@@ -178,6 +178,8 @@ type
     function GetWalkConnectID(Loc: TKMPoint): Byte;
     function GetConnectID(aWalkConnect: TWalkConnect; Loc: TKMPoint): Byte;
 
+    function GetUnitsCountNearPoint(aPoint: TKMPoint; aRadius: Byte): Integer;
+
     function CheckAnimalIsStuck(Loc: TKMPoint; aPass: TKMTerrainPassability; aCheckUnits: Boolean = True): Boolean;
     function GetOutOfTheWay(aUnit: Pointer; PusherLoc: TKMPoint; aPass: TKMTerrainPassability): TKMPoint;
     function FindSideStepPosition(Loc, Loc2, Loc3: TKMPoint; aPass: TKMTerrainPassability; out SidePoint: TKMPoint; OnlyTakeBest: Boolean = False): Boolean;
@@ -2476,6 +2478,39 @@ begin
 end;
 
 
+function TKMTerrain.GetUnitsCountNearPoint(aPoint: TKMPoint; aRadius: Byte): Integer;
+var
+  I, K: Integer;
+begin
+  Result := 0;
+  if aRadius = 0 then Exit;
+
+  // There are 2 types of circle here, even and odd size
+  if aRadius mod 2 = 1 then
+  begin
+    // First comes odd sizes 1,3,5..
+    aRadius := aRadius div 2;
+    for I := -aRadius to aRadius do
+      for K := -aRadius to aRadius do
+        // Rounding corners in a nice way
+        if (Sqr(I) + Sqr(K) < Sqr(aRadius+0.5)) then
+          Inc(Result, Byte(Land[EnsureRange(aPoint.Y+I, 1, MAX_MAP_SIZE),
+                                EnsureRange(aPoint.X+K, 1, MAX_MAP_SIZE)].IsUnit <> nil));
+  end
+  else
+  begin
+    // Even sizes 2,4,6..
+    aRadius := aRadius div 2;
+    for I := -aRadius to aRadius - 1 do
+      for K := -aRadius to aRadius - 1 do
+        // Rounding corners in a nice way
+        if (Sqr(I+0.5)+Sqr(K+0.5) < Sqr(aRadius)) then
+          Inc(Result, Byte(Land[EnsureRange(aPoint.Y+I, 1, MAX_MAP_SIZE),
+                                EnsureRange(aPoint.X+K, 1, MAX_MAP_SIZE)].IsUnit <> nil));
+  end;
+end;
+
+
 //Check which walk connect ID the tile has (to which walk network does it belongs to)
 function TKMTerrain.GetWalkConnectID(Loc: TKMPoint): Byte;
 begin
@@ -2495,7 +2530,7 @@ end;
 function TKMTerrain.CheckAnimalIsStuck(Loc: TKMPoint; aPass: TKMTerrainPassability; aCheckUnits: Boolean=true): Boolean;
 var I,K: integer;
 begin
-  Result := true; //Assume we are stuck
+  Result := True; //Assume we are stuck
   for I := -1 to 1 do for K := -1 to 1 do
     if (I <> 0) or (K <> 0) then
       if TileInMapCoords(Loc.X+K,Loc.Y+I) then
