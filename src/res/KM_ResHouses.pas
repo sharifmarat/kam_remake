@@ -415,7 +415,7 @@ const
     Input:            (wt_Wood,       wt_Steel,      wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_IronSmithy;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2078;
     ),
     ( //Stables
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,1,2,1));
@@ -465,7 +465,7 @@ const
     Input:            (wt_Gold,       wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Metallurgists;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2077;
     ),
     ( //Watch tower
     PlanYX:   ((0,0,0,0), (0,0,0,0), (0,1,1,0), (0,1,2,0));
