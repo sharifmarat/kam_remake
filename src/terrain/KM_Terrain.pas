@@ -37,7 +37,7 @@ type
   TKMTerrainTileChangeErrorArray = array of TKMTerrainTileChangeError;
 
   TKMTerrainTile = record
-    Terrain: Byte;
+    Terrain: Word;
     Height: Byte;
     Rotation: Byte;
     Obj: Byte;
@@ -100,7 +100,7 @@ type
     procedure SetField_Init(Loc: TKMPoint; aOwner: TKMHandIndex);
     procedure SetField_Complete(Loc: TKMPoint; aFieldType: TFieldType);
 
-    function TrySetTile(X, Y: Integer; aType, aRot: Byte; aUpdatePassability: Boolean = True): Boolean;
+    function TrySetTile(X, Y: Integer; aType: Word; aRot: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
@@ -335,6 +335,9 @@ var
   S: TKMemoryStream;
   NewX, NewY: Integer;
   Rot: Byte;
+  GameRevision: UnicodeString;
+  UseKaMFormat: Boolean;
+  TerrainB: Byte;
 begin
   fMapX := 0;
   fMapY := 0;
@@ -345,12 +348,23 @@ begin
 
   gLog.AddTime('Loading map file: ' + FileName);
 
+  UseKaMFormat := True;
   S := TKMemoryStream.Create;
   try
     S.LoadFromFile(FileName);
     S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
+
+    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+    begin
+      S.ReadW(GameRevision);
+      gLog.AddTime('Map is KaM_Remake format, revision ' + GameRevision);
+      UseKaMFormat := False;
+      S.Read(NewX);
+    end;
+
     S.Read(NewY);
-    Assert((NewX <= MAX_MAP_SIZE) and (NewY <= MAX_MAP_SIZE), 'Can''t open the map cos it has too big dimensions');
+    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
+           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
     fMapX := NewX;
     fMapY := NewY;
     fMapRect := KMRect(1, 1, fMapX, fMapY);
@@ -369,14 +383,26 @@ begin
       Land[I,K].Fence        := fncNone;
       Land[I,K].FenceSide    := 0;
 
-      S.Read(Land[I,K].Terrain); //1
-      S.Seek(1, soFromCurrent);
+      if UseKaMFormat then
+      begin
+        S.Read(TerrainB); //1
+        Land[I,K].Terrain := TerrainB;
+        S.Seek(1, soFromCurrent);
+      end else
+        S.Read(Land[I,K].Terrain);
+
       S.Read(Land[I,K].Height); //3
       S.Read(Rot); //4
       Land[I,K].Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
-      S.Seek(1, soFromCurrent);
+
+      if UseKaMFormat then
+        S.Seek(1, soFromCurrent);
+
       S.Read(Land[I,K].Obj); //6
-      S.Seek(17, soFromCurrent);
+
+      if UseKaMFormat then
+        S.Seek(17, soFromCurrent);
+
       if ObjectIsChopableTree(KMPoint(K,I), caAge1) then Land[I,K].TreeAge := 1;
       if ObjectIsChopableTree(KMPoint(K,I), caAge2) then Land[I,K].TreeAge := TREE_AGE_1;
       if ObjectIsChopableTree(KMPoint(K,I), caAge3) then Land[I,K].TreeAge := TREE_AGE_2;
@@ -405,46 +431,57 @@ end;
 //Save (export) map in KaM .map format with additional tile information on the end?
 procedure TKMTerrain.SaveToFile(aFile: UnicodeString; aInsetRect: TKMRect);
 var
+  USE_KAM_FORMAT: Boolean;
   c0: Cardinal;
   cF: Cardinal;
   b205: Byte;
 
-  procedure WriteTile(var S: TKMemoryStream; X, Y: Word; aTerrain, aHeight, aRotation, aObj: Byte; aLight: Single; aSizeX, aSizeY: Word);
+  procedure WriteTile(var S: TKMemoryStream; X, Y, aTerrain: Word; aHeight, aRotation, aObj: Byte; aLight: Single; aSizeX, aSizeY: Word);
   begin
-    S.Write(aTerrain);
+    if USE_KAM_FORMAT then
+      S.Write(Byte(aTerrain))
+    else
+      S.Write(aTerrain);
 
-    S.Write(Byte(Round((aLight+1)*16))); //apply Light (cast to Byte is obligatory due to map file format)
+    if USE_KAM_FORMAT then
+      S.Write(Byte(Round((aLight+1)*16))); //apply Light (cast to Byte is obligatory due to map file format)
+
     S.Write(aHeight);
 
     //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
     S.Write(aRotation);
 
-    S.Write(c0, 1); //unknown
+    if USE_KAM_FORMAT then
+      S.Write(c0, 1); //unknown
 
     S.Write(aObj);
 
-    S.Write(cF, 1); //Passability?
+    if USE_KAM_FORMAT then
+    begin
+      S.Write(cF, 1); //Passability?
 
-    S.Write(cF, 4); //unknown
-    S.Write(c0, 3); //unknown
-    //Border
-    if (X = aSizeX) or (Y = aSizeY) then
-      S.Write(b205) //Bottom/right = 205
-    else
-    if (X = 1) or (Y = 1) then
-      S.Write(c0, 1) //Top/left = 0
-    else
-      S.Write(cF, 1); //Rest of the screen = 255
+      S.Write(cF, 4); //unknown
+      S.Write(c0, 3); //unknown
+      //Border
+      if (X = aSizeX) or (Y = aSizeY) then
+        S.Write(b205) //Bottom/right = 205
+      else
+      if (X = 1) or (Y = 1) then
+        S.Write(c0, 1) //Top/left = 0
+      else
+        S.Write(cF, 1); //Rest of the screen = 255
 
-    S.Write(cF, 1); //unknown - always 255
-    S.Write(b205, 1); //unknown - always 205
-    S.Write(c0, 2); //unknown - always 0
-    S.Write(c0, 4); //unknown - always 0
+      S.Write(cF, 1); //unknown - always 255
+      S.Write(b205, 1); //unknown - always 205
+      S.Write(c0, 2); //unknown - always 0
+      S.Write(c0, 4); //unknown - always 0
+    end;
   end;
 
   procedure SetNewLand(var S: TKMemoryStream; X, Y, aFromX, aFromY: Word; aSizeX, aSizeY: Word; aNewGeneratedTile: Boolean);
   var
-    Terrain, Rot, Height, Obj: Byte;
+    Terrain: Word;
+    Rot, Height, Obj: Byte;
   begin
     // new appended terrain
     if aNewGeneratedTile then
@@ -484,11 +521,15 @@ begin
   Assert(fMapEditor, 'Can save terrain to file only in MapEd');
   ForceDirectories(ExtractFilePath(aFile));
 
+  USE_KAM_FORMAT := False;
+
   c0 := 0;
   cF := $FFFFFFFF;
   b205 := 205;
 
   S := TKMemoryStream.Create;
+  S.Write(Integer(0));     //Indicates this map has not standart KaM format, Can use 0, as we can't have maps with 0 width
+  S.WriteW(GAME_REVISION); //Write KaM version, in case we will change format in future
   try
     //Dimensions must be stored as 4 byte integers
     SizeX := fMapX + aInsetRect.Left + aInsetRect.Right;
@@ -527,28 +568,31 @@ begin
       end;
     end;
 
-    //Resource footer: Temporary hack to make the maps compatible with KaM. If we learn how resource footers
-    //are formatted we can implement it, but for now it appears to work fine like this.
-    ResHead.x1 := 0;
-    ResHead.Allocated := SizeX + SizeY;
-    ResHead.Qty1 := 0;
-    ResHead.Qty2 := ResHead.Qty1;
-    if ResHead.Qty1 > 0 then
-      ResHead.x5:=ResHead.Qty1 - 1
-    else
-      ResHead.x5 := 0;
-    ResHead.Len17 := 17;
-
-    for I := 1 to ResHead.Allocated do
+    if USE_KAM_FORMAT then
     begin
-      Res[I].X1 := -842150451; Res[I].Y1 := -842150451;
-      Res[I].X2 := -842150451; Res[I].Y2 := -842150451;
-      Res[I].Typ := 255;
-    end;
+      //Resource footer: Temporary hack to make the maps compatible with KaM. If we learn how resource footers
+      //are formatted we can implement it, but for now it appears to work fine like this.
+      ResHead.x1 := 0;
+      ResHead.Allocated := SizeX + SizeY;
+      ResHead.Qty1 := 0;
+      ResHead.Qty2 := ResHead.Qty1;
+      if ResHead.Qty1 > 0 then
+        ResHead.x5:=ResHead.Qty1 - 1
+      else
+        ResHead.x5 := 0;
+      ResHead.Len17 := 17;
 
-    S.Write(ResHead, SizeOf(ResHead));
-    for I := 1 to ResHead.Allocated do
-      S.Write(Res[I], SizeOf(Res[I]));
+      for I := 1 to ResHead.Allocated do
+      begin
+        Res[I].X1 := -842150451; Res[I].Y1 := -842150451;
+        Res[I].X2 := -842150451; Res[I].Y2 := -842150451;
+        Res[I].Typ := 255;
+      end;
+
+      S.Write(ResHead, SizeOf(ResHead));
+      for I := 1 to ResHead.Allocated do
+        S.Write(Res[I], SizeOf(Res[I]));
+    end;
 
     S.SaveToFile(aFile);
   finally
@@ -607,7 +651,7 @@ begin
 end;
 
 
-function TKMTerrain.TrySetTile(X, Y: Integer; aType, aRot: Byte; aUpdatePassability: Boolean = True): Boolean;
+function TKMTerrain.TrySetTile(X, Y: Integer; aType: Word; aRot: Byte; aUpdatePassability: Boolean = True): Boolean;
   function UnitWillGetStuck: Boolean;
   var U: TKMUnit;
   begin
@@ -1680,7 +1724,7 @@ function TKMTerrain.FindOre(aLoc: TKMPoint; aRes: TWareType; out OrePoint: TKMPo
 var
   I,K: Integer;
   MiningRect: TKMRect;
-  R1,R2,R3,R4: Byte; //Ore densities
+  R1,R2,R3,R4: Word; //Ore densities
   L: array [1..4] of TKMPointList;
 begin
   if not (aRes in [wt_IronOre, wt_GoldOre, wt_Coal]) then
@@ -2129,7 +2173,7 @@ end;
 
 
 procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: TFieldType; aStage: Byte = 0; aRandomAge: Boolean = False);
-  procedure SetLand(aFieldAge, aTerrain: Byte; aObj: Integer = -1);
+  procedure SetLand(aFieldAge: Byte; aTerrain: Byte; aObj: Integer = -1);
   begin
     Land[Loc.Y, Loc.X].FieldAge := aFieldAge;
 
@@ -2234,7 +2278,7 @@ end;
 procedure TKMTerrain.DecStoneDeposit(Loc: TKMPoint);
 
   procedure UpdateTransition(X,Y:integer);
-  const TileID:array[0..15]of byte = (0,139,139,138,139,140,138,141,139,138,140,141,138,141,141,128);
+  const TileID:array[0..15]of Word = (0,139,139,138,139,140,138,141,139,138,140,141,138,141,141,128);
          RotID:array[0..15]of byte = (0,  0,  1,  0,  2,  0,  1,  3,  3,  3,  1,  2,  2,  1,  0,  0);
   var Bits: Byte;
   begin
@@ -3517,7 +3561,7 @@ end;
 //This whole thing is very CPU intesive, updating whole (256*256) tiles map
 //Don't use any advanced math here, only simpliest operations - + div *
 procedure TKMTerrain.UpdateState;
-  procedure SetLand(const X, Y, aTile, aObj: Byte);
+  procedure SetLand(aTile: Word; const X, Y, aObj: Byte);
   var FloodfillNeeded: Boolean;
   begin
     Land[Y,X].Terrain := aTile;
@@ -3552,23 +3596,23 @@ begin
       Inc(Land[I,K].FieldAge);
       if TileIsCornField(KMPoint(K,I)) then
         case Land[I,K].FieldAge of
-          CORN_AGE_1:     SetLand(K,I,59,255);
-          CORN_AGE_2:     SetLand(K,I,60,255);
-          CORN_AGE_3:     SetLand(K,I,60,58);
+          CORN_AGE_1:     SetLand(59,K,I,255);
+          CORN_AGE_2:     SetLand(60,K,I,255);
+          CORN_AGE_3:     SetLand(60,K,I,58);
           CORN_AGE_FULL:  begin
                             //Skip to the end
-                            SetLand(K,I,60,59);
+                            SetLand(60,K,I,59);
                             Land[I,K].FieldAge := CORN_AGE_MAX;
                           end;
         end
       else
       if TileIsWineField(KMPoint(K,I)) then
         case Land[I,K].FieldAge of
-          WINE_AGE_1:     SetLand(K,I,55,55);
-          WINE_AGE_2:     SetLand(K,I,55,56);
+          WINE_AGE_1:     SetLand(55,K,I,55);
+          WINE_AGE_2:     SetLand(55,K,I,56);
           WINE_AGE_FULL:  begin
                             //Skip to the end
-                            SetLand(K,I,55,57);
+                            SetLand(55,K,I,57);
                             Land[I,K].FieldAge := CORN_AGE_MAX;
                           end;
         end;

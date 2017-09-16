@@ -8,7 +8,7 @@ uses
 
 type
   TKMTilePreview = record
-                       TileID: Byte;
+                       TileID: Word;
                        TileHeight: Byte; //Used for calculating light
                        TileOwner: TKMHandIndex;
                        Revealed: Boolean;
@@ -68,6 +68,9 @@ var
   I: Integer;
   S: TKMemoryStream;
   NewX, NewY: Integer;
+  GameRevision: UnicodeString;
+  UseKaMFormat: Boolean;
+  TerrainB: Byte;
 begin
   Result := False;
 
@@ -76,20 +79,38 @@ begin
 
   S := TKMemoryStream.Create;
   try
+    UseKaMFormat := True;
     S.LoadFromFile(aFileName);
     S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
+
+    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+    begin
+      S.ReadW(GameRevision);
+      UseKaMFormat := False;
+      S.Read(NewX);
+    end;
+
     S.Read(NewY);
-    Assert((NewX <= MAX_MAP_SIZE) and (NewY <= MAX_MAP_SIZE), 'Can''t open the map cos it has too big dimensions');
+    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
+           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
     fMapX := NewX;
     fMapY := NewY;
 
     SetLength(fMapPreview, fMapX * fMapY);
     for I := 0 to fMapX * fMapY - 1 do
     begin
-      S.Read(fMapPreview[I].TileID);
-      S.Seek(1, soFromCurrent);
+      if UseKaMFormat then
+      begin
+        S.Read(TerrainB);
+        fMapPreview[I].TileID := TerrainB;
+        S.Seek(1, soFromCurrent);
+      end else
+        S.Read(fMapPreview[I].TileID);
       S.Read(fMapPreview[I].TileHeight); //Height (for lighting)
-      S.Seek(20, soFromCurrent);
+      if UseKaMFormat then
+        S.Seek(20, soFromCurrent)
+      else
+        S.Seek(2, soFromCurrent); // skip rotation and object
 
       //Fill in blanks
       fMapPreview[I].TileOwner := PLAYER_NONE;

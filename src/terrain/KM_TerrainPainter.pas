@@ -21,7 +21,7 @@ type
 
   //Tile data that we store in undo checkpoints
   TKMUndoTile = packed record
-    Terrain: Byte;
+    Terrain: Word;
     Height: Byte;
     Rotation: Byte;
     Obj: Byte;
@@ -52,10 +52,10 @@ type
     procedure BrushTerrainTile(X, Y: SmallInt; aTerrainKind: TKMTerrainKind);
     procedure EditBrush(aLoc: TKMPoint);
     procedure EditHeight;
-    procedure EditTile(aLoc: TKMPoint; aTile,aRotation: Byte);
+    procedure EditTile(aLoc: TKMPoint; aTile: Word; aRotation: Byte);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
-    function PickRandomTile(aTerrainKind: TKMTerrainKind): Byte;
+    function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
   public
     Land2: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
@@ -123,7 +123,7 @@ const
   //0     number of variants (1..X)
   //1..X  tile variants
   //
-  RandomTiling: array [TKMTerrainKind, 0..15] of Byte = (
+  RandomTiling: array [TKMTerrainKind, 0..15] of Word = (
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
     (15,1,1,1,2,2,2,3,3,3,5,5,5,11,13,14), //reduced chance for "eye-catching" tiles
     (1,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
@@ -177,7 +177,7 @@ begin
 end;
 
 
-function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind): Byte;
+function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 begin
   Result := Abs(Combo[aTerrainKind, aTerrainKind, 1]);
   if not RandomizeTiling or (RandomTiling[aTerrainKind, 0] = 0) then Exit;
@@ -430,7 +430,7 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.EditTile(aLoc: TKMPoint; aTile, aRotation: Byte);
+procedure TKMTerrainPainter.EditTile(aLoc: TKMPoint; aTile: Word; aRotation: Byte);
 begin
   if gTerrain.TileInMapCoords(aLoc.X, aLoc.Y) then
   begin
@@ -448,7 +448,7 @@ type
 var
   FilledTiles: array of array of TMagicType;
 
-  function CanRotate(aTileID: Byte): Boolean;
+  function CanRotate(aTileID: Word): Boolean;
   begin
     Result := (gRes.Tileset.TileIsWater(aTileID)
               and not (aTileID in [114, 115, 119, 194, 200, 210, 211, 235, 236]))
@@ -548,7 +548,7 @@ const
 var
   Accuracy: array of array of Byte;
 
-  procedure SetTerrainKindVertex(X,Y: Integer; T:TKMTerrainKind; aAccuracy:Byte);
+  procedure SetTerrainKindVertex(X,Y: Integer; T: TKMTerrainKind; aAccuracy: Byte);
   begin
     if not gTerrain.TileInMapCoords(X,Y) then Exit;
 
@@ -565,7 +565,7 @@ var
     Accuracy[Y,X] := aAccuracy;
   end;
 
-  procedure SetTerrainKindTile(X,Y: Integer; T:TKMTerrainKind; aAccuracy:Byte);
+  procedure SetTerrainKindTile(X,Y: Integer; T: TKMTerrainKind; aAccuracy: Byte);
   begin
     SetTerrainKindVertex(X  , Y  , T, aAccuracy);
     SetTerrainKindVertex(X+1, Y  , T, aAccuracy);
@@ -758,6 +758,8 @@ var
   end;
   Chunk: AnsiString;
   MapEdChunkFound: Boolean;
+  GameRevision: UnicodeString;
+  UseKaMFormat: Boolean;
 begin
   if not FileExists(aFileName) then Exit;
 
@@ -767,15 +769,31 @@ begin
   try
     S.LoadFromFile(aFileName);
     S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
+
+    UseKaMFormat := True;
+    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+    begin
+      S.ReadW(GameRevision);
+      UseKaMFormat := False;
+      S.Read(NewX);
+    end;
+
     S.Read(NewY);
-    Assert((NewX = gTerrain.MapX) and (NewY = gTerrain.MapY), 'Map size does not match map size');
+    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
+           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
 
     //Skip terrain data
-    S.Seek(23 * NewX * NewY, soFromCurrent);
+    if UseKaMFormat then
+      S.Seek(23 * NewX * NewY, soFromCurrent)
+    else
+      S.Seek(5 * NewX * NewY, soFromCurrent);
 
     //For now we just throw away the resource footer because we don't understand it (and save a blank one)
-    S.Read(ResHead, 22);
-    S.Seek(17 * ResHead.Allocated, soFromCurrent);
+    if UseKaMFormat then
+    begin
+      S.Read(ResHead, 22);
+      S.Seek(17 * ResHead.Allocated, soFromCurrent);
+    end;
 
     //ADDN
     MapEdChunkFound := False;
@@ -840,6 +858,8 @@ var
     x1: Word;
     Allocated, Qty1, Qty2, x5, Len17: Integer;
   end;
+  GameRevision: UnicodeString;
+  UseKaMFormat: Boolean;
 begin
   if not FileExists(aFileName) then Exit;
 
@@ -847,16 +867,31 @@ begin
   try
     S.LoadFromFile(aFileName);
     S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
+
+    UseKaMFormat := True;
+    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+    begin
+      S.ReadW(GameRevision);
+      UseKaMFormat := False;
+      S.Read(NewX);
+    end;
+
     S.Read(NewY);
-    Assert((NewX = gTerrain.MapX + aInsetRect.Left + aInsetRect.Right)
-      and (NewY = gTerrain.MapY + aInsetRect.Top + aInsetRect.Bottom), 'Map size does not match map size');
+    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
+           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
 
     //Skip terrain data
-    S.Seek(23 * NewX * NewY, soFromCurrent);
+    if UseKaMFormat then
+      S.Seek(23 * NewX * NewY, soFromCurrent)
+    else
+      S.Seek(5 * NewX * NewY, soFromCurrent);
 
-    //Skip resource footer
-    S.Read(ResHead, 22);
-    S.Seek(17 * ResHead.Allocated, soFromCurrent);
+    //For now we just throw away the resource footer because we don't understand it (and save a blank one)
+    if UseKaMFormat then
+    begin
+      S.Read(ResHead, 22);
+      S.Seek(17 * ResHead.Allocated, soFromCurrent);
+    end;
 
     S.Write(AnsiString('ADDN')[1], 4);
     S.Write(AnsiString('TILE')[1], 4);

@@ -26,6 +26,8 @@ type
 
 
 implementation
+uses
+  Math;
 
 
 { TMissionParserInfo }
@@ -116,6 +118,7 @@ function TMissionParserInfo.LoadMapInfo(const aFileName: string): Boolean;
 var
   F: TKMemoryStream;
   newX, newY: Integer;
+  GameVersion: UnicodeString;
 begin
   Result := False;
   if not FileExists(aFileName) then Exit;
@@ -124,14 +127,21 @@ begin
   try
     F.LoadFromFile(aFileName);
     F.Read(newX);
+
+    if newX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+    begin
+      F.ReadW(GameVersion);
+      F.Read(newX);
+    end;
+
     F.Read(newY);
   finally
     F.Free;
   end;
 
-  if (newX > MAX_MAP_SIZE) or (newY > MAX_MAP_SIZE) then
+  if not InRange(NewX, 1, MAX_MAP_SIZE) or not InRange(NewY, 1, MAX_MAP_SIZE) then
   begin
-    AddError('MissionParser can''t open the map because it''s too big.', True);
+    AddError(Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]), True);
     Exit;
   end;
 

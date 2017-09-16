@@ -13,7 +13,7 @@ type
   TKMFlipAxis = (fa_Horizontal, fa_Vertical);
 
   TKMBufferData = record
-                    Terrain: Byte;
+                    Terrain: Word;
                     Height: Byte;
                     Rotation: Byte;
                     Obj: Byte;
@@ -335,7 +335,8 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
     OBJ_MIDDLE_X = [8,9,54..61,80,81,212,213,215];
     OBJ_MIDDLE_Y = [8,9,54..61,80,81,212,213,215,  1..5,10..12,17..19,21..24,63,126,210,211,249..253];
   var
-    Ter, Rot: Byte;
+    Ter: Word;
+    Rot: Byte;
   begin
     Ter := gTerrain.Land[Y,X].Terrain;
     Rot := gTerrain.Land[Y,X].Rotation mod 4; //Some KaM maps contain rotations > 3 which must be fixed by modding

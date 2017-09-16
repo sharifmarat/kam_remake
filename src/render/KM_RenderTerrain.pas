@@ -2,7 +2,7 @@ unit KM_RenderTerrain;
 {$I KaM_Remake.inc}
 interface
 uses
-  dglOpenGL, SysUtils, KromUtils, Math,
+  dglOpenGL, SysUtils, KromUtils, Math, KM_ResTileset,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_FogOfWar, KM_Pics, KM_ResSprites, KM_Points, KM_Terrain;
 
 type
@@ -33,7 +33,7 @@ type
     fIndTilesShd: GLUint;
     fVtxAnimTilesShd: GLUint;
     fIndAnimTilesShd: GLUint;
-    fTileUVLookup: array [0..255, 0..3] of TUVRect;
+    fTileUVLookup: array [0..TILES_CNT-1, 0..3] of TUVRect;
     fLastBindVBOArrayType: TVBOArrayType;
     function GetTileUV(Index: Word; Rot: Byte): TUVRect;
     procedure BindVBOArray(aVBOArrayType: TVBOArrayType);

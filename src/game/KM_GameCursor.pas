@@ -17,7 +17,7 @@ type
     PrevCell: TKMPoint;   //Cursor previous position cell
     SState: TShiftState;  //Thats actually used to see if Left or Right mouse button is pressed
 
-    Tag1: Byte;           //Tag to know building type, unit type etc.
+    Tag1: Word;           //Tag to know building type, unit type etc.
     DragOffset: TKMPoint; //used to adjust actual Cursor Cell
     ObjectUID: Integer;   //Object found below cursor
 

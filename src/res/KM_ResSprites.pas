@@ -71,7 +71,7 @@ type
     procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1);
     procedure DeleteSpriteTexture(aIndex: Integer);
 
-    function GetSpriteColors(aCount: Byte): TRGBArray;
+    function GetSpriteColors(aCount: Word): TRGBArray;
 
     procedure ExportAll(const aFolder: string);
     procedure ExportImage(const aFile: string; aIndex: Integer);
@@ -486,7 +486,7 @@ begin
 end;
 
 
-function TKMSpritePack.GetSpriteColors(aCount: Byte): TRGBArray;
+function TKMSpritePack.GetSpriteColors(aCount: Word): TRGBArray;
 var
   I, L, M: Integer;
   PixelCount: Word;

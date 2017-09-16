@@ -191,7 +191,8 @@ end;
 //MapEditor stores only commanders instead of all groups members
 procedure TKMMinimap.UpdateMinimapFromGame;
 var
-  FOW,ID: Byte;
+  FOW: Byte;
+  ID: Word;
   I,J,K: Integer;
   U: TKMUnit;
   P: TKMPoint;
@@ -265,7 +266,7 @@ begin
         end;
       end;
 
-  //Draw
+  //Draw 'Resize map' feature on minimap
   if (gGame <> nil) and (gGame.GameMode = gmMapEd)
     and (mlMapResize in gGame.MapEditor.VisibleLayers)
     and not KMSameRect(gGame.MapEditor.ResizeMapRect, KMRECT_ZERO) then
@@ -273,7 +274,7 @@ begin
       for K := 0 to fMapX - 1 do
       begin
         if not KMInRect(KMPoint(K+1,I+1), gGame.MapEditor.ResizeMapRect) then
-          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 2, 1, 1);
+          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 2, 1, 1); // make red margins where current map is cut
       end;
 
 end;
