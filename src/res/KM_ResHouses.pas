@@ -235,7 +235,7 @@ const
     Input:            (wt_Coal,       wt_Steel,      wt_None,       wt_None);
     Output:           (wt_MetalShield,wt_MetalArmor, wt_None,       wt_None);
     UnlockedByHouse:  ht_IronSmithy;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2069;
     ),
     ( //Armor workshop
     PlanYX:           ((0,0,0,0), (0,1,1,0), (0,1,1,1), (0,2,1,1));
@@ -265,7 +265,7 @@ const
     Input:            (wt_Warfare,    wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Sawmill;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2076;
     ),
     ( //Butchers
     PlanYX:           ((0,0,0,0), (0,1,1,0), (0,1,1,1), (0,1,1,2));
@@ -285,7 +285,7 @@ const
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Coal,       wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Sawmill;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2070;
     ),
     ( //Farm
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -315,7 +315,7 @@ const
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_GoldOre,    wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Sawmill;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2071;
     ),
     ( //Inn
     PlanYX:           ((0,0,0,0), (0,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -355,7 +355,7 @@ const
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Sawmill;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2072;
     ),
     ( //Metallurgist
     PlanYX:           ((0,0,0,0), (1,1,1,0), (1,1,1,0), (1,2,1,0));
@@ -425,7 +425,7 @@ const
     Input:            (wt_Corn,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Horse,      wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Farm;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2073;
     ),
     ( //Store
     PlanYX:           ((0,0,0,0), (1,1,1,0), (1,1,1,0), (1,2,1,0));
@@ -455,7 +455,7 @@ const
     Input:            (wt_Skin,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Leather,    wt_None,       wt_None,       wt_None);
     UnlockedByHouse:  ht_Swine;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2074;
     ),
     ( //Town hall
     PlanYX:           ((0,0,0,0), (1,1,1,1), (1,1,1,1), (1,2,1,1));
@@ -485,7 +485,7 @@ const
     Input:            (wt_Coal,       wt_Steel,      wt_None,       wt_None);
     Output:           (wt_Sword,      wt_Hallebard,  wt_Arbalet,    wt_None);
     UnlockedByHouse:  ht_IronSmithy;
-    SnowSpriteId:     -1;
+    SnowSpriteId:     2075;
     ),
     ( //Weapon workshop
     PlanYX:           ((0,0,0,0), (0,0,0,0), (1,1,1,1), (1,2,1,1));

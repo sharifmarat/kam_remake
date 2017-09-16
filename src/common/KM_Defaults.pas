@@ -74,7 +74,7 @@ var
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
   SHOW_DISMISS_BUTTON   :Boolean = False; //The button to order citizens go back to school
   CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
-  SNOW_HOUSES           :Boolean = False; //Draw snow on houses
+  SNOW_HOUSES           :Boolean = True; //Draw snow on houses
   CHECK_8087CW          :Boolean = False; //Check that 8087CW (FPU flags) are set correctly each frame, in case some lib/API changed them
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
   PathFinderToUse       :Byte = 1;
