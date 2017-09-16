@@ -37,6 +37,7 @@ type
     destructor Destroy; override;
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
 
     property GuiTiles: TKMMapEdTerrainTiles read fGuiTiles;
 
@@ -135,11 +136,16 @@ begin
 end;
 
 
+procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
+begin
+  fGuiBrushes.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+end;
+
+
 procedure TKMMapEdTerrain.PageChange(Sender: TObject);
 begin
   //Reset cursor mode
   gGameCursor.Mode := cmNone;
-  gGameCursor.Tag1 := 0;
 
   //Hide existing pages
   fGuiBrushes.Hide;
