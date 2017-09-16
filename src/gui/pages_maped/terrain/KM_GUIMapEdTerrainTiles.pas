@@ -15,12 +15,12 @@ const
 type
   TKMMapEdTerrainTiles = class
   private
-    fLastTile: Byte;
+    fLastTile: Word;
 
     procedure TilesChange(Sender: TObject);
     procedure TilesSet(aIndex: Integer);
     procedure TilesRefresh(Sender: TObject);
-    function GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Byte;
+    function GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Word;
   protected
     Panel_Tiles: TKMPanel;
     TilesTable: array [0 .. MAPED_TILES_X * MAPED_TILES_Y - 1] of TKMButtonFlat; //how many are visible?
@@ -40,21 +40,26 @@ type
 
 implementation
 uses
-  KM_ResFonts, KM_ResTexts, KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
+  KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
 
 
 const
+  TABLE_ELEMS = 280;
   //Tiles table made by JBSnorro, thanks to him :)
-  MapEdTileRemap: array [1..256] of Integer = (
-     1,73,74,75,37,21,22, 38, 33, 34, 32,181,173,177,129,130,131,132,133, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224,
-    27,76,77,78,36,39,40,198,100,101,102,189,169,185,134,135,136,137,138,124,125,126,229,218,219,220, 46, 11,  5,  0, 26,216,
-    28,79,80,81,35,88,89, 90, 70, 71, 72,182,174,178,196,139,140,141,142,127,128,  0,230,226,227,228, 47,204,205,206,203,207,
-    29,82,83,84,85,86,87,  0,112,113,114,190,170,186,161,162,163,164,165,106,107,108,233,234,231,  0, 48,221,213,214,199,200,
-    30,94,95,96,57,58,59,  0,103,104,105,183,175,179,157,202,158,159,160,117,118,119,209,210,241,245,194,248, 65, 66,195, 25,
-    31, 9,19,20,41,42,43, 44,  6,  7, 10,191,171,187,149,150,151,152, 16,242,243,244,235,238,239,240,  0, 50,172, 52,222,223,
-    18,67,68,69,91,92,93,  0,  3,  4,  2,184,176,180,145,146,147,148,  8,115,116,120,236,237,143,144,  0, 53,167, 55,215,232,
-    17,97,98,99, 0, 0, 0,  0, 12, 14, 15,192,168,188,153,154,155,156,  0,121,122,123,211,212,201,  0,246,166, 51, 54,  0,  0);
+  MapEdTileRemap: array [1..TABLE_ELEMS] of Integer = (
+     1,73,74,75,37,21,22, 38, 33, 34, 32,181,173,177,129,130,131,132,133, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224,257,265,273,
+    27,76,77,78,36,39,40,198,100,101,102,189,169,185,134,135,136,137,138,124,125,126,229,218,219,220, 46, 11,  5,  0, 26,216,258,266,0,
+    28,79,80,81,35,88,89, 90, 70, 71, 72,182,174,178,196,139,140,141,142,127,128,  0,230,226,227,228, 47,204,205,206,203,207,259,267,0,
+    29,82,83,84,85,86,87,  0,112,113,114,190,170,186,161,162,163,164,165,106,107,108,233,234,231,  0, 48,221,213,214,199,200,260,268,0,
+    30,94,95,96,57,58,59,  0,103,104,105,183,175,179,157,202,158,159,160,117,118,119,209,210,241,245,194,248, 65, 66,195, 25,261,269,0,
+    31, 9,19,20,41,42,43, 44,  6,  7, 10,191,171,187,149,150,151,152, 16,242,243,244,235,238,239,240,  0, 50,172, 52,222,223,262,270,0,
+    18,67,68,69,91,92,93,  0,  3,  4,  2,184,176,180,145,146,147,148,  8,115,116,120,236,237,143,144,  0, 53,167, 55,215,232,263,271,0,
+    17,97,98,99, 0, 0, 0,  0, 12, 14, 15,192,168,188,153,154,155,156,  0,121,122,123,211,212,201,  0,246,166, 51, 54,  0,  0,264,272,0
+    );
     // 247 - doesn't work in game, replaced with random road
+
+var
+  TABLE_ELEMS_CNT: Integer;
 
 
 constructor TKMMapEdTerrainTiles.Create(aParent: TKMPanel);
@@ -62,6 +67,8 @@ var
   J,K: Integer;
 begin
   inherited Create;
+
+  TABLE_ELEMS_CNT := Ceil(TILES_CNT / MAPED_TILES_Y) * MAPED_TILES_Y;
 
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
@@ -91,7 +98,7 @@ begin
 
   //Create scroll first to link to its MouseWheel event
   TilesScroll := TKMScrollBar.Create(Panel_Tiles, 2, 136 + 4 + MAPED_TILES_Y * 32, 194, 20, sa_Horizontal, bsGame);
-  TilesScroll.MaxValue := 256 div MAPED_TILES_Y - MAPED_TILES_X; // 32 - 6
+  TilesScroll.MaxValue := (TABLE_ELEMS_CNT div MAPED_TILES_Y) - MAPED_TILES_X; // 32 - 6
   TilesScroll.Position := 0;
   TilesScroll.OnChange := TilesRefresh;
   for J := 0 to MAPED_TILES_Y - 1 do
@@ -181,15 +188,19 @@ begin
 end;
 
 
-function TKMMapEdTerrainTiles.GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Byte;
-var X,Y,Tile: Byte;
+function TKMMapEdTerrainTiles.GetTileTexIDFromTag(aTag: Byte; aScrollPosition: Integer = -1): Word;
+var X,Y: Byte;
+  Tile: Word;
   ScrollPosition: Integer;
 begin
   ScrollPosition := IfThen(aScrollPosition = -1, TilesScroll.Position, aScrollPosition);
 
   X := aTag mod MAPED_TILES_X + ScrollPosition;
   Y := (aTag div MAPED_TILES_X);
-  Tile := (256 div MAPED_TILES_Y) * Y + X;
+  Tile := (TABLE_ELEMS_CNT div MAPED_TILES_Y) * Y + X;
+//  if Tile > TILES_CNT then
+//    Result := 0;
+
   Result := MapEdTileRemap[Tile + 1];
 end;
 

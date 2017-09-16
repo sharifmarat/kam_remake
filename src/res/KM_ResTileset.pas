@@ -7,7 +7,7 @@ uses
 
 
 const
-  TILES_CNT = 259;
+  TILES_CNT = 273;
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
@@ -72,13 +72,33 @@ end;
 
 
 procedure TKMResTileset.InitRemakeTiles;
+var
+  I: Integer;
 begin
+  //IronMountain-DirtSnow
   PatternDAT[257].Walkable := 1;
-  PatternDAT[257].Buildable := 1;
+  PatternDAT[257].Buildable := 0;
   PatternDAT[258].Walkable := 1;
   PatternDAT[258].Buildable := 0;
   PatternDAT[259].Walkable := 1;
   PatternDAT[259].Buildable := 0;
+  //Iron
+  PatternDAT[260].Walkable := 0;
+  PatternDAT[260].Buildable := 0;
+  PatternDAT[261].Walkable := 0;
+  PatternDAT[261].Buildable := 0;
+  //GoldMountains-Snow
+  PatternDAT[262].Walkable := 1;
+  PatternDAT[262].Buildable := 0;
+  PatternDAT[263].Walkable := 1;
+  PatternDAT[263].Buildable := 0;
+  //
+  for I := 264 to TILES_CNT do
+  begin
+    PatternDAT[I].Walkable := 0;
+    PatternDAT[I].Buildable := 0;
+  end;
+
 end;
 
 

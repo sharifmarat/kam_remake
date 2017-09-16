@@ -31,7 +31,7 @@ type
 
 implementation
 uses
-  KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
+  TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
   KM_TerrainPainter, KM_InterfaceGame;
 
 
@@ -48,6 +48,7 @@ const
     (tkCoal,        tkGold,         tkIron,         tkLava,         tkCustom));
 var
   I,K: Integer;
+  TerKindName: String;
 begin
   inherited Create;
 
@@ -70,6 +71,8 @@ begin
   begin
     BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, K * 36, 60 + I * 40, 34, 34, Combo[Surfaces[I,K], Surfaces[I,K], 1] + 1, rxTiles);  // grass
     BrushTable[I,K].Tag := Byte(Surfaces[I,K]);
+    TerKindName := GetEnumName(TypeInfo(TKMTerrainKind), Integer(Surfaces[I,K]));
+    BrushTable[I,K].Hint := Copy(TerKindName, 3, Length(TerKindName) - 2);
     BrushTable[I,K].OnClick := BrushChange;
   end;
 

@@ -54,7 +54,7 @@ type
     procedure RenderFences;
     procedure RenderPlayerPlans(aFieldsList: TKMPointTagList; aHousePlansList: TKMPointDirList);
     procedure RenderFOW(aFOW: TKMFogOfWarCommon; aUseContrast: Boolean);
-    procedure RenderTile(Index: Byte; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+    procedure RenderTile(Index: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
     procedure RenderTileOverlay(pX, pY: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
   end;
 
@@ -76,7 +76,7 @@ begin
   if SKIP_RENDER then Exit;
 
   //Tiles UV lookup for faster access. Only base tileset for smaller size
-  for I := 0 to 255 do
+  for I := 0 to TILES_CNT - 1 do
     for K := 0 to 3 do
       fTileUVLookup[I, K] := GetTileUV(I, K);
 
@@ -831,7 +831,7 @@ end;
 
 
 //Render single terrain cell
-procedure TRenderTerrain.RenderTile(Index: Byte; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+procedure TRenderTerrain.RenderTile(Index: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
 var
   K, I: Integer;
   TexC: TUVRect; // Texture UV coordinates
