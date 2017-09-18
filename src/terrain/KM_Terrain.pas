@@ -263,7 +263,7 @@ implementation
 uses
   KM_CommonTypes, KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_Units_Warrior, KM_TerrainPainter,
-  KM_ResUnits, KM_Hand, KM_Game;
+  KM_ResUnits, KM_Hand, KM_Game, KM_Utils;
 
 
 { TKMTerrain }
@@ -335,7 +335,6 @@ var
   S: TKMemoryStream;
   NewX, NewY: Integer;
   Rot: Byte;
-  GameRevision: UnicodeString;
   UseKaMFormat: Boolean;
   TerrainB: Byte;
 begin
@@ -352,19 +351,8 @@ begin
   S := TKMemoryStream.Create;
   try
     S.LoadFromFile(FileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
 
-    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
-    begin
-      S.ReadW(GameRevision);
-      gLog.AddTime('Map is KaM_Remake format, revision ' + GameRevision);
-      UseKaMFormat := False;
-      S.Read(NewX);
-    end;
-
-    S.Read(NewY);
-    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
-           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
+    LoadMapHeader(S, NewX, NewY, UseKaMFormat);
     fMapX := NewX;
     fMapY := NewY;
     fMapRect := KMRect(1, 1, fMapX, fMapY);

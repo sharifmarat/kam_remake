@@ -180,7 +180,7 @@ const
 
 implementation
 uses
-  KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils;
+  KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils, KM_Utils;
 
 
 { TKMTerrainPainter }
@@ -790,19 +790,8 @@ begin
   S := TKMemoryStream.Create;
   try
     S.LoadFromFile(aFileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
 
-    UseKaMFormat := True;
-    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
-    begin
-      S.ReadW(GameRevision);
-      UseKaMFormat := False;
-      S.Read(NewX);
-    end;
-
-    S.Read(NewY);
-    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
-           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
+    LoadMapHeader(S, NewX, NewY, UseKaMFormat);
 
     //Skip terrain data
     if UseKaMFormat then
@@ -888,19 +877,8 @@ begin
   S := TKMemoryStream.Create;
   try
     S.LoadFromFile(aFileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
 
-    UseKaMFormat := True;
-    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
-    begin
-      S.ReadW(GameRevision);
-      UseKaMFormat := False;
-      S.Read(NewX);
-    end;
-
-    S.Read(NewY);
-    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
-           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
+    LoadMapHeader(S, NewX, NewY, UseKaMFormat);
 
     //Skip terrain data
     if UseKaMFormat then

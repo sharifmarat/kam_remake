@@ -46,7 +46,7 @@ type
 
 implementation
 uses
-  KM_Resource, KM_ResHouses, KM_ResUnits;
+  KM_Resource, KM_ResHouses, KM_ResUnits, KM_Utils;
 
 
 { TMissionParserPreview }
@@ -67,8 +67,6 @@ function TMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStream;
-  NewX, NewY: Integer;
-  GameRevision: UnicodeString;
   UseKaMFormat: Boolean;
   TerrainB: Byte;
 begin
@@ -81,20 +79,8 @@ begin
   try
     UseKaMFormat := True;
     S.LoadFromFile(aFileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
 
-    if NewX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
-    begin
-      S.ReadW(GameRevision);
-      UseKaMFormat := False;
-      S.Read(NewX);
-    end;
-
-    S.Read(NewY);
-    Assert(InRange(NewX, 1, MAX_MAP_SIZE) and InRange(NewY, 1, MAX_MAP_SIZE),
-           Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]));
-    fMapX := NewX;
-    fMapY := NewY;
+    LoadMapHeader(S, fMapX, fMapY, UseKaMFormat);
 
     SetLength(fMapPreview, fMapX * fMapY);
     for I := 0 to fMapX * fMapY - 1 do

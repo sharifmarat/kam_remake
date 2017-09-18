@@ -20,6 +20,8 @@ uses
   function GetMultiplicator(aButton: TMouseButton): Word; overload;
   function GetMultiplicator(aShift: TShiftState): Word; overload;
 
+  procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean);
+
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
 
   function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
@@ -37,6 +39,26 @@ begin
   Result := 0;
   for I := 1 to aNodeList.Count - 1 do
     Result := Result + KMLengthDiag(aNodeList[I-1], aNodeList[I]);
+end;
+
+
+procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean);
+var
+  GameRevision: UnicodeString;
+begin
+  aStream.Read(aMapX); //We read header to new variables to avoid damage to existing map if header is wrong
+
+  aIsKaMFormat := True;
+  if aMapX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
+  begin
+    aStream.ReadW(GameRevision);
+    aIsKaMFormat := False;
+    aStream.Read(aMapX);
+  end;
+
+  aStream.Read(aMapY);
+  Assert(InRange(aMapX, 1, MAX_MAP_SIZE) and InRange(aMapY, 1, MAX_MAP_SIZE),
+         Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [aMapX, aMapY]));
 end;
 
 
