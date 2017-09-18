@@ -106,8 +106,8 @@ begin
 
   Down := Byte(bsDown in aState);
 
-  with GFXData[BackRX, BackID] do
-  with GFXData[BackRX, BackID].Tex do
+  with gGFXData[BackRX, BackID] do
+  with gGFXData[BackRX, BackID].Tex do
   if PxWidth * PxHeight <> 0 then //Make sure data was loaded properly
   begin
     A.X := u1 + (u2 - u1) * (aLeft - Down) / 2 / PxWidth;
@@ -129,7 +129,7 @@ begin
 
       //Background
       glColor4f(1, 1, 1, 1);
-      TRender.BindTexture(GFXData[BackRX, BackID].Tex.ID);
+      TRender.BindTexture(gGFXData[BackRX, BackID].Tex.ID);
       glBegin(GL_QUADS);
         glTexCoord2f(A.x,A.y); glVertex2f(0,0);
         glTexCoord2f(B.x,A.y); glVertex2f(aWidth,0);
@@ -283,8 +283,8 @@ begin
 
   OffX  := 0;
   OffY  := 0;
-  DrawWidth   := GFXData[aRX, aID].PxWidth;
-  DrawHeight  := GFXData[aRX, aID].PxHeight;
+  DrawWidth   := gGFXData[aRX, aID].PxWidth;
+  DrawHeight  := gGFXData[aRX, aID].PxHeight;
 
   //Both aAnchors means that we will need to stretch the image
   if (anLeft in aAnchors) and (anRight in aAnchors) then
@@ -310,7 +310,7 @@ begin
   else
     OffY := (aHeight - DrawHeight) div 2;
 
-  with GFXData[aRX, aID] do
+  with gGFXData[aRX, aID] do
   begin
     glPushMatrix;
       glTranslatef(aLeft + OffX, aTop + OffY, 0);

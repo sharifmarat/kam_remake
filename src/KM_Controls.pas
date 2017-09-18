@@ -2585,10 +2585,10 @@ begin
   fColumns := Math.max(1, aColumns);
   fHighlightID := aHighlightID;
 
-  fDrawWidth  := EnsureRange(Width div fColumns, 8, GFXData[fRX, fTexID1].PxWidth);
-  fDrawHeight := EnsureRange(Height div Ceil(fCount/fColumns), 6, GFXData[fRX, fTexID1].PxHeight);
+  fDrawWidth  := EnsureRange(Width div fColumns, 8, gGFXData[fRX, fTexID1].PxWidth);
+  fDrawHeight := EnsureRange(Height div Ceil(fCount/fColumns), 6, gGFXData[fRX, fTexID1].PxHeight);
 
-  Aspect := GFXData[fRX, fTexID1].PxWidth / GFXData[fRX, fTexID1].PxHeight;
+  Aspect := gGFXData[fRX, fTexID1].PxWidth / gGFXData[fRX, fTexID1].PxHeight;
   if fDrawHeight * Aspect <= fDrawWidth then
     fDrawWidth  := Round(fDrawHeight * Aspect)
   else

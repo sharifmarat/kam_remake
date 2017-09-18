@@ -119,7 +119,7 @@ type
                 end;
 
 var
-  GFXData: array [TRXType] of array of record
+  gGFXData: array [TRXType] of array of record
     Tex, Alt: TKMTexCoords; //AltID used for team colors and house building steps
     PxWidth, PxHeight: Word;
   end;
@@ -154,13 +154,13 @@ end;
 //This is a crude solution to allow Campaigns to delete sprites they add
 procedure TKMSpritePack.DeleteSpriteTexture(aIndex: Integer);
 begin
-  if GFXData[fRT, aIndex].Tex.ID <> 0 then
-    TRender.DeleteTexture(GFXData[fRT, aIndex].Tex.ID);
-  if GFXData[fRT, aIndex].Alt.ID <> 0 then
-    TRender.DeleteTexture(GFXData[fRT, aIndex].Alt.ID);
+  if gGFXData[fRT, aIndex].Tex.ID <> 0 then
+    TRender.DeleteTexture(gGFXData[fRT, aIndex].Tex.ID);
+  if gGFXData[fRT, aIndex].Alt.ID <> 0 then
+    TRender.DeleteTexture(gGFXData[fRT, aIndex].Alt.ID);
 
-  GFXData[fRT, aIndex].Tex.ID := 0;
-  GFXData[fRT, aIndex].Alt.ID := 0;
+  gGFXData[fRT, aIndex].Tex.ID := 0;
+  gGFXData[fRT, aIndex].Alt.ID := 0;
 end;
 
 
@@ -169,7 +169,7 @@ begin
   fRXData.Count := aCount;
 
   aCount := fRXData.Count + 1;
-  SetLength(GFXData[fRT],     aCount);
+  SetLength(gGFXData[fRT],     aCount);
   SetLength(fRXData.Flag,     aCount);
   SetLength(fRXData.Size,     aCount);
   SetLength(fRXData.Pivot,    aCount);
@@ -637,12 +637,12 @@ type
 
         if aMode = saBase then
         begin
-          GFXData[fRT, ID].Tex := TxCoords;
-          GFXData[fRT, ID].PxWidth := fRXData.Size[ID].X;
-          GFXData[fRT, ID].PxHeight := fRXData.Size[ID].Y;
+          gGFXData[fRT, ID].Tex := TxCoords;
+          gGFXData[fRT, ID].PxWidth := fRXData.Size[ID].X;
+          gGFXData[fRT, ID].PxHeight := fRXData.Size[ID].Y;
         end
         else
-          GFXData[fRT, ID].Alt := TxCoords;
+          gGFXData[fRT, ID].Alt := TxCoords;
       end;
 
       if aMode = saBase then

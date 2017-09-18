@@ -164,7 +164,7 @@ begin
   // Rotate by 270 degrees = 90 + 180
 
   //Apply rotation
-  with GFXData[rxTiles, Index+1] do
+  with gGFXData[rxTiles, Index+1] do
   begin
     Result[TexO[1], 1] := Tex.u1; Result[TexO[1], 2] := Tex.v1;
     Result[TexO[2], 1] := Tex.u1; Result[TexO[2], 2] := Tex.v2;
@@ -213,8 +213,8 @@ var
   begin
     Result := False;
     with gTerrain do
-      if (aTexOffset + Land[aTY,aTX].Terrain + 1 <= High(GFXData[rxTiles]))
-         and (GFXData[rxTiles, aTexOffset + Land[aTY,aTX].Terrain + 1].Tex.ID <> 0)
+      if (aTexOffset + Land[aTY,aTX].Terrain + 1 <= High(gGFXData[rxTiles]))
+         and (gGFXData[rxTiles, aTexOffset + Land[aTY,aTX].Terrain + 1].Tex.ID <> 0)
          and (aFOW.CheckTileRevelation(aTX,aTY) > FOG_OF_WAR_ACT) then
       begin
         TexAnimC := GetTileUV(aTexOffset + Land[aTY,aTX].Terrain, Land[aTY,aTX].Rotation mod 4);
@@ -342,7 +342,7 @@ begin
     BindVBOArray(vat_Tile);
     //Bind to tiles texture. All tiles should be places in 1 atlas,
     //so to get TexId we can use any of terrain tile Id (f.e. 1st)
-    TRender.BindTexture(GFXData[rxTiles, 1].Tex.ID);
+    TRender.BindTexture(gGFXData[rxTiles, 1].Tex.ID);
 
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -365,7 +365,7 @@ begin
     begin
       with Land[I,K] do
       begin
-        TRender.BindTexture(GFXData[rxTiles, Terrain+1].Tex.ID);
+        TRender.BindTexture(gGFXData[rxTiles, Terrain+1].Tex.ID);
         glBegin(GL_TRIANGLE_FAN);
         TexC := fTileUVLookup[Terrain, Rotation mod 4];
       end;
@@ -405,7 +405,7 @@ begin
     BindVBOArray(vat_AnimTile);
     //Bind to tiles texture. All tiles should be placed in 1 atlas,
     //so to get TexId we can use any of terrain tile Id (f.e. 1st)
-    TRender.BindTexture(GFXData[rxTiles, 1].Tex.ID);
+    TRender.BindTexture(gGFXData[rxTiles, 1].Tex.ID);
 
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -433,11 +433,11 @@ begin
       with gTerrain do
       for I := fClipRect.Top to fClipRect.Bottom do
       for K := fClipRect.Left to fClipRect.Right do
-      if (TexOffset + Land[I,K].Terrain + 1 <= High(GFXData[rxTiles]))
-      and (GFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID <> 0)
+      if (TexOffset + Land[I,K].Terrain + 1 <= High(gGFXData[rxTiles]))
+      and (gGFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID <> 0)
       and (aFOW.CheckTileRevelation(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
       begin
-        TRender.BindTexture(GFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID);
+        TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID);
         TexC := GetTileUV(TexOffset + Land[I,K].Terrain, Land[I,K].Rotation);
 
         glBegin(GL_TRIANGLE_FAN);
@@ -845,7 +845,7 @@ begin
   else
     glColor4f(1, 1, 1, 1);
 
-  TRender.BindTexture(GFXData[rxTiles, Index + 1].Tex.ID);
+  TRender.BindTexture(gGFXData[rxTiles, Index + 1].Tex.ID);
   TexC := fTileUVLookup[Index, Rot mod 4];
 
   glBegin(GL_TRIANGLE_FAN);
@@ -892,16 +892,16 @@ begin
 
   if Pos in [dir_N, dir_S] then
   begin //Horizontal
-    TRender.BindTexture(GFXData[rxGui,TexID].Tex.ID);
-    UVa.X := GFXData[rxGui, TexID].Tex.u1;
-    UVa.Y := GFXData[rxGui, TexID].Tex.v1;
-    UVb.X := GFXData[rxGui, TexID].Tex.u2;
-    UVb.Y := GFXData[rxGui, TexID].Tex.v2;
+    TRender.BindTexture(gGFXData[rxGui,TexID].Tex.ID);
+    UVa.X := gGFXData[rxGui, TexID].Tex.u1;
+    UVa.Y := gGFXData[rxGui, TexID].Tex.v1;
+    UVb.X := gGFXData[rxGui, TexID].Tex.u2;
+    UVb.Y := gGFXData[rxGui, TexID].Tex.v2;
 
     y1 := pY - 1 - (gTerrain.Land[pY, pX].Height + VO) / CELL_HEIGHT_DIV;
     y2 := pY - 1 - (gTerrain.Land[pY, pX + 1].Height + VO) / CELL_HEIGHT_DIV;
 
-    FenceY := GFXData[rxGui,TexID].PxWidth / CELL_SIZE_PX;
+    FenceY := gGFXData[rxGui,TexID].PxWidth / CELL_SIZE_PX;
     glBegin(GL_QUADS);
       glTexCoord2f(UVb.x, UVa.y); glVertex2f(pX-1 -3/ CELL_SIZE_PX, y1);
       glTexCoord2f(UVa.x, UVa.y); glVertex2f(pX-1 -3/ CELL_SIZE_PX, y1 - FenceY);
@@ -911,17 +911,17 @@ begin
   end
   else
   begin //Vertical
-    TRender.BindTexture(GFXData[rxGui,TexID].Tex.ID);
+    TRender.BindTexture(gGFXData[rxGui,TexID].Tex.ID);
     HeightInPx := Round(CELL_SIZE_PX * (1 + (gTerrain.Land[pY,pX].Height - gTerrain.Land[pY+1,pX].Height)/CELL_HEIGHT_DIV)+FO);
-    UVa.X := GFXData[rxGui, TexID].Tex.u1;
-    UVa.Y := GFXData[rxGui, TexID].Tex.v1;
-    UVb.X := GFXData[rxGui, TexID].Tex.u2;
-    UVb.Y := Mix(GFXData[rxGui, TexID].Tex.v2, GFXData[rxGui, TexID].Tex.v1, HeightInPx / GFXData[rxGui, TexID].pxHeight);
+    UVa.X := gGFXData[rxGui, TexID].Tex.u1;
+    UVa.Y := gGFXData[rxGui, TexID].Tex.v1;
+    UVb.X := gGFXData[rxGui, TexID].Tex.u2;
+    UVb.Y := Mix(gGFXData[rxGui, TexID].Tex.v2, gGFXData[rxGui, TexID].Tex.v1, HeightInPx / gGFXData[rxGui, TexID].pxHeight);
 
     y1 := pY - 1 - (gTerrain.Land[pY, pX].Height + FO + VO) / CELL_HEIGHT_DIV;
     y2 := pY - (gTerrain.Land[pY + 1, pX].Height + VO) / CELL_HEIGHT_DIV;
 
-    FenceX := GFXData[rxGui,TexID].PxWidth / CELL_SIZE_PX;
+    FenceX := gGFXData[rxGui,TexID].PxWidth / CELL_SIZE_PX;
 
     case Pos of
       dir_W:  x1 := pX - 1 - 3 / CELL_SIZE_PX;
@@ -948,12 +948,12 @@ var
 begin
   ID := MarkupTex[aFieldType];
 
-  TRender.BindTexture(GFXData[rxGui, ID].Tex.ID);
+  TRender.BindTexture(gGFXData[rxGui, ID].Tex.ID);
 
-  UVa.X := GFXData[rxGui, ID].Tex.u1;
-  UVa.Y := GFXData[rxGui, ID].Tex.v1;
-  UVb.X := GFXData[rxGui, ID].Tex.u2;
-  UVb.Y := GFXData[rxGui, ID].Tex.v2;
+  UVa.X := gGFXData[rxGui, ID].Tex.u1;
+  UVa.Y := gGFXData[rxGui, ID].Tex.v1;
+  UVb.X := gGFXData[rxGui, ID].Tex.u2;
+  UVb.Y := gGFXData[rxGui, ID].Tex.v2;
 
   glBegin(GL_QUADS);
     glTexCoord2f(UVb.x, UVa.y); glVertex2f(pX-1, pY-1 - gTerrain.Land[pY  ,pX  ].Height/CELL_HEIGHT_DIV+0.10);

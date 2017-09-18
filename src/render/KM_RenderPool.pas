@@ -1069,7 +1069,7 @@ end;}
 
 procedure TRenderPool.RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 begin
-  with GFXData[aRX, aId] do
+  with gGFXData[aRX, aId] do
   begin
     // FOW is rendered over the top so no need to make sprites black anymore
     glColor4ub(255, 255, 255, 255);
@@ -1085,8 +1085,8 @@ begin
     glEnd;
   end;
 
-  if GFXData[aRX, aId].Alt.Id <> 0 then
-  with GFXData[aRX, aId] do
+  if gGFXData[aRX, aId].Alt.Id <> 0 then
+  with gGFXData[aRX, aId] do
   begin
     glColor4ubv(@Col);
     TRender.BindTexture(Alt.Id);
@@ -1129,7 +1129,7 @@ begin
 
     // Wood progress
     glAlphaFunc(GL_GREATER, 1 - aWoodProgress);
-    with GFXData[aRX,aId] do
+    with gGFXData[aRX,aId] do
     begin
       glColor3f(1, 1, 1);
       TRender.BindTexture(Alt.Id);
@@ -1148,7 +1148,7 @@ begin
       glStencilOp(GL_DECR, GL_DECR, GL_DECR);
 
       glAlphaFunc(GL_GREATER, 1 - aStoneProgress);
-        with GFXData[aRX,aId2] do
+        with gGFXData[aRX,aId2] do
         begin
           glColor3f(1, 1, 1);
           TRender.BindTexture(Alt.Id);
@@ -1173,7 +1173,7 @@ begin
   glColorMask(True, True, True, True);
 
   // Render sprite
-  with GFXData[aRX,aId] do
+  with gGFXData[aRX,aId] do
   begin
     // FOW is rendered over the top so no need to make sprites black anymore
     glColor4ub(255, 255, 255, 255);
@@ -1835,8 +1835,8 @@ begin
     begin
       Left := RenderList[fCount].Loc.X;
       Bottom := gY;
-      Right := Left + GFXData[aRX, aId].PxWidth / CELL_SIZE_PX;
-      Top := Bottom - GFXData[aRX, aId].PxHeight / CELL_SIZE_PX;
+      Right := Left + gGFXData[aRX, aId].PxWidth / CELL_SIZE_PX;
+      Top := Bottom - gGFXData[aRX, aId].PxHeight / CELL_SIZE_PX;
     end;
 
   Inc(fCount); // New item added
