@@ -36,10 +36,18 @@ type
 
   TKMTerrainTileChangeErrorArray = array of TKMTerrainTileChangeError;
 
-  TKMTerrainTile = record
+  TKMTerrainLayer = record
     Terrain: Word;
-    Height: Byte;
     Rotation: Byte;
+    Corners: set of Byte; //Corners, that this layer 'owns' (corners are distributed between all layers, so any layer can own 1-4 corners)
+  end;
+
+  TKMTerrainTile = record
+    BaseLayer: TKMTerrainLayer;
+    LayersCnt: Byte;
+    Layer: array [0..2] of TKMTerrainLayer;
+    StoneLayer: TKMTerrainLayer;
+    Height: Byte;
     Obj: Byte;
 
     //Age of tree, another independent variable since trees can grow on fields
@@ -303,7 +311,9 @@ begin
     else
       Terrain      := 0;
     Height       := 30 + KaMRandom(7);  //variation in Height
-    Rotation     := KaMRandom(4);  //Make it random
+    LayersCnt := 0;
+    BaseLayer.Corners := [0,1,2,3];
+    BaseLayer.Rotation     := KaMRandom(4);  //Make it random
     Obj          := 255;             //none
     //Uncomment to enable random trees, but we don't want that for the map editor by default
     //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
@@ -374,14 +384,14 @@ begin
       if UseKaMFormat then
       begin
         S.Read(TerrainB); //1
-        Land[I,K].Terrain := TerrainB;
+        Land[I,K].BaseLayer.Terrain := TerrainB;
         S.Seek(1, soFromCurrent);
       end else
-        S.Read(Land[I,K].Terrain);
+        S.Read(Land[I,K].BaseLayer.Terrain);
 
       S.Read(Land[I,K].Height); //3
       S.Read(Rot); //4
-      Land[I,K].Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
+      Land[I,K].BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
 
       if UseKaMFormat then
         S.Seek(1, soFromCurrent);
@@ -474,16 +484,16 @@ var
     // new appended terrain
     if aNewGeneratedTile then
     begin
-      Terrain := Land[aFromY,aFromX].Terrain;
+      Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
       //Apply some random tiles for artisticity
       Height := EnsureRange(Land[aFromY,aFromX].Height + KaMRandom(7), 0, 100);  //variation in Height
-      Rot := Land[aFromY,aFromX].Rotation;
+      Rot := Land[aFromY,aFromX].BaseLayer.Rotation;
       Obj := 255; // No object
     end
     else
     begin
-      Rot := Land[aFromY,aFromX].Rotation;
-      Terrain := Land[aFromY,aFromX].Terrain;
+      Rot := Land[aFromY,aFromX].BaseLayer.Rotation;
+      Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
       Height := Land[aFromY,aFromX].Height;
       Obj := Land[aFromY,aFromX].Obj;
     end;
@@ -667,8 +677,8 @@ begin
   end;
 
   //Apply change
-  Land[Y, X].Terrain := aType;
-  Land[Y, X].Rotation := aRot;
+  Land[Y, X].BaseLayer.Terrain := aType;
+  Land[Y, X].BaseLayer.Rotation := aRot;
 
   if aUpdatePassability then
   begin
@@ -956,8 +966,8 @@ function TKMTerrain.TileGoodForIron(X,Y: Word): Boolean;
         Result := True;
   end;
 begin
-  Result := (Land[Y,X].Terrain in [109,166..170])
-    and (Land[Y,X].Rotation mod 4 = 0) //only horizontal mountain edges allowed
+  Result := (Land[Y,X].BaseLayer.Terrain in [109,166..170])
+    and (Land[Y,X].BaseLayer.Rotation mod 4 = 0) //only horizontal mountain edges allowed
     and ((Land[Y,X].Obj = 255) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
     and TileInMapCoords(X,Y, 1)
     and not HousesNearTile
@@ -969,8 +979,8 @@ end;
 function TKMTerrain.TileGoodForGoldmine(X,Y: Word): Boolean;
 begin
   Result := TileInMapCoords(X,Y, 1)
-    and (Land[Y,X].Terrain in [171..175])
-    and (Land[Y,X].Rotation mod 4 = 0); //only horizontal mountain edges allowed
+    and (Land[Y,X].BaseLayer.Terrain in [171..175])
+    and (Land[Y,X].BaseLayer.Rotation mod 4 = 0); //only horizontal mountain edges allowed
 end;
 
 
@@ -1045,71 +1055,71 @@ end;
 //Check if requested tile is water suitable for fish and/or sail. No waterfalls, but swamps/shallow water allowed
 function TKMTerrain.TileIsWater(Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsWater(Land[Loc.Y, Loc.X].Terrain);
+  Result := fTileset.TileIsWater(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 end;
 
 
 function TKMTerrain.TileIsWater(X,Y : Word): Boolean;
 begin
-  Result := fTileset.TileIsWater(Land[Y, X].Terrain);
+  Result := fTileset.TileIsWater(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 //Check if requested tile is sand suitable for crabs
 function TKMTerrain.TileIsSand(Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsSand(Land[Loc.Y, Loc.X].Terrain);
+  Result := fTileset.TileIsSand(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 end;
 
 
 function TKMTerrain.TileIsSnow(X, Y: Word): Boolean;
 begin
-  Result := fTileset.TileIsSnow(Land[Y, X].Terrain);
+  Result := fTileset.TileIsSnow(Land[Y, X].BaseLayer.Terrain);
 end;
 
 //Check if requested tile is Stone and returns Stone deposit
 function TKMTerrain.TileIsStone(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsStone(Land[Y, X].Terrain);
+  Result := fTileset.TileIsStone(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 function TKMTerrain.TileIsCoal(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsCoal(Land[Y, X].Terrain);
+  Result := fTileset.TileIsCoal(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 function TKMTerrain.TileIsIron(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsIron(Land[Y, X].Terrain);
+  Result := fTileset.TileIsIron(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 function TKMTerrain.TileIsGold(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsGold(Land[Y, X].Terrain);
+  Result := fTileset.TileIsGold(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 //Check if requested tile is soil suitable for fields and trees
 function TKMTerrain.TileIsSoil(X,Y: Word): Boolean;
 begin
-  Result := fTileset.TileIsSoil(Land[Y, X].Terrain);
+  Result := fTileset.TileIsSoil(Land[Y, X].BaseLayer.Terrain);
 end;
 
 
 //Check if requested tile is generally walkable
 function TKMTerrain.TileIsWalkable(Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].Terrain);
+  Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 end;
 
 
 //Check if requested tile is generally suitable for road building
 function TKMTerrain.TileIsRoadable(Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].Terrain);
+  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 end;
 
 
@@ -1121,7 +1131,7 @@ begin
     Exit;
   //Tile can't be used as a field if there is road or any other overlay
   if not fMapEditor then
-    Result := fTileset.TileIsCornField(Land[Loc.Y, Loc.X].Terrain)
+    Result := fTileset.TileIsCornField(Land[Loc.Y, Loc.X].BaseLayer.Terrain)
               and (Land[Loc.Y,Loc.X].TileOverlay = to_None)
   else
     Result := (Land[Loc.Y,Loc.X].CornOrWine = 1);
@@ -1137,7 +1147,7 @@ begin
  //Tile can't be used as a winefield if there is road or any other overlay
  //It also must have right object on it
   if not fMapEditor then
-    Result := fTileset.TileIsWineField(Land[Loc.Y, Loc.X].Terrain)
+    Result := fTileset.TileIsWineField(Land[Loc.Y, Loc.X].BaseLayer.Terrain)
               and (Land[Loc.Y,Loc.X].TileOverlay = to_None)
               and (Land[Loc.Y,Loc.X].Obj in [54..57])
   else
@@ -1148,7 +1158,7 @@ end;
 //Check if this tile can be factored
 function TKMTerrain.TileIsFactorable(Loc: TKMPoint): Boolean;
 begin
-  Result := TileInMapCoords(Loc.X,Loc.Y) and fTileset.TileIsFactorable(Land[Loc.Y, Loc.X].Terrain);
+  Result := TileInMapCoords(Loc.X,Loc.Y) and fTileset.TileIsFactorable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 end;
 
 
@@ -1564,8 +1574,8 @@ procedure TKMTerrain.SetInitWine(Loc: TKMPoint; aOwner: TKMHandIndex);
 begin
   SetField_Init(Loc, aOwner);
 
-  Land[Loc.Y,Loc.X].Terrain  := 55;
-  Land[Loc.Y,Loc.X].Rotation := 0;
+  Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 55;
+  Land[Loc.Y,Loc.X].BaseLayer.Rotation := 0;
 
   SetField_Complete(Loc, ft_InitWine);
 end;
@@ -1733,25 +1743,25 @@ begin
   for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
   for K := Max(aLoc.X - MiningRect.Left, 1) to Min(aLoc.X + MiningRect.Right, fMapX - 1) do
   begin
-    if Land[I, K].Terrain = R1 then
+    if Land[I, K].BaseLayer.Terrain = R1 then
     begin
       //Poorest ore gets mined in range - 2
       if InRange(I - aLoc.Y, - MiningRect.Top + 2, MiningRect.Bottom - 2) then
         if InRange(K - aLoc.X, - MiningRect.Left + 2, MiningRect.Right - 2) then
           L[1].Add(KMPoint(K, I))
     end
-    else if Land[I, K].Terrain = R2 then
+    else if Land[I, K].BaseLayer.Terrain = R2 then
     begin
       //Second poorest ore gets mined in range - 1
       if InRange(I - aLoc.Y, - MiningRect.Top + 1, MiningRect.Bottom - 1) then
         if InRange(K - aLoc.X, - MiningRect.Left + 1, MiningRect.Right - 1) then
           L[2].Add(KMPoint(K, I))
     end
-    else if Land[I, K].Terrain = R3 then
+    else if Land[I, K].BaseLayer.Terrain = R3 then
       //Always mine second richest ore
       L[3].Add(KMPoint(K, I))
     else
-      if Land[I, K].Terrain = R4 then
+      if Land[I, K].BaseLayer.Terrain = R4 then
         // Always mine richest ore
         L[4].Add(KMPoint(K, I));
   end;
@@ -1928,7 +1938,7 @@ end;
 function TKMTerrain.ChooseTreeToPlant(aLoc: TKMPoint):integer;
 begin
   //This function randomly chooses a tree object based on the terrain type. Values matched to KaM, using all soil tiles.
-  case Land[aLoc.Y,aLoc.X].Terrain of
+  case Land[aLoc.Y,aLoc.X].BaseLayer.Terrain of
     0..3,5,6,8,9,11,13,14,18,19,56,57,66..69,72..74,84..86,93..98,180,188: Result := ChopableTrees[1+KaMRandom(7), caAge1]; //Grass (oaks, etc.)
     26..28,75..80,182,190:                                                 Result := ChopableTrees[7+KaMRandom(2), caAge1]; //Yellow dirt
     16,17,20,21,34..39,47,49,58,64,65,87..89,183,191,220,247:              Result := ChopableTrees[9+KaMRandom(5), caAge1]; //Brown dirt (pine trees)
@@ -2140,7 +2150,7 @@ end;
 procedure TKMTerrain.SowCorn(Loc: TKMPoint);
 begin
   Land[Loc.Y,Loc.X].FieldAge := 1;
-  Land[Loc.Y,Loc.X].Terrain  := 61; //Plant it right away, don't wait for update state
+  Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 61; //Plant it right away, don't wait for update state
   UpdatePassability(KMRectGrow(KMRect(Loc), 1));
 end;
 
@@ -2148,7 +2158,7 @@ end;
 procedure TKMTerrain.CutCorn(Loc: TKMPoint);
 begin
   Land[Loc.Y,Loc.X].FieldAge := 0;
-  Land[Loc.Y,Loc.X].Terrain  := 63;
+  Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 63;
   Land[Loc.Y,Loc.X].Obj := 255;
 end;
 
@@ -2168,11 +2178,11 @@ procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: T
     if fMapEditor then
       Land[Loc.Y, Loc.X].CornOrWineTerrain := aTerrain
     else
-      Land[Loc.Y, Loc.X].Terrain := aTerrain;
+      Land[Loc.Y, Loc.X].BaseLayer.Terrain := aTerrain;
         
     if aObj <> -1 then
       Land[Loc.Y,Loc.X].Obj := aObj;
-    Land[Loc.Y, Loc.X].Rotation := 0;
+    Land[Loc.Y, Loc.X].BaseLayer.Rotation := 0;
   end;
 
   function GetObj: Integer;
@@ -2281,22 +2291,22 @@ procedure TKMTerrain.DecStoneDeposit(Loc: TKMPoint);
     //The tile in center is fully mined and one below has Stoncutter on it,
     //hence there cant be any tile surrounded by stones from all sides
     Assert(Bits < 15);
-    Land[Y,X].Terrain  := TileID[Bits];
-    Land[Y,X].Rotation := RotID[Bits];
-    if Land[Y,X].Terrain = 0 then Land[Y,X].Rotation := KaMRandom(4); //Randomise the direction of grass tiles
+    Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
+    Land[Y,X].BaseLayer.Rotation := RotID[Bits];
+    if Land[Y,X].BaseLayer.Terrain = 0 then Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
     UpdatePassability(Loc);
   end;
 
 begin
   //Replace with smaller ore deposit tile (there are 2 sets of tiles, we can choose random)
-  case Land[Loc.Y,Loc.X].Terrain of
-    132, 137: Land[Loc.Y,Loc.X].Terrain := 131 + KaMRandom(2)*5;
-    131, 136: Land[Loc.Y,Loc.X].Terrain := 130 + KaMRandom(2)*5;
-    130, 135: Land[Loc.Y,Loc.X].Terrain := 129 + KaMRandom(2)*5;
-    129, 134: Land[Loc.Y,Loc.X].Terrain := 128 + KaMRandom(2)*5;
+  case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
+    132, 137: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 131 + KaMRandom(2)*5;
+    131, 136: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 130 + KaMRandom(2)*5;
+    130, 135: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 129 + KaMRandom(2)*5;
+    129, 134: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 128 + KaMRandom(2)*5;
     128, 133: begin
-                Land[Loc.Y,Loc.X].Terrain  := 0;
-                Land[Loc.Y,Loc.X].Rotation := KaMRandom(4);
+                Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 0;
+                Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4);
 
                 //Tile type has changed and we need to update these 5 tiles transitions:
                 UpdateTransition(Loc.X,Loc.Y);
@@ -2320,22 +2330,22 @@ begin
     raise ELocError.Create('Wrong ore decrease',Loc);
 
   Result := true;
-  case Land[Loc.Y,Loc.X].Terrain of
-    144: Land[Loc.Y,Loc.X].Terrain:=157+KaMRandom(3); //Gold
-    145: Land[Loc.Y,Loc.X].Terrain:=144;
-    146: Land[Loc.Y,Loc.X].Terrain:=145;
-    147: Land[Loc.Y,Loc.X].Terrain:=146;
-    148: Land[Loc.Y,Loc.X].Terrain:=160+KaMRandom(4); //Iron
-    149: Land[Loc.Y,Loc.X].Terrain:=148;
-    150: Land[Loc.Y,Loc.X].Terrain:=149;
-    151: Land[Loc.Y,Loc.X].Terrain:=150;
-    152: Land[Loc.Y,Loc.X].Terrain:=35 +KaMRandom(2); //Coal
-    153: Land[Loc.Y,Loc.X].Terrain:=152;
-    154: Land[Loc.Y,Loc.X].Terrain:=153;
-    155: Land[Loc.Y,Loc.X].Terrain:=154;
+  case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
+    144: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=157+KaMRandom(3); //Gold
+    145: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=144;
+    146: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=145;
+    147: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=146;
+    148: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=160+KaMRandom(4); //Iron
+    149: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=148;
+    150: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
+    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150;
+    152: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=35 +KaMRandom(2); //Coal
+    153: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=152;
+    154: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=153;
+    155: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=154;
     else Result := false;
   end;
-  Land[Loc.Y,Loc.X].Rotation:=KaMRandom(4);
+  Land[Loc.Y,Loc.X].BaseLayer.Rotation:=KaMRandom(4);
   UpdatePassability(Loc);
 end;
 
@@ -2965,7 +2975,7 @@ begin
     Land[I,K].Light := EnsureRange((Land[I,K].Height-(Land[y2,K].Height+Land[I,x0].Height)/2)/22,-1,1); //  1.33*16 ~=22
 
     //Use more contrast lighting for Waterbeds
-    if fTileset.TileIsWater(Land[I, K].Terrain) then
+    if fTileset.TileIsWater(Land[I, K].BaseLayer.Terrain) then
       Land[I,K].Light := EnsureRange(Land[I,K].Light * 1.3 + 0.1, -1, 1);
 
     //Map borders always fade to black
@@ -3173,9 +3183,9 @@ begin
 
     //Mines must be on a mountain edge
     if aHouseType = ht_IronMine then
-      Result := Result and (Land[TY,TX].Terrain in [109, 166..170]) and (Land[TY,TX].Rotation mod 4 = 0);
+      Result := Result and (Land[TY,TX].BaseLayer.Terrain in [109, 166..170]) and (Land[TY,TX].BaseLayer.Rotation mod 4 = 0);
     if aHouseType = ht_GoldMine then
-      Result := Result and (Land[TY,TX].Terrain in [171..175     ]) and (Land[TY,TX].Rotation mod 4 = 0);
+      Result := Result and (Land[TY,TX].BaseLayer.Terrain in [171..175     ]) and (Land[TY,TX].BaseLayer.Rotation mod 4 = 0);
 
     //Check surrounding tiles for another house that overlaps
     for L := -1 to 1 do
@@ -3440,9 +3450,9 @@ begin
   for I:=1 to fMapY do for K:=1 to fMapX do
   begin
     //Only save fields that cannot be recalculated after loading
-    SaveStream.Write(Land[I,K].Terrain);
+    SaveStream.Write(Land[I,K].BaseLayer.Terrain);
     SaveStream.Write(Land[I,K].Height);
-    SaveStream.Write(Land[I,K].Rotation);
+    SaveStream.Write(Land[I,K].BaseLayer.Rotation);
     SaveStream.Write(Land[I,K].Obj);
     SaveStream.Write(Land[I,K].TreeAge);
     SaveStream.Write(Land[I,K].FieldAge);
@@ -3471,9 +3481,9 @@ begin
 
   for I:=1 to fMapY do for K:=1 to fMapX do
   begin
-    LoadStream.Read(Land[I,K].Terrain);
+    LoadStream.Read(Land[I,K].BaseLayer.Terrain);
     LoadStream.Read(Land[I,K].Height);
-    LoadStream.Read(Land[I,K].Rotation);
+    LoadStream.Read(Land[I,K].BaseLayer.Rotation);
     LoadStream.Read(Land[I,K].Obj);
     LoadStream.Read(Land[I,K].TreeAge);
     LoadStream.Read(Land[I,K].FieldAge);
@@ -3516,7 +3526,7 @@ begin
   if FieldAge = 0 then
   begin
     if (fMapEditor and (Land[Loc.Y,Loc.X].CornOrWineTerrain = 63))
-      or (Land[Loc.Y,Loc.X].Terrain = 63) then
+      or (Land[Loc.Y,Loc.X].BaseLayer.Terrain = 63) then
       Result := 6
     else
       Result := 0;
@@ -3552,7 +3562,7 @@ procedure TKMTerrain.UpdateState;
   procedure SetLand(aTile: Word; const X, Y, aObj: Byte);
   var FloodfillNeeded: Boolean;
   begin
-    Land[Y,X].Terrain := aTile;
+    Land[Y,X].BaseLayer.Terrain := aTile;
     FloodfillNeeded   := gMapElements[Land[Y,X].Obj].DiagonalBlocked <> gMapElements[aObj].DiagonalBlocked;
     Land[Y,X].Obj     := aObj;
     if FloodfillNeeded then //When trees are removed by corn growing we need to update floodfill

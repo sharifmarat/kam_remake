@@ -106,6 +106,7 @@ var
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR   :Boolean = False; //Skip loading and setting cursor
   AGGRESSIVE_REPLAYS    :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  SHOW_TERRAIN_IDS      :Boolean = False; //Show number of every tile on it
   SHOW_TERRAIN_WIRES    :Boolean = False; //Makes terrain height visible
   SHOW_TERRAIN_PASS     :Byte = 0; //Byte(TKMTerrainPassability)
   SHOW_UNIT_ROUTES      :Boolean = False; //Draw unit routes
@@ -303,6 +304,9 @@ type
     cfmPlan, // Placing plans
     cfmErase // Erasing plans
   );
+
+  // Shape types for MapEditor
+  TKMMapEdShape = (hsCircle, hsSquare);
 
 
 const

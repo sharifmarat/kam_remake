@@ -7,11 +7,278 @@ uses
 
 
 const
-  TILES_CNT = 273;
+  TILES_CNT = 287;
+  MAX_TILE_TO_SHOW = 276;
+  MAX_STATIC_TERRAIN_ID = 4997;
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
 
+  TKMTileMaskType = (mt_None, mt_2Straight, mt_2Diagonal, mt_2Corner, mt_3Straight, mt_4Square);
+
+  TKMTerrainKind = (
+//    tkNone,
+    tkCustom,
+    tkGrass,
+    tkMoss,
+    tkPaleGrass,
+    tkCoastSand,
+    tkGrassSand1,
+    tkGrassSand2,
+    tkGrassSand3,
+    tkSand,
+    tkGrassDirt,
+    tkDirt,
+    tkCobbleStone,
+    tkGrassyWater,
+    tkSwamp,
+    tkIce,
+    tkShallowSnow,
+    tkSnow,
+    tkDeepSnow,
+    tkStone,
+    tkGoldMount,
+    tkIronMount,
+    tkAbyss,
+    tkGravel,
+    tkCoal,
+    tkGold,
+    tkIron,
+    tkWater,
+    tkFastWater,
+    tkLava);
+
+const
+  TER_KIND_ORDER: array[tkCustom..tkLava] of Byte =
+    (0,2,3,4,5,6,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28);
+
+  BASE_TERRAIN: array[TKMTerrainKind] of Word = //tkCustom..tkLava] of Word =
+    (0, 0, 8, 17, 32, 26, 27, 28, 29, 34, 35, 215, 48, 40, 44, 47, 46, 45, 132, 159, 164, 245, 20, 155, 147, 151, 192, 209, 7);
+
+//  TILE_MASKS: array[mt_2Straight..mt_4Square] of Word =
+//      (279, 278, 280, 281, 282, 277);
+
+//  TILE_MASKS_LAYERS_CNT: array[mt_2Straight..mt_4Square] of Byte =
+//    (2, 2, 2, 3, 4);
+
+  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..3] of Integer =
+    ((286, -1, -1, -1),
+     (285, -1, -1, -1),
+     (284, -1, -1, -1),
+     (281, 282, -1, -1),
+     (277, 278, 279, 280));
+
+  TERRAIN_EQUALITY_PAIRS: array[0..2] of record
+      TK1, TK2: TKMTerrainKind;
+    end =
+      (
+        (TK1: tkGold; TK2: tkGoldMount),
+        (TK1: tkIron; TK2: tkIronMount),
+        (TK1: tkWater; TK2: tkFastWater)
+      );
+
+
+  TILE_CORNERS_TERRAIN_KINDS: array [0..TILES_CNT-1]
+                  of array[0..3] //Corners: LeftTop - RightTop - RightBottom - LeftBottom
+                    of TKMTerrainKind = (
+  (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass),
+  (tkGrass,tkGrass,tkGrass,tkGrass), (tkIce,tkIce,tkSnow,tkSnow),       (tkGrass,tkGrass,tkGrass,tkGrass),
+  (tkGrass,tkGrass,tkGrass,tkGrass), (tkLava,tkLava,tkLava,tkLava),     (tkMoss,tkMoss,tkMoss,tkMoss),
+  (tkMoss,tkMoss,tkMoss,tkMoss),
+  //10
+  (tkSnow,tkIce,tkSnow,tkSnow),      (tkMoss,tkMoss,tkMoss,tkMoss),     (tkIce,tkIce,tkWater,tkWater),
+  (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass), (tkGoldMount,tkLava,tkLava,tkLava),
+  (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkPaleGrass), (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkPaleGrass),
+  (tkGrass,tkGrass,tkMoss,tkMoss),   (tkMoss,tkGrass,tkMoss,tkMoss),    //??? not sure if they are good there
+   //20
+  (tkGravel,tkGravel,tkGravel,tkGravel), (tkGravel,tkGravel,tkGravel,tkGravel), (tkWater,tkIce,tkWater,tkWater),
+  (tkIce,tkIce,tkIce,tkWater),           (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //26
+  (tkGrassSand1,tkGrassSand1,tkGrassSand1,tkGrassSand1), (tkGrassSand2,tkGrassSand2,tkGrassSand2,tkGrassSand2),
+  (tkGrassSand3,tkGrassSand3,tkGrassSand3,tkGrassSand3), (tkSand,tkSand,tkSand,tkSand),
+   //30
+  (tkSand,tkSand,tkSand,tkSand),                         (tkCoastSand,tkCoastSand,tkCoastSand,tkCoastSand),
+  (tkCoastSand,tkCoastSand,tkCoastSand,tkCoastSand),     (tkCoastSand,tkCoastSand,tkCoastSand,tkCoastSand),
+   //34
+  (tkGrassDirt,tkGrassDirt,tkGrassDirt,tkGrassDirt),     (tkDirt,tkDirt,tkDirt,tkDirt), (tkDirt,tkDirt,tkDirt,tkDirt),
+  (tkDirt,tkDirt,tkDirt,tkDirt),  (tkDirt,tkCobbleStone,tkDirt,tkDirt), (tkCobbleStone,tkCobbleStone,tkDirt,tkDirt),
+   //40
+  (tkSwamp,tkSwamp,tkSwamp,tkSwamp), (tkSwamp,tkSwamp,tkSwamp,tkSwamp), (tkSwamp,tkSwamp,tkSwamp,tkSwamp), (tkSwamp,tkSwamp,tkSwamp,tkSwamp),
+  (tkIce,tkIce,tkIce,tkIce), (tkDeepSnow,tkDeepSnow,tkDeepSnow,tkDeepSnow), (tkSnow,tkSnow,tkSnow,tkSnow),
+  (tkShallowSnow,tkShallowSnow,tkShallowSnow,tkShallowSnow),
+   //48
+  (tkGrassyWater,tkGrassyWater,tkGrassyWater,tkGrassyWater), (tkShallowSnow,tkShallowSnow,tkShallowSnow,tkGoldMount),
+  (tkAbyss,tkAbyss,tkIronMount,tkIronMount),                 (tkGoldMount,tkShallowSnow,tkGoldMount,tkGoldMount),
+   //52
+  (tkSnow,tkIronMount,tkSnow,tkSnow), (tkIronMount,tkIronMount,tkIronMount,tkAbyss), (tkIronMount,tkIronMount,tkIronMount,tkSnow),
+  (tkCustom,tkCustom,tkCustom,tkCustom), // Wine
+  (tkGrass,tkDirt,tkGrass,tkGrass),
+  (tkDirt,tkDirt,tkGrass,tkGrass), (tkDirt,tkDirt,tkDirt,tkGrass),
+  (tkCustom,tkCustom,tkCustom,tkCustom), // Corn
+   //60
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), // Corn
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), // Corn
+   //64
+  (tkShallowSnow,tkShallowSnow,tkDirt,tkDirt), (tkShallowSnow,tkShallowSnow,tkShallowSnow,tkDirt),
+  (tkGrass,tkPaleGrass,tkGrass,tkGrass), (tkPaleGrass,tkPaleGrass,tkGrass,tkGrass), (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkGrass),
+   //69
+  (tkGrass,tkCoastSand,tkGrass,tkGrass), (tkCoastSand,tkCoastSand,tkGrass,tkGrass), (tkCoastSand,tkCoastSand,tkCoastSand,tkGrass),
+   //72
+  (tkGrass,tkGrassSand1,tkGrass,tkGrass), (tkGrassSand1,tkGrassSand1,tkGrass,tkGrass), (tkGrassSand1,tkGrassSand1,tkGrassSand1,tkGrass),
+   //75
+  (tkGrassSand1,tkGrassSand2,tkGrassSand1,tkGrassSand1),(tkGrassSand2,tkGrassSand2,tkGrassSand1,tkGrassSand1),(tkGrassSand2,tkGrassSand2,tkGrassSand2,tkGrassSand1),
+   //78
+  (tkGrassSand2,tkGrassSand3,tkGrassSand2,tkGrassSand2),(tkGrassSand3,tkGrassSand3,tkGrassSand2,tkGrassSand2),(tkGrassSand3,tkGrassSand3,tkGrassSand3,tkGrassSand2),
+   //81
+  (tkGrassSand2,tkSand,tkGrassSand3,tkGrassSand3),(tkSand,tkSand,tkGrassSand3,tkGrassSand3),(tkSand,tkSand,tkSand,tkGrassSand3),
+   //84
+  (tkGrass,tkGrassDirt,tkGrass,tkGrass), (tkGrassDirt,tkGrassDirt,tkGrass,tkGrass), (tkGrassDirt,tkGrassDirt,tkGrassDirt,tkGrass),
+   //87
+  (tkGrassDirt,tkDirt,tkGrassDirt,tkGrassDirt), (tkDirt,tkDirt,tkGrassDirt,tkGrassDirt), (tkDirt,tkDirt,tkDirt,tkGrassDirt),
+   //90
+  (tkGrass,tkSwamp,tkGrass,tkGrass), (tkSwamp,tkSwamp,tkGrass,tkGrass), (tkSwamp,tkSwamp,tkSwamp,tkGrass),
+   //93
+  (tkGrass,tkGrassSand3,tkGrass,tkGrass), (tkGrassSand3,tkGrassSand3,tkGrass,tkGrass), (tkGrassSand3,tkGrassSand3,tkGrassSand3,tkGrass),
+   //96
+  (tkGrassDirt,tkPaleGrass,tkGrassDirt,tkGrassDirt), (tkPaleGrass,tkPaleGrass,tkGrassDirt,tkGrassDirt), (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkGrassDirt),
+   //99
+  (tkCoastSand,tkSand,tkCoastSand,tkCoastSand), (tkSand,tkSand,tkCoastSand,tkCoastSand), (tkSand,tkSand,tkSand,tkCoastSand),
+   //102
+  (tkCoastSand,tkGrassSand2,tkCoastSand,tkCoastSand),(tkGrassSand2,tkGrassSand2,tkCoastSand,tkCoastSand),(tkGrassSand2,tkGrassSand2,tkGrassSand2,tkCoastSand),
+   //105
+  (tkWater,tkDirt,tkWater,tkWater), (tkDirt,tkDirt,tkWater,tkWater), (tkDirt,tkDirt,tkDirt,tkWater),
+   //108
+  (tkCoastSand,tkIronMount,tkCoastSand,tkCoastSand),(tkIronMount,tkIronMount,tkCoastSand,tkCoastSand),(tkIronMount,tkIronMount,tkIronMount,tkCoastSand),
+   //111
+  (tkDirt,tkCoastSand,tkDirt,tkDirt), (tkCoastSand,tkCoastSand,tkDirt,tkDirt), (tkCoastSand,tkCoastSand,tkCoastSand,tkDirt),
+   //114
+  (tkGrassyWater,tkWater,tkGrassyWater,tkGrassyWater), (tkWater,tkWater,tkGrassyWater,tkGrassyWater),
+   //116
+  (tkCoastSand,tkWater,tkCoastSand,tkCoastSand), (tkCoastSand,tkCoastSand,tkWater,tkWater), (tkWater,tkWater,tkWater,tkCoastSand),
+   //119
+  (tkWater,tkWater,tkWater,tkGrassyWater),
+   //120
+  (tkGrass,tkGrassyWater,tkGrass,tkGrass), (tkGrassyWater,tkGrassyWater,tkGrass,tkGrass), (tkGrassyWater,tkGrassyWater,tkGrassyWater,tkGrass),
+   //123
+  (tkGrass,tkWater,tkGrass,tkGrass), (tkGrass,tkGrass,tkWater,tkWater), (tkGrass,tkGrass,tkWater,tkWater),
+  (tkWater,tkWater,tkWater,tkGrass), (tkWater,tkWater,tkWater,tkGrass),
+   //128
+  (tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),(tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkStone),
+   //138
+  (tkStone,tkStone,tkStone,tkGrass), (tkStone,tkStone,tkGrass,tkGrass),
+   //140
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+   //142
+  (tkStone,tkStone,tkWater,tkStone), (tkStone,tkStone,tkStone,tkWater),
+   //144
+  (tkGoldMount,tkGold,tkGoldMount,tkGoldMount),(tkGold,tkGold,tkGoldMount,tkGoldMount), (tkGold,tkGold,tkGold,tkGoldMount),
+   //147
+  (tkGold,tkGold,tkGold,tkGold),
+   //148
+  (tkIronMount,tkIron,tkIronMount,tkIronMount), (tkIron,tkIron,tkIronMount,tkIronMount), (tkIron,tkIron,tkIron,tkIronMount),
+   //151
+  (tkIron,tkIron,tkIron,tkIron),
+   //152
+  (tkDirt,tkCoal,tkDirt,tkDirt), (tkCoal,tkCoal,tkDirt,tkDirt), (tkCoal,tkCoal,tkCoal,tkDirt),
+   //155
+  (tkCoal,tkCoal,tkCoal,tkCoal),
+   //156
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount),
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount),
+   //160
+  (tkIronMount,tkIronMount,tkIronMount,tkIronMount), (tkIronMount,tkIronMount,tkIronMount,tkIronMount),
+  (tkIronMount,tkIronMount,tkIronMount,tkIronMount), (tkIronMount,tkIronMount,tkIronMount,tkIronMount),
+  (tkIronMount,tkIronMount,tkIronMount,tkIronMount),
+   //165
+  (tkAbyss,tkIronMount,tkAbyss,tkAbyss),
+   //166
+  (tkIronMount,tkIronMount,tkSnow,tkSnow), (tkIronMount,tkIronMount,tkDirt,tkDirt),
+   //168
+  (tkIronMount,tkIronMount,tkGrass,tkGrass), (tkIronMount,tkIronMount,tkCoastSand,tkCoastSand),
+   //170
+  (tkIronMount,tkIronMount,tkGrassSand2,tkGrassSand2),
+   //171
+  (tkGoldMount,tkGoldMount,tkShallowSnow,tkShallowSnow), (tkGoldMount,tkGoldMount,tkGrass,tkGrass),
+   //173
+  (tkGoldMount,tkGoldMount,tkCoastSand,tkCoastSand), (tkGoldMount,tkGoldMount,tkGrassSand2,tkGrassSand2),
+  (tkGoldMount,tkGoldMount,tkDirt,tkDirt),
+   //176
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGrass),(tkGoldMount,tkGoldMount,tkGoldMount,tkCoastSand),
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGrassSand2), (tkGoldMount,tkGoldMount,tkGoldMount,tkDirt),
+   //180
+  (tkGrass,tkGoldMount,tkGrass,tkGrass), (tkCoastSand,tkGoldMount,tkCoastSand,tkCoastSand),
+  (tkGrassSand2,tkGoldMount,tkGrassSand2,tkGrassSand2), (tkDirt,tkGoldMount,tkDirt,tkDirt),
+   //184
+  (tkIronMount,tkGrass,tkIronMount,tkIronMount), (tkIronMount,tkCoastSand,tkIronMount,tkIronMount),
+  (tkIronMount,tkGrassSand2,tkIronMount,tkIronMount), (tkIronMount,tkDirt,tkIronMount,tkIronMount),
+   //188
+  (tkGrass,tkIronMount,tkGrass,tkGrass), (tkCoastSand,tkIronMount,tkCoastSand,tkCoastSand),
+  (tkGrassSand2,tkIronMount,tkGrassSand2,tkGrassSand2), (tkDirt,tkIronMount,tkDirt,tkDirt),
+   //192
+  (tkWater,tkWater,tkWater,tkWater), (tkWater,tkWater,tkWater,tkWater), (tkWater,tkWater,tkWater,tkWater),
+   //195
+  (tkStone,tkStone,tkStone,tkStone), (tkWater,tkWater,tkWater,tkWater),
+   //197
+  (tkCobbleStone,tkCobbleStone,tkCobbleStone,tkCobbleStone),
+  (tkCustom,tkCustom,tkCustom,tkWater), (tkCustom,tkCustom,tkWater,tkCustom),
+   //200
+  (tkStone,tkStone,tkWater,tkWater),//(?)
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkCustom,tkCustom,tkWater,tkCustom),
+   //203
+  (tkSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkDeepSnow,tkSnow),
+   //206
+  (tkCustom,tkCustom,tkWater,tkCustom), (tkCustom,tkCustom,tkWater,tkCustom),
+   //208
+  (tkWater,tkWater,tkWater,tkWater), (tkFastWater,tkFastWater,tkFastWater,tkFastWater),
+   //210
+  (tkStone,tkStone,tkWater,tkWater),(tkStone,tkStone,tkWater,tkWater),//(?)
+   //212
+  (tkSnow,tkSnow,tkShallowSnow,tkShallowSnow), (tkSnow,tkSnow,tkSnow,tkShallowSnow),
+   //214
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCobbleStone,tkCobbleStone,tkCobbleStone,tkCobbleStone),
+   //216
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //220
+  (tkShallowSnow,tkSnow,tkShallowSnow,tkShallowSnow),
+   //221
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //230
+  (tkCustom,tkCustom,tkWater,tkWater), (tkCustom,tkCustom,tkAbyss,tkAbyss),
+  (tkCustom,tkCustom,tkWater,tkWater), (tkCustom,tkCustom,tkWater,tkWater),
+   //234
+  (tkGoldMount,tkGoldMount,tkWater,tkGoldMount), (tkGoldMount,tkWater,tkWater,tkWater),
+  (tkWater,tkGoldMount,tkWater,tkWater), (tkGoldMount,tkGoldMount,tkGoldMount,tkWater),
+   //238
+  (tkIronMount,tkIronMount,tkWater,tkIronMount), (tkIronMount,tkWater,tkIronMount,tkIronMount),
+   //240
+  (tkWater,tkWater,tkWater,tkWater),
+   //241
+  (tkWater, tkGrassSand2,tkWater,tkWater), (tkGrassSand2,tkGrassSand2,tkWater,tkWater), (tkGrassSand2,tkGrassSand2,tkGrassSand2,tkWater),
+   //244
+  (tkFastWater,tkFastWater,tkFastWater,tkFastWater), (tkAbyss,tkAbyss,tkAbyss,tkAbyss), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //247
+  (tkDirt,tkShallowSnow,tkDirt,tkDirt),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //260
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+   //280
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
+  );
+
+type
   TKMResTileset = class
   private
     fCRC: Cardinal;
@@ -32,6 +299,12 @@ type
       u3: Byte; // 1/2/4/8 bitfield, seems to have no logical explanation
     end;
 
+    TilesInfo: array [1..TILES_CNT] of record
+      Walkable: Boolean;
+      Buildable: Boolean;
+      Mask: Boolean;
+    end;
+
     TileColor: TRGBArray;
 
     constructor Create(const aPatternPath: string);
@@ -39,6 +312,8 @@ type
     property CRC: Cardinal read fCRC;
 
     procedure ExportPatternDat(const aFilename: string);
+
+//    function GetTransTerrainId(aTerKind: TKMTerrainKind; aMaskType: TKMTileMaskType): Word;
 
     function TileIsWater(aTile: Word): Boolean;
     //function TileHasWater(aTile: Word): Boolean;
@@ -92,12 +367,24 @@ begin
   PatternDAT[262].Buildable := 0;
   PatternDAT[263].Walkable := 1;
   PatternDAT[263].Buildable := 0;
-  //
+  //Other
   for I := 264 to TILES_CNT do
   begin
-    PatternDAT[I].Walkable := 0;
+    PatternDAT[I].Walkable := 1;
     PatternDAT[I].Buildable := 0;
   end;
+
+
+  for I := 1 to TILES_CNT do
+  begin
+    TilesInfo[I].Walkable := PatternDAT[I].Walkable <> 0;
+    TilesInfo[I].Buildable := PatternDAT[I].Buildable <> 0;
+    TilesInfo[I].Mask := False;
+  end;
+
+  TilesInfo[274].Mask := True;
+  TilesInfo[275].Mask := True;
+  TilesInfo[276].Mask := True;
 
 end;
 
@@ -256,7 +543,7 @@ end;
 function TKMResTileset.TileIsWalkable(aTile: Word): Boolean;
 begin
   //Includes 1/2 and 3/4 walkable as walkable
-  //Result := Land[Loc.Y,Loc.X].Terrain in [0..6, 8..11,13,14, 16..22, 25..31, 32..39, 44..47, 49,52,55, 56..63,
+  //Result := Land[Loc.Y,Loc.X].BaseLayer.Terrain in [0..6, 8..11,13,14, 16..22, 25..31, 32..39, 44..47, 49,52,55, 56..63,
   //                                        64..71, 72..79, 80..87, 88..95, 96..103, 104,106..109,111, 112,113,116,117, 123..125,
   //                                        138..139, 152..155, 166,167, 168..175, 180..183, 188..191,
   //                                        197, 203..205,207, 212..215, 220..223, 242,243,247];
@@ -269,7 +556,7 @@ end;
 function TKMResTileset.TileIsRoadable(aTile: Word): Boolean;
 begin
   //Do not include 1/2 and 1/4 walkable as roadable
-  //Result := Land[Loc.Y,Loc.X].Terrain in [0..3,5,6, 8,9,11,13,14, 16..21, 26..31, 32..39, 45..47, 49, 52, 55, 56..63,
+  //Result := Land[Loc.Y,Loc.X].BaseLayer.Terrain in [0..3,5,6, 8,9,11,13,14, 16..21, 26..31, 32..39, 45..47, 49, 52, 55, 56..63,
   //                                        64..71, 72..79, 80..87, 88..95, 96..103, 104,108,111, 112,113,
   //                                        152..155,180..183,188..191,
   //                                        203..205, 212,213,215, 220, 247];
@@ -294,6 +581,12 @@ begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
   Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206]);
 end;
+
+
+//function TKMResTileset.GetTransTerrainId(aTerKind: TKMTerrainKind; aMaskType: TKMTileMaskType): Word;
+//begin
+//
+//end;
 
 
 end.

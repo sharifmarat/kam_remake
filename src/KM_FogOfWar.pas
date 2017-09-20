@@ -319,7 +319,7 @@ begin
     {//Remember waht we have seen last
     if Revelation[I, K].Visibility <= FOG_OF_WAR_MIN then
     begin
-      Revelation[I, K].LastTerrain := gTerrain.Land[I, K].Terrain;
+      Revelation[I, K].LastTerrain := gTerrain.Land[I, K].BaseLayer.Terrain;
 
     end;}
   end;

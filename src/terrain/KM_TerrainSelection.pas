@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, Clipbrd, KromUtils,
   {$IFDEF MSWindows} Windows, {$ENDIF}
-  KM_CommonClasses, KM_Points, KM_Terrain, KM_TerrainPainter, KM_RenderPool;
+  KM_CommonClasses, KM_Points, KM_Terrain, KM_TerrainPainter, KM_RenderPool, KM_ResTileset;
 
 
 type
@@ -215,9 +215,9 @@ begin
   begin
     Bx := K - fSelectionRect.Left;
     By := I - fSelectionRect.Top;
-    fSelectionBuffer[By,Bx].Terrain   := gTerrain.Land[I+1, K+1].Terrain;
+    fSelectionBuffer[By,Bx].Terrain   := gTerrain.Land[I+1, K+1].BaseLayer.Terrain;
     fSelectionBuffer[By,Bx].Height    := gTerrain.Land[I+1, K+1].Height;
-    fSelectionBuffer[By,Bx].Rotation  := gTerrain.Land[I+1, K+1].Rotation;
+    fSelectionBuffer[By,Bx].Rotation  := gTerrain.Land[I+1, K+1].BaseLayer.Rotation;
     fSelectionBuffer[By,Bx].Obj       := gTerrain.Land[I+1, K+1].Obj;
     fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.Land2[I+1, K+1].TerKind;
 
@@ -289,9 +289,9 @@ begin
   begin
     Bx := K - fSelectionRect.Left;
     By := I - fSelectionRect.Top;
-    gTerrain.Land[I+1, K+1].Terrain     := fSelectionBuffer[By,Bx].Terrain;
+    gTerrain.Land[I+1, K+1].BaseLayer.Terrain     := fSelectionBuffer[By,Bx].Terrain;
     gTerrain.Land[I+1, K+1].Height      := fSelectionBuffer[By,Bx].Height;
-    gTerrain.Land[I+1, K+1].Rotation    := fSelectionBuffer[By,Bx].Rotation;
+    gTerrain.Land[I+1, K+1].BaseLayer.Rotation    := fSelectionBuffer[By,Bx].Rotation;
     gTerrain.Land[I+1, K+1].Obj         := fSelectionBuffer[By,Bx].Obj;
     fTerrainPainter.Land2[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
   end;
@@ -314,13 +314,13 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
   procedure SwapTiles(X1, Y1, X2, Y2: Word);
   var Tmp: TKMTerrainKind;
   begin
-    SwapInt(gTerrain.Land[Y1,X1].Terrain, gTerrain.Land[Y2,X2].Terrain);
+    SwapInt(gTerrain.Land[Y1,X1].BaseLayer.Terrain, gTerrain.Land[Y2,X2].BaseLayer.Terrain);
     //Heights are vertex based not tile based, so it gets flipped slightly differently
     case aAxis of
       fa_Horizontal: SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2  ,X2+1].Height);
       fa_Vertical:   SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2+1,X2  ].Height);
     end;
-    SwapInt(gTerrain.Land[Y1,X1].Rotation, gTerrain.Land[Y2,X2].Rotation);
+    SwapInt(gTerrain.Land[Y1,X1].BaseLayer.Rotation, gTerrain.Land[Y2,X2].BaseLayer.Rotation);
     SwapInt(gTerrain.Land[Y1,X1].Obj, gTerrain.Land[Y2,X2].Obj);
     Tmp := fTerrainPainter.Land2[Y1, X1].TerKind;
     fTerrainPainter.Land2[Y1, X1].TerKind := fTerrainPainter.Land2[Y2, X2].TerKind;
@@ -338,20 +338,20 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
     Ter: Word;
     Rot: Byte;
   begin
-    Ter := gTerrain.Land[Y,X].Terrain;
-    Rot := gTerrain.Land[Y,X].Rotation mod 4; //Some KaM maps contain rotations > 3 which must be fixed by modding
+    Ter := gTerrain.Land[Y,X].BaseLayer.Terrain;
+    Rot := gTerrain.Land[Y,X].BaseLayer.Rotation mod 4; //Some KaM maps contain rotations > 3 which must be fixed by modding
 
     //Edges
     if (Ter in EDGES) and ((Rot in [1,3]) xor (aAxis = fa_Vertical)) then
-      gTerrain.Land[Y,X].Rotation := (Rot+2) mod 4;
+      gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+2) mod 4;
 
     //Corners
     if Ter in CORNERS then
     begin
       if (Rot in [1,3]) xor (Ter in CORNERS_REVERSED) xor (aAxis = fa_Vertical) then
-        gTerrain.Land[Y,X].Rotation := (Rot+1) mod 4
+        gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+1) mod 4
       else
-        gTerrain.Land[Y,X].Rotation := (Rot+3) mod 4;
+        gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+3) mod 4;
     end;
 
     //Horizontal flip: Vertex (not middle) objects must be moved right by 1

@@ -10,6 +10,7 @@ type
   //Painting on terrain with terrain brushes
   TKMMapEdTerrainBrushes = class
   private
+    fLastShape: TKMMapEdShape;
     procedure BrushChange(Sender: TObject);
     procedure BrushRefresh;
   protected
@@ -18,6 +19,7 @@ type
     BrushCircle: TKMButtonFlat;
     BrushSquare: TKMButtonFlat;
     BrushTable: array [0..6, 0..4] of TKMButtonFlat;
+    MagicBrush: TKMButtonFlat;
     BrushRandom: TKMCheckBox;
   public
     constructor Create(aParent: TKMPanel);
@@ -33,25 +35,27 @@ type
 implementation
 uses
   TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
-  KM_TerrainPainter, KM_InterfaceGame;
+  KM_TerrainPainter, KM_InterfaceGame, KM_ResTileset;
 
 
 { TKMMapEdTerrainBrushes }
 constructor TKMMapEdTerrainBrushes.Create(aParent: TKMPanel);
 const
   Surfaces: array [0..6, 0..4] of TKMTerrainKind = (
-    (tkGrass,       tkMoss,         tkRustyGrass1,  tkRustyGrass2,  tkCustom),
-    (tkDirtGrass,   tkDirt,         tkGravel,       tkCobbleStone,  tkCustom),
-    (tkGrassSand2,  tkGrassSand1,   tkSand,         tkRichSand,     tkCustom),
+    (tkGrass,       tkMoss,         tkPaleGrass,    tkGrassDirt,    tkDirt),
+    (tkCobbleStone, tkGravel,       tkCustom,       tkCustom,       tkCustom),
+    (tkCoastSand,   tkGrassSand1,   tkGrassSand2,   tkGrassSand3,   tkSand),
     (tkSwamp,       tkGrassyWater,  tkWater,        tkFastWater,    tkCustom),
     (tkShallowSnow, tkSnow,         tkDeepSnow,     tkIce,          tkCustom),
-    (tkStoneMount,  tkGoldMount,    tkIronMount,    tkAbyss,        tkCustom),
+    (tkStone,  tkGoldMount,    tkIronMount,    tkAbyss,        tkCustom),
     (tkCoal,        tkGold,         tkIron,         tkLava,         tkCustom));
 var
   I,K: Integer;
   TerKindName: String;
 begin
   inherited Create;
+
+  fLastShape := hsCircle;
 
   Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
@@ -79,6 +83,9 @@ begin
 
   BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 350, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
   BrushRandom.OnClick := BrushChange;
+
+  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 0, 380, 34, 34, 4, rxTiles);
+  MagicBrush.OnClick := BrushChange;
 end;
 
 
@@ -90,14 +97,26 @@ begin
   gGameCursor.MapEdSize := BrushSize.Position;
   gGame.MapEditor.TerrainPainter.RandomizeTiling := BrushRandom.Checked;
 
-  if Sender = BrushCircle then
-    gGameCursor.MapEdShape := hsCircle
+  if Sender = MagicBrush then
+    gGameCursor.MapEdMagicBrush := True
   else
-  if Sender = BrushSquare then
-    gGameCursor.MapEdShape := hsSquare
-  else
-  if Sender is TKMButtonFlat then
-    gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
+  begin
+    gGameCursor.MapEdMagicBrush := False;
+    if Sender = BrushCircle then
+    begin
+      gGameCursor.MapEdShape := hsCircle;
+      fLastShape := hsCircle;
+    end
+    else
+    if Sender = BrushSquare then
+    begin
+      gGameCursor.MapEdShape := hsSquare;
+      fLastShape := hsSquare;
+    end
+    else
+    if Sender is TKMButtonFlat then
+      gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
+  end;
 
   BrushRefresh;
 end;
@@ -125,6 +144,8 @@ end;
 
 procedure TKMMapEdTerrainBrushes.Show;
 begin
+  gGameCursor.MapEdShape := fLastShape;
+
   BrushChange(BrushTable[0,0]);
 
   Panel_Brushes.Show;

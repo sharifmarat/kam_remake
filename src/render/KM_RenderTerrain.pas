@@ -213,11 +213,11 @@ var
   begin
     Result := False;
     with gTerrain do
-      if (aTexOffset + Land[aTY,aTX].Terrain + 1 <= High(gGFXData[rxTiles]))
-         and (gGFXData[rxTiles, aTexOffset + Land[aTY,aTX].Terrain + 1].Tex.ID <> 0)
+      if (aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1 <= MAX_STATIC_TERRAIN_ID)
+         and (gGFXData[rxTiles, aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1].Tex.ID <> 0)
          and (aFOW.CheckTileRevelation(aTX,aTY) > FOG_OF_WAR_ACT) then
       begin
-        TexAnimC := GetTileUV(aTexOffset + Land[aTY,aTX].Terrain, Land[aTY,aTX].Rotation mod 4);
+        TexAnimC := GetTileUV(aTexOffset + Land[aTY,aTX].BaseLayer.Terrain, Land[aTY,aTX].BaseLayer.Rotation mod 4);
 
         SetAnimTileVertex(aQ,   aTX-1, aTY-1, False, TexAnimC[1][1], TexAnimC[1][2]);
         SetAnimTileVertex(aQ+1, aTX-1, aTY,   True,  TexAnimC[2][1], TexAnimC[2][2]);
@@ -230,7 +230,7 @@ var
   end;
 
 var
-  I,K,H,Q,AnimCnt: Integer;
+  I,K,H,Q,L,AnimCnt: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
   Row: Integer;
@@ -264,7 +264,7 @@ begin
       alSwamp: TexOffsetSwamp := 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 4200..4800
     end;
 
-  SetLength(fTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
+  SetLength(fTilesVtx, (SizeX + 1) * 4 * 4 * (SizeY + 1));
   SetLength(fAnimTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
   with gTerrain do
     if (MapX > 0) and (MapY > 0) then
@@ -273,7 +273,7 @@ begin
         begin
           tX := K + fClipRect.Left;
           tY := I + fClipRect.Top;
-          TexTileC := fTileUVLookup[Land[tY, tX].Terrain, Land[tY, tX].Rotation mod 4];
+          TexTileC := fTileUVLookup[Land[tY, tX].BaseLayer.Terrain, Land[tY, tX].BaseLayer.Rotation mod 4];
 
           //Fill Tile vertices array
           SetTileVertex(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
@@ -281,15 +281,29 @@ begin
           SetTileVertex(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
           SetTileVertex(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
 
+          H := H + 4;
+
+          if Land[tY, tX].LayersCnt > 0 then
+            for L := 0 to Land[tY, tX].LayersCnt - 1 do
+            begin
+              TexTileC := GetTileUV(Land[tY,tX].Layer[L].Terrain, Land[TY,TX].Layer[L].Rotation mod 4);
+
+              //Fill Tile vertices array
+              SetTileVertex(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
+              SetTileVertex(H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
+              SetTileVertex(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
+              SetTileVertex(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
+
+              H := H + 4;
+            end;
+
           //Fill tiles animation vertices array
           if not TryAddAnimTex(Q, tX, tY, TexOffsetWater) then  //every tile can have only 1 animation
             if not TryAddAnimTex(Q, tX, tY, TexOffsetFalls) then
               TryAddAnimTex(Q, tX, tY, TexOffsetSwamp);
-
-          H := H + 4;
         end;
 
-
+  SetLength(fTilesVtx, H);
   //Cut animation vertices array to actual size
   SetLength(fAnimTilesVtx, Q);
 
@@ -365,9 +379,9 @@ begin
     begin
       with Land[I,K] do
       begin
-        TRender.BindTexture(gGFXData[rxTiles, Terrain+1].Tex.ID);
+        TRender.BindTexture(gGFXData[rxTiles, BaseLayer.Terrain+1].Tex.ID);
         glBegin(GL_TRIANGLE_FAN);
-        TexC := fTileUVLookup[Terrain, Rotation mod 4];
+        TexC := fTileUVLookup[BaseLayer.Terrain, BaseLayer.Rotation mod 4];
       end;
 
       if RENDER_3D then
@@ -433,12 +447,12 @@ begin
       with gTerrain do
       for I := fClipRect.Top to fClipRect.Bottom do
       for K := fClipRect.Left to fClipRect.Right do
-      if (TexOffset + Land[I,K].Terrain + 1 <= High(gGFXData[rxTiles]))
-      and (gGFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID <> 0)
+      if (TexOffset + Land[I,K].BaseLayer.Terrain + 1 <= High(gGFXData[rxTiles]))
+      and (gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID <> 0)
       and (aFOW.CheckTileRevelation(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
       begin
-        TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].Terrain + 1].Tex.ID);
-        TexC := GetTileUV(TexOffset + Land[I,K].Terrain, Land[I,K].Rotation);
+        TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID);
+        TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
 
         glBegin(GL_TRIANGLE_FAN);
           glColor4f(1,1,1,1);

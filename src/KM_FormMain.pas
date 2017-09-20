@@ -85,6 +85,7 @@ type
     chkLogsShowInChat: TCheckBox;
     chkUIControlsID: TCheckBox;
     ShowLogistics: TMenuItem;
+    ShowTerrainIds: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -566,6 +567,7 @@ begin
     Label2.Caption := IfThen(I <> 0, PassabilityGuiText[TKMTerrainPassability(I)], '');
     SHOW_TERRAIN_PASS := I;
     SHOW_TERRAIN_WIRES := chkShowWires.Checked;
+    SHOW_TERRAIN_IDS := ShowTerrainIds.Checked;
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
   end;

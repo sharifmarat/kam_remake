@@ -237,7 +237,7 @@ begin
               fBase[I*fMapX + K] := gRes.Units[U.UnitType].MinimapColor
           else
           begin
-            ID := fMyTerrain.Land[I+1,K+1].Terrain;
+            ID := fMyTerrain.Land[I+1,K+1].BaseLayer.Terrain;
             // Do not use fMyTerrain.Land[].Light for borders of the map, because it is set to -1 for fading effect
             // So assume fMyTerrain.Land[].Light as 0 in this case
             if (I = 0) or (I = fMapY - 1) or (K = 0) or (K = fMapX - 1) then

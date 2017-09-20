@@ -27,10 +27,11 @@ type
     TilesScroll: TKMScrollBar;
     TilesRandom: TKMCheckBox;
     TilesMagicWater, TilesEyedropper, TilesRotate: TKMButtonFlat;
+    NumEdit_SetTileNumber: TKMNumericEdit;
   public
     constructor Create(aParent: TKMPanel);
 
-    procedure TilesTableScrollToTileTexId(aTexId: Integer);
+    procedure TilesTableSetTileTexId(aTexId: Integer);
     procedure Show;
     procedure Hide;
     procedure UpdateState;
@@ -40,18 +41,22 @@ type
 
 implementation
 uses
-  KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
-
+  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
 
 const
+  TILES_NOT_ALLOWED_TO_SET = [55..55,59..63, //wine and corn
+                              108..110, //duplicates of 189/169/185
+                              246..246, //some strange bridge...
+                              248..255]; //roads and overlays
+
   TABLE_ELEMS = 280;
   //Tiles table made by JBSnorro, thanks to him :)
   MapEdTileRemap: array [1..TABLE_ELEMS] of Integer = (
      1,73,74,75,37,21,22, 38, 33, 34, 32,181,173,177,129,130,131,132,133, 49,193,197,217,225,  0,  0, 45, 24, 13, 23,208,224,257,265,273,
-    27,76,77,78,36,39,40,198,100,101,102,189,169,185,134,135,136,137,138,124,125,126,229,218,219,220, 46, 11,  5,  0, 26,216,258,266,0,
-    28,79,80,81,35,88,89, 90, 70, 71, 72,182,174,178,196,139,140,141,142,127,128,  0,230,226,227,228, 47,204,205,206,203,207,259,267,0,
-    29,82,83,84,85,86,87,  0,112,113,114,190,170,186,161,162,163,164,165,106,107,108,233,234,231,  0, 48,221,213,214,199,200,260,268,0,
-    30,94,95,96,57,58,59,  0,103,104,105,183,175,179,157,202,158,159,160,117,118,119,209,210,241,245,194,248, 65, 66,195, 25,261,269,0,
+    27,76,77,78,36,39,40,198,100,101,102,189,169,185,134,135,136,137,138,124,125,126,229,218,219,220, 46, 11,  5,  0, 26,216,258,266,274,
+    28,79,80,81,35,88,89, 90, 70, 71, 72,182,174,178,196,139,140,141,142,127,128,  0,230,226,227,228, 47,204,205,206,203,207,259,267,275,
+    29,82,83,84,85,86,87,  0,112,113,114,190,170,186,161,162,163,164,165,106,107,108,233,234,231,  0, 48,221,213,214,199,200,260,268,276,
+    30,94,95,96,57,58,59,  0,103,104,105,183,175,179,157,202,158,159,160,117,118,119,209,210,241,245,194,248, 65, 66,195, 25,261,269,277,
     31, 9,19,20,41,42,43, 44,  6,  7, 10,191,171,187,149,150,151,152, 16,242,243,244,235,238,239,240,  0, 50,172, 52,222,223,262,270,0,
     18,67,68,69,91,92,93,  0,  3,  4,  2,184,176,180,145,146,147,148,  8,115,116,120,236,237,143,144,  0, 53,167, 55,215,232,263,271,0,
     17,97,98,99, 0, 0, 0,  0, 12, 14, 15,192,168,188,153,154,155,156,  0,121,122,123,211,212,201,  0,246,166, 51, 54,  0,  0,264,272,0
@@ -68,28 +73,34 @@ var
 begin
   inherited Create;
 
-  TABLE_ELEMS_CNT := Ceil(TILES_CNT / MAPED_TILES_Y) * MAPED_TILES_Y;
+//  TABLE_ELEMS_CNT := Ceil(TILES_CNT / MAPED_TILES_Y) * MAPED_TILES_Y;
+  TABLE_ELEMS_CNT := TABLE_ELEMS;
 
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
 
-  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 2, 22, TB_WIDTH - 4, 20, 0);
+  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 0, 22, TB_WIDTH, 20, 0);
   TilesMagicWater.Caption := gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER];
   TilesMagicWater.CapOffsetY := -10;
   TilesMagicWater.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER_HINT];
   TilesMagicWater.OnClick := TilesChange;
 
-  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 2, 46, TB_WIDTH - 4, 20, 0);
+  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 0, 46, (TB_WIDTH div 2) - 2, 20, 0);
   TilesEyedropper.Caption := gResTexts[TX_MAPED_TERRAIN_EYEDROPPER];
   TilesEyedropper.CapOffsetY := -10;
   TilesEyedropper.Hint := gResTexts[TX_MAPED_TERRAIN_EYEDROPPER_HINT];
   TilesEyedropper.OnClick := TilesChange;
 
-  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 2, 70, TB_WIDTH - 4, 20, 0);
+  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, (TB_WIDTH div 2) + 2, 46, (TB_WIDTH div 2) - 2, 20, 0);
   TilesRotate.Caption := 'Rotate tile'; //Todo translate;
   TilesRotate.CapOffsetY := -10;
   TilesRotate.Hint := 'Rotate tile'; //Todo translate;
   TilesRotate.OnClick := TilesChange;
+
+  TKMLabel.Create(Panel_Tiles, 2, 78, 'Tile ID:', fnt_Metal, taLeft); //Todo translate
+  NumEdit_SetTileNumber := TKMNumericEdit.Create(Panel_Tiles, (TB_WIDTH div 2) + 2, 76, 0, MAX_TILE_TO_SHOW);
+  NumEdit_SetTileNumber.Hint := 'Enter tile ID to select it'; // Todo translate
+  NumEdit_SetTileNumber.OnChange := TilesChange;
 
   TilesRandom := TKMCheckBox.Create(Panel_Tiles, 0, 106, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM], fnt_Metal);
   TilesRandom.Checked := True;
@@ -101,14 +112,15 @@ begin
   TilesScroll.MaxValue := (TABLE_ELEMS_CNT div MAPED_TILES_Y) - MAPED_TILES_X; // 32 - 6
   TilesScroll.Position := 0;
   TilesScroll.OnChange := TilesRefresh;
+
   for J := 0 to MAPED_TILES_Y - 1 do
-  for K := 0 to MAPED_TILES_X - 1 do
-  begin
-    TilesTable[J * MAPED_TILES_X + K] := TKMButtonFlat.Create(Panel_Tiles, K * 32, 136 + J * 32, 32, 32, 1, rxTiles);
-    TilesTable[J * MAPED_TILES_X + K].Tag :=  J * MAPED_TILES_X + K; //Store ID
-    TilesTable[J * MAPED_TILES_X + K].OnClick := TilesChange;
-    TilesTable[J * MAPED_TILES_X + K].OnMouseWheel := TilesScroll.MouseWheel;
-  end;
+    for K := 0 to MAPED_TILES_X - 1 do
+    begin
+      TilesTable[J * MAPED_TILES_X + K] := TKMButtonFlat.Create(Panel_Tiles, K * 32, 136 + J * 32, 32, 32, 1, rxTiles);
+      TilesTable[J * MAPED_TILES_X + K].Tag :=  J * MAPED_TILES_X + K; //Store ID
+      TilesTable[J * MAPED_TILES_X + K].OnClick := TilesChange;
+      TilesTable[J * MAPED_TILES_X + K].OnMouseWheel := TilesScroll.MouseWheel;
+    end;
 end;
 
 
@@ -139,19 +151,28 @@ begin
   if Sender = TilesRandom then
     gGameCursor.MapEdDir := 4 * Byte(TilesRandom.Checked); //Defined=0..3 or Random=4
 
+  if Sender = NumEdit_SetTileNumber then
+    if not (NumEdit_SetTileNumber.Value in TILES_NOT_ALLOWED_TO_SET) then
+      TilesTableSetTileTexId(NumEdit_SetTileNumber.Value);
+
   if (Sender is TKMButtonFlat)
-  and not (Sender = TilesMagicWater)
-  and not (Sender = TilesEyedropper) then
-    TilesSet(TKMButtonFlat(Sender).TexID)
+    and not (Sender = TilesMagicWater)
+    and not (Sender = TilesEyedropper) then
+  begin
+    TilesSet(TKMButtonFlat(Sender).TexID);
+    NumEdit_SetTileNumber.Value := TKMButtonFlat(Sender).TexID - 1;
+  end
   else
     TilesRefresh(nil);
 end;
 
 
-procedure TKMMapEdTerrainTiles.TilesTableScrollToTileTexId(aTexId: Integer);
+procedure TKMMapEdTerrainTiles.TilesTableSetTileTexId(aTexId: Integer);
 var
   I,K,L,SP: Integer;
 begin
+  NumEdit_SetTileNumber.Value := aTexId;
+  TilesSet(aTexId + 1);
   for SP := 0 to TilesScroll.MaxValue do
     for I := 0 to MAPED_TILES_Y - 1 do
       for K := 0 to MAPED_TILES_X - 1 do
@@ -177,6 +198,7 @@ begin
   begin
     gGameCursor.Mode := cmTiles;
     gGameCursor.Tag1 := aIndex - 1; //MapEdTileRemap is 1 based, tag is 0 based
+
     if TilesRandom.Checked then
       gGameCursor.MapEdDir := 4;
 

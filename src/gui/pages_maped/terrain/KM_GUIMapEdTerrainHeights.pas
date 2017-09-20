@@ -10,6 +10,8 @@ type
   //Terrain height editing
   TKMMapEdTerrainHeights = class
   private
+    fLastCursorMode: TKMCursorMode;
+    fLastShape: TKMMapEdShape;
     procedure HeightChange(Sender: TObject);
     procedure HeightRefresh;
   protected
@@ -33,14 +35,16 @@ type
 
 implementation
 uses
-  KM_ResFonts, KM_ResTexts, KM_GameCursor, KM_RenderUI,
-  KM_InterfaceGame;
+  KM_ResFonts, KM_ResTexts, KM_RenderUI, KM_GameCursor, KM_InterfaceGame;
 
 
 { TKMMapEdTerrainHeights }
 constructor TKMMapEdTerrainHeights.Create(aParent: TKMPanel);
 begin
   inherited Create;
+
+  fLastCursorMode := cmElevate;
+  fLastShape := hsCircle;
 
   Panel_Heights := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Heights, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HEIGHTS], fnt_Outline, taCenter);
@@ -87,17 +91,28 @@ begin
 
   //Shape
   if Sender = HeightCircle then
-    gGameCursor.MapEdShape := hsCircle
+  begin
+    gGameCursor.MapEdShape := hsCircle;
+    fLastShape := hsCircle;
+  end
   else
   if Sender = HeightSquare then
+  begin
     gGameCursor.MapEdShape := hsSquare;
+    fLastShape := hsSquare;
+  end;
 
   //Kind
   if Sender = HeightElevate then
-    gGameCursor.Mode := cmElevate
-  else
+  begin
+    gGameCursor.Mode := cmElevate;
+    fLastCursorMode := cmElevate;
+  end else
   if Sender = HeightUnequalize then
+  begin
     gGameCursor.Mode := cmEqualize;
+    fLastCursorMode := cmEqualize;
+  end;
 
   HeightRefresh;
 end;
@@ -115,8 +130,11 @@ end;
 
 procedure TKMMapEdTerrainHeights.Show;
 begin
-  HeightChange(HeightCircle);
-  HeightChange(HeightElevate);
+  gGameCursor.Mode := fLastCursorMode;
+  gGameCursor.MapEdShape := fLastShape;
+  HeightRefresh;
+//  HeightChange(HeightCircle);
+//  HeightChange(HeightElevate);
   Panel_Heights.Show;
 end;
 

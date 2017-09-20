@@ -503,7 +503,7 @@ begin
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);
                                 if (gGame.ActiveInterface is TKMapEdInterface) then
-                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableScrollToTileTexId(gGameCursor.Tag1);
+                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableSetTileTexId(gGameCursor.Tag1);
                                 if not (ssShift in gGameCursor.SState) then  //Holding shift allows to choose another tile
                                   gGameCursor.Mode := cmTiles;
                               end;

@@ -54,11 +54,15 @@ type
   function KMRectF(aLeft, aTop, aRight, aBottom: SmallInt): TKMRectF; overload;
   function KMRectRound(aRect: TKMRectF): TKMRect;
   function KMSameRect(aRect1, aRect2: TKMRect): Boolean;
-  function KMRectGrow(aRect: TKMRect; aInset: Integer): TKMRect;
-  function KMRectGrowTopLeft(aRect: TKMRect): TKMRect;
+  function KMRectGrow(aRect: TKMRect; aInset: Integer): TKMRect; overload;
+  function KMRectGrow(aRect: TKMRect; aDir: TKMDirection; aInset: Integer = 1): TKMRect; overload;
+  function KMRectGrowTopLeft(aRect: TKMRect; aInset: Integer = 1): TKMRect;
+  function KMRectGrowTopRight(aRect: TKMRect; aInset: Integer = 1): TKMRect;
+  function KMRectGrowBottomLeft(aRect: TKMRect; aInset: Integer = 1): TKMRect;
   function KMRectShinkTopLeft(aRect: TKMRect): TKMRect;
-  function KMRectGrowBottomRight(aRect: TKMRect): TKMRect;
+  function KMRectGrowBottomRight(aRect: TKMRect; aInset: Integer = 1): TKMRect;
   function KMClipRect(aRect: TKMRect; X1,Y1,X2,Y2: Integer): TKMRect;
+  function KMRectCorners(aRect: TKMRect): TKMPointArray;
   function KMInRect(aPoint: TKMPoint; aRect: TKMRect): Boolean; overload;
   function KMInRect(aPoint: TKMPointF; aRect: TKMRect): Boolean; overload;
   function KMInRect(aPoint: TKMPointF; aRect: TKMRectF): Boolean; overload;
@@ -305,12 +309,43 @@ begin
 end;
 
 
-function KMRectGrowTopLeft(aRect: TKMRect): TKMRect;
+function KMRectGrow(aRect: TKMRect; aDir: TKMDirection; aInset: Integer = 1): TKMRect; overload;
 begin
-  Result.Left   := aRect.Left - 1;
+  case aDir of
+    dir_NA: Result := KMRectGrow(aRect, aInset);
+    dir_NE: Result := KMRectGrowTopRight(aRect, aInset);
+    dir_SE: Result := KMRectGrowBottomRight(aRect, aInset);
+    dir_SW: Result := KMRectGrowBottomLeft(aRect, aInset);
+    dir_NW: Result := KMRectGrowTopLeft(aRect, aInset);
+    dir_N, dir_E, dir_S, dir_W: Result := aRect; //not implemented yet
+  end;
+end;
+
+
+function KMRectGrowTopLeft(aRect: TKMRect; aInset: Integer = 1): TKMRect;
+begin
+  Result.Left   := aRect.Left - aInset;
   Result.Right  := aRect.Right;
-  Result.Top    := aRect.Top  - 1;
+  Result.Top    := aRect.Top  - aInset;
   Result.Bottom := aRect.Bottom;
+end;
+
+
+function KMRectGrowTopRight(aRect: TKMRect; aInset: Integer = 1): TKMRect;
+begin
+  Result.Left   := aRect.Left;
+  Result.Right  := aRect.Right + aInset;
+  Result.Top    := aRect.Top - aInset;
+  Result.Bottom := aRect.Bottom;
+end;
+
+
+function KMRectGrowBottomLeft(aRect: TKMRect; aInset: Integer = 1): TKMRect;
+begin
+  Result.Left   := aRect.Left - aInset;
+  Result.Right  := aRect.Right;
+  Result.Top    := aRect.Top;
+  Result.Bottom := aRect.Bottom + aInset;
 end;
 
 
@@ -323,12 +358,12 @@ begin
 end;
 
 
-function KMRectGrowBottomRight(aRect: TKMRect): TKMRect;
+function KMRectGrowBottomRight(aRect: TKMRect; aInset: Integer = 1): TKMRect;
 begin
   Result.Left   := aRect.Left;
-  Result.Right  := aRect.Right + 1;
+  Result.Right  := aRect.Right + aInset;
   Result.Top    := aRect.Top;
-  Result.Bottom := aRect.Bottom + 1;
+  Result.Bottom := aRect.Bottom + aInset;
 end;
 
 
@@ -338,6 +373,16 @@ begin
   Result.Right  := EnsureRange(aRect.Right, X1, X2);
   Result.Top    := EnsureRange(aRect.Top, Y1, Y2);
   Result.Bottom := EnsureRange(aRect.Bottom, Y1, Y2);
+end;
+
+
+function KMRectCorners(aRect: TKMRect): TKMPointArray;
+begin
+  SetLength(Result, 4);
+  Result[0] := KMPoint(aRect.Left, aRect.Top);
+  Result[1] := KMPoint(aRect.Right, aRect.Top);
+  Result[2] := KMPoint(aRect.Right, aRect.Bottom);
+  Result[3] := KMPoint(aRect.Left, aRect.Bottom);
 end;
 
 

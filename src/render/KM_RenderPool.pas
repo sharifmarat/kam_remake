@@ -140,7 +140,7 @@ implementation
 uses
   KM_RenderAux, KM_HandsCollection, KM_Game, KM_Sound, KM_Resource, KM_ResUnits,
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor, KM_HouseBarracks,
-  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils;
+  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils, KM_ResTileset;
 
 
 const
@@ -332,6 +332,9 @@ begin
 
   if SHOW_TERRAIN_PASS <> 0 then
     gRenderAux.Passability(aRect, SHOW_TERRAIN_PASS);
+
+  if SHOW_TERRAIN_IDS then
+    gRenderAux.TileIDs(aRect);
 
   if SHOW_UNIT_MOVEMENT then
     gRenderAux.UnitMoves(aRect);

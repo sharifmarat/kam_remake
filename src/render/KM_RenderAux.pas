@@ -26,12 +26,14 @@ type
     procedure Line(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Triangle(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
+    procedure TileIDs(aRect: TKMRect);
     procedure Passability(aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
     procedure Quad(pX, pY: Integer; aCol: TColor4);
     procedure SquareOnTerrain(x1, y1, x2, y2: Single; aLineColor: TColor4);
-    procedure Text(pX, pY: Integer; const aText: string; aCol: TColor4);
+    procedure Text(pX, pY: Integer; const aText: string; aCol: TColor4); overload;
+    procedure Text(pX, pY: Integer; const aText: string; aCol: TColor4; aInset: TKMPointF); overload;
     procedure UnitMoves(aRect: TKMRect);
     procedure UnitPointers(pX, pY: Single; Count: Integer);
     procedure UnitRoute(NodeList: TKMPointList; Pos: Integer; aUnitType: Byte);
@@ -271,6 +273,21 @@ begin
 end;
 
 
+procedure TRenderAux.TileIDs(aRect: TKMRect);
+var
+  I, K: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for K := aRect.Left to aRect.Right do
+    begin
+      Text(K, I, IntToStr(gTerrain.Land[I,K].BaseLayer.Terrain), icWhite, KMPointF(0,0.2));
+      if gTerrain.Land[I,K].LayersCnt > 0 then
+        Text(K, I, IntToStr(gTerrain.Land[I,K].Layer[0].Terrain), icWhite, KMPointF(0,-0.2));
+
+    end;
+end;
+
+
 procedure TRenderAux.Passability(aRect: TKMRect; aPass: Byte);
 var
   I, K: Integer;
@@ -279,9 +296,9 @@ begin
   begin
     glColor4f(0,1,0,0.25);
     for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
-      if TKMTerrainPassability(aPass) in gTerrain.Land[I,K].Passability then
-        RenderQuad(K,I);
+      for K := aRect.Left to aRect.Right do
+        if TKMTerrainPassability(aPass) in gTerrain.Land[I,K].Passability then
+          RenderQuad(K,I);
   end;
 end;
 
@@ -317,9 +334,15 @@ end;
 
 procedure TRenderAux.Text(pX, pY: Integer; const aText: string; aCol: TColor4);
 begin
+  Text(pX, pY, aText, aCol, KMPOINTF_ZERO);
+end;
+
+
+procedure TRenderAux.Text(pX, pY: Integer; const aText: string; aCol: TColor4; aInset: TKMPointF);
+begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
   glColor4ubv(@aCol);
-  glRasterPos2f(pX - 0.5, gTerrain.FlatToHeight(pX-0.5, pY-0.5));
+  glRasterPos2f(pX + aInset.X - 0.5 - Length(aText) / 20, gTerrain.FlatToHeight(pX + aInset.X - 0.5, pY + aInset.Y - 0.5));
   glPrint(AnsiString(aText));
 end;
 

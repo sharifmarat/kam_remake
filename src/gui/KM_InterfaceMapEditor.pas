@@ -1117,7 +1117,6 @@ begin
                   and ((gGameCursor.Tag1 = MARKER_RALLY_POINT) or (gGameCursor.Tag1 = MARKER_CUTTING_POINT)) then
                 begin
                   gGameCursor.Mode := cmNone;
-                  gGameCursor.Tag1 := 0;
                   Exit;
                 end;
 
