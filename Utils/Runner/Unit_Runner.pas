@@ -18,6 +18,7 @@ type
     TimesCount: Integer;
     TimeMin, TimeMax: Integer;
     Times: array {Run} of array {Tick} of Cardinal;
+    FinalInfo: String;
   end;
 
   TKMRunnerCommon = class
@@ -128,7 +129,7 @@ begin
   SKIP_SOUND := True;
   SKIP_LOADING_CURSOR := True;
   ExeDir := ExtractFilePath(ParamStr(0)) + '..\..\';
-  //gLog := TKMLog.Create(ExtractFilePath(ParamStr(0)) + 'temp.log');
+  gLog := TKMLog.Create(ExeDir + 'Utils\Runner\Runner_Log.log');
 
   fResults.TimesCount := Duration*60*10;
 
@@ -153,8 +154,12 @@ begin
   FreeAndNil(gGameApp);
   FreeAndNil(gLog);
   if Assigned(OnProgress) then
-    OnProgress('Done');
-
+  begin
+    if fResults.FinalInfo <> '' then
+      OnProgress(fResults.FinalInfo)
+    else
+      OnProgress('Done');
+  end;
 end;
 
 

@@ -20,6 +20,10 @@ type
   end;
 
   TKMRunnerFight95 = class(TKMRunnerCommon)
+  private
+    fRedWinsCnt: Integer;
+    fBlueWinsCnt: Integer;
+    fDraw: Integer;
   protected
     procedure SetUp; override;
     procedure Execute(aRun: Integer); override;
@@ -138,21 +142,33 @@ begin
   fResults.ValueCount := 2;
 //  fResults.TimesCount := 2*60*10;
 
+  fRedWinsCnt := 0;
+  fBlueWinsCnt := 0;
+  fDraw := 0;
   DYNAMIC_TERRAIN := False;
 end;
 
 
 procedure TKMRunnerFight95.TearDown;
+var Str: String;
 begin
+
+  Str := Format('Red wins: %d; Blue wins: %d; Draw: %d', [fRedWinsCnt, fBlueWinsCnt, fDraw]);
+  gLog.AddTime(Str);
+  fResults.FinalInfo := Str;
+
   inherited;
   DYNAMIC_TERRAIN := True;
+
 end;
 
 
 procedure TKMRunnerFight95.Execute(aRun: Integer);
 begin
-  gGameApp.NewEmptyMap(128, 128);
-  SetKaMSeed(aRun + 1);
+//  gGameApp.NewEmptyMap(128, 128);
+//  SetKaMSeed(aRun + 1);
+
+  gGameApp.NewSingleMap(ExtractFilePath(ParamStr(0)) + '..\..\Maps\TestFight\TestFight.dat', 'TestFight');
 
   //fPlayers[0].AddUnitGroup(ut_Cavalry, KMPoint(63, 64), dir_E, 8, 24);
   //fPlayers[1].AddUnitGroup(ut_Swordsman, KMPoint(65, 64), dir_W, 8, 24);
@@ -163,15 +179,23 @@ begin
   //fPlayers[0].AddUnitGroup(ut_Hallebardman, KMPoint(63, 64), dir_E, 8, 24);
   //fPlayers[1].AddUnitGroup(ut_Cavalry, KMPoint(65, 64), dir_W, 8, 24);
 
-  gHands[0].AddUnitGroup(ut_Swordsman, KMPoint(63, 64), dir_E, 8, 24);
-  gHands[1].AddUnitGroup(ut_Swordsman, KMPoint(65, 64), dir_W, 8, 24);
-
-  gHands[1].UnitGroups[0].OrderAttackUnit(gHands[0].Units[0], True);
+//  gHands[0].AddUnitGroup(ut_Swordsman, KMPoint(63, 64), dir_E, 8, 24);
+//  gHands[1].AddUnitGroup(ut_Swordsman, KMPoint(65, 64), dir_W, 8, 24);
+//
+//  gHands[1].UnitGroups[0].OrderAttackUnit(gHands[0].Units[0], True);
 
   SimulateGame;
 
   fResults.Value[aRun, 0] := gHands[0].Stats.GetUnitQty(ut_Any);
   fResults.Value[aRun, 1] := gHands[1].Stats.GetUnitQty(ut_Any);
+
+  if (gHands[0].Stats.GetUnitQty(ut_Any) > 0)
+    and (gHands[1].Stats.GetUnitQty(ut_Any) = 0) then
+    Inc(fRedWinsCnt)
+  else if (gHands[1].Stats.GetUnitQty(ut_Any) > 0)
+    and (gHands[0].Stats.GetUnitQty(ut_Any) = 0) then
+      Inc(fBlueWinsCnt) else
+    Inc(fDraw);
 
   gGameApp.Stop(gr_Silent);
 end;
