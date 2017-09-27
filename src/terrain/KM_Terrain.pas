@@ -307,9 +307,9 @@ begin
   begin
     //Apply some random tiles for artisticity
     if KaMRandom(5) = 0 then
-      Terrain      := RandomTiling[tkGrass, Random(RandomTiling[tkGrass, 0]) + 1]
+      BaseLayer.Terrain      := RandomTiling[tkGrass, Random(RandomTiling[tkGrass, 0]) + 1]
     else
-      Terrain      := 0;
+      BaseLayer.Terrain      := 0;
     Height       := 30 + KaMRandom(7);  //variation in Height
     LayersCnt := 0;
     BaseLayer.Corners := [0,1,2,3];
