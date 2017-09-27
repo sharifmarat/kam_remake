@@ -6,15 +6,15 @@ uses
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_FogOfWar, KM_Pics, KM_ResSprites, KM_Points, KM_Terrain;
 
 type
-  TVBOArrayType = (vat_None, vat_Tile, vat_AnimTile);
+  TVBOArrayType = (vat_None, vat_Tile, vat_TileLayer, vat_AnimTile);
 
   TUVRect = array [1 .. 4, 1 .. 2] of Single; // Texture UV coordinates
 
-  TTileVertice = record
+  TTileVerticeExt = record
     X, Y, Z, UTile, VTile, ULit, UShd, UFow: Single;
   end;
 
-  TAnimTileVertice = record
+  TTileVertice = record
     X, Y, Z, UAnim, VAnim: Single;
   end;
 
@@ -25,12 +25,16 @@ type
     fTextG: GLuint; //Shading gradient for lighting
     fTextB: GLuint; //Contrast BW for FOW over color-coder
     fUseVBO: Boolean; //Wherever to render terrain through VBO (faster but needs GL1.5) or DrawCalls (slower but needs only GL1.1)
-    fTilesVtx: array of TTileVertice; //Vertice cache for tiles
+    fTilesVtx: array of TTileVerticeExt; //Vertice cache for tiles
     fTilesInd: array of Integer;      //Indexes for tiles array
-    fAnimTilesVtx: array of TAnimTileVertice; //Vertice cache for tiles animations (water/falls/swamp)
+    fTilesLayersVtx: array of TTileVertice; //Vertice cache for tiles
+    fTilesLayersInd: array of Integer;      //Indexes for tiles array
+    fAnimTilesVtx: array of TTileVertice; //Vertice cache for tiles animations (water/falls/swamp)
     fAnimTilesInd: array of Integer;          //Indexes for array tiles animation array
     fVtxTilesShd: GLUint;
     fIndTilesShd: GLUint;
+    fVtxTilesLayersShd: GLUint;
+    fIndTilesLayersShd: GLUint;
     fVtxAnimTilesShd: GLUint;
     fIndAnimTilesShd: GLUint;
     fTileUVLookup: array [0..TILES_CNT-1, 0..3] of TUVRect;
@@ -39,6 +43,7 @@ type
     procedure BindVBOArray(aVBOArrayType: TVBOArrayType);
     procedure UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
     procedure DoTiles;
+    procedure DoTilesLayers;
     procedure DoOverlays;
     procedure DoLighting;
     procedure DoWater(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
@@ -46,6 +51,7 @@ type
     function VBOSupported: Boolean;
     procedure RenderFence(aFence: TFenceType; Pos: TKMDirection; pX,pY: Integer);
     procedure RenderMarkup(pX, pY: Word; aFieldType: TFieldType);
+    procedure DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
   public
     constructor Create;
     destructor Destroy; override;
@@ -54,7 +60,8 @@ type
     procedure RenderFences;
     procedure RenderPlayerPlans(aFieldsList: TKMPointTagList; aHousePlansList: TKMPointDirList);
     procedure RenderFOW(aFOW: TKMFogOfWarCommon; aUseContrast: Boolean);
-    procedure RenderTile(Index: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+    procedure RenderTile(aTerrainId: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0); overload;
+    procedure RenderTile(pX,pY: Integer; aTileBasic: TKMTerrainTileBasic; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0); overload;
     procedure RenderTileOverlay(pX, pY: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
   end;
 
@@ -102,6 +109,8 @@ begin
   begin
     glGenBuffers(1, @fVtxTilesShd);
     glGenBuffers(1, @fIndTilesShd);
+    glGenBuffers(1, @fVtxTilesLayersShd);
+    glGenBuffers(1, @fIndTilesLayersShd);
     glGenBuffers(1, @fVtxAnimTilesShd);
     glGenBuffers(1, @fIndAnimTilesShd);
   end;
@@ -178,7 +187,7 @@ procedure TRenderTerrain.UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
 var
   Fog: PKMByte2Array;
 
-  procedure SetTileVertex(aH: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUTile, aVTile: Single);
+  procedure SetTileVertexExt(aH: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUTile, aVTile: Single);
   begin
     with gTerrain do
     begin
@@ -196,15 +205,15 @@ var
     end;
   end;
 
-  procedure SetAnimTileVertex(aQ: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUAnimTile, aVAnimTile: Single);
+  procedure SetTileVertex(var aTilesVtxArr: array of TTileVertice; aQ: Integer; aTX, aTY: Word; aIsBottomRow: Boolean; aUAnimTile, aVAnimTile: Single);
   begin
     with gTerrain do
     begin
-      fAnimTilesVtx[aQ].X := aTX;
-      fAnimTilesVtx[aQ].Y := aTY - Land[aTY+1, aTX+1].Height / CELL_HEIGHT_DIV;
-      fAnimTilesVtx[aQ].Z := aTY - Byte(aIsBottomRow);
-      fAnimTilesVtx[aQ].UAnim := aUAnimTile;
-      fAnimTilesVtx[aQ].VAnim := aVAnimTile;
+      aTilesVtxArr[aQ].X := aTX;
+      aTilesVtxArr[aQ].Y := aTY - Land[aTY+1, aTX+1].Height / CELL_HEIGHT_DIV;
+      aTilesVtxArr[aQ].Z := aTY - Byte(aIsBottomRow);
+      aTilesVtxArr[aQ].UAnim := aUAnimTile;
+      aTilesVtxArr[aQ].VAnim := aVAnimTile;
     end;
   end;
 
@@ -219,10 +228,10 @@ var
       begin
         TexAnimC := GetTileUV(aTexOffset + Land[aTY,aTX].BaseLayer.Terrain, Land[aTY,aTX].BaseLayer.Rotation mod 4);
 
-        SetAnimTileVertex(aQ,   aTX-1, aTY-1, False, TexAnimC[1][1], TexAnimC[1][2]);
-        SetAnimTileVertex(aQ+1, aTX-1, aTY,   True,  TexAnimC[2][1], TexAnimC[2][2]);
-        SetAnimTileVertex(aQ+2, aTX,   aTY,   True,  TexAnimC[3][1], TexAnimC[3][2]);
-        SetAnimTileVertex(aQ+3, aTX,   aTY-1, False, TexAnimC[4][1], TexAnimC[4][2]);
+        SetTileVertex(fAnimTilesVtx, aQ,   aTX-1, aTY-1, False, TexAnimC[1][1], TexAnimC[1][2]);
+        SetTileVertex(fAnimTilesVtx, aQ+1, aTX-1, aTY,   True,  TexAnimC[2][1], TexAnimC[2][2]);
+        SetTileVertex(fAnimTilesVtx, aQ+2, aTX,   aTY,   True,  TexAnimC[3][1], TexAnimC[3][2]);
+        SetTileVertex(fAnimTilesVtx, aQ+3, aTX,   aTY-1, False, TexAnimC[4][1], TexAnimC[4][2]);
 
         aQ := aQ + 4;
         Result := True;
@@ -230,10 +239,10 @@ var
   end;
 
 var
-  I,K,H,Q,L,AnimCnt: Integer;
+  I,J,K,K1,H,Q,P,L,TilesCnt,TilesLayersCnt,AnimCnt: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
-  Row: Integer;
+//  Row: Integer;
   TexTileC: TUVRect;
   AL: TAnimLayer;
   TexOffsetWater, TexOffsetFalls, TexOffsetSwamp: Word;
@@ -252,6 +261,7 @@ begin
 
   H := 0;
   Q := 0;
+  P := 0;
 
   TexOffsetWater := 0;
   TexOffsetFalls := 0;
@@ -264,22 +274,23 @@ begin
       alSwamp: TexOffsetSwamp := 300 * ((aAnimStep mod 24) div 8 + 1 + 8 + 5); // 4200..4800
     end;
 
-  SetLength(fTilesVtx, (SizeX + 1) * 4 * 4 * (SizeY + 1));
+  SetLength(fTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
+  SetLength(fTilesLayersVtx, (SizeX + 1) * 4 * 3 * (SizeY + 1));
   SetLength(fAnimTilesVtx, (SizeX + 1) * 4 * (SizeY + 1));
   with gTerrain do
     if (MapX > 0) and (MapY > 0) then
       for I := 0 to SizeY do
-        for K := 0 to SizeX do
+        for J := 0 to SizeX do
         begin
-          tX := K + fClipRect.Left;
+          tX := J + fClipRect.Left;
           tY := I + fClipRect.Top;
           TexTileC := fTileUVLookup[Land[tY, tX].BaseLayer.Terrain, Land[tY, tX].BaseLayer.Rotation mod 4];
 
           //Fill Tile vertices array
-          SetTileVertex(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
-          SetTileVertex(H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
-          SetTileVertex(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
-          SetTileVertex(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
+          SetTileVertexExt(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
+          SetTileVertexExt(H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
+          SetTileVertexExt(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
+          SetTileVertexExt(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
 
           H := H + 4;
 
@@ -289,12 +300,12 @@ begin
               TexTileC := GetTileUV(Land[tY,tX].Layer[L].Terrain, Land[TY,TX].Layer[L].Rotation mod 4);
 
               //Fill Tile vertices array
-              SetTileVertex(H,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
-              SetTileVertex(H+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
-              SetTileVertex(H+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
-              SetTileVertex(H+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
+              SetTileVertex(fTilesLayersVtx, P,   tX-1, tY-1, False, TexTileC[1][1], TexTileC[1][2]);
+              SetTileVertex(fTilesLayersVtx, P+1, tX-1, tY,   True,  TexTileC[2][1], TexTileC[2][2]);
+              SetTileVertex(fTilesLayersVtx, P+2, tX,   tY,   True,  TexTileC[3][1], TexTileC[3][2]);
+              SetTileVertex(fTilesLayersVtx, P+3, tX,   tY-1, False, TexTileC[4][1], TexTileC[4][2]);
 
-              H := H + 4;
+              P := P + 4;
             end;
 
           //Fill tiles animation vertices array
@@ -304,23 +315,44 @@ begin
         end;
 
   SetLength(fTilesVtx, H);
+  SetLength(fTilesLayersVtx, P);
   //Cut animation vertices array to actual size
   SetLength(fAnimTilesVtx, Q);
 
+  TilesCnt := H div 4;
+  TilesLayersCnt := P div 4;
   //Fill indexes array for tiles vertices array
   H := 0;
-  SetLength(fTilesInd, (SizeX+1) * (SizeY+1) * 6);
+  P := 0;
+  K := 0;
+  K1 := 0;
+  SetLength(fTilesInd, TilesCnt*6);
+  SetLength(fTileslayersInd, TilesLayersCnt*6);
   for I := 0 to SizeY do
-    for K := 0 to SizeX do
+    for J := 0 to SizeX do
     begin
-      Row := (I * (SizeX + 1)) shl 2;
-      fTilesInd[H+0] := Row + K shl 2; // shl 2 = *4
-      fTilesInd[H+1] := Row + (K shl 2) + 1;
-      fTilesInd[H+2] := Row + (K shl 2) + 2;
-      fTilesInd[H+3] := Row + (K shl 2);
-      fTilesInd[H+4] := Row + (K shl 2) + 3;
-      fTilesInd[H+5] := Row + (K shl 2) + 2;
+      fTilesInd[H+0] := K shl 2; // shl 2 = *4
+      fTilesInd[H+1] := (K shl 2) + 1;
+      fTilesInd[H+2] := (K shl 2) + 2;
+      fTilesInd[H+3] := (K shl 2);
+      fTilesInd[H+4] := (K shl 2) + 3;
+      fTilesInd[H+5] := (K shl 2) + 2;
       H := H + 6;
+      Inc(K);
+      tX := J + fClipRect.Left;
+      tY := I + fClipRect.Top;
+      if gTerrain.Land[tY, tX].LayersCnt > 0 then
+        for L := 0 to gTerrain.Land[tY, tX].LayersCnt - 1 do
+        begin
+          fTilesLayersInd[P+0] := K1 shl 2; // shl 2 = *4
+          fTilesLayersInd[P+1] := (K1 shl 2) + 1;
+          fTilesLayersInd[P+2] := (K1 shl 2) + 2;
+          fTilesLayersInd[P+3] := (K1 shl 2);
+          fTilesLayersInd[P+4] := (K1 shl 2) + 3;
+          fTilesLayersInd[P+5] := (K1 shl 2) + 2;
+          P := P + 6;
+          Inc(K1);
+        end;
     end;
 
   AnimCnt := Q div 4;
@@ -351,9 +383,69 @@ begin
   //They all run at different speeds so we can't adjoin them in one layer
   glColor4f(1,1,1,1);
   //Draw with VBO only if all tiles are on the same texture
-  if fUseVBO and TKMResSprites.AllTilesInOneAtlas then
+  if fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
   begin
     BindVBOArray(vat_Tile);
+    //Bind to tiles texture. All tiles should be places in 1 atlas,
+    //so to get TexId we can use any of terrain tile Id (f.e. 1st)
+    TRender.BindTexture(gGFXData[rxTiles, 1].Tex.ID);
+
+    //Setup vertex and UV layout and offsets
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(0));
+    glClientActiveTexture(GL_TEXTURE0);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(2, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(12));
+
+    //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
+    glDrawElements(GL_TRIANGLES, Length(fTilesInd), GL_UNSIGNED_INT, Pointer(0));
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  end
+  else
+  begin
+    with gTerrain do
+    for I := fClipRect.Top to fClipRect.Bottom do
+    for K := fClipRect.Left to fClipRect.Right do
+    begin
+      with Land[I,K] do
+      begin
+        TRender.BindTexture(gGFXData[rxTiles, BaseLayer.Terrain+1].Tex.ID);
+        glBegin(GL_TRIANGLE_FAN);
+        TexC := fTileUVLookup[BaseLayer.Terrain, BaseLayer.Rotation mod 4];
+      end;
+
+      if RENDER_3D then
+      begin
+        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
+      end else begin
+        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height / CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height / CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height / CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height / CELL_HEIGHT_DIV, I-1);
+      end;
+      glEnd;
+    end;
+  end;
+end;
+
+
+procedure TRenderTerrain.DoTilesLayers;
+var
+  TexC: TUVRect;
+  I,K: Integer;
+begin
+  //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
+  //They all run at different speeds so we can't adjoin them in one layer
+  glColor4f(1,1,1,1);
+  //Draw with VBO only if all tiles are on the same texture
+  if fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
+  begin
+    BindVBOArray(vat_TileLayer);
     //Bind to tiles texture. All tiles should be places in 1 atlas,
     //so to get TexId we can use any of terrain tile Id (f.e. 1st)
     TRender.BindTexture(gGFXData[rxTiles, 1].Tex.ID);
@@ -366,7 +458,7 @@ begin
     glTexCoordPointer(2, GL_FLOAT, SizeOf(TTileVertice), Pointer(12));
 
     //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
-    glDrawElements(GL_TRIANGLES, Length(fTilesInd), GL_UNSIGNED_INT, Pointer(0));
+    glDrawElements(GL_TRIANGLES, Length(fTilesLayersInd), GL_UNSIGNED_INT, Pointer(0));
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -413,7 +505,7 @@ begin
   //They all run at different speeds so we can't adjoin them in one layer
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  if fUseVBO and TKMResSprites.AllTilesInOneAtlas then
+  if fUseVBO and TKMResSprites.AllTilesOnOneAtlas then
   begin
     if Length(fAnimTilesVtx) = 0 then Exit; //There is no animation on map
     BindVBOArray(vat_AnimTile);
@@ -423,10 +515,10 @@ begin
 
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, SizeOf(TAnimTileVertice), Pointer(0));
+    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVertice), Pointer(0));
     glClientActiveTexture(GL_TEXTURE0);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, SizeOf(TAnimTileVertice), Pointer(12));
+    glTexCoordPointer(2, GL_FLOAT, SizeOf(TTileVertice), Pointer(12));
 
     //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
     glDrawElements(GL_TRIANGLES, Length(fAnimTilesInd), GL_UNSIGNED_INT, Pointer(0));
@@ -574,10 +666,10 @@ begin
     BindVBOArray(vat_Tile);
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVertice), Pointer(0));
+    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(0));
     glClientActiveTexture(GL_TEXTURE0);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVertice), Pointer(20));
+    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(20));
 
     //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
     glDrawElements(GL_TRIANGLES, Length(fTilesInd), GL_UNSIGNED_INT, Pointer(0));
@@ -628,10 +720,10 @@ begin
     BindVBOArray(vat_Tile);
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVertice), Pointer(0));
+    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(0));
     glClientActiveTexture(GL_TEXTURE0);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVertice), Pointer(24));
+    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(24));
 
     //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
     glDrawElements(GL_TRIANGLES, Length(fTilesInd), GL_UNSIGNED_INT, Pointer(0));
@@ -707,10 +799,10 @@ begin
     BindVBOArray(vat_Tile);
     //Setup vertex and UV layout and offsets
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVertice), Pointer(0));
+    glVertexPointer(3, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(0));
     glClientActiveTexture(GL_TEXTURE0);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVertice), Pointer(28));
+    glTexCoordPointer(1, GL_FLOAT, SizeOf(TTileVerticeExt), Pointer(28));
 
     //Here and above OGL requests Pointer, but in fact it's just a number (offset within Array)
     glDrawElements(GL_TRIANGLES, Length(fTilesInd), GL_UNSIGNED_INT, Pointer(0));
@@ -805,21 +897,29 @@ begin
   if fLastBindVBOArrayType = aVBOArrayType then Exit; // Do not to rebind for same tyle type
 
   case aVBOArrayType of
-    vat_Tile:      begin
-                    glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesShd);
-                    glBufferData(GL_ARRAY_BUFFER, Length(fTilesVtx) * SizeOf(TTileVertice), @fTilesVtx[0].X, GL_STREAM_DRAW);
+    vat_Tile:       begin
+                      glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesShd);
+                      glBufferData(GL_ARRAY_BUFFER, Length(fTilesVtx) * SizeOf(TTileVerticeExt), @fTilesVtx[0].X, GL_STREAM_DRAW);
 
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesShd);
-                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fTilesInd) * SizeOf(fTilesInd[0]), @fTilesInd[0], GL_STREAM_DRAW);
-                  end;
-    vat_AnimTile: if Length(fAnimTilesVtx) > 0 then
-                  begin
-                    glBindBuffer(GL_ARRAY_BUFFER, fVtxAnimTilesShd);
-                    glBufferData(GL_ARRAY_BUFFER, Length(fAnimTilesVtx) * SizeOf(TAnimTileVertice), @fAnimTilesVtx[0].X, GL_STREAM_DRAW);
+                      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesShd);
+                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fTilesInd) * SizeOf(fTilesInd[0]), @fTilesInd[0], GL_STREAM_DRAW);
+                    end;
+    vat_TileLayer:  if Length(fTilesLayersVtx) > 0 then
+                    begin
+                      glBindBuffer(GL_ARRAY_BUFFER, fVtxTilesLayersShd);
+                      glBufferData(GL_ARRAY_BUFFER, Length(fTilesLayersVtx) * SizeOf(TTileVertice), @fTilesLayersVtx[0].X, GL_STREAM_DRAW);
 
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndAnimTilesShd);
-                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fAnimTilesInd) * SizeOf(fAnimTilesInd[0]), @fAnimTilesInd[0], GL_STREAM_DRAW);
-                  end;
+                      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndTilesLayersShd);
+                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fTilesLayersInd) * SizeOf(fTilesLayersInd[0]), @fTilesLayersInd[0], GL_STREAM_DRAW);
+                    end;
+    vat_AnimTile:   if Length(fAnimTilesVtx) > 0 then
+                    begin
+                      glBindBuffer(GL_ARRAY_BUFFER, fVtxAnimTilesShd);
+                      glBufferData(GL_ARRAY_BUFFER, Length(fAnimTilesVtx) * SizeOf(TTileVertice), @fAnimTilesVtx[0].X, GL_STREAM_DRAW);
+
+                      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fIndAnimTilesShd);
+                      glBufferData(GL_ELEMENT_ARRAY_BUFFER, Length(fAnimTilesInd) * SizeOf(fAnimTilesInd[0]), @fAnimTilesInd[0], GL_STREAM_DRAW);
+                    end;
   end;
   fLastBindVBOArrayType := aVBOArrayType;
 end;
@@ -837,6 +937,7 @@ begin
   UpdateVBO(aAnimStep, aFOW);
 
   DoTiles;
+  DoTilesLayers;
   DoOverlays;
   DoLighting;
   DoWater(aAnimStep, aFOW); //Unlit water goes above lit sand
@@ -844,41 +945,80 @@ begin
 end;
 
 
-//Render single terrain cell
-procedure TRenderTerrain.RenderTile(Index: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+procedure TRenderTerrain.DoRenderTile(aTerrainId: Word; pX,pY,Rot: Integer; aDoBindTexture: Boolean; aUseTileLookup: Boolean; 
+                                      DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
 var
   K, I: Integer;
   TexC: TUVRect; // Texture UV coordinates
 begin
   if not gTerrain.TileInMapCoords(pX,pY) then Exit;
-
+  
   K := pX;
   I := pY;
+
   if DoHighlight then
-    glColor4ub(HighlightColor AND $FF, HighlightColor SHR 8 AND $FF, HighlightColor SHR 16 AND $FF, $FF)
+    glColor4ub(HighlightColor and $FF, (HighlightColor shr 8) and $FF, (HighlightColor shr 16) and $FF, $FF)
   else
     glColor4f(1, 1, 1, 1);
+  
+  if aDoBindTexture then
+    TRender.BindTexture(gGFXData[rxTiles, aTerrainId + 1].Tex.ID);
 
-  TRender.BindTexture(gGFXData[rxTiles, Index + 1].Tex.ID);
-  TexC := fTileUVLookup[Index, Rot mod 4];
+  if aUseTileLookup then
+    TexC := fTileUVLookup[aTerrainId, Rot mod 4]
+  else
+    TexC := GetTileUV(aTerrainId, Rot mod 4);
 
   glBegin(GL_TRIANGLE_FAN);
     with gTerrain do
-    if RENDER_3D then
-    begin
-      glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-      glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-      glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-      glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-    end
-    else
-    begin
-      glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
-      glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
-      glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
-      glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
-    end;
+      if RENDER_3D then
+      begin
+        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
+        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
+      end
+      else
+      begin
+        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
+        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
+      end;
   glEnd;
+end;
+
+
+//Render single terrain cell
+procedure TRenderTerrain.RenderTile(aTerrainId: Word; pX,pY,Rot: Integer; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+begin
+  if not gTerrain.TileInMapCoords(pX,pY) then Exit;
+
+  DoRenderTile(aTerrainId, pX, pY, Rot, True, True, DoHighlight, HighlightColor);
+end;
+
+
+//Render single terrain cell
+procedure TRenderTerrain.RenderTile(pX,pY: Integer; aTileBasic: TKMTerrainTileBasic; DoHighlight: Boolean = False; HighlightColor: Cardinal = 0);
+var
+  L: Integer;
+  DoBindTexture: Boolean;
+begin
+  if not gTerrain.TileInMapCoords(pX,pY) then Exit;
+
+  DoBindTexture := not TKMResSprites.AllTilesOnOneAtlas;
+  if not DoBindTexture then
+    TRender.BindTexture(gGFXData[rxTiles, aTileBasic.BaseLayer.Terrain + 1].Tex.ID);
+
+  // Render Base Layer
+  DoRenderTile(aTileBasic.BaseLayer.Terrain, pX, pY, aTileBasic.BaseLayer.Rotation, DoBindTexture, 
+               False, DoHighlight, HighlightColor);
+
+  // Render other Layers
+  for L := 0 to aTileBasic.LayersCnt - 1 do
+    DoRenderTile(aTileBasic.Layer[L].Terrain, pX, pY, aTileBasic.Layer[L].Rotation, DoBindTexture, 
+                 False, DoHighlight, HighlightColor);
+    
 end;
 
 

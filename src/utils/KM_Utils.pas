@@ -20,7 +20,9 @@ uses
   function GetMultiplicator(aButton: TMouseButton): Word; overload;
   function GetMultiplicator(aShift: TShiftState): Word; overload;
 
-  procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean);
+  procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer); overload;
+  procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean); overload;
+  procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal); overload;
 
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
 
@@ -42,7 +44,23 @@ begin
 end;
 
 
+procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer);
+var
+  UseKaMFormat: Boolean;
+begin
+  LoadMapHeader(aStream, aMapX, aMapY, UseKaMFormat);
+end;
+
+
 procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean);
+var
+  MapDataSize: Cardinal;
+begin
+  LoadMapHeader(aStream, aMapX, aMapY, aIsKaMFormat, MapDataSize);
+end;
+
+
+procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal);
 var
   GameRevision: UnicodeString;
 begin
@@ -53,6 +71,7 @@ begin
   begin
     aStream.ReadW(GameRevision);
     aIsKaMFormat := False;
+    aStream.Read(aMapDataSize);
     aStream.Read(aMapX);
   end;
 

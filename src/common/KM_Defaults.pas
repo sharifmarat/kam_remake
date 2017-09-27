@@ -106,7 +106,8 @@ var
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR   :Boolean = False; //Skip loading and setting cursor
   AGGRESSIVE_REPLAYS    :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
-  SHOW_TERRAIN_IDS      :Boolean = False; //Show number of every tile on it
+  SHOW_TERRAIN_IDS      :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
+  SHOW_TERRAIN_KINDS    :Boolean = False; //Show terrain kind ids on every tile corner
   SHOW_TERRAIN_WIRES    :Boolean = False; //Makes terrain height visible
   SHOW_TERRAIN_PASS     :Byte = 0; //Byte(TKMTerrainPassability)
   SHOW_UNIT_ROUTES      :Boolean = False; //Draw unit routes
@@ -723,6 +724,7 @@ const
   icLightGray = $FFA0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
+  icLightCyan   = $FFFFFF80;
   icDarkCyan   = $FFB0B000;
 
   icSteelBlue = $FFA56D53;

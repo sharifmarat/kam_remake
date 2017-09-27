@@ -7,14 +7,34 @@ uses
 
 
 const
-  TILES_CNT = 287;
+  TILES_CNT = 289;
   MAX_TILE_TO_SHOW = 276;
   MAX_STATIC_TERRAIN_ID = 4997;
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
 
-  TKMTileMaskType = (mt_None, mt_2Straight, mt_2Diagonal, mt_2Corner, mt_3Straight, mt_4Square);
+  TKMTileMaskType = (mt_None,
+    mt_2Straight, // A A
+                  // B B
+
+    mt_2Diagonal, // A A
+                  // B A
+
+    mt_2Corner,   // A B
+                  // B B
+
+    mt_2Opposite, // A B
+                  // B A
+
+    mt_3Straight, // A A
+                  // C D
+
+    mt_3Opposite, // A B
+                  // D A
+
+    mt_4Square);  // A B
+                  // D C
 
   TKMTerrainKind = (
 //    tkNone,
@@ -26,9 +46,9 @@ type
     tkGrassSand1,
     tkGrassSand2,
     tkGrassSand3,
-    tkSand,
+    tkSand,       //8
     tkGrassDirt,
-    tkDirt,
+    tkDirt,       //10
     tkCobbleStone,
     tkGrassyWater,
     tkSwamp,
@@ -50,7 +70,7 @@ type
 
 const
   TER_KIND_ORDER: array[tkCustom..tkLava] of Byte =
-    (0,2,3,4,5,6,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28);
+    (0,1,2,3,4,5,6,7,9,10,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28);
 
   BASE_TERRAIN: array[TKMTerrainKind] of Word = //tkCustom..tkLava] of Word =
     (0, 0, 8, 17, 32, 26, 27, 28, 29, 34, 35, 215, 48, 40, 44, 47, 46, 45, 132, 159, 164, 245, 20, 155, 147, 151, 192, 209, 7);
@@ -58,15 +78,17 @@ const
 //  TILE_MASKS: array[mt_2Straight..mt_4Square] of Word =
 //      (279, 278, 280, 281, 282, 277);
 
-//  TILE_MASKS_LAYERS_CNT: array[mt_2Straight..mt_4Square] of Byte =
-//    (2, 2, 2, 3, 4);
+  TILE_MASKS_LAYERS_CNT: array[TKMTileMaskType] of Byte =
+    (1, 2, 2, 2, 2, 3, 3, 4);
 
-  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..3] of Integer =
-    ((286, -1, -1, -1),
-     (285, -1, -1, -1),
-     (284, -1, -1, -1),
-     (281, 282, -1, -1),
-     (277, 278, 279, 280));
+  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..2] of Integer =
+    ((286, -1, -1),
+     (285, -1, -1),
+     (284, -1, -1),
+     (287, -1, -1),
+     (284, 286, -1),
+     (284, 287, -1),
+     (284, -1, -1));
 
   TERRAIN_EQUALITY_PAIRS: array[0..2] of record
       TK1, TK2: TKMTerrainKind;
@@ -78,7 +100,7 @@ const
       );
 
 
-  TILE_CORNERS_TERRAIN_KINDS: array [0..TILES_CNT-1]
+  TILE_CORNERS_TERRAIN_KINDS: array [0..MAX_TILE_TO_SHOW-1]
                   of array[0..3] //Corners: LeftTop - RightTop - RightBottom - LeftBottom
                     of TKMTerrainKind = (
   (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass),
@@ -271,11 +293,11 @@ const
   (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
   (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
   (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
+//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
    //280
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
+//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
+//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
   );
 
 type
@@ -299,11 +321,11 @@ type
       u3: Byte; // 1/2/4/8 bitfield, seems to have no logical explanation
     end;
 
-    TilesInfo: array [1..TILES_CNT] of record
-      Walkable: Boolean;
-      Buildable: Boolean;
-      Mask: Boolean;
-    end;
+//    TilesInfo: array [1..TILES_CNT] of record
+//      Walkable: Boolean;
+//      Buildable: Boolean;
+//      Mask: Boolean;
+//    end;
 
     TileColor: TRGBArray;
 
@@ -375,16 +397,16 @@ begin
   end;
 
 
-  for I := 1 to TILES_CNT do
-  begin
-    TilesInfo[I].Walkable := PatternDAT[I].Walkable <> 0;
-    TilesInfo[I].Buildable := PatternDAT[I].Buildable <> 0;
-    TilesInfo[I].Mask := False;
-  end;
-
-  TilesInfo[274].Mask := True;
-  TilesInfo[275].Mask := True;
-  TilesInfo[276].Mask := True;
+//  for I := 1 to TILES_CNT do
+//  begin
+//    TilesInfo[I].Walkable := PatternDAT[I].Walkable <> 0;
+//    TilesInfo[I].Buildable := PatternDAT[I].Buildable <> 0;
+//    TilesInfo[I].Mask := False;
+//  end;
+//
+//  TilesInfo[274].Mask := True;
+//  TilesInfo[275].Mask := True;
+//  TilesInfo[276].Mask := True;
 
 end;
 

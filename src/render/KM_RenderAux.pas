@@ -26,14 +26,16 @@ type
     procedure Line(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Triangle(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
-    procedure TileIDs(aRect: TKMRect);
+    procedure TileTerrainIDs(aRect: TKMRect);
+    procedure TileTerrainKinds(aRect: TKMRect);
     procedure Passability(aRect: TKMRect; aPass: Byte);
     procedure RenderResizeMap(aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
     procedure Quad(pX, pY: Integer; aCol: TColor4);
     procedure SquareOnTerrain(x1, y1, x2, y2: Single; aLineColor: TColor4);
-    procedure Text(pX, pY: Integer; const aText: string; aCol: TColor4); overload;
-    procedure Text(pX, pY: Integer; const aText: string; aCol: TColor4; aInset: TKMPointF); overload;
+    procedure Text(pX, pY: Single; const aText: string; aCol: TColor4); overload;
+    procedure Text(pX, pY: Single; const aText: string; aCol: TColor4; aInset: TKMPointF; aConsiderTextLength: Boolean = True); overload;
+    procedure TextAtCorner(pX, pY: Integer; const aCorner: Byte; const aText: string; aCol: TColor4);
     procedure UnitMoves(aRect: TKMRect);
     procedure UnitPointers(pX, pY: Single; Count: Integer);
     procedure UnitRoute(NodeList: TKMPointList; Pos: Integer; aUnitType: Byte);
@@ -47,7 +49,11 @@ var
 
 implementation
 uses
-  KM_Render, KM_Terrain;
+  KM_Render, KM_Terrain, KM_Resource, KM_ResTileset;
+
+const
+  TILE_TERRAIN_LAYERS_COLORS: array [0..3] of Cardinal =
+    (icWhite, icLightCyan, icCyan, icDarkCyan);
 
 
 //Simple dot to know where it actualy is
@@ -273,18 +279,48 @@ begin
 end;
 
 
-procedure TRenderAux.TileIDs(aRect: TKMRect);
+procedure TRenderAux.TileTerrainIDs(aRect: TKMRect);
 var
-  I, K: Integer;
+  I, J, K, Cnt: Integer;
 begin
   for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
+    for J := aRect.Left to aRect.Right do
     begin
-      Text(K, I, IntToStr(gTerrain.Land[I,K].BaseLayer.Terrain), icWhite, KMPointF(0,0.2));
-      if gTerrain.Land[I,K].LayersCnt > 0 then
-        Text(K, I, IntToStr(gTerrain.Land[I,K].Layer[0].Terrain), icWhite, KMPointF(0,-0.2));
-
+      if gTerrain.Land[I,J].LayersCnt = 0 then
+        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain)+ '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation),
+             TILE_TERRAIN_LAYERS_COLORS[0])
+      else begin
+        Cnt := gTerrain.Land[I,J].LayersCnt + 1;
+        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain) + '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation),
+             TILE_TERRAIN_LAYERS_COLORS[0], KMPointF(0,-0.3));
+        for K := 0 to gTerrain.Land[I,J].LayersCnt - 1 do
+          Text(J, I, IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainKindByTerrain(gTerrain.Land[I,J].Layer[K].Terrain)])
+                     + '*' + IntToStr(gTerrain.Land[I,J].Layer[K].Rotation),
+               TILE_TERRAIN_LAYERS_COLORS[K+1], KMPointF(0,-0.3 + 0.7*(K+1)/Cnt));
+      end;
     end;
+end;
+
+
+procedure TRenderAux.TileTerrainKinds(aRect: TKMRect);
+var
+  I, J, K, L, Cnt: Integer;
+begin
+  for I := aRect.Top to aRect.Bottom do
+    for J := aRect.Left to aRect.Right do
+      for K := 0 to 3 do
+        with gTerrain.Land[I,J] do
+        begin
+          if K in BaseLayer.Corners then
+            TextAtCorner(J, I, K,
+                         IntToStr(BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]]),
+                         TILE_TERRAIN_LAYERS_COLORS[0]);
+          for L := 0 to gTerrain.Land[I,J].LayersCnt - 1 do
+            if K in gTerrain.Land[I,J].Layer[L].Corners then
+              TextAtCorner(J, I, K,
+                           IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainKindByTerrain(gTerrain.Land[I,J].Layer[L].Terrain)]),
+                           TILE_TERRAIN_LAYERS_COLORS[L+1]);
+        end;
 end;
 
 
@@ -332,18 +368,30 @@ begin
 end;
 
 
-procedure TRenderAux.Text(pX, pY: Integer; const aText: string; aCol: TColor4);
+procedure TRenderAux.Text(pX, pY: Single; const aText: string; aCol: TColor4);
 begin
   Text(pX, pY, aText, aCol, KMPOINTF_ZERO);
 end;
 
 
-procedure TRenderAux.Text(pX, pY: Integer; const aText: string; aCol: TColor4; aInset: TKMPointF);
+procedure TRenderAux.Text(pX, pY: Single; const aText: string; aCol: TColor4; aInset: TKMPointF; aConsiderTextLength: Boolean = True);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
   glColor4ubv(@aCol);
-  glRasterPos2f(pX + aInset.X - 0.5 - Length(aText) / 20, gTerrain.FlatToHeight(pX + aInset.X - 0.5, pY + aInset.Y - 0.5));
+  glRasterPos2f(pX + aInset.X - 0.5 - Byte(aConsiderTextLength)*Length(aText)/20, gTerrain.FlatToHeight(pX + aInset.X - 0.5, pY + aInset.Y - 0.5));
   glPrint(AnsiString(aText));
+end;
+
+
+procedure TRenderAux.TextAtCorner(pX, pY: Integer; const aCorner: Byte; const aText: string; aCol: TColor4);
+begin
+  case aCorner of
+    0:  Text(pX - 0.4, pY - 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
+    1:  Text(pX + 0.4, pY - 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
+    2:  Text(pX + 0.4, pY + 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
+    3:  Text(pX - 0.4, pY + 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
+    else raise Exception.Create('Wrong corner: ' + IntToStr(aCorner));
+  end;
 end;
 
 

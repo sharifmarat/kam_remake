@@ -334,7 +334,10 @@ begin
     gRenderAux.Passability(aRect, SHOW_TERRAIN_PASS);
 
   if SHOW_TERRAIN_IDS then
-    gRenderAux.TileIDs(aRect);
+    gRenderAux.TileTerrainIDs(aRect);
+
+  if SHOW_TERRAIN_KINDS then
+    gRenderAux.TileTerrainKinds(aRect);
 
   if SHOW_UNIT_MOVEMENT then
     gRenderAux.UnitMoves(aRect);
@@ -1436,28 +1439,50 @@ begin
                       // Brush size smaller than one cell
                       gRenderAux.DotOnTerrain(Round(F.X), Round(F.Y), $FF80FF80)
                     else
-                    // There are two brush types here, even and odd size
-                    if Rad mod 2 = 1 then
+                    if gGameCursor.MapEdMagicBrush then
                     begin
-                      // First comes odd sizes 1,3,5..
-                      Rad := Rad div 2;
-                      for I := -Rad to Rad do
-                      for K := -Rad to Rad do
-                      // Rounding corners in a nice way
-                      if (gGameCursor.MapEdShape = hsSquare)
-                      or (Sqr(I) + Sqr(K) < Sqr(Rad+0.5)) then
-                        RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
-                    end
-                    else
-                    begin
-                      // Even sizes 2,4,6..
-                      Rad := Rad div 2;
-                      for I := -Rad to Rad - 1 do
-                      for K := -Rad to Rad - 1 do
-                      // Rounding corners in a nice way
-                      if (gGameCursor.MapEdShape = hsSquare)
-                      or (Sqr(I+0.5)+Sqr(K+0.5) < Sqr(Rad)) then
-                        RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
+                      Rad := gGameCursor.MapEdSize;
+                      Slope := gGameCursor.MapEdSlope;
+                      for I := Max((Round(F.Y) - Rad), 1) to Min((Round(F.Y) + Rad), gTerrain.MapY -1) do
+                      for K := Max((Round(F.X) - Rad), 1) to Min((Round(F.X) + Rad), gTerrain.MapX - 1) do
+                      begin
+                        case gGameCursor.MapEdShape of
+                          hsCircle: Tmp := 1 - GetLength(I-Round(F.Y), K-Round(F.X)) / Rad;
+                          hsSquare: Tmp := 1 - Math.max(abs(I-Round(F.Y)), abs(K-Round(F.X))) / Rad;
+                          else                 Tmp := 0;
+                        end;
+                        Tmp := Power(Abs(Tmp), (Slope + 1) / 6) * Sign(Tmp); // Modify slopes curve
+                        Tmp := EnsureRange(Tmp * 2.5, 0, 1); // *2.5 makes dots more visible
+                        gRenderAux.DotOnTerrain(K, I, $FF or (Round(Tmp*255) shl 24));
+                      end;
+                      case gGameCursor.MapEdShape of
+                        hsCircle: gRenderAux.CircleOnTerrain(round(F.X), round(F.Y), Rad, $00000000,  $FFFFFFFF);
+                        hsSquare: gRenderAux.SquareOnTerrain(round(F.X) - Rad, round(F.Y) - Rad, round(F.X + Rad), round(F.Y) + Rad, $FFFFFFFF);
+                      end;
+                    end else begin
+                      // There are two brush types here, even and odd size
+                      if Rad mod 2 = 1 then
+                      begin
+                        // First comes odd sizes 1,3,5..
+                        Rad := Rad div 2;
+                        for I := -Rad to Rad do
+                        for K := -Rad to Rad do
+                        // Rounding corners in a nice way
+                        if (gGameCursor.MapEdShape = hsSquare)
+                        or (Sqr(I) + Sqr(K) < Sqr(Rad+0.5)) then
+                          RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
+                      end
+                      else
+                      begin
+                        // Even sizes 2,4,6..
+                        Rad := Rad div 2;
+                        for I := -Rad to Rad - 1 do
+                        for K := -Rad to Rad - 1 do
+                        // Rounding corners in a nice way
+                        if (gGameCursor.MapEdShape = hsSquare)
+                        or (Sqr(I+0.5)+Sqr(K+0.5) < Sqr(Rad)) then
+                          RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
+                      end;
                     end;
                   end;
     cmTiles:      if gGameCursor.MapEdDir in [0..3] then

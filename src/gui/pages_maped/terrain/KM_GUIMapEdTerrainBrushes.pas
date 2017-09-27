@@ -61,7 +61,7 @@ begin
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fnt_Outline, taCenter);
   BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, 32);
-  BrushSize.Position := 4;
+  BrushSize.Position := 8;//4;
   BrushSize.OnChange := BrushChange;
   BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 28, 24, 24, 592);
   BrushCircle.Hint := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_CIRCLE];
@@ -85,6 +85,7 @@ begin
   BrushRandom.OnClick := BrushChange;
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 0, 380, 34, 34, 4, rxTiles);
+  MagicBrush.Hint := 'Magic brush'; //Todo translate
   MagicBrush.OnClick := BrushChange;
 end;
 

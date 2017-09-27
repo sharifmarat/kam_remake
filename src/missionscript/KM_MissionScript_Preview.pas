@@ -47,6 +47,7 @@ type
 implementation
 uses
   Classes, SysUtils, Math,
+  KM_Terrain,
   KM_Resource, KM_ResHouses, KM_ResUnits,
   KM_CommonClasses, KM_CommonUtils, KM_Utils;
 
@@ -70,7 +71,7 @@ var
   I: Integer;
   S: TKMemoryStream;
   UseKaMFormat: Boolean;
-  TerrainB: Byte;
+  TileBasic: TKMTerrainTileBasic;
 begin
   Result := False;
 
@@ -85,25 +86,16 @@ begin
     LoadMapHeader(S, fMapX, fMapY, UseKaMFormat);
 
     SetLength(fMapPreview, fMapX * fMapY);
-    for I := 0 to fMapX * fMapY - 1 do
-    begin
-      if UseKaMFormat then
+     for I := 0 to fMapX * fMapY - 1 do
       begin
-        S.Read(TerrainB);
-        fMapPreview[I].TileID := TerrainB;
-        S.Seek(1, soFromCurrent);
-      end else
-        S.Read(fMapPreview[I].TileID);
-      S.Read(fMapPreview[I].TileHeight); //Height (for lighting)
-      if UseKaMFormat then
-        S.Seek(20, soFromCurrent)
-      else
-        S.Seek(2, soFromCurrent); // skip rotation and object
+        TKMTerrain.ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        fMapPreview[I].TileID := TileBasic.BaseLayer.Terrain;
+        fMapPreview[I].TileHeight := TileBasic.Height;
 
-      //Fill in blanks
-      fMapPreview[I].TileOwner := PLAYER_NONE;
-      fMapPreview[I].Revealed := False;
-    end;
+        //Fill in blanks
+        fMapPreview[I].TileOwner := PLAYER_NONE;
+        fMapPreview[I].Revealed := False;
+      end;
   finally
     S.Free;
   end;

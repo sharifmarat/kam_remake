@@ -4,7 +4,8 @@ interface
 uses
   Classes, KromUtils, Math, SysUtils, Graphics,
   KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils, KM_ResTileset,
-  KM_ResHouses, KM_ResWares, KM_TerrainFinder, KM_ResMapElements;
+  KM_ResHouses, KM_ResWares, KM_TerrainFinder, KM_ResMapElements,
+  KM_CommonTypes;
 
 
 type
@@ -39,14 +40,22 @@ type
   TKMTerrainLayer = record
     Terrain: Word;
     Rotation: Byte;
-    Corners: set of Byte; //Corners, that this layer 'owns' (corners are distributed between all layers, so any layer can own 1-4 corners)
+    Corners: TKMByteSet; //Corners, that this layer 'owns' (corners are distributed between all layers, so any layer can own 1-4 corners)
+  end;
+
+  TKMTerrainTileBasic = record
+    BaseLayer: TKMTerrainLayer;
+    LayersCnt: Byte;
+    Layer: array [0..2] of TKMTerrainLayer;
+    Height: Byte;
+    Obj: Byte;
   end;
 
   TKMTerrainTile = record
     BaseLayer: TKMTerrainLayer;
     LayersCnt: Byte;
     Layer: array [0..2] of TKMTerrainLayer;
-    StoneLayer: TKMTerrainLayer;
+//    StoneLayer: TKMTerrainLayer;
     Height: Byte;
     Obj: Byte;
 
@@ -80,6 +89,8 @@ type
     FenceSide: Byte; //Bitfield whether the fences are enabled
   end;
 
+  TKMTerrainTileArray = array of TKMTerrainTile;
+
   {Class to store all terrain data, aswell terrain routines}
   TKMTerrain = class
   private
@@ -91,6 +102,14 @@ type
 
     fTileset: TKMResTileset;
     fFinder: TKMTerrainFinder;
+
+    fTempLandCnt: Integer;
+    fTempLand: array of record
+      X,Y: SmallInt;
+      Tile: TKMTerrainTile;
+    end;
+
+//    fLand: array [1..MAX_MAP_SIZE, 1..MAX_MAP_SIZE] of TKMTerrainTile;
 
     fBoundsWC: TKMRect; //WC rebuild bounds used in FlattenTerrain (put outside to fight with recursion SO error in FlattenTerrain EnsureWalkable)
 
@@ -112,9 +131,11 @@ type
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
+
+//    function GetLand(aY,aX: Integer): TKMTerrainTile;
+//    procedure SetLand(aY,aX: Integer; aTile: TKMTerrainTile);
   public
     Land: array [1..MAX_MAP_SIZE, 1..MAX_MAP_SIZE] of TKMTerrainTile;
-
     FallingTrees: TKMPointTagList;
 
     constructor Create;
@@ -124,6 +145,7 @@ type
     procedure SaveToFile(aFile: UnicodeString); overload;
     procedure SaveToFile(aFile: UnicodeString; aInsetRect: TKMRect); overload;
 
+//    property Land[aY,aX: Integer]: TKMTerrainTile read GetLand;
     property MapX: Word read fMapX;
     property MapY: Word read fMapY;
     property MapRect: TKMRect read fMapRect;
@@ -258,6 +280,10 @@ type
     procedure SyncLoad;
 
     procedure UpdateState;
+
+    class procedure WriteTileToStream(var S: TKMemoryStream; aTileBasic: TKMTerrainTileBasic); overload;
+    class procedure WriteTileToStream(var S: TKMemoryStream; aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
+    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
   end;
 
 
@@ -269,10 +295,12 @@ var
 
 implementation
 uses
-  KM_CommonTypes, KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
+  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_Units_Warrior, KM_TerrainPainter,
   KM_ResUnits, KM_Hand, KM_Game, KM_Utils;
 
+const
+  EMPTY_CORNER: Byte = 255;
 
 { TKMTerrain }
 constructor TKMTerrain.Create;
@@ -302,33 +330,33 @@ begin
   fMapRect := KMRect(1, 1, fMapX, fMapY);
 
   for I := 1 to fMapY do
-  for K := 1 to fMapX do
-  with Land[I, K] do
-  begin
-    //Apply some random tiles for artisticity
-    if KaMRandom(5) = 0 then
-      BaseLayer.Terrain      := RandomTiling[tkGrass, Random(RandomTiling[tkGrass, 0]) + 1]
-    else
-      BaseLayer.Terrain      := 0;
-    Height       := 30 + KaMRandom(7);  //variation in Height
-    LayersCnt := 0;
-    BaseLayer.Corners := [0,1,2,3];
-    BaseLayer.Rotation     := KaMRandom(4);  //Make it random
-    Obj          := 255;             //none
-    //Uncomment to enable random trees, but we don't want that for the map editor by default
-    //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
-    TileOverlay  := to_None;
-    TileLock     := tlNone;
-    CornOrWine   := 0;
-    Passability  := []; //Gets recalculated later
-    TileOwner    := -1;
-    IsUnit       := nil;
-    IsVertexUnit := vu_None;
-    FieldAge     := 0;
-    TreeAge      := IfThen(ObjectIsChopableTree(KMPoint(K, I), caAgeFull), TREE_AGE_FULL, 0);
-    Fence        := fncNone;
-    FenceSide    := 0;
-  end;
+    for K := 1 to fMapX do
+      with Land[I, K] do
+      begin
+        //Apply some random tiles for artisticity
+    //    if KaMRandom(5) = 0 then
+    //      BaseLayer.Terrain := RandomTiling[tkGrass, Random(RandomTiling[tkGrass, 0]) + 1]
+    //    else
+          BaseLayer.Terrain := 0;
+        LayersCnt := 0;
+        BaseLayer.Corners := [0,1,2,3];
+        Height       := 30;// + KaMRandom(7);  //variation in Height
+        BaseLayer.Rotation     := KaMRandom(4);  //Make it random
+        Obj          := 255;             //none
+        //Uncomment to enable random trees, but we don't want that for the map editor by default
+        //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
+        TileOverlay  := to_None;
+        TileLock     := tlNone;
+        CornOrWine   := 0;
+        Passability  := []; //Gets recalculated later
+        TileOwner    := -1;
+        IsUnit       := nil;
+        IsVertexUnit := vu_None;
+        FieldAge     := 0;
+        TreeAge      := IfThen(ObjectIsChopableTree(KMPoint(K, I), caAgeFull), TREE_AGE_FULL, 0);
+        Fence        := fncNone;
+        FenceSide    := 0;
+      end;
 
   fFinder := TKMTerrainFinder.Create;
   UpdateLighting(MapRect);
@@ -341,12 +369,11 @@ end;
 
 procedure TKMTerrain.LoadFromFile(FileName: UnicodeString; aMapEditor: Boolean);
 var
-  I, K: Integer;
+  I, J, L: Integer;
   S: TKMemoryStream;
   NewX, NewY: Integer;
-  Rot: Byte;
   UseKaMFormat: Boolean;
-  TerrainB: Byte;
+  TileBasic: TKMTerrainTileBasic;
 begin
   fMapX := 0;
   fMapY := 0;
@@ -365,48 +392,40 @@ begin
     LoadMapHeader(S, NewX, NewY, UseKaMFormat);
     fMapX := NewX;
     fMapY := NewY;
+
     fMapRect := KMRect(1, 1, fMapX, fMapY);
 
-    for I := 1 to fMapY do for K := 1 to fMapX do
-    begin
-      Land[I,K].TileOverlay  := to_None;
-      Land[I,K].TileLock     := tlNone;
-      Land[I,K].CornOrWine   := 0;
-      Land[I,K].Passability  := []; //Gets recalculated later
-      Land[I,K].TileOwner    := PLAYER_NONE;
-      Land[I,K].IsUnit       := nil;
-      Land[I,K].IsVertexUnit := vu_None;
-      Land[I,K].FieldAge     := 0;
-      Land[I,K].TreeAge      := 0;
-      Land[I,K].Fence        := fncNone;
-      Land[I,K].FenceSide    := 0;
-
-      if UseKaMFormat then
+    for I := 1 to fMapY do
+      for J := 1 to fMapX do
       begin
-        S.Read(TerrainB); //1
-        Land[I,K].BaseLayer.Terrain := TerrainB;
-        S.Seek(1, soFromCurrent);
-      end else
-        S.Read(Land[I,K].BaseLayer.Terrain);
+        Land[I,J].TileOverlay  := to_None;
+        Land[I,J].TileLock     := tlNone;
+        Land[I,J].CornOrWine   := 0;
+        Land[I,J].Passability  := []; //Gets recalculated later
+        Land[I,J].TileOwner    := PLAYER_NONE;
+        Land[I,J].IsUnit       := nil;
+        Land[I,J].IsVertexUnit := vu_None;
+        Land[I,J].FieldAge     := 0;
+        Land[I,J].TreeAge      := 0;
+        Land[I,J].Fence        := fncNone;
+        Land[I,J].FenceSide    := 0;
 
-      S.Read(Land[I,K].Height); //3
-      S.Read(Rot); //4
-      Land[I,K].BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
+        ReadTileFromStream(S, TileBasic, UseKaMFormat);
 
-      if UseKaMFormat then
-        S.Seek(1, soFromCurrent);
+        Land[I,J].BaseLayer := TileBasic.BaseLayer;
+        Land[I,J].Height := TileBasic.Height;
+        Land[I,J].Obj := TileBasic.Obj;
+        Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
-      S.Read(Land[I,K].Obj); //6
+        for L := 0 to TileBasic.LayersCnt - 1 do
+          Land[I,J].Layer[L] := TileBasic.Layer[L];
 
-      if UseKaMFormat then
-        S.Seek(17, soFromCurrent);
-
-      if ObjectIsChopableTree(KMPoint(K,I), caAge1) then Land[I,K].TreeAge := 1;
-      if ObjectIsChopableTree(KMPoint(K,I), caAge2) then Land[I,K].TreeAge := TREE_AGE_1;
-      if ObjectIsChopableTree(KMPoint(K,I), caAge3) then Land[I,K].TreeAge := TREE_AGE_2;
-      if ObjectIsChopableTree(KMPoint(K,I), caAgeFull) then Land[I,K].TreeAge := TREE_AGE_FULL;
-      //Everything else is default
-    end;
+        if ObjectIsChopableTree(KMPoint(J,I), caAge1) then Land[I,J].TreeAge := 1;
+        if ObjectIsChopableTree(KMPoint(J,I), caAge2) then Land[I,J].TreeAge := TREE_AGE_1;
+        if ObjectIsChopableTree(KMPoint(J,I), caAge3) then Land[I,J].TreeAge := TREE_AGE_2;
+        if ObjectIsChopableTree(KMPoint(J,I), caAgeFull) then Land[I,J].TreeAge := TREE_AGE_FULL;
+        //Everything else is default
+      end;
   finally
     S.Free;
   end;
@@ -429,75 +448,40 @@ end;
 //Save (export) map in KaM .map format with additional tile information on the end?
 procedure TKMTerrain.SaveToFile(aFile: UnicodeString; aInsetRect: TKMRect);
 var
-  USE_KAM_FORMAT: Boolean;
-  c0: Cardinal;
-  cF: Cardinal;
-  b205: Byte;
+  MapDataSize: Cardinal;
 
-  procedure WriteTile(var S: TKMemoryStream; X, Y, aTerrain: Word; aHeight, aRotation, aObj: Byte; aLight: Single; aSizeX, aSizeY: Word);
-  begin
-    if USE_KAM_FORMAT then
-      S.Write(Byte(aTerrain))
-    else
-      S.Write(aTerrain);
-
-    if USE_KAM_FORMAT then
-      S.Write(Byte(Round((aLight+1)*16))); //apply Light (cast to Byte is obligatory due to map file format)
-
-    S.Write(aHeight);
-
-    //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
-    S.Write(aRotation);
-
-    if USE_KAM_FORMAT then
-      S.Write(c0, 1); //unknown
-
-    S.Write(aObj);
-
-    if USE_KAM_FORMAT then
-    begin
-      S.Write(cF, 1); //Passability?
-
-      S.Write(cF, 4); //unknown
-      S.Write(c0, 3); //unknown
-      //Border
-      if (X = aSizeX) or (Y = aSizeY) then
-        S.Write(b205) //Bottom/right = 205
-      else
-      if (X = 1) or (Y = 1) then
-        S.Write(c0, 1) //Top/left = 0
-      else
-        S.Write(cF, 1); //Rest of the screen = 255
-
-      S.Write(cF, 1); //unknown - always 255
-      S.Write(b205, 1); //unknown - always 205
-      S.Write(c0, 2); //unknown - always 0
-      S.Write(c0, 4); //unknown - always 0
-    end;
-  end;
-
-  procedure SetNewLand(var S: TKMemoryStream; X, Y, aFromX, aFromY: Word; aSizeX, aSizeY: Word; aNewGeneratedTile: Boolean);
+  procedure SetNewLand(var S: TKMemoryStream; aFromX, aFromY: Word; aNewGeneratedTile: Boolean);
   var
-    Terrain: Word;
-    Rot, Height, Obj: Byte;
+    L: Integer;
+    TileBasic: TKMTerrainTileBasic;
   begin
     // new appended terrain
     if aNewGeneratedTile then
     begin
-      Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
+      TileBasic.BaseLayer.Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
       //Apply some random tiles for artisticity
-      Height := EnsureRange(Land[aFromY,aFromX].Height + KaMRandom(7), 0, 100);  //variation in Height
-      Rot := Land[aFromY,aFromX].BaseLayer.Rotation;
-      Obj := 255; // No object
+      TileBasic.Height := EnsureRange(Land[aFromY,aFromX].Height + KaMRandom(7), 0, 100);  //variation in Height
+      TileBasic.BaseLayer.Rotation := Land[aFromY,aFromX].BaseLayer.Rotation;
+      TileBasic.Obj := 255; // No object
+      TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
     end
     else
     begin
-      Rot := Land[aFromY,aFromX].BaseLayer.Rotation;
-      Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
-      Height := Land[aFromY,aFromX].Height;
-      Obj := Land[aFromY,aFromX].Obj;
+      TileBasic.BaseLayer := Land[aFromY,aFromX].BaseLayer;
+      TileBasic.Height := Land[aFromY,aFromX].Height;
+      TileBasic.Obj := Land[aFromY,aFromX].Obj;
+      TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
+      for L := 0 to 2 do
+        TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
-    WriteTile(S, X, Y, Terrain, Height, Rot, Obj, Land[aFromY,aFromX].Light, aSizeX, aSizeY);
+    WriteTileToStream(S, TileBasic, MapDataSize);
+  end;
+
+  procedure WriteFileHeader(S: TKMemoryStream);
+  begin
+    S.Write(Integer(0));     //Indicates this map has not standart KaM format, Can use 0, as we can't have maps with 0 width
+    S.WriteW(GAME_REVISION); //Write KaM version, in case we will change format in future
+    S.Write(MapDataSize);
   end;
 
 var
@@ -506,28 +490,13 @@ var
   NewGeneratedTileI, NewGeneratedTileK: Boolean;
   I, K, IFrom, KFrom: Integer;
   SizeX, SizeY: Integer;
-  ResHead: packed record
-                    x1: Word;
-                    Allocated, Qty1, Qty2, x5, Len17: Integer;
-                  end;
-  Res: array[1..MAX_MAP_SIZE*2] of
-    packed record
-      X1, Y1, X2, Y2: Integer;
-      Typ: Byte;
-    end;
 begin
   Assert(fMapEditor, 'Can save terrain to file only in MapEd');
   ForceDirectories(ExtractFilePath(aFile));
 
-  USE_KAM_FORMAT := False;
-
-  c0 := 0;
-  cF := $FFFFFFFF;
-  b205 := 205;
-
+  MapDataSize := 0;
   S := TKMemoryStream.Create;
-  S.Write(Integer(0));     //Indicates this map has not standart KaM format, Can use 0, as we can't have maps with 0 width
-  S.WriteW(GAME_REVISION); //Write KaM version, in case we will change format in future
+  WriteFileHeader(S);
   try
     //Dimensions must be stored as 4 byte integers
     SizeX := fMapX + aInsetRect.Left + aInsetRect.Right;
@@ -562,35 +531,13 @@ begin
           KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1);
           NewGeneratedTileK := not InRange(K, MapInnerRect.Left, MapInnerRect.Right);
         end;
-        SetNewLand(S, K, I, KFrom, IFrom, SizeX, SizeY, NewGeneratedTileI or NewGeneratedTileK);
+        SetNewLand(S, KFrom, IFrom, NewGeneratedTileI or NewGeneratedTileK);
       end;
     end;
 
-    if USE_KAM_FORMAT then
-    begin
-      //Resource footer: Temporary hack to make the maps compatible with KaM. If we learn how resource footers
-      //are formatted we can implement it, but for now it appears to work fine like this.
-      ResHead.x1 := 0;
-      ResHead.Allocated := SizeX + SizeY;
-      ResHead.Qty1 := 0;
-      ResHead.Qty2 := ResHead.Qty1;
-      if ResHead.Qty1 > 0 then
-        ResHead.x5:=ResHead.Qty1 - 1
-      else
-        ResHead.x5 := 0;
-      ResHead.Len17 := 17;
-
-      for I := 1 to ResHead.Allocated do
-      begin
-        Res[I].X1 := -842150451; Res[I].Y1 := -842150451;
-        Res[I].X2 := -842150451; Res[I].Y2 := -842150451;
-        Res[I].Typ := 255;
-      end;
-
-      S.Write(ResHead, SizeOf(ResHead));
-      for I := 1 to ResHead.Allocated do
-        S.Write(Res[I], SizeOf(Res[I]));
-    end;
+    //Update header info with MapDataSize
+    S.Seek(0, soFromBeginning);
+    WriteFileHeader(S);
 
     S.SaveToFile(aFile);
   finally
@@ -3435,7 +3382,9 @@ end;
 
 
 procedure TKMTerrain.Save(SaveStream: TKMemoryStream);
-var I,K: Integer;
+var
+  I,K,L: Integer;
+  TileBasic: TKMTerrainTileBasic;
 begin
   Assert(not fMapEditor, 'MapEd mode is not intended to be saved into savegame');
 
@@ -3447,29 +3396,37 @@ begin
 
   FallingTrees.SaveToStream(SaveStream);
 
-  for I:=1 to fMapY do for K:=1 to fMapX do
-  begin
-    //Only save fields that cannot be recalculated after loading
-    SaveStream.Write(Land[I,K].BaseLayer.Terrain);
-    SaveStream.Write(Land[I,K].Height);
-    SaveStream.Write(Land[I,K].BaseLayer.Rotation);
-    SaveStream.Write(Land[I,K].Obj);
-    SaveStream.Write(Land[I,K].TreeAge);
-    SaveStream.Write(Land[I,K].FieldAge);
-    SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
-    SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
-    SaveStream.Write(Land[I,K].TileOwner, SizeOf(Land[I,K].TileOwner));
-    if Land[I,K].IsUnit <> nil then
-      SaveStream.Write(TKMUnit(Land[I,K].IsUnit).UID) //Store ID, then substitute it with reference on SyncLoad
-    else
-      SaveStream.Write(Integer(0));
-    SaveStream.Write(Land[I,K].IsVertexUnit, SizeOf(Land[I,K].IsVertexUnit));
-  end;
+  for I := 1 to fMapY do
+    for K := 1 to fMapX do
+    begin
+      //Only save fields that cannot be recalculated after loading
+      TileBasic.BaseLayer := Land[I,K].BaseLayer;
+      TileBasic.Height := Land[I,K].Height;
+      TileBasic.Obj := Land[I,K].Obj;
+      TileBasic.LayersCnt := Land[I,K].LayersCnt;
+      for L := 0 to 2 do
+        TileBasic.Layer[L] := Land[I,K].Layer[L];
+
+      WriteTileToStream(SaveStream, TileBasic);
+
+      SaveStream.Write(Land[I,K].TreeAge);
+      SaveStream.Write(Land[I,K].FieldAge);
+      SaveStream.Write(Land[I,K].TileLock, SizeOf(Land[I,K].TileLock));
+      SaveStream.Write(Land[I,K].TileOverlay, SizeOf(Land[I,K].TileOverlay));
+      SaveStream.Write(Land[I,K].TileOwner, SizeOf(Land[I,K].TileOwner));
+      if Land[I,K].IsUnit <> nil then
+        SaveStream.Write(TKMUnit(Land[I,K].IsUnit).UID) //Store ID, then substitute it with reference on SyncLoad
+      else
+        SaveStream.Write(Integer(0));
+      SaveStream.Write(Land[I,K].IsVertexUnit, SizeOf(Land[I,K].IsVertexUnit));
+    end;
 end;
 
 
 procedure TKMTerrain.Load(LoadStream: TKMemoryStream);
-var I,K: Integer;
+var
+  I,J,L: Integer;
+  TileBasic: TKMTerrainTileBasic;
 begin
   LoadStream.ReadAssert('Terrain');
   LoadStream.Read(fMapX);
@@ -3479,23 +3436,30 @@ begin
 
   FallingTrees.LoadFromStream(LoadStream);
 
-  for I:=1 to fMapY do for K:=1 to fMapX do
-  begin
-    LoadStream.Read(Land[I,K].BaseLayer.Terrain);
-    LoadStream.Read(Land[I,K].Height);
-    LoadStream.Read(Land[I,K].BaseLayer.Rotation);
-    LoadStream.Read(Land[I,K].Obj);
-    LoadStream.Read(Land[I,K].TreeAge);
-    LoadStream.Read(Land[I,K].FieldAge);
-    LoadStream.Read(Land[I,K].TileLock,SizeOf(Land[I,K].TileLock));
-    LoadStream.Read(Land[I,K].TileOverlay,SizeOf(Land[I,K].TileOverlay));
-    LoadStream.Read(Land[I,K].TileOwner,SizeOf(Land[I,K].TileOwner));
-    LoadStream.Read(Land[I,K].IsUnit, 4);
-    LoadStream.Read(Land[I,K].IsVertexUnit,SizeOf(Land[I,K].IsVertexUnit));
-  end;
+  for I := 1 to fMapY do
+    for J := 1 to fMapX do
+    begin
+      ReadTileFromStream(LoadStream, TileBasic);
+      Land[I,J].BaseLayer := TileBasic.BaseLayer;
+      Land[I,J].Height := TileBasic.Height;
+      Land[I,J].Obj := TileBasic.Obj;
+      Land[I,J].LayersCnt := TileBasic.LayersCnt;
 
-  for I:=1 to fMapY do for K:=1 to fMapX do
-    UpdateFences(KMPoint(K,I), False);
+      for L := 0 to 2 do
+        Land[I,J].Layer[L] := TileBasic.Layer[L];
+
+      LoadStream.Read(Land[I,J].TreeAge);
+      LoadStream.Read(Land[I,J].FieldAge);
+      LoadStream.Read(Land[I,J].TileLock,SizeOf(Land[I,J].TileLock));
+      LoadStream.Read(Land[I,J].TileOverlay,SizeOf(Land[I,J].TileOverlay));
+      LoadStream.Read(Land[I,J].TileOwner,SizeOf(Land[I,J].TileOwner));
+      LoadStream.Read(Land[I,J].IsUnit, 4);
+      LoadStream.Read(Land[I,J].IsVertexUnit,SizeOf(Land[I,J].IsVertexUnit));
+    end;
+
+  for I := 1 to fMapY do
+    for J := 1 to fMapX do
+      UpdateFences(KMPoint(J,I), False);
 
   fFinder := TKMTerrainFinder.Create;
 
@@ -3636,5 +3600,132 @@ begin
   end;
 end;
 
+
+class procedure TKMTerrain.WriteTileToStream(var S: TKMemoryStream; aTileBasic: TKMTerrainTileBasic);
+var
+  MapDataSize: Cardinal;
+begin
+  WriteTileToStream(S, aTileBasic, MapDataSize);
+end;
+
+
+class procedure TKMTerrain.WriteTileToStream(var S: TKMemoryStream; aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal);
+
+  function PackLayersCorners(aTileBasic: TKMTerrainTileBasic): Byte;
+  var
+    I, L: Integer;
+    LayerNumber: Byte;
+  begin
+    Result := 0;
+    //Layers corners are packed into 1 byte.
+    //It contains info which layer 'owns' each corner
+    //f.e. aCorners[0] contains layer number, which 'own' 0 corner.
+    //0-layer means BaseLayer
+    LayerNumber := 0;
+    for I := 3 downto 0 do  // go from 3 to 0, as we pack 3 corner to the most left
+    begin
+      if I in aTileBasic.BaseLayer.Corners then
+        LayerNumber := 0
+      else
+        for L := 0 to 2 do
+          if I in aTileBasic.Layer[L].Corners then
+          begin
+            LayerNumber := L + 1;
+            Break;
+          end;
+      if I < 3 then //do not shl for first corner
+        Result := Result shl 2;
+      Result := Result or LayerNumber;
+    end;
+  end;
+
+var
+  L: Integer;
+begin
+  S.Write(aTileBasic.BaseLayer.Terrain);
+  //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
+  S.Write(aTileBasic.BaseLayer.Rotation);
+  S.Write(aTileBasic.Height);
+  S.Write(aTileBasic.Obj);
+  S.Write(aTileBasic.LayersCnt);
+  Inc(aMapDataSize, 6); // obligatory 6 bytes per tile
+  if aTileBasic.LayersCnt > 0 then
+  begin
+    S.Write(PackLayersCorners(aTileBasic));
+    Inc(aMapDataSize);
+    for L := 0 to aTileBasic.LayersCnt - 1 do
+    begin
+      S.Write(aTileBasic.Layer[L].Terrain);
+      S.Write(aTileBasic.Layer[L].Rotation);
+      Inc(aMapDataSize, 3); // Terrain (2 bytes) + Rotation (1 byte)
+    end;
+  end;
+end;
+
+
+class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+var
+  I: Integer;
+  TerrainB, Rot, Corners: Byte;
+  LayersCorners: array[0..3] of Byte;
+begin
+  if aUseKaMFormat then
+  begin
+    aStream.Read(TerrainB);           //1
+    aTileBasic.BaseLayer.Terrain := TerrainB;
+    aStream.Seek(1, soFromCurrent);
+    aStream.Read(aTileBasic.Height);  //3
+    aStream.Read(Rot);                //4
+    aTileBasic.BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
+    aStream.Seek(1, soFromCurrent);
+    aStream.Read(aTileBasic.Obj);     //6
+    aTileBasic.BaseLayer.Corners := [0,1,2,3];
+    aTileBasic.LayersCnt := 0;
+  end else begin
+    aStream.Read(aTileBasic.BaseLayer.Terrain); //2
+    aStream.Read(Rot);                          //3
+    aTileBasic.BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
+    aStream.Read(aTileBasic.Height);            //4
+    aStream.Read(aTileBasic.Obj);               //5
+
+    // Load all layers info
+    // First get layers count
+    aStream.Read(aTileBasic.LayersCnt);         //6
+    if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
+      aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
+    else begin
+      // if there are some layers, then load base layer corners first
+      aStream.Read(Corners);
+
+      //Layers corners are packed into 1 byte.
+      //It contains info which layer 'owns' each corner
+      //f.e. aCorners[0] contains layer number, which 'own' 0 corner.
+      //0-layer means BaseLayer
+      LayersCorners[0] := Corners and $3;
+      LayersCorners[1] := (Corners shr 2) and $3;
+      LayersCorners[2] := (Corners shr 4) and $3;
+      LayersCorners[3] := (Corners shr 6) and $3;
+
+      aTileBasic.BaseLayer.Corners := [];
+      for I := 0 to aTileBasic.LayersCnt - 1 do
+      begin
+        aStream.Read(aTileBasic.Layer[I].Terrain);
+        aStream.Read(aTileBasic.Layer[I].Rotation);
+        aTileBasic.Layer[I].Corners := [];
+      end;
+
+      for I := 0 to 3 do
+      begin
+        case LayersCorners[I] of
+          0:    Include(aTileBasic.BaseLayer.Corners, I);
+          else  Include(aTileBasic.Layer[LayersCorners[I]-1].Corners, I);
+        end;
+      end;
+    end;
+  end;
+
+  if aUseKaMFormat then
+    aStream.Seek(17, soFromCurrent);
+end;
 
 end.

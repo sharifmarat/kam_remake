@@ -27,7 +27,7 @@ implementation
 uses
   SysUtils, Math,
   KM_Resource,
-  KM_CommonClasses, KM_Defaults;
+  KM_CommonClasses, KM_Defaults, KM_Utils;
 
 
 { TMissionParserInfo }
@@ -116,32 +116,30 @@ end;
 //Acquire essential terrain details
 function TMissionParserInfo.LoadMapInfo(const aFileName: string): Boolean;
 var
-  F: TKMemoryStream;
+  S: TKMemoryStream;
   newX, newY: Integer;
-  GameVersion: UnicodeString;
+  ErrorStr: UnicodeString;
 begin
   Result := False;
   if not FileExists(aFileName) then Exit;
 
-  F := TKMemoryStream.Create;
+  ErrorStr := '';
+  S := TKMemoryStream.Create;
   try
-    F.LoadFromFile(aFileName);
-    F.Read(newX);
-
-    if newX = 0 then //Means we have not standart KaM format map, but our own KaM_Remake format
-    begin
-      F.ReadW(GameVersion);
-      F.Read(newX);
+    S.LoadFromFile(aFileName);
+    try
+      LoadMapHeader(S, newX, newY);
+    except
+      on E: Exception do
+        ErrorStr := E.Message;
     end;
-
-    F.Read(newY);
   finally
-    F.Free;
+    S.Free;
   end;
 
-  if not InRange(NewX, 1, MAX_MAP_SIZE) or not InRange(NewY, 1, MAX_MAP_SIZE) then
+  if ErrorStr <> '' then
   begin
-    AddError(Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [NewX, NewY]), True);
+    AddError(ErrorStr, True);
     Exit;
   end;
 

@@ -6,11 +6,13 @@ uses
   KM_Defaults;
 
 type
+  TKMByteSet = set of Byte;
+
   TBooleanArray = array of Boolean;
   TBoolean2Array = array of array of Boolean;
   TKMByteArray = array of Byte;
   TKMByte2Array = array of array of Byte;
-  TKMByteSetArray = array of set of Byte;
+  TKMByteSetArray = array of TKMByteSet;
   PKMByte2Array = ^TKMByte2Array;
   TKMWordArray = array of Word;
   TKMWord2Array = array of array of Word;
@@ -26,6 +28,8 @@ type
   TRGBArray = array of record R,G,B: Byte end;
   TKMStaticByteArray = array [0..MaxInt - 1] of Byte;
   PKMStaticByteArray = ^TKMStaticByteArray;
+
+
 
   TEvent = procedure of object;
   TPointEvent = procedure (Sender: TObject; const X,Y: Integer) of object;
