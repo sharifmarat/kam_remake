@@ -133,9 +133,9 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure MakeNewMap(aWidth, aHeight: Integer; aMapEditor: Boolean);
-    procedure LoadFromFile(FileName: UnicodeString; aMapEditor: Boolean);
-    procedure SaveToFile(aFile: UnicodeString); overload;
-    procedure SaveToFile(aFile: UnicodeString; const aInsetRect: TKMRect); overload;
+    procedure LoadFromFile(const FileName: UnicodeString; aMapEditor: Boolean);
+    procedure SaveToFile(const aFile: UnicodeString); overload;
+    procedure SaveToFile(const aFile: UnicodeString; const aInsetRect: TKMRect); overload;
 
 //    property Land[aY,aX: Integer]: TKMTerrainTile read GetLand;
     property MapX: Word read fMapX;
@@ -357,7 +357,7 @@ begin
 end;
 
 
-procedure TKMTerrain.LoadFromFile(FileName: UnicodeString; aMapEditor: Boolean);
+procedure TKMTerrain.LoadFromFile(const FileName: UnicodeString; aMapEditor: Boolean);
 var
   I, J, L: Integer;
   S: TKMemoryStream;
@@ -430,13 +430,13 @@ begin
 end;
 
 
-procedure TKMTerrain.SaveToFile(aFile: UnicodeString);
+procedure TKMTerrain.SaveToFile(const aFile: UnicodeString);
 begin
   SaveToFile(aFile, KMRECT_ZERO);
 end;
 
 //Save (export) map in KaM .map format with additional tile information on the end?
-procedure TKMTerrain.SaveToFile(aFile: UnicodeString; const aInsetRect: TKMRect);
+procedure TKMTerrain.SaveToFile(const aFile: UnicodeString; const aInsetRect: TKMRect);
 var
   MapDataSize: Cardinal;
 
