@@ -38,10 +38,10 @@ type
   public
     Revelation: TKMByte2Array; //Public for faster access from Render
     constructor Create(X,Y: Word);
-    procedure RevealCircle(Pos: TKMPoint; Radius,Amount: Word);
-    procedure CoverCircle(Pos: TKMPoint; Radius: Word);
-    procedure RevealRect(TL, BR: TKMPoint; Amount: Word);
-    procedure CoverRect(TL, BR: TKMPoint);
+    procedure RevealCircle(const Pos: TKMPoint; Radius,Amount: Word);
+    procedure CoverCircle(const Pos: TKMPoint; Radius: Word);
+    procedure RevealRect(const TL, BR: TKMPoint; Amount: Word);
+    procedure CoverRect(const TL, BR: TKMPoint);
     procedure RevealEverything;
     procedure CoverEverything;
     function CheckVerticeRevelation(const X,Y: Word): Byte; override;
@@ -97,7 +97,7 @@ end;
 
 {Reveal circle on map}
 {Amount controls how "strong" terrain is revealed, almost instantly or slowly frame-by-frame in multiple calls}
-procedure TKMFogOfWar.RevealCircle(Pos: TKMPoint; Radius, Amount: Word);
+procedure TKMFogOfWar.RevealCircle(const Pos: TKMPoint; Radius, Amount: Word);
 var
   I, K: Word;
   I1, I2, K1, K2: Word;
@@ -132,7 +132,7 @@ begin
 end;
 
 
-procedure TKMFogOfWar.CoverCircle(Pos: TKMPoint; Radius: Word);
+procedure TKMFogOfWar.CoverCircle(const Pos: TKMPoint; Radius: Word);
 var
   I, K: Word;
   I1, I2, K1, K2: Word;
@@ -154,7 +154,7 @@ begin
 end;
 
 
-procedure TKMFogOfWar.RevealRect(TL, BR: TKMPoint; Amount: Word);
+procedure TKMFogOfWar.RevealRect(const TL, BR: TKMPoint; Amount: Word);
 var
   I, K: Word;
 begin
@@ -163,7 +163,7 @@ begin
 end;
 
 
-procedure TKMFogOfWar.CoverRect(TL, BR: TKMPoint);
+procedure TKMFogOfWar.CoverRect(const TL, BR: TKMPoint);
 var
   I, K: Word;
 begin

@@ -16,7 +16,7 @@ type
     fStamina: integer; //How much stamina to run do we have
     fNextPos: TKMPoint; //The tile we are currently walking to
     fVertexOccupied: TKMPoint; //The diagonal vertex we are currently occupying
-    procedure IncVertex(aFrom, aTo: TKMPoint);
+    procedure IncVertex(const aFrom, aTo: TKMPoint);
     procedure DecVertex;
   public
     constructor Create(aUnit: TKMUnit; aActionType: TUnitActionType; aRow: Integer);
@@ -86,7 +86,7 @@ begin
 end;
 
 
-procedure TUnitActionStormAttack.IncVertex(aFrom, aTo: TKMPoint);
+procedure TUnitActionStormAttack.IncVertex(const aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Storm vertex in use');

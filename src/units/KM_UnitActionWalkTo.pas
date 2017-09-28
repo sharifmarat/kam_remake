@@ -40,24 +40,24 @@ type
     fInteractionCount, fLastSideStepNodePos: integer;
     fInteractionStatus: TInteractionStatus;
     function AssembleTheRoute: Boolean;
-    function CanWalkToTarget(aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
+    function CanWalkToTarget(const aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
     function CheckForNewDestination: TDestinationCheck;
     function CheckTargetHasDied: Boolean;
     function CheckForObstacle: TObstacleCheck;
-    function CheckWalkComplete:boolean;
+    function CheckWalkComplete: Boolean;
     function CheckInteractionFreq(aIntCount,aTimeout,aFreq:integer): Boolean;
     function DoUnitInteraction: Boolean;
       //Sub functions split out of DoUnitInteraction (these are the solutions)
-      function IntCheckIfPushing(fOpponent: TKMUnit):boolean;
-      function IntSolutionPush(fOpponent: TKMUnit; HighestInteractionCount:integer):boolean;
-      function IntSolutionExchange(fOpponent: TKMUnit; HighestInteractionCount:integer):boolean;
-      function IntCheckIfPushed(HighestInteractionCount:integer):boolean;
-      function IntSolutionDodge(fOpponent: TKMUnit; HighestInteractionCount:integer):boolean;
+      function IntCheckIfPushing(fOpponent: TKMUnit): Boolean;
+      function IntSolutionPush(fOpponent: TKMUnit; HighestInteractionCount:integer): Boolean;
+      function IntSolutionExchange(fOpponent: TKMUnit; HighestInteractionCount:integer): Boolean;
+      function IntCheckIfPushed(HighestInteractionCount:integer): Boolean;
+      function IntSolutionDodge(fOpponent: TKMUnit; HighestInteractionCount:integer): Boolean;
       function IntSolutionAvoid(fOpponent: TKMUnit): Boolean;
-      function IntSolutionSideStep(aPosition: TKMPoint; HighestInteractionCount:integer):boolean;
+      function IntSolutionSideStep(const aPosition: TKMPoint; HighestInteractionCount: Integer): Boolean;
 
-    procedure ChangeStepTo(aPos: TKMPoint);
-    procedure PerformExchange(ForcedExchangePos: TKMPoint);
+    procedure ChangeStepTo(const aPos: TKMPoint);
+    procedure PerformExchange(const ForcedExchangePos: TKMPoint);
     procedure IncVertex;
     procedure DecVertex;
     procedure SetInitValues;
@@ -73,7 +73,8 @@ type
     ExplanationLog: TStringList;
   public
     fVertexOccupied: TKMPoint; //Public because it needs to be used by AbandonWalk
-    constructor Create(aUnit: TKMUnit; aLocB: TKMPoint; aActionType: TUnitActionType; aDistance: Single; aSetPushed: Boolean; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aUseExactTarget: boolean = True);
+    constructor Create(aUnit: TKMUnit; const aLocB: TKMPoint; aActionType: TUnitActionType; aDistance: Single; aSetPushed: Boolean;
+                       aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aUseExactTarget: Boolean = True);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure  SyncLoad; override;
     destructor Destroy; override;
@@ -88,7 +89,7 @@ type
     property WalkTo: TKMPoint read fWalkTo;
 
     //Modify route to go to this destination instead
-    procedure ChangeWalkTo(aLoc: TKMPoint; aDistance: Single); overload;
+    procedure ChangeWalkTo(const aLoc: TKMPoint; aDistance: Single); overload;
     procedure ChangeWalkTo(aNewTargetUnit: TKMUnit; aDistance: Single); overload;
 
     function Execute: TActionResult; override;
@@ -120,13 +121,13 @@ const
 
 { TUnitActionWalkTo }
 constructor TUnitActionWalkTo.Create( aUnit: TKMUnit;
-                                      aLocB:TKMPoint;
-                                      aActionType:TUnitActionType;
-                                      aDistance:single;
-                                      aSetPushed:boolean;
+                                      const aLocB: TKMPoint;
+                                      aActionType: TUnitActionType;
+                                      aDistance: Single;
+                                      aSetPushed: Boolean;
                                       aTargetUnit: TKMUnit;
                                       aTargetHouse: TKMHouse;
-                                      aUseExactTarget: boolean=true);
+                                      aUseExactTarget: Boolean = True);
 var
   RouteBuilt: Boolean; //Check if route was built, otherwise return nil
 begin
@@ -322,7 +323,7 @@ begin
 end;
 
 
-procedure TUnitActionWalkTo.PerformExchange(ForcedExchangePos: TKMPoint);
+procedure TUnitActionWalkTo.PerformExchange(const ForcedExchangePos: TKMPoint);
 begin
   //If we are being forced to exchange then modify our route to make the exchange,
   //  then return to the tile we are currently on, then continue the route
@@ -350,7 +351,7 @@ end;
 
 
 //Used for dodging and side stepping
-procedure TUnitActionWalkTo.ChangeStepTo(aPos: TKMPoint);
+procedure TUnitActionWalkTo.ChangeStepTo(const aPos: TKMPoint);
 begin
   if (NodePos+2 <= NodeList.Count-1) and (KMLengthDiag(aPos, NodeList[NodePos+2]) < 1.5) then
     NodeList[NodePos+1] := aPos //We can simply replace the entry because it is near the next tile
@@ -780,7 +781,7 @@ end;
 
 
 {This solution tries to find an unoccupied tile where unit can side-step}
-function TUnitActionWalkTo.IntSolutionSideStep(aPosition: TKMPoint; HighestInteractionCount: Integer): Boolean;
+function TUnitActionWalkTo.IntSolutionSideStep(const aPosition: TKMPoint; HighestInteractionCount: Integer): Boolean;
 var
   SideStepTest: TKMPoint;
   Found: Boolean;
@@ -821,7 +822,7 @@ begin
 end;
 
 
-function TUnitActionWalkTo.CanWalkToTarget(aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
+function TUnitActionWalkTo.CanWalkToTarget(const aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
 begin
   Result := ((fTargetHouse = nil) and fUnit.CanWalkTo(aFrom, fWalkTo, aPass, fDistance))
          or ((fTargetHouse <> nil) and fUnit.CanWalkTo(aFrom, fTargetHouse, aPass, fDistance));
@@ -912,7 +913,7 @@ end;
 
 
 //Modify route to go to this destination instead. Kind of like starting the walk over again but without recreating the action
-procedure TUnitActionWalkTo.ChangeWalkTo(aLoc: TKMPoint; aDistance: Single);
+procedure TUnitActionWalkTo.ChangeWalkTo(const aLoc: TKMPoint; aDistance: Single);
 begin
   if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y) then
     raise ELocError.Create('Invalid Change Walk To for '+gRes.Units[fUnit.UnitType].GUIName, aLoc);

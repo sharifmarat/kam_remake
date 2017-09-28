@@ -63,7 +63,7 @@ type
     property Count: Integer read fCount;
     property Item[aIndex: Integer]: TKMGoal read GetGoal write SetGoal; default;
     procedure AddGoal(aType: TGoalType; aCondition: TGoalCondition; aStatus: TGoalStatus; aTime: Cardinal; aMessageToShow: Integer; aHandIndex: TKMHandIndex); overload;
-    procedure AddGoal(aGoal: TKMGoal); overload;
+    procedure AddGoal(const aGoal: TKMGoal); overload;
     procedure Delete(aIndex: Integer);
     procedure RemoveReference(aHandIndex: TKMHandIndex);
     procedure DisableGoalsForHand(aHandIndex: TKMHandIndex);
@@ -110,7 +110,7 @@ begin
 end;
 
 
-procedure TKMGoals.AddGoal(aGoal: TKMGoal);
+procedure TKMGoals.AddGoal(const aGoal: TKMGoal);
 begin
   if fCount >= Length(fGoals) then
     SetLength(fGoals, fCount + 16);

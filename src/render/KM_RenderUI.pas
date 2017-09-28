@@ -29,7 +29,7 @@ type
     class procedure WritePolyShape    (aPoints: array of TKMPoint; aColor: TColor4);
     class procedure WriteLine         (aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
     class procedure WriteText         (aLeft, aTop, aWidth: SmallInt; aText: UnicodeString; aFont: TKMFont; aAlign: TKMTextAlign; aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False);
-    class procedure WriteTexture      (aLeft, aTop, aWidth, aHeight: SmallInt; aTexture: TTexture; aCol: TColor4);
+    class procedure WriteTexture      (aLeft, aTop, aWidth, aHeight: SmallInt; const aTexture: TTexture; aCol: TColor4);
     class procedure WriteCircle       (aCenterX, aCenterY: SmallInt; aRadius: Byte; aFillColor: TColor4);
     class procedure WriteShadow       (aLeft, aTop, aWidth, aHeight: SmallInt; aBlur: Byte; aCol: TColor4);
   end;
@@ -625,7 +625,7 @@ begin
 end;
 
 
-class procedure TKMRenderUI.WriteTexture(aLeft, aTop, aWidth, aHeight: SmallInt; aTexture: TTexture; aCol: TColor4);
+class procedure TKMRenderUI.WriteTexture(aLeft, aTop, aWidth, aHeight: SmallInt; const aTexture: TTexture; aCol: TColor4);
 begin
   TRender.BindTexture(aTexture.Tex);
 

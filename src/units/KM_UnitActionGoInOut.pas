@@ -24,7 +24,7 @@ type
     fUsedDoorway: Boolean;
     procedure IncDoorway;
     procedure DecDoorway;
-    function FindBestExit(aLoc: TKMPoint): TBestExit;
+    function FindBestExit(const aLoc: TKMPoint): TBestExit;
     function TileHasIdleUnit(X,Y: Word): TKMUnit;
     procedure WalkIn;
     procedure WalkOut;
@@ -154,7 +154,7 @@ end;
 
 //Attempt to find a tile below the door (on the street) we can walk to
 //We can push idle units away. Check center first
-function TUnitActionGoInOut.FindBestExit(aLoc: TKMPoint): TBestExit;
+function TUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TBestExit;
 var
   U: TKMUnit;
 begin

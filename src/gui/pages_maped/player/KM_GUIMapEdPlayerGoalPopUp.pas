@@ -15,7 +15,7 @@ type
 
     procedure Goal_Change(Sender: TObject);
     procedure Goal_Close(Sender: TObject);
-    procedure Goal_Refresh(aGoal: TKMGoal);
+    procedure Goal_Refresh(const aGoal: TKMGoal);
     function GetVisible: Boolean;
   protected
     Panel_Goal: TKMPanel;
@@ -131,7 +131,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerGoal.Goal_Refresh(aGoal: TKMGoal);
+procedure TKMMapEdPlayerGoal.Goal_Refresh(const aGoal: TKMGoal);
 begin
   Image_GoalFlag.FlagColor := gHands[fOwner].FlagColor;
 

@@ -24,7 +24,7 @@ type
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
-    function FindEmptyHouse(aUnitType: TUnitType; Loc: TKMPoint): TKMHouse;
+    function FindEmptyHouse(aUnitType: TUnitType; const Loc: TKMPoint): TKMHouse;
     function FindHouse(aType: THouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function GetTotalPointers: Cardinal;
@@ -35,7 +35,7 @@ type
     procedure UpdateResRequest; //Change resource requested counts for all houses
     procedure DeleteHouseFromList(aHouse: TKMHouse);
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -166,7 +166,7 @@ end;
 
 
 //Should find closest house to Loc
-function TKMHousesCollection.FindEmptyHouse(aUnitType: TUnitType; Loc: TKMPoint): TKMHouse;
+function TKMHousesCollection.FindEmptyHouse(aUnitType: TUnitType; const Loc: TKMPoint): TKMHouse;
 var
   I: Integer;
   Dist, BestBid: Single;
@@ -352,7 +352,7 @@ begin
 end;
 
 
-procedure TKMHousesCollection.Paint(aRect: TKMRect);
+procedure TKMHousesCollection.Paint(const aRect: TKMRect);
 const
   Margin = 3;
 var

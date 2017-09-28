@@ -92,12 +92,12 @@ type
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
-    procedure Add(aLoc: TKMPoint);
-    function  Remove(aLoc: TKMPoint): Integer; virtual;
+    procedure Add(const aLoc: TKMPoint);
+    function  Remove(const aLoc: TKMPoint): Integer; virtual;
     procedure Delete(aIndex: Integer);
-    procedure Insert(ID: Integer; aLoc: TKMPoint);
+    procedure Insert(ID: Integer; const aLoc: TKMPoint);
     function  GetRandom(out Point: TKMPoint): Boolean;
-    function  GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
+    function  GetClosest(const aLoc: TKMPoint; out Point: TKMPoint): Boolean;
     function Contains(const aLoc: TKMPoint): Boolean;
     function IndexOf(const aLoc: TKMPoint): Integer;
     procedure Inverse;
@@ -112,10 +112,10 @@ type
   public
     Tag, Tag2: array of Cardinal; //0..Count-1
     procedure Clear; override;
-    procedure Add(aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0); reintroduce;
+    procedure Add(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0); reintroduce;
     function IndexOf(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal): Integer;
     procedure SortByTag;
-    function Remove(aLoc: TKMPoint): Integer; override;
+    function Remove(const aLoc: TKMPoint): Integer; override;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
@@ -128,7 +128,7 @@ type
     function GetItem(aIndex: Integer): TKMPointDir;
   public
     procedure Clear;
-    procedure Add(aLoc: TKMPointDir);
+    procedure Add(const aLoc: TKMPointDir);
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMPointDir read GetItem; default;
     function GetRandom(out Point: TKMPointDir):Boolean;
@@ -140,7 +140,7 @@ type
   TKMPointDirTagList = class(TKMPointDirList)
   public
     Tag: array of Cardinal; //0..Count-1
-    procedure Add(aLoc: TKMPointDir; aTag: Cardinal); reintroduce;
+    procedure Add(const aLoc: TKMPointDir; aTag: Cardinal); reintroduce;
     procedure SortByTag;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
@@ -150,7 +150,7 @@ type
   //Custom Exception that includes a TKMPoint
   ELocError = class(Exception)
     Loc: TKMPoint;
-    constructor Create(const aMsg: UnicodeString; aLoc: TKMPoint);
+    constructor Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
   end;
 
 
@@ -160,7 +160,7 @@ uses
 
 
 { ELocError }
-constructor ELocError.Create(const aMsg: UnicodeString; aLoc: TKMPoint);
+constructor ELocError.Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
 begin
   inherited Create(aMsg);
   Loc := aLoc;
@@ -370,7 +370,7 @@ begin
 end;
 
 
-procedure TKMPointList.Add(aLoc: TKMPoint);
+procedure TKMPointList.Add(const aLoc: TKMPoint);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 32);
@@ -380,7 +380,7 @@ end;
 
 
 //Remove point from the list if is there. Return index of removed entry or -1 on failure
-function TKMPointList.Remove(aLoc: TKMPoint): Integer;
+function TKMPointList.Remove(const aLoc: TKMPoint): Integer;
 var
   I: Integer;
 begin
@@ -408,7 +408,7 @@ end;
 
 //Insert an entry and check if list is still walkable
 //Walkable means that every point is next to neighbour points }
-procedure TKMPointList.Insert(ID: Integer; aLoc: TKMPoint);
+procedure TKMPointList.Insert(ID: Integer; const aLoc: TKMPoint);
 begin
   Assert(InRange(ID, 0, fCount));
 
@@ -433,7 +433,7 @@ begin
 end;
 
 
-function TKMPointList.GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
+function TKMPointList.GetClosest(const aLoc: TKMPoint; out Point: TKMPoint): Boolean;
 var
   I: Integer;
 begin
@@ -583,7 +583,7 @@ begin
 end;
 
 
-procedure TKMPointTagList.Add(aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0);
+procedure TKMPointTagList.Add(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0);
 begin
   inherited Add(aLoc);
 
@@ -608,7 +608,7 @@ begin
 end;
 
 
-function TKMPointTagList.Remove(aLoc: TKMPoint): Integer;
+function TKMPointTagList.Remove(const aLoc: TKMPoint): Integer;
 begin
   Result := inherited Remove(aLoc);
 
@@ -668,7 +668,7 @@ begin
 end;
 
 
-procedure TKMPointDirList.Add(aLoc: TKMPointDir);
+procedure TKMPointDirList.Add(const aLoc: TKMPointDir);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 32);
@@ -712,7 +712,7 @@ begin
 end;
 
 
-procedure TKMPointDirTagList.Add(aLoc: TKMPointDir; aTag: Cardinal);
+procedure TKMPointDirTagList.Add(const aLoc: TKMPointDir; aTag: Cardinal);
 begin
   inherited Add(aLoc);
 

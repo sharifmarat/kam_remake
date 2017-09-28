@@ -26,7 +26,7 @@ type
     procedure SetDefenceType(const Value: TAIDefencePosType);
     procedure SetPosition(const Value: TKMPointDir);
   public
-    constructor Create(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+    constructor Create(const aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
     constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
 
@@ -55,7 +55,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Add(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+    procedure Add(const aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
     procedure Clear;
     property Count: Integer read GetCount;
     procedure Delete(aIndex: Integer);
@@ -86,7 +86,7 @@ uses
 
 
 { TAIDefencePosition }
-constructor TAIDefencePosition.Create(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+constructor TAIDefencePosition.Create(const aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
 begin
   inherited Create;
   fPosition := aPos;
@@ -238,7 +238,7 @@ begin
 end;
 
 
-procedure TAIDefencePositions.Add(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+procedure TAIDefencePositions.Add(const aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
 begin
   fPositions.Add(TAIDefencePosition.Create(aPos, aGroupType, aRadius, aDefenceType));
 end;

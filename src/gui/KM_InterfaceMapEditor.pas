@@ -75,7 +75,7 @@ type
     procedure SetUniversalEraserMode(aSetUniversalEraserMode: Boolean);
     procedure MoveObjectToCursorCell(aObjectToMove: TObject);
     procedure UpdateSelection;
-    procedure DragHouseModeStart(aHouseNewPos: TKMPoint; aHouseOldPos: TKMPoint);
+    procedure DragHouseModeStart(const aHouseNewPos, aHouseOldPos: TKMPoint);
     procedure DragHouseModeEnd;
     function IsDragHouseModeOn: Boolean;
     procedure ResetDragObject;
@@ -361,12 +361,12 @@ end;
 procedure TKMapEdInterface.UpdateState(aTickCount: Cardinal);
 begin
   inherited;
-  //Update minimap every 1000ms
-  if aTickCount mod 10 = 0 then
+  //Update minimap every 500ms
+  if aTickCount mod 5 = 0 then
     fMinimap.Update(False);
 
   //Show players without assets in grey
-  if aTickCount mod 10 = 0 then
+  if aTickCount mod 5 = 0 then
     UpdatePlayerSelectButtons;
 
   UpdateStateInternal;
@@ -941,13 +941,11 @@ end;
 procedure TKMapEdInterface.ResetCursorMode;
 begin
   gGameCursor.Mode := cmNone;
-  gGameCursor.Tag1 := 0;
-  gGameCursor.DragOffset := KMPOINT_ZERO;
 end;
 
 
 //Start drag house move mode (with cursor mode cmHouse)
-procedure TKMapEdInterface.DragHouseModeStart(aHouseNewPos: TKMPoint; aHouseOldPos: TKMPoint);
+procedure TKMapEdInterface.DragHouseModeStart(const aHouseNewPos, aHouseOldPos: TKMPoint);
   procedure SetCursorModeHouse(aHouseType: THouseType);
   begin
     gGameCursor.Mode := cmHouses;

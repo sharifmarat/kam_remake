@@ -91,7 +91,7 @@ type
     function GetHitPointsMax: Byte;
     procedure SetDirection(aValue: TKMDirection);
     procedure SetAction(aAction: TUnitAction; aStep: Integer = 0);
-    procedure SetNextPosition(aLoc: TKMPoint);
+    procedure SetNextPosition(const aLoc: TKMPoint);
     procedure SetCondition(aValue: Integer);
     function CanAccessHome: Boolean;
 
@@ -107,7 +107,7 @@ type
 
     HitPointsInvulnerable: Boolean;
 
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); dynamic;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -127,7 +127,7 @@ type
 
     function HitTest(X,Y: Integer; const UT: TUnitType = ut_Any): Boolean;
 
-    procedure SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+    procedure SetActionAbandonWalk(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
     procedure SetActionFight(aAction: TUnitActionType; aOpponent: TKMUnit);
     procedure SetActionGoIn(aAction: TUnitActionType; aGoDir: TGoInDirection; aHouse: TKMHouse); virtual;
     procedure SetActionStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
@@ -135,13 +135,13 @@ type
     procedure SetActionSteer;
     procedure SetActionLockedStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
 
-    procedure SetActionWalk(aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
+    procedure SetActionWalk(const aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
     procedure SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
     procedure SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
     procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TUnitActionType = ua_Walk);
     procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkPushed(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+    procedure SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+    procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
     procedure AbandonWalk;
@@ -175,16 +175,16 @@ type
     procedure TrainInHouse(aSchool: TKMHouseSchool);
 
     function CanStepTo(X,Y: Integer; aPass: TKMTerrainPassability): Boolean;
-    function CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean; overload;
-    function CanWalkTo(aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
-    function CanWalkTo(aFrom, aTo: TKMPoint; aDistance: Single): Boolean; overload;
-    function CanWalkTo(aFrom, aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
-    function CanWalkTo(aFrom: TKMPoint; aHouse: TKMHouse; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
-    function CanWalkDiagonaly(aFrom, aTo: TKMPoint): Boolean;
-    procedure VertexRem(aLoc: TKMPoint);
-    function  VertexUsageCompatible(aFrom, aTo: TKMPoint): Boolean;
-    procedure VertexAdd(aFrom, aTo: TKMPoint);
-    procedure Walk(aFrom, aTo: TKMPoint);
+    function CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean; overload;
+    function CanWalkTo(const aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
+    function CanWalkTo(const aFrom, aTo: TKMPoint; aDistance: Single): Boolean; overload;
+    function CanWalkTo(const aFrom, aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
+    function CanWalkTo(const aFrom: TKMPoint; aHouse: TKMHouse; aPass: TKMTerrainPassability; aDistance: Single): Boolean; overload;
+    function CanWalkDiagonaly(const aFrom, aTo: TKMPoint): Boolean;
+    procedure VertexRem(const aLoc: TKMPoint);
+    function  VertexUsageCompatible(const aFrom, aTo: TKMPoint): Boolean;
+    procedure VertexAdd(const aFrom, aTo: TKMPoint);
+    procedure Walk(const aFrom, aTo: TKMPoint);
     function GetActivityText: UnicodeString; virtual;
     function GetSlide(aCheck: TCheckAxis): Single;
     function PathfindingShouldAvoid: Boolean; virtual;
@@ -230,7 +230,7 @@ type
   private
     fCarry: TWareType;
   public
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -265,7 +265,7 @@ type
   private
     fFishCount: Byte; //1-5
   public
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex); overload;
+    constructor Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex); overload;
     constructor Load(LoadStream: TKMemoryStream); override;
     property FishCount: byte read fFishCount;
     function ReduceFish: Boolean;
@@ -737,7 +737,7 @@ end;
 
 
 { TKMSerf }
-constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
   fCarry := wt_None;
@@ -975,7 +975,7 @@ end;
 
 
 { TKMUnitAnimal }
-constructor TKMUnitAnimal.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitAnimal.Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
 
@@ -1086,7 +1086,7 @@ end;
 
 
 { TKMUnit }
-constructor TKMUnit.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnit.Create(aID: Cardinal; aUnitType: TUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited Create;
 
@@ -1446,7 +1446,7 @@ end;
 //there can be no problems (as were occurring in GetSlide)
 //This procedure ensures that these values always get updated correctly so we don't get a problem
 //where GetLength(PrevPosition,NextPosition) > sqrt(2)
-procedure TKMUnit.SetNextPosition(aLoc: TKMPoint);
+procedure TKMUnit.SetNextPosition(const aLoc: TKMPoint);
 begin
   fPrevPosition := NextPosition;
   fNextPosition := aLoc;
@@ -1556,7 +1556,7 @@ end;
 
 
 //WalkTo action with exact options (retranslated from WalkTo if Obstcale met)
-procedure TKMUnit.SetActionWalk(aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
+procedure TKMUnit.SetActionWalk(const aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
 begin
   if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('');
@@ -1627,7 +1627,7 @@ end;
 
 
 //Walk to spot or its neighbourhood
-procedure TKMUnit.SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
 begin
   if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('Interrupting unabandonable Walk action');
@@ -1637,7 +1637,7 @@ end;
 
 
 //We were pushed (walk to spot with wider Passability)
-procedure TKMUnit.SetActionWalkPushed(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
 begin
   //1. Only idle units can be pushed, for they are low priority to busy units
   //2. If unit can't get away it will re-push itself once again
@@ -1650,7 +1650,7 @@ begin
 end;
 
 
-procedure TKMUnit.SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionAbandonWalk(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
 var
   TempVertexOccupied: TKMPoint;
 begin
@@ -1722,38 +1722,38 @@ begin
 end;
 
 
-function TKMUnit.CanWalkDiagonaly(aFrom, aTo: TKMPoint): Boolean;
+function TKMUnit.CanWalkDiagonaly(const aFrom, aTo: TKMPoint): Boolean;
 begin
   Result := gTerrain.CanWalkDiagonaly(aFrom, aTo.X, aTo.Y);
 end;
 
 
-function TKMUnit.CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
+function TKMUnit.CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
 begin
   Result := gTerrain.Route_CanBeMade(GetPosition, aTo, DesiredPassability, aDistance);
 end;
 
 
-function TKMUnit.CanWalkTo(aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
+function TKMUnit.CanWalkTo(const aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
 begin
   Result := gTerrain.Route_CanBeMade(GetPosition, aTo, aPass, aDistance);
 end;
 
 
-function TKMUnit.CanWalkTo(aFrom, aTo: TKMPoint; aDistance: Single): Boolean;
+function TKMUnit.CanWalkTo(const aFrom, aTo: TKMPoint; aDistance: Single): Boolean;
 begin
   Result := gTerrain.Route_CanBeMade(aFrom, aTo, DesiredPassability, aDistance);
 end;
 
 
-function TKMUnit.CanWalkTo(aFrom, aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
+function TKMUnit.CanWalkTo(const aFrom, aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
 begin
   Result := gTerrain.Route_CanBeMade(aFrom, aTo, aPass, aDistance);
 end;
 
 
 //Check if a route can be made to any tile around this house
-function TKMUnit.CanWalkTo(aFrom: TKMPoint; aHouse: TKMHouse; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
+function TKMUnit.CanWalkTo(const aFrom: TKMPoint; aHouse: TKMHouse; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
 var
   I: Integer;
   Cells: TKMPointList;
@@ -1856,24 +1856,24 @@ begin
 end;
 
 
-procedure TKMUnit.VertexAdd(aFrom, aTo: TKMPoint);
+procedure TKMUnit.VertexAdd(const aFrom, aTo: TKMPoint);
 begin
   gTerrain.UnitVertexAdd(aFrom, aTo);
 end;
 
-procedure TKMUnit.VertexRem(aLoc: TKMPoint);
+procedure TKMUnit.VertexRem(const aLoc: TKMPoint);
 begin
   gTerrain.UnitVertexRem(aLoc); //Unoccupy vertex
 end;
 
 
-function TKMUnit.VertexUsageCompatible(aFrom, aTo: TKMPoint): Boolean;
+function TKMUnit.VertexUsageCompatible(const aFrom, aTo: TKMPoint): Boolean;
 begin
   Result := gTerrain.VertexUsageCompatible(aFrom, aTo);
 end;
 
 
-procedure TKMUnit.Walk(aFrom, aTo: TKMPoint);
+procedure TKMUnit.Walk(const aFrom, aTo: TKMPoint);
 begin
   gTerrain.UnitWalk(aFrom, aTo, Self)
 end;

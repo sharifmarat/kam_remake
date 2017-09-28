@@ -21,7 +21,7 @@ type
     DemandSet: Boolean;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -37,7 +37,7 @@ type
     DemandSet: Boolean;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -52,7 +52,7 @@ type
     BuildID: Integer;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -73,7 +73,7 @@ type
     LastToDig: ShortInt;
     function GetHouseEntranceLoc: TKMPoint;
   public
-    constructor Create(aWorker: TKMUnitWorker; aHouseType: THouseType; aLoc: TKMPoint; aID:integer);
+    constructor Create(aWorker: TKMUnitWorker; aHouseType: THouseType; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
@@ -123,7 +123,7 @@ uses
 
 
 { TTaskBuildRoad }
-constructor TTaskBuildRoad.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+constructor TTaskBuildRoad.Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildRoad;
@@ -264,7 +264,7 @@ end;
 
 
 { TTaskBuildWine }
-constructor TTaskBuildWine.Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+constructor TTaskBuildWine.Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildWine;
@@ -392,7 +392,7 @@ end;
 
 
 { TTaskBuildField }
-constructor TTaskBuildField.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+constructor TTaskBuildField.Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildField;
@@ -402,7 +402,7 @@ begin
 end;
 
 
-constructor TTaskBuildField.Load(LoadStream:TKMemoryStream);
+constructor TTaskBuildField.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fLoc);
@@ -494,7 +494,7 @@ end;
 
 
 { TTaskBuildHouseArea }
-constructor TTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: THouseType; aLoc: TKMPoint; aID: Integer);
+constructor TTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: THouseType; const aLoc: TKMPoint; aID: Integer);
 var
   I,K: Integer;
   HA: THouseArea;

@@ -81,14 +81,14 @@ const
   TILE_MASKS_LAYERS_CNT: array[TKMTileMaskType] of Byte =
     (1, 2, 2, 2, 2, 3, 3, 4);
 
-  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..2] of Integer =
-    ((286, -1, -1),
-     (285, -1, -1),
-     (284, -1, -1),
-     (287, -1, -1),
-     (284, 286, -1),
-     (284, 287, -1),
-     (284, -1, -1));
+  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..1] of Integer =
+    ((286, -1),
+     (285, -1),
+     (284, -1),
+     (287, -1),
+     (284, 286),
+     (284, 287),
+     (284, -1));
 
   TERRAIN_EQUALITY_PAIRS: array[0..2] of record
       TK1, TK2: TKMTerrainKind;

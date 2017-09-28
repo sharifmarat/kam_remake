@@ -39,7 +39,7 @@ type
     //Tension: array of array of array of SmallInt;
 
     procedure AddAvoidBuilding(X,Y: Word; aRad: Single);
-    procedure RemAvoidBuilding(aArea: TKMRect);
+    procedure RemAvoidBuilding(const aArea: TKMRect);
     function GetBestOwner(X, Y: Word): TKMHandIndex;
     procedure Init;
     procedure ExportInfluenceMaps;
@@ -47,7 +47,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -79,7 +79,7 @@ begin
 end;
 
 
-procedure TKMInfluences.RemAvoidBuilding(aArea: TKMRect);
+procedure TKMInfluences.RemAvoidBuilding(const aArea: TKMRect);
 var I,K: Integer;
 begin
   for I := Max(aArea.Top , 1) to Min(aArea.Bottom, fMapY - 1) do
@@ -375,7 +375,7 @@ end;
 
 
 //Render debug symbols
-procedure TKMInfluences.Paint(aRect: TKMRect);
+procedure TKMInfluences.Paint(const aRect: TKMRect);
 var
   I, K, J: Integer;
   Col: Cardinal;

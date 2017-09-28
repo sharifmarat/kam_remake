@@ -130,7 +130,7 @@ var
 
    gGenTerrainTransitions: array[TKMTerrainKind]
                             of array[TKMTileMaskType]
-                              of array[0..2] //mask components
+                              of array[0..1] //mask components (subtypes)
 //                                of array[0..3] //Terrain Rotation
                                   of Word;
 implementation
@@ -835,7 +835,7 @@ begin
       begin
         if J = mt_None then Continue;
 
-        for C := 0 to 2 do //Mask subtypes (actual masks for layers)
+        for C := 0 to 1 do //Mask subtypes (actual masks for layers)
         begin
           MaskId := TILE_MASKS_FOR_LAYERS[J, C] + 1;
           if MaskId = 0 then Continue;   //Ignore non existent masks

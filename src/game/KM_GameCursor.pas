@@ -8,8 +8,8 @@ type
   TKMGameCursor = class
   private
     fMode: TKMCursorMode; //Modes used in game (building, unit, road, etc..)
-    procedure Reset;
     procedure SetMode(aMode: TKMCursorMode);
+    procedure Reset;
   public
     Pixel: TKMPoint;      //Cursor position in screen-space
     Float: TKMPointF;     //Precise cursor position in map coords
@@ -27,6 +27,7 @@ type
     MapEdSize: Byte;
     MapEdSpeed: Byte;
     MapEdMagicBrush: Boolean;
+    MapEdMagicBrush2: Boolean;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
@@ -50,6 +51,10 @@ end;
 procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
+  MapEdMagicBrush := False;
+  MapEdMagicBrush2 := False;
+  if fMode = cmNone then  //Reset Tag1 also, when reset mode
+    Tag1 := 0;
   // Actually we need reset all fields when changing mode,
   // but lets reset only DragOffset for now, need to do lots of tests for other fields
 end;
@@ -58,8 +63,6 @@ end;
 procedure TKMGameCursor.SetMode(aMode: TKMCursorMode);
 begin
   fMode := aMode;
-  if fMode = cmNone then  //Reset Tag1 also, when reset mode
-    Tag1 := 0;
 
   Reset;
 end;

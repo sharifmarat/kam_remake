@@ -10,7 +10,9 @@ uses
   {$ENDIF}
   {$IFDEF FPC} FileUtil, {$ENDIF}
   {$IFDEF WDC} IOUtils, {$ENDIF}
-	SysUtils, StrUtils, Classes, Controls, KM_Defaults, KM_CommonTypes, KM_CommonClasses, KM_Points;
+	SysUtils, StrUtils, Classes, Controls,
+  KM_Terrain,
+  KM_Defaults, KM_CommonTypes, KM_CommonClasses, KM_Points;
 
   function KMPathLength(aNodeList: TKMPointList): Single;
 
@@ -25,6 +27,8 @@ uses
   procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal); overload;
 
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
+
+  function GetTerrainTileBasic(aTile: TKMTerrainTile): TKMTerrainTileBasic;
 
   function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
 
@@ -78,6 +82,54 @@ begin
   aStream.Read(aMapY);
   Assert(InRange(aMapX, 1, MAX_MAP_SIZE) and InRange(aMapY, 1, MAX_MAP_SIZE),
          Format('Can''t open the map cos it has wrong dimensions: [%d:%d]', [aMapX, aMapY]));
+end;
+
+
+procedure IterateThroughTiles(const aStartCell: TKMPoint; Size: Integer; aIsSquare: Boolean; aOnCell: TPointEvent);
+var
+  I,K,Rad: Integer;
+begin
+  if Size = 0 then
+    // Brush size smaller than one cell
+//    aOnCell(aStartCell.X, aStartCell.Y);
+//    gRenderAux.DotOnTerrain(Round(F.X), Round(F.Y), $FF80FF80)
+  else
+  begin
+    // There are two brush types here, even and odd size
+    if Size mod 2 = 1 then
+    begin
+      // First comes odd sizes 1,3,5..
+      Rad := Size div 2;
+      for I := -Rad to Rad do
+        for K := -Rad to Rad do
+        // Rounding corners in a nice way
+//        if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad+0.5)) then
+//          RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
+    end
+    else
+    begin
+      // Even sizes 2,4,6..
+      Rad := Size div 2;
+      for I := -Rad to Rad - 1 do
+        for K := -Rad to Rad - 1 do
+        // Rounding corners in a nice way
+//        if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I+0.5)+Sqr(K+0.5) < Sqr(Rad)) then
+//          RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
+    end;
+  end;
+end;
+
+
+function GetTerrainTileBasic(aTile: TKMTerrainTile): TKMTerrainTileBasic;
+var
+  L: Integer;
+begin
+  Result.BaseLayer := aTile.BaseLayer;
+  Result.LayersCnt := aTile.LayersCnt;
+  Result.Height := aTile.Height;
+  Result.Obj := aTile.Obj;
+  for L := 0 to 2 do
+    Result.Layer[L] := aTile.Layer[L];
 end;
 
 

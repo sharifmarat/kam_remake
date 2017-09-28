@@ -14,18 +14,18 @@ type
     class procedure CCLFind(aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
 
     //Check whether passability was unchanged, if so we can completely skip the update
-    class function CheckCanSkip(aWorkRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aDiagObjectsEffected: Boolean): Boolean;
+    class function CheckCanSkip(const aWorkRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aDiagObjectsEffected: Boolean): Boolean;
 
     //Helpful functions used to determine when it's ok to use LocalUpdate instead of slower GlobalUpdate
-    class function ExactlyOneAreaIDInRect_Current(aRect: TKMRect; aWC: TWalkConnect): Boolean;
-    class function ExactlyOneAreaIDInRect_New(aRect: TKMRect; aPass: TKMTerrainPassability; aAllowDiag: Boolean): Boolean;
+    class function ExactlyOneAreaIDInRect_Current(const aRect: TKMRect; aWC: TWalkConnect): Boolean;
+    class function ExactlyOneAreaIDInRect_New(const aRect: TKMRect; aPass: TKMTerrainPassability; aAllowDiag: Boolean): Boolean;
 
     //GlobalUpdate rebuilds the entire map
     class procedure GlobalUpdate(aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
     //LocalUpdate just updates changes in aRect for much better performance, used under special conditions
-    class procedure LocalUpdate(aRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
+    class procedure LocalUpdate(const aRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
   public
-    class procedure DoUpdate(aAreaAffected: TKMRect; aWC:TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
+    class procedure DoUpdate(const aAreaAffected: TKMRect; aWC:TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
   end;
 
 implementation
@@ -33,7 +33,7 @@ uses
   Math, KM_ResMapElements;
 
 { TKMTerrainWalkConnect }
-class procedure TKMTerrainWalkConnect.DoUpdate(aAreaAffected:TKMRect; aWC:TWalkConnect; aPass:TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
+class procedure TKMTerrainWalkConnect.DoUpdate(const aAreaAffected: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
 var LocalArea: TKMRect;
 begin
   //If passability is unchanged we can completely skip the update
@@ -101,7 +101,7 @@ begin
 end;
 
 
-class function TKMTerrainWalkConnect.CheckCanSkip(aWorkRect:TKMRect; aWC:TWalkConnect; aPass:TKMTerrainPassability; aDiagObjectsEffected: Boolean):Boolean;
+class function TKMTerrainWalkConnect.CheckCanSkip(const aWorkRect:TKMRect; aWC:TWalkConnect; aPass:TKMTerrainPassability; aDiagObjectsEffected: Boolean):Boolean;
 var I,K: Integer; AllPass, AllFail: Boolean;
 begin
   //If objects were effected we must reprocess because a tree could block the connection
@@ -139,7 +139,7 @@ end;
 
 
 //Returns true if there is exactly one walkable area within Rect in Land.WalkConnect (from last time we updated WalkConnect)
-class function TKMTerrainWalkConnect.ExactlyOneAreaIDInRect_Current(aRect:TKMRect; aWC: TWalkConnect): Boolean;
+class function TKMTerrainWalkConnect.ExactlyOneAreaIDInRect_Current(const aRect:TKMRect; aWC: TWalkConnect): Boolean;
 var
   AreaID: Byte;
   X, Y: Word;
@@ -166,7 +166,7 @@ end;
 
 
 //Do a local floodfill and check that there's exactly one area that matches passability
-class function TKMTerrainWalkConnect.ExactlyOneAreaIDInRect_New(aRect:TKMRect; aPass: TKMTerrainPassability; aAllowDiag: Boolean): Boolean;
+class function TKMTerrainWalkConnect.ExactlyOneAreaIDInRect_New(const aRect:TKMRect; aPass: TKMTerrainPassability; aAllowDiag: Boolean): Boolean;
 var
   LocalWalkConnect: array of array of Boolean; //We can use Boolean instead of byte since we're only looking for one area
 
@@ -403,7 +403,7 @@ end;
 //The Rect area must contain exactly one unique WalkConnect ID, before AND after the change
 //(must be checked before running this procedure)
 //See comments in TKMTerrainWalkConnect.DoUpdate for a full explanation of the logic.
-class procedure TKMTerrainWalkConnect.LocalUpdate(aRect:TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
+class procedure TKMTerrainWalkConnect.LocalUpdate(const aRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
 var
   AreaID: Byte;
   X, Y: Word;

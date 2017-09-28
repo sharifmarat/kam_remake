@@ -38,7 +38,7 @@ type
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
 
     procedure SyncUI(aMoveViewport: Boolean = True); virtual;
-    procedure SyncUIView(aCenter: TKMPointF; aZoom: Single = 1);
+    procedure SyncUIView(const aCenter: TKMPointF; aZoom: Single = 1);
     procedure UpdateGameCursor(X, Y: Integer; Shift: TShiftState);
     procedure UpdateStateIdle(aFrameTime: Cardinal); virtual; abstract;
   end;
@@ -304,7 +304,7 @@ begin
 end;
 
 
-procedure TKMUserInterfaceGame.SyncUIView(aCenter: TKMPointF; aZoom: Single = 1);
+procedure TKMUserInterfaceGame.SyncUIView(const aCenter: TKMPointF; aZoom: Single = 1);
 begin
   fViewport.Position := aCenter;
   fViewport.Zoom := aZoom;

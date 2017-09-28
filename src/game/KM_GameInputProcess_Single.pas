@@ -8,7 +8,7 @@ uses
 type
   TGameInputProcess_Single = class(TGameInputProcess)
   protected
-    procedure TakeCommand(aCommand: TGameInputCommand); override;
+    procedure TakeCommand(const aCommand: TGameInputCommand); override;
   public
     procedure ReplayTimer(aTick: Cardinal); override;
     procedure RunningTimer(aTick: Cardinal); override;
@@ -20,7 +20,7 @@ uses
   KM_Game, KM_Defaults, KM_CommonUtils;
 
 
-procedure TGameInputProcess_Single.TakeCommand(aCommand: TGameInputCommand);
+procedure TGameInputProcess_Single.TakeCommand(const aCommand: TGameInputCommand);
 begin
   if gGame.GameMode in [gmReplaySingle, gmReplayMulti] then Exit;
 

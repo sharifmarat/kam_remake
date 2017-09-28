@@ -24,8 +24,8 @@ type
     constructor Create(aOwner: TKMHandIndex);
 
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
-    function Route_Make(aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean; reintroduce;
-    function Route_ReturnToWalkable(aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean; reintroduce;
+    function Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean; reintroduce;
+    function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean; reintroduce;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Load(LoadStream: TKMemoryStream); override;
   end;
@@ -134,14 +134,14 @@ begin
 end;
 
 
-function TPathFindingRoad.Route_Make(aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean;
+function TPathFindingRoad.Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean;
 begin
   Result := inherited Route_Make(aLocA, aLocB, [tpMakeRoads, tpWalkRoad], 0, nil, NodeList);
 end;
 
 
 //Even though we are only going to a road network it is useful to know where our target is so we start off in the right direction (makes algorithm faster/work over long distances)
-function TPathFindingRoad.Route_ReturnToWalkable(aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean;
+function TPathFindingRoad.Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean;
 begin
   fRoadConnectID := aRoadConnectID;
   Result := inherited Route_ReturnToWalkable(aLocA, aLocB, wcRoad, 0, [tpMakeRoads, tpWalkRoad], NodeList);

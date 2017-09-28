@@ -20,7 +20,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; aLoc: TKMPoint; aAutoPlace: boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+    function AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; const aLoc: TKMPoint; aAutoPlace: boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
     procedure AddUnitToList(aUnit: TKMUnit);
     property Count: Integer read GetCount;
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
@@ -29,14 +29,14 @@ type
     procedure OwnerUpdate(aOwner: TKMHandIndex);
     function HitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
     function GetUnitByUID(aUID: Integer): TKMUnit;
-    function GetClosestUnit(aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
-    procedure GetUnitsInRect(aRect: TKMRect; List: TList);
+    function GetClosestUnit(const aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
+    procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetTotalPointers: Integer;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -75,7 +75,7 @@ end;
 
 
 //AutoPlace means we should try to find a spot for this unit instead of just placing it where we were told to
-function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
 var
   ID: Cardinal;
   PlaceTo: TKMPoint;
@@ -181,7 +181,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.GetUnitsInRect(aRect: TKMRect; List: TList);
+procedure TKMUnitsCollection.GetUnitsInRect(const aRect: TKMRect; List: TList);
 var
   I: Integer;
 begin
@@ -191,7 +191,7 @@ begin
 end;
 
 
-function TKMUnitsCollection.GetClosestUnit(aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
+function TKMUnitsCollection.GetClosestUnit(const aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
 var
   I: Integer;
   BestDist, Dist: Single;
@@ -306,7 +306,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.Paint(aRect: TKMRect);
+procedure TKMUnitsCollection.Paint(const aRect: TKMRect);
 const
   Margin = 2;
 var

@@ -224,7 +224,7 @@ type
 
   function IsSelectedObjectCommand(aGIC: TGameInputCommandType): Boolean;
   //As TGameInputCommand is no longer fixed size (due to the string) we cannot simply read/write it as a block
-  procedure SaveCommandToMemoryStream(aCommand: TGameInputCommand; aMemoryStream: TKMemoryStream);
+  procedure SaveCommandToMemoryStream(const aCommand: TGameInputCommand; aMemoryStream: TKMemoryStream);
   procedure LoadCommandFromMemoryStream(out aCommand: TGameInputCommand; aMemoryStream: TKMemoryStream);
 
 type
@@ -248,10 +248,10 @@ type
     function MakeCommand(aGIC: TGameInputCommandType; const aParam1, aParam2, aParam3, aParam4: Integer): TGameInputCommand; overload;
     function MakeCommand(aGIC: TGameInputCommandType; const aTextParam: UnicodeString): TGameInputCommand; overload;
     function MakeCommand(aGIC: TGameInputCommandType; aDateTimeParam: TDateTime): TGameInputCommand; overload;
-    procedure TakeCommand(aCommand: TGameInputCommand); virtual; abstract;
-    procedure ExecCommand(aCommand: TGameInputCommand);
-    procedure StoreCommand(aCommand: TGameInputCommand);
-    procedure ExecGameAlertBeaconCmd(aCommand: TGameInputCommand);
+    procedure TakeCommand(const aCommand: TGameInputCommand); virtual; abstract;
+    procedure ExecCommand(const aCommand: TGameInputCommand);
+    procedure StoreCommand(const aCommand: TGameInputCommand);
+    procedure ExecGameAlertBeaconCmd(const aCommand: TGameInputCommand);
   public
     constructor Create(aReplayState: TGIPReplayState);
     destructor Destroy; override;
@@ -261,11 +261,11 @@ type
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup1, aGroup2: TKMUnitGroup); overload;
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aHouse: TKMHouse); overload;
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aTurnAmount: TKMTurnDirection; aLineAmount:shortint); overload;
-    procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aLoc: TKMPoint; aDirection: TKMDirection); overload;
+    procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; const aLoc: TKMPoint; aDirection: TKMDirection); overload;
 
-    procedure CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint); overload;
-    procedure CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint; aFieldType: TFieldType); overload;
-    procedure CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint; aHouseType: THouseType); overload;
+    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint); overload;
+    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TFieldType); overload;
+    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: THouseType); overload;
 
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aItem, aAmountChange: Integer); overload;
@@ -273,7 +273,7 @@ type
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TWoodcutterMode); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aUnitType: TUnitType; aCount:byte); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aItem: Integer); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aLoc: TKMPoint); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TDeliveryMode); overload;
 
     procedure CmdWareDistribution(aCommandType: TGameInputCommandType; aWare: TWareType; aHouseType: THouseType; aValue:integer); overload;
@@ -282,10 +282,10 @@ type
     procedure CmdGame(aCommandType: TGameInputCommandType; aValue:boolean); overload;
     procedure CmdGame(aCommandType: TGameInputCommandType; aDateTime: TDateTime); overload;
     procedure CmdGame(aCommandType: TGameInputCommandType; aParam1, aParam2: Integer); overload;
-    procedure CmdGame(aCommandType: TGameInputCommandType; aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal); overload;
+    procedure CmdGame(aCommandType: TGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal); overload;
     procedure CmdGame(aCommandType: TGameInputCommandType; aValue: Integer); overload;
 
-    procedure CmdTemp(aCommandType: TGameInputCommandType; aLoc: TKMPoint); overload;
+    procedure CmdTemp(aCommandType: TGameInputCommandType; const aLoc: TKMPoint); overload;
     procedure CmdTemp(aCommandType: TGameInputCommandType); overload;
 
     function CommandsConfirmed(aTick: Cardinal): Boolean; virtual;
@@ -318,7 +318,7 @@ begin
 end;
 
 
-procedure SaveCommandToMemoryStream(aCommand: TGameInputCommand; aMemoryStream: TKMemoryStream);
+procedure SaveCommandToMemoryStream(const aCommand: TGameInputCommand; aMemoryStream: TKMemoryStream);
 begin
   with aCommand do
   begin
@@ -488,7 +488,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.ExecCommand(aCommand: TGameInputCommand);
+procedure TGameInputProcess.ExecCommand(const aCommand: TGameInputCommand);
 var
   P: TKMHand;
   IsSilent: boolean;
@@ -656,7 +656,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.ExecGameAlertBeaconCmd(aCommand: TGameInputCommand);
+procedure TGameInputProcess.ExecGameAlertBeaconCmd(const aCommand: TGameInputCommand);
   function DoAddPlayerBeacon: Boolean;
   var IsPlayerMuted: Boolean;
   begin
@@ -731,14 +731,14 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aLoc: TKMPoint; aDirection: TKMDirection);
+procedure TGameInputProcess.CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; const aLoc: TKMPoint; aDirection: TKMDirection);
 begin
   Assert(aCommandType = gic_ArmyWalk);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, aLoc.X, aLoc.Y, Byte(aDirection)));
 end;
 
 
-procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint);
+procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint);
 begin
   Assert(aCommandType in [gic_BuildRemoveFieldPlan, gic_BuildRemoveHouse, gic_BuildRemoveHousePlan]);
 
@@ -752,7 +752,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint; aFieldType: TFieldType);
+procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TFieldType);
 begin
   Assert(aCommandType in [gic_BuildAddFieldPlan]);
 
@@ -766,7 +766,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint; aHouseType: THouseType);
+procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: THouseType);
 begin
   Assert(aCommandType = gic_BuildHousePlan);
   TakeCommand(MakeCommand(aCommandType, Byte(aHouseType), aLoc.X, aLoc.Y));
@@ -816,7 +816,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aLoc: TKMPoint);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint);
 begin
   Assert((aCommandType = gic_HouseBarracksRally) or (aCommandType = gic_HouseWoodcuttersCutting));
   Assert((aHouse is TKMHouseBarracks) or (aHouse is TKMHouseWoodcutters));
@@ -873,14 +873,14 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdGame(aCommandType: TGameInputCommandType; aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal);
+procedure TGameInputProcess.CmdGame(aCommandType: TGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal);
 begin
   Assert(aCommandType = gic_GameAlertBeacon);
   TakeCommand(MakeCommand(aCommandType, Round(aLoc.X * 10), Round(aLoc.Y * 10), aOwner, (aColor and $FFFFFF)));
 end;
 
 
-procedure TGameInputProcess.CmdTemp(aCommandType: TGameInputCommandType; aLoc: TKMPoint);
+procedure TGameInputProcess.CmdTemp(aCommandType: TGameInputCommandType; const aLoc: TKMPoint);
 begin
   Assert(aCommandType = gic_TempAddScout);
   TakeCommand(MakeCommand(aCommandType, aLoc.X, aLoc.Y));
@@ -957,7 +957,7 @@ end;
 
 //Store commands for the replay
 //While in replay there are no commands to process, but for debug we might allow ChangePlayer
-procedure TGameInputProcess.StoreCommand(aCommand: TGameInputCommand);
+procedure TGameInputProcess.StoreCommand(const aCommand: TGameInputCommand);
 begin
   if ReplayState = gipReplaying then
     Exit;

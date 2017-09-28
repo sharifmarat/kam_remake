@@ -51,9 +51,9 @@ type
     fOnUnfadeMusic: TBooleanEvent;
     procedure CheckOpenALError;
 
-    function PlayWave(const aFile: UnicodeString; Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
+    function PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
                       FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
-    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; Loc: TKMPointF;
+    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF;
                        Attenuated: Boolean; Volume: Single; Radius: Single;
                        FadeMusic: Boolean; aLoop: Boolean): Integer;
   public
@@ -71,20 +71,20 @@ type
     procedure UpdateSoundVolume(Value: Single);
 
     procedure PlayNotification(aSound: TAttackNotification);
-    procedure PlaySoundFromScript(aFileName: UnicodeString; Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
+    procedure PlaySoundFromScript(aFileName: UnicodeString; const Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
 
     procedure PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech); overload;
-    procedure PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; aLoc: TKMPointF); overload;
+    procedure PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
     procedure PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech); overload;
-    procedure PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; aLoc: TKMPointF); overload;
+    procedure PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
     procedure Play(SoundID: TSoundFX; Volume: Single = 1); overload;
-    procedure Play(SoundID: TSoundFX; Loc: TKMPoint; Attenuated:boolean = True; Volume: Single = 1); overload;
-    procedure Play(SoundID: TSoundFX; Loc: TKMPointF; Attenuated:boolean = True; Volume: Single = 1); overload;
+    procedure Play(SoundID: TSoundFX; const Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1); overload;
+    procedure Play(SoundID: TSoundFX; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1); overload;
 
     procedure Play(SoundID: TSoundFXNew; Volume:Single = 1; FadeMusic: Boolean = False); overload;
-    procedure Play(SoundID: TSoundFXNew; Loc: TKMPoint; Attenuated:boolean=true; Volume: Single = 1; FadeMusic: Boolean = False); overload;
+    procedure Play(SoundID: TSoundFXNew; const Loc: TKMPoint; Attenuated: Boolean=true; Volume: Single = 1; FadeMusic: Boolean = False); overload;
 
-    function PlayLoopSound(const aFile: UnicodeString; aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
+    function PlayLoopSound(const aFile: UnicodeString; const aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
     procedure StopLoopSound(aIndex: Integer);
 
     procedure Paint;
@@ -357,7 +357,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.Play(SoundID: TSoundFXNew; Loc: TKMPoint; Attenuated:boolean=true; Volume:single=1; FadeMusic:boolean=false);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFXNew; const Loc: TKMPoint; Attenuated:boolean=true; Volume:single=1; FadeMusic:boolean=false);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
   PlayWave(gRes.Sounds.FileOfNewSFX(SoundID), KMPointF(Loc), Attenuated, Volume, FadeMusic);
@@ -365,14 +365,14 @@ end;
 
 
 {Wrapper for TSoundFX}
-procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFX; const Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
   PlaySound(SoundID, '', KMPointF(Loc), Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
 end;
 
 
-procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFX; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
   PlaySound(SoundID, '', Loc, Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
@@ -380,7 +380,7 @@ end;
 
 
 {Wrapper WAV files}
-function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
+function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
                                  FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
 begin
   Result := -1;
@@ -392,7 +392,7 @@ end;
 {Call to this procedure will find free spot and start to play sound immediately}
 {Will need to make another one for unit sounds, which will take WAV file path as parameter}
 {Attenuated means if sound should fade over distance or not}
-function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; Loc: TKMPointF;
+function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF;
                                   Attenuated: Boolean; Volume: Single; Radius: Single;
                                   FadeMusic: Boolean; aLoop: Boolean): Integer;
 var Dif:array[1..3]of single;
@@ -597,7 +597,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; aLoc: TKMPointF);
+procedure TKMSoundPlayer.PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
 var
   Wave: UnicodeString;
   HasLoc: Boolean;
@@ -627,7 +627,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.PlaySoundFromScript(aFileName: UnicodeString; Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
+procedure TKMSoundPlayer.PlaySoundFromScript(aFileName: UnicodeString; const Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
 
@@ -646,7 +646,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; aLoc: TKMPointF);
+procedure TKMSoundPlayer.PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
 var
   Wave: UnicodeString;
   HasLoc: Boolean;
@@ -664,7 +664,7 @@ begin
 end;
 
 
-function TKMSoundPlayer.PlayLoopSound(const aFile: UnicodeString; aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
+function TKMSoundPlayer.PlayLoopSound(const aFile: UnicodeString; const aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
 var I: Integer;
 begin
   Result := -1; //Failed to play

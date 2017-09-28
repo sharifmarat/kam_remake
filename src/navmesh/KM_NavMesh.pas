@@ -65,7 +65,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -652,7 +652,7 @@ end;
 
 
 //Render debug symbols
-procedure TKMNavMesh.Paint(aRect: TKMRect);
+procedure TKMNavMesh.Paint(const aRect: TKMRect);
 var
   I, K, J: Integer;
   T1, T2: TKMPointF;

@@ -43,7 +43,7 @@ type
 
     property Included[I: Integer]: TKMScriptFileInfo read GetIncluded; default;
     property IncludedCount: Integer read fIncludedCnt;
-    procedure AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+    procedure AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
     function FindCodeLine(aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
   end;
 
@@ -1712,7 +1712,7 @@ begin
 end;
 
 
-procedure TKMScriptFilesCollection.AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+procedure TKMScriptFilesCollection.AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
 begin
   if Length(fIncluded) >= fIncludedCnt then
     SetLength(fIncluded, fIncludedCnt + 8);
@@ -1747,7 +1747,7 @@ function TKMScriptFilesCollection.FindCodeLine(aLine: AnsiString; out aFileNames
     Inc(aFoundCnt);
   end;
 
-  procedure FindLine(var aFoundCnt: Integer; aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
+  procedure FindLine(var aFoundCnt: Integer; const aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
   var I: Integer;
   begin
     aStrings.Clear;

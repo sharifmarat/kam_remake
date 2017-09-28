@@ -37,10 +37,10 @@ type
     procedure CloseQuery(var CanClose: Boolean);
     procedure Stop(Sender: TObject);
 
-    procedure UpdateWindowParams(aWindowParams: TKMWindowParamsRecord);
-    procedure Move(aWindowParams: TKMWindowParamsRecord);
+    procedure UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
+    procedure Move(const aWindowParams: TKMWindowParamsRecord);
     procedure Resize(aWidth, aHeight: Integer); overload;
-    procedure Resize(aWidth, aHeight: Integer; aWindowParams: TKMWindowParamsRecord); overload;
+    procedure Resize(aWidth, aHeight: Integer; const aWindowParams: TKMWindowParamsRecord); overload;
     procedure Render;
     procedure ShowAbout;
     property FormMain: TFormMain read fFormMain;
@@ -533,7 +533,7 @@ end;
 
 
 
-procedure TKMMain.Resize(aWidth, aHeight: Integer; aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.Resize(aWidth, aHeight: Integer; const aWindowParams: TKMWindowParamsRecord);
 begin
   if gGameApp <> nil then
   begin
@@ -543,13 +543,13 @@ begin
 end;
 
 
-procedure TKMMain.Move(aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.Move(const aWindowParams: TKMWindowParamsRecord);
 begin
   UpdateWindowParams(aWindowParams);
 end;
 
 
-procedure TKMMain.UpdateWindowParams(aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
 begin
   if gGameApp <> nil then
     fMainSettings.WindowParams.ApplyWindowParams(aWindowParams);

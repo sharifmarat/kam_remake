@@ -61,9 +61,9 @@ type
     procedure MouseMove;
     procedure MouseUp(Button: TMouseButton; aOverMap: Boolean);
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
-    procedure Update;
+    procedure UpdateState;
     procedure UpdateStateIdle;
-    procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+    procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
   end;
 
 
@@ -548,17 +548,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.Update;
-begin
-  if mlDeposits in VisibleLayers then
-    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
-
-  //todo: if mlNavMesh in VisibleLayers then
-    //gAIFields.NavMesh.Init;
-end;
-
-
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 var
   I, K: Integer;
   Loc, P: TKMPoint;
@@ -672,11 +662,23 @@ begin
 end;
 
 
+procedure TKMMapEditor.UpdateState;
+begin
+  if mlDeposits in VisibleLayers then
+    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
+
+  fTerrainPainter.UpdateState;
+
+  //todo: if mlNavMesh in VisibleLayers then
+    //gAIFields.NavMesh.Init;
+end;
+
+
 procedure TKMMapEditor.UpdateStateIdle;
 begin
-  if fTerrainPainter <> nil then
-    fTerrainPainter.UpdateStateIdle;
+  fTerrainPainter.UpdateStateIdle;
 end;
 
 
 end.
+

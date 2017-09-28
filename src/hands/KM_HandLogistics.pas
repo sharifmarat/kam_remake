@@ -110,10 +110,10 @@ type
     function PermitDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function CalculateBid(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single;
     function CalculateBidBasic(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single; overload;
-    function CalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType; aOwner: TKMHandIndex;
+    function CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType; aOwner: TKMHandIndex;
                                iD: Integer; aSerf: TKMUnitSerf = nil): Single; overload;
-    function CalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer): Single;
-    function GetRouteCost(aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
+    function CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
+    function GetRouteCost(const aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
   public
     constructor Create;
@@ -771,7 +771,7 @@ end;
 
 
 //Calc bid cost between serf and offer house
-function TKMDeliveries.CalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer): Single;
+function TKMDeliveries.CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
 var
   BelowOfferPos: TKMPoint;
   {$IFDEF WDC}
@@ -820,7 +820,7 @@ end;
 
 
 //Calc route cost
-function TKMDeliveries.GetRouteCost(aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
+function TKMDeliveries.GetRouteCost(const aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
 var Distance: Single;
 begin
   {$IFDEF WDC}
@@ -848,7 +848,7 @@ end;
 
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
-function TKMDeliveries.CalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
+function TKMDeliveries.CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
                                          aOwner: TKMHandIndex; iD: Integer; aSerf: TKMUnitSerf = nil): Single;
 var
   BelowOfferPos: TKMPoint;

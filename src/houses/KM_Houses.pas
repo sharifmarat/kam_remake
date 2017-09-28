@@ -119,14 +119,14 @@ type
     property BuildingProgress: Word read fBuildingProgress;
 
     property GetPosition: TKMPoint read fPosition;
-    procedure SetPosition(aPos: TKMPoint); //Used only by map editor
+    procedure SetPosition(const aPos: TKMPoint); //Used only by map editor
     procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
-    function GetClosestCell(aPos: TKMPoint): TKMPoint;
-    function GetDistance(aPos: TKMPoint): Single;
-    function InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+    function GetClosestCell(const aPos: TKMPoint): TKMPoint;
+    function GetDistance(const aPos: TKMPoint): Single;
+    function InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
     procedure GetListOfCellsAround(Cells: TKMPointDirList; aPassability: TKMTerrainPassability);
     procedure GetListOfCellsWithin(Cells: TKMPointList);
     function GetRandomCellWithin: TKMPoint;
@@ -232,7 +232,7 @@ type
     fWoodcutterMode: TWoodcutterMode;
     fCuttingPoint: TKMPoint;
     procedure SetWoodcutterMode(aWoodcutterMode: TWoodcutterMode);
-    procedure SetCuttingPoint(aValue: TKMPoint);
+    procedure SetCuttingPoint(const aValue: TKMPoint);
     function GetCuttingPointTexId: Word;
   public
     property WoodcutterMode: TWoodcutterMode read fWoodcutterMode write SetWoodcutterMode;
@@ -243,7 +243,7 @@ type
     function IsCuttingPointSet: Boolean;
     procedure ValidateCuttingPoint;
     property CuttingPoint: TKMPoint read fCuttingPoint write SetCuttingPoint;
-    function GetValidCuttingPoint(aPoint: TKMPoint): TKMPoint;
+    function GetValidCuttingPoint(const aPoint: TKMPoint): TKMPoint;
     property CuttingPointTexId: Word read GetCuttingPointTexId;
   end;
 
@@ -511,7 +511,7 @@ end;
 
 //Used by MapEditor
 //Set house to new position
-procedure TKMHouse.SetPosition(aPos: TKMPoint);
+procedure TKMHouse.SetPosition(const aPos: TKMPoint);
   procedure UpdateRallyPoint(aIsRallyPointSet: Boolean);
   begin
     if (Self is TKMHouseBarracks) then
@@ -609,7 +609,7 @@ end;
 
 
 {Returns the closest cell of the house to aPos}
-function TKMHouse.GetClosestCell(aPos: TKMPoint): TKMPoint;
+function TKMHouse.GetClosestCell(const aPos: TKMPoint): TKMPoint;
 var
   C: TKMPointList;
 begin
@@ -626,7 +626,7 @@ end;
 
 
 {Return distance from aPos to the closest house tile}
-function TKMHouse.GetDistance(aPos: TKMPoint): Single;
+function TKMHouse.GetDistance(const aPos: TKMPoint): Single;
 var
   I, K: Integer;
   Loc: TKMPoint;
@@ -645,7 +645,7 @@ end;
 
 //Check if house is within reach of given Distance (optimized version for PathFinding)
 //Check precise distance when we are close enough
-function TKMHouse.InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+function TKMHouse.InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
 begin
   //+6 is the worst case with the barracks, distance from fPosition to top left tile of house could be > 5
   if KMLengthDiag(aPos, fPosition) >= aDistance + 6 then
@@ -1858,13 +1858,13 @@ end;
 //Check if specified point is valid
 //if it is valid - return it
 //if it is not valid - return appropriate valid point, within segment between PointBelowEntrance and specified aPoint
-function TKMHouseWoodcutters.GetValidCuttingPoint(aPoint: TKMPoint): TKMPoint;
+function TKMHouseWoodcutters.GetValidCuttingPoint(const aPoint: TKMPoint): TKMPoint;
 begin
   Result := gTerrain.GetPassablePointWithinSegment(PointBelowEntrance, aPoint, tpWalk, MAX_WOODCUTTER_CUT_PNT_DISTANCE);
 end;
 
 
-procedure TKMHouseWoodcutters.SetCuttingPoint(aValue: TKMPoint);
+procedure TKMHouseWoodcutters.SetCuttingPoint(const aValue: TKMPoint);
 begin
   fCuttingPoint := GetValidCuttingPoint(aValue);
 end;

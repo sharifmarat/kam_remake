@@ -35,10 +35,10 @@ type
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
-    function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
-    function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
-    function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
-    procedure GetUnitsInRect(aRect: TKMRect; List: TList);
+    function GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
+    function GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+    function DistanceToEnemyTowers(const aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
+    procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
     function GetUnitByUID(aUID: Integer): TKMUnit;
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
@@ -59,9 +59,9 @@ type
     procedure CleanUpUnitPointer(var aUnit: TKMUnit);
     procedure CleanUpGroupPointer(var aGroup: TKMUnitGroup);
     procedure CleanUpHousePointer(var aHouse: TKMHouse);
-    procedure RemAnyHouse(Position: TKMPoint);
-    procedure RemAnyUnit(Position: TKMPoint);
-    procedure RevealForTeam(aPlayer: TKMHandIndex; Pos: TKMPoint; Radius,Amount:word);
+    procedure RemAnyHouse(const Position: TKMPoint);
+    procedure RemAnyUnit(const Position: TKMPoint);
+    procedure RevealForTeam(aPlayer: TKMHandIndex; const Pos: TKMPoint; Radius,Amount: Word);
     procedure SyncFogOfWar;
     procedure AddDefaultGoalsToAll(aMissionMode: TKMissionMode);
     procedure DisableGoalsForDefeatedHand(aHandIndex: TKMHandIndex);
@@ -72,7 +72,7 @@ type
     procedure IncAnimStep;
 
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 var
@@ -246,7 +246,7 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
+function TKMHandsCollection.GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
 var
   I: Integer;
   U: TKMUnit;
@@ -266,7 +266,7 @@ end;
 
 //Check opponents for closest House with given Alliance setting
 //Note: we check by house cells, not by entrance
-function TKMHandsCollection.GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHandsCollection.GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
 var
   I: Integer;
   H: TKMHouse;
@@ -285,7 +285,7 @@ end;
 
 
 //Return distance from the tile to the closest enemy tower
-function TKMHandsCollection.DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
+function TKMHandsCollection.DistanceToEnemyTowers(const aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
 var
   I, K: Integer;
   H: TKMHouse;
@@ -547,7 +547,7 @@ begin
 end;
 
 
-procedure TKMHandsCollection.GetUnitsInRect(aRect: TKMRect; List: TList);
+procedure TKMHandsCollection.GetUnitsInRect(const aRect: TKMRect; List: TList);
 var I: Integer;
 begin
   Assert(List.Count = 0);
@@ -558,7 +558,7 @@ end;
 
 
 {Should return closest position where unit can be placed}
-function TKMHandsCollection.FindPlaceForUnit(PosX,PosY:integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+function TKMHandsCollection.FindPlaceForUnit(PosX,PosY: Integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
 var
   I: Integer;
   P: TKMPoint;
@@ -684,7 +684,7 @@ end;
 
 
 //MapEd procedure to remove any house under cursor
-procedure TKMHandsCollection.RemAnyHouse(Position: TKMPoint);
+procedure TKMHandsCollection.RemAnyHouse(const Position: TKMPoint);
 var
   H: TKMHouse;
 begin
@@ -698,7 +698,7 @@ end;
 
 
 //MapEd procedure to remove any unit under cursor
-procedure TKMHandsCollection.RemAnyUnit(Position: TKMPoint);
+procedure TKMHandsCollection.RemAnyUnit(const Position: TKMPoint);
 var
   I: Integer;
 begin
@@ -712,7 +712,7 @@ end;
 
 //Reveal portion of terrain for said player and his allies (if they share vision)
 //In singleplayer KaM sometimes you should not see your allies till some time
-procedure TKMHandsCollection.RevealForTeam(aPlayer: TKMHandIndex; Pos: TKMPoint; Radius, Amount: Word);
+procedure TKMHandsCollection.RevealForTeam(aPlayer: TKMHandIndex; const Pos: TKMPoint; Radius, Amount: Word);
 var
   I: Integer;
 begin
@@ -823,7 +823,7 @@ begin
 end;
 
 
-procedure TKMHandsCollection.Paint(aRect: TKMRect);
+procedure TKMHandsCollection.Paint(const aRect: TKMRect);
 var
   I: Integer;
 begin

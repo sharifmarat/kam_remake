@@ -44,7 +44,7 @@ type
     procedure Selection_Flip(aAxis: TKMFlipAxis);
 
     function TileWithinPastePreview(aX, aY: Word): Boolean;
-    procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+    procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
   end;
 
 
@@ -223,7 +223,7 @@ begin
         fSelectionBuffer[By,Bx].LayersCnt := gTerrain.Land[I+1, K+1].LayersCnt;
         fSelectionBuffer[By,Bx].Height    := gTerrain.Land[I+1, K+1].Height;
         fSelectionBuffer[By,Bx].Obj       := gTerrain.Land[I+1, K+1].Obj;
-        fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.Land2[I+1, K+1].TerKind;
+        fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.LandTerKind[I+1, K+1].TerKind;
         for L := 0 to 2 do
         begin
           fSelectionBuffer[By,Bx].Layer[L].Terrain  := gTerrain.Land[I+1, K+1].Layer[L].Terrain;
@@ -305,7 +305,7 @@ begin
         gTerrain.Land[I+1, K+1].LayersCnt   := fSelectionBuffer[By,Bx].LayersCnt;
         gTerrain.Land[I+1, K+1].Height      := fSelectionBuffer[By,Bx].Height;
         gTerrain.Land[I+1, K+1].Obj         := fSelectionBuffer[By,Bx].Obj;
-        fTerrainPainter.Land2[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
+        fTerrainPainter.LandTerKind[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
         for L := 0 to 2 do
         begin
           gTerrain.Land[I+1, K+1].Layer[L].Terrain  := fSelectionBuffer[By,Bx].Layer[L].Terrain;
@@ -358,9 +358,9 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
       fa_Horizontal: SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2  ,X2+1].Height);
       fa_Vertical:   SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2+1,X2  ].Height);
     end;
-    Tmp := fTerrainPainter.Land2[Y1, X1].TerKind;
-    fTerrainPainter.Land2[Y1, X1].TerKind := fTerrainPainter.Land2[Y2, X2].TerKind;
-    fTerrainPainter.Land2[Y2, X2].TerKind := Tmp;
+    Tmp := fTerrainPainter.LandTerKind[Y1, X1].TerKind;
+    fTerrainPainter.LandTerKind[Y1, X1].TerKind := fTerrainPainter.LandTerKind[Y2, X2].TerKind;
+    fTerrainPainter.LandTerKind[Y2, X2].TerKind := Tmp;
   end;
 
   procedure FixTerrain(X, Y: Integer);
@@ -378,9 +378,11 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
         Inc(J);
       end;
 
+      //Lets try to get initial Rot from Corners information, if possible
       case J of
-        0,4:  Exit;
+        0,4:  Exit;  //nothing to fix here
         1:    begin
+                // For 1 corner - corner is equal to rotation
                 Rot := Corners[0];
                 if (Rot in [0,2]) xor (aAxis = fa_Vertical) then
                   Rot := (Rot+1) mod 4
@@ -392,19 +394,21 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                 if Abs(Corners[0] - Corners[1]) = 2 then  //Opposite corners
                 begin
                   if aFixRotation then
-                    Rot := aLayer.Rotation
+                    Rot := aLayer.Rotation // for opposite corners its not possible to get rotation from corners, as 1 rot equal to 3 rot etc.
                   else
                     Rot := Corners[0];
+                  // Fixed Rot is same as for 1 corner
                   if (Rot in [0,2]) xor (aAxis = fa_Vertical) then
                     Rot := (Rot+1) mod 4
                   else
                     Rot := (Rot+3) mod 4;
                   aLayer.Corners := [(Corners[0] + 1) mod 4, (Corners[1] + 1) mod 4]; //no difference for +1 or +3, as they are same on (mod 4)
                 end else begin
-                  if (Corners[0] = 0) and (Corners[1] = 3) then
+                  if (Corners[0] = 0) and (Corners[1] = 3) then // left vertical straight  = initial Rot = 3
                     Rot := 3
                   else
                     Rot := Corners[0];
+                  // Fixed Rot calculation
                   if (Rot in [1,3]) xor (aAxis = fa_Vertical) then
                   begin
                     Rot := (Rot+2) mod 4;
@@ -413,11 +417,12 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
                 end;
               end;
         3:    begin
+                // Initial Rot - just go through all 4 possibilities
                 if (Corners[0] = 0) and (Corners[2] = 3) then
                   Rot := IfThen(Corners[1] = 1, 0, 3)
                 else
                   Rot := Round((Corners[0] + Corners[2]) / 2);
-
+                // Fixed Rot calculation same as for corner
                 if (Rot in [0,2]) xor (aAxis = fa_Vertical) then
                   Rot := (Rot+1) mod 4
                 else
@@ -514,9 +519,9 @@ begin
 end;
 
 
-procedure TKMSelection.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMSelection.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 
-  function GetTileBasic(aBufferData: TKMBufferData): TKMTerrainTileBasic;
+  function GetTileBasic(const aBufferData: TKMBufferData): TKMTerrainTileBasic;
   var
     L: Integer;
   begin
@@ -571,4 +576,5 @@ initialization
 
 
 end.
+
 

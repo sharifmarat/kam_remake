@@ -20,7 +20,7 @@ type
     fPanTo, fPanFrom: TKMPointF;
     fPanDuration, fPanProgress: Cardinal;
     function GetPosition: TKMPointF;
-    procedure SetPosition(Value: TKMPointF);
+    procedure SetPosition(const Value: TKMPointF);
     procedure SetZoom(aZoom: Single);
   public
     ScrollKeyLeft, ScrollKeyRight, ScrollKeyUp, ScrollKeyDown, ZoomKeyIn, ZoomKeyOut: boolean;
@@ -38,7 +38,7 @@ type
     function GetClip: TKMRect; //returns visible area dimensions in map space
     function GetMinimapClip: TKMRect;
     procedure ReleaseScrollKeys;
-    function MapToScreen(aMapLoc: TKMPointF): TKMPoint;
+    function MapToScreen(const aMapLoc: TKMPointF): TKMPoint;
     procedure PanTo(aLoc: TKMPointF; aDuration: Cardinal);
 
     procedure Save(SaveStream: TKMemoryStream);
@@ -119,7 +119,7 @@ begin
 end;
 
 
-procedure TKMViewport.SetPosition(Value: TKMPointF);
+procedure TKMViewport.SetPosition(const Value: TKMPointF);
 var PadTop, TilesX, TilesY: Single;
 begin
   PadTop := fTopHill + 0.75; //Leave place on top for highest hills + 1 unit
@@ -170,7 +170,7 @@ begin
 end;
 
 
-function TKMViewport.MapToScreen(aMapLoc: TKMPointF): TKMPoint;
+function TKMViewport.MapToScreen(const aMapLoc: TKMPointF): TKMPoint;
 begin
   Result.X := Round((aMapLoc.X - fPosition.X) * CELL_SIZE_PX * fZoom + fViewRect.Right / 2 + TOOLBAR_WIDTH / 2);
   Result.Y := Round((aMapLoc.Y - fPosition.Y) * CELL_SIZE_PX * fZoom + fViewRect.Bottom / 2);

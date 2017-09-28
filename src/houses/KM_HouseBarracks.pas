@@ -15,7 +15,7 @@ type
     fRecruitsList: TList;
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
     fRallyPoint: TKMPoint;
-    procedure SetRallyPoint(aRallyPoint: TKMPoint);
+    procedure SetRallyPoint(const aRallyPoint: TKMPoint);
     function GetRallyPointTexId: Word;
   public
     MapEdRecruitCount: Word; //Only used by MapEd
@@ -310,7 +310,7 @@ begin
 end;
 
 
-procedure TKMHouseBarracks.SetRallyPoint(aRallyPoint: TKMPoint);
+procedure TKMHouseBarracks.SetRallyPoint(const aRallyPoint: TKMPoint);
 begin
   fRallyPoint := gTerrain.GetPassablePointWithinSegment(PointBelowEntrance, aRallyPoint, tpWalk);
 end;

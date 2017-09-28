@@ -47,7 +47,7 @@ type
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TAIAttack read GetAttack write SetAttack; default;
 
-    procedure AddAttack(aAttack: TAIAttack);
+    procedure AddAttack(const aAttack: TAIAttack);
     procedure Delete(aIndex: Integer);
     function CanOccur(aIndex: Integer; const aMenAvailable: TGroupTypeArray; const aGroupsAvailable: TGroupTypeArray; aTick: Cardinal): Boolean;
     procedure HasOccured(aIndex: Integer);
@@ -101,7 +101,7 @@ begin
 end;
 
 
-procedure TAIAttacks.AddAttack(aAttack: TAIAttack);
+procedure TAIAttacks.AddAttack(const aAttack: TAIAttack);
 begin
   if fCount >= Length(fAttacks) then
     SetLength(fAttacks, fCount + 16);

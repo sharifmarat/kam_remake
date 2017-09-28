@@ -78,7 +78,7 @@ type
     procedure Create_Quit;
 
     procedure Beacon_Cancel;
-    procedure Beacon_Place(aLoc: TKMPointF);
+    procedure Beacon_Place(const aLoc: TKMPointF);
     procedure Chat_Click(Sender: TObject);
     procedure House_Demolish;
     procedure Reset_Menu;
@@ -257,7 +257,7 @@ type
     constructor Create(aRender: TRender; aUIMode: TUIMode); reintroduce;
     destructor Destroy; override;
     procedure MessageIssue(aKind: TKMMessageKind; aText: UnicodeString); overload;
-    procedure MessageIssue(aKind: TKMMessageKind; aText: UnicodeString; aLoc: TKMPoint); overload;
+    procedure MessageIssue(aKind: TKMMessageKind; aText: UnicodeString; const aLoc: TKMPoint); overload;
     procedure SetMenuState(aTactic: Boolean);
     procedure ShowClock(aSpeed: Single);
     procedure ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
@@ -1737,7 +1737,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.MessageIssue(aKind: TKMMessageKind; aText: UnicodeString; aLoc: TKMPoint);
+procedure TKMGamePlayInterface.MessageIssue(aKind: TKMMessageKind; aText: UnicodeString; const aLoc: TKMPoint);
 begin
   if fUIMode in [umReplay, umSpectate] then Exit; // No message stack in replay/spectate
   fMessageStack.Add(aKind, aText, aLoc);
@@ -1930,7 +1930,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.Beacon_Place(aLoc: TKMPointF);
+procedure TKMGamePlayInterface.Beacon_Place(const aLoc: TKMPointF);
 begin
   if (GetTimeSince(fLastBeaconTime) >= BEACON_COOLDOWN) then
   begin
@@ -2973,7 +2973,7 @@ end;
 // 1. Process Controls
 // 2. Show SelectingTroopDirection
 procedure TKMGamePlayInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
-  procedure HandleFieldLMBDown(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDown(const P: TKMPoint; aFieldType: TFieldType);
   begin
     if gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType) then
     begin
@@ -3072,7 +3072,7 @@ end;
 // 2. Perform SelectingTroopDirection if it is active
 // 3. Display various cursors depending on whats below (might be called often)
 procedure TKMGamePlayInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
-  procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDrag(const P: TKMPoint; aFieldType: TFieldType);
   begin
     if not KMSamePoint(LastDragPoint, P) then
       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmPlan)) then

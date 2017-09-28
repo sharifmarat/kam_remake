@@ -19,27 +19,27 @@ type
     procedure Dot(x, y: Single; aCol: TColor4; aSize: Single = 0.05);
     procedure DotOnTerrain(x, y: Single; aCol: TColor4);
     procedure LineOnTerrain(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
-    procedure LineOnTerrain(A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
-    procedure LineOnTerrain(A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
-    procedure Line(A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF); overload;
-    procedure Line(A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF); overload;
+    procedure LineOnTerrain(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
+    procedure LineOnTerrain(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True); overload;
+    procedure Line(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF); overload;
+    procedure Line(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Line(x1, y1, x2, y2: Single; aCol: TColor4; aPattern: Word = $FFFF); overload;
     procedure Triangle(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
     procedure TriangleOnTerrain(x1, y1, x2, y2, X3, Y3: Single; aCol: TColor4);
-    procedure TileTerrainIDs(aRect: TKMRect);
-    procedure TileTerrainKinds(aRect: TKMRect);
-    procedure Passability(aRect: TKMRect; aPass: Byte);
-    procedure RenderResizeMap(aExceptRect: TKMRect);
+    procedure TileTerrainIDs(const aRect: TKMRect);
+    procedure TileTerrainKinds(const aRect: TKMRect);
+    procedure Passability(const aRect: TKMRect; aPass: Byte);
+    procedure RenderResizeMap(const aExceptRect: TKMRect);
     procedure Projectile(x1, y1, x2, y2: Single);
     procedure Quad(pX, pY: Integer; aCol: TColor4);
     procedure SquareOnTerrain(x1, y1, x2, y2: Single; aLineColor: TColor4);
     procedure Text(pX, pY: Single; const aText: string; aCol: TColor4); overload;
-    procedure Text(pX, pY: Single; const aText: string; aCol: TColor4; aInset: TKMPointF; aConsiderTextLength: Boolean = True); overload;
+    procedure Text(pX, pY: Single; const aText: string; aCol: TColor4; const aInset: TKMPointF; aConsiderTextLength: Boolean = True); overload;
     procedure TextAtCorner(pX, pY: Integer; const aCorner: Byte; const aText: string; aCol: TColor4);
-    procedure UnitMoves(aRect: TKMRect);
+    procedure UnitMoves(const aRect: TKMRect);
     procedure UnitPointers(pX, pY: Single; Count: Integer);
     procedure UnitRoute(NodeList: TKMPointList; Pos: Integer; aUnitType: Byte);
-    procedure Wires(aRect: TKMRect);
+    procedure Wires(const aRect: TKMRect);
   end;
 
 
@@ -49,7 +49,7 @@ var
 
 implementation
 uses
-  KM_Render, KM_Terrain, KM_Resource, KM_ResTileset;
+  KM_Render, KM_Game, KM_Terrain, KM_Resource, KM_ResTileset;
 
 const
   TILE_TERRAIN_LAYERS_COLORS: array [0..3] of Cardinal =
@@ -211,25 +211,25 @@ begin
 end;
 
 
-procedure TRenderAux.LineOnTerrain(A,B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True);
+procedure TRenderAux.LineOnTerrain(const A,B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True);
 begin
   LineOnTerrain(A.X, A.Y, B.X, B.Y, aCol, aPattern, aDots);
 end;
 
 
-procedure TRenderAux.LineOnTerrain(A,B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True);
+procedure TRenderAux.LineOnTerrain(const A,B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF; aDots: Boolean = True);
 begin
   LineOnTerrain(A.X, A.Y, B.X, B.Y, aCol, aPattern, aDots);
 end;
 
 
-procedure TRenderAux.Line(A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF);
+procedure TRenderAux.Line(const A, B: TKMPoint; aCol: TColor4; aPattern: Word = $FFFF);
 begin
   Line(A.X, A.Y, B.X, B.Y, aCol, aPattern);
 end;
 
 
-procedure TRenderAux.Line(A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF);
+procedure TRenderAux.Line(const A, B: TKMPointF; aCol: TColor4; aPattern: Word = $FFFF);
 begin
   Line(A.X, A.Y, B.X, B.Y, aCol, aPattern);
 end;
@@ -279,7 +279,7 @@ begin
 end;
 
 
-procedure TRenderAux.TileTerrainIDs(aRect: TKMRect);
+procedure TRenderAux.TileTerrainIDs(const aRect: TKMRect);
 var
   I, J, K, Cnt: Integer;
 begin
@@ -302,12 +302,24 @@ begin
 end;
 
 
-procedure TRenderAux.TileTerrainKinds(aRect: TKMRect);
+procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
 var
-  I, J, K, L, Cnt: Integer;
+  I, J, K, L: Integer;
+  TerKind: TKMTerrainKind;
+  TerKindStr: String;
 begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
+    begin
+      if gGame.IsMapEditor then
+      begin
+        TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[I,J].TerKind;
+        if TerKind <> tkCustom then
+          TerKindStr := IntToStr(BASE_TERRAIN[TerKind])
+        else
+          TerKindStr := 'C';
+        Text(J - 0.47, I - 0.47, TerKindStr, icRed);
+      end;
       for K := 0 to 3 do
         with gTerrain.Land[I,J] do
         begin
@@ -321,10 +333,11 @@ begin
                            IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainKindByTerrain(gTerrain.Land[I,J].Layer[L].Terrain)]),
                            TILE_TERRAIN_LAYERS_COLORS[L+1]);
         end;
+    end;
 end;
 
 
-procedure TRenderAux.Passability(aRect: TKMRect; aPass: Byte);
+procedure TRenderAux.Passability(const aRect: TKMRect; aPass: Byte);
 var
   I, K: Integer;
 begin
@@ -339,7 +352,7 @@ begin
 end;
 
 
-procedure TRenderAux.RenderResizeMap(aExceptRect: TKMRect);
+procedure TRenderAux.RenderResizeMap(const aExceptRect: TKMRect);
 var
   I, K: Integer;
 begin
@@ -374,7 +387,7 @@ begin
 end;
 
 
-procedure TRenderAux.Text(pX, pY: Single; const aText: string; aCol: TColor4; aInset: TKMPointF; aConsiderTextLength: Boolean = True);
+procedure TRenderAux.Text(pX, pY: Single; const aText: string; aCol: TColor4; const aInset: TKMPointF; aConsiderTextLength: Boolean = True);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
   glColor4ubv(@aCol);
@@ -386,16 +399,16 @@ end;
 procedure TRenderAux.TextAtCorner(pX, pY: Integer; const aCorner: Byte; const aText: string; aCol: TColor4);
 begin
   case aCorner of
-    0:  Text(pX - 0.4, pY - 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
-    1:  Text(pX + 0.4, pY - 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
-    2:  Text(pX + 0.4, pY + 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
-    3:  Text(pX - 0.4, pY + 0.4, aText, aCol, KMPOINTF(0.02, 0.02));
+    0:  Text(pX - 0.3, pY - 0.3, aText, aCol, KMPOINTF(0.02, 0.02));
+    1:  Text(pX + 0.3, pY - 0.3, aText, aCol, KMPOINTF(0.02, 0.02));
+    2:  Text(pX + 0.3, pY + 0.3, aText, aCol, KMPOINTF(0.02, 0.02));
+    3:  Text(pX - 0.3, pY + 0.3, aText, aCol, KMPOINTF(0.02, 0.02));
     else raise Exception.Create('Wrong corner: ' + IntToStr(aCorner));
   end;
 end;
 
 
-procedure TRenderAux.UnitMoves(aRect: TKMRect);
+procedure TRenderAux.UnitMoves(const aRect: TKMRect);
 var
   I, K: Integer;
   VertexUsage: Byte;
@@ -464,7 +477,7 @@ begin
 end;
 
 
-procedure TRenderAux.Wires(aRect: TKMRect);
+procedure TRenderAux.Wires(const aRect: TKMRect);
 var
   I, K: Integer;
 begin
