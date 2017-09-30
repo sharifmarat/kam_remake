@@ -853,7 +853,7 @@ begin
               Continue;
             end;
           end else begin
-            System.New(MaskFullType); // := TKMMaskFullType.Create;
+            System.New(MaskFullType);
             MaskFullType.MType := J;
             MaskFullType.SubType := C;
             GeneratedMasks.AddObject(IntToStr(MaskId), TObject(MaskFullType));

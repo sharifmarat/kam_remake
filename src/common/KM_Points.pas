@@ -8,10 +8,20 @@ type
 
 type
   //Records must be packed so they are stored identically in MP saves (padding bytes are unknown values)
-  TKMPoint = record X,Y: Integer; end;
+  TKMPoint = record
+    X,Y: Integer;
+    class operator Equal(A: TKMPoint; B: TKMPoint): Boolean;
+    class operator NotEqual(A: TKMPoint; B: TKMPoint): Boolean;
+  end;
+
+  TKMPointF = record
+    X,Y: Single;
+    class operator Equal(A: TKMPointF; B: TKMPointF): Boolean;
+    class operator NotEqual(A: TKMPointF; B: TKMPointF): Boolean;
+  end;
+
   TKMPointDir = packed record Loc: TKMPoint; Dir: TKMDirection; end;
   TKMPointExact = packed record Loc: TKMPoint; Exact: Boolean; end;
-  TKMPointF = record X,Y: Single; end;
   TKMPointW = record X,Y: Word; end; // For backwards compatibility with cmp files
   TKMPointArray = array of TKMPoint;
   TKMPoint2Array = array of array of TKMPoint;
@@ -85,6 +95,8 @@ type
   function KMNextDirection(const aDir: TKMDirection): TKMDirection;
   function KMPrevDirection(const aDir: TKMDirection): TKMDirection;
 
+  function KMPointsAround(const P: TKMPoint; aIncludeSelf: Boolean = False): TKMPointArray;
+
   function KMGetDiagVertex(const P1,P2:TKMPoint): TKMPoint;
   function KMStepIsDiag(const P1,P2:TKMPoint): Boolean;
 
@@ -119,6 +131,8 @@ type
   function TypeToString(const T: TKMPoint): string; overload;
   function TypeToString(const T: TKMDirection): string; overload;
 
+  function StringToType(const Str: String): TKMPoint; overload;
+
 
 const
   KMPOINT_ZERO: TKMPoint = (X: 0; Y: 0);
@@ -131,7 +145,31 @@ const
 
 implementation
 uses
-  SysUtils, Math;
+  SysUtils, Math, KM_CommonUtils;
+
+
+class operator TKMPoint.Equal(A: TKMPoint; B: TKMPoint): Boolean;
+begin
+  Result := KMSamePoint(A,B);
+end;
+
+
+class operator TKMPoint.NotEqual(A: TKMPoint; B: TKMPoint): Boolean;
+begin
+  Result := not KMSamePoint(A,B);
+end;
+
+
+class operator TKMPointF.Equal(A: TKMPointF; B: TKMPointF): Boolean;
+begin
+  Result := KMSamePointF(A,B);
+end;
+
+
+class operator TKMPointF.NotEqual(A: TKMPointF; B: TKMPointF): Boolean;
+begin
+  Result := not KMSamePointF(A,B);
+end;
 
 
 function KMPoint(X,Y: Integer): TKMPoint;
@@ -562,6 +600,25 @@ begin
 end;
 
 
+function KMPointsAround(const P: TKMPoint; aIncludeSelf: Boolean = False): TKMPointArray;
+var
+  I,J,K: Integer;
+begin
+  if aIncludeSelf then
+    SetLength(Result, 9)
+  else
+    SetLength(Result, 8);
+  K := 0;
+  for I := -1 to 1 do
+    for J := -1 to 1 do
+      if aIncludeSelf or (I <> 0) or (J <> 0) then
+      begin
+        Result[K] := KMPoint(P.X + J, P.Y + I);
+        Inc(K);
+      end;
+end;
+
+
 function KMGetDiagVertex(const P1,P2: TKMPoint): TKMPoint;
 begin
   //Returns the position of the vertex inbetween the two diagonal points (points must be diagonal)
@@ -765,6 +822,22 @@ end;
 function TypeToString(const T: TKMPoint): string;
 begin
   Result := '(' + IntToStr(T.X) + ';' + IntToStr(T.Y) + ')';
+end;
+
+
+function StringToType(const Str: String): TKMPoint;
+var
+  DelimPos, X, Y: Integer;
+begin
+  Result := KMPOINT_INVALID_TILE;
+  DelimPos := StrIndexOf(Str, ';');
+  if DelimPos > 0 then
+  begin
+    if TryStrToInt(Copy(Str, 2, DelimPos - 1), X)
+      and TryStrToInt(Copy(Str, DelimPos + 2, Length(Str) - DelimPos - 2), Y) then
+      Result := KMPoint(X,Y);
+  end;
+
 end;
 
 

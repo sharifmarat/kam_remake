@@ -111,6 +111,9 @@ type
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
     function TileIsFactorable(const Loc: TKMPoint): Boolean;
 
+    function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
+    function TileHasRoad(X,Y: Integer): Boolean; overload;
+
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
 
     procedure UpdateFences(const Loc: TKMPoint; CheckSurrounding: Boolean = True);
@@ -1057,6 +1060,19 @@ end;
 function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
 begin
   Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+end;
+
+
+//Check if Tile has road overlay
+function TKMTerrain.TileHasRoad(const Loc: TKMPoint): Boolean;
+begin
+  Result := TileHasRoad(Loc.X,Loc.Y);
+end;
+
+
+function TKMTerrain.TileHasRoad(X,Y: Integer): Boolean;
+begin
+  Result := TileInMapCoords(X, Y) and (Land[Y, X].TileOverlay = to_Road);
 end;
 
 
@@ -2048,11 +2064,6 @@ end;
 
 
 procedure TKMTerrain.RemoveObjectsKilledByRoad(const Loc: TKMPoint);
-  function TileIsRoad(X,Y: Integer): Boolean;
-  begin
-    Result := TileInMapCoords(X, Y) and (Land[Y, X].TileOverlay = to_Road);
-  end;
-
   procedure RemoveIfWest(Loc: TKMPoint);
   begin
     if gMapElements[Land[Loc.Y,Loc.X].Obj].KillByRoad = kbrWest then
@@ -2063,8 +2074,8 @@ procedure TKMTerrain.RemoveObjectsKilledByRoad(const Loc: TKMPoint);
   begin
     // Check object type first, cos checking roads is more expensive
     if (gMapElements[Land[Loc.Y,Loc.X].Obj].KillByRoad = kbrNWCorner)
-    and (TileIsRoad(Loc.X - 1, Loc.Y)) and (TileIsRoad(Loc.X - 1, Loc.Y - 1))
-    and (TileIsRoad(Loc.X, Loc.Y - 1)) and (TileIsRoad(Loc.X, Loc.Y)) then
+      and (TileHasRoad(Loc.X - 1, Loc.Y)) and (TileHasRoad(Loc.X - 1, Loc.Y - 1))
+      and (TileHasRoad(Loc.X, Loc.Y - 1)) and (TileHasRoad(Loc.X, Loc.Y)) then
       RemoveObject(Loc);
   end;
 begin
@@ -2077,9 +2088,9 @@ begin
 
   // Objects killed by roads on sides only
   // Check 2 tiles this tile affects
-  if TileIsRoad(Loc.X - 1, Loc.Y) then
+  if TileHasRoad(Loc.X - 1, Loc.Y) then
     RemoveIfWest(Loc);
-  if TileIsRoad(Loc.X + 1, Loc.Y) then
+  if TileHasRoad(Loc.X + 1, Loc.Y) then
     RemoveIfWest(KMPoint(Loc.X + 1, Loc.Y));
 end;
 

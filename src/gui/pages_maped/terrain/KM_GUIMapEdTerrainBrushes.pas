@@ -6,6 +6,9 @@ uses
    KM_Controls, KM_Defaults, KM_Pics;
 
 
+const
+  BRUSH_MAX_SIZE = 32;
+
 type
   //Painting on terrain with terrain brushes
   TKMMapEdTerrainBrushes = class
@@ -61,7 +64,7 @@ begin
   Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fnt_Outline, taCenter);
-  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, 32);
+  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, BRUSH_MAX_SIZE);
   BrushSize.Position := 3;//4;
   BrushSize.OnChange := BrushChange;
   BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 28, 24, 24, 592);

@@ -72,6 +72,9 @@ type
     procedure RenderBackgroundUI(const aRect: TKMRect);
     // Terrain overlay cursors rendering (incl. sprites highlighting)
     procedure RenderForegroundUI;
+    procedure RenderForegroundUI_Brush;
+    procedure RenderForegroundUI_ElevateEqualize;
+    procedure RenderForegroundUI_Markers;
     procedure RenderForegroundUI_Units;
     procedure RenderForegroundUI_PaintBucket(aHighlightAll: Boolean);
     procedure RenderForegroundUI_UniversalEraser(aHighlightAll: Boolean);
@@ -92,13 +95,13 @@ type
     procedure PaintRallyPoint(const aHouseEntrance, aRallyPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aPass: Byte; aDoImmediateRender: Boolean = False);
     procedure PaintRallyPoints(aPass: Byte);
 
-    procedure RenderForegroundUI_Brush;
-    procedure RenderForegroundUI_ElevateEqualize;
-    procedure RenderForegroundUI_Markers;
     procedure RenderWireHousePlan(const P: TKMPoint; aHouseType: THouseType);
     procedure RenderMapEdLayers(const aRect: TKMRect);
     procedure RenderTileOwnerLayer(const aRect: TKMRect);
     procedure RenderGridLayer(const aRect: TKMRect);
+
+    procedure RenderWireTileInt(const X,Y: Integer);
+    procedure RenderTileInt(const X, Y: Integer);
   public
     constructor Create(aViewport: TKMViewport; aRender: TRender);
     destructor Destroy; override;
@@ -124,7 +127,7 @@ type
     procedure RenderMapElement(aIndex: Byte; AnimStep,pX,pY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
     procedure RenderSpriteOnTile(const aLoc: TKMPoint; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
     procedure RenderSpriteOnTerrain(const aLoc: TKMPointF; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
-    procedure RenderTile(Index: Byte; pX,pY,Rot: Integer);
+    procedure RenderTile(aTerrainId: Word; pX,pY,Rot: Integer);
     procedure RenderWireTile(const P: TKMPoint; Col: TColor4; aInset: Single = 0.0; aLineWidth: Single = -1);
 
     property RenderList: TRenderList read fRenderList;
@@ -143,7 +146,7 @@ implementation
 uses
   KM_RenderAux, KM_HandsCollection, KM_Game, KM_Sound, KM_Resource, KM_ResUnits,
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor, KM_HouseBarracks,
-  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils, KM_ResTileset;
+  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils, KM_Utils, KM_ResTileset;
 
 
 const
@@ -442,9 +445,9 @@ begin
 end;
 
 
-procedure TRenderPool.RenderTile(Index: Byte; pX, pY, Rot: Integer);
+procedure TRenderPool.RenderTile(aTerrainId: Word; pX, pY, Rot: Integer);
 begin
-  fRenderTerrain.RenderTile(Index, pX, pY, Rot);
+  fRenderTerrain.RenderTile(aTerrainId, pX, pY, Rot);
 end;
 
 
@@ -1399,75 +1402,44 @@ begin
 end;
 
 
+procedure TRenderPool.RenderWireTileInt(const X,Y: Integer);
+begin
+  RenderWireTile(KMPoint(X, Y), icLightCyan, 0, 0.3);
+end;
+
+
+procedure TRenderPool.RenderTileInt(const X, Y: Integer);
+begin
+ if gGameCursor.MapEdSize = 0 then
+    // Brush size smaller than one cell
+    gRenderAux.DotOnTerrain(Round(gGameCursor.Float.X), Round(gGameCursor.Float.Y), $FF80FF80)
+  else
+    RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],X,Y,0);
+end;
+
+
 procedure TRenderPool.RenderForegroundUI_Brush;
 var
-  I, K: Integer;
-  Tmp: Single;
-  Rad, Rad2, Size: Integer;
-  F: TKMPointF;
-  P: TKMPoint;
+  P, RP: TKMPoint;
+  Size: Integer;
+  IsSquare: Boolean;
 begin
   P := gGameCursor.Cell;
-  F := gGameCursor.Float;
+  Size := gGameCursor.MapEdSize;
+  IsSquare := gGameCursor.MapEdShape = hsSquare;
   if gGameCursor.MapEdMagicBrush then
-  begin
-    Size := gGameCursor.MapEdSize;
-    Rad := Size div 2;
-    if Size mod 2 = 1 then
-    begin
-      //first comes odd sizes 1,3,5..
-      for I:=-Rad to Rad do
-        for K:=-Rad to Rad do
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad + 0.5)) then               //Rounding corners in a nice way
-            RenderWireTile(KMPoint(P.X+K, P.Y+I), icLightCyan, 0, 0.3);
-    end
-    else
-    begin
-      //even sizes 2,4,6..
-      for I:=-Rad to Rad-1 do
-        for K:=-Rad to Rad-1 do
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I + 0.5) + Sqr(K + 0.5) < Sqr(Rad)) then           //Rounding corners in a nice way
-            RenderWireTile(KMPoint(P.X+K, P.Y+I), icLightCyan, 0, 0.3);
-    end;
-  end else
+    IterateOverArea(P, Size, IsSquare, RenderWireTileInt)
+  else
   if gGameCursor.Tag1 <> 0 then
   begin
-    Size := gGameCursor.MapEdSize;
-    if Size = 0 then
-      // Brush size smaller than one cell
-      gRenderAux.DotOnTerrain(Round(F.X), Round(F.Y), $FF80FF80)
-    else
+    if SHOW_BRUSH_APPLY_AREA then
     begin
-      // There are two brush types here, even and odd size
-      if Size mod 2 = 1 then
-      begin
-        // First comes odd sizes 1,3,5..
-        Rad := Size div 2;
-        for I := -Rad to Rad do
-          for K := -Rad to Rad do
-          // Rounding corners in a nice way
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad+0.5)) then
-            RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
-      end
-      else
-      begin
-        // Even sizes 2,4,6..
-        Rad := Size div 2;
-        for I := -Rad to Rad - 1 do
-          for K := -Rad to Rad - 1 do
-          // Rounding corners in a nice way
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I+0.5)+Sqr(K+0.5) < Sqr(Rad)) then
-            RenderTile(Combo[TKMTerrainKind(gGameCursor.Tag1), TKMTerrainKind(gGameCursor.Tag1),1],P.X+K,P.Y+I,0);
-      end;
+      RP := P;
+      if Size = 0 then
+        RP := KMPoint(Round(gGameCursor.Float.X+1), Round(gGameCursor.Float.Y+1));
+      IterateOverArea(RP, Size, IsSquare, RenderWireTileInt, True); // Render surrounding tiles, that will be fixed with transitions
     end;
-    Rad2 := Size div 2;// + 2;
-    if gGameCursor.MapEdMagicBrush2 then
-    begin
-      for I := -Rad2 to Rad2 do
-        for K := -Rad2 to Rad2 do
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad2)) then
-            RenderWireTile(KMPoint(P.X+K,P.Y+I), icLightCyan, 0, 0.3);
-    end;
+    IterateOverArea(P, Size, IsSquare, RenderTileInt);
   end;
 end;
 
@@ -1566,9 +1538,9 @@ begin
     cmHouses:     RenderWireHousePlan(KMPointAdd(P, gGameCursor.DragOffset), THouseType(gGameCursor.Tag1)); // Cyan quads and red Xs
     cmBrush:      RenderForegroundUI_Brush;
     cmTiles:      if gGameCursor.MapEdDir in [0..3] then
-                    fRenderTerrain.RenderTile(gGameCursor.Tag1, P.X, P.Y, gGameCursor.MapEdDir)
+                    RenderTile(gGameCursor.Tag1, P.X, P.Y, gGameCursor.MapEdDir)
                   else
-                    fRenderTerrain.RenderTile(gGameCursor.Tag1, P.X, P.Y, (gTerrain.AnimStep div 5) mod 4); // Spin it slowly so player remembers it is on randomized
+                    RenderTile(gGameCursor.Tag1, P.X, P.Y, (gTerrain.AnimStep div 5) mod 4); // Spin it slowly so player remembers it is on randomized
     cmObjects:    begin
                     // If there's object below - paint it in Red
                     RenderMapElement(gTerrain.Land[P.Y,P.X].Obj, gTerrain.AnimStep, P.X, P.Y, True, True);

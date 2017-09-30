@@ -41,20 +41,25 @@ type
       Data: Cardinal;
     end;
 
-    TempLand: array of array of TKMTerrainTileBasic;
+    // Temp data do not saved
+    fUseTempLand: Boolean;
+    fBrushAreaTerKindCnt: Integer;
+    fBrushAreaTerKind: array of TKMPoint;
+    fTempLand: array of array of TKMTerrainTileBasic;
 
-    MapXn, MapYn: Integer; //Cursor position node
-    MapXc, MapYc: Integer; //Cursor position cell
-    MapXn2, MapYn2: Integer; //keeps previous node position
-    MapXc2, MapYc2: Integer; //keeps previous cell position
+    fMapXn, fMapYn: Integer; //Cursor position node
+    fMapXc, fMapYc: Integer; //Cursor position cell
+    fMapXnOld, fMapYnOld: Integer; //keeps previous node position
+    fMapXcOld, fMapYcOld: Integer; //keeps previous cell position
 
-    function GetTileCornersTerrainKinds(aTile: TKMTerrainTileBasic): TKMTerrainKindsArray;
+    function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
+    function GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
     procedure CheckpointToTerrain;
-    procedure BrushTerrainTile(X, Y: SmallInt; aTerrainKind: TKMTerrainKind);
-    procedure MagicBrush(const aLocation: TKMPoint; aOnlyCell: Boolean = True; aUseTempLand: Boolean = True);
-    procedure UseMagicBrush(X,Y,Rad: Integer; aSquare: Boolean);
+    procedure BrushTerrainTile(const X, Y: Integer);
+    procedure MagicBrush(const X,Y: Integer);
+    procedure UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
     procedure UpdateTempLand;
-    procedure EditBrush(const aLoc: TKMPoint);
+    procedure EditBrush;
     procedure EditHeight;
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte);
     procedure GenerateAddnData;
@@ -68,10 +73,10 @@ type
     procedure SaveToFile(const aFileName: UnicodeString); overload;
     procedure SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect); overload;
     procedure Eyedropper(const aLoc: TKMPoint);
-    procedure RebuildMap(X,Y,Rad: Integer; aSquare: Boolean); overload;
+    procedure RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False); overload;
     procedure RebuildMap(const aRect: TKMRect); overload;
     procedure RotateTile(const aLoc: TKMPoint);
-    procedure RebuildTile(X,Y: Integer);
+    procedure RebuildTile(const X,Y: Integer);
 
     procedure MagicWater(const aLoc: TKMPoint);
 
@@ -166,7 +171,7 @@ const
 
 implementation
 uses
-  KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils, KM_Utils, KM_CommonTypes, KM_ResSprites;
+  KM_GameCursor, KM_Resource, KM_Log, KM_CommonUtils, KM_Utils, KM_CommonTypes, KM_ResSprites, KM_GUIMapEdTerrainBrushes;
 
 
 function GetCombo(aTerKindFrom, aTerKindTo: TKMTerrainKind; aTransition: Byte; var aFound: Boolean): SmallInt;
@@ -177,29 +182,70 @@ begin
     and not ((aTerKindFrom = tkGrass) and (aTerKindTo = tkGrass))
     and (aTerKindTo <> tkCustom)
     and (aTerKindFrom <> tkCustom) then
-  begin
     //We have no direct transition
     aFound := False;
-
-  end;
-
-
 end;
 
 
 { TKMTerrainPainter }
-procedure TKMTerrainPainter.BrushTerrainTile(X, Y: SmallInt; aTerrainKind: TKMTerrainKind);
+function TKMTerrainPainter.BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to fBrushAreaTerKindCnt - 1 do
+    if aCell = fBrushAreaTerKind[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer);
+
+  procedure AddBrushAreaTerKind(aX,aY: Integer);
+  var
+    P: TKMPoint;
+  begin
+    P := KMPoint(aX,aY);
+    if not BrushAreaTerKindContains(P) then
+    begin
+      fBrushAreaTerKind[fBrushAreaTerKindCnt] := P;
+      Inc(fBrushAreaTerKindCnt);
+    end;
+  end;
+
+var
+  TerKind: TKMTerrainKind;
 begin
   if not gTerrain.TileInMapCoords(X, Y) then
     Exit;
 
-  LandTerKind[Y, X].TerKind := aTerrainKind;
-  LandTerKind[Y, X + 1].TerKind := aTerrainKind;
-  LandTerKind[Y + 1, X + 1].TerKind := aTerrainKind;
-  LandTerKind[Y + 1, X].TerKind := aTerrainKind;
+  TerKind := TKMTerrainKind(gGameCursor.Tag1);
 
-  gTerrain.Land[Y, X].BaseLayer.Terrain := PickRandomTile(TKMTerrainKind(gGameCursor.Tag1));
+  if gGameCursor.MapEdSize = 0 then
+  begin
+    if (fMapXnOld <> fMapXn) or (fMapYnOld <> fMapYn) then
+    begin
+      LandTerKind[fMapYn, fMapXn].TerKind := TerKind;
+      AddBrushAreaTerKind(fMapXn, fMapYn);
+    end;
+    Exit;
+  end;
+
+  LandTerKind[Y,   X].TerKind   := TerKind;
+  LandTerKind[Y,   X+1].TerKind := TerKind;
+  LandTerKind[Y+1, X+1].TerKind := TerKind;
+  LandTerKind[Y+1, X].TerKind   := TerKind;
+
+  gTerrain.Land[Y, X].BaseLayer.Terrain := PickRandomTile(TerKind);
   gTerrain.Land[Y, X].BaseLayer.Rotation := Random(4); //Random direction for all plain tiles
+
+  AddBrushAreaTerKind(X,  Y);
+  AddBrushAreaTerKind(X+1,Y);
+  AddBrushAreaTerKind(X+1,Y+1);
+  AddBrushAreaTerKind(X,  Y+1);
 end;
 
 
@@ -218,20 +264,22 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.RebuildTile(X,Y: Integer);
+procedure TKMTerrainPainter.RebuildTile(const X,Y: Integer);
 var
   pY, pX, Nodes, Rot, T: Integer;
   Tmp, Ter1, Ter2, A, B, C, D: TKMTerrainKind;
   Found: Boolean;
 begin
+  if not gTerrain.TileInMapCoords(X, Y) then Exit;
+
   pX := EnsureRange(X, 1, gTerrain.MapX - 1);
   pY := EnsureRange(Y, 1, gTerrain.MapY - 1);
 
   //don't touch custom placed tiles (tkCustom type)
   if (LandTerKind[pY  ,pX].TerKind <> tkCustom)
-    and (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
-    and (LandTerKind[pY+1,pX].TerKind <> tkCustom)
-    and (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
+    or (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
+    or (LandTerKind[pY+1,pX].TerKind <> tkCustom)
+    or (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
   begin
     A := (LandTerKind[pY    , pX    ].TerKind);
     B := (LandTerKind[pY    , pX + 1].TerKind);
@@ -325,54 +373,76 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.RebuildMap(X,Y,Rad: Integer; aSquare: Boolean);
+procedure TKMTerrainPainter.RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
 var
   I, K: Integer;
 begin
-  for I := -Rad to Rad do
-    for K := -Rad to Rad do
-      if aSquare or (Sqr(I) + Sqr(K) < Sqr(Rad)) then
-        RebuildTile(X+K,Y+I);
+  IterateOverArea(KMPoint(X,Y), aSize, aSquare, RebuildTile, aAroundTiles);
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTerrainKinds(aTile: TKMTerrainTileBasic): TKMTerrainKindsArray;
-  function GetBaseLayerTerKinds: TKMTerrainKindsArray;
-  var I: Integer;
+function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
+var
+  TerKindFound: array [0..3] of Boolean;
+
+  procedure CheckTerKind(aX,aY,aI: Integer);
+  var
+    TerKind: TKMTerrainKind;
   begin
-    SetLength(Result, 4);
-    for I := 0 to 3 do
-      if I in aTile.BaseLayer.Corners then
-        Result[I] := TILE_CORNERS_TERRAIN_KINDS[aTile.BaseLayer.Terrain, (I + 4 - aTile.BaseLayer.Rotation) mod 4]
-      else
-        Result[I] := tkCustom;
+    if not gTerrain.TileInMapCoords(aX, aY)
+      or (not aUseOnlyNodeTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
+      Exit;
+
+    TerKind := LandTerKind[aY,aX].TerKind;
+    if TerKind <> tkCustom then
+    begin
+      TerKindFound[aI] := True;
+      Result[aI] := TerKind;
+    end;
   end;
 
 var
   I,L: Integer;
   TerKind: TKMTerrainKind;
-begin
-  Result := GetBaseLayerTerKinds;
+  Tile: TKMTerrainTileBasic;
 
-  if aTile.LayersCnt > 0 then
+begin
+  SetLength(Result, 4);
+
+  if aUseTempLand then
+    Tile := fTempLand[aCell.Y, aCell.X]
+  else
+    Tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
+
+  for I := 0 to 3 do
   begin
-    for L := 0 to aTile.LayersCnt - 1 do
-    begin
-      for I := 0 to 3 do
-      begin
-        if I in aTile.Layer[L].Corners then
-        begin
-          TerKind := gRes.Sprites.GetGenTerrainKindByTerrain(aTile.Layer[L].Terrain);
-          if TerKind <> tkCustom then
-            Result[I] := TerKind;
-        end;
-      end;
-    end;
+    TerKindFound[I] := False;
+    Result[I] := tkCustom;
   end;
+
+  if not aUseOnlyTileOwnTK then
+  begin
+    CheckTerKind(aCell.X,   aCell.Y,   0);
+    CheckTerKind(aCell.X+1, aCell.Y,   1);
+    CheckTerKind(aCell.X+1, aCell.Y+1, 2);
+    CheckTerKind(aCell.X,   aCell.Y+1, 3);
+  end;
+
+  if not aUseOnlyNodeTK then
+    for I := 0 to 3 do
+      if not TerKindFound[I] then
+      begin
+        if I in Tile.BaseLayer.Corners then
+          Result[I] := TILE_CORNERS_TERRAIN_KINDS[Tile.BaseLayer.Terrain, (I + 4 - Tile.BaseLayer.Rotation) mod 4]
+        else
+          for L := 0 to Tile.LayersCnt - 1 do
+            if I in Tile.Layer[L].Corners then
+              Result[I] := gRes.Sprites.GetGenTerrainKindByTerrain(Tile.Layer[L].Terrain);;
+      end;
 end;
 
 
-procedure TKMTerrainPainter.MagicBrush(const aLocation: TKMPoint; aOnlyCell: Boolean = True; aUseTempLand: Boolean = True);
+procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
 
 type
   TMaskInfo = record
@@ -431,10 +501,7 @@ type
         //so f.e. for 0 corner, and tile 'above' (tile to the top from tasrget cell(aCell)) we have to get terrainKind from corner 3
         //3 = 1 (I, start from top left alwaysm top tile is the 2nd tile) + 0 (aCorner) + 2
         //and so on
-        if aUseTempLand then
-          TerKinds[K] := GetTileCornersTerrainKinds(TempLand[RectCorners[J].Y,RectCorners[J].X])[(I+aCorner+2) mod 4]
-        else
-          TerKinds[K] := GetTileCornersTerrainKinds(GetTerrainTileBasic(gTerrain.Land[RectCorners[J].Y,RectCorners[J].X]))[(I+aCorner+2) mod 4];
+        TerKinds[K] := GetTileCornersTerrainKinds(RectCorners[J], fUseTempLand)[(I+aCorner+2) mod 4];
         // Find diagTerKind, as its preferrable over other cells
         if (aCell.X <> RectCorners[J].X) and (aCell.Y <> RectCorners[J].Y) then
           DiagTerKind := TerKinds[K];
@@ -493,7 +560,7 @@ type
     I, J, Tmp: Integer;
     CornerI: array[0..3] of Integer;
   begin
-    Result := mt_None;
+    Result := mt_None; // makes compiler happy
     // A B
     // D C
     A := aCornerTerKinds[0];
@@ -506,7 +573,7 @@ type
     if (A = B) and (A = C) and (A = D) then
     begin
       Result := mt_None;
-      aLayerOrder[0].TerKind := aCornerTerKinds[0];
+      aLayerOrder[0].TerKind := A;
       aLayerOrder[0].Corners := [0,1,2,3];
       aLayerOrder[0].Rotation := 0;
       Exit;
@@ -518,17 +585,17 @@ type
     begin
       if TER_KIND_ORDER[B] < TER_KIND_ORDER[D] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[1];
+        aLayerOrder[0].TerKind := B;
         aLayerOrder[0].Corners := [0,1,2];
-        aLayerOrder[1].TerKind := aCornerTerKinds[3];
+        aLayerOrder[1].TerKind := D;
         aLayerOrder[1].Rotation := 3;
         aLayerOrder[1].Corners := [3];
         Result := mt_2Corner;
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[3];
+        aLayerOrder[0].TerKind := D;
         aLayerOrder[0].Corners := [3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[1];
+        aLayerOrder[1].TerKind := B;
         aLayerOrder[1].Rotation := 1;
         aLayerOrder[1].Corners := [0,1,2];
         Result := mt_2Diagonal;
@@ -542,17 +609,17 @@ type
     begin
       if TER_KIND_ORDER[A] < TER_KIND_ORDER[C] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[0];
+        aLayerOrder[0].TerKind := A;
         aLayerOrder[0].Corners := [0,1,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[2];
+        aLayerOrder[1].TerKind := C;
         aLayerOrder[1].Rotation := 2;
         aLayerOrder[1].Corners := [2];
         Result := mt_2Corner;
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[2];
+        aLayerOrder[0].TerKind := C;
         aLayerOrder[0].Corners := [2];
-        aLayerOrder[1].TerKind := aCornerTerKinds[0];
+        aLayerOrder[1].TerKind := A;
         aLayerOrder[1].Rotation := 0;
         aLayerOrder[1].Corners := [0,1,3];
         Result := mt_2Diagonal;
@@ -566,17 +633,17 @@ type
     begin
       if TER_KIND_ORDER[A] < TER_KIND_ORDER[C] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[0];
+        aLayerOrder[0].TerKind := A;
         aLayerOrder[0].Corners := [0];
-        aLayerOrder[1].TerKind := aCornerTerKinds[2];
+        aLayerOrder[1].TerKind := C;
         aLayerOrder[1].Rotation := 2;
         aLayerOrder[1].Corners := [1,2,3];
         Result := mt_2Diagonal;
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[2];
+        aLayerOrder[0].TerKind := C;
         aLayerOrder[0].Corners := [1,2,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[0];
+        aLayerOrder[1].TerKind := A;
         aLayerOrder[1].Rotation := 0;
         aLayerOrder[1].Corners := [0];
         Result := mt_2Corner;
@@ -590,17 +657,17 @@ type
     begin
       if TER_KIND_ORDER[D] < TER_KIND_ORDER[B] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[3];
+        aLayerOrder[0].TerKind := D;
         aLayerOrder[0].Corners := [0,2,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[1];
+        aLayerOrder[1].TerKind := B;
         aLayerOrder[1].Rotation := 1;
         aLayerOrder[1].Corners := [1];
         Result := mt_2Corner;
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[1];
+        aLayerOrder[0].TerKind := B;
         aLayerOrder[0].Corners := [1];
-        aLayerOrder[1].TerKind := aCornerTerKinds[3];
+        aLayerOrder[1].TerKind := D;
         aLayerOrder[1].Rotation := 3;
         aLayerOrder[1].Corners := [0,2,3];
         Result := mt_2Diagonal;
@@ -615,16 +682,16 @@ type
       Result := mt_2Straight;
       if TER_KIND_ORDER[A] < TER_KIND_ORDER[C] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[0];
+        aLayerOrder[0].TerKind := A;
         aLayerOrder[0].Corners := [0,1];
-        aLayerOrder[1].TerKind := aCornerTerKinds[2];
+        aLayerOrder[1].TerKind := C;
         aLayerOrder[1].Rotation := 2;
         aLayerOrder[1].Corners := [2,3];
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[2];
+        aLayerOrder[0].TerKind := C;
         aLayerOrder[0].Corners := [2,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[0];
+        aLayerOrder[1].TerKind := A;
         aLayerOrder[1].Rotation := 0;
         aLayerOrder[1].Corners := [0,1];
       end;
@@ -638,16 +705,16 @@ type
       Result := mt_2Straight;
       if TER_KIND_ORDER[A] < TER_KIND_ORDER[B] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[0];
+        aLayerOrder[0].TerKind := A;
         aLayerOrder[0].Corners := [0,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[1];
+        aLayerOrder[1].TerKind := B;
         aLayerOrder[1].Rotation := 1;
         aLayerOrder[1].Corners := [1,2];
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[1];
+        aLayerOrder[0].TerKind := B;
         aLayerOrder[0].Corners := [1,2];
-        aLayerOrder[1].TerKind := aCornerTerKinds[0];
+        aLayerOrder[1].TerKind := A;
         aLayerOrder[1].Rotation := 3;
         aLayerOrder[1].Corners := [0,3];
       end;
@@ -662,16 +729,16 @@ type
       Result := mt_2Opposite;
       if TER_KIND_ORDER[A] < TER_KIND_ORDER[B] then
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[0];
+        aLayerOrder[0].TerKind := A;
         aLayerOrder[0].Corners := [0,2];
-        aLayerOrder[1].TerKind := aCornerTerKinds[1];
+        aLayerOrder[1].TerKind := B;
         aLayerOrder[1].Rotation := 1;
         aLayerOrder[1].Corners := [1,3];
       end else
       begin
-        aLayerOrder[0].TerKind := aCornerTerKinds[1];
+        aLayerOrder[0].TerKind := B;
         aLayerOrder[0].Corners := [1,3];
-        aLayerOrder[1].TerKind := aCornerTerKinds[0];
+        aLayerOrder[1].TerKind := A;
         aLayerOrder[1].Rotation := 0;
         aLayerOrder[1].Corners := [0,2];
       end;
@@ -730,7 +797,7 @@ type
     end;
 
 
-    aLayerOrder[0].TerKind := aCornerTerKinds[0];
+    aLayerOrder[0].TerKind := A;
     aLayerOrder[0].Rotation := 0;
     aLayerOrder[0].Corners := [0,1,2,3];
 
@@ -756,92 +823,59 @@ type
     end;
   end;
 
-  procedure ApplyMagicBrush(aCell: TKMPoint);
-  var
-    I: Integer;
-    TileTerKinds: TKMTerrainKindsArray;
-    AroundTerKinds: TKMTerrainKindsArray;
-    CollisionFound: Boolean;
-    LayerOrder: array of TMaskInfo;
-    MaskType: TKMTileMaskType;
-  begin
-    if not gTerrain.TileInMapCoords(aCell.X, aCell.Y) then Exit;
-
-    if aUseTempLand then
-      TileTerKinds := GetTileCornersTerrainKinds(TempLand[aCell.Y, aCell.X])
-    else
-      TileTerKinds := GetTileCornersTerrainKinds(GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]));
-
-    AroundTerKinds := GetTerKindsAround(aCell);
-
-    CollisionFound := False;
-    Inc(fTime[7].Data);
-    for I := 0 to 3 do
-      if HasCollision(TileTerKinds[I], AroundTerKinds[I]) then
-      begin
-        CollisionFound := True;
-        Break;
-      end;
-
-    if CollisionFound then  //Need to apply MagicBrush
-      with gTerrain.Land[aCell.Y,aCell.X] do
-      begin
-        Inc(fTime[8].Data);
-        SetLength(LayerOrder, 4);
-
-        MaskType := GetMaskType(AroundTerKinds, LayerOrder);
-
-        BaseLayer.Terrain := BASE_TERRAIN[LayerOrder[0].TerKind];
-        BaseLayer.Rotation := 0;
-        BaseLayer.Corners := LayerOrder[0].Corners;
-        LayersCnt := TILE_MASKS_LAYERS_CNT[MaskType] - 1;
-
-        if MaskType = mt_None then Exit;
-
-        for I := 1 to LayersCnt do
-        begin
-          Layer[I-1].Terrain := gGenTerrainTransitions[LayerOrder[I].TerKind, MaskType, LayerOrder[I].SubType];
-          Layer[I-1].Rotation := LayerOrder[I].Rotation;
-          Layer[I-1].Corners := LayerOrder[I].Corners;
-        end;
-      end;
-  end;
-
 var
-  I,K,Size,Rad: Integer;
+  I: Integer;
+  TileOwnTerKinds: TKMTerrainKindsArray;
+  TileNodeTerKinds: TKMTerrainKindsArray;
+  AroundTerKinds: TKMTerrainKindsArray;
+  CollisionFound: Boolean;
+  LayerOrder: array of TMaskInfo;
+  MaskType: TKMTileMaskType;
 begin
-  if not gTerrain.TileInMapCoords(aLocation.X, aLocation.Y) then Exit;
+  if not gTerrain.TileInMapCoords(X, Y) then Exit;
 
-  Size := gGameCursor.MapEdSize;
-  Rad := Size div 2;
+  TileNodeTerKinds := GetTileCornersTerrainKinds(KMPoint(X,Y), fUseTempLand, False, True);
 
-  fTime[7].Desc := 'Cells total';
-  fTime[8].Desc := 'Collisions total';
+  for I := 0 to 3 do
+    if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
+      Exit;
 
-  if aOnlyCell or (Rad = 0) then
-  begin
-    ApplyMagicBrush(aLocation);
-//    gLog.AddTime('MagicBrush applied');
-    Exit;
-  end;
+  TileOwnTerKinds := GetTileCornersTerrainKinds(KMPoint(X,Y), fUseTempLand, True);
+  AroundTerKinds := GetTerKindsAround(KMPoint(X,Y));
 
-//  gLog.AddTime('Prepare Temp MagicBrush');
+  for I := 0 to 3 do
+    if AroundTerKinds[I] = tkCustom then  // Do not set masks if at least 1 around corner is custom
+      Exit;
 
-  //There are two brush types here, even and odd size
-  if Size mod 2 = 1 then
-  begin
-    //first comes odd sizes 1,3,5..
-    for I:=-Rad to Rad do for K:=-Rad to Rad do
-      if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad + 0.5)) then               //Rounding corners in a nice way
-        ApplyMagicBrush(KMPoint(aLocation.X+K, aLocation.Y+I));
-  end
-  else
-  begin
-    //even sizes 2,4,6..
-    for I:=-Rad to Rad-1 do for K:=-Rad to Rad-1 do
-      if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I + 0.5) + Sqr(K + 0.5) < Sqr(Rad)) then           //Rounding corners in a nice way
-        ApplyMagicBrush(KMPoint(aLocation.X+K, aLocation.Y+I));
-  end;
+  CollisionFound := False;
+  for I := 0 to 3 do
+    if HasCollision(TileOwnTerKinds[I], AroundTerKinds[I]) then
+    begin
+      CollisionFound := True;
+      Break;
+    end;
+
+  if CollisionFound then  //Need to apply MagicBrush
+    with gTerrain.Land[Y,X] do
+    begin
+      SetLength(LayerOrder, 4);
+
+      MaskType := GetMaskType(AroundTerKinds, LayerOrder);
+
+      BaseLayer.Terrain := BASE_TERRAIN[LayerOrder[0].TerKind];
+      BaseLayer.Rotation := 0;
+      BaseLayer.Corners := LayerOrder[0].Corners;
+      LayersCnt := TILE_MASKS_LAYERS_CNT[MaskType] - 1;
+
+      if MaskType = mt_None then Exit;
+
+      for I := 1 to LayersCnt do
+      begin
+        Layer[I-1].Terrain := gGenTerrainTransitions[LayerOrder[I].TerKind, MaskType, LayerOrder[I].SubType];
+        Layer[I-1].Rotation := LayerOrder[I].Rotation;
+        Layer[I-1].Corners := LayerOrder[I].Corners;
+      end;
+    end;
 
 end;
 
@@ -853,17 +887,17 @@ begin
   for I := 1 to gTerrain.MapY do
     for J := 1 to gTerrain.MapX do
     begin
-      TempLand[I,J].BaseLayer := gTerrain.Land[I,J].BaseLayer;
-      TempLand[I,J].LayersCnt := gTerrain.Land[I,J].LayersCnt;
-      TempLand[I,J].Height := gTerrain.Land[I,J].Height;
-      TempLand[I,J].Obj := gTerrain.Land[I,J].Obj;
+      fTempLand[I,J].BaseLayer := gTerrain.Land[I,J].BaseLayer;
+      fTempLand[I,J].LayersCnt := gTerrain.Land[I,J].LayersCnt;
+      fTempLand[I,J].Height := gTerrain.Land[I,J].Height;
+      fTempLand[I,J].Obj := gTerrain.Land[I,J].Obj;
       for L := 0 to 2 do
-        TempLand[I,J].Layer[L] := gTerrain.Land[I,J].Layer[L];
+        fTempLand[I,J].Layer[L] := gTerrain.Land[I,J].Layer[L];
     end;
 end;
 
 
-procedure TKMTerrainPainter.UseMagicBrush(X,Y,Rad: Integer; aSquare: Boolean);
+procedure TKMTerrainPainter.UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
 var
   I,K: Integer;
 begin
@@ -873,66 +907,52 @@ begin
 //  gLog.AddTime('Prepare Temp UseMagicBrush');
   UpdateTempLand;
 
-  for I := -Rad to Rad do
-    for K := -Rad to Rad do
-      if aSquare or (Sqr(I) + Sqr(K) < Sqr(Rad)) then
-        MagicBrush(KMPoint(X+K,Y+I));
+  fUseTempLand := True;
+  IterateOverArea(KMPoint(X,Y), aSize, aSquare, MagicBrush, aAroundTiles);
 
-  for I := Low(fTime) to High(fTime) do
-    gLog.AddTime(Format('%s: %d ms', [fTime[I].Desc, fTime[I].Data]));
+//  for I := Low(fTime) to High(fTime) do
+//    gLog.AddTime(Format('%s: %d ms', [fTime[I].Desc, fTime[I].Data]));
 end;
 
 
-procedure TKMTerrainPainter.EditBrush(const aLoc: TKMPoint);
+procedure TKMTerrainPainter.EditBrush;
 var
-  I,K,Size,Rad: Integer;
+  Size, X, Y: Integer;
 begin
   //Cell below cursor
-  MapXc := EnsureRange(round(gGameCursor.Float.X+0.5),1,gTerrain.MapX);
-  MapYc := EnsureRange(round(gGameCursor.Float.Y+0.5),1,gTerrain.MapY);
+  fMapXc := EnsureRange(round(gGameCursor.Float.X+0.5),1,gTerrain.MapX);
+  fMapYc := EnsureRange(round(gGameCursor.Float.Y+0.5),1,gTerrain.MapY);
 
   //Node below cursor
-  MapXn := EnsureRange(round(gGameCursor.Float.X+1),1,gTerrain.MapX);
-  MapYn := EnsureRange(round(gGameCursor.Float.Y+1),1,gTerrain.MapY);
+  fMapXn := EnsureRange(round(gGameCursor.Float.X+1),1,gTerrain.MapX);
+  fMapYn := EnsureRange(round(gGameCursor.Float.Y+1),1,gTerrain.MapY);
 
   Size := gGameCursor.MapEdSize;
-  Rad := Size div 2;
+
+  // Clear fBrushAreaTerKind array. It will be refilled in BrushTerrainTile
+  fBrushAreaTerKindCnt := 0;
+
+  IterateOverArea(KMPoint(fMapXc,fMapYc), Size, gGameCursor.MapEdShape = hsSquare, BrushTerrainTile);
 
   if Size = 0 then
   begin
-    if (MapXn2 <> MapXn) or (MapYn2 <> MapYn) then
-      LandTerKind[MapYn, MapXn].TerKind := TKMTerrainKind(gGameCursor.Tag1);
-  end
-  else
-    if (MapXc2 <> MapXc) or (MapYc2 <> MapYc) then
-    begin
-      //There are two brush types here, even and odd size
-      if Size mod 2 = 1 then
-      begin
-        //first comes odd sizes 1,3,5..
-        for I:=-Rad to Rad do for K:=-Rad to Rad do
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I) + Sqr(K) < Sqr(Rad + 0.5)) then               //Rounding corners in a nice way
-            BrushTerrainTile(MapXc+K, MapYc+I, TKMTerrainKind(gGameCursor.Tag1));
-      end
-      else
-      begin
-        //even sizes 2,4,6..
-        for I:=-Rad to Rad-1 do for K:=-Rad to Rad-1 do
-          if (gGameCursor.MapEdShape = hsSquare) or (Sqr(I + 0.5) + Sqr(K + 0.5) < Sqr(Rad)) then           //Rounding corners in a nice way
-            BrushTerrainTile(MapXc+K, MapYc+I, TKMTerrainKind(gGameCursor.Tag1));
-      end;
-    end;
-  RebuildMap(MapXc, MapYc, Rad+2, (gGameCursor.MapEdShape = hsSquare)); //+3 for surrounding tiles
+    X := fMapXn;
+    Y := fMapYn;
+  end else begin
+    X := fMapXc;
+    Y := fMapYc;
+  end;
+  RebuildMap(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True); //+4 for surrounding tiles
 
   if gGameCursor.MapEdMagicBrush2 then
-    UseMagicBrush(MapXc, MapYc, Rad, (gGameCursor.MapEdShape = hsSquare));
+    UseMagicBrush(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
 
-  MapXn2 := MapXn;
-  MapYn2 := MapYn;
-  MapXc2 := MapXc;
-  MapYc2 := MapYc;
+  fMapXcOld := fMapXc;
+  fMapYcOld := fMapYc;
+  fMapXnOld := fMapXn;
+  fMapYnOld := fMapYn;
 
-  gTerrain.UpdatePassability(KMRectGrow(KMRect(aLoc), Rad+1));
+  gTerrain.UpdatePassability(KMRectGrow(KMRect(gGameCursor.Cell), (Size div 2) + 1));
 end;
 
 
@@ -1015,7 +1035,10 @@ procedure TKMTerrainPainter.EditTile(const aLoc: TKMPoint; aTile: Word; aRotatio
 begin
   if gTerrain.TileInMapCoords(aLoc.X, aLoc.Y) then
   begin
-    LandTerKind[aLoc.Y, aLoc.X].TerKind := tkCustom;
+    LandTerKind[aLoc.Y,   aLoc.X].TerKind   := tkCustom;
+    LandTerKind[aLoc.Y,   aLoc.X+1].TerKind := tkCustom;
+    LandTerKind[aLoc.Y+1, aLoc.X].TerKind   := tkCustom;
+    LandTerKind[aLoc.Y+1, aLoc.X+1].TerKind := tkCustom;
 
     gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer.Terrain := aTile;
     gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer.Corners := [0,1,2,3];
@@ -1313,8 +1336,11 @@ begin
   for I := 0 to High(fUndos) do
     SetLength(fUndos[I].Data, Y+1, X+1);
 
+  fBrushAreaTerKindCnt := 0;
+
   SetLength(LandTerKind, Y+1, X+1);
-  SetLength(TempLand, Y+1, X+1);
+  SetLength(fTempLand, Y+1, X+1);
+  SetLength(fBrushAreaTerKind, Sqr(BRUSH_MAX_SIZE+1));
 end;
 
 
@@ -1613,9 +1639,11 @@ begin
                     if gGameCursor.MapEdMagicBrush then
                     begin
 //                      UpdateTempLand;
-                      MagicBrush(gGameCursor.Cell, False, False);
+                      fUseTempLand := False;
+                      IterateOverArea(gGameCursor.Cell, gGameCursor.MapEdSize, gGameCursor.MapEdShape = hsSquare, MagicBrush);
+//                      MagicBrush(gGameCursor.Cell, False, False);
                     end else
-                      EditBrush(gGameCursor.Cell);
+                      EditBrush;
                   end;
     cmTiles:      if (ssLeft in gGameCursor.SState) then
                     if gGameCursor.MapEdDir in [0..3] then //Defined direction

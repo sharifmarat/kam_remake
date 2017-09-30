@@ -41,6 +41,8 @@ uses
 
 { TKMMapEdExtras }
 constructor TKMMapEdExtras.Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
+const
+  PANEL_HEIGHT = 200;
 var
   I: Integer;
 begin
@@ -48,11 +50,11 @@ begin
 
   fOnChange := aOnChange;
 
-  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - 190, 600, 190);
+  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - PANEL_HEIGHT, 600, 190);
   Panel_Extra.Anchors := [anLeft, anBottom];
   Panel_Extra.Hide;
 
-  with TKMImage.Create(Panel_Extra, 0, 0, 600, 190, 409) do
+  with TKMImage.Create(Panel_Extra, 0, 0, 600, PANEL_HEIGHT, 409) do
   begin
     Anchors := [anLeft, anTop, anBottom];
     ImageAnchors := [anLeft, anRight, anTop];
@@ -86,9 +88,8 @@ begin
   CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 250, 150, 180, 20, 'Show tile owners', fnt_Antiqua); //Todo translate
   CheckBox_ShowTileOwners.Checked := False; //Disabled by default
   CheckBox_ShowTileOwners.OnClick := Extra_Change;
-
-  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 150, 180, 20, 'Show tiles grid', fnt_Antiqua); //Todo translate
-  CheckBox_ShowTilesGrid.Checked := False; //Disabled by default
+  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 250, 170, 180, 20, 'Show tiles grid', fnt_Antiqua); //Todo translate
+  CheckBox_ShowTilesGrid.Checked := True; //Disabled by default
   CheckBox_ShowTilesGrid.OnClick := Extra_Change;
 
   //dropdown list needs to be ontop other buttons created on Panel_Main
