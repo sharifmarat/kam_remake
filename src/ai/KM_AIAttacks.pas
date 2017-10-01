@@ -4,6 +4,8 @@ interface
 uses
   KM_Defaults, KM_CommonClasses, KM_Points;
 
+// Test comment
+
 type
   TAIAttackType = (
     aat_Once,     // Attack will occur once (after the set time has passed and if they have enough troops
