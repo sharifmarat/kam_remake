@@ -493,7 +493,7 @@ begin
 
   FreeAndNil(fRoadsList);
 
-  fAI.Mayor.AfterMissionInit;
+  fAI.AfterMissionInit;
 end;
 
 
