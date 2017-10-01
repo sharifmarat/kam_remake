@@ -32,6 +32,11 @@ uses
   KM_AIMayorBalance in 'src\ai\KM_AIMayorBalance.pas',
   KM_AISetup in 'src\ai\KM_AISetup.pas',
 
+  KM_CityManagement in 'src\ai\newAI\KM_CityManagement.pas',
+  KM_CityPredictor in 'src\ai\newAI\KM_CityPredictor.pas',
+  KM_CityBuilder in 'src\ai\newAI\KM_CityBuilder.pas',
+  KM_CityPlanner in 'src\ai\newAI\KM_CityPlanner.pas', 
+
   KM_Alerts in 'src\KM_Alerts.pas',
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
