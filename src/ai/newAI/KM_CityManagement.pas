@@ -64,7 +64,7 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
   fSetup := TKMHandAISetup.Create; //DELETE!!!!!!!!!!!!!!!!!!!!
-  fSetup.ApplyAgressiveBuilderSetup(True, True);
+  fSetup.ApplyAgressiveBuilderSetup(True);
 
   fBuilder := TKMCityBuilder.Create(aPlayer);
   fPredictor := TKMCityPredictor.Create(aPlayer);
