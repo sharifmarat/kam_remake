@@ -49,11 +49,13 @@ type
   end;
   PRXData = ^TRXData;
 
+  TTGameResourceLoader = class;
+
   //Base class for Sprite loading
   TKMSpritePack = class
   private
     fPad: Byte; //Force padding between sprites to avoid neighbour edge visibility
-    procedure MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal);
+    procedure MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal; aFillGFXData: Boolean = True);
     procedure SaveTextureToPNG(aWidth, aHeight: Word; const aFilename: string; const Data: TKMCardinalArray);
   protected
     fRT: TRXType;
@@ -68,7 +70,7 @@ type
 
     procedure LoadFromRXXFile(const aFileName: string; aStartingIndex: Integer = 1);
     procedure OverloadFromFolder(const aFolder: string);
-    procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1); overload;
+    procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True);
     procedure DeleteSpriteTexture(aIndex: Integer);
 
     function GetSpriteColors(aCount: Word): TRGBArray;
@@ -90,15 +92,25 @@ type
     fGenTexIdStartI: Integer;
     fGenTerrainToTerKind: array of TKMTerrainKind;
 
+    fGameRXTypes: TStringList; //list of TRXType for game resources
+    fGameResLoader: TTGameResourceLoader; // thread of game resource loader
+    fGameResLoadCompleted: Boolean;
+
     function GetRXFileName(aRX: TRXType): string;
     function GetSprites(aRT: TRXType): TKMSpritePack;
+
+    procedure ManageResLoader;
+    procedure StopResourceLoader;
+    procedure GenerateTextureAtlasForGameRes(aRT: TRXType);
+    function GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
   public
     constructor Create(aStepProgress: TEvent; aStepCaption: TUnicodeStringEvent);
     destructor Destroy; override;
 
     procedure LoadMenuResources;
-    procedure LoadGameResources(aAlphaShadows: Boolean);
+    procedure LoadGameResources(aAlphaShadows: Boolean; aForceReload: Boolean = False);
     procedure ClearTemp;
+    procedure ClearGameResGenTemp;
     class procedure SetMaxAtlasSize(aMaxSupportedTxSize: Integer);
     class function AllTilesOnOneAtlas: Boolean;
 
@@ -114,6 +126,22 @@ type
 
     property AlphaShadows: Boolean read fAlphaShadows;
     property FileName[aRX: TRXType]: string read GetRXFileName;
+
+    procedure UpdateStateIdle;
+  end;
+
+
+  //Game resource loader thread
+  TTGameResourceLoader = class(TThread)
+  private
+    fResSprites: TKMResSprites;
+    fAlphaShadows: Boolean;
+  public
+    DoTerminate: Boolean; // flag, to allow this thread exit loop in Execute method
+    RXType: TRXType;
+    LoadDone: Boolean;    // flag to show, when another rxx load is completed
+    constructor Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
+    procedure Execute; override;
   end;
 
 
@@ -135,15 +163,27 @@ var
                                   of Word;
 implementation
 uses
-  TypInfo, KromUtils, KM_Log, KM_BinPacking, KM_CommonUtils;
+  KromUtils, KM_Log, KM_BinPacking, KM_CommonUtils;
+
+type
+  TSpriteAtlasType = (saBase, saMask);
 
 const
   MAX_GAME_ATLAS_SIZE = 2048; //Max atlas size for KaM. No need for bigger atlases
+  SPRITE_TYPE_EXPORT_NAME: array [TSpriteAtlasType] of string = ('Base', 'Mask');
 
 var
-  LOG_EXTRA_GFX: Boolean = True;
+  LOG_EXTRA_GFX: Boolean = False;
   ALL_TILES_IN_ONE_TEXTURE: Boolean = False;
   MaxAtlasSize: Integer;
+
+  gGFXPrepData: array[TSpriteAtlasType] of  // for each atlas type
+                  array of                  // Atlases for each rxx
+                    record                  // Atlas data, needed for Texture Atlas Generation
+                      SpriteInfo: TBinItem;
+                      TexType: TTexFormat;
+                      Data: TKMCardinalArray;
+                    end;
 
 
 { TKMSpritePack }
@@ -522,7 +562,10 @@ begin
 end;
 
 
-procedure TKMSpritePack.MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1);
+//Take RX data and make nice atlas texture out of it
+//Atlases should be POT to improve performance and avoid driver bugs
+//In result we have GFXData structure filled
+procedure TKMSpritePack.MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True);
 var
   TexType: TTexFormat;
   BaseRAM, IdealRAM, ColorRAM, TexCount: Cardinal;
@@ -536,7 +579,7 @@ begin
   else
     TexType := tf_RGB5A1;
 
-  MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount);
+  MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount, aFillGFXData);
 
   if LOG_EXTRA_GFX then
   begin
@@ -553,18 +596,51 @@ begin
 end;
 
 
+//Set GFXData from SpriteInfo
+procedure SetGFXData(aTx: Cardinal; aSpriteInfo: TBinItem; aAtlasType: TSpriteAtlasType; aSpritesPack: TKMSpritePack; aRT: TRXType);
+var
+  K: Integer;
+  ID: Word;
+  TxCoords: TKMTexCoords;
+begin
+  for K := 0 to High(aSpriteInfo.Sprites) do
+  begin
+    ID := aSpriteInfo.Sprites[K].SpriteID;
+
+    TxCoords.ID := aTx;
+    TxCoords.u1 := aSpriteInfo.Sprites[K].PosX / aSpriteInfo.Width;
+    TxCoords.v1 := aSpriteInfo.Sprites[K].PosY / aSpriteInfo.Height;
+    TxCoords.u2 := (aSpriteInfo.Sprites[K].PosX + aSpritesPack.RXData.Size[ID].X) / aSpriteInfo.Width;
+    TxCoords.v2 := (aSpriteInfo.Sprites[K].PosY + aSpritesPack.RXData.Size[ID].Y) / aSpriteInfo.Height;
+
+    if aAtlasType = saBase then
+    begin
+      gGFXData[aRT, ID].Tex := TxCoords;
+      gGFXData[aRT, ID].PxWidth := aSpritesPack.RXData.Size[ID].X;
+      gGFXData[aRT, ID].PxHeight := aSpritesPack.RXData.Size[ID].Y;
+    end
+    else
+      gGFXData[aRT, ID].Alt := TxCoords;
+  end;
+
+  //Fake Render from Atlas, to force copy of it into video RAM, where it is supposed to be
+  with gGFXData[aRT, aSpriteInfo.Sprites[0].SpriteID] do
+    if aAtlasType = saBase then
+      TRender.FakeRender(Tex.ID)
+    else
+      TRender.FakeRender(Alt.ID);
+end;
+
+
 //This algorithm is planned to take advantage of more efficient 2D bin packing
-procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal);
-type
-  TSpriteAtlas = (saBase, saMask);
-  procedure PrepareAtlases(SpriteInfo: TBinArray; aMode: TSpriteAtlas; aTexType: TTexFormat);
-  const ExportName: array [TSpriteAtlas] of string = ('Base', 'Mask');
+procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal; aFillGFXData: Boolean = True);
+
+  procedure PrepareAtlases(SpriteInfo: TBinArray; aMode: TSpriteAtlasType; aTexType: TTexFormat);
   var
     I, K, L, M: Integer;
     CT, CL, Pixel: Cardinal;
     Tx: Cardinal;
     ID: Word;
-    TxCoords: TKMTexCoords;
     TD: TKMCardinalArray;
   begin
     //Prepare atlases
@@ -626,28 +702,17 @@ type
         end;
       end;
 
-      //Generate texture once
-      Tx := TRender.GenTexture(SpriteInfo[I].Width, SpriteInfo[I].Height, @TD[0], aTexType);
-
-      //Now that we know texture IDs we can fill GFXData structure
-      for K := 0 to High(SpriteInfo[I].Sprites) do
+      if aFillGFXData then
       begin
-        ID := SpriteInfo[I].Sprites[K].SpriteID;
-
-        TxCoords.ID := Tx;
-        TxCoords.u1 := SpriteInfo[I].Sprites[K].PosX / SpriteInfo[I].Width;
-        TxCoords.v1 := SpriteInfo[I].Sprites[K].PosY / SpriteInfo[I].Height;
-        TxCoords.u2 := (SpriteInfo[I].Sprites[K].PosX + fRXData.Size[ID].X) / SpriteInfo[I].Width;
-        TxCoords.v2 := (SpriteInfo[I].Sprites[K].PosY + fRXData.Size[ID].Y) / SpriteInfo[I].Height;
-
-        if aMode = saBase then
-        begin
-          gGFXData[fRT, ID].Tex := TxCoords;
-          gGFXData[fRT, ID].PxWidth := fRXData.Size[ID].X;
-          gGFXData[fRT, ID].PxHeight := fRXData.Size[ID].Y;
-        end
-        else
-          gGFXData[fRT, ID].Alt := TxCoords;
+        //Generate texture once
+        Tx := TRender.GenTexture(SpriteInfo[I].Width, SpriteInfo[I].Height, @TD[0], aTexType);
+        //Now that we know texture IDs we can fill GFXData structure
+        SetGFXData(Tx, SpriteInfo[I], aMode, Self, fRT);
+      end else begin
+        // Save prepared data for generating later (in main thread)
+        gGFXPrepData[aMode, I].SpriteInfo := SpriteInfo[I];
+        gGFXPrepData[aMode, I].TexType := aTexType;
+        gGFXPrepData[aMode, I].Data := TD;
       end;
 
       if aMode = saBase then
@@ -657,8 +722,9 @@ type
 
       Inc(TexCount);
 
-      SaveTextureToPNG(SpriteInfo[I].Width, SpriteInfo[I].Height, RXInfo[fRT].FileName + '_' +
-                       ExportName[aMode] + IntToStr(aStartingIndex+I), TD);
+      if aFillGFXData then
+        SaveTextureToPNG(SpriteInfo[I].Width, SpriteInfo[I].Height, RXInfo[fRT].FileName + '_' +
+                         SPRITE_TYPE_EXPORT_NAME[aMode] + IntToStr(aStartingIndex+I), TD);
     end;
   end;
 
@@ -697,6 +763,7 @@ begin
 
   SetLength(SpriteInfo, 0);
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
+  SetLength(gGFXPrepData[saBase], Length(SpriteInfo));
   PrepareAtlases(SpriteInfo, saBase, aTexType);
 
   //Prepare masking atlases
@@ -714,6 +781,7 @@ begin
 
   SetLength(SpriteInfo, 0);
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
+  SetLength(gGFXPrepData[saMask], Length(SpriteInfo));
   PrepareAtlases(SpriteInfo, saMask, tf_Alpha8);
 end;
 
@@ -748,9 +816,14 @@ var
   RT: TRXType;
 begin
   inherited Create;
+  fGameRXTypes := TStringList.Create;
 
   for RT := Low(TRXType) to High(TRXType) do
+  begin
     fSprites[RT] := TKMSpritePack.Create(RT);
+    if RXInfo[RT].Usage = ruGame then
+      fGameRXTypes.Add(IntToStr(Integer(RT)));
+  end;
 
   fStepProgress := aStepProgress;
   fStepCaption := aStepCaption;
@@ -761,6 +834,11 @@ destructor TKMResSprites.Destroy;
 var
   RT: TRXType;
 begin
+  fGameRXTypes.Free;
+  // Stop resource loader before Freeing SpritePack, as loader use fRXData and could get an exception there on game exit
+  if fGameResLoader <> nil then
+    StopResourceLoader;
+
   for RT := Low(TRXType) to High(TRXType) do
     fSprites[RT].Free;
 
@@ -774,6 +852,25 @@ var RT: TRXType;
 begin
   for RT := Low(TRXType) to High(TRXType) do
     fSprites[RT].ClearTemp;
+end;
+
+
+//Get next game resource RXType to load. Returns -1 if its the last one
+function TKMResSprites.GetNextLoadRxTypeIndex(aRT: TRXType): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := 0 to fGameRXTypes.Count - 1 do
+    if StrToInt(fGameRXTypes[I]) = Integer(aRT) then
+    begin
+      if I = fGameRXTypes.Count - 1 then
+        Exit
+      else begin
+        Result := I + 1;
+        Exit;
+      end;
+    end;
 end;
 
 
@@ -930,21 +1027,77 @@ begin
 end;
 
 
-procedure TKMResSprites.LoadGameResources(aAlphaShadows: Boolean);
-var
-  RT: TRXType;
+procedure TKMResSprites.StopResourceLoader;
+begin
+  fGameResLoader.DoTerminate := True;
+  fGameResLoader.Terminate;
+  fGameResLoader.WaitFor;
+  FreeThenNil(fGameResLoader);
+  gLog.MultithreadLogging := False;
+end;
+
+
+procedure TKMResSprites.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Boolean = False);
 begin
   //Remember which version we load, so if it changes inbetween games we reload it
   fAlphaShadows := aAlphaShadows;
 
-  for RT := Low(TRXType) to High(TRXType) do
-  if RXInfo[RT].Usage = ruGame then
+  if fGameResLoader <> nil then
   begin
-    fStepCaption(gResTexts[RXInfo[RT].LoadingTextID]);
-    gLog.AddTime('Reading ' + RXInfo[RT].FileName + '.rx');
-    LoadSprites(RT, fAlphaShadows);
-    fSprites[RT].MakeGFX(fAlphaShadows);
+    if aForceReload then
+      StopResourceLoader
+    else begin
+      while not fGameResLoadCompleted do
+      begin
+        ManageResLoader; //check if we have some work to do in this thread
+        Sleep(5); // wait till load will be completed by fGameResLoader thread
+      end;
+      Exit;
+    end;
   end;
+
+  if aForceReload then
+  begin
+    fGameResLoadCompleted := False;
+    gLog.MultithreadLogging := True;
+    fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
+  end;
+end;
+
+
+procedure TKMResSprites.ClearGameResGenTemp;
+var
+  SAT: TSpriteAtlasType;
+begin
+  for SAT := Low(TSpriteAtlasType) to High(TSpriteAtlasType) do
+    SetLength(gGFXPrepData[SAT], 0);
+end;
+
+
+// Generate texture atlases from previosly prepared SpriteInfo data (loaded from RXX, Bin Packed, copied to atlas)
+// Preparation was done asynchroniously by TTGameResourceLoader thread
+// Texture generating task can be done only by main thread, as OpenGL does not work with multiple threads
+procedure TKMResSprites.GenerateTextureAtlasForGameRes(aRT: TRXType);
+var
+  I: Integer;
+  SAT: TSpriteAtlasType;
+  Tx: Cardinal;
+  SpritesPack: TKMSpritePack;
+begin
+  SpritesPack := GetSprites(aRT);
+  for SAT := Low(TSpriteAtlasType) to High(TSpriteAtlasType) do
+    for I := Low(gGFXPrepData[SAT]) to High(gGFXPrepData[SAT]) do
+    begin
+      with gGFXPrepData[SAT,I] do
+      begin
+        Tx := TRender.GenTexture(SpriteInfo.Width, SpriteInfo.Height, @Data[0], TexType);
+        //Now that we know texture IDs we can fill GFXData structure
+        SetGFXData(Tx, SpriteInfo, SAT, SpritesPack, aRT);
+
+        SpritesPack.SaveTextureToPNG(SpriteInfo.Width, SpriteInfo.Height, RXInfo[aRT].FileName + '_' +
+                                     SPRITE_TYPE_EXPORT_NAME[SAT] + IntToStr(I+1), Data);
+      end;
+    end;
 end;
 
 
@@ -986,12 +1139,74 @@ begin
 end;
 
 
+procedure TKMResSprites.ManageResLoader;
+var
+  NextRXTypeI, I, px,py: Integer;
+  RT: TRXType;
+begin
+  if (fGameResLoader <> nil) and fGameResLoader.LoadDone then
+  begin
+    // Generate texture atlas from prepared data for game resources
+    // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread
+    // That is why we need call this method from main thread only
+    GenerateTextureAtlasForGameRes(fGameResLoader.RXType);
+    fStepCaption(gResTexts[RXInfo[fGameResLoader.RXType].LoadingTextID]);
+    fSprites[fGameResLoader.RXType].ClearTemp;      //Clear fRXData sprites temp data, which is not needed anymore
+    ClearGameResGenTemp;                                   //Clear all the temp data used for atlas texture generating
+    NextRXTypeI := GetNextLoadRxTypeIndex(fGameResLoader.RXType); // get next RXType to load
+    if NextRXTypeI = -1 then
+    begin
+      //Load is completed, we can stop loading thread
+      StopResourceLoader;
+      fGameResLoadCompleted := True; // mark loading game res as completed
+    end else begin
+      fGameResLoader.RXType := TRXType(StrToInt(fGameRXTypes[NextRXTypeI]));
+      fGameResLoader.LoadDone := False;
+    end;
+  end;
+end;
+
+
+procedure TKMResSprites.UpdateStateIdle;
+begin
+  ManageResLoader;
+end;
+
+
 procedure TKMResSprites.ExportToPNG(aRT: TRXType);
 begin
   if LoadSprites(aRT, False) then
   begin
     fSprites[aRT].ExportAll(ExeDir + 'Export' + PathDelim + RXInfo[aRT].FileName + '.rx' + PathDelim);
     ClearTemp;
+  end;
+end;
+
+
+{ TTGameResourceLoader }
+constructor TTGameResourceLoader.Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
+begin
+  inherited Create(False);
+  DoTerminate := False;
+  fResSprites := aResSprites;
+  fAlphaShadows := aAlphaShadows;
+  RXType := aRxType;
+  FreeOnTerminate := False; //object can be automatically removed after its termination
+end;
+
+
+procedure TTGameResourceLoader.Execute;
+begin
+  inherited;
+  while not DoTerminate do
+  begin
+    if not LoadDone then
+    begin
+      fResSprites.LoadSprites(RXType, fAlphaShadows);
+      fResSprites.fSprites[RXType].MakeGFX(fAlphaShadows, 1, False);
+      LoadDone := True;
+    end;
+    Sleep(1); // sleep a a bit
   end;
 end;
 

@@ -162,6 +162,9 @@ begin
   //Update map cache files (*.mi) in the background so map lists load faster
   MapCacheUpdate;
 
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
+
   //Process messages in queue before hiding Loading, so that they all land on Loading form, not main one
   Application.ProcessMessages;
   fFormLoading.Hide;
@@ -279,6 +282,7 @@ end;
 procedure TKMMain.DoIdle(Sender: TObject; var Done: Boolean);
 var
   FrameTime: Cardinal;
+  FPSLag: Integer;
 begin
   if CHECK_8087CW then
     //$1F3F is used to mask out reserved/undefined bits
@@ -291,10 +295,11 @@ begin
     FrameTime  := GetTimeSince(fOldTimeFPS);
     fOldTimeFPS := TimeGet;
 
-    if CAP_MAX_FPS and (FPS_LAG <> 1) and (FrameTime < FPS_LAG) then
+    FPSLag := Floor(1000 / fMainSettings.FPSCap);
+    if CAP_MAX_FPS and (FPSLag <> 1) and (FrameTime < FPSLag) then
     begin
-      Sleep(FPS_LAG - FrameTime);
-      FrameTime := FPS_LAG;
+      Sleep(FPSLag - FrameTime);
+      FrameTime := FPSLag;
     end;
 
     inc(fOldFrameTimes, FrameTime);
@@ -304,7 +309,7 @@ begin
       if gGameApp <> nil then
         gGameApp.FPSMeasurement(Round(1000 / (fOldFrameTimes / fFrameCount)));
       StatusBarText(4, Format('%.1f fps', [1000 / (fOldFrameTimes / fFrameCount)]) +
-                       IfThen(CAP_MAX_FPS, ' (' + inttostr(FPS_LAG) + ')'));
+                       IfThen(CAP_MAX_FPS, ' (' + inttostr(FPSLag) + ')'));
       fOldFrameTimes := 0;
       fFrameCount := 0;
     end;
