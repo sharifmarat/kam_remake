@@ -901,8 +901,7 @@ begin
                   gTerrain.Land[Y,X].LayersCnt := 0; // Simple way to clear all layers
                   gTerrain.Land[Y,X].BaseLayer.Corners := [0,1,2,3];
                 end;
-      mk_Soft,
-      mk_Hard:  for L := 0 to gTerrain.Land[Y,X].LayersCnt - 1 do
+      else      for L := 0 to gTerrain.Land[Y,X].LayersCnt - 1 do
                 begin
                   GenInfo := gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[Y,X].Layer[L].Terrain);
                   if GenInfo.Mask.Kind <> MaskKind then

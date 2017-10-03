@@ -7,9 +7,10 @@ uses
 
 
 const
-  TILES_CNT = 289;
+  TILES_CNT = 301;
   MAX_TILE_TO_SHOW = 276;
   MAX_STATIC_TERRAIN_ID = 4997;
+  WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
 type
   //TKMTileProperty = set of (tpWalkable, tpRoadable);
@@ -38,7 +39,7 @@ type
 
   TKMTileMaskSubType = (mst_Main, mst_Extra);
 
-  TKMTileMaskKind = (mk_None, mk_Soft, mk_Hard);
+  TKMTileMaskKind = (mk_None, mk_Soft, mk_Hard, mk_Hard2, mk_Hard3);
 
   TKMMaskFullType = record
     Kind: TKMTileMaskKind;
@@ -82,7 +83,7 @@ type
 
 const
   TER_KIND_ORDER: array[tkCustom..tkLava] of Byte =
-    (0,1,2,3,4,5,6,7,9,10,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28);
+    (0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,28,26,27);
 
   BASE_TERRAIN: array[TKMTerrainKind] of Word = //tkCustom..tkLava] of Word =
     (0, 0, 8, 17, 32, 26, 27, 28, 29, 34, 35, 215, 48, 40, 44, 47, 46, 45, 132, 159, 164, 245, 20, 155, 147, 151, 192, 209, 7);
@@ -94,25 +95,41 @@ const
     (1, 2, 2, 2, 2, 3, 3, 4);
 
   TILE_MASK_KINDS_PREVIEW: array[TKMTileMaskKind] of Integer =
-    (-1, 284, 289);
+    (-1, 551, 561, 571, 581);
 
-  TILE_MASKS_FOR_LAYERS: array[mk_Soft..mk_Hard] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
-    //Soft
-    (((286, -1),
-      (285, -1),
-      (284, -1),
-      (287, -1),
-      (284, 286),
-      (284, 287),
-      (284, -1)),
-    //Hard
-     ((290, -1),
-      (291, -1),
-      (289, -1),
-      (287, -1),
-      (284, 286),
-      (284, 287),
-      (284, -1)));
+  TILE_MASKS_FOR_LAYERS: array[mk_Soft..mk_Hard3] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
+     //Soft
+    (((549, -1),
+      (550, -1),
+      (551, -1),
+      (552, -1),
+      (553, 554),
+      (555, 556),
+      (557, -1)),
+     //Hard
+     ((559, -1),
+      (560, -1),
+      (561, -1),
+      (562, -1),
+      (563, 564),
+      (565, 566),
+      (567, -1)),
+      //Hard2
+     ((569, -1),
+      (570, -1),
+      (571, -1),
+      (572, -1),
+      (573, 574),
+      (575, 576),
+      (577, -1)),
+      //Hard3
+     ((579, -1),
+      (580, -1),
+      (581, -1),
+      (582, -1),
+      (583, 584),
+      (585, 586),
+      (587, -1)));
 
 
 

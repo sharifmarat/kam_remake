@@ -217,12 +217,22 @@ var
     end;
   end;
 
+  function IsWaterAnimTerId(aTerId: Word): Boolean;
+  var
+    I: Integer;
+  begin
+    Result := InRange(aTerId, 305, MAX_STATIC_TERRAIN_ID);
+    if Result and InRange(aTerId, 305, 350) then
+      for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
+        Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I]);
+  end;
+
   function TryAddAnimTex(var aQ: Integer; aTX, aTY, aTexOffset: Word): Boolean;
   var TexAnimC: TUVRect;
   begin
     Result := False;
     with gTerrain do
-      if (aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1 <= MAX_STATIC_TERRAIN_ID)
+      if IsWaterAnimTerId(aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1)
          and (gGFXData[rxTiles, aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1].Tex.ID <> 0)
          and (aFOW.CheckTileRevelation(aTX,aTY) > FOG_OF_WAR_ACT) then
       begin
@@ -242,7 +252,6 @@ var
   I,J,K,K1,H,Q,P,L,TilesCnt,TilesLayersCnt,AnimCnt: Integer;
   SizeX, SizeY: Word;
   tX, tY: Word;
-//  Row: Integer;
   TexTileC: TUVRect;
   AL: TAnimLayer;
   TexOffsetWater, TexOffsetFalls, TexOffsetSwamp: Word;
