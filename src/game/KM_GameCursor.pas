@@ -18,6 +18,7 @@ type
     SState: TShiftState;  //Thats actually used to see if Left or Right mouse button is pressed
 
     Tag1: Word;           //Tag to know building type, unit type etc
+//    Tag2: Word;           //Extra Tag
     DragOffset: TKMPoint; //used to adjust actual Cursor Cell
     ObjectUID: Integer;   //Object found below cursor
 
@@ -26,8 +27,8 @@ type
     MapEdSlope: Byte;
     MapEdSize: Byte;
     MapEdSpeed: Byte;
+    MapEdBrushMask: Integer;
     MapEdMagicBrush: Boolean;
-    MapEdMagicBrush2: Boolean;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
@@ -52,9 +53,11 @@ procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
   MapEdMagicBrush := False;
-  MapEdMagicBrush2 := False;
   if fMode = cmNone then  //Reset Tag1 also, when reset mode
+  begin
     Tag1 := 0;
+//    Tag2 := 0;
+  end;
   // Actually we need reset all fields when changing mode,
   // but lets reset only DragOffset for now, need to do lots of tests for other fields
 end;

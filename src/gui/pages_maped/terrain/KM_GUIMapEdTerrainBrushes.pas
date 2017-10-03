@@ -3,7 +3,7 @@ unit KM_GUIMapEdTerrainBrushes;
 interface
 uses
    Classes, Math, SysUtils,
-   KM_Controls, KM_Defaults, KM_Pics;
+   KM_Controls, KM_Defaults, KM_Pics, KM_ResTileset;
 
 
 const
@@ -14,6 +14,8 @@ type
   TKMMapEdTerrainBrushes = class
   private
     fLastShape: TKMMapEdShape;
+    fLastBrush: Integer;
+    fLastMagicBrush: Boolean;
     procedure BrushChange(Sender: TObject);
     procedure BrushRefresh;
   protected
@@ -22,8 +24,8 @@ type
     BrushCircle: TKMButtonFlat;
     BrushSquare: TKMButtonFlat;
     BrushTable: array [0..6, 0..4] of TKMButtonFlat;
+    BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
     MagicBrush: TKMButtonFlat;
-    MagicBrush2: TKMButtonFlat;
     BrushRandom: TKMCheckBox;
   public
     constructor Create(aParent: TKMPanel);
@@ -32,6 +34,7 @@ type
     procedure Hide;
     function Visible: Boolean;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure RightClickCancel;
     procedure UpdateState;
   end;
 
@@ -39,33 +42,38 @@ type
 implementation
 uses
   TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
-  KM_TerrainPainter, KM_InterfaceGame, KM_ResTileset;
+  KM_TerrainPainter, KM_InterfaceGame;
+
+type
+  TMBrushButtonType = (bbtBrush = -1, bbtMask = -2);
 
 
 { TKMMapEdTerrainBrushes }
 constructor TKMMapEdTerrainBrushes.Create(aParent: TKMPanel);
 const
-  Surfaces: array [0..6, 0..4] of TKMTerrainKind = (
+  Surfaces: array [0..5, 0..4] of TKMTerrainKind = (
     (tkGrass,       tkMoss,         tkPaleGrass,    tkGrassDirt,    tkDirt),
-    (tkCobbleStone, tkGravel,       tkCustom,       tkCustom,       tkCustom),
     (tkCoastSand,   tkGrassSand1,   tkGrassSand2,   tkGrassSand3,   tkSand),
     (tkSwamp,       tkGrassyWater,  tkWater,        tkFastWater,    tkCustom),
     (tkShallowSnow, tkSnow,         tkDeepSnow,     tkIce,          tkCustom),
-    (tkStone,  tkGoldMount,    tkIronMount,    tkAbyss,        tkCustom),
-    (tkCoal,        tkGold,         tkIron,         tkLava,         tkCustom));
+    (tkStone,       tkGoldMount,    tkIronMount,    tkCobbleStone,  tkGravel),
+    (tkCoal,        tkGold,         tkIron,         tkLava,         tkAbyss));
 var
   I,K: Integer;
-  TerKindName: String;
+  MK: TKMTileMaskKind;
+  HintStr: String;
 begin
   inherited Create;
 
   fLastShape := hsCircle;
+  fLastBrush := Byte(Surfaces[0,0]);
+  fLastMagicBrush := False;
 
   Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fnt_Outline, taCenter);
   BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, BRUSH_MAX_SIZE);
-  BrushSize.Position := 3;//4;
+  BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
   BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 28, 24, 24, 592);
   BrushCircle.Hint := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_CIRCLE];
@@ -75,37 +83,44 @@ begin
   BrushSquare.OnClick := BrushChange;
 
   for I := Low(Surfaces) to High(Surfaces) do
-  for K := Low(Surfaces[I]) to High(Surfaces[I]) do
-  if Surfaces[I,K] <> tkCustom then
+    for K := Low(Surfaces[I]) to High(Surfaces[I]) do
+    if Surfaces[I,K] <> tkCustom then
+    begin
+      BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, K * 36, 60 + I * 40, 34, 34, Combo[Surfaces[I,K], Surfaces[I,K], 1] + 1, rxTiles);
+      BrushTable[I,K].Tag := Byte(Surfaces[I,K]);
+      BrushTable[I,K].Tag2 := Byte(bbtBrush);
+      HintStr := GetEnumName(TypeInfo(TKMTerrainKind), Integer(Surfaces[I,K]));
+      BrushTable[I,K].Hint := Copy(HintStr, 3, Length(HintStr) - 2);
+      BrushTable[I,K].OnClick := BrushChange;
+    end;
+
+  BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 310, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
+  BrushRandom.OnClick := BrushChange;
+  BrushRandom.Hint := 'Use random elements while drawing'; //Todo translate
+
+  for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
-    BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, K * 36, 60 + I * 40, 34, 34, Combo[Surfaces[I,K], Surfaces[I,K], 1] + 1, rxTiles);  // grass
-    BrushTable[I,K].Tag := Byte(Surfaces[I,K]);
-    TerKindName := GetEnumName(TypeInfo(TKMTerrainKind), Integer(Surfaces[I,K]));
-    BrushTable[I,K].Hint := Copy(TerKindName, 3, Length(TerKindName) - 2);
-    BrushTable[I,K].OnClick := BrushChange;
+    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 340, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
+    BrushMasks[MK].Tag := Byte(MK);
+    BrushMasks[MK].Tag2 := Byte(bbtMask);
+    if MK = mk_None then
+      HintStr := 'No mask'
+    else begin
+      HintStr := GetEnumName(TypeInfo(TKMTileMaskKind), Integer(MK));
+      HintStr := Copy(HintStr, 4, Length(HintStr) - 3) + ' mask'; //Todo translate
+    end;
+    BrushMasks[MK].Hint := HintStr;
+    BrushMasks[MK].OnClick := BrushChange;
   end;
 
-  BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 350, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
-  BrushRandom.OnClick := BrushChange;
-
-  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 0, 380, 34, 34, 0, rxTiles);
-  MagicBrush.Hint := 'Magic brush'; //Todo translate
+  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 0, 385, 34, 34, 668, rxGui);
+  MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate
   MagicBrush.OnClick := BrushChange;
-
-  MagicBrush2 := TKMButtonFlat.Create(Panel_Brushes, 36, 380, 34, 34, 4, rxTiles);
-  MagicBrush2.OnClick := BrushChange;
 end;
 
 
 procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
-  if Sender = MagicBrush2 then
-  begin
-    gGameCursor.MapEdMagicBrush2 := not gGameCursor.MapEdMagicBrush2;
-    BrushRefresh;
-    Exit;
-  end;
-
   if gGameCursor.Mode <> cmBrush then
     gGameCursor.Mode := cmBrush;    // This will reset Tag
 
@@ -113,8 +128,10 @@ begin
   gGame.MapEditor.TerrainPainter.RandomizeTiling := BrushRandom.Checked;
 
   if Sender = MagicBrush then
-    gGameCursor.MapEdMagicBrush := True
-  else
+  begin
+    gGameCursor.MapEdMagicBrush := True;
+    fLastMagicBrush := True;
+  end else
   begin
     if Sender = BrushCircle then
     begin
@@ -130,8 +147,14 @@ begin
     else
     if Sender is TKMButtonFlat then
     begin
-      gGameCursor.MapEdMagicBrush := False;
-      gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
+      if TKMButtonFlat(Sender).Tag2 = Byte(bbtBrush) then
+      begin
+        gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
+        fLastBrush := TKMButtonFlat(Sender).Tag;
+        fLastMagicBrush := False;
+        gGameCursor.MapEdMagicBrush := False;
+      end else
+        gGameCursor.MapEdBrushMask := TKMButtonFlat(Sender).Tag;
     end;
   end;
 
@@ -142,22 +165,23 @@ end;
 procedure TKMMapEdTerrainBrushes.BrushRefresh;
 var
   I,K: Integer;
+  MK: TKMTileMaskKind;
 begin
   BrushCircle.Down := (gGameCursor.MapEdShape = hsCircle);
   BrushSquare.Down := (gGameCursor.MapEdShape = hsSquare);
-  MagicBrush2.Down := gGameCursor.MapEdMagicBrush2;
+  MagicBrush.Down  := gGameCursor.MapEdMagicBrush;
   for I := Low(BrushTable) to High(BrushTable) do
     for K := Low(BrushTable[I]) to High(BrushTable[I]) do
       if gGameCursor.MapEdMagicBrush then
       begin
         if BrushTable[I,K] <> nil then
           BrushTable[I,K].Down := False;
-        MagicBrush.Down := True;
-      end else begin
-        MagicBrush.Down := False;
+      end else
         if BrushTable[I,K] <> nil then
           BrushTable[I,K].Down := (BrushTable[I,K].Tag = gGameCursor.Tag1);
-      end;
+
+  for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
+    BrushMasks[MK].Down := (BrushMasks[MK].Tag = gGameCursor.MapEdBrushMask);
 end;
 
 
@@ -169,9 +193,15 @@ end;
 
 procedure TKMMapEdTerrainBrushes.Show;
 begin
-  gGameCursor.MapEdShape := fLastShape;
+  if gGameCursor.Mode <> cmBrush then
+    gGameCursor.Mode := cmBrush;    // This will reset Tag
 
-  BrushChange(BrushTable[0,0]);
+  gGameCursor.MapEdShape := fLastShape;
+  gGameCursor.MapEdMagicBrush := fLastMagicBrush;
+  if fLastBrush >= 0 then
+    gGameCursor.Tag1 := fLastBrush;
+
+  BrushChange(nil);
 
   Panel_Brushes.Show;
 end;
@@ -191,6 +221,18 @@ begin
     BrushSize.Position := Max(0, BrushSize.Position - (WheelDelta div 100)); //can't set negative number
     BrushChange(nil);
     aHandled := True;
+  end;
+end;
+
+
+procedure TKMMapEdTerrainBrushes.RightClickCancel;
+begin
+  // Reset last object on RMB click
+  if gGameCursor.Mode = cmBrush then
+  begin
+    fLastShape := hsCircle;
+    fLastBrush := -1;
+    fLastMagicBrush := False;
   end;
 end;
 

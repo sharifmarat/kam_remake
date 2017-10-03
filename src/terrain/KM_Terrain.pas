@@ -49,6 +49,7 @@ type
     Layer: array [0..2] of TKMTerrainLayer;
     Height: Byte;
     Obj: Byte;
+    IsCustom: Boolean;
   end;
 
   TKMTerrainTile = record
@@ -58,6 +59,7 @@ type
 //    StoneLayer: TKMTerrainLayer;
     Height: Byte;
     Obj: Byte;
+    IsCustom: Boolean;
 
     //Age of tree, another independent variable since trees can grow on fields
     TreeAge: Byte; //Not init=0 .. Full=TreeAgeFull Depending on this tree gets older and thus could be chopped
@@ -331,11 +333,12 @@ begin
     //      BaseLayer.Terrain := RandomTiling[tkGrass, Random(RandomTiling[tkGrass, 0]) + 1]
     //    else
           BaseLayer.Terrain := 0;
-        LayersCnt := 0;
+        LayersCnt    := 0;
         BaseLayer.Corners := [0,1,2,3];
         Height       := 30;// + KaMRandom(7);  //variation in Height
         BaseLayer.Rotation     := KaMRandom(4);  //Make it random
         Obj          := 255;             //none
+        IsCustom     := False;
         //Uncomment to enable random trees, but we don't want that for the map editor by default
         //if KaMRandom(16)=0 then Obj := ChopableTrees[KaMRandom(13)+1,4];
         TileOverlay  := to_None;
@@ -409,6 +412,7 @@ begin
         Land[I,J].Height := TileBasic.Height;
         Land[I,J].Obj := TileBasic.Obj;
         Land[I,J].LayersCnt := TileBasic.LayersCnt;
+        Land[I,J].IsCustom  := TileBasic.IsCustom;
 
         for L := 0 to TileBasic.LayersCnt - 1 do
           Land[I,J].Layer[L] := TileBasic.Layer[L];
@@ -995,7 +999,7 @@ end;
 //Check if requested tile is water suitable for fish and/or sail. No waterfalls, but swamps/shallow water allowed
 function TKMTerrain.TileIsWater(const Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsWater(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  Result := TileIsWater(Loc.X, Loc.Y);
 end;
 
 
@@ -3648,8 +3652,9 @@ begin
   S.Write(aTileBasic.BaseLayer.Rotation);
   S.Write(aTileBasic.Height);
   S.Write(aTileBasic.Obj);
+  S.Write(aTileBasic.IsCustom);
   S.Write(aTileBasic.LayersCnt);
-  Inc(aMapDataSize, 6); // obligatory 6 bytes per tile
+  Inc(aMapDataSize, 7); // obligatory 7 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
@@ -3682,16 +3687,18 @@ begin
     aStream.Read(aTileBasic.Obj);     //6
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
+    aTileBasic.IsCustom := False;
   end else begin
     aStream.Read(aTileBasic.BaseLayer.Terrain); //2
     aStream.Read(Rot);                          //3
     aTileBasic.BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
     aStream.Read(aTileBasic.Height);            //4
     aStream.Read(aTileBasic.Obj);               //5
+    aStream.Read(aTileBasic.IsCustom);          //6
 
     // Load all layers info
     // First get layers count
-    aStream.Read(aTileBasic.LayersCnt);         //6
+    aStream.Read(aTileBasic.LayersCnt);         //7
     if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
       aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
     else begin

@@ -282,19 +282,24 @@ end;
 procedure TRenderAux.TileTerrainIDs(const aRect: TKMRect);
 var
   I, J, K, Cnt: Integer;
+  CustomStr: String;
 begin
+
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
     begin
+      CustomStr := '';
+      if gTerrain.Land[I,J].IsCustom then
+        CustomStr := '-C';
       if gTerrain.Land[I,J].LayersCnt = 0 then
-        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain)+ '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation),
+        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain)+ '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation) + CustomStr,
              TILE_TERRAIN_LAYERS_COLORS[0])
       else begin
         Cnt := gTerrain.Land[I,J].LayersCnt + 1;
-        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain) + '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation),
+        Text(J, I, IntToStr(gTerrain.Land[I,J].BaseLayer.Terrain) + '-' + IntToStr(gTerrain.Land[I,J].BaseLayer.Rotation) + CustomStr,
              TILE_TERRAIN_LAYERS_COLORS[0], KMPointF(0,-0.3));
         for K := 0 to gTerrain.Land[I,J].LayersCnt - 1 do
-          Text(J, I, IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainKindByTerrain(gTerrain.Land[I,J].Layer[K].Terrain)])
+          Text(J, I, IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[I,J].Layer[K].Terrain).TerKind])
                      + '*' + IntToStr(gTerrain.Land[I,J].Layer[K].Rotation),
                TILE_TERRAIN_LAYERS_COLORS[K+1], KMPointF(0,-0.3 + 0.7*(K+1)/Cnt));
       end;
@@ -330,7 +335,7 @@ begin
           for L := 0 to gTerrain.Land[I,J].LayersCnt - 1 do
             if K in gTerrain.Land[I,J].Layer[L].Corners then
               TextAtCorner(J, I, K,
-                           IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainKindByTerrain(gTerrain.Land[I,J].Layer[L].Terrain)]),
+                           IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[I,J].Layer[L].Terrain).TerKind]),
                            TILE_TERRAIN_LAYERS_COLORS[L+1]);
         end;
     end;

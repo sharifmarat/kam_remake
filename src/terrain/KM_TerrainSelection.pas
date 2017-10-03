@@ -18,6 +18,7 @@ type
                     Layer: array [0..2] of TKMTerrainLayer;
                     Height: Byte;
                     Obj: Byte;
+                    IsCustom: Boolean;
                     TerKind: TKMTerrainKind; //Used for brushes
                   end;
 
@@ -527,8 +528,9 @@ procedure TKMSelection.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
   begin
     Result.BaseLayer := aBufferData.BaseLayer;
     Result.LayersCnt := aBufferData.LayersCnt;
-    Result.Height := aBufferData.Height;
-    Result.Obj := aBufferData.Obj;
+    Result.Height    := aBufferData.Height;
+    Result.Obj       := aBufferData.Obj;
+    Result.IsCustom  := aBufferData.IsCustom;
     for L := 0 to 2 do
       Result.Layer[L] := aBufferData.Layer[L];
   end;

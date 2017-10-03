@@ -224,8 +224,9 @@ var
 begin
   Result.BaseLayer := aTile.BaseLayer;
   Result.LayersCnt := aTile.LayersCnt;
-  Result.Height := aTile.Height;
-  Result.Obj := aTile.Obj;
+  Result.Height    := aTile.Height;
+  Result.Obj       := aTile.Obj;
+  Result.IsCustom  := aTile.IsCustom;
   for L := 0 to 2 do
     Result.Layer[L] := aTile.Layer[L];
 end;

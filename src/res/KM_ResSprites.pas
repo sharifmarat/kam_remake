@@ -25,6 +25,11 @@ type
     LoadingTextID: Word;
   end;
 
+  TKMGenTerrainInfo = record
+    TerKind: TKMTerrainKind;
+    Mask: TKMMaskFullType;
+  end;
+
 
 var
   RXInfo: array [TRXType] of TRXInfo = (
@@ -90,7 +95,7 @@ type
     fStepProgress: TEvent;
     fStepCaption: TUnicodeStringEvent;
     fGenTexIdStartI: Integer;
-    fGenTerrainToTerKind: array of TKMTerrainKind;
+    fGenTerrainToTerKind: array of TKMGenTerrainInfo;
 
     fGameRXTypes: TStringList; //list of TRXType for game resources
     fGameResLoader: TTGameResourceLoader; // thread of game resource loader
@@ -116,7 +121,7 @@ type
 
     procedure GenerateTerrainTransitions(aSprites: TKMSpritePack);
 
-    function GetGenTerrainKindByTerrain(aTerrain: Integer): TKMTerrainKind;
+    function GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
 
     property Sprites[aRT: TRXType]: TKMSpritePack read GetSprites; default;
 
@@ -157,10 +162,11 @@ var
   end;
 
    gGenTerrainTransitions: array[TKMTerrainKind]
-                            of array[TKMTileMaskType]
-                              of array[0..1] //mask components (subtypes)
-//                                of array[0..3] //Terrain Rotation
-                                  of Word;
+                            of array[TKMTileMaskKind]
+                              of array[TKMTileMaskType]
+                                of array[TKMTileMaskSubType] //mask components (subtypes)
+//                                  of array[0..3] //Terrain Rotation
+                                    of Word;
 implementation
 uses
   KromUtils, KM_Log, KM_BinPacking, KM_CommonUtils;
@@ -899,93 +905,108 @@ procedure TKMResSprites.GenerateTerrainTransitions(aSprites: TKMSpritePack);
 //
 //  end;
 
-type
-  PKMMaskFullType = ^TKMMaskFullType;
-  TKMMaskFullType = record
-    MType: TKMTileMaskType;
-    SubType: Byte;
-  end;
-
 var
-  I: TKMTerrainKind;
-  J: TKMTileMaskType;
+  TK: TKMTerrainKind;
+  MK: TKMTileMaskKind;
+  MT: TKMTileMaskType;
+  MST: TKMTileMaskSubType;
   TerrainId, MaskId: Word;
   MaskFullType: PKMMaskFullType;
-  TexId,{ K,} C, L, M, P, Q, MId, Tmp: Integer;
+  GenTerrainInfo: TKMGenTerrainInfo;
+
+  TexId,{ K,} L, M, {P, }Q, MId, Tmp: Integer;
+  GenTilesCnt: Integer;
   StraightPixel{, RotatePixel}: Cardinal;
   GeneratedMasks: TStringList;
 begin
   TexId := Length(aSprites.fRXData.RGBA) + 1;
   fGenTexIdStartI := TexId;
-  aSprites.Allocate(TexId + 3*(Integer(High(TKMTerrainKind)))*Integer(High(TKMTileMaskType)));
-  SetLength(fGenTerrainToTerKind, 3*(Integer(High(TKMTerrainKind)))*Integer(High(TKMTileMaskType)));
+  GenTilesCnt := Integer(High(TKMTerrainKind))*Integer(High(TKMTileMaskKind))
+                   *Integer(High(TKMTileMaskType))*(Integer(High(TKMTileMaskSubType)) + 1);
+  aSprites.Allocate(TexId + GenTilesCnt);
+  SetLength(fGenTerrainToTerKind, GenTilesCnt);
   GeneratedMasks := TStringList.Create;
 //  K := 0;
-  C := 0;
   try
-    for I := Low(TKMTerrainKind) to High(TKMTerrainKind) do
+    //for all Terrain Kinds
+    for TK := Low(TKMTerrainKind) to High(TKMTerrainKind) do
     begin
-      if I = tkCustom then Continue;
+      if TK = tkCustom then Continue;
+      TerrainId := BASE_TERRAIN[TK] + 1; // in fRXData Tiles are 1-based
 
-      TerrainId := BASE_TERRAIN[I] + 1; // in fRXData Tiles are 1-based
-      for J := Low(TKMTileMaskType) to High(TKMTileMaskType) do
+      //for all Mask Kinds
+      for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
       begin
-        if J = mt_None then Continue;
+        if MK = mk_None then Continue;
 
-        for C := 0 to 1 do //Mask subtypes (actual masks for layers)
+        //for all Mask Types
+        for MT := Low(TKMTileMaskType) to High(TKMTileMaskType) do
         begin
-          MaskId := TILE_MASKS_FOR_LAYERS[J, C] + 1;
-          if MaskId = 0 then Continue;   //Ignore non existent masks
+          if MT = mt_None then Continue;
 
-          // We could use same mask image for several masktypes/subtypes
-          MId := GeneratedMasks.IndexOf(IntToStr(MaskId));
-          if MId > -1 then
+          // for all Mask subtypes
+          for MST := Low(TKMTileMaskSubType) to High(TKMTileMaskSubType) do //Mask subtypes (actual masks for layers)
           begin
-            MaskFullType := PKMMaskFullType(GeneratedMasks.Objects[MId]);
+            MaskId := TILE_MASKS_FOR_LAYERS[MK, MT, MST] + 1;
+            if MaskId = 0 then Continue;   //Ignore non existent masks
 
-            Tmp := gGenTerrainTransitions[I, MaskFullType.MType, MaskFullType.SubType];
-            if Tmp <> 0 then
+            // We could use same mask image for several masktypes/subtypes
+            MId := GeneratedMasks.IndexOf(IntToStr(MaskId));
+            if MId > -1 then
             begin
-              gGenTerrainTransitions[I, J, C] := Tmp;
-              Continue;
-            end;
-          end else begin
-            System.New(MaskFullType);
-            MaskFullType.MType := J;
-            MaskFullType.SubType := C;
-            GeneratedMasks.AddObject(IntToStr(MaskId), TObject(MaskFullType));
-          end;
+              MaskFullType := PKMMaskFullType(GeneratedMasks.Objects[MId]);
 
-  //        for K := 0 to 3 do //Rotation
-  //        begin
-            SetLength(aSprites.fRXData.RGBA[TexId], aSprites.fRXData.Size[TerrainId].X*aSprites.fRXData.Size[TerrainId].Y); //32*32 actually...
-            SetLength(aSprites.fRXData.Mask[TexId], aSprites.fRXData.Size[TerrainId].X*aSprites.fRXData.Size[TerrainId].Y);
-            aSprites.fRXData.Flag[TexId] := aSprites.fRXData.Flag[TerrainId];
-            aSprites.fRXData.Size[TexId].X := aSprites.fRXData.Size[TerrainId].X;
-            aSprites.fRXData.Size[TexId].Y := aSprites.fRXData.Size[TerrainId].Y;
-            aSprites.fRXData.Pivot[TexId] := aSprites.fRXData.Pivot[TerrainId];
-            aSprites.fRXData.HasMask[TexId] := False;
-            gGenTerrainTransitions[I, J, C] := TexId - 1; //TexId is 1-based, but textures we use - 0 based
-  //          gLog.AddTime(Format('TerKind: %10s Mask: %10s TexId: %d ', [GetEnumName(TypeInfo(TKMTerrainKind), Integer(I)),
-  //                                                        GetEnumName(TypeInfo(TKMTileMaskType), Integer(J)), TexId]));
-
-            fGenTerrainToTerKind[TexId - fGenTexIdStartI] := I;
-  //          fGenTerrainToTerKind.Add(IntToStr(TexId) + '=' + IntToStr(Integer(I)));
-            for L := 0 to aSprites.fRXData.Size[TerrainId].Y - 1 do
-              for M := 0 to aSprites.fRXData.Size[TerrainId].X - 1 do
+              Tmp := gGenTerrainTransitions[TK, MaskFullType.Kind, MaskFullType.MType, MaskFullType.SubType];
+              if Tmp <> 0 then
               begin
-  //              Rotate(K, L, M, P, Q, aSprites.fRXData.Size[TerrainId].X - 1);
-                StraightPixel := L * aSprites.fRXData.Size[TerrainId].X  + M;
-  //              RotatePixel := StraightPixel; //P * aSprites.fRXData.Size[TerrainId].X  + Q;
-                aSprites.fRXData.RGBA[TexId, StraightPixel] := ($FFFFFF or (aSprites.fRXData.RGBA[MaskId, StraightPixel] shl 24))
-                                                   and aSprites.fRXData.RGBA[TerrainId, StraightPixel{RotatePixel}];
+                gGenTerrainTransitions[TK, MK, MT, MST] := Tmp;
+                Continue;
               end;
-            Inc(TexId);
-  //        end;
+            end else begin
+              System.New(MaskFullType);
+              MaskFullType.Kind := MK;
+              MaskFullType.MType := MT;
+              MaskFullType.SubType := MST;
+              GeneratedMasks.AddObject(IntToStr(MaskId), TObject(MaskFullType));
+            end;
+
+    //        for K := 0 to 3 do //Rotation
+    //        begin
+              SetLength(aSprites.fRXData.RGBA[TexId], aSprites.fRXData.Size[TerrainId].X*aSprites.fRXData.Size[TerrainId].Y); //32*32 actually...
+              SetLength(aSprites.fRXData.Mask[TexId], aSprites.fRXData.Size[TerrainId].X*aSprites.fRXData.Size[TerrainId].Y);
+              aSprites.fRXData.Flag[TexId] := aSprites.fRXData.Flag[TerrainId];
+              aSprites.fRXData.Size[TexId].X := aSprites.fRXData.Size[TerrainId].X;
+              aSprites.fRXData.Size[TexId].Y := aSprites.fRXData.Size[TerrainId].Y;
+              aSprites.fRXData.Pivot[TexId] := aSprites.fRXData.Pivot[TerrainId];
+              aSprites.fRXData.HasMask[TexId] := False;
+              gGenTerrainTransitions[TK, MK, MT, MST] := TexId - 1; //TexId is 1-based, but textures we use - 0 based
+    //          gLog.AddTime(Format('TerKind: %10s Mask: %10s TexId: %d ', [GetEnumName(TypeInfo(TKMTerrainKind), Integer(I)),
+    //                                                        GetEnumName(TypeInfo(TKMTileMaskType), Integer(J)), TexId]));
+
+              GenTerrainInfo.TerKind := TK;
+              GenTerrainInfo.Mask.Kind := MK;
+              GenTerrainInfo.Mask.MType := MT;
+              GenTerrainInfo.Mask.SubType := MST;
+              fGenTerrainToTerKind[TexId - fGenTexIdStartI] := GenTerrainInfo;
+    //          fGenTerrainToTerKind.Add(IntToStr(TexId) + '=' + IntToStr(Integer(I)));
+              for L := 0 to aSprites.fRXData.Size[TerrainId].Y - 1 do
+                for M := 0 to aSprites.fRXData.Size[TerrainId].X - 1 do
+                begin
+    //              Rotate(K, L, M, P, Q, aSprites.fRXData.Size[TerrainId].X - 1);
+                  StraightPixel := L * aSprites.fRXData.Size[TerrainId].X  + M;
+    //              RotatePixel := StraightPixel; //P * aSprites.fRXData.Size[TerrainId].X  + Q;
+                  aSprites.fRXData.RGBA[TexId, StraightPixel] := ($FFFFFF or (aSprites.fRXData.RGBA[MaskId, StraightPixel] shl 24))
+                                                     and aSprites.fRXData.RGBA[TerrainId, StraightPixel{RotatePixel}];
+                end;
+              Inc(TexId);
+    //        end;
+          end;
         end;
       end;
     end;
+    // There could be usused place in arrays, as we could use same mask image for different purposes
     aSprites.Allocate(TexId);
+    SetLength(fGenTerrainToTerKind, TexId - fGenTexIdStartI);
   finally
     for Q := 0 to GeneratedMasks.Count - 1 do
       System.Dispose(PKMMaskFullType(GeneratedMasks.Objects[Q]));
@@ -994,7 +1015,7 @@ begin
 end;
 
 
-function TKMResSprites.GetGenTerrainKindByTerrain(aTerrain: Integer): TKMTerrainKind;
+function TKMResSprites.GetGenTerrainInfo(aTerrain: Integer): TKMGenTerrainInfo;
 begin
   Result := fGenTerrainToTerKind[aTerrain + 1 - fGenTexIdStartI]; //TexId is 1-based, but textures we use - 0 based
 end;

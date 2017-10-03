@@ -98,6 +98,7 @@ type
     fVisible: Boolean;
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
+    fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
 
     fTimeOfLastClick: Cardinal; //Required to handle double-clicks
 
@@ -151,6 +152,7 @@ type
     procedure SetVisible(aValue: Boolean); virtual;
     procedure SetEnabled(aValue: Boolean); virtual;
     procedure SetAnchors(aValue: TKMAnchorsSet); virtual;
+    procedure SetHint(aValue: UnicodeString); virtual;
     function GetSelfAbsLeft: Integer; virtual;
     function GetSelfAbsTop: Integer; virtual;
     function GetSelfHeight: Integer; virtual;
@@ -170,7 +172,8 @@ type
     Scale: Single; //Child controls position is scaled
 
     Tag: Integer; //Some tag which can be used for various needs
-    Hint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
+    Tag2: Integer; //Some tag which can be used for various needs
+
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     function HitTest(X, Y: Integer; aIncludeDisabled: Boolean=false): Boolean; virtual;
 
@@ -187,6 +190,7 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property Center: TKMPoint read GetCenter;
     property ID: Integer read fID;
+    property Hint: UnicodeString read fHint write SetHint;
 
     // "Self" coordinates - this is the coordinates of control itself.
     // For simple controls they are equal to normal coordinates
@@ -664,14 +668,15 @@ type
 
     procedure SetValueNCheckRange(aValue: Int64);
     procedure SetValue(aValue: Integer);
-    procedure SetSharedHint(const aHint: UnicodeString);
     procedure CheckValueOnUnfocus;
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
+    function Hint: UnicodeString;
   protected
     procedure SetLeft(aValue: Integer); override;
     procedure SetTop(aValue: Integer); override;
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
+    procedure SetHint(aValue: UnicodeString); override;
     function GetSelfAbsLeft: Integer; override;
     function GetSelfWidth: Integer; override;
     function GetMaxLength: Word; override;
@@ -685,7 +690,6 @@ type
     ValueMax: Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
     property Value: Integer read fValue write SetValue;
-    property SharedHint: UnicodeString read Hint write SetSharedHint;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer); override;
@@ -1500,7 +1504,7 @@ begin
   fEnabled      := True;
   fVisible      := True;
   Tag           := 0;
-  Hint          := '';
+  fHint         := '';
   fControlIndex := -1;
   AutoFocusable := True;
 
@@ -1906,6 +1910,12 @@ end;
 procedure TKMControl.SetAnchors(aValue: TKMAnchorsSet);
 begin
   fAnchors := aValue;
+end;
+
+
+procedure TKMControl.SetHint(aValue: UnicodeString);
+begin
+  fHint := aValue;
 end;
 
 
@@ -3698,14 +3708,6 @@ begin
 end;
 
 
-procedure TKMNumericEdit.SetSharedHint(const aHint: UnicodeString);
-begin
-  Hint := aHint;
-  fButtonInc.Hint := aHint;
-  fButtonDec.Hint := aHint;
-end;
-
-
 procedure TKMNumericEdit.SetTop(aValue: Integer);
 begin
   inherited;
@@ -3732,6 +3734,14 @@ begin
 end;
 
 
+procedure TKMNumericEdit.SetHint(aValue: UnicodeString);
+begin
+  inherited;
+  fButtonDec.Hint := aValue;
+  fButtonInc.Hint := aValue;
+end;
+
+
 procedure TKMNumericEdit.SetVisible(aValue: Boolean);
 begin
   inherited;
@@ -3751,6 +3761,11 @@ begin
   Result := fWidth - 40;
 end;
 
+
+function TKMNumericEdit.Hint: UnicodeString;
+begin
+
+end;
 
 function TKMNumericEdit.IsCharValid(Key: WideChar): Boolean;
 begin

@@ -36,6 +36,18 @@ type
     mt_4Square);  // A B
                   // D C
 
+  TKMTileMaskSubType = (mst_Main, mst_Extra);
+
+  TKMTileMaskKind = (mk_None, mk_Soft, mk_Hard);
+
+  TKMMaskFullType = record
+    Kind: TKMTileMaskKind;
+    MType: TKMTileMaskType;
+    SubType: TKMTileMaskSubType;
+  end;
+
+  PKMMaskFullType = ^TKMMaskFullType;
+
   TKMTerrainKind = (
 //    tkNone,
     tkCustom,
@@ -81,14 +93,28 @@ const
   TILE_MASKS_LAYERS_CNT: array[TKMTileMaskType] of Byte =
     (1, 2, 2, 2, 2, 3, 3, 4);
 
-  TILE_MASKS_FOR_LAYERS: array[mt_2Straight..mt_4Square] of array[0..1] of Integer =
-    ((286, -1),
-     (285, -1),
-     (284, -1),
-     (287, -1),
-     (284, 286),
-     (284, 287),
-     (284, -1));
+  TILE_MASK_KINDS_PREVIEW: array[TKMTileMaskKind] of Integer =
+    (-1, 284, 289);
+
+  TILE_MASKS_FOR_LAYERS: array[mk_Soft..mk_Hard] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
+    //Soft
+    (((286, -1),
+      (285, -1),
+      (284, -1),
+      (287, -1),
+      (284, 286),
+      (284, 287),
+      (284, -1)),
+    //Hard
+     ((290, -1),
+      (291, -1),
+      (289, -1),
+      (287, -1),
+      (284, 286),
+      (284, 287),
+      (284, -1)));
+
+
 
   TERRAIN_EQUALITY_PAIRS: array[0..2] of record
       TK1, TK2: TKMTerrainKind;
@@ -234,8 +260,8 @@ const
   (tkGrass,tkGoldMount,tkGrass,tkGrass), (tkCoastSand,tkGoldMount,tkCoastSand,tkCoastSand),
   (tkGrassSand2,tkGoldMount,tkGrassSand2,tkGrassSand2), (tkDirt,tkGoldMount,tkDirt,tkDirt),
    //184
-  (tkIronMount,tkGrass,tkIronMount,tkIronMount), (tkIronMount,tkCoastSand,tkIronMount,tkIronMount),
-  (tkIronMount,tkGrassSand2,tkIronMount,tkIronMount), (tkIronMount,tkDirt,tkIronMount,tkIronMount),
+  (tkIronMount,tkIronMount,tkIronMount,tkGrass), (tkIronMount,tkCoastSand,tkIronMount,tkIronMount),
+  (tkIronMount,tkGrassSand2,tkIronMount,tkIronMount), (tkIronMount,tkIronMount,tkIronMount,tkDirt),
    //188
   (tkGrass,tkIronMount,tkGrass,tkGrass), (tkCoastSand,tkIronMount,tkCoastSand,tkCoastSand),
   (tkGrassSand2,tkIronMount,tkGrassSand2,tkGrassSand2), (tkDirt,tkIronMount,tkDirt,tkDirt),
@@ -248,11 +274,11 @@ const
   (tkCustom,tkCustom,tkCustom,tkWater), (tkCustom,tkCustom,tkWater,tkCustom),
    //200
   (tkStone,tkStone,tkWater,tkWater),//(?)
-  (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkCustom,tkCustom,tkWater,tkCustom),
+  (tkGoldMount,tkGoldMount,tkGoldMount,tkGoldMount), (tkCustom,tkCustom,tkCustom,tkCustom),
    //203
   (tkSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkSnow,tkSnow), (tkDeepSnow,tkDeepSnow,tkDeepSnow,tkSnow),
    //206
-  (tkCustom,tkCustom,tkWater,tkCustom), (tkCustom,tkCustom,tkWater,tkCustom),
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
    //208
   (tkWater,tkWater,tkWater,tkWater), (tkFastWater,tkFastWater,tkFastWater,tkFastWater),
    //210
