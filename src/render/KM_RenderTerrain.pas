@@ -68,7 +68,7 @@ type
 
 implementation
 uses
-  KM_Render;
+  KM_Render, KM_Resource;
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);
@@ -232,15 +232,16 @@ var
   end;
 
   function TryAddAnimTex(var aQ: Integer; aTX, aTY, aTexOffset: Word): Boolean;
-  var TexAnimC: TUVRect;
-  begin
-    Result := False;
-    with gTerrain do
-      if IsWaterAnimTerId(aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1)
-         and (gGFXData[rxTiles, aTexOffset + Land[aTY,aTX].BaseLayer.Terrain + 1].Tex.ID <> 0)
+    function SetAnimTileVertex(aTerrain: Word; aRotation: Byte): Boolean;
+    var
+      TexAnimC: TUVRect;
+    begin
+      Result := False;
+      if IsWaterAnimTerId(aTexOffset + aTerrain + 1)
+         and (gGFXData[rxTiles, aTexOffset + aTerrain + 1].Tex.ID <> 0)
          and (aFOW.CheckTileRevelation(aTX,aTY) > FOG_OF_WAR_ACT) then
       begin
-        TexAnimC := GetTileUV(aTexOffset + Land[aTY,aTX].BaseLayer.Terrain, Land[aTY,aTX].BaseLayer.Rotation mod 4);
+        TexAnimC := GetTileUV(aTexOffset + aTerrain, aRotation mod 4);
 
         SetTileVertex(fAnimTilesVtx, aQ,   aTX-1, aTY-1, False, TexAnimC[1][1], TexAnimC[1][2]);
         SetTileVertex(fAnimTilesVtx, aQ+1, aTX-1, aTY,   True,  TexAnimC[2][1], TexAnimC[2][2]);
@@ -250,6 +251,17 @@ var
         aQ := aQ + 4;
         Result := True;
       end;
+    end;
+  var
+    L: Integer;
+  begin
+    Result := SetAnimTileVertex(gTerrain.Land[aTY,aTX].BaseLayer.Terrain, gTerrain.Land[aTY,aTX].BaseLayer.Rotation);
+    for L := 0 to gTerrain.Land[aTY,aTX].LayersCnt - 1 do
+      if not Result then
+        Result := SetAnimTileVertex(BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[aTY,aTX].Layer[L].Terrain).TerKind],
+                                    gTerrain.Land[aTY,aTX].Layer[L].Rotation)
+      else
+        Exit;
   end;
 
 var
@@ -950,10 +962,14 @@ begin
   UpdateVBO(aAnimStep, aFOW);
 
   DoTiles;
+  //It was 'unlit water goes above lit sand'
+  //But there is no big difference there, that is why, to make possible transitions with water,
+  //Water was put before DoLighting
+  DoWater(aAnimStep, aFOW);
+  //TileLayers after water, as water with animation is always base layer
   DoTilesLayers;
   DoOverlays;
   DoLighting;
-  DoWater(aAnimStep, aFOW); //Unlit water goes above lit sand
   DoShadows;
 end;
 
