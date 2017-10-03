@@ -1679,22 +1679,22 @@ function TKMTerrain.FindOre(const aLoc: TKMPoint; aRes: TWareType; out OrePoint:
 var
   I,K: Integer;
   MiningRect: TKMRect;
-  R1,R2,R3,R4: Word; //Ore densities
-  L: array [1..4] of TKMPointList;
+  R1,R2,R3,R3_2,R4,R5: Integer; //Ore densities
+  L: array [1..5] of TKMPointList;
 begin
   if not (aRes in [wt_IronOre, wt_GoldOre, wt_Coal]) then
     raise ELocError.Create('Wrong resource as Ore', aLoc);
 
   //Create separate list for each density, to be able to pick best one
-  for I := 1 to 4 do
+  for I := 1 to 5 do
     L[I] := TKMPointList.Create;
 
   //These values have been measured from KaM
   case aRes of
-    wt_GoldOre: begin MiningRect := KMRect(7, 11, 6, 2); R1:=144; R2:=145; R3:=146; R4:=147; end;
-    wt_IronOre: begin MiningRect := KMRect(7, 11, 5, 2); R1:=148; R2:=149; R3:=150; R4:=151; end;
-    wt_Coal:    begin MiningRect := KMRect(4,  5, 5, 2); R1:=152; R2:=153; R3:=154; R4:=155; end;
-    else        begin MiningRect := KMRect(0,  0, 0, 0); R1:=  0; R2:=  0; R3:=  0; R4:=  0; end;
+    wt_GoldOre: begin MiningRect := KMRect(7, 11, 6, 2); R1:=144; R2:=145; R3:=146; R3_2:= -1; R4:=147; R5:= -1; end;
+    wt_IronOre: begin MiningRect := KMRect(7, 11, 5, 2); R1:=148; R2:=149; R3:=150; R3_2:=259; R4:=151; R5:=260; end;
+    wt_Coal:    begin MiningRect := KMRect(4,  5, 5, 2); R1:=152; R2:=153; R3:=154; R3_2:= -1; R4:=155; R5:=263; end;
+    else        begin MiningRect := KMRect(0,  0, 0, 0); R1:= -1; R2:= -1; R3:= -1; R3_2:= -1; R4:= -1; R5:= -1; end;
   end;
 
   for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
@@ -1714,22 +1714,28 @@ begin
         if InRange(K - aLoc.X, - MiningRect.Left + 1, MiningRect.Right - 1) then
           L[2].Add(KMPoint(K, I))
     end
-    else if Land[I, K].BaseLayer.Terrain = R3 then
+    else if (Land[I, K].BaseLayer.Terrain = R3)
+      or (Land[I, K].BaseLayer.Terrain = R3_2) then
       //Always mine second richest ore
       L[3].Add(KMPoint(K, I))
     else
       if Land[I, K].BaseLayer.Terrain = R4 then
         // Always mine richest ore
-        L[4].Add(KMPoint(K, I));
+        L[4].Add(KMPoint(K, I))
+      else
+        if Land[I, K].BaseLayer.Terrain = R5 then
+          // Always mine the most richest ore
+          L[5].Add(KMPoint(K, I));
   end;
 
   //Equation elements will be evalueated one by one until True is found
-  Result := L[4].GetRandom(OrePoint) or
+  Result := L[5].GetRandom(OrePoint) or
+            L[4].GetRandom(OrePoint) or
             L[3].GetRandom(OrePoint) or
             L[2].GetRandom(OrePoint) or
             L[1].GetRandom(OrePoint);
 
-  for I := 1 to 4 do L[I].Free;
+  for I := 1 to 5 do L[I].Free;
 end;
 
 
@@ -2290,11 +2296,14 @@ begin
     148: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=160+KaMRandom(4); //Iron
     149: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=148;
     150: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
-    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150;
+    259: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
+    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150+KaMRandom(2)*(259-150);
+    260: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=151;
     152: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=35 +KaMRandom(2); //Coal
     153: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=152;
     154: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=153;
     155: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=154;
+    263: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=155;
     else Result := false;
   end;
   Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4);

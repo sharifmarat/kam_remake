@@ -438,45 +438,31 @@ end;
 
 
 procedure TKMResTileset.InitRemakeTiles;
+const
+  WalkBuild: array[0..7] of Integer = (257,262,264,274,275,283,291,299);
+  WalkNoBuild: array[0..5] of Integer = (258,263,270,279,287,295);
+  NoWalkNoBuild: array[0..30] of Integer = (259,260,261,265,266,267,268,169,271,272,273,276,277,278,280,281,282,284,285,
+                                             286,288,289,290,292,293,294,296,297,298,300,301);
 var
   I: Integer;
 begin
-  //IronMountain-DirtSnow
-  PatternDAT[257].Walkable := 1;
-  PatternDAT[257].Buildable := 0;
-  PatternDAT[258].Walkable := 1;
-  PatternDAT[258].Buildable := 0;
-  PatternDAT[259].Walkable := 1;
-  PatternDAT[259].Buildable := 0;
-  //Iron
-  PatternDAT[260].Walkable := 0;
-  PatternDAT[260].Buildable := 0;
-  PatternDAT[261].Walkable := 0;
-  PatternDAT[261].Buildable := 0;
-  //GoldMountains-Snow
-  PatternDAT[262].Walkable := 1;
-  PatternDAT[262].Buildable := 0;
-  PatternDAT[263].Walkable := 1;
-  PatternDAT[263].Buildable := 0;
-  //Other
-  for I := 264 to TILES_CNT do
+  for I := Low(WalkBuild) to High(WalkBuild) do
   begin
-    PatternDAT[I].Walkable := 1;
-    PatternDAT[I].Buildable := 0;
+    PatternDAT[WalkBuild[I]].Walkable := 1;
+    PatternDAT[WalkBuild[I]].Buildable := 1;
   end;
 
+  for I := Low(WalkNoBuild) to High(WalkNoBuild) do
+  begin
+    PatternDAT[WalkNoBuild[I]].Walkable := 1;
+    PatternDAT[WalkNoBuild[I]].Buildable := 0;
+  end;
 
-//  for I := 1 to TILES_CNT do
-//  begin
-//    TilesInfo[I].Walkable := PatternDAT[I].Walkable <> 0;
-//    TilesInfo[I].Buildable := PatternDAT[I].Buildable <> 0;
-//    TilesInfo[I].Mask := False;
-//  end;
-//
-//  TilesInfo[274].Mask := True;
-//  TilesInfo[275].Mask := True;
-//  TilesInfo[276].Mask := True;
-
+  for I := Low(NoWalkNoBuild) to High(NoWalkNoBuild) do
+  begin
+    PatternDAT[NoWalkNoBuild[I]].Walkable := 0;
+    PatternDAT[NoWalkNoBuild[I]].Buildable := 0;
+  end;
 end;
 
 
@@ -582,7 +568,7 @@ begin
     132,137: Result := 5;
     131,136: Result := 4;
     130,135: Result := 3;
-    129,134: Result := 2;
+    129,134,266,267,275,276,283,284,291,292: Result := 2;
     128,133: Result := 1;
     else     Result := 0;
   end;
@@ -600,8 +586,13 @@ function TKMResTileset.TileIsCoal(aTile: Word): Word;
 begin
   Result := 0;
   if aTile > 151 then
+  begin
     if aTile < 156 then
-      Result := aTile - 151;
+      Result := aTile - 151
+    else
+      if aTile = 263 then
+        Result := 5;
+  end;
 end;
 
 
@@ -609,8 +600,15 @@ function TKMResTileset.TileIsIron(aTile: Word): Word;
 begin
   Result := 0;
   if aTile > 147 then
+  begin
     if aTile < 152 then
-      Result := aTile - 147;
+      Result := aTile - 147
+    else
+      case aTile of
+        259: Result := 3;
+        260: Result := 5;
+      end;
+  end;
 end;
 
 
