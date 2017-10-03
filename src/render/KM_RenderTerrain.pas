@@ -222,9 +222,13 @@ var
     I: Integer;
   begin
     Result := InRange(aTerId, 305, MAX_STATIC_TERRAIN_ID);
-    if Result and InRange(aTerId, 305, 350) then
-      for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
-        Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I]);
+    if Result then
+      if InRange(aTerId, 305, 349) then
+        for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
+          Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I])
+      else
+        Result := Result and not InRange(aTerId, 549, 600);
+
   end;
 
   function TryAddAnimTex(var aQ: Integer; aTX, aTY, aTexOffset: Word): Boolean;

@@ -89,7 +89,7 @@ begin
   CheckBox_ShowTileOwners.Checked := False; //Disabled by default
   CheckBox_ShowTileOwners.OnClick := Extra_Change;
   CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 250, 170, 180, 20, 'Show tiles grid', fnt_Antiqua); //Todo translate
-  CheckBox_ShowTilesGrid.Checked := True; //Disabled by default
+  CheckBox_ShowTilesGrid.Checked := False; //Disabled by default
   CheckBox_ShowTilesGrid.OnClick := Extra_Change;
 
   //dropdown list needs to be ontop other buttons created on Panel_Main
