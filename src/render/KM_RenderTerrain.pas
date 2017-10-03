@@ -183,6 +183,21 @@ begin
 end;
 
 
+function IsWaterAnimTerId(aTerId: Word): Boolean;
+var
+  I: Integer;
+begin
+  Result := InRange(aTerId, 305, MAX_STATIC_TERRAIN_ID)
+    and (gGFXData[rxTiles, aTerId].Tex.ID <> 0);
+  if Result then
+    if InRange(aTerId, 305, 349) then
+      for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
+        Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I])
+    else
+      Result := Result and not InRange(aTerId, 549, 600);
+end;
+
+
 procedure TRenderTerrain.UpdateVBO(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
 var
   Fog: PKMByte2Array;
@@ -217,20 +232,6 @@ var
     end;
   end;
 
-  function IsWaterAnimTerId(aTerId: Word): Boolean;
-  var
-    I: Integer;
-  begin
-    Result := InRange(aTerId, 305, MAX_STATIC_TERRAIN_ID);
-    if Result then
-      if InRange(aTerId, 305, 349) then
-        for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
-          Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I])
-      else
-        Result := Result and not InRange(aTerId, 549, 600);
-
-  end;
-
   function TryAddAnimTex(var aQ: Integer; aTX, aTY, aTexOffset: Word): Boolean;
     function SetAnimTileVertex(aTerrain: Word; aRotation: Byte): Boolean;
     var
@@ -238,7 +239,6 @@ var
     begin
       Result := False;
       if IsWaterAnimTerId(aTexOffset + aTerrain + 1)
-         and (gGFXData[rxTiles, aTexOffset + aTerrain + 1].Tex.ID <> 0)
          and (aFOW.CheckTileRevelation(aTX,aTY) > FOG_OF_WAR_ACT) then
       begin
         TexAnimC := GetTileUV(aTexOffset + aTerrain, aRotation mod 4);
@@ -431,30 +431,30 @@ begin
   else
   begin
     with gTerrain do
-    for I := fClipRect.Top to fClipRect.Bottom do
-    for K := fClipRect.Left to fClipRect.Right do
-    begin
-      with Land[I,K] do
-      begin
-        TRender.BindTexture(gGFXData[rxTiles, BaseLayer.Terrain+1].Tex.ID);
-        glBegin(GL_TRIANGLE_FAN);
-        TexC := fTileUVLookup[BaseLayer.Terrain, BaseLayer.Rotation mod 4];
-      end;
+      for I := fClipRect.Top to fClipRect.Bottom do
+        for K := fClipRect.Left to fClipRect.Right do
+        begin
+          with Land[I,K] do
+          begin
+            TRender.BindTexture(gGFXData[rxTiles, BaseLayer.Terrain+1].Tex.ID);
+            glBegin(GL_TRIANGLE_FAN);
+            TexC := fTileUVLookup[BaseLayer.Terrain, BaseLayer.Rotation mod 4];
+          end;
 
-      if RENDER_3D then
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-      end else begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height / CELL_HEIGHT_DIV, I-1);
-      end;
-      glEnd;
-    end;
+          if RENDER_3D then
+          begin
+            glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
+            glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
+            glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
+            glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
+          end else begin
+            glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height / CELL_HEIGHT_DIV, I-1);
+            glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height / CELL_HEIGHT_DIV, I-1);
+            glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height / CELL_HEIGHT_DIV, I-1);
+            glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height / CELL_HEIGHT_DIV, I-1);
+          end;
+          glEnd;
+        end;
   end;
 end;
 
@@ -462,7 +462,7 @@ end;
 procedure TRenderTerrain.DoTilesLayers;
 var
   TexC: TUVRect;
-  I,K: Integer;
+  I,K,L: Integer;
 begin
   //First we render base layer, then we do animated layers for Water/Swamps/Waterfalls
   //They all run at different speeds so we can't adjoin them in one layer
@@ -491,30 +491,33 @@ begin
   else
   begin
     with gTerrain do
-    for I := fClipRect.Top to fClipRect.Bottom do
-    for K := fClipRect.Left to fClipRect.Right do
-    begin
-      with Land[I,K] do
-      begin
-        TRender.BindTexture(gGFXData[rxTiles, BaseLayer.Terrain+1].Tex.ID);
-        glBegin(GL_TRIANGLE_FAN);
-        TexC := fTileUVLookup[BaseLayer.Terrain, BaseLayer.Rotation mod 4];
-      end;
+      for I := fClipRect.Top to fClipRect.Bottom do
+        for K := fClipRect.Left to fClipRect.Right do
+        begin
+          for L := 0 to Land[I,K].LayersCnt - 1 do
+          begin
+            with Land[I,K] do
+            begin
+              TRender.BindTexture(gGFXData[rxTiles, Layer[L].Terrain+1].Tex.ID);
+              glBegin(GL_TRIANGLE_FAN);
+              TexC := GetTileUV(Layer[L].Terrain, Layer[L].Rotation);
+            end;
 
-      if RENDER_3D then
-      begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-      end else begin
-        glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height / CELL_HEIGHT_DIV, I-1);
-        glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height / CELL_HEIGHT_DIV, I-1);
-      end;
-      glEnd;
-    end;
+            if RENDER_3D then
+            begin
+              glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
+              glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
+              glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
+              glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
+            end else begin
+              glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height / CELL_HEIGHT_DIV, I-1);
+              glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height / CELL_HEIGHT_DIV, I-1);
+              glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height / CELL_HEIGHT_DIV, I-1);
+              glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height / CELL_HEIGHT_DIV, I-1);
+            end;
+            glEnd;
+          end;
+        end;
   end;
 end;
 
@@ -562,33 +565,32 @@ begin
       end;
 
       with gTerrain do
-      for I := fClipRect.Top to fClipRect.Bottom do
-      for K := fClipRect.Left to fClipRect.Right do
-      if (TexOffset + Land[I,K].BaseLayer.Terrain + 1 <= High(gGFXData[rxTiles]))
-      and (gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID <> 0)
-      and (aFOW.CheckTileRevelation(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
-      begin
-        TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID);
-        TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
+        for I := fClipRect.Top to fClipRect.Bottom do
+          for K := fClipRect.Left to fClipRect.Right do
+          if IsWaterAnimTerId(TexOffset + Land[I,K].BaseLayer.Terrain + 1)
+            and (aFOW.CheckTileRevelation(K,I) > FOG_OF_WAR_ACT) then //No animation in FOW
+          begin
+            TRender.BindTexture(gGFXData[rxTiles, TexOffset + Land[I,K].BaseLayer.Terrain + 1].Tex.ID);
+            TexC := GetTileUV(TexOffset + Land[I,K].BaseLayer.Terrain, Land[I,K].BaseLayer.Rotation);
 
-        glBegin(GL_TRIANGLE_FAN);
-          glColor4f(1,1,1,1);
-          if RENDER_3D then
-          begin
-            glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
-            glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
-            glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
-            glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
-          end
-          else
-          begin
-            glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
-            glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
-            glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
-            glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
+            glBegin(GL_TRIANGLE_FAN);
+              glColor4f(1,1,1,1);
+              if RENDER_3D then
+              begin
+                glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1,-Land[I,K].Height/CELL_HEIGHT_DIV);
+                glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  ,-Land[I+1,K].Height/CELL_HEIGHT_DIV);
+                glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  ,-Land[I+1,K+1].Height/CELL_HEIGHT_DIV);
+                glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1,-Land[I,K+1].Height/CELL_HEIGHT_DIV);
+              end
+              else
+              begin
+                glTexCoord2fv(@TexC[1]); glVertex3f(K-1,I-1-Land[I,K].Height/CELL_HEIGHT_DIV, I-1);
+                glTexCoord2fv(@TexC[2]); glVertex3f(K-1,I  -Land[I+1,K].Height/CELL_HEIGHT_DIV, I-1);
+                glTexCoord2fv(@TexC[3]); glVertex3f(K  ,I  -Land[I+1,K+1].Height/CELL_HEIGHT_DIV, I-1);
+                glTexCoord2fv(@TexC[4]); glVertex3f(K  ,I-1-Land[I,K+1].Height/CELL_HEIGHT_DIV, I-1);
+              end;
+            glEnd;
           end;
-        glEnd;
-      end;
     end;
   end;
 end;

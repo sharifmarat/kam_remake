@@ -8,7 +8,7 @@ uses
 
 const
   TILES_CNT = 301;
-  MAX_TILE_TO_SHOW = 276;
+  MAX_TILE_TO_SHOW = 301;
   MAX_STATIC_TERRAIN_ID = 4997;
   WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
@@ -335,16 +335,38 @@ const
   (tkDirt,tkShallowSnow,tkDirt,tkDirt),
   (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
   (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-   //260
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
-//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-   //280
-//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom),
-//  (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom), (tkCustom,tkCustom,tkCustom,tkCustom)
+   //256
+  (tkShallowSnow,tkIronMount,tkShallowSnow,tkShallowSnow),(tkIronMount,tkIronMount,tkShallowSnow,tkShallowSnow), (tkIronMount,tkIronMount,tkIronMount,tkShallowSnow),
+   //259
+  (tkIron,tkIron,tkIron,tkIron), (tkIron,tkIron,tkIron,tkIron),
+   //261
+  (tkSnow,tkGoldMount,tkSnow,tkSnow), (tkGoldMount,tkGoldMount,tkSnow,tkSnow),
+   //263
+  (tkCoal,tkCoal,tkCoal,tkCoal), (tkCustom,tkCustom,tkCustom,tkIce), (tkCustom,tkCustom,tkIce,tkCustom),
+   //266
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkCoastSand), (tkStone,tkStone,tkCoastSand,tkCoastSand),
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkCoastSand,tkStone,tkCoastSand,tkCoastSand),
+   //274
+  (tkGrass,tkStone,tkGrass,tkGrass),
+   //275
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkDirt), (tkStone,tkStone,tkDirt,tkDirt),
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkDirt,tkStone,tkDirt,tkDirt),
+   //283
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkSnow), (tkStone,tkStone,tkSnow,tkSnow),
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkSnow,tkStone,tkSnow,tkSnow),
+   //291
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkStone,tkStone,tkStone,tkShallowSnow), (tkStone,tkStone,tkShallowSnow,tkShallowSnow),
+  (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
+  (tkShallowSnow,tkStone,tkShallowSnow,tkShallowSnow),
+   //299
+  (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount), (tkIronMount,tkIronMount,tkLava,tkIronMount)
   );
 
 type

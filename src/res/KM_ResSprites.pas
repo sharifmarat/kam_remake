@@ -180,7 +180,7 @@ const
 
 var
   LOG_EXTRA_GFX: Boolean = False;
-  ALL_TILES_IN_ONE_TEXTURE: Boolean = False;
+  ALL_TILES_ON_ONE_TEXTURE: Boolean = False;
   MaxAtlasSize: Integer;
 
   gGFXPrepData: array[TSpriteAtlasType] of  // for each atlas type
@@ -761,9 +761,8 @@ begin
   else if fRT = rxTiles then
   begin
     AllTilesAtlasSize := MakePOT(Ceil(sqrt(K))*(32+2*fPad)); //Tiles are 32x32
-    AtlasSize := Min(MaxAtlasSize, AllTilesAtlasSize);       //Use smallest possible atlas size for tiles (should be 1024, until many new tiles were added)
-    if AtlasSize = AllTilesAtlasSize then
-      ALL_TILES_IN_ONE_TEXTURE := True;
+    AtlasSize := Min(MaxAtlasSize, AllTilesAtlasSize);       //Use smallest possible atlas size for tiles
+    ALL_TILES_ON_ONE_TEXTURE := (AtlasSize = AllTilesAtlasSize);
   end else
     AtlasSize := MaxAtlasSize;
 
@@ -1150,7 +1149,7 @@ end;
 
 class function TKMResSprites.AllTilesOnOneAtlas: Boolean;
 begin
-  Result := ALL_TILES_IN_ONE_TEXTURE;
+  Result := ALL_TILES_ON_ONE_TEXTURE;
 end;
 
 
