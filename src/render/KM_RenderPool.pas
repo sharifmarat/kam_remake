@@ -271,7 +271,7 @@ begin
     // so that terrain shadows could be applied seamlessly ontop
     glDisable(GL_DEPTH_TEST);
 
-    fRenderTerrain.RenderFences;
+    fRenderTerrain.RenderFences(gMySpectator.FogOfWar);
 
     fRenderTerrain.RenderPlayerPlans(fFieldsList, fHousePlansList);
 
@@ -294,7 +294,7 @@ begin
     fRenderList.SortRenderList;
     fRenderList.Render;
 
-    fRenderTerrain.RenderFOW(gMySpectator.FogOfWar, False);
+    fRenderTerrain.RenderFOW(gMySpectator.FogOfWar);
 
     // Alerts/rally second pass is rendered after FOW
     PaintRallyPoints(1);
@@ -453,6 +453,7 @@ end;
 
 procedure TRenderPool.RenderMapElement(aIndex: Byte; AnimStep,pX,pY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
 begin
+  if (gMySpectator.FogOfWar.CheckTileRenderRev(pX,pY) <= FOG_OF_WAR_MIN) then Exit;// Do not render tiles fully covered by FOW
   // Render either normal object or quad depending on what it is
   if gMapElements[aIndex].WineOrCorn then
     RenderMapElement4(aIndex,AnimStep,pX,pY,(aIndex in [54..57]),DoImmediateRender,Deleting) // 54..57 are grapes, all others are doubles
@@ -471,6 +472,8 @@ var
   FOW: Byte;
   A: TKMAnimLoop;
 begin
+  if (gMySpectator.FogOfWar.CheckTileRenderRev(LocX,LocY) <= FOG_OF_WAR_MIN) then Exit;
+
   if aIndex = 61 then
   begin
     // Invisible wall
@@ -1080,7 +1083,13 @@ begin
 end;}
 
 procedure TRenderPool.RenderSprite(aRX: TRXType; aId: Word; pX,pY: Single; Col: TColor4; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+var
+  X,Y: Integer;
 begin
+  X := EnsureRange(Round(pX),1,gTerrain.MapX);
+  Y := EnsureRange(Round(pY),1,gTerrain.MapY);
+  if (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
+
   with gGFXData[aRX, aId] do
   begin
     // FOW is rendered over the top so no need to make sprites black anymore
@@ -1098,17 +1107,17 @@ begin
   end;
 
   if gGFXData[aRX, aId].Alt.Id <> 0 then
-  with gGFXData[aRX, aId] do
-  begin
-    glColor4ubv(@Col);
-    TRender.BindTexture(Alt.Id);
-    glBegin(GL_QUADS);
-      glTexCoord2f(Alt.u1, Alt.v2); glVertex2f(pX                     , pY                      );
-      glTexCoord2f(Alt.u2, Alt.v2); glVertex2f(pX+pxWidth/CELL_SIZE_PX, pY                      );
-      glTexCoord2f(Alt.u2, Alt.v1); glVertex2f(pX+pxWidth/CELL_SIZE_PX, pY-pxHeight/CELL_SIZE_PX);
-      glTexCoord2f(Alt.u1, Alt.v1); glVertex2f(pX                     , pY-pxHeight/CELL_SIZE_PX);
-    glEnd;
-  end;
+    with gGFXData[aRX, aId] do
+    begin
+      glColor4ubv(@Col);
+      TRender.BindTexture(Alt.Id);
+      glBegin(GL_QUADS);
+        glTexCoord2f(Alt.u1, Alt.v2); glVertex2f(pX                     , pY                      );
+        glTexCoord2f(Alt.u2, Alt.v2); glVertex2f(pX+pxWidth/CELL_SIZE_PX, pY                      );
+        glTexCoord2f(Alt.u2, Alt.v1); glVertex2f(pX+pxWidth/CELL_SIZE_PX, pY-pxHeight/CELL_SIZE_PX);
+        glTexCoord2f(Alt.u1, Alt.v1); glVertex2f(pX                     , pY-pxHeight/CELL_SIZE_PX);
+      glEnd;
+    end;
 end;
 
 
@@ -1120,7 +1129,12 @@ end;
 procedure TRenderPool.RenderSpriteAlphaTest(
   aRX: TRXType; aId: Word; aWoodProgress: Single; pX, pY: Single;
   aId2: Word = 0; aStoneProgress: Single = 0; X2: Single = 0; Y2: Single = 0);
+var
+  X,Y: Integer;
 begin
+  X := EnsureRange(Round(pX),1,gTerrain.MapX);
+  Y := EnsureRange(Round(pY),1,gTerrain.MapY);
+  if (gMySpectator.FogOfWar.CheckTileRenderRev(X,Y) <= FOG_OF_WAR_MIN) then Exit;
   // Skip rendering if alphas are zero (occurs so non-started houses can still have child sprites)
   if (aWoodProgress = 0) and (aStoneProgress = 0) then Exit;
   
@@ -1305,7 +1319,8 @@ procedure TRenderPool.RenderSpriteOnTile(const aLoc: TKMPoint; aId: Word; aFlagC
 var
   pX, pY: Single;
 begin
-  if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y) then Exit;
+  if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y)
+    or (gMySpectator.FogOfWar.CheckTileRenderRev(aLoc.X,aLoc.Y) <= FOG_OF_WAR_MIN) then Exit;
 
   pX := aLoc.X - 0.5 + fRXData[rxGui].Pivot[aId].X / CELL_SIZE_PX;
   pY := gTerrain.FlatToHeight(aLoc.X - 0.5, aLoc.Y - 0.5) -
