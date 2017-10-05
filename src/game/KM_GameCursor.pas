@@ -53,6 +53,7 @@ procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
   MapEdMagicBrush := False;
+  SState := [];
   if fMode = cmNone then  //Reset Tag1 also, when reset mode
   begin
     Tag1 := 0;
