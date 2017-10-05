@@ -132,9 +132,9 @@ procedure TKMMapEdTerrainHeights.Show;
 begin
   gGameCursor.Mode := fLastCursorMode;
   gGameCursor.MapEdShape := fLastShape;
+  gGameCursor.MapEdSlope := HeightSlope.Position;
+  gGameCursor.MapEdSpeed := HeightSpeed.Position;
   HeightRefresh;
-//  HeightChange(HeightCircle);
-//  HeightChange(HeightElevate);
   Panel_Heights.Show;
 end;
 
