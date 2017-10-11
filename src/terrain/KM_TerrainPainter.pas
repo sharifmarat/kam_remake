@@ -51,8 +51,6 @@ type
 
     fMapXn, fMapYn: Integer; //Cursor position node
     fMapXc, fMapYc: Integer; //Cursor position cell
-    fMapXnOld, fMapYnOld: Integer; //keeps previous node position
-    fMapXcOld, fMapYcOld: Integer; //keeps previous cell position
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
     function GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
@@ -67,6 +65,8 @@ type
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
+
+    function IsTerrainRepresentTerKind(aTerId: Word; aTerKind: TKMTerrainKind): Boolean;
 
     procedure RebuildTile(const X,Y: Integer);
   public
@@ -246,11 +246,8 @@ begin
 
   if gGameCursor.MapEdSize = 0 then
   begin
-    if (fMapXnOld <> fMapXn) or (fMapYnOld <> fMapYn) then
-    begin
-      LandTerKind[fMapYn, fMapXn].TerKind := aTerKind;
-      AddBrushAreaTerKind(fMapXn, fMapYn);
-    end;
+    LandTerKind[fMapYn, fMapXn].TerKind := aTerKind;
+    AddBrushAreaTerKind(fMapXn, fMapYn);
     Exit;
   end;
 
@@ -267,6 +264,19 @@ begin
   AddBrushAreaTerKind(X+1,Y);
   AddBrushAreaTerKind(X+1,Y+1);
   AddBrushAreaTerKind(X,  Y+1);
+end;
+
+
+function TKMTerrainPainter.IsTerrainRepresentTerKind(aTerId: Word; aTerKind: TKMTerrainKind): Boolean;
+var
+  I: Integer;
+begin
+  Result := (aTerId = BASE_TERRAIN[aTerKind]);
+  for I := 1 to RandomTiling[aTerKind,0] do
+  begin
+    if Result then Exit;
+    Result := Result or (aTerId = RandomTiling[aTerKind,I]);
+  end;
 end;
 
 
@@ -370,6 +380,7 @@ begin
 
   //Need to check if this tile was already smart-painted, "4-Nodes" hence default value is 0
   if (LandTerKind[pY,pX].Tiles <> Byte(Ter1)*Byte(Ter2)*(4-Nodes))
+    or ((Nodes = 4) and not IsTerrainRepresentTerKind(gTerrain.Land[pY,pX].BaseLayer.Terrain, Ter1)) //All nodes, but terrain is different from needed TerKind
     or (gTerrain.Land[pY,pX].LayersCnt > 0) then
   begin
     LandTerKind[pY,pX].Tiles := Byte(Ter1)*Byte(Ter2)*(4-Nodes);//store not only nodes info, but also terrain type used
@@ -991,11 +1002,6 @@ begin
 
   if TKMTileMaskKind(gGameCursor.MapEdBrushMask) <> mk_None then
     UseMagicBrush(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
-
-  fMapXcOld := fMapXc;
-  fMapYcOld := fMapYc;
-  fMapXnOld := fMapXn;
-  fMapYnOld := fMapYn;
 
   gTerrain.UpdatePassability(KMRectGrow(KMRect(gGameCursor.Cell), (Size div 2) + 1));
 end;
