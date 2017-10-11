@@ -113,9 +113,6 @@ type
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
     function TileIsFactorable(const Loc: TKMPoint): Boolean;
 
-    function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
-    function TileHasRoad(X,Y: Integer): Boolean; overload;
-
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
 
     procedure UpdateFences(const Loc: TKMPoint; CheckSurrounding: Boolean = True);
@@ -240,6 +237,10 @@ type
     function TileIsCornField(const Loc: TKMPoint): Boolean;
     function TileIsWineField(const Loc: TKMPoint): Boolean;
     function TileIsLocked(const aLoc: TKMPoint): Boolean;
+
+    function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
+    function TileHasRoad(X,Y: Integer): Boolean; overload;
+
     function UnitsHitTest(X, Y: Word): Pointer;
     function UnitsHitTestF(const aLoc: TKMPointF): Pointer;
     function UnitsHitTestWithinRad(const aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandIndex; aAlliance: TAllianceType; Dir: TKMDirection; const aClosest: Boolean): Pointer;
@@ -455,13 +456,14 @@ var
     // new appended terrain
     if aNewGeneratedTile then
     begin
-      TileBasic.BaseLayer.Terrain := Land[aFromY,aFromX].BaseLayer.Terrain;
+      TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(tkGrass);
+      TileBasic.BaseLayer.Rotation := Random(4);
+      TileBasic.BaseLayer.Corners := [0,1,2,3];
       //Apply some random tiles for artisticity
-      TileBasic.Height := EnsureRange(Land[aFromY,aFromX].Height + KaMRandom(7), 0, 100);  //variation in Height
-      TileBasic.BaseLayer.Rotation := Land[aFromY,aFromX].BaseLayer.Rotation;
-      TileBasic.Obj := 255; // No object
-      TileBasic.IsCustom  := Land[aFromY,aFromX].IsCustom;
-      TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
+      TileBasic.Height    := EnsureRange(30 + KaMRandom(7), 0, 100);  //variation in Height
+      TileBasic.Obj       := 255; // No object
+      TileBasic.IsCustom  := False;
+      TileBasic.LayersCnt := 0;
     end
     else
     begin
@@ -509,27 +511,12 @@ begin
 
     for I := 1 to SizeY do
     begin
-      if I = SizeY then
-      begin
-        IFrom := fMapY;
-        NewGeneratedTileI := KMSameRect(aInsetRect, KMRECT_ZERO);
-      end else
-      begin
-        IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY - 1);
-        NewGeneratedTileI := not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
-      end;
-
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY);
+      NewGeneratedTileI := IFrom <> I - aInsetRect.Top; //not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
       for K := 1 to SizeX do
       begin
-        if K = SizeX then
-        begin
-          KFrom := fMapX;
-          NewGeneratedTileK := KMSameRect(aInsetRect, KMRECT_ZERO);
-        end else
-        begin
-          KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1);
-          NewGeneratedTileK := not InRange(K, MapInnerRect.Left, MapInnerRect.Right);
-        end;
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX);
+        NewGeneratedTileK := KFrom <> K - aInsetRect.Left;
         SetNewLand(S, KFrom, IFrom, NewGeneratedTileI or NewGeneratedTileK);
       end;
     end;

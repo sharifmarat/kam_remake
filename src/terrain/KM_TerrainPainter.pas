@@ -57,7 +57,8 @@ type
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
     function GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
     procedure CheckpointToTerrain;
-    procedure BrushTerrainTile(const X, Y: Integer);
+    procedure BrushTile(const X, Y: Integer);
+    procedure BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
     procedure MagicBrush(const X,Y: Integer);
     procedure UseMagicBrush(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False);
     procedure UpdateTempLand;
@@ -66,21 +67,24 @@ type
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
-    function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
+
+    procedure RebuildTile(const X,Y: Integer);
   public
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
     procedure InitEmpty;
+
     procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString); overload;
     procedure SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect); overload;
+
     procedure Eyedropper(const aLoc: TKMPoint);
+    procedure RotateTile(const aLoc: TKMPoint);
+    procedure MagicWater(const aLoc: TKMPoint);
+
     procedure RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False); overload;
     procedure RebuildMap(const aRect: TKMRect); overload;
-    procedure RotateTile(const aLoc: TKMPoint);
-    procedure RebuildTile(const X,Y: Integer);
-
-    procedure MagicWater(const aLoc: TKMPoint);
+    function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 
     function CanUndo: Boolean;
     function CanRedo: Boolean;
@@ -213,7 +217,16 @@ begin
 end;
 
 
-procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer);
+procedure TKMTerrainPainter.BrushTile(const X, Y: Integer);
+var
+  TerKind: TKMTerrainKind;
+begin
+  TerKind := TKMTerrainKind(gGameCursor.Tag1);
+  BrushTerrainTile(X,Y, TerKind);
+end;
+
+
+procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
 
   procedure AddBrushAreaTerKind(aX,aY: Integer);
   var
@@ -227,30 +240,26 @@ procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer);
     end;
   end;
 
-var
-  TerKind: TKMTerrainKind;
 begin
   if not gTerrain.TileInMapCoords(X, Y) then
     Exit;
-
-  TerKind := TKMTerrainKind(gGameCursor.Tag1);
 
   if gGameCursor.MapEdSize = 0 then
   begin
     if (fMapXnOld <> fMapXn) or (fMapYnOld <> fMapYn) then
     begin
-      LandTerKind[fMapYn, fMapXn].TerKind := TerKind;
+      LandTerKind[fMapYn, fMapXn].TerKind := aTerKind;
       AddBrushAreaTerKind(fMapXn, fMapYn);
     end;
     Exit;
   end;
 
-  LandTerKind[Y,   X].TerKind   := TerKind;
-  LandTerKind[Y,   X+1].TerKind := TerKind;
-  LandTerKind[Y+1, X+1].TerKind := TerKind;
-  LandTerKind[Y+1, X].TerKind   := TerKind;
+  LandTerKind[Y,   X].TerKind   := aTerKind;
+  LandTerKind[Y,   X+1].TerKind := aTerKind;
+  LandTerKind[Y+1, X+1].TerKind := aTerKind;
+  LandTerKind[Y+1, X].TerKind   := aTerKind;
 
-  gTerrain.Land[Y, X].BaseLayer.Terrain := PickRandomTile(TerKind);
+  gTerrain.Land[Y, X].BaseLayer.Terrain := PickRandomTile(aTerKind);
   gTerrain.Land[Y, X].BaseLayer.Rotation := Random(4); //Random direction for all plain tiles
   gTerrain.Land[Y, X].IsCustom := False;
 
@@ -968,7 +977,7 @@ begin
   // Clear fBrushAreaTerKind array. It will be refilled in BrushTerrainTile
   fBrushAreaTerKindCnt := 0;
 
-  IterateOverArea(KMPoint(fMapXc,fMapYc), Size, gGameCursor.MapEdShape = hsSquare, BrushTerrainTile);
+  IterateOverArea(KMPoint(fMapXc,fMapYc), Size, gGameCursor.MapEdShape = hsSquare, BrushTile);
 
   if Size = 0 then
   begin
@@ -978,7 +987,7 @@ begin
     X := fMapXc;
     Y := fMapYc;
   end;
-  RebuildMap(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True); //+4 for surrounding tiles
+  RebuildMap(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
 
   if TKMTileMaskKind(gGameCursor.MapEdBrushMask) <> mk_None then
     UseMagicBrush(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
@@ -1523,22 +1532,15 @@ begin
     S.Write(Integer(0)); //Cypher - ommited
     for I := 1 to NewY do
     begin
-      if I <= aInsetRect.Top then
-        IFrom := 1
-      else if I >= aInsetRect.Top + gTerrain.MapY then
-        IFrom := gTerrain.MapY
-      else
-        IFrom := I - aInsetRect.Top;
-
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, aInsetRect.Top + gTerrain.MapY);
       for K := 1 to NewX do
       begin
-        if K <= aInsetRect.Left then
-          KFrom := 1
-        else if K >= aInsetRect.Left + gTerrain.MapX then
-          KFrom := gTerrain.MapX
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, aInsetRect.Left + gTerrain.MapX);
+        if (IFrom <> I - aInsetRect.Top)
+          or (KFrom <> K - aInsetRect.Left) then
+          S.Write(Byte(tkGrass))             // Its ok if we fill all with grass
         else
-          KFrom := K - aInsetRect.Left;
-        S.Write(LandTerKind[IFrom,KFrom].TerKind, 1);
+          S.Write(LandTerKind[IFrom,KFrom].TerKind, 1);
       end;
     end;
 
