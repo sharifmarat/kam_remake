@@ -293,7 +293,7 @@ var
 
 implementation
 uses
-  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
+  KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units, KM_ResSprites,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_Units_Warrior, KM_TerrainPainter,
   KM_ResUnits, KM_Hand, KM_Game, KM_Utils;
 
@@ -591,19 +591,19 @@ function TKMTerrain.TrySetTile(X, Y: Integer; aType: Word; aRot: Byte; aUpdatePa
       Result := False
     else
       if gRes.Units[U.UnitType].DesiredPassability = tpFish then
-        Result := not gRes.Tileset.TileIsWater(aType) //Fish need water
+        Result := not fTileset.TileIsWater(aType) //Fish need water
       else
-        Result := not gRes.Tileset.TileIsWalkable(aType); //All other animals need Walkable
+        Result := not fTileset.TileIsWalkable(aType); //All other animals need Walkable
   end;
 begin
   //First see if this change is allowed
   //Will this change make a unit stuck?
   if UnitWillGetStuck
-  //Will this change damage a field?
-  or (TileIsCornField(KMPoint(X, Y)) or TileIsWineField(KMPoint(X, Y)))
-  //Will this change block a construction site?
-  or ((Land[Y, X].TileLock in [tlFenced, tlDigged, tlHouse])
-      and (not gRes.Tileset.TileIsRoadable(aType) or not gRes.Tileset.TileIsWalkable(aType))) then
+    //Will this change damage a field?
+    or (TileIsCornField(KMPoint(X, Y)) or TileIsWineField(KMPoint(X, Y)))
+    //Will this change block a construction site?
+    or ((Land[Y, X].TileLock in [tlFenced, tlDigged, tlHouse])
+      and (not fTileSet.TileIsRoadable(aType) or not fTileset.TileIsWalkable(aType))) then
   begin
     Result := False;
     Exit;
@@ -1044,15 +1044,49 @@ end;
 
 //Check if requested tile is generally walkable
 function TKMTerrain.TileIsWalkable(const Loc: TKMPoint): Boolean;
+var
+  L: Integer;
+  Ter: Word;
+  TerInfo: TKMGenTerrainInfo;
 begin
   Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
+  begin
+    if not Result then Exit;
+      
+    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
+    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
+    // Check if this layer walkable
+    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
+    Result := Result
+                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,0] = 0)
+                  or fTileset.TileIsWalkable(BASE_TERRAIN[TerInfo.TerKind]));
+
+  end;
 end;
 
 
 //Check if requested tile is generally suitable for road building
 function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
+var
+  L: Integer;
+  Ter: Word;
+  TerInfo: TKMGenTerrainInfo;
 begin
   Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
+  begin
+    if not Result then Exit;
+
+    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
+    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
+    // Check if this layer walkable
+    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
+    Result := Result
+                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,1] = 0)
+                  or fTileset.TileIsRoadable(BASE_TERRAIN[TerInfo.TerKind]));
+
+  end;
 end;
 
 
@@ -2314,8 +2348,8 @@ begin
   Land[Loc.Y,Loc.X].Passability := [];
 
   if TileIsWalkable(Loc)
-  and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
-  and CheckHeightPass(Loc, hpWalking) then
+    and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
+    and CheckHeightPass(Loc, hpWalking) then
     AddPassability(tpOwn);
 
   //For all passability types other than CanAll, houses and fenced houses are excluded

@@ -71,7 +71,7 @@ type
     tkDeepSnow,
     tkStone,
     tkGoldMount,
-    tkIronMount,    //20
+    tkIronMount,  //20
     tkAbyss,
     tkGravel,
     tkCoal,
@@ -101,7 +101,7 @@ const
     (1, 2, 2, 2, 2, 3, 3, 4);
 
   TILE_MASK_KINDS_PREVIEW: array[TKMTileMaskKind] of Integer =
-    (-1, 551, 561, 571, 581);
+    (-1, 551, 561, 571, 581); //+1 here, so -1 is no image, and not grass
 
   TILE_MASKS_FOR_LAYERS: array[mk_Soft..mk_Hard3] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
      //Soft
@@ -136,6 +136,18 @@ const
       (583, 584),
       (585, 586),
       (587, -1)));
+
+  // Does masks apply Walkable/Buildable restrictions on tile.
+  // F.e. mt_2Corner mask does not add any restrictions
+  TILE_MASKS_PASS_RESTRICTIONS: array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType]
+                            of array[0..1] of Byte =  // (Walkable, Buildable) (0,1): 0 = False/1 = True
+     (((0,1), (0,0)),  // mt_2Straight
+      ((1,1), (0,0)),  // mt_2Diagonal
+      ((0,0), (0,0)),  // mt_2Corner
+      ((0,1), (0,0)),  // mt_2Opposite
+      ((0,0), (0,1)),  // mt_3Straight
+      ((0,0), (0,1)),  // mt_3Opposite
+      ((0,0), (0,0))); // mt_4Square
 
 
 
@@ -406,8 +418,6 @@ type
 
     procedure ExportPatternDat(const aFilename: string);
 
-//    function GetTransTerrainId(aTerKind: TKMTerrainKind; aMaskType: TKMTileMaskType): Word;
-
     function TileIsWater(aTile: Word): Boolean;
     //function TileHasWater(aTile: Word): Boolean;
     function TileIsIce(aTile: Word): Boolean;
@@ -441,10 +451,10 @@ end;
 
 procedure TKMResTileset.InitRemakeTiles;
 const
-  WalkBuild: array[0..7] of Integer = (257,262,264,274,275,283,291,299);
-  WalkNoBuild: array[0..5] of Integer = (258,263,270,279,287,295);
+  WalkBuild:      array[0..7] of Integer = (257,262,264,274,275,283,291,299);
+  WalkNoBuild:    array[0..5] of Integer = (258,263,270,279,287,295);
   NoWalkNoBuild: array[0..30] of Integer = (259,260,261,265,266,267,268,169,271,272,273,276,277,278,280,281,282,284,285,
-                                             286,288,289,290,292,293,294,296,297,298,300,301);
+                                            286,288,289,290,292,293,294,296,297,298,300,301);
 var
   I: Integer;
 begin
