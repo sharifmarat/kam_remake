@@ -670,7 +670,6 @@ type
     procedure SetValue(aValue: Integer);
     procedure CheckValueOnUnfocus;
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
-    function Hint: UnicodeString;
   protected
     procedure SetLeft(aValue: Integer); override;
     procedure SetTop(aValue: Integer); override;
@@ -3761,11 +3760,6 @@ begin
   Result := fWidth - 40;
 end;
 
-
-function TKMNumericEdit.Hint: UnicodeString;
-begin
-
-end;
 
 function TKMNumericEdit.IsCharValid(Key: WideChar): Boolean;
 begin
