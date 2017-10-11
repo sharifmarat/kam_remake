@@ -364,7 +364,7 @@ begin
     or (gTerrain.Land[pY,pX].LayersCnt > 0) then
   begin
     LandTerKind[pY,pX].Tiles := Byte(Ter1)*Byte(Ter2)*(4-Nodes);//store not only nodes info, but also terrain type used
-    if Found and (TKMTileMaskKind(gGameCursor.MapEdBrushMask) = mk_None) then
+    if Found and ((Nodes = 4) or (TKMTileMaskKind(gGameCursor.MapEdBrushMask) = mk_None)) then
     begin
       gTerrain.Land[pY,pX].BaseLayer.Terrain := T;
       gTerrain.Land[pY,pX].BaseLayer.Corners := [0,1,2,3];

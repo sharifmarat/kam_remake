@@ -460,14 +460,16 @@ var
       TileBasic.Height := EnsureRange(Land[aFromY,aFromX].Height + KaMRandom(7), 0, 100);  //variation in Height
       TileBasic.BaseLayer.Rotation := Land[aFromY,aFromX].BaseLayer.Rotation;
       TileBasic.Obj := 255; // No object
+      TileBasic.IsCustom  := Land[aFromY,aFromX].IsCustom;
       TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
     end
     else
     begin
       TileBasic.BaseLayer := Land[aFromY,aFromX].BaseLayer;
-      TileBasic.Height := Land[aFromY,aFromX].Height;
-      TileBasic.Obj := Land[aFromY,aFromX].Obj;
+      TileBasic.Height    := Land[aFromY,aFromX].Height;
+      TileBasic.Obj       := Land[aFromY,aFromX].Obj;
       TileBasic.LayersCnt := Land[aFromY,aFromX].LayersCnt;
+      TileBasic.IsCustom  := Land[aFromY,aFromX].IsCustom;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[aFromY,aFromX].Layer[L];
     end;
@@ -3415,8 +3417,9 @@ begin
     begin
       //Only save fields that cannot be recalculated after loading
       TileBasic.BaseLayer := Land[I,K].BaseLayer;
-      TileBasic.Height := Land[I,K].Height;
-      TileBasic.Obj := Land[I,K].Obj;
+      TileBasic.Height    := Land[I,K].Height;
+      TileBasic.Obj       := Land[I,K].Obj;
+      TileBasic.IsCustom  := Land[I,K].IsCustom;
       TileBasic.LayersCnt := Land[I,K].LayersCnt;
       for L := 0 to 2 do
         TileBasic.Layer[L] := Land[I,K].Layer[L];
@@ -3656,13 +3659,13 @@ class procedure TKMTerrain.WriteTileToStream(var S: TKMemoryStream; const aTileB
 var
   L: Integer;
 begin
-  S.Write(aTileBasic.BaseLayer.Terrain);
+  S.Write(aTileBasic.BaseLayer.Terrain);  //1
   //Map file stores terrain, not the fields placed over it, so save OldRotation rather than Rotation
-  S.Write(aTileBasic.BaseLayer.Rotation);
-  S.Write(aTileBasic.Height);
-  S.Write(aTileBasic.Obj);
-  S.Write(aTileBasic.IsCustom);
-  S.Write(aTileBasic.LayersCnt);
+  S.Write(aTileBasic.BaseLayer.Rotation); //3
+  S.Write(aTileBasic.Height);             //4
+  S.Write(aTileBasic.Obj);                //5
+  S.Write(aTileBasic.IsCustom);           //6
+  S.Write(aTileBasic.LayersCnt);          //7
   Inc(aMapDataSize, 7); // obligatory 7 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
