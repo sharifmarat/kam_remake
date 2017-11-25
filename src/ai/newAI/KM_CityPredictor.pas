@@ -232,7 +232,7 @@ end;
 
 
 // Update ware consumption
-procedure TKMCityPredictor.UpdateWareBalance();
+procedure TKMCityPredictor.UpdateWareBalance(aSkipWeaponsCalculation: Boolean = False);
 const
   STONE_NEED_PER_A_WORKER = 0.8;
   WOOD_NEED_PER_A_WORKER = 0.3;
