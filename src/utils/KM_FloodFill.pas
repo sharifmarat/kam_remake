@@ -31,7 +31,7 @@ type
     procedure SearchAround(aX,aY: SmallInt); virtual;
   public
     constructor Create(const aScanEightTiles: Boolean = False); virtual;
-    destructor Destroy(); virtual;
+    destructor Destroy(); override;
     procedure QuickFlood(aX,aY: SmallInt); virtual;
   end;
 
