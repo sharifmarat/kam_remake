@@ -22,7 +22,8 @@ uses
    KM_GUIMapEdMarkerReveal,
    KM_GUIMapEdMenu,
    KM_GUIMapEdMenuQuickPlay,
-   KM_GUIMapEdUnit;
+   KM_GUIMapEdUnit,
+   KM_GUIMapEdRMG;
 
 type
   TKMapEdInterface = class (TKMUserInterfaceGame)
@@ -46,6 +47,7 @@ type
     fGuiMission: TKMMapEdMission;
     fGuiAttack: TKMMapEdTownAttack;
     fGuiGoal: TKMMapEdPlayerGoal;
+    fGuiRMG: TKMMapEdRMG;
     fGuiFormations: TKMMapEdTownFormations;
     fGuiMenuQuickPlay: TKMMapEdMenuQuickPlay;
     fGuiExtras: TKMMapEdExtras;
@@ -226,6 +228,7 @@ begin
   fGuiAttack := TKMMapEdTownAttack.Create(Panel_Main);
   fGuiFormations := TKMMapEdTownFormations.Create(Panel_Main);
   fGuiGoal := TKMMapEdPlayerGoal.Create(Panel_Main);
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Main);
   fGuiMenuQuickPlay := TKMMapEdMenuQuickPlay.Create(Panel_Main);
 
   //Pass pop-ups to their dispatchers
@@ -233,6 +236,7 @@ begin
   fGuiTown.GuiOffence.AttackPopUp := fGuiAttack;
   fGuiPlayer.GuiPlayerGoals.GoalPopUp := fGuiGoal;
   fGuiMenu.GuiMenuQuickPlay := fGuiMenuQuickPlay;
+  fGuiTerrain.GuiSelection.GuiRMGPopUp := fGuiRMG;
 
   //Hints go above everything
   Bevel_HintBG := TKMBevel.Create(Panel_Main,224+32,Panel_Main.Height-23,300,21);

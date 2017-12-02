@@ -9,7 +9,7 @@ uses
 type
   TKMMapEdTerrainSelection = class
   private
-    RMGPopUp: TKMMapEdRMG;
+    fRMGPopUp: TKMMapEdRMG;
     procedure SelectionClick(Sender: TObject);
     procedure GenerateMapClick(Sender: TObject);
   protected
@@ -24,6 +24,7 @@ type
     constructor Create(aParent: TKMPanel);
     destructor Destroy; override;
 
+    property GuiRMGPopUp: TKMMapEdRMG read fRMGPopUp write fRMGPopUp;
     procedure Show;
     function Visible: Boolean;
     procedure Hide;
@@ -44,7 +45,7 @@ constructor TKMMapEdTerrainSelection.Create(aParent: TKMPanel);
 begin
   inherited Create;
 
-  RMGPopUp := TKMMapEdRMG.Create(aParent);
+//  RMGPopUp := TKMMapEdRMG.Create(aParent);
 
   Panel_Selection := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
@@ -85,14 +86,14 @@ end;
 
 destructor TKMMapEdTerrainSelection.Destroy;
 begin
-  RMGPopUp.Free();
+  fRMGPopUp.Free();
   inherited;
 end;
 
 procedure TKMMapEdTerrainSelection.GenerateMapClick(Sender: TObject);
 //var Tiles: TKMTerrainTileBriefArray;
 begin
-  RMGPopUp.Show();
+  fRMGPopUp.Show();
 end;
 
 
