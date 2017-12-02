@@ -505,6 +505,17 @@ object FormMain: TFormMain
         Caption = 'Edit mission...'
         OnClick = MenuItem1Click
       end
+      object N4: TMenuItem
+        Caption = '-'
+      end
+      object ReloadSettings: TMenuItem
+        Caption = 'Reload settings.ini'
+        OnClick = ReloadSettingsClick
+      end
+      object SaveSettings: TMenuItem
+        Caption = 'Save settings.ini'
+        OnClick = SaveSettingsClick
+      end
       object N1: TMenuItem
         Caption = '-'
       end
@@ -534,6 +545,10 @@ object FormMain: TFormMain
       object ExportUIPages: TMenuItem
         Caption = 'Export UI pages'
         OnClick = Debug_ExportUIPagesClick
+      end
+      object ShowLogistics: TMenuItem
+        Caption = 'Show Logistics'
+        OnClick = ShowLogisticsClick
       end
     end
     object Export1: TMenuItem
