@@ -2,9 +2,9 @@ unit Unit1;
 {$I ..\..\KaM_Remake.inc}
 interface
 uses
-  Windows, Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms,
+  Windows, Classes, ComCtrls, Controls, Dialogs, ExtDlgs, ExtCtrls, Forms,
   Graphics, Mask, Math, Spin, StdCtrls, SysUtils,
-  KM_Defaults, KM_Campaigns, KM_Pics, KM_ResSpritesEdit, KromUtils;
+  KM_Defaults, KM_Campaigns, KM_Pics, KM_ResSpritesEdit, KromUtils, inifiles;
 
 type
   TForm1 = class(TForm)
@@ -32,6 +32,14 @@ type
     shpBriefing: TShape;
     Bevel2: TBevel;
     cbShowNodeNumbers: TCheckBox;
+    Bevel3: TBevel;
+    GroupBox1: TGroupBox;
+    imgNewFlag: TImage;
+    imgNewNode: TImage;
+    cbShowBriefingPosition: TCheckBox;
+    edtName: TEdit;
+    Label3: TLabel;
+    btnUnloadCMP: TButton;
     procedure btnLoadPictureClick(Sender: TObject);
     procedure btnLoadCMPClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -46,6 +54,14 @@ type
 
     procedure edtShortNameKeyPress(Sender: TObject; var Key: Char);
     procedure cbShowNodeNumbersClick(Sender: TObject);
+    procedure NewObjectImgDblClick(Sender: TObject);
+    procedure Image1DragOver(Sender, Source: TObject; X, Y: Integer;
+                             State: TDragState; var Accept: Boolean);
+    procedure Image1DragDrop(Sender, Source: TObject; X, Y: Integer);
+    procedure NewObjectImgMouseDown(Sender: TObject; Button: TMouseButton;
+                                    Shift: TShiftState; X, Y: Integer);
+    procedure cbShowBriefingPositionClick(Sender: TObject);
+    procedure btnUnloadCMPClick(Sender: TObject);
   private
     fExePath: string;
     fCampaignsPath: string;
@@ -57,6 +73,15 @@ type
     fSelectedMap: Integer;
     fSelectedNode: Integer;
     PrevX, PrevY: Integer;
+
+    procedure LoadCmp(aFileName : String);
+
+    function DlgQuestionShow(aCaption, aMsg: string): boolean;
+
+    function GetCharset(aLang: string): TFontCharset;
+    procedure LoadCampaignName(aFileName, aLocale: string);
+    procedure SaveCampaignName(aFileName: string);
+    procedure CreateDefaultLocaleLibxTemplate(aFileName: string);
   public
     procedure FlagDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FlagMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -67,8 +92,6 @@ type
 
     procedure FlagNodeLeave(Sender: TObject);
 
-    procedure CreateDefaultLocaleLibxTemplate(aFileName: string);
-
     procedure SelectMap;
     procedure RefreshBackground;
     procedure RefreshFlags;
@@ -78,13 +101,13 @@ type
     procedure UpdateNodeCount;
     procedure DrawFlagNumber(aIndexMap: Integer);
     procedure DrawNodeNumber(aIndexNode: Integer);
-  end;
 
+  end;
 
 var
   Form1: TForm1;
   C: TKMCampaign;
-
+  Locale: String;
 implementation
 {$R *.dfm}
 
@@ -98,6 +121,8 @@ begin
 
   fExePath := ExtractFilePath(ParamStr(0));
   fCampaignsPath := ExpandFileName(fExePath + '..\..\Campaigns\');
+
+  Locale := 'eng';
 
   C := TKMCampaign.Create;
   fSelectedMap := -1;
@@ -126,12 +151,47 @@ begin
   fSprites := TKMSpritePackEdit.Create(rxCustom, nil);
 
   seMapCountChange(nil); //Initialise it to 1 map
+
+  cbShowBriefingPositionClick(nil);
+
+  if FileExists(ParamStr(1)) then
+    LoadCmp(ParamStr(1));
 end;
 
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
   fSprites.Free;
+end;
+
+
+procedure TForm1.LoadCmp(aFileName : String);
+var
+  I: Integer;
+begin
+  C.LoadFromFile(aFileName);
+
+  fSprites.Free;
+  fSprites := TKMSpritePackEdit.Create(rxCustom, nil);
+  if FileExists(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx') then
+    fSprites.LoadFromRXXFile(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx')
+  else
+    ShowMessage('Campaign background image (images.rxx) could not be found');
+
+  fSelectedMap := -1;
+  fSelectedNode := -1;
+
+  edtShortName.Text := C.CampName;
+  seMapCount.Value := C.MapCount;
+
+  UpdateList;
+  UpdateFlagCount;
+  RefreshBackground;
+  RefreshFlags;
+
+  //Hide nodes that might have been open from the last campaign
+  for I := 0 to Length(imgNodes) - 1 do
+    imgNodes[I].Visible := False;
 end;
 
 
@@ -172,6 +232,83 @@ begin
 end;
 
 
+procedure TForm1.Image1DragDrop(Sender, Source: TObject; X, Y: Integer);
+var
+  curItem: Integer;
+begin
+  if fUpdating then Exit;
+
+  if Source = imgNewFlag then
+  begin
+    curItem          := seMapCount.Value;
+    seMapCount.Value := curItem + 1;
+    C.MapCount       := EnsureRange(seMapCount.Value, 1, MAX_CAMP_MAPS);
+
+    C.Maps[C.MapCount - 1].Flag.X := EnsureRange(X - Image1.Left, 0, 1024 - imgNewFlag.Width);
+    C.Maps[C.MapCount - 1].Flag.Y := EnsureRange(Y - Image1.Top, 0, 768 - imgNewFlag.Height);
+
+    fSelectedMap := C.MapCount - 1; //Always select last, just added MapFlag
+  end else if (fSelectedMap <> -1) and (Source = imgNewNode) then
+  begin
+    curItem                        := seNodeCount.Value;
+    seNodeCount.Value              := curItem + 1;
+    C.Maps[fSelectedMap].NodeCount := EnsureRange(seNodeCount.Value, 0, MAX_CAMP_NODES);
+
+    C.Maps[fSelectedMap].Nodes[curItem].X := (X - Image1.Left);
+    C.Maps[fSelectedMap].Nodes[curItem].Y := (Y - Image1.Top);
+
+    fSelectedNode := C.Maps[fSelectedMap].NodeCount - 1; //Always select last, just added Node
+  end;
+
+  UpdateList;
+  UpdateFlagCount;
+  UpdateNodeCount;
+  RefreshFlags;
+end;
+
+
+procedure TForm1.Image1DragOver(Sender, Source: TObject; X, Y: Integer;
+                                State: TDragState; var Accept: Boolean);
+begin
+  Accept := (Source = imgNewFlag) or
+            ((fSelectedMap <> -1) and (Source = imgNewNode));
+end;
+
+
+procedure TForm1.NewObjectImgMouseDown(Sender: TObject; Button: TMouseButton;
+                                       Shift: TShiftState; X, Y: Integer);
+begin
+  TImage(Sender).BeginDrag(False, 5);
+end;
+
+
+procedure TForm1.NewObjectImgDblClick(Sender: TObject);
+begin
+  if fUpdating then Exit;
+
+  if Sender = imgNewFlag then
+  begin
+    seMapCount.Value := seMapCount.Value + 1;
+    C.MapCount       := EnsureRange(seMapCount.Value, 1, MAX_CAMP_MAPS);
+
+    if fSelectedMap > C.MapCount - 1 then
+      fSelectedMap := -1;
+  end else if (fSelectedMap <> -1) and (Sender = imgNewNode) then
+  begin
+    seNodeCount.Value              := seNodeCount.Value + 1;
+    C.Maps[fSelectedMap].NodeCount := EnsureRange(seNodeCount.Value, 0, MAX_CAMP_NODES);
+
+    if fSelectedNode > C.Maps[fSelectedMap].NodeCount - 1 then
+      fSelectedNode := -1;
+  end;
+
+  UpdateList;
+  UpdateFlagCount;
+  UpdateNodeCount;
+  RefreshFlags;
+end;
+
+
 procedure TForm1.FlagDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if Button = mbLeft then
@@ -190,6 +327,7 @@ procedure TForm1.FlagEnter(Sender: TObject);
 begin
   StatusBar1.Panels[2].Text := 'Map #' + IntToStr(TImage(Sender).Tag + 1);
 end;
+
 
 procedure TForm1.FlagMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
@@ -229,10 +367,12 @@ begin
   StatusBar1.Panels[2].Text := 'Node #' + IntToStr(TImage(Sender).Tag + 1);
 end;
 
+
 procedure TForm1.FlagNodeLeave(Sender: TObject);
 begin
   StatusBar1.Panels[2].Text := '';
 end;
+
 
 procedure TForm1.NodeMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
@@ -254,21 +394,79 @@ begin
 end;
 
 
+function TForm1.GetCharset(aLang: string): TFontCharset;
+begin
+  if Pos(aLang, 'bel,rus,bul,ukr') <> 0 then
+    Result := RUSSIAN_CHARSET
+  else if Pos(aLang, 'pol,hun,cze,svk,rom') <> 0 then
+    Result := EASTEUROPE_CHARSET
+  else if Pos(aLang, 'tur') <> 0 then
+    Result := TURKISH_CHARSET
+  else if Pos(aLang, 'lit,lat') <> 0 then
+    Result := BALTIC_CHARSET
+  else if Pos(aLang, 'eng,spa,ita,nor,chn,dut,est,ptb,fre,ger,jpn,swe') <> 0 then
+    Result := ANSI_CHARSET
+  else
+    Result := DEFAULT_CHARSET;
+end;
+
+
+procedure TForm1.LoadCampaignName(aFileName, aLocale: string);
+var
+  LibxFile: TStringList;
+  I : Integer;
+  VarText : String;
+  VarIndex: Integer;
+begin
+  if not FileExists(Format(aFileName, [aLocale])) then Exit;
+  LibxFile := TStringList.Create;
+  LibxFile.LoadFromFile(Format(aFileName, [aLocale]));
+  edtName.Font.Charset := GetCharset(aLocale);
+
+  for I := 0 to LibxFile.Count - 1 do
+  begin
+    VarText := LibxFile.Strings[I];
+    VarIndex := Pos('0:', VarText);
+    if VarIndex > 0 then
+    begin
+      edtName.Text := Copy(VarText, VarIndex + 2, Length(VarText));
+      Break;
+    end;
+  end;
+  LibxFile.Free;
+end;
+
+
+procedure TForm1.SaveCampaignName(aFileName: string);
+var
+  LibxFile: TStringList;
+  I: Integer;
+begin
+  LibxFile := TStringList.Create;
+  LibxFile.LoadFromFile(aFileName);
+  for I := 0 to LibxFile.Count - 1 do
+    if Pos('0:', LibxFile.Strings[I]) > 0 then
+    begin
+      LibxFile.Strings[I] := '0:' + edtName.Text;
+      Break;
+    end;
+  LibxFile.SaveToFile(aFileName);
+  LibxFile.Free;
+end;
+
+
 procedure TForm1.CreateDefaultLocaleLibxTemplate(aFileName: string);
 var
   LibxFile: TextFile;
   I: Integer;
 begin
-  if FileExists(aFileName) then
-    Exit;
-
   AssignFile(LibxFile, aFileName);
   try
     ReWrite(LibxFile);
 
     Writeln(LibxFile, '');
     Writeln(LibxFile, 'MaxID:' + IntToStr(C.MapCount + 9) + EolW);
-    Writeln(LibxFile, '0:Campaign title');
+    Writeln(LibxFile, '0:' + edtName.Text);
     Writeln(LibxFile, '1:Mission %d');
     Writeln(LibxFile, '2:Campaign description');
     for I := 0 to C.MapCount-1 do
@@ -296,7 +494,7 @@ end;
 
 procedure TForm1.DrawFlagNumber(aIndexMap: Integer);
 const
-  OFF: array [Boolean] of TPoint = ((X:1; Y:3), (X:-1; Y:-2));
+  OFF: array [Boolean] of TPoint = ((X:-3; Y:-2), (X:-1; Y:-2));
 var
   txtWidth, txtHeight, txtLeft, txtTop: Integer;
   isRedFlag: Boolean;
@@ -313,6 +511,7 @@ begin
   SetBkMode(imgFlags[aIndexMap].Canvas.Handle, TRANSPARENT);
   imgFlags[aIndexMap].Canvas.TextOut(txtLeft, txtTop, IntToStr(aIndexMap + 1));
 end;
+
 
 procedure TForm1.btnSaveCMPClick(Sender: TObject);
 begin
@@ -336,7 +535,20 @@ begin
 
   C.SaveToFile(dlgSaveCampaign.FileName);
   fSprites.SaveToRXXFile(ExtractFilePath(dlgSaveCampaign.FileName) + 'images.rxx');
-  CreateDefaultLocaleLibxTemplate(ExtractFilePath(dlgSaveCampaign.FileName) + 'text.eng.libx');
+
+  if FileExists(ExtractFilePath(dlgSaveCampaign.FileName) +
+  Format(TEMPLATE_LIBX_FILE_TEXT, [Locale])) then
+    SaveCampaignName(ExtractFilePath(dlgSaveCampaign.FileName) +
+      Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]))
+  else
+    CreateDefaultLocaleLibxTemplate(ExtractFilePath(dlgSaveCampaign.FileName) +
+      Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]));
+end;
+
+
+procedure TForm1.cbShowBriefingPositionClick(Sender: TObject);
+begin
+  shpBriefing.Visible := cbShowBriefingPosition.Checked;
 end;
 
 
@@ -346,39 +558,75 @@ begin
 end;
 
 
-procedure TForm1.btnLoadCMPClick(Sender: TObject);
+function  TForm1.DlgQuestionShow(aCaption, aMsg: string): boolean;
 var
-  I: Integer;
+  VarBool: boolean;
 begin
+  VarBool := false;
+  {$IFDEF MSWindows}
+  if MessageBox(Handle, PChar(aCaption), PChar(aMsg), MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON2) = ID_YES then
+    VarBool := true
+  else
+    VarBool := false;
+  {$ENDIF}
+  {$IFDEF Unix}
+  if MessageDlg(aCaption, aMsg, mtConfirmation, [mbYes, mbNo], 0, mbNo) = mrYes then
+    VarBool := true
+  else
+    VarBool := false;
+  {$ENDIF}
+  Result := VarBool;
+end;
+
+
+procedure TForm1.btnUnloadCMPClick(Sender: TObject);
+var I: Integer;
+begin
+  if DlgQuestionShow('Unsaved data will be lost. Are you sure?', Self.Caption) then
+  begin
+    C.Free;
+    fSprites.Free;
+    Image1.Picture := nil;
+
+    C := TKMCampaign.Create;
+    fSprites := TKMSpritePackEdit.Create(rxCustom, nil);
+
+    fSelectedMap := -1;
+
+    edtName.Clear;
+    edtShortName.Clear;
+
+    seMapCount.Value := 1;
+    seNodeCount.Value := 0;
+
+    edtShortNameChange(nil);
+    seMapCountChange(nil);
+
+    for I := 0 to Length(imgNodes) - 1 do
+      imgNodes[I].Visible := False;
+  end;
+end;
+
+
+procedure TForm1.btnLoadCMPClick(Sender: TObject);
+var Ini: TMemIniFile;
+begin
+  Ini := TMemIniFile.Create(fExePath + '..\..\KaM_Remake_Settings.ini');
+  Locale := Ini.ReadString('Game', 'Locale', 'eng');
+  Ini.Free;
+
   if DirectoryExists(fCampaignsPath) then
     dlgOpenCampaign.InitialDir := fCampaignsPath
   else
     dlgOpenCampaign.InitialDir := fExePath;
 
   if not dlgOpenCampaign.Execute then Exit;
+  
+  LoadCmp(dlgOpenCampaign.FileName);
 
-  C.LoadFromFile(dlgOpenCampaign.FileName);
-
-  fSprites.Free;
-  fSprites := TKMSpritePackEdit.Create(rxCustom, nil);
-  if FileExists(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx') then
-    fSprites.LoadFromRXXFile(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx')
-  else
-    ShowMessage('Campaign background image (images.rxx) could not be found');
-
-  fSelectedMap := -1;
-  fSelectedNode := -1;
-
-  edtShortName.Text := C.CampName;
-  seMapCount.Value := C.MapCount;
-
-  UpdateList;
-  UpdateFlagCount;
-  RefreshBackground;
-  RefreshFlags;
-  //Hide nodes that might have been open from the last campaign
-  for I := 0 to Length(imgNodes) - 1 do
-    imgNodes[I].Visible := False;
+  LoadCampaignName(ExtractFilePath(dlgOpenCampaign.FileName) + TEMPLATE_LIBX_FILE_TEXT, Locale);
+  if Length(edtName.Text) = 0 then
+    LoadCampaignName(ExtractFilePath(dlgOpenCampaign.FileName) + TEMPLATE_LIBX_FILE_TEXT , 'eng');
 end;
 
 
@@ -387,11 +635,16 @@ begin
   dlgOpenPicture.InitialDir := ExtractFilePath(dlgOpenCampaign.FileName);
 
   if not dlgOpenPicture.Execute then Exit;
+  try
+    fSprites.AddImage(ExtractFilePath(dlgOpenPicture.FileName),
+                      ExtractFileName(dlgOpenPicture.FileName), 1);
+    RefreshBackground;
+  except
+    on E: Exception do
+      ShowMessage(E.Message);
+  end;
 
-  fSprites.AddImage(ExtractFilePath(dlgOpenPicture.FileName),
-                    ExtractFileName(dlgOpenPicture.FileName), 1);
 
-  RefreshBackground;
 end;
 
 
@@ -413,6 +666,7 @@ begin
   end;
 end;
 
+
 // Allow only Eng characters
 procedure TForm1.edtShortNameKeyPress(Sender: TObject; var Key: Char);
 begin
@@ -422,6 +676,7 @@ begin
     Key := #0;
   end;
 end;
+
 
 procedure TForm1.seMapCountChange(Sender: TObject);
 begin
@@ -444,8 +699,7 @@ begin
 
   C.Maps[fSelectedMap].NodeCount := EnsureRange(seNodeCount.Value, 0, MAX_CAMP_NODES);
 
-  if fSelectedNode > C.Maps[fSelectedMap].NodeCount - 1 then
-    fSelectedNode := -1;
+  fSelectedNode := Min(fSelectedNode, C.Maps[fSelectedMap].NodeCount - 1);
 
   UpdateList;
   UpdateNodeCount;
@@ -552,7 +806,7 @@ begin
     for K := 0 to C.Maps[I].NodeCount - 1 do
     begin
       SN := tvList.Items.AddChild(N, 'node ' + IntToStr(K + 1));
-      if fSelectedNode = K then
+      if (fSelectedMap = I) and (fSelectedNode = K) then
         SN.Selected := True;
     end;
   end;

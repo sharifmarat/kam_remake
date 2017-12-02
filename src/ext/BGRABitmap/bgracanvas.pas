@@ -5,7 +5,7 @@ unit BGRACanvas;
 interface
 
 uses
-  Classes, SysUtils, BGRABitmapTypes, Graphics, GraphType, FPImage, Types;
+  Classes, SysUtils, FPCanvas, BGRAGraphics, Types, FPImage, BGRABitmapTypes;
 
 type
 
@@ -77,14 +77,20 @@ type
   { TBGRAFont }
 
   TBGRAFont = class(TBGRAColoredObject)
+  private
+    function GetAntialiasing: Boolean;
+    procedure SetAntialiasing(const AValue: Boolean);
+  public
     Name:   string;
     Height: Integer;
     Style:  TFontStyles;
-    Antialiasing: Boolean;
+    Quality : TBGRAFontQuality;
     Orientation:  integer;
     Texture:      IBGRAScanner;
     constructor Create;
     procedure Assign(Source: TObject); override;
+    property Antialiasing: Boolean read GetAntialiasing write SetAntialiasing;
+
   end;
 
   { TBGRACanvas }
@@ -153,7 +159,8 @@ type
     procedure FillRect(const bounds: TRect);
     procedure FrameRect(x1,y1,x2,y2: integer; width: integer = 1);
     procedure FrameRect(const bounds: TRect; width: integer = 1);
-    procedure Frame3D(const bounds: TRect; width: integer; Style: TGraphicsBevelCut);
+    procedure Frame3D(var bounds: TRect; width: integer; Style: TGraphicsBevelCut); overload;
+    procedure Frame3D(var bounds: TRect; width: integer; Style: TGraphicsBevelCut; LightColor: TBGRAPixel; ShadowColor: TBGRAPixel); overload;
     procedure GradientFill(ARect: TRect; AStart, AStop: TColor;
       ADirection: TGradientDirection; GammaCorrection: Boolean = false);
     procedure FloodFill(X, Y: Integer; FillColor: TColor; FillStyle: TFillStyle);
@@ -181,6 +188,7 @@ type
                          Filled: boolean = False;
                          Continuous: boolean = False);
     procedure Draw(X,Y: Integer; SrcBitmap: TBGRACustomBitmap);
+    procedure CopyRect(X,Y: Integer; SrcBitmap: TBGRACustomBitmap; SrcRect: TRect);
     procedure StretchDraw(DestRect: TRect; SrcBitmap: TBGRACustomBitmap; HorizFlip: Boolean = false; VertFlip: Boolean = false);
     procedure DrawFocusRect(bounds: TRect);
     procedure CopyRect(Dest: TRect; SrcBmp: TBGRACustomBitmap;
@@ -209,9 +217,23 @@ type
 
 implementation
 
-uses BGRAPen, BGRAPolygon, BGRAPolygonAliased, Math;
+uses BGRAPen, BGRAPath, BGRAPolygon, BGRAPolygonAliased, Math;
 
 { TBGRAFont }
+
+function TBGRAFont.GetAntialiasing: Boolean;
+begin
+  result := Quality <> fqSystem;
+end;
+
+procedure TBGRAFont.SetAntialiasing(const AValue: Boolean);
+begin
+  if AValue = Antialiasing then exit;
+  if AValue then
+    Quality := fqFineAntialiasing
+  else
+    Quality := fqSystem;
+end;
 
 constructor TBGRAFont.Create;
 begin
@@ -226,16 +248,49 @@ end;
 
 procedure TBGRAFont.Assign(Source: TObject);
 var sf: TBGRAFont;
+    f: TFont;
+    cf: TFPCustomFont;
 begin
+  if Source is TFont then
+  begin
+    f := TFont(Source);
+    Color := f.Color;
+    Opacity := 255;
+    Style := f.Style;
+    Name := f.Name;
+    Orientation := f.Orientation;
+    if f.Height= 0 then
+      Height := 16 else
+       Height := f.Height;
+  end else
   if Source is TBGRAFont then
   begin
     sf := Source as TBGRAFont;
     Name := sf.Name;
     Height := sf.Height;
     Style := sf.Style;
-    Antialiasing := sf.Antialiasing;
+    Quality := sf.Quality;
     Orientation := sf.Orientation;
     Texture := sf.Texture;
+  end else
+  if Source is TFPCustomFont then
+  begin
+    cf := Source as TFPCustomFont;
+    Color := FPColorToTColor(cf.FPColor);
+    Style := [];
+    if cf.Bold then Style += [fsBold];
+    if cf.Italic then Style += [fsItalic];
+    if cf.Underline then Style += [fsUnderline];
+{$IF FPC_FULLVERSION>=20602} //changed in 2.6.2 and 2.7    
+    if cf.StrikeThrough then Style += [fsStrikeOut];
+{$ELSE}
+    if cf.StrikeTrough then Style += [fsStrikeOut];
+{$ENDIF}
+    Name := cf.Name;
+    //Orientation := cf.Orientation;
+    if cf.Size = 0 then
+      Height := 16 else
+       Height := round(cf.Size*1.8);
   end;
   inherited Assign(Source);
 end;
@@ -289,6 +344,7 @@ end;
 
 procedure TBGRABrush.Assign(Source: TObject);
 var sb: TBGRABrush;
+    b: TBrush;
 begin
   if Source is TBGRABrush then
   begin
@@ -296,6 +352,13 @@ begin
     Texture := sb.Texture;
     BackColor := sb.BackColor;
     Style := sb.Style;
+  end else
+  if Source is TBrush then
+  begin
+    b := Source as TBrush;
+    Color := b.Color;
+    Opacity := 255;
+    Style := b.Style;
   end;
   inherited Assign(Source);
 end;
@@ -344,13 +407,8 @@ begin
 end;
 
 function TBGRAPen.GetCustomPenStyle: TBGRAPenStyle;
-var
-  i: Integer;
 begin
-  //copy array content
-  setlength(result,length(FCustomPenStyle));
-  for i := 0 to high(result) do
-    result[i] := FCustomPenStyle[i];
+  result := DuplicatePenStyle(FCustomPenStyle);
 end;
 
 function TBGRAPen.GetPenStyle: TPenStyle;
@@ -359,12 +417,8 @@ begin
 end;
 
 procedure TBGRAPen.SetCustomPenStyle(const AValue: TBGRAPenStyle);
-var
-  i: Integer;
 begin
-  setlength(FCustomPenStyle,length(AValue));
-  for i := 0 to high(FCustomPenStyle) do
-    FCustomPenStyle[i] := AValue[i];
+  FCustomPenStyle := DuplicatePenStyle(AValue);
 
   if IsSolidPenStyle(AValue) then FPenStyle := psSolid else
   if IsClearPenStyle(AValue) then FPenStyle := psClear else
@@ -395,6 +449,7 @@ end;
 
 procedure TBGRAPen.Assign(Source: TObject);
 var sp: TBGRAPen;
+    p: TPen;
 begin
   if Source is TBGRAPen then
   begin
@@ -404,6 +459,16 @@ begin
     JoinStyle := sp.JoinStyle;
     Style := sp.Style;
     CustomStyle := sp.CustomStyle;
+  end else
+  if Source is TPen then
+  begin
+    p := Source as TPen;
+    Width := p.Width;
+    EndCap := p.EndCap;
+    JoinStyle := p.JoinStyle;
+    Style := p.Style;
+    Color := p.Color;
+    Opacity := 255;
   end;
   inherited Assign(Source);
 end;
@@ -584,7 +649,7 @@ begin
   FBitmap.FontName := Font.Name;
   FBitmap.FontHeight := -Font.Height;
   FBitmap.FontStyle := Font.Style;
-  FBitmap.FontAntialias := Font.Antialiasing;
+  FBitmap.FontQuality := Font.Quality;
   FBitmap.FontOrientation := Font.Orientation;
 end;
 
@@ -857,6 +922,14 @@ begin
   begin
     dec(x2);
     dec(y2);
+
+    if (Pen.Style = psSolid) and not Filled then
+    begin
+      ApplyPenStyle;
+      FBitmap.RectangleAntialias(x1,y1,x2,y2,Pen.ActualColor,Pen.ActualWidth);
+      exit;
+    end;
+
     tex := Brush.BuildTexture(FBitmap);
 
     if (Pen.Style = psSolid) and (tex=nil) then
@@ -1022,14 +1095,21 @@ begin
   FrameRect(bounds.left,bounds.top,bounds.right,bounds.Bottom,width);
 end;
 
-procedure TBGRACanvas.Frame3D(const bounds: TRect; width: integer;
+procedure TBGRACanvas.Frame3D(var bounds: TRect; width: integer;
   Style: TGraphicsBevelCut);
-var color1,color2,temp: TBGRAPixel;
+begin
+  Frame3D(bounds,width,style,ColorToBGRA(clRgbBtnHighlight),ColorToBGRA(clRgbBtnShadow));
+end;
+
+procedure TBGRACanvas.Frame3D(var bounds: TRect; width: integer;
+  Style: TGraphicsBevelCut; LightColor: TBGRAPixel; ShadowColor: TBGRAPixel);
+var temp: TBGRAPixel;
     multi: TBGRAMultishapeFiller;
+    color1,color2: TBGRAPixel;
 begin
   if width <= 0 then exit;
-  color1 := ColorToBGRA(ColorToRGB(clBtnHighlight));
-  color2 := ColorToBGRA(ColorToRGB(clBtnShadow));
+  color1 := LightColor;
+  color2 := ShadowColor;
   if Style = bvLowered then
   begin
     temp := color1;
@@ -1052,6 +1132,7 @@ begin
     multi.Draw(FBitmap);
     multi.Free;
   end;
+  InflateRect(bounds,-width,-width);
 end;
 
 procedure TBGRACanvas.GradientFill(ARect: TRect; AStart, AStop: TColor;
@@ -1068,7 +1149,7 @@ var
     GStop,GStart: Byte;
     RStop,RStart: Byte;
   begin
-    RedGreenBlue(ColorToRGB(AStart), RStart, GStart, BStart);
+      RedGreenBlue(ColorToRGB(AStart), RStart, GStart, BStart);
       RedGreenBlue(ColorToRGB(AStop),  RStop,  GStop,  BStop);
 
       RDiff := RStop - RStart;
@@ -1352,6 +1433,12 @@ begin
   FBitmap.PutImage(X,Y,SrcBitmap,dmDrawWithTransparency);
 end;
 
+procedure TBGRACanvas.CopyRect(X, Y: Integer; SrcBitmap: TBGRACustomBitmap;
+  SrcRect: TRect);
+begin
+  FBitmap.PutImagePart(X,Y,SrcBitmap,SrcRect,dmDrawWithTransparency);
+end;
+
 procedure TBGRACanvas.StretchDraw(DestRect: TRect; SrcBitmap: TBGRACustomBitmap; HorizFlip: Boolean = false; VertFlip: Boolean = false);
 var Stretched: TBGRACustomBitmap;
     temp: Integer;
@@ -1434,6 +1521,12 @@ var TempBmp: TBGRACustomBitmap;
   Temp: Integer;
   FlipHoriz,FlipVert: Boolean;
 begin
+  if (Dest.Right-Dest.Left = Source.Right-Source.Left) and (Dest.Bottom-Dest.Top = Source.Bottom-Source.Top) and
+     (Dest.Right > Dest.Left) and (Dest.Bottom > Dest.Top) then
+  begin
+    CopyRect(Dest.Left,Dest.Top, SrcBmp, Source);
+    exit;
+  end;
   if (Source.Left = Source.Right) or (Source.Bottom = Source.Top) or
     (Dest.Left = Dest.Right) or (Dest.Bottom = Dest.Top) then exit;
   if Source.Left > Source.Right then
@@ -1452,8 +1545,7 @@ begin
     FlipVert := True;
   end else
     FlipVert := false;
-  TempBmp := FBitmap.NewBitmap(Source.Right-Source.Left,Source.Bottom-Source.Top);
-  TempBmp.PutImage(-Source.Left,-Source.Top, SrcBmp, dmSet);
+  TempBmp := SrcBmp.GetPart(Source);
   StretchDraw(Dest,TempBmp,FlipHoriz,FlipVert);
   TempBmp.Free;
 end;

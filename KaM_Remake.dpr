@@ -76,7 +76,7 @@ uses
   KM_GUIMapEdMenuLoad in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuLoad.pas',
   KM_GUIMapEdMenuSave in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuSave.pas',
   KM_GUIMapEdMenuResize in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuResize.pas',
-  KM_GUIMapEdMenuTryMap in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuTryMap.pas',
+  KM_GUIMapEdMenuQuickPlay in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuQuickPlay.pas',
   KM_GUIMapEdMenuQuit in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuQuit.pas',
   KM_GUIMapEdMenuSettings in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuSettings.pas',
 	
@@ -241,6 +241,7 @@ uses
 
   KM_ServerQuery in 'src\net\KM_ServerQuery.pas',
   KM_Settings in 'src\KM_Settings.pas',
+	KM_SoftShadows in 'src\KM_SoftShadows.pas',
   KM_Sound in 'src\KM_Sound.pas',
 
   KM_Terrain in 'src\terrain\KM_Terrain.pas',

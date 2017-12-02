@@ -111,8 +111,10 @@ type
 
   TTMapsCacheUpdater = class(TTCustomMapsScanner)
   private
+    fIsStopped: Boolean;
     procedure ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder); override;
   public
+    procedure Stop;
     constructor Create(aMapFolders: TMapFolderSet);
   end;
 
@@ -284,6 +286,9 @@ begin
 
     //Load additional text info
     LoadTXTInfo;
+
+    if gGameApp.GameSettings = nil // In case we are closing app and settings object is already destroyed
+      then Exit;
 
     IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
 
@@ -1161,8 +1166,17 @@ var
   Map: TKMapInfo;
 begin
   //Simply creating the TKMapInfo updates the .mi cache file
-  Map := TKMapInfo.Create(aPath, False, aFolder);
-  Map.Free;
+  if not fIsStopped then
+  begin
+    Map := TKMapInfo.Create(aPath, False, aFolder);
+    Map.Free;
+  end;
+end;
+
+
+procedure TTMapsCacheUpdater.Stop;
+begin
+  fIsStopped := True;
 end;
 
 

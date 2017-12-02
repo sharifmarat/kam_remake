@@ -3,7 +3,7 @@ unit KM_Main;
 interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
-  KM_FormMain, KM_FormLoading,
+  KM_FormMain, KM_FormLoading, KM_Maps,
   KM_Settings, KM_Resolutions;
 
 
@@ -19,6 +19,7 @@ type
 
     fMainSettings: TMainSettings;
     fResolutions: TKMResolutions;
+    fMapCacheUpdater: TTMapsCacheUpdater;
 
     procedure DoRestore(Sender: TObject);
     procedure DoActivate(Sender: TObject);
@@ -27,7 +28,6 @@ type
 
     procedure MapCacheUpdate;
 
-    procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
     procedure GameSpeedChange(aSpeed: Single);
   public
     constructor Create;
@@ -57,6 +57,8 @@ type
     function LockMutex: Boolean;
     procedure UnlockMutex;
 
+    procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
+
     property Resolutions: TKMResolutions read fResolutions;
     property Settings: TMainSettings read fMainSettings;
   end;
@@ -72,7 +74,7 @@ uses
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils,
-  KM_GameApp, KM_Maps,
+  KM_GameApp,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points;
 
 
@@ -162,6 +164,9 @@ begin
   //Update map cache files (*.mi) in the background so map lists load faster
   MapCacheUpdate;
 
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
+
   //Process messages in queue before hiding Loading, so that they all land on Loading form, not main one
   Application.ProcessMessages;
   fFormLoading.Hide;
@@ -226,6 +231,8 @@ begin
   //Reset the resolution
   FreeThenNil(fResolutions);
   FreeThenNil(fMainSettings);
+  if fMapCacheUpdater <> nil then
+    fMapCacheUpdater.Stop;
   FreeThenNil(gGameApp);
   FreeThenNil(gLog);
 
@@ -279,6 +286,7 @@ end;
 procedure TKMMain.DoIdle(Sender: TObject; var Done: Boolean);
 var
   FrameTime: Cardinal;
+  FPSLag: Integer;
 begin
   if CHECK_8087CW then
     //$1F3F is used to mask out reserved/undefined bits
@@ -291,10 +299,11 @@ begin
     FrameTime  := GetTimeSince(fOldTimeFPS);
     fOldTimeFPS := TimeGet;
 
-    if CAP_MAX_FPS and (FPS_LAG <> 1) and (FrameTime < FPS_LAG) then
+    FPSLag := Floor(1000 / fMainSettings.FPSCap);
+    if CAP_MAX_FPS and (FPSLag <> 1) and (FrameTime < FPSLag) then
     begin
-      Sleep(FPS_LAG - FrameTime);
-      FrameTime := FPS_LAG;
+      Sleep(FPSLag - FrameTime);
+      FrameTime := FPSLag;
     end;
 
     inc(fOldFrameTimes, FrameTime);
@@ -303,8 +312,8 @@ begin
     begin
       if gGameApp <> nil then
         gGameApp.FPSMeasurement(Round(1000 / (fOldFrameTimes / fFrameCount)));
-      StatusBarText(4, Format('%.1f fps', [1000 / (fOldFrameTimes / fFrameCount)]) +
-                       IfThen(CAP_MAX_FPS, ' (' + inttostr(FPS_LAG) + ')'));
+      StatusBarText(SB_ID_FPS, Format('%.1f FPS', [1000 / (fOldFrameTimes / fFrameCount)]) +
+                       IfThen(CAP_MAX_FPS, ' (' + inttostr(FPSLag) + ')'));
       fOldFrameTimes := 0;
       fFrameCount := 0;
     end;
@@ -389,7 +398,7 @@ end;
 procedure TKMMain.MapCacheUpdate;
 begin
   //Thread frees itself automatically
-  TTMapsCacheUpdater.Create([mfSP, mfMP, mfDL]);
+  fMapCacheUpdater := TTMapsCacheUpdater.Create([mfSP, mfMP, mfDL]);
 end;
 
 

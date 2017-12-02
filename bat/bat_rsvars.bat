@@ -5,5 +5,5 @@
 @SET FrameworkSDKDir=
 @SET KaMDir=E:\Games\Knights and Merchants TPR
 @SET BetaVersionsDir=E:\KaM_Remake Beta
-@SET PATH=%FrameworkDir%;%FrameworkSDKDir%;C:\Program Files (x86)\Embarcadero\Studio\18.0\bin;C:\Program Files (x86)\Embarcadero\Studio\18.0\bin64;%PATH%
+@SET PATH=%FrameworkDir%;%FrameworkSDKDir%;%BDS%\bin;%BDS%\bin64;%PATH%
 @SET LANGDIR=EN

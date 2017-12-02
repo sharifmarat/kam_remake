@@ -16,20 +16,9 @@ type
   PDensity = ^TDensity;
 
 type
-
-  { TIntersectionInfo }
-
-  TIntersectionInfo = class
-    interX: single;
-    winding: integer;
-    numSegment: integer;
-    procedure SetValues(AInterX: Single; AWinding, ANumSegment: integer);
-  end;
-  ArrayOfTIntersectionInfo = array of TIntersectionInfo;
-
   { TFillShapeInfo }
 
-  TFillShapeInfo = class
+  TFillShapeInfo = class(TBGRACustomFillInfo)
     protected
       //compute intersections. the array must be big enough
       procedure ComputeIntersection(cury: single; var inter: ArrayOfTIntersectionInfo; var nbInter: integer); virtual;
@@ -42,23 +31,27 @@ type
 
     public
       //returns true if the same segment number can be curved
-      function SegmentsCurved: boolean; virtual;
+      function SegmentsCurved: boolean; override;
 
       //returns integer bounds
-      function GetBounds: TRect; virtual;
+      function GetBounds: TRect; override;
 
-      //compute min-max to be drawn on destination bitmap according to cliprect. Returns false if
-      //there is nothing to draw
-      function ComputeMinMax(out minx,miny,maxx,maxy: integer; bmpDest: TBGRACustomBitmap): boolean;
+      //check if the point is inside the filling zone
+      function IsPointInside(x,y: single; windingMode: boolean): boolean; override;
 
       //create an array that will contain computed intersections.
       //you may augment, in this case, use CreateIntersectionInfo for new items
-      function CreateIntersectionArray: ArrayOfTIntersectionInfo;
-      function CreateIntersectionInfo: TIntersectionInfo; virtual; //creates a single info
+      function CreateIntersectionArray: ArrayOfTIntersectionInfo; override;
+      function CreateIntersectionInfo: TIntersectionInfo; override; //creates a single info
+      procedure FreeIntersectionArray(var inter: ArrayOfTIntersectionInfo); override;
 
       //fill a previously created array of intersections with actual intersections at the current y coordinate.
       //nbInter gets the number of computed intersections
-      procedure ComputeAndSort(cury: single; var inter: ArrayOfTIntersectionInfo; out nbInter: integer; windingMode: boolean);
+      procedure ComputeAndSort(cury: single; var inter: ArrayOfTIntersectionInfo; out nbInter: integer; windingMode: boolean); override;
+
+      //can be called after ComputeAndSort or ComputeIntersection to determine the current horizontal slice
+      //so that it can be checked if the intermediates scanlines can be skipped
+      function GetSliceIndex: integer; override;
 
   end;
 
@@ -67,6 +60,8 @@ type
   TFillEllipseInfo = class(TFillShapeInfo)
   private
     FX, FY, FRX, FRY: single;
+    FSliceIndex: integer;
+    function GetCenter: TPointF;
   protected
     function NbMaxIntersection: integer; override;
     procedure ComputeIntersection(cury: single;
@@ -76,13 +71,17 @@ type
     constructor Create(x, y, rx, ry: single);
     function GetBounds: TRect; override;
     function SegmentsCurved: boolean; override;
+    function GetSliceIndex: integer; override;
+    property Center: TPointF read GetCenter;
+    property RadiusX: single read FRX;
+    property RadiusY: single read FRY;
   end;
 
   { TFillBorderEllipseInfo }
 
   TFillBorderEllipseInfo = class(TFillShapeInfo)
   private
-    innerBorder, outerBorder: TFillEllipseInfo;
+    FInnerBorder, FOuterBorder: TFillEllipseInfo;
   protected
     function NbMaxIntersection: integer; override;
     procedure ComputeIntersection(cury: single;
@@ -92,6 +91,9 @@ type
     function GetBounds: TRect; override;
     function SegmentsCurved: boolean; override;
     destructor Destroy; override;
+    function GetSliceIndex: integer; override;
+    property InnerBorder: TFillEllipseInfo read FInnerBorder;
+    property OuterBorder: TFillEllipseInfo read FOuterBorder;
   end;
 
   { TFillRoundRectangleInfo }
@@ -100,6 +102,8 @@ type
   private
     FX1, FY1, FX2, FY2, FRX, FRY: single;
     FOptions: TRoundRectangleOptions;
+    function GetBottomRight: TPointF;
+    function GetTopLeft: TPointF;
   protected
     function NbMaxIntersection: integer; override;
     procedure ComputeIntersection(cury: single;
@@ -109,21 +113,27 @@ type
     constructor Create(x1, y1, x2, y2, rx, ry: single; options: TRoundRectangleOptions);
     function SegmentsCurved: boolean; override;
     function GetBounds: TRect; override;
+    property TopLeft: TPointF read GetTopLeft;
+    property BottomRight: TPointF read GetBottomRight;
+    property RadiusX: single read FRX;
+    property RadiusY: single read FRY;
   end;
 
   { TFillBorderRoundRectInfo }
 
   TFillBorderRoundRectInfo = class(TFillShapeInfo)
   protected
+    FInnerBorder, FOuterBorder: TFillRoundRectangleInfo;
     function NbMaxIntersection: integer; override;
     procedure ComputeIntersection(cury: single;
       var inter: ArrayOfTIntersectionInfo; var nbInter: integer); override;
   public
-    innerBorder, outerBorder: TFillRoundRectangleInfo;
     constructor Create(x1, y1, x2, y2, rx, ry, w: single; options: TRoundRectangleOptions);
     function GetBounds: TRect; override;
     function SegmentsCurved: boolean; override;
     destructor Destroy; override;
+    property InnerBorder: TFillRoundRectangleInfo read FInnerBorder;
+    property OuterBorder: TFillRoundRectangleInfo read FOuterBorder;
   end;
 
   TPolySlice = record
@@ -138,119 +148,119 @@ type
     nbSegments: integer;
   end;
 
-  { TFillPolyInfo }
+  { TCustomFillPolyInfo }
 
-  TFillPolyInfo = class(TFillShapeInfo)
+  TCustomFillPolyInfo = class(TFillShapeInfo)
+  private
+    function GetNbPoints: integer;
   protected
     FPoints:      array of TPointF;
     FSlopes:      array of single;
     FEmptyPt:     array of boolean;
     FNext, FPrev: array of integer;
+    function NbMaxIntersection: integer; override;
+    procedure SetIntersectionValues(AInter: TIntersectionInfo; AInterX: Single; AWinding, ANumSegment: integer; {%H-}dy: single; {%H-}AData: pointer); virtual;
+  public
+    constructor Create(const points: array of TPointF);
+    function CreateSegmentData(numPt,nextPt: integer; x,y: single): pointer; virtual;
+    procedure FreeSegmentData(data: pointer); virtual;
+    function GetBounds: TRect; override;
+    property NbPoints: integer read GetNbPoints;
+  end;
 
+  { TFillPolyInfo }
+
+  TFillPolyInfo = class(TCustomFillPolyInfo)
+  protected
     FSlices:   array of TPolySlice;
     FCurSlice: integer;
-
+    FMaxIntersection: integer;
     function NbMaxIntersection: integer; override;
     procedure ComputeIntersection(cury: single;
       var inter: ArrayOfTIntersectionInfo; var nbInter: integer); override;
   public
     constructor Create(const points: array of TPointF);
     destructor Destroy; override;
-    function CreateSegmentData(numPt,nextPt: integer; x,y: single): pointer; virtual;
-    procedure FreeSegmentData(data: pointer); virtual;
-    function GetBounds: TRect; override;
+    function GetSliceIndex: integer; override;
+  end;
+
+  POnePassRecord = ^TOnePassRecord;
+  TOnePassRecord = record
+                id: integer;
+                data: pointer;
+                slope: single;
+                winding: integer;
+                includeStartingPoint: boolean;
+                originalY1: single;
+                x1,y1,y2: single;
+                next: POnePassRecord;
+                nextWaiting: POnePassRecord;
+                nextDrawing: POnePassRecord;
+            end;
+
+  { TOnePassFillPolyInfo }
+
+  TOnePassFillPolyInfo = class(TCustomFillPolyInfo)
+  private
+    procedure InsertionSortByY;
+    function PartitionByY(left, right: integer): integer;
+    procedure QuickSortByY(left, right: integer);
+    procedure SortByY;
+  protected
+    FOnePass: array of TOnePassRecord;
+    FSortedByY: array of POnePassRecord;
+    FFirstWaiting, FFirstDrawing: POnePassRecord;
+    FShouldInitializeDrawing: boolean;
+    FSliceIndex: integer;
+    procedure ComputeIntersection(cury: single;
+      var inter: ArrayOfTIntersectionInfo; var nbInter: integer); override;
+  public
+    constructor Create(const points: array of TPointF);
+    function CreateIntersectionArray: ArrayOfTIntersectionInfo; override;
+    function GetSliceIndex: integer; override;
+    destructor Destroy; override;
+  end;
+
+  { TSimpleFillPolyInfo }
+
+  TSimpleFillPolyInfo = class(TCustomFillPolyInfo)
+  protected
+    FSimple: array of record
+                  winding: integer;
+                  includeStartingPoint: boolean;
+                  data: pointer;
+    end;
+    procedure ComputeIntersection(cury: single; var inter: ArrayOfTIntersectionInfo;
+      var nbInter: integer); override;
+  public
+    constructor Create(const points: array of TPointF);
+    destructor Destroy; override;
   end;
 
 procedure AddDensity(dest: PDensity; start,count: integer; value : word); inline;
-function DivByAntialiasPrecision(value: cardinal): cardinal; inline;
-function DivByAntialiasPrecision256(value: cardinal): cardinal; inline;
-function DivByAntialiasPrecision65536(value: cardinal): cardinal; inline;
+function DivByAntialiasPrecision(value: UInt32or64): UInt32or64; inline;
+function DivByAntialiasPrecision256(value: UInt32or64): UInt32or64; inline;
+function DivByAntialiasPrecision65536(value: UInt32or64): UInt32or64; inline;
 procedure ComputeAliasedRowBounds(x1,x2: single; minx,maxx: integer; out ix1,ix2: integer);
+
+function IsPointInPolygon(const points: ArrayOfTPointF; point: TPointF; windingMode: boolean): boolean;
+function IsPointInEllipse(x,y,rx,ry: single; point: TPointF): boolean;
+function IsPointInRoundRectangle(x1, y1, x2, y2, rx, ry: single; point: TPointF): boolean;
+function IsPointInRectangle(x1, y1, x2, y2: single; point: TPointF): boolean;
+
+function BGRAShapeComputeMinMax(AShape: TBGRACustomFillInfo; out minx, miny, maxx, maxy: integer;
+  bmpDest: TBGRACustomBitmap): boolean;
 
 implementation
 
 uses Math;
 
-procedure ComputeAliasedRowBounds(x1,x2: single; minx,maxx: integer; out ix1,ix2: integer);
-begin
-  if frac(x1)=0.5 then
-    ix1 := trunc(x1) else
-    ix1 := round(x1);
-  if frac(x2)=0.5 then
-    ix2 := trunc(x2)-1 else
-    ix2 := round(x2)-1;
-
-  if ix1 < minx then
-    ix1 := minx;
-  if ix2 >= maxx then
-    ix2 := maxx;
-end;
-
-procedure AddDensity(dest: PDensity; start,count: integer; value: word);
-var valueValue: longword;
-    lastAdd: integer;
-begin
-  if count=0 then exit;
-  inc(dest,start);
-  if start and 1 = 1 then
-  begin
-    dest^ += value;
-    inc(dest);
-    dec(count);
-  end;
-  lastAdd := count and 1;
-  count := count shr 1;
-  if count > 0 then
-  begin
-    valueValue := value+(value shl 16);
-    while count > 0 do
-    begin
-      plongword(dest)^ += valueValue;
-      inc(dest,2);
-      dec(count);
-    end;
-  end;
-  if lastAdd <> 0 then
-    dest^ += value;
-end;
-
-function DivByAntialiasPrecision(value: cardinal): cardinal;
-begin             //
-  result := value shr AntialiasPrecisionShift;// div AntialiasPrecision;
-end;
-
-function DivByAntialiasPrecision256(value: cardinal): cardinal;
-begin             //
-  result := value shr (AntialiasPrecisionShift+8);// div (256*AntialiasPrecision);
-end;
-
-function DivByAntialiasPrecision65536(value: cardinal): cardinal;
-begin             //
-  result := value shr (AntialiasPrecisionShift+16);//div (65536*AntialiasPrecision);
-end;
-
-{ TIntersectionInfo }
-
-procedure TIntersectionInfo.SetValues(AInterX: Single; AWinding, ANumSegment: integer);
-begin
-  interX := AInterX;
-  winding := AWinding;
-  numSegment := ANumSegment;
-end;
-
-{ TFillShapeInfo }
-
-function TFillShapeInfo.GetBounds: TRect;
-begin
-  Result := rect(0, 0, 0, 0);
-end;
-
-function TFillShapeInfo.ComputeMinMax(out minx, miny, maxx, maxy: integer;
+function BGRAShapeComputeMinMax(AShape: TBGRACustomFillInfo; out minx, miny, maxx, maxy: integer;
   bmpDest: TBGRACustomBitmap): boolean;
 var clip,bounds: TRect;
 begin
   result := true;
-  bounds := GetBounds;
+  bounds := AShape.GetBounds;
 
   if (bounds.Right <= bounds.left) or (bounds.bottom <= bounds.top) then
   begin
@@ -286,6 +296,128 @@ begin
     result := false;
 end;
 
+procedure ComputeAliasedRowBounds(x1,x2: single; minx,maxx: integer; out ix1,ix2: integer);
+begin
+  if frac(x1)=0.5 then
+    ix1 := trunc(x1) else
+    ix1 := round(x1);
+  if frac(x2)=0.5 then
+    ix2 := trunc(x2)-1 else
+    ix2 := round(x2)-1;
+
+  if ix1 < minx then
+    ix1 := minx;
+  if ix2 >= maxx then
+    ix2 := maxx;
+end;
+
+function IsPointInPolygon(const points: ArrayOfTPointF; point: TPointF
+  ; windingMode: boolean): boolean;
+var info: TBGRACustomFillInfo;
+begin
+  info := TSimpleFillPolyInfo.Create(points);
+  result := info.IsPointInside(point.x+0.5,point.y+0.5,windingMode);
+  info.free;
+end;
+
+function IsPointInEllipse(x, y, rx, ry: single; point: TPointF): boolean;
+var info: TBGRACustomFillInfo;
+begin
+  info := TFillEllipseInfo.Create(x,y,rx,ry);
+  result := info.IsPointInside(point.x+0.5,point.y+0.5,false);
+  info.free;
+end;
+
+function IsPointInRoundRectangle(x1, y1, x2, y2, rx, ry: single; point: TPointF
+  ): boolean;
+var info: TBGRACustomFillInfo;
+begin
+  info := TFillRoundRectangleInfo.Create(x1, y1, x2, y2, rx, ry,[]);
+  result := info.IsPointInside(point.x+0.5,point.y+0.5,false);
+  info.free;
+end;
+
+function IsPointInRectangle(x1, y1, x2, y2: single; point: TPointF): boolean;
+begin
+  with point do
+    result := (((x1<x) and (x2>x)) or ((x1>x) and (x2<x))) and
+              (((y1<y) and (y2>y)) or ((y1>y) and (y2<y)));
+end;
+
+procedure AddDensity(dest: PDensity; start,count: integer; value: word);
+var valueValue: longword;
+    lastAdd: integer;
+begin
+  if count=0 then exit;
+  inc(dest,start);
+  if start and 1 = 1 then
+  begin
+    dest^ += value;
+    inc(dest);
+    dec(count);
+  end;
+  lastAdd := count and 1;
+  count := count shr 1;
+  if count > 0 then
+  begin
+    valueValue := value+(value shl 16);
+    while count > 0 do
+    begin
+      plongword(dest)^ += valueValue;
+      inc(dest,2);
+      dec(count);
+    end;
+  end;
+  if lastAdd <> 0 then
+    dest^ += value;
+end;
+
+function DivByAntialiasPrecision(value: UInt32or64): UInt32or64;
+begin             //
+  result := value shr AntialiasPrecisionShift;// div AntialiasPrecision;
+end;
+
+function DivByAntialiasPrecision256(value: UInt32or64): UInt32or64;
+begin             //
+  result := value shr (AntialiasPrecisionShift+8);// div (256*AntialiasPrecision);
+end;
+
+function DivByAntialiasPrecision65536(value: UInt32or64): UInt32or64;
+begin             //
+  result := value shr (AntialiasPrecisionShift+16);//div (65536*AntialiasPrecision);
+end;
+
+{ TFillShapeInfo }
+
+function TFillShapeInfo.GetBounds: TRect;
+begin
+  Result := rect(0, 0, 0, 0);
+end;
+
+
+function TFillShapeInfo.IsPointInside(x, y: single; windingMode: boolean
+  ): boolean;
+var
+    inter : ArrayOfTIntersectionInfo;
+    i,nbInter: integer;
+begin
+  inter := CreateIntersectionArray;
+  ComputeAndSort(y,inter,nbInter,windingMode);
+  i := 0;
+  while i+1 < nbInter do
+  begin
+    if (inter[i].interX < x) and (inter[i+1].interX > x) then
+    begin
+      result := true;
+      FreeIntersectionArray(inter);
+      exit;
+    end;
+    inc(i,2);
+  end;
+  result := false;
+  FreeIntersectionArray(inter);
+end;
+
 function TFillShapeInfo.NbMaxIntersection: integer;
 begin
   Result := 0;
@@ -299,6 +431,16 @@ end;
 function TFillShapeInfo.CreateIntersectionInfo: TIntersectionInfo;
 begin
   result := TIntersectionInfo.Create;
+end;
+
+procedure TFillShapeInfo.FreeIntersectionArray(
+  var inter: ArrayOfTIntersectionInfo);
+var
+  i: Integer;
+begin
+  for i := 0 to high(inter) do
+    inter[i].free;
+  inter := nil;
 end;
 
 {$hints off}
@@ -356,6 +498,11 @@ begin
   if nbInter < 2 then exit;
   SortIntersection(inter,nbInter);
   if windingMode then ConvertFromNonZeroWinding(inter,nbInter);
+end;
+
+function TFillShapeInfo.GetSliceIndex: integer;
+begin
+  result := 0;
 end;
 
 function TFillShapeInfo.CreateIntersectionArray: ArrayOfTIntersectionInfo;
@@ -478,35 +625,42 @@ begin
   end;
 end;
 
-{ TFillPolyInfo }
+{ TCustomFillPolyInfo }
 
-constructor TFillPolyInfo.Create(const points: array of TPointF);
-function AddSeg(numSlice: integer): integer;
-begin
-  result := FSlices[numSlice].nbSegments;
-  if length(FSlices[numSlice].segments)=FSlices[numSlice].nbSegments then
-    setlength(FSlices[numSlice].segments,FSlices[numSlice].nbSegments*2+2);
-  inc(FSlices[numSlice].nbSegments);
-end;
-
+constructor TCustomFillPolyInfo.Create(const points: array of TPointF);
 var
-  i, j, k: integer;
+  i, j: integer;
   First, cur, nbP: integer;
-  yList: array of single;
-  nbYList: integer;
-  ya,yb,temp: single;
-  sliceStart,sliceEnd,idxSeg: integer;
-
 begin
   setlength(FPoints, length(points));
   nbP := 0;
+  first := -1;
   for i := 0 to high(points) do
-  if (i=0) or (points[i]<>points[i-1]) then
+  if isEmptyPointF(points[i]) then
   begin
+    if first<>-1 then
+    begin
+      if nbP = first+1 then //is there only one point?
+      begin
+        dec(nbP);
+        first := -1; //remove subpolygon
+      end else
+      if (FPoints[nbP-1] = FPoints[first]) then
+        dec(nbP); //remove just last looping point
+    end;
+    if first<>-1 then
+    begin
+      FPoints[nbP] := points[i];
+      inc(nbP);
+      first := -1;
+    end;
+  end else
+  if (first=-1) or (points[i]<>points[i-1]) then
+  begin
+    if first = -1 then first := nbP;
     FPoints[nbP] := points[i];
     inc(nbP);
   end;
-  if (nbP>0) and (FPoints[nbP-1] = FPoints[0]) then dec(NbP);
   setlength(FPoints, nbP);
 
   //look for empty points, correct coordinate and successors
@@ -562,6 +716,114 @@ begin
     end
     else
       FSlopes[i]    := EmptySingle;
+end;
+
+{$hints off}
+function TCustomFillPolyInfo.CreateSegmentData(numPt,nextPt: integer; x, y: single
+  ): pointer;
+begin
+  result := nil;
+end;
+{$hints on}
+
+procedure TCustomFillPolyInfo.FreeSegmentData(data: pointer);
+begin
+  freemem(data);
+end;
+
+function TCustomFillPolyInfo.GetBounds: TRect;
+var
+  minx, miny, maxx, maxy, i: integer;
+begin
+  if length(FPoints) = 0 then
+  begin
+    result := rect(0,0,0,0);
+    exit;
+  end;
+  miny := floor(FPoints[0].y);
+  maxy := ceil(FPoints[0].y);
+  minx := floor(FPoints[0].x);
+  maxx := ceil(FPoints[0].x);
+  for i := 1 to high(FPoints) do
+    if not FEmptyPt[i] then
+    begin
+      if floor(FPoints[i].y) < miny then
+        miny := floor(FPoints[i].y)
+      else
+      if ceil(FPoints[i].y) > maxy then
+        maxy := ceil(FPoints[i].y);
+
+      if floor(FPoints[i].x) < minx then
+        minx := floor(FPoints[i].x)
+      else
+      if ceil(FPoints[i].x) > maxx then
+        maxx := ceil(FPoints[i].x);
+    end;
+  Result := rect(minx, miny, maxx + 1, maxy + 1);
+end;
+
+function TCustomFillPolyInfo.GetNbPoints: integer;
+begin
+  result := length(FPoints);
+end;
+
+function TCustomFillPolyInfo.NbMaxIntersection: integer;
+begin
+  Result := length(FPoints);
+end;
+
+procedure TCustomFillPolyInfo.SetIntersectionValues(AInter: TIntersectionInfo;
+  AInterX: Single; AWinding, ANumSegment: integer; dy: single; AData: pointer);
+begin
+  AInter.SetValues( AInterX, AWinding, ANumSegment );
+end;
+
+{ TFillPolyInfo }
+
+function TFillPolyInfo.NbMaxIntersection: integer;
+begin
+  Result:= FMaxIntersection;
+end;
+
+procedure TFillPolyInfo.ComputeIntersection(cury: single;
+  var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
+var
+  j: integer;
+begin
+  if length(FSlices)=0 then exit;
+
+  while (cury < FSlices[FCurSlice].y1) and (FCurSlice > 0) do dec(FCurSlice);
+  while (cury > FSlices[FCurSlice].y2) and (FCurSlice < high(FSlices)) do inc(FCurSlice);
+  with FSlices[FCurSlice] do
+  if (cury >= y1) and (cury <= y2) then
+  begin
+    for j := 0 to nbSegments-1 do
+    begin
+      SetIntersectionValues(inter[nbinter], (cury - segments[j].y1) * segments[j].slope + segments[j].x1,
+                                segments[j].winding, segments[j].id, cury - segments[j].y1, segments[j].data );
+      Inc(nbinter);
+    end;
+  end;
+end;
+
+constructor TFillPolyInfo.Create(const points: array of TPointF);
+  function AddSeg(numSlice: integer): integer;
+  begin
+    result := FSlices[numSlice].nbSegments;
+    if length(FSlices[numSlice].segments)=FSlices[numSlice].nbSegments then
+      setlength(FSlices[numSlice].segments,FSlices[numSlice].nbSegments*2+2);
+    inc(FSlices[numSlice].nbSegments);
+  end;
+
+var
+  yList: array of single;
+  nbYList: integer;
+  ya,yb,temp: single;
+  sliceStart,sliceEnd,idxSeg: integer;
+  i,j,k,idSeg: integer;
+
+begin
+  inherited Create(points);
 
   //slice
   nbYList:= length(FPoints);
@@ -580,6 +842,7 @@ begin
     FSlices[i].nbSegments := 0;
   end;
 
+  idSeg := 0;
   for j := 0 to high(FSlopes) do
   begin
     if FSlopes[j]<>EmptySingle then
@@ -612,7 +875,8 @@ begin
             slope := FSlopes[j];
             winding := ComputeWinding(FPoints[j].y,FPoints[k].y);
             data := CreateSegmentData(j,k,x1,y1);
-            id := j;
+            inc(idSeg);
+            id := idSeg;
           end;
         end;
       end;
@@ -620,6 +884,10 @@ begin
   end;
 
   FCurSlice := 0;
+  FMaxIntersection:= 0;
+  for i := 0 to high(FSlices) do
+    if FSlices[i].nbSegments > FMaxIntersection then
+      FMaxIntersection:= FSlices[i].nbSegments;
 end;
 
 destructor TFillPolyInfo.Destroy;
@@ -632,74 +900,278 @@ begin
   inherited Destroy;
 end;
 
-{$hints off}
-function TFillPolyInfo.CreateSegmentData(numPt,nextPt: integer; x, y: single
-  ): pointer;
+function TFillPolyInfo.GetSliceIndex: integer;
 begin
-  result := nil;
-end;
-{$hints on}
-
-procedure TFillPolyInfo.FreeSegmentData(data: pointer);
-begin
-  freemem(data);
+  Result:= FCurSlice;
 end;
 
-function TFillPolyInfo.GetBounds: TRect;
-var
-  minx, miny, maxx, maxy, i: integer;
-begin
-  if length(FPoints) = 0 then
+{ TOnePassFillPolyInfo }
+
+function TOnePassFillPolyInfo.PartitionByY(left,right: integer): integer;
+
+  procedure Swap(idx1,idx2: integer); inline;
+  var temp: POnePassRecord;
   begin
-    result := rect(0,0,0,0);
-    exit;
+    temp := FSortedByY[idx1];
+    FSortedByY[idx1] := FSortedByY[idx2];
+    FSortedByY[idx2] := temp;
   end;
-  miny := floor(FPoints[0].y);
-  maxy := ceil(FPoints[0].y);
-  minx := floor(FPoints[0].x);
-  maxx := ceil(FPoints[0].x);
-  for i := 1 to high(FPoints) do
+
+var pivotIndex: integer;
+    pivotValue: single;
+    storeIndex: integer;
+    i: integer;
+
+begin
+  pivotIndex := left + random(right-left+1);
+  pivotValue := FSortedByY[pivotIndex]^.y1;
+  swap(pivotIndex,right);
+  storeIndex := left;
+  for i := left to right-1 do
+    if FSortedByY[i]^.y1 <= pivotValue then
+    begin
+      swap(i,storeIndex);
+      inc(storeIndex);
+    end;
+  swap(storeIndex,right);
+  result := storeIndex;
+end;
+
+procedure TOnePassFillPolyInfo.QuickSortByY(left,right: integer);
+var pivotNewIndex: integer;
+begin
+  if right > left+9 then
+  begin
+    pivotNewIndex := PartitionByY(left,right);
+    QuickSortByY(left,pivotNewIndex-1);
+    QuickSortByY(pivotNewIndex+1,right);
+  end;
+end;
+
+procedure TOnePassFillPolyInfo.InsertionSortByY;
+var i,j: integer;
+    tempValue: single;
+    tempPtr: POnePassRecord;
+begin
+  for i := 1 to high(FSortedByY) do
+  begin
+    tempPtr := FSortedByY[i];
+    TempValue := tempPtr^.y1;
+    j := i;
+    while (j>0) and (FSortedByY[j-1]^.y1 > TempValue) do
+    begin
+      FSortedByY[j] := FSortedByY[j-1];
+      dec(j);
+    end;
+    FSortedByY[j] := tempPtr;
+  end;
+end;
+
+procedure TOnePassFillPolyInfo.SortByY;
+var i,nbSorted: integer;
+begin
+  setlength(FSortedByY, length(FPoints));
+  nbSorted := 0;
+  for i := 0 to high(FSortedByY) do
     if not FEmptyPt[i] then
     begin
-      if floor(FPoints[i].y) < miny then
-        miny := floor(FPoints[i].y)
-      else
-      if ceil(FPoints[i].y) > maxy then
-        maxy := ceil(FPoints[i].y);
-
-      if floor(FPoints[i].x) < minx then
-        minx := floor(FPoints[i].x)
-      else
-      if ceil(FPoints[i].x) > maxx then
-        maxx := ceil(FPoints[i].x);
+      FSortedByY[nbSorted] := @FOnePass[i];
+      inc(nbSorted);
     end;
-  Result := rect(minx, miny, maxx + 1, maxy + 1);
-end;
-
-function TFillPolyInfo.NbMaxIntersection: integer;
-begin
-  Result := length(FPoints);
-end;
-
-procedure TFillPolyInfo.ComputeIntersection(cury: single;
-      var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
-var
-  j: integer;
-begin
-  if length(FSlices)=0 then exit;
-
-  while (cury < FSlices[FCurSlice].y1) and (FCurSlice > 0) do dec(FCurSlice);
-  while (cury > FSlices[FCurSlice].y2) and (FCurSlice < high(FSlices)) do inc(FCurSlice);
-  with FSlices[FCurSlice] do
-  if (cury >= y1) and (cury <= y2) then
+  setlength(FSortedByY,nbSorted);
+  if length(FSortedByY) < 10 then InsertionSortByY else
   begin
-    for j := 0 to nbSegments-1 do
+    QuickSortByY(0,high(FSortedByY));
+    InsertionSortByY;
+  end;
+end;
+
+procedure TOnePassFillPolyInfo.ComputeIntersection(cury: single;
+  var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
+var
+  p,pprev,pnext: POnePassRecord;
+begin
+  FShouldInitializeDrawing := true;
+
+  p := FFirstWaiting;
+  while p <> nil do
+  begin
+    if (cury >= p^.y1) then
     begin
-      inter[nbinter].SetValues( (cury - segments[j].y1) * segments[j].slope + segments[j].x1,
-                                segments[j].winding, segments[j].id );
-      Inc(nbinter);
+      if cury <= p^.y2+1 then
+      begin
+        p^.nextDrawing := FFirstDrawing;
+        FFirstDrawing := p;
+        inc(FSliceIndex);
+      end;
+    end
+      else break;
+    p := p^.nextWaiting;
+  end;
+  FFirstWaiting:= p;
+
+  p := FFirstDrawing;
+  pprev := nil;
+  while p <> nil do
+  begin
+    pnext := p^.nextDrawing;
+{    if p^.slope = EmptySingle then
+      raise exception.Create('Unexpected');}
+    if ((cury > p^.y1) and (cury <= p^.y2)) or
+       (p^.includeStartingPoint and (cury = p^.y1)) then
+    begin
+{      if nbinter = length(inter) then
+        raise exception.Create('too much'); }
+      if inter[nbinter] = nil then inter[nbinter] := CreateIntersectionInfo;
+      SetIntersectionValues(inter[nbinter], (cury - p^.y1)*p^.slope + p^.x1, p^.winding, p^.id, cury - p^.originalY1, p^.data);
+      inc(nbinter);
+    end else
+    if (cury > p^.y2+1) then
+    begin
+      if pprev <> nil then
+        pprev^.nextDrawing := pnext
+      else
+        FFirstDrawing:= pnext;
+      p := pnext;
+      Inc(FSliceIndex);
+      continue;
+    end;
+    pprev := p;
+    p := pnext;
+  end;
+end;
+
+constructor TOnePassFillPolyInfo.Create(const points: array of TPointF);
+var i,j: integer;
+  p: POnePassRecord;
+  temp: single;
+begin
+  inherited create(points);
+
+  FShouldInitializeDrawing := true;
+  setlength(FOnePass, length(FPoints));
+  for i := 0 to high(FPoints) do
+  if not FEmptyPt[i] then
+  begin
+    p := @FOnePass[i];
+    j := FNext[i];
+    p^.next := @FOnePass[FNext[i]];
+    p^.id := i;
+    p^.slope := FSlopes[i];
+    if p^.slope <> EmptySingle then
+      p^.data := CreateSegmentData(i, j, FPoints[i].x, FPoints[i].y);
+    p^.y1 := FPoints[i].y;
+    p^.y2 := FPoints[j].y;
+    p^.originalY1 := p^.y1;
+    p^.winding:= ComputeWinding(p^.y1,p^.y2);
+    if p^.y1 < p^.y2 then
+      p^.x1 := FPoints[i].x
+    else
+    if p^.y1 > p^.y2 then
+    begin
+      temp := p^.y1;
+      p^.y1 := p^.y2;
+      p^.y2 := temp;
+      p^.x1 := FPoints[j].x;
     end;
   end;
+
+  SortByY;
+  FSliceIndex := 0;
+end;
+
+function TOnePassFillPolyInfo.CreateIntersectionArray: ArrayOfTIntersectionInfo;
+var i: integer;
+  p,pprev: POnePassRecord;
+begin
+  if FShouldInitializeDrawing then
+  begin
+    FShouldInitializeDrawing := false;
+    FFirstWaiting:= nil;
+    pprev := nil;
+    for i := 0 to high(FSortedByY) do
+    begin
+      p := FSortedByY[i];
+      if p^.winding > 0 then
+        p^.includeStartingPoint := p^.next^.winding <= 0
+      else if p^.winding < 0 then
+        p^.includeStartingPoint := p^.next^.winding >= 0;
+      if p^.slope <> EmptySingle then
+      begin
+        if pprev <> nil then
+          pprev^.nextWaiting:= p
+        else
+          FFirstWaiting := p;
+        pprev := p;
+      end;
+    end;
+  end;
+
+  setlength(result, NbMaxIntersection);
+  for i := 0 to high(result) do
+    result[i] := nil;
+end;
+
+function TOnePassFillPolyInfo.GetSliceIndex: integer;
+begin
+  Result:= FSliceIndex;
+end;
+
+destructor TOnePassFillPolyInfo.Destroy;
+var i: integer;
+begin
+  for i := 0 to high(FOnePass) do
+    if FOnePass[i].data<>nil then FreeSegmentData(FOnePass[i].data);
+  FOnePass := nil;
+  inherited Destroy;
+end;
+
+{ TSimpleFillPolyInfo }
+
+procedure TSimpleFillPolyInfo.ComputeIntersection(cury: single;
+  var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
+var i,j: integer;
+begin
+  for i := 0 to high(FPoints) do
+    if FSlopes[i] <> EmptySingle then
+    begin
+      j := FNext[i];
+      if ((cury > FPoints[i].y) and (cury <= FPoints[j].y)) or
+        ((cury < FPoints[i].y) and (cury >= FPoints[j].y)) or
+       (FSimple[i].includeStartingPoint and (cury = FPoints[i].y)) then
+     begin
+       SetIntersectionValues(inter[nbinter], (cury - FPoints[i].y)*FSlopes[i] + FPoints[i].x, FSimple[i].winding, i, cury - FPoints[i].y, FSimple[i].data);
+       inc(nbinter);
+     end;
+    end;
+end;
+
+constructor TSimpleFillPolyInfo.Create(const points: array of TPointF);
+var i,j: integer;
+begin
+  inherited Create(points);
+
+  setlength(FSimple, length(FPoints));
+  for i := 0 to high(FPoints) do
+  begin
+    j := FNext[i];
+    if j <> -1 then
+      FSimple[i].winding:= ComputeWinding(FPoints[i].y,FPoints[j].y)
+    else
+      FSimple[i].winding:= 0;
+    if FSlopes[i] <> EmptySingle then
+      FSimple[i].data := CreateSegmentData(i, j, FPoints[i].x, FPoints[i].y);
+  end;
+end;
+
+destructor TSimpleFillPolyInfo.Destroy;
+var i: integer;
+begin
+  for i := 0 to high(FSimple) do
+    if FSimple[i].data <> nil then
+      FreeSegmentData(FSimple[i].data);
+  FSimple := nil;
+  inherited Destroy;
 end;
 
 { TFillEllipseInfo }
@@ -711,6 +1183,7 @@ begin
   FRX := abs(rx);
   FRY := abs(ry);
   WindingFactor := 1;
+  FSliceIndex:= -1;
 end;
 
 function TFillEllipseInfo.GetBounds: TRect;
@@ -721,6 +1194,16 @@ end;
 function TFillEllipseInfo.SegmentsCurved: boolean;
 begin
   Result:= true;
+end;
+
+function TFillEllipseInfo.GetSliceIndex: integer;
+begin
+  Result:= FSliceIndex;
+end;
+
+function TFillEllipseInfo.GetCenter: TPointF;
+begin
+  result := PointF(FX-0.5,FY-0.5);
 end;
 
 function TFillEllipseInfo.NbMaxIntersection: integer;
@@ -742,6 +1225,13 @@ begin
     Inc(nbinter);
     inter[nbinter].SetValues( FX + d, windingFactor, 1);
     Inc(nbinter);
+    FSliceIndex := 0;
+  end else
+  begin
+    if cury < FY then
+      FSliceIndex:= -1
+    else
+      FSliceIndex:= 1;
   end;
 end;
 
@@ -753,25 +1243,25 @@ begin
     rx := -rx;
   if ry < 0 then
     ry := -ry;
-  outerBorder := TFillEllipseInfo.Create(x, y, rx + w / 2, ry + w / 2);
+  FOuterBorder := TFillEllipseInfo.Create(x, y, rx + w / 2, ry + w / 2);
   if (rx > w / 2) and (ry > w / 2) then
   begin
-    innerBorder := TFillEllipseInfo.Create(x, y, rx - w / 2, ry - w / 2);
-    innerBorder.WindingFactor := -1;
+    FInnerBorder := TFillEllipseInfo.Create(x, y, rx - w / 2, ry - w / 2);
+    FInnerBorder.WindingFactor := -1;
   end
   else
-    innerBorder := nil;
+    FInnerBorder := nil;
 end;
 
 function TFillBorderEllipseInfo.GetBounds: TRect;
 begin
-  Result := outerBorder.GetBounds;
+  Result := FOuterBorder.GetBounds;
 end;
 
 function TFillBorderEllipseInfo.SegmentsCurved: boolean;
 begin
-  Result:= outerBorder.SegmentsCurved;
-  if innerBorder <> nil then result := result or innerBorder.SegmentsCurved;
+  Result:= FOuterBorder.SegmentsCurved;
+  if FInnerBorder <> nil then result := result or FInnerBorder.SegmentsCurved;
 end;
 
 function TFillBorderEllipseInfo.NbMaxIntersection: integer;
@@ -782,17 +1272,22 @@ end;
 procedure TFillBorderEllipseInfo.ComputeIntersection(cury: single;
       var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
 begin
-  outerBorder.ComputeIntersection(cury, inter, nbInter);
-  if innerBorder <> nil then
-    innerBorder.ComputeIntersection(cury, inter, nbInter);
+  FOuterBorder.ComputeIntersection(cury, inter, nbInter);
+  if FInnerBorder <> nil then
+    FInnerBorder.ComputeIntersection(cury, inter, nbInter);
 end;
 
 destructor TFillBorderEllipseInfo.Destroy;
 begin
-  outerBorder.Free;
-  if innerBorder <> nil then
-    innerBorder.Free;
+  FOuterBorder.Free;
+  if FInnerBorder <> nil then
+    FInnerBorder.Free;
   inherited Destroy;
+end;
+
+function TFillBorderEllipseInfo.GetSliceIndex: integer;
+begin
+  Result:= FOuterBorder.GetSliceIndex;
 end;
 
 { TFillRoundRectangleInfo }
@@ -837,6 +1332,16 @@ end;
 function TFillRoundRectangleInfo.GetBounds: TRect;
 begin
   result := rect(floor(fx1),floor(fy1),floor(fx2)+1,floor(fy2)+1);
+end;
+
+function TFillRoundRectangleInfo.GetBottomRight: TPointF;
+begin
+  result := PointF(FX2-0.5,FY2-0.5);
+end;
+
+function TFillRoundRectangleInfo.GetTopLeft: TPointF;
+begin
+  result := PointF(FX1-0.5,FY1-0.5);
 end;
 
 function TFillRoundRectangleInfo.NbMaxIntersection: integer;
@@ -940,28 +1445,28 @@ begin
   if 2*rx > x2-x1 then rx := (x2-x1)/2;
   if 2*ry > y2-y1 then ry := (y2-y1)/2;
   rdiff := w*(sqrt(2)-1);
-  outerBorder := TFillRoundRectangleInfo.Create(x1-w/2,y1-w/2,x2+w/2,y2+w/2, rx+rdiff, ry+rdiff, options);
+  FOuterBorder := TFillRoundRectangleInfo.Create(x1-w/2,y1-w/2,x2+w/2,y2+w/2, rx+rdiff, ry+rdiff, options);
   if (abs(x2-x1) > w) and (abs(y2-y1) > w) then
   begin
     if (rx-rdiff <= 0) or (ry-rdiff <= 0) then
-      innerBorder := TFillRoundRectangleInfo.Create(x1+w/2, y1+w/2, x2-w/2, y2-w/2, 0,0, options)
+      FInnerBorder := TFillRoundRectangleInfo.Create(x1+w/2, y1+w/2, x2-w/2, y2-w/2, 0,0, options)
     else
-      innerBorder := TFillRoundRectangleInfo.Create(x1+w/2, y1+w/2, x2-w/2, y2-w/2, rx-rdiff, ry-rdiff, options);
-    innerBorder.WindingFactor := -1;
+      FInnerBorder := TFillRoundRectangleInfo.Create(x1+w/2, y1+w/2, x2-w/2, y2-w/2, rx-rdiff, ry-rdiff, options);
+    FInnerBorder.WindingFactor := -1;
   end
   else
-    innerBorder := nil;
+    FInnerBorder := nil;
 end;
 
 function TFillBorderRoundRectInfo.GetBounds: TRect;
 begin
-  result := outerBorder.GetBounds;
+  result := FOuterBorder.GetBounds;
 end;
 
 function TFillBorderRoundRectInfo.SegmentsCurved: boolean;
 begin
-  Result:= outerBorder.SegmentsCurved;
-  if innerBorder <> nil then result := result or innerBorder.SegmentsCurved;
+  Result:= FOuterBorder.SegmentsCurved;
+  if FInnerBorder <> nil then result := result or FInnerBorder.SegmentsCurved;
 end;
 
 function TFillBorderRoundRectInfo.NbMaxIntersection: integer;
@@ -972,17 +1477,21 @@ end;
 procedure TFillBorderRoundRectInfo.ComputeIntersection(cury: single;
       var inter: ArrayOfTIntersectionInfo; var nbInter: integer);
 begin
-  outerBorder.ComputeIntersection(cury, inter, nbInter);
-  if innerBorder <> nil then
-    innerBorder.ComputeIntersection(cury, inter, nbInter);
+  FOuterBorder.ComputeIntersection(cury, inter, nbInter);
+  if FInnerBorder <> nil then
+    FInnerBorder.ComputeIntersection(cury, inter, nbInter);
 end;
 
 destructor TFillBorderRoundRectInfo.Destroy;
 begin
-  outerBorder.Free;
-  innerBorder.Free;
+  FOuterBorder.Free;
+  FInnerBorder.Free;
   inherited Destroy;
 end;
+
+initialization
+
+  Randomize;
 
 end.
 

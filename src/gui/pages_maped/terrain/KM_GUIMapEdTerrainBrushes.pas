@@ -32,6 +32,8 @@ type
 
 implementation
 uses
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLType, {$ENDIF}
   KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
   KM_TerrainPainter, KM_InterfaceGame;
 
@@ -137,7 +139,7 @@ end;
 procedure TKMMapEdTerrainBrushes.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
 begin
   aHandled := False;
-  if ssCtrl in Shift then
+  if GetKeyState(VK_CONTROL) < 0 then // Do not use ssCtrl in SHift here, as it can sometimes be wrong values inside Shift (ssShift instead of ssCtrl)
   begin
     BrushSize.Position := Max(0, BrushSize.Position - (WheelDelta div 100)); //can't set negative number
     BrushChange(nil);

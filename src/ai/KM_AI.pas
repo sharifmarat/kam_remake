@@ -50,7 +50,7 @@ type
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
-    procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit);
+    procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -295,7 +295,7 @@ end;
 
 
 // aUnit is our unit that was attacked
-procedure TKMHandAI.UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit);
+procedure TKMHandAI.UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 const
   NotifyKind: array [Boolean] of TAttackNotification = (an_Citizens, an_Troops);
 var
@@ -338,7 +338,8 @@ begin
       end;
   end;
 
-  gScriptEvents.ProcUnitAttacked(aUnit, aAttacker); //At the end since it could kill the unit
+  if aNotifyScript then
+    gScriptEvents.ProcUnitAttacked(aUnit, aAttacker); //At the end since it could kill the unit
 end;
 
 

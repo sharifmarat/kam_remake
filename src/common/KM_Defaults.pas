@@ -4,6 +4,16 @@ interface
 uses
   SysUtils;
 
+//Indexes KM_FormMain.StatusBar
+const
+  SB_ID_KMR_VER      = 0;
+  SB_ID_MAP_SIZE     = 1;
+  SB_ID_CURSOR_COORD = 2;
+  SB_ID_TILE         = 3;
+  SB_ID_TIME         = 4;
+  SB_ID_FPS          = 5;
+  SB_ID_OBJECT       = 6;
+  SB_ID_CTRL_ID      = 7;
 
 //Global constants
 const
@@ -16,7 +26,9 @@ const
   TERRAIN_PACE          = 200;          //Each tile gets updated once per ** ticks (100 by default), Warning, it affects field/tree growth rate
   FOW_PACE              = 10;           //Each tile gets updated once per ** ticks (10 by default)
 
-  FPS_LAG               = 16;           //Allowed lag between frames, 1000/FPSLag = max allowed FPS, 1 means unlimited
+  MIN_FPS_CAP           = 10;           //Minimum FPS Cap - limit fps
+  DEF_FPS_CAP           = 60;           //Default FPS Cap
+  MAX_FPS_CAP           = 1000;         //Maximum FPS Cap (means no CAP at all)
   FPS_INTERVAL          = 1000;         //Time in ms between FPS measurements, bigger value = more accurate result
   MENU_DESIGN_X         = 1024;         //Thats the size menu was designed for. All elements are placed in this size
   MENU_DESIGN_Y         = 768;          //Thats the size menu was designed for. All elements are placed in this size
@@ -24,7 +36,7 @@ const
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
 
   GAME_REVISION         = 'r7000+';       //Should be updated for every release (each time save format is changed)
-  GAME_BETA_REVISION    = 4;
+  GAME_BETA_REVISION    = 5;
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
   {$ELSE}
@@ -40,7 +52,8 @@ const
 
   DEL_LOGS_OLDER_THAN   = 14;           //in days
 
-const  
+  TEMPLATE_LIBX_FILE_TEXT = 'text.%s.libx';
+const
   //Max number of ticks, played on 1 game update.
   //We must limit number of ticks per update to be able to leave update cycle fast (when turn off ultra fast speedup, f.e.)
   //Also there is a technical limit, of how many ticks we can calculate per update
@@ -170,8 +183,9 @@ const
 const
   MAX_HANDS            = 12; //Maximum players (human or AI) per map
   MAX_LOBBY_PLAYERS    = 12;  //Maximum number of players (not spectators) allowed in the lobby. Map can have additional AI locations up to MAX_HANDS (for co-op).
-  MAX_LOBBY_SPECTATORS = 1;  //Slots available in lobby. Additional slots can be used by spectators
-  MAX_LOBBY_SLOTS = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
+  MAX_LOBBY_SPECTATORS = 2;  //Slots available in lobby. Additional slots can be used by spectators
+  MAX_LOBBY_SLOTS      = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
+  MAX_TEAMS            = MAX_LOBBY_PLAYERS div 2;
 
   AUTOSAVE_COUNT_MIN      = 2;
   AUTOSAVE_COUNT_MAX      = 10;
@@ -249,6 +263,7 @@ const
   EXT_SAVE_REPLAY = 'rpl';
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
+  EXT_FILE_SCRIPT = 'script';
 
 type
   TKMHandIndex = {type} ShortInt;
@@ -327,6 +342,7 @@ type
         gr_Error,       //Some known error occured
         gr_Disconnect,  //Disconnected from multiplayer game
         gr_Silent,      //Used when loading savegame from running game (show no screens)
+        gr_ShowStats,   //Used to show MP statistics page from SP statistics page and back
         gr_ReplayEnd,   //Replay was cancelled - return to menu without screens
         gr_MapEdEnd);   //Map Editor was closed - return to menu without screens
 
@@ -714,12 +730,19 @@ const
   icRed    = $FF0707FF;
   icCyan   = $FFFFFF00;
 
+  icTransparent = $00;
   icDarkGray = $FF606060;
+  icDarkGrayTrans = $60606060;
+  icDarkestGrayTrans = $80303030;
   icGray = $FF808080;
   icLightGray = $FFA0A0A0;
+  icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
   icDarkCyan   = $FFB0B000;
+
+  icPink = $FFFF00FF;
+  icDarkPink = $FFAA00AA;
 
   icSteelBlue = $FFA56D53;
 
@@ -761,6 +784,16 @@ const
 
   clMapEdBtnField = icYellow;
   clMapEdBtnWine = icYellow;
+
+  clChartHighlight = icPink;
+  clChartHighlight2 = icDarkPink;
+  clChartDashedHLn = icDarkGray;
+  clChartDashedVLn = icDarkGrayTrans;
+  clChartPeacetimeLn = icDarkGoldenRod;
+  clChartPeacetimeLbl = icGoldenYellow;
+  clChartSeparator = icTransparent;
+
+  clChkboxOutline = icLightGrayTrans;
 
 var
   ExeDir: UnicodeString;

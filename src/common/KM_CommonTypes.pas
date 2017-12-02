@@ -16,6 +16,7 @@ type
   TKMWord2Array = array of array of Word;
   PKMWordArray = ^TKMWordArray;
   TKMCardinalArray = array of Cardinal;
+  PKMCardinalArray = ^TKMCardinalArray;
   TSmallIntArray = array of SmallInt;
   TIntegerArray = array of Integer;
   TInteger2Array = array of array of Integer;
@@ -40,6 +41,7 @@ type
   TResyncEvent = procedure (aSender: ShortInt; aTick: cardinal) of object;
   TIntegerStringEvent = procedure (aValue: Integer; const aText: UnicodeString) of object;
   TBooleanFunc = function(Obj: TObject): Boolean of object;
+  TBooleanFuncSimple = function: Boolean of object;
 
   TKMAnimLoop = packed record
                   Step: array [1 .. 30] of SmallInt;

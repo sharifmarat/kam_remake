@@ -2473,7 +2473,6 @@ begin
   fMyPlayerCurrentFPS := aFPS;
   if fNetGameState = lgs_Game then
   begin
-//    MyNetPlayer.FPS := aFPS;
     PacketSend(NET_ADDRESS_SERVER, mk_FPS, aFPS);
     MyNetPlayer.FPS := aFPS;
   end;

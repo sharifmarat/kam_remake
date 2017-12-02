@@ -6,7 +6,7 @@ uses
   {$IFDEF FPC} Controls, {$ENDIF}
   Classes, Dialogs, ExtCtrls,
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
-  KM_Campaigns, KM_Game, KM_InterfaceMainMenu,
+  KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Networking, KM_Settings, KM_Render;
 
 type
@@ -51,6 +51,8 @@ type
     procedure PrintScreen(const aFilename: UnicodeString = '');
     procedure PauseMusicToPlayFile(const aFileName: UnicodeString);
     function CheckDATConsistency: Boolean;
+
+    procedure PreloadGameResources;
 
     //These are all different game kinds we can start
     procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
@@ -99,7 +101,7 @@ uses
   SysUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
-  KM_InterfaceDefaults, KM_GameCursor, KM_Resource, KM_ResTexts,
+  KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
   KM_Maps, KM_Saves, KM_CommonUtils;
 
 
@@ -236,6 +238,14 @@ begin
 end;
 
 
+//Preload game resources while in menu
+procedure TKMGameApp.PreloadGameResources;
+begin
+  //Load game resources asychronously (by other thread)
+  gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
+end;
+
+
 procedure TKMGameApp.Resize(X,Y: Integer);
 begin
   if fIsExiting then Exit;
@@ -316,10 +326,10 @@ begin
 
   if Assigned(fOnCursorUpdate) then
   begin
-    fOnCursorUpdate(1, Format('Cursor: %d:%d', [X, Y]));
-    fOnCursorUpdate(2, Format('Tile: %.1f:%.1f [%d:%d]',
-                              [gGameCursor.Float.X, gGameCursor.Float.Y,
-                              gGameCursor.Cell.X, gGameCursor.Cell.Y]));
+    fOnCursorUpdate(SB_ID_CURSOR_COORD, Format('Cursor: %d:%d', [X, Y]));
+    fOnCursorUpdate(SB_ID_TILE,         Format('Tile: %.1f:%.1f [%d:%d]',
+                               [gGameCursor.Float.X, gGameCursor.Float.Y,
+                               gGameCursor.Cell.X, gGameCursor.Cell.Y]));
     if SHOW_CONTROLS_ID then
     begin
       if gGame <> nil then
@@ -329,7 +339,7 @@ begin
       CtrlID := -1;
       if Ctrl <> nil then
         CtrlID := Ctrl.ID;
-      fOnCursorUpdate(6, Format('Control ID: %d', [CtrlID]));
+      fOnCursorUpdate(SB_ID_CTRL_ID, Format('Control ID: %d', [CtrlID]));
     end;
   end;
 end;
@@ -431,8 +441,10 @@ begin
     gr_Cancel,
     gr_ReplayEnd:   if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
                       fMainMenuInterface.ShowResultsMP(aMsg)
-                    else
+                    else begin
+                      fMainMenuInterface.ShowResultsMP(aMsg); // Show MP stats too, as we can show them from SP stats page
                       fMainMenuInterface.ShowResultsSP(aMsg);
+                    end;
     gr_Error,
     gr_Disconnect:  begin
                       if gGame.IsMultiplayer then
@@ -519,7 +531,7 @@ begin
   end;
 
   if Assigned(fOnCursorUpdate) then
-    fOnCursorUpdate(0, gGame.MapSizeInfo);
+    fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
 end;
 
 
@@ -555,7 +567,7 @@ begin
   end;
 
   if Assigned(fOnCursorUpdate) then
-    fOnCursorUpdate(0, gGame.MapSizeInfo);
+    fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
 end;
 
 
@@ -590,7 +602,7 @@ begin
   end;
 
   if Assigned(fOnCursorUpdate) then
-    fOnCursorUpdate(0, gGame.MapSizeInfo);
+    fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
 end;
 
 
@@ -733,7 +745,7 @@ begin
 
   if not aForPrintScreen and (gGame <> nil) then
     if Assigned(fOnCursorUpdate) then
-      fOnCursorUpdate(5, 'Object: ' + IntToStr(gGameCursor.ObjectUID));
+      fOnCursorUpdate(SB_ID_OBJECT, 'Obj: ' + IntToStr(gGameCursor.ObjectUID));
 end;
 
 
@@ -802,7 +814,7 @@ begin
 
     //StatusBar
     if (gGame <> nil) and not gGame.IsPaused and Assigned(fOnCursorUpdate) then
-        fOnCursorUpdate(3, 'Time: ' + TimeToString(gGame.MissionTime));
+        fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
 end;
 
@@ -814,6 +826,7 @@ begin
   if fMusicLib <> nil then fMusicLib.UpdateStateIdle;
   if gSoundPlayer <> nil then gSoundPlayer.UpdateStateIdle;
   if fNetworking <> nil then fNetworking.UpdateStateIdle;
+  if gRes <> nil then gRes.UpdateStateIdle;
 end;
 
 

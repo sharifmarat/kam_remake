@@ -873,8 +873,10 @@ begin
                         begin
                           //Old enemy has died, change target to his comrades
                           U := OrderTargetGroup.GetNearestMember(Members[0].GetPosition);
-                          Assert(U <> nil, 'We checked that Group is not dead, hence we should have a valid Unit');
-                          OrderAttackUnit(U, False);
+                          if U <> nil then // U could be nil in some rare cases (probably some rare bug with unit kills from scripts), just ignore that situation for now
+                            OrderAttackUnit(U, False)
+                          else
+                            OrderExecuted := True; //Could rarely happen, as described above
                         end;
                       end;
                     end;

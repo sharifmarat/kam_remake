@@ -85,6 +85,13 @@ type
     chkLogsShowInChat: TCheckBox;
     chkUIControlsID: TCheckBox;
     ShowLogistics: TMenuItem;
+    UnitAnim_All: TMenuItem;
+    N3: TMenuItem;
+    Soldiers: TMenuItem;
+    Civilians1: TMenuItem;
+    SaveSettings: TMenuItem;
+    N4: TMenuItem;
+    ReloadSettings: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -107,7 +114,6 @@ type
     procedure Export_TilesetClick(Sender: TObject);
     procedure Export_Sounds1Click(Sender: TObject);
     procedure Export_HouseAnim1Click(Sender: TObject);
-    procedure Export_UnitAnim1Click(Sender: TObject);
     procedure Export_Fonts1Click(Sender: TObject);
     procedure Export_DeliverLists1Click(Sender: TObject);
     procedure Button_StopClick(Sender: TObject);
@@ -129,6 +135,11 @@ type
     procedure RenderAreaResize(aWidth, aHeight: Integer);
     procedure RenderAreaRender(aSender: TObject);
     procedure ShowLogisticsClick(Sender: TObject);
+    procedure UnitAnim_AllClick(Sender: TObject);
+    procedure SoldiersClick(Sender: TObject);
+    procedure Civilians1Click(Sender: TObject);
+    procedure ReloadSettingsClick(Sender: TObject);
+    procedure SaveSettingsClick(Sender: TObject);
   private
     fUpdating: Boolean;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
@@ -255,6 +266,13 @@ begin
   Assert(KeyPreview, 'MainForm should recieve all keys to pass them to fGame');
 
   FormKeyUpProc(Key, Shift);
+end;
+
+
+procedure TFormMain.ReloadSettingsClick(Sender: TObject);
+begin
+  gMain.Settings.ReloadSettings;
+  gGameApp.GameSettings.ReloadSettings;
 end;
 
 
@@ -416,10 +434,6 @@ begin
   gRes.ExportHouseAnim;
 end;
 
-procedure TFormMain.Export_UnitAnim1Click(Sender: TObject);
-begin
-  gRes.ExportUnitAnim;
-end;
 
 procedure TFormMain.HousesDat1Click(Sender: TObject);
 begin
@@ -457,11 +471,23 @@ begin
 end;
 
 
+procedure TFormMain.SaveSettingsClick(Sender: TObject);
+begin
+  gMain.Settings.SaveSettings(True);
+  gGameApp.GameSettings.SaveSettings(True);
+end;
+
 procedure TFormMain.ShowLogisticsClick(Sender: TObject);
 begin
   if not Assigned(FormLogistics) then
     FormLogistics := TFormLogistics.Create(Self);
   FormLogistics.Show;
+end;
+
+
+procedure TFormMain.SoldiersClick(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(WARRIOR_MIN, WARRIOR_MAX);
 end;
 
 
@@ -485,6 +511,12 @@ begin
       gGameApp.Stop(gr_MapEdEnd)
     else
       gGameApp.Stop(gr_Cancel);
+end;
+
+
+procedure TFormMain.Civilians1Click(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(CITIZEN_MIN, CITIZEN_MAX);
 end;
 
 
@@ -682,6 +714,12 @@ begin
 
   //Make sure Panel is properly aligned
   RenderArea.Align := alClient;
+end;
+
+
+procedure TFormMain.UnitAnim_AllClick(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(UNIT_MIN, UNIT_MAX, True);
 end;
 
 

@@ -77,6 +77,9 @@ type
     function GetTicksBehindCnt: Single;
     procedure SetIsPaused(aValue: Boolean);
     procedure IssueAutosaveCommand(aAfterPT: Boolean = False);
+
+    function GetGameTickDuration: Single;
+    procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
   public
     PlayOnState: TGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -127,6 +130,7 @@ type
     function IsMapEditor: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
+    function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
     procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint; aHandIndex: TKMHandIndex);
@@ -134,11 +138,12 @@ type
     procedure OverlayUpdate;
     procedure OverlaySet(const aText: UnicodeString; aPlayer: Shortint);
     procedure OverlayAppend(const aText: UnicodeString; aPlayer: Shortint);
-    property GameTickCount:cardinal read fGameTickCount;
+    property GameTickCount: Cardinal read fGameTickCount;
     property GameName: UnicodeString read fGameName;
     property CampaignName: TKMCampaignId read fCampaignName;
     property CampaignMap: Byte read fCampaignMap;
     property GameSpeed: Single read fGameSpeed;
+    property GameTickDuration: Single read GetGameTickDuration;
     function PlayerLoc: Byte;
     function PlayerColor: Cardinal;
 
@@ -253,8 +258,8 @@ begin
   if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gLog.AddTime('<== Game creation is done ==>');
 
-  gLoopSounds := TKMLoopSoundsManager.Create; //Currently only used by scripting
-  fScripting := TKMScripting.Create(ShowScriptError);
+  gScriptSounds := TKMScriptSoundsManager.Create; //Currently only used by scripting
+  fScripting := TKMScriptingCreator.CreateScripting(ShowScriptError);
 
   fIgnoreConsistencyCheckErrors := False;
 
@@ -295,7 +300,7 @@ begin
   FreeAndNil(gProjectiles);
   FreeAndNil(fPathfinding);
   FreeAndNil(fScripting);
-  FreeAndNil(gLoopSounds);
+  FreeAndNil(gScriptSounds);
 
   FreeThenNil(fGamePlayInterface);
   FreeThenNil(fMapEditorInterface);
@@ -489,15 +494,15 @@ begin
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     SaveGame(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), UTCNow);
 
-  //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
-  gScriptEvents.ProcMissionStart;
-
   //When everything is ready we can update UI
   fActiveInterface.SyncUI;
   if IsMapEditor then
     fActiveInterface.SyncUIView(KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2))
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
+
+  //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
+  gScriptEvents.ProcMissionStart;
 
   gLog.AddTime('Gameplay initialized', True);
 end;
@@ -780,8 +785,9 @@ end;
 
 procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
 begin
-  fNetworking.PostLocalMessage(Format('%s has won!', //Todo translate
-    [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+  if IsMultiplayer then
+    fNetworking.PostLocalMessage(Format('%s has won!', //Todo translate
+      [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
 
   if fGameMode = gmMultiSpectate then
     Exit;
@@ -1084,6 +1090,12 @@ begin
 end;
 
 
+function TKMGame.IsSingleplayer: Boolean;
+begin
+  Result := fGameMode in [gmSingle, gmCampaign];
+end;
+
+
 function TKMGame.IsReplay: Boolean;
 begin
   Result := fGameMode in [gmReplaySingle, gmReplayMulti];
@@ -1205,8 +1217,12 @@ end;
 
 
 procedure TKMGame.SetGameSpeed(aSpeed: Single; aToggle: Boolean);
+var
+  OldGameSpeed: Single;
 begin
   Assert(aSpeed > 0);
+
+  OldGameSpeed := fGameSpeed;
 
   //MapEd always runs at x1
   if IsMapEditor then
@@ -1248,6 +1264,14 @@ begin
 
   if Assigned(gGameApp.OnGameSpeedChange) then
     gGameApp.OnGameSpeedChange(fGameSpeed);
+
+  GameSpeedChanged(OldGameSpeed, fGameSpeed);
+end;
+
+
+procedure TKMGame.GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+begin
+  fActiveInterface.GameSpeedChanged(aFromSpeed, aToSpeed);
 end;
 
 
@@ -1388,7 +1412,7 @@ begin
     fPathfinding.Save(SaveStream);
     gProjectiles.Save(SaveStream);
     fScripting.Save(SaveStream);
-    gLoopSounds.Save(SaveStream);
+    gScriptSounds.Save(SaveStream);
 
     fTextMission.Save(SaveStream);
 
@@ -1425,7 +1449,7 @@ begin
 
   if not IsMultiplayer then
     // Update GameSettings for saved positions in lists of saves and replays
-    gGameApp.GameSettings.MenuSPSaveCRC := TKMSavesCollection.GetSaveCRC(aSaveName, IsMultiplayer); // Update save position for SP game
+    gGameApp.GameSettings.MenuSPSaveFileName := aSaveName;
 
   //Remember which savegame to try to restart (if game was not saved before)
   fSaveFile := ExtractRelativePath(ExeDir, fullPath);
@@ -1534,7 +1558,7 @@ begin
     fPathfinding.Load(LoadStream);
     gProjectiles.Load(LoadStream);
     fScripting.Load(LoadStream);
-    gLoopSounds.Load(LoadStream);
+    gScriptSounds.Load(LoadStream);
 
     fTextMission := TKMTextLibraryMulti.Create;
     fTextMission.Load(LoadStream);
@@ -1574,7 +1598,7 @@ begin
     if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     begin
       DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
-      KMCopyFile(ChangeFileExt(aPathName, '.bas'), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+      KMCopyFile(ChangeFileExt(aPathName, '.' + EXT_SAVE_BASE), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
     end;
 
     //Repeat mission init if necessary
@@ -1601,6 +1625,12 @@ begin
   finally
     FreeAndNil(LoadStream);
   end;
+end;
+
+
+function TKMGame.GetGameTickDuration: Single;
+begin
+  Result := gGameApp.GameSettings.SpeedPace / fGameSpeed;
 end;
 
 
@@ -1824,8 +1854,8 @@ end;
 
 procedure TKMGame.UpdateState(aGlobalTickCount: Cardinal);
 begin
-  if gLoopSounds <> nil then
-    gLoopSounds.UpdateState;
+  if gScriptSounds <> nil then
+    gScriptSounds.UpdateState;
 
   if not fIsPaused then
     fActiveInterface.UpdateState(aGlobalTickCount);

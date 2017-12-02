@@ -5,7 +5,7 @@ uses
   Classes, Controls,
   KromOGLUtils,
   KM_RenderUI, KM_Pics, KM_Minimap, KM_Viewport, KM_ResFonts,
-  KM_CommonTypes, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Points;
 
 
 type
@@ -428,6 +428,7 @@ type
     TexID: Word;
     TexOffsetX: Shortint;
     TexOffsetY: Shortint;
+    CapOffsetX: Shortint;
     CapOffsetY: Shortint;
     Caption: UnicodeString;
     CapColor: TColor4;
@@ -592,6 +593,9 @@ type
     fChecked: Boolean;
     fFont: TKMFont;
   public
+    DrawOutline: Boolean;
+    LineColor: TColor4; //color of outline
+    LineWidth: Byte;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont); overload;
     property Caption: UnicodeString read fCaption write fCaption;
     property Checked: Boolean read fChecked write fChecked;
@@ -612,6 +616,9 @@ type
     fFont: TKMFont;
     fOnChange: TNotifyEvent;
   public
+    DrawChkboxOutline: Boolean;
+    LineColor: TColor4; //color of outline
+    LineWidth: Byte;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont);
 
     procedure Add(aText: UnicodeString; aEnabled: Boolean = True);
@@ -799,10 +806,10 @@ type
     fBackAlpha: Single; //Alpha of background (usually 0.5, dropbox 1)
     fFont: TKMFont; //Should not be changed from inital value, it will mess up the word wrapping
     fItemHeight: Byte;
-    fSeparatorHeight: Byte;
     fItemIndex: Smallint;
     fItems: TStringList;
     fSeparatorPositions: array of Integer;
+    fSeparatorHeight: Byte;
     fSeparatorColor: TColor4;
     fSeparatorTexts: TStringList;
     fSeparatorFont: TKMFont;
@@ -965,6 +972,8 @@ type
     procedure SetItemIndex(const Value: Smallint);
     procedure UpdateMouseOverPosition(X,Y: Integer);
     procedure UpdateItemIndex(Shift: TShiftState);
+    function GetItem(aIndex: Integer): TKMListRow;
+    function GetSelectedItem: TKMListRow;
   protected
     procedure SetLeft(aValue: Integer); override;
     procedure SetTop(aValue: Integer); override;
@@ -987,11 +996,14 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
     destructor Destroy; override;
 
+    property Item[aIndex: Integer]: TKMListRow read GetItem; default;
+    property SelectedItem: TKMListRow read GetSelectedItem;
     procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word);
     procedure AddItem(aItem: TKMListRow);
     procedure Clear;
     function GetVisibleRows: Integer;
     function GetVisibleRowsExact: Single;
+    function IsSelected: Boolean;
     property ShowHeader: Boolean read fShowHeader write SetShowHeader;
     property ShowLines: Boolean read fShowLines write fShowLines;
     property SearchColumn: ShortInt read fSearchColumn write SetSearchColumn;
@@ -1329,18 +1341,27 @@ type
     fCount: Integer;
     fItemHeight: Byte;
     fLegendWidth: Word;
+    fLegendCaption: String;
     fLineOver: Integer;
     fLines: array of TKMGraphLine;
     fMaxLength: Cardinal; //Maximum samples (by horizontal axis)
     fMinTime: Cardinal; //Minimum time (in sec), used only for Rendering time ticks
     fMaxTime: Cardinal; //Maximum time (in sec), used only for Rendering time ticks
     fMaxValue: Cardinal; //Maximum value (by vertical axis)
+    fPeaceTime: Cardinal;
+    fSeparatorPositions: TXStringList;
+    fSeparatorHeight: Byte;
+    fSeparatorColor: TColor4;
     procedure UpdateMaxValue;
-    function GetLine(aIndex:Integer):TKMGraphLine;
+    function GetLine(aIndex:Integer): TKMGraphLine;
+    function GetLineNumber(aY: Integer): Integer;
+//    function GetSeparatorsHeight(aIndex: Integer): Integer;
+    function GetSeparatorPos(aIndex: Integer): Integer;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+    destructor Destroy; override;
 
-    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag:Integer=-1);
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
     procedure AddAltLine(const aAltValues: TKMCardinalArray);
     procedure TrimToFirstVariation;
     property Caption: UnicodeString read fCaption write fCaption;
@@ -1351,12 +1372,25 @@ type
     property Lines[aIndex: Integer]: TKMGraphLine read GetLine;
     property LineCount:Integer read fCount;
     property Font: TKMFont read fFont write fFont;
+    property LegendWidth: Word read fLegendWidth write fLegendWidth;
+    property LegendCaption: String read fLegendCaption write fLegendCaption;
+    property Peacetime: Cardinal read fPeaceTime write fPeaceTime;
+
+    property SeparatorPos[aIndex: Integer]: Integer read GetSeparatorPos;
+    property SeparatorColor: TColor4 read fSeparatorColor write fSeparatorColor;
+    property SeparatorHeight: Byte read fSeparatorHeight write fSeparatorHeight;
+
+    procedure AddSeparator(aPosition: Integer);
+    procedure SetSeparatorPositions(aSeparatorPositions: TStringList);
+    procedure ClearSeparators;
 
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
 
     procedure Paint; override;
   end;
+
+  PKMChart = ^TKMChart;
 
   //MinimapView relies on fMinimap and fViewport that provide all the data
   //MinimapView itself is just a painter
@@ -1595,19 +1629,19 @@ end;
 
 
 procedure TKMControl.MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
+var
+  ClickHoldHandled: Boolean;
 begin
   //if Assigned(fOnMouseUp) then OnMouseUp(Self); { Unused }
   if (csDown in State) then
   begin
     State := State - [csDown];
-
-    //Send Click events
-    if not fClickHoldHandled then // Do not send click event, if it was handled already while in click hold mode
-    begin
+    ClickHoldHandled := fClickHoldHandled;
       ResetClickHoldMode;
+    //Send Click events
+    if not ClickHoldHandled then // Do not send click event, if it was handled already while in click hold mode
       DoClick(X, Y, Shift, Button);
     end;
-  end;
   // No code is allowed after DoClick, as control object could be destroyed,
   // that means we will modify freed memory, which will cause memory leaks
 end;
@@ -2861,7 +2895,7 @@ begin
                              AbsTop + TexOffsetY - 6 * Byte(Caption <> ''),
                              Width, Height, [], RX, TexID, fEnabled, FlagColor);
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop + (Height div 2) + 4 + CapOffsetY, Width, Caption, Font, taCenter, TextCol[fEnabled]);
+  TKMRenderUI.WriteText(AbsLeft + CapOffsetX, AbsTop + (Height div 2) + 4 + CapOffsetY, Width, Caption, Font, taCenter, TextCol[fEnabled]);
 
   if Down then
     TKMRenderUI.WriteOutline(AbsLeft, AbsTop, Width, Height, 1, $FFFFFFFF);
@@ -3354,6 +3388,8 @@ begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont     := aFont;
   fCaption  := aCaption;
+  LineWidth := 1;
+  LineColor := clChkboxOutline;
 end;
 
 
@@ -3372,16 +3408,19 @@ procedure TKMCheckBox.Paint;
 var Col: TColor4; CheckSize: Integer;
 begin
   inherited;
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
+  if fEnabled then Col := icWhite else Col := $FF888888;
 
-  CheckSize := gRes.Fonts[fFont].GetTextSize('I').Y + 1;
+  CheckSize := gRes.Fonts[fFont].GetTextSize('x').Y + 1;
 
-  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, CheckSize-4, CheckSize-4, 1, 0.3);
+  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, CheckSize - 4, CheckSize-4, 1, 0.3);
+
+  if DrawOutline then
+    TKMRenderUI.WriteOutline(AbsLeft, AbsTop, CheckSize - 4, CheckSize - 4, LineWidth, LineColor);
 
   if fChecked then
-    TKMRenderUI.WriteText(AbsLeft+(CheckSize-4)div 2, AbsTop, 0, 'x', fFont, taCenter, Col);
+    TKMRenderUI.WriteText(AbsLeft + (CheckSize-4) div 2, AbsTop - 1, 0, 'x', fFont, taCenter, Col);
 
-  TKMRenderUI.WriteText(AbsLeft+CheckSize, AbsTop, Width-Height, fCaption, fFont, taLeft, Col);
+  TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop, Width - Height, fCaption, fFont, taLeft, Col);
 end;
 
 
@@ -3391,6 +3430,8 @@ begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont := aFont;
   fItemIndex := -1;
+  LineWidth := 1;
+  LineColor := clChkboxOutline;
 end;
 
 
@@ -3448,14 +3489,16 @@ begin
   if Count = 0 then Exit; //Avoid dividing by zero
 
   LineHeight := Round(fHeight / Count);
-  CheckSize := gRes.Fonts[fFont].GetTextSize('I').Y + 1;
+  CheckSize := gRes.Fonts[fFont].GetTextSize('x').Y + 1;
 
   for I := 0 to Count - 1 do
   begin
     TKMRenderUI.WriteBevel(AbsLeft, AbsTop + I * LineHeight, CheckSize-4, CheckSize-4, 1, 0.3);
+    if DrawChkboxOutline then
+      TKMRenderUI.WriteOutline(AbsLeft, AbsTop + I * LineHeight, CheckSize-4, CheckSize-4, LineWidth, LineColor);
 
     if fItemIndex = I then
-      TKMRenderUI.WriteText(AbsLeft+(CheckSize-4)div 2, AbsTop + I * LineHeight, 0, 'x', fFont, taCenter, FntCol[fEnabled and fItems[I].Enabled]);
+      TKMRenderUI.WriteText(AbsLeft+(CheckSize-4)div 2, AbsTop + I * LineHeight - 1, 0, 'x', fFont, taCenter, FntCol[fEnabled and fItems[I].Enabled]);
 
     // Caption
     TKMRenderUI.WriteText(AbsLeft+CheckSize, AbsTop + I * LineHeight, Width-LineHeight, fItems[I].Text, fFont, taLeft, FntCol[fEnabled and fItems[I].Enabled]);
@@ -5519,6 +5562,12 @@ begin
 end;
 
 
+function TKMColumnBox.IsSelected: Boolean;
+begin
+  Result := fItemIndex <> -1;
+end;
+
+
 procedure TKMColumnBox.SetTopIndex(aIndex: Integer);
 begin
   fScrollBar.Position := aIndex;
@@ -5552,6 +5601,24 @@ end;
 function TKMColumnBox.GetColumn(aIndex: Integer): TKMListColumn;
 begin
   Result := fColumns[aIndex];
+end;
+
+
+function TKMColumnBox.GetItem(aIndex: Integer): TKMListRow;
+begin
+  if InRange(aIndex, 0, RowCount - 1) then
+    Result := Rows[aIndex]
+  else
+    raise Exception.Create('Cannot get Item with index ' + IntToStr(aIndex));
+end;
+
+
+function TKMColumnBox.GetSelectedItem: TKMListRow;
+begin
+  if IsSelected then
+    Result := Rows[fItemIndex]
+  else
+    raise Exception.Create('No selected item found');
 end;
 
 
@@ -5948,15 +6015,15 @@ begin
 
   //Grid lines should be below selection focus
   if fShowLines then
-  for I := 0 to Math.min(fRowCount - 1, MaxItem) do
-    TKMRenderUI.WriteShape(AbsLeft+1, Y + I * fItemHeight - 1, PaintWidth - 2, 1, $FFBBBBBB);
+    for I := 0 to Math.Min(fRowCount - 1, MaxItem) do
+      TKMRenderUI.WriteShape(AbsLeft+1, Y + I * fItemHeight - 1, PaintWidth - 2, 1, $FFBBBBBB);
 
   TKMRenderUI.SetupClipY(AbsTop, AbsTop + Height - 1);
 
   //Selection highlight
   if not HideSelection
-  and (fItemIndex <> -1)
-  and InRange(ItemIndex - TopIndex, 0, MaxItem) then
+    and (fItemIndex <> -1)
+    and InRange(ItemIndex - TopIndex, 0, MaxItem) then
   begin
 
     if IsFocused then
@@ -5967,6 +6034,7 @@ begin
       ShapeColor := clListSelShapeUnfocused;//$66666666;
       OutlineColor := clListSelOutlineUnfocused;//$FFA0A0A0;
     end;
+
     TKMRenderUI.WriteShape(AbsLeft, Y + fItemHeight * (fItemIndex - TopIndex), PaintWidth, fItemHeight, ShapeColor);
     TKMRenderUI.WriteOutline(AbsLeft, Y + fItemHeight * (fItemIndex - TopIndex), PaintWidth, fItemHeight, 1 + Byte(fShowLines), OutlineColor);
   end;
@@ -7001,14 +7069,26 @@ constructor TKMChart.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Int
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
 
+  fSeparatorPositions := TXStringList.Create;
+  fSeparatorPositions.Sorted := True; // Better we have separators sorted
+
   fFont := fnt_Outline;
-  fItemHeight := 13;
+  fItemHeight := 20;
   fLineOver := -1;
   fLegendWidth := 150;
+  fSeparatorColor := clChartSeparator;
+  fSeparatorHeight := 10;
 end;
 
 
-procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag:Integer=-1);
+destructor TKMChart.Destroy;
+begin
+  FreeAndNil(fSeparatorPositions);
+  inherited;
+end;
+
+
+procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
 begin
   if fMaxLength = 0 then Exit;
 
@@ -7027,6 +7107,42 @@ begin
   Inc(fCount);
 
   UpdateMaxValue;
+end;
+
+
+function TKMChart.GetSeparatorPos(aIndex: Integer): Integer;
+begin
+  Result := -1;
+  if not InRange(aIndex, 0, fSeparatorPositions.Count - 1) then Exit;
+
+  Result := StrToInt(fSeparatorPositions[aIndex]);
+end;
+
+
+//function TKMChart.GetSeparatorsHeight(aIndex: Integer): Integer;
+//var
+//  I, Pos: Integer;
+//begin
+//  Result := 0;
+//  for I := 0 to fSeparatorPositions.Count - 1 do
+//  begin
+//    Pos := SeparatorPos[I];
+//    if (Pos <> -1) and (Pos <= aIndex) then
+//      Inc(Result, fSeparatorHeight);
+//  end;
+//end;
+
+
+procedure TKMChart.AddSeparator(aPosition: Integer);
+begin
+  fSeparatorPositions.Add(IntToStr(aPosition));
+end;
+
+
+procedure TKMChart.SetSeparatorPositions(aSeparatorPositions: TStringList);
+begin
+  fSeparatorPositions.Clear;
+  fSeparatorPositions.AddStrings(aSeparatorPositions);
 end;
 
 
@@ -7058,19 +7174,19 @@ begin
         if fLines[I].Values[K] <> StartVal then
         begin
           if (K < FirstVarSample) or (FirstVarSample = -1) then
-            FirstVarSample := K;
+            FirstVarSample := K - 1;
           Break;
         end;
     end;
-  if FirstVarSample = -1 then
+  if FirstVarSample <= 0 then
   begin
     fMinTime := 0; //No variation at all, so don't trim it (but clear previous value)
     Exit;
   end;
   //Take 5% before the first varied sample
-  FirstVarSample := Max(0, FirstVarSample - Round(0.05*fMaxLength));
+  FirstVarSample := Max(0, FirstVarSample - Max(1, Round(0.05*(fMaxLength - FirstVarSample))));
   //Trim all fLines[I].Values to start at FirstVarSample
-  for I:=0 to fCount-1 do
+  for I := 0 to fCount - 1 do
   begin
     Move(fLines[I].Values[FirstVarSample], fLines[I].Values[0], (Length(fLines[I].Values)-FirstVarSample)*SizeOf(fLines[I].Values[0]));
     SetLength(fLines[I].Values, Length(fLines[I].Values)-FirstVarSample);
@@ -7087,6 +7203,13 @@ begin
   fCount := 0;
   SetLength(fLines, 0);
   fMaxValue := 0;
+  ClearSeparators;
+end;
+
+
+procedure TKMChart.ClearSeparators;
+begin
+  fSeparatorPositions.Clear;
 end;
 
 
@@ -7115,13 +7238,38 @@ begin
 end;
 
 
+function TKMChart.GetLineNumber(aY: Integer): Integer;
+var
+  I, S, LineTop, LienBottom: Integer;
+begin
+  Result := -1;
+  S := 0;
+  LineTop := AbsTop + 5 + 20*Byte(fLegendCaption <> '');
+  for I := 0 to fCount - 1 do
+  begin
+    if SeparatorPos[S] = I then
+    begin
+      Inc(LineTop, fSeparatorHeight);
+      Inc(S);
+    end;
+    LienBottom := LineTop + fItemHeight;
+    if InRange(aY, LineTop, LienBottom) then
+    begin
+      Result := I;
+      Exit;
+    end;
+    LineTop := LienBottom;
+  end;
+end;
+
+
 procedure TKMChart.MouseMove(X, Y: Integer; Shift: TShiftState);
 begin
   inherited;
 
   fLineOver := -1;
-  if X < AbsLeft + Width - fLegendWidth+5 then Exit;
-  fLineOver := (Y - AbsTop + 2) div fItemHeight;
+  if X < AbsLeft + Width - fLegendWidth + 5 then Exit;
+  fLineOver := GetLineNumber(Y);
 end;
 
 
@@ -7132,7 +7280,7 @@ begin
 
   if X < AbsLeft + Width - fLegendWidth+5 then Exit;
 
-  I := (Y - AbsTop + 2) div fItemHeight;
+  I := GetLineNumber(Y);
   if not InRange(I, 0, fCount - 1) then Exit;
 
   fLines[I].Visible := not fLines[I].Visible;
@@ -7142,25 +7290,115 @@ end;
 
 
 procedure TKMChart.Paint;
-  function EnsureColorBlend(aColor: TColor4): TColor4;
-  var
-    R, G, B: Byte;
-    Hue, Sat, Bri: Single;
-  begin
-    ConvertRGB2HSB(aColor and $FF, aColor shr 8 and $FF, aColor shr 16 and $FF, Hue, Sat, Bri);
-    //Lighten colors to ensure they are visible on black background
-    Bri := Max(Bri, 0.2);
-    ConvertHSB2RGB(Hue, Sat, Bri, R, G, B);
-    Result := (R + G shl 8 + B shl 16) or $FF000000;
-  end;
 const
   IntervalCount: array [0..9] of Word = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000);
   IntervalTime: array [0..10] of Word = (30, 1*60, 5*60, 10*60, 15*60, 30*60, 1*60*60, 2*60*60, 3*60*60, 4*60*60, 5*60*60);
+
+var
+  G: TKMRect;
+  TopValue: Integer;
+
+  procedure PaintAxisLabel(aTime: Integer; aIsPT: Boolean = False);
+  var
+    XPos: Integer;
+  begin
+    XPos := G.Left + Round((aTime - fMinTime) / (fMaxTime-fMinTime) * (G.Right - G.Left));
+    TKMRenderUI.WriteShape(XPos, G.Bottom - 2, 2, 5, IfThen(aIsPT, clChartPeacetimeLn, icWhite));
+    TKMRenderUI.WriteText (XPos, G.Bottom + 4, 0, TimeToString(aTime / 24 / 60 / 60), fnt_Game, taLeft, IfThen(aIsPT, clChartPeacetimeLbl, icWhite));
+    TKMRenderUI.WriteLine(XPos, G.Top, XPos, G.Bottom, IfThen(aIsPT, clChartPeacetimeLn, clChartDashedVLn), $CCCC);
+    if aIsPT then
+      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, 'PT-', fnt_Game, taRight, clChartPeacetimeLbl); //Todo translate
+  end;
+
+  procedure RenderHorizontalAxisTicks;
+  var
+    I, Best: Integer;
+  begin
+    //Find first time interval that will have less than 10 ticks
+    Best := 0;
+    for I := Low(IntervalTime) to High(IntervalTime) do
+      if (fMaxTime-fMinTime) div IntervalTime[I] < 7 then
+      begin
+        Best := IntervalTime[I];
+        Break;
+      end;
+
+    //Paint time axis labels
+    if (Best <> 0) and (fMaxTime <> fMinTime) then
+      if (fPeaceTime <> 0) and InRange(fPeaceTime, fMinTime, fMaxTime) then
+      begin
+        //Labels before PT and PT himself
+        for I := 0 to ((fPeaceTime - fMinTime) div Best) do
+          PaintAxisLabel(fPeaceTime - I * Best, I = 0);
+
+        //Labels after PT
+        for I := 1 to ((fMaxTime - fPeaceTime) div Best) do
+          PaintAxisLabel(fPeaceTime + I * Best);
+      end else
+        for I := Ceil(fMinTime / Best) to (fMaxTime div Best) do
+          PaintAxisLabel(I * Best);
+  end;
+
+  procedure RenderChartAndLegend;
+  const
+    MARKS_FONT: TKMFont = fnt_Grey;
+  var
+    I, S, CheckSize, XPos, YPos, Height: Integer;
+    NewColor: TColor4;
+  begin
+    CheckSize := gRes.Fonts[MARKS_FONT].GetTextSize('v').Y + 1;
+    S := 0;
+    XPos := G.Right + 10;
+    YPos := G.Top + 8 + 20*Byte(fLegendCaption <> '');
+
+    //Legend title and outline
+    Height := fItemHeight*fCount + 6 + 20*Byte(fLegendCaption <> '') + fSeparatorPositions.Count*fSeparatorHeight;
+    TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
+    TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
+    if fLegendCaption <> '' then
+      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
+    //Charts and legend
+    for I := 0 to fCount - 1 do
+    begin
+      //Adjust the color if it blends with black background
+      NewColor := EnsureBrightness(fLines[I].Color, 0.3);
+
+      // If color is similar to highlight color, then use alternative HL color
+      if GetColorDistance(NewColor, clChartHighlight) < 0.1 then
+        NewColor := clChartHighlight2;
+
+      if (csOver in State) and (I = fLineOver) then
+        NewColor := clChartHighlight;
+
+      //Charts
+      if fLines[I].Visible then
+      begin
+        TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[I].Values, TopValue, NewColor, 2);
+        if Length(fLines[I].ValuesAlt) > 0 then
+          TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[I].ValuesAlt, TopValue, NewColor, 1);
+      end;
+
+      if SeparatorPos[S] = I then
+      begin
+        Inc(YPos, fSeparatorHeight);
+        Inc(S);
+      end;
+
+      //Checkboxes
+      TKMRenderUI.WriteBevel(XPos, YPos, CheckSize - 4, CheckSize - 4, 1, 0.3);
+      TKMRenderUI.WriteOutline(XPos, YPos, CheckSize - 4, CheckSize - 4, 1, clChkboxOutline);
+      if fLines[I].Visible then
+        TKMRenderUI.WriteText(XPos + (CheckSize-4) div 2, YPos - 1, 0, 'v', MARKS_FONT, taCenter, NewColor);
+
+      //Legend
+      TKMRenderUI.WriteText(XPos + CheckSize, YPos, 0, fLines[I].Title, fnt_Game, taLeft, NewColor);
+      Inc(YPos, fItemHeight);
+    end;
+  end;
+
 var
   I: Integer;
-  G: TKMRect;
-  Best, TopValue, Tmp: Integer;
-  NewColor, TextColor: TColor4;
+  Best, Tmp: Integer;
 begin
   inherited;
 
@@ -7180,49 +7418,24 @@ begin
 
   //Dashed lines in the background
   if Best <> 0 then
-  for I := 1 to (TopValue div Best) do
-  begin
-    Tmp := G.Top + Round((1 - I * Best / TopValue) * (G.Bottom - G.Top));
-    TKMRenderUI.WriteText(G.Left - 5, Tmp - 6, 0, IntToStr(I * Best), fnt_Game, taRight);
-    TKMRenderUI.WriteLine(G.Left, Tmp, G.Right, Tmp, $FF606060, $CCCC);
-  end;
-
-  //Charts and legend
-  for I := 0 to fCount - 1 do
-  begin
-    //Adjust the color if it blends with black background
-    NewColor := EnsureColorBlend(fLines[I].Color);
-    TextColor := $FFFFFFFF;
-
-    if (csOver in State) and (I = fLineOver) then
+    for I := 1 to (TopValue div Best) do
     begin
-      NewColor := $FFFF00FF;
-      TextColor := $FFFF00FF;
+      Tmp := G.Top + Round((1 - I * Best / TopValue) * (G.Bottom - G.Top));
+      TKMRenderUI.WriteText(G.Left - 5, Tmp - 6, 0, IntToStr(I * Best), fnt_Game, taRight);
+      TKMRenderUI.WriteLine(G.Left, Tmp, G.Right, Tmp, clChartDashedHLn, $CCCC);
     end;
 
-    //Charts
-    if fLines[I].Visible then
-    begin
-      TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[I].Values, TopValue, NewColor, 2);
-      if Length(fLines[I].ValuesAlt) > 0 then
-        TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[I].ValuesAlt, TopValue, NewColor, 1);
-    end;
+  //Render horizontal axis ticks
+  RenderHorizontalAxisTicks;
 
-    //Checkboxes
-    TKMRenderUI.WriteShape(G.Right + 5, G.Top - 2 + I*fItemHeight+2, 11, 11, NewColor);
-    if fLines[I].Visible then
-      TKMRenderUI.WriteText(G.Right + 5, G.Top - 2 + I*fItemHeight - 1, 0, 'v', fnt_Game, taLeft, $FF000000);
-
-    //Legend
-    TKMRenderUI.WriteText(G.Right + 18, G.Top - 2 + I*fItemHeight, 0, fLines[I].Title, fnt_Game, taLeft, TextColor);
-  end;
+  RenderChartAndLegend;
 
   //Render the highlighted line above all the others and thicker so you can see where it goes under others
   if (csOver in State) and InRange(fLineOver, 0, fCount-1) and fLines[fLineOver].Visible then
-    TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[fLineOver].Values, TopValue, $FFFF00FF, 3);
+    TKMRenderUI.WritePlot(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, fLines[fLineOver].Values, TopValue, clChartHighlight, 3);
 
   //Outline
-  TKMRenderUI.WriteOutline(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, 1, $FFFFFFFF);
+  TKMRenderUI.WriteOutline(G.Left, G.Top, G.Right-G.Left, G.Bottom-G.Top, 1, icWhite);
 
   //Title
   TKMRenderUI.WriteText(G.Left + 5, G.Top + 5, 0, fCaption, fFont, taLeft);
@@ -7231,23 +7444,6 @@ begin
   TKMRenderUI.WriteText(G.Left - 5, G.Bottom - 6, 0, IntToStr(0), fnt_Game, taRight);
   //TKMRenderUI.WriteText(Left+20, Top + 20, 0, 0, IntToStr(fMaxValue), fnt_Game, taRight);
 
-  //Render horizontal axis ticks
-  //Find first interval that will have less than 10 ticks
-  Best := 0;
-  for I := Low(IntervalTime) to High(IntervalTime) do
-    if (fMaxTime-fMinTime) div IntervalTime[I] < 6 then
-    begin
-      Best := IntervalTime[I];
-      Break;
-    end;
-
-  //Paint time axis labels
-  if (Best <> 0) and (fMaxTime <> fMinTime) then
-  for I := Ceil(fMinTime / Best) to (fMaxTime div Best) do
-  begin
-    TKMRenderUI.WriteShape(G.Left + Round((I * Best - fMinTime) / (fMaxTime-fMinTime) * (G.Right - G.Left)), G.Bottom - 2, 2, 5, $FFFFFFFF);
-    TKMRenderUI.WriteText (G.Left + Round((I * Best - fMinTime) / (fMaxTime-fMinTime) * (G.Right - G.Left)), G.Bottom + 4, 0, TimeToString((I * Best) / 24 / 60 / 60), fnt_Game, taLeft);
-  end;
 end;
 
 

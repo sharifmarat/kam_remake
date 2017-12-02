@@ -18,6 +18,7 @@ type
     fViewRect: TKMRect;
     fZoom: Single;
     fPanTo, fPanFrom: TKMPointF;
+    fPanImmidiately : Boolean;
     fPanDuration, fPanProgress: Cardinal;
     function GetPosition: TKMPointF;
     procedure SetPosition(Value: TKMPointF);
@@ -38,8 +39,9 @@ type
     function GetClip: TKMRect; //returns visible area dimensions in map space
     function GetMinimapClip: TKMRect;
     procedure ReleaseScrollKeys;
-    function MapToScreen(aMapLoc: TKMPointF): TKMPoint;
-    procedure PanTo(aLoc: TKMPointF; aDuration: Cardinal);
+    procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+    function MapToScreen(const aMapLoc: TKMPointF): TKMPoint;
+    procedure PanTo(const aLoc: TKMPointF; aTicksCnt: Cardinal);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -52,7 +54,7 @@ implementation
 uses
   Math, KromUtils,
   KM_Resource, KM_ResCursors,
-  KM_Main, KM_GameApp, KM_Sound,
+  KM_Main, KM_GameApp, KM_Game, KM_Sound,
   KM_Defaults, KM_CommonUtils;
 
 
@@ -67,8 +69,8 @@ begin
   fZoom := 1;
   ReleaseScrollKeys;
   gSoundPlayer.UpdateListener(fPosition.X, fPosition.Y);
-  if gLoopSounds <> nil then
-    gLoopSounds.UpdateListener(fPosition.X, fPosition.Y);
+  if gScriptSounds <> nil then
+    gScriptSounds.UpdateListener(fPosition.X, fPosition.Y);
   Resize(aWidth, aHeight);
 end;
 
@@ -130,8 +132,8 @@ begin
   fPosition.X := EnsureRange(Value.X, TilesX, fMapX - TilesX - 1);
   fPosition.Y := EnsureRange(Value.Y, TilesY - PadTop, fMapY - TilesY - 1); //Top row should be visible
   gSoundPlayer.UpdateListener(fPosition.X, fPosition.Y);
-  if gLoopSounds <> nil then
-    gLoopSounds.UpdateListener(fPosition.X, fPosition.Y);
+  if gScriptSounds <> nil then
+    gScriptSounds.UpdateListener(fPosition.X, fPosition.Y);
 end;
 
 
@@ -170,21 +172,37 @@ begin
 end;
 
 
-function TKMViewport.MapToScreen(aMapLoc: TKMPointF): TKMPoint;
+procedure TKMViewport.GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+var
+  Koef: Single;
+begin
+  if (aFromSpeed > 0) and (fPanDuration > 0) and not fPanImmidiately then
+  begin
+    //Update PanDuration and Progress due to new game speed
+    Koef := aFromSpeed / aToSpeed;
+    fPanDuration := Round((fPanDuration - fPanProgress) * Koef);
+    fPanProgress := Round(fPanProgress * Koef);
+    Inc(fPanDuration, fPanProgress);
+  end;
+end;
+
+
+function TKMViewport.MapToScreen(const aMapLoc: TKMPointF): TKMPoint;
 begin
   Result.X := Round((aMapLoc.X - fPosition.X) * CELL_SIZE_PX * fZoom + fViewRect.Right / 2 + TOOLBAR_WIDTH / 2);
   Result.Y := Round((aMapLoc.Y - fPosition.Y) * CELL_SIZE_PX * fZoom + fViewRect.Bottom / 2);
 end;
 
 
-procedure TKMViewport.PanTo(aLoc: TKMPointF; aDuration: Cardinal);
+procedure TKMViewport.PanTo(const aLoc: TKMPointF; aTicksCnt: Cardinal);
 begin
   fPanTo := aLoc;
   fPanFrom := fPosition;
-  fPanDuration := aDuration;
+  fPanImmidiately := aTicksCnt = 0;
   fPanProgress := 0;
+  fPanDuration := Round(aTicksCnt * gGame.GameTickDuration);
   //Panning will be skipped when duration is zero
-  if aDuration = 0 then
+  if fPanImmidiately then
     SetPosition(aLoc);
 end;
 
@@ -211,13 +229,14 @@ begin
   //Cinematics do not allow normal scrolling. The camera will be set and panned with script commands
   if aInCinematic then
   begin
-    if fPanDuration <> 0 then
+    if not fPanImmidiately then
     begin
       Inc(fPanProgress, aFrameTime);
-      if fPanProgress > fPanDuration then
+      if fPanProgress >= fPanDuration then
       begin
         SetPosition(fPanTo); //Pan ended
-        fPanDuration := 0; //Not panning
+        fPanImmidiately := True; //Not panning
+        fPanDuration := 0;
       end
       else
         SetPosition(KMLerp(fPanFrom, fPanTo, fPanProgress / fPanDuration));

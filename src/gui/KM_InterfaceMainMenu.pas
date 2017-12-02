@@ -74,7 +74,7 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_Campaigns, KM_GameApp, KM_Game, KM_Log, KM_RenderUI, KM_ResFonts;
+  KM_Main, KM_ResTexts, KM_Campaigns, KM_GameApp, KM_Game, KM_Log, KM_RenderUI, KM_ResFonts;
 
 
 { TKMMainMenuInterface }
@@ -212,16 +212,21 @@ procedure TKMMainMenuInterface.PageChange(Dest: TKMMenuPageType; const aText: Un
 var
   I: Integer;
   cmp: TKMCampaignId;
+  Version: String;
 begin
-  Label_Version.Caption := 'KaM Remake - ' + GAME_VERSION + ' / ' + gGameApp.RenderVersion;
+  Version := GAME_VERSION + ' / ' + gGameApp.RenderVersion;
+  gMain.StatusBarText(SB_ID_KMR_VER,'KMR ' +  Version);
 
   //Hide all other pages
   for I := 0 to Panel_Menu.ChildCount - 1 do
     if Panel_Menu.Childs[I] is TKMPanel then
       Panel_Menu.Childs[I].Hide;
 
+  Label_Version.Caption := '';
+
   case Dest of
     gpMainMenu:     begin
+                      Label_Version.Caption := 'KAM Remake - ' + Version;
                       fMenuMain.Show;
                       fMenuPage := fMenuMain;
                     end;
@@ -277,6 +282,14 @@ begin
     gpReplays:      begin
                       fMenuReplays.Show;
                       fMenuPage := fMenuReplays;
+                    end;
+    gpResultsMP:    begin
+                      fMenuResultsMP.Show(gr_ShowStats);
+                      fMenuPage := fMenuResultsMP;
+                    end;
+    gpResultsSP:    begin
+                      fMenuResultsSP.Show(gr_ShowStats);
+                      fMenuPage := fMenuResultsSP;
                     end;
     gpError:        begin
                       fMenuError.Show(aText);
