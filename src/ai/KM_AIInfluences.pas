@@ -172,32 +172,45 @@ end;
 
 //AI should avoid certain areas, keeping them for special houses
 procedure TKMInfluences.InitInfluenceAvoid;
+  procedure CheckAndMarkMine(aX,aY: Integer; aHT: THouseType);
+  var
+    X,Y,X2,Y2: Integer;
+  begin
+    for Y := Max(1,aY-3) to Min(fMapY-1,aY-1) do
+    for X := Max(1,aX-1) to Min(fMapX-1,aX+1) do
+      if   ((aHT = ht_IronMine) AND (gTerrain.TileIsIron(X,Y) > 1))
+        OR ((aHT = ht_GoldMine) AND (gTerrain.TileIsGold(X,Y) > 1)) then
+      begin
+        for Y2 := aY to Min(fMapY-1,aY+1) do
+        for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = ht_IronMine)) do
+          AvoidBuilding[Y2, X2] := 255;
+        Exit;
+      end;
+  end;
 var
   S: TKMHouse;
   I, K, J: Integer;
-  M: Integer;
-  N: Integer;
 begin
   //Avoid areas where Gold/Iron mines should be
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-  if (gTerrain.TileIsIron(K, I) > 1) or (gTerrain.TileIsGold(K, I) > 1) then
-    for M := I to Min(I + 2, fMapY - 1) do
-    for N := Max(K - 1, 1) to Min(K + 1, fMapX - 1) do
-      AvoidBuilding[M, N] := 255;
+  for I := 3 to fMapY - 2 do
+  for K := 2 to fMapX - 2 do
+    if gTerrain.CanPlaceHouse(KMPoint(K,I), ht_IronMine) then
+      CheckAndMarkMine(K,I, ht_IronMine)
+    else if gTerrain.CanPlaceHouse(KMPoint(K,I), ht_GoldMine) then
+      CheckAndMarkMine(K,I, ht_GoldMine);
 
   //Avoid Coal fields
   for I := 1 to fMapY - 1 do
   for K := 1 to fMapX - 1 do
    AvoidBuilding[I,K] := AvoidBuilding[I,K] or (Byte(gTerrain.TileIsCoal(K, I) > 1) * $FF);
 
-  //Leave free space below all players Stores
+  //Leave free space BELOW all players Stores
   for J := 0 to gHands.Count - 1 do
   begin
     S := gHands[J].FindHouse(ht_Store);
-    if S <> nil then
-    for I := Max(S.Entrance.Y - 3, 1) to Min(S.Entrance.Y + 2, fMapY - 1) do
-    for K := Max(S.Entrance.X - 2, 1) to Min(S.Entrance.X + 2, fMapX - 1) do
+    if (S <> nil) then
+    for I := Max(S.Entrance.Y + 1, 1) to Min(S.Entrance.Y + 2, fMapY - 1) do
+    for K := Max(S.Entrance.X - 1, 1) to Min(S.Entrance.X + 1, fMapX - 1) do
       AvoidBuilding[I,K] := AvoidBuilding[I,K] or $FF;
   end;
 end;
