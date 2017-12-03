@@ -32,6 +32,15 @@ uses
   KM_AIMayorBalance in 'src\ai\KM_AIMayorBalance.pas',
   KM_AISetup in 'src\ai\KM_AISetup.pas',
 
+  KM_Eye in 'src\ai\newAI\KM_Eye.pas',
+  KM_CityManagement in 'src\ai\newAI\KM_CityManagement.pas',
+  KM_CityPredictor in 'src\ai\newAI\KM_CityPredictor.pas',
+  KM_CityBuilder in 'src\ai\newAI\KM_CityBuilder.pas',
+  KM_CityPlanner in 'src\ai\newAI\KM_CityPlanner.pas',
+  KM_ArmyManagement in 'src\ai\newAI\KM_ArmyManagement.pas',
+  KM_ArmyAttack in 'src\ai\newAI\KM_ArmyAttack.pas',
+  KM_ArmyPresence in 'src\ai\newAI\KM_ArmyPresence.pas',
+
   KM_Alerts in 'src\KM_Alerts.pas',
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
@@ -162,6 +171,7 @@ uses
   KM_Outline in 'src\navmesh\KM_Outline.pas',
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',
   KM_PolySimplify in 'src\navmesh\KM_PolySimplify.pas',
+  KM_NavMeshPathFinding in 'src\navmesh\KM_NavMeshPathFinding.pas',
 
   {$IFDEF USESECUREAUTH}
     KM_NetAuthSecure in 'src\net\KM_NetAuthSecure.pas',
@@ -275,6 +285,7 @@ uses
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
+  KM_FloodFill in 'src\utils\KM_FloodFill.pas',
 	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas';
