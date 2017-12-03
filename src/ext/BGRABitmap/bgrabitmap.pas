@@ -4,9 +4,7 @@
                                 --------------
                  Free easy-to-use memory bitmap 32-bit,
                  8-bit for each channel, transparency.
-                 Channels can be in the following orders:
-                 - B G R A (recommended for Windows, required for fpGUI)
-                 - R G B A (recommended for Gtk and MacOS)
+                 Channels in that order : B G R A
 
                  - Drawing primitives
                  - Resample
@@ -39,7 +37,6 @@
 unit BGRABitmap;
 
 {$mode objfpc}{$H+}
-{$i bgrabitmap.inc}
 
 interface
 
@@ -48,66 +45,42 @@ interface
 
 uses
   Classes, SysUtils,
-{$IFDEF BGRABITMAP_USE_FPGUI}
-    BGRAfpGUIBitmap,
+{$IFDEF LCLwin32}
+  BGRAWinBitmap,
 {$ELSE}
-	{$IFDEF BGRABITMAP_USE_LCL}
-	  {$IFDEF LCLwin32}
-		BGRAWinBitmap,
-	  {$ELSE}
-		{$IFDEF LCLgtk}
-		BGRAGtkBitmap,
-		{$ELSE}
-		  {$IFDEF LCLgtk2}
-		BGRAGtkBitmap,
-		  {$ELSE}
-			{$IFDEF LCLqt}
-		BGRAQtBitmap,
-			{$ELSE}
-              {$IFDEF DARWIN}
-        BGRAMacBitmap,
-              {$ELSE}
-		BGRALCLBitmap,
-              {$ENDIF}
-			{$ENDIF}
-		  {$ENDIF}
-		{$ENDIF}
-	  {$ENDIF}
-	{$ELSE}
-	  BGRANoGuiBitmap,
-	{$ENDIF}
+  {$IFDEF LCLgtk}
+  BGRAGtkBitmap,
+  {$ELSE}
+    {$IFDEF LCLgtk2}
+  BGRAGtkBitmap,
+    {$ELSE}
+      {$IFDEF LCLqt}
+  BGRAQtBitmap,
+      {$ELSE}
+  BGRADefaultBitmap,
+      {$ENDIF} 
+    {$ENDIF}
+  {$ENDIF}
 {$ENDIF}
-  BGRAGraphics;
+  Graphics;
 
 type
-{$IFDEF BGRABITMAP_USE_FPGUI}
-  TBGRABitmap = class(TBGRAfpGUIBitmap);
+{$IFDEF LCLwin32}
+  TBGRABitmap = TBGRAWinBitmap;
 {$ELSE}
-    {$IFDEF BGRABITMAP_USE_LCL}
-      {$IFDEF LCLwin32}
-        TBGRABitmap = class(TBGRAWinBitmap);
-      {$ELSE}
-        {$IFDEF LCLgtk}
-        TBGRABitmap = class(TBGRAGtkBitmap);
-        {$ELSE}
-          {$IFDEF LCLgtk2}
-        TBGRABitmap = class(TBGRAGtkBitmap);
-          {$ELSE}
-            {$IFDEF LCLqt}
-        TBGRABitmap = class(TBGRAQtBitmap);
-            {$ELSE}
-              {$IFDEF DARWIN}
-        TBGRABitmap = class(TBGRAMacBitmap);
-              {$ELSE}
-        TBGRABitmap = class(TBGRALCLBitmap);
-              {$ENDIF}
-            {$ENDIF}
-          {$ENDIF}
-        {$ENDIF}
-      {$ENDIF}
+  {$IFDEF LCLgtk}
+  TBGRABitmap = TBGRAGtkBitmap;
+  {$ELSE}
+    {$IFDEF LCLgtk2}
+  TBGRABitmap = TBGRAGtkBitmap;
     {$ELSE}
-      TBGRABitmap = class(TBGRANoGUIBitmap);
+      {$IFDEF LCLqt}
+  TBGRABitmap = TBGRAQtBitmap;
+      {$ELSE}
+  TBGRABitmap = TBGRADefaultBitmap;
+      {$ENDIF}
     {$ENDIF}
+  {$ENDIF}
 {$ENDIF}
 
 // draw a bitmap from pure data
@@ -132,36 +105,31 @@ procedure BGRABitmapDraw(ACanvas: TCanvas; Rect: TRect; AData: Pointer;
   
   begin
     ...
-    BGRAReplace(someBmp, someBmp.Filter... );
+    BGRAReplace(temp, someBmp.Filter... );
   end;
 }
 procedure BGRAReplace(var Destination: TBGRABitmap; Temp: TObject);
 
 implementation
 
-uses BGRABitmapTypes, BGRAReadBMP, BGRAReadBmpMioMap, BGRAReadGif,
-  BGRAReadIco, BGRAReadJpeg, BGRAReadLzp, BGRAReadPCX,
-  BGRAReadPng, BGRAReadPSD, BGRAReadTGA, BGRAReadXPM,
-  BGRAWriteLzp;
+uses GraphType;
 
 var
-  tempBmp: TBGRABitmap;
+  bmp: TBGRABitmap;
 
 procedure BGRABitmapDraw(ACanvas: TCanvas; Rect: TRect; AData: Pointer;
   VerticalFlip: boolean; AWidth, AHeight: integer; Opaque: boolean);
 var
   LineOrder: TRawImageLineOrder;
 begin
-  if tempBmp = nil then
-    tempBmp := TBGRABitmap.Create;
   if VerticalFlip then
     LineOrder := riloBottomToTop
   else
     LineOrder := riloTopToBottom;
   if Opaque then
-    tempBmp.DataDrawOpaque(ACanvas, Rect, AData, LineOrder, AWidth, AHeight)
+    bmp.DataDrawOpaque(ACanvas, Rect, AData, LineOrder, AWidth, AHeight)
   else
-    tempBmp.DataDrawTransparent(ACanvas, Rect, AData, LineOrder, AWidth, AHeight);
+    bmp.DataDrawTransparent(ACanvas, Rect, AData, LineOrder, AWidth, AHeight);
 end;
 
 procedure BGRAReplace(var Destination: TBGRABitmap; Temp: TObject);
@@ -172,13 +140,13 @@ end;
 
 initialization
 
-  //this variable is assigned to access appropriate functions
+  //this variable is created to access appropriate functions
   //depending on the platform
-  BGRABitmapFactory := TBGRABitmap;
+  bmp := TBGRABitmap.Create(0, 0);
 
 finalization
 
-  tempBmp.Free;
+  bmp.Free;
 
 end.
 
