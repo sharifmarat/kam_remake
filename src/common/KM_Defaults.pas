@@ -174,7 +174,7 @@ var
   //Statistic
   CtrlPaintCount: Word; //How many Controls were painted in last frame
   {AI_GA_Tests}
-  GA_PLANNER            :Boolean = True;
+  GA_PLANNER            :Boolean = False;
 
 
 const
