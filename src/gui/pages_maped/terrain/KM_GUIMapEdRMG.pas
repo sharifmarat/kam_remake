@@ -87,8 +87,7 @@ var
 begin
   inherited Create;
 
-//  Panel_RMG := TKMPanel.Create(aParent, POS_X, POS_Y, SIZE_X, SIZE_Y);
-  Panel_RMG := TKMPanel.Create(aParent, (aParent.Width - SIZE_X) div 2, (aParent.Height - SIZE_Y) div 2, SIZE_X, SIZE_Y);
+  Panel_RMG := TKMPanel.Create(aParent, POS_X, POS_Y, SIZE_X, SIZE_Y);
   Panel_RMG.AnchorsCenter;
   Panel_RMG.Hide;
 
@@ -138,7 +137,7 @@ begin
   Column_2_Y := 20;
   TKMLabel.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 280, 0, 'Obstacles', fnt_Metal, taLeft);
   Check_Obstacles := TKMCheckBox.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), BOX_X, BOX_Y, 'Obstacles', fnt_Metal);
-  Check_Obstacles.Checked := True;//True;
+  Check_Obstacles.Checked := False;//True;
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'EGold', fnt_Metal, taLeft);
   TBar_NonWalk_EGold := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
   TBar_NonWalk_EGold.Position := 6;
@@ -169,7 +168,7 @@ begin
   Column_3_Y := 20;
   TKMLabel.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 180, 0, 'Walk textures', fnt_Metal, taLeft);
   Check_Biomes := TKMCheckBox.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), BOX_X, BOX_Y, 'Biomes', fnt_Metal);
-  Check_Biomes.Checked := True;//True;
+  Check_Biomes.Checked := False;//True;
     CheckGroup_Grass := TKMRadioGroup.Create(Panel_RMG, Column_3_X+OFFSET_1, NextLine(Column_3_Y), BOX_X, BOX_Y, fnt_Metal);
     CheckGroup_Grass.Add('Grass',False); // Just for information purposes (grass must be there always)
     CheckGroup_Grass.ItemIndex := 0;
@@ -179,7 +178,7 @@ begin
     Check_Snow.Checked := True;
     Check_Sand := TKMCheckBox.Create(Panel_RMG, Column_3_X+OFFSET_1, NextLine(Column_3_Y), BOX_X, BOX_Y, 'Sand', fnt_Metal);
     Check_Sand.Checked := True;
-
+  // First Layer
   TKMLabel.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 180, 0, 'First layer', fnt_Metal, taLeft);
     TKMLabel.Create(Panel_RMG, Column_3_X+OFFSET_1, NextLine(Column_3_Y), 180, 0, 'Step', fnt_Metal, taLeft);
     TBar_Biomes1_Step := TKMTrackBar.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 120, 1, 10);
@@ -187,7 +186,7 @@ begin
     TKMLabel.Create(Panel_RMG, Column_3_X+OFFSET_1, NextLine(Column_3_Y), 220, 0, 'Limit', fnt_Metal, taLeft);
     TBar_Biomes1_Limit := TKMTrackBar.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 120, 1, 10);
     TBar_Biomes1_Limit.Position := 6;
-
+  // Second Layer
   TKMLabel.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 180, 0, 'Second layer', fnt_Metal, taLeft);
     TKMLabel.Create(Panel_RMG, Column_3_X+OFFSET_1, NextLine(Column_3_Y), 180, 0, 'Step', fnt_Metal, taLeft);
     TBar_Biomes2_Step := TKMTrackBar.Create(Panel_RMG, Column_3_X, NextLine(Column_3_Y), 120, 3, 10);
@@ -201,7 +200,7 @@ begin
   Column_4_Y := 20;
   TKMLabel.Create(Panel_RMG, Column_4_X, NextLine(Column_4_Y), 'Height', fnt_Metal, taLeft);
   Check_Height := TKMCheckBox.Create(Panel_RMG, Column_4_X+OFFSET_1, NextLine(Column_4_Y), BOX_X, BOX_Y, 'Active', fnt_Metal);
-  Check_Height.Checked := True;//True;
+  Check_Height.Checked := False;//True;
   Check_HideNonSmoothTransition := TKMCheckBox.Create(Panel_RMG, Column_4_X+OFFSET_1, NextLine(Column_4_Y), BOX_X, BOX_Y, 'H_N-S_T', fnt_Metal);
   Check_HideNonSmoothTransition.Checked := True;
 // COLUMN 4: One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
@@ -213,7 +212,7 @@ begin
 // COLUMN 4: Objects
   TKMLabel.Create(Panel_RMG, Column_4_X, NextLine(Column_4_Y), 'Objects', fnt_Metal, taLeft);
   Check_Objects := TKMCheckBox.Create(Panel_RMG, Column_4_X+OFFSET_1, NextLine(Column_4_Y), BOX_X, BOX_Y, 'Active', fnt_Metal);
-  Check_Objects.Checked := True;
+  Check_Objects.Checked := False;
   Check_Animals := TKMCheckBox.Create(Panel_RMG, Column_4_X+OFFSET_1, NextLine(Column_4_Y), BOX_X, BOX_Y, 'Animals', fnt_Metal);
   Check_Animals.Checked := True;
   TKMLabel.Create(Panel_RMG, Column_4_X+OFFSET_1, NextLine(Column_4_Y), 'Density', fnt_Metal, taLeft);
@@ -236,9 +235,9 @@ begin
   TBar_Players.Position := 4;
 
 
-  Check_BasicTiles := TKMCheckBox.Create(Panel_RMG, 360, NextLine(Column_4_Y), BOX_X, BOX_Y, 'BasicTiles', fnt_Metal);
+  Check_BasicTiles := TKMCheckBox.Create(Panel_RMG, 400, NextLine(Column_4_Y), BOX_X, BOX_Y, 'BasicTiles', fnt_Metal);
   Check_BasicTiles.Checked := False;
-  Check_CA := TKMCheckBox.Create(Panel_RMG, 360, NextLine(Column_4_Y), BOX_X, BOX_Y, 'Cellular automaton', fnt_Metal);
+  Check_CA := TKMCheckBox.Create(Panel_RMG, 400, NextLine(Column_4_Y), BOX_X, BOX_Y, 'Cellular automaton', fnt_Metal);
   Check_CA.Checked := True;
 
 
