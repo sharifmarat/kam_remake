@@ -1,20 +1,18 @@
 unit BGRAGradients;
 
 {$mode objfpc}{$H+}
-{$i bgrabitmap.inc}
-{$i bgrasse.inc}
 
 interface
 
 { Here are various functions that draw gradients, shadow and lighting }
 
 uses
-  Classes, BGRAGraphics, BGRABitmapTypes, BGRABitmap, BGRABlend, BGRAPhongTypes, BGRASSE;
+  Graphics, Classes, BGRABitmap, BGRABitmapTypes, BGRABlend
+  {$ifdef CPUI386},mmx{$endif};
 
-{$IFDEF BGRABITMAP_USE_LCL}{ Creates a bitmap with the specified text horizontally centered and with a shadow }
+{ Creates a bitmap with the specified text horizontally centered and with a shadow }
 function TextShadow(AWidth,AHeight: Integer; AText: String; AFontHeight: Integer; ATextColor,AShadowColor: TBGRAPixel;
   AOffSetX,AOffSetY: Integer; ARadius: Integer = 0; AFontStyle: TFontStyles = []; AFontName: String = 'Default'; AShowText: Boolean = True): TBGRABitmap;
-{$ENDIF}
 
 {----------------------------------------------------------------------}
 { Functions to draw multiple gradients.
@@ -55,13 +53,14 @@ type
 
   { TPhongShading }
 
-  TPhongShading = class(TCustomPhongShading)
+  TPhongShading = class
     LightSourceIntensity : Single; //global intensity of the light
 
     LightSourceDistanceTerm,       //minimum distance always added (positive value)
     LightSourceDistanceFactor,     //how much actual distance is taken into account (usually 0 or 1)
     LightDestFactor : Single;      //how much the location of the lightened pixel is taken into account (usually 0 or 1)
 
+    LightPosition : TPoint;
     LightPositionZ : Integer;
     LightColor: TBGRAPixel;        //color of the light reflection
 
@@ -77,71 +76,40 @@ type
 
     { Render the specified map on the destination bitmap with one solid color. Map altitude
       indicate the global height of the map. }
-    procedure Draw(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   Color : TBGRAPixel); override;
+    procedure Draw(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
+                   Color : TBGRAPixel);
 
     { Render with a color map of the same size as the height map. Map altitude
       indicate the global height of the map. }
-    procedure Draw(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorMap : TBGRACustomBitmap); override;
-
-    { Render with a color scanner. Map altitude
-      indicate the global height of the map. }
-    procedure DrawScan(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorScan : IBGRAScanner); override;
+    procedure Draw(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
+                   ColorMap : TBGRABitmap);
 
     { Draw a cone of the specified color }
-    procedure DrawCone(dest: TBGRACustomBitmap; X,Y,Size,Altitude: Integer; Color: TBGRAPixel); overload;
-    procedure DrawCone(dest: TBGRACustomBitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel); overload;
-
-    { Draw a vertical cone of the specified color }
-    procedure DrawVerticalCone(dest: TBGRACustomBitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
-
-    { Draw an horizontal cylinder of the specified color }
-    procedure DrawHorizontalCylinder(dest: TBGRACustomBitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
-
-    { Draw a vertical cylinder of the specified color }
-    procedure DrawVerticalCylinder(dest: TBGRACustomBitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
+    procedure DrawCone(dest: TBGRABitmap; X,Y,Size,Altitude: Integer; Color: TBGRAPixel);
 
     { Draw a hemisphere of the specified color }
-    procedure DrawSphere(dest: TBGRACustomBitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
+    procedure DrawSphere(dest: TBGRABitmap; bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
 
     { Draw a rectangle of the specified color }
-    procedure DrawRectangle(dest: TBGRACustomBitmap; bounds: TRect; Border,Altitude: Integer; Color: TBGRAPixel; RoundCorners: Boolean; Options: TRectangleMapOptions);
+    procedure DrawRectangle(dest: TBGRABitmap; bounds: TRect; Border,Altitude: Integer; Color: TBGRAPixel; RoundCorners: Boolean; Options: TRectangleMapOptions);
   protected
 
-    procedure DrawMapNormal(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorMap : TBGRACustomBitmap);
-    procedure DrawScannerNormal(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorScan : IBGRAScanner);
-    procedure DrawColorNormal(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
+    procedure DrawMapNormal(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
+                   ColorMap : TBGRABitmap);
+    procedure DrawColorNormal(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
                    Color : TBGRAPixel);
 
-    {$ifdef BGRASSE_AVAILABLE}
-    procedure DrawMapSSE(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorMap : TBGRACustomBitmap);
-    procedure DrawScannerSSE(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
-                   ColorScan : IBGRAScanner);
-    procedure DrawColorSSE(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
+    {$ifdef CPUI386}
+    procedure DrawMapSSE(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
+                   ColorMap : TBGRABitmap);
+    procedure DrawColorSSE(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
                    Color : TBGRAPixel);
     {$endif}
 
   end;
 
-{ Create a grayscale height map for a cone (may not be precise enough) }
+{ Create a grayscale height map for a cone }
 function CreateConeMap(size: integer): TBGRABitmap;
-
-{ Create a precise height map for a cone (not grayscale anymore but more precise) }
-function CreateConePreciseMap(width,height: integer): TBGRABitmap;
-
-{ Create a precise height map for a vertical cone (not grayscale anymore but more precise) }
-function CreateVerticalConePreciseMap(width,height: integer): TBGRABitmap;
-
-{ Create a precise height map for a vertical cylinder (not grayscale anymore but more precise) }
-function CreateVerticalCylinderPreciseMap(width,height: integer): TBGRABitmap;
-
-{ Create a precise height map for an horizontal cylinder (not grayscale anymore but more precise) }
-function CreateHorizontalCylinderPreciseMap(width,height: integer): TBGRABitmap;
 
 { Create a grayscale height map for a sphere (may not be precise enough) }
 function CreateSphereMap(width,height: integer): TBGRABitmap;
@@ -152,14 +120,14 @@ function CreateSpherePreciseMap(width,height: integer): TBGRABitmap;
 { Create a rectangle height map with a border }
 function CreateRectangleMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
 
-{ Create a precise height map for a rectangle height map with a border (not grayscale anymore but more precise) }
-function CreateRectanglePreciseMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
-
 { Create a round rectangle height map with a border }
 function CreateRoundRectangleMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
 
-{ Create a precise height map for a round rectangle height map with a border (not grayscale anymore but more precise) }
-function CreateRoundRectanglePreciseMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
+{ Get height [0..1] stored in a TBGRAPixel }
+function MapHeight(Color: TBGRAPixel): Single;
+
+{ Get TBGRAPixel to store height [0..1] }
+function MapHeightToBGRA(Height: Single; Alpha: Byte): TBGRAPixel;
 
 {---------- Perlin Noise -------------}
 { Random image using a superposition of interpolated random values.
@@ -176,15 +144,38 @@ function CreateCyclicPerlinNoiseMap(AWidth, AHeight: integer; HorizontalPeriod: 
 
 implementation
 
-uses Types, SysUtils{$IFDEF BGRABITMAP_USE_LCL}, BGRATextFX{$ENDIF}; {GraphType unit used by phongdraw.inc}
+uses Types, SysUtils;
 
-{$IFDEF BGRABITMAP_USE_LCL}function TextShadow(AWidth, AHeight: Integer; AText: String;
-  AFontHeight: Integer; ATextColor, AShadowColor: TBGRAPixel; AOffSetX,
-  AOffSetY: Integer; ARadius: Integer; AFontStyle: TFontStyles;
-  AFontName: String; AShowText: Boolean): TBGRABitmap;
+function TextShadow(AWidth,AHeight: Integer; AText: String; AFontHeight: Integer; ATextColor,AShadowColor: TBGRAPixel;
+  AOffSetX,AOffSetY: Integer; ARadius: Integer = 0; AFontStyle: TFontStyles = []; AFontName: String = 'Default'; AShowText: Boolean = True): TBGRABitmap;
+var
+  bmpOut,bmpSdw: TBGRABitmap; OutTxtSize: TSize; OutX,OutY: Integer;
 begin
-  result := BGRATextFX.TextShadow(AWidth,AHeight,AText,AFontHeight,ATextColor,AShadowColor,AOffsetX,AOffsetY,ARadius,AFontStyle,AFontName,AShowText) as TBGRABitmap;
-end;{$ENDIF}
+  bmpOut:= TBGRABitmap.Create(AWidth,AHeight);
+  bmpOut.FontAntialias:= True;
+  bmpOut.FontHeight:= AFontHeight;
+  bmpOut.FontStyle:= AFontStyle;
+  bmpOut.FontName:= AFontName;
+
+  OutTxtSize:= bmpOut.TextSize(AText);
+  OutX:= Round(AWidth/2) - Round(OutTxtSize.cx/2);
+  OutY:= Round(AHeight/2) - Round(OutTxtSize.cy/2);
+
+  bmpSdw:= TBGRABitmap.Create(OutTxtSize.cx+2*ARadius,OutTxtSize.cy+2*ARadius);
+  bmpSdw.FontAntialias:= True;
+  bmpSdw.FontHeight:= AFontHeight;
+  bmpSdw.FontStyle:= AFontStyle;
+  bmpSdw.FontName:= AFontName;
+
+  bmpSdw.TextOut(ARadius,ARadius,AText,AShadowColor);
+  BGRAReplace(bmpSdw,bmpSdw.FilterBlurRadial(ARadius,rbFast));
+  bmpOut.PutImage(OutX+AOffSetX-ARadius,OutY+AOffSetY-ARadius,bmpSdw,dmDrawWithTransparency);
+  bmpSdw.Free;
+
+  if AShowText = True then bmpOut.TextOut(OutX,OutY,AText,ATextColor);
+
+  Result:= bmpOut;
+end;
 
 function nGradientInfo(StartColor, StopColor: TBGRAPixel;
   Direction: TGradientDirection; EndPercent: Single): TnGradientInfo;
@@ -367,6 +358,69 @@ begin
   LightPositionZ := 100;
 end;
 
+type
+  TVector3D = record x,y,z,t: single; end;
+
+function Vector3D(x,y,z: single): TVector3D; inline;
+begin
+  result.x := x;
+  result.y := y;
+  result.z := z;
+  result.t := 0;
+end;
+
+function Vector3D(x,y,z,t: single): TVector3D; inline; overload;
+begin
+  result.x := x;
+  result.y := y;
+  result.z := z;
+  result.t := t;
+end;
+
+operator + (const v1,v2: TVector3D): TVector3D; inline;
+begin
+  result.x := v1.x+v2.x;
+  result.y := v1.y+v2.y;
+  result.z := v1.z+v2.z;
+end;
+
+operator - (const v1,v2: TVector3D): TVector3D; inline;
+begin
+  result.x := v1.x-v2.x;
+  result.y := v1.y-v2.y;
+  result.z := v1.z-v2.z;
+end;
+
+operator * (const v1: TVector3D; const factor: single): TVector3D; inline;
+begin
+  result.x := v1.x*factor;
+  result.y := v1.y*factor;
+  result.z := v1.z*factor;
+end;
+
+operator * (const v1,v2: TVector3D): single; inline;
+begin
+  result := v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
+end;
+
+procedure normalize(var v: TVector3D); inline;
+var len: double;
+begin
+  len := v*v;
+  if len = 0 then exit;
+  len := sqrt(len);
+  v.x /= len;
+  v.y /= len;
+  v.z /= len;
+end;
+
+procedure vectproduct(u,v: TVector3D; out w: TVector3D); overload;
+begin
+  w.x := u.y*v.z-u.z*v.y;
+  w.y := u.z*v.x-u.x*v.z;
+  w.z := u.x*v.Y-u.y*v.x;
+end;
+
 Const
   PhongLightPrecisionSh = 12;
   PhongLightPrecision = 1 shl PhongLightPrecisionSh;
@@ -374,139 +428,44 @@ Const
 
 {------------------ Phong drawing ----------------}
 { Look for the fastest method available }
-procedure TPhongShading.Draw(dest: TBGRACustomBitmap; map: TBGRACustomBitmap; mapAltitude: integer; ofsX,ofsY: integer;
+procedure TPhongShading.Draw(dest: TBGRABitmap; map: TBGRABitmap; mapAltitude: integer; ofsX,ofsY: integer;
                              Color : TBGRAPixel);
 begin
-  {$ifdef BGRASSE_AVAILABLE}
-    if UseSSE then
+  {$ifdef CPUI386}
+    if is_sse_cpu then
       DrawColorSSE(dest,map,mapAltitude,ofsX,ofsY,Color)
     else
-  {$endif}
       DrawColorNormal(dest,map,mapAltitude,ofsX,ofsY,Color);
+  {$else}
+    DrawColorNormal(dest,map,mapAltitude,ofsX,ofsY,Color);
+  {$endif}
 end;
 
-procedure TPhongShading.Draw(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
-            mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRACustomBitmap);
+procedure TPhongShading.Draw(dest: TBGRABitmap; map: TBGRABitmap;
+            mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRABitmap);
 begin
-  {$ifdef BGRASSE_AVAILABLE}
-    if UseSSE then
+  {$ifdef CPUI386}
+    if is_sse_cpu then
       DrawMapSSE(dest,map,mapAltitude,ofsX,ofsY,ColorMap)
     else
-  {$endif}
       DrawMapNormal(dest,map,mapAltitude,ofsX,ofsY,ColorMap);
-end;
-
-procedure TPhongShading.DrawScan(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
-  mapAltitude: integer; ofsX, ofsY: integer; ColorScan: IBGRAScanner);
-begin
-  {$ifdef BGRASSE_AVAILABLE}
-    if UseSSE then
-      DrawScannerSSE(dest,map,mapAltitude,ofsX,ofsY,ColorScan)
-    else
+  {$else}
+    DrawMapNormal(dest,map,mapAltitude,ofsX,ofsY,ColorMap);
   {$endif}
-      DrawScannerNormal(dest,map,mapAltitude,ofsX,ofsY,ColorScan);
 end;
 
   {------------------ End of phong drawing ----------------}
 
-procedure TPhongShading.DrawCone(dest: TBGRACustomBitmap; X, Y, Size,
+procedure TPhongShading.DrawCone(dest: TBGRABitmap; X, Y, Size,
   Altitude: Integer; Color: TBGRAPixel);
 var map: TBGRABitmap;
 begin
-  map := CreateConePreciseMap(Size,Size);
+  map := CreateConeMap(Size);
   Draw(dest,map,Altitude,X,Y,Color);
   map.Free;
 end;
 
-procedure TPhongShading.DrawCone(dest: TBGRACustomBitmap; bounds: TRect;
-  Altitude: Integer; Color: TBGRAPixel);
-var map: TBGRABitmap;
-    temp: integer;
-begin
-  if Bounds.Right < Bounds.Left then
-  begin
-    temp := Bounds.Left;
-    bounds.Left := bounds.Right;
-    Bounds.Right := temp;
-  end;
-  if Bounds.Bottom < Bounds.Top then
-  begin
-    temp := Bounds.Bottom;
-    bounds.Bottom := bounds.Top;
-    Bounds.Top := temp;
-  end;
-  map := CreateConePreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top);
-  Draw(dest,map,Altitude,bounds.Left,bounds.Top,Color);
-  map.Free;
-end;
-
-procedure TPhongShading.DrawVerticalCone(dest: TBGRACustomBitmap;
-  bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
-var map: TBGRABitmap;
-    temp: integer;
-begin
-  if Bounds.Right < Bounds.Left then
-  begin
-    temp := Bounds.Left;
-    bounds.Left := bounds.Right;
-    Bounds.Right := temp;
-  end;
-  if Bounds.Bottom < Bounds.Top then
-  begin
-    temp := Bounds.Bottom;
-    bounds.Bottom := bounds.Top;
-    Bounds.Top := temp;
-  end;
-  map := CreateVerticalConePreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top);
-  Draw(dest,map,Altitude,bounds.Left,bounds.Top,Color);
-  map.Free;
-end;
-
-procedure TPhongShading.DrawHorizontalCylinder(dest: TBGRACustomBitmap;
-  bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
-var map: TBGRABitmap;
-    temp: integer;
-begin
-  if Bounds.Right < Bounds.Left then
-  begin
-    temp := Bounds.Left;
-    bounds.Left := bounds.Right;
-    Bounds.Right := temp;
-  end;
-  if Bounds.Bottom < Bounds.Top then
-  begin
-    temp := Bounds.Bottom;
-    bounds.Bottom := bounds.Top;
-    Bounds.Top := temp;
-  end;
-  map := CreateHorizontalCylinderPreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top);
-  Draw(dest,map,Altitude,bounds.Left,bounds.Top,Color);
-  map.Free;
-end;
-
-procedure TPhongShading.DrawVerticalCylinder(dest: TBGRACustomBitmap;
-  bounds: TRect; Altitude: Integer; Color: TBGRAPixel);
-var map: TBGRABitmap;
-    temp: integer;
-begin
-  if Bounds.Right < Bounds.Left then
-  begin
-    temp := Bounds.Left;
-    bounds.Left := bounds.Right;
-    Bounds.Right := temp;
-  end;
-  if Bounds.Bottom < Bounds.Top then
-  begin
-    temp := Bounds.Bottom;
-    bounds.Bottom := bounds.Top;
-    Bounds.Top := temp;
-  end;
-  map := CreateVerticalCylinderPreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top);
-  Draw(dest,map,Altitude,bounds.Left,bounds.Top,Color);
-  map.Free;
-end;
-
-procedure TPhongShading.DrawSphere(dest: TBGRACustomBitmap; bounds: TRect;
+procedure TPhongShading.DrawSphere(dest: TBGRABitmap; bounds: TRect;
   Altitude: Integer; Color: TBGRAPixel);
 var map: TBGRABitmap;
     temp: integer;
@@ -528,7 +487,7 @@ begin
   map.Free;
 end;
 
-procedure TPhongShading.DrawRectangle(dest: TBGRACustomBitmap; bounds: TRect;
+procedure TPhongShading.DrawRectangle(dest: TBGRABitmap; bounds: TRect;
   Border,Altitude: Integer; Color: TBGRAPixel; RoundCorners: Boolean; Options: TRectangleMapOptions);
 var map: TBGRABitmap;
     temp: integer;
@@ -545,55 +504,33 @@ begin
     bounds.Bottom := bounds.Top;
     Bounds.Top := temp;
   end;
-  if border > 10 then
-  begin
-    if RoundCorners then
-      map := CreateRoundRectanglePreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options)
-    else
-      map := CreateRectanglePreciseMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options);
-  end else
-  begin
-    if RoundCorners then
-      map := CreateRoundRectangleMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options)
-    else
-      map := CreateRectangleMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options);
-  end;
+  if RoundCorners then
+    map := CreateRoundRectangleMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options)
+  else
+    map := CreateRectangleMap(Bounds.Right-Bounds.Left,Bounds.Bottom-Bounds.Top,Border,Options);
   Draw(dest,map,Altitude,bounds.Left,bounds.Top,Color);
   map.Free;
 end;
 
-procedure TPhongShading.DrawMapNormal(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
-  mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRACustomBitmap);
+procedure TPhongShading.DrawMapNormal(dest: TBGRABitmap; map: TBGRABitmap;
+  mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRABitmap);
   {$I phongdraw.inc }
 
-procedure TPhongShading.DrawColorNormal(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
+procedure TPhongShading.DrawColorNormal(dest: TBGRABitmap; map: TBGRABitmap;
   mapAltitude: integer; ofsX, ofsY: integer; Color: TBGRAPixel);
   {$define PARAM_SIMPLECOLOR}
   {$I phongdraw.inc }
 
-procedure TPhongShading.DrawScannerNormal(dest: TBGRACustomBitmap;
-  map: TBGRACustomBitmap; mapAltitude: integer; ofsX, ofsY: integer;
-  ColorScan: IBGRAScanner);
-  {$define PARAM_SCANNER}
-  {$I phongdraw.inc }
-
-{$ifdef BGRASSE_AVAILABLE}
-procedure TPhongShading.DrawMapSSE(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
-  mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRACustomBitmap);
+{$ifdef CPUI386}
+procedure TPhongShading.DrawMapSSE(dest: TBGRABitmap; map: TBGRABitmap;
+  mapAltitude: integer; ofsX, ofsY: integer; ColorMap: TBGRABitmap);
   {$define PARAM_PHONGSSE}
   {$I phongdraw.inc }
 
-procedure TPhongShading.DrawColorSSE(dest: TBGRACustomBitmap; map: TBGRACustomBitmap;
+procedure TPhongShading.DrawColorSSE(dest: TBGRABitmap; map: TBGRABitmap;
   mapAltitude: integer; ofsX, ofsY: integer; Color: TBGRAPixel);
   {$define PARAM_PHONGSSE}
   {$define PARAM_SIMPLECOLOR}
-  {$I phongdraw.inc }
-
-procedure TPhongShading.DrawScannerSSE(dest: TBGRACustomBitmap;
-  map: TBGRACustomBitmap; mapAltitude: integer; ofsX, ofsY: integer;
-  ColorScan: IBGRAScanner);
-  {$define PARAM_PHONGSSE}
-  {$define PARAM_SCANNER}
   {$I phongdraw.inc }
 
 {$endif}
@@ -614,105 +551,6 @@ begin
   mask.FillEllipseAntialias(cx,cy,r,r,BGRAWhite);
   result.ApplyMask(mask);
   mask.Free;
-end;
-
-function CreateConePreciseMap(width,height: integer): TBGRABitmap;
-var cx,cy,rx,ry,d: single;
-    xb,yb: integer;
-    p: PBGRAPixel;
-    mask: TBGRABitmap;
-begin
-  result := TBGRABitmap.Create(width,height);
-  cx := (width-1)/2;
-  cy := (height-1)/2;
-  rx := (width-1)/2;
-  ry := (height-1)/2;
-  for yb := 0 to height-1 do
-  begin
-   p := result.scanline[yb];
-   for xb := 0 to width-1 do
-   begin
-     d := sqr((xb-cx)/(rx+1))+sqr((yb-cy)/(ry+1));
-     if d >= 1 then
-       p^ := BGRAPixelTransparent else
-       p^ := MapHeightToBGRA(1-sqrt(d),255);
-     inc(p);
-   end;
-  end;
-  //antialiased border
-  mask := TBGRABitmap.Create(width,height,BGRABlack);
-  mask.FillEllipseAntialias(cx,cy,rx,ry,BGRAWhite);
-  result.ApplyMask(mask);
-  mask.Free;
-end;
-
-function CreateVerticalConePreciseMap(width, height: integer): TBGRABitmap;
-var cx,rx,d,vpos: single;
-    xb,yb: integer;
-    p: PBGRAPixel;
-    mask: TBGRABitmap;
-begin
-  result := TBGRABitmap.Create(width,height);
-  if (height=0) or (width=0) then exit;
-  cx := (width-1)/2;
-  for yb := 0 to height-1 do
-  begin
-   p := result.scanline[yb];
-   vpos := (yb+1)/height;
-   rx := width/2*vpos;
-   for xb := 0 to width-1 do
-   begin
-     d := sqr((xb-cx)/(rx+1));
-     if d >= 1 then
-       p^ := BGRAPixelTransparent else
-       p^ := MapHeightToBGRA(sqrt(1-d)*vpos,255);
-     inc(p);
-   end;
-  end;
-  //antialiased border
-  mask := TBGRABitmap.Create(width,height,BGRABlack);
-  mask.FillPolyAntialias([PointF(width/2,-0.5),PointF(0,height-0.5),PointF(width-0.5,height-0.5)],BGRAWhite);
-  result.ApplyMask(mask);
-  mask.Free;
-end;
-
-function CreateVerticalCylinderPreciseMap(width, height: integer): TBGRABitmap;
-var cx,rx,d: single;
-    xb: integer;
-begin
-  result := TBGRABitmap.Create(width,height);
-  if (height=0) or (width=0) then exit;
-  rx := width/2;
-  cx := (width-1)/2;
-  for xb := 0 to width-1 do
-  begin
-    d := sqr((xb-cx)/(rx+1));
-    result.SetVertLine(xb,0,height-1,MapHeightToBGRA(sqrt(1-d),255));
-  end;
-end;
-
-function CreateHorizontalCylinderPreciseMap(width, height: integer
-  ): TBGRABitmap;
-var cy,ry,d: single;
-    xb,yb: integer;
-    p: PBGRAPixel;
-    c: TBGRAPixel;
-begin
-  result := TBGRABitmap.Create(width,height);
-  if (height=0) or (width=0) then exit;
-  ry := height/2;
-  cy := (height-1)/2;
-  for yb := 0 to height-1 do
-  begin
-   p := result.scanline[yb];
-   d := sqr((yb-cy)/(ry+1));
-   c := MapHeightToBGRA(sqrt(1-d),255);
-   for xb := 0 to width-1 do
-   begin
-     p^ := c;
-     inc(p);
-   end;
-  end;
 end;
 
 function CreateSphereMap(width,height: integer): TBGRABitmap;
@@ -796,37 +634,6 @@ begin
   mask.Free;
 end;
 
-procedure RectangleMapRemoveCorners(dest: TBGRABitmap; options: TRectangleMapOptions);
-begin
-  if [rmoNoLeftBorder,rmoNoTopBorder]*Options = [] then
-  begin
-    dest.SetPixel(0,0,BGRAPixelTransparent);
-    dest.ErasePixel(1,0,128);
-    dest.ErasePixel(0,1,128);
-  end;
-
-  if [rmoNoRightBorder,rmoNoTopBorder]*Options = [] then
-  begin
-    dest.SetPixel(dest.width-1,0,BGRAPixelTransparent);
-    dest.ErasePixel(dest.width-2,0,128);
-    dest.ErasePixel(dest.width-1,1,128);
-  end;
-
-  if [rmoNoRightBorder,rmoNoBottomBorder]*Options = [] then
-  begin
-    dest.SetPixel(dest.width-1,dest.height-1,BGRAPixelTransparent);
-    dest.ErasePixel(dest.width-2,dest.height-1,128);
-    dest.ErasePixel(dest.width-1,dest.height-2,128);
-  end;
-
-  if [rmoNoLeftBorder,rmoNoBottomBorder]*Options = [] then
-  begin
-    dest.SetPixel(0,dest.height-1,BGRAPixelTransparent);
-    dest.ErasePixel(1,dest.height-1,128);
-    dest.ErasePixel(0,dest.height-2,128);
-  end;
-end;
-
 function CreateRectangleMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
 var xb,yb: integer;
     p: PBGRAPixel;
@@ -864,47 +671,33 @@ begin
    end;
   end;
 
-  RectangleMapRemoveCorners(result,options);
-end;
-
-function CreateRectanglePreciseMap(width, height, border: integer;
-  options: TRectangleMapOptions): TBGRABitmap;
-var xb,yb: integer;
-    p: PBGRAPixel;
-    h: single;
-begin
-  MapBorderLimit(width,height,options,border);
-
-  result := TBGRABitmap.Create(width,height);
-  for yb := 0 to height-1 do
+  if [rmoNoLeftBorder,rmoNoTopBorder]*Options = [] then
   begin
-   p := result.scanline[yb];
-   for xb := 0 to width-1 do
-   begin
-     if not (rmoNoLeftBorder in options) and (xb < border) and (yb > xb) and (yb < height-1-xb) then h := xb else
-     if not (rmoNoRightBorder in options) and (xb > width-1-border) and (yb > width-1-xb) and (yb < height-1-(width-1-xb)) then h := width-1-xb else
-     if not (rmoNoTopBorder in options) and (yb < border) and (xb > yb) and (xb < width-1-yb) then h := yb else
-     if not (rmoNoBottomBorder in options) and (yb > height-1-border) and (xb > height-1-yb) and (xb < width-1-(height-1-yb)) then h := height-1-yb else
-     if not (rmoNoLeftBorder in options) and (xb < border) then h := xb else
-     if not (rmoNoRightBorder in options) and (xb > width-1-border) then h := width-1-xb else
-     if not (rmoNoTopBorder in options) and (yb < border) then h := yb else
-     if not (rmoNoBottomBorder in options) and (yb > height-1-border) then h := height-1-yb else
-     begin
-       p^ := BGRAWhite;
-       inc(p);
-       Continue;
-     end;
-
-     if rmoLinearBorder in options then h := h/border else
-       h := sin((h+1/2)/border*Pi/2);
-
-     p^ := MapHeightToBGRA(h,255);
-
-     inc(p);
-   end;
+    result.SetPixel(0,0,BGRAPixelTransparent);
+    result.ErasePixel(1,0,128);
+    result.ErasePixel(0,1,128);
   end;
 
-  RectangleMapRemoveCorners(result,options);
+  if [rmoNoRightBorder,rmoNoTopBorder]*Options = [] then
+  begin
+    result.SetPixel(width-1,0,BGRAPixelTransparent);
+    result.ErasePixel(width-2,0,128);
+    result.ErasePixel(width-1,1,128);
+  end;
+
+  if [rmoNoRightBorder,rmoNoBottomBorder]*Options = [] then
+  begin
+    result.SetPixel(width-1,height-1,BGRAPixelTransparent);
+    result.ErasePixel(width-2,height-1,128);
+    result.ErasePixel(width-1,height-2,128);
+  end;
+
+  if [rmoNoLeftBorder,rmoNoBottomBorder]*Options = [] then
+  begin
+    result.SetPixel(0,height-1,BGRAPixelTransparent);
+    result.ErasePixel(1,height-1,128);
+    result.ErasePixel(0,height-2,128);
+  end;
 end;
 
 function CreateRoundRectangleMap(width,height,border: integer; options: TRectangleMapOptions = []): TBGRABitmap;
@@ -934,8 +727,6 @@ begin
        inc(p);
        Continue;
      end;
-
-     d := (d+1)*border/(border+1);
 
      if d < 0 then
        p^ := BGRAPixelTransparent else
@@ -1044,54 +835,23 @@ begin
   result := temp;
 end;
 
-function CreateRoundRectanglePreciseMap(width, height, border: integer;
-  options: TRectangleMapOptions): TBGRABitmap;
-var d: single;
-    xb,yb: integer;
-    p: PBGRAPixel;
-    h: single;
+function MapHeight(Color: TBGRAPixel): Single;
+var intval: integer;
 begin
-  MapBorderLimit(width,height,options,border);
-
-  result := TBGRABitmap.Create(width,height);
-  for yb := 0 to height-1 do
-  begin
-   p := result.scanline[yb];
-   for xb := 0 to width-1 do
-   begin
-     if not (rmoNoLeftBorder in options) and not (rmoNoTopBorder in options) and (xb < border) and (yb < border) then d := border-sqrt(sqr(border-xb)+sqr(border-yb)) else
-     if not (rmoNoLeftBorder in options) and not (rmoNoBottomBorder in options) and (xb < border) and (yb > height-1-border) then d := border-sqrt(sqr(border-xb)+sqr(border-(height-1-yb))) else
-     if not (rmoNoRightBorder in options) and not (rmoNoTopBorder in options) and (xb > width-1-border) and (yb < border) then d := border-sqrt(sqr(border-(width-1-xb))+sqr(border-yb)) else
-     if not (rmoNoRightBorder in options) and not (rmoNoBottomBorder in options) and (xb > width-1-border) and (yb > height-1-border) then d := border-sqrt(sqr(border-(width-1-xb))+sqr(border-(height-1-yb))) else
-     if not (rmoNoLeftBorder in options) and (xb < border) then d := xb else
-     if not (rmoNoRightBorder in options) and (xb > width-1-border) then d := width-1-xb else
-     if not (rmoNoTopBorder in options) and (yb < border) then d := yb else
-     if not (rmoNoBottomBorder in options) and (yb > height-1-border) then d := height-1-yb else
-     begin
-       p^ := BGRAWhite;
-       inc(p);
-       Continue;
-     end;
-
-     d := (d+1)*border/(border+1);
-
-     if d < 0 then
-       p^ := BGRAPixelTransparent else
-     begin
-       if rmoLinearBorder in options then h := d/border else
-         h := sin((d+1/2)/border*Pi/2);
-
-       if d < 1 then p^:= MapHeightToBGRA(h,round(d*255)) else
-         p^ := MapHeightToBGRA(h,255);
-     end;
-     inc(p);
-   end;
-  end;
+  intval := color.Green shl 16 + color.red shl 8 + color.blue;
+  result := intval/16777215;
 end;
 
-initialization
-
-  Randomize;
+function MapHeightToBGRA(Height: Single; Alpha: Byte): TBGRAPixel;
+var intval: integer;
+begin
+  if Height >= 1 then result := BGRA(255,255,255,alpha) else
+  if Height <= 0 then result := BGRA(0,0,0,alpha) else
+  begin
+    intval := round(Height*16777215);
+    result := BGRA(intval shr 8,intval shr 16,intval,alpha);
+  end;
+end;
 
 end.
 
