@@ -74,7 +74,7 @@ type
   public
     property Count: Integer read fCount;
     property SearchArr: TInteger2Array read fSearchArr write fSearchArr;
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; const aScanEightTiles: Boolean = False); reintroduce;//virtual; reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; const aScanEightTiles: Boolean = False); reintroduce;//virtual; reintroduce;
     procedure QuickFlood(aX,aY,aSearch,aNewSearch: SmallInt); reintroduce;//virtual; reintroduce;
   end;
 
@@ -86,7 +86,7 @@ type
   protected
     function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
   public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
     procedure QuickFlood(aX,aY,aSearch,aNewSearch: SmallInt; aBiome: Byte); reintroduce;
   end;
 
@@ -98,7 +98,7 @@ type
   protected
     function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
   public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
     procedure QuickFlood(aX,aY,aSearch,aNewSearch: SmallInt; var aCount: Integer; var aPresentBiomes: Cardinal); reintroduce;
   end;
 
@@ -110,7 +110,7 @@ type
   protected
     procedure MarkAsVisited(const aX,aY: SmallInt); override;
   public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
     procedure QuickFlood(aX,aY,aSearch,aNewSearch,aFill: SmallInt); reintroduce;
   end;
 
@@ -121,7 +121,7 @@ type
   protected
     function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
   public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aObjectArr, aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aObjectArr, aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
     procedure QuickFlood(aX,aY,aSearch,aNewSearch,aObject: SmallInt); reintroduce;
   end;
 
@@ -139,7 +139,7 @@ type
     function IsVisited(const aX,aY: SmallInt): Boolean; override;
     procedure MarkAsVisited(const aX,aY: SmallInt); override;
   public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aMinPoint, aMaxPoint: TSmallIntArray; var aVisited: TBoolean2Array; var aSerachArr: TKMByte2Array); reintroduce;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aMinPoint, aMaxPoint: TSmallIntArray; var aVisited: TBoolean2Array; var aSearchArr: TKMByte2Array); reintroduce;
     procedure QuickFlood(aX,aY: SmallInt; aSearch: Byte); reintroduce;
   end;
 
@@ -161,25 +161,54 @@ type
     procedure QuickFlood(aX,aY,aSearch,aNewSearch: SmallInt; var aOutIdx: Integer; var aTileCounterArr: TInteger2Array; var aOutPointArr: TKMPointArray; var aOutLevelArr: TKMByteArray); reintroduce; overload;
   end;
 
+// Calculator of full tiles inside of shape (good for resources)
+TKMInternalTileCounter = class(TKMQuickFlood)
+  private
+    fCount: Integer;
+    fSearchBiome, fVisitedNum: Byte;
+    fBiomeArr, fVisitedArr: TKMByte2Array;
+  protected
+    function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
+    function IsVisited(const aX,aY: SmallInt): Boolean; override;
+    procedure MarkAsVisited(const aX,aY: SmallInt); override;
+  public
+    property Count: Integer read fCount;
+    property VisitedArr: TKMByte2Array read fVisitedArr write fVisitedArr;
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aBiomeArr, aVisitedArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+    procedure QuickFlood(aX,aY,aSearchBiome,aVisitedNum: SmallInt); reintroduce;
+  end;
+
+// Remove "sharp" edges of each shape = edges with 1x1 or 2x2 tiles => each tile have at least 2 surrounding tiles in row and 2 tiles in column
+TKMSharpShapeFixer = class(TKMInternalTileCounter)
+  private
+  protected
+    procedure MarkAsVisited(const aX,aY: SmallInt); override;
+  public
+  end;
+
 // Standard flood fill algorithm with queue instead of recursion -> first element is the closest to the center point, second is automatically second closest etc.
 // This is class for resources in RMG because it is quite complicated task (randomly generate something which must look like original template but still different...)
   TKMFloodWithQueue = class
   private
+    fActualIdx: Byte;
     fStartQueue, fEndQueue: TResElementPointer;
     fPointsArr: TKMPoint2Array;
     fSearchArr, fCount: TInteger2Array;
-    fFillArr: TKMByte2Array;
+    fFillArr, fCountVisitedArr: TKMByte2Array;
     fFillResource: TKMFillBiome;
+    fTileCounter: TKMInternalTileCounter;
+    fShapeFixer: TKMSharpShapeFixer;
     fRNG: TKMRandomNumberGenerator;
   protected
+    procedure ClearCountVisitedArr();
     procedure MakeNewQueue();
     procedure InsertInQueue(aX,aY: Integer; aProbability: Single);
     function RemoveFromQueue(var aX,aY: SmallInt; var aProbability: Single): Boolean;
     function IsQueueEmpty(): boolean;
   public
     constructor Create(var aRNG: TKMRandomNumberGenerator; var aPointsArr: TKMPoint2Array; var aCount, aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array);
-    destructor Destroy;
-    procedure FloodFillWithQueue(const aX,aY: Integer; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
+    destructor Destroy; override;
+    procedure FloodFillWithQueue(var aPointArr: TKMPointArray; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
   end;
 
 
@@ -335,10 +364,10 @@ end;
 
 
 { TKMSearchBiome }
-constructor TKMSearchBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; const aScanEightTiles: Boolean = False);
+constructor TKMSearchBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; const aScanEightTiles: Boolean = False);
 begin
   inherited Create(aScanEightTiles);
-  fSearchArr := aSerachArr;
+  fSearchArr := aSearchArr;
   fMinLimit := aMinLimit;
   fMaxLimit := aMaxLimit;
 end;
@@ -370,9 +399,9 @@ end;
 
 
 { TKMSearchSimilarBiome }
-constructor TKMSearchSimilarBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+constructor TKMSearchSimilarBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
 begin
-  inherited Create(aMinLimit, aMaxLimit, aSerachArr, aScanEightTiles);
+  inherited Create(aMinLimit, aMaxLimit, aSearchArr, aScanEightTiles);
   fBiomeArr := aBiomeArr;
 end;
 
@@ -407,9 +436,9 @@ end;
 
 
 { TKMSearchWalkableAreas }
-constructor TKMSearchWalkableAreas.Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+constructor TKMSearchWalkableAreas.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
 begin
-  inherited Create(aMinLimit, aMaxLimit, aSerachArr, aScanEightTiles);
+  inherited Create(aMinLimit, aMaxLimit, aSearchArr, aScanEightTiles);
   fBiomeArr := aBiomeArr;
 end;
 
@@ -433,9 +462,9 @@ end;
 
 
 { TKMFillBiome }
-constructor TKMFillBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+constructor TKMFillBiome.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
 begin
-  inherited Create(aMinLimit, aMaxLimit, aSerachArr, aScanEightTiles);
+  inherited Create(aMinLimit, aMaxLimit, aSearchArr, aScanEightTiles);
   fFillArr := aFillArr;
 end;
 
@@ -457,9 +486,9 @@ end;
 
 
 { TKMFillObject }
-constructor TKMFillObject.Create(aMinLimit, aMaxLimit: TKMPoint; var aSerachArr: TInteger2Array; var aObjectArr, aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+constructor TKMFillObject.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aObjectArr, aBiomeArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
 begin
-  inherited Create(aMinLimit, aMaxLimit, aSerachArr, aObjectArr, aScanEightTiles);
+  inherited Create(aMinLimit, aMaxLimit, aSearchArr, aObjectArr, aScanEightTiles);
   fBiomeArr := aBiomeArr;
 end;
 
@@ -479,7 +508,7 @@ end;
 
 
 { TKMMinerFixSearch }
-constructor TKMMinerFixSearch.Create(aMinLimit, aMaxLimit: TKMPoint; var aMinPoint, aMaxPoint: TSmallIntArray; var aVisited: TBoolean2Array; var aSerachArr: TKMByte2Array);
+constructor TKMMinerFixSearch.Create(aMinLimit, aMaxLimit: TKMPoint; var aMinPoint, aMaxPoint: TSmallIntArray; var aVisited: TBoolean2Array; var aSearchArr: TKMByte2Array);
 begin
   inherited Create;
   fMinLimit := aMinLimit;
@@ -487,7 +516,7 @@ begin
   fMinPoint := aMinPoint;
   fMaxPoint := aMaxPoint;
   fVisited := aVisited;
-  fSearchArr := aSerachArr;
+  fSearchArr := aSearchArr;
 end;
 
 function TKMMinerFixSearch.CanBeVisited(const aX,aY: SmallInt): Boolean;
@@ -587,21 +616,163 @@ end;
 
 
 
+{ TKMInternalTileCounter }
+constructor TKMInternalTileCounter.Create(aMinLimit, aMaxLimit: TKMPoint; var aBiomeArr, aVisitedArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+begin
+  inherited Create(aScanEightTiles);
+  fBiomeArr := aBiomeArr;
+  fVisitedArr := aVisitedArr;
+  fMinLimit := aMinLimit;
+  fMaxLimit := aMaxLimit;
+end;
+
+function TKMInternalTileCounter.CanBeVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := fBiomeArr[aY,aX] = fSearchBiome;
+end;
+
+function TKMInternalTileCounter.IsVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := fVisitedArr[aY,aX] > fVisitedNum;
+end;
+
+procedure TKMInternalTileCounter.MarkAsVisited(const aX,aY: SmallInt);
+var
+  X,Y: SmallInt;
+begin
+  fVisitedArr[aY,aX] := fVisitedNum + 1;
+  for Y := Max(Low(fBiomeArr), aY-1) to Min(High(fBiomeArr), aY+1) do
+  for X := Max(Low(fBiomeArr[Y]), aX-1) to Min(High(fBiomeArr[Y]), aX+1) do
+    if not CanBeVisited(X,Y) then
+      Exit;
+  fCount := fCount + 1;
+end;
+
+procedure TKMInternalTileCounter.QuickFlood(aX,aY,aSearchBiome,aVisitedNum: SmallInt);
+begin
+  fCount := 0;
+  fSearchBiome := aSearchBiome;
+  fVisitedNum := aVisitedNum;
+  inherited QuickFlood(aX,aY);
+end;
+
+
+
+
+
+
+{ TKMSharpShapeFixer }
+procedure TKMSharpShapeFixer.MarkAsVisited(const aX,aY: SmallInt);
+  procedure InsertInQ();
+  begin
+    // First mark as visited
+    fBiomeArr[aY,aX] := 0;
+    fCount := fCount + 1;
+    // Now add in queue surrounding points (or use simple recursion but recursion should not be used)
+    if (aX+1 <= High(fBiomeArr[aY])) AND CanBeVisited(aX+1,aY) then
+    begin
+      InsertInQueue(aX+1,aY);
+      fVisitedArr[aY,aX+1] := fVisitedNum;
+    end;
+    if (aX-1 >= Low(fBiomeArr[aY])) AND CanBeVisited(aX-1,aY) then
+    begin
+      InsertInQueue(aX-1,aY);
+      fVisitedArr[aY,aX-1] := fVisitedNum;
+    end;
+    if (aY+1 <= High(fBiomeArr)) AND CanBeVisited(aX,aY+1) then
+    begin
+      InsertInQueue(aX,aY+1);
+      fVisitedArr[aY+1,aX] := fVisitedNum;
+    end;
+    if (aY-1 >= Low(fBiomeArr)) AND CanBeVisited(aX,aY-1) then
+    begin
+      InsertInQueue(aX,aY-1);
+      fVisitedArr[aY-1,aX] := fVisitedNum;
+    end;
+  end;
+var
+  L,R: Boolean;
+  cnt: Word;
+  I: SmallInt;
+begin
+  fVisitedArr[aY,aX] := fVisitedNum + 1;
+  cnt := 0;
+  L := True;
+  R := True;
+  for I := 1 to 2 do
+  begin
+    if L AND (aY-I >= Low(fBiomeArr)) AND (CanBeVisited(aX,aY-I)) then
+      cnt := cnt + 1
+    else
+      L := False;
+    if R AND (aY+I <= High(fBiomeArr)) AND (CanBeVisited(aX,aY+I)) then
+      cnt := cnt + 1
+    else
+      R := False;
+  end;
+  if (cnt < 2) then
+  begin
+    InsertInQ();
+    Exit;
+  end;
+  cnt := 0;
+  L := True;
+  R := True;
+  for I := 1 to 2 do
+  begin
+    if L AND (aX-I >= Low(fBiomeArr[aY])) AND (CanBeVisited(aX-I,aY)) then
+      cnt := cnt + 1
+    else
+      L := False;
+    if R AND (aX+I <= High(fBiomeArr[aY])) AND (CanBeVisited(aX+I,aY)) then
+      cnt := cnt + 1
+    else
+      R := False;
+  end;
+  if (cnt < 2) then
+    InsertInQ();
+end;
+
+
+
+
+
 
 { TKMFloodWithQueue }
 constructor TKMFloodWithQueue.Create(var aRNG: TKMRandomNumberGenerator; var aPointsArr: TKMPoint2Array; var aCount, aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array);
+var
+  MinP, MaxP: TKMPoint;
 begin
   fRNG := aRNG;
   fPointsArr := aPointsArr;
   fCount := aCount;
   fFillArr := aFillArr;
   fSearchArr := aSearchArr;
-  fFillResource := TKMFillBiome.Create(  KMPoint(  Low(fFillArr[0]), Low(fFillArr) ), KMPoint(  High(fFillArr[0]), High(fFillArr)  ), fSearchArr, fFillArr  );
+  MinP := KMPoint( Low(fFillArr[0]), Low(fFillArr) );
+  MaxP := KMPoint( High(fFillArr[0]), High(fFillArr) );
+  SetLength(fCountVisitedArr, Length(fFillArr), Length(fFillArr[0]));
+  ClearCountVisitedArr();
+  fFillResource := TKMFillBiome.Create( MinP, MaxP, fSearchArr, fFillArr  );
+  fTileCounter := TKMInternalTileCounter.Create( MinP, MaxP, fFillArr, fCountVisitedArr);
+  fShapeFixer := TKMSharpShapeFixer.Create( MinP, MaxP, fFillArr, fCountVisitedArr);
 end;
 
 destructor TKMFloodWithQueue.Destroy();
 begin
   fFillResource.Free;
+  fTileCounter.Free;
+  fShapeFixer.Free;
+  inherited;
+end;
+
+procedure TKMFloodWithQueue.ClearCountVisitedArr();
+var
+  X,Y: SmallInt;
+begin
+  fActualIdx := 0;
+  for Y := Low(fCountVisitedArr) to High(fCountVisitedArr) do
+    for X := Low(fCountVisitedArr[Y]) to High(fCountVisitedArr[Y]) do
+      fCountVisitedArr[Y,X] := 0;
 end;
 
 procedure TKMFloodWithQueue.MakeNewQueue();
@@ -641,35 +812,65 @@ begin
   Result := fStartQueue = fEndQueue;
 end;
 
-procedure TKMFloodWithQueue.FloodFillWithQueue(const aX,aY: Integer; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
+procedure TKMFloodWithQueue.FloodFillWithQueue(var aPointArr: TKMPointArray; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
 var
-  X,Y: SmallInt;
+  I,X,Y: SmallInt;
+  Cnt, POMCnt: Integer;
   Probability, Prob_POM: Single;
 begin
   X := 0;
   Y := 0;
+  Cnt := aCnt_actual;
+  POMCnt := aCnt_actual;
   MakeNewQueue();
-  InsertInQueue(aX, aY, aProbability);
-  while RemoveFromQueue(X, Y, Probability) AND (aCnt_actual < aCnt_FINAL) do
+  for I := Low(aPointArr) to High(aPointArr) do
+    InsertInQueue(aPointArr[I].X, aPointArr[I].Y, aProbability);
+  while RemoveFromQueue(X, Y, Probability) AND ((Probability = 1) OR (POMCnt < aCnt_FINAL) OR (Cnt < aCnt_FINAL)) do  // Probability = 1 in case that we need this shape in new mine
     if (   (fCount[Y,X] > 0)  OR  ( (aRESOURCE = Byte(btCoal)) AND (fCount[Y,X] < 0) )   )
        AND (fRNG.Random() < Probability) then
     begin
-      aCnt_actual := aCnt_actual + abs(fCount[Y,X]);
+      //aCnt_actual := aCnt_actual + abs(fCount[Y,X]); // After tests it looks like too inaccurate
+      POMCnt := POMCnt + abs(fCount[Y,X]);
       fCount[Y,X] := 0;
 
-      SetLength(aPoints, Length(aPoints)+1);
+      SetLength(aPoints, Length(aPoints)+1); // Just a few interactions
       aPoints[ High(aPoints) ] := fPointsArr[Y,X];
-      fFillResource.QuickFlood(fPointsArr[Y,X].X,fPointsArr[Y,X].Y, fSearchArr[ fPointsArr[Y,X].Y, fPointsArr[Y,X].X ], 0, aRESOURCE);
+      fFillResource.QuickFlood(fPointsArr[Y,X].X, fPointsArr[Y,X].Y, fSearchArr[ fPointsArr[Y,X].Y, fPointsArr[Y,X].X ], 0, aRESOURCE);
+      // Do not start flood fill until we know that final shape is smaller than desired shape
+      if (POMCnt >= aCnt_FINAL) then
+      begin
+        fTileCounter.QuickFlood(fPointsArr[Y,X].X, fPointsArr[Y,X].Y, aRESOURCE, fActualIdx);
+        Cnt := aCnt_actual + fTileCounter.Count;
+        fActualIdx := fActualIdx + 1;
+        if (fActualIdx = High(Byte)) then
+          ClearCountVisitedArr();
+      end;
 
       Prob_POM := Probability - aPROB_REDUCER;
       if Prob_POM > 0 then
       begin
-        if X+1 <= High(fPointsArr[Y]) then InsertInQueue( X+1, Y,   Prob_POM );
-        if X-1 >= Low(fPointsArr[Y]) then  InsertInQueue( X-1, Y,   Prob_POM );
-        if Y-1 >= Low(fPointsArr) then     InsertInQueue( X,   Y-1, Prob_POM );
-        if Y+1 <= High(fPointsArr) then    InsertInQueue( X,   Y+1, Prob_POM );
+        if (aRESOURCE < Byte(btGold)) then
+        begin
+          if (X+1 <= High(fPointsArr[Y])) then InsertInQueue( X+1, Y, Prob_POM );
+          if (X-1 >= Low(fPointsArr[Y]))  then InsertInQueue( X-1, Y, Prob_POM );
+        end;
+        if (Y-1 >= Low(fPointsArr))  then InsertInQueue( X, Y-1, Prob_POM );
+        if (Y+1 <= High(fPointsArr)) then InsertInQueue( X, Y+1, Prob_POM );
       end;
     end;
+
+  aCnt_actual := Cnt;
+  Cnt := 1;
+  POMCnt := 0;
+  while (Cnt > 0) AND (POMCnt < 10) do
+  begin
+    POMCnt := POMCnt + 1;
+    fShapeFixer.QuickFlood(  fPointsArr[ aPointArr[0].Y,aPointArr[0].X ].X, fPointsArr[ aPointArr[0].Y,aPointArr[0].X ].Y, aRESOURCE, fActualIdx  );
+    Cnt := fShapeFixer.Count;
+    fActualIdx := fActualIdx + 1;
+    if (fActualIdx = High(Byte)) then
+      ClearCountVisitedArr();
+  end;
 
   while RemoveFromQueue(X, Y, Probability) do
   begin
