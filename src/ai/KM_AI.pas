@@ -4,7 +4,8 @@ interface
 uses
   KM_CommonClasses, KM_Defaults,
   KM_Houses, KM_Units, KM_Units_Warrior,
-  KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral;
+  KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral,
+  KM_CityManagement, KM_ArmyManagement;
 
 
 type
@@ -20,6 +21,9 @@ type
     fGoals: TKMGoals;
     fMayor: TKMayor;
     fSetup: TKMHandAISetup;
+
+    fCityManagement: TKMCityManagement;
+    fArmyManagement: TKMArmyManagement;
 
     fWonOrLost: TWonOrLost; //Has this player won/lost? If so, do not check goals
 
@@ -72,6 +76,9 @@ begin
   fGeneral := TKMGeneral.Create(fOwner, fSetup);
   fGoals := TKMGoals.Create;
   fWonOrLost := wol_None;
+
+  fCityManagement := TKMCityManagement.Create(fOwner, fSetup);
+  fArmyManagement := TKMArmyManagement.Create(fOwner, fSetup);
 end;
 
 
@@ -81,6 +88,9 @@ begin
   fGeneral.Free;
   fMayor.Free;
   fSetup.Free;
+
+  fCityManagement.Free;
+  fArmyManagement.Free;
 
   inherited;
 end;
@@ -343,6 +353,9 @@ begin
   fGeneral.Save(SaveStream);
   fMayor.Save(SaveStream);
   fGoals.Save(SaveStream);
+
+  fCityManagement.Save(SaveStream);
+  fArmyManagement.Save(SaveStream);
 end;
 
 
@@ -356,6 +369,9 @@ begin
   fGeneral.Load(LoadStream);
   fMayor.Load(LoadStream);
   fGoals.Load(LoadStream);
+
+  fCityManagement.Load(LoadStream);
+  fArmyManagement.Load(LoadStream);
 end;
 
 
@@ -380,8 +396,16 @@ begin
                     //Humans dont need Mayor and Army management
                   end;
     hndComputer:  begin
-                    fMayor.UpdateState(aTick);
-                    fGeneral.UpdateState(aTick);
+                    if fSetup.NewAI then
+                    begin
+                      fArmyManagement.UpdateState(aTick);
+                      fCityManagement.UpdateState(aTick);
+                    end
+                    else
+                    begin
+                      fMayor.UpdateState(aTick);
+                      fGeneral.UpdateState(aTick);
+                    end;
                   end;
   end;
 end;
