@@ -27,15 +27,17 @@ unit BGRAGtkBitmap;
 interface
 
 uses
-  Classes, SysUtils, BGRALCLBitmap, Graphics,
+  Classes, SysUtils, BGRADefaultBitmap, Graphics,
   GraphType;
 
 type
   { TBGRAGtkBitmap }
 
-  TBGRAGtkBitmap = class(TBGRALCLBitmap)
+  TBGRAGtkBitmap = class(TBGRADefaultBitmap)
   private
     FPixBuf: Pointer;
+{    procedure SlowDrawTransparent(ABitmap: TBGRADefaultBitmap;
+      ACanvas: TCanvas; ARect: TRect);}
     procedure DrawTransparent(ACanvas: TCanvas; Rect: TRect);
     procedure DrawOpaque(ACanvas: TCanvas; Rect: TRect);
   protected
@@ -54,7 +56,7 @@ type
 
 implementation
 
-uses BGRABitmapTypes, BGRADefaultBitmap, LCLType,
+uses BGRABitmapTypes, LCLType,
   LCLIntf, IntfGraphics,
   {$IFDEF LCLgtk2}
   gdk2, gtk2def, gdk2pixbuf, glib2,
@@ -62,28 +64,42 @@ uses BGRABitmapTypes, BGRADefaultBitmap, LCLType,
   {$IFDEF LCLgtk}
   gdk, gtkdef, gtkProc, gdkpixbuf, glib,
   {$ENDIF}
-  FPImage, Dialogs;
+  FPImage;
 
 {$IFDEF LCLgtk2}
 type TGtkDeviceContext = TGtk2DeviceContext;
 {$ENDIF}
 
+{procedure TBGRAGtkBitmap.SlowDrawTransparent(ABitmap: TBGRADefaultBitmap;
+  ACanvas: TCanvas; ARect: TRect);
+var
+  background, temp: TBGRACustomBitmap;
+  w, h: integer;
+
+begin
+  w := ARect.Right - ARect.Left;
+  h := ARect.Bottom - ARect.Top;
+  background := NewBitmap(w, h);
+  background.GetImageFromCanvas(ACanvas, ARect.Left, ARect.Top);
+  if (ABitmap.Width = w) and (ABitmap.Height = h) then
+    background.PutImage(0, 0, ABitmap, dmDrawWithTransparency)
+  else
+  begin
+    temp := ABitmap.Resample(w, h, rmSimpleStretch);
+    background.PutImage(0, 0, temp, dmDrawWithTransparency);
+    temp.Free;
+  end;
+  background.Draw(ACanvas, ARect.Left, ARect.Top, True);
+  background.Free;
+end;}
+
 procedure TBGRAGtkBitmap.ReallocData;
 begin
-  {$IFDEF LCLgtk2}
-  If FPixBuf <> nil then g_object_unref(FPixBuf);
-  {$ELSE}
-  If FPixBuf <> nil then gdk_pixbuf_unref(FPixBuf);
-  {$ENDIF}
-  FPixBuf := nil;  
   inherited ReallocData;
-  if (FWidth <> 0) and (FHeight <> 0) then
-  begin  
-    FPixbuf := gdk_pixbuf_new_from_data(pguchar(FData),
-      GDK_COLORSPACE_RGB, True, 8, Width, Height, Width*Sizeof(TBGRAPixel), nil, nil);
-    if FPixbuf = nil then
-      raise Exception.Create('Error initializing Pixbuf');
-  end;
+  FPixbuf := gdk_pixbuf_new_from_data(pguchar(FData),
+    GDK_COLORSPACE_RGB, True, 8, Width, Height, Width*Sizeof(TBGRAPixel), nil, nil);
+  if FPixbuf = nil then
+    raise Exception.Create('Error initializing Pixbuf');
 end;
 
 procedure TBGRAGtkBitmap.FreeData;
@@ -100,7 +116,6 @@ end;
 procedure TBGRAGtkBitmap.DrawTransparent(ACanvas: TCanvas; Rect: TRect);
 var DrawWidth,DrawHeight: integer;
     stretched: TBGRAGtkBitmap;
-    P: TPoint;
 begin
   DrawWidth := Rect.Right-Rect.Left;
   DrawHeight := Rect.Bottom-Rect.Top;
@@ -115,18 +130,16 @@ begin
     exit;
   end;
 
-  If not TBGRAPixel_RGBAOrder then SwapRedBlue;
-  
-  P := Rect.TopLeft;
-  LPToDP(ACanvas.Handle, P, 1);
+  SwapRedBlue;
   gdk_pixbuf_render_to_drawable(FPixBuf,
     TGtkDeviceContext(ACanvas.Handle).Drawable,
     TGtkDeviceContext(ACanvas.Handle).GC,
-    0,0, P.X,P.Y,
+    0,0,
+    TGtkDeviceContext(ACanvas.Handle).Offset.X+Rect.Left,
+    TGtkDeviceContext(ACanvas.Handle).Offset.Y+Rect.Top,
     Width,Height,
-    GDK_RGB_DITHER_NORMAL,0,0);   
-
-  If not TBGRAPixel_RGBAOrder then SwapRedBlue;
+    GDK_RGB_DITHER_NORMAL,0,0);
+  SwapRedBlue;
 end;
 
 procedure TBGRAGtkBitmap.DrawOpaque(ACanvas: TCanvas; Rect: TRect);
@@ -223,15 +236,16 @@ begin
   end;
 
   dest := ACanvas.Handle;
-  pos := rect.TopLeft;
-  LPtoDP(dest, pos, 1);
+  pos := TGtkDeviceContext(dest).Offset;
+  pos.X += rect.Left;
+  pos.Y += rect.Top;
   If ALineOrder = riloBottomToTop then VerticalFlip;
-  If not TBGRAPixel_RGBAOrder then SwapRedBlue;
+  SwapRedBlue;
   gdk_draw_rgb_32_image(TGtkDeviceContext(dest).Drawable,
-    TGtkDeviceContext(Dest).GC, pos.x,pos.y,
+    TGtkDeviceContext(Dest).GC, pos.X,pos.Y,
     AWidth,AHeight, GDK_RGB_DITHER_NORMAL,
     AData, AWidth*sizeof(TBGRAPixel));
-  If not TBGRAPixel_RGBAOrder then SwapRedBlue;
+  SwapRedBlue;
   If ALineOrder = riloBottomToTop then VerticalFlip;
 end;
 
@@ -240,7 +254,6 @@ var
   subBmp: TBGRACustomBitmap;
   subRect: TRect;
   cw,ch: integer;
-  P: TPoint;
 begin
   cw := CanvasSource.Width;
   ch := CanvasSource.Height;
@@ -266,12 +279,12 @@ begin
     exit;
   end;
 
-  P := Point(x,y);
-  LPToDP(CanvasSource.Handle, P, 1);
   gdk_pixbuf_get_from_drawable(FPixBuf,
     TGtkDeviceContext(CanvasSource.Handle).Drawable,
-    nil, P.X,P.Y,0,0,Width,Height);
-  If not TBGRAPixel_RGBAOrder then SwapRedBlue;
+    nil,
+    TGtkDeviceContext(CanvasSource.Handle).Offset.X+x,
+    TGtkDeviceContext(CanvasSource.Handle).Offset.Y+y,0,0,Width,Height);
+  SwapRedBlue;
   InvalidateBitmap;
 end;
 

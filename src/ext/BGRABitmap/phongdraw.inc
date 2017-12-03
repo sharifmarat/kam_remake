@@ -7,24 +7,24 @@
 
 var
   //Light source normal.
-  vL: TPoint3D_128;  {xmm0}
+  vL: TVector3D;  {xmm0}
   //Light source position.
-  vLS: TPoint3D_128; {xmm1}
+  vLS: TVector3D; {xmm1}
   //Vector H is the unit normal to the hypothetical surface oriented
   //halfway between the light direction vector (L) and the viewing vector (V).
-  vH: TPoint3D_128;  {xmm2}
+  vH: TVector3D;  {xmm2}
 
-  vN: TPoint3D_128;  {xmm3}        // surface normal
-  vP: TPoint3D_128;  {xmm4}        // position of lighted pixel
-  vV: TPoint3D_128;                // viewer direction
+  vN: TVector3D;  {xmm3}        // surface normal
+  vP: TVector3D;  {xmm4}        // position of lighted pixel
+  vV: TVector3D;                // viewer direction
 {$ifdef PARAM_PHONGSSE}
-  LightDestFactor4: TPoint3D_128;  // for multiplication
+  LightDestFactor4: TVector3D;  // for multiplication
 {$endif}
 
   //Calculate LdotN and NnH
   NH: Single;
 {$ifndef PARAM_PHONGSSE}
-  vD: TPoint3D_128;
+  vD: TVector3D;
 {$endif}
 
   Iw, Ic: integer;    // Iw: specular intensity, Ic: ambient+diffuse intensity
@@ -38,9 +38,7 @@ var
 {$ifdef PARAM_SIMPLECOLOR}
   eColor: TExpandedPixel;
 {$else}
-  {$ifndef PARAM_SCANNER}
-    pcolormap: PBGRAPixel;
-  {$endif}
+  pcolormap: PBGRAPixel;
 {$endif}
 
   {$hints off}
@@ -51,13 +49,8 @@ var
     {$endif}
   begin
     {$ifndef PARAM_SIMPLECOLOR}
-      {$ifdef PARAM_SCANNER}
-        eColor := GammaExpansion(ColorScan.ScanNextPixel);
-      {$else}
-        eColor := GammaExpansion(pcolormap^);
-      {$endif}
+      eColor := GammaExpansion(pcolormap^);
     {$endif}
-    Alpha := ApplyOpacity(Alpha, eColor.alpha shr 8);
     ec.red := (eColor.Red*DiffuseLight+eLight.Red*SpecularLight+PhongLightPrecisionDiv2) shr PhongLightPrecisionSh;
     ec.green := (eColor.Green*DiffuseLight+eLight.Green*SpecularLight+PhongLightPrecisionDiv2) shr PhongLightPrecisionSh;
     ec.blue := (eColor.Blue*DiffuseLight+eLight.Blue*SpecularLight+PhongLightPrecisionDiv2) shr PhongLightPrecisionSh;
@@ -71,17 +64,12 @@ var
   pmap: PBGRAPixel;
   pdest: PBGRAPixel;
   x,y : integer;      // Coordinates of point in height map.
-  vS1,vS2: TPoint3D_128; // surface vectors (plane)
-  deltaDown: Int32or64;
-  IsLineUp,IsLineDown: boolean;
+  vS1,vS2: TVector3D; // surface vectors (plane)
 
 begin
-  if map = nil then exit;
   {$ifndef PARAM_SIMPLECOLOR}
-    {$ifndef PARAM_SCANNER}
-      if (colorMap.Width < map.width) or (colorMap.Height < map.height) then
-        raise Exception.Create('Dimension mismatch');
-    {$endif}
+    if (colorMap.Width < map.width) or (colorMap.Height < map.height) then
+      raise Exception.Create('Dimension mismatch');
   {$endif}
 
   if (map.width = 0) or (map.Height = 0) then exit;
@@ -105,28 +93,27 @@ begin
   {$endif}
 
   //light origin
-  vLS := Point3D_128(LightPosition.X-ofsX,
+  vLS := Vector3D(LightPosition.X-ofsX,
                   LightPosition.Y-ofsY,
                   LightPositionZ);
+  {$ifdef PARAM_PHONGSSE}
+  asm
+    movups xmm1, vLS
+  end;
+  LightDestFactor4 := Vector3D(LightDestFactor,LightDestFactor,LightDestFactor,LightDestFactor);
+  {$endif}
 
   //surface vectors
-  vS1 := Point3D_128(1,0,0);
-  vS2 := Point3D_128(0,1,0);
+  vS1 := Vector3D(1,0,0);
+  vS2 := Vector3D(0,1,0);
 
-  vV := Point3D_128(0,0,1);
+  vV := Vector3D(0,0,1);
+
 
   dist := 0;
   LdotN := 0;
   NnH := 0;
 
-  {$ifdef PARAM_PHONGSSE}
-  LightDestFactor4 := Point3D_128(LightDestFactor,LightDestFactor,LightDestFactor,LightDestFactor);
-  {$endif}
-
-  if map.LineOrder = riloTopToBottom then
-    deltaDown := map.Width*sizeof(TBGRAPixel)
-  else
-    deltaDown := -map.Width*sizeof(TBGRAPixel);
   for y := miny to maxy do
   begin
     //read map values
@@ -135,42 +122,28 @@ begin
     mcRight := pmap^;
     pdest := dest.ScanLine[y+ofsY]+ofsX+minx;
     {$ifndef PARAM_SIMPLECOLOR}
-      {$ifdef PARAM_SCANNER}
-        ColorScan.ScanMoveTo(OfsX+minx,OfsY+Y);
-      {$else}
-        pcolormap := ColorMap.ScanLine[y];
-      {$endif}
+      pcolormap := ColorMap.ScanLine[y];
     {$endif}
-    IsLineUp := y > 0;
-    IsLineDown := y < map.Height-1;
-    mcTop := BGRAPixelTransparent;
-    mcBottom := BGRAPixelTransparent;
     for x := minx to maxx do
     begin
       mcLeft := mc;
       mc := mcRight;
+      inc(pmap);
       if x < map.width-1 then
-        mcRight := (pmap+1)^ else
+        mcRight := pmap^ else
         mcRight := BGRAPixelTransparent;
       if mc.alpha = 0 then
       begin
         {$ifndef PARAM_SIMPLECOLOR}
-          {$ifdef PARAM_SCANNER}
-            ColorScan.ScanNextPixel;
-          {$else}
-            inc(pcolormap);
-          {$endif}
+        inc(pcolormap);
         {$endif}
         inc(pdest);
-        inc(pmap);
         continue;
       end;
 
       //compute surface vectors
-      if IsLineUp then mcTop := pbgrapixel(pbyte(pmap)-deltaDown)^;
-      if IsLineDown then mcBottom := pbgrapixel(pbyte(pmap)+deltaDown)^;
-      inc(pmap);
-
+      mcTop := map.GetPixel(x,y-1);
+      mcBottom := map.GetPixel(x,y+1);
       z := MapHeight(mc)*mapAltitude;
       if mcLeft.alpha = 0 then
       begin
@@ -200,48 +173,162 @@ begin
       end;
 
       //position vector
-      vP := Point3D_128(x, y, z);
+      vP := Vector3D(x, y, z);
       {$ifdef PARAM_PHONGSSE}
-      if UseSSE3 then
-      begin
-        {$DEFINE PARAM_USESSE3}
-        asm
-          movups xmm1, vLS
-        end;
-        {$i phongdrawsse.inc}
-        {$UNDEF PARAM_USESSE3}
-      end else
-      begin
-        asm
-          movups xmm1, vLS
-        end;
-        {$i phongdrawsse.inc}
+      asm
+        //vL := vLS- vP*LightDestFactor;
+        movups xmm4, vP
+        movups xmm6,LightDestFactor4
+        shufps xmm6,xmm6, 0
+        mulps xmm6, xmm4
+        movaps xmm0, xmm1
+        subps xmm0, xmm6
+
+        //normalize(vL);
+        movaps xmm6, xmm0   //save
+        mulps xmm0, xmm0
+        //mix1
+        movaps xmm7, xmm0
+        shufps xmm7, xmm7, $4e
+        addps xmm0, xmm7
+        //mix2
+        movaps xmm7, xmm0
+        shufps xmm7, xmm7, $11
+        addps xmm0, xmm7
+        //1/sqrt
+        rsqrtps xmm0, xmm0
+        mulps xmm0, xmm6  //apply
+
+        //vH := vL + vV;
+        movaps xmm2, xmm0
+        movups xmm6, vV
+        addps xmm2, xmm6
+
+        //normalize(vH);
+        movaps xmm6, xmm2   //save
+        mulps xmm2, xmm2
+        //mix1
+        movaps xmm7, xmm2
+        shufps xmm7, xmm7, $4e
+        addps xmm2, xmm7
+        //mix2
+        movaps xmm7, xmm2
+        shufps xmm7, xmm7, $11
+        addps xmm2, xmm7
+        //1/sqrt
+        rsqrtps xmm2, xmm2
+        mulps xmm2, xmm6  //apply
+
+        //vectproduct(vS1,vS2,vN);
+        movups xmm6, vS1
+        shufps xmm6, xmm6, Shift231
+
+        movups xmm7, vS2
+        shufps xmm7, xmm7, Shift312
+
+        movaps xmm3,xmm6
+        mulps xmm3,xmm7
+
+        movups xmm6, vS1
+        shufps xmm6, xmm6, Shift312
+
+        movups xmm7, vS2
+        shufps xmm7, xmm7, Shift231
+
+        mulps xmm7,xmm6
+        subps xmm3,xmm7
+        //end of vectproduct
+
+        //normalize(vN);
+        movaps xmm6, xmm3   //save
+        mulps xmm3, xmm3
+        //mix1
+        movaps xmm7, xmm3
+        shufps xmm7, xmm7, $4e
+        addps xmm3, xmm7
+        //mix2
+        movaps xmm7, xmm3
+        shufps xmm7, xmm7, $11
+        addps xmm3, xmm7
+        //1/sqrt
+        rsqrtps xmm3, xmm3
+        mulps xmm3, xmm6  //apply
+
+        //LdotN := vN * vL;
+        movups xmm5, xmm3
+        mulps xmm5, xmm0
+        //mix1
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $4e
+        addps xmm5, xmm7
+        //mix2
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $11
+        addps xmm5, xmm7
+        //:=
+        movss LdotN, xmm5
+
+        //vD := vLS-vP;
+        movaps xmm5, xmm1
+        subps xmm5, xmm4
+
+        //dist := sqrt(vD*vD);
+        mulps xmm5, xmm5
+        //mix1
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $4e
+        addps xmm5, xmm7
+        //mix2
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $11
+        addps xmm5, xmm7
+        //:= sqrt
+        sqrtss xmm5,xmm5
+        movss dist, xmm5
+
+        //NH := vH * vN;
+        movups xmm5, xmm2
+        mulps xmm5, xmm3
+        //mix1
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $4e
+        addps xmm5, xmm7
+        //mix2
+        movaps xmm7, xmm5
+        shufps xmm7, xmm7, $11
+        addps xmm5, xmm7
+        //:=
+        movss NH, xmm5
       end;
       {$else}
-        vP := Point3D_128(x, y, z);
+        vP := Vector3D(x, y, z);
         vL := vLS- vP*LightDestFactor;
-        Normalize3D_128(vL);
+        normalize(vL);
 
         //compute bisector of angle between light and observer
         vH := vL + vV;
-        Normalize3D_128(vH);
+        normalize(vH);
 
         // compute normal vector to the surface
-        VectProduct3D_128(vS1,vS2,vN);
-        Normalize3D_128(vN);
+        vectproduct(vS1,vS2,vN);
+        normalize(vN);
 
         //Calculate LdotN and NnH
-        LdotN := DotProduct3D_128(vN,vL);
+        LdotN := vN * vL;
         vD := vLS-vP;
-        dist := sqrt(DotProduct3D_128(vD,vD));
+        dist := sqrt(vD*vD);
 
-        NH := DotProduct3D_128(vH,vN);
+        NH := vH * vN;
+        if NH <= 0 then
+          NnH := 0
+        else
+          NnH := exp(SpecularIndex*ln(NH));
       {$endif}
 
       if NH <= 0 then
         NnH := 0
       else
-        NnH := exp(SpecularIndex*ln(NH));  //to be optimized
+        NnH := exp(SpecularIndex*ln(NH));
 
       distfactor := LightSourceIntensity / (dist*LightSourceDistanceFactor + LightSourceDistanceTerm);
 
@@ -273,9 +360,7 @@ begin
 
       DrawPixelInlineWithAlphaCheck(pdest, ComputePixel(x,y,Ic,Iw,mc.alpha));
       {$ifndef PARAM_SIMPLECOLOR}
-        {$ifndef PARAM_SCANNER}
-          inc(pcolormap);
-        {$endif}
+        inc(pcolormap);
       {$endif}
       inc(pdest); //go to next pixel
     end;
@@ -284,5 +369,4 @@ end;
 
 {$undef PARAM_PHONGSSE}
 {$undef PARAM_SIMPLECOLOR}
-{$undef PARAM_SCANNER}
 

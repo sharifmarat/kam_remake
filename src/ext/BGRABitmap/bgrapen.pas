@@ -11,92 +11,51 @@ interface
   A poly-polyline consists in a series of polylines, defined by polyline points separated by empty points (see EmptyPointF) }
 
 uses
-  SysUtils, BGRAGraphics, BGRABitmapTypes, BGRATransform;
+  Classes, SysUtils, Graphics, BGRABitmapTypes;
 
 var   //predefined pen styles
   SolidPenStyle, DashPenStyle, DotPenStyle, DashDotPenStyle, DashDotDotPenStyle, ClearPenStyle: TBGRAPenStyle;
 
 type
-
-  { TBGRAPenStroker }
-
-  TBGRAPenStroker = class(TBGRACustomPenStroker)
-    protected
-      { Pen style can be defined by PenStyle property of by CustomPenStyle property.
-      When PenStyle property is assigned, CustomPenStyle property is assigned the actual
-      pen pattern. }
-      FCustomPenStyle: TBGRAPenStyle;
-      FPenStyle: TPenStyle;
-      FArrow: TBGRACustomArrow;
-      FArrowOwned: boolean;
-      FOriginalStrokeMatrix,FStrokeMatrix,FStrokeMatrixInverse: TAffineMatrix;
-      FStrokeZoom: single;
-      FStrokeMatrixIdentity: boolean;
-      FLineCap: TPenEndCap;
-      FJoinStyle: TPenJoinStyle;
-      FMiterLimit: single;
-
-      function GetArrow: TBGRACustomArrow; override;
-      function GetArrowOwned: boolean; override;
-      function GetCustomPenStyle: TBGRAPenStyle; override;
-      function GetJoinStyle: TPenJoinStyle; override;
-      function GetLineCap: TPenEndCap; override;
-      function GetMiterLimit: single; override;
-      function GetPenStyle: TPenStyle; override;
-      function GetStrokeMatrix: TAffineMatrix; override;
-      procedure SetArrow(AValue: TBGRACustomArrow); override;
-      procedure SetArrowOwned(AValue: boolean); override;
-      procedure SetCustomPenStyle(AValue: TBGRAPenStyle); override;
-      procedure SetJoinStyle(AValue: TPenJoinStyle); override;
-      procedure SetLineCap(AValue: TPenEndCap); override;
-      procedure SetMiterLimit(AValue: single); override;
-      procedure SetPenStyle(AValue: TPenStyle); override;
-      procedure SetStrokeMatrix(const AValue: TAffineMatrix); override;
-    public
-      constructor Create;
-      destructor Destroy; override;
-      function ComputePolyline(const APoints: array of TPointF; AWidth: single; AClosedCap: boolean = true): ArrayOfTPointF; override;
-      function ComputePolyline(const APoints: array of TPointF; AWidth: single; APenColor: TBGRAPixel; AClosedCap: boolean = true): ArrayOfTPointF; override;
-      function ComputePolylineAutocycle(const APoints: array of TPointF; AWidth: single): ArrayOfTPointF; override;
-      function ComputePolygon(const APoints: array of TPointF; AWidth: single): ArrayOfTPointF; override;
-
-  end;
-
   TBGRAPolyLineOption = (plRoundCapOpen, //specifies that the line ending is opened
-                         plCycle,        //specifies that it is a polygon
-                         plAutoCycle,    //specifies that a cycle must be used if the last point is the first point
-                         plNoStartCap,
-                         plNoEndCap);
+                         plCycle);       //specifies that it is a polygon
   TBGRAPolyLineOptions = set of TBGRAPolyLineOption;
-  TComputeArrowHeadProc = function(const APosition: TPointF; const ADirection: TPointF; const AWidth: single; const ACurrentPos: single): ArrayOfTPointF of object;
+
+{ Draw a polyline with specified parameters. If a scanner is specified, it is used as a texture.
+  Else the pencolor parameter is used as a solid color. }
+procedure BGRAPolyLine(bmp: TBGRACustomBitmap; const linepts: array of TPointF;
+     width: single; pencolor: TBGRAPixel; linecap: TPenEndCap; joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
+     options: TBGRAPolyLineOptions; scan: IBGRAScanner= nil);
 
 { Compute the path for a polyline }
 function ComputeWidePolylinePoints(const linepts: array of TPointF; width: single;
           pencolor: TBGRAPixel; linecap: TPenEndCap; joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
-          options: TBGRAPolyLineOptions; miterLimit: single = 2; arrow: TBGRACustomArrow = nil): ArrayOfTPointF;
+          options: TBGRAPolyLineOptions): ArrayOfTPointF;
 
 { Compute the path for a poly-polyline }
 function ComputeWidePolyPolylinePoints(const linepts: array of TPointF; width: single;
           pencolor: TBGRAPixel; linecap: TPenEndCap; joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
-          options: TBGRAPolyLineOptions; miterLimit: single = 2; arrow: TBGRACustomArrow = nil): ArrayOfTPointF;
+          options: TBGRAPolyLineOptions): ArrayOfTPointF;
+
+{ Compute points to draw an antialiased ellipse }
+function ComputeEllipse(x,y,rx,ry: single): ArrayOfTPointF;
+function ComputeArc65536(x, y, rx, ry: single; start65536,end65536: word): ArrayOfTPointF;
+function ComputeRoundRect(x1,y1,x2,y2,rx,ry: single): ArrayOfTPointF;
 
 {--------------------- Pixel line procedures --------------------------}
 { These procedures take integer coordinates as parameters and do not handle pen styles and width.
   They are faster and can be useful for drawing a simple frame }
 
 //aliased version
-procedure BGRADrawLineAliased(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer; c: TBGRAPixel; DrawLastPixel: boolean; ADrawMode: TDrawMode = dmDrawWithTransparency);
-procedure BGRAEraseLineAliased(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer; alpha: byte; DrawLastPixel: boolean);
+procedure BGRADrawLineAliased(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer; c: TBGRAPixel; DrawLastPixel: boolean);
 
 //antialiased version
-procedure BGRADrawLineAntialias({%H-}dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  c: TBGRAPixel; DrawLastPixel: boolean; LinearBlend : boolean = false);
-procedure BGRAEraseLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  calpha: byte; DrawLastPixel: boolean);
+procedure BGRADrawLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
+  c: TBGRAPixel; DrawLastPixel: boolean);
 
 //antialiased version with bicolor dashes (to draw a frame)
 procedure BGRADrawLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  c1, c2: TBGRAPixel; dashLen: integer; DrawLastPixel: boolean; var DashPos: integer; LinearBlend : boolean = false);
+  c1, c2: TBGRAPixel; dashLen: integer; DrawLastPixel: boolean);
 
 //length added to ensure accepable alpha join (using TBGRAMultishapeFiller is still better)
 function GetAlphaJoinFactor(alpha: byte): single;
@@ -108,122 +67,13 @@ function CreateBrushTexture(prototype: TBGRACustomBitmap; brushstyle: TBrushStyl
 //check special pen styles
 function IsSolidPenStyle(ACustomPenStyle: TBGRAPenStyle): boolean;
 function IsClearPenStyle(ACustomPenStyle: TBGRAPenStyle): boolean;
-function DuplicatePenStyle(ACustomPenStyle: array of single): TBGRAPenStyle;
 
 implementation
 
-uses math, BGRAPath;
+uses math;
 
 procedure BGRADrawLineAliased(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  c: TBGRAPixel; DrawLastPixel: boolean; ADrawMode: TDrawMode);
-var
-  Y, X: integer;
-  DX, DY, SX, SY, E: integer;
-  PixelProc: procedure (x, y: int32or64; c: TBGRAPixel) of object;
-begin
-  if (Y1 = Y2) then
-  begin
-    if (X1 = X2) then
-    begin
-      if DrawLastPixel then
-        dest.DrawPixel(X1, Y1, c, ADrawMode);
-    end else
-    begin
-      if not DrawLastPixel then
-      begin
-        if X2 > X1 then dec(X2) else inc(X2);
-      end;
-      dest.HorizLine(X1,Y1,X2,c, ADrawMode);
-    end;
-    Exit;
-  end else
-  if (X1 = X2) then
-  begin
-    if not DrawLastPixel then
-    begin
-      if Y2 > Y1 then dec(Y2) else inc(Y2);
-    end;
-    dest.VertLine(X1,Y1,Y2,c, ADrawMode);
-	Exit;
-  end;
-
-  DX := X2 - X1;
-  DY := Y2 - Y1;
-
-  if (ADrawMode = dmSetExceptTransparent) and (c.alpha <> 255) then exit else
-  if c.alpha = 0 then
-  begin
-    if ADrawMode in[dmDrawWithTransparency,dmLinearBlend] then exit;
-    if (ADrawMode = dmXor) and (DWord(c)=0) then exit;
-  end;
-  case ADrawMode of
-  dmDrawWithTransparency: PixelProc := @dest.DrawPixel;
-  dmXor: PixelProc := @dest.XorPixel;
-  dmLinearBlend: PixelProc := @dest.FastBlendPixel;
-  else
-    PixelProc := @dest.SetPixel;
-  end;
-
-  if DX < 0 then
-  begin
-    SX := -1;
-    DX := -DX;
-  end
-  else
-    SX := 1;
-
-  if DY < 0 then
-  begin
-    SY := -1;
-    DY := -DY;
-  end
-  else
-    SY := 1;
-
-  DX := DX shl 1;
-  DY := DY shl 1;
-
-  X := X1;
-  Y := Y1;
-  if DX > DY then
-  begin
-    E := DY - DX shr 1;
-
-    while X <> X2 do
-    begin
-      PixelProc(X, Y, c);
-      if E >= 0 then
-      begin
-        Inc(Y, SY);
-        Dec(E, DX);
-      end;
-      Inc(X, SX);
-      Inc(E, DY);
-    end;
-  end
-  else
-  begin
-    E := DX - DY shr 1;
-
-    while Y <> Y2 do
-    begin
-      PixelProc(X, Y, c);
-      if E >= 0 then
-      begin
-        Inc(X, SX);
-        Dec(E, DY);
-      end;
-      Inc(Y, SY);
-      Inc(E, DX);
-    end;
-  end;
-
-  if DrawLastPixel then
-    PixelProc(X2, Y2, c);
-end;
-
-procedure BGRAEraseLineAliased(dest: TBGRACustomBitmap; x1, y1, x2,
-  y2: integer; alpha: byte; DrawLastPixel: boolean);
+  c: TBGRAPixel; DrawLastPixel: boolean);
 var
   Y, X: integer;
   DX, DY, SX, SY, E: integer;
@@ -232,7 +82,7 @@ begin
   if (Y1 = Y2) and (X1 = X2) then
   begin
     if DrawLastPixel then
-      dest.ErasePixel(X1, Y1, alpha);
+      dest.DrawPixel(X1, Y1, c);
     Exit;
   end;
 
@@ -266,7 +116,7 @@ begin
 
     while X <> X2 do
     begin
-      dest.ErasePixel(X, Y, alpha);
+      dest.DrawPixel(X, Y, c);
       if E >= 0 then
       begin
         Inc(Y, SY);
@@ -282,7 +132,7 @@ begin
 
     while Y <> Y2 do
     begin
-      dest.ErasePixel(X, Y, alpha);
+      dest.DrawPixel(X, Y, c);
       if E >= 0 then
       begin
         Inc(X, SX);
@@ -294,191 +144,16 @@ begin
   end;
 
   if DrawLastPixel then
-    dest.ErasePixel(X2, Y2, alpha);
+    dest.DrawPixel(X2, Y2, c);
 end;
 
 procedure BGRADrawLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  c: TBGRAPixel; DrawLastPixel: boolean; LinearBlend : boolean);
+  c: TBGRAPixel; DrawLastPixel: boolean);
 var
   Y, X:  integer;
   DX, DY, SX, SY, E: integer;
-  alpha: NativeUInt;
-  pixelproc: procedure(x,y: int32or64; c: TBGRAPixel) of object;
+  alpha: single;
 begin
-  if LinearBlend then
-    pixelproc := @dest.FastBlendPixel
-  else
-    pixelproc := @dest.DrawPixel;
-
-  if (Y1 = Y2) and (X1 = X2) then
-  begin
-    if DrawLastPixel then
-      pixelproc(X1, Y1, c);
-    Exit;
-  end;
-
-  DX := X2 - X1;
-  DY := Y2 - Y1;
-
-  if DX < 0 then
-  begin
-    SX := -1;
-    DX := -DX;
-  end
-  else
-    SX := 1;
-
-  if DY < 0 then
-  begin
-    SY := -1;
-    DY := -DY;
-  end
-  else
-    SY := 1;
-
-  DX := DX shl 1;
-  DY := DY shl 1;
-
-  X := X1;
-  Y := Y1;
-
-  if DX > DY then
-  begin
-    E := 0;
-
-    while X <> X2 do
-    begin
-      alpha := c.alpha * E div DX;
-      pixelproc(X, Y, BGRA(c.red, c.green, c.blue, c.alpha - alpha));
-      pixelproc(X, Y + SY, BGRA(c.red, c.green, c.blue, alpha));
-      Inc(E, DY);
-      if E >= DX then
-      begin
-        Inc(Y, SY);
-        Dec(E, DX);
-      end;
-      Inc(X, SX);
-    end;
-  end
-  else
-  begin
-    E := 0;
-
-    while Y <> Y2 do
-    begin
-      alpha := c.alpha * E div DY;
-      pixelproc(X, Y, BGRA(c.red, c.green, c.blue, c.alpha - alpha));
-      pixelproc(X + SX, Y, BGRA(c.red, c.green, c.blue, alpha));
-      Inc(E, DX);
-      if E >= DY then
-      begin
-        Inc(X, SX);
-        Dec(E, DY);
-      end;
-      Inc(Y, SY);
-    end;
-  end;
-  if DrawLastPixel then
-    pixelproc(X2, Y2, c);
-end;
-
-procedure BGRAEraseLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2,
-  y2: integer; calpha: byte; DrawLastPixel: boolean);
-var
-  Y, X:  integer;
-  DX, DY, SX, SY, E: integer;
-  alpha: NativeUInt;
-begin
-
-  if (Y1 = Y2) and (X1 = X2) then
-  begin
-    if DrawLastPixel then
-      dest.ErasePixel(X1, Y1, calpha);
-    Exit;
-  end;
-
-  DX := X2 - X1;
-  DY := Y2 - Y1;
-
-  if DX < 0 then
-  begin
-    SX := -1;
-    DX := -DX;
-  end
-  else
-    SX := 1;
-
-  if DY < 0 then
-  begin
-    SY := -1;
-    DY := -DY;
-  end
-  else
-    SY := 1;
-
-  DX := DX shl 1;
-  DY := DY shl 1;
-
-  X := X1;
-  Y := Y1;
-
-  if DX > DY then
-  begin
-    E := 0;
-
-    while X <> X2 do
-    begin
-      alpha := calpha * E div DX;
-      dest.ErasePixel(X, Y, calpha - alpha);
-      dest.ErasePixel(X, Y + SY, alpha);
-      Inc(E, DY);
-      if E >= DX then
-      begin
-        Inc(Y, SY);
-        Dec(E, DX);
-      end;
-      Inc(X, SX);
-    end;
-  end
-  else
-  begin
-    E := 0;
-
-    while Y <> Y2 do
-    begin
-      alpha := calpha * E div DY;
-      dest.ErasePixel(X, Y, calpha - alpha);
-      dest.ErasePixel(X + SX, Y, alpha);
-      Inc(E, DX);
-      if E >= DY then
-      begin
-        Inc(X, SX);
-        Dec(E, DY);
-      end;
-      Inc(Y, SY);
-    end;
-  end;
-  if DrawLastPixel then
-    dest.ErasePixel(X2, Y2, calpha);
-end;
-
-procedure BGRADrawLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
-  c1, c2: TBGRAPixel; dashLen: integer; DrawLastPixel: boolean; var DashPos: integer; LinearBlend : boolean);
-var
-  Y, X:  integer;
-  DX, DY, SX, SY, E: integer;
-  alpha: NativeUInt;
-  c:     TBGRAPixel;
-begin
-  if (c1.alpha=0) and (c2.alpha=0) then exit;
-  if DashLen <= 0 then
-  begin
-    BGRADrawLineAntialias(dest,x1,y1,x2,y2,MergeBGRA(c1,c2),DrawLastPixel,LinearBlend);
-    exit;
-  end;
-
-  DashPos := PositiveMod(DashPos,DashLen+DashLen);
-  if DashPos < DashLen then c := c1 else c := c2;
 
   if (Y1 = Y2) and (X1 = X2) then
   begin
@@ -518,9 +193,98 @@ begin
 
     while X <> X2 do
     begin
-      alpha := c.alpha * E div DX;
-      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, c.alpha - alpha));
-      dest.DrawPixel(X, Y + SY, BGRA(c.red, c.green, c.blue, alpha));
+      alpha := 1 - E / DX;
+      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, round(c.alpha * sqrt(alpha))));
+      dest.DrawPixel(X, Y + SY, BGRA(c.red, c.green, c.blue,
+        round(c.alpha * sqrt(1 - alpha))));
+      Inc(E, DY);
+      if E >= DX then
+      begin
+        Inc(Y, SY);
+        Dec(E, DX);
+      end;
+      Inc(X, SX);
+    end;
+  end
+  else
+  begin
+    E := 0;
+
+    while Y <> Y2 do
+    begin
+      alpha := 1 - E / DY;
+      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, round(c.alpha * sqrt(alpha))));
+      dest.DrawPixel(X + SX, Y, BGRA(c.red, c.green, c.blue,
+        round(c.alpha * sqrt(1 - alpha))));
+      Inc(E, DX);
+      if E >= DY then
+      begin
+        Inc(X, SX);
+        Dec(E, DY);
+      end;
+      Inc(Y, SY);
+    end;
+  end;
+  if DrawLastPixel then
+    dest.DrawPixel(X2, Y2, c);
+end;
+
+procedure BGRADrawLineAntialias(dest: TBGRACustomBitmap; x1, y1, x2, y2: integer;
+  c1, c2: TBGRAPixel; dashLen: integer; DrawLastPixel: boolean);
+var
+  Y, X:  integer;
+  DX, DY, SX, SY, E: integer;
+  alpha: single;
+  c:     TBGRAPixel;
+  DashPos: integer;
+begin
+  if (c1.alpha=0) and (c2.alpha=0) then exit;
+
+  c := c1;
+  DashPos := 0;
+
+  if (Y1 = Y2) and (X1 = X2) then
+  begin
+    if DrawLastPixel then
+      dest.DrawPixel(X1, Y1, c);
+    Exit;
+  end;
+
+  DX := X2 - X1;
+  DY := Y2 - Y1;
+
+  if DX < 0 then
+  begin
+    SX := -1;
+    DX := -DX;
+  end
+  else
+    SX := 1;
+
+  if DY < 0 then
+  begin
+    SY := -1;
+    DY := -DY;
+  end
+  else
+    SY := 1;
+
+  DX := DX shl 1;
+  DY := DY shl 1;
+
+  X := X1;
+  Y := Y1;
+
+  if DX > DY then
+  begin
+    E := 0;
+
+    while X <> X2 do
+    begin
+      alpha := 1 - E / DX;
+      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, round(c.alpha * sqrt(alpha))));
+      dest.DrawPixel(X, Y + SY, BGRA(c.red, c.green, c.blue,
+        round(c.alpha * sqrt(1 - alpha))));
       Inc(E, DY);
       if E >= DX then
       begin
@@ -546,9 +310,10 @@ begin
 
     while Y <> Y2 do
     begin
-      alpha := c.alpha * E div DY;
-      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, c.alpha - alpha));
-      dest.DrawPixel(X + SX, Y, BGRA(c.red, c.green, c.blue, alpha));
+      alpha := 1 - E / DY;
+      dest.DrawPixel(X, Y, BGRA(c.red, c.green, c.blue, round(c.alpha * sqrt(alpha))));
+      dest.DrawPixel(X + SX, Y, BGRA(c.red, c.green, c.blue,
+        round(c.alpha * sqrt(1 - alpha))));
       Inc(E, DX);
       if E >= DY then
       begin
@@ -569,11 +334,7 @@ begin
     end;
   end;
   if DrawLastPixel then
-  begin
     dest.DrawPixel(X2, Y2, c);
-    inc(DashPos);
-    if DashPos = DashLen + DashLen then DashPos := 0;
-  end;
 end;
 
 function GetAlphaJoinFactor(alpha: byte): single;
@@ -626,15 +387,6 @@ begin
     result := false;
 end;
 
-function DuplicatePenStyle(ACustomPenStyle: array of single): TBGRAPenStyle;
-var
-  i: Integer;
-begin
-  setlength(result,length(ACustomPenStyle));
-  for i := 0 to high(result) do
-    result[i]:= ACustomPenStyle[i];
-end;
-
 procedure ApplyPenStyle(const leftPts, rightPts: array of TPointF; const penstyle: TBGRAPenStyle;
     width: single; var posstyle: single; out styledPts: ArrayOfTPointF);
 var
@@ -667,13 +419,10 @@ var
 
   procedure AddPt(pt: TPointF);
   begin
-    if (nbStyled = 0) or (pt <> styledPts[nbStyled-1]) then
-    begin
-      if nbStyled = length(styledPts) then
-        setlength(styledPts,nbStyled*2+4);
-      styledPts[nbStyled] := pt;
-      inc(nbStyled);
-    end;
+    if nbStyled = length(styledPts) then
+      setlength(styledPts,nbStyled*2+4);
+    styledPts[nbStyled] := pt;
+    inc(nbStyled);
   end;
 
   procedure StartPolygon;
@@ -729,8 +478,6 @@ begin
     raise Exception.Create('Pen style must contain an even number of values');
   styleLength := 0;
   styleIndex := -1;
-  remainingDash := 0;
-  betweenDash   := false;
   for i := 0 to high(penstyle) do
     if penstyle[i] <= 0 then
       raise Exception.Create('Invalid pen dash length')
@@ -786,13 +533,23 @@ begin
   setlength(styledPts,nbStyled);
 end;
 
+procedure BGRAPolyLine(bmp: TBGRACustomBitmap; const linepts: array of TPointF; width: single;
+          pencolor: TBGRAPixel; linecap: TPenEndCap; joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
+          options: TBGRAPolyLineOptions; scan: IBGRAScanner= nil);
+var
+  widePolylinePoints: ArrayOfTPointF;
+begin
+  widePolylinePoints := ComputeWidePolylinePoints(linepts,width,pencolor,linecap,joinstyle,penstyle,options);
+  if scan <> nil then
+    bmp.FillPolyAntialias(widePolylinePoints,scan)
+  else
+    bmp.FillPolyAntialias(widePolylinePoints,pencolor);
+end;
+
 function ComputeWidePolylinePoints(const linepts: array of TPointF; width: single;
           pencolor: TBGRAPixel; linecap: TPenEndCap; joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
-          options: TBGRAPolyLineOptions; miterLimit: single; arrow: TBGRACustomArrow): ArrayOfTPointF;
-const oneOver512 = 1/512;
+          options: TBGRAPolyLineOptions): ArrayOfTPointF;
 var
-  startArrowPos, startArrowDir, endArrowPos, endArrowDir: TPointF;
-  startArrowLinePos, endArrowLinePos: single;
   borders : array of record
               leftSide,rightSide: TLineDef;
               len: single;
@@ -953,7 +710,7 @@ var
        AddPt( pts[lastPointIndex] + borders[lastPointIndex-1].leftDir,
               pts[lastPointIndex] - borders[lastPointIndex-1].leftDir);
 
-    if (lastPointIndex = high(pts)) and (linecap = pecRound) and not (plNoEndCap in options) then
+    if (lastPointIndex = high(pts)) and (linecap = pecRound) then
     begin
       if not (plRoundCapOpen in options) then
         AddRoundCap(pts[high(pts)],borders[high(pts)-1].leftSide.dir,false)
@@ -1010,46 +767,6 @@ var
     end;
   end;
 
-  procedure FinalizeArray;
-  var arrowStartData, arrowEndData: ArrayOfTPointF;
-    finalNb,i,delta: integer;
-    hasStart,hasEnd: boolean;
-  begin
-    if assigned(arrow) and not isEmptyPointF(startArrowPos) then
-      arrowStartData := arrow.ComputeStartAt(startArrowPos, startArrowDir, width, startArrowLinePos)
-    else
-      arrowStartData := nil;
-    if assigned(arrow) and not isEmptyPointF(endArrowPos) then
-      arrowEndData := arrow.ComputeEndAt(endArrowPos, endArrowDir, width, endArrowLinePos)
-    else
-      arrowEndData := nil;
-    hasStart := length(arrowStartData)>0;
-    hasEnd := length(arrowEndData)>0;
-    finalNb := NbPolyAcc;
-    if hasStart then
-    begin
-      delta := length(arrowStartData)+1;
-      finalNb += delta;
-    end else delta := 0;
-    if hasEnd then finalNb += length(arrowEndData)+1;
-    SetLength(Result, finalNb);
-    if hasStart then
-    begin
-      for i := NbPolyAcc-1 downto 0 do
-        result[i+delta] := result[i];
-      result[delta-1] := EmptyPointF;
-      for i := 0 to high(arrowStartData) do
-        result[i] := arrowStartData[i];
-    end;
-    if hasEnd then
-    begin
-      delta += NbPolyAcc+1;
-      result[delta-1] := EmptyPointF;
-      for i := 0 to high(arrowEndData) do
-        result[i+delta] := arrowEndData[i];
-    end;
-  end;
-
 var
   i: integer;
   dir: TPointF;
@@ -1060,33 +777,23 @@ var
   nbPts: integer;
   ShouldFlushLine, HasLittleBorder, NormalRestart: Boolean;
   pt1,pt2,pt3,pt4: TPointF;
-  linePos: single;
-  startArrowDone,endArrowDone: boolean;
-  wantedStartArrowPos,wantedEndArrowPos: single;
 
 begin
   Result := nil;
 
-  if (length(linepts)=0) or (width = 0) then exit;
+  if length(linepts)=0 then exit;
   if IsClearPenStyle(penstyle) then exit;
   for i := 0 to high(linepts) do
     if isEmptyPointF(linepts[i]) then
     begin
-      result := ComputeWidePolyPolylinePoints(linepts,width,pencolor,linecap,joinstyle,penstyle,options,miterLimit,arrow);
+      result := ComputeWidePolyPolylinePoints(linepts,width,pencolor,linecap,joinstyle,penstyle,options);
       exit;
     end;
-
-  if (plAutoCycle in options) and (length(linepts) >= 2) and (linepts[0]=linepts[high(linepts)]) then
-    options := options + [plCycle];
-  if plNoEndCap in options then options := options - [plRoundCapOpen];
 
   hw := width / 2;
   case joinstyle of
   pjsBevel,pjsRound: maxMiter := hw*1.001;
-  pjsMiter: if miterLimit < 1.001 then maxMiter := hw*1.001 else
-               maxMiter := hw*miterLimit;
-  else
-    raise Exception.Create('Unknown join style');
+  pjsMiter: maxMiter := hw*2;
   end;
 
   roundPrecision := round(hw)+2;
@@ -1094,23 +801,20 @@ begin
   nbPts := 0;
   setlength(pts, length(linepts)+2);
   for i := 0 to high(linepts) do
-    if (nbPts = 0) or (abs(linepts[i].x-pts[nbPts-1].x)>oneOver512) or (abs(linepts[i].y-pts[nbPts-1].y)>oneOver512) then
+    if (nbPts = 0) or (linepts[i] <> pts[nbPts-1]) then
     begin
       pts[nbPts]:= linePts[i];
       inc(nbPts);
     end;
-  if (nbPts > 1) and (plCycle in options) and
-      (abs(pts[0].x-pts[nbPts-1].x)<=oneOver512) and
-      (abs(pts[0].y-pts[nbPts-1].y)<=oneOver512) then dec(nbPts);
+  if (nbPts > 1) and
+      (pts[nbPts-1] = pts[0]) then dec(nbPts);
   if (plCycle in options) and (nbPts > 2) then
   begin
-    if (pts[nbPts-1] <> pts[0]) then
-    begin
-      pts[nbPts] := pts[0];
-      inc(nbPts);
-    end;
+    pts[nbPts] := pts[0];
+    inc(nbPts);
     pts[nbPts] := pts[1];
     inc(nbPts);
+    linecap := pecRound;
   end else
     options -= [plCycle];
 
@@ -1123,25 +827,6 @@ begin
     exit;
   end;
 
-  startArrowDir := EmptyPointF;
-  startArrowPos := EmptyPointF;
-  endArrowDir := EmptyPointF;
-  endArrowPos := EmptyPointF;
-  if Assigned(arrow) then
-  begin
-    wantedStartArrowPos:= arrow.StartOffsetX;
-    wantedEndArrowPos:= arrow.EndOffsetX;
-    startArrowDone := not arrow.IsStartDefined;
-    endArrowDone := not arrow.IsEndDefined;
-  end
-  else
-  begin
-    wantedStartArrowPos:= 0;
-    wantedEndArrowPos:= 0;
-    startArrowDone := true;
-    endArrowDone := true;
-  end;
-
   //init computed points arrays
   setlength(compPts, length(pts)*2+4);
   setlength(revCompPts, length(pts)*2+4); //reverse order array
@@ -1149,29 +834,6 @@ begin
   nbRevCompPts := 0;
   NbPolyAcc := 0;
 
-  if not endArrowDone then
-  begin
-    wantedEndArrowPos:= -wantedEndArrowPos*width;
-    linePos := 0;
-    for i := high(pts) downto 1 do
-    begin
-      dir := pts[i-1]-pts[i];
-      len := sqrt(dir*dir);
-      dir *= 1/len;
-      if not endArrowDone and (linePos+len >= wantedEndArrowPos) then
-      begin
-        endArrowPos := pts[i];
-        endArrowDir := -dir;
-        endArrowLinePos := -linePos/width;
-        endArrowDone := true;
-        break;
-      end;
-      linePos += len;
-    end;
-  end;
-
-  wantedStartArrowPos:= -wantedStartArrowPos*width;
-  linePos := 0;
   //compute borders
   setlength(borders, length(pts)-1);
   for i := 0 to high(pts)-1 do
@@ -1179,15 +841,8 @@ begin
     dir := pts[i+1]-pts[i];
     len := sqrt(dir*dir);
     dir *= 1/len;
-    if not startArrowDone and (linePos+len >= wantedStartArrowPos) then
-    begin
-      startArrowPos := pts[i];
-      startArrowDir := -dir;
-      startArrowLinePos := -linePos/width;
-      startArrowDone := true;
-    end;
-    if (linecap = pecSquare) and ((not (plNoStartCap in options) and (i=0)) or
-      (not (plNoEndCap in options) and (i=high(pts)-1))) then //for square cap, just start and end further
+
+    if (linecap = pecSquare) and ((i=0) or (i=high(pts)-1)) then //for square cap, just start and end further
     begin
       if i=0 then
         pts[0] -= dir*hw;
@@ -1200,7 +855,7 @@ begin
       len := sqrt(dir*dir);
       dir *= 1/len;
     end else
-    if not (plNoStartCap in options) and (linecap = pecRound) and (i=0) and not (plCycle in options) then
+    if (linecap = pecRound) and (i=0) and not (plCycle in options) then
       AddRoundCap(pts[0], -dir ,true);
 
     borders[i].len := len;
@@ -1209,7 +864,6 @@ begin
     borders[i].leftSide.dir := dir;
     borders[i].rightSide.origin := pts[i] - borders[i].leftDir;
     borders[i].rightSide.dir := dir;
-    linePos += len;
   end;
 
   //first points
@@ -1382,37 +1036,23 @@ begin
       if joinstyle = pjsRound then
       begin
 
-        if {(penstyle= nil) and} (turn > 0) then
+        if (penstyle= nil) and (turn > 0) then
         begin
           pt1 := pts[i+1] + borders[i].leftDir;
           pt2 := pts[i+1] + borders[i+1].leftDir;
-          pt3 := pts[i+1] - borders[i].leftDir;
-          pt4 := pts[i+1];
-
-          SetJoinLeft([pt1,pt1]);
-          SetJoinRight([pt3,pt4]);
-          AddJoin(-1);
-
           SetJoinLeft(ComputeRoundJoin(pts[i+1],pt1,pt2));
           nbJoinRight := 1;
-          joinRight[0] := pt4;
+          joinRight[0] := pts[i+1] - borders[i].leftDir;
           AddJoin(-1);
           FlushLine(-1);
         end else
-        if {(penstyle= nil) and} (turn < 0) then
+        if (penstyle= nil) and (turn < 0) then
         begin
           pt1 := pts[i+1] - borders[i].leftDir;
           pt2 := pts[i+1] - borders[i+1].leftDir;
-          pt3 := pts[i+1] + borders[i].leftDir;
-          pt4 := pts[i+1];
-
-          SetJoinRight([pt1,pt1]);
-          SetJoinLeft([pt3,pt4]);
-          AddJoin(-1);
-
           SetJoinRight(ComputeRoundJoin(pts[i+1],pt1,pt2));
           nbJoinLeft := 1;
-          joinLeft[0] := pt4;
+          joinLeft[0] := pts[i+1] + borders[i].leftDir;
           AddJoin(-1);
           FlushLine(-1);
         end else
@@ -1449,13 +1089,13 @@ begin
   else
     FlushLine(high(pts));
 
-  FinalizeArray;
+  SetLength(Result, NbPolyAcc);
 end;
 
 function ComputeWidePolyPolylinePoints(const linepts: array of TPointF;
   width: single; pencolor: TBGRAPixel; linecap: TPenEndCap;
   joinstyle: TPenJoinStyle; const penstyle: TBGRAPenStyle;
-  options: TBGRAPolyLineOptions; miterLimit: single; arrow: TBGRACustomArrow): ArrayOfTPointF;
+  options: TBGRAPolyLineOptions): ArrayOfTPointF;
 
 var
   results: array of array of TPointF;
@@ -1472,7 +1112,7 @@ var
       setlength(subPts,endIndexP1-startIndex);
       for j := startIndex to endIndexP1-1 do
         subPts[j-startIndex] := linepts[j];
-      tempWidePolyline := ComputeWidePolylinePoints(subPts,width,pencolor,linecap,joinstyle,penstyle,options,miterLimit,arrow);
+      tempWidePolyline := ComputeWidePolylinePoints(subPts,width,pencolor,linecap,joinstyle,penstyle,options);
       if length(results) = nbresults then
         setlength(results,(nbresults+1)*2);
       results[nbResults] := tempWidePolyline;
@@ -1514,185 +1154,62 @@ begin
   end;
 end;
 
-{ TBGRAPenStroker }
-
-function TBGRAPenStroker.GetArrow: TBGRACustomArrow;
+{$PUSH}{$R-}
+function ComputeArc65536(x, y, rx, ry: single; start65536,end65536: word): ArrayOfTPointF;
+var i,nb: integer;
+    arclen: integer;
+    pos: word;
 begin
-  result := FArrow;
-end;
+  if end65536 > start65536 then
+    arclen := end65536-start65536 else
+    arclen := 65536-(start65536-end65536);
 
-function TBGRAPenStroker.GetArrowOwned: boolean;
-begin
-  result := FArrowOwned;
-end;
+  nb := round(((rx+ry)*2+8)*arclen/65536) and not 3;
+  if nb < 2 then nb := 2;
+  if nb > arclen+1 then nb := arclen+1;
 
-function TBGRAPenStroker.GetCustomPenStyle: TBGRAPenStyle;
-begin
-  result := FCustomPenStyle;
-end;
-
-function TBGRAPenStroker.GetJoinStyle: TPenJoinStyle;
-begin
-  result := FJoinStyle;
-end;
-
-function TBGRAPenStroker.GetLineCap: TPenEndCap;
-begin
-  result := FLineCap;
-end;
-
-function TBGRAPenStroker.GetMiterLimit: single;
-begin
-  result := FMiterLimit;
-end;
-
-function TBGRAPenStroker.GetPenStyle: TPenStyle;
-begin
-  result := FPenStyle;
-end;
-
-function TBGRAPenStroker.GetStrokeMatrix: TAffineMatrix;
-begin
-  result := FOriginalStrokeMatrix;
-end;
-
-procedure TBGRAPenStroker.SetArrow(AValue: TBGRACustomArrow);
-begin
-  FArrow := AValue;
-end;
-
-procedure TBGRAPenStroker.SetArrowOwned(AValue: boolean);
-begin
-  FArrowOwned := AValue;
-end;
-
-procedure TBGRAPenStroker.SetCustomPenStyle(AValue: TBGRAPenStyle);
-begin
-  if FCustomPenStyle=AValue then Exit;
-  FCustomPenStyle:=AValue;
-  if AValue = SolidPenStyle then FPenStyle := psSolid
-  else if AValue = ClearPenStyle then FPenStyle:= psClear
-  else if AValue = DashPenStyle then FPenStyle:= psDash
-  else if AValue = DotPenStyle then FPenStyle := psDot
-  else if AValue = DashDotPenStyle then FPenStyle:= psDashDot
-  else if AValue = DashDotDotPenStyle then FPenStyle:= psDashDotDot
-  else
+  setlength(result,nb);
+  for i := 0 to nb-1 do
   begin
-    FPenStyle := psPattern;
-    FCustomPenStyle:= DuplicatePenStyle(AValue);
+    pos := start65536+int64(i)*arclen div (int64(nb)-1);
+    result[i] := PointF(x+rx*(Cos65536(pos)-32768)/32768,
+                        y-ry*(Sin65536(pos)-32768)/32768);
   end;
 end;
+{$R+}
 
-procedure TBGRAPenStroker.SetJoinStyle(AValue: TPenJoinStyle);
+function ComputeEllipse(x, y, rx, ry: single): ArrayOfTPointF;
 begin
-  FJoinStyle:= AValue;
+  result := ComputeArc65536(x,y,rx,ry,0,0);
 end;
 
-procedure TBGRAPenStroker.SetLineCap(AValue: TPenEndCap);
+function ComputeRoundRect(x1,y1,x2,y2,rx,ry: single): ArrayOfTPointF;
+var q1,q2,q3,q4: array of TPointF;
+  temp: Single;
 begin
-  FLineCap:= AValue;
-end;
-
-procedure TBGRAPenStroker.SetMiterLimit(AValue: single);
-begin
-  FMiterLimit := AValue;
-end;
-
-procedure TBGRAPenStroker.SetStrokeMatrix(const AValue: TAffineMatrix);
-begin
-  if FOriginalStrokeMatrix=AValue then Exit;
-  FOriginalStrokeMatrix:=AValue;
-  FStrokeMatrix := AValue;
-  FStrokeMatrix[1,3] := 0;
-  FStrokeMatrix[2,3] := 0;
-  FStrokeZoom := max(VectLen(PointF(FStrokeMatrix[1,1],FStrokeMatrix[2,1])),
-          VectLen(PointF(FStrokeMatrix[1,2],FStrokeMatrix[2,2])));
-  if FStrokeZoom > 0 then
-    FStrokeMatrix *= AffineMatrixScale(1/FStrokeZoom,1/FStrokeZoom);
-  FStrokeMatrixIdentity := IsAffineMatrixIdentity(FStrokeMatrix);
-  FStrokeMatrixInverse := AffineMatrixInverse(FStrokeMatrix);
-end;
-
-procedure TBGRAPenStroker.SetPenStyle(AValue: TPenStyle);
-begin
-  if FPenStyle=AValue then Exit;
-  Case AValue of
-  psSolid: FCustomPenStyle := SolidPenStyle;
-  psDash: FCustomPenStyle := DashPenStyle;
-  psDot: FCustomPenStyle := DotPenStyle;
-  psDashDot: FCustomPenStyle := DashDotPenStyle;
-  psDashDotDot: FCustomPenStyle := DashDotDotPenStyle;
-  else FCustomPenStyle := ClearPenStyle;
+  if x1 > x2 then
+  begin
+    temp := x1;
+    x1 := x2;
+    x2 := temp;
   end;
-  FPenStyle := AValue;
-end;
-
-constructor TBGRAPenStroker.Create;
-begin
-  Style := psSolid;
-  LineCap := pecRound;
-  JoinStyle := pjsBevel;
-  MiterLimit := 2;
-  fillchar(FOriginalStrokeMatrix,sizeof(FOriginalStrokeMatrix),0);
-  StrokeMatrix := AffineMatrixIdentity;
-end;
-
-destructor TBGRAPenStroker.Destroy;
-begin
-  if ArrowOwned then FreeAndNil(FArrow);
-  inherited Destroy;
-end;
-
-function TBGRAPenStroker.ComputePolyline(const APoints: array of TPointF;
-  AWidth: single; AClosedCap: boolean): ArrayOfTPointF;
-var
-  c: TBGRAPixel;
-begin
-  if not AClosedCap then
-    c := BGRAWhite //needed for alpha junction
-  else
-    c := BGRAPixelTransparent;
-
-  if FStrokeMatrixIdentity then
-    result := ComputePolyline(APoints,AWidth*FStrokeZoom,c,AClosedCap)
-  else
-    result := FStrokeMatrix*ComputePolyline(FStrokeMatrixInverse*APoints,AWidth*FStrokeZoom,c,AClosedCap);
-end;
-
-function TBGRAPenStroker.ComputePolyline(const APoints: array of TPointF;
-  AWidth: single; APenColor: TBGRAPixel; AClosedCap: boolean): ArrayOfTPointF;
-var options: TBGRAPolyLineOptions;
-begin
-  options := [];
-  if Assigned(Arrow) and Arrow.IsStartDefined then options += [plNoStartCap];
-  if Assigned(Arrow) and Arrow.IsEndDefined then options += [plNoEndCap];
-  if not AClosedCap then options += [plRoundCapOpen];
-  if FStrokeMatrixIdentity then
-    result := BGRAPen.ComputeWidePolylinePoints(APoints, AWidth*FStrokeZoom, APenColor, LineCap, JoinStyle, CustomPenStyle, options, MiterLimit, Arrow)
-  else
-    result := FStrokeMatrix*BGRAPen.ComputeWidePolylinePoints(FStrokeMatrixInverse*APoints, AWidth*FStrokeZoom, APenColor, LineCap, JoinStyle, CustomPenStyle, options, MiterLimit, Arrow);
-end;
-
-function TBGRAPenStroker.ComputePolylineAutocycle(
-  const APoints: array of TPointF; AWidth: single): ArrayOfTPointF;
-var options: TBGRAPolyLineOptions;
-begin
-  options := [plAutoCycle];
-  if Assigned(Arrow) and Arrow.IsStartDefined then options += [plNoStartCap];
-  if Assigned(Arrow) and Arrow.IsEndDefined then options += [plNoEndCap];
-  if FStrokeMatrixIdentity then
-    result := BGRAPen.ComputeWidePolylinePoints(APoints, AWidth*FStrokeZoom, BGRAPixelTransparent, LineCap, JoinStyle, CustomPenStyle, options, MiterLimit, Arrow)
-  else
-    result := FStrokeMatrix*BGRAPen.ComputeWidePolylinePoints(FStrokeMatrixInverse*APoints, AWidth*FStrokeZoom, BGRAPixelTransparent, LineCap, JoinStyle, CustomPenStyle, options, MiterLimit, Arrow)
-end;
-
-function TBGRAPenStroker.ComputePolygon(const APoints: array of TPointF;
-  AWidth: single): ArrayOfTPointF;
-begin
-  if FStrokeMatrixIdentity then
-    result := BGRAPen.ComputeWidePolylinePoints(APoints, AWidth*FStrokeZoom, BGRAPixelTransparent, LineCap, JoinStyle, CustomPenStyle, [plCycle], MiterLimit)
-  else
-    result := FStrokeMatrix*BGRAPen.ComputeWidePolylinePoints(FStrokeMatrixInverse*APoints, AWidth*FStrokeZoom, BGRAPixelTransparent, LineCap, JoinStyle, CustomPenStyle, [plCycle], MiterLimit);
+  if y1 > y2 then
+  begin
+    temp := y1;
+    y1 := y2;
+    y2 := temp;
+  end;
+  rx := abs(rx);
+  ry := abs(ry);
+  if 2*rx > x2-x1 then
+    rx := (x2-x1)/2;
+  if 2*ry > y2-y1 then
+    ry := (y2-y1)/2;
+  q1 := ComputeArc65536(x2-rx,y1+ry,rx,ry,0,16384);
+  q2 := ComputeArc65536(x1+rx,y1+ry,rx,ry,16384,32768);
+  q3 := ComputeArc65536(x1+rx,y2-ry,rx,ry,32768,32768+16384);
+  q4 := ComputeArc65536(x2-rx,y2-ry,rx,ry,32768+16384,0);
+  result := ConcatPointsF([q1,q2,q3,q4]);
 end;
 
 initialization
