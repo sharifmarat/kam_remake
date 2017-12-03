@@ -1406,6 +1406,20 @@ begin
 
   if SHOW_DEFENCE_POSITIONS then
     fAI.General.DefencePositions.Paint;
+
+  if not SKIP_RENDER AND fAI.Setup.NewAI then
+  begin
+    if OVERLAY_AI_BUILD then
+    begin
+      fAI.CityManagement.Builder.Paint();
+      fAI.CityManagement.Builder.Planner.Paint();
+    end;
+    if OVERLAY_AI_COMBAT then
+    begin
+      fAI.ArmyManagement.Paint();
+      fAI.ArmyManagement.Attack.Paint();
+    end;
+  end;
 end;
 
 
