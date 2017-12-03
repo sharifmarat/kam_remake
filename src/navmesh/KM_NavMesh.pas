@@ -13,6 +13,22 @@ type
     Weight: Single;
   end;
 
+  TNode = record
+      Loc: TKMPoint;
+      Nearby: array of Word; //Indexes of connected nodes
+      Owner: array [0..MAX_HANDS-1] of Byte;
+    end;
+
+  TPolygon = record
+      CenterPoint: TKMPoint;
+      NearbyCount: Byte; //could be 0 .. 3
+      Indices: array [0..2] of Word; //Neighbour nodes
+      Nearby: array [0..2] of Word; //Neighbour polygons
+    end;
+
+  TNodeArray = array of TNode;
+  TPolygonArray = array of TPolygon;
+
   //NavMesh is used to acess the map on a higher level than tiles
   //terrain is represented as a mesh interconnected polygons
   TKMNavMesh = class
@@ -28,16 +44,9 @@ type
     //Working data
     fNodeCount: Integer;
     fPolyCount: Integer;
-    fNodes: array of record
-      Loc: TKMPoint;
-      Nearby: array of Word; //Indexes of connected nodes
-      Owner: array [0..MAX_HANDS-1] of Byte;
-    end;
-    fPolygons: array of record
-      Indices: array [0..2] of Word;
-      NearbyCount: Byte; //could be 0 .. 3
-      Nearby: array [0..2] of Word; //Neighbour polygons
-    end;
+    fNodes: TNodeArray;            // Nodes
+    fPolygons: TPolygonArray;      // Polygons
+    fPoint2NodeArr: TKMWord2Array;
 
     //Building the navmesh from terrain
     //Process involves many steps executed in a functional way
@@ -57,6 +66,10 @@ type
     procedure UpdateOwnership;
   public
     constructor Create(aInfluences: TKMInfluences);
+
+    property Point2NodeArr: TKMWord2Array read fPoint2NodeArr;
+    property Polygons: TPolygonArray read fPolygons;
+    property Nodes: TNodeArray read fNodes;
 
     procedure Init;
     procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
@@ -120,6 +133,9 @@ begin
 
   //Fill in NavMesh structure
   AssembleNavMesh;
+
+  //Mapp all map tiles to its polygons
+  TieUpTilesWithPolygons();
 end;
 
 
@@ -146,6 +162,71 @@ begin
   begin
     aTileOutlines.Shape[I].Nodes[K].X := aTileOutlines.Shape[I].Nodes[K].X + 1;
     aTileOutlines.Shape[I].Nodes[K].Y := aTileOutlines.Shape[I].Nodes[K].Y + 1;
+  end;
+end;
+
+
+procedure TKMNavMesh.TieUpTilesWithPolygons();
+
+// Is inside triangle (source: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle)
+  function Sign(const aP1, aP2, aP3: TKMPointF): Single;
+  begin
+      Result := (aP1.X - aP3.X) * (aP2.Y - aP3.Y) - (aP2.X - aP3.X) * (aP1.Y - aP3.Y);
+  end;
+
+  function PointInTriangle(const aPt, aV1, aV2, aV3: TKMPointF): Boolean;
+  var
+    b1, b2, b3: Boolean;
+  begin
+    b1 := Sign(aPt, aV1, aV2) <= 0.0;
+    b2 := Sign(aPt, aV2, aV3) <= 0.0;
+    b3 := Sign(aPt, aV3, aV1) <= 0.0;
+    Result := ((b1 = b2) AND (b2 = b3));
+  end;
+
+var
+  AlreadyInTriangle: Boolean;
+  I, i1, i2, i3: Word;
+  X, Y: Integer;
+  MinPoint, MaxPoint: TKMPoint;
+  v1, v2, v3: TKMPointF;
+begin
+  SetLength(fPoint2NodeArr, gTerrain.MapY, gTerrain.MapX);
+  for Y := Low(fPoint2NodeArr) to High(fPoint2NodeArr) do
+    for X := Low(fPoint2NodeArr[Y]) to High(fPoint2NodeArr[Y]) do
+      fPoint2NodeArr[Y,X] := High(Word);
+
+  for I := 0 to fPolyCount - 1 do
+  begin
+    i1 := fPolygons[I].Indices[0];
+    i2 := fPolygons[I].Indices[1];
+    i3 := fPolygons[I].Indices[2];
+
+    v1 := KMPointF(fNodes[i1].Loc.X, fNodes[i1].Loc.Y);
+    v2 := KMPointF(fNodes[i2].Loc.X, fNodes[i2].Loc.Y);
+    v3 := KMPointF(fNodes[i3].Loc.X, fNodes[i3].Loc.Y);
+    //CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
+    fPolygons[I].CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
+
+    MinPoint.X := Min(  Min( fNodes[i1].Loc.X, fNodes[i2].Loc.X ), fNodes[i3].Loc.X  );
+    MinPoint.Y := Min(  Min( fNodes[i1].Loc.Y, fNodes[i2].Loc.Y ), fNodes[i3].Loc.Y  );
+    MaxPoint.X := Max(  Max( fNodes[i1].Loc.X, fNodes[i2].Loc.X ), fNodes[i3].Loc.X  );
+    MaxPoint.Y := Max(  Max( fNodes[i1].Loc.Y, fNodes[i2].Loc.Y ), fNodes[i3].Loc.Y  );
+
+    for Y := MinPoint.Y+1 to MaxPoint.Y do
+    begin
+      AlreadyInTriangle := False;
+      for X := MinPoint.X+1 to MaxPoint.X do
+      begin
+        if PointInTriangle(KMPointF(X-0.5,Y-0.5), v1, v2, v3) then
+        begin
+          fPoint2NodeArr[Y,X] := I;
+          AlreadyInTriangle := True;
+        end
+        else if AlreadyInTriangle then
+          break;
+      end;
+    end;
   end;
 end;
 
