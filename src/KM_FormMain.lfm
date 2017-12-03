@@ -21,41 +21,41 @@ object FormMain: TFormMain
   OnKeyUp = FormKeyUp
   OnMouseWheel = FormMouseWheel
   OnShow = FormShow
-  LCLVersion = '1.6.2.0'
+  LCLVersion = '1.6.4.0'
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
     Top = 707
     Width = 529
-    Panels = <
+    Panels = <    
       item
         Text = 'KMR r7000+ / OpenGL 4.0.0 - Build 9.99.99.99999'
         Width = 275
-      end
+      end    
       item
         Text = 'Map size: 999x999'
         Width = 110
-      end
+      end    
       item
         Text = 'Cursor: 1999:1999'
         Width = 105
-      end
+      end    
       item
         Text = 'Tile: 999.9:999.9 [999:999]'
         Width = 140
-      end
+      end    
       item
         Text = 'Time: 99:99:99'
         Width = 90
-      end
+      end    
       item
         Text = '999.9 FPS (999)'
         Width = 85
-      end
+      end    
       item
         Text = 'Obj: 99999999'
         Width = 90
-      end
+      end    
       item
         Text = 'Control ID: 9999'
         Width = 80
