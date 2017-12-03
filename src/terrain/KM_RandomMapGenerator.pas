@@ -1,4 +1,4 @@
-{
+﻿{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -8,8 +8,7 @@ unit KM_RandomMapGenerator;
 interface
 uses
   KM_CommonTypes, KM_Terrain, KM_Utils, Math,  // KM_Utils = random number
-  KM_Points, KM_RMGUtils, KM_Defaults,
-  LclIntf; // Measure of time in Lazarus ... DELETE THIS!!!!!!!!!!  and delete command (GetTickCount) in code
+  KM_Points, KM_RMGUtils, KM_Defaults, KM_CommonUtils;
 
 
 type
@@ -189,7 +188,7 @@ type
 implementation
 
 uses
-  KM_HandsCollection, KM_Hand, Dialogs;
+  SysUtils, KM_HandsCollection, KM_Hand, Dialogs, KM_Log;
 
 
 
@@ -227,7 +226,7 @@ var
   Locs: TKMPointArray;
 
 
-  diff: longint;
+  diff: Cardinal;
   Sdiff: String;
 begin
 
@@ -241,6 +240,7 @@ begin
 
   //RMGSettings.Seed := 141; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
   fRNG.Seed := RMGSettings.Seed;
+  gLog.AddTime('RMG seed: ' + IntToStr(fRNG.Seed));
  //ShowMessage('Hello World');
 
 
@@ -256,7 +256,7 @@ begin
       TilesPartsArr.Obj[Y,X] := 255;
   	end;
 
-  diff := GetTickCount;
+  diff := TimeGet;
 
 
   SetLength(S, gTerrain.MapY+1, gTerrain.MapX+1);
@@ -371,7 +371,8 @@ begin
   if RMGSettings.Objects.Active then
     GenerateObjects(TilesPartsArr, A);
   //}
-  diff := GetTickCount - diff;
+  diff := GetTimeSince(diff);
+
   Str(diff,Sdiff);
   //ShowMessage(Sdiff);
   // Show loc postion (Debug)
