@@ -379,7 +379,7 @@ begin
     fWareBalance[ IRON_WARFARE[I] ].FinalConsumption := MaxIronWeapProd;
   //Standard weapons
   MaxWoodWeapProd := Min(6.0, Max(2.0,aBuildCnt / 900.0)) * ProductionRate[wt_Axe]; // 2 <-> 6 in matter of avaiable place
-  MaxWoodWeapProd := 2 * ProductionRate[wt_Axe];
+  MaxWoodWeapProd := 0 * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
     fWareBalance[ STANDARD_WARFARE[I] ].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
@@ -545,5 +545,4 @@ end;
 
 
 end.
-
 
