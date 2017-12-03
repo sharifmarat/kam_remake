@@ -58,6 +58,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState(aTick: Cardinal);
+    procedure AfterMissionInit();
   end;
 
 
@@ -384,6 +385,14 @@ begin
 end;
 
 
+procedure TKMHandAI.AfterMissionInit();
+begin
+  fMayor.AfterMissionInit;
+  fCityManagement.AfterMissionInit;
+  fArmyManagement.AfterMissionInit;
+end;
+
+
 //todo: Updates should be well separated, maybe we can make an interleaved array or something
 //where updates will stacked to execute 1 at a tick
 //OR maybe we can collect all Updates into one list and run them from there (sounds like a better more manageble idea)
@@ -399,16 +408,16 @@ begin
                     //Humans dont need Mayor and Army management
                   end;
     hndComputer:  begin
-                    if fSetup.NewAI then
-                    begin
-                      fArmyManagement.UpdateState(aTick);
-                      fCityManagement.UpdateState(aTick);
-                    end
-                    else
-                    begin
+                    //if fSetup.NewAI then
+                    //begin
+                    //  fArmyManagement.UpdateState(aTick);
+                    //  fCityManagement.UpdateState(aTick);
+                    //end
+                    //else
+                    //begin
                       fMayor.UpdateState(aTick);
                       fGeneral.UpdateState(aTick);
-                    end;
+                    //end;
                   end;
   end;
 end;
