@@ -40,6 +40,9 @@ type
     property Mayor: TKMayor read fMayor;
     property Setup: TKMHandAISetup read fSetup;
 
+    property CityManagement: TKMCityManagement read fCityManagement;
+    property ArmyManagement: TKMArmyManagement read fArmyManagement;
+
     procedure Defeat(aShowDefeatMessage: Boolean = True); //Defeat the player, this is not reversible
     procedure Victory; //Set this player as victorious, this is not reversible
     procedure AddDefaultGoals(aBuildings: Boolean);
