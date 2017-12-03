@@ -54,6 +54,7 @@ type
     procedure TriangulateOutlines;
     procedure AssembleNavMesh;
     procedure InitConnectivity;
+    procedure TieUpTilesWithPolygons();
 
     function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
     function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
