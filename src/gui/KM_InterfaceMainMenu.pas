@@ -215,7 +215,9 @@ var
   Version: String;
 begin
   Version := GAME_VERSION + ' / ' + gGameApp.RenderVersion;
-  gMain.StatusBarText(SB_ID_KMR_VER,'KMR ' +  Version);
+
+  if gMain <> nil then // could be nil if used from utils
+    gMain.StatusBarText(SB_ID_KMR_VER,'KMR ' +  Version);
 
   //Hide all other pages
   for I := 0 to Panel_Menu.ChildCount - 1 do
