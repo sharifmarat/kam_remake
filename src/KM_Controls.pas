@@ -3939,8 +3939,10 @@ begin
   OrderCntMax := aOrderCntMax;
 
   fOrderRem := TKMButton.Create(aParent, aLeft,   0, 20, fHeight - 2, '-', bsGame);
-  fOrderLab := TKMLabel.Create (aParent, aLeft + 33,  0, '', fnt_Grey, taCenter);
   fOrderAdd := TKMButton.Create(aParent, aLeft + 46,  0, 20, fHeight - 2, '+', bsGame);
+  //Label after buttons, to be sure it will be on top of them, to let player read value from it, if too long (more then 3 symbols)
+  fOrderLab := TKMLabel.Create (aParent, aLeft + 33,  0, '', fnt_Grey, taCenter);
+
   fOrderAdd.CapOffsetY := 1;
 
   fOrderRem.OnClickShift := ButtonClick;
