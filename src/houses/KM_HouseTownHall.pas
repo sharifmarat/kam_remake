@@ -7,7 +7,7 @@ uses
   KM_CommonClasses, KM_Defaults, KM_Points;
 
 const
-  TH_MAX_GOLDMAX_VALUE = High(Word);
+  TH_MAX_GOLDMAX_VALUE = 999; //Max value for TownHall MaxGold parameter
 
 
 type

@@ -241,7 +241,7 @@ begin
     Button_TownHall_RallyPoint.Hint := 'Set townhall rally point. Alternatively you can set it via Shift + Right mouse button'; //Todo translate
     Button_TownHall_RallyPoint.OnClick := SetRallyPointClick;
 
-    WaresRow_TH_Gold_Input := TKMWareOrderRow.Create(Panel_HouseTownHall, 0, 34, TB_WIDTH, 999);
+    WaresRow_TH_Gold_Input := TKMWareOrderRow.Create(Panel_HouseTownHall, 0, 34, TB_WIDTH, TH_MAX_GOLDMAX_VALUE);
     WaresRow_TH_Gold_Input.WareRow.RX := rxGui;
     WaresRow_TH_Gold_Input.Hint := gRes.Wares[wt_Gold].Title;
     WaresRow_TH_Gold_Input.WareRow.TexID := gRes.Wares[wt_Gold].GUIIcon;
