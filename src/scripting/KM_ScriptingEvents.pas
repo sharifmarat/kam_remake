@@ -595,7 +595,7 @@ end;
 
 procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
 begin
-  fOnScriptError(se_Log, 'Warning in function / procedure ' + aFuncName + ': ' + aWarnMsg);
+  fOnScriptError(se_Log, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
 end;
 
 
