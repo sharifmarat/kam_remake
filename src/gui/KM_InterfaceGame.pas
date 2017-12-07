@@ -91,7 +91,7 @@ const
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry);
 
   TownHall_Order: array [0..4] of TUnitType = (
-    ut_Peasant, ut_Militia, ut_Slingshot, ut_MetalBarbarian, ut_Horseman);
+    ut_Peasant, ut_Militia, ut_Slingshot, ut_Horseman, ut_MetalBarbarian);
 
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
