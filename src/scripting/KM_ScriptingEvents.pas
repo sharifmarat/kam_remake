@@ -15,6 +15,7 @@ type
   protected
     fIDCache: TKMScriptingIdCache;
     fOnScriptError: TKMScriptErrorEvent;
+    procedure LogWarning(const aFuncName: string; aWarnMsg: String);
     procedure LogParamWarning(const aFuncName: string; const aValues: array of Integer);
   public
     constructor Create(aIDCache: TKMScriptingIdCache);
@@ -589,6 +590,12 @@ constructor TKMScriptEntity.Create(aIDCache: TKMScriptingIdCache);
 begin
   inherited Create;
   fIDCache := aIDCache;
+end;
+
+
+procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
+begin
+  fOnScriptError(se_Log, 'Warning in function / procedure ' + aFuncName + ': ' + aWarnMsg);
 end;
 
 

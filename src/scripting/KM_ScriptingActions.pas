@@ -1305,14 +1305,17 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn);
       end
-    else
+      else
+        LogWarning('Actions.GiveField', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveField', [aPlayer, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1330,16 +1333,19 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn)
-      or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
+        or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn, aStage, aRandomAge);
       end
-    else
+      else
+        LogWarning('Actions.GiveFieldAged', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveFieldAged', [aPlayer, X, Y, aStage, Byte(aRandomAge)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1440,14 +1446,17 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine);
       end
-    else
+      else
+        LogWarning('Actions.GiveWineField', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveWineField', [aPlayer, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1465,16 +1474,19 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine)
-      or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
+        or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine, aStage, aRandomAge);
       end
-    else
+      else
+        LogWarning('Actions.GiveWineFieldAged', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveWineFieldAged', [aPlayer, X, Y, aStage, Byte(aRandomAge)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
