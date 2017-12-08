@@ -30,6 +30,7 @@ type
     procedure House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
 
     procedure House_ClosedForWorkerToggle(Sender: TObject);
+    procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
 
     procedure House_BarracksAcceptFlag(Sender: TObject);
     procedure House_BarracksUnitChange(Sender: TObject; Shift: TShiftState);
@@ -162,7 +163,7 @@ begin
     Image_House_Worker.ImageCenter;
     Button_House_Worker := TKMButton.Create(Panel_House,60,42,30,30,141, rxGui, bsGame);
     Button_House_Worker.OnClick := House_ClosedForWorkerToggle; //Clicking the button cycles it
-    Image_House_Worker_Closed := TKMImage.Create(Panel_House,78,42,12,12,49);
+    Image_House_Worker_Closed := TKMImage.Create(Panel_House,78,42,12,12,49); //Red triangle for house closed for worker
     Image_House_Worker_Closed.Hitable := False;
     Image_House_Worker_Closed.Hide;
 
@@ -553,13 +554,8 @@ begin
   Image_House_Worker.FlagColor := gHands[aHouse.Owner].FlagColor;
 
   Button_House_Worker.TexID  := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
-  if (aHouse.IsClosedForWorker) then begin
-    Button_House_Worker.ShowImageEnabled := False;
-    Image_House_Worker_Closed.Show;
-  end else begin
-    Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
-    Image_House_Worker_Closed.Hide;
-  end;
+
+  HandleHouseClosedForWorker(aHouse);
 
   Button_House_Worker.Hint := Format('Open / Close house for %s', [gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName]); //Todo translate
   Button_House_Worker.FlagColor := gHands[aHouse.Owner].FlagColor;
@@ -978,11 +974,18 @@ begin
   
   gGame.GameInputProcess.CmdHouse(gic_HouseClosedForWorkerToggle, House);
 
-  if (House.IsClosedForWorker) then begin
+  HandleHouseClosedForWorker(House);
+end;
+
+
+procedure TKMGUIGameHouse.HandleHouseClosedForWorker(aHouse: TKMHouse);
+begin
+  if aHouse.IsClosedForWorker then
+  begin
     Button_House_Worker.ShowImageEnabled := False;
     Image_House_Worker_Closed.Show;
   end else begin
-    Button_House_Worker.ShowImageEnabled := House.HasOwner;
+    Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
     Image_House_Worker_Closed.Hide;
   end;
 end;
