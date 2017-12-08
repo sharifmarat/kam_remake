@@ -1811,7 +1811,7 @@ begin
   //       even the NEW message has not been issued yet
   if (H <> nil) then
   begin
-    if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.GetHasOwner
+    if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
         and (gRes.Houses[H.HouseType].OwnerType <> ut_None) and (H.HouseType <> ht_Barracks))
       or H.ResourceDepletedMsgIssued then
     begin

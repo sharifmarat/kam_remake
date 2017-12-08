@@ -177,11 +177,11 @@ begin
   BestBid := MaxSingle;
 
   for I := 0 to Count - 1 do
-    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and //If Unit can work in here
-       (not Houses[I].GetHasOwner) and                                // if there's yet no owner
-       (not Houses[I].IsDestroyed) and                                // if house is not destroyed
-       (Houses[I].IsComplete) and                                     // if house is built
-       (not Houses[I].IsClosedForWorker) then                         // if house is not closed for worker
+    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and // If Unit can work in here
+       not Houses[I].HasOwner and                                   // if there's yet no owner
+       not Houses[I].IsDestroyed and                                // if house is not destroyed
+       Houses[I].IsComplete and                                     // if house is built
+       not Houses[I].IsClosedForWorker then                         // if house is not closed for worker
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
       if (Houses[I].HouseType = ht_Barracks)
@@ -204,7 +204,7 @@ begin
     end;
 
   if (Result <> nil) and (Result.HouseType <> ht_Barracks) then
-    Result.GetHasOwner := True; //Become owner except Barracks;
+    Result.HasOwner := True; //Become owner except Barracks;
 end;
 
 

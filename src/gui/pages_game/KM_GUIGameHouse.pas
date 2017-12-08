@@ -557,7 +557,7 @@ begin
     Button_House_Worker.ShowImageEnabled := False;
     Image_House_Worker_Closed.Show;
   end else begin
-    Button_House_Worker.ShowImageEnabled := aHouse.GetHasOwner;
+    Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
     Image_House_Worker_Closed.Hide;
   end;
 
@@ -982,7 +982,7 @@ begin
     Button_House_Worker.ShowImageEnabled := False;
     Image_House_Worker_Closed.Show;
   end else begin
-    Button_House_Worker.ShowImageEnabled := House.GetHasOwner;
+    Button_House_Worker.ShowImageEnabled := House.HasOwner;
     Image_House_Worker_Closed.Hide;
   end;
 end;

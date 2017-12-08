@@ -138,7 +138,7 @@ type
     property NewDeliveryMode: TDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
     procedure SetDeliveryModeInstantly(aValue: TDeliveryMode);
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
-    property GetHasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
+    property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
     property Owner: TKMHandIndex read fOwner;
     property DisableUnoccupiedMessage: Boolean read fDisableUnoccupiedMessage write fDisableUnoccupiedMessage;
     function GetHealth: Word;

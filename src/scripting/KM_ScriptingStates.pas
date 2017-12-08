@@ -1387,7 +1387,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.GetHasOwner;
+        Result := H.HasOwner;
     end
     else
       LogParamWarning('States.HouseHasOccupant', [aHouseID]);
