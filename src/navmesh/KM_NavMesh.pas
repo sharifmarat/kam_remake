@@ -82,6 +82,9 @@ type
     procedure Paint(aRect: TKMRect);
   end;
 
+const
+  NAVMESH_DENSITY = 3; // Density of NavMesh (affect count and size of points)
+
 
 implementation
 uses
@@ -137,33 +140,6 @@ begin
 
   //Mapp all map tiles to its polygons
   TieUpTilesWithPolygons();
-end;
-
-
-procedure TKMNavMesh.GenerateTileOutline(out aTileOutlines: TKMShapesArray);
-var
-  I, K: Integer;
-  Tmp: TKMByte2Array;
-begin
-  SetLength(Tmp, gTerrain.MapY-1, gTerrain.MapX-1);
-
-  //Copy map to temp array as 0/1 (generator uses other byte values for its needs)
-  //0 - no obstacle
-  //1 - obstacle
-  for I := 0 to gTerrain.MapY - 2 do
-  for K := 0 to gTerrain.MapX - 2 do
-    Tmp[I,K] := 1 - Byte(tpOwn in gTerrain.Land[I+1,K+1].Passability);
-
-  GenerateOutline(Tmp, 12, aTileOutlines);
-
-  //GenerateOutline is 0 based for versatility purposes, but Terrain in 1 based
-  //because of legacy reasons. Do the conversion
-  for I := 0 to aTileOutlines.Count - 1 do
-  for K := 0 to aTileOutlines.Shape[I].Count - 1 do
-  begin
-    aTileOutlines.Shape[I].Nodes[K].X := aTileOutlines.Shape[I].Nodes[K].X + 1;
-    aTileOutlines.Shape[I].Nodes[K].Y := aTileOutlines.Shape[I].Nodes[K].Y + 1;
-  end;
 end;
 
 
@@ -232,6 +208,33 @@ begin
 end;
 
 
+procedure TKMNavMesh.GenerateTileOutline(out aTileOutlines: TKMShapesArray);
+var
+  I, K: Integer;
+  Tmp: TKMByte2Array;
+begin
+  SetLength(Tmp, gTerrain.MapY-1, gTerrain.MapX-1);
+
+  //Copy map to temp array as 0/1 (generator uses other byte values for its needs)
+  //0 - no obstacle
+  //1 - obstacle
+  for I := 0 to gTerrain.MapY - 2 do
+  for K := 0 to gTerrain.MapX - 2 do
+    Tmp[I,K] := 1 - Byte(tpOwn in gTerrain.Land[I+1,K+1].Passability);
+
+  GenerateOutline(Tmp, 12, aTileOutlines);
+
+  //GenerateOutline is 0 based for versatility purposes, but Terrain in 1 based
+  //because of legacy reasons. Do the conversion
+  for I := 0 to aTileOutlines.Count - 1 do
+  for K := 0 to aTileOutlines.Shape[I].Count - 1 do
+  begin
+    aTileOutlines.Shape[I].Nodes[K].X := aTileOutlines.Shape[I].Nodes[K].X + 1;
+    aTileOutlines.Shape[I].Nodes[K].Y := aTileOutlines.Shape[I].Nodes[K].Y + 1;
+  end;
+end;
+
+
 procedure TKMNavMesh.TriangulateOutlines;
 var
   fDelaunay: TDelaunay;
@@ -254,8 +257,8 @@ begin
     //Add more points along edges to get even density
     SizeX := gTerrain.MapX-1;
     SizeY := gTerrain.MapY-1;
-    MeshDensityX := SizeX div 15; //once per 15 tiles
-    MeshDensityY := SizeY div 15;
+    MeshDensityX := SizeX div NAVMESH_DENSITY;
+    MeshDensityY := SizeY div NAVMESH_DENSITY;
     for I := 0 to MeshDensityY do
     for K := 0 to MeshDensityX do
     if (I = 0) or (I = MeshDensityY) or (K = 0) or (K = MeshDensityX) then
@@ -738,20 +741,20 @@ procedure TKMNavMesh.Paint(aRect: TKMRect);
 var
   I, K, J: Integer;
   T1, T2: TKMPointF;
-  //Col, Col2: Cardinal;
-  //Sz: Single;
+  Col, Col2: Cardinal;
+  Sz: Single;
   Outline1, Outline2: TKMWeightSegments;
 begin
   if not AI_GEN_NAVMESH then Exit;
 
-  //Raw obstacle outlines
+  //{Raw obstacle outlines
   if OVERLAY_NAVMESH then
     for I := 0 to fRawOutlines.Count - 1 do
     for K := 0 to fRawOutlines.Shape[I].Count - 1 do
     with fRawOutlines.Shape[I] do
-      gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);
+      gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);//}
 
-  //NavMesh polys coverage
+  //{NavMesh polys coverage
   if OVERLAY_NAVMESH then
     for I := 0 to fPolyCount - 1 do
       gRenderAux.TriangleOnTerrain(
@@ -760,7 +763,7 @@ begin
         fNodes[fPolygons[I].Indices[1]].Loc.X,
         fNodes[fPolygons[I].Indices[1]].Loc.Y,
         fNodes[fPolygons[I].Indices[2]].Loc.X,
-        fNodes[fPolygons[I].Indices[2]].Loc.Y, $60FF0000);
+        fNodes[fPolygons[I].Indices[2]].Loc.Y, $60FF0000);//}
 
   //NavMesh edges
   if OVERLAY_NAVMESH then
@@ -774,19 +777,19 @@ begin
       gRenderAux.LineOnTerrain(T1, T2, $FFFF8000, $F0F0);
     end;
 
-  //NavMesh vertice ids
-  {if OVERLAY_NAVMESH then
+  {//NavMesh vertice ids
+  if OVERLAY_NAVMESH then
     for I := 0 to High(fVertices) do
-      fRenderAux.Text(fVertices[I].X,fVertices[I].Y, IntToStr(I), $FF000000); //}
+      gRenderAux.Text(fVertices[I].X,fVertices[I].Y, IntToStr(I), $FF000000); //}
 
-  {//NavMesh polys ids
+  //{//NavMesh polys ids
   if OVERLAY_NAVMESH then
     for I := 0 to fPolyCount - 1 do
     with fPolygons[I] do
     begin
       T1.X := (fNodes[Indices[0]].Loc.X + fNodes[Indices[1]].Loc.X + fNodes[Indices[2]].Loc.X) / 3;
       T1.Y := (fNodes[Indices[0]].Loc.Y + fNodes[Indices[1]].Loc.Y + fNodes[Indices[2]].Loc.Y) / 3;
-      fRenderAux.Text(Round(T1.X), Round(T1.Y) + 1, IntToStr(I), $FF000000);
+      gRenderAux.Text(Round(T1.X), Round(T1.Y) + 1, IntToStr(I), $FF000000);
     end;//}
 
   {//Simplified obstacle outlines
@@ -794,7 +797,7 @@ begin
     for I := 0 to fSimpleOutlines.Count - 1 do
     for K := 0 to fSimpleOutlines.Shape[I].Count - 1 do
     with fSimpleOutlines.Shape[I] do
-      fRenderAux.Line(Nodes[K], Nodes[(K + 1) mod Count], $FF00FF00, $FF00);//}
+      gRenderAux.Line(Nodes[K], Nodes[(K + 1) mod Count], $FF00FF00, $FF00);//}
 
   {//NavMesh influences
   if OVERLAY_NAVMESH then
@@ -807,7 +810,7 @@ begin
         Col2 := IfThen(fNodes[I].Owner[K] = 255, $FFFFFFFF);
         Sz := Max(fNodes[I].Owner[K] - 128, 0) / 64;
 
-        fRenderAux.CircleOnTerrain(
+        gRenderAux.CircleOnTerrain(
           fNodes[I].Loc.X,
           fNodes[I].Loc.Y, Sz, Col, Col2);
       end;
