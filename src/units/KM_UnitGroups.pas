@@ -8,7 +8,7 @@ uses
 
 type
   TKMUnitGroup = class;
-  TKMUnitGroupArray: array of TKMUnitGroup;
+  TKMUnitGroupArray = array of TKMUnitGroup;
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
@@ -196,6 +196,7 @@ type
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(aPoint: TKMPoint; aRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -1948,21 +1949,31 @@ begin
 end;
 
 
-function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 var
-  I: Integer;
-  BestDist, Dist: Single;
+  I,K,Idx: Integer;
+  Dist: Single;
+  UW: TKMUnitWarrior;
 begin
-  Result := nil;
-  BestDist := MaxSingle; //Any distance will be closer than that
+  SetLength(Result, 12);
+  Idx := 0; //Any distance will be closer than that
   for I := 0 to Count - 1 do
     if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
     begin
-      Dist := KMLengthSqr(Groups[I].GetPosition, aPoint);
-      if Dist < BestDist then
+      K := 0;
+      while (K < Groups[I].Count) do // Large groups may be in radius too so check every tenth member
       begin
-        BestDist := Dist;
-        Result := Groups[I];
+        UW := Groups[I].Members[K];
+        Dist := KMLengthSqr(UW.GetPosition, aPoint);
+        if (Dist <= aRadius) then
+        begin
+          if (Idx >= Length(Result)) then
+            SetLength(Result, Idx + 12);
+          Result[Idx] := Groups[I];
+          Idx := Idx + 1;
+          break;
+        end;
+        K := K + 10;
       end;
     end;
 end;
