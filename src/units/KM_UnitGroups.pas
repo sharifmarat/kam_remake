@@ -8,6 +8,7 @@ uses
 
 type
   TKMUnitGroup = class;
+  TKMUnitGroupArray: array of TKMUnitGroup;
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
@@ -1928,6 +1929,26 @@ end;
 
 
 function TKMUnitGroups.GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+var
+  I: Integer;
+  BestDist, Dist: Single;
+begin
+  Result := nil;
+  BestDist := MaxSingle; //Any distance will be closer than that
+  for I := 0 to Count - 1 do
+    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
+    begin
+      Dist := KMLengthSqr(Groups[I].GetPosition, aPoint);
+      if Dist < BestDist then
+      begin
+        BestDist := Dist;
+        Result := Groups[I];
+      end;
+    end;
+end;
+
+
+function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
 var
   I: Integer;
   BestDist, Dist: Single;
