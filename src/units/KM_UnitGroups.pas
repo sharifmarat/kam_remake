@@ -1952,7 +1952,6 @@ end;
 function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 var
   I,K,Idx: Integer;
-  Dist: Single;
   UW: TKMUnitWarrior;
 begin
   SetLength(Result, 12);
@@ -1964,8 +1963,7 @@ begin
       while (K < Groups[I].Count) do // Large groups may be in radius too so check every tenth member
       begin
         UW := Groups[I].Members[K];
-        Dist := KMLengthSqr(UW.GetPosition, aPoint);
-        if (Dist <= aSqrRadius) then
+        if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
         begin
           if (Idx >= Length(Result)) then
             SetLength(Result, Idx + 12);
