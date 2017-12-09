@@ -46,7 +46,7 @@ type
     fPolyCount: Integer;
     fNodes: TNodeArray;            // Nodes
     fPolygons: TPolygonArray;      // Polygons
-    fPoint2NodeArr: TKMWord2Array;
+    fPoint2PolygonArr: TKMWord2Array;
 
     //Building the navmesh from terrain
     //Process involves many steps executed in a functional way
@@ -68,12 +68,13 @@ type
   public
     constructor Create(aInfluences: TKMInfluences);
 
-    property Point2NodeArr: TKMWord2Array read fPoint2NodeArr;
+    property Point2PolygonArr: TKMWord2Array read fPoint2PolygonArr;
     property Polygons: TPolygonArray read fPolygons;
     property Nodes: TNodeArray read fNodes;
 
     procedure Init;
     procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
+    function FindClosestPolygon(aP: TKMPoint): Word;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -143,6 +144,55 @@ begin
 end;
 
 
+// Find closest NavMesh in case that we get walkable point which is not part of Point2PolygonArr
+// (stonemason may mine stone and create walkable tiles which are not part of NavMesh [NavMesh is not updated durring game])
+function TKMNavMesh.FindClosestPolygon(aP: TKMPoint): Word;
+const
+  MAX_SCAN_DIST = 10;
+var
+  I,X,Y, Output: Word;
+  PMin,PMax: TKMPoint;
+begin
+  Result := High(Word);
+  if not gTerrain.TileInMapCoords(aP.X, aP.Y) then
+    Exit;
+
+  Output := High(Word);
+  for I := 0 to MAX_SCAN_DIST do
+  begin
+    PMin := KMPoint(Max(1,aP.X - I), Max(1,aP.Y - I));
+    PMax := KMPoint(Min(gTerrain.MapX,aP.X + I), Min(gTerrain.MapY,aP.Y + I));
+    for X := PMin.X to PMax.X do
+      if (Point2PolygonArr[PMin.Y,X] <> High(Word)) then
+      begin
+        Output := Point2PolygonArr[PMin.Y,X];
+        break;
+      end
+      else if (Point2PolygonArr[PMax.Y,X] <> High(Word)) then
+      begin
+        Output := Point2PolygonArr[PMax.Y,X];
+        break;
+      end;
+    if (Output <> High(Word)) then
+      break;
+    for Y := PMin.Y to PMax.Y do
+      if (Point2PolygonArr[Y,PMin.X] <> High(Word)) then
+      begin
+        Output := Point2PolygonArr[Y,PMin.X];
+        break;
+      end
+      else if (Point2PolygonArr[Y,PMax.X] <> High(Word)) then
+      begin
+        Output := Point2PolygonArr[Y,PMax.X];
+        break;
+      end;
+    if (Output <> High(Word)) then
+      break;
+  end;
+  Result := Output;
+end;
+
+
 procedure TKMNavMesh.TieUpTilesWithPolygons();
 
 // Is inside triangle (source: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle)
@@ -168,10 +218,10 @@ var
   MinPoint, MaxPoint: TKMPoint;
   v1, v2, v3: TKMPointF;
 begin
-  SetLength(fPoint2NodeArr, gTerrain.MapY, gTerrain.MapX);
-  for Y := Low(fPoint2NodeArr) to High(fPoint2NodeArr) do
-    for X := Low(fPoint2NodeArr[Y]) to High(fPoint2NodeArr[Y]) do
-      fPoint2NodeArr[Y,X] := High(Word);
+  SetLength(fPoint2PolygonArr, gTerrain.MapY, gTerrain.MapX);
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      fPoint2PolygonArr[Y,X] := High(Word);
 
   for I := 0 to fPolyCount - 1 do
   begin
@@ -197,7 +247,7 @@ begin
       begin
         if PointInTriangle(KMPointF(X-0.5,Y-0.5), v1, v2, v3) then
         begin
-          fPoint2NodeArr[Y,X] := I;
+          fPoint2PolygonArr[Y,X] := I;
           AlreadyInTriangle := True;
         end
         else if AlreadyInTriangle then
