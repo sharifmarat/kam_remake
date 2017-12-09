@@ -33,7 +33,7 @@ type
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
-    function GetGroupsInRadius(aLoc: TKMPoint; aRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+    function GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
     function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
     function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
     function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
@@ -264,7 +264,7 @@ begin
 end;
 
 
-function TKMHandsCollection.GetGroupsInRadius(aLoc: TKMPoint; aRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+function TKMHandsCollection.GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 var
   I,K,Idx: Integer;
   UGA: TKMUnitGroupArray;
@@ -275,7 +275,7 @@ begin
   for I := 0 to fCount - 1 do
   if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
   begin
-    UGA := fHandsList[I].UnitGroups.GetGroupsInRadius(aLoc, aRadius, aTypes);
+    UGA := fHandsList[I].UnitGroups.GetGroupsInRadius(aLoc, aSqrRadius, aTypes);
     if (Idx + Length(UGA) > Length(Result)) then
       SetLength(Result, Idx + Length(UGA) + 12);
     for K := Low(UGA) to High(UGA) do
