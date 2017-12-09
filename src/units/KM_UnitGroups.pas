@@ -1976,6 +1976,7 @@ begin
         K := K + 10;
       end;
     end;
+  SetLength(Result,Idx);
 end;
 
 
