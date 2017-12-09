@@ -32,6 +32,7 @@ type
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
+    function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnitGroup;
     function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
     function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
     function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
@@ -239,6 +240,25 @@ begin
     Result := fHandsList[I].GroupsHitTest(X, Y);
     if Result <> nil then
       Exit; //There can't be 2 groups on one tile
+  end;
+end;
+
+
+//Check opponents for closest Unit with given Alliance setting
+function TKMHandsCollection.GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnitGroup;
+var
+  I: Integer;
+  G: TKMUnitGroup;
+begin
+  Result := nil;
+
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    G := fHandsList[I].UnitGroups.GetClosestGroup(aLoc);
+    if (G <> nil)
+    and ((Result = nil) or (KMLengthSqr(G.Position, aLoc) < KMLengthSqr(Result.Position, aLoc))) then
+      Result := G;
   end;
 end;
 
