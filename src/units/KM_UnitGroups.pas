@@ -196,7 +196,7 @@ type
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
-    function GetGroupsInRadius(aPoint: TKMPoint; aRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+    function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -1949,7 +1949,7 @@ begin
 end;
 
 
-function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 var
   I,K,Idx: Integer;
   Dist: Single;
@@ -1965,7 +1965,7 @@ begin
       begin
         UW := Groups[I].Members[K];
         Dist := KMLengthSqr(UW.GetPosition, aPoint);
-        if (Dist <= aRadius) then
+        if (Dist <= aSqrRadius) then
         begin
           if (Idx >= Length(Result)) then
             SetLength(Result, Idx + 12);
