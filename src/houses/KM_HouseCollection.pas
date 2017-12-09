@@ -297,6 +297,7 @@ begin
       ht_WatchTower:    T := TKMHouseTower.Load(LoadStream);
       ht_Woodcutters:   T := TKMHouseWoodcutters.Load(LoadStream);
       ht_ArmorWorkshop: T := TKMHouseArmorWorkshop.Load(LoadStream);
+      ht_TownHall:      T := TKMHouseTownHall.Load(LoadStream);
       else              T := TKMHouse.Load(LoadStream);
     end;
 
