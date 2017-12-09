@@ -48,7 +48,6 @@ procedure TKMHouseWoodcutters.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fWoodcutterMode, SizeOf(fWoodcutterMode));
-  SaveStream.Write(fCuttingPoint);
 end;
 
 
