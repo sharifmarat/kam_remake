@@ -150,8 +150,8 @@ const
   );
 
   //TownHall units troops cost (number of gold chests needed)
-  TH_TroopCost: array[0..4] of Byte = (
-    2, 2, 2, 4, 6
+  TH_TroopCost: array[0..5] of Byte = (
+    2, 2, 2, 4, 6, 6
   );
 
   //The frame shown when a unit is standing still in ua_Walk. Same for all units!
