@@ -32,7 +32,8 @@ type
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
-    function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnitGroup;
+    function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(aLoc: TKMPoint; aRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
     function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
     function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
     function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
@@ -245,7 +246,7 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnitGroup;
+function TKMHandsCollection.GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
 var
   I: Integer;
   G: TKMUnitGroup;
@@ -255,11 +256,36 @@ begin
   for I := 0 to fCount - 1 do
   if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
   begin
-    G := fHandsList[I].UnitGroups.GetClosestGroup(aLoc);
+    G := fHandsList[I].UnitGroups.GetClosestGroup(aLoc, aTypes);
     if (G <> nil)
     and ((Result = nil) or (KMLengthSqr(G.Position, aLoc) < KMLengthSqr(Result.Position, aLoc))) then
       Result := G;
   end;
+end;
+
+
+function TKMHandsCollection.GetGroupsInRadius(aLoc: TKMPoint; aRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+var
+  I,K,Idx: Integer;
+  UGA: TKMUnitGroupArray;
+begin
+  SetLength(Result, 12);
+
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    UGA := fHandsList[I].UnitGroups.GetGroupsInRadius(aLoc, aRadius, aTypes);
+    if (Idx + Length(UGA) > Length(Result)) then
+      SetLength(Result, Idx + Length(UGA) + 12);
+    for K := Low(UGA) to High(UGA) do
+    begin
+      Result[Idx] := UGA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+
+  SetLength(Result, Idx);
 end;
 
 
