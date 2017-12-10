@@ -138,6 +138,7 @@ type
     property DeliveryMode: TDeliveryMode read fDeliveryMode;
     property NewDeliveryMode: TDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
     procedure SetDeliveryModeInstantly(aValue: TDeliveryMode);
+    function AllowDeliveryModeChange: Boolean;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -635,6 +636,12 @@ procedure TKMHouse.SetDeliveryModeInstantly(aValue: TDeliveryMode);
 begin
   fNewDeliveryMode := aValue;
   UpdateDeliveryMode;
+end;
+
+
+function TKMHouse.AllowDeliveryModeChange: Boolean;
+begin
+  Result := gRes.Houses[fHouseType].AcceptsWares;
 end;
 
 

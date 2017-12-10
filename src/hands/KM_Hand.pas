@@ -495,7 +495,8 @@ begin
 
   FreeAndNil(fRoadsList);
 
-  fAI.Mayor.AfterMissionInit;
+  if not gGame.IsMapEditor then
+    fAI.Mayor.AfterMissionInit;
 end;
 
 

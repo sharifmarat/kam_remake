@@ -273,6 +273,33 @@ begin
                           end
                           else
                             AddError('ct_SetHouseDamage without prior declaration of House');
+    ct_SetHouseDeliveryMode:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                          begin
+                            if InRange(P[0], Byte(Low(TDeliveryMode)), Byte(High(TDeliveryMode))) then //Check allowed range for delivery mode value
+                            begin
+                              if fLastHouse.AllowDeliveryModeChange then
+                                fLastHouse.SetDeliveryModeInstantly(TDeliveryMode(P[0]))
+                              else
+                                AddError(Format('ct_SetHouseDeliveryMode: not allowed to change delivery mode for %s ', [gRes.Houses[fLastHouse.HouseType].HouseName]));
+                            end else
+                              AddError(Format('ct_SetHouseDeliveryMode: wrong value for delivery mode: [%d] ', [P[0]]));
+                          end
+                          else
+                            AddError('ct_SetHouseDeliveryMode without prior declaration of House');
+    ct_SetHouseRepairMode:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                            fLastHouse.BuildingRepair := True
+                          else
+                            AddError('ct_SetHouseRepairMode without prior declaration of House');
+    ct_SetHouseClosedForWorker:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                            fLastHouse.IsClosedForWorker := True
+                          else
+                            AddError('ct_SetHouseClosedForWorker without prior declaration of House');
     ct_SetUnit:         if PointInMap(P[1]+1, P[2]+1) then
                         begin
                           //Animals should be added regardless of current player
@@ -862,6 +889,15 @@ begin
         AddCommand(ct_SetHouse, [HouseTypeToIndex[H.HouseType]-1, H.GetPosition.X-1 + aLeftInset, H.GetPosition.Y-1 + aTopInset]);
         if H.IsDamaged then
           AddCommand(ct_SetHouseDamage, [H.GetDamage]);
+
+        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
+          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
+
+        if H.BuildingRepair then // Repair mode is turned off by default
+          AddCommand(ct_SetHouseRepairMode, []);
+
+        if H.IsClosedForWorker then
+          AddCommand(ct_SetHouseClosedForWorker, []);
 
         if H is TKMHouseBarracks then
         begin

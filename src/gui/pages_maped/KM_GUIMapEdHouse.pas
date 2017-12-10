@@ -23,6 +23,14 @@ type
     procedure HouseHealthChange(Sender: TObject; Shift: TShiftState);
     procedure HouseHealthClickHold(Sender: TObject; AButton: TMouseButton; var aHandled: Boolean);
 
+    procedure House_SetDeliveryMode(aMode: TDeliveryMode);
+    procedure House_UpdateDeliveryMode(aMode: TDeliveryMode);
+    procedure House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
+    procedure House_RepairToggle(Sender: TObject);
+    procedure House_ClosedForWorkerToggle(Sender: TObject);
+    procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
+
+    procedure House_RefreshCommon;
     procedure BarracksRefresh;
     procedure TownHallRefresh;
     procedure WoodcuttersRefresh;
@@ -43,6 +51,9 @@ type
     Panel_House: TKMPanel;
       Label_House: TKMLabel;
       Image_House_Logo, Image_House_Worker: TKMImage;
+      Button_HouseDeliveryMode, Button_HouseRepair: TKMButton;
+      Image_House_Worker_Closed: TKMImage;
+      Button_House_Worker: TKMButton;
       KMHealthBar_House: TKMPercentBar;
       Button_HouseHealthDec, Button_HouseHealthInc: TKMButton;
       Label_House_Input, Label_House_Output: TKMLabel;
@@ -110,13 +121,27 @@ begin
   Panel_House := TKMPanel.Create(aParent, 0, 45, TB_WIDTH, 400);
     //Thats common things
     Label_House := TKMLabel.Create(Panel_House, 0, 14, TB_WIDTH, 0, '', fnt_Outline, taCenter);
-    Image_House_Logo := TKMImage.Create(Panel_House, 0, 41, 32, 32, 338);
-    Image_House_Logo.ImageCenter;
-    Image_House_Worker := TKMImage.Create(Panel_House, 30, 41, 32, 32, 141);
+
+    Button_HouseDeliveryMode := TKMButton.Create(Panel_House,0,42,30,30,37, rxGui, bsGame);
+    Button_HouseDeliveryMode.Hint := gResTexts[TX_HOUSE_TOGGLE_DELIVERS_HINT];
+    Button_HouseDeliveryMode.OnClickShift := House_DeliveryModeToggle;
+    Button_HouseRepair := TKMButton.Create(Panel_House,30,42,30,30,40, rxGui, bsGame);
+    Button_HouseRepair.Hint := gResTexts[TX_HOUSE_TOGGLE_REPAIR_HINT];
+    Button_HouseRepair.OnClick := House_RepairToggle;
+
+    Image_House_Worker := TKMImage.Create(Panel_House,60,41,32,32,141);
     Image_House_Worker.ImageCenter;
-    KMHealthBar_House := TKMPercentBar.Create(Panel_House, 100, 53, 60, 20);
-    Button_HouseHealthDec := TKMButton.Create(Panel_House, 80, 53, 20, 20, '-', bsGame);
-    Button_HouseHealthInc := TKMButton.Create(Panel_House, 160, 53, 20, 20, '+', bsGame);
+    Button_House_Worker := TKMButton.Create(Panel_House,60,42,30,30,141, rxGui, bsGame);
+    Button_House_Worker.OnClick := House_ClosedForWorkerToggle; //Clicking the button cycles it
+    Image_House_Worker_Closed := TKMImage.Create(Panel_House,78,42,12,12,49); //Red triangle for house closed for worker
+    Image_House_Worker_Closed.Hitable := False;
+    Image_House_Worker_Closed.Hide;
+
+    Image_House_Logo := TKMImage.Create(Panel_House,90,41,32,32,338);
+    Image_House_Logo.ImageCenter;
+    KMHealthBar_House := TKMPercentBar.Create(Panel_House, 134, 49, 42, 20);
+    Button_HouseHealthDec := TKMButton.Create(Panel_House, 120, 49, 14, 20, '-', bsGame);
+    Button_HouseHealthInc := TKMButton.Create(Panel_House, 175, 49, 14, 20, '+', bsGame);
     Button_HouseHealthDec.OnClickShift := HouseHealthChange;
     Button_HouseHealthInc.OnClickShift := HouseHealthChange;
     Button_HouseHealthDec.OnClickHold  := HouseHealthClickHold;
@@ -333,6 +358,19 @@ begin
 end;
 
 
+procedure TKMMapEdHouse.HandleHouseClosedForWorker(aHouse: TKMHouse);
+begin
+  if aHouse.IsClosedForWorker then
+  begin
+    Button_House_Worker.ShowImageEnabled := False;
+    Image_House_Worker_Closed.Show;
+  end else begin
+    Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
+    Image_House_Worker_Closed.Hide;
+  end;
+end;
+
+
 procedure TKMMapEdHouse.Show(aHouse: TKMHouse);
 var
   HouseDat: TKMHouseSpec;
@@ -345,18 +383,16 @@ begin
   {Common data}
   Label_House.Caption := HouseDat.HouseName;
   Image_House_Logo.TexID := HouseDat.GUIIcon;
-  Image_House_Worker.TexID := gRes.Units[HouseDat.OwnerType].GUIIcon;
-  Image_House_Worker.FlagColor := gHands[fHouse.Owner].FlagColor;
-  Image_House_Worker.Hint := gRes.Units[HouseDat.OwnerType].GUIName;
-  Image_House_Worker.Visible := HouseDat.OwnerType <> ut_None;
+
   KMHealthBar_House.Caption := IntToStr(Round(fHouse.GetHealth)) + '/' + IntToStr(HouseDat.MaxHealth);
   KMHealthBar_House.Position := fHouse.GetHealth / HouseDat.MaxHealth;
 
-  if fHouse.HouseType <> ht_TownHall then //Do not show common resources inut/output for TownHall
+  if fHouse.HouseType <> ht_TownHall then //Do not show common resources input/output for TownHall
     ShowCommonResources
   else
     HideAllCommonResources;
 
+  House_RefreshCommon;
 
   case fHouse.HouseType of
     ht_Store:       begin
@@ -371,6 +407,7 @@ begin
                       //In the barrack the recruit icon is always enabled
                       Image_House_Worker.Show;
                       Image_House_Worker.Enable;
+                      Button_House_Worker.Visible := False;
                       Button_Barracks_Recruit.FlagColor := gHands[fHouse.Owner].FlagColor;
                       //Reselect the ware so the display is updated
                       if fBarracksItem = -1 then
@@ -403,6 +440,31 @@ begin
     Tmp := TKMHouseStore(fHouse).CheckResIn(StoreResType[I]);
     Button_Store[I].Caption := IfThen(Tmp = 0, '-', IntToStr(Tmp));
   end;
+end;
+
+
+procedure TKMMapEdHouse.House_RefreshCommon;
+var
+  HouseDat: TKMHouseSpec;
+begin
+  HouseDat := gRes.Houses[fHouse.HouseType];
+
+  House_UpdateDeliveryMode(fHouse.DeliveryMode);
+  Button_HouseDeliveryMode.Enabled := fHouse.AllowDeliveryModeChange;
+  Button_HouseDeliveryMode.Show;
+
+  Button_HouseRepair.TexID := IfThen(fHouse.BuildingRepair, 39, 40);
+  Button_HouseRepair.Show;
+
+  Button_House_Worker.TexID  := gRes.Units[gRes.Houses[fHouse.HouseType].OwnerType].GUIIcon;
+  HandleHouseClosedForWorker(fHouse);
+  Button_House_Worker.Hint := Format('Open / Close house for %s', [gRes.Units[gRes.Houses[fHouse.HouseType].OwnerType].GUIName]); //Todo translate
+  Button_House_Worker.FlagColor := gHands[fHouse.Owner].FlagColor;
+  Button_House_Worker.Visible := gRes.Houses[fHouse.HouseType].OwnerType <> ut_None;
+  Image_House_Worker.TexID := gRes.Units[HouseDat.OwnerType].GUIIcon;
+  Image_House_Worker.FlagColor := gHands[fHouse.Owner].FlagColor;
+  Image_House_Worker.Hint := gRes.Units[HouseDat.OwnerType].GUIName;
+  Image_House_Worker.Hide; // show it on special pages (like Barracks, f.e.)
 end;
 
 
@@ -479,6 +541,8 @@ var
   NewCountAdd: Integer;
   HouseDat: TKMHouseSpec;
 begin
+  House_RefreshCommon;
+
   HouseDat := gRes.Houses[fHouse.HouseType];
   for I := 0 to 3 do
   begin
@@ -552,6 +616,65 @@ begin
     gGameCursor.Tag1 := MARKER_RALLY_POINT;
   end else
     gGameCursor.Mode := cmNone;
+end;
+
+
+procedure TKMMapEdHouse.House_UpdateDeliveryMode(aMode: TDeliveryMode);
+var
+  TexId: Word;
+begin
+  TexId := 0;
+  case aMode of
+    dm_Delivery:  TexId := 37;
+    dm_Closed:    TexId := 38;
+    dm_TakeOut:   TexId := 664;
+  end;
+  Button_HouseDeliveryMode.TexID := TexId;
+end;
+
+
+procedure TKMMapEdHouse.House_SetDeliveryMode(aMode: TDeliveryMode);
+begin
+  fHouse.SetDeliveryModeInstantly(aMode);
+  House_UpdateDeliveryMode(aMode);
+end;
+
+
+procedure TKMMapEdHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
+var
+  H: TKMHouse;
+begin
+  case Button_HouseDeliveryMode.TexID of
+    37: // dm_Delivery
+          if ssLeft in Shift then
+            House_SetDeliveryMode(dm_Closed)
+          else if ssRight in Shift then
+            House_SetDeliveryMode(dm_TakeOut);
+    38: // dm_Closed
+          if ssLeft in Shift then
+            House_SetDeliveryMode(dm_TakeOut)
+          else if ssRight in Shift then
+            House_SetDeliveryMode(dm_Delivery);
+    664: // dm_TakeOut
+          if ssLeft in Shift then
+            House_SetDeliveryMode(dm_Delivery)
+          else if ssRight in Shift then
+            House_SetDeliveryMode(dm_Closed);
+  end;
+end;
+
+
+procedure TKMMapEdHouse.House_RepairToggle(Sender: TObject);
+begin
+  fHouse.BuildingRepair := not fHouse.BuildingRepair;
+  House_RefreshCommon;
+end;
+
+
+procedure TKMMapEdHouse.House_ClosedForWorkerToggle(Sender: TObject);
+begin
+  fHouse.IsClosedForWorker := not fHouse.IsClosedForWorker;
+  House_RefreshCommon;
 end;
 
 
