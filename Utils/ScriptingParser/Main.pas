@@ -1,7 +1,8 @@
 unit Main;
 interface
 uses
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtDlgs, SysUtils, Classes, StdCtrls, StrUtils, INIFiles, Vcl.ComCtrls;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtDlgs, SysUtils,
+  Classes, StdCtrls, StrUtils, INIFiles, Vcl.ComCtrls, Shlwapi;
 
 type
   TForm1 = class(TForm)
@@ -396,9 +397,18 @@ end;
 
 procedure TForm1.btnGenerateClick(Sender: TObject);
 
+  function RelToAbs(const RelPath, BasePath: string): string;
+  var
+    Dst: array[0..200-1] of char;
+  begin
+    PathCanonicalize(@Dst[0], PChar(IncludeTrailingBackslash(BasePath) + RelPath));
+    result := Dst;
+  end;
+
   procedure ParseList(aName: String; aResultList: TStringList; aInputFile,aHeaderFile,aOutputFile: String; aHasReturn: Boolean = True);
   var
     tmpList: TStringList;
+    Path: String;
   begin
     tmpList := TStringList.Create;
     if FileExists(aInputFile) then
@@ -423,7 +433,12 @@ procedure TForm1.btnGenerateClick(Sender: TObject);
       aResultList.AddStrings(tmpList);
 
       if aOutputFile <> '' then
+      begin
+        Path := RelToAbs(aOutputFile, ExtractFilePath(ParamStr(0)));
+        if not DirectoryExists(ExtractFileDir(Path)) then
+          ForceDirectories(ExtractFileDir(Path));
         aResultList.SaveToFile(aOutputFile);
+      end;
     end;
     FreeAndNil(tmpList);
   end;
