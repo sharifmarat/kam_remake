@@ -776,12 +776,15 @@ begin
         // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
         if (aHouse = ht_ArmorSmithy) and (I in [1,2]) then
           Id := gRes.Houses[aHouse].SupplyOut[3-I, K] + 1;
+
+        AddHouseSupplySprite(Id);
       end;
     end
     else
+    begin
       Id := gRes.Houses[aHouse].SupplyOut[I, Count] + 1;
-
-    AddHouseSupplySprite(Id);
+      AddHouseSupplySprite(Id);
+    end;
   end;
 end;
 
