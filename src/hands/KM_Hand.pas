@@ -1372,15 +1372,15 @@ begin
   fHouses.UpdateState(aTick);
   fFogOfWar.UpdateState; //We might optimize it for AI somehow, to make it work coarse and faster
 
+  //AI update takes care of it's own interleaving, so run it every tick
+  fAI.UpdateState(aTick);
+
   //Distribute AI updates among different Ticks to avoid slowdowns
   if (aTick + Byte(fHandIndex)) mod 10 = 0 then
   begin
     fBuildList.UpdateState;
     fDeliveries.UpdateState(aTick);
   end;
-
-  //AI update takes care of it's own interleaving, so run it every tick
-  fAI.UpdateState(aTick);
 
   //if (aTick + Byte(fPlayerIndex)) mod 20 = 0 then
     //fArmyEval.UpdateState;
