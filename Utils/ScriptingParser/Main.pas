@@ -129,7 +129,7 @@ begin
     Settings.WriteString('HEADER', 'Events',  'header\Events.header');
     Settings.WriteString('HEADER', 'States',  'header\States.header');
     Settings.WriteString('HEADER', 'Utils',   'header\Utils.header');
-    Settings.WriteString('OUTPUT', 'Actions', 'wiki\Actions.header');
+    Settings.WriteString('OUTPUT', 'Actions', 'wiki\Actions.wiki');
     Settings.WriteString('OUTPUT', 'Events',  'wiki\Events.wiki');
     Settings.WriteString('OUTPUT', 'States',  'wiki\States.wiki');
     Settings.WriteString('OUTPUT', 'Utils',   'wiki\Utils.wiki');
