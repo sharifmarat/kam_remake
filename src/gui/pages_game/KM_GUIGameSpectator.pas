@@ -18,7 +18,8 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   Classes, Math, StrUtils, SysUtils,
-  KM_Controls, KM_HandsCollection, KM_Defaults, KromOGLUtils, KM_Hand, KM_Units;
+  KM_Controls, KM_HandsCollection, KM_Defaults, KromOGLUtils, KM_Hand, KM_Units,
+  KM_ResWares;
 
 
 type
@@ -40,24 +41,24 @@ type
 
     function GetValue: String;
     procedure SetValue(AValue: String);
+    function GetVisible: Boolean;
+    procedure SetVisible(AValue: Boolean);
   public
     constructor Create(aParent: TKMPanel; ATag: Integer; AImage: Word; AHint: String; AColor: TColor4);
     procedure SetPosition(ALeft, ATop: Integer);
     property Tag: Integer read FTag;
     property Value: String read GetValue write SetValue;
+    property Visible: Boolean read GetVisible write SetVisible;
   end;
 
-  TKMGUIGameSpectatorCustomPage = class
-  private
-    FPanel: TKMPanel;
+  TKMGUIGameSpectatorPanel = class(TKMPanel)
   public
     constructor Create(aParent: TKMPanel); virtual;
     procedure Activation; virtual;
 
-    property Panel: TKMPanel read FPanel;
   end;
 
-  TKMGUIGameSpectatorArmy = class(TKMGUIGameSpectatorCustomPage)
+  TKMGUIGameSpectatorPanelArmy = class(TKMGUIGameSpectatorPanel)
   private
     fItems: array of array[WARRIOR_MIN..WARRIOR_MAX] of TKMGUIGameSpectatorItem;
   public
@@ -66,17 +67,26 @@ type
 
   end;
 
+  TKMGUIGameSpectatorPanelResources = class(TKMGUIGameSpectatorPanel)
+  private
+    fItems: array of array[WARE_MIN..WARE_MAX] of TKMGUIGameSpectatorItem;
+  public
+    constructor Create(aParent: TKMPanel); override;
+    procedure Activation; override;
+    procedure UpdateState(aTickCount: Cardinal); override;
+  end;
+
   TKMGUIGameSpectator = class
   private
     FPanel: TKMPanel;
     FDropBox: TKMDropList;
-    FSelectedPage: TKMGUIGameSpectatorCustomPage;
-    FPageList: TList;
+    FSelectedPanel: TKMGUIGameSpectatorPanel;
+    FPanelList: TList;
 
     //TKMGUIGameSpectatorArmy;
 
     procedure ChangePage(Sender: TObject);
-    procedure AddPage(AName: String; APage: TKMGUIGameSpectatorCustomPage);
+    procedure AddPage(AName: String; APanel: TKMGUIGameSpectatorPanel);
   public
     constructor Create(aParent: TKMPanel);
     destructor Destroy; override;
@@ -120,30 +130,108 @@ begin
   FLabel.Caption := AValue;
 end;
 
-{ TKMGUIGameSpectatorCustomPage }
-
-constructor TKMGUIGameSpectatorCustomPage.Create(aParent: TKMPanel);
+function TKMGUIGameSpectatorItem.GetVisible: Boolean;
 begin
-  FPanel := TKMPanel.Create(aParent, aParent.Width - 160, 32, 160, 30);
-  FPanel.Anchors := [anTop, anRight];
-  FPanel.Focusable := false;
-  FPanel.Hide;
+  Result := FImage.Visible;
 end;
 
-procedure TKMGUIGameSpectatorCustomPage.Activation;
+procedure TKMGUIGameSpectatorItem.SetVisible(AValue: Boolean);
+begin
+  FImage.Visible := AValue;
+  FLabel.Visible := AValue;
+end;
+
+{ TKMGUIGameSpectatorPanel }
+
+constructor TKMGUIGameSpectatorPanel.Create(aParent: TKMPanel);
+begin
+  inherited Create(aParent, aParent.Width - 160, 32, 160, 30);
+  Anchors := [anTop, anRight];
+  Focusable := false;
+  Hide;
+
+
+end;
+
+procedure TKMGUIGameSpectatorPanel.Activation;
 begin
 
 end;
 
-{ TKMGUIGameSpectatorArmy }
+{ TKMGUIGameSpectatorPanelResources }
 
-constructor TKMGUIGameSpectatorArmy.Create(aParent: TKMPanel);
+constructor TKMGUIGameSpectatorPanelResources.Create(aParent: TKMPanel);
 begin
   inherited;
 
 end;
 
-procedure TKMGUIGameSpectatorArmy.Activation;
+procedure TKMGUIGameSpectatorPanelResources.Activation;
+var
+  i, p, HandCount, WareCount: Integer;
+  WT: TWareType;
+begin
+  inherited;
+  HandCount := Min(MAX_LOBBY_PLAYERS, gHands.Count);
+  if HandCount = Length(fItems) then
+    Exit;
+
+  SetLength(fItems, HandCount);
+  Height := 32 * HandCount;
+  Width := 448;
+  Left := Parent.Width - 448;
+  for i := 0 to HandCount - 1 do
+  begin
+    p := 0;
+    for WT := WARE_MIN to WARE_MAX do
+    begin
+      WareCount := gHands[i].Stats.GetWareBalance(WT);
+      if WareCount > 0 then
+        p := p + 32;
+      fItems[i, WT] := TKMGUIGameSpectatorItem.Create(Self, Integer(WT), gRes.Wares[WT].GUIIcon, gRes.Wares[WT].Title, gHands[i].FlagColor);
+      fItems[i, WT].SetPosition(Width - p, i * 32);
+      fItems[i, WT].Value := IntToStr(WareCount);
+      fItems[i, WT].Visible := WareCount > 0;
+    end;
+  end;
+end;
+
+procedure TKMGUIGameSpectatorPanelResources.UpdateState(aTickCount: Cardinal);
+var
+  i, p, HandCount, WareCount: Integer;
+  WT: TWareType;
+begin
+  inherited;
+
+  if Length(fItems) = 0 then
+    Exit;
+
+  for i := 0 to HandCount - 1 do
+  begin
+    p := 0;
+    for WT := WARE_MIN to WARE_MAX do
+    begin
+      WareCount := gHands[i].Stats.GetWareBalance(WT);
+
+      if WareCount > 0 then
+        p := p + 32;
+
+      fItems[i, WT].SetPosition(Width - p, i * 32);
+      fItems[i, WT].Value := IntToStr(WareCount);
+      fItems[i, WT].Visible := WareCount > 0;
+    end;
+  end;
+end;
+
+{ TKMGUIGameSpectatorPanelArmy }
+
+constructor TKMGUIGameSpectatorPanelArmy.Create(aParent: TKMPanel);
+begin
+  inherited;
+
+end;
+
+procedure TKMGUIGameSpectatorPanelArmy.Activation;
 
   function GetUnitCount(AHand: TKMHand; AUnitType: TUnitType): Integer;
   var
@@ -167,9 +255,9 @@ begin
     Exit;
 
   SetLength(fItems, HandCount);
-  FPanel.Height := 32 * HandCount;
-  FPanel.Width := 448;
-  FPanel.Left := FPanel.Parent.Width - 448;
+  Height := 32 * HandCount;
+  Width := 448;
+  Left := Parent.Width - 448;
   for i := 0 to HandCount - 1 do
   begin
     p := 0;
@@ -179,8 +267,8 @@ begin
       if UnitCount > 0 then
       begin
         p := p + 32;
-        fItems[i, WT] := TKMGUIGameSpectatorItem.Create(FPanel, Integer(WT), gRes.Units[WT].GUIIcon, gRes.Units[WT].GUIName, gHands[i].FlagColor);
-        fItems[i, WT].SetPosition(FPanel.Width - p, i * 32);
+        fItems[i, WT] := TKMGUIGameSpectatorItem.Create(Self, Integer(WT), gRes.Units[WT].GUIIcon, gRes.Units[WT].GUIName, gHands[i].FlagColor);
+        fItems[i, WT].SetPosition(Width - p, i * 32);
         fItems[i, WT].Value := IntToStr(UnitCount);
       end;
     end;
@@ -198,45 +286,45 @@ begin
   FPanel.Anchors := [anTop, anRight];
   FPanel.Focusable := false;
   FPanel.Show;
-  FPageList := TList.Create;
-  FSelectedPage := nil;
+  FPanelList := TList.Create;
+  FSelectedPanel := nil;
 
   FDropBox := TKMDropList.Create(FPanel, 5, 5, 150, 20, fnt_Metal, '', bsMenu);
   FDropBox.OnChange := ChangePage;
 
   AddPage('Ничего', nil);
-  AddPage('Ресурсы', nil);
+  AddPage('Ресурсы', TKMGUIGameSpectatorPanelResources.Create(FPanel));
   AddPage('Строения', nil);
   AddPage('Производство', nil);
-  AddPage('Армия', TKMGUIGameSpectatorArmy.Create(FPanel));
+  AddPage('Армия', TKMGUIGameSpectatorPanelArmy.Create(FPanel));
   AddPage('Население', nil);
   AddPage('Потери', nil);
 end;
 
 destructor TKMGUIGameSpectator.Destroy;
 begin
-  FPageList.Free;
+  FPanelList.Free;
 
   inherited;
 end;
 
-procedure TKMGUIGameSpectator.AddPage(AName: String; APage: TKMGUIGameSpectatorCustomPage);
+procedure TKMGUIGameSpectator.AddPage(AName: String; APanel: TKMGUIGameSpectatorPanel);
 begin
   FDropBox.Add(AName);
-  FPageList.Add(APage);
+  FPanelList.Add(APanel);
 end;
 
 procedure TKMGUIGameSpectator.ChangePage(Sender: TObject);
 begin
-  if Assigned(FSelectedPage) then
-    FSelectedPage.Panel.Hide;
+  if Assigned(FSelectedPanel) then
+    FSelectedPanel.Hide;
 
-  FSelectedPage := TKMGUIGameSpectatorCustomPage(FPageList[FDropBox.ItemIndex]);
+  FSelectedPanel := TKMGUIGameSpectatorPanel(FPanelList[FDropBox.ItemIndex]);
 
-  if Assigned(FSelectedPage) then
+  if Assigned(FSelectedPanel) then
   begin
-    FSelectedPage.Activation;
-    FSelectedPage.Panel.Show;
+    FSelectedPanel.Activation;
+    FSelectedPanel.Show;
   end;
 end;
 
