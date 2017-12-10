@@ -8,7 +8,8 @@ uses
   KM_Controls, KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Pics, KM_Points,
   KM_InterfaceDefaults, KM_InterfaceGame, KM_Terrain, KM_Houses, KM_Units, KM_Minimap, KM_Viewport, KM_Render,
   KM_UnitGroups, KM_Units_Warrior, KM_Saves, KM_MessageStack, KM_ResHouses, KM_Alerts, KM_Networking,
-  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings;
+  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings,
+  KM_GUIGameSpectator;
 
 
 const
@@ -36,6 +37,7 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
+    fGuiMenuSpectator: TKMGUIGameSpectator;
 
     // Not saved
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
@@ -735,6 +737,8 @@ begin
   Create_NetWait; // Overlay blocking everyhitng but sidestack and messages
   Create_Allies; // MessagePage sibling
 
+  fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main);
+
   // On top of NetWait to allow players to chat while waiting for late opponents
   fGuiGameChat := TKMGUIGameChat.Create(Panel_Main);
 
@@ -789,6 +793,7 @@ begin
   fGuiGameRatios.Free;
   fGuiGameStats.Free;
   fGuiMenuSettings.Free;
+  fGuiMenuSpectator.Free;
 
   fMessageStack.Free;
   fSaves.Free;

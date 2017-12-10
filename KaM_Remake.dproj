@@ -150,6 +150,7 @@
 			<DCCReference Include="src\gui\pages_game\KM_GUIGameRatios.pas"/>
 			<DCCReference Include="src\gui\pages_game\KM_GUIGameStats.pas"/>
 			<DCCReference Include="src\gui\pages_game\KM_GUIGameMenuSettings.pas"/>
+            <DCCReference Include="src\gui\pages_game\KM_GUIGameSpectator.pas"/>
 			<DCCReference Include="src\gui\pages_maped\KM_GUIMapEdExtras.pas"/>
 			<DCCReference Include="src\gui\pages_maped\KM_GUIMapEdHouse.pas"/>
 			<DCCReference Include="src\gui\pages_maped\KM_GUIMapEdMarkerDefence.pas"/>

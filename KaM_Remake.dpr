@@ -61,6 +61,7 @@ uses
   KM_GUIGameRatios in 'src\gui\pages_game\KM_GUIGameRatios.pas',
   KM_GUIGameStats in 'src\gui\pages_game\KM_GUIGameStats.pas',
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
+  KM_GUIGameSpectator in 'src\gui\pages_game\KM_GUIGameSpectator.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',
