@@ -191,7 +191,7 @@ begin
 end;
 
 
-//New house, either built by player or created by mission script
+//House closed for worker
 procedure TKMHandStats.HouseClosed(aWasClosed: Boolean; aType: THouseType);
 begin
   if aWasClosed then
@@ -201,6 +201,7 @@ begin
 end;
 
 
+//New house, either built by player or created by mission script
 procedure TKMHandStats.HouseCreated(aType: THouseType; aWasBuilt:boolean);
 begin
   if aWasBuilt then

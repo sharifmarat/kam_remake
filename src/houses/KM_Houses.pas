@@ -134,9 +134,11 @@ type
     function HitTest(X, Y: Integer): Boolean;
     property HouseType: THouseType read fHouseType;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
+
     property DeliveryMode: TDeliveryMode read fDeliveryMode;
     property NewDeliveryMode: TDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
     procedure SetDeliveryModeInstantly(aValue: TDeliveryMode);
+
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
     property Owner: TKMHandIndex read fOwner;
