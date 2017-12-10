@@ -554,9 +554,7 @@ begin
   Image_House_Worker.FlagColor := gHands[aHouse.Owner].FlagColor;
 
   Button_House_Worker.TexID  := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
-
   HandleHouseClosedForWorker(aHouse);
-
   Button_House_Worker.Hint := Format('Open / Close house for %s', [gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName]); //Todo translate
   Button_House_Worker.FlagColor := gHands[aHouse.Owner].FlagColor;
 
@@ -604,14 +602,12 @@ begin
   Image_House_Worker.Hide;
   Button_House_Worker.Visible := gRes.Houses[aHouse.HouseType].OwnerType <> ut_None;
 
-  Button_HouseDeliveryMode.Enabled := gRes.Houses[aHouse.HouseType].AcceptsWares;
+  Button_HouseDeliveryMode.Enabled := aHouse.AllowDeliveryModeChange;
   Button_HouseDeliveryMode.Show;
   Button_HouseRepair.Show;
-  if aHouse.BuildingRepair then 
-    Button_HouseRepair.TexID := 39 
-  else 
-    Button_HouseRepair.TexID := 40;
-  
+
+  Button_HouseRepair.TexID := IfThen(aHouse.BuildingRepair, 39, 40);
+
   case aHouse.NewDeliveryMode of //Use NewDeliveryMode, as it is supposed to be in UI, instead of DeliveryMode
     dm_Delivery: Button_HouseDeliveryMode.TexID := 37;
     dm_Closed:   Button_HouseDeliveryMode.TexID := 38;
