@@ -379,7 +379,7 @@ begin
   for I:=1 to 4 do LoadStream.Read(fResourceOrder[I], SizeOf(fResourceOrder[I]));
   for I:=1 to 4 do LoadStream.Read(fResOrderDesired[I], SizeOf(fResOrderDesired[I]));
 
-  if fHouseType in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop] then
+  if fHouseType in HOUSE_WORKSHOP then
     LoadStream.Read(fResourceOutPool, 20);
 
   LoadStream.Read(fLastOrderProduced);
@@ -1221,7 +1221,7 @@ begin
     begin
       inc(fResourceOut[I], aCount);
 
-      if (fHouseType in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop]) and (aCount > 0) then
+      if (fHouseType in HOUSE_WORKSHOP) and (aCount > 0) then
       begin
         count := aCount;
         for p := 0 to 19 do
@@ -1374,7 +1374,7 @@ begin
     end;
     Assert(aCount <= fResourceOut[I]);
 
-    if (fHouseType in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop]) and (aCount > 0) then
+    if (fHouseType in HOUSE_WORKSHOP) and (aCount > 0) then
     begin
       count := aCount;
       for p := 0 to 19 do
@@ -1520,7 +1520,7 @@ begin
   for I:=1 to 4 do SaveStream.Write(fResourceOrder[I], SizeOf(fResourceOrder[I]));
   for I:=1 to 4 do SaveStream.Write(fResOrderDesired[I], SizeOf(fResOrderDesired[I]));
 
-  if fHouseType in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop] then
+  if fHouseType in HOUSE_WORKSHOP then
     SaveStream.Write(fResourceOutPool, 20);
 
   SaveStream.Write(fLastOrderProduced);

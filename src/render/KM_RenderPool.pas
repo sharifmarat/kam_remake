@@ -759,7 +759,7 @@ begin
     AddHouseSupplySprite(Id);
   end;
 
-  if aHouse in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop] then
+  if aHouse in HOUSE_WORKSHOP then
   begin
     for K := 0 to 19 do
       if R3[K] > 0 then
