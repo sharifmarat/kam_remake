@@ -92,6 +92,16 @@ type
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   end;
+       
+  TKMGUIGameSpectatorItemLineArmyKilling = class(TKMGUIGameSpectatorItemLineArmy)
+  protected
+    function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+  end;     
+       
+  TKMGUIGameSpectatorItemLineArmyLost = class(TKMGUIGameSpectatorItemLineArmy)
+  protected
+    function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+  end;  
 
   ///
 
@@ -241,6 +251,20 @@ begin
   Result := IntToStr(gHands[AHandIndex].Stats.GetUnitQty(TUnitType(ATag)));
 end;
 
+{ TKMGUIGameSpectatorItemLineArmyKilling }
+
+function TKMGUIGameSpectatorItemLineArmyKilling.GetValue(AHandIndex: Integer; ATag: Integer): String;
+begin
+  Result := IntToStr(gHands[AHandIndex].Stats.GetUnitKilledQty(TUnitType(ATag)));
+end;        
+    
+{ TKMGUIGameSpectatorItemLineArmyLost }
+
+function TKMGUIGameSpectatorItemLineArmyLost.GetValue(AHandIndex: Integer; ATag: Integer): String;
+begin
+  Result := IntToStr(gHands[AHandIndex].Stats.GetUnitLostQty(TUnitType(ATag)));
+end;     
+
 { TKMGUIGameSpectator }
 
 constructor TKMGUIGameSpectator.Create(aParent: TKMPanel);
@@ -262,8 +286,8 @@ begin
   AddLineType(2, TKMGUIGameSpectatorItemLineBuildings);
   AddLineType(3, nil);
   AddLineType(4, TKMGUIGameSpectatorItemLineArmy);
-  AddLineType(5, nil);
-  AddLineType(6, nil);
+  AddLineType(5, TKMGUIGameSpectatorItemLineArmyKilling);
+  AddLineType(6, TKMGUIGameSpectatorItemLineArmyLost);
                  
   FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, 200, 20, fnt_Metal, '', bsGame);
   FDropBox.OnChange := ChangePage;
@@ -273,7 +297,7 @@ begin
   FDropBox.Add('Строения');
   FDropBox.Add('Производство');
   FDropBox.Add('Армия');
-  FDropBox.Add('Население');  
+  FDropBox.Add('Убийства');  
   FDropBox.Add('Потери');
   
   FDropBox.ItemIndex := 0;
