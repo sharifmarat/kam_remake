@@ -142,7 +142,7 @@ function TKMSaveInfo.GetCRC: Cardinal;
 begin
   if not fCrcCalculated then
   begin
-    fCRC := Adler32CRC(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+    fCRC := Adler32CRC(fPath + fFileName + EXT_SAVE_MAIN_DOT);
     fCrcCalculated := True;
   end;
   Result := fCRC;
@@ -153,7 +153,7 @@ procedure TKMSaveInfo.ScanSave;
 var
   LoadStream: TKMemoryStream;
 begin
-  if not FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) then
+  if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then
   begin
     fSaveError := 'File not exists';
     Exit;
@@ -162,7 +162,7 @@ begin
   fCrcCalculated := False; //make lazy load for CRC
 
   LoadStream := TKMemoryStream.Create; //Read data from file into stream
-  LoadStream.LoadFromFile(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+  LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
 
   fInfo.Load(LoadStream);
   fGameOptions.Load(LoadStream);
@@ -187,13 +187,13 @@ var
   MinimapFilePath: String;
 begin
   Result := False;
-  if not FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) then Exit;
+  if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
 
   DummyInfo := TKMGameInfo.Create;
   DummyOptions := TKMGameOptions.Create;
   LoadStream := TKMemoryStream.Create; //Read data from file into stream
   try
-    LoadStream.LoadFromFile(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+    LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
 
     DummyInfo.Load(LoadStream); //We don't care, we just need to skip past it correctly
     DummyOptions.Load(LoadStream); //We don't care, we just need to skip past it correctly
@@ -232,7 +232,7 @@ end;
 
 function TKMSaveInfo.IsValid: Boolean;
 begin
-  Result := FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) and (fSaveError = '') and fInfo.IsValid(True);
+  Result := FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) and (fSaveError = '') and fInfo.IsValid(True);
 end;
 
 
@@ -245,8 +245,8 @@ end;
 //Check if replay files exist at location
 function TKMSaveInfo.IsReplayValid: Boolean;
 begin
-  Result := FileExists(fPath + fFileName + '.' + EXT_SAVE_BASE) and
-            FileExists(fPath + fFileName + '.' + EXT_SAVE_REPLAY);
+  Result := FileExists(fPath + fFileName + EXT_SAVE_BASE_DOT) and
+            FileExists(fPath + fFileName + EXT_SAVE_REPLAY_DOT);
 end;
 
 

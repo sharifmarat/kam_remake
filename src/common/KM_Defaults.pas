@@ -265,6 +265,10 @@ const
   EXT_SAVE_BASE = 'bas';
   EXT_FILE_SCRIPT = 'script';
 
+  EXT_SAVE_REPLAY_DOT = '.' + EXT_SAVE_REPLAY;
+  EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
+  EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
+
 type
   TKMHandIndex = {type} ShortInt;
   TKMHandIndexArray = array of TKMHandIndex;

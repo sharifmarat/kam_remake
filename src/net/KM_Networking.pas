@@ -1935,8 +1935,8 @@ begin
                     gLog.AddTime(Format('Save error: %s. Check params: fSaveInfo.IsValid = %s; (fSaveInfo.CRC <> tmpCRC) = ;' +
                                         ' Save FileExists %s: %s; fSaveError = %s; fInfo.IsValid(True) = %s',
                                         [gResTexts[TX_PAUSED_FILE_MISMATCH], BoolToStr(fSaveInfo.IsValid),
-                                         BoolToStr(fSaveInfo.CRC <> tmpCardinal), fSaveInfo.Path + fSaveInfo.FileName + '.' + EXT_SAVE_MAIN,
-                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + '.' + EXT_SAVE_MAIN)), fSaveInfo.SaveError,
+                                         BoolToStr(fSaveInfo.CRC <> tmpCardinal), fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT,
+                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT)), fSaveInfo.SaveError,
                                          fSaveInfo.Info.IsValid(True)]));
                     fSelectGameKind := ngk_None;
                     FreeAndNil(fSaveInfo);
