@@ -1017,7 +1017,7 @@ end;
 
 procedure TKMGame.RestartReplay;
 begin
-  gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, '.bas'));
+  gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
 end;
 
 
@@ -1460,7 +1460,7 @@ begin
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
-  fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, '.' + EXT_SAVE_REPLAY));
+  fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   gLog.AddTime('Saving game', True);
 end;
@@ -1480,7 +1480,7 @@ var
   SaveIsMultiplayer, IsCampaign: Boolean;
   I: Integer;
 begin
-  fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), '.' + EXT_SAVE_MAIN);
+  fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
   gLog.AddTime('Loading game from: ' + aPathName);
 
@@ -1583,7 +1583,7 @@ begin
       else
         fGameInputProcess := TGameInputProcess_Single.Create(gipRecording); //Singleplayer
 
-    fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, '.' + EXT_SAVE_REPLAY));
+    fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
      //Should check all Unit-House ID references and replace them with actual pointers
     gHands.SyncLoad;
@@ -1598,7 +1598,7 @@ begin
     if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     begin
       DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
-      KMCopyFile(ChangeFileExt(aPathName, '.' + EXT_SAVE_BASE), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+      KMCopyFile(ChangeFileExt(aPathName, EXT_SAVE_BASE_DOT), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
     end;
 
     //Repeat mission init if necessary
