@@ -921,7 +921,7 @@ end;
 
 procedure TKMGame.AutoSaveAfterPT(aTimestamp: TDateTime);
 begin
-  Save('autosave_after_pt_end', aTimestamp); //Save to temp file
+  Save('autosave_after_pt_end', aTimestamp);
 end;
 
 
@@ -1298,7 +1298,7 @@ var
   gameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
-  gLog.AddTime('Saving game: ' + aPathName);
+  gLog.AddTime('Saving game start: ' + aPathName);
 
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
     raise Exception.Create('Saving from wrong state');
@@ -1432,14 +1432,14 @@ begin
     SaveStream.Free;
   end;
 
-  gLog.AddTime('Saving game: ' + aPathName);
+  gLog.AddTime('Saving game end: ' + aPathName);
 end;
 
 
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
-  fullPath, minimapPath: UnicodeString;
+  fullPath, minimapPath, NewSaveName: UnicodeString;
 begin
   //Convert name to full path+name
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
@@ -1454,9 +1454,9 @@ begin
   //Remember which savegame to try to restart (if game was not saved before)
   fSaveFile := ExtractRelativePath(ExeDir, fullPath);
 
+  NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer);
   //Copy basesave so we have a starting point for replay
-  DeleteFile(SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer));
-  KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer));
+  KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
