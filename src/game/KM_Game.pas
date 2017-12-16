@@ -598,6 +598,7 @@ begin
   fNetworking.OnPingInfo       := fGamePlayInterface.AlliesOnPingInfo;
   fNetworking.OnDisconnect     := GameMPDisconnect; //For auto reconnecting
   fNetworking.OnJoinerDropped := OtherPlayerDisconnected;
+  fNetworking.OnUpdateMinimap := nil;
   fNetworking.OnReassignedHost := nil; //Reset Lobby OnReassignedHost
   fNetworking.OnReassignedJoiner := nil; //So it is no longer assigned to a lobby event
   fNetworking.GameCreated;
@@ -1376,6 +1377,7 @@ begin
         MnmSaveStream := TKMemoryStream.Create;
         try
           try
+            MnmSaveStream.Write(fNetworking.MyNetPlayer.StartLocation);
             fGamePlayInterface.SaveMinimap(MnmSaveStream);
             MnmSaveStream.SaveToFile(aMinimapPathName);
           except
