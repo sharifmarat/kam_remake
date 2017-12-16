@@ -47,7 +47,7 @@ constructor TNavMeshPathFinding.Create;
 begin
   inherited;
   fHeap := TBinaryHeap.Create(High(Word));
-  fHeap.Cmp := HeapCmp();
+  fHeap.Cmp := HeapCmp;
 end;
 
 
@@ -133,9 +133,9 @@ begin
     DX := Abs(aSPoint.X - aEPoint.X);
     DY := Abs(aSPoint.Y - aEPoint.Y);
     if (DX > DY) then
-      Output := DX << 3 + DY << 2
+      Output := DX shl 3 + DY shl 2
     else
-      Output := DY << 3 + DX << 2;
+      Output := DY shl 3 + DX shl 2;
     //Output := Output + fVisitedPrice[aTo]; // if this polygon is already in plan of some Platoon decrease chance that we will go this way
   end;
   Result := Output;
@@ -153,9 +153,9 @@ begin
   DX := Abs(SPoint.X - EPoint.X);
   DY := Abs(SPoint.Y - EPoint.Y);
   if (DX > DY) then
-    Output := DX << 3 + DY << 2
+    Output := DX shl 3 + DY shl 2
   else
-    Output := DY << 3 + DX << 2;
+    Output := DY shl 3 + DX shl 2;
   Result := Output;
 end;
 

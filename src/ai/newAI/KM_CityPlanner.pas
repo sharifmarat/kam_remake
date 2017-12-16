@@ -5,8 +5,7 @@ uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes,
   KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares,
-  KM_PathFindingRoad, KM_CityPredictor, KM_Eye,
-  LclIntf; // Measure of time in Lazarus ... DELETE THIS!!!!!!!!!!  and delete command (GetTickCount) in code
+  KM_PathFindingRoad, KM_CityPredictor, KM_Eye;
 
 const
   AVOID_BUILDING_UNLOCK = 0;
@@ -785,21 +784,28 @@ end;
 
 //{
 procedure TKMCityPlanner.PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
+type
+  TDirArrInt = array[TDirection] of Integer;
+  TDirArrByte = array[TDirection] of Byte;
 const
   MAX_FIELDS = 15;
   SNAP_TO_EDGE = 5;
   FIELD_PRICE = 1;
   DIR_PRICE: array[TDirection] of Byte = (5,15,20,15); //(dirN,dirE,dirS,dirW);
   AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
+  PRICE_ARR_CONST: TDirArrInt = (0,0,0,0);
+  CNT_ARR_CONST: TDirArrByte = (0,0,0,0);
 var
   I,Dist: Integer;
   Dir, BestDir: TDirection;
   HT: THouseType;
   FieldLoc: TKMPoint;
   HMA: THouseMappingArray;
-  PriceArr: array[TDirection] of Integer = (0,0,0,0);
-  CntArr: array[TDirection] of Byte = (0,0,0,0);
+  PriceArr: TDirArrInt;
+  CntArr: TDirArrByte;
 begin
+  PriceArr := PRICE_ARR_CONST;
+  CntArr := CNT_ARR_CONST;
   HT := ht_Farm;
   HMA := gAIFields.Eye.HousesMapping;
   // Get best edge of current loc (try build field in edges)

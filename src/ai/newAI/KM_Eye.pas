@@ -4,8 +4,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_FloodFill,
-  KM_ResHouses, KM_ResWares, KM_ArmyPresence,
-  LclIntf; // Measure of time in Lazarus ... DELETE THIS!!!!!!!!!!  and delete command (GetTickCount) in code
+  KM_ResHouses, KM_ResWares, KM_ArmyPresence;
 
 const
   MAX_SCAN_DIST_FROM_HOUSE = 10;
@@ -82,7 +81,7 @@ type
 implementation
 uses
   KM_Terrain, KM_Hand, KM_Resource, KM_AIFields, KM_HandsCollection, KM_RenderAux,
-  KM_NavMesh;
+  KM_NavMesh, KM_CommonUtils;
 
 
 { TKMEye }
@@ -149,7 +148,7 @@ var
   diff: LongInt;
 begin
 
-  diff := GetTickCount;
+  diff := TimeGet;
 
   SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := Low(VisitArr) to High(VisitArr) do
@@ -187,7 +186,7 @@ begin
         //else if (gTerrain.ObjectIsChopableTree(X, Y)) then
         //  VisitArr[Y,X] := TREE_NUM;
       end;
-    diff := GetTickCount - diff;
+    diff := GetTimeSince(diff);
   finally
     SearchResource.Free();
   end;
@@ -567,7 +566,7 @@ var
 
   diff: LongInt;
 begin
-  diff := GetTickCount;
+  diff := TimeGet;
 
   setLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := 1 to gTerrain.MapY - 1 do
@@ -615,7 +614,7 @@ begin
   for X := 0 to Forests.Count-1 do
     POM.Add(Forests.Items[X]);
 
-  diff := GetTickCount - diff;
+  diff := GetTimeSince(diff);
 end;
 
 

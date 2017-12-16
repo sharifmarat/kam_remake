@@ -137,7 +137,7 @@ begin
   inherited Create;
   fOwner := aPlayer;
   fPathfinding := TNavMeshPathFinding.Create();
-  for GT in TGroupType do
+  for GT := Low(TGroupType) to High(TGroupType) do
     fSquads[GT] := TKMList.Create();
 end;
 
@@ -147,7 +147,7 @@ var
   GT: TGroupType;
 begin
   fPathfinding.Free;
-  for GT in TGroupType do
+  for GT := Low(TGroupType) to High(TGroupType) do
     fSquads[GT].Free;
   inherited;
 end;
