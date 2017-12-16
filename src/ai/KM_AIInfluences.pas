@@ -41,6 +41,7 @@ type
     procedure AddAvoidBuilding(X,Y: Word; aRad: Single; aValue: Byte = 255);
     procedure RemAvoidBuilding(aArea: TKMRect);
     function GetBestOwner(X, Y: Word): TKMHandIndex;
+    function GetBestAllianceOwnership(aIndex: TKMHandIndex; X,Y: Word; aAllianceType: TAllianceType): Byte;
     function OtherOwnerships(aPlayer: Byte; X, Y: Word): Word;
     procedure Init;
     procedure ExportInfluenceMaps;
@@ -129,6 +130,22 @@ begin
     Best := Ownership[I,Y,X];
     Result := I;
   end;
+end;
+
+
+function TKMInfluences.GetBestAllianceOwnership(aIndex: TKMHandIndex; X,Y: Word; aAllianceType: TAllianceType): Byte;
+var
+  I: Integer;
+  Best: Integer;
+begin
+  Result := 0;
+  if not AI_GEN_INFLUENCE_MAPS then Exit;
+
+  Best := 0;
+  for I := 0 to gHands.Count - 1 do
+    if (gHands[aIndex].Alliances[I] = aAllianceType) AND (Ownership[I,Y,X] > Best) then
+      Best := Ownership[I,Y,X];
+  Result := Best;
 end;
 
 
