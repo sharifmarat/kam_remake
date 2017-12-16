@@ -1328,6 +1328,7 @@ var
 begin
   if fNetPlayerKind = lpk_Joiner then
   begin
+    OldLoc := -1234; // some randor value, make compiler happy
     IsPlayerInitBefore := MyIndex > 0;
     if IsPlayerInitBefore then
       OldLoc := MyNetPlayer.StartLocation;

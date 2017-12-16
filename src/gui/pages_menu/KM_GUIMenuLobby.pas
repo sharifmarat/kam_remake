@@ -1369,8 +1369,6 @@ end;
 //We should reflect it to UI
 procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
 
-const ANY_LOC = -1000;
-
   procedure AddLocation(LocationName: UnicodeString; aIndex, aLocation: Integer);
   begin
     if not fNetworking.CanTakeLocation(fLocalToNetPlayers[aIndex], aLocation, False) then
@@ -1379,17 +1377,12 @@ const ANY_LOC = -1000;
   end;
 
 var
-  I,K,ID,LocaleID,OldLoc: Integer;
+  I,K,ID,LocaleID: Integer;
   MyNik, CanEdit, HostCanEdit, IsSave, IsValid: Boolean;
   CurPlayer: TKMNetPlayerInfo;
   FirstUnused: Boolean;
 begin
   UpdateMappings;
-
-  OldLoc := ANY_LOC;
-
-  if fNetworking.MyIndex > 0 then
-    OldLoc := fNetworking.MyNetPlayer.StartLocation;
 
   IsSave := fNetworking.SelectGameKind = ngk_Save;
 
