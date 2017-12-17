@@ -280,7 +280,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineResources.GetTagCount: Integer;
 begin
-  Result := Integer(WARE_MAX) - Integer(WARE_MIN);
+  Result := Integer(WARE_MAX) - Integer(WARE_MIN) + 1;
 end;
 
 function TKMGUIGameSpectatorItemLineResources.GetTag(AIndex: Integer): Integer;
@@ -306,7 +306,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTagCount: Integer;
 begin
-  Result := Integer(HOUSE_MAX) - Integer(HOUSE_MIN);
+  Result := Integer(HOUSE_MAX) - Integer(HOUSE_MIN) + 1;
 end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTag(AIndex: Integer): Integer;
@@ -314,7 +314,7 @@ begin
   Result := Integer(HOUSE_MIN) + AIndex;
 end;
 
-{ TKMGUIGameSpectatorItemLineBuildings }
+{ TKMGUIGameSpectatorItemLineBuild }
 
 function TKMGUIGameSpectatorItemLineBuild.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
@@ -396,7 +396,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTagCount: Integer;
 begin
-  Result := Integer(WARRIOR_MAX) - Integer(WARRIOR_MIN);
+  Result := Integer(WARRIOR_MAX) - Integer(WARRIOR_MIN) + 1;
 end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTag(AIndex: Integer): Integer;
