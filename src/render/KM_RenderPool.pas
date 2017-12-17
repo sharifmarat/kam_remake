@@ -762,9 +762,6 @@ begin
   for I := 1 to 4 do
   if (R2[I - 1]) > 0 then
   begin
-    // Makes compiler happy
-    Id := 0;
-
     Count := Min(R2[I - 1], 5);
     // Exception for houses whose wares are layered
     if aHouse in [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop] then

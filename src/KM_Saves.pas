@@ -44,7 +44,8 @@ type
     function IsValid: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplayValid: Boolean;
-    function LoadMinimap(aMinimap: TKMMinimap): Boolean;
+    function LoadMinimap(aMinimap: TKMMinimap): Boolean; overload;
+    function LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean; overload;
   end;
 
   TTSavesScanner = class(TThread)
@@ -111,8 +112,11 @@ type
 implementation
 uses
   SysUtils, Math, KromUtils,
-  KM_Resource, KM_ResTexts, KM_FileIO,
-  KM_CommonClasses, KM_Defaults, KM_CommonUtils;
+  KM_Resource, KM_ResTexts, KM_FileIO, KM_NetworkTypes,
+  KM_CommonClasses, KM_Defaults, KM_CommonUtils, KM_Log;
+
+const
+  ANY_LOC = -1000;
 
 
 { TKMSaveInfo }
@@ -179,12 +183,19 @@ end;
 
 
 function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap): Boolean;
+begin
+  Result := LoadMinimap(aMinimap, ANY_LOC);
+end;
+
+
+function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean;
 var
   LoadStream, LoadMnmStream: TKMemoryStream;
   DummyInfo: TKMGameInfo;
   DummyOptions: TKMGameOptions;
   IsMultiplayer: Boolean;
   MinimapFilePath: String;
+  MnmStartLoc: Integer;
 begin
   Result := False;
   if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
@@ -211,11 +222,23 @@ begin
           if FileExists(MinimapFilePath) then
           begin
             LoadMnmStream.LoadFromFile(MinimapFilePath); // try to load minimap from file
-            aMinimap.LoadFromStream(LoadMnmStream);
-            Result := True;
+            LoadMnmStream.Read(MnmStartLoc);
+            if (aStartLoc = ANY_LOC) // for not MP game, f.e.
+              or (aStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
+              or (aStartLoc = MnmStartLoc) then // allow, if we was on the same loc
+            begin
+              aMinimap.LoadFromStream(LoadMnmStream);
+              Result := True;
+            end;
           end;
         except
           // Ignore any errors, because MP minimap is optional
+          on E: Exception do
+            // Just log error to log, do not crash game in case of any error here
+            gLog.AddTime('Load MP save minimap from file '
+              + MinimapFilePath + ' exception: ' + E.ClassName + ': ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
+              );
         end;
       finally
         LoadMnmStream.Free;

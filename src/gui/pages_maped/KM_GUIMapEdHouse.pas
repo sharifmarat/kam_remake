@@ -641,8 +641,6 @@ end;
 
 
 procedure TKMMapEdHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
-var
-  H: TKMHouse;
 begin
   case Button_HouseDeliveryMode.TexID of
     37: // dm_Delivery
