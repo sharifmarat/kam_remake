@@ -737,8 +737,6 @@ begin
   Create_NetWait; // Overlay blocking everyhitng but sidestack and messages
   Create_Allies; // MessagePage sibling
 
-  fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main);
-
   // On top of NetWait to allow players to chat while waiting for late opponents
   fGuiGameChat := TKMGUIGameChat.Create(Panel_Main);
 
@@ -793,7 +791,8 @@ begin
   fGuiGameRatios.Free;
   fGuiGameStats.Free;
   fGuiMenuSettings.Free;
-  fGuiMenuSpectator.Free;
+  if Assigned(fGuiMenuSpectator) then
+    fGuiMenuSpectator.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -2103,7 +2102,11 @@ begin
       // Use team info from ally states:
       // consider team as a group of hands where all members are allied to each other and not allied to any other hands.
       gmReplayMulti,
-      gmMultiSpectate:  Replay_Multi_SetPlayersDropbox;
+      gmMultiSpectate:
+        begin
+          Replay_Multi_SetPlayersDropbox;
+          fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main);
+        end;
     end;
     gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(Dropbox_ReplayFOW.ItemIndex); //Update HandIndex
   end;
