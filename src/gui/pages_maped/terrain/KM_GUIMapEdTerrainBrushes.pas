@@ -94,13 +94,13 @@ begin
       BrushTable[I,K].OnClick := BrushChange;
     end;
 
-  BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 310, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
+  BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 300, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
   BrushRandom.OnClick := BrushChange;
   BrushRandom.Hint := 'Use random elements while drawing'; //Todo translate
 
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
-    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 340, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
+    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 320, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
     BrushMasks[MK].Tag := Byte(MK);
     BrushMasks[MK].Tag2 := Byte(bbtMask);
     if MK = mk_None then
@@ -115,7 +115,7 @@ begin
 
   BrushMasks[mk_Hard3].Hide;
 
-  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 340, 34, 34, 668, rxGui);
+  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 320, 34, 34, 668, rxGui);
   MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate
   MagicBrush.OnClick := BrushChange;
 end;
