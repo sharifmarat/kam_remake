@@ -100,8 +100,8 @@ type
     procedure SetField_Init(Loc: TKMPoint; aOwner: TKMHandIndex);
     procedure SetField_Complete(Loc: TKMPoint; aFieldType: TFieldType);
 
-    function TrySetTile(X, Y: Integer; aType, aRot: Byte): Boolean; overload;
-    function TrySetTile(X, Y: Integer; aType, aRot: Byte; out aPassRect: TKMRect;
+    function TrySetTile(X, Y: Integer; aType, aRot: Integer): Boolean; overload;
+    function TrySetTile(X, Y: Integer; aType, aRot: Integer; out aPassRect: TKMRect;
                         out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean; overload;
@@ -615,7 +615,7 @@ begin
 end;
 
 
-function TKMTerrain.TrySetTile(X, Y: Integer; aType, aRot: Byte): Boolean;
+function TKMTerrain.TrySetTile(X, Y: Integer; aType, aRot: Integer): Boolean;
 var
   TempRect: TKMRect;
   TempBool: Boolean;
@@ -624,7 +624,7 @@ begin
 end;
 
 
-function TKMTerrain.TrySetTile(X, Y: Integer; aType, aRot: Byte; out aPassRect: TKMRect;
+function TKMTerrain.TrySetTile(X, Y: Integer; aType, aRot: Integer; out aPassRect: TKMRect;
                                out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean;
   function UnitWillGetStuck: Boolean;
   var U: TKMUnit;
@@ -643,6 +643,8 @@ var
   LocRect: TKMRect;
   DoRemField: Boolean;
 begin
+  Assert((aType <> -1) or (aRot <> -1), 'Either terrain type or rotation should be set');
+ 
   Loc := KMPoint(X, Y);
   LocRect := KMRect(Loc);
   aPassRect := LocRect;
@@ -665,8 +667,11 @@ begin
     RemField(Loc, False, aPassRect, aDiagonalChanged, False);
 
   //Apply change
-  Land[Y, X].Terrain := aType;
-  Land[Y, X].Rotation := aRot;
+  if aType <> -1 then // Do not update terrain, if -1 is passed as an aType parameter
+    Land[Y, X].Terrain := aType;
+  if aRot <> -1 then // Do not update rotation, if -1 is passed as an aRot parameter
+    Land[Y, X].Rotation := aRot;
+ 
 
   if DoRemField then
     UpdateFences(Loc); // after update Terrain
@@ -789,14 +794,15 @@ function TKMTerrain.ScriptTrySetTilesArray(var aTiles: array of TKMTerrainTileBr
     aResult := False;
   end;
 
-var I, J: Integer;
-    T: TKMTerrainTileBrief;
-    Rect, TerrRect, HeightRect: TKMRect;
-    DiagonalChangedTotal, DiagChanged: Boolean;
-    BackupLand: array of array of TKMTerrainTile;
-    ErrCnt: Integer;
-    HasErrorOnTile: Boolean;
-    ErrorTypesOnTile: TKMTileChangeTypeSet;
+var 
+  I, J, Terr, Rot: Integer;
+  T: TKMTerrainTileBrief;
+  Rect, TerrRect, HeightRect: TKMRect;
+  DiagonalChangedTotal, DiagChanged: Boolean;
+  BackupLand: array of array of TKMTerrainTile;
+  ErrCnt: Integer;
+  HasErrorOnTile: Boolean;
+  ErrorTypesOnTile: TKMTileChangeTypeSet;
 begin
   Result := True;
   if Length(aTiles) = 0 then Exit;
@@ -826,19 +832,28 @@ begin
 
     if TileInMapCoords(T.X, T.Y) then
     begin
-      // Update terrain and rotation if needed
+      Terr := -1;
       if tctTerrain in T.ChangeSet then
+        Terr := T.Terrain;
+        
+      Rot := -1;
+      if (tctRotation in T.ChangeSet) and InRange(T.Rotation, 0, 3) then
+        Rot := T.Rotation;
+
+      if (Terr <> -1) or (Rot <> -1) then
       begin
-        if InRange(T.Rotation, 0, 3) then
+        // Update terrain and rotation if needed
+        if TrySetTile(T.X, T.Y, Terr, Rot, TerrRect, DiagChanged, False) then
         begin
-          if TrySetTile(T.X, T.Y, T.Terrain, T.Rotation, TerrRect, DiagChanged, False) then
-          begin
-            DiagonalChangedTotal := DiagonalChangedTotal or DiagChanged;
-            UpdateRectWRect(Rect, TerrRect);
-          end else
-            SetErrorNSetResult(tctTerrain, HasErrorOnTile, ErrorTypesOnTile, Result);
-        end else
-          SetErrorNSetResult(tctTerrain, HasErrorOnTile, ErrorTypesOnTile, Result);
+          DiagonalChangedTotal := DiagonalChangedTotal or DiagChanged;
+          UpdateRectWRect(Rect, TerrRect);
+        end else begin
+          SetErrorNSetResult(tctTerrain, HasErrorOnTile, ErrorTypesOnTile, Result);  
+          SetErrorNSetResult(tctRotation, HasErrorOnTile, ErrorTypesOnTile, Result);  
+        end;
+      end else begin
+        SetErrorNSetResult(tctTerrain, HasErrorOnTile, ErrorTypesOnTile, Result);  
+        SetErrorNSetResult(tctRotation, HasErrorOnTile, ErrorTypesOnTile, Result);  
       end;
 
       // Update height if needed
