@@ -148,6 +148,8 @@ type
     function GetHealth: Word;
     function GetBuildWoodDelivered: Byte;
     function GetBuildStoneDelivered: Byte;
+    function GetBuildResourceDelivered: Byte;
+    function GetBuildResDeliveredPercent: Single;
 
     property ResourceInArray: TKMByteArray read GetResourceInArray;
     property ResourceOutArray: TKMByteArray read GetResourceOutArray;
@@ -806,6 +808,18 @@ begin
     hbs_Stone: Result := fBuildSupplyStone+Ceil(fBuildingProgress/50)-gRes.Houses[fHouseType].WoodCost;
     else       Result := 0;
   end;
+end;
+
+
+function TKMHouse.GetBuildResourceDelivered: Byte;
+begin
+  Result := GetBuildWoodDelivered + GetBuildStoneDelivered;
+end;
+
+
+function TKMHouse.GetBuildResDeliveredPercent: Single;
+begin
+  Result := GetBuildResourceDelivered / (gRes.Houses[fHouseType].WoodCost + gRes.Houses[fHouseType].StoneCost);
 end;
 
 
