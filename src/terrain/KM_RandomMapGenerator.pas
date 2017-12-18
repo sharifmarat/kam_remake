@@ -1,4 +1,4 @@
-﻿{
+{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -73,7 +73,8 @@ type
     function RandomPlayerLocs(): TKMPointArray;
     function LinearInterpolation(const aStep,aMaxNum: Integer): TInteger2Array;
     function VoronoiMod(const aStep: Integer; var aPoints: TKMPoint2Array): TInteger2Array;
-    function RNDPoints(const acnt: Single; aSpace: Integer; const aMinimum,aMaximum: TKMPoint): TKMPointArray;
+    function RNDPointsInGrid(const acnt: Single; aSpace: Integer; const aMinimum,aMaximum: TKMPoint): TKMPointArray;
+    function RNDPointInCircle(aMin,aMax,aCenter: TKMPoint; aMaxRadius: Single): TKMPoint;
 
     procedure SnowMountains(var A: TKMByte2Array);
     procedure NoGoZones(Locs: TKMPointArray; var TilesPartsArr: TTileParts);
@@ -204,6 +205,7 @@ begin
   fRNG.Free;
 end;
 
+
 // Main procedure for RMG - requires also RMGSettings: TKMRMGSettings (global variable)
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
@@ -241,7 +243,6 @@ begin
   //RMGSettings.Seed := 141; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
   fRNG.Seed := RMGSettings.Seed;
   gLog.AddTime('RMG seed: ' + IntToStr(fRNG.Seed));
- //ShowMessage('Hello World');
 
 
   SetLength(A, gTerrain.MapY+1, gTerrain.MapX+1);
@@ -304,14 +305,10 @@ begin
   for Y := 29 to 31 do
      for X := 1 to 2 do
        S[Y,X] := 5;
-
   Pmin := KMPoint(0,0);
   Pmax := KMPoint(High(A[0]),High(A));
   FillBiome := TKMFillBiome.Create(Pmin, Pmax, S, A);
   FillBiome.QuickFlood(8,13, 5, 0, 5);
-
-
-
   {
   for Y := Low(S) to High(S) do
   	for X := Low(S[Y]) to High(S[Y]) do
@@ -393,7 +390,7 @@ begin
   Pmax.X := High(A[1])-1;
   Pmin.Y := 1;
   Pmax.Y := High(A)-1;
-  P := POMRNDPoints(RMGSettings.Obstacle.Density, RMGSettings.Objects.Trees,Pmin,Pmax,A);
+  P := POMRNDPointsInGrid(RMGSettings.Obstacle.Density, RMGSettings.Objects.Trees,Pmin,Pmax,A);
   for Y := 0 to High(P) do
     A[P[Y].Y,P[Y].X] := Byte(btDark);
   GenerateBasicTiles(TilesPartsArr,A);
@@ -457,13 +454,10 @@ begin
   Pmin.Y := 50;
   Pmax.X := 100;
   Pmax.Y := 100;;
-
-  P := RNDPoints(50,0,Pmin,Pmax);
-
+  P := RNDPointsInGrid(50,0,Pmin,Pmax);
   for i := Low(P) to High(P) do
   begin
     A[P[I].Y,P[I].X] := Byte(BtDark);
-
   end;
   //}
 
@@ -656,8 +650,6 @@ begin
         X0 := Max(Low(Output[Y0]),  X1 - move);
         Y2 := Min(High(Output), Y1 + move);
         X2 := Min(High(Output[Y2]), X1 + move);
-
-
         for aX := X0 to X2 do
         begin
           if (History[Y0,aX] < price) then
@@ -686,7 +678,6 @@ begin
         end;
         move := move + 1;
         price := price - 1;
-
       end;
       //}
       i := i + 1;
@@ -910,7 +901,7 @@ end;
 // aSpace = minimal space between generated points (when it is high number points will be in grid)
 // aMinimum, aMaximum = point will be generated in rectangle given by this points
 // Result = TKMPointArray of pseudorandom points
-function TKMRandomMapGenerator.RNDPoints(const aCnt: Single; aSpace: Integer; const aMinimum,aMaximum: TKMPoint): TKMPointArray;
+function TKMRandomMapGenerator.RNDPointsInGrid(const aCnt: Single; aSpace: Integer; const aMinimum,aMaximum: TKMPoint): TKMPointArray;
 var
   X,X0,Y,Y0, i: Integer;
   Len, Step, Dist: TKMPoint;
@@ -967,6 +958,22 @@ begin
   end;
 
   Result := Output;
+end;
+
+
+// Generator of random points inside circle
+function TKMRandomMapGenerator.RNDPointInCircle(aMin,aMax,aCenter: TKMPoint; aMaxRadius: Single): TKMPoint;
+const
+  MAX_ANGLE = 3.14*2; // = 360°
+var
+  angle, radius: Single;
+begin
+  // Random point in Polar coordinates
+  angle := fRNG.Random() * MAX_ANGLE;
+  radius := fRNG.Random() * aMaxRadius;
+  // Back to Cartesian coordinates + check edges
+  Result.X := Min(  aMax.X, Max( aMin.X,Round(aCenter.X + radius * cos(angle)) )  );
+  Result.Y := Min(  aMax.Y, Max( aMin.Y,Round(aCenter.Y + radius * sin(angle)) )  );
 end;
 
 
@@ -1110,21 +1117,6 @@ const
   RES_AMOUNT: array[0..4] of Integer = (50, 50, 200, 100, 50);
   RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.25, 0.25);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
-
-// Generate random points inside circle
-function RNDPointInCircle(aMin,aMax,aCenter: TKMPoint; aMaxRadius: Single): TKMPoint;
-const
-  MAX_ANGLE = 3.14*2; // = 360°
-var
-  angle, radius: Single;
-begin
-  // Random point in Polar coordinates
-  angle := fRNG.Random() * MAX_ANGLE;
-  radius := fRNG.Random() * aMaxRadius;
-  // Back to Cartesian coordinates + check edges
-  Result.X := Min(  aMax.X, Max( aMin.X,Round(aCenter.X + radius * cos(angle)) )  );
-  Result.Y := Min(  aMax.Y, Max( aMin.Y,Round(aCenter.Y + radius * sin(angle)) )  );
-end;
 
 //
 function FindBestResLoc(const aRADIUS: Single; aMin,aMax,aCenter: TKMPoint; var aCountArr: TInteger2Array; var aResLoc: TKMPoint): Boolean;
@@ -1334,50 +1326,103 @@ end;
 // aVoronoi = Voronoi diagram (same diagram for resource generator and for obstacle generator => avoid to replace resources with obstacles)
 // aPointsArr = points of Voronoi diagram (easy way how to find each shape)
 procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi: TInteger2Array; var aPointsArr: TKMPoint2Array);
-// Connect Locs with zero chance to create obstacles = secure that player in loc X can walk to player with loc Y
-  procedure ConnectLocs(aLocs: TKMPointArray; var P: TSingle2Array);
+
+// Connect points with zero chance to create obstacles = secure that player in loc X can walk to player with loc Y
+  function LinearConnection(Probability: Single; FinP,StartP: TKMPoint; var P: TSingle2Array): Boolean;
   var
-    HighIdx, idx: Integer;
-    Loc, Pos, Vector: TKMPoint;
+    Owerflow: Integer;
+    Vector, ActP: TKMPoint;
   begin
-    HighIdx := High(aLocs);
-    while HighIdx > 0 do
+    Result := False;
+    // Create vector in direction of second point (connected route will not be completely linear but in "L" shape)
+    Vector.X := Byte(FinP.X > StartP.X) - Byte(FinP.X < StartP.X); // = 1 in firs case; -1 in second case; 0 otherwise
+    Vector.Y := Byte(FinP.Y > StartP.Y) - Byte(FinP.Y < StartP.Y);
+    //  Make route to final point or another route
+    ActP := StartP;
+    Owerflow := 0;
+    while (FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y) do
     begin
-      // Randomly pick locs
-      idx := fRNG.RandomI(HighIdx);
-      Pos := aLocs[idx];
-      Loc := aLocs[HighIdx];
-      // Create vector in direction of second player (connected route will be line)
-      if (Loc.X > Pos.X) then      Vector.X := 1
-      else if (Loc.X = Pos.X) then Vector.X := 0
-      else                         Vector.X := -1;
-      if (Loc.Y > Pos.Y) then      Vector.Y := 1
-      else if (Loc.Y = Pos.Y) then Vector.Y := 0
-      else                         Vector.Y := -1;
-      //  Make route to another one
-      while (Loc.X <> Pos.X) OR (Loc.Y <> Pos.Y) do
+      Owerflow := Owerflow + 1;
+      // Actualize current point
+      if (FinP.X <> ActP.X) then ActP.X := ActP.X + Vector.X;
+      if (FinP.Y <> ActP.Y) then ActP.Y := ActP.Y + Vector.Y;
+      // If we detect zero chance (or almost zero) we reached existing connection and algoritm may end
+      if (P[ ActP.Y,ActP.X ] < Probability) then
       begin
-        if (Pos.X <> Loc.X) then Pos.X := Pos.X + Vector.X;
-        if (Pos.Y <> Loc.Y) then Pos.Y := Pos.Y + Vector.Y;
-        if (P[Pos.Y,Pos.X] = 0) then
-          break;
-        P[Pos.Y,Pos.X] := 0;
-        if ((Pos.Y-Vector.Y) >= Low(P)) AND ((Pos.Y-Vector.Y) <= High(P)) then
-        begin
-          P[Pos.Y-Vector.Y,Pos.X] := 0;
-          if ((Pos.X-Vector.X) >= Low(P[0])) AND ((Pos.X-Vector.X) <= High(P[0])) then
-          begin
-            P[Pos.Y,Pos.X-Vector.X] := 0;
-            P[Pos.Y-Vector.Y,Pos.X-Vector.X] := 0;
-          end;
-        end
-        else if ((Pos.X-Vector.X) >= Low(P[0])) AND ((Pos.X-Vector.X) <= High(P[0])) then
-          P[Pos.Y,Pos.X-Vector.X] := 0;
+        Result := True;
+        break;
       end;
-      HighIdx := HighIdx - 1;
-      Loc := aLocs[idx];
-      aLocs[idx] := aLocs[HighIdx];
-      aLocs[HighIdx] := Loc;
+      // Mark zero probability
+      P[ActP.Y,ActP.X] := Probability;
+      // Mark surrounding Voronoi shapes with 0 probability too
+      // (CA may connect some inacessible texture and break walkable network so better make this area bigger)
+      if ((ActP.Y-Vector.Y) >= Low(P)) AND ((ActP.Y-Vector.Y) <= High(P)) then
+      begin
+        P[ActP.Y-Vector.Y,ActP.X] := Probability;
+        if ((ActP.X-Vector.X) >= Low(P[0])) AND ((ActP.X-Vector.X) <= High(P[0])) then
+        begin
+          P[ActP.Y,ActP.X-Vector.X] := Probability;
+          P[ActP.Y-Vector.Y,ActP.X-Vector.X] := Probability;
+        end;
+      end
+      else if ((ActP.X-Vector.X) >= Low(P[0])) AND ((ActP.X-Vector.X) <= High(P[0])) then
+        P[ActP.Y,ActP.X-Vector.X] := Probability;
+    end;
+  end;
+
+// Linear connection is too ugly -> generate several random points in map and create linear connection between those points and player Loc
+  procedure ConnectLocs(aLocs: TKMPointArray; var P: TSingle2Array);
+  const
+    POINT_RADIUS = 10;
+    MAX_ATTEMPTS = 15;
+    POBABILITY_ADD = 0.000001; // We just need quick way how to distinguish each for cycle
+  var
+    Connected: Boolean;
+    I, HighIdx, idx, Overflow, BestDistance, Distance: Integer;
+    Probability: Single;
+    Loc, StartLoc, NewPoint, BestPoint, MinLimit, MaxLimit: TKMPoint;
+    Locs: TKMPointArray;
+  begin
+    // Just to be sure copy locs
+    SetLength(Locs, Length(aLocs));
+    for HighIdx := Low(Locs) to High(Locs) do
+      Locs[HighIdx] := aLocs[HighIdx];
+    MinLimit := KMPoint( Low(P[0]), Low(P) );
+    MaxLimit := KMPoint( High(P[0]), High(P) );
+    Probability := 0;
+    for HighIdx := High(Locs)-1 downto Low(Locs) do
+    begin
+      // Randomly pick 1 loc
+      idx := fRNG.RandomI(HighIdx);
+      // Get randomly picked loc to the end of the array (in actual index: untouched points ... new point, previous point, ... old points)
+      Loc := Locs[HighIdx+1]; // Previous point
+      StartLoc := Locs[idx]; // Target point
+      Locs[idx] := Locs[HighIdx];
+      Locs[HighIdx] := StartLoc;
+
+      // Connect locs with non-linear road
+      Connected := False;
+      Overflow := 0;
+      while not Connected AND (Overflow < 100) do
+      begin
+        Overflow := Overflow + 1;
+        BestDistance := KMDistanceAbs(StartLoc, Loc);
+        BestPoint := StartLoc;
+        for I := 0 to MAX_ATTEMPTS do
+        begin
+          NewPoint := RNDPointInCircle(MinLimit,MaxLimit,StartLoc, POINT_RADIUS);
+          Distance := KMDistanceAbs(NewPoint, Loc);
+          if (BestDistance > Distance) then
+          begin
+            BestDistance := Distance;
+            BestPoint := NewPoint;
+          end;
+        end;
+        Connected := LinearConnection(Probability, StartLoc,BestPoint, P) OR KMSamePoint(StartLoc, Loc);
+        StartLoc := BestPoint;
+      end;
+
+      Probability := Probability + POBABILITY_ADD;
     end;
   end;
 
@@ -1432,7 +1477,7 @@ begin
   OBST_Probability[otEIron] := 1;
 
   // Make obstacles
-  ObstacleSeeds := RNDPoints(RMGSettings.Obstacle.Density*10, 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
+  ObstacleSeeds := RNDPointsInGrid(RMGSettings.Obstacle.Density*10, 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
   FillObstacle := TKMFillBiome.Create( KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), aVoronoi, A);
   try
     for I := Low(ObstacleSeeds) to High(ObstacleSeeds) do
@@ -2628,9 +2673,6 @@ end;
 // A = array of biomes
 // TileTempl = array of biome-decomposition
 procedure TKMRandomMapGenerator.GenerateHeight(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
-var
-  X_0,Y_0,X_1,Y_1,X_2,Y_2,X0,X1,X2,Y0,Y1,Y2,sum: Integer;
-  H1,H2: TInteger2Array;
 const
   HeightMix: array [0..23] of Byte = (
     //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
@@ -2668,6 +2710,10 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
   );
+var
+  X_0,Y_0,X_1,Y_1,X_2,Y_2,X0,X1,X2,Y0,Y1,Y2,sum: Integer;
+  H1,H2: TInteger2Array;
+  FillHeight: TKMFillBiome;
 begin
 
   H1 := LinearInterpolation(7,20);
@@ -2676,8 +2722,17 @@ begin
     for X1 := 1 to gTerrain.MapX-1 do
     begin
       TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
-      //TilesPartsArr.Height[Y,X] := HeightMix[ A[Y1,X1] ] + H2[Y1,X1] + TGRandomI(HeightVariance[ A[Y1,X1] ]);
+      //TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + HeightMix[ A[Y1,X1] ]*2 + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
     end;
+
+  //constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+  //procedure QuickFlood(aX,aY,aSearch,aNewSearch,aFill: SmallInt); reintroduce;
+  //FillHeight := TKMFillBiome.Create();
+  //try
+
+  //finally
+  //  Fillheight.Free;
+  //end;
 
   for Y_1 := 1 to gTerrain.MapY-1 do
   begin
@@ -2852,7 +2907,7 @@ begin
     Minimum := KMPoint(1,1);
     Maximum.X := Max(gTerrain.MapX - FOREST_RADIUS, Minimum.X + 1);
     Maximum.Y := Max(gTerrain.MapY - FOREST_RADIUS, Minimum.Y + 1);
-    forests := RNDPoints(RMGSettings.Objects.Forests*5, 0, Minimum, Maximum);
+    forests := RNDPointsInGrid(RMGSettings.Objects.Forests*5, 0, Minimum, Maximum);
 	  for cntForests := Low(forests) to High(forests) do
     begin
 		  count := 0;
@@ -3309,7 +3364,6 @@ begin
   {
   if (Settings > 4) then
   begin
-
 	for Y1 := 1 to gTerrain.MapY-1 do
 		for X1 := 1 to gTerrain.MapX-1 do
     begin
@@ -3630,20 +3684,17 @@ var
       end;
       if (Y < Shape[X].Min) then
         Shape[X].Min := Y;
-
       if (Y < gTerrain.MapY-1) then MinerFixFloodSearch(Y+1,X);
       if (Y > 1)               then MinerFixFloodSearch(Y-1,X);
       if (X < gTerrain.MapX-1) then MinerFixFloodSearch(Y,X+1);
       if (X > 1)               then MinerFixFloodSearch(Y,X-1);
     end;
   end;
-
   var
     X,aX,aaX,PossibleMineTileCnt,MinMineSize,DistFromLastMine, minVal, minIndex, startIndex, actVal, minPosition, MinPosIdx, MAX_MINE_DIST_COEF: Integer;
     MinLimit, MaxLimit: TSmallIntArray;
     MineSearch: TKMMinerFixSearch;
 begin
-
 // Initialization
   SetLength(Shape,Length(A[0])+2);
   SetLength(MinLimit, Length(A[0])+2);
@@ -3656,11 +3707,9 @@ begin
     Shape[X].Max := Low(MaxLimit);
     MaxLimit[X] := Low(MaxLimit);
   end;
-
 // Detect shape of resource
   if RMGSettings.Objects.Active then
   begin
-
     MineSearch := TKMMinerFixSearch.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), MinLimit, MaxLimit, Visited, A  );
     try
       MineSearch.QuickFlood(Position.X,Position.Y,Resource);
@@ -3677,12 +3726,10 @@ begin
   end
   else
     MinerFixFloodSearch(Position.Y, Position.X);
-
 // Find start index of shape
   X := 0;
   while not Shape[X].Active AND (X < High(Shape)) do
     X := X+1;
-
 // Change shape to be able to mine resources here
   PossibleMineTileCnt := 0;
   DistFromLastMine := 0;
@@ -3746,10 +3793,6 @@ begin
     end;
   end;
 end;
-
-
-
-
 // Resources and INACCESSIBLE texture generator
 // aLocs = estimated player's positions
 // A = array to fill resources / obstacles
@@ -3776,12 +3819,9 @@ const
   SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_MULTIPLICATION: array[0..4] of Integer = (50, 50, 200, 100, 50);
   RES_DIVISION: array[0..4] of Single = (1/1.7, 1/1.7, 1/7, 1/1.7, 1/1.7); // Inverse it now and in computation use multiplication (faster)
-
 begin
-
   // Initialization - Voroni diagram = divide map into small shapes which will be merged later; each shape have its point in PointsArr for fast searching
   Voronoi := VoronoiMod(VORONOI_STEP, PointsArr);
-
   // Make grid from Voronoi diagram with center points (PointsArr) and count of points in 1 shape (Count)
   SetLength(Count, Length(PointsArr), Length(PointsArr[Low(PointsArr)]));
   SearchResource := TKMSearchBiome.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint(  High(A[0]), High(A)  ), Voronoi  );
@@ -3798,7 +3838,6 @@ begin
   finally
     SearchResource.Free;
   end;
-
   with RMGSettings.Locs.Resource do
   begin
     ResSettings := TIntegerArray.Create(Iron, Gold, Stone, Iron, Gold);
@@ -3810,7 +3849,6 @@ begin
     ALL_RES_RADIUS := Round(((Iron*3 + Gold*2 + Stone) shr 1) / VORONOI_STEP);
     CENTER_RES := Round(ALL_RES_RADIUS / 2);
   end;
-
   // Resources
   if RMGSettings.Locs.Resource.Active then
   begin
@@ -3824,7 +3862,7 @@ begin
       // Generate points around loc (center points of resources)
         TP_S := KMPoint(  Locs[Loc].X - ALL_RES_RADIUS, Locs[Loc].Y - ALL_RES_RADIUS  );
         TP_E := KMPoint(  Locs[Loc].X + ALL_RES_RADIUS, Locs[Loc].Y + ALL_RES_RADIUS  );
-        Points := RNDPoints(3, CENTER_RES, TP_S, TP_E);
+        Points := RNDPointsInGrid(3, CENTER_RES, TP_S, TP_E);
       // Sometimes switch gold and iron
         if (fRNG.RandomI(2) = 1) then
         begin
@@ -3870,11 +3908,8 @@ begin
       FillResource.Free;
     end;
   end;
-
   if RMGSettings.Obstacle.Active then
     CreateObstacles(Locs, A,  Voronoi,  PointsArr);
-
-
   if RMGSettings.Locs.Resource.Active then
   begin
     // Debug: add edges of resources (non-walk textures have low priority and their edges are always transitions)
@@ -3894,15 +3929,12 @@ begin
     //       A[Y,X-1] := A[Y,X];
     //       A[Y-1,X-1] := A[Y,X];
     //    end;
-
-
     if RMGSettings.Locs.Resource.MineFix then
     begin
       SetLength(Visited, gTerrain.MapY+1, gTerrain.MapX+1);
       for I := Low(Visited) to High(Visited) do
         for K := Low(Visited[I]) to High(Visited[I]) do
           Visited[I,K] := False;
-
       for i := Low(Output) to High(Output) do
       begin
         if (Output[I].Resource = Byte(btGold)) then
@@ -3917,11 +3949,8 @@ begin
       end;
     end;
   end;
-
   Result := Output;
 end;
-
-
 // Old version of random locs generation
 function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer; const Minimum,Maximum: TKMPoint): TKMPointArray;
   var
@@ -3933,12 +3962,10 @@ function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer; const M
   const
     POINTS_PER_A_LOC = 5;
 begin
-
   SetLength(Result, LocCount);
   SetLength(Points, POINTS_PER_A_LOC*LocCount);
   SetLength(Used, Length(Points));
   SetLength(Distances, Length(Points), Length(Points));
-
   Size.X := Maximum.X - Minimum.X;
   Size.Y := Maximum.Y - Minimum.Y;
   for i := Low(Points) to High(Points) do
@@ -3953,7 +3980,6 @@ begin
     //Distances[i,i] := High(Integer);
     Used[I] := False;
   end;
-
   for i := 1 to (Length(Points) - Length(Result)) do
   begin
     min_dist_overall := High(Integer);
@@ -3979,7 +4005,6 @@ begin
       end;
     Used[min_idx_overall] := True;
   end;
-
   i := Low(Result);
   for j := Low(Points) to High(Points) do
     if not Used[j] then
@@ -3997,26 +4022,21 @@ end;
 
 {
 // Generator of random points in 2d grid with minimal distance between them (brute force)
-function TKMRandomMapGenerator.RNDPointsBF(const cnt: Integer; Minimum,Maximum: TKMPoint): TKMPointArray;
-
+function TKMRandomMapGenerator.RNDPointsInGridBF(const cnt: Integer; Minimum,Maximum: TKMPoint): TKMPointArray;
   function RoundUP(variable: Single): Integer;
   begin
     if Frac(variable) <> 0 then
       variable := variable + 0.5;
     Result := Round( variable );
   end;
-
   var
     i,counter,overflow,cycle,lenX,lenY: Integer;
     dist, minDist,lenCnt, row, column: Single;
 begin
   SetLength(Result, cnt);
-
   lenX := Maximum.X - Minimum.X;
   lenY := Maximum.Y - Minimum.Y;
-
   lenCnt := Sqrt(lenX * lenY / cnt);
-
   if lenX <= lenY then
   begin
     column := Round( lenX / lenCnt );
@@ -4031,11 +4051,9 @@ begin
       row := 1;
     column := RoundUP( cnt / row );
   end;
-
   row := lenY / row;
   column := lenX / column;
   minDist := (row*row + column*column); // Decrease maximal distance by 20% to secure that points will be calculated fast
-
   //minDist := 30*30;
   for cycle := 0 to 5 do // Sometimes there are badly generated points and it is better start from 0 than try find right points
   begin
@@ -4060,7 +4078,6 @@ begin
     if counter = cnt then
       break;
   end;
-
 end;
 //}
 
@@ -4070,23 +4087,19 @@ end;
 {
 // Generator of random player locs in maximal distance
 function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer): TKMPointArray;
-
   type QLocElement = ^element;
      element = record
        X,Y: Integer;
        Num: Byte;
        NextElement: QLocElement;
      end;
-
   var
     StartQueue, EndQueue: QLocElement;
-
   procedure MakeNewQueue;
   begin
       new(StartQueue);
       EndQueue := StartQueue;
   end;
-
   procedure InsertInQueue(X,Y: Integer; Num: Byte);
   begin
       EndQueue^.X := X;
@@ -4095,7 +4108,6 @@ function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer): TKMPoi
       new(EndQueue^.NextElement);
       EndQueue := EndQueue^.NextElement;
   end;
-
   function RemoveFromQueue(var X,Y: Integer; var Num: Byte): Boolean;
   var pom: QLocElement;
   begin
@@ -4112,14 +4124,12 @@ function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer): TKMPoi
       dispose(pom);
     end;
   end;
-
   function IsQueueEmpty: boolean;
   begin
     Result := True;
     if StartQueue <> EndQueue then
       Result := False;
   end;
-
   // Queue is here much faster (there is not second array to secure that we did not get in 1 element multiple times)
   procedure FillDist(X,Y: Integer; Num: Byte; var Dist: TKMByte2Array);
   begin
@@ -4141,7 +4151,6 @@ function TKMRandomMapGenerator.RandomPlayerLocs(const LocCount: Integer): TKMPoi
     while not IsQueueEmpty do
       RemoveFromQueue(X, Y, Num);
   end;
-
   var
     LocNum,MAXNum: Byte;
     X,Y,count,MaxLimit, NewPoint: Integer;
@@ -4154,7 +4163,6 @@ begin
   for Y := Low(Dist) to High(Dist) do
     for X := Low(Dist[Y]) to High(Dist[Y]) do
       Dist[Y,X] := High(Byte);
-
   for LocNum := Low(Result) to High(Result) do
   begin
   // Maximal length of array Dist is 16 * 16 = 255 elements so this method is fast
@@ -4163,14 +4171,12 @@ begin
       for X := Low(Dist[Y]) to High(Dist[Y]) do
         if Dist[Y,X] > MAXNum then
           MAXNum := Dist[Y,X];
-
     MaxLimit := MAXNum - DISTANCE_TOLERATION;
     count := 0;
     for Y := Low(Dist) to High(Dist) do
       for X := Low(Dist[Y]) to High(Dist[Y]) do
         if Dist[Y,X] >= MaxLimit then
           count := count + 1;
-
     NewPoint := fRNG.RandomI(count) + 1;
     count := 0;
     for Y := Low(Dist) to High(Dist) do
@@ -4187,7 +4193,6 @@ begin
     end;
     Result[LocNum].X := Min(X << 4 + fRNG.RandomI(16), gTerrain.MapX-1);
     Result[LocNum].Y := Min(Y << 4 + fRNG.RandomI(16), gTerrain.MapY-1);
-
     FillDist(X, Y, 0, Dist);
   end;
 end;
@@ -4237,12 +4242,10 @@ const
     (0,1,2,3),(2,3,0,1)
   );
 begin
-
 	// Used signs giving directions:
 	//		2
 	//	1	x	4
 	//		7
-
   K := 0;
 	for Y1 := 1 to gTerrain.MapY-1 do begin
 		Y0 := Y1-1; Y2 := Y1+1;
@@ -4294,7 +4297,6 @@ begin
 			end else begin
         Height := fRNG.RandomI(12)+15;
 			end;
-
       aTiles[K].Terrain := Terrain;
       aTiles[K].Rotation := Rotation;
       aTiles[K].Height := Height;
@@ -4310,14 +4312,12 @@ end;
 {
 // Old resources and INACCESSIBLE texture generator
 function TKMRandomMapGenerator.CreateResources(RMGSettings: TKMRMGSettings; var A: TKMByte2Array): TBalancedResource1Array;
-
   type PtrConnection = ^element;
      element = record
        X,Y: Integer;
        Probability: Single;
        NextElement: PtrConnection;
      end;
-
 var
   cnt_FINAL, cnt_ACTUAL, RESOURCE: Integer;
   PROB_REDUCER: Single;
@@ -4325,13 +4325,11 @@ var
   S,Count: TInteger2Array;
   P: TSingle2Array;
   PointsArr: TKMPoint2Array;
-
   procedure MakeNewQueue;
   begin
       new(StartQueue);
       EndQueue := StartQueue;
   end;
-
   procedure InsertInQueue(X,Y: Integer; Probability: Single);
   begin
       EndQueue^.X := X;
@@ -4340,7 +4338,6 @@ var
       new(EndQueue^.NextElement);
       EndQueue := EndQueue^.NextElement;
   end;
-
   function RemoveFromQueue(var X,Y: Integer; var Probability: Single): Boolean;
   var pom: PtrConnection;
   begin
@@ -4359,15 +4356,12 @@ var
       dispose(pom);
     end;
   end;
-
   function IsQueueEmpty: boolean;
   begin
     Result := True;
     if StartQueue <> EndQueue then
       Result := False;
   end;
-
-
   procedure FloodFillWithQueue(X,Y: Integer; Probability: Single);
   var
     prob: Single;
@@ -4395,7 +4389,6 @@ var
     while not IsQueueEmpty do
       RemoveFromQueue(X, Y, Probability);
   end;
-
   procedure InacessibleTextures(const RES, COUNT, base_POINTS, variance_POINTS, cnt_FIN: Integer; const prob_REDUC, BASE_PROBABILITY: Single);
   var
     i,j,len: Integer;
@@ -4409,7 +4402,7 @@ var
     TP_S.Y := 1;
     TP_E.X := High(PointsArr[0])-1;
     TP_E.Y := High(PointsArr)-1;
-    CenterPoints := RNDPoints(COUNT, 0, TP_S, TP_E);
+    CenterPoints := RNDPointsInGrid(COUNT, 0, TP_S, TP_E);
     for i := Low(CenterPoints) to High(CenterPoints) do
     begin
       if BASE_PROBABILITY < fRNG.Random() then
@@ -4418,7 +4411,7 @@ var
       len := 9 - fRNG.RandomI(9);
       TP_E.X := Min(High(PointsArr[0]), CenterPoints[I].X + len);
       TP_E.Y := Min(High(PointsArr), CenterPoints[I].Y + 10 - len);
-      Point := RNDPoints(base_POINTS+fRNG.RandomI(variance_POINTS), 0, TP_S, TP_E);
+      Point := RNDPointsInGrid(base_POINTS+fRNG.RandomI(variance_POINTS), 0, TP_S, TP_E);
       for j := Low(Point) to High(Point) do
       begin
         cnt_ACTUAL := 0;
@@ -4426,7 +4419,6 @@ var
       end;
     end;
   end;
-
 var
   X,Y,Loc,i,j,overflow, PLAYERS, idx, Quantity, Tiles: Integer;
   val: Single;
@@ -4446,7 +4438,6 @@ const
   CENTER_RES = Round(ALL_RES_RADIUS / 2);
   MIN_PL_DISTANCE = 15;
   SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 7, 7); // Stone, Iron, Gold, Coal, Coal
-
 begin
 	// Grass: btBigGrass,btGrass
 	// Water: btSwamp,btWetland,btWater
@@ -4454,13 +4445,10 @@ begin
 	// Snow: btGroundSnow,btSnow1,btSnow2,btIce
 	// Sand: btCoastSand,btGrassSand1,btGrassSand2,btGrassSand3,btSand
 	// Resources: btCoal,btStone,btGold,btEgold,btIron,btEIron
-
   PLAYERS := RMGSettings.Resource.Players;
   ResAmount := TIntegerArray.Create(RMGSettings.Resource.Stone*20, RMGSettings.Resource.Iron*20, RMGSettings.Resource.Gold*20, RMGSettings.Resource.Iron*20*2, RMGSettings.Resource.Gold*20);
   //ResAmount := TIntegerArray.Create(0, 0, RMGSettings.Resource.Gold*20);
   //ResAmount := TIntegerArray.Create(0, RMGSettings.Resource.Gold*100, 0);
-
-
 // Initialization (init arrays + edges of the map)
   S := VoronoiMod(VORONOI_STEP,PointsArr);
   for X := Low(S) to High(S) do
@@ -4485,8 +4473,6 @@ begin
       Y := PointsArr[i,j].Y;
       FloodSearch(X,Y,S[Y,X],-S[Y,X],Count[i,j],S);
     end;
-
-
   if RMGSettings.Resource.Active then
   begin
     // Resources
@@ -4494,15 +4480,15 @@ begin
     TP_Start.Y := 1;
     TP_End.X := High(PointsArr[0]) - ALL_RES_RADIUS - 1;
     TP_End.Y := High(PointsArr) - ALL_RES_RADIUS - 1;
-    //Locs := RNDPoints(PLAYERS, MIN_PL_DISTANCE, TP_Start, TP_End);
-    Locs := RNDPointsBF(PLAYERS, MIN_PL_DISTANCE, TP_Start, TP_End);
+    //Locs := RNDPointsInGrid(PLAYERS, MIN_PL_DISTANCE, TP_Start, TP_End);
+    Locs := RNDPointsInGridBF(PLAYERS, MIN_PL_DISTANCE, TP_Start, TP_End);
     for Loc := 0 to PLAYERS-1 do
     begin
       TP_Start.X := Locs[Loc].X;
       TP_Start.Y := Locs[Loc].Y;
       TP_End.X := Locs[Loc].X + ALL_RES_RADIUS;
       TP_End.Y := Locs[Loc].Y + ALL_RES_RADIUS;
-      Points := RNDPoints(3, CENTER_RES, TP_Start, TP_End);
+      Points := RNDPointsInGrid(3, CENTER_RES, TP_Start, TP_End);
       SetLength(Points,Length(Points)+2);
       Points[3] := Points[1];
       Points[4] := Points[2];
@@ -4511,12 +4497,10 @@ begin
         begin
           Quantity := ResAmount[I];// << (3*Byte(Resources[I]=btStone));    //BALANCE IT !!!!!!!!!!!!!!
           Tiles := Quantity >> 1;
-
           cnt_FINAL := Tiles;
           cnt_ACTUAL := 0;
           RESOURCE := Byte(Resources[I]);
           PROB_REDUCER := RES_PROB[I];
-
           TP_Start.X := Max(Points[I].X - SPEC_RES_RADIUS[I], 1);
           TP_Start.Y := Max(Points[I].Y - SPEC_RES_RADIUS[I], 1);
           TP_End.X := Min(Points[I].X + SPEC_RES_RADIUS[I], High(PointsArr[0]) - 1);
@@ -4541,7 +4525,6 @@ begin
         end;
     end;
   end;
-
   // Mountains
   if RMGSettings.Resource.Active AND RMGSettings.Obstacle.Active then
   begin
@@ -4561,10 +4544,8 @@ begin
             P[TP_Start.Y,X] := val;
           if P[TP_End.Y,X] > val then
             P[TP_End.Y,X] := val;
-
           //A[TP_Start.Y*3,X*3] := Byte(btDark);
           //A[TP_End.Y*3,X*3] := Byte(btDark);
-
         end;
         for Y := TP_Start.Y to TP_End.Y do
         begin
@@ -4572,10 +4553,8 @@ begin
             P[Y,TP_Start.X] := val;
           if P[Y,TP_End.X] > val then
             P[Y,TP_End.X] := val;
-
           //A[Y*3,TP_Start.X*3] := Byte(btDark);
           //A[Y*3,TP_End.X*3] := Byte(btDark);
-
         end;
         TP_Start.X := Max(TP_Start.X - 1, 0);
         TP_Start.Y := Max(TP_Start.Y - 1, 0);
@@ -4585,7 +4564,6 @@ begin
       end;
     end;
   end;
-
   if RMGSettings.Obstacle.Active then
   begin
     if RMGSettings.Obstacle.EGold then
@@ -4601,7 +4579,6 @@ begin
     if RMGSettings.Obstacle.Wetland then
       InacessibleTextures(Byte(btWetland), 5, 3, 2, 50, 0.25, 0.5);
   end;
-
   for Y := High(A)-1 downto 1 do
 	  for X := High(A[Y])-1 downto 1 do
       if (A[Y,X] = Byte(btStone)) OR (A[Y,X] = Byte(btGold)) OR (A[Y,X] = Byte(btIron)) OR (A[Y,X] = Byte(btCoal)) then
@@ -4630,13 +4607,10 @@ begin
       A[Y+1,X+1] := Byte(btDark);
     end;
   end;
-
-
   SetLength(Visited,gTerrain.MapY,gTerrain.MapX);
   for i := Low(Visited) to High(Visited) do
     for j := Low(Visited[I]) to High(Visited[I]) do
       Visited[i,j] := False;
-
   if RMGSettings.Objects.Animals then
     for i := Low(Result) to High(Result) do
     begin
@@ -4660,14 +4634,12 @@ end;
 {
 // Old fast Voronoi diagram (without calculation of Euclidean distance)
 function TKMRandomMapGenerator.VoronoiMod(const Step: Integer; var Points: TKMPoint2Array): TInteger2Array;
-
   function RoundUP(variable: Single): Integer;
   begin
     if Frac(variable) <> 0 then
       variable := variable + 0.5;
     Result := Round( variable );
   end;
-
   var
     X,aX,X0,X1,X2,Y,aY,Y0,Y1,Y2,i,idxX,idxY,move,price: Integer;
     History: TInteger2Array;
@@ -4681,7 +4653,6 @@ begin
       History[Y,X] := 0;
       Result[Y,X] := 0;
     end;
-
   i := 1;
   idxY := 0;
   Y := 1;
@@ -4739,7 +4710,6 @@ begin
     idxY := idxY + 1;
     Y := Y + Step;
   end;
-
 end;
 //}
 
