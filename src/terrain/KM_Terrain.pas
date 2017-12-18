@@ -16,7 +16,7 @@ type
                     vu_NESW);   //Vertex is used NE-SW like this: /
   TFenceType = (fncNone, fncCorn, fncWine, fncHousePlan, fncHouseFence);
 
-  TKMTileChangeType = (tctTerrain, tctHeight, tctObject);
+  TKMTileChangeType = (tctTerrain, tctRotation, tctHeight, tctObject);
 
   TKMTileChangeTypeSet = set of TKMTileChangeType;
 
