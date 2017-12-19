@@ -58,6 +58,7 @@ type
     fProcUnitWounded: TMethod;
     fProcWareProduced: TMethod;
     fProcWarriorEquipped: TMethod;
+    fProcWarriorWalked:  TMethod;
     fProcWinefieldBuilt: TMethod;
 
     procedure DoProc(const aProc: TMethod; const aParams: array of Integer);
@@ -100,6 +101,7 @@ type
     procedure ProcUnitWounded(aUnit, aAttacker: TKMUnit);
     procedure ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
+    procedure ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
     procedure ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
   end;
 
@@ -181,6 +183,7 @@ begin
   fProcUnitAttacked          := fExec.GetProcAsMethodN('OnUnitAttacked');
   fProcWareProduced          := fExec.GetProcAsMethodN('OnWareProduced');
   fProcWarriorEquipped       := fExec.GetProcAsMethodN('OnWarriorEquipped');
+  fProcWarriorWalked         := fExec.GetProcAsMethodN('OnWarriorWalked');
   fProcWinefieldBuilt        := fExec.GetProcAsMethodN('OnWinefieldBuilt');
 end;
 
@@ -633,6 +636,15 @@ begin
     if (aType <> wt_None) then
       DoProc(fProcWareProduced, [aHouse.UID, WareTypeToIndex[aType], aCount]);
   end;
+end;
+
+
+//* Version: 7000+
+//* Occurs when warrior walk
+procedure TKMScriptEvents.ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
+begin
+  if MethodAssigned(fProcWarriorWalked) then
+      DoProc(fProcWarriorWalked, [aUnit.UID, aToX, aToY]);
 end;
 
 
