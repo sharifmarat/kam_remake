@@ -54,6 +54,7 @@ type
     fProcUnitDied: TMethod;
     fProcUnitTrained: TMethod;
     fProcUnitWounded: TMethod;
+    fProcWareProduced: TMethod;
     fProcWarriorEquipped: TMethod;
 
     procedure DoProc(const aProc: TMethod; const aParams: array of Integer);
@@ -92,6 +93,7 @@ type
     procedure ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandIndex);
     procedure ProcUnitTrained(aUnit: TKMUnit);
     procedure ProcUnitWounded(aUnit, aAttacker: TKMUnit);
+    procedure ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
   end;
 
@@ -169,6 +171,7 @@ begin
   fProcUnitTrained           := fExec.GetProcAsMethodN('OnUnitTrained');
   fProcUnitWounded           := fExec.GetProcAsMethodN('OnUnitWounded');
   fProcUnitAttacked          := fExec.GetProcAsMethodN('OnUnitAttacked');
+  fProcWareProduced          := fExec.GetProcAsMethodN('OnWareProduced');
   fProcWarriorEquipped       := fExec.GetProcAsMethodN('OnWarriorEquipped');
 end;
 
@@ -582,6 +585,18 @@ procedure TKMScriptEvents.ProcPlayerVictory(aPlayer: TKMHandIndex);
 begin
   if MethodAssigned(fProcPlayerVictory) then
     DoProc(fProcPlayerVictory, [aPlayer]);
+end;
+
+
+//* Version: 7000+
+//* Occurs when resource is produced for specified house.
+procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
+begin
+  if MethodAssigned(fProcWareProduced) then
+  begin
+    if (aType <> wt_None) then
+      DoProc(fProcWareProduced, [aHouse.UID, WareTypeToIndex[aType], aCount]);
+  end;
 end;
 
 
