@@ -320,7 +320,7 @@ begin
     Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
-    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctHeight, tctObject)');
+    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctRotation, tctHeight, tctObject)');
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
@@ -542,6 +542,7 @@ begin
     RegisterMethodCheck(c, 'function MapTileObjectSet(X, Y, Obj: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTileSet(X, Y, aType, aRotation: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
+    RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: array of AnsiString; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
     RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString)');
     RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
@@ -1036,6 +1037,7 @@ begin
 
       RegisterMethod(@TKMScriptActions.MapTileSet,                              'MapTileSet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySet,                        'MapTilesArraySet');
+      RegisterMethod(@TKMScriptActions.MapTilesArraySetS,                       'MapTilesArraySetS');
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
 
