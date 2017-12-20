@@ -35,7 +35,7 @@ const
   MIN_RESOLUTION_WIDTH  = 1024;         //Lowest supported resolution X
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
 
-  GAME_REVISION         = 'r8122';       //Should be updated for every release (each time save format is changed)
+  GAME_REVISION         = 'r8134';       //Should be updated for every release (each time save format is changed)
   GAME_BETA_REVISION    = 5;
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
@@ -174,8 +174,9 @@ var
 
 
 const
-  MAX_WARES_IN_HOUSE  = 5;    //Maximum resource items allowed to be in house
-  MAX_WARES_ORDER     = 999;  //Number of max allowed items to be ordered in production houses (Weapon/Armor/etc)
+  MAX_WARES_IN_HOUSE     = 5;    //Maximum resource items allowed to be in house
+  MAX_WARES_OUT_WORKSHOP = 5;    //Maximum sum resource items allowed to output in workshops. Value: 5 - 20;
+  MAX_WARES_ORDER        = 999;  //Number of max allowed items to be ordered in production houses (Weapon/Armor/etc)
 
 const
   MAX_WOODCUTTER_CUT_PNT_DISTANCE = 5; //Max distance for woodcutter new cutting point from his house
@@ -627,7 +628,7 @@ type
   TGoalCondition = (gc_Unknown0,      //Not used/unknown
                     gc_BuildTutorial,   //Must build a tannery (and other buildings from tutorial?) for it to be true. In KaM tutorial messages will be dispalyed if this is a goal
                     gc_Time,            //A certain time must pass
-                    gc_Buildings,       //Storehouse, school, barracks
+                    gc_Buildings,       //Storehouse, school, barracks, TownHall
                     gc_Troops,          //All troops
                     gc_Unknown5,        //Not used/unknown
                     gc_MilitaryAssets,  //All Troops, Coal mine, Weapons Workshop, Tannery, Armory workshop, Stables, Iron mine, Iron smithy, Weapons smithy, Armory smithy, Barracks, Town hall and Vehicles Workshop
