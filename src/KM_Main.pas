@@ -73,10 +73,10 @@ uses
   Classes, Forms,
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
+  {$IFDEF PLAYVIDEO} KM_Video, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils,
   KM_GameApp,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points;
-
 
 const
   //Random GUID generated in Delphi by Ctrl+G
@@ -145,6 +145,10 @@ begin
     if not fResolutions.IsValid(fMainSettings.Resolution) then
       fMainSettings.FullScreen := False;
   end;
+
+  {$IFDEF PLAYVIDEO}
+  gVideoPlayer := TKMVideoPlayer.Create(fFormMain);
+  {$ENDIF}
 
   fFormMain.Caption := 'KaM Remake - ' + GAME_VERSION;
   //Will make the form slightly higher, so do it before ReinitRender so it is reset
@@ -246,6 +250,11 @@ begin
 
   // Do not call gMain.Stop from FormClose handler again
   fFormMain.OnClose := nil;
+
+  {$IFDEF PLAYVIDEO}
+  if Assigned(gVideoPlayer) then
+    gVideoPlayer.Free;
+  {$ENDIF}
 
   if Sender <> fFormMain then
     fFormMain.Close;

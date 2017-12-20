@@ -159,7 +159,8 @@ uses
   KM_MissionScript_Preview in 'src\missionscript\KM_MissionScript_Preview.pas',
   KM_MissionScript_Standard in 'src\missionscript\KM_MissionScript_Standard.pas',
 	
-  KM_Music in 'src\KM_Music.pas',
+  KM_Music in 'src\KM_Music.pas',  
+  KM_Video in 'src\KM_Video.pas',
 	
   KM_Outline in 'src\navmesh\KM_Outline.pas',
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',

@@ -234,6 +234,7 @@
 			<DCCReference Include="src\missionscript\KM_MissionScript_Preview.pas"/>
 			<DCCReference Include="src\missionscript\KM_MissionScript_Standard.pas"/>
 			<DCCReference Include="src\KM_Music.pas"/>
+            <DCCReference Include="src\KM_Video.pas"/>
 			<DCCReference Include="src\navmesh\KM_NavMesh.pas"/>
 			<DCCReference Include="src\navmesh\KM_Outline.pas"/>
 			<DCCReference Include="src\navmesh\KM_PolySimplify.pas"/>

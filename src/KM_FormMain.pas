@@ -164,6 +164,7 @@ implementation
 //{$ENDIF}
 
 uses
+  {$IFDEF PLAYVIDEO} KM_Video, {$ENDIF}
   KromUtils,
   KM_Defaults,
   KM_Main,
@@ -226,7 +227,10 @@ begin
     Left := gMain.Settings.WindowParams.Left;
     Top := gMain.Settings.WindowParams.Top;
   end;
-
+  {$IFDEF PLAYVIDEO}
+  Application.ProcessMessages;
+  gVideoPlayer.Play(['KAMLOGO.AVI', 'Publish.avi', 'OutroNew.avi']);
+  {$ENDIF}
 end;
 
 

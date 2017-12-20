@@ -96,6 +96,7 @@ var
 
 implementation
 uses
+  {$IFDEF PLAYVIDEO} KM_Video, {$ENDIF}
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   SysUtils, Math, TypInfo, KromUtils,
@@ -256,6 +257,11 @@ begin
   fMainMenuInterface.Resize(X, Y);
 
   if gGame <> nil then gGame.ActiveInterface.Resize(X, Y);
+
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    gVideoPlayer.Resize;
+  {$ENDIF}
 end;
 
 
@@ -263,6 +269,10 @@ procedure TKMGameApp.KeyDown(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    Exit;
+  {$ENDIF}
   if gGame <> nil then
     gGame.ActiveInterface.KeyDown(Key, Shift, KeyHandled)
   else
@@ -272,6 +282,13 @@ end;
 
 procedure TKMGameApp.KeyPress(Key: Char);
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+  begin
+    gVideoPlayer.Stop;
+    Exit;
+  end;
+  {$ENDIF}
   if gGame <> nil then
     gGame.ActiveInterface.KeyPress(Key)
   else
@@ -283,6 +300,10 @@ procedure TKMGameApp.KeyUp(Key: Word; Shift: TShiftState);
 var
   KeyHandled: Boolean;
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    Exit;
+  {$ENDIF}
   //List of conflicting keys that we should try to avoid using in debug/game:
   //  F12 Pauses Execution and switches to debug
   //  F10 sets focus on MainMenu1
@@ -302,6 +323,10 @@ end;
 
 procedure TKMGameApp.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    Exit;
+  {$ENDIF}
   if gGame <> nil then
     gGame.ActiveInterface.MouseDown(Button,Shift,X,Y)
   else
@@ -313,6 +338,10 @@ procedure TKMGameApp.MouseMove(Shift: TShiftState; X,Y: Integer);
 var Ctrl: TKMControl;
     CtrlID: Integer;
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    Exit;
+  {$ENDIF}
   if not InRange(X, 1, fRender.ScreenX - 1)
   or not InRange(Y, 1, fRender.ScreenY - 1) then
     Exit; // Exit if Cursor is outside of frame
@@ -347,6 +376,13 @@ end;
 
 procedure TKMGameApp.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+  begin
+    gVideoPlayer.Stop;
+    Exit;
+  end;
+  {$ENDIF}
   if gGame <> nil then
     gGame.ActiveInterface.MouseUp(Button,Shift,X,Y)
   else
@@ -356,6 +392,10 @@ end;
 
 procedure TKMGameApp.MouseWheel(Shift: TShiftState; WheelDelta: Integer; X, Y: Integer);
 begin
+  {$IFDEF PLAYVIDEO}
+  if gVideoPlayer.IsPlay then
+    Exit;
+  {$ENDIF}
   if gGame <> nil then
     gGame.ActiveInterface.MouseWheel(Shift, WheelDelta, X, Y)
   else
@@ -734,12 +774,21 @@ begin
 
   fRender.BeginFrame;
 
+  {$IFDEF PLAYVIDEO}
+  if not gVideoPlayer.IsPlay then
+  begin
+  {$ENDIF}
+
   if gGame <> nil then
     gGame.Render(fRender)
   else
     fMainMenuInterface.Paint;
 
   fRender.RenderBrightness(GameSettings.Brightness);
+
+  {$IFDEF PLAYVIDEO}
+  end;
+  {$ENDIF}
 
   fRender.EndFrame;
 
@@ -804,7 +853,6 @@ begin
   end
   else
     fMainMenuInterface.UpdateState(fGlobalTickCount);
-
   //Every 1000ms
   if fGlobalTickCount mod 10 = 0 then
   begin
