@@ -2629,7 +2629,11 @@ end;
 
 //Test wherever it is possible to make the route without actually making it to save performance
 function TKMTerrain.Route_CanBeMade(LocA, LocB: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
-var i,k:integer; TestRadius: Boolean; WC: TWalkConnect;
+var
+  TestRadius: Boolean;
+  i,k: integer;
+  DistanceSqr: Single;
+  WC: TWalkConnect;
 begin
   Result := True;
 
@@ -2641,9 +2645,10 @@ begin
 
   //Target has to be walkable within Distance
   TestRadius := False;
+  DistanceSqr := Sqr(aDistance);
   for i:=max(round(LocB.Y-aDistance),1) to min(round(LocB.Y+aDistance),fMapY-1) do
   for k:=max(round(LocB.X-aDistance),1) to min(round(LocB.X+aDistance),fMapX-1) do
-  if KMLength(LocB,KMPoint(k,i)) <= aDistance then
+  if KMLengthSqr(LocB,KMPoint(k,i)) <= DistanceSqr then
     TestRadius := TestRadius or CheckPassability(KMPoint(k,i),aPass);
   Result := Result and TestRadius;
 
@@ -2672,7 +2677,7 @@ begin
   TestRadius := False;
   for i:=max(round(LocB.Y-aDistance),1) to min(round(LocB.Y+aDistance),fMapY-1) do
   for k:=max(round(LocB.X-aDistance),1) to min(round(LocB.X+aDistance),fMapX-1) do
-  if KMLength(LocB,KMPoint(k,i)) <= aDistance then
+  if KMLengthSqr(LocB,KMPoint(k,i)) <= DistanceSqr then
     TestRadius := TestRadius or (Land[LocA.Y,LocA.X].WalkConnect[WC] = Land[i,k].WalkConnect[WC]);
   Result := Result and TestRadius;
 end;
