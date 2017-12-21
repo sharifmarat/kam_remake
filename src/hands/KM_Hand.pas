@@ -1404,7 +1404,7 @@ begin
   if not gGame.IsMapEditor or (mlHouses in gGame.MapEditor.VisibleLayers) then
     fHouses.Paint(aRect);
 
-  if SHOW_DEFENCE_POSITIONS then
+  if not SKIP_RENDER AND SHOW_DEFENCE_POSITIONS AND not fAI.Setup.NewAI then
     fAI.General.DefencePositions.Paint;
 
   if not SKIP_RENDER AND fAI.Setup.NewAI then
@@ -1418,6 +1418,7 @@ begin
     begin
       fAI.ArmyManagement.Paint();
       fAI.ArmyManagement.Attack.Paint();
+      fAI.ArmyManagement.Defence.Paint();
     end;
   end;
 end;
