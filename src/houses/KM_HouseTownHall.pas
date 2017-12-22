@@ -302,6 +302,7 @@ begin
   end;
   Assert(aCount <= fGoldCnt);
   Dec(fGoldCnt, aCount);
+  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
 end;
 
 
