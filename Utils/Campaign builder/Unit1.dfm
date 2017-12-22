@@ -14,7 +14,7 @@ object Form1: TForm1
   Font.Style = []
   KeyPreview = True
   OldCreateOrder = False
-  Position = poDesktopCenter
+  Position = poScreenCenter
   Scaled = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -35,7 +35,7 @@ object Form1: TForm1
   end
   object Label2: TLabel
     Left = 8
-    Top = 426
+    Top = 378
     Width = 60
     Height = 16
     Anchors = [akLeft, akBottom]
@@ -44,8 +44,8 @@ object Form1: TForm1
     Layout = tlCenter
   end
   object Bevel1: TBevel
-    Left = 8
-    Top = 214
+    Left = 12
+    Top = 264
     Width = 200
     Height = 2
   end
@@ -81,11 +81,30 @@ object Form1: TForm1
     Caption = 'Campaign name'
     Layout = tlCenter
   end
+  object Label4: TLabel
+    Left = 10
+    Top = 522
+    Width = 200
+    Height = 16
+    Anchors = [akLeft, akBottom]
+    AutoSize = False
+    Caption = 'Victory video'
+    Layout = tlCenter
+  end
+  object Label5: TLabel
+    Left = 8
+    Top = 212
+    Width = 200
+    Height = 16
+    AutoSize = False
+    Caption = 'Intro video'
+    Layout = tlCenter
+  end
   object tvList: TTreeView
     Left = 8
-    Top = 224
+    Top = 272
     Width = 200
-    Height = 194
+    Height = 97
     Anchors = [akLeft, akTop, akBottom]
     AutoExpand = True
     HideSelection = False
@@ -134,7 +153,7 @@ object Form1: TForm1
   end
   object seNodeCount: TSpinEdit
     Left = 8
-    Top = 450
+    Top = 402
     Width = 41
     Height = 22
     Anchors = [akLeft, akBottom]
@@ -379,7 +398,7 @@ object Form1: TForm1
   end
   object rgBriefingPos: TRadioGroup
     Left = 8
-    Top = 504
+    Top = 456
     Width = 200
     Height = 60
     Anchors = [akLeft, akBottom]
@@ -540,7 +559,7 @@ object Form1: TForm1
   end
   object cbShowBriefingPosition: TCheckBox
     Left = 8
-    Top = 480
+    Top = 432
     Width = 121
     Height = 18
     Anchors = [akLeft, akBottom]
@@ -574,6 +593,39 @@ object Form1: TForm1
     Caption = 'Unload CMP'
     TabOrder = 14
     OnClick = btnUnloadCMPClick
+  end
+  object edtVictoryVideo: TEdit
+    Left = 10
+    Top = 544
+    Width = 200
+    Height = 24
+    Anchors = [akLeft, akBottom]
+    AutoSize = False
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    MaxLength = 200
+    ParentFont = False
+    TabOrder = 15
+    OnChange = edtVictoryVideoChange
+  end
+  object edtIntroVideo: TEdit
+    Left = 8
+    Top = 234
+    Width = 200
+    Height = 24
+    AutoSize = False
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    MaxLength = 200
+    ParentFont = False
+    TabOrder = 16
+    OnChange = edtIntroVideoChange
   end
   object dlgOpenPicture: TOpenDialog
     Filter = 'Supported images (*.png)|*.png'

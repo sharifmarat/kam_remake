@@ -40,6 +40,10 @@ type
     edtName: TEdit;
     Label3: TLabel;
     btnUnloadCMP: TButton;
+    edtVictoryVideo: TEdit;
+    Label4: TLabel;
+    Label5: TLabel;
+    edtIntroVideo: TEdit;
     procedure btnLoadPictureClick(Sender: TObject);
     procedure btnLoadCMPClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -62,6 +66,8 @@ type
                                     Shift: TShiftState; X, Y: Integer);
     procedure cbShowBriefingPositionClick(Sender: TObject);
     procedure btnUnloadCMPClick(Sender: TObject);
+    procedure edtIntroVideoChange(Sender: TObject);
+    procedure edtVictoryVideoChange(Sender: TObject);
   private
     fExePath: string;
     fCampaignsPath: string;
@@ -183,6 +189,7 @@ begin
 
   edtShortName.Text := C.CampName;
   seMapCount.Value := C.MapCount;
+  edtIntroVideo.Text := C.IntroVideo;
 
   UpdateList;
   UpdateFlagCount;
@@ -595,6 +602,7 @@ begin
 
     edtName.Clear;
     edtShortName.Clear;
+    edtIntroVideo.Clear;
 
     seMapCount.Value := 1;
     seNodeCount.Value := 0;
@@ -677,6 +685,21 @@ begin
   end;
 end;
 
+procedure TForm1.edtVictoryVideoChange(Sender: TObject);
+begin
+  if fUpdating or (fSelectedMap = -1) then
+    Exit;
+
+  C.Maps[fSelectedMap].VictoryVideo := edtVictoryVideo.Text;
+end;
+
+procedure TForm1.edtIntroVideoChange(Sender: TObject);
+begin
+  if fUpdating then
+    Exit;
+
+  C.IntroVideo := edtIntroVideo.Text;
+end;
 
 procedure TForm1.seMapCountChange(Sender: TObject);
 begin
@@ -927,6 +950,7 @@ begin
 
   seNodeCount.Value := C.Maps[fSelectedMap].NodeCount;
   rgBriefingPos.ItemIndex := Byte(C.Maps[fSelectedMap].TextPos);
+  edtVictoryVideo.Text := C.Maps[fSelectedMap].VictoryVideo;
 
   //Update map info
   StatusBar1.Panels[0].Text := 'Selected map: ' + IntToStr(fSelectedMap +1) + '/' + IntToStr(fSelectedNode +1);
