@@ -266,6 +266,9 @@ begin
   fOwner := aPlayer;
   fMayor.OwnerUpdate(fOwner);
   fGeneral.OwnerUpdate(fOwner);
+
+  fCityManagement.OwnerUpdate(fOwner);
+  fArmyManagement.OwnerUpdate(fOwner);
 end;
 
 
@@ -382,12 +385,14 @@ end;
 procedure TKMHandAI.SyncLoad;
 begin
   fGeneral.SyncLoad;
+  fArmyManagement.SyncLoad;
 end;
 
 
 procedure TKMHandAI.AfterMissionInit();
 begin
   fMayor.AfterMissionInit;
+
   fCityManagement.AfterMissionInit;
   fArmyManagement.AfterMissionInit;
 end;
@@ -408,16 +413,16 @@ begin
                     //Humans dont need Mayor and Army management
                   end;
     hndComputer:  begin
-                    //if fSetup.NewAI then
-                    //begin
-                    //  fArmyManagement.UpdateState(aTick);
-                    //  fCityManagement.UpdateState(aTick);
-                    //end
-                    //else
-                    //begin
+                    if fSetup.NewAI then
+                    begin
+                      fArmyManagement.UpdateState(aTick);
+                      fCityManagement.UpdateState(aTick);
+                    end
+                    else
+                    begin
                       fMayor.UpdateState(aTick);
                       fGeneral.UpdateState(aTick);
-                    //end;
+                    end;
                   end;
   end;
 end;
