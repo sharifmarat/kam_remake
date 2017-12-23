@@ -270,9 +270,6 @@ end;
 //* Removes element on specified index in specified array of integer.
 //* Integer array should be declared as TIntegerArray instead of array of integer.
 function TKMScriptUtils.ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray;
-var
-  I: Integer;
-  R: TIntegerArray;
 begin
   Result := aArray;
   try
@@ -292,9 +289,6 @@ end;
 //* Removes element on specified index in specified array of string.
 //* String array should be declared as TAnsiStringArray instead of array of AnsiString.
 function TKMScriptUtils.ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray;
-var
-  I: Integer;
-  R: TAnsiStringArray;
 begin
   Result := aArray;
   try

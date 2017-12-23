@@ -9,6 +9,8 @@ uses
 
 type
   TKMScriptActions = class(TKMScriptEntity)
+  private
+    procedure LogStr(aText: String);
   public
     procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word);
     procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean);
@@ -2289,6 +2291,13 @@ begin
 end;
 
 
+//private utility function
+procedure TKMScriptActions.LogStr(aText: String);
+begin
+  Log(AnsiString(aText));
+end;
+
+
 //* Version: 6587
 //* Sets the tile type and rotation at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -2423,12 +2432,12 @@ begin
     SetLength(aTiles, Length(aTilesS));
     for I := Low(aTilesS) to High(aTilesS) do
     begin
-      aArrElem := StrSplit(ReplaceStr(aTilesS[I], ' ', ''), ',');
+      aArrElem := StrSplit(ReplaceStr(String(aTilesS[I]), ' ', ''), ',');
       aParserError := false;
 
       //checking params count, if count is invalid we cannot proceed
       if (aArrElem.Count <> 6) then
-        Log(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
+        LogStr(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
       else
       begin
         //checking X, if X <= 0 we cannot proceed
@@ -2436,7 +2445,7 @@ begin
           aTiles[I].X := aParsedValue
         else
         begin
-          Log(Format('Actions.MapTilesArraySetS: Parameter X = [%s] in line [%s] is not a valid integer.', [aArrElem[0], aTilesS[I]]));
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter X = [%s] in line [%s] is not a valid integer.', [aArrElem[0], aTilesS[I]]));
           aParserError := true;
         end;
         //checking Y, if Y <= 0 we cannot proceed
@@ -2444,7 +2453,7 @@ begin
           aTiles[I].Y := aParsedValue
         else
         begin
-          Log(Format('Actions.MapTilesArraySetS: Parameter Y = [%s] in line [%s] is not a valid integer.', [aArrElem[1], aTilesS[I]]));
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter Y = [%s] in line [%s] is not a valid integer.', [aArrElem[1], aTilesS[I]]));
           aParserError := true;
         end;
 
@@ -2461,7 +2470,7 @@ begin
             end;
           end
           else
-             Log(Format('Actions.MapTilesArraySetS: Parameter Terrain = [%s] in line [%s] is not a valid integer.', [aArrElem[2], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Terrain = [%s] in line [%s] is not a valid integer.', [aArrElem[2], aTilesS[I]]));
 
           if (TryStrToInt(aArrElem[3], aParsedValue)) then
           begin
@@ -2473,7 +2482,7 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Rotation = [%s] in line [%s] is not a valid integer.', [aArrElem[3], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Rotation = [%s] in line [%s] is not a valid integer.', [aArrElem[3], aTilesS[I]]));
 
           if (TryStrToInt(aArrElem[4], aParsedValue)) then
           begin
@@ -2485,7 +2494,7 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Height = [%s] in line [%s] is not a valid integer.', [aArrElem[4], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Height = [%s] in line [%s] is not a valid integer.', [aArrElem[4], aTilesS[I]]));
 
           if (TryStrToInt(aArrElem[5], aParsedValue)) then
           begin
@@ -2497,7 +2506,7 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Obj = [%s] in line [%s] is not a valid integer.', [aArrElem[5], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Obj = [%s] in line [%s] is not a valid integer.', [aArrElem[5], aTilesS[I]]));
         end;
       end;
     end;
