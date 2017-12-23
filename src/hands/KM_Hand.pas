@@ -43,7 +43,6 @@ type
   TKMHand = class(TKMHandCommon)
   private
     fAI: TKMHandAI;
-    fArmyEval: TKMArmyEvaluation;
     fBuildList: TKMBuildList; //Not the best name for buildingManagement
     fDeliveries: TKMHandLogistics;
     fFogOfWar: TKMFogOfWar; //Stores FOW info for current player, which includes
@@ -93,7 +92,6 @@ type
     property Locks: TKMHandLocks read fLocks;
     property Stats: TKMHandStats read fStats;
     property FogOfWar: TKMFogOfWar read fFogOfWar;
-    property ArmyEval: TKMArmyEvaluation read fArmyEval;
     property UnitGroups: TKMUnitGroups read fUnitGroups;
     property MessageLog: TKMMessageLog read fMessageLog;
 
@@ -276,7 +274,6 @@ begin
   fHouses       := TKMHousesCollection.Create;
   fDeliveries   := TKMHandLogistics.Create;
   fBuildList    := TKMBuildList.Create;
-  fArmyEval     := TKMArmyEvaluation.Create(aHandIndex);
   fUnitGroups   := TKMUnitGroups.Create;
   fMessageLog   := TKMMessageLog.Create;
 
@@ -306,7 +303,6 @@ begin
   //Free units
   inherited;
 
-  FreeThenNil(fArmyEval);
   FreeThenNil(fRoadsList);
   FreeThenNil(fHouses);
 
@@ -414,7 +410,10 @@ begin
   G.OnGroupDied := GroupDied;
   if HandType = hndComputer then
   begin
-    AI.General.WarriorEquipped(G);
+    if AI.Setup.NewAI then
+      AI.ArmyManagement.WarriorEquipped(G)
+    else
+      AI.General.WarriorEquipped(G);
     G := UnitGroups.GetGroupByMember(aUnit); //AI might assign warrior to different group
   end
   else
