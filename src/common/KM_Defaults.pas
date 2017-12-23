@@ -36,7 +36,6 @@ const
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
 
   GAME_REVISION         = 'r8134';       //Should be updated for every release (each time save format is changed)
-  GAME_BETA_REVISION    = 5;
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
   {$ELSE}
