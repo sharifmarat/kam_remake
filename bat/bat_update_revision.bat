@@ -9,10 +9,15 @@
 @REM update revision number in KM_Revision.inc file 
 @echo GAME_REVISION_NUM=%kam_revision% > ..\KM_Revision.inc
 
+@REM update revision for Installer
+@echo #define Revision 'r%kam_revision%' > ..\Installer\Revision.iss
+
 @REM add, commit and push changes to github
+git reset
 git add ..\KM_Revision.inc
+git add ..\Installer\Revision.iss
 git commit ..\KM_Revision.inc -m "update KM_Revision.inc"
-git push
+REM git push
 
 @echo !
 @echo !
