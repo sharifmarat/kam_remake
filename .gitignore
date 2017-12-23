@@ -29,6 +29,8 @@
 /data/gfx/*.bbm
 /data/gfx/*.lbm
 /data/sfx
+/Installer/BuildFull*
+/Installer/BuildUpdate*
 /dcu
 /src/net/KM_NetAuthSecure.pas
 __history
