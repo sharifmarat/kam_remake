@@ -1,4 +1,4 @@
-﻿unit KM_InterfaceGamePlay;
+unit KM_InterfaceGamePlay;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -3700,10 +3700,10 @@ begin
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
 
   // Temporary inteface (by @Crow)
-  if SHOW_ARMYEVALS then
-    for I := 0 to gHands.Count - 1 do
-    if I <> gMySpectator.HandIndex then
-      S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
+  //if SHOW_ARMYEVALS then
+  //  for I := 0 to gHands.Count - 1 do
+  //  if I <> gMySpectator.HandIndex then
+  //    S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
 
   if SHOW_AI_WARE_BALANCE then
   begin
@@ -3786,4 +3786,3 @@ end;
 
 
 end.
-
