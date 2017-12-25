@@ -8,15 +8,30 @@ uses
 
 
 const
+  MAX_CAMP_CHAPTERS = 64;
   MAX_CAMP_MAPS = 64;
   MAX_CAMP_NODES = 64;
 
 type
   TBriefingCorner = (bcBottomRight, bcBottomLeft);
+  TMissionVideoTypes = (mvBefore, mvAfter);
   //Unique campaign identification, stored as 3 ANSI letters (TSK, TPR, etc)
   //3 bytes are used to avoid string types issues
   TKMCampaignId = array [0..2] of Byte;
 
+  TKMCampaignMap = record
+    Flag: TKMPointW;
+    NodeCount: Byte;
+    Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
+    TextPos: TBriefingCorner;
+    Video: array[TMissionVideoTypes] of AnsiString;
+  end;
+
+  TKMCampaignChapter = record
+    Maps: array of TKMCampaignMap;
+    MapCount: Byte;
+    ImageIndex: Byte;
+  end;
 
   TKMCampaign = class
   private
@@ -25,20 +40,19 @@ type
     fTextLib: TKMTextLibrarySingle;
     fUnlockedMap: Byte;
     fScriptData: TKMemoryStream;
+    fFullName: UnicodeString;
+    fNodeAnimation: Boolean;
 
     //Saved in CMP
     fCampaignId: TKMCampaignId; //Used to identify the campaign
     fBackGroundPic: TKMPic;
-    fMapCount: Byte;
+    fIntroVideo: AnsiString;
     procedure SetUnlockedMap(aValue: Byte);
-    procedure SetMapCount(aValue: Byte);
+    function GetMapCount: Byte;
+
+    function GetMap(Index: Byte): TKMCampaignMap;
   public
-    Maps: array of record
-      Flag: TKMPointW;
-      NodeCount: Byte;
-      Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
-      TextPos: TBriefingCorner;
-    end;
+    Chapters: array of TKMCampaignChapter;
     constructor Create;
     destructor Destroy; override;
 
@@ -46,12 +60,15 @@ type
     procedure SaveToFile(const aFileName: UnicodeString);
     procedure LoadFromPath(const aPath: UnicodeString);
 
+    property Maps[Index: Byte]: TKMCampaignMap read GetMap;
     property BackGroundPic: TKMPic read fBackGroundPic write fBackGroundPic;
-    property MapCount: Byte read fMapCount write SetMapCount;
+    property MapCount: Byte read GetMapCount;
     property CampaignId: TKMCampaignId read fCampaignId write fCampaignId;
+    property FullName: UnicodeString read fFullName write fFullName;
     function CampName: UnicodeString;
     property UnlockedMap: Byte read fUnlockedMap write SetUnlockedMap;
     property ScriptData: TKMemoryStream read fScriptData;
+    property IntroVideo: AnsiString read fIntroVideo write fIntroVideo;
 
     function CampaignTitle: UnicodeString;
     function CampaignDescription: UnicodeString;
@@ -329,6 +346,8 @@ constructor TKMCampaign.Create;
 begin
   inherited;
 
+  SetLength(Chapters, 1);;
+
   //1st map is always unlocked to allow to start campaign
   fUnlockedMap := 0;
   fScriptData := TKMemoryStream.Create;
@@ -355,6 +374,8 @@ var
   M: TKMemoryStream;
   I, K: Integer;
   cmp: TBytes;
+  Count: Byte;
+  Size, Level, VideoType: Byte;
 begin
   if not FileExists(aFileName) then Exit;
 
@@ -368,18 +389,45 @@ begin
   fCampaignId[1] := cmp[1];
   fCampaignId[2] := cmp[2];
 
-  M.Read(fMapCount);
-  SetLength(Maps, fMapCount);
+  M.Read(Count);
 
-  for I := 0 to fMapCount - 1 do
+  if Count > 0 then
   begin
-    M.Read(Maps[I].Flag);
-    M.Read(Maps[I].NodeCount);
-    for K := 0 to Maps[I].NodeCount - 1 do
-      M.Read(Maps[I].Nodes[K]);
-    M.Read(Maps[I].TextPos, SizeOf(TBriefingCorner));
+    SetLength(Chapters, 1);
+
+    Chapters[0].MapCount := Count;
+    Chapters[0].ImageIndex := 1;
+    SetLength(Chapters[0].Maps, Count);
+
+    for I := 0 to Count - 1 do
+    begin
+      M.Read(Chapters[0].Maps[I].Flag);
+      M.Read(Chapters[0].Maps[I].NodeCount);
+      for K := 0 to Chapters[0].Maps[I].NodeCount - 1 do
+        M.Read(Chapters[0].Maps[I].Nodes[K]);
+      M.Read(Chapters[0].Maps[I].TextPos, SizeOf(TBriefingCorner));
+    end;
+
   end;
 
+     {
+  if M.Size = M.Position then
+  begin
+    SetLength(Chapters, 1);
+    Chapters[0].MapCount := fMapCount;
+    Chapters[0].ImageIndex := 0;
+  end;
+
+  while M.Size > M.Position do
+  begin
+    M.Read(Level);
+    M.Read(VideoType);
+    if Level = 0 then
+      M.ReadA(fIntroVideo)
+    else
+      M.ReadA(Maps[Level - 1].Video[TMissionVideoTypes(VideoType)]);
+  end;
+  }
   M.Free;
 end;
 
@@ -387,8 +435,9 @@ end;
 procedure TKMCampaign.SaveToFile(const aFileName: UnicodeString);
 var
   M: TKMemoryStream;
-  I, K: Integer;
+  I, K, J: Integer;
   cmp: TBytes;
+  VideoType: TMissionVideoTypes;
 begin
   Assert(aFileName <> '');
 
@@ -398,22 +447,43 @@ begin
   cmp[1] := fCampaignId[1];
   cmp[2] := fCampaignId[2];
   M.WriteBytes(cmp);
-  M.Write(fMapCount);
 
-  for I := 0 to fMapCount - 1 do
+  M.Write(MapCount);
+  for J := 0 to High(Chapters) do
   begin
-    M.Write(Maps[I].Flag);
-    M.Write(Maps[I].NodeCount);
-    for K := 0 to Maps[I].NodeCount - 1 do
+    for I := 0 to Chapters[J].MapCount - 1 do
     begin
-      //One-time fix for campaigns made before r4880
-      //Inc(Maps[I].Nodes[K].X, 5);
-      //Inc(Maps[I].Nodes[K].Y, 5);
-      M.Write(Maps[I].Nodes[K]);
+      M.Write(Chapters[J].Maps[I].Flag);
+      M.Write(Chapters[J].Maps[I].NodeCount);
+      for K := 0 to Chapters[J].Maps[I].NodeCount - 1 do
+      begin
+        //One-time fix for campaigns made before r4880
+        //Inc(Maps[I].Nodes[K].X, 5);
+        //Inc(Maps[I].Nodes[K].Y, 5);
+        M.Write(Chapters[J].Maps[I].Nodes[K]);
+      end;
+      M.Write(Chapters[J].Maps[I].TextPos, SizeOf(TBriefingCorner));
     end;
-    M.Write(Maps[I].TextPos, SizeOf(TBriefingCorner));
   end;
 
+
+    {
+  if fIntroVideo <> '' then
+  begin
+    M.Write(Byte(0));
+    M.Write(Byte(0));
+    M.WriteA(fIntroVideo);
+  end;
+
+  for I := 0 to fMapCount - 1 do
+    for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
+      if Maps[I].Video[VideoType] <> '' then
+      begin
+        M.Write(Byte(I + 1));
+        M.Write(Byte(VideoType));
+        M.WriteA(Maps[I].Video[VideoType]);
+      end;
+           }
   M.SaveToFile(aFileName);
   M.Free;
 end;
@@ -461,16 +531,30 @@ begin
   end;
 
   if UNLOCK_CAMPAIGN_MAPS then //Unlock more maps for debug
-    fUnlockedMap := fMapCount-1;
+    fUnlockedMap := MapCount - 1;
 end;
 
-
-procedure TKMCampaign.SetMapCount(aValue: Byte);
+function TKMCampaign.GetMapCount: Byte;
+var
+  i: Integer;
 begin
-  fMapCount := aValue;
-  SetLength(Maps, fMapCount);
+  Result := 0;
+  for i := 0 to High(Chapters) do
+    Inc(Result, Chapters[i].MapCount);
 end;
 
+function TKMCampaign.GetMap(Index: Byte): TKMCampaignMap;
+var
+  i, N: Integer;
+begin
+  N := 0;
+  for i := 0 to High(Chapters) do
+  begin
+    if Index < N + Chapters[i].MapCount then
+      Exit(Chapters[i].Maps[Index - N]);
+    Inc(N, Chapters[i].MapCount);
+  end;
+end;
 
 function TKMCampaign.CampaignTitle: UnicodeString;
 begin
@@ -542,7 +626,7 @@ end;
 //player may be replaying previous maps, in that case his progress remains the same
 procedure TKMCampaign.SetUnlockedMap(aValue: Byte);
 begin
-  fUnlockedMap := EnsureRange(aValue, fUnlockedMap, fMapCount - 1);
+  fUnlockedMap := EnsureRange(aValue, fUnlockedMap, MapCount - 1);
 end;
 
 
