@@ -3,12 +3,8 @@ unit KM_AIArmyEvaluation;
 interface
 uses
   KM_Defaults, KM_CommonClasses;
-//Classes, Graphics, KromUtils, Math, SysUtils,
-//KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_FloodFill,
 
 type
-  TKMArmyDemandArray = array[TGroupType] of Integer;
-
   TKMGroupEval = record
     HitPoints, Attack, AttackHorse, Defence, DefenceProjectiles: Single;
   end;
@@ -25,7 +21,6 @@ type
     function GetUnitEvaluation(aUT: TUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
     function GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
     function GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TAllianceType): TKMArmyEval;
-    function CompareAllianceStrength(aPlayer: TKMHandIndex): TKMArmyEval;
   public
     constructor Create();
     destructor Destroy; override;
@@ -36,6 +31,7 @@ type
     property Evaluation[aPlayer: TKMHandIndex]: TKMArmyEval read GetEvaluation;
     property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TAllianceType]: TKMArmyEval read GetAllianceStrength;
 
+    function CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
     procedure UpdateState(aTick: Cardinal);
   end;
 
@@ -140,22 +136,38 @@ begin
 end;
 
 
-function TKMArmyEvaluation.CompareAllianceStrength(aPlayer: TKMHandIndex): TKMArmyEval;
+// Approximate way how to compute strength of 2 alliances
+function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
+type
+  TKMGroupStrengthArray = array[TGroupType] of Single;
+  function CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
+  const
+    DEF_COEFICIENT = 100; // Increase weight of defence
+  var
+    GT: TGroupType;
+  begin
+    for GT := Low(TGroupType) to High(TGroupType) do
+      with aEval[GT] do
+        Result[GT] := Attack * AttackHorse * Hitpoints * Defence;
+  end;
 var
+  Sum, Diff: Single;
   GT: TGroupType;
   AllyEval, EnemyEval: TKMArmyEval;
+  AllyArmy, EnemyArmy: TKMGroupStrengthArray;
 begin
   AllyEval := GetAllianceStrength(aPlayer, at_Ally);
-  EnemyEval := GetAllianceStrength(aPlayer, at_Enemy);
+  EnemyEval := GetAllianceStrength(aOponent, at_Ally);
+  AllyArmy := CalculateStrength(AllyEval);
+  EnemyArmy := CalculateStrength(EnemyEval);
+  Sum := 0;
+  Diff := 0;
   for GT := Low(TGroupType) to High(TGroupType) do
-    with Result[GT] do
-    begin
-      Hitpoints := AllyEval[GT].Hitpoints - EnemyEval[GT].Hitpoints;
-      Attack := AllyEval[GT].Attack - EnemyEval[GT].Attack;
-      AttackHorse := AllyEval[GT].AttackHorse - EnemyEval[GT].AttackHorse;
-      Defence := AllyEval[GT].Defence - EnemyEval[GT].Defence;
-      DefenceProjectiles := AllyEval[GT].DefenceProjectiles - EnemyEval[GT].DefenceProjectiles;
-    end;
+  begin
+    Sum := Sum + AllyArmy[GT] + EnemyArmy[GT];
+    Diff := Diff + AllyArmy[GT] - EnemyArmy[GT];
+  end;
+  Result := Diff / Sum; // => number in <-1,1> ... positive = we have advantage and vice versa
 end;
 
 
