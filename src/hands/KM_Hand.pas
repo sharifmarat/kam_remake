@@ -140,6 +140,7 @@ type
     function FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean = False): TKMHouseInn;
     function FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse; overload;
     function FindHouse(aType: THouseType; Index: Byte=1): TKMHouse; overload;
+    function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function HitTest(X,Y: Integer): TObject;
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
@@ -900,6 +901,12 @@ end;
 function TKMHand.FindHouse(aType: THouseType; Index: Byte=1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, 0, 0, Index);
+end;
+
+
+function TKMHand.FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+begin
+  Result := fHouses.FindHousesInRadius(aLoc, aSqrRadius, aTypes, aOnlyCompleted);
 end;
 
 
