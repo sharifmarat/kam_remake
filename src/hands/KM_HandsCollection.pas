@@ -4,7 +4,7 @@ interface
 uses
   Classes,
   KM_Hand, KM_HandSpectator, KM_HouseCollection,
-  KM_Houses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
+  KM_Houses, KM_ResHouses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
@@ -35,7 +35,8 @@ type
     function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
     function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
-    function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
     procedure GetUnitsInRect(aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -85,7 +86,7 @@ uses
   Math, KromUtils,
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection,
-  KM_Resource, KM_ResHouses, KM_ResUnits,
+  KM_Resource, KM_ResUnits,
   KM_Log, KM_CommonUtils;
 
 
@@ -310,7 +311,7 @@ end;
 
 //Check opponents for closest House with given Alliance setting
 //Note: we check by house cells, not by entrance
-function TKMHandsCollection.GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHandsCollection.GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
 var
   I: Integer;
   H: TKMHouse;
@@ -321,10 +322,34 @@ begin
   for I := 0 to fCount - 1 do
   if (aIndex <> I) and (Hands[aIndex].Alliances[I] = aAlliance) then
   begin
-    H := fHandsList[I].Houses.FindHouse(ht_Any, aLoc.X, aLoc.Y, 1, aOnlyCompleted);
+    H := fHandsList[I].Houses.FindHouse(aTypes, aLoc.X, aLoc.Y, 1, aOnlyCompleted);
     if (H <> nil) and ((Result = nil) or (H.GetDistance(aLoc) < Result.GetDistance(aLoc))) then
       Result := H;
   end;
+end;
+
+
+function TKMHandsCollection.GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+var
+  I,K,Idx: Integer;
+  HA: TKMHouseArray;
+begin
+  SetLength(Result, 12);
+
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (Hands[aIndex].Alliances[I] = aAlliance) then
+  begin
+    HA := fHandsList[I].Houses.FindHousesInRadius(aLoc, aSqrRadius, aTypes, aOnlyCompleted);
+    if (Idx + Length(HA) > Length(Result)) then
+      SetLength(Result, Idx + Length(HA) + 12);
+    for K := Low(HA) to High(HA) do
+    begin
+      Result[Idx] := HA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+  SetLength(Result, Idx);
 end;
 
 
