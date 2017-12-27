@@ -27,6 +27,7 @@ type
     function FindEmptyHouse(aUnitType: TUnitType; Loc: TKMPoint): TKMHouse;
     function FindHouse(aType: THouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
+    function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -254,6 +255,29 @@ begin
         Exit;
       end;
   end;
+end;
+
+
+function TKMHousesCollection.FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
+var
+  I,Idx: Integer;
+begin
+  SetLength(Result, 12);
+  Idx := 0;
+  for I := 0 to Count - 1 do
+    if (Houses[I].HouseType in aTypes)
+      AND (not aOnlyCompleted OR Houses[I].IsComplete)
+      AND not Houses[I].IsDestroyed then
+    begin
+      if (KMLengthSqr(Houses[I].GetPosition, aLoc) <= aSqrRadius) then
+      begin
+        if (Idx >= Length(Result)) then
+          SetLength(Result, Idx + 12);
+        Result[Idx] := Houses[I];
+        Idx := Idx + 1;
+      end;
+    end;
+  SetLength(Result,Idx);
 end;
 
 
