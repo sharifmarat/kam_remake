@@ -555,6 +555,8 @@ end;
 
 //See if we can attack our enemies
 procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+const
+  TARGET_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 var
   TargetHouse: TKMHouse;
   TargetUnit: TKMUnit;
@@ -565,8 +567,8 @@ begin
   //Find target
   case aTarget of
     att_ClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
-    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
+    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
+    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
     att_CustomPosition:               begin
                                         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
                                         if (TargetHouse <> nil) and
@@ -657,4 +659,4 @@ begin
 end;
 
 
-end.
+end.
