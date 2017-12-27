@@ -6,7 +6,8 @@ uses
   Graphics, Mask, Math, Spin, StdCtrls, SysUtils, KM_Points,
   KM_Defaults, KM_Campaigns, KM_Pics, KM_ResSpritesEdit, KromUtils, inifiles,
   Quad.ObjectInspector, Vcl.ToolWin, System.ImageList, Vcl.ImgList,
-  System.Actions, Vcl.ActnList, Vcl.Menus, RenderPanel;
+  System.Actions, Vcl.ActnList, Vcl.Menus, RenderPanel, Vcl.Imaging.pngimage,
+  Vcl.Imaging.jpeg;
 
 const
   crHandMove = TCursor(1);
@@ -40,10 +41,6 @@ type
     dlgSaveCampaign: TSaveDialog;
     StatusBar1: TStatusBar;
     ScrollBox1: TScrollBox;
-    imgBlackFlag: TImage;
-    imgRedFlag: TImage;
-    imgNode: TImage;
-    shpBriefing: TShape;
     ActionList: TActionList;
     aOpen: TAction;
     aNew: TAction;
@@ -71,7 +68,7 @@ type
     MissionBox: TGroupBox;
     Panel1: TPanel;
     cbShowNodeNumbers: TCheckBox;
-    cbShowBriefingPosition: TCheckBox;
+    cbShowBriefingPage: TCheckBox;
     BriefingPositionPanel: TPanel;
     cbBriefingPos: TComboBox;
     VideoBeforePanel: TPanel;
@@ -81,6 +78,11 @@ type
     Splitter: TSplitter;
     aAddChapter: TAction;
     AddChapter1: TMenuItem;
+    ImgBackground: TImage;
+    imgBlackFlag: TImage;
+    ImgBriefing: TImage;
+    imgNode: TImage;
+    imgRedFlag: TImage;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -98,6 +100,9 @@ type
       State: TDragState; var Accept: Boolean);
     procedure tvListDragDrop(Sender, Source: TObject; X, Y: Integer);
     procedure pmMapPopup(Sender: TObject);
+    procedure cbShowBriefingPageClick(Sender: TObject);
+    procedure cbShowNodeNumbersClick(Sender: TObject);
+    procedure cbBriefingPosChange(Sender: TObject);
   private
     FRender: TRenderPanel;
     fExePath: string;
@@ -221,7 +226,7 @@ begin
     LoadCmp(ParamStr(1));
   UpdateCaption;
 
-  FRender := TRenderPanel.Create(ScrollBox1, tvList);
+  FRender := TRenderPanel.Create(Self, tvList);
   FRender.PopupMenu := pmMap;
 end;
 
@@ -290,7 +295,7 @@ begin
   end;
 
   }
-  StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
+  //StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
 end;
 
 
@@ -627,8 +632,9 @@ begin
   else
     dlgOpenCampaign.InitialDir := fExePath;
 
-  if not dlgOpenCampaign.Execute then
-    Exit;
+  //if not dlgOpenCampaign.Execute then
+  //  Exit;
+  dlgOpenCampaign.FileName := 'G:\Projects\kam_remake\Campaigns\The Shattered Kingdom\info.cmp';
 
   LoadCmp(dlgOpenCampaign.FileName);
 
@@ -764,6 +770,25 @@ begin
   end;
 end;
 
+procedure TMainForm.cbBriefingPosChange(Sender: TObject);
+begin
+  if Assigned(SelectedMission) then
+  begin
+    SelectedMission.TextPos := TBriefingCorner(cbBriefingPos.ItemIndex);
+    FRender.Repaint;
+  end;
+end;
+
+procedure TMainForm.cbShowBriefingPageClick(Sender: TObject);
+begin
+  FRender.Repaint;
+end;
+
+procedure TMainForm.cbShowNodeNumbersClick(Sender: TObject);
+begin
+  FRender.Repaint;
+end;
+
 procedure TMainForm.ListToCampaign;
 var
   i, k: Integer;
@@ -828,6 +853,7 @@ begin
         fSelectedNode := Node as TTreeChapterNode;
       end;
   end;
+  FRender.Repaint;
 end;
 
 procedure TMainForm.tvListCreateNodeClass(Sender: TCustomTreeView; var NodeClass: TTreeNodeClass);
