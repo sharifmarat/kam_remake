@@ -30,6 +30,7 @@ type
   TKMPointFunction = function(aPoint: TKMPoint): Boolean of object;
 
   function KMPoint(X,Y: Integer): TKMPoint;
+  function KMPointW(X,Y: Word): TKMPointW;
   function KMPointF(X,Y: Single): TKMPointF; overload;
   function KMPointF(P: TKMPoint):  TKMPointF; overload;
   function KMPointDir(X,Y: Integer; Dir: TKMDirection): TKMPointDir; overload;
@@ -137,6 +138,11 @@ begin
   Result.Y := Y;
 end;
 
+function KMPointW(X, Y: Word): TKMPointW;
+begin
+  Result.X := X;
+  Result.Y := Y;
+end;
 
 function KMPointF(P: TKMPoint): TKMPointF;
 begin
