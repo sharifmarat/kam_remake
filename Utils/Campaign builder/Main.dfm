@@ -34456,6 +34456,7 @@ object MainForm: TMainForm
       OnCreateNodeClass = tvListCreateNodeClass
       OnDragDrop = tvListDragDrop
       OnDragOver = tvListDragOver
+      OnKeyDown = FormKeyDown
     end
     object pTop: TPanel
       Left = 8

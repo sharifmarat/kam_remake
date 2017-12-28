@@ -14,6 +14,7 @@ type
     FRect: TRect;
     FTree: TTreeView;
     FMousePosition: TPoint;
+    FMouseMovePosition: TPoint;
     FMouseCameraPosition: TPoint;
     FMouseMove: Boolean;
     FMouseMoveNode: TTreeNode;
@@ -24,10 +25,11 @@ type
     procedure WmEraseBkgnd (var Msg: TWMEraseBkgnd); message WM_ERASEBKGND;
     procedure DrawImage(const APosition: TKMPointW; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPoint; AImage: TImage); overload;
+    procedure DrawImage(const ARect: TRect; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPointW; ABitmap: TBitmap); overload;
-    procedure DrawFocus(const APosition: TKMPointW; AImage: TImage);
-    function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean; overload;
-    function PointInRect(const APoint: TPoint; const APosition: TKMPointW; AImage: TImage): Boolean; overload;
+    procedure DrawFocus(const ARect: TRect);
+    function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
+    function RectMove(const ARect: TRect; const APosition: TPoint): TRect;
   protected
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
@@ -38,7 +40,7 @@ type
     constructor Create(AOwner: TComponent; ATree: TTreeView);
     destructor Destroy; override;
     procedure RefreshBackground(AIndex: Integer = 0);
-
+    procedure KeyDown(var Key: Word; Shift: TShiftState);
   end;
 
 implementation
@@ -53,7 +55,6 @@ var
   Panel: TPanel;
 begin
   inherited Create(AOwner);
-  //FScrollBox := AScrollBox;
   FTree := ATree;
 
   FRect := Rect(0, 0, 1024, 768);
@@ -75,6 +76,26 @@ begin
   inherited;
 end;
 
+procedure TRenderPanel.KeyDown(var Key: Word; Shift: TShiftState);
+var
+  Node: TTreeChapterItem;
+begin
+  Node := MainForm.SelectedMission;
+  if Assigned(MainForm.SelectedNode) then
+    Node := MainForm.SelectedNode;
+
+  if Assigned(Node) then
+  begin
+    case Key of
+      Ord('A'): Node.Rect := RectMove(Node.Rect, Point(EnsureRange(Node.Rect.Left - 1, 0, 1024 - Node.Rect.Width), Node.Rect.Top));
+      Ord('D'): Node.Rect := RectMove(Node.Rect, Point(EnsureRange(Node.Rect.Left + 1, 0, 1024 - Node.Rect.Width), Node.Rect.Top));
+      Ord('W'): Node.Rect := RectMove(Node.Rect, Point(Node.Rect.Left, EnsureRange(Node.Rect.Top - 1, 0, 768 - Node.Rect.Height)));
+      Ord('S'): Node.Rect := RectMove(Node.Rect, Point(Node.Rect.Left, EnsureRange(Node.Rect.Top + 1, 0, 768 - Node.Rect.Height)));
+    end;
+    Repaint;
+  end;
+end;
+
 procedure TRenderPanel.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
@@ -86,10 +107,28 @@ begin
 end;
 
 procedure TRenderPanel.MouseMove(Shift: TShiftState; X, Y: Integer);
+
+  function InNode(ANode: TTreeNode; AImage: TImage): TTreeNode;
+  var
+    i: Integer;
+    Node: TTreeChapterItem;
+  begin
+    for i := 0 to ANode.Count - 1 do
+      if ANode[i] is TTreeChapterItem then
+      begin
+        Node := TTreeChapterNode(ANode[i]);
+        if PointInRect(FMouseCameraPosition, Node.Rect) then
+        begin
+          FMouseMovePosition.X := FMouseCameraPosition.X - Node.Rect.Left;
+          FMouseMovePosition.Y := FMouseCameraPosition.Y - Node.Rect.Top;
+          Exit(Node);
+        end;
+      end;
+  end;
+
 var
   i: Integer;
-  NodeMission: TTreeChapterMission;
-  NodeMissionNode: TTreeChapterNode;
+  Node: TTreeChapterItem;
   MoveNode: TTreeNode;
 begin
   inherited;
@@ -97,7 +136,15 @@ begin
   begin
     if Assigned(FMouseMoveNode) then
     begin
-
+      if FMouseMoveNode is TTreeChapterItem then
+      begin
+        Node := TTreeChapterItem(FMouseMoveNode);
+        Node.Rect := RectMove(Node.Rect, Point(
+          EnsureRange(FMouseCameraPosition.X - FMouseMovePosition.X, 0, 1024 - Node.Rect.Width),
+          EnsureRange(FMouseCameraPosition.Y - FMouseMovePosition.Y, 0, 768 - Node.Rect.Height)
+        ));
+        Repaint;
+      end;
     end
     else
     begin
@@ -110,30 +157,10 @@ begin
   begin
     MoveNode := nil;
     if Assigned(MainForm.SelectedMission) then
-    begin
-      for i := 0 to MainForm.SelectedMission.Count - 1 do
-        if MainForm.SelectedMission[i] is TTreeChapterNode then
-        begin
-          NodeMissionNode := TTreeChapterNode(MainForm.SelectedMission[i]);
-          if PointInRect(FMouseCameraPosition, NodeMissionNode.Position, MainForm.imgNode) then
-          begin
-            MoveNode := NodeMissionNode;
-            Break;
-          end;
-        end;
-    end;
+      MoveNode := InNode(MainForm.SelectedMission, MainForm.imgNode);
 
-    if not Assigned(FMouseMoveNode) and Assigned(MainForm.SelectedChapter) then
-      for i := 0 to MainForm.SelectedChapter.Count - 1 do
-        if MainForm.SelectedChapter[i] is TTreeChapterMission then
-        begin
-          NodeMission := TTreeChapterMission(MainForm.SelectedChapter[i]);
-          if PointInRect(FMouseCameraPosition, NodeMission.Position, MainForm.imgRedFlag) then
-          begin
-            MoveNode := NodeMission;
-            Break;
-          end;
-        end;
+    if not Assigned(MoveNode) and Assigned(MainForm.SelectedChapter) then
+      MoveNode := InNode(MainForm.SelectedChapter, MainForm.imgRedFlag);
 
     if MoveNode <> FMouseMoveNode then
     begin
@@ -177,9 +204,9 @@ begin
       begin
         NodeMission := TTreeChapterMission(MainForm.SelectedChapter[i]);
         If Assigned(MainForm.SelectedMission) and (MainForm.SelectedMission.Index >= NodeMission.Index) then
-          DrawImage(NodeMission.Position, MainForm.imgRedFlag)
+          DrawImage(NodeMission.Rect, MainForm.imgRedFlag)
         else
-          DrawImage(NodeMission.Position, MainForm.imgBlackFlag);
+          DrawImage(NodeMission.Rect, MainForm.imgBlackFlag);
       end;
 
     if Assigned(MainForm.SelectedMission) then
@@ -188,32 +215,17 @@ begin
         if MainForm.SelectedMission[i] is TTreeChapterNode then
         begin
           NodeMissionNode := TTreeChapterNode(MainForm.SelectedMission[i]);
-          DrawImage(NodeMissionNode.Position, MainForm.imgNode);
+          DrawImage(NodeMissionNode.Rect, MainForm.imgNode);
         end;
 
       Canvas.Brush.Style := bsClear;
       Canvas.Pen.Style := psSolid;
       Canvas.Pen.Color := clGreen;
-      //Rectangle(MainForm.SelectedMission.Position.X, MainForm.SelectedMission.Position.Y, MainForm.imgRedFlag.Width, MainForm.imgRedFlag.Height);
     end;
   end;
 
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := clRed;
-  if Assigned(FMouseMoveNode) then
-  begin
-    if FMouseMoveNode is TTreeChapterMission then
-      DrawFocus(TTreeChapterMission(FMouseMoveNode).Position, MainForm.imgRedFlag);
-
-    if FMouseMoveNode is TTreeChapterNode then
-      DrawFocus(TTreeChapterNode(FMouseMoveNode).Position, MainForm.imgNode);
-  end;
-
-  //Canvas.Rectangle(FMouseCameraPosition.X, FMouseCameraPosition.Y, FMouseCameraPosition.X + 10, FMouseCameraPosition.Y + 10 );
-
-
-  //Img.Left := EnsureRange(Img.Left + (X - PrevX), iMap.Left, iMap.Left + 1024-Img.Width);
-  //Img.Top  := EnsureRange(Img.Top  + (Y - PrevY), iMap.Top, iMap.Top + 768-Img.Height);
+  if Assigned(FMouseMoveNode) and (FMouseMoveNode is TTreeChapterItem) and not FMouseMove then
+      DrawFocus(TTreeChapterItem(FMouseMoveNode).Rect);
 
   if Assigned(MainForm.SelectedMission) and MainForm.cbShowBriefingPage.Checked then
     case MainForm.SelectedMission.TextPos of
@@ -223,13 +235,12 @@ begin
 
 end;
 
-procedure TRenderPanel.DrawFocus(const APosition: TKMPointW; AImage: TImage);
+procedure TRenderPanel.DrawFocus(const ARect: TRect);
 begin
   Canvas.Brush.Style := bsClear;
   Canvas.Pen.Style := psSolid;
   Canvas.Pen.Color := clLime;
-  Canvas.Rectangle(APosition.X - FCamera.X, APosition.Y - FCamera.Y,
-    APosition.X - FCamera.X + AImage.Width, APosition.Y - FCamera.Y + AImage.Height);
+  Canvas.Rectangle(ARect.Left - FCamera.X, ARect.Top - FCamera.Y, ARect.Right - FCamera.X, ARect.Bottom - FCamera.Y);
 end;
 
 procedure TRenderPanel.DrawImage(const APosition: TKMPointW; AImage: TImage);
@@ -240,6 +251,11 @@ end;
 procedure TRenderPanel.DrawImage(const APosition: TKMPoint; AImage: TImage);
 begin
   Canvas.Draw(APosition.X - FCamera.X, APosition.Y - FCamera.Y, AImage.Picture.Graphic);
+end;
+
+procedure TRenderPanel.DrawImage(const ARect: TRect; AImage: TImage);
+begin
+  Canvas.Draw(ARect.Left - FCamera.X, ARect.Top - FCamera.Y, AImage.Picture.Graphic);
 end;
 
 procedure TRenderPanel.DrawImage(const APosition: TKMPointW; ABitmap: TBitmap);
@@ -253,10 +269,12 @@ begin
     and (ARect.Top <= APoint.Y) and (APoint.Y < ARect.Bottom);
 end;
 
-function TRenderPanel.PointInRect(const APoint: TPoint; const APosition: TKMPointW; AImage: TImage): Boolean;
+function TRenderPanel.RectMove(const ARect: TRect; const APosition: TPoint): TRect;
 begin
-  Result := (APosition.X <= APoint.X) and (APoint.X < APosition.X + AImage.Width)
-    and (APosition.Y <= APoint.Y) and (APoint.Y < APosition.Y + AImage.Height);
+  Result.Left := APosition.X;
+  Result.Top := APosition.Y;
+  Result.Right := APosition.X + ARect.Width;
+  Result.Bottom := APosition.Y + ARect.Height;
 end;
 
 procedure TRenderPanel.RefreshBackground(AIndex: Integer = 0);

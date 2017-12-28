@@ -21,8 +21,8 @@ type
 
   TTreeChapterItem = class(TTreeNode)
   public
-    Position: TKMPointW;
-   end;
+    Rect: TRect;
+  end;
 
   TTreeChapterMission = class(TTreeChapterItem)
   public
@@ -127,11 +127,7 @@ type
     procedure CampaignToList;
     procedure ListToCampaign;
   public
-    procedure FlagDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure FlagMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure FlagEnter(Sender: TObject);
-    procedure NodeDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure NodeMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure NodeEnter(Sender: TObject);
 
     procedure FlagNodeLeave(Sender: TObject);
@@ -261,104 +257,15 @@ end;
 
 
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var Img: TImage;
 begin
-  {
-  Img := nil;
-
-  if (fSelectedMap <> -1) then
-    if (fSelectedNode <> -1) then
-      Img := imgNodes[fSelectedNode]
-    else
-      Img := imgFlags[fSelectedMap];
-
-  if Img = nil then Exit;
-
-  case Key of
-    Ord('D'): Img.Left := Img.Left + 1;
-    Ord('A'): Img.Left := Img.Left - 1;
-    Ord('W'): Img.Top  := Img.Top  - 1;
-    Ord('S'): Img.Top  := Img.Top  + 1;
-  end;
-  Img.Left := EnsureRange(Img.Left, iMap.Left, iMap.Left + 1024-Img.Width);
-  Img.Top  := EnsureRange(Img.Top, iMap.Top, iMap.Top + 768-Img.Height);
-  if (fSelectedNode <> -1) then
-  begin
-    //Position node centers, so that if someone changes the nodes they still look correct
-    C.Maps[fSelectedMap].Nodes[fSelectedNode].X := Img.Left - iMap.Left + Img.Width div 2;
-    C.Maps[fSelectedMap].Nodes[fSelectedNode].Y := Img.Top  - iMap.Top + Img.Height div 2;
-  end
-  else
-  begin
-    C.Maps[fSelectedMap].Flag.X := Img.Left - iMap.Left;
-    C.Maps[fSelectedMap].Flag.Y := Img.Top  - iMap.Top;
-  end;
-
-  }
+  FRender.KeyDown(Key, Shift);
   //StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
-end;
-
-
-procedure TMainForm.FlagDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-{
-  if Button = mbLeft then
-  begin
-    if ssShift in Shift then
-      AddMission(TImage(Sender).Left, TImage(Sender).Top)
-    else
-    begin
-      fSelectedMap := TImage(Sender).Tag;
-      SelectMap;
-    end;
-    fSelectedNode := -1;
-    PrevX := X;
-    PrevY := Y;
-  end;
-}
 end;
 
 procedure TMainForm.FlagEnter(Sender: TObject);
 begin
   StatusBar1.Panels[2].Text := 'Map #' + IntToStr(TImage(Sender).Tag + 1);
 end;
-
-procedure TMainForm.FlagMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-var
-  Img: TImage;
-begin
-{
-  if (ssLeft in Shift) and (TImage(Sender).Tag = fSelectedMap) then
-  begin
-    Img := TImage(Sender);
-    Assert(Img <> nil);
-
-    Img.Left := EnsureRange(Img.Left + (X - PrevX), iMap.Left, iMap.Left + 1024-Img.Width);
-    Img.Top  := EnsureRange(Img.Top  + (Y - PrevY), iMap.Top, iMap.Top + 768-Img.Height);
-
-    C.Maps[fSelectedMap].Flag.X := Img.Left - iMap.Left;
-    C.Maps[fSelectedMap].Flag.Y := Img.Top  - iMap.Top;
-
-    StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
-  end;
-}
-end;
-
-
-procedure TMainForm.NodeDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-{
-  if Button = mbLeft then
-  begin
-    fSelectedNode := TImage(Sender).Tag;
-    SelectMap;
-
-    PrevX := X;
-    PrevY := Y;
-  end;
-}
-end;
-
 
 procedure TMainForm.NodeEnter(Sender: TObject);
 begin
@@ -371,27 +278,6 @@ begin
   StatusBar1.Panels[2].Text := '';
 end;
 
-
-procedure TMainForm.NodeMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-var
-  Img: TImage;
-begin
-  {
-  if (ssLeft in Shift) and (fSelectedMap <> -1) and (fSelectedNode <> -1) then
-  begin
-    Img := TImage(Sender);
-    Assert(Img <> nil);
-
-    Img.Left := EnsureRange(Img.Left + (X - PrevX), iMap.Left, iMap.Left + 1024-Img.Width);
-    Img.Top  := EnsureRange(Img.Top  + (Y - PrevY), iMap.Top, iMap.Top + 768-Img.Height);
-
-    C.Maps[fSelectedMap].Nodes[fSelectedNode].X := Img.Left + Img.Width div 2  - iMap.Left;
-    C.Maps[fSelectedMap].Nodes[fSelectedNode].Y := Img.Top  + Img.Height div 2 - iMap.Top;
-
-    StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
-  end;
-  }
-end;
 
 procedure TMainForm.pmMapPopup(Sender: TObject);
 begin
@@ -753,14 +639,16 @@ begin
         FTreeItemCreate := TTreeChapterMission;
         fSelectedMission := tvList.Items.AddChild(fSelectedChapter, Format('Mission %d', [I + 1])) as TTreeChapterMission;
         fSelectedMission.TextPos := C.Chapters[J].Maps[I].TextPos;
-        fSelectedMission.Position := C.Chapters[J].Maps[I].Flag;
+        fSelectedMission.Rect := Rect(C.Chapters[J].Maps[I].Flag.X, C.Chapters[J].Maps[I].Flag.Y,
+          C.Chapters[J].Maps[I].Flag.X + imgRedFlag.Width, C.Chapters[J].Maps[I].Flag.Y + imgRedFlag.Height);
         for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
           fSelectedMission.Video[VideoType] := C.Chapters[J].Maps[I].Video[VideoType];
         for K := 0 to C.Chapters[J].Maps[I].NodeCount - 1 do
         begin
           FTreeItemCreate := TTreeChapterNode;
           fSelectedNode := tvList.Items.AddChild(fSelectedMission, Format('node %d', [K + 1])) as TTreeChapterNode;
-          fSelectedNode.Position := C.Chapters[J].Maps[I].Nodes[K];
+          fSelectedNode.Rect := Rect(C.Chapters[J].Maps[I].Nodes[K].X, C.Chapters[J].Maps[I].Nodes[K].Y,
+            C.Chapters[J].Maps[I].Nodes[K].X + imgNode.Width, C.Chapters[J].Maps[I].Nodes[K].Y + imgNode.Height);
         end;
       end;
     end;
@@ -815,14 +703,20 @@ begin
       SetLength(C.Chapters[node.Index].Maps, node.Count);
       for i := 0 to node.Count - 1 do
       begin
-        C.Chapters[node.Index].Maps[i].Flag := (node[i] as TTreeChapterMission).Position;
+        C.Chapters[node.Index].Maps[i].Flag := KMPointW(
+          (node[i] as TTreeChapterMission).Rect.Left,
+          (node[i] as TTreeChapterMission).Rect.Top
+        );
         C.Chapters[node.Index].Maps[i].TextPos := (node[i] as TTreeChapterMission).TextPos;
         for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
           C.Chapters[node.Index].Maps[i].Video[VideoType] := (node[i] as TTreeChapterMission).Video[VideoType];
 
         C.Chapters[node.Index].Maps[i].NodeCount := node[i].Count;
         for k := 0 to node[i].Count - 1 do
-          C.Chapters[node.Index].Maps[i].Nodes[k] := (node[i][k] as TTreeChapterNode).Position;
+          C.Chapters[node.Index].Maps[i].Nodes[k] := KMPointW(
+            (node[i][k] as TTreeChapterNode).Rect.Left,
+            (node[i][k] as TTreeChapterNode).Rect.Top
+          );
       end;
       node := node.GetNextSibling;
     end;
