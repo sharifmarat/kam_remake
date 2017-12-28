@@ -26,6 +26,7 @@ type
 
   TTreeChapterMission = class(TTreeChapterItem)
   public
+    Number: Integer;
     TextPos: TBriefingCorner;
     Video: array[TMissionVideoTypes] of AnsiString;
     constructor Create(AOwner: TTreeNodes); override;
@@ -60,9 +61,6 @@ type
     ToolButton1: TToolButton;
     ToolButton2: TToolButton;
     ToolButton3: TToolButton;
-    ToolButton5: TToolButton;
-    ToolButton6: TToolButton;
-    ToolButton7: TToolButton;
     aSettings: TAction;
     ImageTree: TImageList;
     MissionBox: TGroupBox;
@@ -83,6 +81,8 @@ type
     ImgBriefing: TImage;
     imgNode: TImage;
     imgRedFlag: TImage;
+    ToolBar2: TToolBar;
+    ToolButton4: TToolButton;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -179,8 +179,8 @@ end;
 constructor TTreeChapterNode.Create(AOwner: TTreeNodes);
 begin
   inherited;
-  ImageIndex := 2;
-  SelectedIndex := 2;
+  ImageIndex := 3;
+  SelectedIndex := 3;
 end;
 
 { TForm1 }
@@ -520,9 +520,8 @@ begin
   else
     dlgOpenCampaign.InitialDir := fExePath;
 
-  //if not dlgOpenCampaign.Execute then
-  //  Exit;
-  dlgOpenCampaign.FileName := 'G:\Projects\kam_remake\Campaigns\The Shattered Kingdom\info.cmp';
+  if not dlgOpenCampaign.Execute then
+    Exit;
 
   LoadCmp(dlgOpenCampaign.FileName);
 
@@ -531,6 +530,7 @@ begin
     LoadCampaignName(ExtractFilePath(dlgOpenCampaign.FileName) + TEMPLATE_LIBX_FILE_TEXT , 'eng');
   UpdateCaption;
   CampaignToList;
+  UpdateList;
   FRender.RefreshBackground;
   FRender.Repaint;
 end;
@@ -702,8 +702,10 @@ end;
 procedure TMainForm.UpdateList;
 var
   i, n, MissionNumber, NodeNumber: Integer;
+  Passed: Boolean;
   node: TTreeNode;
 begin
+  Passed := Assigned(tvList.Selected);
   tvList.Items.BeginUpdate;
   try
     MissionNumber := 1;
@@ -711,12 +713,25 @@ begin
     while node <> nil do
     begin
       node.Text := Format('Chapter %d', [node.Index + 1]);
+      if (node = SelectedChapter) and not Assigned(SelectedMission) then
+        Passed := False;
+
       for i := 0 to node.Count - 1 do
       begin
         node[i].Text := Format('Mission %d', [MissionNumber]);
+        (node[i] as TTreeChapterMission).Number := MissionNumber;
+        node[i].ImageIndex := IfThen(Passed, 1, 2);
+        node[i].SelectedIndex := node[i].ImageIndex;
+        if node[i] = SelectedMission then
+          Passed := False;
+
         Inc(MissionNumber);
         for n := 0 to node[i].Count - 1 do
+        begin
           node[i][n].Text := Format('Node %d', [node[i][n].Index + 1]);
+          node[i][n].ImageIndex := IfThen(node[i] = fSelectedMission, 3, 4);
+          node[i][n].SelectedIndex := node[i][n].ImageIndex;
+        end;
       end;
       node := node.GetNextSibling;
     end;
@@ -795,6 +810,7 @@ begin
         fSelectedNode := Node as TTreeChapterNode;
       end;
   end;
+  UpdateList;
   FRender.Repaint;
 end;
 
@@ -814,16 +830,22 @@ begin
   AnItem := tvList.GetNodeAt(X, Y);
   if Assigned(AnItem) then
   begin
-    Rect := AnItem.DisplayRect(False);
-    if Y > Rect.Top + Rect.Height div 2 then
+    if AnItem.Level = tvList.Selected.Level then
     begin
-      if AnItem.GetNextSibling <> nil then
-        tvList.Selected.MoveTo(AnItem.getNextSibling, naInsert)
+      Rect := AnItem.DisplayRect(False);
+      if Y > Rect.Top + Rect.Height div 2 then
+      begin
+        if AnItem.GetNextSibling <> nil then
+          tvList.Selected.MoveTo(AnItem.getNextSibling, naInsert)
+        else
+          tvList.Selected.MoveTo(AnItem, naAdd);
+      end
       else
-        tvList.Selected.MoveTo(AnItem, naAdd);
+        tvList.Selected.MoveTo(AnItem, naInsert);
     end
     else
-      tvList.Selected.MoveTo(AnItem, naInsert);
+      if AnItem.Level = tvList.Selected.Level - 1 then
+        tvList.Selected.MoveTo(AnItem, naAddChild);
   end;
   UpdateList;
   tvList.Repaint;
@@ -837,8 +859,8 @@ var
 begin
   Node := tvList.GetNodeAt(x, y);
   SelNode := tvList.Selected;
-  Accept := (Sender = Source) and ((Node <> nil) and (Node.Level = SelNode.Level));
-  if Accept then
+  Accept := (Sender = Source) and ((Node <> nil) and ((Node.Level = SelNode.Level) or (Node.Level = SelNode.Level - 1)));
+  if Accept and (Node.Level = SelNode.Level) then
   begin
     tvList.Repaint;
     Rect := Node.DisplayRect(False);
@@ -847,9 +869,9 @@ begin
       Position := Rect.Bottom
     else
       Position := Rect.Top;
-
-    tvList.Canvas.MoveTo(Rect.Left, Position);
-    tvList.Canvas.LineTo(Rect.Right, Position);
+    tvList.Canvas.Pen.Color := clHighlight;
+    tvList.Canvas.MoveTo(Rect.Left + 8, Position);
+    tvList.Canvas.LineTo(Rect.Right - 8, Position);
   end;
 end;
 
