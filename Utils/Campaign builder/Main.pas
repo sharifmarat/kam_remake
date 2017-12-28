@@ -123,7 +123,6 @@ type
     procedure LoadCampaignName(aFileName, aLocale: string);
     procedure SaveCampaignName(aFileName: string);
     procedure CreateDefaultLocaleLibxTemplate(aFileName: string);
-    procedure AddMission(X, Y: Integer);
     procedure CampaignToList;
     procedure ListToCampaign;
   public
@@ -133,8 +132,6 @@ type
     procedure FlagNodeLeave(Sender: TObject);
 
     procedure UpdateCaption;
-    procedure DrawFlagNumber(aIndexMap: Integer);
-    procedure DrawNodeNumber(aIndexNode: Integer);
     function CopyNode(ANode: TTreeChapterItem): TTreeChapterItem;
     procedure UpdateList;
 
@@ -368,46 +365,6 @@ begin
   end;
 end;
 
-
-procedure TMainForm.DrawNodeNumber(aIndexNode: Integer);
-var
-  txtWiMainFormtxtHeight, txtLeft, txtTop: Integer;
-begin
-  {
-  if not cbShowNodeNumbers.Checked then Exit;
-
-  txtWidth := imgNodes[aIndexNode].Canvas.TextWidth(IntToStr(aIndexNode +1));
-  txtHeight := imgNodes[aIndexNode].Canvas.TextHeight(IntToStr(aIndexNode +1));
-  txtLeft := (imgNodes[aIndexNode].Width - txtWidth) div 2;
-  txtTop := (imgNodes[aIndexNode].Height - txtHeight) div 2;
-
-  SetBkMode(imgNodes[aIndexNode].Canvas.Handle, TRANSPARENT);
-  imgNodes[aIndexNode].Canvas.TextOut(txtLeft, txtTop, IntToStr(aIndexNode +1));
-  }
-end;
-
-procedure TMainForm.DrawFlagNumber(aIndexMap: Integer);
-const
-  OFF: array [Boolean] of TPoint = ((X:-3; Y:-2), (X:-1; Y:-2));
-var
-  txtWidth, txtHeight, txtLeft, txtTop: Integer;
-  isRedFlag: Boolean;
-begin
-  {
-  if not cbShowNodeNumbers.Checked then Exit;
-
-  isRedFlag := aIndexMap <= fSelectedMap;
-
-  txtWidth := imgFlags[aIndexMap].Canvas.TextWidth(IntToStr(aIndexMap +1));
-  txtHeight := imgFlags[aIndexMap].Canvas.TextHeight(IntToStr(aIndexMap +1));
-  txtLeft := (imgFlags[aIndexMap].Width - txtWidth) div 2 + OFF[isRedFlag].X;
-  txtTop := (imgFlags[aIndexMap].Height - txtHeight) div 2 + OFF[isRedFlag].Y;
-
-  SetBkMode(imgFlags[aIndexMap].Canvas.Handle, TRANSPARENT);
-  imgFlags[aIndexMap].Canvas.TextOut(txtLeft, txtTop, IntToStr(aIndexMap + 1));
-  }
-end;
-
 function TMainForm.DlgQuestionShow(aCaption, aMsg: string): boolean;
 var
   VarBool: boolean;
@@ -428,64 +385,23 @@ begin
   Result := VarBool;
 end;
 
-procedure TMainForm.AddMission(X, Y: Integer);
-begin
-   {
-  if fUpdatingMainForm
-    Exit;
-  if C.MapCount = MAX_CAMP_MAPS then
-  begin
-    ShowMessage('Mission limit exceeded!');
-    Exit;
-  end;
-
-  C.MapCount := EnsureRange(C.MapCount + 1, 1, MAX_CAMP_MAPS);
-  C.Maps[C.MapCount - 1].Flag.X := EnsureRange(X, 0, 1024 - imgRedFlag.Width);
-  C.Maps[C.MapCount - 1].Flag.Y := EnsureRange(Y, 0, 768 - imgRedFlag.Height);
-       }
-  //fSelectedMap := C.MapCount - 1;
-
-end;
-
 procedure TMainForm.aAddMissionExecute(Sender: TObject);
-var
-  Node: TTreeNode;
 begin
-
   FTreeItemCreate := TTreeChapterMission;
-  Node := tvList.Items.AddChild(fSelectedChapter, Format('Mission %d', [C.MapCount + 1]));
-  Node.Selected := True;
-
-{
-  AddMission(
-    FMousePosition.X + ScrollBox1.HorzScrollBar.Position - imgRedFlag.Width div 2,
-    FMousePosition.Y + ScrollBox1.VertScrollBar.Position - imgRedFlag.Height
-  );
-}
+  tvList.Items.AddChild(fSelectedChapter, 'Mission').Selected := True;
+  UpdateList;
+  FRender.Repaint;
 end;
 
 procedure TMainForm.aAddNodeExecute(Sender: TObject);
-var
-  curItem: Integer;
 begin
   if fUpdating then
     Exit;
-{
-  if C.MapCount = C.Maps[].NodeCount then
-  begin
-    ShowMessage('Node limit exceeded!');
-    Exit;
-  end;
 
-  curItem := C.Maps[fSelectedMap].NodeCount;
-
-  C.Maps[fSelectedMap].NodeCount := EnsureRange(curItem + 1, 0, MAX_CAMP_NODES);
-
-  C.Maps[fSelectedMap].Nodes[curItem].X := EnsureRange(FMousePosition.X + ScrollBox1.HorzScrollBar.Position - imgNode.Width div 2, 0, 1024 - imgNode.Width);
-  C.Maps[fSelectedMap].Nodes[curItem].Y := EnsureRange(FMousePosition.Y + ScrollBox1.VertScrollBar.Position - imgNode.Height div 2, 0, 768 - imgNode.Height);
-
-  fSelectedNode := C.Maps[fSelectedMap].NodeCount - 1;
-}
+  FTreeItemCreate := TTreeChapterNode;
+  tvList.Items.AddChild(fSelectedMission, 'Node %d').Selected := True;
+  UpdateList;
+  FRender.Repaint;
 end;
 
 procedure TMainForm.aNewExecute(Sender: TObject);

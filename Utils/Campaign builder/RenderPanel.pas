@@ -28,6 +28,7 @@ type
     procedure DrawImage(const ARect: TRect; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPointW; ABitmap: TBitmap); overload;
     procedure DrawFocus(const ARect: TRect);
+    procedure DrawText(const ARect: TRect; const AText: String);
     function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
     function RectMove(const ARect: TRect; const APosition: TPoint): TRect;
   protected
@@ -211,6 +212,12 @@ begin
           DrawImage(NodeMission.Rect, MainForm.imgRedFlag)
         else
           DrawImage(NodeMission.Rect, MainForm.imgBlackFlag);
+
+        if MainForm.cbShowNodeNumbers.Checked then
+        begin
+          Canvas.Font := MainForm.imgRedFlag.Canvas.Font;
+          DrawText(NodeMission.Rect, IntToStr(NodeMission.Number));
+        end;
       end;
 
     if Assigned(MainForm.SelectedMission) then
@@ -220,6 +227,12 @@ begin
         begin
           NodeMissionNode := TTreeChapterNode(MainForm.SelectedMission[i]);
           DrawImage(NodeMissionNode.Rect, MainForm.imgNode);
+
+          if MainForm.cbShowNodeNumbers.Checked then
+          begin
+            Canvas.Font := MainForm.imgNode.Canvas.Font;
+            DrawText(NodeMissionNode.Rect, IntToStr(NodeMissionNode.Index));
+          end;
         end;
 
       Canvas.Brush.Style := bsClear;
@@ -237,6 +250,18 @@ begin
       bcBottomLeft: DrawImage(KMPointW(0, FRect.Height - MainForm.ImgBriefing.Height), MainForm.ImgBriefing);
     end;
 
+end;
+
+procedure TRenderPanel.DrawText(const ARect: TRect; const AText: String);
+var
+  txtWidth, txtHeight, txtLeft, txtTop: Integer;
+begin
+  txtWidth := Canvas.TextWidth(AText);
+  txtHeight := Canvas.TextHeight(AText);
+  txtLeft := ARect.Left + ARect.Width div 2 - txtWidth div 2;
+  txtTop := ARect.Top + ARect.Height div 2 - txtHeight div 2;
+  SetBkMode(Canvas.Handle, TRANSPARENT);
+  Canvas.TextOut(txtLeft - FCamera.X, txtTop - FCamera.Y, AText);
 end;
 
 procedure TRenderPanel.DrawFocus(const ARect: TRect);
