@@ -83,6 +83,9 @@ type
     imgRedFlag: TImage;
     ToolBar2: TToolBar;
     ToolButton4: TToolButton;
+    N1: TMenuItem;
+    aDelete: TAction;
+    New1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -103,6 +106,7 @@ type
     procedure cbShowBriefingPageClick(Sender: TObject);
     procedure cbShowNodeNumbersClick(Sender: TObject);
     procedure cbBriefingPosChange(Sender: TObject);
+    procedure aDeleteExecute(Sender: TObject);
   private
     FRender: TRenderPanel;
     fExePath: string;
@@ -386,22 +390,46 @@ begin
 end;
 
 procedure TMainForm.aAddMissionExecute(Sender: TObject);
+var
+  Node: TTreeChapterMission;
+  Position: TPoint;
 begin
   FTreeItemCreate := TTreeChapterMission;
-  tvList.Items.AddChild(fSelectedChapter, 'Mission').Selected := True;
+  Node := tvList.Items.AddChild(fSelectedChapter, 'Mission') as TTreeChapterMission;
+  Node.Selected := True;
+  Position := Point(
+    EnsureRange(FRender.MouseCameraPosition.X, 0, 1024 - imgRedFlag.Width),
+    EnsureRange(FRender.MouseCameraPosition.Y, 0, 768 - imgRedFlag.Height)
+  );
+  Node.Rect := Rect(Position.X, Position.Y, Position.X + imgRedFlag.Width, Position.Y + imgRedFlag.Height);
   UpdateList;
   FRender.Repaint;
 end;
 
 procedure TMainForm.aAddNodeExecute(Sender: TObject);
+var
+  Node: TTreeChapterNode;
+  Position: TPoint;
 begin
   if fUpdating then
     Exit;
 
   FTreeItemCreate := TTreeChapterNode;
-  tvList.Items.AddChild(fSelectedMission, 'Node %d').Selected := True;
+  Node := tvList.Items.AddChild(fSelectedMission, 'Node %d') as TTreeChapterNode;
+  Node.Selected := True;
+  Position := Point(
+    EnsureRange(FRender.MouseCameraPosition.X, 0, 1024 - imgNode.Width),
+    EnsureRange(FRender.MouseCameraPosition.Y, 0, 768 - imgNode.Height)
+  );
+  Node.Rect := Rect(Position.X, Position.Y, Position.X + imgNode.Width, Position.Y + imgNode.Height);
   UpdateList;
   FRender.Repaint;
+end;
+
+procedure TMainForm.aDeleteExecute(Sender: TObject);
+begin
+  if Assigned(tvList.Selected) then
+    tvList.Selected.Delete;
 end;
 
 procedure TMainForm.aNewExecute(Sender: TObject);

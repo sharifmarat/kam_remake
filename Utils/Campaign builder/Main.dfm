@@ -34700,6 +34700,10 @@ object MainForm: TMainForm
       Caption = 'Add Node'
       OnExecute = aAddNodeExecute
     end
+    object aDelete: TAction
+      Caption = 'Delete'
+      OnExecute = aDeleteExecute
+    end
   end
   object ImageList: TImageList
     ColorDepth = cd32Bit
@@ -35790,6 +35794,12 @@ object MainForm: TMainForm
     end
     object AddChapter1: TMenuItem
       Action = aAddChapter
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
+    object New1: TMenuItem
+      Action = aDelete
     end
   end
   object ImageTree: TImageList

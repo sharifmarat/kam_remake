@@ -28,7 +28,8 @@ type
     procedure DrawImage(const ARect: TRect; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPointW; ABitmap: TBitmap); overload;
     procedure DrawFocus(const ARect: TRect);
-    procedure DrawText(const ARect: TRect; const AText: String);
+    procedure DrawText(const APosition: TPoint; const AText: String); overload;
+    procedure DrawText(const ARect: TRect; const AText: String); overload;
     function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
     function RectMove(const ARect: TRect; const APosition: TPoint): TRect;
   protected
@@ -42,6 +43,7 @@ type
     destructor Destroy; override;
     procedure RefreshBackground(AIndex: Integer = 0);
     procedure KeyDown(var Key: Word; Shift: TShiftState);
+    property MouseCameraPosition: TPoint read FMouseCameraPosition;
   end;
 
 implementation
@@ -209,14 +211,28 @@ begin
       begin
         NodeMission := TTreeChapterMission(MainForm.SelectedChapter[i]);
         If Assigned(MainForm.SelectedMission) and (MainForm.SelectedMission.Index >= NodeMission.Index) then
-          DrawImage(NodeMission.Rect, MainForm.imgRedFlag)
-        else
-          DrawImage(NodeMission.Rect, MainForm.imgBlackFlag);
-
-        if MainForm.cbShowNodeNumbers.Checked then
         begin
-          Canvas.Font := MainForm.imgRedFlag.Canvas.Font;
-          DrawText(NodeMission.Rect, IntToStr(NodeMission.Number));
+          DrawImage(NodeMission.Rect, MainForm.imgRedFlag);
+          if MainForm.cbShowNodeNumbers.Checked then
+          begin
+            Canvas.Font := MainForm.imgRedFlag.Canvas.Font;
+            DrawText(Point(
+                NodeMission.Rect.Left + MainForm.imgRedFlag.Width div 2 - 1,
+                NodeMission.Rect.Top + MainForm.imgRedFlag.Height div 2 - 2
+              ), IntToStr(NodeMission.Number));
+          end;
+        end
+        else
+        begin
+          DrawImage(NodeMission.Rect, MainForm.imgBlackFlag);
+          if MainForm.cbShowNodeNumbers.Checked then
+          begin
+            Canvas.Font := MainForm.imgBlackFlag.Canvas.Font;
+            DrawText(Point(
+                NodeMission.Rect.Left + MainForm.imgBlackFlag.Width div 2 - 3,
+                NodeMission.Rect.Top + MainForm.imgBlackFlag.Height div 2
+              ), IntToStr(NodeMission.Number));
+          end;
         end;
       end;
 
@@ -231,7 +247,7 @@ begin
           if MainForm.cbShowNodeNumbers.Checked then
           begin
             Canvas.Font := MainForm.imgNode.Canvas.Font;
-            DrawText(NodeMissionNode.Rect, IntToStr(NodeMissionNode.Index));
+            DrawText(NodeMissionNode.Rect, IntToStr(NodeMissionNode.Index + 1));
           end;
         end;
 
@@ -252,16 +268,19 @@ begin
 
 end;
 
-procedure TRenderPanel.DrawText(const ARect: TRect; const AText: String);
-var
-  txtWidth, txtHeight, txtLeft, txtTop: Integer;
+procedure TRenderPanel.DrawText(const APosition: TPoint; const AText: String);
 begin
-  txtWidth := Canvas.TextWidth(AText);
-  txtHeight := Canvas.TextHeight(AText);
-  txtLeft := ARect.Left + ARect.Width div 2 - txtWidth div 2;
-  txtTop := ARect.Top + ARect.Height div 2 - txtHeight div 2;
   SetBkMode(Canvas.Handle, TRANSPARENT);
-  Canvas.TextOut(txtLeft - FCamera.X, txtTop - FCamera.Y, AText);
+  Canvas.TextOut(
+    APosition.X - FCamera.X - Canvas.TextWidth(AText) div 2,
+    APosition.Y - FCamera.Y - Canvas.TextHeight(AText) div 2,
+    AText
+  );
+end;
+
+procedure TRenderPanel.DrawText(const ARect: TRect; const AText: String);
+begin
+  DrawText(Point(ARect.Left + ARect.Width div 2, ARect.Top + ARect.Height div 2), AText);
 end;
 
 procedure TRenderPanel.DrawFocus(const ARect: TRect);
