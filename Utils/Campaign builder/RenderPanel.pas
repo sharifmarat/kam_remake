@@ -103,7 +103,11 @@ begin
   FMousePosition := Point(X, Y);
 
   if Assigned(FMouseMoveNode) then
+  begin
+    if FMouseMove and (ssShift in Shift) then
+      FMouseMoveNode := MainForm.CopyNode(FMouseMoveNode as TTreeChapterItem);
     FMouseMoveNode.Selected := True;
+  end;
 end;
 
 procedure TRenderPanel.MouseMove(Shift: TShiftState; X, Y: Integer);

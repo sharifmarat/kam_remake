@@ -135,6 +135,8 @@ type
     procedure UpdateCaption;
     procedure DrawFlagNumber(aIndexMap: Integer);
     procedure DrawNodeNumber(aIndexNode: Integer);
+    function CopyNode(ANode: TTreeChapterItem): TTreeChapterItem;
+    procedure UpdateList;
 
     property Sprites: TKMSpritePackEdit read fSprites;
     property SelectedChapter: TTreeChapter read fSelectedChapter;
@@ -618,6 +620,25 @@ begin
   Caption := 'Campaign Build (' + GAME_REVISION + ') ' + StringReplace(C.CampName, #0, '_', [rfReplaceAll, rfIgnoreCase]) + ' - ' + C.FullName;
 end;
 
+function TMainForm.CopyNode(ANode: TTreeChapterItem): TTreeChapterItem;
+begin
+  if ANode is TTreeChapterMission then
+    FTreeItemCreate := TTreeChapterMission
+  else
+    if ANode is TTreeChapterNode then
+      FTreeItemCreate := TTreeChapterNode
+    else
+      Exit(ANode);
+
+  Result := tvList.Items.AddChild(ANode.Parent, 'New node') as TTreeChapterItem;
+  Result.Rect := ANode.Rect;
+  if ANode.GetNextSibling <> nil then
+    Result.MoveTo(ANode.getNextSibling, naInsert)
+  else
+    Result.MoveTo(ANode, naAdd);
+  UpdateList;
+end;
+
 procedure TMainForm.CampaignToList;
 var
   I, K, J: Integer;
@@ -654,6 +675,7 @@ begin
     end;
   finally
     tvList.Items.EndUpdate;
+    UpdateList;
     fUpdating := False;
   end;
 end;
@@ -675,6 +697,32 @@ end;
 procedure TMainForm.cbShowNodeNumbersClick(Sender: TObject);
 begin
   FRender.Repaint;
+end;
+
+procedure TMainForm.UpdateList;
+var
+  i, n, MissionNumber, NodeNumber: Integer;
+  node: TTreeNode;
+begin
+  tvList.Items.BeginUpdate;
+  try
+    MissionNumber := 1;
+    node := tvList.Items.GetFirstNode;
+    while node <> nil do
+    begin
+      node.Text := Format('Chapter %d', [node.Index + 1]);
+      for i := 0 to node.Count - 1 do
+      begin
+        node[i].Text := Format('Mission %d', [MissionNumber]);
+        Inc(MissionNumber);
+        for n := 0 to node[i].Count - 1 do
+          node[i][n].Text := Format('Node %d', [node[i][n].Index + 1]);
+      end;
+      node := node.GetNextSibling;
+    end;
+  finally
+    tvList.Items.EndUpdate;
+  end;
 end;
 
 procedure TMainForm.ListToCampaign;
@@ -758,7 +806,6 @@ end;
 procedure TMainForm.tvListDragDrop(Sender, Source: TObject; X, Y: Integer);
 var
   AnItem: TTreeNode;
-  AttachMode: TNodeAttachMode;
   Rect: TRect;
 begin
   if tvList.Selected = nil then
@@ -769,11 +816,16 @@ begin
   begin
     Rect := AnItem.DisplayRect(False);
     if Y > Rect.Top + Rect.Height div 2 then
-      AttachMode := naAdd
+    begin
+      if AnItem.GetNextSibling <> nil then
+        tvList.Selected.MoveTo(AnItem.getNextSibling, naInsert)
+      else
+        tvList.Selected.MoveTo(AnItem, naAdd);
+    end
     else
-      AttachMode := naInsert;
-    tvList.Selected.MoveTo(AnItem, AttachMode);
+      tvList.Selected.MoveTo(AnItem, naInsert);
   end;
+  UpdateList;
   tvList.Repaint;
 end;
 
