@@ -11,6 +11,7 @@ uses
 type
   TRenderPanel = class(TPanel)
   private
+    FTimer: TTimer;
     FRect: TRect;
     FTree: TTreeView;
     FMousePosition: TPoint;
@@ -32,6 +33,7 @@ type
     procedure DrawText(const ARect: TRect; const AText: String); overload;
     function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
     function RectMove(const ARect: TRect; const APosition: TPoint): TRect;
+    procedure Timer(Sender: TObject);
   protected
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
@@ -70,6 +72,11 @@ begin
   FBackgroundIndex := 1;
   FCamera := Point(0, 0);
   FMouseMoveNode := nil;
+
+  FTimer := TTimer.Create(Self);
+  FTimer.Enabled := False;
+  FTimer.Interval := 230;
+  FTimer.OnTimer := Timer;
 end;
 
 destructor TRenderPanel.Destroy;
@@ -77,6 +84,13 @@ begin
   FBackground.Free;
 
   inherited;
+end;
+
+procedure TRenderPanel.Timer(Sender: TObject);
+begin
+  FMouseMove := True;
+  FTimer.Enabled := False;
+  Repaint;
 end;
 
 procedure TRenderPanel.KeyDown(var Key: Word; Shift: TShiftState);
@@ -102,7 +116,8 @@ end;
 procedure TRenderPanel.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
-  FMouseMove := Button = mbLeft;
+  FTimer.Enabled := False;
+  FTimer.Enabled := Button = mbLeft;
   FMousePosition := Point(X, Y);
 
   if Assigned(FMouseMoveNode) then
@@ -185,6 +200,7 @@ end;
 procedure TRenderPanel.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
+  FTimer.Enabled := False;
   FMouseMove := False;
 end;
 
