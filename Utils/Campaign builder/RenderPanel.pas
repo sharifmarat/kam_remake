@@ -12,6 +12,7 @@ type
   TRenderPanel = class(TPanel)
   private
     FTimer: TTimer;
+    FRepaintTimer: TTimer;
     FRect: TRect;
     FTree: TTreeView;
     FMousePosition: TPoint;
@@ -22,9 +23,9 @@ type
     FBackground: TBitmap;
     FBackgroundIndex: Integer;
     FCamera: TPoint;
+    FZoom: Single;
     procedure CnCtlColorStatic (var Msg: TWMCtlColorStatic); message CN_CTLCOLORSTATIC;
     procedure WmEraseBkgnd (var Msg: TWMEraseBkgnd); message WM_ERASEBKGND;
-    procedure DrawImage(const APosition: TKMPointW; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPoint; AImage: TImage); overload;
     procedure DrawImage(const ARect: TRect; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPointW; ABitmap: TBitmap); overload;
@@ -34,7 +35,12 @@ type
     function PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
     function RectMove(const ARect: TRect; const APosition: TPoint): TRect;
     procedure Timer(Sender: TObject);
+    procedure RepaintTimer(Sender: TObject);
+    function ToDrawRect(const APosition: TKMPoint; AGraphic: TGraphic): TRect; overload;
+    function ToDrawRect(const ARect: TRect): TRect; overload;
+    procedure RefreshCamera;
   protected
+    procedure MouseWheel(var AMessage: TWMMouseWheel); message WM_MOUSEWHEEL;
     procedure MouseMove(Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X: Integer; Y: Integer); override;
@@ -45,6 +51,7 @@ type
     destructor Destroy; override;
     procedure RefreshBackground(AIndex: Integer = 0);
     procedure KeyDown(var Key: Word; Shift: TShiftState);
+    procedure Repaint; override;
     property MouseCameraPosition: TPoint read FMouseCameraPosition;
   end;
 
@@ -71,12 +78,18 @@ begin
   FBackground.Transparent := True;
   FBackgroundIndex := 1;
   FCamera := Point(0, 0);
+  FZoom := 1;
   FMouseMoveNode := nil;
 
   FTimer := TTimer.Create(Self);
   FTimer.Enabled := False;
   FTimer.Interval := 230;
   FTimer.OnTimer := Timer;
+
+  FRepaintTimer := TTimer.Create(Self);
+  FRepaintTimer.Enabled := False;
+  FRepaintTimer.Interval := 32;
+  FRepaintTimer.OnTimer := RepaintTimer;
 end;
 
 destructor TRenderPanel.Destroy;
@@ -86,11 +99,15 @@ begin
   inherited;
 end;
 
-procedure TRenderPanel.Timer(Sender: TObject);
+procedure TRenderPanel.Repaint;
 begin
-  FMouseMove := True;
-  FTimer.Enabled := False;
-  Repaint;
+  FRepaintTimer.Enabled := True;
+end;
+
+procedure TRenderPanel.RepaintTimer(Sender: TObject);
+begin
+  FRepaintTimer.Enabled := False;
+  inherited Repaint;
 end;
 
 procedure TRenderPanel.KeyDown(var Key: Word; Shift: TShiftState);
@@ -113,11 +130,25 @@ begin
   end;
 end;
 
+procedure TRenderPanel.Timer(Sender: TObject);
+begin
+  FMouseMove := True;
+  FTimer.Enabled := False;
+  Repaint;
+end;
+
 procedure TRenderPanel.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
-  FTimer.Enabled := False;
-  FTimer.Enabled := Button = mbLeft;
+  if ssShift in Shift then
+  begin
+    FMouseMove := Button = mbLeft;
+  end
+  else
+  begin
+    FTimer.Enabled := False;
+    FTimer.Enabled := Button = mbLeft;
+  end;
   FMousePosition := Point(X, Y);
 
   if Assigned(FMouseMoveNode) then
@@ -128,11 +159,22 @@ begin
   end;
 end;
 
+procedure TRenderPanel.MouseWheel(var AMessage: TWMMouseWheel);
+begin
+  if (AMessage.WheelDelta > 0) and (FZoom > 0.2) then
+    FZoom := FZoom * 0.95
+  else
+    if (AMessage.WheelDelta < 0) and (FZoom < 10) then
+      FZoom := FZoom * 1.05;
+  Repaint;
+end;
+
 procedure TRenderPanel.MouseMove(Shift: TShiftState; X, Y: Integer);
 
   function InNode(ANode: TTreeNode; AImage: TImage): TTreeNode;
   var
     i: Integer;
+    Rect: TRect;
     Node: TTreeChapterItem;
   begin
     for i := 0 to ANode.Count - 1 do
@@ -154,6 +196,7 @@ var
   MoveNode: TTreeNode;
 begin
   inherited;
+  FMouseCameraPosition := Point(Round(X / FZoom + FCamera.X), Round(Y / FZoom + FCamera.Y));
   if FMouseMove then
   begin
     if Assigned(FMouseMoveNode) then
@@ -170,8 +213,9 @@ begin
     end
     else
     begin
-      FCamera.X := EnsureRange(FCamera.X + (FMousePosition.X - X), -448, IfThen(Width <= 1920, 1920 - 448 - Width, MaxInt));
-      FCamera.Y := EnsureRange(FCamera.Y + (FMousePosition.Y - Y), -216, IfThen(Height <= 1200, 1200 - 216 - Height, MaxInt));
+      FCamera.X := FCamera.X + Round((FMousePosition.X - X) / FZoom);
+      FCamera.Y := FCamera.Y + Round((FMousePosition.Y - Y) / FZoom);
+      RefreshCamera;
       Repaint;
     end;
   end
@@ -191,7 +235,6 @@ begin
     end;
   end;
   FMousePosition := Point(X, Y);
-  FMouseCameraPosition := Point(X + FCamera.X, Y + FCamera.Y);
 
   MainForm.StatusBar1.Panels[1].Text := IntToStr(FMouseCameraPosition.X) + 'x' + IntToStr(FMouseCameraPosition.Y);
 
@@ -213,7 +256,7 @@ begin
   SetBKMode (Handle, TRANSPARENT);
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := clBlack;
-  Canvas.Rectangle(0, 0, Width, Height);
+  Canvas.Rectangle(-10, -10, Width + 10, Height + 10);
   DrawImage(KMPoint(-448, -216), MainForm.ImgBackground);
 
   //imgBlackFlag       imgRedFlag      imgNode
@@ -278,20 +321,41 @@ begin
 
   if Assigned(MainForm.SelectedMission) and MainForm.cbShowBriefingPage.Checked then
     case MainForm.SelectedMission.TextPos of
-      bcBottomRight: DrawImage(KMPointW(FRect.Width - MainForm.ImgBriefing.Width, FRect.Height - MainForm.ImgBriefing.Height), MainForm.ImgBriefing);
-      bcBottomLeft: DrawImage(KMPointW(0, FRect.Height - MainForm.ImgBriefing.Height), MainForm.ImgBriefing);
+      bcBottomRight: DrawImage(KMPoint(FRect.Width - MainForm.ImgBriefing.Width, FRect.Height - MainForm.ImgBriefing.Height), MainForm.ImgBriefing);
+      bcBottomLeft: DrawImage(KMPoint(0, FRect.Height - MainForm.ImgBriefing.Height), MainForm.ImgBriefing);
     end;
 
 end;
 
-procedure TRenderPanel.DrawText(const APosition: TPoint; const AText: String);
+function TRenderPanel.ToDrawRect(const APosition: TKMPoint; AGraphic: TGraphic): TRect;
 begin
+  Result.Left := Round((APosition.X - FCamera.X) * FZoom);
+  Result.Top := Round((APosition.Y - FCamera.Y) * FZoom);
+  Result.Right := Round(Result.Left + AGraphic.Width * FZoom);
+  Result.Bottom := Round(Result.Top + AGraphic.Height * FZoom);
+end;
+
+function TRenderPanel.ToDrawRect(const ARect: TRect): TRect;
+begin
+  Result.Left := Round((ARect.Left - FCamera.X) * FZoom);
+  Result.Top := Round((ARect.Top - FCamera.Y) * FZoom);
+  Result.Right := Round(Result.Left + ARect.Width * FZoom);
+  Result.Bottom := Round(Result.Top + ARect.Height * FZoom);
+end;
+
+procedure TRenderPanel.DrawText(const APosition: TPoint; const AText: String);
+var
+  Size: Integer;
+begin
+  Size := Canvas.Font.Size;
+  Canvas.Font.Size := Round(Size * FZoom);
   SetBkMode(Canvas.Handle, TRANSPARENT);
   Canvas.TextOut(
-    APosition.X - FCamera.X - Canvas.TextWidth(AText) div 2,
-    APosition.Y - FCamera.Y - Canvas.TextHeight(AText) div 2,
+    Round((APosition.X - FCamera.X) * FZoom) - Canvas.TextWidth(AText) div 2,
+    Round((APosition.Y - FCamera.Y) * FZoom) - Canvas.TextHeight(AText) div 2,
     AText
   );
+  Canvas.Font.Size := Size;
 end;
 
 procedure TRenderPanel.DrawText(const ARect: TRect; const AText: String);
@@ -304,27 +368,28 @@ begin
   Canvas.Brush.Style := bsClear;
   Canvas.Pen.Style := psSolid;
   Canvas.Pen.Color := clLime;
-  Canvas.Rectangle(ARect.Left - FCamera.X, ARect.Top - FCamera.Y, ARect.Right - FCamera.X, ARect.Bottom - FCamera.Y);
-end;
-
-procedure TRenderPanel.DrawImage(const APosition: TKMPointW; AImage: TImage);
-begin
-  Canvas.Draw(APosition.X - FCamera.X, APosition.Y - FCamera.Y, AImage.Picture.Graphic);
+  Canvas.Rectangle(
+    Round((ARect.Left - FCamera.X) * FZoom),
+    Round((ARect.Top - FCamera.Y) * FZoom),
+    Round((ARect.Right - FCamera.X) * FZoom),
+    Round((ARect.Bottom - FCamera.Y) * FZoom)
+  );
 end;
 
 procedure TRenderPanel.DrawImage(const APosition: TKMPoint; AImage: TImage);
 begin
-  Canvas.Draw(APosition.X - FCamera.X, APosition.Y - FCamera.Y, AImage.Picture.Graphic);
+  Canvas.StretchDraw(ToDrawRect(APosition, AImage.Picture.Graphic), AImage.Picture.Graphic);
 end;
 
 procedure TRenderPanel.DrawImage(const ARect: TRect; AImage: TImage);
 begin
-  Canvas.Draw(ARect.Left - FCamera.X, ARect.Top - FCamera.Y, AImage.Picture.Graphic);
+  Canvas.StretchDraw(ToDrawRect(ARect), AImage.Picture.Graphic);
 end;
 
 procedure TRenderPanel.DrawImage(const APosition: TKMPointW; ABitmap: TBitmap);
 begin
-  Canvas.Draw(APosition.X - FCamera.X, APosition.Y - FCamera.Y, ABitmap);
+  Canvas.StretchDraw(ToDrawRect(KMPoint(APosition.X, APosition.Y), ABitmap), ABitmap);
+  //Canvas.Draw(APosition.X - FCamera.X, APosition.Y - FCamera.Y, ABitmap);
 end;
 
 function TRenderPanel.PointInRect(const APoint: TPoint; const ARect: TRect): Boolean;
@@ -352,12 +417,17 @@ begin
   end;
 end;
 
+procedure TRenderPanel.RefreshCamera;
+begin
+  FCamera.X := EnsureRange(FCamera.X, -448, 1920 - 448 * 2);
+  FCamera.Y := EnsureRange(FCamera.Y, -216, 1200 - 216 * 2);
+end;
+
 procedure TRenderPanel.Resize;
 begin
   inherited;
 
-  FCamera.X := EnsureRange(FCamera.X, -448, IfThen(Width <= 1920, 1920 - 448 - Width, MaxInt));
-  FCamera.Y := EnsureRange(FCamera.Y, -216, IfThen(Height <= 1200, 1200 - 216 - Height, MaxInt));
+  RefreshCamera;
 end;
 
 procedure TRenderPanel.WmEraseBkgnd(var Msg: TWMEraseBkgnd);
