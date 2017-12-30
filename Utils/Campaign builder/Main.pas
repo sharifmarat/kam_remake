@@ -265,14 +265,17 @@ end;
 
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  if (Key = VK_DELETE) and not (ActiveControl is TEdit) then
+  if not (ActiveControl is TEdit) then
   begin
-    tvList.Selected.Delete;
-    UpdateList;
-    FRender.Repaint;
-  end
-  else
-    FRender.KeyDown(Key, Shift);
+    if Key = VK_DELETE then
+    begin
+      tvList.Selected.Delete;
+      UpdateList;
+      FRender.Repaint;
+    end
+    else
+      FRender.KeyDown(Key, Shift);
+  end;
   //StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
 end;
 
