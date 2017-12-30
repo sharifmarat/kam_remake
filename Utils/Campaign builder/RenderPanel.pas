@@ -27,6 +27,7 @@ type
     procedure CnCtlColorStatic (var Msg: TWMCtlColorStatic); message CN_CTLCOLORSTATIC;
     procedure WmEraseBkgnd (var Msg: TWMEraseBkgnd); message WM_ERASEBKGND;
     procedure DrawImage(const APosition: TKMPoint; AImage: TImage); overload;
+    procedure DrawImage(const ARect: TRect; AGraphic: TGraphic); overload;
     procedure DrawImage(const ARect: TRect; AImage: TImage); overload;
     procedure DrawImage(const APosition: TKMPointW; ABitmap: TBitmap); overload;
     procedure DrawFocus(const ARect: TRect);
@@ -49,7 +50,7 @@ type
   public
     constructor Create(AOwner: TComponent; ATree: TTreeView);
     destructor Destroy; override;
-    procedure RefreshBackground(AIndex: Integer = 0);
+    procedure RefreshBackground(AIndex: Integer = -1);
     procedure KeyDown(var Key: Word; Shift: TShiftState);
     procedure Repaint; override;
     procedure ResetZoom;
@@ -264,8 +265,8 @@ begin
   DrawImage(KMPoint(-448, -216), MainForm.ImgBackground);
 
   //imgBlackFlag       imgRedFlag      imgNode
-  if Assigned(FBackground) then
-    DrawImage(KMPointW(0, 0), FBackground);
+  if Assigned(FBackground) and (FBackgroundIndex > 0) then
+    DrawImage(Rect(0, 0, 1024, 768), FBackground);
 
   if Assigned(MainForm.SelectedChapter) then
   begin
@@ -292,7 +293,7 @@ begin
           begin
             Canvas.Font := MainForm.imgBlackFlag.Canvas.Font;
             DrawText(Point(
-                NodeMission.Rect.Left + MainForm.imgBlackFlag.Width div 2 - 3,
+                NodeMission.Rect.Left + MainForm.imgBlackFlag.Width div 2 - 1,
                 NodeMission.Rect.Top + MainForm.imgBlackFlag.Height div 2
               ), IntToStr(NodeMission.Number));
           end;
@@ -390,6 +391,11 @@ begin
   Canvas.StretchDraw(ToDrawRect(ARect), AImage.Picture.Graphic);
 end;
 
+procedure TRenderPanel.DrawImage(const ARect: TRect; AGraphic: TGraphic);
+begin
+  Canvas.StretchDraw(ToDrawRect(ARect), AGraphic);
+end;
+
 procedure TRenderPanel.DrawImage(const APosition: TKMPointW; ABitmap: TBitmap);
 begin
   Canvas.StretchDraw(ToDrawRect(KMPoint(APosition.X, APosition.Y), ABitmap), ABitmap);
@@ -410,14 +416,15 @@ begin
   Result.Bottom := APosition.Y + ARect.Height;
 end;
 
-procedure TRenderPanel.RefreshBackground(AIndex: Integer = 0);
+procedure TRenderPanel.RefreshBackground(AIndex: Integer = -1);
 begin
-  if (AIndex = 0) or (FBackgroundIndex <> AIndex) then
+  if (AIndex < 0) or (FBackgroundIndex <> AIndex) then
   begin
-    if AIndex > 0 then
+    if AIndex >= 0 then
       FBackgroundIndex := AIndex;
 
-    MainForm.Sprites.GetImageToBitmap(FBackgroundIndex, FBackground, nil);
+    if (FBackgroundIndex > 0) and (FBackgroundIndex <= MainForm.Sprites.RXData.Count) then
+      MainForm.Sprites.GetImageToBitmap(FBackgroundIndex, FBackground, nil);
   end;
 end;
 

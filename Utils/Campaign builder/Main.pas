@@ -11,7 +11,8 @@ uses
 type
   TTreeChapter = class(TTreeNode)
   public
-    ImageIndex: Byte;
+    PictureMapIndex: Byte;
+    Video: array[TMissionVideoTypes] of AnsiString;
     constructor Create(AOwner: TTreeNodes); override;
   end;
 
@@ -34,7 +35,6 @@ type
   end;
 
   TMainForm = class(TForm)
-    dlgOpenPicture: TOpenDialog;
     dlgSaveCampaign: TSaveDialog;
     StatusBar1: TStatusBar;
     ScrollBox1: TScrollBox;
@@ -43,7 +43,7 @@ type
     aNew: TAction;
     aSave: TAction;
     ImageList: TImageList;
-    aOpenPicture: TAction;
+    aPictureMaps: TAction;
     dlgOpenCampaign: TOpenDialog;
     pLeft: TPanel;
     tvList: TTreeView;
@@ -64,11 +64,11 @@ type
     cbShowNodeNumbers: TCheckBox;
     cbShowBriefingPage: TCheckBox;
     BriefingPositionPanel: TPanel;
-    cbBriefingPos: TComboBox;
+    cbMissionBriefingPos: TComboBox;
     VideoBeforePanel: TPanel;
     VideoAfterPanel: TPanel;
-    edtVideoAfter: TEdit;
-    edtVideoBefore: TEdit;
+    edtMissionVideoAfter: TEdit;
+    edtMissionVideoBefore: TEdit;
     Splitter: TSplitter;
     aAddChapter: TAction;
     AddChapter1: TMenuItem;
@@ -91,6 +91,14 @@ type
     N2: TMenuItem;
     Zoom111: TMenuItem;
     aResetZoom: TAction;
+    ChapterBox: TGroupBox;
+    Panel2: TPanel;
+    cbChapterPictureMap: TComboBox;
+    Panel3: TPanel;
+    edtChapterVideoBefore: TEdit;
+    Panel4: TPanel;
+    edtChapterVideoAfter: TEdit;
+    bPictureMap: TButton;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -98,7 +106,7 @@ type
     procedure aNewExecute(Sender: TObject);
     procedure aOpenExecute(Sender: TObject);
     procedure aSaveExecute(Sender: TObject);
-    procedure aOpenPictureExecute(Sender: TObject);
+    procedure aPictureMapsExecute(Sender: TObject);
     procedure aAddMissionExecute(Sender: TObject);
     procedure aAddNodeExecute(Sender: TObject);
     procedure aSettingsExecute(Sender: TObject);
@@ -110,9 +118,14 @@ type
     procedure pmMapPopup(Sender: TObject);
     procedure cbShowBriefingPageClick(Sender: TObject);
     procedure cbShowNodeNumbersClick(Sender: TObject);
-    procedure cbBriefingPosChange(Sender: TObject);
+    procedure cbMissionBriefingPosChange(Sender: TObject);
     procedure aDeleteExecute(Sender: TObject);
     procedure aResetZoomExecute(Sender: TObject);
+    procedure cbChapterPictureMapChange(Sender: TObject);
+    procedure edtChapterVideoBeforeChange(Sender: TObject);
+    procedure edtChapterVideoAfterChange(Sender: TObject);
+    procedure edtMissionVideoBeforeChange(Sender: TObject);
+    procedure edtMissionVideoAfterChange(Sender: TObject);
   private
     FRender: TRenderPanel;
     fExePath: string;
@@ -135,6 +148,7 @@ type
     procedure CreateDefaultLocaleLibxTemplate(aFileName: string);
     procedure CampaignToList;
     procedure ListToCampaign;
+    procedure UpdatePictureMaps;
   public
     procedure FlagEnter(Sender: TObject);
     procedure NodeEnter(Sender: TObject);
@@ -144,6 +158,7 @@ type
     procedure UpdateCaption;
     function CopyNode(ANode: TTreeChapterItem): TTreeChapterItem;
     procedure UpdateList;
+    procedure UpdateBox;
 
     property Sprites: TKMSpritePackEdit read fSprites;
     property SelectedChapter: TTreeChapter read fSelectedChapter;
@@ -161,7 +176,7 @@ implementation
 {$R *.dfm}
 
 uses
-  uCampaignSettings;
+  uCampaignSettings, PictureMaps;
 
 { TTreeMap }
 
@@ -404,6 +419,30 @@ begin
   Result := VarBool;
 end;
 
+procedure TMainForm.edtChapterVideoAfterChange(Sender: TObject);
+begin
+  if Assigned(SelectedChapter) then
+    SelectedChapter.Video[mvAfter] := edtChapterVideoAfter.Text;
+end;
+
+procedure TMainForm.edtChapterVideoBeforeChange(Sender: TObject);
+begin
+  if Assigned(SelectedChapter) then
+    SelectedChapter.Video[mvBefore] := edtChapterVideoBefore.Text;
+end;
+
+procedure TMainForm.edtMissionVideoAfterChange(Sender: TObject);
+begin
+  if Assigned(SelectedMission) then
+    SelectedMission.Video[mvAfter] := edtMissionVideoAfter.Text;
+end;
+
+procedure TMainForm.edtMissionVideoBeforeChange(Sender: TObject);
+begin
+  if Assigned(SelectedMission) then
+    SelectedMission.Video[mvBefore] := edtMissionVideoBefore.Text;
+end;
+
 procedure TMainForm.aAddMissionExecute(Sender: TObject);
 var
   Node: TTreeChapterMission;
@@ -494,19 +533,17 @@ begin
   FRender.Repaint;
 end;
 
-procedure TMainForm.aOpenPictureExecute(Sender: TObject);
+procedure TMainForm.aPictureMapsExecute(Sender: TObject);
+var
+  fPictureMaps: TfPictureMaps;
 begin
-  dlgOpenPicture.InitialDir := ExtractFilePath(dlgOpenCampaign.FileName);
-
-  if not dlgOpenPicture.Execute then Exit;
+  fPictureMaps := TfPictureMaps.Create(nil);
   try
-    fSprites.AddImage(ExtractFilePath(dlgOpenPicture.FileName),
-                      ExtractFileName(dlgOpenPicture.FileName), 1);
+    fPictureMaps.ShowModal;
+    UpdatePictureMaps;
     FRender.RefreshBackground;
-    FRender.Repaint;
-  except
-    on E: Exception do
-      ShowMessage(E.Message);
+  finally
+    fPictureMaps.Free;
   end;
 end;
 
@@ -618,7 +655,7 @@ begin
     begin
       FTreeItemCreate := TTreeChapter;
       fSelectedChapter := tvList.Items.AddChild(nil, Format('Chapter %d', [J + 1])) as TTreeChapter;
-      fSelectedChapter.ImageIndex := C.Chapters[J].ImageIndex;
+      fSelectedChapter.PictureMapIndex := C.Chapters[J].PictureMapIndex;
       for I := 0 to C.Chapters[J].MapCount - 1 do
       begin
         FTreeItemCreate := TTreeChapterMission;
@@ -644,11 +681,21 @@ begin
   end;
 end;
 
-procedure TMainForm.cbBriefingPosChange(Sender: TObject);
+procedure TMainForm.cbChapterPictureMapChange(Sender: TObject);
+begin
+  if Assigned(SelectedChapter) then
+  begin
+    SelectedChapter.PictureMapIndex := cbChapterPictureMap.ItemIndex + 1;
+    FRender.RefreshBackground(SelectedChapter.PictureMapIndex);
+    FRender.Repaint;
+  end;
+end;
+
+procedure TMainForm.cbMissionBriefingPosChange(Sender: TObject);
 begin
   if Assigned(SelectedMission) then
   begin
-    SelectedMission.TextPos := TBriefingCorner(cbBriefingPos.ItemIndex);
+    SelectedMission.TextPos := TBriefingCorner(cbMissionBriefingPos.ItemIndex);
     FRender.Repaint;
   end;
 end;
@@ -725,7 +772,7 @@ begin
     node := tvList.Items.GetFirstNode;
     while node <> nil do
     begin
-      C.Chapters[node.Index].ImageIndex := (node as TTreeChapter).ImageIndex;
+      C.Chapters[node.Index].PictureMapIndex := (node as TTreeChapter).PictureMapIndex;
       C.Chapters[node.Index].MapCount := node.Count;
       SetLength(C.Chapters[node.Index].Maps, node.Count);
       for i := 0 to node.Count - 1 do
@@ -763,7 +810,10 @@ begin
   fSelectedNode := nil;
 
   case Node.Level of
-    0: fSelectedChapter := Node as TTreeChapter;
+    0: begin
+      fSelectedChapter := Node as TTreeChapter;
+      FRender.RefreshBackground(fSelectedChapter.PictureMapIndex);
+    end;
     1: begin
         fSelectedChapter := Node.Parent as TTreeChapter;
         fSelectedMission := Node as TTreeChapterMission;
@@ -775,7 +825,47 @@ begin
       end;
   end;
   UpdateList;
+  UpdateBox;
   FRender.Repaint;
+end;
+
+procedure TMainForm.UpdatePictureMaps;
+var
+  i, Index: Integer;
+begin
+  if not Assigned(fSelectedChapter) then
+    Exit;
+
+  cbChapterPictureMap.Items.BeginUpdate;
+  try
+    cbChapterPictureMap.Clear;
+    for i := 0 to fSprites.RXData.Count - 1 do
+      cbChapterPictureMap.Items.Add(IntToStr(i + 1));
+    cbChapterPictureMap.ItemIndex := IfThen(fSelectedChapter.PictureMapIndex <= cbChapterPictureMap.Items.Count, fSelectedChapter.PictureMapIndex - 1, 0);
+  finally
+    cbChapterPictureMap.Items.EndUpdate;
+  end;
+end;
+
+procedure TMainForm.UpdateBox;
+begin
+  MissionBox.Visible := Assigned(fSelectedMission);
+  ChapterBox.Visible := not MissionBox.Visible and Assigned(fSelectedChapter);
+  if ChapterBox.Visible then
+  begin
+    ChapterBox.Caption := fSelectedChapter.Text;
+    UpdatePictureMaps;
+    edtChapterVideoBefore.Text := fSelectedChapter.Video[mvBefore];
+    edtChapterVideoAfter.Text := fSelectedChapter.Video[mvAfter];
+  end
+  else
+    if MissionBox.Visible then
+    begin
+      MissionBox.Caption := fSelectedMission.Text;
+
+      edtMissionVideoBefore.Text := fSelectedMission.Video[mvBefore];
+      edtMissionVideoAfter.Text := fSelectedMission.Video[mvAfter];
+    end;
 end;
 
 procedure TMainForm.tvListCreateNodeClass(Sender: TCustomTreeView; var NodeClass: TTreeNodeClass);
