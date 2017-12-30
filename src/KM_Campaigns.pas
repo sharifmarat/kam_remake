@@ -30,7 +30,7 @@ type
   TKMCampaignChapter = record
     Maps: array of TKMCampaignMap;
     MapCount: Byte;
-    ImageIndex: Byte;
+    PictureMapIndex: Byte;
   end;
 
   TKMCampaign = class
@@ -394,9 +394,8 @@ begin
   if Count > 0 then
   begin
     SetLength(Chapters, 1);
-
     Chapters[0].MapCount := Count;
-    Chapters[0].ImageIndex := 1;
+    Chapters[0].PictureMapIndex := 1;
     SetLength(Chapters[0].Maps, Count);
 
     for I := 0 to Count - 1 do
