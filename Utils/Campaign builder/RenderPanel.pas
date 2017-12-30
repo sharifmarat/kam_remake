@@ -52,6 +52,7 @@ type
     procedure RefreshBackground(AIndex: Integer = 0);
     procedure KeyDown(var Key: Word; Shift: TShiftState);
     procedure Repaint; override;
+    procedure ResetZoom;
     property MouseCameraPosition: TPoint read FMouseCameraPosition;
   end;
 
@@ -133,6 +134,7 @@ end;
 procedure TRenderPanel.Timer(Sender: TObject);
 begin
   FMouseMove := True;
+  Cursor := crSizeAll;
   FTimer.Enabled := False;
   Repaint;
 end;
@@ -143,6 +145,7 @@ begin
   if ssShift in Shift then
   begin
     FMouseMove := Button = mbLeft;
+    Cursor := crSizeAll;
   end
   else
   begin
@@ -245,6 +248,7 @@ begin
   inherited;
   FTimer.Enabled := False;
   FMouseMove := False;
+  Cursor := crDefault;
 end;
 
 procedure TRenderPanel.Paint;
@@ -421,6 +425,12 @@ procedure TRenderPanel.RefreshCamera;
 begin
   FCamera.X := EnsureRange(FCamera.X, -448, 1920 - 448 * 2);
   FCamera.Y := EnsureRange(FCamera.Y, -216, 1200 - 216 * 2);
+end;
+
+procedure TRenderPanel.ResetZoom;
+begin
+  FZoom := 1;
+  Repaint;
 end;
 
 procedure TRenderPanel.Resize;

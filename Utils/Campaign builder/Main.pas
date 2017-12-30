@@ -5,12 +5,8 @@ uses
   Windows, Classes, ComCtrls, Controls, Dialogs, ExtDlgs, ExtCtrls, Forms,
   Graphics, Mask, Math, Spin, StdCtrls, SysUtils, KM_Points,
   KM_Defaults, KM_Campaigns, KM_Pics, KM_ResSpritesEdit, KromUtils, inifiles,
-  Quad.ObjectInspector, Vcl.ToolWin, System.ImageList, Vcl.ImgList,
-  System.Actions, Vcl.ActnList, Vcl.Menus, RenderPanel, Vcl.Imaging.pngimage,
-  Vcl.Imaging.jpeg;
-
-const
-  crHandMove = TCursor(1);
+  Vcl.ToolWin, System.ImageList, Vcl.ImgList,
+  System.Actions, Vcl.ActnList, Vcl.Menus, RenderPanel, Vcl.Imaging.jpeg;
 
 type
   TTreeChapter = class(TTreeNode)
@@ -62,7 +58,7 @@ type
     ToolButton2: TToolButton;
     ToolButton3: TToolButton;
     aSettings: TAction;
-    ImageTree: TImageList;
+    IconList: TImageList;
     MissionBox: TGroupBox;
     Panel1: TPanel;
     cbShowNodeNumbers: TCheckBox;
@@ -86,6 +82,15 @@ type
     N1: TMenuItem;
     aDelete: TAction;
     New1: TMenuItem;
+    pmList: TPopupMenu;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
+    MenuItem5: TMenuItem;
+    N2: TMenuItem;
+    Zoom111: TMenuItem;
+    aResetZoom: TAction;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -107,6 +112,7 @@ type
     procedure cbShowNodeNumbersClick(Sender: TObject);
     procedure cbBriefingPosChange(Sender: TObject);
     procedure aDeleteExecute(Sender: TObject);
+    procedure aResetZoomExecute(Sender: TObject);
   private
     FRender: TRenderPanel;
     fExePath: string;
@@ -191,8 +197,6 @@ begin
   DoubleBuffered := True; //Makes images drag around smoothly
   ScrollBox1.DoubleBuffered := True;
 
-  Screen.Cursors[crHandMove] := LoadCursor(hInstance, 'CR_HAND');
-
   fExePath := ExtractFilePath(ParamStr(0));
   fCampaignsPath := ExpandFileName(fExePath + '..\..\Campaigns\');
 
@@ -261,7 +265,14 @@ end;
 
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  FRender.KeyDown(Key, Shift);
+  if (Key = VK_DELETE) and not (ActiveControl is TEdit) then
+  begin
+    tvList.Selected.Delete;
+    UpdateList;
+    FRender.Repaint;
+  end
+  else
+    FRender.KeyDown(Key, Shift);
   //StatusBar1.Panels[1].Text := 'Position ' + IntToStr(Img.Left) + 'x' + IntToStr(Img.Top);
 end;
 
@@ -286,6 +297,7 @@ procedure TMainForm.pmMapPopup(Sender: TObject);
 begin
   aAddMission.Enabled := Assigned(fSelectedChapter);
   aAddNode.Enabled := Assigned(fSelectedMission);
+  aDelete.Enabled := Assigned(tvList.Selected);
 end;
 
 function TMainForm.GetCharset(aLang: string): TFontCharset;
@@ -493,6 +505,11 @@ begin
     on E: Exception do
       ShowMessage(E.Message);
   end;
+end;
+
+procedure TMainForm.aResetZoomExecute(Sender: TObject);
+begin
+  FRender.ResetZoom;
 end;
 
 procedure TMainForm.aSaveExecute(Sender: TObject);
