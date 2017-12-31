@@ -130,6 +130,7 @@ type
     property Count: Integer read GetCount;
     property MapEdCount: Word read fMapEdCount write SetMapEdCount;
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
+    function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
     property Owner: TKMHandIndex read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
@@ -457,6 +458,20 @@ end;
 function TKMUnitGroup.GetMember(aIndex: Integer): TKMUnitWarrior;
 begin
   Result := fMembers.Items[aIndex];
+end;
+
+
+function TKMUnitGroup.GetAliveMember: TKMUnitWarrior;
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+  begin
+    Result := Members[I];
+    if not Result.IsDeadOrDying then
+      Exit;
+  end;
+  Result := nil;
 end;
 
 
