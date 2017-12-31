@@ -34,37 +34,39 @@ type
     //it uses ReadBuffer. This procedure will work when Source is a TDecompressionStream
     procedure CopyFromDecompression(Source: TStream);
 
-    procedure Write(const Value:TKMPointDir ); reintroduce; overload;
-    function Write(const Value:TKMDirection): Longint; reintroduce; overload;
-    function Write(const Value:TKMPoint ): Longint; reintroduce; overload;
-    function Write(const Value:TKMPointW): Longint; reintroduce; overload;
-    function Write(const Value:TKMPointF): Longint; reintroduce; overload;
-    function Write(const Value:TKMRect  ): Longint; reintroduce; overload;
-    function Write(const Value:Single   ): Longint; reintroduce; overload;
-    function Write(const Value:Integer  ): Longint; reintroduce; overload;
-    function Write(const Value:Cardinal ): Longint; reintroduce; overload;
-    function Write(const Value:Byte     ): Longint; reintroduce; overload;
-    function Write(const Value:Boolean  ): Longint; reintroduce; overload;
-    function Write(const Value:Word     ): Longint; reintroduce; overload;
-    function Write(const Value:ShortInt ): Longint; reintroduce; overload;
-    function Write(const Value:SmallInt ): Longint; reintroduce; overload;
-    function Write(const Value:TDateTime): Longint; reintroduce; overload;
+    procedure Write(const Value:TKMPointDir); reintroduce; overload;
+    function Write(const Value:TKMDirection  ): Longint; reintroduce; overload;
+    function Write(const Value:TKMPoint      ): Longint; reintroduce; overload;
+    function Write(const Value:TKMPointW     ): Longint; reintroduce; overload;
+    function Write(const Value:TKMPointF     ): Longint; reintroduce; overload;
+    function Write(const Value:TKMRect       ): Longint; reintroduce; overload;
+    function Write(const Value:Single        ): Longint; reintroduce; overload;
+    function Write(const Value:Integer       ): Longint; reintroduce; overload;
+    function Write(const Value:Cardinal      ): Longint; reintroduce; overload;
+    function Write(const Value:Byte          ): Longint; reintroduce; overload;
+    function Write(const Value:Boolean       ): Longint; reintroduce; overload;
+    function Write(const Value:Word          ): Longint; reintroduce; overload;
+    function Write(const Value:ShortInt      ): Longint; reintroduce; overload;
+    function Write(const Value:SmallInt      ): Longint; reintroduce; overload;
+    function Write(const Value:TDateTime     ): Longint; reintroduce; overload;
+    function Write(const Value:TKMemoryStream): Longint; reintroduce; overload;
 
     procedure Read(out Value:TKMPointDir); reintroduce; overload;
-    function Read(out Value:TKMDirection): Longint; reintroduce; overload;
-    function Read(out Value:TKMPoint    ): Longint; reintroduce; overload;
-    function Read(out Value:TKMPointW   ): Longint; reintroduce; overload;
-    function Read(out Value:TKMPointF   ): Longint; reintroduce; overload;
-    function Read(out Value:TKMRect     ): Longint; reintroduce; overload;
-    function Read(out Value:Single      ): Longint; reintroduce; overload;
-    function Read(out Value:Integer     ): Longint; reintroduce; overload;
-    function Read(out Value:Cardinal    ): Longint; reintroduce; overload;
-    function Read(out Value:Byte        ): Longint; reintroduce; overload;
-    function Read(out Value:Boolean     ): Longint; reintroduce; overload;
-    function Read(out Value:Word        ): Longint; reintroduce; overload;
-    function Read(out Value:ShortInt    ): Longint; reintroduce; overload;
-    function Read(out Value:SmallInt    ): Longint; reintroduce; overload;
-    function Read(out Value:TDateTime   ): Longint; reintroduce; overload;
+    function Read(out Value:TKMDirection     ): Longint; reintroduce; overload;
+    function Read(out Value:TKMPoint         ): Longint; reintroduce; overload;
+    function Read(out Value:TKMPointW        ): Longint; reintroduce; overload;
+    function Read(out Value:TKMPointF        ): Longint; reintroduce; overload;
+    function Read(out Value:TKMRect          ): Longint; reintroduce; overload;
+    function Read(out Value:Single           ): Longint; reintroduce; overload;
+    function Read(out Value:Integer          ): Longint; reintroduce; overload;
+    function Read(out Value:Cardinal         ): Longint; reintroduce; overload;
+    function Read(out Value:Byte             ): Longint; reintroduce; overload;
+    function Read(out Value:Boolean          ): Longint; reintroduce; overload;
+    function Read(out Value:Word             ): Longint; reintroduce; overload;
+    function Read(out Value:ShortInt         ): Longint; reintroduce; overload;
+    function Read(out Value:SmallInt         ): Longint; reintroduce; overload;
+    function Read(out Value:TDateTime        ): Longint; reintroduce; overload;
+    function Read(out Value:TKMemoryStream   ): Longint; reintroduce; overload;
   end;
 
   TStreamEvent = procedure (aData: TKMemoryStream) of object;
@@ -306,6 +308,11 @@ begin Result := inherited Write(Value, SizeOf(Value)); end;
 function TKMemoryStream.Write(const Value:TDateTime): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
 
+function TKMemoryStream.Write(const Value: TKMemoryStream): Longint;
+begin
+  Result := Write(Integer(Value.Size));
+  Inc(Result, WriteData(Value.Memory, Value.Size));
+end;
 
 procedure TKMemoryStream.ReadW(out Value: UnicodeString);
 var I: Word;
@@ -352,6 +359,14 @@ begin Result := inherited Read(Value, SizeOf(Value)); end;
 function TKMemoryStream.Read(out Value:TDateTime): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
 
+function TKMemoryStream.Read(out Value: TKMemoryStream): Longint;
+var
+  Size: Integer;
+begin
+  Result := Read(Size);
+  Value.SetSize(Size);
+  Inc(Result, ReadData(Value.Memory, Size));
+end;
 
 procedure TKMemoryStream.CopyFromDecompression(Source: TStream);
 const

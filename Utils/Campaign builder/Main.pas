@@ -12,7 +12,7 @@ type
   TTreeChapter = class(TTreeNode)
   public
     PictureMapIndex: Byte;
-    Video: array[TMissionVideoTypes] of AnsiString;
+    Video: array[TMissionVideoTypes] of UnicodeString;
     constructor Create(AOwner: TTreeNodes); override;
   end;
 
@@ -25,7 +25,7 @@ type
   public
     Number: Integer;
     TextPos: TBriefingCorner;
-    Video: array[TMissionVideoTypes] of AnsiString;
+    Video: array[TMissionVideoTypes] of UnicodeString;
     constructor Create(AOwner: TTreeNodes); override;
   end;
 
@@ -185,6 +185,9 @@ begin
   inherited;
   ImageIndex := 0;
   SelectedIndex := 0;
+  PictureMapIndex := 0;
+  Video[mvBefore] := '';
+  Video[mvAfter] := '';
 end;
 
 { TTreeItemMission }
@@ -194,6 +197,10 @@ begin
   inherited;
   ImageIndex := 1;
   SelectedIndex := 1;
+  TextPos := bcBottomLeft;
+  Rect := Classes.Rect(0, 0, 0, 0);
+  Video[mvBefore] := '';
+  Video[mvAfter] := '';
 end;
 
 { TTreeItemNode }
@@ -201,6 +208,7 @@ end;
 constructor TTreeChapterNode.Create(AOwner: TTreeNodes);
 begin
   inherited;
+  Rect := Classes.Rect(0, 0, 0, 0);
   ImageIndex := 3;
   SelectedIndex := 3;
 end;
@@ -598,7 +606,6 @@ begin
     formSettings.edtName.Font.Charset := GetCharset(Locale);
     formSettings.edtName.Text := C.FullName;
     formSettings.edtShortName.Text := StringReplace(C.CampName, #0, '', [rfReplaceAll, rfIgnoreCase]);
-    formSettings.edtIntroVideo.Text := C.IntroVideo;
 
     if formSettings.ShowModal = mrOk then
     begin
@@ -607,7 +614,6 @@ begin
       cmp[1] := Ord(formSettings.edtShortName.Text[2]);
       cmp[2] := Ord(formSettings.edtShortName.Text[3]);
       C.CampaignId := cmp;
-      C.IntroVideo := formSettings.edtIntroVideo.Text;
       UpdateCaption;
     end;
   finally
@@ -656,6 +662,9 @@ begin
       FTreeItemCreate := TTreeChapter;
       fSelectedChapter := tvList.Items.AddChild(nil, Format('Chapter %d', [J + 1])) as TTreeChapter;
       fSelectedChapter.PictureMapIndex := C.Chapters[J].PictureMapIndex;
+      for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
+        fSelectedChapter.Video[VideoType] := C.Chapters[J].Video[VideoType];
+
       for I := 0 to C.Chapters[J].MapCount - 1 do
       begin
         FTreeItemCreate := TTreeChapterMission;
@@ -663,8 +672,10 @@ begin
         fSelectedMission.TextPos := C.Chapters[J].Maps[I].TextPos;
         fSelectedMission.Rect := Rect(C.Chapters[J].Maps[I].Flag.X, C.Chapters[J].Maps[I].Flag.Y,
           C.Chapters[J].Maps[I].Flag.X + imgRedFlag.Width, C.Chapters[J].Maps[I].Flag.Y + imgRedFlag.Height);
+
         for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
           fSelectedMission.Video[VideoType] := C.Chapters[J].Maps[I].Video[VideoType];
+
         for K := 0 to C.Chapters[J].Maps[I].NodeCount - 1 do
         begin
           FTreeItemCreate := TTreeChapterNode;
@@ -774,6 +785,9 @@ begin
     begin
       C.Chapters[node.Index].PictureMapIndex := (node as TTreeChapter).PictureMapIndex;
       C.Chapters[node.Index].MapCount := node.Count;
+      for VideoType := Low(TMissionVideoTypes) to High(TMissionVideoTypes) do
+        C.Chapters[node.Index].Video[VideoType] := (node as TTreeChapter).Video[VideoType];
+
       SetLength(C.Chapters[node.Index].Maps, node.Count);
       for i := 0 to node.Count - 1 do
       begin
@@ -812,7 +826,6 @@ begin
   case Node.Level of
     0: begin
       fSelectedChapter := Node as TTreeChapter;
-      FRender.RefreshBackground(fSelectedChapter.PictureMapIndex);
     end;
     1: begin
         fSelectedChapter := Node.Parent as TTreeChapter;
@@ -826,6 +839,10 @@ begin
   end;
   UpdateList;
   UpdateBox;
+  if Assigned(SelectedChapter) then
+    FRender.RefreshBackground(SelectedChapter.PictureMapIndex)
+  else
+    FRender.RefreshBackground(0);
   FRender.Repaint;
 end;
 
