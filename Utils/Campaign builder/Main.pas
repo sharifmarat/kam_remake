@@ -35,7 +35,6 @@ type
   end;
 
   TMainForm = class(TForm)
-    dlgSaveCampaign: TSaveDialog;
     StatusBar1: TStatusBar;
     ScrollBox1: TScrollBox;
     ActionList: TActionList;
@@ -44,7 +43,6 @@ type
     aSave: TAction;
     ImageList: TImageList;
     aPictureMaps: TAction;
-    dlgOpenCampaign: TOpenDialog;
     pLeft: TPanel;
     tvList: TTreeView;
     pmMap: TPopupMenu;
@@ -99,6 +97,7 @@ type
     Panel4: TPanel;
     edtChapterVideoAfter: TEdit;
     bPictureMap: TButton;
+    dlgOpenCampaign: TFileOpenDialog;
     procedure FormCreate(Sender: TObject);
     procedure tvListChange(Sender: TObject; Node: TTreeNode);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -138,7 +137,7 @@ type
     fSelectedMission: TTreeChapterMission;
     fSelectedNode: TTreeChapterNode;
 
-    procedure LoadCmp(aFileName : String);
+    procedure LoadCmp(aDirName : String);
 
     function DlgQuestionShow(aCaption, aMsg: string): boolean;
 
@@ -271,16 +270,16 @@ begin
   Node.Selected := True;
 end;
 
-procedure TMainForm.LoadCmp(aFileName : String);
+procedure TMainForm.LoadCmp(aDirName : String);
 var
   I: Integer;
 begin
-  C.LoadFromFile(aFileName);
+  C.LoadFromDir(aDirName);
 
   fSprites.Free;
   fSprites := TKMSpritePackEdit.Create(rxCustom, nil);
-  if FileExists(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx') then
-    fSprites.LoadFromRXXFile(ExtractFilePath(dlgOpenCampaign.FileName) + 'images.rxx')
+  if FileExists(aDirName + '\images.rxx') then
+    fSprites.LoadFromRXXFile(aDirName + '\images.rxx')
   else
     ShowMessage('Campaign background image (images.rxx) could not be found');
 end;
@@ -522,18 +521,20 @@ begin
   Ini.Free;
 
   if DirectoryExists(fCampaignsPath) then
-    dlgOpenCampaign.InitialDir := fCampaignsPath
+    dlgOpenCampaign.DefaultFolder := fCampaignsPath
   else
-    dlgOpenCampaign.InitialDir := fExePath;
+    dlgOpenCampaign.DefaultFolder := fExePath;
+
+  dlgOpenCampaign.FileName := dlgOpenCampaign.DefaultFolder;
 
   if not dlgOpenCampaign.Execute then
     Exit;
 
   LoadCmp(dlgOpenCampaign.FileName);
 
-  LoadCampaignName(ExtractFilePath(dlgOpenCampaign.FileName) + TEMPLATE_LIBX_FILE_TEXT, Locale);
+  LoadCampaignName(dlgOpenCampaign.FileName + '\' + TEMPLATE_LIBX_FILE_TEXT, Locale);
   if Length(C.FullName) = 0 then
-    LoadCampaignName(ExtractFilePath(dlgOpenCampaign.FileName) + TEMPLATE_LIBX_FILE_TEXT , 'eng');
+    LoadCampaignName(dlgOpenCampaign.FileName + '\' + TEMPLATE_LIBX_FILE_TEXT , 'eng');
   UpdateCaption;
   CampaignToList;
   UpdateList;
@@ -575,23 +576,19 @@ begin
     Exit;
   end;
 
-  dlgSaveCampaign.InitialDir := ExtractFilePath(dlgOpenCampaign.FileName);
+  dlgOpenCampaign.DefaultFolder := dlgOpenCampaign.FileName;
+  dlgOpenCampaign.FileName := dlgOpenCampaign.DefaultFolder;
 
-  dlgSaveCampaign.FileName := 'info';
-
-  if not dlgSaveCampaign.Execute then
+  if not dlgOpenCampaign.Execute then
     Exit;
 
-  C.SaveToFile(dlgSaveCampaign.FileName);
-  fSprites.SaveToRXXFile(ExtractFilePath(dlgSaveCampaign.FileName) + 'images.rxx');
+  C.SaveToDir(dlgOpenCampaign.FileName);
+  fSprites.SaveToRXXFile(dlgOpenCampaign.FileName + '\' + 'images.rxx');
 
-  if FileExists(ExtractFilePath(dlgSaveCampaign.FileName) +
-  Format(TEMPLATE_LIBX_FILE_TEXT, [Locale])) then
-    SaveCampaignName(ExtractFilePath(dlgSaveCampaign.FileName) +
-      Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]))
+  if FileExists(dlgOpenCampaign.FileName + '\' + Format(TEMPLATE_LIBX_FILE_TEXT, [Locale])) then
+    SaveCampaignName(dlgOpenCampaign.FileName + '\' + Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]))
   else
-    CreateDefaultLocaleLibxTemplate(ExtractFilePath(dlgSaveCampaign.FileName) +
-      Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]));
+    CreateDefaultLocaleLibxTemplate(dlgOpenCampaign.FileName + '\' + Format(TEMPLATE_LIBX_FILE_TEXT, [Locale]));
 end;
 
 procedure TMainForm.aSettingsExecute(Sender: TObject);

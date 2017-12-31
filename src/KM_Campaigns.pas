@@ -3,7 +3,7 @@ unit KM_Campaigns;
 interface
 uses
   Classes,
-  KM_ResTexts, KM_Pics,
+  KM_ResTexts, KM_Pics, JsonDataObjects,
   KM_CommonClasses, KM_Points;
 
 
@@ -56,8 +56,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure LoadFromFile(const aFileName: UnicodeString);
-    procedure SaveToFile(const aFileName: UnicodeString);
+    procedure LoadFromDir(const aDirName: UnicodeString);
+    procedure SaveToDir(const aDirName: UnicodeString);
     procedure LoadFromPath(const aPath: UnicodeString);
 
     property Maps[Index: Byte]: TKMCampaignMap read GetMap;
@@ -167,7 +167,9 @@ begin
   repeat
     if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
     and (SearchRec.Attr and faDirectory = faDirectory)
-    and FileExists(aPath + SearchRec.Name + PathDelim+'info.cmp') then
+    and (FileExists(aPath + SearchRec.Name + PathDelim + 'info.cmp')
+      or FileExists(aPath + SearchRec.Name + PathDelim + 'info.json')
+      ) then
       AddCampaign(aPath + SearchRec.Name + PathDelim);
   until (FindNext(SearchRec) <> 0);
   FindClose(SearchRec);
@@ -368,48 +370,40 @@ end;
 
 //Load campaign info from *.cmp file
 //It should be private, but it is used by CampaignBuilder
-procedure TKMCampaign.LoadFromFile(const aFileName: UnicodeString);
+procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
 
-  procedure ReadMap(AMemory: TKMemoryStream; var AMap: TKMCampaignMap);
+  procedure JsonToMap(AJson: TJsonObject; var AMap: TKMCampaignMap);
   var
     i: Integer;
-    M: TKMemoryStream;
   begin
-    M := TKMemoryStream.Create;
-    AMemory.Read(M);
+    AMap.Flag.X := AJson.O['Flag']['X'];
+    AMap.Flag.Y := AJson.O['Flag']['Y'];
+    AMap.TextPos := TBriefingCorner(AJson['TextPos']);
 
-    M.Read(AMap.Flag);
-    M.Read(AMap.TextPos, SizeOf(TBriefingCorner));
-    M.Read(AMap.NodeCount);
-    for i := 0 to AMap.NodeCount - 1 do
-      M.Read(AMap.Nodes[i]);
+    AMap.Video[mvBefore] := AJson['VideoBefore'];
+    AMap.Video[mvAfter] := AJson['VideoAfter'];
 
-    M.ReadW(AMap.Video[mvBefore]);
-    M.ReadW(AMap.Video[mvAfter]);
-
-    M.Free;
+    for i := 0 to AJson.A['Nodes'].Count - 1 do
+    begin
+      AMap.Nodes[i].X := AJson.A['Nodes'].Items[i].ObjectValue['X'];
+      AMap.Nodes[i].Y := AJson.A['Nodes'].Items[i].ObjectValue['Y'];
+    end;
   end;
 
-  procedure ReadChapter(AMemory: TKMemoryStream; var AChapter: TKMCampaignChapter);
+  procedure JsonToChapter(AJson: TJsonObject; var AChapter: TKMCampaignChapter);
   var
     i: Integer;
-    M: TKMemoryStream;
   begin
-    M := TKMemoryStream.Create;
-    AMemory.Read(M);
+    AChapter.PictureMapIndex := AJson['PictureMapIndex'];
 
-    M.Read(AChapter.PictureMapIndex);
-    M.Read(AChapter.MapCount);
+    AChapter.Video[mvBefore] := AJson['VideoBefore'];
+    AChapter.Video[mvAfter] := AJson['VideoAfter'];
+
+    AChapter.MapCount := AJson['Maps'].Count;
     SetLength(AChapter.Maps, AChapter.MapCount);
     for i := 0 to AChapter.MapCount - 1 do
-      ReadMap(M, AChapter.Maps[i]);
-
-    M.ReadW(AChapter.Video[mvBefore]);
-    M.ReadW(AChapter.Video[mvAfter]);
-
-    M.Free;
+      JsonToMap(AJson['Maps'].Items[i], AChapter.Maps[i]);
   end;
-
 
 var
   CampaignMemory, M: TKMemoryStream;
@@ -417,132 +411,117 @@ var
   cmp: TBytes;
   Count: Byte;
   Size, Level, VideoType: Byte;
+  Json: TJsonObject;
 begin
-  if not FileExists(aFileName) then Exit;
+  Assert(aDirName <> '');
 
-  CampaignMemory := TKMemoryStream.Create;
-  CampaignMemory.LoadFromFile(aFileName);
-
-  //Convert old AnsiString into new [0..2] Byte format
-  CampaignMemory.ReadBytes(cmp);
-  Assert(Length(cmp) = 3);
-  fCampaignId[0] := cmp[0];
-  fCampaignId[1] := cmp[1];
-  fCampaignId[2] := cmp[2];
-
-  CampaignMemory.Read(Count);
-
-  if Count > 0 then
+  if FileExists(aDirName + '\info.json') then
   begin
-    SetLength(Chapters, 1);
-    Chapters[0].MapCount := Count;
-    Chapters[0].PictureMapIndex := 1;
-    SetLength(Chapters[0].Maps, Count);
+    Json := TJsonObject.Create;
+    Json.LoadFromFile(aDirName + '\info.json');
+    try
+     fCampaignId[0] := Ord(Json['CampaignId'].Value[1]);
+     fCampaignId[1] := Ord(Json['CampaignId'].Value[2]);
+     fCampaignId[2] := Ord(Json['CampaignId'].Value[3]);
 
-    for I := 0 to Count - 1 do
-    begin
-      CampaignMemory.Read(Chapters[0].Maps[I].Flag);
-      CampaignMemory.Read(Chapters[0].Maps[I].NodeCount);
-      for K := 0 to Chapters[0].Maps[I].NodeCount - 1 do
-        CampaignMemory.Read(Chapters[0].Maps[I].Nodes[K]);
-      CampaignMemory.Read(Chapters[0].Maps[I].TextPos, SizeOf(TBriefingCorner));
+     SetLength(Chapters, Json['Chapters'].Count);
+     for i := 0 to Json['Chapters'].Count - 1 do
+       JsonToChapter(Json['Chapters'].Items[i], Chapters[i]);
+
+    finally
+      Json.Free;
     end;
 
   end
   else
-  begin
-    M := TKMemoryStream.Create;
+    if FileExists(aDirName + '\info.cmp') then
+    begin
+      CampaignMemory := TKMemoryStream.Create;
+      CampaignMemory.LoadFromFile(aDirName + '\info.cmp');
 
-    // Campaign Config
-    CampaignMemory.Read(M);
+      //Convert old AnsiString into new [0..2] Byte format
+      CampaignMemory.ReadBytes(cmp);
+      Assert(Length(cmp) = 3);
+      fCampaignId[0] := cmp[0];
+      fCampaignId[1] := cmp[1];
+      fCampaignId[2] := cmp[2];
 
-    M.Free;
+      CampaignMemory.Read(Count);
+      SetLength(Chapters, 1);
+      Chapters[0].MapCount := Count;
+      Chapters[0].PictureMapIndex := 1;
+      SetLength(Chapters[0].Maps, Count);
 
-    i := CampaignMemory.Position;
-    // Chapters
-    CampaignMemory.Read(Count);
-    SetLength(Chapters, Count);
-    for i := 0 to Count - 1 do
-      ReadChapter(CampaignMemory, Chapters[i]);
-  end;
+      for I := 0 to Count - 1 do
+      begin
+        CampaignMemory.Read(Chapters[0].Maps[I].Flag);
+        CampaignMemory.Read(Chapters[0].Maps[I].NodeCount);
+        for K := 0 to Chapters[0].Maps[I].NodeCount - 1 do
+          CampaignMemory.Read(Chapters[0].Maps[I].Nodes[K]);
+        CampaignMemory.Read(Chapters[0].Maps[I].TextPos, SizeOf(TBriefingCorner));
+      end;
 
-  CampaignMemory.Free;
+      CampaignMemory.Free;
+    end;
 end;
 
 
-procedure TKMCampaign.SaveToFile(const aFileName: UnicodeString);
+procedure TKMCampaign.SaveToDir(const aDirName: UnicodeString);
 
-  procedure WriteMap(AMemory: TKMemoryStream; const AMap: TKMCampaignMap);
+  procedure MapToJson(AJsonArray: TJsonArray; const AMap: TKMCampaignMap);
   var
     i: Integer;
-    M: TKMemoryStream;
+    Json, JsonNode: TJsonObject;
   begin
-    M := TKMemoryStream.Create;
+    Json := AJsonArray.AddObject;
 
-    M.Write(AMap.Flag);
-    M.Write(AMap.TextPos, SizeOf(TBriefingCorner));
-    M.Write(AMap.NodeCount);
+    Json.O['Flag']['X'] := AMap.Flag.X;
+    Json.O['Flag']['Y'] := AMap.Flag.Y;
+
+    Json['TextPos'] := Integer(AMap.TextPos);
+    Json['VideoBefore'] := AMap.Video[mvBefore];
+    Json['VideoAfter'] := AMap.Video[mvAfter];
+
     for i := 0 to AMap.NodeCount - 1 do
-      M.Write(AMap.Nodes[i]);
-
-    M.WriteW(AMap.Video[mvBefore]);
-    M.WriteW(AMap.Video[mvAfter]);
-
-    AMemory.Write(M);
-    M.Free;
+    begin
+      JsonNode := Json.A['Nodes'].AddObject;
+      JsonNode['X'] := AMap.Nodes[i].X;
+      JsonNode['Y'] := AMap.Nodes[i].Y;
+    end;
   end;
 
-  procedure WriteChapter(AMemory: TKMemoryStream; const AChapter: TKMCampaignChapter);
+  procedure ChapterToJson(AJsonArray: TJsonArray; const AChapter: TKMCampaignChapter);
   var
     i: Integer;
-    M: TKMemoryStream;
+    Json: TJsonObject;
   begin
-    M := TKMemoryStream.Create;
+    Json := AJsonArray.AddObject;
+    Json['PictureMapIndex'] := AChapter.PictureMapIndex;
+    if AChapter.Video[mvBefore] <> '' then
+      Json['VideoBefore'] := AChapter.Video[mvBefore];
+    Json['VideoAfter'] := AChapter.Video[mvAfter];
 
-    M.Write(AChapter.PictureMapIndex);
-    M.Write(AChapter.MapCount);
     for i := 0 to AChapter.MapCount - 1 do
-      WriteMap(M, AChapter.Maps[i]);
-
-    M.WriteW(AChapter.Video[mvBefore]);
-    M.WriteW(AChapter.Video[mvAfter]);
-
-    AMemory.Write(M);
-    M.Free;
+      MapToJson(Json.A['Maps'], AChapter.Maps[i]);
   end;
 
 var
-  CampaignMemory, M: TKMemoryStream;
   i: Integer;
-  cmp: TBytes;
-  VideoType: TMissionVideoTypes;
+  Json: TJsonObject;
 begin
-  Assert(aFileName <> '');
+  Assert(aDirName <> '');
 
-  CampaignMemory := TKMemoryStream.Create;
-  SetLength(cmp, 3);
-  cmp[0] := fCampaignId[0];
-  cmp[1] := fCampaignId[1];
-  cmp[2] := fCampaignId[2];
-  CampaignMemory.WriteBytes(cmp);
-  CampaignMemory.Write(Byte(0));
+  Json := TJsonObject.Create;
+  try
+    Json['CampaignId'] := CampName;
 
-  // Campaign Config
-  M := TKMemoryStream.Create;
+    for i := 0 to High(Chapters) do
+      ChapterToJson(Json.A['Chapters'], Chapters[i]);
 
-  M.Write(Byte(0));
-  CampaignMemory.Write(M);
-
-  M.Free;
-
-  i := CampaignMemory.Position;
-  // Chapters
-  CampaignMemory.Write(Byte(Length(Chapters)));
-  for i := 0 to High(Chapters) do
-    WriteChapter(CampaignMemory, Chapters[i]);
-
-  CampaignMemory.SaveToFile(aFileName);
-  CampaignMemory.Free;
+    Json.SaveToFile(aDirName + '\info.json');
+  finally
+    Json.Free;
+  end;
 end;
 
 
@@ -559,7 +538,7 @@ var
 begin
   fPath := aPath;
 
-  LoadFromFile(fPath + 'info.cmp');
+  LoadFromDir(fPath);
 
   FreeAndNil(fTextLib);
   fTextLib := TKMTextLibrarySingle.Create;

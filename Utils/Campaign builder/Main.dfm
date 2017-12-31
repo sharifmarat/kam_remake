@@ -20799,8 +20799,8 @@ object MainForm: TMainForm
       Visible = False
     end
     object ImgBriefing: TImage
-      Left = 86
-      Top = 6
+      Left = 82
+      Top = 3
       Width = 360
       Height = 400
       AutoSize = True
@@ -34746,12 +34746,6 @@ object MainForm: TMainForm
       end
     end
   end
-  object dlgSaveCampaign: TSaveDialog
-    DefaultExt = 'cmp'
-    Filter = 'KaM Remake campaigns (*.cmp)|*.cmp'
-    Left = 472
-    Top = 56
-  end
   object ActionList: TActionList
     Left = 560
     Top = 56
@@ -34813,7 +34807,7 @@ object MainForm: TMainForm
     Left = 624
     Top = 56
     Bitmap = {
-      494C010107000800600020002000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010107000800640020002000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -35876,12 +35870,6 @@ object MainForm: TMainForm
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
   end
-  object dlgOpenCampaign: TOpenDialog
-    Filter = 'KaM Remake campaigns (*.cmp)|*.cmp'
-    Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofNoNetworkButton, ofEnableSizing]
-    Left = 368
-    Top = 56
-  end
   object pmMap: TPopupMenu
     Images = IconList
     OnPopup = pmMapPopup
@@ -35912,10 +35900,10 @@ object MainForm: TMainForm
   object IconList: TImageList
     ColorDepth = cd32Bit
     DrawingStyle = dsTransparent
-    Left = 264
-    Top = 120
+    Left = 376
+    Top = 56
     Bitmap = {
-      494C01010A008800600010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C01010A008800640010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       00000000001E00000031000000330000003300000033000000310000001E0000
@@ -36338,5 +36326,12 @@ object MainForm: TMainForm
     object MenuItem5: TMenuItem
       Action = aDelete
     end
+  end
+  object dlgOpenCampaign: TFileOpenDialog
+    FavoriteLinks = <>
+    FileTypes = <>
+    Options = [fdoPickFolders, fdoForceFileSystem, fdoPathMustExist]
+    Left = 264
+    Top = 56
   end
 end
