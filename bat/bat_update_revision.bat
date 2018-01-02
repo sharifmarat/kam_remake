@@ -16,7 +16,7 @@
 git reset
 git add ..\KM_Revision.inc
 git add ..\Installer\Revision.iss
-git commit ..\KM_Revision.inc -m "update KM_Revision.inc"
+git commit -m "update revision number"
 REM git push
 
 @echo !
