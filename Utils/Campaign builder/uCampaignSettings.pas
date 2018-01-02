@@ -10,9 +10,7 @@ type
   TfCampaignSettings = class(TForm)
     edtName: TEdit;
     CampaignNameLabel: TLabel;
-    ShortNameLabel: TLabel;
-    IntoVideoLabel: TLabel;
-    edtIntroVideo: TEdit;
+    CampaignIDLabel: TLabel;
     bOk: TButton;
     bCancel: TButton;
     CheckNodeAnimation: TCheckBox;

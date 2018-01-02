@@ -68,6 +68,7 @@ type
     function CampName: UnicodeString;
     property UnlockedMap: Byte read fUnlockedMap write SetUnlockedMap;
     property ScriptData: TKMemoryStream read fScriptData;
+    property NodeAnimation: boolean Read fNodeAnimation write fNodeAnimation;
 
     function CampaignTitle: UnicodeString;
     function CampaignDescription: UnicodeString;
@@ -423,6 +424,7 @@ begin
      fCampaignId[0] := Ord(Json['CampaignId'].Value[1]);
      fCampaignId[1] := Ord(Json['CampaignId'].Value[2]);
      fCampaignId[2] := Ord(Json['CampaignId'].Value[3]);
+     NodeAnimation := Json['NodeAnimation'];
 
      SetLength(Chapters, Json['Chapters'].Count);
      for i := 0 to Json['Chapters'].Count - 1 do
@@ -436,9 +438,9 @@ begin
   else
     if FileExists(aDirName + '\info.cmp') then
     begin
+      NodeAnimation := False;
       CampaignMemory := TKMemoryStream.Create;
       CampaignMemory.LoadFromFile(aDirName + '\info.cmp');
-
       //Convert old AnsiString into new [0..2] Byte format
       CampaignMemory.ReadBytes(cmp);
       Assert(Length(cmp) = 3);
@@ -514,6 +516,7 @@ begin
   Json := TJsonObject.Create;
   try
     Json['CampaignId'] := CampName;
+    Json['NodeAnimation'] := NodeAnimation;
 
     for i := 0 to High(Chapters) do
       ChapterToJson(Json.A['Chapters'], Chapters[i]);
@@ -624,8 +627,7 @@ end;
 
 function TKMCampaign.MissionFile(aIndex: Byte): UnicodeString;
 begin
-  Result := fPath + CampName + Format('%.2d', [aIndex + 1]) + PathDelim +
-            CampName + Format('%.2d', [aIndex + 1]) + '.dat';
+  Result := fPath + 'Mission' + Format('%.2d', [aIndex + 1]) + PathDelim + 'Mission.dat';
 end;
 
 

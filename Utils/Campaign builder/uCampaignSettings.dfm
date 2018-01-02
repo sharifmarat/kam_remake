@@ -4,7 +4,7 @@ object fCampaignSettings: TfCampaignSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Campaign Settings'
-  ClientHeight = 169
+  ClientHeight = 130
   ClientWidth = 302
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -25,22 +25,13 @@ object fCampaignSettings: TfCampaignSettings
     Caption = 'Campaign name'
     Layout = tlCenter
   end
-  object ShortNameLabel: TLabel
+  object CampaignIDLabel: TLabel
     Left = 8
     Top = 41
     Width = 65
     Height = 16
     AutoSize = False
-    Caption = 'Short name'
-    Layout = tlCenter
-  end
-  object IntoVideoLabel: TLabel
-    Left = 8
-    Top = 71
-    Width = 80
-    Height = 16
-    AutoSize = False
-    Caption = 'Intro video'
+    Caption = 'Campaign ID'
     Layout = tlCenter
   end
   object edtName: TEdit
@@ -58,46 +49,31 @@ object fCampaignSettings: TfCampaignSettings
     TabOrder = 0
     Text = 'Campaign name'
   end
-  object edtIntroVideo: TEdit
-    Left = 95
-    Top = 67
-    Width = 200
-    Height = 24
-    AutoSize = False
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    MaxLength = 200
-    ParentFont = False
-    TabOrder = 1
-  end
   object bOk: TButton
     Left = 137
-    Top = 136
+    Top = 96
     Width = 75
     Height = 25
     Caption = 'Ok'
     ModalResult = 1
-    TabOrder = 2
+    TabOrder = 1
   end
   object bCancel: TButton
     Left = 219
-    Top = 136
+    Top = 96
     Width = 75
     Height = 25
     Caption = 'Cancel'
     ModalResult = 2
-    TabOrder = 3
+    TabOrder = 2
   end
   object CheckNodeAnimation: TCheckBox
     Left = 8
-    Top = 104
+    Top = 71
     Width = 145
     Height = 17
     Caption = 'Node Animation'
-    TabOrder = 4
+    TabOrder = 3
   end
   object edtShortName: TMaskEdit
     Left = 95
@@ -112,7 +88,7 @@ object fCampaignSettings: TfCampaignSettings
     Font.Style = []
     MaxLength = 3
     ParentFont = False
-    TabOrder = 5
+    TabOrder = 4
     Text = '   '
   end
 end

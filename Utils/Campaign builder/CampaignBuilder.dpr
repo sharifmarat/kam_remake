@@ -7,7 +7,9 @@ uses
   KM_Campaigns in '..\..\src\KM_Campaigns.pas',
   KM_ResSprites in '..\..\src\res\KM_ResSprites.pas',
   KM_ResSpritesEdit in '..\..\src\res\KM_ResSpritesEdit.pas',
-  RenderPanel in 'RenderPanel.pas';
+  RenderPanel in 'RenderPanel.pas',
+  PictureMaps in 'PictureMaps.pas' {fPictureMaps},
+  uCampaignSettings in 'uCampaignSettings.pas' {fCampaignSettings};
 
 {$R *.res}
 
