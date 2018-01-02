@@ -384,7 +384,8 @@ procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
     AMap.Video[mvBefore] := AJson['VideoBefore'];
     AMap.Video[mvAfter] := AJson['VideoAfter'];
 
-    for i := 0 to AJson.A['Nodes'].Count - 1 do
+    AMap.NodeCount := AJson.A['Nodes'].Count;
+    for i := 0 to AMap.NodeCount - 1 do
     begin
       AMap.Nodes[i].X := AJson.A['Nodes'].Items[i].ObjectValue['X'];
       AMap.Nodes[i].Y := AJson.A['Nodes'].Items[i].ObjectValue['Y'];
