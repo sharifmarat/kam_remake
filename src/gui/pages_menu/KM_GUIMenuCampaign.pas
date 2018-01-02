@@ -174,9 +174,14 @@ begin
 
   for I := 0 to High(Image_CampaignSubNode) do
   begin
-    Image_CampaignSubNode[I].Visible := false;
-    Image_CampaignSubNode[I].Left := fCampaign.Maps[fMapIndex].Nodes[I].X;
-    Image_CampaignSubNode[I].Top  := fCampaign.Maps[fMapIndex].Nodes[I].Y;
+    if i < fCampaign.Maps[fMapIndex].NodeCount then
+    begin
+      Image_CampaignSubNode[I].Visible := not fCampaign.NodeAnimation;
+      Image_CampaignSubNode[I].Left := fCampaign.Maps[fMapIndex].Nodes[I].X;
+      Image_CampaignSubNode[I].Top  := fCampaign.Maps[fMapIndex].Nodes[I].Y;
+    end
+    else
+      Image_CampaignSubNode[I].Visible := False;
   end;
 
   Label_CampaignTitle.Caption := fCampaign.CampaignMissionTitle(fMapIndex);
@@ -203,18 +208,19 @@ end;
 
 procedure TKMMenuCampaign.AnimNodes(aTickCount: Cardinal);
 begin
-  if not InRange(fAnimNodeIndex, 0, fCampaign.Maps[fMapIndex].NodeCount-1) then Exit;
-  if (aTickCount mod CAMP_NODE_ANIMATION_PERIOD) <> 0 then Exit;
-  if Image_CampaignSubNode[fAnimNodeIndex].Visible then Exit;
-  Image_CampaignSubNode[fAnimNodeIndex].Visible := true;
-  inc(fAnimNodeIndex);
+  if not InRange(fAnimNodeIndex, 0, fCampaign.Maps[fMapIndex].NodeCount - 1)
+    or ((aTickCount mod CAMP_NODE_ANIMATION_PERIOD) <> 0)
+    or Image_CampaignSubNode[fAnimNodeIndex].Visible then
+    Exit;
+
+  Image_CampaignSubNode[fAnimNodeIndex].Visible := True;
+  Inc(fAnimNodeIndex);
 end;
 
 procedure TKMMenuCampaign.UpdateState(aTickCount: Cardinal);
 begin
-  if fCampaign <> nil then
-    if fCampaign.Maps[fMapIndex].NodeCount > 0 then
-      AnimNodes(aTickCount);
+  if (fCampaign <> nil) and fCampaign.NodeAnimation and (fCampaign.Maps[fMapIndex].NodeCount > 0) then
+    AnimNodes(aTickCount);
 end;
 
 procedure TKMMenuCampaign.Resize(X, Y: Word);
