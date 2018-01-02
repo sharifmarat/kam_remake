@@ -1039,7 +1039,11 @@ begin
     af_Wav: Ext := WAV_FILE_EXT;
     af_Ogg: Ext := OGG_FILE_EXT;
   end;
-  Result := ChangeFileExt(GetMissionFile, '.' + UnicodeString(aSound) + Ext)
+  Result := ChangeFileExt(GetMissionFile, '.' + UnicodeString(aSound) + Ext);
+  if not FileExists(ExeDir + Result) then
+    Result := ExtractFilePath(GetMissionFile) + UnicodeString(aSound) + Ext;
+  if not FileExists(ExeDir + Result) then
+    Result := ExtractFilePath(ExtractFileDir(GetMissionFile)) + 'Sounds\' + UnicodeString(aSound) + Ext;
 end;
 
 
