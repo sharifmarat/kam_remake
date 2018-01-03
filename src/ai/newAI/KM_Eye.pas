@@ -4,7 +4,9 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_FloodFill,
-  KM_ResHouses, KM_ResWares, KM_ArmyPresence;
+  KM_ResHouses, KM_Houses, KM_ResWares,
+  KM_ArmyPresence, KM_AIArmyEvaluation,
+  KM_NavMeshFloodPositioning, KM_NavMeshPathFinding;
 
 const
   MAX_SCAN_DIST_FROM_HOUSE = 10;
@@ -39,15 +41,13 @@ type
   private
     fOwner: TKMHandIndex;
     fHousesMapping: THouseMappingArray;
-    fGoldMines, fIronMines, fStoneMiningTiles: TKMPointList;
-    fCoalClusters: TKMList;
+    fGoldMines, fIronMines, fStoneMiningTiles, fCoalMiningTiles: TKMPointList;
 
-    fArmyPresence: TKMArmyPresence;
-
-    POM: TKMPointList;
+    fArmyEvaluation: TKMArmyEvaluation;
+    fPathfinding: TNavMeshPathFinding;
+    fPositioning: TNavMeshFloodPositioning;
 
     procedure InitHousesMapping();
-
     function CheckResourcesNearMine(aLoc: TKMPoint; aHT: THouseType): Boolean;
   public
     constructor Create();
@@ -56,7 +56,9 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property HousesMapping: THouseMappingArray read fHousesMapping write fHousesMapping;
-    property ArmyPresence: TKMArmyPresence read fArmyPresence write fArmyPresence;
+    property ArmyEvaluation: TKMArmyEvaluation read fArmyEvaluation;
+    property Pathfinding: TNavMeshPathFinding read fPathfinding write fPathfinding;
+    property Positioning: TNavMeshFloodPositioning read fPositioning write fPositioning;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -72,6 +74,7 @@ type
     function GetForests(): TKMPointTagList;
     function GetClosestTrees(aLoc: TKMPoint): TKMPointTagList;
     function GetHouse(aHT: THouseType; var aLoc: TKMPoint): Boolean;
+    function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
     procedure Paint(aRect: TKMRect);
   end;
@@ -81,7 +84,7 @@ type
 implementation
 uses
   KM_Terrain, KM_Hand, KM_Resource, KM_AIFields, KM_HandsCollection, KM_RenderAux,
-  KM_NavMesh, KM_CommonUtils;
+  KM_NavMesh;
 
 
 { TKMEye }
@@ -90,11 +93,11 @@ begin
   fGoldMines := TKMPointList.Create();
   fIronMines := TKMPointList.Create();
   fStoneMiningTiles := TKMPointList.Create();
-  fCoalClusters := TKMList.Create();
+  fCoalMiningTiles := TKMPointList.Create();
 
-  fArmyPresence := TKMArmyPresence.Create();
-
-  POM := TKMPointList.Create();
+  fArmyEvaluation := TKMArmyEvaluation.Create();
+  fPathfinding := TNavMeshPathFinding.Create();
+  fPositioning := TNavMeshFloodPositioning.Create();
 
   InitHousesMapping();
 end;
@@ -104,32 +107,46 @@ begin
   fGoldMines.Free;
   fIronMines.Free;
   fStoneMiningTiles.Free;
-  fCoalClusters.Free;
+  fCoalMiningTiles.Free;
 
-  fArmyPresence.Free;
+  fArmyEvaluation.Free;
+  fPathfinding.Free;
+  fPositioning.Free;
 
-  POM.Free;
   inherited;
 end;
 
 
 procedure TKMEye.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.WriteA('Eye');
+  SaveStream.Write(fOwner);
+
   fGoldMines.SaveToStream(SaveStream);
   fIronMines.SaveToStream(SaveStream);
   fStoneMiningTiles.SaveToStream(SaveStream);
-  fArmyPresence.Save(SaveStream);
-// SAVE LIST
+  fCoalMiningTiles.SaveToStream(SaveStream);
+
+  fArmyEvaluation.Save(SaveStream);
+
+  // The following does not requires save
+  // fPathfinding
+  // fPositioning
+  // fInfluenceSearch
+  // fHousesMapping
 end;
 
 procedure TKMEye.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.ReadAssert('Eye');
+  LoadStream.Read(fOwner);
+
   fGoldMines.LoadFromStream(LoadStream);
   fIronMines.LoadFromStream(LoadStream);
   fStoneMiningTiles.LoadFromStream(LoadStream);
-  fArmyPresence.Load(LoadStream);
-  // LOAD LIST
-  InitHousesMapping();
+  fCoalMiningTiles.LoadFromStream(LoadStream);
+
+  fArmyEvaluation.Load(LoadStream);
 end;
 
 
@@ -142,14 +159,8 @@ var
   X,Y: Integer;
   Loc: TKMPoint;
   VisitArr: TKMByte2Array;
-  PoitList: TKMPointList;
   SearchResource: TKMSearchResource;
-
-  diff: LongInt;
 begin
-
-  diff := TimeGet;
-
   SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := Low(VisitArr) to High(VisitArr) do
   for X := Low(VisitArr[Y]) to High(VisitArr[Y]) do
@@ -174,9 +185,8 @@ begin
         end
         else if (gTerrain.TileIsCoal(X, Y) > 1) then
         begin
-          PoitList := TKMPointList.Create();
-          SearchResource.QuickFlood(X,Y,COAL_NUM,PoitList);
-          fCoalClusters.Add(PoitList);
+          if CanAddHousePlan(Loc, ht_CoalMine, True, False) then
+            fCoalMiningTiles.Add(Loc);
         end
         else if (gTerrain.TileIsStone(X, Y) > 1) then
         begin
@@ -186,18 +196,15 @@ begin
         //else if (gTerrain.ObjectIsChopableTree(X, Y)) then
         //  VisitArr[Y,X] := TREE_NUM;
       end;
-    diff := GetTimeSince(diff);
   finally
     SearchResource.Free();
   end;
-
-  fArmyPresence.AfterMissionInit();
 end;
 
 
 procedure TKMEye.UpdateState(aTick: Cardinal);
 begin
-  fArmyPresence.UpdateState(aTick);
+  fArmyEvaluation.UpdateState(aTick);
 end;
 
 
@@ -443,6 +450,10 @@ begin
   if not CanPlaceHouse(aLoc, aHT, aIgnoreTrees) then
     Exit;
 
+  // Make sure that we dont put new house into another plan (just entrance is enought because houses have similar size)
+  if gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aLoc.X,aLoc.Y)) then
+    Exit;
+
   // Scan tiles inside house plan
   for I := Low(fHousesMapping[aHT].Tiles) to High(fHousesMapping[aHT].Tiles) do
   begin
@@ -456,7 +467,7 @@ begin
 
     //This tile must not contain fields/houseplans of allied players
     for PL := 0 to gHands.Count - 1 do
-      if (gHands[fOwner].Alliances[PL] = at_Ally) AND (PL <> fOwner) then
+      if (gHands[fOwner].Alliances[PL] = at_Ally) then// AND (PL <> fOwner) then
         if (gHands[PL].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ft_None) then
           Exit;
   end;
@@ -475,9 +486,15 @@ begin
           Exit;
     if (aHT in [ht_GoldMine, ht_IronMine]) then
       continue;
-    // Make sure we can add road below house; Woodcutters may take place for mine so its arena must be scaned completely
-    if ((Dir = dirS) OR (aHT = ht_Woodcutters)) AND (gTerrain.Land[Y,X].Passability * [tpMakeRoads, tpWalkRoad] = []) then
-    //if (gTerrain.Land[Y,X].Passability * [tpMakeRoads, tpWalkRoad] = []) then
+    // Make sure we can add road below house;
+    // Woodcutters / CoalMine may take place for mine so its arena must be scaned completely
+    if (
+         (Dir = dirS) OR (aHT = ht_Woodcutters) OR (aHT = ht_CoalMine)
+       ) AND not (
+         (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ft_Road)
+         OR (gTerrain.Land[Y, X].TileLock = tlRoadWork)
+         OR (gTerrain.Land[Y, X].Passability * [tpMakeRoads, tpWalkRoad] <> [])
+       ) then
       Exit;
   end;
 
@@ -551,27 +568,24 @@ end;
 // Cluster algorithm (inspired by DBSCAN but clusters may overlap)
 function TKMEye.GetForests(): TKMPointTagList;
 const
+  OWNERSHIP_LIMIT = 50;
   RADIUS = 5;
   MAX_DIST = RADIUS+1; // When is max radius = 5 and max distance = 6 and use KMDistanceAbs it will give area similar to circle (without need to calculate euclidean distance!)
   VISIT_MARK = RADIUS+1;
   MIN_POINTS_CNT = 3;
-  UNVISITED_TREE = 3;
-  VISITED_TREE = 4;
+  UNVISITED_TREE = 1;
+  VISITED_TREE = 2;
 var
   X,X2,Y,Y2, Distance: Integer;
   Cnt: Single;
   Point, sumPoint, newPoint: TKMPoint;
   VisitArr: TKMByte2Array;
   Forests: TKMPointTagList;
-
-  diff: LongInt;
 begin
-  diff := TimeGet;
-
   setLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := 1 to gTerrain.MapY - 1 do
   for X := 1 to gTerrain.MapX - 1 do
-    if (gAIFields.Influences.Ownership[fOwner, Y, X] > 0) AND gTerrain.ObjectIsChopableTree(X, Y) then
+    if (gAIFields.Influences.Ownership[fOwner, Y, X] > OWNERSHIP_LIMIT) AND gTerrain.ObjectIsChopableTree(X, Y) then
       VisitArr[Y,X] := UNVISITED_TREE
     else
       VisitArr[Y,X] := 0;
@@ -602,19 +616,17 @@ begin
       if (Cnt > MIN_POINTS_CNT) then
       begin
         Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-        Forests.Add( Point, Round(Cnt) );
-        Forests.Tag2[Forests.Count-1] := gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X];
+        if (gAIFields.Influences.AvoidBuilding[ Point.Y, Point.X ] < 250) then
+        begin
+          Forests.Add( Point, Round(Cnt) );
+          Forests.Tag2[Forests.Count-1] := gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X];
+        end;
       end;
     end;
   Result := Forests;
 
   // ADD CASE WHERE NO FOREST WAS FOUND!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  POM.Clear;
-  for X := 0 to Forests.Count-1 do
-    POM.Add(Forests.Items[X]);
-
-  diff := GetTimeSince(diff);
 end;
 
 
@@ -627,25 +639,55 @@ end;
 function TKMEye.GetCoalLocs(): TKMPointTagList;
 var
   I,K,Own: Integer;
-  PoitList: TKMPointList;
+  Loc: TKMPoint;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
-  for I := 0 to fCoalClusters.Count - 1 do
+  for I := 0 to fCoalMiningTiles.Count - 1 do
   begin
-    PoitList := fCoalClusters[I];
-    for K := PoitList.Count - 1 downto 0 do
-    begin
-      Own := gAIFields.Influences.Ownership[fOwner, PoitList.Items[K].Y,PoitList.Items[K].X];
-      if (Own = 0) then
-        continue;
-      if (tpBuild in gTerrain.Land[PoitList.Items[K].Y,PoitList.Items[K].X].Passability) then
-        Output.Add(PoitList.Items[K], Own)
-      else
-        PoitList.Delete(K);
-    end;
+    Loc := fCoalMiningTiles.Items[I];
+    Own := gAIFields.Influences.Ownership[fOwner, Loc.Y, Loc.X];
+    if (Own = 0) then
+      continue;
+    if (tpBuild in gTerrain.Land[Loc.Y,Loc.X].Passability) then
+      Output.Add(Loc, Own)
+    else
+      fCoalMiningTiles.Delete(I);
   end;
   Result := Output;
+end;
+
+
+function TKMEye.GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
+const
+  SCANNED_HOUSES = [ht_Store, ht_School, ht_Barracks];
+var
+  I, Cnt: Integer;
+  HT: THouseType;
+  H: TKMHouse;
+begin
+  // Find required house cnt
+  Cnt := 0;
+  for HT in SCANNED_HOUSES do
+    Cnt := Cnt + gHands[fOwner].Stats.GetHouseQty(HT);
+  SetLength(Result, 1 + (Cnt-1) * Byte(aMultiplePoints));
+  // Exit if we have 0 houses
+  if (Cnt = 0) then
+    Exit;
+
+  Cnt := 0;
+  for I := 0 to gHands[fOwner].Houses.Count - 1 do
+  begin
+    H := gHands[fOwner].Houses[I];
+    if (H.HouseType in SCANNED_HOUSES) AND not H.IsDestroyed AND H.IsComplete then
+    begin
+      Result[Cnt] := KMPointBelow(H.Entrance);
+      Cnt := Cnt + 1;
+      if (Length(Result) <= Cnt) then // in case of not aMultiplePoints
+        Exit;
+    end;
+  end;
+  SetLength(Result, Cnt); // Just to be sure ...
 end;
 
 
@@ -671,24 +713,18 @@ var
   Point: TKMPoint;
   PoitList: TKMPointList;
 begin
-  for I := 0 to fCoalClusters.Count - 1 do
+  //{
+  for I := 0 to fCoalMiningTiles.Count - 1 do
   begin
-    PoitList := fCoalClusters.Items[I];
-    for K := 0 to PoitList.Count - 1 do
-      gRenderAux.Quad(PoitList.Items[K].X, PoitList.Items[K].Y, COLOR_BLACK);
+    Point := fCoalMiningTiles.Items[I];
+    gRenderAux.Quad(Point.X, Point.Y, COLOR_BLACK);
   end;
   for I := 0 to fStoneMiningTiles.Count - 1 do
   begin
     Point := fStoneMiningTiles.Items[I];
     gRenderAux.Quad(Point.X, Point.Y, COLOR_RED);
   end;
-  for I := 0 to POM.Count - 1 do
-  begin
-    Point := POM.Items[I];
-    gRenderAux.Quad(Point.X, Point.Y, COLOR_RED);
-  end;
-
-  fArmyPresence.Paint(aRect);
+  //}
 end;
 
 
