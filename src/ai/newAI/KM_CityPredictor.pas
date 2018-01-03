@@ -18,17 +18,16 @@ type
     Houses: array[HOUSE_MIN..HOUSE_MAX] of Word;
   end;
   TWareBalanceArray = array[WARE_MIN..WARE_MAX] of TWareBalance;
-  TWarfareDemands = array[WARFARE_MIN..WARFARE_MAX] of Single;
+  //TWarfareDemands = array[WARFARE_MIN..WARFARE_MAX] of Single;
   TRequiredHousesArray = array[HOUSE_MIN..HOUSE_MAX] of Integer;
 
   TKMCityPredictor = class
   private
     fOwner: TKMHandIndex;
-    fCityStats: TCityStats;
-    fWareBalance: TWareBalanceArray;
-
     fCornDelay: Cardinal;
     fMaxSoldiersInMin: Single;
+    fCityStats: TCityStats;
+    fWareBalance: TWareBalanceArray;
 
     procedure UpdateWareProduction(aWT: TWareType);
     procedure UpdateWareConsumption(aWT: TWareType; aInitialization: Boolean = False);
@@ -36,7 +35,6 @@ type
     procedure UpdateWareDerivation(aWT: TWareType; aInitialization: Boolean = False);
     procedure UpdateWareBalance(aInitialization: Boolean = False);
 
-    //procedure PlanCityStats();
     procedure UpdateBasicHouses(aInitialization: Boolean = False);
     procedure UpdateCityStats();
   public
@@ -44,15 +42,15 @@ type
 
     constructor Create(aPlayer: TKMHandIndex);
     destructor Destroy(); override;
-    procedure AfterMissionInit();
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
 
-    procedure UpdateState(aTick: Cardinal);
+    procedure AfterMissionInit();
     procedure CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+    procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
 
@@ -142,6 +140,44 @@ begin
 end;
 
 
+procedure TKMCityPredictor.Save(SaveStream: TKMemoryStream);
+var
+  WT: TWareType;
+begin
+  SaveStream.WriteA('CityPredictor');
+  SaveStream.Write(fOwner);
+  SaveStream.Write(fCornDelay);
+  SaveStream.Write(fMaxSoldiersInMin);
+
+  // Requred houses should be saved because of public variable
+  SaveStream.Write(RequiredHouses, SizeOf(TRequiredHousesArray));
+  // fWareBalance must be saved because of FinalConsumption
+  for WT := WARE_MIN to WARE_MAX do
+    SaveStream.Write(fWareBalance[WT], SizeOf(TWareBalance));
+  // Stats are updated each cycle and doesn't have to be saved
+  //fCityStats: TCityStats;
+end;
+
+
+procedure TKMCityPredictor.Load(LoadStream: TKMemoryStream);
+var
+  WT: TWareType;
+begin
+  LoadStream.ReadAssert('CityPredictor');
+  LoadStream.Read(fOwner);
+  LoadStream.Read(fCornDelay);
+  LoadStream.Read(fMaxSoldiersInMin);
+
+  // Requred houses should be saved because of public variable
+  LoadStream.Read(RequiredHouses, SizeOf(TRequiredHousesArray));
+  // fWareBalance must be saved because of FinalConsumption
+  for WT := WARE_MIN to WARE_MAX do
+    LoadStream.Read(fWareBalance[WT], SizeOf(TWareBalance));
+  // Stats are updated each cycle and doesn't have to be saved
+  //fCityStats: TCityStats;
+end;
+
+
 procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
@@ -188,13 +224,14 @@ end;
 // Update food consumption
 procedure TKMCityPredictor.UpdateFoodConsumption(aInitialization: Boolean = False);
 const
-  CITIZEN_FOOD_COEF = 0.05; //On average citizen needs to eat each 40min but takes 2 food to full status = 1/20 = 0.05
-  SOLDIER_FOOD_COEF = 0.025; //On average soldier needs to eat each 40min and takes 1 food to full status = 1/40 = 0.025
+  CITIZEN_FOOD_COEF = 0.05; // On average citizen needs to eat each 40min but takes 2 food to full status = 1/20 = 0.05
+  SOLDIER_FOOD_COEF = 0.025; // On average soldier needs to eat each 40min and takes 1 food to full status = 1/40 = 0.025
+  CITIZEN_RESERVE = 3.5 * 15; // Production of food suffer by ~15 min delay -> add some citizens (1 school = 3.5 citizen / min * estimated delay)
 var
   Consumption: Single;
 begin
   // Get consumption of city + army
-  Consumption := (fCityStats.CitizensCnt * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
+  Consumption := ((fCityStats.CitizensCnt + CITIZEN_RESERVE) * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
   // Calculate consumption of leather armor / min and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
   fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
@@ -373,13 +410,13 @@ begin
   fMaxSoldiersInMin := 0;
   // Estimation of final weapons production
   // Iron weapons
-  aIronMineCnt := 2;
+  aIronMineCnt := 3;
   MaxIronWeapProd := aIronMineCnt * ProductionRate[wt_IronOre] / 2.0;
   for I := Low(IRON_WARFARE) to High(IRON_WARFARE) do
     fWareBalance[ IRON_WARFARE[I] ].FinalConsumption := MaxIronWeapProd;
   //Standard weapons
   MaxWoodWeapProd := Min(6.0, Max(2.0,aBuildCnt / 900.0)) * ProductionRate[wt_Axe]; // 2 <-> 6 in matter of avaiable place
-  MaxWoodWeapProd := 0 * ProductionRate[wt_Axe];
+  MaxWoodWeapProd := 2 * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
     fWareBalance[ STANDARD_WARFARE[I] ].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
@@ -410,32 +447,37 @@ begin
   begin
     fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce)
   end;
-  if not GA_PLANNER AND (gGame.GameTickCount - fCornDelay < 0) then
+  if not GA_PLANNER then
   begin
-    RequiredHouses[ht_Swine] := 0;
+    RequiredHouses[ht_Sawmill] := Min(RequiredHouses[ht_Sawmill], Byte(gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 5));
+    if (gGame.GameTickCount - fCornDelay < 0) then
+    begin
+      RequiredHouses[ht_Swine] := 0;
+      RequiredHouses[ht_Mill] := 0;
+      RequiredHouses[ht_Bakery] := 0;
+    end;
     RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
     RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
     RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
 
-    RequiredHouses[ht_Mill] := 0;
-    RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
+    if (gGame.GameTickCount < 36000) then
+      RequiredHouses[ht_Wineyard] := 0;
+
+    //if (gHands[fOwner].Stats.GetWareBalance(wt_Corn) = 0) then
+    //begin
+    //  RequiredHouses[ht_Mill] := 0;
+    //  RequiredHouses[ht_Swine] := 0;
+    //end;
+    //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+    //RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
+    //RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
+    //RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
+    //
+    //
+    //RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
+    //RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+    //RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
   end;
-
-  if (gGame.GameTickCount < 36000) then
-    RequiredHouses[ht_Wineyard] := 0;
-
-  //RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
-  //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-  //RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
-  //RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
-  //
-  //RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
-  //RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
-
-
-  RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
-  RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
-  RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
   //}
 end;
 
@@ -500,7 +542,7 @@ var
   I: Integer;
   HT: THouseType;
 begin
-  aBalanceText := 'Ware balance (ware type -> production; actual consumption; final consumption; fraction; exhaustion):|';
+  aBalanceText := 'Ware balance (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
   //{
   for I := CO_WARE_MIN to CO_WARE_MAX do
     AddWare(CONSUMPTION_ORDER[I], WARE_TO_STRING[ CONSUMPTION_ORDER[I] ]);
@@ -525,23 +567,6 @@ begin
 end;
 
 
-
-
-
-
-procedure TKMCityPredictor.Save(SaveStream: TKMemoryStream);
-begin
-  SaveStream.Write(fOwner);
-
-
-end;
-
-
-procedure TKMCityPredictor.Load(LoadStream: TKMemoryStream);
-begin
-  LoadStream.Read(fOwner);
-
-end;
 
 
 end.
