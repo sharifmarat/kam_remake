@@ -458,7 +458,7 @@ var
   BacklineCount: Integer;
 begin
   //Get defence Outline with weights representing how important each segment is
-  gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
+  //gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
 
   fDefencePositions.Clear;
   BacklineCount := 0;
