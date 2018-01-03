@@ -39,7 +39,7 @@ uses
   KM_CityPlanner in 'src\ai\newAI\KM_CityPlanner.pas',
   KM_ArmyManagement in 'src\ai\newAI\KM_ArmyManagement.pas',
   KM_ArmyAttack in 'src\ai\newAI\KM_ArmyAttack.pas',
-  KM_ArmyPresence in 'src\ai\newAI\KM_ArmyPresence.pas',
+  KM_ArmyDefence in 'src\ai\newAI\KM_ArmyDefence.pas',
 
   KM_Alerts in 'src\KM_Alerts.pas',
   KM_BuildList in 'src\KM_BuildList.pas',
@@ -172,6 +172,10 @@ uses
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',
   KM_PolySimplify in 'src\navmesh\KM_PolySimplify.pas',
   KM_NavMeshPathFinding in 'src\navmesh\KM_NavMeshPathFinding.pas',
+  KM_NavMeshFloodFill in 'src\navmesh\KM_NavMeshFloodFill.pas',
+  KM_NavMeshFloodPositioning in 'src\navmesh\KM_NavMeshFloodPositioning.pas',
+  KM_NavMeshInfluences in 'src\navmesh\KM_NavMeshInfluences.pas',
+  KM_NavMeshDefences in 'src\navmesh\KM_NavMeshDefences.pas',
 
   {$IFDEF USESECUREAUTH}
     KM_NetAuthSecure in 'src\net\KM_NetAuthSecure.pas',
