@@ -10,6 +10,7 @@
 *.or
 *.a
 *.rsj
+/bat/bat_rsvars_local.bat
 /KaM_Remake.drc
 /KaM_Remake.map
 /KaM_Remake.res
