@@ -5,7 +5,7 @@ uses
   Classes, KromUtils, Math, SysUtils,
   KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points,
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats,
-  KM_CityPredictor, KM_CityBuilder, KM_CityPlanner;
+  KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 type
   TWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -72,7 +72,6 @@ begin
 
   fOwner := aPlayer;
   fSetup := aSetup;
-  fSetup.ApplyAgressiveBuilderSetup(True);
 
   fBuilder := TKMCityBuilder.Create(aPlayer);
   fPredictor := TKMCityPredictor.Create(aPlayer);
@@ -90,8 +89,9 @@ end;
 
 procedure TKMCityManagement.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.WriteA('CityManagement');
   SaveStream.Write(fOwner);
-  // fSetup IS NOT SAVED!!!!
+
   fBuilder.Save(SaveStream);
   fPredictor.Save(SaveStream);
 end;
@@ -99,8 +99,9 @@ end;
 
 procedure TKMCityManagement.Load(LoadStream: TKMemoryStream);
 begin
+  LoadStream.ReadAssert('CityManagement');
   LoadStream.Read(fOwner);
-  // fSetup IS NOT SAVED!!!!
+
   fBuilder.Load(LoadStream);
   fPredictor.Load(LoadStream);
 end;
@@ -119,7 +120,18 @@ const
   WORKER_COEF = 80.0;
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt, FreeWorkersCnt, I, Cnt: Integer;
+  vA1, vA2, vA3, vA4: Integer;
+  A1: array[0..3] of Integer;
+  A2: array of integer;
 begin
+  vA1 := SizeOf(A1);
+  vA2 := SizeOf(A2);
+  SetLength(A2, 5);
+  vA3 := SizeOf(A2);
+  vA4 := SizeOf(A2[0]) * Length(A2);
+
+  fSetup.ApplyAgressiveBuilderSetup;
+
   gAIFields.Eye.OwnerUpdate(fOwner);
 
   fPredictor.AfterMissionInit();
@@ -156,17 +168,17 @@ begin
         Cnt := 0;
     end;
 
-  //SetKaMSeed(1);
+  //SetKaMSeed(1); // REMOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 end;
 
 
 procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
   WORKER_COEF = 5.0;
+  LONG_UPDATE = MAX_HANDS * 10;
 var
   FreeWorkersCnt: Integer;
 begin
-  gAIFields.Eye.OwnerUpdate(fOwner);
   // Priorities
   if (aTick = 10) then
   begin
@@ -178,7 +190,7 @@ begin
   fBuilder.UpdateState(aTick, FreeWorkersCnt);
   //if ((FreeWorkersCnt > 0) OR (gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) > 0)) AND (aTick mod 12 = fOwner) then
   //if (aTick mod 12 = fOwner) AND (FreeWorkersCnt > 0) then
-  if (aTick mod 12 = fOwner) AND (FreeWorkersCnt > 0) then
+  if (aTick mod MAX_HANDS = fOwner) AND (FreeWorkersCnt > 0) then
   begin
     fPredictor.UpdateState(aTick);
     fBuilder.ChooseHousesToBuild(Max(1,Ceil(FreeWorkersCnt/WORKER_COEF)), fPredictor.RequiredHouses, fPredictor.WareBalance);
@@ -189,10 +201,8 @@ begin
       //LogStatus(fBalanceText);
     end;
   end;
-  //}
-
-
-  if (aTick mod 120 = 0) then
+//}
+  if (aTick mod LONG_UPDATE = fOwner) then
   begin
     if not GA_PLANNER then
       CheckUnitCount();
@@ -204,168 +214,6 @@ begin
 end;
 
 
-// Check existing unit count vs house count and train missing citizens
-{
-procedure TKMCityManagement.CheckUnitCount();
-var
-  P: TKMHand;
-  UnitReq: array [CITIZEN_MIN..CITIZEN_MAX] of Integer;
-
-  function TryToTrain(aSchool: TKMHouseSchool; aUnitType: TUnitType; aRequiredCount: Integer): Boolean;
-  begin
-    // We summ up requirements for e.g. Recruits required at Towers and Barracks
-    if P.Stats.GetUnitQty(aUnitType) < (aRequiredCount + UnitReq[aUnitType]) then
-    begin
-      Dec(UnitReq[aUnitType]); //So other schools don't order same unit
-      aSchool.AddUnitToQueue(aUnitType, 1);
-      Result := True;
-    end
-    else
-      Result := False;
-  end;
-
-  function RecruitsNeeded: Integer;
-  var AxesLeft: Integer;
-  begin
-    if P.Stats.GetHouseQty(ht_Barracks) = 0 then
-      Result := 0
-    else
-      if gGame.IsPeaceTime then
-      begin
-        //Keep enough recruits to equip using all weapons once PT ends
-        //Iron soldiers
-        Result := Min(P.Stats.GetWareBalance(wt_MetalArmor),
-                      P.Stats.GetWareBalance(wt_Arbalet) + P.Stats.GetWareBalance(wt_Hallebard)
-                      + Min(P.Stats.GetWareBalance(wt_Sword), P.Stats.GetWareBalance(wt_MetalShield)));
-        //Leather soldiers we can make
-        Inc(Result, Min(P.Stats.GetWareBalance(wt_Armor),
-                        P.Stats.GetWareBalance(wt_Bow) + P.Stats.GetWareBalance(wt_Pike)
-                        + Min(P.Stats.GetWareBalance(wt_Axe), P.Stats.GetWareBalance(wt_Shield))));
-        //Militia with leftover axes
-        AxesLeft := P.Stats.GetWareBalance(wt_Axe) - Min(P.Stats.GetWareBalance(wt_Armor), P.Stats.GetWareBalance(wt_Shield));
-        if AxesLeft > 0 then
-          Inc(Result, AxesLeft);
-      end
-      else
-        Result := fSetup.RecruitCount * P.Stats.GetHouseQty(ht_Barracks);
-  end;
-
-  function RequiredServCount(): Byte;
-  var I: Integer;
-    Output: Byte;
-  begin
-    Result := 0;
-    Output := Max(0, gHands[fOwner].Stats.GetHouseQty(ht_Any) + gHands[fOwner].Stats.GetUnitQty(ut_Worker) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
-    for I := 0 to p.Units.Count - 1 do
-      if not p.Units[I].IsDeadOrDying
-         AND (p.Units[I] is TKMUnitSerf)
-         AND (p.Units[I].UnitTask = nil) then
-           Exit;
-    // Increase count of serfs carefully
-    if (gHands[fOwner].Stats.GetUnitQty(ut_Serf) < 60) then
-      Output := Max(3, Result)
-    else
-      Output := Max(1, Result);
-    Result := Output;
-  end;
-
-var
-  I,K: Integer;
-  H: THouseType;
-  UT: TUnitType;
-  Schools: array of TKMHouseSchool;
-  HS: TKMHouseSchool;
-const
-  PRIORITY_TRAINING: array[0..12] of TUnitType = (
-    ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
-    ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker
-  );
-begin
-  P := gHands[fOwner];
-  FillChar(UnitReq, SizeOf(UnitReq), #0); //Clear up
-
-  //gHands[fOwner].Stats.GetHouseTotal(HT);
-  //Citizens
-  // Make sure we have enough gold left for self-sufficient city
-  if (P.Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (P.Stats.GetHouseTotal(ht_Metallurgists) = 0) then
-  begin
-    Inc(UnitReq[ut_Serf], 3 * Byte(P.Stats.GetUnitQty(ut_Serf) < 3)); // 3x Serf
-    Inc(UnitReq[ut_Worker], Byte((P.Stats.GetUnitQty(ut_Worker) = 0) AND (fSetup.WorkerCount > 0)));// 1x Worker
-    Inc(UnitReq[ut_Miner], P.Stats.GetHouseQty(ht_CoalMine) + P.Stats.GetHouseQty(ht_IronMine) + P.Stats.GetHouseQty(ht_GoldMine) - P.Stats.GetUnitQty(ut_Miner)); // Miner can go into iron / gold / coal mines (idealy we need 1 gold and 1 coal but it is hard to catch it)
-    Inc(UnitReq[ut_Metallurgist], P.Stats.GetHouseQty(ht_Metallurgists) + P.Stats.GetHouseQty(ht_IronSmithy) - P.Stats.GetUnitQty(ut_Metallurgist)); // Metallurgist (same problem like in case of miner)
-    Inc(UnitReq[ut_Woodcutter], Byte(P.Stats.GetUnitQty(ut_Woodcutter) = 0)); // 1x Woodcutter
-    Inc(UnitReq[ut_StoneCutter], Byte(P.Stats.GetUnitQty(ut_StoneCutter) = 0)); // 1x StoneCutter
-    Inc(UnitReq[ut_Lamberjack], Byte(P.Stats.GetUnitQty(ut_Lamberjack) = 0)); // 1x Lamberjack
-  end
-  //Count overall unit requirement (excluding Barracks and ownerless houses)
-  else
-  begin
-    for H := HOUSE_MIN to HOUSE_MAX do
-      if (gRes.Houses[H].OwnerType <> ut_None) and (H <> ht_Barracks) then
-        Inc(UnitReq[gRes.Houses[H].OwnerType], P.Stats.GetHouseQty(H));
-    for UT := Low(UnitReq) to High(UnitReq) do
-      Dec(UnitReq[UT], P.Stats.GetUnitQty(UT));
-    //UnitReq[ut_Serf] := Round(fSetup.SerfsPerHouse * (P.Stats.GetHouseTotal(ht_Any) + P.Stats.GetUnitQty(ut_Worker)/2));
-    UnitReq[ut_Serf] := RequiredServCount();
-    UnitReq[ut_Worker] := fSetup.WorkerCount - P.Stats.GetUnitQty(ut_Worker);
-  end;
-
-  //Schools
-  //Count overall schools count and exclude already training units from UnitReq
-  SetLength(Schools, P.Stats.GetHouseTotal(ht_School));
-  K := 1;
-  HS := TKMHouseSchool(P.FindHouse(ht_School, K));
-  while (HS <> nil) do
-  begin
-    Schools[K-1] := HS;
-    for I := 0 to HS.QueueLength - 1 do //Decrease requirement for each unit in training
-      if (HS.Queue[I] <> ut_None) then
-      begin
-        if (I = 0) then // if Queue is already active
-          Dec(UnitReq[HS.Queue[I]]) //Can be negative and compensated by e.g. ReqRecruits
-        else // else remove from Queue (it doesn't have to be actual ... when is city under attack we have to save gold)
-          HS.RemUnitFromQueue(I);
-      end;
-    Inc(K);
-    HS := TKMHouseSchool(P.FindHouse(ht_School, K));
-  end;
-
-  //Order the training. Keep up to 2 units in the queue so the school doesn't have to wait
-  for I := 0 to High(Schools) do
-  begin
-    HS := Schools[I];
-    if (HS <> nil) then
-    begin
-      //Order citizen training
-      for K := Low(PRIORITY_TRAINING) to High(PRIORITY_TRAINING) do
-      begin
-        UT := PRIORITY_TRAINING[K];
-        if UnitReq[UT] > 0 then
-        begin
-          Dec(UnitReq[UT], HS.AddUnitToQueue(UT, Min(UnitReq[UT], 2))); //So other schools don't order same unit
-          if HS.QueueCount > 1 then //Don't need more UnitTypes yet
-            Break;
-        end;
-      end;
-
-      // While still haven't found a match...
-      while (HS.QueueCount < 2) do
-      begin
-        // If we are low on Gold don't hire more ppl (next school will fail this too, so we can exit)
-        if P.Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD then
-          break;
-
-        if not gGame.CheckTime(fSetup.RecruitDelay) then //Recruits can only be trained after this time
-          Break
-        else
-          if not TryToTrain(HS, ut_Recruit, RecruitsNeeded) then
-            Break; //There's no unit demand at all
-      end;
-    end;
-  end;
-end;
-//}
-//{
 procedure TKMCityManagement.CheckUnitCount;
 var
   P: TKMHand;
@@ -414,8 +262,8 @@ var
   var
     I: Integer;
   begin
-    //Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) + gHands[fOwner].Stats.GetHouseTotal(ht_Any) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
-    Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
+    Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) + Round(gHands[fOwner].Stats.GetHouseTotal(ht_Any) * 0.5) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
+    //Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
     for I := 0 to P.Units.Count - 1 do
       if not P.Units[I].IsDeadOrDying
          AND (P.Units[I] is TKMUnitSerf)
@@ -523,7 +371,6 @@ begin
     end;
   end;
 end;
-//}
 
 
 //Check if specific woodcutters are in Fell only mode
@@ -729,85 +576,162 @@ end;
 
 // Calculate weapons demand from combat AI requirements
 function TKMCityManagement.WeaponsBalance(): TWarfareArr;
-const
-  ArmyDemands: array [TGroupType] of Integer = (  //TGroupType = (gt_Melee, gt_AntiHorse, gt_Ranged, gt_Mounted);
-    100, 100, 500, 100
-  );
-  {
-  AITroopTrainOrder: array [TGroupType, 1..3] of TUnitType = (
-    (ut_Swordsman,    ut_AxeFighter, ut_Militia),
-    (ut_Hallebardman, ut_Pikeman,    ut_None),
-    (ut_Arbaletman,   ut_Bowman,     ut_None),
-    (ut_Cavalry,      ut_HorseScout, ut_None)
-  );
-  UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TGroupType = (
-    gt_Melee,gt_Melee,gt_Melee, //ut_Militia, ut_AxeFighter, ut_Swordsman
-    gt_Ranged,gt_Ranged,        //ut_Bowman, ut_Arbaletman
-    gt_AntiHorse,gt_AntiHorse,  //ut_Pikeman, ut_Hallebardman,
-    gt_Mounted,gt_Mounted,      //ut_HorseScout, ut_Cavalry,
-    gt_Melee,                   //ut_Barbarian
-    //TPR Army
-    gt_AntiHorse,        //ut_Peasant
-    gt_Ranged,           //ut_Slingshot
-    gt_Melee,            //ut_MetalBarbarian
-    gt_Mounted           //ut_Horseman
-  );
-  TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TWareType = (
-    (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
-    (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
-    (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
-    (wt_Armor,        wt_Bow,         wt_None,  wt_None ), //Bowman
-    (wt_MetalArmor,   wt_Arbalet,     wt_None,  wt_None ), //Crossbowman
-    (wt_Armor,        wt_Pike,        wt_None,  wt_None ), //Lance Carrier
-    (wt_MetalArmor,   wt_Hallebard,   wt_None,  wt_None ), //Pikeman
-    (wt_Shield,       wt_Armor,       wt_Axe,   wt_Horse), //Scout
-    (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_Horse)  //Knight
-  );
-  WARRIOR_EQUIPABLE_MIN = ut_Militia;
-  WARRIOR_EQUIPABLE_MAX = ut_Cavalry;
-    ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
-    ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
-    ut_Cavalry,      ut_Barbarian,
-  //}
 var
-  I: Integer;
+  EnemyEval, AllyEval: TKMArmyEval;
+  WarriorsDemands: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Integer;
+
+  procedure ComputeGroupDemands(aGT: TGroupType; aIronRatio: Single);
+  const
+    // It doesnt depends on future "optimalization" of parameters: against cav should be always good pikes etc. so this array doesnt have to be computed
+    BEST_VERSUS_OPTION: array[TGroupType] of TGroupType = (gt_Melee, gt_Melee, gt_Ranged, gt_AntiHorse);
+  var
+    Wood, Iron: Boolean;
+    I: Integer;
+    EnemyAttack, EnemyDefence, MyAttack, MyDefence, AttackReq, DefenceReq: Single;
+    UT: TUnitType;
+    antiGT: TGroupType;
+    UnitEval: TKMGroupEval;
+  begin
+    // Get best type of oponent and compute iron ratio
+    antiGT := BEST_VERSUS_OPTION[aGT];
+    Wood := False;
+    Iron := False;
+    for I := 1 to 3 do
+    begin
+      UT := AITroopTrainOrder[antiGT,I];
+      if (UT <> ut_None) AND not gHands[fOwner].Locks.UnitBlocked[UT] then
+        if (I = 1) then
+          Iron := True
+        else
+          Wood := True;
+    end;
+    if Wood AND not Iron then
+      aIronRatio := 0
+    else if not Wood AND Iron then
+      aIronRatio := 1
+    else if not Wood AND not Iron then
+      Exit;
+
+    // Compute strength of specific enemy group
+    with EnemyEval[aGT] do
+    begin
+      EnemyAttack := Attack + AttackHorse * Byte(antiGT = gt_Mounted);
+      EnemyDefence := ifthen( (antiGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
+    end;
+    // Decrease strength by owner's existing units
+    with AllyEval[antiGT] do
+    begin
+      EnemyAttack := EnemyAttack - ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
+      EnemyDefence := EnemyDefence - Attack - AttackHorse * Byte(aGT = gt_Mounted);
+    end;
+    // Compute unit requirements
+    for I := 1 to 3 do
+    begin
+      UT := AITroopTrainOrder[antiGT,I];
+      // Skip unit type if case that it is blocked
+      if (UT = ut_None) OR gHands[fOwner].Locks.UnitBlocked[UT] then
+        continue;
+      // Calculate required count of specific unit type
+      UnitEval := gAIFields.Eye.ArmyEvaluation.UnitEvaluation[UT, True];
+      with UnitEval do
+      begin
+        MyAttack := Attack + AttackHorse * Byte(aGT = gt_Mounted);
+        MyDefence := ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
+      end;
+      AttackReq := EnemyAttack / MyDefence;
+      DefenceReq := EnemyDefence / MyAttack;
+      WarriorsDemands[UT] := WarriorsDemands[UT] + Max(0, Round(  Max(AttackReq, DefenceReq) * ifthen( (I = 1), aIronRatio, 1-aIronRatio )  )   );
+      if (I = 2) then // In case that ut_AxeFighter is not blocked skip militia
+        break;
+    end;
+  end;
+
+  procedure CheckMinArmyReq();
+  const
+    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Word = (
+      10, 10, 10, 30,//ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
+      30, 10, 10, 10,//ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
+      10//ut_Cavalry
+    );
+  var
+    SoldierCnt: Integer;
+    UT: TUnitType;
+  begin
+    SoldierCnt := 0;
+    for UT := Low(WarriorsDemands) to High(WarriorsDemands) do
+      SoldierCnt := SoldierCnt + WarriorsDemands[UT];
+    if (SoldierCnt > 30) then
+      Exit;
+
+    for UT := Low(WarriorsDemands) to High(WarriorsDemands) do
+      if not gHands[fOwner].Locks.UnitBlocked[UT] then
+        WarriorsDemands[UT] := WarriorsDemands[UT] + DEFAULT_ARMY_REQUIREMENTS[UT];
+  end;
+//AITroopTrainOrder: array [TGroupType, 1..3] of TUnitType = (
+//  (ut_Swordsman,    ut_AxeFighter, ut_Militia),
+//  (ut_Hallebardman, ut_Pikeman,    ut_None),
+//  (ut_Arbaletman,   ut_Bowman,     ut_None),
+//  (ut_Cavalry,      ut_HorseScout, ut_None)
+//);
+//UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TGroupType = (
+//  gt_Melee,gt_Melee,gt_Melee, //ut_Militia, ut_AxeFighter, ut_Swordsman
+//  gt_Ranged,gt_Ranged,        //ut_Bowman, ut_Arbaletman
+//  gt_AntiHorse,gt_AntiHorse,  //ut_Pikeman, ut_Hallebardman,
+//  gt_Mounted,gt_Mounted,      //ut_HorseScout, ut_Cavalry,
+//  gt_Melee,                   //ut_Barbarian
+//  //TPR Army
+//  gt_AntiHorse,        //ut_Peasant
+//  gt_Ranged,           //ut_Slingshot
+//  gt_Melee,            //ut_MetalBarbarian
+//  gt_Mounted           //ut_Horseman
+//);
+//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TWareType = (
+//  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
+//  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
+//  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
+//  (wt_Armor,        wt_Bow,         wt_None,  wt_None ), //Bowman
+//  (wt_MetalArmor,   wt_Arbalet,     wt_None,  wt_None ), //Crossbowman
+//  (wt_Armor,        wt_Pike,        wt_None,  wt_None ), //Lance Carrier
+//  (wt_MetalArmor,   wt_Hallebard,   wt_None,  wt_None ), //Pikeman
+//  (wt_Shield,       wt_Armor,       wt_Axe,   wt_Horse), //Scout
+//  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_Horse)  //Knight
+//);
+//WARRIOR_EQUIPABLE_MIN = ut_Militia;
+//WARRIOR_EQUIPABLE_MAX = ut_Cavalry;
+//  ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
+//  ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
+//  ut_Cavalry,      ut_Barbarian,
+
+var
+  I, SmithyCnt, WorkshopCnt, ArmorCnt: Integer;
   IronRatio: Single;
   WT: TWareType;
   GT: TGroupType;
   UT: TUnitType;
-  WarriorsDemands: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Integer;
   Warfare: TWarfareArr;
 begin
-  //gHands[fOwner].AI.General.DefencePositions.GetArmyDemand(Footmen, Pikemen, Horsemen, Archers);
+  ArmorCnt := gHands[fOwner].Stats.GetHouseQty(ht_ArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(ht_ArmorWorkshop);
+  SmithyCnt := gHands[fOwner].Stats.GetHouseQty(ht_WeaponSmithy);
+  WorkshopCnt := gHands[fOwner].Stats.GetHouseQty(ht_WeaponWorkshop);
+  if (ArmorCnt + SmithyCnt + WorkshopCnt = 0) then // Save time when nothing can be produced
+    Exit;
+  IronRatio := 0.5;
+  if (SmithyCnt + WorkshopCnt > 0) then // This will avoid to divide by zero
+    IronRatio := SmithyCnt / ((SmithyCnt + WorkshopCnt)*1.0);
+
+  // Humans may spam archers -> AI will not produce long-range support because of balancing units in team
+  // So it is better to calculate AllyEval just for Owner
+  //AllyEval := gAIFields.Eye.ArmyEvaluation.GetAllianceStrength(aPlayer, at_Ally);
+  AllyEval := gAIFields.Eye.ArmyEvaluation.Evaluation[fOwner];
+  EnemyEval := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[fOwner, at_Enemy];
 
   // Compute requirements of warriors
   for UT := Low(WarriorsDemands) to High(WarriorsDemands) do
     WarriorsDemands[UT] := 0;
-  for GT := Low(ArmyDemands) to High(ArmyDemands) do
-  begin
-    // Get distribution between iron / normal production (in case that iron / normal soldiers are blocked)
-    IronRatio := (
-                   + fSetup.EquipRateIron * Byte(not gHands[fOwner].Locks.UnitBlocked[ AITroopTrainOrder[GT,1] ])
-                   + fSetup.EquipRateLeather * Byte(gHands[fOwner].Locks.UnitBlocked[ AITroopTrainOrder[GT,2] ] AND gHands[fOwner].Locks.UnitBlocked[ AITroopTrainOrder[GT,3] ])  // Check if is possible to block ut_None!!!!!!!!!!!!!!!!!!!!!
-                 ) / (fSetup.EquipRateIron + fSetup.EquipRateLeather);
-    for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
-    begin
-      UT := AITroopTrainOrder[GT,I];
-      if (UT = ut_None)
-        OR (ArmyDemands[ UnitGroups[UT] ] <= 0)
-        OR gHands[fOwner].Locks.UnitBlocked[UT] then
-      begin
-        if (I = 2) then // Special case: ut_AxeFighter is blocked so distribute wood ratio of gt_Melee into ut_Militia
-          IronRatio := IronRatio + 1;
-      end
-      else
-      begin
-        WarriorsDemands[UT] := Ceil(Abs(ArmyDemands[GT] * (IronRatio - Min(1,(I - 1)) ))); // for I = 1 -> IronRatio; for I = 2,3 -> inverse of IronRatio ...
-        if (I = 1) then // Special case: ut_AxeFighter is NOT blocked so remove wood ratio to prevent produce weapons for ut_Militia
-          IronRatio := 2;
-      end;
-    end;
-  end;
+  for GT := Low(TGroupType) to High(TGroupType) do
+    ComputeGroupDemands(GT, IronRatio);
+  // Make sure that
+  CheckMinArmyReq();
 
   // Get weapons reserves
   for WT := Low(Warfare) to High(Warfare) do
