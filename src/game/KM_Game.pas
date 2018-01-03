@@ -1043,7 +1043,7 @@ begin
   if not FileExists(ExeDir + Result) then
     Result := ExtractFilePath(GetMissionFile) + UnicodeString(aSound) + Ext;
   if not FileExists(ExeDir + Result) then
-    Result := ExtractFilePath(ExtractFileDir(GetMissionFile)) + 'Sounds\' + UnicodeString(aSound) + Ext;
+    Result := ExtractFilePath(ExtractFileDir(GetMissionFile)) + 'Sounds' + PathDelim + UnicodeString(aSound) + Ext;
 end;
 
 

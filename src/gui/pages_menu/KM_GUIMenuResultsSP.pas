@@ -150,12 +150,6 @@ begin
   //Even if the campaign is complete Player can now return to it's screen to replay any of the maps
   Button_ResultsContinue.Visible := (gGameApp.Campaigns.ActiveCampaign <> nil) and (fGameResultMsg <> gr_ReplayEnd);
   Button_ResultsContinue.Enabled := fGameResultMsg = gr_Win;
-  {$IFDEF PLAYVIDEO}
-  case fGameResultMsg of
-    gr_Win: gVideoPlayer.Play('Victory.avi');
-    gr_Defeat, gr_Cancel: gVideoPlayer.Play('LOST.AVI');
-  end;
-  {$ENDIF}
   //Header
   case fGameResultMsg of
     gr_Win:       Label_Results.Caption := gResTexts[TX_MENU_MISSION_VICTORY];

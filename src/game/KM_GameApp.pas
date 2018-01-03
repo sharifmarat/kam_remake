@@ -137,7 +137,7 @@ begin
 
   fCampaigns    := TKMCampaignsCollection.Create;
   fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns');
 
   //If game was reinitialized from options menu then we should return there
   fMainMenuInterface := TKMMainMenuInterface.Create(aScreenX, aScreenY);
@@ -181,7 +181,7 @@ begin
   Stop(gr_Silent);
 
   FreeAndNil(fTimerUI);
-  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns');
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
   FreeThenNil(fMainMenuInterface);
@@ -231,7 +231,7 @@ begin
   //Campaigns use single locale
   fCampaigns := TKMCampaignsCollection.Create;
   fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns');
   fMainMenuInterface := TKMMainMenuInterface.Create(fRender.ScreenX, fRender.ScreenY);
   fMainMenuInterface.PageChange(gpOptions);
   Resize(fRender.ScreenX, fRender.ScreenY); //Force the recreated main menu to resize to the user's screen
@@ -473,6 +473,21 @@ begin
       if aMsg = gr_Win then
         fCampaigns.UnlockNextMap;
     end;
+    {$IFDEF PLAYVIDEO}
+    if aMsg in [gr_Win, gr_Defeat] then
+    begin
+      case aMsg of
+        gr_Win:
+          begin
+            if Assigned(fCampaigns.ActiveCampaign) then
+              gVideoPlayer.Play(['Victory.avi', fCampaigns.ActiveCampaign.Maps[gGame.CampaignMap].Video[mvAfter]])
+            else
+              gVideoPlayer.Play('Victory.avi');
+          end;
+        gr_Defeat, gr_Cancel: gVideoPlayer.Play('LOST.AVI');
+      end;
+    end;
+    {$ENDIF}
   end;
 
   case aMsg of

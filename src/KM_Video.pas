@@ -22,13 +22,10 @@ type
     procedure Paint; override;
   end;
 
-  TKMVideoPlayerEvent = reference to procedure;
-
   TKMVideoPlayer = class
   private
     FParentForm: TForm;
     FVideoList: TStringList;
-    FEndVideo: TKMVideoPlayerEvent;
     FPanel: TPanelTransparent;
     FMediaPlayer: TMediaPlayer;
     procedure Init;
@@ -37,11 +34,12 @@ type
     procedure MediaPlayerNotify(Sender: TObject);
     procedure PanelClick(Sender: TObject);
     function GetIsPlay: Boolean;
+    function FindVideoFile(var AFileName: UnicodeString): Boolean;
   public
     constructor Create(AParentForm: TForm);
     destructor Destroy; override;
-    procedure Play(AVideoName: array of String; AEndVideo: TKMVideoPlayerEvent = nil); overload;
-    procedure Play(AVideoName: String; AEndVideo: TKMVideoPlayerEvent = nil); overload;
+    procedure Play(AVideoName: array of UnicodeString); overload;
+    procedure Play(AVideoName: UnicodeString); overload;
     procedure Stop;
     procedure Resize;
     property IsPlay: Boolean read GetIsPlay;
@@ -53,6 +51,9 @@ var
 {$ENDIF}
 
 implementation
+
+uses
+  KM_Game, KM_GameApp;
 
 {$IFDEF PLAYVIDEO}
 
@@ -70,19 +71,31 @@ begin
   inherited;
 end;
 
-procedure TKMVideoPlayer.Play(AVideoName: String; AEndVideo: TKMVideoPlayerEvent = nil);
+function TKMVideoPlayer.FindVideoFile(var AFileName: UnicodeString): Boolean;
 begin
-  Play([AVideoName], AEndVideo);
+  //Result := ChangeFileExt(GetMissionFile, '.' + UnicodeString(aSound) + Ext);
+  if Assigned(gGame) and (gGame.GameMode = gmCampaign) and Assigned(gGameApp.Campaigns.ActiveCampaign) then
+  begin
+    //gGameApp.Campaigns.ActiveCampaign.
+  end;
+  Result := FileExists(VIDEOFILE_PATH + AFileName);
 end;
 
-procedure TKMVideoPlayer.Play(AVideoName: array of String; AEndVideo: TKMVideoPlayerEvent = nil);
+procedure TKMVideoPlayer.Play(AVideoName: UnicodeString);
+begin
+  Play([AVideoName]);
+end;
+
+procedure TKMVideoPlayer.Play(AVideoName: array of UnicodeString);
 var
   i: Integer;
 begin
   for i := 0 to High(AVideoName) do
-    if FileExists(VIDEOFILE_PATH + AVideoName[i]) then
+  begin
+   // Result := ChangeFileExt(GetMissionFile, '.' + UnicodeString(aSound) + Ext);
+    if FindVideoFile(AVideoName[i]) then
       FVideoList.Add(AVideoName[i]);
-  FEndVideo := AEndVideo;
+  end;
   Init;
   PlayNextVideo;
 end;
@@ -108,9 +121,6 @@ procedure TKMVideoPlayer.Clear;
 begin
   FreeAndNil(FMediaPlayer);
   FreeAndNil(FPanel);
-  if Assigned(FEndVideo) then
-    FEndVideo;
-  FEndVideo := nil;
 end;
 
 procedure TKMVideoPlayer.MediaPlayerNotify(Sender: TObject);
@@ -132,8 +142,8 @@ begin
   FMediaPlayer.FileName := VIDEOFILE_PATH + FVideoList[0];
   FVideoList.Delete(0);
   FMediaPlayer.Open;
-  Resize;
   FMediaPlayer.Play;
+  Resize;
   Application.ProcessMessages;
 end;
 
@@ -159,11 +169,14 @@ var
   Width, Height: Integer;
   AspectRatio: Single;
 begin
-  if not Assigned(FMediaPlayer) then
+  if not Assigned(FMediaPlayer) or not IsPlay then
     Exit;
 
-  Width := 640;// FMediaPlayer.DisplayRect.Right;
-  Height := 160 * 2;// FMediaPlayer.DisplayRect.Bottom * 2;
+  Width := FMediaPlayer.DisplayRect.Right;
+  Height := FMediaPlayer.DisplayRect.Bottom;
+  if Height / Width <= 0.26 then
+    Height := Height * 2;
+
   AspectRatio := Width / Height;
 
   if AspectRatio > FParentForm.ClientWidth / FParentForm.ClientHeight then

@@ -41,6 +41,7 @@ type
     procedure MouseMove(Shift: TShiftState; X,Y: Integer);
     procedure Resize(X, Y: Word);
     procedure Show(aCampaign: TKMCampaignId);
+    procedure UpdateChapter;
 
     procedure UpdateState(aTickCount: Cardinal);
   end;
@@ -48,7 +49,7 @@ type
 
 implementation
 uses
-  KM_GameApp, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_Sound, KM_ResSound;
+  KM_GameApp, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_Sound, KM_ResSound, KM_Video;
 
 const
   FLAG_LABEL_OFFSET_X = 10;
@@ -123,30 +124,39 @@ end;
 
 
 procedure TKMMenuCampaign.Campaign_Set(aCampaign: TKMCampaign);
-const MapPic: array [Boolean] of byte = (10, 11);
-var I: Integer;
 begin
   fCampaign := aCampaign;
+  fCampaign.ReserActiveChapter;
+
+  UpdateChapter;
+end;
+
+procedure TKMMenuCampaign.UpdateChapter;
+const
+  MapPic: array [Boolean] of byte = (10, 11);
+var
+  I: Integer;
+begin
 
   //Choose background
   Image_CampaignBG.RX := fCampaign.BackGroundPic.RX;
-  Image_CampaignBG.TexID := fCampaign.BackGroundPic.ID;
+  Image_CampaignBG.TexID := fCampaign.BackGroundPic.ID + fCampaign.ActiveChapter.PictureMapIndex - 1;
 
   //Setup sites
   for I := 0 to High(Image_CampaignFlags) do
   begin
-    Image_CampaignFlags[I].Visible := I < fCampaign.MapCount;
+    Image_CampaignFlags[I].Visible := I < fCampaign.ActiveChapter.MapCount;
     Image_CampaignFlags[I].TexID   := MapPic[I <= fCampaign.UnlockedMap];
     Image_CampaignFlags[I].HighlightOnMouseOver := I <= fCampaign.UnlockedMap;
-    Label_CampaignFlags[I].Visible := (I < fCampaign.MapCount) and (I <= fCampaign.UnlockedMap);
+    Label_CampaignFlags[I].Visible := (I < fCampaign.ActiveChapter.MapCount) and (I <= fCampaign.UnlockedMap);
   end;
 
   //Place sites
-  for I := 0 to fCampaign.MapCount - 1 do
+  for I := 0 to fCampaign.ActiveChapter.MapCount - 1 do
   begin
     //Pivot flags around Y=bottom X=middle, that's where the flag pole is
-    Image_CampaignFlags[I].Left := fCampaign.Maps[I].Flag.X - Round((Image_CampaignFlags[I].Width/2)*(1-Panel_Campaign_Flags.Scale));
-    Image_CampaignFlags[I].Top  := fCampaign.Maps[I].Flag.Y - Round(Image_CampaignFlags[I].Height   *(1-Panel_Campaign_Flags.Scale));
+    Image_CampaignFlags[I].Left := fCampaign.ActiveChapter.Maps[I].Flag.X - Round((Image_CampaignFlags[I].Width/2)*(1-Panel_Campaign_Flags.Scale));
+    Image_CampaignFlags[I].Top  := fCampaign.ActiveChapter.Maps[I].Flag.Y - Round(Image_CampaignFlags[I].Height   *(1-Panel_Campaign_Flags.Scale));
 
     Label_CampaignFlags[I].AbsLeft := Image_CampaignFlags[I].AbsLeft + FLAG_LABEL_OFFSET_X;
     Label_CampaignFlags[I].AbsTop := Image_CampaignFlags[I].AbsTop + FLAG_LABEL_OFFSET_Y;
@@ -155,7 +165,6 @@ begin
   //Select last map to play by 'clicking' last node
   Campaign_SelectMap(Image_CampaignFlags[fCampaign.UnlockedMap]);
 end;
-
 
 procedure TKMMenuCampaign.Campaign_SelectMap(Sender: TObject);
 var
@@ -256,11 +265,20 @@ end;
 
 
 procedure TKMMenuCampaign.Show(aCampaign: TKMCampaignId);
+var
+  Campaign: TKMCampaign;
 begin
-  Campaign_Set(gGameApp.Campaigns.CampaignById(aCampaign));
+  Campaign := gGameApp.Campaigns.CampaignById(aCampaign);
+  Campaign_Set(Campaign);
 
   //Refresh;
   Panel_Campaign.Show;
+
+  {$IFDEF PLAYVIDEO}
+
+ // gVideoPlayer.Play(Campaign.Chapters[].Video[mvAfter])
+
+  {$ENDIF}
 end;
 
 procedure TKMMenuCampaign.BackClick(Sender: TObject);
