@@ -66,7 +66,8 @@ implementation
 uses
   SysUtils,
   KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
-  KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points;
+  KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
+  KM_AIFields;
 
 
 { TKMHandAI }
@@ -410,11 +411,12 @@ begin
 
   case gHands[fOwner].HandType of
     hndHuman:     begin
-                    //Humans dont need Mayor and Army management
+                    //Humans dont need AI management
                   end;
     hndComputer:  begin
                     if fSetup.NewAI then
                     begin
+                      gAIFields.Eye.OwnerUpdate(fOwner);
                       fArmyManagement.UpdateState(aTick);
                       fCityManagement.UpdateState(aTick);
                     end
