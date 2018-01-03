@@ -10,12 +10,13 @@ type
   end;
 
   TKMArmyEval = array[TGroupType] of TKMGroupEval;
+  TKMGameEval = array[0 .. MAX_HANDS - 1] of TKMArmyEval;
 
 
   //This class evaluate self army relatively enemy armies
   TKMArmyEvaluation = class
   private
-    fEvals: array [0 .. MAX_HANDS - 1] of TKMArmyEval; //Results of evaluation
+    fEvals: TKMGameEval; //Results of evaluation
 
     procedure EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
     function GetUnitEvaluation(aUT: TUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
@@ -31,6 +32,7 @@ type
     property Evaluation[aPlayer: TKMHandIndex]: TKMArmyEval read GetEvaluation;
     property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TAllianceType]: TKMArmyEval read GetAllianceStrength;
 
+    //function AttackForceChance(aOponent: TKMHandIndex; aGroups: TKMUnitGroupArray): Single;
     function CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -60,26 +62,16 @@ end;
 
 
 procedure TKMArmyEvaluation.Save(SaveStream: TKMemoryStream);
-var
-  I: Integer;
-  GT: TGroupType;
 begin
   SaveStream.WriteA('ArmyEvaluation');
-  for I := 0 to MAX_HANDS - 1 do
-    for GT := Low(TGroupType) to High(TGroupType) do
-      SaveStream.Write(fEvals[I,GT], SizeOf(TKMGroupEval));
+  SaveStream.Write(fEvals, SizeOf(TKMGameEval));
 end;
 
 
 procedure TKMArmyEvaluation.Load(LoadStream: TKMemoryStream);
-var
-  I: Integer;
-  GT: TGroupType;
 begin
   LoadStream.ReadAssert('ArmyEvaluation');
-  for I := 0 to MAX_HANDS - 1 do
-    for GT := Low(TGroupType) to High(TGroupType) do
-      LoadStream.Read(fEvals[I,GT], SizeOf(TKMGroupEval));
+  LoadStream.Read(fEvals, SizeOf(TKMGameEval));
 end;
 
 
@@ -136,6 +128,14 @@ begin
 end;
 
 
+//function TKMArmyEvaluation.AttackForceChance(aOponent: TKMHandIndex; aGroups: TKMUnitGroupArray): Single;
+//var
+//
+//begin
+//  EnemyEval := Evaluation[aOponent];
+//end;
+
+
 // Approximate way how to compute strength of 2 alliances
 function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
 type
@@ -148,7 +148,11 @@ type
   begin
     for GT := Low(TGroupType) to High(TGroupType) do
       with aEval[GT] do
-        Result[GT] := Attack * AttackHorse * Hitpoints * Defence;
+      begin
+        Result[GT] := Attack * Hitpoints * Defence;
+        //if (GT = gt_AntiHorse) then
+        //  Resutl[GT] := Result[GT] * AttackHorse;
+      end;
   end;
 var
   Sum, Diff: Single;
@@ -167,7 +171,7 @@ begin
     Sum := Sum + AllyArmy[GT] + EnemyArmy[GT];
     Diff := Diff + AllyArmy[GT] - EnemyArmy[GT];
   end;
-  Result := Diff / Sum; // => number in <-1,1> ... positive = we have advantage and vice versa
+  Result := Diff / Max(1,Sum); // => number in <-1,1> ... positive = we have advantage and vice versa
 end;
 
 
