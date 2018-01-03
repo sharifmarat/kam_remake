@@ -342,7 +342,7 @@ begin
   if not P.Locks.HouseCanBuild(ht_WatchTower) then Exit;
 
   //Get defence Outline with weights representing how important each segment is
-  gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
+  //gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
   //Make list of defence positions
   for I := 0 to High(Outline2) do
   begin
