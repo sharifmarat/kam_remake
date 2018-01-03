@@ -20,7 +20,7 @@ LicenseFile=License.eng.txt
 DisableProgramGroupPage=yes
 OutputDir=Output
 OutputBaseFilename={#OutputEXE}_{#Revision}
-Compression=lzma
+Compression=lzma2
 SolidCompression=no
 Uninstallable=yes
 SetupIconFile=Embedded\KaM_Remake.ico
@@ -70,6 +70,17 @@ Filename: "{app}\{#MyAppExeName}"; Description: {cm:LaunchProgram,{#MyAppName}};
 
 [Code]
 #include "CheckKaM.iss"
+
+procedure InitializeWizard;
+var Diff: Integer;
+begin
+	//Change width of WizardSmallBitmapImage up to 125 
+  Diff := ScaleX(125) - WizardForm.WizardSmallBitmapImage.Width;
+  WizardForm.WizardSmallBitmapImage.Width := WizardForm.WizardSmallBitmapImage.Width + Diff
+	WizardForm.WizardSmallBitmapImage.Left := WizardForm.WizardSmallBitmapImage.Left - Diff - 5; // 5px margin to right border
+  WizardForm.PageDescriptionLabel.Width := WizardForm.PageDescriptionLabel.Width - Diff - 5;
+  WizardForm.PageNameLabel.Width := WizardForm.PageNameLabel.Width - Diff - 5;
+end;
 
 //Executed before the wizard appears, allows us to check that they have KaM installed
 function InitializeSetup(): Boolean;
