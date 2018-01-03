@@ -21,19 +21,19 @@ type
     fUsedNodes: array of TNavMeshNode;
 
     function HeapCmp(A,B: Pointer): Boolean;
-    procedure Flush();
+    procedure Flush(aDestroy: Boolean = False);
   protected
     function GetNodeAt(aIdx: Word): TNavMeshNode;
     function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Word;
     function EstimateToFinish(aIdx: Word): Word;
 
     function MakeRoute(): Boolean;
-    function ReturnRoute(out aRoutePointArray: TKMPointArray): TKMWordArray;
+    procedure ReturnRoute(out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray);
   public
     constructor Create();
     destructor Destroy(); override;
 
-    function Route_Make(aStart, aEnd: Word; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
+    function Route_Make(aStart, aEnd: TKMPoint; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
   end;
 
 
@@ -53,7 +53,7 @@ end;
 
 destructor TNavMeshPathFinding.Destroy;
 begin
-  Flush();
+  Flush(true);
   fHeap.Free;
   inherited;
 end;
@@ -68,11 +68,11 @@ begin
 end;
 
 
-procedure TNavMeshPathFinding.Flush();
+procedure TNavMeshPathFinding.Flush(aDestroy: Boolean = False);
 var
   I: Integer;
 begin
-  if (Length(fUsedNodes) <> Length(gAIFields.NavMesh.Polygons)) then
+  if not aDestroy AND (Length(fUsedNodes) <> Length(gAIFields.NavMesh.Polygons)) then
     SetLength(fUsedNodes, Length(gAIFields.NavMesh.Polygons));
   for I := Length(fUsedNodes)-1 downto 0 do
   begin
@@ -98,46 +98,21 @@ end;
 
 
 function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Word;
-  function KMPointAverage(aP1,aP2: TKMPoint): TKMPoint;
-  begin
-    Result.X := (aP1.X + aP2.X) shr 1;
-    Result.Y := (aP1.Y + aP2.Y) shr 1;
-  end;
 var
-  I,K: Integer;
-  P1,P2, DX,DY, Output: Word;
-  SPoint, EPoint: TKMPoint;
+  DX,DY, Output: Word;
 begin
   Output := 0;
   //Do not add extra cost if the tile is the target, as it can cause a longer route to be chosen
-
-  P1 := High(Word);
-  // Find common nodes (indexes of points) [P1,P2] of 2 triangles
-  for I := 0 to 2 do
-    for K := 0 to 2 do
-      if (gAIFields.NavMesh.Polygons[aTo].Indices[I] = gAIFields.NavMesh.Polygons[aFrom].Indices[K]) then
-      begin
-        if (P1 = High(Word)) then
-          P1 := gAIFields.NavMesh.Polygons[aTo].Indices[I]
-        else
-          P2 := gAIFields.NavMesh.Polygons[aTo].Indices[I];
-        break;
-      end;
-
-  aEPoint := KMPointAverage(gAIFields.NavMesh.Nodes[P1].Loc,gAIFields.NavMesh.Nodes[P2].Loc);
-
-  //SPoint := gAIFields.NavMesh.Polygons[aFrom].CenterPoint;
-  //EPoint := gAIFields.NavMesh.Polygons[aTo].CenterPoint;
   if (aTo <> fEnd) then
   begin
     DX := Abs(aSPoint.X - aEPoint.X);
     DY := Abs(aSPoint.Y - aEPoint.Y);
     if (DX > DY) then
-      Output := DX shl 3 + DY shl 2
+      Output := (DX shl 3) + (DY shl 2)
     else
-      Output := DY shl 3 + DX shl 2;
-    //Output := Output + fVisitedPrice[aTo]; // if this polygon is already in plan of some Platoon decrease chance that we will go this way
+      Output := (DY shl 3) + (DX shl 2);
   end;
+  // Output := KMDistanceAbs(SPoint, EPoint); // in test map it throws +1 cycle (109 vs 110 interactions
   Result := Output;
 end;
 
@@ -153,9 +128,9 @@ begin
   DX := Abs(SPoint.X - EPoint.X);
   DY := Abs(SPoint.Y - EPoint.Y);
   if (DX > DY) then
-    Output := DX shl 3 + DY shl 2
+    Output := (DX shl 3) + (DY shl 2)
   else
-    Output := DY shl 3 + DX shl 2;
+    Output := (DY shl 3) + (DX shl 2);
   Result := Output;
 end;
 
@@ -185,15 +160,19 @@ begin
     for I := 0 to PolyArr[fMinN.Idx].NearbyCount-1 do
     begin
       Idx := PolyArr[ fMinN.Idx ].Nearby[I];
+      // New polygon
       if (fUsedNodes[Idx] = nil) then
       begin
         N := GetNodeAt(Idx);
         N.Parent := fMinN;
+        N.Point := PolyArr[ fMinN.Idx ].NearbyPoints[I];
         N.CostTo := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, N.Point);
         fHeap.Push(N);
       end
+      // Visited polygon (recalculate estimation and actualize better result)
       else if (fUsedNodes[Idx].Estim <> c_closed) then
       begin
+        POMPoint := PolyArr[ fMinN.Idx ].NearbyPoints[I];
         NewCost := fMinN.CostTo + MovementCost(fMinN.Idx, Idx, fMinN.Point, POMPoint);
         if (NewCost < fUsedNodes[Idx].CostTo) then
         begin
@@ -214,11 +193,11 @@ begin
 end;
 
 
-function TNavMeshPathFinding.ReturnRoute(out aRoutePointArray: TKMPointArray): TKMWordArray;
+procedure TNavMeshPathFinding.ReturnRoute(out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray);
 const
   USED_PENALIZATION = 40;
 var
-  Count, POM: Word;
+  Count: Word;
   N: TNavMeshNode;
   Output: TKMWordArray;
 begin
@@ -240,27 +219,29 @@ begin
   begin
     aRoutePointArray[Count+1] := N.Point;
     Output[Count] := N.Idx;
-    POM := N.Idx;
     N := N.Parent;
     Inc(Count,1);
   end;
   aRoutePointArray[Count] := gAIFields.NavMesh.Polygons[ Output[Count-1] ].CenterPoint;
-
-  Result := Output;
 end;
 
 
-function TNavMeshPathFinding.Route_Make(aStart, aEnd: Word; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
+function TNavMeshPathFinding.Route_Make(aStart, aEnd: TKMPoint; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
 var Output: Boolean;
 begin
-  fStart := aStart;
-  fEnd := aEnd;
+  Result := False;
+  fStart := gAIFields.NavMesh.FindClosestPolygon(aStart);
+  fEnd := gAIFields.NavMesh.FindClosestPolygon(aEnd);
+  if (fStart = High(Word)) OR (fEnd = High(Word)) then  // Non-Existing polygon
+    Exit;
   Output := MakeRoute();
   if Output then
-     aRouteArray := ReturnRoute(aRoutePointArray);
+  begin
+    ReturnRoute(aRouteArray, aRoutePointArray);
+    aRoutePointArray[0] := aEnd;
+  end;
   Result := Output;
 end;
 
 
 end.
-
