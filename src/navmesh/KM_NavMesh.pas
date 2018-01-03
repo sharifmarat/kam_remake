@@ -2,9 +2,10 @@ unit KM_NavMesh;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_AIInfluences,
   KM_PolySimplify,
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
+  KM_NavMeshDefences,
+  KromUtils, KM_CommonUtils;// TimeGet
 
 
 type
@@ -16,7 +17,6 @@ type
   TNode = record
       Loc: TKMPoint;
       Nearby: array of Word; //Indexes of connected nodes
-      Owner: array [0..MAX_HANDS-1] of Byte;
     end;
 
   TPolygon = record
@@ -24,6 +24,7 @@ type
       NearbyCount: Byte; //could be 0 .. 3
       Indices: array [0..2] of Word; //Neighbour nodes
       Nearby: array [0..2] of Word; //Neighbour polygons
+      NearbyPoints: array [0..2] of TKMPoint; // Center points
     end;
 
   TNodeArray = array of TNode;
@@ -33,9 +34,6 @@ type
   //terrain is represented as a mesh interconnected polygons
   TKMNavMesh = class
   private
-    //Access influences to read terrain ownership values
-    fInfluences: TKMInfluences;
-
     //Keep a copy of these temp arrays for debug rendering
     fRawOutlines: TKMShapesArray;
     fSimpleOutlines: TKMShapesArray;
@@ -44,9 +42,12 @@ type
     //Working data
     fNodeCount: Integer;
     fPolyCount: Integer;
-    fNodes: TNodeArray;            // Nodes
-    fPolygons: TPolygonArray;      // Polygons
-    fPoint2PolygonArr: TKMWord2Array;
+    fNodes: TNodeArray;               // Nodes
+    fPolygons: TPolygonArray;         // Polygons
+    fPoint2PolygonArr: TKMWord2Array; // KMPoint -> Polygon index
+
+    //Defences class
+    fDefences: TNavMeshDefences;
 
     //Building the navmesh from terrain
     //Process involves many steps executed in a functional way
@@ -56,24 +57,26 @@ type
     procedure InitConnectivity;
     procedure TieUpTilesWithPolygons();
 
-    function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
-    function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
-    function RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
-    function EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
+    //function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
+    //function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
+    //function RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
+    //function EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
 
-    function GetBestOwner(aIndex: Integer): TKMHandIndex;
-    function NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
-    function PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
-    procedure UpdateOwnership;
+    //function GetBestOwner(aIndex: Integer): TKMHandIndex;
+    //function NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
+    //function PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
   public
-    constructor Create(aInfluences: TKMInfluences);
+    constructor Create();
+    destructor Destroy(); override;
 
     property Point2PolygonArr: TKMWord2Array read fPoint2PolygonArr;
     property Polygons: TPolygonArray read fPolygons;
     property Nodes: TNodeArray read fNodes;
+    property Defences: TNavMeshDefences read fDefences write fDefences;
 
-    procedure Init;
-    procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
+    procedure AfterMissionInit();
+    //procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
+    function GetDefenceLines(aOwner: TKMHandIndex; out aDefLines: TKMDefenceLines): Boolean;
     function FindClosestPolygon(aP: TKMPoint): Word;
 
     procedure Save(SaveStream: TKMemoryStream);
@@ -90,19 +93,27 @@ const
 implementation
 uses
   SysUtils, Math, Delaunay,
-  KM_Terrain, KM_HandsCollection, KM_RenderAux, KM_Outline;
+  KM_Terrain, KM_HandsCollection, KM_RenderAux, KM_Outline,
+  Dialogs;
 
 
 { TKMNavMesh }
-constructor TKMNavMesh.Create(aInfluences: TKMInfluences);
+constructor TKMNavMesh.Create();
 begin
   inherited Create;
 
-  fInfluences := aInfluences;
+  fDefences := TNavMeshDefences.Create();
 end;
 
 
-procedure TKMNavMesh.Init;
+destructor TKMNavMesh.Destroy();
+begin
+  fDefences.Free;
+  inherited;
+end;
+
+
+procedure TKMNavMesh.AfterMissionInit();
 var
   TileOutlines: TKMShapesArray;
 begin
@@ -145,7 +156,7 @@ end;
 
 
 // Find closest NavMesh in case that we get walkable point which is not part of Point2PolygonArr
-// (stonemason may mine stone and create walkable tiles which are not part of NavMesh [NavMesh is not updated durring game])
+// (stonemason may mine stone and create walkable tiles which are not part of NavMesh [NavMesh is not updated during game])
 function TKMNavMesh.FindClosestPolygon(aP: TKMPoint): Word;
 const
   MAX_SCAN_DIST = 10;
@@ -155,13 +166,17 @@ var
 begin
   Result := High(Word);
   if not gTerrain.TileInMapCoords(aP.X, aP.Y) then
+    aP := KMPoint(  Min( Max(1,aP.X), gTerrain.MapX-1), Min( Max(1,aP.Y), gTerrain.MapY-1)  );
+
+  Result := Point2PolygonArr[aP.Y,aP.X];
+  if (Result <> High(Word)) then
     Exit;
 
   Output := High(Word);
   for I := 0 to MAX_SCAN_DIST do
   begin
     PMin := KMPoint(Max(1,aP.X - I), Max(1,aP.Y - I));
-    PMax := KMPoint(Min(gTerrain.MapX,aP.X + I), Min(gTerrain.MapY,aP.Y + I));
+    PMax := KMPoint(Min(gTerrain.MapX-1,aP.X + I), Min(gTerrain.MapY-1,aP.Y + I));
     for X := PMin.X to PMax.X do
       if (Point2PolygonArr[PMin.Y,X] <> High(Word)) then
       begin
@@ -211,6 +226,28 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
     Result := ((b1 = b2) AND (b2 = b3));
   end;
 
+  procedure ComputeNearbyPoints(aIdx: Word);
+  var
+    SecondPoint: Boolean;
+    I,K,L, ToIdx: Integer;
+    Indices: array[0..1] of Word;
+  begin
+    for I := 0 to fPolygons[aIdx].NearbyCount - 1 do
+    begin
+      SecondPoint := False;
+      ToIdx := fPolygons[aIdx].Nearby[I];
+      for K := 0 to 2 do
+      for L := 0 to 2 do
+        if (fPolygons[aIdx].Indices[K] = fPolygons[ToIdx].Indices[L]) then
+        begin
+          Indices[ Byte(SecondPoint) ] := fPolygons[aIdx].Indices[K];
+          SecondPoint := True;
+          break;
+        end;
+      fPolygons[aIdx].NearbyPoints[I] := KMPointAverage(fNodes[ Indices[0] ].Loc, fNodes[ Indices[1] ].Loc);
+    end;
+  end;
+
 var
   AlreadyInTriangle: Boolean;
   I, i1, i2, i3: Word;
@@ -254,6 +291,8 @@ begin
           break;
       end;
     end;
+
+    ComputeNearbyPoints(I);
   end;
 end;
 
@@ -385,8 +424,6 @@ begin
   end;
 
   InitConnectivity;
-
-  UpdateOwnership;
 end;
 
 
@@ -451,25 +488,9 @@ begin
 end;
 
 
-//Copy ownership values from influence map
-//  for now those values are more accurate
-procedure TKMNavMesh.UpdateOwnership;
-var
-  I, K: Integer;
-begin
-  if not AI_GEN_NAVMESH then Exit;
-
-  for I := 0 to fNodeCount - 1 do
-    for K := 0 to gHands.Count - 1 do
-      fNodes[I].Owner[K] := Min(255, Max(
-        Max(fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Max(fNodes[I].Loc.X, 1)],
-            fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)]),
-        Max(fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Max(fNodes[I].Loc.X, 1)],
-            fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)])
-            ));
-end;
 
 
+{
 function TKMNavMesh.GetBestOwner(aIndex: Integer): TKMHandIndex;
 var
   I: Integer;
@@ -567,58 +588,57 @@ begin
 
   //Remove duplicate Edges, that will leave us with an outline
   for I := 0 to Edges.Count - 1 do
-  if (Edges.Nodes[I, 0] > -1) and (Edges.Nodes[I, 1] > -1) then
-  for K := I + 1 to Edges.Count - 1 do
-  if (Edges.Nodes[K, 0] > -1) and (Edges.Nodes[K, 1] > -1) then
-  if (Edges.Nodes[I, 0] = Edges.Nodes[K, 1]) and (Edges.Nodes[I, 1] = Edges.Nodes[K, 0]) then
-  begin
-    Edges.Nodes[I, 0] := -1;
-    Edges.Nodes[I, 1] := -1;
-    Edges.Nodes[K, 0] := -1;
-    Edges.Nodes[K, 1] := -1;
-  end;
+    if (Edges.Nodes[I, 0] > -1) and (Edges.Nodes[I, 1] > -1) then
+      for K := I + 1 to Edges.Count - 1 do
+        if (Edges.Nodes[K, 0] > -1) and (Edges.Nodes[K, 1] > -1) then
+          if (Edges.Nodes[I, 0] = Edges.Nodes[K, 1]) and (Edges.Nodes[I, 1] = Edges.Nodes[K, 0]) then
+          begin
+            Edges.Nodes[I, 0] := -1;
+            Edges.Nodes[I, 1] := -1;
+            Edges.Nodes[K, 0] := -1;
+            Edges.Nodes[K, 1] := -1;
+          end;
 
   //3. Detect and dismiss inner Edges
   //Separate Edges into open (having 2 polys) and closed (only 1 poly)
   //Once again we take advantage of the fact that polys built in CW order
   for I := 0 to fPolyCount - 1 do
-  with fPolygons[I] do
-  for K := 0 to Edges.Count - 1 do
-  if (Edges.Nodes[K, 0] <> -1) then
-  if ((Edges.Nodes[K, 0] = Indices[1]) and (Edges.Nodes[K, 1] = Indices[0]))
-  or ((Edges.Nodes[K, 0] = Indices[2]) and (Edges.Nodes[K, 1] = Indices[1]))
-  or ((Edges.Nodes[K, 0] = Indices[0]) and (Edges.Nodes[K, 1] = Indices[2])) then
-  begin
-    //Mark outer Edges
-    Edges.Nodes[K, 0] := -1000 - Edges.Nodes[K, 0];
-    Edges.Nodes[K, 1] := -1000 - Edges.Nodes[K, 1];
-  end;
+    with fPolygons[I] do
+      for K := 0 to Edges.Count - 1 do
+        if (Edges.Nodes[K, 0] <> -1) then
+          if ((Edges.Nodes[K, 0] = Indices[1]) and (Edges.Nodes[K, 1] = Indices[0]))
+          or ((Edges.Nodes[K, 0] = Indices[2]) and (Edges.Nodes[K, 1] = Indices[1]))
+          or ((Edges.Nodes[K, 0] = Indices[0]) and (Edges.Nodes[K, 1] = Indices[2])) then
+          begin
+            //Mark outer Edges
+            Edges.Nodes[K, 0] := -1000 - Edges.Nodes[K, 0];
+            Edges.Nodes[K, 1] := -1000 - Edges.Nodes[K, 1];
+          end;
   K := 0;
   for I := 0 to Edges.Count - 1 do
-  if (Edges.Nodes[I, 0] >= 0) then
-  begin //Dismiss inner Edges
-    Edges.Nodes[I, 0] := -1;
-    Edges.Nodes[I, 1] := -1;
-  end
-  else
-  if (Edges.Nodes[I, 0] < -1) then
-  begin //Promote marked outer Edges back
-    Edges.Nodes[I, 0] := -Edges.Nodes[I, 0] - 1000;
-    Edges.Nodes[I, 1] := -Edges.Nodes[I, 1] - 1000;
-    Inc(K);
-  end;
+    if (Edges.Nodes[I, 0] >= 0) then
+    begin //Dismiss inner Edges
+      Edges.Nodes[I, 0] := -1;
+      Edges.Nodes[I, 1] := -1;
+    end
+    else if (Edges.Nodes[I, 0] < -1) then
+    begin //Promote marked outer Edges back
+      Edges.Nodes[I, 0] := -Edges.Nodes[I, 0] - 1000;
+      Edges.Nodes[I, 1] := -Edges.Nodes[I, 1] - 1000;
+      Inc(K);
+    end;
 
   //4. Now we can assemble suboptimal outline from kept Edges
   Result.Count := K;
   SetLength(Result.Nodes, K);
   K := 0;
   for I := 0 to Edges.Count - 1 do
-  if (Edges.Nodes[I, 0] >= 0) then
-  begin
-    Result.Nodes[K, 0] := Edges.Nodes[I, 0];
-    Result.Nodes[K, 1] := Edges.Nodes[I, 1];
-    Inc(K);
-  end;
+    if (Edges.Nodes[I, 0] >= 0) then
+    begin
+      Result.Nodes[K, 0] := Edges.Nodes[I, 0];
+      Result.Nodes[K, 1] := Edges.Nodes[I, 1];
+      Inc(K);
+    end;
 end;
 
 
@@ -662,7 +682,15 @@ var
   I,K: Integer;
   Polys: TKMWordArray;
   Edges: TKMEdgesArray;
+
+  diff: Cardinal;
+  Sdiff: String;
+
 begin
+
+  diff := TimeGet;
+
+
   //1. Get ownership area
   Polys := GetOwnerPolys(aOwner);
 
@@ -684,25 +712,25 @@ begin
   //Floodfill outer polys skipping inner ones, remember best enemy influence
   AreaID := 0;
   for I := 0 to High(Polys) do
-  with fPolygons[Polys[I]] do
-    for K := 0 to NearbyCount - 1 do
-    if (AreaPolys[Nearby[K]] = AP_CLEAR) then
-    begin
-      Inc(AreaID);
-      FloodFillPolys(Polys[I]);
-    end;
+    with fPolygons[Polys[I]] do
+      for K := 0 to NearbyCount - 1 do
+      if (AreaPolys[Nearby[K]] = AP_CLEAR) then
+      begin
+        Inc(AreaID);
+        FloodFillPolys(Polys[I]);
+      end;
 
   //if enemy influence < 128 then mark as isolated
   K := Length(Polys);
   SetLength(Polys, fPolyCount);
   for I := 0 to fPolyCount - 1 do
-  if (AreaPolys[I] <> AP_CLEAR)
-  and (AreaPolys[I] <> AP_SEED)
-  and (AreaEnemy[AreaPolys[I]] < 128) then
-  begin
-    Polys[K] := I;
-    Inc(K);
-  end;
+    if (AreaPolys[I] <> AP_CLEAR)
+    and (AreaPolys[I] <> AP_SEED)
+    and (AreaEnemy[AreaPolys[I]] < 128) then
+    begin
+      Polys[K] := I;
+      Inc(K);
+    end;
   SetLength(Polys, K);
 
   Edges := ConvertPolysToEdges(Polys);
@@ -711,11 +739,21 @@ begin
 
   aOutline2 := EdgesToWeightOutline(Edges, aOwner);
 
+  diff := GetTimeSince(diff);
+  Str(diff,Sdiff);
+  //ShowMessage(Sdiff);
+
   //6. See if we can expand our area while reducing outline length
 
   //7. Deal with allies
   //   Two players could be on same island and share defence lines,
-  //   also they dont need defence line between them}
+  //   also they dont need defence line between them
+end;
+//}
+
+function TKMNavMesh.GetDefenceLines(aOwner: TKMHandIndex; out aDefLines: TKMDefenceLines): Boolean;
+begin
+  Result := fDefences.GetDefenceLines(aOwner, aDefLines);
 end;
 
 
@@ -733,17 +771,26 @@ begin
     SaveStream.Write(Integer(Length(fNodes[I].Nearby)));
     for K := 0 to Length(fNodes[I].Nearby) - 1 do
       SaveStream.Write(fNodes[I].Nearby[K]);
-
-    SaveStream.Write(fNodes[I].Owner, SizeOf(fNodes[I].Owner));
   end;
 
   SaveStream.Write(fPolyCount);
   for I := 0 to fPolyCount - 1 do
   begin
+    SaveStream.Write(fPolygons[I].CenterPoint);
     SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
     SaveStream.Write(fPolygons[I].NearbyCount);
     SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   end;
+
+  I := Length(fPoint2PolygonArr);
+  SaveStream.Write( I );
+  K := 0;
+  if (I > 0) then
+    K := Length(fPoint2PolygonArr[0]);
+  SaveStream.Write( K );
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    SaveStream.Write(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
 end;
 
 
@@ -764,25 +811,31 @@ begin
     SetLength(fNodes[I].Nearby, NewCount);
     for K := 0 to NewCount - 1 do
       LoadStream.Read(fNodes[I].Nearby[K]);
-
-    LoadStream.Read(fNodes[I].Owner, SizeOf(fNodes[I].Owner));
   end;
 
   LoadStream.Read(fPolyCount);
   SetLength(fPolygons, fPolyCount);
   for I := 0 to fPolyCount - 1 do
   begin
+    LoadStream.Read(fPolygons[I].CenterPoint);
     LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
     LoadStream.Read(fPolygons[I].NearbyCount);
     LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   end;
+
+  LoadStream.Read(I);
+  LoadStream.Read(K);
+  SetLength(fPoint2PolygonArr,I,K);
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    LoadStream.Read(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
 end;
 
 
 procedure TKMNavMesh.UpdateState(aTick: Cardinal);
 begin
-  if aTick mod 600 = 0 then
-    UpdateOwnership;
+  //if aTick mod 600 = 0 then
+  //  UpdateOwnership;
 end;
 
 
@@ -804,7 +857,7 @@ begin
     with fRawOutlines.Shape[I] do
       gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);//}
 
-  //{NavMesh polys coverage
+  {NavMesh polys coverage
   if OVERLAY_NAVMESH then
     for I := 0 to fPolyCount - 1 do
       gRenderAux.TriangleOnTerrain(
@@ -824,7 +877,7 @@ begin
       T1 := KMPointF(fNodes[Indices[K]].Loc);
       J := (K + 1) mod 2;
       T2 := KMPointF(fNodes[Indices[J]].Loc);
-      gRenderAux.LineOnTerrain(T1, T2, $FFFF8000, $F0F0);
+      gRenderAux.LineOnTerrain(T1, T2, $80FF8000, $F0F0);
     end;
 
   {//NavMesh vertice ids
@@ -856,7 +909,8 @@ begin
       K := GetBestOwner(I);
       if K <> PLAYER_NONE then
       begin
-        Col := fPlayers[K].FlagColor or $FF000000;
+        //Col := fPlayers[K].FlagColor or $FF000000;
+        Col := $FF000000;
         Col2 := IfThen(fNodes[I].Owner[K] = 255, $FFFFFFFF);
         Sz := Max(fNodes[I].Owner[K] - 128, 0) / 64;
 
@@ -866,10 +920,11 @@ begin
       end;
     end;//}
 
-  //Defence outlines
+  {//Defence outlines
   if OVERLAY_DEFENCES then
     for I := 0 to gHands.Count - 1 do
     begin
+      fAI.Setup.NewAI
       GetDefenceOutline(I, Outline1, Outline2);
 
       for K := 0 to High(Outline1) do
@@ -882,8 +937,34 @@ begin
         T2 := KMPerpendecular(Outline2[K].A, Outline2[K].B);
         gRenderAux.LineOnTerrain(T1.X, T1.Y, T2.X, T2.Y, $A000FF00);
       end;
-    end;
+    end;//}
 end;
 
 
 end.
+
+{
+// The following code was removed and replaced by NavMesh alternative
+TNode = record
+    Loc: TKMPoint;
+    Nearby: array of Word; //Indexes of connected nodes
+    Owner: array [0..MAX_HANDS-1] of Byte;
+  end;
+//Copy ownership values from influence map
+//  for now those values are more accurate
+procedure TKMNavMesh.UpdateOwnership;
+var
+  I, K: Integer;
+begin
+  if not AI_GEN_NAVMESH then Exit;
+
+  for I := 0 to fNodeCount - 1 do
+    for K := 0 to gHands.Count - 1 do
+      fNodes[I].Owner[K] := Min(255, Max(
+        Max(fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Max(fNodes[I].Loc.X, 1)],
+            fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)]),
+        Max(fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Max(fNodes[I].Loc.X, 1)],
+            fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)])
+            ));
+end;
+//}
