@@ -8,12 +8,18 @@ uses
   KM_Controls, KM_Pics,
   KM_Campaigns, KM_InterfaceDefaults;
 
-
 type
+  TKMMenuCampaignsMode = (
+    mcmSelect,
+    mcmEdit
+  );
+
   TKMMenuCampaigns = class (TKMMenuPageCommon)
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
+    fMode: TKMMenuCampaignsMode;
 
+    procedure RefreshControls;
     procedure RefreshList;
     procedure ListChange(Sender: TObject);
     procedure StartClick(Sender: TObject);
@@ -23,22 +29,21 @@ type
     ColumnBox_Camps: TKMColumnBox;
     Image_CampsPreview: TKMImage;
     Memo_CampDesc: TKMMemo;
-    Button_Camp_Start, Button_Camp_Back: TKMButton;
+    Button_Camp_Start, Button_Camp_Edit, Button_Camp_Create, Button_Camp_Back: TKMButton;
+    Label_Camp_Hint: TKMLabel;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
-    procedure Show;
+    procedure Show(AMode: TKMMenuCampaignsMode = mcmSelect);
   end;
 
 
 implementation
+
 uses
   KM_ResTexts, KM_ResFonts, KM_GameApp, KM_RenderUI;
 
-
 { TKMMainMenuInterface }
 constructor TKMMenuCampaigns.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
-var
-  L: TKMLabel;
 begin
   inherited Create;
 
@@ -69,19 +74,35 @@ begin
     Memo_CampDesc.AutoWrap := True;
     Memo_CampDesc.ItemHeight := 16;
 
-    L := TKMLabel.Create(Panel_CampSelect, 80, 540, 864, 40, gResTexts[TX_MENU_CAMP_HINT], fnt_Grey, taCenter);
-    L.AnchorsCenter;
-    L.AutoWrap := True;
+    Label_Camp_Hint := TKMLabel.Create(Panel_CampSelect, 80, 540, 864, 40, gResTexts[TX_MENU_CAMP_HINT], fnt_Grey, taCenter);
+    Label_Camp_Hint.AnchorsCenter;
+    Label_Camp_Hint.AutoWrap := True;
 
     Button_Camp_Start := TKMButton.Create(Panel_CampSelect, 362, 580, 300, 30, gResTexts[TX_MENU_CAMP_START], bsMenu);
     Button_Camp_Start.AnchorsCenter;
     Button_Camp_Start.OnClick := StartClick;
+
+    Button_Camp_Create := TKMButton.Create(Panel_CampSelect, 362, 540, 300, 30, gResTexts[TX_MENU_CAMP_CREATE], bsMenu);
+    Button_Camp_Create.AnchorsCenter;
+    Button_Camp_Create.OnClick := StartClick;
+
+    Button_Camp_Edit := TKMButton.Create(Panel_CampSelect, 362, 580, 300, 30, gResTexts[TX_MENU_CAMP_EDIT], bsMenu);
+    Button_Camp_Edit.AnchorsCenter;
+    Button_Camp_Edit.OnClick := StartClick;
 
     Button_Camp_Back := TKMButton.Create(Panel_CampSelect, 362, 625, 300, 30, gResTexts[TX_MENU_BACK], bsMenu);
     Button_Camp_Back.AnchorsCenter;
     Button_Camp_Back.OnClick := BackClick;
 end;
 
+procedure TKMMenuCampaigns.RefreshControls;
+begin
+  Button_Camp_Start.Visible := fMode = mcmSelect;
+  Label_Camp_Hint.Visible := fMode = mcmSelect;
+
+  Button_Camp_Edit.Visible := fMode = mcmEdit;
+  Button_Camp_Create.Visible := fMode = mcmEdit;
+end;
 
 procedure TKMMenuCampaigns.RefreshList;
 var
@@ -144,10 +165,18 @@ procedure TKMMenuCampaigns.StartClick(Sender: TObject);
 var
   cmp: UnicodeString;
 begin
-  //Get the caption and pass it to Campaign selection menu (it will be casted to TKMCampaignName there)
-  //so that we avoid cast/uncast/cast along the event chain
   cmp := gGameApp.Campaigns[ColumnBox_Camps.Rows[ColumnBox_Camps.ItemIndex].Tag].CampName;
-  fOnPageChange(gpCampaign, cmp);
+  if Sender = Button_Camp_Start then
+  begin
+    //Get the caption and pass it to Campaign selection menu (it will be casted to TKMCampaignName there)
+    //so that we avoid cast/uncast/cast along the event chain
+    fOnPageChange(gpCampaign, cmp);
+  end
+  else
+  if Sender = Button_Camp_Edit then
+  begin
+    fOnPageChange(gpCampaignEditor, cmp);
+  end;
 end;
 
 
@@ -157,8 +186,10 @@ begin
 end;
 
 
-procedure TKMMenuCampaigns.Show;
+procedure TKMMenuCampaigns.Show(AMode: TKMMenuCampaignsMode);
 begin
+  fMode := AMode;
+  RefreshControls;
   RefreshList;
 
   Panel_CampSelect.Show;

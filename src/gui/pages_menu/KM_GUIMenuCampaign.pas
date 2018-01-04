@@ -39,7 +39,7 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
 
     procedure MouseMove(Shift: TShiftState; X,Y: Integer);
-    procedure Resize(X, Y: Word);
+    procedure Resize(X, Y: Word); override;
     procedure Show(aCampaign: TKMCampaignId);
 
     procedure UpdateState(aTickCount: Cardinal);
@@ -221,6 +221,7 @@ procedure TKMMenuCampaign.Resize(X, Y: Word);
 var
   I: Integer;
 begin
+
   //Special rules for resizing the campaigns panel
   Panel_Campaign_Flags.Scale := Min(768,Y) / 768;
   Panel_Campaign_Flags.Left := Round(1024*(1-Panel_Campaign_Flags.Scale) / 2);

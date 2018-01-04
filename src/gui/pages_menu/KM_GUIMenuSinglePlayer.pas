@@ -20,6 +20,7 @@ type
     Button_SP_Tutor: TKMButton;
     Button_SP_Fight: TKMButton;
     Button_SP_Camp: TKMButton;
+    Button_SP_CampEdit: TKMButton;
     Button_SP_Single: TKMButton;
     Button_SP_Load: TKMButton;
     Button_SP_Back: TKMButton;
@@ -58,12 +59,15 @@ begin
       Button_SP_Load   := TKMButton.Create(Panel_SPButtons,0,200,350,30,gResTexts[TX_MENU_LOAD_SAVEGAME],bsMenu);
       Button_SP_Back   := TKMButton.Create(Panel_SPButtons,0,290,350,30,gResTexts[TX_MENU_BACK],bsMenu);
 
-      Button_SP_Tutor.OnClick  := ButtonClick;
-      Button_SP_Fight.OnClick  := ButtonClick;
-      Button_SP_Camp.OnClick   := ButtonClick;
-      Button_SP_Single.OnClick := ButtonClick;
-      Button_SP_Load.OnClick   := ButtonClick;
-      Button_SP_Back.OnClick   := BackClick;
+      Button_SP_CampEdit := TKMButton.Create(Panel_SPButtons,0,330,350,30,gResTexts[TX_MENU_CAMPAIGNS_EDITOR],bsMenu);
+
+      Button_SP_Tutor.OnClick    := ButtonClick;
+      Button_SP_Fight.OnClick    := ButtonClick;
+      Button_SP_Camp.OnClick     := ButtonClick;
+      Button_SP_Single.OnClick   := ButtonClick;
+      Button_SP_Load.OnClick     := ButtonClick;
+      Button_SP_CampEdit.OnClick := ButtonClick;
+      Button_SP_Back.OnClick     := BackClick;
 end;
 
 
@@ -89,6 +93,10 @@ begin
 
   if Sender = Button_SP_Load then
     fOnPageChange(gpLoad);
+
+  if Sender = Button_SP_CampEdit then
+    fOnPageChange(gpCampSelect, 'EDIT');
+
 end;
 
 

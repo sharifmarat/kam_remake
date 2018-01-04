@@ -12,7 +12,9 @@ type
   TKMMenuPageType =  (gpMainMenu,
                         gpSinglePlayer,
                           gpCampaign,
+                          gpCampaignEditor,
                           gpCampSelect,
+                          gpCampaignEditSelect,
                           gpSingleMap,
                           gpLoad,
                         gpMultiplayer,
@@ -28,12 +30,23 @@ type
   TGUIEvent = procedure (Sender: TObject; Dest: TKMMenuPageType) of object;
   TGUIEventText = procedure (Dest: TKMMenuPageType; const aText: UnicodeString = '') of object;
 
+  TKMUserInterfaceCommon = class;
+
   TKMMenuPageCommon = class
+  private
+    FParent: TKMUserInterfaceCommon;
   protected
     OnKeyDown: TNotifyEventKeyShift;
     OnEscKeyDown: TNotifyEvent;
   public
-    procedure MenuKeyDown(Key: Word; Shift: TShiftState);
+    procedure MenuKeyDown(Key: Word; Shift: TShiftState); virtual;
+    procedure MenuKeyUp(Key: Word; Shift: TShiftState); virtual;
+    procedure MenuMouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); virtual;
+    procedure MenuMouseMove(Shift: TShiftState; X,Y: Integer); virtual;
+    procedure MenuMouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); virtual;
+    procedure Show; virtual;
+    procedure Hide; virtual;
+    procedure Resize(X, Y: Word); virtual;
   end;
 
   TKMFileIdentInfo = record // File identification info (for maps/saves)
@@ -139,6 +152,7 @@ begin
   fMyControls.Paint;
 end;
 
+{ TKMMenuPageCommon }
 
 procedure TKMMenuPageCommon.MenuKeyDown(Key: Word; Shift: TShiftState);
 begin
@@ -148,6 +162,41 @@ begin
     else        if Assigned(OnKeyDown) then
                   OnKeyDown(Key, Shift);
   end;
+end;
+
+procedure TKMMenuPageCommon.MenuKeyUp(Key: Word; Shift: TShiftState);
+begin
+
+end;
+
+procedure TKMMenuPageCommon.MenuMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+
+end;
+
+procedure TKMMenuPageCommon.MenuMouseMove(Shift: TShiftState; X, Y: Integer);
+begin
+
+end;
+
+procedure TKMMenuPageCommon.MenuMouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+
+end;
+
+procedure TKMMenuPageCommon.Resize(X, Y: Word);
+begin
+
+end;
+
+procedure TKMMenuPageCommon.Show;
+begin
+
+end;
+
+procedure TKMMenuPageCommon.Hide;
+begin
+
 end;
 
 

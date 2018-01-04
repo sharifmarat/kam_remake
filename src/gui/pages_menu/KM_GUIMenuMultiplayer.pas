@@ -99,7 +99,7 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
 
     procedure Show(const aText: UnicodeString);
-    procedure Resize(X, Y: Word);
+    procedure Resize(X, Y: Word); override;
   end;
 
 
