@@ -23,9 +23,10 @@ xcopy ..\Music "%kam_folder%"\Music\ /y /r /s
 xcopy ..\Readme "%kam_folder%"\ /y /r /s
 
 REM ============================================================
-REM Copy data/sfx folder from KMRPrevVersionDir
+REM Copy files from KMRPrevVersionDir
 REM ============================================================
 xcopy "%KMRPrevVersionDir%"\data\sfx "%kam_folder%"\data\sfx\ /y /r /s
+xcopy "%KMRPrevVersionDir%"\Campaigns\*.mp3 "%kam_folder%"\Campaigns\ /y /r /s
 
 
 @REM ============================================================
