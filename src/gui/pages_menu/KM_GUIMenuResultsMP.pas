@@ -1398,13 +1398,6 @@ const
         KMSummAndEnlargeArr(@ChartData, @ChartWaresData);
       end;
 
-//      HandId := StrToInt(PlayersList[0]);
-//      with gHands[HandId] do
-//      begin
-//        aChart^.MaxLength := Max(aChart^.MaxLength, Stats.ChartCount);
-//        aChart^.AddLine(GetOwnerName(HandId), FlagColor, ChartData, I);
-//      end;
-
       HandId := StrToInt(PlayersList[0]);
       aChart^.MaxLength := Max(aChart^.MaxLength, gHands[HandId].Stats.ChartCount);
       aChart^.AddLine(fNamesToShow[aStatType, I], fColorsToShow[aStatType, I], ChartData, I);
