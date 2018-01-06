@@ -57,18 +57,11 @@ type
     BasicTiles, CA: Boolean;
   end;
 
-  TBalancedResource = record
-    Points: TKMPointArray;
-    Quantity: Integer;
-    Resource, MinesCnt: Byte;
-    TileCounter: TIntegerArray;
-  end;
-  TBalancedResource1Array = array of TBalancedResource;
-
 
   TKMRandomMapGenerator = class
   private
     fRNG: TKMRandomNumberGenerator;
+    fRes: TKMBalancedResources;
   // Generators of random points / seeds / shapes / shapes with certain rules
     function RandomPlayerLocs(): TKMPointArray;
     function LinearInterpolation(const aStep,aMaxNum: Integer): TInteger2Array;
@@ -81,12 +74,12 @@ type
   // Rules for extraction shapes from linear interpolation
     procedure Rules(const aTopLim,aTopLim2,aDownLim,aDownLim2: Integer; var aArr: TInteger2Array);
   // Procedures wich make composition of biomes
-    function CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array): TBalancedResource1Array;
+    procedure CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
     procedure CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi: TInteger2Array; var aPointsArr: TKMPoint2Array);
     procedure CreateBiomes(var A: TKMByte2Array);
   // Fix of mountain to be able to construct mine there
     //procedure MineFix(const Position: TKMPoint; const MINESIZE, Resource: Byte; var Visited: TBoolean2Array; var A: TKMByte2Array);
-    procedure MineFix(var Resources: TBalancedResource1Array; var A: TKMByte2Array);
+    procedure MineFix(var A: TKMByte2Array);
   // These functions secure smooth transitions
     procedure CellularAutomaton(var A: TKMByte2Array);
     function TileTemplate(var A: TKMByte2Array): TKMByte2Array;
@@ -94,7 +87,7 @@ type
     function TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
   // Generators of right rotated tiles and objects
     //procedure GenerateTilesOLD(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
-    procedure GenerateTiles(var Resources: TBalancedResource1Array; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
+    procedure GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
     procedure GenerateBasicTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure GenerateHeight(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
     procedure GenerateObjects(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
@@ -102,6 +95,10 @@ type
     RMGSettings: TKMRMGSettings;
     constructor Create();
     destructor Destroy(); override;
+    procedure SaveSettings();
+    procedure LoadSettings();
+
+    property Resources: TKMBalancedResources read fRes;
   // Random number generators
     procedure GenerateMap(var aTiles: TKMTerrainTileBriefArray);
   end;
@@ -197,12 +194,57 @@ uses
 constructor TKMRandomMapGenerator.Create();
 begin
   fRNG := TKMRandomNumberGenerator.Create;
+  fRes := TKMBalancedResources.Create
 end;
 
 
 destructor TKMRandomMapGenerator.Destroy();
 begin
   fRNG.Free;
+  fRes.Free;
+end;
+
+
+procedure TKMRandomMapGenerator.SaveSettings();
+begin
+
+end;
+
+
+procedure TKMRandomMapGenerator.LoadSettings();
+begin
+  //TKMRMGSettings = record
+  //  Walkable: record
+  //    Active, Grass, Ground, Snow, Sand: Boolean;
+  //    FirstLayerStep, FirstLayerLimit, SecondLayerStep, SecondLayerLimit: Word;
+  //  end;
+  //  Obstacle: record
+  //    Active: Boolean;
+  //    Ratio: array[TObstacleType] of Byte;
+  //    ProtectedRadius, Density, Size, Variance: Byte;
+  //  end;
+  //  Locs: record
+  //    Active: Boolean;
+  //    Players: Byte;
+  //    LocsPosition: Byte;
+  //    Resource: record
+  //      Active, ConnectLocs, MineFix: Boolean;
+  //      Stone, Gold, Iron: Integer;
+  //    end;
+  //  end;
+  //  Height: record
+  //    Active, HideNonSmoothTransition: Boolean;
+  //  end;
+  //  OnePath: record
+  //    NoGoZones, ReplaceTerrain: Boolean;
+  //  end;
+  //  Objects: record
+  //    Active, Animals: Boolean;
+  //    ObjectDensity, Forests, Trees: Byte;
+  //  end;
+  //  Seed: Integer;
+  //  BasicTiles, CA: Boolean;
+  //end;
 end;
 
 
@@ -231,7 +273,7 @@ var
   diff: Cardinal;
   Sdiff: String;
 begin
-
+  fRes.ClearArray();
   // Seed MUST be <> 0!!!
   if RMGSettings.Seed = 0 then
     RMGSettings.Seed := Round(High(Integer)*Random);
@@ -331,7 +373,7 @@ begin
 
   // Generate layers of shapes
   fRNG.Seed := RMGSettings.Seed;
-  Resources := CreateResources(Locs, A);
+  CreateResources(Locs, A);
 
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.Walkable.Active then
@@ -341,7 +383,7 @@ begin
     CellularAutomaton(A);
 
   if RMGSettings.Locs.Resource.MineFix then
-    MineFix(Resources, A);
+    MineFix(A);
 
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.OnePath.ReplaceTerrain then
@@ -354,7 +396,7 @@ begin
   if RMGSettings.BasicTiles then
     GenerateBasicTiles(TilesPartsArr,A)
   else
-    GenerateTiles(Resources, TilesPartsArr, A, TileTemplateArr);
+    GenerateTiles(TilesPartsArr, A, TileTemplateArr);
 
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.OnePath.NoGoZones AND (length(Locs) > 0) then
@@ -1105,9 +1147,10 @@ end;
 // Resources and INACCESSIBLE texture generator
 // aLocs = estimated player's positions
 // A = array to fill resources / obstacles
-// Result = TBalancedResource1Array = array of shapes which represents resources (each shape have its own count of resources and points which were get from Voronoi diagram)
-//          Cellular automaton can change shapes so it is important to keep more points to secure that every shape will have its resources in GenerateTiles
-function TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array): TBalancedResource1Array;
+// Note: add elements into class fRes: TBalancedResource1Array
+//   = array of shapes which represents resources (each shape have its own count of resources and points which were get from Voronoi diagram)
+//     Cellular automaton can change shapes so it is important to keep more points to secure that every shape will have its resources in GenerateTiles
+procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
   VORONOI_STEP = 3;
@@ -1118,7 +1161,7 @@ const
   RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.25, 0.25);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
-//
+// Find best place for resources (scan area around and find empy space)
 function FindBestResLoc(const aRADIUS: Single; aMin,aMax,aCenter: TKMPoint; var aCountArr: TInteger2Array; var aResLoc: TKMPoint): Boolean;
 const
   RESRAD = 2;
@@ -1149,6 +1192,7 @@ begin
   Result := not KMSamePoint(aResLoc, KMPOINT_ZERO);
 end;
 
+// Determine size of mountain to be sure that there will be possible to place specific number of mines
 procedure SetSizeOfMountain(aInitPoint: TKMPoint; var aReqSize, aNewSize: Integer; var aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array; var aPointArr: TKMPointArray);
 var
   Left, Right: Boolean;
@@ -1197,11 +1241,10 @@ var
   Voronoi,CountArr: TInteger2Array;
   ResSettings: TIntegerArray;
   ResAmount, ResTilesAmount, MinesCnt: array[0..4] of Integer; // Amount of tiles of specific resources
-  Locs, PointArr: TKMPointArray;
+  Locs, PointArr, ResPoints: TKMPointArray;
   PointsArr: TKMPoint2Array;
   SearchResource: TKMSearchBiome;
   FillResource: TKMFloodWithQueue;
-  Output: TBalancedResource1Array;
 begin
 
   // Initialization - Voroni diagram = divide map into small shapes which will be merged later; each shape have its point in PointsArr for fast searching
@@ -1282,19 +1325,20 @@ begin
               break;
             // Check if there is enought points to create mountains with specific size
             SetSizeOfMountain(ResLoc, size_Mountain, new_Size, CountArr, PointsArr, PointArr);
-            // Just a few interation so SetLength is fine
-            SetLength(Output, Length(Output)+1);
             // Merge shapes from Voronoi until we reach desired size
             if (RESOURCES[I] = btIron) OR (RESOURCES[I] = btGold) then
               cnt_REQUESTED := Round(   (cnt_FINAL - cnt_ACTUAL) * Max(  1.0, new_Size / ( Max(1.0,size_Mountain*1.0) )  )   )
             else
               cnt_REQUESTED := cnt_FINAL;
-            FillResource.FloodFillWithQueue(PointArr, cnt_REQUESTED, cnt_ACTUAL, RESOURCE, 1, PROB_REDUCER, Output[ High(Output) ].Points);
+            ResPoints := nil;
+            //SetLength(ResPoints, 0);
+            FillResource.FloodFillWithQueue(PointArr, cnt_REQUESTED, cnt_ACTUAL, RESOURCE, 1, PROB_REDUCER, ResPoints);
             // Actualize shape
             Fraction := (Min(cnt_FINAL, cnt_ACTUAL) - cnt_PREVIOUS) / Max(1,cnt_FINAL);
-            Output[ High(Output) ].MinesCnt := Round( Fraction * MinesCnt[I] );
-            Output[ High(Output) ].Quantity := Round( Fraction * ResAmount[I] );
-            Output[ High(Output) ].Resource := RESOURCE;
+            fRes.AddResource( Loc, RESOURCE, Round( Fraction * MinesCnt[I] ), // Owner, Resource, MinesCnt
+                              Round( Fraction * ResAmount[I] ), // Quantity
+                              ResPoints // Centers of Voronoi shapes
+                             );
             cnt_PREVIOUS := cnt_ACTUAL;
             size_Mountain := new_Size + 1; // Size of requested mines + edge (= 1)
           end;
@@ -1305,7 +1349,7 @@ begin
     end;
 
     // Return bottom values back
-    for I := High(PointsArr)  downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
+    for I := High(PointsArr) downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
       for K := Low(PointsArr[I]) to High(PointsArr[I]) do
         CountArr[I,K] := -CountArr[I,K];
   end;
@@ -1314,7 +1358,6 @@ begin
   if RMGSettings.Obstacle.Active then
     CreateObstacles(Locs, A,  Voronoi,  PointsArr);
 
-  Result := Output;
 end;
 //}
 
@@ -1340,7 +1383,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
     //  Make route to final point or another route
     ActP := StartP;
     Owerflow := 0;
-    while (FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y) do
+    while ( (not Result) AND ((FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y)) ) do
     begin
       Owerflow := Owerflow + 1;
       // Actualize current point
@@ -1348,10 +1391,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
       if (FinP.Y <> ActP.Y) then ActP.Y := ActP.Y + Vector.Y;
       // If we detect zero chance (or almost zero) we reached existing connection and algoritm may end
       if (P[ ActP.Y,ActP.X ] < Probability) then
-      begin
         Result := True;
-        break;
-      end;
       // Mark zero probability
       P[ActP.Y,ActP.X] := Probability;
       // Mark surrounding Voronoi shapes with 0 probability too
@@ -1452,7 +1492,7 @@ begin
   // Create protected radius = array with smaller chance to spawn obstacle near aLocs
   if RMGSettings.Locs.Resource.Active then
   begin
-    ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.01;
+    ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.02;
     MaxCnt := Round(1 / ProbabilityReducer);
     if RMGSettings.Locs.Resource.ConnectLocs then
       ConnectLocs(aLocs, P);
@@ -1460,7 +1500,7 @@ begin
       for Y := Max(  Low(P), aLocs[I].Y - MaxCnt  ) to Min(  High(P), aLocs[I].Y + MaxCnt  ) do
         for X := Max(  Low(P[Y]), aLocs[I].X - MaxCnt  ) to Min(  High(P[Y]), aLocs[I].X + MaxCnt  ) do
         begin
-          Probability := (  Abs(aLocs[I].X - X) + Abs(aLocs[I].Y - Y)  ) * ProbabilityReducer;
+          Probability := KMLengthDiag(X,Y,aLocs[I]) * ProbabilityReducer;
           if (P[Y,X] > Probability) then
             P[Y,X] := Probability;
         end;
@@ -1493,7 +1533,7 @@ begin
 
       // Fill array A with obstacles
       cntr := 0;
-      finalCnt := Max(1,Round((1 - fRNG.Random() * RMGSettings.Obstacle.Variance / 10) * RMGSettings.Obstacle.Size));
+      finalCnt := Max(1,Round((1 - fRNG.Random() * RMGSettings.Obstacle.Variance * 0.1) * (RMGSettings.Obstacle.Size * 2)));
       check := True;
       while check AND (cntr < finalCnt) do
       begin
@@ -1550,7 +1590,7 @@ end;
 
 
 // Fixer of mountains with iron or gold to be able to place mines there
-procedure TKMRandomMapGenerator.MineFix(var Resources: TBalancedResource1Array; var A: TKMByte2Array);
+procedure TKMRandomMapGenerator.MineFix(var A: TKMByte2Array);
 type
   TLimitShape = record
     Active: Boolean;
@@ -1559,27 +1599,27 @@ type
 var
   Shape: array of TLimitShape;
 // Search maximal and minimal values of each column in shape
-  procedure MinerFixFloodSearch(const Resource: Byte; const Y,X: Integer; var aVisited: TBoolean2Array);
-  begin
-    if not aVisited[Y,X] AND (A[Y,X] = Resource) then
-    begin
-      aVisited[Y,X] := True;
-      Shape[X].Active := True;
-      if (Y >= Shape[X].Max) then
-      begin
-        Shape[X].Max := Y;
-        if (A[Y+1,X] <> Resource) AND (A[Y+1,X] <> Byte(btCoal)) then
-          A[Y+1,X] := 0;
-      end;
-      if (Y < Shape[X].Min) then
-        Shape[X].Min := Y;
-
-      if (Y < gTerrain.MapY-1) then MinerFixFloodSearch(Resource, Y+1,X, aVisited);
-      if (Y > 1)               then MinerFixFloodSearch(Resource, Y-1,X, aVisited);
-      if (X < gTerrain.MapX-1) then MinerFixFloodSearch(Resource, Y,X+1, aVisited);
-      if (X > 1)               then MinerFixFloodSearch(Resource, Y,X-1, aVisited);
-    end;
-  end;
+  //procedure MinerFixFloodSearch(const Resource: Byte; const Y,X: Integer; var aVisited: TBoolean2Array);
+  //begin
+  //  if not aVisited[Y,X] AND (A[Y,X] = Resource) then
+  //  begin
+  //    aVisited[Y,X] := True;
+  //    Shape[X].Active := True;
+  //    if (Y >= Shape[X].Max) then
+  //    begin
+  //      Shape[X].Max := Y;
+  //      if (A[Y+1,X] <> Resource) AND (A[Y+1,X] <> Byte(btCoal)) then
+  //        A[Y+1,X] := 0;
+  //    end;
+  //    if (Y < Shape[X].Min) then
+  //      Shape[X].Min := Y;
+  //
+  //    if (Y < gTerrain.MapY-1) then MinerFixFloodSearch(Resource, Y+1,X, aVisited);
+  //    if (Y > 1)               then MinerFixFloodSearch(Resource, Y-1,X, aVisited);
+  //    if (X < gTerrain.MapX-1) then MinerFixFloodSearch(Resource, Y,X+1, aVisited);
+  //    if (X > 1)               then MinerFixFloodSearch(Resource, Y,X-1, aVisited);
+  //  end;
+  //end;
 
   procedure Fixer(MINESIZE, Resource, MineCnt: Byte; aPosition: TKMPoint; var aVisited: TBoolean2Array);
   var
@@ -1604,9 +1644,9 @@ var
     end;
 
   // Detect shape of resource
-    if RMGSettings.Objects.Active then // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-    begin
-
+    //if RMGSettings.Objects.Active then // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+    //begin
+    //
       MineSearch := TKMMinerFixSearch.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), MinLimit, MaxLimit, aVisited, A  );
       try
         MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
@@ -1620,9 +1660,9 @@ var
           Shape[X].Min := MinLimit[X];
           Shape[X].Max := MaxLimit[X];
         end;
-    end
-    else
-      MinerFixFloodSearch(Resource, aPosition.Y, aPosition.X, aVisited);
+    //end
+    //else
+    //  MinerFixFloodSearch(Resource, aPosition.Y, aPosition.X, aVisited);
 
   // Find start index of shape
     X := 0;
@@ -1687,13 +1727,15 @@ var
   RESOURCE: Byte;
   I, K: Integer;
   Visited: TBoolean2Array;
+  Resources: TBalancedResource1Array;
 begin
   SetLength(Visited, gTerrain.MapY+1, gTerrain.MapX+1);
   for I := Low(Visited) to High(Visited) do
     for K := Low(Visited[I]) to High(Visited[I]) do
       Visited[I,K] := False;
 
-  for I := Low(Resources) to High(Resources) do
+  Resources := fRes.Resources;
+  for I := 0 to fRes.Count - 1 do
   begin
     if (Resources[I].Resource = Byte(btGold)) then
       RESOURCE := 2
@@ -2303,7 +2345,7 @@ end;
 // TilesPartsArr = tiles composition array
 // A = array of biomes
 // B = array of biome-decomposition
-procedure TKMRandomMapGenerator.GenerateTiles(var Resources: TBalancedResource1Array; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
+procedure TKMRandomMapGenerator.GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
 const
   TT: array[0..23,0..23,0..5] of Byte = ( // Textures of transitions + direction set
     ((1,1,1,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(58,57,56,1,1,1),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(74,73,72,1,1,1),			(0,0,0,0,0,0),			(95,94,93,1,1,1),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0)),
@@ -2491,6 +2533,7 @@ var
    TileFloodSearch: TKMTileFloodSearch;
    PointArr: TKMPointArray;
    LevelArr: TKMByteArray;
+   Resources: TBalancedResource1Array;
 begin
 
   // Initialization
@@ -2566,10 +2609,11 @@ begin
   end;
 
 // Generate balanced resources
+  Resources := fRes.Resources;
   TileFloodSearch := TKMTileFloodSearch.Create(KMPoint(1,1), KMPoint(gTerrain.MapX-1,gTerrain.MapY-1), S, S2);
   try
     // Detect all shapes (merge / split existing shapes if they are / are not connected because could CA changed it)
-    for I := Low(Resources) to High(Resources) do
+    for I := 0 to fRes.Count - 1 do
     begin
       Resources[I].TileCounter := TIntegerArray.Create(0,0,0,0);
       K := Low(Resources[I].Points);
@@ -2615,7 +2659,7 @@ begin
       SetLength( Resources[I].Points, MaxLen );
     end;
 
-    for I := Low(Resources) to High(Resources) do
+    for I := 0 to fRes.Count - 1 do
       // Fill textures with positive quantity (zero quantity = merged shapes)
       if (Resources[I].Quantity > 0) then
       begin
@@ -2907,7 +2951,7 @@ begin
     Minimum := KMPoint(1,1);
     Maximum.X := Max(gTerrain.MapX - FOREST_RADIUS, Minimum.X + 1);
     Maximum.Y := Max(gTerrain.MapY - FOREST_RADIUS, Minimum.Y + 1);
-    forests := RNDPointsInGrid(RMGSettings.Objects.Forests*5, 0, Minimum, Maximum);
+    forests := RNDPointsInGrid(RMGSettings.Objects.Forests*10, 0, Minimum, Maximum);
 	  for cntForests := Low(forests) to High(forests) do
     begin
 		  count := 0;
@@ -2939,7 +2983,7 @@ begin
   // Another objects
   if (RMGSettings.Objects.ObjectDensity > 0) then
   begin
-    OBJ_DENSITY := 41 - RMGSettings.Objects.ObjectDensity; // If 0 is none, 1 must be small and 40 maximum -> invert it
+    OBJ_DENSITY := 15 - RMGSettings.Objects.ObjectDensity; // If 0 is none; 1 must be small; 10 maximum -> invert it
     for Y := 1 to gTerrain.MapY-1 do
     begin
       num := fRNG.RandomI(OBJ_DENSITY) + 1;
