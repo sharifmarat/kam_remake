@@ -1,8 +1,9 @@
 
-REM ============================================================
-REM Copy music files from original KaM TPR game
-REM ============================================================
-xcopy "%KaMOrigDir%"\data\sfx\songs\*.sng "%kam_folder%"\Music\*.mp2 /y /r /s
+@REM ============================================================
+@REM Copy music files from original KaM TPR game
+@REM ============================================================
+@REM take music from previous KMR version for now
+@REM xcopy "%KaMOrigDir%"\data\sfx\songs\*.sng "%kam_folder%"\Music\*.mp2 /y /r /s
 
 
 REM ============================================================
@@ -26,6 +27,7 @@ REM ============================================================
 REM Copy files from KMRPrevVersionDir
 REM ============================================================
 xcopy "%KMRPrevVersionDir%"\data\sfx "%kam_folder%"\data\sfx\ /y /r /s
+xcopy "%KMRPrevVersionDir%"\Music "%kam_folder%"\Music\ /y /r /s
 xcopy "%KMRPrevVersionDir%"\Campaigns\*.mp3 "%kam_folder%"\Campaigns\ /y /r /s
 
 
