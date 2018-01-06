@@ -2,7 +2,8 @@ unit KM_RMGUtils;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils, Math, KM_CommonTypes, KM_Points, KM_Terrain, KM_FloodFill;
+  Classes, SysUtils, Math, KM_CommonTypes, KM_Defaults,
+  KM_Points, KM_Terrain, KM_FloodFill;
 
 type
   {
@@ -26,6 +27,17 @@ type
     Probability: Single;
     Next: TResElementPointer;
   end;
+
+
+  TBalancedResource = record
+    InitOwner, Resource, MinesCnt: Byte;
+    //Owners: array[0..MAX_HANDS] of Byte;
+    Quantity: Integer;
+    TileCounter: TIntegerArray;
+    Points: TKMPointArray;
+  end;
+
+  TBalancedResource1Array = array of TBalancedResource;
 
 // Random number generator for RMG
   TKMRandomNumberGenerator = class
@@ -211,10 +223,28 @@ TKMSharpShapeFixer = class(TKMInternalTileCounter)
     procedure FloodFillWithQueue(var aPointArr: TKMPointArray; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
   end;
 
+  TKMBalancedResources = class
+  private
+  protected
+    fResCnt: Word;
+    fResources: TBalancedResource1Array;
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
+    property Count: Word read fResCnt;
+    property Resources: TBalancedResource1Array read fResources write fResources;
+
+    procedure ClearArray();
+    procedure AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; aPoints: TKMPointArray);
+  end;
+
 
 implementation
 uses
   KM_RandomMapGenerator;
+
+
 
 
 { TKMRandomNumberGenerator }
@@ -231,7 +261,7 @@ function TKMRandomNumberGenerator.Random(): Single;
 begin
   NextSeed();
   Result := fSeed * 0.000000000465661287307739; // Seed / High(Integer) = Seed * (1/2^31) = Seed * 0.000000000465661287307739 -> faster
-  if Result < 0 then
+  if (Result < 0) then
      Result := -Result;
 end;
 
@@ -883,7 +913,39 @@ begin
 end;
 
 
+{ TKMBalancedResources }
+constructor TKMBalancedResources.Create();
+begin
+  fResCnt := 0;
+end;
 
 
+destructor TKMBalancedResources.Destroy();
+begin
+
+end;
+
+
+procedure TKMBalancedResources.ClearArray();
+begin
+  SetLength(fResources, 0);
+end;
+
+
+procedure TKMBalancedResources.AddResource(aOwner, aResource, aMinesCnt: Byte; aQuantity: Integer; aPoints: TKMPointArray);
+begin
+  if (fResCnt >= Length(fResources)) then
+    SetLength(fResources, fResCnt + 24);
+  with Resources[fResCnt] do
+  begin
+    InitOwner := aOwner;
+    //Owners[0] := aOwner;
+    Resource := aResource;
+    MinesCnt := aMinesCnt;
+    Quantity := aQuantity;
+    Points := aPoints;
+  end;
+  fResCnt := fResCnt + 1;
+end;
 
 end.
