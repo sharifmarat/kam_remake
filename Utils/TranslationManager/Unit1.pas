@@ -80,7 +80,6 @@ type
   private
     fPathManager: TPathManager;
     fTextManager: TTextManager;
-    fExeDir: string;
     fWorkDir: string;
     fBuffer: array of string;
 
@@ -107,6 +106,8 @@ var
 
 implementation
 {$R *.dfm}
+uses
+  TranslationManagerUtils;
 
 
 const
@@ -117,8 +118,8 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   Caption := 'KaM Remake Translation Manager (' + GAME_REVISION + ')';
 
-  fExeDir := ExtractFilePath(ParamStr(0));
-  fWorkDir := fExeDir + '..\..\';
+  fWorkDir := GetWorkDir;
+
   gResLocales := TKMLocales.Create(fWorkDir + 'data\locales.txt', DEFAULT_LOCALE);
 
   InitLocalesList;
@@ -148,7 +149,7 @@ begin
   btnCopy.Visible := not USER_MODE;
   btnPaste.Visible := not USER_MODE;
 
-  LoadSettings(fExeDir + 'TranslationManager.ini');
+  LoadSettings(fWorkDir + 'TranslationManager.ini');
 
   WindowState := wsMaximized;
 end;
@@ -156,8 +157,8 @@ end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
-  SaveSettings(fExeDir + 'TranslationManager.ini');
-  fTextManager.Free;
+  SaveSettings(fWorkDir + 'TranslationManager.ini');
+  FreeAndNil(fTextManager);
 end;
 
 
