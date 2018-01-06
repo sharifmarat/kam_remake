@@ -857,6 +857,12 @@ begin
   end
   else
   begin
+    // Actualize terrain for map editor (brushes have array which helps them make smooth transitions)
+    if (gGame.GameMode = gmMapEd) then
+      for I := 1 to fMapY do
+        for J := 1 to fMapX do
+          gGame.MapEditor.TerrainPainter.RMG2MapEditor(J,I, Land[I, J].Terrain);
+
     if not KMSameRect(HeightRect, KMRECT_INVALID_TILES) then
       gTerrain.UpdateLighting(KMRectGrow(HeightRect, 2)); // Update Light only when height was changed
 
