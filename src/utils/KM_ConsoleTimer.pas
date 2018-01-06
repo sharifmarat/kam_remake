@@ -8,6 +8,10 @@ uses
   //Example taken from
   //https://stackoverflow.com/questions/12026951/using-vcl-ttimer-in-delphi-console-application
 type
+
+  //Mimic class for ExtCtrls.TTimer, which is not allowed to use in console app
+  //Event procedure proceed in the main thread
+  //To archive that Classes.CheckSynchronized should be invoked from the main thread
   TKMConsoleTimer = Class(TThread)
   private
     FCancelFlag: TSimpleEvent;
