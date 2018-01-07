@@ -613,7 +613,7 @@ begin
   if H <> nil then
   begin
     AddHouse(H.HouseType, H.GetPosition, 1, 1, 0, DoImmediateRender, DoHighlight, HighlightColor);
-    AddHouseSupply(H.HouseType, H.GetPosition, H.ResourceInArray, H.ResourceOutArray, [], DoImmediateRender, DoHighlight, HighlightColor);
+    AddHouseSupply(H.HouseType, H.GetPosition, H.ResourceInArray, H.ResourceOutArray, H.ResourceOutPoolArray, DoImmediateRender, DoHighlight, HighlightColor);
     if H.CurrentAction <> nil then
       gRenderPool.AddHouseWork(H.HouseType, H.GetPosition, H.CurrentAction.SubAction, H.WorkAnimStep, FlagColor, DoImmediateRender, DoHighlight, HighlightColor);
   end;
@@ -721,7 +721,8 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseSupply(aHouse: THouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddHouseSupply(aHouse: THouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte;
+                                     DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   Id, I, K, Count: Integer;
   R: TRXData;
