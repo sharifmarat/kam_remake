@@ -1116,9 +1116,11 @@ end;
 procedure TKMGUIGameHouse.House_TownHall_Change(Sender: TObject; aChangeValue: Integer);
 var
   TH: TKMHouseTownHall;
+  NewValue: Integer;
 begin
   TH := TKMHouseTownHall(gMySpectator.Selected);
-  TH.GoldMaxCnt := EnsureRange(TH.GoldMaxCnt + aChangeValue, 0, High(Word));
+  NewValue := EnsureRange(TH.GoldMaxCnt + aChangeValue, 0, High(Word));
+  gGame.GameInputProcess.CmdHouse(gic_HouseTownHallMaxGold, TH, NewValue);
 end;
 
 
