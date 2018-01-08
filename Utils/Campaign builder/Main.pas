@@ -603,7 +603,7 @@ begin
     formSettings.edtName.Font.Charset := GetCharset(Locale);
     formSettings.edtName.Text := C.FullName;
     formSettings.edtShortName.Text := StringReplace(C.CampName, #0, '', [rfReplaceAll, rfIgnoreCase]);
-    formSettings.CheckNodeAnimation.Checked := C.NodeAnimation;
+    formSettings.UpDownNodeAnimation.Position := C.NodeAnimation;
 
     if formSettings.ShowModal = mrOk then
     begin
@@ -612,7 +612,7 @@ begin
       cmp[1] := Ord(formSettings.edtShortName.Text[2]);
       cmp[2] := Ord(formSettings.edtShortName.Text[3]);
       C.CampaignId := cmp;
-      C.NodeAnimation := formSettings.CheckNodeAnimation.Checked;
+      C.NodeAnimation := formSettings.UpDownNodeAnimation.Position;
       UpdateCaption;
     end;
   finally

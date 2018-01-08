@@ -42,7 +42,7 @@ type
     fUnlockedMap: Byte;
     fScriptData: TKMemoryStream;
     fFullName: UnicodeString;
-    fNodeAnimation: Boolean;
+    fNodeAnimation: Integer;
 
     //Saved in CMP
     fCampaignId: TKMCampaignId; //Used to identify the campaign
@@ -68,7 +68,7 @@ type
     function CampName: UnicodeString;
     property UnlockedMap: Byte read fUnlockedMap write SetUnlockedMap;
     property ScriptData: TKMemoryStream read fScriptData;
-    property NodeAnimation: boolean Read fNodeAnimation write fNodeAnimation;
+    property NodeAnimation: Integer Read fNodeAnimation write fNodeAnimation;
 
     function CampaignTitle: UnicodeString;
     function CampaignDescription: UnicodeString;
@@ -384,7 +384,8 @@ procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
     AMap.Video[mvBefore] := AJson['VideoBefore'];
     AMap.Video[mvAfter] := AJson['VideoAfter'];
 
-    for i := 0 to AJson.A['Nodes'].Count - 1 do
+    AMap.NodeCount := AJson.A['Nodes'].Count;
+    for i := 0 to AMap.NodeCount - 1 do
     begin
       AMap.Nodes[i].X := AJson.A['Nodes'].Items[i].ObjectValue['X'];
       AMap.Nodes[i].Y := AJson.A['Nodes'].Items[i].ObjectValue['Y'];
@@ -421,9 +422,9 @@ begin
     Json := TJsonObject.Create;
     Json.LoadFromFile(aDirName + '\info.json');
     try
-     fCampaignId[0] := Ord(Json['CampaignId'].Value[1]);
-     fCampaignId[1] := Ord(Json['CampaignId'].Value[2]);
-     fCampaignId[2] := Ord(Json['CampaignId'].Value[3]);
+     fCampaignId[0] := Ord(Json['ID'].Value[1]);
+     fCampaignId[1] := Ord(Json['ID'].Value[2]);
+     fCampaignId[2] := Ord(Json['ID'].Value[3]);
      NodeAnimation := Json['NodeAnimation'];
 
      SetLength(Chapters, Json['Chapters'].Count);
@@ -438,7 +439,7 @@ begin
   else
     if FileExists(aDirName + '\info.cmp') then
     begin
-      NodeAnimation := False;
+      NodeAnimation := 0;
       CampaignMemory := TKMemoryStream.Create;
       CampaignMemory.LoadFromFile(aDirName + '\info.cmp');
       //Convert old AnsiString into new [0..2] Byte format
@@ -515,7 +516,7 @@ begin
 
   Json := TJsonObject.Create;
   try
-    Json['CampaignId'] := CampName;
+    Json['ID'] := CampName;
     Json['NodeAnimation'] := NodeAnimation;
 
     for i := 0 to High(Chapters) do
@@ -627,7 +628,8 @@ end;
 
 function TKMCampaign.MissionFile(aIndex: Byte): UnicodeString;
 begin
-  Result := fPath + 'Mission' + Format('%.2d', [aIndex + 1]) + PathDelim + 'Mission.dat';
+  Result := fPath + CampName + Format('%.2d', [aIndex + 1]) + PathDelim +
+   CampName + Format('%.2d', [aIndex + 1]) + '.dat';
 end;
 
 

@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Mask, Vcl.StdCtrls;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Mask, Vcl.StdCtrls, Vcl.ComCtrls;
 
 type
   TfCampaignSettings = class(TForm)
@@ -13,8 +13,10 @@ type
     CampaignIDLabel: TLabel;
     bOk: TButton;
     bCancel: TButton;
-    CheckNodeAnimation: TCheckBox;
     edtShortName: TMaskEdit;
+    UpDownNodeAnimation: TUpDown;
+    EditNodeAnimation: TEdit;
+    Label1: TLabel;
     procedure edtShortNameKeyPress(Sender: TObject; var Key: Char);
   private
 

@@ -4,8 +4,8 @@ object fCampaignSettings: TfCampaignSettings
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Campaign Settings'
-  ClientHeight = 130
-  ClientWidth = 302
+  ClientHeight = 136
+  ClientWidth = 337
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -34,8 +34,15 @@ object fCampaignSettings: TfCampaignSettings
     Caption = 'Campaign ID'
     Layout = tlCenter
   end
+  object Label1: TLabel
+    Left = 8
+    Top = 70
+    Width = 114
+    Height = 13
+    Caption = 'Node Animation (frame)'
+  end
   object edtName: TEdit
-    Left = 95
+    Left = 127
     Top = 7
     Width = 200
     Height = 24
@@ -50,8 +57,8 @@ object fCampaignSettings: TfCampaignSettings
     Text = 'Campaign name'
   end
   object bOk: TButton
-    Left = 137
-    Top = 96
+    Left = 172
+    Top = 103
     Width = 75
     Height = 25
     Caption = 'Ok'
@@ -59,24 +66,16 @@ object fCampaignSettings: TfCampaignSettings
     TabOrder = 1
   end
   object bCancel: TButton
-    Left = 219
-    Top = 96
+    Left = 254
+    Top = 103
     Width = 75
     Height = 25
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 2
   end
-  object CheckNodeAnimation: TCheckBox
-    Left = 8
-    Top = 71
-    Width = 145
-    Height = 17
-    Caption = 'Node Animation'
-    TabOrder = 3
-  end
   object edtShortName: TMaskEdit
-    Left = 95
+    Left = 127
     Top = 37
     Width = 58
     Height = 24
@@ -88,7 +87,25 @@ object fCampaignSettings: TfCampaignSettings
     Font.Style = []
     MaxLength = 3
     ParentFont = False
-    TabOrder = 4
+    TabOrder = 3
     Text = '   '
+  end
+  object UpDownNodeAnimation: TUpDown
+    Left = 185
+    Top = 67
+    Width = 16
+    Height = 21
+    Associate = EditNodeAnimation
+    Max = 255
+    Position = 5
+    TabOrder = 4
+  end
+  object EditNodeAnimation: TEdit
+    Left = 127
+    Top = 67
+    Width = 58
+    Height = 21
+    TabOrder = 5
+    Text = '5'
   end
 end
