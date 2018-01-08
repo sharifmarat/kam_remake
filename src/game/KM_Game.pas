@@ -1606,6 +1606,7 @@ begin
     if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     begin
       DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+      ForceDirectories(SavePath('basesave', IsMultiplayer)); //basesave directory could not exist at this moment, if this is the first game ever, f.e.
       KMCopyFile(ChangeFileExt(aPathName, EXT_SAVE_BASE_DOT), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
     end;
 
