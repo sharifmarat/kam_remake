@@ -724,7 +724,7 @@ end;
 procedure TRenderPool.AddHouseSupply(aHouse: THouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte;
                                      DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
-  Id, I, K, Count: Integer;
+  Id, I, K, I2, Count: Integer;
   R: TRXData;
 
   procedure AddHouseSupplySprite(aId: Integer);
@@ -750,13 +750,14 @@ begin
   if (R1[I - 1]) > 0 then
   begin
     Count := Min(R1[I - 1], MAX_WARES_IN_HOUSE);
-    Id := gRes.Houses[aHouse].SupplyIn[I, Count] + 1;
+    I2 := I;
 
     // Need to swap Coal and Steel for the ArmorSmithy
     // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
     if (aHouse = ht_ArmorSmithy) and (I in [1,2]) then
-      Id := gRes.Houses[aHouse].SupplyIn[3-I, Count] + 1;
+      I2 := 3-I;
 
+    Id := gRes.Houses[aHouse].SupplyIn[I2, Count] + 1;
     AddHouseSupplySprite(Id);
   end;
 
@@ -765,7 +766,14 @@ begin
     for K := 0 to 19 do
       if R3[K] > 0 then
       begin
-        Id := gRes.Houses[aHouse].SupplyOut[R3[K], K mod MAX_WARES_IN_HOUSE + 1] + 1;
+        I2 := R3[K];
+
+        // Need to swap Shields and Armor for the ArmorSmithy
+        // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
+        if (aHouse = ht_ArmorSmithy) and (I2 in [1,2]) then
+          I2 := 3-R3[K];
+
+        Id := gRes.Houses[aHouse].SupplyOut[3-R3[K], K mod MAX_WARES_IN_HOUSE + 1] + 1;
         AddHouseSupplySprite(Id);
       end;
   end
