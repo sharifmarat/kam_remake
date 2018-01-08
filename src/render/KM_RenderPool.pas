@@ -773,7 +773,7 @@ begin
         if (aHouse = ht_ArmorSmithy) and (I2 in [1,2]) then
           I2 := 3-R3[K];
 
-        Id := gRes.Houses[aHouse].SupplyOut[3-R3[K], K mod MAX_WARES_IN_HOUSE + 1] + 1;
+        Id := gRes.Houses[aHouse].SupplyOut[I2, K mod MAX_WARES_IN_HOUSE + 1] + 1;
         AddHouseSupplySprite(Id);
       end;
   end
