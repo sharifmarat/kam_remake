@@ -1,7 +1,10 @@
-@REM
+
 call bat_get_kam_folder.bat
 
-@SET KMR_EXEs_ARCH=%kam_folder%_exes
+echo ***************
+echo "%build_full_kmr_dir%"
+
+@SET KMR_EXEs_ARCH=%build_full_kmr_dir%_exes
 @SET KMR_EXEs_ARCH_7Z=%KMR_EXEs_ARCH%.7z
 
 @REM Recreate special KMR_EXEs_ARCH folder
@@ -9,9 +12,9 @@ rmdir /S /Q "%KMR_EXEs_ARCH%"
 mkdir "%KMR_EXEs_ARCH%"
 
 @REM rename and copy all exe's into KMR_EXEs_ARCH folder
-@echo off
-for /R "%kam_folder%" %%G in (*.exe) do (
-	xcopy "%kam_folder%"\"%%~nG.exe" "%KMR_EXEs_ARCH%\%%~nG_r%kam_revision%.exe*" /y /r /s
+rem @echo off
+for /R "%build_full_kmr_dir%" %%G in (*.exe) do (
+	xcopy "%build_full_kmr_dir%"\"%%~nG.exe" "%KMR_EXEs_ARCH%\%%~nG_r%kam_revision%.exe*" /y /r /s
 ) 
 
 REM ============================================================
