@@ -1359,7 +1359,7 @@ begin
       end;
 
   //Keep the selected unit Selected
-  if not fSelected.IsDeadOrDying and NewGroup.HasMember(fSelected) then
+  if not SelectedUnit.IsDeadOrDying and NewGroup.HasMember(SelectedUnit) then
   begin
     NewGroup.fSelected := fSelected;
     SelectNearestMember; // For current group set fSelected to nearest member to its old selected
