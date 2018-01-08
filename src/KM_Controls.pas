@@ -106,6 +106,10 @@ type
     fTimeOfLastMouseDown: Cardinal;
     fLastMouseDownButton: TMouseButton;
 
+    fDragAndDropMovePosition: TKMPoint;
+    fDragAndDropMove: Boolean;
+    fDragAndDrop: Boolean;
+
     fOnClick: TNotifyEvent;
     fOnClickShift: TNotifyEventShift;
     fOnClickRight: TPointEvent;
@@ -117,6 +121,9 @@ type
     fOnChangeEnableStatus: TBooleanEvent;
     fOnKeyDown: TNotifyEventKeyShiftFunc;
     fOnKeyUp: TNotifyEventKeyShiftFunc;
+    fOnBeginDragAndDrop: TNotifyEvent;
+    fOnMoveDragAndDrop: TNotifyEvent;
+    fOnEndDragAndDrop: TNotifyEvent;
 
     function GetAbsLeft: Integer;
     function GetAbsTop: Integer;
@@ -221,6 +228,7 @@ type
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); virtual;
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); virtual;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer); virtual;
+    property DragAndDrop: Boolean read fDragAndDrop write fDragAndDrop;
 
     property OnClick: TNotifyEvent read fOnClick write fOnClick;
     property OnClickShift: TNotifyEventShift read fOnClickShift write fOnClickShift;
@@ -233,6 +241,9 @@ type
     property OnChangeEnableStatus: TBooleanEvent read fOnChangeEnableStatus write fOnChangeEnableStatus;
     property OnKeyDown: TNotifyEventKeyShiftFunc read fOnKeyDown write fOnKeyDown;
     property OnKeyUp: TNotifyEventKeyShiftFunc read fOnKeyUp write fOnKeyUp;
+    property OnBeginDragAndDrop: TNotifyEvent read fOnBeginDragAndDrop write fOnBeginDragAndDrop;
+    property OnMoveDragAndDrop: TNotifyEvent read fOnMoveDragAndDrop write fOnMoveDragAndDrop;
+    property OnEndDragAndDrop: TNotifyEvent read fOnEndDragAndDrop write fOnEndDragAndDrop;
 
     procedure Paint; virtual;
     procedure UpdateState(aTickCount: Cardinal); virtual;
@@ -941,7 +952,9 @@ type
       Enabled: Boolean;
       Pic: TKMPic;
     end;
+    Level: Integer;
     Tag: Integer;
+    Data: Pointer;
   end;
 
   TKMListColumn = class
@@ -971,6 +984,7 @@ type
     fScrollBar: TKMScrollBar;
     fOnChange: TNotifyEvent;
     fOnCellClick: TPointEventFunc;
+    fIndent: Integer;
     function GetTopIndex: Integer;
     procedure SetTopIndex(aIndex: Integer);
     procedure SetBackAlpha(aValue: single);
@@ -1039,6 +1053,7 @@ type
     property OnCellClick: TPointEventFunc read fOnCellClick write fOnCellClick;
     property SortIndex: Integer read GetSortIndex write SetSortIndex;
     property SortDirection: TSortDirection read GetSortDirection write SetSortDirection;
+    property Indent: Integer read fIndent write fIndent;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure KeyPress(Key: Char); override;
@@ -1478,6 +1493,7 @@ begin
     Result.Cells[I].Enabled := True;
   end;
   Result.Tag := aTag;
+  Result.Level := 0;
 end;
 
 
@@ -1495,6 +1511,7 @@ begin
     Result.Cells[I].Enabled := True;
   end;
   Result.Tag := aTag;
+  Result.Level := 0;
 end;
 
 
@@ -1515,6 +1532,7 @@ begin
     Result.Cells[I].Enabled := True;
   end;
   Result.Tag := aTag;
+  Result.Level := 0;
 end;
 
 
@@ -1534,6 +1552,7 @@ begin
     Result.Cells[I].Enabled := True;
   end;
   Result.Tag := aTag;
+  Result.Level := 0;
 end;
 
 
@@ -1555,6 +1574,8 @@ begin
   Hint          := '';
   fControlIndex := -1;
   AutoFocusable := True;
+  fDragAndDrop  := False;
+  fDragAndDropMove := False;
 
   if aParent <> nil then
     fID := aParent.fMasterControl.GetNextCtrlID
@@ -1629,14 +1650,28 @@ begin
   fClickHoldMode := True;
   fTimeOfLastMouseDown := TimeGet;
   fLastMouseDownButton := Button;
+
+  if fDragAndDrop then
+  begin
+    fDragAndDropMove := True;
+    fDragAndDropMovePosition := KMPoint(X - AbsLeft, Y - AbsTop);
+  end;
 end;
 
 
-procedure TKMControl.MouseMove(X,Y: Integer; Shift: TShiftState);
+procedure TKMControl.MouseMove(X, Y: Integer; Shift: TShiftState);
 begin
   //if Assigned(fOnMouseOver) then fOnMouseOver(Self); { Unused }
   if (csDown in State) then
   begin
+    if fDragAndDrop and fDragAndDropMove then
+    begin
+      AbsLeft := X - fDragAndDropMovePosition.X;
+      AbsTop := Y - fDragAndDropMovePosition.Y;
+      if Assigned(fOnMoveDragAndDrop) then
+        fOnMoveDragAndDrop(Self);
+    end;
+
     //Update fClickHoldMode
     if InRange(X, AbsLeft, AbsRight) and InRange(Y, AbsTop, AbsBottom) then
       fClickHoldMode := True
@@ -1650,6 +1685,8 @@ procedure TKMControl.MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseBut
 var
   ClickHoldHandled: Boolean;
 begin
+  fDragAndDropMove := False;
+
   //if Assigned(fOnMouseUp) then OnMouseUp(Self); { Unused }
   if (csDown in State) then
   begin
@@ -5551,6 +5588,7 @@ constructor TKMColumnBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight:
 const DEF_HEADER_HEIGHT = 24;
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  fIndent     := 16;
   fFont       := aFont;
   fItemHeight := 20;
   fItemIndex  := -1;
@@ -6062,6 +6100,7 @@ procedure TKMColumnBox.DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: I
   
 var
   I: Integer;
+  Position: Integer;
   AvailWidth, HiddenColumnsTotalWidth: Integer;
   TextSize: TKMPoint;
   Color: Cardinal;
@@ -6075,6 +6114,10 @@ begin
       Inc(HiddenColumnsTotalWidth, fHeader.ColumnWidth[I]);
       Continue;
     end;
+    Position := X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth;
+    if I = 0 then
+      Position := Position + Rows[aIndex].Level * Indent;
+
     //Determine available width
     if I = fHeader.ColumnCount - 1 then
       AvailWidth := PaintWidth - 4 - fHeader.Columns[I].Offset - 4
@@ -6087,7 +6130,7 @@ begin
 
     //Paint column
     if Rows[aIndex].Cells[I].Pic.ID <> 0 then
-      TKMRenderUI.WritePicture(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth, Y + 1,
+      TKMRenderUI.WritePicture(Position, Y + 1,
                              AvailWidth, fItemHeight, [],
                              Rows[aIndex].Cells[I].Pic.RX,
                              Rows[aIndex].Cells[I].Pic.ID,
@@ -6099,17 +6142,18 @@ begin
       if Rows[aIndex].Cells[I].Hint <> '' then
       begin
         TextSize := gRes.Fonts[fFont].GetTextSize(Rows[aIndex].Cells[I].Caption);
-        TKMRenderUI.WriteText(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth,
+        TKMRenderUI.WriteText(Position,
                             Y + 4,
                             AvailWidth,
                             Rows[aIndex].Cells[I].Caption,
                             fColumns[I].Font, fColumns[I].TextAlign, Rows[aIndex].Cells[I].Color);
-        TKMRenderUI.WriteText(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth,
+        TKMRenderUI.WriteText(Position,
                             Y + fItemHeight div 2 + 1,
                             AvailWidth,
                             Rows[aIndex].Cells[I].Hint,
                             fColumns[I].HintFont, fColumns[I].TextAlign, $FFB0B0B0);
-      end else
+      end
+      else
       begin
         TextSize := gRes.Fonts[fFont].GetTextSize(Rows[aIndex].Cells[I].Caption);
         if aAllowHighlight
@@ -6122,7 +6166,7 @@ begin
           
         if not fEnabled then
           Color := ReduceBrightness(Color, 136);
-        TKMRenderUI.WriteText(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth,
+        TKMRenderUI.WriteText(Position,
                             Y + (fItemHeight - TextSize.Y) div 2 + 2,
                             AvailWidth,
                             Rows[aIndex].Cells[I].Caption,
