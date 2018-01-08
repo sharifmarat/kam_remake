@@ -80,6 +80,7 @@ type
 
     function GetGameTickDuration: Single;
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+    function GetControlledHandIndex: TKMHandIndex;
   public
     PlayOnState: TGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -144,8 +145,10 @@ type
     property CampaignMap: Byte read fCampaignMap;
     property GameSpeed: Single read fGameSpeed;
     property GameTickDuration: Single read GetGameTickDuration;
-    function PlayerLoc: Byte;
-    function PlayerColor: Cardinal;
+
+    function PlayerColor: Cardinal; //Can bsed in SP game only
+
+    property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
 
     property Scripting: TKMScripting read fScripting;
     property GameMode: TGameMode read fGameMode;
@@ -845,12 +848,6 @@ begin
 end;
 
 
-function TKMGame.PlayerLoc: Byte;
-begin
-  Result := gMySpectator.HandIndex;
-end;
-
-
 //Get list of players we are waiting for. We do it here because fNetworking does not knows about GIP
 function TKMGame.WaitingPlayersList: TKMByteArray;
 begin
@@ -1273,6 +1270,15 @@ end;
 procedure TKMGame.GameSpeedChanged(aFromSpeed, aToSpeed: Single);
 begin
   fActiveInterface.GameSpeedChanged(aFromSpeed, aToSpeed);
+end;
+
+
+//Return Controlled hand index in game or -1, if there is no one (spectator/replay/maped)
+function TKMGame.GetControlledHandIndex: TKMHandIndex;
+begin
+  Result := -1;
+  if fGameMode in [gmSingle, gmCampaign, gmMulti] then
+    Result := gMySpectator.HandIndex;
 end;
 
 

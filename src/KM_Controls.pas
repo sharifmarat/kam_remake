@@ -710,6 +710,7 @@ type
     fOrderLab: TKMLabel;
     fOrderRem: TKMButton;
     fOrderCount: Integer;
+    fImmidiateOrder: Boolean; //Order count should be changed immidiately in control. Should be False usually
     procedure ButtonClick(Sender: TObject; Shift: TShiftState);
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
     procedure SetOrderRemHint(aValue: UnicodeString);
@@ -723,7 +724,8 @@ type
     OrderCntMin: Integer;
     OrderCntMax: Integer;
     OnChange: TObjectIntegerEvent;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE; aOrderCntMin: Integer = 0);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE;
+                       aOrderCntMin: Integer = 0; aImmidiateOrder: Boolean = False);
     property WareRow: TKMWaresRow read fWaresRow;
     property OrderCount: Integer read fOrderCount write SetOrderCount;
     property OrderRemHint: UnicodeString write SetOrderRemHint;
@@ -3930,11 +3932,14 @@ end;
 
 
 { TKMWareOrderRow }
-constructor TKMWareOrderRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE; aOrderCntMin: Integer = 0);
+constructor TKMWareOrderRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE;
+                                   aOrderCntMin: Integer = 0; aImmidiateOrder: Boolean = False);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, WARE_ROW_HEIGHT);
 
   fWaresRow := TKMWaresRow.Create(aParent, aLeft + 68, aTop, aWidth - 68);
+
+  fImmidiateOrder := aImmidiateOrder;
 
   OrderCntMin := aOrderCntMin;
   OrderCntMax := aOrderCntMax;
@@ -3966,7 +3971,9 @@ begin
 
   if Amt = 0 then Exit;
 
-  OrderCount := fOrderCount + Amt;
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
+
   Focus;
 
   if Assigned(OnChange) then
@@ -3986,7 +3993,9 @@ begin
   if GetKeyState(VK_SHIFT) < 0 then
     Amt := Amt * 10;
 
-  OrderCount := fOrderCount + Amt;
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
+
   Focus;
 
   if Assigned(OnChange) then
@@ -4008,9 +4017,10 @@ begin
 
   if Amt = 0 then Exit;
 
-  OrderCount := fOrderCount + Amt;
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
 
-  if (Amt <> 0) and Assigned(OnChange) then
+  if Assigned(OnChange) then
     OnChange(Self, Amt);
 end;
 

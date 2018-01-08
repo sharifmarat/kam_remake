@@ -1089,7 +1089,7 @@ begin
   if Sender = Button_Barracks_Train then //Equip unit
     gGame.GameInputProcess.CmdHouse(gic_HouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], GetMultiplicator(Shift));
 
-  Button_Barracks_Train.Enabled := Barracks.CanEquip(Barracks_Order[fLastBarracksUnit]);
+  Button_Barracks_Train.Enabled := not gGame.IsPeaceTime and Barracks.CanEquip(Barracks_Order[fLastBarracksUnit]);
   Button_Barracks_Left.Enabled := fLastBarracksUnit > 0;
   Button_Barracks_Right.Enabled := fLastBarracksUnit < High(Barracks_Order);
   Image_Barracks_Left.Visible:= Button_Barracks_Left.Enabled;
@@ -1116,9 +1116,11 @@ end;
 procedure TKMGUIGameHouse.House_TownHall_Change(Sender: TObject; aChangeValue: Integer);
 var
   TH: TKMHouseTownHall;
+  NewValue: Integer;
 begin
   TH := TKMHouseTownHall(gMySpectator.Selected);
-  TH.GoldMaxCnt := EnsureRange(TH.GoldMaxCnt + aChangeValue, 0, High(Word));
+  NewValue := EnsureRange(TH.GoldMaxCnt + aChangeValue, 0, High(Word));
+  gGame.GameInputProcess.CmdHouse(gic_HouseTownHallMaxGold, TH, NewValue);
 end;
 
 
@@ -1151,7 +1153,7 @@ begin
   if Sender = Button_TH_Train then //Equip unit
     gGame.GameInputProcess.CmdHouse(gic_HouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], GetMultiplicator(Shift));
 
-  Button_TH_Train.Enabled := TownHall.CanEquip(TownHall_Order[fLastTHUnit]);
+  Button_TH_Train.Enabled := not gGame.IsPeaceTime and TownHall.CanEquip(TownHall_Order[fLastTHUnit]);
   Button_TH_Left.Enabled := fLastTHUnit > 0;
   Button_TH_Right.Enabled := fLastTHUnit < High(TownHall_Order);
   Image_TH_Left.Visible:= Button_TH_Left.Enabled;

@@ -166,6 +166,7 @@ implementation
 uses
   {$IFDEF PLAYVIDEO} KM_Video, {$ENDIF}
   KromUtils,
+  KromShellUtils,
   KM_Defaults,
   KM_Main,
   //Use these units directly to avoid pass-through methods in fMain

@@ -1,8 +1,9 @@
 
-REM ============================================================
-REM Copy music files from original KaM TPR game
-REM ============================================================
-xcopy "%KaMOrigDir%"\data\sfx\songs\*.sng "%kam_folder%"\Music\*.mp2 /y /r /s
+@REM ============================================================
+@REM Copy music files from original KaM TPR game
+@REM ============================================================
+@REM take music from previous KMR version for now
+@REM xcopy "%KaMOrigDir%"\data\sfx\songs\*.sng "%kam_folder%"\Music\*.mp2 /y /r /s
 
 
 REM ============================================================
@@ -23,9 +24,11 @@ xcopy ..\Music "%kam_folder%"\Music\ /y /r /s
 xcopy ..\Readme "%kam_folder%"\ /y /r /s
 
 REM ============================================================
-REM Copy data/sfx folder from KMRPrevVersionDir
+REM Copy files from KMRPrevVersionDir
 REM ============================================================
 xcopy "%KMRPrevVersionDir%"\data\sfx "%kam_folder%"\data\sfx\ /y /r /s
+xcopy "%KMRPrevVersionDir%"\Music "%kam_folder%"\Music\ /y /r /s
+xcopy "%KMRPrevVersionDir%"\Campaigns\*.mp3 "%kam_folder%"\Campaigns\ /y /r /s
 
 
 @REM ============================================================
@@ -44,3 +47,9 @@ xcopy ..\libzplay.dll "%kam_folder%"\libzplay.dll* /y /r /i
 xcopy ..\ogg.dll "%kam_folder%"\ogg.dll* /y /r /i
 xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
+@REM copy utility applications exe files
+xcopy ..\Utils\Campaign builder\CampaignBuilder.exe "%kam_folder%"\CampaignBuilder.exe* /y /r /i
+xcopy ..\Utils\DedicatedServer\KaM_DedicatedServer.exe "%kam_folder%"\KaM_DedicatedServer.exe* /y /r /i
+xcopy ..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe "%kam_folder%"\KaM_DedicatedServerGUI.exe* /y /r /i
+xcopy ..\Utils\ScriptValidator\ScriptValidator.exe "%kam_folder%"\ScriptValidator.exe* /y /r /i
+xcopy ..\Utils\TranslationManager\TranslationManager.exe "%kam_folder%"\TranslationManager.exe* /y /r /i

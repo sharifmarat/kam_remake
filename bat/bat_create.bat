@@ -19,6 +19,9 @@ call bat_copy_pre_pack.bat
 REM Pack rx data
 call bat_rx_pack.bat
 
+REM Build utility applications, included into the final build
+call bat_build_utils.bat
+
 @REM Build exe
 @REM call bat_build_exe.bat
 
