@@ -1344,10 +1344,14 @@ begin
 
   //Keep the selected unit Selected
   if NewGroup.HasMember(fSelected) or aSplitSingle then
-  begin
-    gMySpectator.Selected := NewGroup;
     NewGroup.fSelected := fSelected;
-  end;
+
+  //Select single splitted unit
+  if aSplitSingle
+    and (gGame.ControlledHandIndex = NewGroup.Owner) //Only select unit for player, that issued order (group owner)
+    and (gGame.ControlledHandIndex <> -1)
+    and (gMySpectator.Selected = Self) then //Selection is still on that group (in MP game there could be a delay, when player could select other target already)
+    gMySpectator.Selected := NewGroup;
 
   //Make sure units per row is still valid for both groups
   UnitsPerRow := fUnitsPerRow;
