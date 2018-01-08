@@ -3294,7 +3294,8 @@ begin
             begin
               gSoundPlayer.PlayWarrior(Group.UnitType, sp_Join); // In SP joining is instant, Group does not exist after that
               gGame.GameInputProcess.CmdArmy(gic_ArmyLink, Group, Group2);
-              fGuiGameUnit.Army_HideJoinMenu(nil);
+              if not (ssShift in Shift) then //Do not cancel link mode if Shift is pressed
+                fGuiGameUnit.Army_HideJoinMenu(nil);
             end;
           end;
           Exit;
