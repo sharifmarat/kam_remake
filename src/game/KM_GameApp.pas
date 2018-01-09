@@ -137,7 +137,7 @@ begin
 
   fCampaigns    := TKMCampaignsCollection.Create;
   fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns');
 
   //If game was reinitialized from options menu then we should return there
   fMainMenuInterface := TKMMainMenuInterface.Create(aScreenX, aScreenY);
@@ -181,7 +181,7 @@ begin
   Stop(gr_Silent);
 
   FreeAndNil(fTimerUI);
-  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns');
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
   FreeThenNil(fMainMenuInterface);

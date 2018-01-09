@@ -4,7 +4,7 @@ interface
 uses
   Classes,
   KM_ResTexts, KM_Pics, JsonDataObjects,
-  KM_CommonClasses, KM_Points;
+  KM_CommonClasses, KM_Points, EncdDecd;
 
 
 const
@@ -237,39 +237,70 @@ var
   unlocked: Byte;
   HasScriptData: Boolean;
   ScriptDataSize: Cardinal;
+  Json, JsonCamp: TJsonObject;
+  Bytes: TBytes;
 begin
-  if not FileExists(aFileName) then Exit;
-
-  M := TKMemoryStream.Create;
-  try
-    M.LoadFromFile(aFileName);
-
-    M.Read(I); //Check for wrong file format
-    //All campaigns will be kept in initial state
-    if (I <> CAMP_HEADER_V1) and (I <> CAMP_HEADER_V2) then Exit;
-    HasScriptData := (I = CAMP_HEADER_V2);
-
-    M.Read(campCount);
-    for I := 0 to campCount - 1 do
-    begin
-      M.Read(campName, sizeOf(TKMCampaignId));
-      M.Read(unlocked);
-      C := CampaignById(campName);
-      if C <> nil then
-      begin
-        C.UnlockedMap := unlocked;
-        C.ScriptData.Clear;
-        if HasScriptData then
+  if FileExists(aFileName + '.json') then
+  begin
+    Json := TJsonObject.Create;
+    try
+      Json.LoadFromFile(aFileName + '.json');
+      campCount := Json.A['Campaings'].Count;
+      for i := 0 to campCount - 1 do
         begin
-          M.Read(ScriptDataSize);
-          C.ScriptData.Write(Pointer(Cardinal(M.Memory) + M.Position)^, ScriptDataSize);
-          M.Seek(ScriptDataSize, soCurrent); //Seek past script data
+          JsonCamp := Json['Campaings'].Items[i];
+          campName[0] := Ord(JsonCamp['ID'].Value[1]);
+          campName[1] := Ord(JsonCamp['ID'].Value[2]);
+          campName[2] := Ord(JsonCamp['ID'].Value[3]);
+          C := CampaignById(campName);
+          if Assigned(C) then
+          begin
+            C.UnlockedMap := JsonCamp['UnlockedMap'];
+            C.ScriptData.Clear;
+            Bytes := DecodeBase64(JsonCamp['ScriptData']);
+            if Bytes <> nil then
+              C.ScriptData.Write(Bytes, Length(Bytes));
+          end;
         end;
+
+    finally
+      Json.Free;
+    end;
+  end
+  else
+    if FileExists(aFileName + '.dat') then
+    begin
+      M := TKMemoryStream.Create;
+      try
+        M.LoadFromFile(aFileName);
+
+        M.Read(I); //Check for wrong file format
+        //All campaigns will be kept in initial state
+        if (I <> CAMP_HEADER_V1) and (I <> CAMP_HEADER_V2) then Exit;
+        HasScriptData := (I = CAMP_HEADER_V2);
+
+        M.Read(campCount);
+        for I := 0 to campCount - 1 do
+        begin
+          M.Read(campName, sizeOf(TKMCampaignId));
+          M.Read(unlocked);
+          C := CampaignById(campName);
+          if C <> nil then
+          begin
+            C.UnlockedMap := unlocked;
+            C.ScriptData.Clear;
+            if HasScriptData then
+            begin
+              M.Read(ScriptDataSize);
+              C.ScriptData.Write(Pointer(Cardinal(M.Memory) + M.Position)^, ScriptDataSize);
+              M.Seek(ScriptDataSize, soCurrent); //Seek past script data
+            end;
+          end;
+        end;
+      finally
+        M.Free;
       end;
     end;
-  finally
-    M.Free;
-  end;
 end;
 
 
@@ -277,10 +308,26 @@ procedure TKMCampaignsCollection.SaveProgress(const aFileName: UnicodeString);
 var
   M: TKMemoryStream;
   I: Integer;
+  Json, JsonCamp: TJsonObject;
 begin
   //Makes the folder incase it is missing
   ForceDirectories(ExtractFilePath(aFileName));
 
+  Json := TJsonObject.Create;
+  try
+    for i := 0 to Count - 1 do
+    begin
+      JsonCamp :=  Json.A['Campaings'].AddObject;
+      JsonCamp['ID'] := Campaigns[i].CampName;
+      JsonCamp['UnlockedMap'] := Campaigns[i].UnlockedMap;
+      if Campaigns[i].ScriptData.Size > 0 then
+        JsonCamp['ScriptData'] := EncodeBase64(Campaigns[i].ScriptData.Memory, Campaigns[i].ScriptData.Size);
+    end;
+    Json.SaveToFile(aFileName + '.json');
+  finally
+    Json.Free;
+  end;
+  {
   M := TKMemoryStream.Create;
   try
     M.Write(Integer(CAMP_HEADER_V2)); //Identify our format
@@ -297,8 +344,8 @@ begin
   finally
     M.Free;
   end;
-
-  gLog.AddTime('Campaigns.dat saved');
+  }
+  gLog.AddTime('Campaigns.json saved');
 end;
 
 
