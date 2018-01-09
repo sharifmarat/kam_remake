@@ -123,9 +123,9 @@ end;
 
 procedure TKMMenuCampaign.Campaign_Set(aCampaign: TKMCampaign);
 const
-  MapPic: array [Boolean] of byte = (11, 10);
+  MapPic: array [Boolean] of byte = (10, 11);
 var
-  i: Integer;
+  i, maxIndex: Integer;
 begin
   fCampaign := aCampaign;
 
@@ -133,12 +133,16 @@ begin
   Image_CampaignBG.RX := fCampaign.BackGroundPic.RX;
   Image_CampaignBG.TexID := fCampaign.BackGroundPic.ID;
 
+  maxIndex := 0;
   //Setup sites
   for i := 0 to High(Image_CampaignFlags) do
   begin
     Image_CampaignFlags[i].Visible := i < fCampaign.ActiveChapter.MapCount;
     if i < fCampaign.ActiveChapter.MapCount then
     begin
+      if fCampaign.ActiveChapter.Maps[i].Unlocked then
+        maxIndex := Max(maxIndex, i);
+
       Image_CampaignFlags[i].TexID   := MapPic[fCampaign.ActiveChapter.Maps[i].Unlocked];
       Image_CampaignFlags[i].HighlightOnMouseOver := fCampaign.ActiveChapter.Maps[i].Unlocked;
       //Pivot flags around Y=bottom X=middle, that's where the flag pole is
@@ -151,7 +155,7 @@ begin
   end;
 
   //Select last map to play by 'clicking' last node
-  Campaign_SelectMap(Image_CampaignFlags[fCampaign.UnlockedMap]);
+  Campaign_SelectMap(Image_CampaignFlags[maxIndex]);
 end;
 
 
@@ -159,9 +163,12 @@ procedure TKMMenuCampaign.Campaign_SelectMap(Sender: TObject);
 var
   I: Integer;
 begin
-  if TKMControl(Sender).Tag > fCampaign.UnlockedMap then exit; //Skip closed maps
+  //if TKMControl(Sender).Tag > fCampaign.UnlockedMap then exit; //Skip closed maps
 
   fMapIndex := TKMControl(Sender).Tag;
+
+  if not fCampaign.ActiveChapter.Maps[fMapIndex].Unlocked then
+    Exit;
 
   // Place highlight
   for I := 0 to High(Image_CampaignFlags) do

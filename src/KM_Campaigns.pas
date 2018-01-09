@@ -19,20 +19,28 @@ type
   //3 bytes are used to avoid string types issues
   TKMCampaignId = array [0..2] of Byte;
 
+  TKMVideoInfo = record
+    FileName: UnicodeString;
+    Looked: Boolean;
+  end;
+
   TKMCampaignMap = record
+    ID: Integer;
     Flag: TKMPointW;
     NodeCount: Byte;
     Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
     TextPos: TBriefingCorner;
-    Video: array[TMissionVideoTypes] of UnicodeString;
+    Video: array[TMissionVideoTypes] of TKMVideoInfo;
     Unlocked: Boolean;
   end;
 
   TKMCampaignChapter = record
+    ID: Integer;
     Maps: array of TKMCampaignMap;
     MapCount: Byte;
     PictureMapIndex: Byte;
-    Video: array[TMissionVideoTypes] of UnicodeString;
+    Video: array[TMissionVideoTypes] of TKMVideoInfo;
+    Unlocked: Boolean;
   end;
 
   TKMCampaign = class
@@ -229,10 +237,34 @@ end;
 
 //Read progress from file trying to find matching campaigns
 procedure TKMCampaignsCollection.LoadProgress(const aFileName: UnicodeString);
+
+  procedure JsonToMap(AJson: TJsonObject; var AMap: TKMCampaignMap);
+  var
+    i: Integer;
+  begin
+    AMap.Unlocked := AJson['Unlocked'];
+
+    AMap.Video[mvBefore].Looked := AJson['VideoBefore'];
+    AMap.Video[mvAfter].Looked := AJson['VideoAfter'];
+  end;
+
+  procedure JsonToChapter(AJson: TJsonObject; var AChapter: TKMCampaignChapter);
+  var
+    i: Integer;
+  begin
+    AChapter.Unlocked := AJson['Unlocked'];
+
+    AChapter.Video[mvBefore].Looked := AJson['VideoBefore'];
+    AChapter.Video[mvAfter].Looked := AJson['VideoAfter'];
+
+    for i := 0 to AJson['Maps'].Count - 1 do
+      JsonToMap(AJson['Maps'].Items[i], AChapter.Maps[i]);
+  end;
+
 var
   M: TKMemoryStream;
   C: TKMCampaign;
-  I, campCount: Integer;
+  I, j, campCount: Integer;
   campName: TKMCampaignId;
   unlocked: Byte;
   HasScriptData: Boolean;
@@ -255,7 +287,10 @@ begin
           C := CampaignById(campName);
           if Assigned(C) then
           begin
-            C.UnlockedMap := JsonCamp['UnlockedMap'];
+            for j := 0 to JsonCamp['Chapters'].Count - 1 do
+              JsonToChapter(JsonCamp['Chapters'].Items[j], C.Chapters[j]);
+
+            // C.UnlockedMap := JsonCamp['UnlockedMap'];
             C.ScriptData.Clear;
             Bytes := DecodeBase64(JsonCamp['ScriptData']);
             if Bytes <> nil then
@@ -272,7 +307,7 @@ begin
     begin
       M := TKMemoryStream.Create;
       try
-        M.LoadFromFile(aFileName);
+        M.LoadFromFile(aFileName + '.dat');
 
         M.Read(I); //Check for wrong file format
         //All campaigns will be kept in initial state
@@ -305,9 +340,41 @@ end;
 
 
 procedure TKMCampaignsCollection.SaveProgress(const aFileName: UnicodeString);
+
+  procedure MapToJson(AJsonArray: TJsonArray; const AMap: TKMCampaignMap);
+  var
+    Json: TJsonObject;
+  begin
+    if not AMap.Unlocked then
+      Exit;
+
+    Json := AJsonArray.AddObject;
+    Json['ID'] := AMap.ID;
+    Json['Unlocked'] := AMap.Unlocked;
+    Json['VideoBefore'] := AMap.Video[mvBefore].Looked;
+    Json['VideoAfter'] := AMap.Video[mvAfter].Looked;
+  end;
+
+  procedure ChapterToJson(AJsonArray: TJsonArray; const AChapter: TKMCampaignChapter);
+  var
+    i: Integer;
+    Json: TJsonObject;
+  begin
+    if not AChapter.Unlocked then
+      Exit;
+
+    Json := AJsonArray.AddObject;
+    Json['ID'] := AChapter.ID;
+    Json['Unlocked'] := AChapter.Unlocked;
+    Json['VideoBefore'] := AChapter.Video[mvBefore].Looked;
+    Json['VideoAfter'] := AChapter.Video[mvAfter].Looked;
+    for i := 0 to AChapter.MapCount - 1 do
+      MapToJson(Json.A['Maps'], AChapter.Maps[i]);
+  end;
+
 var
   M: TKMemoryStream;
-  I: Integer;
+  I, C: Integer;
   Json, JsonCamp: TJsonObject;
 begin
   //Makes the folder incase it is missing
@@ -320,6 +387,10 @@ begin
       JsonCamp :=  Json.A['Campaings'].AddObject;
       JsonCamp['ID'] := Campaigns[i].CampName;
       JsonCamp['UnlockedMap'] := Campaigns[i].UnlockedMap;
+
+      for C := 0 to Campaigns[i].ChapterCount - 1 do
+        ChapterToJson(JsonCamp.A['Chapters'], Campaigns[i].Chapters[C]);
+
       if Campaigns[i].ScriptData.Size > 0 then
         JsonCamp['ScriptData'] := EncodeBase64(Campaigns[i].ScriptData.Memory, Campaigns[i].ScriptData.Size);
     end;
@@ -327,24 +398,7 @@ begin
   finally
     Json.Free;
   end;
-  {
-  M := TKMemoryStream.Create;
-  try
-    M.Write(Integer(CAMP_HEADER_V2)); //Identify our format
-    M.Write(Count);
-    for I := 0 to Count - 1 do
-    begin
-      M.Write(Campaigns[I].CampaignId, SizeOf(TKMCampaignId));
-      M.Write(Campaigns[I].UnlockedMap);
-      M.Write(Cardinal(Campaigns[I].ScriptData.Size));
-      M.Write(Campaigns[I].ScriptData.Memory^, Campaigns[I].ScriptData.Size);
-    end;
 
-    M.SaveToFile(aFileName);
-  finally
-    M.Free;
-  end;
-  }
   gLog.AddTime('Campaigns.json saved');
 end;
 
@@ -440,8 +494,10 @@ procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
     AMap.Flag.Y := AJson.O['Flag']['Y'];
     AMap.TextPos := TBriefingCorner(AJson['TextPos']);
 
-    AMap.Video[mvBefore] := AJson['VideoBefore'];
-    AMap.Video[mvAfter] := AJson['VideoAfter'];
+    AMap.Video[mvBefore].FileName := AJson['VideoBefore'];
+    AMap.Video[mvBefore].Looked := False;
+    AMap.Video[mvAfter].FileName := AJson['VideoAfter'];
+    AMap.Video[mvAfter].Looked := False;
 
     AMap.NodeCount := AJson.A['Nodes'].Count;
     for i := 0 to AMap.NodeCount - 1 do
@@ -457,8 +513,10 @@ procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
   begin
     AChapter.PictureMapIndex := AJson['PictureMapIndex'];
 
-    AChapter.Video[mvBefore] := AJson['VideoBefore'];
-    AChapter.Video[mvAfter] := AJson['VideoAfter'];
+    AChapter.Video[mvBefore].FileName := AJson['VideoBefore'];
+    AChapter.Video[mvBefore].Looked := False;
+    AChapter.Video[mvAfter].FileName := AJson['VideoAfter'];
+    AChapter.Video[mvAfter].Looked := False;
 
     AChapter.MapCount := AJson['Maps'].Count;
     SetLength(AChapter.Maps, AChapter.MapCount);
@@ -542,8 +600,10 @@ procedure TKMCampaign.SaveToDir(const aDirName: UnicodeString);
     Json.O['Flag']['Y'] := AMap.Flag.Y;
 
     Json['TextPos'] := Integer(AMap.TextPos);
-    Json['VideoBefore'] := AMap.Video[mvBefore];
-    Json['VideoAfter'] := AMap.Video[mvAfter];
+    if AMap.Video[mvBefore].FileName <> '' then
+      Json['VideoBefore'] := AMap.Video[mvBefore].FileName;
+    if AMap.Video[mvAfter].FileName <> '' then
+      Json['VideoAfter'] := AMap.Video[mvAfter].FileName;
 
     for i := 0 to AMap.NodeCount - 1 do
     begin
@@ -560,9 +620,11 @@ procedure TKMCampaign.SaveToDir(const aDirName: UnicodeString);
   begin
     Json := AJsonArray.AddObject;
     Json['PictureMapIndex'] := AChapter.PictureMapIndex;
-    if AChapter.Video[mvBefore] <> '' then
-      Json['VideoBefore'] := AChapter.Video[mvBefore];
-    Json['VideoAfter'] := AChapter.Video[mvAfter];
+
+    if AChapter.Video[mvBefore].FileName <> '' then
+      Json['VideoBefore'] := AChapter.Video[mvBefore].FileName;
+    if AChapter.Video[mvAfter].FileName <> '' then
+      Json['VideoAfter'] := AChapter.Video[mvAfter].FileName;
 
     for i := 0 to AChapter.MapCount - 1 do
       MapToJson(Json.A['Maps'], AChapter.Maps[i]);
@@ -578,7 +640,6 @@ begin
   try
     Json['ID'] := CampName;
     Json['NodeAnimation'] := NodeAnimation;
-
 
     for i := 0 to fChapterCount - 1 do
       ChapterToJson(Json.A['Chapters'], Chapters[i]);
@@ -745,11 +806,14 @@ begin
 
   i := 0;
   for C := 0 to fChapterCount - 1 do
+  begin
+    Chapters[C].Unlocked := aValue >= i;
     for M := 0 to Chapters[C].MapCount - 1 do
     begin
-      Chapters[C].Maps[M].Unlocked := aValue + 1 <= i;
+      Chapters[C].Maps[M].Unlocked := aValue >= i;
       Inc(i);
     end;
+  end;
 end;
 
 
