@@ -2420,7 +2420,7 @@ function TKMScriptActions.MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOn
 var I: Integer;
     Errors: TKMTerrainTileChangeErrorArray;
     aTiles: array of TKMTerrainTileBrief;
-    aArrElem: TStrings;
+    aArrElem: TAnsiStringArray;
     aParsedValue: Integer;
     aParserError: Boolean;
 begin
@@ -2436,7 +2436,7 @@ begin
       aParserError := false;
 
       //checking params count, if count is invalid we cannot proceed
-      if (aArrElem.Count <> 6) then
+      if (Length(aArrElem) <> 6) then
         LogStr(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
       else
       begin
