@@ -656,7 +656,7 @@ begin
   try
     tvList.Items.Clear;
 
-    for J := 0 to High(C.Chapters) do
+    for J := 0 to C.ChapterCount - 1 do
     begin
       FTreeItemCreate := TTreeChapter;
       fSelectedChapter := tvList.Items.AddChild(nil, Format('Chapter %d', [J + 1])) as TTreeChapter;
@@ -778,7 +778,7 @@ begin
       node := node.GetNextSibling;
     end;
 
-    SetLength(C.Chapters, ChapterCount);
+    C.ChapterCount := ChapterCount;
     node := tvList.Items.GetFirstNode;
     while node <> nil do
     begin
