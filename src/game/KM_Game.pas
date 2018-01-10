@@ -729,11 +729,12 @@ begin
     end;
   end;
 
-  for I := 1 to gGameApp.GameSettings.AutosaveCount do //All autosaves
+  for I := 1 to Min(gGameApp.GameSettings.AutosaveCount, AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX) do //Add autosaves
   begin
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_REPLAY, IsMultiplayer));
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiplayer));
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiplayer));
+    AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_MINIMAP, IsMultiplayer));
   end;
 
   gLog.AddTime('Crash report created');
