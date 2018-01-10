@@ -256,8 +256,8 @@ begin
     2:  Result :=  gResTexts[TX_KEY_RMB];
     3:  Result :=  gResTexts[TX_KEY_BREAK];
     4:  Result :=  gResTexts[TX_KEY_MMB];
-    5:  Result :=  'Forward mouse button'; // Todo translate
-    6:  Result :=  'Backward mouse button'; // Todo translate
+    5:  Result :=  gResTexts[TX_KEY_MOUSE_FORWARD];
+    6:  Result :=  gResTexts[TX_KEY_MOUSE_BACKWARD];
     8:  Result :=  gResTexts[TX_KEY_BACKSPACE];
     9:  Result :=  gResTexts[TX_KEY_TAB];
     12: Result :=  gResTexts[TX_KEY_CLEAR];

@@ -972,4 +972,86 @@
 1020:Objects palette
 1021:Universal erasor
 1022:Your woodcutter cannot find any free place to plant a tree
-
+1023:PT-
+1024:%s has won!
+1025:%s is not connected to game anymore
+1026:Max Gold
+1027:Maximum amount of gold to deliver into townhall
+1028:Plant only
+1029:Open / Close house for %s
+1030:All
+1031:All
+1032:All
+1033:Rename Map
+1034:Pause at peacetime end
+1035:Game time
+1036:Name
+1037:Army power
+1038:All soldiers
+1039:Chart type
+1040:Quantity
+1041:GDP
+1042:Instantaneous
+1043:Total equipped
+1044:Defeated
+1045:Lost
+1046:Back to Game results
+1047:by Players
+1048:by Teams
+1049:More|statistics
+1050:Return to MapEd
+1051:Return to Map Editor
+1052:Are you sure you|want to quit|this replay?
+1053:Map is invalid
+1054:Selected map is invalid. Please select another map
+1055:Downloaded map files have changed
+1056:Selected DL map, which files have changed. Please move it out of downloads first
+1057:Map files have changed. Please reselect the map
+1058:Forward mouse button
+1059:Backward mouse button
+1060:All
+1061:Universal eraser
+1062:Show tile owners
+1063:Show tiles grid
+1064:Cutting point
+1065:Set woodcutters cutting point. Alternatively you can set it via Shift + Right mouse button
+1066:Rally point
+1067:Set %s rally point. Alternatively you can set it via Shift + Right mouse button
+1068:Resize Map
+1069:Move borders:
+1070:Resize and Save
+1071:Resize map and then save it
+1072:
+1073:Are you sure want to resize the map?||It will automatically override current map
+1074:Resize is not available||You need to save new map first
+1075:Change owner for object
+1076:Quick Play
+1077:Start quick game with current map
+1078:Select player:
+1079:Select player to start map with
+1080:Start without save
+1081:Discard changes and start game for selected player
+1082:Save and start
+1083:Save map and start game for selected player
+1084:In Barracks:
+1085:In TownHall:
+1086:Rotate tile
+1087:Objects palette
+1088:Close palette
+1089:Remove units/groups
+1090:Replay|autopause
+1091:Automatically pause replay when peacetime ends
+1092:Show beacons
+1093:Show players beacons
+1094:Mute player
+1095:Unmute player
+1096:Remember this password
+1097:Use last known password
+1098:Go previous menu
+1099:Yes
+1100:No
+1101:Cancel
+1102:Map
+1103:Replay
+1104:Players
+1105:Teams

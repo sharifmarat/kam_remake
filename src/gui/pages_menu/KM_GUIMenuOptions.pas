@@ -145,10 +145,10 @@ begin
     //Replays section
     Panel_Options_Replays := TKMPanel.Create(Panel_Options,60,500,280,50);
     Panel_Options_Replays.Anchors := [anLeft];
-      TKMLabel.Create(Panel_Options_Replays,6,0,270,20,'Replays:',fnt_Outline,taLeft);   //TODO translate
+      TKMLabel.Create(Panel_Options_Replays,6,0,270,20,gResTexts[TX_WORD_REPLAY] + ':',fnt_Outline,taLeft);
       TKMBevel.Create(Panel_Options_Replays,0,20,280,30);
 
-      CheckBox_Options_ReplayAutopause := TKMCheckBox.Create(Panel_Options_Replays,12,27,256,20,'Pause at peacetime end', fnt_Metal);   //TODO translate
+      CheckBox_Options_ReplayAutopause := TKMCheckBox.Create(Panel_Options_Replays,12,27,256,20,gResTexts[TX_SETTINGS_PAUSE_AT_PT_END], fnt_Metal);
       CheckBox_Options_ReplayAutopause.OnClick := Change;
 
     // Keybindings button

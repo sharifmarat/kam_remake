@@ -1458,7 +1458,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils, Clipbrd,
-  KM_Resource, KM_ResSprites, KM_ResSound, KM_ResCursors,
+  KM_Resource, KM_ResSprites, KM_ResSound, KM_ResCursors, KM_ResTexts,
   KM_Sound, KM_CommonUtils, KM_Utils;
 
 
@@ -7455,7 +7455,7 @@ var
     TKMRenderUI.WriteText (XPos, G.Bottom + 4, 0, TimeToString(aTime / 24 / 60 / 60), fnt_Game, taLeft, IfThen(aIsPT, clChartPeacetimeLbl, icWhite));
     TKMRenderUI.WriteLine(XPos, G.Top, XPos, G.Bottom, IfThen(aIsPT, clChartPeacetimeLn, clChartDashedVLn), $CCCC);
     if aIsPT then
-      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, 'PT-', fnt_Game, taRight, clChartPeacetimeLbl); //Todo translate
+      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, gResTexts[TX_CHART_PT_END], fnt_Game, taRight, clChartPeacetimeLbl);
   end;
 
   procedure RenderHorizontalAxisTicks;
