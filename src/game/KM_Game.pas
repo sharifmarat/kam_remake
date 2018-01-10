@@ -146,7 +146,8 @@ type
     property GameSpeed: Single read fGameSpeed;
     property GameTickDuration: Single read GetGameTickDuration;
 
-    function PlayerColor: Cardinal; //Can bsed in SP game only
+    function PlayerLoc: Byte; //Can used in SP game/replay only
+    function PlayerColor: Cardinal; //Can used in SP game/replay only
 
     property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
 
@@ -810,6 +811,12 @@ begin
   end
   else
     RequestGameHold(gr_Win);
+end;
+
+
+function TKMGame.PlayerLoc: Byte;
+begin
+  Result := gMySpectator.HandIndex;
 end;
 
 

@@ -130,7 +130,7 @@ begin
   fRepeatSave := gGame.SaveFile;
   fRepeatCampName := gGame.CampaignName;
   fRepeatCampMap := gGame.CampaignMap;
-  fRepeatLocation := gGame.ControlledHandIndex;
+  fRepeatLocation := gGame.PlayerLoc;
   fRepeatColor := gGame.PlayerColor;
 
   // When exit mission update stats to build actual charts
