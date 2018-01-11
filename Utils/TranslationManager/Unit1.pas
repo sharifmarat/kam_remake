@@ -51,6 +51,7 @@ type
     edLabelName: TEdit;
     Label3: TLabel;
     edLabelId: TEdit;
+    SaveHotKey: THotKey;
     procedure FormCreate(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
     procedure btnSortByIndexClick(Sender: TObject);
@@ -133,6 +134,7 @@ begin
 
   //Hide menu entries that Users should not access
   mnuSave.Enabled := False;
+  mnuSave.ShortCut := SaveHotKey.HotKey;
   MainMenu1.Items[1].Visible := not USER_MODE;
   mnuSortByIndex.Visible := not USER_MODE;
   mnuSortByName.Visible := not USER_MODE;
@@ -248,6 +250,7 @@ end;
 procedure TForm1.btnSaveClick(Sender: TObject);
 begin
   fTextManager.Save;
+  mnuSave.Enabled := False;
 end;
 
 

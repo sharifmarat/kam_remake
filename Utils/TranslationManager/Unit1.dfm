@@ -199,8 +199,8 @@ object Form1: TForm1
     object Label3: TLabel
       Left = 5
       Top = 170
-      Width = 125
-      Height = 35
+      Width = 122
+      Height = 32
       Caption = 'Label ID or ID range (f.e. 50 or 10-40):'
       WordWrap = True
     end
@@ -246,6 +246,16 @@ object Form1: TForm1
       TabOrder = 4
       OnChange = FilterChanged
     end
+  end
+  object SaveHotKey: THotKey
+    Left = 112
+    Top = 64
+    Width = 121
+    Height = 19
+    HotKey = 16467
+    Modifiers = [hkCtrl]
+    TabOrder = 15
+    Visible = False
   end
   object MainMenu1: TMainMenu
     Left = 32
