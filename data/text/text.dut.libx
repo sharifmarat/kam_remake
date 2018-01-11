@@ -156,8 +156,8 @@
 157:Uith. vermogen
 158:Eenheid linksom draaien
 159:Eenheid rechtsom draaien
-160:Eenheid aanvallen ('a')
-161:Eenheid zenden ('d')
+160:Eenheid aanvallen
+161:Eenheid zenden
 162:Eenheid van voedsel voorzien
 163:Stormaanval starten
 164:Een rij toevoegen
@@ -608,9 +608,9 @@
 619:Resterende vredestijd: %s
 620:De vrede is voorbij. Grijp de wapens!
 621:Speeltijd:|%s
-622:Troep stoppen ('%s')
-623:Troep samenvoegen ('%s')
-624:Troep splitsen ('%s')
+622:Troep stoppen
+623:Troep samenvoegen
+624:Troep splitsen
 625:Herhalingen
 626:Herhaling weergeven
 627:Niet-ondersteund formaat %s
