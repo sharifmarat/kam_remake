@@ -2788,6 +2788,14 @@ begin
       SpecPlayerIndex := 7
     else if Key = gResKeys[SC_SPECTATE_PLAYER_8].Key then
       SpecPlayerIndex := 8
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_9].Key then
+      SpecPlayerIndex := 9
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_10].Key then
+      SpecPlayerIndex := 10
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_11].Key then
+      SpecPlayerIndex := 11
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_12].Key then
+      SpecPlayerIndex := 12
     else
       SpecPlayerIndex := -1;
 
