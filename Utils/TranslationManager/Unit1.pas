@@ -252,9 +252,29 @@ end;
 
 
 procedure TForm1.RefreshList;
+  function ParseRange(aString: String; out aFrom, aTo: Integer): Boolean;
+  var
+    P: Integer;
+    FromStr, ToStr: String;
+  begin
+    Result := False;
+    aFrom := -1;
+    aTo := -1;
+    aString := Trim(aString);
+    P := Pos('-', aString);
+    if P > 0 then
+    begin
+      FromStr := Copy(aString, 1, P - 1);
+      ToStr := Copy(aString, P + 1, Length(aString) - P);
+      if TryStrToInt(Trim(FromStr), aFrom)
+        and TryStrToInt(Trim(ToStr), aTo) then
+        Result := True;
+    end;
+  end;
+
   function ShowConst(aIndex: Integer): Boolean;
   var
-    I,K, TextID, DefLoc, LabelId: Integer;
+    I,K, TextID, DefLoc, LabelId, RangeFrom, RangeTo: Integer;
     TextConstName: String;
   begin
     Result := True;
@@ -289,13 +309,15 @@ procedure TForm1.RefreshList;
       end;
 
     if Result and (edTextFilter.Text <> '') then
-      Result := (TextID <> -1) and (Pos(UpperCase(edTextFilter.Text), UpperCase(fTextManager.Texts[TextID][DefLoc])) <> 0);
+      Result := (TextID <> -1) and (Pos(UpperCase(Trim(edTextFilter.Text)), UpperCase(fTextManager.Texts[TextID][DefLoc])) <> 0);
 
     if Result and (edLabelName.Text <> '') then
-      Result := (TextID <> -1) and (Pos(UpperCase(edLabelName.Text), UpperCase(TextConstName)) <> 0);
+      Result := (TextID <> -1) and (Pos(UpperCase(Trim(edLabelName.Text)), UpperCase(TextConstName)) <> 0);
 
     if Result and (edLabelId.Text <> '') then
-      Result := (TextID <> -1) and TryStrToInt(edLabelId.Text, LabelId) and (TextID = LabelId);
+      Result := (TextID <> -1)
+        and ((TryStrToInt(Trim(edLabelId.Text), LabelId) and (TextID = LabelId))
+          or (ParseRange(edLabelId.Text, RangeFrom, RangeTo) and InRange(TextID, RangeFrom, RangeTo)));
   end;
 var
   I, TopIdx, ItemIdx: Integer;
