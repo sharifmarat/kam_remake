@@ -301,7 +301,7 @@ TX_RESOURCES_ALL = 276; //All wares
 TX_RESOURCES_WARFARE = 277; //Warfare
 TX_RESOURCES_FOOD = 278; //Food
 
-TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|André Quaß||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim Schäfer|Jürgen Rebhann|Klaus Staendike|Steffen Schüngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe Schäfer||MANUAL:|Peter Ohlmann|Uwe Schäfer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe Schäfer|Ingrid Schäfer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk Mühlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe Schäfer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid Schäfer
+TX_CREDITS_TEXT = 279; //JOYMANIA ENTERTAINMENT||PROGRAMMING:|Peter Ohlmann||GAME GRAPHICS:|Adam Sprys||LEVEL DESIGN:|Adam Sprys|Andrï¿½ Quaï¿½||SOUND EDITING AND MIXING:|Tonstudio Mannheim||MUSIC:|Gerd Hofmann|Joachim Schï¿½fer|Jï¿½rgen Rebhann|Klaus Staendike|Steffen Schï¿½ngel||ILLUSTRATIONS:|Boleslaw Kasza|Christoph Werner||TRANSLATION:|Ronnie Shankland|Patricia Bellantuono|Andrea Rumpelt|||ZUXXEZ ENTERTAINMENT AG||PRODUCER:|Uwe Schï¿½fer||MANUAL:|Peter Ohlmann|Uwe Schï¿½fer||BETA TESTING:|Peter Ohlmann|Adam Sprys|Alexandra Constandache|Dirk P. Hassinger|Achim Heidelauf|Uwe Schï¿½fer|Ingrid Schï¿½fer|Dirk U. Jantz|Ion Constandache|Yaman Egeli|Roman Eich|Iris Mocsnek|Anke Jantz|Paul Hassinger|Liza Hassinger||GAMES DIRECTOR:|Achim Heidelauf||PUBLISHED BY:|TopWare Interactive||CUTSCENES:||DIRECTION:|Slawomir Jedrzejewski||Kajetan Czarnecki|Wojciech Drazek|Daniel Duplaga|Rafal Januszkiewicz|Andrzej Rams|Piotr Rulka|Krzysztof Rybczynski|Grzegorz Wisniewski||VOICES:|Claus Boyen (Storyteller)||Tim Timmermann|Peter Houska|Dirk Mï¿½hlbach|Ralf Ditze|Gerhard Piske|Gernot Wassmann||ARTWORK:|Boleslaw Kasza|Adam Sprys||OPENING ANIMATION:|Uwe Schï¿½fer|Christian Bigalk|Additional 3D-Modelling:|Niels Horstmann||SPECIAL THANKS TO:|Tadeusz Zuber|Dieter Ohlmann|Alexandra Constandache|Ingrid Schï¿½fer
 
 TX_MENU_MISSION_CANCELED = 280; //Mission canceled
 TX_MENU_REPLAY_ENDED = 281; //Replay ended
@@ -1008,17 +1008,21 @@ TX_MSG_HOUSE_UNOCCUPIED_WOODCUTTERS = 988; //This woodcutter's is not occupied
 TX_CHART_PT_END = 1023; //PT-
 TX_MULTIPLAYER_PLAYER_WON = 1024; //%s has won!
 TX_MULTIPLAYER_CHAT_PLAYER_NOT_CONNECTED_ANYMORE = 1025; //%s is not connected to game anymore
+
 TX_HOUSES_TOWNHALL_MAX_GOLD = 1026; //Max Gold
 TX_HOUSES_TOWNHALL_MAX_GOLD_HINT = 1027; //Maximum amount of gold to deliver into townhall
 TX_HOUSES_WOODCUTTER_PLANT_ONLY = 1028; //Plant only
 TX_HOUSES_CLOSED_FOR_WORKER_HINT = 1029; //Open / Close house for %s
+
 TX_LOBBY_SLOT_OPEN_ALL = 1030; //All
 TX_LOBBY_SLOT_CLOSED_ALL = 1031; //All
 TX_LOBBY_SLOT_AI_ALL = 1032; //All
+
 TX_MENU_MAP_RENAME = 1033; //Rename Map
 TX_SETTINGS_PAUSE_AT_PT_END = 1034; //Pause at peacetime end
 TX_GAMEPLAY_GAME_TIME = 1035; //Game time
 TX_MENU_MAP_MOVE_NAME_TITLE = 1036; //Name
+
 TX_RESULTS_ARMY_POWER = 1037; //Army power
 TX_RESULTS_ALL_SOLDIERS = 1038; //All soldiers
 TX_RESULTS_CHART_TYPE = 1039; //Chart type
@@ -1032,24 +1036,30 @@ TX_RESULTS_BACK_TO_RESULTS = 1046; //Back to Game results
 TX_RESULTS_BY_PLAYERS = 1047; //by Players
 TX_RESULTS_BY_TEAMS = 1048; //by Teams
 TX_RESULTS_MORE_STATS = 1049; //More|statistics
+
 TX_MENU_RETURN_TO_MAPED = 1050; //Return to MapEd
 TX_MENU_RETURN_TO_MAPED_HINT = 1051; //Return to Map Editor
 TX_REPLAY_QUIT_CONFIRMATION = 1052; //Are you sure you|want to quit|this replay?
+
 TX_NET_ERR_MAP_INVALID = 1053; //Map is invalid
 TX_NET_ERR_MAP_INVALID_MSG = 1054; //Selected map is invalid. Please select another map
 TX_NET_ERR_DL_MAP_FILE_CHANGED = 1055; //Downloaded map files have changed
 TX_NET_ERR_DL_MAP_FILE_CHANGED_MSG = 1056; //Selected DL map, which files have changed. Please move it out of downloads first
 TX_NET_ERR_MAP_FILE_CHANGED = 1057; //Map files have changed. Please reselect the map
+
 TX_KEY_MOUSE_FORWARD = 1058; //Forward mouse button
 TX_KEY_MOUSE_BACKWARD = 1059; //Backward mouse button
+
 TX_UNITS_ALL = 1060; //All
 TX_MAPED_UNIVERSAL_ERASER = 1061; //Universal eraser
 TX_MAPED_SHOW_TILE_OWNERS = 1062; //Show tile owners
 TX_MAPED_SHOW_TILES_GRID = 1063; //Show tiles grid
+
 TX_HOUSES_WOODCUTTER_CUTTING_POINT = 1064; //Cutting point
 TX_MAPED_WOODCUTTER_CUTTING_POINT_HINT = 1065; //Set woodcutters cutting point. Alternatively you can set it via Shift + Right mouse button
 TX_HOUSES_RALLY_POINT = 1066; //Rally point
 TX_MAPED_RALLY_POINT_HINT = 1067; //Set %s rally point. Alternatively you can set it via Shift + Right mouse button
+
 TX_MAPED_MAP_RESIZE = 1068; //Resize Map
 TX_MAPED_MAP_RESIZE_MOVE_BORDERS = 1069; //Move borders:
 TX_MAPED_MAP_RESIZE_AND_SAVE = 1070; //Resize and Save
@@ -1057,10 +1067,13 @@ TX_MAPED_MAP_RESIZE_AND_SAVE_HINT = 1071; //Resize map and then save it
 TX_MAPED_MAP_RESIZE_CONFIRM_TITLE = 1072; //
 TX_MAPED_MAP_RESIZE_CONFIRM = 1073; //Are you sure want to resize the map?||It will automatically override current map
 TX_MAPED_MAP_RESIZE_NOT_AVAIL = 1074; //Resize is not available||You need to save new map first
+TX_MAPED_MAP_RESIZE_CURR_MAP_SIZE = 1110; //Current map size:
+TX_MAPED_MAP_RESIZE_NEW_MAP_SIZE = 1111; //New map size:
+
 TX_MAPED_PAINT_BUCKET_CH_OWNER = 1075; //Change owner for object
 
 TX_MAPED_MAP_QUICK_PLAY = 1076; //Quick Play
-TX_MAPED_MAP_QUICK_PLAY_HINT = 1077; //Start quick game with current map
+TX_MAPED_MAP_QUICK_PLAY_HINT = 1077; //Start singleplayer game on current map
 TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER = 1078; //Select player:
 TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER_TO_START = 1079; //Select player to start map with
 TX_MAPED_MAP_QUICK_PLAY_START_NO_SAVE = 1080; //Start without save
