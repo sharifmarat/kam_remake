@@ -303,13 +303,19 @@ procedure TForm1.RefreshList;
         Result := False;
         for I := 0 to gResLocales.Count - 1 do
           if clbShowLang.Checked[I+1] then
-          for K := 0 to gResLocales.Count - 1 do
-            if (K <> I) and clbShowLang.Checked[K+1] then
-              Result := Result or (fTextManager.Texts[TextID][I] = fTextManager.Texts[TextID][K]);
+            for K := 0 to gResLocales.Count - 1 do
+              if (K <> I) and clbShowLang.Checked[K+1] then
+                Result := Result or (fTextManager.Texts[TextID][I] = fTextManager.Texts[TextID][K]);
       end;
 
     if Result and (edTextFilter.Text <> '') then
-      Result := (TextID <> -1) and (Pos(UpperCase(Trim(edTextFilter.Text)), UpperCase(fTextManager.Texts[TextID][DefLoc])) <> 0);
+    begin
+      Result := False;
+      if TextID <> -1 then
+        for I := 0 to gResLocales.Count - 1 do
+          if not Result and clbShowLang.Checked[I+1] then
+            Result := Pos(UpperCase(Trim(edTextFilter.Text)), UpperCase(fTextManager.Texts[TextID][I])) <> 0;
+    end;
 
     if Result and (edLabelName.Text <> '') then
       Result := (TextID <> -1) and (Pos(UpperCase(Trim(edLabelName.Text)), UpperCase(TextConstName)) <> 0);

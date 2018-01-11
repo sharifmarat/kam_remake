@@ -179,7 +179,7 @@ object Form1: TForm1
     Left = 335
     Top = 183
     Width = 154
-    Height = 242
+    Height = 237
     Caption = 'Filter'
     TabOrder = 14
     object Label4: TLabel
@@ -199,9 +199,9 @@ object Form1: TForm1
     object Label3: TLabel
       Left = 5
       Top = 170
-      Width = 106
-      Height = 32
-      Caption = 'Label ID or range: (f.e. 50 or 10-40)'
+      Width = 125
+      Height = 35
+      Caption = 'Label ID or ID range (f.e. 50 or 10-40):'
       WordWrap = True
     end
     object cbShowMis: TCheckBox
