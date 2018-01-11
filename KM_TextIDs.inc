@@ -1069,6 +1069,7 @@ TX_MAPED_MAP_RESIZE_CONFIRM = 1073; //Are you sure want to resize the map?||It w
 TX_MAPED_MAP_RESIZE_NOT_AVAIL = 1074; //Resize is not available||You need to save new map first
 TX_MAPED_MAP_RESIZE_CURR_MAP_SIZE = 1110; //Current map size:
 TX_MAPED_MAP_RESIZE_NEW_MAP_SIZE = 1111; //New map size:
+TX_MAPED_MAP_RESIZE_TITLE = 1112; //Resize Map
 
 TX_MAPED_PAINT_BUCKET_CH_OWNER = 1075; //Change owner for object
 
