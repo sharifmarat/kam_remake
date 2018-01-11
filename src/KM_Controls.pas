@@ -405,6 +405,7 @@ type
     fTextAlign: TKMTextAlign;
     fStyle: TKMButtonStyle;
     fRX: TRXType;
+    procedure InitCommon(aStyle: TKMButtonStyle);
   public
     Caption: UnicodeString;
     FlagColor: TColor4; //When using an image
@@ -414,6 +415,8 @@ type
     CapOffsetX: Shortint;
     CapOffsetY: Shortint;
     ShowImageEnabled: Boolean; // show picture as enabled or not (normal or darkened)
+    CenterText: Boolean;
+    TextVAlign: TKMTextVAlign;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle); overload;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle); overload;
     function Click: Boolean; //Try to click a button and return TRUE if succeded
@@ -2787,13 +2790,9 @@ end;
 constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
-  fRX          := aRX;
-  TexID        := aTexID;
-  Caption      := '';
-  FlagColor    := $FFFF00FF;
-  fStyle       := aStyle;
-  MakesSound   := True;
-  ShowImageEnabled := True;
+  InitCommon(aStyle);
+  fRX   := aRX;
+  TexID := aTexID;
 end;
 
 
@@ -2801,14 +2800,22 @@ end;
 constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
-  TexID        := 0;
-  Caption      := aCaption;
-  FlagColor    := $FFFF00FF;
-  Font         := fnt_Metal;
-  fTextAlign   := taCenter; //Thats default everywhere in KaM
-  fStyle       := aStyle;
-  MakesSound   := True;
-  ShowImageEnabled := True;
+  InitCommon(aStyle);
+  Caption := aCaption;
+end;
+
+
+procedure TKMButton.InitCommon(aStyle: TKMButtonStyle);
+begin
+  TexID             := 0;
+  Caption           := '';
+  FlagColor         := $FFFF00FF;
+  Font              := fnt_Metal;
+  fTextAlign        := taCenter; //Thats default everywhere in KaM
+  TextVAlign        := tvaMiddle;//tvaNone;
+  fStyle            := aStyle;
+  MakesSound        := True;
+  ShowImageEnabled  := True;
 end;
 
 
@@ -2845,6 +2852,7 @@ procedure TKMButton.Paint;
 var
   Col: TColor4;
   StateSet: TKMButtonStateSet;
+  TextY, Top: Integer;
 begin
   inherited;
   StateSet := [];
@@ -2862,9 +2870,17 @@ begin
   //If disabled then text should be faded
   Col := IfThen(fEnabled, icWhite, icGray);
 
-  TKMRenderUI.WriteText(AbsLeft + Byte(csDown in State) + CapOffsetX,
-                      (AbsTop + Height div 2) - 7 + Byte(csDown in State) + CapOffsetY,
-                      Width, Caption, Font, fTextAlign, Col);
+  Top := AbsTop + Byte(csDown in State) + CapOffsetY;
+
+  TextY := gRes.Fonts[Font].GetTextSize(Caption).Y;
+  case TextVAlign of
+    tvaNone:    Inc(Top, (Height div 2) - 7);
+    tvaTop:     Inc(Top, 2);
+    tvaMiddle:  Inc(Top, (Height div 2) - (TextY div 2) + 2);
+    tvaBottom:  Inc(Top, Height - TextY);
+  end;
+  TKMRenderUI.WriteText(AbsLeft + Byte(csDown in State) + CapOffsetX, Top,
+                        Width, Caption, Font, fTextAlign, Col);
 end;
 
 
