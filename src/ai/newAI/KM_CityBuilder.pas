@@ -370,32 +370,32 @@ end;
 
 //{
 procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
-  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean; inline;
+  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean;
   begin
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
   end;
-  function IsCompletedRoad(aPoint: TKMPoint): Boolean; inline;
+  function IsCompletedRoad(aPoint: TKMPoint): Boolean;
   begin
     Result := gTerrain.TileIsWalkableRoad(aPoint);
   end;
-  function IsCompletedField(aPoint: TKMPoint): Boolean; inline;
+  function IsCompletedField(aPoint: TKMPoint): Boolean;
   begin
     Result := gTerrain.TileIsCornField(aPoint);
   end;
-  function IsCompletedWine(aPoint: TKMPoint): Boolean; inline;
+  function IsCompletedWine(aPoint: TKMPoint): Boolean;
   begin
     Result := gTerrain.TileIsWineField(aPoint);
   end;
-  function IsRoad(aPoint: TKMPoint): Boolean; inline;
+  function IsRoad(aPoint: TKMPoint): Boolean;
   begin
     Result := IsCompletedRoad(aPoint) OR IsPlan(aPoint, tlRoadWork, ft_Road);
   end;
-  function IsCornField(aPoint: TKMPoint): Boolean; inline;
+  function IsCornField(aPoint: TKMPoint): Boolean;
   begin
     Result := IsCompletedField(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Corn);
   end;
-  function IsWineField(aPoint: TKMPoint): Boolean; inline;
+  function IsWineField(aPoint: TKMPoint): Boolean;
   begin
     Result := IsCompletedWine(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
   end;

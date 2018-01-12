@@ -933,7 +933,7 @@ end;
 
 
 function TKMCityPlanner.SnapCrit(aHT: THouseType; aLoc: TKMPoint): Single;
-  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean; inline;
+  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean;
   begin
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);

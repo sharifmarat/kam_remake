@@ -59,12 +59,12 @@ type
 
     // Avoid building
     // Army presence
-    property PresenceAllGroups[aPL: TKMHandIndex; aIdx: Word]: Word read GetAllPresences;
-    property Presence[aPL: TKMHandIndex; aIdx: Word; aGT: TGroupType]: Word read GetPresence write SetPresence;
-    property IncPresence[aPL: TKMHandIndex; aIdx: Word; aGT: TGroupType]: Word write SetIncPresence;
+    property PresenceAllGroups[const aPL: TKMHandIndex; aIdx: Word]: Word read GetAllPresences;
+    property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType]: Word read GetPresence write SetPresence;
+    property IncPresence[const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType]: Word write SetIncPresence;
     // City influence
-    property Ownership[aPL: TKMHandIndex; aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
-    property OwnPoly[aPL: TKMHandIndex; aIdx: Word]: Byte read GetOwnership write SetOwnership;
+    property Ownership[const aPL: TKMHandIndex; aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
+    property OwnPoly[const aPL: TKMHandIndex; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
     // Common
     property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
 
@@ -302,7 +302,7 @@ begin
 
   SetLength(PointArr,16);
   for I := 0 to fPolygons-1 do
-    for GT in TGroupType do
+    for GT := Low(TGroupType) to High(TGroupType) do
       Presence[aPL,I,GT] := 0;
 
   for I := 0 to gHands[aPL].UnitGroups.Count-1 do
