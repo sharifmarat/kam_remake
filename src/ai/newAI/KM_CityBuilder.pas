@@ -6,17 +6,20 @@ uses
   KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points, KM_CommonTypes,
   KM_PathfindingRoad, //KM_AISetup,
   KM_ResHouses, KM_BuildList,
-  KM_CityPlanner, KM_CityPredictor, KM_Eye;
+  KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye;
 
 type
 
   TBuildNode = record
     Active, RemoveTreesMode, ShortcutMode: Boolean;
     FreeWorkers, RequiredWorkers, MaxReqWorkers: Integer;
-    CenterPoint: TKMPoint;
+    HouseType: THouseType;
+    CenterPoint, HouseLoc: TKMPoint;
     FieldType: TFieldType; //ft_Corn, ft_Wine, ft_Road
     FieldList: TKMPointList;
   end;
+
+  TConstructionState = (cs_NoNodeAvailable, cs_HousePlaced, cs_CannotPlaceHouse, cs_HouseReservation, cs_RemoveTreeProcedure);
 
   //
   TKMCityBuilder = class
@@ -28,10 +31,8 @@ type
 
     procedure UpdateBuildNode(var aNode: TBuildNode);
 
-    function BuildHouse(aUnlockProcedure, aHouseReservation: Boolean; aHT: THouseType): Boolean;
-    function BuildHouse_GA_MODE(aHT: THouseType): Boolean;
-    procedure LockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
-    procedure UnlockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
+    function BuildHouse(aUnlockProcedure, aHouseReservation: Boolean; aHT: THouseType): TConstructionState;
+    function BuildHouse_GA_MODE(aHT: THouseType): TConstructionState;
     procedure LockNode(var aNode: TBuildNode);
     procedure UnlockPointOfNode(aPoint: TKMPoint); inline;
     procedure UnlockNode(var aNode: TBuildNode);
@@ -49,6 +50,9 @@ type
     procedure UpdateState(aTick: Cardinal; out aFreeWorkersCnt: Integer);
     procedure UpdateBuildNodes(out aFreeWorkersCnt: Integer);
     function ChooseHousesToBuild(aMaxCnt: Integer; var aRequiredHouses: TRequiredHousesArray; aWareBalance: TWareBalanceArray): Boolean;
+
+    procedure LockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
+    procedure UnlockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -104,6 +108,8 @@ begin
       SaveStream.Write(RequiredWorkers);
       SaveStream.Write(MaxReqWorkers);
       SaveStream.Write(CenterPoint, SizeOf(CenterPoint));
+      SaveStream.Write(HouseType, SizeOf(HouseType));
+      SaveStream.Write(HouseLoc, SizeOf(HouseLoc));
       SaveStream.Write(FieldType, SizeOf(TFieldType));
       FieldList.SaveToStream(SaveStream);
     end;
@@ -131,6 +137,8 @@ begin
     LoadStream.Read(RequiredWorkers);
     LoadStream.Read(MaxReqWorkers);
     LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
+    LoadStream.Read(HouseType, SizeOf(HouseType));
+    LoadStream.Read(HouseLoc, SizeOf(HouseLoc));
     LoadStream.Read(FieldType, SizeOf(TFieldType));
     FieldList := TKMPointList.Create();
     FieldList.LoadFromStream(LoadStream);
@@ -512,6 +520,10 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       if (FieldList.Count = 0) then
       begin
         Active := False;
+        with fPlanner.PlannedHouses[aNode.HouseType] do
+          for I := 0 to Count - 1 do
+            if KMSamePoint(Plans[I].Loc, aNode.HouseLoc) then
+              Plans[I].RemoveTreeInPlanProcedure := False;
         Exit;
       end;
       RequiredWorkers := FieldList.Count;
@@ -574,7 +586,7 @@ end;
 //}
 
 
-function TKMCityBuilder.BuildHouse_GA_MODE(aHT: THouseType): Boolean;
+function TKMCityBuilder.BuildHouse_GA_MODE(aHT: THouseType): TConstructionState;
 var
   FieldType: TFieldType;
   FieldList: TKMPointList;
@@ -606,6 +618,7 @@ var
   Loc: TKMPoint;
   HPlan: TKMHousePlan;
 begin
+  Result := cs_CannotPlaceHouse;
   Output := False;
   FieldList := TKMPointList.Create;
   try
@@ -627,18 +640,18 @@ begin
   finally
     FieldList.Free;
   end;
-  //fPlanner.UpdateState(0);// DELETE (ADD SOMEWHERE ELSE)
-  Result := Output;
+  if Output then
+    Result := cs_HousePlaced;
 end;
 
 
-function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation: Boolean; aHT: THouseType): Boolean;
+function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation: Boolean; aHT: THouseType): TConstructionState;
 var
-  Output: Boolean;
+  Output: TConstructionState;
   I, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
 begin
-  Output := False;
+  Output := cs_NoNodeAvailable;
   // Find at least 2 non active build nodes
   Node1Idx := -1;
   Node2Idx := -1;
@@ -658,24 +671,23 @@ begin
 
   if fPlanner.GetHousePlan(aUnlockProcedure, aHT, Loc, HouseIdx) then
   begin
-    // Check if we can place house
-    Output := gHands[fOwner].CanAddHousePlan(Loc, aHT);
-    if Output then
+    // Check if we can place house by default KaM function
+    if gHands[fOwner].CanAddHousePlan(Loc, aHT) then
     begin
-      // Remove avoid building area around house plan in remove tree mode
-      if fPlanner.PlannedHouses[aHT].Plans[HouseIdx].RemoveTreeInPlanProcedure then
-        UnlockHouseLoc(aHT, fPlanner.PlannedHouses[aHT].Plans[HouseIdx].Loc);
 
       // Update reservation status
-      if fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation AND not aHouseReservation then
+      if fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation then
       begin
-        fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := False;
-        UnLockHouseLoc(aHT, Loc);
+        Output := cs_HouseReservation; // House is already reserved -> no nodes will be updated and workers still have nothing to do so we can build another house
+        if not aHouseReservation then
+          fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := aHouseReservation
+        else
       end;
 
       // if house is not reserved (or will be reserved in this tick)
       if not fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation then
       begin
+        Output := cs_HousePlaced; // Nodes will be updated -> workers will have something to do
         gHands[fOwner].AddHousePlan(aHT, Loc); // Place house
         // Add road to node
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType) then
@@ -717,12 +729,12 @@ begin
         begin
           fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := True;
           gHands[fOwner].RemHousePlan(Loc);
-          LockHouseLoc(aHT, Loc);
         end;
       end;
     end
     else if gAIFields.Eye.CanPlaceHouse(Loc, aHT, True) then
     begin
+      Output := cs_RemoveTreeProcedure; // Remove tree procedure does not require significant count of workers so there is not need for separate mark
       // Remove tree procedure is already active
       if (fPlanner.PlannedHouses[aHT].Plans[HouseIdx].RemoveTreeInPlanProcedure) then
       begin
@@ -748,8 +760,9 @@ begin
           MaxReqWorkers := 5;
           RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
           CenterPoint := Loc;
+          HouseLoc := Loc;
+          HouseType := aHT;
         end;
-        LockHouseLoc(aHT, Loc);
       end;
       // There is another problem...
       //else
@@ -770,8 +783,8 @@ function TKMCityBuilder.ChooseHousesToBuild(aMaxCnt: Integer; var aRequiredHouse
 type
   TSetOfWare = set of TWareType;
 const
-  BASIC_HOUSES: array[0..4] of THouseType = (ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store);
-  BUILD_WARE: TSetOfWare = [wt_Gold, wt_GoldOre, wt_Coal, wt_Stone, wt_Trunk, wt_Wood];
+  BASIC_HOUSES: set of THouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
+  BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish];
   WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
 
@@ -799,12 +812,14 @@ const
     Result := Output AND ( (initHT = aHT) OR (gHands[fOwner].Stats.GetHouseTotal(aHT) = 0) );
   end;
 
-  function AddToConstruction(aHT: THouseType; aUnlockProcedureRequired: Boolean = False): Boolean;
+
+  function AddToConstruction(aHT: THouseType; aUnlockProcedureRequired: Boolean = False): TConstructionState;
   var
-    Output, UnlockProcedure: Boolean;
+    UnlockProcedure: Boolean;
     FollowingHouse: THouseType;
+    Output: TConstructionState;
   begin
-    Output := False;
+    Output := cs_CannotPlaceHouse;
     UnlockProcedure := aUnlockProcedureRequired; // Unlock procedure = build house as soon as possible -> avoid to build house plan inside of tree (remove tree will take time)
     // Check if AI can build house (if is house blocked [by script] ignore it)
     if GetHouseToUnlock(UnlockProcedure, aHT, FollowingHouse) then
@@ -815,12 +830,10 @@ const
       else
         Output := BuildHouse(UnlockProcedure, False, aHT);
     end
-    else if (FollowingHouse <> ht_none) AND (gHands[fOwner].Stats.GetHouseQty(ht_School) > 0) then
+    else if (FollowingHouse <> ht_none) AND (gHands[fOwner].Stats.GetHouseQty(ht_School) > 0) then // Activate house reservation
     begin
       Output := BuildHouse(True, True, FollowingHouse);
     end;
-    aRequiredHouses[aHT] := 0; // Make sure that next node will not scan this house in this tick
-    //aRequiredHouses[aHT] := aRequiredHouses[aHT] - 1;
     Result := Output;
   end;
 
@@ -843,7 +856,6 @@ const
       WarePriority[I] := 0; // Doesn't have to be initialized but in this case compilation throws warning
     end;
     // Find the most required house to be build
-    //for Ware := WARE_MIN to WARE_MAX do
     for Ware in aSetOfWare do
     begin
       WT := Ware;
@@ -865,45 +877,93 @@ const
       end;
     end;
     // Try build required houses
-    I := 0;
     for I := Low(WareOrder) to High(WareOrder) do
+    begin
       if (WareOrder[I] = wt_None) then
-        break
-      else if AddToConstruction(PRODUCTION[ WareOrder[I] ]) then
-      begin
-        Output := True;
-        aMaxCnt := aMaxCnt - 1;
-        if (aMaxCnt <= 0) then
-          break;
+        break;
+      case AddToConstruction(PRODUCTION[ WareOrder[I] ]) of
+        cs_NoNodeAvailable: break;
+        cs_HouseReservation, cs_RemoveTreeProcedure: Output := True;
+        cs_HousePlaced:
+        begin
+          Output := True;
+          aMaxCnt := aMaxCnt - 1;
+          if (aMaxCnt <= 0) then
+            break;
+          aRequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] := 0; // Make sure that next node will not scan this house in this tick
+        end;
+        cs_CannotPlaceHouse:
+        begin
+          aRequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] := 0; // Make sure that next node will not scan this house in this tick
+          //Dec(aRequiredHouses[  PRODUCTION[ WareOrder[I] ]  ]);
+        end;
       end;
+    end;
     Result := Output;
   end;
 
+  procedure CheckHouseReservation();
+  var
+    I: Integer;
+    HT: THouseType;
+  begin
+    for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
+      for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
+        with fPlanner.PlannedHouses[HT].Plans[I] do
+          if (HouseReservation OR RemoveTreeInPlanProcedure)
+             AND (cs_HousePlaced = AddToConstruction(HT)) then
+          begin
+            aMaxCnt := aMaxCnt - 1;
+            Dec(aRequiredHouses[HT]); // Make sure that next node will not scan this house in this tick
+          end;
+  end;
+  procedure fuckmylife();
+  begin
+
+  end;
 var
   Output: Boolean;
-  I, POMCoal: Integer;
+  POMCoal: Integer;
+  HT: THouseType;
 begin
   Output := False;
+
+  CheckHouseReservation();
+  if (aMaxCnt <= 0) then
+    Exit;
+
   // Basic houses (for city management)
-  for I := Low(BASIC_HOUSES) to High(BASIC_HOUSES) do
-    if (aRequiredHouses[ BASIC_HOUSES[I] ] > 0) AND AddToConstruction(BASIC_HOUSES[I], True) then
+  for HT in BASIC_HOUSES do
+    if (aRequiredHouses[HT] > 0) AND (AddToConstruction(HT, True) = cs_HousePlaced) then
     begin
       Output := True;
       if (aMaxCnt <= 0) then
         break;
     end;
 
-  POMCoal := aRequiredHouses[ht_CoalMine];
+  aWareBalance[wt_Trunk].Fraction := Max(0, aRequiredHouses[ht_Woodcutters] - gHands[fOwner].Stats.GetHouseQty(ht_Woodcutters) - 4);
+  POMCoal := aRequiredHouses[ht_CoalMine]; // Coal is used by resource (Gold) and by weapon division -> extract just Gold requirements
   aRequiredHouses[ht_CoalMine] := Max(0,gHands[fOwner].Stats.GetHouseTotal(ht_GoldMine)-gHands[fOwner].Stats.GetHouseTotal(ht_CoalMine));
-  if not Output AND SelectHouse(BUILD_WARE) then
+  aRequiredHouses[ht_Woodcutters] := Max(0,aRequiredHouses[ht_Woodcutters] - Round(Byte(aWareBalance[wt_Gold].Exhaustion < 20) * aRequiredHouses[ht_Woodcutters] * 0.5));
+  if (aMaxCnt > 0) AND SelectHouse(BUILD_WARE) then
     Output := True;
 
+  // Make sure that gold will be produced (stones and wood are fines because of initial influence and order of construction)
+  if (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < 10) AND (aWareBalance[wt_Gold].Exhaustion < 20) then
+    Exit;
+
+  // Now return coal count back to original values
+  aWareBalance[wt_Coal].Fraction := (gHands[fOwner].Stats.GetHouseTotal(ht_CoalMine) - aRequiredHouses[ht_CoalMine]) / POMCoal;
   aRequiredHouses[ht_CoalMine] := POMCoal;
-  if not Output then
+  if (aMaxCnt > 0) then
   begin
-    Output := SelectHouse(FOOD_WARE) OR SelectHouse(WEAPON_WARE);
-    //SelectHouse(FOOD_WARE);
+    Output := SelectHouse(FOOD_WARE);
+    SelectHouse(WEAPON_WARE);
+    SelectHouse(FOOD_WARE);
   end;
+
+  if aMaxCnt > 0 then
+    fuckmylife;
 
   Result := Output;
 end;
@@ -914,36 +974,36 @@ const
   MAX_SHORTCUTS_PER_HOUSE_TYPE = 2;
   MAX_DISTANCE_TO_ALL_HOUSES = 8;
   MAX_WORKERS_FOR_NODE = 20;      // CHANGE CHANGE CHANGE CHANGE CHANGE CHANGE CHANGE CHANGE CHANGE CHANGE
-  HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of array[0..2] of THouseType = (
-    {ht_ArmorSmithy}    ( ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ),
-    {ht_ArmorWorkshop}  ( ht_Tannery,       ht_Barracks,     ht_None        ),
-    {ht_Bakery}         ( ht_Inn,           ht_Store,        ht_Mill        ),
-    {ht_Barracks}       ( ht_School,        ht_None,         ht_None        ),
-    {ht_Butchers}       ( ht_Inn,           ht_Store,        ht_Swine       ),
-    {ht_CoalMine}       ( ht_None,          ht_None,         ht_None        ),
-    {ht_Farm}           ( ht_None,          ht_None,         ht_None        ),
-    {ht_FisherHut}      ( ht_None,          ht_None,         ht_None        ),
-    {ht_GoldMine}       ( ht_Metallurgists, ht_None,         ht_None        ),
-    {ht_Inn}            ( ht_Store,         ht_Inn,          ht_None        ),
-    {ht_IronMine}       ( ht_IronSmithy,    ht_None,         ht_None        ),
-    {ht_IronSmithy}     ( ht_CoalMine,      ht_WeaponSmithy, ht_ArmorSmithy ),
-    {ht_Marketplace}    ( ht_Store,         ht_None,         ht_None        ),
-    {ht_Metallurgists}  ( ht_School,        ht_GoldMine,     ht_CoalMine    ),
-    {ht_Mill}           ( ht_Farm,          ht_Bakery,       ht_None        ),
-    {ht_Quary}          ( ht_Store,         ht_None,         ht_None        ),
-    {ht_Sawmill}        ( ht_ArmorWorkshop, ht_Store,        ht_None        ),
-    {ht_School}         ( ht_Metallurgists, ht_Store,        ht_Barracks    ),
-    {ht_SiegeWorkshop}  ( ht_IronSmithy,    ht_Sawmill,      ht_Store       ),
-    {ht_Stables}        ( ht_Farm,          ht_Barracks,     ht_None        ),
-    {ht_Store}          ( ht_Inn,           ht_Barracks,     ht_School      ),
-    {ht_Swine}          ( ht_Farm,          ht_Butchers,     ht_None        ),
-    {ht_Tannery}        ( ht_ArmorWorkshop, ht_Swine,        ht_None        ),
-    {ht_TownHall}       ( ht_Metallurgists, ht_Store,        ht_None        ),
-    {ht_WatchTower}     ( ht_None,          ht_None,         ht_None        ),
-    {ht_WeaponSmithy}   ( ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ),
-    {ht_WeaponWorkshop} ( ht_Sawmill,       ht_Barracks,     ht_None        ),
-    {ht_Wineyard}       ( ht_Inn,           ht_None,         ht_None        ),
-    {ht_Woodcutters}    ( ht_None,          ht_None,         ht_None        )
+  HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of THouseType = (
+    {ht_ArmorSmithy}    [ ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ],
+    {ht_ArmorWorkshop}  [ ht_Tannery,       ht_Barracks                     ],
+    {ht_Bakery}         [ ht_Inn,           ht_Store,        ht_Mill        ],
+    {ht_Barracks}       [ ht_School                                         ],
+    {ht_Butchers}       [ ht_Inn,           ht_Store,        ht_Swine       ],
+    {ht_CoalMine}       [ ht_None                                           ],
+    {ht_Farm}           [ ht_None                                           ],
+    {ht_FisherHut}      [ ht_None                                           ],
+    {ht_GoldMine}       [ ht_Metallurgists                                  ],
+    {ht_Inn}            [ ht_Store,         ht_Inn                          ],
+    {ht_IronMine}       [ ht_IronSmithy                                     ],
+    {ht_IronSmithy}     [ ht_CoalMine,      ht_WeaponSmithy, ht_ArmorSmithy ],
+    {ht_Marketplace}    [ ht_Store                                          ],
+    {ht_Metallurgists}  [ ht_School,        ht_GoldMine,     ht_CoalMine    ],
+    {ht_Mill}           [ ht_Farm,          ht_Bakery                       ],
+    {ht_Quary}          [ ht_Store                                          ],
+    {ht_Sawmill}        [ ht_ArmorWorkshop, ht_Store                        ],
+    {ht_School}         [ ht_Metallurgists, ht_Store,        ht_Barracks    ],
+    {ht_SiegeWorkshop}  [ ht_IronSmithy,    ht_Sawmill,      ht_Store       ],
+    {ht_Stables}        [ ht_Farm,          ht_Barracks                     ],
+    {ht_Store}          [ ht_Inn,           ht_Barracks,     ht_School      ],
+    {ht_Swine}          [ ht_Farm,          ht_Butchers                     ],
+    {ht_Tannery}        [ ht_ArmorWorkshop, ht_Swine                        ],
+    {ht_TownHall}       [ ht_Metallurgists, ht_Store                        ],
+    {ht_WatchTower}     [ ht_None                                           ],
+    {ht_WeaponSmithy}   [ ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ],
+    {ht_WeaponWorkshop} [ ht_Sawmill,       ht_Barracks                     ],
+    {ht_Wineyard}       [ ht_Inn                                            ],
+    {ht_Woodcutters}    [ ht_None                                           ]
   );
 
   function FindAndMarkNewHouse(var aHT: THouseType; var aLoc: TKMPoint): Boolean;
@@ -992,7 +1052,7 @@ const
             for K := 0 to Road.Count - 1 do
               aNode.FieldList.Add(Road.Items[K]);
             cnt := cnt + 1;
-            LockNode(aNode); // Lock must be here because next shortcut will see road plan -> avoid to build 2 road next to each other
+            LockNode(aNode); // Lock must be here because next shortcut will see road reservation -> avoid to build 2 road next to each other
             if not aAllLocs AND (cnt = MAX_SHORTCUTS_PER_HOUSE_TYPE) then
               break;
           end;
@@ -1050,9 +1110,8 @@ begin
   Locs := TKMPointTagList.Create();
   try
     // Create basic connection to houses which are part of specific distribution network
-    for I := Low(HOUSE_CONNECTION[BaseHT]) to High(HOUSE_CONNECTION[BaseHT]) do
+    for HT in HOUSE_CONNECTION[BaseHT] do
     begin
-      HT := HOUSE_CONNECTION[BaseHT,I];
       if (HT = ht_None) then
         break;
 
@@ -1066,19 +1125,20 @@ begin
 
     // Create additional shortcuts to closest houses
     Locs.Clear();
-    for HT := Low(PlannedHouses) to High(PlannedHouses) do
-    begin
-      if (HT = ht_Woodcutters) then
-        continue;
-      for I := 0 to PlannedHouses[HT].Count - 1 do
-        with PlannedHouses[HT].Plans[I] do
-          if Placed then
-          begin
-            Dist := KMDistanceAbs(BaseLoc, KMPointBelow(Loc));
-            if (Dist <> 0) AND (Dist < MAX_DISTANCE_TO_ALL_HOUSES) then
-              Locs.Add( KMPointBelow(Loc), Dist );
-          end;
-    end;
+    if (HT <> ht_None) then
+      for HT := Low(PlannedHouses) to High(PlannedHouses) do
+      begin
+        if (HT = ht_Woodcutters) then
+          continue;
+        for I := 0 to PlannedHouses[HT].Count - 1 do
+          with PlannedHouses[HT].Plans[I] do
+            if Placed then
+            begin
+              Dist := KMDistanceAbs(BaseLoc, KMPointBelow(Loc));
+              if (Dist <> 0) AND (Dist < MAX_DISTANCE_TO_ALL_HOUSES) then
+                Locs.Add( KMPointBelow(Loc), Dist );
+            end;
+      end;
     PlanRoad(fBuildNodes[NodeIdx], BaseLoc, Locs, True);
   finally
     Locs.Free;
@@ -1100,7 +1160,7 @@ end;
 procedure TKMCityBuilder.Paint();
 const
   COLOR_WHITE = $80FFFFFF;
-  COLOR_BLACK = $E0000000;
+  COLOR_BLACK = $20000000;
   COLOR_GREEN = $6000FF00;
   COLOR_RED = $800000FF;
   COLOR_YELLOW = $8000FFFF;
