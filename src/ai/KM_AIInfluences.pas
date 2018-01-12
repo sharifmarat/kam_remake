@@ -7,6 +7,17 @@ uses
   KM_NavMesh, KM_NavMeshInfluences;
 
 
+const
+
+  AVOID_BUILDING_UNLOCK = 0;
+  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
+  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
+  AVOID_BUILDING_NODE_LOCK_ROAD = 45;
+  AVOID_BUILDING_NODE_LOCK_FIELD = 50;
+  AVOID_BUILDING_FOREST_ADD = 150;
+  AVOID_BUILDING_COAL_TILE = 249;
+
+
 type
 
   //Collection of influence maps
@@ -88,7 +99,6 @@ const
   GROUPS = 4;
   INIT_HOUSE_INFLUENCE = 255;
   MAX_INFLUENCE_DISTANCE = 150;
-
 
 { TKMInfluenceMaps }
 constructor TKMInfluences.Create(aNavMesh: TKMNavMesh);
@@ -209,7 +219,7 @@ procedure TKMInfluences.InitAvoidBuilding();
       begin
         for Y2 := aY to Min(fMapY-1,aY+1) do
         for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = ht_IronMine)) do
-          AvoidBuilding[Y2, X2] := 255;
+          AvoidBuilding[Y2, X2] := AVOID_BUILDING_COAL_TILE;
         Exit;
       end;
   end;
