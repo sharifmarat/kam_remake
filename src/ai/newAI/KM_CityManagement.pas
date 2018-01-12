@@ -164,7 +164,7 @@ begin
 
   // Place all houses AfterMissionInit (only for GA_PLANNER tuning parameters)
   Cnt := 0;
-  GA_PLANNER := True;
+  //GA_PLANNER := True;
   if GA_PLANNER then
     for I := 0 to 100 do
     begin
