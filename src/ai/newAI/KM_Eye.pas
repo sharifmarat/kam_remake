@@ -68,7 +68,7 @@ type
     function CanPlaceHouse(aLoc: TKMPoint; aHT: THouseType; aIgnoreTrees: Boolean = False): Boolean;
     function CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False): Boolean;
 
-    function GetMineLoc(aHT: THouseType; var aLoc: TKMPoint): Boolean;
+    function GetMineLocs(aHT: THouseType): TKMPointTagList;
     function GetStoneLocs(): TKMPointTagList;
     function GetCoalLocs(): TKMPointTagList;
     function GetForests(): TKMPointTagList;
@@ -451,8 +451,8 @@ begin
     Exit;
 
   // Make sure that we dont put new house into another plan (just entrance is enought because houses have similar size)
-  if gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aLoc.X,aLoc.Y)) then
-    Exit;
+  //if gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aLoc.X,aLoc.Y)) then
+  //  Exit;
 
   // Scan tiles inside house plan
   for I := Low(fHousesMapping[aHT].Tiles) to High(fHousesMapping[aHT].Tiles) do
@@ -502,12 +502,13 @@ begin
 end;
 
 
-function TKMEye.GetMineLoc(aHT: THouseType; var aLoc: TKMPoint): Boolean;
+function TKMEye.GetMineLocs(aHT: THouseType): TKMPointTagList;
 var
-  I,BestBid: Integer;
+  I: Integer;
   Mines: TKMPointList;
+  Output: TKMPointTagList;
 begin
-  Result := False;
+  Output := TKMPointTagList.Create();
   case aHT of
     ht_GoldMine: Mines := fGoldMines;
     ht_IronMine: Mines := fIronMines;
@@ -515,17 +516,13 @@ begin
       Exit;
   end;
 
-  BestBid := 0;
   for I := Mines.Count - 1 downto 0 do
-    if (gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X] > BestBid) then
+    if (gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X] > 0) then
       if CanAddHousePlan(Mines.Items[I], aHT, True, False) AND CheckResourcesNearMine(Mines.Items[I], aHT) then
-      begin
-        BestBid := gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X];
-        aLoc := Mines.Items[I];
-      end
+        Output.Add(Mines.Items[I], gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X])
       else
         Mines.Delete(I);
-  Result := (BestBid <> 0);
+  Result := Output;
 end;
 
 
@@ -575,6 +572,7 @@ const
   MIN_POINTS_CNT = 3;
   UNVISITED_TREE = 1;
   VISITED_TREE = 2;
+  AVOID_BUILDING_FOREST_LIMIT = 250;
 var
   X,X2,Y,Y2, Distance: Integer;
   Cnt: Single;
@@ -616,7 +614,7 @@ begin
       if (Cnt > MIN_POINTS_CNT) then
       begin
         Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-        if (gAIFields.Influences.AvoidBuilding[ Point.Y, Point.X ] < 250) then
+        if (gAIFields.Influences.AvoidBuilding[ Point.Y, Point.X ] < AVOID_BUILDING_FOREST_LIMIT) then
         begin
           Forests.Add( Point, Round(Cnt) );
           Forests.Tag2[Forests.Count-1] := gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X];
@@ -630,20 +628,14 @@ begin
 end;
 
 
-function TKMEye.GetClosestTrees(aLoc: TKMPoint): TKMPointTagList;
-begin
-  Result := nil;
-end;
-
-
 function TKMEye.GetCoalLocs(): TKMPointTagList;
 var
-  I,K,Own: Integer;
+  I,Own: Integer;
   Loc: TKMPoint;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
-  for I := 0 to fCoalMiningTiles.Count - 1 do
+  for I := fCoalMiningTiles.Count - 1 downto 0 do
   begin
     Loc := fCoalMiningTiles.Items[I];
     Own := gAIFields.Influences.Ownership[fOwner, Loc.Y, Loc.X];
@@ -655,6 +647,12 @@ begin
       fCoalMiningTiles.Delete(I);
   end;
   Result := Output;
+end;
+
+
+function TKMEye.GetClosestTrees(aLoc: TKMPoint): TKMPointTagList;
+begin
+  Result := nil;
 end;
 
 
