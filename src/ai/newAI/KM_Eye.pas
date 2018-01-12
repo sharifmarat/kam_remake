@@ -5,7 +5,7 @@ uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_FloodFill,
   KM_ResHouses, KM_Houses, KM_ResWares,
-  KM_ArmyPresence, KM_AIArmyEvaluation,
+  KM_AIArmyEvaluation,
   KM_NavMeshFloodPositioning, KM_NavMeshPathFinding;
 
 const
