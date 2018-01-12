@@ -116,6 +116,16 @@ end;
 
 
 procedure TKMCityManagement.AfterMissionInit();
+  procedure SetWareDistribution();
+  begin
+    // Top priority for gold mines
+    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_Metallurgists] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_WeaponSmithy] := 2;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_IronSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_ArmorSmithy] := 2;
+
+    gHands[fOwner].Houses.UpdateResRequest;
+  end;
 const
   WORKER_COEF = 80.0;
 var
@@ -124,6 +134,8 @@ var
   A1: array[0..3] of Integer;
   A2: array of integer;
 begin
+  SetWareDistribution();
+
   vA1 := SizeOf(A1);
   vA2 := SizeOf(A2);
   SetLength(A2, 5);
@@ -152,7 +164,7 @@ begin
 
   // Place all houses AfterMissionInit (only for GA_PLANNER tuning parameters)
   Cnt := 0;
-  //GA_PLANNER := True;
+  GA_PLANNER := True;
   if GA_PLANNER then
     for I := 0 to 100 do
     begin
@@ -174,26 +186,17 @@ end;
 
 procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
-  WORKER_COEF = 5.0;
+  WORKER_COEF = 3.0;
   LONG_UPDATE = MAX_HANDS * 10;
 var
   FreeWorkersCnt: Integer;
 begin
-  // Priorities
-  if (aTick = 10) then
-  begin
-    //fPredictor.UpdateState();
-    // if (aTick + Byte(fOwner)) mod (MAX_HANDS * 10) <> MAX_HANDS then Exit;
-  end;
-  //{
-  FreeWorkersCnt := 0;
-  fBuilder.UpdateState(aTick, FreeWorkersCnt);
-  //if ((FreeWorkersCnt > 0) OR (gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) > 0)) AND (aTick mod 12 = fOwner) then
-  //if (aTick mod 12 = fOwner) AND (FreeWorkersCnt > 0) then
-  if (aTick mod MAX_HANDS = fOwner) AND (FreeWorkersCnt > 0) then
+  if (aTick mod MAX_HANDS = fOwner) then
   begin
     fPredictor.UpdateState(aTick);
-    fBuilder.ChooseHousesToBuild(Max(1,Ceil(FreeWorkersCnt/WORKER_COEF)), fPredictor.RequiredHouses, fPredictor.WareBalance);
+    FreeWorkersCnt := 0;
+    fBuilder.UpdateState(aTick, FreeWorkersCnt);
+    fBuilder.ChooseHousesToBuild(Max(0,Ceil(FreeWorkersCnt/WORKER_COEF)), fPredictor.RequiredHouses, fPredictor.WareBalance);
     if not SKIP_RENDER then
     begin
       fPredictor.LogStatus(fBalanceText);
@@ -201,7 +204,7 @@ begin
       //LogStatus(fBalanceText);
     end;
   end;
-//}
+
   if (aTick mod LONG_UPDATE = fOwner) then
   begin
     if not GA_PLANNER then
@@ -313,8 +316,16 @@ begin
     for UT := Low(UnitReq) to High(UnitReq) do
       Dec(UnitReq[UT], P.Stats.GetUnitQty(UT));
     //UnitReq[ut_Serf] := Round(fSetup.SerfsPerHouse * (P.Stats.GetHouseQty(ht_Any) + P.Stats.GetUnitQty(ut_Worker)/2));
-    UnitReq[ut_Serf] := RequiredServCount;
-    UnitReq[ut_Worker] := fSetup.WorkerCount - P.Stats.GetUnitQty(ut_Worker);
+    if (P.Stats.GetWareBalance(wt_Gold) < 15) AND (P.Stats.GetHouseQty(ht_Metallurgists) = 0) then
+    begin
+      UnitReq[ut_Serf] := 0;
+      UnitReq[ut_Worker] := 0;
+    end
+    else
+    begin
+      UnitReq[ut_Serf] := RequiredServCount;
+      UnitReq[ut_Worker] := fSetup.WorkerCount - P.Stats.GetUnitQty(ut_Worker);
+    end;
   end;
 
   //Schools
@@ -510,10 +521,11 @@ begin
       S := TKMHouseStore(gHands[fOwner].Houses[I]);
 
       // Materials
-      //S.NotAcceptFlag[wt_Trunk] := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 30; // Trunk cannot be blocked because of forest cleaning
+      S.NotAcceptFlag[wt_Trunk] := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 100; // Trunk should not be blocked because of forest cleaning
       S.NotAcceptFlag[wt_Wood] := S.CheckResIn(wt_Wood) > gHands[fOwner].Stats.GetUnitQty(ut_Worker);
-      S.NotAcceptFlag[wt_Stone] := S.CheckResIn(wt_Stone) > gHands[fOwner].Stats.GetUnitQty(ut_Worker);
-      //S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 50; // Everyone needs as much gold as possible
+      //S.NotAcceptFlag[wt_Stone] := S.CheckResIn(wt_Stone) > gHands[fOwner].Stats.GetUnitQty(ut_Worker);
+      S.NotAcceptFlag[wt_Stone] := Predictor.WareBalance[wt_Stone].Exhaustion > 40;
+      S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 200; // Everyone needs as much gold as possible
 
       // Food - don't store food when we have enought (it will cause trafic before storehouse)
       S.NotAcceptFlag[wt_Wine] := gHands[fOwner].Stats.GetWareBalance(wt_Wine)  > 100;
