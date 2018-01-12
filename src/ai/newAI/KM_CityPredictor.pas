@@ -186,13 +186,7 @@ end;
 
 procedure TKMCityPredictor.AfterMissionInit;
 begin
-  // Top priority for gold mines
-  gHands[fOwner].Stats.WareDistribution[wt_coal, ht_Metallurgists] := 5;
-  gHands[fOwner].Stats.WareDistribution[wt_coal, ht_WeaponSmithy] := 3;
-  gHands[fOwner].Stats.WareDistribution[wt_coal, ht_IronSmithy] := 4;
-  gHands[fOwner].Stats.WareDistribution[wt_coal, ht_ArmorSmithy] := 3;
 
-  gHands[fOwner].Houses.UpdateResRequest;
 end;
 
 
@@ -270,7 +264,7 @@ begin
     Exhaustion := 999;
     if (ActualConsumption - Production > 0) then
       Exhaustion := gHands[fOwner].Stats.GetWareBalance(aWT) / (ActualConsumption - Production);
-    HouseReqCnt := Ceil(( Max(ActualConsumption, FinalConsumption) - Production) / ProductionRate[aWT]);
+    HouseReqCnt := Ceil(( Max(ActualConsumption, FinalConsumption) - Production) / Max(0.0001, ProductionRate[aWT]*1.0));
     Fraction := HouseReqCnt / Max(1.0,((fCityStats.Houses[HT] + HouseReqCnt)*1.0));
   end;
   RequiredHouses[HT] := HouseReqCnt;
@@ -282,7 +276,7 @@ procedure TKMCityPredictor.UpdateWareBalance(aInitialization: Boolean = False);
 const
   STONE_NEED_PER_A_WORKER = 0.6;
   WOOD_NEED_PER_A_WORKER = 0.3;
-  GOLD_FOR_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
+  GOLD_PER_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
 var
   I: Integer;
 begin
@@ -306,10 +300,10 @@ begin
         begin
         end;
       // Update Materials / Gold
-      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[ht_School] + RequiredHouses[ht_School]) * GOLD_FOR_A_SCHOOL);
+      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[ht_School] + RequiredHouses[ht_School]) * GOLD_PER_A_SCHOOL);
       wt_Stone:
         begin
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+8, gHands[fOwner].AI.Setup.WorkerCount) * STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, gHands[fOwner].AI.Setup.WorkerCount) * STONE_NEED_PER_A_WORKER;
           fWareBalance[wt_Stone].FinalConsumption := gHands[fOwner].AI.Setup.WorkerCount * STONE_NEED_PER_A_WORKER;
         end;
       wt_Wood:
@@ -450,17 +444,22 @@ begin
   if not GA_PLANNER then
   begin
     RequiredHouses[ht_Sawmill] := Min(RequiredHouses[ht_Sawmill], Byte(gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 5));
-    if (gGame.GameTickCount - fCornDelay < 0) then
+    if (gGame.GameTickCount - fCornDelay < 0) then // Conside corn delay (~10 minutes) -> time saved by construction
     begin
       RequiredHouses[ht_Swine] := 0;
       RequiredHouses[ht_Mill] := 0;
       RequiredHouses[ht_Bakery] := 0;
+      RequiredHouses[ht_Tannery] := 0;
+      RequiredHouses[ht_ArmorWorkshop] := 0;
     end;
     RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-    RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
-    RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
+    //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
+    //begin
+    //  RequiredHouses[ht_Tannery] := 0;
+    //  RequiredHouses[ht_ArmorWorkshop] := 0;
+    //end;
 
-    if (gGame.GameTickCount < 36000) then
+    if (gGame.GameTickCount < 18000) then
       RequiredHouses[ht_Wineyard] := 0;
 
     //if (gHands[fOwner].Stats.GetWareBalance(wt_Corn) = 0) then
