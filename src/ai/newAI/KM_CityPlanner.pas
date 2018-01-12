@@ -191,7 +191,7 @@ implementation
 uses
   KM_Game, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket, KM_CommonUtils, KM_Eye,
+  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_CommonUtils, KM_Eye,
   KM_RenderAux;
 
 
@@ -315,10 +315,10 @@ procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
       Exit;
     W := TKMHouseWoodcutters(aHouse);
     // Check if is point already set (compare with default cutting point)
-    if W.IsCuttingPointSet or KMSamePoint(aHousePlan.SpecPoint, KMPOINT_ZERO) then
+    if W.IsFlagPointSet or KMSamePoint(aHousePlan.SpecPoint, KMPOINT_ZERO) then
       Exit;
     // Set the cutting point (it can be in lager distance so check is needed)
-    W.CuttingPoint := aHousePlan.SpecPoint;
+    W.FlagPoint := aHousePlan.SpecPoint;
     //W.ValidateCuttingPoint;
     // Check chop-only mode woodcutter
     if (gAIFields.Influences.AvoidBuilding[aHousePlan.SpecPoint.Y, aHousePlan.SpecPoint.X] = 0) then // Center of forest is not in protected area => chop only mode

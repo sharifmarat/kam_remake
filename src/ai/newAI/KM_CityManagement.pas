@@ -611,7 +611,7 @@ var
     for I := 1 to 3 do
     begin
       UT := AITroopTrainOrder[antiGT,I];
-      if (UT <> ut_None) AND not gHands[fOwner].Locks.UnitBlocked[UT] then
+      if (UT <> ut_None) AND not gHands[fOwner].Locks.GetUnitBlocked(UT) then
         if (I = 1) then
           Iron := True
         else
@@ -641,7 +641,7 @@ var
     begin
       UT := AITroopTrainOrder[antiGT,I];
       // Skip unit type if case that it is blocked
-      if (UT = ut_None) OR gHands[fOwner].Locks.UnitBlocked[UT] then
+      if (UT = ut_None) OR gHands[fOwner].Locks.GetUnitBlocked(UT) then
         continue;
       // Calculate required count of specific unit type
       UnitEval := gAIFields.Eye.ArmyEvaluation.UnitEvaluation[UT, True];
@@ -676,7 +676,7 @@ var
       Exit;
 
     for UT := Low(WarriorsDemands) to High(WarriorsDemands) do
-      if not gHands[fOwner].Locks.UnitBlocked[UT] then
+      if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
         WarriorsDemands[UT] := WarriorsDemands[UT] + DEFAULT_ARMY_REQUIREMENTS[UT];
   end;
 //AITroopTrainOrder: array [TGroupType, 1..3] of TUnitType = (

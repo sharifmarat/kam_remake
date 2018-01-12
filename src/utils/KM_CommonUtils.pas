@@ -83,7 +83,11 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
-  function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
+
+  {$IFDEF WDC}
+  function StrSplit(const aStr, aDelimiters: String): TStrings;
+  {$ENDIF}
+  function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 
   procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer); overload;
   procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer); overload;
@@ -914,7 +918,21 @@ end;
 
 
 {$IFDEF WDC}
-function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
+function StrSplit(const aStr, aDelimiters: String): TStrings;
+var StrArray: TStringDynArray;
+    I: Integer;
+begin
+  //Todo refactor:
+  //@Krom: It's bad practice to create object (TStringList) inside and return it as parent class (TStrings).
+  //Do we really need it this way? Better to pass TStringList from outside in a parameter.
+  StrArray := SplitString(aStr, aDelimiters);
+  Result := TStringList.Create;
+  for I := Low(StrArray) to High(StrArray) do
+    Result.Add(StrArray[I]);
+end;
+
+
+function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 var StrArray: TStringDynArray;
     I: Integer;
 begin
@@ -924,7 +942,7 @@ end;
 
 
 {$IFDEF FPC}
-function StrSplit(const aStr, aDelimiters: string): TAnsiStringArray;
+function StrSplitA(const aStr, aDelimiters: string): TAnsiStringArray;
 var
   I: integer;
   PosDel: integer;
