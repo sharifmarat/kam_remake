@@ -2,10 +2,10 @@ unit KM_FormMain;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils, ShellAPI,
+  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
   KM_RenderControl, KM_Settings,
   {$IFDEF FPC} LResources, {$ENDIF}
-  {$IFDEF MSWindows} Windows, Messages; {$ENDIF}
+  {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType; {$ENDIF}
 
 
@@ -170,6 +170,7 @@ implementation
 
 uses
   KromUtils,
+  KromShellUtils,
   KM_Defaults,
   KM_Main,
   //Use these units directly to avoid pass-through methods in fMain
@@ -735,9 +736,12 @@ function TFormMain.GetWindowParams: TKMWindowParamsRecord;
   // FindTaskBar returns the Task Bar's position, and fills in
   // ARect with the current bounding rectangle.
   function FindTaskBar(var aRect: TRect): Integer;
+  {$IFDEF MSWINDOWS}
   var	AppData: TAppBarData;
+  {$ENDIF}
   begin
     Result := -1;
+    {$IFDEF MSWINDOWS}
     // 'Shell_TrayWnd' is the name of the task bar's window
     AppData.Hwnd := FindWindow('Shell_TrayWnd', nil);
     if AppData.Hwnd <> 0 then
@@ -753,6 +757,7 @@ function TFormMain.GetWindowParams: TKMWindowParamsRecord;
         aRect := AppData.rc;
       end;
     end;
+    {$ENDIF}
   end;
 var
   Wp: TWindowPlacement;

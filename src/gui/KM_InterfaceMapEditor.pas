@@ -128,7 +128,7 @@ uses
   KM_HandsCollection, KM_ResTexts, KM_Game, KM_Main, KM_GameCursor, KM_RenderPool,
   KM_Resource, KM_TerrainDeposits, KM_ResCursors, KM_ResKeys, KM_GameApp, KM_CommonUtils,
   KM_Hand, KM_AIDefensePos, KM_RenderUI, KM_ResFonts, KM_CommonClasses, KM_Units_Warrior,
-  KM_HouseBarracks, KM_ResHouses;
+  KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters, KM_ResHouses, KM_Utils;
 
 const
   GROUP_IMG: array [TGroupType] of Word = (
@@ -172,12 +172,12 @@ begin
   Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, 151, 203, 26, 26, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
-  Button_ChangeOwner.Hint := 'Change owner for object'; // Todo Translate
+  Button_ChangeOwner.Hint := gResTexts[TX_MAPED_PAINT_BUCKET_CH_OWNER];
 
   Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, 151, 231, 26, 26, 340);
   Button_UniversalEraser.Down := False;
   Button_UniversalEraser.OnClick := UniversalEraser_Click;
-  Button_UniversalEraser.Hint := Format('Universal eraser (''%s'')', [gResKeys.GetKeyNameById(SC_MAPEDIT_UNIV_ERASOR)]); //Todo translate; //Todo use GetHintWHotKey instead; // Todo Translate
+  Button_UniversalEraser.Hint := GetHintWHotKey(TX_MAPED_UNIVERSAL_ERASER, SC_MAPEDIT_UNIV_ERASOR);
 
   Image_Extra := TKMImage.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - 48, 30, 48, 494);
   Image_Extra.Anchors := [anLeft, anBottom];
@@ -1124,8 +1124,7 @@ begin
                   gGameCursor.MapEdDir := (gGameCursor.MapEdDir + 1) mod 4; //Rotate tile direction
 
                 //Check if we are in rally/cutting marker mode
-                if (gGameCursor.Mode = cmMarkers)
-                  and ((gGameCursor.Tag1 = MARKER_RALLY_POINT) or (gGameCursor.Tag1 = MARKER_CUTTING_POINT)) then
+                if (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT) then
                 begin
                   gGameCursor.Mode := cmNone;
                   gGameCursor.Tag1 := 0;
@@ -1137,10 +1136,8 @@ begin
                 begin
                   if ssShift in Shift then
                   begin
-                    if gMySpectator.Selected is TKMHouseBarracks then
-                      TKMHouseBarracks(gMySpectator.Selected).RallyPoint := gGameCursor.Cell
-                    else if gMySpectator.Selected is TKMHouseWoodcutters then
-                      TKMHouseWoodcutters(gMySpectator.Selected).CuttingPoint := gGameCursor.Cell;
+                    if gMySpectator.Selected is TKMHouseWFlagPoint then
+                      TKMHouseWFlagPoint(gMySpectator.Selected).FlagPoint := gGameCursor.Cell;
                   end else
                     TKMHouse(gMySpectator.Selected).SetPosition(gGameCursor.Cell); //Can place is checked in SetPosition
                   Exit;

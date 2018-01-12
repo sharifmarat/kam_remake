@@ -20,7 +20,7 @@ type
     procedure Clear;
     procedure WalkStyle(aLoc2: TKMPointDir; aTo, aWork: TUnitActionType; aCycles, aDelay: byte; aFrom: TUnitActionType; aScript: TGatheringScript);
     procedure SubActAdd(aAct: THouseActionType; aCycles: Single);
-    procedure ResourcePlan(Res1: TWareType; Qty1: byte; Res2: TWareType; Qty2: byte; Prod1: TWareType; Prod2: TWareType = wt_None);
+    procedure ResourcePlan(Res1: TWareType; Qty1: Byte; Res2: TWareType; Qty2: Byte; Prod1: TWareType; Prod2: TWareType = wt_None);
   public
     HasToWalk: Boolean;
     Loc: TKMPoint;
@@ -43,7 +43,8 @@ type
     AfterWorkIdle: Integer;
     ResourceDepleted: Boolean;
   public
-    procedure FindPlan(aUnit: TKMUnit; aHome: THouseType; aProduct: TWareType; aLoc: TKMPoint; aPlantAct: TPlantAct);
+    procedure FindPlan(aUnit: TKMUnit; aHome: THouseType; aProduct: TWareType;
+                       aLoc: TKMPoint; aPlantAct: TPlantAct);
     function FindDifferentResource(aUnit: TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
     property IsIssued: Boolean read fIssued;
     procedure Save(SaveStream: TKMemoryStream);
@@ -53,7 +54,9 @@ type
 
 implementation
 uses
-  SysUtils, KM_Resource, KM_CommonUtils, KM_Hand, KM_ResUnits, KM_Houses;
+  SysUtils,
+  KM_Hand, KM_ResUnits, KM_Houses, KM_HouseWoodcutters,
+  KM_Resource, KM_CommonUtils;
 
 
 {Houses are only a place on map, they should not issue or perform tasks (except Training)
@@ -116,17 +119,17 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.ResourcePlan(Res1:TWareType; Qty1:byte; Res2:TWareType; Qty2:byte; Prod1:TWareType; Prod2:TWareType=wt_None);
+procedure TUnitWorkPlan.ResourcePlan(Res1: TWareType; Qty1: Byte; Res2: TWareType; Qty2: Byte; Prod1: TWareType; Prod2: TWareType = wt_None);
 begin
-  Resource1:=Res1; Count1:=Qty1;
-  Resource2:=Res2; Count2:=Qty2;
-  Product1:=Prod1; ProdCount1:=gRes.Houses[fHome].ResProductionX;
+  Resource1 := Res1; Count1 := Qty1;
+  Resource2 := Res2; Count2 := Qty2;
+  Product1 := Prod1; ProdCount1 := gRes.Houses[fHome].ResProductionX;
   if Prod2=wt_None then exit;
-  Product2:=Prod2; ProdCount2:=gRes.Houses[fHome].ResProductionX;
+  Product2 := Prod2; ProdCount2 := gRes.Houses[fHome].ResProductionX;
 end;
 
 
-function TUnitWorkPlan.FindDifferentResource(aUnit:TKMUnit; aLoc, aAvoidLoc: TKMPoint): boolean;
+function TUnitWorkPlan.FindDifferentResource(aUnit:TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
 var
   NewLoc: TKMPointDir;
   PlantAct: TPlantAct;
@@ -162,14 +165,14 @@ begin
   begin
     Loc := NewLoc.Loc;
     WorkDir := NewLoc.Dir;
-    Result := true;
+    Result := True;
   end
   else
-    Result := false;
+    Result := False;
 end;
 
 
-function TUnitWorkPlan.ChooseTree(aLoc, aAvoid:TKMPoint; aRadius:Integer; aPlantAct: TPlantAct; aUnit:TKMUnit; out Tree:TKMPointDir; out PlantAct: TPlantAct):Boolean;
+function TUnitWorkPlan.ChooseTree(aLoc, aAvoid: TKMPoint; aRadius:Integer; aPlantAct: TPlantAct; aUnit:TKMUnit; out Tree:TKMPointDir; out PlantAct: TPlantAct):Boolean;
 var
   I: Integer;
   T: TKMPoint;
@@ -222,11 +225,13 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.FindPlan(aUnit:TKMUnit; aHome:THouseType; aProduct:TWareType; aLoc:TKMPoint; aPlantAct: TPlantAct);
+procedure TUnitWorkPlan.FindPlan(aUnit: TKMUnit; aHome: THouseType; aProduct: TWareType;
+                                 aLoc: TKMPoint; aPlantAct: TPlantAct);
 var
   I: Integer;
   Tmp: TKMPointDir;
   PlantAct: TPlantAct;
+  HW: TKMHouseWoodcutters;
 begin
   Clear;
 
@@ -237,9 +242,12 @@ begin
   case aUnit.UnitType of
     ut_Woodcutter:    if aHome = ht_Woodcutters then
                       begin
-                        TKMHouseWoodcutters(aUnit.GetHome).ValidateCuttingPoint; //Validate Cutting point. It will be set to a valid one if needed.
-                        if TKMHouseWoodcutters(aUnit.GetHome).IsCuttingPointSet then
-                          aLoc := TKMHouseWoodcutters(aUnit.GetHome).CuttingPoint;
+                        HW := TKMHouseWoodcutters(aUnit.GetHome);
+                        HW.ValidateFlagPoint; //Validate Cutting point. It will be set to a valid one if needed.
+
+                        if HW.IsFlagPointSet then
+                          aLoc := HW.FlagPoint;
+
                         fIssued := ChooseTree(aLoc, KMPOINT_ZERO, gRes.Units[aUnit.UnitType].MiningRange, aPlantAct, aUnit, Tmp, PlantAct);
                         if fIssued then
                         begin
@@ -255,9 +263,12 @@ begin
                           end;
                         end
                         else
-                          if (aPlantAct = taCut)
-                          and not gTerrain.CanFindTree(aLoc, gRes.Units[aUnit.UnitType].MiningRange) then
-                            ResourceDepleted := True; //No more trees to cut
+                          case PlantAct of
+                            taCut:    if not gTerrain.CanFindTree(aLoc, gRes.Units[aUnit.UnitType].MiningRange) then
+                                        ResourceDepleted := True; //No more trees to cut
+                            taPlant:  if HW.WoodcutterMode = wcm_Plant then
+                                        ResourceDepleted := True;   //No place for trees to plant
+                          end;
                       end;
     ut_Miner:         if aHome = ht_CoalMine then
                       begin

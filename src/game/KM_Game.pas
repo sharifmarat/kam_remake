@@ -80,6 +80,7 @@ type
 
     function GetGameTickDuration: Single;
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
+    function GetControlledHandIndex: TKMHandIndex;
   public
     PlayOnState: TGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -144,8 +145,11 @@ type
     property CampaignMap: Byte read fCampaignMap;
     property GameSpeed: Single read fGameSpeed;
     property GameTickDuration: Single read GetGameTickDuration;
-    function PlayerLoc: Byte;
-    function PlayerColor: Cardinal;
+
+    function PlayerLoc: Byte; //Can used in SP game/replay only
+    function PlayerColor: Cardinal; //Can used in SP game/replay only
+
+    property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
 
     property Scripting: TKMScripting read fScripting;
     property GameMode: TGameMode read fGameMode;
@@ -596,6 +600,7 @@ begin
   fNetworking.OnPingInfo       := fGamePlayInterface.AlliesOnPingInfo;
   fNetworking.OnDisconnect     := GameMPDisconnect; //For auto reconnecting
   fNetworking.OnJoinerDropped := OtherPlayerDisconnected;
+  fNetworking.OnUpdateMinimap := nil;
   fNetworking.OnReassignedHost := nil; //Reset Lobby OnReassignedHost
   fNetworking.OnReassignedJoiner := nil; //So it is no longer assigned to a lobby event
   fNetworking.GameCreated;
@@ -723,11 +728,12 @@ begin
     end;
   end;
 
-  for I := 1 to gGameApp.GameSettings.AutosaveCount do //All autosaves
+  for I := 1 to Min(gGameApp.GameSettings.AutosaveCount, AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX) do //Add autosaves
   begin
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_REPLAY, IsMultiplayer));
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiplayer));
     AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiplayer));
+    AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_MINIMAP, IsMultiplayer));
   end;
 
   gLog.AddTime('Crash report created');
@@ -784,7 +790,7 @@ end;
 procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
 begin
   if IsMultiplayer then
-    fNetworking.PostLocalMessage(Format('%s has won!', //Todo translate
+    fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
       [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
 
   if fGameMode = gmMultiSpectate then
@@ -803,6 +809,12 @@ begin
   end
   else
     RequestGameHold(gr_Win);
+end;
+
+
+function TKMGame.PlayerLoc: Byte;
+begin
+  Result := gMySpectator.HandIndex;
 end;
 
 
@@ -839,12 +851,6 @@ begin
                           [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
     //We have not thought of anything to display on players defeat in Replay
   end;
-end;
-
-
-function TKMGame.PlayerLoc: Byte;
-begin
-  Result := gMySpectator.HandIndex;
 end;
 
 
@@ -919,7 +925,7 @@ end;
 
 procedure TKMGame.AutoSaveAfterPT(aTimestamp: TDateTime);
 begin
-  Save('autosave_after_pt_end', aTimestamp); //Save to temp file
+  Save('autosave_after_pt_end', aTimestamp);
 end;
 
 
@@ -1015,7 +1021,7 @@ end;
 
 procedure TKMGame.RestartReplay;
 begin
-  gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, '.bas'));
+  gGameApp.NewReplay(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
 end;
 
 
@@ -1273,6 +1279,15 @@ begin
 end;
 
 
+//Return Controlled hand index in game or -1, if there is no one (spectator/replay/maped)
+function TKMGame.GetControlledHandIndex: TKMHandIndex;
+begin
+  Result := -1;
+  if fGameMode in [gmSingle, gmCampaign, gmMulti] then
+    Result := gMySpectator.HandIndex;
+end;
+
+
 procedure TKMGame.SetIsPaused(aValue: Boolean);
 begin
   fIsPaused := aValue;
@@ -1296,7 +1311,7 @@ var
   gameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
-  gLog.AddTime('Saving game: ' + aPathName);
+  gLog.AddTime('Saving game start: ' + aPathName);
 
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
     raise Exception.Create('Saving from wrong state');
@@ -1374,6 +1389,7 @@ begin
         MnmSaveStream := TKMemoryStream.Create;
         try
           try
+            MnmSaveStream.Write(fNetworking.MyNetPlayer.StartLocation);
             fGamePlayInterface.SaveMinimap(MnmSaveStream);
             MnmSaveStream.SaveToFile(aMinimapPathName);
           except
@@ -1430,14 +1446,14 @@ begin
     SaveStream.Free;
   end;
 
-  gLog.AddTime('Saving game: ' + aPathName);
+  gLog.AddTime('Saving game end: ' + aPathName);
 end;
 
 
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
-  fullPath, minimapPath: UnicodeString;
+  fullPath, minimapPath, NewSaveName: UnicodeString;
 begin
   //Convert name to full path+name
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiplayer);
@@ -1452,13 +1468,13 @@ begin
   //Remember which savegame to try to restart (if game was not saved before)
   fSaveFile := ExtractRelativePath(ExeDir, fullPath);
 
+  NewSaveName := SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer);
   //Copy basesave so we have a starting point for replay
-  DeleteFile(SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer));
-  KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), SaveName(aSaveName, EXT_SAVE_BASE, IsMultiplayer));
+  KMCopyFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), NewSaveName, True);
 
   //Save replay queue
   gLog.AddTime('Saving replay info');
-  fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, '.' + EXT_SAVE_REPLAY));
+  fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
   gLog.AddTime('Saving game', True);
 end;
@@ -1478,7 +1494,7 @@ var
   SaveIsMultiplayer, IsCampaign: Boolean;
   I: Integer;
 begin
-  fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), '.' + EXT_SAVE_MAIN);
+  fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
   gLog.AddTime('Loading game from: ' + aPathName);
 
@@ -1581,7 +1597,7 @@ begin
       else
         fGameInputProcess := TGameInputProcess_Single.Create(gipRecording); //Singleplayer
 
-    fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, '.' + EXT_SAVE_REPLAY));
+    fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
      //Should check all Unit-House ID references and replace them with actual pointers
     gHands.SyncLoad;
@@ -1596,7 +1612,8 @@ begin
     if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     begin
       DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
-      KMCopyFile(ChangeFileExt(aPathName, '.' + EXT_SAVE_BASE), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+      ForceDirectories(SavePath('basesave', IsMultiplayer)); //basesave directory could not exist at this moment, if this is the first game ever, f.e.
+      KMCopyFile(ChangeFileExt(aPathName, EXT_SAVE_BASE_DOT), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
     end;
 
     //Repeat mission init if necessary

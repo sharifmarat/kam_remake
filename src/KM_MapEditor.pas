@@ -71,10 +71,10 @@ implementation
 uses
   SysUtils, StrUtils, Math,
   KM_Terrain, KM_FileIO,
-  KM_AIDefensePos,
-  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseBarracks,
+  KM_AIDefensePos, 
+  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses,
-  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor;
+  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils;
 
 
 { TKMMapEditor }
@@ -149,7 +149,7 @@ begin
   FindFirst(ChangeFileExt(aMissionFile, '.*'), faAnyFile - faDirectory, SearchRec);
   try
     repeat
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+      if (SearchRec.Name <> '') and (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
       begin
         //Can't use ExtractFileExt because we want .eng.libx not .libx
         RecExt := RightStr(SearchRec.Name, Length(SearchRec.Name) - Length(MissionName));
@@ -191,20 +191,32 @@ end;
 procedure TKMMapEditor.SaveAttachements(const aMissionFile: UnicodeString);
 var
   I: Integer;
-  MissionPath, Dest: UnicodeString;
+  MissionPath, MissionNewName, MissionOldName, DestPath: UnicodeString;
 begin
   MissionPath := ExtractFilePath(aMissionFile);
+  MissionNewName := GetFileDirName(aMissionFile);
+  MissionOldName := '';
+
+  //Copy all attachments files into new folder
   for I := 0 to High(fAttachedFiles) do
     if FileExists(fAttachedFiles[I]) then
     begin
-      Dest := MissionPath + ExtractFileName(fAttachedFiles[I]);
-      if not SameFileName(Dest, fAttachedFiles[I]) then
+      DestPath := MissionPath + ExtractFileName(fAttachedFiles[I]);
+
+      //Get MissionOldName from first attachment file
+      if MissionOldName = '' then
+        MissionOldName := GetFileDirName(fAttachedFiles[I]);
+
+      if not SameFileName(DestPath, fAttachedFiles[I]) then
       begin
-        if FileExists(Dest) then
-          DeleteFile(Dest);
-        KMCopyFile(fAttachedFiles[I], Dest);
+        if FileExists(DestPath) then
+          DeleteFile(DestPath);
+        KMCopyFile(fAttachedFiles[I], DestPath);
       end;
     end;
+
+  // Rename all files inside new saved map folder
+  KMRenameFilesInFolder(MissionPath, MissionOldName, MissionNewName);
 
   //Update attached files to be in the new path
   SetLength(fAttachedFiles, 0);
@@ -520,10 +532,8 @@ begin
                                                         //Updating XY display is done in InterfaceMapEd
                                                       end;
                                 MARKER_AISTART:       gMySpectator.Hand.AI.Setup.StartPosition := P;
-                                MARKER_RALLY_POINT:   if gMySpectator.Selected is TKMHouseBarracks then
-                                                        TKMHouseBarracks(gMySpectator.Selected).RallyPoint := P;
-                                MARKER_CUTTING_POINT: if gMySpectator.Selected is TKMHouseWoodcutters then
-                                                        TKMHouseWoodcutters(gMySpectator.Selected).CuttingPoint := P;
+                                MARKER_RALLY_POINT:   if gMySpectator.Selected is TKMHouseWFlagPoint then
+                                                        TKMHouseWFlagPoint(gMySpectator.Selected).FlagPoint := P;
                               end;
                 cmErase:      begin
                                 gHands.RemAnyHouse(P);

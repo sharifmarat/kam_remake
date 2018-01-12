@@ -11,13 +11,15 @@ uses
     cthreads, //We use a thread for deleting old log files
     BaseUnix,
   {$ENDIF}
-  SysUtils,
+  Classes, SysUtils,
   {$IFDEF MSWindows} Windows, MMSystem, {$ENDIF}
+  {$IFDEF FPC} Interfaces, {$ENDIF}
   KM_CommonUtils in '..\..\src\utils\KM_CommonUtils.pas',
   KM_Defaults in '..\..\src\common\KM_Defaults.pas',
   KM_Log in '..\..\src\KM_Log.pas',
   KM_Settings in '..\..\src\KM_Settings.pas',
   KM_DedicatedServer in '..\..\src\net\other\KM_DedicatedServer.pas',
+  KM_ConsoleTimer in '..\..\src\utils\KM_ConsoleTimer.pas',
   KM_ServerEventHandler in 'KM_ServerEventHandler.pas';
 
 var
@@ -81,6 +83,7 @@ begin
     {$IFDEF WDC}
     MyProcessMessages; //This will process network (or other) events
     Sleep(1); //Don't hog CPU (this can also be used to create an artifical latency)
+    CheckSynchronize(); //Update threads synchronization, as our custom TKMConsoleTimer is working in a separate thread
     {$ENDIF}
   end;
 end;

@@ -15,6 +15,7 @@ type
   protected
     fIDCache: TKMScriptingIdCache;
     fOnScriptError: TKMScriptErrorEvent;
+    procedure LogWarning(const aFuncName: string; aWarnMsg: String);
     procedure LogParamWarning(const aFuncName: string; const aValues: array of Integer);
   public
     constructor Create(aIDCache: TKMScriptingIdCache);
@@ -26,6 +27,7 @@ type
     fExec: TPSDebugExec;
 
     fProcBeacon: TMethod;
+    fProcFieldBuilt: TMethod;
     fProcHouseAfterDestroyed: TMethod;
     fProcHouseBuilt: TMethod;
     fProcHousePlanPlaced: TMethod;
@@ -47,13 +49,17 @@ type
     fProcPlanWinefieldRemoved: TMethod;
     fProcPlayerDefeated: TMethod;
     fProcPlayerVictory: TMethod;
+    fProcRoadBuilt: TMethod;
     fProcTick: TMethod;
     fProcUnitAfterDied: TMethod;
     fProcUnitAttacked: TMethod;
     fProcUnitDied: TMethod;
     fProcUnitTrained: TMethod;
     fProcUnitWounded: TMethod;
+    fProcWareProduced: TMethod;
     fProcWarriorEquipped: TMethod;
+    fProcWarriorWalked:  TMethod;
+    fProcWinefieldBuilt: TMethod;
 
     procedure DoProc(const aProc: TMethod; const aParams: array of Integer);
     function MethodAssigned(aMethod: TMethod): Boolean; inline;
@@ -64,6 +70,7 @@ type
     procedure LinkEvents;
 
     procedure ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
+    procedure ProcFieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcHouseAfterDestroyed(aHouseType: THouseType; aOwner: TKMHandIndex; aX, aY: Word);
     procedure ProcHouseBuilt(aHouse: TKMHouse);
     procedure ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: THouseType);
@@ -85,13 +92,17 @@ type
     procedure ProcPlanWinefieldRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcPlayerDefeated(aPlayer: TKMHandIndex);
     procedure ProcPlayerVictory(aPlayer: TKMHandIndex);
+    procedure ProcRoadBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcTick;
     procedure ProcUnitAfterDied(aUnitType: TUnitType; aOwner: TKMHandIndex; aX, aY: Word);
     procedure ProcUnitAttacked(aUnit, aAttacker: TKMUnit);
     procedure ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandIndex);
     procedure ProcUnitTrained(aUnit: TKMUnit);
     procedure ProcUnitWounded(aUnit, aAttacker: TKMUnit);
+    procedure ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
+    procedure ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
+    procedure ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
   end;
 
 
@@ -141,6 +152,7 @@ end;
 procedure TKMScriptEvents.LinkEvents;
 begin
   fProcBeacon                := fExec.GetProcAsMethodN('OnBeacon');
+  fProcFieldBuilt            := fExec.GetProcAsMethodN('OnFieldBuilt');
   fProcHouseAfterDestroyed   := fExec.GetProcAsMethodN('OnHouseAfterDestroyed');
   fProcHouseBuilt            := fExec.GetProcAsMethodN('OnHouseBuilt');
   fProcHousePlanPlaced       := fExec.GetProcAsMethodN('OnHousePlanPlaced');
@@ -162,13 +174,17 @@ begin
   fProcPlanWinefieldRemoved  := fExec.GetProcAsMethodN('OnPlanWinefieldRemoved');
   fProcPlayerDefeated        := fExec.GetProcAsMethodN('OnPlayerDefeated');
   fProcPlayerVictory         := fExec.GetProcAsMethodN('OnPlayerVictory');
+  fProcRoadBuilt             := fExec.GetProcAsMethodN('OnRoadBuilt');
   fProcTick                  := fExec.GetProcAsMethodN('OnTick');
   fProcUnitAfterDied         := fExec.GetProcAsMethodN('OnUnitAfterDied');
   fProcUnitDied              := fExec.GetProcAsMethodN('OnUnitDied');
   fProcUnitTrained           := fExec.GetProcAsMethodN('OnUnitTrained');
   fProcUnitWounded           := fExec.GetProcAsMethodN('OnUnitWounded');
   fProcUnitAttacked          := fExec.GetProcAsMethodN('OnUnitAttacked');
+  fProcWareProduced          := fExec.GetProcAsMethodN('OnWareProduced');
   fProcWarriorEquipped       := fExec.GetProcAsMethodN('OnWarriorEquipped');
+  fProcWarriorWalked         := fExec.GetProcAsMethodN('OnWarriorWalked');
+  fProcWinefieldBuilt        := fExec.GetProcAsMethodN('OnWinefieldBuilt');
 end;
 
 
@@ -233,6 +249,15 @@ procedure TKMScriptEvents.ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
 begin
   if MethodAssigned(fProcBeacon) then
     DoProc(fProcBeacon, [aPlayer, aX, aY]);
+end;
+
+
+//* Version: 7000+
+//* Occurs when player built a field.
+procedure TKMScriptEvents.ProcFieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+begin
+  if MethodAssigned(fProcFieldBuilt) then
+    DoProc(fProcFieldBuilt, [aPlayer, aX, aY]);
 end;
 
 
@@ -584,11 +609,56 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Occurs when player built a road.
+procedure TKMScriptEvents.ProcRoadBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+begin
+  if MethodAssigned(fProcRoadBuilt) then
+    DoProc(fProcRoadBuilt, [aPlayer, aX, aY]);
+end;
+
+
+//* Version: 7000+
+//* Occurs when player built a winefield.
+procedure TKMScriptEvents.ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+begin
+  if MethodAssigned(fProcWinefieldBuilt) then
+    DoProc(fProcWinefieldBuilt, [aPlayer, aX, aY]);
+end;
+
+
+//* Version: 7000+
+//* Occurs when resource is produced for specified house.
+procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
+begin
+  if MethodAssigned(fProcWareProduced) then
+  begin
+    if (aType <> wt_None) then
+      DoProc(fProcWareProduced, [aHouse.UID, WareTypeToIndex[aType], aCount]);
+  end;
+end;
+
+
+//* Version: 7000+
+//* Occurs when warrior walk
+procedure TKMScriptEvents.ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
+begin
+  if MethodAssigned(fProcWarriorWalked) then
+      DoProc(fProcWarriorWalked, [aUnit.UID, aToX, aToY]);
+end;
+
+
 { TKMScriptEntity }
 constructor TKMScriptEntity.Create(aIDCache: TKMScriptingIdCache);
 begin
   inherited Create;
   fIDCache := aIDCache;
+end;
+
+
+procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
+begin
+  fOnScriptError(se_Log, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
 end;
 
 

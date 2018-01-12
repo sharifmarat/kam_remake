@@ -149,6 +149,10 @@ const
     (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_Horse)  //Knight
   );
 
+  //TownHall units troops cost (number of gold chests needed)
+  TH_TroopCost: array[0..5] of Byte = (
+    2, 2, 2, 4, 6, 6
+  );
 
   //The frame shown when a unit is standing still in ua_Walk. Same for all units!
   UnitStillFrames: array [TKMDirection] of Byte = (0,3,2,2,1,6,7,6,6);
@@ -385,7 +389,7 @@ end;
 function TKMUnitSpec.GetUnitName: UnicodeString;
 begin
   case fUnitType of
-    ut_Any:             Result := 'All'; //Todo translate
+    ut_Any:             Result := gResTexts[TX_UNITS_ALL];
     ut_None:            Result := 'N/A';
     else                Result := gResTexts[GetUnitTextID];
   end;

@@ -4,7 +4,7 @@ interface
 uses
   KM_AIMayorBalance, KM_AICityPlanner, KM_AISetup,
   KM_PathfindingRoad,
-  KM_ResHouses,
+  KM_ResHouses, KM_HouseCollection,
   KM_CommonClasses, KM_Defaults, KM_Points;
 
 
@@ -63,7 +63,7 @@ uses
   Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_Terrain,
-  KM_HouseCollection, KM_Houses, KM_HouseSchool,
+  KM_Houses, KM_HouseSchool,
   KM_Units, KM_UnitsCollection, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitTaskDelivery,
   KM_Resource, KM_ResWares,
   KM_NavMesh, KM_CommonUtils;
@@ -813,26 +813,26 @@ procedure TKMayor.SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single)
   begin
     if aIron then
       case aGT of
-        gt_Melee:     Result := gHands[fOwner].Locks.UnitBlocked[ut_Swordsman];
-        gt_AntiHorse: Result := gHands[fOwner].Locks.UnitBlocked[ut_Hallebardman];
-        gt_Ranged:    Result := gHands[fOwner].Locks.UnitBlocked[ut_Arbaletman];
-        gt_Mounted:   Result := gHands[fOwner].Locks.UnitBlocked[ut_Cavalry];
+        gt_Melee:     Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Swordsman);
+        gt_AntiHorse: Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Hallebardman);
+        gt_Ranged:    Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Arbaletman);
+        gt_Mounted:   Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Cavalry);
         else          Result := True;
       end
     else
       case aGT of
-        gt_Melee:     Result := gHands[fOwner].Locks.UnitBlocked[ut_Militia] and
-                                gHands[fOwner].Locks.UnitBlocked[ut_AxeFighter];
-        gt_AntiHorse: Result := gHands[fOwner].Locks.UnitBlocked[ut_Pikeman];
-        gt_Ranged:    Result := gHands[fOwner].Locks.UnitBlocked[ut_Bowman];
-        gt_Mounted:   Result := gHands[fOwner].Locks.UnitBlocked[ut_HorseScout];
+        gt_Melee:     Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Militia) and
+                                gHands[fOwner].Locks.GetUnitBlocked(ut_AxeFighter);
+        gt_AntiHorse: Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Pikeman);
+        gt_Ranged:    Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Bowman);
+        gt_Mounted:   Result := gHands[fOwner].Locks.GetUnitBlocked(ut_HorseScout);
         else          Result := True;
       end;
   end;
 
   function GetUnitRatio(aUT: TUnitType): Byte;
   begin
-    if gHands[fOwner].Locks.UnitBlocked[aUT] then
+    if gHands[fOwner].Locks.GetUnitBlocked(aUT) then
       Result := 0 //This warrior is blocked
     else
       if (fSetup.ArmyType = atIronAndLeather)

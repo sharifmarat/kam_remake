@@ -44,7 +44,8 @@ implementation
 uses
   Classes, Types, Math,
   KM_Game, KM_Terrain,
-  KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool,
+  KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, 
+  KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Resource;
 
 
@@ -75,6 +76,7 @@ begin
     ht_Marketplace:   Result := TKMHouseMarket.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_School:        Result := TKMHouseSchool.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Barracks:      Result := TKMHouseBarracks.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    ht_TownHall:      Result := TKMHouseTownHall.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Store:         Result := TKMHouseStore.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_WatchTower:    Result := TKMHouseTower.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Woodcutters:   Result := TKMHouseWoodcutters.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
@@ -176,11 +178,11 @@ begin
   BestBid := MaxSingle;
 
   for I := 0 to Count - 1 do
-    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and //If Unit can work in here
-       (not Houses[I].GetHasOwner) and                                // if there's yet no owner
-       (not Houses[I].IsDestroyed) and                                // if house is not destroyed
-       (Houses[I].IsComplete) and                                     // if house is built
-       (not Houses[I].IsClosedForWorker) then                         // if house is not closed for worker
+    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and // If Unit can work in here
+       not Houses[I].HasOwner and                                   // if there's yet no owner
+       not Houses[I].IsDestroyed and                                // if house is not destroyed
+       Houses[I].IsComplete and                                     // if house is built
+       not Houses[I].IsClosedForWorker then                         // if house is not closed for worker
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
       if (Houses[I].HouseType = ht_Barracks)
@@ -203,7 +205,7 @@ begin
     end;
 
   if (Result <> nil) and (Result.HouseType <> ht_Barracks) then
-    Result.GetHasOwner := True; //Become owner except Barracks;
+    Result.HasOwner := True; //Become owner except Barracks;
 end;
 
 
@@ -319,6 +321,7 @@ begin
       ht_WatchTower:    T := TKMHouseTower.Load(LoadStream);
       ht_Woodcutters:   T := TKMHouseWoodcutters.Load(LoadStream);
       ht_ArmorWorkshop: T := TKMHouseArmorWorkshop.Load(LoadStream);
+      ht_TownHall:      T := TKMHouseTownHall.Load(LoadStream);
       else              T := TKMHouse.Load(LoadStream);
     end;
 

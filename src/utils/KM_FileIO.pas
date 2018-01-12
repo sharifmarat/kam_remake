@@ -13,7 +13,8 @@ uses
   function ReadTextU(const afilename: UnicodeString; aEncoding: Word): UnicodeString;
 
   //Copy a file (CopyFile is different between Delphi and Lazarus)
-  procedure KMCopyFile(const aSrc, aDest: UnicodeString);
+  procedure KMCopyFile(const aSrc, aDest: UnicodeString); overload;
+  procedure KMCopyFile(const aSrc, aDest: UnicodeString; aOverwrite: Boolean); overload;
 
   //Delete a folder (DeleteFolder is different between Delphi and Lazarus)
   procedure KMDeleteFolder(const aPath: UnicodeString);
@@ -23,6 +24,9 @@ uses
 
   //Move a folder and rename all the files inside it (MoveFolder is different between Delphi and Lazarus)
   function KMMoveFolder(const aSourceFolder, aDestFolder: UnicodeString): Boolean;
+
+  //Rename all the files inside folder (MoveFolder is different between Delphi and Lazarus)
+  procedure KMRenameFilesInFolder(const aPathToFolder, aFromName, aToName: UnicodeString);
 
 
   function IsFilePath(const aPath: UnicodeString): Boolean;
@@ -129,6 +133,20 @@ begin
 end;
 
 
+procedure KMCopyFile(const aSrc, aDest: UnicodeString; aOverwrite: Boolean);
+begin
+  if aOverwrite and FileExists(aDest) then
+    DeleteFile(aDest);
+
+  {$IFDEF FPC}
+  CopyFile(aSrc, aDest);
+  {$ENDIF}
+  {$IFDEF WDC}
+  TFile.Copy(aSrc, aDest);
+  {$ENDIF}
+end;
+
+
 procedure KMDeleteFolder(const aPath: UnicodeString);
 begin
   if DirectoryExists(aPath) then
@@ -163,14 +181,50 @@ begin
 end;
 
 
-//Move folder and rename all files inside by pattern _old_name_suffix to _new_name_suffix
-//Pattern thatwe use for most of the files for our maps/saves
-function KMMoveFolder(const aSourceFolder, aDestFolder: UnicodeString): Boolean;
+//Rename all files inside folder by pattern _old_name_suffix to _new_name_suffix
+//Pattern that we use for most of the files for our maps/saves
+procedure KMRenameFilesInFolder(const aPathToFolder, aFromName, aToName: UnicodeString);
 var
   I: Integer;
-  SrcName, DestName, RenamedFile: UnicodeString;
+  RenamedFile: UnicodeString;
   SearchRec: TSearchRec;
-  FilesToMove: TStringList;
+  FilesToRename: TStringList;
+begin
+  if (Trim(aFromName) = '')
+    or (Trim(aToName) = '')
+    or (aFromName = aToName) then
+    Exit;
+
+  FilesToRename := TStringList.Create;
+  try
+    //Find all files to rename in path
+    //Need to find them first, rename later, because we can possibly find files, that were already renamed, in case NewName = OldName + Smth
+    FindFirst(aPathToFolder + aFromName + '*', faAnyFile - faDirectory, SearchRec);
+    repeat
+      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+        and (Length(SearchRec.Name) > Length(aFromName)) then
+        FilesToRename.Add(SearchRec.Name);
+    until (FindNext(SearchRec) <> 0);
+    FindClose(SearchRec);
+
+    //Move all previously finded files
+    for I := 0 to FilesToRename.Count - 1 do
+    begin
+       RenamedFile := aPathToFolder + aToName + RightStr(FilesToRename[I], Length(FilesToRename[I]) - Length(aFromName));
+       if not FileExists(RenamedFile) and (aPathToFolder + FilesToRename[I] <> RenamedFile) then
+         KMRenamePath(aPathToFolder + FilesToRename[I], RenamedFile);
+    end;
+  finally
+    FilesToRename.Free;
+  end;
+end;
+
+
+//Move folder and rename all files inside by pattern _old_name_suffix to _new_name_suffix
+//Pattern that we use for most of the files for our maps/saves
+function KMMoveFolder(const aSourceFolder, aDestFolder: UnicodeString): Boolean;
+var
+  SrcName, DestName: UnicodeString;
 begin
   Result := False;
   if (Trim(aSourceFolder) = '')
@@ -181,34 +235,14 @@ begin
   SrcName := GetFileDirName(aSourceFolder);
   DestName := GetFileDirName(aDestFolder);
 
-  FilesToMove := TStringList.Create;
-  try
-    //Remove existing dest directory
-    KMDeleteFolder(aDestFolder);
+  KMDeleteFolder(aDestFolder);
 
-    //Move directory to dest
-    KMRenamePath(aSourceFolder, aDestFolder);
+  //Move directory to dest first
+  KMRenamePath(aSourceFolder, aDestFolder);
 
-    //Find all files to move in dest
-    //Need to find them first, rename later, because we can possibly find files, that were already renamed, in case NewName = OldName + Smth
-    FindFirst(aDestFolder + SrcName + '*', faAnyFile - faDirectory, SearchRec);
-    repeat
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-        and (Length(SearchRec.Name) > Length(SrcName)) then
-        FilesToMove.Add(SearchRec.Name);
-    until (FindNext(SearchRec) <> 0);
-    FindClose(SearchRec);
+  //Rename all files there
+  KMRenameFilesInFolder(aDestFolder, SrcName, DestName);
 
-    //Move all previously finded files
-    for I := 0 to FilesToMove.Count - 1 do
-    begin
-       RenamedFile := aDestFolder + DestName + RightStr(FilesToMove[I], Length(FilesToMove[I]) - Length(SrcName));
-       if not FileExists(RenamedFile) and (aDestFolder + FilesToMove[I] <> RenamedFile) then
-         KMRenamePath(aDestFolder + FilesToMove[I], RenamedFile);
-    end;
-  finally
-    FilesToMove.Free;
-  end;
   Result := True;
 end;
 
