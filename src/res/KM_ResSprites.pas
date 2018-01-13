@@ -1053,7 +1053,7 @@ begin
   fGameResLoader.Terminate;
   fGameResLoader.WaitFor;
   FreeThenNil(fGameResLoader);
-  if gLog <> nil then
+  if gLog <> nil then //could be nil in some Utils, f.e.
     gLog.MultithreadLogging := False;
 end;
 
@@ -1080,7 +1080,7 @@ begin
   if aForceReload then
   begin
     fGameResLoadCompleted := False;
-    if gLog <> nil then
+    if gLog <> nil then //could be nil in some Utils, f.e.
       gLog.MultithreadLogging := True;
     fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
   end;

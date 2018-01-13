@@ -97,6 +97,7 @@ type
     SaveSettings: TMenuItem;
     N4: TMenuItem;
     ReloadSettings: TMenuItem;
+    chkLogCommands: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -654,6 +655,11 @@ begin
       Include(gLog.MessageTypes, lmt_Delivery)
     else
       Exclude(gLog.MessageTypes, lmt_Delivery);
+
+    if chkLogCommands.Checked then
+      Include(gLog.MessageTypes, lmt_Commands)
+    else
+      Exclude(gLog.MessageTypes, lmt_Commands);
 
     if chkLogNetConnection.Checked then
       Include(gLog.MessageTypes, lmt_NetConnection)
