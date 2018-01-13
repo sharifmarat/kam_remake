@@ -22,7 +22,7 @@ uses
 
 procedure TGameInputProcess_Single.TakeCommand(aCommand: TGameInputCommand);
 begin
-  if gGame.GameMode in [gmReplaySingle, gmReplayMulti] then Exit;
+  if gGame.IsReplay then Exit;
 
   StoreCommand(aCommand); //Store the command for the replay (store it first in case Exec crashes and we want to debug it)
   ExecCommand(aCommand);  //Execute the command now
@@ -63,4 +63,6 @@ begin
   KaMRandom(MaxInt); //This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
 end;
 
+
 end.
+

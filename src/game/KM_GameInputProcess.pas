@@ -931,7 +931,7 @@ end;
 
 procedure TGameInputProcess.SaveToFile(const aFileName: UnicodeString);
 var
-  I: integer;
+  I: Integer;
   S: TKMemoryStream;
 begin
   S := TKMemoryStream.Create;
@@ -955,7 +955,7 @@ var
   I: Integer;
   S: TKMemoryStream;
 begin
-  if not FileExists(aFileName) then exit;
+  if not FileExists(aFileName) then Exit;
   S := TKMemoryStream.Create;
   S.LoadFromFile(aFileName);
   S.ReadA(FileVersion);
@@ -986,7 +986,7 @@ begin
   if ReplayState = gipReplaying then
     Result := fCursor > fCount
   else
-    Result := false;
+    Result := False;
 end;
 
 
