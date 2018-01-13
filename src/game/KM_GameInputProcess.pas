@@ -262,6 +262,10 @@ type
     procedure ExecCommand(aCommand: TGameInputCommand);
     procedure StoreCommand(aCommand: TGameInputCommand);
     procedure ExecGameAlertBeaconCmd(aCommand: TGameInputCommand);
+  protected
+    function IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
+    procedure SaveExtra(aStream: TKMemoryStream); virtual;
+    procedure LoadExtra(aStream: TKMemoryStream); virtual;
   public
     constructor Create(aReplayState: TGIPReplayState);
     destructor Destroy; override;
@@ -309,8 +313,8 @@ type
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TGIPReplayState read fReplayState;
-    function GetLastTick: Cardinal;
-    function ReplayEnded: Boolean;
+    function GetLastTick: Cardinal; virtual;
+    function ReplayEnded: Boolean; virtual;
   end;
 
 
@@ -320,6 +324,8 @@ uses
   KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection,
   KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall,
   KM_ScriptingEvents, KM_Alerts, KM_CommonUtils, KM_Log;
+
+const NO_LAST_TICK_VALUE = 0;
 
 
 function IsSelectedObjectCommand(aGIC: TGameInputCommandType): Boolean;
@@ -937,6 +943,9 @@ begin
   S := TKMemoryStream.Create;
   S.WriteA(GAME_REVISION);
   S.Write(fCount);
+
+  SaveExtra(S);
+
   for I := 1 to fCount do
   begin
     S.Write(fQueue[I].Tick);
@@ -961,7 +970,10 @@ begin
   S.ReadA(FileVersion);
   Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
   S.Read(fCount);
-  SetLength(fQueue, fCount+1);
+  SetLength(fQueue, fCount + 1);
+
+  LoadExtra(S);
+
   for I := 1 to fCount do
   begin
     S.Read(fQueue[I].Tick);
@@ -1034,4 +1046,26 @@ begin
 end;
 
 
+function TGameInputProcess.IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
+begin
+  Result := aLastTickValue <> NO_LAST_TICK_VALUE;
+end;
+
+
+procedure TGameInputProcess.SaveExtra(aStream: TKMemoryStream);
+begin
+  aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
+end;
+
+
+procedure TGameInputProcess.LoadExtra(aStream: TKMemoryStream);
+var
+  Tmp: Cardinal;
+begin
+  aStream.Read(Tmp); //Just read some bytes from the stream
+  //Only used in GIP_Single
+end;
+
+
 end.
+

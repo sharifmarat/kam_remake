@@ -2,16 +2,24 @@ unit KM_GameInputProcess_Single;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_GameInputProcess;
+  KM_CommonClasses, KM_GameInputProcess;
 
 
 type
   TGameInputProcess_Single = class(TGameInputProcess)
+  private
+    fCurrTick: Cardinal;
+    fLastTick: Cardinal;
   protected
     procedure TakeCommand(aCommand: TGameInputCommand); override;
+    procedure SaveExtra(aStream: TKMemoryStream); override;
+    procedure LoadExtra(aStream: TKMemoryStream); override;
   public
     procedure ReplayTimer(aTick: Cardinal); override;
     procedure RunningTimer(aTick: Cardinal); override;
+    procedure UpdateState(aTick: Cardinal); override;
+    function GetLastTick: Cardinal; override;
+    function ReplayEnded: Boolean; override;
   end;
 
 
@@ -53,6 +61,7 @@ begin
       Inc(fCursor);
     end;
   end;
+  fCurrTick := aTick;
 end;
 
 
@@ -61,6 +70,41 @@ begin
   inherited;
 
   KaMRandom(MaxInt); //This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
+end;
+
+
+function TGameInputProcess_Single.GetLastTick: Cardinal;
+begin
+  if IsLastTickValueCorrect(fLastTick) then
+    Result := fLastTick
+  else
+    Result := inherited;
+end;
+
+
+function TGameInputProcess_Single.ReplayEnded: Boolean;
+begin
+  Result := inherited and (not IsLastTickValueCorrect(fLastTick) or (fLastTick <= fCurrTick));
+end;
+
+
+procedure TGameInputProcess_Single.UpdateState(aTick: Cardinal);
+begin
+  fCurrTick := aTick;
+end;
+
+
+procedure TGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
+begin
+  //no inherited here. We override parent behaviour
+  aStream.Write(fCurrTick);
+end;
+
+
+procedure TGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
+begin
+  //no inherited here. We override parent behaviour
+  aStream.Read(fLastTick);
 end;
 
 
