@@ -319,7 +319,7 @@ uses
   SysUtils, TypInfo, Math,
   KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection,
   KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall,
-  KM_ScriptingEvents, KM_Alerts, KM_CommonUtils;
+  KM_ScriptingEvents, KM_Alerts, KM_CommonUtils, KM_Log;
 
 
 function IsSelectedObjectCommand(aGIC: TGameInputCommandType): Boolean;
@@ -386,6 +386,26 @@ begin
       gicpt_Date:     aMemoryStream.Read(DateTimeParam);
     end;
     aMemoryStream.Read(HandIndex);
+  end;
+end;
+
+
+function GetCommandLogString(aGIC: TGameInputCommand): UnicodeString;
+begin
+
+  with aGIC do
+  begin
+    Result := GetEnumName(TypeInfo(TGameInputCommandType), Integer(CommandType)) +
+              Format(' Hand: %d, params: ', [HandIndex]);
+    case CommandPackType[CommandType] of
+      gicpt_NoParams: Result := Result + ' []';
+      gicpt_Int1:     Result := Result + Format(' [%d]', [Params[1]]);
+      gicpt_Int2:     Result := Result + Format(' [%d,%d]', [Params[1], Params[2]]);
+      gicpt_Int3:     Result := Result + Format(' [%d,%d,%d]', [Params[1], Params[2], Params[3]]);
+      gicpt_Int4:     Result := Result + Format(' [%d,%d,%d,%d]', [Params[1], Params[2], Params[3], Params[4]]);
+      gicpt_Text:     Result := Result + Format(' [%s]', [TextParam]);
+      gicpt_Date:     Result := Result + Format(' [%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
+    end;
   end;
 end;
 
@@ -569,6 +589,8 @@ begin
     //Most commands blocked during cinematic (this is a fall back in case players try to cheat)
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
+
+    gLog.LogCommands('Exec command: ' + GetCommandLogString(aCommand));
 
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
