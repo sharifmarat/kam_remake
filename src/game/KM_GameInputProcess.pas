@@ -325,7 +325,11 @@ uses
   KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall,
   KM_ScriptingEvents, KM_Alerts, KM_CommonUtils, KM_Log;
 
-const NO_LAST_TICK_VALUE = 0;
+const 
+  NO_LAST_TICK_VALUE = 0;
+
+var
+  GIC_COMMAND_TYPE_MAX_LENGTH: Byte;
 
 
 function IsSelectedObjectCommand(aGIC: TGameInputCommandType): Boolean;
@@ -398,19 +402,18 @@ end;
 
 function GetCommandLogString(aGIC: TGameInputCommand): UnicodeString;
 begin
-
   with aGIC do
   begin
-    Result := GetEnumName(TypeInfo(TGameInputCommandType), Integer(CommandType)) +
-              Format(' Hand: %d, params: ', [HandIndex]);
+    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's player: %2d, params: ',
+                     [GetEnumName(TypeInfo(TGameInputCommandType), Integer(CommandType)), HandIndex]);
     case CommandPackType[CommandType] of
       gicpt_NoParams: Result := Result + ' []';
-      gicpt_Int1:     Result := Result + Format(' [%d]', [Params[1]]);
-      gicpt_Int2:     Result := Result + Format(' [%d,%d]', [Params[1], Params[2]]);
-      gicpt_Int3:     Result := Result + Format(' [%d,%d,%d]', [Params[1], Params[2], Params[3]]);
-      gicpt_Int4:     Result := Result + Format(' [%d,%d,%d,%d]', [Params[1], Params[2], Params[3], Params[4]]);
-      gicpt_Text:     Result := Result + Format(' [%s]', [TextParam]);
-      gicpt_Date:     Result := Result + Format(' [%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
+      gicpt_Int1:     Result := Result + Format('[%10d]', [Params[1]]);
+      gicpt_Int2:     Result := Result + Format('[%10d,%10d]', [Params[1], Params[2]]);
+      gicpt_Int3:     Result := Result + Format('[%10d,%10d,%10d]', [Params[1], Params[2], Params[3]]);
+      gicpt_Int4:     Result := Result + Format('[%10d,%10d,%10d,%10d]', [Params[1], Params[2], Params[3], Params[4]]);
+      gicpt_Text:     Result := Result + Format('[%s]', [TextParam]);
+      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
     end;
   end;
 end;
@@ -1064,6 +1067,27 @@ var
 begin
   aStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
+end;
+
+
+function GetGICCommandTypeMaxLength: Byte;
+var
+  Cmd: TGameInputCommandType;
+  Len: Byte;
+begin
+  Result := 0;
+  for Cmd := Low(TGameInputCommandType) to High(TGameInputCommandType) do
+  begin
+    Len := Length(GetEnumName(TypeInfo(TGameInputCommandType), Integer(Cmd)));
+    if Len > Result then
+      Result := Len;
+  end;
+end;
+
+
+initialization
+begin
+  GIC_COMMAND_TYPE_MAX_LENGTH := GetGICCommandTypeMaxLength;
 end;
 
 
