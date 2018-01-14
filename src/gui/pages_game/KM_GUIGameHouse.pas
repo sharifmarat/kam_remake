@@ -968,7 +968,7 @@ begin
 
   House := TKMHouse(gMySpectator.Selected);
   
-  gGame.GameInputProcess.CmdHouse(gic_HouseClosedForWorkerToggle, House);
+  gGame.GameInputProcess.CmdHouse(gic_HouseClosedForWorkerTgl, House);
 
   HandleHouseClosedForWorker(House);
 end;
@@ -1309,7 +1309,7 @@ begin
   if Sender <> Button_BarracksRecruit then
     gGame.GameInputProcess.CmdHouse(gic_HouseBarracksAcceptFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag])
   else
-    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksAcceptRecruitsToggle, TKMHouse(gMySpectator.Selected));
+    gGame.GameInputProcess.CmdHouse(gic_HBarracksAcceptRecruitsTgl, TKMHouse(gMySpectator.Selected));
 end;
 
 

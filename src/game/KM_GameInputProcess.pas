@@ -57,7 +57,7 @@ type
     //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gic_HouseRepairToggle,
     gic_HouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
-    gic_HouseClosedForWorkerToggle,   //Toggle house state for worker - vacate or occupy
+    gic_HouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
     gic_HouseOrderProduct,            //Place an order to manufacture warfare
     gic_HouseMarketFrom,              //Select wares to trade in marketplace
     gic_HouseMarketTo,                //Select wares to trade in marketplace
@@ -68,7 +68,7 @@ type
     gic_HouseSchoolTrainChOrder,      //Change school training order
     gic_HouseSchoolTrainChLastUOrder, //Change school training order for last unit in queue
     gic_HouseBarracksAcceptFlag,      //Control wares delivery to barracks
-    gic_HouseBarracksAcceptRecruitsToggle,  //Toggle are recruits allowed to enter barracks or not
+    gic_HBarracksAcceptRecruitsTgl,   //Toggle are recruits allowed to enter barracks or not
     gic_HouseBarracksEquip,           //Place an order to train warrior in the Barracks
     gic_HouseBarracksRally,           //Set the rally point for the Barracks
     gic_HouseTownHallEquip,           //Place an order to train warrior in the TownHall
@@ -140,7 +140,7 @@ const
   HouseOrderCommands: set of TGameInputCommandType = [
     gic_HouseRepairToggle,
     gic_HouseDeliveryToggle,
-    gic_HouseClosedForWorkerToggle,
+    gic_HouseClosedForWorkerTgl,
     gic_HouseOrderProduct,
     gic_HouseMarketFrom,
     gic_HouseMarketTo,
@@ -150,7 +150,7 @@ const
     gic_HouseSchoolTrainChOrder,
     gic_HouseSchoolTrainChLastUOrder,
     gic_HouseBarracksAcceptFlag,
-    gic_HouseBarracksAcceptRecruitsToggle,
+    gic_HBarracksAcceptRecruitsTgl,
     gic_HouseBarracksEquip,
     gic_HouseBarracksRally,
     gic_HouseTownHallEquip,
@@ -182,7 +182,7 @@ const
     //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gicpt_Int1,     // gic_HouseRepairToggle
     gicpt_Int2,     // gic_HouseDeliveryToggle
-    gicpt_Int1,     // gic_HouseClosedForWorkerToggle
+    gicpt_Int1,     // gic_HouseClosedForWorkerTgl
     gicpt_Int3,     // gic_HouseOrderProduct
     gicpt_Int2,     // gic_HouseMarketFrom
     gicpt_Int2,     // gic_HouseMarketTo
@@ -193,7 +193,7 @@ const
     gicpt_Int3,     // gic_HouseSchoolTrainChOrder
     gicpt_Int2,     // gic_HouseSchoolTrainChLastUOrder
     gicpt_Int2,     // gic_HouseBarracksAcceptFlag
-    gicpt_Int1,     // gic_HouseBarracksAcceptRecruitsToggle
+    gicpt_Int1,     // gic_HBarracksAcceptRecruitsTgl
     gicpt_Int3,     // gic_HouseBarracksEquip
     gicpt_Int3,     // gic_HouseBarracksRally
     gicpt_Int3,     // gic_HouseTownHallEquip
@@ -569,9 +569,9 @@ begin
     end;
     if CommandType in [gic_HouseRepairToggle, gic_HouseDeliveryToggle, gic_HouseWoodcuttersCutting, gic_HouseTownHallMaxGold,
       gic_HouseOrderProduct, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseBarracksRally, gic_HouseTownHallRally,
-      gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseBarracksEquip, gic_HouseTownHallEquip, gic_HouseClosedForWorkerToggle,
+      gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseBarracksEquip, gic_HouseTownHallEquip, gic_HouseClosedForWorkerTgl,
       gic_HouseSchoolTrain, gic_HouseSchoolTrainChOrder, gic_HouseSchoolTrainChLastUOrder, gic_HouseRemoveTrain,
-      gic_HouseWoodcutterMode, gic_HouseBarracksAcceptRecruitsToggle, gic_HouseArmorWSDeliveryToggle] then
+      gic_HouseWoodcutterMode, gic_HBarracksAcceptRecruitsTgl, gic_HouseArmorWSDeliveryToggle] then
     begin
       SrcHouse := gHands.GetHouseByUID(Params[1]);
       if (SrcHouse = nil) or SrcHouse.IsDestroyed //House has been destroyed before command could be executed
@@ -620,7 +620,7 @@ begin
       gic_HouseRepairToggle:      SrcHouse.BuildingRepair := not SrcHouse.BuildingRepair;
       gic_HouseDeliveryToggle:    //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
                                   SrcHouse.NewDeliveryMode := TDeliveryMode(Params[2]);
-      gic_HouseClosedForWorkerToggle: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;                                  
+      gic_HouseClosedForWorkerTgl: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;
       gic_HouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
       gic_HouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TWareType(Params[2]);
       gic_HouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TWareType(Params[2]);
@@ -628,7 +628,7 @@ begin
       gic_HouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
       gic_HouseBarracksAcceptFlag:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptFlag(TWareType(Params[2]));
-      gic_HouseBarracksAcceptRecruitsToggle:
+      gic_HBarracksAcceptRecruitsTgl:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptRecruits;
       gic_HouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TUnitType(Params[2]), Params[3]);
       gic_HouseBarracksRally:     TKMHouseBarracks(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
@@ -816,7 +816,7 @@ end;
 
 procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse);
 begin
-  Assert(aCommandType in [gic_HouseRepairToggle, gic_HouseClosedForWorkerToggle, gic_HouseBarracksAcceptRecruitsToggle]);
+  Assert(aCommandType in [gic_HouseRepairToggle, gic_HouseClosedForWorkerTgl, gic_HBarracksAcceptRecruitsTgl]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID));
 end;
 
