@@ -1,6 +1,3 @@
-REM @SET kp_version=Alpha 7 wip
-REM call bat_get_kp_folder.bat
-
 @REM
 call bat_get_kam_folder.bat
 

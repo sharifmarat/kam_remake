@@ -3,7 +3,7 @@ REM Create new version package
 REM ============================================================
 
 REM Clean before build to avoid any side-effects from old DCUs
-REM call bat_get_kam_folder.bat
+call bat_get_kam_folder.bat
 
 echo "%kam_folder%"
 
