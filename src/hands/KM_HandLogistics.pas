@@ -1422,8 +1422,11 @@ procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   {$IFDEF WDC}
-  fOfferToDemandCache.Clear;
-  fSerfToOfferCache.Clear;
+  if CACHE_DELIVERY_BIDS then
+  begin
+    fOfferToDemandCache.Clear;
+    fSerfToOfferCache.Clear;
+  end;
   {$ENDIF}
 
   LoadStream.ReadAssert('Deliveries');
