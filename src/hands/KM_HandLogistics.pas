@@ -801,7 +801,7 @@ begin
     if fSerfToOfferCache.TryGetValue(BidKey, CachedBid) then
     begin
       aSerfBidValue := aSerfBidValue + CachedBid;
-      Result := (aSerfBidValue = NOT_REACHABLE_DEST_VALUE);
+      Result := (aSerfBidValue <> NOT_REACHABLE_DEST_VALUE);
       Exit;
     end;
   end;
@@ -813,9 +813,7 @@ begin
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
-  begin
     fSerfToOfferCache.Add(BidKey, aSerfBidValue);
-  end;
   {$ENDIF}
 end;
 
@@ -902,7 +900,7 @@ begin
 
     if fOfferToDemandCache.TryGetValue(BidKey, OfferToDemandCache) then
     begin
-      Result := (OfferToDemandCache = NOT_REACHABLE_DEST_VALUE);
+      Result := (OfferToDemandCache <> NOT_REACHABLE_DEST_VALUE);
       if not Result then
         aBidBasicValue := NOT_REACHABLE_DEST_VALUE
       else
