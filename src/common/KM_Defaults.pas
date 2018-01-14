@@ -245,9 +245,11 @@ const
 
   LINK_RADIUS = 5; //Radius to search for groups to link to after being trained at the barracks (measured from KaM)
 
-  BOWMEN_AIMING_DELAY_MIN      = 4; //minimum time for archer to aim
-  BOWMEN_AIMING_DELAY_ADD      = 4; //random component
-  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for archer to aim
+  BOWMEN_AIMING_DELAY_MIN      = 6; //minimum time for bowmen to aim
+  BOWMEN_AIMING_DELAY_ADD      = 6; //random component
+  SLINGSHOT_AIMING_DELAY_MIN   = 0; //minimum time for slingshot to aim
+  SLINGSHOT_AIMING_DELAY_ADD   = 4; //random component
+  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for crossbowmen to aim
   CROSSBOWMEN_AIMING_DELAY_ADD = 8; //random component
 
   SLINGSHOT_FIRING_DELAY = 12; //on which frame slinger fires his rock
