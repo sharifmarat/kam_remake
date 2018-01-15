@@ -843,8 +843,10 @@ begin
 end;
 
 procedure TKMFloodWithQueue.FloodFillWithQueue(var aPointArr: TKMPointArray; var aCnt_FINAL, aCnt_ACTUAL, aRESOURCE: Integer; const aProbability, aPROB_REDUCER: Single; var aPoints: TKMPointArray);
+const
+  PROTECT_COEF = 2;
 var
-  I,X,Y: SmallInt;
+  I,X,Y,X2,Y2: SmallInt;
   Cnt, POMCnt: Integer;
   Probability, Prob_POM: Single;
 begin
@@ -904,11 +906,10 @@ begin
 
   while RemoveFromQueue(X, Y, Probability) do
   begin
-    if fCount[Y,X] > 0 then
-      fCount[Y,X] := -fCount[Y,X];
-    Y := Min(Y+1, High(fPointsArr));
-    if fCount[Y,X] > 0 then
-      fCount[Y,X] := -fCount[Y,X];
+    for Y2 := Max(Low(fPointsArr), Y-PROTECT_COEF) to Min(Y+PROTECT_COEF, High(fPointsArr)) do
+    for X2 := Max(Low(fPointsArr[Y]), X-PROTECT_COEF) to Min(X+PROTECT_COEF, High(fPointsArr[Y])) do
+      if fCount[Y2,X2] > 0 then
+        fCount[Y2,X2] := -fCount[Y2,X2];
   end;
 end;
 
