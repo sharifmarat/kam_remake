@@ -1258,12 +1258,12 @@ begin
     fQueue[I].Item.Caption := gRes.Wares[fOffer[fQueue[I].OfferID].Ware].Title;
 
     if fOffer[fQueue[I].OfferID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
       fQueue[I].Item.SubItems.Add(gRes.Houses[fOffer[fQueue[I].OfferID].Loc_House.HouseType].HouseName);
 
     if fDemand[fQueue[I].DemandID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
       fQueue[I].Item.SubItems.Add(gRes.Houses[fDemand[fQueue[I].DemandID].Loc_House.HouseType].HouseName);
   end;
