@@ -801,7 +801,7 @@ begin
     if fSerfToOfferCache.TryGetValue(BidKey, CachedBid) then
     begin
       aSerfBidValue := aSerfBidValue + CachedBid;
-      Result := (aSerfBidValue = NOT_REACHABLE_DEST_VALUE);
+      Result := (aSerfBidValue <> NOT_REACHABLE_DEST_VALUE);
       Exit;
     end;
   end;
@@ -813,9 +813,7 @@ begin
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
-  begin
     fSerfToOfferCache.Add(BidKey, aSerfBidValue);
-  end;
   {$ENDIF}
 end;
 
@@ -833,7 +831,8 @@ end;
 //Try to Calc route cost
 //If destination is not reachable, then return False
 function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aPassSet: TKMTerrainPassabilitySet; var aRoutCost: Single): Boolean;
-var Distance: Single;
+var
+  Distance: Single;
 begin
   {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
@@ -902,7 +901,7 @@ begin
 
     if fOfferToDemandCache.TryGetValue(BidKey, OfferToDemandCache) then
     begin
-      Result := (OfferToDemandCache = NOT_REACHABLE_DEST_VALUE);
+      Result := (OfferToDemandCache <> NOT_REACHABLE_DEST_VALUE);
       if not Result then
         aBidBasicValue := NOT_REACHABLE_DEST_VALUE
       else
@@ -939,8 +938,9 @@ begin
 
     if not Result then
     begin
+      aBidBasicValue := NOT_REACHABLE_DEST_VALUE;
       {$IFDEF WDC}
-      TryAddToCache(BidKey, NOT_REACHABLE_DEST_VALUE);
+      TryAddToCache(BidKey, aBidBasicValue);
       {$ENDIF}
       Exit; //Add to cache NOT_REACHABLE_DEST_VALUE value
     end;
@@ -1009,7 +1009,6 @@ var
   iD, iO, BestD, OldD: Integer;
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
-  BestBidFound: Boolean;
 begin
   iO := fQueue[aDeliveryID].OfferID;
   OldD := fQueue[aDeliveryID].DemandID;
@@ -1032,12 +1031,11 @@ begin
     Exit;
   end;
 
-  BestBidFound := False;
   //By default we keep the old demand, so that's our starting bid
   BestD := OldD;
   if not fDemand[OldD].IsDeleted then
   begin
-    BestBidFound := TryCalculateBid(iO, OldD, BestBid, aSerf);
+    TryCalculateBid(iO, OldD, BestBid, aSerf);
     BestImportance := fDemand[OldD].Importance;
   end
   else
@@ -1382,6 +1380,9 @@ end;
 procedure TKMDeliveries.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
+  {$IFDEF WDC}
+  Item: TPair<TKMDeliveryBidKey, Single>;
+  {$ENDIF}
 begin
   SaveStream.WriteA('Deliveries');
   SaveStream.Write(fOfferCount);
@@ -1417,17 +1418,38 @@ begin
     SaveStream.Write(fQueue[I].DemandID);
     SaveStream.Write(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  if CACHE_DELIVERY_BIDS then
+  begin
+    SaveStream.Write(fOfferToDemandCache.Count);
+    for Item in fOfferToDemandCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
+
+    SaveStream.Write(fSerfToOfferCache.Count);
+    for Item in fSerfToOfferCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
+  end;
+  {$ENDIF}
 end;
 
 
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
-var I: Integer;
-begin
+var
+  I, Count: Integer;
   {$IFDEF WDC}
-  fOfferToDemandCache.Clear;
-  fSerfToOfferCache.Clear;
+  Key: TKMDeliveryBidKey;
+  Value: Single;
   {$ENDIF}
-
+begin
   LoadStream.ReadAssert('Deliveries');
   LoadStream.Read(fOfferCount);
   SetLength(fOffer, fOfferCount+1);
@@ -1462,6 +1484,31 @@ begin
     LoadStream.Read(fQueue[I].DemandID);
     LoadStream.Read(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  if CACHE_DELIVERY_BIDS then
+  begin
+    fOfferToDemandCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fOfferToDemandCache.Add(Key, Value);
+    end;
+
+    fSerfToOfferCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fSerfToOfferCache.Add(Key, Value);
+    end;
+  end;
+  {$ENDIF}
 end;
 
 

@@ -941,23 +941,7 @@ end;
 
 
 {$IFDEF WDC}
-function StrSplit(const aStr, aDelimiters: String): TStrings;
-var StrArray: TStringDynArray;
-    I: Integer;
-begin
-  //Todo refactor:
-  //@Krom: It's bad practice to create object (TStringList) inside and return it as parent class (TStrings).
-  //Do we really need it this way? Better to pass TStringList from outside in a parameter.
-  StrArray := SplitString(aStr, aDelimiters);
-  Result := TStringList.Create;
-  for I := Low(StrArray) to High(StrArray) do
-    Result.Add(StrArray[I]);
-end;
-
-
-function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
-var StrArray: TStringDynArray;
-    I: Integer;
+function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
 begin
   Result := TAnsiStringArray(SplitString(aStr, aDelimiters));
 end;
