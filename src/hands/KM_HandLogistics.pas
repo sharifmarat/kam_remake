@@ -1380,7 +1380,9 @@ end;
 procedure TKMDeliveries.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
+  {$IFDEF WDC}
   Item: TPair<TKMDeliveryBidKey, Single>;
+  {$ENDIF}
 begin
   SaveStream.WriteA('Deliveries');
   SaveStream.Write(fOfferCount);
@@ -1418,20 +1420,23 @@ begin
   end;
 
   {$IFDEF WDC}
-  SaveStream.Write(fOfferToDemandCache.Count);
-  for Item in fOfferToDemandCache do
+  if CACHE_DELIVERY_BIDS then
   begin
-    SaveStream.Write(Item.Key.FromUID);
-    SaveStream.Write(Item.Key.ToUID);
-    SaveStream.Write(Item.Value);
-  end;
+    SaveStream.Write(fOfferToDemandCache.Count);
+    for Item in fOfferToDemandCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
 
-  SaveStream.Write(fSerfToOfferCache.Count);
-  for Item in fSerfToOfferCache do
-  begin
-    SaveStream.Write(Item.Key.FromUID);
-    SaveStream.Write(Item.Key.ToUID);
-    SaveStream.Write(Item.Value);
+    SaveStream.Write(fSerfToOfferCache.Count);
+    for Item in fSerfToOfferCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
   end;
   {$ENDIF}
 end;
@@ -1440,17 +1445,11 @@ end;
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var
   I, Count: Integer;
+  {$IFDEF WDC}
   Key: TKMDeliveryBidKey;
   Value: Single;
-begin
-  {$IFDEF WDC}
-  if CACHE_DELIVERY_BIDS then
-  begin
-    fOfferToDemandCache.Clear;
-    fSerfToOfferCache.Clear;
-  end;
   {$ENDIF}
-
+begin
   LoadStream.ReadAssert('Deliveries');
   LoadStream.Read(fOfferCount);
   SetLength(fOffer, fOfferCount+1);
@@ -1487,24 +1486,27 @@ begin
   end;
 
   {$IFDEF WDC}
-  fOfferToDemandCache.Clear;
-  LoadStream.Read(Count);
-  for I := 0 to Count - 1 do
+  if CACHE_DELIVERY_BIDS then
   begin
-    LoadStream.Read(Key.FromUID);
-    LoadStream.Read(Key.ToUID);
-    LoadStream.Read(Value);
-    fOfferToDemandCache.Add(Key, Value);
-  end;
+    fOfferToDemandCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fOfferToDemandCache.Add(Key, Value);
+    end;
 
-  fSerfToOfferCache.Clear;
-  LoadStream.Read(Count);
-  for I := 0 to Count - 1 do
-  begin
-    LoadStream.Read(Key.FromUID);
-    LoadStream.Read(Key.ToUID);
-    LoadStream.Read(Value);
-    fSerfToOfferCache.Add(Key, Value);
+    fSerfToOfferCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fSerfToOfferCache.Add(Key, Value);
+    end;
   end;
   {$ENDIF}
 end;
