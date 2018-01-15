@@ -1380,6 +1380,7 @@ end;
 procedure TKMDeliveries.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
+  Item: TPair<TKMDeliveryBidKey, Single>;
 begin
   SaveStream.WriteA('Deliveries');
   SaveStream.Write(fOfferCount);
@@ -1415,11 +1416,32 @@ begin
     SaveStream.Write(fQueue[I].DemandID);
     SaveStream.Write(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  SaveStream.Write(fOfferToDemandCache.Count);
+  for Item in fOfferToDemandCache do
+  begin
+    SaveStream.Write(Item.Key.FromUID);
+    SaveStream.Write(Item.Key.ToUID);
+    SaveStream.Write(Item.Value);
+  end;
+
+  SaveStream.Write(fSerfToOfferCache.Count);
+  for Item in fSerfToOfferCache do
+  begin
+    SaveStream.Write(Item.Key.FromUID);
+    SaveStream.Write(Item.Key.ToUID);
+    SaveStream.Write(Item.Value);
+  end;
+  {$ENDIF}
 end;
 
 
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
-var I: Integer;
+var
+  I, Count: Integer;
+  Key: TKMDeliveryBidKey;
+  Value: Single;
 begin
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -1463,6 +1485,28 @@ begin
     LoadStream.Read(fQueue[I].DemandID);
     LoadStream.Read(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  fOfferToDemandCache.Clear;
+  LoadStream.Read(Count);
+  for I := 0 to Count - 1 do
+  begin
+    LoadStream.Read(Key.FromUID);
+    LoadStream.Read(Key.ToUID);
+    LoadStream.Read(Value);
+    fOfferToDemandCache.Add(Key, Value);
+  end;
+
+  fSerfToOfferCache.Clear;
+  LoadStream.Read(Count);
+  for I := 0 to Count - 1 do
+  begin
+    LoadStream.Read(Key.FromUID);
+    LoadStream.Read(Key.ToUID);
+    LoadStream.Read(Value);
+    fSerfToOfferCache.Add(Key, Value);
+  end;
+  {$ENDIF}
 end;
 
 
