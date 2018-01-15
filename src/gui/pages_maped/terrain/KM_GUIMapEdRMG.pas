@@ -13,6 +13,7 @@ type
 
   TKMMapEdRMG = class
   private
+    fMapSizeIndicator: Boolean;
     fRMG: TKMRandomMapGenerator;
 
     function NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
@@ -86,6 +87,8 @@ var
   Column_1_Y, Column_2_Y, Column_3_Y, Column_4_Y: Integer;
 begin
   inherited Create;
+
+  fMapSizeIndicator := False;
 
   Panel_RMG := TKMPanel.Create(aParent, (aParent.Width - SIZE_X) div 2, (aParent.Height - SIZE_Y) div 2, SIZE_X, SIZE_Y);
   Panel_RMG.AnchorsCenter;
@@ -385,6 +388,11 @@ procedure TKMMapEdRMG.Show();
 begin
   //RMG_Refresh(aRMGSettings);
   Panel_RMG.Show;
+  if not fMapSizeIndicator then
+  begin
+    fMapSizeIndicator := True;
+    TKMLabel.Create(Panel_RMG, 570, 10, 200, 20, '(X: '+IntToStr(gTerrain.MapX)+', Y: '+IntToStr(gTerrain.MapY)+')', fnt_Metal, taLeft);
+  end;
 end;
 
 
