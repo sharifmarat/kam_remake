@@ -88,10 +88,7 @@ uses
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
 
-  {$IFDEF WDC}
-  function StrSplit(const aStr, aDelimiters: String): TStrings;
-  {$ENDIF}
-  function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
+  function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
 
   procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer); overload;
   procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer); overload;
@@ -949,7 +946,7 @@ end;
 
 
 {$IFDEF FPC}
-function StrSplitA(const aStr, aDelimiters: string): TAnsiStringArray;
+function StrSplit(const aStr, aDelimiters: string): TAnsiStringArray;
 var
   I: integer;
   PosDel: integer;

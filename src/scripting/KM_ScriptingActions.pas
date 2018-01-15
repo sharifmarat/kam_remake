@@ -2433,7 +2433,7 @@ begin
     SetLength(aTiles, Length(aTilesS));
     for I := Low(aTilesS) to High(aTilesS) do
     begin
-      aArrElem := StrSplitA(ReplaceStr(String(aTilesS[I]), ' ', ''), ',');
+      aArrElem := StrSplit(ReplaceStr(String(aTilesS[I]), ' ', ''), ',');
       aParserError := false;
 
       //checking params count, if count is invalid we cannot proceed
