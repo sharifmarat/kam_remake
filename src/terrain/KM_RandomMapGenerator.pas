@@ -1517,7 +1517,8 @@ begin
   OBST_Probability[otEIron] := 1;
 
   // Make obstacles
-  ObstacleSeeds := RNDPointsInGrid(RMGSettings.Obstacle.Density*10, 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
+  Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 10000;
+  ObstacleSeeds := RNDPointsInGrid(Round(Factor), 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) )); 
   FillObstacle := TKMFillBiome.Create( KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), aVoronoi, A);
   try
     for I := Low(ObstacleSeeds) to High(ObstacleSeeds) do
