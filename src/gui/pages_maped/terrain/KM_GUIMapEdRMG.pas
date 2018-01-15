@@ -144,16 +144,16 @@ begin
   // Ratio of biomes
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'EGold', fnt_Metal, taLeft);
     TBar_NonWalk_EGold := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
-    TBar_NonWalk_EGold.Position := 0;//8;
+    TBar_NonWalk_EGold.Position := 8;
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'EIron', fnt_Metal, taLeft);
     TBar_NonWalk_EIron := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
-    TBar_NonWalk_EIron.Position := 0;//7;
+    TBar_NonWalk_EIron.Position := 7;
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'Swamp', fnt_Metal, taLeft);
     TBar_NonWalk_Swamp := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
-    TBar_NonWalk_Swamp.Position := 0;//1;
+    TBar_NonWalk_Swamp.Position := 1;
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'Wetland', fnt_Metal, taLeft);
     TBar_NonWalk_Wetland := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
-    TBar_NonWalk_Wetland.Position := 0;//5;
+    TBar_NonWalk_Wetland.Position := 5;
   TKMLabel.Create(Panel_RMG, Column_2_X+OFFSET_1, NextLine(Column_2_Y), 'Water', fnt_Metal, taLeft);
     TBar_NonWalk_Water := TKMTrackBar.Create(Panel_RMG, Column_2_X, NextLine(Column_2_Y), 120, 0, 10);
     TBar_NonWalk_Water.Position := 6;
