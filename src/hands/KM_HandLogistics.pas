@@ -937,8 +937,9 @@ begin
 
     if not Result then
     begin
+      aBidBasicValue := NOT_REACHABLE_DEST_VALUE;
       {$IFDEF WDC}
-      TryAddToCache(BidKey, NOT_REACHABLE_DEST_VALUE);
+      TryAddToCache(BidKey, aBidBasicValue);
       {$ENDIF}
       Exit; //Add to cache NOT_REACHABLE_DEST_VALUE value
     end;
