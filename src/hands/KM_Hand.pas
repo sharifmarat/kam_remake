@@ -276,7 +276,7 @@ begin
   fStats        := TKMHandStats.Create;
   fRoadsList    := TKMPointList.Create;
   fHouses       := TKMHousesCollection.Create;
-  fDeliveries   := TKMHandLogistics.Create;
+  fDeliveries   := TKMHandLogistics.Create(fHandIndex);
   fBuildList    := TKMBuildList.Create;
   fArmyEval     := TKMArmyEvaluation.Create(aHandIndex);
   fUnitGroups   := TKMUnitGroups.Create;
