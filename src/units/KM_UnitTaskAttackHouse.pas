@@ -114,6 +114,7 @@ begin
              ut_Bowman:     Delay := BOWMEN_AIMING_DELAY_MIN + KaMRandom(BOWMEN_AIMING_DELAY_ADD);
              ut_Arbaletman: Delay := CROSSBOWMEN_AIMING_DELAY_MIN + KaMRandom(CROSSBOWMEN_AIMING_DELAY_ADD);
              ut_SLingShot:  Delay := SLINGSHOT_AIMING_DELAY_MIN + KaMRandom(SLINGSHOT_AIMING_DELAY_ADD);
+             else raise Exception.Create('Unknown shooter');
            end;
 
            //Prevent rate of fire exploit by making archers pause for longer if they shot recently

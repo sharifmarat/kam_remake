@@ -915,8 +915,6 @@ end;
 
 {$IFDEF WDC}
 function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
-var StrArray: TStringDynArray;
-    I: Integer;
 begin
   Result := TAnsiStringArray(SplitString(aStr, aDelimiters));
 end;

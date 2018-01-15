@@ -5873,6 +5873,7 @@ var
   OldIndex, NewIndex: Integer;
   PageScrolling: Boolean;
 begin
+  Result := False;
   if PassAllKeys then Exit;
   
   Result := (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END, VK_PRIOR, VK_NEXT]) and not HideSelection;

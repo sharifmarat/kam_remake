@@ -831,7 +831,8 @@ end;
 //Try to Calc route cost
 //If destination is not reachable, then return False
 function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aPassSet: TKMTerrainPassabilitySet; var aRoutCost: Single): Boolean;
-var Distance: Single;
+var
+  Distance: Single;
 begin
   {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
@@ -1008,7 +1009,6 @@ var
   iD, iO, BestD, OldD: Integer;
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
-  BestBidFound: Boolean;
 begin
   iO := fQueue[aDeliveryID].OfferID;
   OldD := fQueue[aDeliveryID].DemandID;
@@ -1031,12 +1031,11 @@ begin
     Exit;
   end;
 
-  BestBidFound := False;
   //By default we keep the old demand, so that's our starting bid
   BestD := OldD;
   if not fDemand[OldD].IsDeleted then
   begin
-    BestBidFound := TryCalculateBid(iO, OldD, BestBid, aSerf);
+    TryCalculateBid(iO, OldD, BestBid, aSerf);
     BestImportance := fDemand[OldD].Importance;
   end
   else
