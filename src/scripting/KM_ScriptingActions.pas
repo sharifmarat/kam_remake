@@ -2424,6 +2424,7 @@ var I: Integer;
     aParsedValue: Integer;
     aParserError: Boolean;
 begin
+{$WARN SUSPICIOUS_TYPECAST OFF}
   try
     Result := True;
     SetLength(Errors, 16);
@@ -2532,6 +2533,7 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+{$WARN SUSPICIOUS_TYPECAST ON}
 end;
 
 

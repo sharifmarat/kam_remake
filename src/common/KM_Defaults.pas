@@ -43,9 +43,9 @@ const
   GAME_VERSION_PREFIX   = ''; //Game version string displayed in menu corner
 var
   //Game revision is set in initialisation block
-  GAME_REVISION: String; //Should be updated for every release (each time save format is changed)
-  GAME_VERSION: String;
-  NET_PROTOCOL_REVISON: String; //Clients of this version may connect to the dedicated server
+  GAME_REVISION: AnsiString; //Should be updated for every release (each time save format is changed)
+  GAME_VERSION: AnsiString;
+  NET_PROTOCOL_REVISON: AnsiString; //Clients of this version may connect to the dedicated server
 const
   SETTINGS_FILE         = 'KaM_Remake_Settings.ini';
   FONTS_FOLDER          = 'data' + PathDelim + 'gfx' + PathDelim + 'fonts' + PathDelim;
@@ -813,7 +813,7 @@ implementation
 
 initialization
 begin
-  GAME_REVISION := 'r' + IntToStr(GAME_REVISION_NUM);
+  GAME_REVISION := AnsiString('r' + IntToStr(GAME_REVISION_NUM));
   GAME_VERSION := GAME_VERSION_PREFIX + GAME_REVISION + GAME_VERSION_POSTFIX;
   NET_PROTOCOL_REVISON := GAME_REVISION;     //Clients of this version may connect to the dedicated server
 end;
