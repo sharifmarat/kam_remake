@@ -1349,9 +1349,9 @@ begin
     end;
 
     // Return bottom values back
-    for I := High(PointsArr) downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
-      for K := Low(PointsArr[I]) to High(PointsArr[I]) do
-        CountArr[I,K] := -CountArr[I,K];
+    //for I := High(PointsArr) downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
+    //  for K := Low(PointsArr[I]) to High(PointsArr[I]) do
+    //    CountArr[I,K] := -CountArr[I,K];
   end;
   //}
 
