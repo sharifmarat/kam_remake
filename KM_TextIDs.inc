@@ -1072,6 +1072,7 @@ TX_MAPED_MAP_RESIZE_NEW_MAP_SIZE = 1111; //New map size:
 TX_MAPED_MAP_RESIZE_TITLE = 1112; //Resize Map
 
 TX_MAPED_PAINT_BUCKET_CH_OWNER = 1075; //Change owner for object
+TX_MAPED_HOUSE_FLAG_FOR_PLAYER_HINT = 1113; //House owner: %s
 
 TX_MAPED_MAP_QUICK_PLAY = 1076; //Quick Play
 TX_MAPED_MAP_QUICK_PLAY_HINT = 1077; //Start singleplayer game on current map
