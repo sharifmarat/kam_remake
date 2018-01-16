@@ -136,7 +136,7 @@ type
     procedure RemField(const Loc: TKMPoint); overload;
     procedure RemField(const Loc: TKMPoint; aDoUpdatePassNWalk: Boolean; out aUpdatePassRect: TKMRect; 
                        out aDiagObjectChanged: Boolean; aDoUpdateFences: Boolean); overload;
-    procedure ResetLand(aPlayer: TKMHandIndex);
+    procedure ClearPlayerLand(aPlayer: TKMHandIndex);
 
     procedure IncDigState(Loc: TKMPoint);
     procedure ResetDigState(Loc: TKMPoint);
@@ -1618,7 +1618,7 @@ begin
 end;
 
 
-procedure TKMTerrain.ResetLand(aPlayer: TKMHandIndex);
+procedure TKMTerrain.ClearPlayerLand(aPlayer: TKMHandIndex);
 var
   I, K: Integer;
   KMPoint: TKMPoint;

@@ -354,8 +354,6 @@ end;
 
 
 procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandIndex);
-var
-  I: Integer;
 begin
   if gHands = nil then Exit;
 
@@ -369,7 +367,7 @@ begin
 
   gHands.Hands[aIndex].Houses.RemoveAllHouses;
 
-  gTerrain.ResetLand(aIndex);
+  gTerrain.ClearPlayerLand(aIndex);
 
   gHands.Hands[aIndex].AI.Goals.Clear;
 

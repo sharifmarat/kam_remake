@@ -29,7 +29,7 @@ type
     function Visible: Boolean;
     procedure Hide;
 
-    procedure ChangePlayer;
+    procedure UpdatePlayer;
   end;
 
 
@@ -116,11 +116,8 @@ begin
   begin
     Label_PlayerDeleteConfirmTitle.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE_TITLE], [gMySpectator.HandIndex + 1]);
     PopUp_Confirm_PlayerDelete.Show;
-
-  end else begin
+  end else
     PopUp_Confirm_PlayerDelete.Hide;
-
-  end;
 end;
 
 
@@ -179,7 +176,7 @@ end;
 procedure TKMMapEdMissionPlayers.Mission_PlayerIdUpdate;
 var I : integer;
 begin
-  ChangePlayer;
+  UpdatePlayer;
 
   for I := 0 to MAX_HANDS - 1 do
     if I < gHands.Count then
@@ -190,7 +187,7 @@ begin
 end;
 
 
-procedure TKMMapEdMissionPlayers.ChangePlayer;
+procedure TKMMapEdMissionPlayers.UpdatePlayer;
 begin
   Button_PlayerDelete.Enabled := gHands[gMySpectator.HandIndex].HasAssets;
   Button_PlayerDelete.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE], [gMySpectator.HandIndex + 1]);
