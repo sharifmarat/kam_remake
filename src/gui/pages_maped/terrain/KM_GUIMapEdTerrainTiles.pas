@@ -93,7 +93,7 @@ begin
   TilesRotate.OnClick := TilesChange;
 
   TKMLabel.Create(Panel_Tiles, 89, 30, 'ID:', fnt_Metal, taLeft); //Todo translate
-  NumEdit_SetTileNumber := TKMNumericEdit.Create(Panel_Tiles, 115, 29, 0, MAX_TILE_TO_SHOW);
+  NumEdit_SetTileNumber := TKMNumericEdit.Create(Panel_Tiles, 115, 29, 0, MAX_TILE_TO_SHOW - 1);
   NumEdit_SetTileNumber.Hint := 'Enter tile ID to select it'; // Todo translate
   NumEdit_SetTileNumber.OnChange := TilesChange;
   NumEdit_SetTileNumber.AutoFocusable := False;
