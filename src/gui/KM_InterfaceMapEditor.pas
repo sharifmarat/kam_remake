@@ -88,6 +88,7 @@ type
     Button_PlayerSelect: array [0..MAX_HANDS-1] of TKMFlatButtonShape; //Animals are common for all
     Button_ChangeOwner: TKMButtonFlat;
     Button_UniversalEraser: TKMButtonFlat;
+
     Label_Stat,Label_Hint: TKMLabel;
     Bevel_HintBG: TKMBevel;
 
@@ -163,18 +164,18 @@ begin
   TKMLabel.Create(Panel_Main, TB_PAD, 190, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS], fnt_Outline, taLeft);
   for I := 0 to MAX_HANDS - 1 do
   begin
-    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, 6 + (I mod 6)*23, 208 + 23*(I div 6), 21, 21, IntToStr(I+1), fnt_Grey, $FF0000FF);
+    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, TB_PAD + (I mod 6)*24, 208 + 24*(I div 6), 21, 21, IntToStr(I+1), fnt_Grey, $FF0000FF);
     Button_PlayerSelect[I].Tag     := I;
     Button_PlayerSelect[I].OnClick := Player_ActiveClick;
   end;
   Button_PlayerSelect[0].Down := True; //First player selected by default
 
-  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, 151, 203, 26, 26, 662);
+  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 203, 26, 26, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
   Button_ChangeOwner.Hint := gResTexts[TX_MAPED_PAINT_BUCKET_CH_OWNER];
 
-  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, 151, 231, 26, 26, 340);
+  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 231, 26, 26, 340);
   Button_UniversalEraser.Down := False;
   Button_UniversalEraser.OnClick := UniversalEraser_Click;
   Button_UniversalEraser.Hint := GetHintWHotKey(TX_MAPED_UNIVERSAL_ERASER, SC_MAPEDIT_UNIV_ERASOR);
@@ -536,6 +537,7 @@ var
   I: Integer;
 begin
   gMySpectator.HandIndex := aIndex;
+  fGuiMission.GuiMissionPlayers.ChangePlayer;
 
   for I := 0 to MAX_HANDS - 1 do
     Button_PlayerSelect[I].Down := (I = gMySpectator.HandIndex);

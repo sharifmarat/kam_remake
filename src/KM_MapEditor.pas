@@ -64,6 +64,8 @@ type
     procedure Update;
     procedure UpdateStateIdle;
     procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+
+    procedure DeletePlayer(aIndex: TKMHandIndex);
   end;
 
 
@@ -348,6 +350,33 @@ begin
     gTerrain.RemRoad(P);
   if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
     gTerrain.RemField(P);
+end;
+
+
+procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandIndex);
+var
+  I: Integer;
+begin
+  if gHands = nil then Exit;
+
+  if gHands.Count = 0 then Exit;
+
+  Revealers[aIndex].Clear;
+
+  gHands.Hands[aIndex].Units.RemoveAllUnits;
+
+  gHands.Hands[aIndex].UnitGroups.RemAllGroups;
+
+  gHands.Hands[aIndex].Houses.RemoveAllHouses;
+
+  gTerrain.ResetLand(aIndex);
+
+  gHands.Hands[aIndex].AI.Goals.Clear;
+
+  gHands.Hands[aIndex].AI.General.Attacks.Clear;
+
+  gHands.Hands[aIndex].AI.General.DefencePositions.Clear;
+
 end;
 
 
