@@ -691,7 +691,8 @@ begin
   //      KMSwapInt(Tag[I], Tag[K]);
   //      KMSwapInt(Tag2[I], Tag2[K]);
   //    end;
-  QuickSort(0, fCount - 1);
+  if (fCount > 1) then
+    QuickSort(0, fCount - 1);
 end;
 
 
