@@ -1,4 +1,4 @@
-﻿{
+{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -83,13 +83,13 @@ type
   // These functions secure smooth transitions
     procedure CellularAutomaton(var A: TKMByte2Array);
     function TileTemplate(var A: TKMByte2Array): TKMByte2Array;
-//    function TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
-//    function TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+    //function TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+    //function TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
   // Generators of right rotated tiles and objects
     //procedure GenerateTilesOLD(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
     procedure GenerateBasicTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
-    procedure GenerateHeight(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
+    procedure GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
     procedure GenerateObjects(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
   public
     RMGSettings: TKMRMGSettings;
@@ -252,13 +252,21 @@ end;
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
-  Y, X, K: Integer;
+  aX,aY,Y, X, K, X0,X1,X2,Y0,Y1,Y2,i: Integer;
+  Pmin,Pmax: TKMPoint;
+  S1,S2,S3,S4: TInteger2Array;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
+  TDAP: TKMPoint2Array;
+  P: TKMPointArray;
+  Points: TKMPoint2Array;
+  Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
 
   //Queue: TKMQuickFlood;
+  FillBiome: TKMFillBiome;
 
+  LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
 
 
@@ -396,7 +404,7 @@ begin
 
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.Height.Active then
-    GenerateHeight(TilesPartsArr, A, TileTemplateArr);
+    GenerateHeight(Locs, TilesPartsArr, A, TileTemplateArr);
 
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.Objects.Active then
@@ -1153,77 +1161,87 @@ const
   RES_TILES_AMOUNT: array[0..4] of Single = (0.25, 0.25, 0.066, 0.25, 0.25);
   RES_MINES_CNT: array[0..4] of Single = (0.005, 0.01, 1.0, 1.0, 1.0);
 
-// Find best place for resources (scan area around and find empy space)
-function FindBestResLoc(const aRADIUS: Single; aMin,aMax,aCenter: TKMPoint; var aCountArr: TInteger2Array; var aResLoc: TKMPoint): Boolean;
-const
-  RESRAD = 2;
-  BREAK_LIMIT = 20;
-var
-  I,X,Y, BestResCnt, ResCnt: Integer;
-  ResPoint: TKMPoint;
-begin
-  aResLoc := KMPOINT_ZERO;
-  BestResCnt := 0;
-  for I := 0 to 10 do
+  // Find best place for resources (scan area around and find empy space)
+  function FindBestResLoc(const aIgnoreNegativeValues: Boolean; const aRADIUS: Single; aMin,aMax,aCenter: TKMPoint; var aCountArr: TInteger2Array; var aResLoc: TKMPoint): Boolean;
+  const
+    RESRAD = 2;
+    BREAK_LIMIT = 20;
+    INC_RADIUS = 1.4;
+    MAX_RADIUS = 30;
+  var
+    I,X,Y, BestResCnt, ResCnt: Integer;
+    ResPoint: TKMPoint;
   begin
-    ResCnt := 0;
-    ResPoint := RNDPointInCircle(aMin,aMax,aCenter, aRADIUS);
-    if (aCountArr[ResPoint.Y,ResPoint.X] > 0) then
-      for Y := Max(Low(aCountArr), ResPoint.Y-RESRAD) to Min(High(aCountArr), ResPoint.Y+RESRAD) do
+    Result := False;
+    if (aRadius > MAX_RADIUS) then
+      Exit;
+    aResLoc := KMPOINT_ZERO;
+    BestResCnt := 0;
+    for I := 0 to 10 do
+    begin
+      ResCnt := 0;
+      ResPoint := RNDPointInCircle(aMin,aMax,aCenter, aRADIUS);
+      if (aIgnoreNegativeValues AND (aCountArr[ResPoint.Y,ResPoint.X] > 0))
+        OR (not aIgnoreNegativeValues AND (aCountArr[ResPoint.Y,ResPoint.X] <> 0)) then
+        for Y := Max(Low(aCountArr), ResPoint.Y-RESRAD) to Min(High(aCountArr), ResPoint.Y+RESRAD) do
         for X := Max(Low(aCountArr[0]), ResPoint.X-RESRAD) to Min(High(aCountArr[0]), ResPoint.X+RESRAD) do
-          if (aCountArr[Y,X] > 0) then
+          if (aIgnoreNegativeValues AND (aCountArr[Y,X] > 0))
+            OR (not aIgnoreNegativeValues AND (aCountArr[Y,X] <> 0)) then
             ResCnt := ResCnt + 1;
-    if (BestResCnt < ResCnt) then
-    begin
-      BestResCnt := ResCnt;
-      aResLoc := ResPoint;
+      if (BestResCnt < ResCnt) then
+      begin
+        BestResCnt := ResCnt;
+        aResLoc := ResPoint;
+      end;
+      if (BestResCnt >= BREAK_LIMIT) then
+        break;
     end;
-    if (BestResCnt >= BREAK_LIMIT) then
-      break;
+    if KMSamePoint(aResLoc, KMPOINT_ZERO) then
+      Result := FindBestResLoc(aIgnoreNegativeValues, aRADIUS*INC_RADIUS, aMin,aMax,aCenter, aCountArr, aResLoc)
+    else
+      Result := True;
   end;
-  Result := not KMSamePoint(aResLoc, KMPOINT_ZERO);
-end;
 
-// Determine size of mountain to be sure that there will be possible to place specific number of mines
-procedure SetSizeOfMountain(aInitPoint: TKMPoint; var aReqSize, aNewSize: Integer; var aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array; var aPointArr: TKMPointArray);
-var
-  Left, Right: Boolean;
-  I,X,Y, cnt, elements: Integer;
-begin
-  SetLength(aPointArr, Ceil(aReqSize / (VORONOI_STEP*1.0))+10);
-  Left := True;
-  Right := True;
-  X := aInitPoint.X;
-  Y := aInitPoint.Y;
-  cnt := 1;
-  elements := 1;
-  aPointArr[0] := KMPoint(X,Y);
-  for I := 1 to aReqSize do
+  // Determine size of mountain to be sure that there will be possible to place specific number of mines
+  procedure SetSizeOfMountain(aInitPoint: TKMPoint; var aReqSize, aNewSize: Integer; var aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array; var aPointArr: TKMPointArray);
+  var
+    Left, Right: Boolean;
+    I,X,Y, cnt, elements: Integer;
   begin
-    if (cnt >= aReqSize) then
-          break;
-    if Right AND (X+I <= High(aCountArr[Y])) AND (aCountArr[Y,X+I] > 0) then
+    SetLength(aPointArr, Ceil(aReqSize / (VORONOI_STEP*1.0))+10);
+    Left := True;
+    Right := True;
+    X := aInitPoint.X;
+    Y := aInitPoint.Y;
+    cnt := 1;
+    elements := 1;
+    aPointArr[0] := KMPoint(X,Y);
+    for I := 1 to aReqSize do
     begin
-      aPointArr[elements] := KMPoint(X+I,Y);
-      cnt := cnt - aPointsArr[Y,X+I-1].X + aPointsArr[Y,X+I].X;
-      elements := elements + 1;
-    end
-    else
-      Right := False;
-    if (cnt >= aReqSize) then
-      break;
-    if Left AND (X-I >= Low(aCountArr[Y])) AND (aCountArr[Y,X-I] > 0) then
-    begin
-      aPointArr[elements] := KMPoint(X-I,Y);
-      cnt := cnt + aPointsArr[Y,X-I+1].X - aPointsArr[Y,X-I].X;
-      elements := elements + 1;
-    end
-    else
-      Left := False;
+      if (cnt >= aReqSize) then
+            break;
+      if Right AND (X+I <= High(aCountArr[Y])) AND (aCountArr[Y,X+I] > 0) then
+      begin
+        aPointArr[elements] := KMPoint(X+I,Y);
+        cnt := cnt - aPointsArr[Y,X+I-1].X + aPointsArr[Y,X+I].X;
+        elements := elements + 1;
+      end
+      else
+        Right := False;
+      if (cnt >= aReqSize) then
+        break;
+      if Left AND (X-I >= Low(aCountArr[Y])) AND (aCountArr[Y,X-I] > 0) then
+      begin
+        aPointArr[elements] := KMPoint(X-I,Y);
+        cnt := cnt + aPointsArr[Y,X-I+1].X - aPointsArr[Y,X-I].X;
+        elements := elements + 1;
+      end
+      else
+        Left := False;
+    end;
+    aNewSize := Max(0, aReqSize - cnt);
+    SetLength(aPointArr, elements);
   end;
-  aNewSize := Max(0, aReqSize - cnt);
-  SetLength(aPointArr, elements);
-end;
 
 
 var
@@ -1313,7 +1331,7 @@ begin
           begin
             overflow := overflow + 1;
             // Try find unused shape
-            if not FindBestResLoc(8.0, TP_S,TP_E,Locs[Loc], CountArr, ResLoc) then
+            if not FindBestResLoc((RESOURCE <> Byte(btCoal)), 8.0, TP_S,TP_E,Locs[Loc], CountArr, ResLoc) then
               break;
             // Check if there is enought points to create mountains with specific size
             SetSizeOfMountain(ResLoc, size_Mountain, new_Size, CountArr, PointsArr, PointArr);
@@ -1365,7 +1383,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
 // Connect points with zero chance to create obstacles = secure that player in loc X can walk to player with loc Y
   function LinearConnection(Probability: Single; FinP,StartP: TKMPoint; var P: TSingle2Array): Boolean;
   var
-//    Owerflow: Integer;
+    Owerflow: Integer;
     Vector, ActP: TKMPoint;
   begin
     Result := False;
@@ -1374,10 +1392,10 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
     Vector.Y := Byte(FinP.Y > StartP.Y) - Byte(FinP.Y < StartP.Y);
     //  Make route to final point or another route
     ActP := StartP;
-//    Owerflow := 0;
-    while ( (not Result) AND ((FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y)) ) do
+    Owerflow := 0;
+    while ( (Owerflow < 500) AND (not Result) AND ((FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y)) ) do
     begin
-//      Owerflow := Owerflow + 1;
+      Owerflow := Owerflow + 1;
       // Actualize current point
       if (FinP.X <> ActP.X) then ActP.X := ActP.X + Vector.X;
       if (FinP.Y <> ActP.Y) then ActP.Y := ActP.Y + Vector.Y;
@@ -1510,7 +1528,7 @@ begin
 
   // Make obstacles
   Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 10000;
-  ObstacleSeeds := RNDPointsInGrid(Round(Factor), 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) )); 
+  ObstacleSeeds := RNDPointsInGrid(Round(Factor), 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
   FillObstacle := TKMFillBiome.Create( KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), aVoronoi, A);
   try
     for I := Low(ObstacleSeeds) to High(ObstacleSeeds) do
@@ -2709,7 +2727,7 @@ end;
 // TilesPartsArr = tiles composition array
 // A = array of biomes
 // TileTempl = array of biome-decomposition
-procedure TKMRandomMapGenerator.GenerateHeight(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
+procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
 const
   HeightMix: array [0..23] of Byte = (
     //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
@@ -2839,6 +2857,164 @@ begin
     end;
   end;
 end;
+
+
+//procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
+//const
+//  HeightMix: array [0..23] of Byte = (
+//    //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
+//    10,10,5,5,3,5,10,1,10,10,20,20,0,5,10,10,15,20,10,20,20,20,20,0
+//  );
+//  //TBiomeType = (
+//  //10,15,0,0,0,10,5,0,15,15,20,20,10,5,btGrassSand1,btGrassSand2,btGrassSand3,btSand,btStone,btGold,btEgold,btIron,btEIron,btDark);
+//
+//  HeightVariance: array [0..23] of Byte = (
+//    10,10,5,5,3,5,10,10,10,10,20,20,0,5,10,10,15,20,10,20,20,0,0,0
+//  );
+//  HNST: array[0..23,0..23] of Byte = ( // Hide Non-Smooth Transition (height fix)
+//    (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
+//    (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
+//    (0,0,0,2,0,5,2,3,2,5,5,5,5,2,1,2,3,4,0,0,0,0,0,0),
+//    (2,2,2,0,3,5,0,1,2,5,5,5,5,3,3,3,4,5,0,0,0,0,0,0),
+//    (3,3,0,3,0,5,3,3,3,3,5,5,5,3,3,3,3,3,0,0,0,0,0,0),
+//    (5,5,5,5,5,0,2,0,0,5,5,5,5,4,4,4,4,4,0,0,0,0,0,0),
+//    (2,2,2,0,3,2,0,0,0,5,5,5,5,5,5,5,5,3,0,0,0,0,0,0),
+//    (5,5,3,1,3,0,0,0,5,5,5,5,5,4,4,4,4,3,0,0,0,0,0,0),
+//    (1,1,2,2,3,0,0,5,0,5,5,5,5,5,5,5,5,5,0,0,0,0,0,0),
+//    (5,5,5,5,3,5,5,5,5,0,5,5,5,5,5,5,5,5,0,0,0,0,0,0),
+//    (5,5,5,5,5,5,5,5,5,5,0,5,5,5,5,5,5,5,0,0,0,0,0,0),
+//    (5,5,5,5,5,5,5,5,5,5,5,0,5,5,5,5,5,5,0,0,0,0,0,0),
+//    (5,5,5,5,5,5,5,5,5,5,5,5,0,3,3,3,3,3,0,0,0,0,0,0),
+//    (3,3,2,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
+//    (1,1,1,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
+//    (4,4,2,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
+//    (3,3,3,4,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
+//    (4,4,4,5,3,4,3,3,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
+//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+//  );
+//var
+//  X,Y,I,MaxCnt,X_0,Y_0,X_1,Y_1,X_2,Y_2,X0,X1,X2,Y0,Y1,Y2,sum: Integer;
+//  Factor,Probability, ProbabilityReducer: Single;
+//  P: TSingle2Array;
+//  H1,H2, H3,H4: TInteger2Array;
+//  FillHeight: TKMFillBiome;
+//begin
+//
+//// Initialization
+//  SetLength(P, Length(A), Length(A[Low(A)]));
+//  for Y := Low(P) to High(P) do
+//    for X := Low(P[Y]) to High(P[Y]) do
+//      P[Y,X] := 1;
+//
+//  // Create protected radius = array with smaller chance to spawn obstacle near aLocs
+//  if RMGSettings.Locs.Resource.Active then
+//  begin
+//    ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.02;
+//    MaxCnt := Round(1 / ProbabilityReducer);
+//    for I := Low(aLocs) to High(aLocs) do
+//      for Y := Max(  Low(P), aLocs[I].Y - MaxCnt  ) to Min(  High(P), aLocs[I].Y + MaxCnt  ) do
+//        for X := Max(  Low(P[Y]), aLocs[I].X - MaxCnt  ) to Min(  High(P[Y]), aLocs[I].X + MaxCnt  ) do
+//        begin
+//          Probability := KMLengthDiag(X,Y,aLocs[I]) * ProbabilityReducer;
+//          if (P[Y,X] > Probability) then
+//            P[Y,X] := Probability;
+//        end;
+//  end;
+//
+//  H1 := LinearInterpolation(7,20);
+//  H2 := LinearInterpolation(5,40);
+//  H3 := LinearInterpolation(8,80);
+//  H4 := LinearInterpolation(6,80);
+//	for Y1 := 1 to gTerrain.MapY-1 do
+//    for X1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      //TilesPartsArr.Height[Y1,X1] := Max(0,   H1[Y1,X1] + H2[Y1,X1] + Round((H3[Y1,X1] - H4[Y1,X1]) * P[Y1,X1])  + fRNG.RandomI(HeightVariance[ A[Y1,X1] ])   );
+//      TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + HeightMix[ A[Y1,X1] ]*2 + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
+//    end;
+//
+//  //constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+//  //procedure QuickFlood(aX,aY,aSearch,aNewSearch,aFill: SmallInt); reintroduce;
+//  //FillHeight := TKMFillBiome.Create();
+//  //try
+//
+//  //finally
+//  //  Fillheight.Free;
+//  //end;
+//
+//  for Y_1 := 1 to gTerrain.MapY-1 do
+//  begin
+//    Y2 := Y_1 shl 1;
+//    Y1 := Y2 - 1;
+//    Y_0 := Max(0, Y_1 - 2);
+//    Y_2 := Min(gTerrain.MapY, Y_1 + 1);
+//    for X_1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      X2 := X_1 shl 1;
+//      X1 := X2 - 1;
+//      X_0 := Max(0, X_1 - 2);
+//      X_2 := Min(gTerrain.MapX, X_1 + 1);
+//
+//      // Mountains
+//      if (A[Y_1,X_1] >= Byte(btStone)) then
+//      begin
+//        if A[Y_1,X_1] = Byte(btStone) then
+//          sum := + Byte(A[Y_0,X_0] = A[Y_1,X_1])
+//                 + Byte(A[Y_0,X_1] = A[Y_1,X_1])
+//                 + Byte(A[Y_0,X_2] = A[Y_1,X_1])
+//                 + Byte(A[Y_1,X_2] = A[Y_1,X_1])
+//                 + Byte(A[Y_1,X_0] = A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_0] = A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_1] = A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_2] = A[Y_1,X_1])
+//        else
+//          sum := + Byte(A[Y_0,X_0] >= A[Y_1,X_1])
+//                 + Byte(A[Y_0,X_1] >= A[Y_1,X_1])
+//                 + Byte(A[Y_0,X_2] >= A[Y_1,X_1])
+//                 + Byte(A[Y_1,X_2] >= A[Y_1,X_1])
+//                 + Byte(A[Y_1,X_0] >= A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_0] >= A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_1] >= A[Y_1,X_1])
+//                 + Byte(A[Y_2,X_2] >= A[Y_1,X_1]);
+//        if (sum = 8) then
+//          TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(70)+30;
+//      end;
+//      //else if (TilesPartsArr.Obj[Y_1,X_1] = 61) AND (  (A[Y_1,X_1] = Byte(btGroundSnow)) OR (A[Y_1,X_1] = Byte(btSnow1)) OR (A[Y_1,X_1] = Byte(btSnow2))  ) then
+//        //TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(30)+60;
+//
+//    // Set lower height to non-smooth transitions (hide it)
+//      if RMGSettings.Height.HideNonSmoothTransition then
+//      begin
+//        sum := + HNST[ TileTempl[Y1,X1] ][ TileTempl[Y2,X1] ]
+//               + HNST[ TileTempl[Y1,X1] ][ TileTempl[Y1,X2] ]
+//               + HNST[ TileTempl[Y1,X2] ][ TileTempl[Y2,X2] ]
+//               + HNST[ TileTempl[Y2,X1] ][ TileTempl[Y2,X2] ];
+//        if (sum > 0) then
+//          TilesPartsArr.Height[Y_1,X_1] := Max(0, H1[Y_1,X_1] + H2[Y_1,X_1] - sum);
+//      end;
+//    // Change height of water
+//    {
+//      if (A[Y_1,X_1] = Byte(btWater)) then
+//      begin
+//        sum :=   Byte(A[Y_2,X_1] = Byte(btWater))
+//               + Byte(A[Y_0,X_1] = Byte(btWater))
+//               + Byte(A[Y_1,X_2] = Byte(btWater))
+//               + Byte(A[Y_1,X_0] = Byte(btWater))
+//               + Byte(A[Y_2,X_2] = Byte(btWater))
+//               + Byte(A[Y_2,X_0] = Byte(btWater))
+//               + Byte(A[Y_0,X_2] = Byte(btWater))
+//               + Byte(A[Y_0,X_0] = Byte(btWater));
+//        TilesPartsArr.Height[Y_1,X_1] := Max(0,TilesPartsArr.Height[Y_1,X_1] - (sum * 2));
+//      end;
+//      }
+//
+//    end;
+//  end;
+//end;
 
 
 
@@ -3367,8 +3543,8 @@ end;
 //
 //	for Y1 := 1 to gTerrain.MapY-1 do
 //  begin
-////    Y0 := Y1 - 1;
-////    Y2 := Y1 + 1;
+//    Y0 := Y1 - 1;
+//    Y2 := Y1 + 1;
 //    for X1 := 1 to gTerrain.MapX-1 do
 //    begin
 //      {
@@ -3509,12 +3685,12 @@ end;
 //	for Y1 := 1 to gTerrain.MapY-1 do
 //  begin
 //    Y0 := Y1 - 1;
-////    Y2 := Y1 + 1;
+//    Y2 := Y1 + 1;
 //    Y := Y1 shl 1;
 //		for X1 := 1 to gTerrain.MapX-1 do
 //    begin
 //      X0 := X1 - 1;
-////      X2 := X1 + 1;
+//      X2 := X1 + 1;
 //      X := X1 shl 1;
 //
 //    // Detect 8 surrounding tiles and store ideal transition of each tile into BArr
