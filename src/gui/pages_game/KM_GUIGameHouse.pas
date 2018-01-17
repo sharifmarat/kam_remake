@@ -938,7 +938,10 @@ procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShif
   end;
 
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) then Exit;
+  if (gMySpectator.Selected = nil)
+    or not (gMySpectator.Selected is TKMHouse)
+    or not gMySpectator.IsSelectedMyObj then
+    Exit;
 
   case Button_HouseDeliveryMode.TexID of
     37: // dm_Delivery
