@@ -2945,6 +2945,7 @@ begin
       if not fGuiGameBuild.Visible then
         SwitchPage(Button_Main[tbBuild]);
       fGuiGameBuild.ErasePlan;
+      gRes.Cursors.Cursor := kmc_Default; //Reset cursor, as it could be kmc_Info, f.e.
     end;
   end;
 
