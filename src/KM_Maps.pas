@@ -38,9 +38,9 @@ type
     fSizeText: string;
     procedure ResetInfo;
     procedure LoadTXTInfo;
-    procedure LoadFromStreamObj(var aStreamObj: TObject; const aPath: UnicodeString);
+    procedure LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure LoadFromFile(const aPath: UnicodeString);
-    procedure SaveToStreamObj(var aStreamObj: TObject; const aPath: UnicodeString);
+    procedure SaveToStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure SaveToFile(const aPath: UnicodeString);
     function GetSizeText: string;
     function DetermineReadmeFilePath: String;
@@ -492,7 +492,7 @@ begin
 end;
 
 
-procedure TKMapInfo.LoadFromStreamObj(var aStreamObj: TObject; const aPath: UnicodeString);
+procedure TKMapInfo.LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
 var
   S: TKMemoryStream;
 begin
@@ -534,7 +534,7 @@ begin
   try
     //Try to load map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
-    TryExecuteMethod(S, aPath, 'LoadFromStreamObj', LoadFromStreamObj);
+    TryExecuteMethod(TObject(S), aPath, 'LoadFromStreamObj', LoadFromStreamObj);
   finally
     //Other properties are not saved, they are fast to reload
     S.Free;
@@ -542,7 +542,7 @@ begin
 end;
 
 
-procedure TKMapInfo.SaveToStreamObj(var aStreamObj: TObject; const aPath: UnicodeString);
+procedure TKMapInfo.SaveToStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
 var
   S: TKMemoryStream;
 begin
@@ -580,7 +580,7 @@ begin
 
     //Try to save map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
-    TryExecuteMethod(S, aPath, 'SaveToStreamObj', SaveToStreamObj);
+    TryExecuteMethod(TObject(S), aPath, 'SaveToStreamObj', SaveToStreamObj);
   finally
     //Other properties from text file are not saved, they are fast to reload
     S.Free;

@@ -27,7 +27,7 @@ const
 
   function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
 
-  function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: UnicodeString;
+  function TryExecuteMethod(var aObjParam: TObject; aStrParam, aMethodName: UnicodeString;
                             aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 
 
@@ -124,7 +124,7 @@ begin
 end;
 
 
-function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: UnicodeString;
+function TryExecuteMethod(var aObjParam: TObject; aStrParam, aMethodName: UnicodeString;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;
