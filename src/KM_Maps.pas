@@ -527,6 +527,7 @@ end;
 procedure TKMapInfo.LoadFromFile(const aPath: UnicodeString);
 var
   S: TKMemoryStream;
+  ErrorStr: UnicodeString;
 begin
   if not FileExists(aPath) then Exit;
 
@@ -534,7 +535,8 @@ begin
   try
     //Try to load map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
-    TryExecuteMethod(TObject(S), aPath, 'LoadFromStreamObj', LoadFromStreamObj);
+    if not TryExecuteMethod(TObject(S), aPath, 'LoadFromStreamObj', ErrorStr, LoadFromStreamObj) then
+      gLog.AddTime(ErrorStr);
   finally
     //Other properties are not saved, they are fast to reload
     S.Free;
@@ -557,6 +559,7 @@ end;
 procedure TKMapInfo.SaveToFile(const aPath: UnicodeString);
 var
   S: TKMemoryStream;
+  ErrorStr: UnicodeString;
 begin
   S := TKMemoryStream.Create;
   try
@@ -580,7 +583,8 @@ begin
 
     //Try to save map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
-    TryExecuteMethod(TObject(S), aPath, 'SaveToStreamObj', SaveToStreamObj);
+    if not TryExecuteMethod(TObject(S), aPath, 'SaveToStreamObj', ErrorStr, SaveToStreamObj) then
+      gLog.AddTime(ErrorStr);
   finally
     //Other properties from text file are not saved, they are fast to reload
     S.Free;

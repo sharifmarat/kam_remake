@@ -162,7 +162,16 @@ begin
 end;
 
 
+procedure KMRenameFolder(const aSourcePath, aDestPath: UnicodeString);
+begin
+  {$IFDEF FPC} RenameFile(aSourcePath, aDestPath); {$ENDIF}
+  {$IFDEF WDC} TDirectory.Move(aSourcePath, aDestPath); {$ENDIF}
+end;
+
+
 procedure KMRenamePath(const aSourcePath, aDestPath: UnicodeString);
+var
+  ErrorStr: UnicodeString;
 begin
   if IsFilePath(aSourcePath) then
   begin
@@ -173,10 +182,13 @@ begin
   else
   if DirectoryExists(aSourcePath) then
   begin
-    if DirectoryExists(aDestPath) then
-      KMDeleteFolder(aDestPath);
-    {$IFDEF FPC} RenameFile(aSourcePath, aDestPath); {$ENDIF}
-    {$IFDEF WDC} TDirectory.Move(aSourcePath, aDestPath); {$ENDIF}
+    //Try to delete folder up to 3 times. Sometimes folder could not be deleted for some reason
+    if not TryExecuteMethodProc(aDestPath, 'KMDeleteFolder', ErrorStr, KMDeleteFolder) then
+      raise Exception.Create('Can''t delete folder ' + aDestPath);
+
+     //Try to rename folder up to 3 times. Sometimes folder could not be renamed for some reason
+    if not TryExecuteMethodProc(aSourcePath, aDestPath, 'KMRenameFolder', ErrorStr, KMRenameFolder) then
+      raise Exception.Create(Format('Can''t rename folder from %s to %s', [aSourcePath, aDestPath]));
   end;
 end;
 
@@ -224,7 +236,7 @@ end;
 //Pattern that we use for most of the files for our maps/saves
 function KMMoveFolder(const aSourceFolder, aDestFolder: UnicodeString): Boolean;
 var
-  SrcName, DestName: UnicodeString;
+  SrcName, DestName, ErrorStr: UnicodeString;
 begin
   Result := False;
   if (Trim(aSourceFolder) = '')
@@ -232,14 +244,13 @@ begin
     or (aSourceFolder = aDestFolder)
     or not DirectoryExists(aSourceFolder) then Exit;
 
-  SrcName := GetFileDirName(aSourceFolder);
-  DestName := GetFileDirName(aDestFolder);
-
   KMDeleteFolder(aDestFolder);
 
   //Move directory to dest first
   KMRenamePath(aSourceFolder, aDestFolder);
 
+  SrcName := GetFileDirName(aSourceFolder);
+  DestName := GetFileDirName(aDestFolder);
   //Rename all files there
   KMRenameFilesInFolder(aDestFolder, SrcName, DestName);
 

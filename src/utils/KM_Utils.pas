@@ -12,9 +12,6 @@ uses
   {$IFDEF WDC} IOUtils, {$ENDIF}
 	SysUtils, StrUtils, Classes, Controls, KM_Defaults, KM_CommonTypes, KM_CommonClasses, KM_Points;
 
-const
-  DEFAULT_ATTEMPS_CNT_TO_TRY = 3;
-
   function KMPathLength(aNodeList: TKMPointList): Single;
 
   function GetHintWHotKey(aTextId, aHotkeyId: Integer): String;
@@ -26,9 +23,6 @@ const
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
 
   function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
-
-  function TryExecuteMethod(var aObjParam: TObject; aStrParam, aMethodName: UnicodeString;
-                            aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 
 
 implementation
@@ -121,36 +115,6 @@ begin
   B2 := Min(Round(aBlue * B), 255);
 
   Result := (R2 + G2 shl 8 + B2 shl 16) or $FF000000;
-end;
-
-
-function TryExecuteMethod(var aObjParam: TObject; aStrParam, aMethodName: UnicodeString;
-                          aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
-var
-  Success: Boolean;
-  TryCnt: Byte;
-begin
-  Success := False;
-  TryCnt := 0;
-  while not Success and (TryCnt < aAttemps) do
-    try
-      Inc(TryCnt);
-
-      aMethod(aObjParam, aStrParam);
-
-      Success := True;
-    except
-      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
-      begin
-        gLog.AddTime(Format('Error at attemp #%d while executing method %s for parameter: %s', [TryCnt, aMethodName, aStrParam]));
-        Sleep(10); // Wait a bit
-      end;
-    end;
-
-  if not Success then
-    gLog.AddTime(Format('Error executing method (%d tries) %s for parameter: %s', [aAttemps, aMethodName, aStrParam]));
-
-  Result := Success;
 end;
 
 

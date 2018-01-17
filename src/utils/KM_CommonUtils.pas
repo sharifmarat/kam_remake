@@ -89,6 +89,18 @@ uses
   procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer); overload;
   procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer); overload;
 
+const
+  DEFAULT_ATTEMPS_CNT_TO_TRY = 3;
+
+  function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                            aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+
+  function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                                aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
+
+  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                                aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
+
 implementation
 uses
   StrUtils, Types;
@@ -997,6 +1009,99 @@ begin
   Delete(Arr, Index, 1);
 end;
 {$ENDIF}
+
+
+function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                          aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethod(aObjParam, aStrParam);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameter: %s', [TryCnt, aMethodName, aStrParam]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameter: %s', [aAttemps, aMethodName, aStrParam]);
+
+  Result := Success;
+end;
+
+
+function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                              aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethodProc(aStrParam);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameter: %s', [TryCnt, aMethodName, aStrParam]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameter: %s', [aAttemps, aMethodName, aStrParam]);
+
+  Result := Success;
+end;
+
+
+function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                              aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethodProc(aStrParam1, aStrParam2);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameters: [%s, %s]', [TryCnt, aMethodName, aStrParam1, aStrParam2]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameters: [%s, %s]', [aAttemps, aMethodName, aStrParam1, aStrParam2]);
+
+  Result := Success;
+end;
 
 
 end.
