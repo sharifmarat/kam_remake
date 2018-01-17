@@ -740,11 +740,14 @@ type
 
   {Production cost bar}
   TKMCostsRow = class(TKMControl)
+  private
   public
     RX: TRXType;
     TexID1, TexID2: Word;
     Count: Byte;
     Caption: UnicodeString;
+    MaxCount: Byte;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aMaxCount: Byte = 6);
     procedure Paint; override;
   end;
 
@@ -4101,18 +4104,33 @@ end;
 
 
 { TKMCostsRow }
+constructor TKMCostsRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aMaxCount: Byte = 6);
+begin
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+
+  MaxCount := aMaxCount;
+end;
+
+
 procedure TKMCostsRow.Paint;
 var
-  I: Integer;
+  I, Gap: Integer;
 begin
   inherited;
   TKMRenderUI.WriteText(AbsLeft, AbsTop + 4, Width-20, Caption, fnt_Grey, taLeft, $FFFFFFFF);
+
   if Count > 0 then
   begin
+    if Count <= MaxCount then
+      Gap := 20
+    else
+      Gap := Trunc(MaxCount * 20 / Count);
+
     if TexID1 <> 0 then
-      for I := 0 to Count - 1 do
-        TKMRenderUI.WritePicture(AbsLeft+Width-19*(I+1), AbsTop, 20, fHeight, [], RX, TexID1);
-  end else begin
+      for I := Count - 1 downto 0 do
+        TKMRenderUI.WritePicture(AbsLeft+Width-Gap*(I+1), AbsTop, 20, fHeight, [], RX, TexID1);
+  end else
+    begin
     if TexID1 <> 0 then
       TKMRenderUI.WritePicture(AbsLeft+Width-40, AbsTop, 20, fHeight, [], RX, TexID1);
     if TexID2 <> 0 then
