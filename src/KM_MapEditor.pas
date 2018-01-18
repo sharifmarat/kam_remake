@@ -432,10 +432,7 @@ end;
 
 
 procedure TKMMapEditor.MouseDown(Button: TMouseButton);
-var
-  P: TKMPoint;
 begin
-  P := gGameCursor.Cell;
   if (Button = mbLeft) then
     case gGameCursor.Mode of
       cmSelection:  fSelection.Selection_Start;
