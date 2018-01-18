@@ -236,7 +236,7 @@ end;
 //Pattern that we use for most of the files for our maps/saves
 function KMMoveFolder(const aSourceFolder, aDestFolder: UnicodeString): Boolean;
 var
-  SrcName, DestName, ErrorStr: UnicodeString;
+  SrcName, DestName: UnicodeString;
 begin
   Result := False;
   if (Trim(aSourceFolder) = '')
