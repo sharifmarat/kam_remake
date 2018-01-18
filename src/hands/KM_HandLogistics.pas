@@ -1000,8 +1000,19 @@ begin
   //Modifications for bidding system
   if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
     and (fDemand[iD].Ware <> wt_All)
-    and (fDemand[iD].Ware <> wt_Warfare) then //Except Barracks and Store, where supply doesn't matter or matter less
+    and (fDemand[iD].Ware <> wt_Warfare) //Except Barracks and Store, where supply doesn't matter or matter less
+    and (fDemand[iD].Loc_House.HouseType <> ht_TownHall) then //Except TownHall as well, where supply doesn't matter or matter less
     aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
+
+  if (fDemand[iD].Loc_House <> nil)
+    and (fDemand[iD].Loc_House.HouseType = ht_TownHall) then
+  begin
+    //Delivering gold to TH - if there are already more then 300 gold, then make this delivery very low priority
+    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 300) then
+      aBidValue := aBidValue + 9000
+    else
+      aBidValue := aBidValue + 5; //Add small value, so it will not have so big advantage above other houses
+  end;
 
   //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
   //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
