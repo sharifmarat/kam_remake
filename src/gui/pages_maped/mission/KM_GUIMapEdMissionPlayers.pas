@@ -19,9 +19,9 @@ type
     Label_PlayerId : array [0..MAX_HANDS-1] of TKMLabel;
 
     PopUp_Confirm_PlayerDelete: TKMPopUpMenu;
-    Image_Confirm_PlayerDelete: TKMImage;
-    Button_PlayerDelete, Button_PlayerDeleteConfirm, Button_PlayerDeleteCancel: TKMButton;
-    Label_PlayerDeleteConfirmTitle, Label_PlayerDeleteConfirm: TKMLabel;
+      Image_Confirm_PlayerDelete: TKMImage;
+      Button_PlayerDelete, Button_PlayerDeleteConfirm, Button_PlayerDeleteCancel: TKMButton;
+      Label_PlayerDeleteConfirmTitle, Label_PlayerDeleteConfirm: TKMLabel;
   public
     constructor Create(aParent: TKMPanel);
 

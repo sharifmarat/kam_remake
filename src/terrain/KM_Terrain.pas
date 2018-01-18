@@ -1645,7 +1645,7 @@ var
 begin
   for I := 1 to fMapY do
     for K := 1 to fMapX do
-      if (Land[I, K].TileOwner = aPlayer) or (Land[I, K].TileOwner = -1) then
+      if (Land[I, K].TileOwner = aPlayer) then
       begin
         KMPoint.X := K;
         KMPoint.Y := I;
