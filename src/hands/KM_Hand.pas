@@ -110,6 +110,8 @@ type
     property ShareBeacons[aIndex: Integer]: Boolean read GetShareBeacons write SetShareBeacons;
     property CenterScreen: TKMPoint read fCenterScreen write fCenterScreen;
 
+    procedure PostLoadMission;
+
     function IsHuman: Boolean;
     function IsComputer: Boolean;
 
@@ -171,8 +173,8 @@ type
 implementation
 uses
   Classes, SysUtils, KromUtils, Math,
-  KM_Game, KM_Terrain, KM_HouseBarracks, KM_AIFields,
-  KM_HandsCollection, KM_Sound,
+  KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
+  KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ScriptingEvents;
 
 
@@ -274,7 +276,7 @@ begin
   fStats        := TKMHandStats.Create;
   fRoadsList    := TKMPointList.Create;
   fHouses       := TKMHousesCollection.Create;
-  fDeliveries   := TKMHandLogistics.Create;
+  fDeliveries   := TKMHandLogistics.Create(fHandIndex);
   fBuildList    := TKMBuildList.Create;
   fArmyEval     := TKMArmyEvaluation.Create(aHandIndex);
   fUnitGroups   := TKMUnitGroups.Create;
@@ -395,14 +397,14 @@ begin
   if not (aUnit is TKMUnitWarrior) then
     gScriptEvents.ProcUnitTrained(aUnit);
 
-  fStats.UnitCreated(aUnit.UnitType, True);
+  fStats.UnitCreated(aUnit.UnitType, True, (aUnit.InHouse <> nil) and (aUnit.InHouse.HouseType = ht_TownHall));
 end;
 
 
 procedure TKMHand.WarriorWalkedOut(aUnit: TKMUnitWarrior);
 var G: TKMUnitGroup;
     H: TKMHouse;
-    B: TKMHouseBarracks;
+    HWFP: TKMHouseWFlagPoint;
 begin
   //Warrior could be killed before he walked out, f.e. by script OnTick ---> Actions.UnitKill
   //Then group will be assigned to invalid warrior and never gets removed from game
@@ -422,13 +424,13 @@ begin
     begin
       //If player is human and this is the first warrior in the group, send it to the rally point
       H := HousesHitTest(aUnit.GetPosition.X, aUnit.GetPosition.Y-1);
-      if (H is TKMHouseBarracks) then
+      if (H is TKMHouseWFlagPoint) then
       begin
-        B := TKMHouseBarracks(H);
-        B.ValidateRallyPoint; // Validate Rally point first. It will set it to a proper walkable position
-        if B.IsRallyPointSet
-          and G.CanWalkTo(B.RallyPoint, 0) then
-          G.OrderWalk(B.RallyPoint, True);
+        HWFP := TKMHouseWFlagPoint(H);
+        HWFP.ValidateFlagPoint; // Validate Flag point first. It will set it to a proper walkable position
+        if HWFP.IsFlagPointSet
+          and G.CanWalkTo(HWFP.FlagPoint, 0) then
+          G.OrderWalk(HWFP.FlagPoint, True);
       end;
     end;
   gScriptEvents.ProcWarriorEquipped(aUnit, G);
@@ -493,7 +495,8 @@ begin
 
   FreeAndNil(fRoadsList);
 
-  fAI.Mayor.AfterMissionInit;
+  if not gGame.IsMapEditor then
+    fAI.Mayor.AfterMissionInit;
 end;
 
 
@@ -880,6 +883,7 @@ begin
     fUnitGroups.RemGroup(Group);
 end;
 
+
 //This is called immediately when the user clicks erase on a field plan.
 //We know that an erase command is queued and will be processed in some ticks,
 //so we AddFakeDeletedField which lets the user think the field was removed,
@@ -942,6 +946,16 @@ end;
 function TKMHand.HasAssets: Boolean;
 begin
   Result := (GetFieldsCount > 0) or (Units.Count > 0) or (Houses.Count > 0);
+end;
+
+
+procedure TKMHand.PostLoadMission;
+var
+  I: Integer;
+begin
+
+  for I := 0 to fHouses.Count - 1 do
+    fHouses[I].PostLoadMission;
 end;
 
 

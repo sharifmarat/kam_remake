@@ -54,6 +54,7 @@ uses
 
 var
   I, K: Integer;
+  ForcedConsoleMode: Boolean;
   RXType: TRXType;
   fRXXPacker: TRXXPacker;
   fPalettes: TKMResPalettes;
@@ -80,14 +81,14 @@ end;
 
 
 begin
-  if not IsConsoleMode then
-  begin
-    FreeConsole; // Used to hide the console
-    Application.Initialize;
-    Application.MainFormOnTaskbar := True;
-    Application.CreateForm(TRXXForm1, RXXForm1);
-    Application.Run;
-  end else
+  ForcedConsoleMode :=
+  {$IFDEF FPC}
+    True
+  {$ELSE}
+    False
+  {$ENDIF}
+    ;
+  if ForcedConsoleMode or IsConsoleMode then
   begin
     if ParamCount >= 1 then
     begin
@@ -99,7 +100,6 @@ begin
         writeln('Usage example: RXXPacker.exe gui guimain houses trees units');
         Exit;
       end;
-
 
       ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
       fRXXPacker := TRXXPacker.Create;
@@ -131,5 +131,12 @@ begin
         fPalettes.Free;
       end;
     end;
+  end else
+  begin
+    FreeConsole; // Used to hide the console
+    Application.Initialize;
+    Application.MainFormOnTaskbar := True;
+    Application.CreateForm(TRXXForm1, RXXForm1);
+    Application.Run;
   end;
 end.

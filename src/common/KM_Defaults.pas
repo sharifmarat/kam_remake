@@ -34,18 +34,19 @@ const
   MENU_DESIGN_Y         = 768;          //Thats the size menu was designed for. All elements are placed in this size
   MIN_RESOLUTION_WIDTH  = 1024;         //Lowest supported resolution X
   MIN_RESOLUTION_HEIGHT = 576;          //Lowest supported resolution Y
-
-  GAME_REVISION         = 'r7000+';       //Should be updated for every release (each time save format is changed)
-  GAME_BETA_REVISION    = 5;
+  {$I KM_Revision.inc};
   {$IFDEF USESECUREAUTH}
     GAME_VERSION_POSTFIX  = '';
   {$ELSE}
     GAME_VERSION_POSTFIX  = ' (UNSECURE!)';
   {$ENDIF}
   GAME_VERSION_PREFIX   = ''; //Game version string displayed in menu corner
-  GAME_VERSION          = GAME_VERSION_PREFIX + GAME_REVISION + GAME_VERSION_POSTFIX;
-  NET_PROTOCOL_REVISON  = GAME_REVISION;     //Clients of this version may connect to the dedicated server
-
+var
+  //Game revision is set in initialisation block
+  GAME_REVISION: AnsiString; //Should be updated for every release (each time save format is changed)
+  GAME_VERSION: AnsiString;
+  NET_PROTOCOL_REVISON: AnsiString; //Clients of this version may connect to the dedicated server
+const
   SETTINGS_FILE         = 'KaM_Remake_Settings.ini';
   FONTS_FOLDER          = 'data' + PathDelim + 'gfx' + PathDelim + 'fonts' + PathDelim;
   DEFAULT_LOCALE: AnsiString = 'eng';
@@ -61,7 +62,7 @@ const
 
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
-  CALC_EXPECTED_TICK    :Boolean = False; //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
+  CALC_EXPECTED_TICK    :Boolean = True;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
   MAKE_ANIM_TERRAIN     :Boolean = True;  //Should we animate water and swamps
   MAKE_TEAM_COLORS      :Boolean = True;  //Whenever to make team colors or not, saves RAM for debug
   DYNAMIC_TERRAIN       :Boolean = True;  //Update terrain each tick to grow things
@@ -92,10 +93,11 @@ var
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
   PathFinderToUse       :Byte = 1;
 
-
+  {$IFDEF WDC} //Work only in Delphi
   DELIVERY_BID_CALC_USE_PATHFINDING
                         :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   CACHE_DELIVERY_BIDS   :Boolean = True; //Cache delivery bids cost. Must be turned ON if we want to use pathfinding for bid calc, huge impact on performance in that case
+  {$ENDIF}
 
   WARFARE_ORDER_SEQUENTIAL    :Boolean = True; //Pick weapon orders like KaM did
   WARFARE_ORDER_PROPORTIONAL  :Boolean = False; //New proportional way (looks like a bad idea)
@@ -174,8 +176,9 @@ var
 
 
 const
-  MAX_WARES_IN_HOUSE  = 5;    //Maximum resource items allowed to be in house
-  MAX_WARES_ORDER     = 999;  //Number of max allowed items to be ordered in production houses (Weapon/Armor/etc)
+  MAX_WARES_IN_HOUSE     = 5;    //Maximum resource items allowed to be in house
+  MAX_WARES_OUT_WORKSHOP = 5;    //Maximum sum resource items allowed to output in workshops. Value: 5 - 20;
+  MAX_WARES_ORDER        = 999;  //Number of max allowed items to be ordered in production houses (Weapon/Armor/etc)
 
 const
   MAX_WOODCUTTER_CUT_PNT_DISTANCE = 5; //Max distance for woodcutter new cutting point from his house
@@ -193,7 +196,10 @@ const
   AUTOSAVE_FREQUENCY_MIN  = 600;
   AUTOSAVE_FREQUENCY_MAX  = 3000;
   AUTOSAVE_FREQUENCY      = 600; //How often to do autosave, every N ticks
-  AUTOSAVE_NOT_MORE_OFTEN_THEN = 5000; //= 5s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
+  AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX = 5; //Max number of autosaves to be included into crashreport
+  AUTOSAVE_NOT_MORE_OFTEN_THEN = 10000; //= 10s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
+
+
   CHAT_COOLDOWN           = 500;  //Minimum time in milliseconds between chat messages
   BEACON_COOLDOWN         = 800;  //Minimum time in milliseconds between beacons
 
@@ -240,9 +246,11 @@ const
 
   LINK_RADIUS = 5; //Radius to search for groups to link to after being trained at the barracks (measured from KaM)
 
-  BOWMEN_AIMING_DELAY_MIN      = 4; //minimum time for archer to aim
-  BOWMEN_AIMING_DELAY_ADD      = 4; //random component
-  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for archer to aim
+  BOWMEN_AIMING_DELAY_MIN      = 6; //minimum time for bowmen to aim
+  BOWMEN_AIMING_DELAY_ADD      = 6; //random component
+  SLINGSHOT_AIMING_DELAY_MIN   = 0; //minimum time for slingshot to aim
+  SLINGSHOT_AIMING_DELAY_ADD   = 4; //random component
+  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for crossbowmen to aim
   CROSSBOWMEN_AIMING_DELAY_ADD = 8; //random component
 
   SLINGSHOT_FIRING_DELAY = 12; //on which frame slinger fires his rock
@@ -264,6 +272,10 @@ const
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
   EXT_FILE_SCRIPT = 'script';
+
+  EXT_SAVE_REPLAY_DOT = '.' + EXT_SAVE_REPLAY;
+  EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
+  EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
 
 type
   TKMHandIndex = {type} ShortInt;
@@ -326,7 +338,6 @@ const
   MARKER_CENTERSCREEN = 3;
   MARKER_AISTART = 4;
   MARKER_RALLY_POINT = 5;
-  MARKER_CUTTING_POINT = 6;
 
 
 const
@@ -624,7 +635,7 @@ type
   TGoalCondition = (gc_Unknown0,      //Not used/unknown
                     gc_BuildTutorial,   //Must build a tannery (and other buildings from tutorial?) for it to be true. In KaM tutorial messages will be dispalyed if this is a goal
                     gc_Time,            //A certain time must pass
-                    gc_Buildings,       //Storehouse, school, barracks
+                    gc_Buildings,       //Storehouse, school, barracks, TownHall
                     gc_Troops,          //All troops
                     gc_Unknown5,        //Not used/unknown
                     gc_MilitaryAssets,  //All Troops, Coal mine, Weapons Workshop, Tannery, Armory workshop, Stables, Iron mine, Iron smithy, Weapons smithy, Armory smithy, Barracks, Town hall and Vehicles Workshop
@@ -801,5 +812,11 @@ var
 
 implementation
 
+initialization
+begin
+  GAME_REVISION := AnsiString('r' + IntToStr(GAME_REVISION_NUM));
+  GAME_VERSION := GAME_VERSION_PREFIX + GAME_REVISION + GAME_VERSION_POSTFIX;
+  NET_PROTOCOL_REVISON := GAME_REVISION;     //Clients of this version may connect to the dedicated server
+end;
 
 end.

@@ -355,18 +355,18 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
 
     //Horizontal flip: Vertex (not middle) objects must be moved right by 1
     if (aAxis = fa_Horizontal) and (X < fSelectionRect.Right)
-    and (gTerrain.Land[Y,X+1].Obj = 255) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_X) then
+    and (gTerrain.Land[Y,X+1].Obj = OBJ_NONE) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_X) then
     begin
       gTerrain.Land[Y,X+1].Obj := gTerrain.Land[Y,X].Obj;
-      gTerrain.Land[Y,X].Obj := 255;
+      gTerrain.Land[Y,X].Obj := OBJ_NONE;
     end;
 
     //Vertical flip: Vertex (not middle) objects must be moved down by 1
     if (aAxis = fa_Vertical) and (Y < fSelectionRect.Bottom)
-    and (gTerrain.Land[Y+1,X].Obj = 255) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_Y) then
+    and (gTerrain.Land[Y+1,X].Obj = OBJ_NONE) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_Y) then
     begin
       gTerrain.Land[Y+1,X].Obj := gTerrain.Land[Y,X].Obj;
-      gTerrain.Land[Y,X].Obj := 255;
+      gTerrain.Land[Y,X].Obj := OBJ_NONE;
     end;
   end;
 

@@ -27,7 +27,7 @@ type
     procedure AddPlayers(aCount: Byte); //Batch add several players
 
     procedure RemoveEmptyPlayers;
-    procedure RemovePlayer(aIndex: TKMHandIndex);
+    procedure RemoveEmptyPlayer(aIndex: TKMHandIndex);
     procedure AfterMissionInit(aFlattenRoads: Boolean);
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
@@ -63,6 +63,7 @@ type
     procedure SyncFogOfWar;
     procedure AddDefaultGoalsToAll(aMissionMode: TKMissionMode);
     procedure DisableGoalsForDefeatedHand(aHandIndex: TKMHandIndex);
+    procedure PostLoadMission;
 
     procedure Save(SaveStream: TKMemoryStream; aMultiplayer: Boolean);
     procedure Load(LoadStream: TKMemoryStream);
@@ -168,13 +169,13 @@ begin
     if fHandsList[I].HasAssets then
       Exit //Exit as soon as we find a player with assets
     else
-      RemovePlayer(I);
+      RemoveEmptyPlayer(I);
 end;
 
 
-//Remove player 'aIndex'
+//Remove empty player 'aIndex'
 //Accessed only by MapEditor when it needs to remove empty players before saving a map
-procedure TKMHandsCollection.RemovePlayer(aIndex: TKMHandIndex);
+procedure TKMHandsCollection.RemoveEmptyPlayer(aIndex: TKMHandIndex);
 var
   I, K: Integer;
 begin
@@ -296,7 +297,7 @@ begin
     begin
       H := fHandsList[I].Houses[K];
       if (H is TKMHouseTower) and H.IsComplete
-      and not H.IsDestroyed and H.GetHasOwner
+      and not H.IsDestroyed and H.HasOwner
       and (H.CurrentAction.State <> hst_Empty) then
         //Don't use H.GetDistance (dist to any tile within house) as that's not how tower range works
         Result := Min(Result, KMLength(H.GetPosition, aLoc));
@@ -364,6 +365,15 @@ begin
     if Result = nil then
       Result := GetGroupByUID(aUID);
   end;
+end;
+
+
+procedure TKMHandsCollection.PostLoadMission;
+var
+  I: Integer;
+begin
+  for I := 0 to fCount - 1 do
+    fHandsList[I].PostLoadMission;
 end;
 
 

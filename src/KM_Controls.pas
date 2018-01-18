@@ -5,7 +5,7 @@ uses
   Classes, Controls,
   KromOGLUtils,
   KM_RenderUI, KM_Pics, KM_Minimap, KM_Viewport, KM_ResFonts,
-  KM_CommonClasses, KM_CommonTypes, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Points, KM_Defaults;
 
 
 type
@@ -405,13 +405,18 @@ type
     fTextAlign: TKMTextAlign;
     fStyle: TKMButtonStyle;
     fRX: TRXType;
+    procedure InitCommon(aStyle: TKMButtonStyle);
   public
     Caption: UnicodeString;
     FlagColor: TColor4; //When using an image
     Font: TKMFont;
     MakesSound: Boolean;
     TexID: Word;
+    CapOffsetX: Shortint;
+    CapOffsetY: Shortint;
     ShowImageEnabled: Boolean; // show picture as enabled or not (normal or darkened)
+    CenterText: Boolean;
+    TextVAlign: TKMTextVAlign;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle); overload;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle); overload;
     function Click: Boolean; //Try to click a button and return TRUE if succeded
@@ -471,7 +476,7 @@ type
 
   TAllowedChars = (
     acDigits, //Only 0..9 digits, for numeric input
-    acANSI7, //#33..#126 - only basic latin chars and symbols for user nikname
+    acANSI7, //#33..#123,#125,#126 - only basic latin chars and symbols for user nikname, except |
     acFileName, //Exclude symbols that can't be used in filenames
     acText  //Anything is allowed except for eol symbol
   );
@@ -655,7 +660,8 @@ type
   {Row with resource name and icons}
   TKMWaresRow = class(TKMButtonFlatCommon)
   public
-    WareCount: Byte;
+    WareCount: Word;
+    WareCntAsNumber: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer); overload;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aClickable: Boolean); overload;
     procedure Paint; override;
@@ -700,29 +706,48 @@ type
   end;
 
   {Ware order bar}
-  TKMWareOrderRow = class(TKMWaresRow)
+  TKMWareOrderRow = class(TKMControl)
   private
+    fWaresRow: TKMWaresRow;
     fOrderAdd: TKMButton;
     fOrderLab: TKMLabel;
     fOrderRem: TKMButton;
+    fOrderCount: Integer;
+    fImmidiateOrder: Boolean; //Order count should be changed immidiately in control. Should be False usually
+    procedure ButtonClick(Sender: TObject; Shift: TShiftState);
+    procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
+    procedure SetOrderRemHint(aValue: UnicodeString);
+    procedure SetOrderAddHint(aValue: UnicodeString);
+    procedure SetOrderCount(aValue: Integer);
   protected
+    procedure SetTop(aValue: Integer); override;
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
   public
-    OrderCount: Word;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer);
-    property OrderAdd: TKMButton read fOrderAdd; //UI sets and handles OnClickEither itself
-    property OrderRem: TKMButton read fOrderRem;
+    OrderCntMin: Integer;
+    OrderCntMax: Integer;
+    OnChange: TObjectIntegerEvent;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE;
+                       aOrderCntMin: Integer = 0; aImmidiateOrder: Boolean = False);
+    property WareRow: TKMWaresRow read fWaresRow;
+    property OrderCount: Integer read fOrderCount write SetOrderCount;
+    property OrderRemHint: UnicodeString write SetOrderRemHint;
+    property OrderAddHint: UnicodeString write SetOrderAddHint;
+    procedure MouseWheel(Sender: TObject; WheelDelta: Integer); override;
     procedure Paint; override;
   end;
 
 
   {Production cost bar}
   TKMCostsRow = class(TKMControl)
+  private
   public
     RX: TRXType;
     TexID1, TexID2: Word;
+    Count: Byte;
     Caption: UnicodeString;
+    MaxCount: Byte;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aMaxCount: Byte = 6);
     procedure Paint; override;
   end;
 
@@ -1439,12 +1464,13 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils, Clipbrd,
-  KM_Resource, KM_ResSprites, KM_ResSound, KM_ResCursors,
-  KM_Sound, KM_CommonUtils, KM_Utils, KM_Defaults;
+  KM_Resource, KM_ResSprites, KM_ResSound, KM_ResCursors, KM_ResTexts,
+  KM_Sound, KM_CommonUtils, KM_Utils;
 
 
 const
   CLICK_HOLD_TIME_THRESHOLD = 200; // Time period, determine delay between mouse down and 1st click hold events
+  WARE_ROW_HEIGHT = 21;
 
 
 function MakeListRow(const aCaption: array of string; aTag: Integer = 0): TKMListRow;
@@ -1637,7 +1663,7 @@ begin
   begin
     State := State - [csDown];
     ClickHoldHandled := fClickHoldHandled;
-      ResetClickHoldMode;
+    ResetClickHoldMode;
     //Send Click events
     if not ClickHoldHandled then // Do not send click event, if it was handled already while in click hold mode
       DoClick(X, Y, Shift, Button);
@@ -2286,11 +2312,12 @@ end;
 // Check if specified aChar is allowed for specified aAllowedChars type
 function IsCharAllowed(aChar: WideChar; aAllowedChars: TAllowedChars): Boolean;
 const
+  Ansi7Chars: TSetOfAnsiChar = [#32..#123,#125..#126]; //except | character
   NonFileChars: TSetOfAnsiChar = [#0 .. #31, '<', '>', #176, '|', '"', '\', '/', ':', '*', '?'];
   NonTextChars: TSetOfAnsiChar = [#0 .. #31, #176, '|']; //° has negative width so acts like a backspace in KaM fonts
 begin
   Result := not ((aAllowedChars = acDigits) and not InRange(Ord(aChar), 48, 57)
-    or (aAllowedChars = acANSI7) and not InRange(Ord(aChar), 32, 126)
+    or (aAllowedChars = acANSI7) and not CharInSet(aChar, Ansi7Chars)
     or (aAllowedChars = acFileName) and CharInSet(aChar, NonFileChars)
     or (aAllowedChars = acText) and CharInSet(aChar, NonTextChars));
 end;
@@ -2766,13 +2793,9 @@ end;
 constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
-  fRX          := aRX;
-  TexID        := aTexID;
-  Caption      := '';
-  FlagColor    := $FFFF00FF;
-  fStyle       := aStyle;
-  MakesSound   := True;
-  ShowImageEnabled := True;
+  InitCommon(aStyle);
+  fRX   := aRX;
+  TexID := aTexID;
 end;
 
 
@@ -2780,14 +2803,22 @@ end;
 constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
-  TexID        := 0;
-  Caption      := aCaption;
-  FlagColor    := $FFFF00FF;
-  Font         := fnt_Metal;
-  fTextAlign   := taCenter; //Thats default everywhere in KaM
-  fStyle       := aStyle;
-  MakesSound   := True;
-  ShowImageEnabled := True;
+  InitCommon(aStyle);
+  Caption := aCaption;
+end;
+
+
+procedure TKMButton.InitCommon(aStyle: TKMButtonStyle);
+begin
+  TexID             := 0;
+  Caption           := '';
+  FlagColor         := $FFFF00FF;
+  Font              := fnt_Metal;
+  fTextAlign        := taCenter; //Thats default everywhere in KaM
+  TextVAlign        := tvaMiddle;//tvaNone;
+  fStyle            := aStyle;
+  MakesSound        := True;
+  ShowImageEnabled  := True;
 end;
 
 
@@ -2824,6 +2855,7 @@ procedure TKMButton.Paint;
 var
   Col: TColor4;
   StateSet: TKMButtonStateSet;
+  TextY, Top: Integer;
 begin
   inherited;
   StateSet := [];
@@ -2841,8 +2873,17 @@ begin
   //If disabled then text should be faded
   Col := IfThen(fEnabled, icWhite, icGray);
 
-  TKMRenderUI.WriteText(AbsLeft + Byte(csDown in State),
-                      (AbsTop + Height div 2) - 7 + Byte(csDown in State), Width, Caption, Font, fTextAlign, Col);
+  Top := AbsTop + Byte(csDown in State) + CapOffsetY;
+
+  TextY := gRes.Fonts[Font].GetTextSize(Caption).Y;
+  case TextVAlign of
+    tvaNone:    Inc(Top, (Height div 2) - 7);
+    tvaTop:     Inc(Top, 2);
+    tvaMiddle:  Inc(Top, (Height div 2) - (TextY div 2) + 2);
+    tvaBottom:  Inc(Top, Height - TextY);
+  end;
+  TKMRenderUI.WriteText(AbsLeft + Byte(csDown in State) + CapOffsetX, Top,
+                        Width, Caption, Font, fTextAlign, Col);
 end;
 
 
@@ -3584,13 +3625,11 @@ end;
 { TKMWaresRow }
 constructor TKMWaresRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer);
 begin
-  Create(aParent, aLeft, Atop, aWidth, False);
+  Create(aParent, aLeft, aTop, aWidth, False);
 end;
 
 
 constructor TKMWaresRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aClickable: Boolean);
-const
-  WARE_ROW_HEIGHT = 21;
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, WARE_ROW_HEIGHT, 0);
   Clickable := aClickable;
@@ -3605,8 +3644,13 @@ begin
   inherited;
   TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 3, Width-8, Caption, fnt_Game, taLeft, $FFE0E0E0);
   //Render in reverse order so the rightmost resource is on top (otherwise lighting looks wrong)
-  for I := WareCount - 1 downto 0 do
-    TKMRenderUI.WritePicture(AbsLeft + Width - 18 - I * 14, AbsTop + 3, 14, 14, [], RX, TexID);
+  if WareCntAsNumber then
+  begin
+    TKMRenderUI.WriteText(AbsLeft + Width - 18 - 70 + 24, AbsTop + 3, 22, IntToStr(WareCount), fnt_Game, taRight, $FFE0E0E0);
+    TKMRenderUI.WritePicture(AbsLeft + Width - 18, AbsTop + 3, 14, 14, [], RX, TexID);
+  end else
+    for I := WareCount - 1 downto 0 do
+      TKMRenderUI.WritePicture(AbsLeft + Width - 18 - I * 14, AbsTop + 3, 14, 14, [], RX, TexID);
 end;
 
 
@@ -3628,6 +3672,7 @@ begin
 
   fButtonDec := TKMButton.Create(aParent, aLeft,           aTop, 20, 20, '-', bsGame);
   fButtonInc := TKMButton.Create(aParent, aLeft + W - 20,  aTop, 20, 20, '+', bsGame);
+  fButtonInc.CapOffsetY := 1;
   fButtonDec.OnClickShift := ButtonClick;
   fButtonInc.OnClickShift := ButtonClick;
   fButtonDec.OnMouseWheel := MouseWheel;
@@ -3906,13 +3951,121 @@ end;
 
 
 { TKMWareOrderRow }
-constructor TKMWareOrderRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer);
+constructor TKMWareOrderRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aOrderCntMax: Integer = MAX_WARES_IN_HOUSE;
+                                   aOrderCntMin: Integer = 0; aImmidiateOrder: Boolean = False);
 begin
-  inherited Create(aParent, aLeft+68, aTop, aWidth-68);
+  inherited Create(aParent, aLeft, aTop, aWidth, WARE_ROW_HEIGHT);
 
-  fOrderRem := TKMButton.Create(aParent, aLeft, 0, 20, fHeight - 2, '-', bsGame);
-  fOrderLab := TKMLabel.Create(aParent, aLeft+33, 0, '', fnt_Grey, taCenter);
-  fOrderAdd := TKMButton.Create(aParent, aLeft+46, 0, 20, fHeight - 2, '+', bsGame);
+  fWaresRow := TKMWaresRow.Create(aParent, aLeft + 68, aTop, aWidth - 68);
+
+  fImmidiateOrder := aImmidiateOrder;
+
+  OrderCntMin := aOrderCntMin;
+  OrderCntMax := aOrderCntMax;
+
+  fOrderRem := TKMButton.Create(aParent, aLeft,   0, 20, fHeight - 2, '-', bsGame);
+  fOrderAdd := TKMButton.Create(aParent, aLeft + 46,  0, 20, fHeight - 2, '+', bsGame);
+  //Label after buttons, to be sure it will be on top of them, to let player read value from it, if too long (more then 3 symbols)
+  fOrderLab := TKMLabel.Create (aParent, aLeft + 33,  0, '', fnt_Grey, taCenter);
+
+  fOrderAdd.CapOffsetY := 1;
+
+  fOrderRem.OnClickShift := ButtonClick;
+  fOrderAdd.OnClickShift := ButtonClick;
+  fOrderRem.OnMouseWheel := MouseWheel;
+  fOrderAdd.OnMouseWheel := MouseWheel;
+  fWaresRow.OnMouseWheel := MouseWheel;
+  fOrderRem.OnClickHold := ClickHold;
+  fOrderAdd.OnClickHold := ClickHold;
+end;
+
+
+procedure TKMWareOrderRow.ButtonClick(Sender: TObject; Shift: TShiftState);
+var
+  Amt: Integer;
+begin
+  Amt := GetMultiplicator(Shift);
+  if Sender = fOrderRem then
+    Amt := -Amt;
+
+  if Amt = 0 then Exit;
+
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
+
+  Focus;
+
+  if Assigned(OnChange) then
+    OnChange(Self, Amt);
+end;
+
+
+procedure TKMWareOrderRow.MouseWheel(Sender: TObject; WheelDelta: Integer);
+const
+  ORDER_WHEEL_AMOUNT = 5; // Amounts for placing orders
+var
+  Amt: Integer;
+begin
+  inherited;
+
+  Amt := ORDER_WHEEL_AMOUNT * Sign(WheelDelta);
+  if GetKeyState(VK_SHIFT) < 0 then
+    Amt := Amt * 10;
+
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
+
+  Focus;
+
+  if Assigned(OnChange) then
+    OnChange(Self, Amt);
+end;
+
+
+procedure TKMWareOrderRow.ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
+var
+  Amt: Integer;
+begin
+  inherited;
+  aHandled := True;
+
+  Amt := GetMultiplicator(Button);
+
+  if Sender = fOrderRem then
+    Amt := -Amt;
+
+  if Amt = 0 then Exit;
+
+  if fImmidiateOrder then
+    OrderCount := fOrderCount + Amt;
+
+  if Assigned(OnChange) then
+    OnChange(Self, Amt);
+end;
+
+
+procedure TKMWareOrderRow.SetOrderCount(aValue: Integer);
+begin
+  fOrderCount := EnsureRange(aValue, OrderCntMin, OrderCntMax);
+end;
+
+
+procedure TKMWareOrderRow.SetOrderRemHint(aValue: UnicodeString);
+begin
+  fOrderRem.Hint := aValue;
+end;
+
+
+procedure TKMWareOrderRow.SetOrderAddHint(aValue: UnicodeString);
+begin
+  fOrderAdd.Hint := aValue;
+end;
+
+
+procedure TKMWareOrderRow.SetTop(aValue: Integer);
+begin
+  inherited;
+  fWaresRow.Top := aValue;
 end;
 
 
@@ -3920,6 +4073,7 @@ end;
 procedure TKMWareOrderRow.SetEnabled(aValue: Boolean);
 begin
   inherited;
+  fWaresRow.Enabled := fEnabled;
   fOrderRem.Enabled := fEnabled;
   fOrderLab.Enabled := fEnabled;
   fOrderAdd.Enabled := fEnabled;
@@ -3930,6 +4084,7 @@ end;
 procedure TKMWareOrderRow.SetVisible(aValue: Boolean);
 begin
   inherited;
+  fWaresRow.Visible := fVisible;
   fOrderRem.Visible := fVisible;
   fOrderLab.Visible := fVisible;
   fOrderAdd.Visible := fVisible;
@@ -3939,6 +4094,7 @@ end;
 procedure TKMWareOrderRow.Paint;
 begin
   inherited;
+
   fOrderRem.Top := Top + 1; //Use internal fTop instead of GetTop (which will return absolute value)
   fOrderLab.Top := Top + 4;
   fOrderAdd.Top := Top + 1;
@@ -3948,12 +4104,38 @@ end;
 
 
 { TKMCostsRow }
+constructor TKMCostsRow.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aMaxCount: Byte = 6);
+begin
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+
+  MaxCount := aMaxCount;
+end;
+
+
 procedure TKMCostsRow.Paint;
+var
+  I, Gap: Integer;
 begin
   inherited;
   TKMRenderUI.WriteText(AbsLeft, AbsTop + 4, Width-20, Caption, fnt_Grey, taLeft, $FFFFFFFF);
-  if TexID1 <> 0 then TKMRenderUI.WritePicture(AbsLeft+Width-40, AbsTop, 20, fHeight, [], RX, TexID1);
-  if TexID2 <> 0 then TKMRenderUI.WritePicture(AbsLeft+Width-20, AbsTop, 20, fHeight, [], RX, TexID2);
+
+  if Count > 0 then
+  begin
+    if Count <= MaxCount then
+      Gap := 20
+    else
+      Gap := Trunc(MaxCount * 20 / Count);
+
+    if TexID1 <> 0 then
+      for I := Count - 1 downto 0 do
+        TKMRenderUI.WritePicture(AbsLeft+Width-Gap*(I+1), AbsTop, 20, fHeight, [], RX, TexID1);
+  end else
+    begin
+    if TexID1 <> 0 then
+      TKMRenderUI.WritePicture(AbsLeft+Width-40, AbsTop, 20, fHeight, [], RX, TexID1);
+    if TexID2 <> 0 then
+      TKMRenderUI.WritePicture(AbsLeft+Width-20, AbsTop, 20, fHeight, [], RX, TexID2);
+  end;
 end;
 
 
@@ -5709,6 +5891,9 @@ var
   OldIndex, NewIndex: Integer;
   PageScrolling: Boolean;
 begin
+  Result := False;
+  if PassAllKeys then Exit;
+  
   Result := (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END, VK_PRIOR, VK_NEXT]) and not HideSelection;
   if inherited KeyDown(Key, Shift) then Exit;
 
@@ -7307,7 +7492,7 @@ var
     TKMRenderUI.WriteText (XPos, G.Bottom + 4, 0, TimeToString(aTime / 24 / 60 / 60), fnt_Game, taLeft, IfThen(aIsPT, clChartPeacetimeLbl, icWhite));
     TKMRenderUI.WriteLine(XPos, G.Top, XPos, G.Bottom, IfThen(aIsPT, clChartPeacetimeLn, clChartDashedVLn), $CCCC);
     if aIsPT then
-      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, 'PT-', fnt_Game, taRight, clChartPeacetimeLbl); //Todo translate
+      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, gResTexts[TX_CHART_PT_END], fnt_Game, taRight, clChartPeacetimeLbl);
   end;
 
   procedure RenderHorizontalAxisTicks;

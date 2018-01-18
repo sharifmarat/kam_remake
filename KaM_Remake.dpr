@@ -18,6 +18,7 @@ uses
 
   KromOGLUtils in 'src\ext\KromOGLUtils.pas',
   KromUtils in 'src\ext\KromUtils.pas',
+	KromShellUtils in 'src\ext\KromShellUtils.pas',
 
   KM_AI in 'src\ai\KM_AI.pas',
   KM_AIArmyEvaluation in 'src\ai\KM_AIArmyEvaluation.pas',
@@ -140,6 +141,8 @@ uses
   KM_HouseMarket in 'src\houses\KM_HouseMarket.pas',
   KM_Houses in 'src\houses\KM_Houses.pas',
   KM_HouseSchool in 'src\houses\KM_HouseSchool.pas',
+  KM_HouseTownHall in 'src\houses\KM_HouseTownHall.pas',
+  KM_HouseWoodcutters in 'src\houses\KM_HouseWoodcutters.pas',
   KM_InterfaceDefaults in 'src\gui\KM_InterfaceDefaults.pas',
   KM_InterfaceGame in 'src\gui\KM_InterfaceGame.pas',
   KM_InterfaceGamePlay in 'src\gui\KM_InterfaceGamePlay.pas',

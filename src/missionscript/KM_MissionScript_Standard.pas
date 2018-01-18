@@ -41,7 +41,7 @@ uses
   Classes, SysUtils, Math, KromUtils,
   KM_Hand, KM_Game, KM_HandsCollection,
   KM_Units, KM_UnitsCollection, KM_Units_Warrior,
-  KM_HouseCollection, KM_HouseBarracks,
+  KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_AI, KM_AIDefensePos,
   KM_Resource, KM_ResHouses, KM_ResUnits, KM_ResWares,
   KM_CommonClasses, KM_Terrain;
@@ -128,6 +128,34 @@ procedure TMissionParserStandard.PostLoadMission;
 begin
   //Post-processing of ct_Attack_Position commands which must be done after mission has been loaded
   ProcessAttackPositions;
+  gHands.PostLoadMission;
+end;
+
+
+//Determine what we are attacking: House, Unit or just walking to some place
+procedure TMissionParserStandard.ProcessAttackPositions;
+var
+  I: Integer;
+  H: TKMHouse;
+  U: TKMUnit;
+begin
+  Assert((fParsingMode <> mpm_Editor) or (fAttackPositionsCount = 0), 'AttackPositions should be handled by MapEd');
+
+  for I := 0 to fAttackPositionsCount - 1 do
+    with fAttackPositions[I] do
+    begin
+      H := gHands.HousesHitTest(Target.X, Target.Y); //Attack house
+      if (H <> nil) and (not H.IsDestroyed) and (gHands.CheckAlliance(Group.Owner, H.Owner) = at_Enemy) then
+        Group.OrderAttackHouse(H, True)
+      else
+      begin
+        U := gTerrain.UnitsHitTest(Target.X, Target.Y); //Chase/attack unit
+        if (U <> nil) and (not U.IsDeadOrDying) and (gHands.CheckAlliance(Group.Owner, U.Owner) = at_Enemy) then
+          Group.OrderAttackUnit(U, True)
+        else
+          Group.OrderWalk(Target, True); //Just move to position
+      end;
+    end;
 end;
 
 
@@ -144,6 +172,7 @@ var
   Qty: Integer;
   H: TKMHouse;
   HT: THouseType;
+  UT: TUnitType;
   iPlayerAI: TKMHandAI;
 begin
   Result := False; //Set it right from the start. There are several Exit points below
@@ -245,6 +274,33 @@ begin
                           end
                           else
                             AddError('ct_SetHouseDamage without prior declaration of House');
+    ct_SetHouseDeliveryMode:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                          begin
+                            if InRange(P[0], Byte(Low(TDeliveryMode)), Byte(High(TDeliveryMode))) then //Check allowed range for delivery mode value
+                            begin
+                              if fLastHouse.AllowDeliveryModeChange then
+                                fLastHouse.SetDeliveryModeInstantly(TDeliveryMode(P[0]))
+                              else
+                                AddError(Format('ct_SetHouseDeliveryMode: not allowed to change delivery mode for %s ', [gRes.Houses[fLastHouse.HouseType].HouseName]));
+                            end else
+                              AddError(Format('ct_SetHouseDeliveryMode: wrong value for delivery mode: [%d] ', [P[0]]));
+                          end
+                          else
+                            AddError('ct_SetHouseDeliveryMode without prior declaration of House');
+    ct_SetHouseRepairMode:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                            fLastHouse.BuildingRepair := True
+                          else
+                            AddError('ct_SetHouseRepairMode without prior declaration of House');
+    ct_SetHouseClosedForWorker:
+                        if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
+                          if fLastHouse <> nil then
+                            fLastHouse.IsClosedForWorker := True
+                          else
+                            AddError('ct_SetHouseClosedForWorker without prior declaration of House');
     ct_SetUnit:         if PointInMap(P[1]+1, P[2]+1) then
                         begin
                           //Animals should be added regardless of current player
@@ -307,7 +363,7 @@ begin
     ct_AddWareToAll:    begin
                           Qty := EnsureRange(P[1], -1, High(Word)); //Sometimes user can define it to be 999999
                           if Qty = -1 then Qty := High(Word); //-1 means maximum resources
-                          for i:=0 to gHands.Count-1 do
+                          for I := 0 to gHands.Count - 1 do
                           begin
                             H := gHands[i].FindHouse(ht_Store, 1);
                             if (H <> nil) and H.ResCanAddToIn(WareIndexToType[P[0]]) then
@@ -372,12 +428,20 @@ begin
     ct_BlockTrade:      if fLastHand <> PLAYER_NONE then
                         begin
                           if WareIndexToType[P[0]] in [WARE_MIN..WARE_MAX] then
-                            gHands[fLastHand].Locks.AllowToTrade[WareIndexToType[P[0]]] := false;
+                            gHands[fLastHand].Locks.AllowToTrade[WareIndexToType[P[0]]] := False;
                         end;
     ct_BlockUnit:       if fLastHand <> PLAYER_NONE then
                         begin
-                          if UnitIndexToType[P[0]] in [HUMANS_MIN..HUMANS_MAX] then
-                            gHands[fLastHand].Locks.UnitBlocked[UnitIndexToType[P[0]]] := True;
+                          UT := UnitIndexToType[P[0]];
+
+                          if UT in [HUMANS_MIN..HUMANS_MAX] then
+                          begin
+                            //Militia is a special case, because it could be trained in 2 diff houses
+                            if (UT = ut_Militia) and (P[1] = 1) then // if P[1] = 1, then its TownHall
+                              gHands[fLastHand].Locks.SetUnitBlocked(True, UT, True)
+                            else
+                              gHands[fLastHand].Locks.SetUnitBlocked(True, UT);
+                          end;
                         end;
     ct_BlockHouse:      if fLastHand <> PLAYER_NONE then
                         begin
@@ -578,11 +642,9 @@ begin
                         begin
                           if (fLastHouse <> nil) then
                           begin
-                            if not fLastHouse.IsDestroyed then //Could be destroyed already by damage
-                              if (fLastHouse is TKMHouseBarracks) then
-                                TKMHouseBarracks(fLastHouse).RallyPoint := KMPoint(P[0]+1, P[1]+1)
-                              else if (fLastHouse is TKMHouseWoodcutters) then
-                                TKMHouseWoodcutters(fLastHouse).CuttingPoint := KMPoint(P[0]+1, P[1]+1);
+                            if not fLastHouse.IsDestroyed  //Could be destroyed already by damage
+                              and (fLastHouse is TKMHouseWFlagPoint) then
+                              TKMHouseWFlagPoint(fLastHouse).FlagPoint := KMPoint(P[0]+1, P[1]+1);
                           end
                           else
                             AddError('ct_SetRallyPoint without prior declaration of House');
@@ -595,33 +657,6 @@ begin
                         end;
   end;
   Result := true; //Must have worked if we haven't exited by now
-end;
-
-
-//Determine what we are attacking: House, Unit or just walking to some place
-procedure TMissionParserStandard.ProcessAttackPositions;
-var
-  I: Integer;
-  H: TKMHouse;
-  U: TKMUnit;
-begin
-  Assert((fParsingMode <> mpm_Editor) or (fAttackPositionsCount = 0), 'AttackPositions should be handled by MapEd');
-
-  for I := 0 to fAttackPositionsCount - 1 do
-    with fAttackPositions[I] do
-    begin
-      H := gHands.HousesHitTest(Target.X, Target.Y); //Attack house
-      if (H <> nil) and (not H.IsDestroyed) and (gHands.CheckAlliance(Group.Owner, H.Owner) = at_Enemy) then
-        Group.OrderAttackHouse(H, True)
-      else
-      begin
-        U := gTerrain.UnitsHitTest(Target.X, Target.Y); //Chase/attack unit
-        if (U <> nil) and (not U.IsDeadOrDying) and (gHands.CheckAlliance(Group.Owner, U.Owner) = at_Enemy) then
-          Group.OrderAttackUnit(U, True)
-        else
-          Group.OrderWalk(Target, True); //Just move to position
-      end;
-    end;
 end;
 
 
@@ -844,8 +879,13 @@ begin
 
     //Block units
     for UT := HUMANS_MIN to HUMANS_MAX do
-      if gHands[I].Locks.UnitBlocked[UT] then
-        AddCommand(ct_BlockUnit, [UnitTypeToIndex[UT]]);
+    begin
+      if (UT = ut_Militia) and gHands[I].Locks.GetUnitBlocked(UT, True) then
+        AddCommand(ct_BlockUnit, [UnitTypeToIndex[UT], 1]); // 1 - special case for militia in TownHall
+
+      if gHands[I].Locks.GetUnitBlocked(UT) then
+        AddCommand(ct_BlockUnit, [UnitTypeToIndex[UT], 0]); // means default
+    end;
 
     //Block trades
     for Res := WARE_MIN to WARE_MAX do
@@ -864,19 +904,24 @@ begin
         if H.IsDamaged then
           AddCommand(ct_SetHouseDamage, [H.GetDamage]);
 
+        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
+          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
+
+        if H.BuildingRepair then // Repair mode is turned off by default
+          AddCommand(ct_SetHouseRepairMode, []);
+
+        if H.IsClosedForWorker then
+          AddCommand(ct_SetHouseClosedForWorker, []);
+
         if H is TKMHouseBarracks then
         begin
           for J := 1 to TKMHouseBarracks(H).MapEdRecruitCount do
             AddCommand(ct_UnitAddToLast, [UnitTypeToOldIndex[ut_Recruit]]);
-          if TKMHouseBarracks(H).IsRallyPointSet then
-            AddCommand(ct_SetRallyPoint, [TKMHouseBarracks(H).RallyPoint.X-1 + aLeftInset, TKMHouseBarracks(H).RallyPoint.Y-1 + aTopInset]);
         end;
 
-        if H is TKMHouseWoodcutters then
-        begin
-          if TKMHouseWoodcutters(H).IsCuttingPointSet then
-            AddCommand(ct_SetRallyPoint, [TKMHouseWoodcutters(H).CuttingPoint.X-1 + aLeftInset, TKMHouseWoodcutters(H).CuttingPoint.Y-1 + aTopInset]);
-        end;
+        if (H is TKMHouseWFlagPoint)
+          and TKMHouseWFlagPoint(H).IsFlagPointSet then
+          AddCommand(ct_SetRallyPoint, [TKMHouseWFlagPoint(H).FlagPoint.X-1 + aLeftInset, TKMHouseWFlagPoint(H).FlagPoint.Y-1 + aTopInset]);
 
         //Process any wares in this house
         //First two Stores use special KaM commands

@@ -45,6 +45,8 @@ var
 type
   TKMChopableAge = (caAge1, caAge2, caAge3, caAgeFull, caAgeFall, caAgeStump);
 
+  TKMChopableAgeSet = set of TKMChopableAge;
+
 const
   //Chopable tree, Chopdown animation,
   //Age1, Age2, Age3, Age4, Falling, Stump

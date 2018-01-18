@@ -9,6 +9,8 @@ uses
 
 type
   TKMScriptActions = class(TKMScriptEntity)
+  private
+    procedure LogStr(aText: String);
   public
     procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word);
     procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean);
@@ -82,8 +84,10 @@ type
     function  HouseSchoolQueueAdd(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer;
     procedure HouseSchoolQueueRemove(aHouseID, QueueIndex: Integer);
     procedure HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word);
+    procedure HouseTownHallMaxGold(aHouseID: Integer; aMaxGold: Integer);
     procedure HouseUnlock(aPlayer, aHouseType: Word);
     procedure HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean);
+    procedure HouseWoodcutterMode(aHouseID: Integer; aWoodcutterMode: Byte);
     procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean);
     procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer);
 
@@ -91,6 +95,7 @@ type
 
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
+    function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
 
@@ -160,7 +165,8 @@ uses
   TypInfo, KM_AI, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior, KM_HandLogistics,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
-  KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
+  KM_HouseWoodcutters, KM_HouseTownHall;
 
 const
   MIN_SOUND_AT_LOC_RADIUS = 28;
@@ -1302,14 +1308,17 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn);
       end
-    else
+      else
+        LogWarning('Actions.GiveField', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveField', [aPlayer, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1327,16 +1336,19 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn)
-      or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
+        or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn, aStage, aRandomAge);
       end
-    else
+      else
+        LogWarning('Actions.GiveFieldAged', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveFieldAged', [aPlayer, X, Y, aStage, Byte(aRandomAge)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1390,6 +1402,7 @@ begin
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
         gHands[aPlayer].Stats.WareProduced(WareIndexToType[aType], aCount);
+        gScriptEvents.ProcWareProduced(H, WareIndexToType[aType], aCount);
       end;
     end
     else
@@ -1419,6 +1432,7 @@ begin
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
         gHands[aPlayer].Stats.WareProduced(WareIndexToType[aType], aCount);
+        gScriptEvents.ProcWareProduced(H, WareIndexToType[aType], aCount);
       end;
     end
     else
@@ -1437,14 +1451,17 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine);
       end
-    else
+      else
+        LogWarning('Actions.GiveWineField', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveWineField', [aPlayer, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1462,16 +1479,19 @@ begin
   try
     Result := False;
     if InRange(aPlayer, 0, gHands.Count - 1)
-    and (gHands[aPlayer].Enabled)
-    and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
-    and gTerrain.TileInMapCoords(X, Y) then
+      and (gHands[aPlayer].Enabled)
+      and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
+      and gTerrain.TileInMapCoords(X, Y) then
+    begin
       if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine)
-      or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
+        or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
       begin
         Result := True;
         gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine, aStage, aRandomAge);
       end
-    else
+      else
+        LogWarning('Actions.GiveWineFieldAged', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
+    end else
       LogParamWarning('Actions.GiveWineFieldAged', [aPlayer, X, Y, aStage, Byte(aRandomAge)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1882,6 +1902,7 @@ begin
           begin
             H.ResAddToEitherFromScript(Res, aCount);
             gHands[H.Owner].Stats.WareProduced(Res, aCount);
+            gScriptEvents.ProcWareProduced(H, Res, aCount);
           end;
         end
         else
@@ -1928,6 +1949,28 @@ begin
     end
     else
       LogParamWarning('Actions.HouseTakeWaresFrom', [aHouseID, aType, aCount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Set TownHall Max Gold parameter (how many gold could be delivered in it)
+procedure TKMScriptActions.HouseTownHallMaxGold(aHouseID: Integer; aMaxGold: Integer);
+var
+  H: TKMHouse;
+begin
+  try
+    if (aHouseID > 0) and InRange(aMaxGold, 0, High(Word)) then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseTownHall then
+        TKMHouseTownHall(H).SetGoldMaxCnt(aMaxGold, True);
+    end
+    else
+      LogParamWarning('Actions.HouseTownHallMaxGold', [aHouseID, aMaxGold]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1984,14 +2027,19 @@ end;
 
 //* Version: 7000+
 //* Sets delivery mode for the specified house
+//* Possible values for aDeliveryMode parameter:
+//* 0 - Delivery closed
+//* 1 - Delivery allowed
+//* 2 - Take resource out
 procedure TKMScriptActions.HouseDeliveryMode(aHouseID: Integer; aDeliveryMode: Byte);
 var H: TKMHouse;
 begin
   try
-    if aHouseID > 0 then
+    if (aHouseID > 0) and (aDeliveryMode <= Byte(High(TDeliveryMode))) then
     begin
       H := fIDCache.GetHouse(aHouseID);
-      if (H <> nil) and gRes.Houses[H.HouseType].AcceptsWares then
+      if (H <> nil)
+        and gRes.Houses[H.HouseType].AcceptsWares then
         H.SetDeliveryModeInstantly(TDeliveryMode(aDeliveryMode));
     end
     else
@@ -2029,7 +2077,7 @@ end;
 //* Sets whether a woodcutter's hut is on chop-only mode
 procedure TKMScriptActions.HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean);
 const
-  CHOP_ONLY: array [Boolean] of TWoodcutterMode = (wcm_ChopAndPlant, wcm_Chop);
+  CHOP_ONLY: array [Boolean] of TKMWoodcutterMode = (wcm_ChopAndPlant, wcm_Chop);
 var
   H: TKMHouse;
 begin
@@ -2042,6 +2090,32 @@ begin
     end
     else
       LogParamWarning('Actions.HouseWoodcutterChopOnly', [aHouseID, Byte(aChopOnly)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Sets woodcutter's hut woodcutter mode
+//* Possible values for aWoodcutterMode parameter are:
+//* 0 - Chop And Plant
+//* 1 - Chop only
+//* 2 - Plant only
+procedure TKMScriptActions.HouseWoodcutterMode(aHouseID: Integer; aWoodcutterMode: Byte);
+var
+  H: TKMHouse;
+begin
+  try
+    if (aHouseID > 0) and (aWoodcutterMode <= Byte(High(TKMWoodcutterMode))) then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseWoodcutters then
+        TKMHouseWoodcutters(H).WoodcutterMode := TKMWoodcutterMode(aWoodcutterMode);
+    end
+    else
+      LogParamWarning('Actions.HouseWoodcutterMode', [aHouseID, Byte(aWoodcutterMode)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2217,6 +2291,13 @@ begin
 end;
 
 
+//private utility function
+procedure TKMScriptActions.LogStr(aText: String);
+begin
+  Log(AnsiString(aText));
+end;
+
+
 //* Version: 6587
 //* Sets the tile type and rotation at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -2256,7 +2337,7 @@ end;
 //*   ChangeSet: TKMTileChangeTypeSet; // Set of changes.
 //* end;
 //* TKMTileChangeTypeSet = set of TKMTileChangeType
-//* TKMTileChangeType = (tctTerrain, tctHeight, tctObject)</pre>
+//* TKMTileChangeType = (tctTerrain, tctRotation, tctHeight, tctObject)</pre>
 //* ChangeSet determines what should be changed on tile
 //* F.e. if we want to change terrain type and height, then ChangeSet should contain tctTerrain and tctHeight
 //* Note: aTiles elements should start from 0, as for dynamic array. So f.e. to change map tile 1,1 we should set aTiles[0][0].
@@ -2306,6 +2387,153 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+end;
+
+
+//* Version: 7000+
+//* Sets array of tiles info, like MapTilesArraySet, but parameters are
+//* passed as an TAnsiStringArray instead of array of TKMTerrainTileBrief.
+//* This function is useful if you need to create dynamic map from scratch.
+//* Array must contain strings in following format: 'X,Y,Terrain,Rotation,Height,Obj'
+//* f.e. '1,1,20,2,87,12'
+//* In case of invalid structure detection / failed variable parsing you can find
+//* detailed errors in LOG file.
+//* If you need to skip terrain or rotation/height/obj use -1 as parameter
+//* f.e.
+//* Skipping rotation for tile [7,2]: '7,2,20,-1,87,12'
+//* Skipping obj for tile [7,2]: '7,2,20,2,87,-1'
+//* Skipping height for tile [7,2]: '7,2,20,2,-1,5' etc.
+function TKMScriptActions.MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
+  function GetTileErrorsStr(aErrorsIn: TKMTileChangeTypeSet): string;
+  var TileChangeType: TKMTileChangeType;
+  begin
+    Result := '';
+    for TileChangeType := Low(TKMTileChangeType) to High(TKMTileChangeType) do
+      if TileChangeType in aErrorsIn then
+      begin
+        if Result <> '' then
+          Result := Result + ', ';
+        Result := Result + GetEnumName(TypeInfo(TKMTileChangeType), Integer(TileChangeType));
+      end;
+  end;
+
+var I: Integer;
+    Errors: TKMTerrainTileChangeErrorArray;
+    aTiles: array of TKMTerrainTileBrief;
+    aArrElem: TAnsiStringArray;
+    aParsedValue: Integer;
+    aParserError: Boolean;
+begin
+{$WARN SUSPICIOUS_TYPECAST OFF}
+  try
+    Result := True;
+    SetLength(Errors, 16);
+
+    //***********PARSING ARRAY OF STRING TO ARRAY OF TKMTerrainTileBrief**********
+    SetLength(aTiles, Length(aTilesS));
+    for I := Low(aTilesS) to High(aTilesS) do
+    begin
+      aArrElem := StrSplitA(ReplaceStr(String(aTilesS[I]), ' ', ''), ',');
+      aParserError := false;
+
+      //checking params count, if count is invalid we cannot proceed
+      if (Length(aArrElem) <> 6) then
+        LogStr(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
+      else
+      begin
+        //checking X, if X <= 0 we cannot proceed
+        if ((TryStrToInt(string(PChar(aArrElem[0])), aParsedValue)) and (aParsedValue > 0)) then
+          aTiles[I].X := aParsedValue
+        else
+        begin
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter X = [%s] in line [%s] is not a valid integer.', [aArrElem[0], aTilesS[I]]));
+          aParserError := true;
+        end;
+        //checking Y, if Y <= 0 we cannot proceed
+        if ((TryStrToInt(string(PChar(aArrElem[1])), aParsedValue)) and (aParsedValue > 0)) then
+          aTiles[I].Y := aParsedValue
+        else
+        begin
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter Y = [%s] in line [%s] is not a valid integer.', [aArrElem[1], aTilesS[I]]));
+          aParserError := true;
+        end;
+
+        //if X and Y are correctly defined we can proceed with terrain changes
+        if (not aParserError) then
+        begin
+          if (TryStrToInt(string(PChar(aArrElem[2])), aParsedValue)) then
+          begin
+            if (aParsedValue >= 0) then
+            begin
+              //if value is not skipped we proceed with terrain
+              aTiles[I].Terrain := aParsedValue;
+              Include(aTiles[I].ChangeSet, tctTerrain);
+            end;
+          end
+          else
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Terrain = [%s] in line [%s] is not a valid integer.', [aArrElem[2], aTilesS[I]]));
+
+          if (TryStrToInt(string(PChar(aArrElem[3])), aParsedValue)) then
+          begin
+            if (aParsedValue >= 0) then
+            begin
+              //if value is not skipped we proceed with rotation
+              aTiles[I].Rotation := aParsedValue;
+              Include(aTiles[I].ChangeSet, tctRotation);
+            end;
+          end
+          else
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Rotation = [%s] in line [%s] is not a valid integer.', [aArrElem[3], aTilesS[I]]));
+
+          if (TryStrToInt(string(PChar(aArrElem[4])), aParsedValue)) then
+          begin
+            if (aParsedValue >= 0) then
+            begin
+              //if value is not skipped we proceed with height
+              aTiles[I].Height := aParsedValue;
+              Include(aTiles[I].ChangeSet, tctHeight);
+            end;
+          end
+          else
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Height = [%s] in line [%s] is not a valid integer.', [aArrElem[4], aTilesS[I]]));
+
+          if (TryStrToInt(string(PChar(aArrElem[5])), aParsedValue)) then
+          begin
+            if (aParsedValue >= 0) then
+            begin
+              //if value is not skipped we proceed with obj
+              aTiles[I].Obj := aParsedValue;
+              Include(aTiles[I].ChangeSet, tctObject);
+            end;
+          end
+          else
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Obj = [%s] in line [%s] is not a valid integer.', [aArrElem[5], aTilesS[I]]));
+        end;
+      end;
+    end;
+    //***********END OF PARSING**********
+
+    if not gTerrain.ScriptTrySetTilesArray(aTiles, aRevertOnFail, Errors) then
+    begin
+      Result := False;
+
+      // Log errors
+      if Length(Errors) > 0 then
+      begin
+        if not aShowDetailedErrors then
+          Log(AnsiString(Format('Actions.MapTilesArraySetS: there were %d errors while setting tiles' , [Length(Errors)])))
+        else
+          Log('Actions.MapTilesArraySetS list of tiles errors:');
+      end;
+      if aShowDetailedErrors then
+        for I := Low(Errors) to High(Errors) do
+          Log(AnsiString(Format('Tile: %d,%d errors while applying [%s]', [Errors[I].X, Errors[I].Y, GetTileErrorsStr(Errors[I].ErrorsIn)])));
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+{$WARN SUSPICIOUS_TYPECAST ON}
 end;
 
 
@@ -2682,7 +2910,7 @@ begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and (aType in [Low(UnitIndexToType) .. High(UnitIndexToType)]) then
-      gHands[aPlayer].Locks.UnitBlocked[UnitIndexToType[aType]] := aBlock
+      gHands[aPlayer].Locks.SetUnitBlocked(aBlock, UnitIndexToType[aType])
     else
       LogParamWarning('Actions.UnitBlock', [aPlayer, aType, Byte(aBlock)]);
   except

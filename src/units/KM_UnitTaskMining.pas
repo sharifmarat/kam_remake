@@ -32,8 +32,9 @@ type
 
 implementation
 uses
-  KM_Houses, KM_HandsCollection, KM_Resource, KM_ResMapElements, KM_ResTexts, KM_ResHouses,
-  KM_Hand, KM_ResUnits;
+  KM_Houses, KM_HouseWoodcutters, KM_HandsCollection,
+  KM_Resource, KM_ResMapElements, KM_ResTexts, KM_ResHouses,
+  KM_Hand, KM_ResUnits, KM_ScriptingEvents;
 
 
 { TTaskMining }
@@ -68,7 +69,7 @@ end;
 
 
 //Note: Phase is -1 because it will have been increased at the end of last Execute
-function TTaskMining.WalkShouldAbandon:boolean;
+function TTaskMining.WalkShouldAbandon: Boolean;
 begin
   Result := false;
   Assert(fUnit is TKMUnitCitizen);
@@ -88,6 +89,7 @@ begin
   case fUnit.GetHome.HouseType of
     ht_Woodcutters: case TKMHouseWoodcutters(fUnit.GetHome).WoodcutterMode of
                       wcm_Chop:         Result := taCut;
+                      wcm_Plant:        Result := taPlant;
                       wcm_ChopAndPlant: if fUnit.GetHome.CheckResOut(wt_Trunk) >= MAX_WARES_IN_HOUSE then
                                           Result := taPlant
                                         else
@@ -130,7 +132,7 @@ end;
 //Happens when we discover that resource is gone or is occupied by another busy unit
 //Return false if new plan could not be found
 procedure TTaskMining.FindAnotherWorkPlan;
-var OldLoc: TKMPoint; OldDir:TKMDirection;
+var OldLoc: TKMPoint; OldDir: TKMDirection;
 begin
   OldLoc := WorkPlan.Loc;
   OldDir := WorkPlan.WorkDir;
@@ -385,6 +387,8 @@ begin
               GetHome.ResAddToOut(WorkPlan.Product2, WorkPlan.ProdCount2);
               gHands[fUnit.Owner].Stats.WareProduced(WorkPlan.Product1, WorkPlan.ProdCount1);
               gHands[fUnit.Owner].Stats.WareProduced(WorkPlan.Product2, WorkPlan.ProdCount2);
+              gScriptEvents.ProcWareProduced(fUnit.GetHome, WorkPlan.Product1, WorkPlan.ProdCount1);
+              gScriptEvents.ProcWareProduced(fUnit.GetHome, WorkPlan.Product2, WorkPlan.ProdCount2);
             end;
 
             GetHome.SetState(hst_Idle);

@@ -10,13 +10,12 @@ uses
 
 type
   //Barracks have 11 resources and Recruits
-  TKMHouseBarracks = class(TKMHouse)
+  TKMHouseBarracks = class(TKMHouseWFlagPoint)
   private
     fRecruitsList: TList;
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
-    fRallyPoint: TKMPoint;
-    procedure SetRallyPoint(aRallyPoint: TKMPoint);
-    function GetRallyPointTexId: Word;
+  protected
+    function GetFlagPointTexId: Word; override;
   public
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
@@ -34,10 +33,6 @@ type
     function CheckResIn(aWare: TWareType): Word; override;
     function ResCanAddToIn(aRes: TWareType): Boolean; override;
 
-    property RallyPoint: TKMPoint read fRallyPoint write SetRallyPoint;
-    function IsRallyPointSet: Boolean;
-    procedure ValidateRallyPoint;
-
     function ResOutputAvailable(aRes: TWareType; const aCount: Word): Boolean; override;
     function CanEquip(aUnitType: TUnitType): Boolean;
     function RecruitsCount: Integer;
@@ -47,8 +42,6 @@ type
     procedure ToggleAcceptRecruits;
     function Equip(aUnitType: TUnitType; aCount: Byte): Byte;
     procedure CreateRecruitInside(aIsMapEd: Boolean);
-
-    property RallyPointTexId: Word read GetRallyPointTexId;
   end;
 
 
@@ -66,7 +59,6 @@ begin
   inherited;
 
   fRecruitsList := TList.Create;
-  fRallyPoint := PointBelowEntrance;
 end;
 
 
@@ -87,7 +79,6 @@ begin
   end;
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
   LoadStream.Read(NotAcceptRecruitFlag);
-  LoadStream.Read(fRallyPoint);
 end;
 
 
@@ -159,11 +150,14 @@ end;
 
 
 procedure TKMHouseBarracks.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+var
+  OldCnt: Integer;
 begin
   Assert(aWare in [WARFARE_MIN..WARFARE_MAX], 'Invalid resource added to barracks');
 
+  OldCnt := fResourceCount[aWare];
   fResourceCount[aWare] := EnsureRange(fResourceCount[aWare] + aCount, 0, High(Word));
-  gHands[fOwner].Deliveries.Queue.AddOffer(Self, aWare, aCount);
+  gHands[fOwner].Deliveries.Queue.AddOffer(Self, aWare, fResourceCount[aWare] - OldCnt);
 end;
 
 
@@ -194,7 +188,7 @@ begin
     end;
   end;
   Assert(aCount <= fResourceCount[aWare]);
-  dec(fResourceCount[aWare], aCount);
+  Dec(fResourceCount[aWare], aCount);
 end;
 
 
@@ -213,15 +207,9 @@ begin
 end;
 
 
-function TKMHouseBarracks.GetRallyPointTexId: Word;
+function TKMHouseBarracks.GetFlagPointTexId: Word;
 begin
   Result := 249;
-end;
-
-
-function TKMHouseBarracks.IsRallyPointSet: Boolean;
-begin
-   Result := not KMSamePoint(fRallyPoint, PointBelowEntrance);
 end;
 
 
@@ -236,7 +224,7 @@ var
   I: Integer;
 begin
   Result := RecruitsCount > 0; //Can't equip anything without recruits
-  Result := Result and not gHands[fOwner].Locks.UnitBlocked[aUnitType];
+  Result := Result and not gHands[fOwner].Locks.GetUnitBlocked(aUnitType);
 
   for I := 1 to 4 do
   if TroopCost[aUnitType, I] <> wt_None then //Can't equip if we don't have a required resource
@@ -274,7 +262,7 @@ begin
 
     //Make new unit
     Soldier := TKMUnitWarrior(gHands[fOwner].TrainUnit(aUnitType, Entrance));
-    Soldier.SetInHouse(Self); //Put him in the barracks, so if it is destroyed while he is inside he is placed somewhere
+    Soldier.InHouse := Self; //Put him in the barracks, so if it is destroyed while he is inside he is placed somewhere
     Soldier.Visible := False; //Make him invisible as he is inside the barracks
     Soldier.Condition := Round(TROOPS_TRAINED_CONDITION * UNIT_MAX_CONDITION); //All soldiers start with 3/4, so groups get hungry at the same time
     //Soldier.OrderLoc := KMPointBelow(Entrance); //Position in front of the barracks facing north
@@ -295,24 +283,11 @@ begin
   begin
     U := gHands[fOwner].TrainUnit(ut_Recruit, Entrance);
     U.Visible := False;
-    U.SetInHouse(Self);
+    U.InHouse := Self;
     U.SetHome(Self); //When walking out Home is used to remove recruit from barracks
     RecruitsAdd(U);
     gHands[fOwner].Stats.UnitCreated(ut_Recruit, False);
   end;
-end;
-
-
-procedure TKMHouseBarracks.ValidateRallyPoint;
-begin
-  //this will automatically update rally point to valid value
-  SetRallyPoint(fRallyPoint);
-end;
-
-
-procedure TKMHouseBarracks.SetRallyPoint(aRallyPoint: TKMPoint);
-begin
-  fRallyPoint := gTerrain.GetPassablePointWithinSegment(PointBelowEntrance, aRallyPoint, tpWalk);
 end;
 
 
@@ -328,7 +303,6 @@ begin
     SaveStream.Write(TKMUnit(fRecruitsList.Items[I]).UID); //Store ID
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
   SaveStream.Write(NotAcceptRecruitFlag);
-  SaveStream.Write(fRallyPoint);
 end;
 
 

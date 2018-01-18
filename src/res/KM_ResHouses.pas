@@ -21,6 +21,7 @@ type
 const
   HOUSE_MIN = ht_ArmorSmithy;
   HOUSE_MAX = ht_Woodcutters;
+  HOUSE_WORKSHOP = [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop];
 
 type
   THouseAnim = array [THouseActionType] of TKMAnimLoop;
@@ -557,8 +558,8 @@ end;
 
 function TKMHouseSpec.AcceptsWares: boolean;
 begin
-  Result := (ResInput[1] <> wt_None) or //Exclude houses that do not receive wares
-            (fHouseType = ht_Marketplace); //Marketplace also accepts wares
+  Result := (ResInput[1] <> wt_None)          //Exclude houses that do not receive wares
+            or (fHouseType = ht_Marketplace); //Marketplace also accepts wares
 end;
 
 

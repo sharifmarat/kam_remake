@@ -95,6 +95,7 @@ type
     procedure SetCondition(aValue: Integer);
     function CanAccessHome: Boolean;
 
+    procedure SetInHouse(aInHouse: TKMHouse);
     procedure UpdateThoughts;
     function UpdateVisibility: Boolean;
     procedure UpdateHitPoints;
@@ -162,8 +163,7 @@ type
     property  HitPointsMax: Byte read GetHitPointsMax;
     procedure CancelUnitTask;
     property  Visible: Boolean read fVisible write fVisible;
-    procedure SetInHouse(aInHouse: TKMHouse);
-    property  GetInHouse: TKMHouse read fInHouse;
+    property  InHouse: TKMHouse read fInHouse write SetInHouse;
     property  IsDead: Boolean read fIsDead;
     function  IsDeadOrDying: Boolean;
     property  GetPosition: TKMPoint read fCurrPosition;
@@ -279,7 +279,7 @@ implementation
 uses
   KM_CommonTypes, KM_Game, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits, KM_HouseInn,
-  KM_Hand,
+  KM_Hand, KM_HouseWoodcutters,
 
   KM_UnitActionAbandonWalk,
   KM_UnitActionFight,
@@ -320,7 +320,7 @@ procedure TKMSettledUnit.CleanHousePointer(aFreeAndNilTask: Boolean = False);
 begin
   if aFreeAndNilTask then
     FreeAndNil(fUnitTask);
-  fHome.GetHasOwner := False;
+  fHome.HasOwner := False;
   gHands.CleanUpHousePointer(fHome);
 end;
 
@@ -519,8 +519,12 @@ begin
           fUnitTask := TTaskGoHome.Create(Self)
         else
           SetActionStay(60, ua_Walk) //Home can't be reached
-      end else begin
-        fUnitTask := InitiateMining; //Unit is at home, so go get a job
+      end
+      else
+      begin
+        if not (fHome.HouseType in HOUSE_WORKSHOP) or (fHome.CheckResOut(wt_All) < MAX_WARES_OUT_WORKSHOP) then
+          fUnitTask := InitiateMining; //Unit is at home, so go get a job
+
         if fUnitTask = nil then //We didn't find any job to do - rest at home
           SetActionStay(gRes.Houses[fHome.HouseType].WorkerRest*10, ua_Walk);
       end;
@@ -539,7 +543,10 @@ begin
     ht_CoalMine:    Msg := TX_MSG_COAL_DEPLETED;
     ht_IronMine:    Msg := TX_MSG_IRON_DEPLETED;
     ht_GoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    ht_Woodcutters: Msg := TX_MSG_WOODCUTTER_DEPLETED;
+    ht_Woodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
+                      Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
+                    else
+                      Msg := TX_MSG_WOODCUTTER_DEPLETED;
     ht_FisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fUnitType].MiningRange) then
                       Msg := TX_MSG_FISHERMAN_TOO_FAR
                     else
@@ -547,7 +554,7 @@ begin
     else            Msg := 0;
   end;
 
-  Assert(Msg <> 0, gRes.Houses[fHome.HouseType].HouseName+' resource cant possibly deplet');
+  Assert(Msg <> 0, gRes.Houses[fHome.HouseType].HouseName + ' resource cant possibly deplet');
 
   gGame.ShowMessage(mkHouse, Msg, fHome.Entrance, fOwner);
   fHome.ResourceDepletedMsgIssued := True;
@@ -1202,6 +1209,7 @@ begin
   LoadStream.Read(fTicker);
   LoadStream.Read(fHitPoints);
   LoadStream.Read(fHitPointCounter);
+  LoadStream.Read(HitPointsInvulnerable);
   LoadStream.Read(fInHouse, 4);
   LoadStream.Read(fOwner, SizeOf(fOwner));
   LoadStream.Read(fHome, 4); //Substitute it with reference on SyncLoad
@@ -1263,7 +1271,7 @@ procedure TKMUnit.CloseUnit(aRemoveTileUsage: Boolean = True);
 begin
   if fHome <> nil then
   begin
-    fHome.GetHasOwner := False;
+    fHome.HasOwner := False;
     gHands.CleanUpHousePointer(fHome);
   end;
 
@@ -2020,6 +2028,7 @@ begin
   SaveStream.Write(fTicker);
   SaveStream.Write(fHitPoints);
   SaveStream.Write(fHitPointCounter);
+  SaveStream.Write(HitPointsInvulnerable);
 
   if fInHouse <> nil then
     SaveStream.Write(fInHouse.UID) //Store ID, then substitute it with reference on SyncLoad

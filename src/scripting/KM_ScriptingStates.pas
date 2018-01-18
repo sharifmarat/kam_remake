@@ -43,9 +43,8 @@ type
     function HouseDeliveryMode(aHouseID: Integer): Integer;
     function HouseDestroyed(aHouseID: Integer): Boolean;
     function HouseHasOccupant(aHouseID: Integer): Boolean;
+    function HouseFlagPoint(aHouseID: Integer): TKMPoint;
     function HouseIsComplete(aHouseID: Integer): Boolean;
-    function HouseTypeMaxHealth(aHouseType: Integer): Word;
-    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseOwner(aHouseID: Integer): Integer;
     function HousePositionX(aHouseID: Integer): Integer;
     function HousePositionY(aHouseID: Integer): Integer;
@@ -53,12 +52,16 @@ type
     function HouseResourceAmount(aHouseID, aResource: Integer): Integer;
     function HouseSchoolQueue(aHouseID, QueueIndex: Integer): Integer;
     function HouseSiteIsDigged(aHouseID: Integer): Boolean;
+    function HouseTownHallMaxGold(aHouseID: Integer): Integer;
     function HouseType(aHouseID: Integer): Integer;
+    function HouseTypeMaxHealth(aHouseType: Integer): Word;
     function HouseTypeName(aHouseType: Byte): AnsiString;
+    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseUnlocked(aPlayer, aHouseType: Word): Boolean;
     function HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
     function HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
     function HouseWoodcutterChopOnly(aHouseID: Integer): Boolean;
+    function HouseWoodcutterMode(aHouseID: Integer): Integer;
 
     function IsFieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
     function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
@@ -139,7 +142,7 @@ uses
   KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
-  KM_UnitsCollection, KM_PathFindingRoad;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -1149,10 +1152,12 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed  and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.X
+          Result := TKMHouseBarracks(H).FlagPoint.X
         else
           LogParamWarning('States.HouseBarracksRallyPointX: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointX', [aBarracks]);
@@ -1176,13 +1181,44 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.Y
+          Result := TKMHouseBarracks(H).FlagPoint.Y
         else
           LogParamWarning('States.HouseBarracksRallyPointY: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointY', [aBarracks]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns House Flag Point of specified house or KMPoint(0,0) if aHouseId is invalid
+//* Result: Flag Point
+function TKMScriptStates.HouseFlagPoint(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_ZERO;
+    if aHouseId > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseId);
+      if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
+        if (H is TKMHouseWFlagPoint) then
+          Result := TKMHouseWFlagPoint(H).FlagPoint
+        else
+          LogParamWarning('States.HouseFlagPoint: Specified house does not have Flag point', [aHouseId]);
+      end;
+    end
+    else
+      LogParamWarning('States.HouseFlagPoint', [aHouseId]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1351,7 +1387,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.GetHasOwner;
+        Result := H.HasOwner;
     end
     else
       LogParamWarning('States.HouseHasOccupant', [aHouseID]);
@@ -1559,6 +1595,31 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns Max amount of gold which is possible to deliver into the TownHall
+//* Result: Max gold for specified TownHall
+//* or -1 if TownHall house was not found
+function TKMScriptStates.HouseTownHallMaxGold(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := -1;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseTownHall then
+        Result := TKMHouseTownHall(H).GoldMaxCnt;
+    end
+    else
+      LogParamWarning('States.HouseTownHallMaxGold', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Returns the type of the specified house
 //* Result: House type
@@ -1743,6 +1804,34 @@ begin
     end
     else
       LogParamWarning('States.HouseWoodcutterChopOnly', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns woodcutter mode value for the specified woodcutter's hut
+//* Possible values for woodcutter mode are:
+//* 0 - Chop And Plant
+//* 1 - Chop only
+//* 2 - Plant only
+//* Result: woodcutter mode as Integer value
+function TKMScriptStates.HouseWoodcutterMode(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := Integer(wcm_ChopAndPlant);
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseWoodcutters then
+        Result := Integer(TKMHouseWoodcutters(H).WoodcutterMode);
+    end
+    else
+      LogParamWarning('States.HouseWoodcutterMode', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

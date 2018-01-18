@@ -11,7 +11,7 @@ type
   TKMGUIGameStats = class
   protected
     Panel_Stats: TKMPanel;
-      Panel_StatBlock: array [0..12] of TKMPanel;
+      Panel_StatBlock: array [0..STATS_LINES_CNT-1] of TKMPanel;
       Stat_HousePic: array [HOUSE_MIN..HOUSE_MAX] of TKMImage;
       Stat_UnitPic: array [CITIZEN_MIN..CITIZEN_MAX] of TKMImage;
       Stat_HouseQty, Stat_HouseWip: array [HOUSE_MIN..HOUSE_MAX] of TKMLabel;

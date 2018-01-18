@@ -1,7 +1,8 @@
 unit Main;
 interface
 uses
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtDlgs, SysUtils, Classes, StdCtrls, StrUtils, INIFiles, Vcl.ComCtrls;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtDlgs, SysUtils,
+  Classes, StdCtrls, StrUtils, INIFiles, Vcl.ComCtrls, Shlwapi;
 
 type
   TForm1 = class(TForm)
@@ -61,7 +62,7 @@ type
   end;
 
 const
-  VAR_TYPE_NAME: array[0..37] of string = (
+  VAR_TYPE_NAME: array[0..38] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
     'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
@@ -70,10 +71,10 @@ const
     'TKMHouseFace',
     'array of TKMTerrainTileBrief','TKMAudioFormat',
     'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandIndex', 'array of TKMHandIndex', // Werewolf types
-    'TByteSet', 'TIntegerArray' // Werewolf types
+    'TByteSet', 'TIntegerArray', 'TAnsiStringArray' // Werewolf types
   );
 
-  VAR_TYPE_ALIAS: array[0..37] of string = (
+  VAR_TYPE_ALIAS: array[0..38] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
     'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
@@ -82,7 +83,7 @@ const
     'TKMHouseFace',
     'array of TKMTerrainTileBrief','TKMAudioFormat',
     'Integer', 'Integer', 'Integer', 'Integer', 'array of Integer', // Werewolf types
-    'set of Byte', 'array of Integer' // Werewolf types
+    'set of Byte', 'array of Integer', 'array of AnsiString' // Werewolf types
   );
 
 var
@@ -129,7 +130,7 @@ begin
     Settings.WriteString('HEADER', 'Events',  'header\Events.header');
     Settings.WriteString('HEADER', 'States',  'header\States.header');
     Settings.WriteString('HEADER', 'Utils',   'header\Utils.header');
-    Settings.WriteString('OUTPUT', 'Actions', 'wiki\Actions.header');
+    Settings.WriteString('OUTPUT', 'Actions', 'wiki\Actions.wiki');
     Settings.WriteString('OUTPUT', 'Events',  'wiki\Events.wiki');
     Settings.WriteString('OUTPUT', 'States',  'wiki\States.wiki');
     Settings.WriteString('OUTPUT', 'Utils',   'wiki\Utils.wiki');
@@ -192,7 +193,7 @@ begin
     // If not set to -1 it skips the first variable
     nextType := -1;
 
-    listTokens.AddStrings(StrSplit(aString, ' '));
+    StrSplit(aString, ' ', listTokens);
 
     // Re-combine type arrays
     for i := 0 to listTokens.Count - 1 do
@@ -396,9 +397,18 @@ end;
 
 procedure TForm1.btnGenerateClick(Sender: TObject);
 
+  function RelToAbs(const RelPath, BasePath: string): string;
+  var
+    Dst: array[0..200-1] of char;
+  begin
+    PathCanonicalize(@Dst[0], PChar(IncludeTrailingBackslash(BasePath) + RelPath));
+    result := Dst;
+  end;
+
   procedure ParseList(aName: String; aResultList: TStringList; aInputFile,aHeaderFile,aOutputFile: String; aHasReturn: Boolean = True);
   var
     tmpList: TStringList;
+    Path: String;
   begin
     tmpList := TStringList.Create;
     if FileExists(aInputFile) then
@@ -423,7 +433,12 @@ procedure TForm1.btnGenerateClick(Sender: TObject);
       aResultList.AddStrings(tmpList);
 
       if aOutputFile <> '' then
+      begin
+        Path := RelToAbs(aOutputFile, ExtractFilePath(ParamStr(0)));
+        if not DirectoryExists(ExtractFileDir(Path)) then
+          ForceDirectories(ExtractFileDir(Path));
         aResultList.SaveToFile(aOutputFile);
+      end;
     end;
     FreeAndNil(tmpList);
   end;

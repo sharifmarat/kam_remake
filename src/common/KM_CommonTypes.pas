@@ -20,6 +20,7 @@ type
   TSmallIntArray = array of SmallInt;
   TIntegerArray = array of Integer;
   TInteger2Array = array of array of Integer;
+  TAnsiStringArray = array of AnsiString;
   TSingleArray = array of Single;
   TSingle2Array = array of array of Single;
   TStringArray = array of string;
@@ -33,8 +34,13 @@ type
   TPointEventFunc = function (Sender: TObject; const X,Y: Integer): Boolean of object;
   TBooleanEvent = procedure (aValue: Boolean) of object;
   TIntegerEvent = procedure (aValue: Integer) of object;
+  TObjectIntegerEvent = procedure (Sender: TObject; X: Integer) of object;
   TSingleEvent = procedure (aValue: Single) of object;
   TUnicodeStringEvent = procedure (const aData: UnicodeString) of object;
+  TUnicodeStringEventProc = procedure (const aData: UnicodeString);
+  TUnicode2StringEventProc = procedure (const aData1, aData2: UnicodeString);
+  TUnicodeStringObjEvent = procedure (Obj: TObject; const aData: UnicodeString) of object;
+  TUnicodeStringObjEventProc = procedure (Sender: TObject; const aData: UnicodeString);
   TUnicodeStringBoolEvent = procedure (const aData: UnicodeString; aBool: Boolean) of object;
   TGameStartEvent = procedure (const aData: UnicodeString; Spectating: Boolean) of object;
   TMapStartEvent = procedure (const aData: UnicodeString; aMapFolder: TMapFolder; aCRC: Cardinal; Spectating: Boolean) of object;

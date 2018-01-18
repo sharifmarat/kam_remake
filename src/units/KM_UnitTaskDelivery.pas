@@ -38,7 +38,10 @@ type
 
 implementation
 uses
-  Math, KM_HandsCollection, KM_Units_Warrior, KM_Log, KM_HouseBarracks, KM_Hand, KM_UnitTaskBuild;
+  Math,
+  KM_HandsCollection, KM_Hand,
+  KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall,
+  KM_UnitTaskBuild, KM_Log;
 
 
 { TTaskDeliver }
@@ -164,7 +167,8 @@ begin
                                       and ((fToHouse.DeliveryMode <> dm_Delivery)
                                         or ((fToHouse is TKMHouseStore) and TKMHouseStore(fToHouse).NotAcceptFlag[fWareType])
                                         or ((fToHouse is TKMHouseBarracks) and TKMHouseBarracks(fToHouse).NotAcceptFlag[fWareType])
-                                        or ((fToHouse is TKMHouseArmorWorkshop) and not TKMHouseArmorWorkshop(fToHouse).AcceptWareForDelivery(fWareType))));
+                                        or ((fToHouse is TKMHouseArmorWorkshop) and not TKMHouseArmorWorkshop(fToHouse).AcceptWareForDelivery(fWareType)))
+                                        or ((fToHouse is TKMHouseTownHall) and (TKMHouseTownHall(fToHouse).GoldMaxCnt <= TKMHouseTownHall(fToHouse).GoldCnt)));
                         end;
     dk_ToConstruction:  if fPhase <= 6 then
                           Result := Result or fToHouse.IsDestroyed;
