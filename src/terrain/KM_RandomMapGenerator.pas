@@ -1,4 +1,4 @@
-{
+﻿{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -83,8 +83,8 @@ type
   // These functions secure smooth transitions
     procedure CellularAutomaton(var A: TKMByte2Array);
     function TileTemplate(var A: TKMByte2Array): TKMByte2Array;
-    function TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
-    function TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+//    function TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+//    function TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
   // Generators of right rotated tiles and objects
     //procedure GenerateTilesOLD(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
@@ -252,21 +252,13 @@ end;
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
-  aX,aY,Y, X, K, X0,X1,X2,Y0,Y1,Y2,i: Integer;
-  Pmin,Pmax: TKMPoint;
-  S1,S2,S3,S4: TInteger2Array;
+  Y, X, K: Integer;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
-  TDAP: TKMPoint2Array;
-  P: TKMPointArray;
-  Points: TKMPoint2Array;
-  Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
 
   //Queue: TKMQuickFlood;
-  FillBiome: TKMFillBiome;
 
-  LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
 
 
@@ -1373,7 +1365,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
 // Connect points with zero chance to create obstacles = secure that player in loc X can walk to player with loc Y
   function LinearConnection(Probability: Single; FinP,StartP: TKMPoint; var P: TSingle2Array): Boolean;
   var
-    Owerflow: Integer;
+//    Owerflow: Integer;
     Vector, ActP: TKMPoint;
   begin
     Result := False;
@@ -1382,10 +1374,10 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
     Vector.Y := Byte(FinP.Y > StartP.Y) - Byte(FinP.Y < StartP.Y);
     //  Make route to final point or another route
     ActP := StartP;
-    Owerflow := 0;
+//    Owerflow := 0;
     while ( (not Result) AND ((FinP.X <> ActP.X) OR (FinP.Y <> ActP.Y)) ) do
     begin
-      Owerflow := Owerflow + 1;
+//      Owerflow := Owerflow + 1;
       // Actualize current point
       if (FinP.X <> ActP.X) then ActP.X := ActP.X + Vector.X;
       if (FinP.Y <> ActP.Y) then ActP.Y := ActP.Y + Vector.Y;
@@ -2756,9 +2748,8 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
   );
 var
-  X_0,Y_0,X_1,Y_1,X_2,Y_2,X0,X1,X2,Y0,Y1,Y2,sum: Integer;
+  X_0,Y_0,X_1,Y_1,X_2,Y_2,X1,X2,Y1,Y2,sum: Integer;
   H1,H2: TInteger2Array;
-  FillHeight: TKMFillBiome;
 begin
 
   H1 := LinearInterpolation(7,20);
@@ -3070,636 +3061,636 @@ end;
 
 
 // TileTemplate with Cellular automaton (developed but unfinished because of performance impact and results)
-function TKMRandomMapGenerator.TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
-type
-  TileTemplateArr = array[0..2,0..2] of Integer;
-var
-   aX,aY, X0,X1,X2, Y0,Y1,Y2, Step, sum: Integer;
-   check: Boolean;
-   B: array of array of TileTemplateArr;
-   Vystup: TKMByte2Array;
-const
-  MAX_LAYER = 255;
-  canWalk: array[0..23] of Boolean = (
-    True,True,False,False,False,True,True,True,True,True,True,False,True,True,True,True,True,True,False,False,False,False,False,False
-  );
-  TerrainPreference: array[0..23,0..3] of Byte = (
-    (0,1,7,14),(0,1,7,14),(2,3,4,0),(2,3,4,0),(2,3,4,0),(5,6,8,12),(5,6,8,12),(0,1,7,14),(5,6,8,12),(8,9,10,255),(8,9,10,255),(4,255,255,255),(5,6,8,12),(13,15,16,17),(0,1,7,14),(13,15,16,17),(13,15,16,17),(13,15,16,17),(0,255,255,255),(19,20,255,255),(19,20,255,255),(21,22,255,255),(21,22,255,255),(21,22,255,255)
-  );
-
-  function ChooseMin(var A,B: Integer): Integer;
-  begin
-    if ((not canWalk[B] OR (A < B)) AND canWalk[A]) then
-      Result := A
-    else
-      Result := B;
-  end;
-
-  procedure ET3(var T1, T2, Base: Byte);
-  var
-    i: Integer;
-  begin
-    for i := Low(TerrainPreference[Base]) to High(TerrainPreference[Base]) do
-    begin
-      if (TerrainPreference[Base,i] = T1) then
-      begin
-        T2 := T1;
-        Exit;
-      end
-      else if (TerrainPreference[Base,i] = T2) then
-      begin
-        T1 := T2;
-        Exit;
-      end;
-    end;
-    if (not canWalk[T1] OR (T1 > T2)) AND canWalk[T2] then
-      T1 := T2
-    else
-      T2 := T1;
-  end;
-
-  procedure ET2(const bY,bX,invY,invX,TTA_Y1,TTA_X1,TTA_Y2,TTA_X2: Integer);
-  var
-    val,TTA_X,TTA_Y,X,Y: Integer;
-  begin
-    TTA_X := TTA_X1;
-    TTA_Y := TTA_Y2;
-    //{
-    if (B[Y1,X1,TTA_Y,TTA_X] = A[Y1,X1]) OR not canWalk[B[Y1,X1,TTA_Y,TTA_X]] then
-    begin
-      B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,1,TTA_X], B[Y1,X1,TTA_Y,1]);
-    end;
-    //}
-
-    B[Y1,X1,TTA_Y1,TTA_X2] := ChooseMin(B[Y1,bX,TTA_Y1,TTA_X1], B[bY,X1,TTA_Y2,TTA_X2]);
-    B[Y1,X1,TTA_Y2,TTA_X2] := B[Y1,bX,TTA_Y2,TTA_X1];
-    B[Y1,X1,TTA_Y1,TTA_X1] := B[bY,X1,TTA_Y2,TTA_X1];
-    B[Y1,X1,1,1] := step;
-
-    val := (Byte(B[Y1,X1,2,0] = B[Y1,X1,0,0]) shl 0) OR // Left
-           (Byte(B[Y1,X1,0,0] = B[Y1,X1,0,2]) shl 1) OR // Top
-           (Byte(B[Y1,X1,0,2] = B[Y1,X1,2,2]) shl 2) OR // Right
-           (Byte(B[Y1,X1,2,2] = B[Y1,X1,2,0]) shl 3);   // Down
-
-    {
-    if B[Y1,X1,TTA_Y,TTA_X] = A[Y1,X1] then
-    begin
-      if B[Y1,X1,TTA_Y,1] <> A[Y1,X1] then
-        B[Y1,X1,TTA_Y,TTA_X] := B[Y1,X1,TTA_Y,1]
-      else if B[Y1,X1,1,TTA_X] <> A[Y1,X1] then
-        B[Y1,X1,TTA_Y,TTA_X] := B[Y1,X1,1,TTA_X];
-    end;
-    //}
-
-
-    case val of
-    // 3-tiles transition
-      1: begin // Left %0001
-           if (TTA_X = 0) then
-           begin
-             TTA_X := 2;
-             if (ChooseMin(B[Y1,X1,0,2], B[Y1,X1,2,2]) = B[Y1,X1,2,2]) then
-               TTA_Y := 0
-             else
-               TTA_Y := 2;
-           end;
-           Y := abs(TTA_Y - 2); // from 0 it makes 2 and from 2 it makes 0
-           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,0,0], B[Y1,X1,Y,2]);
-         end;
-      2: begin // Top %0010
-           if (TTA_Y = 0) then
-           begin
-             TTA_Y := 2;
-             if (ChooseMin(B[Y1,X1,2,0], B[Y1,X1,2,2]) = B[Y1,X1,2,2]) then
-               TTA_X := 0
-             else
-               TTA_X := 2;
-           end;
-           X := abs(TTA_X - 2); // from 0 it makes 2 and from 2 it makes 0
-           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,0,0], B[Y1,X1,2,X]);
-         end;
-      4: begin // Right %0100
-           if (TTA_X = 2) then
-           begin
-             TTA_X := 0;
-             if (ChooseMin(B[Y1,X1,0,0], B[Y1,X1,2,0]) = B[Y1,X1,0,0]) then
-               TTA_Y := 2
-             else
-               TTA_Y := 0;
-           end;
-           Y := abs(TTA_Y - 2); // from 0 it makes 2 and from 2 it makes 0
-           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,2,2], B[Y1,X1,Y,0]);
-         end;
-      8: begin // Down %1000
-           if (TTA_Y = 2) then
-           begin
-             TTA_Y := 0;
-             if (ChooseMin(B[Y1,X1,0,0], B[Y1,X1,0,2]) = B[Y1,X1,0,0]) then
-               TTA_X := 2
-             else
-               TTA_X := 0;
-           end;
-           X := abs(TTA_X - 2); // from 0 it makes 2 and from 2 it makes 0
-           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,2,2], B[Y1,X1,0,X]);
-         end;
-    // 4-tiles transition
-      0: begin // None  %0000
-        // Special case where are 2 diagonal tiles same
-           if (B[Y1,X1,0,0] = B[Y1,X1,2,2]) then // 1 = 4
-           begin
-             B[Y1,X1,TTA_Y2,TTA_X1] := B[Y1,X1,0,0];
-           end
-           else if (B[Y1,X1,0,2] = B[Y1,X1,2,0]) then // 2 = 3
-           begin
-             if (B[Y1,X1,TTA_Y2,TTA_X1] <> B[Y1,X1,0,2]) then
-               B[Y1,X1,TTA_Y2,TTA_X1] := B[Y1,X1,0,2]
-             else
-             begin
-
-             end;
-           end;
-
-          // 4 different tiles
-          {
-            if check then
-            begin
-              B[Y1,X1] := Byte(btDark);
-              B[Y1,X2] := Byte(btDark);
-              B[Y2,X1] := Byte(btDark);
-              B[Y2,X2] := Byte(btDark);
-            end;
-            }
-          end;
-    end;
-  end;
-
-
-begin
-
-  SetLength(B, Length(A), Length(A[Low(A)]));
-  SetLength(Vystup, Length(A) shl 1, Length(A[Low(A)]) shl 1);
-
-	for Y1 := 1 to gTerrain.MapY-1 do
-  begin
-    Y0 := Y1 - 1;
-		for X1 := 1 to gTerrain.MapX-1 do
-    begin
-      X0 := X1 - 1;
-
-    // Detect 8 surrounding tiles and store ideal transition of each tile into B
-      //{
-      check := true;
-      for aY := 0 to 2 do
-        for aX := 0 to 2 do
-        begin
-          B[Y1,X1,aY,aX] := BT[ A[Y1,X1] , A[Y0+aY,X0+aX] ];
-          if (B[Y1,X1,aY,aX] <> -1) then
-            check := false
-          else
-            B[Y1,X1,aY,aX] := A[Y1,X1];
-        end;
-    // Store final value for no-transition tile
-      if check then
-        B[Y1,X1,1,1] := MAX_LAYER
-      else
-        B[Y1,X1,1,1] := -1;
-      //}
-    end;
-  end;
-
-  // Left and top edge of map
-  for Y1 := 1 to gTerrain.MapY-1 do
-  begin
-    B[Y1,0,1,2] := BT[ A[Y1,0] , A[Y1,1] ];
-    if (B[Y1,0,1,2] = -1) then
-      B[Y1,0,1,2] := A[Y1,X1];
-    B[Y1,0,0,2] := B[Y1,0,1,2];
-    if (B[Y1,0,0,2] = -1) then
-      B[Y1,0,0,2] := A[Y1,X1];
-    B[Y1,0,2,2] := BT[ A[Y1,0] , A[Y1+1,1] ];
-    if (B[Y1,0,2,2] = -1) then
-      B[Y1,0,2,2] := A[Y1,X1];
-    B[Y1,0,1,1] := MAX_LAYER;
-  end;
-
-	for X1 := 1 to gTerrain.MapX-1 do
-  begin
-      B[0,X1,2,1] := BT[ A[0,X1] , A[1,X1] ];
-      if (B[0,X1,2,1] = -1) then
-        B[0,X1,2,1] := A[Y1,X1];
-      B[0,X1,2,0] := B[0,X1,2,1];
-      if (B[0,X1,2,0] = -1) then
-        B[0,X1,2,0] := A[Y1,X1];
-      B[0,X1,2,2] := BT[ A[0,X1] , A[1,X1+1] ];
-      if (B[0,X1,2,2] = -1) then
-        B[0,X1,2,2] := A[Y1,X1];
-      B[0,X1,1,1] := MAX_LAYER;
-  end;
-
-//{
-  for step := MAX_LAYER-1 downto MAX_LAYER-Settings do
-  begin
-	  for Y1 := 1 to gTerrain.MapY-1 do
-    begin
-      Y0 := Y1 - 1;
-      Y2 := Y1 + 1;
-		  for X1 := 1 to gTerrain.MapX-1 do
-      begin
-        if (B[Y1,X1,1,1] = -1) then
-        begin
-          X0 := X1 - 1;
-          X2 := X1 + 1;
-          sum := (Byte(B[Y1,X0,1,1] > step) shl 0) OR
-                 (Byte(B[Y0,X1,1,1] > step) shl 1) OR
-                 (Byte(B[Y1,X2,1,1] > step) shl 2) OR
-                 (Byte(B[Y2,X1,1,1] > step) shl 3);
-          case sum of
-          // 2 exist transitions
-            3: begin // Left Top %0011
-                ET2(Y0,X0,Y2,X2,0,2,2,0);
-               end;
-            6: begin // Right Top %0110
-                ET2(Y0,X2,Y2,X0,0,0,2,2);
-               end;
-            12:begin // Right Down %1100
-                ET2(Y2,X2,Y0,X0,2,0,0,2);
-               end;
-            9: begin // Left Down %1001
-                ET2(Y2,X0,Y0,X2,2,2,0,0);
-               end;
-          // 3 exist transitions
-            7: begin // Left Top Right %0111
-                B[Y1,X1,0,0] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
-                B[Y1,X1,0,2] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
-                B[Y1,X1,2,0] := B[Y1,X0,2,2];
-                B[Y1,X1,2,2] := B[Y1,X2,2,0];
-                B[Y1,X1,1,1] := step;
-               end;
-            13: begin // Left Down Right %1101
-                B[Y1,X1,2,0] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
-                B[Y1,X1,2,2] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
-                B[Y1,X1,0,0] := B[Y1,X0,0,2];
-                B[Y1,X1,0,2] := B[Y1,X2,0,0];
-                B[Y1,X1,1,1] := step;
-               end;
-            14: begin // Top Right Down %1110
-                B[Y1,X1,0,2] := ChooseMin(B[Y0,X1,2,2], B[Y1,X2,0,0]);
-                B[Y1,X1,2,2] := ChooseMin(B[Y2,X1,0,2], B[Y1,X2,2,0]);
-                B[Y1,X1,0,0] := B[Y0,X1,2,0];
-                B[Y1,X1,2,0] := B[Y2,X1,0,0];
-                B[Y1,X1,1,1] := step;
-               end;
-            11: begin // Top Left Down %1011
-                B[Y1,X1,0,0] := ChooseMin(B[Y0,X1,2,0], B[Y1,X0,0,2]);
-                B[Y1,X1,2,0] := ChooseMin(B[Y2,X1,0,0], B[Y1,X0,2,2]);
-                B[Y1,X1,0,2] := B[Y0,X1,2,2];
-                B[Y1,X1,2,2] := B[Y2,X1,0,2];
-                B[Y1,X1,1,1] := step;
-               end;
-          // 4 exist transitions
-            15: begin // Left down %1001
-                B[Y1,X1,0,0] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
-                B[Y1,X1,0,2] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
-                B[Y1,X1,2,2] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
-                B[Y1,X1,2,0] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
-                B[Y1,X1,1,1] := step;
-               end;
-            else begin   end;
-          end;
-
-
-        end;
-      end;
-    end;
-  end;
-  //}
-
-	for Y1 := 1 to gTerrain.MapY-1 do
-  begin
-    Y0 := Y1 - 1;
-    Y2 := Y1 + 1;
-    for X1 := 1 to gTerrain.MapX-1 do
-    begin
-      {
-      X0 := X1 - 1;
-      X2 := X1 + 1;
-      Vystup[Y1<<1,X1<<1] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
-      Vystup[Y1<<1,(X1<<1)+1] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
-      Vystup[(Y1<<1)+1,(X1<<1)+1] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
-      Vystup[(Y1<<1)+1,X1<<1] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
-      }
-      //{
-      if (B[Y1,X1,1,1] > -1) then
-      begin
-        Vystup[Y1 shl 1,X1 shl 1] := B[Y1,X1,0,0];
-        Vystup[Y1 shl 1,(X1 shl 1)+1] := B[Y1,X1,0,2];
-        Vystup[(Y1 shl 1)+1,(X1 shl 1)+1] := B[Y1,X1,2,2];
-        Vystup[(Y1 shl 1)+1,X1 shl 1] := B[Y1,X1,2,0];
-      end
-      else
-      begin
-        Vystup[Y1 shl 1,X1 shl 1] := Byte(btSnow2);
-        Vystup[Y1 shl 1,X1 shl 1+1] := Byte(btSnow2);
-        Vystup[Y1 shl 1+1,X1 shl 1+1] := Byte(btSnow2);
-        Vystup[Y1 shl 1+1,X1 shl 1] := Byte(btSnow2);
-      end;
-      //}
-    end;
-  end;
-  {
-  if (Settings > 4) then
-  begin
-	for Y1 := 1 to gTerrain.MapY-1 do
-		for X1 := 1 to gTerrain.MapX-1 do
-    begin
-      if (B[Y1,X1,0,0] < 0) then
-        B[Y1,X1,0,0] := Byte(btDark);
-      if (B[Y1,X1,0,2] < 0) then
-        B[Y1,X1,0,2] := Byte(btDark);
-      if (B[Y1,X1,2,0] < 0) then
-        B[Y1,X1,2,0] := Byte(btDark);
-      if (B[Y1,X1,2,2] < 0) then
-        B[Y1,X1,2,2] := Byte(btDark);
-      Vystup[Y1<<1,X1<<1] := B[Y1,X1,0,0];
-      Vystup[Y1<<1,(X1<<1)+1] := B[Y1,X1,0,2];
-      Vystup[(Y1<<1)+1,(X1<<1)+1] := B[Y1,X1,2,2];
-      Vystup[(Y1<<1)+1,X1<<1] := B[Y1,X1,2,0];
-    end;
-  end;
-    end;
-    end;
-  //}
-  Result := Vystup;
-end;
+//function TKMRandomMapGenerator.TileTemplateCA(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+//type
+//  TileTemplateArr = array[0..2,0..2] of Integer;
+//var
+//   aX,aY, X0,X1,X2, Y0,Y1,Y2, Step, sum: Integer;
+//   check: Boolean;
+//   B: array of array of TileTemplateArr;
+//   Vystup: TKMByte2Array;
+//const
+//  MAX_LAYER = 255;
+//  canWalk: array[0..23] of Boolean = (
+//    True,True,False,False,False,True,True,True,True,True,True,False,True,True,True,True,True,True,False,False,False,False,False,False
+//  );
+//  TerrainPreference: array[0..23,0..3] of Byte = (
+//    (0,1,7,14),(0,1,7,14),(2,3,4,0),(2,3,4,0),(2,3,4,0),(5,6,8,12),(5,6,8,12),(0,1,7,14),(5,6,8,12),(8,9,10,255),(8,9,10,255),(4,255,255,255),(5,6,8,12),(13,15,16,17),(0,1,7,14),(13,15,16,17),(13,15,16,17),(13,15,16,17),(0,255,255,255),(19,20,255,255),(19,20,255,255),(21,22,255,255),(21,22,255,255),(21,22,255,255)
+//  );
+//
+//  function ChooseMin(var A,B: Integer): Integer;
+//  begin
+//    if ((not canWalk[B] OR (A < B)) AND canWalk[A]) then
+//      Result := A
+//    else
+//      Result := B;
+//  end;
+//
+//  procedure ET3(var T1, T2, Base: Byte);
+//  var
+//    i: Integer;
+//  begin
+//    for i := Low(TerrainPreference[Base]) to High(TerrainPreference[Base]) do
+//    begin
+//      if (TerrainPreference[Base,i] = T1) then
+//      begin
+//        T2 := T1;
+//        Exit;
+//      end
+//      else if (TerrainPreference[Base,i] = T2) then
+//      begin
+//        T1 := T2;
+//        Exit;
+//      end;
+//    end;
+//    if (not canWalk[T1] OR (T1 > T2)) AND canWalk[T2] then
+//      T1 := T2
+//    else
+//      T2 := T1;
+//  end;
+//
+//  procedure ET2(const bY,bX,invY,invX,TTA_Y1,TTA_X1,TTA_Y2,TTA_X2: Integer);
+//  var
+//    val,TTA_X,TTA_Y,X,Y: Integer;
+//  begin
+//    TTA_X := TTA_X1;
+//    TTA_Y := TTA_Y2;
+//    //{
+//    if (B[Y1,X1,TTA_Y,TTA_X] = A[Y1,X1]) OR not canWalk[B[Y1,X1,TTA_Y,TTA_X]] then
+//    begin
+//      B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,1,TTA_X], B[Y1,X1,TTA_Y,1]);
+//    end;
+//    //}
+//
+//    B[Y1,X1,TTA_Y1,TTA_X2] := ChooseMin(B[Y1,bX,TTA_Y1,TTA_X1], B[bY,X1,TTA_Y2,TTA_X2]);
+//    B[Y1,X1,TTA_Y2,TTA_X2] := B[Y1,bX,TTA_Y2,TTA_X1];
+//    B[Y1,X1,TTA_Y1,TTA_X1] := B[bY,X1,TTA_Y2,TTA_X1];
+//    B[Y1,X1,1,1] := step;
+//
+//    val := (Byte(B[Y1,X1,2,0] = B[Y1,X1,0,0]) shl 0) OR // Left
+//           (Byte(B[Y1,X1,0,0] = B[Y1,X1,0,2]) shl 1) OR // Top
+//           (Byte(B[Y1,X1,0,2] = B[Y1,X1,2,2]) shl 2) OR // Right
+//           (Byte(B[Y1,X1,2,2] = B[Y1,X1,2,0]) shl 3);   // Down
+//
+//    {
+//    if B[Y1,X1,TTA_Y,TTA_X] = A[Y1,X1] then
+//    begin
+//      if B[Y1,X1,TTA_Y,1] <> A[Y1,X1] then
+//        B[Y1,X1,TTA_Y,TTA_X] := B[Y1,X1,TTA_Y,1]
+//      else if B[Y1,X1,1,TTA_X] <> A[Y1,X1] then
+//        B[Y1,X1,TTA_Y,TTA_X] := B[Y1,X1,1,TTA_X];
+//    end;
+//    //}
+//
+//
+//    case val of
+//    // 3-tiles transition
+//      1: begin // Left %0001
+//           if (TTA_X = 0) then
+//           begin
+//             TTA_X := 2;
+//             if (ChooseMin(B[Y1,X1,0,2], B[Y1,X1,2,2]) = B[Y1,X1,2,2]) then
+//               TTA_Y := 0
+//             else
+//               TTA_Y := 2;
+//           end;
+//           Y := abs(TTA_Y - 2); // from 0 it makes 2 and from 2 it makes 0
+//           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,0,0], B[Y1,X1,Y,2]);
+//         end;
+//      2: begin // Top %0010
+//           if (TTA_Y = 0) then
+//           begin
+//             TTA_Y := 2;
+//             if (ChooseMin(B[Y1,X1,2,0], B[Y1,X1,2,2]) = B[Y1,X1,2,2]) then
+//               TTA_X := 0
+//             else
+//               TTA_X := 2;
+//           end;
+//           X := abs(TTA_X - 2); // from 0 it makes 2 and from 2 it makes 0
+//           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,0,0], B[Y1,X1,2,X]);
+//         end;
+//      4: begin // Right %0100
+//           if (TTA_X = 2) then
+//           begin
+//             TTA_X := 0;
+//             if (ChooseMin(B[Y1,X1,0,0], B[Y1,X1,2,0]) = B[Y1,X1,0,0]) then
+//               TTA_Y := 2
+//             else
+//               TTA_Y := 0;
+//           end;
+//           Y := abs(TTA_Y - 2); // from 0 it makes 2 and from 2 it makes 0
+//           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,2,2], B[Y1,X1,Y,0]);
+//         end;
+//      8: begin // Down %1000
+//           if (TTA_Y = 2) then
+//           begin
+//             TTA_Y := 0;
+//             if (ChooseMin(B[Y1,X1,0,0], B[Y1,X1,0,2]) = B[Y1,X1,0,0]) then
+//               TTA_X := 2
+//             else
+//               TTA_X := 0;
+//           end;
+//           X := abs(TTA_X - 2); // from 0 it makes 2 and from 2 it makes 0
+//           B[Y1,X1,TTA_Y,TTA_X] := ChooseMin(B[Y1,X1,2,2], B[Y1,X1,0,X]);
+//         end;
+//    // 4-tiles transition
+//      0: begin // None  %0000
+//        // Special case where are 2 diagonal tiles same
+//           if (B[Y1,X1,0,0] = B[Y1,X1,2,2]) then // 1 = 4
+//           begin
+//             B[Y1,X1,TTA_Y2,TTA_X1] := B[Y1,X1,0,0];
+//           end
+//           else if (B[Y1,X1,0,2] = B[Y1,X1,2,0]) then // 2 = 3
+//           begin
+//             if (B[Y1,X1,TTA_Y2,TTA_X1] <> B[Y1,X1,0,2]) then
+//               B[Y1,X1,TTA_Y2,TTA_X1] := B[Y1,X1,0,2]
+//             else
+//             begin
+//
+//             end;
+//           end;
+//
+//          // 4 different tiles
+//          {
+//            if check then
+//            begin
+//              B[Y1,X1] := Byte(btDark);
+//              B[Y1,X2] := Byte(btDark);
+//              B[Y2,X1] := Byte(btDark);
+//              B[Y2,X2] := Byte(btDark);
+//            end;
+//            }
+//          end;
+//    end;
+//  end;
+//
+//
+//begin
+//
+//  SetLength(B, Length(A), Length(A[Low(A)]));
+//  SetLength(Vystup, Length(A) shl 1, Length(A[Low(A)]) shl 1);
+//
+//	for Y1 := 1 to gTerrain.MapY-1 do
+//  begin
+//    Y0 := Y1 - 1;
+//		for X1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      X0 := X1 - 1;
+//
+//    // Detect 8 surrounding tiles and store ideal transition of each tile into B
+//      //{
+//      check := true;
+//      for aY := 0 to 2 do
+//        for aX := 0 to 2 do
+//        begin
+//          B[Y1,X1,aY,aX] := BT[ A[Y1,X1] , A[Y0+aY,X0+aX] ];
+//          if (B[Y1,X1,aY,aX] <> -1) then
+//            check := false
+//          else
+//            B[Y1,X1,aY,aX] := A[Y1,X1];
+//        end;
+//    // Store final value for no-transition tile
+//      if check then
+//        B[Y1,X1,1,1] := MAX_LAYER
+//      else
+//        B[Y1,X1,1,1] := -1;
+//      //}
+//    end;
+//  end;
+//
+//  // Left and top edge of map
+//  for Y1 := 1 to gTerrain.MapY-1 do
+//  begin
+//    B[Y1,0,1,2] := BT[ A[Y1,0] , A[Y1,1] ];
+//    if (B[Y1,0,1,2] = -1) then
+//      B[Y1,0,1,2] := A[Y1,X1];
+//    B[Y1,0,0,2] := B[Y1,0,1,2];
+//    if (B[Y1,0,0,2] = -1) then
+//      B[Y1,0,0,2] := A[Y1,X1];
+//    B[Y1,0,2,2] := BT[ A[Y1,0] , A[Y1+1,1] ];
+//    if (B[Y1,0,2,2] = -1) then
+//      B[Y1,0,2,2] := A[Y1,X1];
+//    B[Y1,0,1,1] := MAX_LAYER;
+//  end;
+//
+//	for X1 := 1 to gTerrain.MapX-1 do
+//  begin
+//      B[0,X1,2,1] := BT[ A[0,X1] , A[1,X1] ];
+//      if (B[0,X1,2,1] = -1) then
+//        B[0,X1,2,1] := A[Y1,X1];
+//      B[0,X1,2,0] := B[0,X1,2,1];
+//      if (B[0,X1,2,0] = -1) then
+//        B[0,X1,2,0] := A[Y1,X1];
+//      B[0,X1,2,2] := BT[ A[0,X1] , A[1,X1+1] ];
+//      if (B[0,X1,2,2] = -1) then
+//        B[0,X1,2,2] := A[Y1,X1];
+//      B[0,X1,1,1] := MAX_LAYER;
+//  end;
+//
+////{
+//  for step := MAX_LAYER-1 downto MAX_LAYER-Settings do
+//  begin
+//	  for Y1 := 1 to gTerrain.MapY-1 do
+//    begin
+//      Y0 := Y1 - 1;
+//      Y2 := Y1 + 1;
+//		  for X1 := 1 to gTerrain.MapX-1 do
+//      begin
+//        if (B[Y1,X1,1,1] = -1) then
+//        begin
+//          X0 := X1 - 1;
+//          X2 := X1 + 1;
+//          sum := (Byte(B[Y1,X0,1,1] > step) shl 0) OR
+//                 (Byte(B[Y0,X1,1,1] > step) shl 1) OR
+//                 (Byte(B[Y1,X2,1,1] > step) shl 2) OR
+//                 (Byte(B[Y2,X1,1,1] > step) shl 3);
+//          case sum of
+//          // 2 exist transitions
+//            3: begin // Left Top %0011
+//                ET2(Y0,X0,Y2,X2,0,2,2,0);
+//               end;
+//            6: begin // Right Top %0110
+//                ET2(Y0,X2,Y2,X0,0,0,2,2);
+//               end;
+//            12:begin // Right Down %1100
+//                ET2(Y2,X2,Y0,X0,2,0,0,2);
+//               end;
+//            9: begin // Left Down %1001
+//                ET2(Y2,X0,Y0,X2,2,2,0,0);
+//               end;
+//          // 3 exist transitions
+//            7: begin // Left Top Right %0111
+//                B[Y1,X1,0,0] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
+//                B[Y1,X1,0,2] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
+//                B[Y1,X1,2,0] := B[Y1,X0,2,2];
+//                B[Y1,X1,2,2] := B[Y1,X2,2,0];
+//                B[Y1,X1,1,1] := step;
+//               end;
+//            13: begin // Left Down Right %1101
+//                B[Y1,X1,2,0] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
+//                B[Y1,X1,2,2] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
+//                B[Y1,X1,0,0] := B[Y1,X0,0,2];
+//                B[Y1,X1,0,2] := B[Y1,X2,0,0];
+//                B[Y1,X1,1,1] := step;
+//               end;
+//            14: begin // Top Right Down %1110
+//                B[Y1,X1,0,2] := ChooseMin(B[Y0,X1,2,2], B[Y1,X2,0,0]);
+//                B[Y1,X1,2,2] := ChooseMin(B[Y2,X1,0,2], B[Y1,X2,2,0]);
+//                B[Y1,X1,0,0] := B[Y0,X1,2,0];
+//                B[Y1,X1,2,0] := B[Y2,X1,0,0];
+//                B[Y1,X1,1,1] := step;
+//               end;
+//            11: begin // Top Left Down %1011
+//                B[Y1,X1,0,0] := ChooseMin(B[Y0,X1,2,0], B[Y1,X0,0,2]);
+//                B[Y1,X1,2,0] := ChooseMin(B[Y2,X1,0,0], B[Y1,X0,2,2]);
+//                B[Y1,X1,0,2] := B[Y0,X1,2,2];
+//                B[Y1,X1,2,2] := B[Y2,X1,0,2];
+//                B[Y1,X1,1,1] := step;
+//               end;
+//          // 4 exist transitions
+//            15: begin // Left down %1001
+//                B[Y1,X1,0,0] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
+//                B[Y1,X1,0,2] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
+//                B[Y1,X1,2,2] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
+//                B[Y1,X1,2,0] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
+//                B[Y1,X1,1,1] := step;
+//               end;
+//            else begin   end;
+//          end;
+//
+//
+//        end;
+//      end;
+//    end;
+//  end;
+//  //}
+//
+//	for Y1 := 1 to gTerrain.MapY-1 do
+//  begin
+////    Y0 := Y1 - 1;
+////    Y2 := Y1 + 1;
+//    for X1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      {
+//      X0 := X1 - 1;
+//      X2 := X1 + 1;
+//      Vystup[Y1<<1,X1<<1] := ChooseMin(B[Y1,X0,0,2], B[Y0,X1,2,0]);
+//      Vystup[Y1<<1,(X1<<1)+1] := ChooseMin(B[Y1,X2,0,0], B[Y0,X1,2,2]);
+//      Vystup[(Y1<<1)+1,(X1<<1)+1] := ChooseMin(B[Y1,X2,2,0], B[Y2,X1,0,2]);
+//      Vystup[(Y1<<1)+1,X1<<1] := ChooseMin(B[Y1,X0,2,2], B[Y2,X1,0,0]);
+//      }
+//      //{
+//      if (B[Y1,X1,1,1] > -1) then
+//      begin
+//        Vystup[Y1 shl 1,X1 shl 1] := B[Y1,X1,0,0];
+//        Vystup[Y1 shl 1,(X1 shl 1)+1] := B[Y1,X1,0,2];
+//        Vystup[(Y1 shl 1)+1,(X1 shl 1)+1] := B[Y1,X1,2,2];
+//        Vystup[(Y1 shl 1)+1,X1 shl 1] := B[Y1,X1,2,0];
+//      end
+//      else
+//      begin
+//        Vystup[Y1 shl 1,X1 shl 1] := Byte(btSnow2);
+//        Vystup[Y1 shl 1,X1 shl 1+1] := Byte(btSnow2);
+//        Vystup[Y1 shl 1+1,X1 shl 1+1] := Byte(btSnow2);
+//        Vystup[Y1 shl 1+1,X1 shl 1] := Byte(btSnow2);
+//      end;
+//      //}
+//    end;
+//  end;
+//  {
+//  if (Settings > 4) then
+//  begin
+//	for Y1 := 1 to gTerrain.MapY-1 do
+//		for X1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      if (B[Y1,X1,0,0] < 0) then
+//        B[Y1,X1,0,0] := Byte(btDark);
+//      if (B[Y1,X1,0,2] < 0) then
+//        B[Y1,X1,0,2] := Byte(btDark);
+//      if (B[Y1,X1,2,0] < 0) then
+//        B[Y1,X1,2,0] := Byte(btDark);
+//      if (B[Y1,X1,2,2] < 0) then
+//        B[Y1,X1,2,2] := Byte(btDark);
+//      Vystup[Y1<<1,X1<<1] := B[Y1,X1,0,0];
+//      Vystup[Y1<<1,(X1<<1)+1] := B[Y1,X1,0,2];
+//      Vystup[(Y1<<1)+1,(X1<<1)+1] := B[Y1,X1,2,2];
+//      Vystup[(Y1<<1)+1,X1<<1] := B[Y1,X1,2,0];
+//    end;
+//  end;
+//    end;
+//    end;
+//  //}
+//  Result := Vystup;
+//end;
 
 
 
 // Old version of TileTemplate (version with CA and actual version provides better results)
-function TKMRandomMapGenerator.TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
-var
-   aX,aY,Y, X, X0,X1,X2,Y0,Y1,Y2,cross: Integer;
-   check: Boolean;
-   B: TKMByte2Array;
-   BArr: array[0..2,0..2] of Integer;
-const
-  canWalk: array[0..23] of Boolean = (
-    True,True,False,False,False,True,True,True,True,True,True,False,True,True,True,True,True,True,False,False,False,False,False,False
-  );
-  TerrainPreference: array[0..23,0..3] of Byte = (
-    (0,1,7,14),(0,1,7,14),(2,3,4,0),(2,3,4,0),(2,3,4,0),(5,6,8,12),(5,6,8,12),(0,1,7,14),(5,6,8,12),(8,9,10,255),(8,9,10,255),(4,255,255,255),(5,6,8,12),(13,15,16,17),(0,1,7,14),(13,15,16,17),(13,15,16,17),(13,15,16,17),(0,255,255,255),(19,20,255,255),(19,20,255,255),(21,22,255,255),(21,22,255,255),(21,22,255,255)
-  );
-
-  function IdealTransitions(var T1, T2, Corner: Integer; var Original: Byte): Byte;
-  begin
-    if (T1 <> -1) AND (T2 <> -1) then
-    begin
-      if      (T1 = Corner) then Result := Corner
-      else if (T2 = Corner) then Result := Corner
-      else if (T1 < T2) then     Result := T1
-      else                       Result := T2;
-    end
-    else if (T1 <> -1) then      Result := T1
-    else if (T2 <> -1) then      Result := T2
-    else if (Corner <> -1) then  Result := Corner
-    else                         Result := Original;
-  end;
-
-  function GetSameTile(var Tile: Byte; Arr: array of Integer): Boolean;
-  var
-    i,j: Integer;
-  begin
-    Result := false;
-    for i := Low(Arr) to High(Arr)-1 do
-    begin
-      Tile := Arr[I];
-      for j := i+1 to High(Arr) do
-        if (Tile = Arr[j]) then
-        begin
-          Result := true;
-          Exit;
-        end;
-    end;
-  end;
-
-  procedure ThreeTilesTransition(var T1, T2, Base: Byte);
-  var
-    i: Integer;
-  begin
-    for i := Low(TerrainPreference[Base]) to High(TerrainPreference[Base]) do
-    begin
-      if (TerrainPreference[Base,i] = T1) then
-      begin
-        T2 := T1;
-        Exit;
-      end
-      else if (TerrainPreference[Base,i] = T2) then
-      begin
-        T1 := T2;
-        Exit;
-      end;
-    end;
-    if (not canWalk[T1] OR (T1 > T2)) AND canWalk[T2] then
-      T1 := T2
-    else
-      T2 := T1;
-  end;
-
-begin
-
-  SetLength(B, High(A) shl 1, High(A[Low(A)]) shl 1);
-
-// Surrounding tiles detection
-// Shortcuts (orientation in array A):
-//    _____________________________
-//   | [Y0,X0]   [Y0,X1]   [Y0,X2] |
-//   | [Y1,X0]   [Y1,X1]   [Y1,X2] |    where [Y1,X1] is center point which will be modified
-//   | [Y2,X0]   [Y2,X1]   [Y2,X2] |
-//    —————————————————————————————
-	for Y1 := 1 to gTerrain.MapY-1 do
-  begin
-    Y0 := Y1 - 1;
-    Y2 := Y1 + 1;
-    Y := Y1 shl 1;
-		for X1 := 1 to gTerrain.MapX-1 do
-    begin
-      X0 := X1 - 1;
-      X2 := X1 + 1;
-      X := X1 shl 1;
-
-    // Detect 8 surrounding tiles and store ideal transition of each tile into BArr
-      for aY := 0 to 2 do
-        for aX := 0 to 2 do
-        begin
-          if (BT[ A[Y1,X1] , A[aY+Y0,aX+X0] ] <> -1) then // Transitions
-            BArr[aY,aX] := BT[ A[Y1,X1] , A[aY+Y0,aX+X0] ]
-          else // No transitions
-            BArr[aY,aX] := -1;
-        end;
-
-    // Select 4 ideal transitions from BArr
-      // Left top
-      B[Y,X] := IdealTransitions(BArr[0,1], BArr[1,0], BArr[0,0], A[Y1,X1]);
-      // Right top
-      X := X + 1;
-      B[Y,X] := IdealTransitions(BArr[0,1], BArr[1,2], BArr[0,2], A[Y1,X1]);
-      // Right down
-      Y := Y + 1;
-      B[Y,X] := IdealTransitions(BArr[2,1], BArr[1,2], BArr[2,2], A[Y1,X1]);
-      // Left down
-      X := X - 1;
-      B[Y,X] := IdealTransitions(BArr[2,1], BArr[1,0], BArr[2,0], A[Y1,X1]);
-      Y := Y - 1;
-    end;
-  end;
-
-
-  if (Settings > 2) then
-  begin
-
-
-
-
-  for Y1 := 1 to High(B)-1 do
-  begin
-    Y0 := Y1 - 1;
-    Y2 := Y1 + 1;
-		for X1 := 1 to High(B[Y1])-1 do
-    begin
-      X0 := X1 - 1;
-      X2 := X1 + 1;
-      // Non-accessible texture fix (edge of water)
-      if not canWalk[ B[Y1,X1] ] then
-      begin
-        if canWalk[ B[Y0,X1] ] AND canWalk[ B[Y2,X1] ] then
-        begin
-          if (B[Y0,X1] < B[Y2,X1]) then
-            B[Y1,X1] := B[Y0,X1]
-          else
-            B[Y1,X1] := B[Y2,X1];
-          //if canWalk[ A[Y1 >> 1,X1 >> 1] ] then
-          //  B[Y1,X1] := A[Y1 >> 1,X1 >> 1]
-          //else if ((Y1 mod 2) = 0) then
-          //  B[Y1,X1] := B[Y0,X1]
-          //else
-          //  B[Y1,X1] := B[Y2,X1];
-        end
-        else if canWalk[ B[Y1,X0] ] AND canWalk[ B[Y1,X2] ] then
-        begin
-          if (B[Y1,X0] < B[Y1,X2]) then
-            B[Y1,X1] := B[Y1,X0]
-          else
-            B[Y1,X1] := B[Y1,X2];
-        //  if canWalk[ A[Y1 >> 1,X1 >> 1] ] then
-        //    B[Y1,X1] := A[Y1 >> 1,X1 >> 1]
-        //  else if ((X1 mod 2) = 0) then
-        //    B[Y1,X1] := B[Y1,X0]
-        //  else
-        //    B[Y1,X1] := B[Y1,X2];
-        end;
-      end
-      // Problems which are caused by two tiles transitions
-      else
-      if (B[Y1,X0] = B[Y1,X2]) AND (B[Y1,X1] <> B[Y1,X0]) AND canWalk[ B[Y1,X0] ] then // Vertical problem
-        B[Y1,X1] := B[Y1,X0]
-      else if (B[Y0,X1] = B[Y2,X1]) AND (B[Y1,X1] <> B[Y0,X1]) AND canWalk[ B[Y0,X1] ] then // Horizontal problem
-        B[Y1,X1] := B[Y0,X1];
-      // Single point of different tile (in comparison with surrounding tiles)
-      if (B[Y1,X1] <> B[Y0,X1]) AND (B[Y1,X1] <> B[Y2,X1]) AND (B[Y1,X1] <> B[Y1,X0]) AND (B[Y1,X1] <> B[Y1,X2]) then
-      begin
-        GetSameTile(B[Y1,X1], [ B[Y0,X1],B[Y2,X1],B[Y1,X0],B[Y1,X2] ]);
-      end;
-    end;
-  end;
-  //}
-
-
-// Shortcuts:
-//    _______                 ___________________
-//   | 1   2 |  is equal to  | [Y1,X1]   [Y1,X2] |
-//   | 3   4 |               | [Y2,X1]   [Y2,X2] |
-//    ———————                 ———————————————————
-// Transitions:
-//    ______________     ____________     _______________
-//   | 1 › top  ‹ 2 |   | 1 › $2 ‹ 2 |   | 1 › %0010 ‹ 2 |
-//   | ˇ          ˇ |   | ˇ        ˇ |   | ˇ           ˇ |
-//   | left   right |   | $1      $4 |   | %0001   %0100 |
-//   | ^          ^ |   | ^        ^ |   | ^           ^ |
-//   | 3 › down ‹ 4 |   | 3 › $8 ‹ 4 |   | 3 › %1000 ‹ 4 |
-//    ——————————————     ————————————     ———————————————
-
-  if (Settings > 3) then
-  begin
-//{
-  Y1 := 0;
-  while Y1 < High(B)-2 do
-  begin
-    Y1 := Y1 + 2;
-    Y2 := Y1 + 1;
-    X1 := 0;
-  	while X1 < High(B[Y1])-2 do
-    begin
-      X1 := X1 + 2;
-      X2 := X1 + 1;
-      cross := 0;
-  	  if (B[Y1,X1] <> B[Y2,X1]) then cross := cross OR $1;// Left
-  	  if (B[Y1,X1] <> B[Y1,X2]) then cross := cross OR $2;// Top
-  	  if (B[Y1,X2] <> B[Y2,X2]) then cross := cross OR $4;// Right
-  	  if (B[Y2,X1] <> B[Y2,X2]) then cross := cross OR $8;// Down
-
-      case cross of
-      // 3-tiles transition
-        14: ThreeTilesTransition(B[Y1,X2], B[Y2,X2], B[Y1,X1]); // Left  %1110
-        13: ThreeTilesTransition(B[Y2,X1], B[Y2,X2], B[Y1,X1]); // Top   %1101
-        11: ThreeTilesTransition(B[Y2,X1], B[Y1,X1], B[Y2,X2]); // Right %1011
-        7:  ThreeTilesTransition(B[Y1,X2], B[Y1,X1], B[Y2,X2]); // Down  %0111
-      // 4-tiles transition
-        15: begin
-            // Special case where are 2 diagonal tiles same
-              check := false;
-              if (B[Y1,X1] = B[Y2,X2]) then // 1 = 4
-              begin
-                if not canWalk[ B[Y1,X2] ] then
-                  B[Y1,X2] := B[Y1,X1] // 2 := 1
-                else if not canWalk[ B[Y2,X1] ] then
-                  B[Y2,X1] := B[Y1,X1] // 3 := 1
-                else
-                   check := true;
-              end
-              else if (B[Y2,X1] = B[Y1,X2]) then // 2 = 3
-              begin
-                if not canWalk[ B[Y1,X1] ] then
-                  B[Y1,X1] := B[Y2,X1] // 1 := 2
-                else if not canWalk[ B[Y2,X2] ] then
-                  B[Y2,X2] := B[Y2,X1] // 4 := 2
-                else
-                   check := true;
-              end
-              else
-                check := true;
-
-            // 4 different tiles
-              if check then
-              begin
-                B[Y1,X1] := Byte(btDark);
-                B[Y1,X2] := Byte(btDark);
-                B[Y2,X1] := Byte(btDark);
-                B[Y2,X2] := Byte(btDark);
-              end;
-            end;
-        else
-        begin
-        end;
-
-      end;
-    end;
-  end;
-  //}
-  end;
-  end;
-
-
-  Result := B;
-end;
+//function TKMRandomMapGenerator.TileTemplateOLD(var A: TKMByte2Array; const Settings: Byte): TKMByte2Array;
+//var
+//   aX,aY,Y, X, X0,X1,X2,Y0,Y1,Y2,cross: Integer;
+//   check: Boolean;
+//   B: TKMByte2Array;
+//   BArr: array[0..2,0..2] of Integer;
+//const
+//  canWalk: array[0..23] of Boolean = (
+//    True,True,False,False,False,True,True,True,True,True,True,False,True,True,True,True,True,True,False,False,False,False,False,False
+//  );
+//  TerrainPreference: array[0..23,0..3] of Byte = (
+//    (0,1,7,14),(0,1,7,14),(2,3,4,0),(2,3,4,0),(2,3,4,0),(5,6,8,12),(5,6,8,12),(0,1,7,14),(5,6,8,12),(8,9,10,255),(8,9,10,255),(4,255,255,255),(5,6,8,12),(13,15,16,17),(0,1,7,14),(13,15,16,17),(13,15,16,17),(13,15,16,17),(0,255,255,255),(19,20,255,255),(19,20,255,255),(21,22,255,255),(21,22,255,255),(21,22,255,255)
+//  );
+//
+//  function IdealTransitions(var T1, T2, Corner: Integer; var Original: Byte): Byte;
+//  begin
+//    if (T1 <> -1) AND (T2 <> -1) then
+//    begin
+//      if      (T1 = Corner) then Result := Corner
+//      else if (T2 = Corner) then Result := Corner
+//      else if (T1 < T2) then     Result := T1
+//      else                       Result := T2;
+//    end
+//    else if (T1 <> -1) then      Result := T1
+//    else if (T2 <> -1) then      Result := T2
+//    else if (Corner <> -1) then  Result := Corner
+//    else                         Result := Original;
+//  end;
+//
+//  function GetSameTile(var Tile: Byte; Arr: array of Integer): Boolean;
+//  var
+//    i,j: Integer;
+//  begin
+//    Result := false;
+//    for i := Low(Arr) to High(Arr)-1 do
+//    begin
+//      Tile := Arr[I];
+//      for j := i+1 to High(Arr) do
+//        if (Tile = Arr[j]) then
+//        begin
+//          Result := true;
+//          Exit;
+//        end;
+//    end;
+//  end;
+//
+//  procedure ThreeTilesTransition(var T1, T2, Base: Byte);
+//  var
+//    i: Integer;
+//  begin
+//    for i := Low(TerrainPreference[Base]) to High(TerrainPreference[Base]) do
+//    begin
+//      if (TerrainPreference[Base,i] = T1) then
+//      begin
+//        T2 := T1;
+//        Exit;
+//      end
+//      else if (TerrainPreference[Base,i] = T2) then
+//      begin
+//        T1 := T2;
+//        Exit;
+//      end;
+//    end;
+//    if (not canWalk[T1] OR (T1 > T2)) AND canWalk[T2] then
+//      T1 := T2
+//    else
+//      T2 := T1;
+//  end;
+//
+//begin
+//
+//  SetLength(B, High(A) shl 1, High(A[Low(A)]) shl 1);
+//
+//// Surrounding tiles detection
+//// Shortcuts (orientation in array A):
+////    _____________________________
+////   | [Y0,X0]   [Y0,X1]   [Y0,X2] |
+////   | [Y1,X0]   [Y1,X1]   [Y1,X2] |    where [Y1,X1] is center point which will be modified
+////   | [Y2,X0]   [Y2,X1]   [Y2,X2] |
+////    —————————————————————————————
+//	for Y1 := 1 to gTerrain.MapY-1 do
+//  begin
+//    Y0 := Y1 - 1;
+////    Y2 := Y1 + 1;
+//    Y := Y1 shl 1;
+//		for X1 := 1 to gTerrain.MapX-1 do
+//    begin
+//      X0 := X1 - 1;
+////      X2 := X1 + 1;
+//      X := X1 shl 1;
+//
+//    // Detect 8 surrounding tiles and store ideal transition of each tile into BArr
+//      for aY := 0 to 2 do
+//        for aX := 0 to 2 do
+//        begin
+//          if (BT[ A[Y1,X1] , A[aY+Y0,aX+X0] ] <> -1) then // Transitions
+//            BArr[aY,aX] := BT[ A[Y1,X1] , A[aY+Y0,aX+X0] ]
+//          else // No transitions
+//            BArr[aY,aX] := -1;
+//        end;
+//
+//    // Select 4 ideal transitions from BArr
+//      // Left top
+//      B[Y,X] := IdealTransitions(BArr[0,1], BArr[1,0], BArr[0,0], A[Y1,X1]);
+//      // Right top
+//      X := X + 1;
+//      B[Y,X] := IdealTransitions(BArr[0,1], BArr[1,2], BArr[0,2], A[Y1,X1]);
+//      // Right down
+//      Y := Y + 1;
+//      B[Y,X] := IdealTransitions(BArr[2,1], BArr[1,2], BArr[2,2], A[Y1,X1]);
+//      // Left down
+//      X := X - 1;
+//      B[Y,X] := IdealTransitions(BArr[2,1], BArr[1,0], BArr[2,0], A[Y1,X1]);
+//      Y := Y - 1;
+//    end;
+//  end;
+//
+//
+//  if (Settings > 2) then
+//  begin
+//
+//
+//
+//
+//  for Y1 := 1 to High(B)-1 do
+//  begin
+//    Y0 := Y1 - 1;
+//    Y2 := Y1 + 1;
+//		for X1 := 1 to High(B[Y1])-1 do
+//    begin
+//      X0 := X1 - 1;
+//      X2 := X1 + 1;
+//      // Non-accessible texture fix (edge of water)
+//      if not canWalk[ B[Y1,X1] ] then
+//      begin
+//        if canWalk[ B[Y0,X1] ] AND canWalk[ B[Y2,X1] ] then
+//        begin
+//          if (B[Y0,X1] < B[Y2,X1]) then
+//            B[Y1,X1] := B[Y0,X1]
+//          else
+//            B[Y1,X1] := B[Y2,X1];
+//          //if canWalk[ A[Y1 >> 1,X1 >> 1] ] then
+//          //  B[Y1,X1] := A[Y1 >> 1,X1 >> 1]
+//          //else if ((Y1 mod 2) = 0) then
+//          //  B[Y1,X1] := B[Y0,X1]
+//          //else
+//          //  B[Y1,X1] := B[Y2,X1];
+//        end
+//        else if canWalk[ B[Y1,X0] ] AND canWalk[ B[Y1,X2] ] then
+//        begin
+//          if (B[Y1,X0] < B[Y1,X2]) then
+//            B[Y1,X1] := B[Y1,X0]
+//          else
+//            B[Y1,X1] := B[Y1,X2];
+//        //  if canWalk[ A[Y1 >> 1,X1 >> 1] ] then
+//        //    B[Y1,X1] := A[Y1 >> 1,X1 >> 1]
+//        //  else if ((X1 mod 2) = 0) then
+//        //    B[Y1,X1] := B[Y1,X0]
+//        //  else
+//        //    B[Y1,X1] := B[Y1,X2];
+//        end;
+//      end
+//      // Problems which are caused by two tiles transitions
+//      else
+//      if (B[Y1,X0] = B[Y1,X2]) AND (B[Y1,X1] <> B[Y1,X0]) AND canWalk[ B[Y1,X0] ] then // Vertical problem
+//        B[Y1,X1] := B[Y1,X0]
+//      else if (B[Y0,X1] = B[Y2,X1]) AND (B[Y1,X1] <> B[Y0,X1]) AND canWalk[ B[Y0,X1] ] then // Horizontal problem
+//        B[Y1,X1] := B[Y0,X1];
+//      // Single point of different tile (in comparison with surrounding tiles)
+//      if (B[Y1,X1] <> B[Y0,X1]) AND (B[Y1,X1] <> B[Y2,X1]) AND (B[Y1,X1] <> B[Y1,X0]) AND (B[Y1,X1] <> B[Y1,X2]) then
+//      begin
+//        GetSameTile(B[Y1,X1], [ B[Y0,X1],B[Y2,X1],B[Y1,X0],B[Y1,X2] ]);
+//      end;
+//    end;
+//  end;
+//  //}
+//
+//
+//// Shortcuts:
+////    _______                 ___________________
+////   | 1   2 |  is equal to  | [Y1,X1]   [Y1,X2] |
+////   | 3   4 |               | [Y2,X1]   [Y2,X2] |
+////    ———————                 ———————————————————
+//// Transitions:
+////    ______________     ____________     _______________
+////   | 1 › top  ‹ 2 |   | 1 › $2 ‹ 2 |   | 1 › %0010 ‹ 2 |
+////   | ˇ          ˇ |   | ˇ        ˇ |   | ˇ           ˇ |
+////   | left   right |   | $1      $4 |   | %0001   %0100 |
+////   | ^          ^ |   | ^        ^ |   | ^           ^ |
+////   | 3 › down ‹ 4 |   | 3 › $8 ‹ 4 |   | 3 › %1000 ‹ 4 |
+////    ——————————————     ————————————     ———————————————
+//
+//  if (Settings > 3) then
+//  begin
+////{
+//  Y1 := 0;
+//  while Y1 < High(B)-2 do
+//  begin
+//    Y1 := Y1 + 2;
+//    Y2 := Y1 + 1;
+//    X1 := 0;
+//  	while X1 < High(B[Y1])-2 do
+//    begin
+//      X1 := X1 + 2;
+//      X2 := X1 + 1;
+//      cross := 0;
+//  	  if (B[Y1,X1] <> B[Y2,X1]) then cross := cross OR $1;// Left
+//  	  if (B[Y1,X1] <> B[Y1,X2]) then cross := cross OR $2;// Top
+//  	  if (B[Y1,X2] <> B[Y2,X2]) then cross := cross OR $4;// Right
+//  	  if (B[Y2,X1] <> B[Y2,X2]) then cross := cross OR $8;// Down
+//
+//      case cross of
+//      // 3-tiles transition
+//        14: ThreeTilesTransition(B[Y1,X2], B[Y2,X2], B[Y1,X1]); // Left  %1110
+//        13: ThreeTilesTransition(B[Y2,X1], B[Y2,X2], B[Y1,X1]); // Top   %1101
+//        11: ThreeTilesTransition(B[Y2,X1], B[Y1,X1], B[Y2,X2]); // Right %1011
+//        7:  ThreeTilesTransition(B[Y1,X2], B[Y1,X1], B[Y2,X2]); // Down  %0111
+//      // 4-tiles transition
+//        15: begin
+//            // Special case where are 2 diagonal tiles same
+//              check := false;
+//              if (B[Y1,X1] = B[Y2,X2]) then // 1 = 4
+//              begin
+//                if not canWalk[ B[Y1,X2] ] then
+//                  B[Y1,X2] := B[Y1,X1] // 2 := 1
+//                else if not canWalk[ B[Y2,X1] ] then
+//                  B[Y2,X1] := B[Y1,X1] // 3 := 1
+//                else
+//                   check := true;
+//              end
+//              else if (B[Y2,X1] = B[Y1,X2]) then // 2 = 3
+//              begin
+//                if not canWalk[ B[Y1,X1] ] then
+//                  B[Y1,X1] := B[Y2,X1] // 1 := 2
+//                else if not canWalk[ B[Y2,X2] ] then
+//                  B[Y2,X2] := B[Y2,X1] // 4 := 2
+//                else
+//                   check := true;
+//              end
+//              else
+//                check := true;
+//
+//            // 4 different tiles
+//              if check then
+//              begin
+//                B[Y1,X1] := Byte(btDark);
+//                B[Y1,X2] := Byte(btDark);
+//                B[Y2,X1] := Byte(btDark);
+//                B[Y2,X2] := Byte(btDark);
+//              end;
+//            end;
+//        else
+//        begin
+//        end;
+//
+//      end;
+//    end;
+//  end;
+//  //}
+//  end;
+//  end;
+//
+//
+//  Result := B;
+//end;
 
 
 
@@ -4281,7 +4272,18 @@ const
   ((0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(165,50,53,0,0,0),			(165,50,53,0,0,0),			(1,1,1,0,0,0))
 );
   FT: array[0..23,0..20] of Byte = ( // Full textures + variance
-    (0,0,0,0,1,1,1,2,2,2,3,3,3,5,5,6,6,13,14,0,19),(8,8,8,9,9,9,11,0,0,0,0,0,0,0,0,0,0,0,0,0,7),(48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(40,40,41,41,42,42,43,0,0,0,0,0,0,0,0,0,0,0,0,0,7),(192,192,192,193,193,196,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6),(34,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(35,36,37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3),(17,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2),(47,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(46,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(45,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(44,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(155,155,155,154,153,153,153,152,0,0,0,0,0,0,0,0,0,0,0,0,8),(31,32,32,32,33,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),(26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(27,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(28,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(29,29,30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3),(128,129,130,131,132,133,134,135,136,137,0,0,0,0,0,0,0,0,0,0,10),(144,145,146,146,147,147,147,0,0,0,0,0,0,0,0,0,0,0,0,0,7),(156,157,158,159,201,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),(148,149,150,150,151,151,151,151,0,0,0,0,0,0,0,0,0,0,0,0,8),(160,161,162,163,164,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),(245,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1)
+    (0,0,0,0,1,1,1,2,2,2,3,3,3,5,5,6,6,13,14,0,19),(8,8,8,9,9,9,11,0,0,0,0,0,0,0,0,0,0,0,0,0,7),
+    (48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(40,40,41,41,42,42,43,0,0,0,0,0,0,0,0,0,0,0,0,0,7),
+    (192,192,192,193,193,196,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6),(34,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),
+    (35,36,37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3),(17,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2),
+    (47,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(46,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),
+    (45,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(44,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),
+    (155,155,155,154,153,153,153,152,0,0,0,0,0,0,0,0,0,0,0,0,8),(31,32,32,32,33,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),
+    (26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(27,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),
+    (28,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),(29,29,30,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3),
+    (128,129,130,131,132,133,134,135,136,137,0,0,0,0,0,0,0,0,0,0,10),(144,145,146,146,147,147,147,0,0,0,0,0,0,0,0,0,0,0,0,0,7),
+    (156,157,158,159,201,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),(148,149,150,150,151,151,151,151,0,0,0,0,0,0,0,0,0,0,0,0,8),
+    (160,161,162,163,164,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5),(245,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1)
   );
   DF: array[0..1,0..3] of Byte = ( // Direction fixer
     (0,1,2,3),(2,3,0,1)

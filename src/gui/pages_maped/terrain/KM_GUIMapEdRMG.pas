@@ -19,7 +19,7 @@ type
     function NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
     procedure RMG_Change(Sender: TObject);
     procedure RMG_Close(Sender: TObject);
-    procedure RMG_Refresh();
+//    procedure RMG_Refresh();
     procedure RMG_Generate_Map(Sender: TObject);
     procedure RMG_Generate_New_Seed(Sender: TObject);
     function GetVisible: Boolean;
@@ -377,11 +377,11 @@ begin
 end;
 
 
-procedure TKMMapEdRMG.RMG_Refresh();
-begin
-  //Certain values disable certain controls
-  RMG_Change(nil);
-end;
+//procedure TKMMapEdRMG.RMG_Refresh();
+//begin
+//  //Certain values disable certain controls
+//  RMG_Change(nil);
+//end;
 
 
 procedure TKMMapEdRMG.Show();
