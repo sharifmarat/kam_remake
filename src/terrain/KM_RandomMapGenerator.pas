@@ -252,21 +252,13 @@ end;
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
-  aX,aY,Y, X, K, X0,X1,X2,Y0,Y1,Y2,i: Integer;
-  Pmin,Pmax: TKMPoint;
-  S1,S2,S3,S4: TInteger2Array;
+  Y, X, K: Integer;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
-  TDAP: TKMPoint2Array;
-  P: TKMPointArray;
-  Points: TKMPoint2Array;
-  Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
 
   //Queue: TKMQuickFlood;
-  FillBiome: TKMFillBiome;
 
-  LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
 
 
