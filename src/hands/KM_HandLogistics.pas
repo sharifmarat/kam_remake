@@ -873,7 +873,7 @@ end;
 
 function TKMDeliveries.TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
-  Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.Entrance, fOffer[iO].Count,
+  Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.PointBelowEntrance, fOffer[iO].Count,
                                  fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aBidBasicValue, aSerf);
 end;
 
@@ -891,7 +891,6 @@ function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPo
   {$ENDIF}
 
 var
-  BelowOfferPos: TKMPoint;
   SerfBidValue: Single;
   {$IFDEF WDC}
   BidKey: TKMDeliveryBidKey;
@@ -902,8 +901,6 @@ begin
   Result := TryCalcSerfBidValue(aSerf, aOfferPos, aOfferUID, SerfBidValue);
   if not Result then
     Exit;
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -942,14 +939,14 @@ begin
     if fDemand[iD].Loc_House <> nil then
     begin
       //Calc cost between offer and demand houses
-      Result := TryCalcRouteCost(BelowOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
       aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
         + KaMRandom(15 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
-      Result := TryCalcRouteCost(BelowOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk, aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk, aBidBasicValue);
 
     if not Result then
     begin
