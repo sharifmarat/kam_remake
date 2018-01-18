@@ -253,21 +253,21 @@ end;
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
-  aX,aY,Y, X, K, X0,X1,X2,Y0,Y1,Y2,i: Integer;
-  Pmin,Pmax: TKMPoint;
-  S1,S2,S3,S4: TInteger2Array;
+  Y, X, K: Integer;
+  //Pmin,Pmax: TKMPoint;
+  //S1,S2,S3,S4: TInteger2Array;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
-  TDAP: TKMPoint2Array;
-  P: TKMPointArray;
-  Points: TKMPoint2Array;
-  Resources: TBalancedResource1Array;
+  //TDAP: TKMPoint2Array;
+  //P: TKMPointArray;
+  //Points: TKMPoint2Array;
+  //Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
 
   //Queue: TKMQuickFlood;
-  FillBiome: TKMFillBiome;
-
-  LocMin, LocMax: TKMPoint;
+  //FillBiome: TKMFillBiome;
+  //
+  //LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
 
 
@@ -285,7 +285,7 @@ begin
 
   //RMGSettings.Seed := 141; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
   fRNG.Seed := RMGSettings.Seed;
-  gLog.AddTime('RMG seed: ' + IntToStr(fRNG.Seed));
+  //gLog.AddTime('RMG seed: ' + IntToStr(fRNG.Seed));
 
 
   SetLength(A, gTerrain.MapY+1, gTerrain.MapX+1);
@@ -645,7 +645,8 @@ end;
 // aPoints = array of TKMPoints belonging to its shapes (1 point = 1 shape)
 function TKMRandomMapGenerator.VoronoiMod(const aStep: Integer; var aPoints: TKMPoint2Array): TInteger2Array;
 var
-  X,aX,X0,X1,X2,Y,aY,Y0,Y1,Y2,i,idxX,idxY,move,price: Integer;
+  //X0,X2,Y0,Y2,move,
+  X,aX,X1,Y,aY,Y1,i,idxX,idxY,price: Integer;
   Output, History: TInteger2Array;
 begin
   SetLength(Output, gTerrain.MapY+1, gTerrain.MapX+1);
@@ -847,6 +848,7 @@ function TKMRandomMapGenerator.RandomPlayerLocs(): TKMPointArray;
     const
       POINTS_PER_A_LOC = 5;
   begin
+    min_idx_overall := 0;
     SetLength(Points, POINTS_PER_A_LOC*Length(Locs));
     SetLength(Used, Length(Points));
     SetLength(Distances, Length(Points), Length(Points));
@@ -1055,6 +1057,7 @@ const
   Tr_Sand: array[0..2] of TBiomeType = (btGrassSand1,btGrassSand2,btGrassSand3);
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
+  RandBiom := 0;
 
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
@@ -1497,7 +1500,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
   end;
 
   var
-    X,Y,I,K, MaxIdx, MaxCnt, cntr, finalCnt, ObstBiome, ObstVariance: Integer;
+    X,Y,I,K, MaxIdx, MaxCnt, cntr, finalCnt, ObstBiome: Integer;
     Factor,Probability, ProbabilityReducer: Single;
     check: Boolean;
     Obstacle: TObstacleType;
@@ -1709,6 +1712,8 @@ var
     X_RESERVE := (maxX - minX) / (MineCnt*1.0) - MinMineSize;
     X := minX;
     X_FLOAT := MinX;
+    MaxPosIdx := 0;
+    startIndex := 0;
     while (X+MinMineSize <= MaxX) do
     begin
       minVal := High(Integer);
@@ -2515,7 +2520,7 @@ const
   // Split a shape of the future mine into segments with different density of resource (less coal in edges and more in center tiles)
   function CalculateCountOfResources(const Resource: Byte; const Quantity: Integer; var count: array of Integer): TInteger2Array;
   var
-    i,j,cntRes,difference, incJ, incPerATile: Integer;
+    I,K,cntRes,difference, incK, incPerATile: Integer;
     Output: TInteger2Array;
   begin
     SetLength(Output, 4, 5); // 4 types of resources, 5 quantity types (none, 1, 2, 3, 4)
@@ -2525,33 +2530,34 @@ const
 
     // Fill with maximal possible quantity for each tile
     cntRes := 0;
-    for i := Low(Output) to High(Output) do
+    K := 0;
+    for I := Low(Output) to High(Output) do
     begin
-      j := High(Output[I]);
-      Output[i,j] := count[I];
+      K := High(Output[I]);
+      Output[I,K] := count[I];
       cntRes := cntRes + count[I];
     end;
-    cntRes := cntRes * (j * incPerATile + 3*Byte(Resource = Byte(btStone))); // Maximal capacity of shape
+    cntRes := cntRes * (K * incPerATile + 3*Byte(Resource = Byte(btStone))); // Maximal capacity of shape
 
     // Decrease maximal resource capacity of shape by move specific tiles into lower levels of Output array
-    incJ := High(Output[0]);
-    while (cntRes > Quantity) AND (incJ >= -5) do // incJ anti overflow condition
+    incK := High(Output[0]);
+    while (cntRes > Quantity) AND (incK >= -5) do // incK anti overflow condition
     begin
-      i := 0;
-      j := incJ;
-      while (cntRes > Quantity) AND (i <= High(Output)) AND (j <= High(Output[I])) do
+      I := 0;
+      K := incK;
+      while (cntRes > Quantity) AND (I <= High(Output)) AND (K <= High(Output[I])) do
       begin
-        if (j >= 1) then
+        if (K >= 1) then
         begin
-          difference := Min( Round((cntRes-Quantity)/incPerATile + 0.5), Output[i,j] );
-          Output[i,j] := Output[i,j] - difference;
-          Output[i,j-1] := difference;
+          difference := Min( Round((cntRes-Quantity)/incPerATile + 0.5), Output[I,K] );
+          Output[I,K] := Output[I,K] - difference;
+          Output[I,K-1] := difference;
           cntRes := cntRes - difference*incPerATile;
         end;
-        i := i + 1;
-        j := j + 1;
+        I := I + 1;
+        K := K + 1;
       end;
-      incJ := incJ - 1;
+      incK := incK - 1;
     end;
     Result := Output;
   end;
@@ -2893,10 +2899,10 @@ end;
 // TileTempl = array of biome-decomposition
 procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
 const
-  HeightMix: array [0..23] of Byte = (
-    //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
-    10,10,5,5,3,5,10,1,10,10,20,20,0,5,10,10,15,20,10,20,20,20,20,0
-  );
+  //HeightMix: array [0..23] of Byte = (
+  //  //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
+  //  10,10,5,5,3,5,10,1,10,10,20,20,0,5,10,10,15,20,10,20,20,20,20,0
+  //);
   //TBiomeType = (
   //10,15,0,0,0,10,5,0,15,15,20,20,10,5,btGrassSand1,btGrassSand2,btGrassSand3,btSand,btStone,btGold,btEgold,btIron,btEIron,btDark);
 

@@ -2911,8 +2911,6 @@ end;
 
 
 procedure TKMButtonFlatCommon.Paint;
-const
-  TextCol: array [Boolean] of TColor4 = ($FF808080, $FFFFFFFF);
 begin
   inherited;
 

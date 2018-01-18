@@ -599,7 +599,7 @@ end;
 
 procedure TKMGamePlayInterface.ExportPages(const aPath: string);
 var
-  path: string;
+  path: String;
   I, K: Integer;
 begin
   inherited;

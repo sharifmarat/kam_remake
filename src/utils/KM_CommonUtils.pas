@@ -83,7 +83,9 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
+  {$IFDEF WDC}
   procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
+  {$ENDIF}
   function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 
   procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer); overload;

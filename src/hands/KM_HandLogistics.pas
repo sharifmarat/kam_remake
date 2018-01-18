@@ -99,9 +99,9 @@ type
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
     fSerfToOfferCache: TDictionary<TKMDeliveryBidKey, Single>;
-    {$ENDIF}
 
     fNodeList: TKMPointList; // Used to calc delivery bid
+    {$ENDIF}
 
     procedure CloseDelivery(aID: Integer);
     procedure CloseDemand(aID: Integer);
@@ -833,7 +833,9 @@ end;
 function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single;
                                         aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
 var
+  {$IFDEF WDC}
   Distance: Single;
+  {$ENDIF}
   PassToUse: TKMTerrainPassability;
 begin
   PassToUse := aMainPass;
@@ -1458,8 +1460,9 @@ end;
 
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var
-  I, Count: Integer;
+  I: Integer;
   {$IFDEF WDC}
+  Count: Integer;
   Key: TKMDeliveryBidKey;
   Value: Single;
   {$ENDIF}
