@@ -103,6 +103,7 @@ type
     fNodeList: TKMPointList; // Used to calc delivery bid
     {$ENDIF}
 
+    function GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
     procedure CloseDelivery(aID: Integer);
     procedure CloseDemand(aID: Integer);
     procedure CloseOffer(aID: Integer);
@@ -721,12 +722,8 @@ function TKMDeliveries.SerfCanDoDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Bo
 var
   LocA, LocB: TKMPoint;
 begin
-  LocA := aSerf.GetPosition;
+  LocA := GetSerfActualPos(aSerf);
   LocB := fOffer[iO].Loc_House.PointBelowEntrance;
-
-  //If the serf is inside the house (invisible) test from point below
-  if not aSerf.Visible then
-    LocA := KMPointBelow(LocA);
 
   Result := aSerf.CanWalkTo(LocA, LocB, tpWalk, 0);
 end;
@@ -735,6 +732,16 @@ end;
 function TKMDeliveries.PermitDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Boolean;
 begin
   Result := ValidDelivery(iO, iD) and SerfCanDoDelivery(iO, iD, aSerf);
+end;
+
+
+function TKMDeliveries.GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
+begin
+  Result := aSerf.GetPosition;
+
+  //If the serf is inside the house (invisible) test from point below
+  if not aSerf.Visible then
+    Result := KMPointBelow(Result);
 end;
 
 
@@ -779,7 +786,6 @@ end;
 //Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
 function TKMDeliveries.TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
 var
-  BelowOfferPos: TKMPoint;
   {$IFDEF WDC}
   BidKey: TKMDeliveryBidKey;
   CachedBid: Single;
@@ -788,8 +794,6 @@ begin
   aSerfBidValue := 0;
   Result := True;
   if aSerf = nil then Exit;
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -809,7 +813,7 @@ begin
   //Also prefer deliveries near to the serf
   if aSerf <> nil then
     //Serf gets to first house with tpWalkRoad, if not possible, then with tpWalk
-    Result := TryCalcRouteCost(aSerf.GetPosition, BelowOfferPos, tpWalkRoad, aSerfBidValue, tpWalk);
+    Result := TryCalcRouteCost(GetSerfActualPos(aSerf), aOfferPos, tpWalkRoad, aSerfBidValue, tpWalk);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
