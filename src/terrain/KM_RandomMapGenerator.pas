@@ -848,6 +848,7 @@ function TKMRandomMapGenerator.RandomPlayerLocs(): TKMPointArray;
     const
       POINTS_PER_A_LOC = 5;
   begin
+    min_idx_overall := 0;
     SetLength(Points, POINTS_PER_A_LOC*Length(Locs));
     SetLength(Used, Length(Points));
     SetLength(Distances, Length(Points), Length(Points));
@@ -1056,6 +1057,7 @@ const
   Tr_Sand: array[0..2] of TBiomeType = (btGrassSand1,btGrassSand2,btGrassSand3);
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
+  RandBiom := 0;
 
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
@@ -1710,6 +1712,8 @@ var
     X_RESERVE := (maxX - minX) / (MineCnt*1.0) - MinMineSize;
     X := minX;
     X_FLOAT := MinX;
+    MaxPosIdx := 0;
+    startIndex := 0;
     while (X+MinMineSize <= MaxX) do
     begin
       minVal := High(Integer);
@@ -2516,7 +2520,7 @@ const
   // Split a shape of the future mine into segments with different density of resource (less coal in edges and more in center tiles)
   function CalculateCountOfResources(const Resource: Byte; const Quantity: Integer; var count: array of Integer): TInteger2Array;
   var
-    i,j,cntRes,difference, incJ, incPerATile: Integer;
+    I,K,cntRes,difference, incK, incPerATile: Integer;
     Output: TInteger2Array;
   begin
     SetLength(Output, 4, 5); // 4 types of resources, 5 quantity types (none, 1, 2, 3, 4)
@@ -2526,33 +2530,34 @@ const
 
     // Fill with maximal possible quantity for each tile
     cntRes := 0;
-    for i := Low(Output) to High(Output) do
+    K := 0;
+    for I := Low(Output) to High(Output) do
     begin
-      j := High(Output[I]);
-      Output[i,j] := count[I];
+      K := High(Output[I]);
+      Output[I,K] := count[I];
       cntRes := cntRes + count[I];
     end;
-    cntRes := cntRes * (j * incPerATile + 3*Byte(Resource = Byte(btStone))); // Maximal capacity of shape
+    cntRes := cntRes * (K * incPerATile + 3*Byte(Resource = Byte(btStone))); // Maximal capacity of shape
 
     // Decrease maximal resource capacity of shape by move specific tiles into lower levels of Output array
-    incJ := High(Output[0]);
-    while (cntRes > Quantity) AND (incJ >= -5) do // incJ anti overflow condition
+    incK := High(Output[0]);
+    while (cntRes > Quantity) AND (incK >= -5) do // incK anti overflow condition
     begin
-      i := 0;
-      j := incJ;
-      while (cntRes > Quantity) AND (i <= High(Output)) AND (j <= High(Output[I])) do
+      I := 0;
+      K := incK;
+      while (cntRes > Quantity) AND (I <= High(Output)) AND (K <= High(Output[I])) do
       begin
-        if (j >= 1) then
+        if (K >= 1) then
         begin
-          difference := Min( Round((cntRes-Quantity)/incPerATile + 0.5), Output[i,j] );
-          Output[i,j] := Output[i,j] - difference;
-          Output[i,j-1] := difference;
+          difference := Min( Round((cntRes-Quantity)/incPerATile + 0.5), Output[I,K] );
+          Output[I,K] := Output[I,K] - difference;
+          Output[I,K-1] := difference;
           cntRes := cntRes - difference*incPerATile;
         end;
-        i := i + 1;
-        j := j + 1;
+        I := I + 1;
+        K := K + 1;
       end;
-      incJ := incJ - 1;
+      incK := incK - 1;
     end;
     Result := Output;
   end;
