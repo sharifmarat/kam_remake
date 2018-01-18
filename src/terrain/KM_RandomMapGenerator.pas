@@ -91,6 +91,7 @@ type
     procedure GenerateBasicTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
     procedure GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
     procedure GenerateObjects(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
+    procedure MineFinalFixer(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
   public
     RMGSettings: TKMRMGSettings;
     constructor Create();
@@ -252,13 +253,21 @@ end;
 // aTiles = empty TKMTerrainTileBriefArray
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
-  Y, X, K: Integer;
+  aX,aY,Y, X, K, X0,X1,X2,Y0,Y1,Y2,i: Integer;
+  Pmin,Pmax: TKMPoint;
+  S1,S2,S3,S4: TInteger2Array;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
+  TDAP: TKMPoint2Array;
+  P: TKMPointArray;
+  Points: TKMPoint2Array;
+  Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
 
   //Queue: TKMQuickFlood;
+  FillBiome: TKMFillBiome;
 
+  LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
 
 
@@ -401,6 +410,9 @@ begin
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.Objects.Active then
     GenerateObjects(TilesPartsArr, A);
+
+  if RMGSettings.Locs.Resource.MineFix then
+    MineFinalFixer(TilesPartsArr, A);
   //}
   diff := GetTimeSince(diff);
 
@@ -508,7 +520,6 @@ begin
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];
       Include(aTiles[K].ChangeSet, tctTerrain);
-      Include(aTiles[K].ChangeSet, tctRotation);
       Include(aTiles[K].ChangeSet, tctHeight);
       Include(aTiles[K].ChangeSet, tctObject);
       K := K + 1;
@@ -1147,7 +1158,6 @@ procedure TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKM
 const
   RESOURCES: array[0..4] of TBiomeType = (btIron,btGold,btStone,btCoal,btCoal);
   VORONOI_STEP = 3;
-  DIST_FROM_BOTTOM = 3; // Iron, Gold and Stone mines will be placed in distance [DIST_FROM_BOTTOM] of Voronoi steps from bottom of the map
   RES_PROB: array[0..4] of Single = (0.000001,0.000001,0.15,0.08,0.08); // Probability penalization (only afect final shape: 0 = circle, 1 = multiple separated mountains)
   //SPEC_RES_RADIUS: array[0..4] of Byte = (5, 5, 5, 5, 5); // Iron, Gold, Stone, Coal, Coal
   RES_AMOUNT: array[0..4] of Integer = (50, 50, 200, 100, 50);
@@ -1236,6 +1246,27 @@ const
     SetLength(aPointArr, elements);
   end;
 
+  procedure MarkEdges(var aCountArr: TInteger2Array);
+  const
+    DIST_FROM_BOTTOM = 3; // Iron, Gold and Stone mines will be placed in distance [DIST_FROM_BOTTOM] of Voronoi steps from bottom of the map
+  var
+    X,Y,XMin,YMin,XMax,YMax: Integer;
+  begin
+    YMin := Low(aCountArr);
+    YMax := High(aCountArr);
+    XMin := Low(aCountArr[YMin]);
+    XMax := High(aCountArr[YMin]);
+    for Y := Max(YMax-DIST_FROM_BOTTOM, YMin) to YMax do
+      for X := XMin to XMax do
+        aCountArr[Y,X] := -aCountArr[Y,X];
+    for Y := YMin to Max(YMax-DIST_FROM_BOTTOM-1, YMin) do
+    begin
+      aCountArr[Y,XMin] := -aCountArr[Y,XMin];
+      aCountArr[Y,XMax] := -aCountArr[Y,XMax];
+    end;
+    for X := XMin to XMax do
+      aCountArr[YMin,X] := -aCountArr[YMin,X];
+  end;
 
 var
   X,Y,Loc,I,K,overflow, ALL_RES_RADIUS, cnt_FINAL, cnt_ACTUAL, cnt_PREVIOUS, cnt_REQUESTED, RESOURCE, size_Mountain, new_Size: Integer;
@@ -1290,10 +1321,8 @@ begin
   //{
   if RMGSettings.Locs.Resource.Active then
   begin
-    // Avoid to build resources on bottom of the map (except coal = count is negative)
-    for I := High(PointsArr)  downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
-      for K := Low(PointsArr[I]) to High(PointsArr[I]) do
-        CountArr[I,K] := -CountArr[I,K];
+    // Avoid to build resources in edges of the map (except coal = count is negative)
+    MarkEdges(CountArr);
     SetLength(Locs,Length(aLocs));
     FillResource := TKMFloodWithQueue.Create(fRNG, PointsArr, CountArr, Voronoi, A);
     try
@@ -1351,10 +1380,7 @@ begin
       FillResource.Free;
     end;
 
-    // Return bottom values back
-    //for I := High(PointsArr) downto Max(High(PointsArr)-DIST_FROM_BOTTOM,Low(PointsArr)) do
-    //  for K := Low(PointsArr[I]) to High(PointsArr[I]) do
-    //    CountArr[I,K] := -CountArr[I,K];
+    MarkEdges(CountArr);
   end;
   //}
 
@@ -2696,6 +2722,150 @@ begin
 end;
 
 
+// Last step in fix mines -> check count, height and TRY balance map
+// TilesPartsArr = tiles composition array
+// A = array of biomes
+procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; var A: TKMByte2Array);
+//var
+//  X,Y,X1,X2,maxY,minX,maxX,MinMineSize, minVal, maxIndex, startIndex, actVal, MaxPosIdx: Integer;
+//  X_RESERVE, X_FLOAT: Single;
+//  MinLimit, MaxLimit: TSmallIntArray;
+//  MineSearch: TKMMinerFixSearch;
+//begin
+//  if (MineCnt < 1) then
+//    Exit;
+//// Initialization
+//  SetLength(Shape,Length(A[0])+2);
+//  SetLength(MinLimit, Length(A[0])+2);
+//  SetLength(MaxLimit, Length(A[0])+2);
+//  for X := Low(Shape) to High(Shape) do
+//  begin
+//    Shape[X].Active := False;
+//    Shape[X].Min := High(MinLimit);
+//    MinLimit[X] := High(MinLimit);
+//    Shape[X].Max := Low(MaxLimit);
+//    MaxLimit[X] := Low(MaxLimit);
+//  end;
+//
+//// Detect shape of resource
+//  //if RMGSettings.Objects.Active then // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+//  //begin
+//  //
+//    MineSearch := TKMMinerFixSearch.Create(  KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), MinLimit, MaxLimit, aVisited, A  );
+//    try
+//      MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
+//    finally
+//      MineSearch.Free;
+//    end;
+//    for X := Low(Shape) to High(Shape) do
+//      if (Shape[X].Min <> MinLimit[X]) then
+//      begin
+//        Shape[X].Active := True;
+//        Shape[X].Min := MinLimit[X];
+//        Shape[X].Max := MaxLimit[X];
+//      end;
+//  //end
+//  //else
+//  //  MinerFixFloodSearch(Resource, aPosition.Y, aPosition.X, aVisited);
+//
+//// Find start index of shape
+//  X := 0;
+//  while not Shape[X].Active AND (X < High(Shape)) do
+//    X := X+1;
+//  minX := X;
+//  while Shape[X].Active AND (X < High(Shape)) do
+//    X := X+1;
+//  maxX := X-1;
+//
+//// Change shape to be able to mine resources here
+//  MinMineSize := MINESIZE + 1;
+//  X_RESERVE := (maxX - minX) / (MineCnt*1.0) - MinMineSize;
+//  X := minX;
+//  X_FLOAT := MinX;
+//  while (X+MinMineSize <= MaxX) do
+//  begin
+//    minVal := High(Integer);
+//    maxIndex := High(A);
+//  // Scan last interval of tiles and find best spot for fix
+//    for X1 := X to Max(X,Round(X_FLOAT+X_RESERVE)) do
+//    begin
+//    // Find a southernmost point in minimal interval of possible mine
+//      maxY := 0;
+//      for X2 := X1+1 to Min(maxX,X1+MINESIZE) do // We need to focus only on balancing of 2 or 3 tiles where will be mine (edge tiles may be higher but we dont care)
+//        if (Shape[X2].Max > maxY) then
+//        begin
+//          maxY := Shape[X2].Max;
+//          MaxPosIdx := X2;
+//        end;
+//    // Calculate the price of transformation which secure place mine (price = penalization of deleted tiles)
+//      actVal := 0;
+//      for X2 := X1 to Min(maxX,X1+MINESIZE) do
+//        actVal := actVal + Max(0, maxY - Shape[X2].Max); // Edges of potential mine tiles may be higher but it is fine
+//    // Save best solution (closer to right is better)
+//      if (actVal < minVal) then
+//      begin
+//        minVal := actVal;
+//        maxIndex := MaxPosIdx;
+//        startIndex := X1;
+//      end;
+//    end;
+//  // Apply changes
+//    maxY := Shape[maxIndex].Max;
+//    for X1 := startIndex to startIndex + MinMineSize do
+//    begin
+//      Y := Shape[X1].Max;
+//      while (Y <= maxY) AND (Y < High(A)) do
+//      begin
+//        Shape[X1].Max := Shape[X1].Max + 1;
+//        A[Y,X1] := Resource;
+//        aVisited[Y,X1] := True;
+//        Y := Y + 1;
+//      end;
+//    end;
+//    X_FLOAT := X_FLOAT + X_RESERVE + MinMineSize;
+//    X := Round(X_FLOAT);
+//  end;
+//end;
+//
+var
+//  RESOURCE: Byte;
+  X,Y, X1,Y1, MineHeight: Integer;
+//  Visited: TBoolean2Array;
+//  Resources: TBalancedResource1Array;
+begin
+  with TilesPartsArr do
+  begin
+	  for Y := 2 to gTerrain.MapY-2 do
+		  for X := 2 to gTerrain.MapX-2 do
+        if ((A[Y,X] = Byte(btGold)) OR (A[Y,X] = Byte(btIron))) AND (A[Y+1,X] < Byte(btStone)) then
+        begin
+          MineHeight := 0;
+          for Y1 := Y to Y + 1 do
+            for X1 := X - 1 to X + 1 do
+              MineHeight := MineHeight + Height[Y1,X1];
+          MineHeight := MineHeight div 6;
+          for Y1 := Y to Y + 1 do
+            for X1 := X - 1 to X + 1 do
+              Height[Y1,X1] := MineHeight;
+        end;
+  end;
+  //Resources := fRes.Resources;
+  //for I := 0 to fRes.Count - 1 do
+  //begin
+  //  if (Resources[I].Resource = Byte(btGold)) then
+  //    RESOURCE := 2
+  //  else if (Resources[I].Resource = Byte(btIron)) then
+  //    RESOURCE := 3
+  //  else // Coal and Stone are always fine
+  //    continue;
+  //  for K := Low(Resources[I].Points) to High(Resources[I].Points) do
+  //    if not Visited[ Resources[I].Points[K].Y, Resources[I].Points[K].X ]
+  //       AND (A[ Resources[I].Points[K].Y, Resources[I].Points[K].X ] = Resources[I].Resource) then
+  //      Fixer(RESOURCE, Resources[I].Resource, Resources[I].MinesCnt, Resources[I].Points[K], Visited);
+  //end;
+end;
+
+
 
 // Debug function (only full textures without transitions)
 // TilesPartsArr = tiles composition array
@@ -3224,8 +3394,6 @@ begin
   //}
   end;
 end;
-
-
 
 
 
