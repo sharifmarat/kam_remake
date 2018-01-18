@@ -508,6 +508,7 @@ begin
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];
       Include(aTiles[K].ChangeSet, tctTerrain);
+      Include(aTiles[K].ChangeSet, tctRotation);
       Include(aTiles[K].ChangeSet, tctHeight);
       Include(aTiles[K].ChangeSet, tctObject);
       K := K + 1;
