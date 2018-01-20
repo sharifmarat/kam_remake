@@ -572,7 +572,7 @@ begin
       else
         Inc(dx, GetCharWidth(aText[I]));
 
-    if AnsiChar(aText[I]) in [#9,#32,#124] then
+    if SysUtils.CharInSet(aText[I], [#9,#32,#124]) then
     begin
       LastWrappable := I;
       PrevX := dx;
