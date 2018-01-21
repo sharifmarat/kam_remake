@@ -22,7 +22,7 @@ type
     fHouseInfluence: Boolean;
     fHighEnemiesIdx, fHighStatsIdx, fMaxEnemiesCnt: Integer;
 
-    function CanBeVisited(const aIdx: Word): Boolean; override;
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
     EnemiesStats: TKMEnemyStatisticsArray;
@@ -33,12 +33,12 @@ type
   TKMInfluenceFloodFill = class(TNavMeshFloodFill)
   private
     fCityFlood: Boolean;
-    fHouseInfluence: Byte;
-    fUnitStrength, fMaxDistance: Word;
+    fDecreaseCoef: Word;
+    fUnitStrength, fMaxDistance, fHouseInfluence: Word;
     fGroupType: TGroupType;
   protected
     fOwner: TKMHandIndex;
-    function CanBeVisited(const aIdx: Word): Boolean; override;
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
     function MilitaryPresence(aPlayer: TKMHandIndex; aUnitStrength, aMaxDistance, aMaximalIdx: Word; aGroupType: TGroupType; aInitIdxArray: TKMWordArray): Boolean;
@@ -49,11 +49,9 @@ implementation
 uses
   KM_AIFields, KM_NavMesh, KM_HandsCollection;
 
-const
-  SHIFT_COEF = 2;
 
 {TNavMeshInfluenceSearch}
-function TNavMeshInfluenceSearch.CanBeVisited(const aIdx: Word): Boolean;
+function TNavMeshInfluenceSearch.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   // Can be visited only in case that we have space in array (and we are not out of enemies)
   Result := (fHighEnemiesIdx >= 0) AND (fHighStatsIdx < fMaxEnemiesCnt);
@@ -83,7 +81,7 @@ begin
       fEnemies[I] := fEnemies[ fHighEnemiesIdx ];
       fHighEnemiesIdx := fHighEnemiesIdx - 1;
       fHighStatsIdx := fHighStatsIdx + 1;
-      if not CanBeVisited(aIdx) then
+      if not CanBeExpanded(aIdx) then
         break;
     end;
 end;
@@ -105,7 +103,7 @@ begin
   Cnt := Length(aCenterPoints);
   SetLength(InitIdxArray, Cnt);
   for I := 0 to Cnt - 1 do
-    InitIdxArray[I] := gAIFields.NavMesh.FindClosestPolygon( aCenterPoints[I] );
+    InitIdxArray[I] := gAIFields.NavMesh.Point2Polygon[ aCenterPoints[I].Y, aCenterPoints[I].X ];
 
   // Find enemies (indexes)
   SetLength(fEnemies, gHands.Count - 1);
@@ -137,18 +135,20 @@ end;
 
 
 { TKMInfluenceFloodFill }
-function TKMInfluenceFloodFill.CanBeVisited(const aIdx: Word): Boolean;
+function TKMInfluenceFloodFill.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   Result := (fQueueArray[aIdx].Distance < fMaxDistance);
 end;
 
 
 procedure TKMInfluenceFloodFill.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
+const
+  HOUSE_COEF = 2;
 begin
   if fCityFlood then
-    gAIFields.Influences.OwnPoly[fOwner,aIdx] := Max(0, fHouseInfluence - (aDistance shl SHIFT_COEF))
+    gAIFields.Influences.OwnPoly[fOwner,aIdx] := Max(0, fHouseInfluence - (aDistance shl HOUSE_COEF))
   else
-    gAIFields.Influences.IncPresence[fOwner,aIdx,fGroupType] := Max(0, fUnitStrength - aDistance);
+    gAIFields.Influences.IncPresence[fOwner,aIdx,fGroupType] := Max(0, fUnitStrength - aDistance * fDecreaseCoef );
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
 end;
 
@@ -160,6 +160,7 @@ begin
   fUnitStrength := aUnitStrength;
   fMaxDistance := aMaxDistance;
   fGroupType := aGroupType;
+  fDecreaseCoef := Max( 1, Round(aUnitStrength / (aMaxDistance * 1.0)) );
   Result := inherited FillPolygons(aMaximalIdx, aInitIdxArray);
 end;
 
@@ -175,4 +176,3 @@ end;
 
 
 end.
-
