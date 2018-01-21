@@ -390,10 +390,10 @@ begin
       fDefence.UpdateDefences();
     if (aTick mod PERF_TIME_LIMIT_2 = fOwner) then
       CheckAttack();
-    RecruitSoldiers();
-    CheckGroupsState();
-    fAttack.UpdateState(aTick);
-    fDefence.UpdateState(aTick);
+    //RecruitSoldiers();
+    //CheckGroupsState();
+    //fAttack.UpdateState(aTick);
+    //fDefence.UpdateState(aTick);
   end;
 end;
 
