@@ -14,6 +14,7 @@ type
   TKMHouse = class;
   TKMHouseEvent = procedure(aHouse: TKMHouse) of object;
   TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandIndex) of object;
+  TKMHouseArray = array of TKMHouse;
 
   THouseAction = class
   private

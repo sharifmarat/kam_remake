@@ -10,6 +10,9 @@ uses
 
 
 type
+
+  { TFormMain }
+
   TFormMain = class(TForm)
     MenuItem1: TMenuItem;
     N2: TMenuItem;
@@ -59,6 +62,8 @@ type
     Label5: TLabel;
     Label6: TLabel;
     chkShowDefences: TCheckBox;
+    chkBuildAI: TCheckBox;
+    chkCombatAI: TCheckBox;
     ResourceValues1: TMenuItem;
     GroupBox3: TGroupBox;
     chkUIControlsBounds: TCheckBox;
@@ -609,6 +614,8 @@ begin
   begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
+    OVERLAY_AI_BUILD := chkBuildAI.Checked;
+    OVERLAY_AI_COMBAT := chkCombatAI.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;

@@ -4,7 +4,8 @@ interface
 uses
   KM_AISetup, KM_AIAttacks, KM_AIDefensePos,
   KM_Units, KM_UnitGroups,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_Points,
+  KM_NavMeshDefences;
 
 
 type
@@ -444,21 +445,25 @@ procedure TKMGeneral.CheckAutoDefend;
   end;
 
 var
-  Outline1, Outline2: TKMWeightSegments;
-  I, K: Integer;
+  //Outline1, Outline2: TKMWeightSegments;
+  DefPosArr: TKMDefencePosArr;
+  MinCnt: Word;
+  I: Integer;
   Locs: TKMPointDirTagList;
   Loc: TKMPoint;
   LocI: TKMPoint;
-  FaceDir: TKMDirection;
-  SegLength, Ratio: Single;
-  DefCount: Byte;
+  //FaceDir: TKMDirection;
+  //SegLength, Ratio: Single;
+  //DefCount: Byte;
   GT: TGroupType;
   DPT: TAIDefencePosType;
-  Weight: Cardinal;
+  //Weight: Cardinal;
   BacklineCount: Integer;
 begin
   //Get defence Outline with weights representing how important each segment is
-  gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
+  MinCnt := Min(15,Max(5,gHands[fOwner].UnitGroups.Count));
+  if not gAIFields.NavMesh.Defences.FindDefensivePolygons(fOwner, MinCnt, DefPosArr, True) then
+    Exit;
 
   fDefencePositions.Clear;
   BacklineCount := 0;
@@ -466,34 +471,38 @@ begin
   Locs := TKMPointDirTagList.Create;
   try
     //Make list of defence positions
-    for I := 0 to High(Outline2) do
-    begin
-      FaceDir := KMGetDirection(KMPointF(Outline2[I].A), KMPerpendecular(Outline2[I].A, Outline2[I].B));
+    for I := 0 to High(DefPosArr) do
+      Locs.Add(DefPosArr[I].DirPoint, DefPosArr[I].Weight);
 
-      //Longer segments will get several DefencePositions
-      SegLength := KMLength(Outline2[I].A, Outline2[I].B);
-      DefCount := Max(Trunc(SegLength / 5), 1); //At least 1, otherwise we might leave a bridge undefended
-
-      for K := 0 to DefCount - 1 do
-      begin
-        Ratio := (K + 1) / (DefCount + 1);
-        Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
-        Weight := Round(Outline2[I].Weight * 100);
-        //Make sure each segment gets 1 defence position before filling others (in the middle of the segment line)
-        if K = ((DefCount - 1) div 2) then
-          Weight := Weight + 10000;
-
-        Locs.Add(KMPointDir(Loc, FaceDir), Weight);
-      end;
-    end;
+    //for I := 0 to High(Outline2) do
+    //begin
+    //  FaceDir := KMGetDirection(KMPointF(Outline2[I].A), KMPerpendecular(Outline2[I].A, Outline2[I].B));
+    //
+    //  //Longer segments will get several DefencePositions
+    //  SegLength := KMLength(Outline2[I].A, Outline2[I].B);
+    //  DefCount := Max(Trunc(SegLength / 5), 1); //At least 1, otherwise we might leave a bridge undefended
+    //
+    //  for K := 0 to DefCount - 1 do
+    //  begin
+    //    Ratio := (K + 1) / (DefCount + 1);
+    //    Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
+    //    Weight := Round(Outline2[I].Weight * 100);
+    //    //Make sure each segment gets 1 defence position before filling others (in the middle of the segment line)
+    //    if K = ((DefCount - 1) div 2) then
+    //      Weight := Weight + 10000;
+    //
+    //    Locs.Add(KMPointDir(Loc, FaceDir), Weight);
+    //  end;
+    //end;
 
     //Sort according to positions weight
     Locs.SortByTag;
 
+
     //Add defence positions
     for I := Locs.Count - 1 downto 0 do
     begin
-      LocI := KMGetPointInDir(Locs[I].Loc, KMAddDirection(Locs[I].Dir, 4), 1);
+      LocI := KMGetPointInDir(Locs.Items[I].Loc, Locs.Items[I].Dir, 1);
       Loc := gTerrain.EnsureTileInMapCoords(LocI.X, LocI.Y, 3);
       if not EnsureWalkable(Loc) then
         Continue;
@@ -555,6 +564,8 @@ end;
 
 //See if we can attack our enemies
 procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+const
+  TARGET_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 var
   TargetHouse: TKMHouse;
   TargetUnit: TKMUnit;
@@ -565,8 +576,8 @@ begin
   //Find target
   case aTarget of
     att_ClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
-    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
+    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
+    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
     att_CustomPosition:               begin
                                         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
                                         if (TargetHouse <> nil) and
@@ -657,4 +668,4 @@ begin
 end;
 
 
-end.
+end.

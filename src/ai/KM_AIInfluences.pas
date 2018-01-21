@@ -2,50 +2,87 @@ unit KM_AIInfluences;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
+  KM_Units, KM_UnitGroups,
+  KM_NavMesh, KM_NavMeshInfluences;
+
+
+const
+
+  AVOID_BUILDING_UNLOCK = 0;
+  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
+  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
+  AVOID_BUILDING_NODE_LOCK_ROAD = 45;
+  AVOID_BUILDING_NODE_LOCK_FIELD = 50;
+  AVOID_BUILDING_FOREST_ADD = 150;
+  AVOID_BUILDING_COAL_TILE = 249;
 
 
 type
+
   //Collection of influence maps
   TKMInfluences = class
   private
-    fMapX: Word;
-    fMapY: Word;
-    fUpdatePlayerId: TKMHandIndex; //Player we will be updating next
-    //This is cache for CanOwn in gTerrain.Land
-    Ownable: array of array of Boolean;
+    fMapX, fMapY, fPolygons: Word; // Limits of arrays
 
-    //Stored in 1D arrays for optimisation, accessed through property
-    fInfluence: array of Byte; //Each players area of influence
-    fOwnership: array of Byte;
+    fUpdateCityIdx, fUpdateArmyIdx: TKMHandIndex; // Update index
+    fPresence: TKMWordArray; // Military presence
+    fOwnership: TKMByteArray; // City mark the space around itself
 
-    function GetInfluence(aPlayer: Byte; Y,X: Word): Byte; inline;
-    procedure SetInfluence(aPlayer: Byte; Y,X: Word; aInfluence: Byte); inline;
-    function GetOwnership(aPlayer: Byte; Y,X: Word): Byte; inline;
-    procedure SetOwnership(aPlayer: Byte; Y,X: Word; aOwnership: Byte); inline;
+    fFloodFill: TKMInfluenceFloodFill;
+    fInfluenceSearch: TNavMeshInfluenceSearch;
+    fNavMesh: TKMNavMesh;
 
-    property Influence[aPlayer: Byte; Y,X: Word]: Byte read GetInfluence write SetInfluence;
-
-    procedure InitInfluenceAvoid;
-    procedure InitInfluenceOwnable;
-    procedure UpdateDirectInfluence(aIndex: TKMHandIndex);
-    procedure UpdateOwnershipInfluence(aIndex: TKMHandIndex);
+    // Avoid building
+    procedure InitAvoidBuilding();
+    // Army presence
+    function GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word; inline;
+    procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType; const aPresence: Word); inline;
+    procedure SetIncPresence(const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType; const aPresence: Word); inline;
+    function GetAllPresences(const aPL: TKMHandIndex; aIdx: Word): Word; inline;
+    function GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word;
+    //function GetAlliancePresence(const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TAllianceType): Word;
+    procedure UpdateMilitaryPresence(const aPL: TKMHandIndex);
+    // City influence
+    function GetOwnership(const aPL: TKMHandIndex; const aIdx: Word): Byte; inline;
+    procedure SetOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aOwnership: Byte); inline;
+    function GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
+    procedure SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
+    procedure UpdateOwnership(const aPL: TKMHandIndex);
+    // Common
+    procedure InitArrays();
   public
-    //Common map of areas where building is undesired (around Store, Mines, Woodcutters)
-    AvoidBuilding: array of array of Byte;
+    AvoidBuilding: TKMByte2Array; //Common map of areas where building is undesired (around Store, Mines, Woodcutters)
 
-    //Tiles best owner and his influence
-    property Ownership[aPlayer:Byte; Y,X: Word]: Byte read GetOwnership write SetOwnership;
-    //Tension: array of array of array of SmallInt;
-
-    procedure AddAvoidBuilding(X,Y: Word; aRad: Single);
-    procedure RemAvoidBuilding(aArea: TKMRect);
-    function GetBestOwner(X, Y: Word): TKMHandIndex;
-    procedure Init;
-    procedure ExportInfluenceMaps;
-
+    constructor Create(aNavMesh: TKMNavMesh);
+    destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
+
+    // Avoid building
+    // Army presence
+    property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType]: Word read GetPresence write SetPresence;
+    property IncPresence[const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType]: Word write SetIncPresence;
+    property PresenceAllGroups[const aPL: TKMHandIndex; aIdx: Word]: Word read GetAllPresences;
+    property EnemyGroupPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType]: Word read GetEnemyGroupPresence;
+    //property AlliancePresence[const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TAllianceType]: Word read GetAlliancePresence;
+    // City influence
+    property Ownership[const aPL: TKMHandIndex; const aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
+    property OwnPoly[const aPL: TKMHandIndex; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
+    // Common
+    property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
+
+    // Avoid building
+    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255);
+    procedure RemAvoidBuilding(aArea: TKMRect);
+    // Army presence
+    // City influence
+    function GetBestOwner(const aX,aY: Word): TKMHandIndex; overload;
+    function GetBestOwner(const aIdx: Word): TKMHandIndex; overload;
+    function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TAllianceType): Byte;
+    function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
+
+    procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(aRect: TKMRect);
   end;
@@ -56,320 +93,422 @@ uses
   Classes, Graphics, SysUtils, Math,
   KM_RenderAux,
   KM_Terrain, KM_Houses, KM_HouseCollection,
-  KM_Hand, KM_HandsCollection, KM_ResHouses;
+  KM_Hand, KM_HandsCollection, KM_ResHouses,
+  KM_AIFields;
 
 
 const
-  //Decay affects how much space AI needs to be able to expand
-  //Values smaller than 3 start to block green AI on AcrossDesert too fast
-  INFLUENCE_DECAY = 5;
-  INFLUENCE_DECAY_D = 7;
-  INFLUENCE_ENEMY_DIV = 2;
-
+  GROUPS = 4;
+  INIT_HOUSE_INFLUENCE = 255;
+  MAX_INFLUENCE_DISTANCE = 150;
 
 { TKMInfluenceMaps }
-//Make the area around to be avoided by common houses
-procedure TKMInfluences.AddAvoidBuilding(X,Y: Word; aRad: Single);
-var I,K: Integer;
+constructor TKMInfluences.Create(aNavMesh: TKMNavMesh);
 begin
-  for I := Max(Y - Ceil(aRad), 1) to Min(Y + Ceil(aRad), fMapY - 1) do
-  for K := Max(X - Ceil(aRad), 1) to Min(X + Ceil(aRad), fMapX - 1) do
-    if Sqr(X-K) + Sqr(Y-I) <= Sqr(aRAD) then
-      AvoidBuilding[I,K] := 255;
+  inherited Create();
+
+  fNavMesh := aNavMesh;
+  fUpdateCityIdx := 0;
+  fUpdateArmyIdx := 0;
+  fFloodFill := TKMInfluenceFloodFill.Create(False); // Check if True is better
+  fInfluenceSearch := TNavMeshInfluenceSearch.Create(False);
 end;
 
 
-procedure TKMInfluences.RemAvoidBuilding(aArea: TKMRect);
-var I,K: Integer;
+destructor TKMInfluences.Destroy();
 begin
-  for I := Max(aArea.Top , 1) to Min(aArea.Bottom, fMapY - 1) do
-  for K := Max(aArea.Left, 1) to Min(aArea.Right , fMapX - 1) do
-    AvoidBuilding[I,K] := 0;
-end;
-
-
-function TKMInfluences.GetInfluence(aPlayer: Byte; Y,X: Word): Byte;
-begin
-  Result := fInfluence[aPlayer*fMapX*fMapY + Y*fMapX + X];
-end;
-
-
-procedure TKMInfluences.SetInfluence(aPlayer: Byte; Y,X: Word; aInfluence: Byte);
-begin
-  fInfluence[aPlayer*fMapX*fMapY + Y*fMapX + X] := aInfluence;
-end;
-
-
-function TKMInfluences.GetOwnership(aPlayer: Byte; Y,X: Word): Byte;
-begin
-  Result := fOwnership[aPlayer*fMapX*fMapY + Y*fMapX + X];
-end;
-
-
-procedure TKMInfluences.SetOwnership(aPlayer: Byte; Y,X: Word; aOwnership: Byte);
-begin
-  fOwnership[aPlayer*fMapX*fMapY + Y*fMapX + X] := aOwnership;
-end;
-
-
-//Return index of player who has most influence on this tile, or none
-function TKMInfluences.GetBestOwner(X, Y: Word): TKMHandIndex;
-var
-  I: Integer;
-  Best: Integer;
-begin
-  Result := PLAYER_NONE;
-  if not AI_GEN_INFLUENCE_MAPS then Exit;
-
-  Best := 0;
-  for I := 0 to gHands.Count - 1 do
-  if Ownership[I,Y,X] > Best then
-  begin
-    Best := Ownership[I,Y,X];
-    Result := I;
-  end;
-end;
-
-
-procedure TKMInfluences.Init;
-var
-  I: Integer;
-begin
-  fMapX := gTerrain.MapX;
-  fMapY := gTerrain.MapY;
-  SetLength(AvoidBuilding, fMapY, fMapX);
-  SetLength(Ownable, fMapY, fMapX);
-  SetLength(fInfluence, gHands.Count * fMapY * fMapX);
-  SetLength(fOwnership, gHands.Count * fMapY * fMapX);
-  InitInfluenceAvoid;
-  InitInfluenceOwnable;
-
-  if AI_GEN_INFLUENCE_MAPS then
-  for I := 0 to gHands.Count - 1 do
-  begin
-    UpdateDirectInfluence(I);
-    UpdateOwnershipInfluence(I);
-  end;
-end;
-
-
-//AI should avoid certain areas, keeping them for special houses
-procedure TKMInfluences.InitInfluenceAvoid;
-var
-  S: TKMHouse;
-  I, K, J: Integer;
-  M: Integer;
-  N: Integer;
-begin
-  //Avoid areas where Gold/Iron mines should be
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-  if (gTerrain.TileIsIron(K, I) > 1) or (gTerrain.TileIsGold(K, I) > 1) then
-    for M := I to Min(I + 2, fMapY - 1) do
-    for N := Max(K - 1, 1) to Min(K + 1, fMapX - 1) do
-      AvoidBuilding[M, N] := 255;
-
-  //Avoid Coal fields
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-   AvoidBuilding[I,K] := AvoidBuilding[I,K] or (Byte(gTerrain.TileIsCoal(K, I) > 1) * $FF);
-
-  //Leave free space below all players Stores
-  for J := 0 to gHands.Count - 1 do
-  begin
-    S := gHands[J].FindHouse(ht_Store);
-    if S <> nil then
-    for I := Max(S.Entrance.Y - 3, 1) to Min(S.Entrance.Y + 2, fMapY - 1) do
-    for K := Max(S.Entrance.X - 2, 1) to Min(S.Entrance.X + 2, fMapX - 1) do
-      AvoidBuilding[I,K] := AvoidBuilding[I,K] or $FF;
-  end;
-end;
-
-
-procedure TKMInfluences.InitInfluenceOwnable;
-var
-  I, K: Integer;
-begin
-  if not AI_GEN_INFLUENCE_MAPS then Exit;
-
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-    Ownable[I,K] := (tpOwn in gTerrain.Land[I,K].Passability);
-end;
-
-
-procedure TKMInfluences.UpdateDirectInfluence(aIndex: TKMHandIndex);
-  procedure DoFill(X,Y: Word; V: Byte);
-  begin
-    if  (V > Influence[aIndex, Y, X])
-    and (Ownable[Y,X]) then
-    begin
-      Influence[aIndex, Y, X] := V;
-      if V - INFLUENCE_DECAY <= 0 then Exit;
-
-      if Y-1 >= 1       then DoFill(X, Y-1, V - INFLUENCE_DECAY);
-      if X-1 >= 1       then DoFill(X-1, Y, V - INFLUENCE_DECAY);
-      if X+1 <= fMapX-1 then DoFill(X+1, Y, V - INFLUENCE_DECAY);
-      if Y+1 <= fMapY-1 then DoFill(X, Y+1, V - INFLUENCE_DECAY);
-
-      //We can get away with 4-tap fill, it looks fine already
-      //Diagonals passages are uncommon and don't matter that much for influence
-      {if V - INFLUENCE_DECAY_D <= 0 then Exit;
-      DoFill(X-1, Y-1, V - INFLUENCE_DECAY_D);
-      DoFill(X+1, Y-1, V - INFLUENCE_DECAY_D);
-      DoFill(X-1, Y+1, V - INFLUENCE_DECAY_D);
-      DoFill(X+1, Y+1, V - INFLUENCE_DECAY_D);}
-    end;
-  end;
-var
-  I, K: Integer;
-  P: TKMPoint;
-  PlayerHouses: TKMHousesCollection;
-begin
-  if not AI_GEN_INFLUENCE_MAPS then Exit;
-  Assert(gTerrain <> nil);
-
-  //Clear
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-    Influence[aIndex, I, K] := 0;
-
-  //Sync tile ownership
-  PlayerHouses := gHands[aIndex].Houses;
-  for I := 0 to PlayerHouses.Count - 1 do
-  if not PlayerHouses[I].IsDestroyed and (PlayerHouses[I].HouseType <> ht_WatchTower) then
-  begin
-    P := PlayerHouses[I].GetPosition;
-    //Expand influence with faloff
-    DoFill(P.X, P.Y, 255);
-  end;
-end;
-
-
-procedure TKMInfluences.UpdateOwnershipInfluence(aIndex: TKMHandIndex);
-var
-  I, K, H: Integer;
-  T: Integer;
-begin
-  if not AI_GEN_INFLUENCE_MAPS then Exit;
-  Assert(gTerrain <> nil);
-
-  //Fill Ownership map
-  //Ownerhip = influence of player - influences of his enemies
-  for I := 1 to fMapY - 1 do
-  for K := 1 to fMapX - 1 do
-  begin
-    T := Influence[aIndex, I, K];
-    if T <> 0 then
-    begin
-      for H := 0 to gHands.Count - 1 do
-      if gHands[aIndex].Alliances[H] = at_Enemy then
-        T := T - Influence[H, I, K] div INFLUENCE_ENEMY_DIV;
-
-      Ownership[aIndex, I, K] := Max(T, 0);
-    end
-    else
-      Ownership[aIndex, I, K] := 0;
-  end;
-
-  //Normalization is not working as intended,
-  //it gives unfair advantage to one using it,
-  //muting neighbours areas beyond reason
-end;
-
-
-procedure TKMInfluences.ExportInfluenceMaps;
-var
-  I, J, K: Integer;
-begin
-  for J := 0 to gHands.Count - 1 do
-  with TBitmap.Create do
-  begin
-    Width := fMapX;
-    Height:= fMapY;
-    PixelFormat := pf32bit;
-    for I := 0 to Height-1 do
-      for K := 0 to Width-1 do
-        Canvas.Pixels[K,I] := Influence[J, I, K];
-    SaveToFile(ExeDir + 'Export\Influence map Player'+IntToStr(J) + '.bmp');
-  end;
-
-  for J := 0 to gHands.Count - 1 do
-  with TBitmap.Create do
-  begin
-    Width := fMapX;
-    Height:= fMapY;
-    PixelFormat := pf32bit;
-    for I := 0 to Height-1 do
-      for K := 0 to Width-1 do
-        Canvas.Pixels[K,I] := Influence[J, I, K];
-    SaveToFile(ExeDir + 'Export\Influence map Player'+IntToStr(J) + '.bmp');
-  end;
+  fFloodFill.Free;
+  fInfluenceSearch.Free;
+  inherited;
 end;
 
 
 procedure TKMInfluences.Save(SaveStream: TKMemoryStream);
 var
   PCount: Word;
-  K: Integer;
+  Y, Len: Integer;
 begin
   PCount := gHands.Count;
 
   SaveStream.WriteA('Influences');
-
   SaveStream.Write(PCount);
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
-  SaveStream.Write(fUpdatePlayerId);
+  SaveStream.Write(fPolygons);
+  SaveStream.Write(fUpdateCityIdx);
+  SaveStream.Write(fUpdateArmyIdx);
 
-  SaveStream.Write(fInfluence[0], fMapX * fMapY * PCount * SizeOf(fInfluence[0]));
-  SaveStream.Write(fOwnership[0], fMapX * fMapY * PCount * SizeOf(fOwnership[0]));
+  SaveStream.WriteA('AvoidBuilding');
+  for Y := 0 to fMapY - 1 do
+    SaveStream.Write(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
 
-  for K := 0 to fMapY - 1 do
-    SaveStream.Write(AvoidBuilding[K,0], fMapX * SizeOf(AvoidBuilding[0,0]));
+  SaveStream.WriteA('Ownership');
+  Len := Length(fOwnership);
+  SaveStream.Write(Len);
+  SaveStream.Write(fOwnership[0], SizeOf(fOwnership[0]) * Len);
 
-  for K := 0 to fMapY - 1 do
-    SaveStream.Write(Ownable[K,0], fMapX * SizeOf(Ownable[0,0]));
+  SaveStream.WriteA('ArmyPresence');
+  Len := Length(fPresence);
+  SaveStream.Write(Len);
+  SaveStream.Write(fPresence[0], SizeOf(fPresence[0]) * Len);
 end;
 
 
 procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
 var
   PCount: Word;
-  K: Integer;
+  Y, Len: Integer;
 begin
   LoadStream.ReadAssert('Influences');
-
   LoadStream.Read(PCount);
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
-  LoadStream.Read(fUpdatePlayerId);
+  LoadStream.Read(fPolygons);
+  LoadStream.Read(fUpdateCityIdx);
+  LoadStream.Read(fUpdateArmyIdx);
 
-  SetLength(fInfluence, PCount * fMapY * fMapX);
-  SetLength(fOwnership, PCount * fMapY * fMapX);
+  LoadStream.ReadAssert('AvoidBuilding');
   SetLength(AvoidBuilding, fMapY, fMapX);
-  SetLength(Ownable, fMapY, fMapX);
+  for Y := 0 to fMapY - 1 do
+    LoadStream.Read(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
 
-  LoadStream.Read(fInfluence[0], fMapX * fMapY * PCount * SizeOf(fInfluence[0]));
-  LoadStream.Read(fOwnership[0], fMapX * fMapY * PCount * SizeOf(fOwnership[0]));
+  LoadStream.ReadAssert('Ownership');
+  LoadStream.Read(Len);
+  SetLength(fOwnership, Len);
+  LoadStream.Read(fOwnership[0], SizeOf(fOwnership[0]) * Len);
 
-  for K := 0 to fMapY - 1 do
-    LoadStream.Read(AvoidBuilding[K,0], fMapX * SizeOf(AvoidBuilding[0,0]));
+  LoadStream.ReadAssert('ArmyPresence');
+  LoadStream.Read(Len);
+  SetLength(fPresence, Len);
+  LoadStream.Read(fPresence[0], SizeOf(fPresence[0]) * Len);
+end;
 
-  for K := 0 to fMapY - 1 do
-    LoadStream.Read(Ownable[K,0], fMapX * SizeOf(Ownable[0,0]));
+
+
+
+//Make the area around to be avoided by common houses
+procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255);
+var
+  X,Y: Integer;
+begin
+  for Y := Max(aY - Ceil(aRad), 1) to Min(aY + Ceil(aRad), fMapY - 1) do
+  for X := Max(aX - Ceil(aRad), 1) to Min(aX + Ceil(aRad), fMapX - 1) do
+    if Sqr(aX-X) + Sqr(aY-Y) <= Sqr(aRad) then
+      AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + aValue, 255);
+end;
+
+
+procedure TKMInfluences.RemAvoidBuilding(aArea: TKMRect);
+var
+  X,Y: Integer;
+begin
+  for Y := Max(aArea.Top , 1) to Min(aArea.Bottom, fMapY - 1) do
+  for X := Max(aArea.Left, 1) to Min(aArea.Right , fMapX - 1) do
+    AvoidBuilding[Y,X] := 0;
+end;
+
+
+//AI should avoid certain areas, keeping them for special houses
+procedure TKMInfluences.InitAvoidBuilding();
+  procedure CheckAndMarkMine(aX,aY: Integer; aHT: THouseType);
+  var
+    X,Y,X2,Y2: Integer;
+  begin
+    for Y := Max(1,aY-3) to Min(fMapY-1,aY-1) do
+    for X := Max(1,aX-1) to Min(fMapX-1,aX+1) do
+      if   ((aHT = ht_IronMine) AND (gTerrain.TileIsIron(X,Y) > 1))
+        OR ((aHT = ht_GoldMine) AND (gTerrain.TileIsGold(X,Y) > 1)) then
+      begin
+        for Y2 := aY to Min(fMapY-1,aY+1) do
+        for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = ht_IronMine)) do
+          AvoidBuilding[Y2, X2] := AVOID_BUILDING_COAL_TILE;
+        Exit;
+      end;
+  end;
+var
+  H: TKMHouse;
+  I,X,Y: Integer;
+begin
+  for Y := 0 to fMapY - 1 do
+  for X := 0 to fMapX - 1 do
+    AvoidBuilding[Y,X] := 0;
+
+  //Avoid areas where Gold/Iron mines should be
+  for Y := 3 to fMapY - 2 do
+  for X := 2 to fMapX - 2 do
+    if gTerrain.CanPlaceHouse(KMPoint(X,Y), ht_IronMine) then
+      CheckAndMarkMine(X,Y, ht_IronMine)
+    else if gTerrain.CanPlaceHouse(KMPoint(X,Y), ht_GoldMine) then
+      CheckAndMarkMine(X,Y, ht_GoldMine);
+
+  //Avoid Coal fields
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+   AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or (Byte(gTerrain.TileIsCoal(X, Y) > 1) * $FF);
+
+  //Leave free space BELOW all players Stores
+  for I := 0 to gHands.Count - 1 do
+  begin
+    H := gHands[I].FindHouse(ht_Store);
+    if (H <> nil) then
+    for Y := Max(H.Entrance.Y + 1, 1) to Min(H.Entrance.Y + 2, fMapY - 1) do
+    for X := Max(H.Entrance.X - 1, 1) to Min(H.Entrance.X + 1, fMapX - 1) do
+      AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or $FF;
+  end;
+end;
+
+
+
+
+function TKMInfluences.GetAllPresences(const aPL: TKMHandIndex; aIdx: Word): Word;
+var
+  GT: TGroupType;
+begin
+  Result := 0;
+  aIdx := (aPL*fPolygons + aIdx) shl 2;
+  for GT := Low(TGroupType) to High(TGroupType) do
+    Result := Min(High(Word), Result + fPresence[aIdx + Byte(GT)]);
+end;
+
+
+function TKMInfluences.GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word;
+begin
+  Result := fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)];
+end;
+
+
+procedure TKMInfluences.SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType; const aPresence: Word);
+begin
+  fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)] := aPresence;
+end;
+
+
+procedure TKMInfluences.SetIncPresence(const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType; const aPresence: Word);
+begin
+  aIdx := ((aPL*fPolygons + aIdx) shl 2) + Byte(aGT);
+  fPresence[aIdx] := fPresence[aIdx] + aPresence;
+end;
+
+
+function TKMInfluences.GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = at_Enemy) then
+      Result := Result + Presence[PL, aIdx, aGT];
+end;
+
+
+procedure TKMInfluences.UpdateMilitaryPresence(const aPL: TKMHandIndex);
+const
+  EACH_X_MEMBER_COEF = 10;
+  MAX_DISTANCE = 20;
+var
+  I, K, Cnt: Integer;
+  GT: TGroupType;
+  G: TKMUnitGroup;
+  U: TKMUnit;
+  PointArr: TKMWordArray;
+begin
+  InitArrays();
+
+  SetLength(PointArr,16);
+  for I := 0 to fPolygons-1 do
+    for GT := Low(TGroupType) to High(TGroupType) do
+      Presence[aPL,I,GT] := 0;
+
+  for I := 0 to gHands[aPL].UnitGroups.Count-1 do
+  begin
+    G := gHands[aPL].UnitGroups.Groups[I];
+    if (G = nil) OR G.IsDead then
+      continue;
+    K := 0;
+    Cnt := 0;
+    while (K < G.Count) do
+    begin
+      U := G.Members[K];
+      if (U <> nil) AND not U.IsDeadOrDying then
+      begin
+        if (Length(PointArr) <= Cnt) then
+          SetLength(PointArr, Cnt + 16);
+        PointArr[Cnt] := gAIFields.NavMesh.Point2Polygon[U.GetPosition.Y,U.GetPosition.X];
+        Cnt := Cnt + 1;
+      end;
+      K := K + EACH_X_MEMBER_COEF; // Pick each X member (Huge groups cover large areas so be sure that influence will be accurate)
+    end;
+
+    if (Cnt > 0) then
+      //fFloodFill.MilitaryPresence(aPL, gAIFields.Eye.ArmyEvaluation.GroupStrength(G), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+      fFloodFill.MilitaryPresence(aPL, Max(G.Count,30), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+  end;
+end;
+
+
+
+
+
+
+function TKMInfluences.GetOwnership(const aPL: TKMHandIndex; const aIdx: Word): Byte;
+begin
+  Result := fOwnership[aPL * fPolygons + aIdx];
+end;
+
+
+procedure TKMInfluences.SetOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aOwnership: Byte);
+begin
+  fOwnership[aPL * fPolygons + aIdx] := aOwnership;
+end;
+
+
+function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte;
+begin
+  Result := GetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX]);
+end;
+
+
+procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte);
+begin
+  SetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX], aOwnership);
+end;
+
+
+function TKMInfluences.GetBestOwner(const aX,aY: Word): TKMHandIndex;
+begin
+  Result := GetBestOwner( fNavMesh.Point2Polygon[aY,aX] );
+end;
+
+
+function TKMInfluences.GetBestOwner(const aIdx: Word): TKMHandIndex;
+var
+  PL: TKMHandIndex;
+  Best: Integer;
+begin
+  Result := PLAYER_NONE;
+  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
+    Exit;
+
+  Best := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (OwnPoly[PL,aIdx] > Best) then
+    begin
+      Best := OwnPoly[PL,aIdx];
+      Result := PL;
+    end;
+end;
+
+
+function TKMInfluences.GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TAllianceType): Byte;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  if not AI_GEN_INFLUENCE_MAPS then
+    Exit;
+
+  for PL := 0 to gHands.Count - 1 do
+    if (aPL <> PL) AND (gHands[aPL].Alliances[PL] = aAllianceType) AND (OwnPoly[PL,aIdx] > Result) then
+      Result := OwnPoly[PL,aIdx];
+end;
+
+
+function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
+var
+  PL: TKMHandIndex;
+  Idx: Word;
+begin
+  Result := 0;
+  if not AI_GEN_INFLUENCE_MAPS then
+    Exit;
+
+  Idx := fNavMesh.Point2Polygon[aY,aX];
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (PL <> aPL) then
+      Result := Result + OwnPoly[PL,Idx];
+end;
+
+
+// Here is the main reason for reworking influences: only 1 flood fill for city per a update + ~25x less elements in array
+procedure TKMInfluences.UpdateOwnership(const aPL: TKMHandIndex);
+var
+  I, Idx, Cnt: Integer;
+  H: TKMHouse;
+  IdxArray: TKMWordArray;
+begin
+  InitArrays();
+
+  //Clear array (again is better to clear less than 2000 polygons instead of 255*255 tiles)
+  for Idx := 0 to fPolygons - 1 do
+    OwnPoly[aPL, Idx] := 0;
+
+  // Create array of polygon indexes
+  SetLength(IdxArray, gHands[aPL].Houses.Count);
+  Cnt := 0;
+  for I := 0 to gHands[aPL].Houses.Count - 1 do
+  begin
+    H := gHands[aPL].Houses[I];
+    if not H.IsDestroyed AND (H.HouseType <> ht_WatchTower) then  // Ignore watchtower?
+    begin
+        IdxArray[Cnt] := fNavMesh.Point2Polygon[H.GetPosition.Y,H.GetPosition.X];
+        Cnt := Cnt + 1;
+    end;
+  end;
+
+  if (Cnt > 0) then
+    fFloodFill.HouseInfluence(aPL, INIT_HOUSE_INFLUENCE, MAX_INFLUENCE_DISTANCE, Cnt - 1, IdxArray);
+end;
+
+
+
+
+procedure TKMInfluences.InitArrays();
+var
+  I: Integer;
+begin
+  if (fPolygons <> Length(gAIFields.NavMesh.Polygons)) then
+  begin
+    fPolygons := Length(gAIFields.NavMesh.Polygons);
+    SetLength(fPresence, gHands.Count * fPolygons * GROUPS);
+    SetLength(fOwnership, gHands.Count * fPolygons);
+    for I := 0 to Length(fPresence) - 1 do
+      fPresence[I] := 0;
+    for I := 0 to Length(fOwnership) - 1 do
+      fOwnership[I] := 0;
+  end;
+end;
+
+
+procedure TKMInfluences.AfterMissionInit();
+var
+  PL: TKMHandIndex;
+begin
+  fMapX := gTerrain.MapX;
+  fMapY := gTerrain.MapY;
+  SetLength(AvoidBuilding, fMapY, fMapX);
+  InitAvoidBuilding();
+  InitArrays();
+
+  if AI_GEN_INFLUENCE_MAPS then
+    for PL := 0 to gHands.Count - 1 do
+      UpdateOwnership(PL);
 end;
 
 
 procedure TKMInfluences.UpdateState(aTick: Cardinal);
 begin
-  //Update one player every 15 sec
-  if aTick mod 150 = 15 then
+  // City:
+  if aTick mod 150 = 15 then // Update every 15 sec 1 player
   begin
-    fUpdatePlayerId := (fUpdatePlayerId + 1) mod gHands.Count;
-
-    UpdateDirectInfluence(fUpdatePlayerId);
-    UpdateOwnershipInfluence(fUpdatePlayerId);
+    fUpdateCityIdx := (fUpdateCityIdx + 1) mod gHands.Count;
+    UpdateOwnership(fUpdateCityIdx);
+  end;
+  // Army:
+  if (aTick mod 5 = 0) then // Update every 0.5 sec 1 player
+  begin
+    fUpdateArmyIdx := (fUpdateArmyIdx + 1) mod gHands.Count;
+    UpdateMilitaryPresence(fUpdateArmyIdx);
   end;
 end;
 
@@ -377,43 +516,113 @@ end;
 //Render debug symbols
 procedure TKMInfluences.Paint(aRect: TKMRect);
 var
-  I, K, J: Integer;
+  PL, WatchedPL: TKMHandIndex;
+  I, Cnt: Word;
+  X,Y: Integer;
+  PolyArr: TPolygonArray;
+  NodeArr: TNodeArray;
   Col: Cardinal;
 begin
-  if not AI_GEN_INFLUENCE_MAPS then Exit;
-
-  if OVERLAY_INFLUENCE then
-    for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
-    begin
-      Col := $80000000;
-      J := GetBestOwner(K,I);
-      if J <> PLAYER_NONE then
-        Col := (gHands[J].FlagColor and $FFFFFF) or (Influence[J,I,K] shl 24);
-      gRenderAux.Quad(K, I, Col);
-    end;
-
-  if OVERLAY_OWNERSHIP then
-    for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
-    begin
-      Col := $80000000;
-      J := GetBestOwner(K,I);
-      if J <> PLAYER_NONE then
-        Col := (gHands[J].FlagColor and $FFFFFF)
-                or (Ownership[J,I,K] shl 24)
-                or ((Byte(InRange(Ownership[J,I,K], OWN_THRESHOLD, OWN_MARGIN)) * 255) shl 24);
-      gRenderAux.Quad(K, I, Col);
-    end;
+  if not AI_GEN_NAVMESH OR not AI_GEN_INFLUENCE_MAPS then
+    Exit;
 
   if OVERLAY_AVOID then
-    for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
+    for Y := aRect.Top to aRect.Bottom do
+    for X := aRect.Left to aRect.Right do
     begin
-      Col := AvoidBuilding[I,K] * 65793 or $80000000;
-      gRenderAux.Quad(K, I, Col);
+      Col := AvoidBuilding[Y,X] * 65793 OR $80000000;
+      gRenderAux.Quad(X, Y, Col);
     end;
+
+  if OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP then
+  begin
+    PolyArr := fNavMesh.Polygons;
+    NodeArr := fNavMesh.Nodes;
+    for I := 0 to fPolygons - 1 do
+    begin
+      PL := GetBestOwner(I);
+      if (PL = PLAYER_NONE) then
+        continue
+      else
+        Col := (gHands[PL].FlagColor AND $FFFFFF) OR (OwnPoly[PL,I] shl 24);
+
+      //NavMesh polys coverage
+      gRenderAux.TriangleOnTerrain(
+        NodeArr[PolyArr[I].Indices[0]].Loc.X,
+        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[1]].Loc.X,
+        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[2]].Loc.X,
+        NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+    end;
+  end;
+
+  if OVERLAY_AI_COMBAT then
+  begin
+    WatchedPL := gMySpectator.HandIndex;
+    if (WatchedPL = PLAYER_NONE) then
+      Exit;
+
+    PolyArr := fNavMesh.Polygons;
+    NodeArr := fNavMesh.Nodes;
+
+    for PL := 0 to gHands.Count - 1 do
+    begin
+      if (WatchedPL = PL) then
+        Col := $0000FF00 // Green
+      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+        Col := $00FF0000 // Blue
+      else
+        Col := $000000FF; // Red
+
+      for I := 0 to fPolygons - 1 do
+      begin
+        Cnt := PresenceAllGroups[PL,I];
+        if (Cnt > 0) then
+        begin
+          Cnt := Min(Cnt,$5F);
+          //NavMesh polys coverage
+          gRenderAux.TriangleOnTerrain(
+            NodeArr[PolyArr[I].Indices[0]].Loc.X,
+            NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[1]].Loc.X,
+            NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[2]].Loc.X,
+            NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
+        end;
+      end;
+    end;
+    //for I := 0 to fPolygons - 1 do
+    //begin
+    //  BestCnt := 0;
+    //  for PL := 0 to gHands.Count - 1 do
+    //  begin
+    //    Cnt := PresenceAllGroups[PL,I];
+    //    if (Cnt > BestCnt) then
+    //    begin
+    //      BestCnt := Cnt;
+    //      if (WatchedPL = PL) then
+    //        Col := $0000FF00 // Green
+    //      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+    //        Col := $00FF0000 // Blue
+    //      else
+    //        Col := $000000FF; // Red
+    //    end;
+    //  end;
+    //  if (BestCnt > 0) then
+    //  begin
+    //    BestCnt := Min(BestCnt,$9F);
+    //    //NavMesh polys coverage
+    //    gRenderAux.TriangleOnTerrain(
+    //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
+    //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+    //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
+    //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+    //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
+    //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (BestCnt shl 24)) );
+    //  end;
+    //end;
+  end;
 end;
 
-
-end.
+end.

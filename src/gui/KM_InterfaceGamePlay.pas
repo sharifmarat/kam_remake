@@ -1,4 +1,4 @@
-﻿unit KM_InterfaceGamePlay;
+unit KM_InterfaceGamePlay;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -3724,17 +3724,27 @@ begin
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
 
   // Temporary inteface (by @Crow)
-  if SHOW_ARMYEVALS then
-    for I := 0 to gHands.Count - 1 do
-    if I <> gMySpectator.HandIndex then
-      S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
+  //if SHOW_ARMYEVALS then
+  //  for I := 0 to gHands.Count - 1 do
+  //  if I <> gMySpectator.HandIndex then
+  //    S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
 
   if SHOW_AI_WARE_BALANCE then
   begin
     if (gMySpectator.Selected <> nil) and not gMySpectator.IsSelectedMyObj then
-      S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.Mayor.BalanceText + '|'
+    begin
+      if gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.Setup.NewAI then
+        S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.CityManagement.BalanceText + '|'
+      else
+        S := S + gHands[GetGameObjectOwnerIndex(gMySpectator.Selected)].AI.Mayor.BalanceText + '|'
+    end
     else
-      S := S + gMySpectator.Hand.AI.Mayor.BalanceText + '|'
+    begin
+      if gMySpectator.Hand.AI.Setup.NewAI then
+        S := S + gMySpectator.Hand.AI.CityManagement.BalanceText + '|'
+      else
+        S := S + gMySpectator.Hand.AI.Mayor.BalanceText + '|'
+    end;
   end;
 
 
@@ -3810,4 +3820,3 @@ end;
 
 
 end.
-
