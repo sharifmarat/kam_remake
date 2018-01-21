@@ -10,21 +10,22 @@ type
     Distance, Next: Word;
     DistPoint: TKMPoint;
   end;
+  TPolygonsQueueArr = array of TPolygonQueue;
 
   // Flood-Fill with queue
   TNavMeshFloodFill = class
   private
-    fVisitedIdx: Byte;
   protected
     fSorted: Boolean; // Only for sorted case
+    fVisitedIdx: Byte;
     fStartQueue, fEndQueue, fQueueCnt: Word;
-    fQueueArray: array of TPolygonQueue; // max 2000 elements (polygons in navmesh) -> use array with fixed length instead of creating elements which have 10<->20 bytes
+    fQueueArray: TPolygonsQueueArr; // max 2000 elements (polygons in navmesh) -> use array with fixed length instead of creating elements which have 10<->20 bytes
 
     procedure MakeNewQueue(); virtual;
     procedure ClearVisitIdx();
     function IsQueueEmpty(): Boolean; inline;
-    function IsVisited(const aIdx: Word): Boolean; inline;
-    function CanBeVisited(const aIdx: Word): Boolean; virtual;
+    function IsVisited(const aIdx: Word): Boolean; virtual;
+    function CanBeExpanded(const aIdx: Word): Boolean; virtual;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); virtual;
     procedure InsertInQueue(const aIdx: Word); virtual;
     procedure InsertAndSort(const aIdx: Word); virtual; // Only for sorted case
@@ -33,7 +34,7 @@ type
     procedure InitQueue(const aMaxIdx: Word; aInitIdxArray: TKMWordArray); virtual;
     procedure Flood(); virtual;
   public
-    constructor Create(aSorted: Boolean = False);
+    constructor Create(aSorted: Boolean = False); virtual;
     destructor Destroy(); override;
 
     function FillPolygons(const aMaxIdx: Word; aInitIdxArray: TKMWordArray): Boolean; virtual;
@@ -97,7 +98,7 @@ begin
 end;
 
 
-function TNavMeshFloodFill.CanBeVisited(const aIdx: Word): Boolean;
+function TNavMeshFloodFill.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   Result := True;
 end;
@@ -162,9 +163,8 @@ begin
       fQueueArray[PrevIdx].Next := aIdx;
       fQueueArray[aIdx].Next := ActIdx;
     end;
-
-    fQueueCnt := fQueueCnt + 1;
   end;
+  fQueueCnt := fQueueCnt + 1;
 end;
 
 
@@ -212,7 +212,7 @@ begin
   PolyArr := gAIFields.NavMesh.Polygons;
 
   while RemoveFromQueue(Idx) do
-    if CanBeVisited(Idx) then
+    if CanBeExpanded(Idx) then
       for I := 0 to PolyArr[Idx].NearbyCount-1 do
       begin
         NearbyIdx := PolyArr[Idx].Nearby[I];
@@ -243,4 +243,3 @@ end;
 
 
 end.
-
