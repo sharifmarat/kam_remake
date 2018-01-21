@@ -95,7 +95,7 @@ type
     fOwner: TKMHandIndex; //House owner player, determines flag color as well
     fPosition: TKMPoint; //House position on map, kinda virtual thing cos it doesn't match with entrance
     procedure Activate(aWasBuilt: Boolean); virtual;
-    procedure AddDemandsOnActivate; virtual;
+    procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
     function GetResOrder(aId: Byte): Integer; virtual;
     function GetResIn(aI: Byte): Word; virtual;
     procedure SetResIn(aI: Byte; aValue: Word); virtual;
@@ -441,7 +441,7 @@ begin
 end;
 
 
-procedure TKMHouse.AddDemandsOnActivate;
+procedure TKMHouse.AddDemandsOnActivate(aWasBuilt: Boolean);
 var
   I, DemandsCnt: Integer;
   Res: TWareType;
@@ -484,7 +484,7 @@ begin
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
 
   UpdateDamage; //House might have been damaged during construction, so show flames when it is built
-  AddDemandsOnActivate;
+  AddDemandsOnActivate(aWasBuilt);
 
   //Fix for diagonal blocking objects near house entrance
   if aWasBuilt then

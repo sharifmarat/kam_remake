@@ -124,6 +124,7 @@ type
     procedure RemAllOffers(aHouse: TKMHouse);
     procedure RemOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Cardinal);
 
+    function GetDemandsCnt(aHouse: TKMHouse; aResource: TWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
     procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
     function TryRemoveDemand(aHouse: TKMHouse; aResource: TWareType; aCount: Word): word;
     procedure RemDemand(aHouse: TKMHouse); overload;
@@ -579,10 +580,32 @@ begin
 end;
 
 
+function TKMDeliveries.GetDemandsCnt(aHouse: TKMHouse; aResource: TWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
+var
+  I,K,J: Integer;
+  Demand: TKMDeliveryDemand;
+begin
+  Result := 0;
+
+  if (aHouse = nil) or (aResource = wt_None)  then Exit;
+
+  for I := 1 to fDemandCount do
+  begin
+    Demand := fDemand[I];
+    if (aResource = Demand.Ware)
+      and (aHouse = Demand.Loc_House)
+      and (aType = Demand.DemandType)
+      and (aImp = Demand.Importance) then
+      Inc(Result);
+  end;
+end;
+
+
 //Adds new Demand to the list. List is stored sorted, but the sorting is done upon Deliver completion,
 //so we just find an empty place (which is last one) and write there.
 procedure TKMDeliveries.AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
-var I,K,J:integer;
+var
+  I,K,J: Integer;
 begin
   Assert(aResource <> wt_None, 'Demanding rt_None');
   if aCount <= 0 then Exit;

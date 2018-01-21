@@ -18,9 +18,10 @@ type
     function GetTHUnitOrderIndex(aUnitType: TUnitType): Integer;
     procedure SetGoldCnt(aValue: Word);
     procedure SetGoldMaxCnt(aValue: Word); overload;
+    procedure AddInitialDemands;
   protected
     function GetFlagPointTexId: Word; override;
-    procedure AddDemandsOnActivate; override;
+    procedure AddDemandsOnActivate(aWasBuilt: Boolean); override;
     function GetResIn(aI: Byte): Word; override;
     procedure SetResIn(aI: Byte; aValue: Word); override;
   public
@@ -197,18 +198,22 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.PostLoadMission;
-var
-  DemandsCnt: Integer;
+procedure TKMHouseTownHall.AddInitialDemands;
 begin
-  DemandsCnt := fGoldMaxCnt - fGoldCnt;
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wt_Gold, DemandsCnt, dtOnce, diNorm); //Every new house needs 5 resource units
+  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wt_Gold, fGoldMaxCnt - fGoldCnt, dtOnce, diNorm);
 end;
 
 
-procedure TKMHouseTownHall.AddDemandsOnActivate;
+procedure TKMHouseTownHall.PostLoadMission;
 begin
-  //We have to add demands in PostLoadMission procedure, as GoldMaxCnt and GoldCnt are not loaded yet
+  AddInitialDemands;
+end;
+
+
+procedure TKMHouseTownHall.AddDemandsOnActivate(aWasBuilt: Boolean);
+begin
+  if aWasBuilt then
+    AddInitialDemands;
 end;
 
 
@@ -275,7 +280,8 @@ begin
   end;
   Assert(aCount <= fGoldCnt);
   Dec(fGoldCnt, aCount);
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
+  if gHands[fOwner].Deliveries.Queue.GetDemandsCnt(Self, aWare, dtOnce, diNorm) < fGoldMaxCnt then
+    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
 end;
 
 
