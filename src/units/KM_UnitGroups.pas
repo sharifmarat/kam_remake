@@ -8,7 +8,6 @@ uses
 
 type
   TKMUnitGroup = class;
-  TKMUnitGroupArray = array of TKMUnitGroup;
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
@@ -132,7 +131,6 @@ type
     property Count: Integer read GetCount;
     property MapEdCount: Word read fMapEdCount write SetMapEdCount;
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
-    function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
     property Owner: TKMHandIndex read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
@@ -200,7 +198,6 @@ type
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
-    function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -461,20 +458,6 @@ end;
 function TKMUnitGroup.GetMember(aIndex: Integer): TKMUnitWarrior;
 begin
   Result := fMembers.Items[aIndex];
-end;
-
-
-function TKMUnitGroup.GetAliveMember: TKMUnitWarrior;
-var
-  I: Integer;
-begin
-  for I := 0 to Count - 1 do
-  begin
-    Result := Members[I];
-    if not Result.IsDeadOrDying then
-      Exit;
-  end;
-  Result := nil;
 end;
 
 
@@ -1991,35 +1974,6 @@ begin
         Result := Groups[I];
       end;
     end;
-end;
-
-
-function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
-var
-  I,K,Idx: Integer;
-  UW: TKMUnitWarrior;
-begin
-  SetLength(Result, 12);
-  Idx := 0; //Any distance will be closer than that
-  for I := 0 to Count - 1 do
-    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
-    begin
-      K := 0;
-      while (K < Groups[I].Count) do // Large groups may be in radius too so check every tenth member
-      begin
-        UW := Groups[I].Members[K];
-        if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
-        begin
-          if (Idx >= Length(Result)) then
-            SetLength(Result, Idx + 12);
-          Result[Idx] := Groups[I];
-          Idx := Idx + 1;
-          break;
-        end;
-        K := K + 10;
-      end;
-    end;
-  SetLength(Result,Idx);
 end;
 
 

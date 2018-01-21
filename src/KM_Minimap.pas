@@ -203,19 +203,19 @@ var
   Owner: TKMHandIndex;
   Group: TKMUnitGroup;
 begin
-  //if OVERLAY_OWNERSHIP then
-  //begin
-  //  for I := 0 to fMapY - 1 do
-  //    for K := 0 to fMapX - 1 do
-  //    begin
-  //      Owner := gAIFields.Influences.GetBestOwner(K,I);
-  //      if Owner <> PLAYER_NONE then
-  //        fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
-  //      else
-  //        fBase[I*fMapX + K] := $FF000000;
-  //    end;
-  //  Exit;
-  //end;
+  if OVERLAY_OWNERSHIP then
+  begin
+    for I := 0 to fMapY - 1 do
+      for K := 0 to fMapX - 1 do
+      begin
+        Owner := gAIFields.Influences.GetBestOwner(K,I);
+        if Owner <> PLAYER_NONE then
+          fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
+        else
+          fBase[I*fMapX + K] := $FF000000;
+      end;
+    Exit;
+  end;
 
   for I := 0 to fMapY - 1 do
     for K := 0 to fMapX - 1 do

@@ -12,9 +12,9 @@ type
   //to prefer connecting to supply/demand houses
   TPathFindingRoad = class(TPathFindingAStarNew)
   private
+    fOwner: TKMHandIndex;
     fRoadConnectID: Byte;
   protected
-    fOwner: TKMHandIndex; // fOwner MUST BE VISIBLE for child-classes
     function CanWalkTo(const aFrom: TKMPoint; aToX, aToY: SmallInt): Boolean; override;
     function DestinationReached(aX, aY: Word): Boolean; override;
     function IsWalkableTile(aX, aY: Word): Boolean; override;
@@ -35,6 +35,7 @@ type
   private
   protected
     function DestinationReached(aX, aY: Word): Boolean; override;
+    function IsWalkableTile(aX, aY: Word): Boolean; override;
     function MovementCost(aFromX, aFromY, aToX, aToY: Word): Word; override;
   public
   end;
@@ -118,9 +119,9 @@ end;
 
 function TPathFindingRoad.IsWalkableTile(aX, aY: Word): Boolean;
 begin
-  Result := ( ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[aY,aX].Passability <> []) OR (gTerrain.Land[aY, aX].TileLock = tlRoadWork) )
-            AND (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ft_None, ft_Road])
-            AND not gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY)); // This will ignore allied plans but I guess that it will not cause trouble
+  Result := ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[aY,aX].Passability <> [])
+            and (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ft_None, ft_Road])
+            and not gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY));
 end;
 
 
@@ -166,6 +167,15 @@ begin
   if gTerrain.TileIsCornField(KMPoint(aToX, aToY))
   or gTerrain.TileIsWineField(KMPoint(aToX, aToY)) then
     Inc(Result, 40);
+end;
+
+
+function TPathFindingRoadShortcuts.IsWalkableTile(aX, aY: Word): Boolean;
+begin
+  Result := ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[aY,aX].Passability <> [])
+            or (gTerrain.Land[aY, aX].TileLock = tlRoadWork);
+  Result := Result and (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ft_None, ft_Road])
+                   and not gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY));
 end;
 
 

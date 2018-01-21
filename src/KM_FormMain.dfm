@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Top = 419
   HelpType = htKeyword
   BorderStyle = bsNone
-  ClientHeight = 718
+  ClientHeight = 686
   ClientWidth = 521
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -26,12 +26,12 @@ object FormMain: TFormMain
   OnShow = FormShow
   DesignSize = (
     521
-    718)
+    686)
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 698
+    Top = 666
     Width = 521
     Height = 20
     Panels = <
@@ -67,18 +67,19 @@ object FormMain: TFormMain
         Text = 'Control ID: 9999'
         Width = 80
       end>
+    ExplicitTop = 636
   end
   object GroupBox1: TGroupBox
     Left = 320
     Top = 8
     Width = 193
-    Height = 666
+    Height = 634
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
-      Top = 424
+      Top = 392
       Width = 177
       Height = 89
       Caption = ' Graphics tweaks '
@@ -171,7 +172,7 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Top = 368
+      Top = 336
       Width = 177
       Height = 57
       Caption = ' User Interface '
@@ -251,12 +252,12 @@ object FormMain: TFormMain
       Left = 8
       Top = 200
       Width = 177
-      Height = 169
+      Height = 137
       Caption = ' AI '
       TabOrder = 2
       object Label5: TLabel
         Left = 108
-        Top = 132
+        Top = 100
         Width = 32
         Height = 13
         Caption = 'Margin'
@@ -264,7 +265,7 @@ object FormMain: TFormMain
       end
       object Label6: TLabel
         Left = 108
-        Top = 148
+        Top = 116
         Width = 47
         Height = 13
         Caption = 'Threshold'
@@ -306,42 +307,15 @@ object FormMain: TFormMain
         TabOrder = 3
         OnClick = ControlsUpdate
       end
-      object chkShowDefences: TCheckBox
-        Left = 8
-        Top = 80
-        Width = 97
-        Height = 17
-        Caption = 'Show defences'
-        TabOrder = 4
-        OnClick = ControlsUpdate
-      end
-      object chkBuildAI: TCheckBox
-        Left = 8
-        Top = 96
-        Width = 97
-        Height = 17
-        Caption = 'Build AI'
-        TabOrder = 5
-        OnClick = ControlsUpdate
-      end
-      object chkCombatAI: TCheckBox
-        Left = 8
-        Top = 112
-        Width = 97
-        Height = 17
-        Caption = 'Combat AI'
-        TabOrder = 6
-        OnClick = ControlsUpdate
-      end
       object tbOwnMargin: TTrackBar
         Left = 4
-        Top = 132
+        Top = 100
         Width = 101
         Height = 17
         Max = 255
         Min = 64
         Position = 64
-        TabOrder = 7
+        TabOrder = 4
         ThumbLength = 14
         TickMarks = tmBoth
         TickStyle = tsNone
@@ -350,18 +324,27 @@ object FormMain: TFormMain
       end
       object tbOwnThresh: TTrackBar
         Left = 4
-        Top = 148
+        Top = 116
         Width = 101
         Height = 17
         Max = 255
         Min = 64
         Position = 64
-        TabOrder = 8
+        TabOrder = 5
         ThumbLength = 14
         TickMarks = tmBoth
         TickStyle = tsNone
         Visible = False
         OnChange = ControlsUpdate
+      end
+      object chkShowDefences: TCheckBox
+        Left = 8
+        Top = 80
+        Width = 97
+        Height = 17
+        Caption = 'Show defences'
+        TabOrder = 6
+        OnClick = ControlsUpdate
       end
     end
     object GroupBox5: TGroupBox
@@ -421,7 +404,7 @@ object FormMain: TFormMain
     end
     object GroupBoxLogs: TGroupBox
       Left = 8
-      Top = 513
+      Top = 481
       Width = 177
       Height = 150
       Caption = 'Logs'
@@ -435,7 +418,7 @@ object FormMain: TFormMain
         TabOrder = 0
         OnClick = ControlsUpdate
       end
-      object chkLogCommands: TCheckBox
+			object chkLogCommands: TCheckBox
         Left = 90
         Top = 16
         Width = 73

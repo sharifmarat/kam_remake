@@ -1,7 +1,7 @@
 object FormMain: TFormMain
   Left = 480
   Height = 750
-  Top = 197
+  Top = 135
   Width = 529
   HelpType = htKeyword
   BorderStyle = bsNone
@@ -63,18 +63,18 @@ object FormMain: TFormMain
   end
   object GroupBox1: TGroupBox
     Left = 328
-    Height = 688
+    Height = 664
     Top = 8
     Width = 193
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
-    ClientHeight = 670
+    ClientHeight = 646
     ClientWidth = 189
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
       Height = 88
-      Top = 424
+      Top = 392
       Width = 177
       Caption = ' Graphics tweaks '
       ClientHeight = 70
@@ -172,11 +172,11 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Height = 56
-      Top = 368
+      Height = 57
+      Top = 336
       Width = 177
       Caption = ' User Interface '
-      ClientHeight = 38
+      ClientHeight = 39
       ClientWidth = 173
       TabOrder = 3
       object chkUIControlsBounds: TCheckBox
@@ -263,26 +263,26 @@ object FormMain: TFormMain
     end
     object GroupBox2: TGroupBox
       Left = 8
-      Height = 169
+      Height = 137
       Top = 200
       Width = 177
       Caption = ' AI '
-      ClientHeight = 151
+      ClientHeight = 119
       ClientWidth = 173
       TabOrder = 2
       object Label5: TLabel
-        Left = 111
+        Left = 109
         Height = 13
-        Top = 119
+        Top = 88
         Width = 32
         Caption = 'Margin'
         ParentColor = False
         Visible = False
       end
       object Label6: TLabel
-        Left = 111
+        Left = 109
         Height = 13
-        Top = 136
+        Top = 104
         Width = 47
         Caption = 'Threshold'
         ParentColor = False
@@ -326,8 +326,8 @@ object FormMain: TFormMain
       end
       object tbOwnMargin: TTrackBar
         Left = 8
-        Height = 12
-        Top = 120
+        Height = 17
+        Top = 88
         Width = 101
         Max = 255
         Min = 64
@@ -340,8 +340,8 @@ object FormMain: TFormMain
       end
       object tbOwnThresh: TTrackBar
         Left = 8
-        Height = 16
-        Top = 136
+        Height = 17
+        Top = 104
         Width = 101
         Max = 255
         Min = 64
@@ -360,24 +360,6 @@ object FormMain: TFormMain
         Caption = 'Show defences'
         OnClick = ControlsUpdate
         TabOrder = 6
-      end
-      object chkBuildAI: TCheckBox
-        Left = 10
-        Height = 19
-        Top = 80
-        Width = 56
-        Caption = 'Build AI'
-        OnClick = ControlsUpdate
-        TabOrder = 7
-      end
-      object chkCombatAI: TCheckBox
-        Left = 10
-        Height = 19
-        Top = 96
-        Width = 69
-        Caption = 'Combat AI'
-        OnClick = ControlsUpdate
-        TabOrder = 8
       end
     end
     object GroupBox5: TGroupBox
@@ -441,7 +423,7 @@ object FormMain: TFormMain
     object GroupBoxLogs: TGroupBox
       Left = 8
       Height = 160
-      Top = 512
+      Top = 480
       Width = 177
       Caption = 'Logs'
       ClientHeight = 142

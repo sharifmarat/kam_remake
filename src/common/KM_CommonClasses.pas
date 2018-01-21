@@ -652,47 +652,16 @@ end;
 
 
 procedure TKMPointTagList.SortByTag;
-  // Quicksort implementation (because there is not specified count of elements buble does not give any sense)
-  procedure QuickSort(MinIdx,MaxIdx: Integer);
-  var
-    I,K,X: Integer;
-  begin
-    I := MinIdx;
-    K := MaxIdx;
-    X := Tag[ (MinIdx+MaxIdx) div 2 ];
-    repeat
-      while (Tag[I] < X) do
-        I := I + 1;
-      while (X < Tag[K]) do
-        K := K - 1;
-      if (I <= K) then
+var I,K: Integer;
+begin
+  for I := 0 to fCount - 1 do
+    for K := I + 1 to fCount - 1 do
+      if Tag[K] < Tag[I] then
       begin
         KMSwapPoints(fItems[I], fItems[K]);
         KMSwapInt(Tag[I], Tag[K]);
         KMSwapInt(Tag2[I], Tag2[K]);
-        I := I + 1;
-        K := K - 1;
       end;
-    until (I > K);
-    if (MinIdx < K) then
-      QuickSort(MinIdx,K);
-    if (I < MaxIdx) then
-      QuickSort(I,MaxIdx);
-  end;
-
-//var I,K: Integer;
-begin
-  // Buble sort
-  //for I := 0 to fCount - 1 do
-  //  for K := I + 1 to fCount - 1 do
-  //    if Tag[K] < Tag[I] then
-  //    begin
-  //      KMSwapPoints(fItems[I], fItems[K]);
-  //      KMSwapInt(Tag[I], Tag[K]);
-  //      KMSwapInt(Tag2[I], Tag2[K]);
-  //    end;
-  if (fCount > 1) then
-    QuickSort(0, fCount - 1);
 end;
 
 

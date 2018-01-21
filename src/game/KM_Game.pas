@@ -1,4 +1,4 @@
-unit KM_Game;
+﻿unit KM_Game;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -205,7 +205,7 @@ uses
   Classes, Controls, Dialogs, SysUtils, KromUtils, Math,
   {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
-  KM_Projectiles, KM_AIFields,
+  KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
   KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo,
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
@@ -256,6 +256,8 @@ begin
   gTerrain := TKMTerrain.Create;
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
+
+  InitUnitStatEvals; //Army
 
   if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gLog.AddTime('<== Game creation is done ==>');

@@ -5,8 +5,7 @@ uses
   KM_AIMayorBalance, KM_AICityPlanner, KM_AISetup,
   KM_PathfindingRoad,
   KM_ResHouses, KM_HouseCollection,
-  KM_CommonClasses, KM_Defaults, KM_Points,
-  KM_NavMeshDefences;
+  KM_CommonClasses, KM_Defaults, KM_Points;
 
 
 type
@@ -329,58 +328,34 @@ end;
 
 procedure TKMayor.PlanDefenceTowers;
 const
-  DISTANCE_BETWEEN_TOWERS = 7;
+  DISTANCE_BETWEEN_TOWERS = 10;
 var
   P: TKMHand;
-  pom: boolean;
-  //Outline1, Outline2: TKMWeightSegments;
+  Outline1, Outline2: TKMWeightSegments;
   I, K, DefCount: Integer;
-  // DefCount: Integer;
-  Point1, Point2: TKMPoint;
-  //Loc: TKMPoint;
-  Ratio: Single;
-  //SegLength: Single;
-  DefLines: TKMDefenceLines;
+  Loc: TKMPoint;
+  SegLength, Ratio: Single;
 begin
-  if fDefenceTowersPlanned then
-    Exit;
+  if fDefenceTowersPlanned then Exit;
   fDefenceTowersPlanned := True;
   P := gHands[fOwner];
-  if not P.Locks.HouseCanBuild(ht_WatchTower) then
-    Exit;
-  pom := not gAIFields.NavMesh.Defences.FindDefenceLines(fOwner, DefLines) OR (DefLines.Count < 1);
-  if pom then
-    Exit;
-
-  for I := 0 to DefLines.Count - 1 do
-    with DefLines.Lines[I] do
-    begin
-      Point1 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[0] ].Loc;
-      Point2 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[1] ].Loc;
-      DefCount := Ceil( KMLength(Point1, Point2) / DISTANCE_BETWEEN_TOWERS );
-      for K := 0 to DefCount - 1 do
-      begin
-        Ratio := (K + 1) / (DefCount + 1);
-        fDefenceTowers.Add( KMPointRound(KMLerp(Point1, Point2, Ratio)), gAIFields.Influences.GetBestAllianceOwnership(fOwner, Polygon, at_Enemy));
-      end;
-    end;
+  if not P.Locks.HouseCanBuild(ht_WatchTower) then Exit;
 
   //Get defence Outline with weights representing how important each segment is
-  //gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
-
+  gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
   //Make list of defence positions
-  //for I := 0 to High(Outline2) do
-  //begin
-  //  //Longer segments will get several towers
-  //  SegLength := KMLength(Outline2[I].A, Outline2[I].B);
-  //  DefCount := Max(Trunc(SegLength / DISTANCE_BETWEEN_TOWERS), 1);
-  //  for K := 0 to DefCount - 1 do
-  //  begin
-  //    Ratio := (K + 1) / (DefCount + 1);
-  //    Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
-  //    fDefenceTowers.Add(Loc, Trunc(1000*Outline2[I].Weight));
-  //  end;
-  //end;
+  for I := 0 to High(Outline2) do
+  begin
+    //Longer segments will get several towers
+    SegLength := KMLength(Outline2[I].A, Outline2[I].B);
+    DefCount := Max(Trunc(SegLength / DISTANCE_BETWEEN_TOWERS), 1);
+    for K := 0 to DefCount - 1 do
+    begin
+      Ratio := (K + 1) / (DefCount + 1);
+      Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
+      fDefenceTowers.Add(Loc, Trunc(1000*Outline2[I].Weight));
+    end;
+  end;
   fDefenceTowers.SortByTag;
   fDefenceTowers.Inverse; //So highest weight is first
 end;
@@ -389,7 +364,7 @@ end;
 procedure TKMayor.TryBuildDefenceTower;
 const
   SEARCH_RAD = 6;
-  MAX_ROAD_DISTANCE = 50;
+  MAX_ROAD_DISTANCE = 25;
 var
   P: TKMHand;
   IY, IX: Integer;
