@@ -5,8 +5,7 @@ uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_FloodFill,
   KM_ResHouses, KM_Houses, KM_ResWares,
-  KM_AIArmyEvaluation,
-  KM_NavMeshFloodPositioning, KM_NavMeshPathFinding;
+  KM_AIArmyEvaluation, KM_AIInfluences;
 
 const
   MAX_SCAN_DIST_FROM_HOUSE = 10;
@@ -44,8 +43,6 @@ type
     fGoldMines, fIronMines, fStoneMiningTiles, fCoalMiningTiles: TKMPointList;
 
     fArmyEvaluation: TKMArmyEvaluation;
-    fPathfinding: TNavMeshPathFinding;
-    fPositioning: TNavMeshFloodPositioning;
 
     procedure InitHousesMapping();
     function CheckResourcesNearMine(aLoc: TKMPoint; aHT: THouseType): Boolean;
@@ -57,8 +54,6 @@ type
 
     property HousesMapping: THouseMappingArray read fHousesMapping write fHousesMapping;
     property ArmyEvaluation: TKMArmyEvaluation read fArmyEvaluation;
-    property Pathfinding: TNavMeshPathFinding read fPathfinding write fPathfinding;
-    property Positioning: TNavMeshFloodPositioning read fPositioning write fPositioning;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -66,7 +61,7 @@ type
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
 
     function CanPlaceHouse(aLoc: TKMPoint; aHT: THouseType; aIgnoreTrees: Boolean = False): Boolean;
-    function CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False): Boolean;
+    function CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
 
     function GetMineLocs(aHT: THouseType): TKMPointTagList;
     function GetStoneLocs(): TKMPointTagList;
@@ -96,8 +91,6 @@ begin
   fCoalMiningTiles := TKMPointList.Create();
 
   fArmyEvaluation := TKMArmyEvaluation.Create();
-  fPathfinding := TNavMeshPathFinding.Create();
-  fPositioning := TNavMeshFloodPositioning.Create();
 
   InitHousesMapping();
 end;
@@ -110,8 +103,6 @@ begin
   fCoalMiningTiles.Free;
 
   fArmyEvaluation.Free;
-  fPathfinding.Free;
-  fPositioning.Free;
 
   inherited;
 end;
@@ -130,9 +121,6 @@ begin
   fArmyEvaluation.Save(SaveStream);
 
   // The following does not requires save
-  // fPathfinding
-  // fPositioning
-  // fInfluenceSearch
   // fHousesMapping
 end;
 
@@ -438,7 +426,7 @@ end;
 // Modified version of TKMHand.CanAddHousePlan - added possibilities
 // aIgnoreAvoidBuilding = ignore avoid building areas
 // aIgnoreTrees = ignore trees inside of house plan
-function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False): Boolean;
+function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
 var
   X, Y, I, K, PL: Integer;
   Dir: TDirection;
@@ -461,9 +449,15 @@ begin
     Y := aLoc.Y + fHousesMapping[aHT].Tiles[I].Y;
 
     // Check with AvoidBuilding array to secure that new house will not be build in forests / coal tiles
-    if not aIgnoreAvoidBuilding then
-      if (gAIFields.Influences.AvoidBuilding[Y, X] > 0) then
-        Exit;
+    if aIgnoreAvoidBuilding then
+    begin
+      if not aIgnoreLocks AND
+        ((gAIFields.Influences.AvoidBuilding[Y, X] = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
+          OR (gAIFields.Influences.AvoidBuilding[Y, X] = AVOID_BUILDING_HOUSE_INSIDE_LOCK)) then
+      Exit;
+    end
+    else if (gAIFields.Influences.AvoidBuilding[Y, X] > 0) then
+      Exit;
 
     //This tile must not contain fields/houseplans of allied players
     for PL := 0 to gHands.Count - 1 do
@@ -565,28 +559,61 @@ end;
 // Cluster algorithm (inspired by DBSCAN but clusters may overlap)
 function TKMEye.GetForests(): TKMPointTagList;
 const
-  OWNERSHIP_LIMIT = 50;
+  OWNERSHIP_LIMIT = 100;
+  RANDOM_POINTS_OWNERSHIP_LIMIT = 150;
   RADIUS = 5;
   MAX_DIST = RADIUS+1; // When is max radius = 5 and max distance = 6 and use KMDistanceAbs it will give area similar to circle (without need to calculate euclidean distance!)
   VISIT_MARK = RADIUS+1;
   MIN_POINTS_CNT = 3;
-  UNVISITED_TREE = 1;
-  VISITED_TREE = 2;
+  POLYGON_SCAN_RAD = 4;
+  UNVISITED_TILE = 0;
+  VISITED_TILE = 1;
+  UNVISITED_TREE = 2;
+  VISITED_TREE = 3;
   AVOID_BUILDING_FOREST_LIMIT = 250;
 var
-  X,X2,Y,Y2, Distance: Integer;
+  Ownership: Byte;
+  I,X,X2,Y,Y2, Distance, SparePointsCnt: Integer;
   Cnt: Single;
   Point, sumPoint, newPoint: TKMPoint;
   VisitArr: TKMByte2Array;
   Forests: TKMPointTagList;
+  SparePoints: array[0..10] of Integer;
+  Polygons: TPolygonArray;
 begin
-  setLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
+  SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := 1 to gTerrain.MapY - 1 do
   for X := 1 to gTerrain.MapX - 1 do
-    if (gAIFields.Influences.Ownership[fOwner, Y, X] > OWNERSHIP_LIMIT) AND gTerrain.ObjectIsChopableTree(X, Y) then
-      VisitArr[Y,X] := UNVISITED_TREE
-    else
-      VisitArr[Y,X] := 0;
+    VisitArr[Y,X] := UNVISITED_TILE;
+
+  // Scan influence on 255*255 tiles takes performance -> use polygons from NavMesh instead
+  SparePointsCnt := 0;
+  Polygons := gAIFields.NavMesh.Polygons;
+  for I := 0 to Length(Polygons) - 1 do
+  begin
+    Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
+    if (Ownership > OWNERSHIP_LIMIT) AND (fOwner = gAIFields.Influences.GetBestOwner(I)) then
+    begin
+      Point := Polygons[I].CenterPoint;
+      for Y := Max(1, Point.Y - POLYGON_SCAN_RAD) to Min(gTerrain.MapY - 1, Point.Y + POLYGON_SCAN_RAD) do
+      for X := Max(1, Point.X - POLYGON_SCAN_RAD) to Min(gTerrain.MapX - 1, Point.X + POLYGON_SCAN_RAD) do
+      begin
+        if (VisitArr[Y,X] = UNVISITED_TILE) then
+        begin
+          if (gAIFields.Influences.AvoidBuilding[Y,X] < 250) AND (gTerrain.ObjectIsChopableTree(X, Y)) then
+            VisitArr[Y,X] := UNVISITED_TREE
+          else
+            VisitArr[Y,X] := VISITED_TILE;
+        end;
+      end;
+      // In case that there is no forest save those points which should be in "ideal" distance from city to start forest
+      if (Ownership < RANDOM_POINTS_OWNERSHIP_LIMIT) AND (SparePointsCnt < High(SparePoints)) then
+      begin
+        SparePoints[SparePointsCnt] := I;
+        SparePointsCnt := SparePointsCnt + 1;
+      end;
+    end;
+  end;
 
   Forests := TKMPointTagList.Create();
   for Y := 1 to gTerrain.MapY - 1 do
@@ -614,17 +641,20 @@ begin
       if (Cnt > MIN_POINTS_CNT) then
       begin
         Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-        if (gAIFields.Influences.AvoidBuilding[ Point.Y, Point.X ] < AVOID_BUILDING_FOREST_LIMIT) then
-        begin
-          Forests.Add( Point, Round(Cnt) );
-          Forests.Tag2[Forests.Count-1] := gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X];
-        end;
+        Forests.Add( Point, Round(Cnt) );
+        Forests.Tag2[Forests.Count-1] := gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X];
       end;
     end;
+
+  if (Forests.Count < 10) then
+    for I := 0 to SparePointsCnt - 1 do
+    begin
+      X := SparePoints[I];
+      Forests.Add( Polygons[X].CenterPoint, 0 );
+      Forests.Tag2[Forests.Count-1] := gAIFields.Influences.OwnPoly[fOwner, X];
+    end;
+
   Result := Forests;
-
-  // ADD CASE WHERE NO FOREST WAS FOUND!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 end;
 
 
@@ -707,11 +737,10 @@ const
   COLOR_GREEN_Wine = $3355FFFF;
   COLOR_BLUE = $80FF0000;
 var
-  I,K: Integer;
+  I: Integer;
   Point: TKMPoint;
-  PoitList: TKMPointList;
 begin
-  //{
+  {
   for I := 0 to fCoalMiningTiles.Count - 1 do
   begin
     Point := fCoalMiningTiles.Items[I];
