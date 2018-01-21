@@ -13,6 +13,7 @@ type
 
   TAISquad = class // Squad management (one group)
   private
+    fOwner: TKMHandIndex;
     fGroup: TKMUnitGroup;
     fIsReady: Boolean;
     fFinalPosition: TKMPointDir;
@@ -28,7 +29,7 @@ type
     procedure SetTargetHouse(aHouse: TKMHouse);
     procedure SetTargetUnit(aUnit: TKMUnit);
   public
-    constructor Create(aGroup: TKMUnitGroup);
+    constructor Create(aGroup: TKMUnitGroup; aPlayer: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
@@ -38,19 +39,21 @@ type
     property IsReady: Boolean read fIsReady;
     property FinalPosition: TKMPointDir read fFinalPosition write fFinalPosition;
     property Position: TKMPoint read GetGroupPosition;
+    property TimeLimit: Cardinal read fTimeLimit write fTimeLimit;
     property TargetHouse: TKMHouse read fTargetHouse write SetTargetHouse;
     property TargetUnit: TKMUnit read fTargetUnit write SetTargetUnit;
+
     property PointPath: TKMPointArray read fDEBUGPointPath write fDEBUGPointPath;
 
-
-
     procedure UpdateState(aTick: Cardinal);
+    procedure OwnerUpdate(aPlayer: TKMHandIndex);
   end;
 
   TAICompany = class
   private
     fOwner: TKMHandIndex;
-    fPosition: TKMPoint;
+    fPathPosition: TKMPoint;
+    fScanPosition: TKMPoint;
     fTargetHouse: TKMHouse;
     fTargetUnit: TKMUnit;
     fSquads: TKMSquadArray;
@@ -69,13 +72,14 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
 
-    property Position: TKMPoint read fPosition;
+    property PathPosition: TKMPoint read fPathPosition;
+    property ScanPosition: TKMPoint read fScanPosition;
     property TargetPosition: TKMPoint read GetTargetPosition;
     property Squads: TKMSquadArray read fSquads;
+
     property PointPath: TKMPointArray read fDEBUGPointPath write fDEBUGPointPath;
 
     procedure InitCompany();
-
     procedure UpdateState(aTick: Cardinal);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure AddSquad(aGroup: TKMUnitGroup);
@@ -131,10 +135,11 @@ uses
 
 
 { TAISquad }
-constructor TAISquad.Create(aGroup: TKMUnitGroup);
+constructor TAISquad.Create(aGroup: TKMUnitGroup; aPlayer: TKMHandIndex);
 begin
   inherited Create;
   fGroup := aGroup.GetGroupPointer();
+  fOwner := aPlayer;
   fIsReady := True;
   fTimeLimit := 0;
   fTargetHouse := nil;
@@ -156,6 +161,7 @@ constructor TAISquad.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.ReadAssert('Squad');
+  LoadStream.Read(fOwner);
   LoadStream.Read(fIsReady);
   LoadStream.Read(fFinalPosition);
   LoadStream.Read(fTimeLimit, SizeOf(fTimeLimit));
@@ -169,6 +175,7 @@ end;
 procedure TAISquad.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.WriteA('Squad');
+  SaveStream.Write(fOwner);
   SaveStream.Write(fIsReady);
   SaveStream.Write(fFinalPosition);
   SaveStream.Write(fTimeLimit, SizeOf(fTimeLimit));
@@ -192,6 +199,12 @@ begin
   fGroup := gHands.GetGroupByUID( Cardinal(fGroup) );
   fTargetUnit := gHands.GetUnitByUID( Cardinal(fTargetUnit) );
   fTargetHouse := gHands.GetHouseByUID( Cardinal(fTargetHouse) );
+end;
+
+
+procedure TAISquad.OwnerUpdate(aPlayer: TKMHandIndex);
+begin
+  fOwner := aPlayer;
 end;
 
 
@@ -241,6 +254,7 @@ begin
       Group.OrderWalk(FinPos, True, FinalPosition.Dir)
     else
       Group.OrderAttackUnit(fTargetUnit, True);
+    fIsReady := True;
   end
   else if (fTargetHouse <> nil) then
   begin
@@ -249,6 +263,7 @@ begin
       Group.OrderWalk(FinPos, True, FinalPosition.Dir)
     else
       Group.OrderAttackHouse(fTargetHouse, True);
+    fIsReady := True;
   end
   else
   begin
@@ -263,32 +278,34 @@ end;
 
 function TAISquad.PlanPath(var aActualPosition, aTargetPosition: TKMPoint): Boolean;
 const
-  TARGET_REACHED_TOLERANCE = 6;
+  SQR_TARGET_REACHED_TOLERANCE = 5*5;
 var
-  InitPolygon, ClosestPolygon: Word;
+  InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
-  PolygonPath: TKMWordArray;
   PointPath: TKMPointArray;
 begin
   Result := False;
   fIsReady := False;
-  if (KMDistanceAbs(aActualPosition, aTargetPosition) < TARGET_REACHED_TOLERANCE) then
+  if (fTimeLimit < gGame.GameTickCount) OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_TARGET_REACHED_TOLERANCE) then
   begin
     fIsReady := True;
     Exit;
   end;
-  if gAIFields.Eye.Pathfinding.Route_Make(aActualPosition, aTargetPosition, PolygonPath, PointPath) then
-  begin
-    InitPolygon := gAIFields.NavMesh.FindClosestPolygon(aActualPosition);
-    I := Length(PointPath)-2;
-    repeat
-      aTargetPosition := PointPath[ Max(0, I) ];
-      ClosestPolygon := gAIFields.NavMesh.FindClosestPolygon(aTargetPosition);
-      I := I - 1;
-    until (InitPolygon <> ClosestPolygon) OR (I < 0);
+  if gAIFields.NavMesh.Pathfinding.AvoidEnemyRoute(fOwner, Group.GroupType, aActualPosition, aTargetPosition, Distance, PointPath) then
+    if (Distance < 6) then
+      Exit
+    else
+    begin
+      InitPolygon := gAIFields.NavMesh.Point2Polygon[aActualPosition.Y,aActualPosition.X];
+      I := Length(PointPath)-2;
+      repeat
+        aTargetPosition := PointPath[ Max(0, I) ];
+        ClosestPolygon := gAIFields.NavMesh.Point2Polygon[aTargetPosition.Y,aTargetPosition.X];
+        I := I - 1;
+      until (InitPolygon <> ClosestPolygon) OR (I < 0);
 
-    fDEBUGPointPath := PointPath;//  DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-  end;
+      fDEBUGPointPath := PointPath;//  DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+    end;
   Result := True;
 end;
 
@@ -331,7 +348,8 @@ begin
   inherited Create;
   LoadStream.ReadAssert('Company');
   LoadStream.Read(fOwner);
-  LoadStream.Read(fPosition);
+  LoadStream.Read(fPathPosition);
+  LoadStream.Read(fScanPosition);
   LoadStream.Read(fTargetUnit, 4);
   LoadStream.Read(fTargetHouse, 4);
 
@@ -353,7 +371,8 @@ var
 begin
   SaveStream.WriteA('Company');
   SaveStream.Write(fOwner);
-  SaveStream.Write(fPosition);
+  SaveStream.Write(fPathPosition);
+  SaveStream.Write(fScanPosition);
   if (fTargetUnit <> nil) then
     SaveStream.Write(fTargetUnit.UID) //Store ID
   else
@@ -444,7 +463,6 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
 var
   SquadsAreReady: Boolean;
   I: Integer;
-  ActualPosition: TKMPoint;
   GT: TGroupType;
   HA: TKMHouseArray;
   UGA: TKMUnitGroupArray;
@@ -468,13 +486,12 @@ begin
     Exit;
 
   // Check target
-  ActualPosition := Position;
   ClosestHouse := nil;
   ClosestUnit := nil;
-  //ClosestHouse := gHands.GetClosestHouse(ActualPosition, fOwner, at_Enemy);
-  //ClosestUnit := gHands.GetClosestUnit(ActualPosition, fOwner, at_Enemy);
-  HA := gHands.GetHousesInRadius(ActualPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy, TARGET_HOUSES, True);
-  UGA := gHands.GetGroupsInRadius(ActualPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy);
+  //ClosestHouse := gHands.GetClosestHouse(ScanPosition, fOwner, at_Enemy);
+  //ClosestUnit := gHands.GetClosestUnit(ScanPosition, fOwner, at_Enemy);
+  HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy, TARGET_HOUSES, True);
+  UGA := gHands.GetGroupsInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy);
   if not CheckPrimaryTarget() then
   begin
     if (Length(UGA) > 0) then
@@ -487,11 +504,11 @@ begin
 
   // Give new orders
   if (Length(UGA) > 0) then
-    OrderToAttack(ActualPosition, UGA, HA, False)
+    OrderToAttack(ScanPosition, UGA, HA, False)
   else if (Length(HA) > 0) then
-    OrderToAttack(ActualPosition, UGA, HA, True)
+    OrderToAttack(ScanPosition, UGA, HA, True)
   else if SquadsAreReady then
-    OrderMove(ActualPosition);
+    OrderMove(PathPosition);
 
   // Update state of Squads
   for GT := Low(TGroupType) to High(TGroupType) do
@@ -580,57 +597,121 @@ end;
 
 
 procedure TAICompany.OrderMove(aActualPosition: TKMPoint);
-const
-  MINIMAL_MOVEMENT = 5;
-var
-  InitPolygon: Word;
-  I, Idx, Cnt: Integer;
-  TargetPoint: TKMPoint;
-  Dir: TKMDirection;
-  GT: TGroupType;
-  PolygonPath: TKMWordArray;
-  PointPath, PointPath2: TKMPointArray;
-  InitPolygons: TKMWordArray;
-  Squad: TAISquad;
-begin
-  TargetPoint := TargetPosition;
-  if gAIFields.Eye.Pathfinding.Route_Make(aActualPosition, TargetPoint, PolygonPath, PointPath) then
+
+  function GetInitPolygons(aCnt: Integer; var aPointPath: TKMPointArray): TKMWordArray;
+  const
+    MINIMAL_MOVEMENT = 5;
+    INIT_POLYGONS_COEF = 3;
+  var
+    InitPolygon: Word;
+    I, Idx: Integer;
+    InitPolygons: TKMWordArray;
   begin
-    // Get center point on the path
+    // Get initial point on the path (it must be in specific distance from actual position to secure smooth moving of the company)
     I := Length(PointPath)-1;
     while (I >= 0) AND (KMDistanceAbs(aActualPosition, PointPath[I]) < MINIMAL_MOVEMENT) do
       I := I - 1;
-    InitPolygon := gAIFields.NavMesh.FindClosestPolygon(aActualPosition);
+    // Make sure that platoon will not start in actual polygon but position will be moved forward
+    InitPolygon := gAIFields.NavMesh.Point2Polygon[aActualPosition.Y,aActualPosition.X];
     repeat
-      fPosition := PointPath[ Max(0, I) ];
+      fPathPosition := PointPath[ Max(0, I) ];
       I := I - 1;
-    until (InitPolygon <> gAIFields.NavMesh.FindClosestPolygon(fPosition)) OR (I < 0);
+    until (InitPolygon <> gAIFields.NavMesh.Point2Polygon[fPathPosition.Y,fPathPosition.X]) OR (I < 0);
 
-    fDEBUGPointPath := PointPath;
-
-    Cnt := SquadCnt();
-    I := I + 1;
-    SetLength(InitPolygons, Min(Length(PointPath) - I, Max(1, Cnt div 4)) );
+    I := Max(0,I + 1); // I = 0 we are in polygon of our target
+    // Get several init polygons
+    SetLength(InitPolygons, Min(Length(PointPath) - I, Max(1, aCnt div INIT_POLYGONS_COEF)) );
     Idx := 0;
-    while (I < Length(PointPath)) AND (Idx < Length(InitPolygons)) do
+    while (I >= 0) AND (Idx < Length(InitPolygons)) do
     begin
-      InitPolygons[Idx] := gAIFields.NavMesh.FindClosestPolygon(PointPath[I]);
+      InitPolygons[Idx] := gAIFields.NavMesh.Point2Polygon[PointPath[I].Y,PointPath[I].X];
       Idx := Idx + 1;
-      I := I + 2;
+      I := I - 2;
     end;
+    if (Idx <> Length(InitPolygons)) then
+      SetLength(InitPolygons, Idx);
+    Result := InitPolygons;
+  end;
 
-    gAIFields.Eye.Positioning.FindPositions(Cnt, InitPolygons, PointPath2);
-    Idx := 0;
-    Dir := KMGetDirection( aActualPosition, fPosition );
-    for GT := Low(TGroupType) to High(TGroupType) do
-      for I := 0 to fSquads[GT].Count - 1 do
+  procedure SetOrders(aCnt: Integer; var aPositions: TKMPointArray);
+  const
+    TIME_PER_A_TILE = 8; // Max ticks per a tile
+    INIT_DIST = 1000;
+  var
+    I, K, Dist, ClosestDist, ClosestIdx: Integer;
+    Dir: TKMDirection;
+    Position: TKMPoint;
+    GT: TGroupType;
+    Squads: array of TAISquad;
+    AvaiableSquads: TBooleanArray;
+    TagPositions: TKMPointTagList;
+  begin
+    TagPositions := TKMPointTagList.Create;
+    try
+      for I := 0 to Min(aCnt, High(aPositions)) do
+        TagPositions.Add(aPositions[I], KMDistanceAbs(aActualPosition, aPositions[I]));
+      TagPositions.SortByTag();
+      fScanPosition := TagPositions.Items[TagPositions.Count - 1];
+      //fPathPosition := TagPositions.Items[(TagPositions.Count - 1) div 2];
+      Dir := KMGetDirection( aActualPosition, fPathPosition );
+
+      SetLength(Squads, aCnt);
+      SetLength(AvaiableSquads, aCnt);
+      K := 0;
+      for GT := Low(TGroupType) to High(TGroupType) do
+        for I := 0 to fSquads[GT].Count - 1 do
+        begin
+          Squads[K] := fSquads[GT].Items[I];
+          AvaiableSquads[K] := True;
+          K := K + 1;
+        end;
+      for I := TagPositions.Count - 1 downto 0 do
       begin
-        if (Idx >= Length(PointPath2)) then
+        Position := TagPositions.Items[I];
+        ClosestDist := INIT_DIST;
+        for K := 0 to Length(Squads) - 1 do
+          if AvaiableSquads[K] then
+          begin
+            Dist := KMDistanceAbs(Position, Squads[K].Position);
+            if (Dist < ClosestDist) then
+            begin
+              ClosestDist := Dist;
+              ClosestIdx := K;
+            end;
+          end;
+        if (ClosestIdx = INIT_DIST) then
           break;
-        Squad := fSquads[GT].Items[I];
-        Squad.FinalPosition := KMPointDir(PointPath2[Idx], Dir);
-        Idx := Idx + 1;
+        Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
+        Squads[ClosestIdx].TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
+        AvaiableSquads[ClosestIdx] := False;
       end;
+    finally
+      TagPositions.Free;
+    end;
+  end;
+
+var
+  Distance: Word;
+  Cnt: Integer;
+  TargetPoint: TKMPoint;
+  PointPath, Positions: TKMPointArray;
+  InitPolygons: TKMWordArray;
+begin
+  TargetPoint := TargetPosition;
+  // Try find path to the target point
+  if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
+  begin
+    fDEBUGPointPath := PointPath;
+    Cnt := SquadCnt(); // Count of groups in company
+
+    // Get init polygons -> polygons on road which are base for army positioning (groups will get order to walk there)
+    InitPolygons := GetInitPolygons(Cnt, PointPath);
+
+    // Get positions around init polygons
+    gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
+
+    // Compute distance of new positions and select the closest group to walk there
+    SetOrders(Cnt, Positions);
   end;
 end;
 
@@ -646,14 +727,20 @@ end;
 
 
 procedure TAICompany.OwnerUpdate(aPlayer: TKMHandIndex);
+var
+  I: Integer;
+  GT: TGroupType;
 begin
   fOwner := aPlayer;
+  for GT := Low(TGroupType) to High(TGroupType) do
+    for I := 0 to fSquads[GT].Count-1 do
+      TAISquad(fSquads[GT][I]).OwnerUpdate(aPlayer);
 end;
 
 
 procedure TAICompany.AddSquad(aGroup: TKMUnitGroup);
 begin
-  fSquads[ aGroup.GroupType ].Add( TAISquad.Create(aGroup) );
+  fSquads[ aGroup.GroupType ].Add( TAISquad.Create(aGroup, fOwner) );
 end;
 
 
@@ -669,30 +756,22 @@ end;
 
 procedure TAICompany.InitCompany();
 begin
-  fPosition := GetPosition();
+  fPathPosition := GetPosition();
 end;
 
 
 function TAICompany.GetPosition(): TKMPoint;
-  procedure POM(Point: TKMPoint);  // DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE
-  var
-    wtf: Word;
-  begin
-    wtf := 0;
-  end;
 var
   I, Count: Integer;
   Output: TKMPoint;
   G: TGroupType;
-  Squad: TAISquad;
 begin
   Output := KMPOINT_ZERO;
   Count := 0;
   for G := Low(TGroupType) to High(TGroupType) do
     for I := 0 to fSquads[G].Count-1 do
     begin
-      Squad := fSquads[G][I];
-      Output := KMPointAdd(Output, Squad.Group.Position);
+      Output := KMPointAdd(Output, TAISquad(fSquads[G].Items[I]).Group.Position);
       Count := Count + 1;
     end;
 
@@ -707,12 +786,9 @@ begin
     for G := Low(TGroupType) to High(TGroupType) do
       if (fSquads[G].Count > 0) then
       begin
-        Squad := fSquads[G][0];
-        Output := Squad.Group.Position;
+        Output := TAISquad(fSquads[G].Items[0]).Group.Position;
         break;
       end;
-  if not gTerrain.TileInMapCoords(Output.X, Output.Y) then
-    POM(Output);
   Result := Output;
 end;
 
@@ -741,27 +817,16 @@ begin
 end;
 
 
-{
-function TAICompany.FindPath(aStart,aEnd: TKMPoint; aPolygonPath: TKMWordArray; aPointPath: TKMPointArray): Boolean;
-begin
-  Result := fPathfinding.Route_Make(aStart, aEnd, aPolygonPath, aPointPath);
-end;
-}
-
 function TAICompany.IsGroupInCompany(aGroup: TKMUnitGroup): Boolean;
 var
   I: Integer;
   G: TGroupType;
-  Squad: TAISquad;
 begin
   Result := True;
   for G := Low(TGroupType) to High(TGroupType) do
     for I := 0 to fSquads[G].Count-1 do
-    begin
-      Squad := fSquads[G][I];
-      if (Squad.Group = aGroup) then
+      if (TAISquad(fSquads[G].Items[I]).Group = aGroup) then
         Exit;
-    end;
   Result := False;
 end;
 
@@ -1017,11 +1082,11 @@ begin
   for I := 0 to Count - 1 do
   begin
     Company := fCompanies.Items[I];
-    Position := Company.Position;
+    Position := Company.ScanPosition;
     gRenderAux.CircleOnTerrain(Position.X, Position.Y, COMPANY_SCAN_RAD, $09FFFFFF, $99FFFFFF);
     if (Length(Company.PointPath) > 0) then
       for K := Length(Company.PointPath)-2 downto 0 do
-        gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], COLOR_RED);
+        gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], $9900FFFF);
     for GT := Low(TGroupType) to High(TGroupType) do
       for K := Company.Squads[GT].Count - 1 downto 0 do
       begin
