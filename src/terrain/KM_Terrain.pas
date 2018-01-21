@@ -276,7 +276,7 @@ implementation
 uses
   KM_CommonTypes, KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
   KM_ResSound, KM_Sound, KM_UnitActionStay, KM_Units_Warrior, KM_TerrainPainter, KM_Houses,
-  KM_ResUnits, KM_Hand, KM_Game, KM_ScriptingEvents;
+  KM_ResUnits, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents;
 
 
 { TKMTerrain }
