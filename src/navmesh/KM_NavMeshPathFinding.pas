@@ -3,12 +3,18 @@ unit KM_NavMeshPathFinding;
 interface
 uses
   Math, KM_CommonTypes, KM_Points,
-  BinaryHeap, KM_NavMesh;
+  BinaryHeap, KM_Defaults;
 
 
 type
+  TPathfindingMode = ( pm_ShortestWay,   // Find shortest way in NavMesh
+                       pm_AvoidTraffic,  // Try avoid traffic
+                       pm_AvoidSpecEnemy // Try avoid anti type units (cav will keep distance form spears etc)
+                     );
+
   TNavMeshNode = class
-    Idx,CostTo,Estim: Word; // Index of navMeshNode in navmesh, cost to this navMeshNode, estimated cost from navMeshNode to end
+    Idx,Estim: Word; // Index of navMeshNode in navmesh, estimated cost from navMeshNode to end
+    CostTo: Longword; // Cost to Idx navMeshNode
     Point: TKMPoint; // Point in navMeshNode of navmesh (each triangle [created by points in navMeshNode] have its point -> multiple poits will create path)
     Parent: TNavMeshNode; // Parent navMeshNode
   end;
@@ -20,26 +26,34 @@ type
     fMinN: TNavMeshNode;
     fUsedNodes: array of TNavMeshNode;
 
+    fOwner: TKMHandIndex;
+    fGroupType: TGroupType;
+    fMode: TPathfindingMode;
+
     function HeapCmp(A,B: Pointer): Boolean;
     procedure Flush(aDestroy: Boolean = False);
   protected
     function GetNodeAt(aIdx: Word): TNavMeshNode;
-    function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Word;
+    function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Longword;
     function EstimateToFinish(aIdx: Word): Word;
 
+    function InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function MakeRoute(): Boolean;
-    procedure ReturnRoute(out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray);
+    procedure ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
   public
     constructor Create();
     destructor Destroy(); override;
 
-    function Route_Make(aStart, aEnd: TKMPoint; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
+    //function WalkableDistance(aStart, aEnd: TKMPoint; out aDistance: Word): Boolean;
+    function ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+    function AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+    function AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
   end;
 
 
 implementation
 uses
-   KM_AIFields;
+   KM_AIFields, KM_NavMesh;
 
 
 { TNavMeshPathFinding }
@@ -97,9 +111,35 @@ begin
 end;
 
 
-function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Word;
+function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Longword;
+
+  function AvoidTraffic(): Word;
+  begin
+    Result := 0;
+  end;
+
+  function AvoidSpecEnemy(): Word;
+  const
+    CHANCES: array[TGroupType] of array[TGroupType] of Single = (
+    // gt_Melee gt_AntiHorse gt_Ranged gt_Mounted
+          (1,       0.5,         0.5,      2   ), // gt_Melee
+          (0.5,     1,           1,        0.5 ), // gt_AntiHorse
+          (2,       1,           0.5,      3   ), // gt_Ranged
+          (0.5,     3,           0.5,      1   )  // gt_Mounted
+    );
+  var
+    GT: TGroupType;
+    Weight: Single;
+  begin
+    Weight := 0;
+    for GT in TGroupType do
+      Weight := CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT];
+    Result := Round(Weight);
+  end;
+
 var
-  DX,DY, Output: Word;
+  DX,DY: Word;
+  Output: Longword;
 begin
   Output := 0;
   //Do not add extra cost if the tile is the target, as it can cause a longer route to be chosen
@@ -108,11 +148,15 @@ begin
     DX := Abs(aSPoint.X - aEPoint.X);
     DY := Abs(aSPoint.Y - aEPoint.Y);
     if (DX > DY) then
-      Output := (DX shl 3) + (DY shl 2)
+      Output := (DX * 10) + (DY * 4)
     else
-      Output := (DY shl 3) + (DX shl 2);
+      Output := (DY * 10) + (DX * 4);
+    end;
+  case fMode of
+    pm_ShortestWay: begin end;
+    pm_AvoidTraffic: Output := Output + AvoidTraffic();
+    pm_AvoidSpecEnemy: Output := Output + AvoidSpecEnemy();
   end;
-  // Output := KMDistanceAbs(SPoint, EPoint); // in test map it throws +1 cycle (109 vs 110 interactions
   Result := Output;
 end;
 
@@ -128,9 +172,9 @@ begin
   DX := Abs(SPoint.X - EPoint.X);
   DY := Abs(SPoint.Y - EPoint.Y);
   if (DX > DY) then
-    Output := (DX shl 3) + (DY shl 2)
+    Output := (DX * 10) + (DY * 4)
   else
-    Output := (DY shl 3) + (DX shl 2);
+    Output := (DY * 10) + (DX * 4);
   Result := Output;
 end;
 
@@ -193,55 +237,81 @@ begin
 end;
 
 
-procedure TNavMeshPathFinding.ReturnRoute(out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray);
+procedure TNavMeshPathFinding.ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
 const
   USED_PENALIZATION = 40;
 var
   Count: Word;
-  N: TNavMeshNode;
-  Output: TKMWordArray;
+  N, FinalN: TNavMeshNode;
 begin
-  N := fMinN;
-  Count := 0;
+  aDistance := 0;
+  if (fMinN = nil) then
+    Exit;
+  FinalN := fMinN;
+  N := fMinN.Parent;
+  Count := 1;
   while (N <> nil) do
   begin
+    aDistance := aDistance + KMDistanceAbs(N.Point, FinalN.Point); // DistanceAbs is very rough but when is result different from actual distance there are probably obstacles in path and it is better to count with higher distance
+    FinalN := N;
     N := N.Parent;
     Inc(Count,1);
   end;
 
   SetLength(aRoutePointArray, Count+1);
-  aRoutePointArray[0] := gAIFields.NavMesh.Polygons[fMinN.Idx].CenterPoint;
-
-  SetLength(Output, Count);
   N := fMinN;
   Count := 0;
   while (N <> nil) do
   begin
     aRoutePointArray[Count+1] := N.Point;
-    Output[Count] := N.Idx;
     N := N.Parent;
     Inc(Count,1);
   end;
-  aRoutePointArray[Count] := gAIFields.NavMesh.Polygons[ Output[Count-1] ].CenterPoint;
+  aRoutePointArray[Count] := gAIFields.NavMesh.Polygons[ FinalN.Idx ].CenterPoint;
+  aRoutePointArray[0] := gAIFields.NavMesh.Polygons[fMinN.Idx].CenterPoint;
 end;
 
 
-function TNavMeshPathFinding.Route_Make(aStart, aEnd: TKMPoint; out aRouteArray: TKMWordArray; out aRoutePointArray: TKMPointArray): Boolean;
-var Output: Boolean;
+function TNavMeshPathFinding.InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+var
+  Output: Boolean;
 begin
   Result := False;
-  fStart := gAIFields.NavMesh.FindClosestPolygon(aStart);
-  fEnd := gAIFields.NavMesh.FindClosestPolygon(aEnd);
+  fStart := gAIFields.NavMesh.Point2Polygon[ aStart.Y, aStart.X ];
+  fEnd := gAIFields.NavMesh.Point2Polygon[ aEnd.Y, aEnd.X ];
   if (fStart = High(Word)) OR (fEnd = High(Word)) then  // Non-Existing polygon
     Exit;
+  fMode := pm_ShortestWay;
   Output := MakeRoute();
   if Output then
   begin
-    ReturnRoute(aRouteArray, aRoutePointArray);
+    ReturnRoute(aDistance, aRoutePointArray);
     aRoutePointArray[0] := aEnd;
   end;
   Result := Output;
 end;
 
+
+function TNavMeshPathFinding.ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+begin
+  Result := InitRoute(aStart, aEnd, aDistance, aRoutePointArray);
+end;
+
+
+function TNavMeshPathFinding.AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+begin
+  fOwner := aOwner;
+  fMode := pm_AvoidTraffic;
+  Result := InitRoute(aStart, aEnd, aDistance, aRoutePointArray);
+end;
+
+
+function TNavMeshPathFinding.AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+begin
+  fOwner := aOwner;
+  fMode := pm_AvoidSpecEnemy;
+  fGroupType := aGroup;
+  Result := InitRoute(aStart, aEnd, aDistance, aRoutePointArray);
+end;
 
 end.
