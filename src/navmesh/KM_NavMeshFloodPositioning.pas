@@ -13,7 +13,7 @@ type
   protected
     fPointArray: TKMPointArray;
 
-    function CanBeVisited(const aIdx: Word): Boolean; override;
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
     function FindPositions(aCount: Word; aInitIdxArray: TKMWordArray; out aPointArray: TKMPointArray): Boolean;
@@ -26,20 +26,37 @@ uses
 
 
 { TNavMeshFloodPositioning }
-function TNavMeshFloodPositioning.CanBeVisited(const aIdx: Word): Boolean;
+function TNavMeshFloodPositioning.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   Result := fCount < Length(fPointArray);
 end;
 
 
 procedure TNavMeshFloodPositioning.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
+var
+  Check: Boolean;
+  I, K: Integer;
 begin
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
-  if (aDistance > 0) AND CanBeVisited(aIdx) then // Distance > 0 -> ignore init points (center of polygon instead of edge, may cause traffic)
-  begin
-    fPointArray[fCount] := aPoint;
-    fCount := fCount + 1;
-  end;
+  if CanBeExpanded(aIdx) then
+    with gAIFields.NavMesh.Polygons[aIdx] do
+      for I := 0 to NearbyCount - 1 do
+      begin
+        Check := True;
+        for K := 0 to fCount - 1 do
+          if KMSamePoint(NearbyPoints[I], fPointArray[K]) then
+          begin
+            Check := False;
+            break;
+          end;
+        if Check then
+        begin
+          fPointArray[fCount] := NearbyPoints[I];
+          fCount := fCount + 1;
+          if not CanBeExpanded(aIdx) then
+            Exit;
+        end;
+      end;
 end;
 
 
@@ -56,4 +73,3 @@ end;
 
 
 end.
-
