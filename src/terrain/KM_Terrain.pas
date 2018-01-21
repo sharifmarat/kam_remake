@@ -2655,7 +2655,7 @@ begin
   else
     NormDistance := Min(MaxDistance, Floor(KMLength(OriginPoint, TargetPoint)));
 
-  while (NormDistance > 0)
+  while (NormDistance >= 0)
     and (not IsDistanceBetweenPointsAllowed(OriginPoint, TargetPoint)
          or not CheckPassability(TargetPoint, aPassability)) do
   begin
