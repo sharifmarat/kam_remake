@@ -59,7 +59,7 @@ type
 const
 
   {
-  THouseType:
+  TWareType:
   wt_None,
   wt_Trunk,   wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
   wt_Coal,    wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
@@ -394,23 +394,23 @@ procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aField
     fCityStats.Houses[aHT] := fCityStats.Houses[aHT] * Byte(not aOverride) + aCnt;
   end;
 
+const
+  IRON_WARFARE: set of TWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
+  STANDARD_WARFARE: array[0..3] of TWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
 var
   I: Integer;
   MaxIronWeapProd, MaxWoodWeapProd: Single;
-const
-  IRON_WARFARE: array[0..4] of TWareType = (wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet);
-  STANDARD_WARFARE: array[0..3] of TWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
+  WT: TWareType;
 begin
-  fMaxSoldiersInMin := 0;
-  // Estimation of final weapons production
+  //fMaxSoldiersInMin := 0;
+
+  // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
   // Iron weapons
-  aIronMineCnt := 3;
-  MaxIronWeapProd := aIronMineCnt * ProductionRate[wt_IronOre] / 2.0;
-  for I := Low(IRON_WARFARE) to High(IRON_WARFARE) do
-    fWareBalance[ IRON_WARFARE[I] ].FinalConsumption := MaxIronWeapProd;
-  //Standard weapons
-  MaxWoodWeapProd := Min(6.0, Max(2.0,aBuildCnt / 900.0)) * ProductionRate[wt_Axe]; // 2 <-> 6 in matter of avaiable place
-  MaxWoodWeapProd := 2 * ProductionRate[wt_Axe];
+  MaxIronWeapProd := aIronMineCnt * ProductionRate[wt_IronOre] / 2.0; // / 2.0 for iron weapon and armor
+  for WT in IRON_WARFARE do
+    fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
+  // Wood weapons (depends on avaiable space)
+  MaxWoodWeapProd := Round((aBuildCnt + 1500) / 1500) * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
     fWareBalance[ STANDARD_WARFARE[I] ].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
@@ -459,7 +459,7 @@ begin
     //  RequiredHouses[ht_ArmorWorkshop] := 0;
     //end;
 
-    if (gGame.GameTickCount < 18000) then
+    if (gGame.GameTickCount < 22000) then
       RequiredHouses[ht_Wineyard] := 0;
 
     //if (gHands[fOwner].Stats.GetWareBalance(wt_Corn) = 0) then
@@ -495,19 +495,24 @@ const
     'Axe',     'Sword',   'Pike',        'Hallebard', 'Bow',
     'Arbalet', 'Horse',   'Fish'
   );
-  HOUSE_TO_STRING: array[HOUSE_MIN..HOUSE_MAX] of UnicodeString = (
-    'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
-    'CoalMine',        'Farm',            'FisherHut',     'GoldMine',      'Inn',
-    'IronMine',        'IronSmithy',      'Marketplace',   'Metallurgists', 'Mill',
-    'Quary',           'Sawmill',         'School',        'SiegeWorkshop', 'Stables',
-    'Store',           'Swine',           'Tannery',       'TownHall',      'WatchTower',
-    'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'
-  );
+  //HOUSE_TO_STRING: array[HOUSE_MIN..HOUSE_MAX] of UnicodeString = (
+  //  'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
+  //  'CoalMine',        'Farm',            'FisherHut',     'GoldMine',      'Inn',
+  //  'IronMine',        'IronSmithy',      'Marketplace',   'Metallurgists', 'Mill',
+  //  'Quary',           'Sawmill',         'School',        'SiegeWorkshop', 'Stables',
+  //  'Store',           'Swine',           'Tannery',       'TownHall',      'WatchTower',
+  //  'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'
+  //);
 
   procedure AddWare(aWT: TWareType; aSpecificText: UnicodeString);
   var
-    ProductionColor, ActualConsumptionColor, FinalConsumptionColor, FractionColor, ExhaustionColor: UnicodeString;
+    HouseCntColor, ProductionColor, ActualConsumptionColor, FinalConsumptionColor, FractionColor, ExhaustionColor: UnicodeString;
+    Cnt: Integer;
   begin
+    Cnt := RequiredHouses[ PRODUCTION[aWT] ];
+    HouseCntColor := COLOR_WHITE;
+    if (Cnt > 0) then
+      HouseCntColor := COLOR_RED;
     with fWareBalance[aWT] do
     begin
       ProductionColor := COLOR_YELLOW;
@@ -529,7 +534,8 @@ const
         ExhaustionColor := COLOR_GREEN
       else if (Exhaustion < 0) then
         ExhaustionColor := COLOR_RED;
-      aBalanceText := aBalanceText + aSpecificText + Format(': ('
+      aBalanceText := aBalanceText + Format(HouseCntColor+'%Dx '+COLOR_WHITE, [Cnt]) //
+                        + aSpecificText + Format(': ('
                         +ProductionColor+'%.2f'+COLOR_WHITE+'; '
                         +ActualConsumptionColor+'%.2f'+COLOR_WHITE+'; '
                         +FinalConsumptionColor+'%.2f'+COLOR_WHITE+'; '
@@ -539,9 +545,9 @@ const
   end;
 var
   I: Integer;
-  HT: THouseType;
+  //HT: THouseType;
 begin
-  aBalanceText := 'Ware balance (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
+  aBalanceText := aBalanceText + 'Ware balance|Required houses (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
   //{
   for I := CO_WARE_MIN to CO_WARE_MAX do
     AddWare(CONSUMPTION_ORDER[I], WARE_TO_STRING[ CONSUMPTION_ORDER[I] ]);
@@ -550,23 +556,22 @@ begin
   AddWare(wt_MetalArmor, 'Iron Armors');
   AddWare(wt_Sword, 'Iron Weapons');
   //}
-  aBalanceText := aBalanceText + '|Required houses: |';
-  I := 0;
-  for HT := Low(RequiredHouses) to High(RequiredHouses) do
-    if (RequiredHouses[HT] > 0) then
-    begin
-      I := I + 1;
-      if (I = 5) then
-      begin
-        I := 0;
-        aBalanceText := aBalanceText + '|';
-      end;
-      aBalanceText := aBalanceText + Format('%Dx ', [ RequiredHouses[HT] ]) + HOUSE_TO_STRING[HT] + ';';
-    end;
+  //aBalanceText := aBalanceText + '|Required houses: |';
+  //I := 0;
+  //for HT := Low(RequiredHouses) to High(RequiredHouses) do
+  //  if (RequiredHouses[HT] > 0) then
+  //  begin
+  //    I := I + 1;
+  //    if (I = 5) then
+  //    begin
+  //      I := 0;
+  //      aBalanceText := aBalanceText + '|';
+  //    end;
+  //    aBalanceText := aBalanceText + Format('%Dx ', [ RequiredHouses[HT] ]) + HOUSE_TO_STRING[HT] + ';';
+  //  end;
 end;
 
 
 
 
 end.
-
