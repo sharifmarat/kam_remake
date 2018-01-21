@@ -5,7 +5,8 @@ uses
   KM_PolySimplify,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KM_NavMeshDefences,
-  KromUtils, KM_CommonUtils;// TimeGet
+  KromUtils, KM_CommonUtils,
+  KM_NavMeshFloodPositioning, KM_NavMeshPathFinding;// TimeGet
 
 
 type
@@ -46,8 +47,10 @@ type
     fPolygons: TPolygonArray;         // Polygons
     fPoint2PolygonArr: TKMWord2Array; // KMPoint -> Polygon index
 
-    //Defences class
-    fDefences: TNavMeshDefences;
+
+    fDefences: TForwardFF; //Defences class
+    fPathfinding: TNavMeshPathFinding; // NavMesh Pathfinding
+    fPositioning: TNavMeshFloodPositioning; // NavMesh Positioning
 
     //Building the navmesh from terrain
     //Process involves many steps executed in a functional way
@@ -55,6 +58,7 @@ type
     procedure TriangulateOutlines;
     procedure AssembleNavMesh;
     procedure InitConnectivity;
+    function FindClosestPolygon(aP: TKMPoint): Word;
     procedure TieUpTilesWithPolygons();
 
     //function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
@@ -68,19 +72,18 @@ type
   public
     constructor Create();
     destructor Destroy(); override;
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
 
-    property Point2PolygonArr: TKMWord2Array read fPoint2PolygonArr;
+    property Point2Polygon: TKMWord2Array read fPoint2PolygonArr;
     property Polygons: TPolygonArray read fPolygons;
     property Nodes: TNodeArray read fNodes;
-    property Defences: TNavMeshDefences read fDefences write fDefences;
+    property Defences: TForwardFF read fDefences write fDefences;
+    property Pathfinding: TNavMeshPathFinding read fPathfinding write fPathfinding;
+    property Positioning: TNavMeshFloodPositioning read fPositioning write fPositioning;
 
     procedure AfterMissionInit();
     //procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
-    function GetDefenceLines(aOwner: TKMHandIndex; out aDefLines: TKMDefenceLines): Boolean;
-    function FindClosestPolygon(aP: TKMPoint): Word;
-
-    procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(aRect: TKMRect);
@@ -102,14 +105,97 @@ constructor TKMNavMesh.Create();
 begin
   inherited Create;
 
-  fDefences := TNavMeshDefences.Create();
+  fDefences := TForwardFF.Create(True);
+  fPathfinding := TNavMeshPathFinding.Create();
+  fPositioning := TNavMeshFloodPositioning.Create();
 end;
 
 
 destructor TKMNavMesh.Destroy();
 begin
   fDefences.Free;
+  fPathfinding.Free;
+  fPositioning.Free;
   inherited;
+end;
+
+
+procedure TKMNavMesh.Save(SaveStream: TKMemoryStream);
+var
+  I,K: Integer;
+begin
+  SaveStream.WriteA('NavMesh');
+
+  SaveStream.Write(fNodeCount);
+  for I := 0 to fNodeCount - 1 do
+  begin
+    SaveStream.Write(fNodes[I].Loc);
+
+    SaveStream.Write(Integer(Length(fNodes[I].Nearby)));
+    for K := 0 to Length(fNodes[I].Nearby) - 1 do
+      SaveStream.Write(fNodes[I].Nearby[K]);
+  end;
+
+  SaveStream.Write(fPolyCount);
+  for I := 0 to fPolyCount - 1 do
+  begin
+    SaveStream.Write(fPolygons[I].CenterPoint);
+    SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
+    SaveStream.Write(fPolygons[I].NearbyCount);
+    SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  end;
+
+  I := Length(fPoint2PolygonArr);
+  SaveStream.Write( I );
+  K := 0;
+  if (I > 0) then
+    K := Length(fPoint2PolygonArr[0]);
+  SaveStream.Write( K );
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    SaveStream.Write(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
+
+  // The following does not requires save
+  // fPathfinding
+  // fPositioning
+end;
+
+
+procedure TKMNavMesh.Load(LoadStream: TKMemoryStream);
+var
+  I,K: Integer;
+  NewCount: Integer;
+begin
+  LoadStream.ReadAssert('NavMesh');
+
+  LoadStream.Read(fNodeCount);
+  SetLength(fNodes, fNodeCount);
+  for I := 0 to fNodeCount - 1 do
+  begin
+    LoadStream.Read(fNodes[I].Loc);
+
+    LoadStream.Read(NewCount);
+    SetLength(fNodes[I].Nearby, NewCount);
+    for K := 0 to NewCount - 1 do
+      LoadStream.Read(fNodes[I].Nearby[K]);
+  end;
+
+  LoadStream.Read(fPolyCount);
+  SetLength(fPolygons, fPolyCount);
+  for I := 0 to fPolyCount - 1 do
+  begin
+    LoadStream.Read(fPolygons[I].CenterPoint);
+    LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
+    LoadStream.Read(fPolygons[I].NearbyCount);
+    LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  end;
+
+  LoadStream.Read(I);
+  LoadStream.Read(K);
+  SetLength(fPoint2PolygonArr,I,K);
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    LoadStream.Read(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
 end;
 
 
@@ -155,11 +241,12 @@ begin
 end;
 
 
-// Find closest NavMesh in case that we get walkable point which is not part of Point2PolygonArr
+// Find closest NavMesh in case that we get point which is not part of fPoint2PolygonArr
 // (stonemason may mine stone and create walkable tiles which are not part of NavMesh [NavMesh is not updated during game])
+// Computed points will be copied into fPoint2PolygonArr in TieUpTilesWithPolygons function -> fPoint2PolygonArr will always refer to existing point
 function TKMNavMesh.FindClosestPolygon(aP: TKMPoint): Word;
 const
-  MAX_SCAN_DIST = 10;
+  MAX_SCAN_DIST = 255;
 var
   I,X,Y, Output: Word;
   PMin,PMax: TKMPoint;
@@ -168,7 +255,7 @@ begin
   if not gTerrain.TileInMapCoords(aP.X, aP.Y) then
     aP := KMPoint(  Min( Max(1,aP.X), gTerrain.MapX-1), Min( Max(1,aP.Y), gTerrain.MapY-1)  );
 
-  Result := Point2PolygonArr[aP.Y,aP.X];
+  Result := fPoint2PolygonArr[aP.Y,aP.X];
   if (Result <> High(Word)) then
     Exit;
 
@@ -178,27 +265,27 @@ begin
     PMin := KMPoint(Max(1,aP.X - I), Max(1,aP.Y - I));
     PMax := KMPoint(Min(gTerrain.MapX-1,aP.X + I), Min(gTerrain.MapY-1,aP.Y + I));
     for X := PMin.X to PMax.X do
-      if (Point2PolygonArr[PMin.Y,X] <> High(Word)) then
+      if (fPoint2PolygonArr[PMin.Y,X] <> High(Word)) then
       begin
-        Output := Point2PolygonArr[PMin.Y,X];
+        Output := fPoint2PolygonArr[PMin.Y,X];
         break;
       end
-      else if (Point2PolygonArr[PMax.Y,X] <> High(Word)) then
+      else if (fPoint2PolygonArr[PMax.Y,X] <> High(Word)) then
       begin
-        Output := Point2PolygonArr[PMax.Y,X];
+        Output := fPoint2PolygonArr[PMax.Y,X];
         break;
       end;
     if (Output <> High(Word)) then
       break;
     for Y := PMin.Y to PMax.Y do
-      if (Point2PolygonArr[Y,PMin.X] <> High(Word)) then
+      if (fPoint2PolygonArr[Y,PMin.X] <> High(Word)) then
       begin
-        Output := Point2PolygonArr[Y,PMin.X];
+        Output := fPoint2PolygonArr[Y,PMin.X];
         break;
       end
-      else if (Point2PolygonArr[Y,PMax.X] <> High(Word)) then
+      else if (fPoint2PolygonArr[Y,PMax.X] <> High(Word)) then
       begin
-        Output := Point2PolygonArr[Y,PMax.X];
+        Output := fPoint2PolygonArr[Y,PMax.X];
         break;
       end;
     if (Output <> High(Word)) then
@@ -247,13 +334,13 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
       fPolygons[aIdx].NearbyPoints[I] := KMPointAverage(fNodes[ Indices[0] ].Loc, fNodes[ Indices[1] ].Loc);
     end;
   end;
-
 var
   AlreadyInTriangle: Boolean;
   I, i1, i2, i3: Word;
   X, Y: Integer;
   MinPoint, MaxPoint: TKMPoint;
   v1, v2, v3: TKMPointF;
+  WordArr: TKMWord2Array;
 begin
   SetLength(fPoint2PolygonArr, gTerrain.MapY, gTerrain.MapX);
   for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
@@ -294,6 +381,18 @@ begin
 
     ComputeNearbyPoints(I);
   end;
+
+  // Now add points
+  SetLength(WordArr, gTerrain.MapY, gTerrain.MapX);
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      if (fPoint2PolygonArr[Y,X] = High(Word)) then
+        WordArr[Y,X] := FindClosestPolygon(KMPoint(X,Y));
+
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      if (fPoint2PolygonArr[Y,X] = High(Word)) then
+        fPoint2PolygonArr[Y,X] := WordArr[Y,X];
 end;
 
 
@@ -751,86 +850,6 @@ begin
 end;
 //}
 
-function TKMNavMesh.GetDefenceLines(aOwner: TKMHandIndex; out aDefLines: TKMDefenceLines): Boolean;
-begin
-  Result := fDefences.GetDefenceLines(aOwner, aDefLines);
-end;
-
-
-procedure TKMNavMesh.Save(SaveStream: TKMemoryStream);
-var
-  I,K: Integer;
-begin
-  SaveStream.WriteA('NavMesh');
-
-  SaveStream.Write(fNodeCount);
-  for I := 0 to fNodeCount - 1 do
-  begin
-    SaveStream.Write(fNodes[I].Loc);
-
-    SaveStream.Write(Integer(Length(fNodes[I].Nearby)));
-    for K := 0 to Length(fNodes[I].Nearby) - 1 do
-      SaveStream.Write(fNodes[I].Nearby[K]);
-  end;
-
-  SaveStream.Write(fPolyCount);
-  for I := 0 to fPolyCount - 1 do
-  begin
-    SaveStream.Write(fPolygons[I].CenterPoint);
-    SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
-    SaveStream.Write(fPolygons[I].NearbyCount);
-    SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
-    SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
-  end;
-
-  I := Length(fPoint2PolygonArr);
-  SaveStream.Write( I );
-  K := 0;
-  if (I > 0) then
-    K := Length(fPoint2PolygonArr[0]);
-  SaveStream.Write( K );
-  for I := 0 to Length(fPoint2PolygonArr) - 1 do
-    SaveStream.Write(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
-end;
-
-
-procedure TKMNavMesh.Load(LoadStream: TKMemoryStream);
-var
-  I,K: Integer;
-  NewCount: Integer;
-begin
-  LoadStream.ReadAssert('NavMesh');
-
-  LoadStream.Read(fNodeCount);
-  SetLength(fNodes, fNodeCount);
-  for I := 0 to fNodeCount - 1 do
-  begin
-    LoadStream.Read(fNodes[I].Loc);
-
-    LoadStream.Read(NewCount);
-    SetLength(fNodes[I].Nearby, NewCount);
-    for K := 0 to NewCount - 1 do
-      LoadStream.Read(fNodes[I].Nearby[K]);
-  end;
-
-  LoadStream.Read(fPolyCount);
-  SetLength(fPolygons, fPolyCount);
-  for I := 0 to fPolyCount - 1 do
-  begin
-    LoadStream.Read(fPolygons[I].CenterPoint);
-    LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
-    LoadStream.Read(fPolygons[I].NearbyCount);
-    LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
-    LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
-  end;
-
-  LoadStream.Read(I);
-  LoadStream.Read(K);
-  SetLength(fPoint2PolygonArr,I,K);
-  for I := 0 to Length(fPoint2PolygonArr) - 1 do
-    LoadStream.Read(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
-end;
-
 
 procedure TKMNavMesh.UpdateState(aTick: Cardinal);
 begin
@@ -847,8 +866,77 @@ var
   Col, Col2: Cardinal;
   Sz: Single;
   Outline1, Outline2: TKMWeightSegments;
+
+
+  W: Word;
+  Owner: TKMHandIndex;
+  Point: TKMPoint;
+  DefLines: TKMDefenceLines;
+  FFF: TForwardFF;
+  DefencePosArr: TKMDefencePosArr;
+
 begin
   if not AI_GEN_NAVMESH then Exit;
+
+  //{ Test defences
+  // Show this defences only in case that show combat AI is not enabled;
+  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
+  if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
+  begin
+    FFF := TForwardFF.Create(true);
+    Owner := gMySpectator.HandIndex;
+    try
+
+      FFF.FindDefenceLines(Owner, DefLines);
+      for K := 0 to DefLines.Count - 1 do
+      begin
+        I := DefLines.Lines[K].Polygon;
+        gRenderAux.TriangleOnTerrain(
+          fNodes[fPolygons[I].Indices[0]].Loc.X,
+          fNodes[fPolygons[I].Indices[0]].Loc.Y,
+          fNodes[fPolygons[I].Indices[1]].Loc.X,
+          fNodes[fPolygons[I].Indices[1]].Loc.Y,
+          fNodes[fPolygons[I].Indices[2]].Loc.X,
+          fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
+      end;
+
+      W := 20;
+      FFF.FindDefensivePolygons(Owner, W, DefencePosArr);
+      for K := 0 to Length(DefencePosArr) - 1 do
+      begin
+        Point := DefencePosArr[K].DirPoint.Loc;
+        gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
+      end;
+
+      //PolygonArr := FFF.D_FF_INIT_ARR;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $900000FF);
+      //end;
+
+      //PolygonArr := FFF.D_FF_INIT_FLOOD;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $9000FF00);
+      //end;
+    finally
+      FFF.Free;
+    end;
+  end;//}
 
   //{Raw obstacle outlines
   if OVERLAY_NAVMESH then
@@ -860,13 +948,14 @@ begin
   {NavMesh polys coverage
   if OVERLAY_NAVMESH then
     for I := 0 to fPolyCount - 1 do
+      //if fPolygons[I].NearbyCount = 3 then
       gRenderAux.TriangleOnTerrain(
         fNodes[fPolygons[I].Indices[0]].Loc.X,
         fNodes[fPolygons[I].Indices[0]].Loc.Y,
         fNodes[fPolygons[I].Indices[1]].Loc.X,
         fNodes[fPolygons[I].Indices[1]].Loc.Y,
         fNodes[fPolygons[I].Indices[2]].Loc.X,
-        fNodes[fPolygons[I].Indices[2]].Loc.Y, $60FF0000);//}
+        fNodes[fPolygons[I].Indices[2]].Loc.Y, $90FF0000);//}
 
   //NavMesh edges
   if OVERLAY_NAVMESH then
