@@ -394,14 +394,12 @@ procedure TKMHandAI.AfterMissionInit();
 begin
   fMayor.AfterMissionInit;
 
+  gAIFields.Eye.OwnerUpdate(fOwner);
   fCityManagement.AfterMissionInit;
   fArmyManagement.AfterMissionInit;
 end;
 
 
-//todo: Updates should be well separated, maybe we can make an interleaved array or something
-//where updates will stacked to execute 1 at a tick
-//OR maybe we can collect all Updates into one list and run them from there (sounds like a better more manageble idea)
 procedure TKMHandAI.UpdateState(aTick: Cardinal);
 begin
   //Check goals for all players to maintain multiplayer consistency
