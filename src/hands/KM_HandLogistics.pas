@@ -785,8 +785,8 @@ end;
 //Try to Calc bid cost between serf and offer house
 //Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
 function TKMDeliveries.TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
-var
   {$IFDEF WDC}
+var
   BidKey: TKMDeliveryBidKey;
   CachedBid: Single;
   {$ENDIF}
