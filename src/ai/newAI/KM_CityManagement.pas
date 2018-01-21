@@ -13,7 +13,7 @@ type
     Fraction: Single;
   end;
 
-  //Mayor is the one who manages the town
+
   TKMCityManagement = class
   private
     fOwner: TKMHandIndex;
@@ -22,7 +22,7 @@ type
     fBuilder: TKMCityBuilder;
     fPredictor: TKMCityPredictor;
 
-    POMARR: TWarfareArr;
+    fRequiredWeapons: TWarfareArr;
 
     fBalanceText: UnicodeString;
 
@@ -73,15 +73,15 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
 
-  fBuilder := TKMCityBuilder.Create(aPlayer);
   fPredictor := TKMCityPredictor.Create(aPlayer);
+  fBuilder := TKMCityBuilder.Create(aPlayer, fPredictor);
 end;
 
 
 destructor TKMCityManagement.Destroy();
 begin
-  fBuilder.Free;
   fPredictor.Free;
+  fBuilder.Free;
 
   inherited;
 end;
@@ -92,8 +92,8 @@ begin
   SaveStream.WriteA('CityManagement');
   SaveStream.Write(fOwner);
 
-  fBuilder.Save(SaveStream);
   fPredictor.Save(SaveStream);
+  fBuilder.Save(SaveStream);
 end;
 
 
@@ -102,16 +102,16 @@ begin
   LoadStream.ReadAssert('CityManagement');
   LoadStream.Read(fOwner);
 
-  fBuilder.Load(LoadStream);
   fPredictor.Load(LoadStream);
+  fBuilder.Load(LoadStream);
 end;
 
 
 procedure TKMCityManagement.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
-  fBuilder.OwnerUpdate(aPlayer);
   fPredictor.OwnerUpdate(aPlayer);
+  fBuilder.OwnerUpdate(aPlayer);
 end;
 
 
@@ -127,50 +127,39 @@ procedure TKMCityManagement.AfterMissionInit();
     gHands[fOwner].Houses.UpdateResRequest;
   end;
 const
-  WORKER_COEF = 80.0;
+  WORKER_COEF = 125.0; // Max build cnt ~ 5400
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt, FreeWorkersCnt, I, Cnt: Integer;
-  vA1, vA2, vA3, vA4: Integer;
-  A1: array[0..3] of Integer;
-  A2: array of integer;
 begin
   SetWareDistribution();
 
-  vA1 := SizeOf(A1);
-  vA2 := SizeOf(A2);
-  SetLength(A2, 5);
-  vA3 := SizeOf(A2);
-  vA4 := SizeOf(A2[0]) * Length(A2);
-
-  fSetup.ApplyAgressiveBuilderSetup;
-
-  gAIFields.Eye.OwnerUpdate(fOwner);
+  fSetup.ApplyAgressiveBuilderSetup; // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   fPredictor.AfterMissionInit();
 
   // Find resources around Loc and change building policy
+  GoldCnt := 0;
+  IronCnt := 0;
+  FieldCnt := 0;
+  BuildCnt := 0;
   gAIFields.Eye.ScanLocResources(GoldCnt, IronCnt, FieldCnt, BuildCnt);
 
-
-      BuildCnt := 2500; // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-
   // Decide count of workers + build nodes
-  gHands[fOwner].AI.Setup.WorkerCount := Min(35, Round(BuildCnt / WORKER_COEF));
+  gHands[fOwner].AI.Setup.WorkerCount := Min(35, Round((BuildCnt+1000) / WORKER_COEF));
 
   fBuilder.AfterMissionInit(GoldCnt, IronCnt, FieldCnt, BuildCnt);
-
 
   fPredictor.CityInitialization(GoldCnt, IronCnt, FieldCnt, BuildCnt);
 
   // Place all houses AfterMissionInit (only for GA_PLANNER tuning parameters)
   Cnt := 0;
   //GA_PLANNER := True;
-  if GA_PLANNER then
+  if GA_PLANNER AND (fOwner = 1) then
     for I := 0 to 100 do
     begin
       fBuilder.UpdateState(0, FreeWorkersCnt);
       fPredictor.UpdateState(0);
-      if not fBuilder.ChooseHousesToBuild(1, fPredictor.RequiredHouses, fPredictor.WareBalance) then
+      if not fBuilder.ChooseHousesToBuild(1) then
       begin
         Cnt := Cnt + 1;
         if (Cnt > 5) then
@@ -193,16 +182,16 @@ var
 begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
+    fBalanceText := '';
     fPredictor.UpdateState(aTick);
+    if not SKIP_RENDER then
+      fPredictor.LogStatus(fBalanceText);
     FreeWorkersCnt := 0;
     fBuilder.UpdateState(aTick, FreeWorkersCnt);
-    fBuilder.ChooseHousesToBuild(Max(0,Ceil(FreeWorkersCnt/WORKER_COEF)), fPredictor.RequiredHouses, fPredictor.WareBalance);
-    if not SKIP_RENDER then
-    begin
-      fPredictor.LogStatus(fBalanceText);
+    fBuilder.ChooseHousesToBuild(Max(0,Ceil(FreeWorkersCnt/WORKER_COEF)));
+    if not SKIP_RENDER then // Builder change required houses so builder LogStatus cannot be merged with predictor
       fBuilder.LogStatus(fBalanceText);
-      //LogStatus(fBalanceText);
-    end;
+    LogStatus(fBalanceText);
   end;
 
   if (aTick mod LONG_UPDATE = fOwner) then
@@ -217,7 +206,7 @@ begin
 end;
 
 
-procedure TKMCityManagement.CheckUnitCount;
+procedure TKMCityManagement.CheckUnitCount();
 var
   P: TKMHand;
   UnitReq: array [CITIZEN_MIN..CITIZEN_MAX] of Integer;
@@ -280,6 +269,7 @@ var
 
 var
   I,K: Integer;
+  GoldProduced: Cardinal;
   H: THouseType;
   UT: TUnitType;
   Schools: array of TKMHouseSchool;
@@ -296,7 +286,8 @@ begin
 
   //Citizens
   // Make sure we have enough gold left for self-sufficient city
-  if (P.Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (P.Stats.GetHouseQty(ht_Metallurgists) = 0) then
+  GoldProduced := P.Stats.GetWaresProduced(wt_Gold);
+  if (P.Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (GoldProduced = 0) then
   begin
     Inc(UnitReq[ut_Serf], 3 * Byte(P.Stats.GetUnitQty(ut_Serf) < 3)); // 3x Serf
     Inc(UnitReq[ut_Worker], Byte((P.Stats.GetUnitQty(ut_Worker) = 0) AND (fSetup.WorkerCount > 0)));// 1x Worker
@@ -316,7 +307,7 @@ begin
     for UT := Low(UnitReq) to High(UnitReq) do
       Dec(UnitReq[UT], P.Stats.GetUnitQty(UT));
     //UnitReq[ut_Serf] := Round(fSetup.SerfsPerHouse * (P.Stats.GetHouseQty(ht_Any) + P.Stats.GetUnitQty(ut_Worker)/2));
-    if (P.Stats.GetWareBalance(wt_Gold) < 15) AND (P.Stats.GetHouseQty(ht_Metallurgists) = 0) then
+    if (P.Stats.GetWareBalance(wt_Gold) < 15) AND (GoldProduced = 0) then // Dont train servs and workers when we will be out of gold
     begin
       UnitReq[ut_Serf] := 0;
       UnitReq[ut_Worker] := 0;
@@ -715,7 +706,7 @@ var
 //  ut_Cavalry,      ut_Barbarian,
 
 var
-  I, SmithyCnt, WorkshopCnt, ArmorCnt: Integer;
+  I, SmithyCnt, WorkshopCnt, ArmorCnt, Sum: Integer;
   IronRatio: Single;
   WT: TWareType;
   GT: TGroupType;
@@ -742,8 +733,13 @@ begin
     WarriorsDemands[UT] := 0;
   for GT := Low(TGroupType) to High(TGroupType) do
     ComputeGroupDemands(GT, IronRatio);
-  // Make sure that
-  CheckMinArmyReq();
+
+  // Make sure that we always produce something
+  Sum := 0;
+  for UT := Low(WarriorsDemands) to High(WarriorsDemands) do
+    Sum := Sum + WarriorsDemands[UT];
+  if (Sum < 20) then
+    CheckMinArmyReq();
 
   // Get weapons reserves
   for WT := Low(Warfare) to High(Warfare) do
@@ -769,8 +765,8 @@ begin
 
   Result := Warfare;
 
-  for WT := Low(POMARR) to High(POMARR) do
-    POMARR[WT] := Warfare[WT];
+  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
+    fRequiredWeapons[WT] := Warfare[WT];
 end;
 
 
@@ -823,13 +819,13 @@ end;
 
 procedure TKMCityManagement.LogStatus(var aBalanceText: UnicodeString);
 const
-  WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString = ('Shield', 'MetalShield', 'Armor', 'MetalArmor', 'Axe', 'Sword', 'Pike', 'Hallebard', 'Bow', 'Arbalet', 'wt_Horse');
+  WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString = ('Shield', 'MetalShield', 'Armor', 'MetalArmor', 'Axe', 'Sword', 'Pike', 'Hallebard', 'Bow', 'Arbalet', 'Horse');
 var
   WT: TWareType;
 begin
-  //aBalanceText := '';
-  for WT := Low(POMARR) to High(POMARR) do
-    aBalanceText := aBalanceText + WARFARE[WT] + ': ' + IntToStr(POMARR[WT].Avaiable) + '; ' + IntToStr(POMARR[WT].Required) + '; ' + FloatToStr(POMARR[WT].Fraction) +';|';
+  aBalanceText := aBalanceText + '||Weapons orders (weapon: avaiable, required, fraction)|';
+  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
+    aBalanceText := aBalanceText + WARFARE[WT] + ': ' + IntToStr(fRequiredWeapons[WT].Avaiable) + '; ' + IntToStr(fRequiredWeapons[WT].Required) + '; ' + FloatToStr(fRequiredWeapons[WT].Fraction) +';|';
 end;
 
 end.
