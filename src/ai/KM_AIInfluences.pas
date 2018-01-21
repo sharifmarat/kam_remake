@@ -36,16 +36,18 @@ type
     // Avoid building
     procedure InitAvoidBuilding();
     // Army presence
-    function GetAllPresences(const aPL: TKMHandIndex; aIdx: Word): Word; inline;
     function GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word; inline;
     procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType; const aPresence: Word); inline;
     procedure SetIncPresence(const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType; const aPresence: Word); inline;
+    function GetAllPresences(const aPL: TKMHandIndex; aIdx: Word): Word; inline;
+    function GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word;
+    //function GetAlliancePresence(const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TAllianceType): Word;
     procedure UpdateMilitaryPresence(const aPL: TKMHandIndex);
     // City influence
     function GetOwnership(const aPL: TKMHandIndex; const aIdx: Word): Byte; inline;
     procedure SetOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aOwnership: Byte); inline;
-    function GetOwnershipFromPoint(const aPL: TKMHandIndex; aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
-    procedure SetOwnershipFromPoint(const aPL: TKMHandIndex; aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
+    function GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
+    procedure SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
     procedure UpdateOwnership(const aPL: TKMHandIndex);
     // Common
     procedure InitArrays();
@@ -59,11 +61,13 @@ type
 
     // Avoid building
     // Army presence
-    property PresenceAllGroups[const aPL: TKMHandIndex; aIdx: Word]: Word read GetAllPresences;
     property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType]: Word read GetPresence write SetPresence;
     property IncPresence[const aPL: TKMHandIndex; aIdx: Word; const aGT: TGroupType]: Word write SetIncPresence;
+    property PresenceAllGroups[const aPL: TKMHandIndex; aIdx: Word]: Word read GetAllPresences;
+    property EnemyGroupPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType]: Word read GetEnemyGroupPresence;
+    //property AlliancePresence[const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TAllianceType]: Word read GetAlliancePresence;
     // City influence
-    property Ownership[const aPL: TKMHandIndex; aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
+    property Ownership[const aPL: TKMHandIndex; const aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
     property OwnPoly[const aPL: TKMHandIndex; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
     // Common
     property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
@@ -73,12 +77,10 @@ type
     procedure RemAvoidBuilding(aArea: TKMRect);
     // Army presence
     // City influence
-    function GetBestOwner(aX,aY: Word): TKMHandIndex; overload;
+    function GetBestOwner(const aX,aY: Word): TKMHandIndex; overload;
     function GetBestOwner(const aIdx: Word): TKMHandIndex; overload;
     function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TAllianceType): Byte;
     function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
-
-
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -265,7 +267,7 @@ begin
   Result := 0;
   aIdx := (aPL*fPolygons + aIdx) shl 2;
   for GT := Low(TGroupType) to High(TGroupType) do
-    Result := Result + fPresence[aIdx + Byte(GT)];
+    Result := Min(High(Word), Result + fPresence[aIdx + Byte(GT)]);
 end;
 
 
@@ -288,9 +290,21 @@ begin
 end;
 
 
+function TKMInfluences.GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TGroupType): Word;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = at_Enemy) then
+      Result := Result + Presence[PL, aIdx, aGT];
+end;
+
+
 procedure TKMInfluences.UpdateMilitaryPresence(const aPL: TKMHandIndex);
 const
   EACH_X_MEMBER_COEF = 10;
+  MAX_DISTANCE = 20;
 var
   I, K, Cnt: Integer;
   GT: TGroupType;
@@ -319,14 +333,15 @@ begin
       begin
         if (Length(PointArr) <= Cnt) then
           SetLength(PointArr, Cnt + 16);
-        PointArr[Cnt] := gAIFields.NavMesh.FindClosestPolygon(U.GetPosition);
+        PointArr[Cnt] := gAIFields.NavMesh.Point2Polygon[U.GetPosition.Y,U.GetPosition.X];
         Cnt := Cnt + 1;
       end;
       K := K + EACH_X_MEMBER_COEF; // Pick each X member (Huge groups cover large areas so be sure that influence will be accurate)
     end;
 
     if (Cnt > 0) then
-      fFloodFill.MilitaryPresence(aPL, 80, 30, Cnt-1, G.GroupType, PointArr);
+      //fFloodFill.MilitaryPresence(aPL, gAIFields.Eye.ArmyEvaluation.GroupStrength(G), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+      fFloodFill.MilitaryPresence(aPL, Max(G.Count,30), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
   end;
 end;
 
@@ -347,26 +362,21 @@ begin
 end;
 
 
-function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandIndex; aY, aX: Word): Byte;
-var
-  POM: Word;
+function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte;
 begin
-  POM := fNavMesh.FindClosestPolygon(KMPoint(aX,aY));
-  Result := GetOwnership(aPL, POM);
+  Result := GetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX]);
 end;
 
 
-procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandIndex; aY, aX: Word; const aOwnership: Byte);
+procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte);
 begin
-  aX := fNavMesh.FindClosestPolygon(KMPoint(aX,aY));
-  SetOwnership(aPL, aX, aOwnership);
+  SetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX], aOwnership);
 end;
 
 
-function TKMInfluences.GetBestOwner(aX,aY: Word): TKMHandIndex;
+function TKMInfluences.GetBestOwner(const aX,aY: Word): TKMHandIndex;
 begin
-  aX := fNavMesh.FindClosestPolygon(KMPoint(aX,aY));
-  Result := GetBestOwner(aX);
+  Result := GetBestOwner( fNavMesh.Point2Polygon[aY,aX] );
 end;
 
 
@@ -394,7 +404,7 @@ var
   PL: TKMHandIndex;
 begin
   Result := 0;
-  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
+  if not AI_GEN_INFLUENCE_MAPS then
     Exit;
 
   for PL := 0 to gHands.Count - 1 do
@@ -409,10 +419,10 @@ var
   Idx: Word;
 begin
   Result := 0;
-  Idx := fNavMesh.FindClosestPolygon(KMPoint(aX,aY));
-  if not AI_GEN_INFLUENCE_MAPS OR (Idx = High(Word)) then
+  if not AI_GEN_INFLUENCE_MAPS then
     Exit;
 
+  Idx := fNavMesh.Point2Polygon[aY,aX];
   Result := 0;
   for PL := 0 to gHands.Count - 1 do
     if (PL <> aPL) then
@@ -420,7 +430,7 @@ begin
 end;
 
 
-// Here is the main reason for reworking influences: only 1 flood fill for city per a update + ~20x less elements in array
+// Here is the main reason for reworking influences: only 1 flood fill for city per a update + ~25x less elements in array
 procedure TKMInfluences.UpdateOwnership(const aPL: TKMHandIndex);
 var
   I, Idx, Cnt: Integer;
@@ -429,7 +439,7 @@ var
 begin
   InitArrays();
 
-  //Clear array
+  //Clear array (again is better to clear less than 2000 polygons instead of 255*255 tiles)
   for Idx := 0 to fPolygons - 1 do
     OwnPoly[aPL, Idx] := 0;
 
@@ -439,14 +449,10 @@ begin
   for I := 0 to gHands[aPL].Houses.Count - 1 do
   begin
     H := gHands[aPL].Houses[I];
-    if not H.IsDestroyed AND (H.HouseType <> ht_WatchTower) then  // Ignore watchtower?????????????????????????????????????????????
+    if not H.IsDestroyed AND (H.HouseType <> ht_WatchTower) then  // Ignore watchtower?
     begin
-      Idx := fNavMesh.FindClosestPolygon( H.GetPosition );
-      if (Idx <> High(Word)) then
-      begin
-        IdxArray[Cnt] := Idx;
+        IdxArray[Cnt] := fNavMesh.Point2Polygon[H.GetPosition.Y,H.GetPosition.X];
         Cnt := Cnt + 1;
-      end;
     end;
   end;
 
