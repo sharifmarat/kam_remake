@@ -373,11 +373,12 @@ var
   FaceDir: TKMDirection;
   VisitedNewPos, VisitedExistPos: TBooleanArray;
   DefPolygons: TKMWordArray;
+  DefPosArr: TKMDefencePosArr;
 begin
   //Get defence Polygons
   FirstLineCnt := 0;
-  //if not gAIFields.NavMesh.Defences.GetDefensivePolygons(fOwner, gHands[fOwner].UnitGroups.Count + 10, DefPolygons) then
-  if not gAIFields.NavMesh.Defences.GetDefensivePolygons(fOwner, FirstLineCnt, DefPolygons) then
+  //if not gAIFields.NavMesh.Defences.FindDefensivePolygons(fOwner, gHands[fOwner].UnitGroups.Count + 10, DefPolygons) then
+  if not gAIFields.NavMesh.Defences.FindDefensivePolygons(fOwner, FirstLineCnt, DefPosArr) then
     Exit;
 
   fFirstLineCnt := FirstLineCnt;
