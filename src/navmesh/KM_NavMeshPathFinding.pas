@@ -132,7 +132,7 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
     Weight: Single;
   begin
     Weight := 0;
-    for GT in TGroupType do
+    for GT := Low(TGroupType) to High(TGroupType) do
       Weight := CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT];
     Result := Round(Weight);
   end;
