@@ -14,7 +14,9 @@ type
     fFormLoading: TFormLoading;
 
     fOldTimeFPS, fOldFrameTimes, fFrameCount: Cardinal;
+    {$IFNDEF FPC}
     fFlashing: Boolean;
+    {$ENDIF}
     fMutex: THandle;
 
     fMainSettings: TMainSettings;

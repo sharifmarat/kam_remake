@@ -343,10 +343,12 @@ const
   BG: Integer = $AF6B6B;
 var
   I, K: Integer;
+{$IFDEF WDC}
   scLine: Cardinal;
   TD: TKMCardinalArray;
   C: Integer;
   A: Byte;
+{$ENDIF}
 begin
   Assert(Length(fAtlases[aIndex].TexData) > 0, 'There is no font data in memory');
 
@@ -570,7 +572,7 @@ begin
       else
         Inc(dx, GetCharWidth(aText[I]));
 
-    if AnsiChar(aText[I]) in [#9,#32,#124] then
+    if SysUtils.CharInSet(aText[I], [#9,#32,#124]) then
     begin
       LastWrappable := I;
       PrevX := dx;

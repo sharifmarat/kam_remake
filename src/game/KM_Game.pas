@@ -496,15 +496,15 @@ begin
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
     SaveGame(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer), UTCNow);
 
+  //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
+  gScriptEvents.ProcMissionStart;
+
   //When everything is ready we can update UI
   fActiveInterface.SyncUI;
   if IsMapEditor then
     fActiveInterface.SyncUIView(KMPointF(gTerrain.MapX / 2, gTerrain.MapY / 2))
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
-
-  //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
-  gScriptEvents.ProcMissionStart;
 
   gLog.AddTime('Gameplay initialized', True);
 end;

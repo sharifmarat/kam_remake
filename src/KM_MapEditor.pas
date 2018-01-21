@@ -64,6 +64,8 @@ type
     procedure Update;
     procedure UpdateStateIdle;
     procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+
+    procedure DeletePlayer(aIndex: TKMHandIndex);
   end;
 
 
@@ -351,6 +353,31 @@ begin
 end;
 
 
+procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandIndex);
+begin
+  if gHands = nil then Exit;
+
+  if gHands.Count = 0 then Exit;
+
+  Revealers[aIndex].Clear;
+
+  gHands.Hands[aIndex].Units.RemoveAllUnits;
+
+  gHands.Hands[aIndex].UnitGroups.RemAllGroups;
+
+  gHands.Hands[aIndex].Houses.RemoveAllHouses;
+
+  gTerrain.ClearPlayerLand(aIndex);
+
+  gHands.Hands[aIndex].AI.Goals.Clear;
+
+  gHands.Hands[aIndex].AI.General.Attacks.Clear;
+
+  gHands.Hands[aIndex].AI.General.DefencePositions.Clear;
+
+end;
+
+
 procedure TKMMapEditor.ChangeOwner(aChangeOwnerForAll: Boolean);
 var P: TKMPoint;
 begin
@@ -405,10 +432,7 @@ end;
 
 
 procedure TKMMapEditor.MouseDown(Button: TMouseButton);
-var
-  P: TKMPoint;
 begin
-  P := gGameCursor.Cell;
   if (Button = mbLeft) then
     case gGameCursor.Mode of
       cmSelection:  fSelection.Selection_Start;

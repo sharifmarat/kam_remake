@@ -535,8 +535,8 @@
 545:Ready
 546:Not ready
 547:Start!
-548:Game speed (peacetime)
-549:Game speed
+548:Game speed (PT) [real]
+549:Game speed [real]
 550:OK
 551:Cancel
 552:Description
@@ -1061,3 +1061,9 @@
 1110:Current map size:
 1111:New map size:
 1112:Resize Map
+1113:House owner: %s
+1114:Delete Player %d
+1115:Deleting Player %d
+1116:Are you sure you want to clear the player?|All his data will be erased!
+1117:Close
+1118:Multiplayer maps

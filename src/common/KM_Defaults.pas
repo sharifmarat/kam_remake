@@ -93,10 +93,11 @@ var
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
   PathFinderToUse       :Byte = 1;
 
-
+  {$IFDEF WDC} //Work only in Delphi
   DELIVERY_BID_CALC_USE_PATHFINDING
                         :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   CACHE_DELIVERY_BIDS   :Boolean = True; //Cache delivery bids cost. Must be turned ON if we want to use pathfinding for bid calc, huge impact on performance in that case
+  {$ENDIF}
 
   WARFARE_ORDER_SEQUENTIAL    :Boolean = True; //Pick weapon orders like KaM did
   WARFARE_ORDER_PROPORTIONAL  :Boolean = False; //New proportional way (looks like a bad idea)

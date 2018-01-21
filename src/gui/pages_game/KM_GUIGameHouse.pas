@@ -548,6 +548,7 @@ begin
   Label_House.Width := TB_WIDTH - Label_House.Left;
 
   Image_PlayerFlag.FlagColor := gHands[aHouse.Owner].FlagColor;
+  Image_PlayerFlag.Hint      := Format(gResTexts[TX_MAPED_HOUSE_FLAG_FOR_PLAYER_HINT], [gHands[aHouse.Owner].OwnerName]);
   Image_House_Logo.TexID     := gRes.Houses[aHouse.HouseType].GUIIcon;
   Image_House_Worker.TexID   := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
   Image_House_Worker.Hint    := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName;
@@ -937,7 +938,10 @@ procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShif
   end;
 
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) then Exit;
+  if (gMySpectator.Selected = nil)
+    or not (gMySpectator.Selected is TKMHouse)
+    or not gMySpectator.IsSelectedMyObj then
+    Exit;
 
   case Button_HouseDeliveryMode.TexID of
     37: // dm_Delivery

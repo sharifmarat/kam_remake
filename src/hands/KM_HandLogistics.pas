@@ -81,6 +81,7 @@ type
 
   TKMDeliveries = class
   private
+    fOwner: TKMHandIndex;
     fOfferCount: Integer;
     fOffer: array of TKMDeliveryOffer;
     fDemandCount: Integer;
@@ -98,10 +99,11 @@ type
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
     fSerfToOfferCache: TDictionary<TKMDeliveryBidKey, Single>;
-    {$ENDIF}
 
     fNodeList: TKMPointList; // Used to calc delivery bid
+    {$ENDIF}
 
+    function GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
     procedure CloseDelivery(aID: Integer);
     procedure CloseDemand(aID: Integer);
     procedure CloseOffer(aID: Integer);
@@ -113,10 +115,10 @@ type
     function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
                                   aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
-    function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aPassSet: TKMTerrainPassabilitySet; var aRoutCost: Single): Boolean;
+    function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single; aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
   public
-    constructor Create;
+    constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
     procedure AddOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Integer);
     procedure RemAllOffers(aHouse: TKMHouse);
@@ -158,7 +160,7 @@ type
     procedure RemoveExtraSerfs;
     function GetIdleSerfCount: Integer;
   public
-    constructor Create;
+    constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
 
     procedure AddSerf(aSerf: TKMUnitSerf);
@@ -192,10 +194,9 @@ const
 
 
 { TKMHandLogistics }
-constructor TKMHandLogistics.Create;
+constructor TKMHandLogistics.Create(aHandIndex: TKMHandIndex);
 begin
-  inherited;
-  fQueue := TKMDeliveries.Create;
+  fQueue := TKMDeliveries.Create(aHandIndex);
 end;
 
 
@@ -385,14 +386,13 @@ end;
 
 
 { TKMDeliveries }
-constructor TKMDeliveries.Create;
+constructor TKMDeliveries.Create(aHandIndex: TKMHandIndex);
 {$IFDEF WDC}
 var
   CacheKeyComparer: TKMDeliveryBidKeyComparer;
 {$ENDIF}
 begin
-  inherited;
-
+  fOwner := aHandIndex;
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
   begin
@@ -722,12 +722,8 @@ function TKMDeliveries.SerfCanDoDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Bo
 var
   LocA, LocB: TKMPoint;
 begin
-  LocA := aSerf.GetPosition;
+  LocA := GetSerfActualPos(aSerf);
   LocB := fOffer[iO].Loc_House.PointBelowEntrance;
-
-  //If the serf is inside the house (invisible) test from point below
-  if not aSerf.Visible then
-    LocA := KMPointBelow(LocA);
 
   Result := aSerf.CanWalkTo(LocA, LocB, tpWalk, 0);
 end;
@@ -736,6 +732,16 @@ end;
 function TKMDeliveries.PermitDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Boolean;
 begin
   Result := ValidDelivery(iO, iD) and SerfCanDoDelivery(iO, iD, aSerf);
+end;
+
+
+function TKMDeliveries.GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
+begin
+  Result := aSerf.GetPosition;
+
+  //If the serf is inside the house (invisible) test from point below
+  if not aSerf.Visible then
+    Result := KMPointBelow(Result);
 end;
 
 
@@ -780,7 +786,6 @@ end;
 //Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
 function TKMDeliveries.TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
 var
-  BelowOfferPos: TKMPoint;
   {$IFDEF WDC}
   BidKey: TKMDeliveryBidKey;
   CachedBid: Single;
@@ -789,8 +794,6 @@ begin
   aSerfBidValue := 0;
   Result := True;
   if aSerf = nil then Exit;
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -809,7 +812,8 @@ begin
 
   //Also prefer deliveries near to the serf
   if aSerf <> nil then
-    Result := TryCalcRouteCost(aSerf.GetPosition, BelowOfferPos, [tpWalk], aSerfBidValue); //Serf gets to first house with tpWalk
+    //Serf gets to first house with tpWalkRoad, if not possible, then with tpWalk
+    Result := TryCalcRouteCost(GetSerfActualPos(aSerf), aOfferPos, tpWalkRoad, aSerfBidValue, tpWalk);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -830,35 +834,50 @@ end;
 
 //Try to Calc route cost
 //If destination is not reachable, then return False
-function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aPassSet: TKMTerrainPassabilitySet; var aRoutCost: Single): Boolean;
+function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single;
+                                        aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
 var
+  {$IFDEF WDC}
   Distance: Single;
+  {$ENDIF}
+  PassToUse: TKMTerrainPassability;
 begin
+  PassToUse := aMainPass;
+  Result := True;
+  if not gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0) then
+  begin
+    PassToUse := aSecondPass;
+    Result := gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0);
+  end;
+
   {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
-  Result := True; //Destination is reachable by default
   if DELIVERY_BID_CALC_USE_PATHFINDING and (Distance < BID_CALC_MAX_DIST_FOR_PATHF) then
   begin
     fNodeList.Clear;
+
     //Try to make the route to get delivery cost
-    if gGame.Pathfinding.Route_Make(aFromPos, aToPos, aPassSet, 1, nil, fNodeList) then //Use tpWalkRoad to get to house
+    if Result
+      and gGame.Pathfinding.Route_Make(aFromPos, aToPos, [PassToUse], 1, nil, fNodeList) then
       aRoutCost := KMPathLength(fNodeList) * BID_CALC_PATHF_COMPENSATION //to equalize routes with Pathfinding and without
                 + GetUnitsCntOnPath(fNodeList) // units on path are also considered
-    else begin
-      aRoutCost := NOT_REACHABLE_DEST_VALUE; //Not reachable destination
+    else
       Result := False;
-    end;
   end
   else
   {$ENDIF}
     //Basic Bid is length of route
-    aRoutCost := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cover
+    if Result then
+      aRoutCost := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cove
+
+  if not Result then
+    aRoutCost := NOT_REACHABLE_DEST_VALUE; //Not reachable destination
 end;
 
 
 function TKMDeliveries.TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
-  Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.Entrance, fOffer[iO].Count,
+  Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.PointBelowEntrance, fOffer[iO].Count,
                                  fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aBidBasicValue, aSerf);
 end;
 
@@ -876,7 +895,6 @@ function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPo
   {$ENDIF}
 
 var
-  BelowOfferPos: TKMPoint;
   SerfBidValue: Single;
   {$IFDEF WDC}
   BidKey: TKMDeliveryBidKey;
@@ -887,8 +905,6 @@ begin
   Result := TryCalcSerfBidValue(aSerf, aOfferPos, aOfferUID, SerfBidValue);
   if not Result then
     Exit;
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -927,14 +943,14 @@ begin
     if fDemand[iD].Loc_House <> nil then
     begin
       //Calc cost between offer and demand houses
-      Result := TryCalcRouteCost(BelowOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, [tpWalkRoad], aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
       aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
         + KaMRandom(15 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
-      Result := TryCalcRouteCost(BelowOfferPos, fDemand[iD].Loc_Unit.GetPosition, [tpWalk], aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk, aBidBasicValue);
 
     if not Result then
     begin
@@ -985,8 +1001,19 @@ begin
   //Modifications for bidding system
   if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
     and (fDemand[iD].Ware <> wt_All)
-    and (fDemand[iD].Ware <> wt_Warfare) then //Except Barracks and Store, where supply doesn't matter or matter less
+    and (fDemand[iD].Ware <> wt_Warfare) //Except Barracks and Store, where supply doesn't matter or matter less
+    and (fDemand[iD].Loc_House.HouseType <> ht_TownHall) then //Except TownHall as well, where supply doesn't matter or matter less
     aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
+
+  if (fDemand[iD].Loc_House <> nil)
+    and (fDemand[iD].Loc_House.HouseType = ht_TownHall) then
+  begin
+    //Delivering gold to TH - if there are already more then 300 gold, then make this delivery very low priority
+    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 300) then
+      aBidValue := aBidValue + 9000
+    else
+      aBidValue := aBidValue + 5; //Add small value, so it will not have so big advantage above other houses
+  end;
 
   //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
   //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
@@ -1258,12 +1285,12 @@ begin
     fQueue[I].Item.Caption := gRes.Wares[fOffer[fQueue[I].OfferID].Ware].Title;
 
     if fOffer[fQueue[I].OfferID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
       fQueue[I].Item.SubItems.Add(gRes.Houses[fOffer[fQueue[I].OfferID].Loc_House.HouseType].HouseName);
 
     if fDemand[fQueue[I].DemandID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
       fQueue[I].Item.SubItems.Add(gRes.Houses[fDemand[fQueue[I].DemandID].Loc_House.HouseType].HouseName);
   end;
@@ -1385,6 +1412,7 @@ var
   {$ENDIF}
 begin
   SaveStream.WriteA('Deliveries');
+  SaveStream.Write(fOwner);
   SaveStream.Write(fOfferCount);
   for I := 1 to fOfferCount do
   begin
@@ -1444,13 +1472,15 @@ end;
 
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var
-  I, Count: Integer;
+  I: Integer;
   {$IFDEF WDC}
+  Count: Integer;
   Key: TKMDeliveryBidKey;
   Value: Single;
   {$ENDIF}
 begin
   LoadStream.ReadAssert('Deliveries');
+  LoadStream.Read(fOwner);
   LoadStream.Read(fOfferCount);
   SetLength(fOffer, fOfferCount+1);
   for I := 1 to fOfferCount do
@@ -1513,7 +1543,8 @@ end;
 
 
 procedure TKMDeliveries.SyncLoad;
-var I:integer;
+var
+  I: Integer;
 begin
   for I := 1 to fOfferCount do
     fOffer[I].Loc_House := gHands.GetHouseByUID(cardinal(fOffer[I].Loc_House));
@@ -1530,7 +1561,8 @@ end;
 procedure TKMDeliveries.UpdateState(aTick: Cardinal);
 begin
   {$IFDEF WDC}
-  if CACHE_DELIVERY_BIDS and ((aTick mod CACHE_CLEAN_FREQ) = 0) then //Clear cache every 10 ticks
+  //Clear cache every 10 ticks, spread cache clearing a by handIndex, to make route's calc's spread too
+  if CACHE_DELIVERY_BIDS and (((aTick + fOwner) mod CACHE_CLEAN_FREQ) = 0) then
   begin
     fOfferToDemandCache.Clear;
     fSerfToOfferCache.Clear;

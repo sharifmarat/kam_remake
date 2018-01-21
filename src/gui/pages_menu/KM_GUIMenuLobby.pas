@@ -551,13 +551,13 @@ begin
         TrackBar_LobbySpeedPT := TKMTrackBar.Create(Panel_LobbySetupOptions, 10, 72, 250, 1, 5);
         TrackBar_LobbySpeedPT.Anchors := [anLeft,anBottom];
         TrackBar_LobbySpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
-        TrackBar_LobbySpeedPT.ThumbWidth := 45; //Enough to fit 'x2.5'
+        TrackBar_LobbySpeedPT.ThumbWidth := 55; //Enough to fit 'x1.25'
         TrackBar_LobbySpeedPT.OnChange := GameOptionsChange;
 
         TrackBar_LobbySpeedAfterPT := TKMTrackBar.Create(Panel_LobbySetupOptions, 10, 116, 250, 1, 5);
         TrackBar_LobbySpeedAfterPT.Anchors := [anLeft,anBottom];
         TrackBar_LobbySpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
-        TrackBar_LobbySpeedAfterPT.ThumbWidth := 45; //Enough to fit 'x2.5'
+        TrackBar_LobbySpeedAfterPT.ThumbWidth := 55; //Enough to fit 'x1.25'
         TrackBar_LobbySpeedAfterPT.OnChange := GameOptionsChange;
 
     Button_LobbyBack := TKMButton.Create(Panel_Lobby, 30, 723, 220, 30, gResTexts[TX_LOBBY_QUIT], bsMenu);
@@ -1003,8 +1003,8 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 begin
   //Update the game options
   fNetworking.UpdateGameOptions(EnsureRange(TrackBar_LobbyPeacetime.Position, 0, 300),
-                                (TrackBar_LobbySpeedPT.Position - 1) / 2 + 1,
-                                (TrackBar_LobbySpeedAfterPT.Position - 1) / 2 + 1);
+                                (TrackBar_LobbySpeedPT.Position - 1) / 4 + 1,
+                                (TrackBar_LobbySpeedAfterPT.Position - 1) / 4 + 1);
 
   //Refresh the data to controls
   Lobby_OnGameOptions(nil);
@@ -1035,10 +1035,10 @@ begin
   TrackBar_LobbyPeacetime.Position := fNetworking.NetGameOptions.Peacetime;
 
   TrackBar_LobbySpeedPT.Enabled   := (TrackBar_LobbyPeacetime.Position > 0) and TrackBar_LobbySpeedAfterPT.Enabled;
-  TrackBar_LobbySpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) * 2 + 1);
+  TrackBar_LobbySpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) * 4 + 1);
   TrackBar_LobbySpeedPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedPT);
 
-  TrackBar_LobbySpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) * 2 + 1);
+  TrackBar_LobbySpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) * 4 + 1);
   TrackBar_LobbySpeedAfterPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedAfterPT);
 end;
 

@@ -655,8 +655,8 @@ TX_LOBBY_QUIT = 544; //Quit lobby
 TX_LOBBY_READY = 545; //Ready
 TX_LOBBY_NOT_READY = 546; //Not ready
 TX_LOBBY_START = 547; //Start!
-TX_LOBBY_GAMESPEED_PEACETIME = 548; //Game speed (peacetime)
-TX_LOBBY_GAMESPEED = 549; //Game speed
+TX_LOBBY_GAMESPEED_PEACETIME = 548; //Game speed (PT) [real]
+TX_LOBBY_GAMESPEED = 549; //Game speed [real]
 TX_LOBBY_ROOM_OK = 550; //OK
 TX_LOBBY_ROOM_CANCEL = 551; //Cancel
 TX_LOBBY_ROOM_DESCRIPTION = 552; //Description
@@ -744,6 +744,7 @@ TX_CREDITS_ADDITIONAL_TRANSLATIONS = 587; //ADDITIONAL TRANSLATIONS:
 TX_CREDITS_SPECIAL = 588; //SPECIAL THANKS TO:
 
 TX_MENU_MAPED_MPMAPS = 589; //Multiplayer maps
+TX_MENU_MAPED_MPMAPS_SHORT = 1118; //Multiplayer maps
 TX_MENU_MAPED_SPMAPS = 590; //Singleplayer maps
 TX_MENU_MAPED_DLMAPS = 822; //Downloaded maps
 TX_MENU_OPTIONS_SCROLL_SPEED = 591; //Scroll speed
@@ -1072,6 +1073,7 @@ TX_MAPED_MAP_RESIZE_NEW_MAP_SIZE = 1111; //New map size:
 TX_MAPED_MAP_RESIZE_TITLE = 1112; //Resize Map
 
 TX_MAPED_PAINT_BUCKET_CH_OWNER = 1075; //Change owner for object
+TX_MAPED_HOUSE_FLAG_FOR_PLAYER_HINT = 1113; //House owner: %s
 
 TX_MAPED_MAP_QUICK_PLAY = 1076; //Quick Play
 TX_MAPED_MAP_QUICK_PLAY_HINT = 1077; //Start singleplayer game on current map
@@ -1108,3 +1110,9 @@ TX_WORD_MAP = 1102; //Map
 TX_WORD_REPLAY = 1103; //Replay
 TX_WORD_PLAYERS = 1104; //Players
 TX_WORD_TEAMS = 1105; //Teams
+TX_WORD_CLOSE = 1117; //Close
+
+TX_MAPED_PLAYER_DELETE = 1114; //Button / Clear Player
+
+TX_MAPED_PLAYER_DELETE_TITLE = 1115; // Title / Clear Player
+TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?

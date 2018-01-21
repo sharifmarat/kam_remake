@@ -16,7 +16,7 @@ xcopy ..\data\Sprites "%kam_folder%"\data\Sprites\ /y /r /s
 xcopy ..\data\text "%kam_folder%"\data\text\ /y /r /s
 xcopy ..\data\locales.txt "%kam_folder%"\data\locales.txt* /y /r /i
 xcopy ..\Campaigns "%kam_folder%"\Campaigns\ /y /r /s
-xcopy ..\Maps "%kam_folder%"\Maps\ /y /r /s
+xcopy ..\Maps "%kam_folder%"\Maps\ /y /r /s /exclude:excluded_test_maps.txt
 xcopy ..\MapsMP "%kam_folder%"\MapsMP\ /y /r /s
 xcopy ..\Tutorials "%kam_folder%"\Tutorials\ /y /r /s
 xcopy ..\Sounds "%kam_folder%"\Sounds\ /y /r /s
