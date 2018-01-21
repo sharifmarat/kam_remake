@@ -43,7 +43,8 @@ type
 
 implementation
 uses
-  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior;
+  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior,
+  KM_GameTypes;
 
 
 { TKMUnitsCollection }

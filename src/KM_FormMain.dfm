@@ -483,6 +483,11 @@ object FormMain: TFormMain
         Caption = 'Edit mission...'
         OnClick = MenuItem1Click
       end
+      object SaveEditableMission1: TMenuItem
+        Caption = 'Save editable mission...'
+        Enabled = False
+        OnClick = SaveEditableMission1Click
+      end
       object N4: TMenuItem
         Caption = '-'
       end
@@ -624,5 +629,9 @@ object FormMain: TFormMain
       Caption = 'About..'
       OnClick = AboutClick
     end
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 144
+    Top = 8
   end
 end

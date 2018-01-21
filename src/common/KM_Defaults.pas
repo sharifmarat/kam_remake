@@ -809,7 +809,6 @@ const
 var
   ExeDir: UnicodeString;
 
-
 implementation
 
 initialization

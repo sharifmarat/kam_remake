@@ -35,6 +35,8 @@ type
     function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
     procedure ChangeOwner(aChangeOwnerForAll: Boolean);
   public
+    MissionDefSavePath: UnicodeString;
+
     ActiveMarker: TKMMapEdMarker;
 
     ResizeMapRect: TKMRect;
@@ -85,6 +87,8 @@ var
   I: Integer;
 begin
   inherited Create;
+
+  MissionDefSavePath := '';
 
   for I := 0 to MAX_HANDS - 1 do
   begin
@@ -147,6 +151,7 @@ begin
   HasScript := False;
   AttachCnt := 0;
   SetLength(fAttachedFiles, 8);
+  MissionDefSavePath := aMissionFile;
   MissionName := ChangeFileExt(ExtractFileName(aMissionFile), '');
   FindFirst(ChangeFileExt(aMissionFile, '.*'), faAnyFile - faDirectory, SearchRec);
   try
