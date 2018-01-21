@@ -444,7 +444,7 @@ begin
   if not GA_PLANNER then
   begin
     RequiredHouses[ht_Sawmill] := Min(RequiredHouses[ht_Sawmill], Byte(gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 5));
-    if (gGame.GameTickCount - fCornDelay < 0) then // Conside corn delay (~10 minutes) -> time saved by construction
+    if (gGame.GameTickCount < fCornDelay) then // Conside corn delay (~10 minutes) -> time saved by construction
     begin
       RequiredHouses[ht_Swine] := 0;
       RequiredHouses[ht_Mill] := 0;
