@@ -768,6 +768,7 @@ type
     Step: Byte; //Change Position by this amount each time
     ThumbText: UnicodeString;
     ThumbWidth: Word;
+    CaptionWidth: Integer;
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aMin, aMax: Word);
 
@@ -4147,6 +4148,7 @@ begin
   Position := (fMinValue + fMaxValue) div 2;
   Caption := '';
   ThumbWidth := gRes.Fonts[fFont].GetTextSize(IntToStr(MaxValue)).X + 24;
+  CaptionWidth := -1;
 
   Font := fnt_Metal;
   Step := 1;
@@ -4209,11 +4211,19 @@ const //Text color for disabled and enabled control
   TextColor: array [Boolean] of TColor4 = ($FF888888, $FFFFFFFF);
 var
   ThumbPos, ThumbHeight: Word;
+  CapWidth: Integer;
 begin
   inherited;
 
   if fCaption <> '' then
-    TKMRenderUI.WriteText(AbsLeft, AbsTop, Width, fCaption, fFont, taLeft, TextColor[fEnabled]);
+  begin
+    if CaptionWidth = -1 then
+      CapWidth := Width
+    else
+      CapWidth := CaptionWidth;
+
+    TKMRenderUI.WriteText(AbsLeft, AbsTop, CapWidth, fCaption, fFont, taLeft, TextColor[fEnabled]);
+  end;
 
   TKMRenderUI.WriteBevel(AbsLeft+2,AbsTop+fTrackTop+2,Width-4,fTrackHeight-4);
   ThumbPos := Round(Mix (0, Width - ThumbWidth - 4, 1-(Position-fMinValue) / (fMaxValue - fMinValue)));
