@@ -1,4 +1,4 @@
-unit KM_GUIMenuResultsSP;
+unit KM_GUIGameResultsSP;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -9,7 +9,7 @@ uses
 
 
 type
-  TKMMenuResultsSP = class (TKMMenuPageCommon)
+  TKMGameResultsSP = class (TKMMenuPageCommon)
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
     fGameResultMsg: TGameResultMsg; //So we know where to go after results screen
@@ -70,7 +70,7 @@ uses
 
 
 { TKMGUIMenuResultsSP }
-constructor TKMMenuResultsSP.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMGameResultsSP.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
 begin
   inherited Create;
 
@@ -79,7 +79,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.Refresh;
+procedure TKMGameResultsSP.Refresh;
 var
   TempGraphCount: Integer;
   TempGraphs: array [0..MAX_HANDS-1] of record
@@ -260,7 +260,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.GraphToggle(Sender: TObject);
+procedure TKMGameResultsSP.GraphToggle(Sender: TObject);
 begin
   Chart_Army.Visible := Sender = Button_ResultsArmy;
   Chart_Citizens.Visible := Sender = Button_ResultsCitizens;
@@ -274,7 +274,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.Show(aMsg: TGameResultMsg);
+procedure TKMGameResultsSP.Show(aMsg: TGameResultMsg);
 begin
   if aMsg <> gr_ShowStats then //Do not update game result, if we came back from MP Stats page
     fGameResultMsg := aMsg;
@@ -286,7 +286,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.Create_Results(aParent: TKMPanel);
+procedure TKMGameResultsSP.Create_Results(aParent: TKMPanel);
 const
   LEGEND_WIDTH = 150;
   StatText: array [1..9] of Word = (
@@ -410,13 +410,13 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.MoreStatsClick(Sender: TObject);
+procedure TKMGameResultsSP.MoreStatsClick(Sender: TObject);
 begin
   fOnPageChange(gpResultsMP);
 end;
 
 
-procedure TKMMenuResultsSP.BackClick(Sender: TObject);
+procedure TKMGameResultsSP.BackClick(Sender: TObject);
 begin
   //Depending on where we were created we need to return to a different place
   //Campaign game end     -> ResultsSP -> Main menu
@@ -432,7 +432,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.ContinueClick(Sender: TObject);
+procedure TKMGameResultsSP.ContinueClick(Sender: TObject);
 var TheCampaign: UnicodeString;
 begin
   TheCampaign := Char(fRepeatCampName[0]) + Char(fRepeatCampName[1]) + Char(fRepeatCampName[2]);
@@ -440,7 +440,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.RepeatClick(Sender: TObject);
+procedure TKMGameResultsSP.RepeatClick(Sender: TObject);
 begin
   //Means replay last map
   gGameApp.NewRestartLast(fRepeatGameName, fRepeatMission, fRepeatSave, fGameMode, fRepeatCampName, fRepeatCampMap, fRepeatLocation, fRepeatColor);

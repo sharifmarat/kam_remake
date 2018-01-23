@@ -1,4 +1,4 @@
-unit KM_GUIMenuResultsMP;
+unit KM_GUIGameResultsMP;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -55,7 +55,7 @@ type
 
   TKMStatsValues = array[0..MAX_HANDS-1] of array [0..9] of Cardinal;
 
-  TKMMenuResultsMP = class (TKMMenuPageCommon)
+  TKMGameResultsMP = class (TKMMenuPageCommon)
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
 
@@ -319,7 +319,7 @@ end;
 
 
 { TKMGUIMenuResultsMP }
-constructor TKMMenuResultsMP.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMGameResultsMP.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
 var
   ST: TKMStatType;
 begin
@@ -337,7 +337,7 @@ begin
 end;
 
 
-destructor TKMMenuResultsMP.Destroy;
+destructor TKMGameResultsMP.Destroy;
 var
   WType: TKMChartWarriorType;
   CKind: TKMChartArmyKind;
@@ -356,7 +356,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.CreateBars(aParent: TKMPanel);
+procedure TKMGameResultsMP.CreateBars(aParent: TKMPanel);
 const
   BarStep = 150;
   BarWidth = BarStep - 10;
@@ -414,7 +414,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.CreateChartEconomy;
+procedure TKMGameResultsMP.CreateChartEconomy;
 const
   RADIO_ECO_HEIGHT = 80;
 begin
@@ -463,13 +463,13 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.RadioEconomyTypeChange(Sender: TObject);
+procedure TKMGameResultsMP.RadioEconomyTypeChange(Sender: TObject);
 begin
   EconomyUpdate(nil);
 end;
 
 
-procedure TKMMenuResultsMP.CreateChartWares(aParent: TKMPanel);
+procedure TKMGameResultsMP.CreateChartWares(aParent: TKMPanel);
 
   procedure SetupWareColumnBox(aColumnBox: TKMColumnBox);
   begin
@@ -538,13 +538,13 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.RadioWareTypeChange(Sender: TObject);
+procedure TKMGameResultsMP.RadioWareTypeChange(Sender: TObject);
 begin
   WareUpdate(Radio_ChartWareType);
 end;
 
 
-procedure TKMMenuResultsMP.CreateChartArmy(aParent: TKMPanel);
+procedure TKMGameResultsMP.CreateChartArmy(aParent: TKMPanel);
 const
   ARMY_TYPE_HEIGHT = 120;
 var
@@ -597,13 +597,13 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.RadioArmyTypeChange(Sender: TObject);
+procedure TKMGameResultsMP.RadioArmyTypeChange(Sender: TObject);
 begin
   ArmyUpdate(nil);
 end;
 
 
-procedure TKMMenuResultsMP.StatTypeChange(Sender: TObject);
+procedure TKMGameResultsMP.StatTypeChange(Sender: TObject);
 begin
   if Sender = Button_Players then
     fStatType := st_ByPlayers;
@@ -618,7 +618,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.UpdateVisibleTab;
+procedure TKMGameResultsMP.UpdateVisibleTab;
 begin
   if Panel_Bars.Visible then
     BarsUpdate(fStatType);
@@ -631,7 +631,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.TabChange(Sender: TObject);
+procedure TKMGameResultsMP.TabChange(Sender: TObject);
 begin
   Button_MPResultsBars.Down := Sender = Button_MPResultsBars;
   Button_MPResultsArmy.Down := Sender = Button_MPResultsArmy;
@@ -647,7 +647,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.BarsUpdate(aStatType: TKMStatType);
+procedure TKMGameResultsMP.BarsUpdate(aStatType: TKMStatType);
 const
   STATS_LOWER_IS_BETTER: set of Byte = [1,3,6];
 
@@ -777,7 +777,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.EconomyUpdate(Sender: TObject);
+procedure TKMGameResultsMP.EconomyUpdate(Sender: TObject);
 begin
   //Hide everything first
   Chart_Players_Houses.Hide;
@@ -809,7 +809,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.WareUpdate(Sender: TObject);
+procedure TKMGameResultsMP.WareUpdate(Sender: TObject);
 
   procedure ChangeWareChart(aChart: TKMChart; aUseGDP: Boolean);
     procedure CheckChart(aChartToFind: TKMChart);
@@ -902,13 +902,13 @@ begin
 end;
 
 
-function TKMMenuResultsMP.GetSelectedChartArmyKind: TKMChartArmyKind;
+function TKMGameResultsMP.GetSelectedChartArmyKind: TKMChartArmyKind;
 begin
   Result := TKMChartArmyKind(Radio_ChartArmyType.ItemIndex);
 end;
 
 
-procedure TKMMenuResultsMP.ArmyUpdate(Sender: TObject);
+procedure TKMGameResultsMP.ArmyUpdate(Sender: TObject);
 var
   K: Integer;
   SelectedWType, WType: TKMChartWarriorType;
@@ -981,13 +981,13 @@ begin
 end;
 
 
-function TKMMenuResultsMP.DoShowHandStats(aHandId: Integer): Boolean;
+function TKMGameResultsMP.DoShowHandStats(aHandId: Integer): Boolean;
 begin
   Result := gHands[aHandId].Enabled and (fShowAIResults or gHands[aHandId].IsHuman);
 end;
 
 
-procedure TKMMenuResultsMP.RecreateListToShow(aStatType: TKMStatType);
+procedure TKMGameResultsMP.RecreateListToShow(aStatType: TKMStatType);
 begin
   if fListToShow[aStatType] <> nil then
     FreeAndNil(fListToShow[aStatType]);
@@ -998,13 +998,13 @@ begin
 end;
 
 
-function TKMMenuResultsMP.DoAdjoinSameColorHand(aHandId: Integer): Boolean;
+function TKMGameResultsMP.DoAdjoinSameColorHand(aHandId: Integer): Boolean;
 begin
   Result := gHands[aHandId].IsComputer and (gGame.GameMode in [gmSingle, gmCampaign, gmReplaySingle]); //Adjoin only AI's in SP games
 end;
 
 
-procedure TKMMenuResultsMP.ReinitPlayersToShow;
+procedure TKMGameResultsMP.ReinitPlayersToShow;
 var
   HandsUniqueColorsCnt: Integer;
   HandsUniqueColors: array[0..MAX_HANDS-1] of record
@@ -1095,7 +1095,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.ReinitTeamsToShow;
+procedure TKMGameResultsMP.ReinitTeamsToShow;
   procedure AddToNewTeam(aFirstHandId: Integer; aPlayersList: TStringList);
   var
     PlayersList: TStringList;
@@ -1153,7 +1153,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.Reinit;
+procedure TKMGameResultsMP.Reinit;
 var
   I: Integer;
   BackCaption: String;
@@ -1219,7 +1219,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.ReinitBars;
+procedure TKMGameResultsMP.ReinitBars;
 
   function GetStatValue(aHandId, aStatId: Integer): Cardinal;
   begin
@@ -1279,7 +1279,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.ReinitChartEconomy;
+procedure TKMGameResultsMP.ReinitChartEconomy;
 
   function GetEconomyChart(aStatType: TKMStatType; aEcoStatKind: TKMEconomyStatKind): PKMChart;
   begin
@@ -1357,7 +1357,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.ReinitChartWares;
+procedure TKMGameResultsMP.ReinitChartWares;
 const
   WARES_CNT = 31;
 
@@ -1455,7 +1455,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.ReinitChartArmy;
+procedure TKMGameResultsMP.ReinitChartArmy;
 type
   TKMChartArmyCaptionIndex = array[TKMChartArmyKind] of Integer;
 const
@@ -1543,7 +1543,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.Create_ResultsMP(aParent: TKMPanel);
+procedure TKMGameResultsMP.Create_ResultsMP(aParent: TKMPanel);
 const
   TABS_TOP = 75;
 begin
@@ -1627,7 +1627,7 @@ begin
 end;
 
 
-function TKMMenuResultsMP.GetChartWares(aPlayer: TKMHandIndex; aWare: TWareType; aUseGDP: Boolean): TKMCardinalArray;
+function TKMGameResultsMP.GetChartWares(aPlayer: TKMHandIndex; aWare: TWareType; aUseGDP: Boolean): TKMCardinalArray;
 const
   FoodWares: array[0..3] of TWareType = (wt_Bread, wt_Sausages, wt_Wine, wt_Fish);
   FoodWaresRestore: array[0..3] of Single = (BREAD_RESTORE,SAUSAGE_RESTORE,WINE_RESTORE,FISH_RESTORE);
@@ -1685,7 +1685,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.Show(aMsg: TGameResultMsg);
+procedure TKMGameResultsMP.Show(aMsg: TGameResultMsg);
 begin
   fGameResultMsg := aMsg;
 
@@ -1696,7 +1696,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.BackClick(Sender: TObject);
+procedure TKMGameResultsMP.BackClick(Sender: TObject);
 begin
   //Depending on where we were created we need to return to a different place
   //Multiplayer game end   -> ResultsMP -> Multiplayer

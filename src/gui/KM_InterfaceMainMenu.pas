@@ -19,8 +19,8 @@ uses
   KM_GUIMenuMultiplayer,
   KM_GUIMenuOptions,
   KM_GUIMenuReplays,
-  KM_GUIMenuResultsMP,
-  KM_GUIMenuResultsSP,
+  KM_GUIGameResultsSP,
+  KM_GUIGameResultsMP,
   KM_GUIMenuSingleMap,
   KM_GUIMenuSinglePlayer;
 
@@ -40,8 +40,8 @@ type
     fMenuMultiplayer: TKMMenuMultiplayer;
     fMenuOptions: TKMMenuOptions;
     fMenuReplays: TKMMenuReplays;
-    fMenuResultsMP: TKMMenuResultsMP;
-    fMenuResultsSP: TKMMenuResultsSP;
+    fMenuResultsMP: TKMGameResultsMP;
+    fMenuResultsSP: TKMGameResultsSP;
     fMenuSingleMap: TKMMenuSingleMap;
     fMenuSinglePlayer: TKMMenuSinglePlayer;
 
@@ -110,8 +110,8 @@ begin
   fMenuCredits       := TKMMenuCredits.Create(Panel_Menu, PageChange);
   fMenuError         := TKMMenuError.Create(Panel_Menu, PageChange);
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
-  fMenuResultsMP     := TKMMenuResultsMP.Create(Panel_Menu, PageChange);
-  fMenuResultsSP     := TKMMenuResultsSP.Create(Panel_Menu, PageChange);
+  fMenuResultsMP     := TKMGameResultsMP.Create(Panel_Menu, PageChange);
+  fMenuResultsSP     := TKMGameResultsSP.Create(Panel_Menu, PageChange);
 
     {for i:=1 to length(FontFiles) do L[i]:=TKMLabel.Create(Panel_Main1,550,280+i*20,160,30,'This is a test string for KaM Remake ('+FontFiles[i],TKMFont(i),taLeft);//}
     //MyControls.AddTextEdit(Panel_Main, 32, 32, 200, 20, fnt_Grey);
