@@ -552,9 +552,9 @@ procedure TFormMain.Button_StopClick(Sender: TObject);
 begin
   if gGameApp.Game <> nil then
     if gGameApp.Game.IsMapEditor then
-      gGameApp.Stop(gr_MapEdEnd)
+      gGameApp.StopGame(gr_MapEdEnd)
     else
-      gGameApp.Stop(gr_Cancel);
+      gGameApp.StopGame(gr_Cancel);
 end;
 
 

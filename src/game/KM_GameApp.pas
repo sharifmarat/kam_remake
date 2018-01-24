@@ -41,7 +41,7 @@ type
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
-    procedure Stop(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+    procedure StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
     procedure StopGameReturnToLobby(Sender: TObject);
@@ -184,7 +184,7 @@ begin
   //Stop music imediently, so it doesn't keep playing and jerk while things closes
   if fMusicLib <> nil then fMusicLib.StopMusic;
 
-  Stop(gr_Silent);
+  StopGame(gr_Silent);
 
   FreeAndNil(fTimerUI);
   if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
@@ -412,7 +412,7 @@ end;
 //4. Fill in menu message if needed
 //5. Free the game object
 //6. Switch to MainMenu
-procedure TKMGameApp.Stop(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+procedure TKMGameApp.StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
 begin
   if gGame = nil then Exit;
 
@@ -514,7 +514,7 @@ procedure TKMGameApp.LoadGameFromSave(const aFilePath: UnicodeString; aGameMode:
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -532,7 +532,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -550,7 +550,7 @@ procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: UnicodeSt
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -568,7 +568,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -585,7 +585,7 @@ procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGa
 var
   LoadError: string;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -603,7 +603,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], ['-'])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );

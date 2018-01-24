@@ -1483,11 +1483,11 @@ procedure TKMGamePlayInterface.Menu_QuitMission(Sender: TObject);
 begin
 
   if (gGame.GameMode = gmMulti) and (gGame.PlayOnState = gr_Cancel) then
-    gGameApp.Stop(gr_Defeat) //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
+    gGameApp.StopGame(gr_Defeat) //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
   else
     // Show outcome depending on actual situation.
     // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
-    gGameApp.Stop(gGame.PlayOnState);
+    gGameApp.StopGame(gGame.PlayOnState);
 end;
 
 
@@ -2343,7 +2343,7 @@ begin
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_DROP_PLAYERS] then
       gGame.WaitingPlayersDrop else
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_QUIT_TO_MENU] then
-      gGameApp.Stop(gr_Cancel);
+      gGameApp.StopGame(gr_Cancel);
   end
   else raise Exception.Create('Wrong Sender in NetWaitClick');
 end;

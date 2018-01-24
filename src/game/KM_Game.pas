@@ -667,7 +667,7 @@ begin
   else
   begin
     fNetworking.Disconnect;
-    gGameApp.Stop(gr_Disconnect, gResTexts[TX_GAME_ERROR_NETWORK] + ' ' + aData)
+    gGameApp.StopGame(gr_Disconnect, gResTexts[TX_GAME_ERROR_NETWORK] + ' ' + aData)
   end;
 end;
 
@@ -749,7 +749,7 @@ begin
                     fIgnoreConsistencyCheckErrors := True;  // Ignore these errors in future while watching this replay
                     fIsPaused := False;
                   end
-      else        gGameApp.Stop(gr_Error, '');
+      else        gGameApp.StopGame(gr_Error, '');
     end;
   end;
 end;
