@@ -176,7 +176,8 @@ var
   //Statistic
   CtrlPaintCount: Word; //How many Controls were painted in last frame
   {AI_GA_Tests}
-  GA_PLANNER            :Boolean = False;
+  GA_PLANNER            :Boolean = False; // Activation of special code for genetic algorithm (class Planner)
+  GA_BUILDER            :Boolean = False; // Activation of special code for genetic algorithm (class Builder)
 
 
 const
