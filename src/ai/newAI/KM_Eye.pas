@@ -482,8 +482,8 @@ begin
       continue;
     // Make sure we can add road below house;
     // Woodcutters / CoalMine may take place for mine so its arena must be scaned completely
-    if (
-         (Dir = dirS) OR (aHT = ht_Woodcutters) OR (aHT = ht_CoalMine)
+    if (  // Direction south + not in case of house reservation OR specific house
+         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT = ht_Woodcutters) OR (aHT = ht_CoalMine)
        ) AND not (
          (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ft_Road)
          OR (gTerrain.Land[Y, X].TileLock = tlRoadWork)
