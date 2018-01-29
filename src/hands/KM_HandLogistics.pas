@@ -582,7 +582,7 @@ end;
 
 function TKMDeliveries.GetDemandsCnt(aHouse: TKMHouse; aResource: TWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
 var
-  I,K,J: Integer;
+  I: Integer;
   Demand: TKMDeliveryDemand;
 begin
   Result := 0;
