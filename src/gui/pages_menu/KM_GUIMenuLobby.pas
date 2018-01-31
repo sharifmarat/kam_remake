@@ -2053,9 +2053,15 @@ var
 begin
   //Common settings
   MinimapView_Lobby.Visible := (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.BlockPeacetime;
-  TrackBar_LobbySpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbySpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
+  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost
+                                     and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid
+                                     and not fNetworking.MapInfo.BlockPeacetime;
+  TrackBar_LobbySpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost
+                                    and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
+                                      or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
+  TrackBar_LobbySpeedAfterPT.Enabled := fNetworking.IsHost
+                                        and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
+                                          or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
   CheckBox_LobbyRandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngk_Save);
 
   //In case it was hidden during file transfer
