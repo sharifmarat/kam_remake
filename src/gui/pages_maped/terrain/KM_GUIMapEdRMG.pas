@@ -93,6 +93,7 @@ begin
   Panel_RMG := TKMPanel.Create(aParent, (aParent.Width - SIZE_X) div 2, (aParent.Height - SIZE_Y) div 2, SIZE_X, SIZE_Y);
   Panel_RMG.AnchorsCenter;
   Panel_RMG.Hide;
+  Panel_RMG.PanelHandleMouseWheelByDefault := False; //Allow to zoom in/out while RMG settings window is open
 
   TKMBevel.Create(Panel_RMG, -1000,  -1000, 4000, 4000);
   Img := TKMImage.Create(Panel_RMG, -20, -50, SIZE_X+40, SIZE_Y+60, 15, rxGuiMain);
