@@ -140,6 +140,7 @@ end;
 procedure TKMMapEdTerrain.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
 begin
   fGuiBrushes.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+  fGuiHeights.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
 end;
 
 
