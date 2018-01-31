@@ -221,6 +221,7 @@ TX_UNIT_TASK_GRAPES = 201; //Harvesting grapes
 TX_UNIT_TASK_FISHING = 202; //Fishing
 TX_UNIT_TASK_CUT_TREE = 203; //Cutting tree
 TX_UNIT_TASK_PLANT_TREE = 204; //Planting tree
+TX_UNIT_TASK_DISMISS = 1122; //Dismiss
 
 TX_MUSIC__29 = 205; //Spirit
 TX_MUSIC_BUSY = 206; //Busy

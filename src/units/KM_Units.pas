@@ -79,6 +79,7 @@ type
     fVisible: Boolean;
     fIsDead: Boolean;
     fKillASAP: Boolean;
+    fDismissASAP: Boolean;
     fKillASAPShowAnimation: Boolean;
     fPointerCount: Word;
     fInHouse: TKMHouse; //House we are currently in
@@ -100,6 +101,7 @@ type
     function UpdateVisibility: Boolean;
     procedure UpdateHitPoints;
     procedure DoKill(aShowAnimation: Boolean);
+    procedure DoDismiss;
   public
     AnimStep: Integer;
     IsExchanging: Boolean; //Current walk is an exchange, used for sliding
@@ -107,6 +109,7 @@ type
     OnUnitTrained: TKMUnitEvent;
 
     HitPointsInvulnerable: Boolean;
+    Dismissable: Boolean; //Is it allowed to dismiss this unit ?
 
     constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); dynamic;
@@ -117,7 +120,11 @@ type
     procedure ReleaseUnitPointer;  //Decreases the pointer counter
     property GetPointerCount: Word read fPointerCount;
 
-    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); virtual; //Creates TTaskDie which then will Close the unit from further access
+    //Creates TTaskDie which then will Close the unit from further access
+    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); virtual;
+    //Creates TTaskDismiss
+    procedure Dismiss; virtual;
+
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); dynamic;
 
     property UID: Integer read fUID;
@@ -199,28 +206,30 @@ type
   private
     procedure CleanHousePointer(aFreeAndNilTask: Boolean = False);
   protected
+    function InitiateActivity: TUnitTask; virtual; abstract;
+  protected
     function FindHome: Boolean;
     procedure ProceedHouseClosedForWorker;
+    function UpdateState: Boolean; override;
   end;
 
   //This is a common class for all units, who can work in house
   TKMUnitCitizen = class(TKMSettledUnit)
   private
-    function InitiateMining: TUnitTask;
     procedure IssueResourceDepletedMessage;
+  protected
+    function InitiateActivity: TUnitTask; override;
   public
     function CanWorkAt(aLoc: TKMPoint; aGatheringScript: TGatheringScript): Boolean;
     function GetActivityText: UnicodeString; override;
-    function UpdateState: Boolean; override;
     procedure Paint; override;
   end;
 
 
   TKMUnitRecruit = class(TKMSettledUnit)
-  private
-    function InitiateActivity: TUnitTask;
+  protected
+    function InitiateActivity: TUnitTask; override;
   public
-    function UpdateState: Boolean; override;
     procedure Paint; override;
     procedure DestroyInBarracks;
   end;
@@ -295,6 +304,7 @@ uses
   KM_UnitTaskDie,
   KM_UnitTaskGoEat,
   KM_UnitTaskGoHome,
+  KM_UnitTaskDismiss,
   KM_UnitTaskGoOutShowHungry,
   KM_UnitTaskMining,
   KM_UnitTaskSelfTrain,
@@ -391,6 +401,76 @@ begin
 end;
 
 
+function TKMSettledUnit.UpdateState: Boolean;
+var
+  HInn: TKMHouseInn;
+begin
+  Result := True;
+  if fCurrentAction = nil then
+    raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMSettledUnit.UpdateState', fCurrPosition);
+
+  //Reset unit activity if home was destroyed, except when unit is dying or eating (finish eating/dying first)
+  if (fHome <> nil)
+    and fHome.IsDestroyed
+    and not(fUnitTask is TTaskDie)
+    and not(fUnitTask is TTaskGoEat) then
+  begin
+    if (fCurrentAction is TUnitActionWalkTo)
+      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+      AbandonWalk;
+    FreeAndNil(fUnitTask);
+    gHands.CleanUpHousePointer(fHome);
+  end;
+
+  ProceedHouseClosedForWorker;
+
+  if inherited UpdateState then Exit;
+  if IsDead then Exit; //Caused by SelfTrain.Abandoned
+
+  fThought := th_None;
+
+  if fCondition < UNIT_MIN_CONDITION then
+  begin
+    HInn := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
+    if HInn <> nil then
+      fUnitTask := TTaskGoEat.Create(HInn,Self)
+    else
+      if (fHome <> nil) and not fVisible then
+        fUnitTask := TTaskGoOutShowHungry.Create(Self);
+  end;
+
+  if fUnitTask = nil then //If Unit still got nothing to do, nevermind hunger
+    if fHome = nil then
+      if FindHome then
+        fUnitTask := TTaskGoHome.Create(Self) //Home found - go there
+      else begin
+        fThought := th_Quest; //Always show quest when idle, unlike serfs who randomly show it
+        SetActionStay(20, ua_Walk) //There's no home, but there will hopefully be one soon so don't sleep too long
+      end
+    else
+      if fVisible then //Unit is not at home, but it has one
+      begin
+        if CanAccessHome then
+          fUnitTask := TTaskGoHome.Create(Self)
+        else
+          SetActionStay(60, ua_Walk) //Home can't be reached
+      end else begin
+
+        if not (fHome.HouseType in HOUSE_WORKSHOP)
+          or (fHome.CheckResOut(wt_All) < MAX_WARES_OUT_WORKSHOP) then //Do not do anything if we have too many ready resources
+          fUnitTask := InitiateActivity; //Unit is at home, so go get a job
+
+        if fUnitTask = nil then //We didn't find any job to do - rest at home
+          SetActionStay(Max(gRes.Houses[fHome.HouseType].WorkerRest,1)*10, ua_Walk); //By default it's 0, don't scan that often
+      end;
+
+  if fCurrentAction = nil then
+    raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at end of TKMSettledUnit.UpdateState',fCurrPosition);
+
+  Result := False;
+end;
+
+
 { TKMUnitCitizen }
 procedure TKMUnitCitizen.Paint;
 var
@@ -455,86 +535,6 @@ begin
 end;
 
 
-function TKMUnitCitizen.UpdateState: Boolean;
-var
-  houseInn: TKMHouseInn;
-begin
-  Result := True; //Required for override compatibility
-  if fCurrentAction = nil then
-    raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnitCitizen.UpdateState', fCurrPosition);
-
-  //Reset unit activity if home was destroyed, except when unit is dying or eating (finish eating/dying first)
-  if (fHome <> nil)
-  and fHome.IsDestroyed
-  and not(fUnitTask is TTaskDie)
-  and not(fUnitTask is TTaskGoEat) then
-  begin
-    if (fCurrentAction is TUnitActionWalkTo)
-    and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
-      AbandonWalk;
-    if (UnitTask is TTaskMining) and (GetUnitAction is TUnitActionStay) and (fInHouse = fHome) then
-      SetActionStay(0, ua_Walk); //If we were working inside the house stop
-    FreeAndNil(fUnitTask);
-    gHands.CleanUpHousePointer(fHome);
-  end;
-
-  ProceedHouseClosedForWorker;
-
-  if inherited UpdateState then exit;
-  if IsDead then exit; //Caused by SelfTrain.Abandoned
-
-  fThought := th_None;
-
-{  if fUnitTask=nil then //Which is always nil if 'inherited UpdateState' works properly
-  if not TestHunger then
-  if not TestHasHome then
-  if not TestAtHome then
-  if not TestMining then
-    Idle..}
-
-
-  //See if need to get to eat
-  if fCondition < UNIT_MIN_CONDITION then
-  begin
-    houseInn := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
-    if houseInn <> nil then
-      fUnitTask := TTaskGoEat.Create(houseInn, Self)
-    else
-      if (fHome <> nil) and not fVisible then
-        //If we inside home - go out and return (I suspect that was same task as TTaskGoEat in KaM though)
-        fUnitTask := TTaskGoOutShowHungry.Create(Self)
-  end;
-
-  if fUnitTask = nil then //If Unit still got nothing to do, nevermind hunger
-    if fHome = nil then
-      if FindHome then
-        fUnitTask := TTaskGoHome.Create(Self) //Home found - go there
-      else begin
-        fThought := th_Quest; //Always show quest when idle, unlike serfs who randomly show it
-        SetActionStay(20, ua_Walk) //There's no home, but there will hopefully be one soon so don't sleep too long
-      end
-    else
-      if fVisible then //Unit is not at home, but it has one
-      begin
-        if CanAccessHome then
-          fUnitTask := TTaskGoHome.Create(Self)
-        else
-          SetActionStay(60, ua_Walk) //Home can't be reached
-      end
-      else
-      begin
-        if not (fHome.HouseType in HOUSE_WORKSHOP) or (fHome.CheckResOut(wt_All) < MAX_WARES_OUT_WORKSHOP) then
-          fUnitTask := InitiateMining; //Unit is at home, so go get a job
-
-        if fUnitTask = nil then //We didn't find any job to do - rest at home
-          SetActionStay(gRes.Houses[fHome.HouseType].WorkerRest*10, ua_Walk);
-      end;
-
-  if fCurrentAction = nil then
-    raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at end of TKMUnitCitizen.UpdateState', fCurrPosition);
-end;
-
-
 procedure TKMUnitCitizen.IssueResourceDepletedMessage;
 var
   Msg: Word;
@@ -562,7 +562,7 @@ begin
 end;
 
 
-function TKMUnitCitizen.InitiateMining: TUnitTask;
+function TKMUnitCitizen.InitiateActivity: TUnitTask;
 var
   Res: Integer;
   TM: TTaskMining;
@@ -594,10 +594,10 @@ begin
     IssueResourceDepletedMessage;
 
   if TM.WorkPlan.IsIssued
-  and ((TM.WorkPlan.Resource1 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource1) >= TM.WorkPlan.Count1))
-  and ((TM.WorkPlan.Resource2 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource2) >= TM.WorkPlan.Count2))
-  and (fHome.CheckResOut(TM.WorkPlan.Product1) < MAX_WARES_IN_HOUSE)
-  and (fHome.CheckResOut(TM.WorkPlan.Product2) < MAX_WARES_IN_HOUSE) then
+    and ((TM.WorkPlan.Resource1 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource1) >= TM.WorkPlan.Count1))
+    and ((TM.WorkPlan.Resource2 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource2) >= TM.WorkPlan.Count2))
+    and (fHome.CheckResOut(TM.WorkPlan.Product1) < MAX_WARES_IN_HOUSE)
+    and (fHome.CheckResOut(TM.WorkPlan.Product2) < MAX_WARES_IN_HOUSE) then
   begin
     //if fResource.HouseDat[fHome.HouseType].DoesOrders then
       //Take order to production
@@ -658,68 +658,6 @@ begin
   FreeAndNil(fUnitTask);
 
   CloseUnit(False); //Don't remove tile usage, we are inside the barracks
-end;
-
-
-function TKMUnitRecruit.UpdateState: Boolean;
-var
-  H: TKMHouseInn;
-begin
-  Result := True; //Required for override compatibility
-  if fCurrentAction=nil then raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at start of TKMUnitRecruit.UpdateState',fCurrPosition);
-
-  //Reset unit activity if home was destroyed, except when unit is dying or eating (finish eating/dying first)
-  if (fHome <> nil)
-  and fHome.IsDestroyed
-  and not(fUnitTask is TTaskDie)
-  and not(fUnitTask is TTaskGoEat) then
-  begin
-    if (fCurrentAction is TUnitActionWalkTo)
-    and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
-      AbandonWalk;
-    FreeAndNil(fUnitTask);
-    gHands.CleanUpHousePointer(fHome);
-  end;
-
-  ProceedHouseClosedForWorker;
-
-  if inherited UpdateState then exit;
-  if IsDead then exit; //Caused by SelfTrain.Abandoned
-
-  fThought := th_None;
-
-  if fCondition < UNIT_MIN_CONDITION then
-  begin
-    H := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
-    if H <> nil then
-      fUnitTask := TTaskGoEat.Create(H,Self)
-    else
-      if (fHome <> nil) and not fVisible then
-        fUnitTask := TTaskGoOutShowHungry.Create(Self);
-  end;
-
-  if fUnitTask=nil then //If Unit still got nothing to do, nevermind hunger
-    if fHome=nil then
-      if FindHome then
-        fUnitTask := TTaskGoHome.Create(Self) //Home found - go there
-      else begin
-        fThought := th_Quest; //Always show quest when idle, unlike serfs who randomly show it
-        SetActionStay(20, ua_Walk) //There's no home
-      end
-    else
-      if fVisible then //Unit is not at home, but it has one
-      begin
-        if CanAccessHome then
-          fUnitTask := TTaskGoHome.Create(Self)
-        else
-          SetActionStay(60, ua_Walk) //Home can't be reached
-      end else begin
-        fUnitTask := InitiateActivity; //Unit is at home, so go get a job
-        if fUnitTask=nil then //We didn't find any job to do - rest at home
-          SetActionStay(Max(gRes.Houses[fHome.HouseType].WorkerRest,1)*10, ua_Walk); //By default it's 0, don't scan that often
-      end;
-
-  if fCurrentAction=nil then raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at end of TKMUnitRecruit.UpdateState',fCurrPosition);
 end;
 
 
@@ -1113,9 +1051,10 @@ begin
   fOwner        := aOwner;
   fUnitType     := aUnitType;
   fDirection    := dir_S;
-  fVisible      := true;
-  IsExchanging  := false;
+  fVisible      := True;
+  IsExchanging  := False;
   AnimStep      := UnitStillFrames[fDirection]; //Use still frame at begining, so units don't all change frame on first tick
+  Dismissable   := True;
 
   //Units start with a random amount of condition ranging from 0.5 to 0.7 (KaM uses 0.6 for all units)
   //By adding the random amount they won't all go eat at the same time and cause crowding, blockages, food shortages and other problems.
@@ -1172,6 +1111,7 @@ begin
       utn_BuildHouse:      fUnitTask := TTaskBuildHouse.Load(LoadStream);
       utn_BuildHouseRepair:fUnitTask := TTaskBuildHouseRepair.Load(LoadStream);
       utn_GoHome:          fUnitTask := TTaskGoHome.Load(LoadStream);
+      utn_Dismiss:         fUnitTask := TTaskDismiss.Load(LoadStream);
       utn_AttackHouse:     fUnitTask := TTaskAttackHouse.Load(LoadStream);
       utn_ThrowRock:       fUnitTask := TTaskThrowRock.Load(LoadStream);
       utn_GoEat:           fUnitTask := TTaskGoEat.Load(LoadStream);
@@ -1227,6 +1167,8 @@ begin
   LoadStream.Read(fCurrPosition);
   LoadStream.Read(fPrevPosition);
   LoadStream.Read(fNextPosition);
+  LoadStream.Read(fDismissASAP);
+  LoadStream.Read(Dismissable);
 end;
 
 
@@ -1299,6 +1241,30 @@ begin
 end;
 
 
+procedure TKMUnit.Dismiss;
+begin
+  if not Dismissable or IsDeadOrDying then
+    Exit;
+
+  if (fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  begin
+    fDismissASAP := True; //Unit will be dismissed ASAP, when unit is ready for it
+    Exit;
+  end;
+
+  DoDismiss;
+end;
+
+
+procedure TKMUnit.DoDismiss;
+begin
+  fThought := th_None; //Reset thought
+  SetAction(nil); //Dispose of current action
+  FreeAndNil(fUnitTask); //Should be overriden to dispose of Task-specific items
+  fUnitTask := TTaskDismiss.Create(Self);
+end;
+
+
 {Call this procedure to properly kill a unit. ForceDelay means we always use KillASAP}
 //killing a unit is done in 3 steps
 // Kill - release all unit-specific tasks
@@ -1323,7 +1289,7 @@ begin
 
   // Wait till units exchange (1 tick) and then do the killing
   if aForceDelay
-  or ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
+    or ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
   begin
     fKillASAP := True; //Unit will be killed ASAP, when unit is ready for it
     fKillASAPShowAnimation := aShowAnimation;
@@ -1900,6 +1866,7 @@ const
       TX_UNIT_TASK_HOUSE,      //utn_BuildHouse
       TX_UNIT_TASK_REPAIRING,  //utn_BuildHouseRepair
       TX_UNIT_TASK_HOME,       //utn_GoHome
+      TX_UNIT_TASK_DISMISS,    //utn_Dismiss
       TX_UNIT_TASK_INN,        //utn_GoEat
       -1,                      //utn_Mining (overridden by Citizen)
       -1,                      //utn_Die (never visible)
@@ -2057,6 +2024,8 @@ begin
   SaveStream.Write(fCurrPosition);
   SaveStream.Write(fPrevPosition);
   SaveStream.Write(fNextPosition);
+  SaveStream.Write(fDismissASAP);
+  SaveStream.Write(Dismissable);
 end;
 
 
@@ -2103,7 +2072,7 @@ begin
   UpdateHitPoints;
   if UpdateVisibility then Exit; //incase units home was destroyed. Returns true if the unit was killed due to lack of space
 
-  //Shortcut to freeze unit in place if it's on an unwalkable tile. We use fNextPosition rather than fCurrPosition
+  //Shortcut to kill unit in place if it's on an unwalkable tile. We use fNextPosition rather than fCurrPosition
   //because once we have taken a step from a tile we no longer care about it. (fNextPosition matches up with IsUnit in terrain)
   if fCurrentAction is TUnitActionWalkTo then
     if DesiredPassability = tpWalkRoad then
