@@ -250,9 +250,9 @@ begin
   Check_CA.Checked := True;
 
 
-  Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, SIZE_X-20-480-20, SIZE_Y - 50, 160, 30, 'New Random Seed', bsMenu);
+  Button_RMG_Generate_New_Seed := TKMButton.Create(Panel_RMG, SIZE_X-20-480-60, SIZE_Y - 50, 200, 30, 'New Random Seed', bsMenu); //Todo translate
   Button_RMG_Generate_New_Seed.OnClick := RMG_Generate_New_Seed;
-  Button_RMG_Generate := TKMButton.Create(Panel_RMG, SIZE_X-20-320-10, SIZE_Y - 50, 160, 30, 'Generate map', bsMenu);
+  Button_RMG_Generate := TKMButton.Create(Panel_RMG, SIZE_X-20-320-10, SIZE_Y - 50, 160, 30, 'Generate map', bsMenu); //Todo translate
   Button_RMG_Generate.OnClick := RMG_Generate_Map;
   Button_RMG_Cancel := TKMButton.Create(Panel_RMG, SIZE_X-20-160, SIZE_Y - 50, 160, 30, gResTexts[TX_MAPED_CANCEL], bsMenu);
   Button_RMG_Cancel.OnClick := RMG_Close;
