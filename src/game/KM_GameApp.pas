@@ -362,11 +362,14 @@ end;
 
 
 procedure TKMGameApp.MouseWheel(Shift: TShiftState; WheelDelta: Integer; X, Y: Integer);
+var
+  Handled: Boolean;
 begin
+  Handled := False; // False by Default
   if gGame <> nil then
-    gGame.ActiveInterface.MouseWheel(Shift, WheelDelta, X, Y)
+    gGame.ActiveInterface.MouseWheel(Shift, WheelDelta, X, Y, Handled)
   else
-    fMainMenuInterface.MouseWheel(Shift, WheelDelta, X, Y);
+    fMainMenuInterface.MouseWheel(Shift, WheelDelta, X, Y, Handled);
 end;
 
 

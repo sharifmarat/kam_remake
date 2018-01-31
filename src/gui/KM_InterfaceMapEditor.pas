@@ -114,9 +114,9 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean); override;
     procedure Resize(X,Y: Word); override;
-    procedure SetLoadMode(aMultiplayer:boolean);
+    procedure SetLoadMode(aMultiplayer: Boolean);
 
     procedure SyncUI(aMoveViewport: Boolean = True); override;
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -1207,9 +1207,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer);
-var
-  Handled: Boolean;
+procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean);
 begin
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
@@ -1219,8 +1217,8 @@ begin
     if (fMyControls.CtrlOver = nil) then
       gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
   end else begin
-    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, Handled);
-    if not Handled then
+    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+    if not aHandled then
       inherited;
   end;
 end;
