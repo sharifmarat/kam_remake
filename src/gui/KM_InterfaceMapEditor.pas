@@ -1213,9 +1213,7 @@ begin
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 
-    // Allow to zoom only when cursor is over map. Controls handle zoom on their own
-    if (fMyControls.CtrlOver = nil) then
-      gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
+    gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
   end else begin
     fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
     if not aHandled then
