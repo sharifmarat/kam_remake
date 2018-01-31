@@ -340,11 +340,17 @@ end;
 
 
 procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 
 
 procedure TFormMain.RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y);
+end;
 
 
 procedure TFormMain.RenderAreaResize(aWidth, aHeight: Integer);
