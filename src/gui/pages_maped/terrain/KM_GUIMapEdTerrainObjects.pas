@@ -22,6 +22,7 @@ type
     function GetObjPaletteTableHeight: Integer;
     function GetObjPaletteTableWidth: Integer;
 
+    procedure UpdateObjButtonDescription(aBtn: TKMButtonFlat; aObjID: Integer);
     procedure CompactMapElements;
     procedure ObjectsUpdate(aObjIndex: Integer);
     procedure UpdateObjectsScrollPosToIndex(aObjIndex: Integer);
@@ -100,6 +101,7 @@ begin
     begin
       ObjectsTable[I*3+J] := TKMButtonFlat.Create(Panel_Objects, I*(OBJ_CELL_W + 1), 40 + J*(OBJ_CELL_H + 1),
                                                   OBJ_CELL_W, OBJ_CELL_H, 1, rxTrees); //RXid=1  // 1 2
+      ObjectsTable[I*3+J].CapOffsetY := 15;
       ObjectsTable[I*3+J].Tag := I*3+J; //Store ID
       ObjectsTable[I*3+J].OnClick := ObjectsChange;
       ObjectsTable[I*3+J].OnMouseWheel := ObjectsScroll.MouseWheel;
@@ -150,6 +152,7 @@ begin
     begin
       ObjectsPaletteTable[I] := TKMButtonFlat.Create(PopUp_ObjectsPalette, 0, 0, OBJ_CELL_W, OBJ_CELL_H, 1, rxTrees); // Left and Top will update later
       ObjectsPaletteTable[I].Tag := I; //Store ID
+      ObjectsPaletteTable[I].CapOffsetY := 15;
       ObjectsPaletteTable[I].Enable;
       ObjectsPaletteTable[I].Hide;
       ObjectsPaletteTable[I].OnMouseWheel := Scroll_ObjectsPalette.MouseWheel;
@@ -196,6 +199,35 @@ begin
 end;
 
 
+procedure TKMMapEdTerrainObjects.UpdateObjButtonDescription(aBtn: TKMButtonFlat; aObjID: Integer);
+var
+  ChoppableTree: Boolean;
+begin
+  aBtn.Hint := aBtn.Caption;
+
+  ChoppableTree := False;
+  if ObjectIsChoppableTree(aObjID, [caAge1, caAge2, caAge3, caAgeFull]) then
+  begin
+    aBtn.CapColor := icRoyalYellow;
+    aBtn.Hint := aBtn.Hint + ' / ' + 'Choppable tree'; //Todo translate
+    ChoppableTree := True;
+  end;
+
+  if gMapElements[aObjID].DiagonalBlocked then
+  begin
+    aBtn.Hint := aBtn.Hint + ' / ' + 'Diagonal blocked'; //Todo translate
+    if not ChoppableTree then
+      aBtn.CapColor := icLightRed;
+  end else
+  if gMapElements[aObjID].AllBlocked then
+  begin
+    aBtn.Hint := aBtn.Hint + ' / ' + 'All blocked'; //Todo translate
+    if not ChoppableTree then
+      aBtn.CapColor := icRed;
+  end;
+end;
+
+
 procedure TKMMapEdTerrainObjects.ObjectsPalette_Refresh(Sender: TObject);
 var
   I, J, K, LeftAdj, TopAdj: Integer;
@@ -218,6 +250,9 @@ begin
         ObjectsPaletteTable[K].Top := 25 + I*(OBJ_CELL_H + 1)  + TopAdj;
         ObjectsPaletteTable[K].TexID := gMapElements[fCompactToMapElem[K]].Anim.Step[1] + 1;
         ObjectsPaletteTable[K].Caption := IntToStr(fCompactToMapElem[K]);
+
+        UpdateObjButtonDescription(ObjectsPaletteTable[K], fCompactToMapElem[K]);
+
         ObjectsPaletteTable[K].Visible := True;
       end;
     end;
@@ -394,6 +429,9 @@ begin
     begin
       ObjectsTable[I].TexID := gMapElements[fCompactToMapElem[ObjIndex]].Anim.Step[1] + 1;
       ObjectsTable[I].Caption := IntToStr(fCompactToMapElem[ObjIndex]);
+
+      UpdateObjButtonDescription(ObjectsTable[I], fCompactToMapElem[ObjIndex]);
+
       ObjectsTable[I].Enable;
     end
     else

@@ -1419,45 +1419,20 @@ end;
 
 
 function TKMTerrain.ObjectIsChopableTree(X,Y: Word): Boolean;
-var
-  I: Integer;
-  K: TKMChopableAge;
 begin
-  Result := True;
-
-  for I := 1 to Length(ChopableTrees) do
-    for K := Low(TKMChopableAge) to High(TKMChopableAge) do
-      if (Land[Y,X].Obj = ChopableTrees[I,K]) then Exit;
-
-  Result := False;
-end;
-
-
-function TKMTerrain.ObjectIsChopableTree(Loc: TKMPoint; aStages: TKMChopableAgeSet): Boolean;
-var
-  I: Integer;
-  Stage: TKMChopableAge;
-begin
-  Result := True;
-
-  for I := 1 to Length(ChopableTrees) do
-    for Stage in aStages do
-      if (Land[Loc.Y,Loc.X].Obj = ChopableTrees[I, Stage]) then Exit;
-
-  Result := False;
+  Result := ObjectIsChoppableTree(Land[Y,X].Obj);
 end;
 
 
 function TKMTerrain.ObjectIsChopableTree(Loc: TKMPoint; aStage: TKMChopableAge): Boolean;
-var
-  I: Integer;
 begin
-  Result := True;
+  Result := ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStage);
+end;
 
-  for I := 1 to Length(ChopableTrees) do
-    if (Land[Loc.Y, Loc.X].Obj = ChopableTrees[I, aStage]) then Exit;
 
-  Result := False;
+function TKMTerrain.ObjectIsChopableTree(Loc: TKMPoint; aStages: TKMChopableAgeSet): Boolean;
+begin
+  Result := ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStages);
 end;
 
 
