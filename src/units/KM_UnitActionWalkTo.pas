@@ -297,7 +297,7 @@ end;
 
 
 // Returns true only when unit is stuck for some reason
-function TUnitActionWalkTo.CanAbandonExternal: boolean;
+function TUnitActionWalkTo.CanAbandonExternal: Boolean;
 begin
   Result := (not fDoExchange) //Other unit could have set this
             and KMSamePointF(KMPointF(fUnit.GetPosition), fUnit.PositionF);

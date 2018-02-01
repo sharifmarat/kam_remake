@@ -625,7 +625,7 @@ begin
     woWalk:         begin
                       //We can update existing Walk action with minimum changes
                       if (GetUnitAction is TUnitActionWalkTo)
-                      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                        and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
                       begin
                         FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
 
@@ -780,7 +780,7 @@ begin
     CheckForEnemy; //Split into seperate procedure so it can be called from other places
 
   Result := True; //Required for override compatibility
-  if inherited UpdateState then exit;
+  if inherited UpdateState then Exit;
 
   //Make sure we didn't get an action above
   if GetUnitAction <> nil then

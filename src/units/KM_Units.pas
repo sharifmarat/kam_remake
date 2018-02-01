@@ -1518,7 +1518,8 @@ end;
 
 
 //Same as above but we will ignore get-out-of-the-way (push) requests from interaction system
-procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
+procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean = true;
+                                      aStillFrame: Byte = 0; aStep: Integer = 0);
 begin
   //When standing still in walk, use default frame
   if (aAction = ua_Walk) and aStayStill then
@@ -1526,7 +1527,7 @@ begin
     aStillFrame := UnitStillFrames[Direction];
     aStep := UnitStillFrames[Direction];
   end;
-  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, true), aStep);
+  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, True), aStep);
 end;
 
 

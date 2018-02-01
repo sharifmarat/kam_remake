@@ -31,7 +31,7 @@ uses
 { TUnitActionAbandonWalk }
 constructor TUnitActionAbandonWalk.Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TUnitActionType);
 begin
-  Assert(LocB.X*LocB.Y <> 0, 'Illegal WalkTo 0;0');
+  Assert(LocB.X*LocB.Y <> 0, 'Illegal WalkTo 0:0');
   inherited Create(aUnit, aActionType, False);
 
   fWalkTo         := LocB;
