@@ -60,7 +60,7 @@ type
     destructor Destroy; override;
 
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
-    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
     procedure Dismiss; override;
 
     //Commands from TKMUnitGroup
@@ -167,7 +167,7 @@ begin
 end;
 
 
-procedure TKMUnitWarrior.KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
+procedure TKMUnitWarrior.Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
 var AlreadyDeadOrDying: Boolean;
 begin
   AlreadyDeadOrDying := IsDeadOrDying; //Inherrited will kill the unit

@@ -88,7 +88,7 @@ begin
           end;
       1:  SetActionGoIn(ua_Walk, gd_GoInside, fSchool);
       2:  begin
-            fUnit.KillUnit(PLAYER_NONE, False, False);
+            fUnit.Kill(PLAYER_NONE, False, False);
           end;
       else Result := tr_TaskDone;
     end;

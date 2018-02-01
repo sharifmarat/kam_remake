@@ -121,7 +121,7 @@ type
     property GetPointerCount: Word read fPointerCount;
 
     //Creates TTaskDie which then will Close the unit from further access
-    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); virtual;
+    procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); virtual;
     //Creates TTaskDismiss
     procedure Dismiss; virtual;
 
@@ -946,7 +946,7 @@ begin
   if fFishCount > 1 then
     Dec(fFishCount)
   else
-    KillUnit(PLAYER_NONE, True, False);
+    Kill(PLAYER_NONE, True, False);
 end;
 
 
@@ -992,7 +992,7 @@ begin
   if (not gTerrain.CheckPassability(fCurrPosition, DesiredPassability))
   or gTerrain.CheckAnimalIsStuck(fCurrPosition, DesiredPassability) then
   begin
-    KillUnit(PLAYER_NONE, True, False); //Animal is stuck so it dies
+    Kill(PLAYER_NONE, True, False); //Animal is stuck so it dies
     Exit;
   end;
 
@@ -1270,7 +1270,7 @@ end;
 // Kill - release all unit-specific tasks
 // TTaskDie - perform dying animation
 // CloseUnit - erase all unit data and hide it from further access
-procedure TKMUnit.KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
+procedure TKMUnit.Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
 begin
   //Don't kill unit if it's already dying
   if IsDeadOrDying then
@@ -1370,9 +1370,9 @@ begin
   //Make sure to kill only once
   if (fHitPoints = 0) and not IsDeadOrDying then
     if aAttacker <> nil then
-      KillUnit(aAttacker.Owner, True, False)
+      Kill(aAttacker.Owner, True, False)
     else
-      KillUnit(PLAYER_NONE, True, False)
+      Kill(PLAYER_NONE, True, False)
 end;
 
 
@@ -1381,7 +1381,7 @@ begin
   fHitPoints := EnsureRange(fHitPoints + aAmount, 0, GetHitPointsMax);
   if (fHitPoints = 0)
   and (not IsDeadOrDying) then
-    KillUnit(PLAYER_NONE, True, False);
+    Kill(PLAYER_NONE, True, False);
 end;
 
 
@@ -2062,7 +2062,7 @@ begin
 
   //Unit killing could be postponed by few ticks, hence fCondition could be <0
   if fCondition <= 0 then
-    KillUnit(PLAYER_NONE, True, False);
+    Kill(PLAYER_NONE, True, False);
 
   //We only need to update fog of war regularly if we're using dynamic fog of war, otherwise only update it when the unit moves
   if DYNAMIC_FOG_OF_WAR and (fTicker mod 10 = 0) then
@@ -2078,7 +2078,7 @@ begin
     if DesiredPassability = tpWalkRoad then
     begin
       if not gTerrain.CheckPassability(fNextPosition, tpWalk) then
-        Self.KillUnit(PLAYER_NONE, False, True);
+        Self.Kill(PLAYER_NONE, False, True);
         //Grayter 18.01.2018
         //Despite checking passability of current tile, some units can walk on
         //unwalkable tile especially when there are many soldiers on the map (> 4000)
@@ -2088,7 +2088,7 @@ begin
         //raise ELocError.Create( gRes.Units[UnitType].GUIName+' on unwalkable tile at '+KM_Points.TypeToString(fNextPosition)+' pass CanWalk', fNextPosition);
     end else
     if not gTerrain.CheckPassability(fNextPosition, DesiredPassability) then
-      Self.KillUnit(PLAYER_NONE, False, True);
+      Self.Kill(PLAYER_NONE, False, True);
       //Explanation above
       //raise ELocError.Create(gRes.Units[UnitType].GUIName+' on unwalkable tile at '+KM_Points.TypeToString(fNextPosition)+' "'+PassabilityGuiText[DesiredPassability] + '"', fNextPosition);
 

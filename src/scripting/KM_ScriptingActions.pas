@@ -3066,7 +3066,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
         //Force delay to let the unit choose when to die, because this could be called in the middle of an event
-        U.KillUnit(PLAYER_NONE, not aSilent, True);
+        U.Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.UnitKill', [aUnitID]);
@@ -3162,7 +3162,7 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if G <> nil then
         for I := G.Count - 1 downto 0 do
-          G.Members[I].KillUnit(PLAYER_NONE, not aSilent, True);
+          G.Members[I].Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.GroupKillAll', [aGroupID]);

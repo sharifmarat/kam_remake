@@ -664,7 +664,7 @@ procedure TKMUnitGroup.KillGroup;
 var I: Integer;
 begin
   for I := fMembers.Count - 1 downto 0 do
-    TKMUnit(fMembers[I]).KillUnit(PLAYER_NONE, True, False);
+    TKMUnit(fMembers[I]).Kill(PLAYER_NONE, True, False);
 end;
 
 
