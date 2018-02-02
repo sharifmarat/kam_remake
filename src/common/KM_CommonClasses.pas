@@ -100,7 +100,7 @@ type
     procedure Copy(aSrc: TKMPointList);
     procedure Add(aLoc: TKMPoint);
     function  Remove(aLoc: TKMPoint): Integer; virtual;
-    procedure Delete(aIndex: Integer);
+    procedure Delete(aIndex: Integer); virtual;
     procedure Insert(ID: Integer; aLoc: TKMPoint);
     function  GetRandom(out Point: TKMPoint): Boolean;
     function  GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
@@ -122,6 +122,7 @@ type
     function IndexOf(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal): Integer;
     procedure SortByTag;
     function Remove(aLoc: TKMPoint): Integer; override;
+    procedure Delete(aIndex: Integer); override;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
@@ -415,7 +416,7 @@ begin
 end;
 
 
-procedure TKMPointList.Delete(aIndex:Integer);
+procedure TKMPointList.Delete(aIndex: Integer);
 begin
   if not InRange(aIndex, 0, Count-1) then Exit;
   if (aIndex <> fCount - 1) then
@@ -635,6 +636,21 @@ begin
   begin
     Move(Tag[Result+1], Tag[Result], SizeOf(Tag[Result]) * (fCount - Result));
     Move(Tag2[Result+1], Tag2[Result], SizeOf(Tag2[Result]) * (fCount - Result));
+  end;
+end;
+
+
+procedure TKMPointTagList.Delete(aIndex: Integer);
+begin
+  if not InRange(aIndex, 0, Count-1) then Exit;
+
+  inherited Delete(aIndex);
+
+  //Note that fCount is already decreased by 1
+  if (aIndex <> fCount) then
+  begin
+    Move(Tag[aIndex+1], Tag[aIndex], SizeOf(Tag[aIndex]) * (fCount - aIndex));
+    Move(Tag2[aIndex+1], Tag2[aIndex], SizeOf(Tag2[aIndex]) * (fCount - aIndex));
   end;
 end;
 
