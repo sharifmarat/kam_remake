@@ -186,6 +186,7 @@ begin
 
   Button_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN
                                  and TKMUnit(Sender).Dismissable   // Its possible to block dismiss from scripts
+                                 and not TKMUnit(Sender).IsDismissing //Do not show button, if unit is currently dismissing
                                  and not fAskDismiss               // Hide button, when dismiss panel is open
                                  and gMySpectator.IsSelectedMyObj; // Allow to dismiss only our units
 
@@ -267,7 +268,7 @@ begin
     if IsGroup then
       TKMUnitGroup(gMySpectator.Selected).KillGroup
     else
-      TKMUnit(gMySpectator.Selected).Dismiss;
+      gGame.GameInputProcess.CmdUnit(gic_UnitDismiss, TKMUnit(gMySpectator.Selected));
 
     gMySpectator.Selected := nil;
     Hide;

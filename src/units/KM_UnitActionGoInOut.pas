@@ -36,6 +36,7 @@ type
     procedure SyncLoad; override;
     destructor Destroy; override;
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     property GetHasStarted: boolean read fHasStarted;
     property GetWaitingForPush: boolean read fWaitingForPush;
@@ -408,6 +409,12 @@ begin
   SaveStream.Write(fHasStarted);
   SaveStream.Write(fWaitingForPush);
   SaveStream.Write(fUsedDoorway);
+end;
+
+
+function TUnitActionGoInOut.CanBeInterrupted: Boolean;
+begin
+  Result := not Locked; //Never interupt leaving barracks
 end;
 
 

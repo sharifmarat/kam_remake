@@ -79,6 +79,7 @@ type
     destructor Destroy; override;
 
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function CanAbandonExternal: Boolean;
     property DoesWalking: Boolean read fDoesWalking;
     property DoingExchange: Boolean read fDoExchange; //Critical piece, must not be abandoned
@@ -1182,6 +1183,12 @@ procedure TUnitActionWalkTo.Paint;
 begin
   if SHOW_UNIT_ROUTES then
     gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
+end;
+
+
+function TUnitActionWalkTo.CanBeInterrupted: Boolean;
+begin
+  Result := CanAbandonExternal and StepDone;//Only when unit is idling during Interaction pauses
 end;
 
 

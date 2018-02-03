@@ -16,6 +16,7 @@ type
     constructor Create(aUnit: TKMUnit; aTimeToStay:integer; aActionType:TUnitActionType; aStayStill:boolean; aStillFrame:byte; aLocked:boolean);
     constructor Load(LoadStream:TKMemoryStream); override;
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     function Execute: TActionResult; override;
     procedure Save(SaveStream:TKMemoryStream); override;
@@ -124,6 +125,10 @@ begin
 end;
 
 
+function TUnitActionStay.CanBeInterrupted: Boolean;
+begin
+  Result := not Locked; //Initial pause before leaving barracks is locked
+end;
 
 
 end.

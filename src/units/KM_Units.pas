@@ -30,6 +30,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
+    function CanBeInterrupted: Boolean; virtual;
     function ActName: TUnitActionName; virtual; abstract;
     property ActionType: TUnitActionType read fActionType;
     function GetExplanation: UnicodeString; virtual; abstract;
@@ -46,6 +47,7 @@ type
     fUnit: TKMUnit; //Unit who's performing the Task
     fPhase: Byte;
     fPhase2: Byte;
+    procedure InitDefaultAction; virtual;
   public
     constructor Create(aUnit: TKMUnit);
     constructor Load(LoadStream: TKMemoryStream); virtual;
@@ -96,6 +98,7 @@ type
     procedure SetCondition(aValue: Integer);
     function CanAccessHome: Boolean;
 
+    procedure SetThought(aThought: TKMUnitThought);
     procedure SetInHouse(aInHouse: TKMHouse);
     procedure UpdateThoughts;
     function UpdateVisibility: Boolean;
@@ -173,10 +176,11 @@ type
     property  InHouse: TKMHouse read fInHouse write SetInHouse;
     property  IsDead: Boolean read fIsDead;
     function  IsDeadOrDying: Boolean;
+    function  IsDismissing: Boolean;
     property  GetPosition: TKMPoint read fCurrPosition;
     procedure SetPosition(aPos: TKMPoint);
     property  PositionF: TKMPointF read fPosition write fPosition;
-    property  Thought: TKMUnitThought read fThought write fThought;
+    property  Thought: TKMUnitThought read fThought write SetThought;
     function  GetMovementVector: TKMPointF;
     function  IsIdle: Boolean;
     procedure TrainInHouse(aSchool: TKMHouseSchool);
@@ -207,9 +211,9 @@ type
     procedure CleanHousePointer(aFreeAndNilTask: Boolean = False);
   protected
     function InitiateActivity: TUnitTask; virtual; abstract;
-  protected
     function FindHome: Boolean;
     procedure ProceedHouseClosedForWorker;
+  public
     function UpdateState: Boolean; override;
   end;
 
@@ -1259,9 +1263,22 @@ end;
 procedure TKMUnit.DoDismiss;
 begin
   fThought := th_None; //Reset thought
-  SetAction(nil); //Dispose of current action
-  FreeAndNil(fUnitTask); //Should be overriden to dispose of Task-specific items
-  fUnitTask := TTaskDismiss.Create(Self);
+
+  //We can update existing Walk action with minimum changes
+  if (fCurrentAction is TUnitActionWalkTo)
+    and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  begin
+    AbandonWalk;
+    FreeAndNil(fUnitTask);
+    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
+  end else
+  if fCurrentAction.CanBeInterrupted then
+  begin
+    FreeAndNil(fUnitTask);
+    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
+  end
+  else
+    fDismissASAP := True; // Delay Dismiss for 1 more tick, until action interrupt could be possible
 end;
 
 
@@ -1394,10 +1411,16 @@ end;
 procedure TKMUnit.CancelUnitTask;
 begin
   if (fUnitTask <> nil)
-  and (fCurrentAction is TUnitActionWalkTo)
-  and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+    and (fCurrentAction is TUnitActionWalkTo)
+    and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
     AbandonWalk;
   FreeAndNil(fUnitTask);
+end;
+
+
+procedure TKMUnit.SetThought(aThought: TKMUnitThought);
+begin
+  fThought := aThought;
 end;
 
 
@@ -1443,7 +1466,7 @@ end;
 
 
 //Assign the following Action to unit and set AnimStep
-procedure TKMUnit.SetAction(aAction: TUnitAction; aStep: Integer=0);
+procedure TKMUnit.SetAction(aAction: TUnitAction; aStep: Integer = 0);
 begin
   AnimStep := aStep;
   if aAction = nil then
@@ -1458,7 +1481,9 @@ begin
   end;
   if fCurrentAction <> aAction then
   begin
-    fCurrentAction.Free;
+//    FreeAndNil(fCurrentAction);
+//    if fCurrentAction <> nil then
+      fCurrentAction.Free;
     fCurrentAction := aAction;
   end;
 end;
@@ -1695,6 +1720,12 @@ end;
 function TKMUnit.IsDeadOrDying: Boolean;
 begin
   Result := fIsDead or fKillASAP or (fUnitTask is TTaskDie);
+end;
+
+
+function TKMUnit.IsDismissing: Boolean;
+begin
+  Result := fDismissASAP or (fUnitTask is TTaskDismiss);
 end;
 
 
@@ -2043,14 +2074,29 @@ begin
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnit.UpdateState', fCurrPosition);
 
-  //UpdateState can happen right after unit gets killed (Exchange still in progress)
-  if fKillASAP
-    and not ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
+  if not ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
   begin
-    DoKill(fKillASAPShowAnimation);
-    fKillASAP := False;
-    Assert(IsDeadOrDying); //Just in case KillUnit failed
+    //UpdateState can happen right after unit gets killed (Exchange still in progress)
+    if fKillASAP then
+    begin
+      DoKill(fKillASAPShowAnimation);
+      fKillASAP := False;
+      Assert(IsDeadOrDying, 'Unit should be dead or dying'); //Just in case KillUnit failed
+    end;
+
+    //UpdateState can happen right after unit gets dismissed (Exchange still in progress)
+    if fDismissASAP then
+    begin
+      fDismissASAP := False; //Could be set back to True in DoDismiss
+      DoDismiss;
+    end;
   end;
+
+  //Reset unit dismiss, when target school is destroyed
+  if not fDismissASAP and (fUnitTask is TTaskDismiss)
+    and ((TTaskDismiss(fUnitTask).School = nil)
+      or TTaskDismiss(fUnitTask).School.IsDestroyed) then
+    DoDismiss;
 
   Inc(fTicker);
 
@@ -2144,7 +2190,7 @@ begin
   fPhase  := 0;
   fPhase2 := 0;
 
-  fUnit.SetActionLockedStay(0, ua_Walk);
+  InitDefaultAction;
 end;
 
 
@@ -2172,6 +2218,12 @@ begin
   fPhase        := High(Byte) - 1; //-1 so that if it is increased on the next run it won't overrun before exiting
   fPhase2       := High(Byte) - 1;
   inherited;
+end;
+
+
+procedure TUnitTask.InitDefaultAction;
+begin
+  fUnit.SetActionLockedStay(0, ua_Walk);
 end;
 
 
@@ -2238,6 +2290,12 @@ end;
 procedure TUnitAction.Paint;
 begin
   //Used for debug, paint action properties here
+end;
+
+
+function TUnitAction.CanBeInterrupted: Boolean;
+begin
+  Result := True;
 end;
 
 

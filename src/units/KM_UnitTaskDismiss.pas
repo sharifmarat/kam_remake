@@ -10,6 +10,8 @@ type
   TTaskDismiss = class(TUnitTask)
   private
     fSchool: TKMHouse;
+  protected
+    procedure InitDefaultAction; override;
   public
     constructor Create(aUnit: TKMUnit);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -18,6 +20,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
 
     property School: TKMHouse read fSchool;
+    function FindNewSchool: TKMHouse;
 
     function Execute: TTaskResult; override;
   end;
@@ -25,7 +28,7 @@ type
 
 implementation
 uses
-  KM_ResHouses, KM_HandsCollection;
+  KM_ResHouses, KM_HandsCollection, KM_UnitActionAbandonWalk;
 
 
 { TTaskDismiss }
@@ -34,7 +37,7 @@ begin
   inherited;
 
   fTaskName := utn_Dismiss;
-  fSchool := gHands[aUnit.Owner].FindHouse(ht_School, aUnit.GetPosition).GetHousePointer;
+  FindNewSchool;
 end;
 
 
@@ -70,6 +73,32 @@ begin
 end;
 
 
+function TTaskDismiss.FindNewSchool: TKMHouse;
+var
+  S: TKMHouse;
+begin
+  fSchool := nil;
+
+  S := gHands[fUnit.Owner].FindHouse(ht_School, fUnit.GetPosition);
+
+  if (S <> nil) and fUnit.CanWalkTo(fUnit.GetPosition, S.PointBelowEntrance, tpWalk, 0) then
+    fSchool := S.GetHousePointer;
+
+  Result := fSchool;
+
+//  if (fSchool = nil) or fSchool.IsDestroyed then
+//    fPhase := 10 //Done
+//  else
+//    fPhase := 0; //Reset phase
+end;
+
+
+procedure TTaskDismiss.InitDefaultAction;
+begin
+  //Do nothing here, as we have to continue old action, until it could be interrupted
+end;
+
+
 function TTaskDismiss.Execute: TTaskResult;
 begin
   Result := tr_TaskContinues;
@@ -83,13 +112,11 @@ begin
   with fUnit do
     case fPhase of
       0:  begin
-            Thought := th_Death;
+//            Thought := th_Death;
             SetActionWalkToSpot(fSchool.PointBelowEntrance);
           end;
       1:  SetActionGoIn(ua_Walk, gd_GoInside, fSchool);
-      2:  begin
-            fUnit.Kill(PLAYER_NONE, False, False);
-          end;
+      2:  fUnit.Kill(PLAYER_NONE, False, False); //Silently kill unit
       else Result := tr_TaskDone;
     end;
 
@@ -98,3 +125,4 @@ end;
 
 
 end.
+
