@@ -152,6 +152,8 @@ type
 
     procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean);
     function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean;
+    procedure UnitDismiss(aUnitID: Integer);
+    procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
     procedure UnitHPChange(aUnitID, aHP: Integer);
     procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean);
     procedure UnitHungerSet(aUnitID, aHungerLevel: Integer);
@@ -3010,6 +3012,50 @@ begin
     end
     else
       LogParamWarning('Actions.UnitDirectionSet', [aUnitID, aDirection]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Dismiss the specified unit
+procedure TKMScriptActions.UnitDismiss(aUnitID: Integer);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismiss;
+    end
+    else
+      LogParamWarning('Actions.UnitDismiss', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Makes the specified unit 'dismiss' command available
+procedure TKMScriptActions.UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismissable := aDismissable;
+    end
+    else
+      LogParamWarning('Actions.UnitDismissableSet', [aUnitID, Byte(aDismissable)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
