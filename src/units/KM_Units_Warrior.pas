@@ -78,7 +78,7 @@ type
     property LastShootTime: Cardinal read fLastShootTime;
     function IsRanged: Boolean;
     function InFight(aCountCitizens: Boolean = False): Boolean;
-    function InFightAgaist(var aUT: TKMUnit; aCountCitizens: Boolean = False): Boolean;
+    function InFightAgaist(var aUnit: TKMUnit; aCountCitizens: Boolean = False): Boolean;
     function InAGroup: Boolean;
     function NeedsToReload(aFightAnimLength: Byte): Boolean;
     procedure SetLastShootTime;
@@ -338,12 +338,12 @@ begin
 end;
 
 
-function TKMUnitWarrior.InFightAgaist(var aUT: TKMUnit; aCountCitizens: Boolean = False): Boolean;
+function TKMUnitWarrior.InFightAgaist(var aUnit: TKMUnit; aCountCitizens: Boolean = False): Boolean;
 begin
   Result := InFight(aCountCitizens);
-  aUT := nil;
+  aUnit := nil;
   if Result then
-    aUT := TUnitActionFight(GetUnitAction).GetOpponent;
+    aUnit := TUnitActionFight(GetUnitAction).GetOpponent;
 end;
 
 
