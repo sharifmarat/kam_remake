@@ -116,6 +116,7 @@ type
     function  HasMember(aWarrior: TKMUnit): Boolean;
     procedure ResetAnimStep;
     function InFight(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
+    function InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean; //Fighting agaist specific groups
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
     function IsIdleToAI(aAllowWalking: Boolean = False): Boolean;
@@ -945,6 +946,40 @@ begin
     Result := True;
     Exit;
   end;
+end;
+
+
+function TKMUnitGroup.InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean;
+var
+  Check: Boolean;
+  I,K,Cnt: Integer;
+  U: TKMUnit;
+  G: TKMUnitGroup;
+begin
+  Cnt := 0;
+  U := nil;
+  for I := 0 to Count - 1 do
+    if Members[I].InFightAgaist(U, False) then
+    begin
+      G := gHands[ U.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(U) );
+      Check := True;
+      for K := 0 to Cnt - 1 do
+        if (aGroupArray[K] = G) then
+        begin
+          Check := False;
+          break;
+        end;
+      if Check then
+      begin
+        if (Length(aGroupArray) >= Cnt) then
+          SetLength(aGroupArray, Cnt + 12);
+        aGroupArray[Cnt] := G;
+        Cnt := Cnt + 1;
+      end;
+    end;
+  SetLength(aGroupArray,Cnt);
+
+  Result := Cnt > 0;
 end;
 
 
