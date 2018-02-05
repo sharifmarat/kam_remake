@@ -47,6 +47,7 @@ type
   TKMFontData = class
   private
     function GetTexID(aIndex: Integer): Cardinal;
+    function GetLineHeight: SmallInt;
   protected
     fTexSizeX, fTexSizeY: Word; //All atlases have same dimensions
     //Character atlases
@@ -80,6 +81,7 @@ type
     property CharCount: Word read fCharCount;
     property CharSpacing: SmallInt read fCharSpacing;
     property LineSpacing: Byte read fLineSpacing;
+    property LineHeight: SmallInt read GetLineHeight;
     property BaseHeight: SmallInt read fBaseHeight;
     property WordSpacing: SmallInt read fWordSpacing;
 
@@ -518,6 +520,12 @@ begin
 end;
 
 
+function TKMFontData.GetLineHeight: SmallInt;
+begin
+  Result := BaseHeight + LineSpacing;
+end;
+
+
 function TKMFontData.GetCharWidth(aChar: WideChar): Integer;
 begin
   if AnsiChar(aChar) in [#124, #9] then
@@ -746,7 +754,7 @@ begin
   end;
 
   Dec(LineCount);
-  Result.Y := (BaseHeight + LineSpacing) * LineCount;
+  Result.Y := LineHeight * LineCount;
   for I := 1 to LineCount do
     Result.X := Math.Max(Result.X, LineWidth[I]);
 end;
