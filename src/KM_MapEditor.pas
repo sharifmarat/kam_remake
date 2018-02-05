@@ -580,6 +580,7 @@ begin
                                 //Actual change was made in UpdateStateIdle, we just register it is done here
                                 fTerrainPainter.MakeCheckpoint;
                               end;
+                cmObjects,
                 cmEyedropper,
                 cmRotateTile: gGameCursor.Mode := cmNone;
               end;

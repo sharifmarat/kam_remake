@@ -5,11 +5,12 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   Classes, Math, SysUtils,
-  KM_Controls, KM_Defaults, KM_Pics, KM_GameCursor, KM_Points;
+  KM_Controls, KM_Defaults, KM_Pics, KM_GameCursor, KM_Points, KM_CommonTypes;
 
 type
   TKMMapEdTerrainObjects = class
   private
+    fHideAllPages: TEvent;
     //Objects in MapElem are placed sparsely, so we need to compact them
     //to use in MapEd palette
     fLastObjectIndex: Integer;
@@ -53,7 +54,7 @@ type
       ObjectsPaletteTable: array of TKMButtonFlat;
       Scroll_ObjectsPalette: TKMScrollBar;
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aHideAllPages: TEvent);
 
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
@@ -70,7 +71,7 @@ type
 implementation
 uses
   KM_Resource, KM_ResFonts, KM_ResMapElements, KM_ResTexts, KM_ResKeys,
-  KM_RenderUI, KM_InterfaceGame, KM_Utils;
+  KM_HandsCollection, KM_RenderUI, KM_InterfaceGame, KM_Utils;
 
 const
   OBJECTS_PALETTE_MAX_COLS_CNT = 17;
@@ -79,12 +80,13 @@ const
 
 
 { TKMMapEdTerrainObjects }
-constructor TKMMapEdTerrainObjects.Create(aParent: TKMPanel);
+constructor TKMMapEdTerrainObjects.Create(aParent: TKMPanel; aHideAllPages: TEvent);
 var
   I, J: Integer;
 begin
   inherited Create;
 
+  fHideAllPages := aHideAllPages;
   fLastObjectIndex := -1;
 
   CompactMapElements;
@@ -490,10 +492,17 @@ end;
 
 procedure TKMMapEdTerrainObjects.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
-  if Key = gResKeys[SC_MAPEDIT_OBJ_PALETTE].Key then
+  aHandled := Key = gResKeys[SC_MAPEDIT_OBJ_PALETTE].Key;
+  if aHandled then
   begin
+    //Reset selected and hide all pages
+    if Assigned(fHideAllPages) and (gMySpectator.Selected <> nil) then
+    begin
+      gMySpectator.Selected := nil;
+      fHideAllPages;
+    end;
+
     PopUp_ObjectsPalette.Show;
-    aHandled := True;
   end;
 end;
 
