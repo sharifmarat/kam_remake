@@ -19,6 +19,8 @@ type
 
   TActionResult = (ar_ActContinues, ar_ActDone, ar_ActAborted); //
 
+  TKMUnitArray = array of TKMUnit;
+
   TUnitAction = class
   protected
     fActionType: TUnitActionType;
