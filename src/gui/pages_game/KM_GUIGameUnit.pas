@@ -73,8 +73,8 @@ begin
   Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 400);
     Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,30,'',fnt_Outline,taCenter);
     Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
-    Label_UnitCondition   := TKMLabel.Create(Panel_Unit,97,40,84,30,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
-    ConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,97,55,84,15);
+    Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,30,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
+    ConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
 
     Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,0,132,54,40,667, rxGui, bsGame);
 
