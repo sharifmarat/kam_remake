@@ -70,22 +70,24 @@ uses
 
 constructor TKMGUIGameUnit.Create(aParent: TKMPanel);
 begin
-  Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
+  Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 400);
     Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,30,'',fnt_Outline,taCenter);
     Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
     Label_UnitCondition   := TKMLabel.Create(Panel_Unit,97,40,84,30,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
     ConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,97,55,84,15);
-    Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,65,45,25,25,340, rxGui, bsGame);
+
+    Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,0,132,54,40,667, rxGui, bsGame);
 
     Label_UnitTask        := TKMLabel.Create(Panel_Unit,65,80,116,60,'',fnt_Grey,taLeft);
     Label_UnitTask.AutoWrap := True;
-    Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,152,TB_WIDTH,200,'',fnt_Grey,taLeft); // Taken from LIB resource
+    Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,132 + 50,TB_WIDTH,200,'',fnt_Grey,taLeft); // Taken from LIB resource
     Label_UnitDescription.AutoWrap := True;
 
-    Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 160, TB_WIDTH, 182);
-    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,16,TB_WIDTH,20,'Are you sure?',fnt_Outline,taCenter);
-    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,30, 50,TB_WIDTH-60,30,'Dismiss',bsGame);
-    Button_Unit_DismissNo          := TKMButton.Create(Panel_Unit_Dismiss,30,100,TB_WIDTH-60,30,'Cancel',bsGame);
+    Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 132, TB_WIDTH, 182);
+    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,2,TB_WIDTH,20,'Do you really want to dismiss this unit?|He will go to school and leave your town forever',fnt_Grey,taCenter); // Todo translate
+    Label_Unit_Dismiss.AutoWrap    := True;
+    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,0,100,TB_WIDTH,30,'Dismiss',bsGame); // Todo translate
+    Button_Unit_DismissNo          := TKMButton.Create(Panel_Unit_Dismiss,0,135,TB_WIDTH,30,gResTexts[TX_WORD_CANCEL],bsGame);
     Button_Unit_DismissYes.OnClick := Unit_Dismiss;
     Button_Unit_DismissNo.OnClick  := Unit_Dismiss;
 
@@ -155,17 +157,9 @@ end;
 procedure TKMGUIGameUnit.ShowDismissBtn;
 begin
   if Button_Unit_Dismiss.Visible then
-  begin
-    ConditionBar_Unit.Left      := 95;
-    ConditionBar_Unit.Width     := 86;
-    Label_UnitCondition.Left    := 95;
-    Label_UnitCondition.Width   := 86;
-  end else begin
-    ConditionBar_Unit.Left      := 65;
-    ConditionBar_Unit.Width     := 116;
-    Label_UnitCondition.Left    := 65;
-    Label_UnitCondition.Width   := 116;
-  end;
+    Label_UnitDescription.Top := 132 + 50
+  else
+    Label_UnitDescription.Top := 132;
 end;
 
 
