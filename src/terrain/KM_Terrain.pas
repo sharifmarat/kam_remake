@@ -2326,7 +2326,6 @@ procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: T
         
     if aObj <> -1 then
       Land[Loc.Y,Loc.X].Obj := aObj;
-    Land[Loc.Y, Loc.X].Rotation := 0;
   end;
 
   function GetObj: Integer;
