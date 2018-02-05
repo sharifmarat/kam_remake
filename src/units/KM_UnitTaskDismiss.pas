@@ -18,6 +18,7 @@ type
     destructor Destroy; override;
     procedure SyncLoad; override;
     procedure Save(SaveStream: TKMemoryStream); override;
+    function ShouldBeCancelled: Boolean;
 
     property School: TKMHouse read fSchool;
     function FindNewSchool: TKMHouse;
@@ -53,6 +54,12 @@ begin
   gHands.CleanUpHousePointer(fSchool);
 
   inherited;
+end;
+
+
+function TTaskDismiss.ShouldBeCancelled: Boolean;
+begin
+  Result := (fSchool = nil) or fSchool.IsDestroyed;
 end;
 
 
@@ -111,6 +118,7 @@ begin
 
   with fUnit do
     case fPhase of
+//      0:  //SetActionStay(5, ua_Walk); //Wait a bit
       0:  begin
 //            Thought := th_Death;
             SetActionWalkToSpot(fSchool.PointBelowEntrance);

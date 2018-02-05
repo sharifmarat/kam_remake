@@ -356,7 +356,8 @@ begin
   if (fHome <> nil)
     and not fHome.IsDestroyed
     and (fHome.IsClosedForWorker or ((fHome.HouseType = ht_Barracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
-    and not(fUnitTask is TTaskDie) then
+    and not (fUnitTask is TTaskDie)
+    and not (fUnitTask is TTaskDismiss) then
     begin
       wGoingInsideHouse := (fCurrentAction is TUnitActionGoInOut) and ((TUnitActionGoInOut(fCurrentAction)).Direction = gd_GoInside);
       // let recruits finish throwing animation
@@ -1261,6 +1262,15 @@ end;
 
 
 procedure TKMUnit.DoDismiss;
+
+  procedure TryCreateDismissTask;
+  begin
+    FreeAndNil(fUnitTask);
+    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
+    if TTaskDismiss(fUnitTask).ShouldBeCancelled then
+      FreeAndNil(fUnitTask);
+  end;
+
 begin
   fThought := th_None; //Reset thought
 
@@ -1269,15 +1279,15 @@ begin
     and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
   begin
     AbandonWalk;
-    FreeAndNil(fUnitTask);
-    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
+    TryCreateDismissTask;
   end else
   if fCurrentAction.CanBeInterrupted then
   begin
-    FreeAndNil(fUnitTask);
-    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
-  end
-  else
+    SetActionLockedStay(0, ua_Walk);
+    TryCreateDismissTask;
+    if fUnitTask = nil then
+      SetActionStay(5, ua_Walk);
+  end else
     fDismissASAP := True; // Delay Dismiss for 1 more tick, until action interrupt could be possible
 end;
 
@@ -1518,7 +1528,7 @@ begin
 end;
 
 
-procedure TKMUnit.SetActionStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
+procedure TKMUnit.SetActionStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean = True; aStillFrame: Byte = 0; aStep: Integer = 0);
 begin
   //When standing still in walk, use default frame
   if (aAction = ua_Walk) and aStayStill then
@@ -1526,7 +1536,7 @@ begin
     aStillFrame := UnitStillFrames[Direction];
     aStep := UnitStillFrames[Direction];
   end;
-  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, false), aStep);
+  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, False), aStep);
 end;
 
 
@@ -1795,6 +1805,9 @@ begin
 
   if (fThought in [th_Death, th_Eat]) and (fCondition > UNIT_MIN_CONDITION) then
     fThought := th_None;
+
+  if (fUnitTask is TTaskDismiss) then
+    fThought := th_Dismiss;
 
   if (fUnitTask is TTaskDie) then //Clear thought if we are in the process of dying
     fThought := th_None;
