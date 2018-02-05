@@ -1272,8 +1272,7 @@ end;
   Should be optimized versus usual UnitsHitTest
   Prefer Warriors over Citizens}
 function TKMTerrain.UnitsHitTestWithinRad(aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandIndex; aAlliance: TAllianceType; Dir: TKMDirection; const aClosest: Boolean): Pointer;
-type
-  TKMUnitArray = array of TKMUnit;
+
   procedure Append(var aArray: TKMUnitArray; var aCount: Integer; const aUnit: TKMUnit);
   begin
     if aCount >= Length(aArray) then
