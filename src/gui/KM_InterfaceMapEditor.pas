@@ -213,7 +213,7 @@ begin
     Button_Main[I].OnClick := Main_ButtonClick;
 
   //Terrain editing pages
-  fGuiTerrain := TKMMapEdTerrain.Create(Panel_Common, PageChanged);
+  fGuiTerrain := TKMMapEdTerrain.Create(Panel_Common, PageChanged, HidePages);
   fGuiTown := TKMMapEdTown.Create(Panel_Common, PageChanged);
   fGuiPlayer := TKMMapEdPlayer.Create(Panel_Common, PageChanged);
   fGuiMission := TKMMapEdMission.Create(Panel_Common, PageChanged);
@@ -725,6 +725,7 @@ begin
 
   //For Objects Palette
   fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
+
   fGuiMission.KeyDown(Key, Shift, KeyHandled);
   if KeyHandled then Exit;
 
