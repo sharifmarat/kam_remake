@@ -202,6 +202,8 @@ type
     function HitTest(X,Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
+
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -2017,7 +2019,7 @@ begin
   Result := nil;
   BestDist := MaxSingle; //Any distance will be closer than that
   for I := 0 to Count - 1 do
-    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
     begin
       Dist := KMLengthSqr(Groups[I].GetPosition, aPoint);
       if Dist < BestDist then
@@ -2034,24 +2036,68 @@ var
   I,K,Idx: Integer;
   UW: TKMUnitWarrior;
 begin
-  SetLength(Result, 12);
-  Idx := 0; //Any distance will be closer than that
+  Idx := 0;
   for I := 0 to Count - 1 do
-    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
     begin
       K := 0;
-      while (K < Groups[I].Count) do // Large groups may be in radius too so check every tenth member
-      begin
-        UW := Groups[I].Members[K];
-        if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
+      while (K < Groups[I].Count) do // Large groups may be in radius too so check every fifth member
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
         begin
-          if (Idx >= Length(Result)) then
-            SetLength(Result, Idx + 12);
-          Result[Idx] := Groups[I];
-          Idx := Idx + 1;
-          break;
+          UW := Groups[I].Members[K];
+          if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
+          begin
+            if (Idx >= Length(Result)) then
+              SetLength(Result, Idx + 12);
+            Result[Idx] := Groups[I];
+            Idx := Idx + 1;
+            break;
+          end;
+          K := K + 5;
         end;
-        K := K + 10;
+    end;
+  SetLength(Result,Idx);
+end;
+
+
+function TKMUnitGroups.GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
+var
+  I,K,Idx: Integer;
+  Dist, MinDist: Single;
+  U, BestU: TKMUnit;
+begin
+  Idx := 0;
+  for I := 0 to Count - 1 do
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
+    begin
+      K := 0;
+      MinDist := 1000000; //Any distance will be closer than that
+      while (K < Groups[I].Count) do
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
+        begin
+          U := Groups[I].Members[K];
+          Dist := KMLengthSqr(U.GetPosition, aPoint);
+          if (Dist <= MinDist) then
+          begin
+            MinDist := Dist;
+            BestU := U;
+          end;
+          K := K + 5; // Large groups may be in radius too so check every fifth member
+        end;
+      if (MinDist <= aSqrRadius) then
+      begin
+        if (Idx >= Length(Result)) then
+        begin
+          SetLength(Result, Idx + 12);
+          SetLength(aUGA, Idx + 12);
+        end;
+        Result[Idx] := BestU;
+        aUGA[Idx] := Groups[I]; // Save also group (it is faster than search group via HandsCollection)
+        Idx := Idx + 1;
       end;
     end;
   SetLength(Result,Idx);
