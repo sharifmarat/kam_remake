@@ -34,6 +34,7 @@ type
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
     function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
     function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
     function GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
@@ -271,8 +272,6 @@ var
   I,K,Idx: Integer;
   UGA: TKMUnitGroupArray;
 begin
-  SetLength(Result, 12);
-
   Idx := 0;
   for I := 0 to fCount - 1 do
   if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
@@ -283,6 +282,35 @@ begin
     for K := Low(UGA) to High(UGA) do
     begin
       Result[Idx] := UGA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+
+  SetLength(Result, Idx);
+end;
+
+
+// Aproximative function to get closest units in specific radius
+function TKMHandsCollection.GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
+var
+  I,K,Idx: Integer;
+  UA: TKMUnitArray;
+  UGA: TKMUnitGroupArray;
+begin
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    UA := fHandsList[I].UnitGroups.GetGroupsMemberInRadius(aLoc, aSqrRadius, UGA, aTypes);
+    if (Idx + Length(UA) > Length(Result)) then
+    begin
+      SetLength(Result, Idx + Length(UA) + 12);
+      SetLength(aUGA, Idx + Length(UA) + 12);
+    end;
+    for K := Low(UA) to High(UA) do
+    begin
+      Result[Idx] := UA[K];
+      aUGA[Idx] := UGA[K];
       Idx := Idx + 1;
     end;
   end;
