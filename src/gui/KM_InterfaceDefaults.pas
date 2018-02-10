@@ -79,6 +79,10 @@ const
   CHAT_MENU_SPECTATORS = -3;
 
 
+const
+  ITEM_NOT_LOADED = -100; // smth, but not -1, as -1 is used for ColumnBox.ItemIndex, when no item is selected
+
+
 implementation
 
 

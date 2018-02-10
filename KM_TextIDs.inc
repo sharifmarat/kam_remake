@@ -1119,3 +1119,7 @@ TX_MAPED_PLAYER_DELETE = 1114; //Button / Clear Player
 
 TX_MAPED_PLAYER_DELETE_TITLE = 1115; // Title / Clear Player
 TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?
+
+TX_MENU_MAP_TYPE = 1122; // Map type
+TX_MENU_SP_MAP_SCENARIO = 1123; // Scenario map
+TX_MENU_MAP_PLAYABLE_AS_SP = 1124; // Playable as SP
