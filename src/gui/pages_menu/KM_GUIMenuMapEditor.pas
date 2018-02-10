@@ -31,9 +31,11 @@ type
     procedure UpdateUI;
     procedure SetSelectedMapInfo(aID: Integer = -1); overload;
     procedure SetSelectedMapInfo(aCRC: Cardinal; const aName: UnicodeString); overload;
+
     procedure ScanUpdate(Sender: TObject);
     procedure ScanTerminate(Sender: TObject);
     procedure SortUpdate(Sender: TObject);
+
     procedure RefreshList(aJumpToSelected: Boolean);
     procedure ColumnClick(aValue: Integer);
     function GetMaps: TKMapsCollection;
@@ -479,7 +481,7 @@ begin
 end;
 
 
-procedure TKMMenuMapEditor.RefreshList(aJumpToSelected:Boolean);
+procedure TKMMenuMapEditor.RefreshList(aJumpToSelected: Boolean);
 var
   I, PrevTop: Integer;
   Maps: TKMapsCollection;
