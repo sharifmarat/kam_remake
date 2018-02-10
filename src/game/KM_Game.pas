@@ -1543,8 +1543,10 @@ begin
     for I := Low(TKMCampaignId) to High(TKMCampaignId) do
       if fCampaignName[I] <> NO_CAMPAIGN[I] then
         IsCampaign := True;
+
     //If there is Campaign Name in save then change GameMode to gmCampaign, because GameMode is not stored in Save
-    if IsCampaign then
+    if IsCampaign
+      and not (fGameMode in [gmReplaySingle, gmReplayMulti]) then //Not for replays thought...
       fGameMode := gmCampaign;
 
     //We need to know which mission/savegame to try to restart. This is unused in MP.
