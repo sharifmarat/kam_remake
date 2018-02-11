@@ -39,6 +39,9 @@ type
     procedure DoOptionsChange(aForceUpdate: Boolean = False);
     procedure OptionsChange(Sender: TObject);
     procedure Update(aForceUpdate: Boolean = False);
+    procedure ResetUI;
+    procedure ResetExtraInfo;
+    procedure UpdateDropBoxes;
 
     procedure StartClick(Sender: TObject);
     procedure ListSort(aColumn: Integer);
@@ -105,6 +108,7 @@ end;
 
 procedure TKMMenuSingleMap.MapTypeChanged(Sender: TObject);
 begin
+  ResetUI;
   ListUpdate;
   ListRefresh(True);
   Update;
@@ -367,7 +371,6 @@ begin
 
       Label_SingleTitle.Caption   := fMaps[MapId].FileName;
       Memo_SingleDesc.Text        := fMaps[MapId].BigDesc;
-
       MinimapView_Single.Show;
 
       //Location
@@ -382,7 +385,8 @@ begin
       //Fill in colors for each map individually
       //I plan to skip colors that are similar to those on a map already
       LastColor := DropBox_SingleColor.ItemIndex;
-      if LastColor = -1 then LastColor := 0; //Default
+      if LastColor = -1 then
+        LastColor := 0; //Default
       DropBox_SingleColor.Clear;
       //Default colour chosen by map author
       DropBox_SingleColor.Add(MakeListRow([''], [fMaps[MapId].FlagColors[fMaps[MapId].DefaultHuman]], [MakePic(rxGuiMain, 30)]));
@@ -408,24 +412,14 @@ end;
 
 procedure TKMMenuSingleMap.DoOptionsChange(aForceUpdate: Boolean = False);
 begin
-  if DropBox_SingleLoc.ItemIndex <> -1 then
-    fSingleLoc := DropBox_SingleLoc.GetSelectedTag
-  else
-    fSingleLoc := -1;
-
-  //Don't allow selecting separator
-  if DropBox_SingleColor.ItemIndex = 1 then
-    DropBox_SingleColor.ItemIndex := 0;
-
-  if InRange(DropBox_SingleColor.ItemIndex, 0, DropBox_SingleColor.List.RowCount - 1) then
-    fSingleColor := DropBox_SingleColor.List.Rows[DropBox_SingleColor.ItemIndex].Cells[0].Color;
-
+  UpdateDropBoxes;
   Update(aForceUpdate);
 end;
 
 
 procedure TKMMenuSingleMap.OptionsChange(Sender: TObject);
 begin
+  UpdateDropBoxes;
   DoOptionsChange(True);
 end;
 
@@ -445,15 +439,24 @@ begin
 end;
 
 
-procedure TKMMenuSingleMap.Update(aForceUpdate: Boolean = False);
-const
-  GoalCondPic: array [TGoalCondition] of Word = (
-    41, 39, 592, 38, 62, 41, 303, 141, 312);
+procedure TKMMenuSingleMap.ResetUI;
+begin
+  Label_SingleTitle.Caption   := '';
+  Memo_SingleDesc.Text        := '';
+  DropBox_SingleLoc.ItemIndex := -1;
+
+  MinimapView_Single.Hide;
+
+  DropBox_SingleLoc.Clear;
+  DropBox_SingleColor.Clear;
+
+  ResetExtraInfo;
+end;
+
+
+procedure TKMMenuSingleMap.ResetExtraInfo;
 var
-  I,J,K: Integer;
-  MapId: Integer;
-  M: TKMapInfo;
-  G: TKMMapGoalInfo;
+  I: Integer;
 begin
   //Clear all so that later we fill only used
   for I := 0 to MAX_UI_GOALS - 1 do
@@ -471,7 +474,35 @@ begin
     Image_SingleEnemies[I].Hide;
   end;
   Button_SingleStart.Disable;
+end;
 
+
+procedure TKMMenuSingleMap.UpdateDropBoxes;
+begin
+  if DropBox_SingleLoc.ItemIndex <> -1 then
+    fSingleLoc := DropBox_SingleLoc.GetSelectedTag
+  else
+    fSingleLoc := -1;
+
+  //Don't allow selecting separator
+  if DropBox_SingleColor.ItemIndex = 1 then
+    DropBox_SingleColor.ItemIndex := 0;
+
+  if InRange(DropBox_SingleColor.ItemIndex, 0, DropBox_SingleColor.List.RowCount - 1) then
+    fSingleColor := DropBox_SingleColor.List.Rows[DropBox_SingleColor.ItemIndex].Cells[0].Color;
+end;
+
+
+procedure TKMMenuSingleMap.Update(aForceUpdate: Boolean = False);
+const
+  GoalCondPic: array [TGoalCondition] of Word = (
+    41, 39, 592, 38, 62, 41, 303, 141, 312);
+var
+  I,J,K: Integer;
+  MapId: Integer;
+  M: TKMapInfo;
+  G: TKMMapGoalInfo;
+begin
   if (fSingleLoc <> -1) and (ColumnBox_SingleMaps.IsSelected) then
   begin
     MapId := ColumnBox_SingleMaps.SelectedItem.Tag;
@@ -479,6 +510,9 @@ begin
     if aForceUpdate or (fUpdatedLastListId <> MapId) then
     begin
       fUpdatedLastListId := MapId;
+
+      ResetExtraInfo;
+
       fMaps.Lock;
       try
         M := fMaps[MapId];
@@ -606,7 +640,7 @@ begin
 
   DropBox_SingleLoc.SelectByTag(fSingleLoc);
 
-  Update;
+  Update(True);
 end;
 
 
@@ -614,6 +648,7 @@ procedure TKMMenuSingleMap.Show;
 begin
   Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuMapSPType;
 
+  ResetUI;
   //Terminate all
   fMaps.TerminateScan;
 
