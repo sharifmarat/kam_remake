@@ -14,6 +14,7 @@ uses
 
   function KMPathLength(aNodeList: TKMPointList): Single;
 
+  function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
   function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String; overload;
   function GetHintWHotKey(aTextId, aHotkeyId: Integer): String; overload;
 
@@ -89,6 +90,17 @@ begin
 end;
 
 
+function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
+var
+  HotKeyStr: String;
+begin
+  Result := aText;
+  HotKeyStr := gResKeys.GetKeyNameById(aHotkeyId);
+  if HotKeyStr <> '' then
+    Result := Result + Format(' (''%s'')', [HotKeyStr]);
+end;
+
+
 function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String;
 begin
   Result := gResTexts[aTextId];
@@ -99,8 +111,6 @@ end;
 
 
 function GetHintWHotKey(aTextId, aHotkeyId: Integer): String;
-var
-  HotKeyStr: String;
 begin
   Result := GetHintWHotKey(aTextId, gResKeys.GetKeyNameById(aHotkeyId));
 end;

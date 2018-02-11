@@ -5,10 +5,11 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
   Classes, Math, SysUtils,
+  KM_InterfaceDefaults,
   KM_Controls, KM_Defaults, KM_Pics, KM_GameCursor, KM_Points, KM_CommonTypes;
 
 type
-  TKMMapEdTerrainObjects = class
+  TKMMapEdTerrainObjects = class (TKMMapEdSubMenuPage)
   private
     fHideAllPages: TEvent;
     //Objects in MapElem are placed sparsely, so we need to compact them
@@ -60,7 +61,7 @@ type
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 
     procedure Show;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure Hide;
     procedure Resize;
     procedure RightClickCancel;
@@ -109,12 +110,12 @@ begin
       ObjectsTable[I*3+J].OnMouseWheel := ObjectsScroll.MouseWheel;
     end;
   ObjectErase := TKMButtonFlat.Create(Panel_Objects, 0, 8, 32, 32, 340);
-  ObjectErase.Hint := gResTexts[TX_MAPED_TERRAIN_OBJECTS_REMOVE];
+  ObjectErase.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_OBJECTS_REMOVE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   ObjectErase.Tag := 255; //no object
   ObjectErase.OnClick := ObjectsChange;
 
   ObjectBlock := TKMButtonFlat.Create(Panel_Objects, TB_WIDTH-32, 8, 32, 32, 254,rxTrees);
-  ObjectBlock.Hint := gResTexts[TX_MAPED_TERRAIN_OBJECTS_BLOCK];
+  ObjectBlock.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_OBJECTS_BLOCK, SC_MAPEDIT_SUB_MENU_ACTION_2);
   ObjectBlock.Tag := 61; //no object
   ObjectBlock.OnClick := ObjectsChange;
 
@@ -179,6 +180,14 @@ begin
     Button_ClosePalette.OnClick := ObjectsPaletteClose_Click;
 
     ObjPalette_UpdateControlsPosition;
+
+  fSubMenuActionsEvents[0] := ObjectsChange;
+  fSubMenuActionsEvents[1] := ObjectsChange;
+  fSubMenuActionsEvents[2] := ObjectsPaletteButton_Click;
+
+  fSubMenuActionsCtrls[0] := ObjectErase;
+  fSubMenuActionsCtrls[1] := ObjectBlock;
+  fSubMenuActionsCtrls[2] := ObjectsPalette_Button;
 end;
 
 

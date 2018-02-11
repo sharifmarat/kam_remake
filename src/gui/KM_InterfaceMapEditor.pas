@@ -84,6 +84,8 @@ type
     function IsDragHouseModeOn: Boolean;
     procedure ResetDragObject;
     procedure ResetCursorMode;
+    procedure ShowSubMenu(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte);
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
@@ -175,7 +177,7 @@ begin
   Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 203, 26, 26, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
-  Button_ChangeOwner.Hint := gResTexts[TX_MAPED_PAINT_BUCKET_CH_OWNER];
+  Button_ChangeOwner.Hint := GetHintWHotKey(TX_MAPED_PAINT_BUCKET_CH_OWNER, SC_MAPEDIT_PAINT_BUCKET);
 
   Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 231, 26, 26, 340);
   Button_UniversalEraser.Down := False;
@@ -451,25 +453,25 @@ begin
 
   gGame.MapEditor.VisibleLayers := [];
 
-  if fGuiPlayer.Visible(ptView) or fGuiMarkerReveal.Visible then
+  if fGuiPlayer.IsVisible(ptView) or fGuiMarkerReveal.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlRevealFOW, mlCenterScreen];
 
-  if fGuiTown.Visible(ttScript) then
+  if fGuiTown.IsVisible(ttScript) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlAIStart];
 
-  if fGuiTown.Visible(ttDefences) or fGuiMarkerDefence.Visible then
+  if fGuiTown.IsVisible(ttDefences) or fGuiMarkerDefence.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlDefences];
 
-  if fGuiExtras.CheckBox_ShowObjects.Checked or fGuiTerrain.Visible(ttObject) then
+  if fGuiExtras.CheckBox_ShowObjects.Checked or fGuiTerrain.IsVisible(ttObject) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlObjects];
 
-  if fGuiExtras.CheckBox_ShowHouses.Checked or fGuiTown.Visible(ttHouses) or fGuiHouse.Visible then
+  if fGuiExtras.CheckBox_ShowHouses.Checked or fGuiTown.IsVisible(ttHouses) or fGuiHouse.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlHouses];
 
-  if fGuiExtras.CheckBox_ShowUnits.Checked or fGuiTown.Visible(ttUnits) or fGuiUnit.Visible then
+  if fGuiExtras.CheckBox_ShowUnits.Checked or fGuiTown.IsVisible(ttUnits) or fGuiUnit.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlUnits];
 
-  if fGuiTerrain.Visible(ttSelection) then
+  if fGuiTerrain.IsVisible(ttSelection) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlSelection];
 
   if fGuiExtras.CheckBox_ShowDeposits.Checked then
@@ -610,8 +612,8 @@ begin
   if (gGameCursor.Mode <> cmPaintBucket) and (gGameCursor.Mode <> cmUniversalEraser) then
   begin
     //These pages use RMB
-    if fGuiTerrain.Visible(ttHeights) then Exit;
-    if fGuiTerrain.Visible(ttTile) then Exit;
+    if fGuiTerrain.IsVisible(ttHeights) then Exit;
+    if fGuiTerrain.IsVisible(ttTile) then Exit;
     if fGuiUnit.Visible then Exit;
     if fGuiHouse.Visible then Exit;
   end;
@@ -762,8 +764,27 @@ begin
 end;
 
 
+procedure TKMapEdInterface.ShowSubMenu(aIndex: Byte);
+begin
+  fGuiTerrain.ShowSubMenu(aIndex);
+  fGuiTown.ShowSubMenu(aIndex);
+  fGuiPlayer.ShowSubMenu(aIndex);
+  fGuiMission.ShowSubMenu(aIndex);
+end;
+
+
+procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte);
+begin
+  fGuiTerrain.ExecuteSubMenuAction(aIndex);
+  fGuiTown.ExecuteSubMenuAction(aIndex);
+  fGuiPlayer.ExecuteSubMenuAction(aIndex);
+  fGuiMission.ExecuteSubMenuAction(aIndex);
+end;
+
+
 procedure TKMapEdInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
+  I: Integer;
   KeyHandled: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
@@ -785,66 +806,22 @@ begin
   if Key = gResKeys[SC_MAPEDIT_MAIN_MANU].Key then Button_Main[5].Click;
 
   //1-6 submenu shortcuts
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_1].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(0) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(0) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(0) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(0);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_2].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(1) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(1) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(1) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(1);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_3].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(2) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(2) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(2) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(2);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_4].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(3) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(3) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(3) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(3);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_5].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(4) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(4) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(4) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(4);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_6].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(5) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(5) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(5) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(5);
+  for I := Low(MAPED_SUBMENU_HOTKEYS) to High(MAPED_SUBMENU_HOTKEYS) do
+    if Key = gResKeys[MAPED_SUBMENU_HOTKEYS[I]].Key then
+      ShowSubMenu(I);
 
-  // Build road/field/wine/cancel build
-  if Key = gResKeys[SC_PLAN_ROAD].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildRoad;
-  end;
-  if Key = gResKeys[SC_PLAN_FIELD].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildField;
-  end;
-  if Key = gResKeys[SC_PLAN_WINE].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildWine;
-  end;
-  if Key = gResKeys[SC_ERASE_PLAN].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildCancel;
-  end;
+  //q-w-e-r-t-y-u submenu actions shortcuts
+  for I := Low(MAPED_SUBMENU_ACTIONS_HOTKEYS) to High(MAPED_SUBMENU_ACTIONS_HOTKEYS) do
+    if Key = gResKeys[MAPED_SUBMENU_ACTIONS_HOTKEYS[I]].Key then
+      ExecuteSubMenuAction(I);
 
   //Universal erasor
   if Key = gResKeys[SC_MAPEDIT_UNIV_ERASOR].Key then
     UniversalEraser_Click(Button_UniversalEraser);
+
+  //Universal erasor
+  if Key = gResKeys[SC_MAPEDIT_PAINT_BUCKET].Key then
+    ChangeOwner_Click(Button_ChangeOwner);
 
   gGameCursor.SState := Shift; // Update Shift state on KeyUp
 end;

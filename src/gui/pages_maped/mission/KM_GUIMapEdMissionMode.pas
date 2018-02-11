@@ -57,6 +57,8 @@ begin
   Button_AIBuilderCancel := TKMButton.Create(Panel_Mode, 92, 200, 88, 20, gResTexts[TX_MAPED_CANCEL], bsGame);
   Button_AIBuilderCancel.OnClick := AIBuilderChange;
   Button_AIBuilderCancel.Hide;
+
+
 end;
 
 

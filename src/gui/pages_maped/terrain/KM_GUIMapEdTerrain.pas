@@ -4,6 +4,7 @@ interface
 uses
    Classes, Math, SysUtils,
    KM_Controls, KM_Defaults, KM_Pics, KM_CommonTypes,
+   KM_InterfaceDefaults,
    KM_GUIMapEdTerrainBrushes,
    KM_GUIMapEdTerrainHeights,
    KM_GUIMapEdTerrainTiles,
@@ -15,7 +16,7 @@ type
   TKMTerrainTab = (ttBrush, ttHeights, ttTile, ttObject, ttSelection);
 
   //Collection of terrain editing controls
-  TKMMapEdTerrain = class
+  TKMMapEdTerrain = class (TKMMapEdMenuPage)
   private
     fOnPageChange: TNotifyEvent;
 
@@ -32,6 +33,8 @@ type
     Button_Terrain: array [TKMTerrainTab] of TKMButton;
     Button_TerrainUndo: TKMButton;
     Button_TerrainRedo: TKMButton;
+    procedure DoShowSubMenu(aIndex: Byte); override;
+    procedure DoExecuteSubMenuAction(aIndex: Byte); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aHideAllPages: TEvent);
     destructor Destroy; override;
@@ -43,9 +46,9 @@ type
     property GuiSelection: TKMMapEdTerrainSelection read fGuiSelection;
 
     procedure Show(aTab: TKMTerrainTab);
-    procedure ShowIndex(aIndex: Byte);
-    function Visible(aPage: TKMTerrainTab): Boolean; overload;
-    function Visible: Boolean; overload;
+    //procedure
+    function IsVisible(aPage: TKMTerrainTab): Boolean;
+    function Visible: Boolean;  override;
     procedure Resize;
     procedure UpdateState;
     procedure RightClickCancel;
@@ -54,7 +57,7 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_InterfaceDefaults, KM_Utils;
+  KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_Utils;
 
 
 { TKMMapEdTerrain }
@@ -78,7 +81,7 @@ begin
     for I := Low(TKMTerrainTab) to High(TKMTerrainTab) do
     begin
       Button_Terrain[I] := TKMButton.Create(Panel_Terrain, SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, BtnGlyph[I], rxGui, bsGame);
-      Button_Terrain[I].Hint := GetHintWHotKey(BtnHint[I], MAPED_SUBMENU_TAB_HOTKEYS[Ord(I)]);
+      Button_Terrain[I].Hint := GetHintWHotKey(BtnHint[I], MAPED_SUBMENU_HOTKEYS[Ord(I)]);
       Button_Terrain[I].OnClick := PageChange;
     end;
 
@@ -196,11 +199,23 @@ begin
 end;
 
 
-procedure TKMMapEdTerrain.ShowIndex(aIndex: Byte);
+procedure TKMMapEdTerrain.DoShowSubMenu(aIndex: Byte);
 begin
   if (aIndex in [Byte(Low(TKMTerrainTab))..Byte(High(TKMTerrainTab))])
     and Button_Terrain[TKMTerrainTab(aIndex)].Enabled then
     Show(TKMTerrainTab(aIndex));
+end;
+
+
+procedure TKMMapEdTerrain.DoExecuteSubMenuAction(aIndex: Byte);
+begin
+  inherited;
+
+  fGuiBrushes.ExecuteSubMenuAction(aIndex);
+  fGuiHeights.ExecuteSubMenuAction(aIndex);
+  fGuiTiles.ExecuteSubMenuAction(aIndex);
+  fGuiObjects.ExecuteSubMenuAction(aIndex);
+  fGuiSelection.ExecuteSubMenuAction(aIndex);
 end;
 
 
@@ -211,7 +226,7 @@ end;
 
 
 //Check if specific page is visble
-function TKMMapEdTerrain.Visible(aPage: TKMTerrainTab): Boolean;
+function TKMMapEdTerrain.IsVisible(aPage: TKMTerrainTab): Boolean;
 begin
   Result := False;
   case aPage of

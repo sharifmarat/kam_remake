@@ -4,6 +4,7 @@ interface
 uses
   Classes, Controls, Math, SysUtils,
   KM_Controls, KM_Defaults, KM_Pics,
+  KM_InterfaceDefaults,
   KM_GUIMapEdTownHouses,
   KM_GUIMapEdTownUnits,
   KM_GUIMapEdTownScript,
@@ -13,7 +14,7 @@ uses
 type
   TKMTownTab = (ttHouses, ttUnits, ttScript, ttDefences, ttOffence);
 
-  TKMMapEdTown = class
+  TKMMapEdTown = class (TKMMapEdMenuPage)
   private
     fOnPageChange: TNotifyEvent;
 
@@ -27,6 +28,8 @@ type
   protected
     Panel_Town: TKMPanel;
     Button_Town: array [TKMTownTab] of TKMButton;
+    procedure DoShowSubMenu(aIndex: Byte); override;
+    procedure DoExecuteSubMenuAction(aIndex: Byte); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
     destructor Destroy; override;
@@ -36,9 +39,8 @@ type
     property GuiOffence: TKMMapEdTownOffence read fGuiOffence;
 
     procedure Show(aPage: TKMTownTab);
-    procedure ShowIndex(aIndex: Byte);
-    function Visible(aPage: TKMTownTab): Boolean; overload;
-    function Visible: Boolean; overload;
+    function IsVisible(aPage: TKMTownTab): Boolean;
+    function Visible: Boolean; override;
     procedure ChangePlayer;
     procedure UpdatePlayerColor;
     procedure UpdateState;
@@ -49,7 +51,7 @@ type
 implementation
 uses
   KM_Hand, KM_HandsCollection, KM_ResTexts, KM_GameCursor,
-  KM_InterfaceGame, KM_InterfaceDefaults, KM_RenderUI, KM_Game, KM_Utils;
+  KM_InterfaceGame, KM_RenderUI, KM_Game, KM_Utils;
 
 
 { TKMMapEdTown }
@@ -75,7 +77,7 @@ begin
   for I := Low(TKMTownTab) to High(TKMTownTab) do
   begin
     Button_Town[I] := TKMButton.Create(Panel_Town, SMALL_PAD_W * Byte(I), 0, SMALL_TAB_W, SMALL_TAB_H, TabGlyph[I], TabRXX[I], bsGame);
-    Button_Town[I].Hint := GetHintWHotKey(TabHint[I], MAPED_SUBMENU_TAB_HOTKEYS[Ord(I)]);
+    Button_Town[I].Hint := GetHintWHotKey(TabHint[I], MAPED_SUBMENU_HOTKEYS[Ord(I)]);
     Button_Town[I].OnClick := PageChange;
   end;
 
@@ -146,7 +148,7 @@ begin
 end;
 
 
-procedure TKMMapEdTown.ShowIndex(aIndex: Byte);
+procedure TKMMapEdTown.DoShowSubMenu(aIndex: Byte);
 begin
   if (aIndex in [Byte(Low(TKMTownTab))..Byte(High(TKMTownTab))])
     and Button_Town[TKMTownTab(aIndex)].Enabled then
@@ -157,13 +159,25 @@ begin
 end;
 
 
+procedure TKMMapEdTown.DoExecuteSubMenuAction(aIndex: Byte);
+begin
+  inherited;
+
+  fGuiHouses.ExecuteSubMenuAction(aIndex);
+  fGuiUnits.ExecuteSubMenuAction(aIndex);
+  fGuiScript.ExecuteSubMenuAction(aIndex);
+  fGuiDefence.ExecuteSubMenuAction(aIndex);
+  fGuiOffence.ExecuteSubMenuAction(aIndex);
+end;
+
+
 function TKMMapEdTown.Visible: Boolean;
 begin
   Result := Panel_Town.Visible;
 end;
 
 
-function TKMMapEdTown.Visible(aPage: TKMTownTab): Boolean;
+function TKMMapEdTown.IsVisible(aPage: TKMTownTab): Boolean;
 begin
   case aPage of
     ttHouses:   Result := fGuiHouses.Visible;

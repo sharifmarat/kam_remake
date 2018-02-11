@@ -11,46 +11,46 @@ SC_ZOOM_RESET = 7; //Reset Zoom
 
 SC_CLOSE_MENU = 8; //Close opened menu
 
-SC_PLAN_ROAD = 9; //Plan road
-SC_PLAN_FIELD = 10; //Plan field
-SC_PLAN_WINE = 11; //Plan wine
-SC_ERASE_PLAN = 12; //Erase plan
+SC_DEBUG_WINDOW = 9; //Debug window
+SC_DEBUG_REVEALMAP = 10; //Debug Menu Reveal Map
+SC_DEBUG_VICTORY = 11; //Debug Menu Victory
+SC_DEBUG_DEFEAT = 12; //Debug Menu Defeat
+SC_DEBUG_ADDSCOUT = 13; //Debug Menu Add Scout
 
-SC_DEBUG_WINDOW = 13; //Debug window
-SC_DEBUG_REVEALMAP = 14; //Debug Menu Reveal Map
-SC_DEBUG_VICTORY = 15; //Debug Menu Victory
-SC_DEBUG_DEFEAT = 16; //Debug Menu Defeat
-SC_DEBUG_ADDSCOUT = 17; //Debug Menu Add Scout
+SC_MENU_BUILD = 14; //Build Menu
+SC_MENU_RATIO = 15; //Ratio Menu
+SC_MENU_STATS = 16; //Stats Menu
+SC_MENU_MENU = 17; //Main Menu
 
-SC_MENU_BUILD = 18; //Build Menu
-SC_MENU_RATIO = 19; //Ratio Menu
-SC_MENU_STATS = 20; //Stats Menu
-SC_MENU_MENU = 21; //Main Menu
+SC_ARMY_HALT = 18; //Halt Command
+SC_ARMY_SPLIT = 19; //Split up Command
+SC_ARMY_LINK = 20; //Linkup Command
+SC_ARMY_FOOD = 21; //Food Command
+SC_ARMY_STORM = 22; //Storm Command
+SC_ARMY_ADD_LINE = 23; //Formation Increase Line Command
+SC_ARMY_DEL_LINE = 24; //Formation Shrink Line Command
+SC_ARMY_ROTATE_CW = 25; //Turn Right Command
+SC_ARMY_ROTATE_CCW = 26; //Turn Left Command
 
-SC_ARMY_HALT = 22; //Halt Command
-SC_ARMY_SPLIT = 23; //Split up Command
-SC_ARMY_LINK = 24; //Linkup Command
-SC_ARMY_FOOD = 25; //Food Command
-SC_ARMY_STORM = 26; //Storm Command
-SC_ARMY_ADD_LINE = 27; //Formation Increase Line Command
-SC_ARMY_DEL_LINE = 28; //Formation Shrink Line Command
-SC_ARMY_ROTATE_CW = 29; //Turn Right Command
-SC_ARMY_ROTATE_CCW = 30; //Turn Left Command
+SC_SPEEDUP_1 = 27; //Speed up 1
+SC_SPEEDUP_2 = 28; //Speed up 2
+SC_SPEEDUP_3 = 29; //Speed up 3
+SC_SPEEDUP_4 = 30; //Speed up 4
 
-SC_SPEEDUP_1 = 31; //Speed up 1
-SC_SPEEDUP_2 = 32; //Speed up 2
-SC_SPEEDUP_3 = 33; //Speed up 3
-SC_SPEEDUP_4 = 34; //Speed up 4
+SC_BEACON = 31; //Beacon
+SC_PAUSE = 32; //Pause
+SC_SHOW_TEAMS = 33; //Show teams in MP
 
-SC_BEACON = 35; //Beacon
-SC_PAUSE = 36; //Pause
-SC_SHOW_TEAMS = 37; //Show teams in MP
+SC_CENTER_ALERT = 34; //Center to alert
+SC_DELETE_MSG = 35; //Delete message
+SC_CHAT_MP = 36; //Show the chat
 
-SC_CENTER_ALERT = 38; //Center to alert
-SC_DELETE_MSG = 39; //Delete message
-SC_CHAT_MP = 40; //Show the chat
+SC_NEXT_BLD_UNIT_SAME_TYPE = 37; //Select next building/unit with same type
 
-SC_NEXT_BLD_UNIT_SAME_TYPE = 41; //Select next building/unit with same type
+SC_PLAN_ROAD = 38; //Plan road
+SC_PLAN_FIELD = 39; //Plan field
+SC_PLAN_WINE = 40; //Plan wine
+SC_ERASE_PLAN = 41; //Erase plan
 
 SC_SELECT_1 = 42; //Select 1
 SC_SELECT_2 = 43; //Select 2
@@ -98,6 +98,14 @@ SC_MAPEDIT_SUB_MENU_3 = 82; // MapEdit Sub-menu 3
 SC_MAPEDIT_SUB_MENU_4 = 83; // MapEdit Sub-menu 4
 SC_MAPEDIT_SUB_MENU_5 = 84; // MapEdit Sub-menu 5
 SC_MAPEDIT_SUB_MENU_6 = 85; // MapEdit Sub-menu 6
-SC_MAPEDIT_OBJ_PALETTE = 86; // MapEdit Objects palette
-SC_MAPEDIT_UNIV_ERASOR = 87; // MapEdit Universal erasor
+SC_MAPEDIT_SUB_MENU_ACTION_1 = 86; // MapEdit Sub-menu Action 1
+SC_MAPEDIT_SUB_MENU_ACTION_2 = 87; // MapEdit Sub-menu Action 2
+SC_MAPEDIT_SUB_MENU_ACTION_3 = 88; // MapEdit Sub-menu Action 3
+SC_MAPEDIT_SUB_MENU_ACTION_4 = 89; // MapEdit Sub-menu Action 4
+SC_MAPEDIT_SUB_MENU_ACTION_5 = 90; // MapEdit Sub-menu Action 5
+SC_MAPEDIT_SUB_MENU_ACTION_6 = 91; // MapEdit Sub-menu Action 6
+SC_MAPEDIT_SUB_MENU_ACTION_7 = 92; // MapEdit Sub-menu Action 6
+SC_MAPEDIT_OBJ_PALETTE = 93; // MapEdit Objects palette
+SC_MAPEDIT_UNIV_ERASOR = 94; // MapEdit Universal erasor
+SC_MAPEDIT_PAINT_BUCKET = 95; // MapEdit Paint bucket
 
