@@ -91,9 +91,11 @@ type
     constructor Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
     destructor Destroy; override;
 
-    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal); overload;
-    procedure GameStart(aSizeX, aSizeY: Integer); overload;
+    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal);
+    procedure AfterStart;
+    procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure Load(const aPathName: UnicodeString);
+    procedure AfterLoad;
 
     function MapSizeInfo: UnicodeString;
 
@@ -476,6 +478,13 @@ begin
     Parser.Free;
   end;
 
+  gLog.AddTime('Gameplay initialized', True);
+end;
+
+
+procedure TKMGame.AfterStart;
+begin
+  gLog.AddTime('After game start');
   gHands.AfterMissionInit(fGameMode <> gmMapEd); //Don't flatten roads in MapEd
 
   //Random after StartGame and ViewReplay should match
@@ -500,7 +509,7 @@ begin
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
-  gLog.AddTime('Gameplay initialized', True);
+  gLog.AddTime('After game start', True);
 end;
 
 
@@ -878,7 +887,7 @@ end;
 
 
 //Start MapEditor (empty map)
-procedure TKMGame.GameStart(aSizeX, aSizeY: Integer);
+procedure TKMGame.MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
 var
   I: Integer;
 begin
@@ -1597,47 +1606,54 @@ begin
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
-     //Should check all Unit-House ID references and replace them with actual pointers
-    gHands.SyncLoad;
-    gTerrain.SyncLoad;
-    gProjectiles.SyncLoad;
-
     SetKaMSeed(LoadedSeed); //Seed is used in MultiplayerRig when changing humans to AIs through GIP for replay
-
-    if fGameMode in [gmMulti, gmMultiSpectate] then
-      MultiplayerRig;
-
-    if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
-    begin
-      DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
-      ForceDirectories(SavePath('basesave', IsMultiplayer)); //basesave directory could not exist at this moment, if this is the first game ever, f.e.
-      KMCopyFile(ChangeFileExt(aPathName, EXT_SAVE_BASE_DOT), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
-    end;
-
-    //Repeat mission init if necessary
-    if fGameTickCount = 0 then
-      gScriptEvents.ProcMissionStart;
-
-    //When everything is ready we can update UI
-    fActiveInterface.SyncUI;
-
-    if SaveIsMultiplayer then
-    begin
-      //MP does not saves view position cos of save identity for all players
-      fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
-      //In MP saves hotkeys can't be saved by UI, they must be network synced
-      if fGameMode in [gmSingle, gmCampaign, gmMulti] then
-        fGamePlayInterface.LoadHotkeysFromHand;
-    end;
-
-    if fGameMode = gmReplaySingle then
-      //SP Replay need to set screen position
-      fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
     gLog.AddTime('Loading game', True);
   finally
     FreeAndNil(LoadStream);
   end;
+end;
+
+
+procedure TKMGame.AfterLoad;
+begin
+  gLog.AddTime('After game loading');
+  //Should check all Unit-House ID references and replace them with actual pointers
+  gHands.SyncLoad;
+  gTerrain.SyncLoad;
+  gProjectiles.SyncLoad;
+
+  if fGameMode in [gmMulti, gmMultiSpectate] then
+    MultiplayerRig;
+
+  if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
+  begin
+    DeleteFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+    ForceDirectories(SavePath('basesave', IsMultiplayer)); //basesave directory could not exist at this moment, if this is the first game ever, f.e.
+    KMCopyFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT), SaveName('basesave', EXT_SAVE_BASE, IsMultiplayer));
+  end;
+
+  //Repeat mission init if necessary
+  if fGameTickCount = 0 then
+    gScriptEvents.ProcMissionStart;
+
+  //When everything is ready we can update UI
+  fActiveInterface.SyncUI;
+
+  if IsMultiplayer then
+  begin
+    //MP does not saves view position cos of save identity for all players
+    fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
+    //In MP saves hotkeys can't be saved by UI, they must be network synced
+    if fGameMode in [gmSingle, gmCampaign, gmMulti] then
+      fGamePlayInterface.LoadHotkeysFromHand;
+  end;
+
+  if fGameMode = gmReplaySingle then
+    //SP Replay need to set screen position
+    fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
+
+  gLog.AddTime('After game loading', True);
 end;
 
 
