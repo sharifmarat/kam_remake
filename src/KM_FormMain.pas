@@ -158,6 +158,7 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+  protected
     procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
   public
