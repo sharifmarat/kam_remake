@@ -19,7 +19,6 @@ type
     function NextLine(var Line: Integer; const LINE_Y: Byte = 20): Integer;
     procedure RMG_Change(Sender: TObject);
     procedure RMG_Close(Sender: TObject);
-//    procedure RMG_Refresh();
     procedure RMG_Generate_Map(Sender: TObject);
     procedure RMG_Generate_New_Seed(Sender: TObject);
     function GetVisible: Boolean;
@@ -52,7 +51,6 @@ type
     destructor Destroy; override;
 
     property Visible: Boolean read GetVisible;
-    //function KeyDown(Key: Word; Shift: TShiftState): Boolean;
     procedure Show();
   end;
 
@@ -63,9 +61,6 @@ uses
   KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_Hand,
   KM_TerrainSelection, KM_Terrain;
 
-
-//KM_Game, KM_GameCursor
-//KM_InterfaceGame;
 
 { TKMGUIMapEdGoal }
 constructor TKMMapEdRMG.Create(aParent: TKMPanel);
@@ -378,16 +373,8 @@ begin
 end;
 
 
-//procedure TKMMapEdRMG.RMG_Refresh();
-//begin
-//  //Certain values disable certain controls
-//  RMG_Change(nil);
-//end;
-
-
 procedure TKMMapEdRMG.Show();
 begin
-  //RMG_Refresh(aRMGSettings);
   Panel_RMG.Show;
   if not fMapSizeIndicator then
   begin
