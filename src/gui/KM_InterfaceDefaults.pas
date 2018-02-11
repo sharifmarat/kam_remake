@@ -78,6 +78,8 @@ const
   CHAT_MENU_TEAM = -2;
   CHAT_MENU_SPECTATORS = -3;
 
+  RESULTS_X_PADDING = 50;
+
 var
   MAPED_SUBMENU_TAB_HOTKEYS: array[0..5] of Integer;
 
