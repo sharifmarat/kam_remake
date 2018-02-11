@@ -127,6 +127,7 @@ type
     procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); virtual;
     //Creates TTaskDismiss
     procedure Dismiss; virtual;
+    procedure DismissCancel; virtual;
 
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); dynamic;
 
@@ -177,6 +178,7 @@ type
     property  IsDead: Boolean read fIsDead;
     function  IsDeadOrDying: Boolean;
     function  IsDismissing: Boolean;
+    function  IsDismissCancelAvailable: Boolean;
     property  GetPosition: TKMPoint read fCurrPosition;
     procedure SetPosition(aPos: TKMPoint);
     property  PositionF: TKMPointF read fPosition write fPosition;
@@ -903,8 +905,9 @@ var
   H: TKMHouseInn;
 begin
   Result := True; //Required for override compatibility
-  if fCurrentAction=nil then raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at start of TKMUnitWorker.UpdateState',fCurrPosition);
-  if inherited UpdateState then exit;
+  if fCurrentAction = nil then
+    raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnitWorker.UpdateState', fCurrPosition);
+  if inherited UpdateState then Exit;
 
   if fCondition < UNIT_MIN_CONDITION then
   begin
@@ -1261,6 +1264,30 @@ begin
 end;
 
 
+procedure TKMUnit.DismissCancel;
+begin
+  if not IsDismissing then Exit;
+
+  fThought := th_None; //Reset thought
+  fDismissASAP := False;
+
+  if (fCurrentAction is TUnitActionWalkTo)
+    and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  begin
+    AbandonWalk;
+  end else
+  if fCurrentAction.CanBeInterrupted then
+  begin
+    SetActionLockedStay(0, ua_Walk);
+    if fUnitTask = nil then
+      SetActionStay(5, ua_Walk);
+  end;
+
+  if fUnitTask <> nil then
+    FreeAndNil(fUnitTask);
+end;
+
+
 procedure TKMUnit.DoDismiss;
 
   procedure TryCreateDismissTask;
@@ -1491,9 +1518,7 @@ begin
   end;
   if fCurrentAction <> aAction then
   begin
-//    FreeAndNil(fCurrentAction);
-//    if fCurrentAction <> nil then
-      fCurrentAction.Free;
+    fCurrentAction.Free;
     fCurrentAction := aAction;
   end;
 end;
@@ -1736,6 +1761,14 @@ end;
 function TKMUnit.IsDismissing: Boolean;
 begin
   Result := fDismissASAP or (fUnitTask is TTaskDismiss);
+end;
+
+
+function TKMUnit.IsDismissCancelAvailable: Boolean;
+begin
+  Result := fDismissASAP
+            or ((fUnitTask is TTaskDismiss)
+              and TTaskDismiss(fUnitTask).CouldBeCancelled);
 end;
 
 

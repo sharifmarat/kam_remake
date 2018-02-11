@@ -62,6 +62,7 @@ type
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
     procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
     procedure Dismiss; override;
+    procedure DismissCancel; override;
 
     //Commands from TKMUnitGroup
     procedure OrderFood;
@@ -164,6 +165,12 @@ end;
 procedure TKMUnitWarrior.Dismiss;
 begin
   raise Exception.Create('Warrior unit can not be dismissed');
+end;
+
+
+procedure TKMUnitWarrior.DismissCancel;
+begin
+  raise Exception.Create('Warrior unit can not be dismissed and can not cancel dismiss then');
 end;
 
 

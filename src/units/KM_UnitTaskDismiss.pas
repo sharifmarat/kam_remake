@@ -7,6 +7,8 @@ uses
 
 
 type
+  TKMTaskDismissPhase = (tdp_);
+
   TTaskDismiss = class(TUnitTask)
   private
     fSchool: TKMHouse;
@@ -19,6 +21,7 @@ type
     procedure SyncLoad; override;
     procedure Save(SaveStream: TKMemoryStream); override;
     function ShouldBeCancelled: Boolean;
+    function CouldBeCancelled: BOolean;
 
     property School: TKMHouse read fSchool;
     function FindNewSchool: TKMHouse;
@@ -60,6 +63,12 @@ end;
 function TTaskDismiss.ShouldBeCancelled: Boolean;
 begin
   Result := (fSchool = nil) or fSchool.IsDestroyed;
+end;
+
+
+function TTaskDismiss.CouldBeCancelled: Boolean;
+begin
+  Result := fPhase <= 1;
 end;
 
 

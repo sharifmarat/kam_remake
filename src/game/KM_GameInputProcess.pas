@@ -49,6 +49,7 @@ type
 
     //II. Unit commands
     gic_UnitDismiss,
+    gic_UnitDismissCancel,
 
     //III.     Building/road plans (what to build and where)
     gic_BuildAddFieldPlan,
@@ -176,6 +177,7 @@ const
     gicpt_Int1,     // gic_ArmyStorm
     //II.      Unit commands
     gicpt_Int1,     // gic_UnitDismiss
+    gicpt_Int1,     // gic_UnitDismissCancel
     //III.     Building/road plans (what to build and where)
     gicpt_Int3,     // gic_BuildAddFieldPlan
     gicpt_Int2,     // gic_BuildRemoveFieldPlan
@@ -595,7 +597,7 @@ begin
       if (TgtHouse = nil) or TgtHouse.IsDestroyed then Exit; //House has been destroyed before command could be executed
     end;
 
-    if CommandType in [gic_UnitDismiss] then
+    if CommandType in [gic_UnitDismiss, gic_UnitDismissCancel] then
     begin
       SrcUnit := gHands.GetUnitByUID(Params[1]);
       if (SrcUnit = nil) or SrcUnit.IsDeadOrDying //Unit has died before command could be executed
@@ -629,7 +631,8 @@ begin
       gic_ArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
       gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, TKMDirection(Params[4]));
 
-      gic_UnitDismiss:      SrcUnit.Dismiss;
+      gic_UnitDismiss:        SrcUnit.Dismiss;
+      gic_UnitDismissCancel:  SrcUnit.DismissCancel;
 
       gic_BuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
       gic_BuildRemoveFieldPlan:   P.RemFieldPlan(KMPoint(Params[1],Params[2]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
@@ -802,7 +805,7 @@ end;
 
 procedure TGameInputProcess.CmdUnit(aCommandType: TGameInputCommandType; aUnit: TKMUnit);
 begin
-  Assert(aCommandType = gic_UnitDismiss);
+  Assert(aCommandType in [gic_UnitDismiss, gic_UnitDismissCancel]);
   TakeCommand(MakeCommand(aCommandType, aUnit.UID));
 end;
 
