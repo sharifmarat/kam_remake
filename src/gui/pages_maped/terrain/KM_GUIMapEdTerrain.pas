@@ -83,10 +83,10 @@ begin
     end;
 
     Button_TerrainUndo := TKMButton.Create(Panel_Terrain, 155, 0, 15, 26, '<', bsGame);
-    Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT];
+    Button_TerrainUndo.Hint := gResTexts[TX_MAPED_UNDO_HINT]+ ' (''Ctrl + Z'')';
     Button_TerrainUndo.OnClick := UnRedoClick;
     Button_TerrainRedo := TKMButton.Create(Panel_Terrain, 170, 0, 15, 26, '>', bsGame);
-    Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT];
+    Button_TerrainRedo.Hint := gResTexts[TX_MAPED_REDO_HINT] + ' (''Ctrl + Y'')';
     Button_TerrainRedo.OnClick := UnRedoClick;
 
     fGuiBrushes := TKMMapEdTerrainBrushes.Create(Panel_Terrain);
