@@ -5,7 +5,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   Controls, Classes,
-  KM_Controls;
+  KM_Controls, KM_ResKeys;
 
 
 type
@@ -77,6 +77,9 @@ const
   CHAT_MENU_ALL = -1;
   CHAT_MENU_TEAM = -2;
   CHAT_MENU_SPECTATORS = -3;
+
+var
+  MAPED_SUBMENU_TAB_HOTKEYS: array[0..5] of Integer;
 
 
 const
@@ -152,6 +155,17 @@ begin
     else        if Assigned(OnKeyDown) then
                   OnKeyDown(Key, Shift);
   end;
+end;
+
+
+initialization
+begin
+  MAPED_SUBMENU_TAB_HOTKEYS[0] := SC_MAPEDIT_SUB_MENU_1;
+  MAPED_SUBMENU_TAB_HOTKEYS[1] := SC_MAPEDIT_SUB_MENU_2;
+  MAPED_SUBMENU_TAB_HOTKEYS[2] := SC_MAPEDIT_SUB_MENU_3;
+  MAPED_SUBMENU_TAB_HOTKEYS[3] := SC_MAPEDIT_SUB_MENU_4;
+  MAPED_SUBMENU_TAB_HOTKEYS[4] := SC_MAPEDIT_SUB_MENU_5;
+  MAPED_SUBMENU_TAB_HOTKEYS[5] := SC_MAPEDIT_SUB_MENU_6;
 end;
 
 
