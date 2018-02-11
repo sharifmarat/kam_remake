@@ -275,6 +275,7 @@ type
     procedure CinematicUpdate;
     procedure LoadHotkeysFromHand;
     procedure SetButtons(aPaused: Boolean);
+    property UIMode: TUIMode read fUIMode;
 
     property Alerts: TKMAlerts read fAlerts;
 
