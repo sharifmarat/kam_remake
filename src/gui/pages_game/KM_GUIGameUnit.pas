@@ -79,11 +79,10 @@ begin
 
     Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,65,41,30,30,667, rxGui, bsGame);
     Button_Unit_Dismiss.OnClick := Dismiss_Click;
-//    Button_Unit_Dismiss.Hint := 'Dismiss unit'; //Todo translate
 
     Label_UnitTask        := TKMLabel.Create(Panel_Unit,65,80,116,60,'',fnt_Grey,taLeft);
     Label_UnitTask.AutoWrap := True;
-    Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,132 + 50,TB_WIDTH,200,'',fnt_Grey,taLeft); // Taken from LIB resource
+    Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,152,TB_WIDTH,200,'',fnt_Grey,taLeft); // Taken from LIB resource
     Label_UnitDescription.AutoWrap := True;
 
     Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 132, TB_WIDTH, 182);
@@ -165,13 +164,11 @@ begin
     ConditionBar_Unit.Left   := 65 + DISMISS_PADDING;
     Label_UnitCondition.Width := 116 - DISMISS_PADDING;
     ConditionBar_Unit.Width   := 116 - DISMISS_PADDING;
-//    Label_UnitDescription.Top := 132 + 50
   end else begin
     Label_UnitCondition.Left := 65;
     ConditionBar_Unit.Left   := 65;
     Label_UnitCondition.Width := 116;
     ConditionBar_Unit.Width   := 116;
-//    Label_UnitDescription.Top := 132;
   end;
 end;
 
@@ -195,13 +192,12 @@ begin
 
   Button_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN
                                  and aUnit.Dismissable   // Its possible to block dismiss from scripts
-//                                 and not fAskDismiss               // Hide button, when dismiss panel is open
                                  and gMySpectator.IsSelectedMyObj; // Allow to dismiss only our units
 
   if aUnit.IsDismissing then
   begin
     Button_Unit_Dismiss.TexID := 668;
-    Button_Unit_Dismiss.Hint := 'Cancel dismiss';
+    Button_Unit_Dismiss.Hint := 'Cancel unit dismiss';
     Button_Unit_Dismiss.Enabled := aUnit.IsDismissCancelAvailable;
     Panel_Unit_Dismiss.Visible := False;
   end else begin
@@ -286,11 +282,6 @@ begin
       TKMUnitGroup(gMySpectator.Selected).KillGroup
     else
       gGame.GameInputProcess.CmdUnit(gic_UnitDismiss, TKMUnit(gMySpectator.Selected));
-
-//    gMySpectator.Selected := nil;
-//    Hide;
-//    if Assigned(OnUnitDismiss) then // Return to main menu after dismissing
-//      OnUnitDismiss;
   end
   else
   begin
