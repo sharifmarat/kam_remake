@@ -2321,9 +2321,11 @@ procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: T
 
     if fMapEditor then
       Land[Loc.Y, Loc.X].CornOrWineTerrain := aTerrain
-    else
+    else begin
       Land[Loc.Y, Loc.X].Terrain := aTerrain;
-        
+      Land[Loc.Y, Loc.X].Rotation := 0;
+    end;
+
     if aObj <> -1 then
       Land[Loc.Y,Loc.X].Obj := aObj;
   end;
