@@ -5,7 +5,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   Controls, Classes,
-  KM_Controls, KM_ResKeys;
+  KM_Controls;
 
 
 type
@@ -89,6 +89,8 @@ const
 
 
 implementation
+uses
+  KM_ResKeys;
 
 
 { TKMUserInterface }
