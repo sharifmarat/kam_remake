@@ -1123,3 +1123,7 @@ TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the play
 TX_MENU_MAP_TYPE = 1122; // Map type
 TX_MENU_SP_MAP_SCENARIO = 1123; // Scenario map
 TX_MENU_MAP_PLAYABLE_AS_SP = 1124; // Playable as SP
+
+TX_MAPED_OBJ_DESC_CHOPPABLE = 1125; // Choppable tree
+TX_MAPED_OBJ_DESC_BLOCK_DIAG = 1126; // Blocks diagonal walking
+TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; // Blocks walking / building
