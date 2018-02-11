@@ -2512,14 +2512,13 @@ begin
   Land[Loc.Y,Loc.X].Passability := [];
 
   if TileIsWalkable(Loc)
-  and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
-  and CheckHeightPass(Loc, hpWalking) then
+    and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
+    and CheckHeightPass(Loc, hpWalking) then
     AddPassability(tpOwn);
 
   //For all passability types other than CanAll, houses and fenced houses are excluded
   if Land[Loc.Y,Loc.X].TileLock in [tlNone, tlFenced, tlFieldWork, tlRoadWork] then
   begin
-
     if TileIsWalkable(Loc)
       and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
       and CheckHeightPass(Loc, hpWalking) then
@@ -2531,11 +2530,11 @@ begin
 
     //Check for houses around this tile/vertex
     HousesNearTile := False;
-    for i := -1 to 1 do
-    for k := -1 to 1 do
-      if TileInMapCoords(Loc.X+k, Loc.Y+i)
-      and (Land[Loc.Y+i,Loc.X+k].TileLock in [tlFenced,tlDigged,tlHouse]) then
-        HousesNearTile := True;
+    for I := -1 to 1 do
+      for K := -1 to 1 do
+        if TileInMapCoords(Loc.X+K, Loc.Y+I)
+          and (Land[Loc.Y+I,Loc.X+K].TileLock in [tlFenced,tlDigged,tlHouse]) then
+          HousesNearTile := True;
 
     IsBuildNoObj := False;
     if TileIsRoadable(Loc)
@@ -2564,49 +2563,49 @@ begin
       AddPassability(tpFish);
 
     if TileIsSand(Loc)
-    and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
-    //TileLock checked in outer begin/end
-    and (Land[Loc.Y,Loc.X].TileOverlay <> to_Road)
-    and not TileIsCornField(Loc)
-    and not TileIsWineField(Loc)
-    and CheckHeightPass(Loc, hpWalking) then //Can't crab on houses, fields and roads (can walk on fenced house so you can't kill them by placing a house on top of them)
+      and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
+      //TileLock checked in outer begin/end
+      and (Land[Loc.Y,Loc.X].TileOverlay <> to_Road)
+      and not TileIsCornField(Loc)
+      and not TileIsWineField(Loc)
+      and CheckHeightPass(Loc, hpWalking) then //Can't crab on houses, fields and roads (can walk on fenced house so you can't kill them by placing a house on top of them)
       AddPassability(tpCrab);
 
     if TileIsSoil(Loc.X,Loc.Y)
-    and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
-    //TileLock checked in outer begin/end
-    //Wolf are big enough to run over roads, right?
-    and not TileIsCornField(Loc)
-    and not TileIsWineField(Loc)
-    and CheckHeightPass(Loc, hpWalking) then
+      and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
+      //TileLock checked in outer begin/end
+      //Wolf are big enough to run over roads, right?
+      and not TileIsCornField(Loc)
+      and not TileIsWineField(Loc)
+      and CheckHeightPass(Loc, hpWalking) then
       AddPassability(tpWolf);
   end;
 
   if TileIsWalkable(Loc)
-  and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
-  and CheckHeightPass(Loc, hpWalking)
-  and (Land[Loc.Y,Loc.X].TileLock <> tlHouse) then
+    and not gMapElements[Land[Loc.Y,Loc.X].Obj].AllBlocked
+    and CheckHeightPass(Loc, hpWalking)
+    and (Land[Loc.Y,Loc.X].TileLock <> tlHouse) then
     AddPassability(tpWorker);
 
   //Check all 4 tiles that border with this vertex
   if TileIsFactorable(KMPoint(Loc.X  ,Loc.Y))
-  and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y))
-  and TileIsFactorable(KMPoint(Loc.X  ,Loc.Y-1))
-  and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y-1)) then
+    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y))
+    and TileIsFactorable(KMPoint(Loc.X  ,Loc.Y-1))
+    and TileIsFactorable(KMPoint(Loc.X-1,Loc.Y-1)) then
     AddPassability(tpFactor);
 
   //Check for houses around this vertice(!)
   //Use only with CanElevate since it's vertice-based!
   HousesNearVertex := False;
-  for i := -1 to 0 do
-  for k := -1 to 0 do
-    if TileInMapCoords(Loc.X+k, Loc.Y+i) then
-    //Can't elevate built houses, can elevate fenced and dug houses though
-    if (Land[Loc.Y+i,Loc.X+k].TileLock = tlHouse) then
-      HousesNearVertex := True;
+  for I := -1 to 0 do
+    for K := -1 to 0 do
+      if TileInMapCoords(Loc.X+K, Loc.Y+I) then
+        //Can't elevate built houses, can elevate fenced and dug houses though
+        if (Land[Loc.Y+I,Loc.X+K].TileLock = tlHouse) then
+          HousesNearVertex := True;
 
   if VerticeInMapCoords(Loc.X,Loc.Y)
-  and not HousesNearVertex then
+    and not HousesNearVertex then
     AddPassability(tpElevate);
 end;
 
