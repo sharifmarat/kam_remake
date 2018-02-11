@@ -127,7 +127,7 @@ begin
     if (ssCtrl in Shift) and (Key = Ord('Z')) then
     begin
       if ssShift in Shift then
-        Button_TerrainUndo.Click //Ctrl+Shift+Z = Redo
+        Button_TerrainRedo.Click //Ctrl+Shift+Z = Redo
       else
         Button_TerrainUndo.Click; //Ctrl+Z = Undo
       aHandled := True;
