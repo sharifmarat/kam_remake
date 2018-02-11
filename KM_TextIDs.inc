@@ -457,6 +457,7 @@ TX_MAPED_MENU = 397; //Menu
 TX_MAPED_UNITS = 697; //Units
 TX_MAPED_OBJECTS = 398; //Objects
 TX_MAPED_VIEW_DEPOSISTS = 399; //Show deposits
+TX_MAPED_VIEW_OVERLAYS = 1128; //Show roads/fields/winefields
 TX_MAPED_VIEW_UNITS = 400; //Show units
 TX_MAPED_VIEW_HOUSES = 401; //Show houses
 TX_MAPED_VIEW_OBJECTS = 402; //Show objects

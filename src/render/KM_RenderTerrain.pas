@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  KM_Render;
+  KM_Render, KM_Game;
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);
@@ -509,6 +509,9 @@ procedure TRenderTerrain.DoOverlays;
 var
   I, K: Integer;
 begin
+  if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
+    Exit;
+
   for I := fClipRect.Top to fClipRect.Bottom do
     for K := fClipRect.Left to fClipRect.Right do
       RenderTileOverlay(K, I);
@@ -519,6 +522,9 @@ procedure TRenderTerrain.RenderFences;
 var
   I,K: Integer;
 begin
+  if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
+    Exit;
+
   with gTerrain do
     for I := fClipRect.Top to fClipRect.Bottom do
       for K := fClipRect.Left to fClipRect.Right do

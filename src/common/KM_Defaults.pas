@@ -670,6 +670,7 @@ type
     mlObjects,
     mlHouses,
     mlUnits,
+    mlOverlays,
     mlDeposits,
     mlDefences,
     mlRevealFOW,
