@@ -2559,6 +2559,9 @@ begin
       and CheckHeightPass(Loc, hpWalking) then
       AddPassability(tpMakeRoads);
 
+    if ObjectIsChopableTree(Loc, [caAge1, caAge2, caAge3, caAgeFull]) then
+      AddPassability(tpCutTree);
+
     if TileIsWater(Loc) then
       AddPassability(tpFish);
 

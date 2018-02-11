@@ -382,11 +382,12 @@ const
 type
   TKMTerrainPassability = (
     tpUnused,
-    tpWalk,         // General passability of tile for any walking units
+    tpWalk,        // General passability of tile for any walking units
     tpWalkRoad,    // Type of passability for Serfs when transporting wares, only roads have it
     tpBuildNoObj,  // Can we build a house on this tile after removing an object on the tile or house near it?
     tpBuild,       // Can we build a house on this tile?
     tpMakeRoads,   // Thats less strict than house building, roads Can be placed almost everywhere where units Can walk, except e.g. bridges
+    tpCutTree,     // Can tree be cut
     tpFish,        // Water tiles where fish Can move around
     tpCrab,        // Sand tiles where crabs Can move around
     tpWolf,        // Soil tiles where wolfs Can move around
@@ -407,6 +408,7 @@ const
     'Can build without|object or house',
     'Can build',
     'Can make roads',
+    'Can cut tree',
     'Can fish',
     'Can crab',
     'Can wolf',
