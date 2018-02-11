@@ -1,8 +1,5 @@
-//-- TBK06 --//
-//20.01.2018
-
-var
-	aArmyFirst, aArmySecond, aArmyThird: array[1..5] of Integer;
+//-- TSK16 --//
+//29.01.2018
 
 //Gives AI-Players Units a Random Hunger Level (2/3 to Max)
 procedure UnitsRandomHungerSet();
@@ -54,7 +51,7 @@ begin
 				Actions.HouseAllow(iPlayer, 8, true); //Farm
 				Actions.HouseAllow(iPlayer, 19, true); //Weapons Workshop
 				Actions.HouseAllow(iPlayer, 21, true); //Barracks
-				Actions.HouseAllow(iPlayer, 6, true); //Fisherman
+			//	Actions.HouseAllow(iPlayer, 6, true); //Fisherman
 			end;
 		1: 	begin // Iron Smithy
 				Actions.HouseAllow(iPlayer, 2, true); //Weapon Smithy
@@ -100,36 +97,81 @@ begin
 		29: exit; //Market
 	end;
 end;
-	
-procedure OnMissionStart;
-var 
+
+procedure SetupAI();
+var
+	p: Byte;
+	h: SmallInt;
 	aHouses: array of Integer;
-	h: Integer;
 begin
-	//Randomize Hunger Level of Enemy Units
-	UnitsRandomHungerSet();
-	//Unallow all Buildings
+	for p := 0 to States.StatPlayerCount() -1 do
+	begin
+		if States.PlayerIsAI(p) then
+		begin
+			//Adjust Ware Distribution
+			//Iron
+			Actions.PlayerWareDistribution(p, 6, 2, 5); //Weapon Smithy
+			Actions.PlayerWareDistribution(p, 6, 10, 5); //Armor smithy
+			//Coal
+			Actions.PlayerWareDistribution(p, 5, 1, 5);	//Iron smity
+			Actions.PlayerWareDistribution(p, 5, 15, 5); //Metallurgist
+			Actions.PlayerWareDistribution(p, 5, 2, 5);	//Weapon Smithy
+			Actions.PlayerWareDistribution(p, 5, 10, 5); //Armor Smithy
+			//Timber
+			Actions.PlayerWareDistribution(p, 2, 20, 5); //Armory workshop
+			Actions.PlayerWareDistribution(p, 2, 19, 5); //Weapon Workshop
+			//Corn
+			Actions.PlayerWareDistribution(p, 9, 22, 5); //Mill
+			Actions.PlayerWareDistribution(p, 9, 16, 5); //Swine farm
+			Actions.PlayerWareDistribution(p, 9, 12, 5); //Stables
+			//Block Wares in Storehouses
+			aHouses := States.PlayerGetAllHouses(p);
+			for h := 0 to Length(aHouses) -1 do
+			begin
+				if States.HouseType(aHouses[h]) = 11 then
+				begin
+					Actions.HouseWareBlock(aHouses[h], 0, true); //Treetrunk
+					//Actions.HouseWareBlock(aHouses[h], 1, true); //Stone
+					//Actions.HouseWareBlock(aHouses[h], 2, true); //Timber
+					Actions.HouseWareBlock(aHouses[h], 3, true); //Iron Ore
+					Actions.HouseWareBlock(aHouses[h], 4, true); //Gold Ore
+					Actions.HouseWareBlock(aHouses[h], 5, true); //Coal
+					Actions.HouseWareBlock(aHouses[h], 6, true); //Iron
+					//Actions.HouseWareBlock(aHouses[h], 7, true); //Gold
+					//Actions.HouseWareBlock(aHouses[h], 8, true); //Wine
+					Actions.HouseWareBlock(aHouses[h], 9, true); //Corn
+					//Actions.HouseWareBlock(aHouses[h], 10, true); //Loaves
+					Actions.HouseWareBlock(aHouses[h], 11, true); //Flour
+					Actions.HouseWareBlock(aHouses[h], 12, true); //Leather
+					//Actions.HouseWareBlock(aHouses[h], 13, true); //Sausages
+					Actions.HouseWareBlock(aHouses[h], 14, true); //Pig
+					Actions.HouseWareBlock(aHouses[h], 15, true); //Skin
+					//16-26 = Military Equipment
+					//Actions.HouseWareBlock(aHouses[h], 15, true); //Fish
+				end;
+			end;
+		end;
+	end;
+end;
+
+
+procedure OnMissionStart();
+var
+	h: Integer;
+	aHouses: array of Integer;
+begin
 	LockBuildings(0);
-	//Unlock Buildings at the Sart
+	//Set Hunger Level of AIs
+	UnitsRandomHungerSet();
+	//Setup AI Defaults
+	SetupAI();
+	//Unlock Houses
 	aHouses := States.PlayerGetAllHouses(0);
 	for h := 0 to Length(aHouses) -1 do
 		TraditionalUnlock(0, aHouses[h]);
-	//First Wave
-	aArmyFirst[1] := States.GroupAt(56, 127); //Militia
-	aArmyFirst[2] := States.GroupAt(63, 125); //Scouts
-	aArmyFirst[3] := States.GroupAt(62, 129); //Lance Carriers
-	aArmyFirst[4] := States.GroupAt(62, 133); //Rogues
-	//Second Wave
-	aArmySecond[1] := States.GroupAt(109, 8); //Militia
-	aArmySecond[2] := States.GroupAt(111, 4); //Lance Carriers
-	aArmySecond[3] := States.GroupAt(114, 5); //Vagabond - Top
-	aArmySecond[4] := States.GroupAt(117, 2); //Vagabond - Bottom
-	//Third Wave
-	aArmyThird[1] := States.GroupAt(73, 137); //Knights
-	aArmyThird[2] := States.GroupAt(76, 135); //Pikemen
-	aArmyThird[3] := States.GroupAt(80, 132); //Axe Fighters
-	aArmyThird[4] := States.GroupAt(66, 138); //Crossbowmen
-	aArmyThird[5] := States.GroupAt(80, 141); //Bowmen
+	//Disables Sharing Fog With Ally
+	Actions.PlayerShareFog(0, 3, False);
+	Actions.PlayerShareFog(3, 0, False);
 end;
 
 procedure OnHouseBuilt(aHouseID: Integer);
@@ -138,36 +180,4 @@ begin
 	iOwner := States.HouseOwner(aHouseID);
 	if iOwner = 0 then
 		TraditionalUnlock(iOwner, aHouseID);
-end;
-
-procedure OnTick;
-begin
-	//Message After 5 Seconds
-	if States.GameTime = 50 then
-		Actions.ShowMsg(0, '<$0>');
-	//First Wave Move
-	if States.GameTime = 600 then
-	begin
-		Actions.GroupOrderWalk(aArmyFirst[1], 58, 89, 0);
-		Actions.GroupOrderWalk(aArmyFirst[2], 62, 87, 0);
-		Actions.GroupOrderWalk(aArmyFirst[3], 66, 90, 0);
-		Actions.GroupOrderWalk(aArmyFirst[4], 62, 93, 0);
-	end;
-	//Second Wave Move
-	if States.GameTime = 850 then
-    begin
-		Actions.GroupOrderWalk(aArmySecond[1], 31, 18, 6);
-		Actions.GroupOrderWalk(aArmySecond[2], 32, 23, 6);
-		Actions.GroupOrderWalk(aArmySecond[3], 27, 19, 6);
-		Actions.GroupOrderWalk(aArmySecond[4], 28, 24, 6);
-	end;
-	//Third Wave Move
-	if States.GameTime = 1200 then
-	begin
-		Actions.GroupOrderWalk(aArmyThird[1], 65, 89, 0);
-		Actions.GroupOrderWalk(aArmyThird[2], 69, 88, 0);
-		Actions.GroupOrderWalk(aArmyThird[3], 73, 87, 0);
-		Actions.GroupOrderWalk(aArmyThird[4], 67, 94, 0);
-		Actions.GroupOrderWalk(aArmyThird[5], 72, 92, 0);
-	end;
 end;
