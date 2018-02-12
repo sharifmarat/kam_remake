@@ -216,6 +216,10 @@ type
     procedure AnchorsStretch;
     function MasterParent: TKMPanel;
 
+    procedure SetPosCenter;
+    procedure SetPosCenterW;
+    procedure SetPosCenterH;
+
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; virtual;
     procedure KeyPress(Key: Char); virtual;
     function KeyUp(Key: Word; Shift: TShiftState): Boolean; virtual;
@@ -2128,6 +2132,25 @@ begin
   while P.Parent <> nil do
     P := P.Parent;
   Result := P;
+end;
+
+
+procedure TKMControl.SetPosCenterW;
+begin
+  Left := (Parent.Width - Width) div 2;
+end;
+
+
+procedure TKMControl.SetPosCenterH;
+begin
+  Top := (Parent.Height - Height) div 2;
+end;
+
+
+procedure TKMControl.SetPosCenter;
+begin
+  SetPosCenterW;
+  SetPosCenterH;
 end;
 
 
