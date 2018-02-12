@@ -1329,8 +1329,11 @@ type
   end;
 
 
+  TKMPopUpBGImageType = (pubgit_Gray, pubgit_Yellowish);
+
   TKMPopUpPanel = class(TKMPanel)
   private
+    fBGImageType: TKMPopUpBGImageType;
     procedure UpdateSizes;
   protected
     ImageBG: TKMImage;
@@ -1341,7 +1344,7 @@ type
     Caption: UnicodeString;
     Font: TKMFont;
     FontColor: TColor4;
-    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '');
+    constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgit_Yellowish);
     procedure Paint; override;
   end;
 
@@ -6498,9 +6501,13 @@ end;
 
 
 { TKMPopUpPanel }
-constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = '');
+constructor TKMPopUpPanel.Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgit_Yellowish);
+var
+  BGImageID: Integer;
 begin
   inherited Create(aParent, (aParent.Width div 2) - (aWidth div 2), (aParent.Height div 2) - (aHeight div 2), aWidth, aHeight);
+
+  fBGImageType := aImageType;
 
   Font := fnt_Outline;
   FontColor := icWhite;
@@ -6508,7 +6515,12 @@ begin
 
   TKMBevel.Create(Self, -1000,  -1000, 4000, 4000);
 
-  ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 60, 15, rxGuiMain);
+  case fBGImageType of
+    pubgit_Gray:      BGImageID := 15;
+    pubgit_Yellowish: BGImageID := 3;
+  end;
+
+  ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 60, BGImageID, rxGuiMain);
   ImageBG.ImageStretch;
 
   BevelBG := TKMBevel.Create(Self, 0, 0, aWidth, aHeight);
