@@ -86,9 +86,9 @@ begin
     Label_UnitDescription.AutoWrap := True;
 
     Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 132, TB_WIDTH, 182);
-    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,2,TB_WIDTH,20,'Do you really want to dismiss this unit?|He will go to school and leave your town forever',fnt_Grey,taCenter); // Todo translate
+    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,2,TB_WIDTH,20,gResTexts[TX_UNIT_TASK_DISMISS_CONFIRMATION],fnt_Grey,taCenter);
     Label_Unit_Dismiss.AutoWrap    := True;
-    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,0,100,TB_WIDTH,30,'Dismiss',bsGame); // Todo translate
+    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,0,100,TB_WIDTH,30,gResTexts[TX_UNIT_TASK_DISMISS_BTN],bsGame);
     Button_Unit_DismissNo          := TKMButton.Create(Panel_Unit_Dismiss,0,135,TB_WIDTH,30,gResTexts[TX_WORD_CANCEL],bsGame);
     Button_Unit_DismissYes.OnClick := Unit_Dismiss;
     Button_Unit_DismissNo.OnClick  := Unit_Dismiss;
@@ -197,15 +197,15 @@ begin
   if aUnit.IsDismissing then
   begin
     Button_Unit_Dismiss.TexID := 668;
-    Button_Unit_Dismiss.Hint := 'Cancel unit dismiss';
+    Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_CANCEL_HINT];
     Button_Unit_Dismiss.Enabled := aUnit.IsDismissCancelAvailable;
     Panel_Unit_Dismiss.Visible := False;
   end else begin
     HasSchools := gMySpectator.Hand.Stats.GetHouseQty(ht_School) > 0;
     Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools;
     Button_Unit_Dismiss.TexID := 667;
-    Button_Unit_Dismiss.Hint  := IfThenS(fAskDismiss or HasSchools, 'Dismiss unit',
-                                 'Dismiss is not available because of lack of schools in your town'); //Todo translate
+    Button_Unit_Dismiss.Hint  := IfThenS(fAskDismiss or HasSchools, gResTexts[TX_UNIT_TASK_DISMISS_HINT],
+                                 gResTexts[TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT]);
     Panel_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN and fAskDismiss;
   end;
 

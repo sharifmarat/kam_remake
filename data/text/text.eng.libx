@@ -1087,4 +1087,9 @@
 1136:Paint bucket (change owner)
 1137:Add AI attack
 1138:Remove AI attack
-1139:Retiring...
+1139:Retiring
+1140:Dismiss
+1141:Do you really want to dismiss this unit?|He will go to school and leave your town forever
+1142:Dismiss unit
+1143:Cancel unit dismiss
+1144:Dismiss is not available because of lack of schools in your town

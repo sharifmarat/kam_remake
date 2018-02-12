@@ -221,7 +221,12 @@ TX_UNIT_TASK_GRAPES = 201; //Harvesting grapes
 TX_UNIT_TASK_FISHING = 202; //Fishing
 TX_UNIT_TASK_CUT_TREE = 203; //Cutting tree
 TX_UNIT_TASK_PLANT_TREE = 204; //Planting tree
-TX_UNIT_TASK_DISMISS = 1139; //Retiring...
+TX_UNIT_TASK_DISMISS = 1139; //Retiring
+TX_UNIT_TASK_DISMISS_BTN = 1140; //Dismiss
+TX_UNIT_TASK_DISMISS_CONFIRMATION = 1141; //Do you really want to dismiss this unit?|He will go to school and leave your town forever
+TX_UNIT_TASK_DISMISS_HINT = 1142; //Dismiss unit
+TX_UNIT_TASK_DISMISS_CANCEL_HINT = 1143; //Cancel unit dismiss
+TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT = 1144; //Dismiss is not available because of lack of schools in your town
 
 TX_MUSIC__29 = 205; //Spirit
 TX_MUSIC_BUSY = 206; //Busy
