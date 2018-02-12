@@ -6549,6 +6549,7 @@ begin
 
   TKMBevel.Create(Self, -1000,  -1000, 4000, 4000);
 
+  BGImageID := 0;
   case fBGImageType of
     pubgit_Gray:      BGImageID := 15;
     pubgit_Yellowish: BGImageID := 3;
