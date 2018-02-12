@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  Classes, //SysUtils,
+  Classes,
   KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave;
 
 type

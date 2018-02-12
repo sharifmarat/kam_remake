@@ -25,12 +25,12 @@ type
     procedure MapTypeChange(aIsMultiplayer: Boolean);
   protected
     Panel_Menu: TKMPanel;
-    Button_Resize: TKMButton;
-    Button_Menu_Save: TKMButton;
-    Button_Menu_Load: TKMButton;
-    Button_QuickPlay: TKMButton;
-    Button_Menu_Settings: TKMButton;
-    Button_Menu_Quit: TKMButton;
+      Button_Resize: TKMButton;
+      Button_Menu_Save: TKMButton;
+      Button_Menu_Load: TKMButton;
+      Button_QuickPlay: TKMButton;
+      Button_Menu_Settings: TKMButton;
+      Button_Menu_Quit: TKMButton;
     procedure DoShowSubMenu(aIndex: Byte); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
