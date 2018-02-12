@@ -6522,7 +6522,7 @@ begin
     pubgit_Yellowish: BGImageID := 3;
   end;
 
-  ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 60, BGImageID, rxGuiMain);
+  ImageBG := TKMImage.Create(Self, -20, -50, aWidth + 40, aHeight + 70, BGImageID, rxGuiMain);
   ImageBG.ImageStretch;
 
   BevelBG := TKMBevel.Create(Self, 0, 0, aWidth, aHeight);
