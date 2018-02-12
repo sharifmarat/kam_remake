@@ -154,6 +154,7 @@ type
     function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean;
     procedure UnitDismiss(aUnitID: Integer);
     procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
+    procedure UnitDismissCancel(aUnitID: Integer);
     procedure UnitHPChange(aUnitID, aHP: Integer);
     procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean);
     procedure UnitHungerSet(aUnitID, aHungerLevel: Integer);
@@ -3056,6 +3057,28 @@ begin
     end
     else
       LogParamWarning('Actions.UnitDismissableSet', [aUnitID, Byte(aDismissable)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Cancel dismiss task for the specified unit
+procedure TKMScriptActions.UnitDismissCancel(aUnitID: Integer);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.DismissCancel;
+    end
+    else
+      LogParamWarning('Actions.UnitDismissCancel', [aUnitID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
