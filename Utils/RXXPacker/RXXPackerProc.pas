@@ -92,7 +92,7 @@ begin
         end;
         if RT = rxUnits then
         begin
-          SpritePack.SoftenShadows(6251, 6314, False); //Smooth thought bubbles
+          SpritePack.SoftenShadows(6251, 6322, False); //Smooth thought bubbles
           //Smooth all death animations for all units
           resUnits := TKMResUnits.Create;
           DeathAnimCount := 0; //We need to remember which ones we've done because units reuse them

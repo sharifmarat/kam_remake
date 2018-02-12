@@ -47,14 +47,18 @@ type
     gic_ArmyWalk,         //Walking
     gic_ArmyStorm,        //StormAttack
 
-    //II.     Building/road plans (what to build and where)
+    //II. Unit commands
+    gic_UnitDismiss,
+    gic_UnitDismissCancel,
+
+    //III.     Building/road plans (what to build and where)
     gic_BuildAddFieldPlan,
     gic_BuildRemoveFieldPlan, //Removal of a plan
     gic_BuildRemoveHouse,     //Removal of house
     gic_BuildRemoveHousePlan, //Removal of house plan
     gic_BuildHousePlan,       //Build HouseType
 
-    //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
+    //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gic_HouseRepairToggle,
     gic_HouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
     gic_HouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
@@ -77,11 +81,11 @@ type
     gic_HouseRemoveTrain,             //Remove unit being trained from School
     gic_HouseWoodcuttersCutting,      //Set the cutting point for the Woodcutters
 
-    //IV.     Delivery ratios changes (and other game-global settings)
+    //V.     Delivery ratios changes (and other game-global settings)
     gic_WareDistributionChange,   //Change of distribution for 1 ware
     gic_WareDistributions,        //Update distributions for all wares at ones
 
-    //V.      Game changes
+    //VI.      Game changes
     gic_GameAlertBeacon,          //Signal alert (beacon)
     gic_GamePause,
     gic_GameAutoSave,
@@ -92,8 +96,6 @@ type
     gic_GameMessageLogRead,   //Player marks a message in their log as read
     gic_GamePlayerTypeChange, //Players can be changed to AI when loading a save
     gic_GamePlayerDefeat,     //Player can be defeated after intentional quit from the game
-
-    //VI.      Cheatcodes affecting gameplay (props)
 
     //VII.     Temporary and debug commands
     gic_TempAddScout,
@@ -173,13 +175,16 @@ const
     gicpt_Int3,     // gic_ArmyFormation
     gicpt_Int4,     // gic_ArmyWalk
     gicpt_Int1,     // gic_ArmyStorm
-    //II.     Building/road plans (what to build and where)
+    //II.      Unit commands
+    gicpt_Int1,     // gic_UnitDismiss
+    gicpt_Int1,     // gic_UnitDismissCancel
+    //III.     Building/road plans (what to build and where)
     gicpt_Int3,     // gic_BuildAddFieldPlan
     gicpt_Int2,     // gic_BuildRemoveFieldPlan
     gicpt_Int2,     // gic_BuildRemoveHouse
     gicpt_Int2,     // gic_BuildRemoveHousePlan
     gicpt_Int3,     // gic_BuildHousePlan
-    //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
+    //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gicpt_Int1,     // gic_HouseRepairToggle
     gicpt_Int2,     // gic_HouseDeliveryToggle
     gicpt_Int1,     // gic_HouseClosedForWorkerTgl
@@ -201,10 +206,10 @@ const
     gicpt_Int2,     // gic_HouseTownHallMaxGold
     gicpt_Int2,     // gic_HouseRemoveTrain
     gicpt_Int3,     // gic_HouseWoodcuttersCutting
-    //IV.     Delivery ratios changes (and other game-global settings)
+    //V.     Delivery ratios changes (and other game-global settings)
     gicpt_Int3,     // gic_WareDistributionChange
     gicpt_Text,     // gic_WareDistributions
-    //V.      Game changes
+    //VI.      Game changes
     gicpt_Int4,     // gic_GameAlertBeacon
     gicpt_NoParams, // gic_GamePause
     gicpt_Date,     // gic_GameAutoSave
@@ -276,6 +281,8 @@ type
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aHouse: TKMHouse); overload;
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aTurnAmount: TKMTurnDirection; aLineAmount:shortint); overload;
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aLoc: TKMPoint; aDirection: TKMDirection); overload;
+
+    procedure CmdUnit(aCommandType: TGameInputCommandType; aUnit: TKMUnit);
 
     procedure CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint); overload;
     procedure CmdBuild(aCommandType: TGameInputCommandType; aLoc: TKMPoint; aFieldType: TFieldType); overload;
@@ -531,7 +538,8 @@ end;
 procedure TGameInputProcess.ExecCommand(aCommand: TGameInputCommand);
 var
   P: TKMHand;
-  IsSilent: boolean;
+  IsSilent: Boolean;
+  SrcUnit: TKMUnit;
   SrcGroup, TgtGroup: TKMUnitGroup;
   TgtUnit: TKMUnit;
   SrcHouse, TgtHouse: TKMHouse;
@@ -539,6 +547,7 @@ begin
   //NOTE: gMySpectator.PlayerIndex should not be used for important stuff here, use P instead (commands must be executed the same for all players)
   IsSilent := (aCommand.HandIndex <> gMySpectator.HandIndex);
   P := gHands[aCommand.HandIndex];
+  SrcUnit := nil;
   SrcGroup := nil;
   TgtGroup := nil;
   SrcHouse := nil;
@@ -588,6 +597,14 @@ begin
       if (TgtHouse = nil) or TgtHouse.IsDestroyed then Exit; //House has been destroyed before command could be executed
     end;
 
+    if CommandType in [gic_UnitDismiss, gic_UnitDismissCancel] then
+    begin
+      SrcUnit := gHands.GetUnitByUID(Params[1]);
+      if (SrcUnit = nil) or SrcUnit.IsDeadOrDying //Unit has died before command could be executed
+        or (SrcUnit.Owner <> aCommand.HandIndex) then //Potential exploit
+        Exit;
+    end;
+
     //Some commands are blocked by peacetime (this is a fall back in case players try to cheat)
     if gGame.IsPeaceTime and (CommandType in BlockedByPeaceTime) then
        Exit;
@@ -613,6 +630,9 @@ begin
       gic_ArmyHalt:         SrcGroup.OrderHalt(True);
       gic_ArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
       gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, TKMDirection(Params[4]));
+
+      gic_UnitDismiss:        SrcUnit.Dismiss;
+      gic_UnitDismissCancel:  SrcUnit.DismissCancel;
 
       gic_BuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
       gic_BuildRemoveFieldPlan:   P.RemFieldPlan(KMPoint(Params[1],Params[2]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
@@ -780,6 +800,13 @@ procedure TGameInputProcess.CmdArmy(aCommandType: TGameInputCommandType; aGroup:
 begin
   Assert(aCommandType = gic_ArmyWalk);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, aLoc.X, aLoc.Y, Byte(aDirection)));
+end;
+
+
+procedure TGameInputProcess.CmdUnit(aCommandType: TGameInputCommandType; aUnit: TKMUnit);
+begin
+  Assert(aCommandType in [gic_UnitDismiss, gic_UnitDismissCancel]);
+  TakeCommand(MakeCommand(aCommandType, aUnit.UID));
 end;
 
 

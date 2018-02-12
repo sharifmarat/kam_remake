@@ -10,6 +10,7 @@ type
   TTaskGoHome = class(TUnitTask)
   public
     constructor Create(aUnit: TKMUnit);
+    destructor Destroy; override;
     function Execute:TTaskResult; override;
   end;
 
@@ -23,6 +24,12 @@ begin
   inherited;
 
   fTaskName := utn_GoHome;
+end;
+
+
+destructor TTaskGoHome.Destroy;
+begin
+  inherited;
 end;
 
 

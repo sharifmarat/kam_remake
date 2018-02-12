@@ -439,6 +439,7 @@ begin
     RegisterMethodCheck(c, 'function UnitCarrying(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitDead(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitDirection(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitDismissable(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitHome(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPCurrent(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPMax(aUnitID: Integer): Integer');
@@ -596,6 +597,8 @@ begin
 
     RegisterMethodCheck(c, 'procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean)');
     RegisterMethodCheck(c, 'function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean');
+    RegisterMethodCheck(c, 'procedure UnitDismiss(aUnitID: Integer)');
+    RegisterMethodCheck(c, 'procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean)');
     RegisterMethodCheck(c, 'procedure UnitHPChange(aUnitID, aHP: Integer)');
     RegisterMethodCheck(c, 'procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean)');
     RegisterMethodCheck(c, 'procedure UnitHungerSet(aUnitID, aHungerLevel: Integer)');
@@ -937,6 +940,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitCarrying,                             'UnitCarrying');
       RegisterMethod(@TKMScriptStates.UnitDead,                                 'UnitDead');
       RegisterMethod(@TKMScriptStates.UnitDirection,                            'UnitDirection');
+      RegisterMethod(@TKMScriptStates.UnitDismissable,                          'UnitDismissable');
       RegisterMethod(@TKMScriptStates.UnitHome,                                 'UnitHome');
       RegisterMethod(@TKMScriptStates.UnitHPCurrent,                            'UnitHPCurrent');
       RegisterMethod(@TKMScriptStates.UnitHPMax,                                'UnitHPMax');
@@ -1095,6 +1099,8 @@ begin
 
       RegisterMethod(@TKMScriptActions.UnitBlock,                               'UnitBlock');
       RegisterMethod(@TKMScriptActions.UnitDirectionSet,                        'UnitDirectionSet');
+      RegisterMethod(@TKMScriptActions.UnitDismiss,                             'UnitDismiss');
+      RegisterMethod(@TKMScriptActions.UnitDismissableSet,                      'UnitDismissableSet');
       RegisterMethod(@TKMScriptActions.UnitHPChange,                            'UnitHPChange');
       RegisterMethod(@TKMScriptActions.UnitHPSetInvulnerable,                   'UnitHPSetInvulnerable');
       RegisterMethod(@TKMScriptActions.UnitHungerSet,                           'UnitHungerSet');

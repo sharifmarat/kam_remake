@@ -17,6 +17,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     function Execute: TActionResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -31,7 +32,7 @@ uses
 { TUnitActionAbandonWalk }
 constructor TUnitActionAbandonWalk.Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TUnitActionType);
 begin
-  Assert(LocB.X*LocB.Y <> 0, 'Illegal WalkTo 0;0');
+  Assert(LocB.X*LocB.Y <> 0, 'Illegal WalkTo 0:0');
   inherited Create(aUnit, aActionType, False);
 
   fWalkTo         := LocB;
@@ -114,6 +115,12 @@ begin
   inherited;
   SaveStream.Write(fWalkTo);
   SaveStream.Write(fVertexOccupied);
+end;
+
+
+function TUnitActionAbandonWalk.CanBeInterrupted: Boolean;
+begin
+  Result := StepDone and not Locked; //Abandon walk should never be abandoned, it will exit within 1 step anyway
 end;
 
 

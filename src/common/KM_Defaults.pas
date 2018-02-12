@@ -72,6 +72,7 @@ var
   CAP_MAX_FPS           :Boolean = True;  //Should limit rendering performance to avoid GPU overheating (disable to measure debug performance)
   CRASH_ON_REPLAY       :Boolean = True;  //Crash as soon as replay consistency fails (random numbers mismatch)
   BLOCK_DUPLICATE_APP   :Boolean = True;  //Do not allow to run multiple games at once (to prevent MP cheating)
+  SHOW_DISMISS_UNITS_BTN:Boolean = True; //The button to order citizens go back to school
 
   //Implemented
   DO_UNIT_INTERACTION   :Boolean = True; //Debug for unit interaction
@@ -86,7 +87,7 @@ var
   //Not fully implemented yet
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
-  SHOW_DISMISS_BUTTON   :Boolean = False; //The button to order citizens go back to school
+  SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
   CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   SNOW_HOUSES           :Boolean = False; //Draw snow on houses
   CHECK_8087CW          :Boolean = False; //Check that 8087CW (FPU flags) are set correctly each frame, in case some lib/API changed them
@@ -509,11 +510,11 @@ type
   TGoInDirection = (gd_GoOutside=-1, gd_GoInside=1); //Switch to set if unit goes into house or out of it
 
 type
-  TKMUnitThought = (th_None, th_Eat, th_Home, th_Build, th_Stone, th_Wood, th_Death, th_Quest);
+  TKMUnitThought = (th_None, th_Eat, th_Home, th_Build, th_Stone, th_Wood, th_Death, th_Quest, th_Dismiss);
 
 const //Corresponding indices in units.rx
   ThoughtBounds: array [TKMUnitThought, 1..2] of Word = (
-  (0,0), (6250,6257), (6258,6265), (6266,6273), (6274,6281), (6282,6289), (6290,6297), (6298,6305)
+  (0,0), (6250,6257), (6258,6265), (6266,6273), (6274,6281), (6282,6289), (6290,6297), (6298,6305), (6314,6321)
   );
 
   UNIT_OFF_X = -0.5;
@@ -534,7 +535,7 @@ const //Corresponding indices in units.rx
 type
   TUnitTaskName = ( utn_Unknown, //Uninitialized task to detect bugs
         utn_SelfTrain, utn_Deliver,        utn_BuildRoad,  utn_BuildWine,        utn_BuildField,
-        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,
+        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,    utn_Dismiss,
         utn_GoEat,     utn_Mining,         utn_Die,        utn_GoOutShowHungry,  utn_AttackHouse,
         utn_ThrowRock);
 

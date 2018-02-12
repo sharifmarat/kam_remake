@@ -79,6 +79,7 @@ type
     destructor Destroy; override;
 
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function CanAbandonExternal: Boolean;
     property DoesWalking: Boolean read fDoesWalking;
     property DoingExchange: Boolean read fDoExchange; //Critical piece, must not be abandoned
@@ -297,7 +298,7 @@ end;
 
 
 // Returns true only when unit is stuck for some reason
-function TUnitActionWalkTo.CanAbandonExternal: boolean;
+function TUnitActionWalkTo.CanAbandonExternal: Boolean;
 begin
   Result := (not fDoExchange) //Other unit could have set this
             and KMSamePointF(KMPointF(fUnit.GetPosition), fUnit.PositionF);
@@ -1182,6 +1183,12 @@ procedure TUnitActionWalkTo.Paint;
 begin
   if SHOW_UNIT_ROUTES then
     gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
+end;
+
+
+function TUnitActionWalkTo.CanBeInterrupted: Boolean;
+begin
+  Result := CanAbandonExternal and StepDone;//Only when unit is idling during Interaction pauses
 end;
 
 

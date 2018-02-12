@@ -152,6 +152,8 @@ type
 
     procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean);
     function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean;
+    procedure UnitDismiss(aUnitID: Integer);
+    procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
     procedure UnitHPChange(aUnitID, aHP: Integer);
     procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean);
     procedure UnitHungerSet(aUnitID, aHungerLevel: Integer);
@@ -3017,6 +3019,50 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Dismiss the specified unit
+procedure TKMScriptActions.UnitDismiss(aUnitID: Integer);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismiss;
+    end
+    else
+      LogParamWarning('Actions.UnitDismiss', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Makes the specified unit 'dismiss' command available
+procedure TKMScriptActions.UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismissable := aDismissable;
+    end
+    else
+      LogParamWarning('Actions.UnitDismissableSet', [aUnitID, Byte(aDismissable)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Order the specified unit to walk somewhere.
 //* Note: Only works on idle units so as not to interfere with game logic and cause crashes.
@@ -3066,7 +3112,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
         //Force delay to let the unit choose when to die, because this could be called in the middle of an event
-        U.KillUnit(PLAYER_NONE, not aSilent, True);
+        U.Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.UnitKill', [aUnitID]);
@@ -3162,7 +3208,7 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if G <> nil then
         for I := G.Count - 1 downto 0 do
-          G.Members[I].KillUnit(PLAYER_NONE, not aSilent, True);
+          G.Members[I].Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.GroupKillAll', [aGroupID]);

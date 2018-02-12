@@ -897,7 +897,7 @@ begin
 end;
 
 
-function TKMHand.FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse;
+function TKMHand.FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte = 1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, aPosition.X, aPosition.Y, Index);
 end;

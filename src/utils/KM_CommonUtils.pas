@@ -14,6 +14,8 @@ uses
   {$ENDIF}
   ;
 
+  function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+
   function KMGetCursorDirection(X,Y: integer): TKMDirection;
 
   function GetPositionInGroup2(OriginX, OriginY: Word; aDir: TKMDirection; aIndex, aUnitPerRow: Word; MapX, MapY: Word; out aTargetCanBeReached: Boolean): TKMPoint;
@@ -109,6 +111,15 @@ uses
 
 var
   fKaMSeed: Integer;
+
+
+function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+begin
+  if aCondition then
+    Result := aIfTrue
+  else
+    Result := aIfFalse;
+end;
 
 
 //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)

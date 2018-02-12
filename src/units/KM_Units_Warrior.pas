@@ -35,7 +35,6 @@ type
     fRequestedFood: Boolean;
     fStormDelay: Word;
 
-    function CanInterruptAction: Boolean;
     procedure FightEnemy(aEnemy: TKMUnit);
 
     procedure ClearOrderTarget;
@@ -47,6 +46,7 @@ type
 
     procedure TakeNextOrder;
     procedure WalkedOut;
+    function CanInterruptAction: Boolean;
   public
     OnWarriorDied: TKMWarriorEvent; //Separate event from OnUnitDied to report to Group
     OnPickedFight: TKMWarrior2Event;
@@ -60,7 +60,9 @@ type
     destructor Destroy; override;
 
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
-    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Dismiss; override;
+    procedure DismissCancel; override;
 
     //Commands from TKMUnitGroup
     procedure OrderFood;
@@ -160,7 +162,19 @@ begin
 end;
 
 
-procedure TKMUnitWarrior.KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
+procedure TKMUnitWarrior.Dismiss;
+begin
+  raise Exception.Create('Warrior unit can not be dismissed');
+end;
+
+
+procedure TKMUnitWarrior.DismissCancel;
+begin
+  raise Exception.Create('Warrior unit can not be dismissed and can not cancel dismiss then');
+end;
+
+
+procedure TKMUnitWarrior.Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
 var AlreadyDeadOrDying: Boolean;
 begin
   AlreadyDeadOrDying := IsDeadOrDying; //Inherrited will kill the unit
@@ -587,17 +601,12 @@ end;
 { See if we can abandon other actions in favor of more important things }
 function TKMUnitWarrior.CanInterruptAction: Boolean;
 begin
-  if GetUnitAction is TUnitActionWalkTo      then Result := TUnitActionWalkTo(GetUnitAction).CanAbandonExternal and GetUnitAction.StepDone else //Only when unit is idling during Interaction pauses
-  if(GetUnitAction is TUnitActionStay) and
-    (UnitTask      is TTaskAttackHouse)      then Result := True else //We can abandon attack house if the action is stay
-  if GetUnitAction is TUnitActionStay        then Result := not GetUnitAction.Locked else //Initial pause before leaving barracks is locked
-  if GetUnitAction is TUnitActionAbandonWalk then Result := GetUnitAction.StepDone and not GetUnitAction.Locked else //Abandon walk should never be abandoned, it will exit within 1 step anyway
-  if GetUnitAction is TUnitActionGoInOut     then Result := not GetUnitAction.Locked else //Never interupt leaving barracks
-  if GetUnitAction is TUnitActionStormAttack then Result := not GetUnitAction.Locked else //Never interupt storm attack
-  if GetUnitAction is TUnitActionFight       then Result := IsRanged or not GetUnitAction.Locked //Only allowed to interupt ranged fights
-  else Result := true;
+  if (GetUnitAction is TUnitActionStay)
+    and (UnitTask is TTaskAttackHouse) then
+    Result := True //We can abandon attack house if the action is stay
+  else
+    Result := GetUnitAction.CanBeInterrupted;
 end;
-
 
 
 //Override current action if there's an Order in queue paying attention
@@ -618,7 +627,7 @@ begin
     woWalk:         begin
                       //We can update existing Walk action with minimum changes
                       if (GetUnitAction is TUnitActionWalkTo)
-                      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                        and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
                       begin
                         FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
 
@@ -773,7 +782,7 @@ begin
     CheckForEnemy; //Split into seperate procedure so it can be called from other places
 
   Result := True; //Required for override compatibility
-  if inherited UpdateState then exit;
+  if inherited UpdateState then Exit;
 
   //Make sure we didn't get an action above
   if GetUnitAction <> nil then
