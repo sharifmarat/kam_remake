@@ -35,6 +35,10 @@ type
     procedure EraseObject(aEraseAll: Boolean);
     function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
     procedure ChangeOwner(aChangeOwnerForAll: Boolean);
+    procedure PaintDefences(aLayer: TKMPaintLayer);
+    procedure PaintRevealFOW(aLayer: TKMPaintLayer);
+    procedure PaintCenterScreen(aLayer: TKMPaintLayer);
+    procedure PaintAIStart(aLayer: TKMPaintLayer);
   public
     MissionDefSavePath: UnicodeString;
 
@@ -601,36 +605,20 @@ begin
 end;
 
 
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.PaintDefences(aLayer: TKMPaintLayer);
 var
   I, K: Integer;
-  Loc, P: TKMPoint;
-  G: TKMUnitGroup;
   DP: TAIDefencePosition;
 begin
-  P := gGameCursor.Cell;
-
-  if aLayer = plCursors then
-    //With Buildings tab see if we can remove Fields or Houses
-    if gGameCursor.Mode = cmErase then
-      if gTerrain.TileIsCornField(P)
-      or gTerrain.TileIsWineField(P)
-      or (gTerrain.Land[P.Y,P.X].TileOverlay=to_Road)
-      or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
-        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
-      else
-        gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
-
-
   if mlDefences in fVisibleLayers then
   begin
     case aLayer of
       plCursors:  for I := 0 to gHands.Count - 1 do
-                  for K := 0 to gHands[I].AI.General.DefencePositions.Count - 1 do
-                  begin
-                    DP := gHands[I].AI.General.DefencePositions[K];
-                    gRenderPool.RenderSpriteOnTile(DP.Position.Loc, 510 + Byte(DP.Position.Dir), gHands[I].FlagColor);
-                  end;
+                    for K := 0 to gHands[I].AI.General.DefencePositions.Count - 1 do
+                    begin
+                      DP := gHands[I].AI.General.DefencePositions[K];
+                      gRenderPool.RenderSpriteOnTile(DP.Position.Loc, 510 + Byte(DP.Position.Dir), gHands[I].FlagColor);
+                    end;
       plTerrain:  if ActiveMarker.MarkerType = mtDefence then
                     //Render the radius only for the selected defence position, otherwise it's too much overlap
                     if InRange(ActiveMarker.Index, 0, gHands[ActiveMarker.Owner].AI.General.DefencePositions.Count - 1) then
@@ -642,47 +630,94 @@ begin
                     end;
     end;
   end;
+end;
 
+
+procedure TKMMapEditor.PaintRevealFOW(aLayer: TKMPaintLayer);
+var
+  I, K: Integer;
+  Loc: TKMPoint;
+begin
   if mlRevealFOW in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  for K := 0 to fRevealers[I].Count - 1 do
-  begin
-    Loc := fRevealers[I][K];
-    case aLayer of
-      plTerrain:  gRenderAux.CircleOnTerrain(Loc.X-0.5, Loc.Y-0.5,
-                                           fRevealers[I].Tag[K],
-                                           gHands[I].FlagColor and $20FFFFFF,
-                                           gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc,
-                      394, gHands[I].FlagColor);
-    end;
-  end;
+    for I := 0 to gHands.Count - 1 do
+      for K := 0 to fRevealers[I].Count - 1 do
+      begin
+        Loc := fRevealers[I][K];
+        case aLayer of
+          plTerrain:  gRenderAux.CircleOnTerrain(Loc.X-0.5, Loc.Y-0.5,
+                                               fRevealers[I].Tag[K],
+                                               gHands[I].FlagColor and $20FFFFFF,
+                                               gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc,
+                          394, gHands[I].FlagColor);
+        end;
+      end;
+end;
 
+
+procedure TKMMapEditor.PaintCenterScreen(aLayer: TKMPaintLayer);
+var
+  I: Integer;
+  Loc: TKMPoint;
+begin
   if mlCenterScreen in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  if gHands[I].HasAssets then
-  begin
-    Loc := gHands[I].CenterScreen;
-    case aLayer of
-      plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
-                                             Loc.X + 2, Loc.Y + 1.5,
-                                             gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 391, gHands[I].FlagColor);
-    end;
-  end;
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        Loc := gHands[I].CenterScreen;
+        case aLayer of
+          plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
+                                                 Loc.X + 2, Loc.Y + 1.5,
+                                                 gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 391, gHands[I].FlagColor);
+        end;
+      end;
+end;
 
+
+procedure TKMMapEditor.PaintAIStart(aLayer: TKMPaintLayer);
+var
+  I: Integer;
+  Loc: TKMPoint;
+begin
   if mlAIStart in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  if gHands[I].HasAssets then
-  begin
-    Loc := gHands[I].AI.Setup.StartPosition;
-    case aLayer of
-      plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
-                                             Loc.X + 2, Loc.Y + 1.5,
-                                             gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 390, gHands[I].FlagColor);
-    end;
-  end;
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        Loc := gHands[I].AI.Setup.StartPosition;
+        case aLayer of
+          plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
+                                                 Loc.X + 2, Loc.Y + 1.5,
+                                                 gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 390, gHands[I].FlagColor);
+        end;
+      end;
+end;
+
+
+procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+var
+  I, K: Integer;
+  P: TKMPoint;
+  G: TKMUnitGroup;
+begin
+  P := gGameCursor.Cell;
+
+  if aLayer = plCursors then
+    //With Buildings tab see if we can remove Fields or Houses
+    if gGameCursor.Mode = cmErase then
+      if gTerrain.TileIsCornField(P)
+        or gTerrain.TileIsWineField(P)
+        or (gTerrain.Land[P.Y,P.X].TileOverlay=to_Road)
+        or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
+        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
+      else
+        gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
+
+  PaintDefences(aLayer);
+  PaintRevealFOW(aLayer);
+  PaintCenterScreen(aLayer);
+  PaintAIStart(aLayer);
 
   if mlSelection in fVisibleLayers then
     fSelection.Paint(aLayer, aClipRect);
