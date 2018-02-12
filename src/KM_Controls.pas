@@ -8014,12 +8014,20 @@ end;
 
 
 function TKMMasterControl.KeyDown(Key: Word; Shift: TShiftState): Boolean;
+var
+  Control: TKMControl;
 begin
+  Result := False;
   //CtrlFocus could be on another menu page and no longer visible
   if (CtrlFocus <> nil) and CtrlFocus.Visible then
-    Result := CtrlFocus.KeyDown(Key, Shift)
-  else
-    Result := false;
+  begin
+    Control := CtrlFocus;
+    //Lets try to find who can handle KeyDown event in controls tree
+    while (Control <> nil) and not Control.KeyDown(Key, Shift) do
+      Control := Control.Parent;
+
+    Result := Control <> nil; // means we find someone, who handle that event
+  end;
 end;
 
 
@@ -8032,12 +8040,20 @@ end;
 
 
 function TKMMasterControl.KeyUp(Key: Word; Shift: TShiftState): Boolean;
+var
+  Control: TKMControl;
 begin
+  Result := False;
   //CtrlFocus could be on another menu page and no longer visible
   if (CtrlFocus <> nil) and CtrlFocus.Visible then
-    Result := CtrlFocus.KeyUp(Key, Shift)
-  else
-    Result := false;
+  begin
+    Control := CtrlFocus;
+    //Lets try to find who can handle KeyUp event in controls tree
+    while (Control <> nil) and not Control.KeyUp(Key, Shift) do
+      Control := Control.Parent;
+
+    Result := Control <> nil; // means we find someone, who handle that event
+  end;
 end;
 
 
