@@ -1767,7 +1767,7 @@ begin
 
   FileExt := ExtractFileExt(aFileName);
   // Check included file extension
-  if FileExt <> '.script' then
+  if FileExt <> EXT_FILE_SCRIPT_DOT then
     raise Exception.Create(Format('Error including ''%s'' from ''%s'': |Wrong extension: ''%s''',
                                   [ExtractFileName(aFileName), ExtractFileName(aCallingFileName), FileExt]));
 

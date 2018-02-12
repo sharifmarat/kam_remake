@@ -281,6 +281,8 @@ const
   EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
   EXT_SAVE_MP_MINIMAP_DOT = '.' + EXT_SAVE_MP_MINIMAP;
 
+  EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
+
 type
   TKMHandIndex = {type} ShortInt;
   TKMHandIndexArray = array of TKMHandIndex;

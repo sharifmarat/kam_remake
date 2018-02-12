@@ -165,7 +165,7 @@ begin
           or (LowerCase(RecExt) = '.mi' ) then
           Continue;
 
-        if LowerCase(RecExt) = '.script' then
+        if LowerCase(RecExt) = EXT_FILE_SCRIPT_DOT then
           HasScript := True;
 
         AddAttachment(AttachCnt, ExtractFilePath(aMissionFile) + SearchRec.Name);
@@ -178,8 +178,8 @@ begin
   //Add all scripts if we find main script
   if HasScript then
   begin
-    MissionScriptFileName := MissionName + '.script';
-    FindFirst(ExtractFilePath(aMissionFile) + '*.script', faAnyFile - faDirectory, SearchRec);
+    MissionScriptFileName := MissionName + EXT_FILE_SCRIPT_DOT;
+    FindFirst(ExtractFilePath(aMissionFile) + '*' + EXT_FILE_SCRIPT_DOT, faAnyFile - faDirectory, SearchRec);
     try
       repeat
         if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')

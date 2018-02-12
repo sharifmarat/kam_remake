@@ -226,7 +226,7 @@ begin
 
   DatFile := fPath + fFileName + '.dat';
   MapFile := fPath + fFileName + '.map';
-  ScriptFile := fPath + fFileName + '.script'; //Needed for CRC
+  ScriptFile := fPath + fFileName + EXT_FILE_SCRIPT_DOT; //Needed for CRC
   TxtFile := fPath + fFileName + '.txt'; //Needed for CRC
   LIBXFiles := fPath + fFileName + '.*.libx'; //Needed for CRC
 
