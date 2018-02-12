@@ -486,7 +486,8 @@ type
     acDigits, //Only 0..9 digits, for numeric input
     acANSI7, //#33..#123,#125,#126 - only basic latin chars and symbols for user nikname, except |
     acFileName, //Exclude symbols that can't be used in filenames
-    acText  //Anything is allowed except for eol symbol
+    acText,  //Anything is allowed except for eol symbol
+    acAll    //Anything is allowed
   );
 
 
@@ -552,6 +553,7 @@ type
     procedure ValidateText; virtual; abstract;
     function KeyEventHandled(Key: Word; Shift: TShiftState): Boolean; virtual; abstract;
     procedure PaintSelection;
+    function DrawEolSymbol: Boolean; virtual;
   public
     ReadOnly: Boolean;
     BlockInput: Boolean; // Blocks all input into the field, but allow focus, selection and copy selected text
@@ -582,6 +584,7 @@ type
     procedure ValidateText; override;
     function KeyEventHandled(Key: Word; Shift: TShiftState): Boolean; override;
     function GetRText: UnicodeString;
+    function DrawEolSymbol: Boolean; override;
   public
     Masked: Boolean; //Mask entered text as *s
     MaxLen: Word;
@@ -2376,12 +2379,14 @@ function IsCharAllowed(aChar: WideChar; aAllowedChars: TAllowedChars): Boolean;
 const
   Ansi7Chars: TSetOfAnsiChar = [#32..#123,#125..#126]; //except | character
   NonFileChars: TSetOfAnsiChar = [#0 .. #31, '<', '>', #176, '|', '"', '\', '/', ':', '*', '?'];
-  NonTextChars: TSetOfAnsiChar = [#0 .. #31, #176, '|']; //° has negative width so acts like a backspace in KaM fonts
+  NonTextCharsWEOL: TSetOfAnsiChar = [#0 .. #31, #176, '|']; //° has negative width so acts like a backspace in KaM fonts
+  NonTextChars: TSetOfAnsiChar = [#0 .. #31, #176]; //° has negative width so acts like a backspace in KaM fonts
 begin
   Result := not ((aAllowedChars = acDigits) and not InRange(Ord(aChar), 48, 57)
     or (aAllowedChars = acANSI7) and not CharInSet(aChar, Ansi7Chars)
     or (aAllowedChars = acFileName) and CharInSet(aChar, NonFileChars)
-    or (aAllowedChars = acText) and CharInSet(aChar, NonTextChars));
+    or (aAllowedChars = acText) and CharInSet(aChar, NonTextCharsWEOL)
+    or (aAllowedChars = acAll) and CharInSet(aChar, NonTextChars));
 end;
 
 
@@ -2603,7 +2608,7 @@ begin
   if fEnabled then Col := FontColor
               else Col := $FF888888;
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width, fText, fFont, fTextAlign, Col, False, False, fTabWidth);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width, fText, fFont, fTextAlign, Col, False, False, False, fTabWidth);
 
   if fStrikethrough then
     TKMRenderUI.WriteShape(TextLeft, AbsTop + fTextSize.Y div 2 - 2, fTextSize.X, 3, Col, $FF000000);
@@ -3068,10 +3073,10 @@ function TKMSelectableEdit.GetCursorPosAt(X: Integer): Integer;
 var RText: UnicodeString;
 begin
   RText := Copy(fText, fLeftIndex+1, Length(fText) - fLeftIndex);
-  if gRes.Fonts[fFont].GetTextSize(RText).X < X-SelfAbsLeft-4 then
+  if gRes.Fonts[fFont].GetTextSize(RText, False, DrawEolSymbol).X < X-SelfAbsLeft-4 then
     Result := Length(RText) + fLeftIndex
   else
-    Result := gRes.Fonts[fFont].CharsThatFit(RText, X-SelfAbsLeft-4) + fLeftIndex;
+    Result := gRes.Fonts[fFont].CharsThatFit(RText, X-SelfAbsLeft-4, False, DrawEolSymbol) + fLeftIndex;
 end;
 
 
@@ -3122,7 +3127,7 @@ begin
   begin
     //Remove characters to the left of fLeftIndex
     RText := Copy(fText, fLeftIndex+1, Length(fText));
-    while fCursorPos-fLeftIndex > gRes.Fonts[fFont].CharsThatFit(RText, Width-8) do
+    while fCursorPos-fLeftIndex > gRes.Fonts[fFont].CharsThatFit(RText, Width-8, False, DrawEolSymbol) do
     begin
       Inc(fLeftIndex);
       //Remove characters to the left of fLeftIndex
@@ -3325,11 +3330,17 @@ begin
     BeforeSelectionText := Copy(fText, fLeftIndex+1, max(fSelectionStart, fLeftIndex) - fLeftIndex);
     SelectionText := Copy(fText, max(fSelectionStart, fLeftIndex)+1, fSelectionEnd - max(fSelectionStart, fLeftIndex));
 
-    BeforeSelectionW := gRes.Fonts[fFont].GetTextSize(BeforeSelectionText).X;
-    SelectionW := gRes.Fonts[fFont].GetTextSize(SelectionText).X;
+    BeforeSelectionW := gRes.Fonts[fFont].GetTextSize(BeforeSelectionText, False, DrawEolSymbol).X;
+    SelectionW := gRes.Fonts[fFont].GetTextSize(SelectionText, False, DrawEolSymbol).X;
 
     TKMRenderUI.WriteShape(SelfAbsLeft+4+BeforeSelectionW, AbsTop+3, min(SelectionW, Width-8), Height-6, clTextSelection);
   end;
+end;
+
+
+function TKMSelectableEdit.DrawEolSymbol: Boolean;
+begin
+  Result := False; //EOL is not showing by default
 end;
 
 
@@ -3371,6 +3382,12 @@ begin
   else
     Result := fText;
   Result := Copy(Result, fLeftIndex+1, Length(Result));
+end;
+
+
+function TKMEdit.DrawEolSymbol: Boolean;
+begin
+  Result := AllowedChars = acAll;
 end;
 
 
@@ -3464,7 +3481,7 @@ begin
   end;
 
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
+  if fEnabled then Col := $FFFFFFFF else Col := $FF888888;
 
   if Masked then
     RText := StringOfChar('*', Length(fText))
@@ -3474,13 +3491,14 @@ begin
 
   PaintSelection;
 
-  TKMRenderUI.WriteText(AbsLeft+4, AbsTop+3, Width-8, RText, fFont, taLeft, Col, not ShowColors, True); //Characters that do not fit are trimmed
+  //Characters that do not fit are trimmed
+  TKMRenderUI.WriteText(AbsLeft+4, AbsTop+3, Width-8, RText, fFont, taLeft, Col, not ShowColors, True, DrawEolSymbol);
 
   //Render text cursor
   if (csFocus in State) and ((TimeGet div 500) mod 2 = 0) then
   begin
     SetLength(RText, CursorPos - fLeftIndex);
-    OffX := AbsLeft + 2 + gRes.Fonts[fFont].GetTextSize(RText, True).X;
+    OffX := AbsLeft + 2 + gRes.Fonts[fFont].GetTextSize(RText, True, DrawEolSymbol).X;
     TKMRenderUI.WriteShape(OffX, AbsTop+2, 3, Height-4, Col, $FF000000);
   end;
 end;

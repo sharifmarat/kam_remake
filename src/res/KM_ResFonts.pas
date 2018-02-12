@@ -85,10 +85,13 @@ type
     property BaseHeight: SmallInt read fBaseHeight;
     property WordSpacing: SmallInt read fWordSpacing;
 
-    function GetCharWidth(aChar: WideChar): Integer;
-    function WordWrap(aText: UnicodeString; aMaxPxWidth: Integer; aForced: Boolean; aIndentAfterNL: Boolean; aTabWidth: Integer = TAB_WIDTH): UnicodeString;
-    function CharsThatFit(const aText: UnicodeString; aMaxPxWidth: Integer; aRound: Boolean = False; aTabWidth: Integer = TAB_WIDTH): Integer;
-    function GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aTabWidth: Integer = TAB_WIDTH): TKMPoint;
+    function GetCharWidth(aChar: WideChar; aConsiderEolSymbol: Boolean = False): Integer;
+    function WordWrap(aText: UnicodeString; aMaxPxWidth: Integer; aForced: Boolean; aIndentAfterNL: Boolean;
+             aTabWidth: Integer = TAB_WIDTH): UnicodeString;
+    function CharsThatFit(const aText: UnicodeString; aMaxPxWidth: Integer; aRound: Boolean = False;
+                          aConsiderEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH): Integer;
+    function GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aConsiderEolSymbol: Boolean = False;
+             aTabWidth: Integer = TAB_WIDTH): TKMPoint;
     function GetMaxPrintWidthOfStrings(aStrings: array of string): Integer;
   end;
 
@@ -526,9 +529,9 @@ begin
 end;
 
 
-function TKMFontData.GetCharWidth(aChar: WideChar): Integer;
+function TKMFontData.GetCharWidth(aChar: WideChar; aConsiderEolSymbol: Boolean = False): Integer;
 begin
-  if AnsiChar(aChar) in [#124, #9] then
+  if (not aConsiderEolSymbol and (aChar = #124)) or (aChar = #9) then
     Result := 0
   else if aChar = #32 then
     Result := WordSpacing
@@ -665,7 +668,8 @@ begin
 end;
 
 
-function TKMFontData.CharsThatFit(const aText: UnicodeString; aMaxPxWidth: Integer; aRound: Boolean = False; aTabWidth: Integer = TAB_WIDTH): Integer;
+function TKMFontData.CharsThatFit(const aText: UnicodeString; aMaxPxWidth: Integer; aRound: Boolean = False;
+                                  aConsiderEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH): Integer;
 var
   I, dx, PrevX, LastCharW: Integer;
 begin
@@ -674,7 +678,7 @@ begin
 
   for I := 1 to Length(aText) do
   begin
-    LastCharW := GetCharWidth(aText[I]);
+    LastCharW := GetCharWidth(aText[I], aConsiderEolSymbol);
     PrevX := dx;
     if aText[I] = #9 then
       dx := (Floor(dx / aTabWidth) + 1) * aTabWidth
@@ -694,7 +698,8 @@ begin
 end;
 
 
-function TKMFontData.GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aTabWidth: Integer = TAB_WIDTH): TKMPoint;
+function TKMFontData.GetTextSize(const aText: UnicodeString; aCountMarkup: Boolean = False; aConsiderEolSymbol: Boolean = False;
+                                 aTabWidth: Integer = TAB_WIDTH): TKMPoint;
 var
   I: Integer;
   LineCount, LineWidthInc, TmpColor: Integer;
@@ -706,8 +711,9 @@ begin
   if aText = '' then Exit;
 
   LineCount := 1;
-  for I := 1 to Length(aText) do
-    if aText[I] = #124 then Inc(LineCount);
+  if not aConsiderEolSymbol then
+    for I := 1 to Length(aText) do
+      if aText[I] = #124 then Inc(LineCount);
 
   SetLength(LineWidth, LineCount+2); //1..n+1 (for last line)
 
@@ -722,7 +728,7 @@ begin
       if aText[I] = #9 then // Tab char
         LineWidthInc := (Floor(LineWidth[LineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[LineCount]
       else
-        LineWidthInc := GetCharWidth(aText[I]);
+        LineWidthInc := GetCharWidth(aText[I], aConsiderEolSymbol);
       Inc(LineWidth[LineCount], LineWidthInc);
     end else
       //Ignore color markups [$FFFFFF][]
@@ -738,11 +744,11 @@ begin
           if aText[I] = #9 then // Tab char
             LineWidthInc := (Floor(LineWidth[LineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[LineCount]
           else
-            LineWidthInc := GetCharWidth(aText[I]);
+            LineWidthInc := GetCharWidth(aText[I], aConsiderEolSymbol);
           Inc(LineWidth[LineCount], LineWidthInc);
         end;
 
-    if (aText[I] = #124) or (I = Length(aText)) then
+    if (not aConsiderEolSymbol and (aText[I] = #124)) or (I = Length(aText)) then
     begin // If EOL or aText end
       if aText[I] <> #9 then       // for Tab reduce line width for CharSpacing and also for TAB 'jump'
         LineWidthInc := 0;
