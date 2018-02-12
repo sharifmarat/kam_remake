@@ -6522,7 +6522,7 @@ procedure TKMPopUpPanel.Paint;
 begin
   inherited Paint;
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop + 10, Width, Caption, Font, taCenter, FontColor);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop - 30, Width, Caption, Font, taCenter, FontColor);
 end;
 
 
