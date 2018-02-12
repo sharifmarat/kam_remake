@@ -612,6 +612,8 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont); overload;
     property Caption: UnicodeString read fCaption write fCaption;
     property Checked: Boolean read fChecked write fChecked;
+    procedure Check;
+    procedure Uncheck;
     procedure SwitchCheck;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure Paint; override;
@@ -3492,6 +3494,18 @@ begin
   fCaption  := aCaption;
   LineWidth := 1;
   LineColor := clChkboxOutline;
+end;
+
+
+procedure TKMCheckBox.Check;
+begin
+  fChecked := True;
+end;
+
+
+procedure TKMCheckBox.Uncheck;
+begin
+  fChecked := False;
 end;
 
 
