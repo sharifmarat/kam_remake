@@ -770,6 +770,7 @@ begin
   fGuiTown.ShowSubMenu(aIndex);
   fGuiPlayer.ShowSubMenu(aIndex);
   fGuiMission.ShowSubMenu(aIndex);
+  fGuiMenu.ShowSubMenu(aIndex);
 end;
 
 

@@ -154,6 +154,8 @@ end;
 
 procedure TKMMapEdPlayer.DoShowSubMenu(aIndex: Byte);
 begin
+  inherited;
+
   if (aIndex in [Byte(Low(TKMPlayerTab))..Byte(High(TKMPlayerTab))])
     and Button_Player[TKMPlayerTab(aIndex)].Enabled then
   begin

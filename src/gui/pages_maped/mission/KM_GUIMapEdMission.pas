@@ -128,6 +128,8 @@ end;
 
 procedure TKMMapEdMission.DoShowSubMenu(aIndex: Byte);
 begin
+  inherited;
+
   if (aIndex in [Byte(Low(TKMMissionTab))..Byte(High(TKMMissionTab))])
     and Button_Mission[TKMMissionTab(aIndex)].Enabled then
   begin

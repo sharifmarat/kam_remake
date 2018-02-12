@@ -150,6 +150,8 @@ end;
 
 procedure TKMMapEdTown.DoShowSubMenu(aIndex: Byte);
 begin
+  inherited;
+
   if (aIndex in [Byte(Low(TKMTownTab))..Byte(High(TKMTownTab))])
     and Button_Town[TKMTownTab(aIndex)].Enabled then
   begin

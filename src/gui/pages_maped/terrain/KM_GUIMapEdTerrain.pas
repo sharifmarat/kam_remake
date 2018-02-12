@@ -174,7 +174,7 @@ begin
   if (Sender = Button_Terrain[ttSelection]) then
     fGuiSelection.Show;
 
-  //Signla that active page has changed, that may affect layers visibility
+  //Signal that active page has changed, that may affect layers visibility
   fOnPageChange(Self);
 end;
 
@@ -201,6 +201,8 @@ end;
 
 procedure TKMMapEdTerrain.DoShowSubMenu(aIndex: Byte);
 begin
+  inherited;
+
   if (aIndex in [Byte(Low(TKMTerrainTab))..Byte(High(TKMTerrainTab))])
     and Button_Terrain[TKMTerrainTab(aIndex)].Enabled then
     Show(TKMTerrainTab(aIndex));

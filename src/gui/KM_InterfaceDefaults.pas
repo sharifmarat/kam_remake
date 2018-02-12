@@ -73,7 +73,7 @@ const
 type
   TKMMapEdMenuPage = class
   protected
-    procedure DoShowSubMenu(aIndex: Byte); virtual; abstract;
+    procedure DoShowSubMenu(aIndex: Byte); virtual;
     procedure DoExecuteSubMenuAction(aIndex: Byte); virtual;
   public
     procedure ShowSubMenu(aIndex: Byte);
@@ -200,6 +200,12 @@ procedure TKMMapEdMenuPage.ExecuteSubMenuAction(aIndex: Byte);
 begin
   if Visible then
     DoExecuteSubMenuAction(aIndex);
+end;
+
+
+procedure TKMMapEdMenuPage.DoShowSubMenu(aIndex: Byte);
+begin
+  //just empty stub here
 end;
 
 
