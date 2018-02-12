@@ -389,6 +389,7 @@ begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
     fMapEditor := TKMMapEditor.Create;
     fMapEditor.DetectAttachedFiles(aMissionFile);
+    fMapEditor.MapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
   end;
 
   Parser := TMissionParserStandard.Create(ParseMode, PlayerEnabled);
@@ -571,7 +572,7 @@ begin
 
   //Setup alliances
   //We mirror Lobby team setup on to alliances. Savegame and coop has the setup already
-  if (fNetworking.SelectGameKind = ngk_Map) and not fNetworking.MapInfo.BlockTeamSelection then
+  if (fNetworking.SelectGameKind = ngk_Map) and not fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
     UpdateMultiplayerTeams;
 
   FreeAndNil(gMySpectator); //May have been created earlier
@@ -592,7 +593,7 @@ begin
 
   //Multiplayer missions don't have goals yet, so add the defaults (except for special/coop missions)
   if (fNetworking.SelectGameKind = ngk_Map)
-  and not fNetworking.MapInfo.IsSpecial and not fNetworking.MapInfo.IsCoop then
+  and not fNetworking.MapInfo.TxtInfo.IsSpecial and not fNetworking.MapInfo.TxtInfo.IsCoop then
     gHands.AddDefaultGoalsToAll(fMissionMode);
 
   fNetworking.OnPlay           := GameMPPlay;
@@ -986,6 +987,7 @@ begin
 
   fMapEditor.MissionDefSavePath := aPathName;
   fMapEditor.SaveAttachements(aPathName);
+  fMapEditor.MapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMissionParser := TMissionParserStandard.Create(mpm_Editor);

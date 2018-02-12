@@ -1131,16 +1131,32 @@ TX_WORD_REPLAY = 1103; //Replay
 TX_WORD_PLAYERS = 1104; //Players
 TX_WORD_TEAMS = 1105; //Teams
 TX_WORD_CLOSE = 1117; //Close
+TX_WORD_TEXT = 1159; //Text
 
 TX_MAPED_PLAYER_DELETE = 1114; //Button / Clear Player
 
-TX_MAPED_PLAYER_DELETE_TITLE = 1115; // Title / Clear Player
+TX_MAPED_PLAYER_DELETE_TITLE = 1115; //Title / Clear Player
 TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?
 
-TX_MENU_MAP_TYPE = 1122; // Map type
-TX_MENU_SP_MAP_SCENARIO = 1123; // Scenario map
-TX_MENU_MAP_PLAYABLE_AS_SP = 1124; // Playable as SP
+TX_MENU_MAP_TYPE = 1122; //Map type
+TX_MENU_SP_MAP_SCENARIO = 1123; //Scenario map
+TX_MENU_MAP_PLAYABLE_AS_SP = 1124; //Playable as SP
 
-TX_MAPED_OBJ_DESC_CHOPPABLE = 1125; // Choppable tree
-TX_MAPED_OBJ_DESC_BLOCK_DIAG = 1126; // Blocks diagonal walking
-TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; // Blocks walking / building
+TX_MAPED_OBJ_DESC_CHOPPABLE = 1125; //Choppable tree
+TX_MAPED_OBJ_DESC_BLOCK_DIAG = 1126; //Blocks diagonal walking
+TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; //Blocks walking / building
+
+TX_MAPED_MISSION_PARAMETERS_BTN = 1145; //Mission|parameters
+TX_MAPED_MISSION_PARAMETERS_BTN_HINT = 1146; //Modify mission parameters
+TX_MAPED_MISSION_PARAMETERS_TITLE = 1147; //Mission parameters
+TX_MAPED_MISSION_AUTHOR = 1148; //Author
+TX_MAPED_MISSION_SMALL_DESC = 1149; //Small description
+TX_MAPED_MISSION_BIG_DESC = 1150; //Big description
+TX_MAPED_MISSION_LIBX_TEXT_ID = 1151; //Libx text ID
+TX_MAPED_MISSION_PLAYABLE_AS_SP_HINT = 1152; //This map will be always visible in singleplayer maps list
+TX_MAPED_MISSION_BLOCK_TEAM_SEL = 1153; //Block team selection
+TX_MAPED_MISSION_BLOCK_TEAM_SEL_HINT = 1154; //Blocks team selection in lobby
+TX_MAPED_MISSION_BLOCK_PT = 1155; //Block peacetime
+TX_MAPED_MISSION_BLOCK_PT_HINT = 1156; //Blocks peacetime change in lobby
+TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW = 1157; //Block full map preview
+TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW_HINT = 1158; //Blocks full map preview in lobby

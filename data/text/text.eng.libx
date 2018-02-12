@@ -1093,3 +1093,18 @@
 1142:Dismiss unit
 1143:Cancel unit dismiss
 1144:Dismiss is not available because of lack of schools in your town
+1145:Mission|parameters
+1146:Modify mission parameters
+1147:Mission parameters
+1148:Author
+1149:Small description
+1150:Big description
+1151:Libx text ID
+1152:This map will be always visible in singleplayer maps list
+1153:Block team selection
+1154:Blocks team selection in lobby
+1155:Block peacetime
+1156:Blocks peacetime change in lobby
+1157:Block full map preview
+1158:Blocks full map preview in lobby
+1159:Text

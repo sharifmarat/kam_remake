@@ -825,7 +825,7 @@ begin
     MinimapView_MapEd.Show;
     Panel_LobbySetupDesc.Show;
     Map.LoadExtra;
-    Memo_LobbyMapDesc.Text := Map.BigDesc;
+    Memo_LobbyMapDesc.Text := Map.TxtInfo.BigDesc;
     if Map.HasReadme then
       Button_LobbySetupReadme.Show
     else
@@ -833,13 +833,13 @@ begin
 
     Label_MapType.Caption := '';
 
-    if Map.IsCoop then
+    if Map.TxtInfo.IsCoop then
       Label_MapType.Caption := AddLabelDesc(Label_MapType.Caption, gResTexts[TX_LOBBY_MAP_COOP]);
 
-    if Map.IsSpecial then
+    if Map.TxtInfo.IsSpecial then
       Label_MapType.Caption := AddLabelDesc(Label_MapType.Caption, gResTexts[TX_LOBBY_MAP_SPECIAL]);
 
-    if Map.IsPlayableAsSP then
+    if Map.TxtInfo.IsPlayableAsSP then
       Label_MapType.Caption := AddLabelDesc(Label_MapType.Caption, gResTexts[TX_MENU_MAP_PLAYABLE_AS_SP]);
 
     if Label_MapType.Caption = '' then

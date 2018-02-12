@@ -4,7 +4,7 @@ interface
 uses
   Classes, Controls,
   KM_RenderPool, KM_TerrainPainter, KM_TerrainDeposits, KM_TerrainSelection,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_Points, KM_Maps;
 
 
 type
@@ -27,6 +27,7 @@ type
     //When you load a map script/libx/wav/etc. files are "attached" then copied when
     //saving if the path is different
     fAttachedFiles: array of UnicodeString;
+    fMapTxtInfo: TKMMapTxtInfo;
 
     function GetRevealer(aIndex: Byte): TKMPointTagList;
     procedure ProceedUnitsCursorMode;
@@ -54,6 +55,7 @@ type
     property Deposits: TKMDeposits read fDeposits;
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
+    property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     property VisibleLayers: TMapEdLayerSet read fVisibleLayers write fVisibleLayers;
     procedure DetectAttachedFiles(const aMissionFile: UnicodeString);
     procedure SaveAttachements(const aMissionFile: UnicodeString);
@@ -100,6 +102,7 @@ begin
 
   fTerrainPainter := TKMTerrainPainter.Create;
   fSelection := TKMSelection.Create(fTerrainPainter);
+  fMapTxtInfo := TKMMapTxtInfo.Create;
 
   fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlOverlays, mlDeposits];
 

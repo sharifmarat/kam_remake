@@ -291,18 +291,18 @@ begin
       if not fMaps[I].IsSinglePlayer then Continue;
 
       case Radio_MapType.ItemIndex of
-        0:  if not ((fMaps[I].MapFolder = mfSP) and fMaps[I].IsNormalMission and not fMaps[I].IsSpecial) then
+        0:  if not ((fMaps[I].MapFolder = mfSP) and fMaps[I].IsNormalMission and not fMaps[I].TxtInfo.IsSpecial) then
               Continue;
-        1:  if not ((fMaps[I].MapFolder <> mfSP) and fMaps[I].IsNormalMission and not fMaps[I].IsSpecial) then
+        1:  if not ((fMaps[I].MapFolder <> mfSP) and fMaps[I].IsNormalMission and not fMaps[I].TxtInfo.IsSpecial) then
               Continue;
-        2:  if not (fMaps[I].IsTacticMission and not fMaps[I].IsSpecial) then
+        2:  if not (fMaps[I].IsTacticMission and not fMaps[I].TxtInfo.IsSpecial) then
               Continue;
-        3:  if not fMaps[I].IsSpecial then
+        3:  if not fMaps[I].TxtInfo.IsSpecial then
               Continue;
       end;
 
       R := MakeListRow(['', IntToStr(fMaps[I].LocCount), fMaps[I].FileName, MapSizeText(fMaps[I].MapSizeX, fMaps[I].MapSizeY)]);
-      R.Cells[2].Hint := fMaps[I].SmallDesc;
+      R.Cells[2].Hint := fMaps[I].TxtInfo.SmallDesc;
       R.Cells[0].Pic := MakePic(rxGui, 28 + Byte(fMaps[I].MissionMode <> mm_Tactic) * 14);
       R.Tag := I;
       ColumnBox_SingleMaps.AddItem(R);
@@ -370,7 +370,7 @@ begin
       end;
 
       Label_SingleTitle.Caption   := fMaps[MapId].FileName;
-      Memo_SingleDesc.Text        := fMaps[MapId].BigDesc;
+      Memo_SingleDesc.Text        := fMaps[MapId].TxtInfo.BigDesc;
       MinimapView_Single.Show;
 
       //Location
