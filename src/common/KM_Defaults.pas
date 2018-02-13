@@ -678,6 +678,7 @@ type
     mlOverlays,
     mlDeposits,
     mlHouseRanges,
+    mlAttackRadius,
     mlDefences,
     mlRevealFOW,
     mlCenterScreen,
@@ -749,6 +750,7 @@ const
   icYellow = $FF07FFFF;
   icOrange = $FF0099FF;
   icRed    = $FF0707FF;
+  icBlue   = $FFFF0707;
   icCyan   = $FFFFFF00;
 
   icTransparent = $00;

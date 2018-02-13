@@ -100,7 +100,7 @@ implementation
 uses
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
-  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand,
+  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroups,
   KM_ResWares, KM_Game, KM_ResHouses;
 
 
@@ -797,6 +797,7 @@ var
   Act: TUnitActionType;
   UnitPos: TKMPointF;
   I,K: Integer;
+  Color: Cardinal;
 begin
   inherited;
   if not fVisible then Exit;
@@ -810,13 +811,20 @@ begin
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, UnitPos.X, UnitPos.Y);
 
-  if SHOW_ATTACK_RADIUS then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  begin
+    Color := $40FFFFFF;
+    if (gMySpectator.Selected = Self)
+      or ((gMySpectator.Selected is TKMUnitGroup)
+        and (TKMUnitGroup(gMySpectator.Selected).FlagBearer = Self)) then
+      Color := icRed and Color;
     if IsRanged then
-    for I := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
-    for K := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
-    if InRange(GetLength(I, K), GetFightMinRange, GetFightMaxRange) then
-    if gTerrain.TileInMapCoords(GetPosition.X + K, GetPosition.Y + I) then
-      gRenderAux.Quad(GetPosition.X + K, GetPosition.Y + I, $40FFFFFF);
+      for I := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
+        for K := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
+          if InRange(GetLength(I, K), GetFightMinRange, GetFightMaxRange)
+            and gTerrain.TileInMapCoords(GetPosition.X + K, GetPosition.Y + I) then
+              gRenderAux.Quad(GetPosition.X + K, GetPosition.Y + I, Color);
+  end;
 end;
 
 

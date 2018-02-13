@@ -827,7 +827,6 @@ begin
       SelectedOreP[I].Free;
     end;
   end;
-
 end;
 
 

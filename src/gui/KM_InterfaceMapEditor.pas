@@ -480,6 +480,9 @@ begin
   if fGuiExtras.CheckBox_ShowHousesRanges.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlHouseRanges];
 
+  if fGuiExtras.CheckBox_ShowAttackRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlAttackRadius];
+
   if fGuiExtras.CheckBox_ShowOverlays.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlOverlays];
 

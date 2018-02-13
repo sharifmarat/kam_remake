@@ -465,6 +465,7 @@ TX_MAPED_OBJECTS = 398; //Objects
 TX_MAPED_VIEW_DEPOSISTS = 399; //Show deposits
 TX_MAPED_VIEW_OVERLAYS = 1128; //Show roads/fields/winefields
 TX_MAPED_VIEW_HOUSES_RANGES = 1160; //Show houses ranges
+TX_MAPED_VIEW_ATTACK_RADIUS = 1161; //Show attack radius
 TX_MAPED_VIEW_UNITS = 400; //Show units
 TX_MAPED_VIEW_HOUSES = 401; //Show houses
 TX_MAPED_VIEW_OBJECTS = 402; //Show objects

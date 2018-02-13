@@ -2055,15 +2055,21 @@ end;
 procedure TKMHouseTower.Paint;
 var
   I, K: Integer;
+  Color: Cardinal;
 begin
   inherited;
 
-  if SHOW_ATTACK_RADIUS then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  begin
+    Color := $40FFFFFF;
+    if gMySpectator.Selected = Self then
+      Color := icRed and Color;
     for I := -Round(RANGE_WATCHTOWER_MAX) - 1 to Round(RANGE_WATCHTOWER_MAX) do
       for K := -Round(RANGE_WATCHTOWER_MAX) - 1 to Round(RANGE_WATCHTOWER_MAX) do
-        if InRange(GetLength(I, K), RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX) then
-          if gTerrain.TileInMapCoords(GetPosition.X+K, GetPosition.Y+I) then
-            gRenderAux.Quad(GetPosition.X+K, GetPosition.Y+I, $40FFFFFF);
+        if InRange(GetLength(I, K), RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX)
+          and gTerrain.TileInMapCoords(GetPosition.X+K, GetPosition.Y+I) then
+            gRenderAux.Quad(GetPosition.X+K, GetPosition.Y+I, Color);
+  end;
 end;
 
 
