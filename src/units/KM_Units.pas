@@ -1299,8 +1299,6 @@ procedure TKMUnit.DoDismiss;
   end;
 
 begin
-  fThought := th_None; //Reset thought
-
   //We can update existing Walk action with minimum changes
   if (fCurrentAction is TUnitActionWalkTo)
     and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
