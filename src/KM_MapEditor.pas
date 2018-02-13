@@ -39,7 +39,7 @@ type
     procedure PaintRevealFOW(aLayer: TKMPaintLayer);
     procedure PaintCenterScreen(aLayer: TKMPaintLayer);
     procedure PaintAIStart(aLayer: TKMPaintLayer);
-    procedure PaintHouseRanges(aLayer: TKMPaintLayer);
+    procedure PaintMiningRadius(aLayer: TKMPaintLayer);
   public
     MissionDefSavePath: UnicodeString;
 
@@ -696,7 +696,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.PaintHouseRanges(aLayer: TKMPaintLayer);
+procedure TKMMapEditor.PaintMiningRadius(aLayer: TKMPaintLayer);
 const
   GOLD_ORE_COLOR = icYellow;
   IRON_ORE_COLOR = icSteelBlue;
@@ -766,7 +766,7 @@ var
   H: TKMHouse;
   IronOreP, GoldOreP, CoalOreP, OreP, SelectedOreP: TKMPointListArray;
 begin
-  if (mlHouseRanges in fVisibleLayers) and (aLayer = plTerrain) then
+  if (mlMiningRadius in fVisibleLayers) and (aLayer = plTerrain) then
   begin
     SetLength(OreP, 3);
     SetLength(IronOreP, 3);
@@ -853,7 +853,7 @@ begin
   PaintRevealFOW(aLayer);
   PaintCenterScreen(aLayer);
   PaintAIStart(aLayer);
-  PaintHouseRanges(aLayer);
+  PaintMiningRadius(aLayer);
 
   if mlSelection in fVisibleLayers then
     fSelection.Paint(aLayer, aClipRect);

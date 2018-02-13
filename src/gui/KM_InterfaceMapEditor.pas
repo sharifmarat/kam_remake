@@ -477,8 +477,8 @@ begin
   if fGuiExtras.CheckBox_ShowDeposits.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlDeposits];
 
-  if fGuiExtras.CheckBox_ShowHousesRanges.Checked then
-    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlHouseRanges];
+  if fGuiExtras.CheckBox_ShowMiningRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlMiningRadius];
 
   if fGuiExtras.CheckBox_ShowAttackRadius.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlAttackRadius];

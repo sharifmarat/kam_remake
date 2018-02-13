@@ -677,7 +677,7 @@ type
     mlUnits,
     mlOverlays,
     mlDeposits,
-    mlHouseRanges,
+    mlMiningRadius,
     mlAttackRadius,
     mlDefences,
     mlRevealFOW,

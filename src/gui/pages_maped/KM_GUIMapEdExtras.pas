@@ -24,7 +24,7 @@ type
     CheckBox_ShowUnits: TKMCheckBox;
     CheckBox_ShowOverlays: TKMCheckBox;
     CheckBox_ShowDeposits: TKMCheckBox;
-    CheckBox_ShowHousesRanges: TKMCheckBox;
+    CheckBox_ShowMiningRadius: TKMCheckBox;
     CheckBox_ShowAttackRadius: TKMCheckBox;
     CheckBox_ShowTileOwners: TKMCheckBox;
     CheckBox_ShowTilesGrid: TKMCheckBox;
@@ -89,9 +89,9 @@ begin
   CheckBox_ShowDeposits := TKMCheckBox.Create(Panel_Extra, 300, 150, 280, 20, gResTexts[TX_MAPED_VIEW_DEPOSISTS], fnt_Antiqua);
   CheckBox_ShowDeposits.Checked := True; //Enabled by default
   CheckBox_ShowDeposits.OnClick := Extra_Change;
-  CheckBox_ShowHousesRanges := TKMCheckBox.Create(Panel_Extra, 300, 170, 280, 20, gResTexts[TX_MAPED_VIEW_HOUSES_RANGES], fnt_Antiqua);
-  CheckBox_ShowHousesRanges.Checked := False; //Disabled by default
-  CheckBox_ShowHousesRanges.OnClick := Extra_Change;
+  CheckBox_ShowMiningRadius := TKMCheckBox.Create(Panel_Extra, 300, 170, 280, 20, gResTexts[TX_MAPED_VIEW_MINING_RADIUS], fnt_Antiqua);
+  CheckBox_ShowMiningRadius.Checked := False; //Disabled by default
+  CheckBox_ShowMiningRadius.OnClick := Extra_Change;
   CheckBox_ShowAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 190, 280, 20, gResTexts[TX_MAPED_VIEW_ATTACK_RADIUS], fnt_Antiqua);
   CheckBox_ShowAttackRadius.Checked := False; //Disabled by default
   CheckBox_ShowAttackRadius.OnClick := Extra_Change;
