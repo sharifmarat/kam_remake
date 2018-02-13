@@ -677,6 +677,7 @@ type
     mlUnits,
     mlOverlays,
     mlDeposits,
+    mlHouseRanges,
     mlDefences,
     mlRevealFOW,
     mlCenterScreen,
@@ -759,7 +760,9 @@ const
   icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
+  icLightOrange = $FF80CCFF;
   icLightRed   = $FF7070FF;
+  icLight2Red   = $FFB0B0FF;
   icDarkCyan   = $FFB0B000;
 
   icPink = $FFFF00FF;

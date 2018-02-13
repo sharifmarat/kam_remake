@@ -94,6 +94,8 @@ type
     function TileIsRoadable(Loc: TKMPoint): Boolean;
     function TileIsFactorable(Loc: TKMPoint): Boolean;
 
+    function GetMiningRect(aRes: TWareType): TKMRect;
+
     function ChooseCuttingDirection(aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
 
     procedure UpdateFences(Loc: TKMPoint; CheckSurrounding: Boolean = True);
@@ -155,6 +157,8 @@ type
     function FindCornField(aLoc: TKMPoint; aRadius:integer; aAvoidLoc: TKMPoint; aPlantAct: TPlantAct; out PlantAct: TPlantAct; out FieldPoint: TKMPointDir): Boolean;
     function FindStone(aLoc: TKMPoint; aRadius: Byte; aAvoidLoc: TKMPoint; aIgnoreWorkingUnits:Boolean; out StonePoint: TKMPointDir): Boolean;
     function FindOre(aLoc: TKMPoint; aRes: TWareType; out OrePoint: TKMPoint): Boolean;
+    procedure FindOrePoints(aLoc: TKMPoint; aRes: TWareType; var aPoints: TKMPointListArray);
+    procedure FindOrePointsByDistance(aLoc: TKMPoint; aRes: TWareType; var aPoints: TKMPointListArray);
     function CanFindTree(aLoc: TKMPoint; aRadius: Word):Boolean;
     procedure FindTree(aLoc: TKMPoint; aRadius: Word; aAvoidLoc: TKMPoint; aPlantAct: TPlantAct; Trees: TKMPointDirList; BestToPlant,SecondBestToPlant: TKMPointList);
     function FindFishWater(aLoc: TKMPoint; aRadius:integer; aAvoidLoc: TKMPoint; aIgnoreWorkingUnits:Boolean; out FishPoint: TKMPointDir): Boolean;
@@ -1832,62 +1836,125 @@ begin
 end;
 
 
-//Given aLoc the function return location of richest ore within predefined bounds
 function TKMTerrain.FindOre(aLoc: TKMPoint; aRes: TWareType; out OrePoint: TKMPoint): Boolean;
+var
+  I: Integer;
+  L: TKMPointListArray;
+begin
+  SetLength(L, ORE_MAX_TYPES_CNT);
+  //Create separate list for each density, to be able to pick best one
+  for I := 0 to Length(L) - 1 do
+    L[I] := TKMPointList.Create;
+
+  FindOrePoints(aLoc, aRes, L);
+
+  //Equation elements will be evalueated one by one until True is found
+  Result := False;
+  for I := ORE_MAX_TYPES_CNT - 1 downto 0 do
+    if not Result then
+      Result := L[I].GetRandom(OrePoint)
+    else
+      Break;
+
+  for I := 0 to Length(L) - 1 do
+    L[I].Free;
+end;
+
+
+function TKMTerrain.GetMiningRect(aRes: TWareType): TKMRect;
+begin
+  case aRes of
+    wt_GoldOre: Result := KMRect(7, 11, 6, 2);
+    wt_IronOre: Result := KMRect(7, 11, 5, 2);
+    wt_Coal:    Result := KMRect(4,  5, 5, 2);
+    else        Result := KMRECT_ZERO;
+  end;
+end;
+
+
+procedure TKMTerrain.FindOrePointsByDistance(aLoc: TKMPoint; aRes: TWareType; var aPoints: TKMPointListArray);
+var
+  I,K: Integer;
+  MiningRect: TKMRect;
+
+begin
+  Assert(gGame.IsMapEditor, 'Its allowed to use this method only from MapEd for now...');
+  Assert(Length(aPoints) = 3, 'Wrong length of Points array: ' + IntToStr(Length(aPoints)));
+
+  if not (aRes in [wt_IronOre, wt_GoldOre, wt_Coal]) then
+    raise ELocError.Create('Wrong resource as Ore', aLoc);
+
+  MiningRect := GetMiningRect(aRes);
+
+  for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
+    for K := Max(aLoc.X - MiningRect.Left, 1) to Min(aLoc.X + MiningRect.Right, fMapX - 1) do
+    begin
+      if ((aRes = wt_IronOre)   and (TileIsIron(K,I) > 0))
+        or ((aRes = wt_GoldOre) and (TileIsGold(K,I) > 0))
+        or ((aRes = wt_Coal)    and (TileIsCoal(K,I) > 0)) then
+      begin
+        //Poorest ore gets mined in range - 2
+        if InRange(I - aLoc.Y, - MiningRect.Top + 2, MiningRect.Bottom - 2)
+          and InRange(K - aLoc.X, - MiningRect.Left + 2, MiningRect.Right - 2) then
+            aPoints[0].Add(KMPoint(K, I))
+        //Second poorest ore gets mined in range - 1
+        else
+        if InRange(I - aLoc.Y, - MiningRect.Top + 1, MiningRect.Bottom - 1)
+          and InRange(K - aLoc.X, - MiningRect.Left + 1, MiningRect.Right - 1) then
+            aPoints[1].Add(KMPoint(K, I))
+        else
+          //Always mine second richest ore
+          aPoints[2].Add(KMPoint(K, I));
+      end;
+    end;
+end;
+
+//Given aLoc the function return location of richest ore within predefined bounds
+procedure TKMTerrain.FindOrePoints(aLoc: TKMPoint; aRes: TWareType; var aPoints: TKMPointListArray);
 var
   I,K: Integer;
   MiningRect: TKMRect;
   R1,R2,R3,R4: Byte; //Ore densities
-  L: array [1..4] of TKMPointList;
 begin
   if not (aRes in [wt_IronOre, wt_GoldOre, wt_Coal]) then
     raise ELocError.Create('Wrong resource as Ore', aLoc);
 
-  //Create separate list for each density, to be able to pick best one
-  for I := 1 to 4 do
-    L[I] := TKMPointList.Create;
+  Assert(Length(aPoints) = ORE_MAX_TYPES_CNT, 'Wrong length of Points array: ' + IntToStr(Length(aPoints)));
+
+  MiningRect := GetMiningRect(aRes);
 
   //These values have been measured from KaM
   case aRes of
-    wt_GoldOre: begin MiningRect := KMRect(7, 11, 6, 2); R1:=144; R2:=145; R3:=146; R4:=147; end;
-    wt_IronOre: begin MiningRect := KMRect(7, 11, 5, 2); R1:=148; R2:=149; R3:=150; R4:=151; end;
-    wt_Coal:    begin MiningRect := KMRect(4,  5, 5, 2); R1:=152; R2:=153; R3:=154; R4:=155; end;
-    else        begin MiningRect := KMRect(0,  0, 0, 0); R1:=  0; R2:=  0; R3:=  0; R4:=  0; end;
+    wt_GoldOre: begin R1:=144; R2:=145; R3:=146; R4:=147; end;
+    wt_IronOre: begin R1:=148; R2:=149; R3:=150; R4:=151; end;
+    wt_Coal:    begin R1:=152; R2:=153; R3:=154; R4:=155; end;
+    else        begin R1:=  0; R2:=  0; R3:=  0; R4:=  0; end;
   end;
 
   for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
-  for K := Max(aLoc.X - MiningRect.Left, 1) to Min(aLoc.X + MiningRect.Right, fMapX - 1) do
-  begin
-    if Land[I, K].Terrain = R1 then
+    for K := Max(aLoc.X - MiningRect.Left, 1) to Min(aLoc.X + MiningRect.Right, fMapX - 1) do
     begin
-      //Poorest ore gets mined in range - 2
-      if InRange(I - aLoc.Y, - MiningRect.Top + 2, MiningRect.Bottom - 2) then
-        if InRange(K - aLoc.X, - MiningRect.Left + 2, MiningRect.Right - 2) then
-          L[1].Add(KMPoint(K, I))
-    end
-    else if Land[I, K].Terrain = R2 then
-    begin
-      //Second poorest ore gets mined in range - 1
-      if InRange(I - aLoc.Y, - MiningRect.Top + 1, MiningRect.Bottom - 1) then
-        if InRange(K - aLoc.X, - MiningRect.Left + 1, MiningRect.Right - 1) then
-          L[2].Add(KMPoint(K, I))
-    end
-    else if Land[I, K].Terrain = R3 then
-      //Always mine second richest ore
-      L[3].Add(KMPoint(K, I))
-    else
-      if Land[I, K].Terrain = R4 then
+      if Land[I, K].Terrain = R1 then
+      begin
+        //Poorest ore gets mined in range - 2
+        if InRange(I - aLoc.Y, - MiningRect.Top + 2, MiningRect.Bottom - 2) then
+          if InRange(K - aLoc.X, - MiningRect.Left + 2, MiningRect.Right - 2) then
+            aPoints[0].Add(KMPoint(K, I));
+      end
+      else if Land[I, K].Terrain = R2 then
+      begin
+        //Second poorest ore gets mined in range - 1
+        if InRange(I - aLoc.Y, - MiningRect.Top + 1, MiningRect.Bottom - 1) then
+          if InRange(K - aLoc.X, - MiningRect.Left + 1, MiningRect.Right - 1) then
+            aPoints[1].Add(KMPoint(K, I));
+      end
+      else if Land[I, K].Terrain = R3 then
+        //Always mine second richest ore
+        aPoints[2].Add(KMPoint(K, I))
+      else if Land[I, K].Terrain = R4 then
         // Always mine richest ore
-        L[4].Add(KMPoint(K, I));
-  end;
-
-  //Equation elements will be evalueated one by one until True is found
-  Result := L[4].GetRandom(OrePoint) or
-            L[3].GetRandom(OrePoint) or
-            L[2].GetRandom(OrePoint) or
-            L[1].GetRandom(OrePoint);
-
-  for I := 1 to 4 do L[I].Free;
+        aPoints[3].Add(KMPoint(K, I));
+    end;
 end;
 
 

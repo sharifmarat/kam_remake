@@ -277,7 +277,7 @@ begin
       for K := 0 to fMapX - 1 do
       begin
         if not KMInRect(KMPoint(K+1,I+1), gGame.MapEditor.ResizeMapRect) then
-          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 2, 1, 1);
+          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1);
       end;
 
 end;

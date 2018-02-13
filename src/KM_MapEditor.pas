@@ -39,6 +39,7 @@ type
     procedure PaintRevealFOW(aLayer: TKMPaintLayer);
     procedure PaintCenterScreen(aLayer: TKMPaintLayer);
     procedure PaintAIStart(aLayer: TKMPaintLayer);
+    procedure PaintHouseRanges(aLayer: TKMPaintLayer);
   public
     MissionDefSavePath: UnicodeString;
 
@@ -82,9 +83,9 @@ uses
   SysUtils, StrUtils, Math,
   KM_Terrain, KM_FileIO,
   KM_AIDefensePos, 
-  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
-  KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses,
-  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils;
+  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
+  KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses, KM_ResWares,
+  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils, KM_Utils;
 
 
 { TKMMapEditor }
@@ -695,6 +696,141 @@ begin
 end;
 
 
+procedure TKMMapEditor.PaintHouseRanges(aLayer: TKMPaintLayer);
+const
+  GOLD_ORE_COLOR = icYellow;
+  IRON_ORE_COLOR = icSteelBlue;
+  COAL_ORE_COLOR = icGray;
+  SELECTED_ORE_COLOR = icLight2Red;
+
+  procedure AddOrePoints(aOreP, aAllOreP: TKMPointListArray);
+  var
+    I,J,K: Integer;
+    Skip: Boolean;
+  begin
+    for I := 0 to Length(aOreP) - 1 do
+    begin
+      for J := 0 to aOreP[I].Count - 1 do
+      begin
+        Skip := False;
+        //Skip if we already have this point in upper layer
+        for K := 0 to I do
+          if aAllOreP[K].Contains(aOreP[I][J]) then
+          begin
+            Skip := True;
+            Break;
+          end;
+        if not Skip then
+        begin
+          aAllOreP[I].Add(aOreP[I][J]); //Couild be Add actually, as we checked Contains already
+          //Remove added points from lowered layers
+          for K := I + 1 to 2 do
+            aAllOreP[K].Remove(aOreP[I][J]);
+        end;
+      end;
+    end;
+  end;
+
+  procedure PaintOrePoints(aOreP: TKMPointListArray; Color: Cardinal; aHighlight: Boolean = False);
+  var
+    I, K, L: Integer;
+    Color2: Cardinal;
+    Coef: Single;
+  begin
+    Coef := 0.15;
+    if aHighlight then
+    begin
+      Color := SELECTED_ORE_COLOR;
+      Coef := 0.3;
+    end;
+
+    for I := 1 to Length(aOreP) - 1 do
+    begin
+      Color := Color and $40FFFFFF;
+      Color := MultiplyBrightnessByFactor(Color, Coef);
+      for K := Length(aOreP) - 1 downto 0 do
+        for L := 0 to aOreP[K].Count - 1 do
+        begin
+          Color2 := Color;
+          if K = 1 then
+            Color2 := MultiplyBrightnessByFactor(Color, 4);
+          if K = 2 then
+            Color2 := MultiplyBrightnessByFactor(Color, 7);
+          gRenderAux.Quad(aOreP[K][L].X, aOreP[K][L].Y, Color2);
+        end;
+    end;
+  end;
+
+var
+  I, J, K: Integer;
+  H: TKMHouse;
+  IronOreP, GoldOreP, CoalOreP, OreP, SelectedOreP: TKMPointListArray;
+begin
+  if (mlHouseRanges in fVisibleLayers) and (aLayer = plTerrain) then
+  begin
+    SetLength(OreP, 3);
+    SetLength(IronOreP, 3);
+    SetLength(GoldOreP, 3);
+    SetLength(CoalOreP, 3);
+    SetLength(SelectedOreP, 3);
+
+    for I := 0 to Length(OreP) - 1 do
+    begin
+      OreP[I] := TKMPointList.Create;
+      IronOreP[I] := TKMPointList.Create;
+      GoldOreP[I] := TKMPointList.Create;
+      CoalOreP[I] := TKMPointList.Create;
+      SelectedOreP[I] := TKMPointList.Create;
+    end;
+
+    for I := 0 to gHands.Count - 1 do
+    begin
+      for J := 0 to gHands[I].Houses.Count - 1 do
+      begin
+        H := gHands[I].Houses[J];
+        case H.HouseType of
+          ht_IronMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_IronOre, OreP);
+                          AddOrePoints(OreP, IronOreP);
+                        end;
+          ht_GoldMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_GoldOre, OreP);
+                          AddOrePoints(OreP, GoldOreP);
+                        end;
+          ht_CoalMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_Coal, OreP);
+                          AddOrePoints(OreP, CoalOreP);
+                        end;
+          else Continue;
+        end;
+
+        if gMySpectator.Selected = H then
+          for K := 0 to Length(OreP) - 1 do
+            SelectedOreP[K].AddList(OreP[K]);
+
+        for K := 0 to Length(OreP) - 1 do
+          OreP[K].Clear;
+      end;
+    end;
+
+    PaintOrePoints(IronOreP, IRON_ORE_COLOR);
+    PaintOrePoints(GoldOreP, GOLD_ORE_COLOR);
+    PaintOrePoints(CoalOreP, COAL_ORE_COLOR);
+    PaintOrePoints(SelectedOreP, 0, True);
+
+    for I := 0 to Length(OreP) - 1 do
+    begin
+      OreP[I].Free;
+      IronOreP[I].Free;
+      GoldOreP[I].Free;
+      CoalOreP[I].Free;
+      SelectedOreP[I].Free;
+    end;
+  end;
+
+end;
+
+
 procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
 var
   I, K: Integer;
@@ -718,6 +854,7 @@ begin
   PaintRevealFOW(aLayer);
   PaintCenterScreen(aLayer);
   PaintAIStart(aLayer);
+  PaintHouseRanges(aLayer);
 
   if mlSelection in fVisibleLayers then
     fSelection.Paint(aLayer, aClipRect);

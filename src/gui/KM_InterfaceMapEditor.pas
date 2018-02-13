@@ -477,6 +477,9 @@ begin
   if fGuiExtras.CheckBox_ShowDeposits.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlDeposits];
 
+  if fGuiExtras.CheckBox_ShowHousesRanges.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlHouseRanges];
+
   if fGuiExtras.CheckBox_ShowOverlays.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlOverlays];
 
