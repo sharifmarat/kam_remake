@@ -51,7 +51,7 @@ begin
 
   fOnChange := aOnChange;
 
-  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - 250, 600, 250);
+  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH + 30, aParent.Height - 220, 600, 220);
   Panel_Extra.Anchors := [anLeft, anBottom];
   Panel_Extra.Hide;
 
@@ -95,11 +95,11 @@ begin
   CheckBox_ShowAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 190, 280, 20, gResTexts[TX_MAPED_VIEW_ATTACK_RADIUS], fnt_Antiqua);
   CheckBox_ShowAttackRadius.Checked := False; //Disabled by default
   CheckBox_ShowAttackRadius.OnClick := Extra_Change;
-  CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 300, 210, 280, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fnt_Antiqua);
+
+  CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 50, 170, 220, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fnt_Antiqua);
   CheckBox_ShowTileOwners.Checked := False; //Disabled by default
   CheckBox_ShowTileOwners.OnClick := Extra_Change;
-
-  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 230, 220, 20, gResTexts[TX_MAPED_SHOW_TILES_GRID], fnt_Antiqua);
+  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 190, 220, 20, gResTexts[TX_MAPED_SHOW_TILES_GRID], fnt_Antiqua);
   CheckBox_ShowTilesGrid.Checked := False; //Disabled by default
   CheckBox_ShowTilesGrid.OnClick := Extra_Change;
 
