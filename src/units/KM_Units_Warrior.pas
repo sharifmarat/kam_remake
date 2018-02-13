@@ -811,7 +811,7 @@ begin
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, UnitPos.X, UnitPos.Y);
 
-  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlUnitsAttackRadius in gGame.MapEditor.VisibleLayers)) then
   begin
     Color := $40FFFFFF;
     if (gMySpectator.Selected = Self)

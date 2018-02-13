@@ -1109,4 +1109,5 @@
 1158:Blocks full map preview in lobby
 1159:Text
 1160:Show mining radius
-1161:Show attack radius
+1161:Show towers attack radius
+1162:Show units attack radius

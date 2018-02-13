@@ -480,8 +480,11 @@ begin
   if fGuiExtras.CheckBox_ShowMiningRadius.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlMiningRadius];
 
-  if fGuiExtras.CheckBox_ShowAttackRadius.Checked then
-    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlAttackRadius];
+  if fGuiExtras.CheckBox_ShowTowersAttackRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlTowersAttackRadius];
+
+  if fGuiExtras.CheckBox_ShowUnitsAttackRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlUnitsAttackRadius];
 
   if fGuiExtras.CheckBox_ShowOverlays.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlOverlays];

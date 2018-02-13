@@ -2059,7 +2059,7 @@ var
 begin
   inherited;
 
-  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlTowersAttackRadius in gGame.MapEditor.VisibleLayers)) then
   begin
     Color := $40FFFFFF;
     if gMySpectator.Selected = Self then

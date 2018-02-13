@@ -25,7 +25,8 @@ type
     CheckBox_ShowOverlays: TKMCheckBox;
     CheckBox_ShowDeposits: TKMCheckBox;
     CheckBox_ShowMiningRadius: TKMCheckBox;
-    CheckBox_ShowAttackRadius: TKMCheckBox;
+    CheckBox_ShowTowersAttackRadius: TKMCheckBox;
+    CheckBox_ShowUnitsAttackRadius: TKMCheckBox;
     CheckBox_ShowTileOwners: TKMCheckBox;
     CheckBox_ShowTilesGrid: TKMCheckBox;
     constructor Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
@@ -51,7 +52,7 @@ begin
 
   fOnChange := aOnChange;
 
-  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH + 30, aParent.Height - 220, 600, 220);
+  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH + 30, aParent.Height - 240, 600, 240);
   Panel_Extra.Anchors := [anLeft, anBottom];
   Panel_Extra.Hide;
 
@@ -92,9 +93,12 @@ begin
   CheckBox_ShowMiningRadius := TKMCheckBox.Create(Panel_Extra, 300, 170, 280, 20, gResTexts[TX_MAPED_VIEW_MINING_RADIUS], fnt_Antiqua);
   CheckBox_ShowMiningRadius.Checked := False; //Disabled by default
   CheckBox_ShowMiningRadius.OnClick := Extra_Change;
-  CheckBox_ShowAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 190, 280, 20, gResTexts[TX_MAPED_VIEW_ATTACK_RADIUS], fnt_Antiqua);
-  CheckBox_ShowAttackRadius.Checked := False; //Disabled by default
-  CheckBox_ShowAttackRadius.OnClick := Extra_Change;
+  CheckBox_ShowTowersAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 190, 280, 20, gResTexts[TX_MAPED_VIEW_TOWERS_ATTACK_RADIUS], fnt_Antiqua);
+  CheckBox_ShowTowersAttackRadius.Checked := False; //Disabled by default
+  CheckBox_ShowTowersAttackRadius.OnClick := Extra_Change;
+  CheckBox_ShowUnitsAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 210, 280, 20, gResTexts[TX_MAPED_VIEW_UNITS_ATTACK_RADIUS], fnt_Antiqua);
+  CheckBox_ShowUnitsAttackRadius.Checked := False; //Disabled by default
+  CheckBox_ShowUnitsAttackRadius.OnClick := Extra_Change;
 
   CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 50, 170, 220, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fnt_Antiqua);
   CheckBox_ShowTileOwners.Checked := False; //Disabled by default
