@@ -12,6 +12,7 @@ type
   //Painting on terrain with terrain brushes
   TKMMapEdTerrainBrushes = class (TKMMapEdSubMenuPage)
   private
+    fLastShape: TKMMapEdShape;
     procedure BrushChange(Sender: TObject);
     procedure BrushRefresh;
   protected
@@ -55,6 +56,8 @@ var
   I,K: Integer;
 begin
   inherited Create;
+
+  fLastShape := hsCircle;
 
   Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
@@ -102,10 +105,16 @@ begin
   gGame.MapEditor.TerrainPainter.RandomizeTiling := BrushRandom.Checked;
 
   if Sender = BrushCircle then
-    gGameCursor.MapEdShape := hsCircle
+  begin
+    gGameCursor.MapEdShape := hsCircle;
+    fLastShape := hsCircle;
+  end
   else
   if Sender = BrushSquare then
-    gGameCursor.MapEdShape := hsSquare
+  begin
+    gGameCursor.MapEdShape := hsSquare;
+    fLastShape := hsSquare;
+  end
   else
   if Sender is TKMButtonFlat then
     gGameCursor.Tag1 := TKMButtonFlat(Sender).Tag;
@@ -136,6 +145,8 @@ end;
 
 procedure TKMMapEdTerrainBrushes.Show;
 begin
+  gGameCursor.MapEdShape := fLastShape;
+
   BrushChange(BrushTable[0,0]);
 
   Panel_Brushes.Show;

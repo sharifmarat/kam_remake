@@ -337,6 +337,9 @@ type
     cfmErase // Erasing plans
   );
 
+  // Shape types for MapEditor
+  TKMMapEdShape = (hsCircle, hsSquare);
+
 
 const
   MARKER_REVEAL = 1;

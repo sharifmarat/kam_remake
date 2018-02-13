@@ -11,8 +11,11 @@ type
   //Terrain height editing
   TKMMapEdTerrainHeights = class (TKMMapEdSubMenuPage)
   private
+    fLastCursorMode: TKMCursorMode;
+    fLastShape: TKMMapEdShape;
     procedure HeightChange(Sender: TObject);
     procedure HeightRefresh;
+    procedure UpdateHeightParams;
   protected
     Panel_Heights: TKMPanel;
     HeightSize: TKMTrackBar;
@@ -45,6 +48,9 @@ uses
 constructor TKMMapEdTerrainHeights.Create(aParent: TKMPanel);
 begin
   inherited Create;
+
+  fLastCursorMode := cmElevate;
+  fLastShape := hsCircle;
 
   Panel_Heights := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Heights, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HEIGHTS], fnt_Outline, taCenter);
@@ -101,17 +107,28 @@ begin
 
   //Shape
   if Sender = HeightCircle then
-    gGameCursor.MapEdShape := hsCircle
+  begin
+    gGameCursor.MapEdShape := hsCircle;
+    fLastShape := hsCircle;
+  end
   else
   if Sender = HeightSquare then
+  begin
     gGameCursor.MapEdShape := hsSquare;
+    fLastShape := hsSquare;
+  end;
 
   //Kind
   if Sender = HeightElevate then
-    gGameCursor.Mode := cmElevate
-  else
+  begin
+    gGameCursor.Mode := cmElevate;
+    fLastCursorMode := cmElevate;
+  end else
   if Sender = HeightUnequalize then
+  begin
     gGameCursor.Mode := cmEqualize;
+    fLastCursorMode := cmEqualize;
+  end;
 
   HeightRefresh;
 end;
@@ -127,11 +144,21 @@ begin
 end;
 
 
+procedure TKMMapEdTerrainHeights.UpdateHeightParams;
+begin
+  gGameCursor.MapEdSize  := HeightSize.Position;
+  gGameCursor.MapEdSlope := HeightSlope.Position;
+  gGameCursor.MapEdSpeed := HeightSpeed.Position;
+end;
+
+
 procedure TKMMapEdTerrainHeights.Show;
 begin
-  HeightChange(HeightCircle);
-  HeightChange(HeightElevate);
   gMain.FormMain.SuppressAltForMenu := True;
+  gGameCursor.Mode := fLastCursorMode;
+  gGameCursor.MapEdShape := fLastShape;
+  UpdateHeightParams;
+  HeightRefresh;
   Panel_Heights.Show;
 end;
 
@@ -160,7 +187,7 @@ begin
     end;
 
     if aHandled then
-      Show;
+      UpdateHeightParams;
   end;
 end;
 
