@@ -1004,6 +1004,11 @@ begin
   if aHouse.BuildingState in [hbs_NoGlyph .. hbs_Stone] then
     fStats.HouseEnded(aHouse.HouseType)
   else
+  begin
+    //We have to consider destroyed closed house as actually opened, otherwise closed houses stats will be corrupted
+    if aHouse.IsClosedForWorker then
+      fStats.HouseClosed(False, aHouse.HouseType);
+
     //Distribute honors
     if aFrom = fHandIndex then
       fStats.HouseSelfDestruct(aHouse.HouseType)
@@ -1014,6 +1019,7 @@ begin
       if aFrom <> PLAYER_NONE then
         gHands[aFrom].Stats.HouseDestroyed(aHouse.HouseType);
     end;
+  end;
 
   //Scripting events happen AFTER updating statistics
   gScriptEvents.ProcHouseDestroyed(aHouse, aFrom);
