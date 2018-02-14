@@ -172,6 +172,11 @@ begin
 	aHouses := States.PlayerGetAllHouses(0);
 	for h := 0 to Length(aHouses) -1 do
 		TraditionalUnlock(0, aHouses[h]);
+	//Unlock Watchtower & Quarry
+	Actions.HouseUnlock(0, 17);
+	Actions.HouseAllow(0, 17, true);
+	Actions.HouseUnlock(0, 14);
+	Actions.HouseAllow(0, 14, true);
 	//Disables Sharing Fog With Ally
 	Actions.PlayerShareFog(0, 4, False);
 	Actions.PlayerShareFog(4, 0, False);
