@@ -23,6 +23,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     function GetSpeed: Single;
     function Execute: TActionResult; override;
@@ -208,6 +209,12 @@ begin
   SaveStream.Write(fStamina);
   SaveStream.Write(fNextPos);
   SaveStream.Write(fVertexOccupied);
+end;
+
+
+function TUnitActionStormAttack.CanBeInterrupted: Boolean;
+begin
+  Result := not Locked; //Never interupt storm attack
 end;
 
 

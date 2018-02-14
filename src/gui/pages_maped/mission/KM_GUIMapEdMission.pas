@@ -4,6 +4,7 @@ interface
 uses
    Classes, Controls, Math, SysUtils,
    KM_Controls,
+   KM_InterfaceDefaults,
    KM_GUIMapEdMissionMode,
    KM_GUIMapEdMissionAlliances,
    KM_GUIMapEdMissionPlayers;
@@ -11,7 +12,7 @@ uses
 type
   TKMMissionTab = (mtMode, mtPlayers, mtAlliances);
 
-  TKMMapEdMission = class
+  TKMMapEdMission = class (TKMMapEdMenuPage)
   private
     fOnPageChange: TNotifyEvent;
 
@@ -23,6 +24,7 @@ type
   protected
     Panel_Mission: TKMPanel;
     Button_Mission: array [TKMMissionTab] of TKMButton;
+    procedure DoShowSubMenu(aIndex: Byte); override;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
     destructor Destroy; override;
@@ -31,15 +33,14 @@ type
 
     property GuiMissionPlayers: TKMMapEdMissionPlayers read fGuiMissionPlayers;
     procedure Show(aPage: TKMMissionTab);
-    procedure ShowIndex(aIndex: Byte);
-    function Visible(aPage: TKMMissionTab): Boolean; overload;
-    function Visible: Boolean; overload;
+    function IsVisible(aPage: TKMMissionTab): Boolean;
+    function Visible: Boolean; override;
   end;
 
 
 implementation
 uses
-  KM_ResTexts, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_Pics, KM_Defaults;
+  KM_ResTexts, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_Pics, KM_Defaults, KM_Utils;
 
 
 { TKMMapEdMission }
@@ -62,7 +63,7 @@ begin
   for MT := Low(TKMMissionTab) to High(TKMMissionTab) do
   begin
     Button_Mission[MT] := TKMButton.Create(Panel_Mission, SMALL_PAD_W * Byte(MT), 0, SMALL_TAB_W, SMALL_TAB_H,  TabGlyph[MT], rxGui, bsGame);
-    Button_Mission[MT].Hint := gResTexts[TabHint[MT]];
+    Button_Mission[MT].Hint := GetHintWHotKey(TabHint[MT], MAPED_SUBMENU_HOTKEYS[Ord(MT)]);
     Button_Mission[MT].OnClick := PageChange;
   end;
 
@@ -125,9 +126,12 @@ begin
 end;
 
 
-procedure TKMMapEdMission.ShowIndex(aIndex: Byte);
+procedure TKMMapEdMission.DoShowSubMenu(aIndex: Byte);
 begin
-  if aIndex in [Byte(Low(TKMMissionTab))..Byte(High(TKMMissionTab))] then
+  inherited;
+
+  if (aIndex in [Byte(Low(TKMMissionTab))..Byte(High(TKMMissionTab))])
+    and Button_Mission[TKMMissionTab(aIndex)].Enabled then
   begin
     PageChange(nil); //Hide existing pages
     Show(TKMMissionTab(aIndex));
@@ -141,7 +145,7 @@ begin
 end;
 
 
-function TKMMapEdMission.Visible(aPage: TKMMissionTab): Boolean;
+function TKMMapEdMission.IsVisible(aPage: TKMMissionTab): Boolean;
 begin
   case aPage of
     mtMode:       Result := fGuiMissionMode.Visible;

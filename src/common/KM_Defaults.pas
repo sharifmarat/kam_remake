@@ -72,6 +72,7 @@ var
   CAP_MAX_FPS           :Boolean = True;  //Should limit rendering performance to avoid GPU overheating (disable to measure debug performance)
   CRASH_ON_REPLAY       :Boolean = True;  //Crash as soon as replay consistency fails (random numbers mismatch)
   BLOCK_DUPLICATE_APP   :Boolean = True;  //Do not allow to run multiple games at once (to prevent MP cheating)
+  SHOW_DISMISS_UNITS_BTN:Boolean = True; //The button to order citizens go back to school
 
   //Implemented
   DO_UNIT_INTERACTION   :Boolean = True; //Debug for unit interaction
@@ -86,7 +87,7 @@ var
   //Not fully implemented yet
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
-  SHOW_DISMISS_BUTTON   :Boolean = False; //The button to order citizens go back to school
+  SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
   CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   SNOW_HOUSES           :Boolean = False; //Draw snow on houses
   CHECK_8087CW          :Boolean = False; //Check that 8087CW (FPU flags) are set correctly each frame, in case some lib/API changed them
@@ -211,13 +212,14 @@ var
 const
   //Here we store options that are hidden somewhere in code
   //Unit condition
-  CONDITION_PACE            = 10;         //Check unit conditions only once per 10 ticks
-  UNIT_MAX_CONDITION        = 45*60;      //Minutes of life. In KaM it's 45min
-  UNIT_MIN_CONDITION        = 6*60;       //If unit condition is less it will look for Inn. In KaM it's 6min
-  TROOPS_FEED_MAX           = 0.55;       //Maximum amount of condition a troop can have to order food (more than this means they won't order food)
-  UNIT_CONDITION_BASE       = 0.6;        //Base amount of health a unit starts with (measured in KaM)
-  UNIT_CONDITION_RANDOM     = 0.1;        //Random jitter of unit's starting health (KaM did not have this, all units started the same)
-  TROOPS_TRAINED_CONDITION  = 0.6;        //Condition troops start with when trained (measured from KaM)
+  CONDITION_PACE             = 10;         //Check unit conditions only once per 10 ticks
+  UNIT_STUFFED_CONDITION_LVL = 0.9;        //Unit condition level, until which we allow unit to eat foods
+  UNIT_MAX_CONDITION         = 45*60;      //Minutes of life. In KaM it's 45min
+  UNIT_MIN_CONDITION         = 6*60;       //If unit condition is less it will look for Inn. In KaM it's 6min
+  TROOPS_FEED_MAX            = 0.55;       //Maximum amount of condition a troop can have to order food (more than this means they won't order food)
+  UNIT_CONDITION_BASE        = 0.6;        //Base amount of health a unit starts with (measured in KaM)
+  UNIT_CONDITION_RANDOM      = 0.1;        //Random jitter of unit's starting health (KaM did not have this, all units started the same)
+  TROOPS_TRAINED_CONDITION   = 0.6;        //Condition troops start with when trained (measured from KaM)
 
   //Units are fed acording to this: (from knightsandmerchants.de tips and tricks)
   //Bread    = +40%
@@ -267,15 +269,19 @@ const
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
 
-  EXT_SAVE_MP_MINIMAP = 'smm';
   EXT_SAVE_REPLAY = 'rpl';
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
+  EXT_SAVE_MP_MINIMAP = 'smm';
+
   EXT_FILE_SCRIPT = 'script';
 
   EXT_SAVE_REPLAY_DOT = '.' + EXT_SAVE_REPLAY;
   EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
   EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
+  EXT_SAVE_MP_MINIMAP_DOT = '.' + EXT_SAVE_MP_MINIMAP;
+
+  EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
 
 type
   TKMHandIndex = {type} ShortInt;
@@ -331,6 +337,9 @@ type
     cfmErase // Erasing plans
   );
 
+  // Shape types for MapEditor
+  TKMMapEdShape = (hsCircle, hsSquare);
+
 
 const
   MARKER_REVEAL = 1;
@@ -381,11 +390,12 @@ const
 type
   TKMTerrainPassability = (
     tpUnused,
-    tpWalk,         // General passability of tile for any walking units
+    tpWalk,        // General passability of tile for any walking units
     tpWalkRoad,    // Type of passability for Serfs when transporting wares, only roads have it
     tpBuildNoObj,  // Can we build a house on this tile after removing an object on the tile or house near it?
     tpBuild,       // Can we build a house on this tile?
     tpMakeRoads,   // Thats less strict than house building, roads Can be placed almost everywhere where units Can walk, except e.g. bridges
+    tpCutTree,     // Can tree be cut
     tpFish,        // Water tiles where fish Can move around
     tpCrab,        // Sand tiles where crabs Can move around
     tpWolf,        // Soil tiles where wolfs Can move around
@@ -406,6 +416,7 @@ const
     'Can build without|object or house',
     'Can build',
     'Can make roads',
+    'Can cut tree',
     'Can fish',
     'Can crab',
     'Can wolf',
@@ -504,11 +515,11 @@ type
   TGoInDirection = (gd_GoOutside=-1, gd_GoInside=1); //Switch to set if unit goes into house or out of it
 
 type
-  TKMUnitThought = (th_None, th_Eat, th_Home, th_Build, th_Stone, th_Wood, th_Death, th_Quest);
+  TKMUnitThought = (th_None, th_Eat, th_Home, th_Build, th_Stone, th_Wood, th_Death, th_Quest, th_Dismiss);
 
 const //Corresponding indices in units.rx
   ThoughtBounds: array [TKMUnitThought, 1..2] of Word = (
-  (0,0), (6250,6257), (6258,6265), (6266,6273), (6274,6281), (6282,6289), (6290,6297), (6298,6305)
+  (0,0), (6250,6257), (6258,6265), (6266,6273), (6274,6281), (6282,6289), (6290,6297), (6298,6305), (6314,6321)
   );
 
   UNIT_OFF_X = -0.5;
@@ -529,7 +540,7 @@ const //Corresponding indices in units.rx
 type
   TUnitTaskName = ( utn_Unknown, //Uninitialized task to detect bugs
         utn_SelfTrain, utn_Deliver,        utn_BuildRoad,  utn_BuildWine,        utn_BuildField,
-        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,
+        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,    utn_Dismiss,
         utn_GoEat,     utn_Mining,         utn_Die,        utn_GoOutShowHungry,  utn_AttackHouse,
         utn_ThrowRock);
 
@@ -667,7 +678,11 @@ type
     mlObjects,
     mlHouses,
     mlUnits,
+    mlOverlays,
     mlDeposits,
+    mlMiningRadius,
+    mlTowersAttackRadius,
+    mlUnitsAttackRadius,
     mlDefences,
     mlRevealFOW,
     mlCenterScreen,
@@ -739,6 +754,7 @@ const
   icYellow = $FF07FFFF;
   icOrange = $FF0099FF;
   icRed    = $FF0707FF;
+  icBlue   = $FFFF0707;
   icCyan   = $FFFFFF00;
 
   icTransparent = $00;
@@ -750,6 +766,9 @@ const
   icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
+  icLightOrange = $FF80CCFF;
+  icLightRed   = $FF7070FF;
+  icLight2Red   = $FFB0B0FF;
   icDarkCyan   = $FFB0B000;
 
   icPink = $FFFF00FF;

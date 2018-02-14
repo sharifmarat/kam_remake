@@ -754,10 +754,10 @@ begin
   Result := 0;
 
   case fNetworking.SelectGameKind of
-    ngk_Map:  if fNetworking.MapInfo.IsCoop then
+    ngk_Map:  if fNetworking.MapInfo.TxtInfo.IsCoop then
                 Result := 2
               else
-              if fNetworking.MapInfo.IsSpecial then
+              if fNetworking.MapInfo.TxtInfo.IsSpecial then
                 Result := 3
               else
               if fNetworking.MapInfo.MissionMode = mm_Tactic then
@@ -1525,7 +1525,7 @@ begin
       DropBox_LobbyLoc[I].ItemIndex := 0;
 
     //Always show the selected teams, except when the map denies it
-    if (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.BlockTeamSelection then
+    if (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
       DropBox_LobbyTeam[I].ItemIndex := 0 //Hide selected teams since they will be overridden
     else
       DropBox_LobbyTeam[I].ItemIndex := CurPlayer.Team;
@@ -1559,7 +1559,7 @@ begin
     //Can only edit teams for maps (not saves), but the map may deny this
     DropBox_LobbyTeam[I].Enabled := (CanEdit or HostCanEdit) and not CurPlayer.IsSpectator
                                     and (fNetworking.SelectGameKind = ngk_Map)
-                                    and not fNetworking.MapInfo.BlockTeamSelection;
+                                    and not fNetworking.MapInfo.TxtInfo.BlockTeamSelection;
     DropBox_LobbyColors[I].Enabled := (CanEdit or (MyNik and not CurPlayer.ReadyToStart))
                                       and (not IsSave or CurPlayer.IsSpectator);
     if MyNik and not fNetworking.IsHost then
@@ -1599,7 +1599,7 @@ begin
   //If we have a map selected update the preview
   if (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid then
   begin
-    fMinimap.Update(not fNetworking.MapInfo.BlockFullMapPreview);
+    fMinimap.Update(not fNetworking.MapInfo.TxtInfo.BlockFullMapPreview);
     MinimapView_Lobby.SetMinimap(fMinimap);
     for I := 0 to MAX_HANDS - 1 do
     begin
@@ -1793,10 +1793,10 @@ begin
     begin
       //Different modes allow different maps
       case Radio_LobbyMapType.ItemIndex of
-        0:    AddMap := (fMapsMP[I].MissionMode = mm_Normal) and not fMapsMP[I].IsCoop and not fMapsMP[I].IsSpecial; //BuildMap
-        1:    AddMap := (fMapsMP[I].MissionMode = mm_Tactic) and not fMapsMP[I].IsCoop and not fMapsMP[I].IsSpecial; //FightMap
-        2:    AddMap := fMapsMP[I].IsCoop; //CoopMap
-        3:    AddMap := fMapsMP[I].IsSpecial; //Special map
+        0:    AddMap := (fMapsMP[I].MissionMode = mm_Normal) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //BuildMap
+        1:    AddMap := (fMapsMP[I].MissionMode = mm_Tactic) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //FightMap
+        2:    AddMap := fMapsMP[I].TxtInfo.IsCoop; //CoopMap
+        3:    AddMap := fMapsMP[I].TxtInfo.IsSpecial; //Special map
         else  AddMap := False; //Other cases are already handled in Lobby_MapTypeSelect
       end;
 
@@ -2053,9 +2053,15 @@ var
 begin
   //Common settings
   MinimapView_Lobby.Visible := (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.BlockPeacetime;
-  TrackBar_LobbySpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbySpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
+  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost
+                                     and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid
+                                     and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
+  TrackBar_LobbySpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost
+                                    and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
+                                      or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
+  TrackBar_LobbySpeedAfterPT.Enabled := fNetworking.IsHost
+                                        and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
+                                          or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
   CheckBox_LobbyRandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngk_Save);
 
   //In case it was hidden during file transfer
@@ -2094,7 +2100,7 @@ begin
                 if M.IsValid then
                 begin
                   fMinimap.LoadFromMission(M.FullPath('.dat'), M.HumanUsableLocations);
-                  fMinimap.Update(not M.BlockFullMapPreview);
+                  fMinimap.Update(not M.TxtInfo.BlockFullMapPreview);
                   MinimapView_Lobby.SetMinimap(fMinimap);
 
                   if not TrackBar_LobbyPeacetime.Enabled and fNetworking.IsHost then
@@ -2110,7 +2116,7 @@ begin
                   end;
                 end;
                 Label_LobbyMapName.Caption := WrapColor(M.FileName, M.GetLobbyColor);
-                Memo_LobbyMapDesc.Text := M.BigDesc;
+                Memo_LobbyMapDesc.Text := M.TxtInfo.BigDesc;
             end;
   end;
 end;
@@ -2120,7 +2126,7 @@ procedure TKMMenuLobby.Lobby_OnMapMissing(const aData: UnicodeString; aStartTran
 begin
   //Common settings
   MinimapView_Lobby.Visible := (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.BlockPeacetime;
+  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
   TrackBar_LobbySpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
   TrackBar_LobbySpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
   CheckBox_LobbyRandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngk_Save);

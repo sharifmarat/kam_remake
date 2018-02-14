@@ -76,6 +76,8 @@ const
     wt_Axe, wt_Sword, wt_Pike, wt_Hallebard, wt_Bow,
     wt_Arbalet, wt_Horse, wt_Fish);
 
+  ORE_MAX_TYPES_CNT = 4; //Maximum number of ore tiles types
+
 
   //Aligned to right to use them in GUI costs display as well
   WarfareCosts: array [WEAPON_MIN..WEAPON_MAX, 1..2] of TWareType = (

@@ -158,9 +158,12 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+  protected
+    procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
   public
     RenderArea: TKMRenderControl;
+    SuppressAltForMenu: Boolean; //Suppress Alt key 'activate window menu' function
     procedure ControlsSetVisibile(aShowCtrls: Boolean);
     procedure ControlsReset;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
@@ -202,6 +205,7 @@ begin
   RenderArea.OnMouseUp := RenderAreaMouseUp;
   RenderArea.OnResize := RenderAreaResize;
   RenderArea.OnRender := RenderAreaRender;
+  SuppressAltForMenu := False;
 
   chkSuperSpeed.Caption := 'Speed x' + IntToStr(DEBUG_SPEEDUP_SPEED);
 
@@ -340,11 +344,17 @@ end;
 
 
 procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 
 
 procedure TFormMain.RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y);
+end;
 
 
 procedure TFormMain.RenderAreaResize(aWidth, aHeight: Integer);
@@ -895,6 +905,17 @@ begin
      end;
   end;
   {$ENDIF}
+end;
+
+
+//Supress default activation of window menu when Alt pressed, as Alt used in some shortcuts
+procedure TFormMain.WndProc(var Message : TMessage);
+begin
+  if (Message.Msg = WM_SYSCOMMAND)
+    and (Message.WParam = SC_KEYMENU)
+    and SuppressAltForMenu then Exit;
+
+  inherited WndProc(Message);
 end;
 
 

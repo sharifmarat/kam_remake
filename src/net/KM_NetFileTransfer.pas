@@ -124,7 +124,7 @@ begin
               if FileExists(FileName) then
                 AddFileToStream(FileName, '', VALID_MAP_EXTENSIONS[I]);
               //Add all included script files
-              if (VALID_MAP_EXTENSIONS[I] = 'script') and FileExists(FileName) then
+              if (VALID_MAP_EXTENSIONS[I] = EXT_FILE_SCRIPT) and FileExists(FileName) then
               begin
                 ScriptPreProcessor := TKMScriptingPreProcessor.Create;
                 try
@@ -367,7 +367,7 @@ begin
     FileStream.CopyFrom(ReadStream, ReadSize);
 
     // Scripts can have arbitrary names
-    if (Ext = 'script') and (TransferedFileName <> ReadName) then
+    if (Ext = EXT_FILE_SCRIPT) and (TransferedFileName <> ReadName) then
       FileName := GetFullDestFileName(fType, fName, Postfix, Ext, TransferedFileName)
     else
       FileName := GetFullDestFileName(fType, fName, Postfix, Ext);

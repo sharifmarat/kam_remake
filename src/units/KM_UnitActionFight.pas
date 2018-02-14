@@ -27,6 +27,7 @@ type
     constructor Load(LoadStream:TKMemoryStream); override;
     destructor Destroy; override;
     function ActName: TUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     procedure SyncLoad; override;
     property GetOpponent: TKMUnit read fOpponent;
@@ -59,6 +60,9 @@ const
 constructor TUnitActionFight.Create(aUnit: TKMUnit; aActionType: TUnitActionType; aOpponent: TKMUnit);
 begin
   inherited Create(aUnit, aActionType, True);
+
+  Assert(aUnit is TKMUnitWarrior, 'Can''t create fight action for not Warrior unit');
+
   fFightDelay     := -1;
   fOpponent       := aOpponent.GetUnitPointer;
   aUnit.Direction := KMGetDirection(fUnit.PositionF, fOpponent.PositionF); //Face the opponent from the beginning
@@ -371,6 +375,10 @@ begin
 end;
 
 
+function TUnitActionFight.CanBeInterrupted: Boolean;
+begin
+  Result := TKMUnitWarrior(fUnit).IsRanged or not Locked; //Only allowed to interupt ranged fights
+end;
 
 
 end.

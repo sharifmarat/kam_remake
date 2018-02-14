@@ -3,10 +3,11 @@ unit KM_GUIMapEdTownScript;
 interface
 uses
    Classes, Controls, KromUtils, Math, StrUtils, SysUtils,
+   KM_InterfaceDefaults,
    KM_Controls;
 
 type
-  TKMMapEdTownScript = class
+  TKMMapEdTownScript = class (TKMMapEdSubMenuPage)
   private
     procedure Town_ScriptRefresh;
     procedure Town_ScriptChange(Sender: TObject);
@@ -26,7 +27,7 @@ type
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure UpdateState;
   end;
 
@@ -34,7 +35,7 @@ type
 implementation
 uses
   KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_GameCursor,
-  KM_Defaults, KM_Pics, KM_Hand, KM_ResHouses;
+  KM_Defaults, KM_Pics, KM_Hand, KM_ResHouses, KM_Utils;
 
 
 { TKMMapEdTownScript }
@@ -46,8 +47,11 @@ begin
   TKMLabel.Create(Panel_Script, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_TITLE], fnt_Outline, taCenter);
   CheckBox_AutoBuild := TKMCheckBox.Create(Panel_Script, 0, 30, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOBUILD], fnt_Metal);
   CheckBox_AutoBuild.OnClick := Town_ScriptChange;
+  CheckBox_AutoBuild.Hint := GetHintWHotKey(TX_MAPED_AI_AUTOBUILD, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
   CheckBox_AutoRepair := TKMCheckBox.Create(Panel_Script, 0, 50, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOREPAIR], fnt_Metal);
   CheckBox_AutoRepair.OnClick := Town_ScriptChange;
+  CheckBox_AutoRepair.Hint := GetHintWHotKey(TX_MAPED_AI_AUTOREPAIR, MAPED_SUBMENU_ACTIONS_HOTKEYS[1]);
+
   TrackBar_SerfsPer10Houses := TKMTrackBar.Create(Panel_Script, 0, 70, TB_WIDTH, 1, 50);
   TrackBar_SerfsPer10Houses.Caption := gResTexts[TX_MAPED_AI_SERFS_PER_10_HOUSES];
   TrackBar_SerfsPer10Houses.OnChange := Town_ScriptChange;
@@ -65,7 +69,7 @@ begin
 
   CheckBox_UnlimitedEquip := TKMCheckBox.Create(Panel_Script, 0, 200, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_FASTEQUIP], fnt_Metal);
   CheckBox_UnlimitedEquip.OnClick := Town_ScriptChange;
-  CheckBox_UnlimitedEquip.Hint := gResTexts[TX_MAPED_AI_FASTEQUIP_HINT];
+  CheckBox_UnlimitedEquip.Hint := GetHintWHotKey(TX_MAPED_AI_FASTEQUIP_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[2]);
 
   TrackBar_EquipRateLeather := TKMTrackBar.Create(Panel_Script, 0, 216, TB_WIDTH, 10, 300);
   TrackBar_EquipRateLeather.Caption := gResTexts[TX_MAPED_AI_DEFENSE_EQUIP_LEATHER];
@@ -79,8 +83,18 @@ begin
 
   TKMLabel.Create(Panel_Script, 0, 310, gResTexts[TX_MAPED_AI_START], fnt_Metal, taLeft);
   Button_AIStart         := TKMButtonFlat.Create(Panel_Script, 0, 330, 33, 33, 62, rxGuiMain);
-  Button_AIStart.Hint    := gResTexts[TX_MAPED_AI_START_HINT];
+  Button_AIStart.Hint    := GetHintWHotKey(TX_MAPED_AI_START_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[3]);
   Button_AIStart.OnClick := Town_ScriptChange;
+
+  fSubMenuActionsEvents[0] := Town_ScriptChange;
+  fSubMenuActionsEvents[1] := Town_ScriptChange;
+  fSubMenuActionsEvents[2] := Town_ScriptChange;
+  fSubMenuActionsEvents[3] := Town_ScriptChange;
+
+  fSubMenuActionsCtrls[0] := CheckBox_AutoBuild;
+  fSubMenuActionsCtrls[1] := CheckBox_AutoRepair;
+  fSubMenuActionsCtrls[2] := CheckBox_UnlimitedEquip;
+  fSubMenuActionsCtrls[3] := Button_AIStart;
 end;
 
 

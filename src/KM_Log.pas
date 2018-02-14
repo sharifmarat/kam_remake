@@ -153,7 +153,7 @@ end;
 
 procedure TKMLog.InitLog;
 begin
-  ForceDirectories(ExtractFilePath((fLogPath)));
+  ForceDirectories(ExtractFilePath(fLogPath));
 
   AssignFile(fl, fLogPath);
   Rewrite(fl);

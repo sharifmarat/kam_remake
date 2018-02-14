@@ -35,7 +35,6 @@ type
     fRequestedFood: Boolean;
     fStormDelay: Word;
 
-    function CanInterruptAction: Boolean;
     procedure FightEnemy(aEnemy: TKMUnit);
 
     procedure ClearOrderTarget;
@@ -47,6 +46,7 @@ type
 
     procedure TakeNextOrder;
     procedure WalkedOut;
+    function CanInterruptAction: Boolean;
   public
     OnWarriorDied: TKMWarriorEvent; //Separate event from OnUnitDied to report to Group
     OnPickedFight: TKMWarrior2Event;
@@ -60,7 +60,9 @@ type
     destructor Destroy; override;
 
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
-    procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Dismiss; override;
+    procedure DismissCancel; override;
 
     //Commands from TKMUnitGroup
     procedure OrderFood;
@@ -98,7 +100,7 @@ implementation
 uses
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
-  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand,
+  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroups,
   KM_ResWares, KM_Game, KM_ResHouses;
 
 
@@ -160,7 +162,19 @@ begin
 end;
 
 
-procedure TKMUnitWarrior.KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
+procedure TKMUnitWarrior.Dismiss;
+begin
+  raise Exception.Create('Warrior unit can not be dismissed');
+end;
+
+
+procedure TKMUnitWarrior.DismissCancel;
+begin
+  raise Exception.Create('Warrior unit can not be dismissed and can not cancel dismiss then');
+end;
+
+
+procedure TKMUnitWarrior.Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
 var AlreadyDeadOrDying: Boolean;
 begin
   AlreadyDeadOrDying := IsDeadOrDying; //Inherrited will kill the unit
@@ -587,17 +601,12 @@ end;
 { See if we can abandon other actions in favor of more important things }
 function TKMUnitWarrior.CanInterruptAction: Boolean;
 begin
-  if GetUnitAction is TUnitActionWalkTo      then Result := TUnitActionWalkTo(GetUnitAction).CanAbandonExternal and GetUnitAction.StepDone else //Only when unit is idling during Interaction pauses
-  if(GetUnitAction is TUnitActionStay) and
-    (UnitTask      is TTaskAttackHouse)      then Result := True else //We can abandon attack house if the action is stay
-  if GetUnitAction is TUnitActionStay        then Result := not GetUnitAction.Locked else //Initial pause before leaving barracks is locked
-  if GetUnitAction is TUnitActionAbandonWalk then Result := GetUnitAction.StepDone and not GetUnitAction.Locked else //Abandon walk should never be abandoned, it will exit within 1 step anyway
-  if GetUnitAction is TUnitActionGoInOut     then Result := not GetUnitAction.Locked else //Never interupt leaving barracks
-  if GetUnitAction is TUnitActionStormAttack then Result := not GetUnitAction.Locked else //Never interupt storm attack
-  if GetUnitAction is TUnitActionFight       then Result := IsRanged or not GetUnitAction.Locked //Only allowed to interupt ranged fights
-  else Result := true;
+  if (GetUnitAction is TUnitActionStay)
+    and (UnitTask is TTaskAttackHouse) then
+    Result := True //We can abandon attack house if the action is stay
+  else
+    Result := GetUnitAction.CanBeInterrupted;
 end;
-
 
 
 //Override current action if there's an Order in queue paying attention
@@ -618,7 +627,7 @@ begin
     woWalk:         begin
                       //We can update existing Walk action with minimum changes
                       if (GetUnitAction is TUnitActionWalkTo)
-                      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                        and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
                       begin
                         FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
 
@@ -773,7 +782,7 @@ begin
     CheckForEnemy; //Split into seperate procedure so it can be called from other places
 
   Result := True; //Required for override compatibility
-  if inherited UpdateState then exit;
+  if inherited UpdateState then Exit;
 
   //Make sure we didn't get an action above
   if GetUnitAction <> nil then
@@ -788,6 +797,7 @@ var
   Act: TUnitActionType;
   UnitPos: TKMPointF;
   I,K: Integer;
+  Color: Cardinal;
 begin
   inherited;
   if not fVisible then Exit;
@@ -801,13 +811,20 @@ begin
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, UnitPos.X, UnitPos.Y);
 
-  if SHOW_ATTACK_RADIUS then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlUnitsAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  begin
+    Color := $40FFFFFF;
+    if (gMySpectator.Selected = Self)
+      or ((gMySpectator.Selected is TKMUnitGroup)
+        and (TKMUnitGroup(gMySpectator.Selected).FlagBearer = Self)) then
+      Color := icRed and Color;
     if IsRanged then
-    for I := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
-    for K := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
-    if InRange(GetLength(I, K), GetFightMinRange, GetFightMaxRange) then
-    if gTerrain.TileInMapCoords(GetPosition.X + K, GetPosition.Y + I) then
-      gRenderAux.Quad(GetPosition.X + K, GetPosition.Y + I, $40FFFFFF);
+      for I := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
+        for K := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
+          if InRange(GetLength(I, K), GetFightMinRange, GetFightMaxRange)
+            and gTerrain.TileInMapCoords(GetPosition.X + K, GetPosition.Y + I) then
+              gRenderAux.Quad(GetPosition.X + K, GetPosition.Y + I, Color);
+  end;
 end;
 
 

@@ -26,23 +26,49 @@ type
     Stat: TGoalStatus;
   end;
 
+  TKMMapTxtInfo = class
+  private
+    function IsEmpty: Boolean;
+    procedure ResetInfo;
+    procedure Load(aStream: TKMemoryStream);
+    procedure Save(aStream: TKMemoryStream);
+  public
+    Author, SmallDesc, BigDesc: UnicodeString;
+    SmallDescLibx, BigDescLibx: Integer;
+    IsCoop: Boolean; //Some multiplayer missions are defined as coop
+    IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
+    IsPlayableAsSP: Boolean; //Is MP map playable as SP map ?
+
+    BlockTeamSelection: Boolean;
+    BlockPeacetime: Boolean;
+    BlockFullMapPreview: Boolean;
+
+    constructor Create;
+
+    function IsSmallDescLibxSet: Boolean;
+    function IsBigDescLibxSet: Boolean;
+
+    procedure SaveTXTInfo(aFilePath: UnicodeString);
+    procedure LoadTXTInfo(aFilePath: UnicodeString);
+  end;
+
   TKMapInfo = class
   private
-    fPath: string;
+    fPath: String;
     fFileName: UnicodeString; //without extension
     fCRC: Cardinal;
     fDatCRC: Cardinal; //Used to speed up scanning
     fVersion: AnsiString; //Savegame version, yet unused in maps, they always have actual version
     fInfoAmount: TKMMapInfoAmount;
     fMapFolder: TMapFolder;
-    fSizeText: string;
+    fTxtInfo: TKMMapTxtInfo;
+    fSizeText: String;
     procedure ResetInfo;
-    procedure LoadTXTInfo;
     procedure LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure LoadFromFile(const aPath: UnicodeString);
     procedure SaveToStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure SaveToFile(const aPath: UnicodeString);
-    function GetSizeText: string;
+    function GetSizeText: String;
     function DetermineReadmeFilePath: String;
   public
     MapSizeX, MapSizeY: Integer;
@@ -56,13 +82,7 @@ type
     GoalsSurvive: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
     Alliances: array [0..MAX_HANDS-1, 0..MAX_HANDS-1] of TAllianceType;
     FlagColors: array [0..MAX_HANDS-1] of Cardinal;
-    Author, SmallDesc, BigDesc: UnicodeString;
-    IsCoop: Boolean; //Some multiplayer missions are defined as coop
-    IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
     IsFavourite: Boolean;
-    BlockTeamSelection: Boolean;
-    BlockPeacetime: Boolean;
-    BlockFullMapPreview: Boolean;
 
     constructor Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TMapFolder); overload;
     destructor Destroy; override;
@@ -70,6 +90,7 @@ type
     procedure AddGoal(aType: TGoalType; aPlayer: TKMHandIndex; aCondition: TGoalCondition; aStatus: TGoalStatus; aPlayerIndex: TKMHandIndex);
     procedure LoadExtra;
 
+    property TxtInfo: TKMMapTxtInfo read fTxtInfo;
     property InfoAmount: TKMMapInfoAmount read fInfoAmount;
     property Path: string read fPath;
     property MapFolder: TMapFolder read fMapFolder;
@@ -89,6 +110,10 @@ type
     function ViewReadme: Boolean;
     function GetLobbyColor: Cardinal;
     function IsFilenameEndMatchHash: Boolean;
+    function IsSinglePlayer: Boolean;
+    function IsMultiplayer: Boolean;
+    function IsNormalMission: Boolean;
+    function IsTacticMission: Boolean;
   end;
 
 
@@ -215,13 +240,14 @@ var
 begin
   inherited Create;
 
+  fTxtInfo := TKMMapTxtInfo.Create;
   fPath := ExeDir + MAP_FOLDER[aMapFolder] + PathDelim + aFolder + PathDelim;
   fFileName := aFolder;
   fMapFolder := aMapFolder;
 
   DatFile := fPath + fFileName + '.dat';
   MapFile := fPath + fFileName + '.map';
-  ScriptFile := fPath + fFileName + '.script'; //Needed for CRC
+  ScriptFile := fPath + fFileName + EXT_FILE_SCRIPT_DOT; //Needed for CRC
   TxtFile := fPath + fFileName + '.txt'; //Needed for CRC
   LIBXFiles := fPath + fFileName + '.*.libx'; //Needed for CRC
 
@@ -287,7 +313,7 @@ begin
     end;
 
     //Load additional text info
-    LoadTXTInfo;
+    fTxtInfo.LoadTXTInfo(fPath + fFileName + '.txt');
 
     if gGameApp.GameSettings = nil // In case we are closing app and settings object is already destroyed
       then Exit;
@@ -379,60 +405,6 @@ begin
 end;
 
 
-procedure TKMapInfo.LoadTXTInfo;
-
-  function LoadDescriptionFromLIBX(aIndex: Integer): UnicodeString;
-  var MissionTexts: TKMTextLibrarySingle;
-  begin
-    if aIndex = -1 then Exit;
-    MissionTexts := TKMTextLibrarySingle.Create;
-    MissionTexts.LoadLocale(fPath + fFileName + '.%s.libx');
-    Result := MissionTexts.Texts[aIndex];
-    MissionTexts.Free;
-  end;
-
-var
-  st, S: string;
-  ft: TextFile;
-begin
-  //Load additional text info
-  if FileExists(fPath + fFileName + '.txt') then
-  begin
-    AssignFile(ft, fPath + fFileName + '.txt');
-    FileMode := fmOpenRead;
-    Reset(ft);
-    repeat
-      ReadLn(ft, st);
-      if SameText(st, 'Author')    then Readln(ft, Author);
-      if SameText(st, 'BigDesc')   then Readln(ft, BigDesc);
-      if SameText(st, 'BigDescLIBX') then
-      begin
-        Readln(ft, S);
-        BigDesc := LoadDescriptionFromLIBX(StrToIntDef(S, -1));
-      end;
-      if SameText(st, 'SmallDesc') then ReadLn(ft, SmallDesc);
-      if SameText(st, 'SmallDescLIBX') then
-      begin
-        Readln(ft, S);
-        SmallDesc := LoadDescriptionFromLIBX(StrToIntDef(S, -1));
-      end;
-      if SameText(st, 'SetCoop')   then
-      begin
-        IsCoop := True;
-        BlockPeacetime := True;
-        BlockTeamSelection := True;
-        BlockFullMapPreview := True;
-      end;
-      if SameText(st, 'SetSpecial')then IsSpecial := True;
-      if SameText(st, 'BlockPeacetime') then BlockPeacetime := True;
-      if SameText(st, 'BlockTeamSelection') then BlockTeamSelection := True;
-      if SameText(st, 'BlockFullMapPreview') then BlockFullMapPreview := True;
-    until(eof(ft));
-    CloseFile(ft);
-  end;
-end;
-
-
 //Load additional information for map that is not in main SP list
 procedure TKMapInfo.LoadExtra;
 var
@@ -456,9 +428,9 @@ begin
   end;
 
   if MissionMode = mm_Tactic then
-    BlockPeacetime := True;
+    fTxtInfo.BlockPeacetime := True;
 
-  LoadTXTInfo;
+  fTxtInfo.LoadTXTInfo(fPath + fFileName + '.txt');
 
   fInfoAmount := iaExtra;
 end;
@@ -467,13 +439,9 @@ end;
 procedure TKMapInfo.ResetInfo;
 var I, K: Integer;
 begin
-  IsCoop := False;
-  IsSpecial := False;
   MissionMode := mm_Normal;
   DefaultHuman := 0;
-  Author := '';
-  SmallDesc := '';
-  BigDesc := '';
+  fTxtInfo.ResetInfo;
   for I:=0 to MAX_HANDS-1 do
   begin
     FlagColors[I] := DefaultTeamColors[I];
@@ -512,13 +480,9 @@ begin
   S.Read(MapSizeY);
   S.Read(MissionMode, SizeOf(TKMissionMode));
   S.Read(LocCount);
-  S.ReadW(SmallDesc);
-  S.Read(IsCoop);
-  S.Read(IsSpecial);
   S.Read(CanBeHuman, SizeOf(CanBeHuman));
-  S.Read(BlockTeamSelection);
-  S.Read(BlockPeacetime);
-  S.Read(BlockFullMapPreview);
+
+  fTxtInfo.Load(S);
 
   IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
 end;
@@ -573,13 +537,9 @@ begin
     S.Write(MapSizeY);
     S.Write(MissionMode, SizeOf(TKMissionMode));
     S.Write(LocCount);
-    S.WriteW(SmallDesc);
-    S.Write(IsCoop);
-    S.Write(IsSpecial);
     S.Write(CanBeHuman, SizeOf(CanBeHuman));
-    S.Write(BlockTeamSelection);
-    S.Write(BlockPeacetime);
-    S.Write(BlockFullMapPreview);
+
+    fTxtInfo.Save(S);
 
     //Try to save map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
@@ -639,6 +599,31 @@ begin
 end;
 
 
+function TKMapInfo.IsSinglePlayer: Boolean;
+begin
+  Result := (fMapFolder = mfSP) or TxtInfo.IsPlayableAsSP;
+end;
+
+
+function TKMapInfo.IsMultiplayer: Boolean;
+begin
+  Result := fMapFolder <> mfSP;
+end;
+
+
+function TKMapInfo.IsNormalMission: Boolean;
+begin
+  Result := MissionMode = mm_Normal;
+end;
+
+
+function TKMapInfo.IsTacticMission: Boolean;
+begin
+  Result := MissionMode = mm_Tactic;
+end;
+
+
+
 function TKMapInfo.FileNameWithoutHash: UnicodeString;
 begin
   if (MapFolder = mfDL) and IsFilenameEndMatchHash then
@@ -690,6 +675,197 @@ begin
     Result := $FFC9BBBB
   else
     Result := $FF9CF6FF;
+end;
+
+
+{ TKMMapTxtInfo }
+constructor TKMMapTxtInfo.Create;
+begin
+  ResetInfo;
+end;
+
+procedure TKMMapTxtInfo.SaveTXTInfo(aFilePath: UnicodeString);
+var
+  ft: TextFile;
+
+  procedure WriteLine(aLineHeader: UnicodeString; aLineValue: UnicodeString = '');
+  begin
+    Writeln(ft, aLineHeader);
+    if aLineValue <> '' then
+      Writeln(ft, aLineValue);
+    Writeln(ft);
+  end;
+
+begin
+  if IsEmpty then Exit;
+
+  ForceDirectories(ExtractFilePath(aFilePath));
+
+  AssignFile(ft, aFilePath);
+  Rewrite(ft);
+
+  if Author <> '' then
+    WriteLine('Author', Author);
+
+  if SmallDescLibx <> -1 then
+    WriteLine('SmallDescLIBX', IntToStr(SmallDescLibx))
+  else if SmallDesc <> '' then
+    WriteLine('SmallDesc', SmallDesc);
+
+  if BigDescLibx <> -1 then
+    WriteLine('BigDescLIBX', IntToStr(BigDescLibx))
+  else if BigDesc <> '' then
+    WriteLine('BigDesc', BigDesc);
+
+  if IsCoop then
+    WriteLine('SetCoop');
+
+  if IsSpecial then
+    WriteLine('SetSpecial');
+
+  if IsPlayableAsSP then
+    WriteLine('PlayableAsSP');
+
+  if BlockPeacetime then
+    WriteLine('BlockPeacetime');
+
+  if BlockTeamSelection then
+    WriteLine('BlockTeamSelection');
+
+  if BlockFullMapPreview then
+    WriteLine('BlockFullMapPreview');
+
+  CloseFile(ft);
+end;
+
+procedure TKMMapTxtInfo.LoadTXTInfo(aFilePath: UnicodeString);
+
+  function LoadDescriptionFromLIBX(aIndex: Integer): UnicodeString;
+  var
+    MissionTexts: TKMTextLibrarySingle;
+  begin
+    Result := '';
+    if aIndex = -1 then Exit;
+    MissionTexts := TKMTextLibrarySingle.Create;
+    MissionTexts.LoadLocale(ChangeFileExt(aFilePath, '.%s.libx'));
+    Result := MissionTexts.Texts[aIndex];
+    MissionTexts.Free;
+  end;
+
+var
+  St, S: String;
+  ft: TextFile;
+begin
+  //Load additional text info
+  if FileExists(aFilePath) then
+  begin
+    AssignFile(ft, aFilePath);
+    FileMode := fmOpenRead;
+    Reset(ft);
+    repeat
+      ReadLn(ft, St);
+      if SameText(St, 'Author')    then Readln(ft, Author);
+      if SameText(St, 'BigDesc')   then Readln(ft, BigDesc);
+      if SameText(St, 'BigDescLIBX') then
+      begin
+        Readln(ft, S);
+        BigDescLibx := StrToIntDef(S, -1);
+        BigDesc := LoadDescriptionFromLIBX(BigDescLibx);
+      end;
+      if SameText(St, 'SmallDesc') then
+        ReadLn(ft, SmallDesc);
+      if SameText(St, 'SmallDescLIBX') then
+      begin
+        Readln(ft, S);
+        SmallDescLibx := StrToIntDef(S, -1);
+        SmallDesc := LoadDescriptionFromLIBX(SmallDescLibx);
+      end;
+      if SameText(St, 'SetCoop')   then
+      begin
+        IsCoop := True;
+        BlockPeacetime := True;
+        BlockTeamSelection := True;
+        BlockFullMapPreview := True;
+      end;
+      if SameText(St, 'SetSpecial') then IsSpecial := True;
+      if SameText(St, 'PlayableAsSP') then IsPlayableAsSP := True;
+      if SameText(St, 'BlockPeacetime') then BlockPeacetime := True;
+      if SameText(St, 'BlockTeamSelection') then BlockTeamSelection := True;
+      if SameText(St, 'BlockFullMapPreview') then BlockFullMapPreview := True;
+    until(eof(ft));
+    CloseFile(ft);
+  end;
+end;
+
+
+function TKMMapTxtInfo.IsSmallDescLibxSet: Boolean;
+begin
+  Result := SmallDescLibx <> -1;
+end;
+
+
+
+function TKMMapTxtInfo.IsBigDescLibxSet: Boolean;
+begin
+  Result := BigDescLibx <> -1;
+end;
+
+
+function TKMMapTxtInfo.IsEmpty: Boolean;
+begin
+  Result := not (IsCoop or IsSpecial or IsPlayableAsSP
+            or BlockTeamSelection or BlockPeacetime or BlockFullMapPreview
+            or (Author <> '')
+            or (SmallDesc <> '') or IsSmallDescLibxSet
+            or (BigDesc <> '') or IsBigDescLibxSet);
+end;
+
+
+procedure TKMMapTxtInfo.ResetInfo;
+begin
+  IsCoop := False;
+  IsSpecial := False;
+  IsPlayableAsSP := False;
+  BlockTeamSelection := False;
+  BlockPeacetime := False;
+  BlockFullMapPreview := False;
+  Author := '';
+  SmallDesc := '';
+  SmallDescLibx := -1;
+  BigDesc := '';
+  BigDescLibx := -1;
+end;
+
+
+procedure TKMMapTxtInfo.Load(aStream: TKMemoryStream);
+begin
+  aStream.Read(IsCoop);
+  aStream.Read(IsSpecial);
+  aStream.Read(IsPlayableAsSP);
+
+  aStream.Read(BlockTeamSelection);
+  aStream.Read(BlockPeacetime);
+  aStream.Read(BlockFullMapPreview);
+
+  aStream.ReadW(SmallDesc);
+  aStream.Read(SmallDescLibx);
+//  aStream.ReadW(BigDesc);
+end;
+
+
+procedure TKMMapTxtInfo.Save(aStream: TKMemoryStream);
+begin
+  aStream.Write(IsCoop);
+  aStream.Write(IsSpecial);
+  aStream.Write(IsPlayableAsSP);
+
+  aStream.Write(BlockTeamSelection);
+  aStream.Write(BlockPeacetime);
+  aStream.Write(BlockFullMapPreview);
+
+  aStream.WriteW(SmallDesc);
+  aStream.Write(SmallDescLibx);
+//  aStream.WriteW(BigDesc);
 end;
 
 

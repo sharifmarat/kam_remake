@@ -4,10 +4,11 @@ interface
 uses
    Classes, Controls, Math, SysUtils,
    KM_Controls,
+   KM_InterfaceDefaults,
    KM_Points, KM_AIAttacks, KM_GUIMapEdTownAttackPopUp;
 
 type
-  TKMMapEdTownOffence = class
+  TKMMapEdTownOffence = class (TKMMapEdSubMenuPage)
   private
     fAttackPopUp: TKMMapEdTownAttack;
     procedure Attacks_Add(Sender: TObject);
@@ -32,13 +33,13 @@ type
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
   end;
 
 
 implementation
 uses
-  KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_Hand;
+  KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_Hand, KM_Utils;
 
 
 { TKMMapEdTownOffence }
@@ -50,7 +51,7 @@ begin
   TKMLabel.Create(Panel_Offence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ATTACK], fnt_Outline, taCenter);
 
   CheckBox_AutoAttack := TKMCheckBox.Create(Panel_Offence, 0, 24, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_ATTACK_AUTO], fnt_Metal);
-  CheckBox_AutoAttack.Hint := gResTexts[TX_MAPED_AI_ATTACK_AUTO_HINT];
+  CheckBox_AutoAttack.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_AUTO_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
   CheckBox_AutoAttack.OnClick := AutoAttackClick;
 
   ColumnBox_Attacks := TKMColumnBox.Create(Panel_Offence, 0, 50, TB_WIDTH, 210, fnt_Game, bsGame);
@@ -65,8 +66,18 @@ begin
 
   Button_AttacksAdd := TKMButton.Create(Panel_Offence, 0, 270, 25, 25, '+', bsGame);
   Button_AttacksAdd.OnClick := Attacks_Add;
+  Button_AttacksAdd.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_ADD, MAPED_SUBMENU_ACTIONS_HOTKEYS[1]);
   Button_AttacksDel := TKMButton.Create(Panel_Offence, 30, 270, 25, 25, 'X', bsGame);
   Button_AttacksDel.OnClick := Attacks_Del;
+  Button_AttacksDel.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_DEL, MAPED_SUBMENU_ACTIONS_HOTKEYS[2]);
+
+  fSubMenuActionsEvents[0] := AutoAttackClick;
+  fSubMenuActionsEvents[1] := Attacks_Add;
+  fSubMenuActionsEvents[2] := Attacks_Del;
+
+  fSubMenuActionsCtrls[0] := CheckBox_AutoAttack;
+  fSubMenuActionsCtrls[1] := Button_AttacksAdd;
+  fSubMenuActionsCtrls[2] := Button_AttacksDel;
 end;
 
 

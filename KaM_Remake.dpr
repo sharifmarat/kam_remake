@@ -270,6 +270,7 @@ uses
   KM_UnitTaskDie in 'src\units\KM_UnitTaskDie.pas',
   KM_UnitTaskGoEat in 'src\units\KM_UnitTaskGoEat.pas',
   KM_UnitTaskGoHome in 'src\units\KM_UnitTaskGoHome.pas',
+	KM_UnitTaskDismiss in 'src\units\KM_UnitTaskDismiss.pas',
   KM_UnitTaskGoOutShowHungry in 'src\units\KM_UnitTaskGoOutShowHungry.pas',
   KM_UnitTaskMining in 'src\units\KM_UnitTaskMining.pas',
   KM_UnitTaskSelfTrain in 'src\units\KM_UnitTaskSelfTrain.pas',

@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  Classes, //SysUtils,
+  Classes,
   KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave;
 
 type
@@ -54,7 +54,7 @@ var
 begin
   inherited Create;
 
-  PopUp_QuickPlay := TKMPopUpPanel.Create(aParent, 240, 420, gResTexts[TX_MAPED_MAP_QUICK_PLAY]);
+  PopUp_QuickPlay := TKMPopUpPanel.Create(aParent, 240, 420, gResTexts[TX_MAPED_MAP_QUICK_PLAY], pubgit_Gray);
 
   PopUp_QuickPlay.Width := Math.Max(240, gRes.Fonts[PopUp_QuickPlay.Font].GetTextSize(PopUp_QuickPlay.Caption).X + 40);
   Left := (PopUp_QuickPlay.Width - ControlsWidth) div 2;

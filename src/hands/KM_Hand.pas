@@ -130,7 +130,7 @@ type
 
     procedure AddRoadToList(aLoc: TKMPoint);
     procedure AddRoad(aLoc: TKMPoint);
-    procedure AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0);
+    procedure AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
     procedure ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType; aMakeSound: Boolean);
     procedure ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType);
     function AddHouse(aHouseType: THouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
@@ -522,7 +522,7 @@ begin
 end;
 
 
-procedure TKMHand.AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0);
+procedure TKMHand.AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
 var IsFieldSet: Boolean;
 begin
   IsFieldSet := False;
@@ -531,20 +531,20 @@ begin
   begin
     if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 58, 59) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True);
+      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end else if (aFieldType = ft_Wine) and not gTerrain.TileIsWineField(aLoc) then
   begin
     if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 54, 57) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True);
+      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end;
 
   if not IsFieldSet then
-    gTerrain.SetField(aLoc, fHandIndex, aFieldType, aStage, True);
+    gTerrain.SetField(aLoc, fHandIndex, aFieldType, aStage, True, aKeepOldObject);
 end;
 
 
@@ -897,7 +897,7 @@ begin
 end;
 
 
-function TKMHand.FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse;
+function TKMHand.FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte = 1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, aPosition.X, aPosition.Y, Index);
 end;
@@ -1004,6 +1004,11 @@ begin
   if aHouse.BuildingState in [hbs_NoGlyph .. hbs_Stone] then
     fStats.HouseEnded(aHouse.HouseType)
   else
+  begin
+    //We have to consider destroyed closed house as actually opened, otherwise closed houses stats will be corrupted
+    if aHouse.IsClosedForWorker then
+      fStats.HouseClosed(False, aHouse.HouseType);
+
     //Distribute honors
     if aFrom = fHandIndex then
       fStats.HouseSelfDestruct(aHouse.HouseType)
@@ -1014,6 +1019,7 @@ begin
       if aFrom <> PLAYER_NONE then
         gHands[aFrom].Stats.HouseDestroyed(aHouse.HouseType);
     end;
+  end;
 
   //Scripting events happen AFTER updating statistics
   gScriptEvents.ProcHouseDestroyed(aHouse, aFrom);

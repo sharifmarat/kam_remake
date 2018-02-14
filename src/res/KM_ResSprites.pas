@@ -230,7 +230,7 @@ begin
               else
                 Result := sstOnlyShadow;
     rxUnits:  begin
-                if InRange(aID, 6251, 6314) then     //Smooth thought bubbles
+                if InRange(aID, 6251, 6322) then     //Smooth thought bubbles
                 begin
                   Result := sstBoth;
                   Exit;
