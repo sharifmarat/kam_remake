@@ -145,9 +145,6 @@ type
     procedure ReloadSettingsClick(Sender: TObject);
     procedure SaveSettingsClick(Sender: TObject);
     procedure SaveEditableMission1Click(Sender: TObject);
-
-    procedure GameStart(aGameMode: TGameMode);
-    procedure GameEnd(aGameMode: TGameMode);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -167,6 +164,7 @@ type
     procedure ControlsSetVisibile(aShowCtrls: Boolean);
     procedure ControlsReset;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
+    procedure SetSaveEditableMission(aEnabled: Boolean);
   end;
 
 
@@ -241,22 +239,13 @@ begin
     Top := gMain.Settings.WindowParams.Top;
   end;
 
-  gGameApp.OnGameStart := GameStart;
-  gGameApp.OnGameEnd := GameEnd;
-
   fMissionDefOpenPath:= ExeDir;
 end;
 
 
-procedure TFormMain.GameStart(aGameMode: TGameMode);
+procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
 begin
-  SaveEditableMission1.Enabled := aGameMode = gmMapEd;
-end;
-
-
-procedure TFormMain.GameEnd(aGameMode: TGameMode);
-begin
-  SaveEditableMission1.Enabled := False;
+  SaveEditableMission1.Enabled := aEnabled;
 end;
 
 

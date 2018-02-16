@@ -36,6 +36,9 @@ type
     procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
+
+    procedure GameStart(aGameMode: TGameMode);
+    procedure GameEnd(aGameMode: TGameMode);
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -158,6 +161,9 @@ begin
     fMusicLib.PlayMenuTrack;
 
   fMusicLib.ToggleShuffle(fGameSettings.ShuffleOn); //Determine track order
+
+  fOnGameStart := GameStart;
+  fOnGameEnd := GameEnd;
 end;
 
 
@@ -747,7 +753,18 @@ begin
 
   if Assigned(fOnGameStart) then
     fOnGameStart(gGame.GameMode);
+end;
 
+
+procedure TKMGameApp.GameStart(aGameMode: TGameMode);
+begin
+  gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+end;
+
+
+procedure TKMGameApp.GameEnd(aGameMode: TGameMode);
+begin
+  gMain.FormMain.SetSaveEditableMission(False);
 end;
 
 
