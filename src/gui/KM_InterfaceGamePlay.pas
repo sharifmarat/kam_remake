@@ -39,10 +39,10 @@ type
 
     // Not saved
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
-    LastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
+    fLastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
     fLastBeaconTime: Cardinal; //Last time a beacon was sent to enforce cooldown
-    ShownMessage: Integer;
-    PlayMoreMsg: TGameResultMsg; // Remember which message we are showing
+    fShownMessage: Integer;
+    fPlayMoreMsg: TGameResultMsg; // Remember which message we are showing
     fPlacingBeacon: Boolean;
     fNetWaitDropPlayersDelayStarted: Cardinal;
     SelectedDirection: TKMDirection;
@@ -50,7 +50,6 @@ type
     SelectingDirPosition: TPoint;
     fSaves: TKMSavesCollection;
     fTeamNames: TList;
-    Label_TeamName: TKMLabel;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
     fAlliesToNetPlayers: array [0..MAX_LOBBY_SLOTS-1] of Integer;
 
@@ -164,6 +163,8 @@ type
 
     Label_MenuTitle: TKMLabel; // Displays the title of the current menu to the right of return
     Image_DirectionCursor: TKMImage;
+
+    Label_TeamName: TKMLabel;
 
     Panel_Controls: TKMPanel;
       Button_Main: array [TKMTabButtons] of TKMButton; // 4 common buttons + Return
@@ -668,7 +669,7 @@ begin
   SelectingTroopDirection := False;
   SelectingDirPosition.X := 0;
   SelectingDirPosition.Y := 0;
-  ShownMessage := -1; // 0 is the first message, -1 is invalid
+  fShownMessage := -1; // 0 is the first message, -1 is invalid
   for I := Low(fSelection) to High(fSelection) do
     fSelection[I] := -1; // Not set
 
@@ -1354,7 +1355,7 @@ end;
 // Click on the same message again closes it
 procedure TKMGamePlayInterface.Message_Click(Sender: TObject);
 begin
-  if TKMImage(Sender).Tag <> ShownMessage then
+  if TKMImage(Sender).Tag <> fShownMessage then
     Message_Show(TKMImage(Sender).Tag)
   else
     Message_Close(Sender);
@@ -1365,14 +1366,14 @@ procedure TKMGamePlayInterface.Message_Show(aIndex: Integer);
 var
   I: Integer;
 begin
-  ShownMessage := aIndex;
+  fShownMessage := aIndex;
 
   // Highlight target message icon
   for I := 0 to MAX_VISIBLE_MSGS do
-    Image_Message[I].Highlight := (ShownMessage = I);
+    Image_Message[I].Highlight := (fShownMessage = I);
 
-  Label_MessageText.Caption := fMessageStack[ShownMessage].Text;
-  Button_MessageGoTo.Visible := not KMSamePoint(fMessageStack[ShownMessage].Loc, KMPOINT_ZERO);
+  Label_MessageText.Caption := fMessageStack[fShownMessage].Text;
+  Button_MessageGoTo.Visible := not KMSamePoint(fMessageStack[fShownMessage].Loc, KMPOINT_ZERO);
 
   Allies_Close(nil);
   fGuiGameChat.Hide;
@@ -1388,16 +1389,16 @@ end;
 procedure TKMGamePlayInterface.Message_Close(Sender: TObject);
 begin
   // Remove highlight
-  if ShownMessage <> -1 then
+  if fShownMessage <> -1 then
   begin
-    Image_Message[ShownMessage].Highlight := False;
+    Image_Message[fShownMessage].Highlight := False;
 
     // Play sound
     if Sender <> nil then
       gSoundPlayer.Play(sfx_MessageClose);
   end;
 
-  ShownMessage := -1;
+  fShownMessage := -1;
   Panel_Message.Hide;
 end;
 
@@ -1406,9 +1407,9 @@ procedure TKMGamePlayInterface.Message_Delete(Sender: TObject);
 var
   OldMsg: Integer;
 begin
-  if ShownMessage = -1 then Exit; // Player pressed DEL with no Msg opened
+  if fShownMessage = -1 then Exit; // Player pressed DEL with no Msg opened
 
-  OldMsg := ShownMessage;
+  OldMsg := fShownMessage;
 
   Message_Close(Sender);
   fMessageStack.RemoveStack(OldMsg);
@@ -1420,7 +1421,7 @@ end;
 
 procedure TKMGamePlayInterface.Message_GoTo(Sender: TObject);
 begin
-  fViewport.Position := KMPointF(fMessageStack.MessagesStack[ShownMessage].Loc);
+  fViewport.Position := KMPointF(fMessageStack.MessagesStack[fShownMessage].Loc);
 end;
 
 
@@ -2096,7 +2097,7 @@ end;
 procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
 begin
   ReleaseDirectionSelector;
-  PlayMoreMsg := Msg;
+  fPlayMoreMsg := Msg;
   case Msg of
     gr_Win:       begin
                     Label_PlayMore.Caption := gResTexts[TX_GAMEPLAY_WON];
@@ -2123,7 +2124,7 @@ end;
 procedure TKMGamePlayInterface.ShowMPPlayMore(Msg: TGameResultMsg);
 begin
   ReleaseDirectionSelector;
-  PlayMoreMsg := Msg;
+  fPlayMoreMsg := Msg;
   case Msg of
     gr_Win:       begin
                     Label_MPPlayMore.Caption := gResTexts[TX_GAMEPLAY_WON];
@@ -2151,14 +2152,14 @@ begin
   Panel_PlayMore.Hide; // Hide anyways
 
   if Sender = Button_PlayQuit then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       gGameApp.Stop(gr_Win);
       gr_Defeat:    gGameApp.Stop(gr_Defeat);
       gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
     end
   else // GameStop has Destroyed our Sender by now
   if Sender = Button_PlayMore then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       gGame.GameHold(false, gr_Win);
       gr_Defeat:    gGame.GameHold(false, gr_Defeat);
       gr_ReplayEnd: begin
@@ -2174,7 +2175,7 @@ begin
   Panel_MPPlayMore.Hide;
 
   if Sender = Button_MPPlayQuit then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       gGameApp.Stop(gr_Win);
       gr_Defeat:    gGameApp.Stop(gr_Defeat);
       gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
@@ -2792,7 +2793,7 @@ begin
     if fGuiGameUnit.JoiningGroups then
       fGuiGameUnit.Army_HideJoinMenu(nil)
     else
-    if ShownMessage <> -1 then
+    if fShownMessage <> -1 then
       Message_Close(nil)
     else
     if fGuiGameChat.Visible then
@@ -2960,12 +2961,12 @@ procedure TKMGamePlayInterface.MouseDown(Button: TMouseButton; Shift: TShiftStat
     if gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-      LastDragPoint := gGameCursor.Cell;
+      fLastDragPoint := gGameCursor.Cell;
       gGameCursor.Tag1 := Byte(cfmPlan);
     end else if gMySpectator.Hand.CanRemFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-      LastDragPoint := gGameCursor.Cell;
+      fLastDragPoint := gGameCursor.Cell;
       // Set cursor into "Erase" mode, so dragging it will erase next tiles with the same field type
       gGameCursor.Tag1 := Byte(cfmErase);
     end;
@@ -3056,15 +3057,15 @@ end;
 procedure TKMGamePlayInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
   procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TFieldType);
   begin
-    if not KMSamePoint(LastDragPoint, P) then
+    if not KMSamePoint(fLastDragPoint, P) then
       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmPlan)) then
       begin
         gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-        LastDragPoint := gGameCursor.Cell;
+        fLastDragPoint := gGameCursor.Cell;
       end else if (gMySpectator.Hand.CanRemFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmErase)) then
       begin
         gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-        LastDragPoint := gGameCursor.Cell;
+        fLastDragPoint := gGameCursor.Cell;
       end;
   end;
 var
@@ -3141,18 +3142,18 @@ begin
         cmRoad:   HandleFieldLMBDrag(P, ft_Road);
         cmField:  HandleFieldLMBDrag(P, ft_Corn);
         cmWine:   HandleFieldLMBDrag(P, ft_Wine);
-        cmErase:  if not KMSamePoint(LastDragPoint, P) then
+        cmErase:  if not KMSamePoint(fLastDragPoint, P) then
                   begin
                     if gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P) then
                     begin
                       gGame.GameInputProcess.CmdBuild(gic_BuildRemoveHousePlan, P);
-                      LastDragPoint := gGameCursor.Cell;
+                      fLastDragPoint := gGameCursor.Cell;
                     end
                     else
                       if (gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None) then
                       begin
                         gGame.GameInputProcess.CmdBuild(gic_BuildRemoveFieldPlan, P); // Remove any plans
-                        LastDragPoint := gGameCursor.Cell;
+                        fLastDragPoint := gGameCursor.Cell;
                       end;
                   end;
       end;
@@ -3358,7 +3359,7 @@ begin
               else
                 gSoundPlayer.Play(sfx_CantPlace, P, False, 4);
             cmErase:
-              if KMSamePoint(LastDragPoint, KMPOINT_ZERO) then
+              if KMSamePoint(fLastDragPoint, KMPOINT_ZERO) then
               begin
                 H := gMySpectator.Hand.HousesHitTest(P.X, P.Y);
                 // Ask wherever player wants to destroy own house (don't ask about houses that are not started, they are removed below)
@@ -3460,7 +3461,7 @@ begin
       end;
   end;
 
-  LastDragPoint := KMPOINT_ZERO;
+  fLastDragPoint := KMPOINT_ZERO;
 end;
 
 

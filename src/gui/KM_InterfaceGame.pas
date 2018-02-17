@@ -15,8 +15,8 @@ type
   private
     fDragScrollingCursorPos: TPoint;
     fDragScrollingViewportPos: TKMPointF;
-    PrevHint: TObject;
-    PrevHintMessage: UnicodeString;
+    fPrevHint: TObject;
+    fPrevHintMessage: UnicodeString;
     procedure ResetDragScrolling;
   protected
     fMinimap: TKMMinimap;
@@ -266,25 +266,25 @@ end;
 
 procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
 begin
-  if (PrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
-  if (PrevHint <> nil) and (Sender = PrevHint)
-    and (TKMControl(PrevHint).Hint = PrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
+  if (fPrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
+  if (fPrevHint <> nil) and (Sender = fPrevHint)
+    and (TKMControl(fPrevHint).Hint = fPrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
   if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
 
   if (Sender = nil) or (TKMControl(Sender).Hint = '') then
   begin
     Label_Hint.Caption := '';
     Bevel_HintBG.Hide;
-    PrevHintMessage := '';
+    fPrevHintMessage := '';
   end
   else
   begin
     Label_Hint.Caption := TKMControl(Sender).Hint;
     Bevel_HintBG.Show;
     Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
-    PrevHintMessage := TKMControl(Sender).Hint;
+    fPrevHintMessage := TKMControl(Sender).Hint;
   end;
-  PrevHint := Sender;
+  fPrevHint := Sender;
 end;
 
 
