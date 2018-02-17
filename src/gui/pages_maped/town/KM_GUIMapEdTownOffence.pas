@@ -152,10 +152,12 @@ const
                                                    TX_MAPED_AI_TARGET_HOUSE_START,
                                                    TX_MAPED_AI_TARGET_CUSTOM);
 var
-  I: Integer;
+  I, Index, TopIndex: Integer;
   A: TAIAttack;
   CustomPosS: String;
 begin
+  TopIndex := ColumnBox_Attacks.TopIndex; //Save index and TopIndex to restore after refresh
+  Index := ColumnBox_Attacks.ItemIndex;
   ColumnBox_Attacks.Clear;
 
   for I := 0 to gMySpectator.Hand.AI.General.Attacks.Count - 1 do
@@ -180,6 +182,15 @@ begin
   Attacks_ListClick(nil);
 
   CheckBox_AutoAttack.Checked := gMySpectator.Hand.AI.Setup.AutoAttack;
+
+  //Try to restore previous selected element
+  if Index >= ColumnBox_Attacks.RowCount then
+    Index := ColumnBox_Attacks.RowCount - 1;
+
+  ColumnBox_Attacks.ItemIndex := Index;
+  ColumnBox_Attacks.TopIndex := TopIndex;
+
+  ColumnBox_Attacks.JumpToSelected;
 end;
 
 

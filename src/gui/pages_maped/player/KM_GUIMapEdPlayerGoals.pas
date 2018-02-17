@@ -137,9 +137,11 @@ const
   TypeHint: array [TGoalType] of Integer = (
     TX_MAPED_GOALS_TYPE_NONE, TX_MAPED_GOALS_TYPE_VICTORY, TX_MAPED_GOALS_TYPE_SURVIVE);
 var
-  I: Integer;
+  I, Index, TopIndex: Integer;
   G: TKMGoal;
 begin
+  TopIndex := ColumnBox_Goals.TopIndex; //Save index and TopIndex to restore after refresh
+  Index := ColumnBox_Goals.ItemIndex;
   ColumnBox_Goals.Clear;
 
   for I := 0 to gMySpectator.Hand.AI.Goals.Count - 1 do
@@ -154,6 +156,15 @@ begin
   end;
 
   Goals_ListClick(nil);
+
+  //Try to restore previous selected element
+  if Index >= ColumnBox_Goals.RowCount then
+    Index := ColumnBox_Goals.RowCount - 1;
+
+  ColumnBox_Goals.ItemIndex := Index;
+  ColumnBox_Goals.TopIndex := TopIndex;
+
+  ColumnBox_Goals.JumpToSelected;
 end;
 
 
