@@ -20,9 +20,9 @@ type
     procedure Goals_Refresh;
   protected
     Panel_Goals: TKMPanel;
-    ColumnBox_Goals: TKMColumnBox;
-    Button_GoalsAdd: TKMButton;
-    Button_GoalsDel: TKMButton;
+      ColumnBox_Goals: TKMColumnBox;
+      Button_GoalsAdd: TKMButton;
+      Button_GoalsDel: TKMButton;
   public
     GoalPopUp: TKMMapEdPlayerGoal;
 
@@ -50,7 +50,7 @@ begin
   ColumnBox_Goals.SetColumns(fnt_Outline,
     [gResTexts[TX_MAPED_GOALS_TYPE],
      gResTexts[TX_MAPED_GOALS_CONDITION],
-     gResTexts[TX_MAPED_GOALS_PLAYER]], [0, 25, 155]);
+     gResTexts[TX_MAPED_GOALS_PLAYER]], [0, 25, 155], True);
   ColumnBox_Goals.OnClick := Goals_ListClick;
   ColumnBox_Goals.OnDoubleClick := Goals_ListDoubleClick;
   ColumnBox_Goals.ColumnIdForScroll := 2;
@@ -134,6 +134,8 @@ const
     TX_MAPED_GOALS_CONDITION_NONE, TX_MAPED_GOALS_CONDITION_TUTORIAL, TX_MAPED_GOALS_CONDITION_TIME,
     TX_MAPED_GOALS_CONDITION_BUILDS, TX_MAPED_GOALS_CONDITION_TROOPS, TX_MAPED_GOALS_CONDITION_UNKNOWN,
     TX_MAPED_GOALS_CONDITION_ASSETS, TX_MAPED_GOALS_CONDITION_SERFS, TX_MAPED_GOALS_CONDITION_ECONOMY);
+  TypeHint: array [TGoalType] of Integer = (
+    TX_MAPED_GOALS_TYPE_NONE, TX_MAPED_GOALS_TYPE_VICTORY, TX_MAPED_GOALS_TYPE_SURVIVE);
 var
   I: Integer;
   G: TKMGoal;
@@ -144,8 +146,11 @@ begin
   begin
     G := gMySpectator.Hand.AI.Goals[I];
     ColumnBox_Goals.AddItem(MakeListRow([Typ[G.GoalType],
-                                    gResTexts[Cnd[G.GoalCondition]],
-                                    IntToStr(G.HandIndex + 1)]));
+                                         gResTexts[Cnd[G.GoalCondition]],
+                                         IntToStr(G.HandIndex + 1)],
+                                        [gResTexts[TypeHint[G.GoalType]],
+                                         gResTexts[Cnd[G.GoalCondition]],
+                                         Format(gResTexts[TX_PLAYER_X], [G.HandIndex + 1])]));
   end;
 
   Goals_ListClick(nil);
