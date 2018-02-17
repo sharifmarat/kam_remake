@@ -96,6 +96,7 @@ type
 
     fEnabled: Boolean;
     fVisible: Boolean;
+    fHint: UnicodeString;
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
 
@@ -162,6 +163,8 @@ type
     procedure FocusChanged(aFocused: Boolean); virtual;
     procedure DoClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean); virtual;
     function DoHandleMouseWheelByDefault: Boolean; virtual;
+    function GetHint: UnicodeString; virtual;
+    procedure SetHint(aHint: UnicodeString); virtual;
   public
     Hitable: Boolean; //Can this control be hit with the cursor?
     Focusable: Boolean; //Can this control have focus (e.g. TKMEdit sets this true)
@@ -172,7 +175,7 @@ type
     Scale: Single; //Child controls position is scaled
 
     Tag: Integer; //Some tag which can be used for various needs
-    Hint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
+
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; virtual;
 
@@ -189,6 +192,7 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property Center: TKMPoint read GetCenter;
     property ID: Integer read fID;
+    property Hint: UnicodeString read GetHint write SetHint; //Text that shows up when cursor is over that control, mainly for Buttons
 
     // "Self" coordinates - this is the coordinates of control itself.
     // For simple controls they are equal to normal coordinates
@@ -713,7 +717,7 @@ type
     ValueMax: Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
     property Value: Integer read fValue write SetValue;
-    property SharedHint: UnicodeString read Hint write SetSharedHint;
+    property SharedHint: UnicodeString read GetHint write SetSharedHint;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
@@ -921,6 +925,7 @@ type
   TKMListHeaderColumn = class
     Caption: UnicodeString;
     Glyph: TKMPic;
+    HeaderHint: UnicodeString;
     Offset: Word; //Offsets are easier to handle than widths
   end;
 
@@ -933,14 +938,18 @@ type
     fSortIndex: Integer;
     fSortDirection: TSortDirection;
     fTextAlign: TKMTextAlign;
+    fOnHint: TUnicodeStringEvent;
     function GetColumnIndex(X: Integer): Integer;
     function GetColumn(aIndex: Integer): TKMListHeaderColumn;
     procedure ClearColumns;
     function GetColumnWidth(aIndex: Integer): Integer;
     function GetOffset(aIndex: Integer): Word;
     procedure SetOffset(aIndex: Integer; aValue: Word);
+    function GetHeaderHint(aIndex: Integer): UnicodeString;
+    procedure SetHeaderHint(aIndex: Integer; aValue: UnicodeString);
   protected
     procedure DoClick(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
+    function GetHint: UnicodeString; override;
   public
     BackAlpha: Single; //Alpha of background
     EdgeAlpha: Single; //Alpha of background outline
@@ -949,8 +958,11 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
 
-    procedure SetColumns(aFont: TKMFont; aColumns: array of string; aColumnOffsets: array of Word);
+    procedure SetColumns(aFont: TKMFont; aColumns: array of String; aColumnOffsets: array of Word); overload;
+    procedure SetColumns(aFont: TKMFont; aColumns, aHints: array of String; aColumnOffsets: array of Word); overload;
     property Offset[aIndes: Integer]: Word read GetOffset write SetOffset;
+    property HeaderHint[aIndes: Integer]: UnicodeString read GetHeaderHint write SetHeaderHint;
+    property OnHint: TUnicodeStringEvent read fOnHint write fOnHint;
 
     property Font: TKMFont read fFont write fFont;
     property ColumnCount: Integer read fCount;
@@ -968,6 +980,7 @@ type
     Cells: array of record
       Caption: UnicodeString;  //Main Text
       SubTxt: UnicodeString; //Gray text below main text
+      CellHint: UnicodeString;
       Color: TColor4;
       HighlightColor: TColor4;
       HighlightOnMouseOver: Boolean;
@@ -999,7 +1012,8 @@ type
     fHeader: TKMListHeader;
     fShowHeader: Boolean;
     fShowLines: Boolean;
-    fMouseOverRow: Smallint;
+    fMouseOverRow: SmallInt;
+    fMouseOverColumn: SmallInt;
     fMouseOverCell: TKMPoint;
     fScrollBar: TKMScrollBar;
     fOnChange: TNotifyEvent;
@@ -1038,6 +1052,7 @@ type
     function DoHandleMouseWheelByDefault: Boolean; override;
     procedure DoPaintLine(aIndex: Integer; X,Y: Integer; PaintWidth: Integer; aAllowHighlight: Boolean = True); overload;
     procedure DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean; aAllowHighlight: Boolean = True); overload;
+    function GetHint: UnicodeString; override;
   public
     HideSelection: Boolean;
     HighlightError: Boolean;
@@ -1051,7 +1066,9 @@ type
 
     property Item[aIndex: Integer]: TKMListRow read GetItem; default;
     property SelectedItem: TKMListRow read GetSelectedItem;
-    procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word);
+    procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of String; aOffsets: array of Word); overload;
+    procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word; aCaptionsAsHints: Boolean); overload;
+    procedure SetColumns(aHeaderFont: TKMFont; aCaptions, aHints: array of String; aOffsets: array of Word); overload;
     procedure AddItem(aItem: TKMListRow);
     procedure Clear;
     function GetVisibleRows: Integer;
@@ -1485,7 +1502,8 @@ type
   end;
 
 
-  function MakeListRow(const aCaption: array of string; aTag: Integer = 0): TKMListRow; overload;
+  function MakeListRow(const aCaption: array of String; aTag: Integer = 0): TKMListRow; overload;
+  function MakeListRow(const aCaption, aHint: array of String; aTag: Integer = 0): TKMListRow; overload;
   function MakeListRow(const aCaption: array of string; const aColor: array of TColor4; aTag: Integer = 0): TKMListRow; overload;
   function MakeListRow(const aCaption: array of string; const aColor: array of TColor4; const aColorHighlight: array of TColor4; aTag: Integer = 0): TKMListRow; overload;
   function MakeListRow(const aCaption: array of string; const aColor: array of TColor4; const aPic: array of TKMPic; aTag: Integer = 0): TKMListRow; overload;
@@ -1505,7 +1523,7 @@ const
   WARE_ROW_HEIGHT = 21;
 
 
-function MakeListRow(const aCaption: array of string; aTag: Integer = 0): TKMListRow;
+function MakeListRow(const aCaption: array of String; aTag: Integer = 0): TKMListRow;
 var
   I: Integer;
 begin
@@ -1514,6 +1532,24 @@ begin
   for I := 0 to High(aCaption) do
   begin
     Result.Cells[I].Caption := aCaption[I];
+    Result.Cells[I].Color := $FFFFFFFF;
+    Result.Cells[I].Enabled := True;
+  end;
+  Result.Tag := aTag;
+end;
+
+
+function MakeListRow(const aCaption, aHint: array of String; aTag: Integer = 0): TKMListRow;
+var
+  I: Integer;
+begin
+  Assert(Length(aCaption) = Length(aHint));
+  SetLength(Result.Cells, Length(aCaption));
+
+  for I := 0 to High(aCaption) do
+  begin
+    Result.Cells[I].Caption := aCaption[I];
+    Result.Cells[I].CellHint := aHint[I];
     Result.Cells[I].Color := $FFFFFFFF;
     Result.Cells[I].Enabled := True;
   end;
@@ -1703,6 +1739,18 @@ begin
     end;
   // No code is allowed after DoClick, as control object could be destroyed,
   // that means we will modify freed memory, which will cause memory leaks
+end;
+
+
+function TKMControl.GetHint: UnicodeString;
+begin
+  Result := fHint;
+end;
+
+
+procedure TKMControl.SetHint(aHint: UnicodeString);
+begin
+  fHint := aHint;
 end;
 
 
@@ -5665,13 +5713,20 @@ end;
 
 
 function TKMListHeader.GetColumnIndex(X: Integer): Integer;
-var I: Integer;
+var
+  I, CellRightOffset: Integer;
 begin
   Result := -1;
 
   for I := 0 to fCount - 1 do
-    if X - AbsLeft > fColumns[I].Offset then
+  begin
+    if I = fCount - 1 then
+      CellRightOffset := AbsLeft + Width
+    else
+      CellRightOffset := AbsLeft + fColumns[I+1].Offset - 1;
+    if InRange(X, AbsLeft + fColumns[I].Offset, CellRightOffset) then
       Result := I;
+  end;
 end;
 
 
@@ -5687,6 +5742,14 @@ begin
     Result := Width - fColumns[aIndex].Offset
   else
     Result := fColumns[aIndex+1].Offset - fColumns[aIndex].Offset;
+end;
+
+
+function TKMListHeader.GetHint: UnicodeString;
+begin
+  Result := inherited GetHint;
+  if (Result = '') and (fColumnHighlight <> -1) then
+    Result := HeaderHint[fColumnHighlight];
 end;
 
 
@@ -5720,11 +5783,21 @@ begin
 end;
 
 
-procedure TKMListHeader.SetColumns(aFont: TKMFont; aColumns: array of string; aColumnOffsets: array of Word);
+procedure TKMListHeader.SetColumns(aFont: TKMFont; aColumns: array of String; aColumnOffsets: array of Word);
+var
+  Hints: array of String;
+begin
+  SetLength(Hints, Length(aColumns));
+  SetColumns(aFont, aColumns, Hints, aColumnOffsets);
+end;
+
+
+procedure TKMListHeader.SetColumns(aFont: TKMFont; aColumns, aHints: array of String; aColumnOffsets: array of Word);
 var
   I: Integer;
 begin
   Assert(Length(aColumns) = Length(aColumnOffsets));
+  Assert(Length(aHints) = Length(aColumnOffsets));
 
   fFont := aFont;
 
@@ -5736,6 +5809,7 @@ begin
   begin
     fColumns[I] := TKMListHeaderColumn.Create;
     fColumns[I].Caption := aColumns[I];
+    fColumns[I].HeaderHint := aHints[I];
     fColumns[I].Offset := aColumnOffsets[I];
   end;
 end;
@@ -5750,6 +5824,18 @@ end;
 procedure TKMListHeader.SetOffset(aIndex: Integer; aValue: Word);
 begin
   fColumns[aIndex].Offset := aValue;
+end;
+
+
+function TKMListHeader.GetHeaderHint(aIndex: Integer): UnicodeString;
+begin
+  Result := fColumns[aIndex].HeaderHint;
+end;
+
+
+procedure TKMListHeader.SetHeaderHint(aIndex: Integer; aValue: UnicodeString);
+begin
+  fColumns[aIndex].HeaderHint := aValue;
 end;
 
 
@@ -5803,7 +5889,8 @@ end;
 
 { TKMColumnListBox }
 constructor TKMColumnBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
-const DEF_HEADER_HEIGHT = 24;
+const
+  DEF_HEADER_HEIGHT = 24;
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont       := aFont;
@@ -6064,14 +6151,33 @@ end;
 //If we don't add columns there will be Assert on items add
 procedure TKMColumnBox.SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word);
 var
+  Hints: array of String;
+begin
+  SetLength(Hints, Length(aCaptions));
+  SetColumns(aHeaderFont, aCaptions, Hints, aOffsets);
+end;
+
+
+procedure TKMColumnBox.SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word; aCaptionsAsHints: Boolean);
+begin
+  if aCaptionsAsHints then
+    SetColumns(aHeaderFont, aCaptions, aCaptions, aOffsets)
+  else
+    SetColumns(aHeaderFont, aCaptions, aOffsets);
+end;
+
+
+procedure TKMColumnBox.SetColumns(aHeaderFont: TKMFont; aCaptions, aHints: array of String; aOffsets: array of Word);
+var
   I: Integer;
 begin
   Assert(Length(aCaptions) = Length(aOffsets));
+  Assert(Length(aHints) = Length(aOffsets));
 
   Clear; //We don't want to conflict with already added rows elements
   ClearColumns;
 
-  fHeader.SetColumns(aHeaderFont, aCaptions, aOffsets);
+  fHeader.SetColumns(aHeaderFont, aCaptions, aHints, aOffsets);
 
   SetLength(fColumns, fHeader.ColumnCount);
   for I := 0 to fHeader.ColumnCount - 1 do
@@ -6211,12 +6317,16 @@ end;
 
 //Update mouse over row/cell positions (fMouseOver* variables)
 procedure TKMColumnBox.UpdateMouseOverPosition(X,Y: Integer);
-var I, CellLeftOffset, CellRightOffset: Integer;
+var
+  I, CellLeftOffset, CellRightOffset: Integer;
 begin
-  if  InRange(X, AbsLeft, AbsLeft + Width - fScrollBar.Width * Byte(fScrollBar.Visible))
-  and InRange(Y, AbsTop + fHeader.Height*Byte(fHeader.Visible), AbsTop + fHeader.Height*Byte(fHeader.Visible) + Floor(GetVisibleRowsExact * fItemHeight) - 1) then
+  fMouseOverColumn := -1;
+  fMouseOverRow := -1;
+  fMouseOverCell := KMPOINT_INVALID_TILE;
+
+  if InRange(X, AbsLeft, AbsLeft + Width - fScrollBar.Width * Byte(fScrollBar.Visible))
+    and InRange(Y, AbsTop + fHeader.Height*Byte(fHeader.Visible), AbsTop + fHeader.Height*Byte(fHeader.Visible) + Floor(GetVisibleRowsExact * fItemHeight) - 1) then
   begin
-    fMouseOverRow := TopIndex + (Y - AbsTop - fHeader.Height * Byte(fShowHeader)) div fItemHeight;
     for I := 0 to fHeader.ColumnCount - 1 do
     begin
       CellLeftOffset := AbsLeft + fHeader.Columns[I].Offset;
@@ -6225,11 +6335,19 @@ begin
       else
         CellRightOffset := AbsLeft + fHeader.Columns[I+1].Offset - 1;
       if InRange(X, CellLeftOffset, CellRightOffset) then
-        fMouseOverCell := KMPoint(I, fMouseOverRow);
+      begin
+        fMouseOverColumn := I;
+        Break;
+      end;
     end;
-  end else begin
-    fMouseOverRow := -1;
-    fMouseOverCell := KMPOINT_INVALID_TILE;
+
+    fMouseOverRow := TopIndex + (Y - AbsTop - fHeader.Height * Byte(fShowHeader)) div fItemHeight;
+
+    if fMouseOverRow >= fRowCount then
+      fMouseOverRow := -1;
+
+    if (fMouseOverRow <> -1) and (fMouseOverColumn <> -1) then
+      fMouseOverCell := KMPoint(fMouseOverColumn, fMouseOverRow);
   end;
 end;
 
@@ -6325,6 +6443,17 @@ begin
   fScrollBar.Position := TopIndex; //Make the scrollbar move too when using the wheel
 
   aHandled := WheelDelta <> 0;
+end;
+
+
+function TKMColumnBox.GetHint: UnicodeString;
+begin
+  Result := inherited GetHint;
+  if Result = '' then
+  begin
+    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
+      Result := Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].CellHint;
+  end;
 end;
 
 
