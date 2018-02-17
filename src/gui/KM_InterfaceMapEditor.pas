@@ -86,6 +86,7 @@ type
     procedure ResetCursorMode;
     procedure ShowSubMenu(aIndex: Byte);
     procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure Update_Label_Coordinates;
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
@@ -410,6 +411,7 @@ begin
   //Check to see if we need to scroll
   fViewport.UpdateStateIdle(aFrameTime, False);
   fGuiTown.UpdateStateIdle;
+  Update_Label_Coordinates;
 end;
 
 
@@ -871,6 +873,13 @@ begin
 end;
 
 
+procedure TKMapEdInterface.Update_Label_Coordinates;
+begin
+  Label_Coordinates.Caption := Format('X: %d, Y: %d, Z: %d', [gGameCursor.Cell.X, gGameCursor.Cell.Y,
+                                                                gTerrain.Land[Round(gGameCursor.Float.Y + 1), Round(gGameCursor.Float.X + 1)].Height]);
+end;
+
+
 procedure TKMapEdInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
 begin
   inherited MouseMove(Shift, X, Y, aHandled);
@@ -908,8 +917,6 @@ begin
 
   UpdateCursor(X, Y, Shift);
 
-  Label_Coordinates.Caption := Format('X: %d, Y: %d', [gGameCursor.Cell.X, gGameCursor.Cell.Y]);
-
   gGame.MapEditor.MouseMove;
 end;
 
@@ -944,6 +951,8 @@ begin
     if not fViewport.Scrolling then
       gRes.Cursors.Cursor := kmc_Default;
   end;
+
+  Update_Label_Coordinates;
 end;
 
 
