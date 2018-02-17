@@ -13,15 +13,15 @@ type
     procedure Town_ScriptChange(Sender: TObject);
   protected
     Panel_Script: TKMPanel;
-    CheckBox_AutoBuild: TKMCheckBox;
-    CheckBox_AutoRepair: TKMCheckBox;
-    TrackBar_SerfsPer10Houses: TKMTrackBar;
-    TrackBar_WorkerCount: TKMTrackBar;
-    CheckBox_UnlimitedEquip: TKMCheckBox;
-    DropBox_ArmyType: TKMDropList;
-    TrackBar_EquipRateLeather: TKMTrackBar;
-    TrackBar_EquipRateIron: TKMTrackBar;
-    Button_AIStart: TKMButtonFlat;
+      CheckBox_AutoBuild: TKMCheckBox;
+      CheckBox_AutoRepair: TKMCheckBox;
+      TrackBar_SerfsPer10Houses: TKMTrackBar;
+      TrackBar_WorkerCount: TKMTrackBar;
+      CheckBox_UnlimitedEquip: TKMCheckBox;
+      DropBox_ArmyType: TKMDropList;
+      TrackBar_EquipRateLeather: TKMTrackBar;
+      TrackBar_EquipRateIron: TKMTrackBar;
+      Button_AIStart: TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 

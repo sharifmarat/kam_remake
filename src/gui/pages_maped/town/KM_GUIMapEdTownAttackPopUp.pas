@@ -21,20 +21,20 @@ type
     function GetVisible: Boolean;
   protected
     Panel_Attack: TKMPanel;
-    Label_AttackHeader: TKMLabel;
-    Button_Next: TKMButton;
-    Button_Prev: TKMButton;
-    Radio_AttackType: TKMRadioGroup;
-    NumEdit_AttackDelay: TKMNumericEdit;
-    NumEdit_AttackMen: TKMNumericEdit;
-    NumEdit_AttackAmount: array [TGroupType] of TKMNumericEdit;
-    CheckBox_AttackTakeAll: TKMCheckBox;
-    Radio_AttackTarget: TKMRadioGroup;
-    TrackBar_AttackRange: TKMTrackBar;
-    NumEdit_AttackLocX: TKMNumericEdit;
-    NumEdit_AttackLocY: TKMNumericEdit;
-    Button_AttackOk: TKMButton;
-    Button_AttackCancel: TKMButton;
+      Label_AttackHeader: TKMLabel;
+      Button_Next: TKMButton;
+      Button_Prev: TKMButton;
+      Radio_AttackType: TKMRadioGroup;
+      NumEdit_AttackDelay: TKMNumericEdit;
+      NumEdit_AttackMen: TKMNumericEdit;
+      NumEdit_AttackAmount: array [TGroupType] of TKMNumericEdit;
+      CheckBox_AttackTakeAll: TKMCheckBox;
+      Radio_AttackTarget: TKMRadioGroup;
+      TrackBar_AttackRange: TKMTrackBar;
+      NumEdit_AttackLocX: TKMNumericEdit;
+      NumEdit_AttackLocY: TKMNumericEdit;
+      Button_AttackOk: TKMButton;
+      Button_AttackCancel: TKMButton;
   public
     fOnDone: TNotifyEvent;
     constructor Create(aParent: TKMPanel);

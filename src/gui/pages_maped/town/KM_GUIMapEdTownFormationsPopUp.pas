@@ -16,11 +16,11 @@ type
     function GetVisible: Boolean;
   protected
     Panel_Formations: TKMPanel;
-    Image_FormationsFlag: TKMImage;
-    NumEdit_FormationsCount,
-    NumEdit_FormationsColumns: array [TGroupType] of TKMNumericEdit;
-    Button_Formations_Ok: TKMButton;
-    Button_Formations_Cancel: TKMButton;
+      Image_FormationsFlag: TKMImage;
+      NumEdit_FormationsCount,
+      NumEdit_FormationsColumns: array [TGroupType] of TKMNumericEdit;
+      Button_Formations_Ok: TKMButton;
+      Button_Formations_Cancel: TKMButton;
   public
     constructor Create(aParent: TKMPanel);
 
