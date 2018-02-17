@@ -618,13 +618,15 @@ begin
   //select the placed warrior.
 
   // When global tools are used, just cancel the tool, even if some page is open
-  if (gGameCursor.Mode <> cmPaintBucket) and (gGameCursor.Mode <> cmUniversalEraser) then
+  if not (gGameCursor.Mode in [cmPaintBucket, cmUniversalEraser]) then
   begin
     //These pages use RMB
     if fGuiTerrain.IsVisible(ttHeights) then Exit;
     if fGuiTerrain.IsVisible(ttTile) then Exit;
     if fGuiUnit.Visible then Exit;
     if fGuiHouse.Visible then Exit;
+    if fGuiMarkerDefence.Visible then Exit;
+    if fGuiMarkerReveal.Visible then Exit;
   end;
 
   fGuiTerrain.RightClickCancel;

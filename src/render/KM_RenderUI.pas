@@ -100,6 +100,8 @@ var
   BackRX: TRXType;
   BackID: Word;
 begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   if aStyle = bsMenu then
   begin
     BackRX := rxGuiMain;
@@ -240,6 +242,7 @@ var
   BarWidth: Word;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushMatrix;
     glTranslatef(aLeft, aTop, 0);
 
@@ -286,6 +289,8 @@ var
   DrawWidth, DrawHeight: Integer;
 begin
   if aID = 0 then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
 
   OffX  := 0;
   OffY  := 0;
@@ -378,6 +383,7 @@ var
   I: Integer;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
   glPushMatrix;
     //glEnable(GL_LINE_SMOOTH); //Smooth lines actually look odd in KaM
@@ -396,6 +402,9 @@ end;
 class procedure TKMRenderUI.WriteOutline(aLeft, aTop, aWidth, aHeight, aLineWidth: SmallInt; Col: TColor4);
 begin
   if aLineWidth = 0 then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
     glLineWidth(aLineWidth);
     glColor4ubv(@Col);
@@ -409,6 +418,8 @@ end;
 //Renders plane with given color and optional 1px outline
 class procedure TKMRenderUI.WriteShape(aLeft, aTop, aWidth, aHeight: SmallInt; Col: TColor4; Outline: TColor4 = $00000000);
 begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
     glColor4ubv(@Col);
     glBegin(GL_QUADS);
@@ -428,6 +439,7 @@ class procedure TKMRenderUI.WritePolyShape(aPoints: array of TKMPoint; aColor: T
 var I: Integer;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aColor);
   glBegin(GL_POLYGON);
     for I := 0 to High(aPoints) do
@@ -441,6 +453,7 @@ end;
 class procedure TKMRenderUI.WriteLine(aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aCol);
 
   glEnable(GL_LINE_STIPPLE);
@@ -493,6 +506,9 @@ var
 
 begin
   if (aText = '') or (aColor = $00000000) then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   SetLength(Colors, 0);
 
   if aWidth <> 0 then
@@ -669,7 +685,9 @@ var
   I: Byte;
 begin
   if aRadius = 0 then Exit;
+
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aFillColor);
   glBegin(GL_POLYGON);
     for I := 0 to 15 do
