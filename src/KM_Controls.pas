@@ -964,7 +964,7 @@ type
   TKMListRow = record
     Cells: array of record
       Caption: UnicodeString;
-      Hint: UnicodeString;
+      CellHint: UnicodeString;
       Color: TColor4;
       HighlightColor: TColor4;
       HighlightOnMouseOver: Boolean;
@@ -6348,7 +6348,7 @@ begin
                              0.4*Byte(IsHighlightOverCell(I) or (HighlightOnMouseOver and (csOver in State) and (fMouseOverRow = aIndex))));
 
     if Rows[aIndex].Cells[I].Caption <> '' then
-      if Rows[aIndex].Cells[I].Hint <> '' then
+      if Rows[aIndex].Cells[I].CellHint <> '' then
       begin
         TextSize := gRes.Fonts[fFont].GetTextSize(Rows[aIndex].Cells[I].Caption);
         TKMRenderUI.WriteText(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth,
@@ -6359,7 +6359,7 @@ begin
         TKMRenderUI.WriteText(X + 4 + fHeader.Columns[I].Offset - HiddenColumnsTotalWidth,
                             Y + fItemHeight div 2 + 1,
                             AvailWidth,
-                            Rows[aIndex].Cells[I].Hint,
+                            Rows[aIndex].Cells[I].CellHint,
                             fColumns[I].HintFont, fColumns[I].TextAlign, $FFB0B0B0);
       end else
       begin

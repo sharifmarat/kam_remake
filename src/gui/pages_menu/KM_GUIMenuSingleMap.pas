@@ -302,7 +302,7 @@ begin
       end;
 
       R := MakeListRow(['', IntToStr(fMaps[I].LocCount), fMaps[I].FileName, MapSizeText(fMaps[I].MapSizeX, fMaps[I].MapSizeY)]);
-      R.Cells[2].Hint := fMaps[I].TxtInfo.SmallDesc;
+      R.Cells[2].CellHint := fMaps[I].TxtInfo.SmallDesc;
       R.Cells[0].Pic := MakePic(rxGui, 28 + Byte(fMaps[I].MissionMode <> mm_Tactic) * 14);
       R.Tag := I;
       ColumnBox_SingleMaps.AddItem(R);
