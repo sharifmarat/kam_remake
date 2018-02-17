@@ -937,6 +937,8 @@ type
     function GetColumn(aIndex: Integer): TKMListHeaderColumn;
     procedure ClearColumns;
     function GetColumnWidth(aIndex: Integer): Integer;
+    function GetOffset(aIndex: Integer): Word;
+    procedure SetOffset(aIndex: Integer; aValue: Word);
   protected
     procedure DoClick(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
   public
@@ -948,6 +950,7 @@ type
     destructor Destroy; override;
 
     procedure SetColumns(aFont: TKMFont; aColumns: array of string; aColumnOffsets: array of Word);
+    property Offset[aIndes: Integer]: Word read GetOffset write SetOffset;
 
     property Font: TKMFont read fFont write fFont;
     property ColumnCount: Integer read fCount;
@@ -1021,6 +1024,7 @@ type
     procedure UpdateItemIndex(Shift: TShiftState);
     function GetItem(aIndex: Integer): TKMListRow;
     function GetSelectedItem: TKMListRow;
+    procedure ScrollBarChangeVisibility;
   protected
     procedure SetLeft(aValue: Integer); override;
     procedure SetTop(aValue: Integer); override;
@@ -1040,6 +1044,7 @@ type
     HighlightOnMouseOver: Boolean;
     Rows: array of TKMListRow; //Exposed to public since we need to edit sub-fields
     PassAllKeys: Boolean;
+    ColumnIdForScroll: Integer; //When scroll is visible, we can move columns to the left. Using specified ColumnId. If ColumnId = -1, then no column width is changed
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
     destructor Destroy; override;
@@ -5736,6 +5741,18 @@ begin
 end;
 
 
+function TKMListHeader.GetOffset(aIndex: Integer): Word;
+begin
+  Result := fColumns[aIndex].Offset;
+end;
+
+
+procedure TKMListHeader.SetOffset(aIndex: Integer; aValue: Word);
+begin
+  fColumns[aIndex].Offset := aValue;
+end;
+
+
 procedure TKMListHeader.MouseMove(X, Y: Integer; Shift: TShiftState);
 begin
   inherited;
@@ -5795,6 +5812,7 @@ begin
   fShowHeader := True;
   SearchColumn := -1; //Disabled by default
   Focusable := True; //For up/down keys
+  ColumnIdForScroll := -1;
 
   fHeader := TKMListHeader.Create(aParent, aLeft, aTop, aWidth - fItemHeight, DEF_HEADER_HEIGHT);
 
@@ -5998,6 +6016,18 @@ begin
 end;
 
 
+procedure TKMColumnBox.ScrollBarChangeVisibility;
+begin
+  if Visible and (ColumnIdForScroll <> -1) then
+  begin
+    if fScrollBar.Visible then
+      fHeader.Offset[ColumnIdForScroll] := fHeader.Offset[ColumnIdForScroll] - fScrollBar.Width
+    else
+      fHeader.Offset[ColumnIdForScroll] := fHeader.Offset[ColumnIdForScroll] + fScrollBar.Width;
+  end;
+end;
+
+
 function TKMColumnBox.GetOnColumnClick: TIntegerEvent;
 begin
   Result := fHeader.OnColumnClick;
@@ -6018,10 +6048,16 @@ end;
 
 //fRowCount or Height has changed
 procedure TKMColumnBox.UpdateScrollBar;
+var
+  OldScrollBarVisible: Boolean;
 begin
   fScrollBar.MaxValue := fRowCount - (fHeight - fHeader.Height * Byte(fShowHeader)) div fItemHeight;
   Assert(fScrollBar.MaxValue >= fScrollBar.MinValue);
+  OldScrollBarVisible := fScrollBar.Visible;
   fScrollBar.Visible := fVisible and (fScrollBar.MaxValue <> fScrollBar.MinValue);
+  if fScrollBar.Visible <> OldScrollBarVisible then
+    ScrollBarChangeVisibility;
+
 end;
 
 
