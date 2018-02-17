@@ -963,8 +963,8 @@ type
 
   TKMListRow = record
     Cells: array of record
-      Caption: UnicodeString;
-      CellHint: UnicodeString;
+      Caption: UnicodeString;  //Main Text
+      CellHint: UnicodeString; //Gray text below main text
       Color: TColor4;
       HighlightColor: TColor4;
       HighlightOnMouseOver: Boolean;
