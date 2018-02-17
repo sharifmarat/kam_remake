@@ -15,14 +15,19 @@ type
   private
     fDragScrollingCursorPos: TPoint;
     fDragScrollingViewportPos: TKMPointF;
-
+    PrevHint: TObject;
+    PrevHintMessage: UnicodeString;
     procedure ResetDragScrolling;
   protected
     fMinimap: TKMMinimap;
     fViewport: TKMViewport;
     fDragScrolling: Boolean;
 
+    Label_Hint: TKMLabel;
+    Bevel_HintBG: TKMBevel;
+
     function IsDragScrollingAllowed: Boolean; virtual;
+    procedure DisplayHint(Sender: TObject);
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -149,7 +154,7 @@ const
 
 implementation
 uses
-  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys;
+  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys, KM_RenderUI, KM_ResFonts;
 
 
 { TKMUserInterfaceGame }
@@ -159,6 +164,17 @@ begin
 
   fMinimap := TKMMinimap.Create(False, False);
   fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
+
+  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
+  Bevel_HintBG.BackAlpha := 0.5;
+  Bevel_HintBG.EdgeAlpha := 0.5;
+  Bevel_HintBG.Hide;
+  Bevel_HintBG.Anchors := [anLeft, anBottom];
+  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
+  Label_Hint.Anchors := [anLeft, anBottom];
+
+  // Controls without a hint will reset the Hint to ''
+  fMyControls.OnHint := DisplayHint;
 
   fDragScrolling := False;
   fDragScrollingCursorPos.X := 0;
@@ -245,6 +261,30 @@ end;
 function TKMUserInterfaceGame.IsDragScrollingAllowed: Boolean;
 begin
   Result := True; // Allow drag scrolling by default
+end;
+
+
+procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
+begin
+  if (PrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
+  if (PrevHint <> nil) and (Sender = PrevHint)
+    and (TKMControl(PrevHint).Hint = PrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
+  if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
+
+  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
+  begin
+    Label_Hint.Caption := '';
+    Bevel_HintBG.Hide;
+    PrevHintMessage := '';
+  end
+  else
+  begin
+    Label_Hint.Caption := TKMControl(Sender).Hint;
+    Bevel_HintBG.Show;
+    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
+    PrevHintMessage := TKMControl(Sender).Hint;
+  end;
+  PrevHint := Sender;
 end;
 
 

@@ -41,8 +41,6 @@ type
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
     LastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
     fLastBeaconTime: Cardinal; //Last time a beacon was sent to enforce cooldown
-    PrevHint: TObject;
-    PrevHintMessage: UnicodeString;
     ShownMessage: Integer;
     PlayMoreMsg: TGameResultMsg; // Remember which message we are showing
     fPlacingBeacon: Boolean;
@@ -120,7 +118,6 @@ type
     procedure SelectUnitGroup(aGroup: TKMUnitGroup);
     procedure SelectNextGameObjWSameType;
     procedure SwitchPage(Sender: TObject);
-    procedure DisplayHint(Sender: TObject);
     procedure PlayMoreClick(Sender: TObject);
     procedure MPPlayMoreClick(Sender: TObject);
     procedure NetWaitClick(Sender: TObject);
@@ -151,8 +148,7 @@ type
     Sidebar_Middle: TKMImage;
     Sidebar_Bottom: array of TKMImage;
     MinimapView: TKMMinimapView;
-    Label_DebugInfo, Label_Hint: TKMLabel;
-    Bevel_HintBG: TKMBevel;
+    Label_DebugInfo: TKMLabel;
 
     Image_MPChat, Image_MPAllies: TKMImage; // Multiplayer buttons
     Image_MessageLog: TKMImage;
@@ -575,30 +571,6 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.DisplayHint(Sender: TObject);
-begin
-  if (PrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
-  if (PrevHint <> nil) and (Sender = PrevHint)
-    and (TKMControl(PrevHint).Hint = PrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
-  if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
-
-  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
-  begin
-    Label_Hint.Caption := '';
-    Bevel_HintBG.Hide;
-    PrevHintMessage := '';
-  end
-  else
-  begin
-    Label_Hint.Caption := TKMControl(Sender).Hint;
-    Bevel_HintBG.Show;
-    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
-    PrevHintMessage := TKMControl(Sender).Hint;
-  end;
-  PrevHint := Sender;
-end;
-
-
 procedure TKMGamePlayInterface.ExportPages(const aPath: string);
 var
   path: String;
@@ -748,17 +720,6 @@ begin
   Create_Replay; // Replay controls
   Create_PlayMore; // Must be created last, so that all controls behind are blocked
   Create_MPPlayMore;
-
-  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
-  Bevel_HintBG.BackAlpha := 0.5;
-  Bevel_HintBG.EdgeAlpha := 0.5;
-  Bevel_HintBG.Hide;
-  Bevel_HintBG.Anchors := [anLeft, anBottom];
-  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
-  Label_Hint.Anchors := [anLeft, anBottom];
-
-  // Controls without a hint will reset the Hint to ''
-  fMyControls.OnHint := DisplayHint;
 
   if OVERLAY_RESOLUTIONS then
   begin

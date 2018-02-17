@@ -28,7 +28,6 @@ uses
 type
   TKMapEdInterface = class (TKMUserInterfaceGame)
   private
-    fPrevHint: TObject;
     fMouseDownOnMap: Boolean;
 
     // Drag object feature fields
@@ -68,7 +67,6 @@ type
     procedure UpdateCursor(X, Y: Integer; Shift: TShiftState);
     procedure Main_ButtonClick(Sender: TObject);
     procedure HidePages;
-    procedure DisplayHint(Sender: TObject);
     procedure RightClick_Cancel;
     procedure ShowMarkerInfo(aMarker: TKMMapEdMarker);
     procedure Player_SetActive(aIndex: TKMHandIndex);
@@ -94,8 +92,7 @@ type
     Button_ChangeOwner: TKMButtonFlat;
     Button_UniversalEraser: TKMButtonFlat;
 
-    Label_Stat,Label_Hint: TKMLabel;
-    Bevel_HintBG: TKMBevel;
+    Label_Stat: TKMLabel;
 
     Panel_Common: TKMPanel;
       Button_Main: array [1..5] of TKMButton; //5 buttons
@@ -244,16 +241,6 @@ begin
   fGuiMenu.GuiMenuQuickPlay := fGuiMenuQuickPlay;
   fGuiTerrain.GuiSelection.GuiRMGPopUp := fGuiRMG;
 
-  //Hints go above everything
-  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+32,Panel_Main.Height-23,300,21);
-  Bevel_HintBG.BackAlpha := 0.5;
-  Bevel_HintBG.Hide;
-  Bevel_HintBG.Anchors := [anLeft, anBottom];
-  Label_Hint := TKMLabel.Create(Panel_Main, 224 + 36, Panel_Main.Height - 21, 0, 0, '', fnt_Outline, taLeft);
-  Label_Hint.Anchors := [anLeft, anBottom];
-
-  fMyControls.OnHint := DisplayHint;
-
   if OVERLAY_RESOLUTIONS then
   begin
     S := TKMShape.Create(Panel_Main, 0, 0, 1024, 576);
@@ -335,26 +322,6 @@ begin
     if TKMPanel(Panel_Common.Childs[I]).Childs[K] is TKMPanel then
       TKMPanel(Panel_Common.Childs[I]).Childs[K].Hide;
   end;
-end;
-
-
-procedure TKMapEdInterface.DisplayHint(Sender: TObject);
-begin
-  if (fPrevHint = Sender) then exit; //Hint didn't changed
-
-  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
-  begin
-    Label_Hint.Caption := '';
-    Bevel_HintBG.Hide;
-  end
-  else
-  begin
-    Label_Hint.Caption := TKMControl(Sender).Hint;
-    Bevel_HintBG.Show;
-    Bevel_HintBG.Width := 8 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
-  end;
-
-  fPrevHint := Sender;
 end;
 
 
