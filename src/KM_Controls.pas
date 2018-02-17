@@ -1093,6 +1093,8 @@ type
     property SortIndex: Integer read GetSortIndex write SetSortIndex;
     property SortDirection: TSortDirection read GetSortDirection write SetSortDirection;
 
+    procedure JumpToSelected;
+
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure KeyPress(Key: Char); override;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -6219,6 +6221,19 @@ var
 begin
   for I := 0 to fHeader.ColumnCount - 1 do
     FreeAndNil(fColumns[I]);
+end;
+
+
+procedure TKMColumnBox.JumpToSelected;
+begin
+  if (ItemIndex <> -1)
+    and not InRange(ItemIndex - TopIndex, 0, GetVisibleRows-1)
+  then
+    if ItemIndex < TopIndex then
+      TopIndex := ItemIndex
+    else
+    if ItemIndex > TopIndex + GetVisibleRows - 1 then
+      TopIndex := ItemIndex - GetVisibleRows + 1;
 end;
 
 
