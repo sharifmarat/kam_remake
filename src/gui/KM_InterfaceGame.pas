@@ -267,8 +267,10 @@ end;
 procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
 begin
   if (fPrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
+
   if (fPrevHint <> nil) and (Sender = fPrevHint)
     and (TKMControl(fPrevHint).Hint = fPrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
+
   if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
 
   if (Sender = nil) or (TKMControl(Sender).Hint = '') then
