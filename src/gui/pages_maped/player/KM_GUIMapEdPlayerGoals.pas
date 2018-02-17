@@ -53,6 +53,7 @@ begin
      gResTexts[TX_MAPED_GOALS_PLAYER]], [0, 25, 155]);
   ColumnBox_Goals.OnClick := Goals_ListClick;
   ColumnBox_Goals.OnDoubleClick := Goals_ListDoubleClick;
+  ColumnBox_Goals.ColumnIdForScroll := 2;
 
   Button_GoalsAdd := TKMButton.Create(Panel_Goals, 0, 270, 25, 25, '+', bsGame);
   Button_GoalsAdd.OnClick := Goals_Add;
