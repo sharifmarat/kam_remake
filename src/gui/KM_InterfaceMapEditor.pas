@@ -843,7 +843,8 @@ end;
 procedure TKMapEdInterface.Update_Label_Coordinates;
 begin
   Label_Coordinates.Caption := Format('X: %d, Y: %d, Z: %d', [gGameCursor.Cell.X, gGameCursor.Cell.Y,
-                                                                gTerrain.Land[Round(gGameCursor.Float.Y + 1), Round(gGameCursor.Float.X + 1)].Height]);
+                                                              gTerrain.Land[EnsureRange(Round(gGameCursor.Float.Y + 1), 1, gTerrain.MapY),
+                                                                            EnsureRange(Round(gGameCursor.Float.X + 1), 1, gTerrain.MapX)].Height]);
 end;
 
 
