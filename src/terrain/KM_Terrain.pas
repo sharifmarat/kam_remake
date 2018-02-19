@@ -519,27 +519,12 @@ begin
 
     for I := 1 to SizeY do
     begin
-      if I = SizeY then
-      begin
-        IFrom := fMapY;
-        NewGeneratedTileI := KMSameRect(aInsetRect, KMRECT_ZERO);
-      end else
-      begin
-        IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY - 1);
-        NewGeneratedTileI := not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
-      end;
-
+      IFrom := EnsureRange(I - aInsetRect.Top, 1, fMapY);
+      NewGeneratedTileI := IFrom <> I - aInsetRect.Top; //not InRange(I, MapInnerRect.Top, MapInnerRect.Bottom);
       for K := 1 to SizeX do
       begin
-        if K = SizeX then
-        begin
-          KFrom := fMapX;
-          NewGeneratedTileK := KMSameRect(aInsetRect, KMRECT_ZERO);
-        end else
-        begin
-          KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX - 1);
-          NewGeneratedTileK := not InRange(K, MapInnerRect.Left, MapInnerRect.Right);
-        end;
+        KFrom := EnsureRange(K - aInsetRect.Left, 1, fMapX);
+        NewGeneratedTileK := KFrom <> K - aInsetRect.Left;
         SetNewLand(S, K, I, KFrom, IFrom, SizeX, SizeY, NewGeneratedTileI or NewGeneratedTileK);
       end;
     end;
