@@ -280,6 +280,13 @@ begin
     CheckBox_BlockTeamSelection.Check;
     CheckBox_BlockPeacetime.Check;
     CheckBox_BlockFullMapPreview.Check;
+    CheckBox_BlockTeamSelection.Disable;
+    CheckBox_BlockPeacetime.Disable;
+    CheckBox_BlockFullMapPreview.Disable;
+  end else begin
+    CheckBox_BlockTeamSelection.Enable;
+    CheckBox_BlockPeacetime.Enable;
+    CheckBox_BlockFullMapPreview.Enable;
   end;
 
   Memo_BigDesc.Text := Edit_BigDesc.Text;
