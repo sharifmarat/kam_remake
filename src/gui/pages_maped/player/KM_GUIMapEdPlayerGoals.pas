@@ -165,6 +165,8 @@ begin
   ColumnBox_Goals.TopIndex := TopIndex;
 
   ColumnBox_Goals.JumpToSelected;
+
+  Button_GoalsDel.Enabled := ColumnBox_Goals.IsSelected;
 end;
 
 

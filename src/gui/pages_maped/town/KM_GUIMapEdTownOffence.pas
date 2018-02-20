@@ -191,6 +191,8 @@ begin
   ColumnBox_Attacks.TopIndex := TopIndex;
 
   ColumnBox_Attacks.JumpToSelected;
+
+  Button_AttacksDel.Enabled := ColumnBox_Attacks.IsSelected;
 end;
 
 
