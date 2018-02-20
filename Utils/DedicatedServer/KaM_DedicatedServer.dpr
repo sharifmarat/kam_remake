@@ -143,6 +143,10 @@ end;
 {$ENDIF}
 
 begin
+  //Define CONSOLE for Lazarus
+  {$IFDEF FPC}
+    {$DEFINE CONSOLE}
+  {$ENDIF}
   {$IFDEF UNIX}
   //Handle interupts (requests for our process to terminate)
   FpSignal(SIGTerm, @OnInterrupt);
