@@ -64,8 +64,8 @@ type
     procedure LoadSettings;
 
     //those procs run KM_Log.AppendLog() and add same log line to Memo control
-    procedure ServerStatusMessage(const aData: string);
-    procedure ServerStatusMessageNoTime(const aData: string);
+    procedure ServerStatusMessage(const aData: UnicodeString);
+    procedure ServerStatusMessageNoTime(const aData: UnicodeString);
 
     //this proc can change state (enable/disable) of controls that CAN'T be modyfied when server is online
     procedure ChangeEnableStateOfControls(state: Boolean);
@@ -139,14 +139,14 @@ begin
 end;
 
 
-procedure TFormMain.ServerStatusMessage(const aData: string);
+procedure TFormMain.ServerStatusMessage(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(FormatDateTime('yyyy-mm-dd hh-nn-ss ', Now) + aData);
   gLog.AddNoTime(aData);
 end;
 
 
-procedure TFormMain.ServerStatusMessageNoTime(const aData: string);
+procedure TFormMain.ServerStatusMessageNoTime(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(aData);
   gLog.AddNoTime(aData);
