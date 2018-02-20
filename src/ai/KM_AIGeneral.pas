@@ -224,7 +224,7 @@ begin
     Group := gHands[fOwner].UnitGroups[I];
 
     if not Group.IsDead
-    and Group.IsIdleToAI then
+      and Group.IsIdleToAI then
     begin
       //Check hunger and order food
       if (Group.Condition < UNIT_MIN_CONDITION) then
@@ -312,7 +312,7 @@ begin
     begin
       Group := gHands[fOwner].UnitGroups[I];
       if not Group.IsDead
-      and Group.IsIdleToAI(True) then
+      and Group.IsIdleToAI then
       begin
         DP := fDefencePositions.FindPositionOf(Group);
         if DP = nil then
