@@ -166,9 +166,6 @@ begin
   //Update map cache files (*.mi) in the background so map lists load faster
   MapCacheUpdate;
 
-  //Preload game resources while in menu to make 1st game start faster
-  gGameApp.PreloadGameResources;
-
   //Process messages in queue before hiding Loading, so that they all land on Loading form, not main one
   Application.ProcessMessages;
   fFormLoading.Hide;
@@ -362,6 +359,8 @@ begin
                                 StatusBarText);
   gGameApp.OnGameSpeedChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
 
   gLog.AddTime('ToggleFullscreen');
   gLog.AddTime('Form Width/Height: '+inttostr(fFormMain.Width)+':'+inttostr(fFormMain.Height));
