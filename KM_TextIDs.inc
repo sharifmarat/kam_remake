@@ -1163,3 +1163,7 @@ TX_MAPED_MISSION_BLOCK_PT = 1155; //Block peacetime
 TX_MAPED_MISSION_BLOCK_PT_HINT = 1156; //Blocks peacetime change in lobby
 TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW = 1157; //Block full map preview
 TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW_HINT = 1158; //Blocks full map preview in lobby
+
+TX_MAPED_PLAYER_COLOR_CODE_TYPE_TITLE = 1163; //Color code type:
+TX_MAPED_PLAYER_COLOR_BGR_HINT = 1164; //Blue / Green / Red
+TX_MAPED_PLAYER_COLOR_RGB_HINT = 1165; //Red / Green / Blue
