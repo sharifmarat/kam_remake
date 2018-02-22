@@ -600,6 +600,7 @@ type
 
     property AllowedChars: TKMAllowedChars read fAllowedChars write fAllowedChars;
     property Text: UnicodeString read fText write SetText;
+    procedure UpdateText(const aText: UnicodeString);
 
     function HitTest(X,Y: Integer; aIncludeDisabled: Boolean=false): Boolean; override;
     procedure Paint; override;
@@ -3455,12 +3456,18 @@ end;
 
 procedure TKMEdit.SetText(const aText: UnicodeString);
 begin
-  fText := aText;
-  ValidateText; //Validate first since it could change fText
-  CursorPos := Math.Min(CursorPos, Length(fText));
+  UpdateText(aText);
   //Setting the text should place cursor to the end
   fLeftIndex := 0;
   SetCursorPos(Length(Text));
+end;
+
+
+procedure TKMEdit.UpdateText(const aText: UnicodeString);
+begin
+  fText := aText;
+  ValidateText; //Validate first since it could change fText
+  CursorPos := Math.Min(CursorPos, Length(fText));
 end;
 
 
