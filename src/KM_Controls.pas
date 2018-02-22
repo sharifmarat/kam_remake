@@ -629,29 +629,41 @@ type
   end;
 
 
+  TKMRadioGroupItem = record
+    Text: UnicodeString;
+    Hint: UnicodeString;
+    Enabled: Boolean;
+  end;
+
+
   { TKMRadioGroup }
   TKMRadioGroup = class(TKMControl)
   private
     fItemIndex: Integer;
     fCount: Integer;
-    fItems: array of record
-      Text: UnicodeString;
-      Enabled: Boolean;
-    end;
+    fItems: array of TKMRadioGroupItem;
     fFont: TKMFont;
+    fMouseOverItem: SmallInt;
     fOnChange: TNotifyEvent;
+    procedure UpdateMouseOverPositions(X,Y: Integer);
+    function GetItem(aIndex: Integer): TKMRadioGroupItem;
+  protected
+    function GetHint: UnicodeString; override;
   public
     DrawChkboxOutline: Boolean;
     LineColor: TColor4; //color of outline
     LineWidth: Byte;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont);
 
-    procedure Add(aText: UnicodeString; aEnabled: Boolean = True);
+    procedure Add(aText: UnicodeString; aEnabled: Boolean = True); overload;
+    procedure Add(aText, aHint: UnicodeString; aEnabled: Boolean = True); overload;
     procedure Clear;
     property Count: Integer read fCount;
     property ItemIndex: Integer read fItemIndex write fItemIndex;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
+    property Item[aIndex: Integer]: TKMRadioGroupItem read GetItem;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
+    procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure Paint; override;
   end;
 
@@ -3642,10 +3654,17 @@ end;
 
 procedure TKMRadioGroup.Add(aText: UnicodeString; aEnabled: Boolean);
 begin
+  Add(aText, '', aEnabled);
+end;
+
+
+procedure TKMRadioGroup.Add(aText, aHint: UnicodeString; aEnabled: Boolean = True);
+begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 8);
 
   fItems[fCount].Text := aText;
+  fItems[fCount].Hint := aHint;
   fItems[fCount].Enabled := aEnabled;
 
   Inc(fCount);
@@ -3677,6 +3696,46 @@ begin
   end;
 
   inherited; //There are OnMouseUp and OnClick events there
+end;
+
+
+procedure TKMRadioGroup.MouseMove(X,Y: Integer; Shift: TShiftState);
+begin
+  inherited;
+  UpdateMouseOverPositions(X,Y);
+end;
+
+
+procedure TKMRadioGroup.UpdateMouseOverPositions(X,Y: Integer);
+var
+  LineHeight, MouseOverRow: Integer;
+begin
+  fMouseOverItem := -1;
+  LineHeight := Round(fHeight / Count);
+  if InRange(Y, AbsTop, AbsTop + Height) then
+  begin
+    MouseOverRow := (Y - AbsTop) div LineHeight;
+    if InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[MouseOverRow].Text).X) then
+      fMouseOverItem := EnsureRange(MouseOverRow, 0, fCount - 1);
+  end;
+end;
+
+
+function TKMRadioGroup.GetItem(aIndex: Integer): TKMRadioGroupItem;
+begin
+  Assert(aIndex < fCount, 'Can''t get radio group item for index ' + IntToStr(aIndex));
+  Result := fItems[aIndex];
+end;
+
+
+function TKMRadioGroup.GetHint: UnicodeString;
+begin
+  Result := inherited GetHint;
+  if Result = '' then
+  begin
+    if fMouseOverItem <> -1 then
+      Result := fItems[fMouseOverItem].Hint;
+  end;
 end;
 
 
