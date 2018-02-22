@@ -50,7 +50,10 @@ xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
 @REM copy utility applications exe files
 xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\CampaignBuilder.exe* /y /r /i
-xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_DedicatedServer.exe* /y /r /i
-xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_DedicatedServerGUI.exe* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_Remake_Server_win32.exe* /y /r /i
+xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_Remake_ServerGUI_win32.exe* /y /r /i
 xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptValidator.exe* /y /r /i
 xcopy "..\Utils\TranslationManager\TranslationManager.exe" "%kam_folder%"\TranslationManager.exe* /y /r /i
+@REM copy linux dedicated servers
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86" "%kam_folder%"\KaM_Remake_Server_linux_x86* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86_64" "%kam_folder%"\KaM_Remake_Server_linux_x86_64* /y /r /i
