@@ -18,7 +18,7 @@ type
     function CanUse(const X,Y: Word): Boolean; override;
   public
     FindType: TFindNearest;
-    HouseType: THouseType;
+    HouseType: TKMHouseType;
     constructor Create(aOwner: TKMHandIndex);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -31,13 +31,13 @@ type
     fListGold: TKMPointList; //List of possible goldmine locations
     fFinder: TKMTerrainFinderCity;
 
-    function GetSeeds(aHouseType: array of THouseType): TKMPointArray;
+    function GetSeeds(aHouseType: array of TKMHouseType): TKMPointArray;
 
-    function NextToOre(aHouse: THouseType; aOreType: TWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
-    function NextToHouse(aHouse: THouseType; aSeed, aAvoid: array of THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToStone(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToTrees(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToGrass(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
+    function NextToOre(aHouse: TKMHouseType; aOreType: TKMWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
+    function NextToHouse(aHouse: TKMHouseType; aSeed, aAvoid: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToStone(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToTrees(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToGrass(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
   public
     constructor Create(aPlayer: TKMHandIndex);
     destructor Destroy; override;
@@ -46,8 +46,8 @@ type
 
     function FindNearest(const aStart: TKMPoint; aRadius: Byte; aType: TFindNearest; out aResultLoc: TKMPoint): Boolean; overload;
     procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aType: TFindNearest; aPass: TKMTerrainPassabilitySet; aMaxCount: Word; aLocs: TKMPointTagList); overload;
-    procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: THouseType; aMaxCount: Word; aLocs: TKMPointTagList); overload;
-    function FindPlaceForHouse(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+    procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: TKMHouseType; aMaxCount: Word; aLocs: TKMPointTagList); overload;
+    function FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -89,7 +89,7 @@ begin
 end;
 
 
-function TKMCityPlanner.FindPlaceForHouse(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
 begin
   Result := False;
 
@@ -137,10 +137,10 @@ end;
 
 //Receive list of desired house types
 //Output list of locations below these houses
-function TKMCityPlanner.GetSeeds(aHouseType: array of THouseType): TKMPointArray;
+function TKMCityPlanner.GetSeeds(aHouseType: array of TKMHouseType): TKMPointArray;
 var
   I, K: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   Count, HQty: Integer;
   House: TKMHouse;
 begin
@@ -180,8 +180,8 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToGrass(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
-  function CanPlaceHouse(aHouse: THouseType; aX, aY: Word): Boolean;
+function TKMCityPlanner.NextToGrass(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+  function CanPlaceHouse(aHouse: TKMHouseType; aX, aY: Word): Boolean;
   var
     I, K: Integer;
     FieldCount: Integer;
@@ -240,7 +240,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToHouse(aHouse: THouseType; aSeed, aAvoid: array of THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToHouse(aHouse: TKMHouseType; aSeed, aAvoid: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
 var
   I: Integer;
   Bid, BestBid: Single;
@@ -274,7 +274,7 @@ end;
 
 
 //Called when AI needs to find a good spot for a new Quary
-function TKMCityPlanner.NextToStone(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToStone(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
 const
   SEARCH_RAD = 8;
 var
@@ -345,7 +345,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: THouseType; aMaxCount: Word; aLocs: TKMPointTagList);
+procedure TKMCityPlanner.FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: TKMHouseType; aMaxCount: Word; aLocs: TKMPointTagList);
 begin
   fFinder.FindType := fnHouse;
   fFinder.HouseType := aHouse;
@@ -353,7 +353,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToOre(aHouse: THouseType; aOreType: TWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
+function TKMCityPlanner.NextToOre(aHouse: TKMHouseType; aOreType: TKMWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
 var
   P: TKMPoint;
   SeedLocs: TKMPointArray;
@@ -412,7 +412,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToTrees(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToTrees(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
 const
   SEARCH_RES = 7;
   SEARCH_RAD = 20; //Search for forests within this radius

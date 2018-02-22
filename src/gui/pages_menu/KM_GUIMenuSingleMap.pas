@@ -495,7 +495,7 @@ end;
 
 procedure TKMMenuSingleMap.Update(aForceUpdate: Boolean = False);
 const
-  GoalCondPic: array [TGoalCondition] of Word = (
+  GoalCondPic: array [TKMGoalCondition] of Word = (
     41, 39, 592, 38, 62, 41, 303, 141, 312);
 var
   I,J,K: Integer;
@@ -604,7 +604,7 @@ end;
 
 procedure TKMMenuSingleMap.ListSort(aColumn: Integer);
 var
-  Method: TMapsSortMethod;
+  Method: TKMapsSortMethod;
 begin
   //Set Descending order by default and invert it if same column selected again
   case aColumn of

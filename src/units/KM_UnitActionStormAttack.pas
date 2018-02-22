@@ -9,24 +9,24 @@ uses
 
 {Charge forwards until we are tired or hit an obstacle}
 type
-  TUnitActionStormAttack = class(TUnitAction)
+  TKMUnitActionStormAttack = class(TKMUnitAction)
   private
-    fDelay: integer; //Delay before action starts
-    fTileSteps: integer; //The number of tiles we have walked onto so far
-    fStamina: integer; //How much stamina to run do we have
+    fDelay: Integer; //Delay before action starts
+    fTileSteps: Integer; //The number of tiles we have walked onto so far
+    fStamina: Integer; //How much stamina to run do we have
     fNextPos: TKMPoint; //The tile we are currently walking to
     fVertexOccupied: TKMPoint; //The diagonal vertex we are currently occupying
     procedure IncVertex(aFrom, aTo: TKMPoint);
     procedure DecVertex;
   public
-    constructor Create(aUnit: TKMUnit; aActionType: TUnitActionType; aRow: Integer);
+    constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aRow: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
     function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     function GetSpeed: Single;
-    function Execute: TActionResult; override;
+    function Execute: TKMActionResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -40,7 +40,7 @@ const
 
 
 { TUnitActionStormAttack }
-constructor TUnitActionStormAttack.Create(aUnit: TKMUnit; aActionType: TUnitActionType; aRow: Integer);
+constructor TKMUnitActionStormAttack.Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aRow: Integer);
 const
   //Tiles traveled measured in KaM TPR: Min 8, maximum 13
   //We reduced the variation in order to make storm attack more useful
@@ -56,7 +56,7 @@ begin
 end;
 
 
-destructor TUnitActionStormAttack.Destroy;
+destructor TKMUnitActionStormAttack.Destroy;
 begin
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
     DecVertex;
@@ -64,7 +64,7 @@ begin
 end;
 
 
-constructor TUnitActionStormAttack.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionStormAttack.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fDelay);
@@ -75,19 +75,19 @@ begin
 end;
 
 
-function TUnitActionStormAttack.ActName: TUnitActionName;
+function TKMUnitActionStormAttack.ActName: TKMUnitActionName;
 begin
   Result := uan_StormAttack;
 end;
 
 
-function TUnitActionStormAttack.GetExplanation: UnicodeString;
+function TKMUnitActionStormAttack.GetExplanation: UnicodeString;
 begin
   Result := 'Storming';
 end;
 
 
-procedure TUnitActionStormAttack.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionStormAttack.IncVertex(aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Storm vertex in use');
@@ -98,7 +98,7 @@ begin
 end;
 
 
-procedure TUnitActionStormAttack.DecVertex;
+procedure TKMUnitActionStormAttack.DecVertex;
 begin
   //Tell gTerrain that this vertex is not being used anymore
   Assert(not KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'DecVertex 0:0 Storm');
@@ -108,7 +108,7 @@ begin
 end;
 
 
-function TUnitActionStormAttack.GetSpeed: Single;
+function TKMUnitActionStormAttack.GetSpeed: Single;
 begin
   if (fTileSteps <= 0) or (fTileSteps >= fStamina-1) then
     Result := gRes.Units[fUnit.UnitType].Speed
@@ -117,7 +117,7 @@ begin
 end;
 
 
-function TUnitActionStormAttack.Execute: TActionResult;
+function TKMUnitActionStormAttack.Execute: TKMActionResult;
 var
   DX, DY: ShortInt;
   WalkX, WalkY, Distance: Single;
@@ -201,7 +201,7 @@ begin
 end;
 
 
-procedure TUnitActionStormAttack.Save(SaveStream: TKMemoryStream);
+procedure TKMUnitActionStormAttack.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fDelay);
@@ -212,7 +212,7 @@ begin
 end;
 
 
-function TUnitActionStormAttack.CanBeInterrupted: Boolean;
+function TKMUnitActionStormAttack.CanBeInterrupted: Boolean;
 begin
   Result := not Locked; //Never interupt storm attack
 end;

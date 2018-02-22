@@ -7,7 +7,7 @@ uses
 
 type
   //Go to eat
-  TTaskGoEat = class(TUnitTask)
+  TKMTaskGoEat = class(TKMUnitTask)
   private
     fInn: TKMHouseInn; //Inn in which we are going to eat
     fPlace: ShortInt; //Units place in Inn
@@ -17,7 +17,7 @@ type
     procedure SyncLoad; override;
     destructor Destroy; override;
     function Eating: Boolean;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -28,7 +28,7 @@ uses
 
 
 { TTaskGoEat }
-constructor TTaskGoEat.Create(aInn: TKMHouseInn; aUnit: TKMUnit);
+constructor TKMTaskGoEat.Create(aInn: TKMHouseInn; aUnit: TKMUnit);
 begin
   inherited Create(aUnit);
 
@@ -38,7 +38,7 @@ begin
 end;
 
 
-constructor TTaskGoEat.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskGoEat.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
 
@@ -47,7 +47,7 @@ begin
 end;
 
 
-procedure TTaskGoEat.SyncLoad;
+procedure TKMTaskGoEat.SyncLoad;
 begin
   inherited;
 
@@ -55,7 +55,7 @@ begin
 end;
 
 
-destructor TTaskGoEat.Destroy;
+destructor TKMTaskGoEat.Destroy;
 begin
   //May happen when we die while desperatley trying to get some food
   if Eating then
@@ -67,13 +67,13 @@ begin
 end;
 
 
-function TTaskGoEat.Eating: Boolean;
+function TKMTaskGoEat.Eating: Boolean;
 begin
   Result := fPlace <> -1;
 end;
 
 
-function TTaskGoEat.Execute: TTaskResult;
+function TKMTaskGoEat.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -167,7 +167,7 @@ begin
 end;
 
 
-procedure TTaskGoEat.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskGoEat.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
 

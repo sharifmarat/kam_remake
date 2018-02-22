@@ -10,22 +10,22 @@ type
   TKMHousesCollection = class
   private
     fHouses: TKMList; //Private to hide methods we don't want to expose
-    function AddToCollection(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: THouseBuildState):TKMHouse;
+    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState):TKMHouse;
     function GetHouse(aIndex: Integer): TKMHouse; inline;
     function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    function AddHouse(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
-    function AddHouseWIP(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
     procedure AddHouseToList(aHouse: TKMHouse);
     property Count: Integer read GetCount;
     procedure OwnerUpdate(aOwner: TKMHandIndex);
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
-    function FindEmptyHouse(aUnitType: TUnitType; Loc: TKMPoint): TKMHouse;
-    function FindHouse(aType: THouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
+    function FindEmptyHouse(aUnitType: TKMUnitType; Loc: TKMPoint): TKMHouse;
+    function FindHouse(aType: TKMHouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
@@ -66,7 +66,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddToCollection(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: THouseBuildState): TKMHouse;
+function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState): TKMHouse;
 var ID: Cardinal;
 begin
   ID := gGame.GetNewUID;
@@ -103,7 +103,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddHouse(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
 begin
   if RelativeEntrance then
     Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbs_Done)
@@ -113,7 +113,7 @@ end;
 
 
 {Add a plan for house}
-function TKMHousesCollection.AddHouseWIP(aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
 begin
   Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_NoGlyph);
 end;
@@ -184,7 +184,7 @@ end;
 
 
 //Should find closest house to Loc
-function TKMHousesCollection.FindEmptyHouse(aUnitType: TUnitType; Loc: TKMPoint): TKMHouse;
+function TKMHousesCollection.FindEmptyHouse(aUnitType: TKMUnitType; Loc: TKMPoint): TKMHouse;
 var
   I: Integer;
   Dist, BestBid: Single;
@@ -224,10 +224,10 @@ begin
 end;
 
 
-function TKMHousesCollection.FindHouse(aType: THouseType; X, Y: word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHousesCollection.FindHouse(aType: TKMHouseType; X, Y: word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse;
 var HT: THouseTypeSet;
 begin
-  if aType = ht_Any then HT := [Low(THouseType)..High(THouseType)]
+  if aType = ht_Any then HT := [Low(TKMHouseType)..High(TKMHouseType)]
   else                   HT := [aType];
   Result := FindHouse(HT, X, Y, aIndex, aOnlyCompleted);
 end;
@@ -293,7 +293,7 @@ end;
 procedure TKMHousesCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
-  HouseType: THouseType;
+  HouseType: TKMHouseType;
   T: TKMHouse;
 begin
   LoadStream.ReadAssert('Houses');

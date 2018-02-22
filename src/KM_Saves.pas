@@ -7,7 +7,7 @@ uses
 
 
 type
-  TSavesSortMethod = (
+  TKMSavesSortMethod = (
     smByFileNameAsc, smByFileNameDesc,
     smByDescriptionAsc, smByDescriptionDesc,
     smByTimeAsc, smByTimeDesc,
@@ -16,7 +16,7 @@ type
     smByModeAsc, smByModeDesc);
 
   TKMSaveInfo = class;
-  TSaveEvent = procedure (aSave: TKMSaveInfo) of object;
+  TKMSaveEvent = procedure (aSave: TKMSaveInfo) of object;
 
   //Savegame info, most of which is stored in TKMGameInfo structure
   TKMSaveInfo = class
@@ -48,14 +48,14 @@ type
     function LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean; overload;
   end;
 
-  TTSavesScanner = class(TThread)
+  TKMSavesScanner = class(TThread)
   private
     fMultiplayerPath: Boolean;
-    fOnSaveAdd: TSaveEvent;
+    fOnSaveAdd: TKMSaveEvent;
     fOnSaveAddDone: TNotifyEvent;
     fOnComplete: TNotifyEvent;
   public
-    constructor Create(aMultiplayerPath: Boolean; aOnSaveAdd: TSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
+    constructor Create(aMultiplayerPath: Boolean; aOnSaveAdd: TKMSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
     procedure Execute; override;
   end;
 
@@ -63,9 +63,9 @@ type
   private
     fCount: Word;
     fSaves: array of TKMSaveInfo;
-    fSortMethod: TSavesSortMethod;
+    fSortMethod: TKMSavesSortMethod;
     CS: TCriticalSection;
-    fScanner: TTSavesScanner;
+    fScanner: TKMSavesScanner;
     fScanning: Boolean;
     fScanFinished: Boolean;
     fUpdateNeeded: Boolean;
@@ -80,7 +80,7 @@ type
     procedure DoSort;
     function GetSave(aIndex: Integer): TKMSaveInfo;
   public
-    constructor Create(aSortMethod: TSavesSortMethod = smByFileNameDesc);
+    constructor Create(aSortMethod: TKMSavesSortMethod = smByFileNameDesc);
     destructor Destroy; override;
 
     property Count: Word read fCount;
@@ -95,8 +95,8 @@ type
 
     procedure Refresh(aOnRefresh: TNotifyEvent; aMultiplayerPath: Boolean; aOnTerminate: TNotifyEvent = nil; aOnComplete: TNotifyEvent = nil);
     procedure TerminateScan;
-    procedure Sort(aSortMethod: TSavesSortMethod; aOnSortComplete: TNotifyEvent);
-    property SortMethod: TSavesSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
+    procedure Sort(aSortMethod: TKMSavesSortMethod; aOnSortComplete: TNotifyEvent);
+    property SortMethod: TKMSavesSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
     property ScanFinished: Boolean read fScanFinished;
 
     function Contains(const aNewName: UnicodeString): Boolean;
@@ -274,7 +274,7 @@ end;
 
 
 { TKMSavesCollection }
-constructor TKMSavesCollection.Create(aSortMethod: TSavesSortMethod = smByFileNameDesc);
+constructor TKMSavesCollection.Create(aSortMethod: TKMSavesSortMethod = smByFileNameDesc);
 begin
   inherited Create;
   fSortMethod := aSortMethod;
@@ -518,7 +518,7 @@ end;
 //For public access
 //Apply new Sort within Critical Section, as we could be in the Refresh phase
 //note that we need to preserve fScanning flag
-procedure TKMSavesCollection.Sort(aSortMethod: TSavesSortMethod; aOnSortComplete: TNotifyEvent);
+procedure TKMSavesCollection.Sort(aSortMethod: TKMSavesSortMethod; aOnSortComplete: TNotifyEvent);
 begin
   Lock;
   try
@@ -572,7 +572,7 @@ begin
 
   //Scan will launch upon create automatcally
   fScanning := True;
-  fScanner := TTSavesScanner.Create(aMultiplayerPath, SaveAdd, SaveAddDone, ScanTerminate, ScanComplete);
+  fScanner := TKMSavesScanner.Create(aMultiplayerPath, SaveAdd, SaveAddDone, ScanTerminate, ScanComplete);
 end;
 
 
@@ -638,7 +638,7 @@ end;
 //aOnSaveAddDone - signal that save has been added
 //aOnTerminate - scan was terminated (but could be not complete yet)
 //aOnComplete - scan is complete
-constructor TTSavesScanner.Create(aMultiplayerPath: Boolean; aOnSaveAdd: TSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
+constructor TKMSavesScanner.Create(aMultiplayerPath: Boolean; aOnSaveAdd: TKMSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
 begin
   //Thread isn't started until all constructors have run to completion
   //so Create(False) may be put in front as well
@@ -655,7 +655,7 @@ begin
 end;
 
 
-procedure TTSavesScanner.Execute;
+procedure TKMSavesScanner.Execute;
 var
   PathToSaves: string;
   SearchRec: TSearchRec;

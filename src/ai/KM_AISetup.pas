@@ -17,7 +17,7 @@ type
     AutoDefend: Boolean;
     DefendAllies: Boolean;
     UnlimitedEquip: Boolean;
-    ArmyType: TArmyType;
+    ArmyType: TKMArmyType;
     EquipRateLeather, EquipRateIron: Word; //Number of ticks between soldiers being equipped. Seperated into Leather/Iron to keep KaM compatibility.
     MaxSoldiers: Integer; //-1 means not used or default
     RecruitDelay: Cardinal; //Recruits (for barracks) can only be trained after this many ticks
@@ -29,8 +29,8 @@ type
     AutoAttackRange: Byte;
 
     constructor Create;
-    function GetEquipRate(aUnit: TUnitType): Word;
-    function WarriorsPerMinute(aArmy: TArmyType): Single; overload;
+    function GetEquipRate(aUnit: TKMUnitType): Word;
+    function WarriorsPerMinute(aArmy: TKMArmyType): Single; overload;
     function WarriorsPerMinute: Single; overload;
 
     procedure ApplyAgressiveBuilderSetup;
@@ -71,7 +71,7 @@ begin
 end;
 
 
-function TKMHandAISetup.GetEquipRate(aUnit: TUnitType): Word;
+function TKMHandAISetup.GetEquipRate(aUnit: TKMUnitType): Word;
 begin
   if aUnit in WARRIORS_IRON then
     Result := EquipRateIron
@@ -80,7 +80,7 @@ begin
 end;
 
 
-function TKMHandAISetup.WarriorsPerMinute(aArmy: TArmyType): Single;
+function TKMHandAISetup.WarriorsPerMinute(aArmy: TKMArmyType): Single;
 
   function EquipRateToPerMin(EquipRate: Cardinal): Single;
   begin

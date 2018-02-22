@@ -53,7 +53,7 @@ type
     OnWarriorWalkOut: TKMWarriorEvent;
     FaceDir: TKMDirection; //Direction we should face after walking. Only check for enemies in this direction.
 
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); override;
@@ -88,7 +88,7 @@ type
     function FindEnemy: TKMUnit;
     function PathfindingShouldAvoid: Boolean; override;
 
-    procedure SetActionGoIn(aAction: TUnitActionType; aGoDir: TGoInDirection; aHouse: TKMHouse); override;
+    procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); override;
 
     procedure Save(SaveStream: TKMemoryStream); override;
     function UpdateState: Boolean; override;
@@ -105,7 +105,7 @@ uses
 
 
 { TKMUnitWarrior }
-constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
   fOrderTargetUnit   := nil;
@@ -138,8 +138,8 @@ begin
   inherited;
   fOrderTargetUnit := TKMUnitWarrior(gHands.GetUnitByUID(cardinal(fOrderTargetUnit)));
   fOrderTargetHouse := gHands.GetHouseByUID(cardinal(fOrderTargetHouse));
-  if GetUnitAction is TUnitActionGoInOut then
-    TUnitActionGoInOut(GetUnitAction).OnWalkedOut := WalkedOut;
+  if GetUnitAction is TKMUnitActionGoInOut then
+    TKMUnitActionGoInOut(GetUnitAction).OnWalkedOut := WalkedOut;
 end;
 
 
@@ -215,7 +215,7 @@ end;
 procedure TKMUnitWarrior.OrderStorm(aDelay: Word);
 begin
   //Can't order another storm attack until the current one stops
-  if GetUnitAction is TUnitActionStormAttack then Exit;
+  if GetUnitAction is TKMUnitActionStormAttack then Exit;
 
   ClearOrderTarget;
 
@@ -293,7 +293,7 @@ begin
     ut_Arbaletman:  Result := RANGE_ARBALETMAN_MAX / (Byte(REDUCE_SHOOTING_RANGE) + 1);
     ut_Slingshot:   Result := RANGE_SLINGSHOT_MAX / (Byte(REDUCE_SHOOTING_RANGE) + 1);
     //During storm attack we look for enemies 1.42 tiles away so we engage enemies easier and don't accidentially walk past them diagonally
-    else            if aTileBased and not (GetUnitAction is TUnitActionStormAttack) then
+    else            if aTileBased and not (GetUnitAction is TKMUnitActionStormAttack) then
                       Result := 1 //Enemy must maximum be 1 tile away
                     else
                       Result := 1.42; //slightly bigger than sqrt(2) for diagonal fights
@@ -345,9 +345,9 @@ end;
 //We are actively fighting with an enemy
 function TKMUnitWarrior.InFight(aCountCitizens: Boolean = False): Boolean;
 begin
-  Result := (GetUnitAction is TUnitActionFight)
-            and (aCountCitizens or (TUnitActionFight(GetUnitAction).GetOpponent is TKMUnitWarrior))
-            and not TUnitActionFight(GetUnitAction).GetOpponent.IsDeadOrDying;
+  Result := (GetUnitAction is TKMUnitActionFight)
+            and (aCountCitizens or (TKMUnitActionFight(GetUnitAction).GetOpponent is TKMUnitWarrior))
+            and not TKMUnitActionFight(GetUnitAction).GetOpponent.IsDeadOrDying;
 end;
 
 
@@ -399,22 +399,22 @@ end;
 function TKMUnitWarrior.GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
 begin
   //We can't rely on fOrder because it does not get reset, so look at actions/tasks
-  if fCurrentAction is TUnitActionFight then
+  if fCurrentAction is TKMUnitActionFight then
     if IsRanged then
       Result := gResTexts[TX_UNIT_TASK_FIRING]
     else
       Result := gResTexts[TX_UNIT_TASK_FIGHTING]
   else
-  if fCurrentAction is TUnitActionStormAttack then
+  if fCurrentAction is TKMUnitActionStormAttack then
     Result := gResTexts[TX_UNIT_TASK_STORM_ATTACK]
   else
-  if fUnitTask is TTaskAttackHouse then
+  if fUnitTask is TKMTaskAttackHouse then
     Result := gResTexts[TX_UNIT_TASK_ATTACKING_HOUSE]
   else
-  if fCurrentAction is TUnitActionGoInOut then
+  if fCurrentAction is TKMUnitActionGoInOut then
     Result := gResTexts[TX_UNIT_TASK_MOVING]
   else
-  if fCurrentAction is TUnitActionWalkTo then
+  if fCurrentAction is TKMUnitActionWalkTo then
     if aIsAttackingUnit then
       Result := gResTexts[TX_UNIT_TASK_ATTACKING]
     else
@@ -424,13 +424,13 @@ begin
 end;
 
 
-procedure TKMUnitWarrior.SetActionGoIn(aAction: TUnitActionType; aGoDir: TGoInDirection; aHouse: TKMHouse);
+procedure TKMUnitWarrior.SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse);
 begin
   Assert(aGoDir = gd_GoOutside, 'Walking inside is not implemented yet');
   Assert((aHouse.HouseType = ht_Barracks) or (aHouse.HouseType = ht_TownHall), 'Only Barracks and TownHall so far');
   inherited;
 
-  TUnitActionGoInOut(GetUnitAction).OnWalkedOut := WalkedOut;
+  TKMUnitActionGoInOut(GetUnitAction).OnWalkedOut := WalkedOut;
 end;
 
 
@@ -551,10 +551,10 @@ begin
     if (GetUnitAction <> nil) and GetUnitAction.Locked then Exit;
 
     //We are shooting at house
-    if (fUnitTask <> nil) and (fUnitTask is TTaskAttackHouse) then Exit;
+    if (fUnitTask <> nil) and (fUnitTask is TKMTaskAttackHouse) then Exit;
 
     //Archers should only look for opponents when they are idle or when they are finishing another fight (function is called by TUnitActionFight)
-    if (GetUnitAction is TUnitActionWalkTo)
+    if (GetUnitAction is TKMUnitActionWalkTo)
     and ((GetOrderTarget = nil) or GetOrderTarget.IsDeadOrDying or not WithinFightRange(GetOrderTarget.GetPosition))
     then
       Exit;
@@ -574,7 +574,7 @@ begin
   Result := gTerrain.UnitsHitTestWithinRad(GetPosition, GetFightMinRange, Range, Owner, at_Enemy, TestDir, not RANDOM_TARGETS);
 
   //Only stop attacking a house if it's a warrior
-  if (fUnitTask <> nil) and (fUnitTask is TTaskAttackHouse) and (GetUnitAction is TUnitActionStay) and not (Result is TKMUnitWarrior) then
+  if (fUnitTask <> nil) and (fUnitTask is TKMTaskAttackHouse) and (GetUnitAction is TKMUnitActionStay) and not (Result is TKMUnitWarrior) then
     Result := nil;
 end;
 
@@ -586,8 +586,8 @@ begin
   //Free the task or set it up to be resumed afterwards
   if UnitTask <> nil then
   begin
-    if (UnitTask is TTaskAttackHouse) and not (aEnemy is TKMUnitWarrior) then
-      TTaskAttackHouse(UnitTask).Phase := 0 //Reset task so it will resume after the fight
+    if (UnitTask is TKMTaskAttackHouse) and not (aEnemy is TKMUnitWarrior) then
+      TKMTaskAttackHouse(UnitTask).Phase := 0 //Reset task so it will resume after the fight
     else
       FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
   end;
@@ -601,8 +601,8 @@ end;
 { See if we can abandon other actions in favor of more important things }
 function TKMUnitWarrior.CanInterruptAction: Boolean;
 begin
-  if (GetUnitAction is TUnitActionStay)
-    and (UnitTask is TTaskAttackHouse) then
+  if (GetUnitAction is TKMUnitActionStay)
+    and (UnitTask is TKMTaskAttackHouse) then
     Result := True //We can abandon attack house if the action is stay
   else
     Result := GetUnitAction.CanBeInterrupted;
@@ -626,8 +626,8 @@ begin
     woNone: ;
     woWalk:         begin
                       //We can update existing Walk action with minimum changes
-                      if (GetUnitAction is TUnitActionWalkTo)
-                        and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                      if (GetUnitAction is TKMUnitActionWalkTo)
+                        and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
                       begin
                         FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
 
@@ -636,7 +636,7 @@ begin
                         else
                           loc := gTerrain.GetClosestTile(fOrderLoc, GetPosition, GetDesiredPassability, False);
 
-                        TUnitActionWalkTo(GetUnitAction).ChangeWalkTo(loc, 0);
+                        TKMUnitActionWalkTo(GetUnitAction).ChangeWalkTo(loc, 0);
                         fNextOrder := woNone;
                         fOrder := woWalk;
                       end
@@ -669,15 +669,15 @@ begin
                     end;
     woAttackHouse:  begin
                       //Abandon walk so we can take attack house
-                      if (GetUnitAction is TUnitActionWalkTo)
-                      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                      if (GetUnitAction is TKMUnitActionWalkTo)
+                      and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
                         AbandonWalk;
 
                       //Take attack house order
                       if CanInterruptAction then
                       begin
                         FreeAndNil(fUnitTask); //e.g. TaskAttackHouse
-                        fUnitTask := TTaskAttackHouse.Create(Self, GetOrderHouseTarget);
+                        fUnitTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
                         fOrderLoc := GetPosition; //Once the house is destroyed we will position where we are standing
                         fNextOrder := woNone;
                         fOrder := woAttackHouse;
@@ -685,8 +685,8 @@ begin
                     end;
     woStorm:        begin
                       //Abandon walk so we can take attack house or storm attack order
-                      if (GetUnitAction is TUnitActionWalkTo)
-                      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+                      if (GetUnitAction is TKMUnitActionWalkTo)
+                      and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
                         AbandonWalk;
 
                       //Storm
@@ -794,7 +794,7 @@ end;
 
 procedure TKMUnitWarrior.Paint;
 var
-  Act: TUnitActionType;
+  Act: TKMUnitActionType;
   UnitPos: TKMPointF;
   I,K: Integer;
   Color: Cardinal;

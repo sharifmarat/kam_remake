@@ -1917,8 +1917,8 @@ end;
 
 procedure TKMMenuLobby.MapColumnClick(aValue: Integer);
 var
-  SM: TMapsSortMethod;
-  SSM: TSavesSortMethod;
+  SM: TKMapsSortMethod;
+  SSM: TKMSavesSortMethod;
 begin
   if Radio_LobbyMapType.ItemIndex < 4 then
   begin

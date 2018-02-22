@@ -7,32 +7,32 @@ uses
 
 //Fight until we die or the opponent dies
 type
-  TUnitActionFight = class(TUnitAction)
+  TKMUnitActionFight = class(TKMUnitAction)
   private
     fFightDelay: Integer; //Pause for this many ticks before going onto the next Step
     fOpponent: TKMUnit; //Who we are fighting with
     fVertexOccupied: TKMPoint; //The diagonal vertex we are currently occupying
 
     //Execute is broken up into multiple methods
-      function ExecuteValidateOpponent(Step:byte): TActionResult;
-      function ExecuteProcessRanged(Step:byte):boolean;
-      function ExecuteProcessMelee(Step:byte):boolean;
+      function ExecuteValidateOpponent(Step: Byte): TKMActionResult;
+      function ExecuteProcessRanged(Step: Byte):boolean;
+      function ExecuteProcessMelee(Step: Byte):boolean;
 
-    function UpdateVertexUsage(aFrom, aTo: TKMPoint):boolean;
+    function UpdateVertexUsage(aFrom, aTo: TKMPoint): Boolean;
     procedure IncVertex(aFrom, aTo: TKMPoint);
     procedure DecVertex;
     procedure MakeSound(IsHit:boolean);
   public
-    constructor Create(aUnit: TKMUnit; aActionType: TUnitActionType; aOpponent: TKMUnit);
+    constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aOpponent: TKMUnit);
     constructor Load(LoadStream:TKMemoryStream); override;
     destructor Destroy; override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
     function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     procedure SyncLoad; override;
     property GetOpponent: TKMUnit read fOpponent;
-    function Execute: TActionResult; override;
-    procedure Save(SaveStream:TKMemoryStream); override;
+    function Execute: TKMActionResult; override;
+    procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
 
@@ -57,7 +57,7 @@ const
 
 
 { TUnitActionFight }
-constructor TUnitActionFight.Create(aUnit: TKMUnit; aActionType: TUnitActionType; aOpponent: TKMUnit);
+constructor TKMUnitActionFight.Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aOpponent: TKMUnit);
 begin
   inherited Create(aUnit, aActionType, True);
 
@@ -72,7 +72,7 @@ begin
 end;
 
 
-destructor TUnitActionFight.Destroy;
+destructor TKMUnitActionFight.Destroy;
 begin
   gHands.CleanUpUnitPointer(fOpponent);
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
@@ -81,7 +81,7 @@ begin
 end;
 
 
-constructor TUnitActionFight.Load(LoadStream:TKMemoryStream);
+constructor TKMUnitActionFight.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fOpponent, 4);
@@ -90,28 +90,28 @@ begin
 end;
 
 
-procedure TUnitActionFight.SyncLoad;
+procedure TKMUnitActionFight.SyncLoad;
 begin
   inherited;
-  fOpponent := gHands.GetUnitByUID(cardinal(fOpponent));
+  fOpponent := gHands.GetUnitByUID(Cardinal(fOpponent));
 end;
 
 
-function TUnitActionFight.ActName: TUnitActionName;
+function TKMUnitActionFight.ActName: TKMUnitActionName;
 begin
   Result := uan_Fight;
 end;
 
 
-function TUnitActionFight.GetExplanation: UnicodeString;
+function TKMUnitActionFight.GetExplanation: UnicodeString;
 begin
   Result := 'Fighting';
 end;
 
 
-function TUnitActionFight.UpdateVertexUsage(aFrom, aTo: TKMPoint):boolean;
+function TKMUnitActionFight.UpdateVertexUsage(aFrom, aTo: TKMPoint):boolean;
 begin
-  Result := true;
+  Result := True;
   if KMStepIsDiag(aFrom, aTo) then
   begin
     //If the new target has the same vertex as the old one, no change is needed
@@ -121,7 +121,7 @@ begin
     if fUnit.VertexUsageCompatible(aFrom, aTo) then
       IncVertex(aFrom, aTo)
     else
-      Result := false; //This vertex is being used so we can't fight
+      Result := False; //This vertex is being used so we can't fight
   end
   else
     //The new target is not diagonal, make sure any old vertex usage is removed
@@ -129,7 +129,7 @@ begin
 end;
 
 
-procedure TUnitActionFight.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionFight.IncVertex(aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Fight vertex in use');
@@ -139,7 +139,7 @@ begin
 end;
 
 
-procedure TUnitActionFight.DecVertex;
+procedure TKMUnitActionFight.DecVertex;
 begin
   //Tell gTerrain that this vertex is not being used anymore
   if KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then exit;
@@ -149,7 +149,7 @@ begin
 end;
 
 
-procedure TUnitActionFight.MakeSound(IsHit:boolean);
+procedure TKMUnitActionFight.MakeSound(IsHit:boolean);
 var
   //Battlecry is the most noticable random sound, we would like to repeat it exactly the same in each replay (?)
   MakeBattleCry: Boolean;
@@ -178,7 +178,7 @@ begin
 end;
 
 
-function TUnitActionFight.ExecuteValidateOpponent(Step: Byte): TActionResult;
+function TKMUnitActionFight.ExecuteValidateOpponent(Step: Byte): TKMActionResult;
 begin
   Result := ar_ActContinues;
   //See if Opponent has walked away (i.e. Serf) or died
@@ -218,7 +218,7 @@ end;
 
 
 //A result of true means exit from Execute
-function TUnitActionFight.ExecuteProcessRanged(Step: Byte): Boolean;
+function TKMUnitActionFight.ExecuteProcessRanged(Step: Byte): Boolean;
 begin
   Result := False;
 
@@ -268,7 +268,7 @@ end;
 
 
 //A result of true means exit from Execute
-function TUnitActionFight.ExecuteProcessMelee(Step: Byte): Boolean;
+function TKMUnitActionFight.ExecuteProcessMelee(Step: Byte): Boolean;
 var
   IsHit: Boolean;
   Damage: Word;
@@ -323,7 +323,7 @@ begin
 end;
 
 
-function TUnitActionFight.Execute: TActionResult;
+function TKMUnitActionFight.Execute: TKMActionResult;
 var
   Cycle, Step: Byte;
 begin
@@ -363,7 +363,7 @@ begin
 end;
 
 
-procedure TUnitActionFight.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitActionFight.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
   if fOpponent <> nil then
@@ -375,7 +375,7 @@ begin
 end;
 
 
-function TUnitActionFight.CanBeInterrupted: Boolean;
+function TKMUnitActionFight.CanBeInterrupted: Boolean;
 begin
   Result := TKMUnitWarrior(fUnit).IsRanged or not Locked; //Only allowed to interupt ranged fights
 end;

@@ -530,7 +530,7 @@ end;
 
 procedure TKMMenuMapEditor.ColumnClick(aValue: Integer);
 var
-  SM: TMapsSortMethod;
+  SM: TKMapsSortMethod;
 begin
   //Determine Sort method depending on which column user clicked
   with ColumnBox_MapEd do

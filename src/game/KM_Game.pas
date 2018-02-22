@@ -74,9 +74,9 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
   public
-    PlayOnState: TGameResultMsg;
+    PlayOnState: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
-    DoGameHoldState: TGameResultMsg; //The type of GameHold we want to occur due to DoGameHold
+    DoGameHoldState: TKMGameResultMsg; //The type of GameHold we want to occur due to DoGameHold
     SkipReplayEndCheck: Boolean;
     StartedFromMapEditor: Boolean; //True if we start game from map editor ('Try Map')
     StartedFromMapEdAsMPMap: Boolean;     //True if we start game from map editor ('Try Map') with MP map
@@ -101,8 +101,8 @@ type
 
     procedure GameMPPlay(Sender: TObject);
     procedure GameMPReadyToPlay(Sender: TObject);
-    procedure GameHold(DoHold: Boolean; Msg: TGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
-    procedure RequestGameHold(Msg: TGameResultMsg);
+    procedure GameHold(DoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
+    procedure RequestGameHold(Msg: TKMGameResultMsg);
     procedure PlayerVictory(aPlayerIndex: TKMHandIndex);
     procedure PlayerDefeat(aPlayerIndex: TKMHandIndex; aShowDefeatMessage: Boolean = True);
     procedure WaitingPlayersDisplay(aWaiting: Boolean);
@@ -327,13 +327,13 @@ end;
 //New mission
 procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal);
 const
-  GAME_PARSE: array [TGameMode] of TMissionParsingMode = (
+  GAME_PARSE: array [TGameMode] of TKMMissionParsingMode = (
     mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
 var
   I: Integer;
-  ParseMode: TMissionParsingMode;
+  ParseMode: TKMMissionParsingMode;
   PlayerEnabled: TKMHandEnabledArray;
-  Parser: TMissionParserStandard;
+  Parser: TKMMissionParserStandard;
   CampaignData: TKMemoryStream;
   CampaignDataTypeFile: UnicodeString;
 begin
@@ -392,7 +392,7 @@ begin
     fMapEditor.MapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
   end;
 
-  Parser := TMissionParserStandard.Create(ParseMode, PlayerEnabled);
+  Parser := TKMMissionParserStandard.Create(ParseMode, PlayerEnabled);
   try
     if not Parser.LoadMission(aMissionFile) then
       raise Exception.Create(Parser.FatalErrors);
@@ -777,7 +777,7 @@ end;
 
 
 //Put the game on Hold for Victory screen
-procedure TKMGame.GameHold(DoHold: Boolean; Msg: TGameResultMsg);
+procedure TKMGame.GameHold(DoHold: Boolean; Msg: TKMGameResultMsg);
 begin
   DoGameHold := false;
   fGamePlayInterface.ReleaseDirectionSelector; //In case of victory/defeat while moving troops
@@ -795,7 +795,7 @@ begin
 end;
 
 
-procedure TKMGame.RequestGameHold(Msg: TGameResultMsg);
+procedure TKMGame.RequestGameHold(Msg: TKMGameResultMsg);
 begin
   DoGameHold := true;
   DoGameHoldState := Msg;
@@ -973,9 +973,9 @@ end;
 procedure TKMGame.SaveMapEditor(const aPathName: UnicodeString; aInsetRect: TKMRect);
 var
   I: Integer;
-  fMissionParser: TMissionParserStandard;
+  fMissionParser: TKMMissionParserStandard;
   MapInfo: TKMapInfo;
-  MapFolder: TMapFolder;
+  MapFolder: TKMapFolder;
 begin
   if aPathName = '' then exit;
 
@@ -990,7 +990,7 @@ begin
   fMapEditor.MapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
-  fMissionParser := TMissionParserStandard.Create(mpm_Editor);
+  fMissionParser := TKMMissionParserStandard.Create(mpm_Editor);
   fMissionParser.SaveDATFile(ChangeFileExt(aPathName, '.dat'), aInsetRect.Left, aInsetRect.Top);
   FreeAndNil(fMissionParser);
 

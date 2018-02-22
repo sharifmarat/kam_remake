@@ -9,12 +9,12 @@ uses
 
 //Do the building
 type
-  TTaskBuild = class(TUnitTask)
+  TKMTaskBuild = class(TKMUnitTask)
   public
     procedure CancelThePlan; virtual; abstract;
   end;
 
-  TTaskBuildRoad = class(TTaskBuild)
+  TKMTaskBuildRoad = class(TKMTaskBuild)
   private
     fLoc: TKMPoint;
     fIsDigged: Boolean;
@@ -27,11 +27,11 @@ type
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
-  TTaskBuildWine = class(TTaskBuild)
+  TKMTaskBuildWine = class(TKMTaskBuild)
   private
     fLoc: TKMPoint;
     fIsDigged: Boolean;
@@ -44,11 +44,11 @@ type
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
-  TTaskBuildField = class(TTaskBuild)
+  TKMTaskBuildField = class(TKMTaskBuild)
   private
     fLoc: TKMPoint;
     BuildID: Integer;
@@ -59,14 +59,14 @@ type
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
-  TTaskBuildHouseArea = class(TTaskBuild)
+  TKMTaskBuildHouseArea = class(TKMTaskBuild)
   private
     fHouse: TKMHouse;
-    fHouseType: THouseType;
+    fHouseType: TKMHouseType;
     fHouseLoc: TKMPoint;
     BuildID: Integer;
     HouseNeedsWorker: Boolean;
@@ -75,34 +75,34 @@ type
     LastToDig: ShortInt;
     function GetHouseEntranceLoc: TKMPoint;
   public
-    constructor Create(aWorker: TKMUnitWorker; aHouseType: THouseType; aLoc: TKMPoint; aID:integer);
+    constructor Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
     function Digging: Boolean;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
-  TTaskBuildHouse = class(TUnitTask)
+  TKMTaskBuildHouse = class(TKMUnitTask)
   private
     fHouse: TKMHouse;
     BuildID: Integer;
     BuildFrom: TKMPointDir; //Current WIP location
     Cells: TKMPointDirList; //List of surrounding cells and directions
   public
-    constructor Create(aWorker:TKMUnitWorker; aHouse:TKMHouse; aID:integer);
-    constructor Load(LoadStream:TKMemoryStream); override;
+    constructor Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aID: Integer);
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon:boolean; override;
-    function Execute:TTaskResult; override;
+    function Execute:TKMTaskResult; override;
     procedure Save(SaveStream:TKMemoryStream); override;
   end;
 
-  TTaskBuildHouseRepair = class(TUnitTask)
+  TKMTaskBuildHouseRepair = class(TKMUnitTask)
   private
     fHouse: TKMHouse;
     fRepairID: Integer; //Remember the house we repair to report if we died and let others take our place
@@ -114,7 +114,7 @@ type
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -126,7 +126,7 @@ uses
 
 
 { TTaskBuildRoad }
-constructor TTaskBuildRoad.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildRoad;
@@ -137,7 +137,7 @@ begin
 end;
 
 
-constructor TTaskBuildRoad.Load(LoadStream:TKMemoryStream);
+constructor TKMTaskBuildRoad.Load(LoadStream:TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fLoc);
@@ -147,7 +147,7 @@ begin
 end;
 
 
-destructor TTaskBuildRoad.Destroy;
+destructor TKMTaskBuildRoad.Destroy;
 begin
   if DemandSet   then gHands[fUnit.Owner].Deliveries.Queue.RemDemand(fUnit);
   if TileLockSet then gTerrain.UnlockTile(fLoc);
@@ -172,21 +172,21 @@ begin
 end;
 
 
-function TTaskBuildRoad.WalkShouldAbandon: Boolean;
+function TKMTaskBuildRoad.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
   Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Road);
 end;
 
 
-procedure TTaskBuildRoad.CancelThePlan;
+procedure TKMTaskBuildRoad.CancelThePlan;
 begin
   gHands[fUnit.Owner].BuildList.FieldworksList.CloseField(BuildID); //Close the job now because it can no longer be cancelled
   BuildID := -1;
 end;
 
 
-function TTaskBuildRoad.Execute: TTaskResult;
+function TKMTaskBuildRoad.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -262,7 +262,7 @@ begin
 end;
 
 
-procedure TTaskBuildRoad.Save(SaveStream:TKMemoryStream);
+procedure TKMTaskBuildRoad.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fLoc);
@@ -273,7 +273,7 @@ end;
 
 
 { TTaskBuildWine }
-constructor TTaskBuildWine.Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+constructor TKMTaskBuildWine.Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildWine;
@@ -284,7 +284,7 @@ begin
 end;
 
 
-constructor TTaskBuildWine.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskBuildWine.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fLoc);
@@ -294,7 +294,7 @@ begin
 end;
 
 
-destructor TTaskBuildWine.Destroy;
+destructor TKMTaskBuildWine.Destroy;
 begin
   //Yet unstarted
   if BuildID <> -1 then
@@ -311,21 +311,21 @@ begin
 end;
 
 
-function TTaskBuildWine.WalkShouldAbandon: Boolean;
+function TKMTaskBuildWine.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
   Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Wine);
 end;
 
 
-procedure TTaskBuildWine.CancelThePlan;
+procedure TKMTaskBuildWine.CancelThePlan;
 begin
   gHands[fUnit.Owner].BuildList.FieldworksList.CloseField(BuildID); //Close the job now because it can no longer be cancelled
   BuildID := -1;
 end;
 
 
-function TTaskBuildWine.Execute: TTaskResult;
+function TKMTaskBuildWine.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -396,7 +396,7 @@ begin
 end;
 
 
-procedure TTaskBuildWine.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskBuildWine.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fLoc);
@@ -407,7 +407,7 @@ end;
 
 
 { TTaskBuildField }
-constructor TTaskBuildField.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+constructor TKMTaskBuildField.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildField;
@@ -417,7 +417,7 @@ begin
 end;
 
 
-constructor TTaskBuildField.Load(LoadStream:TKMemoryStream);
+constructor TKMTaskBuildField.Load(LoadStream:TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fLoc);
@@ -426,7 +426,7 @@ begin
 end;
 
 
-destructor TTaskBuildField.Destroy;
+destructor TKMTaskBuildField.Destroy;
 begin
   //Yet unstarted
   if BuildID <> -1 then
@@ -442,21 +442,21 @@ begin
 end;
 
 
-function TTaskBuildField.WalkShouldAbandon: Boolean;
+function TKMTaskBuildField.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
   Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Corn);
 end;
 
 
-procedure TTaskBuildField.CancelThePlan;
+procedure TKMTaskBuildField.CancelThePlan;
 begin
   gHands[fUnit.Owner].BuildList.FieldworksList.CloseField(BuildID); //Close the job now because it can no longer be cancelled
   BuildID := -1;
 end;
 
 
-function TTaskBuildField.Execute: TTaskResult;
+function TKMTaskBuildField.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -499,7 +499,7 @@ begin
 end;
 
 
-procedure TTaskBuildField.Save(SaveStream:TKMemoryStream);
+procedure TKMTaskBuildField.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fLoc);
@@ -509,7 +509,7 @@ end;
 
 
 { TTaskBuildHouseArea }
-constructor TTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: THouseType; aLoc: TKMPoint; aID: Integer);
+constructor TKMTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; aLoc: TKMPoint; aID: Integer);
 var
   I,K: Integer;
   HA: THouseArea;
@@ -535,7 +535,7 @@ begin
 end;
 
 
-constructor TTaskBuildHouseArea.Load(LoadStream:TKMemoryStream);
+constructor TKMTaskBuildHouseArea.Load(LoadStream:TKMemoryStream);
 begin
   inherited;
 
@@ -550,7 +550,7 @@ begin
 end;
 
 
-procedure TTaskBuildHouseArea.SyncLoad;
+procedure TKMTaskBuildHouseArea.SyncLoad;
 begin
   inherited;
   fHouse := gHands.GetHouseByUID(cardinal(fHouse));
@@ -558,7 +558,7 @@ end;
 
 
 { We need to revert all changes made }
-destructor TTaskBuildHouseArea.Destroy;
+destructor TKMTaskBuildHouseArea.Destroy;
 begin
   //Don't demolish the house when the game is exiting (causes wrong stats and errors in script)
   if (gGame = nil) or gGame.IsExiting then
@@ -595,14 +595,14 @@ begin
 end;
 
 
-function TTaskBuildHouseArea.WalkShouldAbandon: Boolean;
+function TKMTaskBuildHouseArea.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
   Result := (BuildID <> -1) and not gTerrain.CanPlaceHouse(GetHouseEntranceLoc, fHouseType);
 end;
 
 
-function TTaskBuildHouseArea.GetHouseEntranceLoc: TKMPoint;
+function TKMTaskBuildHouseArea.GetHouseEntranceLoc: TKMPoint;
 begin
   Result.X := fHouseLoc.X + gRes.Houses[fHouseType].EntranceOffsetX;
   Result.Y := fHouseLoc.Y;
@@ -611,13 +611,13 @@ end;
 
 //Tell if we are in Digging phase where we can walk on tlDigged tiles
 //(incl. phase when we walk out)
-function TTaskBuildHouseArea.Digging: Boolean;
+function TKMTaskBuildHouseArea.Digging: Boolean;
 begin
   Result := fPhase >= 2;
 end;
 
 
-procedure TTaskBuildHouseArea.CancelThePlan;
+procedure TKMTaskBuildHouseArea.CancelThePlan;
 begin
   //House plan could be canceled during initial walk or while walking within the house area so
   //ignore it if it's already been canceled (occurs when trying to walk within range of an enemy tower during flattening)
@@ -629,7 +629,7 @@ end;
 
 
 //Prepare building site - flatten terrain
-function TTaskBuildHouseArea.Execute: TTaskResult;
+function TKMTaskBuildHouseArea.Execute: TKMTaskResult;
 var OutOfWay: TKMPoint;
 begin
   Result := tr_TaskContinues;
@@ -717,7 +717,7 @@ begin
 end;
 
 
-procedure TTaskBuildHouseArea.Save(SaveStream:TKMemoryStream);
+procedure TKMTaskBuildHouseArea.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
 
@@ -736,7 +736,7 @@ end;
 
 
 { TTaskBuildHouse }
-constructor TTaskBuildHouse.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aID: Integer);
+constructor TKMTaskBuildHouse.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildHouse;
@@ -748,7 +748,7 @@ begin
 end;
 
 
-constructor TTaskBuildHouse.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskBuildHouse.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fHouse, 4);
@@ -759,14 +759,14 @@ begin
 end;
 
 
-procedure TTaskBuildHouse.SyncLoad;
+procedure TKMTaskBuildHouse.SyncLoad;
 begin
   inherited;
   fHouse := gHands.GetHouseByUID(Cardinal(fHouse));
 end;
 
 
-destructor TTaskBuildHouse.Destroy;
+destructor TKMTaskBuildHouse.Destroy;
 begin
   //We are no longer connected to the House (it's either done or we died)
   gHands[fUnit.Owner].BuildList.HouseList.RemWorker(BuildID);
@@ -781,14 +781,14 @@ end;
   task that has enough resouces. Once this house has building resources delivered it will be
   available from build queue again
   If house is already built by other workers}
-function TTaskBuildHouse.WalkShouldAbandon: Boolean;
+function TKMTaskBuildHouse.WalkShouldAbandon: Boolean;
 begin
   Result := fHouse.IsDestroyed or (not fHouse.CheckResToBuild) or fHouse.IsComplete;
 end;
 
 
 {Build the house}
-function TTaskBuildHouse.Execute: TTaskResult;
+function TKMTaskBuildHouse.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -846,7 +846,7 @@ begin
 end;
 
 
-procedure TTaskBuildHouse.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskBuildHouse.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fHouse <> nil then
@@ -860,7 +860,7 @@ end;
 
 
 { TTaskBuildHouseRepair }
-constructor TTaskBuildHouseRepair.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aRepairID: Integer);
+constructor TKMTaskBuildHouseRepair.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aRepairID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildHouseRepair;
@@ -872,7 +872,7 @@ begin
 end;
 
 
-constructor TTaskBuildHouseRepair.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskBuildHouseRepair.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fHouse, 4);
@@ -883,14 +883,14 @@ begin
 end;
 
 
-procedure TTaskBuildHouseRepair.SyncLoad;
+procedure TKMTaskBuildHouseRepair.SyncLoad;
 begin
   inherited;
   fHouse := gHands.GetHouseByUID(Cardinal(fHouse));
 end;
 
 
-destructor TTaskBuildHouseRepair.Destroy;
+destructor TKMTaskBuildHouseRepair.Destroy;
 begin
   gHands[fUnit.Owner].BuildList.RepairList.RemWorker(fRepairID);
   gHands.CleanUpHousePointer(fHouse);
@@ -899,7 +899,7 @@ begin
 end;
 
 
-function TTaskBuildHouseRepair.WalkShouldAbandon: Boolean;
+function TKMTaskBuildHouseRepair.WalkShouldAbandon: Boolean;
 begin
   Result := fHouse.IsDestroyed
             or not fHouse.IsDamaged
@@ -908,7 +908,7 @@ end;
 
 
 {Repair the house}
-function TTaskBuildHouseRepair.Execute: TTaskResult;
+function TKMTaskBuildHouseRepair.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -957,7 +957,7 @@ begin
 end;
 
 
-procedure TTaskBuildHouseRepair.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskBuildHouseRepair.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fHouse <> nil then

@@ -12,7 +12,7 @@ type
   TKMMenuResultsSP = class (TKMMenuPageCommon)
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
-    fGameResultMsg: TGameResultMsg; //So we know where to go after results screen
+    fGameResultMsg: TKMGameResultMsg; //So we know where to go after results screen
     fGameMode: TGameMode;
 
     //Story behind these seemingly superflous elements that
@@ -58,7 +58,7 @@ type
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
 
-    procedure Show(aMsg: TGameResultMsg);
+    procedure Show(aMsg: TKMGameResultMsg);
   end;
 
 
@@ -116,7 +116,7 @@ var
 
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
   G: TKMCardinalArray;
   HumanId: TKMHandIndex;
   ShowAIResults: Boolean;
@@ -274,7 +274,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsSP.Show(aMsg: TGameResultMsg);
+procedure TKMMenuResultsSP.Show(aMsg: TKMGameResultMsg);
 begin
   if aMsg <> gr_ShowStats then //Do not update game result, if we came back from MP Stats page
     fGameResultMsg := aMsg;

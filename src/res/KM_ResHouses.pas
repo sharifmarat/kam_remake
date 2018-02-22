@@ -8,7 +8,7 @@ uses
 
 
 type
-  THouseType = (ht_None, ht_Any,
+  TKMHouseType = (ht_None, ht_Any,
     ht_ArmorSmithy,     ht_ArmorWorkshop,   ht_Bakery,        ht_Barracks,      ht_Butchers,
     ht_CoalMine,        ht_Farm,            ht_FisherHut,     ht_GoldMine,      ht_Inn,
     ht_IronMine,        ht_IronSmithy,      ht_Marketplace,   ht_Metallurgists, ht_Mill,
@@ -16,7 +16,7 @@ type
     ht_Store,           ht_Swine,           ht_Tannery,       ht_TownHall,      ht_WatchTower,
     ht_WeaponSmithy,    ht_WeaponWorkshop,  ht_Wineyard,      ht_Woodcutters    );
 
-  THouseTypeSet = set of THouseType;
+  THouseTypeSet = set of TKMHouseType;
 
 const
   HOUSE_MIN = ht_ArmorSmithy;
@@ -24,7 +24,7 @@ const
   HOUSE_WORKSHOP = [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop];
 
 type
-  THouseAnim = array [THouseActionType] of TKMAnimLoop;
+  THouseAnim = array [TKMHouseActionType] of TKMAnimLoop;
 
   THouseBuildSupply = array [1..2,1..6] of packed record MoveX, MoveY: Integer; end;
   THouseSupply = array [1..4, 1..5] of SmallInt;
@@ -54,13 +54,13 @@ type
   end;
 
   THouseArea = array [1..4, 1..4] of Byte;
-  THouseRes = array [1..4] of TWareType;
+  THouseRes = array [1..4] of TKMWareType;
 
   //This class wraps KaM House info
   //it hides unused fields and adds new ones
   TKMHouseSpec = class
   private
-    fHouseType: THouseType; //Our class
+    fHouseType: TKMHouseType; //Our class
     fNameTextID: Integer;
     fHouseDat: TKMHouseDat;
     function GetArea: THouseArea;
@@ -69,13 +69,13 @@ type
     function GetHouseName: UnicodeString;
     function GetResInput: THouseRes;
     function GetResOutput: THouseRes;
-    function GetOwnerType: TUnitType;
-    function GetReleasedBy: THouseType;
+    function GetOwnerType: TKMUnitType;
+    function GetReleasedBy: TKMHouseType;
     function GetTabletIcon: Word;
     function GetSnowPic: SmallInt;
     function GetUnoccupiedMsgId: SmallInt;
   public
-    constructor Create(aHouseType: THouseType);
+    constructor Create(aHouseType: TKMHouseType);
     procedure LoadFromStream(Stream: TMemoryStream);
     //Property accessors:
     //Derived from KaM
@@ -97,14 +97,14 @@ type
     property WorkerRest:smallint read fHouseDat.WorkerRest;
     property ResProductionX:shortint read fHouseDat.ResProductionX;
     property Sight:smallint read fHouseDat.Sight;
-    property OwnerType: TUnitType read GetOwnerType;
+    property OwnerType: TKMUnitType read GetOwnerType;
     //Additional properties added by Remake
     property BuildArea: THouseArea read GetArea;
     property DoesOrders:boolean read GetDoesOrders;
     property GUIIcon:word read GetGUIIcon;
     property HouseName: UnicodeString read GetHouseName;
     property HouseNameTextID: Integer read fNameTextID;
-    property ReleasedBy: THouseType read GetReleasedBy;
+    property ReleasedBy: TKMHouseType read GetReleasedBy;
     property ResInput: THouseRes read GetResInput;
     property ResOutput: THouseRes read GetResOutput;
     property TabletIcon:word read GetTabletIcon;
@@ -126,16 +126,16 @@ type
     fBeastAnim: array [1..2,1..5,1..3] of TKMAnimLoop;
     fMarketBeastAnim: array [1..3] of TKMAnimLoop;
     function LoadHouseDat(const aPath: string): Cardinal;
-    function GetHouseDat(aType: THouseType): TKMHouseSpec; inline;
-    function GetBeastAnim(aType: THouseType; aBeast, aAge:integer): TKMAnimLoop;
+    function GetHouseDat(aType: TKMHouseType): TKMHouseSpec; inline;
+    function GetBeastAnim(aType: TKMHouseType; aBeast, aAge:integer): TKMAnimLoop;
   public
     constructor Create;
     destructor Destroy; override;
 
-    function IsValid(aType: THouseType): Boolean;
+    function IsValid(aType: TKMHouseType): Boolean;
 
-    property HouseDat[aType: THouseType]: TKMHouseSpec read GetHouseDat; default;
-    property BeastAnim[aType: THouseType; aBeast, aAge: Integer]: TKMAnimLoop read GetBeastAnim;
+    property HouseDat[aType: TKMHouseType]: TKMHouseSpec read GetHouseDat; default;
+    property BeastAnim[aType: TKMHouseType; aBeast, aAge: Integer]: TKMAnimLoop read GetBeastAnim;
     property CRC: Cardinal read fCRC; //Return hash of all values
 
     procedure ExportCSV(const aPath: string);
@@ -147,7 +147,7 @@ const
   MarketWaresOffsetX = -93;
   MarketWaresOffsetY = -88;
   MarketWareTexStart = 1724; //ID of where market ware sprites start. Allows us to relocate them easily.
-  MarketWares: array[TWareType] of record
+  MarketWares: array[TKMWareType] of record
                                          TexStart: Integer; //Tex ID for first sprite
                                          Count: Integer; //Total sprites for this resource
                                        end
@@ -191,7 +191,7 @@ const
   //These tables are used to convert between KaM script IDs and Remake enums
   HOUSE_DAT_COUNT = 30;
   //KaM scripts and HouseDat address houses in this order
-  HouseIndexToType: array [0 .. HOUSE_DAT_COUNT - 1] of THouseType = (
+  HouseIndexToType: array [0 .. HOUSE_DAT_COUNT - 1] of TKMHouseType = (
     ht_Sawmill, ht_IronSmithy, ht_WeaponSmithy, ht_CoalMine, ht_IronMine,
     ht_GoldMine, ht_FisherHut, ht_Bakery, ht_Farm, ht_Woodcutters,
     ht_ArmorSmithy, ht_Store, ht_Stables, ht_School, ht_Quary,
@@ -201,7 +201,7 @@ const
 
   //THouseType corresponds to this index in KaM scripts and libs
   //KaM scripts are 0 based, so we must use HouseTypeToIndex[H]-1 in script usage. Other cases are 1 based.
-  HouseTypeToIndex: array [THouseType] of Byte = (0, 0,
+  HouseTypeToIndex: array [TKMHouseType] of Byte = (0, 0,
     11, 21, 8, 22, 25, 4, 9, 7, 6, 28,
     5, 2, 30, 16, 23, 15, 1, 14, 24, 13, 12,
     17, 26, 19, 18, 3, 20, 29, 10);
@@ -221,7 +221,7 @@ type
     TabletSpriteId: Word; //House area WIP tablet
     Input: THouseRes;
     Output: THouseRes;
-    UnlockedByHouse: THouseType; //Which house type allows to build this house type
+    UnlockedByHouse: TKMHouseType; //Which house type allows to build this house type
     SnowSpriteId: SmallInt;
   end;
 
@@ -530,7 +530,7 @@ const
 
 
   //'This house is unoccupied' msg index
-  HouseTypeToUnoccupiedMsgIndex: array[THouseType] of ShortInt = (
+  HouseTypeToUnoccupiedMsgIndex: array[TKMHouseType] of ShortInt = (
     -1, -1,     //ut_None, ut_Any
     0,1,2,
     -1,         //ht_Barracks
@@ -548,7 +548,7 @@ const
 
 
 { TKMHouseDatClass }
-constructor TKMHouseSpec.Create(aHouseType: THouseType);
+constructor TKMHouseSpec.Create(aHouseType: TKMHouseType);
 begin
   inherited Create;
   fHouseType := aHouseType;
@@ -616,7 +616,7 @@ begin
 end;
 
 
-function TKMHouseSpec.GetOwnerType: TUnitType;
+function TKMHouseSpec.GetOwnerType: TKMUnitType;
 begin
   //fHouseDat.OwnerType is read from DAT file and is shortint, it can be out of range (i.e. -1)
   if InRange(fHouseDat.OwnerType, Low(UnitIndexToType), High(UnitIndexToType)) then
@@ -632,7 +632,7 @@ begin
 end;
 
 
-function TKMHouseSpec.GetReleasedBy: THouseType;
+function TKMHouseSpec.GetReleasedBy: TKMHouseType;
 begin
   Result := HouseDatX[fHouseType].UnlockedByHouse;
 end;
@@ -681,7 +681,7 @@ end;
 { TKMResHouses }
 constructor TKMResHouses.Create;
 
-  procedure AddAnimation(aHouse: THouseType; aAnim: THouseActionType; aMoveX, aMoveY: Integer; const aSteps: array of SmallInt);
+  procedure AddAnimation(aHouse: TKMHouseType; aAnim: TKMHouseActionType; aMoveX, aMoveY: Integer; const aSteps: array of SmallInt);
   var I: Integer;
   begin
     with fItems[aHouse].fHouseDat.Anim[aAnim] do
@@ -702,7 +702,7 @@ constructor TKMResHouses.Create;
       fMarketBeastAnim[aBeast].Step[I] := aStep[I - 1] + MarketWareTexStart - 1;
   end;
 
-var H: THouseType; I: Integer;
+var H: TKMHouseType; I: Integer;
 begin
   inherited;
 
@@ -772,7 +772,7 @@ end;
 
 
 destructor TKMResHouses.Destroy;
-var H: THouseType;
+var H: TKMHouseType;
 begin
   for H := HOUSE_MIN to HOUSE_MAX do
     FreeAndNil(fItems[H]);
@@ -781,19 +781,19 @@ begin
 end;
 
 
-function TKMResHouses.GetHouseDat(aType: THouseType): TKMHouseSpec;
+function TKMResHouses.GetHouseDat(aType: TKMHouseType): TKMHouseSpec;
 begin
   Result := fItems[aType];
 end;
 
 
-function TKMResHouses.IsValid(aType: THouseType): Boolean;
+function TKMResHouses.IsValid(aType: TKMHouseType): Boolean;
 begin
   Result := aType in [HOUSE_MIN..HOUSE_MAX];
 end;
 
 
-function TKMResHouses.GetBeastAnim(aType: THouseType; aBeast, aAge: Integer): TKMAnimLoop;
+function TKMResHouses.GetBeastAnim(aType: TKMHouseType; aBeast, aAge: Integer): TKMAnimLoop;
 begin
   Assert(aType in [ht_Swine, ht_Stables, ht_Marketplace]);
   Assert(InRange(aBeast, 1, 5));
@@ -837,7 +837,7 @@ end;
 
 procedure TKMResHouses.ExportCSV(const aPath: string);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   S: string;
   SL: TStringList;
   I, K: Integer;

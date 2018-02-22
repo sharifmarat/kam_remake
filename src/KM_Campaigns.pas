@@ -12,7 +12,7 @@ const
   MAX_CAMP_NODES = 64;
 
 type
-  TBriefingCorner = (bcBottomRight, bcBottomLeft);
+  TKMBriefingCorner = (bcBottomRight, bcBottomLeft);
   //Unique campaign identification, stored as 3 ANSI letters (TSK, TPR, etc)
   //3 bytes are used to avoid string types issues
   TKMCampaignId = array [0..2] of Byte;
@@ -37,7 +37,7 @@ type
       Flag: TKMPointW;
       NodeCount: Byte;
       Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
-      TextPos: TBriefingCorner;
+      TextPos: TKMBriefingCorner;
     end;
     constructor Create;
     destructor Destroy; override;
@@ -377,7 +377,7 @@ begin
     M.Read(Maps[I].NodeCount);
     for K := 0 to Maps[I].NodeCount - 1 do
       M.Read(Maps[I].Nodes[K]);
-    M.Read(Maps[I].TextPos, SizeOf(TBriefingCorner));
+    M.Read(Maps[I].TextPos, SizeOf(TKMBriefingCorner));
   end;
 
   M.Free;
@@ -411,7 +411,7 @@ begin
       //Inc(Maps[I].Nodes[K].Y, 5);
       M.Write(Maps[I].Nodes[K]);
     end;
-    M.Write(Maps[I].TextPos, SizeOf(TBriefingCorner));
+    M.Write(Maps[I].TextPos, SizeOf(TKMBriefingCorner));
   end;
 
   M.SaveToFile(aFileName);

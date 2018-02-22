@@ -20,7 +20,7 @@ type
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
     NotAcceptRecruitFlag: Boolean;
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure SyncLoad; override;
@@ -28,19 +28,19 @@ type
 
     procedure Activate(aWasBuilt: Boolean); override;
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    function CheckResIn(aWare: TWareType): Word; override;
-    function ResCanAddToIn(aRes: TWareType): Boolean; override;
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    function CheckResIn(aWare: TKMWareType): Word; override;
+    function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
 
-    function ResOutputAvailable(aRes: TWareType; const aCount: Word): Boolean; override;
-    function CanEquip(aUnitType: TUnitType): Boolean;
+    function ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean; override;
+    function CanEquip(aUnitType: TKMUnitType): Boolean;
     function RecruitsCount: Integer;
     procedure RecruitsAdd(aUnit: Pointer);
     procedure RecruitsRemove(aUnit: Pointer);
-    procedure ToggleAcceptFlag(aRes: TWareType);
+    procedure ToggleAcceptFlag(aRes: TKMWareType);
     procedure ToggleAcceptRecruits;
-    function Equip(aUnitType: TUnitType; aCount: Byte): Byte;
+    function Equip(aUnitType: TKMUnitType; aCount: Byte): Byte;
     procedure CreateRecruitInside(aIsMapEd: Boolean);
   end;
 
@@ -54,7 +54,7 @@ uses
 
 
 { TKMHouseBarracks }
-constructor TKMHouseBarracks.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseBarracks.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 
@@ -101,7 +101,7 @@ end;
 procedure TKMHouseBarracks.Activate(aWasBuilt: Boolean);
 var
   FirstBarracks: TKMHouseBarracks;
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   inherited;
   //A new Barracks should inherit the accept properies of the first Barracks of that player,
@@ -118,7 +118,7 @@ end;
 
 procedure TKMHouseBarracks.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
 var
-  R: TWareType;
+  R: TKMWareType;
 begin
   //Recruits are no longer under our control so we forget about them (UpdateVisibility will sort it out)
   //Otherwise it can cause crashes while saving under the right conditions when a recruit is then killed.
@@ -149,7 +149,7 @@ begin
 end;
 
 
-procedure TKMHouseBarracks.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+procedure TKMHouseBarracks.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 var
   OldCnt: Integer;
 begin
@@ -161,13 +161,13 @@ begin
 end;
 
 
-function TKMHouseBarracks.ResCanAddToIn(aRes: TWareType): Boolean;
+function TKMHouseBarracks.ResCanAddToIn(aRes: TKMWareType): Boolean;
 begin
   Result := (aRes in [WARFARE_MIN..WARFARE_MAX]);
 end;
 
 
-function TKMHouseBarracks.CheckResIn(aWare: TWareType): Word;
+function TKMHouseBarracks.CheckResIn(aWare: TKMWareType): Word;
 begin
   if aWare in [WARFARE_MIN..WARFARE_MAX] then
     Result := fResourceCount[aWare]
@@ -176,7 +176,7 @@ begin
 end;
 
 
-procedure TKMHouseBarracks.ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouseBarracks.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
   if aFromScript then
   begin
@@ -192,14 +192,14 @@ begin
 end;
 
 
-function TKMHouseBarracks.ResOutputAvailable(aRes: TWareType; const aCount: Word): Boolean;
+function TKMHouseBarracks.ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
   Result := (fResourceCount[aRes] >= aCount);
 end;
 
 
-procedure TKMHouseBarracks.ToggleAcceptFlag(aRes: TWareType);
+procedure TKMHouseBarracks.ToggleAcceptFlag(aRes: TKMWareType);
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
 
@@ -219,7 +219,7 @@ begin
 end;
 
 
-function TKMHouseBarracks.CanEquip(aUnitType: TUnitType): Boolean;
+function TKMHouseBarracks.CanEquip(aUnitType: TKMUnitType): Boolean;
 var
   I: Integer;
 begin
@@ -234,7 +234,7 @@ end;
 
 //Equip a new soldier and make him walk out of the house
 //Return the number of units successfully equipped
-function TKMHouseBarracks.Equip(aUnitType: TUnitType; aCount: Byte): Byte;
+function TKMHouseBarracks.Equip(aUnitType: TKMUnitType; aCount: Byte): Byte;
 var
   I, K: Integer;
   Soldier: TKMUnitWarrior;

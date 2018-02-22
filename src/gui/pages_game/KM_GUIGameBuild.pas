@@ -127,7 +127,7 @@ procedure TKMGUIGameBuild.Build_ButtonClick(Sender: TObject);
   end;
 var
   I: Integer;
-  house: THouseType;
+  house: TKMHouseType;
   houseDat: TKMHouseSpec;
 begin
   if Sender = nil then
@@ -160,7 +160,7 @@ begin
     SetCost(cmWine, 0, 336, 1, 0, gResTexts[TX_BUILD_WINE])
   else
   begin
-    house := THouseType(TKMButton(Sender).Tag);
+    house := TKMHouseType(TKMButton(Sender).Tag);
     houseDat := gRes.Houses[house];
     SetCost(cmHouses, Byte(house), houseDat.GUIIcon, houseDat.WoodCost, houseDat.StoneCost, houseDat.HouseName);
   end;

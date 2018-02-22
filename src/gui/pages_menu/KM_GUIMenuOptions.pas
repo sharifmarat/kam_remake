@@ -15,8 +15,8 @@ type
 
     fOnPageChange: TGUIEventText; // will be in ancestor class
 
-    fMainSettings: TMainSettings;
-    fGameSettings: TGameSettings;
+    fMainSettings: TKMainSettings;
+    fGameSettings: TKMGameSettings;
     fResolutions: TKMResolutions;
 
     // We remember old values to enable/disable "Apply" button dynamicaly

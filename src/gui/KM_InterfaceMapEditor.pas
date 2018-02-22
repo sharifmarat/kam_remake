@@ -134,7 +134,7 @@ uses
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters, KM_ResHouses, KM_Utils;
 
 const
-  GROUP_IMG: array [TGroupType] of Word = (
+  GROUP_IMG: array [TKMGroupType] of Word = (
     371, 374,
     376, 377);
 
@@ -934,7 +934,7 @@ end;
 
 //Start drag house move mode (with cursor mode cmHouse)
 procedure TKMapEdInterface.DragHouseModeStart(aHouseNewPos: TKMPoint; aHouseOldPos: TKMPoint);
-  procedure SetCursorModeHouse(aHouseType: THouseType);
+  procedure SetCursorModeHouse(aHouseType: TKMHouseType);
   begin
     gGameCursor.Mode := cmHouses;
     gGameCursor.Tag1 := Byte(aHouseType);
@@ -1227,14 +1227,14 @@ const
   DefenceLine: array [TAIDefencePosType] of Cardinal = ($FF80FF00, $FFFF8000);
 var
   I, K: Integer;
-  R: TRawDeposit;
+  R: TKMRawDeposit;
   DP: TAIDefencePosition;
   LocF: TKMPointF;
   ScreenLoc: TKMPoint;
 begin
   if mlDeposits in gGame.MapEditor.VisibleLayers then
   begin
-    for R := Low(TRawDeposit) to High(TRawDeposit) do
+    for R := Low(TKMRawDeposit) to High(TKMRawDeposit) do
       for I := 0 to gGame.MapEditor.Deposits.Count[R] - 1 do
       //Ignore water areas with 0 fish in them
       if gGame.MapEditor.Deposits.Amount[R, I] > 0 then

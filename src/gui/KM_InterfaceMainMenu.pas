@@ -54,8 +54,8 @@ type
     destructor Destroy; override;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    procedure ShowResultsMP(aMsg: TGameResultMsg);
-    procedure ShowResultsSP(aMsg: TGameResultMsg);
+    procedure ShowResultsMP(aMsg: TKMGameResultMsg);
+    procedure ShowResultsSP(aMsg: TKMGameResultMsg);
     function GetChatState: TChatState;
     procedure SetChatState(const aChatState: TChatState);
     procedure ExportPages(const aPath: string); override;
@@ -196,13 +196,13 @@ begin
 end;
 
 
-procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TGameResultMsg);
+procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TKMGameResultMsg);
 begin
   fMenuResultsMP.Show(aMsg);
 end;
 
 
-procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TGameResultMsg);
+procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TKMGameResultMsg);
 begin
   fMenuResultsSP.Show(aMsg);
 end;

@@ -74,11 +74,11 @@ type
 
     procedure ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcFieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcHouseAfterDestroyed(aHouseType: THouseType; aOwner: TKMHandIndex; aX, aY: Word);
+    procedure ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandIndex; aX, aY: Word);
     procedure ProcHouseBuilt(aHouse: TKMHouse);
     procedure ProcHousePlanDigged(aHouse: Integer);
-    procedure ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: THouseType);
-    procedure ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: THouseType);
+    procedure ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
+    procedure ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
     procedure ProcHouseDamaged(aHouse: TKMHouse; aAttacker: TKMUnit);
     procedure ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandIndex);
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
@@ -86,7 +86,7 @@ type
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
     procedure ProcGroupOrderLink(aGroup1, aGroup2: TKMUnitGroup);
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
-    procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TWareType);
+    procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
     procedure ProcMissionStart;
     procedure ProcPlanRoadDigged(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcPlanRoadPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
@@ -100,12 +100,12 @@ type
     procedure ProcPlayerVictory(aPlayer: TKMHandIndex);
     procedure ProcRoadBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
     procedure ProcTick;
-    procedure ProcUnitAfterDied(aUnitType: TUnitType; aOwner: TKMHandIndex; aX, aY: Word);
+    procedure ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandIndex; aX, aY: Word);
     procedure ProcUnitAttacked(aUnit, aAttacker: TKMUnit);
     procedure ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandIndex);
     procedure ProcUnitTrained(aUnit: TKMUnit);
     procedure ProcUnitWounded(aUnit, aAttacker: TKMUnit);
-    procedure ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
+    procedure ProcWareProduced(aHouse: TKMHouse; aType: TKMWareType; aCount: Word);
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
     procedure ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
     procedure ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
@@ -272,7 +272,7 @@ end;
 
 //* Version: 6216
 //* Occurs when a trade happens in a market (at the moment when resources are exchanged by serfs).
-procedure TKMScriptEvents.ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TWareType);
+procedure TKMScriptEvents.ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
 begin
   if MethodAssigned(fProcMarketTrade) then
   begin
@@ -353,7 +353,7 @@ end;
 //* Occurs after a house is destroyed and has been completely removed from the game,
 //* meaning the area it previously occupied can be used.
 //* If you need more information about the house use the OnHouseDestroyed event.
-procedure TKMScriptEvents.ProcHouseAfterDestroyed(aHouseType: THouseType; aOwner: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandIndex; aX, aY: Word);
 begin
   if MethodAssigned(fProcHouseAfterDestroyed) then
     DoProc(fProcHouseAfterDestroyed, [HouseTypeToIndex[aHouseType] - 1, aOwner, aX, aY]);
@@ -371,7 +371,7 @@ end;
 
 //* Version: 5871
 //* Occurs when player has placed a house plan.
-procedure TKMScriptEvents.ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: THouseType);
+procedure TKMScriptEvents.ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
 begin
   if MethodAssigned(fProcHousePlanPlaced) then
     DoProc(fProcHousePlanPlaced, [aPlayer, aX + gRes.Houses[aType].EntranceOffsetX, aY, HouseTypeToIndex[aType] - 1]);
@@ -380,7 +380,7 @@ end;
 
 //* Version: 6298
 //* Occurs when player has removed a house plan.
-procedure TKMScriptEvents.ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: THouseType);
+procedure TKMScriptEvents.ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
 begin
   if MethodAssigned(fProcHousePlanRemoved) then
     DoProc(fProcHousePlanRemoved, [aPlayer, aX + gRes.Houses[aType].EntranceOffsetX, aY, HouseTypeToIndex[aType] - 1]);
@@ -480,7 +480,7 @@ end;
 //* Occurs after a unit has died and has been completely removed from the game, meaning the tile it previously occupied can be used.
 //* If you need more information about the unit use the OnUnitDied event.
 //* Note: Because units have a death animation there is a delay of several ticks between OnUnitDied and OnUnitAfterDied.
-procedure TKMScriptEvents.ProcUnitAfterDied(aUnitType: TUnitType; aOwner: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandIndex; aX, aY: Word);
 begin
   if MethodAssigned(fProcUnitAfterDied) then
     DoProc(fProcUnitAfterDied, [UnitTypeToIndex[aUnitType], aOwner, aX, aY]);
@@ -665,7 +665,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when resource is produced for specified house.
-procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TWareType; aCount: Word);
+procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TKMWareType; aCount: Word);
 begin
   if MethodAssigned(fProcWareProduced) then
   begin

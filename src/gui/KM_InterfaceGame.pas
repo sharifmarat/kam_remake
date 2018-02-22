@@ -62,7 +62,7 @@ const
   // naming collisions and confusion in discussions
 
   GUI_HOUSE_COUNT = 28;   // Number of KaM houses to show in GUI
-  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of THouseType = (
+  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of TKMHouseType = (
     ht_School, ht_Inn, ht_Quary, ht_Woodcutters, ht_Sawmill,
     ht_Farm, ht_Mill, ht_Bakery, ht_Swine, ht_Butchers,
     ht_Wineyard, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_WeaponWorkshop,
@@ -72,13 +72,13 @@ const
 
   // Template for how resources are shown in Barracks
   BARRACKS_RES_COUNT = 11;
-  BarracksResType: array [1..BARRACKS_RES_COUNT] of TWareType =
+  BarracksResType: array [1..BARRACKS_RES_COUNT] of TKMWareType =
     (wt_Shield, wt_MetalShield, wt_Armor, wt_MetalArmor, wt_Axe, wt_Sword,
      wt_Pike, wt_Hallebard, wt_Bow, wt_Arbalet, wt_Horse);
 
   // Layout of resources in Store
   STORE_RES_COUNT = 28;
-  StoreResType: array [1..STORE_RES_COUNT] of TWareType =
+  StoreResType: array [1..STORE_RES_COUNT] of TKMWareType =
     (wt_Trunk,    wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
      wt_Coal,     wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
      wt_Bread,    wt_Flour,   wt_Leather,     wt_Sausages,  wt_Pig,
@@ -86,23 +86,23 @@ const
      wt_Axe,      wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
      wt_Arbalet,  wt_Horse,   wt_Fish);
 
-  School_Order: array [0..13] of TUnitType = (
+  School_Order: array [0..13] of TKMUnitType = (
     ut_Serf, ut_Worker, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Fisher, ut_Farmer, ut_Baker, ut_AnimalBreeder, ut_Butcher,
     ut_Miner, ut_Metallurgist, ut_Smith, ut_Recruit);
 
-  Barracks_Order: array [0..8] of TUnitType = (
+  Barracks_Order: array [0..8] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry);
 
-  TownHall_Order: array [0..5] of TUnitType = (
+  TownHall_Order: array [0..5] of TKMUnitType = (
     ut_Peasant, ut_Militia, ut_Slingshot, ut_Horseman, ut_Barbarian, ut_MetalBarbarian);
 
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
   StatPlan: array [0..STATS_LINES_CNT-1] of record
-    HouseType: array [0..3] of THouseType;
-    UnitType: array [0..1] of TUnitType;
+    HouseType: array [0..3] of TKMHouseType;
+    UnitType: array [0..1] of TKMUnitType;
   end = (
     (HouseType: (ht_Quary, ht_None, ht_None, ht_None); UnitType: (ut_StoneCutter, ut_None)),
     (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None); UnitType: (ut_Woodcutter, ut_None)),
@@ -119,7 +119,7 @@ const
     (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace); UnitType: (ut_Serf, ut_Worker))
     );
 
-  MapEd_Order: array [0..13] of TUnitType = (
+  MapEd_Order: array [0..13] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry, ut_Barbarian,
     ut_Peasant, ut_Slingshot, ut_MetalBarbarian, ut_Horseman);
@@ -129,7 +129,7 @@ const
     66, 67, 68, 69, 70,
     79, 80, 81, 82);
 
-  Animal_Order: array [0..7] of TUnitType = (
+  Animal_Order: array [0..7] of TKMUnitType = (
     ut_Wolf, ut_Fish,        ut_Watersnake, ut_Seastar,
     ut_Crab, ut_Waterflower, ut_Waterleaf,  ut_Duck);
 

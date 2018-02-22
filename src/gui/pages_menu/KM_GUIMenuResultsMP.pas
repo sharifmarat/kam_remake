@@ -23,13 +23,13 @@ type
   TKMChartWarrior = class
   private
     fType: TKMChartWarriorType;
-    fUnitType: TUnitType;
-    function GetUnitType: TUnitType;
+    fUnitType: TKMUnitType;
+    function GetUnitType: TKMUnitType;
     function GetGUIName: UnicodeString;
     function GetGUIIcon: Word;
   public
     constructor Create(aType: TKMChartWarriorType);
-    property UnitType: TUnitType read GetUnitType;
+    property UnitType: TKMUnitType read GetUnitType;
     property GUIName: UnicodeString read GetGUIName;
     property GUIIcon: Word read GetGUIIcon;
     function HasUnitType: Boolean;
@@ -59,7 +59,7 @@ type
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
 
-    fGameResultMsg: TGameResultMsg; //So we know where to go after results screen
+    fGameResultMsg: TKMGameResultMsg; //So we know where to go after results screen
     fPlayersVisibleWares: array [0 .. MAX_HANDS - 1] of Boolean;  //Remember visible players when toggling wares
     fPlayersVisibleArmy: array [0 .. MAX_HANDS - 1] of Boolean;   //Remember visible players when toggling warriors
     fGameResultCaption: String;
@@ -83,7 +83,7 @@ type
     procedure BackClick(Sender: TObject);
     function DoAdjoinSameColorHand(aHandId: Integer): Boolean;
     function GetSelectedChartArmyKind: TKMChartArmyKind;
-    function GetChartWares(aPlayer: TKMHandIndex; aWare: TWareType; aUseGDP: Boolean): TKMCardinalArray;
+    function GetChartWares(aPlayer: TKMHandIndex; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
     function DoShowHandStats(aHandId: Integer): Boolean;
 
     procedure Create_ResultsMP(aParent: TKMPanel);
@@ -135,7 +135,7 @@ type
       Panel_ChartsWares: TKMPanel;
         Columnbox_Wares: TKMColumnBox;    //columnBox for Quantities charts
         Columnbox_WaresGDP: TKMColumnBox; //columnBox for GDP charts
-        Charts_Wares: array[TKMStatType] of array[TWareType] of TKMChart; //One for each kind
+        Charts_Wares: array[TKMStatType] of array[TKMWareType] of TKMChart; //One for each kind
         Charts_WaresGDP: array[TKMStatType] of array [0..2] of TKMChart;
         Label_NoWareData: TKMLabel;
         Panel_ChartWare_Type: TKMPanel;
@@ -151,7 +151,7 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
     destructor Destroy; override;
 
-    procedure Show(aMsg: TGameResultMsg);
+    procedure Show(aMsg: TKMGameResultMsg);
   end;
 
 
@@ -179,10 +179,10 @@ const
     5.3, 2.1        // ut_MetalBarbarian, ut_Horseman
   );
 
-  GDPWares: array [0..2] of TWareType = (wt_All, wt_Warfare, wt_Food);
+  GDPWares: array [0..2] of TKMWareType = (wt_All, wt_Warfare, wt_Food);
 
 
-function GetWareIdInGDPArr(aWare: TWareType): Integer;
+function GetWareIdInGDPArr(aWare: TKMWareType): Integer;
 var
   I: Integer;
 begin
@@ -218,12 +218,12 @@ begin
   fType := aType;
   case aType of
     cwt_All:                    fUnitType := ut_Any;
-    cwt_Militia..cwt_Horseman:  fUnitType := TUnitType(Ord(ut_Militia) + Ord(aType) - Ord(cwt_Militia));
+    cwt_Militia..cwt_Horseman:  fUnitType := TKMUnitType(Ord(ut_Militia) + Ord(aType) - Ord(cwt_Militia));
   end;
 end;
 
 
-function TKMChartWarrior.GetUnitType: TUnitType;
+function TKMChartWarrior.GetUnitType: TKMUnitType;
 begin
   Assert(HasUnitType, 'ArmyPower has no UnitType match');
   Result := fUnitType;
@@ -290,7 +290,7 @@ end;
 
 function TKMChartArmyMP.GetArmyPowerChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
 var
-  WT: TUnitType;
+  WT: TKMUnitType;
   I, ChartCnt: Integer;
   Value: Single;
 begin
@@ -498,7 +498,7 @@ const
   WARES_TYPE_HEIGHT = 80;
 var
   I: Integer;
-  W: TWareType;
+  W: TKMWareType;
   ST: TKMStatType;
 begin
   Panel_ChartsWares := TKMPanel.Create(aParent, RESULTS_X_PADDING, PANES_TOP, aParent.Width - 2*RESULTS_X_PADDING, CHART_HEIGHT);
@@ -511,7 +511,7 @@ begin
 
     for ST := Low(TKMStatType) to High(TKMStatType) do
     begin
-      for W := Low(TWareType) to High(TWareType) do
+      for W := Low(TKMWareType) to High(TKMWareType) do
       begin
         Charts_Wares[ST,W] := TKMChart.Create(Panel_ChartsWares, 140, 0, Panel_ChartsWares.Width - 140, CHART_HEIGHT);
         SetupWareChart(Charts_Wares[ST,W], ST);
@@ -834,7 +834,7 @@ procedure TKMMenuResultsMP.WareUpdate(Sender: TObject);
       aChartToFind.Visible := False;
     end;
   var
-    W: TWareType;
+    W: TKMWareType;
     I: Integer;
     ST: TKMStatType;
   begin
@@ -844,7 +844,7 @@ procedure TKMMenuResultsMP.WareUpdate(Sender: TObject);
       for I := Low(GDPWares) to High(GDPWares) do
         CheckChart(Charts_WaresGDP[ST,I]);
 
-      for W := Low(TWareType) to High(TWareType) do
+      for W := Low(TKMWareType) to High(TKMWareType) do
         CheckChart(Charts_Wares[ST,W]);
     end;
 
@@ -857,7 +857,7 @@ procedure TKMMenuResultsMP.WareUpdate(Sender: TObject);
 
 var
   K, WareInGdpI: Integer;
-  W: TWareType;
+  W: TKMWareType;
   ST: TKMStatType;
 begin
   //Hide everything if no selection in columnbox
@@ -870,7 +870,7 @@ begin
     Panel_ChartWare_Type.Hide;
     for ST := Low(TKMStatType) to High(TKMStatType) do
     begin
-      for W := Low(TWareType) to High(TWareType) do
+      for W := Low(TKMWareType) to High(TKMWareType) do
         Charts_Wares[ST,W].Hide;
       for K := Low(GDPWares) to High(GDPWares) do
         Charts_WaresGDP[ST,K].Hide;
@@ -886,7 +886,7 @@ begin
           if (Sender = Radio_ChartWareType) and Columnbox_WaresGDP.IsSelected then
             Columnbox_Wares.ItemIndex := Columnbox_WaresGDP.ItemIndex;
 
-          W := TWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
+          W := TKMWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
           ChangeWareChart(Charts_Wares[fStatType, W], False);
 
           Columnbox_WaresGDP.Hide;
@@ -895,7 +895,7 @@ begin
     1:  begin // GDP chart
           if (Sender = Radio_ChartWareType) then
           begin
-            W := TWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
+            W := TKMWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
             WareInGdpI := GetWareIdInGDPArr(W);
             if Columnbox_Wares.IsSelected and InRange(WareInGdpI, 0, 2) then
               Columnbox_WaresGDP.ItemIndex := Columnbox_Wares.ItemIndex
@@ -1371,7 +1371,7 @@ procedure TKMMenuResultsMP.ReinitChartWares;
 const
   WARES_CNT = 31;
 
-  Wares: array [0..WARES_CNT-1] of TWareType = (
+  Wares: array [0..WARES_CNT-1] of TKMWareType = (
     wt_All,     wt_Warfare, wt_Food,
     wt_Trunk,   wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
     wt_Coal,    wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
@@ -1380,7 +1380,7 @@ const
     wt_Axe,     wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
     wt_Arbalet, wt_Horse,   wt_Fish);
 
-  procedure RefreshChart(aStatType: TKMStatType; W: TWareType; aChart: PKMChart; aUseGDP: Boolean);
+  procedure RefreshChart(aStatType: TKMStatType; W: TKMWareType; aChart: PKMChart; aUseGDP: Boolean);
   var
     I, K, HandId: Integer;
     PlayersList: TStringList;
@@ -1417,7 +1417,7 @@ const
 
 var
   I,K,J,WareInGDP: Integer;
-  W: TWareType;
+  W: TKMWareType;
   ListRow: TKMListRow;
   ST: TKMStatType;
 begin
@@ -1449,7 +1449,7 @@ begin
   for ST := Low(TKMStatType) to High(TKMStatType) do
     for J := 0 to Columnbox_Wares.RowCount - 1 do
     begin
-      W := TWareType(Columnbox_Wares.Rows[J].Tag);
+      W := TKMWareType(Columnbox_Wares.Rows[J].Tag);
 
       RefreshChart(ST, W, @Charts_Wares[ST, W], False);
       WareInGDP := GetWareIdInGDPArr(W);
@@ -1637,12 +1637,12 @@ begin
 end;
 
 
-function TKMMenuResultsMP.GetChartWares(aPlayer: TKMHandIndex; aWare: TWareType; aUseGDP: Boolean): TKMCardinalArray;
+function TKMMenuResultsMP.GetChartWares(aPlayer: TKMHandIndex; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
 const
-  FoodWares: array[0..3] of TWareType = (wt_Bread, wt_Sausages, wt_Wine, wt_Fish);
+  FoodWares: array[0..3] of TKMWareType = (wt_Bread, wt_Sausages, wt_Wine, wt_Fish);
   FoodWaresRestore: array[0..3] of Single = (BREAD_RESTORE,SAUSAGE_RESTORE,WINE_RESTORE,FISH_RESTORE);
 var
-  RT: TWareType;
+  RT: TKMWareType;
   I,J: Integer;
   TempResult: Single;
 begin
@@ -1695,7 +1695,7 @@ begin
 end;
 
 
-procedure TKMMenuResultsMP.Show(aMsg: TGameResultMsg);
+procedure TKMMenuResultsMP.Show(aMsg: TKMGameResultMsg);
 begin
   fGameResultMsg := aMsg;
 

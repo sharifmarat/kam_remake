@@ -87,7 +87,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockUnitClick(Sender: TObject);
 var
   I: Integer;
-  U: TUnitType;
+  U: TKMUnitType;
 begin
   I := TKMButtonFlat(Sender).Tag;
   U := School_Order[I];
@@ -101,7 +101,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockBarracksWarriorsClick(Sender: TObject);
 var
   K: Integer;
-  W: TUnitType;
+  W: TKMUnitType;
 begin
   K := TKMButtonFlat(Sender).Tag;
   W := Barracks_Order[K];
@@ -115,7 +115,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockTHWarriorsClick(Sender: TObject);
 var
   K: Integer;
-  W: TUnitType;
+  W: TKMUnitType;
 begin
   K := TKMButtonFlat(Sender).Tag;
   W := TownHall_Order[K];
@@ -129,7 +129,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockUnitRefresh;
 var
   I: Integer;
-  U: TUnitType;
+  U: TKMUnitType;
   Blocked: Boolean;
 begin
   for I := 0 to 13 do
@@ -149,7 +149,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockBarracksWarriorsRefresh;
 var
   K: Integer;
-  W: TUnitType;
+  W: TKMUnitType;
   Blocked: Boolean;
 begin
   for K := 0 to High(Barracks_Order) do
@@ -169,7 +169,7 @@ end;
 procedure TKMMapEdPlayerBlockUnit.Player_BlockTHWarriorsRefresh;
 var
   K: Integer;
-  W: TUnitType;
+  W: TKMUnitType;
   Blocked: Boolean;
 begin
   for K := 0 to High(TownHall_Order) do

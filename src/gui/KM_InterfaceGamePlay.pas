@@ -42,7 +42,7 @@ type
     fLastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
     fLastBeaconTime: Cardinal; //Last time a beacon was sent to enforce cooldown
     fShownMessage: Integer;
-    fPlayMoreMsg: TGameResultMsg; // Remember which message we are showing
+    fPlayMoreMsg: TKMGameResultMsg; // Remember which message we are showing
     fPlacingBeacon: Boolean;
     fNetWaitDropPlayersDelayStarted: Cardinal;
     SelectedDirection: TKMDirection;
@@ -257,8 +257,8 @@ type
     procedure MessageIssue(aKind: TKMMessageKind; const aText: UnicodeString; aLoc: TKMPoint); overload;
     procedure SetMenuState(aTactic: Boolean);
     procedure ShowClock(aSpeed: Single);
-    procedure ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
-    procedure ShowMPPlayMore(Msg: TGameResultMsg);
+    procedure ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
+    procedure ShowMPPlayMore(Msg: TKMGameResultMsg);
     procedure ShowNetworkLag(aShow: Boolean; aPlayers: TKMByteArray; IsHost: Boolean);
     procedure SetScriptedOverlay(const aText: UnicodeString);
     procedure UpdateOverlayControls;
@@ -2094,7 +2094,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
+procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
 begin
   ReleaseDirectionSelector;
   fPlayMoreMsg := Msg;
@@ -2121,7 +2121,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowMPPlayMore(Msg: TGameResultMsg);
+procedure TKMGamePlayInterface.ShowMPPlayMore(Msg: TKMGameResultMsg);
 begin
   ReleaseDirectionSelector;
   fPlayMoreMsg := Msg;
@@ -2956,7 +2956,7 @@ end;
 // 1. Process Controls
 // 2. Show SelectingTroopDirection
 procedure TKMGamePlayInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
-  procedure HandleFieldLMBDown(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDown(P: TKMPoint; aFieldType: TKMFieldType);
   begin
     if gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType) then
     begin
@@ -3055,7 +3055,7 @@ end;
 // 2. Perform SelectingTroopDirection if it is active
 // 3. Display various cursors depending on whats below (might be called often)
 procedure TKMGamePlayInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
-  procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TKMFieldType);
   begin
     if not KMSamePoint(fLastDragPoint, P) then
       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmPlan)) then
@@ -3349,9 +3349,9 @@ begin
             cmWine:  gGameCursor.Tag1 := Ord(cfmNone);
 
             cmHouses:
-              if gMySpectator.Hand.CanAddHousePlan(P, THouseType(gGameCursor.Tag1)) then
+              if gMySpectator.Hand.CanAddHousePlan(P, TKMHouseType(gGameCursor.Tag1)) then
               begin
-                gGame.GameInputProcess.CmdBuild(gic_BuildHousePlan, P, THouseType(gGameCursor.Tag1));
+                gGame.GameInputProcess.CmdBuild(gic_BuildHousePlan, P, TKMHouseType(gGameCursor.Tag1));
                 // If shift pressed do not reset cursor (keep selected building)
                 if not (ssShift in Shift) then
                   fGuiGameBuild.Show;

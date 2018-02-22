@@ -7,7 +7,7 @@ uses
 
 
 type
-  TMapsSortMethod = (
+  TKMapsSortMethod = (
     smByFavouriteAsc, smByFavouriteDesc,
     smByNameAsc, smByNameDesc,
     smBySizeAsc, smBySizeDesc,
@@ -17,13 +17,13 @@ type
     smByModeAsc, smByModeDesc);
 
   TKMapInfo = class;
-  TMapEvent = procedure (aMap: TKMapInfo) of object;
+  TKMapEvent = procedure (aMap: TKMapInfo) of object;
   TKMMapInfoAmount = (iaBase, iaExtra);
 
   TKMMapGoalInfo = packed record
-    Cond: TGoalCondition;
+    Cond: TKMGoalCondition;
     Play: TKMHandIndex;
-    Stat: TGoalStatus;
+    Stat: TKMGoalStatus;
   end;
 
   TKMMapTxtInfo = class
@@ -60,7 +60,7 @@ type
     fDatCRC: Cardinal; //Used to speed up scanning
     fVersion: AnsiString; //Savegame version, yet unused in maps, they always have actual version
     fInfoAmount: TKMMapInfoAmount;
-    fMapFolder: TMapFolder;
+    fMapFolder: TKMapFolder;
     fTxtInfo: TKMMapTxtInfo;
     fSizeText: String;
     procedure ResetInfo;
@@ -80,20 +80,20 @@ type
     GoalsVictoryCount, GoalsSurviveCount: array [0..MAX_HANDS-1] of Byte;
     GoalsVictory: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
     GoalsSurvive: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
-    Alliances: array [0..MAX_HANDS-1, 0..MAX_HANDS-1] of TAllianceType;
+    Alliances: array [0..MAX_HANDS-1, 0..MAX_HANDS-1] of TKMAllianceType;
     FlagColors: array [0..MAX_HANDS-1] of Cardinal;
     IsFavourite: Boolean;
 
-    constructor Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TMapFolder); overload;
+    constructor Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TKMapFolder); overload;
     destructor Destroy; override;
 
-    procedure AddGoal(aType: TGoalType; aPlayer: TKMHandIndex; aCondition: TGoalCondition; aStatus: TGoalStatus; aPlayerIndex: TKMHandIndex);
+    procedure AddGoal(aType: TKMGoalType; aPlayer: TKMHandIndex; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandIndex);
     procedure LoadExtra;
 
     property TxtInfo: TKMMapTxtInfo read fTxtInfo;
     property InfoAmount: TKMMapInfoAmount read fInfoAmount;
     property Path: string read fPath;
-    property MapFolder: TMapFolder read fMapFolder;
+    property MapFolder: TKMapFolder read fMapFolder;
     property FileName: UnicodeString read fFileName;
     function FullPath(const aExt: string): string;
     function HumanUsableLocations: TKMHandIndexArray;
@@ -119,30 +119,30 @@ type
 
   TTCustomMapsScanner = class(TThread)
   private
-    fMapFolders: TMapFolderSet;
+    fMapFolders: TKMapFolderSet;
     fOnComplete: TNotifyEvent;
-    procedure ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder); virtual; abstract;
+    procedure ProcessMap(const aPath: UnicodeString; aFolder: TKMapFolder); virtual; abstract;
   public
-    constructor Create(aMapFolders: TMapFolderSet; aOnComplete: TNotifyEvent = nil);
+    constructor Create(aMapFolders: TKMapFolderSet; aOnComplete: TNotifyEvent = nil);
     procedure Execute; override;
   end;
 
   TTMapsScanner = class(TTCustomMapsScanner)
   private
-    fOnMapAdd: TMapEvent;
+    fOnMapAdd: TKMapEvent;
     fOnMapAddDone: TNotifyEvent;
-    procedure ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder); override;
+    procedure ProcessMap(const aPath: UnicodeString; aFolder: TKMapFolder); override;
   public
-    constructor Create(aMapFolders: TMapFolderSet; aOnMapAdd: TMapEvent; aOnMapAddDone, aOnTerminate: TNotifyEvent; aOnComplete: TNotifyEvent = nil);
+    constructor Create(aMapFolders: TKMapFolderSet; aOnMapAdd: TKMapEvent; aOnMapAddDone, aOnTerminate: TNotifyEvent; aOnComplete: TNotifyEvent = nil);
   end;
 
   TTMapsCacheUpdater = class(TTCustomMapsScanner)
   private
     fIsStopped: Boolean;
-    procedure ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder); override;
+    procedure ProcessMap(const aPath: UnicodeString; aFolder: TKMapFolder); override;
   public
     procedure Stop;
-    constructor Create(aMapFolders: TMapFolderSet);
+    constructor Create(aMapFolders: TKMapFolderSet);
   end;
 
 
@@ -150,8 +150,8 @@ type
   private
     fCount: Integer;
     fMaps: array of TKMapInfo;
-    fMapFolders: TMapFolderSet;
-    fSortMethod: TMapsSortMethod;
+    fMapFolders: TKMapFolderSet;
+    fSortMethod: TKMapsSortMethod;
     fDoSortWithFavourites: Boolean;
     CS: TCriticalSection;
     fScanner: TTMapsScanner;
@@ -168,8 +168,8 @@ type
     procedure DoSort;
     function GetMap(aIndex: Integer): TKMapInfo;
   public
-    constructor Create(aMapFolders: TMapFolderSet; aSortMethod: TMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False); overload;
-    constructor Create(aMapFolder: TMapFolder; aSortMethod: TMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False); overload;
+    constructor Create(aMapFolders: TKMapFolderSet; aSortMethod: TKMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False); overload;
+    constructor Create(aMapFolder: TKMapFolder; aSortMethod: TKMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False); overload;
     destructor Destroy; override;
 
     property Count: Integer read fCount;
@@ -177,29 +177,29 @@ type
     procedure Lock;
     procedure Unlock;
 
-    class function FullPath(const aDirName, aFileName, aExt: string; aMapFolder: TMapFolder): string; overload;
+    class function FullPath(const aDirName, aFileName, aExt: string; aMapFolder: TKMapFolder): string; overload;
     class function FullPath(const aName, aExt: string; aMultiplayer: Boolean): string; overload;
-    class function FullPath(const aName, aExt: string; aMapFolder: TMapFolder): string; overload;
-    class function FullPath(const aName, aExt: string; aMapFolder: TMapFolder; aCRC: Cardinal): string; overload;
+    class function FullPath(const aName, aExt: string; aMapFolder: TKMapFolder): string; overload;
+    class function FullPath(const aName, aExt: string; aMapFolder: TKMapFolder; aCRC: Cardinal): string; overload;
     class function GuessMPPath(const aName, aExt: string; aCRC: Cardinal): string;
     class procedure GetAllMapPaths(const aExeDir: string; aList: TStringList);
     class function GetMapCRC(const aName: UnicodeString; aIsMultiplayer: Boolean): Cardinal;
 
     procedure Refresh(aOnRefresh: TNotifyEvent;  aOnTerminate: TNotifyEvent = nil;aOnComplete: TNotifyEvent = nil);
     procedure TerminateScan;
-    procedure Sort(aSortMethod: TMapsSortMethod; aOnSortComplete: TNotifyEvent);
-    property SortMethod: TMapsSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
+    procedure Sort(aSortMethod: TKMapsSortMethod; aOnSortComplete: TNotifyEvent);
+    property SortMethod: TKMapsSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
 
     function Contains(const aNewName: UnicodeString): Boolean;
     procedure RenameMap(aIndex: Integer; const aName: UnicodeString);
     procedure DeleteMap(aIndex: Integer);
-    procedure MoveMap(aIndex: Integer; const aName: UnicodeString; aMapFolder: TMapFolder);
+    procedure MoveMap(aIndex: Integer; const aName: UnicodeString; aMapFolder: TKMapFolder);
 
     procedure UpdateState;
   end;
 
-  function GetMapFolderType(aIsMultiplayer: Boolean): TMapFolder;
-  function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TMapFolder): Boolean;
+  function GetMapFolderType(aIsMultiplayer: Boolean): TKMapFolder;
+  function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TKMapFolder): Boolean;
 
 
 implementation
@@ -212,11 +212,11 @@ uses
 
 const
   //Map folder name by folder type. Containing single maps, for SP/MP/DL mode
-  MAP_FOLDER: array [TMapFolder] of string = (MAPS_FOLDER_NAME, MAPS_MP_FOLDER_NAME, MAPS_DL_FOLDER_NAME);
+  MAP_FOLDER: array [TKMapFolder] of string = (MAPS_FOLDER_NAME, MAPS_MP_FOLDER_NAME, MAPS_DL_FOLDER_NAME);
 
 
 { TKMapInfo }
-constructor TKMapInfo.Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TMapFolder);
+constructor TKMapInfo.Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TKMapFolder);
 
   function GetLIBXCRC(const aSearchFile: UnicodeString): Cardinal;
   var SearchRec: TSearchRec;
@@ -234,7 +234,7 @@ var
   I: Integer;
   DatFile, MapFile, ScriptFile, TxtFile, LIBXFiles: string;
   DatCRC, OthersCRC: Cardinal;
-  fMissionParser: TMissionParserInfo;
+  fMissionParser: TKMMissionParserInfo;
   ScriptPreProcessor: TKMScriptingPreProcessor;
   ScriptFiles: TKMScriptFilesCollection;
 begin
@@ -304,7 +304,7 @@ begin
     //First reset everything because e.g. CanBeHuman is assumed false by default and set true when we encounter SET_USER_PLAYER
     ResetInfo;
 
-    fMissionParser := TMissionParserInfo.Create;
+    fMissionParser := TKMMissionParserInfo.Create;
     try
       //Fill Self properties with MissionParser
       fMissionParser.LoadMission(DatFile, Self, pmBase);
@@ -334,7 +334,7 @@ begin
 end;
 
 
-procedure TKMapInfo.AddGoal(aType: TGoalType; aPlayer: TKMHandIndex; aCondition: TGoalCondition; aStatus: TGoalStatus; aPlayerIndex: TKMHandIndex);
+procedure TKMapInfo.AddGoal(aType: TKMGoalType; aPlayer: TKMHandIndex; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandIndex);
 var G: TKMMapGoalInfo;
 begin
   G.Cond := aCondition;
@@ -409,7 +409,7 @@ end;
 procedure TKMapInfo.LoadExtra;
 var
   DatFile: string;
-  fMissionParser: TMissionParserInfo;
+  fMissionParser: TKMMissionParserInfo;
 begin
   //Do not append Extra info twice
   if fInfoAmount = iaExtra then Exit;
@@ -419,7 +419,7 @@ begin
 
   DatFile := fPath + fFileName + '.dat';
 
-  fMissionParser := TMissionParserInfo.Create;
+  fMissionParser := TKMMissionParserInfo.Create;
   try
     //Fill Self properties with MissionParser
     fMissionParser.LoadMission(DatFile, Self, pmExtra);
@@ -870,7 +870,7 @@ end;
 
 
 { TKMapsCollection }
-constructor TKMapsCollection.Create(aMapFolders: TMapFolderSet; aSortMethod: TMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False);
+constructor TKMapsCollection.Create(aMapFolders: TKMapFolderSet; aSortMethod: TKMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False);
 begin
   inherited Create;
   fMapFolders := aMapFolders;
@@ -899,7 +899,7 @@ begin
 end;
 
 
-constructor TKMapsCollection.Create(aMapFolder: TMapFolder; aSortMethod: TMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False);
+constructor TKMapsCollection.Create(aMapFolder: TKMapFolder; aSortMethod: TKMapsSortMethod = smByNameDesc; aDoSortWithFavourites: Boolean = False);
 begin
   Create([aMapFolder], aSortMethod, aDoSortWithFavourites);
 end;
@@ -997,7 +997,7 @@ begin
 end;
 
 
-procedure TKMapsCollection.MoveMap(aIndex: Integer; const aName: UnicodeString; aMapFolder: TMapFolder);
+procedure TKMapsCollection.MoveMap(aIndex: Integer; const aName: UnicodeString; aMapFolder: TKMapFolder);
 var
   I: Integer;
   Dest: UnicodeString;
@@ -1095,7 +1095,7 @@ end;
 //For public access
 //Apply new Sort within Critical Section, as we could be in the Refresh phase
 //note that we need to preserve fScanning flag
-procedure TKMapsCollection.Sort(aSortMethod: TMapsSortMethod; aOnSortComplete: TNotifyEvent);
+procedure TKMapsCollection.Sort(aSortMethod: TKMapsSortMethod; aOnSortComplete: TNotifyEvent);
 begin
   Lock;
   try
@@ -1216,19 +1216,19 @@ begin
 end;
 
 
-class function TKMapsCollection.FullPath(const aName, aExt: string; aMapFolder: TMapFolder): string;
+class function TKMapsCollection.FullPath(const aName, aExt: string; aMapFolder: TKMapFolder): string;
 begin
   Result := ExeDir + MAP_FOLDER[aMapFolder] + PathDelim + aName + PathDelim + aName + aExt;
 end;
 
 
-class function TKMapsCollection.FullPath(const aDirName, aFileName, aExt: string; aMapFolder: TMapFolder): string;
+class function TKMapsCollection.FullPath(const aDirName, aFileName, aExt: string; aMapFolder: TKMapFolder): string;
 begin
   Result := ExeDir + MAP_FOLDER[aMapFolder] + PathDelim + aDirName + PathDelim + aFileName + aExt;
 end;
 
 
-class function TKMapsCollection.FullPath(const aName, aExt: string; aMapFolder: TMapFolder; aCRC: Cardinal): string;
+class function TKMapsCollection.FullPath(const aName, aExt: string; aMapFolder: TKMapFolder; aCRC: Cardinal): string;
 var S: UnicodeString;
 begin
   S := aName;
@@ -1290,7 +1290,7 @@ end;
 
 
 { TTCustomMapsScanner }
-constructor TTCustomMapsScanner.Create(aMapFolders: TMapFolderSet; aOnComplete: TNotifyEvent = nil);
+constructor TTCustomMapsScanner.Create(aMapFolders: TKMapFolderSet; aOnComplete: TNotifyEvent = nil);
 begin
   //Thread isn't started until all constructors have run to completion
   //so Create(False) may be put in front as well
@@ -1306,7 +1306,7 @@ procedure TTCustomMapsScanner.Execute;
 var
   SearchRec: TSearchRec;
   PathToMaps: string;
-  MF: TMapFolder;
+  MF: TKMapFolder;
 begin
   try
     for MF in fMapFolders do
@@ -1338,7 +1338,7 @@ end;
 //aOnMapAddDone - signal that map has been added
 //aOnTerminate - scan was terminated (but could be not complete yet)
 //aOnComplete - scan is complete
-constructor TTMapsScanner.Create(aMapFolders: TMapFolderSet; aOnMapAdd: TMapEvent; aOnMapAddDone, aOnTerminate: TNotifyEvent; aOnComplete: TNotifyEvent = nil);
+constructor TTMapsScanner.Create(aMapFolders: TKMapFolderSet; aOnMapAdd: TKMapEvent; aOnMapAddDone, aOnTerminate: TNotifyEvent; aOnComplete: TNotifyEvent = nil);
 begin
   inherited Create(aMapFolders, aOnComplete);
 
@@ -1351,7 +1351,7 @@ begin
 end;
 
 
-procedure TTMapsScanner.ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder);
+procedure TTMapsScanner.ProcessMap(const aPath: UnicodeString; aFolder: TKMapFolder);
 var
   Map: TKMapInfo;
 begin
@@ -1366,14 +1366,14 @@ end;
 
 
 { TTMapsCacheUpdater }
-constructor TTMapsCacheUpdater.Create(aMapFolders: TMapFolderSet);
+constructor TTMapsCacheUpdater.Create(aMapFolders: TKMapFolderSet);
 begin
   inherited Create(aMapFolders);
   FreeOnTerminate := True;
 end;
 
 
-procedure TTMapsCacheUpdater.ProcessMap(const aPath: UnicodeString; aFolder: TMapFolder);
+procedure TTMapsCacheUpdater.ProcessMap(const aPath: UnicodeString; aFolder: TKMapFolder);
 var
   Map: TKMapInfo;
 begin
@@ -1395,10 +1395,10 @@ end;
 {Utility methods}
 //Try to determine TMapFolder for specified aFolderName
 //Returns true when succeeded
-function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TMapFolder): Boolean;
-var F: TMapFolder;
+function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TKMapFolder): Boolean;
+var F: TKMapFolder;
 begin
-  for F := Low(TMapFolder) to High(TMapFolder) do
+  for F := Low(TKMapFolder) to High(TKMapFolder) do
     if aFolderName = MAP_FOLDER[F] then
     begin
       aMapFolder := F;
@@ -1409,7 +1409,7 @@ begin
 end;
 
 
-function GetMapFolderType(aIsMultiplayer: Boolean): TMapFolder;
+function GetMapFolderType(aIsMultiplayer: Boolean): TKMapFolder;
 begin
   if aIsMultiplayer then
     Result := mfMP

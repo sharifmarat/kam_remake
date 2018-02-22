@@ -71,7 +71,7 @@ type
 
     procedure ExportTreeAnim;
     procedure ExportHouseAnim;
-    procedure ExportUnitAnim(aUnitFrom, aUnitTo: TUnitType; aExportUnused: Boolean = False);
+    procedure ExportUnitAnim(aUnitFrom, aUnitTo: TKMUnitType; aExportUnused: Boolean = False);
   end;
 
 
@@ -244,14 +244,14 @@ end;
 
 
 //Export Units graphics categorized by Unit and Action
-procedure TKMResource.ExportUnitAnim(aUnitFrom, aUnitTo: TUnitType; aExportUnused: Boolean = False);
+procedure TKMResource.ExportUnitAnim(aUnitFrom, aUnitTo: TKMUnitType; aExportUnused: Boolean = False);
 var
   FullFolder,Folder: string;
-  U: TUnitType;
-  A: TUnitActionType;
+  U: TKMUnitType;
+  A: TKMUnitActionType;
   Anim: TKMAnimLoop;
   D: TKMDirection;
-  R: TWareType;
+  R: TKMWareType;
   T: TKMUnitThought;
   i,ci:integer;
   Used:array of Boolean;
@@ -273,7 +273,7 @@ begin
       fUnits := TKMResUnits.Create;
 
     for U := aUnitFrom to aUnitTo do
-      for A := Low(TUnitActionType) to High(TUnitActionType) do
+      for A := Low(TKMUnitActionType) to High(TKMUnitActionType) do
       begin
         FolderCreated := False;
         for D := dir_N to dir_NW do
@@ -298,8 +298,8 @@ begin
     SetLength(Used, Length(RXData.Size));
 
     //Exclude actions
-    for U := Low(TUnitType) to High(TUnitType) do
-      for A := Low(TUnitActionType) to High(TUnitActionType) do
+    for U := Low(TKMUnitType) to High(TKMUnitType) do
+      for A := Low(TKMUnitActionType) to High(TKMUnitActionType) do
         for D := dir_N to dir_NW do
           if fUnits[U].UnitAnim[A,D].Step[1] <> -1 then
           for i := 1 to fUnits[U].UnitAnim[A,D].Count do
@@ -328,7 +328,7 @@ begin
                 begin
                   //Use default locale for Unit GUIName, as translation could be not good for file system (like russian 'Крестьянин/Винодел' with slash in it)
                   FullFolder := Folder + gResTexts.DefaultTexts[fUnits[ut_Serf].GUITextID] + PathDelim + 'Delivery' + PathDelim
-                                  + GetEnumName(TypeInfo(TWareType), Integer(R)) + PathDelim;
+                                  + GetEnumName(TypeInfo(TKMWareType), Integer(R)) + PathDelim;
                   ForceDirectories(FullFolder);
                   FolderCreated := True;
                 end;
@@ -368,8 +368,8 @@ procedure TKMResource.ExportHouseAnim;
 var
   FullFolder,Folder: string;
   HD: TKMResHouses;
-  ID: THouseType;
-  Ac: THouseActionType;
+  ID: TKMHouseType;
+  Ac: TKMHouseActionType;
   Q, Beast, I, K, ci: Integer;
   SpritePack: TKMSpritePack;
   SList: TStringList;
