@@ -704,19 +704,17 @@ end;
 
 
 procedure TKMNetServer.SendScheduledData(aServerClient: TKMServerClient);
-var P: Pointer;
+var
+  P: Pointer;
 begin
   if aServerClient.fScheduledPacketsCnt > 0 then
   begin
-    GetMem(P, aServerClient.fScheduledPacketsSize + 1);
     GetMem(P, aServerClient.fScheduledPacketsSize + 1); //+1 byte for packets number
     try
       //packets size into 1st byte
       PByte(P)^ := aServerClient.fScheduledPacketsCnt;
-
-      Move(aServerClient.fScheduledPackets[0], Pointer(Cardinal(P) + 1)^, aServerClient.fScheduledPacketsSize);
-
       //Copy collected packets data with 1 byte shift
+      Move(aServerClient.fScheduledPackets[0], Pointer(NativeUInt(P) + 1)^, aServerClient.fScheduledPacketsSize);
       DoSendData(aServerClient.fHandle, P, aServerClient.fScheduledPacketsSize + 1);
       aServerClient.ClearScheduledPackets;
     finally
