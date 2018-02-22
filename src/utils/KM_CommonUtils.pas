@@ -23,6 +23,8 @@ uses
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function RGB2BGR(aRGB: Cardinal): Cardinal;
+  function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
@@ -444,6 +446,34 @@ begin
     13..15: Result := clFpsNormal;
     else    Result := clFpsHigh;
   end;
+end;
+
+
+function RGB2BGR(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  R := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  B := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := B + G shl 8 + R shl 16 + A shl 24;
+end;
+
+
+function BGR2RGB(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  B := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  R := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := R + G shl 8 + B shl 16 + A shl 24;
 end;
 
 
