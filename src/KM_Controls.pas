@@ -486,7 +486,7 @@ type
   end;
 
 
-  TAllowedChars = (
+  TKMAllowedChars = (
     acDigits, //Only 0..9 digits, for numeric input
     acANSI7, //#33..#123,#125,#126 - only basic latin chars and symbols for user nikname, except |
     acFileName, //Exclude symbols that can't be used in filenames
@@ -496,7 +496,7 @@ type
 
 
   // Check if specified aChar is allowed for specified aAllowedChars type
-  function IsCharAllowed(aChar: WideChar; aAllowedChars: TAllowedChars): Boolean;
+  function IsCharAllowed(aChar: WideChar; aAllowedChars: TKMAllowedChars): Boolean;
 
 
 type
@@ -580,7 +580,7 @@ type
   {EditField}
   TKMEdit = class(TKMSelectableEdit)
   private
-    fAllowedChars: TAllowedChars;
+    fAllowedChars: TKMAllowedChars;
     procedure SetText(const aText: UnicodeString);
   protected
     function GetMaxLength: Word; override;
@@ -598,7 +598,7 @@ type
     OnIsKeyEventHandled: TNotifyEventKeyFunc; //Invoked to check is key overrides default handle policy or not
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aSelectable: Boolean = True);
 
-    property AllowedChars: TAllowedChars read fAllowedChars write fAllowedChars;
+    property AllowedChars: TKMAllowedChars read fAllowedChars write fAllowedChars;
     property Text: UnicodeString read fText write SetText;
 
     function HitTest(X,Y: Integer; aIncludeDisabled: Boolean=false): Boolean; override;
@@ -2430,7 +2430,7 @@ end;
 
 
 // Check if specified aChar is allowed for specified aAllowedChars type
-function IsCharAllowed(aChar: WideChar; aAllowedChars: TAllowedChars): Boolean;
+function IsCharAllowed(aChar: WideChar; aAllowedChars: TKMAllowedChars): Boolean;
 const
   Ansi7Chars: TSetOfAnsiChar = [#32..#123,#125..#126]; //except | character
   NonFileChars: TSetOfAnsiChar = [#0 .. #31, '<', '>', #176, '|', '"', '\', '/', ':', '*', '?'];
