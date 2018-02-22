@@ -24,9 +24,6 @@ uses
 
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
 
-  function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
-
-
 implementation
 uses
   Math, KM_CommonUtils, KM_ResTexts, KM_ResKeys, KM_Houses, KM_Units, KM_UnitGroups, KM_Log;
@@ -115,25 +112,6 @@ begin
   Result := GetHintWHotKey(aTextId, gResKeys.GetKeyNameById(aHotkeyId));
 end;
 
-
-//Multiply color by channels
-function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
-var
-  A, R, G, B, A2, R2, G2, B2: Byte;
-begin
-  //We split color to RGB values
-  R := aColor and $FF;
-  G := aColor shr 8 and $FF;
-  B := aColor shr 16 and $FF;
-  A := aColor shr 24 and $FF;
-
-  R2 := Min(Round(aRed * R), 255);
-  G2 := Min(Round(aGreen * G), 255);
-  B2 := Min(Round(aBlue * B), 255);
-  A2 := Min(Round(aAlpha * A), 255);
-
-  Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
-end;
 
 
 end.
