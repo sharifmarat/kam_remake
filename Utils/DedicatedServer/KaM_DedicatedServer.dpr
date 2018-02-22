@@ -5,6 +5,13 @@ program KaM_DedicatedServer;
   {$APPTYPE CONSOLE}
 {$ENDIF}
 
+//Next instructions could help sometimes for cross-compile builds
+//{$IFDEF FPC_CROSSCOMPILING}
+//  {$IFDEF UNIX}
+//    {$linklib libc_nonshared.a}
+//  {$ENDIF}
+//{$ENDIF}
+
 uses
   {$IFDEF UNIX}
     {$DEFINE UseCThreads}
