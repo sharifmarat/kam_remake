@@ -629,7 +629,7 @@ begin
       gic_ArmyAttackHouse:  SrcGroup.OrderAttackHouse(TgtHouse, True);
       gic_ArmyHalt:         SrcGroup.OrderHalt(True);
       gic_ArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
-      gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, TKMDirection(Params[4]));
+      gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, wtokPlayerOrder, TKMDirection(Params[4]));
 
       gic_UnitDismiss:        SrcUnit.Dismiss;
       gic_UnitDismissCancel:  SrcUnit.DismissCancel;

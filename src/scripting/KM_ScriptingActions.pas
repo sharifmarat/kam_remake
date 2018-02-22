@@ -3255,7 +3255,7 @@ begin
     begin
       G := fIDCache.GetGroup(aGroupID);
       if (G <> nil) and G.CanWalkTo(KMPoint(X,Y), 0) then
-        G.OrderWalk(KMPoint(X,Y), True, TKMDirection(aDirection+1));
+        G.OrderWalk(KMPoint(X,Y), True, wtokScript, TKMDirection(aDirection+1));
     end
     else
       LogParamWarning('Actions.GroupOrderWalk', [aGroupID, X, Y, aDirection]);

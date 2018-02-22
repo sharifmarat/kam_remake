@@ -11,6 +11,13 @@ type
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
+  TKMOrderWalkKind = (wtokNone,
+                      wtokPlayerOrder,  //player order
+                      wtokHaltOrder,    //could be player order, or AI order (as part of OrderRepeat)
+                      wtokFlagPoint,    //after warrior get out of barracks/townhall
+                      wtokAIGotoDefencePos, wtokAIAttackCustomPos, //initiated by AI
+                      wtokMissionScript, wtokScript); //initiated by mission script or script
+  TKMOrderWalkKindSet = set of TKMOrderWalkKind;
 
   TKMGroupOrder = (
     goNone,         //Last order was executed and now we have nothing to do
@@ -46,6 +53,7 @@ type
 
     fOrder: TKMGroupOrder; //Remember last order incase we need to repeat it (e.g. to joined members)
     fOrderLoc: TKMPointDir; //Dir is the direction to face after order
+    fOrderWalkKind: TKMOrderWalkKind;
 
     //Avoid accessing these directly
     fOrderTargetUnit: TKMUnit; //Unit we are ordered to attack. This property should never be accessed, use public OrderTarget instead.
@@ -117,7 +125,7 @@ type
     function InFight(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
-    function IsIdleToAI(aAllowWalking: Boolean = False): Boolean;
+    function IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
     function IsPositioned(aLoc: TKMPoint; Dir: TKMDirection): Boolean;
     function CanTakeOrders: Boolean;
     function CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
@@ -152,6 +160,7 @@ type
 
     procedure SetOwner(aOwner: TKMHandIndex);
     procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+
     procedure OrderAttackHouse(aHouse: TKMHouse; aClearOffenders: Boolean);
     procedure OrderAttackUnit(aUnit: TKMUnit; aClearOffenders: Boolean);
     procedure OrderFood(aClearOffenders: Boolean; aHungryOnly: Boolean = False);
@@ -159,13 +168,15 @@ type
     procedure OrderHalt(aClearOffenders: Boolean);
     procedure OrderLinkTo(aTargetGroup: TKMUnitGroup; aClearOffenders: Boolean);
     procedure OrderNone;
-    procedure OrderRepeat;
-    procedure CopyOrderFrom(aGroup: TKMUnitGroup);
     function OrderSplit(aClearOffenders: Boolean; aSplitSingle: Boolean = False): TKMUnitGroup;
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
-    procedure OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aDir: TKMDirection = dir_NA);
+    procedure OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+
+    procedure OrderRepeat;
+    procedure CopyOrderFrom(aGroup: TKMUnitGroup);
+
     procedure KillGroup;
 
     procedure UpdateState;
@@ -953,11 +964,11 @@ begin
 end;
 
 
-function TKMUnitGroup.IsIdleToAI(aAllowWalking: Boolean = False): Boolean;
+function TKMUnitGroup.IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
 begin
   //First check that the previous order has completed
   if fOrder = goWalkTo then
-    Result := aAllowWalking or (KMLengthDiag(Position, fOrderLoc.Loc) < 2)
+    Result := (fOrderWalkKind in aOrderWalkKindSet) or (KMLengthDiag(Position, fOrderLoc.Loc) < 2)
   else
     Result := (fOrder = goNone);
 
@@ -1151,7 +1162,7 @@ begin
   begin
     //Walk in formation towards enemy,
     //Members will take care of attack when we approach
-    OrderWalk(aUnit.NextPosition, False);
+    OrderWalk(aUnit.NextPosition, False, wtokNone);
 
     //Revert Order to proper one (we disguise Walk)
     fOrder := goAttackUnit;
@@ -1208,13 +1219,13 @@ begin
   //hose target depends on previous activity
   case fOrder of
     goNone:         if not KMSamePoint(fOrderLoc.Loc, KMPOINT_ZERO) then
-                      OrderWalk(fOrderLoc.Loc, False)
+                      OrderWalk(fOrderLoc.Loc, False, wtokHaltOrder)
                     else
-                      OrderWalk(Members[0].NextPosition, False);
-    goWalkTo:       OrderWalk(Members[0].NextPosition, False);
-    goAttackHouse:  OrderWalk(Members[0].NextPosition, False);
-    goAttackUnit:   OrderWalk(Members[0].NextPosition, False);
-    goStorm:        OrderWalk(Members[0].NextPosition, False);
+                      OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goWalkTo:       OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goAttackHouse:  OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goAttackUnit:   OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goStorm:        OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
   end;
 end;
 
@@ -1282,9 +1293,13 @@ begin
   if fOrder <> goNone then          //when there is no order, then use own fOrderLoc
     fOrderLoc := aGroup.fOrderLoc;  //otherwise - copy from target group
 
+  fOrderWalkKind := wtokNone;
+  if fOrder = goWalkTo then
+    fOrderWalkKind := aGroup.fOrderWalkKind;
+
   case fOrder of
     goNone:         OrderHalt(False);
-    goWalkTo:       OrderWalk(fOrderLoc.Loc, False);
+    goWalkTo:       OrderWalk(fOrderLoc.Loc, False, fOrderWalkKind);
     goAttackHouse:  if aGroup.OrderTargetHouse <> nil then OrderAttackHouse(aGroup.OrderTargetHouse, False);
     goAttackUnit:   if aGroup.OrderTargetUnit <> nil then OrderAttackUnit(aGroup.OrderTargetUnit, False);
     goStorm:        ;
@@ -1297,7 +1312,7 @@ procedure TKMUnitGroup.OrderRepeat;
 begin
   case fOrder of
     goNone:         OrderHalt(False);
-    goWalkTo:       OrderWalk(fOrderLoc.Loc, False);
+    goWalkTo:       OrderWalk(fOrderLoc.Loc, False, fOrderWalkKind);
     goAttackHouse:  if OrderTargetHouse <> nil then OrderAttackHouse(OrderTargetHouse, False);
     goAttackUnit:   if OrderTargetUnit <> nil then OrderAttackUnit(OrderTargetUnit, False);
     goStorm:        ;
@@ -1489,13 +1504,15 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aDir: TKMDirection = dir_NA);
+procedure TKMUnitGroup.OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
 var
   I: Integer;
   NewDir: TKMDirection;
   P: TKMPointExact;
 begin
   if IsDead then Exit;
+
+  fOrderWalkKind := aOrderWalkKind;
 
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;

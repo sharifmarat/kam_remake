@@ -431,7 +431,7 @@ begin
         HWFP.ValidateFlagPoint; // Validate Flag point first. It will set it to a proper walkable position
         if HWFP.IsFlagPointSet
           and G.CanWalkTo(HWFP.FlagPoint, 0) then
-          G.OrderWalk(HWFP.FlagPoint, True);
+          G.OrderWalk(HWFP.FlagPoint, True, wtokFlagPoint);
       end;
     end;
   gScriptEvents.ProcWarriorEquipped(aUnit, G);

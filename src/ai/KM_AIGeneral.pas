@@ -224,7 +224,7 @@ begin
     Group := gHands[fOwner].UnitGroups[I];
 
     if not Group.IsDead
-    and Group.IsIdleToAI then
+      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder]) then
     begin
       //Check hunger and order food
       if (Group.Condition < UNIT_MIN_CONDITION) then
@@ -312,7 +312,7 @@ begin
     begin
       Group := gHands[fOwner].UnitGroups[I];
       if not Group.IsDead
-      and Group.IsIdleToAI(True) then
+        and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder]) then
       begin
         DP := fDefencePositions.FindPositionOf(Group);
         if DP = nil then
@@ -324,7 +324,7 @@ begin
       if (fDefencePositions[I].DefenceType = adt_BackLine)
       and (fDefencePositions[I].CurrentGroup <> nil)
       and not fDefencePositions[I].CurrentGroup.IsDead
-      and fDefencePositions[I].CurrentGroup.IsIdleToAI(True) then
+      and fDefencePositions[I].CurrentGroup.IsIdleToAI([wtokFlagPoint, wtokHaltOrder, wtokAIGotoDefencePos]) then
         AddAvailable(fDefencePositions[I].CurrentGroup);
 
     //Now process AI attacks (we have compiled a list of warriors available to attack)
@@ -587,7 +587,7 @@ begin
   else if TargetUnit <> nil then
     aGroup.OrderAttackUnit(TargetUnit, True)
   else if aTarget = att_CustomPosition then
-    aGroup.OrderWalk(aCustomPos, True);
+    aGroup.OrderWalk(aCustomPos, True, wtokAIAttackCustomPos);
 end;
 
 
@@ -608,8 +608,9 @@ begin
   begin
     Group := fDefencePositions[I].CurrentGroup;
     if (Group <> nil)
-    and not Group.IsDead
-    and Group.IsIdleToAI(True) //Units walking to their defence position can retaliate (but not if pursuing an enemy)
+      and not Group.IsDead
+      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder, wtokAIGotoDefencePos])
+    //Units walking to their defence position can retaliate (but not if pursuing an enemy)
     //@Lewin: Is it right that Group defends against attackers within the Rad
     //rather than defending property within the Rad?
     //Think of archer, he attacks property in AI defense radius, but stands utself outside of the radius

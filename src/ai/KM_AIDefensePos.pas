@@ -195,9 +195,9 @@ begin
   //Tell group to walk to its position
   //It's easier to repeat the order than check that all members are in place
   if (CurrentGroup <> nil)
-  and CurrentGroup.IsIdleToAI
-  and CurrentGroup.CanWalkTo(Position.Loc, 0) then
-    CurrentGroup.OrderWalk(Position.Loc, True, Position.Dir);
+    and CurrentGroup.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
+    and CurrentGroup.CanWalkTo(Position.Loc, 0) then
+    CurrentGroup.OrderWalk(Position.Loc, True, wtokAIGotoDefencePos, Position.Dir);
 end;
 
 
@@ -315,7 +315,7 @@ begin
       Positions[Matched].CurrentGroup := aGroup;
       if aGroup.UnitsPerRow < TroopFormations[aGroup.GroupType].UnitsPerRow then
         aGroup.UnitsPerRow := TroopFormations[aGroup.GroupType].UnitsPerRow;
-      aGroup.OrderWalk(Positions[Matched].Position.Loc, True);
+      aGroup.OrderWalk(Positions[Matched].Position.Loc, True, wtokAIGotoDefencePos);
     end
     else
       //Append to existing position

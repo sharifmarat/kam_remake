@@ -153,7 +153,7 @@ begin
         if (U <> nil) and (not U.IsDeadOrDying) and (gHands.CheckAlliance(Group.Owner, U.Owner) = at_Enemy) then
           Group.OrderAttackUnit(U, True)
         else
-          Group.OrderWalk(Target, True); //Just move to position
+          Group.OrderWalk(Target, True, wtokMissionScript); //Just move to position
       end;
     end;
 end;
@@ -514,7 +514,7 @@ begin
                               fLastTroop.MapEdOrder.Pos := KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1));
                             end
                             else
-                              fLastTroop.OrderWalk(KMPoint(P[0]+1, P[1]+1), True, TKMDirection(P[2]+1))
+                              fLastTroop.OrderWalk(KMPoint(P[0]+1, P[1]+1), True, wtokMissionScript, TKMDirection(P[2]+1))
                           else
                             AddError('ct_SendGroup without prior declaration of Troop');
                         end;
