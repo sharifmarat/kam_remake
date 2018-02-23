@@ -3558,7 +3558,13 @@ begin
   end;
 
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
-  if fEnabled then Col := $FFFFFFFF else Col := $FF888888;
+
+  if not fEnabled then
+    Col := icGray2
+  else if BlockInput then
+    Col := icLightGray
+  else
+    Col := icWhite;
 
   if Masked then
     RText := StringOfChar('*', Length(fText))
