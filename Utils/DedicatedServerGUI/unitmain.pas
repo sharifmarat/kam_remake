@@ -75,7 +75,7 @@ type
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure FillPlayersList;
   private
-    fSettings: TGameSettings;
+    fSettings: TKMGameSettings;
     fSettingsLastModified: integer;
     fServerStatus: TKMServerStatus;
     fDedicatedServer: TKMDedicatedServer;
@@ -117,7 +117,7 @@ begin
   ServerStatusMessageNoTime('-.- .- -- / .-. . -- .- -.- . / .. ... / - .... . / -... . ... -');
   ServerStatusMessageNoTime('');
 
-  fSettings := TGameSettings.Create;
+  fSettings := TKMGameSettings.Create;
   fSettings.SaveSettings(true);
   fSettingsLastModified := FileAge(ExeDir+SETTINGS_FILE);
 
