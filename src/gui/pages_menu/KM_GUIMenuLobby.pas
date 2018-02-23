@@ -14,7 +14,7 @@ type
 
   TKMMenuLobby = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fLastTimeResetBans: Cardinal;
 
@@ -165,7 +165,7 @@ type
       Button_LobbyChangeSettings: TKMButton;
       Button_LobbyStart: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     function GetChatState: TChatState;
@@ -187,7 +187,7 @@ const
 
 
 { TKMGUIMenuLobby }
-constructor TKMMenuLobby.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuLobby.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

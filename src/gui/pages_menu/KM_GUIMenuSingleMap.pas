@@ -14,7 +14,7 @@ const
 type
   TKMMenuSingleMap = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fMaps: TKMapsCollection;
     fMinimap: TKMMinimap;
@@ -69,7 +69,7 @@ type
       ColumnBox_SingleMaps: TKMColumnBox;
       Button_SingleBack, Button_SingleStart: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -83,7 +83,7 @@ uses
 
 
 { TKMGUIMenuSingleMap }
-constructor TKMMenuSingleMap.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuSingleMap.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
               

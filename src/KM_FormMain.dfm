@@ -418,7 +418,7 @@ object FormMain: TFormMain
         TabOrder = 0
         OnClick = ControlsUpdate
       end
-			object chkLogCommands: TCheckBox
+      object chkLogCommands: TCheckBox
         Left = 90
         Top = 16
         Width = 73

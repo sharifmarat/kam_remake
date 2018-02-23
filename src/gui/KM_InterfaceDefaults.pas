@@ -21,12 +21,10 @@ type
                         gpMapEditor,
                         gpOptions,
                         gpCredits,
-                      gpResultsMP,
-                      gpResultsSP,
                       gpLoading,
                       gpError);
   TGUIEvent = procedure (Sender: TObject; Dest: TKMMenuPageType) of object;
-  TGUIEventText = procedure (Dest: TKMMenuPageType; const aText: UnicodeString = '') of object;
+  TKMMenuChangeEventText = procedure (Dest: TKMMenuPageType; const aText: UnicodeString = '') of object;
 
   TKMMenuPageCommon = class
   protected

@@ -13,7 +13,7 @@ type
     fTempKeys: TKMKeyLibrary;
     fLastAlphaShadows: Boolean;
 
-    fOnPageChange: TGUIEventText; // will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; // will be in ancestor class
 
     fMainSettings: TMainSettings;
     fGameSettings: TGameSettings;
@@ -73,7 +73,7 @@ type
             Button_OptionsKeysCancel: TKMButton;
       Button_OptionsBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
     procedure Show;
   end;
@@ -85,7 +85,7 @@ uses
 
 
 { TKMGUIMainOptions }
-constructor TKMMenuOptions.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuOptions.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 var
   I: Integer;
 begin

@@ -12,7 +12,7 @@ uses
 type
   TKMMenuMultiplayer = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fServerSelected: Boolean;
     fSelectedRoomInfo: TKMRoomInfo;
@@ -96,7 +96,7 @@ type
         Button_MP_PasswordOk: TKMButton;
         Button_MP_PasswordCancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure Show(const aText: UnicodeString);
     procedure Resize(X, Y: Word);
@@ -114,7 +114,7 @@ const
 
 
 { TKMGUIMainMultiplayer }
-constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
   procedure CreateServerPopUp;
   begin
     Panel_MPCreateServer := TKMPanel.Create(aParent, 362, 250, 320, 300);

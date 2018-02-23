@@ -8,6 +8,8 @@ uses
   KM_Controls, KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Pics, KM_Points,
   KM_InterfaceDefaults, KM_InterfaceGame, KM_Terrain, KM_Houses, KM_Units, KM_Minimap, KM_Viewport, KM_Render,
   KM_UnitGroups, KM_Units_Warrior, KM_Saves, KM_MessageStack, KM_ResHouses, KM_Alerts, KM_Networking,
+  KM_GUIGameResultsSP,
+  KM_GUIGameResultsMP,
   KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings;
 
 
@@ -36,6 +38,8 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
+    fGuiGameResultsSP: TKMGameResultsSP;
+    fGuiGameResultsMP: TKMGameResultsMP;
 
     // Not saved
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
@@ -120,6 +124,7 @@ type
     procedure SelectUnitGroup(aGroup: TKMUnitGroup);
     procedure SelectNextGameObjWSameType;
     procedure SwitchPage(Sender: TObject);
+    procedure ShowStats(Sender: TObject);
     procedure DisplayHint(Sender: TObject);
     procedure PlayMoreClick(Sender: TObject);
     procedure MPPlayMoreClick(Sender: TObject);
@@ -146,6 +151,11 @@ type
     procedure Replay_UpdatePlayerInterface(aFromPlayer, aToPlayer: Integer);
     procedure Replay_Single_SetPlayersDropbox;
     procedure Replay_Multi_SetPlayersDropbox;
+
+    procedure StopPlay(aMsg: TGameResultMsg; aPrepareToStopGame: Boolean = True);
+    procedure StopGame(const aText: UnicodeString = '');
+    procedure ShowMPStats;
+    procedure ShowSPStats;
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -172,6 +182,8 @@ type
     Panel_Controls: TKMPanel;
       Button_Main: array [TKMTabButtons] of TKMButton; // 4 common buttons + Return
       Button_Back: TKMButton;
+
+    Panel_Stats: TKMPanel;
 
     Panel_ReplayCtrl: TKMPanel; // Smaller Panel to contain replay controls
       PercentBar_Replay: TKMPercentBar;
@@ -232,7 +244,7 @@ type
           Button_NetConfirmYes,Button_NetConfirmNo: TKMButton;
     Panel_Menu: TKMPanel;
       Button_Menu_Save, Button_Menu_Load, Button_Menu_ReturnLobby, Button_Menu_Settings, Button_Menu_Quit,
-      Button_Menu_TrackUp, Button_Menu_TrackDown: TKMButton;
+      Button_Menu_TrackUp, Button_Menu_TrackDown, Button_ShowStats: TKMButton;
       Label_Menu_Track, Label_GameTime, Label_MapName: TKMLabel;
 
       Panel_Save: TKMPanel;
@@ -483,8 +495,8 @@ var
 
 begin
   if (Sender = Button_Main[tbBuild]) or (Sender = Button_Main[tbRatio])
-  or (Sender = Button_Main[tbStats]) or (Sender = Button_Main[tbMenu])
-  or (Sender = Button_Menu_Settings) or (Sender = Button_Menu_Quit) then
+    or (Sender = Button_Main[tbStats]) or (Sender = Button_Main[tbMenu])
+    or (Sender = Button_Menu_Settings) or (Sender = Button_Menu_Quit) then
     gMySpectator.Selected := nil;
 
   // Set LastVisiblePage to which ever page was last visible, out of the ones needed
@@ -500,7 +512,6 @@ begin
   // Ensure, that saves scanning will be stopped when user leaves save/load page
   if (LastVisiblePage = Panel_Save) or (LastVisiblePage = Panel_Load) then
     fSaves.TerminateScan;
-
 
   HidePages;
 
@@ -572,6 +583,12 @@ begin
     Panel_Quit.Show
   else // If Sender is anything else - then show all 4 buttons and hide Return button
     Flip4MainButtons(True);
+end;
+
+
+procedure TKMGamePlayInterface.ShowStats(Sender: TObject);
+begin
+  StopPlay(gr_GameContinues);
 end;
 
 
@@ -772,6 +789,21 @@ begin
     S.Hitable := False;
   end;
 
+  Panel_Stats := TKMPanel.Create(Panel_Main, (aRender.ScreenX - MENU_DESIGN_X) div 2, (aRender.ScreenY - MENU_DESIGN_Y) div 2, MENU_DESIGN_X, MENU_DESIGN_Y);
+  Panel_Stats.AnchorsCenter;
+
+  // Background image
+  TKMImage.Create(Panel_Stats,-448,-216, 960, 600, 17, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats, 512,-216, 960, 600, 18, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats,-448, 384, 960, 600, 19, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats, 512, 384, 960, 600, 20, rxGuiMain).AnchorsCenter;
+  Panel_Stats.Hide;
+
+  fGuiGameResultsSP := TKMGameResultsSP.Create(Panel_Stats, StopGame, ShowMPStats);
+  fGuiGameResultsSP.Hide;
+  fGuiGameResultsMP := TKMGameResultsMP.Create(Panel_Stats, StopGame, ShowSPStats);
+  fGuiGameResultsMP.Hide;
+
   SwitchPage(nil); // Update
   Resize(aRender.ScreenX, aRender.ScreenY); // Hide/show swords according to player's resolution when game starts
   // Panel_Main.Width := aScreenX;
@@ -791,6 +823,8 @@ begin
   fGuiGameRatios.Free;
   fGuiGameStats.Free;
   fGuiMenuSettings.Free;
+  fGuiGameResultsSP.Free;
+  fGuiGameResultsMP.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -809,6 +843,9 @@ begin
   // Show swords filler if screen height allows
   showSwords := (Panel_Main.Height >= 758);
   Sidebar_Middle.Visible := showSwords;
+
+  Panel_Stats.Top := (Panel_Main.Height - Panel_Stats.Height) div 2;
+  Panel_Stats.Height := Min(Panel_Main.Height, MENU_DESIGN_Y);
 
   // Needs to be -10 when the swords are hidden so it fits 1024x576
   Panel_Controls.Top := Sidebar_Top.Height - 10 + (10+Sidebar_Middle.Height) * Byte(showSwords);
@@ -1188,25 +1225,30 @@ end;
 procedure TKMGamePlayInterface.Create_Menu;
 begin
   Panel_Menu := TKMPanel.Create(Panel_Controls, TB_PAD, 44, TB_WIDTH, 332);
-  Button_Menu_Load := TKMButton.Create(Panel_Menu, 0, 20, TB_WIDTH, 30, gResTexts[TX_MENU_LOAD_GAME], bsGame);
+  Button_Menu_Load := TKMButton.Create(Panel_Menu, 0, 10, TB_WIDTH, 30, gResTexts[TX_MENU_LOAD_GAME], bsGame);
   Button_Menu_Load.OnClick := SwitchPage;
   Button_Menu_Load.Hint := gResTexts[TX_MENU_LOAD_GAME];
   Button_Menu_Load.Visible := not (fUIMode in [umMP, umSpectate]);
 
-  Button_Menu_ReturnLobby := TKMButton.Create(Panel_Menu, 0, 20, TB_WIDTH, 30, gResTexts[TX_MENU_VOTE_RETURN_LOBBY], bsGame);
+  Button_Menu_ReturnLobby := TKMButton.Create(Panel_Menu, 0, 10, TB_WIDTH, 30, gResTexts[TX_MENU_VOTE_RETURN_LOBBY], bsGame);
   Button_Menu_ReturnLobby.OnClick := ReturnToLobbyClick;
   Button_Menu_ReturnLobby.Hint := gResTexts[TX_MENU_VOTE_RETURN_LOBBY_HINT];
   Button_Menu_ReturnLobby.Visible := fUIMode in [umMP, umSpectate];
 
-  Button_Menu_Save := TKMButton.Create(Panel_Menu, 0, 60, TB_WIDTH, 30, gResTexts[TX_MENU_SAVE_GAME], bsGame);
+  Button_Menu_Save := TKMButton.Create(Panel_Menu, 0, 45, TB_WIDTH, 30, gResTexts[TX_MENU_SAVE_GAME], bsGame);
   Button_Menu_Save.OnClick := SwitchPage;
   Button_Menu_Save.Hint := gResTexts[TX_MENU_SAVE_GAME];
-  Button_Menu_Settings := TKMButton.Create(Panel_Menu, 0, 100, TB_WIDTH, 30, gResTexts[TX_MENU_SETTINGS], bsGame);
+  Button_Menu_Settings := TKMButton.Create(Panel_Menu, 0, 80, TB_WIDTH, 30, gResTexts[TX_MENU_SETTINGS], bsGame);
   Button_Menu_Settings.OnClick := SwitchPage;
   Button_Menu_Settings.Hint := gResTexts[TX_MENU_SETTINGS];
+
+  Button_ShowStats := TKMButton.Create(Panel_Menu, 0, 125, TB_WIDTH, 30, 'Show stats', bsGame); //Todo translate
+  Button_ShowStats.Hint := 'Show game statisctics'; //Todo translate
+  Button_ShowStats.OnClick := ShowStats;
   Button_Menu_Quit := TKMButton.Create(Panel_Menu, 0, 160, TB_WIDTH, 30, gResTexts[TX_MENU_QUIT_MISSION], bsGame);
   Button_Menu_Quit.Hint := gResTexts[TX_MENU_QUIT_MISSION];
   Button_Menu_Quit.OnClick := SwitchPage;
+
   Button_Menu_TrackUp := TKMButton.Create(Panel_Menu, 160, 300, 20, 30, '>', bsGame);
   Button_Menu_TrackDown := TKMButton.Create(Panel_Menu, 0, 300, 20, 30, '<', bsGame);
   Button_Menu_TrackUp.Hint := gResTexts[TX_MUSIC_NEXT_HINT];
@@ -1479,16 +1521,51 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.StopPlay(aMsg: TGameResultMsg; aPrepareToStopGame: Boolean = True);
+var
+  ShowStats: Boolean;
+begin
+  if aMsg <> gr_GameContinues then
+    gGame.GameState := aMsg;
+
+  ShowStats := False;
+
+  case aMsg of
+    gr_Win,
+    gr_Defeat,
+    gr_Cancel,
+    gr_ReplayEnd:     begin
+                        gGameApp.PrepageStopGame(gGame.GameState);
+                        ShowStats := True;
+                      end;
+    gr_GameContinues: ShowStats := True;
+    gr_Error,
+    gr_Disconnect,
+    gr_Silent,
+    gr_MapEdEnd:  StopGame;
+  end;
+
+  if ShowStats then
+  begin
+    if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
+      fGuiGameResultsMP.Show(aMsg)
+    else
+      fGuiGameResultsSP.Show(aMsg)
+  end;
+end;
+
+
 // Quit the mission and return to main menu
 procedure TKMGamePlayInterface.Menu_QuitMission(Sender: TObject);
 begin
-
-  if (gGame.GameMode = gmMulti) and (gGame.PlayOnState = gr_Cancel) then
-    gGameApp.StopGame(gr_Defeat) //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
-  else
-    // Show outcome depending on actual situation.
-    // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
-    gGameApp.StopGame(gGame.PlayOnState);
+  //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
+  if (gGame.GameMode = gmMulti) and (gGame.GameState = gr_Cancel) then
+    gGame.GameState := gr_Defeat
+  else if gGame.IsReplay then
+    gGame.GameState := gr_ReplayEnd;
+  // Show outcome depending on actual situation.
+  // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
+  StopPlay(gGame.GameState);
 end;
 
 
@@ -2056,7 +2133,6 @@ begin
     Label_QuitQuestion.Caption := gResTexts[TX_REPLAY_QUIT_CONFIRMATION];
     Button_Quit_Yes.Caption := gResTexts[TX_REPLAY_QUIT];
     Button_Quit_Yes.Hint := gResTexts[TX_REPLAY_QUIT];
-    gGame.PlayOnState := gr_ReplayEnd;
   end else begin
     Button_Menu_Quit.Caption := gResTexts[TX_MENU_QUIT_MISSION];
     Button_Menu_Quit.Hint := gResTexts[TX_MENU_QUIT_MISSION];
@@ -2191,9 +2267,9 @@ begin
 
   if Sender = Button_PlayQuit then
     case PlayMoreMsg of
-      gr_Win:       gGameApp.Stop(gr_Win);
-      gr_Defeat:    gGameApp.Stop(gr_Defeat);
-      gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
+      gr_Win:       StopPlay(gr_Win);
+      gr_Defeat:    StopPlay(gr_Defeat);
+      gr_ReplayEnd: StopPlay(gr_ReplayEnd);
     end
   else // GameStop has Destroyed our Sender by now
   if Sender = Button_PlayMore then
@@ -2214,9 +2290,9 @@ begin
 
   if Sender = Button_MPPlayQuit then
     case PlayMoreMsg of
-      gr_Win:       gGameApp.Stop(gr_Win);
-      gr_Defeat:    gGameApp.Stop(gr_Defeat);
-      gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
+      gr_Win:       StopPlay(gr_Win);
+      gr_Defeat:    StopPlay(gr_Defeat);
+      gr_ReplayEnd: StopPlay(gr_ReplayEnd);
     end
   // If they click continue no other action is necessary, the game is still running
 end;
@@ -2346,7 +2422,7 @@ begin
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_DROP_PLAYERS] then
       gGame.WaitingPlayersDrop else
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_QUIT_TO_MENU] then
-      gGameApp.StopGame(gr_Cancel);
+      StopPlay(gr_Cancel);
   end
   else raise Exception.Create('Wrong Sender in NetWaitClick');
 end;
@@ -3680,6 +3756,12 @@ begin
 
   UpdateDebugInfo;
   if fSaves <> nil then fSaves.UpdateState;
+
+  if aTickCount mod 10 = 0 then
+  begin
+    fGuiGameResultsSP.UpdateState(aTickCount);
+    fGuiGameResultsMP.UpdateState(aTickCount);
+  end;
 end;
 
 
@@ -3810,6 +3892,26 @@ begin
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
 
   inherited;
+end;
+
+
+procedure TKMGamePlayInterface.StopGame(const aText: UnicodeString = '');
+begin
+  gGameApp.StopGame(gGame.GameState, aText);
+end;
+
+
+procedure TKMGamePlayInterface.ShowMPStats;
+begin
+  fGuiGameResultsSP.Hide;
+  fGuiGameResultsMP.Show(fGuiGameResultsSP.GameResultMsg);
+end;
+
+
+procedure TKMGamePlayInterface.ShowSPStats;
+begin
+  fGuiGameResultsMP.Hide;
+  fGuiGameResultsSP.Show(fGuiGameResultsMP.GameResultMsg);
 end;
 
 

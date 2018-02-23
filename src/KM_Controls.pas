@@ -210,6 +210,7 @@ type
     procedure Disable;
     procedure Show;
     procedure Hide;
+    procedure DoSetVisible; //Differs from Show, that we do not force to show Parents
     procedure Focus;
     procedure Unfocus;
     procedure AnchorsCenter;
@@ -2095,6 +2096,12 @@ end;
 procedure TKMControl.Hide;
 begin
   Visible := False;
+end;
+
+
+procedure TKMControl.DoSetVisible;
+begin
+  Visible := True;
 end;
 
 

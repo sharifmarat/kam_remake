@@ -58,6 +58,8 @@ type
     fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
     fMissionMode: TKMissionMode;
 
+    fReadyToStop: Boolean;
+
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
     procedure MultiplayerRig;
@@ -74,7 +76,7 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
   public
-    PlayOnState: TGameResultMsg;
+    GameState: TGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
     DoGameHoldState: TGameResultMsg; //The type of GameHold we want to occur due to DoGameHold
     SkipReplayEndCheck: Boolean;
@@ -117,6 +119,7 @@ type
 
     property IsExiting: Boolean read fIsExiting;
     property IsPaused: Boolean read fIsPaused write SetIsPaused;
+    property ReadyToStop: Boolean read fReadyToStop write fReadyToStop;
 
     function MissionTime: TDateTime;
     function GetPeacetimeRemaining: TDateTime;
@@ -220,7 +223,7 @@ begin
 
   fAdvanceFrame := False;
   fUIDTracker   := 0;
-  PlayOnState   := gr_Cancel;
+  GameState   := gr_Cancel;
   DoGameHold    := False;
   SkipReplayEndCheck := False;
   fWaitingForNetwork := False;
@@ -770,7 +773,7 @@ begin
                     fIgnoreConsistencyCheckErrors := True;  // Ignore these errors in future while watching this replay
                     fIsPaused := False;
                   end
-      else        gGameApp.StopGame(gr_Error, '');
+      else        gGameApp.StopGame(gr_Error);
     end;
   end;
 end;
@@ -784,7 +787,7 @@ begin
   gRes.Cursors.Cursor := kmc_Default;
 
   fGamePlayInterface.Viewport.ReleaseScrollKeys;
-  PlayOnState := Msg;
+  GameState := Msg;
 
   if DoHold then
   begin
@@ -818,7 +821,7 @@ begin
   begin
     if aPlayerIndex = gMySpectator.HandIndex then
     begin
-      PlayOnState := gr_Win;
+      GameState := gr_Win;
       fGamePlayInterface.ShowMPPlayMore(gr_Win);
     end;
   end
@@ -857,7 +860,7 @@ begin
                 if aPlayerIndex = gMySpectator.HandIndex then
                 begin
                   gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
-                  PlayOnState := gr_Defeat;
+                  GameState := gr_Defeat;
                   fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
                 end;
               end;
@@ -1434,7 +1437,7 @@ begin
     SaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
     if not IsMultiplayer then
-      SaveStream.Write(PlayOnState, SizeOf(PlayOnState));
+      SaveStream.Write(GameState, SizeOf(GameState));
 
     gTerrain.Save(SaveStream); //Saves the map
     gHands.Save(SaveStream, fGameMode in [gmMulti, gmMultiSpectate]); //Saves all players properties individually
@@ -1579,7 +1582,7 @@ begin
     LoadStream.Read(LoadedSeed);
 
     if not SaveIsMultiplayer then
-      LoadStream.Read(PlayOnState, SizeOf(PlayOnState));
+      LoadStream.Read(GameState, SizeOf(GameState));
 
     //Load the data into the game
     gTerrain.Load(LoadStream);

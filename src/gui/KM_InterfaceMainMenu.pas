@@ -19,8 +19,6 @@ uses
   KM_GUIMenuMultiplayer,
   KM_GUIMenuOptions,
   KM_GUIMenuReplays,
-  KM_GUIGameResultsSP,
-  KM_GUIGameResultsMP,
   KM_GUIMenuSingleMap,
   KM_GUIMenuSinglePlayer;
 
@@ -40,8 +38,8 @@ type
     fMenuMultiplayer: TKMMenuMultiplayer;
     fMenuOptions: TKMMenuOptions;
     fMenuReplays: TKMMenuReplays;
-    fMenuResultsMP: TKMGameResultsMP;
-    fMenuResultsSP: TKMGameResultsSP;
+//    fMenuResultsMP: TKMGameResultsMP;
+//    fMenuResultsSP: TKMGameResultsSP;
     fMenuSingleMap: TKMMenuSingleMap;
     fMenuSinglePlayer: TKMMenuSinglePlayer;
 
@@ -54,8 +52,8 @@ type
     destructor Destroy; override;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    procedure ShowResultsMP(aMsg: TGameResultMsg);
-    procedure ShowResultsSP(aMsg: TGameResultMsg);
+//    procedure ShowResultsMP(aMsg: TGameResultMsg);
+//    procedure ShowResultsSP(aMsg: TGameResultMsg);
     function GetChatState: TChatState;
     procedure SetChatState(const aChatState: TChatState);
     procedure ExportPages(const aPath: string); override;
@@ -110,8 +108,8 @@ begin
   fMenuCredits       := TKMMenuCredits.Create(Panel_Menu, PageChange);
   fMenuError         := TKMMenuError.Create(Panel_Menu, PageChange);
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
-  fMenuResultsMP     := TKMGameResultsMP.Create(Panel_Menu, PageChange);
-  fMenuResultsSP     := TKMGameResultsSP.Create(Panel_Menu, PageChange);
+//  fMenuResultsMP     := TKMGameResultsMP.Create(Panel_Menu, PageChange);
+//  fMenuResultsSP     := TKMGameResultsSP.Create(Panel_Menu, PageChange);
 
     {for i:=1 to length(FontFiles) do L[i]:=TKMLabel.Create(Panel_Main1,550,280+i*20,160,30,'This is a test string for KaM Remake ('+FontFiles[i],TKMFont(i),taLeft);//}
     //MyControls.AddTextEdit(Panel_Main, 32, 32, 200, 20, fnt_Grey);
@@ -153,8 +151,8 @@ begin
   fMenuMultiplayer.Free;
   fMenuOptions.Free;
   fMenuReplays.Free;
-  fMenuResultsMP.Free;
-  fMenuResultsSP.Free;
+//  fMenuResultsMP.Free;
+//  fMenuResultsSP.Free;
   fMenuSingleMap.Free;
   fMenuSinglePlayer.Free;
 
@@ -196,16 +194,16 @@ begin
 end;
 
 
-procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsMP.Show(aMsg);
-end;
-
-
-procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsSP.Show(aMsg);
-end;
+//procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TGameResultMsg);
+//begin
+//  fMenuResultsMP.Show(aMsg);
+//end;
+//
+//
+//procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TGameResultMsg);
+//begin
+//  fMenuResultsSP.Show(aMsg);
+//end;
 
 
 procedure TKMMainMenuInterface.PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
@@ -285,14 +283,14 @@ begin
                       fMenuReplays.Show;
                       fMenuPage := fMenuReplays;
                     end;
-    gpResultsMP:    begin
-                      fMenuResultsMP.Show(gr_ShowStats);
-                      fMenuPage := fMenuResultsMP;
-                    end;
-    gpResultsSP:    begin
-                      fMenuResultsSP.Show(gr_ShowStats);
-                      fMenuPage := fMenuResultsSP;
-                    end;
+//    gpResultsMP:    begin
+//                      fMenuResultsMP.Show(gr_ShowStats);
+//                      fMenuPage := fMenuResultsMP;
+//                    end;
+//    gpResultsSP:    begin
+//                      fMenuResultsSP.Show(gr_ShowStats);
+//                      fMenuPage := fMenuResultsSP;
+//                    end;
     gpError:        begin
                       fMenuError.Show(aText);
                       fMenuPage := fMenuError;

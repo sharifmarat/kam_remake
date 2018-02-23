@@ -155,6 +155,8 @@ type
     procedure GetHousePlans(aList: TKMPointDirList; aRect: TKMRect);
     procedure GetPlansTablets(aList: TKMPointTagList; aRect: TKMRect);
 
+    function CanDoStatsUpdate(aTick: Cardinal): Boolean;
+
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
@@ -168,6 +170,8 @@ type
   public
     function GetFishInWaterBody(aWaterID: Byte; FindHighestCount: Boolean=True): TKMUnitAnimal;
   end;
+
+  function GetStatsUpdatePeriod: Integer;
 
 
 implementation
@@ -1406,10 +1410,14 @@ begin
   //if (aTick + Byte(fPlayerIndex)) mod 20 = 0 then
     //fArmyEval.UpdateState;
 
-  if (gGame.MissionMode = mm_Normal) and (aTick mod CHARTS_SAMPLING_FOR_ECONOMY = 0)
-    or (gGame.MissionMode = mm_Tactic) and (aTick mod CHARTS_SAMPLING_FOR_TACTICS = 0)
-    or (aTick = 1) then
-    fStats.UpdateState;
+  if CanDoStatsUpdate(aTick) then
+    fStats.UpdateState(aTick);
+end;
+
+
+function TKMHand.CanDoStatsUpdate(aTick: Cardinal): Boolean;
+begin
+  Result := (aTick mod GetStatsUpdatePeriod = 0) or (aTick = 1);
 end;
 
 
@@ -1455,6 +1463,17 @@ begin
       if not FindHighestCount then Exit;
       HighestGroupCount := Result.FishCount;
     end;
+  end;
+end;
+
+
+//-----------
+function GetStatsUpdatePeriod: Integer;
+begin
+  Result := 1000;
+  case gGame.MissionMode of
+    mm_Normal:  Result := CHARTS_SAMPLING_FOR_ECONOMY;
+    mm_Tactic:  Result := CHARTS_SAMPLING_FOR_TACTICS;
   end;
 end;
 

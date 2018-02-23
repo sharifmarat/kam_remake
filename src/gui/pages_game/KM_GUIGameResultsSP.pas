@@ -4,14 +4,15 @@ interface
 uses
   Controls, SysUtils,
   KM_Controls, KM_Defaults, KM_Pics,
-  KM_InterfaceDefaults, KM_Campaigns, KM_Game,
-  KM_GameTypes;
+  KM_InterfaceDefaults, KM_Campaigns,
+  KM_GameTypes, KM_CommonTypes;
 
 
 type
-  TKMGameResultsSP = class (TKMMenuPageCommon)
+  TKMGameResultsSP = class
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnStopGame: TUnicodeStringWDefEvent; //will be in ancestor class
+    fOnShowDetailedStats: TEvent; //will be in ancestor class
     fGameResultMsg: TGameResultMsg; //So we know where to go after results screen
     fGameMode: TGameMode;
 
@@ -28,10 +29,10 @@ type
     fRepeatLocation: Byte;
     fRepeatColor: Cardinal;
 
-    fIsStatsRefreshed: Boolean;
+    fStatsLastUpdateTick: Cardinal;
 
     procedure Create_Results(aParent: TKMPanel);
-    procedure Refresh;
+    procedure Reinit;
 
     procedure GraphToggle(Sender: TObject);
 
@@ -54,32 +55,38 @@ type
         Chart_Citizens: TKMChart;
         Chart_Houses: TKMChart;
         Chart_Wares: TKMChart;
-      Button_ResultsBack, Button_ResultsRepeat, Button_ResultsContinue: TKMButton;
+      Button_Back, Button_Restart, Button_ContinueCampaign: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnStopGame: TUnicodeStringWDefEvent; aOnShowDetailedStats: TEvent);
+
+    property GameResultMsg: TGameResultMsg read fGameResultMsg;
 
     procedure Show(aMsg: TGameResultMsg);
+    function Visible: Boolean;
+    procedure Hide;
+    procedure UpdateState(aTick: Cardinal);
   end;
 
 
 implementation
 uses
-  KM_ResTexts, KM_GameApp, KM_HandsCollection,
-  KM_CommonUtils, KM_Resource, KM_Hand, KM_CommonTypes, KM_RenderUI, KM_ResFonts,
+  KM_ResTexts, KM_Game, KM_GameApp, KM_HandsCollection,
+  KM_CommonUtils, KM_Resource, KM_Hand, KM_RenderUI, KM_ResFonts,
   KM_ResWares, KM_HandStats;
 
 
 { TKMGUIMenuResultsSP }
-constructor TKMGameResultsSP.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMGameResultsSP.Create(aParent: TKMPanel; aOnStopGame: TUnicodeStringWDefEvent; aOnShowDetailedStats: TEvent);
 begin
   inherited Create;
 
-  fOnPageChange := aOnPageChange;
+  fOnStopGame := aOnStopGame;
+  fOnShowDetailedStats := aOnShowDetailedStats;
   Create_Results(aParent);
 end;
 
 
-procedure TKMGameResultsSP.Refresh;
+procedure TKMGameResultsSP.Reinit;
 var
   TempGraphCount: Integer;
   TempGraphs: array [0..MAX_HANDS-1] of record
@@ -120,9 +127,8 @@ var
   G: TKMCardinalArray;
   HumanId: TKMHandIndex;
   ShowAIResults: Boolean;
+  Cap: UnicodeString;
 begin
-  if fIsStatsRefreshed then Exit;
-
   fGameMode := gGame.GameMode;
 
   //Remember which map we played so we could restart it
@@ -137,31 +143,41 @@ begin
   // When exit mission update stats to build actual charts
   // without CHARTS_SAMPLING_FOR_TACTICS or CHARTS_SAMPLING_FOR_ECONOMY delays
   // so measurements for warriors/goods produces will not differ from charts
-  for I := 0 to gHands.Count - 1 do
-    gHands[I].Stats.UpdateState;
+//  if gGame.ReadyToStop then //Only if game is ready to stop the game
+//    for I := 0 to gHands.Count - 1 do
+//      gHands[I].Stats.UpdateState;
 
   //If the player canceled mission, hide the AI graph lines so he doesn't see secret info about enemy (e.g. army size)
   //That info should only be visible if the mission was won or a replay
   ShowAIResults := (fGameResultMsg in [gr_Win, gr_ReplayEnd]);
 
   //Restart button is hidden if you won or if it is a replay
-  Button_ResultsRepeat.Visible := not (fGameResultMsg in [gr_ReplayEnd, gr_Win]);
+  Button_Restart.Visible := not (fGameResultMsg in [gr_ReplayEnd, gr_Win, gr_GameContinues]);
 
   //Even if the campaign is complete Player can now return to it's screen to replay any of the maps
-  Button_ResultsContinue.Visible := (gGameApp.Campaigns.ActiveCampaign <> nil) and (fGameResultMsg <> gr_ReplayEnd);
-  Button_ResultsContinue.Enabled := fGameResultMsg = gr_Win;
+  Button_ContinueCampaign.Visible := (gGameApp.Campaigns.ActiveCampaign <> nil) and not (fGameResultMsg in [gr_ReplayEnd, gr_GameContinues]);
+  Button_ContinueCampaign.Enabled := fGameResultMsg = gr_Win;
+
+  if fGameResultMsg = gr_GameContinues then
+    Button_Back.Caption := 'Back to game' //Todo translate
+  else
+    Button_Back.Caption := gResTexts[TX_MENU_BACK];  
 
   //Header
   case fGameResultMsg of
-    gr_Win:       Label_Results.Caption := gResTexts[TX_MENU_MISSION_VICTORY];
-    gr_Defeat:    Label_Results.Caption := gResTexts[TX_MENU_MISSION_DEFEAT];
-    gr_Cancel:    Label_Results.Caption := gResTexts[TX_MENU_MISSION_CANCELED];
-    gr_ReplayEnd: Label_Results.Caption := gResTexts[TX_MENU_REPLAY_ENDED];
-    else          Label_Results.Caption := NO_TEXT;
+    gr_Win:           Cap := gResTexts[TX_MENU_MISSION_VICTORY];
+    gr_Defeat:        Cap := gResTexts[TX_MENU_MISSION_DEFEAT];
+    gr_Cancel:        Cap := gResTexts[TX_MENU_MISSION_CANCELED];
+    gr_ReplayEnd:     Cap := gResTexts[TX_MENU_REPLAY_ENDED];
+    gr_GameContinues: Cap := ''; //Do not show game result, as game is still going //Todo translate
+    else              Cap := NO_TEXT;
   end;
+  Label_Results.Caption := Cap;
 
   //Append mission name and time after the result message
-  Label_Results.Caption := Label_Results.Caption + ' - ' + gGame.GameName; //Don't show the mission time in SP because it's already shown elsewhere
+  if Label_Results.Caption <> '' then
+    Label_Results.Caption := Label_Results.Caption + ' - ';
+  Label_Results.Caption := Label_Results.Caption + gGame.GameName; //Don't show the mission time in SP because it's already shown elsewhere
 
   //This is SP menu, we are dead sure there's only one Human player
   HumanId := -1;
@@ -256,7 +272,6 @@ begin
   Button_ResultsHouses.Enabled := (gGame.MissionMode = mm_Normal);
   Button_ResultsCitizens.Enabled := (gGame.MissionMode = mm_Normal);
   Button_ResultsWares.Enabled := (gGame.MissionMode = mm_Normal);
-  GraphToggle(Button_ResultsArmy);
 end;
 
 
@@ -276,13 +291,40 @@ end;
 
 procedure TKMGameResultsSP.Show(aMsg: TGameResultMsg);
 begin
-  if aMsg <> gr_ShowStats then //Do not update game result, if we came back from MP Stats page
-    fGameResultMsg := aMsg;
+  fGameResultMsg := aMsg;
 
-  fIsStatsRefreshed := (aMsg = gr_ShowStats);
+  fStatsLastUpdateTick := 0;
+  if aMsg <> gr_GameContinues then
+    fStatsLastUpdateTick := gHands[0].Stats.LastUpdateStateTick;
 
-  Refresh;
+  Reinit;
+
+  GraphToggle(Button_ResultsArmy);
+
   Panel_Results.Show;
+end;
+
+
+procedure TKMGameResultsSP.Hide;
+begin
+  Panel_Results.Hide;
+  Panel_Results.Parent.Hide;
+end;
+
+
+function TKMGameResultsSP.Visible: Boolean;
+begin
+  Result := Panel_Results.Visible;
+end;
+
+
+procedure TKMGameResultsSP.UpdateState(aTick: Cardinal);
+begin
+  if Visible
+    and (not gGame.ReadyToStop
+      or (fStatsLastUpdateTick = 0)
+      or (aTick < fStatsLastUpdateTick + GetStatsUpdatePeriod)) then
+    Reinit;
 end;
 
 
@@ -398,21 +440,27 @@ begin
     Button_MoreStats.CapOffsetY := -20;
     Button_MoreStats.OnClick := MoreStatsClick;
 
-    Button_ResultsBack := TKMButton.Create(Panel_Results, 30, 610, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
-    Button_ResultsBack.Anchors := [anLeft];
-    Button_ResultsBack.OnClick := BackClick;
-    Button_ResultsRepeat := TKMButton.Create(Panel_Results, 270, 610, 220, 30, gResTexts[TX_MENU_MISSION_REPEAT], bsMenu);
-    Button_ResultsRepeat.Anchors := [anLeft];
-    Button_ResultsRepeat.OnClick := RepeatClick;
-    Button_ResultsContinue := TKMButton.Create(Panel_Results, 510, 610, 220, 30, gResTexts[TX_MENU_MISSION_NEXT], bsMenu);
-    Button_ResultsContinue.Anchors := [anLeft];
-    Button_ResultsContinue.OnClick := ContinueClick;
+    Button_Back := TKMButton.Create(Panel_Results, 30, 610, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
+    Button_Back.Anchors := [anLeft];
+    Button_Back.OnClick := BackClick;
+
+    Button_Restart := TKMButton.Create(Panel_Results, 270, 610, 220, 30, gResTexts[TX_MENU_MISSION_REPEAT], bsMenu);
+    Button_Restart.Anchors := [anLeft];
+    Button_Restart.OnClick := RepeatClick;
+
+    Button_ContinueCampaign := TKMButton.Create(Panel_Results, 510, 610, 220, 30, gResTexts[TX_MENU_MISSION_NEXT], bsMenu);
+    Button_ContinueCampaign.Anchors := [anLeft];
+    Button_ContinueCampaign.OnClick := ContinueClick;
+
+//    Button_BackToGame := TKMButton.Create(Panel_Results, 780, 610, 220, 30, 'Back to game', bsMenu);
+//    Button_BackToGame.Anchors := [anLeft];
+//    Button_BackToGame.OnClick := BackClick;
 end;
 
 
 procedure TKMGameResultsSP.MoreStatsClick(Sender: TObject);
 begin
-  fOnPageChange(gpResultsMP);
+  fOnShowDetailedStats;
 end;
 
 
@@ -423,20 +471,27 @@ begin
   //Singleplayer game end -> ResultsSP -> Singleplayer
   //Replay end            -> ResultsSP -> Replays
 
-  if fGameResultMsg = gr_ReplayEnd then
-    fOnPageChange(gpReplays)
-  else if fGameMode = gmSingle then
-    fOnPageChange(gpSinglePlayer)
+  if fGameResultMsg = gr_GameContinues then
+    Hide
   else
-    fOnPageChange(gpMainMenu);
+    fOnStopGame;    
+
+
+//  if fGameResultMsg = gr_ReplayEnd then
+//    fOnPageChange(gpReplays)
+//  else if fGameMode = gmSingle then
+//    fOnPageChange(gpSinglePlayer)
+//  else
+//    fOnPageChange(gpMainMenu);
 end;
 
 
 procedure TKMGameResultsSP.ContinueClick(Sender: TObject);
-var TheCampaign: UnicodeString;
+var
+  CampaignName: UnicodeString;
 begin
-  TheCampaign := Char(fRepeatCampName[0]) + Char(fRepeatCampName[1]) + Char(fRepeatCampName[2]);
-  fOnPageChange(gpCampaign, TheCampaign);
+  CampaignName := Char(fRepeatCampName[0]) + Char(fRepeatCampName[1]) + Char(fRepeatCampName[2]);
+  fOnStopGame(CampaignName);
 end;
 
 

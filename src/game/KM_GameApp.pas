@@ -41,6 +41,7 @@ type
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
+    procedure PrepageStopGame(aMsg: TGameResultMsg);
     procedure StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
@@ -408,23 +409,9 @@ begin
 end;
 
 
-//Game needs to be stopped
-//1. Disconnect from network
-//2. Save games replay
-//3. Fill in game results
-//4. Fill in menu message if needed
-//5. Free the game object
-//6. Switch to MainMenu
-procedure TKMGameApp.StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+procedure TKMGameApp.PrepageStopGame(aMsg: TGameResultMsg);
 begin
-  if gGame = nil then Exit;
-
-  if gGame.IsMultiplayer then
-  begin
-    if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
-    fNetworking.Disconnect;
-  end;
+  if (gGame = nil) or gGame.ReadyToStop then Exit;
 
   gSoundPlayer.AbortAllLongSounds; //SFX with a long duration should be stopped when quitting
 
@@ -445,16 +432,40 @@ begin
     end;
   end;
 
+  gGame.ReadyToStop := True;
+end;
+
+
+//Game needs to be stopped
+//1. Disconnect from network
+//2. Save games replay
+//3. Fill in game results
+//4. Fill in menu message if needed
+//5. Free the game object
+//6. Switch to MainMenu
+procedure TKMGameApp.StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+begin
+  if gGame = nil then Exit;
+
+  PrepageStopGame(aMsg);
+
+  if gGame.IsMultiplayer then
+  begin
+    if fNetworking.Connected then
+      fNetworking.AnnounceDisconnect;
+    fNetworking.Disconnect;
+  end;
+
   case aMsg of
     gr_Win,
     gr_Defeat,
-    gr_Cancel,
-    gr_ReplayEnd:   if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
-                      fMainMenuInterface.ShowResultsMP(aMsg)
-                    else begin
-                      fMainMenuInterface.ShowResultsMP(aMsg); // Show MP stats too, as we can show them from SP stats page
-                      fMainMenuInterface.ShowResultsSP(aMsg);
+    gr_Cancel:      case gGame.GameMode of
+                      gmSingle:         fMainMenuInterface.PageChange(gpSinglePlayer);
+                      gmCampaign:       fMainMenuInterface.PageChange(gpMainMenu);
+                      gmMulti,
+                      gmMultiSpectate:  fMainMenuInterface.PageChange(gpMultiplayer);
                     end;
+    gr_ReplayEnd:   fMainMenuInterface.PageChange(gpReplays);
     gr_Error,
     gr_Disconnect:  begin
                       if gGame.IsMultiplayer then

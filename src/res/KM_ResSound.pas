@@ -110,6 +110,8 @@ type
     IsLoaded: boolean;
   end;
 
+  TKMSoundType = (stGame, stMenu);
+
   TKMResSounds = class
   private
     fLocaleString: AnsiString; //Locale used to access warrior sounds
@@ -133,6 +135,11 @@ type
     function FileOfNewSFX(aSFX: TSoundFXNew): UnicodeString;
     function FileOfNotification(aSound: TAttackNotification; aNumber: Byte): UnicodeString;
     function FileOfWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; aNumber: Byte): UnicodeString;
+
+    function GetSoundType(aNewSFX: TSoundFXNew): TKMSoundType; overload;
+    function GetSoundType(aSFX: TSoundFX): TKMSoundType; overload;
+    function GetSoundType(aSFX: TWarriorSpeech): TKMSoundType; overload;
+    function GetSoundType(aSFX: TAttackNotification): TKMSoundType; overload;
 
     procedure ExportSounds;
   end;
@@ -322,6 +329,41 @@ var
 begin
   S := ExeDir + 'data'+PathDelim+'sfx'+PathDelim+'speech.'+UnicodeString(fLocaleString)+ PathDelim + AttackNotifications[aSound] + int2fix(aNumber,2);
   Result := S+'.wav';
+end;
+
+
+function TKMResSounds.GetSoundType(aSFX: TSoundFX): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
+end;
+
+
+function TKMResSounds.GetSoundType(aNewSFX: TSoundFXNew): TKMSoundType;
+begin
+  if aNewSFX in [sfxn_ButtonClick,
+    sfxn_MPChatMessage,
+    sfxn_MPChatTeam,
+    sfxn_MPChatSystem,
+    sfxn_MPChatOpen,
+    sfxn_MPChatClose,
+//    sfxn_Victory,
+//    sfxn_Defeat,
+    sfxn_Error] then
+    Result := stMenu
+  else
+    Result := stGame;
+end;
+
+
+function TKMResSounds.GetSoundType(aSFX: TWarriorSpeech): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
+end;
+
+
+function TKMResSounds.GetSoundType(aSFX: TAttackNotification): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
 end;
 
 
