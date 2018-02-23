@@ -1006,6 +1006,9 @@ begin
                     // Update saved SP game list saved selected map position CRC if we resave this map
                     if fGameMapCRC = gGameApp.GameSettings.MenuSPMissionMapCRC then
                       gGameApp.GameSettings.MenuSPMissionMapCRC := MapInfo.CRC;
+                    // Update favorite map CRC if we resave favourite map with the same name
+                    if fGameName = MapInfo.FileName then
+                      gGameApp.GameSettings.FavouriteMapsSP.Replace(fGameMapCRC, MapInfo.CRC);
                   end;
       mfMP,mfDL:  begin
                     gGameApp.GameSettings.MenuMapEdMPMapCRC := MapInfo.CRC;
@@ -1013,7 +1016,7 @@ begin
                     gGameApp.GameSettings.MenuMapEdMapType := 1;
                     // Update favorite map CRC if we resave favourite map with the same name
                     if fGameName = MapInfo.FileName then
-                      gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapCRC, MapInfo.CRC);
+                      gGameApp.GameSettings.FavouriteMapsMP.Replace(fGameMapCRC, MapInfo.CRC);
                   end;
     end;
     MapInfo.Free;

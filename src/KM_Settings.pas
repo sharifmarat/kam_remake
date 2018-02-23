@@ -138,6 +138,7 @@ type
     fServerWelcomeMessage: UnicodeString;
     fWareDistribution: TKMWareDistribution;
 
+    fMenu_FavouriteSPMapsStr: UnicodeString;
     fMenu_FavouriteMPMapsStr: UnicodeString;
     fMenu_MapSPType: Byte;
     fMenu_ReplaysType: Byte;
@@ -157,7 +158,8 @@ type
     fMenu_SPSaveFileName: UnicodeString;
     fMenu_LobbyMapType: Byte;
 
-    fFavouriteMaps: TKMFavouriteMaps;
+    fFavouriteMapsSP: TKMFavouriteMaps;
+    fFavouriteMapsMP: TKMFavouriteMaps;
 
     procedure SetAutosave(aValue: Boolean);
     procedure SetAutosaveFrequency(aValue: Integer);
@@ -192,6 +194,7 @@ type
     procedure SetServerPacketsAccumulatingDelay(aValue: Integer);
     procedure SetFlashOnMessage(aValue: Boolean);
 
+    procedure SetMenuFavouriteSPMapsStr(const aValue: UnicodeString);
     procedure SetMenuFavouriteMPMapsStr(const aValue: UnicodeString);
     procedure SetMenuMapSPType(aValue: Byte);
     procedure SetMenuReplaysType(aValue: Byte);
@@ -258,7 +261,6 @@ type
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
     property WareDistribution: TKMWareDistribution read fWareDistribution;
 
-    property MenuFavouriteMPMapsStr: UnicodeString read fMenu_FavouriteMPMapsStr write SetMenuFavouriteMPMapsStr;
     property MenuMapSPType: Byte read fMenu_MapSPType write SetMenuMapSPType;
     property MenuReplaysType: Byte read fMenu_ReplaysType write SetMenuReplaysType;
     property MenuMapEdMapType: Byte read fMenu_MapEdMapType write SetMenuMapEdMapType;
@@ -277,7 +279,8 @@ type
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
 
-    property FavouriteMaps: TKMFavouriteMaps read fFavouriteMaps;
+    property FavouriteMapsSP: TKMFavouriteMaps read fFavouriteMapsSP;
+    property FavouriteMapsMP: TKMFavouriteMaps read fFavouriteMapsMP;
   end;
 
 
@@ -422,8 +425,11 @@ begin
   inherited;
 
   fWareDistribution := TKMWareDistribution.Create;
-  fFavouriteMaps := TKMFavouriteMaps.Create;
-  fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMPMapsStr;
+
+  fFavouriteMapsSP := TKMFavouriteMaps.Create;
+  fFavouriteMapsSP.OnMapsUpdate := SetMenuFavouriteSPMapsStr;
+  fFavouriteMapsMP := TKMFavouriteMaps.Create;
+  fFavouriteMapsMP.OnMapsUpdate := SetMenuFavouriteMPMapsStr;
 
   ReloadSettings;
 end;
@@ -433,7 +439,8 @@ destructor TKMGameSettings.Destroy;
 begin
   SaveToINI(ExeDir + SETTINGS_FILE);
   FreeAndNil(fWareDistribution);
-  FreeAndNil(fFavouriteMaps);
+  FreeAndNil(fFavouriteMapsSP);
+  FreeAndNil(fFavouriteMapsMP);
 
   inherited;
 end;
@@ -512,8 +519,11 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
-    fMenu_FavouriteMPMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
-    fFavouriteMaps.LoadFromString(fMenu_FavouriteMPMapsStr);
+    fMenu_FavouriteSPMapsStr   := F.ReadString('Menu', 'FavouriteMapsSP', '');
+    fFavouriteMapsSP.LoadFromString(fMenu_FavouriteSPMapsStr);
+
+    fMenu_FavouriteMPMapsStr   := F.ReadString('Menu', 'FavouriteMapsMP', '');
+    fFavouriteMapsMP.LoadFromString(fMenu_FavouriteMPMapsStr);
 
     fMenu_MapSPType         := F.ReadInteger('Menu', 'MapSPType',  0);
     fMenu_ReplaysType       := F.ReadInteger('Menu', 'ReplaysType',  0);
@@ -594,7 +604,8 @@ begin
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
 
-    F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMPMapsStr);
+    F.WriteString ('Menu',  'FavouriteMapsSP',    fMenu_FavouriteSPMapsStr);
+    F.WriteString ('Menu',  'FavouriteMapsMP',    fMenu_FavouriteMPMapsStr);
     F.WriteInteger('Menu',  'MapSPType',          fMenu_MapSPType);
     F.WriteInteger('Menu',  'ReplaysType',        fMenu_ReplaysType);
     F.WriteInteger('Menu',  'MapEdMapType',       fMenu_MapEdMapType);
@@ -640,6 +651,13 @@ end;
 procedure TKMGameSettings.SetFlashOnMessage(aValue: Boolean);
 begin
   fFlashOnMessage := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuFavouriteSPMapsStr(const aValue: UnicodeString);
+begin
+  fMenu_FavouriteSPMapsStr := aValue;
   Changed;
 end;
 

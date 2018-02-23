@@ -1751,7 +1751,7 @@ begin
     SetLength(MapsCRCArray, fMapsMP.Count);
     for I := 0 to fMapsMP.Count - 1 do
       MapsCRCArray[I] := fMapsMP[I].CRC;
-    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsCRCArray);
+    gGameApp.GameSettings.FavouriteMapsMP.RemoveMissing(MapsCRCArray);
   end;
 end;
 
@@ -1980,9 +1980,9 @@ begin
     try
       fMapsMP[I].IsFavourite := not fMapsMP[I].IsFavourite;
       if fMapsMP[I].IsFavourite then
-        gGameApp.GameSettings.FavouriteMaps.Add(fMapsMP[I].CRC)
+        gGameApp.GameSettings.FavouriteMapsMP.Add(fMapsMP[I].CRC)
       else
-        gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].CRC);
+        gGameApp.GameSettings.FavouriteMapsMP.Remove(fMapsMP[I].CRC);
 
       //Update pic
       DropCol_LobbyMaps.Item[Y].Cells[0].Pic := fMapsMP[I].FavouriteMapPic;

@@ -14,7 +14,7 @@ type
   private
     fOnPageChange: TGUIEventText; //will be in ancestor class
 
-    fMaps: TKMapsCollection;
+    fMapsSP: TKMapsCollection;
     fMapsMP: TKMapsCollection;
     fMinimap: TKMMinimap;
     fMinimapLastListId: Integer;  // column id, on which last time minimap was loaded. Avoid multiple loads of same minimap, which could happen on every RefreshList
@@ -35,6 +35,7 @@ type
     procedure ScanUpdate(Sender: TObject);
     procedure ScanTerminate(Sender: TObject);
     procedure SortUpdate(Sender: TObject);
+    procedure ScanComplete(Sender: TObject);
 
     procedure RefreshList(aJumpToSelected: Boolean);
     procedure ColumnClick(aValue: Integer);
@@ -42,6 +43,7 @@ type
     procedure LoadMinimap(aID: Integer = -1);
     procedure ReadmeClick(Sender: TObject);
     procedure SelectMap(Sender: TObject);
+    function ColumnBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
     procedure BackClick(Sender: TObject);
     procedure DeleteClick(Sender: TObject);
     procedure DeleteConfirm(aVisible: Boolean);
@@ -101,7 +103,9 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_Game, KM_GameApp, KM_RenderUI, KM_Resource, KM_ResFonts, KM_InterfaceMapEditor, KM_Defaults, KM_Pics;
+  KM_ResTexts, KM_Game, KM_GameApp,
+  KM_RenderUI, KM_Resource, KM_ResFonts, KM_InterfaceMapEditor,
+  KM_Defaults, KM_Pics, KM_CommonTypes;
 
 const
   MAPSIZES_COUNT = 15;
@@ -119,8 +123,8 @@ begin
   OnEscKeyDown := EscKeyDown;
   OnKeyDown := KeyDown;
 
-  fMaps := TKMapsCollection.Create(mfSP);
-  fMapsMP := TKMapsCollection.Create([mfMP, mfDL]);
+  fMapsSP := TKMapsCollection.Create(mfSP, smByNameDesc, True);
+  fMapsMP := TKMapsCollection.Create([mfMP, mfDL], smByNameDesc, True);
   fMinimap := TKMMinimap.Create(True, True);
 
   Panel_MapEd:=TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
@@ -168,11 +172,12 @@ begin
       Radio_MapEd_MapType.OnChange := MapTypeChange;
       ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 80, 440, 506, fnt_Metal,  bsMenu);
       ColumnBox_MapEd.Anchors := [anLeft, anTop, anBottom];
-      ColumnBox_MapEd.SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 22, 310, 340]);
-      ColumnBox_MapEd.SearchColumn := 1;
+      ColumnBox_MapEd.SetColumns(fnt_Outline, ['', '', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 22, 44, 310, 340]);
+      ColumnBox_MapEd.SearchColumn := 2;
       ColumnBox_MapEd.OnColumnClick := ColumnClick;
       ColumnBox_MapEd.OnChange := SelectMap;
       ColumnBox_MapEd.OnDoubleClick := StartClick;
+      ColumnBox_MapEd.OnCellClick := ColumnBoxMaps_CellClick;
 
       with TKMBevel.Create(Panel_MapEdLoad, 448, 104, 199, 199) do
         Anchors := [anLeft];
@@ -314,11 +319,48 @@ end;
 
 destructor TKMMenuMapEditor.Destroy;
 begin
-  fMaps.Free;
+  fMapsSP.Free;
   fMapsMP.Free;
   fMinimap.Free;
 
   inherited;
+end;
+
+
+function TKMMenuMapEditor.ColumnBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
+var
+  I: Integer;
+  Maps: TKMapsCollection;
+begin
+  Result := False;
+  if X = 0 then //1st column
+  begin
+    I := ColumnBox_MapEd.Item[Y].Tag;
+    Maps := GetMaps;
+    Maps.Lock;
+    try
+      Maps[I].IsFavourite := not Maps[I].IsFavourite;
+      if Maps[I].IsFavourite then
+      begin
+        if Maps = fMapsMP then
+          gGameApp.GameSettings.FavouriteMapsMP.Add(Maps[I].CRC)
+        else
+          gGameApp.GameSettings.FavouriteMapsSP.Add(Maps[I].CRC);
+      end else
+      begin
+        if Maps = fMapsMP then
+          gGameApp.GameSettings.FavouriteMapsMP.Remove(Maps[I].CRC)
+        else
+          gGameApp.GameSettings.FavouriteMapsSP.Remove(Maps[I].CRC)
+      end;
+
+      //Update pic
+      ColumnBox_MapEd.Item[Y].Cells[0].Pic := Maps[I].FavouriteMapPic;
+    finally
+      Maps.Unlock;
+    end;
+    Result := True; //we handle mouse click here, and do not want to propagate it further
+  end;
 end;
 
 
@@ -344,7 +386,7 @@ begin
     Maps := GetMaps;
 
     //Terminate all
-    fMaps.TerminateScan;
+    fMapsSP.TerminateScan;
     fMapsMP.TerminateScan;
 
     Maps.Lock;
@@ -425,7 +467,7 @@ end;
 procedure TKMMenuMapEditor.ListUpdate;
 begin
   //Terminate all
-  fMaps.TerminateScan;
+  fMapsSP.TerminateScan;
   fMapsMP.TerminateScan;
 
   ColumnBox_MapEd.Clear;
@@ -439,12 +481,12 @@ begin
   case Radio_MapEd_MapType.ItemIndex of
     0:  begin
           fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdSPMapCRC;
-          fMaps.Refresh(ScanUpdate, ScanTerminate);
+          fMapsSP.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
         end;
     1:  begin
           fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdMPMapCRC;
           fSelectedMapInfo.Name := gGameApp.GameSettings.MenuMapEdMPMapName;
-          fMapsMP.Refresh(ScanUpdate, ScanTerminate);
+          fMapsMP.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
         end
   end;
 end;
@@ -470,6 +512,29 @@ begin
 end;
 
 
+procedure TKMMenuMapEditor.ScanComplete(Sender: TObject);
+var
+  Maps: TKMapsCollection;
+  MapsCRCArray: TKMCardinalArray;
+  I: Integer;
+begin
+  Maps := GetMaps;
+  //Cleanup missing Favourite maps from the lists
+  if (Sender = Maps) and (Maps.Count > 0) then
+  begin
+    SetLength(MapsCRCArray, Maps.Count);
+
+    for I := 0 to Maps.Count - 1 do
+      MapsCRCArray[I] := Maps[I].CRC;
+
+    if Maps = fMapsMP then
+      gGameApp.GameSettings.FavouriteMapsMP.RemoveMissing(MapsCRCArray)
+    else
+      gGameApp.GameSettings.FavouriteMapsSP.RemoveMissing(MapsCRCArray);
+  end;
+end;
+
+
 procedure TKMMenuMapEditor.ReadmeClick(Sender: TObject);
 var
   ID: Integer;
@@ -486,6 +551,7 @@ var
   I, PrevTop: Integer;
   Maps: TKMapsCollection;
   R: TKMListRow;
+  Color: Cardinal;
 begin
   PrevTop := ColumnBox_MapEd.TopIndex;
   ColumnBox_MapEd.Clear;
@@ -496,10 +562,13 @@ begin
   try
     for I := 0 to Maps.Count - 1 do
     begin
-      R := MakeListRow(['', Maps[I].FileName, IntToStr(Maps[I].LocCount), Maps[I].SizeText],  //Texts
-                       [Maps[I].GetLobbyColor, Maps[I].GetLobbyColor, Maps[I].GetLobbyColor, Maps[I].GetLobbyColor], //Colors
+      Color := Maps[I].GetLobbyColor;
+      R := MakeListRow(['', '', Maps[I].FileName, IntToStr(Maps[I].LocCount), Maps[I].SizeText],  //Texts
+                       [Color, Color, Color, Color, Color], //Colors
                        I);
-      R.Cells[0].Pic := MakePic(rxGui, 657 + Byte(Maps[I].MissionMode = mm_Tactic));
+      R.Cells[0].Pic := Maps[I].FavouriteMapPic;
+      R.Cells[0].HighlightOnMouseOver := True;
+      R.Cells[1].Pic := MakePic(rxGui, 657 + Byte(Maps[I].MissionMode = mm_Tactic));
       ColumnBox_MapEd.AddItem(R);
 
       if (Maps[I].CRC = fSelectedMapInfo.CRC)
@@ -536,18 +605,22 @@ begin
   with ColumnBox_MapEd do
   case SortIndex of
     0:  if SortDirection = sdDown then
+          SM := smByFavouriteDesc
+        else
+          SM := smByFavouriteAsc;
+    1:  if SortDirection = sdDown then
           SM := smByMissionModeDesc
         else
           SM := smByMissionModeAsc;
-    1:  if SortDirection = sdDown then
+    2:  if SortDirection = sdDown then
           SM := smByNameDesc
         else
           SM := smByNameAsc;
-    2:  if SortDirection = sdDown then
+    3:  if SortDirection = sdDown then
           SM := smByPlayersDesc
         else
           SM := smByPlayersAsc;
-    3:  if SortDirection = sdDown then
+    4:  if SortDirection = sdDown then
           SM := smBySizeDesc
         else
           SM := smBySizeAsc;
@@ -555,7 +628,7 @@ begin
   end;
 
   //Keep all lists in sync incase user switches between them
-  fMaps.Sort(SM, SortUpdate);
+  fMapsSP.Sort(SM, SortUpdate);
   fMapsMP.Sort(SM, SortUpdate);
 end;
 
@@ -563,7 +636,7 @@ end;
 function TKMMenuMapEditor.GetMaps: TKMapsCollection;
 begin
   case Radio_MapEd_MapType.ItemIndex of
-    0: Result := fMaps;
+    0: Result := fMapsSP;
     1: Result := fMapsMP;
     else
       raise Exception.Create('Unknown map type ' + IntToStr(Radio_MapEd_MapType.ItemIndex));
@@ -626,7 +699,7 @@ end;
 
 procedure TKMMenuMapEditor.BackClick(Sender: TObject);
 begin
-  fMaps.TerminateScan;
+  fMapsSP.TerminateScan;
   fMapsMP.TerminateScan;
 
   fOnPageChange(gpMainMenu);
@@ -910,7 +983,7 @@ end;
 
 procedure TKMMenuMapEditor.UpdateState;
 begin
-  fMaps.UpdateState;
+  fMapsSP.UpdateState;
   fMapsMP.UpdateState;
 end;
 
