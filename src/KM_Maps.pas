@@ -3,7 +3,7 @@ unit KM_Maps;
 interface
 uses
   Classes, SyncObjs,
-  KM_CommonClasses, KM_Defaults;
+  KM_CommonClasses, KM_Defaults, KM_Pics;
 
 
 type
@@ -70,6 +70,7 @@ type
     procedure SaveToFile(const aPath: UnicodeString);
     function GetSizeText: String;
     function DetermineReadmeFilePath: String;
+    function GetFavouriteMapPic: TKMPic;
   public
     MapSizeX, MapSizeY: Integer;
     MissionMode: TKMissionMode;
@@ -114,6 +115,7 @@ type
     function IsMultiplayer: Boolean;
     function IsNormalMission: Boolean;
     function IsTacticMission: Boolean;
+    property FavouriteMapPic: TKMPic read GetFavouriteMapPic;
   end;
 
 
@@ -654,6 +656,12 @@ begin
         Result := Path;
     end;
   end;
+end;
+
+
+function TKMapInfo.GetFavouriteMapPic: TKMPic;
+begin
+  Result := MakePic(rxGuiMain, IfThen(IsFavourite, 77, 85), True);
 end;
 
 

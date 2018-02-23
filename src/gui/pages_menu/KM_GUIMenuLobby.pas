@@ -73,7 +73,6 @@ type
     procedure MapList_ScanComplete(Sender: TObject);
     procedure RefreshMapList(aJumpToSelected: Boolean);
     procedure RefreshSaveList(aJumpToSelected: Boolean);
-    function GetFavouriteMapPic(aIsFavourite: Boolean): TKMPic;
     procedure MapChange(Sender: TObject);
     function DropBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
     function DropBoxPlayers_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
@@ -1755,11 +1754,6 @@ begin
 end;
 
 
-function TKMMenuLobby.GetFavouriteMapPic(aIsFavourite: Boolean): TKMPic;
-begin
-  Result := MakePic(rxGuiMain, IfThen(aIsFavourite, 77, 85), True);
-end;
-
 
 procedure TKMMenuLobby.RefreshMapList(aJumpToSelected:Boolean);
   procedure SelectByName(const aName: UnicodeString);
@@ -1805,7 +1799,7 @@ begin
         Row := MakeListRow(['', fMapsMP[I].FileName, IntToStr(fMapsMP[I].HumanPlayerCountMP), fMapsMP[I].SizeText], //Texts
                            [fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor], //Colors
                            I);
-        Row.Cells[0].Pic := GetFavouriteMapPic(fMapsMP[I].IsFavourite);
+        Row.Cells[0].Pic := fMapsMP[I].FavouriteMapPic;
         Row.Cells[0].HighlightOnMouseOver := True;
         DropCol_LobbyMaps.Add(Row);
       end;
@@ -1989,7 +1983,7 @@ begin
         gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].CRC);
 
       //Update pic
-      DropCol_LobbyMaps.Item[Y].Cells[0].Pic := GetFavouriteMapPic(fMapsMP[I].IsFavourite);
+      DropCol_LobbyMaps.Item[Y].Cells[0].Pic := fMapsMP[I].FavouriteMapPic;
       fMapsSortUpdateNeeded := True; //Ask for resort on next list show
     finally
       fMapsMP.Unlock;
