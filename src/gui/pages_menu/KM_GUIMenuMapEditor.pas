@@ -536,9 +536,9 @@ begin
   with ColumnBox_MapEd do
   case SortIndex of
     0:  if SortDirection = sdDown then
-          SM := smByModeDesc
+          SM := smByMissionModeDesc
         else
-          SM := smByModeAsc;
+          SM := smByMissionModeAsc;
     1:  if SortDirection = sdDown then
           SM := smByNameDesc
         else

@@ -608,12 +608,11 @@ var
 begin
   //Set Descending order by default and invert it if same column selected again
   case aColumn of
-    0:  if fMaps.SortMethod = smByModeDesc then
-          Method := smByModeAsc
+    0:  if fMaps.SortMethod = smByMissionModeDesc then
+          Method := smByMissionModeAsc
         else
-          Method := smByModeDesc;
-    1:
-        if fMaps.SortMethod = smByPlayersDesc then
+          Method := smByMissionModeDesc;
+    1:  if fMaps.SortMethod = smByPlayersDesc then
           Method := smByPlayersAsc
         else
           Method := smByPlayersDesc;

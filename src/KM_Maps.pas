@@ -14,7 +14,7 @@ type
     smByPlayersAsc, smByPlayersDesc,
     smByHumanPlayersAsc, smByHumanPlayersDesc,
     smByHumanPlayersMPAsc, smByHumanPlayersMPDesc,
-    smByModeAsc, smByModeDesc);
+    smByMissionModeAsc, smByMissionModeDesc);
 
   TKMapInfo = class;
   TKMapEvent = procedure (aMap: TKMapInfo) of object;
@@ -1045,8 +1045,8 @@ var TempMaps: array of TKMapInfo;
       smByHumanPlayersDesc:   Result := A.HumanPlayerCount > B.HumanPlayerCount;
       smByHumanPlayersMPAsc:  Result := A.HumanPlayerCountMP < B.HumanPlayerCountMP;
       smByHumanPlayersMPDesc: Result := A.HumanPlayerCountMP > B.HumanPlayerCountMP;
-      smByModeAsc:            Result := A.MissionMode < B.MissionMode;
-      smByModeDesc:           Result := A.MissionMode > B.MissionMode;
+      smByMissionModeAsc:            Result := A.MissionMode < B.MissionMode;
+      smByMissionModeDesc:           Result := A.MissionMode > B.MissionMode;
     end;
     if fDoSortWithFavourites and not (fSortMethod in [smByFavouriteAsc, smByFavouriteDesc]) then
     begin
