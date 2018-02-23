@@ -129,7 +129,7 @@
 !SET_AI_ATTACK TYPE 0
 !SET_AI_ATTACK TOTAL_AMOUNT 1
 !SET_AI_ATTACK TAKEALL
-!SET_AI_ATTACK COUNTER 950
+!SET_AI_ATTACK COUNTER 1050
 !SET_AI_ATTACK TARGET 0
 !COPY_AI_ATTACK 0
 !CLEAR_AI_ATTACK
@@ -152,4 +152,4 @@
 
 //Animals
 
-//This mission was made with KaM Remake Map Editor version r6720 at 20.08.2015 17:17:54
+//This mission was made with KaM Remake Map Editor version r8687 at 23.02.2018 17:06:40
