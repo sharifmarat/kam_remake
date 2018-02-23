@@ -68,9 +68,11 @@ type
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
     procedure UpdateMapList;
+
     procedure MapList_SortUpdate(Sender: TObject);
     procedure MapList_ScanUpdate(Sender: TObject);
     procedure MapList_ScanComplete(Sender: TObject);
+
     procedure RefreshMapList(aJumpToSelected: Boolean);
     procedure RefreshSaveList(aJumpToSelected: Boolean);
     procedure MapChange(Sender: TObject);
