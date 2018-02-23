@@ -86,7 +86,7 @@ const
   );
 
 type
-  TMissionParserPatcher = class(TMissionParserCommon)
+  TKMMissionParserPatcher = class(TKMMissionParserCommon)
   protected
     function ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
   public
@@ -94,7 +94,7 @@ type
     procedure SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
   end;
 
-  TMissionParserColorCheck = class(TMissionParserPatcher)
+  TKMMissionParserColorCheck = class(TKMMissionParserPatcher)
   public
     procedure SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
     function GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): String;
@@ -104,7 +104,7 @@ type
 
 
 { TMissionParserPatcher }
-function TMissionParserPatcher.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserPatcher.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
 begin
   // Do nothing here and make compiler happy
   Result := True;
@@ -112,7 +112,7 @@ end;
 
 // Read mission file as it is, without any changes
 // We don't use TMissionParserCommon.ReadMissionFile, becasue it cuts spaces and does other things
-function TMissionParserPatcher.ReadMissionFileWOChanges(const aFileName: string): AnsiString;
+function TKMMissionParserPatcher.ReadMissionFileWOChanges(const aFileName: string): AnsiString;
 var
   I, Num: Cardinal;
   F: TMemoryStream;
@@ -147,7 +147,7 @@ begin
 end;
 
 
-procedure TMissionParserPatcher.SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
+procedure TKMMissionParserPatcher.SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
 var
   I: Integer;
   F: TMemoryStream;
@@ -249,9 +249,9 @@ var
   I,J,K: Integer;
   PathToMaps: TStringList;
   MapInfo: TKMapInfo;
-  WinCond, DefeatCond: array [TGoalCondition] of Word;
-  GC: TGoalCondition;
-  MapFolderType: TMapFolder;
+  WinCond, DefeatCond: array [TKMGoalCondition] of Word;
+  GC: TKMGoalCondition;
+  MapFolderType: TKMapFolder;
 begin
   SetUp(True);
 
@@ -283,7 +283,7 @@ begin
     //Report results
     Memo1.Lines.Append(IntToStr(PathToMaps.Count) + ' maps');
     Memo1.Lines.Append('Win / Def');
-    for GC := Low(TGoalCondition) to High(TGoalCondition) do
+    for GC := Low(TKMGoalCondition) to High(TKMGoalCondition) do
       Memo1.Lines.Append(Format('%3d / %3d ' + GoalConditionStr[GC], [WinCond[GC], DefeatCond[GC]]));
   finally
     PathToMaps.Free;
@@ -300,7 +300,7 @@ var
   GoalLoc, GoalEnd: Integer;
   Txt, GoalTxt: AnsiString;
   L,R: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   Args: TStringList;
   GoalLog: TStringList;
 begin
@@ -318,7 +318,7 @@ begin
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
 
     //Intent of this design is to rip the specified lines with least impact
-    MP := TMissionParserPatcher.Create;
+    MP := TKMMissionParserPatcher.Create;
 
     for I := 0 to PathToMaps.Count - 1 do
     begin
@@ -389,14 +389,14 @@ var
   CurrLoc, CurrEnd, NextCurrLoc, AILoc, AIEnd: Integer;
   Txt: AnsiString;
   PlayerId, AiId: Integer;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
   s: string;
 begin
   SetUp(True);
 
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -491,12 +491,12 @@ var
   PathToMaps: TStringList;
   CurrLoc, CurrEnd: Integer;
   Txt: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
 begin
   SetUp(True);
 
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -584,7 +584,7 @@ var
   PathToMaps: TStringList;
   GoalLoc, GoalEnd: Integer;
   Txt, GoalTxt: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   Args: TStringList;
 begin
   SetUp(True);
@@ -599,7 +599,7 @@ begin
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
 
     //Intent of this design is to rip the specified lines with least impact
-    MP := TMissionParserPatcher.Create;
+    MP := TKMMissionParserPatcher.Create;
 
     for I := 0 to PathToMaps.Count - 1 do
     begin
@@ -655,14 +655,14 @@ var
   CurrLoc, CurrEnd: Integer;
   Txt: AnsiString;
   PlayerId: Integer;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
   s: string;
 begin
   SetUp(True);
 
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -729,7 +729,7 @@ end;
 //Delete command SET_NEW_REMAP from all maps (this command is unused) 
 procedure TForm1.btnRemoveNewRemapClick(Sender: TObject);
 var
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   PathToMaps: TStringList;
   I, Deleted: Integer;
   Txt: AnsiString;
@@ -738,7 +738,7 @@ begin
 
   Deleted := 0;
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
   try
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
     for I := 0 to PathToMaps.Count - 1 do
@@ -782,7 +782,7 @@ var
   I, J, K, TmpValue, ChangedCnt: Integer;
   Txt: AnsiString;
   PathToMaps: TStringList;
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   Commands: TKMMissionColorInfoArray;
   DeleteColorFromPlayerArr: TIntegerArray;
   IsMapColorFirst: Boolean;
@@ -792,7 +792,7 @@ begin
   SetLength(DeleteColorFromPlayerArr, MAX_HANDS);
   
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
 
   IsMapColorFirst := Sender = btnDeleteUnusedSetMapColor;
 
@@ -922,12 +922,12 @@ function TForm1.CheckNoColorCommandsForAllMaps(var NoColorsMaps: TStringList; aS
 var
   I: Integer;
   PathToMaps: TStringList;
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   Txt: AnsiString;
   Commands: TKMMissionColorInfoArray;
 begin
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
 
   NoColorsMaps.Clear;
   try
@@ -1129,7 +1129,7 @@ end;
 
 
 { TMissionParserColorCheck }
-procedure TMissionParserColorCheck.SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
+procedure TKMMissionParserColorCheck.SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
 var
   IntArr: TIntegerArray;
   I, J, TmpValue, TotalOffset: Integer;
@@ -1158,7 +1158,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): string;
+function TKMMissionParserColorCheck.GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): string;
 var
   I: Integer;
   IntArr: TIntegerArray;
@@ -1174,7 +1174,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.GetPlayersWithoutColorArr(aCommands: TKMMissionColorInfoArray): TIntegerArray;
+function TKMMissionParserColorCheck.GetPlayersWithoutColorArr(aCommands: TKMMissionColorInfoArray): TIntegerArray;
 var
   I, J: Integer;
 begin
@@ -1193,7 +1193,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.IsValid(aCommands: TKMMissionColorInfoArray): Boolean;
+function TKMMissionParserColorCheck.IsValid(aCommands: TKMMissionColorInfoArray): Boolean;
 var
   I: Integer;
 begin

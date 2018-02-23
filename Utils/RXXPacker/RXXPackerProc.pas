@@ -39,7 +39,7 @@ var
   RXName: string;
   resHouses: TKMResHouses;
   resUnits: TKMResUnits;
-  UT: TUnitType;
+  UT: TKMUnitType;
   Dir: TKMDirection;
 begin
   //ruCustom sprite packs do not have a main RXX file so don't need packing

@@ -172,7 +172,7 @@ end;
 //
 procedure TKMSpritePackEdit.AdjoinHouseMasks(aHouseDat: TKMResHouses);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   ID1, ID2: Integer; //RGB and A index
   I, K, Lay, StepCount: Integer;
   T1, T2, tx, ty: Integer;
@@ -214,7 +214,7 @@ end;
 //Grow house building masks to account for blurred shadows edges being visible
 procedure TKMSpritePackEdit.GrowHouseMasks(aHouseDat: TKMResHouses);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   ID: Integer; //RGB and A index
   I, K, Lay: Integer;
   T: Integer;
