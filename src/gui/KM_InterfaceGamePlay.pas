@@ -148,7 +148,7 @@ type
     procedure Replay_Single_SetPlayersDropbox;
     procedure Replay_Multi_SetPlayersDropbox;
 
-    procedure StopPlay(aMsg: TGameResultMsg; aPrepareToStopGame: Boolean = True);
+    procedure StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
     procedure StopGame(const aText: UnicodeString = '');
     procedure ShowMPStats;
     procedure ShowSPStats;
@@ -1483,7 +1483,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.StopPlay(aMsg: TGameResultMsg; aPrepareToStopGame: Boolean = True);
+procedure TKMGamePlayInterface.StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
 var
   ShowStats: Boolean;
 begin

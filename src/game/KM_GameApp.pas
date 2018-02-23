@@ -44,7 +44,7 @@ type
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
-    procedure PrepageStopGame(aMsg: TGameResultMsg);
+    procedure PrepageStopGame(aMsg: TKMGameResultMsg);
     procedure StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
