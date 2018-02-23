@@ -19,7 +19,7 @@ type
     {$ENDIF}
     fMutex: THandle;
 
-    fMainSettings: TMainSettings;
+    fMainSettings: TKMainSettings;
     fResolutions: TKMResolutions;
     fMapCacheUpdater: TTMapsCacheUpdater;
 
@@ -62,7 +62,7 @@ type
     procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
 
     property Resolutions: TKMResolutions read fResolutions;
-    property Settings: TMainSettings read fMainSettings;
+    property Settings: TKMainSettings read fMainSettings;
   end;
 
 
@@ -139,7 +139,7 @@ begin
 
   //Only after we read settings (fullscreen property and resolutions)
   //we can decide whenever we want to create Game fullscreen or not (OpenGL init depends on that)
-  fMainSettings := TMainSettings.Create;
+  fMainSettings := TKMainSettings.Create;
   //We need to verify INI values, as they can be from another display
   if not fResolutions.IsValid(fMainSettings.Resolution) then
   begin
@@ -165,9 +165,6 @@ begin
 
   //Update map cache files (*.mi) in the background so map lists load faster
   MapCacheUpdate;
-
-  //Preload game resources while in menu to make 1st game start faster
-  gGameApp.PreloadGameResources;
 
   //Process messages in queue before hiding Loading, so that they all land on Loading form, not main one
   Application.ProcessMessages;
@@ -362,6 +359,8 @@ begin
                                 StatusBarText);
   gGameApp.OnGameSpeedChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
 
   gLog.AddTime('ToggleFullscreen');
   gLog.AddTime('Form Width/Height: '+inttostr(fFormMain.Width)+':'+inttostr(fFormMain.Height));

@@ -6,19 +6,20 @@ uses
 
 type
   {Stay in place for set time}
-  TUnitActionStay = class(TUnitAction)
+  TKMUnitActionStay = class(TKMUnitAction)
   private
     StayStill:boolean;
     TimeToStay:integer;
     StillFrame:byte;
     procedure MakeSound(Cycle, Step: Byte);
   public
-    constructor Create(aUnit: TKMUnit; aTimeToStay:integer; aActionType:TUnitActionType; aStayStill:boolean; aStillFrame:byte; aLocked:boolean);
+    constructor Create(aUnit: TKMUnit; aTimeToStay: Integer; aActionType: TKMUnitActionType; aStayStill: Boolean;
+                       aStillFrame: Byte; aLocked: Boolean);
     constructor Load(LoadStream:TKMemoryStream); override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
     function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
-    function Execute: TActionResult; override;
+    function Execute: TKMActionResult; override;
     procedure Save(SaveStream:TKMemoryStream); override;
   end;
 
@@ -29,7 +30,8 @@ uses
 
 
 { TUnitActionStay }
-constructor TUnitActionStay.Create(aUnit: TKMUnit; aTimeToStay:integer; aActionType:TUnitActionType; aStayStill:boolean; aStillFrame:byte; aLocked:boolean);
+constructor TKMUnitActionStay.Create(aUnit: TKMUnit; aTimeToStay: Integer; aActionType: TKMUnitActionType; aStayStill: Boolean;
+                                     aStillFrame: Byte; aLocked: Boolean);
 begin
   inherited Create(aUnit, aActionType, aLocked);
   StayStill   := aStayStill;
@@ -38,7 +40,7 @@ begin
 end;
 
 
-constructor TUnitActionStay.Load(LoadStream:TKMemoryStream);
+constructor TKMUnitActionStay.Load(LoadStream:TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(StayStill);
@@ -47,19 +49,19 @@ begin
 end;
 
 
-function TUnitActionStay.ActName: TUnitActionName;
+function TKMUnitActionStay.ActName: TKMUnitActionName;
 begin
   Result := uan_Stay;
 end;
 
 
-function TUnitActionStay.GetExplanation: UnicodeString;
+function TKMUnitActionStay.GetExplanation: UnicodeString;
 begin
   Result := 'Staying';
 end;
 
 
-procedure TUnitActionStay.MakeSound(Cycle, Step: Byte);
+procedure TKMUnitActionStay.MakeSound(Cycle, Step: Byte);
 begin
   if SKIP_SOUND then Exit;
 
@@ -87,7 +89,7 @@ begin
 end;
 
 
-function TUnitActionStay.Execute: TActionResult;
+function TKMUnitActionStay.Execute: TKMActionResult;
 var
   Cycle, Step: Byte;
 begin
@@ -116,7 +118,7 @@ begin
 end;
 
 
-procedure TUnitActionStay.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitActionStay.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(StayStill);
@@ -125,7 +127,7 @@ begin
 end;
 
 
-function TUnitActionStay.CanBeInterrupted: Boolean;
+function TKMUnitActionStay.CanBeInterrupted: Boolean;
 begin
   Result := not Locked; //Initial pause before leaving barracks is locked
 end;

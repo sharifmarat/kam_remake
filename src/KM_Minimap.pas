@@ -14,7 +14,7 @@ type
   private
     fPaintVirtualGroups: Boolean; //Paint missing army memmbers
     fSepia: Boolean; //Less saturated display for menu
-    fParser: TMissionParserPreview;
+    fParser: TKMMissionParserPreview;
     fMyTerrain: TKMTerrain;
     fAlerts: TKMAlerts;
 
@@ -74,7 +74,7 @@ begin
   //We don't need terrain on main menu, just a parser
   //Otherwise access synced Game terrain
   if aFromParser then
-    fParser := TMissionParserPreview.Create;
+    fParser := TKMMissionParserPreview.Create;
 end;
 
 

@@ -10,22 +10,22 @@ type
   // Permissions
   TKMHandLocks = class
   private
-    fHouseUnlocked: array [THouseType] of Boolean; //If building requirements performed
-    fUnitBlocked: array [TUnitType] of Boolean;   //Allowance derived from mission script
+    fHouseUnlocked: array [TKMHouseType] of Boolean; //If building requirements performed
+    fUnitBlocked: array [TKMUnitType] of Boolean;   //Allowance derived from mission script
     fMilitiaBlockedInTH: Boolean; // special case for militia block to train in TownHall
-    procedure UpdateReqDone(aType: THouseType);
+    procedure UpdateReqDone(aType: TKMHouseType);
   public
-    HouseBlocked: array [THouseType] of Boolean; //Allowance derived from mission script
-    HouseGranted: array [THouseType] of Boolean; //Allowance derived from mission script
+    HouseBlocked: array [TKMHouseType] of Boolean; //Allowance derived from mission script
+    HouseGranted: array [TKMHouseType] of Boolean; //Allowance derived from mission script
 
     AllowToTrade: array [WARE_MIN..WARE_MAX] of Boolean; //Allowance derived from mission script
     constructor Create;
 
-    procedure HouseCreated(aType: THouseType);
-    function HouseCanBuild(aType: THouseType): Boolean;
+    procedure HouseCreated(aType: TKMHouseType);
+    function HouseCanBuild(aType: TKMHouseType): Boolean;
 
-    procedure SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TUnitType; aInTownHall: Boolean = False);
-    function GetUnitBlocked(aUnitType: TUnitType; aInTownHall: Boolean = False): Boolean;
+    procedure SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TKMUnitType; aInTownHall: Boolean = False);
+    function GetUnitBlocked(aUnitType: TKMUnitType; aInTownHall: Boolean = False): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -40,7 +40,7 @@ uses
 { TKMHandLocks }
 constructor TKMHandLocks.Create;
 var
-  W: TWareType;
+  W: TKMWareType;
 begin
   inherited;
 
@@ -52,9 +52,9 @@ begin
 end;
 
 
-procedure TKMHandLocks.UpdateReqDone(aType: THouseType);
+procedure TKMHandLocks.UpdateReqDone(aType: TKMHouseType);
 var
-  H: THouseType;
+  H: TKMHouseType;
 begin
   for H := HOUSE_MIN to HOUSE_MAX do
     if gRes.Houses[H].ReleasedBy = aType then
@@ -63,20 +63,20 @@ end;
 
 
 // New house, either built by player or created by mission script
-procedure TKMHandLocks.HouseCreated(aType: THouseType);
+procedure TKMHandLocks.HouseCreated(aType: TKMHouseType);
 begin
   UpdateReqDone(aType);
 end;
 
 
 // Get effective permission
-function TKMHandLocks.HouseCanBuild(aType: THouseType): Boolean;
+function TKMHandLocks.HouseCanBuild(aType: TKMHouseType): Boolean;
 begin
   Result := (fHouseUnlocked[aType] or HouseGranted[aType]) and not HouseBlocked[aType];
 end;
 
 
-function TKMHandLocks.GetUnitBlocked(aUnitType: TUnitType; aInTownHall: Boolean = False): Boolean;
+function TKMHandLocks.GetUnitBlocked(aUnitType: TKMUnitType; aInTownHall: Boolean = False): Boolean;
 begin
   if aInTownHall and (aUnitType = ut_Militia) then
     Result := fMilitiaBlockedInTH
@@ -85,7 +85,7 @@ begin
 end;
 
 
-procedure TKMHandLocks.SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TUnitType; aInTownHall: Boolean = False);
+procedure TKMHandLocks.SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TKMUnitType; aInTownHall: Boolean = False);
 begin
   if aInTownHall and (aUnitType = ut_Militia) then
     fMilitiaBlockedInTH := aIsBlocked

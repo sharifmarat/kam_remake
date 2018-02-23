@@ -40,8 +40,8 @@ const
   Unit_Width = 26;
 var
   I, K: Integer;
-  HT: THouseType;
-  UT: TUnitType;
+  HT: TKMHouseType;
+  UT: TKMUnitType;
   OffX: Integer;
 begin
   inherited Create;
@@ -130,8 +130,8 @@ end;
 
 procedure TKMGUIGameStats.UpdateState;
 var
-  HT: THouseType;
-  UT: TUnitType;
+  HT: TKMHouseType;
+  UT: TKMUnitType;
   Qty, WipQty, HTotalConstrOpenedQty: Integer;
   I,K: Integer;
   DoHighlight: Boolean;

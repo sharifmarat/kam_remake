@@ -8,7 +8,7 @@ uses
 
 type
   // Attack a house
-  TTaskAttackHouse = class(TUnitTask)
+  TKMTaskAttackHouse = class(TKMUnitTask)
   private
     fHouse: TKMHouse;
   public
@@ -17,7 +17,7 @@ type
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -36,7 +36,7 @@ const
 
 
 { TTaskAttackHouse }
-constructor TTaskAttackHouse.Create(aWarrior: TKMUnitWarrior; aHouse: TKMHouse);
+constructor TKMTaskAttackHouse.Create(aWarrior: TKMUnitWarrior; aHouse: TKMHouse);
 begin
   inherited Create(aWarrior);
   fTaskName := utn_AttackHouse;
@@ -44,34 +44,34 @@ begin
 end;
 
 
-constructor TTaskAttackHouse.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskAttackHouse.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fHouse, 4);
 end;
 
 
-procedure TTaskAttackHouse.SyncLoad;
+procedure TKMTaskAttackHouse.SyncLoad;
 begin
   inherited;
   fHouse := gHands.GetHouseByUID(Cardinal(fHouse));
 end;
 
 
-destructor TTaskAttackHouse.Destroy;
+destructor TKMTaskAttackHouse.Destroy;
 begin
   gHands.CleanUpHousePointer(fHouse);
   inherited;
 end;
 
 
-function TTaskAttackHouse.WalkShouldAbandon: Boolean;
+function TKMTaskAttackHouse.WalkShouldAbandon: Boolean;
 begin
   Result := fHouse.IsDestroyed;
 end;
 
 
-function TTaskAttackHouse.Execute: TTaskResult;
+function TKMTaskAttackHouse.Execute: TKMTaskResult;
 var
    AnimLength: Integer;
    Delay, Cycle: Byte;
@@ -190,7 +190,7 @@ begin
 end;
 
 
-procedure TTaskAttackHouse.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskAttackHouse.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
 

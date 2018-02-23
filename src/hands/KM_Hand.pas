@@ -11,7 +11,7 @@ uses
 
 
 type
-  THandType = (
+  TKMHandType = (
         hndHuman,
         hndComputer);
 
@@ -26,10 +26,10 @@ type
     property HandIndex: TKMHandIndex read fHandIndex;
     property Units: TKMUnitsCollection read fUnits;
 
-    function AddUnit(aUnitType: TUnitType; aLoc: TKMPoint): TKMUnit;
+    function AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint): TKMUnit;
     procedure RemUnit(Position: TKMPoint);
-    function UnitsHitTest(const aLoc: TKMPoint; const UT: TUnitType = ut_Any): TKMUnit; overload;
-    function UnitsHitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit; overload;
+    function UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
+    function UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     procedure Load(LoadStream: TKMemoryStream); virtual;
@@ -55,17 +55,17 @@ type
     fMessageLog: TKMMessageLog;
 
     fOwnerNikname: AnsiString; //Multiplayer owner nikname
-    fHandType: THandType;
+    fHandType: TKMHandType;
     fFlagColor: Cardinal;
     fCenterScreen: TKMPoint;
-    fAlliances: array [0 .. MAX_HANDS - 1] of TAllianceType;
+    fAlliances: array [0 .. MAX_HANDS - 1] of TKMAllianceType;
     fShareFOW: array [0 .. MAX_HANDS - 1] of Boolean;
     fShareBeacons: array [0 .. MAX_HANDS - 1] of Boolean;
 
     function GetColorIndex: Byte;
 
-    function  GetAlliances(aIndex: Integer): TAllianceType; inline;
-    procedure SetAlliances(aIndex: Integer; aValue: TAllianceType); inline;
+    function  GetAlliances(aIndex: Integer): TKMAllianceType; inline;
+    procedure SetAlliances(aIndex: Integer; aValue: TKMAllianceType); inline;
     function  GetShareFOW(aIndex: Integer): Boolean;
     procedure SetShareFOW(aIndex: Integer; aValue: Boolean);
     function  GetShareBeacons(aIndex: Integer): Boolean;
@@ -102,10 +102,10 @@ type
     property OwnerNikname: AnsiString read fOwnerNikname;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function HasAssets: Boolean;
-    property HandType: THandType read fHandType write fHandType; //Is it Human or AI
+    property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property FlagColor: Cardinal read fFlagColor write fFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
-    property Alliances[aIndex: Integer]: TAllianceType read GetAlliances write SetAlliances;
+    property Alliances[aIndex: Integer]: TKMAllianceType read GetAlliances write SetAlliances;
     property ShareFOW[aIndex: Integer]: Boolean read GetShareFOW write SetShareFOW;
     property ShareBeacons[aIndex: Integer]: Boolean read GetShareBeacons write SetShareBeacons;
     property CenterScreen: TKMPoint read fCenterScreen write fCenterScreen;
@@ -117,38 +117,38 @@ type
 
     procedure AfterMissionInit(aFlattenRoads: Boolean);
 
-    function AddUnit(aUnitType: TUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit; reintroduce;
-    function AddUnitGroup(aUnitType: TUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
+    function AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit; reintroduce;
+    function AddUnitGroup(aUnitType: TKMUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 
-    function TrainUnit(aUnitType: TUnitType; Position: TKMPoint): TKMUnit;
+    function TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
 
-    function CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
-    function CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
-    function CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
-    function CanAddHousePlan(aLoc: TKMPoint; aHouseType: THouseType): Boolean;
-    function CanAddHousePlanAI(aX, aY: Word; aHouseType: THouseType; aCheckInfluence: Boolean): Boolean;
+    function CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanAddHousePlan(aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
+    function CanAddHousePlanAI(aX, aY: Word; aHouseType: TKMHouseType; aCheckInfluence: Boolean): Boolean;
 
     procedure AddRoadToList(aLoc: TKMPoint);
     procedure AddRoad(aLoc: TKMPoint);
-    procedure AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
-    procedure ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType; aMakeSound: Boolean);
-    procedure ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType);
-    function AddHouse(aHouseType: THouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
-    procedure AddHousePlan(aHouseType: THouseType; aLoc: TKMPoint);
-    function AddHouseWIP(aHouseType: THouseType; aLoc: TKMPoint): TKMHouse;
+    procedure AddField(aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+    procedure ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
+    procedure ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType);
+    function AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
+    procedure AddHousePlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
+    function AddHouseWIP(aHouseType: TKMHouseType; aLoc: TKMPoint): TKMHouse;
     procedure RemGroup(Position: TKMPoint);
     procedure RemHouse(Position: TKMPoint; DoSilent: Boolean; IsEditor: Boolean = False);
     procedure RemHousePlan(Position: TKMPoint);
     procedure RemFieldPlan(Position: TKMPoint; aMakeSound:Boolean);
     procedure RemFakeFieldPlan(Position: TKMPoint);
     function FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean = False): TKMHouseInn;
-    function FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse; overload;
-    function FindHouse(aType: THouseType; Index: Byte=1): TKMHouse; overload;
+    function FindHouse(aType: TKMHouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse; overload;
+    function FindHouse(aType: TKMHouseType; Index: Byte=1): TKMHouse; overload;
     function HitTest(X,Y: Integer): TObject;
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function ObjectByUID(aUID: Integer): TObject;
-    procedure GetHouseMarks(aLoc: TKMPoint; aHouseType: THouseType; aList: TKMPointTagList);
+    procedure GetHouseMarks(aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
 
     function GetFieldsCount: Integer;
     procedure GetFieldPlans(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake: Boolean);
@@ -203,7 +203,7 @@ begin
 end;
 
 
-function TKMHandCommon.AddUnit(aUnitType: TUnitType; aLoc: TKMPoint): TKMUnit;
+function TKMHandCommon.AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint): TKMUnit;
 begin
   //Animals are autoplaced by default
   Result := fUnits.AddUnit(fHandIndex, aUnitType, aLoc, True);
@@ -248,13 +248,13 @@ begin
 end;
 
 
-function TKMHandCommon.UnitsHitTest(const aLoc: TKMPoint; const UT: TUnitType = ut_Any): TKMUnit;
+function TKMHandCommon.UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = ut_Any): TKMUnit;
 begin
   Result := UnitsHitTest(aLoc.X, aLoc.Y, UT);
 end;
 
 
-function TKMHandCommon.UnitsHitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
+function TKMHandCommon.UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
 begin
   Result := fUnits.HitTest(X, Y, UT);
 end;
@@ -329,7 +329,7 @@ end;
 
 //Place unit of aUnitType to aLoc via script
 //AutoPlace - add unit to nearest available spot if aLoc is already taken (or unwalkable)
-function TKMHand.AddUnit(aUnitType: TUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit;
+function TKMHand.AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit;
 var
   G: TKMUnitGroup;
 begin
@@ -374,7 +374,7 @@ end;
 
 //Start training unit in School/Barracks
 //User can cancel the training, so we don't add unit to stats just yet
-function TKMHand.TrainUnit(aUnitType: TUnitType; Position: TKMPoint): TKMUnit;
+function TKMHand.TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
 begin
   Result := fUnits.AddUnit(fHandIndex, aUnitType, Position, False);
   Result.OnUnitDied := UnitDied;
@@ -435,14 +435,14 @@ begin
         HWFP.ValidateFlagPoint; // Validate Flag point first. It will set it to a proper walkable position
         if HWFP.IsFlagPointSet
           and G.CanWalkTo(HWFP.FlagPoint, 0) then
-          G.OrderWalk(HWFP.FlagPoint, True);
+          G.OrderWalk(HWFP.FlagPoint, True, wtokFlagPoint);
       end;
     end;
   gScriptEvents.ProcWarriorEquipped(aUnit, G);
 end;
 
 
-function TKMHand.AddUnitGroup(aUnitType: TUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
+function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 var
   I: Integer;
 begin
@@ -526,7 +526,7 @@ begin
 end;
 
 
-procedure TKMHand.AddField(aLoc: TKMPoint; aFieldType: TFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+procedure TKMHand.AddField(aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
 var IsFieldSet: Boolean;
 begin
   IsFieldSet := False;
@@ -566,7 +566,7 @@ end;
 
 
 //See comment on CanAddFakeFieldPlan
-function TKMHand.CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
+function TKMHand.CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
             and (fBuildList.FieldworksList.HasField(aLoc) = ft_None)
@@ -578,7 +578,7 @@ end;
 //This differs from above only in that it uses HasFakeField instead of HasField.
 //We need it because the user expects to be blocked by fake field plans, but the gameplay should not.
 //When the result effects the outcome of the game, the above function should be used instead.
-function TKMHand.CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
+function TKMHand.CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
             and (fBuildList.FieldworksList.HasFakeField(aLoc) = ft_None)
@@ -588,14 +588,14 @@ end;
 
 
 // Same as for CanAddFakeFieldPlan, but check can we delete plan
-function TKMHand.CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType): Boolean;
+function TKMHand.CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := (fBuildList.FieldworksList.HasFakeField(aLoc) = aFieldType)
             and LocHasNoAllyPlans(aLoc);
 end;
 
 
-function TKMHand.CanAddHousePlan(aLoc: TKMPoint; aHouseType: THouseType): Boolean;
+function TKMHand.CanAddHousePlan(aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
 var I,K,J,S,T,Tx,Ty: Integer; HA: THouseArea;
 begin
   Result := gTerrain.CanPlaceHouse(aLoc, aHouseType);
@@ -628,7 +628,7 @@ begin
 end;
 
 
-function TKMHand.CanAddHousePlanAI(aX, aY: Word; aHouseType: THouseType; aCheckInfluence: Boolean): Boolean;
+function TKMHand.CanAddHousePlanAI(aX, aY: Word; aHouseType: TKMHouseType; aCheckInfluence: Boolean): Boolean;
 var
   I, K, J, S, T, Tx, Ty: Integer;
   HA: THouseArea;
@@ -710,8 +710,8 @@ end;
 //Due to lag there could be already plans placed by user in previous ticks
 //Check if Plan can be placed once again, as we might have conflicting commands caused by lag
 //This is called by GIP when a place field command is processed
-procedure TKMHand.ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType; aMakeSound: Boolean);
-var Plan: TFieldType;
+procedure TKMHand.ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
+var Plan: TKMFieldType;
 begin
   Assert(aFieldType in [ft_Road, ft_Corn, ft_Wine], 'Placing wrong FieldType');
 
@@ -750,8 +750,8 @@ end;
 
 //This procedure does not effect gameplay, it only changes fake field plans to make it look better for the user
 //It is called when the user clicks to place a field plan
-procedure TKMHand.ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TFieldType);
-var Plan: TFieldType;
+procedure TKMHand.ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType);
+var Plan: TKMFieldType;
 begin
   Assert(aFieldType in [ft_Road, ft_Corn, ft_Wine], 'Placing wrong fake FieldType');
 
@@ -795,7 +795,7 @@ begin
 end;}
 
 
-function TKMHand.AddHouse(aHouseType: THouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
+function TKMHand.AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
 begin
   Result := fHouses.AddHouse(aHouseType, PosX, PosY, fHandIndex, RelativeEntrace);
   Result.OnDestroyed := HouseDestroyed;
@@ -803,7 +803,7 @@ end;
 
 
 //Add plan of a house, house is not created until after worker flattens the terrain
-procedure TKMHand.AddHousePlan(aHouseType: THouseType; aLoc: TKMPoint);
+procedure TKMHand.AddHousePlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
 var
   Loc: TKMPoint;
 begin
@@ -819,7 +819,7 @@ begin
 end;
 
 
-function TKMHand.AddHouseWIP(aHouseType: THouseType; aLoc: TKMPoint): TKMHouse;
+function TKMHand.AddHouseWIP(aHouseType: TKMHouseType; aLoc: TKMPoint): TKMHouse;
 begin
   Result := fHouses.AddHouseWIP(aHouseType, aLoc.X, aLoc.Y, fHandIndex);
   Result.OnDestroyed := HouseDestroyed;
@@ -858,7 +858,7 @@ end;
 //This is called by the GIP when an erase command is processed
 procedure TKMHand.RemFieldPlan(Position: TKMPoint; aMakeSound: Boolean);
 var
-  fieldType: TFieldType;
+  fieldType: TKMFieldType;
 begin
   fieldType := fBuildList.FieldworksList.HasField(Position);
   if fieldType = ft_None then Exit; //Can happen due to network delays
@@ -901,13 +901,13 @@ begin
 end;
 
 
-function TKMHand.FindHouse(aType: THouseType; aPosition: TKMPoint; Index: Byte = 1): TKMHouse;
+function TKMHand.FindHouse(aType: TKMHouseType; aPosition: TKMPoint; Index: Byte = 1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, aPosition.X, aPosition.Y, Index);
 end;
 
 
-function TKMHand.FindHouse(aType: THouseType; Index: Byte=1): TKMHouse;
+function TKMHand.FindHouse(aType: TKMHouseType; Index: Byte=1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, 0, 0, Index);
 end;
@@ -1102,13 +1102,13 @@ begin
 end;
 
 
-function TKMHand.GetAlliances(aIndex: Integer): TAllianceType;
+function TKMHand.GetAlliances(aIndex: Integer): TKMAllianceType;
 begin
   Result := fAlliances[aIndex];
 end;
 
 
-procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TAllianceType);
+procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TKMAllianceType);
 begin
   fAlliances[aIndex] := aValue;
 end;
@@ -1187,7 +1187,7 @@ begin
 end;
 
 
-procedure TKMHand.GetHouseMarks(aLoc: TKMPoint; aHouseType: THouseType; aList: TKMPointTagList);
+procedure TKMHand.GetHouseMarks(aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
   //Replace existing icon with a Block
   procedure BlockPoint(aPoint: TKMPoint; aID: Integer);
   var I: Integer;

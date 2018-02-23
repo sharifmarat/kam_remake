@@ -1,4 +1,4 @@
-unit KM_GameApp;
+﻿unit KM_GameApp;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -18,7 +18,7 @@ type
     fIsExiting: Boolean;
 
     fCampaigns: TKMCampaignsCollection;
-    fGameSettings: TGameSettings;
+    fGameSettings: TKMGameSettings;
     fMusicLib: TKMMusicLib;
     fNetworking: TKMNetworking;
     fRender: TRender;
@@ -36,13 +36,16 @@ type
     procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
+
+    procedure GameStart(aGameMode: TGameMode);
+    procedure GameEnd(aGameMode: TGameMode);
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
     procedure PrepageStopGame(aMsg: TGameResultMsg);
-    procedure StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+    procedure StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
     procedure StopGameReturnToLobby(Sender: TObject);
@@ -62,7 +65,7 @@ type
     procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
     procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1; aDesiredColor: Cardinal = $00000000);
     procedure NewSingleSave(const aSaveName: UnicodeString);
-    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TMapFolder; aCRC: Cardinal; Spectating: Boolean);
+    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
     procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
@@ -73,7 +76,7 @@ type
 
     property Campaigns: TKMCampaignsCollection read fCampaigns;
     function Game: TKMGame;
-    property GameSettings: TGameSettings read fGameSettings;
+    property GameSettings: TKMGameSettings read fGameSettings;
     property MainMenuInterface: TKMMainMenuInterface read fMainMenuInterface;
     property MusicLib: TKMMusicLib read fMusicLib;
     property Networking: TKMNetworking read fNetworking;
@@ -120,7 +123,7 @@ begin
 
   fOnCursorUpdate := aOnCursorUpdate;
 
-  fGameSettings := TGameSettings.Create;
+  fGameSettings := TKMGameSettings.Create;
 
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
 
@@ -159,6 +162,9 @@ begin
     fMusicLib.PlayMenuTrack;
 
   fMusicLib.ToggleShuffle(fGameSettings.ShuffleOn); //Determine track order
+
+  fOnGameStart := GameStart;
+  fOnGameEnd := GameEnd;
 end;
 
 
@@ -409,7 +415,7 @@ begin
 end;
 
 
-procedure TKMGameApp.PrepageStopGame(aMsg: TGameResultMsg);
+procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
 begin
   if (gGame = nil) or gGame.ReadyToStop then Exit;
 
@@ -443,7 +449,7 @@ end;
 //4. Fill in menu message if needed
 //5. Free the game object
 //6. Switch to MainMenu
-procedure TKMGameApp.StopGame(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+procedure TKMGameApp.StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
 begin
   if gGame = nil then Exit;
 
@@ -482,7 +488,7 @@ begin
     fOnGameEnd(gGame.GameMode);
 
   FreeThenNil(gGame);
-  gLog.AddTime('Gameplay ended - ' + GetEnumName(TypeInfo(TGameResultMsg), Integer(aMsg)) + ' /' + aTextMsg);
+  gLog.AddTime('Gameplay ended - ' + GetEnumName(TypeInfo(TKMGameResultMsg), Integer(aMsg)) + ' /' + aTextMsg);
 end;
 
 
@@ -664,7 +670,7 @@ begin
 end;
 
 
-procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TMapFolder; aCRC: Cardinal; Spectating: Boolean);
+procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
 var GameMode: TGameMode;
 begin
   if Spectating then
@@ -758,7 +764,18 @@ begin
 
   if Assigned(fOnGameStart) then
     fOnGameStart(gGame.GameMode);
+end;
 
+
+procedure TKMGameApp.GameStart(aGameMode: TGameMode);
+begin
+  gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+end;
+
+
+procedure TKMGameApp.GameEnd(aGameMode: TGameMode);
+begin
+  gMain.FormMain.SetSaveEditableMission(False);
 end;
 
 
@@ -900,4 +917,5 @@ end;
 
 
 end.
+
 

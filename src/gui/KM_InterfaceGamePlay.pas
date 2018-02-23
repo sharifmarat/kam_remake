@@ -43,12 +43,10 @@ type
 
     // Not saved
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
-    LastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
+    fLastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
     fLastBeaconTime: Cardinal; //Last time a beacon was sent to enforce cooldown
-    PrevHint: TObject;
-    PrevHintMessage: UnicodeString;
-    ShownMessage: Integer;
-    PlayMoreMsg: TGameResultMsg; // Remember which message we are showing
+    fShownMessage: Integer;
+    fPlayMoreMsg: TKMGameResultMsg; // Remember which message we are showing
     fPlacingBeacon: Boolean;
     fNetWaitDropPlayersDelayStarted: Cardinal;
     SelectedDirection: TKMDirection;
@@ -56,7 +54,6 @@ type
     SelectingDirPosition: TPoint;
     fSaves: TKMSavesCollection;
     fTeamNames: TList;
-    Label_TeamName: TKMLabel;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
     fAlliesToNetPlayers: array [0..MAX_LOBBY_SLOTS-1] of Integer;
 
@@ -125,7 +122,6 @@ type
     procedure SelectNextGameObjWSameType;
     procedure SwitchPage(Sender: TObject);
     procedure ShowStats(Sender: TObject);
-    procedure DisplayHint(Sender: TObject);
     procedure PlayMoreClick(Sender: TObject);
     procedure MPPlayMoreClick(Sender: TObject);
     procedure NetWaitClick(Sender: TObject);
@@ -161,8 +157,7 @@ type
     Sidebar_Middle: TKMImage;
     Sidebar_Bottom: array of TKMImage;
     MinimapView: TKMMinimapView;
-    Label_DebugInfo, Label_Hint: TKMLabel;
-    Bevel_HintBG: TKMBevel;
+    Label_DebugInfo: TKMLabel;
 
     Image_MPChat, Image_MPAllies: TKMImage; // Multiplayer buttons
     Image_MessageLog: TKMImage;
@@ -178,6 +173,8 @@ type
 
     Label_MenuTitle: TKMLabel; // Displays the title of the current menu to the right of return
     Image_DirectionCursor: TKMImage;
+
+    Label_TeamName: TKMLabel;
 
     Panel_Controls: TKMPanel;
       Button_Main: array [TKMTabButtons] of TKMButton; // 4 common buttons + Return
@@ -272,8 +269,8 @@ type
     procedure MessageIssue(aKind: TKMMessageKind; const aText: UnicodeString; aLoc: TKMPoint); overload;
     procedure SetMenuState(aTactic: Boolean);
     procedure ShowClock(aSpeed: Single);
-    procedure ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
-    procedure ShowMPPlayMore(Msg: TGameResultMsg);
+    procedure ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
+    procedure ShowMPPlayMore(Msg: TKMGameResultMsg);
     procedure ShowNetworkLag(aShow: Boolean; aPlayers: TKMByteArray; IsHost: Boolean);
     procedure SetScriptedOverlay(const aText: UnicodeString);
     procedure UpdateOverlayControls;
@@ -592,30 +589,6 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.DisplayHint(Sender: TObject);
-begin
-  if (PrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
-  if (PrevHint <> nil) and (Sender = PrevHint)
-    and (TKMControl(PrevHint).Hint = PrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
-  if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
-
-  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
-  begin
-    Label_Hint.Caption := '';
-    Bevel_HintBG.Hide;
-    PrevHintMessage := '';
-  end
-  else
-  begin
-    Label_Hint.Caption := TKMControl(Sender).Hint;
-    Bevel_HintBG.Show;
-    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
-    PrevHintMessage := TKMControl(Sender).Hint;
-  end;
-  PrevHint := Sender;
-end;
-
-
 procedure TKMGamePlayInterface.ExportPages(const aPath: string);
 var
   path: String;
@@ -713,7 +686,7 @@ begin
   SelectingTroopDirection := False;
   SelectingDirPosition.X := 0;
   SelectingDirPosition.Y := 0;
-  ShownMessage := -1; // 0 is the first message, -1 is invalid
+  fShownMessage := -1; // 0 is the first message, -1 is invalid
   for I := Low(fSelection) to High(fSelection) do
     fSelection[I] := -1; // Not set
 
@@ -765,17 +738,6 @@ begin
   Create_Replay; // Replay controls
   Create_PlayMore; // Must be created last, so that all controls behind are blocked
   Create_MPPlayMore;
-
-  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
-  Bevel_HintBG.BackAlpha := 0.5;
-  Bevel_HintBG.EdgeAlpha := 0.5;
-  Bevel_HintBG.Hide;
-  Bevel_HintBG.Anchors := [anLeft, anBottom];
-  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
-  Label_Hint.Anchors := [anLeft, anBottom];
-
-  // Controls without a hint will reset the Hint to ''
-  fMyControls.OnHint := DisplayHint;
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -1435,7 +1397,7 @@ end;
 // Click on the same message again closes it
 procedure TKMGamePlayInterface.Message_Click(Sender: TObject);
 begin
-  if TKMImage(Sender).Tag <> ShownMessage then
+  if TKMImage(Sender).Tag <> fShownMessage then
     Message_Show(TKMImage(Sender).Tag)
   else
     Message_Close(Sender);
@@ -1446,14 +1408,14 @@ procedure TKMGamePlayInterface.Message_Show(aIndex: Integer);
 var
   I: Integer;
 begin
-  ShownMessage := aIndex;
+  fShownMessage := aIndex;
 
   // Highlight target message icon
   for I := 0 to MAX_VISIBLE_MSGS do
-    Image_Message[I].Highlight := (ShownMessage = I);
+    Image_Message[I].Highlight := (fShownMessage = I);
 
-  Label_MessageText.Caption := fMessageStack[ShownMessage].Text;
-  Button_MessageGoTo.Visible := not KMSamePoint(fMessageStack[ShownMessage].Loc, KMPOINT_ZERO);
+  Label_MessageText.Caption := fMessageStack[fShownMessage].Text;
+  Button_MessageGoTo.Visible := not KMSamePoint(fMessageStack[fShownMessage].Loc, KMPOINT_ZERO);
 
   Allies_Close(nil);
   fGuiGameChat.Hide;
@@ -1469,16 +1431,16 @@ end;
 procedure TKMGamePlayInterface.Message_Close(Sender: TObject);
 begin
   // Remove highlight
-  if ShownMessage <> -1 then
+  if fShownMessage <> -1 then
   begin
-    Image_Message[ShownMessage].Highlight := False;
+    Image_Message[fShownMessage].Highlight := False;
 
     // Play sound
     if Sender <> nil then
       gSoundPlayer.Play(sfx_MessageClose);
   end;
 
-  ShownMessage := -1;
+  fShownMessage := -1;
   Panel_Message.Hide;
 end;
 
@@ -1487,9 +1449,9 @@ procedure TKMGamePlayInterface.Message_Delete(Sender: TObject);
 var
   OldMsg: Integer;
 begin
-  if ShownMessage = -1 then Exit; // Player pressed DEL with no Msg opened
+  if fShownMessage = -1 then Exit; // Player pressed DEL with no Msg opened
 
-  OldMsg := ShownMessage;
+  OldMsg := fShownMessage;
 
   Message_Close(Sender);
   fMessageStack.RemoveStack(OldMsg);
@@ -1501,7 +1463,7 @@ end;
 
 procedure TKMGamePlayInterface.Message_GoTo(Sender: TObject);
 begin
-  fViewport.Position := KMPointF(fMessageStack.MessagesStack[ShownMessage].Loc);
+  fViewport.Position := KMPointF(fMessageStack.MessagesStack[fShownMessage].Loc);
 end;
 
 
@@ -2208,10 +2170,10 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TGameResultMsg);
+procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
 begin
   ReleaseDirectionSelector;
-  PlayMoreMsg := Msg;
+  fPlayMoreMsg := Msg;
   case Msg of
     gr_Win:       begin
                     Label_PlayMore.Caption := gResTexts[TX_GAMEPLAY_WON];
@@ -2235,10 +2197,10 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowMPPlayMore(Msg: TGameResultMsg);
+procedure TKMGamePlayInterface.ShowMPPlayMore(Msg: TKMGameResultMsg);
 begin
   ReleaseDirectionSelector;
-  PlayMoreMsg := Msg;
+  fPlayMoreMsg := Msg;
   case Msg of
     gr_Win:       begin
                     Label_MPPlayMore.Caption := gResTexts[TX_GAMEPLAY_WON];
@@ -2266,14 +2228,14 @@ begin
   Panel_PlayMore.Hide; // Hide anyways
 
   if Sender = Button_PlayQuit then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       StopPlay(gr_Win);
       gr_Defeat:    StopPlay(gr_Defeat);
       gr_ReplayEnd: StopPlay(gr_ReplayEnd);
     end
   else // GameStop has Destroyed our Sender by now
   if Sender = Button_PlayMore then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       gGame.GameHold(false, gr_Win);
       gr_Defeat:    gGame.GameHold(false, gr_Defeat);
       gr_ReplayEnd: begin
@@ -2289,7 +2251,7 @@ begin
   Panel_MPPlayMore.Hide;
 
   if Sender = Button_MPPlayQuit then
-    case PlayMoreMsg of
+    case fPlayMoreMsg of
       gr_Win:       StopPlay(gr_Win);
       gr_Defeat:    StopPlay(gr_Defeat);
       gr_ReplayEnd: StopPlay(gr_ReplayEnd);
@@ -2907,7 +2869,7 @@ begin
     if fGuiGameUnit.JoiningGroups then
       fGuiGameUnit.Army_HideJoinMenu(nil)
     else
-    if ShownMessage <> -1 then
+    if fShownMessage <> -1 then
       Message_Close(nil)
     else
     if fGuiGameChat.Visible then
@@ -3070,17 +3032,17 @@ end;
 // 1. Process Controls
 // 2. Show SelectingTroopDirection
 procedure TKMGamePlayInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
-  procedure HandleFieldLMBDown(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDown(P: TKMPoint; aFieldType: TKMFieldType);
   begin
     if gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-      LastDragPoint := gGameCursor.Cell;
+      fLastDragPoint := gGameCursor.Cell;
       gGameCursor.Tag1 := Byte(cfmPlan);
     end else if gMySpectator.Hand.CanRemFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-      LastDragPoint := gGameCursor.Cell;
+      fLastDragPoint := gGameCursor.Cell;
       // Set cursor into "Erase" mode, so dragging it will erase next tiles with the same field type
       gGameCursor.Tag1 := Byte(cfmErase);
     end;
@@ -3169,17 +3131,17 @@ end;
 // 2. Perform SelectingTroopDirection if it is active
 // 3. Display various cursors depending on whats below (might be called often)
 procedure TKMGamePlayInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
-  procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TFieldType);
+  procedure HandleFieldLMBDrag(P: TKMPoint; aFieldType: TKMFieldType);
   begin
-    if not KMSamePoint(LastDragPoint, P) then
+    if not KMSamePoint(fLastDragPoint, P) then
       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmPlan)) then
       begin
         gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-        LastDragPoint := gGameCursor.Cell;
+        fLastDragPoint := gGameCursor.Cell;
       end else if (gMySpectator.Hand.CanRemFakeFieldPlan(P, aFieldType)) and (gGameCursor.Tag1 = Byte(cfmErase)) then
       begin
         gGame.GameInputProcess.CmdBuild(gic_BuildAddFieldPlan, P, aFieldType);
-        LastDragPoint := gGameCursor.Cell;
+        fLastDragPoint := gGameCursor.Cell;
       end;
   end;
 var
@@ -3256,18 +3218,18 @@ begin
         cmRoad:   HandleFieldLMBDrag(P, ft_Road);
         cmField:  HandleFieldLMBDrag(P, ft_Corn);
         cmWine:   HandleFieldLMBDrag(P, ft_Wine);
-        cmErase:  if not KMSamePoint(LastDragPoint, P) then
+        cmErase:  if not KMSamePoint(fLastDragPoint, P) then
                   begin
                     if gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P) then
                     begin
                       gGame.GameInputProcess.CmdBuild(gic_BuildRemoveHousePlan, P);
-                      LastDragPoint := gGameCursor.Cell;
+                      fLastDragPoint := gGameCursor.Cell;
                     end
                     else
                       if (gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None) then
                       begin
                         gGame.GameInputProcess.CmdBuild(gic_BuildRemoveFieldPlan, P); // Remove any plans
-                        LastDragPoint := gGameCursor.Cell;
+                        fLastDragPoint := gGameCursor.Cell;
                       end;
                   end;
       end;
@@ -3463,9 +3425,9 @@ begin
             cmWine:  gGameCursor.Tag1 := Ord(cfmNone);
 
             cmHouses:
-              if gMySpectator.Hand.CanAddHousePlan(P, THouseType(gGameCursor.Tag1)) then
+              if gMySpectator.Hand.CanAddHousePlan(P, TKMHouseType(gGameCursor.Tag1)) then
               begin
-                gGame.GameInputProcess.CmdBuild(gic_BuildHousePlan, P, THouseType(gGameCursor.Tag1));
+                gGame.GameInputProcess.CmdBuild(gic_BuildHousePlan, P, TKMHouseType(gGameCursor.Tag1));
                 // If shift pressed do not reset cursor (keep selected building)
                 if not (ssShift in Shift) then
                   fGuiGameBuild.Show;
@@ -3473,7 +3435,7 @@ begin
               else
                 gSoundPlayer.Play(sfx_CantPlace, P, False, 4);
             cmErase:
-              if KMSamePoint(LastDragPoint, KMPOINT_ZERO) then
+              if KMSamePoint(fLastDragPoint, KMPOINT_ZERO) then
               begin
                 H := gMySpectator.Hand.HousesHitTest(P.X, P.Y);
                 // Ask wherever player wants to destroy own house (don't ask about houses that are not started, they are removed below)
@@ -3575,7 +3537,7 @@ begin
       end;
   end;
 
-  LastDragPoint := KMPOINT_ZERO;
+  fLastDragPoint := KMPOINT_ZERO;
 end;
 
 

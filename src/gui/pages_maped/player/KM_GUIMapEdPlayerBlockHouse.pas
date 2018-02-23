@@ -55,7 +55,7 @@ end;
 procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseClick(Sender: TObject);
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   locks: TKMHandLocks;
 begin
   I := TKMButtonFlat(Sender).Tag;
@@ -86,7 +86,7 @@ end;
 procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseRefresh;
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   locks: TKMHandLocks;
 begin
   locks := gMySpectator.Hand.Locks;

@@ -44,7 +44,7 @@ procedure TraditionalUnlock(iPlayer: Byte; iHouseID: Integer);
 begin
 	case States.HouseType(iHouseID) of
 		0: 	begin //Sawmill
-			//	Actions.HouseAllow(iPlayer, 4, true); //Iron Mine
+				Actions.HouseAllow(iPlayer, 4, true); //Iron Mine
 				Actions.HouseAllow(iPlayer, 5, true); //Gold Mine
 				Actions.HouseAllow(iPlayer, 3, true); //Coal Mine
 				Actions.HouseAllow(iPlayer, 28, true); //Vineyard

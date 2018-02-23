@@ -7,7 +7,7 @@ uses
   //Collection of types and arrays for Wares usage
 
 type
-  TWareType = (
+  TKMWareType = (
     wt_None,
     wt_Trunk,   wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
     wt_Coal,    wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
@@ -20,14 +20,14 @@ type
 
   TKMWare = class
   private
-    fType: TWareType;
+    fType: TKMWareType;
     fMarketPrice: Single;
     function GetGUIIcon: Word;
     function GetTextID: Integer;
     function GetTitle: UnicodeString;
     function GetGUIColor: Cardinal;
   public
-    constructor Create(aType: TWareType);
+    constructor Create(aType: TKMWareType);
     function IsValid: Boolean;
     property GUIColor: Cardinal read GetGUIColor;
     property GUIIcon: Word read GetGUIIcon;
@@ -38,13 +38,13 @@ type
 
   TKMResWares = class
   private
-    fList: array [TWareType] of TKMWare;
+    fList: array [TKMWareType] of TKMWare;
     procedure CalculateCostsTable;
-    function GetWare(aIndex: TWareType): TKMWare;
+    function GetWare(aIndex: TKMWareType): TKMWare;
   public
     constructor Create;
     destructor Destroy; override;
-    property Wares[aIndex: TWareType]: TKMWare read GetWare; default;
+    property Wares[aIndex: TKMWareType]: TKMWare read GetWare; default;
     procedure ExportCostsTable(const aFilename: string);
   end;
 
@@ -61,14 +61,14 @@ const
 
   MARKET_TRADEOFF_FACTOR = 2.2; //X resources buys 1 resource of equal value
 
-  WareTypeToIndex: array [TWareType] of byte = (0, //rt_None
+  WareTypeToIndex: array [TKMWareType] of byte = (0, //rt_None
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
     11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
     22, 23, 24, 25, 26, 27,
     0, 0, 0); //rt_All, rt_Warfare, rt_Food
 
   RES_COUNT = 28;
-  WareIndexToType: array [0..RES_COUNT-1] of TWareType = (
+  WareIndexToType: array [0..RES_COUNT-1] of TKMWareType = (
     wt_Trunk, wt_Stone, wt_Wood, wt_IronOre, wt_GoldOre,
     wt_Coal, wt_Steel, wt_Gold, wt_Wine, wt_Corn,
     wt_Bread, wt_Flour, wt_Leather, wt_Sausages, wt_Pig,
@@ -80,7 +80,7 @@ const
 
 
   //Aligned to right to use them in GUI costs display as well
-  WarfareCosts: array [WEAPON_MIN..WEAPON_MAX, 1..2] of TWareType = (
+  WarfareCosts: array [WEAPON_MIN..WEAPON_MAX, 1..2] of TKMWareType = (
     (wt_None,   wt_Wood), //rt_Shield
     (wt_Coal,  wt_Steel), //rt_MetalShield
     (wt_None,wt_Leather), //rt_Armor
@@ -128,7 +128,7 @@ uses
 
 
 { TKMWare }
-constructor TKMWare.Create(aType: TWareType);
+constructor TKMWare.Create(aType: TKMWareType);
 begin
   inherited Create;
 
@@ -196,11 +196,11 @@ end;
 { TKMResWares }
 constructor TKMResWares.Create;
 var
-  I: TWareType;
+  I: TKMWareType;
 begin
   inherited;
 
-  for I := Low(TWareType) to High(TWareType) do
+  for I := Low(TKMWareType) to High(TKMWareType) do
     fList[I] := TKMWare.Create(I);
 
   // Calcuate the trade costs for marketplace once
@@ -210,16 +210,16 @@ end;
 
 destructor TKMResWares.Destroy;
 var
-  I: TWareType;
+  I: TKMWareType;
 begin
-  for I := Low(TWareType) to High(TWareType) do
+  for I := Low(TKMWareType) to High(TKMWareType) do
     fList[I].Free;
 
   inherited;
 end;
 
 
-function TKMResWares.GetWare(aIndex: TWareType): TKMWare;
+function TKMResWares.GetWare(aIndex: TKMWareType): TKMWare;
 begin
   Result := fList[aIndex];
 end;
@@ -229,7 +229,7 @@ end;
 procedure TKMResWares.ExportCostsTable(const aFilename: string);
 var
   SL: TStringList;
-  I: TWareType;
+  I: TKMWareType;
 begin
   SL := TStringList.Create;
   try

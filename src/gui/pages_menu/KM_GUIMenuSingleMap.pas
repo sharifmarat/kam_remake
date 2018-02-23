@@ -302,7 +302,7 @@ begin
       end;
 
       R := MakeListRow(['', IntToStr(fMaps[I].LocCount), fMaps[I].FileName, MapSizeText(fMaps[I].MapSizeX, fMaps[I].MapSizeY)]);
-      R.Cells[2].Hint := fMaps[I].TxtInfo.SmallDesc;
+      R.Cells[2].SubTxt := fMaps[I].TxtInfo.SmallDesc;
       R.Cells[0].Pic := MakePic(rxGui, 28 + Byte(fMaps[I].MissionMode <> mm_Tactic) * 14);
       R.Tag := I;
       ColumnBox_SingleMaps.AddItem(R);
@@ -495,7 +495,7 @@ end;
 
 procedure TKMMenuSingleMap.Update(aForceUpdate: Boolean = False);
 const
-  GoalCondPic: array [TGoalCondition] of Word = (
+  GoalCondPic: array [TKMGoalCondition] of Word = (
     41, 39, 592, 38, 62, 41, 303, 141, 312);
 var
   I,J,K: Integer;
@@ -604,16 +604,15 @@ end;
 
 procedure TKMMenuSingleMap.ListSort(aColumn: Integer);
 var
-  Method: TMapsSortMethod;
+  Method: TKMapsSortMethod;
 begin
   //Set Descending order by default and invert it if same column selected again
   case aColumn of
-    0:  if fMaps.SortMethod = smByModeDesc then
-          Method := smByModeAsc
+    0:  if fMaps.SortMethod = smByMissionModeDesc then
+          Method := smByMissionModeAsc
         else
-          Method := smByModeDesc;
-    1:
-        if fMaps.SortMethod = smByPlayersDesc then
+          Method := smByMissionModeDesc;
+    1:  if fMaps.SortMethod = smByPlayersDesc then
           Method := smByPlayersAsc
         else
           Method := smByPlayersDesc;

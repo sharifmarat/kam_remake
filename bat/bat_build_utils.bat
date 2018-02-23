@@ -16,3 +16,5 @@ msbuild ..\Utils\ScriptValidator\ScriptValidator.dproj /p:Configuration=Release 
 
 REM Build Translation Manager
 msbuild ..\Utils\TranslationManager\TranslationManager.dproj /p:Configuration=Release /t:Build /clp:ErrorsOnly /fl /flp:LogFile="bat_build_translation_manager.log"
+
+call bat_build_linux_servers.bat

@@ -6,22 +6,22 @@ uses
 
 {Steer in place for set time}
 type
-  TUnitActionSteer = class(TUnitAction)
+  TKMUnitActionSteer = class(TKMUnitAction)
   private
     fDesireToSteer, fStuckFor: Byte; //Likelihood of changing direction
     fVertexOccupied: TKMPoint; //The diagonal vertex we are currently occupying
     fNextPos: TKMPoint; //The tile we are currently walking to
     procedure IncVertex(aFrom, aTo: TKMPoint);
     procedure DecVertex;
-    function ChooseNextStep(out Point: TKMPoint):Boolean;
+    function ChooseNextStep(out Point: TKMPoint): Boolean;
   public
-    constructor Create(aUnit: TKMUnit; aActionType:TUnitActionType; aLocked:boolean);
-    constructor Load(LoadStream:TKMemoryStream); override;
+    constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aLocked: Boolean);
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
     function GetExplanation: UnicodeString; override;
-    function Execute: TActionResult; override;
-    procedure Save(SaveStream:TKMemoryStream); override;
+    function Execute: TKMActionResult; override;
+    procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
 
@@ -31,7 +31,7 @@ uses
 
 
 { TUnitActionSteer }
-constructor TUnitActionSteer.Create(aUnit: TKMUnit; aActionType:TUnitActionType; aLocked:boolean);
+constructor TKMUnitActionSteer.Create(aUnit: TKMUnit; aActionType:TKMUnitActionType; aLocked:boolean);
 begin
   inherited Create(aUnit, aActionType, aLocked);
   Assert(aUnit is TKMUnitAnimal); //Only animals do steering
@@ -40,7 +40,7 @@ begin
 end;
 
 
-destructor TUnitActionSteer.Destroy;
+destructor TKMUnitActionSteer.Destroy;
 begin
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
     DecVertex;
@@ -48,7 +48,7 @@ begin
 end;
 
 
-constructor TUnitActionSteer.Load(LoadStream:TKMemoryStream);
+constructor TKMUnitActionSteer.Load(LoadStream:TKMemoryStream);
 begin
   Inherited;
   LoadStream.Read(fDesireToSteer);
@@ -58,19 +58,19 @@ begin
 end;
 
 
-function TUnitActionSteer.ActName: TUnitActionName;
+function TKMUnitActionSteer.ActName: TKMUnitActionName;
 begin
   Result := uan_Steer;
 end;
 
 
-function TUnitActionSteer.GetExplanation: UnicodeString;
+function TKMUnitActionSteer.GetExplanation: UnicodeString;
 begin
   Result := 'Steering';
 end;
 
 
-procedure TUnitActionSteer.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionSteer.IncVertex(aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Steer vertex in use');
@@ -80,7 +80,7 @@ begin
 end;
 
 
-procedure TUnitActionSteer.DecVertex;
+procedure TKMUnitActionSteer.DecVertex;
 begin
   //Tell gTerrain that this vertex is not being used anymore
   Assert(not KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'DecVertex 0:0 Steer');
@@ -90,7 +90,7 @@ begin
 end;
 
 
-function TUnitActionSteer.ChooseNextStep(out Point: TKMPoint): Boolean;
+function TKMUnitActionSteer.ChooseNextStep(out Point: TKMPoint): Boolean;
 var
   I,K,J: Integer;
   Loc:TKMPoint;
@@ -127,7 +127,7 @@ begin
 end;
 
 
-function TUnitActionSteer.Execute: TActionResult;
+function TKMUnitActionSteer.Execute: TKMActionResult;
 var
   DX,DY:shortint;
   WalkX,WalkY,Distance:single;
@@ -188,7 +188,7 @@ begin
 end;
 
 
-procedure TUnitActionSteer.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitActionSteer.Save(SaveStream:TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fDesireToSteer);

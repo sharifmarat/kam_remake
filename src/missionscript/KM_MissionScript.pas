@@ -6,7 +6,7 @@ uses
 
 
 type
-  TMissionParsingMode = (
+  TKMMissionParsingMode = (
                           mpm_Single,
                           mpm_Multi,  //Skip players
                           mpm_Editor  //Ignore errors, load armies differently
@@ -52,7 +52,7 @@ const
     'SET_RALLY_POINT');
 
 type
-  TMissionParserCommon = class
+  TKMMissionParserCommon = class
   protected
     fMissionFileName: string;
     fLastHand: TKMHandIndex; //Current Player
@@ -76,7 +76,7 @@ uses
 
 
 { TMissionParserCommon }
-function TMissionParserCommon.LoadMission(const aFileName: string):boolean;
+function TKMMissionParserCommon.LoadMission(const aFileName: string):boolean;
 begin
   fMissionFileName := aFileName;
   fLastHand := -1;
@@ -85,7 +85,7 @@ begin
 end;
 
 
-function TMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
+function TKMMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
 var
   I: TKMCommandType;
 begin
@@ -106,7 +106,7 @@ end;
 
 
 //Read mission file to a string and if necessary - decode it
-function TMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
+function TKMMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
 var
   I,Num: Cardinal;
   F: TMemoryStream;
@@ -171,7 +171,7 @@ begin
 end;
 
 
-function TMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
+function TKMMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
 var
   CommandText, strParam, TextParam: AnsiString;
   ParamList: array of Integer;
@@ -249,7 +249,7 @@ end;
 
 //A nice way of debugging script errors.
 //Shows the error to the user so they know exactly what they did wrong.
-procedure TMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
+procedure TKMMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
 begin
   if aFatal then
     fFatalErrors := fFatalErrors + ErrorMsg + '|'

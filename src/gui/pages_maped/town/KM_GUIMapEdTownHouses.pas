@@ -13,11 +13,11 @@ type
     procedure Town_BuildRefresh;
   protected
     Panel_Build: TKMPanel;
-    Button_BuildRoad: TKMButtonFlat;
-    Button_BuildField: TKMButtonFlat;
-    Button_BuildWine: TKMButtonFlat;
-    Button_BuildCancel: TKMButtonFlat;
-    Button_Build: array [1..GUI_HOUSE_COUNT] of TKMButtonFlat;
+      Button_BuildRoad: TKMButtonFlat;
+      Button_BuildField: TKMButtonFlat;
+      Button_BuildWine: TKMButtonFlat;
+      Button_BuildCancel: TKMButtonFlat;
+      Button_Build: array [1..GUI_HOUSE_COUNT] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 

@@ -9,25 +9,25 @@ uses
 
 //Everything related to houses is here
 type
-  TDeliveryMode = (dm_Closed = 0, dm_Delivery = 1, dm_TakeOut = 2);
+  TKMDeliveryMode = (dm_Closed = 0, dm_Delivery = 1, dm_TakeOut = 2);
 
   TKMHouse = class;
   TKMHouseEvent = procedure(aHouse: TKMHouse) of object;
   TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandIndex) of object;
 
-  THouseAction = class
+  TKMHouseAction = class
   private
     fHouse: TKMHouse;
-    fHouseState: THouseState;
-    fSubAction: THouseActionSet;
-    procedure SetHouseState(aHouseState: THouseState);
+    fHouseState: TKMHouseState;
+    fSubAction: TKMHouseActionSet;
+    procedure SetHouseState(aHouseState: TKMHouseState);
   public
-    constructor Create(aHouse: TKMHouse; aHouseState: THouseState);
-    procedure SubActionWork(aActionSet: THouseActionType);
-    procedure SubActionAdd(aActionSet: THouseActionSet);
-    procedure SubActionRem(aActionSet: THouseActionSet);
-    property State: THouseState read fHouseState write SetHouseState;
-    property SubAction: THouseActionSet read fSubAction;
+    constructor Create(aHouse: TKMHouse; aHouseState: TKMHouseState);
+    procedure SubActionWork(aActionSet: TKMHouseActionType);
+    procedure SubActionAdd(aActionSet: TKMHouseActionSet);
+    procedure SubActionRem(aActionSet: TKMHouseActionSet);
+    property State: TKMHouseState read fHouseState write SetHouseState;
+    property SubAction: TKMHouseActionSet read fSubAction;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream); 
   end;
@@ -36,7 +36,7 @@ type
   TKMHouse = class
   private
     fUID: Integer; //unique ID, used for save/load to sync to
-    fHouseType: THouseType; //House type
+    fHouseType: TKMHouseType; //House type
 
     fBuildSupplyWood: Byte; //How much Wood was delivered to house building site
     fBuildSupplyStone: Byte; //How much Stone was delivered to house building site
@@ -49,8 +49,8 @@ type
     fBuildingRepair: Boolean; //If on and the building is damaged then labourers will come and repair it
 
     //Switch between delivery modes: delivery on/off/or make an offer from resources available
-    fDeliveryMode: TDeliveryMode; // REAL delivery mode - using in game interactions and actual deliveries
-    fNewDeliveryMode: TDeliveryMode; // Fake, NEW delivery mode, used just for UI. After few tick it will be set as REAL, if there will be no other clicks from player
+    fDeliveryMode: TKMDeliveryMode; // REAL delivery mode - using in game interactions and actual deliveries
+    fNewDeliveryMode: TKMDeliveryMode; // Fake, NEW delivery mode, used just for UI. After few tick it will be set as REAL, if there will be no other clicks from player
     // Delivery mode set with small delay (couple of ticks), to avoid occasional clicks on delivery mode button
     fUpdateDeliveryModeOnTick: Cardinal; // Tick, on which we have to update real delivery mode with its NEW value
 
@@ -89,7 +89,7 @@ type
     procedure SetIsClosedForWorker(aIsClosed: Boolean);
     procedure UpdateDeliveryMode;
   protected
-    fBuildState: THouseBuildState; // = (hbs_Glyph, hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
+    fBuildState: TKMHouseBuildState; // = (hbs_Glyph, hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
     FlagAnimStep: Cardinal; //Used for Flags and Burning animation
     //WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
     fOwner: TKMHandIndex; //House owner player, determines flag color as well
@@ -101,15 +101,15 @@ type
     procedure SetResIn(aI: Byte; aValue: Word); virtual;
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
-    procedure SetNewDeliveryMode(aValue: TDeliveryMode); virtual;
+    procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
   public
-    CurrentAction: THouseAction; //Current action, withing HouseTask or idle
+    CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
     ResourceDepletedMsgIssued: Boolean;
     DoorwayUse: Byte; //number of units using our door way. Used for sliding.
     OnDestroyed: TKMHouseFromEvent;
 
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -134,12 +134,12 @@ type
     procedure GetListOfCellsWithin(Cells: TKMPointList);
     function GetRandomCellWithin: TKMPoint;
     function HitTest(X, Y: Integer): Boolean;
-    property HouseType: THouseType read fHouseType;
+    property HouseType: TKMHouseType read fHouseType;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
 
-    property DeliveryMode: TDeliveryMode read fDeliveryMode;
-    property NewDeliveryMode: TDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
-    procedure SetDeliveryModeInstantly(aValue: TDeliveryMode);
+    property DeliveryMode: TKMDeliveryMode read fDeliveryMode;
+    property NewDeliveryMode: TKMDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
+    procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
@@ -156,7 +156,7 @@ type
     property ResourceOutArray: TKMByteArray read GetResourceOutArray;
     property ResourceOutPoolArray: TKMByteArray read GetResourceOutPoolArray;
 
-    property BuildingState: THouseBuildState read fBuildState write fBuildState;
+    property BuildingState: TKMHouseBuildState read fBuildState write fBuildState;
     procedure IncBuildingProgress;
     function MaxHealth: Word;
     procedure AddDamage(aAmount: Word; aAttacker: TObject; aIsEditor: Boolean = False);
@@ -169,23 +169,23 @@ type
     property IsDestroyed: Boolean read fIsDestroyed;
     property GetDamage: Word read fDamage;
 
-    procedure SetState(aState: THouseState);
-    function GetState: THouseState;
+    procedure SetState(aState: TKMHouseState);
+    function GetState: TKMHouseState;
 
-    function CheckResIn(aWare: TWareType): Word; virtual;
-    function CheckResOut(aWare: TWareType): Word; virtual;
+    function CheckResIn(aWare: TKMWareType): Word; virtual;
+    function CheckResOut(aWare: TKMWareType): Word; virtual;
     function PickOrder: Byte;
     function CheckResToBuild: Boolean;
     function GetMaxInRes: Word;
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); virtual; //override for School and etc..
-    procedure ResAddToOut(aWare: TWareType; const aCount: Integer = 1);
-    procedure ResAddToEitherFromScript(aWare: TWareType; aCount: Integer);
-    procedure ResAddToBuild(aWare: TWareType);
-    procedure ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
-    function ResCanAddToIn(aWare: TWareType): Boolean; virtual;
-    function ResCanAddToOut(aWare: TWareType): Boolean;
-    function ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean; virtual;
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); virtual; //override for School and etc..
+    procedure ResAddToOut(aWare: TKMWareType; const aCount: Integer = 1);
+    procedure ResAddToEitherFromScript(aWare: TKMWareType; aCount: Integer);
+    procedure ResAddToBuild(aWare: TKMWareType);
+    procedure ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
+    function ResCanAddToIn(aWare: TKMWareType): Boolean; virtual;
+    function ResCanAddToOut(aWare: TKMWareType): Boolean;
+    function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; virtual;
     property ResOrder[aId: Byte]: Integer read GetResOrder write SetResOrder;
     property ResIn[aId: Byte]: Word read GetResIn write SetResIn;
 
@@ -208,7 +208,7 @@ type
     function GetFlagPointTexId: Word; virtual; abstract;
     function GetMaxDistanceToPoint: Integer; virtual;
   public
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -244,12 +244,12 @@ type
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
-    procedure ToggleAcceptFlag(aWare: TWareType);
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
-    function CheckResIn(aWare: TWareType): Word; override;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    function ResCanAddToIn(aWare: TWareType): Boolean; override;
-    function ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean; override;
+    procedure ToggleAcceptFlag(aWare: TKMWareType);
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
+    function CheckResIn(aWare: TKMWareType): Word; override;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    function ResCanAddToIn(aWare: TKMWareType): Boolean; override;
+    function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -267,11 +267,11 @@ type
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
-    procedure ToggleResDelivery(aWareType: TWareType);
-    function AcceptWareForDelivery(aWareType: TWareType): Boolean;
+    procedure ToggleResDelivery(aWareType: TKMWareType);
+    function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
   end;
 
 
@@ -295,7 +295,7 @@ const
 
 
 { TKMHouse }
-constructor TKMHouse.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 var
   I: Byte;
 begin
@@ -402,7 +402,7 @@ begin
   LoadStream.Read(HasAct);
   if HasAct then
   begin
-    CurrentAction := THouseAction.Create(nil, hst_Empty); //Create action object
+    CurrentAction := TKMHouseAction.Create(nil, hst_Empty); //Create action object
     CurrentAction.Load(LoadStream); //Load actual data into object
   end;
   LoadStream.Read(ResourceDepletedMsgIssued);
@@ -444,7 +444,7 @@ end;
 procedure TKMHouse.AddDemandsOnActivate(aWasBuilt: Boolean);
 var
   I, DemandsCnt: Integer;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   for I := 1 to 4 do
   begin
@@ -480,7 +480,7 @@ begin
 
   gHands.RevealForTeam(fOwner, fPosition, gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
 
-  CurrentAction := THouseAction.Create(Self, hst_Empty);
+  CurrentAction := TKMHouseAction.Create(Self, hst_Empty);
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
 
   UpdateDamage; //House might have been damaged during construction, so show flames when it is built
@@ -507,7 +507,7 @@ end;
 procedure TKMHouse.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
 begin
   if IsDestroyed or fIsBeingDemolished then Exit;
 
@@ -608,7 +608,7 @@ procedure TKMHouse.UpdateDeliveryMode;
 var
   I: Integer;
   ResCnt: Word;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   if fNewDeliveryMode = fDeliveryMode then Exit;
 
@@ -636,7 +636,7 @@ end;
 
 
 //Set NewDelivery mode. Its going to become a real delivery mode few ticks later
-procedure TKMHouse.SetNewDeliveryMode(aValue: TDeliveryMode);
+procedure TKMHouse.SetNewDeliveryMode(aValue: TKMDeliveryMode);
 begin
   fNewDeliveryMode := aValue;
 
@@ -645,7 +645,7 @@ end;
 
 
 //Set delivery mdoe immidiately
-procedure TKMHouse.SetDeliveryModeInstantly(aValue: TDeliveryMode);
+procedure TKMHouse.SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
 begin
   fNewDeliveryMode := aValue;
   UpdateDeliveryMode;
@@ -994,13 +994,13 @@ begin
 end;
 
 
-procedure TKMHouse.SetState(aState: THouseState);
+procedure TKMHouse.SetState(aState: TKMHouseState);
 begin
   CurrentAction.State := aState;
 end;
 
 
-function TKMHouse.GetState: THouseState;
+function TKMHouse.GetState: TKMHouseState;
 begin
   Result := CurrentAction.State;
 end;
@@ -1060,7 +1060,7 @@ end;
 
 
 {How much resources house has in Input}
-function TKMHouse.CheckResIn(aWare: TWareType): Word;
+function TKMHouse.CheckResIn(aWare: TKMWareType): Word;
 var I: Integer;
 begin
   Result := 0;
@@ -1071,7 +1071,7 @@ end;
 
 
 {How much resources house has in Output}
-function TKMHouse.CheckResOut(aWare: TWareType): Word;
+function TKMHouse.CheckResOut(aWare: TKMWareType): Word;
 var I: Integer;
 begin
   Result := 0;
@@ -1112,7 +1112,7 @@ end;
 function TKMHouse.PickOrder: Byte;
 var
   I, Res: Byte;
-  Ware: TWareType;
+  Ware: TKMWareType;
   BestBid: Single;
   TotalLeft: Integer;
   LeftRatio: array [1..4] of Single;
@@ -1214,7 +1214,7 @@ end;
 
 //Maybe it's better to rule out In/Out? No, it is required to separate what can be taken out of the house and what not.
 //But.. if we add "Evacuate" button to all house the separation becomes artificial..
-procedure TKMHouse.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 var I,OrdersRemoved: Integer;
 begin
   Assert(aWare <> wt_None);
@@ -1236,7 +1236,7 @@ begin
 end;
 
 
-procedure TKMHouse.ResAddToOut(aWare: TWareType; const aCount:integer=1);
+procedure TKMHouse.ResAddToOut(aWare: TKMWareType; const aCount:integer=1);
 var
   I, p, count: Integer;
 begin
@@ -1266,7 +1266,7 @@ begin
 end;
 
 
-procedure TKMHouse.ResAddToEitherFromScript(aWare: TWareType; aCount: Integer);
+procedure TKMHouse.ResAddToEitherFromScript(aWare: TKMWareType; aCount: Integer);
 var I: Integer;
 begin
   for I := 1 to 4 do
@@ -1291,7 +1291,7 @@ end;
 
 
 // Add resources to building process
-procedure TKMHouse.ResAddToBuild(aWare: TWareType);
+procedure TKMHouse.ResAddToBuild(aWare: TKMWareType);
 begin
   case aWare of
     wt_Wood:  Inc(fBuildSupplyWood);
@@ -1301,7 +1301,7 @@ begin
 end;
 
 
-function TKMHouse.ResCanAddToIn(aWare: TWareType): Boolean;
+function TKMHouse.ResCanAddToIn(aWare: TKMWareType): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1311,7 +1311,7 @@ begin
 end;
 
 
-function TKMHouse.ResCanAddToOut(aWare: TWareType): Boolean;
+function TKMHouse.ResCanAddToOut(aWare: TKMWareType): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1333,7 +1333,7 @@ begin
 end;
 
 
-function TKMHouse.ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean;
+function TKMHouse.ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1349,7 +1349,7 @@ end;
 
 
 // Take resource from Input and order more of that kind if DistributionRatios allow
-procedure TKMHouse.ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 var I,K: Integer;
 begin
   Assert(aWare <> wt_None);
@@ -1381,7 +1381,7 @@ begin
 end;
 
 
-procedure TKMHouse.ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 var
   I, K, p, count: integer;
 begin
@@ -1453,7 +1453,7 @@ end;
 
 procedure TKMHouse.MakeSound;
 var
-  Work: THouseActionType;
+  Work: TKMHouseActionType;
   Step: Byte;
 begin
   if SKIP_SOUND then Exit;
@@ -1798,7 +1798,7 @@ end;
 procedure TKMHouseStore.Activate(aWasBuilt:boolean);
 var
   FirstStore: TKMHouseStore;
-  RT: TWareType;
+  RT: TKMWareType;
 begin
   inherited;
   //A new storehouse should inherrit the accept properies of the first storehouse of that player,
@@ -1818,8 +1818,8 @@ begin
 end;
 
 
-procedure TKMHouseStore.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
-var R: TWareType;
+procedure TKMHouseStore.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+var R: TKMWareType;
 begin
   case aWare of
     wt_All:     for R := Low(WaresCount) to High(WaresCount) do begin
@@ -1836,20 +1836,20 @@ begin
 end;
 
 
-function TKMHouseStore.ResCanAddToIn(aWare: TWareType): Boolean;
+function TKMHouseStore.ResCanAddToIn(aWare: TKMWareType): Boolean;
 begin
   Result := (aWare in [WARE_MIN..WARE_MAX]);
 end;
 
 
-function TKMHouseStore.ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean;
+function TKMHouseStore.ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aWare in [WARE_MIN..WARE_MAX]);
   Result := (WaresCount[aWare] >= aCount);
 end;
 
 
-function TKMHouseStore.CheckResIn(aWare: TWareType): Word;
+function TKMHouseStore.CheckResIn(aWare: TKMWareType): Word;
 begin
   if aWare in [WARE_MIN..WARE_MAX] then
     Result := WaresCount[aWare]
@@ -1860,7 +1860,7 @@ end;
 
 procedure TKMHouseStore.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
 var
-  R: TWareType;
+  R: TKMWareType;
 begin
   for R := WARE_MIN to WARE_MAX do
     gHands[fOwner].Stats.WareConsumed(R, WaresCount[R]);
@@ -1869,7 +1869,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ResTakeFromOut(aWare: TWareType; aCount: Word=1; aFromScript: Boolean = False);
+procedure TKMHouseStore.ResTakeFromOut(aWare: TKMWareType; aCount: Word=1; aFromScript: Boolean = False);
 begin
   if aFromScript then
   begin
@@ -1886,7 +1886,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ToggleAcceptFlag(aWare: TWareType);
+procedure TKMHouseStore.ToggleAcceptFlag(aWare: TKMWareType);
 const
   //Using shortints instead of bools makes it look much neater in code-view
   CHEAT_SP_PATTERN: array [WARE_MIN..WARE_MAX] of Byte = (
@@ -1897,7 +1897,7 @@ const
     1,1,1,1,1,
     0,0,0);
 var
-  ware: TWareType;
+  ware: TKMWareType;
   cheatPattern: Boolean;
 begin
   // Dunno why thats happening sometimes..
@@ -1948,7 +1948,7 @@ end;
 
 
 { TKMHouseArmorWorkshop }
-constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
   fAcceptWood := True;
@@ -1971,7 +1971,7 @@ begin
 end;
 
 
-procedure TKMHouseArmorWorkshop.ToggleResDelivery(aWareType: TWareType);
+procedure TKMHouseArmorWorkshop.ToggleResDelivery(aWareType: TKMWareType);
 begin
   case aWareType of
     wt_Wood: fAcceptWood := not fAcceptWood;
@@ -1980,7 +1980,7 @@ begin
 end;
 
 
-function TKMHouseArmorWorkshop.AcceptWareForDelivery(aWareType: TWareType): Boolean;
+function TKMHouseArmorWorkshop.AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
 begin
   Result := True;
   case aWareType of
@@ -1991,7 +1991,7 @@ end;
 
 
 { THouseAction }
-constructor THouseAction.Create(aHouse: TKMHouse; aHouseState: THouseState);
+constructor TKMHouseAction.Create(aHouse: TKMHouse; aHouseState: TKMHouseState);
 begin
   inherited Create;
   fHouse := aHouse;
@@ -1999,7 +1999,7 @@ begin
 end;
 
 
-procedure THouseAction.SetHouseState(aHouseState: THouseState);
+procedure TKMHouseAction.SetHouseState(aHouseState: TKMHouseState);
 begin
   fHouseState := aHouseState;
   case fHouseState of
@@ -2013,7 +2013,7 @@ begin
 end;
 
 
-procedure THouseAction.SubActionWork(aActionSet: THouseActionType);
+procedure TKMHouseAction.SubActionWork(aActionSet: TKMHouseActionType);
 begin
   SubActionRem([ha_Work1..ha_Work5]); //Remove all work
   fSubAction := fSubAction + [aActionSet];
@@ -2021,19 +2021,19 @@ begin
 end;
 
 
-procedure THouseAction.SubActionAdd(aActionSet: THouseActionSet);
+procedure TKMHouseAction.SubActionAdd(aActionSet: TKMHouseActionSet);
 begin
   fSubAction := fSubAction + aActionSet;
 end;
 
 
-procedure THouseAction.SubActionRem(aActionSet: THouseActionSet);
+procedure TKMHouseAction.SubActionRem(aActionSet: TKMHouseActionSet);
 begin
   fSubAction := fSubAction - aActionSet;
 end;
 
 
-procedure THouseAction.Save(SaveStream: TKMemoryStream);
+procedure TKMHouseAction.Save(SaveStream: TKMemoryStream);
 begin
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID)
@@ -2044,7 +2044,7 @@ begin
 end;
 
 
-procedure THouseAction.Load(LoadStream: TKMemoryStream);
+procedure TKMHouseAction.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fHouseState, SizeOf(fHouseState));
@@ -2074,7 +2074,7 @@ end;
 
 
 { TKMHouseWPoint }
-constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 

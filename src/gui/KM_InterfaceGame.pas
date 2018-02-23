@@ -15,14 +15,19 @@ type
   private
     fDragScrollingCursorPos: TPoint;
     fDragScrollingViewportPos: TKMPointF;
-
+    fPrevHint: TObject;
+    fPrevHintMessage: UnicodeString;
     procedure ResetDragScrolling;
   protected
     fMinimap: TKMMinimap;
     fViewport: TKMViewport;
     fDragScrolling: Boolean;
 
+    Label_Hint: TKMLabel;
+    Bevel_HintBG: TKMBevel;
+
     function IsDragScrollingAllowed: Boolean; virtual;
+    procedure DisplayHint(Sender: TObject);
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -57,7 +62,7 @@ const
   // naming collisions and confusion in discussions
 
   GUI_HOUSE_COUNT = 28;   // Number of KaM houses to show in GUI
-  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of THouseType = (
+  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of TKMHouseType = (
     ht_School, ht_Inn, ht_Quary, ht_Woodcutters, ht_Sawmill,
     ht_Farm, ht_Mill, ht_Bakery, ht_Swine, ht_Butchers,
     ht_Wineyard, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_WeaponWorkshop,
@@ -67,13 +72,13 @@ const
 
   // Template for how resources are shown in Barracks
   BARRACKS_RES_COUNT = 11;
-  BarracksResType: array [1..BARRACKS_RES_COUNT] of TWareType =
+  BarracksResType: array [1..BARRACKS_RES_COUNT] of TKMWareType =
     (wt_Shield, wt_MetalShield, wt_Armor, wt_MetalArmor, wt_Axe, wt_Sword,
      wt_Pike, wt_Hallebard, wt_Bow, wt_Arbalet, wt_Horse);
 
   // Layout of resources in Store
   STORE_RES_COUNT = 28;
-  StoreResType: array [1..STORE_RES_COUNT] of TWareType =
+  StoreResType: array [1..STORE_RES_COUNT] of TKMWareType =
     (wt_Trunk,    wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
      wt_Coal,     wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
      wt_Bread,    wt_Flour,   wt_Leather,     wt_Sausages,  wt_Pig,
@@ -81,23 +86,23 @@ const
      wt_Axe,      wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
      wt_Arbalet,  wt_Horse,   wt_Fish);
 
-  School_Order: array [0..13] of TUnitType = (
+  School_Order: array [0..13] of TKMUnitType = (
     ut_Serf, ut_Worker, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Fisher, ut_Farmer, ut_Baker, ut_AnimalBreeder, ut_Butcher,
     ut_Miner, ut_Metallurgist, ut_Smith, ut_Recruit);
 
-  Barracks_Order: array [0..8] of TUnitType = (
+  Barracks_Order: array [0..8] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry);
 
-  TownHall_Order: array [0..5] of TUnitType = (
+  TownHall_Order: array [0..5] of TKMUnitType = (
     ut_Peasant, ut_Militia, ut_Slingshot, ut_Horseman, ut_Barbarian, ut_MetalBarbarian);
 
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
   StatPlan: array [0..STATS_LINES_CNT-1] of record
-    HouseType: array [0..3] of THouseType;
-    UnitType: array [0..1] of TUnitType;
+    HouseType: array [0..3] of TKMHouseType;
+    UnitType: array [0..1] of TKMUnitType;
   end = (
     (HouseType: (ht_Quary, ht_None, ht_None, ht_None); UnitType: (ut_StoneCutter, ut_None)),
     (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None); UnitType: (ut_Woodcutter, ut_None)),
@@ -114,7 +119,7 @@ const
     (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace); UnitType: (ut_Serf, ut_Worker))
     );
 
-  MapEd_Order: array [0..13] of TUnitType = (
+  MapEd_Order: array [0..13] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry, ut_Barbarian,
     ut_Peasant, ut_Slingshot, ut_MetalBarbarian, ut_Horseman);
@@ -124,7 +129,7 @@ const
     66, 67, 68, 69, 70,
     79, 80, 81, 82);
 
-  Animal_Order: array [0..7] of TUnitType = (
+  Animal_Order: array [0..7] of TKMUnitType = (
     ut_Wolf, ut_Fish,        ut_Watersnake, ut_Seastar,
     ut_Crab, ut_Waterflower, ut_Waterleaf,  ut_Duck);
 
@@ -149,7 +154,7 @@ const
 
 implementation
 uses
-  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys;
+  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys, KM_RenderUI, KM_ResFonts;
 
 
 { TKMUserInterfaceGame }
@@ -159,6 +164,17 @@ begin
 
   fMinimap := TKMMinimap.Create(False, False);
   fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
+
+  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
+  Bevel_HintBG.BackAlpha := 0.5;
+  Bevel_HintBG.EdgeAlpha := 0.5;
+  Bevel_HintBG.Hide;
+  Bevel_HintBG.Anchors := [anLeft, anBottom];
+  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
+  Label_Hint.Anchors := [anLeft, anBottom];
+
+  // Controls without a hint will reset the Hint to ''
+  fMyControls.OnHint := DisplayHint;
 
   fDragScrolling := False;
   fDragScrollingCursorPos.X := 0;
@@ -245,6 +261,32 @@ end;
 function TKMUserInterfaceGame.IsDragScrollingAllowed: Boolean;
 begin
   Result := True; // Allow drag scrolling by default
+end;
+
+
+procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
+begin
+  if (fPrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
+
+  if (fPrevHint <> nil) and (Sender = fPrevHint)
+    and (TKMControl(fPrevHint).Hint = fPrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
+
+  if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
+
+  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
+  begin
+    Label_Hint.Caption := '';
+    Bevel_HintBG.Hide;
+    fPrevHintMessage := '';
+  end
+  else
+  begin
+    Label_Hint.Caption := TKMControl(Sender).Hint;
+    Bevel_HintBG.Show;
+    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
+    fPrevHintMessage := TKMControl(Sender).Hint;
+  end;
+  fPrevHint := Sender;
 end;
 
 

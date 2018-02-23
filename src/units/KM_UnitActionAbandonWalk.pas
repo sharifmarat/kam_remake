@@ -8,18 +8,18 @@ uses
 
 {Abandon the current walk, move onto next tile}
 type
-  TUnitActionAbandonWalk = class(TUnitAction)
+  TKMUnitActionAbandonWalk = class(TKMUnitAction)
   private
     fWalkTo: TKMPoint;
     fVertexOccupied: TKMPoint;
   public
-    constructor Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TUnitActionType);
+    constructor Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TKMUnitActionType);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
     function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
-    function Execute: TActionResult; override;
+    function Execute: TKMActionResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -30,7 +30,7 @@ uses
 
 
 { TUnitActionAbandonWalk }
-constructor TUnitActionAbandonWalk.Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TUnitActionType);
+constructor TKMUnitActionAbandonWalk.Create(aUnit: TKMUnit; LocB, aVertexOccupied: TKMPoint; aActionType: TKMUnitActionType);
 begin
   Assert(LocB.X*LocB.Y <> 0, 'Illegal WalkTo 0:0');
   inherited Create(aUnit, aActionType, False);
@@ -40,7 +40,7 @@ begin
 end;
 
 
-destructor TUnitActionAbandonWalk.Destroy;
+destructor TKMUnitActionAbandonWalk.Destroy;
 begin
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
   begin
@@ -51,7 +51,7 @@ begin
 end;
 
 
-constructor TUnitActionAbandonWalk.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionAbandonWalk.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fWalkTo);
@@ -59,19 +59,19 @@ begin
 end;
 
 
-function TUnitActionAbandonWalk.ActName: TUnitActionName;
+function TKMUnitActionAbandonWalk.ActName: TKMUnitActionName;
 begin
   Result := uan_AbandonWalk;
 end;
 
 
-function TUnitActionAbandonWalk.GetExplanation: UnicodeString;
+function TKMUnitActionAbandonWalk.GetExplanation: UnicodeString;
 begin
   Result := 'Abandoning walk';
 end;
 
 
-function TUnitActionAbandonWalk.Execute: TActionResult;
+function TKMUnitActionAbandonWalk.Execute: TKMActionResult;
 var
   DX, DY: ShortInt;
   WalkX, WalkY, Distance: Single;
@@ -110,7 +110,7 @@ begin
 end;
 
 
-procedure TUnitActionAbandonWalk.Save(SaveStream: TKMemoryStream);
+procedure TKMUnitActionAbandonWalk.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fWalkTo);
@@ -118,7 +118,7 @@ begin
 end;
 
 
-function TUnitActionAbandonWalk.CanBeInterrupted: Boolean;
+function TKMUnitActionAbandonWalk.CanBeInterrupted: Boolean;
 begin
   Result := StepDone and not Locked; //Abandon walk should never be abandoned, it will exit within 1 step anyway
 end;

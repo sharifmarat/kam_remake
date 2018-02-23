@@ -85,7 +85,7 @@ type
   private
     fOwner: TKMHandIndex;
 
-    fAdvice: array of THouseType;
+    fAdvice: array of TKMHouseType;
 
     //The following are recalculated before each use, so they don't need saving
     fCore: TKMCoreBalance;
@@ -102,8 +102,8 @@ type
     fWarfareText: UnicodeString;
     fAdviceText: UnicodeString;
 
-    function WeaponUsed(aWare: TWareType): Boolean;
-    function AdviceContains(aHouse: THouseType): Boolean;
+    function WeaponUsed(aWare: TKMWareType): Boolean;
+    function AdviceContains(aHouse: TKMHouseType): Boolean;
 
     procedure AppendCore;
     procedure AppendMaterials;
@@ -111,8 +111,8 @@ type
     procedure AppendFood;
     procedure AppendWeaponry;
 
-    procedure Append(aHouse: THouseType; aCount: Byte = 1);
-    function HouseCount(aHouse: THouseType): Integer;
+    procedure Append(aHouse: TKMHouseType; aCount: Byte = 1);
+    function HouseCount(aHouse: TKMHouseType): Integer;
 
     procedure DistributeCorn;
     procedure DistributeCoal;
@@ -134,7 +134,7 @@ type
 
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure Refresh;
-    function Peek: THouseType;
+    function Peek: TKMHouseType;
     procedure Take;
     procedure Reject;
     procedure SetArmyDemand(aNeeds: TWarfareDemands);
@@ -164,13 +164,13 @@ end;
 
 
 //How many houses of certain type we have (assume all wip houses will be finished)
-function TKMayorBalance.HouseCount(aHouse: THouseType): Integer;
+function TKMayorBalance.HouseCount(aHouse: TKMHouseType): Integer;
 begin
   Result := gHands[fOwner].Stats.GetHouseTotal(aHouse);
 end;
 
 
-function TKMayorBalance.WeaponUsed(aWare: TWareType): Boolean;
+function TKMayorBalance.WeaponUsed(aWare: TKMWareType): Boolean;
 begin
   case gHands[fOwner].AI.Setup.ArmyType of
     atLeather:         Result := aWare in [wt_Shield, wt_Armor, wt_Axe, wt_Pike, wt_Bow, wt_Horse];
@@ -182,7 +182,7 @@ begin
 end;
 
 
-function TKMayorBalance.AdviceContains(aHouse: THouseType): Boolean;
+function TKMayorBalance.AdviceContains(aHouse: TKMHouseType): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -195,7 +195,7 @@ begin
 end;
 
 
-procedure TKMayorBalance.Append(aHouse: THouseType; aCount: Byte = 1);
+procedure TKMayorBalance.Append(aHouse: TKMHouseType; aCount: Byte = 1);
 var
   I: Integer;
 begin
@@ -326,10 +326,10 @@ procedure TKMayorBalance.AppendWeaponry;
 const
   MAX_WEAPON_TYPES = Byte(WARFARE_MAX) - Byte(WARFARE_MIN) + 1;
 var
-  I, TmpWare: TWareType;
+  I, TmpWare: TKMWareType;
   Tmp: Single;
   WeaponsCount, J, K: Integer;
-  Weapons: array[0..MAX_WEAPON_TYPES-1] of TWareType;
+  Weapons: array[0..MAX_WEAPON_TYPES-1] of TKMWareType;
   WeaponSatisfactions: array[0..MAX_WEAPON_TYPES-1] of Single;
 begin
   //List all the required weapons
@@ -717,7 +717,7 @@ end;
 
 procedure TKMayorBalance.UpdateBalanceWarfare;
 var
-  I: TWareType;
+  I: TKMWareType;
   S: UnicodeString;
 begin
   UpdateBalanceLeather;
@@ -861,7 +861,7 @@ end;
 procedure TKMayorBalance.UpdateBalanceFood;
 var
   P: TKMHand;
-  UT: TUnitType;
+  UT: TKMUnitType;
 begin
   P := gHands[fOwner];
 
@@ -922,7 +922,7 @@ end;
 //Tell Mayor what proportions of army is needed
 procedure TKMayorBalance.SetArmyDemand(aNeeds: TWarfareDemands);
 var
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   //Convert army request into how many weapons are needed
   with fWarfare do
@@ -1001,7 +1001,7 @@ end;
 
 
 //Look at next item in advice queue
-function TKMayorBalance.Peek: THouseType;
+function TKMayorBalance.Peek: TKMHouseType;
 begin
   //Take element from fAdvice queue
   if Length(fAdvice) > 0 then

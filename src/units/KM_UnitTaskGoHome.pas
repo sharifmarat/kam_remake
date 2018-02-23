@@ -7,11 +7,11 @@ uses
 
 
 type
-  TTaskGoHome = class(TUnitTask)
+  TKMTaskGoHome = class(TKMUnitTask)
   public
     constructor Create(aUnit: TKMUnit);
     destructor Destroy; override;
-    function Execute:TTaskResult; override;
+    function Execute:TKMTaskResult; override;
   end;
 
 
@@ -19,7 +19,7 @@ implementation
 
 
 { TTaskGoHome }
-constructor TTaskGoHome.Create(aUnit: TKMUnit);
+constructor TKMTaskGoHome.Create(aUnit: TKMUnit);
 begin
   inherited;
 
@@ -27,13 +27,13 @@ begin
 end;
 
 
-destructor TTaskGoHome.Destroy;
+destructor TKMTaskGoHome.Destroy;
 begin
   inherited;
 end;
 
 
-function TTaskGoHome.Execute: TTaskResult;
+function TKMTaskGoHome.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 

@@ -13,7 +13,7 @@ type
   private
     fOnStopGame: TUnicodeStringWDefEvent; //will be in ancestor class
     fOnShowDetailedStats: TEvent; //will be in ancestor class
-    fGameResultMsg: TGameResultMsg; //So we know where to go after results screen
+    fGameResultMsg: TKMGameResultMsg; //So we know where to go after results screen
     fGameMode: TGameMode;
 
     //Story behind these seemingly superflous elements that
@@ -59,9 +59,9 @@ type
   public
     constructor Create(aParent: TKMPanel; aOnStopGame: TUnicodeStringWDefEvent; aOnShowDetailedStats: TEvent);
 
-    property GameResultMsg: TGameResultMsg read fGameResultMsg;
+    property GameResultMsg: TKMGameResultMsg read fGameResultMsg;
 
-    procedure Show(aMsg: TGameResultMsg);
+    procedure Show(aMsg: TKMGameResultMsg);
     function Visible: Boolean;
     procedure Hide;
     procedure UpdateState(aTick: Cardinal);
@@ -123,7 +123,7 @@ var
 
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
   G: TKMCardinalArray;
   HumanId: TKMHandIndex;
   ShowAIResults: Boolean;
@@ -289,7 +289,7 @@ begin
 end;
 
 
-procedure TKMGameResultsSP.Show(aMsg: TGameResultMsg);
+procedure TKMGameResultsSP.Show(aMsg: TKMGameResultMsg);
 begin
   fGameResultMsg := aMsg;
 

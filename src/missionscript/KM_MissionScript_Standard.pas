@@ -12,9 +12,9 @@ type
     Target: TKMPoint;
   end;
 
-  TMissionParserStandard = class(TMissionParserCommon)
+  TKMMissionParserStandard = class(TKMMissionParserCommon)
   private
-    fParsingMode: TMissionParsingMode; //Data gets sent to Game differently depending on Game/Editor mode
+    fParsingMode: TKMMissionParsingMode; //Data gets sent to Game differently depending on Game/Editor mode
     fPlayerEnabled: TKMHandEnabledArray;
     fLastHouse: TKMHouse;
     fLastTroop: TKMUnitGroup;
@@ -26,8 +26,8 @@ type
   protected
     function ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean; override;
   public
-    constructor Create(aMode: TMissionParsingMode); overload;
-    constructor Create(aMode: TMissionParsingMode; aPlayersEnabled: TKMHandEnabledArray); overload;
+    constructor Create(aMode: TKMMissionParsingMode); overload;
+    constructor Create(aMode: TKMMissionParsingMode; aPlayersEnabled: TKMHandEnabledArray); overload;
     function LoadMission(const aFileName: string): Boolean; overload; override;
     procedure PostLoadMission;
 
@@ -64,7 +64,7 @@ const
 
 { TMissionParserStandard }
 //Mode affect how certain parameters are loaded a bit differently
-constructor TMissionParserStandard.Create(aMode: TMissionParsingMode);
+constructor TKMMissionParserStandard.Create(aMode: TKMMissionParsingMode);
 var I: Integer;
 begin
   inherited Create;
@@ -76,7 +76,7 @@ begin
 end;
 
 
-constructor TMissionParserStandard.Create(aMode: TMissionParsingMode; aPlayersEnabled: TKMHandEnabledArray);
+constructor TKMMissionParserStandard.Create(aMode: TKMMissionParsingMode; aPlayersEnabled: TKMHandEnabledArray);
 begin
   inherited Create;
   fParsingMode := aMode;
@@ -87,7 +87,7 @@ begin
 end;
 
 
-function TMissionParserStandard.LoadMission(const aFileName: string): Boolean;
+function TKMMissionParserStandard.LoadMission(const aFileName: string): Boolean;
 var
   FileText: AnsiString;
 begin
@@ -124,7 +124,7 @@ begin
 end;
 
 
-procedure TMissionParserStandard.PostLoadMission;
+procedure TKMMissionParserStandard.PostLoadMission;
 begin
   //Post-processing of ct_Attack_Position commands which must be done after mission has been loaded
   ProcessAttackPositions;
@@ -133,7 +133,7 @@ end;
 
 
 //Determine what we are attacking: House, Unit or just walking to some place
-procedure TMissionParserStandard.ProcessAttackPositions;
+procedure TKMMissionParserStandard.ProcessAttackPositions;
 var
   I: Integer;
   H: TKMHouse;
@@ -153,13 +153,13 @@ begin
         if (U <> nil) and (not U.IsDeadOrDying) and (gHands.CheckAlliance(Group.Owner, U.Owner) = at_Enemy) then
           Group.OrderAttackUnit(U, True)
         else
-          Group.OrderWalk(Target, True); //Just move to position
+          Group.OrderWalk(Target, True, wtokMissionScript); //Just move to position
       end;
     end;
 end;
 
 
-function TMissionParserStandard.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserStandard.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
 
   function PointInMap(X, Y: Integer): Boolean;
   begin
@@ -171,8 +171,8 @@ var
   I: Integer;
   Qty: Integer;
   H: TKMHouse;
-  HT: THouseType;
-  UT: TUnitType;
+  HT: TKMHouseType;
+  UT: TKMUnitType;
   iPlayerAI: TKMHandAI;
 begin
   Result := False; //Set it right from the start. There are several Exit points below
@@ -289,10 +289,10 @@ begin
                         if fLastHand <> PLAYER_NONE then //Skip false-positives for skipped players
                           if fLastHouse <> nil then
                           begin
-                            if InRange(P[0], Byte(Low(TDeliveryMode)), Byte(High(TDeliveryMode))) then //Check allowed range for delivery mode value
+                            if InRange(P[0], Byte(Low(TKMDeliveryMode)), Byte(High(TKMDeliveryMode))) then //Check allowed range for delivery mode value
                             begin
                               if fLastHouse.AllowDeliveryModeChange then
-                                fLastHouse.SetDeliveryModeInstantly(TDeliveryMode(P[0]))
+                                fLastHouse.SetDeliveryModeInstantly(TKMDeliveryMode(P[0]))
                               else
                                 AddError(Format('ct_SetHouseDeliveryMode: not allowed to change delivery mode for %s ', [gRes.Houses[fLastHouse.HouseType].HouseName]));
                             end else
@@ -514,7 +514,7 @@ begin
                               fLastTroop.MapEdOrder.Pos := KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1));
                             end
                             else
-                              fLastTroop.OrderWalk(KMPoint(P[0]+1, P[1]+1), True, TKMDirection(P[2]+1))
+                              fLastTroop.OrderWalk(KMPoint(P[0]+1, P[1]+1), True, wtokMissionScript, TKMDirection(P[2]+1))
                           else
                             AddError('ct_SendGroup without prior declaration of Troop');
                         end;
@@ -553,8 +553,8 @@ begin
                           if TextParam = PARAMVALUES[cpt_AttackFactor]     then iPlayerAI.Setup.Aggressiveness   := P[1];
                           if TextParam = PARAMVALUES[cpt_TroopParam]   then
                           begin
-                            iPlayerAI.General.DefencePositions.TroopFormations[TGroupType(P[1])].NumUnits := P[2];
-                            iPlayerAI.General.DefencePositions.TroopFormations[TGroupType(P[1])].UnitsPerRow  := P[3];
+                            iPlayerAI.General.DefencePositions.TroopFormations[TKMGroupType(P[1])].NumUnits := P[2];
+                            iPlayerAI.General.DefencePositions.TroopFormations[TKMGroupType(P[1])].UnitsPerRow  := P[3];
                           end;
                         end;
 
@@ -576,8 +576,8 @@ begin
     ct_AIUnlimitedEquip:if fLastHand <> PLAYER_NONE then
                           gHands[fLastHand].AI.Setup.UnlimitedEquip := True;
 
-    ct_AIArmyType:      if (fLastHand <> PLAYER_NONE) and (P[0] >= Byte(Low(TArmyType))) and (P[0] <= Byte(High(TArmyType))) then
-                          gHands[fLastHand].AI.Setup.ArmyType := TArmyType(P[0]);
+    ct_AIArmyType:      if (fLastHand <> PLAYER_NONE) and (P[0] >= Byte(Low(TKMArmyType))) and (P[0] <= Byte(High(TKMArmyType))) then
+                          gHands[fLastHand].AI.Setup.ArmyType := TKMArmyType(P[0]);
 
     ct_AIStartPosition: if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
                           gHands[fLastHand].AI.Setup.StartPosition := KMPoint(P[0]+1,P[1]+1);
@@ -612,38 +612,38 @@ begin
     ct_AddGoal:         //ADD_GOAL, condition, status, message_id, player_id,
                         if fLastHand <> PLAYER_NONE then
                         begin
-                          if not InRange(P[0], 0, Byte(High(TGoalCondition))) then
+                          if not InRange(P[0], 0, Byte(High(TKMGoalCondition))) then
                             AddError('Add_Goal with unknown condition index ' + IntToStr(P[0]))
                           else
-                            if not (TGoalCondition(P[0]) in GoalsSupported) then
-                              AddError('Goal type ' + GoalConditionStr[TGoalCondition(P[0])] + ' is deprecated')
+                            if not (TKMGoalCondition(P[0]) in GoalsSupported) then
+                              AddError('Goal type ' + GoalConditionStr[TKMGoalCondition(P[0])] + ' is deprecated')
                             else
                               if (P[2] <> 0) then
                                 AddError('Goals messages are deprecated. Use .script instead')
                               else
                                 if InRange(P[3], 0, gHands.Count - 1) and fPlayerEnabled[P[3]] then
-                                  gHands[fLastHand].AI.Goals.AddGoal(glt_Victory, TGoalCondition(P[0]), TGoalStatus(P[1]), 0, P[2], P[3]);
+                                  gHands[fLastHand].AI.Goals.AddGoal(glt_Victory, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), 0, P[2], P[3]);
                         end;
 
     ct_AddLostGoal:     if fLastHand <> PLAYER_NONE then
                         begin
-                          if not InRange(P[0], 0, Byte(High(TGoalCondition))) then
+                          if not InRange(P[0], 0, Byte(High(TKMGoalCondition))) then
                             AddError('Add_LostGoal with unknown condition index ' + IntToStr(P[0]))
                           else
                           if InRange(P[3], 0, gHands.Count - 1)
                           and fPlayerEnabled[P[3]] then
                           begin
-                            if not (TGoalCondition(P[0]) in GoalsSupported) then
-                              AddError('LostGoal type ' + GoalConditionStr[TGoalCondition(P[0])] + ' is deprecated');
+                            if not (TKMGoalCondition(P[0]) in GoalsSupported) then
+                              AddError('LostGoal type ' + GoalConditionStr[TKMGoalCondition(P[0])] + ' is deprecated');
                             if (P[2] <> 0) then
                               AddError('LostGoals messages are deprecated. Use .script instead');
-                            gHands[fLastHand].AI.Goals.AddGoal(glt_Survive, TGoalCondition(P[0]), TGoalStatus(P[1]), 0, P[2], P[3]);
+                            gHands[fLastHand].AI.Goals.AddGoal(glt_Survive, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), 0, P[2], P[3]);
                           end;
                         end;
 
     ct_AIDefence:       if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          if InRange(P[3], Integer(Low(TGroupType)), Integer(High(TGroupType))) then //TPR 3 tries to set TGroupType 240 due to a missing space
-                            gHands[fLastHand].AI.General.DefencePositions.Add(KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1)),TGroupType(P[3]),P[4],TAIDefencePosType(P[5]));
+                          if InRange(P[3], Integer(Low(TKMGroupType)), Integer(High(TKMGroupType))) then //TPR 3 tries to set TGroupType 240 due to a missing space
+                            gHands[fLastHand].AI.General.DefencePositions.Add(KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1)),TKMGroupType(P[3]),P[4],TAIDefencePosType(P[5]));
 
     ct_SetMapColor:     if fLastHand <> PLAYER_NONE then
                           //For now simply use the minimap color for all color, it is too hard to load all 8 shades from ct_SetNewRemap
@@ -667,7 +667,7 @@ begin
                           if TextParam = AI_ATTACK_PARAMS[cpt_Range] then
                             fAIAttack.Range := P[1];
                           if TextParam = AI_ATTACK_PARAMS[cpt_TroopAmount] then
-                            fAIAttack.GroupAmounts[TGroupType(P[1])] := P[2];
+                            fAIAttack.GroupAmounts[TKMGroupType(P[1])] := P[2];
                           if TextParam = AI_ATTACK_PARAMS[cpt_Target] then
                             fAIAttack.Target := TAIAttackTarget(P[1]);
                           if TextParam = AI_ATTACK_PARAMS[cpt_Position] then
@@ -711,23 +711,23 @@ end;
 
 
 //Write out a KaM format mission file to aFileName
-procedure TMissionParserStandard.SaveDATFile(const aFileName: string;  aLeftInset: SmallInt = 0; aTopInset: SmallInt = 0; aDoXorEncoding: Boolean = False);
+procedure TKMMissionParserStandard.SaveDATFile(const aFileName: string;  aLeftInset: SmallInt = 0; aTopInset: SmallInt = 0; aDoXorEncoding: Boolean = False);
 const
   COMMANDLAYERS = 4;
 var
   I: longint; //longint because it is used for encoding entire output, which will limit the file size
   K,J,iX,iY,CommandLayerCount: Integer;
   StoreCount, BarracksCount: Integer;
-  Res: TWareType;
-  G: TGroupType;
+  Res: TKMWareType;
+  G: TKMGroupType;
   U: TKMUnit;
   H: TKMHouse;
   Group: TKMUnitGroup;
-  HT: THouseType;
+  HT: TKMHouseType;
   ReleaseAllHouses: Boolean;
   SaveString: AnsiString;
   SaveStream: TFileStream;
-  UT: TUnitType;
+  UT: TKMUnitType;
 
   procedure AddData(aText: AnsiString);
   begin
@@ -861,7 +861,7 @@ begin
     AddCommand(ct_AICharacter,cpt_EquipRateIron,    [gHands[I].AI.Setup.EquipRateIron]);
     AddCommand(ct_AICharacter,cpt_AttackFactor, [gHands[I].AI.Setup.Aggressiveness]);
     AddCommand(ct_AICharacter,cpt_RecruitCount, [gHands[I].AI.Setup.RecruitDelay]);
-    for G:=Low(TGroupType) to High(TGroupType) do
+    for G:=Low(TKMGroupType) to High(TKMGroupType) do
       if gHands[I].AI.General.DefencePositions.TroopFormations[G].NumUnits <> 0 then //Must be valid and used
         AddCommand(ct_AICharacter, cpt_TroopParam, [KaMGroupType[G], gHands[I].AI.General.DefencePositions.TroopFormations[G].NumUnits, gHands[I].AI.General.DefencePositions.TroopFormations[G].UnitsPerRow]);
     AddData(''); //NL
@@ -883,7 +883,7 @@ begin
         if TakeAll then
           AddCommand(ct_AIAttack, cpt_TakeAll, [])
         else
-          for G:=Low(TGroupType) to High(TGroupType) do
+          for G:=Low(TKMGroupType) to High(TKMGroupType) do
             AddCommand(ct_AIAttack, cpt_TroopAmount, [KaMGroupType[G], GroupAmounts[G]]);
 
         if (Delay > 0) or (AttackType = aat_Once) then //Type once must always have counter because it uses the delay

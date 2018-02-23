@@ -5,10 +5,10 @@ uses
   Classes, KM_Defaults, KM_Units, SysUtils, KM_Points;
 
 type
-  TTaskGoOutShowHungry = class(TUnitTask)
+  TKMTaskGoOutShowHungry = class(TKMUnitTask)
   public
     constructor Create(aUnit:TKMUnit);
-    function Execute:TTaskResult; override;
+    function Execute:TKMTaskResult; override;
   end;
 
 
@@ -18,14 +18,14 @@ uses
 
 
 { TTaskGoOutShowHungry }
-constructor TTaskGoOutShowHungry.Create(aUnit:TKMUnit);
+constructor TKMTaskGoOutShowHungry.Create(aUnit:TKMUnit);
 begin
   inherited Create(aUnit);
   fTaskName := utn_GoOutShowHungry;
 end;
 
 
-function TTaskGoOutShowHungry.Execute:TTaskResult;
+function TKMTaskGoOutShowHungry.Execute:TKMTaskResult;
 begin
   Result := tr_TaskContinues;
   if fUnit.GetHome.IsDestroyed then

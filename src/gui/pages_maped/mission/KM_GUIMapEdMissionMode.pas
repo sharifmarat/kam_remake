@@ -93,7 +93,7 @@ begin
     Radio_SmallDescType.Add(gResTexts[TX_MAPED_MISSION_LIBX_TEXT_ID]);
     Radio_SmallDescType.OnChange := RadioMissionDesc_Changed;
 
-    Edit_SmallDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, 70, Panel_MissionParams.Width - RADIO_W - 25, 20, fnt_Arial);
+    Edit_SmallDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, 70, Panel_MissionParams.Width - RADIO_W - 25, 20, fnt_Game);
     NumEdit_SmallDesc := TKMNumericEdit.Create(Panel_MissionParams, RADIO_W + 20, 70, -1, 999, fnt_Grey);
 
     TKMLabel.Create(Panel_MissionParams, 0, 125, gResTexts[TX_MAPED_MISSION_PARAMETERS_TITLE], fnt_Outline, taLeft);
@@ -280,6 +280,13 @@ begin
     CheckBox_BlockTeamSelection.Check;
     CheckBox_BlockPeacetime.Check;
     CheckBox_BlockFullMapPreview.Check;
+    CheckBox_BlockTeamSelection.Disable;
+    CheckBox_BlockPeacetime.Disable;
+    CheckBox_BlockFullMapPreview.Disable;
+  end else begin
+    CheckBox_BlockTeamSelection.Enable;
+    CheckBox_BlockPeacetime.Enable;
+    CheckBox_BlockFullMapPreview.Enable;
   end;
 
   Memo_BigDesc.Text := Edit_BigDesc.Text;

@@ -403,7 +403,7 @@ end;
 //* aCompliment: Both ways
 procedure TKMScriptActions.PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean);
 const
-  ALLIED: array [Boolean] of TAllianceType = (at_Enemy, at_Ally);
+  ALLIED: array [Boolean] of TKMAllianceType = (at_Enemy, at_Ally);
 begin
   try
     //Verify all input parameters
@@ -1057,10 +1057,10 @@ begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and (TAIDefencePosType(aDefType) in [adt_FrontLine..adt_BackLine])
-    and (TGroupType(aGroupType) in [gt_Melee..gt_Mounted])
+    and (TKMGroupType(aGroupType) in [gt_Melee..gt_Mounted])
     and (TKMDirection(aDir+1) in [dir_N..dir_NW])
     and (gTerrain.TileInMapCoords(X, Y)) then
-      gHands[aPlayer].AI.General.DefencePositions.Add(KMPointDir(X, Y, TKMDirection(aDir + 1)), TGroupType(aGroupType), aRadius, TAIDefencePosType(aDefType))
+      gHands[aPlayer].AI.General.DefencePositions.Add(KMPointDir(X, Y, TKMDirection(aDir + 1)), TKMGroupType(aGroupType), aRadius, TAIDefencePosType(aDefType))
   else
     LogParamWarning('Actions.AIDefencePositionAdd', [aPlayer, X, Y, aDir, aGroupType, aRadius, aDefType]);
   except
@@ -1159,14 +1159,14 @@ end;
 //* Sets the formation the AI uses for defence positions
 procedure TKMScriptActions.AIGroupsFormationSet(aPlayer, aType: Byte; aCount, aColumns: Word);
 var
-  gt: TGroupType;
+  gt: TKMGroupType;
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and InRange(aType, 0, 3)
     and (aCount > 0) and (aColumns > 0) then
     begin
-      gt := TGroupType(aType);
+      gt := TKMGroupType(aType);
       gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits := aCount;
       gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow := aColumns;
     end
@@ -1891,7 +1891,7 @@ end;
 procedure TKMScriptActions.HouseAddWaresTo(aHouseID: Integer; aType, aCount: Word);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0) and (aType in [Low(WareIndexToType)..High(WareIndexToType)]) then
@@ -1927,7 +1927,7 @@ end;
 procedure TKMScriptActions.HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0) and (aType in [Low(WareIndexToType)..High(WareIndexToType)]) then
@@ -2038,12 +2038,12 @@ procedure TKMScriptActions.HouseDeliveryMode(aHouseID: Integer; aDeliveryMode: B
 var H: TKMHouse;
 begin
   try
-    if (aHouseID > 0) and (aDeliveryMode <= Byte(High(TDeliveryMode))) then
+    if (aHouseID > 0) and (aDeliveryMode <= Byte(High(TKMDeliveryMode))) then
     begin
       H := fIDCache.GetHouse(aHouseID);
       if (H <> nil)
         and gRes.Houses[H.HouseType].AcceptsWares then
-        H.SetDeliveryModeInstantly(TDeliveryMode(aDeliveryMode));
+        H.SetDeliveryModeInstantly(TKMDeliveryMode(aDeliveryMode));
     end
     else
       LogParamWarning('Actions.HouseDeliveryState', [aHouseID, aDeliveryMode]);
@@ -2131,7 +2131,7 @@ end;
 procedure TKMScriptActions.HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0)
@@ -2158,7 +2158,7 @@ end;
 procedure TKMScriptActions.HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
   I: Integer;
 begin
   try
@@ -2681,7 +2681,7 @@ end;
 procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 var
   H: TKMHouse;
-  ResFrom, ResTo: TWareType;
+  ResFrom, ResTo: TKMWareType;
 begin
   try
     if (aMarketID > 0)
@@ -3255,7 +3255,7 @@ begin
     begin
       G := fIDCache.GetGroup(aGroupID);
       if (G <> nil) and G.CanWalkTo(KMPoint(X,Y), 0) then
-        G.OrderWalk(KMPoint(X,Y), True, TKMDirection(aDirection+1));
+        G.OrderWalk(KMPoint(X,Y), True, wtokScript, TKMDirection(aDirection+1));
     end
     else
       LogParamWarning('Actions.GroupOrderWalk', [aGroupID, X, Y, aDirection]);

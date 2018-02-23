@@ -10,41 +10,41 @@ const
   MAX_WORKPLAN = 24;
 
 type
-  TWorkPlanAllowedEvent = function(aProduct: TWareType): Boolean of object;
+  TKMWorkPlanAllowedEvent = function(aProduct: TKMWareType): Boolean of object;
 
-  TUnitWorkPlan = class
+  TKMUnitWorkPlan = class
   private
-    fHome: THouseType;
+    fHome: TKMHouseType;
     fIssued: Boolean;
-    function ChooseTree(aLoc, aAvoid: TKMPoint; aRadius: Integer; aPlantAct: TPlantAct; aUnit: TKMUnit; out Tree: TKMPointDir; out PlantAct: TPlantAct): Boolean;
+    function ChooseTree(aLoc, aAvoid: TKMPoint; aRadius: Integer; aPlantAct: TKMPlantAct; aUnit: TKMUnit; out Tree: TKMPointDir; out PlantAct: TKMPlantAct): Boolean;
     procedure Clear;
-    procedure WalkStyle(aLoc2: TKMPointDir; aTo, aWork: TUnitActionType; aCycles, aDelay: byte; aFrom: TUnitActionType; aScript: TGatheringScript);
-    procedure SubActAdd(aAct: THouseActionType; aCycles: Single);
-    procedure ResourcePlan(Res1: TWareType; Qty1: Byte; Res2: TWareType; Qty2: Byte; Prod1: TWareType; Prod2: TWareType = wt_None);
+    procedure WalkStyle(aLoc2: TKMPointDir; aTo, aWork: TKMUnitActionType; aCycles, aDelay: byte; aFrom: TKMUnitActionType; aScript: TKMGatheringScript);
+    procedure SubActAdd(aAct: TKMHouseActionType; aCycles: Single);
+    procedure ResourcePlan(Res1: TKMWareType; Qty1: Byte; Res2: TKMWareType; Qty2: Byte; Prod1: TKMWareType; Prod2: TKMWareType = wt_None);
   public
     HasToWalk: Boolean;
     Loc: TKMPoint;
-    ActionWalkTo: TUnitActionType;
-    ActionWorkType: TUnitActionType;
+    ActionWalkTo: TKMUnitActionType;
+    ActionWorkType: TKMUnitActionType;
     WorkCyc: Integer;
     WorkDir: TKMDirection;
-    GatheringScript: TGatheringScript;
+    GatheringScript: TKMGatheringScript;
     AfterWorkDelay: Integer;
-    ActionWalkFrom: TUnitActionType;
-    Resource1: TWareType; Count1: Byte;
-    Resource2: TWareType; Count2: Byte;
+    ActionWalkFrom: TKMUnitActionType;
+    Resource1: TKMWareType; Count1: Byte;
+    Resource2: TKMWareType; Count2: Byte;
     ActCount: Byte;
     HouseAct: array [0..MAX_WORKPLAN - 1] of record
-      Act: THouseActionType;
+      Act: TKMHouseActionType;
       TimeToWork: Word;
     end;
-    Product1: TWareType; ProdCount1: Byte;
-    Product2: TWareType; ProdCount2: Byte;
+    Product1: TKMWareType; ProdCount1: Byte;
+    Product2: TKMWareType; ProdCount2: Byte;
     AfterWorkIdle: Integer;
     ResourceDepleted: Boolean;
   public
-    procedure FindPlan(aUnit: TKMUnit; aHome: THouseType; aProduct: TWareType;
-                       aLoc: TKMPoint; aPlantAct: TPlantAct);
+    procedure FindPlan(aUnit: TKMUnit; aHome: TKMHouseType; aProduct: TKMWareType;
+                       aLoc: TKMPoint; aPlantAct: TKMPlantAct);
     function FindDifferentResource(aUnit: TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
     property IsIssued: Boolean read fIssued;
     procedure Save(SaveStream: TKMemoryStream);
@@ -71,7 +71,7 @@ Then Work2 and Work3 same way. Then adds resource to out and everything to Idle 
 E.g. Farmer arrives at home and Idles for 5sec, then takes a work task (depending on ResOut count, HouseType and Need to sow corn)
 ...... then switches house to Work1 (and self busy for same framecount)
 Then Work2 and Work3 same way. Then adds resource to out and everything to Idle for 5sec.}
-procedure TUnitWorkPlan.Clear;
+procedure TKMUnitWorkPlan.Clear;
 begin
   fIssued := False;
   HasToWalk := False;
@@ -97,7 +97,7 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.WalkStyle(aLoc2:TKMPointDir; aTo,aWork:TUnitActionType; aCycles,aDelay:byte; aFrom:TUnitActionType; aScript:TGatheringScript);
+procedure TKMUnitWorkPlan.WalkStyle(aLoc2:TKMPointDir; aTo,aWork:TKMUnitActionType; aCycles,aDelay:byte; aFrom:TKMUnitActionType; aScript:TKMGatheringScript);
 begin
   Loc := aLoc2.Loc;
   HasToWalk := True;
@@ -111,7 +111,7 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.SubActAdd(aAct: THouseActionType; aCycles: Single);
+procedure TKMUnitWorkPlan.SubActAdd(aAct: TKMHouseActionType; aCycles: Single);
 begin
   HouseAct[ActCount].Act := aAct;
   HouseAct[ActCount].TimeToWork := Round(gRes.Houses[fHome].Anim[aAct].Count * aCycles);
@@ -119,7 +119,7 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.ResourcePlan(Res1: TWareType; Qty1: Byte; Res2: TWareType; Qty2: Byte; Prod1: TWareType; Prod2: TWareType = wt_None);
+procedure TKMUnitWorkPlan.ResourcePlan(Res1: TKMWareType; Qty1: Byte; Res2: TKMWareType; Qty2: Byte; Prod1: TKMWareType; Prod2: TKMWareType = wt_None);
 begin
   Resource1 := Res1; Count1 := Qty1;
   Resource2 := Res2; Count2 := Qty2;
@@ -129,10 +129,10 @@ begin
 end;
 
 
-function TUnitWorkPlan.FindDifferentResource(aUnit:TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
+function TKMUnitWorkPlan.FindDifferentResource(aUnit:TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
 var
   NewLoc: TKMPointDir;
-  PlantAct: TPlantAct;
+  PlantAct: TKMPlantAct;
   Found: boolean;
   HW: TKMHouseWoodcutters;
 begin
@@ -182,7 +182,7 @@ begin
 end;
 
 
-function TUnitWorkPlan.ChooseTree(aLoc, aAvoid: TKMPoint; aRadius:Integer; aPlantAct: TPlantAct; aUnit:TKMUnit; out Tree:TKMPointDir; out PlantAct: TPlantAct):Boolean;
+function TKMUnitWorkPlan.ChooseTree(aLoc, aAvoid: TKMPoint; aRadius:Integer; aPlantAct: TKMPlantAct; aUnit:TKMUnit; out Tree:TKMPointDir; out PlantAct: TKMPlantAct):Boolean;
 var
   I: Integer;
   T: TKMPoint;
@@ -235,12 +235,12 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.FindPlan(aUnit: TKMUnit; aHome: THouseType; aProduct: TWareType;
-                                 aLoc: TKMPoint; aPlantAct: TPlantAct);
+procedure TKMUnitWorkPlan.FindPlan(aUnit: TKMUnit; aHome: TKMHouseType; aProduct: TKMWareType;
+                                 aLoc: TKMPoint; aPlantAct: TKMPlantAct);
 var
   I: Integer;
   Tmp: TKMPointDir;
-  PlantAct: TPlantAct;
+  PlantAct: TKMPlantAct;
   HW: TKMHouseWoodcutters;
 begin
   Clear;
@@ -612,7 +612,7 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.Load(LoadStream:TKMemoryStream);
+procedure TKMUnitWorkPlan.Load(LoadStream:TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.ReadAssert('WorkPlan');
@@ -647,7 +647,7 @@ begin
 end;
 
 
-procedure TUnitWorkPlan.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitWorkPlan.Save(SaveStream:TKMemoryStream);
 var I: Integer;
 begin
   SaveStream.WriteA('WorkPlan');

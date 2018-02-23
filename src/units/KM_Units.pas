@@ -17,33 +17,33 @@ type
   TKMUnitEvent = procedure(aUnit: TKMUnit) of object;
   TKMUnitFromEvent = procedure(aUnit: TKMUnit; aFrom: TKMHandIndex) of object;
 
-  TActionResult = (ar_ActContinues, ar_ActDone, ar_ActAborted); //
+  TKMActionResult = (ar_ActContinues, ar_ActDone, ar_ActAborted); //
 
-  TUnitAction = class
+  TKMUnitAction = class
   protected
-    fActionType: TUnitActionType;
+    fActionType: TKMUnitActionType;
     fUnit: TKMUnit;
   public
     Locked: Boolean; //Means that unit can't take part in interaction, must stay on its tile
     StepDone: Boolean; //True when single action element is done (unit walked to new tile, single attack loop done)
-    constructor Create(aUnit: TKMUnit; aActionType: TUnitActionType; aLocked: Boolean);
+    constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aLocked: Boolean);
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
     function CanBeInterrupted: Boolean; virtual;
-    function ActName: TUnitActionName; virtual; abstract;
-    property ActionType: TUnitActionType read fActionType;
+    function ActName: TKMUnitActionName; virtual; abstract;
+    property ActionType: TKMUnitActionType read fActionType;
     function GetExplanation: UnicodeString; virtual; abstract;
-    function Execute: TActionResult; virtual; abstract;
+    function Execute: TKMActionResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
     procedure Paint; virtual;
   end;
 
-  TTaskResult = (tr_TaskContinues, tr_TaskDone); //There's no difference between Done and Aborted
+  TKMTaskResult = (tr_TaskContinues, tr_TaskDone); //There's no difference between Done and Aborted
 
-  TUnitTask = class
+  TKMUnitTask = class
   protected
-    fTaskName: TUnitTaskName;
+    fTaskName: TKMUnitTaskName;
     fUnit: TKMUnit; //Unit who's performing the Task
     fPhase: Byte;
     fPhase2: Byte;
@@ -55,10 +55,10 @@ type
     destructor Destroy; override;
 
     property Phase: Byte read fPhase write fPhase;
-    property TaskName: TUnitTaskName read fTaskName;
+    property TaskName: TKMUnitTaskName read fTaskName;
     function WalkShouldAbandon: Boolean; dynamic;
 
-    function Execute: TTaskResult; virtual; abstract;
+    function Execute: TKMTaskResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
   end;
 
@@ -66,9 +66,9 @@ type
   TKMUnit = class
   protected //Accessible for child classes
     fUID: Integer; //unique unit ID, used for save/load to sync to
-    fUnitType: TUnitType;
-    fUnitTask: TUnitTask;
-    fCurrentAction: TUnitAction;
+    fUnitType: TKMUnitType;
+    fUnitTask: TKMUnitTask;
+    fCurrentAction: TKMUnitAction;
     fThought: TKMUnitThought;
     fHitPoints: Byte;
     fHitPointCounter: Cardinal; //Counter for hit point restoration, separate cos it resets on first hit
@@ -93,7 +93,7 @@ type
     function GetDesiredPassability: TKMTerrainPassability;
     function GetHitPointsMax: Byte;
     procedure SetDirection(aValue: TKMDirection);
-    procedure SetAction(aAction: TUnitAction; aStep: Integer = 0);
+    procedure SetAction(aAction: TKMUnitAction; aStep: Integer = 0);
     procedure SetNextPosition(aLoc: TKMPoint);
     procedure SetCondition(aValue: Integer);
     function CanAccessHome: Boolean;
@@ -114,7 +114,7 @@ type
     HitPointsInvulnerable: Boolean;
     Dismissable: Boolean; //Is it allowed to dismiss this unit ?
 
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); dynamic;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -137,23 +137,23 @@ type
     property Direction: TKMDirection read fDirection write SetDirection;
     property CurrentHitPoints: Byte read fHitPoints;
 
-    function HitTest(X,Y: Integer; const UT: TUnitType = ut_Any): Boolean;
+    function HitTest(X,Y: Integer; const UT: TKMUnitType = ut_Any): Boolean;
 
-    procedure SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionFight(aAction: TUnitActionType; aOpponent: TKMUnit);
-    procedure SetActionGoIn(aAction: TUnitActionType; aGoDir: TGoInDirection; aHouse: TKMHouse); virtual;
-    procedure SetActionStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
+    procedure SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
+    procedure SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
+    procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); virtual;
+    procedure SetActionStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = True; aStillFrame: Byte = 0; aStep: Integer = 0);
     procedure SetActionStorm(aRow: Integer);
     procedure SetActionSteer;
-    procedure SetActionLockedStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean=true; aStillFrame:byte=0; aStep: Integer=0);
+    procedure SetActionLockedStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean=true; aStillFrame: Byte = 0; aStep: Integer=0);
 
-    procedure SetActionWalk(aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
-    procedure SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk; aDistance: Single = 0);
-    procedure SetActionWalkPushed(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+    procedure SetActionWalk(aLocB: TKMPoint; aActionType: TKMUnitActionType; aDistance: Single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
+    procedure SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
+    procedure SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
+    procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TKMUnitActionType = ua_Walk);
+    procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
+    procedure SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0);
+    procedure SetActionWalkPushed(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
     procedure AbandonWalk;
@@ -161,9 +161,9 @@ type
     property  Owner: TKMHandIndex read fOwner;
     property  GetHome: TKMHouse read fHome;
     procedure SetHome(aHome: TKMHouse);
-    property  GetUnitAction: TUnitAction read fCurrentAction;
-    property  UnitTask: TUnitTask read fUnitTask;
-    property  UnitType: TUnitType read fUnitType;
+    property  GetUnitAction: TKMUnitAction read fCurrentAction;
+    property  UnitTask: TKMUnitTask read fUnitTask;
+    property  UnitType: TKMUnitType read fUnitType;
     function  GetUnitActText: UnicodeString;
     property  Condition: Integer read fCondition write SetCondition;
     property  StartWDefaultCondition: Boolean read fStartWDefaultCondition write fStartWDefaultCondition;
@@ -199,7 +199,7 @@ type
     procedure VertexAdd(aFrom, aTo: TKMPoint);
     procedure Walk(aFrom, aTo: TKMPoint);
     function GetActivityText: UnicodeString; virtual;
-    function GetSlide(aCheck: TCheckAxis): Single;
+    function GetSlide(aCheck: TKMCheckAxis): Single;
     function PathfindingShouldAvoid: Boolean; virtual;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
@@ -212,7 +212,7 @@ type
   private
     procedure CleanHousePointer(aFreeAndNilTask: Boolean = False);
   protected
-    function InitiateActivity: TUnitTask; virtual; abstract;
+    function InitiateActivity: TKMUnitTask; virtual; abstract;
     function FindHome: Boolean;
     procedure ProceedHouseClosedForWorker;
   public
@@ -224,9 +224,9 @@ type
   private
     procedure IssueResourceDepletedMessage;
   protected
-    function InitiateActivity: TUnitTask; override;
+    function InitiateActivity: TKMUnitTask; override;
   public
-    function CanWorkAt(aLoc: TKMPoint; aGatheringScript: TGatheringScript): Boolean;
+    function CanWorkAt(aLoc: TKMPoint; aGatheringScript: TKMGatheringScript): Boolean;
     function GetActivityText: UnicodeString; override;
     procedure Paint; override;
   end;
@@ -234,7 +234,7 @@ type
 
   TKMUnitRecruit = class(TKMSettledUnit)
   protected
-    function InitiateActivity: TUnitTask; override;
+    function InitiateActivity: TKMUnitTask; override;
   public
     procedure Paint; override;
     procedure DestroyInBarracks;
@@ -243,18 +243,18 @@ type
   //Serf - transports all wares between houses
   TKMUnitSerf = class(TKMUnit)
   private
-    fCarry: TWareType;
+    fCarry: TKMWareType;
   public
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
-    procedure Deliver(aFrom: TKMHouse; toHouse: TKMHouse; Res: TWareType; aID: integer); overload;
-    procedure Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TWareType; aID: integer); overload;
+    procedure Deliver(aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: integer); overload;
+    procedure Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: integer); overload;
     function TryDeliverFrom(aFrom: TKMHouse): Boolean;
 
-    property Carry: TWareType read fCarry;
-    procedure CarryGive(Res: TWareType);
+    property Carry: TKMWareType read fCarry;
+    procedure CarryGive(Res: TKMWareType);
     procedure CarryTake;
 
     function UpdateState: Boolean; override;
@@ -266,8 +266,8 @@ type
   public
     procedure BuildHouse(aHouse: TKMHouse; aIndex: Integer);
     procedure BuildHouseRepair(aHouse: TKMHouse; aIndex: Integer);
-    procedure BuildField(aField: TFieldType; aLoc: TKMPoint; aIndex: Integer);
-    procedure BuildHouseArea(aHouseType: THouseType; aLoc: TKMPoint; aIndex: Integer);
+    procedure BuildField(aField: TKMFieldType; aLoc: TKMPoint; aIndex: Integer);
+    procedure BuildHouseArea(aHouseType: TKMHouseType; aLoc: TKMPoint; aIndex: Integer);
     function PickRandomSpot(aList: TKMPointDirList; out Loc: TKMPointDir): Boolean;
 
     function UpdateState: Boolean; override;
@@ -280,7 +280,7 @@ type
   private
     fFishCount: Byte; //1-5
   public
-    constructor Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex); overload;
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex); overload;
     constructor Load(LoadStream: TKMemoryStream); override;
     property FishCount: byte read fFishCount;
     function ReduceFish: Boolean;
@@ -358,24 +358,24 @@ begin
   if (fHome <> nil)
     and not fHome.IsDestroyed
     and (fHome.IsClosedForWorker or ((fHome.HouseType = ht_Barracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
-    and not (fUnitTask is TTaskDie)
-    and not (fUnitTask is TTaskDismiss) then
+    and not (fUnitTask is TKMTaskDie)
+    and not (fUnitTask is TKMTaskDismiss) then
     begin
-      wGoingInsideHouse := (fCurrentAction is TUnitActionGoInOut) and ((TUnitActionGoInOut(fCurrentAction)).Direction = gd_GoInside);
+      wGoingInsideHouse := (fCurrentAction is TKMUnitActionGoInOut) and ((TKMUnitActionGoInOut(fCurrentAction)).Direction = gd_GoInside);
       // let recruits finish throwing animation
-      wThrowingRock := (fUnitTask is TTaskThrowRock) and (fHome.GetState in [hst_Work]);
+      wThrowingRock := (fUnitTask is TKMTaskThrowRock) and (fHome.GetState in [hst_Work]);
       // do not cancel eating task
-      wGoingForEating := (fUnitTask is TTaskGoEat);
+      wGoingForEating := (fUnitTask is TKMTaskGoEat);
       // Assume worker is inside the house if not Visible.
       wIsInsideHouse := not Visible;
       // cancel GoOutShowHungry task if we outside of the house
-      wWentOutShowHungry := (fUnitTask is TTaskGoOutShowHungry) and not wIsInsideHouse;
+      wWentOutShowHungry := (fUnitTask is TKMTaskGoOutShowHungry) and not wIsInsideHouse;
       // cancel GoOutShowHungry task and go out of the house, if we inside of it
-      wWantToGoOutShowHungry := (fUnitTask is TTaskGoOutShowHungry) and wIsInsideHouse;
+      wWantToGoOutShowHungry := (fUnitTask is TKMTaskGoOutShowHungry) and wIsInsideHouse;
       // We are on the way to somewhere. AbandonWalk 'n cancel task.
-      wWalkingOutside := (fCurrentAction is TUnitActionWalkTo) and not TUnitActionWalkTo(fCurrentAction).DoingExchange;
+      wWalkingOutside := (fCurrentAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(fCurrentAction).DoingExchange;
       // Working outside
-      wWorkingOutsideHouse := (fUnitTask is TTaskMining) and not wIsInsideHouse;
+      wWorkingOutsideHouse := (fUnitTask is TKMTaskMining) and not wIsInsideHouse;
       // Somehow no task
       wHasNoTask := (fUnitTask = nil);
       if (not wThrowingRock) then       // Let recruit finish rock throwing
@@ -419,11 +419,11 @@ begin
   //Reset unit activity if home was destroyed, except when unit is dying or eating (finish eating/dying first)
   if (fHome <> nil)
     and fHome.IsDestroyed
-    and not(fUnitTask is TTaskDie)
-    and not(fUnitTask is TTaskGoEat) then
+    and not(fUnitTask is TKMTaskDie)
+    and not(fUnitTask is TKMTaskGoEat) then
   begin
-    if (fCurrentAction is TUnitActionWalkTo)
-      and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+    if (fCurrentAction is TKMUnitActionWalkTo)
+      and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
       AbandonWalk;
     FreeAndNil(fUnitTask);
     gHands.CleanUpHousePointer(fHome);
@@ -440,16 +440,16 @@ begin
   begin
     HInn := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
     if HInn <> nil then
-      fUnitTask := TTaskGoEat.Create(HInn,Self)
+      fUnitTask := TKMTaskGoEat.Create(HInn,Self)
     else
       if (fHome <> nil) and not fVisible then
-        fUnitTask := TTaskGoOutShowHungry.Create(Self);
+        fUnitTask := TKMTaskGoOutShowHungry.Create(Self);
   end;
 
   if fUnitTask = nil then //If Unit still got nothing to do, nevermind hunger
     if fHome = nil then
       if FindHome then
-        fUnitTask := TTaskGoHome.Create(Self) //Home found - go there
+        fUnitTask := TKMTaskGoHome.Create(Self) //Home found - go there
       else begin
         fThought := th_Quest; //Always show quest when idle, unlike serfs who randomly show it
         SetActionStay(20, ua_Walk) //There's no home, but there will hopefully be one soon so don't sleep too long
@@ -458,7 +458,7 @@ begin
       if fVisible then //Unit is not at home, but it has one
       begin
         if CanAccessHome then
-          fUnitTask := TTaskGoHome.Create(Self)
+          fUnitTask := TKMTaskGoHome.Create(Self)
         else
           SetActionStay(60, ua_Walk) //Home can't be reached
       end else begin
@@ -481,7 +481,7 @@ end;
 { TKMUnitCitizen }
 procedure TKMUnitCitizen.Paint;
 var
-  Act: TUnitActionType;
+  Act: TKMUnitActionType;
   XPaintPos, YPaintPos: Single;
   ID: Integer;
 begin
@@ -516,7 +516,7 @@ begin
 end;
 
 
-function TKMUnitCitizen.CanWorkAt(aLoc: TKMPoint; aGatheringScript: TGatheringScript): Boolean;
+function TKMUnitCitizen.CanWorkAt(aLoc: TKMPoint; aGatheringScript: TKMGatheringScript): Boolean;
 var
   I: Integer;
 begin
@@ -537,8 +537,8 @@ end;
 function TKMUnitCitizen.GetActivityText: UnicodeString;
 begin
   Result := Inherited GetActivityText; //Default
-  if fUnitTask is TTaskMining then
-    Result := TTaskMining(fUnitTask).GetActivityText;
+  if fUnitTask is TKMTaskMining then
+    Result := TKMTaskMining(fUnitTask).GetActivityText;
 end;
 
 
@@ -569,10 +569,10 @@ begin
 end;
 
 
-function TKMUnitCitizen.InitiateActivity: TUnitTask;
+function TKMUnitCitizen.InitiateActivity: TKMUnitTask;
 var
   Res: Integer;
-  TM: TTaskMining;
+  TM: TKMTaskMining;
 begin
   Result := nil;
 
@@ -595,7 +595,7 @@ begin
   and (fHome.CheckResOut(gRes.Houses[fHome.HouseType].ResOutput[Res]) >= MAX_WARES_IN_HOUSE) then
     Exit;
 
-  TM := TTaskMining.Create(Self, gRes.Houses[fHome.HouseType].ResOutput[Res]);
+  TM := TKMTaskMining.Create(Self, gRes.Houses[fHome.HouseType].ResOutput[Res]);
 
   if TM.WorkPlan.ResourceDepleted and not fHome.ResourceDepletedMsgIssued then
     IssueResourceDepletedMessage;
@@ -622,7 +622,7 @@ end;
 { TKMUnitRecruit }
 procedure TKMUnitRecruit.Paint;
 var
-  Act: TUnitActionType;
+  Act: TKMUnitActionType;
   XPaintPos, YPaintPos: Single;
   ID: Integer;
 begin
@@ -668,7 +668,7 @@ begin
 end;
 
 
-function TKMUnitRecruit.InitiateActivity: TUnitTask;
+function TKMUnitRecruit.InitiateActivity: TKMUnitTask;
 var
   Enemy: TKMUnit;
 begin
@@ -685,35 +685,35 @@ begin
   //negate that fact, thats real-life situation.
 
   if Enemy <> nil then
-    Result := TTaskThrowRock.Create(Self, Enemy);
+    Result := TKMTaskThrowRock.Create(Self, Enemy);
 end;
 
 
 { TKMSerf }
-constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
   fCarry := wt_None;
 end;
 
 
-procedure TKMUnitSerf.Deliver(aFrom, toHouse: TKMHouse; Res: TWareType; aID: integer);
+procedure TKMUnitSerf.Deliver(aFrom, toHouse: TKMHouse; Res: TKMWareType; aID: integer);
 begin
   fThought := th_None; //Clear ? thought
-  fUnitTask := TTaskDeliver.Create(Self, aFrom, toHouse, Res, aID);
+  fUnitTask := TKMTaskDeliver.Create(Self, aFrom, toHouse, Res, aID);
 end;
 
 
-procedure TKMUnitSerf.Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TWareType; aID: integer);
+procedure TKMUnitSerf.Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: integer);
 begin
   fThought := th_None; //Clear ? thought
-  fUnitTask := TTaskDeliver.Create(Self, aFrom, toUnit, Res, aID);
+  fUnitTask := TKMTaskDeliver.Create(Self, aFrom, toUnit, Res, aID);
 end;
 
 
 function TKMUnitSerf.TryDeliverFrom(aFrom: TKMHouse): Boolean;
 var
-  T: TUnitTask;
+  T: TKMUnitTask;
 begin
   //Remember current task
   T := fUnitTask;
@@ -738,7 +738,7 @@ end;
 
 procedure TKMUnitSerf.Paint;
 var
-  Act: TUnitActionType;
+  Act: TKMUnitActionType;
   XPaintPos, YPaintPos: Single;
   ID: Integer;
 begin
@@ -754,7 +754,7 @@ begin
 
   gRenderPool.AddUnit(UnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
 
-  if fUnitTask is TTaskDie then Exit; //Do not show unnecessary arms
+  if fUnitTask is TKMTaskDie then Exit; //Do not show unnecessary arms
 
   if Carry <> wt_None then
     gRenderPool.AddUnitCarry(Carry, ID, Direction, AnimStep, XPaintPos, YPaintPos)
@@ -791,7 +791,7 @@ begin
   begin
     H := gHands[fOwner].FindInn(fCurrPosition, Self);
     if H <> nil then
-      fUnitTask := TTaskGoEat.Create(H, Self);
+      fUnitTask := TKMTaskGoEat.Create(H, Self);
   end;
 
   //Only show quest thought if we have been idle since the last update (not HadTask)
@@ -808,7 +808,7 @@ begin
 end;
 
 
-procedure TKMUnitSerf.CarryGive(Res:TWareType);
+procedure TKMUnitSerf.CarryGive(Res:TKMWareType);
 begin
   Assert(fCarry = wt_None, 'Giving Serf another Carry');
   fCarry := Res;
@@ -825,31 +825,31 @@ end;
 { TKMWorker }
 procedure TKMUnitWorker.BuildHouse(aHouse: TKMHouse; aIndex: Integer);
 begin
-  fUnitTask := TTaskBuildHouse.Create(Self, aHouse, aIndex);
+  fUnitTask := TKMTaskBuildHouse.Create(Self, aHouse, aIndex);
 end;
 
 
-procedure TKMUnitWorker.BuildField(aField: TFieldType; aLoc: TKMPoint; aIndex: Integer);
+procedure TKMUnitWorker.BuildField(aField: TKMFieldType; aLoc: TKMPoint; aIndex: Integer);
 begin
   case aField of
-    ft_Road: fUnitTask := TTaskBuildRoad.Create(Self, aLoc, aIndex);
-    ft_Corn: fUnitTask := TTaskBuildField.Create(Self, aLoc, aIndex);
-    ft_Wine: fUnitTask := TTaskBuildWine.Create(Self, aLoc, aIndex);
+    ft_Road: fUnitTask := TKMTaskBuildRoad.Create(Self, aLoc, aIndex);
+    ft_Corn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
+    ft_Wine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
   else
     raise Exception.Create('Unexpected TFieldType');
   end;
 end;
 
 
-procedure TKMUnitWorker.BuildHouseArea(aHouseType: THouseType; aLoc: TKMPoint; aIndex: Integer);
+procedure TKMUnitWorker.BuildHouseArea(aHouseType: TKMHouseType; aLoc: TKMPoint; aIndex: Integer);
 begin
-  fUnitTask := TTaskBuildHouseArea.Create(Self, aHouseType, aLoc, aIndex);
+  fUnitTask := TKMTaskBuildHouseArea.Create(Self, aHouseType, aLoc, aIndex);
 end;
 
 
 procedure TKMUnitWorker.BuildHouseRepair(aHouse: TKMHouse; aIndex: Integer);
 begin
-  fUnitTask := TTaskBuildHouseRepair.Create(Self, aHouse, aIndex);
+  fUnitTask := TKMTaskBuildHouseRepair.Create(Self, aHouse, aIndex);
 end;
 
 
@@ -913,7 +913,7 @@ begin
   begin
     H := gHands[fOwner].FindInn(fCurrPosition, Self);
     if H <> nil then
-      fUnitTask := TTaskGoEat.Create(H, Self);
+      fUnitTask := TKMTaskGoEat.Create(H, Self);
   end;
 
   if (fThought = th_Build)and(fUnitTask = nil) then
@@ -929,7 +929,7 @@ end;
 
 
 { TKMUnitAnimal }
-constructor TKMUnitAnimal.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitAnimal.Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
 
@@ -989,8 +989,8 @@ begin
   fCurrPosition := KMPointRound(fPosition);
 
 
-  Assert((fUnitTask = nil) or (fUnitTask is TTaskDie));
-  if fUnitTask is TTaskDie then
+  Assert((fUnitTask = nil) or (fUnitTask is TKMTaskDie));
+  if fUnitTask is TKMTaskDie then
   case fUnitTask.Execute of
     tr_TaskContinues:  exit;
     tr_TaskDone:       raise Exception.Create('Unexpected fUnitTask.Execute value = tr_TaskDone'); //TTaskDie never returns tr_TaskDone yet
@@ -1014,7 +1014,7 @@ end;
 //For fish the action is the number of fish in the group
 procedure TKMUnitAnimal.Paint;
 var
-  Act: TUnitActionType;
+  Act: TKMUnitActionType;
   XPaintPos, YPaintPos: single;
 begin
   inherited;
@@ -1040,7 +1040,7 @@ end;
 
 
 { TKMUnit }
-constructor TKMUnit.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnit.Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited Create;
 
@@ -1099,8 +1099,8 @@ end;
 constructor TKMUnit.Load(LoadStream: TKMemoryStream);
 var
   HasTask, HasAct: Boolean;
-  TaskName: TUnitTaskName;
-  ActName: TUnitActionName;
+  TaskName: TKMUnitTaskName;
+  ActName: TKMUnitActionName;
 begin
   inherited Create;
   LoadStream.Read(fUnitType, SizeOf(fUnitType));
@@ -1110,22 +1110,22 @@ begin
     LoadStream.Read(TaskName, SizeOf(TaskName));
     case TaskName of
       utn_Unknown:         raise Exception.Create('TaskName can''t be handled');
-      utn_SelfTrain:       fUnitTask := TTaskSelfTrain.Load(LoadStream);
-      utn_Deliver:         fUnitTask := TTaskDeliver.Load(LoadStream);
-      utn_BuildRoad:       fUnitTask := TTaskBuildRoad.Load(LoadStream);
-      utn_BuildWine:       fUnitTask := TTaskBuildWine.Load(LoadStream);
-      utn_BuildField:      fUnitTask := TTaskBuildField.Load(LoadStream);
-      utn_BuildHouseArea:  fUnitTask := TTaskBuildHouseArea.Load(LoadStream);
-      utn_BuildHouse:      fUnitTask := TTaskBuildHouse.Load(LoadStream);
-      utn_BuildHouseRepair:fUnitTask := TTaskBuildHouseRepair.Load(LoadStream);
-      utn_GoHome:          fUnitTask := TTaskGoHome.Load(LoadStream);
-      utn_Dismiss:         fUnitTask := TTaskDismiss.Load(LoadStream);
-      utn_AttackHouse:     fUnitTask := TTaskAttackHouse.Load(LoadStream);
-      utn_ThrowRock:       fUnitTask := TTaskThrowRock.Load(LoadStream);
-      utn_GoEat:           fUnitTask := TTaskGoEat.Load(LoadStream);
-      utn_Mining:          fUnitTask := TTaskMining.Load(LoadStream);
-      utn_Die:             fUnitTask := TTaskDie.Load(LoadStream);
-      utn_GoOutShowHungry: fUnitTask := TTaskGoOutShowHungry.Load(LoadStream);
+      utn_SelfTrain:       fUnitTask := TKMTaskSelfTrain.Load(LoadStream);
+      utn_Deliver:         fUnitTask := TKMTaskDeliver.Load(LoadStream);
+      utn_BuildRoad:       fUnitTask := TKMTaskBuildRoad.Load(LoadStream);
+      utn_BuildWine:       fUnitTask := TKMTaskBuildWine.Load(LoadStream);
+      utn_BuildField:      fUnitTask := TKMTaskBuildField.Load(LoadStream);
+      utn_BuildHouseArea:  fUnitTask := TKMTaskBuildHouseArea.Load(LoadStream);
+      utn_BuildHouse:      fUnitTask := TKMTaskBuildHouse.Load(LoadStream);
+      utn_BuildHouseRepair:fUnitTask := TKMTaskBuildHouseRepair.Load(LoadStream);
+      utn_GoHome:          fUnitTask := TKMTaskGoHome.Load(LoadStream);
+      utn_Dismiss:         fUnitTask := TKMTaskDismiss.Load(LoadStream);
+      utn_AttackHouse:     fUnitTask := TKMTaskAttackHouse.Load(LoadStream);
+      utn_ThrowRock:       fUnitTask := TKMTaskThrowRock.Load(LoadStream);
+      utn_GoEat:           fUnitTask := TKMTaskGoEat.Load(LoadStream);
+      utn_Mining:          fUnitTask := TKMTaskMining.Load(LoadStream);
+      utn_Die:             fUnitTask := TKMTaskDie.Load(LoadStream);
+      utn_GoOutShowHungry: fUnitTask := TKMTaskGoOutShowHungry.Load(LoadStream);
     else
       raise Exception.Create('TaskName can''t be handled');
     end;
@@ -1138,13 +1138,13 @@ begin
   begin
     LoadStream.Read(ActName, SizeOf(ActName));
     case ActName of
-      uan_Stay:        fCurrentAction := TUnitActionStay.Load(LoadStream);
-      uan_WalkTo:      fCurrentAction := TUnitActionWalkTo.Load(LoadStream);
-      uan_AbandonWalk: fCurrentAction := TUnitActionAbandonWalk.Load(LoadStream);
-      uan_GoInOut:     fCurrentAction := TUnitActionGoInOut.Load(LoadStream);
-      uan_Fight:       fCurrentAction := TUnitActionFight.Load(LoadStream);
-      uan_StormAttack: fCurrentAction := TUnitActionStormAttack.Load(LoadStream);
-      uan_Steer:       fCurrentAction := TUnitActionSteer.Load(LoadStream);
+      uan_Stay:        fCurrentAction := TKMUnitActionStay.Load(LoadStream);
+      uan_WalkTo:      fCurrentAction := TKMUnitActionWalkTo.Load(LoadStream);
+      uan_AbandonWalk: fCurrentAction := TKMUnitActionAbandonWalk.Load(LoadStream);
+      uan_GoInOut:     fCurrentAction := TKMUnitActionGoInOut.Load(LoadStream);
+      uan_Fight:       fCurrentAction := TKMUnitActionFight.Load(LoadStream);
+      uan_StormAttack: fCurrentAction := TKMUnitActionStormAttack.Load(LoadStream);
+      uan_Steer:       fCurrentAction := TKMUnitActionSteer.Load(LoadStream);
     else
       raise Exception.Create('ActName can''t be handled');
     end;
@@ -1195,7 +1195,7 @@ end;
 
 procedure TKMUnit.TrainInHouse(aSchool: TKMHouseSchool);
 begin
-  fUnitTask := TTaskSelfTrain.Create(Self, aSchool);
+  fUnitTask := TKMTaskSelfTrain.Create(Self, aSchool);
 end;
 
 
@@ -1254,7 +1254,7 @@ begin
   if not Dismissable or IsDeadOrDying then
     Exit;
 
-  if (fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  if (fCurrentAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(fCurrentAction).DoingExchange then
   begin
     fDismissASAP := True; //Unit will be dismissed ASAP, when unit is ready for it
     Exit;
@@ -1271,8 +1271,8 @@ begin
   fThought := th_None; //Reset thought
   fDismissASAP := False;
 
-  if (fCurrentAction is TUnitActionWalkTo)
-    and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  if (fCurrentAction is TKMUnitActionWalkTo)
+    and not TKMUnitActionWalkTo(fCurrentAction).DoingExchange then
   begin
     AbandonWalk;
   end else
@@ -1293,15 +1293,15 @@ procedure TKMUnit.DoDismiss;
   procedure TryCreateDismissTask;
   begin
     FreeAndNil(fUnitTask);
-    fUnitTask := TTaskDismiss.Create(Self); //Will create empty locked stay action
-    if TTaskDismiss(fUnitTask).ShouldBeCancelled then
+    fUnitTask := TKMTaskDismiss.Create(Self); //Will create empty locked stay action
+    if TKMTaskDismiss(fUnitTask).ShouldBeCancelled then
       FreeAndNil(fUnitTask);
   end;
 
 begin
   //We can update existing Walk action with minimum changes
-  if (fCurrentAction is TUnitActionWalkTo)
-    and not TUnitActionWalkTo(fCurrentAction).DoingExchange then
+  if (fCurrentAction is TKMUnitActionWalkTo)
+    and not TKMUnitActionWalkTo(fCurrentAction).DoingExchange then
   begin
     AbandonWalk;
     TryCreateDismissTask;
@@ -1341,7 +1341,7 @@ begin
 
   // Wait till units exchange (1 tick) and then do the killing
   if aForceDelay
-    or ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
+    or ((fCurrentAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(fCurrentAction).DoingExchange) then
   begin
     fKillASAP := True; //Unit will be killed ASAP, when unit is ready for it
     fKillASAPShowAnimation := aShowAnimation;
@@ -1358,7 +1358,7 @@ begin
   fThought := th_None; //Reset thought
   SetAction(nil); //Dispose of current action (TTaskDie will set it to LockedStay)
   FreeAndNil(fUnitTask); //Should be overriden to dispose of Task-specific items
-  fUnitTask := TTaskDie.Create(Self, aShowAnimation);
+  fUnitTask := TKMTaskDie.Create(Self, aShowAnimation);
 end;
 
 
@@ -1446,8 +1446,8 @@ end;
 procedure TKMUnit.CancelUnitTask;
 begin
   if (fUnitTask <> nil)
-    and (fCurrentAction is TUnitActionWalkTo)
-    and not TUnitActionWalkTo(GetUnitAction).DoingExchange then
+    and (fCurrentAction is TKMUnitActionWalkTo)
+    and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
     AbandonWalk;
   FreeAndNil(fUnitTask);
 end;
@@ -1467,7 +1467,7 @@ begin
 end;
 
 
-function TKMUnit.HitTest(X,Y: Integer; const UT:TUnitType = ut_Any): Boolean;
+function TKMUnit.HitTest(X,Y: Integer; const UT:TKMUnitType = ut_Any): Boolean;
 begin
   Result := (X = fCurrPosition.X) and //Comparing X,Y to CurrentPosition separately, cos they can be negative numbers
             (Y = fCurrPosition.Y) and
@@ -1501,7 +1501,7 @@ end;
 
 
 //Assign the following Action to unit and set AnimStep
-procedure TKMUnit.SetAction(aAction: TUnitAction; aStep: Integer = 0);
+procedure TKMUnit.SetAction(aAction: TKMUnitAction; aStep: Integer = 0);
 begin
   AnimStep := aStep;
   if aAction = nil then
@@ -1522,7 +1522,7 @@ begin
 end;
 
 
-procedure TKMUnit.SetActionFight(aAction: TUnitActionType; aOpponent: TKMUnit);
+procedure TKMUnit.SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
 var
   Cycle, Step: Byte;
 begin
@@ -1539,19 +1539,19 @@ begin
     end;
   end;
 
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise ELocError.Create('Unit fight overrides walk', fCurrPosition);
-  SetAction(TUnitActionFight.Create(Self, aAction, aOpponent), Step);
+  SetAction(TKMUnitActionFight.Create(Self, aAction, aOpponent), Step);
 end;
 
 
-procedure TKMUnit.SetActionGoIn(aAction: TUnitActionType; aGoDir: TGoInDirection; aHouse: TKMHouse);
+procedure TKMUnit.SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse);
 begin
-  SetAction(TUnitActionGoInOut.Create(Self, aAction, aGoDir, aHouse));
+  SetAction(TKMUnitActionGoInOut.Create(Self, aAction, aGoDir, aHouse));
 end;
 
 
-procedure TKMUnit.SetActionStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean = True; aStillFrame: Byte = 0; aStep: Integer = 0);
+procedure TKMUnit.SetActionStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = True; aStillFrame: Byte = 0; aStep: Integer = 0);
 begin
   //When standing still in walk, use default frame
   if (aAction = ua_Walk) and aStayStill then
@@ -1559,24 +1559,24 @@ begin
     aStillFrame := UnitStillFrames[Direction];
     aStep := UnitStillFrames[Direction];
   end;
-  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, False), aStep);
+  SetAction(TKMUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, False), aStep);
 end;
 
 
 procedure TKMUnit.SetActionStorm(aRow: Integer);
 begin
-  SetAction(TUnitActionStormAttack.Create(Self, ua_Walk, aRow), 0); //Action is ua_Walk for that is the inital one
+  SetAction(TKMUnitActionStormAttack.Create(Self, ua_Walk, aRow), 0); //Action is ua_Walk for that is the inital one
 end;
 
 
 procedure TKMUnit.SetActionSteer;
 begin
-  SetAction(TUnitActionSteer.Create(Self, ua_Walk, True), 0);
+  SetAction(TKMUnitActionSteer.Create(Self, ua_Walk, True), 0);
 end;
 
 
 //Same as above but we will ignore get-out-of-the-way (push) requests from interaction system
-procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TUnitActionType; aStayStill: Boolean = true;
+procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = true;
                                       aStillFrame: Byte = 0; aStep: Integer = 0);
 begin
   //When standing still in walk, use default frame
@@ -1585,26 +1585,26 @@ begin
     aStillFrame := UnitStillFrames[Direction];
     aStep := UnitStillFrames[Direction];
   end;
-  SetAction(TUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, True), aStep);
+  SetAction(TKMUnitActionStay.Create(Self, aTimeToStay, aAction, aStayStill, aStillFrame, True), aStep);
 end;
 
 
 //WalkTo action with exact options (retranslated from WalkTo if Obstcale met)
-procedure TKMUnit.SetActionWalk(aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
+procedure TKMUnit.SetActionWalk(aLocB: TKMPoint; aActionType:TKMUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('');
-  SetAction(TUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, false, aTargetUnit, aTargetHouse));
+  SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, false, aTargetUnit, aTargetHouse));
 end;
 
 
 //Approach house
-procedure TKMUnit.SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('');
 
-  SetAction(TUnitActionWalkTo.Create( Self,               //Who's walking
+  SetAction(TKMUnitActionWalkTo.Create( Self,               //Who's walking
                                       //Target position is the closest cell to our current position (only used for estimating in path finding)
                                       aHouse.GetClosestCell(Self.GetPosition),
                                       aActionType,        //
@@ -1616,9 +1616,9 @@ begin
 end;
 
 
-procedure TKMUnit.SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('');
 
   //todo: Make unit walk away from House
@@ -1627,13 +1627,13 @@ end;
 
 
 //Approach unit
-procedure TKMUnit.SetActionWalkToUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkToUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
    raise Exception.Create('');
 
   Assert(aDistance >= 1, 'Should not walk to units place');
-  SetAction(TUnitActionWalkTo.Create( Self,               //Who's walking
+  SetAction(TKMUnitActionWalkTo.Create( Self,               //Who's walking
                                       aUnit.fCurrPosition,//Target position
                                       aActionType,        //
                                       aDistance,          //Proximity
@@ -1650,9 +1650,9 @@ begin
 end;
 
 
-procedure TKMUnit.SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('');
 
   //todo: Make unit walk away from Unit
@@ -1661,48 +1661,48 @@ end;
 
 
 //Walk to spot or its neighbourhood
-procedure TKMUnit.SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk; aDistance: Single = 0);
+procedure TKMUnit.SetActionWalkToSpot(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0);
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and not TUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('Interrupting unabandonable Walk action');
 
-  SetAction(TUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, false, nil, nil));
+  SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, false, nil, nil));
 end;
 
 
 //We were pushed (walk to spot with wider Passability)
-procedure TKMUnit.SetActionWalkPushed(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkPushed(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 begin
   //1. Only idle units can be pushed, for they are low priority to busy units
   //2. If unit can't get away it will re-push itself once again
-  Assert(((GetUnitAction is TUnitActionStay) and (not GetUnitAction.Locked)) or
-         ((GetUnitAction is TUnitActionWalkTo) and TUnitActionWalkTo(GetUnitAction).CanAbandonExternal));
+  Assert(((GetUnitAction is TKMUnitActionStay) and (not GetUnitAction.Locked)) or
+         ((GetUnitAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal));
 
-  SetAction(TUnitActionWalkTo.Create(Self, aLocB, aActionType, 0, True, nil, nil));
+  SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, 0, True, nil, nil));
   //Once pushed, unit will try to walk away, if he bumps into more units he will
   //
 end;
 
 
-procedure TKMUnit.SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 var
   TempVertexOccupied: TKMPoint;
 begin
-  if GetUnitAction is TUnitActionWalkTo then
+  if GetUnitAction is TKMUnitActionWalkTo then
   begin
-    TempVertexOccupied := TUnitActionWalkTo(GetUnitAction).fVertexOccupied;
-    TUnitActionWalkTo(GetUnitAction).fVertexOccupied := KMPOINT_ZERO; //So it doesn't try to DecVertex on destroy (now it's AbandonWalk's responsibility)
+    TempVertexOccupied := TKMUnitActionWalkTo(GetUnitAction).fVertexOccupied;
+    TKMUnitActionWalkTo(GetUnitAction).fVertexOccupied := KMPOINT_ZERO; //So it doesn't try to DecVertex on destroy (now it's AbandonWalk's responsibility)
   end
   else
     TempVertexOccupied := KMPOINT_ZERO;
 
-  SetAction(TUnitActionAbandonWalk.Create(Self, aLocB, TempVertexOccupied, aActionType), AnimStep); //Use the current animation step, to ensure smooth transition
+  SetAction(TKMUnitActionAbandonWalk.Create(Self, aLocB, TempVertexOccupied, aActionType), AnimStep); //Use the current animation step, to ensure smooth transition
 end;
 
 
 procedure TKMUnit.AbandonWalk;
 begin
-  if GetUnitAction is TUnitActionWalkTo then
+  if GetUnitAction is TKMUnitActionWalkTo then
     SetActionAbandonWalk(NextPosition, ua_Walk)
   else
     SetActionLockedStay(0, ua_Walk); //Error
@@ -1724,20 +1724,20 @@ begin
 
   //Delivery to unit
   if (fUnitType = ut_Serf)
-  and (fUnitTask is TTaskDeliver)
-  and (TTaskDeliver(fUnitTask).DeliverKind = dk_ToUnit)
+  and (fUnitTask is TKMTaskDeliver)
+  and (TKMTaskDeliver(fUnitTask).DeliverKind = dk_ToUnit)
   then
     Result := tpWalk;
 
   //Preparing house area
-  if (fUnitType = ut_Worker) and (fUnitTask is TTaskBuildHouseArea)
-  and TTaskBuildHouseArea(fUnitTask).Digging
+  if (fUnitType = ut_Worker) and (fUnitTask is TKMTaskBuildHouseArea)
+  and TKMTaskBuildHouseArea(fUnitTask).Digging
   then
     Result := tpWorker; //Special mode that allows us to walk on building sites
 
   //Miners at work need to go off roads
   if (fUnitType in [ut_Woodcutter, ut_Farmer, ut_Fisher, ut_StoneCutter])
-  and (fUnitTask is TTaskMining)
+  and (fUnitTask is TKMTaskMining)
   then
     Result := tpWalk;
 end;
@@ -1752,21 +1752,21 @@ end;
 //It's better not to start doing anything with dying units
 function TKMUnit.IsDeadOrDying: Boolean;
 begin
-  Result := fIsDead or fKillASAP or (fUnitTask is TTaskDie);
+  Result := fIsDead or fKillASAP or (fUnitTask is TKMTaskDie);
 end;
 
 
 function TKMUnit.IsDismissing: Boolean;
 begin
-  Result := fDismissASAP or (fUnitTask is TTaskDismiss);
+  Result := fDismissASAP or (fUnitTask is TKMTaskDismiss);
 end;
 
 
 function TKMUnit.IsDismissCancelAvailable: Boolean;
 begin
   Result := fDismissASAP
-            or ((fUnitTask is TTaskDismiss)
-              and TTaskDismiss(fUnitTask).CouldBeCancelled);
+            or ((fUnitTask is TKMTaskDismiss)
+              and TKMTaskDismiss(fUnitTask).CouldBeCancelled);
 end;
 
 
@@ -1837,10 +1837,10 @@ begin
   if (fThought in [th_Death, th_Eat]) and (fCondition > UNIT_MIN_CONDITION) then
     fThought := th_None;
 
-  if (fUnitTask is TTaskDismiss) then
+  if (fUnitTask is TKMTaskDismiss) then
     fThought := th_Dismiss;
 
-  if (fUnitTask is TTaskDie) then //Clear thought if we are in the process of dying
+  if (fUnitTask is TKMTaskDie) then //Clear thought if we are in the process of dying
     fThought := th_None;
 end;
 
@@ -1855,9 +1855,9 @@ begin
   begin
     fVisible := True;
     //If we are walking into/out of the house then don't set our position, ActionGoInOut will sort it out
-    if (not (GetUnitAction is TUnitActionGoInOut))
-    or (not TUnitActionGoInOut(GetUnitAction).GetHasStarted)
-    or (TUnitActionGoInOut(GetUnitAction).GetWaitingForPush) then
+    if (not (GetUnitAction is TKMUnitActionGoInOut))
+    or (not TKMUnitActionGoInOut(GetUnitAction).GetHasStarted)
+    or (TKMUnitActionGoInOut(GetUnitAction).GetWaitingForPush) then
     begin
       //Position in a spiral nearest to entrance of house, updating IsUnit.
       if not gHands.FindPlaceForUnit(fInHouse.Entrance.X, fInHouse.Entrance.Y, UnitType, fCurrPosition, gTerrain.GetWalkConnectID(fInHouse.Entrance)) then
@@ -1890,16 +1890,16 @@ begin
       if (Self is TKMUnitWarrior) and Assigned(TKMUnitWarrior(Self).OnWarriorWalkOut) then
         TKMUnitWarrior(Self).OnWarriorWalkOut(TKMUnitWarrior(Self));
 
-      if GetUnitAction is TUnitActionGoInOut then
+      if GetUnitAction is TKMUnitActionGoInOut then
         SetActionLockedStay(0, ua_Walk); //Abandon the walk out in this case
 
-      if (UnitTask is TTaskGoEat) and (TTaskGoEat(UnitTask).Eating) then
+      if (UnitTask is TKMTaskGoEat) and (TKMTaskGoEat(UnitTask).Eating) then
       begin
         FreeAndNil(fUnitTask); //Stop the eating animation and makes the unit appear
         SetActionStay(0, ua_Walk); //Free the current action and give the unit a temporary one
       end;
       //If we were idle abandon our action so we look for a new house immediately (rather than after 20 seconds for the fisherman)
-      if (UnitTask = nil) and (GetUnitAction is TUnitActionStay) and not TUnitActionStay(GetUnitAction).Locked then
+      if (UnitTask = nil) and (GetUnitAction is TKMUnitActionStay) and not TKMUnitActionStay(GetUnitAction).Locked then
         SetActionStay(0, ua_Walk); //Free the current action and give the unit a temporary one
     end;
     SetInHouse(nil); //Can't be in a destroyed house
@@ -1932,7 +1932,7 @@ end;
 
 function TKMUnit.GetActivityText: UnicodeString;
 const
-  TASK_TEXT: array[TUnitTaskName] of Integer = (
+  TASK_TEXT: array[TKMUnitTaskName] of Integer = (
       -1,-1,                   //utn_Unknown, utn_SelfTrain
       TX_UNIT_TASK_DELVERING,  //utn_Deliver
       TX_UNIT_TASK_ROAD,       //utn_BuildRoad
@@ -1970,7 +1970,7 @@ begin
 end;
 
 
-function TKMUnit.GetSlide(aCheck: TCheckAxis): Single;
+function TKMUnit.GetSlide(aCheck: TKMCheckAxis): Single;
 //Pixel positions (waypoints) for sliding around other units. Uses a lookup to save on-the-fly calculations.
 //Follows a sort of a bell curve (normal distribution) shape for realistic acceleration/deceleration.
 //I tweaked it by hand to look similar to KaM.
@@ -1985,8 +1985,8 @@ begin
   Result := 0;
 
   //When going into a house, units "slide" towards the door when it is not on center
-  if GetUnitAction is TUnitActionGoInOut then
-    Result := Result+TUnitActionGoInOut(GetUnitAction).GetDoorwaySlide(aCheck);
+  if GetUnitAction is TKMUnitActionGoInOut then
+    Result := Result+TKMUnitActionGoInOut(GetUnitAction).GetDoorwaySlide(aCheck);
 
   if (not IsExchanging) or not (GetUnitAction.ActName in [uan_WalkTo, uan_GoInOut]) then exit;
 
@@ -2013,7 +2013,7 @@ end;
 
 function TKMUnit.PathfindingShouldAvoid: Boolean;
 begin
-  Result := not (fCurrentAction is TUnitActionWalkTo); //If we're walking, pathfinding should not route around us
+  Result := not (fCurrentAction is TKMUnitActionWalkTo); //If we're walking, pathfinding should not route around us
 end;
 
 
@@ -2021,11 +2021,11 @@ function TKMUnit.GetMovementVector: TKMPointF;
 var
   MovementSpeed: Single;
 begin
-  if (GetUnitAction is TUnitActionWalkTo) and TUnitActionWalkTo(GetUnitAction).DoesWalking then
+  if (GetUnitAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(GetUnitAction).DoesWalking then
     MovementSpeed := gRes.Units[fUnitType].Speed
   else
-  if (GetUnitAction is TUnitActionStormAttack) then
-    MovementSpeed := TUnitActionStormAttack(GetUnitAction).GetSpeed
+  if (GetUnitAction is TKMUnitActionStormAttack) then
+    MovementSpeed := TKMUnitActionStormAttack(GetUnitAction).GetSpeed
   else
     MovementSpeed := 0;
 
@@ -2036,14 +2036,14 @@ end;
 
 function TKMUnit.IsIdle: Boolean;
 begin
-  Result := (fUnitTask = nil) and ((fCurrentAction is TUnitActionStay) and not TUnitActionStay(fCurrentAction).Locked);
+  Result := (fUnitTask = nil) and ((fCurrentAction is TKMUnitActionStay) and not TKMUnitActionStay(fCurrentAction).Locked);
 end;
 
 
 procedure TKMUnit.Save(SaveStream: TKMemoryStream);
 var
   HasTask, HasAct: Boolean;
-  ActName: TUnitActionName;
+  ActName: TKMUnitActionName;
 begin
   SaveStream.Write(fUnitType, SizeOf(fUnitType));
 
@@ -2118,7 +2118,7 @@ begin
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnit.UpdateState', fCurrPosition);
 
-  if not ((fCurrentAction is TUnitActionWalkTo) and TUnitActionWalkTo(fCurrentAction).DoingExchange) then
+  if not ((fCurrentAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(fCurrentAction).DoingExchange) then
   begin
     //UpdateState can happen right after unit gets killed (Exchange still in progress)
     if fKillASAP then
@@ -2137,9 +2137,9 @@ begin
   end;
 
   //Reset unit dismiss, when target school is destroyed
-  if not fDismissASAP and (fUnitTask is TTaskDismiss)
-    and ((TTaskDismiss(fUnitTask).School = nil)
-      or TTaskDismiss(fUnitTask).School.IsDestroyed) then
+  if not fDismissASAP and (fUnitTask is TKMTaskDismiss)
+    and ((TKMTaskDismiss(fUnitTask).School = nil)
+      or TKMTaskDismiss(fUnitTask).School.IsDestroyed) then
     DoDismiss;
 
   Inc(fTicker);
@@ -2147,7 +2147,7 @@ begin
   //Update hunger
   if (fTicker mod CONDITION_PACE = 0)
     and (fCondition > 0)
-    and not ((fUnitTask is TTaskGoEat) and TTaskGoEat(fUnitTask).Eating) then
+    and not ((fUnitTask is TKMTaskGoEat) and TKMTaskGoEat(fUnitTask).Eating) then
     //Make unit hungry as long as they are not currently eating in the inn
     Dec(fCondition);
 
@@ -2165,7 +2165,7 @@ begin
 
   //Shortcut to kill unit in place if it's on an unwalkable tile. We use fNextPosition rather than fCurrPosition
   //because once we have taken a step from a tile we no longer care about it. (fNextPosition matches up with IsUnit in terrain)
-  if fCurrentAction is TUnitActionWalkTo then
+  if fCurrentAction is TKMUnitActionWalkTo then
     if DesiredPassability = tpWalkRoad then
     begin
       if not gTerrain.CheckPassability(fNextPosition, tpWalk) then
@@ -2224,7 +2224,7 @@ end;
 
 
 { TUnitTask }
-constructor TUnitTask.Create(aUnit: TKMUnit);
+constructor TKMUnitTask.Create(aUnit: TKMUnit);
 begin
   inherited Create;
 
@@ -2238,7 +2238,7 @@ begin
 end;
 
 
-constructor TUnitTask.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitTask.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
 
@@ -2249,13 +2249,13 @@ begin
 end;
 
 
-procedure TUnitTask.SyncLoad;
+procedure TKMUnitTask.SyncLoad;
 begin
   fUnit := gHands.GetUnitByUID(cardinal(fUnit));
 end;
 
 
-destructor TUnitTask.Destroy;
+destructor TKMUnitTask.Destroy;
 begin
   fUnit.Thought := th_None; //Stop any thoughts
   gHands.CleanUpUnitPointer(fUnit);
@@ -2265,19 +2265,19 @@ begin
 end;
 
 
-procedure TUnitTask.InitDefaultAction;
+procedure TKMUnitTask.InitDefaultAction;
 begin
   fUnit.SetActionLockedStay(0, ua_Walk);
 end;
 
 
-function TUnitTask.WalkShouldAbandon: Boolean;
+function TKMUnitTask.WalkShouldAbandon: Boolean;
 begin
   Result := False; //Only used in some child classes
 end;
 
 
-procedure TUnitTask.Save(SaveStream: TKMemoryStream);
+procedure TKMUnitTask.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.Write(fTaskName, SizeOf(fTaskName)); //Save task type before anything else for it will be used on loading to create specific task type
   if fUnit <> nil then
@@ -2290,7 +2290,7 @@ end;
 
 
 { TUnitAction }
-constructor TUnitAction.Create(aUnit: TKMUnit; aActionType: TUnitActionType; aLocked: Boolean);
+constructor TKMUnitAction.Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aLocked: Boolean);
 begin
   inherited Create;
 
@@ -2303,7 +2303,7 @@ begin
 end;
 
 
-constructor TUnitAction.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitAction.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.Read(fActionType, SizeOf(fActionType));
@@ -2313,13 +2313,13 @@ begin
 end;
 
 
-procedure TUnitAction.SyncLoad;
+procedure TKMUnitAction.SyncLoad;
 begin
   fUnit := gHands.GetUnitByUID(cardinal(fUnit));
 end;
 
 
-procedure TUnitAction.Save(SaveStream: TKMemoryStream);
+procedure TKMUnitAction.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.Write(fActionType, SizeOf(fActionType));
   if fUnit <> nil then
@@ -2331,13 +2331,13 @@ begin
 end;
 
 
-procedure TUnitAction.Paint;
+procedure TKMUnitAction.Paint;
 begin
   //Used for debug, paint action properties here
 end;
 
 
-function TUnitAction.CanBeInterrupted: Boolean;
+function TKMUnitAction.CanBeInterrupted: Boolean;
 begin
   Result := True;
 end;

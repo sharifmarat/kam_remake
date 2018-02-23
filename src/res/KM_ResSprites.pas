@@ -218,7 +218,7 @@ end;
 function TKMSpritePack.GetSoftenShadowType(aID: Integer): TSoftenShadowType;
 var
   Step, SpriteID: Integer;
-  UT: TUnitType;
+  UT: TKMUnitType;
   Dir: TKMDirection;
 begin
   Result := sstNone;

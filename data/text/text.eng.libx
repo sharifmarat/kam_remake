@@ -1111,3 +1111,9 @@
 1160:Show mining radius
 1161:Show towers attack radius
 1162:Show units attack radius
+1163:Color code:
+1164:Blue / Green / Red
+1165:Red / Green / Blue
+1166:Text color:
+1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
+1168:Maps filter

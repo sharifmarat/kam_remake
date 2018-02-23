@@ -13,10 +13,10 @@ type
     procedure Town_UnitRefresh;
   protected
     Panel_Units: TKMPanel;
-    Button_UnitCancel: TKMButtonFlat;
-    Button_Citizen: array [0..13] of TKMButtonFlat;
-    Button_Warriors: array [0..13] of TKMButtonFlat;
-    Button_Animals: array [0..7] of TKMButtonFlat;
+      Button_UnitCancel: TKMButtonFlat;
+      Button_Citizen: array [0..13] of TKMButtonFlat;
+      Button_Warriors: array [0..13] of TKMButtonFlat;
+      Button_Animals: array [0..7] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 

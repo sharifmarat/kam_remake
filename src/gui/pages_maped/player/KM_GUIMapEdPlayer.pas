@@ -188,7 +188,7 @@ end;
 procedure TKMMapEdPlayer.ChangePlayer;
 begin
   if GuiPlayerGoals.Visible then GuiPlayerGoals.Show;
-  if fGuiPlayerColors.Visible then fGuiPlayerColors.Show;
+  if fGuiPlayerColors.Visible then fGuiPlayerColors.UpdatePlayer;
   if fGuiPlayerBlockHouse.Visible then fGuiPlayerBlockHouse.Show;
   if fGuiPlayerBlockTrade.Visible then fGuiPlayerBlockTrade.Show;
   if fGuiPlayerBlockUnit.Visible then fGuiPlayerBlockUnit.Show;

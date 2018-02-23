@@ -7,7 +7,7 @@ uses
 
 
 type
-  TTaskDismiss = class(TUnitTask)
+  TKMTaskDismiss = class(TKMUnitTask)
   private
     fSchool: TKMHouse;
   protected
@@ -24,7 +24,7 @@ type
     property School: TKMHouse read fSchool;
     function FindNewSchool: TKMHouse;
 
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
   end;
 
 
@@ -34,7 +34,7 @@ uses
 
 
 { TTaskDismiss }
-constructor TTaskDismiss.Create(aUnit: TKMUnit);
+constructor TKMTaskDismiss.Create(aUnit: TKMUnit);
 begin
   inherited;
 
@@ -43,14 +43,14 @@ begin
 end;
 
 
-constructor TTaskDismiss.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskDismiss.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fSchool, 4);
 end;
 
 
-destructor TTaskDismiss.Destroy;
+destructor TKMTaskDismiss.Destroy;
 begin
   gHands.CleanUpHousePointer(fSchool);
 
@@ -58,19 +58,19 @@ begin
 end;
 
 
-function TTaskDismiss.ShouldBeCancelled: Boolean;
+function TKMTaskDismiss.ShouldBeCancelled: Boolean;
 begin
   Result := (fSchool = nil) or fSchool.IsDestroyed;
 end;
 
 
-function TTaskDismiss.CouldBeCancelled: Boolean;
+function TKMTaskDismiss.CouldBeCancelled: Boolean;
 begin
   Result := fPhase <= 1;
 end;
 
 
-procedure TTaskDismiss.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskDismiss.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fSchool <> nil then
@@ -80,14 +80,14 @@ begin
 end;
 
 
-procedure TTaskDismiss.SyncLoad;
+procedure TKMTaskDismiss.SyncLoad;
 begin
   inherited;
   fSchool := gHands[fUnit.Owner].Houses.GetHouseByUID(Cardinal(fSchool));
 end;
 
 
-function TTaskDismiss.FindNewSchool: TKMHouse;
+function TKMTaskDismiss.FindNewSchool: TKMHouse;
 var
   S: TKMHouse;
 begin
@@ -102,13 +102,13 @@ begin
 end;
 
 
-procedure TTaskDismiss.InitDefaultAction;
+procedure TKMTaskDismiss.InitDefaultAction;
 begin
   //Do nothing here, as we have to continue old action, until it could be interrupted
 end;
 
 
-function TTaskDismiss.Execute: TTaskResult;
+function TKMTaskDismiss.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 

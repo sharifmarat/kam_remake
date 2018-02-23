@@ -42,7 +42,8 @@ var
 begin
   ListBox1.Items.Clear;
   for RT := Low(TRXType) to High(TRXType) do
-    if FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
+    if (RT = rxTiles) //Tiles are always in the list
+      or FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
       ListBox1.Items.Add(GetEnumName(TypeInfo(TRXType), Integer(RT)));
 
   if ListBox1.Items.Count = 0 then

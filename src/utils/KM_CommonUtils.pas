@@ -23,6 +23,9 @@ uses
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function RGB2BGR(aRGB: Cardinal): Cardinal;
+  function BGR2RGB(aRGB: Cardinal): Cardinal;
+  function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
@@ -443,6 +446,54 @@ begin
     13..15: Result := clFpsNormal;
     else    Result := clFpsHigh;
   end;
+end;
+
+
+function RGB2BGR(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  R := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  B := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := B + G shl 8 + R shl 16 + A shl 24;
+end;
+
+
+function BGR2RGB(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  B := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  R := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := R + G shl 8 + B shl 16 + A shl 24;
+end;
+
+
+//Multiply color by channels
+function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+var
+  A, R, G, B, A2, R2, G2, B2: Byte;
+begin
+  //We split color to RGB values
+  R := aColor and $FF;
+  G := aColor shr 8 and $FF;
+  B := aColor shr 16 and $FF;
+  A := aColor shr 24 and $FF;
+
+  R2 := Min(Round(aRed * R), 255);
+  G2 := Min(Round(aGreen * G), 255);
+  B2 := Min(Round(aBlue * B), 255);
+  A2 := Min(Round(aAlpha * A), 255);
+
+  Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
 end;
 
 

@@ -18,7 +18,7 @@ type
   end;
 
   TKMUnitSprite = packed record
-    Act: array [TUnitActionType] of packed record
+    Act: array [TKMUnitActionType] of packed record
       Dir: array [dir_N..dir_NW] of TKMAnimLoop;
     end;
   end;
@@ -27,7 +27,7 @@ type
 
   TKMUnitSpec = class
   private
-    fUnitType: TUnitType;
+    fUnitType: TKMUnitType;
     fUnitDat: TKMUnitDat;
     fUnitSprite: TKMUnitSprite;
     fUnitSprite2: TKMUnitSprite2;
@@ -40,11 +40,11 @@ type
     function GetMinimapColor: Cardinal;
     function GetMiningRange: Byte;
     function GetSpeed: Single;
-    function GetUnitAnim(aAction: TUnitActionType; aDir: TKMDirection): TKMAnimLoop;
+    function GetUnitAnim(aAction: TKMUnitActionType; aDir: TKMDirection): TKMAnimLoop;
     function GetUnitTextID: Integer;
     function GetUnitName: UnicodeString;
   public
-    constructor Create(aType: TUnitType);
+    constructor Create(aType: TKMUnitType);
     function IsValid: Boolean;
     function IsAnimal: Boolean;
     function IsCitizen: Boolean;
@@ -68,8 +68,8 @@ type
     property MinimapColor: Cardinal read GetMinimapColor;
     property MiningRange:byte read GetMiningRange;
     property Speed:single read GetSpeed;
-    function SupportsAction(aAct: TUnitActionType):boolean;
-    property UnitAnim[aAction:TUnitActionType; aDir:TKMDirection]: TKMAnimLoop read GetUnitAnim;
+    function SupportsAction(aAct: TKMUnitActionType):boolean;
+    property UnitAnim[aAction:TKMUnitActionType; aDir:TKMDirection]: TKMAnimLoop read GetUnitAnim;
     property GUIName: UnicodeString read GetUnitName;
     property GUITextID: Integer read GetUnitTextID;
   end;
@@ -78,17 +78,17 @@ type
   TKMResUnits = class
   private
     fCRC: Cardinal;
-    fItems: array [TUnitType] of TKMUnitSpec;
+    fItems: array [TKMUnitType] of TKMUnitSpec;
     fSerfCarry: array [WARE_MIN..WARE_MAX, dir_N..dir_NW] of TKMAnimLoop;
     function LoadUnitsDat(const aPath: UnicodeString): Cardinal;
-    function GetItem(aType: TUnitType): TKMUnitSpec; inline;
-    function GetSerfCarry(aType: TWareType; aDir: TKMDirection): TKMAnimLoop;
+    function GetItem(aType: TKMUnitType): TKMUnitSpec; inline;
+    function GetSerfCarry(aType: TKMWareType; aDir: TKMDirection): TKMAnimLoop;
   public
     constructor Create;
     destructor Destroy; override;
 
-    property Items[aType: TUnitType]: TKMUnitSpec read GetItem; default;
-    property SerfCarry[aType: TWareType; aDir: TKMDirection]: TKMAnimLoop read GetSerfCarry;
+    property Items[aType: TKMUnitType]: TKMUnitSpec read GetItem; default;
+    property SerfCarry[aType: TKMWareType; aDir: TKMDirection]: TKMAnimLoop read GetSerfCarry;
     property CRC: Cardinal read fCRC; //Return hash of all values
 
     procedure ExportCSV(const aPath: UnicodeString);
@@ -97,7 +97,7 @@ type
 const
   //This is a map of the valid values for !SET_UNIT,
   //TSK did not had place for new warriors that were inserted in the middle(!)
-  UnitOldIndexToType: array[0..31] of TUnitType = (
+  UnitOldIndexToType: array[0..31] of TKMUnitType = (
     ut_Serf,ut_Woodcutter,ut_Miner,ut_AnimalBreeder,ut_Farmer,
     ut_Lamberjack,ut_Baker,ut_Butcher,ut_Fisher,ut_Worker,
     ut_StoneCutter,ut_Smith,ut_Metallurgist,ut_Recruit, //Units
@@ -107,7 +107,7 @@ const
     ut_Waterflower,ut_Waterleaf,ut_Duck); //Animals
 
   //and the corresponing unit that will be created (matches KaM behavior)
-  UnitTypeToOldIndex: array[TUnitType] of integer = (
+  UnitTypeToOldIndex: array[TKMUnitType] of integer = (
   -1, -1, //ut_None, ut_Any
   0,1,2,3,4,5,6,7,8,9,10,11,12,13, //Citizens
   14,15,16,17,18,19,20,21,22,23, //Warriors
@@ -115,7 +115,7 @@ const
   24,25,26,27,28,29,30,31); //Animals
 
   //This is a map of the valid values for !SET_GROUP, and the corresponing unit that will be created (matches KaM behavior)
-  UnitIndexToType: array[0..40] of TUnitType = (
+  UnitIndexToType: array[0..40] of TKMUnitType = (
     ut_Serf,ut_Woodcutter,ut_Miner,ut_AnimalBreeder,ut_Farmer,
     ut_Lamberjack,ut_Baker,ut_Butcher,ut_Fisher,ut_Worker,
     ut_StoneCutter,ut_Smith,ut_Metallurgist,ut_Recruit, //Units
@@ -128,7 +128,7 @@ const
     ut_None, ut_None, ut_None
     );
 
-  UnitTypeToIndex: array[TUnitType] of ShortInt = (
+  UnitTypeToIndex: array[TKMUnitType] of ShortInt = (
   -1, -1, //ut_None, ut_Any
   0,1,2,3,4,5,6,7,8,9,10,11,12,13, //Citizens
   14,15,16,17,18,19,20,21,22,23, //Warriors
@@ -137,7 +137,7 @@ const
 
 
   //Number means ResourceType as it is stored in Barracks, hence it's not rt_Something
-  TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TWareType = (
+  TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
     (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
     (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
     (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -164,7 +164,7 @@ uses
 
 
 { TKMUnitsDatClass }
-constructor TKMUnitSpec.Create(aType: TUnitType);
+constructor TKMUnitSpec.Create(aType: TKMUnitType);
 begin
   inherited Create;
   fUnitType := aType;
@@ -221,8 +221,8 @@ begin
 end;
 
 
-function TKMUnitSpec.SupportsAction(aAct: TUnitActionType): Boolean;
-const UnitSupportedActions: array [TUnitType] of TUnitActionTypeSet = (
+function TKMUnitSpec.SupportsAction(aAct: TKMUnitActionType): Boolean;
+const UnitSupportedActions: array [TKMUnitType] of TKMUnitActionTypeSet = (
     [], [], //None, Any
     [ua_Walk, ua_Die, ua_Eat, ua_WalkArm], //Serf
     [ua_Walk, ua_Work, ua_Die, ua_Work1, ua_Eat..ua_WalkTool2],
@@ -330,7 +330,7 @@ end;
 //Animals don't have team and thus are rendered in their own prefered clors
 function TKMUnitSpec.GetMinimapColor: Cardinal;
 const
-  MMColor:array[TUnitType] of Cardinal = (
+  MMColor:array[TKMUnitType] of Cardinal = (
     0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,
@@ -359,10 +359,10 @@ begin
 end;
 
 
-function TKMUnitSpec.GetUnitAnim(aAction: TUnitActionType; aDir: TKMDirection): TKMAnimLoop;
+function TKMUnitSpec.GetUnitAnim(aAction: TKMUnitActionType; aDir: TKMDirection): TKMAnimLoop;
 begin
   Assert(aDir <> dir_NA);
-  Assert(aAction in [Low(TUnitActionType)..High(TUnitActionType)]);
+  Assert(aAction in [Low(TKMUnitActionType)..High(TKMUnitActionType)]);
   Result := fUnitSprite.Act[aAction].Dir[aDir];
 end;
 
@@ -408,11 +408,11 @@ end;
 { TKMUnitsDatCollection }
 constructor TKMResUnits.Create;
 var
-  U: TUnitType;
+  U: TKMUnitType;
 begin
   inherited;
 
-  for U := Low(TUnitType) to High(TUnitType) do
+  for U := Low(TKMUnitType) to High(TKMUnitType) do
     fItems[U] := TKMUnitSpec.Create(U);
 
   fCRC := LoadUnitsDat(ExeDir+'data' + PathDelim + 'defines' + PathDelim + 'unit.dat');
@@ -424,9 +424,9 @@ end;
 
 
 destructor TKMResUnits.Destroy;
-var U:TUnitType;
+var U:TKMUnitType;
 begin
-  for U := Low(TUnitType) to High(TUnitType) do
+  for U := Low(TKMUnitType) to High(TKMUnitType) do
     fItems[U].Free;
 
   inherited;
@@ -434,11 +434,11 @@ end;
 
 
 procedure TKMResUnits.ExportCSV(const aPath: UnicodeString);
-var ft:textfile; ii:TUnitType;
+var ft:textfile; ii:TKMUnitType;
 begin
     AssignFile(ft,aPath); rewrite(ft);
     writeln(ft,'Name;HitPoints;Attack;AttackHorse;Defence;Speed;Sight;');
-    for ii:=Low(TUnitType) to High(TUnitType) do
+    for ii:=Low(TKMUnitType) to High(TKMUnitType) do
     if Items[ii].IsValid then
     begin
       write(ft,Items[ii].GUIName+';');
@@ -485,14 +485,14 @@ begin
 end;
 
 
-function TKMResUnits.GetSerfCarry(aType: TWareType; aDir: TKMDirection): TKMAnimLoop;
+function TKMResUnits.GetSerfCarry(aType: TKMWareType; aDir: TKMDirection): TKMAnimLoop;
 begin
   Assert(aType in [WARE_MIN .. WARE_MAX]);
   Result := fSerfCarry[aType, aDir];
 end;
 
 
-function TKMResUnits.GetItem(aType: TUnitType): TKMUnitSpec;
+function TKMResUnits.GetItem(aType: TKMUnitType): TKMUnitSpec;
 begin
   Result := fItems[aType];
 end;

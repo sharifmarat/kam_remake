@@ -167,19 +167,19 @@ end;
 //* Result: Group ID
 function TKMScriptStates.ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer;
 var
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y)
-    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TGroupType))..Byte(High(TGroupType))])) then
+    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))])) then
     begin
       if aGroupType = -1 then
-        GTS := [Low(TGroupType)..High(TGroupType)]
+        GTS := [Low(TKMGroupType)..High(TKMGroupType)]
       else
-        GTS := [TGroupType(aGroupType)];
+        GTS := [TKMGroupType(aGroupType)];
 
       G := gHands[aPlayer].UnitGroups.GetClosestGroup(KMPoint(X,Y), GTS);
       if (G <> nil) and not G.IsDead then
@@ -206,15 +206,15 @@ end;
 function TKMScriptStates.ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer;
 var
   B: Byte;
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     GTS := [];
-    for B in [Byte(Low(TGroupType))..Byte(High(TGroupType))] do
+    for B in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))] do
       if B in aGroupTypes then
-        GTS := GTS + [TGroupType(B)];
+        GTS := GTS + [TKMGroupType(B)];
 
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y) then
@@ -252,7 +252,7 @@ begin
     and ((aHouseType = -1) or HouseTypeValid(aHouseType)) then
     begin
       if aHouseType = -1 then
-        HTS := [Low(THouseType)..High(THouseType)]
+        HTS := [Low(TKMHouseType)..High(TKMHouseType)]
       else
         HTS := [HouseIndexToType[aHouseType]];
 
@@ -317,7 +317,7 @@ end;
 //* Result: Unit ID
 function TKMScriptStates.ClosestUnit(aPlayer, X, Y, aUnitType: Integer): Integer;
 var
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -327,7 +327,7 @@ begin
     and ((aUnitType = -1) or (aUnitType in [Low(UnitIndexToType)..High(UnitIndexToType)]))  then
     begin
       if aUnitType = -1 then
-        UTS := [Low(TUnitType)..High(TUnitType)]
+        UTS := [Low(TKMUnitType)..High(TKMUnitType)]
       else
         UTS := [UnitIndexToType[aUnitType]];
 
@@ -356,7 +356,7 @@ end;
 function TKMScriptStates.ClosestUnitMultipleTypes(aPlayer, X, Y: Integer; aUnitTypes: TByteSet): Integer;
 var
   B: Byte;
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -721,7 +721,7 @@ begin
       begin
         U := gHands[aPlayer].Units[I];
         //Skip units in training, they can't be disturbed until they are finished training
-        if U.IsDeadOrDying or (U.UnitTask is TTaskSelfTrain) then Continue;
+        if U.IsDeadOrDying or (U.UnitTask is TKMTaskSelfTrain) then Continue;
         Result[UnitCount] := U.UID;
         Inc(UnitCount);
       end;
@@ -1525,7 +1525,7 @@ end;
 function TKMScriptStates.HouseResourceAmount(aHouseID, aResource: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if house id is invalid
@@ -1734,7 +1734,7 @@ end;
 function TKMScriptStates.HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := False;
@@ -1762,7 +1762,7 @@ end;
 function TKMScriptStates.HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
   I: Integer;
 begin
   try
@@ -2088,7 +2088,7 @@ end;
 function TKMScriptStates.MarketFromWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResFrom: TWareType;
+  ResFrom: TKMWareType;
 begin
   try
     Result := -1;
@@ -2164,7 +2164,7 @@ end;
 function TKMScriptStates.MarketToWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResTo: TWareType;
+  ResTo: TKMWareType;
 begin
   try
     Result := -1;
@@ -2200,7 +2200,7 @@ end;
 //* Result: Value
 function TKMScriptStates.MarketValue(aRes: Integer): Single;
 var
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if ware is invalid

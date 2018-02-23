@@ -16,15 +16,15 @@ type
     procedure Town_DefenceChange(Sender: TObject);
   protected
     Panel_Defence: TKMPanel;
-    Button_DefencePosAdd: TKMButtonFlat;
-    CheckBox_AutoDefence: TKMCheckBox;
-    CheckBox_DefendAllies: TKMCheckBox;
-    TrackBar_AutoAttackRange: TKMTrackBar;
-    TrackBar_RecruitCount: TKMTrackBar;
-    TrackBar_MaxSoldiers: TKMTrackBar;
-    CheckBox_MaxSoldiers: TKMCheckBox;
-    TrackBar_RecruitDelay: TKMTrackBar;
-    Button_EditFormations: TKMButton;
+      Button_DefencePosAdd: TKMButtonFlat;
+      CheckBox_AutoDefence: TKMCheckBox;
+      CheckBox_DefendAllies: TKMCheckBox;
+      TrackBar_AutoAttackRange: TKMTrackBar;
+      TrackBar_RecruitCount: TKMTrackBar;
+      TrackBar_MaxSoldiers: TKMTrackBar;
+      CheckBox_MaxSoldiers: TKMCheckBox;
+      TrackBar_RecruitDelay: TKMTrackBar;
+      Button_EditFormations: TKMButton;
   public
     FormationsPopUp: TKMMapEdTownFormations;
 

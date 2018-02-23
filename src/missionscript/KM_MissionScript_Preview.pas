@@ -21,7 +21,7 @@ type
                      end;
 
   //Specially optimized mission parser for map previews
-  TMissionParserPreview = class(TMissionParserCommon)
+  TKMMissionParserPreview = class(TKMMissionParserCommon)
   private
     fMapX: Integer;
     fMapY: Integer;
@@ -52,20 +52,20 @@ uses
 
 
 { TMissionParserPreview }
-function TMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
+function TKMMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
 begin
   Result := fMapPreview[(Y-1)*fMapX + X-1];
 end;
 
 
-function TMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
+function TKMMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
 begin
   Result := fHandPreview[aIndex];
 end;
 
 
 //Load terrain data into liteweight structure, take only what we need for preview
-function TMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
+function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStream;
@@ -105,7 +105,7 @@ begin
 end;
 
 
-function TMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
 
   function PointInMap(X, Y: Integer): Boolean;
   begin
@@ -238,7 +238,7 @@ end;
 
 
 //We use custom mission loader for speed (compare only used commands)
-function TMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
+function TKMMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
 const
   Commands: array [0..15] of AnsiString = (
     '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!CENTER_SCREEN',

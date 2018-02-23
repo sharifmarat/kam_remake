@@ -8,10 +8,10 @@ uses
 
 
 type
-  TMarkerType = (mtNone, mtDefence, mtRevealFOW);
+  TKMMarkerType = (mtNone, mtDefence, mtRevealFOW);
 
   TKMMapEdMarker = record
-    MarkerType: TMarkerType;
+    MarkerType: TKMMarkerType;
     Owner: TKMHandIndex;
     Index: SmallInt;
   end;
@@ -23,7 +23,7 @@ type
     fDeposits: TKMDeposits;
     fSelection: TKMSelection;
     fRevealers: array [0..MAX_HANDS-1] of TKMPointTagList;
-    fVisibleLayers: TMapEdLayerSet;
+    fVisibleLayers: TKMMapEdLayerSet;
     //When you load a map script/libx/wav/etc. files are "attached" then copied when
     //saving if the path is different
     fAttachedFiles: array of UnicodeString;
@@ -61,7 +61,7 @@ type
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
-    property VisibleLayers: TMapEdLayerSet read fVisibleLayers write fVisibleLayers;
+    property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
     procedure DetectAttachedFiles(const aMissionFile: UnicodeString);
     procedure SaveAttachements(const aMissionFile: UnicodeString);
     function HitTest(X,Y: Integer): TKMMapEdMarker;
@@ -501,16 +501,16 @@ begin
     if Obj is TKMUnit then
       gHands.RemAnyUnit(TKMUnit(Obj).GetPosition);
   end else
-  if gTerrain.CanPlaceUnit(P, TUnitType(gGameCursor.Tag1)) then
+  if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
   begin
     //Check if we can really add a unit
-    if TUnitType(gGameCursor.Tag1) in [CITIZEN_MIN..CITIZEN_MAX] then
-      gMySpectator.Hand.AddUnit(TUnitType(gGameCursor.Tag1), P, False)
+    if TKMUnitType(gGameCursor.Tag1) in [CITIZEN_MIN..CITIZEN_MAX] then
+      gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
     else
-    if TUnitType(gGameCursor.Tag1) in [WARRIOR_MIN..WARRIOR_MAX] then
-      gMySpectator.Hand.AddUnitGroup(TUnitType(gGameCursor.Tag1), P, dir_S, 1, 1)
+    if TKMUnitType(gGameCursor.Tag1) in [WARRIOR_MIN..WARRIOR_MAX] then
+      gMySpectator.Hand.AddUnitGroup(TKMUnitType(gGameCursor.Tag1), P, dir_S, 1, 1)
     else
-      gHands.PlayerAnimals.AddUnit(TUnitType(gGameCursor.Tag1), P);
+      gHands.PlayerAnimals.AddUnit(TKMUnitType(gGameCursor.Tag1), P);
   end;
 end;
 
@@ -538,9 +538,9 @@ begin
                                   gTerrain.RemField(P);
                                 gMySpectator.Hand.AddRoad(P);
                               end;
-                cmHouses:     if gMySpectator.Hand.CanAddHousePlan(P, THouseType(gGameCursor.Tag1)) then
+                cmHouses:     if gMySpectator.Hand.CanAddHousePlan(P, TKMHouseType(gGameCursor.Tag1)) then
                               begin
-                                gMySpectator.Hand.AddHouse(THouseType(gGameCursor.Tag1), P.X, P.Y, true);
+                                gMySpectator.Hand.AddHouse(TKMHouseType(gGameCursor.Tag1), P.X, P.Y, true);
                                 //Holding shift allows to place that house multiple times
                                 if not (ssShift in gGameCursor.SState) then
                                 begin

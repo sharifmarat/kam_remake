@@ -44,7 +44,7 @@ type
     function IsComputer: Boolean;
     function IsClosed: Boolean;
     function IsSpectator: Boolean;
-    function GetPlayerType: THandType;
+    function GetPlayerType: TKMHandType;
     function SlotName: UnicodeString; //Player name if it's human or computer or closed
     property Nikname: AnsiString read GetNikname; //Human player nikname (ANSI-Latin)
     property NiknameColored: AnsiString read GetNiknameColored;
@@ -219,9 +219,9 @@ begin
 end;
 
 
-function TKMNetPlayerInfo.GetPlayerType: THandType;
+function TKMNetPlayerInfo.GetPlayerType: TKMHandType;
 const
-  PlayerTypes: array [TNetPlayerType] of THandType = (hndHuman, hndComputer, hndComputer);
+  PlayerTypes: array [TNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer);
 begin
   Result := PlayerTypes[PlayerNetType];
 end;

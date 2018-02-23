@@ -13,15 +13,15 @@ type
     procedure Town_ScriptChange(Sender: TObject);
   protected
     Panel_Script: TKMPanel;
-    CheckBox_AutoBuild: TKMCheckBox;
-    CheckBox_AutoRepair: TKMCheckBox;
-    TrackBar_SerfsPer10Houses: TKMTrackBar;
-    TrackBar_WorkerCount: TKMTrackBar;
-    CheckBox_UnlimitedEquip: TKMCheckBox;
-    DropBox_ArmyType: TKMDropList;
-    TrackBar_EquipRateLeather: TKMTrackBar;
-    TrackBar_EquipRateIron: TKMTrackBar;
-    Button_AIStart: TKMButtonFlat;
+      CheckBox_AutoBuild: TKMCheckBox;
+      CheckBox_AutoRepair: TKMCheckBox;
+      TrackBar_SerfsPer10Houses: TKMTrackBar;
+      TrackBar_WorkerCount: TKMTrackBar;
+      CheckBox_UnlimitedEquip: TKMCheckBox;
+      DropBox_ArmyType: TKMDropList;
+      TrackBar_EquipRateLeather: TKMTrackBar;
+      TrackBar_EquipRateIron: TKMTrackBar;
+      Button_AIStart: TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -128,7 +128,7 @@ begin
   gMySpectator.Hand.AI.Setup.UnlimitedEquip := CheckBox_UnlimitedEquip.Checked;
   gMySpectator.Hand.AI.Setup.EquipRateLeather := TrackBar_EquipRateLeather.Position * 10;
   gMySpectator.Hand.AI.Setup.EquipRateIron := TrackBar_EquipRateIron.Position * 10;
-  gMySpectator.Hand.AI.Setup.ArmyType := TArmyType(DropBox_ArmyType.GetSelectedTag);
+  gMySpectator.Hand.AI.Setup.ArmyType := TKMArmyType(DropBox_ArmyType.GetSelectedTag);
 
   TrackBar_EquipRateLeather.Enable;
   TrackBar_EquipRateIron.Enable;

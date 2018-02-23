@@ -68,12 +68,13 @@ type
     procedure InitDropColMapsList;
     procedure MapList_OnShow(Sender: TObject);
     procedure UpdateMapList;
+
     procedure MapList_SortUpdate(Sender: TObject);
     procedure MapList_ScanUpdate(Sender: TObject);
     procedure MapList_ScanComplete(Sender: TObject);
+
     procedure RefreshMapList(aJumpToSelected: Boolean);
     procedure RefreshSaveList(aJumpToSelected: Boolean);
-    function GetFavouriteMapPic(aIsFavourite: Boolean): TKMPic;
     procedure MapChange(Sender: TObject);
     function DropBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
     function DropBoxPlayers_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
@@ -1750,15 +1751,10 @@ begin
     SetLength(MapsCRCArray, fMapsMP.Count);
     for I := 0 to fMapsMP.Count - 1 do
       MapsCRCArray[I] := fMapsMP[I].CRC;
-    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsCRCArray);
+    gGameApp.GameSettings.FavouriteMapsMP.RemoveMissing(MapsCRCArray);
   end;
 end;
 
-
-function TKMMenuLobby.GetFavouriteMapPic(aIsFavourite: Boolean): TKMPic;
-begin
-  Result := MakePic(rxGuiMain, IfThen(aIsFavourite, 77, 85), True);
-end;
 
 
 procedure TKMMenuLobby.RefreshMapList(aJumpToSelected:Boolean);
@@ -1805,7 +1801,7 @@ begin
         Row := MakeListRow(['', fMapsMP[I].FileName, IntToStr(fMapsMP[I].HumanPlayerCountMP), fMapsMP[I].SizeText], //Texts
                            [fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor], //Colors
                            I);
-        Row.Cells[0].Pic := GetFavouriteMapPic(fMapsMP[I].IsFavourite);
+        Row.Cells[0].Pic := fMapsMP[I].FavouriteMapPic;
         Row.Cells[0].HighlightOnMouseOver := True;
         DropCol_LobbyMaps.Add(Row);
       end;
@@ -1917,8 +1913,8 @@ end;
 
 procedure TKMMenuLobby.MapColumnClick(aValue: Integer);
 var
-  SM: TMapsSortMethod;
-  SSM: TSavesSortMethod;
+  SM: TKMapsSortMethod;
+  SSM: TKMSavesSortMethod;
 begin
   if Radio_LobbyMapType.ItemIndex < 4 then
   begin
@@ -1984,12 +1980,12 @@ begin
     try
       fMapsMP[I].IsFavourite := not fMapsMP[I].IsFavourite;
       if fMapsMP[I].IsFavourite then
-        gGameApp.GameSettings.FavouriteMaps.Add(fMapsMP[I].CRC)
+        gGameApp.GameSettings.FavouriteMapsMP.Add(fMapsMP[I].CRC)
       else
-        gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].CRC);
+        gGameApp.GameSettings.FavouriteMapsMP.Remove(fMapsMP[I].CRC);
 
       //Update pic
-      DropCol_LobbyMaps.Item[Y].Cells[0].Pic := GetFavouriteMapPic(fMapsMP[I].IsFavourite);
+      DropCol_LobbyMaps.Item[Y].Cells[0].Pic := fMapsMP[I].FavouriteMapPic;
       fMapsSortUpdateNeeded := True; //Ask for resort on next list show
     finally
       fMapsMP.Unlock;

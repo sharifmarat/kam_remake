@@ -55,7 +55,7 @@ end;
 procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeClick(Sender: TObject);
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
 begin
   I := TKMButtonFlat(Sender).Tag;
   R := StoreResType[I];
@@ -69,7 +69,7 @@ end;
 procedure TKMMapEdPlayerBlockTrade.Player_BlockTradeRefresh;
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
 begin
   for I := 1 to STORE_RES_COUNT do
   begin

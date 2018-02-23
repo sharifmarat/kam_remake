@@ -41,10 +41,10 @@ uses
 
 
 const
-  ResRatioType: array [TKMRatioTab] of TWareType = (wt_Steel, wt_Coal, wt_Wood, wt_Corn);
+  ResRatioType: array [TKMRatioTab] of TKMWareType = (wt_Steel, wt_Coal, wt_Wood, wt_Corn);
   //ResRatioHint: array [TKMRatioTab] of Word = (298, 300, 302, 304);
   ResRatioHouseCount: array [TKMRatioTab] of Byte = (2, 4, 2, 3);
-  ResRatioHouse: array [TKMRatioTab, 0..3] of THouseType = (
+  ResRatioHouse: array [TKMRatioTab, 0..3] of TKMHouseType = (
       (ht_WeaponSmithy,   ht_ArmorSmithy,     ht_None,          ht_None),
       (ht_IronSmithy,     ht_Metallurgists,   ht_WeaponSmithy,  ht_ArmorSmithy),
       (ht_ArmorWorkshop,  ht_WeaponWorkshop,  ht_None,          ht_None),
@@ -97,7 +97,7 @@ end;
 procedure TKMGUIGameRatios.RatioTabSet(aTab: TKMRatioTab);
 var
   I: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   //Hide everything but the tab buttons
   for I := 0 to Panel_Ratios.ChildCount - 1 do
@@ -137,8 +137,8 @@ end;
 
 procedure TKMGUIGameRatios.RatiosChange(Sender: TObject);
 var
-  ware: TWareType;
-  house: THouseType;
+  ware: TKMWareType;
+  house: TKMHouseType;
   value: Byte;
 begin
   ware := ResRatioType[fActiveTab];

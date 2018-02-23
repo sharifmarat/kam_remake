@@ -7,10 +7,17 @@ uses
    {$IFDEF FPC}KM_NetServerLNet, {$ENDIF}
   Classes, SysUtils, Math, VerySimpleXML,
   KM_CommonClasses, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_CommonUtils,
-  {$IFDEF CONSOLE}
-    KM_ConsoleTimer
+  {$IFDEF WDC}
+    {$IFDEF CONSOLE}
+      KM_ConsoleTimer
+    {$ELSE}
+      ExtCtrls
+    {$ENDIF}
   {$ELSE}
-    ExtCtrls
+    FPTimer
+    {$IFDEF UNIX}
+      , cthreads
+    {$ENDIF}
   {$ENDIF};
 
 
@@ -83,10 +90,14 @@ type
     {$IFDEF WDC} fServer:TKMNetServerOverbyte; {$ENDIF}
     {$IFDEF FPC} fServer:TKMNetServerLNet;     {$ENDIF}
 
-    {$IFDEF CONSOLE}
-    fTimer: TKMConsoleTimer; //Use our custom TKMConsoleTimer instead of ExtCtrls.TTimer, to be able to use it in console application (DedicatedServer)
+    {$IFDEF WDC}
+      {$IFDEF CONSOLE}
+      fTimer: TKMConsoleTimer; //Use our custom TKMConsoleTimer instead of ExtCtrls.TTimer, to be able to use it in console application (DedicatedServer)
+      {$ELSE}
+      fTimer: TTimer;
+      {$ENDIF}
     {$ELSE}
-    fTimer: TTimer;
+      fTimer: TFPTimer;
     {$ENDIF}
 
     fClientList: TKMClientsList;
@@ -286,15 +297,23 @@ begin
   fListening := false;
   fRoomCount := 0;
 
-  {$IFDEF CONSOLE}
-    fTimer := TKMConsoleTimer.Create;
-    fTimer.OnTimerEvent := UpdateState;
+  {$IFDEF WDC}
+    {$IFDEF CONSOLE}
+      fTimer := TKMConsoleTimer.Create;
+      fTimer.OnTimerEvent := UpdateState;
+    {$ELSE}
+      fTimer := TTimer.Create(nil);
+      fTimer.OnTimer := UpdateState;
+    {$ENDIF}
+    fTimer.Interval := fPacketsAccumulatingDelay;
+    fTimer.Enabled  := True;
   {$ELSE}
-    fTimer := TTimer.Create(nil);
-    fTimer.OnTimer := UpdateState;
+    fTimer := TFPTimer.Create(nil);
+    fTimer.OnTimer  := UpdateState;
+    fTimer.Interval := fPacketsAccumulatingDelay;
+    fTimer.Enabled  := True;
+    fTimer.StartTimer;
   {$ENDIF}
-  fTimer.Interval := fPacketsAccumulatingDelay;
-  fTimer.Enabled  := True;
 end;
 
 
@@ -685,16 +704,17 @@ end;
 
 
 procedure TKMNetServer.SendScheduledData(aServerClient: TKMServerClient);
-var P: Pointer;
+var
+  P: Pointer;
 begin
   if aServerClient.fScheduledPacketsCnt > 0 then
   begin
-    GetMem(P, aServerClient.fScheduledPacketsSize + 1);
+    GetMem(P, aServerClient.fScheduledPacketsSize + 1); //+1 byte for packets number
     try
+      //packets size into 1st byte
       PByte(P)^ := aServerClient.fScheduledPacketsCnt;
-
-      Move(aServerClient.fScheduledPackets[0], Pointer(Cardinal(P) + 1)^, aServerClient.fScheduledPacketsSize);
-
+      //Copy collected packets data with 1 byte shift
+      Move(aServerClient.fScheduledPackets[0], Pointer(NativeUInt(P) + 1)^, aServerClient.fScheduledPacketsSize);
       DoSendData(aServerClient.fHandle, P, aServerClient.fScheduledPacketsSize + 1);
       aServerClient.ClearScheduledPackets;
     finally
@@ -741,7 +761,7 @@ begin
   if SenderClient = nil then Exit;
 
   if (SenderClient.fScheduledPacketsSize + aLength > MAX_CUMULATIVE_PACKET_SIZE)
-    or (SenderClient.fScheduledPacketsCnt = 255) then
+    or (SenderClient.fScheduledPacketsCnt = 255) then //Max number of packets = 255 (we use 1 byte for that)
   begin
     //gLog.AddTime(Format('@@@ FLUSH fScheduledPacketsSize + aLength = %d > %d', [SenderClient.fScheduledPacketsSize + aLength, MAX_CUMULATIVE_PACKET_SIZE]));
     SendScheduledData(SenderClient);
