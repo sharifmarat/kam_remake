@@ -40,7 +40,7 @@ type
     procedure RecruitsRemove(aUnit: Pointer);
     procedure ToggleAcceptFlag(aRes: TKMWareType);
     procedure ToggleAcceptRecruits;
-    function Equip(aUnitType: TKMUnitType; aCount: Byte): Byte;
+    function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
     procedure CreateRecruitInside(aIsMapEd: Boolean);
   end;
 
@@ -234,7 +234,7 @@ end;
 
 //Equip a new soldier and make him walk out of the house
 //Return the number of units successfully equipped
-function TKMHouseBarracks.Equip(aUnitType: TKMUnitType; aCount: Byte): Byte;
+function TKMHouseBarracks.Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
 var
   I, K: Integer;
   Soldier: TKMUnitWarrior;
