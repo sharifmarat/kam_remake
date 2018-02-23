@@ -1115,4 +1115,5 @@
 1164:Blue / Green / Red
 1165:Red / Green / Blue
 1166:Text color:
-1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [READONLY]
+1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
+1168:Maps filter

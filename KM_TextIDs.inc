@@ -1169,3 +1169,5 @@ TX_MAPED_PLAYER_COLOR_BGR_HINT = 1164; //Blue / Green / Red
 TX_MAPED_PLAYER_COLOR_RGB_HINT = 1165; //Red / Green / Blue
 TX_MAPED_PLAYER_COLOR_TEXT_COLOR = 1166; //Text color:
 TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT = 1167; //Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
+
+TX_MENU_MAP_FILTER = 1168; //Maps filter

@@ -24,6 +24,7 @@ type
 
     procedure StartClick(Sender: TObject);
     procedure MapTypeChange(Sender: TObject);
+    procedure MapFilterClick(Sender: TObject);
     procedure SizeChangeByRadio(Sender: TObject);
     procedure SizeChangeByEdit(Sender: TObject);
     procedure UpdateRadioMapEdSizes;
@@ -62,6 +63,7 @@ type
       Panel_MapEdLoad: TKMPanel;
       ColumnBox_MapEd: TKMColumnBox;
       Radio_MapEd_MapType: TKMRadioGroup;
+      CheckBox_SpecialMap, CheckBox_CoopMap: TKMCheckBox;
       Button_MapEdBack,Button_MapEd_Create,Button_MapEd_Load: TKMButton;
       NumEdit_MapSizeX: TKMNumericEdit;
       NumEdit_MapSizeY: TKMNumericEdit;
@@ -114,6 +116,8 @@ const
 
 { TKMGUIMainMapEditor }
 constructor TKMMenuMapEditor.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+const
+  MAP_TYPE_W = 250;
 var
   I: Integer;
 begin
@@ -163,13 +167,22 @@ begin
 
     Panel_MapEdLoad := TKMPanel.Create(Panel_MapEd, 320, 40, 620, 700);
     Panel_MapEdLoad.Anchors := [anLeft, anTop, anBottom];
-      TKMLabel.Create(Panel_MapEdLoad, 6, 0, 288, 20, gResTexts[TX_MENU_MAP_AVAILABLE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_MapEdLoad, 0, 20, 300, 50);
-      Radio_MapEd_MapType := TKMRadioGroup.Create(Panel_MapEdLoad,8,28,286,40,fnt_Grey);
+      TKMLabel.Create(Panel_MapEdLoad, 6, 0, MAP_TYPE_W - 12, 20, gResTexts[TX_MENU_MAP_AVAILABLE], fnt_Outline, taLeft);
+      TKMBevel.Create(Panel_MapEdLoad, 0, 20, MAP_TYPE_W, 50);
+
+      Radio_MapEd_MapType := TKMRadioGroup.Create(Panel_MapEdLoad,8,28,MAP_TYPE_W - 14,40,fnt_Grey);
       Radio_MapEd_MapType.ItemIndex := 0;
       Radio_MapEd_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
       Radio_MapEd_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
       Radio_MapEd_MapType.OnChange := MapTypeChange;
+
+      TKMLabel.Create(Panel_MapEdLoad, 6 + MAP_TYPE_W + 5, 0, 440 - MAP_TYPE_W - 11, 20, gResTexts[TX_MENU_MAP_FILTER], fnt_Outline, taLeft);
+      TKMBevel.Create(Panel_MapEdLoad, MAP_TYPE_W + 5, 20, 440 - MAP_TYPE_W - 5, 50);
+      CheckBox_SpecialMap := TKMCheckBox.Create(Panel_MapEdLoad, 8 + MAP_TYPE_W + 5, 28, 440 - MAP_TYPE_W - 5, 20, gResTexts[TX_LOBBY_MAP_SPECIAL], fnt_Grey);
+      CheckBox_SpecialMap.OnClick := MapFilterClick;
+      CheckBox_CoopMap := TKMCheckBox.Create(Panel_MapEdLoad, 8 + MAP_TYPE_W + 5, 48, 440 - MAP_TYPE_W - 5, 20, gResTexts[TX_LOBBY_MAP_COOP], fnt_Grey);
+      CheckBox_CoopMap.OnClick := MapFilterClick;
+
       ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 80, 440, 506, fnt_Metal,  bsMenu);
       ColumnBox_MapEd.Anchors := [anLeft, anTop, anBottom];
       ColumnBox_MapEd.SetColumns(fnt_Outline, ['', '', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 22, 44, 310, 340]);
@@ -450,6 +463,14 @@ begin
 end;
 
 
+procedure TKMMenuMapEditor.MapFilterClick(Sender: TObject);
+begin
+  if (Sender is TKMCheckBox) and not TKMCheckBox(Sender).Checked then
+    fMinimapLastListId := -1; // Clear last loasded minimap ID, as we uncheck the filter, then need to draw minimap again, probably
+  RefreshList(True);
+end;
+
+
 procedure TKMMenuMapEditor.UpdateUI;
 begin
   Button_MapEd_Load.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
@@ -458,8 +479,11 @@ begin
   Button_MapRename.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
   Button_MapRename.Visible := not Button_MapMove.Visible;
 
-  if (ColumnBox_MapEd.ItemIndex = -1) then
-    MinimapView_MapEd.Hide
+  if not ColumnBox_MapEd.IsSelected then
+  begin
+    MinimapView_MapEd.Hide;
+    LoadMinimap; //Clear map info
+  end;
 end;
 
 
@@ -548,7 +572,7 @@ end;
 
 procedure TKMMenuMapEditor.RefreshList(aJumpToSelected: Boolean);
 var
-  I, PrevTop: Integer;
+  I, ListI, PrevTop: Integer;
   Maps: TKMapsCollection;
   R: TKMListRow;
   Color: Cardinal;
@@ -560,8 +584,14 @@ begin
 
   Maps.Lock;
   try
+    ListI := 0;
     for I := 0 to Maps.Count - 1 do
     begin
+      if CheckBox_SpecialMap.Checked and not Maps[I].TxtInfo.IsSpecial then
+        Continue;
+      if CheckBox_CoopMap.Checked and not Maps[I].TxtInfo.IsCoop then
+        Continue;
+
       Color := Maps[I].GetLobbyColor;
       R := MakeListRow(['', '', Maps[I].FileName, IntToStr(Maps[I].LocCount), Maps[I].SizeText],  //Texts
                        [Color, Color, Color, Color, Color], //Colors
@@ -569,14 +599,16 @@ begin
       R.Cells[0].Pic := Maps[I].FavouriteMapPic;
       R.Cells[0].HighlightOnMouseOver := True;
       R.Cells[1].Pic := MakePic(rxGui, 657 + Byte(Maps[I].MissionMode = mm_Tactic));
+      R.Tag := I;
       ColumnBox_MapEd.AddItem(R);
 
       if (Maps[I].CRC = fSelectedMapInfo.CRC)
         and ((Radio_MapEd_MapType.ItemIndex = 0) or (Maps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
       begin
-        ColumnBox_MapEd.ItemIndex := I;
-        LoadMinimap(I);
+        ColumnBox_MapEd.ItemIndex := ListI;
+        LoadMinimap(ListI);
       end;
+      Inc(ListI);
     end;
   finally
     Maps.Unlock;
@@ -645,13 +677,14 @@ end;
 
 
 procedure TKMMenuMapEditor.SelectMap(Sender: TObject);
-var ID: Integer;
-    Maps: TKMapsCollection;
+var
+  MapId: Integer;
+  Maps: TKMapsCollection;
 begin
   UpdateUI;
-  if ColumnBox_MapEd.ItemIndex <> -1 then
+  if ColumnBox_MapEd.IsSelected then
   begin
-    ID := ColumnBox_MapEd.Rows[ColumnBox_MapEd.ItemIndex].Tag;
+    MapId := ColumnBox_MapEd.SelectedItem.Tag;
     Maps := GetMaps;
 
     DeleteConfirm(False);
@@ -659,8 +692,8 @@ begin
 
     Maps.Lock;
     try
-      SetSelectedMapInfo(ID);
-      LoadMinimap(ID);
+      SetSelectedMapInfo(MapId);
+      LoadMinimap(MapId);
     finally
       Maps.Unlock;
     end;
