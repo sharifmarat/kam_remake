@@ -21,6 +21,10 @@ type
       Radio_ColorCodeType: TKMRadioGroup;
       Shape_Color: TKMShape;
       Edit_ColorCode: TKMEdit;
+      Panel_TextColor: TKMPanel;
+        Label_TextColor: TKMLabel;
+        Edit_TextColorCode: TKMEdit;
+        Shape_TextColor: TKMShape;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -41,6 +45,7 @@ uses
 constructor TKMMapEdPlayerColors.Create(aParent: TKMPanel);
 const
   MAX_COL = 288;
+  COLOR_TYPE_W = 65;
 var
   Hue, Sat, Bri, I, K: Integer;
   R, G, B: Byte;
@@ -54,21 +59,33 @@ begin
   ColorSwatch_Color := TKMColorSwatch.Create(Panel_Color, 2, 32, 16, 18, 11);
 
   //Show Color Code
-  TKMLabel.Create(Panel_Color, 0, 240, gResTexts[TX_MAPED_PLAYER_COLOR_CODE_TYPE_TITLE], fnt_Outline, taLeft);
-  TKMBevel.Create(Panel_Color, 0, 260, TB_WIDTH, 60);
-  Radio_ColorCodeType := TKMRadioGroup.Create(Panel_Color, 5, 265, TB_WIDTH, 40, fnt_Metal);
+  TKMLabel.Create(Panel_Color, 0, 240, gResTexts[TX_MAPED_PLAYER_COLOR_CODE], fnt_Outline, taLeft);
+  TKMBevel.Create(Panel_Color, 0, 260, COLOR_TYPE_W, 70);
+  Radio_ColorCodeType := TKMRadioGroup.Create(Panel_Color, 5, 273, COLOR_TYPE_W - 5, 50, fnt_Metal);
   Radio_ColorCodeType.Add('BGR', gResTexts[TX_MAPED_PLAYER_COLOR_BGR_HINT]); //No need to translate BGR / RGB
   Radio_ColorCodeType.Add('RGB', gResTexts[TX_MAPED_PLAYER_COLOR_RGB_HINT]);
   Radio_ColorCodeType.OnChange := ColorCodeChange;
   Radio_ColorCodeType.ItemIndex := 0;
 
-  TKMBevel.Create(Panel_Color, 0, 305, 20, 20);
-  Shape_Color := TKMShape.Create(Panel_Color, 2, 307, 17, 17);
-  Edit_ColorCode := TKMEdit.Create(Panel_Color, 20, 305, TB_WIDTH - 20, 20, fnt_Metal, true);
+  TKMBevel.Create(Panel_Color, COLOR_TYPE_W + 5, 260, 20, 20);
+  Shape_Color := TKMShape.Create(Panel_Color, COLOR_TYPE_W + 7, 262, 17, 17);
+  Edit_ColorCode := TKMEdit.Create(Panel_Color, COLOR_TYPE_W + 25, 260, TB_WIDTH - COLOR_TYPE_W - 25, 20, fnt_Metal, True);
   Edit_ColorCode.AllowedChars := acHex;
   Edit_ColorCode.MaxLen := 6;
   Edit_ColorCode.OnChange := ColorCodeChange;
-//  Edit_BGRCode.BlockInput := True;
+
+
+  Panel_TextColor := TKMPanel.Create(Panel_Color, COLOR_TYPE_W + 5, 290, TB_WIDTH - COLOR_TYPE_W - 5, 40);
+  Panel_TextColor.Hint := gResTexts[TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT];
+    Label_TextColor := TKMLabel.Create(Panel_TextColor, 0, 0, gResTexts[TX_MAPED_PLAYER_COLOR_TEXT_COLOR], fnt_Grey, taLeft);
+    //Edit to show text color code (desaturated) Could be used for scripts overlay
+    with TKMBevel.Create(Panel_TextColor, 0, 20, 20, 20) do
+      Hint := gResTexts[TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT];
+    Shape_TextColor := TKMShape.Create(Panel_TextColor, 2, 22, 17, 17);
+    Shape_TextColor.Hint := gResTexts[TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT];
+    Edit_TextColorCode := TKMEdit.Create(Panel_TextColor, 20, 20, Panel_TextColor.Width - 20, 20, fnt_Metal, True);
+    Edit_TextColorCode.BlockInput := True;
+    Edit_TextColorCode.Hint := gResTexts[TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT];
 
   //Generate a palette using HSB so the layout is more intuitive
   I := 0;
@@ -101,6 +118,9 @@ begin
   gMySpectator.Hand.FlagColor := aColor;
   Shape_Color.FillColor := aColor;
 
+  Shape_TextColor.FillColor := FlagColorToTextColor(aColor);
+  Label_TextColor.SetColor(Shape_TextColor.FillColor);
+
   //Update minimap
   gGame.ActiveInterface.SyncUI(False);
 end;
@@ -122,6 +142,7 @@ begin
       else
         C := BGR2RGB(C);
       Edit_ColorCode.Text := GetColorCodeText(C, False);
+      Edit_TextColorCode.Text := GetColorCodeText(FlagColorToTextColor(C), False);
     end else
       UpdateColor(C, Radio_ColorCodeType.ItemIndex = 0);
   end;
@@ -162,9 +183,14 @@ var
 begin
   ColorSwatch_Color.SelectByColor(gMySpectator.Hand.FlagColor);
   Shape_Color.FillColor := gMySpectator.Hand.FlagColor;
+  Shape_TextColor.FillColor := FlagColorToTextColor(Shape_Color.FillColor);
+
   ColorText := GetColorCodeText(gMySpectator.Hand.FlagColor, True);
   if not ColorText.EndsWith(Edit_ColorCode.Text) then
     Edit_ColorCode.UpdateText(ColorText);
+
+  Edit_TextColorCode.UpdateText(GetColorCodeText(Shape_TextColor.FillColor, True));
+  Label_TextColor.SetColor(Shape_TextColor.FillColor);
 end;
 
 
