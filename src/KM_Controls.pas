@@ -808,6 +808,7 @@ type
     ThumbText: UnicodeString;
     ThumbWidth: Word;
     CaptionWidth: Integer;
+    SliderFont: TKMFont;
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aMin, aMax: Word);
 
@@ -4434,6 +4435,7 @@ begin
   CaptionWidth := -1;
 
   Font := fnt_Metal;
+  SliderFont := fnt_Metal;
   Step := 1;
 end;
 
@@ -4541,13 +4543,13 @@ begin
     TKMRenderUI.WriteText(AbsLeft, AbsTop, CapWidth, fCaption, fFont, taLeft, TextColor[fEnabled]);
   end;
 
-  TKMRenderUI.WriteBevel(AbsLeft+2,AbsTop+fTrackTop+2,Width-4,fTrackHeight-4);
-  ThumbPos := Round(Mix (0, Width - ThumbWidth - 4, 1-(Position-fMinValue) / (fMaxValue - fMinValue)));
+  TKMRenderUI.WriteBevel(AbsLeft,AbsTop+fTrackTop+2,Width,fTrackHeight-4);
+  ThumbPos := Round(Mix (0, Width - ThumbWidth, 1-(Position-fMinValue) / (fMaxValue - fMinValue)));
 
   ThumbHeight := gRes.Sprites[rxGui].RXData.Size[132].Y;
 
-  TKMRenderUI.WritePicture(AbsLeft + ThumbPos + 2, AbsTop+fTrackTop, ThumbWidth, ThumbHeight, [anLeft,anRight], rxGui, 132);
-  TKMRenderUI.WriteText(AbsLeft + ThumbPos + ThumbWidth div 2 + 2, AbsTop+fTrackTop+3, 0, ThumbText, fnt_Metal, taCenter, TextColor[fEnabled]);
+  TKMRenderUI.WritePicture(AbsLeft + ThumbPos, AbsTop+fTrackTop, ThumbWidth, ThumbHeight, [anLeft,anRight], rxGui, 132);
+  TKMRenderUI.WriteText(AbsLeft + ThumbPos + ThumbWidth div 2, AbsTop+fTrackTop+3, 0, ThumbText, SliderFont, taCenter, TextColor[fEnabled]);
 end;
 
 
