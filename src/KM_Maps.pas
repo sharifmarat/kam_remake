@@ -114,8 +114,10 @@ type
     function ViewReadme: Boolean;
     function GetLobbyColor: Cardinal;
     function IsFilenameEndMatchHash: Boolean;
+    function IsPlayableForSP: Boolean;
     function IsSinglePlayer: Boolean;
-    function IsMultiplayer: Boolean;
+    function IsMultiPlayer: Boolean;
+    function IsDownloaded: Boolean;
     function IsNormalMission: Boolean;
     function IsTacticMission: Boolean;
     property FavouriteMapPic: TKMPic read GetFavouriteMapPic;
@@ -618,15 +620,28 @@ begin
 end;
 
 
-function TKMapInfo.IsSinglePlayer: Boolean;
+function TKMapInfo.IsPlayableForSP: Boolean;
 begin
-  Result := (fMapFolder = mfSP) or TxtInfo.IsPlayableAsSP;
+  Result := IsSinglePlayer or TxtInfo.IsPlayableAsSP;
 end;
 
 
-function TKMapInfo.IsMultiplayer: Boolean;
+
+function TKMapInfo.IsSinglePlayer: Boolean;
 begin
-  Result := fMapFolder <> mfSP;
+  Result := fMapFolder = mfSP;
+end;
+
+
+function TKMapInfo.IsMultiPlayer: Boolean;
+begin
+  Result := fMapFolder = mfMP;
+end;
+
+
+function TKMapInfo.IsDownloaded: Boolean;
+begin
+  Result := fMapFolder = mfDL;
 end;
 
 

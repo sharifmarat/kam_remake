@@ -288,7 +288,7 @@ begin
     for I := 0 to fMaps.Count - 1 do
     begin
       //Ignore not SP maps in list
-      if not fMaps[I].IsSinglePlayer then Continue;
+      if not fMaps[I].IsPlayableForSP then Continue;
 
       case Radio_MapType.ItemIndex of
         0:  if not ((fMaps[I].MapFolder = mfSP) and fMaps[I].IsNormalMission and not fMaps[I].TxtInfo.IsSpecial) then
