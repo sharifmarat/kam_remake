@@ -22,7 +22,7 @@ type
 
     fSelectedMapInfo: TKMFileIdentInfo; // Identification info about last selected map
 
-    procedure StartClick(Sender: TObject);
+    procedure LoadClick(Sender: TObject);
     procedure MapTypeChange(Sender: TObject);
     procedure MapFilterClick(Sender: TObject);
     procedure SizeChangeByRadio(Sender: TObject);
@@ -58,19 +58,21 @@ type
     procedure KeyDown(Key: Word; Shift: TShiftState);
   protected
     Panel_MapEd: TKMPanel;
-      Panel_MapEdSizeXY: TKMPanel;
-      Radio_MapEdSizeX, Radio_MapEdSizeY: TKMRadioGroup;
-      Panel_MapEdLoad: TKMPanel;
-      ColumnBox_MapEd: TKMColumnBox;
-      Radio_MapEd_MapType: TKMRadioGroup;
-      CheckBox_SpecialMap, CheckBox_CoopMap: TKMCheckBox;
-      Button_MapEdBack,Button_MapEd_Create,Button_MapEd_Load: TKMButton;
-      NumEdit_MapSizeX: TKMNumericEdit;
-      NumEdit_MapSizeY: TKMNumericEdit;
+      Panel_NewMapSizeXY: TKMPanel;
+        Radio_NewMapSizeX, Radio_NewMapSizeY: TKMRadioGroup;
+        NumEdit_MapSizeX: TKMNumericEdit;
+        NumEdit_MapSizeY: TKMNumericEdit;
+        Button_Create: TKMButton;
 
-      MinimapView_MapEd: TKMMinimapView;
+      Panel_MapEdLoad: TKMPanel;
+        ColumnBox_MapEd: TKMColumnBox;
+        Radio_MapEd_MapType: TKMRadioGroup;
+        CheckBox_SpecialMap, CheckBox_CoopMap: TKMCheckBox;
+        Button_MapMove, Button_MapRename, Button_MapDelete, Button_Load: TKMButton;
+
 
       Panel_MapInfo: TKMPanel;
+        MinimapView_MapEd: TKMMinimapView;
         Label_MapType: TKMLabel;
         Memo_MapDesc: TKMMemo;
         Button_ViewReadme: TKMButton;
@@ -78,22 +80,24 @@ type
       //PopUp Menus
       PopUp_Delete: TKMPopUpMenu;
         Image_Delete: TKMImage;
-        Button_MapDelete, Button_MapDeleteConfirm, Button_MapDeleteCancel: TKMButton;
+        Button_MapDeleteConfirm, Button_MapDeleteCancel: TKMButton;
         Label_MapDeleteConfirmTitle, Label_MapDeleteConfirm: TKMLabel;
 
       PopUp_Rename: TKMPopUpMenu;
         Image_Rename: TKMImage;
         Label_RenameTitle, Label_RenameName: TKMLabel;
         Edit_Rename: TKMEdit;
-        Button_MapRename, Button_MapRenameConfirm, Button_MapRenameCancel: TKMButton;
+        Button_MapRenameConfirm, Button_MapRenameCancel: TKMButton;
 
       PopUp_Move: TKMPopUpMenu;
         Image_Move: TKMImage;
-        Button_MapMove, Button_MapMoveConfirm, Button_MapMoveCancel: TKMButton;
+        Button_MapMoveConfirm, Button_MapMoveCancel: TKMButton;
         Edit_MapMove: TKMEdit;
         Label_MoveExists: TKMLabel;
         CheckBox_MoveExists: TKMCheckBox;
         Label_MapMoveConfirmTitle, Label_MapMoveName: TKMLabel;
+
+      Button_MapEdBack: TKMButton;
 
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
@@ -133,27 +137,27 @@ begin
 
   Panel_MapEd := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_MapEd.AnchorsStretch;
-    Panel_MapEdSizeXY := TKMPanel.Create(Panel_MapEd, 60, 240, 220, 700);
-    Panel_MapEdSizeXY.Anchors := [anLeft, anBottom];
-      TKMLabel.Create(Panel_MapEdSizeXY, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_MapEdSizeXY, 0, 20, 220, 406);
-      TKMLabel.Create(Panel_MapEdSizeXY, 8, 27, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_MapEdSizeXY, 118, 27, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
+    Panel_NewMapSizeXY := TKMPanel.Create(Panel_MapEd, 60, 240, 220, 700);
+    Panel_NewMapSizeXY.Anchors := [anLeft, anBottom];
+      TKMLabel.Create(Panel_NewMapSizeXY, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
+      TKMBevel.Create(Panel_NewMapSizeXY, 0, 20, 220, 406);
+      TKMLabel.Create(Panel_NewMapSizeXY, 8, 27, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_NewMapSizeXY, 118, 27, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
 
-      Radio_MapEdSizeX := TKMRadioGroup.Create(Panel_MapEdSizeXY, 10, 52, 88, 332, fnt_Metal);
-      Radio_MapEdSizeY := TKMRadioGroup.Create(Panel_MapEdSizeXY, 120, 52, 88, 332, fnt_Metal);
+      Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMapSizeXY, 10, 52, 88, 332, fnt_Metal);
+      Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMapSizeXY, 120, 52, 88, 332, fnt_Metal);
       for I := 1 to MAPSIZES_COUNT do
       begin
-        Radio_MapEdSizeX.Add(IntToStr(MapSize[I]));
-        Radio_MapEdSizeY.Add(IntToStr(MapSize[I]));
+        Radio_NewMapSizeX.Add(IntToStr(MapSize[I]));
+        Radio_NewMapSizeY.Add(IntToStr(MapSize[I]));
       end;
-      Radio_MapEdSizeX.ItemIndex := 2; //64
-      Radio_MapEdSizeY.ItemIndex := 2; //64
+      Radio_NewMapSizeX.ItemIndex := 2; //64
+      Radio_NewMapSizeY.ItemIndex := 2; //64
 
-      Radio_MapEdSizeX.OnChange := SizeChangeByRadio;
-      Radio_MapEdSizeY.OnChange := SizeChangeByRadio;
-      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_MapEdSizeXY, 8, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
-      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_MapEdSizeXY, 118, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      Radio_NewMapSizeX.OnChange := SizeChangeByRadio;
+      Radio_NewMapSizeY.OnChange := SizeChangeByRadio;
+      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_NewMapSizeXY, 8, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_NewMapSizeXY, 118, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
       NumEdit_MapSizeX.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeY.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeX.Value := 64;
@@ -161,9 +165,9 @@ begin
       NumEdit_MapSizeX.OnChange := SizeChangeByEdit;
       NumEdit_MapSizeY.OnChange := SizeChangeByEdit;
 
-      Button_MapEd_Create := TKMButton.Create(Panel_MapEdSizeXY, 0, 432, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
-      Button_MapEd_Create.Anchors := [anLeft, anBottom];
-      Button_MapEd_Create.OnClick := StartClick;
+      Button_Create := TKMButton.Create(Panel_NewMapSizeXY, 0, 432, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
+      Button_Create.Anchors := [anLeft, anBottom];
+      Button_Create.OnClick := LoadClick;
 
     Panel_MapEdLoad := TKMPanel.Create(Panel_MapEd, 320, 40, 620, 700);
     Panel_MapEdLoad.Anchors := [anLeft, anTop, anBottom];
@@ -189,12 +193,12 @@ begin
       ColumnBox_MapEd.SearchColumn := 2;
       ColumnBox_MapEd.OnColumnClick := ColumnClick;
       ColumnBox_MapEd.OnChange := SelectMap;
-      ColumnBox_MapEd.OnDoubleClick := StartClick;
+      ColumnBox_MapEd.OnDoubleClick := LoadClick;
       ColumnBox_MapEd.OnCellClick := ColumnBoxMaps_CellClick;
 
-      Button_MapEd_Load := TKMButton.Create(Panel_MapEdLoad, 0, 596, 440, 30, gResTexts[TX_MENU_MAP_LOAD_EXISTING], bsMenu);
-      Button_MapEd_Load.Anchors := [anLeft, anBottom];
-      Button_MapEd_Load.OnClick := StartClick;
+      Button_Load := TKMButton.Create(Panel_MapEdLoad, 0, 596, 440, 30, gResTexts[TX_MENU_MAP_LOAD_EXISTING], bsMenu);
+      Button_Load.Anchors := [anLeft, anBottom];
+      Button_Load.OnClick := LoadClick;
 
       Button_MapMove := TKMButton.Create(Panel_MapEdLoad, 0, 632, 440, 30, gResTexts[TX_MENU_MAP_MOVE_DOWNLOAD], bsMenu);
       Button_MapMove.Anchors := [anLeft, anBottom];
@@ -379,14 +383,14 @@ begin
 end;
 
 
-procedure TKMMenuMapEditor.StartClick(Sender: TObject);
+procedure TKMMenuMapEditor.LoadClick(Sender: TObject);
 var
   MapEdSizeX, MapEdSizeY: Integer;
   ID: Integer;
   Maps: TKMapsCollection;
 begin
   //Create new map (NumEdits hold actual dimensions)
-  if Sender = Button_MapEd_Create then
+  if Sender = Button_Create then
   begin
     MapEdSizeX := NumEdit_MapSizeX.Value;
     MapEdSizeY := NumEdit_MapSizeY.Value;
@@ -394,8 +398,8 @@ begin
   end;
 
   //This is also called by double clicking on a map in the list
-  if ((Sender = Button_MapEd_Load) or (Sender = ColumnBox_MapEd)) and
-     Button_MapEd_Load.Enabled and (ColumnBox_MapEd.ItemIndex <> -1) then
+  if ((Sender = Button_Load) or (Sender = ColumnBox_MapEd)) and
+     Button_Load.Enabled and (ColumnBox_MapEd.ItemIndex <> -1) then
   begin
     ID := ColumnBox_MapEd.Rows[ColumnBox_MapEd.ItemIndex].Tag;
     Maps := GetMaps;
@@ -422,15 +426,15 @@ end;
 procedure TKMMenuMapEditor.UpdateRadioMapEdSizes;
 var I: Integer;
 begin
-  Radio_MapEdSizeX.ItemIndex := -1;
-  Radio_MapEdSizeY.ItemIndex := -1;
+  Radio_NewMapSizeX.ItemIndex := -1;
+  Radio_NewMapSizeY.ItemIndex := -1;
 
   for I := 1 to MAPSIZES_COUNT do
   begin
     if NumEdit_MapSizeX.Value = MapSize[I] then
-      Radio_MapEdSizeX.ItemIndex := I - 1;
+      Radio_NewMapSizeX.ItemIndex := I - 1;
     if NumEdit_MapSizeY.Value = MapSize[I] then
-      Radio_MapEdSizeY.ItemIndex := I - 1;
+      Radio_NewMapSizeY.ItemIndex := I - 1;
   end;
 end;
 
@@ -446,10 +450,10 @@ end;
 
 procedure TKMMenuMapEditor.SizeChangeByRadio(Sender: TObject);
 begin
-  if Radio_MapEdSizeX.ItemIndex <> -1 then
-    NumEdit_MapSizeX.Value := MapSize[Radio_MapEdSizeX.ItemIndex + 1];
-  if Radio_MapEdSizeY.ItemIndex <> -1 then
-    NumEdit_MapSizeY.Value := MapSize[Radio_MapEdSizeY.ItemIndex + 1];
+  if Radio_NewMapSizeX.ItemIndex <> -1 then
+    NumEdit_MapSizeX.Value := MapSize[Radio_NewMapSizeX.ItemIndex + 1];
+  if Radio_NewMapSizeY.ItemIndex <> -1 then
+    NumEdit_MapSizeY.Value := MapSize[Radio_NewMapSizeY.ItemIndex + 1];
   gGameApp.GameSettings.MenuMapEdNewMapX := NumEdit_MapSizeX.Value;
   gGameApp.GameSettings.MenuMapEdNewMapY := NumEdit_MapSizeY.Value;
 end;
@@ -475,7 +479,7 @@ end;
 
 procedure TKMMenuMapEditor.UpdateUI;
 begin
-  Button_MapEd_Load.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
+  Button_Load.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
   Button_MapDelete.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
   Button_MapMove.Visible := (ColumnBox_MapEd.ItemIndex <> -1) and (GetMaps[ColumnBox_MapEd.ItemIndex].MapFolder = mfDL);
   Button_MapRename.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
