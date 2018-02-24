@@ -1444,6 +1444,8 @@ type
     fSeparatorPositions: TXStringList;
     fSeparatorHeight: Byte;
     fSeparatorColor: TColor4;
+
+    fOnLegendClick: TObjectIntBoolEvent;
     procedure UpdateMaxValue;
     function GetLine(aIndex:Integer): TKMGraphLine;
     function GetLineNumber(aY: Integer): Integer;
@@ -1475,6 +1477,8 @@ type
     procedure AddSeparator(aPosition: Integer);
     procedure SetSeparatorPositions(aSeparatorPositions: TStringList);
     procedure ClearSeparators;
+
+    property OnLegendClick: TObjectIntBoolEvent read fOnLegendClick write fOnLegendClick;
 
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -7956,6 +7960,9 @@ begin
   fLines[I].Visible := not fLines[I].Visible;
 
   UpdateMaxValue;
+
+  if Assigned(fOnLegendClick) then
+    fOnLegendClick(Self, I, fLines[I].Visible);
 end;
 
 
