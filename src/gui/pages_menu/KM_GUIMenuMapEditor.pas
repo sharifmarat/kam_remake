@@ -14,8 +14,7 @@ type
   private
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
-    fMapsSP: TKMapsCollection;
-    fMapsMP: TKMapsCollection;
+    fMaps: TKMapsCollection;
     fMinimap: TKMMinimap;
     fMinimapLastListId: Integer;  // column id, on which last time minimap was loaded. Avoid multiple loads of same minimap, which could happen on every RefreshList
     fScanCompleted: Boolean;      // True, after scan was completed
@@ -25,10 +24,13 @@ type
     procedure LoadClick(Sender: TObject);
     procedure MapTypeChange(Sender: TObject);
     procedure MapFilterChanged(Sender: TObject);
+    procedure MapFilterReset(Sender: TObject);
     procedure SizeChangeByRadio(Sender: TObject);
     procedure SizeChangeByEdit(Sender: TObject);
     procedure UpdateRadioMapEdSizes;
+    procedure UpdateSelectedMapCRC;
     procedure ListUpdate;
+    procedure UpdateFilterUI;
     procedure UpdateUI;
     procedure SetSelectedMapInfo(aID: Integer = -1); overload;
     procedure SetSelectedMapInfo(aCRC: Cardinal; const aName: UnicodeString); overload;
@@ -40,7 +42,6 @@ type
 
     procedure RefreshList(aJumpToSelected: Boolean);
     procedure ColumnClick(aValue: Integer);
-    function GetMaps: TKMapsCollection;
     procedure UpdateMapInfo(aID: Integer = -1);
     procedure ReadmeClick(Sender: TObject);
     procedure SelectMap(Sender: TObject);
@@ -60,13 +61,14 @@ type
     Panel_MapEd: TKMPanel;
 
       Panel_MapFilter: TKMPanel;
-        Radio_BuildFight, Radio_CoopSpecial: TKMRadioGroup;
+        Radio_MapType, Radio_BuildFight, Radio_CoopSpecial: TKMRadioGroup;
         CheckBox_ByPlayerCnt: TKMCheckBox;
         TrackBar_PlayersCnt: TKMTrackBar;
         Panel_MapFilter_Size: TKMPanel;
           CheckBox_Sizes: array [MAP_SIZE_ENUM_MIN..MAP_SIZE_ENUM_MAX] of TKMCheckBox;
+        Button_ResetFilter: TKMButton;
 
-      Panel_NewMapSizeXY: TKMPanel;
+      Panel_NewMap: TKMPanel;
         Radio_NewMapSizeX, Radio_NewMapSizeY: TKMRadioGroup;
         NumEdit_MapSizeX: TKMNumericEdit;
         NumEdit_MapSizeY: TKMNumericEdit;
@@ -74,7 +76,6 @@ type
 
       Panel_MapEdLoad: TKMPanel;
         ColumnBox_MapEd: TKMColumnBox;
-        Radio_MapType: TKMRadioGroup;
         Button_MapMove, Button_MapRename, Button_MapDelete, Button_Load: TKMButton;
 
 
@@ -121,16 +122,16 @@ uses
   KM_Pics, KM_CommonTypes, KM_CommonUtils;
 
 const
-  MAPSIZES_COUNT = 15;
-  MapSize: array [1..MAPSIZES_COUNT] of Word = (32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256);
+  MAPSIZES_COUNT = 8;
+  MapSize: array [0..MAPSIZES_COUNT-1] of Word = (32, 64, 96, 128, 160, 192, 224, 256);
 
 
 { TKMGUIMainMapEditor }
 constructor TKMMenuMapEditor.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 const
-  MAP_TYPE_W = 250;
-  FILTER_PAD_X = 8;
-  FILTER_PAD_Y = 6;
+  FILTER_PAD_X = 10;
+  FILTER_PAD_Y = 8;
+  NEW_MAP_PAD_Y = 6;
 var
   I: Integer;
   MS: TKMMapSize;
@@ -141,8 +142,8 @@ begin
   OnEscKeyDown := EscKeyDown;
   OnKeyDown := KeyDown;
 
-  fMapsSP := TKMapsCollection.Create(mfSP, smByNameDesc, True);
-  fMapsMP := TKMapsCollection.Create([mfMP, mfDL], smByNameDesc, True);
+  fMaps := TKMapsCollection.Create([mfSP, mfMP, mfDL], smByNameDesc, True);
+
   fMinimap := TKMMinimap.Create(True, True);
 
   Panel_MapEd := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
@@ -152,8 +153,16 @@ begin
     Panel_MapFilter.Anchors := [anLeft, anTop];
       TKMLabel.Create(Panel_MapFilter, 6, 0, Panel_MapFilter.Width, 20, gResTexts[TX_MENU_MAP_FILTER], fnt_Outline, taLeft);
 
-      TKMBevel.Create(Panel_MapFilter, 0, 20, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
-      Radio_BuildFight := TKMRadioGroup.Create(Panel_MapFilter, FILTER_PAD_X, 25, Panel_MapFilter.Width - 10, 40, fnt_Grey);
+      TKMBevel.Create(Panel_MapFilter, 0, 20, Panel_MapFilter.Width, 60 + FILTER_PAD_Y);
+      Radio_MapType := TKMRadioGroup.Create(Panel_MapFilter,FILTER_PAD_X,20+FILTER_PAD_Y,Panel_MapFilter.Width - 2*FILTER_PAD_X,60,fnt_Grey);
+      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
+      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS_SHORT]);
+      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_DLMAPS]);
+      Radio_MapType.ItemIndex := 0;
+      Radio_MapType.OnChange := MapTypeChange;
+
+      TKMBevel.Create(Panel_MapFilter, 0, Radio_MapType.Bottom + FILTER_PAD_Y, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
+      Radio_BuildFight := TKMRadioGroup.Create(Panel_MapFilter, FILTER_PAD_X, Radio_MapType.Bottom + 2*FILTER_PAD_Y, Panel_MapFilter.Width - 2*FILTER_PAD_X, 40, fnt_Grey);
       Radio_BuildFight.Add(gResTexts[TX_LOBBY_MAP_BUILD]);
       Radio_BuildFight.Add(gResTexts[TX_LOBBY_MAP_FIGHT]);
       Radio_BuildFight.AllowUncheck := True; //Allow uncheck filter radio
@@ -168,7 +177,7 @@ begin
 
       TKMBevel.Create(Panel_MapFilter, 0, Radio_CoopSpecial.Bottom + FILTER_PAD_Y, Panel_MapFilter.Width, 45 + 2*FILTER_PAD_Y);
       CheckBox_ByPlayerCnt := TKMCheckBox.Create(Panel_MapFilter, FILTER_PAD_X, Radio_CoopSpecial.Bottom + 2*FILTER_PAD_Y,
-                                                 Panel_MapFilter.Width - 2*FILTER_PAD_X, 20, 'By players number:', fnt_Grey);
+                                                 Panel_MapFilter.Width - 2*FILTER_PAD_X, 20, gResTexts[TX_MENU_MAP_FILTER_BY_PLAYERS_NUMBER], fnt_Grey);
       CheckBox_ByPlayerCnt.OnClick := MapFilterChanged;
       TrackBar_PlayersCnt := TKMTrackBar.Create(Panel_MapFilter, FILTER_PAD_X, CheckBox_ByPlayerCnt.Bottom + FILTER_PAD_Y,
                                                 Panel_MapFilter.Width - 2*FILTER_PAD_X, 1, MAX_HANDS);
@@ -176,27 +185,31 @@ begin
       TrackBar_PlayersCnt.Disable;
       TrackBar_PlayersCnt.OnChange := MapFilterChanged;
 
-      Panel_MapFilter_Size := TKMPanel.Create(Panel_MapFilter, 0, TrackBar_PlayersCnt.Bottom + 2*FILTER_PAD_Y, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
+      Panel_MapFilter_Size := TKMPanel.Create(Panel_MapFilter, 0, TrackBar_PlayersCnt.Bottom + FILTER_PAD_Y + 5, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
         TKMBevel.Create(Panel_MapFilter_Size, 0, 0, Panel_MapFilter_Size.Width, Panel_MapFilter_Size.Height);
 
         for MS := MAP_SIZE_ENUM_MIN to MAP_SIZE_ENUM_MAX do
         begin
-          CheckBox_Sizes[MS] := TKMCheckBox.Create(Panel_MapFilter_Size, FILTER_PAD_X + 75*((Byte(MS)-1) div 2), FILTER_PAD_Y + 20*((Byte(MS)-1) mod 2),
-                                                   60, 20, MapSizeText(MS),  fnt_Metal);
+          CheckBox_Sizes[MS] := TKMCheckBox.Create(Panel_MapFilter_Size, FILTER_PAD_X + 70*((Byte(MS)-1) div 2),
+                                                   FILTER_PAD_Y + 20*((Byte(MS)-1) mod 2), 60, 20, MapSizeText(MS), fnt_Metal);
           CheckBox_Sizes[MS].Check;
           CheckBox_Sizes[MS].OnClick := MapFilterChanged;
         end;
 
-    Panel_NewMapSizeXY := TKMPanel.Create(Panel_MapEd, 60, 275, 225, 371);
-    Panel_NewMapSizeXY.Anchors := [anLeft, anBottom];
-      TKMLabel.Create(Panel_NewMapSizeXY, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_NewMapSizeXY, 0, 20, 220, Panel_NewMapSizeXY.Height);
-      TKMLabel.Create(Panel_NewMapSizeXY, 8, 25, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_NewMapSizeXY, 118, 25, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
+      Button_ResetFilter := TKMButton.Create(Panel_MapFilter, 0, Panel_MapFilter_Size.Bottom + FILTER_PAD_Y, Panel_MapFilter.Width, 20,
+                                             gResTexts[TX_MENU_MAP_FILTER_RESET], bsMenu);
+      Button_ResetFilter.OnClick := MapFilterReset;
 
-      Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMapSizeXY, 10, 47, 88, 310, fnt_Metal);
-      Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMapSizeXY, 120, 47, 88, 310, fnt_Metal);
-      for I := 1 to MAPSIZES_COUNT do
+    Panel_NewMap := TKMPanel.Create(Panel_MapEd, 60, 394, 225, 308);
+    Panel_NewMap.Anchors := [anLeft, anBottom];
+      TKMLabel.Create(Panel_NewMap, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
+      TKMBevel.Create(Panel_NewMap, 0, 20, 220, 250);
+      TKMLabel.Create(Panel_NewMap, 8, 28, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_NewMap, 118, 28, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
+
+      Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMap, 10, 52, 88, 180, fnt_Metal);
+      Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMap, 120, 52, 88, 180, fnt_Metal);
+      for I := 0 to MAPSIZES_COUNT - 1 do
       begin
         Radio_NewMapSizeX.Add(IntToStr(MapSize[I]));
         Radio_NewMapSizeY.Add(IntToStr(MapSize[I]));
@@ -206,8 +219,8 @@ begin
 
       Radio_NewMapSizeX.OnChange := SizeChangeByRadio;
       Radio_NewMapSizeY.OnChange := SizeChangeByRadio;
-      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_NewMapSizeXY, 8, 362, MIN_MAP_SIZE, MAX_MAP_SIZE);
-      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_NewMapSizeXY, 118, 362, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_NewMap, 8, Radio_NewMapSizeX.Bottom + NEW_MAP_PAD_Y, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_NewMap, 118, Radio_NewMapSizeY.Bottom + NEW_MAP_PAD_Y, MIN_MAP_SIZE, MAX_MAP_SIZE);
       NumEdit_MapSizeX.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeY.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeX.Value := 64;
@@ -215,22 +228,15 @@ begin
       NumEdit_MapSizeX.OnChange := SizeChangeByEdit;
       NumEdit_MapSizeY.OnChange := SizeChangeByEdit;
 
-      Button_Create := TKMButton.Create(Panel_NewMapSizeXY, 0, 397, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
+      Button_Create := TKMButton.Create(Panel_NewMap, 0, 278, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
       Button_Create.Anchors := [anLeft, anBottom];
       Button_Create.OnClick := LoadClick;
 
     Panel_MapEdLoad := TKMPanel.Create(Panel_MapEd, 305, 30, 440, 708);
     Panel_MapEdLoad.Anchors := [anLeft, anTop, anBottom];
-      TKMLabel.Create(Panel_MapEdLoad, 6, 0, MAP_TYPE_W - 12, 20, gResTexts[TX_MENU_MAP_AVAILABLE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_MapEdLoad, 0, 20, Panel_MapEdLoad.Width, 50);
+      TKMLabel.Create(Panel_MapEdLoad, 6, 0, Panel_MapEdLoad.Width - 12, 20, gResTexts[TX_MENU_MAP_AVAILABLE], fnt_Outline, taLeft);
 
-      Radio_MapType := TKMRadioGroup.Create(Panel_MapEdLoad,8,28,MAP_TYPE_W - 14,40,fnt_Grey);
-      Radio_MapType.ItemIndex := 0;
-      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
-      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
-      Radio_MapType.OnChange := MapTypeChange;
-
-      ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 80, 440, 516, fnt_Metal,  bsMenu);
+      ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 20, 440, 576, fnt_Metal,  bsMenu);
       ColumnBox_MapEd.Anchors := [anLeft, anTop, anBottom];
       ColumnBox_MapEd.SetColumns(fnt_Outline, ['', '', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 22, 44, 310, 340]);
       ColumnBox_MapEd.SearchColumn := 2;
@@ -381,8 +387,7 @@ end;
 
 destructor TKMMenuMapEditor.Destroy;
 begin
-  fMapsSP.Free;
-  fMapsMP.Free;
+  fMaps.Free;
   fMinimap.Free;
 
   inherited;
@@ -392,34 +397,23 @@ end;
 function TKMMenuMapEditor.ColumnBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
 var
   I: Integer;
-  Maps: TKMapsCollection;
 begin
   Result := False;
   if X = 0 then //1st column
   begin
     I := ColumnBox_MapEd.Item[Y].Tag;
-    Maps := GetMaps;
-    Maps.Lock;
+    fMaps.Lock;
     try
-      Maps[I].IsFavourite := not Maps[I].IsFavourite;
-      if Maps[I].IsFavourite then
-      begin
-        if Maps = fMapsMP then
-          gGameApp.GameSettings.FavouriteMapsMP.Add(Maps[I].CRC)
-        else
-          gGameApp.GameSettings.FavouriteMapsSP.Add(Maps[I].CRC);
-      end else
-      begin
-        if Maps = fMapsMP then
-          gGameApp.GameSettings.FavouriteMapsMP.Remove(Maps[I].CRC)
-        else
-          gGameApp.GameSettings.FavouriteMapsSP.Remove(Maps[I].CRC)
-      end;
+      fMaps[I].IsFavourite := not fMaps[I].IsFavourite;
+      if fMaps[I].IsFavourite then
+        gGameApp.GameSettings.FavouriteMaps.Add(fMaps[I].CRC)
+      else
+        gGameApp.GameSettings.FavouriteMaps.Remove(fMaps[I].CRC);
 
       //Update pic
-      ColumnBox_MapEd.Item[Y].Cells[0].Pic := Maps[I].FavouriteMapPic;
+      ColumnBox_MapEd.Item[Y].Cells[0].Pic := fMaps[I].FavouriteMapPic;
     finally
-      Maps.Unlock;
+      fMaps.Unlock;
     end;
     Result := True; //we handle mouse click here, and do not want to propagate it further
   end;
@@ -430,7 +424,6 @@ procedure TKMMenuMapEditor.LoadClick(Sender: TObject);
 var
   MapEdSizeX, MapEdSizeY: Integer;
   ID: Integer;
-  Maps: TKMapsCollection;
 begin
   //Create new map (NumEdits hold actual dimensions)
   if Sender = Button_Create then
@@ -442,24 +435,22 @@ begin
 
   //This is also called by double clicking on a map in the list
   if ((Sender = Button_Load) or (Sender = ColumnBox_MapEd)) and
-     Button_Load.Enabled and (ColumnBox_MapEd.ItemIndex <> -1) then
+     Button_Load.Enabled and ColumnBox_MapEd.IsSelected then
   begin
-    ID := ColumnBox_MapEd.Rows[ColumnBox_MapEd.ItemIndex].Tag;
-    Maps := GetMaps;
+    ID := ColumnBox_MapEd.SelectedItemTag;
 
     //Terminate all
-    fMapsSP.TerminateScan;
-    fMapsMP.TerminateScan;
+    fMaps.TerminateScan;
 
-    Maps.Lock;
+    fMaps.Lock;
     try
-      gGameApp.NewMapEditor(Maps[ID].FullPath('.dat'), 0, 0, Maps[ID].CRC);
+      gGameApp.NewMapEditor(fMaps[ID].FullPath('.dat'), 0, 0, fMaps[ID].CRC);
     finally
-      Maps.Unlock;
+      fMaps.Unlock;
     end;
 
     //Keep MP/SP selected in the map editor interface
-    //(if mission failed to load we would have fGame = nil)
+    //(if mission failed to load we would have gGame = nil)
     if (gGame <> nil) and (gGame.ActiveInterface is TKMapEdInterface) then
       TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(Radio_MapType.ItemIndex <> 0);
   end;
@@ -472,12 +463,12 @@ begin
   Radio_NewMapSizeX.ItemIndex := -1;
   Radio_NewMapSizeY.ItemIndex := -1;
 
-  for I := 1 to MAPSIZES_COUNT do
+  for I := 0 to MAPSIZES_COUNT - 1 do
   begin
     if NumEdit_MapSizeX.Value = MapSize[I] then
-      Radio_NewMapSizeX.ItemIndex := I - 1;
+      Radio_NewMapSizeX.ItemIndex := I;
     if NumEdit_MapSizeY.Value = MapSize[I] then
-      Radio_NewMapSizeY.ItemIndex := I - 1;
+      Radio_NewMapSizeY.ItemIndex := I;
   end;
 end;
 
@@ -494,9 +485,9 @@ end;
 procedure TKMMenuMapEditor.SizeChangeByRadio(Sender: TObject);
 begin
   if Radio_NewMapSizeX.ItemIndex <> -1 then
-    NumEdit_MapSizeX.Value := MapSize[Radio_NewMapSizeX.ItemIndex + 1];
+    NumEdit_MapSizeX.Value := MapSize[Radio_NewMapSizeX.ItemIndex];
   if Radio_NewMapSizeY.ItemIndex <> -1 then
-    NumEdit_MapSizeY.Value := MapSize[Radio_NewMapSizeY.ItemIndex + 1];
+    NumEdit_MapSizeY.Value := MapSize[Radio_NewMapSizeY.ItemIndex];
   gGameApp.GameSettings.MenuMapEdNewMapX := NumEdit_MapSizeX.Value;
   gGameApp.GameSettings.MenuMapEdNewMapY := NumEdit_MapSizeY.Value;
 end;
@@ -505,31 +496,72 @@ end;
 procedure TKMMenuMapEditor.MapTypeChange(Sender: TObject);
 begin
   gGameApp.GameSettings.MenuMapEdMapType := Radio_MapType.ItemIndex;
-  ListUpdate;
+  UpdateSelectedMapCRC;
+  UpdateFilterUI;
+  RefreshList(True);
   UpdateUI;
-  DeleteConfirm(False);
-  MoveConfirm(False);
 end;
 
 
 procedure TKMMenuMapEditor.MapFilterChanged(Sender: TObject);
 begin
   TrackBar_PlayersCnt.Enabled := CheckBox_ByPlayerCnt.Checked;
-//  if (Sender is TKMCheckBox) and not TKMCheckBox(Sender).Checked then
   fMinimapLastListId := -1; // Clear last loasded minimap ID, as we uncheck the filter, then need to draw minimap again, probably
   RefreshList(True);
 end;
 
 
+procedure TKMMenuMapEditor.MapFilterReset(Sender: TObject);
+var
+  MS: TKMMapSize;
+begin
+  Radio_BuildFight.ItemIndex := -1;
+  Radio_CoopSpecial.ItemIndex := -1;
+  CheckBox_ByPlayerCnt.Uncheck;
+  TrackBar_PlayersCnt.Enabled := False;
+  for MS := MAP_SIZE_ENUM_MIN to MAP_SIZE_ENUM_MAX do
+    CheckBox_Sizes[MS].Check;
+  MapFilterChanged(nil);
+end;
+
+
+procedure TKMMenuMapEditor.UpdateFilterUI;
+begin
+  //Disable Coop map filter for SP maps
+  if Radio_MapType.ItemIndex = 0 then
+  begin
+    Radio_CoopSpecial.SetItemEnabled(1, False);
+    if Radio_CoopSpecial.ItemIndex = 1 then
+      Radio_CoopSpecial.ItemIndex := -1;
+  end else
+    Radio_CoopSpecial.SetItemEnabled(1, True);
+end;
+
+
 procedure TKMMenuMapEditor.UpdateUI;
 begin
-  Button_Load.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
-  Button_MapDelete.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
-  Button_MapMove.Visible := (ColumnBox_MapEd.ItemIndex <> -1) and (GetMaps[ColumnBox_MapEd.ItemIndex].MapFolder = mfDL);
-  Button_MapRename.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
+  UpdateFilterUI;
+
+  Button_Load.Enabled := ColumnBox_MapEd.IsSelected;
+  Button_MapDelete.Enabled := ColumnBox_MapEd.IsSelected;
+  Button_MapMove.Visible := ColumnBox_MapEd.IsSelected and (fMaps[ColumnBox_MapEd.SelectedItemTag].MapFolder = mfDL);
+  Button_MapRename.Enabled := ColumnBox_MapEd.IsSelected;
   Button_MapRename.Visible := not Button_MapMove.Visible;
 
-  UpdateMapInfo(ColumnBox_MapEd.ItemIndex);
+  UpdateMapInfo(ColumnBox_MapEd.SelectedItemTag);
+end;
+
+
+procedure TKMMenuMapEditor.UpdateSelectedMapCRC;
+begin
+  case Radio_MapType.ItemIndex of
+    0:  fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdSPMapCRC;
+    1:  begin
+          fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdMPMapCRC;
+          fSelectedMapInfo.Name := gGameApp.GameSettings.MenuMapEdMPMapName;
+        end;
+    2:  fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdDLMapCRC;
+  end;
 end;
 
 
@@ -537,8 +569,7 @@ end;
 procedure TKMMenuMapEditor.ListUpdate;
 begin
   //Terminate all
-  fMapsSP.TerminateScan;
-  fMapsMP.TerminateScan;
+  fMaps.TerminateScan;
 
   ColumnBox_MapEd.Clear;
 
@@ -546,19 +577,9 @@ begin
   fScanCompleted := False;
   fMinimapLastListId := ITEM_NOT_LOADED;
 
-  //If both Maps and MapsMP are scanning at once ListUpdateDone can be called from either one
-  //meaning we can access inconsistent and trigger assertion
-  case Radio_MapType.ItemIndex of
-    0:  begin
-          fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdSPMapCRC;
-          fMapsSP.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
-        end;
-    1:  begin
-          fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdMPMapCRC;
-          fSelectedMapInfo.Name := gGameApp.GameSettings.MenuMapEdMPMapName;
-          fMapsMP.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
-        end
-  end;
+  UpdateSelectedMapCRC;
+
+  fMaps.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
 end;
 
 
@@ -584,23 +605,18 @@ end;
 
 procedure TKMMenuMapEditor.ScanComplete(Sender: TObject);
 var
-  Maps: TKMapsCollection;
   MapsCRCArray: TKMCardinalArray;
   I: Integer;
 begin
-  Maps := GetMaps;
   //Cleanup missing Favourite maps from the lists
-  if (Sender = Maps) and (Maps.Count > 0) then
+  if (Sender = fMaps) and (fMaps.Count > 0) then
   begin
-    SetLength(MapsCRCArray, Maps.Count);
+    SetLength(MapsCRCArray, fMaps.Count);
 
-    for I := 0 to Maps.Count - 1 do
-      MapsCRCArray[I] := Maps[I].CRC;
+    for I := 0 to fMaps.Count - 1 do
+      MapsCRCArray[I] := fMaps[I].CRC;
 
-    if Maps = fMapsMP then
-      gGameApp.GameSettings.FavouriteMapsMP.RemoveMissing(MapsCRCArray)
-    else
-      gGameApp.GameSettings.FavouriteMapsSP.RemoveMissing(MapsCRCArray);
+    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsCRCArray)
   end;
 end;
 
@@ -608,18 +624,15 @@ end;
 procedure TKMMenuMapEditor.ReadmeClick(Sender: TObject);
 var
   ID: Integer;
-  Maps: TKMapsCollection;
 begin
-  ID := ColumnBox_MapEd.Rows[ColumnBox_MapEd.ItemIndex].Tag;
-  Maps := GetMaps;
-  Maps[ID].ViewReadme;
+  ID := ColumnBox_MapEd.SelectedItemTag;
+  fMaps[ID].ViewReadme;
 end;
 
 
 procedure TKMMenuMapEditor.RefreshList(aJumpToSelected: Boolean);
 var
   I, ListI, PrevTop: Integer;
-  Maps: TKMapsCollection;
   R: TKMListRow;
   Color: Cardinal;
   MS: TKMMapSize;
@@ -628,23 +641,24 @@ begin
   PrevTop := ColumnBox_MapEd.TopIndex;
   ColumnBox_MapEd.Clear;
 
-  Maps := GetMaps;
-
-  Maps.Lock;
+  fMaps.Lock;
   try
     ListI := 0;
-    for I := 0 to Maps.Count - 1 do
+    for I := 0 to fMaps.Count - 1 do
     begin
       SkipMap := False;
-      if ((Radio_BuildFight.ItemIndex = 0) and (Maps[I].MissionMode <> mm_Normal))              //Build map filter
-        or ((Radio_BuildFight.ItemIndex = 1) and (Maps[I].MissionMode <> mm_Tactic))            //Fight map filter
-        or ((Radio_CoopSpecial.ItemIndex = 0) and not Maps[I].TxtInfo.IsSpecial)                //Special map filter
-        or ((Radio_CoopSpecial.ItemIndex = 1) and not Maps[I].TxtInfo.IsCoop)                   //Coop map filter
-        or (TrackBar_PlayersCnt.Enabled and (Maps[I].LocCount <> TrackBar_PlayersCnt.Position)) //Players number map filter
+      if ((Radio_MapType.ItemIndex = 0) and not fMaps[I].IsSinglePlayer)  //SP map filter
+        or ((Radio_MapType.ItemIndex = 1) and not fMaps[I].IsMultiPlayer) //MP map filter
+        or ((Radio_MapType.ItemIndex = 2) and not fMaps[I].IsDownloaded)  //MP DL map filter
+        or ((Radio_BuildFight.ItemIndex = 0) and (fMaps[I].MissionMode <> mm_Normal)) //Build map filter
+        or ((Radio_BuildFight.ItemIndex = 1) and (fMaps[I].MissionMode <> mm_Tactic)) //Fight map filter
+        or ((Radio_CoopSpecial.ItemIndex = 0) and not fMaps[I].TxtInfo.IsSpecial)     //Special map filter
+        or ((Radio_CoopSpecial.ItemIndex = 1) and not fMaps[I].TxtInfo.IsCoop)        //Coop map filter
+        or (TrackBar_PlayersCnt.Enabled and (fMaps[I].LocCount <> TrackBar_PlayersCnt.Position)) //Players number map filter
          then
         SkipMap := True;
       for MS := MAP_SIZE_ENUM_MIN to MAP_SIZE_ENUM_MAX do
-        if not CheckBox_Sizes[MS].Checked and (Maps[I].Size = MS) then
+        if not CheckBox_Sizes[MS].Checked and (fMaps[I].Size = MS) then
         begin
           SkipMap := True;
           Break;
@@ -653,18 +667,20 @@ begin
       if SkipMap then
         Continue;
 
-      Color := Maps[I].GetLobbyColor;
-      R := MakeListRow(['', '', Maps[I].FileName, IntToStr(Maps[I].LocCount), Maps[I].SizeText],  //Texts
+      Color := fMaps[I].GetLobbyColor;
+      R := MakeListRow(['', '', fMaps[I].FileName, IntToStr(fMaps[I].LocCount), fMaps[I].SizeText],  //Texts
                        [Color, Color, Color, Color, Color], //Colors
                        I);
-      R.Cells[0].Pic := Maps[I].FavouriteMapPic;
+      R.Cells[0].Pic := fMaps[I].FavouriteMapPic;
       R.Cells[0].HighlightOnMouseOver := True;
-      R.Cells[1].Pic := MakePic(rxGui, 657 + Byte(Maps[I].MissionMode = mm_Tactic));
+      R.Cells[1].Pic := MakePic(rxGui, 657 + Byte(fMaps[I].MissionMode = mm_Tactic));
       R.Tag := I;
       ColumnBox_MapEd.AddItem(R);
 
-      if (Maps[I].CRC = fSelectedMapInfo.CRC)
-        and ((Radio_MapType.ItemIndex = 0) or (Maps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
+      if (fMaps[I].CRC = fSelectedMapInfo.CRC)
+        and ((Radio_MapType.ItemIndex = 0)
+          or (Radio_MapType.ItemIndex = 2)
+          or (fMaps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
       begin
         ColumnBox_MapEd.ItemIndex := ListI;
         UpdateMapInfo(ListI);
@@ -672,13 +688,13 @@ begin
       Inc(ListI);
     end;
   finally
-    Maps.Unlock;
+    fMaps.Unlock;
   end;
 
   ColumnBox_MapEd.TopIndex := PrevTop;
 
-  if aJumpToSelected and (ColumnBox_MapEd.ItemIndex <> -1)
-    and not InRange(ColumnBox_MapEd.ItemIndex - ColumnBox_MapEd.TopIndex, 0, ColumnBox_MapEd.GetVisibleRows-1)
+  if aJumpToSelected and ColumnBox_MapEd.IsSelected
+    and not InRange(ColumnBox_MapEd.ItemIndex - ColumnBox_MapEd.TopIndex, 0, ColumnBox_MapEd.GetVisibleRows - 1)
   then
     if ColumnBox_MapEd.ItemIndex < ColumnBox_MapEd.TopIndex then
       ColumnBox_MapEd.TopIndex := ColumnBox_MapEd.ItemIndex
@@ -696,67 +712,53 @@ var
 begin
   //Determine Sort method depending on which column user clicked
   with ColumnBox_MapEd do
-  case SortIndex of
-    0:  if SortDirection = sdDown then
-          SM := smByFavouriteDesc
-        else
-          SM := smByFavouriteAsc;
-    1:  if SortDirection = sdDown then
-          SM := smByMissionModeDesc
-        else
-          SM := smByMissionModeAsc;
-    2:  if SortDirection = sdDown then
-          SM := smByNameDesc
-        else
-          SM := smByNameAsc;
-    3:  if SortDirection = sdDown then
-          SM := smByPlayersDesc
-        else
-          SM := smByPlayersAsc;
-    4:  if SortDirection = sdDown then
-          SM := smBySizeDesc
-        else
-          SM := smBySizeAsc;
-    else SM := smByNameAsc;
-  end;
+    case SortIndex of
+      0:  if SortDirection = sdDown then
+            SM := smByFavouriteDesc
+          else
+            SM := smByFavouriteAsc;
+      1:  if SortDirection = sdDown then
+            SM := smByMissionModeDesc
+          else
+            SM := smByMissionModeAsc;
+      2:  if SortDirection = sdDown then
+            SM := smByNameDesc
+          else
+            SM := smByNameAsc;
+      3:  if SortDirection = sdDown then
+            SM := smByPlayersDesc
+          else
+            SM := smByPlayersAsc;
+      4:  if SortDirection = sdDown then
+            SM := smBySizeDesc
+          else
+            SM := smBySizeAsc;
+      else SM := smByNameAsc;
+    end;
 
   //Keep all lists in sync incase user switches between them
-  fMapsSP.Sort(SM, SortUpdate);
-  fMapsMP.Sort(SM, SortUpdate);
-end;
-
-
-function TKMMenuMapEditor.GetMaps: TKMapsCollection;
-begin
-  case Radio_MapType.ItemIndex of
-    0: Result := fMapsSP;
-    1: Result := fMapsMP;
-    else
-      raise Exception.Create('Unknown map type ' + IntToStr(Radio_MapType.ItemIndex));
-  end;
+  fMaps.Sort(SM, SortUpdate);
 end;
 
 
 procedure TKMMenuMapEditor.SelectMap(Sender: TObject);
 var
   MapId: Integer;
-  Maps: TKMapsCollection;
 begin
   UpdateUI;
   if ColumnBox_MapEd.IsSelected then
   begin
-    MapId := ColumnBox_MapEd.SelectedItem.Tag;
-    Maps := GetMaps;
+    MapId := ColumnBox_MapEd.SelectedItemTag;
 
     DeleteConfirm(False);
     MoveConfirm(False);
 
-    Maps.Lock;
+    fMaps.Lock;
     try
       SetSelectedMapInfo(MapId);
       UpdateMapInfo(MapId);
     finally
-      Maps.Unlock;
+      fMaps.Unlock;
     end;
   end else begin
     SetSelectedMapInfo;
@@ -793,21 +795,15 @@ end;
 
 procedure TKMMenuMapEditor.BackClick(Sender: TObject);
 begin
-  fMapsSP.TerminateScan;
-  fMapsMP.TerminateScan;
+  fMaps.TerminateScan;
 
   fOnPageChange(gpMainMenu);
 end;
 
 
 procedure TKMMenuMapEditor.DeleteClick(Sender: TObject);
-var
-  OldSelection, NewSelection: Integer;
-  Maps: TKMapsCollection;
 begin
-  Maps := GetMaps;
-
-  if ColumnBox_MapEd.ItemIndex = -1 then Exit;
+  if not ColumnBox_MapEd.IsSelected then Exit;
 
   if Sender = Button_MapDelete then
     DeleteConfirm(True);
@@ -818,14 +814,8 @@ begin
   //Delete selected map
   if Sender = Button_MapDeleteConfirm then
   begin
-    OldSelection := ColumnBox_MapEd.ItemIndex;
-    Maps.DeleteMap(ColumnBox_MapEd.ItemIndex);
-    if ColumnBox_MapEd.RowCount > 1 then
-    begin
-      NewSelection := EnsureRange(OldSelection, 0, ColumnBox_MapEd.RowCount - 2);
-      SetSelectedMapInfo(NewSelection);
-    end else
-      SetSelectedMapInfo;
+    fMaps.DeleteMap(ColumnBox_MapEd.SelectedItemTag);
+    SetSelectedMapInfo;
 
     RefreshList(True);
   end;
@@ -848,12 +838,8 @@ end;
 
 
 procedure TKMMenuMapEditor.RenameClick(Sender: TObject);
-var
-  Maps: TKMapsCollection;
 begin
-  Maps := GetMaps;
-
-  if ColumnBox_MapEd.ItemIndex = -1 then Exit;
+  if not ColumnBox_MapEd.IsSelected then Exit;
 
   if Sender = Button_MapRename then
     RenameConfirm(True);
@@ -865,7 +851,7 @@ begin
   if Sender = Button_MapRenameConfirm then
   begin
     Edit_Rename.Text := Trim(Edit_Rename.Text);
-    Maps.RenameMap(ColumnBox_MapEd.ItemIndex, Edit_Rename.Text);
+    fMaps.RenameMap(ColumnBox_MapEd.SelectedItemTag, Edit_Rename.Text);
     SetSelectedMapInfo(fSelectedMapInfo.CRC, Edit_Rename.Text);
     ListUpdate;
   end;
@@ -875,7 +861,7 @@ end;
 // Check if new name is allowed
 procedure TKMMenuMapEditor.Edit_Rename_Change(Sender: TObject);
 begin
-  Button_MapRenameConfirm.Enabled := (Trim(Edit_Rename.Text) <> '') and not GetMaps.Contains(Trim(Edit_Rename.Text));
+  Button_MapRenameConfirm.Enabled := (Trim(Edit_Rename.Text) <> '') and not fMaps.Contains(Trim(Edit_Rename.Text));
 end;
 
 
@@ -883,7 +869,7 @@ procedure TKMMenuMapEditor.RenameConfirm(aVisible: Boolean);
 begin
   if aVisible then
   begin
-    Edit_Rename.Text := GetMaps[ColumnBox_MapEd.ItemIndex].FileName;
+    Edit_Rename.Text := fMaps[ColumnBox_MapEd.SelectedItemTag].FileName;
     Button_MapRenameConfirm.Enabled := False;
     PopUp_Rename.Show;
   end else
@@ -909,13 +895,11 @@ end;
 procedure TKMMenuMapEditor.SetSelectedMapInfo(aID: Integer = -1);
 var CRC: Cardinal;
     Name: UnicodeString;
-    Maps: TKMapsCollection;
 begin
   if (aID <> -1) then
   begin
-    Maps := GetMaps;
-    CRC := Maps[aID].CRC;
-    Name := Maps[aID].FileName;
+    CRC := fMaps[aID].CRC;
+    Name := fMaps[aID].FileName;
   end else begin
     CRC := 0;
     Name := '';
@@ -934,6 +918,7 @@ begin
           gGameApp.GameSettings.MenuMapEdMPMapCRC := aCRC;
           gGameApp.GameSettings.MenuMapEdMPMapName := aName;
         end;
+    2:  gGameApp.GameSettings.MenuMapEdDLMapCRC := aCRC; // Set only CRC, because we do not save selected DL map name
   end;
 end;
 
@@ -985,7 +970,7 @@ begin
     if fMinimapLastListId = aID then Exit; //Do not reload same minimap
 
     fMinimapLastListId := aID;
-    Map := GetMaps[aID];
+    Map := fMaps[aID];
     fMinimap.LoadFromMission(Map.FullPath('.dat'), []);
     fMinimap.Update(True);
     MinimapView_MapEd.SetMinimap(fMinimap);
@@ -1035,14 +1020,14 @@ procedure TKMMenuMapEditor.MoveClick(Sender: TObject);
 var
   ID: Integer;
 begin
-  Assert(Radio_MapType.ItemIndex = 1);
+  Assert(Radio_MapType.ItemIndex = 2);
 
-  if ColumnBox_MapEd.ItemIndex = -1 then Exit;
+  if not ColumnBox_MapEd.IsSelected then Exit;
 
   if Sender = Button_MapMove then
   begin
-    ID := ColumnBox_MapEd.Rows[ColumnBox_MapEd.ItemIndex].Tag;
-    Edit_MapMove.Text := fMapsMP[ID].FileNameWithoutHash;
+    ID := ColumnBox_MapEd.SelectedItemTag;
+    Edit_MapMove.Text := fMaps[ID].FileNameWithoutHash;
     MoveConfirm(True);
     MoveEditChange(Button_MapMove);
   end;
@@ -1053,7 +1038,7 @@ begin
   //Move selected map
   if Sender = Button_MapMoveConfirm then
   begin
-    fMapsMP.MoveMap(ColumnBox_MapEd.ItemIndex, Edit_MapMove.Text, mfMP);
+    fMaps.MoveMap(ColumnBox_MapEd.SelectedItemTag, Edit_MapMove.Text, mfMP);
     SetSelectedMapInfo(fSelectedMapInfo.CRC, Edit_MapMove.Text); // Update Name of selected item in list
     gGameApp.MainMenuInterface.MyControls.UpdateFocus(ColumnBox_MapEd); // Set focus to the maps list
     ListUpdate;
@@ -1079,8 +1064,7 @@ end;
 
 procedure TKMMenuMapEditor.UpdateState;
 begin
-  fMapsSP.UpdateState;
-  fMapsMP.UpdateState;
+  fMaps.UpdateState;
 end;
 
 

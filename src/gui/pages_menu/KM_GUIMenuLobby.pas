@@ -1746,13 +1746,15 @@ procedure TKMMenuLobby.MapList_ScanComplete(Sender: TObject);
 var MapsCRCArray: TKMCardinalArray;
     I: Integer;
 begin
-  if (Sender = fMapsMP) and (fMapsMP.Count > 0) then
-  begin
-    SetLength(MapsCRCArray, fMapsMP.Count);
-    for I := 0 to fMapsMP.Count - 1 do
-      MapsCRCArray[I] := fMapsMP[I].CRC;
-    gGameApp.GameSettings.FavouriteMapsMP.RemoveMissing(MapsCRCArray);
-  end;
+//--------//Do not RemoveMissing maps from favourites, as we have only 1 favorites for all maps, including SP maps also//--------//
+
+//  if (Sender = fMapsMP) and (fMapsMP.Count > 0) then
+//  begin
+//    SetLength(MapsCRCArray, fMapsMP.Count);
+//    for I := 0 to fMapsMP.Count - 1 do
+//      MapsCRCArray[I] := fMapsMP[I].CRC;
+//    gGameApp.GameSettings.FavouriteMaps.RemoveMissing(MapsCRCArray);
+//  end;
 end;
 
 
@@ -1980,9 +1982,9 @@ begin
     try
       fMapsMP[I].IsFavourite := not fMapsMP[I].IsFavourite;
       if fMapsMP[I].IsFavourite then
-        gGameApp.GameSettings.FavouriteMapsMP.Add(fMapsMP[I].CRC)
+        gGameApp.GameSettings.FavouriteMaps.Add(fMapsMP[I].CRC)
       else
-        gGameApp.GameSettings.FavouriteMapsMP.Remove(fMapsMP[I].CRC);
+        gGameApp.GameSettings.FavouriteMaps.Remove(fMapsMP[I].CRC);
 
       //Update pic
       DropCol_LobbyMaps.Item[Y].Cells[0].Pic := fMapsMP[I].FavouriteMapPic;

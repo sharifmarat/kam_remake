@@ -1117,5 +1117,7 @@
 1166:Text color:
 1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
 1168:Maps filter
-1169:Back to game
-1170:Show detailed game statistics
+1169:Reset filter
+1170:By players number
+1171:Back to game
+1172:Show detailed game statistics

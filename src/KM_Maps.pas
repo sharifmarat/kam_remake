@@ -325,10 +325,7 @@ begin
     if gGameApp.GameSettings = nil // In case we are closing app and settings object is already destroyed
       then Exit;
 
-    if IsMultiplayer then
-      IsFavourite := gGameApp.GameSettings.FavouriteMapsMP.Contains(fCRC)
-    else
-      IsFavourite := gGameApp.GameSettings.FavouriteMapsSP.Contains(fCRC);
+    IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
 
     SaveToFile(fPath + fFileName + '.mi'); //Save new cache file
   end;
@@ -502,10 +499,7 @@ begin
 
   fTxtInfo.Load(S);
 
-  if IsMultiplayer then
-    IsFavourite := gGameApp.GameSettings.FavouriteMapsMP.Contains(fCRC)
-  else
-    IsFavourite := gGameApp.GameSettings.FavouriteMapsSP.Contains(fCRC)
+  IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
 end;
 
 
