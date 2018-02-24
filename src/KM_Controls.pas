@@ -3755,7 +3755,7 @@ var
 begin
   fMouseOverItem := -1;
   LineHeight := Round(fHeight / Count);
-  if InRange(Y, AbsTop, AbsTop + Height) then
+  if InRange(Y, AbsTop, AbsTop + Height) and (LineHeight > 0) then
   begin
     MouseOverRow := EnsureRange((Y - AbsTop) div LineHeight, 0, fCount - 1);
     if InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[MouseOverRow].Text).X) then
