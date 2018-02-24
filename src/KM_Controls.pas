@@ -652,6 +652,7 @@ type
   protected
     function GetHint: UnicodeString; override;
   public
+    AllowUncheck: Boolean; //Do we allow to uncheck selected element ? Usually not, but its possible
     DrawChkboxOutline: Boolean;
     LineColor: TColor4; //color of outline
     LineWidth: Byte;
@@ -3674,6 +3675,7 @@ begin
   fItemIndex := -1;
   LineWidth := 1;
   LineColor := clChkboxOutline;
+  AllowUncheck := False;
 end;
 
 
@@ -3704,15 +3706,27 @@ end;
 
 procedure TKMRadioGroup.MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 var
-  NewIndex: Integer;
+  Changed: Boolean;
 begin
   if (csDown in State) and (Button = mbLeft) then
   begin
-    NewIndex := EnsureRange((Y-AbsTop) div Round(Height/Count), 0, Count - 1); //Clicking at wrong place can select invalid ID
-    if (NewIndex <> fItemIndex) and (fItems[NewIndex].Enabled) then
+    UpdateMouseOverPositions(X,Y);
+    if (fMouseOverItem <> -1) and fItems[fMouseOverItem].Enabled then
     begin
-      fItemIndex := NewIndex;
-      if Assigned(fOnChange) then
+      Changed := False;
+      if (fMouseOverItem = fItemIndex) then
+      begin
+        if AllowUncheck then
+        begin
+          fItemIndex := -1; //Uncheck
+          Changed := True;
+        end;
+      end else begin
+        fItemIndex := fMouseOverItem;
+        Changed := True;
+      end;
+
+      if Changed and Assigned(fOnChange) then
       begin
         fOnChange(Self);
         Exit; //Don't generate OnClick after OnChanged event (esp. when reloading Game on local change)
