@@ -6,7 +6,7 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes, Controls, SysUtils, Math,
   KM_Controls, KM_Maps, KM_Minimap,
-  KM_InterfaceDefaults;
+  KM_InterfaceDefaults, KM_Defaults;
 
 
 type
@@ -24,7 +24,7 @@ type
 
     procedure LoadClick(Sender: TObject);
     procedure MapTypeChange(Sender: TObject);
-    procedure MapFilterClick(Sender: TObject);
+    procedure MapFilterChanged(Sender: TObject);
     procedure SizeChangeByRadio(Sender: TObject);
     procedure SizeChangeByEdit(Sender: TObject);
     procedure UpdateRadioMapEdSizes;
@@ -58,6 +58,14 @@ type
     procedure KeyDown(Key: Word; Shift: TShiftState);
   protected
     Panel_MapEd: TKMPanel;
+
+      Panel_MapFilter: TKMPanel;
+        Radio_BuildFight, Radio_CoopSpecial: TKMRadioGroup;
+        CheckBox_ByPlayerCnt: TKMCheckBox;
+        TrackBar_PlayersCnt: TKMTrackBar;
+        Panel_MapFilter_Size: TKMPanel;
+          CheckBox_Sizes: array [MAP_SIZE_ENUM_MIN..MAP_SIZE_ENUM_MAX] of TKMCheckBox;
+
       Panel_NewMapSizeXY: TKMPanel;
         Radio_NewMapSizeX, Radio_NewMapSizeY: TKMRadioGroup;
         NumEdit_MapSizeX: TKMNumericEdit;
@@ -66,8 +74,7 @@ type
 
       Panel_MapEdLoad: TKMPanel;
         ColumnBox_MapEd: TKMColumnBox;
-        Radio_MapEd_MapType: TKMRadioGroup;
-        CheckBox_SpecialMap, CheckBox_CoopMap: TKMCheckBox;
+        Radio_MapType: TKMRadioGroup;
         Button_MapMove, Button_MapRename, Button_MapDelete, Button_Load: TKMButton;
 
 
@@ -111,7 +118,7 @@ implementation
 uses
   KM_ResTexts, KM_Game, KM_GameApp,
   KM_RenderUI, KM_Resource, KM_ResFonts, KM_InterfaceMapEditor,
-  KM_Defaults, KM_Pics, KM_CommonTypes;
+  KM_Pics, KM_CommonTypes, KM_CommonUtils;
 
 const
   MAPSIZES_COUNT = 15;
@@ -122,8 +129,11 @@ const
 constructor TKMMenuMapEditor.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 const
   MAP_TYPE_W = 250;
+  FILTER_PAD_X = 8;
+  FILTER_PAD_Y = 6;
 var
   I: Integer;
+  MS: TKMMapSize;
 begin
   inherited Create;
 
@@ -137,15 +147,55 @@ begin
 
   Panel_MapEd := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_MapEd.AnchorsStretch;
-    Panel_NewMapSizeXY := TKMPanel.Create(Panel_MapEd, 60, 240, 220, 700);
+
+    Panel_MapFilter := TKMPanel.Create(Panel_MapEd, 60, 30, 220, 500);
+    Panel_MapFilter.Anchors := [anLeft, anTop];
+      TKMLabel.Create(Panel_MapFilter, 6, 0, Panel_MapFilter.Width, 20, gResTexts[TX_MENU_MAP_FILTER], fnt_Outline, taLeft);
+
+      TKMBevel.Create(Panel_MapFilter, 0, 20, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
+      Radio_BuildFight := TKMRadioGroup.Create(Panel_MapFilter, FILTER_PAD_X, 25, Panel_MapFilter.Width - 10, 40, fnt_Grey);
+      Radio_BuildFight.Add(gResTexts[TX_LOBBY_MAP_BUILD]);
+      Radio_BuildFight.Add(gResTexts[TX_LOBBY_MAP_FIGHT]);
+      Radio_BuildFight.AllowUncheck := True; //Allow uncheck filter radio
+      Radio_BuildFight.OnChange := MapFilterChanged;
+
+      TKMBevel.Create(Panel_MapFilter, 0, Radio_BuildFight.Bottom + FILTER_PAD_Y, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
+      Radio_CoopSpecial := TKMRadioGroup.Create(Panel_MapFilter, FILTER_PAD_X, Radio_BuildFight.Bottom + 2*FILTER_PAD_Y, Panel_MapFilter.Width - 2*FILTER_PAD_X, 40, fnt_Grey);
+      Radio_CoopSpecial.Add(gResTexts[TX_LOBBY_MAP_SPECIAL]);
+      Radio_CoopSpecial.Add(gResTexts[TX_LOBBY_MAP_Coop]);
+      Radio_CoopSpecial.AllowUncheck := True; //Allow uncheck filter radio
+      Radio_CoopSpecial.OnChange := MapFilterChanged;
+
+      TKMBevel.Create(Panel_MapFilter, 0, Radio_CoopSpecial.Bottom + FILTER_PAD_Y, Panel_MapFilter.Width, 45 + 2*FILTER_PAD_Y);
+      CheckBox_ByPlayerCnt := TKMCheckBox.Create(Panel_MapFilter, FILTER_PAD_X, Radio_CoopSpecial.Bottom + 2*FILTER_PAD_Y,
+                                                 Panel_MapFilter.Width - 2*FILTER_PAD_X, 20, 'By players number:', fnt_Grey);
+      CheckBox_ByPlayerCnt.OnClick := MapFilterChanged;
+      TrackBar_PlayersCnt := TKMTrackBar.Create(Panel_MapFilter, FILTER_PAD_X, CheckBox_ByPlayerCnt.Bottom + FILTER_PAD_Y,
+                                                Panel_MapFilter.Width - 2*FILTER_PAD_X, 1, MAX_HANDS);
+      TrackBar_PlayersCnt.Anchors := [anLeft,anTop];
+      TrackBar_PlayersCnt.Disable;
+      TrackBar_PlayersCnt.OnChange := MapFilterChanged;
+
+      Panel_MapFilter_Size := TKMPanel.Create(Panel_MapFilter, 0, TrackBar_PlayersCnt.Bottom + 2*FILTER_PAD_Y, Panel_MapFilter.Width, 40 + FILTER_PAD_Y);
+        TKMBevel.Create(Panel_MapFilter_Size, 0, 0, Panel_MapFilter_Size.Width, Panel_MapFilter_Size.Height);
+
+        for MS := MAP_SIZE_ENUM_MIN to MAP_SIZE_ENUM_MAX do
+        begin
+          CheckBox_Sizes[MS] := TKMCheckBox.Create(Panel_MapFilter_Size, FILTER_PAD_X + 75*((Byte(MS)-1) div 2), FILTER_PAD_Y + 20*((Byte(MS)-1) mod 2),
+                                                   60, 20, MapSizeText(MS),  fnt_Metal);
+          CheckBox_Sizes[MS].Check;
+          CheckBox_Sizes[MS].OnClick := MapFilterChanged;
+        end;
+
+    Panel_NewMapSizeXY := TKMPanel.Create(Panel_MapEd, 60, 275, 225, 371);
     Panel_NewMapSizeXY.Anchors := [anLeft, anBottom];
       TKMLabel.Create(Panel_NewMapSizeXY, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_NewMapSizeXY, 0, 20, 220, 406);
-      TKMLabel.Create(Panel_NewMapSizeXY, 8, 27, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_NewMapSizeXY, 118, 27, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
+      TKMBevel.Create(Panel_NewMapSizeXY, 0, 20, 220, Panel_NewMapSizeXY.Height);
+      TKMLabel.Create(Panel_NewMapSizeXY, 8, 25, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_NewMapSizeXY, 118, 25, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
 
-      Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMapSizeXY, 10, 52, 88, 332, fnt_Metal);
-      Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMapSizeXY, 120, 52, 88, 332, fnt_Metal);
+      Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMapSizeXY, 10, 47, 88, 310, fnt_Metal);
+      Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMapSizeXY, 120, 47, 88, 310, fnt_Metal);
       for I := 1 to MAPSIZES_COUNT do
       begin
         Radio_NewMapSizeX.Add(IntToStr(MapSize[I]));
@@ -156,8 +206,8 @@ begin
 
       Radio_NewMapSizeX.OnChange := SizeChangeByRadio;
       Radio_NewMapSizeY.OnChange := SizeChangeByRadio;
-      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_NewMapSizeXY, 8, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
-      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_NewMapSizeXY, 118, 392, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      NumEdit_MapSizeX := TKMNumericEdit.Create(Panel_NewMapSizeXY, 8, 362, MIN_MAP_SIZE, MAX_MAP_SIZE);
+      NumEdit_MapSizeY := TKMNumericEdit.Create(Panel_NewMapSizeXY, 118, 362, MIN_MAP_SIZE, MAX_MAP_SIZE);
       NumEdit_MapSizeX.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeY.Anchors := [anLeft, anBottom];
       NumEdit_MapSizeX.Value := 64;
@@ -165,29 +215,22 @@ begin
       NumEdit_MapSizeX.OnChange := SizeChangeByEdit;
       NumEdit_MapSizeY.OnChange := SizeChangeByEdit;
 
-      Button_Create := TKMButton.Create(Panel_NewMapSizeXY, 0, 432, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
+      Button_Create := TKMButton.Create(Panel_NewMapSizeXY, 0, 397, 220, 30, gResTexts[TX_MENU_MAP_CREATE_NEW_MAP], bsMenu);
       Button_Create.Anchors := [anLeft, anBottom];
       Button_Create.OnClick := LoadClick;
 
-    Panel_MapEdLoad := TKMPanel.Create(Panel_MapEd, 320, 40, 620, 700);
+    Panel_MapEdLoad := TKMPanel.Create(Panel_MapEd, 305, 30, 440, 708);
     Panel_MapEdLoad.Anchors := [anLeft, anTop, anBottom];
       TKMLabel.Create(Panel_MapEdLoad, 6, 0, MAP_TYPE_W - 12, 20, gResTexts[TX_MENU_MAP_AVAILABLE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_MapEdLoad, 0, 20, MAP_TYPE_W, 50);
+      TKMBevel.Create(Panel_MapEdLoad, 0, 20, Panel_MapEdLoad.Width, 50);
 
-      Radio_MapEd_MapType := TKMRadioGroup.Create(Panel_MapEdLoad,8,28,MAP_TYPE_W - 14,40,fnt_Grey);
-      Radio_MapEd_MapType.ItemIndex := 0;
-      Radio_MapEd_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
-      Radio_MapEd_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
-      Radio_MapEd_MapType.OnChange := MapTypeChange;
+      Radio_MapType := TKMRadioGroup.Create(Panel_MapEdLoad,8,28,MAP_TYPE_W - 14,40,fnt_Grey);
+      Radio_MapType.ItemIndex := 0;
+      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
+      Radio_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
+      Radio_MapType.OnChange := MapTypeChange;
 
-      TKMLabel.Create(Panel_MapEdLoad, 6 + MAP_TYPE_W + 5, 0, 440 - MAP_TYPE_W - 11, 20, gResTexts[TX_MENU_MAP_FILTER], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_MapEdLoad, MAP_TYPE_W + 5, 20, 440 - MAP_TYPE_W - 5, 50);
-      CheckBox_SpecialMap := TKMCheckBox.Create(Panel_MapEdLoad, 8 + MAP_TYPE_W + 5, 28, 440 - MAP_TYPE_W - 5, 20, gResTexts[TX_LOBBY_MAP_SPECIAL], fnt_Grey);
-      CheckBox_SpecialMap.OnClick := MapFilterClick;
-      CheckBox_CoopMap := TKMCheckBox.Create(Panel_MapEdLoad, 8 + MAP_TYPE_W + 5, 48, 440 - MAP_TYPE_W - 5, 20, gResTexts[TX_LOBBY_MAP_COOP], fnt_Grey);
-      CheckBox_CoopMap.OnClick := MapFilterClick;
-
-      ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 80, 440, 506, fnt_Metal,  bsMenu);
+      ColumnBox_MapEd := TKMColumnBox.Create(Panel_MapEdLoad, 0, 80, 440, 516, fnt_Metal,  bsMenu);
       ColumnBox_MapEd.Anchors := [anLeft, anTop, anBottom];
       ColumnBox_MapEd.SetColumns(fnt_Outline, ['', '', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 22, 44, 310, 340]);
       ColumnBox_MapEd.SearchColumn := 2;
@@ -196,24 +239,24 @@ begin
       ColumnBox_MapEd.OnDoubleClick := LoadClick;
       ColumnBox_MapEd.OnCellClick := ColumnBoxMaps_CellClick;
 
-      Button_Load := TKMButton.Create(Panel_MapEdLoad, 0, 596, 440, 30, gResTexts[TX_MENU_MAP_LOAD_EXISTING], bsMenu);
+      Button_Load := TKMButton.Create(Panel_MapEdLoad, 0, 606, 440, 30, gResTexts[TX_MENU_MAP_LOAD_EXISTING], bsMenu);
       Button_Load.Anchors := [anLeft, anBottom];
       Button_Load.OnClick := LoadClick;
 
-      Button_MapMove := TKMButton.Create(Panel_MapEdLoad, 0, 632, 440, 30, gResTexts[TX_MENU_MAP_MOVE_DOWNLOAD], bsMenu);
+      Button_MapMove := TKMButton.Create(Panel_MapEdLoad, 0, 642, 440, 30, gResTexts[TX_MENU_MAP_MOVE_DOWNLOAD], bsMenu);
       Button_MapMove.Anchors := [anLeft, anBottom];
       Button_MapMove.OnClick := MoveClick;
       Button_MapMove.Hide;
 
-      Button_MapRename := TKMButton.Create(Panel_MapEdLoad, 0, 632, 440, 30, gResTexts[TX_MENU_MAP_RENAME], bsMenu);
+      Button_MapRename := TKMButton.Create(Panel_MapEdLoad, 0, 642, 440, 30, gResTexts[TX_MENU_MAP_RENAME], bsMenu);
       Button_MapRename.Anchors := [anLeft, anBottom];
       Button_MapRename.OnClick := RenameClick;
 
-      Button_MapDelete := TKMButton.Create(Panel_MapEdLoad, 0, 668, 440, 30, gResTexts[TX_MENU_MAP_DELETE], bsMenu);
+      Button_MapDelete := TKMButton.Create(Panel_MapEdLoad, 0, 678, 440, 30, gResTexts[TX_MENU_MAP_DELETE], bsMenu);
       Button_MapDelete.Anchors := [anLeft, anBottom];
       Button_MapDelete.OnClick := DeleteClick;
 
-    Panel_MapInfo := TKMPanel.Create(Panel_MapEd, 320+448, 60, 199, 678);
+    Panel_MapInfo := TKMPanel.Create(Panel_MapEd, 320+448, 50, 199, 688);
     Panel_MapInfo.Anchors := [anLeft, anTop, anBottom];
 
       with TKMBevel.Create(Panel_MapInfo, 0, 0, 199, 199) do
@@ -418,7 +461,7 @@ begin
     //Keep MP/SP selected in the map editor interface
     //(if mission failed to load we would have fGame = nil)
     if (gGame <> nil) and (gGame.ActiveInterface is TKMapEdInterface) then
-      TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(Radio_MapEd_MapType.ItemIndex <> 0);
+      TKMapEdInterface(gGame.ActiveInterface).SetLoadMode(Radio_MapType.ItemIndex <> 0);
   end;
 end;
 
@@ -461,7 +504,7 @@ end;
 
 procedure TKMMenuMapEditor.MapTypeChange(Sender: TObject);
 begin
-  gGameApp.GameSettings.MenuMapEdMapType := Radio_MapEd_MapType.ItemIndex;
+  gGameApp.GameSettings.MenuMapEdMapType := Radio_MapType.ItemIndex;
   ListUpdate;
   UpdateUI;
   DeleteConfirm(False);
@@ -469,10 +512,11 @@ begin
 end;
 
 
-procedure TKMMenuMapEditor.MapFilterClick(Sender: TObject);
+procedure TKMMenuMapEditor.MapFilterChanged(Sender: TObject);
 begin
-  if (Sender is TKMCheckBox) and not TKMCheckBox(Sender).Checked then
-    fMinimapLastListId := -1; // Clear last loasded minimap ID, as we uncheck the filter, then need to draw minimap again, probably
+  TrackBar_PlayersCnt.Enabled := CheckBox_ByPlayerCnt.Checked;
+//  if (Sender is TKMCheckBox) and not TKMCheckBox(Sender).Checked then
+  fMinimapLastListId := -1; // Clear last loasded minimap ID, as we uncheck the filter, then need to draw minimap again, probably
   RefreshList(True);
 end;
 
@@ -485,11 +529,7 @@ begin
   Button_MapRename.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
   Button_MapRename.Visible := not Button_MapMove.Visible;
 
-  if not ColumnBox_MapEd.IsSelected then
-  begin
-    MinimapView_MapEd.Hide;
-    LoadMinimap; //Clear map info
-  end;
+  LoadMinimap(ColumnBox_MapEd.ItemIndex);
 end;
 
 
@@ -508,7 +548,7 @@ begin
 
   //If both Maps and MapsMP are scanning at once ListUpdateDone can be called from either one
   //meaning we can access inconsistent and trigger assertion
-  case Radio_MapEd_MapType.ItemIndex of
+  case Radio_MapType.ItemIndex of
     0:  begin
           fSelectedMapInfo.CRC := gGameApp.GameSettings.MenuMapEdSPMapCRC;
           fMapsSP.Refresh(ScanUpdate, ScanTerminate, ScanComplete);
@@ -582,6 +622,8 @@ var
   Maps: TKMapsCollection;
   R: TKMListRow;
   Color: Cardinal;
+  MS: TKMMapSize;
+  SkipMap: Boolean;
 begin
   PrevTop := ColumnBox_MapEd.TopIndex;
   ColumnBox_MapEd.Clear;
@@ -593,9 +635,22 @@ begin
     ListI := 0;
     for I := 0 to Maps.Count - 1 do
     begin
-      if CheckBox_SpecialMap.Checked and not Maps[I].TxtInfo.IsSpecial then
-        Continue;
-      if CheckBox_CoopMap.Checked and not Maps[I].TxtInfo.IsCoop then
+      SkipMap := False;
+      if ((Radio_BuildFight.ItemIndex = 0) and (Maps[I].MissionMode <> mm_Normal))              //Build map filter
+        or ((Radio_BuildFight.ItemIndex = 1) and (Maps[I].MissionMode <> mm_Tactic))            //Fight map filter
+        or ((Radio_CoopSpecial.ItemIndex = 0) and not Maps[I].TxtInfo.IsSpecial)                //Special map filter
+        or ((Radio_CoopSpecial.ItemIndex = 1) and not Maps[I].TxtInfo.IsCoop)                   //Coop map filter
+        or (TrackBar_PlayersCnt.Enabled and (Maps[I].LocCount <> TrackBar_PlayersCnt.Position)) //Players number map filter
+         then
+        SkipMap := True;
+      for MS := MAP_SIZE_ENUM_MIN to MAP_SIZE_ENUM_MAX do
+        if not CheckBox_Sizes[MS].Checked and (Maps[I].Size = MS) then
+        begin
+          SkipMap := True;
+          Break;
+        end;
+
+      if SkipMap then
         Continue;
 
       Color := Maps[I].GetLobbyColor;
@@ -609,7 +664,7 @@ begin
       ColumnBox_MapEd.AddItem(R);
 
       if (Maps[I].CRC = fSelectedMapInfo.CRC)
-        and ((Radio_MapEd_MapType.ItemIndex = 0) or (Maps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
+        and ((Radio_MapType.ItemIndex = 0) or (Maps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
       begin
         ColumnBox_MapEd.ItemIndex := ListI;
         LoadMinimap(ListI);
@@ -673,11 +728,11 @@ end;
 
 function TKMMenuMapEditor.GetMaps: TKMapsCollection;
 begin
-  case Radio_MapEd_MapType.ItemIndex of
+  case Radio_MapType.ItemIndex of
     0: Result := fMapsSP;
     1: Result := fMapsMP;
     else
-      raise Exception.Create('Unknown map type ' + IntToStr(Radio_MapEd_MapType.ItemIndex));
+      raise Exception.Create('Unknown map type ' + IntToStr(Radio_MapType.ItemIndex));
   end;
 end;
 
@@ -873,7 +928,7 @@ procedure TKMMenuMapEditor.SetSelectedMapInfo(aCRC: Cardinal; const aName: Unico
 begin
   fSelectedMapInfo.CRC := aCRC;
   fSelectedMapInfo.Name := aName;
-  case Radio_MapEd_MapType.ItemIndex of
+  case Radio_MapType.ItemIndex of
     0:  gGameApp.GameSettings.MenuMapEdSPMapCRC := aCRC; // Set only CRC, because we do not save selected SP map name
     1:  begin
           gGameApp.GameSettings.MenuMapEdMPMapCRC := aCRC;
@@ -980,7 +1035,7 @@ procedure TKMMenuMapEditor.MoveClick(Sender: TObject);
 var
   ID: Integer;
 begin
-  Assert(Radio_MapEd_MapType.ItemIndex = 1);
+  Assert(Radio_MapType.ItemIndex = 1);
 
   if ColumnBox_MapEd.ItemIndex = -1 then Exit;
 
@@ -1009,7 +1064,7 @@ end;
 procedure TKMMenuMapEditor.Show;
 begin
   // we can get access to gGameApp only here, because in Create it could still be nil
-  Radio_MapEd_MapType.ItemIndex := gGameApp.GameSettings.MenuMapEdMapType;
+  Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuMapEdMapType;
   NumEdit_MapSizeX.Value := gGameApp.GameSettings.MenuMapEdNewMapX;
   NumEdit_MapSizeY.Value := gGameApp.GameSettings.MenuMapEdNewMapY;
   UpdateRadioMapEdSizes;
