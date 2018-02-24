@@ -65,25 +65,25 @@ begin
 
   Panel_Menu := TKMPanel.Create(aParent, 0, 45, TB_WIDTH, 400);
 
-  Button_Resize := TKMButton.Create(Panel_Menu, 0, 20, TB_WIDTH, 30, gResTexts[TX_MAPED_MAP_RESIZE], bsGame);
+  Button_Resize := TKMButton.Create(Panel_Menu, 0, 10, TB_WIDTH, 30, gResTexts[TX_MAPED_MAP_RESIZE], bsGame);
   Button_Resize.Hint := GetHintWHotKey(TX_MAPED_MAP_RESIZE, MAPED_SUBMENU_HOTKEYS[0]);
   Button_Resize.OnClick := MenuClick;
 
-  Button_QuickPlay := TKMButton.Create(Panel_Menu, 0, 60, TB_WIDTH, 30, gResTexts[TX_MAPED_MAP_QUICK_PLAY], bsGame);
+  Button_QuickPlay := TKMButton.Create(Panel_Menu, 0, 50, TB_WIDTH, 30, gResTexts[TX_MAPED_MAP_QUICK_PLAY], bsGame);
   Button_QuickPlay.Hint := GetHintWHotKey(TX_MAPED_MAP_QUICK_PLAY_HINT, MAPED_SUBMENU_HOTKEYS[1]);
   Button_QuickPlay.OnClick := MenuClick;
 
-  Button_Menu_Load := TKMButton.Create(Panel_Menu, 0, 130, TB_WIDTH, 30, gResTexts[TX_MAPED_LOAD_TITLE], bsGame);
+  Button_Menu_Load := TKMButton.Create(Panel_Menu, 0, 110, TB_WIDTH, 30, gResTexts[TX_MAPED_LOAD_TITLE], bsGame);
   Button_Menu_Load.OnClick := MenuClick;
   Button_Menu_Load.Hint := GetHintWHotKey(TX_MAPED_LOAD_TITLE, MAPED_SUBMENU_HOTKEYS[2]);
-  Button_Menu_Save := TKMButton.Create(Panel_Menu, 0, 170, TB_WIDTH, 30, gResTexts[TX_MAPED_SAVE_TITLE], bsGame);
+  Button_Menu_Save := TKMButton.Create(Panel_Menu, 0, 150, TB_WIDTH, 30, gResTexts[TX_MAPED_SAVE_TITLE], bsGame);
   Button_Menu_Save.OnClick := MenuClick;
   Button_Menu_Save.Hint := GetHintWHotKey(TX_MAPED_SAVE_TITLE, MAPED_SUBMENU_HOTKEYS[3]);
-  Button_Menu_Settings := TKMButton.Create(Panel_Menu, 0, 210, TB_WIDTH, 30, gResTexts[TX_MENU_SETTINGS], bsGame);
+  Button_Menu_Settings := TKMButton.Create(Panel_Menu, 0, 190, TB_WIDTH, 30, gResTexts[TX_MENU_SETTINGS], bsGame);
   Button_Menu_Settings.Hint := GetHintWHotKey(TX_MENU_SETTINGS, MAPED_SUBMENU_HOTKEYS[4]);
   Button_Menu_Settings.OnClick := MenuClick;
 
-  Button_Menu_Quit := TKMButton.Create(Panel_Menu, 0, 280, TB_WIDTH, 30, gResTexts[TX_MENU_QUIT_MAPED], bsGame);
+  Button_Menu_Quit := TKMButton.Create(Panel_Menu, 0, 250, TB_WIDTH, 30, gResTexts[TX_MENU_QUIT_MAPED], bsGame);
   Button_Menu_Quit.Hint := GetHintWHotKey(TX_MENU_QUIT_MAPED, MAPED_SUBMENU_HOTKEYS[5]);
   Button_Menu_Quit.OnClick := MenuClick;
 end;
