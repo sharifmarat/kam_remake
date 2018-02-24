@@ -1057,6 +1057,7 @@ type
     procedure UpdateItemIndex(Shift: TShiftState);
     function GetItem(aIndex: Integer): TKMListRow;
     function GetSelectedItem: TKMListRow;
+    function GetSelectedItemTag: Integer;
     procedure ScrollBarChangeVisibility;
   protected
     procedure SetLeft(aValue: Integer); override;
@@ -1085,6 +1086,7 @@ type
 
     property Item[aIndex: Integer]: TKMListRow read GetItem; default;
     property SelectedItem: TKMListRow read GetSelectedItem;
+    property SelectedItemTag: Integer read GetSelectedItemTag;
     procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of String; aOffsets: array of Word); overload;
     procedure SetColumns(aHeaderFont: TKMFont; aCaptions: array of string; aOffsets: array of Word; aCaptionsAsHints: Boolean); overload;
     procedure SetColumns(aHeaderFont: TKMFont; aCaptions, aHints: array of String; aOffsets: array of Word); overload;
@@ -6220,6 +6222,14 @@ begin
     Result := Rows[fItemIndex]
   else
     raise Exception.Create('No selected item found');
+end;
+
+
+function TKMColumnBox.GetSelectedItemTag: Integer;
+begin
+  Result := -1;
+  if IsSelected then
+    Result := GetSelectedItem.Tag;
 end;
 
 
