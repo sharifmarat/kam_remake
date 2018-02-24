@@ -665,6 +665,7 @@ type
     property ItemIndex: Integer read fItemIndex write fItemIndex;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     property Item[aIndex: Integer]: TKMRadioGroupItem read GetItem;
+    procedure SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure Paint; override;
@@ -3765,6 +3766,13 @@ function TKMRadioGroup.GetItem(aIndex: Integer): TKMRadioGroupItem;
 begin
   Assert(aIndex < fCount, 'Can''t get radio group item for index ' + IntToStr(aIndex));
   Result := fItems[aIndex];
+end;
+
+
+procedure TKMRadioGroup.SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
+begin
+  Assert(aIndex < fCount, 'Can''t SetItemEnabled for index ' + IntToStr(aIndex));
+  fItems[aIndex].Enabled := aEnabled;
 end;
 
 
