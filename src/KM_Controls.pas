@@ -825,11 +825,11 @@ type
   end;
 
 
-  TScrollAxis = (sa_Vertical, sa_Horizontal);
+  TKMScrollAxis = (sa_Vertical, sa_Horizontal);
 
   TKMScrollBar = class(TKMPanel)
   private
-    fScrollAxis: TScrollAxis;
+    fScrollAxis: TKMScrollAxis;
     fStyle: TKMButtonStyle;
     fMinValue: Integer;
     fMaxValue: Integer;
@@ -856,7 +856,7 @@ type
     BackAlpha: Single; //Alpha of background (usually 0.5, dropbox 1)
     EdgeAlpha: Single; //Alpha of background outline (usually 1)
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TScrollAxis; aStyle: TKMButtonStyle);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis; aStyle: TKMButtonStyle);
     property MinValue: Integer read fMinValue write SetMinValue;
     property MaxValue: Integer read fMaxValue write SetMaxValue;
     property Position: Integer read fPosition write SetPosition;
@@ -4554,7 +4554,7 @@ end;
 
 
 { TKMScrollBar }
-constructor TKMScrollBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TScrollAxis; aStyle: TKMButtonStyle);
+constructor TKMScrollBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis; aStyle: TKMButtonStyle);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   BackAlpha := 0.5;
