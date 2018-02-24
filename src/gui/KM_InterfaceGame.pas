@@ -104,19 +104,19 @@ const
     HouseType: array [0..3] of TKMHouseType;
     UnitType: array [0..1] of TKMUnitType;
   end = (
-    (HouseType: (ht_Quary, ht_None, ht_None, ht_None); UnitType: (ut_StoneCutter, ut_None)),
-    (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None); UnitType: (ut_Woodcutter, ut_None)),
-    (HouseType: (ht_FisherHut, ht_None, ht_None, ht_None); UnitType: (ut_Fisher, ut_None)),
-    (HouseType: (ht_Farm, ht_Wineyard, ht_None, ht_None); UnitType: (ut_Farmer, ut_None)),
-    (HouseType: (ht_Mill, ht_Bakery, ht_None, ht_None); UnitType: (ut_Baker, ut_None)),
-    (HouseType: (ht_Swine, ht_Stables, ht_None, ht_None); UnitType: (ut_AnimalBreeder, ut_None)),
-    (HouseType: (ht_Butchers, ht_Tannery, ht_None, ht_None); UnitType: (ut_Butcher, ut_None)),
-    (HouseType: (ht_Metallurgists, ht_IronSmithy, ht_None, ht_None); UnitType: (ut_Metallurgist, ut_None)),
-    (HouseType: (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None); UnitType: (ut_Smith, ut_None)),
-    (HouseType: (ht_CoalMine, ht_IronMine, ht_GoldMine, ht_None); UnitType: (ut_Miner, ut_None)),
+    (HouseType: (ht_Quary, ht_None, ht_None, ht_None);                      UnitType: (ut_StoneCutter, ut_None)),
+    (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None);                UnitType: (ut_Woodcutter, ut_None)),
+    (HouseType: (ht_FisherHut, ht_None, ht_None, ht_None);                  UnitType: (ut_Fisher, ut_None)),
+    (HouseType: (ht_Farm, ht_Wineyard, ht_None, ht_None);                   UnitType: (ut_Farmer, ut_None)),
+    (HouseType: (ht_Mill, ht_Bakery, ht_None, ht_None);                     UnitType: (ut_Baker, ut_None)),
+    (HouseType: (ht_Swine, ht_Stables, ht_None, ht_None);                   UnitType: (ut_AnimalBreeder, ut_None)),
+    (HouseType: (ht_Butchers, ht_Tannery, ht_None, ht_None);                UnitType: (ut_Butcher, ut_None)),
+    (HouseType: (ht_Metallurgists, ht_IronSmithy, ht_None, ht_None);        UnitType: (ut_Metallurgist, ut_None)),
+    (HouseType: (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None);        UnitType: (ut_Smith, ut_None)),
+    (HouseType: (ht_CoalMine, ht_IronMine, ht_GoldMine, ht_None);           UnitType: (ut_Miner, ut_None)),
     (HouseType: (ht_Sawmill, ht_WeaponWorkshop, ht_ArmorWorkshop, ht_None); UnitType: (ut_Lamberjack, ut_None)),
-    (HouseType: (ht_Barracks, ht_TownHall, ht_WatchTower, ht_None); UnitType: (ut_Recruit, ut_None)),
-    (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace); UnitType: (ut_Serf, ut_Worker))
+    (HouseType: (ht_Barracks, ht_TownHall, ht_WatchTower, ht_None);         UnitType: (ut_Recruit, ut_None)),
+    (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace);              UnitType: (ut_Serf, ut_Worker))
     );
 
   MapEd_Order: array [0..13] of TKMUnitType = (
