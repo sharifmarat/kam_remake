@@ -70,10 +70,10 @@ type
 
       MinimapView_MapEd: TKMMinimapView;
 
-      Panel_LobbySetupDesc: TKMPanel;
+      Panel_MapInfo: TKMPanel;
         Label_MapType: TKMLabel;
-        Memo_LobbyMapDesc: TKMMemo;
-        Button_LobbySetupReadme: TKMButton;
+        Memo_MapDesc: TKMMemo;
+        Button_ViewReadme: TKMButton;
 
       //PopUp Menus
       PopUp_Delete: TKMPopUpMenu;
@@ -131,7 +131,7 @@ begin
   fMapsMP := TKMapsCollection.Create([mfMP, mfDL], smByNameDesc, True);
   fMinimap := TKMMinimap.Create(True, True);
 
-  Panel_MapEd:=TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
+  Panel_MapEd := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_MapEd.AnchorsStretch;
     Panel_MapEdSizeXY := TKMPanel.Create(Panel_MapEd, 60, 240, 220, 700);
     Panel_MapEdSizeXY.Anchors := [anLeft, anBottom];
@@ -192,24 +192,6 @@ begin
       ColumnBox_MapEd.OnDoubleClick := StartClick;
       ColumnBox_MapEd.OnCellClick := ColumnBoxMaps_CellClick;
 
-      with TKMBevel.Create(Panel_MapEdLoad, 448, 104, 199, 199) do
-        Anchors := [anLeft];
-      MinimapView_MapEd := TKMMinimapView.Create(Panel_MapEdLoad, 452, 108, 191, 191);
-      MinimapView_MapEd.Anchors := [anLeft];
-
-      Panel_LobbySetupDesc := TKMPanel.Create(Panel_MapEdLoad, 448, 104+199+10, 199, 218);
-      Panel_LobbySetupDesc.Anchors := [anLeft, anTop, anBottom];
-        Label_MapType := TKMLabel.Create(Panel_LobbySetupDesc, 0, 0, '', fnt_Metal, taLeft);
-        Memo_LobbyMapDesc := TKMMemo.Create(Panel_LobbySetupDesc, 0, 0, 199, 218, fnt_Game, bsMenu);
-        Memo_LobbyMapDesc.Anchors := [anLeft,anTop,anBottom];
-        Memo_LobbyMapDesc.AutoWrap := True;
-        Memo_LobbyMapDesc.ItemHeight := 16;
-
-        Button_LobbySetupReadme := TKMButton.Create(Panel_LobbySetupDesc, 0, 225, 199, 25, gResTexts[TX_LOBBY_VIEW_README], bsMenu);
-        Button_LobbySetupReadme.Anchors := [anLeft,anBottom];
-        Button_LobbySetupReadme.OnClick := ReadmeClick;
-        Button_LobbySetupReadme.Hide;
-
       Button_MapEd_Load := TKMButton.Create(Panel_MapEdLoad, 0, 596, 440, 30, gResTexts[TX_MENU_MAP_LOAD_EXISTING], bsMenu);
       Button_MapEd_Load.Anchors := [anLeft, anBottom];
       Button_MapEd_Load.OnClick := StartClick;
@@ -227,9 +209,29 @@ begin
       Button_MapDelete.Anchors := [anLeft, anBottom];
       Button_MapDelete.OnClick := DeleteClick;
 
-      Button_MapEdBack := TKMButton.Create(Panel_MapEd, 60, 708, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
-      Button_MapEdBack.Anchors := [anLeft, anBottom];
-      Button_MapEdBack.OnClick := BackClick;
+    Panel_MapInfo := TKMPanel.Create(Panel_MapEd, 320+448, 60, 199, 678);
+    Panel_MapInfo.Anchors := [anLeft, anTop, anBottom];
+
+      with TKMBevel.Create(Panel_MapInfo, 0, 0, 199, 199) do
+        Anchors := [anLeft, anTop];
+      MinimapView_MapEd := TKMMinimapView.Create(Panel_MapInfo, 4, 4, 191, 191);
+      MinimapView_MapEd.Anchors := [anLeft, anTop];
+
+      Label_MapType := TKMLabel.Create(Panel_MapInfo, 0, 199+10, '', fnt_Metal, taLeft);
+      Label_MapType.Anchors := [anLeft, anTop];
+      Memo_MapDesc := TKMMemo.Create(Panel_MapInfo, 0, 199+10, 199, Panel_MapInfo.Height - 199 - 10, fnt_Game, bsMenu);
+      Memo_MapDesc.Anchors := [anLeft, anTop, anBottom];
+      Memo_MapDesc.AutoWrap := True;
+      Memo_MapDesc.ItemHeight := 16;
+
+      Button_ViewReadme := TKMButton.Create(Panel_MapInfo, 0, 225, 199, 25, gResTexts[TX_LOBBY_VIEW_README], bsMenu);
+      Button_ViewReadme.Anchors := [anLeft, anBottom];
+      Button_ViewReadme.OnClick := ReadmeClick;
+      Button_ViewReadme.Hide;
+
+    Button_MapEdBack := TKMButton.Create(Panel_MapEd, 60, 708, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
+    Button_MapEdBack.Anchors := [anLeft, anBottom];
+    Button_MapEdBack.OnClick := BackClick;
 
       //Delete PopUp
       PopUp_Delete := TKMPopUpMenu.Create(Panel_MapEd, 450);
@@ -929,13 +931,13 @@ begin
     fMinimap.Update(True);
     MinimapView_MapEd.SetMinimap(fMinimap);
     MinimapView_MapEd.Show;
-    Panel_LobbySetupDesc.Show;
+    Panel_MapInfo.Show;
     Map.LoadExtra;
-    Memo_LobbyMapDesc.Text := Map.TxtInfo.BigDesc;
+    Memo_MapDesc.Text := Map.TxtInfo.BigDesc;
     if Map.HasReadme then
-      Button_LobbySetupReadme.Show
+      Button_ViewReadme.Show
     else
-      Button_LobbySetupReadme.Hide;
+      Button_ViewReadme.Hide;
 
     Label_MapType.Caption := '';
 
@@ -950,20 +952,22 @@ begin
 
     if Label_MapType.Caption = '' then
     begin
-      Memo_LobbyMapDesc.Top := 0;
-      Button_LobbySetupReadme.Top := 225;
+      Memo_MapDesc.AbsTop := MinimapView_MapEd.AbsBottom + 15;
+      Memo_MapDesc.Height := Panel_MapInfo.Height - 209 - (Button_ViewReadme.Height + 5) * Byte(Button_ViewReadme.Visible);
+      Button_ViewReadme.Top := Memo_MapDesc.AbsBottom + 5;
       Label_MapType.Hide;
     end else
     begin
       LabelHeight := gRes.Fonts[Label_MapType.Font].GetTextSize(Label_MapType.Caption).Y;
-      Memo_LobbyMapDesc.Top := LabelHeight;
-      Button_LobbySetupReadme.Top := 225 + LabelHeight;
+      Memo_MapDesc.Top := MinimapView_MapEd.Bottom + 15 + LabelHeight;
+      Memo_MapDesc.Height := Panel_MapInfo.Height - 209 - LabelHeight - (Button_ViewReadme.Height + 5) * Byte(Button_ViewReadme.Visible);
+      Button_ViewReadme.Top := Memo_MapDesc.Bottom + 5;
       Label_MapType.Show;
     end;
   end else begin
     MinimapView_MapEd.Hide;
-    Panel_LobbySetupDesc.Hide;
-    Memo_LobbyMapDesc.Clear;
+    Panel_MapInfo.Hide;
+    Memo_MapDesc.Clear;
   end;
 end;
 
