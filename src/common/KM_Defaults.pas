@@ -678,6 +678,11 @@ const
 type
   TKMMapSize = (msNone, msXS, msS, msM, msL, msXL, msXXL);
 
+const
+  MAP_SIZE_ENUM_MIN = msXS;
+  MAP_SIZE_ENUM_MAX = msXXL;
+
+type
   TKMMapEdLayer = (
     mlObjects,
     mlHouses,

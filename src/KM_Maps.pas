@@ -62,12 +62,14 @@ type
     fInfoAmount: TKMMapInfoAmount;
     fMapFolder: TKMapFolder;
     fTxtInfo: TKMMapTxtInfo;
+    fSize: TKMMapSize;
     fSizeText: String;
     procedure ResetInfo;
     procedure LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure LoadFromFile(const aPath: UnicodeString);
     procedure SaveToStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure SaveToFile(const aPath: UnicodeString);
+    function GetSize: TKMMapSize;
     function GetSizeText: String;
     function DetermineReadmeFilePath: String;
     function GetFavouriteMapPic: TKMPic;
@@ -101,6 +103,7 @@ type
     function AIUsableLocations: TKMHandIndexArray;
     property CRC: Cardinal read fCRC;
     function LocationName(aIndex: TKMHandIndex): string;
+    property Size: TKMMapSize read GetSize;
     property SizeText: string read GetSizeText;
     function IsValid: Boolean;
     function HumanPlayerCount: Byte;
@@ -399,6 +402,14 @@ end;
 function TKMapInfo.LocationName(aIndex: TKMHandIndex): string;
 begin
   Result := Format(gResTexts[TX_LOBBY_LOCATION_X], [aIndex + 1]);
+end;
+
+
+function TKMapInfo.GetSize: TKMMapSize;
+begin
+  if fSize = msNone then
+    fSize := MapSizeIndex(MapSizeX, MapSizeY);
+  Result := fSize;
 end;
 
 

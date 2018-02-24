@@ -56,7 +56,8 @@ uses
   function UTCToLocal(Input: TDateTime): TDateTime;
 
   function MapSizeIndex(X, Y: Word): TKMMapSize;
-  function MapSizeText(X,Y: Word): UnicodeString;
+  function MapSizeText(X,Y: Word): UnicodeString; overload;
+  function MapSizeText(aMapSize: TKMMapSize): UnicodeString; overload;
 
   //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
   procedure KMSwapInt(var A,B: Byte); overload;
@@ -111,6 +112,10 @@ const
 implementation
 uses
   StrUtils, Types;
+
+const
+  //Pretend these are understandable in any language
+  MAP_SIZES: array [TKMMapSize] of String = ('???', 'XS', 'S', 'M', 'L', 'XL', 'XXL');
 
 var
   fKaMSeed: Integer;
@@ -319,10 +324,14 @@ end;
 
 
 function MapSizeText(X, Y: Word): UnicodeString;
-const
-  MAP_SIZES: array [TKMMapSize] of String = ('???', 'XS', 'S', 'M', 'L', 'XL', 'XXL'); //Pretend these are understandable in any language
 begin
   Result := MAP_SIZES[MapSizeIndex(X, Y)];
+end;
+
+
+function MapSizeText(aMapSize: TKMMapSize): UnicodeString;
+begin
+  Result := MAP_SIZES[aMapSize];
 end;
 
 
