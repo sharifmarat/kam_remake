@@ -10,7 +10,7 @@ uses
 
 
 type
-  TLobbyTab = (ltDesc, ltOptions);
+  TKMLobbyTab = (ltDesc, ltOptions);
 
   TKMMenuLobby = class (TKMMenuPageCommon)
   private
@@ -23,8 +23,8 @@ type
     fMinimap: TKMMinimap;
     fNetworking: TKMNetworking;
 
-    fLobbyTab: TLobbyTab;
-    fChatMode: TChatMode;
+    fLobbyTab: TKMLobbyTab;
+    fChatMode: TKMChatMode;
     fChatWhisperRecipient: TKMNetHandleIndex; //Server index of the player who will receive the whisper
     fLastChatTime: Cardinal; //Last time a chat message was sent to enforce cooldown
 
@@ -779,7 +779,7 @@ end;
 
 
 procedure TKMMenuLobby.SetChatState(const aChatState: TChatState);
-const CHAT_TAG: array[TChatMode] of Integer = (
+const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
   -3,  //cmSpectators
