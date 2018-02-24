@@ -1173,3 +1173,4 @@ TX_MAPED_PLAYER_COLOR_TEXT_COLOR_HINT = 1167; //Desaturated color, that could be
 TX_MENU_MAP_FILTER = 1168; //Maps filter
 
 TX_RESULTS_BACK_TO_GAME = 1169; //Back to game
+TX_GAME_MENU_SHOW_STATS_HINT = 1170; //Show detailed game statistics

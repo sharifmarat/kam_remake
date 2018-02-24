@@ -346,17 +346,16 @@ const
 
 
 type
-  TKMGameResultMsg = ( //Game result
-        gr_Win,         //Player has won the game
-        gr_Defeat,      //Player was defeated
-        gr_Cancel,      //Game was cancelled (unfinished)
-        gr_Error,       //Some known error occured
-        gr_Disconnect,  //Disconnected from multiplayer game
-        gr_Silent,      //Used when loading savegame from running game (show no screens)
-//        gr_ShowStats,   //Used to show MP statistics page from SP statistics page and back
-        gr_ReplayEnd,   //Replay was cancelled - return to menu without screens
-        gr_MapEdEnd,    //Map Editor was closed - return to menu without screens
-        gr_GameContinues);
+  TKMGameResultMsg = (//Game result
+        gr_Win,           //Player has won the game
+        gr_Defeat,        //Player was defeated
+        gr_Cancel,        //Game was cancelled (unfinished)
+        gr_Error,         //Some known error occured
+        gr_Disconnect,    //Disconnected from multiplayer game
+        gr_Silent,        //Used when loading savegame from running game (show no screens)
+        gr_ReplayEnd,     //Replay was cancelled - return to menu without screens
+        gr_MapEdEnd,      //Map Editor was closed - return to menu without screens
+        gr_GameContinues);//Game is not finished yet, it is continious
 
 
 type

@@ -159,7 +159,7 @@ begin
   Button_ContinueCampaign.Enabled := fGameResultMsg = gr_Win;
 
   if fGameResultMsg = gr_GameContinues then
-    Button_Back.Caption := gResTexts[TX_RESULTS_BACK_TO_GAME] //Todo translate
+    Button_Back.Caption := gResTexts[TX_RESULTS_BACK_TO_GAME]
   else
     Button_Back.Caption := gResTexts[TX_MENU_BACK];  
 
@@ -169,7 +169,7 @@ begin
     gr_Defeat:        Cap := gResTexts[TX_MENU_MISSION_DEFEAT];
     gr_Cancel:        Cap := gResTexts[TX_MENU_MISSION_CANCELED];
     gr_ReplayEnd:     Cap := gResTexts[TX_MENU_REPLAY_ENDED];
-    gr_GameContinues: Cap := ''; //Do not show game result, as game is still going //Todo translate
+    gr_GameContinues: Cap := ''; //Do not show game result, as game is still going
     else              Cap := NO_TEXT;
   end;
   Label_Results.Caption := Cap;

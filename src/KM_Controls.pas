@@ -456,7 +456,7 @@ type
     HideHighlight: Boolean;
     Clickable: Boolean; //Disables clicking without dimming
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight,aTexID: Integer; aRX: TRXType = rxGui);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight, aTexID: Integer; aRX: TRXType = rxGui);
 
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
 
