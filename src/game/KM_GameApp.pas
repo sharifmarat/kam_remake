@@ -30,6 +30,7 @@ type
     fOnGameStart: TKMGameModeChangeEvent;
     fOnGameEnd: TKMGameModeChangeEvent;
 
+    procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
     procedure LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
@@ -194,7 +195,6 @@ begin
   StopGame(gr_Silent);
 
   FreeAndNil(fTimerUI);
-  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
   FreeThenNil(fMainMenuInterface);
@@ -415,6 +415,13 @@ begin
 end;
 
 
+procedure TKMGameApp.SaveCampaignsProgress;
+begin
+  if fCampaigns <> nil then
+    fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+end;
+
+
 procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
 begin
   if (gGame = nil) or gGame.ReadyToStop then Exit;
@@ -434,7 +441,10 @@ begin
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
       if aMsg = gr_Win then
+      begin
         fCampaigns.UnlockNextMap;
+        SaveCampaignsProgress; //Always save Campaigns progress after mission has been won. In case future game crash
+      end;
     end;
   end;
 
