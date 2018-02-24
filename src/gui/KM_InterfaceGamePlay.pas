@@ -8,6 +8,8 @@ uses
   KM_Controls, KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Pics, KM_Points,
   KM_InterfaceDefaults, KM_InterfaceGame, KM_Terrain, KM_Houses, KM_Units, KM_Minimap, KM_Viewport, KM_Render,
   KM_UnitGroups, KM_Units_Warrior, KM_Saves, KM_MessageStack, KM_ResHouses, KM_Alerts, KM_Networking,
+  KM_GUIGameResultsSP,
+  KM_GUIGameResultsMP,
   KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings;
 
 
@@ -36,6 +38,8 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
+    fGuiGameResultsSP: TKMGameResultsSP;
+    fGuiGameResultsMP: TKMGameResultsMP;
 
     // Not saved
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
@@ -117,6 +121,7 @@ type
     procedure SelectUnitGroup(aGroup: TKMUnitGroup);
     procedure SelectNextGameObjWSameType;
     procedure SwitchPage(Sender: TObject);
+    procedure ShowStats(Sender: TObject);
     procedure PlayMoreClick(Sender: TObject);
     procedure MPPlayMoreClick(Sender: TObject);
     procedure NetWaitClick(Sender: TObject);
@@ -142,6 +147,11 @@ type
     procedure Replay_UpdatePlayerInterface(aFromPlayer, aToPlayer: Integer);
     procedure Replay_Single_SetPlayersDropbox;
     procedure Replay_Multi_SetPlayersDropbox;
+
+    procedure StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
+    procedure StopGame(const aText: UnicodeString = '');
+    procedure ShowMPStats;
+    procedure ShowSPStats;
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -170,6 +180,8 @@ type
       Button_Main: array [TKMTabButtons] of TKMButton; // 4 common buttons + Return
       Button_Back: TKMButton;
 
+    Panel_Stats: TKMPanel;
+
     Panel_ReplayCtrl: TKMPanel; // Smaller Panel to contain replay controls
       PercentBar_Replay: TKMPercentBar;
       Label_Replay: TKMLabel;
@@ -178,7 +190,10 @@ type
       Button_ReplayStep: TKMButton;
       Button_ReplayResume: TKMButton;
       Button_ReplayExit: TKMButton;
+      Button_ShowStatsReplay: TKMButton;
+
     Panel_ReplayFOW: TKMPanel;
+      Button_ShowStatsSpec: TKMButton;
       Dropbox_ReplayFOW: TKMDropList;
       Checkbox_ReplayFOW: TKMCheckBox;
     Panel_Allies: TKMPanel;
@@ -229,7 +244,7 @@ type
           Button_NetConfirmYes,Button_NetConfirmNo: TKMButton;
     Panel_Menu: TKMPanel;
       Button_Menu_Save, Button_Menu_Load, Button_Menu_ReturnLobby, Button_Menu_Settings, Button_Menu_Quit,
-      Button_Menu_TrackUp, Button_Menu_TrackDown: TKMButton;
+      Button_Menu_TrackUp, Button_Menu_TrackDown, Button_ShowStats: TKMButton;
       Label_Menu_Track, Label_GameTime, Label_MapName: TKMLabel;
 
       Panel_Save: TKMPanel;
@@ -480,8 +495,8 @@ var
 
 begin
   if (Sender = Button_Main[tbBuild]) or (Sender = Button_Main[tbRatio])
-  or (Sender = Button_Main[tbStats]) or (Sender = Button_Main[tbMenu])
-  or (Sender = Button_Menu_Settings) or (Sender = Button_Menu_Quit) then
+    or (Sender = Button_Main[tbStats]) or (Sender = Button_Main[tbMenu])
+    or (Sender = Button_Menu_Settings) or (Sender = Button_Menu_Quit) then
     gMySpectator.Selected := nil;
 
   // Set LastVisiblePage to which ever page was last visible, out of the ones needed
@@ -497,7 +512,6 @@ begin
   // Ensure, that saves scanning will be stopped when user leaves save/load page
   if (LastVisiblePage = Panel_Save) or (LastVisiblePage = Panel_Load) then
     fSaves.TerminateScan;
-
 
   HidePages;
 
@@ -569,6 +583,12 @@ begin
     Panel_Quit.Show
   else // If Sender is anything else - then show all 4 buttons and hide Return button
     Flip4MainButtons(True);
+end;
+
+
+procedure TKMGamePlayInterface.ShowStats(Sender: TObject);
+begin
+  StopPlay(gr_GameContinues);
 end;
 
 
@@ -734,6 +754,21 @@ begin
     S.Hitable := False;
   end;
 
+  Panel_Stats := TKMPanel.Create(Panel_Main, (aRender.ScreenX - MENU_DESIGN_X) div 2, (aRender.ScreenY - MENU_DESIGN_Y) div 2, MENU_DESIGN_X, MENU_DESIGN_Y);
+  Panel_Stats.AnchorsCenter;
+
+  // Background image
+  TKMImage.Create(Panel_Stats,-448,-216, 960, 600, 17, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats, 512,-216, 960, 600, 18, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats,-448, 384, 960, 600, 19, rxGuiMain).AnchorsCenter;
+  TKMImage.Create(Panel_Stats, 512, 384, 960, 600, 20, rxGuiMain).AnchorsCenter;
+  Panel_Stats.Hide;
+
+  fGuiGameResultsSP := TKMGameResultsSP.Create(Panel_Stats, StopGame, ShowMPStats);
+  fGuiGameResultsSP.Hide;
+  fGuiGameResultsMP := TKMGameResultsMP.Create(Panel_Stats, StopGame, ShowSPStats);
+  fGuiGameResultsMP.Hide;
+
   SwitchPage(nil); // Update
   Resize(aRender.ScreenX, aRender.ScreenY); // Hide/show swords according to player's resolution when game starts
   // Panel_Main.Width := aScreenX;
@@ -753,6 +788,8 @@ begin
   fGuiGameRatios.Free;
   fGuiGameStats.Free;
   fGuiMenuSettings.Free;
+  fGuiGameResultsSP.Free;
+  fGuiGameResultsMP.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -771,6 +808,9 @@ begin
   // Show swords filler if screen height allows
   showSwords := (Panel_Main.Height >= 758);
   Sidebar_Middle.Visible := showSwords;
+
+  Panel_Stats.Top := (Panel_Main.Height - Panel_Stats.Height) div 2;
+  Panel_Stats.Height := Min(Panel_Main.Height, MENU_DESIGN_Y);
 
   // Needs to be -10 when the swords are hidden so it fits 1024x576
   Panel_Controls.Top := Sidebar_Top.Height - 10 + (10+Sidebar_Middle.Height) * Byte(showSwords);
@@ -923,13 +963,14 @@ end;
 procedure TKMGamePlayInterface.Create_Replay;
 begin
   Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8, 160, 60);
-    PercentBar_Replay     := TKMPercentBar.Create(Panel_ReplayCtrl, 0, 0, 160, 20);
-    Label_Replay          := TKMLabel.Create(Panel_ReplayCtrl,  80,  2, NO_TEXT, fnt_Grey, taCenter);
-    Button_ReplayRestart  := TKMButton.Create(Panel_ReplayCtrl,  0, 24, 24, 24, 582, rxGui, bsGame);
-    Button_ReplayPause    := TKMButton.Create(Panel_ReplayCtrl, 25, 24, 24, 24, 583, rxGui, bsGame);
-    Button_ReplayStep     := TKMButton.Create(Panel_ReplayCtrl, 50, 24, 24, 24, 584, rxGui, bsGame);
-    Button_ReplayResume   := TKMButton.Create(Panel_ReplayCtrl, 75, 24, 24, 24, 585, rxGui, bsGame);
-    Button_ReplayExit     := TKMButton.Create(Panel_ReplayCtrl,100, 24, 24, 24, 586, rxGui, bsGame);
+    PercentBar_Replay       := TKMPercentBar.Create(Panel_ReplayCtrl, 0, 0, 180, 20);
+    Label_Replay            := TKMLabel.Create(Panel_ReplayCtrl,  80,  2, NO_TEXT, fnt_Grey, taCenter);
+    Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 24, 24, 24, 582, rxGui, bsGame);
+    Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 24, 24, 24, 583, rxGui, bsGame);
+    Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 24, 24, 24, 584, rxGui, bsGame);
+    Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 24, 24, 24, 585, rxGui, bsGame);
+    Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 24, 24, 24, 586, rxGui, bsGame);
+    Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl,PercentBar_Replay.Right - 24, 24, 24, 24, 669, rxGui, bsGame);
     //TODO: Button_ReplayFF       := TKMButton.Create(Panel_ReplayCtrl,125, 24, 24, 24, 393, rxGui, bsGame);
     Button_ReplayRestart.OnClick := ReplayClick;
     Button_ReplayPause.OnClick   := ReplayClick;
@@ -942,13 +983,17 @@ begin
     Button_ReplayResume.Hint  := gResTexts[TX_REPLAY_RESUME];
     Button_ReplayExit.Hint    := gResTexts[TX_REPLAY_QUIT];
 
+    Button_ShowStatsReplay.OnClick := ShowStats;
+    Button_ShowStatsReplay.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
+
     Button_ReplayStep.Disable; // Initial state
     Button_ReplayResume.Disable; // Initial state
 
-  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 61, 220, 39);
-    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 0, 0, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fnt_Metal);
+  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
+    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 0, 5, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fnt_Metal);
     Checkbox_ReplayFOW.OnClick := ReplayClick;
-    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 19, 160, 20, fnt_Metal, '', bsGame, False, 0.5);
+
+    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 27, 180, 20, fnt_Metal, '', bsGame, False, 0.5);
     Dropbox_ReplayFOW.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
     Dropbox_ReplayFOW.OnChange := ReplayClick;
     Dropbox_ReplayFOW.DropCount := MAX_LOBBY_PLAYERS;
@@ -957,6 +1002,10 @@ begin
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
     Dropbox_ReplayFOW.List.SeparatorHeight := 4;
     Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
+
+    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, Dropbox_ReplayFOW.Right - 22, 0, 22, 22, 669, rxGui, bsGame);
+    Button_ShowStatsSpec.OnClick := ShowStats;
+    Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
  end;
 
 
@@ -1079,7 +1128,7 @@ begin
 
   fGuiGameBuild := TKMGUIGameBuild.Create(Panel_Controls);
   fGuiGameRatios := TKMGUIGameRatios.Create(Panel_Controls, fUIMode in [umSP, umMP]);
-  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls);
+  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls, ShowStats);
   Create_Menu;
     Create_Save;
     Create_Load;
@@ -1166,9 +1215,11 @@ begin
   Button_Menu_Settings := TKMButton.Create(Panel_Menu, 0, 100, TB_WIDTH, 30, gResTexts[TX_MENU_SETTINGS], bsGame);
   Button_Menu_Settings.OnClick := SwitchPage;
   Button_Menu_Settings.Hint := gResTexts[TX_MENU_SETTINGS];
+
   Button_Menu_Quit := TKMButton.Create(Panel_Menu, 0, 160, TB_WIDTH, 30, gResTexts[TX_MENU_QUIT_MISSION], bsGame);
   Button_Menu_Quit.Hint := gResTexts[TX_MENU_QUIT_MISSION];
   Button_Menu_Quit.OnClick := SwitchPage;
+
   Button_Menu_TrackUp := TKMButton.Create(Panel_Menu, 160, 300, 20, 30, '>', bsGame);
   Button_Menu_TrackDown := TKMButton.Create(Panel_Menu, 0, 300, 20, 30, '<', bsGame);
   Button_Menu_TrackUp.Hint := gResTexts[TX_MUSIC_NEXT_HINT];
@@ -1441,16 +1492,59 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
+var
+  ShowStats, ReinitStatsLastTime: Boolean;
+begin
+  if aMsg <> gr_GameContinues then
+    gGame.GameResult := aMsg;
+
+  ShowStats := False;
+  ReinitStatsLastTime := False;
+
+  case aMsg of
+    gr_Win,
+    gr_Defeat,
+    gr_Cancel,
+    gr_ReplayEnd:     begin
+                        gGameApp.PrepageStopGame(gGame.GameResult);
+                        ShowStats := True;
+                        ReinitStatsLastTime := True;
+                      end;
+    gr_GameContinues: ShowStats := True;
+    gr_Error,
+    gr_Disconnect,
+    gr_Silent,
+    gr_MapEdEnd:  StopGame;
+  end;
+
+  if ShowStats then
+  begin
+    if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
+      fGuiGameResultsMP.Show(aMsg)
+    else begin
+      if ReinitStatsLastTime then
+      begin
+        fGuiGameResultsMP.Show(aMsg, True); //Show and hide MP results, so they will be synced with SP results page
+        fGuiGameResultsMP.Hide;
+      end;
+      fGuiGameResultsSP.Show(aMsg, ReinitStatsLastTime);
+    end;
+  end;
+end;
+
+
 // Quit the mission and return to main menu
 procedure TKMGamePlayInterface.Menu_QuitMission(Sender: TObject);
 begin
-
-  if (gGame.GameMode = gmMulti) and (gGame.PlayOnState = gr_Cancel) then
-    gGameApp.Stop(gr_Defeat) //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
-  else
-    // Show outcome depending on actual situation.
-    // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
-    gGameApp.Stop(gGame.PlayOnState);
+  //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
+  if (gGame.GameMode = gmMulti) and (gGame.GameResult = gr_Cancel) then
+    gGame.GameResult := gr_Defeat
+  else if gGame.IsReplay then
+    gGame.GameResult := gr_ReplayEnd;
+  // Show outcome depending on actual situation.
+  // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
+  StopPlay(gGame.GameResult);
 end;
 
 
@@ -1641,7 +1735,7 @@ var
   oldCenter: TKMPointF;
   oldZoom: Single;
 begin
-  if (Sender = Button_ReplayRestart) then
+  if Sender = Button_ReplayRestart then
   begin
     // Restart the replay but keep the viewport position/zoom
     oldCenter := fViewport.Position;
@@ -1655,32 +1749,32 @@ begin
     Exit; // Restarting the replay will destroy Self, so exit immediately
   end;
 
-  if (Sender = Button_ReplayPause) then
+  if Sender = Button_ReplayPause then
   begin
     gGame.IsPaused := True;
     SetButtons(False);
   end;
 
-  if (Sender = Button_ReplayStep) then
+  if Sender = Button_ReplayStep then
   begin
     gGame.StepOneFrame;
     gGame.IsPaused := False;
     SetButtons(False);
   end;
 
-  if (Sender = Button_ReplayResume) then
+  if Sender = Button_ReplayResume then
   begin
     gGame.IsPaused := False;
     SetButtons(True);
   end;
 
-  if (Sender = Button_ReplayExit) then
+  if Sender = Button_ReplayExit then
   begin
     gGame.GameHold(True, gr_ReplayEnd);
     SetButtons(True);
   end;
 
-  if (Sender = Dropbox_ReplayFOW) then
+  if Sender = Dropbox_ReplayFOW then
     Replay_ViewPlayer(Dropbox_ReplayFOW.ItemIndex);
 
   if (Sender = Checkbox_ReplayFOW) then
@@ -2018,7 +2112,6 @@ begin
     Label_QuitQuestion.Caption := gResTexts[TX_REPLAY_QUIT_CONFIRMATION];
     Button_Quit_Yes.Caption := gResTexts[TX_REPLAY_QUIT];
     Button_Quit_Yes.Hint := gResTexts[TX_REPLAY_QUIT];
-    gGame.PlayOnState := gr_ReplayEnd;
   end else begin
     Button_Menu_Quit.Caption := gResTexts[TX_MENU_QUIT_MISSION];
     Button_Menu_Quit.Hint := gResTexts[TX_MENU_QUIT_MISSION];
@@ -2049,7 +2142,8 @@ begin
 
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
-  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 8, 61);
+  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
+  Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
 
   if fUIMode in [umSpectate, umReplay] then
   begin
@@ -2153,9 +2247,9 @@ begin
 
   if Sender = Button_PlayQuit then
     case fPlayMoreMsg of
-      gr_Win:       gGameApp.Stop(gr_Win);
-      gr_Defeat:    gGameApp.Stop(gr_Defeat);
-      gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
+      gr_Win:       StopPlay(gr_Win);
+      gr_Defeat:    StopPlay(gr_Defeat);
+      gr_ReplayEnd: StopPlay(gr_ReplayEnd);
     end
   else // GameStop has Destroyed our Sender by now
   if Sender = Button_PlayMore then
@@ -2176,9 +2270,9 @@ begin
 
   if Sender = Button_MPPlayQuit then
     case fPlayMoreMsg of
-      gr_Win:       gGameApp.Stop(gr_Win);
-      gr_Defeat:    gGameApp.Stop(gr_Defeat);
-      gr_ReplayEnd: gGameApp.Stop(gr_ReplayEnd);
+      gr_Win:       StopPlay(gr_Win);
+      gr_Defeat:    StopPlay(gr_Defeat);
+      gr_ReplayEnd: StopPlay(gr_ReplayEnd);
     end
   // If they click continue no other action is necessary, the game is still running
 end;
@@ -2308,7 +2402,7 @@ begin
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_DROP_PLAYERS] then
       gGame.WaitingPlayersDrop else
     if Button_NetConfirmYes.Caption = gResTexts[TX_GAMEPLAY_QUIT_TO_MENU] then
-      gGameApp.Stop(gr_Cancel);
+      StopPlay(gr_Cancel);
   end
   else raise Exception.Create('Wrong Sender in NetWaitClick');
 end;
@@ -3642,6 +3736,12 @@ begin
 
   UpdateDebugInfo;
   if fSaves <> nil then fSaves.UpdateState;
+
+  if aTickCount mod RESULTS_UPDATE_RATE = 0 then
+  begin
+    fGuiGameResultsSP.UpdateState(aTickCount);
+    fGuiGameResultsMP.UpdateState(aTickCount);
+  end;
 end;
 
 
@@ -3772,6 +3872,26 @@ begin
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
 
   inherited;
+end;
+
+
+procedure TKMGamePlayInterface.StopGame(const aText: UnicodeString = '');
+begin
+  gGameApp.StopGame(gGame.GameResult, aText);
+end;
+
+
+procedure TKMGamePlayInterface.ShowMPStats;
+begin
+  fGuiGameResultsSP.Hide;
+  fGuiGameResultsMP.Show(fGuiGameResultsSP.GameResultMsg);
+end;
+
+
+procedure TKMGamePlayInterface.ShowSPStats;
+begin
+  fGuiGameResultsMP.Hide;
+  fGuiGameResultsSP.Show(fGuiGameResultsMP.GameResultMsg);
 end;
 
 

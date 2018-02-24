@@ -11,7 +11,7 @@ uses
 type
   TKMMenuLoad = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fSaves: TKMSavesCollection;
     fMinimap: TKMMinimap;
@@ -49,7 +49,7 @@ type
       Button_DeleteYes, Button_DeleteNo: TKMButton;
 
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -63,7 +63,7 @@ uses
 
 
 { TKMGUIMenuLoad }
-constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

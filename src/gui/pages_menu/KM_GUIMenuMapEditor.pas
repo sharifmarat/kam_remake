@@ -12,7 +12,7 @@ uses
 type
   TKMMenuMapEditor = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fMapsSP: TKMapsCollection;
     fMapsMP: TKMapsCollection;
@@ -96,7 +96,7 @@ type
         Label_MapMoveConfirmTitle, Label_MapMoveName: TKMLabel;
 
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
     procedure Show;
     procedure UpdateState;
@@ -115,7 +115,7 @@ const
 
 
 { TKMGUIMainMapEditor }
-constructor TKMMenuMapEditor.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMapEditor.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 const
   MAP_TYPE_W = 250;
 var

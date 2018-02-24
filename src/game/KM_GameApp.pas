@@ -30,6 +30,7 @@ type
     fOnGameStart: TKMGameModeChangeEvent;
     fOnGameEnd: TKMGameModeChangeEvent;
 
+    procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
     procedure LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
@@ -44,7 +45,8 @@ type
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
-    procedure Stop(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
+    procedure PrepageStopGame(aMsg: TKMGameResultMsg);
+    procedure StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
     procedure StopGameReturnToLobby(Sender: TObject);
@@ -190,10 +192,9 @@ begin
   //Stop music imediently, so it doesn't keep playing and jerk while things closes
   if fMusicLib <> nil then fMusicLib.StopMusic;
 
-  Stop(gr_Silent);
+  StopGame(gr_Silent);
 
   FreeAndNil(fTimerUI);
-  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
   FreeThenNil(fMainMenuInterface);
@@ -414,23 +415,16 @@ begin
 end;
 
 
-//Game needs to be stopped
-//1. Disconnect from network
-//2. Save games replay
-//3. Fill in game results
-//4. Fill in menu message if needed
-//5. Free the game object
-//6. Switch to MainMenu
-procedure TKMGameApp.Stop(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
+procedure TKMGameApp.SaveCampaignsProgress;
 begin
-  if gGame = nil then Exit;
+  if fCampaigns <> nil then
+    fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+end;
 
-  if gGame.IsMultiplayer then
-  begin
-    if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
-    fNetworking.Disconnect;
-  end;
+
+procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
+begin
+  if (gGame = nil) or gGame.ReadyToStop then Exit;
 
   gSoundPlayer.AbortAllLongSounds; //SFX with a long duration should be stopped when quitting
 
@@ -447,20 +441,50 @@ begin
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
       if aMsg = gr_Win then
+      begin
         fCampaigns.UnlockNextMap;
+        SaveCampaignsProgress; //Always save Campaigns progress after mission has been won. In case future game crash
+      end;
     end;
+  end;
+
+  gGame.ReadyToStop := True;
+end;
+
+
+//Game needs to be stopped
+//1. Disconnect from network
+//2. Save games replay
+//3. Fill in game results
+//4. Fill in menu message if needed
+//5. Free the game object
+//6. Switch to MainMenu
+procedure TKMGameApp.StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
+begin
+  if gGame = nil then Exit;
+
+  PrepageStopGame(aMsg);
+
+  if gGame.IsMultiplayer then
+  begin
+    if fNetworking.Connected then
+      fNetworking.AnnounceDisconnect;
+    fNetworking.Disconnect;
   end;
 
   case aMsg of
     gr_Win,
     gr_Defeat,
-    gr_Cancel,
-    gr_ReplayEnd:   if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
-                      fMainMenuInterface.ShowResultsMP(aMsg)
-                    else begin
-                      fMainMenuInterface.ShowResultsMP(aMsg); // Show MP stats too, as we can show them from SP stats page
-                      fMainMenuInterface.ShowResultsSP(aMsg);
+    gr_Cancel:      case gGame.GameMode of
+                      gmSingle:         fMainMenuInterface.PageChange(gpSinglePlayer);
+                      gmCampaign:       if aTextMsg = '' then //Rely on text message (for campaign it should contain CampaignID)
+                                          fMainMenuInterface.PageChange(gpMainMenu) //Goto main menu in case we fail campaing mission
+                                        else
+                                          fMainMenuInterface.PageChange(gpCampaign, aTextMsg); //Goto Campaign menu in case we win campaing mission
+                      gmMulti,
+                      gmMultiSpectate:  fMainMenuInterface.PageChange(gpMultiplayer);
                     end;
+    gr_ReplayEnd:   fMainMenuInterface.PageChange(gpReplays);
     gr_Error,
     gr_Disconnect:  begin
                       if gGame.IsMultiplayer then
@@ -523,7 +547,7 @@ procedure TKMGameApp.LoadGameFromSave(const aFilePath: UnicodeString; aGameMode:
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -541,7 +565,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath]) + '||' + E.ClassName + ': ' + E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -561,7 +585,7 @@ procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: UnicodeSt
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -579,7 +603,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile]) + '||' + E.ClassName + ': ' + E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -597,7 +621,7 @@ procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGa
 var
   LoadError: string;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(gr_Silent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
@@ -615,7 +639,7 @@ begin
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
       LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], ['-']) + '||' + E.ClassName + ': ' + E.Message;
-      Stop(gr_Error, LoadError);
+      StopGame(gr_Error, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );

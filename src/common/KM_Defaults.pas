@@ -4,17 +4,6 @@ interface
 uses
   SysUtils;
 
-//Indexes KM_FormMain.StatusBar
-const
-  SB_ID_KMR_VER      = 0;
-  SB_ID_MAP_SIZE     = 1;
-  SB_ID_CURSOR_COORD = 2;
-  SB_ID_TILE         = 3;
-  SB_ID_TIME         = 4;
-  SB_ID_FPS          = 5;
-  SB_ID_OBJECT       = 6;
-  SB_ID_CTRL_ID      = 7;
-
 //Global constants
 const
 //|===================| <- constant name length
@@ -62,7 +51,7 @@ const
 
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
-  CALC_EXPECTED_TICK    :Boolean = True;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
+  CALC_EXPECTED_TICK    :Boolean = False;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
   MAKE_ANIM_TERRAIN     :Boolean = True;  //Should we animate water and swamps
   MAKE_TEAM_COLORS      :Boolean = True;  //Whenever to make team colors or not, saves RAM for debug
   DYNAMIC_TERRAIN       :Boolean = True;  //Update terrain each tick to grow things
@@ -107,6 +96,7 @@ var
   {User interface options}
   DEBUG_SPEEDUP_SPEED   :Integer = 300;   //Speed for speedup from debug menu
   ALLOW_SELECT_ENEMIES  :Boolean = False; //Do we allow to select enemies houses/units/froups
+  SHOW_ENEMIES_STATS    :Boolean = False; //Do we allow to show enemies stats during the game
   SHOW_DEBUG_CONTROLS   :Boolean = False; //Show debug panel / Form1 menu (F11)
   SHOW_CONTROLS_OVERLAY :Boolean = False; //Draw colored overlays ontop of controls! always Off here
   SHOW_CONTROLS_ID      :Boolean = False; //Draw controls ID
@@ -263,8 +253,9 @@ const
   ANNOUNCE_BUILD_MAP = 30*60*10; //30 minutes
   ANNOUNCE_BATTLE_MAP = 2*60*10; //2 minutes
 
-  CHARTS_SAMPLING_FOR_ECONOMY = 450; //Each 45sec
-  CHARTS_SAMPLING_FOR_TACTICS = 50; //Each 5sec, cos average game length is much shorter
+  RESULTS_UPDATE_RATE = 15;          //Each 1.5 sec
+  CHARTS_SAMPLING_FOR_ECONOMY = 150; //Each 15sec
+  CHARTS_SAMPLING_FOR_TACTICS = 30;  //Each 3sec, cos average game length is much shorter
 
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
@@ -355,16 +346,16 @@ const
 
 
 type
-  TKMGameResultMsg = ( //Game result
-        gr_Win,         //Player has won the game
-        gr_Defeat,      //Player was defeated
-        gr_Cancel,      //Game was cancelled (unfinished)
-        gr_Error,       //Some known error occured
-        gr_Disconnect,  //Disconnected from multiplayer game
-        gr_Silent,      //Used when loading savegame from running game (show no screens)
-        gr_ShowStats,   //Used to show MP statistics page from SP statistics page and back
-        gr_ReplayEnd,   //Replay was cancelled - return to menu without screens
-        gr_MapEdEnd);   //Map Editor was closed - return to menu without screens
+  TKMGameResultMsg = (//Game result
+        gr_Win,           //Player has won the game
+        gr_Defeat,        //Player was defeated
+        gr_Cancel,        //Game was cancelled (unfinished)
+        gr_Error,         //Some known error occured
+        gr_Disconnect,    //Disconnected from multiplayer game
+        gr_Silent,        //Used when loading savegame from running game (show no screens)
+        gr_ReplayEnd,     //Replay was cancelled - return to menu without screens
+        gr_MapEdEnd,      //Map Editor was closed - return to menu without screens
+        gr_GameContinues);//Game is not finished yet, it is continious
 
 
 type
@@ -672,6 +663,17 @@ const
     'Military assets',
     'Serfs&Schools',
     'School Inn Store');
+
+//Indexes KM_FormMain.StatusBar
+const
+  SB_ID_KMR_VER      = 0;
+  SB_ID_MAP_SIZE     = 1;
+  SB_ID_CURSOR_COORD = 2;
+  SB_ID_TILE         = 3;
+  SB_ID_TIME         = 4;
+  SB_ID_FPS          = 5;
+  SB_ID_OBJECT       = 6;
+  SB_ID_CTRL_ID      = 7;
 
 type
   TKMMapEdLayer = (

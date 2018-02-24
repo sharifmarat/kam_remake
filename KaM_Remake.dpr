@@ -59,10 +59,12 @@ uses
   KM_GUIGameBuild in 'src\gui\pages_game\KM_GUIGameBuild.pas',
   KM_GUIGameChat in 'src\gui\pages_game\KM_GUIGameChat.pas',
   KM_GUIGameHouse in 'src\gui\pages_game\KM_GUIGameHouse.pas',
-	KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
+  KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
   KM_GUIGameRatios in 'src\gui\pages_game\KM_GUIGameRatios.pas',
   KM_GUIGameStats in 'src\gui\pages_game\KM_GUIGameStats.pas',
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
+  KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
+  KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',
@@ -124,8 +126,6 @@ uses
   KM_GUIMenuMultiplayer in 'src\gui\pages_menu\KM_GUIMenuMultiplayer.pas',
   KM_GUIMenuOptions in 'src\gui\pages_menu\KM_GUIMenuOptions.pas',
   KM_GUIMenuReplays in 'src\gui\pages_menu\KM_GUIMenuReplays.pas',
-  KM_GUIMenuResultsMP in 'src\gui\pages_menu\KM_GUIMenuResultsMP.pas',
-  KM_GUIMenuResultsSP in 'src\gui\pages_menu\KM_GUIMenuResultsSP.pas',
   KM_GUIMenuSingleMap in 'src\gui\pages_menu\KM_GUIMenuSingleMap.pas',
   KM_GUIMenuSinglePlayer in 'src\gui\pages_menu\KM_GUIMenuSinglePlayer.pas',
 

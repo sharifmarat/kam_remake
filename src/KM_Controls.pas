@@ -214,6 +214,7 @@ type
     procedure Disable;
     procedure Show;
     procedure Hide;
+    procedure DoSetVisible; //Differs from Show, that we do not force to show Parents
     procedure Focus;
     procedure Unfocus;
     procedure AnchorsCenter;
@@ -455,7 +456,7 @@ type
     HideHighlight: Boolean;
     Clickable: Boolean; //Disables clicking without dimming
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight,aTexID: Integer; aRX: TRXType = rxGui);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight, aTexID: Integer; aRX: TRXType = rxGui);
 
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
 
@@ -1443,6 +1444,8 @@ type
     fSeparatorPositions: TXStringList;
     fSeparatorHeight: Byte;
     fSeparatorColor: TColor4;
+
+    fOnLegendClick: TObjectIntBoolEvent;
     procedure UpdateMaxValue;
     function GetLine(aIndex:Integer): TKMGraphLine;
     function GetLineNumber(aY: Integer): Integer;
@@ -1474,6 +1477,8 @@ type
     procedure AddSeparator(aPosition: Integer);
     procedure SetSeparatorPositions(aSeparatorPositions: TStringList);
     procedure ClearSeparators;
+
+    property OnLegendClick: TObjectIntBoolEvent read fOnLegendClick write fOnLegendClick;
 
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
@@ -2165,6 +2170,12 @@ end;
 procedure TKMControl.Hide;
 begin
   Visible := False;
+end;
+
+
+procedure TKMControl.DoSetVisible;
+begin
+  Visible := True;
 end;
 
 
@@ -7949,6 +7960,9 @@ begin
   fLines[I].Visible := not fLines[I].Visible;
 
   UpdateMaxValue;
+
+  if Assigned(fOnLegendClick) then
+    fOnLegendClick(Self, I, fLines[I].Visible);
 end;
 
 
