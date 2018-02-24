@@ -477,7 +477,10 @@ begin
     gr_Defeat,
     gr_Cancel:      case gGame.GameMode of
                       gmSingle:         fMainMenuInterface.PageChange(gpSinglePlayer);
-                      gmCampaign:       fMainMenuInterface.PageChange(gpMainMenu);
+                      gmCampaign:       if aTextMsg = '' then //Rely on text message (for campaign it should contain CampaignID)
+                                          fMainMenuInterface.PageChange(gpMainMenu) //Goto main menu in case we fail campaing mission
+                                        else
+                                          fMainMenuInterface.PageChange(gpCampaign, aTextMsg); //Goto Campaign menu in case we win campaing mission
                       gmMulti,
                       gmMultiSpectate:  fMainMenuInterface.PageChange(gpMultiplayer);
                     end;
