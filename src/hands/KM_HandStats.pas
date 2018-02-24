@@ -56,8 +56,6 @@ type
     // It's important to use cak_Total instead of cak_Instantenious, because Inst. can be empty even after load and 1 update state!
     fArmyEmpty: array[cak_Total..cak_Lost] of array [WARRIOR_MIN..WARRIOR_MAX] of Boolean;
 
-    fLastUpdateStateTick: Cardinal;
-
     Houses: array [TKMHouseType] of TKMHouseStats;
     Units: array [HUMANS_MIN..HUMANS_MAX] of TKMUnitStats;
     Wares: array [WARE_MIN..WARE_MAX] of TKMWareStats;
@@ -132,12 +130,10 @@ type
     function ChartWaresEmpty(aWare: TKMWareType): Boolean;
     function ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): Boolean;
 
-    property LastUpdateStateTick: Cardinal read fLastUpdateStateTick;
-
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
-    procedure UpdateState(aTick: Cardinal);
+    procedure UpdateState;
   end;
 
 
@@ -832,15 +828,13 @@ begin
 end;
 
 
-procedure TKMHandStats.UpdateState(aTick: Cardinal);
+procedure TKMHandStats.UpdateState;
 var
   I: TKMWareType;
   W: TKMUnitType;
   ArmyQty: Integer;
   CKind, ArmyEmptyCKind: TKMChartArmyKind;
 begin
-  fLastUpdateStateTick := aTick;
-
   //Store player stats in Chart
 
   //Grow the list

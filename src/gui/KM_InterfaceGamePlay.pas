@@ -1485,20 +1485,22 @@ end;
 
 procedure TKMGamePlayInterface.StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
 var
-  ShowStats: Boolean;
+  ShowStats, ReinitStatsLastTime: Boolean;
 begin
   if aMsg <> gr_GameContinues then
-    gGame.GameState := aMsg;
+    gGame.GameResult := aMsg;
 
   ShowStats := False;
+  ReinitStatsLastTime := False;
 
   case aMsg of
     gr_Win,
     gr_Defeat,
     gr_Cancel,
     gr_ReplayEnd:     begin
-                        gGameApp.PrepageStopGame(gGame.GameState);
+                        gGameApp.PrepageStopGame(gGame.GameResult);
                         ShowStats := True;
+                        ReinitStatsLastTime := True;
                       end;
     gr_GameContinues: ShowStats := True;
     gr_Error,
@@ -1511,8 +1513,14 @@ begin
   begin
     if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
       fGuiGameResultsMP.Show(aMsg)
-    else
-      fGuiGameResultsSP.Show(aMsg)
+    else begin
+      if ReinitStatsLastTime then
+      begin
+        fGuiGameResultsMP.Show(aMsg, True); //Show and hide MP results, so they will be synced with SP results page
+        fGuiGameResultsMP.Hide;
+      end;
+      fGuiGameResultsSP.Show(aMsg, ReinitStatsLastTime);
+    end;
   end;
 end;
 
@@ -1521,13 +1529,13 @@ end;
 procedure TKMGamePlayInterface.Menu_QuitMission(Sender: TObject);
 begin
   //Defeat player, if he intentionally quit, when game result is not determined yet (gr_Cancel)
-  if (gGame.GameMode = gmMulti) and (gGame.GameState = gr_Cancel) then
-    gGame.GameState := gr_Defeat
+  if (gGame.GameMode = gmMulti) and (gGame.GameResult = gr_Cancel) then
+    gGame.GameResult := gr_Defeat
   else if gGame.IsReplay then
-    gGame.GameState := gr_ReplayEnd;
+    gGame.GameResult := gr_ReplayEnd;
   // Show outcome depending on actual situation.
   // By default PlayOnState is gr_Cancel, if playing on after victory/defeat it changes
-  StopPlay(gGame.GameState);
+  StopPlay(gGame.GameResult);
 end;
 
 
@@ -3719,7 +3727,7 @@ begin
   UpdateDebugInfo;
   if fSaves <> nil then fSaves.UpdateState;
 
-  if aTickCount mod 10 = 0 then
+  if aTickCount mod RESULTS_UPDATE_RATE = 0 then
   begin
     fGuiGameResultsSP.UpdateState(aTickCount);
     fGuiGameResultsMP.UpdateState(aTickCount);
@@ -3859,7 +3867,7 @@ end;
 
 procedure TKMGamePlayInterface.StopGame(const aText: UnicodeString = '');
 begin
-  gGameApp.StopGame(gGame.GameState, aText);
+  gGameApp.StopGame(gGame.GameResult, aText);
 end;
 
 

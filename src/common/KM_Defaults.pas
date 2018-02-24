@@ -107,6 +107,7 @@ var
   {User interface options}
   DEBUG_SPEEDUP_SPEED   :Integer = 300;   //Speed for speedup from debug menu
   ALLOW_SELECT_ENEMIES  :Boolean = False; //Do we allow to select enemies houses/units/froups
+  SHOW_ENEMIES_STATS    :Boolean = False; //Do we allow to show enemies stats during the game
   SHOW_DEBUG_CONTROLS   :Boolean = False; //Show debug panel / Form1 menu (F11)
   SHOW_CONTROLS_OVERLAY :Boolean = False; //Draw colored overlays ontop of controls! always Off here
   SHOW_CONTROLS_ID      :Boolean = False; //Draw controls ID
@@ -263,8 +264,9 @@ const
   ANNOUNCE_BUILD_MAP = 30*60*10; //30 minutes
   ANNOUNCE_BATTLE_MAP = 2*60*10; //2 minutes
 
-  CHARTS_SAMPLING_FOR_ECONOMY = 450; //Each 45sec
-  CHARTS_SAMPLING_FOR_TACTICS = 50; //Each 5sec, cos average game length is much shorter
+  RESULTS_UPDATE_RATE = 15;          //Each 1.5 sec
+  CHARTS_SAMPLING_FOR_ECONOMY = 150; //Each 15sec
+  CHARTS_SAMPLING_FOR_TACTICS = 30;  //Each 3sec, cos average game length is much shorter
 
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';

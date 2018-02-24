@@ -29,7 +29,7 @@ type
     fRepeatLocation: Byte;
     fRepeatColor: Cardinal;
 
-    fStatsLastUpdateTick: Cardinal;
+    fReinitedLastTime: Boolean;
 
     procedure Create_Results(aParent: TKMPanel);
     procedure Reinit;
@@ -61,7 +61,7 @@ type
 
     property GameResultMsg: TKMGameResultMsg read fGameResultMsg;
 
-    procedure Show(aMsg: TKMGameResultMsg);
+    procedure Show(aMsg: TKMGameResultMsg; aReinitLastTime: Boolean = False);
     function Visible: Boolean;
     procedure Hide;
     procedure UpdateState(aTick: Cardinal);
@@ -149,7 +149,7 @@ begin
 
   //If the player canceled mission, hide the AI graph lines so he doesn't see secret info about enemy (e.g. army size)
   //That info should only be visible if the mission was won or a replay
-  ShowAIResults := (fGameResultMsg in [gr_Win, gr_ReplayEnd]);
+  ShowAIResults := gGame.IsReplay or (fGameResultMsg in [gr_Win, gr_ReplayEnd]);
 
   //Restart button is hidden if you won or if it is a replay
   Button_Restart.Visible := not (fGameResultMsg in [gr_ReplayEnd, gr_Win, gr_GameContinues]);
@@ -159,7 +159,7 @@ begin
   Button_ContinueCampaign.Enabled := fGameResultMsg = gr_Win;
 
   if fGameResultMsg = gr_GameContinues then
-    Button_Back.Caption := 'Back to game' //Todo translate
+    Button_Back.Caption := gResTexts[TX_RESULTS_BACK_TO_GAME] //Todo translate
   else
     Button_Back.Caption := gResTexts[TX_MENU_BACK];  
 
@@ -289,15 +289,18 @@ begin
 end;
 
 
-procedure TKMGameResultsSP.Show(aMsg: TKMGameResultMsg);
+procedure TKMGameResultsSP.Show(aMsg: TKMGameResultMsg; aReinitLastTime: Boolean = False);
 begin
   fGameResultMsg := aMsg;
 
-  fStatsLastUpdateTick := 0;
-  if aMsg <> gr_GameContinues then
-    fStatsLastUpdateTick := gHands[0].Stats.LastUpdateStateTick;
+//  fStatsLastUpdateTick := 0;
+//  if (aMsg <> gr_GameContinues) and (fStatsLastUpdateTick = 0) then
+//    fStatsLastUpdateTick := gHands.GetFirstEnabledHand.Stats.LastUpdateStateTick;
 
-  Reinit;
+  if not fReinitedLastTime then
+    Reinit;
+
+  fReinitedLastTime := aReinitLastTime;
 
   GraphToggle(Button_ResultsArmy);
 
@@ -321,9 +324,7 @@ end;
 procedure TKMGameResultsSP.UpdateState(aTick: Cardinal);
 begin
   if Visible
-    and (not gGame.ReadyToStop
-      or (fStatsLastUpdateTick = 0)
-      or (aTick < fStatsLastUpdateTick + GetStatsUpdatePeriod)) then
+    and not gGame.ReadyToStop then
     Reinit;
 end;
 
@@ -451,10 +452,6 @@ begin
     Button_ContinueCampaign := TKMButton.Create(Panel_Results, 510, 610, 220, 30, gResTexts[TX_MENU_MISSION_NEXT], bsMenu);
     Button_ContinueCampaign.Anchors := [anLeft];
     Button_ContinueCampaign.OnClick := ContinueClick;
-
-//    Button_BackToGame := TKMButton.Create(Panel_Results, 780, 610, 220, 30, 'Back to game', bsMenu);
-//    Button_BackToGame.Anchors := [anLeft];
-//    Button_BackToGame.OnClick := BackClick;
 end;
 
 
@@ -473,16 +470,10 @@ begin
 
   if fGameResultMsg = gr_GameContinues then
     Hide
-  else
-    fOnStopGame;    
-
-
-//  if fGameResultMsg = gr_ReplayEnd then
-//    fOnPageChange(gpReplays)
-//  else if fGameMode = gmSingle then
-//    fOnPageChange(gpSinglePlayer)
-//  else
-//    fOnPageChange(gpMainMenu);
+  else begin
+    fReinitedLastTime := False; //Reset to default Value for next game (before game stop)
+    fOnStopGame;
+  end;
 end;
 
 

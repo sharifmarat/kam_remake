@@ -1411,7 +1411,7 @@ begin
     //fArmyEval.UpdateState;
 
   if CanDoStatsUpdate(aTick) then
-    fStats.UpdateState(aTick);
+    fStats.UpdateState;
 end;
 
 

@@ -76,7 +76,7 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
   public
-    GameState: TKMGameResultMsg;
+    GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
     DoGameHoldState: TKMGameResultMsg; //The type of GameHold we want to occur due to DoGameHold
     SkipReplayEndCheck: Boolean;
@@ -223,7 +223,7 @@ begin
 
   fAdvanceFrame := False;
   fUIDTracker   := 0;
-  GameState   := gr_Cancel;
+  GameResult   := gr_Cancel;
   DoGameHold    := False;
   SkipReplayEndCheck := False;
   fWaitingForNetwork := False;
@@ -787,7 +787,7 @@ begin
   gRes.Cursors.Cursor := kmc_Default;
 
   fGamePlayInterface.Viewport.ReleaseScrollKeys;
-  GameState := Msg;
+  GameResult := Msg;
 
   if DoHold then
   begin
@@ -821,7 +821,7 @@ begin
   begin
     if aPlayerIndex = gMySpectator.HandIndex then
     begin
-      GameState := gr_Win;
+      GameResult := gr_Win;
       fGamePlayInterface.ShowMPPlayMore(gr_Win);
     end;
   end
@@ -860,7 +860,7 @@ begin
                 if aPlayerIndex = gMySpectator.HandIndex then
                 begin
                   gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
-                  GameState := gr_Defeat;
+                  GameResult := gr_Defeat;
                   fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
                 end;
               end;
@@ -1440,7 +1440,7 @@ begin
     SaveStream.Write(GetKaMSeed); //Include the random seed in the save file to ensure consistency in replays
 
     if not IsMultiplayer then
-      SaveStream.Write(GameState, SizeOf(GameState));
+      SaveStream.Write(GameResult, SizeOf(GameResult));
 
     gTerrain.Save(SaveStream); //Saves the map
     gHands.Save(SaveStream, fGameMode in [gmMulti, gmMultiSpectate]); //Saves all players properties individually
@@ -1585,7 +1585,7 @@ begin
     LoadStream.Read(LoadedSeed);
 
     if not SaveIsMultiplayer then
-      LoadStream.Read(GameState, SizeOf(GameState));
+      LoadStream.Read(GameResult, SizeOf(GameResult));
 
     //Load the data into the game
     gTerrain.Load(LoadStream);
