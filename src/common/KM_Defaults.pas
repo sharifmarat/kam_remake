@@ -676,6 +676,8 @@ const
   SB_ID_CTRL_ID      = 7;
 
 type
+  TKMMapSize = (msNone, msXS, msS, msM, msL, msXL, msXXL);
+
   TKMMapEdLayer = (
     mlObjects,
     mlHouses,

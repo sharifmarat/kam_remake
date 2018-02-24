@@ -55,7 +55,7 @@ uses
   function UTCNow: TDateTime;
   function UTCToLocal(Input: TDateTime): TDateTime;
 
-  function MapSizeIndex(X, Y: Word): Byte;
+  function MapSizeIndex(X, Y: Word): TKMMapSize;
   function MapSizeText(X,Y: Word): UnicodeString;
 
   //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
@@ -304,23 +304,23 @@ end;
 {$ENDIF}
 
 
-function MapSizeIndex(X, Y: Word): Byte;
+function MapSizeIndex(X, Y: Word): TKMMapSize;
 begin
   case X * Y of
-            1.. 48* 48: Result := 0;
-     48* 48+1.. 80* 80: Result := 1;
-     80* 80+1..128*128: Result := 2;
-    128*128+1..176*176: Result := 3;
-    176*176+1..224*224: Result := 4;
-    224*224+1..320*320: Result := 5;
-    else                Result := 6;
+            1.. 48* 48: Result := msXS;
+     48* 48+1.. 80* 80: Result := msS;
+     80* 80+1..128*128: Result := msM;
+    128*128+1..176*176: Result := msL;
+    176*176+1..224*224: Result := msXL;
+    224*224+1..320*320: Result := msXXL;
+    else                Result := msNone;
   end;
 end;
 
 
 function MapSizeText(X, Y: Word): UnicodeString;
-//Pretend these are understandable in any language
-const MAP_SIZES: array [0..6] of String = ('XS', 'S', 'M', 'L', 'XL', 'XXL', '???');
+const
+  MAP_SIZES: array [TKMMapSize] of String = ('???', 'XS', 'S', 'M', 'L', 'XL', 'XXL'); //Pretend these are understandable in any language
 begin
   Result := MAP_SIZES[MapSizeIndex(X, Y)];
 end;
