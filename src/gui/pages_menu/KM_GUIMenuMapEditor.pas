@@ -41,7 +41,7 @@ type
     procedure RefreshList(aJumpToSelected: Boolean);
     procedure ColumnClick(aValue: Integer);
     function GetMaps: TKMapsCollection;
-    procedure LoadMinimap(aID: Integer = -1);
+    procedure UpdateMapInfo(aID: Integer = -1);
     procedure ReadmeClick(Sender: TObject);
     procedure SelectMap(Sender: TObject);
     function ColumnBoxMaps_CellClick(Sender: TObject; const X, Y: Integer): Boolean;
@@ -529,7 +529,7 @@ begin
   Button_MapRename.Enabled := (ColumnBox_MapEd.ItemIndex <> -1);
   Button_MapRename.Visible := not Button_MapMove.Visible;
 
-  LoadMinimap(ColumnBox_MapEd.ItemIndex);
+  UpdateMapInfo(ColumnBox_MapEd.ItemIndex);
 end;
 
 
@@ -667,7 +667,7 @@ begin
         and ((Radio_MapType.ItemIndex = 0) or (Maps[I].FileName = fSelectedMapInfo.Name)) then  //Check name only for MP maps
       begin
         ColumnBox_MapEd.ItemIndex := ListI;
-        LoadMinimap(ListI);
+        UpdateMapInfo(ListI);
       end;
       Inc(ListI);
     end;
@@ -754,7 +754,7 @@ begin
     Maps.Lock;
     try
       SetSelectedMapInfo(MapId);
-      LoadMinimap(MapId);
+      UpdateMapInfo(MapId);
     finally
       Maps.Unlock;
     end;
@@ -966,7 +966,7 @@ begin
 end;
 
 
-procedure TKMMenuMapEditor.LoadMinimap(aID: Integer = -1);
+procedure TKMMenuMapEditor.UpdateMapInfo(aID: Integer = -1);
 
   function AddLabelDesc(aLabelDesc, aAddition: UnicodeString): UnicodeString;
   begin
