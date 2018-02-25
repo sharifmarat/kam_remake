@@ -119,6 +119,9 @@ type
     fOnKeyDown: TNotifyEventKeyShiftFunc;
     fOnKeyUp: TNotifyEventKeyShiftFunc;
 
+    fOnWidthChange: TObjectIntegerEvent;
+    fOnHeightChange: TObjectIntegerEvent;
+
     function GetAbsLeft: Integer;
     function GetAbsTop: Integer;
     function GetAbsRight: Integer;
@@ -244,6 +247,9 @@ type
     property OnChangeEnableStatus: TBooleanEvent read fOnChangeEnableStatus write fOnChangeEnableStatus;
     property OnKeyDown: TNotifyEventKeyShiftFunc read fOnKeyDown write fOnKeyDown;
     property OnKeyUp: TNotifyEventKeyShiftFunc read fOnKeyUp write fOnKeyUp;
+
+    property OnWidthChange: TObjectIntegerEvent read fOnWidthChange write fOnWidthChange;
+    property OnHeightChange: TObjectIntegerEvent read fOnHeightChange write fOnHeightChange;
 
     procedure Paint; virtual;
     procedure UpdateState(aTickCount: Cardinal); virtual;
@@ -2012,14 +2018,24 @@ end;
 
 //Overriden in child classes
 procedure TKMControl.SetHeight(aValue: Integer);
+var
+  OldH: Integer;
 begin
+  OldH := fHeight;
   fHeight := aValue;
+  if (OldH <> fHeight) and Assigned(fOnHeightChange) then
+    fOnHeightChange(Self, fHeight);
 end;
 
 //Overriden in child classes
 procedure TKMControl.SetWidth(aValue: Integer);
+var
+  OldW: Integer;
 begin
+  OldW := fHeight;
   fWidth := aValue;
+  if (OldW <> fWidth) and Assigned(fOnWidthChange) then
+    fOnWidthChange(Self, fWidth);
 end;
 
 
