@@ -657,6 +657,7 @@ type
     procedure UpdateMouseOverPositions(X,Y: Integer);
     function GetItem(aIndex: Integer): TKMRadioGroupItem;
     function GetVisibleCount: Integer;
+    function GetLineHeight: Single;
   protected
     function GetHint: UnicodeString; override;
   public
@@ -676,6 +677,7 @@ type
     property Item[aIndex: Integer]: TKMRadioGroupItem read GetItem;
     procedure SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
     procedure SetItemVisible(aIndex: Integer; aEnabled: Boolean);
+    property LineHeight: Single read GetLineHeight;
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure Paint; override;
@@ -3803,6 +3805,12 @@ begin
 end;
 
 
+function TKMRadioGroup.GetLineHeight: Single;
+begin
+  Result := IfThen(VisibleCount > 0, fHeight / VisibleCount, fHeight);
+end;
+
+
 procedure TKMRadioGroup.SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
 begin
   Assert(aIndex < fCount, 'Can''t SetItemEnabled for index ' + IntToStr(aIndex));
@@ -3835,26 +3843,32 @@ procedure TKMRadioGroup.Paint;
 const
   FntCol: array [Boolean] of TColor4 = ($FF888888, $FFFFFFFF);
 var
-  LineHeight, CheckSize: Integer;
-  I: Integer;
+  CheckSize: Integer;
+  I, VisibleI: Integer;
 begin
   inherited;
-  if Count = 0 then Exit; //Avoid dividing by zero
+  if (Count = 0) or (VisibleCount = 0) then Exit; //Avoid dividing by zero
 
-  LineHeight := Round(fHeight / Count);
   CheckSize := gRes.Fonts[fFont].GetTextSize('x').Y + 1;
 
+  VisibleI := 0;
   for I := 0 to Count - 1 do
   begin
-    TKMRenderUI.WriteBevel(AbsLeft, AbsTop + I * LineHeight, CheckSize-4, CheckSize-4, 1, 0.3);
+    if not fItems[I].Visible then
+      Continue;
+
+    TKMRenderUI.WriteBevel(AbsLeft, AbsTop + Round(VisibleI * LineHeight), CheckSize-4, CheckSize-4, 1, 0.3);
     if DrawChkboxOutline then
-      TKMRenderUI.WriteOutline(AbsLeft, AbsTop + I * LineHeight, CheckSize-4, CheckSize-4, LineWidth, LineColor);
+      TKMRenderUI.WriteOutline(AbsLeft, AbsTop + Round(VisibleI * LineHeight), CheckSize-4, CheckSize-4, LineWidth, LineColor);
 
     if fItemIndex = I then
-      TKMRenderUI.WriteText(AbsLeft+(CheckSize-4)div 2, AbsTop + I * LineHeight - 1, 0, 'x', fFont, taCenter, FntCol[fEnabled and fItems[I].Enabled]);
+      TKMRenderUI.WriteText(AbsLeft + (CheckSize - 4) div 2, AbsTop + Round(VisibleI * LineHeight) - 1, 0,
+                            'x', fFont, taCenter, FntCol[fEnabled and fItems[I].Enabled]);
 
     // Caption
-    TKMRenderUI.WriteText(AbsLeft+CheckSize, AbsTop + I * LineHeight, Width-LineHeight, fItems[I].Text, fFont, taLeft, FntCol[fEnabled and fItems[I].Enabled]);
+    TKMRenderUI.WriteText(AbsLeft + CheckSize, AbsTop + Round(VisibleI * LineHeight), Width - Round(LineHeight),
+                          fItems[I].Text, fFont, taLeft, FntCol[fEnabled and fItems[I].Enabled]);
+    Inc(VisibleI);
   end;
 end;
 
