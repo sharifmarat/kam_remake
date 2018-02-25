@@ -40,6 +40,8 @@ type
     procedure SortUpdate(Sender: TObject);
     procedure ScanComplete(Sender: TObject);
 
+    procedure Radio_MapSizes_HeightChange(Sender: TObject; aValue: Integer);
+
     procedure RefreshList(aJumpToSelected: Boolean);
     procedure ColumnClick(aValue: Integer);
     procedure UpdateMapInfo(aID: Integer = -1);
@@ -201,21 +203,25 @@ begin
       Button_ResetFilter.OnClick := MapFilterReset;
 
     Panel_NewMap := TKMPanel.Create(Panel_MapEd, 60, 394, 225, 308);
-    Panel_NewMap.Anchors := [anLeft, anBottom];
+    Panel_NewMap.Anchors := [anLeft, anTop, anBottom];
       TKMLabel.Create(Panel_NewMap, 6, 0, 188, 20, gResTexts[TX_MENU_NEW_MAP_SIZE], fnt_Outline, taLeft);
-      TKMBevel.Create(Panel_NewMap, 0, 20, 220, 250);
+      with TKMBevel.Create(Panel_NewMap, 0, 20, 220, 250) do
+        Anchors := [anLeft, anTop, anBottom];
       TKMLabel.Create(Panel_NewMap, 8, 28, 88, 20, gResTexts[TX_MENU_MAP_WIDTH], fnt_Outline, taLeft);
       TKMLabel.Create(Panel_NewMap, 118, 28, 88, 20, gResTexts[TX_MENU_MAP_HEIGHT], fnt_Outline, taLeft);
 
       Radio_NewMapSizeX := TKMRadioGroup.Create(Panel_NewMap, 10, 52, 88, 180, fnt_Metal);
+      Radio_NewMapSizeX.Anchors := [anLeft, anTop, anBottom];
+      Radio_NewMapSizeX.OnHeightChange := Radio_MapSizes_HeightChange;
       Radio_NewMapSizeY := TKMRadioGroup.Create(Panel_NewMap, 120, 52, 88, 180, fnt_Metal);
+      Radio_NewMapSizeY.Anchors := [anLeft, anTop, anBottom];
+      Radio_NewMapSizeY.OnHeightChange := Radio_MapSizes_HeightChange;
+
       for I := 0 to MAPSIZES_COUNT - 1 do
       begin
         Radio_NewMapSizeX.Add(IntToStr(MapSize[I]));
         Radio_NewMapSizeY.Add(IntToStr(MapSize[I]));
       end;
-      Radio_NewMapSizeX.ItemIndex := 2; //64
-      Radio_NewMapSizeY.ItemIndex := 2; //64
 
       Radio_NewMapSizeX.OnChange := SizeChangeByRadio;
       Radio_NewMapSizeY.OnChange := SizeChangeByRadio;
@@ -381,7 +387,6 @@ begin
         Button_MapMoveCancel  := TKMButton.Create(PopUp_Move, 210, 150, 170, 30, gResTexts[TX_MENU_LOAD_DELETE_CANCEL], bsMenu);
         Button_MapMoveCancel.Anchors := [anLeft, anBottom];
         Button_MapMoveCancel.OnClick := MoveClick;
-
 end;
 
 
@@ -391,6 +396,37 @@ begin
   fMinimap.Free;
 
   inherited;
+end;
+
+
+procedure TKMMenuMapEditor.Radio_MapSizes_HeightChange(Sender: TObject; aValue: Integer);
+const
+  RADIO_MAPSIZE_LINE_H = 20;
+  RADIO_MAPSIZE_LINE_MAX_H = 25;
+  //Indexes of new map sizes to skip. First less important
+  RADIO_SKIP_SIZES_I: array [0..MAPSIZES_COUNT - 1] of Integer = (1,5,7,3,4,6,0,2);
+var
+  I: Integer;
+begin
+  Assert(Sender is TKMRadioGroup);
+  I := TKMRadioGroup(Sender).Count - 1;
+
+  while (TKMRadioGroup(Sender).LineHeight < RADIO_MAPSIZE_LINE_H)
+    and (TKMRadioGroup(Sender).VisibleCount >= 0)
+    and (I >= 0) do
+  begin
+    TKMRadioGroup(Sender).SetItemVisible(RADIO_SKIP_SIZES_I[I], False);
+    Dec(I);
+  end;
+
+  I := 0;
+  while ((TKMRadioGroup(Sender).LineHeight > RADIO_MAPSIZE_LINE_MAX_H)
+      or ((TKMRadioGroup(Sender).LineHeight > RADIO_MAPSIZE_LINE_H) and (TKMRadioGroup(Sender).VisibleCount = 0)))
+    and (I < TKMRadioGroup(Sender).Count) do
+  begin
+    TKMRadioGroup(Sender).SetItemVisible(RADIO_SKIP_SIZES_I[I], True);
+    Inc(I);
+  end;
 end;
 
 
