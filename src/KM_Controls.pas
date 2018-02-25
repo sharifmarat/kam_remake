@@ -641,6 +641,7 @@ type
     Text: UnicodeString;
     Hint: UnicodeString;
     Enabled: Boolean;
+    Visible: Boolean;
   end;
 
 
@@ -655,6 +656,7 @@ type
     fOnChange: TNotifyEvent;
     procedure UpdateMouseOverPositions(X,Y: Integer);
     function GetItem(aIndex: Integer): TKMRadioGroupItem;
+    function GetVisibleCount: Integer;
   protected
     function GetHint: UnicodeString; override;
   public
@@ -668,10 +670,12 @@ type
     procedure Add(aText, aHint: UnicodeString; aEnabled: Boolean = True); overload;
     procedure Clear;
     property Count: Integer read fCount;
+    property VisibleCount: Integer read GetVisibleCount;
     property ItemIndex: Integer read fItemIndex write fItemIndex;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     property Item[aIndex: Integer]: TKMRadioGroupItem read GetItem;
     procedure SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
+    procedure SetItemVisible(aIndex: Integer; aEnabled: Boolean);
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure Paint; override;
@@ -3713,6 +3717,7 @@ begin
   fItems[fCount].Text := aText;
   fItems[fCount].Hint := aHint;
   fItems[fCount].Enabled := aEnabled;
+  fItems[fCount].Visible := True;
 
   Inc(fCount);
 end;
@@ -3787,10 +3792,28 @@ begin
 end;
 
 
+function TKMRadioGroup.GetVisibleCount: Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fCount - 1 do
+    if fItems[I].Visible then
+      Inc(Result);
+end;
+
+
 procedure TKMRadioGroup.SetItemEnabled(aIndex: Integer; aEnabled: Boolean);
 begin
   Assert(aIndex < fCount, 'Can''t SetItemEnabled for index ' + IntToStr(aIndex));
   fItems[aIndex].Enabled := aEnabled;
+end;
+
+
+procedure TKMRadioGroup.SetItemVisible(aIndex: Integer; aEnabled: Boolean);
+begin
+  Assert(aIndex < fCount, 'Can''t SetItemVisible for index ' + IntToStr(aIndex));
+  fItems[aIndex].Visible := aEnabled;
 end;
 
 
