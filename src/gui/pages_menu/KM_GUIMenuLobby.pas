@@ -1743,8 +1743,8 @@ end;
 
 
 procedure TKMMenuLobby.MapList_ScanComplete(Sender: TObject);
-var MapsCRCArray: TKMCardinalArray;
-    I: Integer;
+//var MapsCRCArray: TKMCardinalArray;
+//    I: Integer;
 begin
 //--------//Do not RemoveMissing maps from favourites, as we have only 1 favorites for all maps, including SP maps also//--------//
 
