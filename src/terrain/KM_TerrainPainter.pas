@@ -175,9 +175,32 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)       // Lava
   );
 
-  RMG2Painter: array [0..255] of TKMTerrainKind = (
-    tkGrass, tkGrass, tkGrass, tkGrass, tkSnow, tkGrass, tkGrass, tkCustom, tkMoss, tkMoss, tkSnow, tkGrass, tkWater, tkGrass, tkGrass, tkCustom, tkRustyGrass1, tkRustyGrass1, tkGrass, tkGrass, tkDirt, tkDirt, tkWater, tkWater, tkCustom, tkCustom, tkRustyGrass2, tkGrassSand2, tkGrassSand1, tkRichSand, tkRichSand, tkSand, tkSand, tkSand, tkDirtGrass, tkDirt, tkDirt, tkDirt, tkDirt, tkDirt, tkSwamp, tkSwamp, tkSwamp, tkSwamp, tkIce, tkDeepSnow, tkSnow, tkShallowSnow, tkGrassyWater, tkShallowSnow, tkIronMount, tkShallowSnow, tkDeepSnow, tkIronMount, tkDeepSnow, tkCustom, tkGrass, tkGrass, tkGrass, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkDirt, tkDirt, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkRustyGrass2, tkRustyGrass2, tkRustyGrass2, tkGrassSand2, tkGrassSand2, tkGrassSand2, tkGrassSand1, tkGrassSand1, tkGrassSand1, tkGrass, tkGrass, tkGrass, tkDirtGrass, tkDirtGrass, tkDirtGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkDirtGrass, tkDirtGrass, tkDirtGrass, tkRichSand, tkRichSand, tkRichSand, tkGrassSand2, tkGrassSand2, tkGrassSand2, tkWater, tkWater, tkWater, tkSand, tkSand, tkSand, tkDirt, tkDirt, tkDirt, tkGrassyWater, tkGrassyWater, tkWater, tkWater, tkWater, tkGrassyWater, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkWater, tkWater, tkGold, tkGold, tkGold, tkGold, tkIron, tkIron, tkIron, tkIron, tkCoal, tkCoal, tkCoal, tkCoal, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkWater, tkWater, tkWater, tkStoneMount, tkWater, tkDirt, tkCustom, tkCustom, tkWater, tkGoldMount, tkCustom, tkSnow, tkSnow, tkSnow, tkCustom, tkCustom, tkWater, tkWater, tkWater, tkWater, tkSnow, tkSnow, tkCustom, tkDirt, tkCustom, tkCustom, tkCustom, tkCustom, tkSnow, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkAbyss, tkCustom, tkDirt, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom
-  );
+//  RMG2Painter: array [0..255] of TKMTerrainKind = (
+//    tkGrass, tkGrass, tkGrass, tkGrass, tkSnow, tkGrass, tkGrass, tkCustom, tkMoss, tkMoss, tkSnow, tkGrass, tkWater,
+//    tkGrass, tkGrass, tkCustom, tkPaleGrass, tkPaleGrass, tkGrass, tkGrass, tkDirt, tkDirt, tkWater, tkWater,
+//    tkCustom, tkCustom, tkGrassSand1, tkGrassSand2, tkGrassSand1, tkRichSand, tkRichSand, tkSand, tkSand, tkSand,
+//    tkDirtGrass, tkDirt, tkDirt, tkDirt, tkDirt, tkDirt, tkSwamp, tkSwamp, tkSwamp, tkSwamp, tkIce, tkDeepSnow, tkSnow,
+//    tkShallowSnow, tkGrassyWater, tkShallowSnow, tkIronMount, tkShallowSnow, tkDeepSnow, tkIronMount, tkDeepSnow,
+//    tkCustom, tkGrass, tkGrass, tkGrass, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkDirt, tkDirt, tkGrass,
+//    tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkRustyGrass2, tkRustyGrass2, tkRustyGrass2,
+//    tkGrassSand2, tkGrassSand2, tkGrassSand2, tkGrassSand1, tkGrassSand1, tkGrassSand1, tkGrass, tkGrass, tkGrass,
+//    tkDirtGrass, tkDirtGrass, tkDirtGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkDirtGrass, tkDirtGrass,
+//    tkDirtGrass, tkRichSand, tkRichSand, tkRichSand, tkGrassSand2, tkGrassSand2, tkGrassSand2, tkWater, tkWater, tkWater,
+//    tkSand, tkSand, tkSand, tkDirt, tkDirt, tkDirt, tkGrassyWater, tkGrassyWater, tkWater, tkWater, tkWater, tkGrassyWater,
+//    tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkGrass, tkStoneMount, tkStoneMount, tkStoneMount,
+//    tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount, tkStoneMount,
+//    tkStoneMount, tkStoneMount, tkStoneMount, tkWater, tkWater, tkGold, tkGold, tkGold, tkGold, tkIron, tkIron, tkIron,
+//    tkIron, tkCoal, tkCoal, tkCoal, tkCoal, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkIronMount, tkIronMount,
+//    tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount,
+//    tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount,
+//    tkGoldMount, tkGoldMount, tkGoldMount, tkGoldMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount, tkIronMount,
+//    tkIronMount, tkIronMount, tkIronMount, tkWater, tkWater, tkWater, tkStoneMount, tkWater, tkDirt, tkCustom, tkCustom,
+//    tkWater, tkGoldMount, tkCustom, tkSnow, tkSnow, tkSnow, tkCustom, tkCustom, tkWater, tkWater, tkWater, tkWater, tkSnow,
+//    tkSnow, tkCustom, tkDirt, tkCustom, tkCustom, tkCustom, tkCustom, tkSnow, tkCustom, tkCustom, tkCustom, tkCustom,
+//    tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkWater, tkWater, tkWater,
+//    tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkWater, tkAbyss, tkCustom, tkDirt, tkCustom, tkCustom,
+//    tkCustom, tkCustom, tkCustom, tkCustom, tkCustom, tkCustom
+//  );
 
 
 implementation
@@ -1105,7 +1128,7 @@ end;
 
 procedure TKMTerrainPainter.RMG2MapEditor(X,Y: Integer; aTile: Word);
 begin
-  Land2[Y,X].TerKind := RMG2Painter[aTile];
+  LandTerKind[Y,X].TerKind := TILE_CORNERS_TERRAIN_KINDS[aTile][0];
 end;
 
 

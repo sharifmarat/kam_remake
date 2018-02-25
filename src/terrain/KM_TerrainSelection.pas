@@ -576,7 +576,10 @@ end;
 
 
 initialization
-  CF_MAPDATA := RegisterClipboardFormat('KaM Remake ' + GAME_REVISION + ' Map Data');
+begin
+
+  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + GAME_REVISION + ' Map Data'));
+end;
 
 
 end.

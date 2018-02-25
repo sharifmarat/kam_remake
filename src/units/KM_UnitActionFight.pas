@@ -15,7 +15,7 @@ type
 
     //Execute is broken up into multiple methods
       function ExecuteValidateOpponent(Step: Byte): TKMActionResult;
-      function ExecuteProcessRanged(Step: Byte): B oolean;
+      function ExecuteProcessRanged(Step: Byte): Boolean;
       function ExecuteProcessMelee(Step: Byte): Boolean;
 
     function UpdateVertexUsage(const aFrom, aTo: TKMPoint): Boolean;

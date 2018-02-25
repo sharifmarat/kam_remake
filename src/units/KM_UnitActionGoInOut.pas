@@ -155,7 +155,7 @@ end;
 
 //Attempt to find a tile below the door (on the street) we can walk to
 //We can push idle units away. Check center first
-function TUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TKMBestExit;
+function TKMUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TKMBestExit;
 var
   U: TKMUnit;
 begin

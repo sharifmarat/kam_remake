@@ -596,7 +596,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.PaintDefences(aLayer: TKMPaintLayer);
 var
   I, K: Integer;
   DP: TAIDefencePosition;
@@ -820,7 +820,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 var
   I, K: Integer;
   P: TKMPoint;

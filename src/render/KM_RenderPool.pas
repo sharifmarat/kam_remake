@@ -95,7 +95,7 @@ type
     procedure PaintRallyPoint(const aHouseEntrance, aRallyPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aPass: Byte; aDoImmediateRender: Boolean = False);
     procedure PaintRallyPoints(aPass: Byte);
 
-    procedure RenderWireHousePlan(P: TKMPoint; aHouseType: THouseType);
+    procedure RenderWireHousePlan(const P: TKMPoint; aHouseType: TKMHouseType);
     procedure RenderMapEdLayers(const aRect: TKMRect);
     procedure RenderTileOwnerLayer(const aRect: TKMRect);
     procedure RenderGridLayer(const aRect: TKMRect);
@@ -740,7 +740,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseSupply(aHouse: TKMHouseType; const Loc: TKMPoint; const R1, R2, R3: array of Byte; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddHouseSupply(aHouse: TKMHouseType; const Loc: TKMPoint; const R1, R2, R3: array of Byte;
                                      DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   Id, I, K, I2, Count: Integer;
@@ -1365,8 +1365,6 @@ end;
 
 procedure TRenderPool.RenderForegroundUI_Markers;
 var
-  WH: TKMHouseWoodcutters;
-  B: TKMHouseBarracks;
   P: TKMPoint;
   HWFP: TKMHouseWFlagPoint;
 begin

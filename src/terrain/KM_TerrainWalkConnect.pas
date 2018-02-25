@@ -23,9 +23,10 @@ type
     //GlobalUpdate rebuilds the entire map
     class procedure GlobalUpdate(aWC: TKMWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
     //LocalUpdate just updates changes in aRect for much better performance, used under special conditions
-    class procedure LocalUpdate(aRect: TKMRect; aWC: TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
+    class procedure LocalUpdate(const aRect: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean);
   public
-    class procedure DoUpdate(aAreaAffected: TKMRect; aWC:TWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
+    class procedure DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability;
+                             aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
   end;
 
 implementation
@@ -33,7 +34,8 @@ uses
   Math, KM_ResMapElements;
 
 { TKMTerrainWalkConnect }
-class procedure TKMTerrainWalkConnect.DoUpdate(const aAreaAffected:TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability; aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
+class procedure TKMTerrainWalkConnect.DoUpdate(const aAreaAffected: TKMRect; aWC: TKMWalkConnect; aPass: TKMTerrainPassability;
+                                               aAllowDiag: Boolean; aDiagObjectsEffected: Boolean);
 var LocalArea: TKMRect;
 begin
   //If passability is unchanged we can completely skip the update

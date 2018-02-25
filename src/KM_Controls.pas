@@ -96,7 +96,6 @@ type
 
     fEnabled: Boolean;
     fVisible: Boolean;
-    fHint: UnicodeString;
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
     fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
@@ -156,7 +155,6 @@ type
     procedure SetVisible(aValue: Boolean); virtual;
     procedure SetEnabled(aValue: Boolean); virtual;
     procedure SetAnchors(aValue: TKMAnchorsSet); virtual;
-    procedure SetHint(aValue: UnicodeString); virtual;
     function GetSelfAbsLeft: Integer; virtual;
     function GetSelfAbsTop: Integer; virtual;
     function GetSelfHeight: Integer; virtual;
@@ -750,7 +748,6 @@ type
     ValueMax: Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
     property Value: Integer read fValue write SetValue;
-    property SharedHint: UnicodeString read GetHint write SetSharedHint;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
@@ -2110,12 +2107,6 @@ end;
 procedure TKMControl.SetAnchors(aValue: TKMAnchorsSet);
 begin
   fAnchors := aValue;
-end;
-
-
-procedure TKMControl.SetHint(aValue: UnicodeString);
-begin
-  fHint := aValue;
 end;
 
 

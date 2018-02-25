@@ -1947,8 +1947,6 @@ begin
 end;
 
 
-function TKMHouseWoodcutters.GetValidCuttingPoint(aPoint: TKMPoint): TKMPoint;
-procedure TKMHouseWoodcutters.SetCuttingPoint(aValue: TKMPoint);
 { TKMHouseArmorWorkshop }
 constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin

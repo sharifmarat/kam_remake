@@ -120,7 +120,7 @@ type
     function AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit; reintroduce;
     function AddUnitGroup(aUnitType: TKMUnitType; const Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 
-    function TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
+    function TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 
     function CanAddFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
     function CanAddFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
@@ -148,7 +148,7 @@ type
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function ObjectByUID(aUID: Integer): TObject;
-    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: THouseType; aList: TKMPointTagList);
+    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
 
     function GetFieldsCount: Integer;
     procedure GetFieldPlans(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
@@ -245,12 +245,6 @@ end;
 procedure TKMHandCommon.SyncLoad;
 begin
   fUnits.SyncLoad;
-end;
-
-
-function TKMHandCommon.UnitsHitTest(const aLoc: TKMPoint; const UT: TUnitType = ut_Any): TKMUnit;
-begin
-  Result := UnitsHitTest(aLoc.X, aLoc.Y, UT);
 end;
 
 
@@ -448,7 +442,7 @@ begin
 end;
 
 
-function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; constPosition: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
+function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; const Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 var
   I: Integer;
 begin
@@ -594,14 +588,14 @@ end;
 
 
 // Same as for CanAddFakeFieldPlan, but check can we delete plan
-function TKMHand.CanRemFakeFieldPlan(constaLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+function TKMHand.CanRemFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := (fBuildList.FieldworksList.HasFakeField(aLoc) = aFieldType)
             and LocHasNoAllyPlans(aLoc);
 end;
 
 
-function TKMHand.CanAddHousePlan(constaLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
+function TKMHand.CanAddHousePlan(const aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
 var I,K,J,S,T,Tx,Ty: Integer; HA: THouseArea;
 begin
   Result := gTerrain.CanPlaceHouse(aLoc, aHouseType);

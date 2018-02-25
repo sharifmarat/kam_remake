@@ -147,13 +147,13 @@ type
     procedure SetActionSteer;
     procedure SetActionLockedStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean=true; aStillFrame: Byte = 0; aStep: Integer=0);
 
-    procedure SetActionWalk(const aLocB: TKMPoint; aActionType:TUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
+    procedure SetActionWalk(const aLocB: TKMPoint; aActionType: TKMUnitActionType; aDistance:single; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse);
     procedure SetActionWalkToHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkFromHouse(aHouse: TKMHouse; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
-    procedure SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
-    procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+    procedure SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0);
+    procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
     procedure AbandonWalk;
@@ -1666,12 +1666,12 @@ begin
   if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
     raise Exception.Create('Interrupting unabandonable Walk action');
 
-  SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, false, nil, nil));
+  SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, False, nil, nil));
 end;
 
 
 //We were pushed (walk to spot with wider Passability)
-procedure TKMUnit.SetActionWalkPushed(aLocB: TKMPoint; aActionType: TUnitActionType = ua_Walk);
+procedure TKMUnit.SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 begin
   //1. Only idle units can be pushed, for they are low priority to busy units
   //2. If unit can't get away it will re-push itself once again

@@ -58,7 +58,7 @@ type
     procedure AddPlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
     function HasPlan(const aLoc: TKMPoint): Boolean;
     procedure RemPlan(const aLoc: TKMPoint);
-    function TryGetPlan(const aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
+    function TryGetPlan(const aLoc: TKMPoint; out aHousePlan: TKMHousePlan): Boolean;
     function FindHousePlan(const aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
 
     //Game events

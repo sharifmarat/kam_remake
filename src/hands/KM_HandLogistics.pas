@@ -112,10 +112,10 @@ type
     function PermitDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
     function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
-    function CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType; aOwner: TKMHandIndex;
+    function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
                                   aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
-    function CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
-    function GetRouteCost(aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
+    function TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
+    function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single; aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
   public
     constructor Create(aHandIndex: TKMHandIndex);
@@ -807,7 +807,7 @@ end;
 
 //Try to Calc bid cost between serf and offer house
 //Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
-function TKMDeliveries.CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
+function TKMDeliveries.TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
   {$IFDEF WDC}
 var
   BidKey: TKMDeliveryBidKey;
@@ -857,7 +857,7 @@ end;
 
 //Try to Calc route cost
 //If destination is not reachable, then return False
-function TKMDeliveries.GetRouteCost(const aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
+function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single;
                                         aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
 var
   {$IFDEF WDC}
@@ -906,7 +906,7 @@ end;
 
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
-function TKMDeliveries.CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
+function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
                                             aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 
   {$IFDEF WDC}

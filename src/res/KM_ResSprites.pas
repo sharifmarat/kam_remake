@@ -86,7 +86,7 @@ type
     procedure SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True); overload;
     procedure SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True); overload;
 
-    function GetSpriteColors(aCount: Byte): TRGBArray;
+    function GetSpriteColors(aCount: Word): TRGBArray;
 
     procedure ExportAll(const aFolder: string);
     procedure ExportFullImageData(const aFolder: string; aIndex: Integer; aTempList: TStringList = nil);
@@ -152,20 +152,6 @@ type
     fAlphaShadows: Boolean;
     function IsTerminated: Boolean;
   public
-    RXType: TRXType;
-    LoadDone: Boolean;    // flag to show, when another rxx load is completed
-    constructor Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
-    procedure Execute; override;
-  end;
-
-
-  //Game resource loader thread
-  TTGameResourceLoader = class(TThread)
-  private
-    fResSprites: TKMResSprites;
-    fAlphaShadows: Boolean;
-  public
-    DoTerminate: Boolean; // flag, to allow this thread exit loop in Execute method
     RXType: TRXType;
     LoadDone: Boolean;    // flag to show, when another rxx load is completed
     constructor Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
@@ -1218,7 +1204,7 @@ end;
 
 procedure TKMResSprites.StopResourceLoader;
 begin
-  fGameResLoader.DoTerminate := True;
+//  fGameResLoader.DoTerminate := True;
   fGameResLoader.Terminate;
   fGameResLoader.WaitFor;
   FreeThenNil(fGameResLoader);
@@ -1327,39 +1313,6 @@ end;
 class procedure TKMResSprites.SetMaxAtlasSize(aMaxSupportedTxSize: Integer);
 begin
   MaxAtlasSize := Min(aMaxSupportedTxSize, MAX_GAME_ATLAS_SIZE);
-end;
-
-
-procedure TKMResSprites.ManageResLoader;
-var
-  NextRXTypeI: Integer;
-begin
-  if (fGameResLoader <> nil) and fGameResLoader.LoadDone then
-  begin
-    // Generate texture atlas from prepared data for game resources
-    // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread
-    // That is why we need call this method from main thread only
-    GenerateTextureAtlasForGameRes(fGameResLoader.RXType);
-    fStepCaption(gResTexts[RXInfo[fGameResLoader.RXType].LoadingTextID]);
-    fSprites[fGameResLoader.RXType].ClearTemp;      //Clear fRXData sprites temp data, which is not needed anymore
-    ClearGameResGenTemp;                                   //Clear all the temp data used for atlas texture generating
-    NextRXTypeI := GetNextLoadRxTypeIndex(fGameResLoader.RXType); // get next RXType to load
-    if NextRXTypeI = -1 then
-    begin
-      //Load is completed, we can stop loading thread
-      StopResourceLoader;
-      fGameResLoadCompleted := True; // mark loading game res as completed
-    end else begin
-      fGameResLoader.RXType := TRXType(StrToInt(fGameRXTypes[NextRXTypeI]));
-      fGameResLoader.LoadDone := False;
-    end;
-  end;
-end;
-
-
-procedure TKMResSprites.UpdateStateIdle;
-begin
-  ManageResLoader;
 end;
 
 

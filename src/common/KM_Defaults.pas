@@ -32,7 +32,7 @@ const
   GAME_VERSION_PREFIX   = ''; //Game version string displayed in menu corner
 var
   //Game revision is set in initialisation block
-  GAME_REVISION: AnsiString; //Should be updated for every release (each time save format is changed)
+  GAME_REVISION: String; //Should be updated for every release (each time save format is changed)
   GAME_VERSION: AnsiString;
   NET_PROTOCOL_REVISON: AnsiString; //Clients of this version may connect to the dedicated server
 const
@@ -779,6 +779,7 @@ const
   icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
+  icLightCyan   = $FFFFFF80;
   icLightOrange = $FF80CCFF;
   icLightRed   = $FF7070FF;
   icLight2Red   = $FFB0B0FF;

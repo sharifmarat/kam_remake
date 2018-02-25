@@ -260,14 +260,6 @@ begin
 end;
 
 
-//Preload game resources while in menu
-procedure TKMGameApp.PreloadGameResources;
-begin
-  //Load game resources asychronously (by other thread)
-  gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
-end;
-
-
 procedure TKMGameApp.Resize(X,Y: Integer);
 begin
   if fIsExiting then Exit;

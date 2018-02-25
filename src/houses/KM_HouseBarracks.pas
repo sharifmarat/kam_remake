@@ -288,7 +288,6 @@ begin
     RecruitsAdd(U);
     gHands[fOwner].Stats.UnitCreated(ut_Recruit, False);
   end;
-procedure TKMHouseBarracks.SetRallyPoint(aRallyPoint: TKMPoint);
 end;
 
 
