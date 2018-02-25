@@ -81,15 +81,15 @@ begin
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
 
-  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 0, 25, 27, 27, 667);
+  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 0, 25, 30, 30, 670);
   TilesMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
   TilesMagicWater.OnClick := TilesChange;
 
-  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 29, 25, 27, 27, 666);
+  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 29, 25, 30, 30, 671);
   TilesEyedropper.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_EYEDROPPER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
   TilesEyedropper.OnClick := TilesChange;
 
-  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 58, 25, 27, 27, 665);
+  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 58, 25, 30, 30, 672);
   TilesRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
   TilesRotate.OnClick := TilesChange;
 
