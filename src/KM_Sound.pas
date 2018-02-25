@@ -37,10 +37,11 @@ type
       PlaySince: cardinal;
       Volume: Single;
       Looped: Boolean;
+      FromScript: Boolean;
       FadesMusic: Boolean;
     end;
 
-    fLoopSoundIndex: array[1..MAX_LOOP_SOUNDS] of Integer;
+    fScriptSoundIndex: array[1..MAX_LOOP_SOUNDS] of Integer;
 
     fLastMessageNoticeTime: Cardinal; // Last time message notice were played
 
@@ -50,12 +51,12 @@ type
     fOnFadeMusic: TEvent;
     fOnUnfadeMusic: TBooleanEvent;
     procedure CheckOpenALError;
+    function IsSoundPlaying(aIndex: Integer): Boolean;
 
-    function PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
-                      FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
-    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF;
-                       Attenuated: Boolean; Volume: Single; Radius: Single;
-                       FadeMusic: Boolean; aLoop: Boolean): Integer;
+    function PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
+                      Volume: Single = 1; FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
+    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType;
+                       Attenuated: Boolean; Volume: Single; Radius: Single; FadeMusic, aLooped: Boolean; aFromScript: Boolean = False): Integer;
   public
     constructor Create(aVolume: Single);
     destructor Destroy; override;
@@ -64,34 +65,33 @@ type
     property OnRequestFade: TEvent write fOnFadeMusic;
     property OnRequestUnfade: TBooleanEvent write fOnUnfadeMusic;
     procedure AbortAllFadeSounds;
-    procedure AbortAllLoopedSounds;
+    procedure AbortAllScriptSounds;
     procedure AbortAllLongSounds;
 
     procedure UpdateListener(X,Y: Single);
     procedure UpdateSoundVolume(Value: Single);
 
     procedure PlayNotification(aSound: TAttackNotification);
-    procedure PlaySoundFromScript(const aFileName: UnicodeString; const Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
 
-    procedure PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech); overload;
-    procedure PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
-    procedure PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech); overload;
-    procedure PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
+    procedure PlayCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech); overload;
+    procedure PlayCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
+    procedure PlayWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech); overload;
+    procedure PlayWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF); overload;
     procedure Play(SoundID: TSoundFX; Volume: Single = 1); overload;
-    procedure Play(SoundID: TSoundFX; const Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1); overload;
-    procedure Play(SoundID: TSoundFX; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1); overload;
+    procedure Play(SoundID: TSoundFX; Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1); overload;
+    procedure Play(SoundID: TSoundFX; Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1); overload;
 
     procedure Play(SoundID: TSoundFXNew; Volume:Single = 1; FadeMusic: Boolean = False); overload;
-    procedure Play(SoundID: TSoundFXNew; const Loc: TKMPoint; Attenuated: Boolean=true; Volume: Single = 1; FadeMusic: Boolean = False); overload;
+    procedure Play(SoundID: TSoundFXNew; Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1; FadeMusic: Boolean = False); overload;
 
-    function PlayLoopSound(const aFile: UnicodeString; const aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
-    procedure StopLoopSound(aIndex: Integer);
+    function PlayScriptSound(const aFile: UnicodeString; aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
+    procedure StopScriptSound(aIndex: Integer);
 
     procedure Paint;
     procedure UpdateStateIdle;
   end;
 
-  TKMLoopSoundsManager = class
+  TKMScriptSoundsManager = class
   private
     fListener: TKMPointF;
     fLastScriptIndex: Integer;
@@ -99,6 +99,8 @@ type
     fSounds: array of record
                         PlayingIndex: Integer; //Index into gSoundPlayer, or -1 if not playing
                         //Fields below are saved
+                        Looped: Boolean;
+                        FadeMusic: Boolean;
                         ScriptIndex: Integer;
                         SoundName: AnsiString; //Just sound name, not the path
                         AudioFormat: TKMAudioFormat;
@@ -109,8 +111,8 @@ type
                         HandIndex: TKMHandIndex;
                       end;
     function CanPlay(aIndex: Integer): Boolean;
-    procedure StartLoopSound(aIndex: Integer);
-    procedure StopLoopSound(aIndex: Integer);
+    procedure StartSound(aIndex: Integer);
+    procedure StopSound(aIndex: Integer);
   public
     destructor Destroy; override;
     property Count: Integer read fCount;
@@ -119,15 +121,17 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState;
 
-    function AddLoopSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
+    function AddSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint;
+                          aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
     procedure RemoveLoopSound(aScriptIndex: Integer);
+    procedure RemoveSound(aScriptIndex: Integer; aLoopedOnly: Boolean = False);
     procedure UpdateListener(X,Y: Single);
   end;
 
 
 var
   gSoundPlayer: TKMSoundPlayer;
-  gLoopSounds: TKMLoopSoundsManager;
+  gScriptSounds: TKMScriptSoundsManager;
 
 
 implementation
@@ -159,8 +163,8 @@ var
 begin
   inherited Create;
 
-  for I := Low(fLoopSoundIndex) to High(fLoopSoundIndex) do
-    fLoopSoundIndex[I] := -1;
+  for I := Low(fScriptSoundIndex) to High(fScriptSoundIndex) do
+    fScriptSoundIndex[I] := -1;
 
   if SKIP_SOUND then Exit;
 
@@ -288,7 +292,7 @@ begin
   //This is used to abort long sounds from the game when you quit so they don't play in the menu
   for I := 1 to MAX_SOUNDS do
     if (fSound[I].PlaySince <> 0) and (GetTimeSince(fSound[I].PlaySince) < fSound[I].Duration)
-    and not fSound[I].Looped //Looped sounds manage themselves
+    and not fSound[I].FromScript //Looped sounds manage themselves
     and (fSound[I].Duration > 8000) then //Sounds <= 8 seconds can keep playing (e.g. victory music)
     begin
       fSound[I].PlaySince := 0;
@@ -309,7 +313,12 @@ end;
 
 
 { Update sound gain (global volume for all sounds) }
-procedure TKMSoundPlayer.UpdateSoundVolume(Value:single);
+procedure TKMSoundPlayer.UpdateSoundVolume(Value: Single);
+  procedure UpdateSound(aI: Integer);
+  begin
+    AlSourcef(fSound[aI].ALSource, AL_GAIN, 1 * fSound[aI].Volume * fSoundGain);
+  end;
+
 var I: Integer;
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
@@ -317,20 +326,20 @@ begin
   //alListenerf(AL_GAIN, fSoundGain); //Set in source property
 
   //Loop sounds must be updated separately
-  for I:=Low(fLoopSoundIndex) to High(fLoopSoundIndex) do
-    if fLoopSoundIndex[I] <> -1 then
-      AlSourcef(fSound[fLoopSoundIndex[I]].ALSource, AL_GAIN, 1 * fSound[fLoopSoundIndex[I]].Volume * fSoundGain);
+  for I := Low(fScriptSoundIndex) to High(fScriptSoundIndex) do
+    if fScriptSoundIndex[I] <> -1 then
+      UpdateSound(fScriptSoundIndex[I]);//AlSourcef(fSound[fScriptSoundIndex[I]].ALSource, AL_GAIN, 1 * fSound[fScriptSoundIndex[I]].Volume * fSoundGain);
 
   //Update the volume of all other playing sounds
   for I := 1 to MAX_SOUNDS do
-    if not fSound[I].Looped //Looped sounds are handled above
-    and (fSound[I].PlaySince <> 0) and (GetTimeSince(fSound[I].PlaySince) < fSound[I].Duration) then
-      AlSourcef(fSound[I].ALSource, AL_GAIN, 1 * fSound[I].Volume * fSoundGain);
+    if not fSound[I].FromScript //Looped sounds are handled above
+      and (fSound[I].PlaySince <> 0) and (GetTimeSince(fSound[I].PlaySince) < fSound[I].Duration) then
+      UpdateSound(I);//AlSourcef(fSound[I].ALSource, AL_GAIN, 1 * fSound[I].Volume * fSoundGain);
 end;
 
 
 {Wrapper with fewer options for non-attenuated sounds}
-procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Volume:single=1);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Volume: Single = 1);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
 
@@ -353,49 +362,50 @@ end;
 procedure TKMSoundPlayer.Play(SoundID: TSoundFXNew; Volume: Single = 1; FadeMusic: Boolean = False);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
-  Play(SoundID, KMPOINT_ZERO, false, Volume, FadeMusic);
+  Play(SoundID, KMPOINT_ZERO, False, Volume, FadeMusic);
 end;
 
 
-procedure TKMSoundPlayer.Play(SoundID: TSoundFXNew; const Loc: TKMPoint; Attenuated:boolean=true; Volume:single=1; FadeMusic:boolean=false);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFXNew; Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1; FadeMusic: Boolean = False);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
-  PlayWave(gRes.Sounds.FileOfNewSFX(SoundID), KMPointF(Loc), Attenuated, Volume, FadeMusic);
+  PlayWave(gRes.Sounds.FileOfNewSFX(SoundID), KMPointF(Loc), gRes.Sounds.GetSoundType(SoundID), Attenuated, Volume, FadeMusic);
 end;
 
 
 {Wrapper for TSoundFX}
-procedure TKMSoundPlayer.Play(SoundID: TSoundFX; const Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Loc: TKMPoint; Attenuated: Boolean = True; Volume: Single = 1);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
-  PlaySound(SoundID, '', KMPointF(Loc), Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
+  PlaySound(SoundID, '', KMPointF(Loc), gRes.Sounds.GetSoundType(SoundID), Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
 end;
 
 
-procedure TKMSoundPlayer.Play(SoundID: TSoundFX; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1);
+procedure TKMSoundPlayer.Play(SoundID: TSoundFX; Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1);
 begin
   if SKIP_SOUND or not fIsSoundInitialized then Exit;
-  PlaySound(SoundID, '', Loc, Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
+  PlaySound(SoundID, '', Loc, gRes.Sounds.GetSoundType(SoundID), Attenuated, Volume, MAX_DISTANCE, False, False); //Redirect
 end;
 
 
 {Wrapper WAV files}
-function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; Attenuated: Boolean = True; Volume: Single = 1;
-                                 FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
+function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
+                                 Volume: Single = 1; FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
 begin
   Result := -1;
   if not fIsSoundInitialized then Exit;
-  Result := PlaySound(sfx_None, aFile, Loc, Attenuated, Volume, MAX_DISTANCE, FadeMusic, aLoop); //Redirect
+  Result := PlaySound(sfx_None, aFile, Loc, aSoundType, Attenuated, Volume, MAX_DISTANCE, FadeMusic, aLoop); //Redirect
 end;
 
 
 {Call to this procedure will find free spot and start to play sound immediately}
 {Will need to make another one for unit sounds, which will take WAV file path as parameter}
 {Attenuated means if sound should fade over distance or not}
-function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF;
-                                  Attenuated: Boolean; Volume: Single; Radius: Single;
-                                  FadeMusic: Boolean; aLoop: Boolean): Integer;
-var Dif:array[1..3]of single;
+function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType;
+                                  Attenuated: Boolean; Volume: Single; Radius: Single; FadeMusic, aLooped: Boolean;
+                                  aFromScript: Boolean = False): Integer;
+var
+  Dif: array[1..3]of Single;
   FreeBuf{,FreeSrc}: Integer;
   I, ID, OggOpenResult: Integer;
   W: TKMSoundData;
@@ -417,6 +427,11 @@ begin
   Result := -1;
   if not fIsSoundInitialized then Exit;
   if (SoundID = sfx_None) and (aFile = '') then Exit;
+
+  //Do not play game sounds, if game is ready to stop
+  if (aSoundType = stGame) and (gGame <> nil) and (gGame.ReadyToStop) then
+    Exit;
+
 
   if Attenuated then
   begin
@@ -564,7 +579,8 @@ begin
   AlSourcef(fSound[FreeBuf].ALSource, AL_REFERENCE_DISTANCE, 4);
   AlSourcef(fSound[FreeBuf].ALSource, AL_MAX_DISTANCE, Radius);
   AlSourcef(fSound[FreeBuf].ALSource, AL_ROLLOFF_FACTOR, 1);
-  if aLoop then
+
+  if aLooped then
     AlSourcei(fSound[FreeBuf].ALSource, AL_LOOPING, AL_TRUE)
   else
     AlSourcei(fSound[FreeBuf].ALSource, AL_LOOPING, AL_FALSE);
@@ -579,14 +595,15 @@ begin
   fSound[FreeBuf].Duration := WAVDuration;
   fSound[FreeBuf].PlaySince := TimeGet;
   fSound[FreeBuf].Volume := Volume;
-  fSound[FreeBuf].Looped := aLoop;
+  fSound[FreeBuf].FromScript := aFromScript;
+  fSound[FreeBuf].FromScript := aLooped;
   fSound[FreeBuf].FadesMusic := FadeMusic;
 
   Result := FreeBuf;
 end;
 
 
-procedure TKMSoundPlayer.PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech);
+procedure TKMSoundPlayer.PlayCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech);
 begin
   if SKIP_SOUND
     or not fIsSoundInitialized
@@ -597,7 +614,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.PlayCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
+procedure TKMSoundPlayer.PlayCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
 var
   Wave: UnicodeString;
   HasLoc: Boolean;
@@ -608,7 +625,7 @@ begin
   HasLoc := not KMSamePointF(aLoc, KMPOINTF_ZERO);
   Wave := gRes.Sounds.FileOfCitizen(aUnitType, aSound);
   if FileExists(Wave) then
-    PlayWave(Wave, aLoc, HasLoc, 1 + 3*byte(HasLoc)); //Attenuate sounds when aLoc is valid
+    PlayWave(Wave, aLoc, gRes.Sounds.GetSoundType(aSound), HasLoc, 1 + 3*byte(HasLoc)); //Attenuate sounds when aLoc is valid
 end;
 
 
@@ -623,19 +640,12 @@ begin
 
   Wave := gRes.Sounds.FileOfNotification(aSound, Random(Count));
   if FileExists(Wave) then
-    PlayWave(Wave, KMPOINTF_ZERO, False, 1);
+    PlayWave(Wave, KMPOINTF_ZERO, gRes.Sounds.GetSoundType(aSound), False, 1);
 end;
 
 
-procedure TKMSoundPlayer.PlaySoundFromScript(const aFileName: UnicodeString; const Loc: TKMPoint; Attenuated:Boolean; Volume:Single; Radius: Single; aFadesMusic: Boolean);
-begin
-  if SKIP_SOUND or not fIsSoundInitialized then Exit;
 
-  PlaySound(sfx_None, aFileName, KMPointF(Loc), Attenuated, Volume, Radius, aFadesMusic, False);
-end;
-
-
-procedure TKMSoundPlayer.PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech);
+procedure TKMSoundPlayer.PlayWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech);
 begin
   if SKIP_SOUND
     or not fIsSoundInitialized
@@ -646,7 +656,7 @@ begin
 end;
 
 
-procedure TKMSoundPlayer.PlayWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
+procedure TKMSoundPlayer.PlayWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech; const aLoc: TKMPointF);
 var
   Wave: UnicodeString;
   HasLoc: Boolean;
@@ -660,44 +670,52 @@ begin
   HasLoc := not KMSamePointF(aLoc, KMPOINTF_ZERO);
   Wave := gRes.Sounds.FileOfWarrior(aUnitType, aSound, Random(Count));
   if FileExists(Wave) then
-    PlayWave(Wave, aLoc, HasLoc, 1 + 3*byte(HasLoc)); //Attenuate sounds when aLoc is valid
+    PlayWave(Wave, aLoc, gRes.Sounds.GetSoundType(aSound), HasLoc, 1 + 3*Byte(HasLoc)); //Attenuate sounds when aLoc is valid
 end;
 
 
-function TKMSoundPlayer.PlayLoopSound(const aFile: UnicodeString; const aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
+function TKMSoundPlayer.PlayScriptSound(const aFile: UnicodeString; aLoc: TKMPointF; aAttenuate: Boolean; aVolume: Single;
+                                        aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
 var I: Integer;
 begin
   Result := -1; //Failed to play
-  for I := Low(fLoopSoundIndex) to High(fLoopSoundIndex) do
-    if fLoopSoundIndex[I] = -1 then
+  for I := Low(fScriptSoundIndex) to High(fScriptSoundIndex) do
+    if fScriptSoundIndex[I] = -1 then
     begin
-      fLoopSoundIndex[I] := PlaySound(sfx_None, aFile, aLoc, aAttenuate, aVolume, aRadius, False, True);
-      if fLoopSoundIndex[I] <> -1 then
+      fScriptSoundIndex[I] := PlaySound(sfx_None, aFile, aLoc, stGame, aAttenuate, aVolume, aRadius, aFadeMusic, aLooped, True);
+      if fScriptSoundIndex[I] <> -1 then
         Result := I; //Successfully playing
       Exit;
     end;
 end;
 
 
-procedure TKMSoundPlayer.StopLoopSound(aIndex: Integer);
+procedure TKMSoundPlayer.StopScriptSound(aIndex: Integer);
 begin
   if not fIsSoundInitialized then Exit;
-  if fLoopSoundIndex[aIndex] = -1 then Exit;
+  if fScriptSoundIndex[aIndex] = -1 then Exit;
 
   //Stop previously playing sound and release buffer
-  AlSourceStop(fSound[fLoopSoundIndex[aIndex]].ALSource);
-  AlSourcei(fSound[fLoopSoundIndex[aIndex]].ALSource, AL_BUFFER, 0);
+  AlSourceStop(fSound[fScriptSoundIndex[aIndex]].ALSource);
+  AlSourcei(fSound[fScriptSoundIndex[aIndex]].ALSource, AL_BUFFER, 0);
 
-  fSound[fLoopSoundIndex[aIndex]].PlaySince := 0;
-  fLoopSoundIndex[aIndex] := -1;
+  fSound[fScriptSoundIndex[aIndex]].PlaySince := 0;
+  fScriptSoundIndex[aIndex] := -1;
 end;
 
 
-procedure TKMSoundPlayer.AbortAllLoopedSounds;
+procedure TKMSoundPlayer.AbortAllScriptSounds;
 var I: Integer;
 begin
-  for I := Low(fLoopSoundIndex) to High(fLoopSoundIndex) do
-    StopLoopSound(I);
+  for I := Low(fScriptSoundIndex) to High(fScriptSoundIndex) do
+    StopScriptSound(I);
+end;
+
+
+function TKMSoundPlayer.IsSoundPlaying(aIndex: Integer): Boolean;
+begin
+  Result := (fSound[aIndex].PlaySince <> 0)
+      and ((GetTimeSince(fSound[aIndex].PlaySince) < fSound[aIndex].Duration) or fSound[aIndex].Looped)
 end;
 
 
@@ -706,11 +724,10 @@ var I: Integer;
 begin
   Result := 0;
   for I := 1 to MAX_SOUNDS do
-  if (fSound[I].PlaySince <> 0)
-  and ((GetTimeSince(fSound[I].PlaySince) < fSound[I].Duration) or fSound[I].Looped) then
-    Inc(Result)
-  else
-    fSound[I].PlaySince := 0;
+    if IsSoundPlaying(I) then
+      Inc(Result)
+    else
+      fSound[I].PlaySince := 0;
 end;
 
 
@@ -719,13 +736,12 @@ var I: Integer;
 begin
   gRenderAux.CircleOnTerrain(fListener.Pos[1], fListener.Pos[2], MAX_DISTANCE, $00000000, $FFFFFFFF);
   for I := 1 to MAX_SOUNDS do
-  if (fSound[I].PlaySince <> 0)
-  and ((GetTimeSince(fSound[I].PlaySince) < fSound[I].Duration)  or fSound[I].Looped) then
-  begin
-    gRenderAux.CircleOnTerrain(fSound[I].Position.X, fSound[I].Position.Y, 5, $4000FFFF, $FFFFFFFF);
-    gRenderAux.Text(Round(fSound[I].Position.X), Round(fSound[I].Position.Y), fSound[I].Name, $FFFFFFFF);
-  end else
-    fSound[I].PlaySince := 0;
+    if IsSoundPlaying(I) then
+    begin
+      gRenderAux.CircleOnTerrain(fSound[I].Position.X, fSound[I].Position.Y, 5, $4000FFFF, $FFFFFFFF);
+      gRenderAux.Text(Round(fSound[I].Position.X), Round(fSound[I].Position.Y), fSound[I].Name, $FFFFFFFF);
+    end else
+      fSound[I].PlaySince := 0;
 end;
 
 
@@ -751,29 +767,32 @@ end;
 
 
 { TKMLoopSoundsManager }
-destructor TKMLoopSoundsManager.Destroy;
+destructor TKMScriptSoundsManager.Destroy;
 begin
-  gSoundPlayer.AbortAllLoopedSounds;
+  gSoundPlayer.AbortAllScriptSounds;
 
   inherited;
 end;
 
 
-procedure TKMLoopSoundsManager.UpdateState;
+procedure TKMScriptSoundsManager.UpdateState;
 var
   I: Integer;
 begin
   //Check whether a sound needs starting or stopping
-  for I := 0 to fCount-1 do
-    if (fSounds[I].PlayingIndex = -1) and CanPlay(I) then
-      StartLoopSound(I)
-    else
-      if (fSounds[I].PlayingIndex <> -1) and not CanPlay(I) then
-        StopLoopSound(I);
+  for I := 0 to fCount - 1 do
+    if fSounds[I].Looped then
+    begin
+      if (fSounds[I].PlayingIndex = -1) and CanPlay(I) then
+        StartSound(I)
+      else
+        if (fSounds[I].PlayingIndex <> -1) and not CanPlay(I) then
+          StopSound(I);
+    end;
 end;
 
 
-function TKMLoopSoundsManager.CanPlay(aIndex: Integer): Boolean;
+function TKMScriptSoundsManager.CanPlay(aIndex: Integer): Boolean;
 var
   DistanceSqr: Single;
 begin
@@ -789,7 +808,7 @@ begin
 end;
 
 
-procedure TKMLoopSoundsManager.StartLoopSound(aIndex: Integer);
+procedure TKMScriptSoundsManager.StartSound(aIndex: Integer);
 var S: UnicodeString;
 begin
   S := ExeDir + gGame.GetScriptSoundFile(fSounds[aIndex].SoundName, fSounds[aIndex].AudioFormat);
@@ -798,21 +817,23 @@ begin
   if not FileExists(S) or not CanPlay(aIndex) then
     Exit;
 
-  fSounds[aIndex].PlayingIndex := gSoundPlayer.PlayLoopSound(S, KMPointF(fSounds[aIndex].Loc), fSounds[aIndex].Attenuate, fSounds[aIndex].Volume, fSounds[aIndex].Radius);
+  fSounds[aIndex].PlayingIndex := gSoundPlayer.PlayScriptSound(S, KMPointF(fSounds[aIndex].Loc), fSounds[aIndex].Attenuate,
+                                                               fSounds[aIndex].Volume, fSounds[aIndex].Radius,
+                                                               fSounds[aIndex].FadeMusic, fSounds[aIndex].Looped);
 end;
 
 
-procedure TKMLoopSoundsManager.StopLoopSound(aIndex: Integer);
+procedure TKMScriptSoundsManager.StopSound(aIndex: Integer);
 begin
   if fSounds[aIndex].PlayingIndex = -1 then Exit;
 
-  gSoundPlayer.StopLoopSound(fSounds[aIndex].PlayingIndex);
+  gSoundPlayer.StopScriptSound(fSounds[aIndex].PlayingIndex);
   fSounds[aIndex].PlayingIndex := -1;
 end;
 
 
-function TKMLoopSoundsManager.AddLoopSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; 
-                                           aLoc: TKMPoint; aAttenuate: Boolean; aVolume: Single; aRadius: Single): Integer;
+function TKMScriptSoundsManager.AddSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat;
+                                           aLoc: TKMPoint; aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
 var
   NewIndex: Integer;
 begin
@@ -824,6 +845,8 @@ begin
 
   fSounds[NewIndex].ScriptIndex := fLastScriptIndex;
   fSounds[NewIndex].PlayingIndex := -1;
+  fSounds[NewIndex].Looped := aLooped;
+  fSounds[NewIndex].FadeMusic := aFadeMusic;
   fSounds[NewIndex].SoundName := aSoundName;
   fSounds[NewIndex].AudioFormat := aSoundFormat;
   fSounds[NewIndex].Loc := aLoc;
@@ -832,19 +855,25 @@ begin
   fSounds[NewIndex].Radius := aRadius;
   fSounds[NewIndex].HandIndex := aHandIndex;
 
-  StartLoopSound(NewIndex);
+  StartSound(NewIndex);
   Result := fSounds[NewIndex].ScriptIndex;
 end;
 
 
-procedure TKMLoopSoundsManager.RemoveLoopSound(aScriptIndex: Integer);
+procedure TKMScriptSoundsManager.RemoveLoopSound(aScriptIndex: Integer);
+begin
+  RemoveSound(aScriptIndex, True);
+end;
+
+
+procedure TKMScriptSoundsManager.RemoveSound(aScriptIndex: Integer; aLoopedOnly: Boolean = False);
 var
   I: Integer;
 begin
-  for I := 0 to fCount-1 do
-    if fSounds[I].ScriptIndex = aScriptIndex then
+  for I := 0 to fCount - 1 do
+    if (not aLoopedOnly or fSounds[I].Looped) and (fSounds[I].ScriptIndex = aScriptIndex) then
     begin
-      StopLoopSound(I);
+      StopSound(I);
 
       if I <> fCount - 1 then
         Move(fSounds[I+1], fSounds[I], (fCount - 1 - I) * SizeOf(fSounds[I]));
@@ -855,13 +884,13 @@ begin
 end;
 
 
-procedure TKMLoopSoundsManager.UpdateListener(X,Y: Single);
+procedure TKMScriptSoundsManager.UpdateListener(X,Y: Single);
 begin
   fListener := KMPointF(X, Y);
 end;
 
 
-procedure TKMLoopSoundsManager.Save(SaveStream: TKMemoryStream);
+procedure TKMScriptSoundsManager.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
@@ -880,7 +909,7 @@ begin
 end;
 
 
-procedure TKMLoopSoundsManager.Load(LoadStream: TKMemoryStream);
+procedure TKMScriptSoundsManager.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

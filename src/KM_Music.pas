@@ -22,7 +22,7 @@ uses
   ;
 
 type
-  TFadeState = (fsNone, fsFadeOut, fsFadeIn, fsFaded);
+  TKMFadeState = (fsNone, fsFadeOut, fsFadeIn, fsFaded);
 
   TKMMusicLib = class
   private
@@ -36,7 +36,7 @@ type
     MusicGain: Single;
     {$IFDEF USEBASS} fBassStream, fBassOtherStream: Cardinal; {$ENDIF}
     {$IFDEF USELIBZPLAY} ZPlayer, ZPlayerOther: ZPlay; {$ENDIF} //I dislike that it's not TZPlay... Guess they don't know Delphi conventions.
-    fFadeState: TFadeState;
+    fFadeState: TKMFadeState;
     fFadeStarted: Cardinal;
     fToPlayAfterFade: UnicodeString;
     fFadedToPlayOther: Boolean;

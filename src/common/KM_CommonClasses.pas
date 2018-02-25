@@ -70,6 +70,12 @@ type
   TStreamEvent = procedure (aData: TKMemoryStream) of object;
   TStreamIntEvent = procedure (aData: TKMemoryStream; aSenderIndex: ShortInt) of object;
 
+  //TXStringList using integer values, instead of its String represantation, when sorted
+  TXStringList = class(TStringList)
+  protected
+    function CompareStrings(const S1, S2: string): Integer; override;
+  end;
+
 
   //TKMList owns items and frees them when they are deleted from the list
   TKMList = class(TList)
@@ -93,6 +99,9 @@ type
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
     procedure Add(const aLoc: TKMPoint);
+    procedure AddList(aList: TKMPointList);
+    procedure AddUnique(const aLoc: TKMPoint);
+    procedure AddListUnique(aList: TKMPointList);
     function  Remove(const aLoc: TKMPoint): Integer; virtual;
     procedure Delete(aIndex: Integer);
     procedure Insert(ID: Integer; const aLoc: TKMPoint);
@@ -107,6 +116,7 @@ type
     procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
   end;
 
+  TKMPointListArray = array of TKMPointList;
 
   TKMPointTagList = class(TKMPointList)
   public
@@ -158,6 +168,18 @@ implementation
 uses
   Math, KM_CommonUtils;
 
+{TXStringList}
+//List custom comparation, using Integer value, instead of its String represantation
+function TXStringList.CompareStrings(const S1, S2: string): Integer;
+var
+  i1, i2, e1, e2: Integer;
+begin
+  Val(S1, i1, e1);
+  Assert((e1 = 0) or (S1[e1] = NameValueSeparator));
+  Val(S2, i2, e2);
+  Assert((e2 = 0) or (S2[e2] = NameValueSeparator));
+  Result := CompareValue(i1, i2);
+end;
 
 { ELocError }
 constructor ELocError.Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
@@ -376,6 +398,31 @@ begin
     SetLength(fItems, fCount + 32);
   fItems[fCount] := aLoc;
   Inc(fCount);
+end;
+
+
+procedure TKMPointList.AddList(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    Add(aList[I]);
+end;
+
+
+procedure TKMPointList.AddUnique(const aLoc: TKMPoint);
+begin
+  if not Contains(aLoc) then
+    Add(aLoc);
+end;
+
+
+procedure TKMPointList.AddListUnique(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    AddUnique(aList[I]);
 end;
 
 

@@ -41,6 +41,7 @@ type
 
     fTexts: array of TUnicodeStringArray;
     function GetTexts(aIndex: Word): UnicodeString;
+    function GetDefaultTexts(aIndex: Word): UnicodeString;
     procedure InitLocaleIds;
     function DoParseTextMarkup(const aText: UnicodeString; aTagSym: Char): UnicodeString;
   public
@@ -50,6 +51,7 @@ type
     function ParseTextMarkup(const aText: UnicodeString; aParams: array of const): UnicodeString; overload;
     function HasText(aIndex: Word): Boolean;
     property Texts[aIndex: Word]: UnicodeString read GetTexts; default;
+    property DefaultTexts[aIndex: Word]: UnicodeString read GetDefaultTexts;
     procedure Save(aStream: TKMemoryStream);
     procedure Load(aStream: TKMemoryStream);
   end;
@@ -114,7 +116,7 @@ begin
       Break;
   end;
 
-  Assert(topId <= 1024, 'Dont allow too many strings for no reason');
+  Assert(topId <= 2048, 'Dont allow too many strings for no reason');
 
   // Don't shrink the array, we might be overloading base locale with a partial translation
   if Length(aArray) < topId + 1 then
@@ -209,6 +211,16 @@ begin
   if (fPref[1] <> -1) and (aIndex < Length(fTexts[fPref[1]])) and (fTexts[fPref[1], aIndex] <> '') then
     Result := fTexts[fPref[1], aIndex]
   else
+  if (fPref[2] <> -1) and (aIndex < Length(fTexts[fPref[2]])) and (fTexts[fPref[2], aIndex] <> '') then
+    Result := fTexts[fPref[2], aIndex]
+  else
+    Result := '~~~String ' + IntToStr(aIndex) + ' out of range!~~~';
+end;
+
+
+// Returns in text default locale
+function TKMTextLibraryMulti.GetDefaultTexts(aIndex: Word): UnicodeString;
+begin
   if (fPref[2] <> -1) and (aIndex < Length(fTexts[fPref[2]])) and (fTexts[fPref[2], aIndex] <> '') then
     Result := fTexts[fPref[2], aIndex]
   else

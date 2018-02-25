@@ -14,7 +14,7 @@ type
   private
     fPaintVirtualGroups: Boolean; //Paint missing army memmbers
     fSepia: Boolean; //Less saturated display for menu
-    fParser: TMissionParserPreview;
+    fParser: TKMMissionParserPreview;
     fMyTerrain: TKMTerrain;
     fAlerts: TKMAlerts;
 
@@ -59,7 +59,8 @@ uses
   SysUtils, KromUtils, Math,
   KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
   KM_Units, KM_UnitGroups, KM_Hand, KM_HandsCollection,
-  KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils;
+  KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils,
+  KM_GameTypes;
 
 
 { TKMMinimap }
@@ -73,7 +74,7 @@ begin
   //We don't need terrain on main menu, just a parser
   //Otherwise access synced Game terrain
   if aFromParser then
-    fParser := TMissionParserPreview.Create;
+    fParser := TKMMissionParserPreview.Create;
 end;
 
 
@@ -277,7 +278,7 @@ begin
       for K := 0 to fMapX - 1 do
       begin
         if not KMInRect(KMPoint(K+1,I+1), gGame.MapEditor.ResizeMapRect) then
-          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 2, 1, 1); // make red margins where current map is cut
+          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1); // make red margins where current map is cut
       end;
 
 end;

@@ -18,6 +18,7 @@ uses
 
   KromOGLUtils in 'src\ext\KromOGLUtils.pas',
   KromUtils in 'src\ext\KromUtils.pas',
+	KromShellUtils in 'src\ext\KromShellUtils.pas',
 
   KM_AI in 'src\ai\KM_AI.pas',
   KM_AIArmyEvaluation in 'src\ai\KM_AIArmyEvaluation.pas',
@@ -44,7 +45,8 @@ uses
   KM_Controls in 'src\KM_Controls.pas',
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
   KM_FogOfWar in 'src\KM_FogOfWar.pas',
-	
+
+  KM_GameTypes in 'src\game\KM_GameTypes.pas',  
   KM_Game in 'src\game\KM_Game.pas',
   KM_GameApp in 'src\game\KM_GameApp.pas',
   KM_GameCursor in 'src\game\KM_GameCursor.pas',
@@ -57,10 +59,12 @@ uses
   KM_GUIGameBuild in 'src\gui\pages_game\KM_GUIGameBuild.pas',
   KM_GUIGameChat in 'src\gui\pages_game\KM_GUIGameChat.pas',
   KM_GUIGameHouse in 'src\gui\pages_game\KM_GUIGameHouse.pas',
-	KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
+  KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
   KM_GUIGameRatios in 'src\gui\pages_game\KM_GUIGameRatios.pas',
   KM_GUIGameStats in 'src\gui\pages_game\KM_GUIGameStats.pas',
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
+  KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
+  KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',
@@ -71,7 +75,7 @@ uses
   KM_GUIMapEdMenuLoad in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuLoad.pas',
   KM_GUIMapEdMenuSave in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuSave.pas',
   KM_GUIMapEdMenuResize in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuResize.pas',
-  KM_GUIMapEdMenuTryMap in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuTryMap.pas',
+  KM_GUIMapEdMenuQuickPlay in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuQuickPlay.pas',
   KM_GUIMapEdMenuQuit in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuQuit.pas',
   KM_GUIMapEdMenuSettings in 'src\gui\pages_maped\menu\KM_GUIMapEdMenuSettings.pas',
 	
@@ -97,6 +101,7 @@ uses
   KM_GUIMapEdTerrainTiles in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainTiles.pas',
   KM_GUIMapEdTerrainObjects in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainObjects.pas',
   KM_GUIMapEdTerrainSelection in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainSelection.pas',
+  KM_GUIMapEdRMG in 'src\gui\pages_maped\terrain\KM_GUIMapEdRMG.pas',
 	
   KM_GUIMapEdTown in 'src\gui\pages_maped\town\KM_GUIMapEdTown.pas',
   KM_GUIMapEdTownUnits in 'src\gui\pages_maped\town\KM_GUIMapEdTownUnits.pas',
@@ -121,8 +126,6 @@ uses
   KM_GUIMenuMultiplayer in 'src\gui\pages_menu\KM_GUIMenuMultiplayer.pas',
   KM_GUIMenuOptions in 'src\gui\pages_menu\KM_GUIMenuOptions.pas',
   KM_GUIMenuReplays in 'src\gui\pages_menu\KM_GUIMenuReplays.pas',
-  KM_GUIMenuResultsMP in 'src\gui\pages_menu\KM_GUIMenuResultsMP.pas',
-  KM_GUIMenuResultsSP in 'src\gui\pages_menu\KM_GUIMenuResultsSP.pas',
   KM_GUIMenuSingleMap in 'src\gui\pages_menu\KM_GUIMenuSingleMap.pas',
   KM_GUIMenuSinglePlayer in 'src\gui\pages_menu\KM_GUIMenuSinglePlayer.pas',
 
@@ -139,6 +142,8 @@ uses
   KM_HouseMarket in 'src\houses\KM_HouseMarket.pas',
   KM_Houses in 'src\houses\KM_Houses.pas',
   KM_HouseSchool in 'src\houses\KM_HouseSchool.pas',
+  KM_HouseTownHall in 'src\houses\KM_HouseTownHall.pas',
+  KM_HouseWoodcutters in 'src\houses\KM_HouseWoodcutters.pas',
   KM_InterfaceDefaults in 'src\gui\KM_InterfaceDefaults.pas',
   KM_InterfaceGame in 'src\gui\KM_InterfaceGame.pas',
   KM_InterfaceGamePlay in 'src\gui\KM_InterfaceGamePlay.pas',
@@ -235,6 +240,7 @@ uses
 
   KM_ServerQuery in 'src\net\KM_ServerQuery.pas',
   KM_Settings in 'src\KM_Settings.pas',
+	KM_SoftShadows in 'src\KM_SoftShadows.pas',
   KM_Sound in 'src\KM_Sound.pas',
 
   KM_Terrain in 'src\terrain\KM_Terrain.pas',
@@ -243,6 +249,8 @@ uses
   KM_TerrainPainter in 'src\terrain\KM_TerrainPainter.pas',
   KM_TerrainSelection in 'src\terrain\KM_TerrainSelection.pas',
   KM_TerrainWalkConnect in 'src\terrain\KM_TerrainWalkConnect.pas',
+  KM_RandomMapGenerator in 'src\terrain\KM_RandomMapGenerator.pas',
+  KM_RMGUtils in 'src\terrain\KM_RMGUtils.pas',
 
   KM_UnitActionAbandonWalk in 'src\units\KM_UnitActionAbandonWalk.pas',
   KM_UnitActionFight in 'src\units\KM_UnitActionFight.pas',
@@ -262,6 +270,7 @@ uses
   KM_UnitTaskDie in 'src\units\KM_UnitTaskDie.pas',
   KM_UnitTaskGoEat in 'src\units\KM_UnitTaskGoEat.pas',
   KM_UnitTaskGoHome in 'src\units\KM_UnitTaskGoHome.pas',
+	KM_UnitTaskDismiss in 'src\units\KM_UnitTaskDismiss.pas',
   KM_UnitTaskGoOutShowHungry in 'src\units\KM_UnitTaskGoOutShowHungry.pas',
   KM_UnitTaskMining in 'src\units\KM_UnitTaskMining.pas',
   KM_UnitTaskSelfTrain in 'src\units\KM_UnitTaskSelfTrain.pas',
@@ -274,6 +283,8 @@ uses
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
+  KM_FloodFill in 'src\utils\KM_FloodFill.pas',
+
 	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas';

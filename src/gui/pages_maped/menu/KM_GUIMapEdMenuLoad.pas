@@ -58,7 +58,7 @@ begin
   Radio_Load_MapType := TKMRadioGroup.Create(Panel_Load,0,32,TB_WIDTH,54,fnt_Grey);
   Radio_Load_MapType.ItemIndex := 0;
   Radio_Load_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
-  Radio_Load_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
+  Radio_Load_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS_SHORT]);
   Radio_Load_MapType.Add(gResTexts[TX_MENU_MAPED_DLMAPS]);
   Radio_Load_MapType.OnChange := Menu_LoadChange;
   ListBox_Load := TKMListBox.Create(Panel_Load, 0, 104, TB_WIDTH, 205, fnt_Grey, bsGame);
@@ -94,7 +94,7 @@ begin
 
     MapName := ListBox_Load.Item[ListBox_Load.ItemIndex];
     IsMulti := Radio_Load_MapType.ItemIndex <> 0;
-    gGameApp.NewMapEditor(TKMapsCollection.FullPath(MapName, '.dat', TMapFolder(Radio_Load_MapType.ItemIndex)), 0, 0);
+    gGameApp.NewMapEditor(TKMapsCollection.FullPath(MapName, '.dat', TKMapFolder(Radio_Load_MapType.ItemIndex)), 0, 0);
 
     //Keep MP/SP selected in the map editor interface
     //(if mission failed to load we would have fGame = nil)

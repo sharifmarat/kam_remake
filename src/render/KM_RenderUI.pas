@@ -12,6 +12,7 @@ type
   TKMButtonStateSet = set of (bsOver, bsDown, bsDisabled);
   TKMButtonStyle = (bsMenu, bsGame); //Menu buttons are metal, game buttons are stone
   TKMTextAlign = (taLeft, taCenter, taRight);
+  TKMTextVAlign = (tvaNone, tvaTop, tvaMiddle, tvaBottom);
 
   TKMRenderUI = class
   public
@@ -19,19 +20,24 @@ type
     class procedure SetupClipY        (Y1,Y2: SmallInt);
     class procedure ReleaseClipX;
     class procedure ReleaseClipY;
-    class procedure Write3DButton     (aLeft, aTop, aWidth, aHeight: SmallInt; aRX: TRXType; aID: Word; aFlagColor: TColor4; aState: TKMButtonStateSet; aStyle: TKMButtonStyle; aImageEnabled: Boolean = True);
-    class procedure WriteBevel        (aLeft, aTop, aWidth, aHeight: SmallInt; aEdgeAlpha: Single = 1; aBackAlpha: Single = 0.5);
-    class procedure WritePercentBar   (aLeft, aTop, aWidth, aHeight: SmallInt; aPos: Single; aSeam: Single);
-    class procedure WritePicture      (aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word; aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
-    class procedure WritePlot         (aLeft, aTop, aWidth, aHeight: SmallInt; aValues: TKMCardinalArray; aMaxValue: Cardinal; aColor: TColor4; aLineWidth: Byte);
-    class procedure WriteOutline      (aLeft, aTop, aWidth, aHeight, aLineWidth: SmallInt; Col: TColor4);
-    class procedure WriteShape        (aLeft, aTop, aWidth, aHeight: SmallInt; Col: TColor4; Outline: TColor4 = $00000000);
-    class procedure WritePolyShape    (aPoints: array of TKMPoint; aColor: TColor4);
-    class procedure WriteLine         (aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
-    class procedure WriteText         (aLeft, aTop, aWidth: SmallInt; aText: UnicodeString; aFont: TKMFont; aAlign: TKMTextAlign; aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False; aTabWidth: Integer = TAB_WIDTH);
-    class procedure WriteTexture      (aLeft, aTop, aWidth, aHeight: SmallInt; const aTexture: TTexture; aCol: TColor4);
-    class procedure WriteCircle       (aCenterX, aCenterY: SmallInt; aRadius: Byte; aFillColor: TColor4);
-    class procedure WriteShadow       (aLeft, aTop, aWidth, aHeight: SmallInt; aBlur: Byte; aCol: TColor4);
+    class procedure Write3DButton  (aLeft, aTop, aWidth, aHeight: SmallInt; aRX: TRXType; aID: Word; aFlagColor: TColor4;
+                                    aState: TKMButtonStateSet; aStyle: TKMButtonStyle; aImageEnabled: Boolean = True);
+    class procedure WriteBevel     (aLeft, aTop, aWidth, aHeight: SmallInt; aEdgeAlpha: Single = 1; aBackAlpha: Single = 0.5);
+    class procedure WritePercentBar(aLeft, aTop, aWidth, aHeight: SmallInt; aPos: Single; aSeam: Single);
+    class procedure WritePicture   (aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word;
+                                    aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
+    class procedure WritePlot      (aLeft, aTop, aWidth, aHeight: SmallInt; aValues: TKMCardinalArray; aMaxValue: Cardinal;
+                                    aColor: TColor4; aLineWidth: Byte);
+    class procedure WriteOutline   (aLeft, aTop, aWidth, aHeight, aLineWidth: SmallInt; Col: TColor4);
+    class procedure WriteShape     (aLeft, aTop, aWidth, aHeight: SmallInt; Col: TColor4; Outline: TColor4 = $00000000);
+    class procedure WritePolyShape (aPoints: array of TKMPoint; aColor: TColor4);
+    class procedure WriteLine      (aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
+    class procedure WriteText      (aLeft, aTop, aWidth: SmallInt; aText: UnicodeString; aFont: TKMFont; aAlign: TKMTextAlign;
+                                    aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False;
+                                    aShowEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH);
+    class procedure WriteTexture   (aLeft, aTop, aWidth, aHeight: SmallInt; aTexture: TTexture; aCol: TColor4);
+    class procedure WriteCircle    (aCenterX, aCenterY: SmallInt; aRadius: Byte; aFillColor: TColor4);
+    class procedure WriteShadow    (aLeft, aTop, aWidth, aHeight: SmallInt; aBlur: Byte; aCol: TColor4);
   end;
 
 
@@ -94,6 +100,8 @@ var
   BackRX: TRXType;
   BackID: Word;
 begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   if aStyle = bsMenu then
   begin
     BackRX := rxGuiMain;
@@ -234,6 +242,7 @@ var
   BarWidth: Word;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushMatrix;
     glTranslatef(aLeft, aTop, 0);
 
@@ -280,6 +289,8 @@ var
   DrawWidth, DrawHeight: Integer;
 begin
   if aID = 0 then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
 
   OffX  := 0;
   OffY  := 0;
@@ -372,6 +383,7 @@ var
   I: Integer;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
   glPushMatrix;
     //glEnable(GL_LINE_SMOOTH); //Smooth lines actually look odd in KaM
@@ -390,6 +402,9 @@ end;
 class procedure TKMRenderUI.WriteOutline(aLeft, aTop, aWidth, aHeight, aLineWidth: SmallInt; Col: TColor4);
 begin
   if aLineWidth = 0 then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
     glLineWidth(aLineWidth);
     glColor4ubv(@Col);
@@ -403,6 +418,8 @@ end;
 //Renders plane with given color and optional 1px outline
 class procedure TKMRenderUI.WriteShape(aLeft, aTop, aWidth, aHeight: SmallInt; Col: TColor4; Outline: TColor4 = $00000000);
 begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glPushAttrib(GL_LINE_BIT);
     glColor4ubv(@Col);
     glBegin(GL_QUADS);
@@ -422,6 +439,7 @@ class procedure TKMRenderUI.WritePolyShape(aPoints: array of TKMPoint; aColor: T
 var I: Integer;
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aColor);
   glBegin(GL_POLYGON);
     for I := 0 to High(aPoints) do
@@ -435,6 +453,7 @@ end;
 class procedure TKMRenderUI.WriteLine(aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
 begin
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aCol);
 
   glEnable(GL_LINE_STIPPLE);
@@ -451,7 +470,8 @@ end;
 {Renders a line of text}
 {By default color must be non-transparent white}
 class procedure TKMRenderUI.WriteText(aLeft, aTop, aWidth: SmallInt; aText: UnicodeString; aFont: TKMFont; aAlign: TKMTextAlign;
-                                      aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False; aTabWidth: Integer = TAB_WIDTH);
+                                      aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False;
+                                      aShowEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH);
 var
   I, K: Integer;
   LineCount,dx,dy,LineHeight,BlockWidth,PrevAtlas, LineWidthInc: Integer;
@@ -463,8 +483,32 @@ var
     FirstChar: Word;
     Color: TColor4;
   end;
+
+  procedure DrawLetter;
+  begin
+    Let := FontData.GetLetter(aText[I]);
+
+    if (PrevAtlas = -1) or (PrevAtlas <> Let.AtlasId) then
+    begin
+      if PrevAtlas <> -1 then
+        glEnd; //End previous draw
+      PrevAtlas := Let.AtlasId;
+      TRender.BindTexture(FontData.TexID[Let.AtlasId]);
+      glBegin(GL_QUADS);
+    end;
+
+    glTexCoord2f(Let.u1, Let.v1); glVertex2f(dx            , dy            + Let.YOffset);
+    glTexCoord2f(Let.u2, Let.v1); glVertex2f(dx + Let.Width, dy            + Let.YOffset);
+    glTexCoord2f(Let.u2, Let.v2); glVertex2f(dx + Let.Width, dy+Let.Height + Let.YOffset);
+    glTexCoord2f(Let.u1, Let.v2); glVertex2f(dx            , dy+Let.Height + Let.YOffset);
+    Inc(dx, Let.Width + FontData.CharSpacing);
+  end;
+
 begin
   if (aText = '') or (aColor = $00000000) then Exit;
+
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   SetLength(Colors, 0);
 
   if aWidth <> 0 then
@@ -505,9 +549,10 @@ begin
 
   //Calculate line count and each lines width to be able to properly aAlign them
   LineCount := 1;
-  for I := 1 to Length(aText) do
-    if aText[I] = #124 then
-      Inc(LineCount);
+  if not aShowEolSymbol then
+    for I := 1 to Length(aText) do
+      if aText[I] = #124 then
+        Inc(LineCount);
 
   SetLength(LineWidth, LineCount+2); //1..n+1 (for last line)
 
@@ -518,11 +563,11 @@ begin
     if aText[I] = #9 then // Tab char
       LineWidthInc := (Floor(LineWidth[LineCount] / aTabWidth) + 1) * aTabWidth - LineWidth[LineCount]
     else
-      LineWidthInc := FontData.GetCharWidth(aText[I]);
+      LineWidthInc := FontData.GetCharWidth(aText[I], aShowEolSymbol);
     Inc(LineWidth[LineCount], LineWidthInc);
 
     //If EOL or aText end
-    if (aText[I] = #124) or (I = Length(aText)) then
+    if (not aShowEolSymbol and (aText[I] = #124)) or (I = Length(aText)) then
     begin
       if aText[I] <> #9 then // for Tab reduce line width for CharSpacing and also for TAB 'jump'
         LineWidthInc := 0;
@@ -567,7 +612,9 @@ begin
     case aText[I] of
       #9:   dx := aLeft + (Floor((dx - aLeft) / aTabWidth) + 1) * aTabWidth;
       #32:  Inc(dx, FontData.WordSpacing);
-      #124: begin
+      #124: if aShowEolSymbol then
+              DrawLetter
+            else begin
               //KaM uses #124 or vertical bar (|) for new lines in the LIB files,
               //so lets do the same here. Saves complex conversions...
               Inc(dy, LineHeight);
@@ -578,24 +625,7 @@ begin
                 taRight:  dx := aLeft + aWidth - LineWidth[LineCount];
               end;
             end;
-      else  begin
-              Let := FontData.GetLetter(aText[I]);
-
-              if (PrevAtlas = -1) or (PrevAtlas <> Let.AtlasId) then
-              begin
-                if PrevAtlas <> -1 then
-                  glEnd; //End previous draw
-                PrevAtlas := Let.AtlasId;
-                TRender.BindTexture(FontData.TexID[Let.AtlasId]);
-                glBegin(GL_QUADS);
-              end;
-
-              glTexCoord2f(Let.u1, Let.v1); glVertex2f(dx            , dy            + Let.YOffset);
-              glTexCoord2f(Let.u2, Let.v1); glVertex2f(dx + Let.Width, dy            + Let.YOffset);
-              glTexCoord2f(Let.u2, Let.v2); glVertex2f(dx + Let.Width, dy+Let.Height + Let.YOffset);
-              glTexCoord2f(Let.u1, Let.v2); glVertex2f(dx            , dy+Let.Height + Let.YOffset);
-              Inc(dx, Let.Width + FontData.CharSpacing);
-            end;
+      else  DrawLetter;
     end;
     //When we reach the end, if we painted something then we need to end it
     if (I = Length(aText)) and (PrevAtlas <> -1) then
@@ -655,7 +685,9 @@ var
   I: Byte;
 begin
   if aRadius = 0 then Exit;
+
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
   glColor4ubv(@aFillColor);
   glBegin(GL_POLYGON);
     for I := 0 to 15 do

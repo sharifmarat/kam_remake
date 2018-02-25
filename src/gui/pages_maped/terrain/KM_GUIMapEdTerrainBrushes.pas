@@ -3,7 +3,9 @@ unit KM_GUIMapEdTerrainBrushes;
 interface
 uses
    Classes, Math, SysUtils,
-   KM_Controls, KM_Defaults, KM_Pics, KM_ResTileset;
+   KM_Controls,
+   KM_InterfaceDefaults,
+   KM_Defaults, KM_Pics, KM_ResTileset;
 
 
 const
@@ -11,7 +13,7 @@ const
 
 type
   //Painting on terrain with terrain brushes
-  TKMMapEdTerrainBrushes = class
+  TKMMapEdTerrainBrushes = class (TKMMapEdSubMenuPage)
   private
     fLastShape: TKMMapEdShape;
     fLastBrush: Integer;
@@ -32,7 +34,7 @@ type
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
     procedure RightClickCancel;
     procedure UpdateState;
@@ -41,8 +43,10 @@ type
 
 implementation
 uses
-  TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI,
-  KM_TerrainPainter, KM_InterfaceGame;
+  {$IFDEF MSWindows} Windows, {$ENDIF}
+  {$IFDEF Unix} LCLType, {$ENDIF}
+  TypInfo, KM_ResFonts, KM_ResTexts, KM_Game, KM_GameCursor, KM_RenderUI, KM_ResKeys,
+  KM_TerrainPainter, KM_InterfaceGame, KM_Utils;
 
 type
   TMBrushButtonType = (bbtBrush = -1, bbtMask = -2);
@@ -75,18 +79,19 @@ begin
   BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, BRUSH_MAX_SIZE);
   BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
+  BrushSize.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, 'Ctrl + MouseWheel');
   BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 28, 24, 24, 592);
-  BrushCircle.Hint := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_CIRCLE];
+  BrushCircle.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_CIRCLE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   BrushCircle.OnClick := BrushChange;
   BrushSquare := TKMButtonFlat.Create(Panel_Brushes, 134, 28, 24, 24, 593);
-  BrushSquare.Hint := gResTexts[TX_MAPED_TERRAIN_HEIGHTS_SQUARE];
+  BrushSquare.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_SQUARE, SC_MAPEDIT_SUB_MENU_ACTION_2);
   BrushSquare.OnClick := BrushChange;
 
   for I := Low(Surfaces) to High(Surfaces) do
     for K := Low(Surfaces[I]) to High(Surfaces[I]) do
     if Surfaces[I,K] <> tkCustom then
     begin
-      BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, K * 36, 60 + I * 40, 34, 34, Combo[Surfaces[I,K], Surfaces[I,K], 1] + 1, rxTiles);
+      BrushTable[I,K] := TKMButtonFlat.Create(Panel_Brushes, K * 36, 60 + I * 40, 34, 34, Combo[Surfaces[I,K], Surfaces[I,K], 1] + 1, rxTiles); // grass
       BrushTable[I,K].Tag := Byte(Surfaces[I,K]);
       BrushTable[I,K].Tag2 := Byte(bbtBrush);
       HintStr := GetEnumName(TypeInfo(TKMTerrainKind), Integer(Surfaces[I,K]));
@@ -96,7 +101,7 @@ begin
 
   BrushRandom := TKMCheckBox.Create(Panel_Brushes, 0, 300, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
   BrushRandom.OnClick := BrushChange;
-  BrushRandom.Hint := 'Use random elements while drawing'; //Todo translate
+  BrushRandom.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_RANDOM, SC_MAPEDIT_SUB_MENU_ACTION_3);
 
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
@@ -117,7 +122,14 @@ begin
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 320, 34, 34, 668, rxGui);
   MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate
-  MagicBrush.OnClick := BrushChange;
+
+  fSubMenuActionsEvents[0] := BrushChange;
+  fSubMenuActionsEvents[1] := BrushChange;
+  fSubMenuActionsEvents[2] := BrushChange;
+
+  fSubMenuActionsCtrls[0] := BrushCircle;
+  fSubMenuActionsCtrls[1] := BrushSquare;
+  fSubMenuActionsCtrls[2] := BrushRandom;
 end;
 
 
@@ -217,8 +229,7 @@ end;
 
 procedure TKMMapEdTerrainBrushes.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
 begin
-  aHandled := False;
-  if ssCtrl in Shift then
+  if not aHandled and Visible and (GetKeyState(VK_CONTROL) < 0) then // Do not use ssCtrl in SHift here, as it can sometimes be wrong values inside Shift (ssShift instead of ssCtrl)
   begin
     BrushSize.Position := Max(0, BrushSize.Position - (WheelDelta div 100)); //can't set negative number
     BrushChange(nil);

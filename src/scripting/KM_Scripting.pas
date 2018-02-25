@@ -68,11 +68,13 @@ type
     procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
     procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
     function HasErrors: Boolean;
+    function HasWarnings: Boolean;
     procedure AppendError(aError: TKMScriptErrorMessage);
     procedure AppendWarning(aWarning: TKMScriptErrorMessage);
     procedure AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
     procedure AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
     procedure HandleErrors;
+    procedure Clear;
   end;
 
 
@@ -127,8 +129,8 @@ type
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
     function FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+    constructor Create(aOnScriptError: TUnicodeStringEvent); // Scripting has to be created via special TKMScriptingCreator
   public
-    constructor Create(aOnScriptError: TUnicodeStringEvent);
     destructor Destroy; override;
 
     property ErrorHandler: TKMScriptErrorHandler read fErrorHandler;
@@ -157,6 +159,13 @@ type
   end;
 
 
+  //Scripting creator
+  TKMScriptingCreator = class
+  public
+    class function CreateScripting(aOnScriptError: TUnicodeStringEvent): TKMScripting;
+  end;
+
+
 const
   MAX_LOG_SIZE = 1024 * 1024; //1 MB
   CAMPAIGN_DATA_TYPE = 'TCampaignData'; //Type of the global variable
@@ -177,28 +186,44 @@ uses
 const
   SCRIPT_LOG_EXT = '.log.txt';
 
+var
+  gScripting: TKMScripting;
+
 
 {Regular procedures and functions to wrap TKMScripting procedures and functions}
 function ScriptOnUsesFunc(Sender: TPSPascalCompiler; const Name: AnsiString): Boolean;
 begin
   Result := False;
-  if gGame <> nil then
-    Result := gGame.Scripting.ScriptOnUses(Sender, Name);
+  if gScripting <> nil then
+    Result := gScripting.ScriptOnUses(Sender, Name);
 end;
 
 
 procedure ScriptOnUseVariableProc(Sender: TPSPascalCompiler; VarType: TPSVariableType; VarNo: Integer; ProcNo, Position: Cardinal; const PropData: tbtString);
 begin
-  if gGame <> nil  then
-    gGame.Scripting.ScriptOnUseVariable(Sender, VarType, VarNo, ProcNo, Position, PropData);
+  if gScripting <> nil  then
+    gScripting.ScriptOnUseVariable(Sender, VarType, VarNo, ProcNo, Position, PropData);
 end;
 
 
 function ScriptOnExportCheckFunc(Sender: TPSPascalCompiler; Proc: TPSInternalProcedure; const ProcDecl: AnsiString): Boolean;
 begin
   Result := False;
-  if gGame <> nil then
-    Result := gGame.Scripting.ScriptOnExportCheck(Sender, Proc, ProcDecl);
+  if gScripting <> nil then
+    Result := gScripting.ScriptOnExportCheck(Sender, Proc, ProcDecl);
+end;
+
+
+{ TKMScriptingCreator }
+//We need to save pointer to scripting object (in gScripting), as it is used by ScriptOnUsesFunc/ScriptOnUseVariableProc/ScriptOnExportCheckFunc
+//These functions are regular methods and need TKMScripting object in global scope
+class function TKMScriptingCreator.CreateScripting(aOnScriptError: TUnicodeStringEvent): TKMScripting;
+begin
+  if gScripting <> nil then // Should never happen in 1 application, as only 1 TKMScripting object is needed usually
+    FreeAndNil(gScripting);
+
+  gScripting := TKMScripting.Create(aOnScriptError);
+  Result := gScripting;
 end;
 
 
@@ -237,6 +262,7 @@ begin
   FreeAndNil(fUtils);
   FreeAndNil(fErrorHandler);
   FreeAndNil(fPreProcessor);
+  gScripting := nil;
   inherited;
 end;
 
@@ -265,6 +291,8 @@ end;
 //For example: uses ii1, ii2;
 //This will call this function 3 times. First with 'SYSTEM' then 'II1' and then 'II2'
 function TKMScripting.ScriptOnUses(Sender: TPSPascalCompiler; const Name: AnsiString): Boolean;
+  //Register classes and methods to the script engine.
+  //After that they can be used from within the script.
   procedure RegisterMethodCheck(aClass: TPSCompileTimeClass; const aDecl: String);
   begin
     // We are fine with Assert, cos it will trigger for devs during development
@@ -288,10 +316,14 @@ begin
 
     // Common
     Sender.AddTypeS('TIntegerArray', 'array of Integer'); //Needed for PlayerGetAllUnits
+    Sender.AddTypeS('TAnsiStringArray', 'array of AnsiString'); //Needed for some array Utils
     Sender.AddTypeS('TByteSet', 'set of Byte'); //Needed for Closest*MultipleTypes
+    Sender.AddTypeS('TKMPoint', 'record X,Y: Integer; end;'); //Could be very useful
+
+    Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
-    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctHeight, tctObject)');
+    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctRotation, tctHeight, tctObject)');
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
@@ -331,6 +363,7 @@ begin
     RegisterMethodCheck(c, 'function HouseDeliveryMode(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseDestroyed(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseHasOccupant(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseFlagPoint(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HouseIsComplete(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseOwner(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HousePositionX(aHouseID: Integer): Integer');
@@ -339,12 +372,14 @@ begin
     RegisterMethodCheck(c, 'function HouseResourceAmount(aHouseID, aResource: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseSchoolQueue(aHouseID, QueueIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseSiteIsDigged(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseTownHallMaxGold(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseType(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseTypeMaxHealth(aHouseType: Integer): Word');
     RegisterMethodCheck(c, 'function HouseTypeName(aHouseType: Byte): AnsiString');
     RegisterMethodCheck(c, 'function HouseTypeToOccupantType(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseUnlocked(aPlayer, aHouseType: Word): Boolean');
     RegisterMethodCheck(c, 'function HouseWoodcutterChopOnly(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseWoodcutterMode(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseWareBlocked(aHouseID, aWareType: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer');
 
@@ -406,6 +441,7 @@ begin
     RegisterMethodCheck(c, 'function UnitCarrying(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitDead(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitDirection(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitDismissable(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitHome(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPCurrent(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPMax(aUnitID: Integer): Integer');
@@ -495,8 +531,10 @@ begin
     RegisterMethodCheck(c, 'function  HouseSchoolQueueAdd(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer');
     RegisterMethodCheck(c, 'procedure HouseSchoolQueueRemove(aHouseID, QueueIndex: Integer)');
     RegisterMethodCheck(c, 'procedure HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word)');
+    RegisterMethodCheck(c, 'procedure HouseTownHallMaxGold(aHouseID: Integer; aMaxGold: Integer)');
     RegisterMethodCheck(c, 'procedure HouseUnlock(aPlayer, aHouseType: Word)');
     RegisterMethodCheck(c, 'procedure HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseWoodcutterMode(aHouseID: Integer; aWoodcutterMode: Byte)');
     RegisterMethodCheck(c, 'procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean)');
     RegisterMethodCheck(c, 'procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer)');
 
@@ -508,6 +546,7 @@ begin
     RegisterMethodCheck(c, 'function MapTileObjectSet(X, Y, Obj: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTileSet(X, Y, aType, aRotation: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
+    RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
     RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString)');
     RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
@@ -530,19 +569,24 @@ begin
     RegisterMethodCheck(c, 'procedure PlayerWareDistribution(aPlayer, aWareType, aHouseType, aAmount: Byte)');
     RegisterMethodCheck(c, 'procedure PlayerWin(const aVictors: array of Integer; aTeamVictory: Boolean)');
 
-    RegisterMethodCheck(c, 'procedure PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single)');
-    RegisterMethodCheck(c, 'procedure PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word)');
-    RegisterMethodCheck(c, 'function  PlayWAVAtLocationLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
-    RegisterMethodCheck(c, 'procedure PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single)');
-    RegisterMethodCheck(c, 'function  PlayWAVLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function PlayWAVAtLocationLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayWAVLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
     RegisterMethodCheck(c, 'procedure StopLoopedWAV(aLoopIndex: Integer)');
 
-    RegisterMethodCheck(c, 'procedure PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single)');
-    RegisterMethodCheck(c, 'procedure PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word)');
-    RegisterMethodCheck(c, 'function  PlayOGGAtLocationLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
-    RegisterMethodCheck(c, 'procedure PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single)');
-    RegisterMethodCheck(c, 'function  PlayOGGLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function PlayOGGAtLocationLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single; aRadius: Single; aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'function PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
+    RegisterMethodCheck(c, 'function PlayOGGLooped(aPlayer: ShortInt; const aFileName: AnsiString; aVolume: Single): Integer');
     RegisterMethodCheck(c, 'procedure StopLoopedOGG(aLoopIndex: Integer)');
+    RegisterMethodCheck(c, 'function PlaySound(aPlayer: ShortInt; const aFileName: AnsiString; aAudioFormat: TKMAudioFormat; ' +
+                            'aVolume: Single; aFadeMusic, aLooped: Boolean): Integer');
+    RegisterMethodCheck(c, 'function PlaySoundAtLocation(aPlayer: ShortInt; const aFileName: AnsiString; aAudioFormat: TKMAudioFormat; ' +
+                            'aVolume: Single; aFadeMusic, aLooped: Boolean; aRadius: Single; aX, aY: Word): Integer');
+    RegisterMethodCheck(c, 'procedure StopSound(aSoundIndex: Integer)');
 
     RegisterMethodCheck(c, 'procedure RemoveRoad(X, Y: Word)');
 
@@ -555,6 +599,9 @@ begin
 
     RegisterMethodCheck(c, 'procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean)');
     RegisterMethodCheck(c, 'function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean');
+    RegisterMethodCheck(c, 'procedure UnitDismiss(aUnitID: Integer)');
+    RegisterMethodCheck(c, 'procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean)');
+    RegisterMethodCheck(c, 'procedure UnitDismissCancel(aUnitID: Integer)');
     RegisterMethodCheck(c, 'procedure UnitHPChange(aUnitID, aHP: Integer)');
     RegisterMethodCheck(c, 'procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean)');
     RegisterMethodCheck(c, 'procedure UnitHungerSet(aUnitID, aHungerLevel: Integer)');
@@ -574,6 +621,9 @@ begin
     RegisterMethodCheck(c, 'function ArrayHasElementB(aElement: Boolean; aArray: array of Boolean): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementI(aElement: Integer; aArray: array of Integer): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementS(aElement: Single; aArray: array of Single): Boolean');
+
+    RegisterMethodCheck(c, 'function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray');
+    RegisterMethodCheck(c, 'function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray');
 
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
@@ -639,13 +689,14 @@ end;
   A result type of 0 means no result}
 function TKMScripting.ScriptOnExportCheck(Sender: TPSPascalCompiler; Proc: TPSInternalProcedure; const ProcDecl: AnsiString): Boolean;
 const
-  Procs: array [0..27] of record
+  Procs: array [0..32] of record
     Names: AnsiString;
     ParamCount: Byte;
     Typ: array [0..4] of Byte;
     Dir: array [0..3] of TPSParameterMode;
   end =
   (
+  (Names: 'OnFieldBuilt';           ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnGroupHungry';          ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
   (Names: 'OnGroupOrderAttackHouse';ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
@@ -674,6 +725,8 @@ const
   (Names: 'OnPlayerDefeated';       ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnPlayerVictory';        ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
+  (Names: 'OnRoadBuilt';            ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+
   (Names: 'OnTick';                 ParamCount: 0; Typ: (0, 0,     0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
   (Names: 'OnUnitAfterDied';        ParamCount: 4; Typ: (0, btS32, btS32, btS32, btS32); Dir: (pmIn, pmIn, pmIn, pmIn)),
@@ -682,7 +735,10 @@ const
   (Names: 'OnUnitTrained';          ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnUnitWounded';          ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
-  (Names: 'OnWarriorEquipped';      ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn))
+  (Names: 'OnWarriorEquipped';      ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWarriorWalked';        ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWareProduced';         ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWinefieldBuilt';       ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn))
   );
 var
   I: Integer;
@@ -809,6 +865,7 @@ begin
       RegisterMethod(@TKMScriptStates.HouseDeliveryMode,                        'HouseDeliveryMode');
       RegisterMethod(@TKMScriptStates.HouseDestroyed,                           'HouseDestroyed');
       RegisterMethod(@TKMScriptStates.HouseHasOccupant,                         'HouseHasOccupant');
+      RegisterMethod(@TKMScriptStates.HouseFlagPoint,                           'HouseFlagPoint');
       RegisterMethod(@TKMScriptStates.HouseIsComplete,                          'HouseIsComplete');
       RegisterMethod(@TKMScriptStates.HouseOwner,                               'HouseOwner');
       RegisterMethod(@TKMScriptStates.HousePositionX,                           'HousePositionX');
@@ -817,12 +874,14 @@ begin
       RegisterMethod(@TKMScriptStates.HouseResourceAmount,                      'HouseResourceAmount');
       RegisterMethod(@TKMScriptStates.HouseSchoolQueue,                         'HouseSchoolQueue');
       RegisterMethod(@TKMScriptStates.HouseSiteIsDigged,                        'HouseSiteIsDigged');
+      RegisterMethod(@TKMScriptStates.HouseTownHallMaxGold,                     'HouseTownHallMaxGold');
       RegisterMethod(@TKMScriptStates.HouseType,                                'HouseType');
       RegisterMethod(@TKMScriptStates.HouseTypeMaxHealth,                       'HouseTypeMaxHealth');
       RegisterMethod(@TKMScriptStates.HouseTypeName,                            'HouseTypeName');
       RegisterMethod(@TKMScriptStates.HouseTypeToOccupantType,                  'HouseTypeToOccupantType');
       RegisterMethod(@TKMScriptStates.HouseUnlocked,                            'HouseUnlocked');
       RegisterMethod(@TKMScriptStates.HouseWoodcutterChopOnly,                  'HouseWoodcutterChopOnly');
+      RegisterMethod(@TKMScriptStates.HouseWoodcutterMode,                      'HouseWoodcutterMode');
       RegisterMethod(@TKMScriptStates.HouseWareBlocked,                         'HouseWareBlocked');
       RegisterMethod(@TKMScriptStates.HouseWeaponsOrdered,                      'HouseWeaponsOrdered');
 
@@ -884,6 +943,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitCarrying,                             'UnitCarrying');
       RegisterMethod(@TKMScriptStates.UnitDead,                                 'UnitDead');
       RegisterMethod(@TKMScriptStates.UnitDirection,                            'UnitDirection');
+      RegisterMethod(@TKMScriptStates.UnitDismissable,                          'UnitDismissable');
       RegisterMethod(@TKMScriptStates.UnitHome,                                 'UnitHome');
       RegisterMethod(@TKMScriptStates.UnitHPCurrent,                            'UnitHPCurrent');
       RegisterMethod(@TKMScriptStates.UnitHPMax,                                'UnitHPMax');
@@ -975,8 +1035,10 @@ begin
       RegisterMethod(@TKMScriptActions.HouseSchoolQueueAdd,                     'HouseSchoolQueueAdd');
       RegisterMethod(@TKMScriptActions.HouseSchoolQueueRemove,                  'HouseSchoolQueueRemove');
       RegisterMethod(@TKMScriptActions.HouseTakeWaresFrom,                      'HouseTakeWaresFrom');
+      RegisterMethod(@TKMScriptActions.HouseTownHallMaxGold,                    'HouseTownHallMaxGold');
       RegisterMethod(@TKMScriptActions.HouseUnlock,                             'HouseUnlock');
       RegisterMethod(@TKMScriptActions.HouseWoodcutterChopOnly,                 'HouseWoodcutterChopOnly');
+      RegisterMethod(@TKMScriptActions.HouseWoodcutterMode,                     'HouseWoodcutterMode');
       RegisterMethod(@TKMScriptActions.HouseWareBlock,                          'HouseWareBlock');
       RegisterMethod(@TKMScriptActions.HouseWeaponsOrderSet,                    'HouseWeaponsOrderSet');
 
@@ -986,6 +1048,7 @@ begin
 
       RegisterMethod(@TKMScriptActions.MapTileSet,                              'MapTileSet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySet,                        'MapTilesArraySet');
+      RegisterMethod(@TKMScriptActions.MapTilesArraySetS,                       'MapTilesArraySetS');
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
 
@@ -1024,6 +1087,10 @@ begin
       RegisterMethod(@TKMScriptActions.PlayOGGLooped,                           'PlayOGGLooped');
       RegisterMethod(@TKMScriptActions.StopLoopedOGG,                           'StopLoopedOGG');
 
+      RegisterMethod(@TKMScriptActions.PlaySound,                               'PlaySound');
+      RegisterMethod(@TKMScriptActions.PlaySoundAtLocation,                     'PlaySoundAtLocation');
+      RegisterMethod(@TKMScriptActions.StopSound,                               'StopSound');
+
       RegisterMethod(@TKMScriptActions.RemoveRoad,                              'RemoveRoad');
 
       RegisterMethod(@TKMScriptActions.SetTradeAllowed,                         'SetTradeAllowed');
@@ -1035,6 +1102,9 @@ begin
 
       RegisterMethod(@TKMScriptActions.UnitBlock,                               'UnitBlock');
       RegisterMethod(@TKMScriptActions.UnitDirectionSet,                        'UnitDirectionSet');
+      RegisterMethod(@TKMScriptActions.UnitDismiss,                             'UnitDismiss');
+      RegisterMethod(@TKMScriptActions.UnitDismissableSet,                      'UnitDismissableSet');
+      RegisterMethod(@TKMScriptActions.UnitDismissCancel,                       'UnitDismissCancel');
       RegisterMethod(@TKMScriptActions.UnitHPChange,                            'UnitHPChange');
       RegisterMethod(@TKMScriptActions.UnitHPSetInvulnerable,                   'UnitHPSetInvulnerable');
       RegisterMethod(@TKMScriptActions.UnitHungerSet,                           'UnitHungerSet');
@@ -1056,6 +1126,9 @@ begin
       RegisterMethod(@TKMScriptUtils.ArrayHasElementB,                          'ArrayHasElementB');
       RegisterMethod(@TKMScriptUtils.ArrayHasElementI,                          'ArrayHasElementI');
       RegisterMethod(@TKMScriptUtils.ArrayHasElementS,                          'ArrayHasElementS');
+
+      RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexI,                         'ArrayRemoveIndexI');
+      RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexS,                         'ArrayRemoveIndexS');
 
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
@@ -1486,10 +1559,26 @@ begin
 end;
 
 
+function TKMScriptErrorHandler.HasWarnings: Boolean;
+begin
+  Result := fWarningsString.GameMessage <> '';
+end;
+
+
+
 procedure TKMScriptErrorHandler.HandleErrors;
 begin
   HandleScriptError(se_CompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
   HandleScriptError(se_CompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
+end;
+
+
+procedure TKMScriptErrorHandler.Clear;
+begin
+  fErrorString.GameMessage := '';
+  fErrorString.LogMessage := '';
+  fWarningsString.GameMessage := '';
+  fWarningsString.LogMessage := '';
 end;
 
 
@@ -1682,7 +1771,7 @@ begin
 
   FileExt := ExtractFileExt(aFileName);
   // Check included file extension
-  if FileExt <> '.script' then
+  if FileExt <> EXT_FILE_SCRIPT_DOT then
     raise Exception.Create(Format('Error including ''%s'' from ''%s'': |Wrong extension: ''%s''',
                                   [ExtractFileName(aFileName), ExtractFileName(aCallingFileName), FileExt]));
 

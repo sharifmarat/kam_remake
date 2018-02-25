@@ -45,7 +45,7 @@ type
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
-    procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit);
+    procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -58,7 +58,8 @@ implementation
 uses
   SysUtils,
   KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
-  KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points;
+  KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
+  KM_GameTypes;
 
 
 { TKMHandAI }
@@ -163,7 +164,7 @@ procedure TKMHandAI.CheckGoals;
       //gc_Time is disabled as we process messages in Event system now. Return true so players
       //do not have to wait for all messages to show before they are allowed to win (same in TPR)
       gc_Time:              Result := True; //Deprecated
-      gc_Buildings:         Result := (Stat.GetHouseQty([ht_Store, ht_School, ht_Barracks]) > 0);
+      gc_Buildings:         Result := (Stat.GetHouseQty([ht_Store, ht_School, ht_Barracks, ht_TownHall]) > 0);
       gc_Troops:            Result := (Stat.GetArmyCount > 0);
       gc_MilitaryAssets:    Result := (Stat.GetArmyCount > 0) or
                                       (Stat.GetHouseQty([ht_Barracks, ht_CoalMine, ht_WeaponWorkshop, ht_ArmorWorkshop, ht_Stables,
@@ -285,7 +286,7 @@ end;
 
 
 // aUnit is our unit that was attacked
-procedure TKMHandAI.UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit);
+procedure TKMHandAI.UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 const
   NotifyKind: array [Boolean] of TAttackNotification = (an_Citizens, an_Troops);
 var
@@ -328,7 +329,8 @@ begin
       end;
   end;
 
-  gScriptEvents.ProcUnitAttacked(aUnit, aAttacker); //At the end since it could kill the unit
+  if aNotifyScript then
+    gScriptEvents.ProcUnitAttacked(aUnit, aAttacker); //At the end since it could kill the unit
 end;
 
 

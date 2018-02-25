@@ -11,7 +11,7 @@ uses
 type
   TKMGUIGameChat = class
   private
-    fChatMode: TChatMode;
+    fChatMode: TKMChatMode;
     fChatWhisperRecipient: Integer; //NetPlayer index of the player who will receive the whisper
     fLastChatTime: Cardinal; //Last time a chat message was sent to enforce cooldown
     procedure Chat_Close(Sender: TObject);
@@ -147,8 +147,8 @@ begin
       if not gGame.Networking.NetPlayers[fChatWhisperRecipient].Connected
         or gGame.Networking.NetPlayers[fChatWhisperRecipient].Dropped then
       begin
-        gGame.Networking.PostLocalMessage(Format('%s is not connected to game anymore.',
-                                                [gGame.Networking.NetPlayers[fChatWhisperRecipient].NiknameColored]), // Todo translate
+        gGame.Networking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_CHAT_PLAYER_NOT_CONNECTED_ANYMORE],
+                                                [gGame.Networking.NetPlayers[fChatWhisperRecipient].NiknameColored]),
                                           csSystem);
         Chat_MenuSelect(CHAT_MENU_ALL);
       end else
@@ -293,7 +293,7 @@ end;
 
 
 procedure TKMGUIGameChat.SetChatState(const aChatState: TChatState);
-const CHAT_TAG: array[TChatMode] of Integer = (
+const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
   -3,  //cmSpectators

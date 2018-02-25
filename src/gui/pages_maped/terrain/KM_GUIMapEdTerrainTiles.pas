@@ -3,6 +3,7 @@ unit KM_GUIMapEdTerrainTiles;
 interface
 uses
    Math, SysUtils,
+   KM_InterfaceDefaults,
    KM_Controls, KM_Defaults, KM_Pics;
 
 
@@ -13,7 +14,7 @@ const
 
 
 type
-  TKMMapEdTerrainTiles = class
+  TKMMapEdTerrainTiles = class (TKMMapEdSubMenuPage)
   private
     fLastTile: Word;
 
@@ -36,13 +37,13 @@ type
     procedure Show;
     procedure Hide;
     procedure UpdateState;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
   end;
 
 
 implementation
 uses
-  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame;
+  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_ResKeys, KM_Utils;
 
 const
   TILES_NOT_ALLOWED_TO_SET = [55..55,59..63, //wine and corn
@@ -81,15 +82,15 @@ begin
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
 
   TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 0, 25, 27, 27, 667);
-  TilesMagicWater.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER_HINT];
+  TilesMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
   TilesMagicWater.OnClick := TilesChange;
 
   TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 29, 25, 27, 27, 666);
-  TilesEyedropper.Hint := gResTexts[TX_MAPED_TERRAIN_EYEDROPPER_HINT];
+  TilesEyedropper.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_EYEDROPPER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
   TilesEyedropper.OnClick := TilesChange;
 
   TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 58, 25, 27, 27, 665);
-  TilesRotate.Hint := 'Rotate tile'; //Todo translate;
+  TilesRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
   TilesRotate.OnClick := TilesChange;
 
   TKMLabel.Create(Panel_Tiles, 89, 30, 'ID:', fnt_Metal, taLeft); //Todo translate
@@ -101,7 +102,7 @@ begin
   TilesRandom := TKMCheckBox.Create(Panel_Tiles, 0, 58, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM], fnt_Metal);
   TilesRandom.Checked := True;
   TilesRandom.OnClick := TilesChange;
-  TilesRandom.Hint := gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM_HINT];
+  TilesRandom.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_TILES_RANDOM_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
 
   //Create scroll first to link to its MouseWheel event
   TilesScroll := TKMScrollBar.Create(Panel_Tiles, 2, 84 + 4 + MAPED_TILES_Y * 32, 194, 20, sa_Horizontal, bsGame);
@@ -117,6 +118,16 @@ begin
       TilesTable[J * MAPED_TILES_X + K].OnClick := TilesChange;
       TilesTable[J * MAPED_TILES_X + K].OnMouseWheel := TilesScroll.MouseWheel;
     end;
+
+  fSubMenuActionsEvents[0] := TilesChange;
+  fSubMenuActionsEvents[1] := TilesChange;
+  fSubMenuActionsEvents[2] := TilesChange;
+  fSubMenuActionsEvents[3] := TilesChange;
+
+  fSubMenuActionsCtrls[0] := TilesMagicWater;
+  fSubMenuActionsCtrls[1] := TilesEyedropper;
+  fSubMenuActionsCtrls[2] := TilesRotate;
+  fSubMenuActionsCtrls[3] := TilesRandom;
 end;
 
 

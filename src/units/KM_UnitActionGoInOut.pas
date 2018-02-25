@@ -8,14 +8,14 @@ uses
 
 
 type
-  TBestExit = (be_None, be_Left, be_Center, be_Right);
+  TKMBestExit = (be_None, be_Left, be_Center, be_Right);
 
   {This is a [fairly :P] simple action making unit go inside/outside of house}
-  TUnitActionGoInOut = class(TUnitAction)
+  TKMUnitActionGoInOut = class(TKMUnitAction)
   private
     fStep: Single;
     fHouse: TKMHouse;
-    fDirection: TGoInDirection;
+    fDirection: TKMGoInDirection;
     fDoor: TKMPoint;
     fStreet: TKMPoint;
     fHasStarted: Boolean;
@@ -24,24 +24,25 @@ type
     fUsedDoorway: Boolean;
     procedure IncDoorway;
     procedure DecDoorway;
-    function FindBestExit(const aLoc: TKMPoint): TBestExit;
+    function FindBestExit(const aLoc: TKMPoint): TKMBestExit;
     function TileHasIdleUnit(X,Y: Word): TKMUnit;
     procedure WalkIn;
     procedure WalkOut;
   public
     OnWalkedOut: TEvent; //NOTE: Caller must sync these events after loading, used with caution
     OnWalkedIn: TEvent;
-    constructor Create(aUnit: TKMUnit; aAction: TUnitActionType; aDirection: TGoInDirection; aHouse: TKMHouse);
+    constructor Create(aUnit: TKMUnit; aAction: TKMUnitActionType; aDirection: TKMGoInDirection; aHouse: TKMHouse);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
-    function ActName: TUnitActionName; override;
+    function ActName: TKMUnitActionName; override;
+    function CanBeInterrupted: Boolean; override;
     function GetExplanation: UnicodeString; override;
     property GetHasStarted: boolean read fHasStarted;
     property GetWaitingForPush: boolean read fWaitingForPush;
-    property Direction: TGoInDirection read fDirection;
-    function GetDoorwaySlide(aCheck: TCheckAxis): Single;
-    function Execute: TActionResult; override;
+    property Direction: TKMGoInDirection read fDirection;
+    function GetDoorwaySlide(aCheck: TKMCheckAxis): Single;
+    function Execute: TKMActionResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -53,7 +54,7 @@ uses
 
 
 { TUnitActionGoInOut }
-constructor TUnitActionGoInOut.Create(aUnit: TKMUnit; aAction: TUnitActionType; aDirection:TGoInDirection; aHouse:TKMHouse);
+constructor TKMUnitActionGoInOut.Create(aUnit: TKMUnit; aAction: TKMUnitActionType; aDirection:TKMGoInDirection; aHouse:TKMHouse);
 begin
   inherited Create(aUnit, aAction, True);
 
@@ -71,7 +72,7 @@ begin
 end;
 
 
-constructor TUnitActionGoInOut.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionGoInOut.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fStep);
@@ -86,7 +87,7 @@ begin
 end;
 
 
-procedure TUnitActionGoInOut.SyncLoad;
+procedure TKMUnitActionGoInOut.SyncLoad;
 begin
   inherited;
   fHouse := gHands.GetHouseByUID(cardinal(fHouse));
@@ -94,7 +95,7 @@ begin
 end;
 
 
-destructor TUnitActionGoInOut.Destroy;
+destructor TKMUnitActionGoInOut.Destroy;
 begin
   if fUsedDoorway then
     DecDoorway;
@@ -116,25 +117,25 @@ begin
   end;
 
   if (fDirection = gd_GoOutside) and fUnit.Visible then
-    fUnit.SetInHouse(nil); //We are not in any house now
+    fUnit.InHouse := nil; //We are not in any house now
 
   inherited;
 end;
 
 
-function TUnitActionGoInOut.ActName: TUnitActionName;
+function TKMUnitActionGoInOut.ActName: TKMUnitActionName;
 begin
   Result := uan_GoInOut;
 end;
 
 
-function TUnitActionGoInOut.GetExplanation: UnicodeString;
+function TKMUnitActionGoInOut.GetExplanation: UnicodeString;
 begin
   Result := 'Walking in/out';
 end;
 
 
-procedure TUnitActionGoInOut.IncDoorway;
+procedure TKMUnitActionGoInOut.IncDoorway;
 begin
   Assert(not fUsedDoorway, 'Inc doorway when already in use?');
 
@@ -143,7 +144,7 @@ begin
 end;
 
 
-procedure TUnitActionGoInOut.DecDoorway;
+procedure TKMUnitActionGoInOut.DecDoorway;
 begin
   Assert(fUsedDoorway, 'Dec doorway when not in use?');
 
@@ -154,7 +155,7 @@ end;
 
 //Attempt to find a tile below the door (on the street) we can walk to
 //We can push idle units away. Check center first
-function TUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TBestExit;
+function TUnitActionGoInOut.FindBestExit(const aLoc: TKMPoint): TKMBestExit;
 var
   U: TKMUnit;
 begin
@@ -197,7 +198,7 @@ end;
 
 
 //Check that tile is walkable and there's no unit blocking it or that unit can be pushed away
-function TUnitActionGoInOut.TileHasIdleUnit(X,Y: Word): TKMUnit;
+function TKMUnitActionGoInOut.TileHasIdleUnit(X,Y: Word): TKMUnit;
 var
   U: TKMUnit;
 begin
@@ -212,15 +213,15 @@ begin
 
     //Check that the unit is idling and not an enemy, so that we can push it away
     if (U <> nil)
-    and (U.GetUnitAction is TUnitActionStay)
-    and not TUnitActionStay(U.GetUnitAction).Locked
+    and (U.GetUnitAction is TKMUnitActionStay)
+    and not TKMUnitActionStay(U.GetUnitAction).Locked
     and (gHands.CheckAlliance(U.Owner, fUnit.Owner) = at_Ally) then
       Result := U;
   end;
 end;
 
 
-procedure TUnitActionGoInOut.WalkIn;
+procedure TKMUnitActionGoInOut.WalkIn;
 begin
   fUnit.Direction := dir_N;  //one cell up
   fUnit.NextPosition := KMPointAbove(fUnit.GetPosition);
@@ -233,7 +234,7 @@ end;
 
 
 //Start walking out of the house. unit is no longer in the house
-procedure TUnitActionGoInOut.WalkOut;
+procedure TKMUnitActionGoInOut.WalkOut;
 begin
   fUnit.Direction := KMGetDirection(fDoor, fStreet);
   fUnit.NextPosition := fStreet;
@@ -250,7 +251,7 @@ begin
 end;
 
 
-function TUnitActionGoInOut.GetDoorwaySlide(aCheck: TCheckAxis): Single;
+function TKMUnitActionGoInOut.GetDoorwaySlide(aCheck: TKMCheckAxis): Single;
 var Offset: Integer;
 begin
   if aCheck = ax_X then
@@ -265,7 +266,7 @@ begin
 end;
 
 
-function TUnitActionGoInOut.Execute: TActionResult;
+function TKMUnitActionGoInOut.Execute: TKMActionResult;
 var Distance:single; U:TKMUnit;
 begin
   Result := ar_ActContinues;
@@ -315,8 +316,8 @@ begin
     else
     begin //There's still some unit - we can't go outside
       if (U <> fPushedUnit) //The unit has switched places with another one, so we must start again
-        or not (U.GetUnitAction is TUnitActionWalkTo) //Unit was interupted (no longer pushed), so start again
-        or not TUnitActionWalkTo(U.GetUnitAction).WasPushed then
+        or not (U.GetUnitAction is TKMUnitActionWalkTo) //Unit was interupted (no longer pushed), so start again
+        or not TKMUnitActionWalkTo(U.GetUnitAction).WasPushed then
       begin
         fHasStarted := False;
         fWaitingForPush := False;
@@ -374,12 +375,13 @@ begin
       if Assigned(OnWalkedIn) then
         OnWalkedIn;
 
-      if fHouse <> nil then fUnit.SetInHouse(fHouse);
+      if fHouse <> nil then
+        fUnit.InHouse := fHouse;
     end
     else
     begin
       fUnit.PositionF := KMPointF(fStreet);
-      fUnit.SetInHouse(nil); //We are not in a house any longer
+      fUnit.InHouse := nil; //We are not in a house any longer
       if Assigned(OnWalkedOut) then
         OnWalkedOut;
     end;
@@ -389,7 +391,7 @@ begin
 end;
 
 
-procedure TUnitActionGoInOut.Save(SaveStream: TKMemoryStream);
+procedure TKMUnitActionGoInOut.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fStep);
@@ -410,4 +412,11 @@ begin
 end;
 
 
+function TKMUnitActionGoInOut.CanBeInterrupted: Boolean;
+begin
+  Result := not Locked; //Never interupt leaving barracks
+end;
+
+
 end.
+

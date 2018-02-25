@@ -2,7 +2,7 @@ unit KromUtils;
 {$I ..\..\KaM_Remake.inc}
 interface
 uses
-  Forms, Classes, Dialogs, Controls,
+  Classes,
   {$IFDEF MSWindows}Windows, MMSystem, {$ENDIF}
   {$IFDEF Unix}LCLType, {$ENDIF}
   {$IFDEF FPC}LCLIntf, UTF8Process, LazHelpHTML {$ENDIF}
@@ -15,7 +15,7 @@ type
   TSetOfAnsiChar = set of AnsiChar;
 
 
-function TimeGet: Cardinal;
+function KU_TimeGet: Cardinal;
 function ExtractOpenedFileName(const in_s: string):string;
 function GetFileExt (const FileName: string): string;
 function AssureFileExt(const FileName,Ext:string): string;
@@ -36,8 +36,8 @@ function Min(const A,B,C: single):single; overload;
 function Min(Values: array of Single): Single; overload;
 function PickMin(Values: array of Single): Byte;
 
-function Max(const A,B,C: integer):integer; overload;
-function Max(const A,B,C: single):single; overload;
+function Max(const A,B,C: Integer): Integer; overload;
+function Max(const A,B,C: Single): Single; overload;
 
   function GetLengthSQR(ix,iy,iz:integer): integer; //Length without SQRT
   function GetLength(ix,iy,iz:single): single; overload;
@@ -62,26 +62,18 @@ function Max(const A,B,C: single):single; overload;
   procedure SwapInt(var A, B: NativeUInt); overload;
   {$ENDIF}
   procedure SwapFloat(var A, B: Single);
-  function Equals(A, B: single; const Epsilon: single = 0.001): Boolean;
+  function Equals(A, B: single; const Epsilon: Single = 0.001): Boolean;
 
-function MakePOT(num:integer): integer;
-function Adler32CRC(TextPointer:Pointer; TextLength:cardinal):cardinal; overload;
-function Adler32CRC(const aPath:string):cardinal; overload;
-function Adler32CRC(S:TMemoryStream):cardinal; overload;
+function MakePOT(num: Integer): Integer;
+function Adler32CRC(TextPointer: Pointer; TextLength: Cardinal): Cardinal; overload;
+function Adler32CRC(const aPath: string): Cardinal; overload;
+function Adler32CRC(S: TMemoryStream): Cardinal; overload;
 function RandomS(Range_Both_Directions:integer):integer; overload;
 function RandomS(Range_Both_Directions:single):single; overload;
 function PseudoRandom(aMax:cardinal):cardinal;
-function RunOpenDialog(Sender:TOpenDialog; const Name,Path,Filter:string):boolean;
-function RunSaveDialog(Sender:TSaveDialog; FileName, FilePath, Filter:string; const FileExt:string = ''):boolean;
-
-procedure DoClientAreaResize(aForm:TForm);
 
 function CheckDuplicateApplication(const aGUID: string): Boolean;
 
-function BrowseURL(const URL: string) : Boolean;
-function OpenPDF(const URL: string): Boolean;
-procedure MailTo(const Address,Subject,Body:string);
-procedure OpenMySite(const ToolName:string; Address:string='http://krom.reveur.de');
 function CountMatches(const aString, aSubString: string): Integer;
 
 const
@@ -181,7 +173,7 @@ end;
 
 
 //Linux wants this instead of timegettime, it should work on Windows too
-function TimeGet: Cardinal;
+function KU_TimeGet: Cardinal;
 begin
   {$IFDEF MSWindows}
   Result := TimeGetTime; //Returns milliseconds with ~1ms precision
@@ -467,35 +459,35 @@ end;
 
 {$IFDEF WDC}
 procedure SwapInt(var A,B: NativeUInt);
-var s:NativeUInt;
+var s: NativeUInt;
 begin
   s:=A; A:=B; B:=s;
 end;
 {$ENDIF}
 
 procedure SwapFloat(var A,B:single);
-var s:single;
+var s: Single;
 begin
   s:=A; A:=B; B:=s;
 end;
 
 
-function Equals(A,B:single; const Epsilon:single=0.001):boolean;
+function Equals(A,B: Single; const Epsilon: Single = 0.001): Boolean;
 begin
-  Result := abs(A-B) <= Epsilon;
+  Result := Abs(A-B) <= Epsilon;
 end;
 
 
 function Adler32CRC(TextPointer: Pointer; TextLength: Cardinal): Cardinal;
 var
-  i, A, B: Cardinal;
+  I, A, B: Cardinal;
 begin
   A := 1;
   B := 0; // A is initialized to 1, B to 0
-  for i := 1 to TextLength do
+  for I := 1 to TextLength do
   begin
-    inc(A, pbyte(Cardinal(TextPointer) + i - 1)^);
-    inc(B, A);
+    Inc(A, pbyte(Cardinal(TextPointer) + I - 1)^);
+    Inc(B, A);
   end;
   A := A mod 65521; // 65521 (the largest prime number smaller than 2^16)
   B := B mod 65521;
@@ -509,7 +501,7 @@ var
 begin
   Result := 0;
   if not FileExists(aPath) then
-    exit;
+    Exit;
 
   S := TMemoryStream.Create;
   try
@@ -523,16 +515,16 @@ end;
 
 function Adler32CRC(S: TMemoryStream): Cardinal;
 var
-  i, A, B: Cardinal;
+  I, A, B: Cardinal;
 begin
   A := 1;
   B := 0; // A is initialized to 1, B to 0
 
   // We need to MOD B within cos it may overflow in files larger than 65kb, A overflows with files larger than 16mb
   if S.Size <> 0 then
-    for i := 0 to S.Size - 1 do
+    for I := 0 to S.Size - 1 do
     begin
-      inc(A, pbyte(Cardinal(S.Memory) + i)^);
+      Inc(A, pbyte(Cardinal(S.Memory) + I)^);
       B := (B + A) mod 65521; // 65521 (the largest prime number smaller than 2^16)
     end;
   A := A mod 65521;
@@ -561,28 +553,7 @@ begin
   if aMax = 0 then
     Result := 0
   else
-    Result := TimeGet mod aMax;
-end;
-
-
-function RunOpenDialog(Sender: TOpenDialog; const Name, Path, Filter: string): boolean;
-begin
-  Sender.FileName := Name;
-  Sender.InitialDir := Path;
-  Sender.Filter := Filter;
-  Result := Sender.Execute; // Returns "false" if user pressed "Cancel"
-  //Result := Result and FileExists(Sender.FileName); //Already should be enabled in OpenDialog options
-end;
-
-
-function RunSaveDialog(Sender:TSaveDialog; FileName, FilePath, Filter:string; const FileExt:string = ''):boolean;
-begin
-  Sender.FileName   := FileName;
-  Sender.InitialDir := FilePath;
-  Sender.Filter     := Filter;
-  Result            := Sender.Execute; //Returns "false" if user pressed "Cancel"
-  if not Result then exit;
-  Sender.FileName   := AssureFileExt(Sender.FileName, FileExt);
+    Result := KU_TimeGet mod aMax;
 end;
 
 
@@ -599,93 +570,6 @@ begin
   {$IFDEF Unix}
     Result := False;
   {$ENDIF}
-end;
-
-
-procedure DoClientAreaResize(aForm:TForm);
-const DesignHeight = 18;
-var
-  HeightDif:integer;
-  i:integer;
-begin
-  HeightDif := GetSystemMetrics(SM_CYCAPTION) - DesignHeight;
-
-  for i:=0 to aForm.ControlCount-1 do
-    if (akBottom in aForm.Controls[i].Anchors) and
-       (akTop in aForm.Controls[i].Anchors) then
-      aForm.Controls[i].Height := aForm.Controls[i].Height - HeightDif
-    else
-    if (akBottom in aForm.Controls[i].Anchors) then
-      aForm.Controls[i].Top := aForm.Controls[i].Top - HeightDif;
-
-  aForm.ClientHeight := aForm.ClientHeight + HeightDif;
-end;
-
-
-function OpenPDF(const URL: string): Boolean;
-begin
-  {$IFDEF WDC}
-  Result := ShellExecute(Application.Handle, 'open', PChar(URL),nil,nil, SW_SHOWNORMAL) > 32;
-  {$ENDIF}
-
-  {$IFDEF FPC}
-  Result := OpenDocument(URL);
-  {$ENDIF}
-end;
-
-
-function BrowseURL(const URL: string): Boolean;
-{$IFDEF FPC}
-var
-  v: THTMLBrowserHelpViewer;
-  BrowserPath, BrowserParams: string;
-  p: LongInt;
-  BrowserProcess: TProcessUTF8;
-{$ENDIF}
-begin
-  //We need some result incase it's neither WDC nor FPC
-  Result := False;
-
-  {$IFDEF WDC}
-    //ShellExecute returns a value greater than 32 if successful, or an error value that is less than or equal to 32 otherwise
-    if ShellExecute(Application.Handle, 'open', PChar(URL),nil,nil, SW_SHOWNORMAL) > 32 then
-      Result := True;
-  {$ENDIF}
-
-  {$IFDEF FPC}
-  v:=THTMLBrowserHelpViewer.Create(nil);
-  try
-    v.FindDefaultBrowser(BrowserPath,BrowserParams);
-
-    p:=System.Pos('%s', BrowserParams);
-    System.Delete(BrowserParams,p,2);
-    System.Insert(URL,BrowserParams,p);
-
-    // start browser
-    BrowserProcess:=TProcessUTF8.Create(nil);
-    try
-      BrowserProcess.CommandLine:=BrowserPath+' '+BrowserParams;
-      BrowserProcess.Execute;
-      Result := True;
-    finally
-      BrowserProcess.Free;
-    end;
-  finally
-    v.Free;
-  end;
-  {$ENDIF}
-end;
-
-
-procedure MailTo(const Address,Subject,Body:string);
-begin
-  BrowseURL('mailto:'+Address+'?subject='+Subject+'&body='+Body);
-end;
-
-
-procedure OpenMySite(const ToolName:string; Address:string='http://krom.reveur.de');
-begin
-  BrowseURL(Address+'/index_r.php?t='+ToolName); //Maybe add tool version later..
 end;
 
 

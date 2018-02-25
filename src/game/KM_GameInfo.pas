@@ -24,7 +24,7 @@ type
     Enabled: array [0..MAX_HANDS-1] of Boolean;
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     OwnerNikname: array [0..MAX_HANDS-1] of AnsiString; //Nikname of the player who plays this location
-    HandTypes: array [0..MAX_HANDS-1] of THandType;
+    HandTypes: array [0..MAX_HANDS-1] of TKMHandType;
     ColorID: array [0..MAX_HANDS-1] of Integer;
     Team: array [0..MAX_HANDS-1] of Integer;
 

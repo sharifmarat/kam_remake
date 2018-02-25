@@ -20,11 +20,11 @@ type
   TNetGameState = (lgs_None, lgs_Connecting, lgs_Query, lgs_Lobby, lgs_Loading, lgs_Game, lgs_Reconnecting);
   TNetGameKind = (ngk_None, ngk_Map, ngk_Save);
   TChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
-  TChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
+  TKMChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
   TChatState =  record
                   Messages: UnicodeString;
                   ChatText: UnicodeString;
-                  Mode: TChatMode;
+                  Mode: TKMChatMode;
                   WhisperRecipient: TKMNetHandleIndex;
                 end;
 
@@ -117,6 +117,7 @@ type
     fOnPlayerFileTransferProgress: TTransferProgressPlayerEvent;
     fOnTextMessage: TUnicodeStringEvent;
     fOnPlayersSetup: TNotifyEvent;
+    fOnUpdateMinimap: TNotifyEvent;
     fOnGameOptions: TNotifyEvent;
     fOnMapName: TUnicodeStringEvent;
     fOnMapMissing: TUnicodeStringBoolEvent;
@@ -145,6 +146,7 @@ type
     procedure ReassignHost(aSenderIndex: TKMNetHandleIndex; M: TKMemoryStream);
     procedure PlayerJoined(aServerIndex: TKMNetHandleIndex; const aPlayerName: AnsiString);
     procedure PlayerDisconnected(aSenderIndex: TKMNetHandleIndex);
+    procedure PlayersListReceived(aM: TKMemoryStream);
     procedure ReturnToLobbyVoteSucceeded;
     procedure ResetReturnToLobbyVote;
     procedure TransferOnCompleted(aClientIndex: TKMNetHandleIndex);
@@ -187,6 +189,9 @@ type
     function IsMuted(aNetPlayerIndex: Integer): Boolean;
     procedure ToggleMuted(aNetPlayerIndex: Integer);
 
+    function IsSave: Boolean;
+    function IsMap: Boolean;
+
     //Lobby
     property ServerQuery: TKMServerQuery read fServerQuery;
     procedure Host(const aServerName: AnsiString; aPort: Word; const aNikname: AnsiString; aAnnounceServer: Boolean);
@@ -197,7 +202,7 @@ type
     function  Connected: boolean;
     procedure MatchPlayersToSave(aPlayerID:integer=-1);
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
-    procedure SelectMap(const aName: UnicodeString; aMapFolder: TMapFolder);
+    procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
     procedure SelectSave(const aName: UnicodeString);
     procedure SelectLoc(aIndex:integer; aPlayerIndex:integer);
     procedure SelectTeam(aIndex:integer; aPlayerIndex:integer);
@@ -224,18 +229,18 @@ type
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
     procedure PostMessage(aTextID: Integer; aSound: TChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
-    procedure PostChat(const aText: UnicodeString; aMode: TChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
+    procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
     procedure PostLocalMessage(const aText: UnicodeString; aSound: TChatSound);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
     //Gameplay
-    property MapInfo:TKMapInfo read fMapInfo;
-    property SaveInfo:TKMSaveInfo read fSaveInfo;
-    property NetGameOptions:TKMGameOptions read fNetGameOptions;
+    property MapInfo: TKMapInfo read fMapInfo;
+    property SaveInfo: TKMSaveInfo read fSaveInfo;
+    property NetGameOptions: TKMGameOptions read fNetGameOptions;
     property SelectGameKind: TNetGameKind read fSelectGameKind;
-    property NetPlayers:TKMNetPlayersList read fNetPlayers;
+    property NetPlayers: TKMNetPlayersList read fNetPlayers;
     property MyNetPlayer: TKMNetPlayerInfo read GetMyNetPlayer;
-    property LastProcessedTick:cardinal write fLastProcessedTick;
+    property LastProcessedTick: Cardinal write fLastProcessedTick;
     property MissingFileType: TNetGameKind read fMissingFileType;
     property MissingFileName: UnicodeString read fMissingFileName;
     procedure GameCreated;
@@ -254,6 +259,7 @@ type
     property OnPlayerFileTransferProgress: TTransferProgressPlayerEvent write fOnPlayerFileTransferProgress; //File transfer progress to other player
 
     property OnPlayersSetup: TNotifyEvent write fOnPlayersSetup; //Player list updated
+    property OnUpdateMinimap: TNotifyEvent write fOnUpdateMinimap; //Update minimap
     property OnGameOptions: TNotifyEvent write fOnGameOptions; //Game options updated
     property OnMapName: TUnicodeStringEvent write fOnMapName;           //Map name updated
     property OnMapMissing: TUnicodeStringBoolEvent write fOnMapMissing;           //Map missing
@@ -261,7 +267,7 @@ type
     property OnStartSave: TGameStartEvent write fOnStartSave;       //Load the game
     property OnDoReturnToLobby: TNotifyEvent write fOnDoReturnToLobby;
     property OnAnnounceReturnToLobby: TNotifyEvent write fOnAnnounceReturnToLobby;
-    property OnPlay:TNotifyEvent write fOnPlay;                 //Start the gameplay
+    property OnPlay: TNotifyEvent write fOnPlay;                 //Start the gameplay
     property OnReadyToPlay: TNotifyEvent write fOnReadyToPlay;   //Update the list of players ready to play
     property OnPingInfo: TNotifyEvent write fOnPingInfo;         //Ping info updated
     property OnMPGameInfoChanged: TNotifyEvent write fOnMPGameInfoChanged;
@@ -269,7 +275,7 @@ type
     property OnDisconnect: TUnicodeStringEvent write fOnDisconnect;     //Lost connection, was kicked
     property OnJoinerDropped: TIntegerEvent write fOnJoinerDropped; //Other player disconnected
     property OnCommands: TStreamIntEvent write fOnCommands;        //Recieved GIP commands
-    property OnResyncFromTick:TResyncEvent write fOnResyncFromTick;
+    property OnResyncFromTick: TResyncEvent write fOnResyncFromTick;
 
     property OnTextMessage: TUnicodeStringEvent write fOnTextMessage;   //Text message recieved
 
@@ -439,6 +445,7 @@ begin
   fOnHostFail := nil;
   fOnTextMessage := nil;
   fOnPlayersSetup := nil;
+  fOnUpdateMinimap := nil;
   fOnMapName := nil;
   fOnMapMissing := nil;
   fOnCommands := nil;
@@ -612,7 +619,7 @@ end;
 
 //Tell other players which map we will be using
 //Players will reset their starting locations and "Ready" status on their own
-procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TMapFolder);
+procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
 begin
   Assert(IsHost, 'Only host can select maps');
   FreeAndNil(fMapInfo);
@@ -623,15 +630,15 @@ begin
 
   if not fMapInfo.IsValid then
   begin
-    SelectNoMap('Map is invalid'); // Todo translate
-    PostLocalMessage('Selected map is invalid. Please select another map', csSystem); // Todo translate
+    SelectNoMap(gResTexts[TX_NET_ERR_MAP_INVALID]);
+    PostLocalMessage(gResTexts[TX_NET_ERR_MAP_INVALID_MSG], csSystem);
     Exit;
   end;
 
   if (aMapFolder = mfDL) and not fMapInfo.IsFilenameEndMatchHash then
   begin
-    SelectNoMap('Downloaded map files have changed'); // Todo translate
-    PostLocalMessage('Selected DL map, which files have changed. Please move it out of downloads first', csSystem); // Todo translate
+    SelectNoMap(gResTexts[TX_NET_ERR_DL_MAP_FILE_CHANGED]);
+    PostLocalMessage(gResTexts[TX_NET_ERR_DL_MAP_FILE_CHANGED_MSG], csSystem);
     Exit;
   end;
 
@@ -743,6 +750,10 @@ begin
 
                   if aIndex = LOC_SPECTATE then
                     fNetPlayers[aPlayerIndex].Team := 0; //Spectators can't have team
+
+                  // Update minimap
+                  if (aPlayerIndex = fMyIndex) and Assigned(fOnUpdateMinimap) then
+                    fOnUpdateMinimap(Self);
 
                   SendPlayerListAndRefreshPlayersSetup;
                 end;
@@ -922,7 +933,7 @@ begin
                 try
                   if CheckMapInfo.CRC <> fMapInfo.CRC then
                   begin
-                    PostLocalMessage(Format(gResTexts[TX_LOBBY_CANNOT_START], ['Map files have changed. Please reselect the map']), csSystem); // Todo translate
+                    PostLocalMessage(Format(gResTexts[TX_LOBBY_CANNOT_START], [gResTexts[TX_NET_ERR_MAP_FILE_CHANGED]]), csSystem);
                     Exit;
                   end;
                 finally
@@ -1104,7 +1115,7 @@ end;
 
 //We route the message through Server to ensure everyone sees messages in the same order
 //with exact same timestamps (possibly added by Server?)
-procedure TKMNetworking.PostChat(const aText: UnicodeString; aMode: TChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
+procedure TKMNetworking.PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
 var
   I: Integer;
   M: TKMemoryStream;
@@ -1216,7 +1227,8 @@ begin
   PacketSend(aServerIndex, mk_AllowToJoin);
   SendMapOrSave(aServerIndex); //Send the map first so it doesn't override starting locs
 
-  if fSelectGameKind = ngk_Save then MatchPlayersToSave(fNetPlayers.ServerToLocal(aServerIndex)); //Match only this player
+  if fSelectGameKind = ngk_Save then
+    MatchPlayersToSave(fNetPlayers.ServerToLocal(aServerIndex)); //Match only this player
   SendPlayerListAndRefreshPlayersSetup;
   SendGameOptions;
   PostMessage(TX_NET_HAS_JOINED, csJoin, UnicodeString(aPlayerName));
@@ -1304,6 +1316,34 @@ begin
 
     PostMessage(TX_NET_HOSTING_RIGHTS, csSystem, fNetPlayers[fMyIndex].NiknameColoredU);
     gLog.LogNetConnection('Hosting rights reassigned to us ('+UnicodeString(fMyNikname)+')');
+  end;
+end;
+
+
+// Handle mk_PLayerList message
+procedure TKMNetworking.PlayersListReceived(aM: TKMemoryStream);
+var
+  OldLoc: Integer;
+  IsPlayerInitBefore: Boolean;
+begin
+  if fNetPlayerKind = lpk_Joiner then
+  begin
+    OldLoc := -1234; // some randor value, make compiler happy
+    IsPlayerInitBefore := MyIndex > 0;
+    if IsPlayerInitBefore then
+      OldLoc := MyNetPlayer.StartLocation;
+
+    aM.Read(fHostIndex);
+    fNetPlayers.LoadFromStream(aM); //Our index could have changed on players add/removal
+    fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname);
+
+    if Assigned(fOnPlayersSetup) then fOnPlayersSetup(Self);
+
+    if Assigned(fOnUpdateMinimap)
+      and ((IsPlayerInitBefore
+        and (OldLoc <> MyNetPlayer.StartLocation))
+        or not IsPlayerInitBefore) then
+      fOnUpdateMinimap(Self);
   end;
 end;
 
@@ -1489,7 +1529,7 @@ var
   tmpCardinal, tmpCardinal2: Cardinal;
   tmpStringA: AnsiString;
   tmpStringW, replyStringW: UnicodeString;
-  tmpChatMode: TChatMode;
+  tmpChatMode: TKMChatMode;
   I,LocID,TeamID,ColorID,PlayerIndex: Integer;
   ChatSound: TChatSound;
 begin
@@ -1852,14 +1892,7 @@ begin
 //                if Assigned(fOnPingInfo) then fOnPingInfo(Self);
 //              end;
 
-      mk_PlayersList:
-              if fNetPlayerKind = lpk_Joiner then
-              begin
-                M.Read(fHostIndex);
-                fNetPlayers.LoadFromStream(M); //Our index could have changed on players add/removal
-                fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname);
-                if Assigned(fOnPlayersSetup) then fOnPlayersSetup(Self);
-              end;
+      mk_PlayersList: PlayersListReceived(M);
 
       mk_GameOptions:
               if fNetPlayerKind = lpk_Joiner then
@@ -1935,8 +1968,8 @@ begin
                     gLog.AddTime(Format('Save error: %s. Check params: fSaveInfo.IsValid = %s; (fSaveInfo.CRC <> tmpCRC) = ;' +
                                         ' Save FileExists %s: %s; fSaveError = %s; fInfo.IsValid(True) = %s',
                                         [gResTexts[TX_PAUSED_FILE_MISMATCH], BoolToStr(fSaveInfo.IsValid),
-                                         BoolToStr(fSaveInfo.CRC <> tmpCardinal), fSaveInfo.Path + fSaveInfo.FileName + '.' + EXT_SAVE_MAIN,
-                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + '.' + EXT_SAVE_MAIN)), fSaveInfo.SaveError,
+                                         BoolToStr(fSaveInfo.CRC <> tmpCardinal), fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT,
+                                         BoolToStr(FileExists(fSaveInfo.Path + fSaveInfo.FileName + EXT_SAVE_MAIN_DOT)), fSaveInfo.SaveError,
                                          fSaveInfo.Info.IsValid(True)]));
                     fSelectGameKind := ngk_None;
                     FreeAndNil(fSaveInfo);
@@ -2346,6 +2379,18 @@ begin
 end;
 
 
+function TKMNetworking.IsSave: Boolean;
+begin
+  Result := SelectGameKind = ngk_Save;
+end;
+
+
+function TKMNetworking.IsMap: Boolean;
+begin
+  Result := SelectGameKind = ngk_Map;
+end;
+
+
 // Toggle mute status of specified NetPlayer
 procedure TKMNetworking.ToggleMuted(aNetPlayerIndex: Integer);
 var ListIndex: Integer;
@@ -2473,7 +2518,6 @@ begin
   fMyPlayerCurrentFPS := aFPS;
   if fNetGameState = lgs_Game then
   begin
-//    MyNetPlayer.FPS := aFPS;
     PacketSend(NET_ADDRESS_SERVER, mk_FPS, aFPS);
     MyNetPlayer.FPS := aFPS;
   end;

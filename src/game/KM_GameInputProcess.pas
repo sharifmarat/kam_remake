@@ -2,7 +2,8 @@ unit KM_GameInputProcess;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Units, KM_UnitGroups, KM_Houses,
+  KM_Units, KM_UnitGroups,
+  KM_Houses, KM_HouseWoodcutters,
   KM_ResHouses, KM_ResWares,
   KM_CommonClasses, KM_Defaults, KM_Points;
 
@@ -46,17 +47,21 @@ type
     gic_ArmyWalk,         //Walking
     gic_ArmyStorm,        //StormAttack
 
-    //II.     Building/road plans (what to build and where)
+    //II. Unit commands
+    gic_UnitDismiss,
+    gic_UnitDismissCancel,
+
+    //III.     Building/road plans (what to build and where)
     gic_BuildAddFieldPlan,
     gic_BuildRemoveFieldPlan, //Removal of a plan
     gic_BuildRemoveHouse,     //Removal of house
     gic_BuildRemoveHousePlan, //Removal of house plan
     gic_BuildHousePlan,       //Build HouseType
 
-    //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
+    //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gic_HouseRepairToggle,
     gic_HouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
-    gic_HouseClosedForWorkerToggle,   //Toggle house state for worker - vacate or occupy
+    gic_HouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
     gic_HouseOrderProduct,            //Place an order to manufacture warfare
     gic_HouseMarketFrom,              //Select wares to trade in marketplace
     gic_HouseMarketTo,                //Select wares to trade in marketplace
@@ -67,17 +72,20 @@ type
     gic_HouseSchoolTrainChOrder,      //Change school training order
     gic_HouseSchoolTrainChLastUOrder, //Change school training order for last unit in queue
     gic_HouseBarracksAcceptFlag,      //Control wares delivery to barracks
-    gic_HouseBarracksAcceptRecruitsToggle,  //Toggle are recruits allowed to enter barracks or not
-    gic_HouseBarracksEquip,           //Place an order to train warrior
-    gic_HouseBarracksRally,           //Set the rally point for the barracks
+    gic_HBarracksAcceptRecruitsTgl,   //Toggle are recruits allowed to enter barracks or not
+    gic_HouseBarracksEquip,           //Place an order to train warrior in the Barracks
+    gic_HouseBarracksRally,           //Set the rally point for the Barracks
+    gic_HouseTownHallEquip,           //Place an order to train warrior in the TownHall
+    gic_HouseTownHallRally,           //Set the rally point for the TownHall
+    gic_HouseTownHallMaxGold,         //Set TownHall MaxGold value
     gic_HouseRemoveTrain,             //Remove unit being trained from School
     gic_HouseWoodcuttersCutting,      //Set the cutting point for the Woodcutters
 
-    //IV.     Delivery ratios changes (and other game-global settings)
+    //V.     Delivery ratios changes (and other game-global settings)
     gic_WareDistributionChange,   //Change of distribution for 1 ware
     gic_WareDistributions,        //Update distributions for all wares at ones
 
-    //V.      Game changes
+    //VI.      Game changes
     gic_GameAlertBeacon,          //Signal alert (beacon)
     gic_GamePause,
     gic_GameAutoSave,
@@ -88,8 +96,6 @@ type
     gic_GameMessageLogRead,   //Player marks a message in their log as read
     gic_GamePlayerTypeChange, //Players can be changed to AI when loading a save
     gic_GamePlayerDefeat,     //Player can be defeated after intentional quit from the game
-
-    //VI.      Cheatcodes affecting gameplay (props)
 
     //VII.     Temporary and debug commands
     gic_TempAddScout,
@@ -116,7 +122,7 @@ type
 const
   BlockedByPeaceTime: set of TGameInputCommandType = [gic_ArmySplit, gic_ArmySplitSingle,
     gic_ArmyLink, gic_ArmyAttackUnit, gic_ArmyAttackHouse, gic_ArmyHalt,
-    gic_ArmyFormation,  gic_ArmyWalk, gic_ArmyStorm, gic_HouseBarracksEquip];
+    gic_ArmyFormation,  gic_ArmyWalk, gic_ArmyStorm, gic_HouseBarracksEquip, gic_HouseTownHallEquip];
   AllowedAfterDefeat: set of TGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GameMessageLogRead, gic_TempDoNothing];
   AllowedInCinematic: set of TGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GameMessageLogRead, gic_TempDoNothing];
   AllowedBySpectators: set of TGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GamePlayerDefeat, gic_TempDoNothing];
@@ -136,7 +142,7 @@ const
   HouseOrderCommands: set of TGameInputCommandType = [
     gic_HouseRepairToggle,
     gic_HouseDeliveryToggle,
-    gic_HouseClosedForWorkerToggle,
+    gic_HouseClosedForWorkerTgl,
     gic_HouseOrderProduct,
     gic_HouseMarketFrom,
     gic_HouseMarketTo,
@@ -146,9 +152,12 @@ const
     gic_HouseSchoolTrainChOrder,
     gic_HouseSchoolTrainChLastUOrder,
     gic_HouseBarracksAcceptFlag,
-    gic_HouseBarracksAcceptRecruitsToggle,
+    gic_HBarracksAcceptRecruitsTgl,
     gic_HouseBarracksEquip,
     gic_HouseBarracksRally,
+    gic_HouseTownHallEquip,
+    gic_HouseTownHallRally,
+    gic_HouseTownHallMaxGold,
     gic_HouseRemoveTrain,
     gic_HouseWoodcuttersCutting];
 
@@ -166,16 +175,19 @@ const
     gicpt_Int3,     // gic_ArmyFormation
     gicpt_Int4,     // gic_ArmyWalk
     gicpt_Int1,     // gic_ArmyStorm
-    //II.     Building/road plans (what to build and where)
+    //II.      Unit commands
+    gicpt_Int1,     // gic_UnitDismiss
+    gicpt_Int1,     // gic_UnitDismissCancel
+    //III.     Building/road plans (what to build and where)
     gicpt_Int3,     // gic_BuildAddFieldPlan
     gicpt_Int2,     // gic_BuildRemoveFieldPlan
     gicpt_Int2,     // gic_BuildRemoveHouse
     gicpt_Int2,     // gic_BuildRemoveHousePlan
     gicpt_Int3,     // gic_BuildHousePlan
-    //III.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
+    //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gicpt_Int1,     // gic_HouseRepairToggle
     gicpt_Int2,     // gic_HouseDeliveryToggle
-    gicpt_Int1,     // gic_HouseClosedForWorkerToggle
+    gicpt_Int1,     // gic_HouseClosedForWorkerTgl
     gicpt_Int3,     // gic_HouseOrderProduct
     gicpt_Int2,     // gic_HouseMarketFrom
     gicpt_Int2,     // gic_HouseMarketTo
@@ -186,15 +198,18 @@ const
     gicpt_Int3,     // gic_HouseSchoolTrainChOrder
     gicpt_Int2,     // gic_HouseSchoolTrainChLastUOrder
     gicpt_Int2,     // gic_HouseBarracksAcceptFlag
-    gicpt_Int1,     // gic_HouseBarracksAcceptRecruitsToggle
+    gicpt_Int1,     // gic_HBarracksAcceptRecruitsTgl
     gicpt_Int3,     // gic_HouseBarracksEquip
     gicpt_Int3,     // gic_HouseBarracksRally
+    gicpt_Int3,     // gic_HouseTownHallEquip
+    gicpt_Int3,     // gic_HouseTownHallRally
+    gicpt_Int2,     // gic_HouseTownHallMaxGold
     gicpt_Int2,     // gic_HouseRemoveTrain
     gicpt_Int3,     // gic_HouseWoodcuttersCutting
-    //IV.     Delivery ratios changes (and other game-global settings)
+    //V.     Delivery ratios changes (and other game-global settings)
     gicpt_Int3,     // gic_WareDistributionChange
     gicpt_Text,     // gic_WareDistributions
-    //V.      Game changes
+    //VI.      Game changes
     gicpt_Int4,     // gic_GameAlertBeacon
     gicpt_NoParams, // gic_GamePause
     gicpt_Date,     // gic_GameAutoSave
@@ -216,7 +231,7 @@ const
 type
   TGameInputCommand = record
     CommandType: TGameInputCommandType;
-    Params: array[1..MAX_PARAMS]of integer;
+    Params: array[1..MAX_PARAMS] of Integer;
     TextParam: UnicodeString;
     DateTimeParam: TDateTime;
     HandIndex: TKMHandIndex; //Player for which the command is to be issued. (Needed for multiplayer and other reasons)
@@ -252,6 +267,10 @@ type
     procedure ExecCommand(const aCommand: TGameInputCommand);
     procedure StoreCommand(const aCommand: TGameInputCommand);
     procedure ExecGameAlertBeaconCmd(const aCommand: TGameInputCommand);
+  protected
+    function IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
+    procedure SaveExtra(aStream: TKMemoryStream); virtual;
+    procedure LoadExtra(aStream: TKMemoryStream); virtual;
   public
     constructor Create(aReplayState: TGIPReplayState);
     destructor Destroy; override;
@@ -263,20 +282,22 @@ type
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; aTurnAmount: TKMTurnDirection; aLineAmount:shortint); overload;
     procedure CmdArmy(aCommandType: TGameInputCommandType; aGroup: TKMUnitGroup; const aLoc: TKMPoint; aDirection: TKMDirection); overload;
 
+    procedure CmdUnit(aCommandType: TGameInputCommandType; aUnit: TKMUnit);
+
     procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint); overload;
-    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TFieldType); overload;
-    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: THouseType); overload;
+    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TKMFieldType); overload;
+    procedure CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: TKMHouseType); overload;
 
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aItem, aAmountChange: Integer); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWareType: TWareType); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TWoodcutterMode); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aUnitType: TUnitType; aCount:byte); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aItem: Integer); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWareType: TKMWareType); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TKMWoodcutterMode); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aUnitType: TKMUnitType; aCount: Integer); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aValue: Integer); overload;
     procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint); overload;
-    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TDeliveryMode); overload;
+    procedure CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TKMDeliveryMode); overload;
 
-    procedure CmdWareDistribution(aCommandType: TGameInputCommandType; aWare: TWareType; aHouseType: THouseType; aValue:integer); overload;
+    procedure CmdWareDistribution(aCommandType: TGameInputCommandType; aWare: TKMWareType; aHouseType: TKMHouseType; aValue:integer); overload;
     procedure CmdWareDistribution(aCommandType: TGameInputCommandType; const aTextParam: UnicodeString); overload;
 
     procedure CmdGame(aCommandType: TGameInputCommandType; aValue:boolean); overload;
@@ -299,17 +320,24 @@ type
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TGIPReplayState read fReplayState;
-    function GetLastTick: Cardinal;
-    function ReplayEnded: Boolean;
+    function GetLastTick: Cardinal; virtual;
+    function ReplayEnded: Boolean; virtual;
   end;
 
 
 implementation
 uses
-  SysUtils, TypInfo,
+  SysUtils, TypInfo, Math,
   KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection,
-  KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool,
-  KM_ScriptingEvents, KM_Alerts, KM_CommonUtils;
+  KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall,
+  KM_ScriptingEvents, KM_Alerts, KM_CommonUtils, KM_Log,
+  KM_GameTypes;
+
+const 
+  NO_LAST_TICK_VALUE = 0;
+
+var
+  GIC_COMMAND_TYPE_MAX_LENGTH: Byte;
 
 
 function IsSelectedObjectCommand(aGIC: TGameInputCommandType): Boolean;
@@ -376,6 +404,25 @@ begin
       gicpt_Date:     aMemoryStream.Read(DateTimeParam);
     end;
     aMemoryStream.Read(HandIndex);
+  end;
+end;
+
+
+function GetCommandLogString(aGIC: TGameInputCommand): UnicodeString;
+begin
+  with aGIC do
+  begin
+    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's player: %2d, params: ',
+                     [GetEnumName(TypeInfo(TGameInputCommandType), Integer(CommandType)), HandIndex]);
+    case CommandPackType[CommandType] of
+      gicpt_NoParams: Result := Result + ' []';
+      gicpt_Int1:     Result := Result + Format('[%10d]', [Params[1]]);
+      gicpt_Int2:     Result := Result + Format('[%10d,%10d]', [Params[1], Params[2]]);
+      gicpt_Int3:     Result := Result + Format('[%10d,%10d,%10d]', [Params[1], Params[2], Params[3]]);
+      gicpt_Int4:     Result := Result + Format('[%10d,%10d,%10d,%10d]', [Params[1], Params[2], Params[3], Params[4]]);
+      gicpt_Text:     Result := Result + Format('[%s]', [TextParam]);
+      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
+    end;
   end;
 end;
 
@@ -491,7 +538,8 @@ end;
 procedure TGameInputProcess.ExecCommand(const aCommand: TGameInputCommand);
 var
   P: TKMHand;
-  IsSilent: boolean;
+  IsSilent: Boolean;
+  SrcUnit: TKMUnit;
   SrcGroup, TgtGroup: TKMUnitGroup;
   TgtUnit: TKMUnit;
   SrcHouse, TgtHouse: TKMHouse;
@@ -499,6 +547,7 @@ begin
   //NOTE: gMySpectator.PlayerIndex should not be used for important stuff here, use P instead (commands must be executed the same for all players)
   IsSilent := (aCommand.HandIndex <> gMySpectator.HandIndex);
   P := gHands[aCommand.HandIndex];
+  SrcUnit := nil;
   SrcGroup := nil;
   TgtGroup := nil;
   SrcHouse := nil;
@@ -531,11 +580,11 @@ begin
       if (TgtUnit = nil) or TgtUnit.IsDeadOrDying then //Unit has died before command could be executed
         Exit;
     end;
-    if CommandType in [gic_HouseRepairToggle, gic_HouseDeliveryToggle, gic_HouseWoodcuttersCutting,
-      gic_HouseOrderProduct, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseBarracksRally,
-      gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseBarracksEquip, gic_HouseClosedForWorkerToggle,
+    if CommandType in [gic_HouseRepairToggle, gic_HouseDeliveryToggle, gic_HouseWoodcuttersCutting, gic_HouseTownHallMaxGold,
+      gic_HouseOrderProduct, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseBarracksRally, gic_HouseTownHallRally,
+      gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseBarracksEquip, gic_HouseTownHallEquip, gic_HouseClosedForWorkerTgl,
       gic_HouseSchoolTrain, gic_HouseSchoolTrainChOrder, gic_HouseSchoolTrainChLastUOrder, gic_HouseRemoveTrain,
-      gic_HouseWoodcutterMode, gic_HouseBarracksAcceptRecruitsToggle, gic_HouseArmorWSDeliveryToggle] then
+      gic_HouseWoodcutterMode, gic_HBarracksAcceptRecruitsTgl, gic_HouseArmorWSDeliveryToggle] then
     begin
       SrcHouse := gHands.GetHouseByUID(Params[1]);
       if (SrcHouse = nil) or SrcHouse.IsDestroyed //House has been destroyed before command could be executed
@@ -546,6 +595,14 @@ begin
     begin
       TgtHouse := gHands.GetHouseByUID(Params[2]);
       if (TgtHouse = nil) or TgtHouse.IsDestroyed then Exit; //House has been destroyed before command could be executed
+    end;
+
+    if CommandType in [gic_UnitDismiss, gic_UnitDismissCancel] then
+    begin
+      SrcUnit := gHands.GetUnitByUID(Params[1]);
+      if (SrcUnit = nil) or SrcUnit.IsDeadOrDying //Unit has died before command could be executed
+        or (SrcUnit.Owner <> aCommand.HandIndex) then //Potential exploit
+        Exit;
     end;
 
     //Some commands are blocked by peacetime (this is a fall back in case players try to cheat)
@@ -560,6 +617,8 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
+    gLog.LogCommands('Exec command: ' + GetCommandLogString(aCommand));
+
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
       gic_ArmySplit:        SrcGroup.OrderSplit(True);
@@ -570,39 +629,45 @@ begin
       gic_ArmyAttackHouse:  SrcGroup.OrderAttackHouse(TgtHouse, True);
       gic_ArmyHalt:         SrcGroup.OrderHalt(True);
       gic_ArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
-      gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, TKMDirection(Params[4]));
+      gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, wtokPlayerOrder, TKMDirection(Params[4]));
 
-      gic_BuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
+      gic_UnitDismiss:        SrcUnit.Dismiss;
+      gic_UnitDismissCancel:  SrcUnit.DismissCancel;
+
+      gic_BuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TKMFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
       gic_BuildRemoveFieldPlan:   P.RemFieldPlan(KMPoint(Params[1],Params[2]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
       gic_BuildRemoveHouse:       P.RemHouse(KMPoint(Params[1],Params[2]), IsSilent);
       gic_BuildRemoveHousePlan:   P.RemHousePlan(KMPoint(Params[1],Params[2]));
-      gic_BuildHousePlan:         if P.CanAddHousePlan(KMPoint(Params[2],Params[3]), THouseType(Params[1])) then
-                                    P.AddHousePlan(THouseType(Params[1]), KMPoint(Params[2],Params[3]));
+      gic_BuildHousePlan:         if P.CanAddHousePlan(KMPoint(Params[2],Params[3]), TKMHouseType(Params[1])) then
+                                    P.AddHousePlan(TKMHouseType(Params[1]), KMPoint(Params[2],Params[3]));
 
       gic_HouseRepairToggle:      SrcHouse.BuildingRepair := not SrcHouse.BuildingRepair;
       gic_HouseDeliveryToggle:    //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
-                                  SrcHouse.NewDeliveryMode := TDeliveryMode(Params[2]);
-      gic_HouseClosedForWorkerToggle: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;                                  
+                                  SrcHouse.NewDeliveryMode := TKMDeliveryMode(Params[2]);
+      gic_HouseClosedForWorkerTgl: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;
       gic_HouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
-      gic_HouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TWareType(Params[2]);
-      gic_HouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TWareType(Params[2]);
-      gic_HouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleAcceptFlag(TWareType(Params[2]));
-      gic_HouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TWoodcutterMode(Params[2]);
+      gic_HouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
+      gic_HouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TKMWareType(Params[2]);
+      gic_HouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
+      gic_HouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
       gic_HouseBarracksAcceptFlag:
-                                  TKMHouseBarracks(SrcHouse).ToggleAcceptFlag(TWareType(Params[2]));
-      gic_HouseBarracksAcceptRecruitsToggle:
+                                  TKMHouseBarracks(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
+      gic_HBarracksAcceptRecruitsTgl:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptRecruits;
-      gic_HouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TUnitType(Params[2]), Params[3]);
-      gic_HouseBarracksRally:     TKMHouseBarracks(SrcHouse).RallyPoint := KMPoint(Params[2], Params[3]);
-      gic_HouseSchoolTrain:       TKMHouseSchool(SrcHouse).AddUnitToQueue(TUnitType(Params[2]), Params[3]);
+      gic_HouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
+      gic_HouseBarracksRally:     TKMHouseBarracks(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gic_HouseTownHallEquip:     TKMHouseTownHall(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
+      gic_HouseTownHallRally:     TKMHouseTownHall(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gic_HouseTownHallMaxGold:   TKMHouseTownHall(SrcHouse).GoldMaxCnt := EnsureRange(Params[2], 0, High(Word));
+      gic_HouseSchoolTrain:       TKMHouseSchool(SrcHouse).AddUnitToQueue(TKMUnitType(Params[2]), Params[3]);
       gic_HouseSchoolTrainChOrder:TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2], Params[3]);
       gic_HouseSchoolTrainChLastUOrder: TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2]);
       gic_HouseRemoveTrain:       TKMHouseSchool(SrcHouse).RemUnitFromQueue(Params[2]);
-      gic_HouseWoodcuttersCutting: TKMHouseWoodcutters(SrcHouse).CuttingPoint := KMPoint(Params[2], Params[3]);
-      gic_HouseArmorWSDeliveryToggle:   TKMHouseArmorWorkshop(SrcHouse).ToggleResDelivery(TWareType(Params[2]));
+      gic_HouseWoodcuttersCutting: TKMHouseWoodcutters(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gic_HouseArmorWSDeliveryToggle:   TKMHouseArmorWorkshop(SrcHouse).ToggleResDelivery(TKMWareType(Params[2]));
 
       gic_WareDistributionChange: begin
-                                    P.Stats.WareDistribution[TWareType(Params[1]), THouseType(Params[2])] := Params[3];
+                                    P.Stats.WareDistribution[TKMWareType(Params[1]), TKMHouseType(Params[2])] := Params[3];
                                     P.Houses.UpdateResRequest
                                   end;
       gic_WareDistributions:      begin
@@ -644,7 +709,7 @@ begin
       gic_GameMessageLogRead:     P.MessageLog[Params[1]].IsReadGIP := True;
       gic_GamePlayerTypeChange:   begin
                                     Assert(fReplayState <> gipRecording); //Should only occur in replays
-                                    gHands[Params[1]].HandType := THandType(Params[2]);
+                                    gHands[Params[1]].HandType := TKMHandType(Params[2]);
                                   end;
       gic_GamePlayerDefeat:       begin
                                     gHands.DisableGoalsForDefeatedHand(Params[1]);
@@ -738,6 +803,13 @@ begin
 end;
 
 
+procedure TGameInputProcess.CmdUnit(aCommandType: TGameInputCommandType; aUnit: TKMUnit);
+begin
+  Assert(aCommandType in [gic_UnitDismiss, gic_UnitDismissCancel]);
+  TakeCommand(MakeCommand(aCommandType, aUnit.UID));
+end;
+
+
 procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint);
 begin
   Assert(aCommandType in [gic_BuildRemoveFieldPlan, gic_BuildRemoveHouse, gic_BuildRemoveHousePlan]);
@@ -752,7 +824,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TFieldType);
+procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aFieldType: TKMFieldType);
 begin
   Assert(aCommandType in [gic_BuildAddFieldPlan]);
 
@@ -766,7 +838,7 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: THouseType);
+procedure TGameInputProcess.CmdBuild(aCommandType: TGameInputCommandType; const aLoc: TKMPoint; aHouseType: TKMHouseType);
 begin
   Assert(aCommandType = gic_BuildHousePlan);
   TakeCommand(MakeCommand(aCommandType, Byte(aHouseType), aLoc.X, aLoc.Y));
@@ -775,7 +847,7 @@ end;
 
 procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse);
 begin
-  Assert(aCommandType in [gic_HouseRepairToggle, gic_HouseClosedForWorkerToggle, gic_HouseBarracksAcceptRecruitsToggle]);
+  Assert(aCommandType in [gic_HouseRepairToggle, gic_HouseClosedForWorkerTgl, gic_HBarracksAcceptRecruitsTgl]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID));
 end;
 
@@ -787,51 +859,51 @@ begin
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWareType: TWareType);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWareType: TKMWareType);
 begin
   Assert(aCommandType in [gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseArmorWSDeliveryToggle]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aWareType)));
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TWoodcutterMode);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TKMWoodcutterMode);
 begin
   Assert(aCommandType = gic_HouseWoodcutterMode);
-  TakeCommand(MakeCommand(aCommandType, aHouse.UID, byte(aWoodcutterMode)));
+  TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aWoodcutterMode)));
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aUnitType: TUnitType; aCount: Byte);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aUnitType: TKMUnitType; aCount: Integer);
 begin
-  Assert(aCommandType in [gic_HouseSchoolTrain, gic_HouseBarracksEquip]);
-  TakeCommand(MakeCommand(aCommandType, aHouse.UID, byte(aUnitType), aCount));
+  Assert(aCommandType in [gic_HouseSchoolTrain, gic_HouseBarracksEquip, gic_HouseTownHallEquip]);
+  TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aUnitType), aCount));
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aItem:integer);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aValue: Integer);
 begin
-  Assert(aCommandType in [gic_HouseRemoveTrain, gic_HouseSchoolTrainChLastUOrder]);
-  Assert(aHouse is TKMHouseSchool);
-  TakeCommand(MakeCommand(aCommandType, aHouse.UID, aItem));
+  Assert(aCommandType in [gic_HouseRemoveTrain, gic_HouseSchoolTrainChLastUOrder, gic_HouseTownHallMaxGold]);
+  Assert((aHouse is TKMHouseSchool) or (aHouse is TKMHouseTownHall));
+  TakeCommand(MakeCommand(aCommandType, aHouse.UID, aValue));
 end;
 
 
 procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint);
 begin
-  Assert((aCommandType = gic_HouseBarracksRally) or (aCommandType = gic_HouseWoodcuttersCutting));
-  Assert((aHouse is TKMHouseBarracks) or (aHouse is TKMHouseWoodcutters));
+  Assert((aCommandType = gic_HouseBarracksRally) or (aCommandType = gic_HouseTownHallRally) or (aCommandType = gic_HouseWoodcuttersCutting));
+  Assert((aHouse is TKMHouseBarracks) or (aHouse is TKMHouseTownHall) or (aHouse is TKMHouseWoodcutters));
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, aLoc.X, aLoc.Y));
 end;
 
 
-procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TDeliveryMode);
+procedure TGameInputProcess.CmdHouse(aCommandType: TGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TKMDeliveryMode);
 begin
   Assert(aCommandType = gic_HouseDeliveryToggle);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Integer(aDeliveryMode)));
 end;
 
 
-procedure TGameInputProcess.CmdWareDistribution(aCommandType: TGameInputCommandType; aWare: TWareType; aHouseType: THouseType; aValue:integer);
+procedure TGameInputProcess.CmdWareDistribution(aCommandType: TGameInputCommandType; aWare: TKMWareType; aHouseType: TKMHouseType; aValue:integer);
 begin
   Assert(aCommandType = gic_WareDistributionChange);
   TakeCommand(MakeCommand(aCommandType, Byte(aWare), Byte(aHouseType), aValue));
@@ -896,12 +968,15 @@ end;
 
 procedure TGameInputProcess.SaveToFile(const aFileName: UnicodeString);
 var
-  I: integer;
+  I: Integer;
   S: TKMemoryStream;
 begin
   S := TKMemoryStream.Create;
   S.WriteA(GAME_REVISION);
   S.Write(fCount);
+
+  SaveExtra(S);
+
   for I := 1 to fCount do
   begin
     S.Write(fQueue[I].Tick);
@@ -920,13 +995,16 @@ var
   I: Integer;
   S: TKMemoryStream;
 begin
-  if not FileExists(aFileName) then exit;
+  if not FileExists(aFileName) then Exit;
   S := TKMemoryStream.Create;
   S.LoadFromFile(aFileName);
   S.ReadA(FileVersion);
   Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
   S.Read(fCount);
-  SetLength(fQueue, fCount+1);
+  SetLength(fQueue, fCount + 1);
+
+  LoadExtra(S);
+
   for I := 1 to fCount do
   begin
     S.Read(fQueue[I].Tick);
@@ -951,7 +1029,7 @@ begin
   if ReplayState = gipReplaying then
     Result := fCursor > fCount
   else
-    Result := false;
+    Result := False;
 end;
 
 
@@ -964,11 +1042,11 @@ begin
 
   Assert(ReplayState = gipRecording);
   Inc(fCount);
-  if Length(fQueue) <= fCount then SetLength(fQueue, fCount+128);
+  if Length(fQueue) <= fCount then SetLength(fQueue, fCount + 128);
 
   fQueue[fCount].Tick    := gGame.GameTickCount;
   fQueue[fCount].Command := aCommand;
-  fQueue[fCount].Rand    := Cardinal(KaMRandom(maxint)); //This will be our check to ensure everything is consistent
+  fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt)); //This will be our check to ensure everything is consistent
 end;
 
 
@@ -999,4 +1077,47 @@ begin
 end;
 
 
+function TGameInputProcess.IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
+begin
+  Result := aLastTickValue <> NO_LAST_TICK_VALUE;
+end;
+
+
+procedure TGameInputProcess.SaveExtra(aStream: TKMemoryStream);
+begin
+  aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
+end;
+
+
+procedure TGameInputProcess.LoadExtra(aStream: TKMemoryStream);
+var
+  Tmp: Cardinal;
+begin
+  aStream.Read(Tmp); //Just read some bytes from the stream
+  //Only used in GIP_Single
+end;
+
+
+function GetGICCommandTypeMaxLength: Byte;
+var
+  Cmd: TGameInputCommandType;
+  Len: Byte;
+begin
+  Result := 0;
+  for Cmd := Low(TGameInputCommandType) to High(TGameInputCommandType) do
+  begin
+    Len := Length(GetEnumName(TypeInfo(TGameInputCommandType), Integer(Cmd)));
+    if Len > Result then
+      Result := Len;
+  end;
+end;
+
+
+initialization
+begin
+  GIC_COMMAND_TYPE_MAX_LENGTH := GetGICCommandTypeMaxLength;
+end;
+
+
 end.
+

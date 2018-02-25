@@ -4,7 +4,7 @@ interface
 uses
   KM_AIMayorBalance, KM_AICityPlanner, KM_AISetup,
   KM_PathfindingRoad,
-  KM_ResHouses,
+  KM_ResHouses, KM_HouseCollection,
   KM_CommonClasses, KM_Defaults, KM_Points;
 
 
@@ -27,7 +27,7 @@ type
 
     procedure SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single);
 
-    function TryBuildHouse(aHouse: THouseType): Boolean;
+    function TryBuildHouse(aHouse: TKMHouseType): Boolean;
     function TryConnectToRoad(const aLoc: TKMPoint): Boolean;
     function GetMaxPlans: Byte;
 
@@ -63,14 +63,14 @@ uses
   Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_Terrain,
-  KM_HouseCollection, KM_Houses, KM_HouseSchool,
+  KM_Houses, KM_HouseSchool,
   KM_Units, KM_UnitsCollection, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitTaskDelivery,
   KM_Resource, KM_ResWares,
   KM_NavMesh, KM_CommonUtils;
 
 
 const //Sample list made by AntonP
-  WarriorHouses: array [0..44] of THouseType = (
+  WarriorHouses: array [0..44] of TKMHouseType = (
   ht_School, ht_Inn, ht_Quary, ht_Quary, ht_Quary,
   ht_Woodcutters, ht_Woodcutters, ht_Woodcutters, ht_Woodcutters, ht_Woodcutters,
   ht_Sawmill, ht_Sawmill, ht_Woodcutters, ht_GoldMine, ht_CoalMine,
@@ -149,7 +149,7 @@ var
               or (P.Stats.GetWareBalance(wt_Gold) > 20);
   end;
 
-  function TryToTrain(aSchool: TKMHouseSchool; aUnitType: TUnitType; aRequiredCount: Integer): Boolean;
+  function TryToTrain(aSchool: TKMHouseSchool; aUnitType: TKMUnitType; aRequiredCount: Integer): Boolean;
   begin
     // We summ up requirements for e.g. Recruits required at Towers and Barracks
     if P.Stats.GetUnitQty(aUnitType) < (aRequiredCount + UnitReq[aUnitType]) then
@@ -190,8 +190,8 @@ var
 
 var
   I,K: Integer;
-  H: THouseType;
-  UT: TUnitType;
+  H: TKMHouseType;
+  UT: TKMUnitType;
   Schools: array of TKMHouseSchool;
   HS: TKMHouseSchool;
   serfCount: Integer;
@@ -470,7 +470,7 @@ end;
 
 //Try to place a building plan for requested house
 //Report back if failed to do so (that will allow requester to choose different action)
-function TKMayor.TryBuildHouse(aHouse: THouseType): Boolean;
+function TKMayor.TryBuildHouse(aHouse: TKMHouseType): Boolean;
 var
   I, K: Integer;
   Loc: TKMPoint;
@@ -669,7 +669,7 @@ var
   end;
 
 var
-  H: THouseType;
+  H: TKMHouseType;
 begin
   P := gHands[fOwner];
 
@@ -758,13 +758,13 @@ begin
       if KaMRandom(gHands[fOwner].Stats.GetUnitQty(ut_Serf)) >= SHORTCUT_CHECKS_PER_UPDATE then
         Continue;
       if not gHands[fOwner].Units[I].IsDeadOrDying
-      and (gHands[fOwner].Units[I].GetUnitAction is TUnitActionWalkTo) then
-        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].UnitTask is TTaskDeliver)
-                                                     and (TTaskDeliver(gHands[fOwner].Units[I].UnitTask).DeliverKind <> dk_ToUnit))
-        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].UnitTask is TTaskGoEat)) then
+      and (gHands[fOwner].Units[I].GetUnitAction is TKMUnitActionWalkTo) then
+        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].UnitTask is TKMTaskDeliver)
+                                                     and (TKMTaskDeliver(gHands[fOwner].Units[I].UnitTask).DeliverKind <> dk_ToUnit))
+        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].UnitTask is TKMTaskGoEat)) then
         begin
-          FromLoc := TUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkFrom;
-          ToLoc := TUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkTo;
+          FromLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkFrom;
+          ToLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkTo;
           //Unit's route must be using road network, not f.e. delivering to soldiers
           if gTerrain.Route_CanBeMade(FromLoc, ToLoc, tpWalkRoad, 0) then
           begin
@@ -809,30 +809,30 @@ procedure TKMayor.SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single)
                + gHands[fOwner].Stats.GetHousePlans(ht_IronMine)) > 0;
   end;
 
-  function GroupBlocked(aGT: TGroupType; aIron: Boolean): Boolean;
+  function GroupBlocked(aGT: TKMGroupType; aIron: Boolean): Boolean;
   begin
     if aIron then
       case aGT of
-        gt_Melee:     Result := gHands[fOwner].Locks.UnitBlocked[ut_Swordsman];
-        gt_AntiHorse: Result := gHands[fOwner].Locks.UnitBlocked[ut_Hallebardman];
-        gt_Ranged:    Result := gHands[fOwner].Locks.UnitBlocked[ut_Arbaletman];
-        gt_Mounted:   Result := gHands[fOwner].Locks.UnitBlocked[ut_Cavalry];
+        gt_Melee:     Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Swordsman);
+        gt_AntiHorse: Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Hallebardman);
+        gt_Ranged:    Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Arbaletman);
+        gt_Mounted:   Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Cavalry);
         else          Result := True;
       end
     else
       case aGT of
-        gt_Melee:     Result := gHands[fOwner].Locks.UnitBlocked[ut_Militia] and
-                                gHands[fOwner].Locks.UnitBlocked[ut_AxeFighter];
-        gt_AntiHorse: Result := gHands[fOwner].Locks.UnitBlocked[ut_Pikeman];
-        gt_Ranged:    Result := gHands[fOwner].Locks.UnitBlocked[ut_Bowman];
-        gt_Mounted:   Result := gHands[fOwner].Locks.UnitBlocked[ut_HorseScout];
+        gt_Melee:     Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Militia) and
+                                gHands[fOwner].Locks.GetUnitBlocked(ut_AxeFighter);
+        gt_AntiHorse: Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Pikeman);
+        gt_Ranged:    Result := gHands[fOwner].Locks.GetUnitBlocked(ut_Bowman);
+        gt_Mounted:   Result := gHands[fOwner].Locks.GetUnitBlocked(ut_HorseScout);
         else          Result := True;
       end;
   end;
 
-  function GetUnitRatio(aUT: TUnitType): Byte;
+  function GetUnitRatio(aUT: TKMUnitType): Byte;
   begin
-    if gHands[fOwner].Locks.UnitBlocked[aUT] then
+    if gHands[fOwner].Locks.GetUnitBlocked(aUT) then
       Result := 0 //This warrior is blocked
     else
       if (fSetup.ArmyType = atIronAndLeather)
@@ -846,7 +846,7 @@ var
   Summ: Single;
   Footmen, Pikemen, Horsemen, Archers: Single;
   IronPerMin, LeatherPerMin: Single;
-  WT: TWareType;
+  WT: TKMWareType;
   WarfarePerMinute: TWarfareDemands;
 begin
   Summ := aFootmen + aPikemen + aHorsemen + aArchers;

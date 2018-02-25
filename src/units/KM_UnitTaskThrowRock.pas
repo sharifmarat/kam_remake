@@ -8,7 +8,7 @@ uses
 
 {Throw a rock}
 type
-  TTaskThrowRock = class(TUnitTask)
+  TKMTaskThrowRock = class(TKMUnitTask)
   private
     fTarget: TKMUnit;
     fFlightTime: Word; //Thats how long it will take a stone to hit it's target
@@ -17,7 +17,7 @@ type
     destructor Destroy; override;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -28,7 +28,7 @@ uses
 
 
 { TTaskThrowRock }
-constructor TTaskThrowRock.Create(aUnit, aTarget: TKMUnit);
+constructor TKMTaskThrowRock.Create(aUnit, aTarget: TKMUnit);
 begin
   inherited Create(aUnit);
   fTaskName := utn_ThrowRock;
@@ -36,7 +36,7 @@ begin
 end;
 
 
-destructor TTaskThrowRock.Destroy;
+destructor TKMTaskThrowRock.Destroy;
 begin
   if not fUnit.GetHome.IsDestroyed and (fUnit.GetHome.GetState = hst_Work) then
     fUnit.GetHome.SetState(hst_Idle); //Make sure we don't abandon and leave our tower with "working" animations
@@ -45,7 +45,7 @@ begin
 end;
 
 
-constructor TTaskThrowRock.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskThrowRock.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fTarget, 4);
@@ -53,14 +53,14 @@ begin
 end;
 
 
-procedure TTaskThrowRock.SyncLoad;
+procedure TKMTaskThrowRock.SyncLoad;
 begin
   inherited;
   fTarget := gHands.GetUnitByUID(cardinal(fTarget));
 end;
 
 
-function TTaskThrowRock.Execute: TTaskResult;
+function TKMTaskThrowRock.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -96,7 +96,7 @@ begin
 end;
 
 
-procedure TTaskThrowRock.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskThrowRock.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fTarget <> nil then

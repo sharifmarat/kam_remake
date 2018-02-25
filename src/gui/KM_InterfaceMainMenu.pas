@@ -19,8 +19,6 @@ uses
   KM_GUIMenuMultiplayer,
   KM_GUIMenuOptions,
   KM_GUIMenuReplays,
-  KM_GUIMenuResultsMP,
-  KM_GUIMenuResultsSP,
   KM_GUIMenuSingleMap,
   KM_GUIMenuSinglePlayer;
 
@@ -40,8 +38,6 @@ type
     fMenuMultiplayer: TKMMenuMultiplayer;
     fMenuOptions: TKMMenuOptions;
     fMenuReplays: TKMMenuReplays;
-    fMenuResultsMP: TKMMenuResultsMP;
-    fMenuResultsSP: TKMMenuResultsSP;
     fMenuSingleMap: TKMMenuSingleMap;
     fMenuSinglePlayer: TKMMenuSinglePlayer;
 
@@ -54,8 +50,6 @@ type
     destructor Destroy; override;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    procedure ShowResultsMP(aMsg: TGameResultMsg);
-    procedure ShowResultsSP(aMsg: TGameResultMsg);
     function GetChatState: TChatState;
     procedure SetChatState(const aChatState: TChatState);
     procedure ExportPages(const aPath: string); override;
@@ -74,14 +68,13 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_Campaigns, KM_GameApp, KM_Game, KM_Log, KM_RenderUI, KM_ResFonts;
+  KM_Main, KM_ResTexts, KM_Campaigns, KM_GameApp, KM_Game, KM_Log, KM_RenderUI, KM_ResFonts;
 
 
 { TKMMainMenuInterface }
 constructor TKMMainMenuInterface.Create(X,Y: Word);
 var
   S: TKMShape;
-  //F: TKMForm;
 begin
   inherited;
   Assert(gResTexts <> nil, 'fTextMain should be initialized before MainMenuInterface');
@@ -110,11 +103,6 @@ begin
   fMenuCredits       := TKMMenuCredits.Create(Panel_Menu, PageChange);
   fMenuError         := TKMMenuError.Create(Panel_Menu, PageChange);
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
-  fMenuResultsMP     := TKMMenuResultsMP.Create(Panel_Menu, PageChange);
-  fMenuResultsSP     := TKMMenuResultsSP.Create(Panel_Menu, PageChange);
-
-    {for i:=1 to length(FontFiles) do L[i]:=TKMLabel.Create(Panel_Main1,550,280+i*20,160,30,'This is a test string for KaM Remake ('+FontFiles[i],TKMFont(i),taLeft);//}
-    //MyControls.AddTextEdit(Panel_Main, 32, 32, 200, 20, fnt_Grey);
 
   //Show version info on every page
   Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fnt_Antiqua, taLeft);
@@ -130,10 +118,6 @@ begin
     S.LineWidth := 1;
     S.Hitable := False;
   end;
-
-  //F := TKMForm.Create(Panel_Main, 100, 100, 200, 160);
-  //F.Caption := 'Some Form';
-  //F.Show;
 
   gLog.AddTime('Main menu init done');
 end;
@@ -153,8 +137,6 @@ begin
   fMenuMultiplayer.Free;
   fMenuOptions.Free;
   fMenuReplays.Free;
-  fMenuResultsMP.Free;
-  fMenuResultsSP.Free;
   fMenuSingleMap.Free;
   fMenuSinglePlayer.Free;
 
@@ -196,32 +178,27 @@ begin
 end;
 
 
-procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsMP.Show(aMsg);
-end;
-
-
-procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsSP.Show(aMsg);
-end;
-
-
 procedure TKMMainMenuInterface.PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
 var
   I: Integer;
   cmp: TKMCampaignId;
+  Version: UnicodeString;
 begin
-  Label_Version.Caption := 'KaM Remake - ' + GAME_VERSION + ' / ' + gGameApp.RenderVersion;
+  Version := UnicodeString(GAME_VERSION) + ' / ' + gGameApp.RenderVersion;
+
+  if gMain <> nil then // could be nil if used from utils
+    gMain.StatusBarText(SB_ID_KMR_VER,'KMR ' +  Version);
 
   //Hide all other pages
   for I := 0 to Panel_Menu.ChildCount - 1 do
     if Panel_Menu.Childs[I] is TKMPanel then
       Panel_Menu.Childs[I].Hide;
 
+  Label_Version.Caption := '';
+
   case Dest of
     gpMainMenu:     begin
+                      Label_Version.Caption := 'KAM Remake - ' + Version;
                       fMenuMain.Show;
                       fMenuPage := fMenuMain;
                     end;

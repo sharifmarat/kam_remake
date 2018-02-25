@@ -5,7 +5,8 @@ uses
   Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus,
   {$IFDEF MSWINDOWS} ComCtrls, FileCtrl, {$ENDIF}
   StdCtrls, StrUtils, Windows, SysUtils, CheckLst, INIFiles, Zippit,
-  KM_Defaults, KM_FileIO, KM_ResLocales, Unit_Text, Unit_PathManager;
+  KM_Defaults, KM_FileIO, KM_ResLocales, Unit_Text, Unit_PathManager,
+  Vcl.Samples.Spin;
 
 const
   //Disables insert, delete, compact, sort, etc. functions
@@ -25,8 +26,6 @@ type
     lbFolders: TListBox;
     btnCopy: TButton;
     btnPaste: TButton;
-    Label4: TLabel;
-    Edit1: TEdit;
     MainMenu1: TMainMenu;
     File1: TMenuItem;
     Edit2: TMenuItem;
@@ -39,13 +38,20 @@ type
     mnuExit: TMenuItem;
     btnRename: TButton;
     clbShowLang: TCheckListBox;
-    cbShowMis: TCheckBox;
-    cbShowDup: TCheckBox;
     StatusBar1: TStatusBar;
-    Bevel1: TBevel;
     clbFolders: TCheckListBox;
     mmSaveAllZIP: TMenuItem;
     sdExportZIP: TSaveDialog;
+    FilterGroupBox: TGroupBox;
+    cbShowMis: TCheckBox;
+    cbShowDup: TCheckBox;
+    Label4: TLabel;
+    edTextFilter: TEdit;
+    Label1: TLabel;
+    edLabelName: TEdit;
+    Label3: TLabel;
+    edLabelId: TEdit;
+    SaveHotKey: THotKey;
     procedure FormCreate(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
     procedure btnSortByIndexClick(Sender: TObject);
@@ -61,7 +67,7 @@ type
     procedure lbFoldersClick(Sender: TObject);
     procedure btnCopyClick(Sender: TObject);
     procedure btnPasteClick(Sender: TObject);
-    procedure Edit1Change(Sender: TObject);
+    procedure FilterChanged(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure btnUnusedClick(Sender: TObject);
     procedure mnuExitClick(Sender: TObject);
@@ -75,7 +81,6 @@ type
   private
     fPathManager: TPathManager;
     fTextManager: TTextManager;
-    fExeDir: string;
     fWorkDir: string;
     fBuffer: array of string;
 
@@ -102,6 +107,8 @@ var
 
 implementation
 {$R *.dfm}
+uses
+  TranslationManagerUtils;
 
 
 const
@@ -112,8 +119,8 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   Caption := 'KaM Remake Translation Manager (' + GAME_REVISION + ')';
 
-  fExeDir := ExtractFilePath(ParamStr(0));
-  fWorkDir := fExeDir + '..\..\';
+  fWorkDir := GetWorkDir;
+
   gResLocales := TKMLocales.Create(fWorkDir + 'data\locales.txt', DEFAULT_LOCALE);
 
   InitLocalesList;
@@ -127,6 +134,7 @@ begin
 
   //Hide menu entries that Users should not access
   mnuSave.Enabled := False;
+  mnuSave.ShortCut := SaveHotKey.HotKey;
   MainMenu1.Items[1].Visible := not USER_MODE;
   mnuSortByIndex.Visible := not USER_MODE;
   mnuSortByName.Visible := not USER_MODE;
@@ -143,7 +151,7 @@ begin
   btnCopy.Visible := not USER_MODE;
   btnPaste.Visible := not USER_MODE;
 
-  LoadSettings(fExeDir + 'TranslationManager.ini');
+  LoadSettings(fWorkDir + 'TranslationManager.ini');
 
   WindowState := wsMaximized;
 end;
@@ -151,8 +159,8 @@ end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
-  SaveSettings(fExeDir + 'TranslationManager.ini');
-  fTextManager.Free;
+  SaveSettings(fWorkDir + 'TranslationManager.ini');
+  FreeAndNil(fTextManager);
 end;
 
 
@@ -242,16 +250,43 @@ end;
 procedure TForm1.btnSaveClick(Sender: TObject);
 begin
   fTextManager.Save;
+  mnuSave.Enabled := False;
 end;
 
 
 procedure TForm1.RefreshList;
+  function ParseRange(aString: String; out aFrom, aTo: Integer): Boolean;
+  var
+    P: Integer;
+    FromStr, ToStr: String;
+  begin
+    Result := False;
+    aFrom := -1;
+    aTo := -1;
+    aString := Trim(aString);
+    P := Pos('-', aString);
+    if P > 0 then
+    begin
+      FromStr := Copy(aString, 1, P - 1);
+      ToStr := Copy(aString, P + 1, Length(aString) - P);
+      if Trim(FromStr) = '' then //allow '-100' range: all IDs <= 100
+        FromStr := '0';
+      if Trim(ToStr) = '' then //allow '100-' range: all IDs >= 100
+        ToStr := IntToStr(MaxInt);
+      if TryStrToInt(Trim(FromStr), aFrom)
+        and TryStrToInt(Trim(ToStr), aTo) then
+        Result := True;
+    end;
+  end;
+
   function ShowConst(aIndex: Integer): Boolean;
   var
-    I,K, TextID, DefLoc: Integer;
+    I,K, TextID, DefLoc, LabelId, RangeFrom, RangeTo: Integer;
+    TextConstName: String;
   begin
     Result := True;
     TextID := fTextManager.Consts[aIndex].TextID;
+    TextConstName := fTextManager.Consts[aIndex].ConstName;
     DefLoc := gResLocales.IndexByCode(DEFAULT_LOCALE);
 
     //Hide lines that have text
@@ -275,13 +310,27 @@ procedure TForm1.RefreshList;
         Result := False;
         for I := 0 to gResLocales.Count - 1 do
           if clbShowLang.Checked[I+1] then
-          for K := 0 to gResLocales.Count - 1 do
-            if (K <> I) and clbShowLang.Checked[K+1] then
-              Result := Result or (fTextManager.Texts[TextID][I] = fTextManager.Texts[TextID][K]);
+            for K := 0 to gResLocales.Count - 1 do
+              if (K <> I) and clbShowLang.Checked[K+1] then
+                Result := Result or (fTextManager.Texts[TextID][I] = fTextManager.Texts[TextID][K]);
       end;
 
-    if Result and (Edit1.Text <> '') then
-        Result := (TextID <> -1) and (Pos(UpperCase(Edit1.Text), UpperCase(fTextManager.Texts[TextID][DefLoc])) <> 0);
+    if Result and (edTextFilter.Text <> '') then
+    begin
+      Result := False;
+      if TextID <> -1 then
+        for I := 0 to gResLocales.Count - 1 do
+          if not Result and clbShowLang.Checked[I+1] then
+            Result := Pos(UpperCase(Trim(edTextFilter.Text)), UpperCase(fTextManager.Texts[TextID][I])) <> 0;
+    end;
+
+    if Result and (edLabelName.Text <> '') then
+      Result := (TextID <> -1) and (Pos(UpperCase(Trim(edLabelName.Text)), UpperCase(TextConstName)) <> 0);
+
+    if Result and (edLabelId.Text <> '') then
+      Result := (TextID <> -1)
+        and ((TryStrToInt(Trim(edLabelId.Text), LabelId) and (TextID = LabelId))
+          or (ParseRange(edLabelId.Text, RangeFrom, RangeTo) and InRange(TextID, RangeFrom, RangeTo)));
   end;
 var
   I, TopIdx, ItemIdx: Integer;
@@ -488,7 +537,7 @@ begin
 end;
 
 
-procedure TForm1.Edit1Change(Sender: TObject);
+procedure TForm1.FilterChanged(Sender: TObject);
 begin
   RefreshFilter;
   RefreshList;
@@ -678,7 +727,8 @@ begin
   if Id = -1 then Exit;
 
   MainFile := SameText(lbFolders.Items[ID], 'data\text\text.%s.libx');
-  Filter := cbShowMis.Checked or cbShowDup.Checked or (Edit1.Text <> '');
+  Filter := cbShowMis.Checked or cbShowDup.Checked
+    or (edTextFilter.Text <> '') or (edLabelId.Text <> '') or (edLabelName.Text <> '');
 
   //Disable buttons
   mnuSortByIndex.Enabled := MainFile and not Filter;

@@ -6,13 +6,13 @@ uses
 
 type
   {Yep, this is a Task}
-  TTaskDie = class(TUnitTask)
+  TKMTaskDie = class(TKMUnitTask)
   private
     fShowAnimation: Boolean;
   public
     constructor Create(aUnit: TKMUnit; aShowAnimation: Boolean);
     constructor Load(LoadStream: TKMemoryStream); override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -24,7 +24,7 @@ uses
 
 
 { TTaskDie }
-constructor TTaskDie.Create(aUnit: TKMUnit; aShowAnimation: Boolean);
+constructor TKMTaskDie.Create(aUnit: TKMUnit; aShowAnimation: Boolean);
 begin
   inherited Create(aUnit);
   fTaskName := utn_Die;
@@ -38,25 +38,25 @@ begin
 end;
 
 
-constructor TTaskDie.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskDie.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fShowAnimation);
 end;
 
 
-procedure TTaskDie.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskDie.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fShowAnimation);
 end;
 
 
-function TTaskDie.Execute: TTaskResult;
+function TKMTaskDie.Execute: TKMTaskResult;
 var
   SequenceLength: SmallInt;
   TempOwner: TKMHandIndex;
-  TempUnitType: TUnitType;
+  TempUnitType: TKMUnitType;
   TempX, TempY: Word;
 begin
   Result := tr_TaskContinues;

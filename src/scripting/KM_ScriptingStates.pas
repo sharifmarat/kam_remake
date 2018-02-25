@@ -43,9 +43,8 @@ type
     function HouseDeliveryMode(aHouseID: Integer): Integer;
     function HouseDestroyed(aHouseID: Integer): Boolean;
     function HouseHasOccupant(aHouseID: Integer): Boolean;
+    function HouseFlagPoint(aHouseID: Integer): TKMPoint;
     function HouseIsComplete(aHouseID: Integer): Boolean;
-    function HouseTypeMaxHealth(aHouseType: Integer): Word;
-    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseOwner(aHouseID: Integer): Integer;
     function HousePositionX(aHouseID: Integer): Integer;
     function HousePositionY(aHouseID: Integer): Integer;
@@ -53,12 +52,16 @@ type
     function HouseResourceAmount(aHouseID, aResource: Integer): Integer;
     function HouseSchoolQueue(aHouseID, QueueIndex: Integer): Integer;
     function HouseSiteIsDigged(aHouseID: Integer): Boolean;
+    function HouseTownHallMaxGold(aHouseID: Integer): Integer;
     function HouseType(aHouseID: Integer): Integer;
+    function HouseTypeMaxHealth(aHouseType: Integer): Word;
     function HouseTypeName(aHouseType: Byte): AnsiString;
+    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseUnlocked(aPlayer, aHouseType: Word): Boolean;
     function HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
     function HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
     function HouseWoodcutterChopOnly(aHouseID: Integer): Boolean;
+    function HouseWoodcutterMode(aHouseID: Integer): Integer;
 
     function IsFieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
     function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
@@ -116,6 +119,7 @@ type
     function UnitCarrying(aUnitID: Integer): Integer;
     function UnitDead(aUnitID: Integer): Boolean;
     function UnitDirection(aUnitID: Integer): Integer;
+    function UnitDismissable(aUnitID: Integer): Boolean;
     function UnitHome(aUnitID: Integer): Integer;
     function UnitHPCurrent(aUnitID: Integer): Integer;
     function UnitHPMax(aUnitID: Integer): Integer;
@@ -139,7 +143,7 @@ uses
   KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
-  KM_UnitsCollection, KM_PathFindingRoad;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -163,19 +167,19 @@ end;
 //* Result: Group ID
 function TKMScriptStates.ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer;
 var
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y)
-    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TGroupType))..Byte(High(TGroupType))])) then
+    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))])) then
     begin
       if aGroupType = -1 then
-        GTS := [Low(TGroupType)..High(TGroupType)]
+        GTS := [Low(TKMGroupType)..High(TKMGroupType)]
       else
-        GTS := [TGroupType(aGroupType)];
+        GTS := [TKMGroupType(aGroupType)];
 
       G := gHands[aPlayer].UnitGroups.GetClosestGroup(KMPoint(X,Y), GTS);
       if (G <> nil) and not G.IsDead then
@@ -202,15 +206,15 @@ end;
 function TKMScriptStates.ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer;
 var
   B: Byte;
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     GTS := [];
-    for B in [Byte(Low(TGroupType))..Byte(High(TGroupType))] do
+    for B in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))] do
       if B in aGroupTypes then
-        GTS := GTS + [TGroupType(B)];
+        GTS := GTS + [TKMGroupType(B)];
 
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y) then
@@ -248,7 +252,7 @@ begin
     and ((aHouseType = -1) or HouseTypeValid(aHouseType)) then
     begin
       if aHouseType = -1 then
-        HTS := [Low(THouseType)..High(THouseType)]
+        HTS := [Low(TKMHouseType)..High(TKMHouseType)]
       else
         HTS := [HouseIndexToType[aHouseType]];
 
@@ -313,7 +317,7 @@ end;
 //* Result: Unit ID
 function TKMScriptStates.ClosestUnit(aPlayer, X, Y, aUnitType: Integer): Integer;
 var
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -323,7 +327,7 @@ begin
     and ((aUnitType = -1) or (aUnitType in [Low(UnitIndexToType)..High(UnitIndexToType)]))  then
     begin
       if aUnitType = -1 then
-        UTS := [Low(TUnitType)..High(TUnitType)]
+        UTS := [Low(TKMUnitType)..High(TKMUnitType)]
       else
         UTS := [UnitIndexToType[aUnitType]];
 
@@ -352,7 +356,7 @@ end;
 function TKMScriptStates.ClosestUnitMultipleTypes(aPlayer, X, Y: Integer; aUnitTypes: TByteSet): Integer;
 var
   B: Byte;
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -717,7 +721,7 @@ begin
       begin
         U := gHands[aPlayer].Units[I];
         //Skip units in training, they can't be disturbed until they are finished training
-        if U.IsDeadOrDying or (U.UnitTask is TTaskSelfTrain) then Continue;
+        if U.IsDeadOrDying or (U.UnitTask is TKMTaskSelfTrain) then Continue;
         Result[UnitCount] := U.UID;
         Inc(UnitCount);
       end;
@@ -1149,10 +1153,12 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed  and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.X
+          Result := TKMHouseBarracks(H).FlagPoint.X
         else
           LogParamWarning('States.HouseBarracksRallyPointX: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointX', [aBarracks]);
@@ -1176,13 +1182,44 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.Y
+          Result := TKMHouseBarracks(H).FlagPoint.Y
         else
           LogParamWarning('States.HouseBarracksRallyPointY: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointY', [aBarracks]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns House Flag Point of specified house or KMPoint(0,0) if aHouseId is invalid
+//* Result: Flag Point
+function TKMScriptStates.HouseFlagPoint(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_ZERO;
+    if aHouseId > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseId);
+      if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
+        if (H is TKMHouseWFlagPoint) then
+          Result := TKMHouseWFlagPoint(H).FlagPoint
+        else
+          LogParamWarning('States.HouseFlagPoint: Specified house does not have Flag point', [aHouseId]);
+      end;
+    end
+    else
+      LogParamWarning('States.HouseFlagPoint', [aHouseId]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1287,7 +1324,11 @@ end;
 
 
 //* Version: 7000+
-//* Returns true if the specified house has delivery disabled
+//* Returns delivery mode ID, where
+//* ID = 0 delivery blocked
+//* ID = 1 delivery allowed
+//* ID = 2 take ware out allowed
+//* if no house was found then ID = 1 is returned
 //* Result: Blocked
 function TKMScriptStates.HouseDeliveryMode(aHouseID: Integer): Integer;
 var
@@ -1347,7 +1388,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.GetHasOwner;
+        Result := H.HasOwner;
     end
     else
       LogParamWarning('States.HouseHasOccupant', [aHouseID]);
@@ -1484,7 +1525,7 @@ end;
 function TKMScriptStates.HouseResourceAmount(aHouseID, aResource: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if house id is invalid
@@ -1548,6 +1589,31 @@ begin
     end
     else
       LogParamWarning('States.HouseSiteIsDigged', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns Max amount of gold which is possible to deliver into the TownHall
+//* Result: Max gold for specified TownHall
+//* or -1 if TownHall house was not found
+function TKMScriptStates.HouseTownHallMaxGold(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := -1;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseTownHall then
+        Result := TKMHouseTownHall(H).GoldMaxCnt;
+    end
+    else
+      LogParamWarning('States.HouseTownHallMaxGold', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1668,7 +1734,7 @@ end;
 function TKMScriptStates.HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := False;
@@ -1696,7 +1762,7 @@ end;
 function TKMScriptStates.HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
   I: Integer;
 begin
   try
@@ -1739,6 +1805,34 @@ begin
     end
     else
       LogParamWarning('States.HouseWoodcutterChopOnly', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns woodcutter mode value for the specified woodcutter's hut
+//* Possible values for woodcutter mode are:
+//* 0 - Chop And Plant
+//* 1 - Chop only
+//* 2 - Plant only
+//* Result: woodcutter mode as Integer value
+function TKMScriptStates.HouseWoodcutterMode(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := Integer(wcm_ChopAndPlant);
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseWoodcutters then
+        Result := Integer(TKMHouseWoodcutters(H).WoodcutterMode);
+    end
+    else
+      LogParamWarning('States.HouseWoodcutterMode', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1994,7 +2088,7 @@ end;
 function TKMScriptStates.MarketFromWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResFrom: TWareType;
+  ResFrom: TKMWareType;
 begin
   try
     Result := -1;
@@ -2070,7 +2164,7 @@ end;
 function TKMScriptStates.MarketToWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResTo: TWareType;
+  ResTo: TKMWareType;
 begin
   try
     Result := -1;
@@ -2106,7 +2200,7 @@ end;
 //* Result: Value
 function TKMScriptStates.MarketValue(aRes: Integer): Single;
 var
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if ware is invalid
@@ -2283,6 +2377,30 @@ begin
     end
     else
       LogParamWarning('States.UnitDirection', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns the 'Dismissable' status of specified unit
+//* Result: is unit dismissable
+function TKMScriptStates.UnitDismissable(aUnitID: Integer): Boolean;
+var
+  U: TKMUnit;
+begin
+  try
+    Result := False;
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        Result := U.Dismissable;
+    end
+    else
+      LogParamWarning('States.UnitDismissable', [aUnitID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

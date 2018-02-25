@@ -32,7 +32,7 @@ type
 
   PKMDeliveryOffer = ^TKMDeliveryOffer;
   TKMDeliveryOffer = record
-    Ware: TWareType;
+    Ware: TKMWareType;
     Count: Cardinal; //How many items are offered
     Loc_House: TKMHouse;
     BeingPerformed: Cardinal; //How many items are being delivered atm from total Count offered
@@ -42,7 +42,7 @@ type
 
   PKMDeliveryDemand = ^TKMDeliveryDemand;
   TKMDeliveryDemand =  record
-    Ware: TWareType;
+    Ware: TKMWareType;
     DemandType: TKMDemandType; //Once for everything, Always for Store and Barracks
     Importance: TKMDemandImportance; //How important demand is, e.g. Workers and building sites should be di_High
     Loc_House: TKMHouse;
@@ -81,6 +81,7 @@ type
 
   TKMDeliveries = class
   private
+    fOwner: TKMHandIndex;
     fOfferCount: Integer;
     fOffer: array of TKMDeliveryOffer;
     fDemandCount: Integer;
@@ -98,32 +99,34 @@ type
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
     fSerfToOfferCache: TDictionary<TKMDeliveryBidKey, Single>;
-    {$ENDIF}
 
     fNodeList: TKMPointList; // Used to calc delivery bid
+    {$ENDIF}
 
+    function GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
     procedure CloseDelivery(aID: Integer);
     procedure CloseDemand(aID: Integer);
     procedure CloseOffer(aID: Integer);
     function ValidDelivery(iO, iD: Integer; aIgnoreOffer: Boolean = False): Boolean;
     function SerfCanDoDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function PermitDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
-    function CalculateBid(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single;
-    function CalculateBidBasic(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single; overload;
+    function TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
+    function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType; aOwner: TKMHandIndex;
-                               iD: Integer; aSerf: TKMUnitSerf = nil): Single; overload;
+                                  aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
-    function GetRouteCost(const aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
+    function GetRouteCost(aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
   public
-    constructor Create;
+    constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
-    procedure AddOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Integer);
+    procedure AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
     procedure RemAllOffers(aHouse: TKMHouse);
-    procedure RemOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Cardinal);
+    procedure RemOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Cardinal);
 
-    procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TWareType; aCount: Byte; aType: TKMDemandType; aImp: TKMDemandImportance);
-    function TryRemoveDemand(aHouse: TKMHouse; aResource: TWareType; aCount: Word): word;
+    function GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
+    procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
+    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): word;
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
 
@@ -131,7 +134,7 @@ type
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
     procedure AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
     procedure CheckForBetterDemand(aDeliveryID: Integer; out aToHouse: TKMHouse; out aToUnit: TKMUnit; aSerf: TKMUnitSerf);
-    procedure DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
+    procedure DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
     procedure TakenOffer(aID: Integer);
     procedure GaveDemand(aID: Integer);
     procedure AbandonDelivery(aID: Integer); //Occurs when unit is killed or something alike happens
@@ -158,7 +161,7 @@ type
     procedure RemoveExtraSerfs;
     function GetIdleSerfCount: Integer;
   public
-    constructor Create;
+    constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
 
     procedure AddSerf(aSerf: TKMUnitSerf);
@@ -176,7 +179,7 @@ uses
   Classes, SysUtils, Math,
   KM_Terrain,
   KM_FormLogistics,
-  KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks,
+  KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
   KM_Resource, KM_ResUnits,
   KM_Log, KM_Utils, KM_CommonUtils;
 
@@ -188,13 +191,13 @@ const
   BID_CALC_PATHF_COMPENSATION = 0.9;
   CACHE_CLEAN_FREQ = 10; //in ticks. Clean cache every N ticks
   LENGTH_INC = 32; //Increment array lengths by this value
+  NOT_REACHABLE_DEST_VALUE = MaxSingle;
 
 
 { TKMHandLogistics }
-constructor TKMHandLogistics.Create;
+constructor TKMHandLogistics.Create(aHandIndex: TKMHandIndex);
 begin
-  inherited;
-  fQueue := TKMDeliveries.Create;
+  fQueue := TKMDeliveries.Create(aHandIndex);
 end;
 
 
@@ -350,16 +353,14 @@ begin
           for iO := 1 to fQueue.fOfferCount do
             if (fQueue.fOffer[iO].Ware <> wt_None)
               and fQueue.ValidDelivery(iO,iD)
-              and AnySerfCanDoDelivery(iO,iD) then //Only choose this delivery if at least one of the serfs can do it
+              and AnySerfCanDoDelivery(iO,iD) //Only choose this delivery if at least one of the serfs can do it
+              and fQueue.TryCalculateBid(iO,iD,Bid)
+              and ((Bid < BestBid) or (fQueue.fDemand[iD].Importance > BestImportance)) then
             begin
-              Bid := fQueue.CalculateBid(iO,iD,nil);
-              if (Bid < BestBid) or (fQueue.fDemand[iD].Importance > BestImportance) then
-              begin
-                BestBid := Bid;
-                BestImportance := fQueue.fDemand[iD].Importance;
-                FoundO := iO;
-                FoundD := iD;
-              end;
+              BestBid := Bid;
+              BestImportance := fQueue.fDemand[iD].Importance;
+              FoundO := iO;
+              FoundD := iD;
             end;
 
       //FoundO and FoundD give us the best delivery to do at this moment. Now find the best serf for the job.
@@ -379,21 +380,20 @@ begin
               end;
             end;
         if Serf <> nil then
-          fQueue.AssignDelivery(FoundO,FoundD,Serf);
+          fQueue.AssignDelivery(FoundO, FoundD, Serf);
       end;
     end;
 end;
 
 
 { TKMDeliveries }
-constructor TKMDeliveries.Create;
+constructor TKMDeliveries.Create(aHandIndex: TKMHandIndex);
 {$IFDEF WDC}
 var
   CacheKeyComparer: TKMDeliveryBidKeyComparer;
 {$ENDIF}
 begin
-  inherited;
-
+  fOwner := aHandIndex;
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
   begin
@@ -428,7 +428,7 @@ end;
 //Adds new Offer to the list. List is stored without sorting
 //(it matters only for Demand to keep everything in waiting its order in line),
 //so we just find an empty place and write there.
-procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Integer);
+procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
 var
   I, K: Integer;
 begin
@@ -497,7 +497,7 @@ begin
 end;
 
 
-procedure TKMDeliveries.RemOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Cardinal);
+procedure TKMDeliveries.RemOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Cardinal);
 var
   I: Integer;
 begin
@@ -526,19 +526,19 @@ end;
 // List is stored without sorting so we parse it to find all entries..
 procedure TKMDeliveries.RemDemand(aHouse: TKMHouse);
 var
-  i:integer;
+  I: Integer;
 begin
   assert(aHouse <> nil);
-  for i:=1 to fDemandCount do
-  if fDemand[i].Loc_House=aHouse then
-  begin
-    if fDemand[i].BeingPerformed > 0 then
-      //Can't free it yet, some serf is using it
-      fDemand[i].IsDeleted := true
-    else
-      CloseDemand(i); //Clear up demand
-    //Keep on scanning cos House can have multiple demands entries
-  end;
+  for I := 1 to fDemandCount do
+    if fDemand[I].Loc_House = aHouse then
+    begin
+      if fDemand[I].BeingPerformed > 0 then
+        //Can't free it yet, some serf is using it
+        fDemand[I].IsDeleted := true
+      else
+        CloseDemand(I); //Clear up demand
+      //Keep on scanning cos House can have multiple demands entries
+    end;
 end;
 
 
@@ -550,7 +550,7 @@ var
 begin
   assert(aUnit <> nil);
   for i:=1 to fDemandCount do
-  if fDemand[i].Loc_Unit=aUnit then
+  if fDemand[i].Loc_Unit = aUnit then
   begin
     if fDemand[i].BeingPerformed > 0 then
       //Can't free it yet, some serf is using it
@@ -563,7 +563,7 @@ end;
 
 
 //Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
-function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TWareType; aCount:word):word;
+function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TKMWareType; aCount:word):word;
 var i:integer;
 begin
   Result := 0;
@@ -580,12 +580,36 @@ begin
 end;
 
 
+function TKMDeliveries.GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
+var
+  I: Integer;
+  Demand: TKMDeliveryDemand;
+begin
+  Result := 0;
+
+  if (aHouse = nil) or (aResource = wt_None)  then Exit;
+
+  for I := 1 to fDemandCount do
+  begin
+    Demand := fDemand[I];
+    if (aResource = Demand.Ware)
+      and (aHouse = Demand.Loc_House)
+      and (aType = Demand.DemandType)
+      and (aImp = Demand.Importance) then
+      Inc(Result);
+  end;
+end;
+
+
 //Adds new Demand to the list. List is stored sorted, but the sorting is done upon Deliver completion,
 //so we just find an empty place (which is last one) and write there.
-procedure TKMDeliveries.AddDemand(aHouse:TKMHouse; aUnit:TKMUnit; aResource:TWareType; aCount:byte; aType: TKMDemandType; aImp: TKMDemandImportance);
-var I,K,J:integer;
+procedure TKMDeliveries.AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
+var
+  I,K,J: Integer;
 begin
   Assert(aResource <> wt_None, 'Demanding rt_None');
+  if aCount <= 0 then Exit;
+
 
   for K := 1 to aCount do
   begin
@@ -645,10 +669,15 @@ begin
   //If Demand house has WareDelivery toggled ON
   Result := Result and ((fDemand[iD].Loc_House = nil) or (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery));
 
-  //If Demand is a ArmorWorkshop and
+  //If Demand is a ArmorWorkshop and it accepts current ware delivery
   Result := Result and ((fDemand[iD].Loc_House = nil) or
                         (fDemand[iD].Loc_House.HouseType <> ht_ArmorWorkshop) or
                         (TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fOffer[iO].Ware)));
+
+  //If Demand is TownHall and its max gold count value > gold count value
+  Result := Result and ((fDemand[iD].Loc_House = nil) or
+                        (fDemand[iD].Loc_House.HouseType <> ht_TownHall) or
+                        (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt));
 
   //If Demand is a Storehouse and it has WareDelivery toggled ON
   Result := Result and ((fDemand[iD].Loc_House = nil) or
@@ -716,12 +745,8 @@ function TKMDeliveries.SerfCanDoDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Bo
 var
   LocA, LocB: TKMPoint;
 begin
-  LocA := aSerf.GetPosition;
+  LocA := GetSerfActualPos(aSerf);
   LocB := fOffer[iO].Loc_House.PointBelowEntrance;
-
-  //If the serf is inside the house (invisible) test from point below
-  if not aSerf.Visible then
-    LocA := KMPointBelow(LocA);
 
   Result := aSerf.CanWalkTo(LocA, LocB, tpWalk, 0);
 end;
@@ -730,6 +755,16 @@ end;
 function TKMDeliveries.PermitDelivery(iO,iD: Integer; aSerf: TKMUnitSerf): Boolean;
 begin
   Result := ValidDelivery(iO, iD) and SerfCanDoDelivery(iO, iD, aSerf);
+end;
+
+
+function TKMDeliveries.GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
+begin
+  Result := aSerf.GetPosition;
+
+  //If the serf is inside the house (invisible) test from point below
+  if not aSerf.Visible then
+    Result := KMPointBelow(Result);
 end;
 
 
@@ -744,25 +779,25 @@ begin
   FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
 
   Result := 0;
-  for iO:=1 to fOfferCount do
+  for iO := 1 to fOfferCount do
     if (fOffer[iO].Ware <> wt_None) then
     begin
       OffersTaken := 0;
-      for iD:=1 to fDemandCount do
+      for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware <> wt_None) and not DemandTaken[iD] and ValidDelivery(iO,iD) then
         begin
           if fDemand[iD].DemandType = dtOnce then
           begin
             DemandTaken[iD] := True;
-            inc(Result);
-            inc(OffersTaken);
+            Inc(Result);
+            Inc(OffersTaken);
             if fOffer[iO].Count-OffersTaken = 0 then
               Break; //Finished with this offer
           end
           else
           begin
             //This demand will take all the offers, so increase result by that many
-            inc(Result, fOffer[iO].Count-OffersTaken);
+            Inc(Result, fOffer[iO].Count - OffersTaken);
             Break; //This offer is finished (because this demand took it all)
           end;
         end;
@@ -770,19 +805,18 @@ begin
 end;
 
 
-//Calc bid cost between serf and offer house
+//Try to Calc bid cost between serf and offer house
+//Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
 function TKMDeliveries.CalcSerfBidValue(aSerf: TKMUnitSerf; const aOfferPos: TKMPoint; aToUID: Integer): Single;
-var
-  BelowOfferPos: TKMPoint;
   {$IFDEF WDC}
+var
   BidKey: TKMDeliveryBidKey;
   CachedBid: Single;
   {$ENDIF}
 begin
-  Result := 0;
+  aSerfBidValue := 0;
+  Result := True;
   if aSerf = nil then Exit;
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -792,7 +826,8 @@ begin
 
     if fSerfToOfferCache.TryGetValue(BidKey, CachedBid) then
     begin
-      Result := Result + CachedBid;
+      aSerfBidValue := aSerfBidValue + CachedBid;
+      Result := (aSerfBidValue <> NOT_REACHABLE_DEST_VALUE);
       Exit;
     end;
   end;
@@ -800,11 +835,12 @@ begin
 
   //Also prefer deliveries near to the serf
   if aSerf <> nil then
-    Result := GetRouteCost(aSerf.GetPosition, BelowOfferPos, tpWalkRoad);
+    //Serf gets to first house with tpWalkRoad, if not possible, then with tpWalk
+    Result := TryCalcRouteCost(GetSerfActualPos(aSerf), aOfferPos, tpWalkRoad, aSerfBidValue, tpWalk);
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
-    fSerfToOfferCache.Add(BidKey, Result);
+    fSerfToOfferCache.Add(BidKey, aSerfBidValue);
   {$ENDIF}
 end;
 
@@ -819,48 +855,79 @@ begin
 end;
 
 
-//Calc route cost
+//Try to Calc route cost
+//If destination is not reachable, then return False
 function TKMDeliveries.GetRouteCost(const aFromPos, aToPos: TKMPoint; aPass: TKMTerrainPassability): Single;
-var Distance: Single;
+                                        aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
+var
+  {$IFDEF WDC}
+  Distance: Single;
+  {$ENDIF}
+  PassToUse: TKMTerrainPassability;
 begin
+  PassToUse := aMainPass;
+  Result := True;
+  if not gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0) then
+  begin
+    PassToUse := aSecondPass;
+    Result := gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0);
+  end;
+
   {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
   if DELIVERY_BID_CALC_USE_PATHFINDING and (Distance < BID_CALC_MAX_DIST_FOR_PATHF) then
   begin
     fNodeList.Clear;
+
     //Try to make the route to get delivery cost
-    gGame.Pathfinding.Route_Make(aFromPos, aToPos, [tpWalkRoad], 1, nil, fNodeList); //Use tpWalkRoad to get to house
-    Result := KMPathLength(fNodeList) * BID_CALC_PATHF_COMPENSATION //to equalize routes with Pathfinding and without
-              + GetUnitsCntOnPath(fNodeList); // units on path are also considered
+    if Result
+      and gGame.Pathfinding.Route_Make(aFromPos, aToPos, [PassToUse], 1, nil, fNodeList) then
+      aRoutCost := KMPathLength(fNodeList) * BID_CALC_PATHF_COMPENSATION //to equalize routes with Pathfinding and without
+                + GetUnitsCntOnPath(fNodeList) // units on path are also considered
+    else
+      Result := False;
   end
   else
   {$ENDIF}
     //Basic Bid is length of route
-    Result := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cover
+    if Result then
+      aRoutCost := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cove
+
+  if not Result then
+    aRoutCost := NOT_REACHABLE_DEST_VALUE; //Not reachable destination
 end;
 
 
-function TKMDeliveries.CalculateBidBasic(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single;
+function TKMDeliveries.TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
-  Result := CalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.Entrance, fOffer[iO].Count,
-                              fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aSerf);
+  Result := TryCalculateBidBasic(fOffer[iO].Loc_House.UID, fOffer[iO].Loc_House.PointBelowEntrance, fOffer[iO].Count,
+                                 fOffer[iO].Loc_House.HouseType, fOffer[iO].Loc_House.Owner, iD, aBidBasicValue, aSerf);
 end;
 
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
 function TKMDeliveries.CalculateBidBasic(aOfferUID: Integer; const aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
-                                         aOwner: TKMHandIndex; iD: Integer; aSerf: TKMUnitSerf = nil): Single;
+                                            aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
+
+  {$IFDEF WDC}
+  procedure TryAddToCache(aBidKey: TKMDeliveryBidKey; aBidBasicV: Single);
+  begin
+    if CACHE_DELIVERY_BIDS then
+      fOfferToDemandCache.Add(aBidKey, aBidBasicV);
+  end;
+  {$ENDIF}
+
 var
-  BelowOfferPos: TKMPoint;
   SerfBidValue: Single;
   {$IFDEF WDC}
   BidKey: TKMDeliveryBidKey;
   OfferToDemandCache: Single;
   {$ENDIF}
 begin
-  SerfBidValue := CalcSerfBidValue(aSerf, aOfferPos, aOfferUID);
-
-  BelowOfferPos := KMPointBelow(aOfferPos);
+  aBidBasicValue := NOT_REACHABLE_DEST_VALUE;
+  Result := TryCalcSerfBidValue(aSerf, aOfferPos, aOfferUID, SerfBidValue);
+  if not Result then
+    Exit;
 
   {$IFDEF WDC}
   if CACHE_DELIVERY_BIDS then
@@ -873,7 +940,11 @@ begin
 
     if fOfferToDemandCache.TryGetValue(BidKey, OfferToDemandCache) then
     begin
-      Result := SerfBidValue + OfferToDemandCache;
+      Result := (OfferToDemandCache <> NOT_REACHABLE_DEST_VALUE);
+      if not Result then
+        aBidBasicValue := NOT_REACHABLE_DEST_VALUE
+      else
+        aBidBasicValue := SerfBidValue + OfferToDemandCache;
       Exit;
     end;
   end;
@@ -886,7 +957,7 @@ begin
     and gRes.Houses[fDemand[iD].Loc_House.HouseType].DoesOrders
     and (aOfferCnt <= 3) //Little resources to share around
     and (fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware) <= 2) then //Few resources already delivered
-    Result := 10
+    aBidBasicValue := 10
     //Resource ratios are also considered
     + KaMRandom(25 - 2*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType])
   else
@@ -895,53 +966,77 @@ begin
     if fDemand[iD].Loc_House <> nil then
     begin
       //Calc cost between offer and demand houses
-      Result := GetRouteCost(BelowOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad);
-      Result := Result
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
+      aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
         + KaMRandom(15 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
-      Result := GetRouteCost(BelowOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk, aBidBasicValue);
+
+    if not Result then
+    begin
+      aBidBasicValue := NOT_REACHABLE_DEST_VALUE;
+      {$IFDEF WDC}
+      TryAddToCache(BidKey, aBidBasicValue);
+      {$ENDIF}
+      Exit; //Add to cache NOT_REACHABLE_DEST_VALUE value
+    end;
   end;
 
   //Deliver wood first to equal distance construction sites
   if (fDemand[iD].Loc_House <> nil)
     and not fDemand[iD].Loc_House.IsComplete then
   begin
+    //Give priority to almost built houses
+    aBidBasicValue := aBidBasicValue - 2*fDemand[iD].Loc_House.GetBuildResDeliveredPercent;
     //Only add a small amount so houses at different distances will be prioritized separately
     if (fDemand[iD].Ware = wt_Stone) then
-      Result := Result + 0.1
+      aBidBasicValue := aBidBasicValue + 0.1;
   end
   else
     //For all other deliveries, add some random element so in the case of identical
     //bids the same resource will not always be chosen (e.g. weapons storehouse->barracks
     //should take random weapon types not sequentially)
-    Result := Result + KaMRandom(5);
+    aBidBasicValue := aBidBasicValue + KaMRandom(5);
 
   if (fDemand[iD].Ware = wt_All)        // Always prefer deliveries House>House instead of House>Store
     or ((aOfferHouseType = ht_Store)    // Prefer taking wares from House rather than Store...
     and (fDemand[iD].Ware <> wt_Warfare)) then //...except weapons Store>Barracks, that is also prefered
-    Result := Result + 1000;
+    aBidBasicValue := aBidBasicValue + 1000;
 
   {$IFDEF WDC}
-  if CACHE_DELIVERY_BIDS then
-    fOfferToDemandCache.Add(BidKey, Result);
+  TryAddToCache(BidKey, aBidBasicValue);
   {$ENDIF}
 
-  Result := Result + SerfBidValue;
+  aBidBasicValue := aBidBasicValue + SerfBidValue;
 end;
 
 
-function TKMDeliveries.CalculateBid(iO, iD: Integer; aSerf: TKMUnitSerf = nil): Single;
+function TKMDeliveries.TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 begin
-  Result := CalculateBidBasic(iO, iD, aSerf);
+  Result := TryCalculateBidBasic(iO, iD, aBidValue, aSerf);
+
+  if not Result then
+    Exit;
 
   //Modifications for bidding system
   if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
     and (fDemand[iD].Ware <> wt_All)
-    and (fDemand[iD].Ware <> wt_Warfare) then //Except Barracks and Store, where supply doesn't matter or matter less
-    Result := Result + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
+    and (fDemand[iD].Ware <> wt_Warfare) //Except Barracks and Store, where supply doesn't matter or matter less
+    and (fDemand[iD].Loc_House.HouseType <> ht_TownHall) then //Except TownHall as well, where supply doesn't matter or matter less
+    aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
+
+  if (fDemand[iD].Loc_House <> nil)
+    and (fDemand[iD].Loc_House.HouseType = ht_TownHall) then
+  begin
+    //Delivering gold to TH - if there are already more then 300 gold, then make this delivery very low priority
+    if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 300) then
+      aBidValue := aBidValue + 9000
+    else
+      aBidValue := aBidValue + 5; //Add small value, so it will not have so big advantage above other houses
+  end;
 
   //Delivering weapons from store to barracks, make it lowest priority when there are >50 of that weapon in the barracks.
   //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
@@ -950,12 +1045,12 @@ begin
     and (fDemand[iD].Loc_House.HouseType = ht_Barracks)
     and (fOffer[iO].Loc_House.HouseType = ht_Store)
     and (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 50) then
-    Result := Result + 10000;
+    aBidValue := aBidValue + 10000;
 
   //When delivering food to warriors, add a random amount to bid to ensure that a variety of food is taken. Also prefer food which is more abundant.
   if (fDemand[iD].Loc_Unit <> nil)
     and (fDemand[iD].Ware = wt_Food) then
-    Result := Result + KaMRandom(5+(100 div fOffer[iO].Count)); //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
+    aBidValue := aBidValue + KaMRandom(5+(100 div fOffer[iO].Count)); //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
 end;
 
 
@@ -990,7 +1085,7 @@ begin
   BestD := OldD;
   if not fDemand[OldD].IsDeleted then
   begin
-    BestBid := CalculateBid(iO, OldD, aSerf);
+    TryCalculateBid(iO, OldD, BestBid, aSerf);
     BestImportance := fDemand[OldD].Importance;
   end
   else
@@ -1005,15 +1100,13 @@ begin
     if (fDemand[iD].Ware <> wt_None)
     and (OldD <> Id)
     and (fDemand[iD].Importance >= BestImportance) //Skip any less important than the best we found
-    and ValidDelivery(iO, iD, True) then
+    and ValidDelivery(iO, iD, True)
+    and TryCalculateBid(iO, iD, Bid, aSerf)
+    and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
     begin
-      Bid := CalculateBid(iO, iD, aSerf);
-      if (Bid < BestBid) or (fDemand[iD].Importance > BestImportance) then
-      begin
-        BestD := iD;
-        BestBid := Bid;
-        BestImportance := fDemand[iD].Importance;
-      end;
+      BestD := iD;
+      BestBid := Bid;
+      BestImportance := fDemand[iD].Importance;
     end;
 
   //Did we switch jobs?
@@ -1034,7 +1127,7 @@ begin
 end;
 
 // Find best Demand for the given delivery. Could return same or nothing
-procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
+procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
 
   function ValidBestDemand(iD: Integer): Boolean;
   begin
@@ -1049,12 +1142,15 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     if fDemand[iD].Loc_House <> nil then
     begin
       //Check delivery flag
-      Result := Result and (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery);
+      Result := Result
+                and (not fDemand[iD].Loc_House.IsComplete or (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery));
       //for ArmorWorkshop also check accept ware flag
       if fDemand[iD].Loc_House is TKMHouseArmorWorkshop then
-        Result := Result and TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fDemand[iD].Ware)
+        Result := Result and TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fDemand[iD].Ware);
+      if fDemand[iD].Loc_House is TKMHouseTownHall then
+        Result := Result and (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt);
     end;
-
+//    gGame.Pathfinding.Route_Make(aFromPos, aToPos, [tpWalkRoad], 1, nil, fNodeList)
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
   end;
@@ -1074,15 +1170,13 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       if (fDemand[iD].Ware <> wt_None)
         and (iD <> fQueue[aDeliveryId].DemandID)
         and (fDemand[iD].Importance >= BestImportance)
-        and ValidBestDemand(iD) then
+        and ValidBestDemand(iD)
+        and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid)
+        and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then //Calc bid to find the best demand
       begin
-        Bid := CalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD); //Calc bid to find the best demand
-        if (Bid < BestBid) or (fDemand[iD].Importance > BestImportance) then
-        begin
-          Result := iD;
-          BestBid := Bid;
-          BestImportance := fDemand[iD].Importance;
-        end;
+        Result := iD;
+        BestBid := Bid;
+        BestImportance := fDemand[iD].Importance;
       end;
 
     // If nothing was found, then try to deliver to open for delivery Storage
@@ -1092,29 +1186,25 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
           and (iD <> fQueue[aDeliveryId].DemandID)
           and (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
-          and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource] then
+          and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
+          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and (Bid < BestBid) then
         begin
-          Bid := CalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD); //Choose the closest storage
-          if (Bid < BestBid) then
-          begin
-            Result := iD;
-            BestBid := Bid;
-          end;
+          Result := iD;
+          BestBid := Bid;
         end;
 
     // If no open storage for delivery found, then try to find any storage or any barracks
     if Result = -1 then
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wt_All)
-          and not fDemand[iD].Loc_House.IsDestroyed then //choose between all storages, including current delivery. But not destroyed
+          and not fDemand[iD].Loc_House.IsDestroyed //choose between all storages, including current delivery. But not destroyed
+          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and (Bid < BestBid) then
         begin
-          Bid := CalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD); //Choose the closest storage
-          if (Bid < BestBid) then
-          begin
-            Result := iD;
-            BestBid := Bid;
-            aForceDelivery := True;
-          end;
+          Result := iD;
+          BestBid := Bid;
+          aForceDelivery := True;
         end;
   end;
 var
@@ -1178,16 +1268,14 @@ begin
       for iO := 1 to fOfferCount do
         if ((aHouse = nil) or (fOffer[iO].Loc_House = aHouse))  //Make sure from house is the one requested
         and (fOffer[iO].Ware <> wt_None)
-        and PermitDelivery(iO, iD, aSerf) then
+        and PermitDelivery(iO, iD, aSerf)
+        and TryCalculateBid(iO, iD, Bid, aSerf)
+        and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
         begin
-          Bid := CalculateBid(iO, iD, aSerf);
-          if (Bid < BestBid) or (fDemand[iD].Importance > BestImportance) then
-          begin
-            BestO := iO;
-            BestD := iD;
-            BestBid := Bid;
-            BestImportance := fDemand[iD].Importance;
-          end;
+          BestO := iO;
+          BestD := iD;
+          BestBid := Bid;
+          BestImportance := fDemand[iD].Importance;
         end;
 
   if (BestO <> -1) and (BestD <> -1) then
@@ -1195,48 +1283,51 @@ begin
 end;
 
 
-procedure TKMDeliveries.AssignDelivery(iO,iD:Integer; aSerf:TKMUnitSerf);
-var i:Integer;
+procedure TKMDeliveries.AssignDelivery(iO,iD: Integer; aSerf: TKMUnitSerf);
+var I: Integer;
 begin
   //Find a place where Delivery will be written to after Offer-Demand pair is found
-  i:=1; while (i<=fQueueCount)and(fQueue[i].JobStatus<>js_Empty) do inc(i);
-  if i > fQueueCount then
+  I := 1;
+  while (I <= fQueueCount) and (fQueue[I].JobStatus <> js_Empty) do
+    Inc(I);
+
+  if I > fQueueCount then
   begin
     inc(fQueueCount, LENGTH_INC);
-    SetLength(fQueue, fQueueCount+1);
+    SetLength(fQueue, fQueueCount + 1);
   end;
 
-  fQueue[i].DemandID:=iD;
-  fQueue[i].OfferID:=iO;
-  fQueue[i].JobStatus:=js_Taken;
-  fQueue[i].Item := nil;
+  fQueue[I].DemandID := iD;
+  fQueue[I].OfferID := iO;
+  fQueue[I].JobStatus := js_Taken;
+  fQueue[I].Item := nil;
 
   if Assigned(FormLogistics) then
   begin
-    fQueue[i].Item := FormLogistics.ListView.Items.Add;
-    fQueue[i].Item.Caption := gRes.Wares[fOffer[fQueue[i].OfferID].Ware].Title;
+    fQueue[I].Item := FormLogistics.ListView.Items.Add;
+    fQueue[I].Item.Caption := gRes.Wares[fOffer[fQueue[I].OfferID].Ware].Title;
 
     if fOffer[fQueue[I].OfferID].Loc_House = nil then
-      fQueue[i].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
-      fQueue[i].Item.SubItems.Add(gRes.Houses[fOffer[fQueue[I].OfferID].Loc_House.HouseType].HouseName);
+      fQueue[I].Item.SubItems.Add(gRes.Houses[fOffer[fQueue[I].OfferID].Loc_House.HouseType].HouseName);
 
     if fDemand[fQueue[I].DemandID].Loc_House = nil then
-      fQueue[i].Item.SubItems.Add('Destroyed')
+      fQueue[I].Item.SubItems.Add('nil')
     else
-      fQueue[i].Item.SubItems.Add(gRes.Houses[fDemand[fQueue[I].DemandID].Loc_House.HouseType].HouseName);
+      fQueue[I].Item.SubItems.Add(gRes.Houses[fDemand[fQueue[I].DemandID].Loc_House.HouseType].HouseName);
   end;
 
   Inc(fOffer[iO].BeingPerformed); //Places a virtual "Reserved" sign on Offer
   Inc(fDemand[iD].BeingPerformed); //Places a virtual "Reserved" sign on Demand
 
-  gLog.LogDelivery('Creating delivery ID '+ IntToStr(i));
+  gLog.LogDelivery('Creating delivery ID '+ IntToStr(I));
 
   //Now we have best job and can perform it
   if fDemand[iD].Loc_House <> nil then
-    aSerf.Deliver(fOffer[iO].Loc_House, fDemand[iD].Loc_House, fOffer[iO].Ware, i)
+    aSerf.Deliver(fOffer[iO].Loc_House, fDemand[iD].Loc_House, fOffer[iO].Ware, I)
   else
-    aSerf.Deliver(fOffer[iO].Loc_House, fDemand[iD].Loc_Unit, fOffer[iO].Ware, i)
+    aSerf.Deliver(fOffer[iO].Loc_House, fDemand[iD].Loc_Unit, fOffer[iO].Ware, I)
 end;
 
 
@@ -1261,12 +1352,12 @@ end;
 
 
 //Resource has been delivered to Demand
-procedure TKMDeliveries.GaveDemand(aID:integer);
-var iD:integer;
+procedure TKMDeliveries.GaveDemand(aID: Integer);
+var iD: Integer;
 begin
   gLog.LogDelivery('Gave demand from delivery ID ' + IntToStr(aID));
-  iD:=fQueue[aID].DemandID;
-  fQueue[aID].DemandID:=0; //We don't need it any more
+  iD := fQueue[aID].DemandID;
+  fQueue[aID].DemandID := 0; //We don't need it any more
 
   Dec(fDemand[iD].BeingPerformed); //Remove reservation
 
@@ -1277,7 +1368,7 @@ end;
 
 
 //AbandonDelivery
-procedure TKMDeliveries.AbandonDelivery(aID:integer);
+procedure TKMDeliveries.AbandonDelivery(aID: Integer);
 begin
   gLog.LogDelivery('Abandoned delivery ID ' + IntToStr(aID));
 
@@ -1302,19 +1393,19 @@ end;
 
 
 //Job successfully done and we ommit it
-procedure TKMDeliveries.CloseDelivery(aID:integer);
+procedure TKMDeliveries.CloseDelivery(aID: Integer);
 begin
   gLog.LogDelivery('Closed delivery ID ' + IntToStr(aID));
 
-  fQueue[aID].OfferID:=0;
-  fQueue[aID].DemandID:=0;
-  fQueue[aID].JobStatus:=js_Empty; //Open slot
+  fQueue[aID].OfferID := 0;
+  fQueue[aID].DemandID := 0;
+  fQueue[aID].JobStatus := js_Empty; //Open slot
   if Assigned(fQueue[aID].Item) then
     fQueue[aID].Item.Delete;
 end;
 
 
-procedure TKMDeliveries.CloseDemand(aID:integer);
+procedure TKMDeliveries.CloseDemand(aID: Integer);
 begin
   Assert(fDemand[aID].BeingPerformed = 0);
   fDemand[aID].Ware := wt_None;
@@ -1322,11 +1413,11 @@ begin
   fDemand[aID].Importance := Low(TKMDemandImportance);
   gHands.CleanUpHousePointer(fDemand[aID].Loc_House);
   gHands.CleanUpUnitPointer(fDemand[aID].Loc_Unit);
-  fDemand[aID].IsDeleted := false;
+  fDemand[aID].IsDeleted := False;
 end;
 
 
-procedure TKMDeliveries.CloseOffer(aID:integer);
+procedure TKMDeliveries.CloseOffer(aID: Integer);
 begin
   assert(fOffer[aID].BeingPerformed = 0);
   fOffer[aID].IsDeleted := false;
@@ -1336,11 +1427,15 @@ begin
 end;
 
 
-procedure TKMDeliveries.Save(SaveStream:TKMemoryStream);
+procedure TKMDeliveries.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
+  {$IFDEF WDC}
+  Item: TPair<TKMDeliveryBidKey, Single>;
+  {$ENDIF}
 begin
   SaveStream.WriteA('Deliveries');
+  SaveStream.Write(fOwner);
   SaveStream.Write(fOfferCount);
   for I := 1 to fOfferCount do
   begin
@@ -1374,18 +1469,41 @@ begin
     SaveStream.Write(fQueue[I].DemandID);
     SaveStream.Write(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  if CACHE_DELIVERY_BIDS then
+  begin
+    SaveStream.Write(fOfferToDemandCache.Count);
+    for Item in fOfferToDemandCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
+
+    SaveStream.Write(fSerfToOfferCache.Count);
+    for Item in fSerfToOfferCache do
+    begin
+      SaveStream.Write(Item.Key.FromUID);
+      SaveStream.Write(Item.Key.ToUID);
+      SaveStream.Write(Item.Value);
+    end;
+  end;
+  {$ENDIF}
 end;
 
 
-procedure TKMDeliveries.Load(LoadStream:TKMemoryStream);
-var I: Integer;
-begin
+procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
+var
+  I: Integer;
   {$IFDEF WDC}
-  fOfferToDemandCache.Clear;
-  fSerfToOfferCache.Clear;
+  Count: Integer;
+  Key: TKMDeliveryBidKey;
+  Value: Single;
   {$ENDIF}
-
+begin
   LoadStream.ReadAssert('Deliveries');
+  LoadStream.Read(fOwner);
   LoadStream.Read(fOfferCount);
   SetLength(fOffer, fOfferCount+1);
   for I := 1 to fOfferCount do
@@ -1419,11 +1537,37 @@ begin
     LoadStream.Read(fQueue[I].DemandID);
     LoadStream.Read(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
   end;
+
+  {$IFDEF WDC}
+  if CACHE_DELIVERY_BIDS then
+  begin
+    fOfferToDemandCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fOfferToDemandCache.Add(Key, Value);
+    end;
+
+    fSerfToOfferCache.Clear;
+    LoadStream.Read(Count);
+    for I := 0 to Count - 1 do
+    begin
+      LoadStream.Read(Key.FromUID);
+      LoadStream.Read(Key.ToUID);
+      LoadStream.Read(Value);
+      fSerfToOfferCache.Add(Key, Value);
+    end;
+  end;
+  {$ENDIF}
 end;
 
 
 procedure TKMDeliveries.SyncLoad;
-var I:integer;
+var
+  I: Integer;
 begin
   for I := 1 to fOfferCount do
     fOffer[I].Loc_House := gHands.GetHouseByUID(cardinal(fOffer[I].Loc_House));
@@ -1440,7 +1584,8 @@ end;
 procedure TKMDeliveries.UpdateState(aTick: Cardinal);
 begin
   {$IFDEF WDC}
-  if CACHE_DELIVERY_BIDS and ((aTick mod CACHE_CLEAN_FREQ) = 0) then //Clear cache every 10 ticks
+  //Clear cache every 10 ticks, spread cache clearing a by handIndex, to make route's calc's spread too
+  if CACHE_DELIVERY_BIDS and (((aTick + fOwner) mod CACHE_CLEAN_FREQ) = 0) then
   begin
     fOfferToDemandCache.Clear;
     fSerfToOfferCache.Clear;

@@ -10,22 +10,22 @@ type
   TKMHousesCollection = class
   private
     fHouses: TKMList; //Private to hide methods we don't want to expose
-    function AddToCollection(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: THouseBuildState):TKMHouse;
+    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState):TKMHouse;
     function GetHouse(aIndex: Integer): TKMHouse; inline;
     function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    function AddHouse(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
-    function AddHouseWIP(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
     procedure AddHouseToList(aHouse: TKMHouse);
     property Count: Integer read GetCount;
     procedure OwnerUpdate(aOwner: TKMHandIndex);
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
-    function FindEmptyHouse(aUnitType: TUnitType; const Loc: TKMPoint): TKMHouse;
-    function FindHouse(aType: THouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
+    function FindEmptyHouse(aUnitType: TKMUnitType; const Loc: TKMPoint): TKMHouse;
+    function FindHouse(aType: TKMHouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
@@ -34,6 +34,8 @@ type
     procedure IncAnimStep;
     procedure UpdateResRequest; //Change resource requested counts for all houses
     procedure DeleteHouseFromList(aHouse: TKMHouse);
+    procedure RemoveAllHouses;
+
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
   end;
@@ -43,8 +45,10 @@ implementation
 uses
   Classes, Types, Math,
   KM_Game, KM_Terrain,
-  KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool,
-  KM_Resource;
+  KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, 
+  KM_HouseTownHall, KM_HouseWoodcutters,
+  KM_Resource,
+  KM_GameTypes;
 
 
 { TKMHousesCollection }
@@ -62,7 +66,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddToCollection(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: THouseBuildState): TKMHouse;
+function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState): TKMHouse;
 var ID: Cardinal;
 begin
   ID := gGame.GetNewUID;
@@ -74,6 +78,7 @@ begin
     ht_Marketplace:   Result := TKMHouseMarket.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_School:        Result := TKMHouseSchool.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Barracks:      Result := TKMHouseBarracks.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    ht_TownHall:      Result := TKMHouseTownHall.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Store:         Result := TKMHouseStore.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_WatchTower:    Result := TKMHouseTower.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     ht_Woodcutters:   Result := TKMHouseWoodcutters.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
@@ -98,7 +103,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddHouse(aHouseType: THouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
 begin
   if RelativeEntrance then
     Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbs_Done)
@@ -108,7 +113,7 @@ end;
 
 
 {Add a plan for house}
-function TKMHousesCollection.AddHouseWIP(aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
 begin
   Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_NoGlyph);
 end;
@@ -128,6 +133,19 @@ begin
   Assert(gGame.GameMode = gmMapEd); // Allow to delete existing House directly only in MapEd
   if (aHouse <> nil) then
     fHouses.Extract(aHouse);
+end;
+
+
+procedure TKMHousesCollection.RemoveAllHouses;
+var I: Integer;
+begin
+  Assert(gGame.GameMode = gmMapEd);
+  if Count <= 0 then Exit;
+
+  for I := 0 to Count - 1 do
+    Houses[I].DemolishHouse(Houses[I].Owner, True);
+
+  fHouses.Clear;
 end;
 
 
@@ -166,7 +184,7 @@ end;
 
 
 //Should find closest house to Loc
-function TKMHousesCollection.FindEmptyHouse(aUnitType: TUnitType; const Loc: TKMPoint): TKMHouse;
+function TKMHousesCollection.FindEmptyHouse(aUnitType: TKMUnitType; const Loc: TKMPoint): TKMHouse;
 var
   I: Integer;
   Dist, BestBid: Single;
@@ -175,11 +193,11 @@ begin
   BestBid := MaxSingle;
 
   for I := 0 to Count - 1 do
-    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and //If Unit can work in here
-       (not Houses[I].GetHasOwner) and                                // if there's yet no owner
-       (not Houses[I].IsDestroyed) and                                // if house is not destroyed
-       (Houses[I].IsComplete) and                                     // if house is built
-       (not Houses[I].IsClosedForWorker) then                         // if house is not closed for worker
+    if (gRes.Houses[Houses[I].HouseType].OwnerType = aUnitType) and // If Unit can work in here
+       not Houses[I].HasOwner and                                   // if there's yet no owner
+       not Houses[I].IsDestroyed and                                // if house is not destroyed
+       Houses[I].IsComplete and                                     // if house is built
+       not Houses[I].IsClosedForWorker then                         // if house is not closed for worker
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
       if (Houses[I].HouseType = ht_Barracks)
@@ -202,14 +220,14 @@ begin
     end;
 
   if (Result <> nil) and (Result.HouseType <> ht_Barracks) then
-    Result.GetHasOwner := True; //Become owner except Barracks;
+    Result.HasOwner := True; //Become owner except Barracks;
 end;
 
 
-function TKMHousesCollection.FindHouse(aType: THouseType; X, Y: word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHousesCollection.FindHouse(aType: TKMHouseType; X, Y: word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse;
 var HT: THouseTypeSet;
 begin
-  if aType = ht_Any then HT := [Low(THouseType)..High(THouseType)]
+  if aType = ht_Any then HT := [Low(TKMHouseType)..High(TKMHouseType)]
   else                   HT := [aType];
   Result := FindHouse(HT, X, Y, aIndex, aOnlyCompleted);
 end;
@@ -275,7 +293,7 @@ end;
 procedure TKMHousesCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
-  HouseType: THouseType;
+  HouseType: TKMHouseType;
   T: TKMHouse;
 begin
   LoadStream.ReadAssert('Houses');
@@ -295,6 +313,7 @@ begin
       ht_WatchTower:    T := TKMHouseTower.Load(LoadStream);
       ht_Woodcutters:   T := TKMHouseWoodcutters.Load(LoadStream);
       ht_ArmorWorkshop: T := TKMHouseArmorWorkshop.Load(LoadStream);
+      ht_TownHall:      T := TKMHouseTownHall.Load(LoadStream);
       else              T := TKMHouse.Load(LoadStream);
     end;
 

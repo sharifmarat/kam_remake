@@ -8,7 +8,7 @@ uses
 
 //Train citizen in school
 type
-  TTaskSelfTrain = class(TUnitTask)
+  TKMTaskSelfTrain = class(TKMUnitTask)
   private
     fSchool: TKMHouseSchool;
   public
@@ -16,7 +16,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
-    function Execute: TTaskResult; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -27,7 +27,7 @@ uses
 
 
 { TTaskSelfTrain }
-constructor TTaskSelfTrain.Create(aUnit: TKMUnit; aSchool: TKMHouseSchool);
+constructor TKMTaskSelfTrain.Create(aUnit: TKMUnit; aSchool: TKMHouseSchool);
 begin
   inherited Create(aUnit);
 
@@ -37,21 +37,21 @@ begin
 end;
 
 
-constructor TTaskSelfTrain.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskSelfTrain.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fSchool, 4);
 end;
 
 
-procedure TTaskSelfTrain.SyncLoad;
+procedure TKMTaskSelfTrain.SyncLoad;
 begin
   inherited;
   fSchool := TKMHouseSchool(gHands.GetHouseByUID(Cardinal(fSchool)));
 end;
 
 
-destructor TTaskSelfTrain.Destroy;
+destructor TKMTaskSelfTrain.Destroy;
 begin
   if (gGame = nil) or gGame.IsExiting then Exit; //fSchool will already be freed
 
@@ -65,7 +65,7 @@ begin
 end;
 
 
-function TTaskSelfTrain.Execute:TTaskResult;
+function TKMTaskSelfTrain.Execute:TKMTaskResult;
 begin
   Result := tr_TaskContinues;
 
@@ -104,7 +104,7 @@ begin
          end;
       6: begin
           // Put him in the school, so if it is destroyed while he is looking for place to exit he is placed somewhere
-          fUnit.SetInHouse(fSchool);
+          fUnit.InHouse := fSchool;
           SetActionGoIn(ua_Walk, gd_GoOutside, fSchool);
           fSchool.UnitTrainingComplete(fUnit);
           if Assigned(fUnit.OnUnitTrained) then
@@ -116,7 +116,7 @@ begin
 end;
 
 
-procedure TTaskSelfTrain.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskSelfTrain.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fSchool <> nil then

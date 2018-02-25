@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Top = 419
   HelpType = htKeyword
   BorderStyle = bsNone
-  ClientHeight = 656
+  ClientHeight = 686
   ClientWidth = 521
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -26,49 +26,54 @@ object FormMain: TFormMain
   OnShow = FormShow
   DesignSize = (
     521
-    656)
+    686)
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 636
+    Top = 666
     Width = 521
     Height = 20
     Panels = <
       item
-        Text = 'Map size: -'
+        Text = 'KMR r7000+ / OpenGL 4.0.0 - Build 9.99.99.99999'
+        Width = 275
+      end
+      item
+        Text = 'Map size: 999x999'
         Width = 110
       end
       item
         Text = 'Cursor: 1999:1999'
-        Width = 120
+        Width = 105
       end
       item
         Text = 'Tile: 999.9:999.9 [999:999]'
-        Width = 150
+        Width = 140
       end
       item
-        Text = 'Time:'
+        Text = 'Time: 99:99:99'
         Width = 90
       end
       item
-        Text = 'fps'
-        Width = 80
+        Text = '999.9 FPS (999)'
+        Width = 85
       end
       item
-        Text = 'Object '
-        Width = 100
+        Text = 'Obj: 99999999'
+        Width = 90
       end
       item
-        Text = 'Control ID: '
+        Text = 'Control ID: 9999'
         Width = 80
       end>
+    ExplicitTop = 636
   end
   object GroupBox1: TGroupBox
     Left = 320
     Top = 8
     Width = 193
-    Height = 624
+    Height = 634
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
@@ -419,7 +424,7 @@ object FormMain: TFormMain
       Left = 8
       Top = 481
       Width = 177
-      Height = 138
+      Height = 150
       Caption = 'Logs'
       TabOrder = 6
       object chkLogDelivery: TCheckBox
@@ -431,20 +436,29 @@ object FormMain: TFormMain
         TabOrder = 0
         OnClick = ControlsUpdate
       end
-      object chkLogNetConnection: TCheckBox
-        Left = 79
+      object chkLogCommands: TCheckBox
+        Left = 90
         Top = 16
+        Width = 73
+        Height = 17
+        Caption = 'Commands'
+        TabOrder = 1
+        OnClick = ControlsUpdate
+      end
+      object chkLogNetConnection: TCheckBox
+        Left = 8
+        Top = 32
         Width = 95
         Height = 17
         Caption = 'Net connection'
         Checked = True
         State = cbChecked
-        TabOrder = 1
+        TabOrder = 2
         OnClick = ControlsUpdate
       end
       object RGLogNetPackets: TRadioGroup
         Left = 8
-        Top = 36
+        Top = 48
         Width = 161
         Height = 78
         Caption = 'Net packets log level'
@@ -454,16 +468,16 @@ object FormMain: TFormMain
           'All but commands/ping/fps'
           'All but ping/fps'
           'All packets')
-        TabOrder = 2
+        TabOrder = 3
         OnClick = ControlsUpdate
       end
       object chkLogsShowInChat: TCheckBox
         Left = 8
-        Top = 116
+        Top = 129
         Width = 137
         Height = 17
         Caption = 'Show logs in MP chat'
-        TabOrder = 3
+        TabOrder = 4
         OnClick = ControlsUpdate
       end
     end
@@ -486,6 +500,22 @@ object FormMain: TFormMain
       object MenuItem1: TMenuItem
         Caption = 'Edit mission...'
         OnClick = MenuItem1Click
+      end
+      object SaveEditableMission1: TMenuItem
+        Caption = 'Save editable mission...'
+        Enabled = False
+        OnClick = SaveEditableMission1Click
+      end
+      object N4: TMenuItem
+        Caption = '-'
+      end
+      object ReloadSettings: TMenuItem
+        Caption = 'Reload settings.ini'
+        OnClick = ReloadSettingsClick
+      end
+      object SaveSettings: TMenuItem
+        Caption = 'Save settings.ini'
+        OnClick = SaveSettingsClick
       end
       object N1: TMenuItem
         Caption = '-'
@@ -581,7 +611,21 @@ object FormMain: TFormMain
       end
       object Export_UnitAnim1: TMenuItem
         Caption = 'Unit Anim'
-        OnClick = Export_UnitAnim1Click
+        object UnitAnim_All: TMenuItem
+          Caption = 'All'
+          OnClick = UnitAnim_AllClick
+        end
+        object N3: TMenuItem
+          Caption = '-'
+        end
+        object Soldiers: TMenuItem
+          Caption = 'Soldiers'
+          OnClick = SoldiersClick
+        end
+        object Civilians1: TMenuItem
+          Caption = 'Civilians'
+          OnClick = Civilians1Click
+        end
       end
       object N2: TMenuItem
         Caption = '-'
@@ -603,5 +647,9 @@ object FormMain: TFormMain
       Caption = 'About..'
       OnClick = AboutClick
     end
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 144
+    Top = 8
   end
 end

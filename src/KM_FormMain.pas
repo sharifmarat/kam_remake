@@ -2,16 +2,18 @@ unit KM_FormMain;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils, ShellAPI,
+  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
   KM_RenderControl, KM_Settings,
+  KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
-  {$IFDEF MSWindows} Windows, Messages; {$ENDIF}
+  {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType; {$ENDIF}
 
 
 type
   TFormMain = class(TForm)
     MenuItem1: TMenuItem;
+    SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
     OpenDialog1: TOpenDialog;
     StatusBar1: TStatusBar;
@@ -87,6 +89,15 @@ type
     ShowLogistics: TMenuItem;
     chkShowTerrainIds: TCheckBox;
     chkShowTerrainKinds: TCheckBox;
+    UnitAnim_All: TMenuItem;
+    N3: TMenuItem;
+    Soldiers: TMenuItem;
+    Civilians1: TMenuItem;
+    SaveSettings: TMenuItem;
+    N4: TMenuItem;
+    ReloadSettings: TMenuItem;
+    SaveDialog1: TSaveDialog;
+    chkLogCommands: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -109,7 +120,6 @@ type
     procedure Export_TilesetClick(Sender: TObject);
     procedure Export_Sounds1Click(Sender: TObject);
     procedure Export_HouseAnim1Click(Sender: TObject);
-    procedure Export_UnitAnim1Click(Sender: TObject);
     procedure Export_Fonts1Click(Sender: TObject);
     procedure Export_DeliverLists1Click(Sender: TObject);
     procedure Button_StopClick(Sender: TObject);
@@ -131,8 +141,15 @@ type
     procedure RenderAreaResize(aWidth, aHeight: Integer);
     procedure RenderAreaRender(aSender: TObject);
     procedure ShowLogisticsClick(Sender: TObject);
+    procedure UnitAnim_AllClick(Sender: TObject);
+    procedure SoldiersClick(Sender: TObject);
+    procedure Civilians1Click(Sender: TObject);
+    procedure ReloadSettingsClick(Sender: TObject);
+    procedure SaveSettingsClick(Sender: TObject);
+    procedure SaveEditableMission1Click(Sender: TObject);
   private
     fUpdating: Boolean;
+    fMissionDefOpenPath: UnicodeString;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     {$IFDEF MSWindows}
@@ -140,12 +157,16 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+  protected
+    procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
   public
     RenderArea: TKMRenderControl;
+    SuppressAltForMenu: Boolean; //Suppress Alt key 'activate window menu' function
     procedure ControlsSetVisibile(aShowCtrls: Boolean);
     procedure ControlsReset;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
+    procedure SetSaveEditableMission(aEnabled: Boolean);
   end;
 
 
@@ -156,6 +177,7 @@ implementation
 
 uses
   KromUtils,
+  KromShellUtils,
   KM_Defaults,
   KM_Main,
   //Use these units directly to avoid pass-through methods in fMain
@@ -183,6 +205,7 @@ begin
   RenderArea.OnMouseUp := RenderAreaMouseUp;
   RenderArea.OnResize := RenderAreaResize;
   RenderArea.OnRender := RenderAreaRender;
+  SuppressAltForMenu := False;
 
   chkSuperSpeed.Caption := 'Speed x' + IntToStr(DEBUG_SPEEDUP_SPEED);
 
@@ -218,6 +241,13 @@ begin
     Top := gMain.Settings.WindowParams.Top;
   end;
 
+  fMissionDefOpenPath:= ExeDir;
+end;
+
+
+procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
+begin
+  SaveEditableMission1.Enabled := aEnabled;
 end;
 
 
@@ -260,6 +290,13 @@ begin
 end;
 
 
+procedure TFormMain.ReloadSettingsClick(Sender: TObject);
+begin
+  gMain.Settings.ReloadSettings;
+  gGameApp.GameSettings.ReloadSettings;
+end;
+
+
 procedure TFormMain.RenderAreaMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   // Handle middle mouse button as Key
@@ -298,11 +335,17 @@ end;
 
 
 procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 
 
 procedure TFormMain.RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y);
+end;
 
 
 procedure TFormMain.RenderAreaResize(aWidth, aHeight: Integer);
@@ -320,15 +363,32 @@ end;
 //Open
 procedure TFormMain.Open_MissionMenuClick(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
     gGameApp.NewSingleMap(OpenDialog1.FileName, TruncateExt(ExtractFileName(OpenDialog1.FileName)));
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
 end;
 
 
 procedure TFormMain.MenuItem1Click(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
     gGameApp.NewMapEditor(OpenDialog1.FileName, 0, 0);
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
+end;
+
+
+procedure TFormMain.SaveEditableMission1Click(Sender: TObject);
+begin
+  if gGameApp.Game = nil then Exit;
+
+  if not gGameApp.Game.IsMapEditor then Exit;
+
+  if RunSaveDialog(SaveDialog1, gGameApp.Game.MapEditor.MissionDefSavePath, ExtractFileDir(gGameApp.Game.MapEditor.MissionDefSavePath), 'Knights & Merchants Mission (*.dat)|*.dat') then
+    gGameApp.SaveMapEditor(SaveDialog1.FileName);
 end;
 
 
@@ -418,10 +478,6 @@ begin
   gRes.ExportHouseAnim;
 end;
 
-procedure TFormMain.Export_UnitAnim1Click(Sender: TObject);
-begin
-  gRes.ExportUnitAnim;
-end;
 
 procedure TFormMain.HousesDat1Click(Sender: TObject);
 begin
@@ -459,11 +515,24 @@ begin
 end;
 
 
+procedure TFormMain.SaveSettingsClick(Sender: TObject);
+begin
+  gMain.Settings.SaveSettings(True);
+  gGameApp.GameSettings.SaveSettings(True);
+end;
+
+
 procedure TFormMain.ShowLogisticsClick(Sender: TObject);
 begin
   if not Assigned(FormLogistics) then
     FormLogistics := TFormLogistics.Create(Self);
   FormLogistics.Show;
+end;
+
+
+procedure TFormMain.SoldiersClick(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(WARRIOR_MIN, WARRIOR_MAX);
 end;
 
 
@@ -484,9 +553,15 @@ procedure TFormMain.Button_StopClick(Sender: TObject);
 begin
   if gGameApp.Game <> nil then
     if gGameApp.Game.IsMapEditor then
-      gGameApp.Stop(gr_MapEdEnd)
+      gGameApp.StopGame(gr_MapEdEnd)
     else
-      gGameApp.Stop(gr_Cancel);
+      gGameApp.StopGame(gr_Cancel);
+end;
+
+
+procedure TFormMain.Civilians1Click(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(CITIZEN_MIN, CITIZEN_MAX);
 end;
 
 
@@ -619,6 +694,11 @@ begin
     else
       Exclude(gLog.MessageTypes, lmt_Delivery);
 
+    if chkLogCommands.Checked then
+      Include(gLog.MessageTypes, lmt_Commands)
+    else
+      Exclude(gLog.MessageTypes, lmt_Commands);
+
     if chkLogNetConnection.Checked then
       Include(gLog.MessageTypes, lmt_NetConnection)
     else
@@ -689,14 +769,23 @@ begin
 end;
 
 
+procedure TFormMain.UnitAnim_AllClick(Sender: TObject);
+begin
+  gRes.ExportUnitAnim(UNIT_MIN, UNIT_MAX, True);
+end;
+
+
 // Return current window params
 function TFormMain.GetWindowParams: TKMWindowParamsRecord;
   // FindTaskBar returns the Task Bar's position, and fills in
   // ARect with the current bounding rectangle.
   function FindTaskBar(var aRect: TRect): Integer;
+  {$IFDEF MSWINDOWS}
   var	AppData: TAppBarData;
+  {$ENDIF}
   begin
     Result := -1;
+    {$IFDEF MSWINDOWS}
     // 'Shell_TrayWnd' is the name of the task bar's window
     AppData.Hwnd := FindWindow('Shell_TrayWnd', nil);
     if AppData.Hwnd <> 0 then
@@ -712,6 +801,7 @@ function TFormMain.GetWindowParams: TKMWindowParamsRecord;
         aRect := AppData.rc;
       end;
     end;
+    {$ENDIF}
   end;
 var
   Wp: TWindowPlacement;
@@ -808,6 +898,17 @@ begin
      end;
   end;
   {$ENDIF}
+end;
+
+
+//Supress default activation of window menu when Alt pressed, as Alt used in some shortcuts
+procedure TFormMain.WndProc(var Message : TMessage);
+begin
+  if (Message.Msg = WM_SYSCOMMAND)
+    and (Message.WParam = SC_KEYMENU)
+    and SuppressAltForMenu then Exit;
+
+  inherited WndProc(Message);
 end;
 
 

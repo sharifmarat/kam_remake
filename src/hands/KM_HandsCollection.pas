@@ -3,12 +3,9 @@ unit KM_HandsCollection;
 interface
 uses
   Classes,
-  KM_Hand, KM_HandSpectator,
+  KM_Hand, KM_HandSpectator, KM_HouseCollection,
   KM_Houses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
-//  , , Math, SysUtils, Graphics,
-//  , , , , , , ,
-//  , , , , , ;
 
 
 //Hands are identified by their starting location
@@ -30,13 +27,13 @@ type
     procedure AddPlayers(aCount: Byte); //Batch add several players
 
     procedure RemoveEmptyPlayers;
-    procedure RemovePlayer(aIndex: TKMHandIndex);
+    procedure RemoveEmptyPlayer(aIndex: TKMHandIndex);
     procedure AfterMissionInit(aFlattenRoads: Boolean);
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
-    function GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
-    function GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
+    function GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
     function DistanceToEnemyTowers(const aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -49,13 +46,14 @@ type
     function GetGroupByMember(aWarrior: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TObject;
     function UnitCount: Integer;
-    function FindPlaceForUnit(PosX,PosY:integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+    function FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
 
     //Check how Player1 feels towards Player2
     //Note: this is position dependant, e.g. Player1 may be allied with
     //      Player2, but Player2 could be an enemy to Player1
-    function CheckAlliance(aPlay1, aPlay2: TKMHandIndex): TAllianceType;
+    function CheckAlliance(aPlay1, aPlay2: TKMHandIndex): TKMAllianceType;
     function GetTeams: TKMByteSetArray;
+    function GetFullTeams: TKMByteSetArray;
     procedure CleanUpUnitPointer(var aUnit: TKMUnit);
     procedure CleanUpGroupPointer(var aGroup: TKMUnitGroup);
     procedure CleanUpHousePointer(var aHouse: TKMHouse);
@@ -65,6 +63,7 @@ type
     procedure SyncFogOfWar;
     procedure AddDefaultGoalsToAll(aMissionMode: TKMissionMode);
     procedure DisableGoalsForDefeatedHand(aHandIndex: TKMHandIndex);
+    procedure PostLoadMission;
 
     procedure Save(SaveStream: TKMemoryStream; aMultiplayer: Boolean);
     procedure Load(LoadStream: TKMemoryStream);
@@ -84,7 +83,7 @@ implementation
 uses
   Math, KromUtils,
   KM_Game, KM_Terrain, KM_AIFields,
-  KM_HouseCollection, KM_UnitsCollection,
+  KM_UnitsCollection,
   KM_Resource, KM_ResHouses, KM_ResUnits,
   KM_Log, KM_CommonUtils;
 
@@ -170,13 +169,13 @@ begin
     if fHandsList[I].HasAssets then
       Exit //Exit as soon as we find a player with assets
     else
-      RemovePlayer(I);
+      RemoveEmptyPlayer(I);
 end;
 
 
-//Remove player 'aIndex'
+//Remove empty player 'aIndex'
 //Accessed only by MapEditor when it needs to remove empty players before saving a map
-procedure TKMHandsCollection.RemovePlayer(aIndex: TKMHandIndex);
+procedure TKMHandsCollection.RemoveEmptyPlayer(aIndex: TKMHandIndex);
 var
   I, K: Integer;
 begin
@@ -246,7 +245,7 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
+function TKMHandsCollection.GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
 var
   I: Integer;
   U: TKMUnit;
@@ -266,7 +265,7 @@ end;
 
 //Check opponents for closest House with given Alliance setting
 //Note: we check by house cells, not by entrance
-function TKMHandsCollection.GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHandsCollection.GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
 var
   I: Integer;
   H: TKMHouse;
@@ -298,7 +297,7 @@ begin
     begin
       H := fHandsList[I].Houses[K];
       if (H is TKMHouseTower) and H.IsComplete
-      and not H.IsDestroyed and H.GetHasOwner
+      and not H.IsDestroyed and H.HasOwner
       and (H.CurrentAction.State <> hst_Empty) then
         //Don't use H.GetDistance (dist to any tile within house) as that's not how tower range works
         Result := Min(Result, KMLength(H.GetPosition, aLoc));
@@ -366,6 +365,15 @@ begin
     if Result = nil then
       Result := GetGroupByUID(aUID);
   end;
+end;
+
+
+procedure TKMHandsCollection.PostLoadMission;
+var
+  I: Integer;
+begin
+  for I := 0 to fCount - 1 do
+    fHandsList[I].PostLoadMission;
 end;
 
 
@@ -558,7 +566,7 @@ end;
 
 
 {Should return closest position where unit can be placed}
-function TKMHandsCollection.FindPlaceForUnit(PosX,PosY: Integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+function TKMHandsCollection.FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
 var
   I: Integer;
   P: TKMPoint;
@@ -587,7 +595,7 @@ end;
 
 { Check how Player1 feels towards Player2. Note: this is position dependant,
 e.g. Play1 may be allied with Play2, but Play2 may be enemy to Play1}
-function TKMHandsCollection.CheckAlliance(aPlay1,aPlay2: TKMHandIndex): TAllianceType;
+function TKMHandsCollection.CheckAlliance(aPlay1,aPlay2: TKMHandIndex): TKMAllianceType;
 begin
   if (aPlay1 = PLAYER_ANIMAL) or (aPlay2 = PLAYER_ANIMAL) then
     Result := at_Ally //In KaM animals are always friendly
@@ -653,6 +661,39 @@ begin
       Inc(K);
     end;
   end;
+  SetLength(Result, K);
+end;
+
+
+//Return Teams and NonTeam members as team with 1 hand only
+function TKMHandsCollection.GetFullTeams: TKMByteSetArray;
+var
+  I,K: Integer;
+  Teams: TKMByteSetArray;
+  NonTeamHands: set of Byte;
+begin
+  SetLength(Result, Count);
+  K := 0;
+
+  Teams := gHands.GetTeams;
+  NonTeamHands := [0..gHands.Count - 1];
+
+  //Get non team hands
+  for I := Low(Teams) to High(Teams) do
+    NonTeamHands := NonTeamHands - Teams[I];
+
+  for I in NonTeamHands do
+  begin
+    Include(Result[K], I);
+    Inc(K);
+  end;
+
+  for I := Low(Teams) to High(Teams) do
+  begin
+    Result[K] := Teams[I];
+    Inc(K);
+  end;
+
   SetLength(Result, K);
 end;
 

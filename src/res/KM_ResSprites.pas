@@ -54,13 +54,16 @@ type
   end;
   PRXData = ^TRXData;
 
+  TSoftenShadowType = (sstNone, sstOnlyShadow, sstBoth);
+
   TTGameResourceLoader = class;
 
   //Base class for Sprite loading
   TKMSpritePack = class
   private
     fPad: Byte; //Force padding between sprites to avoid neighbour edge visibility
-    procedure MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal; aFillGFXData: Boolean = True);
+    procedure MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal;
+                                 aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
     procedure SaveTextureToPNG(aWidth, aHeight: Word; const aFilename: string; const Data: TKMCardinalArray);
   protected
     fRT: TRXType;
@@ -75,12 +78,18 @@ type
 
     procedure LoadFromRXXFile(const aFileName: string; aStartingIndex: Integer = 1);
     procedure OverloadFromFolder(const aFolder: string);
-    procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True);
+    procedure MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
     procedure DeleteSpriteTexture(aIndex: Integer);
 
-    function GetSpriteColors(aCount: Word): TRGBArray;
+    function GetSoftenShadowType(aID: Integer): TSoftenShadowType;
+    procedure SoftenShadows(aIdList: TStringList); overload;
+    procedure SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True); overload;
+    procedure SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True); overload;
+
+    function GetSpriteColors(aCount: Byte): TRGBArray;
 
     procedure ExportAll(const aFolder: string);
+    procedure ExportFullImageData(const aFolder: string; aIndex: Integer; aTempList: TStringList = nil);
     procedure ExportImage(const aFile: string; aIndex: Integer);
     procedure ExportMask(const aFile: string; aIndex: Integer);
 
@@ -141,6 +150,20 @@ type
   private
     fResSprites: TKMResSprites;
     fAlphaShadows: Boolean;
+    function IsTerminated: Boolean;
+  public
+    RXType: TRXType;
+    LoadDone: Boolean;    // flag to show, when another rxx load is completed
+    constructor Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
+    procedure Execute; override;
+  end;
+
+
+  //Game resource loader thread
+  TTGameResourceLoader = class(TThread)
+  private
+    fResSprites: TKMResSprites;
+    fAlphaShadows: Boolean;
   public
     DoTerminate: Boolean; // flag, to allow this thread exit loop in Execute method
     RXType: TRXType;
@@ -169,7 +192,9 @@ var
                                     of Word;
 implementation
 uses
-  KromUtils, KM_Log, KM_BinPacking, KM_CommonUtils;
+  KromUtils,
+  KM_SoftShadows, KM_Resource, KM_ResUnits,
+  KM_Log, KM_BinPacking, KM_CommonUtils, KM_Points;
 
 type
   TSpriteAtlasType = (saBase, saMask);
@@ -215,6 +240,113 @@ begin
 
   gGFXData[fRT, aIndex].Tex.ID := 0;
   gGFXData[fRT, aIndex].Alt.ID := 0;
+end;
+
+
+function TKMSpritePack.GetSoftenShadowType(aID: Integer): TSoftenShadowType;
+var
+  Step, SpriteID: Integer;
+  UT: TKMUnitType;
+  Dir: TKMDirection;
+begin
+  Result := sstNone;
+
+  case fRT of
+    rxHouses: if InRange(aID, 889, 892)            //Smooth smoke
+                or InRange(aID, 1615, 1638) then   //Smooth flame
+                Result := sstBoth
+              else
+                Result := sstOnlyShadow;
+    rxUnits:  begin
+                if InRange(aID, 6251, 6322) then     //Smooth thought bubbles
+                begin
+                  Result := sstBoth;
+                  Exit;
+                end;
+                //Smooth all death animations for all units
+                for UT := HUMANS_MIN to HUMANS_MAX do
+                  for Dir := dir_N to dir_NW do
+                    for Step := 1 to 30 do
+                    begin
+                      SpriteID := gRes.Units[UT].UnitAnim[ua_Die,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
+                      if (aID = SpriteID) and (SpriteID > 0) then
+                      begin
+                        Result := sstBoth;
+                        Exit;
+                      end;
+                    end;
+                if Result = sstNone then
+                  Result := sstOnlyShadow;
+              end;
+    rxTrees:  Result := sstOnlyShadow;
+    rxGui:    if InRange(aID, 105, 128)         //Field plans
+                or InRange(aID, 249, 281)       //House tablets only (shadow softening messes up other rxGui sprites)
+                or InRange(aID, 461, 468)       //Field fences
+                or InRange(aID, 660, 660) then  //Woodcutter cutting point sign
+                Result := sstOnlyShadow;
+  end;
+end;
+
+
+procedure TKMSpritePack.SoftenShadows(aIdList: TStringList);
+var
+  I, ID: Integer;
+  ShadowConverter: TKMSoftShadowConverter;
+  SoftenShadowType: TSoftenShadowType;
+begin
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    for I := 0 to aIdList.Count - 1 do
+    begin
+      ID := StrToInt(aIdList[I]);
+      if (fRXData.Flag[ID] <> 0) then
+      begin
+        SoftenShadowType := GetSoftenShadowType(ID);
+        case SoftenShadowType of
+          sstNone: ;
+          sstOnlyShadow:  ShadowConverter.ConvertShadows(ID, True);
+          sstBoth:        begin
+                            ShadowConverter.ConvertShadows(ID, False);
+                            ShadowConverter.ConvertShadows(ID, True);
+                          end;
+        end;
+      end;
+    end;
+  finally
+    ShadowConverter.Free;
+  end;
+end;
+
+
+//Make old style KaM checkerboard shadows smooth and transparent
+procedure TKMSpritePack.SoftenShadows(aStart: Integer = 1; aEnd: Integer = -1; aOnlyShadows: Boolean = True);
+var
+  I: Integer;
+  ShadowConverter: TKMSoftShadowConverter;
+begin
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    if aEnd = -1 then aEnd := fRXData.Count;
+    for I := aStart to aEnd do
+      if (fRXData.Flag[I] <> 0) then
+        ShadowConverter.ConvertShadows(I, aOnlyShadows);
+  finally
+    ShadowConverter.Free;
+  end;
+end;
+
+
+procedure TKMSpritePack.SoftenShadows(aID: Integer; aOnlyShadows: Boolean = True);
+var
+  ShadowConverter: TKMSoftShadowConverter;
+begin
+  ShadowConverter := TKMSoftShadowConverter.Create(Self);
+  try
+    if (fRXData.Flag[aID] <> 0) then
+      ShadowConverter.ConvertShadows(aID, aOnlyShadows);
+  finally
+    ShadowConverter.Free;
+  end;
 end;
 
 
@@ -398,12 +530,13 @@ end;
 procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
   procedure ProcessFolder(const aProcFolder: string);
   var
-    FileList: TStringList;
+    FileList, IDList: TStringList;
     SearchRec: TSearchRec;
     I, ID: Integer;
   begin
     if not DirectoryExists(aFolder) then Exit;
     FileList := TStringList.Create;
+    IDList := TStringList.Create;
     try
       //PNGs
       if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????.png', faAnyFile - faDirectory, SearchRec) = 0 then
@@ -418,7 +551,12 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
       //#_####.txt - Pivot info (optional)
       for I := 0 to FileList.Count - 1 do
         if TryStrToInt(Copy(FileList.Strings[I], 3, 4), ID) then
+        begin
           AddImage(aProcFolder, FileList.Strings[I], ID);
+          IDList.Add(IntToStr(ID));
+        end;
+
+      SoftenShadows(IDList); // Soften shadows for overloaded sprites
 
       //Delete following sprites
       if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????', faAnyFile - faDirectory, SearchRec) = 0 then
@@ -429,6 +567,7 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
       FindClose(SearchRec);
     finally
       FileList.Free;
+      IDList.Free;
     end;
   end;
 begin
@@ -450,21 +589,39 @@ begin
   SL := TStringList.Create;
 
   for I := 1 to fRXData.Count do
-  if fRXData.Flag[I] = 1 then
-  begin
-    ExportImage(aFolder + Format('%d_%.4d.png', [Byte(fRT)+1, I]), I);
-
-    if fRXData.HasMask[I] then
-      ExportMask(aFolder + Format('%d_%.4da.png', [Byte(fRT)+1, I]), I);
-
-    //Export pivot
-    SL.Clear;
-    SL.Append(IntToStr(fRXData.Pivot[I].x));
-    SL.Append(IntToStr(fRXData.Pivot[I].y));
-    SL.SaveToFile(aFolder + Format('%d_%.4d.txt', [Byte(fRT)+1, I]));
-  end;
+    ExportFullImageData(aFolder, I, SL);
 
   SL.Free;
+end;
+
+
+procedure TKMSpritePack.ExportFullImageData(const aFolder: string; aIndex: Integer; aTempList: TStringList = nil);
+var
+  ListCreated: Boolean;
+begin
+  ListCreated := False;
+  if aTempList = nil then
+  begin
+    aTempList := TStringList.Create;
+    ListCreated := True;
+  end;
+
+  if fRXData.Flag[aIndex] = 1 then
+  begin
+    ExportImage(aFolder + Format('%d_%.4d.png', [Byte(fRT)+1, aIndex]), aIndex);
+
+    if fRXData.HasMask[aIndex] then
+      ExportMask(aFolder + Format('%d_%.4da.png', [Byte(fRT)+1, aIndex]), aIndex);
+
+    //Export pivot
+    aTempList.Clear;
+    aTempList.Append(IntToStr(fRXData.Pivot[aIndex].x));
+    aTempList.Append(IntToStr(fRXData.Pivot[aIndex].y));
+    aTempList.SaveToFile(aFolder + Format('%d_%.4d.txt', [Byte(fRT)+1, aIndex]));
+  end;
+
+  if ListCreated then
+    aTempList.Free;
 end;
 
 
@@ -571,7 +728,7 @@ end;
 //Take RX data and make nice atlas texture out of it
 //Atlases should be POT to improve performance and avoid driver bugs
 //In result we have GFXData structure filled
-procedure TKMSpritePack.MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True);
+procedure TKMSpritePack.MakeGFX(aAlphaShadows: Boolean; aStartingIndex: Integer = 1; aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
 var
   TexType: TTexFormat;
   BaseRAM, IdealRAM, ColorRAM, TexCount: Cardinal;
@@ -585,7 +742,7 @@ begin
   else
     TexType := tf_RGB5A1;
 
-  MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount, aFillGFXData);
+  MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount, aFillGFXData, aOnStopExecution);
 
   if LOG_EXTRA_GFX then
   begin
@@ -639,7 +796,8 @@ end;
 
 
 //This algorithm is planned to take advantage of more efficient 2D bin packing
-procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal; aFillGFXData: Boolean = True);
+procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex: Word; var BaseRAM, ColorRAM, TexCount: Cardinal;
+                                           aFillGFXData: Boolean = True; aOnStopExecution: TBooleanFuncSimple = nil);
 
   procedure PrepareAtlases(SpriteInfo: TBinArray; aMode: TSpriteAtlasType; aTexType: TTexFormat);
   var
@@ -734,6 +892,11 @@ procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex:
     end;
   end;
 
+  function StopExec: Boolean;
+  begin
+    Result := Assigned(aOnStopExecution) and aOnStopExecution;
+  end;
+
 var
   I, K: Integer;
   SpriteSizes: TIndexSizeArray;
@@ -768,8 +931,13 @@ begin
 
   SetLength(SpriteInfo, 0);
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
+
+  if StopExec then Exit; //Our thread could be terminated and asked to stop. Exit immidiately then
+
   SetLength(gGFXPrepData[saBase], Length(SpriteInfo));
   PrepareAtlases(SpriteInfo, saBase, aTexType);
+
+  if StopExec then Exit;
 
   //Prepare masking atlases
   SetLength(SpriteSizes, fRXData.Count - aStartingIndex + 1);
@@ -786,6 +954,7 @@ begin
 
   SetLength(SpriteInfo, 0);
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
+  if StopExec then Exit;
   SetLength(gGFXPrepData[saMask], Length(SpriteInfo));
   PrepareAtlases(SpriteInfo, saMask, tf_Alpha8);
 end;
@@ -1053,7 +1222,8 @@ begin
   fGameResLoader.Terminate;
   fGameResLoader.WaitFor;
   FreeThenNil(fGameResLoader);
-  gLog.MultithreadLogging := False;
+  if gLog <> nil then //could be nil in some Utils, f.e.
+    gLog.MultithreadLogging := False;
 end;
 
 
@@ -1079,7 +1249,8 @@ begin
   if aForceReload then
   begin
     fGameResLoadCompleted := False;
-    gLog.MultithreadLogging := True;
+    if gLog <> nil then //could be nil in some Utils, f.e.
+      gLog.MultithreadLogging := True;
     fGameResLoader := TTGameResourceLoader.Create(Self, fAlphaShadows, TRXType(StrToInt(fGameRXTypes[0])));
   end;
 end;
@@ -1192,6 +1363,39 @@ begin
 end;
 
 
+procedure TKMResSprites.ManageResLoader;
+var
+  NextRXTypeI: Integer;
+begin
+  if (fGameResLoader <> nil) and fGameResLoader.LoadDone then
+  begin
+    // Generate texture atlas from prepared data for game resources
+    // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread
+    // That is why we need call this method from main thread only
+    GenerateTextureAtlasForGameRes(fGameResLoader.RXType);
+    fStepCaption(gResTexts[RXInfo[fGameResLoader.RXType].LoadingTextID]);
+    fSprites[fGameResLoader.RXType].ClearTemp;      //Clear fRXData sprites temp data, which is not needed anymore
+    ClearGameResGenTemp;                                   //Clear all the temp data used for atlas texture generating
+    NextRXTypeI := GetNextLoadRxTypeIndex(fGameResLoader.RXType); // get next RXType to load
+    if NextRXTypeI = -1 then
+    begin
+      //Load is completed, we can stop loading thread
+      StopResourceLoader;
+      fGameResLoadCompleted := True; // mark loading game res as completed
+    end else begin
+      fGameResLoader.RXType := TRXType(StrToInt(fGameRXTypes[NextRXTypeI]));
+      fGameResLoader.LoadDone := False;
+    end;
+  end;
+end;
+
+
+procedure TKMResSprites.UpdateStateIdle;
+begin
+  ManageResLoader;
+end;
+
+
 procedure TKMResSprites.ExportToPNG(aRT: TRXType);
 begin
   if LoadSprites(aRT, False) then
@@ -1206,7 +1410,7 @@ end;
 constructor TTGameResourceLoader.Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
 begin
   inherited Create(False);
-  DoTerminate := False;
+//  DoTerminate := False;
   fResSprites := aResSprites;
   fAlphaShadows := aAlphaShadows;
   RXType := aRxType;
@@ -1217,16 +1421,23 @@ end;
 procedure TTGameResourceLoader.Execute;
 begin
   inherited;
-  while not DoTerminate do
+  while not Terminated do
   begin
     if not LoadDone then
     begin
       fResSprites.LoadSprites(RXType, fAlphaShadows);
-      fResSprites.fSprites[RXType].MakeGFX(fAlphaShadows, 1, False);
+      if Terminated then Exit;
+      fResSprites.fSprites[RXType].MakeGFX(fAlphaShadows, 1, False, IsTerminated);
       LoadDone := True;
     end;
     Sleep(1); // sleep a a bit
   end;
+end;
+
+
+function TTGameResourceLoader.IsTerminated: Boolean;
+begin
+  Result := Terminated;
 end;
 
 

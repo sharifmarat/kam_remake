@@ -20,16 +20,17 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; const aLoc: TKMPoint; aAutoPlace: boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+    function AddUnit(aOwner: TKMHandIndex; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
     procedure AddUnitToList(aUnit: TKMUnit);
     property Count: Integer read GetCount;
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
     procedure RemoveUnit(aUnit: TKMUnit);
+    procedure RemoveAllUnits;
     procedure DeleteUnitFromList(aUnit: TKMUnit);
     procedure OwnerUpdate(aOwner: TKMHandIndex);
-    function HitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
+    function HitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
     function GetUnitByUID(aUID: Integer): TKMUnit;
-    function GetClosestUnit(const aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
+    function GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetTotalPointers: Integer;
     procedure Save(SaveStream: TKMemoryStream);
@@ -42,7 +43,8 @@ type
 
 implementation
 uses
-  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior;
+  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior,
+  KM_GameTypes;
 
 
 { TKMUnitsCollection }
@@ -75,7 +77,7 @@ end;
 
 
 //AutoPlace means we should try to find a spot for this unit instead of just placing it where we were told to
-function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
 var
   ID: Cardinal;
   PlaceTo: TKMPoint;
@@ -136,6 +138,17 @@ begin
 end;
 
 
+procedure TKMUnitsCollection.RemoveAllUnits;
+var I: Integer;
+begin
+  Assert(gGame.GameMode = gmMapEd);
+  if Count <= 0 then Exit;
+  for I := 0 to Count - 1 do
+    Units[I].CloseUnit;
+  fUnits.Clear;
+end;
+
+
 procedure TKMUnitsCollection.DeleteUnitFromList(aUnit: TKMUnit);
 begin
   Assert(gGame.GameMode = gmMapEd); // Allow to delete existing Unit directly only in MapEd
@@ -153,7 +166,7 @@ begin
 end;
 
 
-function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
+function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
 var
   I: Integer;
 begin
@@ -191,7 +204,7 @@ begin
 end;
 
 
-function TKMUnitsCollection.GetClosestUnit(const aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
+function TKMUnitsCollection.GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
 var
   I: Integer;
   BestDist, Dist: Single;
@@ -239,7 +252,7 @@ end;
 procedure TKMUnitsCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
-  UnitType: TUnitType;
+  UnitType: TKMUnitType;
   U: TKMUnit;
 begin
   LoadStream.ReadAssert('Units');

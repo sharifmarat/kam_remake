@@ -7,8 +7,6 @@ uses
 
 const
   PING_COUNT = 20; //Number of pings to store and take the maximum over for latency calculation (pings are measured once per second)
-  LOC_RANDOM = 0;
-  LOC_SPECTATE = -1;
 
 type
   //Multiplayer info that is filled in Lobby before TKMPlayers are created (thats why it has many mirror fields)
@@ -46,7 +44,7 @@ type
     function IsComputer: Boolean;
     function IsClosed: Boolean;
     function IsSpectator: Boolean;
-    function GetPlayerType: THandType;
+    function GetPlayerType: TKMHandType;
     function SlotName: UnicodeString; //Player name if it's human or computer or closed
     property Nikname: AnsiString read GetNikname; //Human player nikname (ANSI-Latin)
     property NiknameColored: AnsiString read GetNiknameColored;
@@ -221,9 +219,9 @@ begin
 end;
 
 
-function TKMNetPlayerInfo.GetPlayerType: THandType;
+function TKMNetPlayerInfo.GetPlayerType: TKMHandType;
 const
-  PlayerTypes: array [TNetPlayerType] of THandType = (hndHuman, hndComputer, hndComputer);
+  PlayerTypes: array [TNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer);
 begin
   Result := PlayerTypes[PlayerNetType];
 end;
@@ -1038,7 +1036,7 @@ begin
 
   //Shuffle locations within each team if requested
   if RandomizeTeamLocations then
-    for I := 1 to 4 do //Each team
+    for I := 1 to MAX_TEAMS do //Each team
     begin
       SetLength(TeamLocs, 0); //Reset
       for K := 1 to fCount do

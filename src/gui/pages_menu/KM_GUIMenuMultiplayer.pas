@@ -12,7 +12,7 @@ uses
 type
   TKMMenuMultiplayer = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fServerSelected: Boolean;
     fSelectedRoomInfo: TKMRoomInfo;
@@ -96,7 +96,7 @@ type
         Button_MP_PasswordOk: TKMButton;
         Button_MP_PasswordCancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure Show(const aText: UnicodeString);
     procedure Resize(X, Y: Word);
@@ -114,7 +114,7 @@ const
 
 
 { TKMGUIMainMultiplayer }
-constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
   procedure CreateServerPopUp;
   begin
     Panel_MPCreateServer := TKMPanel.Create(aParent, 362, 250, 320, 300);
@@ -237,7 +237,7 @@ begin
       Label_MP_PT_Times.FontColor := clMPSrvDetailsGameInfoFont;
       Label_MP_GameTime := TKMLabel.Create(Panel_MPServerDetails, 8, 90, 304, 20, '', fnt_Metal, taRight);
       Label_MP_GameTime.FontColor := clMPSrvDetailsGameInfoFont;
-      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, 304, 20, 'Map:', fnt_Outline, taLeft); //Todo: translate
+      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, 304, 20, gResTexts[TX_WORD_MAP] + ':', fnt_Outline, taLeft);
       Label_MP_MapName := TKMLabel.Create(Panel_MPServerDetails, 8, 130, 304, 20, '', fnt_Metal, taLeft);
       Label_MP_PlayerList_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 150, 304, 20, gResTexts[TX_MP_MENU_PLAYER_LIST], fnt_Outline, taLeft);
 
@@ -613,7 +613,7 @@ var SortedNetPlayersIndexes: array [1..MAX_LOBBY_SLOTS] of Integer;
 
     K := 1;
     // Players, sorted by team
-    for T := 0 to 4 do
+    for T := 0 to MAX_TEAMS do
       for I := 1 to fSelectedRoomInfo.GameInfo.PlayerCount do
         if not fSelectedRoomInfo.GameInfo.Players[I].IsSpectator and (fSelectedRoomInfo.GameInfo.Players[I].Team = T) then
         begin

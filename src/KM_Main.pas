@@ -3,7 +3,7 @@ unit KM_Main;
 interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
-  KM_FormMain, KM_FormLoading,
+  KM_FormMain, KM_FormLoading, KM_Maps,
   KM_Settings, KM_Resolutions;
 
 
@@ -14,11 +14,14 @@ type
     fFormLoading: TFormLoading;
 
     fOldTimeFPS, fOldFrameTimes, fFrameCount: Cardinal;
+    {$IFNDEF FPC}
     fFlashing: Boolean;
+    {$ENDIF}
     fMutex: THandle;
 
-    fMainSettings: TMainSettings;
+    fMainSettings: TKMainSettings;
     fResolutions: TKMResolutions;
+    fMapCacheUpdater: TTMapsCacheUpdater;
 
     procedure DoRestore(Sender: TObject);
     procedure DoActivate(Sender: TObject);
@@ -27,7 +30,6 @@ type
 
     procedure MapCacheUpdate;
 
-    procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
     procedure GameSpeedChange(aSpeed: Single);
   public
     constructor Create;
@@ -57,8 +59,10 @@ type
     function LockMutex: Boolean;
     procedure UnlockMutex;
 
+    procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
+
     property Resolutions: TKMResolutions read fResolutions;
-    property Settings: TMainSettings read fMainSettings;
+    property Settings: TKMainSettings read fMainSettings;
   end;
 
 
@@ -72,7 +76,7 @@ uses
   {$IFDEF MSWindows} MMSystem, {$ENDIF}
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   SysUtils, StrUtils, Math, KromUtils,
-  KM_GameApp, KM_Maps,
+  KM_GameApp,
   KM_Log, KM_CommonUtils, KM_Defaults, KM_Points;
 
 
@@ -116,7 +120,7 @@ begin
   //Random is only used for cases where order does not matter, e.g. shuffle tracks
   Randomize;
 
-  fFormLoading.Label5.Caption := GAME_VERSION;
+  fFormLoading.Label5.Caption := UnicodeString(GAME_VERSION);
   fFormLoading.Show; //This is our splash screen
   fFormLoading.Refresh;
 
@@ -135,7 +139,7 @@ begin
 
   //Only after we read settings (fullscreen property and resolutions)
   //we can decide whenever we want to create Game fullscreen or not (OpenGL init depends on that)
-  fMainSettings := TMainSettings.Create;
+  fMainSettings := TKMainSettings.Create;
   //We need to verify INI values, as they can be from another display
   if not fResolutions.IsValid(fMainSettings.Resolution) then
   begin
@@ -144,7 +148,7 @@ begin
       fMainSettings.FullScreen := False;
   end;
 
-  fFormMain.Caption := 'KaM Remake - ' + GAME_VERSION;
+  fFormMain.Caption := 'KaM Remake - ' + UnicodeString(GAME_VERSION);
   //Will make the form slightly higher, so do it before ReinitRender so it is reset
   fFormMain.ControlsSetVisibile(SHOW_DEBUG_CONTROLS);
 
@@ -229,6 +233,8 @@ begin
   //Reset the resolution
   FreeThenNil(fResolutions);
   FreeThenNil(fMainSettings);
+  if fMapCacheUpdater <> nil then
+    fMapCacheUpdater.Stop;
   FreeThenNil(gGameApp);
   FreeThenNil(gLog);
 
@@ -308,7 +314,7 @@ begin
     begin
       if gGameApp <> nil then
         gGameApp.FPSMeasurement(Round(1000 / (fOldFrameTimes / fFrameCount)));
-      StatusBarText(4, Format('%.1f fps', [1000 / (fOldFrameTimes / fFrameCount)]) +
+      StatusBarText(SB_ID_FPS, Format('%.1f FPS', [1000 / (fOldFrameTimes / fFrameCount)]) +
                        IfThen(CAP_MAX_FPS, ' (' + inttostr(FPSLag) + ')'));
       fOldFrameTimes := 0;
       fFrameCount := 0;
@@ -356,6 +362,8 @@ begin
                                 StatusBarText);
   gGameApp.OnGameSpeedChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
 
   gLog.AddTime('ToggleFullscreen');
   gLog.AddTime('Form Width/Height: '+inttostr(fFormMain.Width)+':'+inttostr(fFormMain.Height));
@@ -394,7 +402,7 @@ end;
 procedure TKMMain.MapCacheUpdate;
 begin
   //Thread frees itself automatically
-  TTMapsCacheUpdater.Create([mfSP, mfMP, mfDL]);
+  fMapCacheUpdater := TTMapsCacheUpdater.Create([mfSP, mfMP, mfDL]);
 end;
 
 
