@@ -1308,7 +1308,7 @@ begin
 end;
 
 
-class function TKMResSprites.AllTilesInOneAtlas: Boolean;
+class function TKMResSprites.AllTilesOnOneAtlas: Boolean;
 begin
   Result := AllTilesInOneTexture;
 end;
