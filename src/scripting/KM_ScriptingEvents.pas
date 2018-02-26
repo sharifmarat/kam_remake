@@ -23,7 +23,7 @@ type
   end;
 
   TKMCustomEventHandler = record
-    Name: UnicodeString;
+    Name: AnsiString;
     Handler: TMethod;
   end;
 

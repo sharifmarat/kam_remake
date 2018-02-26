@@ -223,7 +223,7 @@ procedure TKMGameApp.ToggleLocale(const aLocale: AnsiString);
 begin
   Assert(gGame = nil, 'We don''t want to recreate whole fGame for that. Let''s limit it only to MainMenu');
 
-  gLog.AddTime('Toggle to locale ' + aLocale);
+  gLog.AddTime('Toggle to locale ' + UnicodeString(aLocale));
   fMainMenuInterface.PageChange(gpLoading, gResTexts[TX_MENU_NEW_LOCALE]);
   Render(False); //Force to repaint information screen
 

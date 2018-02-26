@@ -1750,7 +1750,6 @@ procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProces
 var
   ErrorStr: UnicodeString;
   EventType: Integer;
-  HandlerName: UnicodeString;
   DirectiveParams: TStringList;
 begin
   // Most of the scripts do not have directives.
