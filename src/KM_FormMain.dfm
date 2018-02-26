@@ -67,7 +67,6 @@ object FormMain: TFormMain
         Text = 'Control ID: 9999'
         Width = 80
       end>
-    ExplicitTop = 636
   end
   object GroupBox1: TGroupBox
     Left = 320
@@ -623,6 +622,13 @@ object FormMain: TFormMain
       object HousesDat1: TMenuItem
         Caption = 'Houses Dat'
         OnClick = HousesDat1Click
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object ScriptData1: TMenuItem
+        Caption = 'Script Data'
+        OnClick = Export_ScriptDataClick
       end
     end
     object About1: TMenuItem

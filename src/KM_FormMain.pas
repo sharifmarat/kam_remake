@@ -96,6 +96,8 @@ type
     ReloadSettings: TMenuItem;
     SaveDialog1: TSaveDialog;
     chkLogCommands: TCheckBox;
+    N5: TMenuItem;
+    ScriptData1: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -112,6 +114,7 @@ type
     procedure Export_TreesRXClick(Sender: TObject);
     procedure Export_HousesRXClick(Sender: TObject);
     procedure Export_UnitsRXClick(Sender: TObject);
+    procedure Export_ScriptDataClick(Sender: TObject);
     procedure Export_GUIClick(Sender: TObject);
     procedure Export_GUIMainRXClick(Sender: TObject);
     procedure Export_CustomClick(Sender: TObject);
@@ -187,7 +190,7 @@ uses
   KM_Pics,
   KM_RenderPool,
   KM_Hand,
-  KM_ResKeys, KM_FormLogistics,
+  KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_Log;
 
 
@@ -439,6 +442,13 @@ end;
 procedure TFormMain.Export_UnitsRXClick(Sender: TObject);
 begin
   gRes.Sprites.ExportToPNG(rxUnits);
+end;
+
+procedure TFormMain.Export_ScriptDataClick(Sender: TObject);
+begin
+  if (gGame <> nil)
+    and (gGame.Scripting <> nil) then
+    gGame.Scripting.ExportDataToText;
 end;
 
 procedure TFormMain.Export_GUIClick(Sender: TObject);
