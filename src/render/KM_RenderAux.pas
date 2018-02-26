@@ -308,6 +308,24 @@ end;
 
 
 procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
+
+  procedure DrawTerKind(X,Y: Integer);
+  var
+    TerKind: TKMTerrainKind;
+    TerKindStr: String;
+  begin
+    if gGame.IsMapEditor then
+    begin
+      TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[Y,X].TerKind;
+      case TerKind of
+        tkNone:   TerKindStr := 'N';
+        tkCustom: TerKindStr := 'C';
+        else      TerKindStr := IntToStr(BASE_TERRAIN[TerKind]);
+      end;
+      Text(X - 0.47, Y - 0.47, TerKindStr, icRed);
+    end;
+  end;
+
 var
   I, J, K, L: Integer;
   TerKind: TKMTerrainKind;
@@ -316,15 +334,7 @@ begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
     begin
-      if gGame.IsMapEditor then
-      begin
-        TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[I,J].TerKind;
-        if TerKind <> tkCustom then
-          TerKindStr := IntToStr(BASE_TERRAIN[TerKind])
-        else
-          TerKindStr := 'C';
-        Text(J - 0.47, I - 0.47, TerKindStr, icRed);
-      end;
+      DrawTerKind(J,I);
       for K := 0 to 3 do
         with gTerrain.Land[I,J] do
         begin
@@ -339,6 +349,10 @@ begin
                            TILE_TERRAIN_LAYERS_COLORS[L+1]);
         end;
     end;
+  for I := aRect.Top to aRect.Bottom + 1 do
+    DrawTerKind(aRect.Right + 1,I);
+  for J := aRect.Left to aRect.Right do
+    DrawTerKind(J,aRect.Bottom + 1 );
 end;
 
 
