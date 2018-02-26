@@ -22,13 +22,13 @@ type
     procedure BrushRefresh;
   protected
     Panel_Brushes: TKMPanel;
-    BrushSize: TKMTrackBar;
-    BrushCircle: TKMButtonFlat;
-    BrushSquare: TKMButtonFlat;
-    BrushTable: array [0..6, 0..4] of TKMButtonFlat;
-    BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
-    MagicBrush: TKMButtonFlat;
-    BrushRandom: TKMCheckBox;
+      BrushSize: TKMTrackBar;
+      BrushCircle: TKMButtonFlat;
+      BrushSquare: TKMButtonFlat;
+      BrushTable: array [0..6, 0..4] of TKMButtonFlat;
+      BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
+      MagicBrush: TKMButtonFlat;
+      BrushRandom: TKMCheckBox;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -122,6 +122,7 @@ begin
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 320, 34, 34, 673, rxGui);
   MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate
+  MagicBrush.OnClick := BrushChange;
 
   fSubMenuActionsEvents[0] := BrushChange;
   fSubMenuActionsEvents[1] := BrushChange;
