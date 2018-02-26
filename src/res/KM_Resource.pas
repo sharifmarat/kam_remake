@@ -221,6 +221,7 @@ procedure TKMResource.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Bo
 var
   DoForceReload: Boolean;
 begin
+  gLog.AddTime('LoadGameResources ... AlphaShadows: ' + BoolToStr(aAlphaShadows, True) + '. Forced: ' + BoolToStr(aForceReload, True));
   DoForceReload := aForceReload or (aAlphaShadows <> fSprites.AlphaShadows);
   if (fDataState <> rlsAll) or DoForceReload then
   begin

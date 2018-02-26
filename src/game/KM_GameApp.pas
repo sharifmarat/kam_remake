@@ -223,6 +223,7 @@ procedure TKMGameApp.ToggleLocale(const aLocale: AnsiString);
 begin
   Assert(gGame = nil, 'We don''t want to recreate whole fGame for that. Let''s limit it only to MainMenu');
 
+  gLog.AddTime('Toggle to locale ' + aLocale);
   fMainMenuInterface.PageChange(gpLoading, gResTexts[TX_MENU_NEW_LOCALE]);
   Render(False); //Force to repaint information screen
 
@@ -238,6 +239,12 @@ begin
   gRes.LoadLocaleResources(fGameSettings.Locale);
   //Fonts might need reloading too
   gRes.LoadLocaleFonts(fGameSettings.Locale, fGameSettings.LoadFullFonts);
+
+  //Force reload game resources, if they during loading process,
+  //as that could cause an error in the loading thread
+  //(did not figure it out why. Its easier just to reload game resources in that rare case)
+  if not gRes.Sprites.GameResLoadCompleted then
+    gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
 
   {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
 
