@@ -89,7 +89,7 @@ type
 
     function ScriptOnNeedFile(Sender: TPSPreProcessor; const aCallingFileName: AnsiString; var aFileName, aOutput: AnsiString): Boolean;
     procedure ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                        const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                        const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
   public
     constructor Create; overload;
     constructor Create(aOnScriptError: TUnicodeStringEvent); overload;
@@ -181,9 +181,10 @@ const
 
 implementation
 uses
-  Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
+  TypInfo, Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
 
 const
+  CUSTOM_EVENT_DIRECTIVE = 'EVENT';
   SCRIPT_LOG_EXT = '.log.txt';
 
 var
@@ -1745,7 +1746,12 @@ end;
 
 
 procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                                            const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                                            const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
+var
+  ErrorStr: UnicodeString;
+  EventType: Integer;
+  HandlerName: UnicodeString;
+  DirectiveParams: TStringList;
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
@@ -1753,6 +1759,30 @@ begin
     and Active
     and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
+
+  //Load custom event handlers
+  if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
+  begin
+    aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+    try
+      DirectiveParams := TStringList.Create;
+      StringSplit(DirectiveParam, ':', DirectiveParams);
+      EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParams[0]));
+
+      if EventType = -1 then
+        fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParams[0]), Parser.Row, Parser.Col]));
+
+      gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), Trim(DirectiveParams[1]));
+      DirectiveParams.Free;
+    except
+      on E: Exception do
+        begin
+          ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+          fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+            {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+        end;
+    end;
+  end;
 end;
 
 
