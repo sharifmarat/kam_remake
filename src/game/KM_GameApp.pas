@@ -665,7 +665,6 @@ begin
 
   if Assigned(fOnGameStart) then
     fOnGameStart(gGame.GameMode);
-
 end;
 
 
@@ -675,7 +674,6 @@ begin
 
   if Assigned(fOnGameStart) then
     fOnGameStart(gGame.GameMode);
-
 end;
 
 
