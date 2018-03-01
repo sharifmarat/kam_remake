@@ -326,6 +326,9 @@ begin
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
+    Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
+
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
@@ -398,6 +401,7 @@ begin
     RegisterMethodCheck(c, 'function MapTileRotation(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapTileType(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapWidth: Integer');
+    RegisterMethodCheck(c, 'function MissionDifficulty: TKMMissionDifficulty');
 
     RegisterMethodCheck(c, 'function MarketFromWare(aMarketID: Integer): Integer');
     RegisterMethodCheck(c, 'function MarketLossFactor: Single');
@@ -900,6 +904,8 @@ begin
       RegisterMethod(@TKMScriptStates.MapTileRotation,                          'MapTileRotation');
       RegisterMethod(@TKMScriptStates.MapTileType,                              'MapTileType');
       RegisterMethod(@TKMScriptStates.MapWidth,                                 'MapWidth');
+
+      RegisterMethod(@TKMScriptStates.MissionDifficulty,                        'MissionDifficulty');
 
       RegisterMethod(@TKMScriptStates.MarketFromWare,                           'MarketFromWare');
       RegisterMethod(@TKMScriptStates.MarketLossFactor,                         'MarketLossFactor');

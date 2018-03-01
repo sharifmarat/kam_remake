@@ -1177,4 +1177,10 @@ TX_MENU_MAP_FILTER_BY_PLAYERS_NUMBER = 1170; //By players number
 TX_RESULTS_BACK_TO_GAME = 1171; //Back to game
 TX_GAME_MENU_SHOW_STATS_HINT = 1172; //Show detailed game statistics
 
+TX_MISSION_DIFFICULTY = 1173; //Difficulty
+TX_MISSION_DIFFICULTY_EASY = 1174; //Easy
+TX_MISSION_DIFFICULTY_NORMAL = 1175; //Normal
+TX_MISSION_DIFFICULTY_HARD = 1176; //Hard
 
+TX_MAPED_MISSION_DIFFICULTY_LEVELS = 1177; //Difficulty levels
+TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT = 1178; //Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty

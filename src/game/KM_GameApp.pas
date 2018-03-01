@@ -7,7 +7,7 @@ uses
   Classes, Dialogs, ExtCtrls,
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
-  KM_Music, KM_Networking, KM_Settings, KM_Render,
+  KM_Music, KM_Maps, KM_Networking, KM_Settings, KM_Render,
   KM_GameTypes;
 
 type
@@ -34,7 +34,8 @@ type
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
     procedure LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
-    procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
+    procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+                                 aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
@@ -64,11 +65,13 @@ type
 
     //These are all different game kinds we can start
     procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
-    procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1; aDesiredColor: Cardinal = $00000000);
+    procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1;
+                           aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure NewSingleSave(const aSaveName: UnicodeString);
     procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal);
+    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId;
+                             aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
     procedure NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
@@ -114,7 +117,7 @@ uses
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
-  KM_Maps, KM_Saves, KM_CommonUtils;
+  KM_Saves, KM_CommonUtils;
 
 
 { Creating everything needed for MainMenu, game stuff is created on StartGame }
@@ -588,7 +591,7 @@ end;
 
 
 procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                        aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
+                                        aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 var
   LoadError: UnicodeString;
 begin
@@ -601,7 +604,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking);
   try
-    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor);
+    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty);
   except
     on E : Exception do
     begin
@@ -668,9 +671,10 @@ begin
 end;
 
 
-procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1; aDesiredColor: Cardinal = $00000000);
+procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1;
+                                  aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
-  LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor);
+  LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty);
 
   if Assigned(fOnGameStart) then
     fOnGameStart(gGame.GameMode);
@@ -730,10 +734,11 @@ begin
 end;
 
 
-procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal);
+procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode;
+                                    aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
   if FileExists(ExeDir + aMission) then
-    LoadGameFromScript(ExeDir + aMission, aGameName, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor)
+    LoadGameFromScript(ExeDir + aMission, aGameName, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor, aDifficulty)
   else
   if FileExists(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT)) then
     LoadGameFromSave(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT), aGameMode)

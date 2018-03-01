@@ -32,6 +32,7 @@ type
           Panel_CheckBoxes: TKMPanel;
             CheckBox_Coop, CheckBox_Special, CheckBox_PlayableAsSP,
             CheckBox_BlockTeamSelection, CheckBox_BlockPeacetime, CheckBox_BlockFullMapPreview: TKMCheckBox;
+          CheckBox_DifficultyEasy, CheckBox_DifficultyNormal, CheckBox_DifficultyHard: TKMCheckBox;
           Radio_BigDescType: TKMRadioGroup;
           Edit_BigDesc: TKMEdit;
           NumEdit_BigDesc: TKMNumericEdit;
@@ -54,7 +55,7 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  KM_ResTexts, KM_Game, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_HandsCollection, KM_Hand;
+  KM_ResTexts, KM_Game, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_HandsCollection, KM_Hand, KM_Maps;
 
 
 { TKMMapEdMissionMode }
@@ -62,6 +63,8 @@ constructor TKMMapEdMissionMode.Create(aParent: TKMPanel);
 const
   CHK_W = 300;
   RADIO_W = 250;
+var
+  Dif_W: Integer;
 begin
   inherited Create;
 
@@ -78,7 +81,7 @@ begin
   Button_MissionParams.Hint := gResTexts[TX_MAPED_MISSION_PARAMETERS_BTN_HINT];
   Button_MissionParams.OnClick := MissionParams_Click;
 
-  PopUp_MissionParams := TKMPopUpPanel.Create(aParent.MasterParent, 700, 570, gResTexts[TX_MAPED_MISSION_PARAMETERS_TITLE]);
+  PopUp_MissionParams := TKMPopUpPanel.Create(aParent.MasterParent, 700, 615, gResTexts[TX_MAPED_MISSION_PARAMETERS_TITLE]);
 
     Panel_MissionParams := TKMPanel.Create(PopUp_MissionParams, 5, 5, PopUp_MissionParams.Width - 10, PopUp_MissionParams.Height - 10);
 
@@ -99,7 +102,7 @@ begin
     TKMLabel.Create(Panel_MissionParams, 0, 125, gResTexts[TX_MAPED_MISSION_PARAMETERS_TITLE], fnt_Outline, taLeft);
     TKMBevel.Create(Panel_MissionParams, 0, 150, Panel_MissionParams.Width, 65);
 
-    Panel_CheckBoxes := TKMPanel.Create(Panel_MissionParams, 5, 155, Panel_MissionParams.Width - 5, 90);
+    Panel_CheckBoxes := TKMPanel.Create(Panel_MissionParams, 5, 155, Panel_MissionParams.Width - 10, 90);
 
       CheckBox_Coop := TKMCheckBox.Create(Panel_CheckBoxes, 0, 0,  CHK_W, 20, gResTexts[TX_LOBBY_MAP_COOP], fnt_Metal);
       CheckBox_Coop.Hint := gResTexts[TX_LOBBY_MAP_COOP];
@@ -119,20 +122,29 @@ begin
       CheckBox_BlockFullMapPreview := TKMCheckBox.Create(Panel_CheckBoxes, CHK_W + 10, 40, CHK_W, 20, gResTexts[TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW], fnt_Metal);
       CheckBox_BlockFullMapPreview.Hint := gResTexts[TX_MAPED_MISSION_BLOCK_FULL_MAP_PREVIEW_HINT];
 
-    TKMLabel.Create(Panel_MissionParams, 0, 225, gResTexts[TX_MAPED_MISSION_BIG_DESC], fnt_Outline, taLeft);
-    TKMBevel.Create(Panel_MissionParams, 0, 245, RADIO_W + 10, 45);
+    with TKMLabel.Create(Panel_MissionParams, 0, 225, Panel_MissionParams.Width, 20, gResTexts[TX_MAPED_MISSION_DIFFICULTY_LEVELS], fnt_Outline, taLeft) do
+      Hint := gResTexts[TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT];
+    TKMBevel.Create(Panel_MissionParams, 0, 245, Panel_MissionParams.Width, 25);
 
-    Radio_BigDescType := TKMRadioGroup.Create(Panel_MissionParams, 5, 250, RADIO_W, 40, fnt_Metal);
+    Dif_W := (PopUp_MissionParams.Width - 20) div 3;
+    CheckBox_DifficultyEasy   := TKMCheckBox.Create(Panel_MissionParams, 5,               250, Dif_W, 20, 'Easy',   fnt_Metal);
+    CheckBox_DifficultyNormal := TKMCheckBox.Create(Panel_MissionParams, 5 + Dif_W + 5,   250, Dif_W, 20, 'Normal', fnt_Metal);
+    CheckBox_DifficultyHard   := TKMCheckBox.Create(Panel_MissionParams, 5 + 2*Dif_W + 5, 250, Dif_W, 20, 'Hard',   fnt_Metal);
+
+    TKMLabel.Create(Panel_MissionParams, 0, 275, gResTexts[TX_MAPED_MISSION_BIG_DESC], fnt_Outline, taLeft);
+    TKMBevel.Create(Panel_MissionParams, 0, 295, RADIO_W + 10, 45);
+
+    Radio_BigDescType := TKMRadioGroup.Create(Panel_MissionParams, 5, 300, RADIO_W, 40, fnt_Metal);
     Radio_BigDescType.Add(gResTexts[TX_WORD_TEXT]);
     Radio_BigDescType.Add(gResTexts[TX_MAPED_MISSION_LIBX_TEXT_ID]);
     Radio_BigDescType.OnChange := RadioMissionDesc_Changed;
 
-    Edit_BigDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, 245, Panel_MissionParams.Width - RADIO_W - 25, 20, fnt_Game);
+    Edit_BigDesc := TKMEdit.Create(Panel_MissionParams, RADIO_W + 20, 295, Panel_MissionParams.Width - RADIO_W - 25, 20, fnt_Game);
     Edit_BigDesc.MaxLen := 4096;
     Edit_BigDesc.AllowedChars := acAll;
-    NumEdit_BigDesc := TKMNumericEdit.Create(Panel_MissionParams, RADIO_W + 20, 245, -1, 999, fnt_Grey);
+    NumEdit_BigDesc := TKMNumericEdit.Create(Panel_MissionParams, RADIO_W + 20, 295, -1, 999, fnt_Grey);
 
-    Memo_BigDesc := TKMMemo.Create(Panel_MissionParams, 0, 300, Panel_MissionParams.Width, 200, fnt_Arial, bsGame);
+    Memo_BigDesc := TKMMemo.Create(Panel_MissionParams, 0, 350, Panel_MissionParams.Width, 200, fnt_Arial, bsGame);
     Memo_BigDesc.AnchorsStretch;
     Memo_BigDesc.AutoWrap := True;
     Memo_BigDesc.ScrollDown := True;
@@ -148,8 +160,11 @@ begin
     CheckBox_BlockTeamSelection.OnClick  := UpdateMapTxtInfo;
     CheckBox_BlockPeacetime.OnClick      := UpdateMapTxtInfo;
     CheckBox_BlockFullMapPreview.OnClick := UpdateMapTxtInfo;
+    CheckBox_DifficultyEasy.OnClick              := UpdateMapTxtInfo;
+    CheckBox_DifficultyNormal.OnClick            := UpdateMapTxtInfo;
+    CheckBox_DifficultyHard.OnClick              := UpdateMapTxtInfo;
 
-    Button_Close := TKMButton.Create(Panel_MissionParams, 0, 520, 120, 30, gResTexts[TX_WORD_CLOSE], bsGame);
+    Button_Close := TKMButton.Create(Panel_MissionParams, 0, 565, 120, 30, gResTexts[TX_WORD_CLOSE], bsGame);
     Button_Close.SetPosCenterW;
     Button_Close.OnClick := MissionParams_CloseClick;
 
@@ -321,6 +336,14 @@ begin
   gGame.MapEditor.MapTxtInfo.BlockTeamSelection  := CheckBox_BlockTeamSelection.Checked;
   gGame.MapEditor.MapTxtInfo.BlockPeacetime      := CheckBox_BlockPeacetime.Checked;
   gGame.MapEditor.MapTxtInfo.BlockFullMapPreview := CheckBox_BlockFullMapPreview.Checked;
+
+  gGame.MapEditor.MapTxtInfo.DifficultyLevels := [];
+  if CheckBox_DifficultyEasy.Checked then
+    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdEasy);
+  if CheckBox_DifficultyNormal.Checked then
+    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdNormal);
+  if CheckBox_DifficultyHard.Checked then
+    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdHard);
 end;
 
 
@@ -351,6 +374,10 @@ begin
   CheckBox_BlockTeamSelection.Checked   := gGame.MapEditor.MapTxtInfo.BlockTeamSelection;
   CheckBox_BlockPeacetime.Checked       := gGame.MapEditor.MapTxtInfo.BlockPeacetime;
   CheckBox_BlockFullMapPreview.Checked  := gGame.MapEditor.MapTxtInfo.BlockFullMapPreview;
+
+  CheckBox_DifficultyEasy.Checked    := mdEasy   in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
+  CheckBox_DifficultyNormal.Checked  := mdNormal in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
+  CheckBox_DifficultyHard.Checked    := mdHard   in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
 
   RadioMissionDesc_Changed(nil);
 end;

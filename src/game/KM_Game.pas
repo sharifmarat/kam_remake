@@ -8,7 +8,7 @@ uses
   KM_PathFinding,
   KM_GameInputProcess, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
   KM_InterfaceGame, KM_InterfaceGamePlay, KM_InterfaceMapEditor,
-  KM_ResTexts,
+  KM_ResTexts, KM_Maps,
   KM_PerfLog, KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
   KM_GameTypes;
 
@@ -41,6 +41,8 @@ type
     fGameLockedMutex: Boolean;
     fOverlayText: array[0..MAX_HANDS] of UnicodeString; //Needed for replays. Not saved since it's translated
     fIgnoreConsistencyCheckErrors: Boolean; // User can ignore all consistency check errors while watching SP replay
+
+    fMissionDifficulty: TKMMissionDifficulty;
 
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
@@ -93,7 +95,9 @@ type
     constructor Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
     destructor Destroy; override;
 
-    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal);
+    procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+                        aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
+
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure Load(const aPathName: UnicodeString);
@@ -116,6 +120,8 @@ type
     procedure SaveMapEditor(const aPathName: UnicodeString); overload;
     procedure SaveMapEditor(const aPathName: UnicodeString; aInsetRect: TKMRect); overload;
     procedure RestartReplay; //Restart the replay but keep current viewport position/zoom
+
+    property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty;
 
     property IsExiting: Boolean read fIsExiting;
     property IsPaused: Boolean read fIsPaused write SetIsPaused;
@@ -207,14 +213,15 @@ uses
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound,
-  KM_Log, KM_ScriptingEvents, KM_Maps, KM_Saves, KM_FileIO, KM_CommonUtils;
+  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils;
 
 
 //Create template for the Game
 //aRender - who will be rendering the Game session
 //aNetworking - access to MP stuff
 constructor TKMGame.Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
-const UIMode: array[TGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
+const
+  UIMode: array[TGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
   inherited Create;
 
@@ -228,6 +235,7 @@ begin
   SkipReplayEndCheck := False;
   fWaitingForNetwork := False;
   fGameOptions  := TKMGameOptions.Create;
+  fMissionDifficulty := mdNone;
 
   //UserInterface is different between Gameplay and MapEd
   if fGameMode = gmMapEd then
@@ -328,7 +336,8 @@ end;
 
 
 //New mission
-procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal);
+procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+                            aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
 const
   GAME_PARSE: array [TGameMode] of TKMMissionParsingMode = (
     mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
@@ -350,6 +359,7 @@ begin
   else
     fCampaignName := NO_CAMPAIGN;
   fCampaignMap := aCampMap;
+  fMissionDifficulty := aMapDifficulty;
 
   if IsMultiplayer then
     fMissionFileSP := '' //In MP map could be in DL or MP folder, so don't store path
@@ -1452,6 +1462,7 @@ begin
     gProjectiles.Save(SaveStream);
     fScripting.Save(SaveStream);
     gScriptSounds.Save(SaveStream);
+    SaveStream.Write(fMissionDifficulty, SizeOf(fMissionDifficulty));
 
     fTextMission.Save(SaveStream);
 
@@ -1600,6 +1611,7 @@ begin
     gProjectiles.Load(LoadStream);
     fScripting.Load(LoadStream);
     gScriptSounds.Load(LoadStream);
+    LoadStream.Read(fMissionDifficulty, SizeOf(fMissionDifficulty));
 
     fTextMission := TKMTextLibraryMulti.Create;
     fTextMission.Load(LoadStream);

@@ -3,7 +3,7 @@ unit KM_ScriptingStates;
 interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
-  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units,
+  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Maps,
   KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
 
 
@@ -78,6 +78,8 @@ type
     function MapTilePassability(X, Y: Integer; aPassability: Byte): Boolean;
     function MapWidth: Integer;
     function MapHeight: Integer;
+
+    function MissionDifficulty: TKMMissionDifficulty;
 
     function MarketFromWare(aMarketID: Integer): Integer;
     function MarketLossFactor: Single;
@@ -1940,6 +1942,19 @@ function TKMScriptStates.LocationCount: Integer;
 begin
   try
     Result := gHands.Count;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission difficulty for current game
+function TKMScriptStates.MissionDifficulty: TKMMissionDifficulty;
+begin
+  try
+    Result := gGame.MissionDifficulty;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

@@ -1121,3 +1121,9 @@
 1170:By players number
 1171:Back to game
 1172:Show detailed game statistics
+1173:Difficulty
+1174:Easy
+1175:Normal
+1176:Hard
+1177:Difficulty levels
+1178:Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty

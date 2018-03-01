@@ -1,4 +1,4 @@
-﻿unit KM_GUIMenuSingleMap;
+unit KM_GUIMenuSingleMap;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -26,6 +26,8 @@ type
 
     fSingleLoc: Integer;
     fSingleColor: Cardinal;
+
+    fDifficulty: TKMMissionDifficulty;
 
     procedure Create_SingleMap(aParent: TKMPanel);
     procedure MapTypeChanged(Sender: TObject);
@@ -58,6 +60,8 @@ type
         MinimapView: TKMMinimapView;
         DropBox_Loc: TKMDropList;
         DropBox_Color: TKMDropColumns;
+        Label_Difficulty: TKMLabel;
+        DropBox_Difficulty: TKMDropList;
         Image_Allies: array [0..MAX_HANDS-1] of TKMImage;
         Image_Enemies: array [0..MAX_HANDS-1] of TKMImage;
         Image_VictGoal: array [0..MAX_UI_GOALS-1] of TKMImage;
@@ -67,7 +71,7 @@ type
         Label_SurvGoal: array [0..MAX_UI_GOALS-1] of TKMLabel;
         Image_SurvGoalSt: array [0..MAX_UI_GOALS-1] of TKMImage;
       ColumnBox_Maps: TKMColumnBox;
-      Button_Back, Button_SingleStart: TKMButton;
+      Button_Back, Button_Start: TKMButton;
   public
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
@@ -200,6 +204,14 @@ begin
       DropBox_Color.Add(MakeListRow([''], [$FFFFFFFF], [MakePic(rxGuiMain, 31)], 0));
       DropBox_Color.OnChange := OptionsChange;
 
+      Label_Difficulty := TKMLabel.Create(Panel_Desc, 200, 385, gResTexts[TX_MISSION_DIFFICULTY], fnt_Metal, taLeft);
+      Label_Difficulty.Anchors := [anLeft, anBottom];
+      Label_Difficulty.Hide;
+      DropBox_Difficulty := TKMDropList.Create(Panel_Desc, 200, 405, 150, 20, fnt_Metal, gResTexts[TX_MISSION_DIFFICULTY], bsMenu);
+      DropBox_Difficulty.Anchors := [anLeft, anBottom];
+      DropBox_Difficulty.OnChange := OptionsChange;
+      DropBox_Difficulty.Hide;
+
       //Goals
       B := TKMBevel.Create(Panel_Desc, 0, 530, Half, 30);
       B.Anchors := [anLeft, anBottom];
@@ -248,9 +260,9 @@ begin
     Button_Back := TKMButton.Create(Panel_Single, 45, aParent.Height - PAD_VERT - 30, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
     Button_Back.Anchors := [anLeft, anBottom];
     Button_Back.OnClick := BackClick;
-    Button_SingleStart := TKMButton.Create(Panel_Single, 270, aParent.Height - PAD_VERT - 30, 220, 30, gResTexts[TX_MENU_SINGLE_START_MAP], bsMenu);
-    Button_SingleStart.Anchors := [anLeft, anBottom];
-    Button_SingleStart.OnClick := StartClick;
+    Button_Start := TKMButton.Create(Panel_Single, 270, aParent.Height - PAD_VERT - 30, 220, 30, gResTexts[TX_MENU_SINGLE_START_MAP], bsMenu);
+    Button_Start.Anchors := [anLeft, anBottom];
+    Button_Start.OnClick := StartClick;
 end;
 
 
@@ -335,6 +347,7 @@ var
   MapId: Integer;
   I: Integer;
   LastColor: Integer;
+  MD: TKMMissionDifficulty;
 begin
   fMaps.Lock;
   try
@@ -378,6 +391,26 @@ begin
       for I := 0 to fMaps[MapId].LocCount - 1 do
         if fMaps[MapId].CanBeHuman[I] or ALLOW_TAKE_AI_PLAYERS then
           DropBox_Loc.Add(fMaps[MapId].LocationName(I), I);
+
+      DropBox_Difficulty.Clear;
+      if fMaps[MapId].TxtInfo.HasDifficultyLevels then
+      begin
+        I := 0;
+        for MD in fMaps[MapId].TxtInfo.DifficultyLevels do
+        begin
+          DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
+          if MD = mdNormal then
+            DropBox_Difficulty.ItemIndex := I;
+          Inc(I);
+        end;
+        if not DropBox_Difficulty.IsSelected then
+          DropBox_Difficulty.ItemIndex := 0;
+        DropBox_Difficulty.DoSetVisible;
+        Label_Difficulty.DoSetVisible;
+      end else begin
+        Label_Difficulty.Hide;
+        DropBox_Difficulty.Hide;
+      end;
 
       DropBox_Loc.SelectByTag(fMaps[MapId].DefaultHuman);
 
@@ -449,6 +482,9 @@ begin
 
   DropBox_Loc.Clear;
   DropBox_Color.Clear;
+  DropBox_Difficulty.Clear;
+  Label_Difficulty.Hide;
+  DropBox_Difficulty.Hide;
 
   ResetExtraInfo;
 end;
@@ -473,7 +509,7 @@ begin
     Image_Allies[I].Hide;
     Image_Enemies[I].Hide;
   end;
-  Button_SingleStart.Disable;
+  Button_Start.Disable;
 end;
 
 
@@ -483,6 +519,11 @@ begin
     fSingleLoc := DropBox_Loc.GetSelectedTag
   else
     fSingleLoc := -1;
+
+  if DropBox_Difficulty.Visible and DropBox_Difficulty.IsSelected then
+    fDifficulty := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag)
+  else
+    fDifficulty := mdNone;
 
   //Don't allow selecting separator
   if DropBox_Color.ItemIndex = 1 then
@@ -503,7 +544,7 @@ var
   M: TKMapInfo;
   G: TKMMapGoalInfo;
 begin
-  if (fSingleLoc <> -1) and (ColumnBox_Maps.IsSelected) then
+   if (fSingleLoc <> -1) and (ColumnBox_Maps.IsSelected) then
   begin
     MapId := ColumnBox_Maps.SelectedItem.Tag;
     //Do not update same item several times
@@ -568,7 +609,7 @@ begin
         fMaps.Unlock;
       end;
 
-      Button_SingleStart.Enable;
+      Button_Start.Enable;
     end;
   end;
 end;
@@ -579,7 +620,7 @@ var
   I: Integer;
 begin
   //This is also called by double clicking on a list entry
-  if not Button_SingleStart.Enabled then
+  if not Button_Start.Enabled then
     Exit;
 
   fMaps.Lock;
@@ -591,7 +632,7 @@ begin
         fMaps.TerminateScan;
 
         //Provide mission FileName mask and title here
-        gGameApp.NewSingleMap(fMaps[I].FullPath('.dat'), fMaps[I].FileName, fSingleLoc, fSingleColor);
+        gGameApp.NewSingleMap(fMaps[I].FullPath('.dat'), fMaps[I].FileName, fSingleLoc, fSingleColor, fDifficulty);
         Exit;
       end;
   finally
