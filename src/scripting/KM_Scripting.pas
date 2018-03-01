@@ -1293,6 +1293,7 @@ begin
   LoadStream.ReadAssert('Script');
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
+  gScriptEvents.Load(LoadStream);
 
   if fScriptCode <> '' then
     CompileScript;
@@ -1400,6 +1401,7 @@ begin
   //Write script code
   SaveStream.WriteHugeString(fScriptCode);
   SaveStream.WriteA(fCampaignDataTypeCode);
+  gScriptEvents.Save(SaveStream);
 
   //Write script global variables
   SaveStream.Write(fExec.GetVarCount);

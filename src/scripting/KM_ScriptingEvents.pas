@@ -5,7 +5,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime, uPSDebugger,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes;
+  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
 
 
 type
@@ -44,7 +44,7 @@ type
 
     constructor Create(aExec: TPSDebugExec; aIDCache: TKMScriptingIdCache);
 
-    procedure AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: UnicodeString);
+    procedure AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: AnsiString);
     procedure LinkEvents;
 
     procedure ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
@@ -84,6 +84,9 @@ type
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
     procedure ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
     procedure ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -96,7 +99,7 @@ uses
   uPSUtils,
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
-  KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
+  KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos,
   KM_UnitsCollection, KM_PathFindingRoad;
 
 
@@ -214,7 +217,7 @@ begin
 end;
 
 
-procedure TKMScriptEvents.AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: UnicodeString);
+procedure TKMScriptEvents.AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: AnsiString);
 var
   I, Len: Integer;
 begin
@@ -229,6 +232,39 @@ begin
   Len := Length(fEventHandlers[aEventType]);
   SetLength(fEventHandlers[aEventType], Len + 1);
   fEventHandlers[aEventType][Len].Name := aEventHandlerName;
+end;
+
+
+procedure TKMScriptEvents.Save(SaveStream: TKMemoryStream);
+var
+  I: Integer;
+  ET: TKMScriptEventType;
+begin
+  for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
+  begin
+    SaveStream.Write(Byte(High(fEventHandlers[ET])));
+    for I := 1 to High(fEventHandlers[ET]) do //Start from 1, as we do not need to save default (0) handler
+      SaveStream.WriteA(fEventHandlers[ET][I].Name);
+  end;
+end;
+
+
+procedure TKMScriptEvents.Load(LoadStream: TKMemoryStream);
+var
+  Cnt: Byte;
+  HandlerName: AnsiString;
+  I: Integer;
+  ET: TKMScriptEventType;
+begin
+  for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
+  begin
+    LoadStream.Read(Cnt);
+    for I := 0 to Cnt - 1 do //Start from 1, as we do not need to save default (0) handler
+    begin
+      LoadStream.ReadA(HandlerName);
+      AddEventHandlerName(ET, HandlerName)
+    end;
+  end;
 end;
 
 
