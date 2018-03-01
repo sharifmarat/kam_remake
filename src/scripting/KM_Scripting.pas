@@ -1763,6 +1763,11 @@ begin
   if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
   begin
     aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+    //Do not do anything for while in MapEd
+    //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+    if gGame.IsMapEditor then Exit;
+
     try
       DirectiveParams := TStringList.Create;
       StringSplit(DirectiveParam, ':', DirectiveParams);
