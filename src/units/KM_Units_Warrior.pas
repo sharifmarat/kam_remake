@@ -24,6 +24,7 @@ type
 
   TKMUnitWarrior = class(TKMUnit)
   private
+    fGroup: pointer; // Warrior's group (pointer will be converted to TKMUnitGroup in TKMHandsCollection.GetGroupByMember
     fNextOrder: TKMWarriorOrder; //New order we should perform as soon as we can change tasks
     fOrder: TKMWarriorOrder; //Order we are performing
     fOrderLoc: TKMPoint; //Dir is the direction to face after order
@@ -58,6 +59,9 @@ type
     procedure SyncLoad; override;
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); override;
     destructor Destroy; override;
+
+    property Group: pointer read fGroup; // Property for GetGroupByMember function
+    procedure SetGroup(aGroup: pointer); // This procedure should not be called by anyone except UnitGroups class (it is out of property)
 
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
     procedure KillUnit(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
@@ -99,7 +103,7 @@ implementation
 uses
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
-  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand,
+  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroups,
   KM_ResWares, KM_Game, KM_ResHouses;
 
 
@@ -107,6 +111,7 @@ uses
 constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
+  fGroup             := nil;
   fOrderTargetUnit   := nil;
   fOrderTargetHouse  := nil;
   fRequestedFood     := False;
@@ -119,6 +124,7 @@ end;
 constructor TKMUnitWarrior.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
+  LoadStream.Read(fGroup, 4); //subst on syncload
   LoadStream.Read(fNextOrder, SizeOf(fNextOrder));
   LoadStream.Read(fOrder, SizeOf(fOrder));
   LoadStream.Read(fOrderLoc);
@@ -135,10 +141,37 @@ end;
 procedure TKMUnitWarrior.SyncLoad;
 begin
   inherited;
+  fGroup := TKMUnitGroup(  gHands.GetGroupByUID( Cardinal(fGroup) )  );
   fOrderTargetUnit := TKMUnitWarrior(gHands.GetUnitByUID(cardinal(fOrderTargetUnit)));
   fOrderTargetHouse := gHands.GetHouseByUID(cardinal(fOrderTargetHouse));
   if GetUnitAction is TUnitActionGoInOut then
     TUnitActionGoInOut(GetUnitAction).OnWalkedOut := WalkedOut;
+end;
+
+
+procedure TKMUnitWarrior.Save(SaveStream: TKMemoryStream);
+begin
+  inherited;
+  if (fGroup <> nil) then
+    SaveStream.Write( TKMUnitGroup(fGroup).UID) //Store ID
+  else
+    SaveStream.Write(Integer(0));
+  SaveStream.Write(fNextOrder, SizeOf(fNextOrder));
+  SaveStream.Write(fOrder, SizeOf(fOrder));
+  SaveStream.Write(fOrderLoc);
+  if fOrderTargetHouse <> nil then
+    SaveStream.Write(fOrderTargetHouse.UID) //Store ID
+  else
+    SaveStream.Write(Integer(0));
+  if fOrderTargetUnit <> nil then
+    SaveStream.Write(fOrderTargetUnit.UID) //Store ID
+  else
+    SaveStream.Write(Integer(0));
+  SaveStream.Write(fRequestedFood);
+  SaveStream.Write(fStormDelay);
+  SaveStream.Write(fUseExactTarget);
+  SaveStream.Write(FaceDir);
+  SaveStream.Write(fLastShootTime);
 end;
 
 
@@ -156,8 +189,16 @@ destructor TKMUnitWarrior.Destroy;
 begin
   //This ensures that pointer usage tracking is reset
   ClearOrderTarget;
+  gHands.CleanUpGroupPointer( TKMUnitGroup(fGroup) );
 
   inherited;
+end;
+
+
+procedure TKMUnitWarrior.SetGroup(aGroup: pointer);
+begin
+  gHands.CleanUpGroupPointer( TKMUnitGroup(fGroup) );
+  fGroup := TKMUnitGroup(aGroup).GetGroupPointer();
 end;
 
 
@@ -479,28 +520,6 @@ procedure TKMUnitWarrior.OrderFight(aTargetUnit: TKMUnit);
 begin
   fNextOrder := woAttackUnit;
   SetOrderTarget(aTargetUnit);
-end;
-
-
-procedure TKMUnitWarrior.Save(SaveStream: TKMemoryStream);
-begin
-  inherited;
-  SaveStream.Write(fNextOrder, SizeOf(fNextOrder));
-  SaveStream.Write(fOrder, SizeOf(fOrder));
-  SaveStream.Write(fOrderLoc);
-  if fOrderTargetHouse <> nil then
-    SaveStream.Write(fOrderTargetHouse.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
-  if fOrderTargetUnit <> nil then
-    SaveStream.Write(fOrderTargetUnit.UID) //Store ID
-  else
-    SaveStream.Write(Integer(0));
-  SaveStream.Write(fRequestedFood);
-  SaveStream.Write(fStormDelay);
-  SaveStream.Write(fUseExactTarget);
-  SaveStream.Write(FaceDir);
-  SaveStream.Write(fLastShootTime);
 end;
 
 
