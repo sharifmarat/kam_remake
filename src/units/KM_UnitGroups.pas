@@ -636,6 +636,7 @@ begin
   //Member reports to Group if something happens to him, so that Group can apply its logic
   aWarrior.OnPickedFight := Member_PickedFight;
   aWarrior.OnWarriorDied := Member_Died;
+  aWarrior.SetGroup(Self);
 end;
 
 
