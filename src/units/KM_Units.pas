@@ -1400,7 +1400,7 @@ begin
 
   fHitPoints := Max(fHitPoints - aAmount, 0);
 
-  gScriptEvents.ProcUnitWounded(Self, aAttacker);
+  gHands[Owner].AI.UnitHPDecreaseNotification(Self, aAttacker);
 
   //Make sure to kill only once
   if (fHitPoints = 0) and not IsDeadOrDying then
