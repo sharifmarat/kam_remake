@@ -311,7 +311,7 @@ end;
 function TKMScriptUtils.BoolToStr(aBool: Boolean): AnsiString;
 begin
   try
-    Result := SysUtils.BoolToStr(aBool, True);
+    Result := AnsiString(SysUtils.BoolToStr(aBool, True));
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;

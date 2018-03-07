@@ -1815,7 +1815,7 @@ begin
       if EventType = -1 then
         fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParams[0]), Parser.Row, Parser.Col]));
 
-      gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), Trim(DirectiveParams[1]));
+      gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParams[1])));
       DirectiveParams.Free;
     except
       on E: Exception do
