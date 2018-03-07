@@ -149,6 +149,7 @@ type
     property FlagColor: Cardinal read GetFlagColor;
     function IsFlagRenderBeforeUnit: Boolean;
 
+    property OrderLoc: TKMPointDir read fOrderLoc;
     property OrderTargetUnit: TKMUnit read GetOrderTargetUnit write SetOrderTargetUnit;
     property OrderTargetGroup: TKMUnitGroup read GetOrderTargetGroup;
     property OrderTargetHouse: TKMHouse read GetOrderTargetHouse write SetOrderTargetHouse;
