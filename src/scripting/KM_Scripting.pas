@@ -1197,7 +1197,7 @@ begin
       RegisterMethod(@TKMScriptUtils.MinInArrayI,                               'MinInArrayI');
       RegisterMethod(@TKMScriptUtils.MinInArrayS,                               'MinInArrayS');
 
-      RegisterMethod(@TKMScriptUtils.Power,                                     'POWER');
+      RegisterMethod(@TKMScriptUtils.Power,                                     'Power');
 
       RegisterMethod(@TKMScriptUtils.SumI,                                      'SumI');
       RegisterMethod(@TKMScriptUtils.SumS,                                      'SumS');
