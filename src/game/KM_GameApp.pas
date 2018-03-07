@@ -33,8 +33,8 @@ type
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
-    procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
+    procedure LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
@@ -553,7 +553,8 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
+//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
+procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
 var
   LoadError: UnicodeString;
 begin
@@ -590,7 +591,8 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
+procedure TKMGameApp.LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                                         aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 var
   LoadError: UnicodeString;
