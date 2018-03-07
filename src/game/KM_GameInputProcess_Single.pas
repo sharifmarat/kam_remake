@@ -6,12 +6,12 @@ uses
 
 
 type
-  TGameInputProcess_Single = class(TGameInputProcess)
+  TKMGameInputProcess_Single = class(TKMGameInputProcess)
   private
     fCurrTick: Cardinal;
     fLastTick: Cardinal;
   protected
-    procedure TakeCommand(aCommand: TGameInputCommand); override;
+    procedure TakeCommand(aCommand: TKMGameInputCommand); override;
     procedure SaveExtra(aStream: TKMemoryStream); override;
     procedure LoadExtra(aStream: TKMemoryStream); override;
   public
@@ -28,7 +28,7 @@ uses
   KM_Game, KM_Defaults, KM_CommonUtils;
 
 
-procedure TGameInputProcess_Single.TakeCommand(aCommand: TGameInputCommand);
+procedure TKMGameInputProcess_Single.TakeCommand(aCommand: TKMGameInputCommand);
 begin
   if gGame.IsReplay then Exit;
 
@@ -37,7 +37,7 @@ begin
 end;
 
 
-procedure TGameInputProcess_Single.ReplayTimer(aTick: Cardinal);
+procedure TKMGameInputProcess_Single.ReplayTimer(aTick: Cardinal);
 var
   MyRand: Cardinal;
 begin
@@ -66,7 +66,7 @@ begin
 end;
 
 
-procedure TGameInputProcess_Single.RunningTimer(aTick: Cardinal);
+procedure TKMGameInputProcess_Single.RunningTimer(aTick: Cardinal);
 begin
   inherited;
 
@@ -74,7 +74,7 @@ begin
 end;
 
 
-function TGameInputProcess_Single.GetLastTick: Cardinal;
+function TKMGameInputProcess_Single.GetLastTick: Cardinal;
 begin
   if IsLastTickValueCorrect(fLastTick) then
     Result := fLastTick
@@ -83,26 +83,26 @@ begin
 end;
 
 
-function TGameInputProcess_Single.ReplayEnded: Boolean;
+function TKMGameInputProcess_Single.ReplayEnded: Boolean;
 begin
   Result := inherited and (not IsLastTickValueCorrect(fLastTick) or (fLastTick <= fCurrTick));
 end;
 
 
-procedure TGameInputProcess_Single.UpdateState(aTick: Cardinal);
+procedure TKMGameInputProcess_Single.UpdateState(aTick: Cardinal);
 begin
   fCurrTick := aTick;
 end;
 
 
-procedure TGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
 begin
   //no inherited here. We override parent behaviour
   aStream.Write(fCurrTick);
 end;
 
 
-procedure TGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
 begin
   //no inherited here. We override parent behaviour
   aStream.Read(fLastTick);

@@ -20,7 +20,7 @@ type
     fTimerGame: TTimer;
     fGameOptions: TKMGameOptions;
     fNetworking: TKMNetworking;
-    fGameInputProcess: TGameInputProcess;
+    fGameInputProcess: TKMGameInputProcess;
     fTextMission: TKMTextLibraryMulti;
     fPathfinding: TPathFinding;
     fPerfLog: TKMPerfLog;
@@ -177,7 +177,7 @@ type
 
     property Networking: TKMNetworking read fNetworking;
     property Pathfinding: TPathFinding read fPathfinding;
-    property GameInputProcess: TGameInputProcess read fGameInputProcess;
+    property GameInputProcess: TKMGameInputProcess read fGameInputProcess;
     property GameOptions: TKMGameOptions read fGameOptions;
     property ActiveInterface: TKMUserInterfaceGame read fActiveInterface;
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
@@ -468,13 +468,13 @@ begin
     case fGameMode of
       gmMulti, gmMultiSpectate:
                 begin
-                  fGameInputProcess := TGameInputProcess_Multi.Create(gipRecording, fNetworking);
+                  fGameInputProcess := TKMGameInputProcess_Multi.Create(gipRecording, fNetworking);
                   fTextMission := TKMTextLibraryMulti.Create;
                   fTextMission.LoadLocale(ChangeFileExt(aMissionFile, '.%s.libx'));
                 end;
       gmSingle, gmCampaign:
                 begin
-                  fGameInputProcess := TGameInputProcess_Single.Create(gipRecording);
+                  fGameInputProcess := TKMGameInputProcess_Single.Create(gipRecording);
                   fTextMission := TKMTextLibraryMulti.Create;
                   fTextMission.LoadLocale(ChangeFileExt(aMissionFile, '.%s.libx'));
                 end;
@@ -577,7 +577,7 @@ begin
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
       if fNetworking.SelectGameKind = ngk_Save then
-        TGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(handIndex, gHands[handIndex].HandType);
+        TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(handIndex, gHands[handIndex].HandType);
 
       //Set owners name so we can write it into savegame/replay
       gHands[handIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
@@ -611,7 +611,7 @@ begin
 
   fNetworking.OnPlay           := GameMPPlay;
   fNetworking.OnReadyToPlay    := GameMPReadyToPlay;
-  fNetworking.OnCommands       := TGameInputProcess_Multi(fGameInputProcess).RecieveCommands;
+  fNetworking.OnCommands       := TKMGameInputProcess_Multi(fGameInputProcess).RecieveCommands;
   fNetworking.OnTextMessage    := fGamePlayInterface.ChatMessage;
   fNetworking.OnPlayersSetup   := fGamePlayInterface.AlliesOnPlayerSetup;
   fNetworking.OnPingInfo       := fGamePlayInterface.AlliesOnPingInfo;
@@ -888,7 +888,7 @@ begin
   case fNetworking.NetGameState of
     lgs_Game, lgs_Reconnecting:
         //GIP is waiting for next tick
-        Result := TGameInputProcess_Multi(fGameInputProcess).GetWaitingPlayers(fGameTickCount + 1);
+        Result := TKMGameInputProcess_Multi(fGameInputProcess).GetWaitingPlayers(fGameTickCount + 1);
     lgs_Loading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
@@ -942,7 +942,7 @@ begin
   gHands.AfterMissionInit(false);
 
   if fGameMode in [gmSingle, gmCampaign] then
-    fGameInputProcess := TGameInputProcess_Single.Create(gipRecording);
+    fGameInputProcess := TKMGameInputProcess_Single.Create(gipRecording);
 
   //When everything is ready we can update UI
   fActiveInterface.SyncUI;
@@ -1299,7 +1299,7 @@ begin
 
   //Need to adjust the delay immediately in MP
   if IsMultiplayer and (fGameInputProcess <> nil) then
-    TGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeed);
+    TKMGameInputProcess_Multi(fGameInputProcess).AdjustDelay(fGameSpeed);
 
   if Assigned(gGameApp.OnGameSpeedChange) then
     gGameApp.OnGameSpeedChange(fGameSpeed);
@@ -1629,12 +1629,12 @@ begin
       fGamePlayInterface.Load(LoadStream);
 
     if IsReplay then
-      fGameInputProcess := TGameInputProcess_Single.Create(gipReplaying) //Replay
+      fGameInputProcess := TKMGameInputProcess_Single.Create(gipReplaying) //Replay
     else
       if fGameMode in [gmMulti, gmMultiSpectate] then
-        fGameInputProcess := TGameInputProcess_Multi.Create(gipRecording, fNetworking) //Multiplayer
+        fGameInputProcess := TKMGameInputProcess_Multi.Create(gipRecording, fNetworking) //Multiplayer
       else
-        fGameInputProcess := TGameInputProcess_Single.Create(gipRecording); //Singleplayer
+        fGameInputProcess := TKMGameInputProcess_Single.Create(gipRecording); //Singleplayer
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
@@ -1762,7 +1762,7 @@ end;
 
 procedure TKMGame.IssueAutosaveCommand(aAfterPT: Boolean = False);
 var
-  GICType: TGameInputCommandType;
+  GICType: TKMGameInputCommandType;
 begin
   if (fLastAutosaveTime > 0) and (GetTimeSince(fLastAutosaveTime) < AUTOSAVE_NOT_MORE_OFTEN_THEN) then
     Exit; //Do not do autosave too often, because it can produce IO errors. Can happen on very fast speedups
@@ -1854,7 +1854,7 @@ begin
                     else
                     begin
                       fGameInputProcess.WaitingForConfirmation(fGameTickCount);
-                      if TGameInputProcess_Multi(fGameInputProcess).GetNumberConsecutiveWaits > 10 then
+                      if TKMGameInputProcess_Multi(fGameInputProcess).GetNumberConsecutiveWaits > 10 then
                         WaitingPlayersDisplay(True);
                     end;
                     fGameInputProcess.UpdateState(fGameTickCount); //Do maintenance
