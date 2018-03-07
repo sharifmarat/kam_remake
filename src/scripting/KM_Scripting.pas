@@ -326,6 +326,8 @@ begin
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
+    Sender.AddTypeS('TKMAIAttackTarget', '(att_ClosestUnit, att_ClosestBuildingFromArmy, att_ClosestBuildingFromStartPos, att_CustomPosition)');
+
     Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
     Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
 
@@ -477,6 +479,11 @@ begin
     RegisterMethodCheck(c, 'function WareTypeName(aWareType: Byte): AnsiString');
 
     c := Sender.AddClassN(nil, AnsiString(fActions.ClassName));
+    RegisterMethodCheck(c, 'function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;' +
+                           'aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; ' +
+                           'aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer');
+    RegisterMethodCheck(c, 'function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean');
+    RegisterMethodCheck(c, 'procedure AIAttackRemoveAll(aPlayer: Byte)');
     RegisterMethodCheck(c, 'procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word)');
     RegisterMethodCheck(c, 'procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean)');
     RegisterMethodCheck(c, 'procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean)');
@@ -1000,6 +1007,9 @@ begin
 
     with ClassImp.Add(TKMScriptActions) do
     begin
+      RegisterMethod(@TKMScriptActions.AIAttackAdd,                             'AIAttackAdd');
+      RegisterMethod(@TKMScriptActions.AIAttackRemove,                          'AIAttackRemove');
+      RegisterMethod(@TKMScriptActions.AIAttackRemoveAll,                       'AIAttackRemoveAll');
       RegisterMethod(@TKMScriptActions.AIAutoAttackRange,                       'AIAutoAttackRange');
       RegisterMethod(@TKMScriptActions.AIAutoBuild,                             'AIAutoBuild');
       RegisterMethod(@TKMScriptActions.AIAutoDefence,                           'AIAutoDefence');

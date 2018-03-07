@@ -2,7 +2,7 @@ unit KM_ScriptingActions;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Math, SysUtils, StrUtils, uPSRuntime,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
   KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
@@ -12,6 +12,11 @@ type
   private
     procedure LogStr(aText: String);
   public
+    function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
+                         aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
+                         aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+    function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+    procedure AIAttackRemoveAll(aPlayer: Byte);
     procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word);
     procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean);
     procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean);
@@ -976,6 +981,77 @@ begin
     end
     else
       LogParamWarning('Actions.GiveHouseSite', [aPlayer, aHouseType, X, Y, byte(aAddMaterials)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Add AI attack 
+//* aPlayer - playerID
+//* aRepeating - is attack repeating
+//* aDelay - attack delay
+//* aTotalMen - total soldiers to attack
+//* aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount - soldiers groups count
+//* aRandomGroups - use random groups for attack
+//* aTarget - attack target of TKMAIAttackTarget type. possible values: 
+//*   (att_ClosestUnit, att_ClosestBuildingFromArmy, att_ClosestBuildingFromStartPos, att_CustomPosition)
+//* aCustomPosition - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
+//* Result: Attack ID, that could be used for attack remove in the future
+function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
+                                      aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
+                                      aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+var
+  AttackType: TKMAIAttackType;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    begin
+      if aRepeating then
+        AttackType := aat_Repeating
+      else
+        AttackType := aat_Once;
+        
+      Result := gHands[aPlayer].AI.General.Attacks.AddAttack(AttackType, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount, aRandomGroups, aTarget, 0, aCustomPosition);
+    end else
+      LogParamWarning('Actions.AIAttackAdd', [aPlayer, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove AI attack by attack ID
+//* Result: true, if attack was succesfully removed, false, if attack was not found
+function TKMScriptActions.AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.General.Attacks.RemoveAttack(aAIAttackId)
+    else
+      LogParamWarning('Actions.AIAttackRemove', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove all AI attacks
+procedure TKMScriptActions.AIAttackRemoveAll(aPlayer: Byte);
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      gHands[aPlayer].AI.General.Attacks.Clear
+    else
+      LogParamWarning('Actions.AIAttackRemoveAll', [aPlayer]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

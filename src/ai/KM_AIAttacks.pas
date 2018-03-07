@@ -25,6 +25,7 @@ type
 
   //Records must be packed so they are stored identically in MP saves (? padding bytes are unknown values)
   TKMAIAttack = packed record
+    Id: Word; //Attack ID, used to remove attack from script
     AttackType: TKMAIAttackType; //Once or repeating
     HasOccured: Boolean; //Has this attack happened already?
     Delay: Cardinal; //The attack will not occur before this time has passed
@@ -39,16 +40,26 @@ type
 
   TKMAIAttacks = class
   private
+    fGlobalAttackId: Word; //global attack id counter
     fCount: Integer;
     fAttacks: array of TKMAIAttack;
     function GetAttack(aIndex: Integer): TKMAIAttack;
     procedure SetAttack(aIndex: Integer; const aValue: TKMAIAttack);
   public
+    constructor Create;
+
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMAIAttack read GetAttack write SetAttack; default;
 
-    procedure AddAttack(aAttack: TAIAttack);
-    procedure AddAttack(aAttack: TKMAIAttack);
+    function GetNextAttackId: Word;
+
+    function AddAttack(aAttack: TKMAIAttack): Word; overload;
+    function AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer; aGroupAmounts: TKMGroupTypeArray;
+                       aTakeAll: Boolean; aTarget: TKMAIAttackTarget; aRange: Integer; aCustomPosition: TKMPoint): Word; overload;
+    function AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer;
+                       aMeleeCount, aAntiHorseCount, aRangedCount, aMountedCount: Word;
+                       aTakeAll: Boolean; aTarget: TKMAIAttackTarget; aRange: Integer; aCustomPosition: TKMPoint): Word; overload;
+    function RemoveAttack(aAttackId: Word): Boolean;
     procedure Delete(aIndex: Integer);
     function CanOccur(aIndex: Integer; const aMenAvailable: TKMGroupTypeArray; const aGroupsAvailable: TKMGroupTypeArray; aTick: Cardinal): Boolean;
     procedure HasOccured(aIndex: Integer);
@@ -65,7 +76,13 @@ uses
 
 
 { TAIAttacks }
-function TAIAttacks.CanOccur(aIndex: Integer; const aMenAvailable: TKMGroupTypeArray; const aGroupsAvailable: TKMGroupTypeArray; aTick: Cardinal): Boolean;
+constructor TKMAIAttacks.Create;
+begin
+  fGlobalAttackId := 0;
+end;
+
+
+function TKMAIAttacks.CanOccur(aIndex: Integer; const aMenAvailable: TKMGroupTypeArray; const aGroupsAvailable: TKMGroupTypeArray; aTick: Cardinal): Boolean;
 var
   GT: TKMGroupType;
   TotalMenAvailable: Word;
@@ -102,13 +119,71 @@ begin
 end;
 
 
-procedure TKMAIAttacks.AddAttack(aAttack: TKMAIAttack);
+function TKMAIAttacks.GetNextAttackId: Word;
+begin
+  Inc(fGlobalAttackId);
+  Result := fGlobalAttackId;
+end;
+
+
+function TKMAIAttacks.AddAttack(aAttack: TKMAIAttack): Word;
 begin
   if fCount >= Length(fAttacks) then
     SetLength(fAttacks, fCount + 16);
 
+  aAttack.Id := GetNextAttackId;
   fAttacks[fCount] := aAttack;
   Inc(fCount);
+  Result := aAttack.Id;
+end;
+
+
+function TKMAIAttacks.AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer; aGroupAmounts: TKMGroupTypeArray;
+                                aTakeAll: Boolean; aTarget: TKMAIAttackTarget; aRange: Integer; aCustomPosition: TKMPoint): Word;
+var
+  Attack: TKMAIAttack;
+begin
+  Attack.AttackType     := aAttackType;
+  Attack.HasOccured     := False;
+  Attack.Delay          := aDelay;
+  Attack.TotalMen       := aTotalMen;
+  Attack.GroupAmounts   := aGroupAmounts;
+  Attack.TakeAll        := aTakeAll;
+  Attack.Target         := aTarget;
+  Attack.Range          := aRange;
+  Attack.CustomPosition := aCustomPosition;
+  Result := AddAttack(Attack);
+end;
+
+
+function TKMAIAttacks.AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer;
+                                aMeleeCount, aAntiHorseCount, aRangedCount, aMountedCount: Word;
+                                aTakeAll: Boolean; aTarget: TKMAIAttackTarget; aRange: Integer; aCustomPosition: TKMPoint): Word;
+var
+  GroupAmounts: TKMGroupTypeArray;
+begin
+  GroupAmounts[gt_Melee]      := aMeleeCount;
+  GroupAmounts[gt_AntiHorse]  := aAntiHorseCount;
+  GroupAmounts[gt_Ranged]     := aRangedCount;
+  GroupAmounts[gt_Mounted]    := aMountedCount;
+  Result := AddAttack(aAttackType, aDelay, aTotalMen, GroupAmounts, aTakeAll, aTarget, aRange, aCustomPosition);
+end;
+
+
+//Remove AIAttack by its ID
+//Result - true, if delete was succesfull, false, if no AIAttack was found
+function TKMAIAttacks.RemoveAttack(aAttackId: Word): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to fCount - 1 do
+    if fAttacks[I].Id = aAttackId then
+    begin
+      Delete(I);
+      Result := True;
+      Exit;
+    end;
 end;
 
 
