@@ -17,10 +17,10 @@ const
 
 type
   //Indexes must match with KaM script values (for now)
-  TKMAIAttackTarget = (att_ClosestUnit=0, //Closest enemy unit (untested as to whether this is relative to army or start position)
-                     att_ClosestBuildingFromArmy=1, //Closest building from the group(s) lauching the attack
-                     att_ClosestBuildingFromStartPos=2, //Closest building from the AI's start position
-                     att_CustomPosition=3); //Custom point defined with CustomPosition
+  TKMAIAttackTarget = (att_ClosestUnit, //Closest enemy unit (untested as to whether this is relative to army or start position)
+                       att_ClosestBuildingFromArmy, //Closest building from the group(s) lauching the attack
+                       att_ClosestBuildingFromStartPos, //Closest building from the AI's start position
+                       att_CustomPosition); //Custom point defined with CustomPosition
 
 
   //Records must be packed so they are stored identically in MP saves (? padding bytes are unknown values)
