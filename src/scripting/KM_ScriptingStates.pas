@@ -38,6 +38,7 @@ type
 
     function GameTime: Cardinal;
 
+    function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean;
     function GroupAt(aX, aY: Word): Integer;
     function GroupColumnCount(aGroupID: Integer): Integer;
     function GroupDead(aGroupID: Integer): Boolean;
@@ -2953,6 +2954,35 @@ function TKMScriptStates.UnitLowHunger: Integer;
 begin
   try
     Result := UNIT_MIN_CONDITION*CONDITION_PACE;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if target Group is assigned to the Defence Position at coordinates X, Y
+//* Result: Group assigned to Defence position
+function TKMScriptStates.GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean;
+var
+  G: TKMUnitGroup;
+  DefPos: TAIDefencePosition;
+begin
+  try
+    Result := False;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+      begin
+        DefPos := gHands[G.Owner].AI.General.DefencePositions.FindPositionOf(G);
+        if DefPos <> nil then
+          Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y);
+      end;
+    end
+    else
+      LogParamWarning('States.GroupAssignedToDefencePosition', [aGroupID, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

@@ -362,6 +362,7 @@ begin
 
     RegisterMethodCheck(c, 'function GameTime: Cardinal');
 
+    RegisterMethodCheck(c, 'function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupAt(aX, aY: Word): Integer');
     RegisterMethodCheck(c, 'function GroupColumnCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupDead(aGroupID: Integer): Boolean');
@@ -887,6 +888,7 @@ begin
 
       RegisterMethod(@TKMScriptStates.GameTime,                                 'GameTime');
 
+      RegisterMethod(@TKMScriptStates.GroupAssignedToDefencePosition,           'GroupAssignedToDefencePosition');
       RegisterMethod(@TKMScriptStates.GroupAt,                                  'GroupAt');
       RegisterMethod(@TKMScriptStates.GroupColumnCount,                         'GroupColumnCount');
       RegisterMethod(@TKMScriptStates.GroupDead,                                'GroupDead');
