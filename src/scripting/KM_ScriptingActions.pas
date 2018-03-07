@@ -990,19 +990,16 @@ end;
 
 //* Version: 7000+
 //* Add AI attack 
-//* aPlayer - playerID
-//* aRepeating - is attack repeating
-//* aDelay - attack delay
-//* aTotalMen - total soldiers to attack
-//* aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount - soldiers groups count
-//* aRandomGroups - use random groups for attack
-//* aTarget - attack target of TKMAIAttackTarget type. possible values: 
-//*   (att_ClosestUnit, att_ClosestBuildingFromArmy, att_ClosestBuildingFromStartPos, att_CustomPosition)
-//* aCustomPosition - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
-//* Result: Attack ID, that could be used for attack remove in the future
-function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
-                                      aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
-                                      aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+//** aPlayer - playerID
+//** aRepeating - is attack repeating
+//** aDelay - attack delay
+//** aTotalMen - total soldiers to attack
+//** aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount - soldiers groups count
+//** aRandomGroups - use random groups for attack
+//** aTarget - attack target of TKMAIAttackTarget type. possible values (att_ClosestUnit, att_ClosestBuildingFromArmy, att_ClosestBuildingFromStartPos, att_CustomPosition)
+//** aCustomPosition - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
+//** Result: Attack ID, that could be used for attack remove in the future
+function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer; aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
 var
   AttackType: TKMAIAttackType;
 begin
