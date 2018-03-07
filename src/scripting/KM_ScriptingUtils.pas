@@ -3,7 +3,7 @@ unit KM_ScriptingUtils;
 
 interface
 uses
-  Math, SysUtils, uPSRuntime,
+  Math, uPSRuntime,
   KM_ScriptingEvents, KM_CommonTypes;
 
 type
@@ -24,6 +24,8 @@ type
 
     function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray;
     function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray;
+
+    function BoolToStr(aBool: Boolean): AnsiString;
 
     function EnsureRangeI(aValue, aMin, aMax: Integer): Integer;
     function EnsureRangeS(aValue, aMin, aMax: Single): Single;
@@ -67,7 +69,7 @@ type
 implementation
 
 uses
-  KM_CommonUtils;
+  SysUtils, KM_CommonUtils;
 
 { TKMScriptingUtils }
 
@@ -297,6 +299,19 @@ begin
       DeleteFromArray(aArray, aIndex);
       Result := aArray;
     end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Return string representation of Boolean value: 'True' or 'False'
+function TKMScriptUtils.BoolToStr(aBool: Boolean): AnsiString;
+begin
+  try
+    Result := SysUtils.BoolToStr(aBool, True);
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;

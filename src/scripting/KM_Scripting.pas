@@ -628,6 +628,8 @@ begin
     RegisterMethodCheck(c, 'function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray');
     RegisterMethodCheck(c, 'function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray');
 
+    RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
+
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
@@ -1134,6 +1136,8 @@ begin
 
       RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexI,                         'ArrayRemoveIndexI');
       RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexS,                         'ArrayRemoveIndexS');
+
+      RegisterMethod(@TKMScriptUtils.BoolToStr,                                 'BoolToStr');
 
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
