@@ -5,49 +5,50 @@ uses
   KM_Defaults, KM_CommonClasses, KM_Points;
 
 type
-  TAIAttackType = (
+  TKMAIAttackType = (
     aat_Once,     // Attack will occur once (after the set time has passed and if they have enough troops
     aat_Repeating // Attack will happen multiple times, (after delay time) whenever the AI has enough troops
   );
 
 const
   //KaM uses 0 for repeating attack in TSK (disused and replaced with later by Remake), 1 for once and 2 for repeating in TPR
-  RemakeAttackType: array [0..2] of TAIAttackType = (aat_Repeating, aat_Once, aat_Repeating);
-  KaMAttackType: array [TAIAttackType] of Byte = (1, 0);
+  RemakeAttackType: array [0..2] of TKMAIAttackType = (aat_Repeating, aat_Once, aat_Repeating);
+  KaMAttackType: array [TKMAIAttackType] of Byte = (1, 0);
 
 type
   //Indexes must match with KaM script values (for now)
-  TAIAttackTarget = (att_ClosestUnit=0, //Closest enemy unit (untested as to whether this is relative to army or start position)
+  TKMAIAttackTarget = (att_ClosestUnit=0, //Closest enemy unit (untested as to whether this is relative to army or start position)
                      att_ClosestBuildingFromArmy=1, //Closest building from the group(s) lauching the attack
                      att_ClosestBuildingFromStartPos=2, //Closest building from the AI's start position
                      att_CustomPosition=3); //Custom point defined with CustomPosition
 
 
   //Records must be packed so they are stored identically in MP saves (? padding bytes are unknown values)
-  TAIAttack = packed record
-    AttackType: TAIAttackType; //Once or repeating
+  TKMAIAttack = packed record
+    AttackType: TKMAIAttackType; //Once or repeating
     HasOccured: Boolean; //Has this attack happened already?
     Delay: Cardinal; //The attack will not occur before this time has passed
     TotalMen: Integer; //Number of idle (i.e. back line) warriors required in the AI army before the attack will launch
     GroupAmounts: TKMGroupTypeArray; //How many squads of each group type will be taken
     TakeAll: Boolean; //Used instead of GroupAmounts, chooses groups randomly taking at most TotalMen warriors
-    Target: TAIAttackTarget;
+    Target: TKMAIAttackTarget;
     Range: Integer; //Will only occur when target is within this tile range (not properly tested yet)
     CustomPosition: TKMPoint; //Used when Target = att_CustomPosition
   end;
 
 
-  TAIAttacks = class
+  TKMAIAttacks = class
   private
     fCount: Integer;
-    fAttacks: array of TAIAttack;
-    function GetAttack(aIndex: Integer): TAIAttack;
-    procedure SetAttack(aIndex: Integer; const aValue: TAIAttack);
+    fAttacks: array of TKMAIAttack;
+    function GetAttack(aIndex: Integer): TKMAIAttack;
+    procedure SetAttack(aIndex: Integer; const aValue: TKMAIAttack);
   public
     property Count: Integer read fCount;
-    property Items[aIndex: Integer]: TAIAttack read GetAttack write SetAttack; default;
+    property Items[aIndex: Integer]: TKMAIAttack read GetAttack write SetAttack; default;
 
     procedure AddAttack(aAttack: TAIAttack);
+    procedure AddAttack(aAttack: TKMAIAttack);
     procedure Delete(aIndex: Integer);
     function CanOccur(aIndex: Integer; const aMenAvailable: TKMGroupTypeArray; const aGroupsAvailable: TKMGroupTypeArray; aTick: Cardinal): Boolean;
     procedure HasOccured(aIndex: Integer);
@@ -88,20 +89,20 @@ begin
 end;
 
 
-procedure TAIAttacks.HasOccured(aIndex: Integer);
+procedure TKMAIAttacks.HasOccured(aIndex: Integer);
 begin
   fAttacks[aIndex].HasOccured := True;
 end;
 
 
-procedure TAIAttacks.Clear;
+procedure TKMAIAttacks.Clear;
 begin
   SetLength(fAttacks, 0);
   fCount := 0;
 end;
 
 
-procedure TAIAttacks.AddAttack(aAttack: TAIAttack);
+procedure TKMAIAttacks.AddAttack(aAttack: TKMAIAttack);
 begin
   if fCount >= Length(fAttacks) then
     SetLength(fAttacks, fCount + 16);
@@ -111,7 +112,7 @@ begin
 end;
 
 
-procedure TAIAttacks.Delete(aIndex: Integer);
+procedure TKMAIAttacks.Delete(aIndex: Integer);
 begin
   Assert(InRange(aIndex, 0, Count - 1));
 
@@ -122,21 +123,21 @@ begin
 end;
 
 
-function TAIAttacks.GetAttack(aIndex: Integer): TAIAttack;
+function TKMAIAttacks.GetAttack(aIndex: Integer): TKMAIAttack;
 begin
   Assert(InRange(aIndex, 0, fCount - 1));
   Result := fAttacks[aIndex];
 end;
 
 
-procedure TAIAttacks.SetAttack(aIndex: Integer; const aValue: TAIAttack);
+procedure TKMAIAttacks.SetAttack(aIndex: Integer; const aValue: TKMAIAttack);
 begin
   Assert(InRange(aIndex, 0, fCount - 1));
   fAttacks[aIndex] := aValue;
 end;
 
 
-procedure TAIAttacks.Save(SaveStream: TKMemoryStream);
+procedure TKMAIAttacks.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
@@ -147,7 +148,7 @@ begin
 end;
 
 
-procedure TAIAttacks.Load(LoadStream: TKMemoryStream);
+procedure TKMAIAttacks.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

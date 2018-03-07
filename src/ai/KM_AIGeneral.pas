@@ -13,7 +13,7 @@ type
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fOwner: TKMHandIndex;
     fSetup: TKMHandAISetup;
-    fAttacks: TAIAttacks;
+    fAttacks: TKMAIAttacks;
     fDefencePositions: TAIDefencePositions;
 
     procedure CheckArmy;
@@ -21,14 +21,14 @@ type
     procedure CheckAttacks;
     procedure CheckAutoAttack;
     procedure CheckAutoDefend;
-    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy; override;
 
     procedure AfterMissionInit;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
-    property Attacks: TAIAttacks read fAttacks;
+    property Attacks: TKMAIAttacks read fAttacks;
     property DefencePositions: TAIDefencePositions read fDefencePositions;
     procedure RetaliateAgainstThreat(aAttacker: TKMUnit);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
@@ -63,7 +63,7 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
 
-  fAttacks := TAIAttacks.Create;
+  fAttacks := TKMAIAttacks.Create;
   fDefencePositions := TAIDefencePositions.Create;
 end;
 
@@ -381,7 +381,7 @@ end;
 
 procedure TKMGeneral.CheckAutoAttack;
 var
-  SimpleAttack: TAIAttack;
+  SimpleAttack: TKMAIAttack;
   H: TKMHouse;
 begin
   //Simple test for now
@@ -554,7 +554,7 @@ end;
 
 
 //See if we can attack our enemies
-procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
 var
   TargetHouse: TKMHouse;
   TargetUnit: TKMUnit;

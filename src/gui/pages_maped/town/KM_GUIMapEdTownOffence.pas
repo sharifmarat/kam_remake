@@ -84,7 +84,7 @@ end;
 //Add a dummy attack and let mapmaker edit it
 procedure TKMMapEdTownOffence.Attacks_Add(Sender: TObject);
 var
-  AA: TAIAttack;
+  AA: TKMAIAttack;
 begin
   FillChar(AA, SizeOf(AA), #0);
   gMySpectator.Hand.AI.General.Attacks.AddAttack(AA);
@@ -144,16 +144,16 @@ end;
 
 procedure TKMMapEdTownOffence.Attacks_Refresh;
 const
-  Typ: array [TAIAttackType] of String = ('O', 'R');
-  Tgt: array [TAIAttackTarget] of String = ('U', 'HA', 'HS', 'Pos');
-  TypeHint: array [TAIAttackType] of Integer = (TX_MAPED_AI_ATTACK_TYPE_ONCE, TX_MAPED_AI_ATTACK_TYPE_REP);
-  TargetHint: array [TAIAttackTarget] of Integer = (TX_MAPED_AI_TARGET_CLOSEST,
+  Typ: array [TKMAIAttackType] of String = ('O', 'R');
+  Tgt: array [TKMAIAttackTarget] of String = ('U', 'HA', 'HS', 'Pos');
+  TypeHint: array [TKMAIAttackType] of Integer = (TX_MAPED_AI_ATTACK_TYPE_ONCE, TX_MAPED_AI_ATTACK_TYPE_REP);
+  TargetHint: array [TKMAIAttackTarget] of Integer = (TX_MAPED_AI_TARGET_CLOSEST,
                                                    TX_MAPED_AI_TARGET_HOUSE_ARMY,
                                                    TX_MAPED_AI_TARGET_HOUSE_START,
                                                    TX_MAPED_AI_TARGET_CUSTOM);
 var
   I, Index, TopIndex: Integer;
-  A: TAIAttack;
+  A: TKMAIAttack;
   CustomPosS: String;
 begin
   TopIndex := ColumnBox_Attacks.TopIndex; //Save index and TopIndex to restore after refresh

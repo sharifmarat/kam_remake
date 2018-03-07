@@ -15,7 +15,7 @@ type
     fIndex: Integer;
     procedure Attack_Change(Sender: TObject);
     procedure Attack_Close(Sender: TObject);
-    procedure Attack_Refresh(aAttack: TAIAttack);
+    procedure Attack_Refresh(aAttack: TKMAIAttack);
     procedure Attack_Save;
     procedure Attack_Switch(Sender: TObject);
     function GetVisible: Boolean;
@@ -146,8 +146,8 @@ begin
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     NumEdit_AttackAmount[GT].Enabled := not CheckBox_AttackTakeAll.Checked;
 
-  NumEdit_AttackLocX.Enabled := (TAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
-  NumEdit_AttackLocY.Enabled := (TAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
+  NumEdit_AttackLocX.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
+  NumEdit_AttackLocY.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
 end;
 
 
@@ -161,7 +161,7 @@ begin
 end;
 
 
-procedure TKMMapEdTownAttack.Attack_Refresh(aAttack: TAIAttack);
+procedure TKMMapEdTownAttack.Attack_Refresh(aAttack: TKMAIAttack);
 var
   GT: TKMGroupType;
 begin
@@ -186,17 +186,17 @@ end;
 
 procedure TKMMapEdTownAttack.Attack_Save;
 var
-  AA: TAIAttack;
+  AA: TKMAIAttack;
   GT: TKMGroupType;
 begin
   //Copy attack info from controls to Attacks
-  AA.AttackType := TAIAttackType(Radio_AttackType.ItemIndex);
+  AA.AttackType := TKMAIAttackType(Radio_AttackType.ItemIndex);
   AA.Delay := NumEdit_AttackDelay.Value * 10;
   AA.TotalMen := NumEdit_AttackMen.Value;
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     AA.GroupAmounts[GT] := NumEdit_AttackAmount[GT].Value;
   AA.TakeAll := CheckBox_AttackTakeAll.Checked;
-  AA.Target := TAIAttackTarget(Radio_AttackTarget.ItemIndex);
+  AA.Target := TKMAIAttackTarget(Radio_AttackTarget.ItemIndex);
   AA.Range := TrackBar_AttackRange.Position;
   AA.CustomPosition := KMPoint(NumEdit_AttackLocX.Value, NumEdit_AttackLocY.Value);
 
