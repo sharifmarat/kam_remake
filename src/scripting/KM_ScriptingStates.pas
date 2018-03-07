@@ -10,6 +10,20 @@ uses
 type
   TKMScriptStates = class(TKMScriptEntity)
   public
+    function AIAutoAttackRange(aPlayer: Byte): Integer;
+    function AIAutoBuild(aPlayer: Byte): Boolean;
+    function AIAutoDefence(aPlayer: Byte): Boolean;
+    function AIAutoRepair(aPlayer: Byte): Boolean;
+    function AIDefendAllies(aPlayer: Byte): Boolean;
+    function AIEquipRate(aPlayer: Byte; aType: Byte): Integer;
+    procedure AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer);
+    function AIRecruitDelay(aPlayer: Byte): Integer;
+    function AIRecruitLimit(aPlayer: Byte): Integer;
+    function AISerfsPerHouse(aPlayer: Byte): Single;
+    function AISoldiersLimit(aPlayer: Byte): Integer;
+    function AIStartPosition(aPlayer: Byte): TKMPoint;
+    function AIWorkerLimit(aPlayer: Byte): Integer;
+
     function ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer;
     function ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer;
     function ClosestHouse(aPlayer, X, Y, aHouseType: Integer): Integer;
@@ -162,6 +176,255 @@ end;
 
 
 { TKMScriptStates }
+
+//* Version: 7000+
+//* Gets AI auto attack range.
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIAutoAttackRange(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoAttackRange
+    else
+      LogParamWarning('States.AIAutoAttackRange', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should build and manage his own village
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoBuild(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoBuild
+    else
+      LogParamWarning('States.AIAutoBuild', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should position his soldiers automatically
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoDefence(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoDefend
+    else
+      LogParamWarning('States.AIAutoDefence', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should automatically repair damaged buildings
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoRepair(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoRepair
+    else
+      LogParamWarning('States.AIAutoRepair', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether AI should defend units and houses of allies as if they were its own
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIDefendAllies(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.DefendAllies
+    else
+      LogParamWarning('States.AIDefendAllies', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the warriors equip rate for AI.
+//* aType: type: 0 - leather, 1 - iron
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIEquipRate(aPlayer: Byte; aType: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    begin
+      case aType of
+        0:    Result := gHands[aPlayer].AI.Setup.EquipRateLeather;
+        1:    Result := gHands[aPlayer].AI.Setup.EquipRateIron;
+        else  LogParamWarning('States.AIEquipRate, unknown type', [aPlayer, aType]);
+      end;
+    end else
+      LogParamWarning('States.AIEquipRate', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the formation the AI uses for defence positions for specified player and group type
+//* GroupType: 0 = Melee, 1 = AntiHorse, 2 = Ranged, 3 = Mounted
+//* group count and columns are returned in aCount and aColumns variables
+procedure TKMScriptStates.AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer);
+var
+  gt: TKMGroupType;
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
+      and InRange(aType, 0, 3) then
+    begin
+      gt := TKMGroupType(aType);
+      aCount := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits;
+      aColumns := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow;
+    end
+    else
+      LogParamWarning('Actions.AIGroupsFormationGet', [aPlayer, aType]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of ticks before the specified AI will start training recruits
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIRecruitDelay(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.RecruitDelay
+    else
+      LogParamWarning('States.AIRecruitDelay', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of recruits the AI will keep in each barracks
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIRecruitLimit(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.RecruitCount
+    else
+      LogParamWarning('States.AIRecruitLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of serfs the AI will train per house.
+//* Can be a decimal (0.25 for 1 serf per 4 houses)
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AISerfsPerHouse(aPlayer: Byte): Single;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.SerfsPerHouse
+    else
+      LogParamWarning('States.AISerfsPerHouse', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the maximum number of soldiers the AI will train, or -1 for unlimited
+//* Returns -2 if used with wrong parameters
+function TKMScriptStates.AISoldiersLimit(aPlayer: Byte): Integer;
+begin
+  Result := -2; // use -2 here, as -1 is used for unlimited
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.MaxSoldiers
+    else
+      LogParamWarning('States.AISoldiersLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the AI start position which is used for targeting AI attacks
+//* Returns (-1;-1) if used with wrong parameters
+function TKMScriptStates.AIStartPosition(aPlayer: Byte): TKMPoint;
+begin
+  Result := KMPOINT_INVALID_TILE;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.StartPosition
+    else
+      LogParamWarning('States.AIStartPosition', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the maximum number of laborers the AI will train
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIWorkerLimit(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.WorkerCount
+    else
+      LogParamWarning('States.AIWorkerLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6216
 //* Returns the group of the specified player and group type that is closest to the specified coordinates,
 //* or -1 if no such group was found.

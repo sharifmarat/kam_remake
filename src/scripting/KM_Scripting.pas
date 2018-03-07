@@ -332,6 +332,20 @@ begin
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
+    RegisterMethodCheck(c, 'function AIAutoAttackRange(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIAutoBuild(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoDefence(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoRepair(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIDefendAllies(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIEquipRate(aPlayer: Byte; aType: Byte): Integer');
+    RegisterMethodCheck(c, 'procedure AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer)');
+    RegisterMethodCheck(c, 'function AIRecruitDelay(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIRecruitLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AISerfsPerHouse(aPlayer: Byte): Single');
+    RegisterMethodCheck(c, 'function AISoldiersLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIStartPosition(aPlayer: Byte): TKMPoint');
+    RegisterMethodCheck(c, 'function AIWorkerLimit(aPlayer: Byte): Integer');
+
     RegisterMethodCheck(c, 'function ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer');
     RegisterMethodCheck(c, 'function ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer');
     RegisterMethodCheck(c, 'function ClosestHouse(aPlayer, X, Y, aHouseType: Integer): Integer');
@@ -836,6 +850,19 @@ begin
     //(uppercase is not needed, FastUpperCase does this well. See uPSRuntime.pas, line 11387)
     with ClassImp.Add(TKMScriptStates) do
     begin
+      RegisterMethod(@TKMScriptStates.AIAutoAttackRange,                        'AIAutoAttackRange');
+      RegisterMethod(@TKMScriptStates.AIAutoBuild,                              'AIAutoBuild');
+      RegisterMethod(@TKMScriptStates.AIAutoDefence,                            'AIAutoDefence');
+      RegisterMethod(@TKMScriptStates.AIAutoRepair,                             'AIAutoRepair');
+      RegisterMethod(@TKMScriptStates.AIDefendAllies,                           'AIDefendAllies');
+      RegisterMethod(@TKMScriptStates.AIEquipRate,                              'AIEquipRate');
+      RegisterMethod(@TKMScriptStates.AIGroupsFormationGet,                     'AIGroupsFormationGet');
+      RegisterMethod(@TKMScriptStates.AIRecruitDelay,                           'AIRecruitDelay');
+      RegisterMethod(@TKMScriptStates.AIRecruitLimit,                           'AIRecruitLimit');
+      RegisterMethod(@TKMScriptStates.AISerfsPerHouse,                          'AISerfsPerHouse');
+      RegisterMethod(@TKMScriptStates.AISoldiersLimit,                          'AISoldiersLimit');
+      RegisterMethod(@TKMScriptStates.AIStartPosition,                          'AIStartPosition');
+      RegisterMethod(@TKMScriptStates.AIWorkerLimit,                            'AIWorkerLimit');
 
       RegisterMethod(@TKMScriptStates.ClosestGroup,                             'ClosestGroup');
       RegisterMethod(@TKMScriptStates.ClosestGroupMultipleTypes,                'ClosestGroupMultipleTypes');
