@@ -4,7 +4,7 @@ unit KM_ScriptingUtils;
 interface
 uses
   Math, uPSRuntime,
-  KM_ScriptingEvents, KM_CommonTypes;
+  KM_ScriptingEvents, KM_CommonTypes, KM_Points;
 
 type
   TKMScriptUtils = class(TKMScriptEntity)
@@ -41,6 +41,8 @@ type
 
     function InRangeI(aValue, aMin, aMax: Integer): Boolean;
     function InRangeS(aValue, aMin, aMax: Single): Boolean;
+
+    function KMPoint(X,Y: Integer): TKMPoint;
 
     function MaxI(A, B: Integer): Integer;
     function MaxS(A, B: Single): Single;
@@ -452,6 +454,13 @@ begin
   end;
 end;
 
+
+//* Version: 7000+
+//* Returns point record with specified coordinates
+function TKMScriptUtils.KMPoint(X,Y: Integer): TKMPoint;
+begin
+  Result := KM_Points.KMPoint(X,Y);
+end;
 
 
 //* Version: 7000+
