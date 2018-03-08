@@ -2,7 +2,7 @@ unit KM_ScriptingActions;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Math, SysUtils, StrUtils, uPSRuntime,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
   KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
@@ -12,6 +12,11 @@ type
   private
     procedure LogStr(aText: String);
   public
+    function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
+                         aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
+                         aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+    function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+    procedure AIAttackRemoveAll(aPlayer: Byte);
     procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word);
     procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean);
     procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean);
@@ -976,6 +981,83 @@ begin
     end
     else
       LogParamWarning('Actions.GiveHouseSite', [aPlayer, aHouseType, X, Y, byte(aAddMaterials)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Add AI attack 
+//** <b>aPlayer</b> - playerID
+//** <b>aRepeating</b> - is attack repeating
+//** <b>aDelay</b> - attack delay
+//** <b>aTotalMen</b> - total soldiers to attack
+//** <b>aMelleCount</b>, <b>aAntiHorseCount</b>, <b>aRangedCount</b>, <b>aMountedCount</b> - soldiers groups count
+//** <b>aRandomGroups</b> - use random groups for attack
+//** <b>aTarget</b> - attack target of TKMAIAttackTarget type. Possible values:
+//** <pre>TKMAIAttackTarget = (
+//**  attClosestUnit, //Closest enemy unit
+//**  attClosestBuildingFromArmy,
+//**    //Closest building from the group lauching the attack
+//**  attClosestBuildingFromStartPos,
+//**    //Closest building from the AI's start position
+//**  attCustomPosition
+//**    //Custom point defined with aCustomPosition
+//** );</pre>
+//** <b>aCustomPosition</b> - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
+//** <b>Result</b>: Attack Id, that could be used to remove this attack later on
+function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer; aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+var
+  AttackType: TKMAIAttackType;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    begin
+      if aRepeating then
+        AttackType := aat_Repeating
+      else
+        AttackType := aat_Once;
+        
+      Result := gHands[aPlayer].AI.General.Attacks.AddAttack(AttackType, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount, aRandomGroups, aTarget, 0, aCustomPosition);
+    end else
+      LogParamWarning('Actions.AIAttackAdd', [aPlayer, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove AI attack by attack ID
+//* Result: true, if attack was succesfully removed, false, if attack was not found
+function TKMScriptActions.AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.General.Attacks.RemoveAttack(aAIAttackId)
+    else
+      LogParamWarning('Actions.AIAttackRemove', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove all AI attacks
+procedure TKMScriptActions.AIAttackRemoveAll(aPlayer: Byte);
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      gHands[aPlayer].AI.General.Attacks.Clear
+    else
+      LogParamWarning('Actions.AIAttackRemoveAll', [aPlayer]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2327,7 +2409,7 @@ end;
 
 //* Version: 7000+
 //* Sets array of tiles info, with possible change of
-//* 1. terrain (tile type), rotation (same as for MapTileSet),
+//* 1. terrain (tile type) and/or rotation (same as for MapTileSet),
 //* 2. tile height (same as for MapTileHeightSet)
 //* 3. tile object (same as for MapTileObjectSet)
 //* Works much faster, then applying all changes successively for every tile, because pathfinding compute is executed only once after all changes have been done
@@ -2340,7 +2422,8 @@ end;
 //*   ChangeSet: TKMTileChangeTypeSet; // Set of changes.
 //* end;
 //* TKMTileChangeTypeSet = set of TKMTileChangeType
-//* TKMTileChangeType = (tctTerrain, tctRotation, tctHeight, tctObject)</pre>
+//* TKMTileChangeType =
+//*   (tctTerrain, tctRotation, tctHeight, tctObject)</pre>
 //* ChangeSet determines what should be changed on tile
 //* F.e. if we want to change terrain type and height, then ChangeSet should contain tctTerrain and tctHeight
 //* Note: aTiles elements should start from 0, as for dynamic array. So f.e. to change map tile 1,1 we should set aTiles[0][0].

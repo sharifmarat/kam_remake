@@ -13,7 +13,7 @@ type
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fOwner: TKMHandIndex;
     fSetup: TKMHandAISetup;
-    fAttacks: TAIAttacks;
+    fAttacks: TKMAIAttacks;
     fDefencePositions: TAIDefencePositions;
 
     procedure CheckArmy;
@@ -22,13 +22,14 @@ type
     procedure CheckAutoAttack;
     procedure CheckAutoDefend;
     procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; const aCustomPos: TKMPoint);
+    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy; override;
 
     procedure AfterMissionInit;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
-    property Attacks: TAIAttacks read fAttacks;
+    property Attacks: TKMAIAttacks read fAttacks;
     property DefencePositions: TAIDefencePositions read fDefencePositions;
     procedure RetaliateAgainstThreat(aAttacker: TKMUnit);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
@@ -63,7 +64,7 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
 
-  fAttacks := TAIAttacks.Create;
+  fAttacks := TKMAIAttacks.Create;
   fDefencePositions := TAIDefencePositions.Create;
 end;
 
@@ -381,14 +382,14 @@ end;
 
 procedure TKMGeneral.CheckAutoAttack;
 var
-  SimpleAttack: TAIAttack;
+  SimpleAttack: TKMAIAttack;
   H: TKMHouse;
 begin
   //Simple test for now
   FillChar(SimpleAttack, SizeOf(SimpleAttack), #0);
 
   SimpleAttack.AttackType := aat_Repeating;
-  SimpleAttack.Target := att_ClosestBuildingFromStartPos;
+  SimpleAttack.Target := attClosestBuildingFromStartPos;
   SimpleAttack.TotalMen := fDefencePositions.AverageUnitsPerGroup *
                            fDefencePositions.GetBacklineCount div 2;
   SimpleAttack.TakeAll := True;
@@ -554,7 +555,11 @@ end;
 
 
 //See if we can attack our enemies
+<<<<<<< HEAD
 procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; const aCustomPos: TKMPoint);
+=======
+procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
+>>>>>>> master
 var
   TargetHouse: TKMHouse;
   TargetUnit: TKMUnit;
@@ -564,10 +569,10 @@ begin
 
   //Find target
   case aTarget of
-    att_ClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
-    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
-    att_CustomPosition:               begin
+    attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
+    attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
+    attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
+    attCustomPosition:               begin
                                         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
                                         if (TargetHouse <> nil) and
                                            (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = at_Ally) then
@@ -586,7 +591,7 @@ begin
     aGroup.OrderAttackHouse(TargetHouse, True)
   else if TargetUnit <> nil then
     aGroup.OrderAttackUnit(TargetUnit, True)
-  else if aTarget = att_CustomPosition then
+  else if aTarget = attCustomPosition then
     aGroup.OrderWalk(aCustomPos, True, wtokAIAttackCustomPos);
 end;
 

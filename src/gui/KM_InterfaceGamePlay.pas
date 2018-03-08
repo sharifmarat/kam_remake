@@ -3784,7 +3784,7 @@ begin
     S := S + IntToStr(gGame.GameInputProcess.Count) + ' commands stored|';
 
   if SHOW_NETWORK_DELAY and (fUIMode in [umMP, umSpectate]) then
-    S := S + 'Network delay: ' + IntToStr(TGameInputProcess_Multi(gGame.GameInputProcess).GetNetworkDelay) + '|';
+    S := S + 'Network delay: ' + IntToStr(TKMGameInputProcess_Multi(gGame.GameInputProcess).GetNetworkDelay) + '|';
 
   if DISPLAY_SOUNDS then
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';

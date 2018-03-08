@@ -1214,6 +1214,7 @@ type
     procedure SelectByTag(aTag: Integer);
     function GetTag(aIndex: Integer): Integer;
     function GetSelectedTag: Integer;
+    function IsSelected: Boolean;
     property DefaultCaption: UnicodeString read fDefaultCaption write fDefaultCaption;
     property Item[aIndex: Integer]: UnicodeString read GetItem;
     property List: TKMListBox read fList;
@@ -7252,6 +7253,12 @@ begin
   for I := 0 to fList.Count - 1 do
     if fList.ItemTags[I] = aTag then
       SetItemIndex(I);
+end;
+
+
+function TKMDropList.IsSelected: Boolean;
+begin
+  Result := fList.ItemIndex <> -1;
 end;
 
 

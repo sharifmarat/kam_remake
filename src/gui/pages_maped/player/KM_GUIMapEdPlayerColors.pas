@@ -37,7 +37,7 @@ type
 
 implementation
 uses
-  KM_HandsCollection, KM_Game, KM_ResTexts, KM_RenderUI, KM_Resource, KM_ResFonts,
+  StrUtils, KM_HandsCollection, KM_Game, KM_ResTexts, KM_RenderUI, KM_Resource, KM_ResFonts,
   KM_InterfaceGame, KM_Hand, KM_CommonUtils;
 
 
@@ -186,7 +186,7 @@ begin
   Shape_TextColor.FillColor := FlagColorToTextColor(Shape_Color.FillColor);
 
   ColorText := GetColorCodeText(gMySpectator.Hand.FlagColor, True);
-  if not ColorText.EndsWith(Edit_ColorCode.Text) then
+  if not AnsiEndsText(Edit_ColorCode.Text, ColorText) then
     Edit_ColorCode.UpdateText(ColorText);
 
   Edit_TextColorCode.UpdateText(GetColorCodeText(Shape_TextColor.FillColor, True));

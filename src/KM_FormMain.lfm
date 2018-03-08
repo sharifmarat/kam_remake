@@ -21,7 +21,7 @@ object FormMain: TFormMain
   OnKeyUp = FormKeyUp
   OnMouseWheel = FormMouseWheel
   OnShow = FormShow
-  LCLVersion = '1.6.4.0'
+  LCLVersion = '1.6.2.0'
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
@@ -654,6 +654,14 @@ object FormMain: TFormMain
       object HousesDat1: TMenuItem
         Caption = 'Houses Dat'
         OnClick = HousesDat1Click
+      end
+      object N5: TMenuItem
+        Caption = '-'
+        Enabled = False
+      end
+      object ScriptData1: TMenuItem
+        Caption = 'Script Data'
+        OnClick = Export_ScriptDataClick
       end
     end
     object About1: TMenuItem

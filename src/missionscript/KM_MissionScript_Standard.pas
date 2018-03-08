@@ -18,7 +18,7 @@ type
     fPlayerEnabled: TKMHandEnabledArray;
     fLastHouse: TKMHouse;
     fLastTroop: TKMUnitGroup;
-    fAIAttack: TAIAttack;
+    fAIAttack: TKMAIAttack;
     fAttackPositions: array of TKMAttackPosition;
     fAttackPositionsCount: Integer;
     fDefaultLocation: ShortInt;
@@ -669,7 +669,7 @@ begin
                           if TextParam = AI_ATTACK_PARAMS[cpt_TroopAmount] then
                             fAIAttack.GroupAmounts[TKMGroupType(P[1])] := P[2];
                           if TextParam = AI_ATTACK_PARAMS[cpt_Target] then
-                            fAIAttack.Target := TAIAttackTarget(P[1]);
+                            fAIAttack.Target := TKMAIAttackTarget(P[1]);
                           if TextParam = AI_ATTACK_PARAMS[cpt_Position] then
                             fAIAttack.CustomPosition := KMPoint(P[1]+1,P[2]+1);
                           if TextParam = AI_ATTACK_PARAMS[cpt_TakeAll] then
@@ -890,7 +890,7 @@ begin
           AddCommand(ct_AIAttack,cpt_Counter, [Delay]);
 
         AddCommand(ct_AIAttack,cpt_Target, [Byte(Target)]);
-        if Target = att_CustomPosition then
+        if Target = attCustomPosition then
           AddCommand(ct_AIAttack,cpt_Position, [CustomPosition.X-1 + aLeftInset,CustomPosition.Y-1 + aTopInset]);
 
         if Range > 0 then

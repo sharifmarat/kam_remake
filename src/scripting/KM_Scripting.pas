@@ -89,7 +89,7 @@ type
 
     function ScriptOnNeedFile(Sender: TPSPreProcessor; const aCallingFileName: AnsiString; var aFileName, aOutput: AnsiString): Boolean;
     procedure ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                        const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                        const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
   public
     constructor Create; overload;
     constructor Create(aOnScriptError: TUnicodeStringEvent); overload;
@@ -181,9 +181,10 @@ const
 
 implementation
 uses
-  Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
+  TypInfo, Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
 
 const
+  CUSTOM_EVENT_DIRECTIVE = 'EVENT';
   SCRIPT_LOG_EXT = '.log.txt';
 
 var
@@ -327,9 +328,28 @@ begin
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
+    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit, attClosestBuildingFromArmy, attClosestBuildingFromStartPos, attCustomPosition)');
+
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
+    Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
+
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
+    RegisterMethodCheck(c, 'function AIAutoAttackRange(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIAutoBuild(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoDefence(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoRepair(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIDefendAllies(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIEquipRate(aPlayer: Byte; aType: Byte): Integer');
+    RegisterMethodCheck(c, 'procedure AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer)');
+    RegisterMethodCheck(c, 'function AIRecruitDelay(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIRecruitLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AISerfsPerHouse(aPlayer: Byte): Single');
+    RegisterMethodCheck(c, 'function AISoldiersLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIStartPosition(aPlayer: Byte): TKMPoint');
+    RegisterMethodCheck(c, 'function AIWorkerLimit(aPlayer: Byte): Integer');
+
     RegisterMethodCheck(c, 'function ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer');
     RegisterMethodCheck(c, 'function ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer');
     RegisterMethodCheck(c, 'function ClosestHouse(aPlayer, X, Y, aHouseType: Integer): Integer');
@@ -344,6 +364,7 @@ begin
 
     RegisterMethodCheck(c, 'function GameTime: Cardinal');
 
+    RegisterMethodCheck(c, 'function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupAt(aX, aY: Word): Integer');
     RegisterMethodCheck(c, 'function GroupColumnCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupDead(aGroupID: Integer): Boolean');
@@ -399,6 +420,7 @@ begin
     RegisterMethodCheck(c, 'function MapTileRotation(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapTileType(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapWidth: Integer');
+    RegisterMethodCheck(c, 'function MissionDifficulty: TKMMissionDifficulty');
 
     RegisterMethodCheck(c, 'function MarketFromWare(aMarketID: Integer): Integer');
     RegisterMethodCheck(c, 'function MarketLossFactor: Single');
@@ -460,6 +482,11 @@ begin
     RegisterMethodCheck(c, 'function WareTypeName(aWareType: Byte): AnsiString');
 
     c := Sender.AddClassN(nil, AnsiString(fActions.ClassName));
+    RegisterMethodCheck(c, 'function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;' +
+                           'aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; ' +
+                           'aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer');
+    RegisterMethodCheck(c, 'function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean');
+    RegisterMethodCheck(c, 'procedure AIAttackRemoveAll(aPlayer: Byte)');
     RegisterMethodCheck(c, 'procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word)');
     RegisterMethodCheck(c, 'procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean)');
     RegisterMethodCheck(c, 'procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean)');
@@ -472,7 +499,7 @@ begin
     RegisterMethodCheck(c, 'procedure AIGroupsFormationSet(aPlayer, aType: Byte; aCount, aColumns: Word)');
     RegisterMethodCheck(c, 'procedure AIRecruitDelay(aPlayer, aDelay: Cardinal)');
     RegisterMethodCheck(c, 'procedure AIRecruitLimit(aPlayer, aLimit: Byte)');
-    RegisterMethodCheck(c, 'procedure AISerfsFactor(aPlayer: Byte; aLimit: Single)');
+    RegisterMethodCheck(c, 'procedure AISerfsPerHouse(aPlayer: Byte; aSerfs: Single)');
     RegisterMethodCheck(c, 'procedure AISoldiersLimit(aPlayer: Byte; aLimit: Integer)');
     RegisterMethodCheck(c, 'procedure AIStartPosition(aPlayer: Byte; X, Y: Word)');
     RegisterMethodCheck(c, 'procedure AIWorkerLimit(aPlayer, aLimit: Byte)');
@@ -625,6 +652,8 @@ begin
     RegisterMethodCheck(c, 'function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray');
     RegisterMethodCheck(c, 'function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray');
 
+    RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
+
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
@@ -639,6 +668,8 @@ begin
 
     RegisterMethodCheck(c, 'function InRangeI(aValue, aMin, aMax: Integer): Boolean');
     RegisterMethodCheck(c, 'function InRangeS(aValue, aMin, aMax: Single): Boolean');
+
+    RegisterMethodCheck(c, 'function KMPoint(X,Y: Integer): TKMPoint');
 
     RegisterMethodCheck(c, 'function MaxI(A, B: Integer): Integer');
     RegisterMethodCheck(c, 'function MaxS(A, B: Single): Single');
@@ -831,6 +862,19 @@ begin
     //(uppercase is not needed, FastUpperCase does this well. See uPSRuntime.pas, line 11387)
     with ClassImp.Add(TKMScriptStates) do
     begin
+      RegisterMethod(@TKMScriptStates.AIAutoAttackRange,                        'AIAutoAttackRange');
+      RegisterMethod(@TKMScriptStates.AIAutoBuild,                              'AIAutoBuild');
+      RegisterMethod(@TKMScriptStates.AIAutoDefence,                            'AIAutoDefence');
+      RegisterMethod(@TKMScriptStates.AIAutoRepair,                             'AIAutoRepair');
+      RegisterMethod(@TKMScriptStates.AIDefendAllies,                           'AIDefendAllies');
+      RegisterMethod(@TKMScriptStates.AIEquipRate,                              'AIEquipRate');
+      RegisterMethod(@TKMScriptStates.AIGroupsFormationGet,                     'AIGroupsFormationGet');
+      RegisterMethod(@TKMScriptStates.AIRecruitDelay,                           'AIRecruitDelay');
+      RegisterMethod(@TKMScriptStates.AIRecruitLimit,                           'AIRecruitLimit');
+      RegisterMethod(@TKMScriptStates.AISerfsPerHouse,                          'AISerfsPerHouse');
+      RegisterMethod(@TKMScriptStates.AISoldiersLimit,                          'AISoldiersLimit');
+      RegisterMethod(@TKMScriptStates.AIStartPosition,                          'AIStartPosition');
+      RegisterMethod(@TKMScriptStates.AIWorkerLimit,                            'AIWorkerLimit');
 
       RegisterMethod(@TKMScriptStates.ClosestGroup,                             'ClosestGroup');
       RegisterMethod(@TKMScriptStates.ClosestGroupMultipleTypes,                'ClosestGroupMultipleTypes');
@@ -846,6 +890,7 @@ begin
 
       RegisterMethod(@TKMScriptStates.GameTime,                                 'GameTime');
 
+      RegisterMethod(@TKMScriptStates.GroupAssignedToDefencePosition,           'GroupAssignedToDefencePosition');
       RegisterMethod(@TKMScriptStates.GroupAt,                                  'GroupAt');
       RegisterMethod(@TKMScriptStates.GroupColumnCount,                         'GroupColumnCount');
       RegisterMethod(@TKMScriptStates.GroupDead,                                'GroupDead');
@@ -901,6 +946,8 @@ begin
       RegisterMethod(@TKMScriptStates.MapTileRotation,                          'MapTileRotation');
       RegisterMethod(@TKMScriptStates.MapTileType,                              'MapTileType');
       RegisterMethod(@TKMScriptStates.MapWidth,                                 'MapWidth');
+
+      RegisterMethod(@TKMScriptStates.MissionDifficulty,                        'MissionDifficulty');
 
       RegisterMethod(@TKMScriptStates.MarketFromWare,                           'MarketFromWare');
       RegisterMethod(@TKMScriptStates.MarketLossFactor,                         'MarketLossFactor');
@@ -964,6 +1011,9 @@ begin
 
     with ClassImp.Add(TKMScriptActions) do
     begin
+      RegisterMethod(@TKMScriptActions.AIAttackAdd,                             'AIAttackAdd');
+      RegisterMethod(@TKMScriptActions.AIAttackRemove,                          'AIAttackRemove');
+      RegisterMethod(@TKMScriptActions.AIAttackRemoveAll,                       'AIAttackRemoveAll');
       RegisterMethod(@TKMScriptActions.AIAutoAttackRange,                       'AIAutoAttackRange');
       RegisterMethod(@TKMScriptActions.AIAutoBuild,                             'AIAutoBuild');
       RegisterMethod(@TKMScriptActions.AIAutoDefence,                           'AIAutoDefence');
@@ -1130,6 +1180,8 @@ begin
       RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexI,                         'ArrayRemoveIndexI');
       RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexS,                         'ArrayRemoveIndexS');
 
+      RegisterMethod(@TKMScriptUtils.BoolToStr,                                 'BoolToStr');
+
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
 
@@ -1145,6 +1197,8 @@ begin
       RegisterMethod(@TKMScriptUtils.InRangeI,                                  'InRangeI');
       RegisterMethod(@TKMScriptUtils.InRangeS,                                  'InRangeS');
 
+      RegisterMethod(@TKMScriptUtils.KMPoint,                                   'KMPoint');
+
       RegisterMethod(@TKMScriptUtils.MaxI,                                      'MaxI');
       RegisterMethod(@TKMScriptUtils.MaxS,                                      'MaxS');
 
@@ -1157,7 +1211,7 @@ begin
       RegisterMethod(@TKMScriptUtils.MinInArrayI,                               'MinInArrayI');
       RegisterMethod(@TKMScriptUtils.MinInArrayS,                               'MinInArrayS');
 
-      RegisterMethod(@TKMScriptUtils.Power,                                     'POWER');
+      RegisterMethod(@TKMScriptUtils.Power,                                     'Power');
 
       RegisterMethod(@TKMScriptUtils.SumI,                                      'SumI');
       RegisterMethod(@TKMScriptUtils.SumS,                                      'SumS');
@@ -1288,6 +1342,7 @@ begin
   LoadStream.ReadAssert('Script');
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
+  gScriptEvents.Load(LoadStream);
 
   if fScriptCode <> '' then
     CompileScript;
@@ -1395,6 +1450,7 @@ begin
   //Write script code
   SaveStream.WriteHugeString(fScriptCode);
   SaveStream.WriteA(fCampaignDataTypeCode);
+  gScriptEvents.Save(SaveStream);
 
   //Write script global variables
   SaveStream.Write(fExec.GetVarCount);
@@ -1747,7 +1803,11 @@ end;
 
 
 procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                                            const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                                            const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
+var
+  ErrorStr: UnicodeString;
+  EventType: Integer;
+  DirectiveParams: TStringList;
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
@@ -1755,6 +1815,35 @@ begin
     and Active
     and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
+
+  //Load custom event handlers
+  if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
+  begin
+    aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+    //Do not do anything for while in MapEd
+    //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+    if gGame.IsMapEditor then Exit;
+
+    try
+      DirectiveParams := TStringList.Create;
+      StringSplit(DirectiveParam, ':', DirectiveParams);
+      EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParams[0]));
+
+      if EventType = -1 then
+        fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParams[0]), Parser.Row, Parser.Col]));
+
+      gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParams[1])));
+      DirectiveParams.Free;
+    except
+      on E: Exception do
+        begin
+          ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+          fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+            {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+        end;
+    end;
+  end;
 end;
 
 

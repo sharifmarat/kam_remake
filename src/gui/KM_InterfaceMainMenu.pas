@@ -198,7 +198,7 @@ begin
 
   case Dest of
     gpMainMenu:     begin
-                      Label_Version.Caption := 'KAM Remake - ' + Version;
+                      Label_Version.Caption := 'KaM Remake - ' + Version;
                       fMenuMain.Show;
                       fMenuPage := fMenuMain;
                     end;

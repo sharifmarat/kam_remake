@@ -3,7 +3,7 @@ unit KM_Maps;
 interface
 uses
   Classes, SyncObjs,
-  KM_CommonClasses, KM_Defaults, KM_Pics;
+  KM_CommonClasses, KM_Defaults, KM_Pics, KM_ResTexts;
 
 
 type
@@ -26,6 +26,9 @@ type
     Stat: TKMGoalStatus;
   end;
 
+  TKMMissionDifficulty = (mdNone, mdEasy, mdNormal, mdHard);
+  TKMMissionDifficultySet = set of TKMMissionDifficulty;
+
   TKMMapTxtInfo = class
   private
     function IsEmpty: Boolean;
@@ -39,6 +42,8 @@ type
     IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
     IsPlayableAsSP: Boolean; //Is MP map playable as SP map ?
 
+    DifficultyLevels: TKMMissionDifficultySet;
+
     BlockTeamSelection: Boolean;
     BlockPeacetime: Boolean;
     BlockFullMapPreview: Boolean;
@@ -50,6 +55,7 @@ type
 
     procedure SaveTXTInfo(aFilePath: UnicodeString);
     procedure LoadTXTInfo(aFilePath: UnicodeString);
+    function HasDifficultyLevels: Boolean;
   end;
 
   TKMapInfo = class
@@ -208,11 +214,14 @@ type
   function GetMapFolderType(aIsMultiplayer: Boolean): TKMapFolder;
   function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TKMapFolder): Boolean;
 
+const
+  DIFFICULTY_LEVELS_TX: array[mdEasy..mdHard] of Integer =
+    (TX_MISSION_DIFFICULTY_EASY, TX_MISSION_DIFFICULTY_NORMAL, TX_MISSION_DIFFICULTY_HARD);
 
 implementation
 uses
   SysUtils, StrUtils, Math, KromShellUtils, KromUtils,
-  KM_GameApp, KM_ResTexts, KM_FileIO,
+  KM_GameApp, KM_FileIO,
   KM_MissionScript_Info, KM_Scripting,
   KM_Utils, KM_CommonUtils, KM_Log;
 
@@ -651,7 +660,6 @@ begin
 end;
 
 
-
 function TKMapInfo.FileNameWithoutHash: UnicodeString;
 begin
   if (MapFolder = mfDL) and IsFilenameEndMatchHash then
@@ -720,6 +728,7 @@ end;
 
 procedure TKMMapTxtInfo.SaveTXTInfo(aFilePath: UnicodeString);
 var
+  St: String;
   ft: TextFile;
 
   procedure WriteLine(aLineHeader: UnicodeString; aLineValue: UnicodeString = '');
@@ -731,7 +740,12 @@ var
   end;
 
 begin
-  if IsEmpty then Exit;
+  if IsEmpty then
+  begin
+    if FileExists(aFilePath) then
+      DeleteFile(aFilePath);
+    Exit;
+  end;
 
   ForceDirectories(ExtractFilePath(aFilePath));
 
@@ -769,6 +783,26 @@ begin
   if BlockFullMapPreview then
     WriteLine('BlockFullMapPreview');
 
+  if HasDifficultyLevels then
+  begin
+    St := '';
+    if St <> '' then
+      St := St + ',';
+    if mdEasy in DifficultyLevels then
+      St := 'Easy';
+    if mdNormal in DifficultyLevels then
+    begin
+      if St <> '' then
+        St := St + ',';
+      St := St + 'Normal';
+    end;
+    if mdHard in DifficultyLevels then
+    begin
+      St := St + ',Hard';
+    end;
+    WriteLine('DifficultyLevels', St);
+  end;
+
   CloseFile(ft);
 end;
 
@@ -787,8 +821,10 @@ procedure TKMMapTxtInfo.LoadTXTInfo(aFilePath: UnicodeString);
   end;
 
 var
+  I: Integer;
   St, S: String;
   ft: TextFile;
+  StList: TStringList;
 begin
   //Load additional text info
   if FileExists(aFilePath) then
@@ -798,22 +834,28 @@ begin
     Reset(ft);
     repeat
       ReadLn(ft, St);
-      if SameText(St, 'Author')    then Readln(ft, Author);
-      if SameText(St, 'BigDesc')   then Readln(ft, BigDesc);
+      if SameText(St, 'Author') then
+        Readln(ft, Author);
+      if SameText(St, 'BigDesc') then
+        Readln(ft, BigDesc);
+
       if SameText(St, 'BigDescLIBX') then
       begin
         Readln(ft, S);
         BigDescLibx := StrToIntDef(S, -1);
         BigDesc := LoadDescriptionFromLIBX(BigDescLibx);
       end;
+
       if SameText(St, 'SmallDesc') then
         ReadLn(ft, SmallDesc);
+
       if SameText(St, 'SmallDescLIBX') then
       begin
         Readln(ft, S);
         SmallDescLibx := StrToIntDef(S, -1);
         SmallDesc := LoadDescriptionFromLIBX(SmallDescLibx);
       end;
+
       if SameText(St, 'SetCoop')   then
       begin
         IsCoop := True;
@@ -821,11 +863,34 @@ begin
         BlockTeamSelection := True;
         BlockFullMapPreview := True;
       end;
-      if SameText(St, 'SetSpecial') then IsSpecial := True;
-      if SameText(St, 'PlayableAsSP') then IsPlayableAsSP := True;
-      if SameText(St, 'BlockPeacetime') then BlockPeacetime := True;
-      if SameText(St, 'BlockTeamSelection') then BlockTeamSelection := True;
-      if SameText(St, 'BlockFullMapPreview') then BlockFullMapPreview := True;
+
+      if SameText(St, 'SetSpecial') then
+        IsSpecial := True;
+      if SameText(St, 'PlayableAsSP') then
+        IsPlayableAsSP := True;
+      if SameText(St, 'BlockPeacetime') then
+        BlockPeacetime := True;
+      if SameText(St, 'BlockTeamSelection') then
+        BlockTeamSelection := True;
+      if SameText(St, 'BlockFullMapPreview') then
+        BlockFullMapPreview := True;
+
+      if SameText(St, 'DifficultyLevels') then
+      begin
+        Readln(ft, S);
+        StList := TStringList.Create;
+        StringSplit(S, ',', StList);
+        for I := 0 to StList.Count - 1 do
+        begin
+          if SameText(StList[I], 'Easy') then
+            Include(DifficultyLevels, mdEasy);
+          if SameText(StList[I], 'Normal') then
+            Include(DifficultyLevels, mdNormal);
+          if SameText(StList[I], 'Hard') then
+            Include(DifficultyLevels, mdHard);
+        end;
+        StList.Free;
+      end;
     until(eof(ft));
     CloseFile(ft);
   end;
@@ -851,7 +916,18 @@ begin
             or BlockTeamSelection or BlockPeacetime or BlockFullMapPreview
             or (Author <> '')
             or (SmallDesc <> '') or IsSmallDescLibxSet
-            or (BigDesc <> '') or IsBigDescLibxSet);
+            or (BigDesc <> '') or IsBigDescLibxSet
+            or HasDifficultyLevels);
+end;
+
+
+function TKMMapTxtInfo.HasDifficultyLevels: Boolean;
+begin
+  //We consider there is no difficulty levels, if only one is presented
+  Result := (DifficultyLevels <> [])
+            and (DifficultyLevels <> [mdEasy])
+            and (DifficultyLevels <> [mdNormal])
+            and (DifficultyLevels <> [mdHard]);
 end;
 
 
@@ -863,6 +939,7 @@ begin
   BlockTeamSelection := False;
   BlockPeacetime := False;
   BlockFullMapPreview := False;
+  DifficultyLevels := [];
   Author := '';
   SmallDesc := '';
   SmallDescLibx := -1;

@@ -62,28 +62,28 @@ type
   end;
 
 const
-  VAR_TYPE_NAME: array[0..38] of string = (
+  VAR_TYPE_NAME: array[0..40] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
     'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
     'THouseType', 'TWareType', 'TFieldType', 'TUnitType',
     'TKMObjectiveStatus', 'TKMObjectiveType',
     'TKMHouseFace',
-    'array of TKMTerrainTileBrief','TKMAudioFormat',
+    'array of TKMTerrainTileBrief','TKMAudioFormat','TKMAIAttackTarget',
     'TKMHouse', 'TKMUnit', 'TKMUnitGroup', 'TKMHandIndex', 'array of TKMHandIndex', // Werewolf types
-    'TByteSet', 'TIntegerArray', 'TAnsiStringArray' // Werewolf types
+    'TKMPoint','TByteSet', 'TIntegerArray', 'TAnsiStringArray' // Werewolf types
   );
 
-  VAR_TYPE_ALIAS: array[0..38] of string = (
+  VAR_TYPE_ALIAS: array[0..40] of string = (
     'Byte', 'Shortint', 'Smallint', 'Word', 'Integer', 'Cardinal', 'Single', 'Extended', 'Boolean', 'AnsiString', 'String',
     'array of const', 'array of Boolean', 'array of String', 'array of AnsiString', 'array of Integer', 'array of Single', 'array of Extended',
     'TKMHouseType', 'TKMWareType', 'TKMFieldType', 'TKMUnitType',
     'THouseType', 'TWareType', 'TFieldType', 'TUnitType',
     'TKMObjectiveStatus', 'TKMObjectiveType',
     'TKMHouseFace',
-    'array of TKMTerrainTileBrief','TKMAudioFormat',
+    'array of TKMTerrainTileBrief','TKMAudioFormat','TKMAIAttackTarget',
     'Integer', 'Integer', 'Integer', 'Integer', 'array of Integer', // Werewolf types
-    'set of Byte', 'array of Integer', 'array of AnsiString' // Werewolf types
+    'TKMPoint','set of Byte', 'array of Integer', 'array of AnsiString' // Werewolf types
   );
 
 var

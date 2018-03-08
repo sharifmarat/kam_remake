@@ -89,6 +89,7 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
+  procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings);
   {$IFDEF WDC}
   procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
   {$ENDIF}
@@ -996,6 +997,15 @@ begin
       Break;
   end;
   Result := Copy(aStr, 1, I);
+end;
+
+
+procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings) ;
+begin
+   ListOfStrings.Clear;
+   ListOfStrings.Delimiter       := Delimiter;
+   ListOfStrings.StrictDelimiter := True;
+   ListOfStrings.DelimitedText   := Str;
 end;
 
 
