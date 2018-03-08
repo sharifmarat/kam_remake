@@ -50,7 +50,7 @@ type
   PKMMaskFullType = ^TKMMaskFullType;
 
   TKMTerrainKind = (
-//    tkNone,
+    tkNone,
     tkCustom,
     tkGrass,
     tkMoss,
@@ -82,17 +82,17 @@ type
     tkLava);
 
 const
-  TER_KIND_ORDER: array[tkCustom..tkLava] of Integer =
-    (0,1,2,3,4,5,6,7,8,9,10,11,
+  TER_KIND_ORDER: array[tkNone..tkLava] of Integer =
+    (0,1,2,3,4,5,6,7,8,9,10,11,12,
       -1,    // To make Water/FastWater-GrassyWater transition possible with layers we need GrassyWater to be above Water because of animation (water above grassy anim looks ugly)
-      13,
+      14,
       -2,
-      15,16,17,18,19,20,21,22,23,24,25,
+      16,17,18,19,20,21,22,23,24,25,26,
       -4,-3, // Put GrassyWater/Water/FastWater always to the base layer, because of animation
-      28);
+      29);
 
-  BASE_TERRAIN: array[TKMTerrainKind] of Word = //tkCustom..tkLava] of Word =
-    (0, 0, 8, 17, 32, 26, 27, 28, 29, 34, 35, 215, 48, 40, 44, 47, 46, 45, 132, 159, 164, 245, 20, 155, 147, 151, 192, 209, 7);
+  BASE_TERRAIN: array[TKMTerrainKind] of Word = //tkNone..tkLava] of Word =
+    (0, 0, 0, 8, 17, 32, 26, 27, 28, 29, 34, 35, 215, 48, 40, 44, 47, 46, 45, 132, 159, 164, 245, 20, 155, 147, 151, 192, 209, 7);
 
 //  TILE_MASKS: array[mt_2Straight..mt_4Square] of Word =
 //      (279, 278, 280, 281, 282, 277);

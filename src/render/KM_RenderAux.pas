@@ -333,7 +333,16 @@ begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
     begin
-      DrawTerKind(J,I);
+      if gGame.IsMapEditor then
+      begin
+        TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[I,J].TerKind;
+        case TerKind of
+          tkNone:   TerKindStr := 'N';
+          tkCustom: TerKindStr := 'C';
+          else      TerKindStr := IntToStr(BASE_TERRAIN[TerKind]);
+        end;
+        Text(J - 0.47, I - 0.47, TerKindStr, icRed);
+      end;
       for K := 0 to 3 do
         with gTerrain.Land[I,J] do
         begin

@@ -107,7 +107,7 @@ const
   //2 - in half
   //3 - one corner
   //"-" means flip before use
-  Combo: array [TKMTerrainKind, TKMTerrainKind, 1..3] of SmallInt = (
+  Combo: array [tkCustom..High(TKMTerrainKind), tkCustom..High(TKMTerrainKind), 1..3] of SmallInt = (
   //             Custom    Grass         Moss   PaleGrass        CoastSand      GrassSand1  GrassSand2      GrassSand3          Sand    GrassDirt     Dirt           Cobblest        GrassyWater   Swamp        Ice          ShallowSnow    Snow           DeepSnow     StoneMount       GoldMount        IronMount         Abyss          Gravel        Coal               Gold             Iron           Water           FastWater    Lava
   {Custom}     ((0,0,0),(  0,   0,  0),(0,0,0),(  0,  0,  0),(    0,   0,   0),( 0, 0, 0),(   0,   0,   0),(  0,  0,  0),(  0,  0,  0),( 0, 0, 0),(   0,   0,   0),(   0,   0,   0),(  0,  0,  0),( 0, 0, 0),(  0,  0,  0),(  0,  0,   0),(  0,  0,    0),( 0, 0, 0),(   0,   0,   0),(   0,   0,   0),(   0,   0,   0),(  0, 0,    0),(  0,  0,  0),(  0,    0,    0),(   0,   0,   0),(   0,   0,   0),(   0,   0,   0),(   0, 0, 0),(   0, 0, 0)), //Custom
   {Grass}      ((0,0,0),(  0,   0,  0),(0,0,0),(  0,  0,  0),(    0,   0,   0),( 0, 0, 0),(   0,   0,   0),(  0,  0,  0),(  0,  0,  0),( 0, 0, 0),(   0,   0,   0),(   0,   0,   0),(  0,  0,  0),( 0, 0, 0),(  0,  0,  0),(  0,  0,   0),(  0,  0,    0),( 0, 0, 0),(   0,   0,   0),(   0,   0,   0),(   0,   0,   0),(  0, 0,    0),(  0,  0,  0),(  0,    0,    0),(   0,   0,   0),(   0,   0,   0),(   0,   0,   0),(   0, 0, 0),(   0, 0, 0)), //Grass
@@ -439,7 +439,8 @@ begin
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean;
+                                                      aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
 var
   TerKindFound: array [0..3] of Boolean;
 

@@ -1089,7 +1089,7 @@ begin
     //for all Terrain Kinds
     for TK := Low(TKMTerrainKind) to High(TKMTerrainKind) do
     begin
-      if TK = tkCustom then Continue;
+      if TK in [tkNone, tkCustom] then Continue;
       TerrainId := BASE_TERRAIN[TK] + 1; // in fRXData Tiles are 1-based
 
       //for all Mask Kinds
