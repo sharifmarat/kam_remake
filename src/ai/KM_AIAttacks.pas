@@ -20,7 +20,7 @@ type
   TKMAIAttackTarget = (attClosestUnit, //Closest enemy unit (untested as to whether this is relative to army or start position)
                        attClosestBuildingFromArmy, //Closest building from the group(s) lauching the attack
                        attClosestBuildingFromStartPos, //Closest building from the AI's start position
-                       att_CustomPosition); //Custom point defined with CustomPosition
+                       attCustomPosition); //Custom point defined with CustomPosition
 
 
   //Records must be packed so they are stored identically in MP saves (? padding bytes are unknown values)
