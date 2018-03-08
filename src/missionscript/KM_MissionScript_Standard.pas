@@ -890,7 +890,7 @@ begin
           AddCommand(ct_AIAttack,cpt_Counter, [Delay]);
 
         AddCommand(ct_AIAttack,cpt_Target, [Byte(Target)]);
-        if Target = att_CustomPosition then
+        if Target = attCustomPosition then
           AddCommand(ct_AIAttack,cpt_Position, [CustomPosition.X-1 + aLeftInset,CustomPosition.Y-1 + aTopInset]);
 
         if Range > 0 then

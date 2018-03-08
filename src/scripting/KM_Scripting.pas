@@ -326,7 +326,7 @@ begin
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
-    Sender.AddTypeS('TKMAIAttackTarget', '(att_ClosestUnit, att_ClosestBuildingFromArmy, att_ClosestBuildingFromStartPos, att_CustomPosition)');
+    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit, attClosestBuildingFromArmy, attClosestBuildingFromStartPos, attCustomPosition)');
 
     Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
     Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');

@@ -164,7 +164,7 @@ begin
   begin
     A := gMySpectator.Hand.AI.General.Attacks[I];
     CustomPosS := '';
-    if A.Target = att_CustomPosition then
+    if A.Target = attCustomPosition then
       CustomPosS := TypeToString(A.CustomPosition);
 
     ColumnBox_Attacks.AddItem(MakeListRow([Typ[A.AttackType],

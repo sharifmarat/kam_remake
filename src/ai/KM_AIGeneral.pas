@@ -388,7 +388,7 @@ begin
   FillChar(SimpleAttack, SizeOf(SimpleAttack), #0);
 
   SimpleAttack.AttackType := aat_Repeating;
-  SimpleAttack.Target := att_ClosestBuildingFromStartPos;
+  SimpleAttack.Target := attClosestBuildingFromStartPos;
   SimpleAttack.TotalMen := fDefencePositions.AverageUnitsPerGroup *
                            fDefencePositions.GetBacklineCount div 2;
   SimpleAttack.TakeAll := True;
@@ -564,10 +564,10 @@ begin
 
   //Find target
   case aTarget of
-    att_ClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
-    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
-    att_CustomPosition:               begin
+    attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
+    attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, false);
+    attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, false);
+    attCustomPosition:               begin
                                         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
                                         if (TargetHouse <> nil) and
                                            (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = at_Ally) then
@@ -586,7 +586,7 @@ begin
     aGroup.OrderAttackHouse(TargetHouse, True)
   else if TargetUnit <> nil then
     aGroup.OrderAttackUnit(TargetUnit, True)
-  else if aTarget = att_CustomPosition then
+  else if aTarget = attCustomPosition then
     aGroup.OrderWalk(aCustomPos, True, wtokAIAttackCustomPos);
 end;
 

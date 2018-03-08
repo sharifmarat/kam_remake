@@ -146,8 +146,8 @@ begin
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     NumEdit_AttackAmount[GT].Enabled := not CheckBox_AttackTakeAll.Checked;
 
-  NumEdit_AttackLocX.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
-  NumEdit_AttackLocY.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = att_CustomPosition);
+  NumEdit_AttackLocX.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = attCustomPosition);
+  NumEdit_AttackLocY.Enabled := (TKMAIAttackTarget(Radio_AttackTarget.ItemIndex) = attCustomPosition);
 end;
 
 
