@@ -318,7 +318,6 @@ procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
     begin
       TerKind := gGame.MapEditor.TerrainPainter.LandTerKind[Y,X].TerKind;
       case TerKind of
-        tkNone:   TerKindStr := 'N';
         tkCustom: TerKindStr := 'C';
         else      TerKindStr := IntToStr(BASE_TERRAIN[TerKind]);
       end;

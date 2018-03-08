@@ -53,7 +53,7 @@ type
 
     function GetNextAttackId: Word;
 
-    function AddAttack(const aAttack: TKMAIAttack): Word; overload;
+    function AddAttack(aAttack: TKMAIAttack): Word; overload;
     function AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer; aGroupAmounts: TKMGroupTypeArray;
                        aTakeAll: Boolean; aTarget: TKMAIAttackTarget; aRange: Integer; aCustomPosition: TKMPoint): Word; overload;
     function AddAttack(aAttackType: TKMAIAttackType; aDelay: Cardinal; aTotalMen: Integer;
@@ -126,7 +126,7 @@ begin
 end;
 
 
-procedure TAIAttacks.AddAttack(const aAttack: TAIAttack);
+function TKMAIAttacks.AddAttack(aAttack: TKMAIAttack): Word;
 begin
   if fCount >= Length(fAttacks) then
     SetLength(fAttacks, fCount + 16);

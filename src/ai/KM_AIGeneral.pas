@@ -21,8 +21,7 @@ type
     procedure CheckAttacks;
     procedure CheckAutoAttack;
     procedure CheckAutoDefend;
-    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; const aCustomPos: TKMPoint);
-    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
+    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; const aCustomPos: TKMPoint);
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy; override;
@@ -555,11 +554,7 @@ end;
 
 
 //See if we can attack our enemies
-<<<<<<< HEAD
-procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; const aCustomPos: TKMPoint);
-=======
-procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
->>>>>>> master
+procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; const aCustomPos: TKMPoint);
 var
   TargetHouse: TKMHouse;
   TargetUnit: TKMUnit;
