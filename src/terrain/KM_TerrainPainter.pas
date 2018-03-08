@@ -74,6 +74,8 @@ type
     RandomizeTiling: Boolean;
     procedure InitEmpty;
 
+    function NodeInMapCoords(X,Y: Integer): Boolean;
+
     procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString); overload;
     procedure SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect); overload;
@@ -447,7 +449,7 @@ var
   var
     TerKind: TKMTerrainKind;
   begin
-    if not gTerrain.TileInMapCoords(aX, aY)
+    if not NodeInMapCoords(aX, aY)
       or (not aUseOnlyNodeTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
       Exit;
 
@@ -1436,6 +1438,12 @@ begin
   for I := 1 to gTerrain.MapY do
     for K := 1 to gTerrain.MapX do
       LandTerKind[I,K].TerKind := tkGrass;
+end;
+
+
+function TKMTerrainPainter.NodeInMapCoords(X,Y: Integer): Boolean;
+begin
+  Result := InRange(X, 1, gTerrain.MapX) and InRange(Y, 1, gTerrain.MapY);
 end;
 
 
