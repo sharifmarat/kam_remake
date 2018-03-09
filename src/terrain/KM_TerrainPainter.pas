@@ -74,8 +74,6 @@ type
     RandomizeTiling: Boolean;
     procedure InitEmpty;
 
-    function NodeInMapCoords(X,Y: Integer): Boolean;
-
     procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString); overload;
     procedure SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect); overload;
@@ -271,15 +269,17 @@ procedure TKMTerrainPainter.BrushTerrainTile(const X, Y: Integer; aTerKind: TKMT
   end;
 
 begin
-  if not gTerrain.TileInMapCoords(X, Y) then
-    Exit;
-
   if gGameCursor.MapEdSize = 0 then
   begin
+    if not gTerrain.VerticeInMapCoords(X, Y) then
+      Exit;
     LandTerKind[fMapYn, fMapXn].TerKind := aTerKind;
     AddBrushAreaTerKind(fMapXn, fMapYn);
     Exit;
   end;
+
+  if not gTerrain.TileInMapCoords(X, Y) then
+    Exit;
 
   LandTerKind[Y,   X].TerKind   := aTerKind;
   LandTerKind[Y,   X+1].TerKind := aTerKind;
@@ -441,7 +441,9 @@ begin
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
+function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean;
+                                                      aUseOnlyTileOwnTK: Boolean = False;
+                                                      aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
 var
   TerKindFound: array [0..3] of Boolean;
 
@@ -449,8 +451,8 @@ var
   var
     TerKind: TKMTerrainKind;
   begin
-    if not NodeInMapCoords(aX, aY)
-      or (not aUseOnlyNodeTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
+    if not gTerrain.VerticeInMapCoords(aX, aY)
+      or (not aUseOnlyNodeTK and aUseOnlyTileOwnTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
       Exit;
 
     TerKind := LandTerKind[aY,aX].TerKind;
@@ -468,11 +470,6 @@ var
 begin
   SetLength(Result, 4);
 
-  if aUseTempLand then
-    Tile := fTempLand[aCell.Y, aCell.X]
-  else
-    Tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
-
   for I := 0 to 3 do
   begin
     TerKindFound[I] := False;
@@ -487,7 +484,13 @@ begin
     CheckTerKind(aCell.X,   aCell.Y+1, 3);
   end;
 
-  if not aUseOnlyNodeTK then
+  if not aUseOnlyNodeTK and gTerrain.TileInMapCoords(aCell) then
+  begin
+    if aUseTempLand then
+      Tile := fTempLand[aCell.Y, aCell.X]
+    else
+      Tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
+
     for I := 0 to 3 do
       if not TerKindFound[I] then
       begin
@@ -498,6 +501,7 @@ begin
             if I in Tile.Layer[L].Corners then
               Result[I] := gRes.Sprites.GetGenTerrainInfo(Tile.Layer[L].Terrain).TerKind;
       end;
+  end;
 end;
 
 
@@ -784,7 +788,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
     //get 4 tiles around corner within map borders
     Rect := KMRect(aCell);                                            // x x  - we will get these x Tiles for corner 0, f.e.
     Rect := KMRectGrow(Rect, Dir);                                    // x o
-    Rect := KMClipRect(Rect, 1, 1, gTerrain.MapX, gTerrain.MapY);     //
+    Rect := KMClipRect(Rect, 0, 0, gTerrain.MapX, gTerrain.MapY);     // Clip rect with possible nodes boundaries.
     RectCorners := KMRectCorners(Rect);                               //
     //after this preparation we will get 4 points (rect corners)
 
@@ -992,7 +996,7 @@ begin
 //  gLog.AddTime('Prepare Temp UseMagicBrush');
   UpdateTempLand;
 
-  fUseTempLand := True;
+  fUseTempLand := aSize > 0; //Do not use temp land when size = 0
   fReplaceLayers := False;
   IterateOverArea(KMPoint(X,Y), aSize, aSquare, MagicBrush, aAroundTiles);
 
@@ -1438,12 +1442,6 @@ begin
   for I := 1 to gTerrain.MapY do
     for K := 1 to gTerrain.MapX do
       LandTerKind[I,K].TerKind := tkGrass;
-end;
-
-
-function TKMTerrainPainter.NodeInMapCoords(X,Y: Integer): Boolean;
-begin
-  Result := InRange(X, 1, gTerrain.MapX) and InRange(Y, 1, gTerrain.MapY);
 end;
 
 
