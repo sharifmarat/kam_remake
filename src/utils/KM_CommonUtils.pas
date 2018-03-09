@@ -26,6 +26,7 @@ uses
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+  function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
@@ -504,6 +505,15 @@ begin
   A2 := Min(Round(aAlpha * A), 255);
 
   Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
+end;
+
+
+function GetGreyColor(aGreyLevel: Byte): Cardinal;
+begin
+  Result := aGreyLevel
+            or (aGreyLevel shl 8)
+            or (aGreyLevel shl 16)
+            or $FF000000;
 end;
 
 
