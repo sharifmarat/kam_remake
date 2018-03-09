@@ -108,17 +108,17 @@ begin
     BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 320, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
     BrushMasks[MK].Tag := Byte(MK);
     BrushMasks[MK].Tag2 := Byte(bbtMask);
-    if MK = mk_None then
-      HintStr := 'No mask'
+    if MK = mkNone then
+      HintStr := 'No mask' //Todo translate
     else begin
       HintStr := GetEnumName(TypeInfo(TKMTileMaskKind), Integer(MK));
-      HintStr := Copy(HintStr, 4, Length(HintStr) - 3) + ' mask'; //Todo translate
+      HintStr := Copy(HintStr, 3, Length(HintStr) - 2) + ' mask'; //Todo translate
     end;
     BrushMasks[MK].Hint := HintStr;
     BrushMasks[MK].OnClick := BrushChange;
   end;
 
-  BrushMasks[mk_Hard3].Hide;
+  BrushMasks[mkHarder].Hide;
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 320, 34, 34, 673, rxGui);
   MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate

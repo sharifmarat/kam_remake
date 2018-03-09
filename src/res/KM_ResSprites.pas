@@ -1095,7 +1095,7 @@ begin
       //for all Mask Kinds
       for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
       begin
-        if MK = mk_None then Continue;
+        if MK = mkNone then Continue;
 
         //for all Mask Types
         for MT := Low(TKMTileMaskType) to High(TKMTileMaskType) do

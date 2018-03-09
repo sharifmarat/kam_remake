@@ -273,6 +273,7 @@ begin
   begin
     if not gTerrain.VerticeInMapCoords(X, Y) then
       Exit;
+
     LandTerKind[fMapYn, fMapXn].TerKind := aTerKind;
     AddBrushAreaTerKind(fMapXn, fMapYn);
     Exit;
@@ -414,7 +415,7 @@ begin
     or (gTerrain.Land[pY,pX].LayersCnt > 0) then
   begin
     LandTerKind[pY,pX].Tiles := Byte(Ter1)*Byte(Ter2)*(4-Nodes);//store not only nodes info, but also terrain type used
-    if Found and ((Nodes = 4) or (TKMTileMaskKind(gGameCursor.MapEdBrushMask) = mk_None)) then
+    if Found and ((Nodes = 4) or (TKMTileMaskKind(gGameCursor.MapEdBrushMask) = mkNone)) then
     begin
       gTerrain.Land[pY,pX].BaseLayer.Terrain := T;
       gTerrain.Land[pY,pX].BaseLayer.Corners := [0,1,2,3];
@@ -943,15 +944,15 @@ begin
   if not gTerrain.TileInMapCoords(X, Y) or gTerrain.Land[Y,X].IsCustom then Exit;
 
   MaskKind := TKMTileMaskKind(gGameCursor.MapEdBrushMask);
-  if (MaskKind = mk_None) and not fReplaceLayers then Exit;
+  if (MaskKind = mkNone) and not fReplaceLayers then Exit;
 
-  if MaskKind <> mk_None then
+  if MaskKind <> mkNone then
     ApplyMagicBrush(MaskKind);
 
   if fReplaceLayers then
   begin
     case MaskKind of
-      mk_None:  begin
+      mkNone:  begin
                   gTerrain.Land[Y,X].LayersCnt := 0; // Simple way to clear all layers
                   gTerrain.Land[Y,X].BaseLayer.Corners := [0,1,2,3];
                 end;
@@ -1034,7 +1035,7 @@ begin
   end;
   RebuildMap(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
 
-  if TKMTileMaskKind(gGameCursor.MapEdBrushMask) <> mk_None then
+  if TKMTileMaskKind(gGameCursor.MapEdBrushMask) <> mkNone then
     UseMagicBrush(X, Y, Size, (gGameCursor.MapEdShape = hsSquare), True);
 
   gTerrain.UpdatePassability(KMRectGrow(KMRect(gGameCursor.Cell), (Size div 2) + 1));
