@@ -235,8 +235,10 @@ type
     function VertexUsageCompatible(const LocFrom, LocTo: TKMPoint): Boolean;
     function GetVertexUsageType(const LocFrom, LocTo: TKMPoint): TKMVertexUsage;
 
-    function TileInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean;
-    function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean;
+    function TileInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
+    function TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
+    function VerticeInMapCoords(X, Y: Integer; Inset: Byte = 0): Boolean; overload;
+    function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function EnsureTileInMapCoords(X, Y: Integer; Inset: Byte = 0): TKMPoint;
 
     function TileGoodForIron(X, Y: Word): Boolean;
@@ -961,11 +963,23 @@ begin
 end;
 
 
+function TKMTerrain.TileInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean;
+begin
+  Result := TileInMapCoords(aCell.X, aCell.Y, Inset);
+end;
+
+
 {Check if requested vertice is within Map boundaries}
 {X,Y are unsigned int, usually called from loops, hence no TKMPoint can be used}
 function TKMTerrain.VerticeInMapCoords(X,Y: Integer; Inset: Byte = 0): Boolean;
 begin
   Result := InRange(X, 1 + Inset, fMapX - Inset) and InRange(Y, 1 + Inset, fMapY - Inset);
+end;
+
+
+function TKMTerrain.VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean;
+begin
+  Result := VerticeInMapCoords(aCell.X, aCell.Y, Inset);
 end;
 
 
