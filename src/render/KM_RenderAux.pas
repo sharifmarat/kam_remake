@@ -327,8 +327,6 @@ procedure TRenderAux.TileTerrainKinds(const aRect: TKMRect);
 
 var
   I, J, K, L: Integer;
-  TerKind: TKMTerrainKind;
-  TerKindStr: String;
 begin
   for I := aRect.Top to aRect.Bottom do
     for J := aRect.Left to aRect.Right do
