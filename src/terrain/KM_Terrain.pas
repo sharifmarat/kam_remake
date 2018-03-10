@@ -23,7 +23,7 @@ type
 
   TKMTerrainTileBrief = record
     X,Y: Byte;
-    Terrain: Byte;
+    Terrain: Word;
     Rotation: Byte;
     Height: Byte;
     Obj: Byte;
