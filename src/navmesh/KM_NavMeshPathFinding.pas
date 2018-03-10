@@ -37,14 +37,18 @@ type
     function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Longword;
     function EstimateToFinish(aIdx: Word): Word;
 
+    function InitPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
     function InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function MakeRoute(): Boolean;
+    procedure ReturnPolygonRoute(out aDistance: Word; out aRoutePolygonArray: TKMWordArray);
     procedure ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
   public
     constructor Create();
     destructor Destroy(); override;
 
+
     //function WalkableDistance(aStart, aEnd: TKMPoint; out aDistance: Word): Boolean;
+    function ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
     function ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
@@ -122,10 +126,10 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
   const
     CHANCES: array[TGroupType] of array[TGroupType] of Single = (
     // gt_Melee gt_AntiHorse gt_Ranged gt_Mounted
-          (1,       0.5,         0.5,      2   ), // gt_Melee
-          (0.5,     1,           1,        0.5 ), // gt_AntiHorse
-          (2,       1,           0.5,      3   ), // gt_Ranged
-          (0.5,     3,           0.5,      1   )  // gt_Mounted
+      (1,       0.5,         0.5,      2   ), // gt_Melee
+      (0.5,     1,           1,        0.5 ), // gt_AntiHorse
+      (2,       1,           0.5,      3   ), // gt_Ranged
+      (0.5,     3,           0.5,      1   )  // gt_Mounted
     );
   var
     GT: TGroupType;
@@ -237,9 +241,40 @@ begin
 end;
 
 
+procedure TNavMeshPathFinding.ReturnPolygonRoute(out aDistance: Word; out aRoutePolygonArray: TKMWordArray);
+var
+  Count: Word;
+  N, FinalN: TNavMeshNode;
+begin
+  aDistance := 0;
+  if (fMinN = nil) then
+    Exit;
+  FinalN := fMinN;
+  N := fMinN.Parent;
+  Count := 1;
+  while (N <> nil) do
+  begin
+    aDistance := aDistance + KMDistanceAbs(N.Point, FinalN.Point); // DistanceAbs is very rough but when is result different from actual distance there are probably obstacles in path and it is better to count with higher distance
+    FinalN := N;
+    N := N.Parent;
+    Inc(Count,1);
+  end;
+
+  SetLength(aRoutePolygonArray, Count+1);
+  N := fMinN;
+  Count := 0;
+  while (N <> nil) do
+  begin
+    aRoutePolygonArray[Count+1] := N.Idx;
+    N := N.Parent;
+    Inc(Count,1);
+  end;
+  aRoutePolygonArray[Count] := FinalN.Idx;
+  aRoutePolygonArray[0] := fMinN.Idx;
+end;
+
+
 procedure TNavMeshPathFinding.ReturnRoute(out aDistance: Word; out aRoutePointArray: TKMPointArray);
-const
-  USED_PENALIZATION = 40;
 var
   Count: Word;
   N, FinalN: TNavMeshNode;
@@ -272,13 +307,35 @@ begin
 end;
 
 
+function TNavMeshPathFinding.InitPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
+var
+  Output: Boolean;
+begin
+  Result := False;
+  fStart := aStart;
+  fEnd := aEnd;
+  if (fStart = High(Word)) OR (fEnd = High(Word))
+    OR (fStart >= Length(gAIFields.NavMesh.Polygons))
+    OR (fEnd >= Length(gAIFields.NavMesh.Polygons)) then  // Non-Existing polygon
+    Exit;
+  fMode := pm_ShortestWay;
+  Output := MakeRoute();
+  if Output then
+  begin
+    ReturnPolygonRoute(aDistance, aRoutePolygonArray);
+    aRoutePolygonArray[0] := aEnd;
+  end;
+  Result := Output;
+end;
+
+
 function TNavMeshPathFinding.InitRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
 var
   Output: Boolean;
 begin
   Result := False;
-  fStart := gAIFields.NavMesh.Point2Polygon[ aStart.Y, aStart.X ];
-  fEnd := gAIFields.NavMesh.Point2Polygon[ aEnd.Y, aEnd.X ];
+  fStart := gAIFields.NavMesh.KMPoint2Polygon[ aStart ];
+  fEnd := gAIFields.NavMesh.KMPoint2Polygon[ aEnd ];
   if (fStart = High(Word)) OR (fEnd = High(Word)) then  // Non-Existing polygon
     Exit;
   fMode := pm_ShortestWay;
@@ -289,6 +346,12 @@ begin
     aRoutePointArray[0] := aEnd;
   end;
   Result := Output;
+end;
+
+
+function TNavMeshPathFinding.ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
+begin
+  Result := InitPolygonRoute(aStart, aEnd, aDistance, aRoutePolygonArray);
 end;
 
 
