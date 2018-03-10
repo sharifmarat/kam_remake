@@ -23,6 +23,7 @@ type
   TPolygon = record
       CenterPoint: TKMPoint;
       NearbyCount: Byte; //could be 0 .. 3
+      Poly2PointStart, Poly2PointCnt: Word; // Indexes of fPolygon2PointArr (points which are part of this polygon)
       Indices: array [0..2] of Word; //Neighbour nodes
       Nearby: array [0..2] of Word; //Neighbour polygons
       NearbyPoints: array [0..2] of TKMPoint; // Center points
@@ -46,6 +47,7 @@ type
     fNodes: TNodeArray;               // Nodes
     fPolygons: TPolygonArray;         // Polygons
     fPoint2PolygonArr: TKMWord2Array; // KMPoint -> Polygon index
+    fPolygon2PointArr: TKMPointArray; // Polygon index -> KMPoint
 
 
     fDefences: TForwardFF; //Defences class
@@ -60,6 +62,9 @@ type
     procedure InitConnectivity;
     function FindClosestPolygon(aP: TKMPoint): Word;
     procedure TieUpTilesWithPolygons();
+    procedure TieUpPolygonsWithTiles();
+
+    function GetPolygonFromPoint(const aPoint: TKMPoint): Word;
 
     //function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
     //function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
@@ -76,6 +81,8 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property Point2Polygon: TKMWord2Array read fPoint2PolygonArr;
+    property KMPoint2Polygon[const aPoint: TKMPoint]: Word read GetPolygonFromPoint;
+    property Polygon2Point: TKMPointArray read fPolygon2PointArr;
     property Polygons: TPolygonArray read fPolygons;
     property Nodes: TNodeArray read fNodes;
     property Defences: TForwardFF read fDefences write fDefences;
@@ -90,7 +97,10 @@ type
   end;
 
 const
-  NAVMESH_DENSITY = 3; // Density of NavMesh (affect count and size of points)
+  // Constants in KM_PolySimplify must be also changed!!!
+  NAVMESH_POINT_TOLERANCE = 1; // Shape edges (points) closer than this will be skipped
+  NAVMESH_EDGE_DENSITY = 3; // Density of NavMesh edge points (affect count and size of points)
+  NAVMESH_DENSITY = NAVMESH_EDGE_DENSITY + 1; // Density of NavMesh
 
 
 implementation
@@ -137,11 +147,16 @@ begin
   end;
 
   SaveStream.Write(fPolyCount);
+  // In current implementation there could be just:
+  // SaveStream.Write(fPolygons[0], SizeOf(TPolygon) * fPolyCount);
+  // but future implementation may be changed so this will save some work
   for I := 0 to fPolyCount - 1 do
   begin
     SaveStream.Write(fPolygons[I].CenterPoint);
     SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
     SaveStream.Write(fPolygons[I].NearbyCount);
+    SaveStream.Write(fPolygons[I].Poly2PointStart);
+    SaveStream.Write(fPolygons[I].Poly2PointCnt);
     SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
     SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   end;
@@ -155,7 +170,12 @@ begin
   for I := 0 to Length(fPoint2PolygonArr) - 1 do
     SaveStream.Write(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
 
+  I := Length(fPolygon2PointArr);
+  SaveStream.Write( I );
+  SaveStream.Write(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
+
   // The following does not requires save
+  // fDefences
   // fPathfinding
   // fPositioning
 end;
@@ -187,6 +207,8 @@ begin
     LoadStream.Read(fPolygons[I].CenterPoint);
     LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
     LoadStream.Read(fPolygons[I].NearbyCount);
+    LoadStream.Read(fPolygons[I].Poly2PointStart);
+    LoadStream.Read(fPolygons[I].Poly2PointCnt);
     LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
     LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   end;
@@ -196,6 +218,10 @@ begin
   SetLength(fPoint2PolygonArr,I,K);
   for I := 0 to Length(fPoint2PolygonArr) - 1 do
     LoadStream.Read(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
+
+  LoadStream.Read(I);
+  SetLength(fPolygon2PointArr,I);
+  LoadStream.Read(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
 end;
 
 
@@ -236,8 +262,36 @@ begin
   //Fill in NavMesh structure
   AssembleNavMesh;
 
-  //Mapp all map tiles to its polygons
+  //Mapp all map tiles to its polygons and vice versa
   TieUpTilesWithPolygons();
+  TieUpPolygonsWithTiles();
+end;
+
+
+function TKMNavMesh.GetPolygonFromPoint(const aPoint: TKMPoint): Word;
+begin
+  Result := fPoint2PolygonArr[ aPoint.Y, aPoint.X ];
+end;
+
+
+procedure TKMNavMesh.TieUpPolygonsWithTiles();
+var
+  X,Y,Polygon,Cnt: Integer;
+begin
+  SetLength(fPolygon2PointArr,(gTerrain.MapX-1) * (gTerrain.MapY-1));
+  Cnt := 0;
+  for Polygon := 0 to Length(fPolygons) - 1 do
+  begin
+    fPolygons[ Polygon ].Poly2PointStart := Cnt;
+    for Y := 1 to gTerrain.MapY-1 do
+    for X := 1 to gTerrain.MapX-1 do
+      if (fPoint2PolygonArr[Y,X] = Polygon) then
+      begin
+        fPolygon2PointArr[Cnt] := KMPoint(X,Y);
+        Cnt := Cnt + 1;
+      end;
+    fPolygons[ Polygon ].Poly2PointCnt := Cnt;
+  end;
 end;
 
 
@@ -436,7 +490,7 @@ begin
   fDelaunay := TDelaunay.Create(-1, -1, gTerrain.MapX, gTerrain.MapY);
   try
     //Points that are closer than that will be skipped
-    fDelaunay.Tolerance := 1;
+    fDelaunay.Tolerance := NAVMESH_POINT_TOLERANCE;
     for I := 0 to fSimpleOutlines.Count - 1 do
     with fSimpleOutlines.Shape[I] do
       for K := 0 to Count - 1 do
@@ -445,8 +499,8 @@ begin
     //Add more points along edges to get even density
     SizeX := gTerrain.MapX-1;
     SizeY := gTerrain.MapY-1;
-    MeshDensityX := SizeX div NAVMESH_DENSITY;
-    MeshDensityY := SizeY div NAVMESH_DENSITY;
+    MeshDensityX := SizeX div NAVMESH_EDGE_DENSITY;
+    MeshDensityY := SizeY div NAVMESH_EDGE_DENSITY;
     for I := 0 to MeshDensityY do
     for K := 0 to MeshDensityX do
     if (I = 0) or (I = MeshDensityY) or (K = 0) or (K = MeshDensityX) then
@@ -474,7 +528,7 @@ begin
     //Add more supporting points into the middle to get more even mesh
     //Tolerance must be a little higher than longest span we expect from polysimplification
     //so that not a single node was placed on an outline segment (otherwise RemObstaclePolys will not be able to trace outlines)
-    fDelaunay.Tolerance := 7;
+    fDelaunay.Tolerance := NAVMESH_DENSITY;
     for I := 1 to MeshDensityY - 1 do
     for K := 1 to MeshDensityX - Byte(I mod 2 = 1) - 1 do
       fDelaunay.AddPoint(Round(SizeX / MeshDensityX * (K + Byte(I mod 2 = 1) / 2)), Round(SizeY / MeshDensityY * I));
@@ -887,26 +941,26 @@ begin
     Owner := gMySpectator.HandIndex;
     try
 
-      FFF.FindDefenceLines(Owner, DefLines);
-      for K := 0 to DefLines.Count - 1 do
-      begin
-        I := DefLines.Lines[K].Polygon;
-        gRenderAux.TriangleOnTerrain(
-          fNodes[fPolygons[I].Indices[0]].Loc.X,
-          fNodes[fPolygons[I].Indices[0]].Loc.Y,
-          fNodes[fPolygons[I].Indices[1]].Loc.X,
-          fNodes[fPolygons[I].Indices[1]].Loc.Y,
-          fNodes[fPolygons[I].Indices[2]].Loc.X,
-          fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
-      end;
+      if FFF.FindDefenceLines(Owner, DefLines) then
+        for K := 0 to DefLines.Count - 1 do
+        begin
+          I := DefLines.Lines[K].Polygon;
+          gRenderAux.TriangleOnTerrain(
+            fNodes[fPolygons[I].Indices[0]].Loc.X,
+            fNodes[fPolygons[I].Indices[0]].Loc.Y,
+            fNodes[fPolygons[I].Indices[1]].Loc.X,
+            fNodes[fPolygons[I].Indices[1]].Loc.Y,
+            fNodes[fPolygons[I].Indices[2]].Loc.X,
+            fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
+        end;
 
-      W := 20;
-      FFF.FindDefensivePolygons(Owner, W, DefencePosArr);
-      for K := 0 to Length(DefencePosArr) - 1 do
-      begin
-        Point := DefencePosArr[K].DirPoint.Loc;
-        gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
-      end;
+      W := 40;
+      if FFF.FindDefensivePolygons(Owner, W, DefencePosArr, False) then
+        for K := 0 to Length(DefencePosArr) - 1 do
+        begin
+          Point := DefencePosArr[K].DirPoint.Loc;
+          gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
+        end;
 
       //PolygonArr := FFF.D_FF_INIT_ARR;
       //for K := 0 to Length(PolygonArr) - 1 do
@@ -938,7 +992,8 @@ begin
     end;
   end;//}
 
-  //{Raw obstacle outlines
+
+  {Raw obstacle outlines
   if OVERLAY_NAVMESH then
     for I := 0 to fRawOutlines.Count - 1 do
     for K := 0 to fRawOutlines.Shape[I].Count - 1 do
