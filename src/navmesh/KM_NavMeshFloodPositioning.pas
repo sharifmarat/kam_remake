@@ -7,6 +7,8 @@ uses
 
 
 type
+  // This class finds walkable positions for small groups of soldiers (3x3) around initial points
+  // It uses only NavMesh -> it does not check passability so selected position may be inaccessible (by house / other unit)
   TNavMeshFloodPositioning = class(TNavMeshFloodFill)
   private
     fCount: Word;
@@ -38,18 +40,20 @@ var
   I, K: Integer;
 begin
   inherited MarkAsVisited(aIdx, aDistance, aPoint);
+
+  // Add new positions (1 polygon (triangle) in NavMesh can give 3 new positions which are given by center points of it's 3 border lines)
   if CanBeExpanded(aIdx) then
     with gAIFields.NavMesh.Polygons[aIdx] do
       for I := 0 to NearbyCount - 1 do
       begin
         Check := True;
-        for K := 0 to fCount - 1 do
+        for K := 0 to fCount - 1 do // Does we already have this position?
           if KMSamePoint(NearbyPoints[I], fPointArray[K]) then
           begin
             Check := False;
             break;
           end;
-        if Check then
+        if Check then // Add position
         begin
           fPointArray[fCount] := NearbyPoints[I];
           fCount := fCount + 1;
