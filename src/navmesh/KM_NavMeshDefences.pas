@@ -86,14 +86,18 @@ type
 
 const
   OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
-  ALLY_INFLUENCE_LIMIT = 190; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
-  ENEMY_INFLUENCE_LIMIT = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
+  MAX_ENEMY_INFLUENCE = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
+  ALLY_INFLUENCE_LIMIT = 200; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ENEMY_INFLUENCE_LIMIT = 10; // When enemy influence will be greter than this constant there will be applied penalization ENEMY_INFLUENCE_PENALIZATION in weight function of actual defensive line
 
   // Weights of defensive line calculation
-  POLYGON_CNT_PENALIZATION = 30; // Polygon count penalization (more polygons = worse defensive line)
-  ALLY_INFLUENCE_PENALIZATION = 1000; // Ally penalization (dont place defences inside of ally city)
+  MIN_OPTIMAL_INFLUENCE = 100; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
+  POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
+  OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
+  ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
+  ENEMY_INFLUENCE_PENALIZATION = 4; // Enemy penalization (dont place defences inside of enemy city)
   MINIMAL_DEFENCE_DISTANCE = 5; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
-  MAXIMAL_DEFENCE_DISTANCE = 100; // Maximal defence distance (maximal distance is also affected by ENEMY_INFLUENCE_LIMIT)
+  MAXIMAL_DEFENCE_DISTANCE = 100; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
 
 implementation
 uses
@@ -144,7 +148,7 @@ end;
 function TForwardFF.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   // This is border condition for final line of forward flood fill (polygons with 3 nearby polygons can create defensive lines)
-  Result := (gAIFields.NavMesh.Polygons[aIdx].NearbyCount <> 3) OR (fDefInfo[aIdx].EnemyInfluence < ENEMY_INFLUENCE_LIMIT);
+  Result := (gAIFields.NavMesh.Polygons[aIdx].NearbyCount <> 3) OR (fDefInfo[aIdx].EnemyInfluence < MAX_ENEMY_INFLUENCE);
   if not Result then
     fBackwardFF.AddPolygon(aIdx);
 end;
@@ -314,7 +318,13 @@ begin
   QueueIdx := aIdx;
   for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
   begin
-    Evaluation := Evaluation + fDefInfo[aIdx].Distance + Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION;
+    Evaluation := + Evaluation
+                  //+ fDefInfo[aIdx].Distance // Consideration of distance does more damage than benefit
+                  - Byte(    ((fDefInfo[aIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
+                          OR ((fDefInfo[aIdx].Influence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].Influence < ALLY_INFLUENCE_LIMIT))
+                         ) * OPTIMAL_INFLUENCE_ADD
+                  + Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
+                  + Byte(fDefInfo[aIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION;
     QueueIdx := fQueueArray[QueueIdx].Next;
   end;
   // If is evaluation better save polygons
