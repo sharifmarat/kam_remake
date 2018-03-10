@@ -26,7 +26,7 @@ type
     Terrain: Word;
     Rotation: Byte;
     Height: Byte;
-    Obj: Byte;
+    Obj: Word;
     ChangeSet: TKMTileChangeTypeSet;
   end;
 
@@ -50,7 +50,7 @@ type
     LayersCnt: Byte;
     Layer: array [0..2] of TKMTerrainLayer;
     Height: Byte;
-    Obj: Byte;
+    Obj: Word;
     IsCustom: Boolean;
   end;
 
@@ -60,7 +60,7 @@ type
     Layer: array [0..2] of TKMTerrainLayer;
 //    StoneLayer: TKMTerrainLayer;
     Height: Byte;
-    Obj: Byte;
+    Obj: Word;
     IsCustom: Boolean;
 
     //Age of tree, another independent variable since trees can grow on fields
@@ -129,8 +129,8 @@ type
     function TrySetTile(X, Y: Integer; aType, aRot: Integer; out aPassRect: TKMRect;
                         out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
-    function TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean; overload;
-    function TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
+    function TrySetTileObject(X, Y: Integer; aObject: Word; aUpdatePassability: Boolean = True): Boolean; overload;
+    function TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
   public
     Land: array [1..MAX_MAP_SIZE, 1..MAX_MAP_SIZE] of TKMTerrainTile;
     FallingTrees: TKMPointTagList;
@@ -263,7 +263,7 @@ type
 
     function ScriptTrySetTile(X, Y: Integer; aType, aRot: Byte): Boolean;
     function ScriptTrySetTileHeight(X, Y: Integer; aHeight: Byte): Boolean;
-    function ScriptTrySetTileObject(X, Y: Integer; aObject: Byte): Boolean;
+    function ScriptTrySetTileObject(X, Y: Integer; aObject: Word): Boolean;
     function ScriptTrySetTilesArray(var aTiles: array of TKMTerrainTileBrief; aRevertOnFail: Boolean; var aErrors: TKMTerrainTileChangeErrorArray): Boolean;
 
     function ObjectIsChopableTree(X,Y: Word): Boolean; overload;
@@ -674,14 +674,14 @@ begin
 end;
 
 
-function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean;
+function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Word; aUpdatePassability: Boolean = True): Boolean;
 var DiagonalChanged: Boolean;
 begin
   Result := TrySetTileObject(X, Y, aObject, DiagonalChanged, aUpdatePassability);
 end;
 
 
-function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean;
+function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean;
   function HousesNearObject: Boolean;
   var
     I, K: Integer;
@@ -689,14 +689,14 @@ function TKMTerrain.TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonal
     Result := False;
     //If the object blocks diagonals, houses can't be at -1 either
     for I := -1 * Byte(gMapElements[aObject].DiagonalBlocked) to 0 do
-    for K := -1 * Byte(gMapElements[aObject].DiagonalBlocked) to 0 do
-    if TileInMapCoords(X+K, Y+I) then
-      //Can't put objects near houses or house sites
-      if (Land[Y+I, X+K].TileLock in [tlFenced, tlDigged, tlHouse]) then
-      begin
-        Result := True;
-        Exit;
-      end;
+      for K := -1 * Byte(gMapElements[aObject].DiagonalBlocked) to 0 do
+      if TileInMapCoords(X+K, Y+I) then
+        //Can't put objects near houses or house sites
+        if (Land[Y+I, X+K].TileLock in [tlFenced, tlDigged, tlHouse]) then
+        begin
+          Result := True;
+          Exit;
+        end;
   end;
 
   // We do not want falling trees
@@ -946,7 +946,7 @@ end;
 
 
 // Try to set an object from the script. Failure is an option
-function TKMTerrain.ScriptTrySetTileObject(X, Y: Integer; aObject: Byte): Boolean;
+function TKMTerrain.ScriptTrySetTileObject(X, Y: Integer; aObject: Word): Boolean;
 begin
   Result := TileInMapCoords(X, Y) and TrySetTileObject(X, Y, aObject);
 end;
@@ -4003,9 +4003,9 @@ begin
   S.Write(aTileBasic.BaseLayer.Rotation); //3
   S.Write(aTileBasic.Height);             //4
   S.Write(aTileBasic.Obj);                //5
-  S.Write(aTileBasic.IsCustom);           //6
-  S.Write(aTileBasic.LayersCnt);          //7
-  Inc(aMapDataSize, 7); // obligatory 7 bytes per tile
+  S.Write(aTileBasic.IsCustom);           //7
+  S.Write(aTileBasic.LayersCnt);          //8
+  Inc(aMapDataSize, 8); // obligatory 8 bytes per tile
   if aTileBasic.LayersCnt > 0 then
   begin
     S.Write(PackLayersCorners(aTileBasic));
@@ -4023,7 +4023,7 @@ end;
 class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
 var
   I: Integer;
-  TerrainB, Rot, Corners: Byte;
+  TerrainB, ObjectB, Rot, Corners: Byte;
   LayersCorners: array[0..3] of Byte;
 begin
   if aUseKaMFormat then
@@ -4035,7 +4035,8 @@ begin
     aStream.Read(Rot);                //4
     aTileBasic.BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
     aStream.Seek(1, soFromCurrent);
-    aStream.Read(aTileBasic.Obj);     //6
+    aStream.Read(ObjectB);     //6
+    aTileBasic.Obj := ObjectB;
     aTileBasic.BaseLayer.Corners := [0,1,2,3];
     aTileBasic.LayersCnt := 0;
     aTileBasic.IsCustom := False;
@@ -4045,11 +4046,11 @@ begin
     aTileBasic.BaseLayer.Rotation := Rot mod 4; //Some original KaM maps have Rot > 3, mod 4 gives right result
     aStream.Read(aTileBasic.Height);            //4
     aStream.Read(aTileBasic.Obj);               //5
-    aStream.Read(aTileBasic.IsCustom);          //6
+    aStream.Read(aTileBasic.IsCustom);          //7
 
     // Load all layers info
     // First get layers count
-    aStream.Read(aTileBasic.LayersCnt);         //7
+    aStream.Read(aTileBasic.LayersCnt);         //8
     if aTileBasic.LayersCnt = 0 then            // No need to save corners, if we have no layers on that tile
       aTileBasic.BaseLayer.Corners := [0,1,2,3] // Set all corners then
     else begin

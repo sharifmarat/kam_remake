@@ -529,7 +529,7 @@ end;
 procedure TKMHand.AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
 var
   IsFieldSet: Boolean;
-  Obj: Byte;
+  Obj: Word;
 begin
   IsFieldSet := False;
   Obj := gTerrain.Land[aLoc.Y,aLoc.X].Obj;
