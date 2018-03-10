@@ -302,6 +302,7 @@ type
   end;
 
 const
+  OBJ_BLOCK = 61;
   OBJ_NONE = 255;
 
 

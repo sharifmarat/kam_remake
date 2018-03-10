@@ -473,7 +473,7 @@ var
 begin
   if (gMySpectator.FogOfWar.CheckTileRenderRev(LocX,LocY) <= FOG_OF_WAR_MIN) then Exit;
 
-  if aIndex = 61 then
+  if aIndex = OBJ_BLOCK then
   begin
     // Invisible wall
     // Render as a red outline in map editor mode
@@ -1664,7 +1664,7 @@ begin
   end;
 
   // Terrain object found on the cell
-  if (aHighlightAll or not IsRendered) and (gTerrain.Land[P.Y,P.X].Obj <> 255) then
+  if (aHighlightAll or not IsRendered) and (gTerrain.Land[P.Y,P.X].Obj <> OBJ_NONE) then
   begin
     RenderMapElement(gTerrain.Land[P.Y,P.X].Obj, gTerrain.AnimStep, P.X, P.Y, True, True);
     IsRendered := True;
