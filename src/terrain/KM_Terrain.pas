@@ -131,9 +131,6 @@ type
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileObject(X, Y: Integer; aObject: Byte; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
-
-//    function GetLand(aY,aX: Integer): TKMTerrainTile;
-//    procedure SetLand(aY,aX: Integer; aTile: TKMTerrainTile);
   public
     Land: array [1..MAX_MAP_SIZE, 1..MAX_MAP_SIZE] of TKMTerrainTile;
     FallingTrees: TKMPointTagList;
@@ -145,7 +142,6 @@ type
     procedure SaveToFile(const aFile: UnicodeString); overload;
     procedure SaveToFile(const aFile: UnicodeString; const aInsetRect: TKMRect); overload;
 
-//    property Land[aY,aX: Integer]: TKMTerrainTile read GetLand;
     property MapX: Word read fMapX;
     property MapY: Word read fMapY;
     property MapRect: TKMRect read fMapRect;
