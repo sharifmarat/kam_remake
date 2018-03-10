@@ -2,31 +2,28 @@ unit KM_NavMeshDefences;
 {$I KaM_Remake.inc}
 interface
 uses
-  Math, KM_Defaults, KM_CommonTypes, KM_CommonUtils,
-  KM_ResHouses, KM_Houses, KM_Points, KM_PolySimplify,
+  Math, KM_Defaults, KM_CommonTypes, KM_Points,
   KM_NavMeshFloodFill;
 
-const
-  MAX_SCAN_DISTANCE_FROM_0_INFLUENCE = 200;
-  MAX_LAYERS = 100;
-
-  type
+type
   TDefenceInfo = record
     Influence, EnemyInfluence, AllyInfluence: Byte;
     Distance: Word;
+    PointInDir: TKMPoint;
   end;
   TDefInfoArray = array of TDefenceInfo;
 
+  // Defence lines for watchtowers
   TKMDefenceLine = record
     Polygon: Word;
     Nodes: array[0..1] of Word;
   end;
   TKMDefenceLines = record
-    //EnemyInfluence, AlliedInfluence, OwnerInfluence: Byte;
     Count: Word;
     Lines: array of TKMDefenceLine;
   end;
 
+  // Defence position for army defence
   TKMDefencePosition = record
     Polygon, Weight: Word;
     DirPoint: TKMPointDir;
@@ -37,17 +34,17 @@ const
   TBackwardFF = class(TNavMeshFloodFill)
   private
   protected
+    fDefLinesRequired: Boolean;
     fOwner: TKMHandIndex;
-    fDefInfo: TDefInfoArray;
-
     fBestEvaluation: Single;
+    fDefInfo: TDefInfoArray;
 
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure BackwardFlood();
     procedure EvaluateDefence(const aIdx: Word);
-    function FindDefencePos(var aBaseCnt: Word; aMinDefeces: Boolean): Boolean;
+    function FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
   public
-    D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
+    //D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
     BestDefLines: TKMDefenceLines;
     DefPosArr: TKMDefencePosArr;
 
@@ -55,9 +52,9 @@ const
     procedure NewQueue(aVisitedIdx: Byte);
     procedure AddPolygon(aIdx: Word);
     function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; aMinDefeces: Boolean): TKMDefencePosArr;
+    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
 
-    procedure DEBUG();
+    //procedure DEBUG();
   end;
 
   TForwardFF = class(TNavMeshFloodFill)
@@ -73,8 +70,9 @@ const
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
     function ForwardFF(): Boolean;
   public
-    D_INIT_FLOOD, D_FF_INIT_ARR, D_FF_INIT_FLOOD: TKMWordArray;
+    //D_INIT_FLOOD, D_FF_INIT_ARR, D_FF_INIT_FLOOD: TKMWordArray;
     BestDefLines: TKMDefenceLines;
+    FirstLine: Word;
 
     constructor Create(aSorted: Boolean = False); reintroduce;
     destructor Destroy(); override;
@@ -82,29 +80,24 @@ const
     function FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
     function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
 
-    procedure DEBUG();
+    //procedure DEBUG();
   end;
 
 
 const
-  MAX_BACKWARD_DISTANCE = 50; // Maximal distance from influence where may be defences
-  // Defences cannot be between 255 and this value (owner limit)
-  ALLY_INFLUENCE_LIMIT = 100; // Defences cannot be between 255 and this value (ally limit)
-   // Defences cannot be between 255 and this value (enemy limit)
-  DISTANCE_INFLUENCE_LIMIT = 200;
-  MINIMAL_DISTANCE = 10;
-  POLYGON_CNT_PENALIZATION = 20;
+  OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
+  ALLY_INFLUENCE_LIMIT = 190; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ENEMY_INFLUENCE_LIMIT = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
 
-
-  OWNER_INFLUENCE_LIMIT = 200;
-  ENEMY_INFLUENCE_LIMIT = 100;
-
-  MINIMAL_DEFENCE_DISTANCE = 20;
-  MAXIMAL_DEFENCE_DISTANCE = 100;
+  // Weights of defensive line calculation
+  POLYGON_CNT_PENALIZATION = 30; // Polygon count penalization (more polygons = worse defensive line)
+  ALLY_INFLUENCE_PENALIZATION = 1000; // Ally penalization (dont place defences inside of ally city)
+  MINIMAL_DEFENCE_DISTANCE = 5; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
+  MAXIMAL_DEFENCE_DISTANCE = 100; // Maximal defence distance (maximal distance is also affected by ENEMY_INFLUENCE_LIMIT)
 
 implementation
 uses
-   KM_AIFields, KM_NavMesh;
+  KM_AIFields, KM_NavMesh;
 
 
 { TForwardFF }
@@ -122,10 +115,11 @@ begin
 end;
 
 
+// Prepare new Queue
 procedure TForwardFF.MakeNewQueue();
 begin
-  fVisitedIdx := fVisitedIdx + 3; // There is 1 FF forward, 1 FF backward and 1 FF for positioning in 1 round
-
+  fVisitedIdx := fVisitedIdx + 3; // There is 1 FF forward, 1 FF backward and 1 FF for positioning in 1 cycle
+  // Check length
   if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
   begin
     SetLength(fQueueArray, Length(gAIFields.NavMesh.Polygons));
@@ -133,9 +127,10 @@ begin
     fBackwardFF.UpdatePointers(fDefInfo, fQueueArray);
     ClearVisitIdx();
   end;
+  // Reset VisitIdx if needed
   if (fVisitedIdx = High(Byte)-2) then
     ClearVisitIdx();
-
+  // Init also backward FF
   fBackwardFF.NewQueue(fVisitedIdx+1);
 end;
 
@@ -148,6 +143,7 @@ end;
 
 function TForwardFF.CanBeExpanded(const aIdx: Word): Boolean;
 begin
+  // This is border condition for final line of forward flood fill (polygons with 3 nearby polygons can create defensive lines)
   Result := (gAIFields.NavMesh.Polygons[aIdx].NearbyCount <> 3) OR (fDefInfo[aIdx].EnemyInfluence < ENEMY_INFLUENCE_LIMIT);
   if not Result then
     fBackwardFF.AddPolygon(aIdx);
@@ -158,25 +154,24 @@ procedure TForwardFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TK
 var
   Distance: Word;
 begin
-
-//EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
-//AlliedInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
-//OwnerInfluence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
-
+  // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
   Distance := aDistance; // Min(fDefInfo[aIdx].Influence shr 2, Distance);
   if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) then
     Distance := 0;
   inherited MarkAsVisited(aIdx, Distance, aPoint);
-
+  // For special polygons calculate also alliance influence
   if (gAIFields.NavMesh.Polygons[aIdx].NearbyCount = 3) then
   begin
     fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
-    //AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
+    if (Distance < MAXIMAL_DEFENCE_DISTANCE) then // We dont need to know about ally influence far behind maximal defence distance so save some time and do nothing
+      fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
   end;
 end;
 
 
+// Forward flood fill -> from polygons in the owner's city make flood fill to polygons in hostile influence area
+// ForwardFF will find enemies, compute distance and detect empty areas which does not requires defences
 function TForwardFF.ForwardFF(): Boolean;
 var
   I: Integer;
@@ -184,23 +179,26 @@ var
   StartPolygons: TKMWordArray;
 begin
   Result := False;
+  // Get center city points
   CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
   if (Length(CityCenterPoints) < 1) then
     Exit;
+  // Transform it to polygons
   SetLength(StartPolygons, Length(CityCenterPoints));
   for I := Low(StartPolygons) to High(StartPolygons) do
-    StartPolygons[I] := gAIFields.NavMesh.Point2Polygon[ CityCenterPoints[I].Y,CityCenterPoints[I].X ];
-
+    StartPolygons[I] := gAIFields.NavMesh.KMPoint2Polygon[ CityCenterPoints[I] ];
+  // Flood fill
   Result := FillPolygons(Length(StartPolygons), StartPolygons);
 end;
 
 
+// Find best defensive lines (for watchtowers)
 function TForwardFF.FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
 begin
   Result := False;
   fOwner := aOwner;
 
-  gAIFields.Eye.OwnerUpdate(aOwner); // DEBUG
+  gAIFields.Eye.OwnerUpdate(aOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
 
   Result := ForwardFF();
   if Result then
@@ -208,16 +206,18 @@ begin
 end;
 
 
+// Find best defensive polygons (for defensive positions)
 function TForwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
 begin
   Result := False;
   fOwner := aOwner;
+  FirstLine := 0;
 
-  gAIFields.Eye.OwnerUpdate(aOwner); // DEBUG
+  gAIFields.Eye.OwnerUpdate(aOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
 
   Result := ForwardFF();
   if Result then
-    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, aBaseCnt, aMinDefeces);
+    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, aBaseCnt, FirstLine, BestDefLines, aMinDefeces, False);
 end;
 
 
@@ -235,23 +235,24 @@ procedure TBackwardFF.NewQueue(aVisitedIdx: Byte);
 begin
   fQueueCnt := 0;
   fVisitedIdx := aVisitedIdx;
-  fBestEvaluation := 1000000;
+  fBestEvaluation := 1000000000;
 end;
 
 
 procedure TBackwardFF.AddPolygon(aIdx: Word);
 begin
   fQueueArray[aIdx].Visited := fVisitedIdx; // Polygon is marked from ForwardFF
-  fDefInfo[aIdx].Distance := fQueueArray[aIdx].Distance; // Save distance for future calculation
+  fDefInfo[aIdx].Distance := fQueueArray[aIdx].Distance; // Save distance for future calculation of defensive lines
   fQueueArray[aIdx].Distance := High(Word) - fQueueArray[aIdx].Distance; // NavMesh Flood fill class can sort only in increased order -> distances must be inverted when we want to start with the farthest
   InsertAndSort(aIdx);
 end;
 
 
+// Evaluation of actual defensive line
 procedure TBackwardFF.EvaluateDefence(const aIdx: Word);
 var
   PolyArr: TPolygonArray;
-
+  // Get second defensive polygon (2 neighboring polygons in NavMesh have common 1 line)
   function GetSecondDefencePolygon(const aDefIdx: Word): Word;
   var
     I, NearbyIdx, VisitedCnt, VisitedIdx, UnVisitedIdx: Word;
@@ -275,49 +276,56 @@ var
     else if (VisitedCnt <> 3) then
       Result := UnVisitedIdx;
   end;
-
+  // Add new defensive polygon and find defensive line
   procedure AddDefence(aDefIdx1: Word);
   var
     SecondIndice: Boolean;
     I,K, DefIdx2: Word;
   begin
     BestDefLines.Lines[ BestDefLines.Count ].Polygon := aDefIdx1;
-    DefIdx2 := GetSecondDefencePolygon(aDefIdx1);
-    SecondIndice := False;
-    for I := 0 to 2 do
-      for K := 0 to 2 do
-        if (PolyArr[aDefIdx1].Indices[I] = PolyArr[DefIdx2].Indices[K]) then
-        begin
-          BestDefLines.Lines[ BestDefLines.Count ].Nodes[ Byte(SecondIndice) ] := PolyArr[aDefIdx1].Indices[I];
-          SecondIndice := True; // It will switch index from 0 to 1
-          break;
-        end;
-    if SecondIndice then // Make sure that this node exist
+    // For defensive position we dont need proper defensive lines only border polygon for position flood fill
+    if fDefLinesRequired then
+    begin
+      DefIdx2 := GetSecondDefencePolygon(aDefIdx1);
+      // Find common defensive line of 2 polygons
+      SecondIndice := False;
+      for I := 0 to 2 do
+        for K := 0 to 2 do
+          if (PolyArr[aDefIdx1].Indices[I] = PolyArr[DefIdx2].Indices[K]) then
+          begin
+            BestDefLines.Lines[ BestDefLines.Count ].Nodes[ Byte(SecondIndice) ] := PolyArr[aDefIdx1].Indices[I];
+            SecondIndice := True; // It will also switch index from 0 to 1
+            break;
+          end;
+      if SecondIndice then // Make sure that this node exist
+        Inc(BestDefLines.Count);
+    end
+    else
       Inc(BestDefLines.Count);
   end;
-
-const
-  POLYGON_CNT_PENALIZATION = 20;
 var
   I, QueueIdx: Word;
   Evaluation: Single;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
 
+  // Calculate evaluation of actual defensive position
   Evaluation := fQueueCnt * POLYGON_CNT_PENALIZATION;
   QueueIdx := aIdx;
   for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
   begin
-    Evaluation := Evaluation + fDefInfo[aIdx].Distance;
+    Evaluation := Evaluation + fDefInfo[aIdx].Distance + Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION;
     QueueIdx := fQueueArray[QueueIdx].Next;
   end;
+  // If is evaluation better save polygons
   if (Evaluation < fBestEvaluation) then
   begin
     fBestEvaluation := Evaluation;
-    BestDefLines.Count := 0; // Set defences to 0
+    BestDefLines.Count := 0; // Set defences count to 0 (it will be incremented later)
     if (fQueueCnt >= Length(BestDefLines.Lines)) then
       SetLength(BestDefLines.Lines, fQueueCnt + 32);
     QueueIdx := aIdx;
+    // Copy defensive polygons
     for I := 0 to fQueueCnt do // aIdx is already taken from Queue so I must be from 0 to fQueueCnt!
     begin
       AddDefence(QueueIdx);
@@ -336,15 +344,18 @@ begin
 end;
 
 
+// Backward flood fill -> flood fill from enemy influence area to owner city
+// BackwardFF will find the best possible defences
 procedure TBackwardFF.BackwardFlood();
 var
   PolyArr: TPolygonArray;
+  // Prepare init polygons for backward flood fill (polygons near enemy)
   procedure CreateBorders();
   var
     I, K, QueueIdx, NearbyIdx: Word;
   begin
     QueueIdx := fStartQueue;
-    for I := 1 to fQueueCnt do
+    for I := 1 to fQueueCnt do // Enemy polygons are prepared in Queue
     begin
       for K := 0 to PolyArr[QueueIdx].NearbyCount-1 do
       begin
@@ -355,7 +366,7 @@ var
       QueueIdx := fQueueArray[QueueIdx].Next;
     end;
   end;
-
+  // Find nearby unvisited polygons and expand polygon
   procedure ExpandPolygon(aIdx: Word);
   var
     I, NearbyIdx: Integer;
@@ -370,15 +381,13 @@ var
         if (PolyArr[NearbyIdx].NearbyCount = 3) then
         begin
           fQueueArray[NearbyIdx].Distance := High(Word) - fQueueArray[NearbyIdx].Distance; // Invert distance (only polygons which will be inserted)
-          InsertAndSort(NearbyIdx)
-          //InsertInQueue(NearbyIdx);
+          InsertAndSort(NearbyIdx); // Insert ONLY polygons with 3 nearby polygons because it is possible to create defence line from them and also it save performance
         end
         else
           ExpandPolygon(NearbyIdx);
       end;
     end;
   end;
-
 var
   Idx: Word;
 begin
@@ -390,60 +399,84 @@ begin
 end;
 
 
-function TBackwardFF.FindDefencePos(var aBaseCnt: Word; aMinDefeces: Boolean): Boolean;
+// Flood fill for detection of defensive positions
+function TBackwardFF.FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
 const
   INIT_WEIGHT = 10000;
+  SQR_MIN_DEF_POINT_DISTANCE = 3*3;
 var
-  I, K, Idx, NearbyIdx, Cnt: Word;
+  Check: Boolean;
+  Idx, NearbyIdx, Cnt: Word;
+  I, K: Integer;
   Direction: TKMDirection;
   PolyArr: TPolygonArray;
 begin
   Result := False;
+  // Check and determine counts
   if (BestDefLines.Count = 0) then
     Exit
   else if aMinDefeces then
-    aBaseCnt := Max(4,BestDefLines.Count);
+    aBaseCnt := Max(4,BestDefLines.Count)
+  else
+    aBaseCnt := Max(aBaseCnt,BestDefLines.Count);
 
   PolyArr := gAIFields.NavMesh.Polygons;
-  // Prepare defensive FF
+  // Prepare defensive FF - add all polygon is BestDefLines to queue
   NewQueue(fVisitedIdx + 1);
+  aFirstLine := BestDefLines.Count;
   for I := 0 to BestDefLines.Count - 1 do
   begin
     Idx := BestDefLines.Lines[I].Polygon;
     MarkAsVisited(Idx, fDefInfo[ Idx ].Distance, PolyArr[Idx].CenterPoint);
     InsertInQueue( Idx );
-    for K := 0 to PolyArr[Idx].NearbyCount-1 do // Mark every polygon before def line as visited so FF will not make defences here
+    // Direction of groups in defence position may be tricky so it is computed for all children at once as a average point of surrounding polygons
+    fDefInfo[Idx].PointInDir := PolyArr[Idx].CenterPoint;
+    Cnt := 1;
+    // Mark every polygon before def line as visited so FF will not make defences here
+    for K := 0 to PolyArr[Idx].NearbyCount-1 do
     begin
       NearbyIdx := PolyArr[Idx].Nearby[K];
-      if (fDefInfo[ NearbyIdx ].Influence < fDefInfo[ Idx ].Influence) then
+      if (fDefInfo[ NearbyIdx ].Distance > fDefInfo[ Idx ].Distance) then
+      begin
+        Cnt := Cnt + 1;
+        fDefInfo[Idx].PointInDir := KMPointAdd(fDefInfo[Idx].PointInDir, PolyArr[NearbyIdx].CenterPoint);
         MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, PolyArr[Idx].NearbyPoints[K]);
+      end
     end;
+    // Average sum of points for direction
+    fDefInfo[Idx].PointInDir.X := Round( fDefInfo[Idx].PointInDir.X / Cnt );
+    fDefInfo[Idx].PointInDir.Y := Round( fDefInfo[Idx].PointInDir.Y / Cnt );
   end;
-
-    //  Polygon, Weight: Word;
-    //DirPoint: KMPointDir;
-    //
-    //TDefenceInfo = record
-    //  Influence, EnemyInfluence, AllyInfluence: Byte;
-    //  Distance: Word;      fDefInfo TKMPointDir
-    //end;
 
   // Execute FF
   SetLength(DefPosArr, aBaseCnt);
   Cnt := 0;
   while RemoveFromQueue(Idx) AND (Cnt < aBaseCnt) do
   begin
-    with DefPosArr[Cnt] do
+    // Add only defence points with specicific distance
+    Check := True;
+    for I := 0 to Cnt - 1 do
+      if (KMDistanceSqr(fQueueArray[Idx].DistPoint, DefPosArr[I].DirPoint.Loc) < SQR_MIN_DEF_POINT_DISTANCE) then
+      begin
+        Check := False;
+        break;
+      end;
+    if Check then
     begin
-      Polygon := Idx;
-      Weight := fDefInfo[Idx].Distance + fDefInfo[Idx].EnemyInfluence;
-      Direction := KMGetDirection( PolyArr[Idx].CenterPoint, fQueueArray[Idx].DistPoint );
-      DirPoint := KMPointDir( fQueueArray[Idx].DistPoint, Direction );
-
-     //KMGetDirection(KMPointF(fQueueArray[Idx].DistPoint), KMPerpendecular(fQueueArray[Idx].DistPoint, PolyArr[Idx].CenterPoint)
+      with DefPosArr[Cnt] do
+      begin
+        Polygon := Idx;
+        Direction := KMGetDirection( fQueueArray[Idx].DistPoint, fDefInfo[Idx].PointInDir );
+        DirPoint := KMPointDir( fQueueArray[Idx].DistPoint, Direction );
+        if (Cnt < aFirstLine) then
+          Weight := High(Word) // First line, max importance
+        else
+          Weight := (High(Word) shr 1) - fDefInfo[Idx].Distance + fDefInfo[Idx].EnemyInfluence;
+      end;
+      if (Direction <> dir_NA) then
+        Cnt := Cnt + 1;
     end;
-    if (Direction <> dir_NA) then
-      Cnt := Cnt + 1;
+    // Expand polygon
     for I := 0 to PolyArr[Idx].NearbyCount-1 do
     begin
       NearbyIdx := PolyArr[Idx].Nearby[I];
@@ -451,6 +484,7 @@ begin
       begin
         MarkAsVisited(NearbyIdx, fDefInfo[ NearbyIdx ].Distance, PolyArr[Idx].NearbyPoints[I]);
         InsertInQueue(NearbyIdx);
+        fDefInfo[NearbyIdx].PointInDir := fDefInfo[Idx].PointInDir;
       end;
     end;
   end;
@@ -461,21 +495,25 @@ end;
 
 function TBackwardFF.FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
 begin
+  fDefLinesRequired := True;
   BackwardFlood();
   Result := BestDefLines;
 end;
 
 
-function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; aMinDefeces: Boolean): TKMDefencePosArr;
+function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
 begin
+  fDefLinesRequired := aDefLinesRequired;
   BackwardFlood();
-  FindDefencePos(aBaseCnt, aMinDefeces);
+  FindDefencePos(aBaseCnt, aFirstLine, aMinDefeces);
+  aBestDefLines := BestDefLines;
   Result := DefPosArr;
 end;
 
 
 
 
+{
 procedure TForwardFF.DEBUG();
 var
   I, cnt: Integer;
@@ -518,8 +556,7 @@ begin
     end;
   SetLength(D_INIT_FLOOD, cnt);
 end;
-
-
+//}
 
 
 end.
