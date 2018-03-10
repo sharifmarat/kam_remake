@@ -45,12 +45,24 @@ type
     function HouseInfluence(aPlayer: TKMHandIndex; aHouseInfluence, aMaxDistance, aMaximalIdx: Word; aInitIdxArray: TKMWordArray): Boolean;
   end;
 
+  // Evaluation of terrain (finds large areas without borders)
+  TKMWalkableAreasDetector = class(TNavMeshFloodFill)
+  private
+  protected
+    fMaxDistance: Word;
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
+    procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
+  public
+    WalkableAreas: TKMByteArray;
+    procedure MarkPolygons();
+  end;
+
 implementation
 uses
   KM_AIFields, KM_NavMesh, KM_HandsCollection;
 
 
-{TNavMeshInfluenceSearch}
+{ TNavMeshInfluenceSearch }
 function TNavMeshInfluenceSearch.CanBeExpanded(const aIdx: Word): Boolean;
 begin
   // Can be visited only in case that we have space in array (and we are not out of enemies)
@@ -72,6 +84,7 @@ begin
     if    (      fHouseInfluence AND (gAIFields.Influences.Ownership[  fEnemies[I], aPoint.Y, aPoint.X  ] > HOUSE_INFLUENCE_LIMIT)  )
        OR (  not fHouseInfluence AND (gAIFields.Influences.PresenceAllGroups[  fEnemies[I], aIdx  ] > ARMY_INFLUENCE_LIMIT) ) then
     begin
+      // Mark presence
       with EnemiesStats[fHighStatsIdx] do
       begin
         Player := fEnemies[I];
@@ -103,7 +116,7 @@ begin
   Cnt := Length(aCenterPoints);
   SetLength(InitIdxArray, Cnt);
   for I := 0 to Cnt - 1 do
-    InitIdxArray[I] := gAIFields.NavMesh.Point2Polygon[ aCenterPoints[I].Y, aCenterPoints[I].X ];
+    InitIdxArray[I] := gAIFields.NavMesh.KMPoint2Polygon[ aCenterPoints[I] ];
 
   // Find enemies (indexes)
   SetLength(fEnemies, gHands.Count - 1);
@@ -172,6 +185,57 @@ begin
   fHouseInfluence := aHouseInfluence;
   fMaxDistance := aMaxDistance;
   Result := inherited FillPolygons(aMaximalIdx, aInitIdxArray);
+end;
+
+
+
+
+{ TKMWalkableAreasDetector }
+function TKMWalkableAreasDetector.CanBeExpanded(const aIdx: Word): Boolean;
+begin
+  Result := fQueueArray[aIdx].Distance < fMaxDistance;
+end;
+
+
+procedure TKMWalkableAreasDetector.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
+begin
+  with fQueueArray[aIdx] do
+  begin
+    Visited := fVisitedIdx;
+    DistPoint := aPoint;
+    Distance := aDistance;
+  end;
+  WalkableAreas[aIdx] := WalkableAreas[aIdx] + 1;
+end;
+
+
+procedure TKMWalkableAreasDetector.MarkPolygons();
+const
+  CENTER_POLYGON = 15;
+  BORDER_POLYGON = CENTER_POLYGON - 10;
+var
+  I: Integer;
+  InitIdxArray: TKMWordArray;
+begin
+  SetLength(WalkableAreas, Length(gAIFields.NavMesh.Polygons));
+  SetLength(InitIdxArray, 1);
+  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+    WalkableAreas[I] := 0;
+  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+  begin
+    if (gAIFields.NavMesh.Polygons[I].NearbyCount = 3) then
+    begin
+      fMaxDistance := CENTER_POLYGON;
+      //   ...
+    end
+    else
+    begin
+      fMaxDistance := BORDER_POLYGON;
+      //   ...
+    end;
+    InitIdxArray[0] := I;
+    FillPolygons(0, InitIdxArray);
+  end;
 end;
 
 
