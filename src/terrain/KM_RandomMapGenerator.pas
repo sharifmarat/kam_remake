@@ -515,7 +515,7 @@ begin
       //K := (Y-1)*(gTerrain.MapX-1)+X-1;
       aTiles[K].Y := Y;
       aTiles[K].X := X;
-      aTiles[K].Terrain := TilesPartsArr.Terrain[Y,X];
+      aTiles[K].Terrain := Word(TilesPartsArr.Terrain[Y,X]);
       aTiles[K].Rotation := TilesPartsArr.Rotation[Y,X];
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];

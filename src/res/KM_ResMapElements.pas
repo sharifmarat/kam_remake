@@ -45,17 +45,20 @@ type
   function ObjectIsChoppableTree(aObjId: Integer; aStages: TKMChopableAgeSet): Boolean; overload;
 
 
+const
+  OBJECTS_CNT = 255;
+
 var
   //MapElem is in global access because of the recursive FloodFill algorithm
   //when it uses TKMResMapElements.MapElem each call takes 8 times more memory
   //on the stack (View>Debug>CPU>Stack) for reasons unknown to me.
-  gMapElements: array [Byte] of TKMMapElement;
+  gMapElements: array [0..OBJECTS_CNT] of TKMMapElement;
 
 
 const
   //Chopable tree, Chopdown animation,
   //Age1, Age2, Age3, Age4, Falling, Stump
-  ChopableTrees: array [1..13, TKMChopableAge] of byte = (
+  ChopableTrees: array [1..13, TKMChopableAge] of Word = (
   //For grass
   (  88,  89,  90,  90,  91,  37), //These two are very look alike
   (  97,  98,  99, 100, 101,  41), //yet different in small detail and fall direction
