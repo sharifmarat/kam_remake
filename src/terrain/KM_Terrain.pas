@@ -481,7 +481,7 @@ var
       TileBasic.BaseLayer.Corners := [0,1,2,3];
       //Apply some random tiles for artisticity
       TileBasic.Height    := EnsureRange(30 + KaMRandom(7), 0, 100);  //variation in Height
-      TileBasic.Obj       := 255; // No object
+      TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
       TileBasic.LayersCnt := 0;
     end
@@ -713,7 +713,7 @@ begin
   aDiagonalChanged := False;
 
   //There's no need to check conditions for 255 (NO OBJECT)
-  if (aObject <> 255) then
+  if (aObject <> OBJ_NONE) then
   begin
     //Will this change make a unit stuck?
     if ((Land[Y, X].IsUnit <> nil) and gMapElements[aObject].AllBlocked)
@@ -1001,7 +1001,7 @@ function TKMTerrain.TileGoodForIron(X,Y: Word): Boolean;
 begin
   Result := (Land[Y,X].BaseLayer.Terrain in [109,166..170])
     and (Land[Y,X].BaseLayer.Rotation mod 4 = 0) //only horizontal mountain edges allowed
-    and ((Land[Y,X].Obj = 255) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
+    and ((Land[Y,X].Obj = OBJ_NONE) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
     and TileInMapCoords(X,Y, 1)
     and not HousesNearTile
     and (Land[Y,X].TileLock = tlNone)
@@ -1080,7 +1080,7 @@ begin
     and (Land[Y,X].TileOverlay <> to_Road)
     and not HousesNearVertex
     //Woodcutter will dig out other object in favour of his tree
-    and ((Land[Y,X].Obj = 255) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
+    and ((Land[Y,X].Obj = OBJ_NONE) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
     and CheckHeightPass(KMPoint(X,Y), hpWalking);
 end;
 
@@ -1667,14 +1667,14 @@ begin
         KMPoint.X := K;
         KMPoint.Y := I;
 
-        if (Land[I, K].Obj <> 255) then
+        if (Land[I, K].Obj <> OBJ_NONE) then
         begin
           if TileIsCornField(KMPoint) and (GetCornStage(KMPoint) in [4,5]) then
             SetField(KMPoint, Land[I, K].TileOwner, ft_Corn, 3)  // For corn, when delete corn object reduce field stage to 3
           else if TileIsWineField(KMPoint) then
             RemField(KMPoint)
           else
-            SetObject(KMPoint, 255);
+            SetObject(KMPoint, OBJ_NONE);
         end;
 
         if Land[I, K].TileOverlay = to_Road then

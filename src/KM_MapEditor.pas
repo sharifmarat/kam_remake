@@ -346,7 +346,7 @@ begin
   end;
 
   //Delete tile object (including corn/wine objects as well)
-  if (gTerrain.Land[P.Y,P.X].Obj <> 255) then
+  if (gTerrain.Land[P.Y,P.X].Obj <> OBJ_NONE) then
   begin
     fTerrainPainter.MakeCheckpoint;
     if gTerrain.TileIsCornField(P) and (gTerrain.GetCornStage(P) in [4,5]) then
@@ -354,7 +354,7 @@ begin
     else if gTerrain.TileIsWineField(P) then
       gTerrain.RemField(P)
     else
-      gTerrain.SetObject(P, 255);
+      gTerrain.SetObject(P, OBJ_NONE);
     if not aEraseAll then Exit;
   end;
 

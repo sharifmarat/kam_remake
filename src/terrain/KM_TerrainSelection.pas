@@ -568,7 +568,7 @@ begin
       for I := 0 to Sy - 1 do
         for K := 0 to Sx - 1 do
           //Check TileInMapCoords first since KMInRect can't handle negative coordinates
-          if (fSelectionBuffer[I,K].Obj <> 255) and gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
+          if (fSelectionBuffer[I,K].Obj <> OBJ_NONE) and gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
             and KMInRect(KMPoint(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1), aClipRect) then
             gRenderPool.RenderMapElement(fSelectionBuffer[I,K].Obj, 0, fSelectionRect.Left+K+1, fSelectionRect.Top+I+1, True);
     end;
