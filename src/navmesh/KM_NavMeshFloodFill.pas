@@ -19,7 +19,7 @@ type
     fSorted: Boolean; // Only for sorted case
     fVisitedIdx: Byte;
     fStartQueue, fEndQueue, fQueueCnt: Word;
-    fQueueArray: TPolygonsQueueArr; // max 2000 elements (polygons in navmesh) -> use array with fixed length instead of creating elements which have 10<->20 bytes
+    fQueueArray: TPolygonsQueueArr; // max 2000-4000 elements (polygons in navmesh) -> use array with fixed length instead of creating elements which have 10<->20 bytes
 
     procedure MakeNewQueue(); virtual;
     procedure ClearVisitIdx();
@@ -44,6 +44,7 @@ type
 implementation
 uses
   KM_AIFields, KM_NavMesh;
+
 
 { TNavMeshPathFinding }
 constructor TNavMeshFloodFill.Create(aSorted: Boolean = False);
@@ -76,6 +77,7 @@ begin
 end;
 
 
+// Queue is realised inside of array (constant length) instead of interconnected elements
 procedure TNavMeshFloodFill.ClearVisitIdx();
 var
   I: Word;
@@ -129,15 +131,18 @@ procedure TNavMeshFloodFill.InsertAndSort(const aIdx: Word);
 var
   I, ActIdx, PrevIdx: Word;
 begin
+  // Empty queue
   if IsQueueEmpty then
   begin
     fStartQueue := aIdx;
     fEndQueue := fStartQueue;
   end
+  // Insert in sorted array
   else
   begin
     PrevIdx := fStartQueue;
     ActIdx := fStartQueue;
+    // Find the right position
     I := 0;
     while (I < fQueueCnt) do // While must be here
     begin
@@ -147,7 +152,7 @@ begin
       ActIdx := fQueueArray[ActIdx].Next;
       I := I + 1;
     end;
-
+    // Change indexes of surrounding elements (= insert element into queue, no shift of other elements is required)
     if (I = 0) then
     begin
       fQueueArray[aIdx].Next := fStartQueue;
@@ -203,10 +208,12 @@ begin
 end;
 
 
+// Flood fill in NavMesh grid
 procedure TNavMeshFloodFill.Flood();
 var
   PolyArr: TPolygonArray;
-  I, Idx, NearbyIdx: Word;
+  I: SmallInt;
+  Idx, NearbyIdx: Word;
   Point: TKMPoint;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
