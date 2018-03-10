@@ -1,938 +1,1114 @@
-unit KM_PolySimplify;
+unit KM_NavMesh;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Points;
+  KM_PolySimplify,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
+  KM_NavMeshDefences,
+  KromUtils, KM_CommonUtils,
+  KM_NavMeshFloodPositioning, KM_NavMeshPathFinding;// TimeGet
 
 
 type
-  TKMNodesArray = record
-    Count: Integer;
-    Nodes: TKMPointArray;
+  TKMWeightSegments = array of record
+    A,B: TKMPoint;
+    Weight: Single;
   end;
 
-  TKMShapesArray = record
-    Count: Integer;
-    Shape: array of TKMNodesArray;
-  end;
+  TNode = record
+      Loc: TKMPoint;
+      Nearby: array of Word; //Indexes of connected nodes
+    end;
 
-  PKMShapesArray = ^TKMShapesArray;
+  TPolygon = record
+      CenterPoint: TKMPoint;
+      NearbyCount: Byte; //could be 0 .. 3
+      Poly2PointStart, Poly2PointCnt: Word; // Indexes of fPolygon2PointArr (points which are part of this polygon)
+      Indices: array [0..2] of Word; //Neighbour nodes
+      Nearby: array [0..2] of Word; //Neighbour polygons
+      NearbyPoints: array [0..2] of TKMPoint; // Center points
+    end;
 
-  TKMEdgesArray = record
-    Count: Word;
-    Nodes: array of array [0..1] of SmallInt; //Allow for negative values to mark odd egdes
-  end;
+  TNodeArray = array of TNode;
+  TPolygonArray = array of TPolygon;
 
-  //Class to simplify shapes by removing points within aError
-  TKMSimplifyShapes = class
+  //NavMesh is used to acess the map on a higher level than tiles
+  //terrain is represented as a mesh interconnected polygons
+  TKMNavMesh = class
   private
-    fError: Single;
-    fRect: TKMRect;
-    fIn: TKMShapesArray;
-    fOut: PKMShapesArray;
-    fKeep: array of array of Boolean;
-    procedure SetupKeepArray;
-    procedure Simplify(aShape, aFrom, aTo: Integer; aErrorSqr: Single; aForceSplit: Boolean = False);
-    procedure WriteOutput;
-    procedure SetupOutputArray;
-    procedure FixDegenerateShapes;
-    procedure FixIntersectingShapes;
-    procedure SimplifyShapes;
+    //Keep a copy of these temp arrays for debug rendering
+    fRawOutlines: TKMShapesArray;
+    fSimpleOutlines: TKMShapesArray;
+    fRawMesh: TKMTriMesh;
+
+    //Working data
+    fNodeCount: Integer;
+    fPolyCount: Integer;
+    fNodes: TNodeArray;               // Nodes
+    fPolygons: TPolygonArray;         // Polygons
+    fPoint2PolygonArr: TKMWord2Array; // KMPoint -> Polygon index
+    fPolygon2PointArr: TKMPointArray; // Polygon index -> KMPoint
+
+
+    fDefences: TForwardFF; //Defences class
+    fPathfinding: TNavMeshPathFinding; // NavMesh Pathfinding
+    fPositioning: TNavMeshFloodPositioning; // NavMesh Positioning
+
+    //Building the navmesh from terrain
+    //Process involves many steps executed in a functional way
+    procedure GenerateTileOutline(out aTileOutlines: TKMShapesArray);
+    procedure TriangulateOutlines;
+    procedure AssembleNavMesh;
+    procedure InitConnectivity;
+    function FindClosestPolygon(aP: TKMPoint): Word;
+    procedure TieUpTilesWithPolygons();
+    procedure TieUpPolygonsWithTiles();
+
+    function GetPolygonFromPoint(const aPoint: TKMPoint): Word;
+
+    //function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
+    //function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
+    //function RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
+    //function EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
+
+    //function GetBestOwner(aIndex: Integer): TKMHandIndex;
+    //function NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
+    //function PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
   public
-    constructor Create(aError: Single; aRect: TKMRect);
-    procedure Execute(const aIn: TKMShapesArray; var aOut: TKMShapesArray);
+    constructor Create();
+    destructor Destroy(); override;
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
+
+    property Point2Polygon: TKMWord2Array read fPoint2PolygonArr;
+    property KMPoint2Polygon[const aPoint: TKMPoint]: Word read GetPolygonFromPoint;
+    property Polygon2Point: TKMPointArray read fPolygon2PointArr;
+    property Polygons: TPolygonArray read fPolygons;
+    property Nodes: TNodeArray read fNodes;
+    property Defences: TForwardFF read fDefences write fDefences;
+    property Pathfinding: TNavMeshPathFinding read fPathfinding write fPathfinding;
+    property Positioning: TNavMeshFloodPositioning read fPositioning write fPositioning;
+
+    procedure AfterMissionInit();
+    //procedure GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
+
+    procedure UpdateState(aTick: Cardinal);
+    procedure Paint(aRect: TKMRect);
   end;
 
-//Simplify shapes by removing unnecessary points from straight lines
-procedure SimplifyStraights(const aIn: TKMShapesArray; aRect: TKMRect; var aOut: TKMShapesArray);
-
-procedure ForceOutlines(var aTriMesh: TKMTriMesh; aRect: TKMRect; fSimpleOutlines: TKMShapesArray);
-
-procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; fSimpleOutlines: TKMShapesArray);
-
-//Remove anything that is outside bounds
-procedure RemoveFrame(var aTriMesh: TKMTriMesh);
-
-//Remove anything that is outside bounds
-procedure CheckForDegenerates(var aTriMesh: TKMTriMesh);
+const
+  // Constants in KM_PolySimplify must be also changed!!!
+  NAVMESH_POINT_TOLERANCE = 1; // Shape edges (points) closer than this will be skipped
+  NAVMESH_EDGE_DENSITY = 3; // Density of NavMesh edge points (affect count and size of points)
+  NAVMESH_DENSITY = NAVMESH_EDGE_DENSITY + 1; // Density of NavMesh
 
 
 implementation
 uses
-  SysUtils, Math,
-  PolyTriangulate;
+  SysUtils, Math, Delaunay,
+  KM_Terrain, KM_HandsCollection, KM_RenderAux, KM_Outline,
+  Dialogs;
 
 
-const
-  MAX_STRAIGHT_SPAN = 3; //Keep just every Nth point on nonedge  straightsin raw outlines (7)
-  MAX_SIMPLIFIED_SPAN = 6; //Allow max N span on simplified outline (12)
-
-
-constructor TKMSimplifyShapes.Create(aError: Single; aRect: TKMRect);
+{ TKMNavMesh }
+constructor TKMNavMesh.Create();
 begin
   inherited Create;
 
-  fError := aError;
-  fRect := aRect;
+  fDefences := TForwardFF.Create(True);
+  fPathfinding := TNavMeshPathFinding.Create();
+  fPositioning := TNavMeshFloodPositioning.Create();
 end;
 
-procedure TKMSimplifyShapes.Simplify(aShape, aFrom, aTo: Integer; aErrorSqr: Single; aForceSplit: Boolean = False);
+
+destructor TKMNavMesh.Destroy();
+begin
+  fDefences.Free;
+  fPathfinding.Free;
+  fPositioning.Free;
+  inherited;
+end;
+
+
+procedure TKMNavMesh.Save(SaveStream: TKMemoryStream);
 var
-  InLoop: TKMPointArray;
+  I,K: Integer;
+begin
+  SaveStream.WriteA('NavMesh');
+
+  SaveStream.Write(fNodeCount);
+  for I := 0 to fNodeCount - 1 do
+  begin
+    SaveStream.Write(fNodes[I].Loc);
+
+    SaveStream.Write(Integer(Length(fNodes[I].Nearby)));
+    for K := 0 to Length(fNodes[I].Nearby) - 1 do
+      SaveStream.Write(fNodes[I].Nearby[K]);
+  end;
+
+  SaveStream.Write(fPolyCount);
+  // In current implementation there could be just:
+  // SaveStream.Write(fPolygons[0], SizeOf(TPolygon) * fPolyCount);
+  // but future implementation may be changed so this will save some work
+  for I := 0 to fPolyCount - 1 do
+  begin
+    SaveStream.Write(fPolygons[I].CenterPoint);
+    SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
+    SaveStream.Write(fPolygons[I].NearbyCount);
+    SaveStream.Write(fPolygons[I].Poly2PointStart);
+    SaveStream.Write(fPolygons[I].Poly2PointCnt);
+    SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  end;
+
+  I := Length(fPoint2PolygonArr);
+  SaveStream.Write( I );
+  K := 0;
+  if (I > 0) then
+    K := Length(fPoint2PolygonArr[0]);
+  SaveStream.Write( K );
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    SaveStream.Write(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
+
+  I := Length(fPolygon2PointArr);
+  SaveStream.Write( I );
+  SaveStream.Write(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
+
+  // The following does not requires save
+  // fDefences
+  // fPathfinding
+  // fPositioning
+end;
+
+
+procedure TKMNavMesh.Load(LoadStream: TKMemoryStream);
+var
+  I,K: Integer;
+  NewCount: Integer;
+begin
+  LoadStream.ReadAssert('NavMesh');
+
+  LoadStream.Read(fNodeCount);
+  SetLength(fNodes, fNodeCount);
+  for I := 0 to fNodeCount - 1 do
+  begin
+    LoadStream.Read(fNodes[I].Loc);
+
+    LoadStream.Read(NewCount);
+    SetLength(fNodes[I].Nearby, NewCount);
+    for K := 0 to NewCount - 1 do
+      LoadStream.Read(fNodes[I].Nearby[K]);
+  end;
+
+  LoadStream.Read(fPolyCount);
+  SetLength(fPolygons, fPolyCount);
+  for I := 0 to fPolyCount - 1 do
+  begin
+    LoadStream.Read(fPolygons[I].CenterPoint);
+    LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
+    LoadStream.Read(fPolygons[I].NearbyCount);
+    LoadStream.Read(fPolygons[I].Poly2PointStart);
+    LoadStream.Read(fPolygons[I].Poly2PointCnt);
+    LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
+    LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  end;
+
+  LoadStream.Read(I);
+  LoadStream.Read(K);
+  SetLength(fPoint2PolygonArr,I,K);
+  for I := 0 to Length(fPoint2PolygonArr) - 1 do
+    LoadStream.Read(fPoint2PolygonArr[I,0], SizeOf(fPoint2PolygonArr[0,0]) * K );
+
+  LoadStream.Read(I);
+  SetLength(fPolygon2PointArr,I);
+  LoadStream.Read(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
+end;
+
+
+procedure TKMNavMesh.AfterMissionInit();
+var
+  TileOutlines: TKMShapesArray;
+begin
+  //Convert tilemap into vector outlines
+  GenerateTileOutline(TileOutlines);
+
+  //Remove extra points on straights
+  SimplifyStraights(TileOutlines, KMRect(0, 0, gTerrain.MapX-1, gTerrain.MapY-1), fRawOutlines);
+
+  //Perform outlines simplification
+  with TKMSimplifyShapes.Create(2, KMRect(0, 0, gTerrain.MapX-1, gTerrain.MapY-1)) do
+  begin
+    Execute(fRawOutlines, fSimpleOutlines);
+    Free;
+  end;
+
+  //Triangulate everything
+  TriangulateOutlines;
+
+  //Force mesh triangulation to be along outlines
+  ForceOutlines(fRawMesh, KMRect(0, 0, gTerrain.MapX-1, gTerrain.MapY-1), fSimpleOutlines);
+
+  //Remove polygons within obstacles
+  RemoveObstaclePolies(fRawMesh, fSimpleOutlines);
+
+  //Remove outside frame (required by Delaunay)
+  RemoveFrame(fRawMesh);
+
+  //Make sure we dont have degenerate polys left
+  CheckForDegenerates(fRawMesh);
+
+  Assert(Length(fRawMesh.Polygons) >= 6);
+
+  //Fill in NavMesh structure
+  AssembleNavMesh;
+
+  //Mapp all map tiles to its polygons and vice versa
+  TieUpTilesWithPolygons();
+  TieUpPolygonsWithTiles();
+end;
+
+
+function TKMNavMesh.GetPolygonFromPoint(const aPoint: TKMPoint): Word;
+begin
+  Result := fPoint2PolygonArr[ aPoint.Y, aPoint.X ];
+end;
+
+
+procedure TKMNavMesh.TieUpPolygonsWithTiles();
+var
+  X,Y,Polygon,Cnt: Integer;
+begin
+  SetLength(fPolygon2PointArr,(gTerrain.MapX-1) * (gTerrain.MapY-1));
+  Cnt := 0;
+  for Polygon := 0 to Length(fPolygons) - 1 do
+  begin
+    fPolygons[ Polygon ].Poly2PointStart := Cnt;
+    for Y := 1 to gTerrain.MapY-1 do
+    for X := 1 to gTerrain.MapX-1 do
+      if (fPoint2PolygonArr[Y,X] = Polygon) then
+      begin
+        fPolygon2PointArr[Cnt] := KMPoint(X,Y);
+        Cnt := Cnt + 1;
+      end;
+    fPolygons[ Polygon ].Poly2PointCnt := Cnt;
+  end;
+end;
+
+
+// Find closest NavMesh in case that we get point which is not part of fPoint2PolygonArr
+// (stonemason may mine stone and create walkable tiles which are not part of NavMesh [NavMesh is not updated during game])
+// Computed points will be copied into fPoint2PolygonArr in TieUpTilesWithPolygons function -> fPoint2PolygonArr will always refer to existing point
+function TKMNavMesh.FindClosestPolygon(aP: TKMPoint): Word;
+const
+  MAX_SCAN_DIST = 255;
+var
+  I,X,Y, Output: Word;
+  PMin,PMax: TKMPoint;
+begin
+  Result := High(Word);
+  if not gTerrain.TileInMapCoords(aP.X, aP.Y) then
+    aP := KMPoint(  Min( Max(1,aP.X), gTerrain.MapX-1), Min( Max(1,aP.Y), gTerrain.MapY-1)  );
+
+  Result := fPoint2PolygonArr[aP.Y,aP.X];
+  if (Result <> High(Word)) then
+    Exit;
+
+  Output := High(Word);
+  for I := 0 to MAX_SCAN_DIST do
+  begin
+    PMin := KMPoint(Max(1,aP.X - I), Max(1,aP.Y - I));
+    PMax := KMPoint(Min(gTerrain.MapX-1,aP.X + I), Min(gTerrain.MapY-1,aP.Y + I));
+    for X := PMin.X to PMax.X do
+      if (fPoint2PolygonArr[PMin.Y,X] <> High(Word)) then
+      begin
+        Output := fPoint2PolygonArr[PMin.Y,X];
+        break;
+      end
+      else if (fPoint2PolygonArr[PMax.Y,X] <> High(Word)) then
+      begin
+        Output := fPoint2PolygonArr[PMax.Y,X];
+        break;
+      end;
+    if (Output <> High(Word)) then
+      break;
+    for Y := PMin.Y to PMax.Y do
+      if (fPoint2PolygonArr[Y,PMin.X] <> High(Word)) then
+      begin
+        Output := fPoint2PolygonArr[Y,PMin.X];
+        break;
+      end
+      else if (fPoint2PolygonArr[Y,PMax.X] <> High(Word)) then
+      begin
+        Output := fPoint2PolygonArr[Y,PMax.X];
+        break;
+      end;
+    if (Output <> High(Word)) then
+      break;
+  end;
+  Result := Output;
+end;
+
+
+procedure TKMNavMesh.TieUpTilesWithPolygons();
+
+// Is inside triangle (source: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle)
+  function Sign(const aP1, aP2, aP3: TKMPointF): Single;
+  begin
+      Result := (aP1.X - aP3.X) * (aP2.Y - aP3.Y) - (aP2.X - aP3.X) * (aP1.Y - aP3.Y);
+  end;
+
+  function PointInTriangle(const aPt, aV1, aV2, aV3: TKMPointF): Boolean;
+  var
+    b1, b2, b3: Boolean;
+  begin
+    b1 := Sign(aPt, aV1, aV2) <= 0.0;
+    b2 := Sign(aPt, aV2, aV3) <= 0.0;
+    b3 := Sign(aPt, aV3, aV1) <= 0.0;
+    Result := ((b1 = b2) AND (b2 = b3));
+  end;
+
+  procedure ComputeNearbyPoints(aIdx: Word);
+  var
+    SecondPoint: Boolean;
+    I,K,L, ToIdx: Integer;
+    Indices: array[0..1] of Word;
+  begin
+    for I := 0 to fPolygons[aIdx].NearbyCount - 1 do
+    begin
+      SecondPoint := False;
+      ToIdx := fPolygons[aIdx].Nearby[I];
+      for K := 0 to 2 do
+      for L := 0 to 2 do
+        if (fPolygons[aIdx].Indices[K] = fPolygons[ToIdx].Indices[L]) then
+        begin
+          Indices[ Byte(SecondPoint) ] := fPolygons[aIdx].Indices[K];
+          SecondPoint := True;
+          break;
+        end;
+      fPolygons[aIdx].NearbyPoints[I] := KMPointAverage(fNodes[ Indices[0] ].Loc, fNodes[ Indices[1] ].Loc);
+    end;
+  end;
+var
+  AlreadyInTriangle: Boolean;
+  I, i1, i2, i3: Word;
+  X, Y: Integer;
+  MinPoint, MaxPoint: TKMPoint;
+  v1, v2, v3: TKMPointF;
+  WordArr: TKMWord2Array;
+begin
+  SetLength(fPoint2PolygonArr, gTerrain.MapY, gTerrain.MapX);
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      fPoint2PolygonArr[Y,X] := High(Word);
+
+  for I := 0 to fPolyCount - 1 do
+  begin
+    i1 := fPolygons[I].Indices[0];
+    i2 := fPolygons[I].Indices[1];
+    i3 := fPolygons[I].Indices[2];
+
+    v1 := KMPointF(fNodes[i1].Loc.X, fNodes[i1].Loc.Y);
+    v2 := KMPointF(fNodes[i2].Loc.X, fNodes[i2].Loc.Y);
+    v3 := KMPointF(fNodes[i3].Loc.X, fNodes[i3].Loc.Y);
+    //CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
+    fPolygons[I].CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
+
+    MinPoint.X := Min(  Min( fNodes[i1].Loc.X, fNodes[i2].Loc.X ), fNodes[i3].Loc.X  );
+    MinPoint.Y := Min(  Min( fNodes[i1].Loc.Y, fNodes[i2].Loc.Y ), fNodes[i3].Loc.Y  );
+    MaxPoint.X := Max(  Max( fNodes[i1].Loc.X, fNodes[i2].Loc.X ), fNodes[i3].Loc.X  );
+    MaxPoint.Y := Max(  Max( fNodes[i1].Loc.Y, fNodes[i2].Loc.Y ), fNodes[i3].Loc.Y  );
+
+    for Y := MinPoint.Y+1 to MaxPoint.Y do
+    begin
+      AlreadyInTriangle := False;
+      for X := MinPoint.X+1 to MaxPoint.X do
+      begin
+        if PointInTriangle(KMPointF(X-0.5,Y-0.5), v1, v2, v3) then
+        begin
+          fPoint2PolygonArr[Y,X] := I;
+          AlreadyInTriangle := True;
+        end
+        else if AlreadyInTriangle then
+          break;
+      end;
+    end;
+
+    ComputeNearbyPoints(I);
+  end;
+
+  // Now add points
+  SetLength(WordArr, gTerrain.MapY, gTerrain.MapX);
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      if (fPoint2PolygonArr[Y,X] = High(Word)) then
+        WordArr[Y,X] := FindClosestPolygon(KMPoint(X,Y));
+
+  for Y := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    for X := Low(fPoint2PolygonArr[Y]) to High(fPoint2PolygonArr[Y]) do
+      if (fPoint2PolygonArr[Y,X] = High(Word)) then
+        fPoint2PolygonArr[Y,X] := WordArr[Y,X];
+end;
+
+
+procedure TKMNavMesh.GenerateTileOutline(out aTileOutlines: TKMShapesArray);
+var
+  I, K: Integer;
+  Tmp: TKMByte2Array;
+begin
+  SetLength(Tmp, gTerrain.MapY-1, gTerrain.MapX-1);
+
+  //Copy map to temp array as 0/1 (generator uses other byte values for its needs)
+  //0 - no obstacle
+  //1 - obstacle
+  for I := 0 to gTerrain.MapY - 2 do
+  for K := 0 to gTerrain.MapX - 2 do
+    Tmp[I,K] := 1 - Byte(tpOwn in gTerrain.Land[I+1,K+1].Passability);
+
+  GenerateOutline(Tmp, 12, aTileOutlines);
+
+  //GenerateOutline is 0 based for versatility purposes, but Terrain in 1 based
+  //because of legacy reasons. Do the conversion
+  for I := 0 to aTileOutlines.Count - 1 do
+  for K := 0 to aTileOutlines.Shape[I].Count - 1 do
+  begin
+    aTileOutlines.Shape[I].Nodes[K].X := aTileOutlines.Shape[I].Nodes[K].X + 1;
+    aTileOutlines.Shape[I].Nodes[K].Y := aTileOutlines.Shape[I].Nodes[K].Y + 1;
+  end;
+end;
+
+
+procedure TKMNavMesh.TriangulateOutlines;
+var
+  fDelaunay: TDelaunay;
+  I, K, L, M: Integer;
+  MeshDensityX, MeshDensityY: Byte;
+  SizeX, SizeY: Word;
+  PX,PY,TX,TY: Integer;
+  Skip: Boolean;
+begin
+  //Fill area with Delaunay triangles
+  fDelaunay := TDelaunay.Create(-1, -1, gTerrain.MapX, gTerrain.MapY);
+  try
+    //Points that are closer than that will be skipped
+    fDelaunay.Tolerance := NAVMESH_POINT_TOLERANCE;
+    for I := 0 to fSimpleOutlines.Count - 1 do
+    with fSimpleOutlines.Shape[I] do
+      for K := 0 to Count - 1 do
+        fDelaunay.AddPoint(Nodes[K].X, Nodes[K].Y);
+
+    //Add more points along edges to get even density
+    SizeX := gTerrain.MapX-1;
+    SizeY := gTerrain.MapY-1;
+    MeshDensityX := SizeX div NAVMESH_EDGE_DENSITY;
+    MeshDensityY := SizeY div NAVMESH_EDGE_DENSITY;
+    for I := 0 to MeshDensityY do
+    for K := 0 to MeshDensityX do
+    if (I = 0) or (I = MeshDensityY) or (K = 0) or (K = MeshDensityX) then
+    begin
+      Skip := False;
+      PX := Round(SizeX / MeshDensityX * K);
+      PY := Round(SizeY / MeshDensityY * I);
+
+      //Don't add point to obstacle outline if there's one below
+      for L := 0 to fSimpleOutlines.Count - 1 do
+      with fSimpleOutlines.Shape[L] do
+        for M := 0 to Count - 1 do
+        begin
+          TX := Nodes[(M + 1) mod Count].X;
+          TY := Nodes[(M + 1) mod Count].Y;
+          if InRange(PX, Nodes[M].X, TX) and InRange(PY, Nodes[M].Y, TY)
+          or InRange(PX, TX, Nodes[M].X) and InRange(PY, TY, Nodes[M].Y) then
+            Skip := True;
+        end;
+
+      if not Skip then
+        fDelaunay.AddPoint(PX, PY);
+    end;
+
+    //Add more supporting points into the middle to get more even mesh
+    //Tolerance must be a little higher than longest span we expect from polysimplification
+    //so that not a single node was placed on an outline segment (otherwise RemObstaclePolys will not be able to trace outlines)
+    fDelaunay.Tolerance := NAVMESH_DENSITY;
+    for I := 1 to MeshDensityY - 1 do
+    for K := 1 to MeshDensityX - Byte(I mod 2 = 1) - 1 do
+      fDelaunay.AddPoint(Round(SizeX / MeshDensityX * (K + Byte(I mod 2 = 1) / 2)), Round(SizeY / MeshDensityY * I));
+
+    //Do the Delaunay magick
+    fDelaunay.Mesh;
+
+    //Get triangulated mesh back
+    SetLength(fRawMesh.Vertices, fDelaunay.VerticeCount);
+    for I := 0 to fDelaunay.VerticeCount - 1 do
+    begin
+      fRawMesh.Vertices[I].X := Round(fDelaunay.Vertex[I].X);
+      fRawMesh.Vertices[I].Y := Round(fDelaunay.Vertex[I].Y);
+    end;
+    SetLength(fRawMesh.Polygons, fDelaunay.PolyCount);
+    for I := 0 to fDelaunay.PolyCount - 1 do
+    begin
+      fRawMesh.Polygons[I,0] := fDelaunay.Triangle^[I].vv0;
+      fRawMesh.Polygons[I,1] := fDelaunay.Triangle^[I].vv1;
+      fRawMesh.Polygons[I,2] := fDelaunay.Triangle^[I].vv2;
+    end;
+  finally
+    FreeAndNil(fDelaunay);
+  end;
+end;
+
+
+procedure TKMNavMesh.AssembleNavMesh;
+var
   I: Integer;
-  MaxDistI: Integer;
-  MaxDistSqr: Single;
-  NodeDistSqr, TestDot, Tmp: Single;
-  DistSqr: Single;
-  Node1, Node2: TKMPoint;
-  TestPos: TKMPointF;
-  NodeVect, TestVect: TKMPoint;
-  TestP: TKMPoint;
 begin
-  InLoop := fIn.Shape[aShape].Nodes;
+  fNodeCount := Length(fRawMesh.Vertices);
+  fPolyCount := Length(fRawMesh.Polygons);
 
-  //There is nothing to simplify
-  if aTo <= aFrom + 1 then Exit;
+  //Bring triangulated mesh back
+  SetLength(fNodes, fNodeCount);
+  for I := 0 to fNodeCount - 1 do
+    fNodes[I].Loc := fRawMesh.Vertices[I];
 
-  Node1 := InLoop[aFrom];
-  Node2 := InLoop[aTo mod Length(InLoop)];
-  NodeVect := KMPointSubtract(Node2, Node1);
-  NodeDistSqr := KMDistanceSqr(Node2, Node1);
-  MaxDistI := 0;
-  MaxDistSqr := -1;
-
-  //Check all points and pick farthest away
-  for I := aFrom + 1 to aTo - 1 do
+  SetLength(fPolygons, fPolyCount);
+  for I := 0 to fPolyCount - 1 do
   begin
-    TestP := InLoop[I];
-
-    TestVect := KMPointSubtract(TestP, Node1);
-    TestDot := KMDotProduct(TestVect, NodeVect);
-
-    //Calculate distance to segment
-    if TestDot <= 0 then
-      DistSqr := KMDistanceSqr(TestP, Node1)
-    else
-    if TestDot >= NodeDistSqr then
-      DistSqr := KMDistanceSqr(TestP, Node2)
-    else
-    begin
-      if NodeDistSqr <> 0 then
-        Tmp := TestDot / NodeDistSqr
-      else
-        Tmp := 0;
-      //TestPos is projected on to the line and thus needs FloatingPoint position
-      TestPos.X := Node1.X + Tmp * NodeVect.X;
-      TestPos.Y := Node1.Y + Tmp * NodeVect.Y;
-      DistSqr := KMDistanceSqr(KMPointF(TestP), TestPos);
-    end;
-
-    //Add slightly more weight to the middle to allow to split straight lines
-    DistSqr := DistSqr + Min(aTo - I, I - aFrom) / 100;
-
-    //Pick farthest point
-    if DistSqr > MaxDistSqr then
-    begin
-      MaxDistI := I;
-      MaxDistSqr := DistSqr;
-    end;
+    fPolygons[I].Indices[0] := fRawMesh.Polygons[I,0];
+    fPolygons[I].Indices[1] := fRawMesh.Polygons[I,1];
+    fPolygons[I].Indices[2] := fRawMesh.Polygons[I,2];
   end;
 
-  //See if we need to split once again due to Error, too long span or forced
-  //irregardless of cause - split by farthest point
-  if (MaxDistSqr > aErrorSqr) or (KMLengthSqr(Node1, Node2) > Sqr(MAX_SIMPLIFIED_SPAN)) or aForceSplit then
-  begin
-    fKeep[aShape, MaxDistI] := True;
-
-    Simplify(aShape, aFrom, MaxDistI, aErrorSqr);
-    Simplify(aShape, MaxDistI, aTo, aErrorSqr);
-  end;
+  InitConnectivity;
 end;
 
 
-//Simplify all the shapes
-//Based on Douglas-Peucker algorithm for polyline simplification
-//  aError - max allowed distance between resulting line and removed points
-procedure TKMSimplifyShapes.SimplifyShapes;
-var
-  I, K: Integer;
-  Prev: Integer;
-begin
-  for I := 0 to fIn.Count - 1 do
+procedure TKMNavMesh.InitConnectivity;
+  procedure DoConnectNodes(I, N1, N2: Word);
   begin
-    Assert(fIn.Shape[I].Count > 3, 'There''s nothing to simplify?');
-    Prev := 0;
-    for K := 1 to fIn.Shape[I].Count do
-    if fKeep[I,K] then
+    with fNodes[I] do
     begin
-      //We use Sqr values for all comparisons for speedup
-      Simplify(I, Prev, K, Sqr(fError));
-      Prev := K;
+      SetLength(Nearby, Length(Nearby) + 2);
+      Nearby[High(Nearby)-1] := N1;
+      Nearby[High(Nearby)] := N2;
     end;
   end;
-end;
-
-
-//Fill resulting array with preserved points
-procedure TKMSimplifyShapes.WriteOutput;
-var
-  I, K: Integer;
-begin
-  for I := 0 to fIn.Count - 1 do
+  procedure DoConnectPolys(aPoly, N1, N2, N3: Word);
+  var
+    I: Integer;
+    K1,K2,K3: Word;
   begin
-    fOut.Shape[I].Count := 0;
-    for K := 0 to fIn.Shape[I].Count - 1 do
-    if fKeep[I,K] then
+    for I := 0 to fPolyCount - 1 do
+    if (I <> aPoly) then
+    with fPolygons[I] do
     begin
-      fOut.Shape[I].Nodes[fOut.Shape[I].Count] := fIn.Shape[I].Nodes[K];
-      Inc(fOut.Shape[I].Count);
-    end;
-  end;
-end;
-
-
-//Setup boolean array that tells algo which points to keep
-procedure TKMSimplifyShapes.SetupKeepArray;
-var
-  I,K,L: Integer;
-  KeepMiddle: Boolean;
-  Corners: array of ShortInt;
-  N0, N1, N2: Integer;
-  FirstCorner: Integer;
-  TmpNode: TKMPoint;
-  TmpCorn: ShortInt;
-  Count1, Count2: Integer;
-  Best: Single;
-  BestI: Integer;
-begin
-  SetLength(fKeep, fIn.Count);
-
-  for I := 0 to fIn.Count - 1 do
-  with fIn.Shape[I] do
-  begin
-    //Find corner nodes
-    SetLength(Corners, Count);
-    for K := 0 to Count - 1 do
-    begin
-      N0 := (K + Count - 1) mod Count;
-      N1 := K;
-      N2 := (K + 1) mod Count;
-      Corners[K] := Sign(KMNormal2Poly(Nodes[N0], Nodes[N1], Nodes[N2]));
-    end;
-
-    //Check corner count and invert signs if we are dealing with CCW instead of CW
-    //(yes, that can happen if obstacle gets parsed from opposite side)
-    Count1 := 0;
-    Count2 := 0;
-    for K := 0 to Count - 1 do
-    begin
-      Count1 := Count1 + Byte(Corners[K] > 0);
-      Count2 := Count2 + Byte(Corners[K] < 0);
-    end;
-    Assert(Abs(Count1 - Count2) = 4);
-    if Count2 > Count1 then
-    for K := 0 to Count - 1 do
-      Corners[K] := -Corners[K];
-
-    FirstCorner := -1;
-    for K := 0 to Count - 1 do
-    begin
-      N0 := (K + Count - 1) mod Count;
-      N1 := K;
-      N2 := (K + 1) mod Count;
-      if (Corners[N1] = 1) and ((Corners[N0] >= 0) or (Corners[N2] >= 0)) then
+      K1 := Indices[0];
+      K2 := Indices[1];
+      K3 := Indices[2];
+      //Need to check all combinations
+      if ((K1 = N2) and (K2 = N1)) or ((K1 = N1) and (K2 = N3)) or ((K1 = N3) and (K2 = N2))
+      or ((K2 = N2) and (K3 = N1)) or ((K2 = N1) and (K3 = N3)) or ((K2 = N3) and (K3 = N2))
+      or ((K3 = N2) and (K1 = N1)) or ((K3 = N1) and (K1 = N3)) or ((K3 = N3) and (K1 = N2))
+      then
       begin
-        FirstCorner := K;
-        Break;
+        Nearby[NearbyCount] := aPoly;
+        Inc(NearbyCount);
       end;
     end;
+  end;
+var
+  I: Integer;
+begin
+  //Set nodes nearbys to fill influence field
+  for I := 0 to fPolyCount - 1 do
+  with fPolygons[I] do
+  begin
+    DoConnectNodes(Indices[0], Indices[1], Indices[2]);
+    DoConnectNodes(Indices[1], Indices[0], Indices[2]);
+    DoConnectNodes(Indices[2], Indices[0], Indices[1]);
+  end;
 
-    if FirstCorner = -1 then
-      raise Exception.Create('Could not find corners?');
+  //Erase
+  for I := 0 to fPolyCount - 1 do
+  begin
+    fPolygons[I].NearbyCount := 0;
+    fPolygons[I].Nearby[0] := 0;
+    fPolygons[I].Nearby[1] := 0;
+    fPolygons[I].Nearby[2] := 0;
+  end;
 
-    //Shift start to Corner node
-    if FirstCorner > 0 then
-    begin
-      //Do that many 1-item shifts
-      for L := 0 to FirstCorner - 1 do
-      begin
-        TmpCorn := Corners[0];
-        TmpNode := Nodes[0];
-        for K := 0 to Count - 2 do
-        begin
-          Corners[K] := Corners[K+1];
-          Nodes[K] := Nodes[K+1];
-        end;
-        Corners[Count - 1] := TmpCorn;
-        Nodes[Count - 1] := TmpNode;
-      end;
-    end;
+  //Set polys connectivity to be able to expand
+  for I := 0 to fPolyCount - 1 do
+  with fPolygons[I] do
+    DoConnectPolys(I, Indices[0], Indices[1], Indices[2]);
+end;
 
-    //NCount+1 because we duplicate last point to let algo work on 2 polylines
-    SetLength(fKeep[I], Count + 1);
-    for K := 0 to Count do
-      fKeep[I,K] := False;
-    fKeep[I,0] := True;
-    fKeep[I,Count] := True;
 
-    //We split loop in half and simplify both segments independently as two convex
-    //lines. That is because algo is aimed at polyline, not polyloop
-    KeepMiddle := True;
 
-    //Keep nodes on edges (skip 1st-last that are already marked)
-    for K := 1 to Count - 1 do
-    if (Nodes[K].X = fRect.Left) or (Nodes[K].Y = fRect.Top)
-    or (Nodes[K].X = fRect.Right) or (Nodes[K].Y = fRect.Bottom) then
-    begin
-      fKeep[I,K] := True;
-      KeepMiddle := False;
-    end;
 
-    //Find farthest corner in the middle
-    if KeepMiddle then
-    begin
-      Best := 0;
-      BestI := 0;
-      for K := 2 to Count - 2 do
-      if (Corners[K] = 1) and (Best < KMDistanceSqr(Nodes[0], Nodes[K])) then
-      begin
-        Best := KMDistanceSqr(Nodes[0], Nodes[K]);
-        BestI := K;
-      end;
-      fKeep[I, BestI] := True;
-    end;
+{
+function TKMNavMesh.GetBestOwner(aIndex: Integer): TKMHandIndex;
+var
+  I: Integer;
+  Best: Byte;
+begin
+  Best := 0;
+  Result := PLAYER_NONE;
+  for I := 0 to gHands.Count - 1 do
+  if fNodes[aIndex].Owner[I] > Best then
+  begin
+    Best := fNodes[aIndex].Owner[I];
+    Result := I;
   end;
 end;
 
 
-//Check that shapes have at least 3 points
-procedure TKMSimplifyShapes.FixDegenerateShapes;
-var
-  I, K: Integer;
-  Prev: Integer;
-  Node1, Node2: TKMPoint;
-  A, B: Integer;
-  Best: Single;
+function TKMNavMesh.NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
+var I: Integer;
 begin
-  for I := 0 to fIn.Count - 1 do
-    if fOut.Shape[I].Count < 3 then
-      Assert(fOut.Shape[I].Count = 2, 'Each shape must have at least 2 points');
+  Result := 0;
+  for I := 0 to gHands.Count - 1 do
+  if (I <> aOwner) and (gHands.CheckAlliance(aOwner, I) = at_Enemy) then
+    Result := Result + fNodes[aIndex].Owner[I];
+end;
 
-  //Forcefully split 2 node outlines each segments
-  for I := 0 to fIn.Count - 1 do
-  if fOut.Shape[I].Count = 2 then
+
+function TKMNavMesh.PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
+var I: Integer;
+begin
+  Result := 0;
+  for I := 0 to gHands.Count - 1 do
+  if (I <> aOwner) and (gHands.CheckAlliance(aOwner, I) = at_Enemy) then
+    Result := Result + (fNodes[fPolygons[aIndex].Indices[0]].Owner[I]
+                      + fNodes[fPolygons[aIndex].Indices[1]].Owner[I]
+                      + fNodes[fPolygons[aIndex].Indices[2]].Owner[I]) div 3;
+end;
+
+
+function TKMNavMesh.GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
+var I,K: Integer;
+begin
+  //Collect polys that are well within our ownership area
+  K := 0;
+  SetLength(Result, fPolyCount);
+
+  for I := 0 to fPolyCount - 1 do
+  with fPolygons[I] do
+  if ((fNodes[Indices[0]].Owner[aOwner] >= OWN_MARGIN)
+   or (fNodes[Indices[1]].Owner[aOwner] >= OWN_MARGIN)
+   or (fNodes[Indices[2]].Owner[aOwner] >= OWN_MARGIN))
+  and (fNodes[Indices[0]].Owner[aOwner] >= OWN_THRESHOLD)
+  and (fNodes[Indices[1]].Owner[aOwner] >= OWN_THRESHOLD)
+  and (fNodes[Indices[2]].Owner[aOwner] >= OWN_THRESHOLD)
+  and (GetBestOwner(Indices[0]) = aOwner)
+  and (GetBestOwner(Indices[1]) = aOwner)
+  and (GetBestOwner(Indices[2]) = aOwner) then
   begin
-    Prev := 0;
-    for K := 1 to fIn.Shape[I].Count do
-    if fKeep[I, K] then
-    begin
-      Simplify(I, Prev, K, Sqr(fError), True);
-      Prev := K;
-    end;
+    Result[K] := I;
+    Inc(K);
+  end;
+  SetLength(Result, K);
+end;
+
+
+function TKMNavMesh.ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
+var I: Integer;
+begin
+  Result.Count := Length(aPolys) * 3;
+  SetLength(Result.Nodes, Length(aPolys) * 3);
+  for I := 0 to High(aPolys) do
+  begin
+    Result.Nodes[I * 3 + 0, 0] := fPolygons[aPolys[I]].Indices[0];
+    Result.Nodes[I * 3 + 0, 1] := fPolygons[aPolys[I]].Indices[1];
+    Result.Nodes[I * 3 + 1, 0] := fPolygons[aPolys[I]].Indices[1];
+    Result.Nodes[I * 3 + 1, 1] := fPolygons[aPolys[I]].Indices[2];
+    Result.Nodes[I * 3 + 2, 0] := fPolygons[aPolys[I]].Indices[2];
+    Result.Nodes[I * 3 + 2, 1] := fPolygons[aPolys[I]].Indices[0];
+  end;
+end;
+
+
+function TKMNavMesh.RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
+var
+  I,K: Integer;
+  Edges: TKMEdgesArray;
+begin
+  //Duplicate to avoid spoiling (we need to copy arrays manually)
+  Edges.Count := aEdges.Count;
+  SetLength(Edges.Nodes, Edges.Count);
+  for I := 0 to aEdges.Count - 1 do
+  begin
+    Edges.Nodes[I][0] := aEdges.Nodes[I][0];
+    Edges.Nodes[I][1] := aEdges.Nodes[I][1];
   end;
 
-  //Add 4th point to each 3 point shape (to make sure it is not degenerate)
-  for I := 0 to fIn.Count - 1 do
-    if fOut.Shape[I].Count = 3 then
-    begin
-      A := 0; B := 0; Best := -1;
-      Prev := 0;
-      for K := 1 to fIn.Shape[I].Count do
-        if fKeep[I, K] then
-        begin
-          Node1 := fIn.Shape[I].Nodes[Prev];
-          Node2 := fIn.Shape[I].Nodes[K mod fIn.Shape[I].Count];
-          if KMDistanceSqr(Node1, Node2) > Best then
+  //Remove duplicate Edges, that will leave us with an outline
+  for I := 0 to Edges.Count - 1 do
+    if (Edges.Nodes[I, 0] > -1) and (Edges.Nodes[I, 1] > -1) then
+      for K := I + 1 to Edges.Count - 1 do
+        if (Edges.Nodes[K, 0] > -1) and (Edges.Nodes[K, 1] > -1) then
+          if (Edges.Nodes[I, 0] = Edges.Nodes[K, 1]) and (Edges.Nodes[I, 1] = Edges.Nodes[K, 0]) then
           begin
-            A := Prev;
-            B := K;
-            Best := KMDistanceSqr(Node1, Node2);
+            Edges.Nodes[I, 0] := -1;
+            Edges.Nodes[I, 1] := -1;
+            Edges.Nodes[K, 0] := -1;
+            Edges.Nodes[K, 1] := -1;
           end;
-          Prev := K;
+
+  //3. Detect and dismiss inner Edges
+  //Separate Edges into open (having 2 polys) and closed (only 1 poly)
+  //Once again we take advantage of the fact that polys built in CW order
+  for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+      for K := 0 to Edges.Count - 1 do
+        if (Edges.Nodes[K, 0] <> -1) then
+          if ((Edges.Nodes[K, 0] = Indices[1]) and (Edges.Nodes[K, 1] = Indices[0]))
+          or ((Edges.Nodes[K, 0] = Indices[2]) and (Edges.Nodes[K, 1] = Indices[1]))
+          or ((Edges.Nodes[K, 0] = Indices[0]) and (Edges.Nodes[K, 1] = Indices[2])) then
+          begin
+            //Mark outer Edges
+            Edges.Nodes[K, 0] := -1000 - Edges.Nodes[K, 0];
+            Edges.Nodes[K, 1] := -1000 - Edges.Nodes[K, 1];
+          end;
+  K := 0;
+  for I := 0 to Edges.Count - 1 do
+    if (Edges.Nodes[I, 0] >= 0) then
+    begin //Dismiss inner Edges
+      Edges.Nodes[I, 0] := -1;
+      Edges.Nodes[I, 1] := -1;
+    end
+    else if (Edges.Nodes[I, 0] < -1) then
+    begin //Promote marked outer Edges back
+      Edges.Nodes[I, 0] := -Edges.Nodes[I, 0] - 1000;
+      Edges.Nodes[I, 1] := -Edges.Nodes[I, 1] - 1000;
+      Inc(K);
+    end;
+
+  //4. Now we can assemble suboptimal outline from kept Edges
+  Result.Count := K;
+  SetLength(Result.Nodes, K);
+  K := 0;
+  for I := 0 to Edges.Count - 1 do
+    if (Edges.Nodes[I, 0] >= 0) then
+    begin
+      Result.Nodes[K, 0] := Edges.Nodes[I, 0];
+      Result.Nodes[K, 1] := Edges.Nodes[I, 1];
+      Inc(K);
+    end;
+end;
+
+
+function TKMNavMesh.EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
+var I: Integer;
+begin
+  SetLength(Result, aEdges.Count);
+  for I := 0 to aEdges.Count - 1 do
+  begin
+    Result[I].A := fNodes[aEdges.Nodes[I,0]].Loc;
+    Result[I].B := fNodes[aEdges.Nodes[I,1]].Loc;
+    Result[I].Weight := NodeEnemyPresence(aEdges.Nodes[I,0], aOwner)
+                      + NodeEnemyPresence(aEdges.Nodes[I,1], aOwner);
+  end;
+end;
+
+
+procedure TKMNavMesh.GetDefenceOutline(aOwner: TKMHandIndex; out aOutline1, aOutline2: TKMWeightSegments);
+const
+  AP_CLEAR = 0;
+  AP_SEED = 255;
+var
+  AreaID: Byte;
+  AreaPolys: array of Byte;
+  AreaEnemy: array [1..254] of Word;
+
+  procedure FloodFillPolys(aIndex: Integer);
+  var I: Integer;
+  begin
+    with fPolygons[aIndex] do
+    for I := 0 to NearbyCount - 1 do
+    if (AreaPolys[Nearby[I]] = AP_CLEAR) then
+    begin
+      AreaPolys[Nearby[I]] := AreaID; //Mark as explored
+      AreaEnemy[AreaID] := Max(AreaEnemy[AreaID], PolyEnemyPresence(Nearby[I], aOwner));
+      FloodFillPolys(Nearby[I]);
+    end;
+  end;
+
+var
+  I,K: Integer;
+  Polys: TKMWordArray;
+  Edges: TKMEdgesArray;
+
+  diff: Cardinal;
+  Sdiff: String;
+
+begin
+
+  diff := TimeGet;
+
+
+  //1. Get ownership area
+  Polys := GetOwnerPolys(aOwner);
+
+  Edges := ConvertPolysToEdges(Polys);
+
+  //Obtain suboptimal outline of owned polys
+  Edges := RemoveInnerEdges(Edges);
+
+  aOutline1 := EdgesToWeightOutline(Edges, aOwner);
+
+  //5. Remove spans that face isolated areas
+  SetLength(AreaPolys, fPolyCount);
+  for I := Low(AreaEnemy) to High(AreaEnemy) do
+    AreaEnemy[I] := 0;
+
+  for I := 0 to High(Polys) do
+    AreaPolys[Polys[I]] := AP_SEED;
+
+  //Floodfill outer polys skipping inner ones, remember best enemy influence
+  AreaID := 0;
+  for I := 0 to High(Polys) do
+    with fPolygons[Polys[I]] do
+      for K := 0 to NearbyCount - 1 do
+      if (AreaPolys[Nearby[K]] = AP_CLEAR) then
+      begin
+        Inc(AreaID);
+        FloodFillPolys(Polys[I]);
+      end;
+
+  //if enemy influence < 128 then mark as isolated
+  K := Length(Polys);
+  SetLength(Polys, fPolyCount);
+  for I := 0 to fPolyCount - 1 do
+    if (AreaPolys[I] <> AP_CLEAR)
+    and (AreaPolys[I] <> AP_SEED)
+    and (AreaEnemy[AreaPolys[I]] < 128) then
+    begin
+      Polys[K] := I;
+      Inc(K);
+    end;
+  SetLength(Polys, K);
+
+  Edges := ConvertPolysToEdges(Polys);
+
+  Edges := RemoveInnerEdges(Edges);
+
+  aOutline2 := EdgesToWeightOutline(Edges, aOwner);
+
+  diff := GetTimeSince(diff);
+  Str(diff,Sdiff);
+  //ShowMessage(Sdiff);
+
+  //6. See if we can expand our area while reducing outline length
+
+  //7. Deal with allies
+  //   Two players could be on same island and share defence lines,
+  //   also they dont need defence line between them
+end;
+//}
+
+
+procedure TKMNavMesh.UpdateState(aTick: Cardinal);
+begin
+  //if aTick mod 600 = 0 then
+  //  UpdateOwnership;
+end;
+
+
+//Render debug symbols
+procedure TKMNavMesh.Paint(aRect: TKMRect);
+var
+  I, K, J: Integer;
+  T1, T2: TKMPointF;
+  Col, Col2: Cardinal;
+  Sz: Single;
+  Outline1, Outline2: TKMWeightSegments;
+
+
+  W: Word;
+  Owner: TKMHandIndex;
+  Point: TKMPoint;
+  DefLines: TKMDefenceLines;
+  FFF: TForwardFF;
+  DefencePosArr: TKMDefencePosArr;
+
+begin
+  if not AI_GEN_NAVMESH then Exit;
+
+  //{ Test defences
+  // Show this defences only in case that show combat AI is not enabled;
+  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
+  if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
+  begin
+    FFF := TForwardFF.Create(true);
+    Owner := gMySpectator.HandIndex;
+    try
+
+      if FFF.FindDefenceLines(Owner, DefLines) then
+        for K := 0 to DefLines.Count - 1 do
+        begin
+          I := DefLines.Lines[K].Polygon;
+          gRenderAux.TriangleOnTerrain(
+            fNodes[fPolygons[I].Indices[0]].Loc.X,
+            fNodes[fPolygons[I].Indices[0]].Loc.Y,
+            fNodes[fPolygons[I].Indices[1]].Loc.X,
+            fNodes[fPolygons[I].Indices[1]].Loc.Y,
+            fNodes[fPolygons[I].Indices[2]].Loc.X,
+            fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
         end;
-      Simplify(I, A, B, Sqr(fError), True);
+
+      W := 40;
+      if FFF.FindDefensivePolygons(Owner, W, DefencePosArr, False) then
+        for K := 0 to Length(DefencePosArr) - 1 do
+        begin
+          Point := DefencePosArr[K].DirPoint.Loc;
+          gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
+        end;
+
+      //PolygonArr := FFF.D_FF_INIT_ARR;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $900000FF);
+      //end;
+
+      //PolygonArr := FFF.D_FF_INIT_FLOOD;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $9000FF00);
+      //end;
+    finally
+      FFF.Free;
+    end;
+  end;//}
+
+
+  {Raw obstacle outlines
+  if OVERLAY_NAVMESH then
+    for I := 0 to fRawOutlines.Count - 1 do
+    for K := 0 to fRawOutlines.Shape[I].Count - 1 do
+    with fRawOutlines.Shape[I] do
+      gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);//}
+
+  {NavMesh polys coverage
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+      //if fPolygons[I].NearbyCount = 3 then
+      gRenderAux.TriangleOnTerrain(
+        fNodes[fPolygons[I].Indices[0]].Loc.X,
+        fNodes[fPolygons[I].Indices[0]].Loc.Y,
+        fNodes[fPolygons[I].Indices[1]].Loc.X,
+        fNodes[fPolygons[I].Indices[1]].Loc.Y,
+        fNodes[fPolygons[I].Indices[2]].Loc.X,
+        fNodes[fPolygons[I].Indices[2]].Loc.Y, $90FF0000);//}
+
+  //NavMesh edges
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+    for K := 0 to 2 do
+    begin
+      T1 := KMPointF(fNodes[Indices[K]].Loc);
+      J := (K + 1) mod 2;
+      T2 := KMPointF(fNodes[Indices[J]].Loc);
+      gRenderAux.LineOnTerrain(T1, T2, $80FF8000, $F0F0);
+    end;
+
+  {//NavMesh vertice ids
+  if OVERLAY_NAVMESH then
+    for I := 0 to High(fVertices) do
+      gRenderAux.Text(fVertices[I].X,fVertices[I].Y, IntToStr(I), $FF000000); //}
+
+  //{//NavMesh polys ids
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+    begin
+      T1.X := (fNodes[Indices[0]].Loc.X + fNodes[Indices[1]].Loc.X + fNodes[Indices[2]].Loc.X) / 3;
+      T1.Y := (fNodes[Indices[0]].Loc.Y + fNodes[Indices[1]].Loc.Y + fNodes[Indices[2]].Loc.Y) / 3;
+      gRenderAux.Text(Round(T1.X), Round(T1.Y) + 1, IntToStr(I), $FF000000);
+    end;//}
+
+  {//Simplified obstacle outlines
+  if OVERLAY_NAVMESH then
+    for I := 0 to fSimpleOutlines.Count - 1 do
+    for K := 0 to fSimpleOutlines.Shape[I].Count - 1 do
+    with fSimpleOutlines.Shape[I] do
+      gRenderAux.Line(Nodes[K], Nodes[(K + 1) mod Count], $FF00FF00, $FF00);//}
+
+  {//NavMesh influences
+  if OVERLAY_NAVMESH then
+    for I := 0 to fNodeCount - 1 do
+    begin
+      K := GetBestOwner(I);
+      if K <> PLAYER_NONE then
+      begin
+        //Col := fPlayers[K].FlagColor or $FF000000;
+        Col := $FF000000;
+        Col2 := IfThen(fNodes[I].Owner[K] = 255, $FFFFFFFF);
+        Sz := Max(fNodes[I].Owner[K] - 128, 0) / 64;
+
+        gRenderAux.CircleOnTerrain(
+          fNodes[I].Loc.X,
+          fNodes[I].Loc.Y, Sz, Col, Col2);
+      end;
+    end;//}
+
+  {//Defence outlines
+  if OVERLAY_DEFENCES then
+    for I := 0 to gHands.Count - 1 do
+    begin
+      fAI.Setup.NewAI
+      GetDefenceOutline(I, Outline1, Outline2);
+
+      for K := 0 to High(Outline1) do
+        gRenderAux.LineOnTerrain(Outline1[K].A, Outline1[K].B, $FF00FFFF, $FF00);
+
+      for K := 0 to High(Outline2) do
+      begin
+        gRenderAux.LineOnTerrain(Outline2[K].A, Outline2[K].B, $A000FF00);
+        T1 := KMPointF(Outline2[K].A);
+        T2 := KMPerpendecular(Outline2[K].A, Outline2[K].B);
+        gRenderAux.LineOnTerrain(T1.X, T1.Y, T2.X, T2.Y, $A000FF00);
+      end;
     end;//}
 end;
 
 
-//Check shapes for intersections
-procedure TKMSimplifyShapes.FixIntersectingShapes;
-var
-  IntCount: Integer;
-  Ints: array of array [0..2] of Word;
-  KeptCount: array of Integer;
-  Kept: array of array of Integer;
-
-  //Assemble aligned array
-  procedure AssembleKeptReference;
-  var
-    I, K: Integer;
-  begin
-    SetLength(Kept, fIn.Count);
-    SetLength(KeptCount, fIn.Count + 1);
-    for I := 0 to fIn.Count - 1 do
-    begin
-      KeptCount[I] := 0;
-      //We need to store last point to be able to simplify last segment
-      SetLength(Kept[I], fIn.Shape[I].Count + 1);
-      for K := 0 to fIn.Shape[I].Count do
-        if fKeep[I, K] then
-        begin
-          Kept[I, KeptCount[I]] := K;
-          Inc(KeptCount[I]);
-        end;
-    end;
-  end;
-
-  //Segments should not intersect or touch except for the start/end
-  procedure CheckIntersect(L1, N1, N2, L2, N3, N4: Integer);
-  var A,B,C,D: TKMPoint;
-  begin
-    A := fIn.Shape[L1].Nodes[N1 mod fIn.Shape[L1].Count];
-    B := fIn.Shape[L1].Nodes[N2 mod fIn.Shape[L1].Count];
-    C := fIn.Shape[L2].Nodes[N3 mod fIn.Shape[L2].Count];
-    D := fIn.Shape[L2].Nodes[N4 mod fIn.Shape[L2].Count];
-
-    if KMSamePoint(A, C) or KMSamePoint(A, D) or KMSamePoint(B, C) or KMSamePoint(B, D) then
-      Exit;
-
-    if KMSegmentsIntersectOrTouch(A, B, C, D) then
-    begin
-      //If outline intersects itself we split the longest segment
-      if L1 = L2 then
-        if (N2 - N1) > (N4 - N3) then
-        begin
-          SetLength(Ints, IntCount + 1);
-          Ints[IntCount, 0] := L1;
-          Ints[IntCount, 1] := N1;
-          Ints[IntCount, 2] := N2;
-          Inc(IntCount);
-        end
-        else
-        begin
-          SetLength(Ints, IntCount + 1);
-          Ints[IntCount, 0] := L2;
-          Ints[IntCount, 1] := N3;
-          Ints[IntCount, 2] := N4;
-          Inc(IntCount);
-        end
-      else
-      //If segments belong to different lines we cant yet decide which split is better
-      begin
-        SetLength(Ints, IntCount + 1);
-        Ints[IntCount, 0] := L1;
-        Ints[IntCount, 1] := N1;
-        Ints[IntCount, 2] := N2;
-        Inc(IntCount);
-        SetLength(Ints, IntCount + 1);
-        Ints[IntCount, 0] := L2;
-        Ints[IntCount, 1] := N3;
-        Ints[IntCount, 2] := N4;
-        Inc(IntCount);
-      end;
-    end;
-  end;
-  procedure WriteIntersections;
-  var I, K, L, M: Integer;
-  begin
-    IntCount := 0;
-    //Test self-intersections
-    for I := 0 to fOut.Count - 1 do
-      for K := 0 to KeptCount[I] - 2 do
-        for M := K + 2 to KeptCount[I] - 2 do
-          CheckIntersect(I, Kept[I,K], Kept[I,K+1], I, Kept[I,M], Kept[I,M+1]);
-
-    //Test intersections with other outlines
-    for I := 0 to fOut.Count - 1 do for K := 0 to KeptCount[I] - 2 do
-      for L := I + 1 to fOut.Count - 1 do for M := 0 to KeptCount[L] - 2 do
-        CheckIntersect(I, Kept[I,K], Kept[I,K+1], L, Kept[L,M], Kept[L,M+1]);
-
-  end;
-var
-  I, LoopCount: Integer;
-begin
-  LoopCount := 0;
-  repeat
-    AssembleKeptReference;
-    WriteIntersections;
-
-    for I := 0 to IntCount - 1 do
-      Simplify(Ints[I, 0],
-               Ints[I, 1],
-               Ints[I, 2],
-               Sqr(fError), True);
-
-    Inc(LoopCount);
-    Assert(LoopCount <= 20, 'Can''t resolve intersections');
-  until (IntCount = 0);
-end;
-
-
-procedure TKMSimplifyShapes.Execute(const aIn: TKMShapesArray; var aOut: TKMShapesArray);
-begin
-  fIn := aIn;
-  fOut := @aOut;
-
-  SetupOutputArray;
-  SetupKeepArray;
-
-  SimplifyShapes;
-  WriteOutput;
-
-  FixDegenerateShapes;
-  WriteOutput;
-
-  FixIntersectingShapes;
-
-  WriteOutput;
-end;
-
-
-procedure TKMSimplifyShapes.SetupOutputArray;
-var
-  I: Integer;
-begin
-  fOut.Count := fIn.Count;
-  SetLength(fOut.Shape, fOut.Count);
-  for I := 0 to fIn.Count - 1 do
-    //Reserve space for worst case when all points are kept
-    SetLength(fOut.Shape[I].Nodes, fIn.Shape[I].Count);
-end;
-
-
-procedure SimplifyStraights(const aIn: TKMShapesArray; aRect: TKMRect; var aOut: TKMShapesArray);
-  procedure SimplifyStraights2(const aIn: TKMNodesArray; var aOut: TKMNodesArray);
-  var
-    K: Integer;
-    P0, P1, P2: TKMPoint;
-    NodesOnEdge: Boolean;
-    NodesOnLine: Boolean;
-    KeepNode: Boolean;
-  begin
-    //Reserve space for worst case when nothing gets optimized
-    SetLength(aOut.Nodes, aIn.Count);
-
-    aOut.Count := 0;
-    for K := 0 to aIn.Count - 1 do
-    begin
-      P0 := aIn.Nodes[(K - 1 + aIn.Count) mod aIn.Count];
-      P1 := aIn.Nodes[K];
-      P2 := aIn.Nodes[(K + 1) mod aIn.Count];
-
-      NodesOnEdge := (P1.X = aRect.Left) or (P1.Y = aRect.Top) or (P1.X = aRect.Right) or (P1.Y = aRect.Bottom);
-      NodesOnLine := ((P0.X = P1.X) and (P1.X = P2.X)) or ((P0.Y = P1.Y) and (P1.Y = P2.Y));
-
-      KeepNode := not NodesOnLine or ((K mod MAX_STRAIGHT_SPAN = 0) and not NodesOnEdge);
-
-      if KeepNode then
-      begin
-        aOut.Nodes[aOut.Count] := aIn.Nodes[K];
-        Inc(aOut.Count);
-      end;
-    end;
-
-    //Trim to actual length
-    SetLength(aOut.Nodes, aOut.Count);
-  end;
-
-var I: Integer;
-begin
-  SetLength(aOut.Shape, aIn.Count);
-
-  for I := 0 to aIn.Count - 1 do
-    SimplifyStraights2(aIn.Shape[I], aOut.Shape[I]);
-
-  aOut.Count := aIn.Count;
-end;
-
-
-procedure ForceEdge(var aTriMesh: TKMTriMesh; A,B: TKMPoint; aSkipMissing: Boolean);
-var
-  Edges: array [0..1] of array of SmallInt;
-  Loop: array of Word;
-  LoopCount: Integer;
-  Nedge: LongInt;
-
-  procedure AssembleLoop(aStart, aEnd: Word);
-  var I, H: Integer;
-  begin
-    Loop[0] := aStart;
-    LoopCount := 1;
-    I := 0;
-    repeat
-      for H := 0 to Nedge - 1 do
-      if (Edges[0, H] = Loop[LoopCount - 1]) then
-      begin
-        Loop[LoopCount] := Edges[1, H];
-        Inc(LoopCount);
-        Break; //We break to check = aEnd condition (otherwise we could skip it)
-      end;
-      Assert(LoopCount <= Nedge, 'End is missing?');
-      Inc(I);
-      Assert(I <= 100, 'End is missing2?');
-    until(Loop[LoopCount - 1] = aEnd);
-  end;
-
-  procedure TriangulateLoop;
-  var L: Integer; V: TKMPointArray; PCount: Word; Pols: array of Word;
-  begin
-    SetLength(V, LoopCount);
-    SetLength(Pols, (LoopCount - 2) * 3);
-    for L := 0 to LoopCount - 1 do
-      V[L] := aTriMesh.Vertices[Loop[L]];
-
-    Triangulate(V, LoopCount, Pols, PCount);
-
-    for L := 0 to PCount - 1 do
-    begin
-      SetLength(aTriMesh.Polygons, Length(aTriMesh.Polygons) + 1);
-      aTriMesh.Polygons[High(aTriMesh.Polygons),0] := Loop[Pols[L*3+0]];
-      aTriMesh.Polygons[High(aTriMesh.Polygons),1] := Loop[Pols[L*3+1]];
-      aTriMesh.Polygons[High(aTriMesh.Polygons),2] := Loop[Pols[L*3+2]];
-    end;
-  end;
-
-var
-  I, K: Integer;
-  Vertice1, Vertice2: Integer;
-  Intersect: Boolean;
-begin
-  with aTriMesh do
-  begin
-    Vertice1 := -1;
-    Vertice2 := -1;
-    //Find vertices
-    for I := 0 to High(Vertices) do
-    begin
-      if (A.X = Vertices[I].X) and (A.Y = Vertices[I].Y) then
-        Vertice1 := I;
-      if (B.X = Vertices[I].X) and (B.Y = Vertices[I].Y) then
-        Vertice2 := I;
-      if (Vertice1 <> -1) and (Vertice2 <> -1) then
-        Break;
-    end;
-
-    Assert(aSkipMissing or ((Vertice1 <> -1) and (Vertice2 <> -1)), 'Vertices could not be found?');
-
-    //Exit early if that edge exists
-    for I := 0 to High(Polygons) do
-    if ((Vertice1 = Polygons[I,0]) and (Vertice2 = Polygons[I,1]))
-    or ((Vertice1 = Polygons[I,1]) and (Vertice2 = Polygons[I,2]))
-    or ((Vertice1 = Polygons[I,2]) and (Vertice2 = Polygons[I,0])) then
-      Exit;
-
-    //How many edges we could possible need?
-    SetLength(Edges[0], 1000);
-    SetLength(Edges[1], 1000);
-
-    //Find triangles we cross
-    I := 0;
-    Nedge := 0;
-    repeat
-      //Test each Polygons for intersection with the Edge
-
-      //Eeach test checks if Edge and Polygons edge intersect
-      Intersect :=
-           KMSegmentsIntersect(A, B, aTriMesh.Vertices[aTriMesh.Polygons[I,0]], aTriMesh.Vertices[Polygons[I,1]])
-        or KMSegmentsIntersect(A, B, aTriMesh.Vertices[aTriMesh.Polygons[I,1]], aTriMesh.Vertices[Polygons[I,2]])
-        or KMSegmentsIntersect(A, B, aTriMesh.Vertices[aTriMesh.Polygons[I,2]], aTriMesh.Vertices[Polygons[I,0]]);
-
-      //Cut the Polygons
-      if Intersect then
-      begin
-        //Save triangles edges
-        Edges[0, Nedge + 0] := aTriMesh.Polygons[I,0];
-        Edges[1, Nedge + 0] := aTriMesh.Polygons[I,1];
-        Edges[0, Nedge + 1] := aTriMesh.Polygons[I,1];
-        Edges[1, Nedge + 1] := aTriMesh.Polygons[I,2];
-        Edges[0, Nedge + 2] := aTriMesh.Polygons[I,2];
-        Edges[1, Nedge + 2] := aTriMesh.Polygons[I,0];
-        Nedge := Nedge + 3;
-        //Move last Polygons to I
-        Polygons[I,0] := Polygons[High(Polygons),0];
-        Polygons[I,1] := Polygons[High(Polygons),1];
-        Polygons[I,2] := Polygons[High(Polygons),2];
-        Dec(I);
-        SetLength(Polygons, Length(Polygons) - 1);
-        Assert(Length(Polygons) > 0, '<0?');
-      end;
-
-      Inc(I);
-    until (I >= Length(Polygons));
-
-    //Remove duplicate edges and leave only outline
-    for I := 0 to Nedge - 1 do
-    if (Edges[0, I] > -1) and (Edges[1, I] > -1) then
-    for K := I + 1 to Nedge - 1 do
-    if (Edges[0, K] > -1) and (Edges[1, K] > -1) then
-    if (Edges[0, I] = Edges[1, K]) and (Edges[1, I] = Edges[0, K]) then
-    begin
-      //Discard edges (but keep their value for debug. 0 becomes -1000)
-      Edges[0, I] := -1000 - Edges[0, I];
-      Edges[1, I] := -1000 - Edges[1, I];
-      Edges[0, K] := -1000 - Edges[0, K];
-      Edges[1, K] := -1000 - Edges[1, K];
-    end;
-
-    //Assemble two polygons on Edge sides
-    if Nedge > 0 then
-    begin
-      SetLength(Loop, Nedge*2);
-      AssembleLoop(Vertice1, Vertice2);
-      TriangulateLoop;
-      AssembleLoop(Vertice2, Vertice1);
-      TriangulateLoop;
-    end;
-  end;
-end;
-
-
-procedure ForceOutlines(var aTriMesh: TKMTriMesh; aRect: TKMRect; fSimpleOutlines: TKMShapesArray);
-  procedure CheckAllPolysFaceUp;
-  var I: Integer;
-  begin
-    with aTriMesh do
-    for I := 0 to High(Polygons) do
-      Assert(KMNormal2Poly(Vertices[Polygons[I,0]], Vertices[Polygons[I,1]], Vertices[Polygons[I,2]]) >= 0);
-  end;
-
-var
-  Tmp: TKMPointArray;
-
-  procedure SortAndApply(aX: Boolean);
-  var
-    I, K: Integer;
-  begin
-  //Sort
-  for I := 0 to High(Tmp) do
-    for K := I + 1 to High(Tmp) do
-      if aX and (Tmp[K].X < Tmp[I].X)
-      or not aX and (Tmp[K].Y < Tmp[I].Y) then
-        KMSwapPoints(Tmp[K], Tmp[I]);
-
-  //Apply
-  for I := 0 to High(Tmp) - 1 do
-    ForceEdge(aTriMesh, Tmp[I], Tmp[I+1], True);
-  end;
-var
-  I, K: Integer;
-begin
-  for I := 0 to fSimpleOutlines.Count - 1 do
-    with fSimpleOutlines.Shape[I] do
-      for K := 0 to Count - 1 do
-        ForceEdge(aTriMesh, Nodes[K], Nodes[(K + 1) mod Count], False);
-
-  //Collect
-  for I := 0 to High(aTriMesh.Vertices) do
-  if aTriMesh.Vertices[I].X = aRect.Left then
-  begin
-    SetLength(Tmp, Length(Tmp)+1);
-    Tmp[High(Tmp)] := aTriMesh.Vertices[I];
-  end;
-
-  SortAndApply(False);
-  SetLength(Tmp, 0);
-
-  //Collect
-  for I := 0 to High(aTriMesh.Vertices) do
-  if aTriMesh.Vertices[I].Y = aRect.Top then
-  begin
-    SetLength(Tmp, Length(Tmp)+1);
-    Tmp[High(Tmp)] := aTriMesh.Vertices[I];
-  end;
-
-  SortAndApply(True);
-  SetLength(Tmp, 0);
-
-  //Collect
-  for I := 0 to High(aTriMesh.Vertices) do
-  if aTriMesh.Vertices[I].X = aRect.Right then
-  begin
-    SetLength(Tmp, Length(Tmp)+1);
-    Tmp[High(Tmp)] := aTriMesh.Vertices[I];
-  end;
-
-  SortAndApply(False);
-  SetLength(Tmp, 0);
-
-  //Collect
-  for I := 0 to High(aTriMesh.Vertices) do
-  if aTriMesh.Vertices[I].Y = aRect.Bottom then
-  begin
-    SetLength(Tmp, Length(Tmp)+1);
-    Tmp[High(Tmp)] := aTriMesh.Vertices[I];
-  end;
-
-  SortAndApply(True);
-  SetLength(Tmp, 0);
-
-  CheckAllPolysFaceUp;
-end;
-
-
-procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; fSimpleOutlines: TKMShapesArray);
-type
-  TPolyFill = (pfUnknown, pfKeep, pfRemove);
-var
-  Mark: array of TPolyFill;
-
-  procedure MarkOutlines(var aTriMesh: TKMTriMesh; aNodes: TKMNodesArray);
-  var
-    I, K: Integer;
-    Outline: array of Integer;
-  begin
-    with aTriMesh do
-    begin
-      SetLength(Outline, aNodes.Count);
-
-      //Find Indexes
-      for I := 0 to High(Vertices) do
-      for K := 0 to aNodes.Count - 1 do
-      if (aNodes.Nodes[K].X = Vertices[I].x) and (aNodes.Nodes[K].Y = Vertices[I].y) then
-        Outline[K] := I;
-
-      //Create outline for obstacle with Keep/Remove polys
-      for I := 0 to High(Polygons) do
-      begin
-        for K := 0 to aNodes.Count - 1 do
-        if (Outline[K] = Polygons[I,0]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,1])
-        or (Outline[K] = Polygons[I,1]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,2])
-        or (Outline[K] = Polygons[I,2]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,0]) then
-          Mark[I] := pfRemove;
-
-        for K := 0 to aNodes.Count - 1 do
-        if (Outline[K] = Polygons[I,0]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,2])
-        or (Outline[K] = Polygons[I,1]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,0])
-        or (Outline[K] = Polygons[I,2]) and (Outline[(K+1) mod aNodes.Count] = Polygons[I,1]) then
-          Mark[I] := pfKeep;
-      end;
-    end;
-  end;
-
-  procedure FloodFill;
-    procedure DoFlood(N1, N2: Integer);
-    var I: Integer;
-    begin
-      with aTriMesh do
-      for I := 0 to High(Polygons) do
-      if Mark[I] = pfUnknown then
-      if ((Polygons[I,0] = N1) and (Polygons[I,2] = N2))
-      or ((Polygons[I,1] = N1) and (Polygons[I,0] = N2))
-      or ((Polygons[I,2] = N1) and (Polygons[I,1] = N2)) then
-      begin
-        Mark[I] := pfRemove;
-        DoFlood(Polygons[I,0], Polygons[I,1]);
-        DoFlood(Polygons[I,1], Polygons[I,2]);
-        DoFlood(Polygons[I,2], Polygons[I,0]);
-      end;
-    end;
-  var
-    I: Integer;
-  begin
-    with aTriMesh do
-    for I := 0 to High(Polygons) do
-    if Mark[I] = pfRemove then
-    begin
-      DoFlood(Polygons[I,0], Polygons[I,1]);
-      DoFlood(Polygons[I,1], Polygons[I,2]);
-      DoFlood(Polygons[I,2], Polygons[I,0]);
-    end;
-  end;
-
-  procedure CutTriangles;
-  var
-    I: Integer;
-  begin
-    with aTriMesh do
-    begin
-      //Cut the triangles
-      I := 0;
-      repeat
-        if Mark[I] = pfRemove then
-        begin
-          //Move last triangle to I
-          Polygons[I,0] := Polygons[High(Polygons),0];
-          Polygons[I,1] := Polygons[High(Polygons),1];
-          Polygons[I,2] := Polygons[High(Polygons),2];
-          Mark[I] := Mark[High(Polygons)];
-          Dec(I);
-          SetLength(Polygons, Length(Polygons) - 1);
-        end;
-        Inc(I);
-      until(I >= Length(Polygons));
-    end;
-  end;
-var
-  I: Integer;
-begin
-  SetLength(Mark, Length(aTriMesh.Polygons));
-  for I := 0 to High(aTriMesh.Polygons) do
-    Mark[I] := pfUnknown;
-
-  for I := 0 to fSimpleOutlines.Count - 1 do
-    MarkOutlines(aTriMesh, fSimpleOutlines.Shape[I]);
-
-  FloodFill;
-
-  CutTriangles;
-end;
-
-
-//Remove anything that is outside bounds
-procedure RemoveFrame(var aTriMesh: TKMTriMesh);
-var I: Integer;
-begin
-  I := 0;
-  with aTriMesh do
-  repeat
-    //We take advantage of the fact that
-    //first 4 points were added to make the Frame
-    if (Polygons[I,0] < 4) or (Polygons[I,1] < 4) or (Polygons[I,2] < 4) then
-    begin
-      //Cut the triangle (Move last triangle to I)
-      Polygons[I,0] := Polygons[High(Polygons),0];
-      Polygons[I,1] := Polygons[High(Polygons),1];
-      Polygons[I,2] := Polygons[High(Polygons),2];
-      Dec(I);
-      SetLength(Polygons, Length(Polygons) - 1);
-    end;
-    Inc(I);
-  until(I >= Length(Polygons));
-
-  for I := 0 to High(aTriMesh.Vertices) - 4 do
-    aTriMesh.Vertices[I] := aTriMesh.Vertices[I+4];
-
-  for I := 0 to High(aTriMesh.Polygons) do
-  begin
-    aTriMesh.Polygons[I,0] := aTriMesh.Polygons[I,0] - 4;
-    aTriMesh.Polygons[I,1] := aTriMesh.Polygons[I,1] - 4;
-    aTriMesh.Polygons[I,2] := aTriMesh.Polygons[I,2] - 4;
-  end;
-end;
-
-
-procedure CheckForDegenerates(var aTriMesh: TKMTriMesh);
-var I: Integer;
-begin
-  I := 0;
-  with aTriMesh do
-  repeat
-    if (Polygons[I,0] = Polygons[I,1])
-    or (Polygons[I,1] = Polygons[I,2])
-    or (Polygons[I,2] = Polygons[I,0]) then
-    //Cut the triangle
-    begin
-      raise Exception.Create('Degenerate poly left');
-      {//Move last triangle to I
-      Polygons[I,0] := Polygons[High(Polygons),0];
-      Polygons[I,1] := Polygons[High(Polygons),1];
-      Polygons[I,2] := Polygons[High(Polygons),2];
-      Dec(I);
-      SetLength(Polygons, Length(Polygons) - 1);}
-    end;
-    Inc(I);
-  until(I >= Length(Polygons));
-end;
-
-
 end.
+
+{
+// The following code was removed and replaced by NavMesh alternative
+TNode = record
+    Loc: TKMPoint;
+    Nearby: array of Word; //Indexes of connected nodes
+    Owner: array [0..MAX_HANDS-1] of Byte;
+  end;
+//Copy ownership values from influence map
+//  for now those values are more accurate
+procedure TKMNavMesh.UpdateOwnership;
+var
+  I, K: Integer;
+begin
+  if not AI_GEN_NAVMESH then Exit;
+
+  for I := 0 to fNodeCount - 1 do
+    for K := 0 to gHands.Count - 1 do
+      fNodes[I].Owner[K] := Min(255, Max(
+        Max(fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Max(fNodes[I].Loc.X, 1)],
+            fInfluences.Ownership[K, Max(fNodes[I].Loc.Y, 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)]),
+        Max(fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Max(fNodes[I].Loc.X, 1)],
+            fInfluences.Ownership[K, Min(fNodes[I].Loc.Y+1, gTerrain.MapY - 1), Min(fNodes[I].Loc.X+1, gTerrain.MapX - 1)])
+            ));
+end;
+//}
