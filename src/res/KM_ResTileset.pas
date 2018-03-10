@@ -101,7 +101,7 @@ const
     (1, 2, 2, 2, 2, 3, 3, 4);
 
   TILE_MASK_KINDS_PREVIEW: array[TKMTileMaskKind] of Integer =
-    (-1, 551, 591, 571, 581); //+1 here, so -1 is no image, and not grass
+    (-1, 551, 561, 571, 571); //+1 here, so -1 is no image, and not grass
 
   TILE_MASKS_FOR_LAYERS: array[mkSoft..mkHarder] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
      //Soft
@@ -109,25 +109,25 @@ const
       (550, -1),
       (551, -1),
       (552, -1),
-      (553, 554),
-      (555, 556),
-      (557, -1)),
+      (551, 549),
+      (551, 552),
+      (551, -1)),
      //Softer
-     ((589, -1),
-      (590, -1),
-      (591, -1),
-      (592, -1),
-      (593, 594),
-      (595, 596),
-      (597, -1)),
-     //Hard
      ((559, -1),
       (560, -1),
       (561, -1),
       (562, -1),
-      (563, 564),
-      (565, 566),
-      (567, -1)),
+      (561, 559),
+      (561, 562),
+      (561, -1)),
+     //Hard
+     ((569, -1),
+      (570, -1),
+      (571, -1),
+      (572, -1),
+      (571, 569),
+      (571, 572),
+      (571, -1)),
       //Hard2
      {((569, -1),
       (570, -1),
@@ -137,13 +137,13 @@ const
       (575, 576),
       (577, -1)),}
       //Hard3
-     ((579, -1),
-      (580, -1),
-      (581, -1),
-      (582, -1),
-      (583, 584),
-      (585, 586),
-      (587, -1)));
+     ((569, -1),
+      (570, -1),
+      (571, -1),
+      (572, -1),
+      (571, 569),
+      (571, 572),
+      (571, -1)));
 
   // Does masks apply Walkable/Buildable restrictions on tile.
   // F.e. mt_2Corner mask does not add any restrictions
