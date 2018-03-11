@@ -481,7 +481,7 @@ begin
         if (Cnt < aFirstLine) then
           Weight := High(Word) // First line, max importance
         else
-          Weight := (High(Word) shr 1) - fDefInfo[Idx].Distance + fDefInfo[Idx].EnemyInfluence;
+          Weight := Min(High(Word),  Max( 0,(High(Word) shr 1) - fDefInfo[Idx].Distance + fDefInfo[Idx].EnemyInfluence )  );
       end;
       if (Direction <> dir_NA) then
         Cnt := Cnt + 1;
