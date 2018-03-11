@@ -918,7 +918,8 @@ begin
       if (U <> nil)
        AND not U.IsDeadOrDying
        AND (U.Owner >= 0) // Dont select animals!
-       AND ((U.Owner <> fOwner) OR (gHands[fOwner].Alliances[U.Owner] <> at_Ally)) then
+       AND (U.Owner <> fOwner)
+       AND (gHands[fOwner].Alliances[U.Owner] <> at_Ally)) then
       begin
         Distance := KMDistanceAbs(KMPoint(X,Y), aInitPoint);
         if (Closest > Distance) then
