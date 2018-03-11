@@ -4,7 +4,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes,
-  KM_ResHouses, KM_ResWares;
+  KM_AISetup, KM_ResHouses, KM_ResWares;
 
 type
   TWareBalance = record
@@ -21,6 +21,7 @@ type
   //TWarfareDemands = array[WARFARE_MIN..WARFARE_MAX] of Single;
   TRequiredHousesArray = array[HOUSE_MIN..HOUSE_MAX] of Integer;
 
+  // City predictor (calculation of required houses based on prediction of resource flow)
   TKMCityPredictor = class
   private
     fOwner: TKMHandIndex;
@@ -28,6 +29,7 @@ type
     fMaxSoldiersInMin: Single;
     fCityStats: TCityStats;
     fWareBalance: TWareBalanceArray;
+    fSetup: TKMHandAISetup;
 
     procedure UpdateWareProduction(aWT: TWareType);
     procedure UpdateWareConsumption(aWT: TWareType; aInitialization: Boolean = False);
@@ -40,7 +42,7 @@ type
   public
     RequiredHouses: TRequiredHousesArray;
 
-    constructor Create(aPlayer: TKMHandIndex);
+    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -108,6 +110,10 @@ const
   );
   CO_WEAPONS_MIN = 18;
   CO_WEAPONS_MAX = 27;
+    CO_IRON_WEAPONS_MIN = 23;
+    CO_IRON_WEAPONS_MAX = 27;
+    CO_WOOD_WEAPONS_MIN = 22;
+    CO_WOOD_WEAPONS_MAX = 18;
   CO_WARE_MIN = 0;
   CO_WARE_MAX = 17;
   {
@@ -124,14 +130,15 @@ const
 
 implementation
 uses
-  KM_HandsCollection, KM_Hand, KM_Resource, KM_Game;
+  KM_HandsCollection, KM_Hand, KM_Resource, KM_Game, KM_CityPlanner;
 
 
 { TKMCityPredictor }
-constructor TKMCityPredictor.Create(aPlayer: TKMHandIndex);
+constructor TKMCityPredictor.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
 begin
   inherited Create;
   fOwner := aPlayer;
+  fSetup := aSetup;
 end;
 
 destructor TKMCityPredictor.Destroy();
@@ -203,12 +210,14 @@ var
   I: Integer;
 begin
   fWareBalance[aWT].ActualConsumption := 0;
-  fWareBalance[aWT].FinalConsumption := 0;
+  if aInitialization then
+    fWareBalance[aWT].FinalConsumption := 0;
   for I := Low(CONSUMPTION[aWT]) to High(CONSUMPTION[aWT]) do
     if (CONSUMPTION[aWT,I] <> wt_None) then
     begin
-      fWareBalance[aWT].ActualConsumption := fWareBalance[aWT].ActualConsumption + fWareBalance[ CONSUMPTION[aWT,I] ].ActualConsumption * CONSUMPTION_RATIO[aWT,I] * Byte(fCityStats.Houses[ PRODUCTION[ CONSUMPTION[aWT,I] ] ] > 0);
-      fWareBalance[aWT].FinalConsumption := fWareBalance[aWT].FinalConsumption + Max(fWareBalance[ CONSUMPTION[aWT,I] ].FinalConsumption, fWareBalance[ CONSUMPTION[aWT,I] ].ActualConsumption) * CONSUMPTION_RATIO[aWT,I];
+      fWareBalance[aWT].ActualConsumption := fWareBalance[aWT].ActualConsumption + fWareBalance[ CONSUMPTION[aWT,I] ].ActualConsumption * CONSUMPTION_RATIO[aWT,I];
+      if aInitialization then
+        fWareBalance[aWT].FinalConsumption := fWareBalance[aWT].FinalConsumption + Max(fWareBalance[ CONSUMPTION[aWT,I] ].FinalConsumption, fWareBalance[ CONSUMPTION[aWT,I] ].ActualConsumption) * CONSUMPTION_RATIO[aWT,I];
     end
     else
       break;
@@ -226,7 +235,7 @@ var
 begin
   // Get consumption of city + army
   Consumption := ((fCityStats.CitizensCnt + CITIZEN_RESERVE) * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
-  // Calculate consumption of leather armor / min and pigs which are produced with this cycle
+  // Calculate consumption of leather armor / minute and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
   fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
   // Split rest of consumtion into other houses
@@ -234,6 +243,7 @@ begin
   fWareBalance[wt_Bread].ActualConsumption := Consumption * 0.7;
   fWareBalance[wt_Wine].ActualConsumption := Consumption * 0.3;
   fWareBalance[wt_Fish].ActualConsumption := 0;
+  // Expected food consumption of the final city size (it helps with build order to secure food and weapons production ASAP)
   if aInitialization then
   begin
     fWareBalance[wt_Sausages].FinalConsumption := fWareBalance[wt_Sausages].ActualConsumption;
@@ -248,10 +258,6 @@ end;
 // 1. Exhaustion = estimation of time when will be ware depleted (determine which house should be built at first)
 // 2. Fraction = fraction of required and avaiable houses
 procedure TKMCityPredictor.UpdateWareDerivation(aWT: TWareType; aInitialization: Boolean = False);
-const
-  DERIVATION_LIMIT = -0.05; // Ignore changes into 5%
-  BALANCE_TOLERANCE = 0.15; // Don't build house when there is balance under 10%
-  DERIVATION_COEFICIENT = 15; // Compute derivation for [DERIVATION_COEFICIENT] minutes
 var
   HouseReqCnt: Integer;
   HT: THouseType;
@@ -261,7 +267,7 @@ begin
   with fWareBalance[aWT] do
   begin
     // Calculate when will be ware depleted
-    Exhaustion := 999;
+    Exhaustion := 99;
     if (ActualConsumption - Production > 0) then
       Exhaustion := gHands[fOwner].Stats.GetWareBalance(aWT) / (ActualConsumption - Production);
     HouseReqCnt := Ceil(( Max(ActualConsumption, FinalConsumption) - Production) / Max(0.0001, ProductionRate[aWT]*1.0));
@@ -271,12 +277,12 @@ begin
 end;
 
 
-// Update ware consumption
+// Update ware balance
 procedure TKMCityPredictor.UpdateWareBalance(aInitialization: Boolean = False);
 const
   STONE_NEED_PER_A_WORKER = 0.6;
-  WOOD_NEED_PER_A_WORKER = 0.3;
-  GOLD_PER_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
+  WOOD_NEED_PER_A_WORKER = 0.35;
+  GOLD_NEED_PER_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
 var
   I: Integer;
 begin
@@ -284,8 +290,9 @@ begin
   for I := CO_WEAPONS_MAX downto CO_WEAPONS_MIN do
   begin
     UpdateWareProduction(CONSUMPTION_ORDER[I]);
-    // Consumption was set in initialization
     UpdateWareDerivation(CONSUMPTION_ORDER[I],aInitialization);
+    // Final consumption for weapons is constant and actual is computed only for resource demands (coal mines etc.)
+    fWareBalance[ CONSUMPTION_ORDER[I] ].ActualConsumption :=  fWareBalance[ CONSUMPTION_ORDER[I] ].FinalConsumption * (1.0 - fWareBalance[ CONSUMPTION_ORDER[I] ].Fraction);
   end;
 
   // Update "Normal" ware flow
@@ -300,17 +307,17 @@ begin
         begin
         end;
       // Update Materials / Gold
-      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[ht_School] + RequiredHouses[ht_School]) * GOLD_PER_A_SCHOOL);
+      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[ht_School] + RequiredHouses[ht_School]) * GOLD_NEED_PER_A_SCHOOL);
       wt_Stone:
         begin
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, gHands[fOwner].AI.Setup.WorkerCount) * STONE_NEED_PER_A_WORKER;
-          fWareBalance[wt_Stone].FinalConsumption := gHands[fOwner].AI.Setup.WorkerCount * STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, fSetup.WorkerCount) * STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].FinalConsumption := fSetup.WorkerCount * STONE_NEED_PER_A_WORKER;
         end;
       wt_Wood:
         begin
           UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
           fWareBalance[wt_Wood].ActualConsumption := Max(fWareBalance[wt_Wood].ActualConsumption, fCityStats.Citizens[ut_Worker] * WOOD_NEED_PER_A_WORKER);
-          fWareBalance[wt_Wood].FinalConsumption := Max(fWareBalance[wt_Wood].FinalConsumption, gHands[fOwner].AI.Setup.WorkerCount * WOOD_NEED_PER_A_WORKER);
+          fWareBalance[wt_Wood].FinalConsumption := Max(fWareBalance[wt_Wood].FinalConsumption, fSetup.WorkerCount * WOOD_NEED_PER_A_WORKER);
         end;
       // Other cases
       else UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
@@ -320,12 +327,14 @@ begin
 end;
 
 
-// Get players stats
+// Get players stats and store them into local variable (to be able to edit them later)
 procedure TKMCityPredictor.UpdateCityStats();
 var
   UT: TUnitType;
   HT: THouseType;
+  Planner: TKMCityPlanner;
 begin
+  Planner := gHands[fOwner].AI.CityManagement.Builder.Planner;
   with fCityStats do
   begin
     CitizensCnt := 0;
@@ -343,12 +352,13 @@ begin
     HousesCnt := 0;
     for HT := Low(Houses) to High(Houses) do
     begin
-      Houses[HT] := gHands[fOwner].Stats.GetHouseTotal(HT);
+      //Houses[HT] := gHands[fOwner].Stats.GetHouseTotal(HT); // Does not consider planned houses
+      Houses[HT] := Planner.PlannedHouses[HT].Count;
       HousesCnt := HousesCnt + Houses[HT];
     end;
     if GA_PLANNER then  // Short info for Genetic algorithm planner
     begin
-      Citizens[ut_Worker] := gHands[fOwner].AI.Setup.WorkerCount;
+      Citizens[ut_Worker] := fSetup.WorkerCount;
       Citizens[ut_Serf] := HousesCnt*2;
       CitizensCnt := Citizens[ut_Serf] + Citizens[ut_Worker];
       WarriorsCnt := 100;
@@ -357,18 +367,20 @@ begin
 end;
 
 
+// Basic house requirements
 procedure TKMCityPredictor.UpdateBasicHouses(aInitialization: Boolean = False);
 const
   INN_TIME_LIMIT = 9000; // ~ 15 minutes from start
-  FIRST_MARKETPLACE = 20000;
-  SECOND_MARKETPLACE = 30000;
+  SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
+  FIRST_MARKETPLACE = 30000;
+  SECOND_MARKETPLACE = 40000;
 begin
   // 1 Storehouse
   RequiredHouses[ht_Store] := 1 - fCityStats.Houses[ht_Store];
   // 1 Barracks (build only when we have or produce axe / armors)
   RequiredHouses[ht_Barracks] := Byte(aInitialization OR (gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0)) - fCityStats.Houses[ht_Barracks];
   // Schools (at least 1 + WarriorsPerMinute criterium)
-  RequiredHouses[ht_School] := 1 + Byte(  (fCityStats.Houses[ht_Barracks] > 0) OR aInitialization ) * (Round(gHands[fOwner].AI.Setup.WarriorsPerMinute) shr 1) - fCityStats.Houses[ht_School]; // CHANGE IT!!!!!!!!!
+  RequiredHouses[ht_School] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[ht_Barracks] > 0) OR aInitialization ) * (Round(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[ht_School]  );
   // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
   RequiredHouses[ht_Inn] := Max(0, Ceil(  Byte( (gGame.GameTickCount > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[ht_Inn]);
   // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
@@ -376,6 +388,7 @@ begin
 end;
 
 
+//
 procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
 
   procedure AddCitizens(aUT: TUnitType; aCnt: Word; aOverride: Boolean = False);
@@ -402,8 +415,6 @@ var
   MaxIronWeapProd, MaxWoodWeapProd: Single;
   WT: TWareType;
 begin
-  //fMaxSoldiersInMin := 0;
-
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
   // Iron weapons
   MaxIronWeapProd := aIronMineCnt * ProductionRate[wt_IronOre] / 2.0; // / 2.0 for iron weapon and armor
@@ -415,44 +426,53 @@ begin
     fWareBalance[ STANDARD_WARFARE[I] ].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Shield].FinalConsumption := MaxWoodWeapProd / 5;
-
+  // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
+  // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
+  fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
+  fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
 
   // Predict final city stats (by potential size of city)
   fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
   fCityStats.WarriorsCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
   UpdateWareBalance(True);
 
+  // Corn delay to stop build swine or mill before farm (another way is to check if we have corn but it does not work well)
   fCornDelay := Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
 end;
 
 
 procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
+const
+  WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
 var
   HT: THouseType;
 begin
   for HT := Low(RequiredHouses) to High(RequiredHouses) do
     RequiredHouses[HT] := 0;
+
   UpdateCityStats();
   UpdateBasicHouses(GA_PLANNER);
   UpdateWareBalance();
-  //{
+
   if (fCornDelay = 0) AND (fCityStats.Houses[ht_Farm] > 0) then
   begin
-    fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce)
+    fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce corn)
   end;
   if not GA_PLANNER then
   begin
-    RequiredHouses[ht_Sawmill] := Min(RequiredHouses[ht_Sawmill], Byte(gHands[fOwner].Stats.GetWareBalance(wt_Trunk) > 5));
-    if (gGame.GameTickCount < fCornDelay) then // Conside corn delay (~10 minutes) -> time saved by construction
+    // Corn delay (should not wait till is first corn produced because it have huge impact)
+    if (gGame.GameTickCount < fCornDelay) then // Consider corn delay (~10 minutes) -> time saved by construction
     begin
-      RequiredHouses[ht_Swine] := 0;
       RequiredHouses[ht_Mill] := 0;
       RequiredHouses[ht_Bakery] := 0;
+      RequiredHouses[ht_Swine] := 0;
       RequiredHouses[ht_Tannery] := 0;
       RequiredHouses[ht_ArmorWorkshop] := 0;
     end;
-    RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+    // Pig delay
+    //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+    RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(fCityStats.Houses[ht_Swine] > 0);
     //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
     //begin
     //  RequiredHouses[ht_Tannery] := 0;
@@ -462,22 +482,24 @@ begin
     if (gGame.GameTickCount < 22000) then
       RequiredHouses[ht_Wineyard] := 0;
 
-    //if (gHands[fOwner].Stats.GetWareBalance(wt_Corn) = 0) then
-    //begin
-    //  RequiredHouses[ht_Mill] := 0;
-    //  RequiredHouses[ht_Swine] := 0;
-    //end;
-    //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-    //RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
-    //RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
-    //RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
-    //
-    //
-    //RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
-    //RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
-    //RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+    RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) );
+
+    // Loghical house requirements (delay takes too long so it is not used)
+    {
+    RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+    RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+    RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
+    RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
+    RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
+    RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+    //}
+    // Iron production (it will give time to build more mines)
+    {
+    RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
+    RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+    RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+    //}
   end;
-  //}
 end;
 
 
@@ -519,56 +541,33 @@ const
       ActualConsumptionColor := COLOR_YELLOW;
       FinalConsumptionColor := COLOR_YELLOW;
       FractionColor := COLOR_YELLOW;
-      ExhaustionColor := COLOR_YELLOW;
-      if (Production > 0) then
-        ProductionColor := COLOR_GREEN;
-      if (ActualConsumption > 0) then
-        ActualConsumptionColor := COLOR_RED;
-      if (FinalConsumption > 0) then
-        FinalConsumptionColor := COLOR_RED;
-      if (Fraction <= 0.1) then
-        FractionColor := COLOR_GREEN
-      else
-        FractionColor := COLOR_RED;
-      if (Exhaustion > 0) then
-        ExhaustionColor := COLOR_GREEN
-      else if (Exhaustion < 0) then
-        ExhaustionColor := COLOR_RED;
+      ExhaustionColor := COLOR_RED;
+      if (Production > 0) then         ProductionColor := COLOR_GREEN;
+      if (ActualConsumption > 0) then  ActualConsumptionColor := COLOR_RED;
+      if (FinalConsumption > 0) then   FinalConsumptionColor := COLOR_RED;
+      if (Fraction <= 0.1) then        FractionColor := COLOR_GREEN
+      else                             FractionColor := COLOR_RED;
+      if (Exhaustion > 10) then        ExhaustionColor := COLOR_GREEN
+      else if (Exhaustion > 1) then    ExhaustionColor := COLOR_YELLOW;
       aBalanceText := aBalanceText + Format(HouseCntColor+'%Dx '+COLOR_WHITE, [Cnt]) //
-                        + aSpecificText + Format(': ('
+                        + aSpecificText + Format(':   ('
                         +ProductionColor+'%.2f'+COLOR_WHITE+'; '
                         +ActualConsumptionColor+'%.2f'+COLOR_WHITE+'; '
                         +FinalConsumptionColor+'%.2f'+COLOR_WHITE+'; '
                         +FractionColor+'%.2f '+COLOR_WHITE+'; '
-                        +ExhaustionColor+'%.2f '+COLOR_WHITE+')|', [Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
+                        +ExhaustionColor+'%.2f'+COLOR_WHITE+')|', [Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
     end;
   end;
 var
   I: Integer;
-  //HT: THouseType;
 begin
   aBalanceText := aBalanceText + 'Ware balance|Required houses (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
-  //{
   for I := CO_WARE_MIN to CO_WARE_MAX do
     AddWare(CONSUMPTION_ORDER[I], WARE_TO_STRING[ CONSUMPTION_ORDER[I] ]);
   AddWare(wt_Armor, 'Armors');
   AddWare(wt_Axe, 'Weapons');
   AddWare(wt_MetalArmor, 'Iron Armors');
   AddWare(wt_Sword, 'Iron Weapons');
-  //}
-  //aBalanceText := aBalanceText + '|Required houses: |';
-  //I := 0;
-  //for HT := Low(RequiredHouses) to High(RequiredHouses) do
-  //  if (RequiredHouses[HT] > 0) then
-  //  begin
-  //    I := I + 1;
-  //    if (I = 5) then
-  //    begin
-  //      I := 0;
-  //      aBalanceText := aBalanceText + '|';
-  //    end;
-  //    aBalanceText := aBalanceText + Format('%Dx ', [ RequiredHouses[HT] ]) + HOUSE_TO_STRING[HT] + ';';
-  //  end;
 end;
 
 
