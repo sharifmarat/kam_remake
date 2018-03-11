@@ -41,6 +41,7 @@ type
   TKMArmyDefence = class
   private
     fOwner: TKMHandIndex;
+    fCityUnderAttack: Boolean;
     fFirstLineCnt: Word;
     fPositions: TKMList;
     fDefPolyFirstLine: TKMWordArray;
@@ -49,7 +50,6 @@ type
 
     function GetCount: Integer; inline;
     function GetPosition(aIndex: Integer): TKMDefencePosition; inline;
-    procedure RestockPositionWith(aDefenceGroup, aGroup: TKMUnitGroup);
     procedure UpdateDefences();
   public
     TroopFormations: array [TGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
@@ -62,6 +62,7 @@ type
 
     property Count: Integer read GetCount;
     property Positions[aIndex: Integer]: TKMDefencePosition read GetPosition; default;
+    property CityUnderAttack: Boolean read fCityUnderAttack;
 
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     function DefenceStatus(): TKMDefenceStatus;
@@ -158,9 +159,8 @@ end;
 
 function TKMDefencePosition.CanAccept(aGroup: TKMUnitGroup; aMaxUnits: Integer): Boolean;
 begin
-  Result := (Group = nil) OR (  // Empty defence
-              (GroupType = UnitGroups[aGroup.UnitType]) AND ( (aGroup.Count = 1) AND (Group.Count < aMaxUnits) ) // Same small group
-            );
+  Result := (Group = nil)
+            OR ((GroupType = UnitGroups[aGroup.UnitType]) AND (Group.Count < aMaxUnits));
 end;
 
 
@@ -176,7 +176,7 @@ begin
   //Tell group to walk to its position
   //It's easier to repeat the order than check that all members are in place
   if (Group <> nil)
-    AND Group.IsIdleToAI
+    AND Group.IsIdleToAI(True)
     AND Group.CanWalkTo(Position.Loc, 0) then
     Group.OrderWalk(Position.Loc, True, Position.Dir);
 end;
@@ -193,6 +193,7 @@ begin
   inherited Create;
 
   fOwner := aPlayer;
+  fCityUnderAttack := False;
   fPositions := TKMList.Create;
   fAttack := aAttack;
 
@@ -217,6 +218,7 @@ var I: Integer;
 begin
   SaveStream.WriteA('DefencePositions');
   SaveStream.Write(fOwner);
+  SaveStream.Write(fCityUnderAttack);
   SaveStream.Write(fFirstLineCnt);
   SaveStream.Write(TroopFormations, SizeOf(TroopFormations));
 
@@ -236,6 +238,7 @@ var I, NewCount: Integer;
 begin
   LoadStream.ReadAssert('DefencePositions');
   LoadStream.Read(fOwner);
+  LoadStream.Read(fCityUnderAttack);
   LoadStream.Read(fFirstLineCnt);
   LoadStream.Read(TroopFormations, SizeOf(TroopFormations));
 
@@ -278,8 +281,9 @@ end;
 
 function TKMArmyDefence.FindPlaceForGroup(aGroup: TKMUnitGroup): Boolean;
 var
-  I, BestIdx: Integer;
+  I, BestIdx, Needed: Integer;
   BestWeight: Word;
+  UG: TKMUnitGroup;
 begin
   Result := False;
 
@@ -297,40 +301,47 @@ begin
   if (BestIdx <> -1) then
   begin
     Result := True;
+    //New position
     if (Positions[BestIdx].Group = nil) then
     begin
-      //New position
+      Needed := TroopFormations[ aGroup.GroupType ].NumUnits;
+      // Add group to new defense position
       Positions[BestIdx].Group := aGroup;
-      if (aGroup.UnitsPerRow < TroopFormations[aGroup.GroupType].UnitsPerRow) then
-        aGroup.UnitsPerRow := TroopFormations[aGroup.GroupType].UnitsPerRow;
-      aGroup.OrderWalk( Positions[BestIdx].Position.Loc, True );
+      // Defence position requires less soldiers -> distribute other soldiers into different defence position
+      if (aGroup.Count > Needed) then
+      begin
+        UG := aGroup.OrderSplitUnit( aGroup.GetAliveMember, True);
+        if (UG <> nil) then
+        begin
+          if (aGroup.Count - Needed > 0) then
+            aGroup.OrderSplitLinkTo(UG, aGroup.Count - Needed, True); //Link only as many units as are needed
+          //FindPlaceForGroup(UG); // The rest of group will be added later (not in this tick)
+        end;
+      end;
+      UG := Positions[BestIdx].Group;
+      UG.OrderWalk( Positions[BestIdx].Position.Loc, True, Positions[BestIdx].Position.Dir );
     end
+    // Restock
     else
+    begin
       //Append to existing position
-      RestockPositionWith( Positions[BestIdx].Group, aGroup );
+      UG := Positions[BestIdx].Group;
+      Needed := TroopFormations[ UG.GroupType ].NumUnits - UG.Count;
+      if (aGroup.Count <= Needed) then
+        aGroup.OrderLinkTo(UG, True) //Link entire group
+      else
+      begin
+        aGroup.OrderSplitLinkTo(UG, Needed, True); //Link only as many units as are needed
+        //FindPlaceForGroup(aGroup); // The rest of group will be added later (not in this tick)
+      end;
+    end;
+    if (UG.UnitsPerRow <> TroopFormations[UG.GroupType].UnitsPerRow) then
+      UG.UnitsPerRow := TroopFormations[UG.GroupType].UnitsPerRow;
   end;
 end;
 
 
-procedure TKMArmyDefence.RestockPositionWith(aDefenceGroup, aGroup: TKMUnitGroup);
-var
-  Needed: integer;
-begin
-  Needed := TroopFormations[aDefenceGroup.GroupType].NumUnits - aDefenceGroup.Count;
-  if (Needed <= 0) then
-    Exit;
-  if (aGroup.Count <= Needed) then
-    aGroup.OrderLinkTo(aDefenceGroup, True) //Link entire group
-  else
-    aGroup.OrderSplitLinkTo(aDefenceGroup, Needed, True); //Link only as many units as are needed
-
-  if (aDefenceGroup.UnitsPerRow < TroopFormations[aDefenceGroup.GroupType].UnitsPerRow) then
-    aDefenceGroup.UnitsPerRow := TroopFormations[aDefenceGroup.GroupType].UnitsPerRow;
-end;
-
-
-//Find DefencePosition to which this Commander belongs
-//(Result could be nil if CommanderCount > PositionsCount
+//Find DefencePosition of a group
 function TKMArmyDefence.FindPositionOf(aGroup: TKMUnitGroup): TKMDefencePosition;
 var
   I: Integer;
@@ -365,7 +376,7 @@ end;
 
 function TKMArmyDefence.DefenceStatus(): TKMDefenceStatus;
 const
-  FIRST_LINE_COEF = 2; // We should have at least 2 lines of defence
+  FIRST_LINE_COEF = 2; // We should have at least 2 lines of defences
 var
   I, Cnt: Integer;
 begin
@@ -386,11 +397,10 @@ end;
 
 
 procedure TKMArmyDefence.UpdateDefences();
-//const
-//  DEF_GROUPS: array[0..2] of TGroupType = (gt_Melee, gt_Ranged, gt_AntiHorse);
 var
   DefCnt: Word;
   I, K: Integer;
+  G: TKMUnitGroup;
   VisitedNewPos, VisitedExistPos: TBooleanArray;
   DefPosArr: TKMDefencePosArr;
   BestDefLines: TKMDefenceLines;
@@ -422,10 +432,7 @@ begin
       begin
         VisitedNewPos[I] := True;
         VisitedExistPos[K] := True;
-        //with TKMDefencePosition(Positions[K]) do
-
-          Positions[K].Weight := DefPosArr[I].Weight;
-
+        Positions[K].Weight := DefPosArr[I].Weight;
         break;
       end;
 
@@ -438,6 +445,16 @@ begin
   for I := 0 to Length(DefPosArr) - 1 do
     if not VisitedNewPos[I] then
       fPositions.Add(  TKMDefencePosition.Create( DefPosArr[I].Weight, DefPosArr[I].DirPoint )  );
+
+  for I := fPositions.Count - 1 downto 0 do
+  begin
+    G := Positions[I].Group;
+    if (G <> nil) AND (G.Count < TroopFormations[ G.GroupType ].NumUnits) then
+    begin
+      ReleaseGroup(I);
+      FindPlaceForGroup(G);
+    end;
+  end;
 end;
 
 
@@ -517,6 +534,7 @@ var
   GT: TGroupType;
   UGA: TKMUnitGroupArray;
 begin
+  fCityUnderAttack := False;
   // Check defensive line
   for I := 0 to Length(fDefPolyFirstLine) - 1 do
   begin
@@ -526,6 +544,7 @@ begin
       Threat := Threat + gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ];
     if (Threat > 0) then
     begin
+      fCityUnderAttack := True;
       Loc := gAIFields.NavMesh.Polygons[Idx].CenterPoint;
       if not IsCompanyAround(Loc) then
       begin
@@ -546,8 +565,9 @@ begin
     if (Group <> nil) AND not Group.IsDead then
     begin
       Loc := Group.Position;
-      if not IsCompanyAround(Loc) then
+      if (gAIFields.Influences.Ownership[ fOwner, Loc.Y, Loc.X ] > 0) AND not IsCompanyAround(Loc) then
       begin
+        fCityUnderAttack := True;
         UGA := FindDefenceGroups(Loc);
         if (Length(UGA) > 0) then
           fAttack.CreateCompany(Loc, UGA, cm_Defence);
