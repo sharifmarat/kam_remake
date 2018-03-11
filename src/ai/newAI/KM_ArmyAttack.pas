@@ -9,9 +9,9 @@ uses
   KM_Eye, KM_NavMeshInfluences;
 
 type
-  TAISquad = class; // Combat group management (orders to specific group: walk / attack)
-  TAICompany = class; // Company management (selection of targets, positions etc.)
-  TKMArmyAttack = class; // Attack management (time distribution, company initialization)
+  TAISquad = class; // Combat group (orders to specific group: walk / attack)
+  TAICompany = class; // Company (selection of targets, positions etc.)
+  TKMArmyAttack = class; // Attack (time distribution, company initialization)
 
   TKMSquadList = array[TGroupType] of TKMList;
   TKMSquadsArray = array[TGroupType] of record
@@ -28,7 +28,7 @@ type
   TKMCompanyMode = (cm_Attack, cm_Defence);
   TKMCompanyState = (cs_Attack, cs_Walking, cs_Idle);
 
-  TAISquad = class // Squad management (one group)
+  TAISquad = class
   private
     fGroup: TKMUnitGroup;
     fOnPlace, fTargetChanged: Boolean;
@@ -275,7 +275,8 @@ end;
 // Update state of squad (group orders)
 procedure TAISquad.UpdateState(aTick: Cardinal);
 const
-  RANGE_AIM_DELAY = 50;
+  RANGE_AIM_DELAY = 80;
+  HOUSE_AIM_DELAY = 1000;
 var
   ActPos, FinPos: TKMPoint;
 begin
@@ -310,8 +311,9 @@ begin
     FinPos := fTargetHouse.GetPosition;
     if PlanPath(ActPos, FinPos, True) then
       Group.OrderWalk(FinPos, True, FinalPosition.Dir)
-    else if fTargetChanged then
+    else if fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
+      fAttackTimeLimit := aTick + HOUSE_AIM_DELAY;
       fTargetChanged := False;
       Group.OrderAttackHouse(fTargetHouse, True);
     end;
@@ -331,7 +333,7 @@ end;
 function TAISquad.PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False): Boolean;
 const
   SQR_TARGET_REACHED_TOLERANCE = 5*5;
-  SQR_TARGET_REACHED_RANGED = 9*9;
+  SQR_TARGET_REACHED_RANGED = 14*14; // This should be more than maximal range (11*11)
 var
   InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
@@ -544,9 +546,9 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
         TAISquad( fSquads[GT].Items[I] ).UpdateState(aTick);
   end;
 var
+  InPosition: Boolean;
   I: Integer;
   SQRRadius: Single;
-  GT: TGroupType;
   HA: TKMHouseArray;
   UA: TKMUnitArray;
   UGA: TKMUnitGroupArray;
@@ -555,6 +557,8 @@ var
 begin
   if (SquadCnt = 0) then
     Exit;
+
+  InPosition := SquadsInPosition();
 
   // Check target
   ClosestHouse := nil;
@@ -592,7 +596,7 @@ begin
   if not OrderToAttack(ScanPosition, UA, UGA, HA) then
   begin
     fState := cs_Walking;
-    if SquadsInPosition() then
+    if InPosition then
     begin
       if not OrderMove(PathPosition) then
         fState := cs_Idle;
@@ -1495,28 +1499,30 @@ begin
       for K := Company.Squads[GT].Count - 1 downto 0 do
       begin
         Squad := Company.Squads[GT].Items[K];
-        // Position
-        Position := Squad.Position;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, ($99 shl 24) OR COLOR_GREEN);
         // Order position of group
         Position := Squad.Group.OrderLoc.Loc;
         gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, ($99 shl 24) OR COLOR_YELLOW);
+        // Position
+        Position := Squad.Position;
+        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, ($99 shl 24) OR COLOR_GREEN);
         // Target house
         if (Squad.TargetHouse <> nil) then
-        begin
-          gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, ($99 shl 24) OR COLOR_RED);
-          if (Length(Squad.PointPath) > 0) then
-            for J := Length(Squad.PointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
-        end;
+          if not Squad.TargetHouse.IsDestroyed then
+          begin
+            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, ($99 shl 24) OR COLOR_RED);
+            if (Length(Squad.PointPath) > 0) then
+              for J := Length(Squad.PointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
+          end;
         // Target unit
         if (Squad.TargetUnit <> nil) then
-        begin
-          gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, ($99 shl 24) OR COLOR_RED);
-          if (Length(Squad.PointPath) > 0) then
-            for J := Length(Squad.PointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
-        end;
+          if not Squad.TargetUnit.IsDeadOrDying then
+          begin
+            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, ($99 shl 24) OR COLOR_RED);
+            if (Length(Squad.PointPath) > 0) then
+              for J := Length(Squad.PointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
+          end;
         // Pathfinding
         if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
         begin
