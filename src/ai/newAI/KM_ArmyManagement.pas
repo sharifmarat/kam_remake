@@ -336,7 +336,7 @@ procedure TKMArmyManagement.CheckAttack();
     for I := 0 to Length(aAvaiableGroups) - 1 do
       Inc(  GTArr[ aAvaiableGroups[I].GroupType ]  );
 
-    CompaniesCnt := Max(1, Round(Length(aAvaiableGroups) / MAX_GROUPS_IN_COMPANY));
+    CompaniesCnt := Max(1, Ceil(Length(aAvaiableGroups) / MAX_GROUPS_IN_COMPANY));
     HighAG := Length(aAvaiableGroups) - 1;
     for I := 0 to CompaniesCnt - 1 do
     begin
@@ -351,7 +351,7 @@ procedure TKMArmyManagement.CheckAttack();
           else if (aAvaiableGroups[K].GroupType = GT) then
           begin
             if (Length(Groups) <= GCnt) then
-              SetLength(Groups, GCnt + 10);
+              SetLength(Groups, GCnt + MAX_GROUPS_IN_COMPANY);
             Groups[GCnt] := aAvaiableGroups[K];
             GCnt := GCnt + 1;
             aAvaiableGroups[K] := aAvaiableGroups[HighAG];
@@ -360,7 +360,7 @@ procedure TKMArmyManagement.CheckAttack();
           end;
        end;
 
-      SetLength(Groups, GCnt-1);
+      SetLength(Groups, GCnt);
       fattack.CreateCompany(aTargetPoint, Groups);
     end;
   end;
@@ -487,8 +487,8 @@ begin
     fHostileGroups.Delete(I);
     if (Group <> nil) then
     begin
-      gHands.CleanUpGroupPointer(Group);
       UGA[I] := Group;
+      gHands.CleanUpGroupPointer(Group);
     end;
   end;
   fDefence.FindEnemyInDefLine(UGA);
@@ -503,8 +503,8 @@ begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     CheckThreats();
-    if (aTick mod PERF_TIME_LIMIT = fOwner) then
-      CheckAttack();
+    //if (aTick mod PERF_TIME_LIMIT = fOwner) then
+    //  CheckAttack();
     RecruitSoldiers();
     CheckGroupsState();
     fAttack.UpdateState(aTick);
