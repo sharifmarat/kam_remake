@@ -503,8 +503,8 @@ begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     CheckThreats();
-    //if (aTick mod PERF_TIME_LIMIT = fOwner) then
-    //  CheckAttack();
+    if (aTick mod PERF_TIME_LIMIT = fOwner) then
+      CheckAttack();
     RecruitSoldiers();
     CheckGroupsState();
     fAttack.UpdateState(aTick);
