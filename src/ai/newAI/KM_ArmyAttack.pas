@@ -161,7 +161,7 @@ const
 
 implementation
 uses
-  System.Types,
+  Types,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_NavMesh, KM_CommonUtils, KM_AISetup, KM_AI, KM_RenderAux,
   KM_Units_Warrior;
