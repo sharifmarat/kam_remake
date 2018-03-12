@@ -116,22 +116,23 @@ var
   //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75.74541473;
   //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2.960519552;
 
-  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 77.13183594;
-  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 1.862679005;
-  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 22.33260345;
-  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 111.6290359;
-  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 26.50380707;
-  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 2.076984644;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 1.455792427;
-  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 41.640728;
-  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 29.6295166;
-  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 22.21867371;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 15.45532322;
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 67.72820282;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 1;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 1.648992062;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 144.6980438;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2.727262497;
+  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 54.46446991;
+  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 37.58007431;
+  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 45.52814484;
+  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 112.8556213;
+  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 35.73310852;
+  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 16.74302101;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 13.72853088;
+  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 34.18622589;
+  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 39.71033478;
+  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 21.58207703;
+  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 15.41100121;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 68.38710785;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 3.980914116;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 3.259504318;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 37.63645935;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 8.272258759;
+
 
 
 
@@ -195,8 +196,6 @@ type
     function FindForestAndWoodcutter(): Boolean;
     function PlanDefenceTowers(): Boolean;
 
-//    function GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
-//    function GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
   public
     constructor Create(aPlayer: TKMHandIndex);
     destructor Destroy(); override;
@@ -805,6 +804,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aFiel
   function FindClosestHouseEntrance(aOnlyPlaced: Boolean; var aNewLoc, aExistLoc: TKMPoint): Boolean;
   const
     INIT_DIST = 1000000;
+    MAX_WATCHTOWER_DIST = 10;
   var
     I: Integer;
     Dist, BestDist: Single;
@@ -821,7 +821,10 @@ function TKMCityPlanner.GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aFiel
         begin
           Loc := fPlannedHouses[HT].Plans[I].Loc;
           Dist := abs(Loc.X - aNewLoc.X) + abs(Loc.Y - aNewLoc.Y) * 1.5; // Prefer to connect road in X axis
-          if (Dist < BestDist) then
+          // Watchtowers may be far from the city and path may leads out of protected area
+          // so if is distance from closest watchtower too far away better select other house type
+          // -> secure that path will lead directly to the city
+          if (Dist < BestDist) AND ( (aHT <> ht_WatchTower) OR (HT <> ht_WatchTower) OR (Dist < MAX_WATCHTOWER_DIST) ) then
           begin
             BestDist := Dist;
             aExistLoc := Loc;
@@ -911,68 +914,6 @@ begin
   end;
   Result := aField.Count;
 end;
-
-
-//function TKMCityPlanner.GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
-//var
-//  Output: Boolean;
-//  I,X,Y, TreeCnt: Integer;
-//  HMA: THouseMappingArray;
-//begin
-//  Result := True;
-//  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
-//    Exit;
-//
-//  HMA := gAIFields.Eye.HousesMapping;
-//  SetLength(aTrees, Length(HMA[aHT].Tiles));
-//  for I := Low(aTrees) to High(aTrees) do
-//    aTrees[I] := KMPOINT_ZERO;
-//
-//  Output := True;
-//  TreeCnt := 0;
-//  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-//  begin
-//    X := aLoc.X + HMA[aHT].Tiles[I].X;
-//    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
-//    Output := Output AND (tpBuild in gTerrain.Land[Y,X].Passability);
-//    if gTerrain.ObjectIsChopableTree(X, Y) then
-//    begin
-//      aTrees[TreeCnt] := KMPoint(X,Y);
-//      TreeCnt := TreeCnt + 1;
-//    end;
-//    if not Output then
-//      break;
-//  end;
-//  Result := Output;
-//end;
-//
-//
-//function TKMCityPlanner.GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
-//var
-//  I,X,Y, FieldCnt: Integer;
-//  HMA: THouseMappingArray;
-//begin
-//  Result := True;
-//  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
-//    Exit;
-//
-//  HMA := gAIFields.Eye.HousesMapping;
-//  SetLength(aFields, Length(HMA[aHT].Tiles));
-//  for I := Low(aFields) to High(aFields) do
-//    aFields[I] := KMPOINT_ZERO;
-//
-//  FieldCnt := 0;
-//  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-//  begin
-//    X := aLoc.X + HMA[aHT].Tiles[I].X;
-//    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
-//    aFields[FieldCnt] := KMPoint(X,Y);
-//    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Wine)
-//        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Corn) then
-//      FieldCnt := FieldCnt + 1;
-//  end;
-//  Result := (FieldCnt > 0);
-//end;
 
 
 procedure TKMCityPlanner.PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
@@ -1994,7 +1935,7 @@ const
   COLOR_GREEN_Wine = $3355FFFF;
   COLOR_BLUE = $60FF0000;
 var
-  I,K, Cnt: Integer;
+  I,K: Integer;
   Division: Single;
   HT: THouseType;
   Loc: TKMPoint;
@@ -2031,11 +1972,6 @@ begin
     for I := 0 to fForestsNearby.Count - 1 do
     begin
       Loc := fForestsNearby.Items[I];
-//      Cnt := 0;
-//      for K := 0 to fForestsNearby.Count-1 do // Check if we are above or under median
-//        if (fForestsNearby.Tag2[I] > fForestsNearby.Tag2[K]) then
-//          Cnt := Cnt + 1;
-
       Color := (Max(50,Round((fForestsNearby.Tag[I] - fForestsNearby.Tag[0]) * Division)) shl 24) OR $000000FF;
       gRenderAux.Quad(Loc.X, Loc.Y, Color);
     end;
@@ -2114,7 +2050,74 @@ end;
 
 
 
-{
+{ JUNK:
+
+
+function GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+function GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+
+function TKMCityPlanner.GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+var
+  Output: Boolean;
+  I,X,Y, TreeCnt: Integer;
+  HMA: THouseMappingArray;
+begin
+  Result := True;
+  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+    Exit;
+
+  HMA := gAIFields.Eye.HousesMapping;
+  SetLength(aTrees, Length(HMA[aHT].Tiles));
+  for I := Low(aTrees) to High(aTrees) do
+    aTrees[I] := KMPOINT_ZERO;
+
+  Output := True;
+  TreeCnt := 0;
+  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+  begin
+    X := aLoc.X + HMA[aHT].Tiles[I].X;
+    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
+    Output := Output AND (tpBuild in gTerrain.Land[Y,X].Passability);
+    if gTerrain.ObjectIsChopableTree(X, Y) then
+    begin
+      aTrees[TreeCnt] := KMPoint(X,Y);
+      TreeCnt := TreeCnt + 1;
+    end;
+    if not Output then
+      break;
+  end;
+  Result := Output;
+end;
+
+
+function TKMCityPlanner.GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+var
+  I,X,Y, FieldCnt: Integer;
+  HMA: THouseMappingArray;
+begin
+  Result := True;
+  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+    Exit;
+
+  HMA := gAIFields.Eye.HousesMapping;
+  SetLength(aFields, Length(HMA[aHT].Tiles));
+  for I := Low(aFields) to High(aFields) do
+    aFields[I] := KMPOINT_ZERO;
+
+  FieldCnt := 0;
+  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+  begin
+    X := aLoc.X + HMA[aHT].Tiles[I].X;
+    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
+    aFields[FieldCnt] := KMPoint(X,Y);
+    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Wine)
+        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Corn) then
+      FieldCnt := FieldCnt + 1;
+  end;
+  Result := (FieldCnt > 0);
+end;
+
+
 procedure TKMCityPlanner.PlanFarmFields(aLoc: TKMPoint; var aNodeTagList: TKMPointTagList);
 const
   NORTH_PENALIZATION = 10;
