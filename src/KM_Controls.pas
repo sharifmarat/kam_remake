@@ -6780,11 +6780,11 @@ begin
 
     if IsFocused then
     begin
-      ShapeColor := clListSelShape;//$88888888;
-      OutlineColor := clListSelOutline;//$FFFFFFFF;
+      ShapeColor := clListSelShape;
+      OutlineColor := clListSelOutline;
     end else begin
-      ShapeColor := clListSelShapeUnfocused;//$66666666;
-      OutlineColor := clListSelOutlineUnfocused;//$FFA0A0A0;
+      ShapeColor := clListSelShapeUnfocused;
+      OutlineColor := clListSelOutlineUnfocused;
     end;
 
     TKMRenderUI.WriteShape(AbsLeft, Y + fItemHeight * (fItemIndex - TopIndex), PaintWidth, fItemHeight, ShapeColor);

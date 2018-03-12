@@ -484,7 +484,7 @@ var
 
 var
   S: TKMemoryStream;
-  MapInnerRect: TKMRect;
+  //MapInnerRect: TKMRect;
   NewGeneratedTileI, NewGeneratedTileK: Boolean;
   I, K, IFrom, KFrom: Integer;
   SizeX, SizeY: Integer;
@@ -512,10 +512,10 @@ begin
     SizeY := fMapY + aInsetRect.Top + aInsetRect.Bottom;
     S.Write(SizeX);
     S.Write(SizeY);
-    MapInnerRect := KMRect(1 + EnsureRange(aInsetRect.Left, 0, aInsetRect.Left),
-                           1 + EnsureRange(aInsetRect.Top, 0, aInsetRect.Top),
-                           EnsureRange(fMapX + aInsetRect.Left, fMapX + aInsetRect.Left, fMapX + aInsetRect.Left + aInsetRect.Right),
-                           EnsureRange(fMapY + aInsetRect.Top, fMapY + aInsetRect.Top, fMapY + aInsetRect.Top + aInsetRect.Bottom));
+    //MapInnerRect := KMRect(1 + EnsureRange(aInsetRect.Left, 0, aInsetRect.Left),
+    //                       1 + EnsureRange(aInsetRect.Top, 0, aInsetRect.Top),
+    //                       EnsureRange(fMapX + aInsetRect.Left, fMapX + aInsetRect.Left, fMapX + aInsetRect.Left + aInsetRect.Right),
+    //                       EnsureRange(fMapY + aInsetRect.Top, fMapY + aInsetRect.Top, fMapY + aInsetRect.Top + aInsetRect.Bottom));
 
     for I := 1 to SizeY do
     begin
