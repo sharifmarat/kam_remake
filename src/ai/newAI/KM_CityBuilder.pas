@@ -529,7 +529,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
   // Build Wine or Corn fields
   procedure BuildFields();
   var
-    I,K,ActiveWorkers: Integer;
+    I,{K,}ActiveWorkers: Integer;
   begin
     ActiveWorkers := 0;
     with aNode do
@@ -1404,9 +1404,6 @@ begin
 end;
 
 
-end.
-
-
 {
 var
   GA_BUILDER_WORKER_COEF : Single = 8.516485214;
@@ -1953,3 +1950,6 @@ begin
       aNode.RequiredWorkers := Min(aNode.MaxReqWorkers, aNode.RequiredWorkers);
 end;
 //}
+
+
+end.

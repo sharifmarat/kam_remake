@@ -2,6 +2,7 @@ unit KM_AIInfluences;
 {$I KaM_Remake.inc}
 interface
 uses
+  Math,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KM_Units, KM_UnitGroups,
   KM_NavMesh, KM_NavMeshInfluences,
@@ -96,7 +97,7 @@ type
 
 implementation
 uses
-  Classes, Graphics, SysUtils, Math,
+  Classes, Graphics, SysUtils,
   KM_RenderAux, KM_Resource,
   KM_Terrain, KM_Houses, KM_HouseCollection,
   KM_Hand, KM_HandsCollection, KM_ResHouses,
@@ -655,8 +656,8 @@ end;
 //Render debug symbols
 procedure TKMInfluences.Paint(aRect: TKMRect);
 var
-  PL, WatchedPL: TKMHandIndex;
-  I, Cnt: Word;
+  PL{, WatchedPL}: TKMHandIndex;
+  I{, Cnt}: Word;
   X,Y: Integer;
   PolyArr: TPolygonArray;
   NodeArr: TNodeArray;

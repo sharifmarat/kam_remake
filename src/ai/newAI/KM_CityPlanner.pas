@@ -195,8 +195,8 @@ type
     function FindForestAndWoodcutter(): Boolean;
     function PlanDefenceTowers(): Boolean;
 
-    function GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
-    function GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+//    function GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+//    function GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
   public
     constructor Create(aPlayer: TKMHandIndex);
     destructor Destroy(); override;
@@ -835,7 +835,6 @@ var
   NewLoc, ExistLoc: TKMPoint;
   //H: TKMHouse;
 begin
-  Output := False;
   aFieldType := ft_Road;
   ExistLoc := KMPOINT_ZERO;
   NewLoc := fPlannedHouses[aHT].Plans[aIdx].Loc;
@@ -914,66 +913,66 @@ begin
 end;
 
 
-function TKMCityPlanner.GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
-var
-  Output: Boolean;
-  I,X,Y, TreeCnt: Integer;
-  HMA: THouseMappingArray;
-begin
-  Result := True;
-  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
-    Exit;
-
-  HMA := gAIFields.Eye.HousesMapping;
-  SetLength(aTrees, Length(HMA[aHT].Tiles));
-  for I := Low(aTrees) to High(aTrees) do
-    aTrees[I] := KMPOINT_ZERO;
-
-  Output := True;
-  TreeCnt := 0;
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-  begin
-    X := aLoc.X + HMA[aHT].Tiles[I].X;
-    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
-    Output := Output AND (tpBuild in gTerrain.Land[Y,X].Passability);
-    if gTerrain.ObjectIsChopableTree(X, Y) then
-    begin
-      aTrees[TreeCnt] := KMPoint(X,Y);
-      TreeCnt := TreeCnt + 1;
-    end;
-    if not Output then
-      break;
-  end;
-  Result := Output;
-end;
-
-
-function TKMCityPlanner.GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
-var
-  I,X,Y, FieldCnt: Integer;
-  HMA: THouseMappingArray;
-begin
-  Result := True;
-  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
-    Exit;
-
-  HMA := gAIFields.Eye.HousesMapping;
-  SetLength(aFields, Length(HMA[aHT].Tiles));
-  for I := Low(aFields) to High(aFields) do
-    aFields[I] := KMPOINT_ZERO;
-
-  FieldCnt := 0;
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-  begin
-    X := aLoc.X + HMA[aHT].Tiles[I].X;
-    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
-    aFields[FieldCnt] := KMPoint(X,Y);
-    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Wine)
-        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Corn) then
-      FieldCnt := FieldCnt + 1;
-  end;
-  Result := (FieldCnt > 0);
-end;
+//function TKMCityPlanner.GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+//var
+//  Output: Boolean;
+//  I,X,Y, TreeCnt: Integer;
+//  HMA: THouseMappingArray;
+//begin
+//  Result := True;
+//  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+//    Exit;
+//
+//  HMA := gAIFields.Eye.HousesMapping;
+//  SetLength(aTrees, Length(HMA[aHT].Tiles));
+//  for I := Low(aTrees) to High(aTrees) do
+//    aTrees[I] := KMPOINT_ZERO;
+//
+//  Output := True;
+//  TreeCnt := 0;
+//  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+//  begin
+//    X := aLoc.X + HMA[aHT].Tiles[I].X;
+//    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
+//    Output := Output AND (tpBuild in gTerrain.Land[Y,X].Passability);
+//    if gTerrain.ObjectIsChopableTree(X, Y) then
+//    begin
+//      aTrees[TreeCnt] := KMPoint(X,Y);
+//      TreeCnt := TreeCnt + 1;
+//    end;
+//    if not Output then
+//      break;
+//  end;
+//  Result := Output;
+//end;
+//
+//
+//function TKMCityPlanner.GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+//var
+//  I,X,Y, FieldCnt: Integer;
+//  HMA: THouseMappingArray;
+//begin
+//  Result := True;
+//  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+//    Exit;
+//
+//  HMA := gAIFields.Eye.HousesMapping;
+//  SetLength(aFields, Length(HMA[aHT].Tiles));
+//  for I := Low(aFields) to High(aFields) do
+//    aFields[I] := KMPOINT_ZERO;
+//
+//  FieldCnt := 0;
+//  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+//  begin
+//    X := aLoc.X + HMA[aHT].Tiles[I].X;
+//    Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
+//    aFields[FieldCnt] := KMPoint(X,Y);
+//    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Wine)
+//        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Corn) then
+//      FieldCnt := FieldCnt + 1;
+//  end;
+//  Result := (FieldCnt > 0);
+//end;
 
 
 procedure TKMCityPlanner.PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
@@ -2032,10 +2031,10 @@ begin
     for I := 0 to fForestsNearby.Count - 1 do
     begin
       Loc := fForestsNearby.Items[I];
-      Cnt := 0;
-      for K := 0 to fForestsNearby.Count-1 do // Check if we are above or under median
-        if (fForestsNearby.Tag2[I] > fForestsNearby.Tag2[K]) then
-          Cnt := Cnt + 1;
+//      Cnt := 0;
+//      for K := 0 to fForestsNearby.Count-1 do // Check if we are above or under median
+//        if (fForestsNearby.Tag2[I] > fForestsNearby.Tag2[K]) then
+//          Cnt := Cnt + 1;
 
       Color := (Max(50,Round((fForestsNearby.Tag[I] - fForestsNearby.Tag[0]) * Division)) shl 24) OR $000000FF;
       gRenderAux.Quad(Loc.X, Loc.Y, Color);
@@ -2112,10 +2111,6 @@ function TPathFindingShortcutsCityPlanner.DestinationReached(aX, aY: Word): Bool
 begin
   Result := ((aX = fLocB.X) and (aY = fLocB.Y)); //We reached destination point
 end;
-
-
-
-end.
 
 
 
@@ -2237,3 +2232,6 @@ begin
   aNodeTagList.SortByTag;
 end;
 //}
+
+
+end.

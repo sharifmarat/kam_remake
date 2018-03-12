@@ -65,8 +65,8 @@ uses
   Math,
   KM_Hand, KM_AIFields, KM_AIInfluences,
   KM_Terrain, KM_HandsCollection,
-  KM_Resource, KM_ResUnits,
-  KM_Houses, KM_CommonUtils;
+  KM_Resource, KM_ResUnits, KM_NavMesh,
+  KM_Houses, KM_CommonTypes, KM_CommonUtils;
 
 
 { TKMCityPlanner }

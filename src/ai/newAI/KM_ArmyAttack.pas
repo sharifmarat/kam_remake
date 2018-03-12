@@ -161,6 +161,7 @@ const
 
 implementation
 uses
+  System.Types,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_NavMesh, KM_CommonUtils, KM_AISetup, KM_AI, KM_RenderAux,
   KM_Units_Warrior;
@@ -1062,7 +1063,6 @@ var
   PointPath, Positions: TKMPointArray;
   InitPolygons: TKMWordArray;
 begin
-  Result := True;
   if (fCompanyMode = cm_Defence) then
   begin
     TargetPoint := fTargetPoint;
@@ -1359,7 +1359,6 @@ begin
   CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
   if (Length(CenterPoints) = 0) then // No important houses were found -> try find soldier
   begin
-    Group := nil;
     Group := gHands[fOwner].UnitGroups.Groups[ KaMRandom(gHands[fOwner].UnitGroups.Count) ];
     if (Group <> nil) then
     begin
@@ -1442,7 +1441,7 @@ begin
 end;
 
 
-procedure TKMArmyAttack.Paint();
+procedure TKMArmyAttack.Paint;
 const
   COLOR_WHITE = $FFFFFF;
   COLOR_BLACK = $000000;
@@ -1474,7 +1473,7 @@ begin
     Position := Company.ScanPosition;
     gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), ($09 shl 24) OR Col, ($99 shl 24) OR Col);
     Position := Company.PathPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, ($09 shl 24) OR COLOR_GREEN, ($99 shl 24) OR COLOR_WHITE);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, ($09 shl 24) OR COLOR_GREEN, $99000000 OR COLOR_WHITE);
 
     // Target aim
     for K := 0 to Length(Company.fTargetU) - 1 do
@@ -1483,10 +1482,10 @@ begin
       Position := CenterPoint;
       // Close threath
       Col :=  (Min($FF, Max(0,Round(CloseThreat)) ) shl 24) OR COLOR_RED;
-      gRenderAux.CircleOnTerrain(Position.X, Position.Y, 0.5, Col, ($FF shl 24) OR COLOR_RED );
+      gRenderAux.CircleOnTerrain(Position.X, Position.Y, 0.5, Col, $FF000000 OR COLOR_RED );
       // Distant threath
       Col :=  (Min($FF, Max(0,Round(DistantThreat)) ) shl 24) OR COLOR_BLACK;
-      gRenderAux.CircleOnTerrain(Position.X, Position.Y+1, 0.5, Col, ($FF shl 24) OR COLOR_BLACK );
+      gRenderAux.CircleOnTerrain(Position.X, Position.Y+1, 0.5, Col, $FF000000 OR COLOR_BLACK );
     end;
 
     // Pathfinding (company)
@@ -1501,15 +1500,15 @@ begin
         Squad := Company.Squads[GT].Items[K];
         // Order position of group
         Position := Squad.Group.OrderLoc.Loc;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, ($99 shl 24) OR COLOR_YELLOW);
+        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, $99000000 OR COLOR_YELLOW);
         // Position
         Position := Squad.Position;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, ($99 shl 24) OR COLOR_GREEN);
+        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, $99000000 OR COLOR_GREEN);
         // Target house
         if (Squad.TargetHouse <> nil) then
           if not Squad.TargetHouse.IsDestroyed then
           begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, ($99 shl 24) OR COLOR_RED);
+            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
                 gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
@@ -1518,7 +1517,7 @@ begin
         if (Squad.TargetUnit <> nil) then
           if not Squad.TargetUnit.IsDeadOrDying then
           begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, ($99 shl 24) OR COLOR_RED);
+            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
                 gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
@@ -1538,9 +1537,6 @@ begin
   //gRenderAux.CircleOnTerrain(CenterPlatoon.X, CenterPlatoon.Y, 5, $09FFFFFF, $99FFFFFF);
   //gRenderAux.Quad(Loc.X, Loc.Y, Color);
 end;
-
-end.
-
 
 
 // JUNK
@@ -1591,4 +1587,7 @@ begin
     end;
 end;
 //}
+
+
+end.
 

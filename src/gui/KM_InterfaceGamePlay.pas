@@ -3697,7 +3697,7 @@ end;
 
 procedure TKMGamePlayInterface.UpdateDebugInfo;
 var
-  I: Integer;
+//  I: Integer;
   mKind: TKMessageKind;
   Received, Sent, RTotal, STotal, Period: Cardinal;
   S, SPackets, S2: String;

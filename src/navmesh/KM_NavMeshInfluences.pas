@@ -59,7 +59,7 @@ type
 
 implementation
 uses
-  KM_AIFields, KM_NavMesh, KM_HandsCollection;
+  KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_Hand, KM_HandsCollection;
 
 
 { TNavMeshInfluenceSearch }

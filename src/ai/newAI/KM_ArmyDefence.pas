@@ -85,7 +85,7 @@ const
 implementation
 uses
   Math,
-  KM_Game, KM_HandsCollection, KM_RenderAux,
+  KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
   KM_AIFields, KM_NavMesh, KM_CommonUtils;
 
 
@@ -664,7 +664,7 @@ begin
       for K := 0 to Length(UGA) - 1 do
       begin
         Pos := UGA[K].Position;
-        gRenderAux.CircleOnTerrain(Pos.X, Pos.Y, 1, ($44 shl 24) OR COLOR_RED, ($FF shl 24) OR COLOR_RED);
+        gRenderAux.CircleOnTerrain(Pos.X, Pos.Y, 1, ($44 shl 24) OR COLOR_RED, $FF000000 OR COLOR_RED);
         //gRenderAux.LineOnTerrain(Pos, Loc, ($AA shl 24) OR COLOR_BLACK);
       end;
     end;

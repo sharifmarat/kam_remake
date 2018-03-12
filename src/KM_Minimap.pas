@@ -200,7 +200,7 @@ var
   P: TKMPoint;
   DoesFit: Boolean;
   Light: Smallint;
-  Owner: TKMHandIndex;
+//  Owner: TKMHandIndex;
   Group: TKMUnitGroup;
 begin
   //if OVERLAY_OWNERSHIP then

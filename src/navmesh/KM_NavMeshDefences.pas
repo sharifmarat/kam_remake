@@ -101,7 +101,7 @@ const
 
 implementation
 uses
-  KM_AIFields, KM_NavMesh;
+  KM_AIFields, KM_AIInfluences, KM_NavMesh;
 
 
 { TForwardFF }
@@ -199,7 +199,6 @@ end;
 // Find best defensive lines (for watchtowers)
 function TForwardFF.FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
 begin
-  Result := False;
   fOwner := aOwner;
 
   gAIFields.Eye.OwnerUpdate(aOwner); // Make sure that Eye is set to the right Owner (Old AI does not shift it)
@@ -213,7 +212,6 @@ end;
 // Find best defensive polygons (for defensive positions)
 function TForwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
 begin
-  Result := False;
   fOwner := aOwner;
   FirstLine := 0;
 

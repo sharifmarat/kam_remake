@@ -696,7 +696,6 @@ begin
   for I := 0 to Length(fCoalPolygons) - 1 do
     if (fCoalPolygons[I] > 0) then
     begin
-      Own := 0;
       if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
         continue;
       Own := gAIFields.Influences.OwnPoly[fOwner, I];

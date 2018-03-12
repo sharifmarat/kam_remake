@@ -305,7 +305,7 @@ var
   I,X,Y, Output: Word;
   PMin,PMax: TKMPoint;
 begin
-  Result := High(Word);
+//  Result := High(Word);
   if not gTerrain.TileInMapCoords(aP.X, aP.Y) then
     aP := KMPoint(  Min( Max(1,aP.X), gTerrain.MapX-1), Min( Max(1,aP.Y), gTerrain.MapY-1)  );
 
@@ -917,9 +917,9 @@ procedure TKMNavMesh.Paint(aRect: TKMRect);
 var
   I, K, J: Integer;
   T1, T2: TKMPointF;
-  Col, Col2: Cardinal;
-  Sz: Single;
-  Outline1, Outline2: TKMWeightSegments;
+//  Col, Col2: Cardinal;
+//  Sz: Single;
+//  Outline1, Outline2: TKMWeightSegments;
 
 
   W: Word;
@@ -1085,8 +1085,6 @@ begin
 end;
 
 
-end.
-
 {
 // The following code was removed and replaced by NavMesh alternative
 TNode = record
@@ -1112,3 +1110,5 @@ begin
             ));
 end;
 //}
+
+end.

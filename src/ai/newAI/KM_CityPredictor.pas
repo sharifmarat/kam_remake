@@ -263,7 +263,6 @@ var
   HT: THouseType;
 begin
   HT := PRODUCTION[aWT];
-  HouseReqCnt := 0;
   with fWareBalance[aWT] do
   begin
     // Calculate when will be ware depleted

@@ -341,7 +341,7 @@ procedure TKMArmyManagement.CheckAttack();
     for I := 0 to CompaniesCnt - 1 do
     begin
       GCnt := 0;
-      for GT in TGroupType do
+      for GT := Low(TGroupType) to High(TGroupType) do
       begin
         GTMaxCnt := Max(0, Round(GTArr[GT] / (CompaniesCnt - I)));
         GTArr[GT] := GTArr[GT] - GTMaxCnt;
