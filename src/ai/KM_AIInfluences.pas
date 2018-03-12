@@ -656,8 +656,8 @@ end;
 //Render debug symbols
 procedure TKMInfluences.Paint(aRect: TKMRect);
 var
-  PL{, WatchedPL}: TKMHandIndex;
-  I{, Cnt}: Word;
+  PL, WatchedPL: TKMHandIndex;
+  I, Cnt: Word;
   X,Y: Integer;
   PolyArr: TPolygonArray;
   NodeArr: TNodeArray;
@@ -709,7 +709,7 @@ begin
       gRenderAux.Quad(X, Y, Col);
     end;
 
-  if OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP then
+  if (OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP) AND not OVERLAY_AI_COMBAT then
   begin
     PolyArr := fNavMesh.Polygons;
     NodeArr := fNavMesh.Nodes;
@@ -732,41 +732,41 @@ begin
     end;
   end;
 
-  if OVERLAY_AI_COMBAT then
+  if (OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP) AND OVERLAY_AI_COMBAT then
   begin
-    //WatchedPL := gMySpectator.HandIndex;
-    //if (WatchedPL = PLAYER_NONE) then
-    //  Exit;
-    //
-    //PolyArr := fNavMesh.Polygons;
-    //NodeArr := fNavMesh.Nodes;
-    //
-    //for PL := 0 to gHands.Count - 1 do
-    //begin
-    //  if (WatchedPL = PL) then
-    //    Col := $0000FF00 // Green
-    //  else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
-    //    Col := $00FF0000 // Blue
-    //  else
-    //    Col := $000000FF; // Red
-    //
-    //  for I := 0 to fPolygons - 1 do
-    //  begin
-    //    Cnt := PresenceAllGroups[PL,I];
-    //    if (Cnt > 0) then
-    //    begin
-    //      Cnt := Min(Cnt,$5F);
-    //      //NavMesh polys coverage
-    //      gRenderAux.TriangleOnTerrain(
-    //        NodeArr[PolyArr[I].Indices[0]].Loc.X,
-    //        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-    //        NodeArr[PolyArr[I].Indices[1]].Loc.X,
-    //        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-    //        NodeArr[PolyArr[I].Indices[2]].Loc.X,
-    //        NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
-    //    end;
-    //  end;
-    //end;
+    WatchedPL := gMySpectator.HandIndex;
+    if (WatchedPL = PLAYER_NONE) then
+      Exit;
+
+    PolyArr := fNavMesh.Polygons;
+    NodeArr := fNavMesh.Nodes;
+
+    for PL := 0 to gHands.Count - 1 do
+    begin
+      if (WatchedPL = PL) then
+        Col := $0000FF00 // Green
+      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+        Col := $00FF0000 // Blue
+      else
+        Col := $000000FF; // Red
+
+      for I := 0 to fPolygons - 1 do
+      begin
+        Cnt := PresenceAllGroups[PL,I];
+        if (Cnt > 0) then
+        begin
+          Cnt := Min(Cnt,$5F);
+          //NavMesh polys coverage
+          gRenderAux.TriangleOnTerrain(
+            NodeArr[PolyArr[I].Indices[0]].Loc.X,
+            NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[1]].Loc.X,
+            NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[2]].Loc.X,
+            NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
+        end;
+      end;
+    end;
     //for I := 0 to fPolygons - 1 do
     //begin
     //  BestCnt := 0;
