@@ -698,7 +698,8 @@ begin
   begin
     if (aIdx >= Count) then
       Exit;
-    gHands[fOwner].AI.CityManagement.Builder.UnLockHouseLoc(aHT, Plans[aIdx].Loc);
+    if not Plans[aIdx].Placed then // Unlock house plan
+      gHands[fOwner].AI.CityManagement.Builder.UnLockHouseLoc(aHT, Plans[aIdx].Loc);
     Count := Count - 1;
     Plans[aIdx] := Plans[Count];
   end;
@@ -815,7 +816,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aFiel
     for HT := HOUSE_MIN to HOUSE_MAX do
       for I := 0 to fPlannedHouses[HT].Count - 1 do
         if (not aOnlyPlaced OR (fPlannedHouses[HT].Plans[I].Placed))     // Only placed houses?
-           AND not fPlannedHouses[HT].Plans[I].RemoveTreeInPlanProcedure // Ignore Remove tree in plan procedure because there is not build road
+           AND not fPlannedHouses[HT].Plans[I].RemoveTreeInPlanProcedure // Ignore Remove tree in plan procedure because there is not builded road
            AND not KMSamePoint(fPlannedHouses[HT].Plans[I].Loc, aNewLoc) // Ignore itself
            AND (not (HT = ht_Woodcutters) OR not fPlannedHouses[HT].Plans[I].ChopOnly) then // Chop only woodcutters are planned without road connection so skip it
         begin
@@ -1653,6 +1654,7 @@ const
         if Output AND (I > min(5,Locs.Count-1)) then // Do several points
         begin
           AddPlan(aHT, BestLoc);
+          gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, BestLoc);
           break;
         end;
       end;
@@ -1714,6 +1716,8 @@ begin
     if ((aCenter.Y <= BestLoc.Y) AND (aCenter.Y >= BestLoc.Y-1)) AND ((aCenter.X <= BestLoc.X) AND (aCenter.X >= BestLoc.X-2)) then
       aCenter := KMPoint(BestLoc.X-1, BestLoc.Y+1);
     AddPlan(ht_Woodcutters, BestLoc, aCenter, aChopOnly);
+    if aChopOnly then // Lock chop only woodcutter (it can be added in next tick and it is placed out of avoid building areas)
+      gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(ht_Woodcutters, BestLoc);
   end;
   Result := Output;
 end;
@@ -2019,20 +2023,25 @@ begin
             OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                                // Road under construction
 
   if not IsRoad then
-  begin
-    // Snap to no-build areas (1 tile from house)
-    if (tpBuild in gTerrain.Land[aToY,aToX].Passability) then
-      Inc(Result, 10);
     //Building roads over fields is discouraged unless unavoidable
     case AvoidBuilding of
-      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Result := 5; end; // 1 tile from future house
+      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, 5); end; // 1 tile from future house
       AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, 75); // Corn / wine field
       //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
       //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
+      //AVOID_BUILDING_COAL_TILE: begin end;
+      //AVOID_BUILDING_FOREST_MINIMUM: begin end;
       else
-        Inc(Result, 20); // Forest or mines etc.
+      begin
+        // Snap to no-build areas (1 tile from house)
+        if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then
+          Inc(Result, 5)
+        else if (AvoidBuilding > 0) then // Forest or coal etc.
+          Inc(Result, 20)
+        else
+          Inc(Result, 10);
+      end;
     end;
-  end;
 end;
 
 
