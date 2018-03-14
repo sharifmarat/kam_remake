@@ -8,13 +8,20 @@ uses
   KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye;
 
 
+var
+  GA_BUILDER_BuildHouse_RoadMaxWork                   : Single = 6;
+  GA_BUILDER_BuildHouse_FieldMaxWork                  : Single = 1;
+  GA_BUILDER_BuildHouse_RTPMaxWork                    : Single = 10;
+  GA_BUILDER_CreateShortcuts_MaxWork                  : Single = 6;
+  GA_BUILDER_ChooseHousesToBuild_FC                   : Single = 8.512814522;
+
+
 type
 
   TBuildNode = record
     Active, RemoveTreesMode, ShortcutMode: Boolean;
     FreeWorkers, RequiredWorkers, MaxReqWorkers: Integer;
-    HouseType: THouseType;
-    CenterPoint, HouseLoc: TKMPoint;
+    CenterPoint: TKMPoint;
     FieldType: TFieldType; //ft_Corn, ft_Wine, ft_Road
     FieldList: TKMPointList;
   end;
@@ -124,8 +131,6 @@ begin
       SaveStream.Write(RequiredWorkers);
       SaveStream.Write(MaxReqWorkers);
       SaveStream.Write(CenterPoint, SizeOf(CenterPoint));
-      SaveStream.Write(HouseType, SizeOf(HouseType));
-      SaveStream.Write(HouseLoc, SizeOf(HouseLoc));
       SaveStream.Write(FieldType, SizeOf(TFieldType));
       FieldList.SaveToStream(SaveStream);
     end;
@@ -158,8 +163,6 @@ begin
     LoadStream.Read(RequiredWorkers);
     LoadStream.Read(MaxReqWorkers);
     LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
-    LoadStream.Read(HouseType, SizeOf(HouseType));
-    LoadStream.Read(HouseLoc, SizeOf(HouseLoc));
     LoadStream.Read(FieldType, SizeOf(TFieldType));
     FieldList := TKMPointList.Create();
     FieldList.LoadFromStream(LoadStream);
@@ -529,7 +532,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
   // Build Wine or Corn fields
   procedure BuildFields();
   var
-    I,{K,}ActiveWorkers: Integer;
+    I, ActiveWorkers: Integer;
   begin
     ActiveWorkers := 0;
     with aNode do
@@ -582,13 +585,6 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       if (FieldList.Count = 0) then
       begin
         Active := False;
-        with fPlanner.PlannedHouses[aNode.HouseType] do
-          for I := 0 to Count - 1 do
-            if KMSamePoint(Plans[I].Loc, aNode.HouseLoc) then
-            begin
-              Plans[I].RemoveTreeInPlanProcedure := False;
-              Plans[I].HouseReservation := True; // Switch reservation on so the house plan will be placed in next tick
-            end;
         Exit;
       end;
       RequiredWorkers := FieldList.Count;
@@ -745,6 +741,7 @@ begin
   if (Node1Idx = -1) OR (Node2Idx = -1) then
     Exit;
 
+  Output := cs_NoPlaceCanBeFound;
   if fPlanner.GetHousePlan(aUnlockProcedure, aIgnoreExistingPlans, aHT, Loc, HouseIdx) then
   begin
     // Check if we can place house by default KaM function
@@ -781,10 +778,9 @@ begin
             Active := True;
             RemoveTreesMode := False;
             ShortcutMode := False;
-            MaxReqWorkers := 5 + Byte(aUnlockProcedure) * 20;
+            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RoadMaxWork) + Byte(aUnlockProcedure) * 20;
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
-            HouseType := aHT;
           end;
         end;
         // Add field to node (if is required [ht_Farm, ht_Wineyard])
@@ -796,10 +792,9 @@ begin
             Active := True;
             RemoveTreesMode := False;
             ShortcutMode := False;
-            MaxReqWorkers := 3;
+            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_FieldMaxWork);
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := Loc;
-            HouseType := aHT;
           end;
         end;
         // Reserve house place
@@ -835,11 +830,9 @@ begin
           Active := True;
           RemoveTreesMode := True;
           ShortcutMode := False;
-          MaxReqWorkers := 5;
+          MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RTPMaxWork);
           RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
           CenterPoint := Loc;
-          HouseLoc := Loc;
-          HouseType := aHT;
         end;
       end;
       // There is another problem...
@@ -872,7 +865,7 @@ const
 
 
   BASIC_HOUSES: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
-  BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
+  //BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish];
   WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
   BUILD_ORDER_WARE: array[0..5] of TWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
@@ -940,7 +933,7 @@ var
   var
     Output: Boolean;
     I: Integer;
-    Priority, POM_Priority: Single;
+    Priority: Single;
     Ware, WT, POM_WT: TWareType;
     WareOrder: array[0..5] of TWareType;
     WarePriority: array[0..5] of Single;
@@ -950,7 +943,7 @@ var
     for I := Low(WareOrder) to High(WareOrder) do
     begin
       WareOrder[I] := wt_None;
-      WarePriority[I] := 0; // Doesn't have to be initialized but in this case compilation throws warning
+      WarePriority[I] := 1000000; // Doesn't have to be initialized but in this case compilation throws warning
     end;
     // Find the most required house to be build
     for Ware in aSetOfWare do
@@ -958,7 +951,7 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION[WT] ] > 0) then
       begin
-        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * FRACTION_COEF;
+        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChooseHousesToBuild_FC;
         for I := Low(WareOrder) to High(WareOrder) do
           if (WT = wt_None) then
             break
@@ -967,9 +960,7 @@ var
             POM_WT := WT;
             WT := WareOrder[I];
             WareOrder[I] := POM_WT;
-            POM_Priority := Priority;
-            Priority := WarePriority[I];
-            WarePriority[I] := POM_Priority;
+            SwapFloat(Priority, WarePriority[I]);
           end;
       end;
     end;
@@ -1023,7 +1014,7 @@ var
   procedure CheckHouseReservation();
   const
     RESERVATION_StoneShortage: TSetOfHouseType = [ht_Quary, ht_MarketPlace];
-    RESERVATION_GoldShortage: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store, ht_Quary, ht_GoldMine, ht_CoalMine, ht_Metallurgists];
+    RESERVATION_GoldShortage: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store, ht_Quary, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_Woodcutters, ht_Sawmill];
     RESERVATION_WoodShortage: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store, ht_Quary, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_Woodcutters, ht_Sawmill];
     RESERVATION_FullSet: TSetOfHouseType = [ht_ArmorSmithy, ht_ArmorWorkshop, ht_Bakery, ht_Barracks, ht_Butchers, ht_CoalMine, ht_Farm, ht_FisherHut, ht_GoldMine, ht_Inn, ht_IronMine, ht_IronSmithy, ht_Marketplace, ht_Metallurgists, ht_Mill, ht_Quary, ht_Sawmill, ht_School, ht_SiegeWorkshop, ht_Stables, ht_Store, ht_Swine, ht_Tannery, ht_TownHall, ht_WatchTower, ht_WeaponSmithy, ht_WeaponWorkshop, ht_Wineyard, ht_Woodcutters];
   var
@@ -1045,15 +1036,16 @@ var
           if not Placed AND (HouseReservation OR RemoveTreeInPlanProcedure)
              AND (cs_HousePlaced = AddToConstruction(HT,False,True)) then
           begin
+            RemoveTreeInPlanProcedure := False;
+            HouseReservation := False;
             MaxPlans := MaxPlans - 1;
             RequiredHouses[HT] := 0;
           end;
   end;
 
 const
-  BUILD_TOWER_DELAY = 17 * 60 * 10;
+  BUILD_TOWER_DELAY = 17 * 60 * 10; // 17 minutes before end of peace
 var
-  //PlansCnt, WorkersCoef: Integer;
   HT: THouseType;
 begin
   StoneShortage := False;
@@ -1121,7 +1113,8 @@ begin
   if (MaxPlans > 0) then
   begin
     SelectHouse(FOOD_WARE);
-    SelectHouse(WEAPON_WARE);
+    //if (MaxPlans > 0) then
+      SelectHouse(WEAPON_WARE);
   end;
 end;
 
@@ -1225,7 +1218,7 @@ const
           Active := True;
           RemoveTreesMode := False;
           ShortcutMode := True;
-          MaxReqWorkers := MAX_WORKERS_FOR_NODE;
+          MaxReqWorkers := Round(GA_BUILDER_CreateShortcuts_MaxWork);//MAX_WORKERS_FOR_NODE;
           RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
           CenterPoint := FieldList.Items[0];
         end;
