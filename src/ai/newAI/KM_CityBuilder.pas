@@ -2,8 +2,8 @@ unit KM_CityBuilder;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, KromUtils, Math, SysUtils,
-  KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points, KM_CommonTypes,
+  KromUtils, Math, SysUtils,
+  KM_Defaults, KM_CommonClasses, KM_Points,
   KM_ResHouses, KM_ResWares, KM_BuildList,
   KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye;
 
@@ -81,9 +81,9 @@ const
 
 implementation
 uses
-  KM_Game, KM_Houses, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket, KM_RenderAux, KM_ResMapElements;
+  KM_Game, KM_HandsCollection, KM_Terrain, KM_Resource,
+  KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo,
+  KM_NavMesh, KM_RenderAux, KM_ResMapElements;
 
 { TKMCityBuilder }
 constructor TKMCityBuilder.Create(aPlayer: TKMHandIndex; aPredictor: TKMCityPredictor);
@@ -209,10 +209,6 @@ begin
   begin
     fPlanner.UpdateState(aTick); // Planner must be updated as first to secure that completed houses are actualized
     UpdateBuildNodes(aFreeWorkersCnt);
-  end;
-  if gAIFields.Eye.CanAddHousePlan(KMPoint(71,31), ht_WatchTower, True, False, False) then
-  begin
-
   end;
 end;
 
@@ -802,6 +798,11 @@ begin
         begin
           fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := True;
           gHands[fOwner].RemHousePlan(Loc);
+        end
+        else
+        begin
+          fPlanner.PlannedHouses[aHT].Plans[HouseIdx].HouseReservation := False;
+          fPlanner.PlannedHouses[aHT].Plans[HouseIdx].RemoveTreeInPlanProcedure := False;
         end;
       end;
     end
@@ -834,13 +835,13 @@ begin
           RequiredWorkers := Min(MaxReqWorkers, FieldList.Count); // Real count will be updated during building process
           CenterPoint := Loc;
         end;
-      end;
+      end
       // There is another problem...
-      //else
-      //  Planner.RemovePlan(aHT, Loc);
-    end;
-    //else
-    //  Planner.RemovePlan(aHT, Loc);
+      else
+        Planner.RemovePlan(aHT, Loc);
+    end
+    else
+      Planner.RemovePlan(aHT, Loc);
   end
   else
   begin
@@ -1036,8 +1037,6 @@ var
           if not Placed AND (HouseReservation OR RemoveTreeInPlanProcedure)
              AND (cs_HousePlaced = AddToConstruction(HT,False,True)) then
           begin
-            RemoveTreeInPlanProcedure := False;
-            HouseReservation := False;
             MaxPlans := MaxPlans - 1;
             RequiredHouses[HT] := 0;
           end;
