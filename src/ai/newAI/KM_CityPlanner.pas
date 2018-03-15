@@ -130,7 +130,7 @@ var
   GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 68.38710785;
   GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 3.980914116;
   GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 3.259504318;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 37.63645935;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75;//37.63645935;
   GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 8.272258759;
 
 
@@ -2047,8 +2047,37 @@ end;
 
 { TPathFindingShortcutsCityPlanner }
 function TPathFindingShortcutsCityPlanner.MovementCost(aFromX, aFromY, aToX, aToY: Word): Word;
+var
+  IsRoad: Boolean;
+  AvoidBuilding: Byte;
 begin
-  Result := 15 + inherited MovementCost(aFromX, aFromY, aToX, aToY);
+  Result := 10;
+  AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
+  IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
+            OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
+            OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ft_Road) // Placed road plan
+            OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                                // Road under construction
+
+  if not IsRoad then
+    //Building roads over fields is discouraged unless unavoidable
+    case AvoidBuilding of
+      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, 2); end; // 1 tile from future house
+      AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, 100); // Corn / wine field
+      //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
+      //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
+      //AVOID_BUILDING_COAL_TILE: begin end;
+      //AVOID_BUILDING_FOREST_MINIMUM: begin end;
+      else
+      begin
+        // Snap to no-build areas (1 tile from house)
+        if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then
+          Inc(Result, 2)
+        else if (AvoidBuilding > 0) then // Forest or coal etc.
+          Inc(Result, 40)
+        else
+          Inc(Result, 20);
+      end;
+    end;
 end;
 
 
