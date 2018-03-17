@@ -62,7 +62,7 @@ uses
 
 
 const
-  LACK_OF_GOLD = 10;
+  LACK_OF_GOLD = 8;
 
 
 { TKMCityManagement }
@@ -138,8 +138,8 @@ var
   GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-  //SetKaMSeed(4);
-  //gGame.GameOptions.Peacetime := 90;
+  SetKaMSeed(4);
+  gGame.GameOptions.Peacetime := 90;
   fSetup.ApplyAgressiveBuilderSetup;
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -241,8 +241,7 @@ var
          AND (P.Units[I].UnitTask = nil) then
            Exit;
     // Increase count of serfs carefully
-    Result := Max( + 1
-                   + Byte(gHands[fOwner].Stats.GetUnitQty(ut_Serf) < 80)*2, Result);
+    Result := Max( 1 + Byte(gHands[fOwner].Stats.GetUnitQty(ut_Serf) < 80)*2, Result);
   end;
 
 const
@@ -335,20 +334,9 @@ end;
 
 //Check if specific woodcutters are in Fell only mode
 procedure TKMCityManagement.CheckMarketplaces();
-const
-  SOLD_ORDER: array[0..27] of TWareType = (
-    wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
-    wt_Skin,         wt_Leather,  wt_Pig,
-    wt_Trunk,        wt_Stone,    wt_Wood,
-    wt_Shield,       wt_Axe,      wt_Pike,       wt_Bow,      wt_Armor,
-    wt_MetalShield,  wt_Sword,    wt_Hallebard,  wt_Arbalet,  wt_MetalArmor,
-    wt_Horse,        wt_Corn,     wt_Flour,
-    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre
-  );
 var
-  MarketCnt, RequiedCnt, AvaiableCnt, L: Word;
+  RequiedCnt, AvaiableCnt: Word;
   RequiredWares, AvaiableWares: array of TWareType;
-
   procedure AddWare(aWare: TWareType; IsRequired: Boolean = True);
   begin
     if IsRequired then
@@ -364,47 +352,53 @@ var
   end;
 
   procedure TryBuyItem(aResFrom, aResTo: TWareType);
+  const
+    TRADE_QUANTITY = 20;
   var
-    M: Integer;
+    I: Integer;
     Houses: TKMHousesCollection;
-    H: TKMHouseMarket;
+    HM, IdleHM: TKMHouseMarket;
   begin
     Houses := gHands[fOwner].Houses;
-    for M := 0 to Houses.Count - 1 do
-      if (Houses[M].HouseType = ht_Marketplace)
-        AND Houses[M].IsComplete
-        AND not Houses[M].IsDestroyed then
+    IdleHM := nil;
+    for I := 0 to Houses.Count - 1 do
+      if (Houses[I].HouseType = ht_Marketplace)
+        AND Houses[I].IsComplete
+        AND not Houses[I].IsDestroyed then
       begin
-        H := TKMHouseMarket(Houses[M]);
-        if (TKMHouseMarket(H).ResOrder[0] <> 0)
-          AND (H.ResTo = aResTo) then
-          Exit;
+        HM := TKMHouseMarket(Houses[I]);
+        if (TKMHouseMarket(HM).ResOrder[0] <> 0)
+          AND (HM.ResTo = aResTo) then
+          Exit
+        else if HM.AllowedToTrade(aResFrom)
+          AND HM.AllowedToTrade(aResTo)
+          AND (TKMHouseMarket(HM).ResOrder[0] = 0) then
+          IdleHM := HM;
       end;
-    for M := 0 to Houses.Count - 1 do
-      if (Houses[M].HouseType = ht_Marketplace)
-        AND Houses[M].IsComplete
-        AND not Houses[M].IsDestroyed then
-      begin
-        H := TKMHouseMarket(Houses[M]);
-        if H.AllowedToTrade(aResFrom)
-          AND H.AllowedToTrade(aResTo)
-          AND (TKMHouseMarket(H).ResOrder[0] = 0) then
-        begin
-          if (H.ResFrom <> aResFrom) or (H.ResTo <> aResTo) then
-          begin
-            //H.ResOrder[0] := 0; //First we must cancel the current trade
-            H.ResFrom := aResFrom;
-            H.ResTo := aResTo;
-            H.ResOrder[0] := 20; //Set the new trade
-            break;
-          end;
-        end;
-      end;
+    if (IdleHM <> nil) then  // AND (IdleHM.ResFrom <> aResFrom) or (IdleHM.ResTo <> aResTo) then
+    begin
+      //IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
+      IdleHM.ResFrom := aResFrom;
+      IdleHM.ResTo := aResTo;
+      IdleHM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
+    end;
   end;
 const
+  SOLD_ORDER: array[0..27] of TWareType = (
+    wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
+    wt_Skin,         wt_Leather,  wt_Pig,
+    wt_Trunk,        wt_Stone,    wt_Wood,
+    wt_Shield,       wt_Axe,      wt_Pike,       wt_Bow,      wt_Armor,
+    wt_MetalShield,  wt_Sword,    wt_Hallebard,  wt_Arbalet,  wt_MetalArmor,
+    wt_Horse,        wt_Corn,     wt_Flour,
+    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre
+  );
   MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
   LACK_OF_STONE = 50;
+  WARFARE_SELL_LIMIT = 20;
   SELL_LIMIT = 100;
+var
+  MarketCnt, I, WareCnt: Word;
 begin
 
   MarketCnt := gHands[fOwner].Stats.GetHouseQty(ht_Marketplace);
@@ -412,10 +406,10 @@ begin
     Exit;
 
   RequiedCnt := 0;
-  SetLength(RequiredWares,3);
+  SetLength(RequiredWares,4);
   with gHands[fOwner].Stats do
   begin
-  // Gold
+    // Gold
     if (GetHouseQty(ht_Metallurgists) = 0)
        AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
        AddWare(wt_Gold);
@@ -439,19 +433,20 @@ begin
 
   AvaiableCnt := 0;
   SetLength(AvaiableWares, RequiedCnt);
-  for L := Low(SOLD_ORDER) to High(SOLD_ORDER) do
-    if gHands[fOwner].Stats.GetWareBalance( SOLD_ORDER[L] ) > SELL_LIMIT then
+  for I := 0 to Length(SOLD_ORDER) - 1 do
+    if (AvaiableCnt < RequiedCnt) then
     begin
-      if L >= RequiedCnt then
-         break;
-      AddWare(SOLD_ORDER[L], False);
+      WareCnt := gHands[fOwner].Stats.GetWareBalance( SOLD_ORDER[I] );
+      if (  (SOLD_ORDER[I] in [WARFARE_MIN..WARFARE_MAX]) AND (WareCnt > WARFARE_SELL_LIMIT)  )
+         OR (WareCnt > SELL_LIMIT) then
+        AddWare(SOLD_ORDER[I], False);
     end;
 
-  for L := 0 to RequiedCnt do
-   if L < AvaiableCnt then
-     TryBuyItem(AvaiableWares[L], RequiredWares[L])
-   else
-     break;
+  for I := 0 to RequiedCnt - 1 do
+    if (I < AvaiableCnt) then
+      TryBuyItem(AvaiableWares[I], RequiredWares[I])
+  else
+    break;
 end;
 
 
