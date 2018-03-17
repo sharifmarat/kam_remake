@@ -2,8 +2,7 @@ unit KM_CityManagement;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, KromUtils, Math, SysUtils,
-  KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points,
+  Math, KM_CommonUtils, SysUtils, KM_Defaults, KM_CommonClasses, KM_Points,
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats,
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
@@ -58,9 +57,8 @@ type
 
 implementation
 uses
-  KM_Game, KM_Houses, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket;
+  KM_Game, KM_Houses, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
+  KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket;
 
 
 const
@@ -135,17 +133,18 @@ procedure TKMCityManagement.AfterMissionInit();
     gHands[fOwner].Houses.UpdateResRequest;
   end;
 const
-  WORKER_COEF = 125.0; // Max build cnt ~ 5400
+  WORKER_COEF = 135.0; // Max build cnt ~ 5400
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
+  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
+  //SetKaMSeed(4);
+  //gGame.GameOptions.Peacetime := 90;
+  fSetup.ApplyAgressiveBuilderSetup;
+  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
-  //gGame.GameOptions.Peacetime := 100; // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-
+  // Change distribution
   SetWareDistribution();
-
-  fSetup.ApplyAgressiveBuilderSetup; // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-
   fPredictor.AfterMissionInit();
 
   // Find resources around Loc and change building policy
@@ -161,32 +160,12 @@ begin
   fBuilder.AfterMissionInit(GoldCnt, IronCnt, FieldCnt, BuildCnt);
 
   fPredictor.CityInitialization(GoldCnt, IronCnt, FieldCnt, BuildCnt);
-
-  // Place all houses AfterMissionInit (only for GA_PLANNER tuning parameters)
-  //Cnt := 0;
-  //GA_PLANNER := True;
-  //if GA_PLANNER AND (fOwner = 1) then
-  //  for I := 0 to 100 do
-  //  begin
-  //    fBuilder.UpdateState(0, FreeWorkersCnt);
-  //    fPredictor.UpdateState(0);
-  //    if not fBuilder.ChooseHousesToBuild(1) then
-  //    begin
-  //      Cnt := Cnt + 1;
-  //      if (Cnt > 5) then
-  //        Exit;
-  //    end
-  //    else
-  //      Cnt := 0;
-  //  end;
-
 end;
 
 
 procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
-  WORKER_COEF = 3.0;
-  LONG_UPDATE = MAX_HANDS * 20;
+  LONG_UPDATE = MAX_HANDS * 25; // 30 sec
 var
   FreeWorkersCnt: Integer;
 begin
@@ -199,11 +178,7 @@ begin
     FreeWorkersCnt := 0;
     fBuilder.UpdateState(aTick, FreeWorkersCnt);
     fBuilder.ChooseHousesToBuild(FreeWorkersCnt, aTick);
-    //if GA_BUILDER then
-    //  fBuilder.ChooseHousesToBuildGA(FreeWorkersCnt)
-    //else
-    //  fBuilder.ChooseHousesToBuild(Max(0,Ceil(FreeWorkersCnt/WORKER_COEF)));
-    if not SKIP_RENDER then // Builder change required houses so builder LogStatus cannot be merged with predictor
+    if not SKIP_RENDER then // Builder LogStatus cannot be merged with predictor
     begin
       fBuilder.LogStatus(fBalanceText);
       LogStatus(fBalanceText);
@@ -212,8 +187,7 @@ begin
 
   if (aTick mod LONG_UPDATE = fOwner) then
   begin
-    if not GA_PLANNER then
-      CheckUnitCount(aTick);
+    CheckUnitCount(aTick);
     CheckMarketplaces();
     CheckStoreWares(aTick);
     CheckAutoRepair();
@@ -236,7 +210,7 @@ var
   begin
     Output := Stats.GetHouseQty(ht_WatchTower);
 
-    if aTick > gGame.GameOptions.Peacetime * 600 + RECRUIT_PEACE_DELAY then
+    if (aTick - gGame.GameOptions.Peacetime * 600 + RECRUIT_PEACE_DELAY > 0) then
     begin
       if fSetup.UnlimitedEquip then
       begin
@@ -272,7 +246,7 @@ var
   end;
 
 const
-  PRIORITY_TRAINING: array[0..13] of TUnitType = (
+  TRAINING_PRIORITY: array[0..13] of TUnitType = (
     ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker, ut_Recruit
   );
@@ -335,7 +309,7 @@ begin
        AND (P.Houses[I].HouseType = ht_School) then
     begin
       Schools[cnt] := TKMHouseSchool(P.Houses[I]);
-      for K := 0 to Schools[cnt].QueueLength - 1 do
+      for K := Schools[cnt].QueueLength - 1 downto 0 do
         if (Schools[cnt].Queue[K] <> ut_None) then
         begin
           if K = 0 then // Queue is already active
@@ -347,17 +321,14 @@ begin
     end;
 
   //Order citizen training
-  for K := Low(PRIORITY_TRAINING) to High(PRIORITY_TRAINING) do
+  for K := Low(TRAINING_PRIORITY) to High(TRAINING_PRIORITY) do
   begin
-    UT := PRIORITY_TRAINING[K];
+    UT := TRAINING_PRIORITY[K];
     for I := 0 to cnt - 1 do
-      if (UnitReq[UT] > 0) then // Check unit requirements
-      begin
-        if (Schools[I].QueueCount <= 1) then
-          Dec(  UnitReq[UT], Schools[I].AddUnitToQueue( UT, Min(UnitReq[UT], 2) )  ) // Order citizen, decrease unit requirement
-      end
-      else
-        break;
+      if (UnitReq[UT] <= 0) then // Check unit requirements
+        break
+      else if (Schools[I].QueueCount <= 2) then // Order citizen, decrease unit requirement
+        Dec(  UnitReq[UT], Schools[I].AddUnitToQueue( UT, Min(UnitReq[UT], 3-Schools[I].QueueCount) )  )
   end;
 end;
 
