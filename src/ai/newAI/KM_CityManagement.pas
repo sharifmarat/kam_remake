@@ -210,7 +210,7 @@ var
   begin
     Output := Stats.GetHouseQty(ht_WatchTower);
 
-    if (aTick - gGame.GameOptions.Peacetime * 600 + RECRUIT_PEACE_DELAY > 0) then
+    if aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600 then
     begin
       if fSetup.UnlimitedEquip then
       begin

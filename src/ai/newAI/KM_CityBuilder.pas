@@ -1039,7 +1039,7 @@ begin
 
   HT := ht_WatchTower;
   if (not Planner.DefenceTowersPlanned OR (gHands[fOwner].Stats.GetHouseTotal(HT) < Planner.PlannedHouses[HT].Count))
-    AND (aTick - gGame.GameOptions.Peacetime * 600 + BUILD_TOWER_DELAY > 0)
+    AND (aTick + BUILD_TOWER_DELAY > gGame.GameOptions.Peacetime * 600)
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
     begin
       MaxPlans := MaxPlans - 1;
