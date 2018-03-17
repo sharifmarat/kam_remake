@@ -1471,7 +1471,7 @@ begin
       cs_Idle: Col := COLOR_BLACK;
     end;
     Position := Company.ScanPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), ($09 shl 24) OR Col, ($99 shl 24) OR Col);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), ($09 shl 24) OR Col, $99000000 OR Col);
     Position := Company.PathPosition;
     gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, ($09 shl 24) OR COLOR_GREEN, $99000000 OR COLOR_WHITE);
 
