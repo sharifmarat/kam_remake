@@ -1671,7 +1671,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
   end;
 
 const
-  DISTANCE_BETWEEN_TOWERS = 4;
+  DISTANCE_BETWEEN_TOWERS = 7;
 var
   I, K, DefCount: Integer;
   P1,P2: TKMPoint;
