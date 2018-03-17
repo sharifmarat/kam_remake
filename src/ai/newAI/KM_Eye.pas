@@ -543,7 +543,11 @@ begin
     case aHT of
       ht_IronMine: Output := Output AND gTerrain.TileGoodForIron(X, Y);
       ht_GoldMine: Output := Output AND gTerrain.CanPlaceGoldmine(X, Y);
-      else         Output := Output AND (  (tpBuild in gTerrain.Land[Y,X].Passability) OR (aIgnoreTrees AND gTerrain.ObjectIsChopableTree(X, Y) AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ft_Wine))  );
+      else         Output := Output AND ( (tpBuild in gTerrain.Land[Y,X].Passability)
+                                          OR (aIgnoreTrees
+                                              AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])
+                                              AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ft_Wine))
+                                        );
     end;
     if not Output then
       break;
