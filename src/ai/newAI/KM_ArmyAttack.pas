@@ -649,7 +649,7 @@ var
     INIT_DIST = 1000000;
     SQR_MAX_RANGE_INTEREST = 12*12;
     SQR_RANGE_OF_PROJECTILES = 11*11; // Sqr(  Max( Max(RANGE_BOWMAN_MAX,RANGE_ARBALETMAN_MAX),RANGE_SLINGSHOT_MAX )  );
-    SQR_RANGED_PROTECT_RADIUS = 7*7; // Radius around ranged units where requires close combat protection
+    SQR_RANGED_PROTECT_RADIUS = 9*9; // Radius around ranged units where requires close combat protection
   var
     Polygon: Word;
     I,K,L: Integer;
