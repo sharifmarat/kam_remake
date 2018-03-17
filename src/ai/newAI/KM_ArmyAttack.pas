@@ -878,7 +878,7 @@ var
       begin
         GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
         // Find and kill workers who want to repair house
-        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[K].HouseType, HA[K].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
         if (U <> nil) then
           AvaiableSquads[GT].Squads[I].TargetUnit := U
         else
@@ -915,7 +915,7 @@ var
         begin
           GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
           // Find and kill workers who want to repair house
-          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[K].HouseType, HA[K].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
           if (U <> nil)
             AND ((GT = gt_Ranged) OR (KMDistanceSqr(U.GetPosition, AvaiableSquads[GT].Squads[I].Position) < SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST)) then
             AvaiableSquads[GT].Squads[I].TargetUnit := U
