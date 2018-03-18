@@ -349,6 +349,7 @@ begin
   SetLength(WorkersPos, aFreeWorkersCnt);
 
   // Find closest build-node to each free worker and allow to expand it in next update
+  ClosestIdx := 0; // For compiler
   while (aFreeWorkersCnt > 0) do
   begin
     ClosestDist := High(Integer);
@@ -1198,6 +1199,7 @@ begin
   // Find houses which should be connected
   PlannedHouses := fPlanner.PlannedHouses;
   Locs := TKMPointTagList.Create();
+  HT := ht_None; // For compiler
   try
     // Create basic connection to houses which are part of specific distribution network
     for HT in HOUSE_CONNECTION[BaseHT] do
@@ -1309,6 +1311,7 @@ var
   Color: Cardinal;
   Point: TKMPoint;
 begin
+  Color := 0; // For compiler
   for I := Low(fBuildNodes) to High(fBuildNodes) do
     with fBuildNodes[I] do
       if Active then
