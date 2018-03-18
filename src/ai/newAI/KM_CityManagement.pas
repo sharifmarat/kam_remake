@@ -147,7 +147,7 @@ begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(4);
   //gGame.GameOptions.Peacetime := 90;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -767,6 +767,7 @@ var
   WT, MaxWT: TKMWareType;
   H: TKMHouse;
 begin
+  MaxIdx := 0; // For compiler
   for HT in PRODUCTION_HOUSES do
   begin
     // Check house cnt
