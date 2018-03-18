@@ -1191,6 +1191,7 @@ type
   private
     fCaption: UnicodeString; //Current caption (Default or from list)
     fDefaultCaption: UnicodeString;
+    fDropWidth: Integer;
     fList: TKMListBox;
     fListTopIndex: Integer;
     procedure UpdateDropPosition; override;
@@ -1202,6 +1203,7 @@ type
     function GetItem(aIndex: Integer): UnicodeString;
     function GetItemIndex: smallint; override;
     procedure SetItemIndex(aIndex: smallint); override;
+    procedure SetDropWidth(aDropWidth: Integer);
   protected
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
@@ -1218,6 +1220,7 @@ type
     property DefaultCaption: UnicodeString read fDefaultCaption write fDefaultCaption;
     property Item[aIndex: Integer]: UnicodeString read GetItem;
     property List: TKMListBox read fList;
+    property DropWidth: Integer read fDropWidth write SetDropWidth;
 
     procedure Paint; override;
   end;
@@ -1238,9 +1241,9 @@ type
     procedure ListHide(Sender: TObject); override;
     function ListVisible: Boolean; override;
     function GetItem(aIndex: Integer): TKMListRow;
-    function GetItemIndex: smallint; override;
-    procedure SetItemIndex(aIndex: smallint); override;
-    procedure SetDropWidth(aDropWidth:Integer);
+    function GetItemIndex: Smallint; override;
+    procedure SetItemIndex(aIndex: Smallint); override;
+    procedure SetDropWidth(aDropWidth: Integer);
   protected
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
@@ -7122,6 +7125,8 @@ begin
   fList.fOnClick := ListClick;
   fList.fOnChange := ListChange;
 
+  DropWidth := aWidth;
+
   ListHide(nil);
   fList.OnKeyDown := ListKeyDown;
 end;
@@ -7191,6 +7196,14 @@ begin
 end;
 
 
+procedure TKMDropList.SetDropWidth(aDropWidth: Integer);
+begin
+  fDropWidth := aDropWidth;
+  fList.AbsLeft := AbsLeft + Width - aDropWidth;
+  fList.Width := aDropWidth;
+end;
+
+
 procedure TKMDropList.SetEnabled(aValue: Boolean);
 begin
   inherited;
@@ -7218,14 +7231,14 @@ procedure TKMDropList.UpdateDropPosition;
 begin
   if Count > 0 then
   begin
-    fList.Height := Math.min(fDropCount, fList.Count) * fList.ItemHeight + fList.SeparatorsCount*fList.SeparatorHeight;
+    fList.Height := Math.Min(fDropCount, fList.Count) * fList.ItemHeight + fList.SeparatorsCount*fList.SeparatorHeight;
 
     if fDropUp then
       fList.AbsTop := AbsTop - fList.Height
     else
       fList.AbsTop := AbsTop + Height;
 
-    fList.Left := AbsLeft - MasterParent.AbsLeft;
+    fList.Left := AbsLeft + Width - DropWidth - MasterParent.AbsLeft;
   end;
 end;
 
@@ -7429,7 +7442,7 @@ procedure TKMDropColumns.UpdateDropPosition;
 begin
   if Count > 0 then
   begin
-    fList.Height := Math.min(fDropCount, fList.RowCount) * fList.ItemHeight + fList.Header.Height * Ord(fList.ShowHeader);
+    fList.Height := Math.Min(fDropCount, fList.RowCount) * fList.ItemHeight + fList.Header.Height * Ord(fList.ShowHeader);
 
     if fDropUp then
       fList.AbsTop := AbsTop - fList.Height
