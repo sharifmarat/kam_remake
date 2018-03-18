@@ -1671,7 +1671,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
   end;
 
 const
-  DISTANCE_BETWEEN_TOWERS = 7;
+  DISTANCE_BETWEEN_TOWERS = 5.5;
 var
   I, K, DefCount: Integer;
   P1,P2: TKMPoint;
@@ -1704,16 +1704,12 @@ end;
 
 procedure TKMCityPlanner.Paint();
 const
-  COLOR_WHITE = $80FFFFFF;
-  COLOR_BLACK = $80000000;
-  COLOR_GREEN = $6000FF00;
-  COLOR_DARK_GREEN = $AA00FF00;
-  COLOR_RED = $800000FF;
-  COLOR_DARK_RED = $AA0000FF;
-  COLOR_YELLOW = $8000FFFF;
-  COLOR_GREEN_Field = $4400FF00;
-  COLOR_GREEN_Wine = $3355FFFF;
-  COLOR_BLUE = $60FF0000;
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $0000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
 var
   I,K: Integer;
   Division: Single;
@@ -1724,11 +1720,12 @@ var
 begin
   HMA := gAIFields.Eye.HousesMapping;
 
-  //for I := 1 to Length(fPerfArr) - 1 do
-  //  for K := 1 to Length(fPerfArr[I]) - 1 do
-  //    if (fPerfArr[I,K] = fPerfIdx) then
-  //      gRenderAux.Quad(K, I, COLOR_BLUE);
-
+  {
+  for I := 1 to Length(fPerfArr) - 1 do
+    for K := 1 to Length(fPerfArr[I]) - 1 do
+      if (fPerfArr[I,K] = fPerfIdx) then
+        gRenderAux.Quad(K, I, $60000000 OR COLOR_BLUE);
+  //}
 
   // Paint houses
   for HT := HOUSE_MIN to HOUSE_MAX do
@@ -1741,9 +1738,10 @@ begin
       ht_Bakery,ht_Butchers,ht_Mill,ht_Swine,ht_Stables,ht_Farm,ht_Wineyard: Color := COLOR_GREEN;
       else Color := COLOR_WHITE;
     end;
+    Color := $80000000 OR Color;
     for I := 0 to fPlannedHouses[HT].Count - 1 do
     begin
-      for K := 0 to Length(HMA[HT].Tiles)-1 do
+      for K := 0 to Length(HMA[HT].Tiles) - 1 do
       begin
         Loc := KMPointAdd(fPlannedHouses[HT].Plans[I].Loc, HMA[HT].Tiles[K]);
         gRenderAux.Quad(Loc.X, Loc.Y, Color);
@@ -1762,20 +1760,6 @@ begin
       gRenderAux.Quad(Loc.X, Loc.Y, Color);
     end;
   end;
-
-  // Paint existing forests / chop only wodcutters
-  //HT := ht_Woodcutters;
-  //for K := 0 to fPlannedHouses[HT].Count - 1 do
-  //begin
-  //  Loc := fPlannedHouses[HT].Plans[K].SpecPoint;
-  //  if not KMSamePoint(Loc, KMPOINT_ZERO) then
-  //  begin
-  //    if (gAIFields.Influences.AvoidBuilding[ Loc.Y, Loc.X ] >= AVOID_BUILDING_FOREST_ADD) then
-  //      gRenderAux.Quad(Loc.X, Loc.Y, COLOR_DARK_GREEN)
-  //    else
-  //      gRenderAux.Quad(Loc.X, Loc.Y, COLOR_DARK_RED);
-  //  end;
-  //end;
 end;
 
 
