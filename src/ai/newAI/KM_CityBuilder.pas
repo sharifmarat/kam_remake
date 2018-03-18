@@ -50,6 +50,9 @@ type
   public
     constructor Create(aPlayer: TKMHandIndex; aPredictor: TKMCityPredictor);
     destructor Destroy(); override;
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
+    procedure SyncLoad();
 
     property Planner: TKMCityPlanner read fPlanner;
     property WorkersPos: TKMPointArray read fWorkersPos;
@@ -63,8 +66,6 @@ type
     procedure LockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
     procedure UnlockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
 
-    procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
 
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -83,6 +84,8 @@ uses
   Classes, KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitsCollection, KM_UnitTaskDelivery, KM_UnitActionWalkTo,
   KM_NavMesh, KM_RenderAux, KM_ResMapElements;
+
+
 
 { TKMCityBuilder }
 constructor TKMCityBuilder.Create(aPlayer: TKMHandIndex; aPredictor: TKMCityPredictor);
@@ -153,45 +156,41 @@ begin
   LoadStream.Read(Cnt);
   SetLength(fBuildNodes, Cnt);
   for I := 0 to Cnt - 1 do
-  with fBuildNodes[I] do
-  begin
-    LoadStream.Read(Active);
-    LoadStream.Read(RemoveTreesMode);
-    LoadStream.Read(ShortcutMode);
-    LoadStream.Read(FreeWorkers);
-    LoadStream.Read(RequiredWorkers);
-    LoadStream.Read(MaxReqWorkers);
-    LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
-    LoadStream.Read(FieldType, SizeOf(TKMFieldType));
-    FieldList := TKMPointList.Create();
-    FieldList.LoadFromStream(LoadStream);
-  end;
+    with fBuildNodes[I] do
+    begin
+      LoadStream.Read(Active);
+      LoadStream.Read(RemoveTreesMode);
+      LoadStream.Read(ShortcutMode);
+      LoadStream.Read(FreeWorkers);
+      LoadStream.Read(RequiredWorkers);
+      LoadStream.Read(MaxReqWorkers);
+      LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
+      LoadStream.Read(FieldType, SizeOf(TKMFieldType));
+      FieldList := TKMPointList.Create();
+      FieldList.LoadFromStream(LoadStream);
+    end;
 
   fPlanner.Load(LoadStream);
+end;
+
+
+procedure TKMCityBuilder.SyncLoad();
+begin
+  fPlanner.SyncLoad();
 end;
 
 
 procedure TKMCityBuilder.AfterMissionInit(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
 var
   I: Integer;
-  U: TKMUnit;
 begin
   fPlanner.AfterMissionInit();
-  //SetLength(fBuildNodes, gHands[fOwner].AI.Setup.WorkerCount shr 1);
   SetLength(fBuildNodes, gHands[fOwner].AI.Setup.WorkerCount);
   for I := Low(fBuildNodes) to High(fBuildNodes) do
   begin
     fBuildNodes[I].FieldList := TKMPointList.Create();
     fBuildNodes[I].Active := False;
   end;
-  // Remove units when is game in GA mode (avoid to place houses at unit)
-  if GA_PLANNER then
-    for I := 0 to gHands[fOwner].Units.Count - 1 do
-    begin
-      U := gHands[fOwner].Units[I];
-      if (U <> nil) then
-        U.Kill(fOwner, False, False);
-    end;
 end;
 
 
@@ -642,6 +641,7 @@ var
   I, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
 begin
+  Result := cs_NoNodeAvailable;
   FieldsComplete := False;
   // Find at least 2 non active build nodes
   Node1Idx := -1;
@@ -955,7 +955,8 @@ var
     for HT in ActualHouseSet do
       for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
         with fPlanner.PlannedHouses[HT].Plans[I] do
-          if not Placed AND (HouseReservation OR RemoveTreeInPlanProcedure)
+          if not Placed
+             AND (HouseReservation OR RemoveTreeInPlanProcedure)
              AND (cs_HousePlaced = AddToConstruction(HT,False,True)) then
           begin
             MaxPlans := MaxPlans - 1;
@@ -1334,6 +1335,14 @@ end;
 
 
 
+// Remove units when is game in GA mode (avoid to place houses at unit)
+if GA_PLANNER then
+  for I := 0 to gHands[fOwner].Units.Count - 1 do
+  begin
+    U := gHands[fOwner].Units[I];
+    if (U <> nil) then
+      U.KillUnit(fOwner, False, False);
+  end;
 
 function BuildHouse_GA_MODE(aHT: TKMHouseType): TConstructionState;
 
