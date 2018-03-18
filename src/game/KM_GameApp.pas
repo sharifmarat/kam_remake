@@ -794,13 +794,15 @@ end;
 
 procedure TKMGameApp.GameStart(aGameMode: TGameMode);
 begin
-  gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+  if gMain <> nil then
+    gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
 end;
 
 
 procedure TKMGameApp.GameEnd(aGameMode: TGameMode);
 begin
-  gMain.FormMain.SetSaveEditableMission(False);
+  if gMain <> nil then
+    gMain.FormMain.SetSaveEditableMission(False);
 end;
 
 
