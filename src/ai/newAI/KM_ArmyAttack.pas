@@ -161,7 +161,6 @@ const
 
 implementation
 uses
-  Types,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_NavMesh, KM_CommonUtils, KM_AISetup, KM_AI, KM_RenderAux,
   KM_Units_Warrior;
@@ -649,7 +648,7 @@ var
     INIT_DIST = 1000000;
     SQR_MAX_RANGE_INTEREST = 12*12;
     SQR_RANGE_OF_PROJECTILES = 11*11; // Sqr(  Max( Max(RANGE_BOWMAN_MAX,RANGE_ARBALETMAN_MAX),RANGE_SLINGSHOT_MAX )  );
-    SQR_RANGED_PROTECT_RADIUS = 9*9; // Radius around ranged units where requires close combat protection
+    SQR_RANGED_PROTECT_RADIUS = 7*7; // Radius around ranged units where requires close combat protection
   var
     Polygon: Word;
     I,K,L: Integer;
@@ -1471,9 +1470,9 @@ begin
       cs_Idle: Col := COLOR_BLACK;
     end;
     Position := Company.ScanPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), ($09 shl 24) OR Col, $99000000 OR Col);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), $09000000 OR Col, $99000000 OR Col);
     Position := Company.PathPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, ($09 shl 24) OR COLOR_GREEN, $99000000 OR COLOR_WHITE);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, $09000000 OR COLOR_GREEN, $99000000 OR COLOR_WHITE);
 
     // Target aim
     for K := 0 to Length(Company.fTargetU) - 1 do
@@ -1491,7 +1490,7 @@ begin
     // Pathfinding (company)
     if (Length(Company.PointPath) > 0) then
       for K := Length(Company.PointPath)-2 downto 0 do
-        gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], ($60 shl 24) OR COLOR_YELLOW);
+        gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], $60000000 OR COLOR_YELLOW);
 
     // Pathfinding (squads) + targets
     for GT := Low(TGroupType) to High(TGroupType) do
@@ -1511,7 +1510,7 @@ begin
             gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
+                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
           end;
         // Target unit
         if (Squad.TargetUnit <> nil) then
@@ -1520,16 +1519,16 @@ begin
             gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
+                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
           end;
         // Pathfinding
         if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
         begin
           //gRenderAux.LineOnTerrain(Position, Squad.FinalPosition.Loc, $AAFF5555);
-          gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, ($66 shl 24) OR COLOR_BLUE);
+          gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, $66000000 OR COLOR_BLUE);
           if (Length(Squad.PointPath) > 0) then
             for J := Length(Squad.PointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], ($60 shl 24) OR COLOR_BLUE);
+              gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
         end;
       end;
   end;
@@ -1590,4 +1589,3 @@ end;
 
 
 end.
-
