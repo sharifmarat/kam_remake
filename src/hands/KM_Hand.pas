@@ -43,7 +43,6 @@ type
   TKMHand = class(TKMHandCommon)
   private
     fAI: TKMHandAI;
-    fArmyEval: TKMArmyEvaluation;
     fBuildList: TKMBuildList; //Not the best name for buildingManagement
     fDeliveries: TKMHandLogistics;
     fFogOfWar: TKMFogOfWar; //Stores FOW info for current player, which includes
@@ -93,7 +92,6 @@ type
     property Locks: TKMHandLocks read fLocks;
     property Stats: TKMHandStats read fStats;
     property FogOfWar: TKMFogOfWar read fFogOfWar;
-    property ArmyEval: TKMArmyEvaluation read fArmyEval;
     property UnitGroups: TKMUnitGroups read fUnitGroups;
     property MessageLog: TKMMessageLog read fMessageLog;
 
@@ -144,6 +142,7 @@ type
     function FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean = False): TKMHouseInn;
     function FindHouse(aType: TKMHouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse; overload;
     function FindHouse(aType: TKMHouseType; Index: Byte=1): TKMHouse; overload;
+    function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function HitTest(X,Y: Integer): TObject;
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
@@ -283,7 +282,6 @@ begin
   fHouses       := TKMHousesCollection.Create;
   fDeliveries   := TKMHandLogistics.Create(fHandIndex);
   fBuildList    := TKMBuildList.Create;
-  fArmyEval     := TKMArmyEvaluation.Create(aHandIndex);
   fUnitGroups   := TKMUnitGroups.Create;
   fMessageLog   := TKMMessageLog.Create;
 
@@ -313,7 +311,6 @@ begin
   //Free units
   inherited;
 
-  FreeThenNil(fArmyEval);
   FreeThenNil(fRoadsList);
   FreeThenNil(fHouses);
 
@@ -421,7 +418,10 @@ begin
   G.OnGroupDied := GroupDied;
   if HandType = hndComputer then
   begin
-    AI.General.WarriorEquipped(G);
+    if AI.Setup.NewAI then
+      AI.ArmyManagement.WarriorEquipped(G)
+    else
+      AI.General.WarriorEquipped(G);
     G := UnitGroups.GetGroupByMember(aUnit); //AI might assign warrior to different group
   end
   else
@@ -501,7 +501,7 @@ begin
   FreeAndNil(fRoadsList);
 
   if not gGame.IsMapEditor then
-    fAI.Mayor.AfterMissionInit;
+    fAI.AfterMissionInit;
 end;
 
 
@@ -910,6 +910,12 @@ end;
 function TKMHand.FindHouse(aType: TKMHouseType; Index: Byte=1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, 0, 0, Index);
+end;
+
+
+function TKMHand.FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+begin
+  Result := fHouses.FindHousesInRadius(aLoc, aSqrRadius, aTypes, aOnlyCompleted);
 end;
 
 
@@ -1433,8 +1439,23 @@ begin
   if not gGame.IsMapEditor or (mlHouses in gGame.MapEditor.VisibleLayers) then
     fHouses.Paint(aRect);
 
-  if SHOW_DEFENCE_POSITIONS then
+  if not SKIP_RENDER AND SHOW_DEFENCE_POSITIONS AND not fAI.Setup.NewAI then
     fAI.General.DefencePositions.Paint;
+
+  if not SKIP_RENDER AND fAI.Setup.NewAI then
+  begin
+    if OVERLAY_AI_BUILD then
+    begin
+      fAI.CityManagement.Builder.Paint();
+      fAI.CityManagement.Builder.Planner.Paint();
+    end;
+    if OVERLAY_AI_COMBAT then
+    begin
+      fAI.ArmyManagement.Paint();
+      fAI.ArmyManagement.Attack.Paint();
+      fAI.ArmyManagement.Defence.Paint();
+    end;
+  end;
 end;
 
 

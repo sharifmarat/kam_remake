@@ -64,8 +64,8 @@ uses
 
 
 const
-  MAX_STRAIGHT_SPAN = 7; //Keep just every Nth point on nonedge  straightsin raw outlines
-  MAX_SIMPLIFIED_SPAN = 12; //Allow max N span on simplified outline
+  MAX_STRAIGHT_SPAN = 3; //Keep just every Nth point on nonedge  straightsin raw outlines (7)
+  MAX_SIMPLIFIED_SPAN = 6; //Allow max N span on simplified outline (12)
 
 
 constructor TKMSimplifyShapes.Create(aError: Single; aRect: TKMRect);

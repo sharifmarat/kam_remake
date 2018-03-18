@@ -4,7 +4,8 @@ interface
 uses
   KM_CommonClasses, KM_Defaults,
   KM_Houses, KM_Units, KM_Units_Warrior,
-  KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral;
+  KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral,
+  KM_CityManagement, KM_ArmyManagement;
 
 
 type
@@ -21,6 +22,9 @@ type
     fMayor: TKMayor;
     fSetup: TKMHandAISetup;
 
+    fCityManagement: TKMCityManagement;
+    fArmyManagement: TKMArmyManagement;
+
     fWonOrLost: TWonOrLost; //Has this player won/lost? If so, do not check goals
 
     procedure CheckGoals;
@@ -36,6 +40,9 @@ type
     property Mayor: TKMayor read fMayor;
     property Setup: TKMHandAISetup read fSetup;
 
+    property CityManagement: TKMCityManagement read fCityManagement;
+    property ArmyManagement: TKMArmyManagement read fArmyManagement;
+
     procedure Defeat(aShowDefeatMessage: Boolean = True); //Defeat the player, this is not reversible
     procedure Victory; //Set this player as victorious, this is not reversible
     procedure AddDefaultGoals(aBuildings: Boolean);
@@ -45,21 +52,23 @@ type
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
+    procedure UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
     procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState(aTick: Cardinal);
+    procedure AfterMissionInit();
   end;
 
 
 implementation
 uses
   SysUtils,
-  KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
+  KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
   KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
-  KM_GameTypes;
+  KM_AIFields;
 
 
 { TKMHandAI }
@@ -73,6 +82,9 @@ begin
   fGeneral := TKMGeneral.Create(fOwner, fSetup);
   fGoals := TKMGoals.Create;
   fWonOrLost := wol_None;
+
+  fCityManagement := TKMCityManagement.Create(fOwner, fSetup);
+  fArmyManagement := TKMArmyManagement.Create(fOwner, fSetup);
 end;
 
 
@@ -82,6 +94,9 @@ begin
   fGeneral.Free;
   fMayor.Free;
   fSetup.Free;
+
+  fCityManagement.Free;
+  fArmyManagement.Free;
 
   inherited;
 end;
@@ -253,6 +268,9 @@ begin
   fOwner := aPlayer;
   fMayor.OwnerUpdate(fOwner);
   fGeneral.OwnerUpdate(fOwner);
+
+  fCityManagement.OwnerUpdate(fOwner);
+  fArmyManagement.OwnerUpdate(fOwner);
 end;
 
 
@@ -272,16 +290,34 @@ begin
       end;
     hndComputer:
       begin
-        fGeneral.RetaliateAgainstThreat(aAttacker);
-        //Our allies might like to help us too
-        for I := 0 to gHands.Count-1 do
-          if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-          and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
-            gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+        if fSetup.NewAI then
+        begin
+          fArmyManagement.CheckNewThreat(aHouse, aAttacker);
+        end
+        else
+        begin
+          fGeneral.RetaliateAgainstThreat(aAttacker);
+          //Our allies might like to help us too
+          for I := 0 to gHands.Count-1 do
+            if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
+            and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+              gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+        end;
       end;
   end;
 
   gScriptEvents.ProcHouseDamaged(aHouse, aAttacker); //At the end since it could destroy the house
+end;
+
+
+procedure TKMHandAI.UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
+begin
+  if fSetup.NewAI AND (gHands[fOwner].HandType <> hndHuman) then // Make sure that it is not player
+  begin
+    fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+  end;
+  if aNotifyScript then
+    gScriptEvents.ProcUnitWounded(aUnit, aAttacker); //At the end since it could kill the unit
 end;
 
 
@@ -301,29 +337,37 @@ begin
         gGame.GamePlayInterface.Alerts.AddFight(aUnit.PositionF, fOwner, NotifyKind[aUnit is TKMUnitWarrior], gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
     hndComputer:
       begin
-        //If we are attacked, then we should counter attack the attacker (except if he is a recruit in tower)
-        if aAttacker is TKMUnitWarrior then
+        if fSetup.NewAI then
         begin
-          fGeneral.RetaliateAgainstThreat(aAttacker); //Nearby soldiers should come to assist
-
-          //Our allies might like to help us too
-          for I := 0 to gHands.Count-1 do
-            if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-            and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
-              gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
-
-          //If we are a warrior we can also attack that unit ourselves
-          if aUnit is TKMUnitWarrior then
+          // Calls too often
+          //fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+        end
+        else
+        begin
+          //If we are attacked, then we should counter attack the attacker (except if he is a recruit in tower)
+          if aAttacker is TKMUnitWarrior then
           begin
-            Group := gHands[fOwner].UnitGroups.GetGroupByMember(TKMUnitWarrior(aUnit));
-            //It's ok for the group to be nil, the warrior could still be walking out of the barracks
-            if (Group <> nil) and not Group.IsDead then
-              //If we are already in the process of attacking something, don't change our minds,
-              //otherwise you can make a unit walk backwards and forwards forever between two groups of archers
-              if not Group.InFight then
-                //Make sure the group could possibly reach the offenders
-                if Group.CanWalkTo(aAttacker.GetPosition, Group.FightMaxRange) then
-                  Group.OrderAttackUnit(aAttacker, True);
+            fGeneral.RetaliateAgainstThreat(aAttacker); //Nearby soldiers should come to assist
+
+            //Our allies might like to help us too
+            for I := 0 to gHands.Count-1 do
+              if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
+              and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+                gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+
+            //If we are a warrior we can also attack that unit ourselves
+            if aUnit is TKMUnitWarrior then
+            begin
+              Group := gHands[fOwner].UnitGroups.GetGroupByMember(TKMUnitWarrior(aUnit));
+              //It's ok for the group to be nil, the warrior could still be walking out of the barracks
+              if (Group <> nil) and not Group.IsDead then
+                //If we are already in the process of attacking something, don't change our minds,
+                //otherwise you can make a unit walk backwards and forwards forever between two groups of archers
+                if not Group.InFight then
+                  //Make sure the group could possibly reach the offenders
+                  if Group.CanWalkTo(aAttacker.GetPosition, Group.FightMaxRange) then
+                    Group.OrderAttackUnit(aAttacker, True);
+            end;
           end;
         end;
       end;
@@ -344,6 +388,9 @@ begin
   fGeneral.Save(SaveStream);
   fMayor.Save(SaveStream);
   fGoals.Save(SaveStream);
+
+  fCityManagement.Save(SaveStream);
+  fArmyManagement.Save(SaveStream);
 end;
 
 
@@ -357,18 +404,29 @@ begin
   fGeneral.Load(LoadStream);
   fMayor.Load(LoadStream);
   fGoals.Load(LoadStream);
+
+  fCityManagement.Load(LoadStream);
+  fArmyManagement.Load(LoadStream);
 end;
 
 
 procedure TKMHandAI.SyncLoad;
 begin
   fGeneral.SyncLoad;
+  fArmyManagement.SyncLoad;
 end;
 
 
-//todo: Updates should be well separated, maybe we can make an interleaved array or something
-//where updates will stacked to execute 1 at a tick
-//OR maybe we can collect all Updates into one list and run them from there (sounds like a better more manageble idea)
+procedure TKMHandAI.AfterMissionInit();
+begin
+  fMayor.AfterMissionInit;
+
+  gAIFields.Eye.OwnerUpdate(fOwner);
+  fCityManagement.AfterMissionInit;
+  fArmyManagement.AfterMissionInit;
+end;
+
+
 procedure TKMHandAI.UpdateState(aTick: Cardinal);
 begin
   //Check goals for all players to maintain multiplayer consistency
@@ -378,11 +436,20 @@ begin
 
   case gHands[fOwner].HandType of
     hndHuman:     begin
-                    //Humans dont need Mayor and Army management
+                    //Humans dont need AI management
                   end;
     hndComputer:  begin
-                    fMayor.UpdateState(aTick);
-                    fGeneral.UpdateState(aTick);
+                    if fSetup.NewAI then
+                    begin
+                      gAIFields.Eye.OwnerUpdate(fOwner);
+                      fArmyManagement.UpdateState(aTick);
+                      fCityManagement.UpdateState(aTick);
+                    end
+                    else
+                    begin
+                      fMayor.UpdateState(aTick);
+                      fGeneral.UpdateState(aTick);
+                    end;
                   end;
   end;
 end;

@@ -642,7 +642,7 @@ begin
                         end;
 
     ct_AIDefence:       if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          if InRange(P[3], Integer(Low(TKMGroupType)), Integer(High(TKMGroupType))) then //TPR 3 tries to set TGroupType 240 due to a missing space
+                          if InRange(P[3], Integer(Low(TKMGroupType)), Integer(High(TKMGroupType))) then //TPR 3 tries to set TKMGroupType 240 due to a missing space
                             gHands[fLastHand].AI.General.DefencePositions.Add(KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1)),TKMGroupType(P[3]),P[4],TAIDefencePosType(P[5]));
 
     ct_SetMapColor:     if fLastHand <> PLAYER_NONE then

@@ -19,6 +19,8 @@ type
 
   TKMActionResult = (ar_ActContinues, ar_ActDone, ar_ActAborted); //
 
+  TKMUnitArray = array of TKMUnit;
+
   TKMUnitAction = class
   protected
     fActionType: TKMUnitActionType;
@@ -836,7 +838,7 @@ begin
     ft_Corn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
     ft_Wine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
   else
-    raise Exception.Create('Unexpected TFieldType');
+    raise Exception.Create('Unexpected TKMFieldType');
   end;
 end;
 

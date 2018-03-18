@@ -8,6 +8,7 @@ uses
 
 type
   TKMUnitGroup = class;
+  TKMUnitGroupArray = array of TKMUnitGroup;
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
@@ -15,7 +16,7 @@ type
                       wtokPlayerOrder,  //player order
                       wtokHaltOrder,    //could be player order, or AI order (as part of OrderRepeat)
                       wtokFlagPoint,    //after warrior get out of barracks/townhall
-                      wtokAIGotoDefencePos, wtokAIAttackCustomPos, //initiated by AI
+                      wtokAISquad, wtokAIGotoDefencePos, wtokAIAttackCustomPos, //initiated by AI
                       wtokMissionScript, wtokScript); //initiated by mission script or script
   TKMOrderWalkKindSet = set of TKMOrderWalkKind;
 
@@ -123,6 +124,7 @@ type
     function  HasMember(aWarrior: TKMUnit): Boolean;
     procedure ResetAnimStep;
     function InFight(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
+    function InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean; //Fighting agaist specific groups
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
     function IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
@@ -139,6 +141,7 @@ type
     property Count: Integer read GetCount;
     property MapEdCount: Word read fMapEdCount write SetMapEdCount;
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
+    function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
     property Owner: TKMHandIndex read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
@@ -154,6 +157,7 @@ type
     property FlagColor: Cardinal read GetFlagColor;
     function IsFlagRenderBeforeUnit: Boolean;
 
+    property OrderLoc: TKMPointDir read fOrderLoc;
     property OrderTargetUnit: TKMUnit read GetOrderTargetUnit write SetOrderTargetUnit;
     property OrderTargetGroup: TKMUnitGroup read GetOrderTargetGroup;
     property OrderTargetHouse: TKMHouse read GetOrderTargetHouse write SetOrderTargetHouse;
@@ -209,6 +213,8 @@ type
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
     function GetClosestGroup(aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -473,6 +479,20 @@ begin
 end;
 
 
+function TKMUnitGroup.GetAliveMember: TKMUnitWarrior;
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+  begin
+    Result := Members[I];
+    if not Result.IsDeadOrDying then
+      Exit;
+  end;
+  Result := nil;
+end;
+
+
 function TKMUnitGroup.GetFlagBearer: TKMUnitWarrior;
 begin
   Result := fMembers.Items[0];
@@ -628,6 +648,7 @@ begin
   //Member reports to Group if something happens to him, so that Group can apply its logic
   aWarrior.OnPickedFight := Member_PickedFight;
   aWarrior.OnWarriorDied := Member_Died;
+  aWarrior.SetGroup(Self);
 end;
 
 
@@ -940,6 +961,40 @@ begin
     Result := True;
     Exit;
   end;
+end;
+
+
+function TKMUnitGroup.InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean;
+var
+  Check: Boolean;
+  I,K,Cnt: Integer;
+  U: TKMUnit;
+  G: TKMUnitGroup;
+begin
+  Cnt := 0;
+  U := nil;
+  for I := 0 to Count - 1 do
+    if Members[I].InFightAgaist(U, False) then
+    begin
+      G := gHands[ U.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(U) );
+      Check := True;
+      for K := 0 to Cnt - 1 do
+        if (aGroupArray[K] = G) then
+        begin
+          Check := False;
+          break;
+        end;
+      if Check then
+      begin
+        if (Length(aGroupArray) >= Cnt) then
+          SetLength(aGroupArray, Cnt + 12);
+        aGroupArray[Cnt] := G;
+        Cnt := Cnt + 1;
+      end;
+    end;
+  SetLength(aGroupArray,Cnt);
+
+  Result := Cnt > 0;
 end;
 
 
@@ -1983,7 +2038,7 @@ begin
   Result := nil;
   BestDist := MaxSingle; //Any distance will be closer than that
   for I := 0 to Count - 1 do
-    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
     begin
       Dist := KMLengthSqr(Groups[I].GetPosition, aPoint);
       if Dist < BestDist then
@@ -1992,6 +2047,80 @@ begin
         Result := Groups[I];
       end;
     end;
+end;
+
+
+function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+var
+  I,K,Idx: Integer;
+  UW: TKMUnitWarrior;
+begin
+  Idx := 0;
+  for I := 0 to Count - 1 do
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
+    begin
+      K := 0;
+      while (K < Groups[I].Count) do // Large groups may be in radius too so check every fifth member
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
+        begin
+          UW := Groups[I].Members[K];
+          if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
+          begin
+            if (Idx >= Length(Result)) then
+              SetLength(Result, Idx + 12);
+            Result[Idx] := Groups[I];
+            Idx := Idx + 1;
+            break;
+          end;
+          K := K + 5;
+        end;
+    end;
+  SetLength(Result,Idx);
+end;
+
+
+function TKMUnitGroups.GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
+var
+  I,K,Idx: Integer;
+  Dist, MinDist: Single;
+  U, BestU: TKMUnit;
+begin
+  Idx := 0;
+  BestU := nil;
+  for I := 0 to Count - 1 do
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
+    begin
+      K := 0;
+      MinDist := 1000000; //Any distance will be closer than that
+      while (K < Groups[I].Count) do
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
+        begin
+          U := Groups[I].Members[K];
+          Dist := KMLengthSqr(U.GetPosition, aPoint);
+          if (Dist <= MinDist) then
+          begin
+            MinDist := Dist;
+            BestU := U;
+          end;
+          K := K + 5; // Large groups may be in radius too so check every fifth member
+        end;
+      if (MinDist <= aSqrRadius) then
+      begin
+        if (Idx >= Length(Result)) then
+        begin
+          SetLength(Result, Idx + 12);
+          SetLength(aUGA, Idx + 12);
+        end;
+        Result[Idx] := BestU;
+        aUGA[Idx] := Groups[I]; // Save also group (it is faster than search group via HandsCollection)
+        Idx := Idx + 1;
+      end;
+    end;
+  SetLength(Result,Idx);
 end;
 
 

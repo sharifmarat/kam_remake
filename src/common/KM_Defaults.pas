@@ -133,6 +133,8 @@ var
   OVERLAY_INFLUENCE     :Boolean = False; //Show influence map
   OVERLAY_OWNERSHIP     :Boolean = False; //Show ownership map
   OVERLAY_AVOID         :Boolean = False; //Show avoidance map
+  OVERLAY_AI_BUILD      :Boolean = False; //Show build progress of new AI
+  OVERLAY_AI_COMBAT     :Boolean = False; //Show combat marks of new AI
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked
@@ -150,7 +152,7 @@ var
   {Gameplay cheats}
   UNLOCK_CAMPAIGN_MAPS  :Boolean = False; //Unlock more maps for debug
   REDUCE_SHOOTING_RANGE :Boolean = False; //Reduce shooting range for debug
-  MULTIPLAYER_CHEATS    :Boolean = False; //Allow cheats and debug overlays (e.g. CanWalk) in Multiplayer
+  MULTIPLAYER_CHEATS    :Boolean = True; //Allow cheats and debug overlays (e.g. CanWalk) in Multiplayer
   DEBUG_CHEATS          :Boolean = False; //Cheats for debug (place scout and reveal map) which can be turned On from menu
   MULTIPLAYER_SPEEDUP   :Boolean = False; //Allow you to use F8 to speed up multiplayer for debugging (only effects local client)
   SKIP_EXE_CRC          :Boolean = False; //Don't check KaM_Remake.exe CRC before MP game (useful for testing with different versions)
@@ -164,6 +166,9 @@ var
   EXPORT_INFLUENCE      :Boolean = False;
   //Statistic
   CtrlPaintCount: Word; //How many Controls were painted in last frame
+  {AI_GA_Tests}
+  GA_PLANNER            :Boolean = False; // Activation of special code for genetic algorithm (class Planner)
+  GA_BUILDER            :Boolean = False; // Activation of special code for genetic algorithm (class Builder)
 
 
 const

@@ -103,7 +103,7 @@ type
     procedure AddUnique(const aLoc: TKMPoint);
     procedure AddListUnique(aList: TKMPointList);
     function  Remove(aLoc: TKMPoint): Integer; virtual;
-    procedure Delete(aIndex: Integer);
+    procedure Delete(aIndex: Integer); virtual;
     procedure Insert(ID: Integer; aLoc: TKMPoint);
     function  GetRandom(out Point: TKMPoint): Boolean;
     function  GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
@@ -126,6 +126,7 @@ type
     function IndexOf(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal): Integer;
     procedure SortByTag;
     function Remove(aLoc: TKMPoint): Integer; override;
+    procedure Delete(aIndex: Integer); override;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
@@ -668,6 +669,21 @@ begin
 end;
 
 
+procedure TKMPointTagList.Delete(aIndex: Integer);
+begin
+  if not InRange(aIndex, 0, Count-1) then Exit;
+
+  inherited Delete(aIndex);
+
+  //Note that fCount is already decreased by 1
+  if (aIndex <> fCount) then
+  begin
+    Move(Tag[aIndex+1], Tag[aIndex], SizeOf(Tag[aIndex]) * (fCount - aIndex));
+    Move(Tag2[aIndex+1], Tag2[aIndex], SizeOf(Tag2[aIndex]) * (fCount - aIndex));
+  end;
+end;
+
+
 procedure TKMPointTagList.SaveToStream(SaveStream: TKMemoryStream);
 begin
   inherited; //Writes Count
@@ -681,16 +697,47 @@ end;
 
 
 procedure TKMPointTagList.SortByTag;
-var I,K: Integer;
-begin
-  for I := 0 to fCount - 1 do
-    for K := I + 1 to fCount - 1 do
-      if Tag[K] < Tag[I] then
+  // Quicksort implementation (because there is not specified count of elements buble does not give any sense)
+  procedure QuickSort(MinIdx,MaxIdx: Integer);
+  var
+    I,K,X: Integer;
+  begin
+    I := MinIdx;
+    K := MaxIdx;
+    X := Tag[ (MinIdx+MaxIdx) div 2 ];
+    repeat
+      while (Tag[I] < X) do
+        I := I + 1;
+      while (X < Tag[K]) do
+        K := K - 1;
+      if (I <= K) then
       begin
         KMSwapPoints(fItems[I], fItems[K]);
         KMSwapInt(Tag[I], Tag[K]);
         KMSwapInt(Tag2[I], Tag2[K]);
+        I := I + 1;
+        K := K - 1;
       end;
+    until (I > K);
+    if (MinIdx < K) then
+      QuickSort(MinIdx,K);
+    if (I < MaxIdx) then
+      QuickSort(I,MaxIdx);
+  end;
+
+//var I,K: Integer;
+begin
+  // Buble sort
+  //for I := 0 to fCount - 1 do
+  //  for K := I + 1 to fCount - 1 do
+  //    if Tag[K] < Tag[I] then
+  //    begin
+  //      KMSwapPoints(fItems[I], fItems[K]);
+  //      KMSwapInt(Tag[I], Tag[K]);
+  //      KMSwapInt(Tag2[I], Tag2[K]);
+  //    end;
+  if (fCount > 1) then
+    QuickSort(0, fCount - 1);
 end;
 
 

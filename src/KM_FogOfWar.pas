@@ -32,7 +32,7 @@ type
       {LastTerrain: Byte;
       LastHeight: Byte;
       LastObj: Byte;
-      LastHouse: THouseType;}
+      LastHouse: TKMHouseType;}
     end;*)
     procedure SetMapSize(X,Y: Word);
   public

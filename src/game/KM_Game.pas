@@ -262,8 +262,6 @@ begin
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
 
-  InitUnitStatEvals; //Army
-
   if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gLog.AddTime('<== Game creation is done ==>');
 

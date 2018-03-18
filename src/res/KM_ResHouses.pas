@@ -199,7 +199,7 @@ const
     ht_ArmorWorkshop, ht_Barracks, ht_Mill, ht_SiegeWorkshop, ht_Butchers,
     ht_Tannery, ht_None, ht_Inn, ht_Wineyard, ht_Marketplace);
 
-  //THouseType corresponds to this index in KaM scripts and libs
+  //TKMHouseType corresponds to this index in KaM scripts and libs
   //KaM scripts are 0 based, so we must use HouseTypeToIndex[H]-1 in script usage. Other cases are 1 based.
   HouseTypeToIndex: array [TKMHouseType] of Byte = (0, 0,
     11, 21, 8, 22, 25, 4, 9, 7, 6, 28,
