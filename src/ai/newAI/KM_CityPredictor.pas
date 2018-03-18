@@ -352,7 +352,7 @@ begin
     for HT := Low(Houses) to High(Houses) do
     begin
       //Houses[HT] := gHands[fOwner].Stats.GetHouseTotal(HT); // Does not consider planned houses
-      Houses[HT] := Planner.PlannedHouses[HT].Count;
+      Houses[HT] := Planner.PlannedHouses[HT].Calculated; // Consider only placed or planned houses (not destroyed houses - plans will remain in CityPlanner)
       HousesCnt := HousesCnt + Houses[HT];
     end;
     if GA_PLANNER then  // Short info for Genetic algorithm planner
