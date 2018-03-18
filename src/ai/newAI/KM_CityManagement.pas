@@ -38,6 +38,9 @@ type
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
+    procedure SyncLoad();
 
     procedure AfterMissionInit();
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
@@ -49,8 +52,6 @@ type
 
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
-    procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
 
   end;
 
@@ -111,6 +112,12 @@ begin
 end;
 
 
+procedure TKMCityManagement.SyncLoad();
+begin
+  fBuilder.SyncLoad();
+end;
+
+
 procedure TKMCityManagement.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
@@ -140,7 +147,7 @@ begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(4);
   //gGame.GameOptions.Peacetime := 90;
-//  fSetup.ApplyAgressiveBuilderSetup(True);
+  //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -812,7 +819,7 @@ begin
     with fRequiredWeapons[WT] do
       aBalanceText := aBalanceText + WARFARE[WT] + ':   ('
                       + Format(
-                        COLOR_GREEN+'%D'+COLOR_WHITE+'; '
+                         COLOR_GREEN+'%D'+COLOR_WHITE+'; '
                         +COLOR_RED+'%D'+COLOR_WHITE+'; '
                         +COLOR_YELLOW+'%.2f'+COLOR_WHITE+')|', [Avaiable, Required, Fraction]
                       );
