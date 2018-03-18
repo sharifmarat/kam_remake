@@ -60,6 +60,7 @@ type
     procedure RemPlan(aLoc: TKMPoint);
     function TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
     function FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
+    function ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
 
     //Game events
     function BestBid(aWorker: TKMUnitWorker; out aBid: Single): Integer; //Calculate best bid for a given worker
@@ -737,6 +738,19 @@ begin
       Result := True;
     end;
   end;
+end;
+
+
+// Check if this plan exist
+function TKMHousePlanList.ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 0 to Length(fPlans) - 1 do
+    if (fPlans[I].HouseType = aHT) AND KMSamePoint(aLoc, fPlans[I].Loc) then
+	    Exit;
+  Result := False;
 end;
 
 
