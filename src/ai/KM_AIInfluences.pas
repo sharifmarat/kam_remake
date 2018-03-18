@@ -655,6 +655,13 @@ end;
 
 //Render debug symbols
 procedure TKMInfluences.Paint(aRect: TKMRect);
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $0000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
 var
   PL, WatchedPL: TKMHandIndex;
   I, Cnt: Word;
@@ -666,35 +673,37 @@ var
   //MaxW,MinW: Word;
   //B: Byte;
 begin
-  //for Y := 1 to fMapY - 1 do
-  //for X := 1 to fMapX - 1 do
-  //begin
-  //  Col := fAreas[Y,X] * 65793 OR $80000000;
-  //  gRenderAux.Quad(X, Y, Col);
-  //end;
-  //PolyArr := fNavMesh.Polygons;
-  //NodeArr := fNavMesh.Nodes;
-  //  MaxW := 0;
-  //  MinW := High(Word);
-  //  for I := Low(fAreas) to High(fAreas) do
-  //    if (fAreas[I] > MaxW) then
-  //      MaxW := fAreas[I]
-  //    else if (fAreas[I] < MinW) then
-  //      MinW := fAreas[I];
-  //  for I := Low(fAreas) to High(fAreas) do
-  //  begin
-  //    B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
-  //    Col := $FFFFFF OR (B shl 24);
-  //
-  //    //NavMesh polys coverage
-  //    gRenderAux.TriangleOnTerrain(
-  //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-  //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-  //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
-  //  end;
+  {
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+  begin
+    Col := fAreas[Y,X] * 65793 OR $80000000;
+    gRenderAux.Quad(X, Y, Col);
+  end;
+  PolyArr := fNavMesh.Polygons;
+  NodeArr := fNavMesh.Nodes;
+    MaxW := 0;
+    MinW := High(Word);
+    for I := Low(fAreas) to High(fAreas) do
+      if (fAreas[I] > MaxW) then
+        MaxW := fAreas[I]
+      else if (fAreas[I] < MinW) then
+        MinW := fAreas[I];
+    for I := Low(fAreas) to High(fAreas) do
+    begin
+      B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
+      Col := $FFFFFF OR (B shl 24);
+
+      //NavMesh polys coverage
+      gRenderAux.TriangleOnTerrain(
+        NodeArr[PolyArr[I].Indices[0]].Loc.X,
+        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[1]].Loc.X,
+        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[2]].Loc.X,
+        NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+    end;
+  //}
 
 
 
@@ -719,7 +728,7 @@ begin
       if (PL = PLAYER_NONE) then
         continue
       else
-        Col := (gHands[PL].FlagColor AND $FFFFFF) OR (OwnPoly[PL,I] shl 24);
+        Col := (gHands[PL].FlagColor AND COLOR_WHITE) OR (OwnPoly[PL,I] shl 24);
 
       //NavMesh polys coverage
       gRenderAux.TriangleOnTerrain(
@@ -744,11 +753,11 @@ begin
     for PL := 0 to gHands.Count - 1 do
     begin
       if (WatchedPL = PL) then
-        Col := $0000FF00 // Green
+        Col := COLOR_GREEN
       else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
-        Col := $00FF0000 // Blue
+        Col := COLOR_BLUE
       else
-        Col := $000000FF; // Red
+        Col := COLOR_RED;
 
       for I := 0 to fPolygons - 1 do
       begin
@@ -767,36 +776,38 @@ begin
         end;
       end;
     end;
-    //for I := 0 to fPolygons - 1 do
-    //begin
-    //  BestCnt := 0;
-    //  for PL := 0 to gHands.Count - 1 do
-    //  begin
-    //    Cnt := PresenceAllGroups[PL,I];
-    //    if (Cnt > BestCnt) then
-    //    begin
-    //      BestCnt := Cnt;
-    //      if (WatchedPL = PL) then
-    //        Col := $0000FF00 // Green
-    //      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
-    //        Col := $00FF0000 // Blue
-    //      else
-    //        Col := $000000FF; // Red
-    //    end;
-    //  end;
-    //  if (BestCnt > 0) then
-    //  begin
-    //    BestCnt := Min(BestCnt,$9F);
-    //    //NavMesh polys coverage
-    //    gRenderAux.TriangleOnTerrain(
-    //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
-    //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-    //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
-    //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-    //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
-    //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (BestCnt shl 24)) );
-    //  end;
-    //end;
+    {
+    for I := 0 to fPolygons - 1 do
+    begin
+      BestCnt := 0;
+      for PL := 0 to gHands.Count - 1 do
+      begin
+        Cnt := PresenceAllGroups[PL,I];
+        if (Cnt > BestCnt) then
+        begin
+          BestCnt := Cnt;
+          if (WatchedPL = PL) then
+            Col := COLOR_GREEN
+          else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+            Col := COLOR_BLUE
+          else
+            Col := COLOR_RED;
+        end;
+      end;
+      if (BestCnt > 0) then
+      begin
+        BestCnt := Min(BestCnt,$9F);
+        //NavMesh polys coverage
+        gRenderAux.TriangleOnTerrain(
+          NodeArr[PolyArr[I].Indices[0]].Loc.X,
+          NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+          NodeArr[PolyArr[I].Indices[1]].Loc.X,
+          NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+          NodeArr[PolyArr[I].Indices[2]].Loc.X,
+          NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (BestCnt shl 24)) );
+      end;
+    end;
+    //}
   end;
 end;
 
