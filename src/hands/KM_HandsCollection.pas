@@ -32,12 +32,12 @@ type
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
-    function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
-    function GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
-    function GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
-    function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
-    function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
-    function GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+    function GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
+    function GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
+    function GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function DistanceToEnemyTowers(aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
     procedure GetUnitsInRect(aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -50,12 +50,12 @@ type
     function GetGroupByMember(aWarrior: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TObject;
     function UnitCount: Integer;
-    function FindPlaceForUnit(PosX,PosY:integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+    function FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
 
     //Check how Player1 feels towards Player2
     //Note: this is position dependant, e.g. Player1 may be allied with
     //      Player2, but Player2 could be an enemy to Player1
-    function CheckAlliance(aPlay1, aPlay2: TKMHandIndex): TAllianceType;
+    function CheckAlliance(aPlay1, aPlay2: TKMHandIndex): TKMAllianceType;
     function GetTeams: TKMByteSetArray;
     function GetFullTeams: TKMByteSetArray;
     procedure CleanUpUnitPointer(var aUnit: TKMUnit);
@@ -249,7 +249,7 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+function TKMHandsCollection.GetClosestGroup(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
 var
   I: Integer;
   G: TKMUnitGroup;
@@ -267,7 +267,7 @@ begin
 end;
 
 
-function TKMHandsCollection.GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroupArray;
+function TKMHandsCollection.GetGroupsInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
 var
   I,K,Idx: Integer;
   UGA: TKMUnitGroupArray;
@@ -291,7 +291,7 @@ end;
 
 
 // Aproximative function to get closest units in specific radius
-function TKMHandsCollection.GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitArray;
+function TKMHandsCollection.GetGroupsMemberInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
 var
   I,K,Idx: Integer;
   UA: TKMUnitArray;
@@ -320,7 +320,7 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType): TKMUnit;
+function TKMHandsCollection.GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
 var
   I: Integer;
   U: TKMUnit;
@@ -340,7 +340,7 @@ end;
 
 //Check opponents for closest House with given Alliance setting
 //Note: we check by house cells, not by entrance
-function TKMHandsCollection.GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHandsCollection.GetClosestHouse(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
 var
   I: Integer;
   H: TKMHouse;
@@ -358,7 +358,7 @@ begin
 end;
 
 
-function TKMHandsCollection.GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+function TKMHandsCollection.GetHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
 var
   I,K,Idx: Integer;
   HA: TKMHouseArray;
@@ -667,7 +667,7 @@ end;
 
 
 {Should return closest position where unit can be placed}
-function TKMHandsCollection.FindPlaceForUnit(PosX,PosY:integer; aUnitType: TUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
+function TKMHandsCollection.FindPlaceForUnit(PosX,PosY:integer; aUnitType: TKMUnitType; out PlacePoint: TKMPoint; RequiredWalkConnect:byte):Boolean;
 var
   I: Integer;
   P: TKMPoint;
@@ -696,7 +696,7 @@ end;
 
 { Check how Player1 feels towards Player2. Note: this is position dependant,
 e.g. Play1 may be allied with Play2, but Play2 may be enemy to Play1}
-function TKMHandsCollection.CheckAlliance(aPlay1,aPlay2: TKMHandIndex): TAllianceType;
+function TKMHandsCollection.CheckAlliance(aPlay1,aPlay2: TKMHandIndex): TKMAllianceType;
 begin
   if (aPlay1 = PLAYER_ANIMAL) or (aPlay2 = PLAYER_ANIMAL) then
     Result := at_Ally //In KaM animals are always friendly

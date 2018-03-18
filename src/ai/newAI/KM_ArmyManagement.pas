@@ -196,10 +196,10 @@ procedure TKMArmyManagement.RecruitSoldiers();
 var
   Barracks: array of TKMHouseBarracks;
   H: TKMHouse;
-  GT: TGroupType;
+  GT: TKMGroupType;
   I,K: Integer;
-  UT: TUnitType;
-  GroupReq: TGroupTypeArray;
+  UT: TKMUnitType;
+  GroupReq: TKMGroupTypeArray;
 begin
   // Peace time; Max soldiers limit reached; cannot equip; no Barracks
   if gGame.IsPeaceTime
@@ -219,7 +219,7 @@ begin
   //      Inc(GroupReq[GroupType], Max(fDefence.TroopFormations[GroupType].NumUnits - CurrentGroup.Count, 0));
 
   // Take required warriors from CityManagement (-> implemented consideration of required units + save time)
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
       if (AITroopTrainOrder[GT,I] <> ut_None) then
         Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ]);
@@ -253,7 +253,7 @@ begin
       //Chose a random group type that we are going to attempt to train (so we don't always train certain group types first)
       K := 0;
       repeat
-        GT := TGroupType(KaMRandom(4)); //Pick random from overall count
+        GT := TKMGroupType(KaMRandom(4)); //Pick random from overall count
         Inc(K);
       until (GroupReq[GT] > 0) or (K > 9); //Limit number of attempts to guarantee it doesn't loop forever
 
@@ -327,8 +327,8 @@ procedure TKMArmyManagement.CheckAttack();
     MAX_GROUPS_IN_COMPANY = 9;
   var
     I, K, CompaniesCnt, GTMaxCnt, GCnt, HighAG: Integer;
-    GT: TGroupType;
-    GTArr: array[TGroupType] of Integer;
+    GT: TKMGroupType;
+    GTArr: array[TKMGroupType] of Integer;
     Groups: TKMUnitGroupArray;
   begin
     // Get count of avaiable group types
@@ -341,7 +341,7 @@ procedure TKMArmyManagement.CheckAttack();
     for I := 0 to CompaniesCnt - 1 do
     begin
       GCnt := 0;
-      for GT := Low(TGroupType) to High(TGroupType) do
+      for GT := Low(TKMGroupType) to High(TKMGroupType) do
       begin
         GTMaxCnt := Max(0, Round(GTArr[GT] / (CompaniesCnt - I)));
         GTArr[GT] := GTArr[GT] - GTMaxCnt;
@@ -398,9 +398,9 @@ begin
   begin
     Group := gHands[fOwner].UnitGroups[I];
     if Group.IsDead
-      OR not Group.IsIdleToAI(True)
+      OR not Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
       OR (not TakeAllIn AND (Group.Count < MIN_TROOPS_IN_GROUP)) then
-      continue;
+      Continue;
     if ForceToAttack then
     begin
       // Take all groups out of attack class

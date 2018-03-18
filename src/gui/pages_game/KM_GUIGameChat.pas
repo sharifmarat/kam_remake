@@ -11,7 +11,7 @@ uses
 type
   TKMGUIGameChat = class
   private
-    fChatMode: TChatMode;
+    fChatMode: TKMChatMode;
     fChatWhisperRecipient: Integer; //NetPlayer index of the player who will receive the whisper
     fLastChatTime: Cardinal; //Last time a chat message was sent to enforce cooldown
     procedure Chat_Close(Sender: TObject);
@@ -293,7 +293,7 @@ end;
 
 
 procedure TKMGUIGameChat.SetChatState(const aChatState: TChatState);
-const CHAT_TAG: array[TChatMode] of Integer = (
+const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
   -3,  //cmSpectators

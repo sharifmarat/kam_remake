@@ -66,7 +66,7 @@ type
 implementation
 uses
   SysUtils,
-  KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
+  KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
   KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
   KM_AIFields;
 

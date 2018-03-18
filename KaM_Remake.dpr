@@ -54,7 +54,8 @@ uses
   KM_Controls in 'src\KM_Controls.pas',
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
   KM_FogOfWar in 'src\KM_FogOfWar.pas',
-	
+
+  KM_GameTypes in 'src\game\KM_GameTypes.pas',  
   KM_Game in 'src\game\KM_Game.pas',
   KM_GameApp in 'src\game\KM_GameApp.pas',
   KM_GameCursor in 'src\game\KM_GameCursor.pas',
@@ -67,10 +68,12 @@ uses
   KM_GUIGameBuild in 'src\gui\pages_game\KM_GUIGameBuild.pas',
   KM_GUIGameChat in 'src\gui\pages_game\KM_GUIGameChat.pas',
   KM_GUIGameHouse in 'src\gui\pages_game\KM_GUIGameHouse.pas',
-	KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
+  KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
   KM_GUIGameRatios in 'src\gui\pages_game\KM_GUIGameRatios.pas',
   KM_GUIGameStats in 'src\gui\pages_game\KM_GUIGameStats.pas',
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
+  KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
+  KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',
@@ -132,8 +135,6 @@ uses
   KM_GUIMenuMultiplayer in 'src\gui\pages_menu\KM_GUIMenuMultiplayer.pas',
   KM_GUIMenuOptions in 'src\gui\pages_menu\KM_GUIMenuOptions.pas',
   KM_GUIMenuReplays in 'src\gui\pages_menu\KM_GUIMenuReplays.pas',
-  KM_GUIMenuResultsMP in 'src\gui\pages_menu\KM_GUIMenuResultsMP.pas',
-  KM_GUIMenuResultsSP in 'src\gui\pages_menu\KM_GUIMenuResultsSP.pas',
   KM_GUIMenuSingleMap in 'src\gui\pages_menu\KM_GUIMenuSingleMap.pas',
   KM_GUIMenuSinglePlayer in 'src\gui\pages_menu\KM_GUIMenuSinglePlayer.pas',
 
@@ -283,6 +284,7 @@ uses
   KM_UnitTaskDie in 'src\units\KM_UnitTaskDie.pas',
   KM_UnitTaskGoEat in 'src\units\KM_UnitTaskGoEat.pas',
   KM_UnitTaskGoHome in 'src\units\KM_UnitTaskGoHome.pas',
+	KM_UnitTaskDismiss in 'src\units\KM_UnitTaskDismiss.pas',
   KM_UnitTaskGoOutShowHungry in 'src\units\KM_UnitTaskGoOutShowHungry.pas',
   KM_UnitTaskMining in 'src\units\KM_UnitTaskMining.pas',
   KM_UnitTaskSelfTrain in 'src\units\KM_UnitTaskSelfTrain.pas',

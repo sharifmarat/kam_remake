@@ -15,16 +15,17 @@ type
   private
     fGoldCnt: Word;
     fGoldMaxCnt: Word;
-    function GetTHUnitOrderIndex(aUnitType: TUnitType): Integer;
+    function GetTHUnitOrderIndex(aUnitType: TKMUnitType): Integer;
     procedure SetGoldCnt(aValue: Word);
     procedure SetGoldMaxCnt(aValue: Word); overload;
+    procedure AddInitialDemands;
   protected
     function GetFlagPointTexId: Word; override;
-    procedure AddDemandsOnActivate; override;
+    procedure AddDemandsOnActivate(aWasBuilt: Boolean); override;
     function GetResIn(aI: Byte): Word; override;
     procedure SetResIn(aI: Byte; aValue: Word); override;
   public
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -35,16 +36,16 @@ type
 
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
 
-    function Equip(aUnitType: TUnitType; aCount: Integer): Integer;
-    function CanEquip(aUnitType: TUnitType): Boolean;
+    function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
+    function CanEquip(aUnitType: TKMUnitType): Boolean;
 
     procedure PostLoadMission; override;
 
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
-    procedure ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    function CheckResIn(aWare: TWareType): Word; override;
-    function ResCanAddToIn(aRes: TWareType): Boolean; override;
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
+    procedure ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    function CheckResIn(aWare: TKMWareType): Word; override;
+    function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
   end;
 
 
@@ -57,7 +58,7 @@ uses
 
 
 {TKMHouseTownHall}
-constructor TKMHouseTownHall.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseTownHall.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 
@@ -121,7 +122,7 @@ begin
 end;
 
 
-function TKMHouseTownHall.CanEquip(aUnitType: TUnitType): Boolean;
+function TKMHouseTownHall.CanEquip(aUnitType: TKMUnitType): Boolean;
 var
   THUnitIndex: Integer;
 begin
@@ -136,7 +137,7 @@ end;
 
 //Equip a new soldier and make him walk out of the house
 //Return the number of units successfully equipped
-function TKMHouseTownHall.Equip(aUnitType: TUnitType; aCount: Integer): Integer;
+function TKMHouseTownHall.Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
 var
   I, K, THUnitIndex: Integer;
   Soldier: TKMUnitWarrior;
@@ -181,7 +182,7 @@ begin
 end;
 
 
-function TKMHouseTownhall.GetTHUnitOrderIndex(aUnitType: TUnitType): Integer;
+function TKMHouseTownhall.GetTHUnitOrderIndex(aUnitType: TKMUnitType): Integer;
 var
   I: Integer;
 begin
@@ -197,18 +198,22 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.PostLoadMission;
-var
-  DemandsCnt: Integer;
+procedure TKMHouseTownHall.AddInitialDemands;
 begin
-  DemandsCnt := fGoldMaxCnt - fGoldCnt;
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wt_Gold, DemandsCnt, dtOnce, diNorm); //Every new house needs 5 resource units
+  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, wt_Gold, fGoldMaxCnt - fGoldCnt, dtOnce, diNorm);
 end;
 
 
-procedure TKMHouseTownHall.AddDemandsOnActivate;
+procedure TKMHouseTownHall.PostLoadMission;
 begin
-  //We have to add demands in PostLoadMission procedure, as GoldMaxCnt and GoldCnt are not loaded yet
+  AddInitialDemands;
+end;
+
+
+procedure TKMHouseTownHall.AddDemandsOnActivate(aWasBuilt: Boolean);
+begin
+  if aWasBuilt then
+    AddInitialDemands;
 end;
 
 
@@ -235,7 +240,7 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+procedure TKMHouseTownHall.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 begin
   Assert(aWare = wt_Gold, 'Invalid resource added to TownHall');
 
@@ -249,7 +254,7 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouseTownHall.ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
   aCount := Min(aCount, fGoldCnt);
   if aFromScript then
@@ -261,7 +266,7 @@ begin
 end;
 
 
-procedure TKMHouseTownHall.ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouseTownHall.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
   Assert(aWare = wt_Gold, 'Invalid resource added to TownHall');
   if aFromScript then
@@ -275,11 +280,12 @@ begin
   end;
   Assert(aCount <= fGoldCnt);
   Dec(fGoldCnt, aCount);
-  gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
+  if gHands[fOwner].Deliveries.Queue.GetDemandsCnt(Self, aWare, dtOnce, diNorm) < fGoldMaxCnt then
+    gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, aWare, aCount, dtOnce, diNorm);
 end;
 
 
-function TKMHouseTownHall.CheckResIn(aWare: TWareType): Word;
+function TKMHouseTownHall.CheckResIn(aWare: TKMWareType): Word;
 begin
   Result := 0; //Including Wood/stone in building stage
   if aWare = wt_Gold then
@@ -287,7 +293,7 @@ begin
 end;
 
 
-function TKMHouseTownHall.ResCanAddToIn(aRes: TWareType): Boolean;
+function TKMHouseTownHall.ResCanAddToIn(aRes: TKMWareType): Boolean;
 begin
   Result := (aRes = wt_Gold) and (fGoldCnt < fGoldMaxCnt);
 end;

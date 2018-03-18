@@ -3,8 +3,8 @@ unit KM_ScriptingUtils;
 
 interface
 uses
-  Math, SysUtils, uPSRuntime,
-  KM_ScriptingEvents, KM_CommonTypes;
+  Math, uPSRuntime,
+  KM_ScriptingEvents, KM_CommonTypes, KM_Points;
 
 type
   TKMScriptUtils = class(TKMScriptEntity)
@@ -25,6 +25,8 @@ type
     function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray;
     function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray;
 
+    function BoolToStr(aBool: Boolean): AnsiString;
+
     function EnsureRangeI(aValue, aMin, aMax: Integer): Integer;
     function EnsureRangeS(aValue, aMin, aMax: Single): Single;
 
@@ -39,6 +41,8 @@ type
 
     function InRangeI(aValue, aMin, aMax: Integer): Boolean;
     function InRangeS(aValue, aMin, aMax: Single): Boolean;
+
+    function KMPoint(X,Y: Integer): TKMPoint;
 
     function MaxI(A, B: Integer): Integer;
     function MaxS(A, B: Single): Single;
@@ -67,7 +71,7 @@ type
 implementation
 
 uses
-  KM_CommonUtils;
+  SysUtils, KM_CommonUtils;
 
 { TKMScriptingUtils }
 
@@ -305,6 +309,19 @@ end;
 
 
 //* Version: 7000+
+//* Return string representation of Boolean value: 'True' or 'False'
+function TKMScriptUtils.BoolToStr(aBool: Boolean): AnsiString;
+begin
+  try
+    Result := AnsiString(SysUtils.BoolToStr(aBool, True));
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
 //* Returns the closest to aValue integer that is in interval [aMin..aMax]
 function TKMScriptUtils.EnsureRangeI(aValue, aMin, aMax: Integer): Integer;
 begin
@@ -437,6 +454,13 @@ begin
   end;
 end;
 
+
+//* Version: 7000+
+//* Returns point record with specified coordinates
+function TKMScriptUtils.KMPoint(X,Y: Integer): TKMPoint;
+begin
+  Result := KM_Points.KMPoint(X,Y);
+end;
 
 
 //* Version: 7000+

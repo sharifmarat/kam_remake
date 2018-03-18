@@ -31,10 +31,10 @@ type
     fWareBalance: TWareBalanceArray;
     fSetup: TKMHandAISetup;
 
-    procedure UpdateWareProduction(aWT: TWareType);
-    procedure UpdateWareConsumption(aWT: TWareType; aInitialization: Boolean = False);
+    procedure UpdateWareProduction(aWT: TKMWareType);
+    procedure UpdateWareConsumption(aWT: TKMWareType; aInitialization: Boolean = False);
     procedure UpdateFoodConsumption(aInitialization: Boolean = False);
-    procedure UpdateWareDerivation(aWT: TWareType; aInitialization: Boolean = False);
+    procedure UpdateWareDerivation(aWT: TKMWareType; aInitialization: Boolean = False);
     procedure UpdateWareBalance(aInitialization: Boolean = False);
 
     procedure UpdateBasicHouses(aInitialization: Boolean = False);
@@ -61,7 +61,7 @@ type
 const
 
   {
-  TWareType:
+  TKMWareType:
   wt_None,
   wt_Trunk,   wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
   wt_Coal,    wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
@@ -72,7 +72,7 @@ const
   wt_All,     wt_Warfare, wt_Food
   }
   // Array of wares which are produced by specific houses
-  PRODUCTION: array[WARE_MIN..WARE_MAX] of THouseType = (
+  PRODUCTION: array[WARE_MIN..WARE_MAX] of TKMHouseType = (
     ht_Woodcutters,    ht_Quary,         ht_Sawmill,        ht_IronMine,      ht_GoldMine,
     ht_CoalMine,       ht_IronSmithy,    ht_Metallurgists,  ht_Wineyard,      ht_Farm,
     ht_Bakery,         ht_Mill,          ht_Tannery,        ht_Butchers,      ht_Swine,
@@ -81,7 +81,7 @@ const
     ht_WeaponSmithy,   ht_Stables,       ht_FisherHut
   );
   // Possible transformation of wares: resource -> product
-  CONSUMPTION: array[WARE_MIN..WARE_MAX] of array[0..3] of TWareType = (         // wt_Shield are ignored
+  CONSUMPTION: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMWareType = (         // wt_Shield are ignored
     (wt_Wood, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Axe, wt_None, wt_None, wt_None), (wt_Steel, wt_None, wt_None, wt_None), (wt_Gold, wt_None, wt_None, wt_None),
     (wt_Steel, wt_Gold, wt_MetalArmor, wt_Sword), (wt_MetalArmor, wt_Sword, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Flour, wt_Pig, wt_Horse, wt_None),
     (wt_None, wt_None, wt_None, wt_None), (wt_Bread, wt_None, wt_None, wt_None), (wt_Armor, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Sausages, wt_None, wt_None, wt_None),
@@ -100,7 +100,7 @@ const
     // 1 skin = 2 leather
     (0.5, 1, 1, 1)
   );
-  CONSUMPTION_ORDER: array[0..27] of TWareType = ( // Basicaly TWareType but sorted by order: resource -> product
+  CONSUMPTION_ORDER: array[0..27] of TKMWareType = ( // Basicaly TKMWareType but sorted by order: resource -> product
     wt_Stone,   wt_Trunk,    wt_Wood,
     wt_Corn,    wt_Flour,    wt_Bread,     wt_Wine,        wt_Fish,
     wt_Pig,     wt_Sausages, wt_Skin,      wt_Leather,     wt_Horse,
@@ -118,7 +118,7 @@ const
   CO_WARE_MAX = 17;
   {
   // Array of wares which are consumed by specific houses
-  CONSUMPTION: array[WARE_MIN..WARE_MAX] of array[0..3] of THouseType = (
+  CONSUMPTION: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMHouseType = (
     (ht_Sawmill, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_WeaponWorkshop, ht_ArmorWorkshop, ht_None, ht_None),   (ht_IronSmithy, ht_None, ht_None, ht_None),   (ht_Metallurgists, ht_None, ht_None, ht_None),
     (ht_Metallurgists, ht_IronSmithy, ht_ArmorSmithy, ht_WeaponSmithy),   (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_Mill, ht_Swine, ht_Stables, ht_None),
     (ht_None, ht_None, ht_None, ht_None),   (ht_Bakery, ht_None, ht_None, ht_None),   (ht_ArmorWorkshop, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_Butchers, ht_None, ht_None, ht_None),
@@ -149,7 +149,7 @@ end;
 
 procedure TKMCityPredictor.Save(SaveStream: TKMemoryStream);
 var
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   SaveStream.WriteA('CityPredictor');
   SaveStream.Write(fOwner);
@@ -168,7 +168,7 @@ end;
 
 procedure TKMCityPredictor.Load(LoadStream: TKMemoryStream);
 var
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   LoadStream.ReadAssert('CityPredictor');
   LoadStream.Read(fOwner);
@@ -198,14 +198,14 @@ end;
 
 
 // Update ware production
-procedure TKMCityPredictor.UpdateWareProduction(aWT: TWareType);
+procedure TKMCityPredictor.UpdateWareProduction(aWT: TKMWareType);
 begin
   fWareBalance[aWT].Production := fCityStats.Houses[ PRODUCTION[aWT] ] * ProductionRate[aWT];
 end;
 
 
 // Update ware consumption
-procedure TKMCityPredictor.UpdateWareConsumption(aWT: TWareType; aInitialization: Boolean = False);
+procedure TKMCityPredictor.UpdateWareConsumption(aWT: TKMWareType; aInitialization: Boolean = False);
 var
   I: Integer;
 begin
@@ -257,10 +257,10 @@ end;
 // Update ware derivation - 2 views:
 // 1. Exhaustion = estimation of time when will be ware depleted (determine which house should be built at first)
 // 2. Fraction = fraction of required and avaiable houses
-procedure TKMCityPredictor.UpdateWareDerivation(aWT: TWareType; aInitialization: Boolean = False);
+procedure TKMCityPredictor.UpdateWareDerivation(aWT: TKMWareType; aInitialization: Boolean = False);
 var
   HouseReqCnt: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   HT := PRODUCTION[aWT];
   with fWareBalance[aWT] do
@@ -329,8 +329,8 @@ end;
 // Get players stats and store them into local variable (to be able to edit them later)
 procedure TKMCityPredictor.UpdateCityStats();
 var
-  UT: TUnitType;
-  HT: THouseType;
+  UT: TKMUnitType;
+  HT: TKMHouseType;
   Planner: TKMCityPlanner;
 begin
   Planner := gHands[fOwner].AI.CityManagement.Builder.Planner;
@@ -390,29 +390,29 @@ end;
 //
 procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
 
-  procedure AddCitizens(aUT: TUnitType; aCnt: Word; aOverride: Boolean = False);
+  procedure AddCitizens(aUT: TKMUnitType; aCnt: Word; aOverride: Boolean = False);
   begin
     fCityStats.CitizensCnt := fCityStats.CitizensCnt - fCityStats.Citizens[aUT] * Byte(aOverride) + aCnt;
     fCityStats.Citizens[aUT] := fCityStats.Citizens[aUT] * Byte(not aOverride) + aCnt;
   end;
-  procedure AddWarriors(aUT: TUnitType; aCnt: Word; aOverride: Boolean = False);
+  procedure AddWarriors(aUT: TKMUnitType; aCnt: Word; aOverride: Boolean = False);
   begin
     fCityStats.WarriorsCnt := fCityStats.WarriorsCnt - fCityStats.Warriors[aUT] * Byte(aOverride) + aCnt;
     fCityStats.Warriors[aUT] := fCityStats.Warriors[aUT] * Byte(not aOverride) + aCnt;
   end;
-  procedure AddHouses(aHT: THouseType; aCnt: Word; aOverride: Boolean = False);
+  procedure AddHouses(aHT: TKMHouseType; aCnt: Word; aOverride: Boolean = False);
   begin
     fCityStats.HousesCnt := fCityStats.HousesCnt - fCityStats.Houses[aHT] * Byte(aOverride) + aCnt;
     fCityStats.Houses[aHT] := fCityStats.Houses[aHT] * Byte(not aOverride) + aCnt;
   end;
 
 const
-  IRON_WARFARE: set of TWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
-  STANDARD_WARFARE: array[0..3] of TWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
+  IRON_WARFARE: set of TKMWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
+  STANDARD_WARFARE: array[0..3] of TKMWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
 var
   I: Integer;
   MaxIronWeapProd, MaxWoodWeapProd: Single;
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
   // Iron weapons
@@ -445,7 +445,7 @@ procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
 const
   WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
 var
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   for HT := Low(RequiredHouses) to High(RequiredHouses) do
     RequiredHouses[HT] := 0;
@@ -525,7 +525,7 @@ const
   //  'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'
   //);
 
-  procedure AddWare(aWT: TWareType; aSpecificText: UnicodeString);
+  procedure AddWare(aWT: TKMWareType; aSpecificText: UnicodeString);
   var
     HouseCntColor, ProductionColor, ActualConsumptionColor, FinalConsumptionColor, FractionColor, ExhaustionColor: UnicodeString;
     Cnt: Integer;

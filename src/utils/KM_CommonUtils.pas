@@ -14,6 +14,8 @@ uses
   {$ENDIF}
   ;
 
+  function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+
   function KMGetCursorDirection(X,Y: integer): TKMDirection;
 
   function GetPositionInGroup2(OriginX, OriginY: Word; aDir: TKMDirection; aIndex, aUnitPerRow: Word; MapX, MapY: Word; out aTargetCanBeReached: Boolean): TKMPoint;
@@ -21,6 +23,10 @@ uses
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function RGB2BGR(aRGB: Cardinal): Cardinal;
+  function BGR2RGB(aRGB: Cardinal): Cardinal;
+  function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+  function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
@@ -50,8 +56,9 @@ uses
   function UTCNow: TDateTime;
   function UTCToLocal(Input: TDateTime): TDateTime;
 
-  function MapSizeIndex(X, Y: Word): Byte;
-  function MapSizeText(X,Y: Word): UnicodeString;
+  function MapSizeIndex(X, Y: Word): TKMMapSize;
+  function MapSizeText(X,Y: Word): UnicodeString; overload;
+  function MapSizeText(aMapSize: TKMMapSize): UnicodeString; overload;
 
   //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
   procedure KMSwapInt(var A,B: Byte); overload;
@@ -87,6 +94,7 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
+  procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings);
   {$IFDEF WDC}
   procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
   {$ENDIF}
@@ -111,8 +119,21 @@ implementation
 uses
   StrUtils, Types;
 
+const
+  //Pretend these are understandable in any language
+  MAP_SIZES: array [TKMMapSize] of String = ('???', 'XS', 'S', 'M', 'L', 'XL', 'XXL');
+
 var
   fKaMSeed: Integer;
+
+
+function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+begin
+  if aCondition then
+    Result := aIfTrue
+  else
+    Result := aIfFalse;
+end;
 
 
 //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
@@ -313,25 +334,29 @@ end;
 {$ENDIF}
 
 
-function MapSizeIndex(X, Y: Word): Byte;
+function MapSizeIndex(X, Y: Word): TKMMapSize;
 begin
   case X * Y of
-            1.. 48* 48: Result := 0;
-     48* 48+1.. 80* 80: Result := 1;
-     80* 80+1..128*128: Result := 2;
-    128*128+1..176*176: Result := 3;
-    176*176+1..224*224: Result := 4;
-    224*224+1..320*320: Result := 5;
-    else                Result := 6;
+            1.. 48* 48: Result := msXS;
+     48* 48+1.. 80* 80: Result := msS;
+     80* 80+1..128*128: Result := msM;
+    128*128+1..176*176: Result := msL;
+    176*176+1..224*224: Result := msXL;
+    224*224+1..320*320: Result := msXXL;
+    else                Result := msNone;
   end;
 end;
 
 
 function MapSizeText(X, Y: Word): UnicodeString;
-//Pretend these are understandable in any language
-const MAP_SIZES: array [0..6] of String = ('XS', 'S', 'M', 'L', 'XL', 'XXL', '???');
 begin
   Result := MAP_SIZES[MapSizeIndex(X, Y)];
+end;
+
+
+function MapSizeText(aMapSize: TKMMapSize): UnicodeString;
+begin
+  Result := MAP_SIZES[aMapSize];
 end;
 
 
@@ -455,6 +480,63 @@ begin
     13..15: Result := clFpsNormal;
     else    Result := clFpsHigh;
   end;
+end;
+
+
+function RGB2BGR(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  R := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  B := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := B + G shl 8 + R shl 16 + A shl 24;
+end;
+
+
+function BGR2RGB(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  B := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  R := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := R + G shl 8 + B shl 16 + A shl 24;
+end;
+
+
+//Multiply color by channels
+function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+var
+  A, R, G, B, A2, R2, G2, B2: Byte;
+begin
+  //We split color to RGB values
+  R := aColor and $FF;
+  G := aColor shr 8 and $FF;
+  B := aColor shr 16 and $FF;
+  A := aColor shr 24 and $FF;
+
+  R2 := Min(Round(aRed * R), 255);
+  G2 := Min(Round(aGreen * G), 255);
+  B2 := Min(Round(aBlue * B), 255);
+  A2 := Min(Round(aAlpha * A), 255);
+
+  Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
+end;
+
+
+function GetGreyColor(aGreyLevel: Byte): Cardinal;
+begin
+  Result := aGreyLevel
+            or (aGreyLevel shl 8)
+            or (aGreyLevel shl 16)
+            or $FF000000;
 end;
 
 
@@ -948,6 +1030,15 @@ begin
       Break;
   end;
   Result := Copy(aStr, 1, I);
+end;
+
+
+procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings) ;
+begin
+   ListOfStrings.Clear;
+   ListOfStrings.Delimiter       := Delimiter;
+   ListOfStrings.StrictDelimiter := True;
+   ListOfStrings.DelimitedText   := Str;
 end;
 
 

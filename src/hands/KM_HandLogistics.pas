@@ -32,7 +32,7 @@ type
 
   PKMDeliveryOffer = ^TKMDeliveryOffer;
   TKMDeliveryOffer = record
-    Ware: TWareType;
+    Ware: TKMWareType;
     Count: Cardinal; //How many items are offered
     Loc_House: TKMHouse;
     BeingPerformed: Cardinal; //How many items are being delivered atm from total Count offered
@@ -42,7 +42,7 @@ type
 
   PKMDeliveryDemand = ^TKMDeliveryDemand;
   TKMDeliveryDemand =  record
-    Ware: TWareType;
+    Ware: TKMWareType;
     DemandType: TKMDemandType; //Once for everything, Always for Store and Barracks
     Importance: TKMDemandImportance; //How important demand is, e.g. Workers and building sites should be di_High
     Loc_House: TKMHouse;
@@ -112,7 +112,7 @@ type
     function PermitDelivery(iO, iD: Integer; aSerf: TKMUnitSerf): Boolean;
     function TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
     function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
-    function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
+    function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
                                   aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
     function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single; aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
@@ -120,12 +120,13 @@ type
   public
     constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
-    procedure AddOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Integer);
+    procedure AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
     procedure RemAllOffers(aHouse: TKMHouse);
-    procedure RemOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Cardinal);
+    procedure RemOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Cardinal);
 
-    procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
-    function TryRemoveDemand(aHouse: TKMHouse; aResource: TWareType; aCount: Word): word;
+    function GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
+    procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
+    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): word;
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
 
@@ -133,7 +134,7 @@ type
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
     procedure AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
     procedure CheckForBetterDemand(aDeliveryID: Integer; out aToHouse: TKMHouse; out aToUnit: TKMUnit; aSerf: TKMUnitSerf);
-    procedure DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
+    procedure DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
     procedure TakenOffer(aID: Integer);
     procedure GaveDemand(aID: Integer);
     procedure AbandonDelivery(aID: Integer); //Occurs when unit is killed or something alike happens
@@ -427,7 +428,7 @@ end;
 //Adds new Offer to the list. List is stored without sorting
 //(it matters only for Demand to keep everything in waiting its order in line),
 //so we just find an empty place and write there.
-procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Integer);
+procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
 var
   I, K: Integer;
 begin
@@ -496,7 +497,7 @@ begin
 end;
 
 
-procedure TKMDeliveries.RemOffer(aHouse: TKMHouse; aWare: TWareType; aCount: Cardinal);
+procedure TKMDeliveries.RemOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Cardinal);
 var
   I: Integer;
 begin
@@ -562,7 +563,7 @@ end;
 
 
 //Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
-function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TWareType; aCount:word):word;
+function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TKMWareType; aCount:word):word;
 var i:integer;
 begin
   Result := 0;
@@ -579,10 +580,32 @@ begin
 end;
 
 
+function TKMDeliveries.GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
+var
+  I: Integer;
+  Demand: TKMDeliveryDemand;
+begin
+  Result := 0;
+
+  if (aHouse = nil) or (aResource = wt_None)  then Exit;
+
+  for I := 1 to fDemandCount do
+  begin
+    Demand := fDemand[I];
+    if (aResource = Demand.Ware)
+      and (aHouse = Demand.Loc_House)
+      and (aType = Demand.DemandType)
+      and (aImp = Demand.Importance) then
+      Inc(Result);
+  end;
+end;
+
+
 //Adds new Demand to the list. List is stored sorted, but the sorting is done upon Deliver completion,
 //so we just find an empty place (which is last one) and write there.
-procedure TKMDeliveries.AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
-var I,K,J:integer;
+procedure TKMDeliveries.AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
+var
+  I,K,J: Integer;
 begin
   Assert(aResource <> wt_None, 'Demanding rt_None');
   if aCount <= 0 then Exit;
@@ -883,7 +906,7 @@ end;
 
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
-function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: THouseType;
+function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
                                             aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 
   {$IFDEF WDC}
@@ -1104,7 +1127,7 @@ begin
 end;
 
 // Find best Demand for the given delivery. Could return same or nothing
-procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
+procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
 
   function ValidBestDemand(iD: Integer): Boolean;
   begin

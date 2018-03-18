@@ -98,7 +98,10 @@ type
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
-    procedure Add(aLoc: TKMPoint);
+    procedure Add(const aLoc: TKMPoint);
+    procedure AddList(aList: TKMPointList);
+    procedure AddUnique(const aLoc: TKMPoint);
+    procedure AddListUnique(aList: TKMPointList);
     function  Remove(aLoc: TKMPoint): Integer; virtual;
     procedure Delete(aIndex: Integer); virtual;
     procedure Insert(ID: Integer; aLoc: TKMPoint);
@@ -113,6 +116,7 @@ type
     procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
   end;
 
+  TKMPointListArray = array of TKMPointList;
 
   TKMPointTagList = class(TKMPointList)
   public
@@ -389,12 +393,37 @@ begin
 end;
 
 
-procedure TKMPointList.Add(aLoc: TKMPoint);
+procedure TKMPointList.Add(const aLoc: TKMPoint);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 32);
   fItems[fCount] := aLoc;
   Inc(fCount);
+end;
+
+
+procedure TKMPointList.AddList(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    Add(aList[I]);
+end;
+
+
+procedure TKMPointList.AddUnique(const aLoc: TKMPoint);
+begin
+  if not Contains(aLoc) then
+    Add(aLoc);
+end;
+
+
+procedure TKMPointList.AddListUnique(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    AddUnique(aList[I]);
 end;
 
 

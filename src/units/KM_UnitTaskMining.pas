@@ -10,22 +10,22 @@ uses
 
 type
   // Resource mining task
-  TTaskMining = class(TUnitTask)
+  TKMTaskMining = class(TKMUnitTask)
   private
     fBeastID: Byte;
-    fWorkPlan: TUnitWorkPlan;
+    fWorkPlan: TKMUnitWorkPlan;
     function ResourceExists: Boolean;
     function ResourceTileIsLocked: Boolean;
-    function ChooseToCutOrPlant: TPlantAct;
+    function ChooseToCutOrPlant: TKMPlantAct;
     procedure FindAnotherWorkPlan;
   public
-    constructor Create(aUnit: TKMUnit; aWare: TWareType);
+    constructor Create(aUnit: TKMUnit; aWare: TKMWareType);
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     constructor Load(LoadStream: TKMemoryStream); override;
     function GetActivityText: UnicodeString;
-    property WorkPlan: TUnitWorkPlan read fWorkPlan;
-    function Execute: TTaskResult; override;
+    property WorkPlan: TKMUnitWorkPlan read fWorkPlan;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -38,12 +38,12 @@ uses
 
 
 { TTaskMining }
-constructor TTaskMining.Create(aUnit: TKMUnit; aWare: TWareType);
+constructor TKMTaskMining.Create(aUnit: TKMUnit; aWare: TKMWareType);
 begin
   inherited Create(aUnit);
 
   fTaskName := utn_Mining;
-  fWorkPlan := TUnitWorkPlan.Create;
+  fWorkPlan := TKMUnitWorkPlan.Create;
   fBeastID  := 0;
 
   fWorkPlan.FindPlan( fUnit,
@@ -55,7 +55,7 @@ begin
 end;
 
 
-destructor TTaskMining.Destroy;
+destructor TKMTaskMining.Destroy;
 begin
   // Make sure we don't abandon and leave our house with "working" animations
   if (not fUnit.GetHome.IsDestroyed)
@@ -69,7 +69,7 @@ end;
 
 
 //Note: Phase is -1 because it will have been increased at the end of last Execute
-function TTaskMining.WalkShouldAbandon: Boolean;
+function TKMTaskMining.WalkShouldAbandon: Boolean;
 begin
   Result := false;
   Assert(fUnit is TKMUnitCitizen);
@@ -82,7 +82,7 @@ end;
 
 //Chose if we don't care or prefer specific activity
 //depending on orders or clogged output
-function TTaskMining.ChooseToCutOrPlant: TPlantAct;
+function TKMTaskMining.ChooseToCutOrPlant: TKMPlantAct;
 begin
   Result := taAny;
 
@@ -104,16 +104,16 @@ begin
 end;
 
 
-constructor TTaskMining.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskMining.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
-  fWorkPlan := TUnitWorkPlan.Create;
+  fWorkPlan := TKMUnitWorkPlan.Create;
   fWorkPlan.Load(LoadStream);
   LoadStream.Read(fBeastID);
 end;
 
 
-function TTaskMining.GetActivityText: UnicodeString;
+function TKMTaskMining.GetActivityText: UnicodeString;
 begin
   case WorkPlan.GatheringScript of
     gs_StoneCutter:     Result := gResTexts[TX_UNIT_TASK_STONE];
@@ -131,7 +131,7 @@ end;
 //Try to find alternative target for our WorkPlan
 //Happens when we discover that resource is gone or is occupied by another busy unit
 //Return false if new plan could not be found
-procedure TTaskMining.FindAnotherWorkPlan;
+procedure TKMTaskMining.FindAnotherWorkPlan;
 var OldLoc: TKMPoint; OldDir: TKMDirection;
 begin
   OldLoc := WorkPlan.Loc;
@@ -152,7 +152,7 @@ begin
 end;
 
 
-function TTaskMining.ResourceTileIsLocked: Boolean;
+function TKMTaskMining.ResourceTileIsLocked: Boolean;
 var P: TKMPoint;
 begin
   if WorkPlan.GatheringScript = gs_WoodCutterCut then
@@ -169,7 +169,7 @@ begin
 end;
 
 
-function TTaskMining.ResourceExists: Boolean;
+function TKMTaskMining.ResourceExists: Boolean;
 var P: TKMPoint;
 begin
   with gTerrain do
@@ -205,7 +205,7 @@ end;
 
 
 {This is execution of Resource mining}
-function TTaskMining.Execute: TTaskResult;
+function TKMTaskMining.Execute: TKMTaskResult;
 const
   // Shortcuts to skip certain Phases
   SkipWalk = 9;
@@ -400,7 +400,7 @@ begin
 end;
 
 
-procedure TTaskMining.Save(SaveStream: TKMemoryStream);
+procedure TKMTaskMining.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   fWorkPlan.Save(SaveStream);

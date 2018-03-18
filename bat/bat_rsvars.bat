@@ -2,6 +2,7 @@ call bat_rsvars_local.bat
 
 @SET BDS=%BDS_LOCAL%
 @SET BDSCOMMONDIR=%BDSCOMMONDIR_LOCAL%
+@SET LAZARUS_LINUX=%LAZARUS_LINUX_LOCAL%
 @SET FrameworkDir=%FrameworkDir_LOCAL%
 @SET FrameworkVersion=%FrameworkVersion_LOCAL%
 @SET FrameworkSDKDir=%FrameworkSDKDir_LOCAL%

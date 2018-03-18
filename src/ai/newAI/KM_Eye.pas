@@ -60,7 +60,7 @@ type
     fArmyEvaluation: TKMArmyEvaluation;
 
     procedure InitHousesMapping();
-    function CheckResourcesNearMine(aLoc: TKMPoint; aHT: THouseType): Boolean;
+    function CheckResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -77,16 +77,16 @@ type
     procedure ScanLocResources(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
 
-    function CanPlaceHouse(aLoc: TKMPoint; aHT: THouseType; aIgnoreTrees: Boolean = False): Boolean;
-    function CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
+    function CanPlaceHouse(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreTrees: Boolean = False): Boolean;
+    function CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
 
-    function GetMineLocs(aHT: THouseType): TKMPointTagList;
+    function GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
     function GetStoneLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
     function GetCoalLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
     procedure GetForests(var aForests: TKMPointTagList; aInitialization: Boolean = False);
     function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
-    function GetClosestUnitAroundHouse(aHT: THouseType; aLoc: TKMPoint; aInitPoint: TKMPoint): TKMUnit;
+    function GetClosestUnitAroundHouse(aHT: TKMHouseType; aLoc: TKMPoint; aInitPoint: TKMPoint): TKMUnit;
 
     procedure Paint(aRect: TKMRect);
   end;
@@ -240,7 +240,7 @@ end;
 
 
 // Search for ore - gold and iron mines have similar requirements so there are booth in 1 method
-function TKMEye.CheckResourcesNearMine(aLoc: TKMPoint; aHT: THouseType): Boolean;
+function TKMEye.CheckResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
 var
   X,Y: Integer;
 begin
@@ -258,7 +258,7 @@ end;
 procedure TKMEye.InitHousesMapping();
 var
   EnterOff: ShortInt;
-  House: THouseType;
+  House: TKMHouseType;
   POMArr: array[1-MAX_SCAN_DIST_FROM_HOUSE..4+MAX_SCAN_DIST_FROM_HOUSE,1-MAX_SCAN_DIST_FROM_HOUSE..4+MAX_SCAN_DIST_FROM_HOUSE] of Byte;
   CntArr, Index: array [TDirection] of Integer;
 
@@ -426,7 +426,7 @@ var
     end;
   end;
 
-  function FindSeparateMines(aMineType: THouseType; var MineList: TKMPointList): Word;
+  function FindSeparateMines(aMineType: TKMHouseType; var MineList: TKMPointList): Word;
   var
     I,K, Output: Integer;
     InfluenceArr: array of Boolean;
@@ -527,7 +527,7 @@ end;
 
 
 // This function is copied (and reworked) from TKMTerrain.CanPlaceHouse and edited to be able to ignore trees
-function TKMEye.CanPlaceHouse(aLoc: TKMPoint; aHT: THouseType; aIgnoreTrees: Boolean = False): Boolean;
+function TKMEye.CanPlaceHouse(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreTrees: Boolean = False): Boolean;
 var
   Output: Boolean;
   I,X,Y: Integer;
@@ -559,7 +559,7 @@ end;
 // Modified version of TKMHand.CanAddHousePlan - added possibilities
 // aIgnoreAvoidBuilding = ignore avoid building areas
 // aIgnoreTrees = ignore trees inside of house plan
-function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: THouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
+function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
 var
   X, Y, I, K, PL: Integer;
   Dir: TDirection;
@@ -629,7 +629,7 @@ begin
 end;
 
 
-function TKMEye.GetMineLocs(aHT: THouseType): TKMPointTagList;
+function TKMEye.GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
 var
   I: Integer;
   Mines: TKMPointList;
@@ -872,7 +872,7 @@ const
   SCANNED_HOUSES = [ht_Store, ht_School, ht_Barracks];
 var
   I, Cnt: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
   H: TKMHouse;
 begin
   // Find required house cnt
@@ -901,7 +901,7 @@ end;
 
 
 
-function TKMEye.GetClosestUnitAroundHouse(aHT: THouseType; aLoc: TKMPoint; aInitPoint: TKMPoint): TKMUnit;
+function TKMEye.GetClosestUnitAroundHouse(aHT: TKMHouseType; aLoc: TKMPoint; aInitPoint: TKMPoint): TKMUnit;
 const
   INIT_DIST = 10000;
 var

@@ -13,8 +13,8 @@ type
   TAICompany = class; // Company (selection of targets, positions etc.)
   TKMArmyAttack = class; // Attack (time distribution, company initialization)
 
-  TKMSquadList = array[TGroupType] of TKMList;
-  TKMSquadsArray = array[TGroupType] of record
+  TKMSquadList = array[TKMGroupType] of TKMList;
+  TKMSquadsArray = array[TKMGroupType] of record
     Count: Word;
     Squads: array of TAISquad;
     TargetUnit: TKMUnitArray;
@@ -114,8 +114,8 @@ type
     procedure InitCompany();
     procedure UpdateState(aTick: Cardinal);
     procedure AddSquad(aGroup: TKMUnitGroup);
-    procedure DeleteSquad(aGT: TGroupType; aIdx: Integer);
-    function SquadCnt(aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): Word;
+    procedure DeleteSquad(aGT: TKMGroupType; aIdx: Integer);
+    function SquadCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
     function IsGroupInCompany(aGroup: TKMUnitGroup): Boolean;
     function SetTarget(aHouse: TKMHouse; aUnit: TKMUnit = nil): Boolean;
     function ActualizeTarget(aInitPosition: TKMPoint; var aTargetHouse: TKMHouse; var aTargetUnit: TKMUnit; aAimCivilians: Boolean = True): Boolean;
@@ -298,7 +298,7 @@ begin
   begin
     FinPos := fTargetUnit.GetPosition;
     if PlanPath(ActPos, FinPos, True) then
-      Group.OrderWalk(FinPos, True, FinalPosition.Dir)
+      Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if (fGroup.GroupType <> gt_Ranged) OR (fTargetChanged AND (fAttackTimeLimit < aTick)) then
     begin
       fAttackTimeLimit := aTick + RANGE_AIM_DELAY;
@@ -311,7 +311,7 @@ begin
   begin
     FinPos := fTargetHouse.GetPosition;
     if PlanPath(ActPos, FinPos, True) then
-      Group.OrderWalk(FinPos, True, FinalPosition.Dir)
+      Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
       fAttackTimeLimit := aTick + HOUSE_AIM_DELAY;
@@ -324,9 +324,9 @@ begin
   begin
     FinPos := FinalPosition.Loc;
     if PlanPath(ActPos, FinPos, False) then
-      Group.OrderWalk(FinPos, True, FinalPosition.Dir)
+      Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else
-      Group.OrderWalk(FinalPosition.Loc, True, FinalPosition.Dir);
+      Group.OrderWalk(FinalPosition.Loc, True, wtokAISquad, FinalPosition.Dir);
   end;
 end;
 
@@ -378,7 +378,7 @@ end;
 { TAICompany }
 constructor TAICompany.Create(aOwner: TKMHandIndex; aCompanyMode: TKMCompanyMode);
 var
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   inherited Create;
   fOwner := aOwner;
@@ -388,18 +388,18 @@ begin
   fTargetHouse := nil;
   fTargetUnit := nil;
 
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     fSquads[GT] := TKMList.Create();
 end;
 
 
 destructor TAICompany.Destroy();
 var
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   gHands.CleanUpUnitPointer(fTargetUnit);
   gHands.CleanUpHousePointer(fTargetHouse);
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     fSquads[GT].Free;
   inherited;
 end;
@@ -408,7 +408,7 @@ end;
 constructor TAICompany.Load(LoadStream: TKMemoryStream);
 var
   I,Cnt: Integer;
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   inherited Create;
   LoadStream.ReadAssert('Company');
@@ -420,7 +420,7 @@ begin
   LoadStream.Read(fTargetUnit, 4);
   LoadStream.Read(fTargetHouse, 4);
 
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     fSquads[GT] := TKMList.Create();
     LoadStream.Read(Cnt);
@@ -433,7 +433,7 @@ end;
 procedure TAICompany.Save(SaveStream: TKMemoryStream);
 var
   I,Cnt: Integer;
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   SaveStream.WriteA('Company');
   SaveStream.Write(fOwner);
@@ -450,7 +450,7 @@ begin
   else
     SaveStream.Write(Integer(0));
 
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     Cnt := fSquads[GT].Count;
     SaveStream.Write(Cnt);
@@ -463,11 +463,11 @@ end;
 procedure TAICompany.SyncLoad();
 var
   I: Integer;
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   fTargetUnit := gHands.GetUnitByUID( Cardinal(fTargetUnit) );
   fTargetHouse := gHands.GetHouseByUID( Cardinal(fTargetHouse) );
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := 0 to fSquads[GT].Count - 1 do
       TAISquad( Squads[GT].Items[I] ).SyncLoad();
 end;
@@ -522,11 +522,11 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
   function SquadsInPosition(): Boolean;
   var
     I: Integer;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squad: TAISquad;
   begin
     Result := True;
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := fSquads[GT].Count - 1 downto 0 do
       begin
         Squad := fSquads[GT].Items[I];
@@ -540,9 +540,9 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
   procedure UpdateSquadsState();
   var
     I: Integer;
-    GT: TGroupType;
+    GT: TKMGroupType;
   begin
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := fSquads[GT].Count - 1 downto 0 do
         TAISquad( fSquads[GT].Items[I] ).UpdateState(aTick);
   end;
@@ -618,15 +618,15 @@ var
   procedure FindAvaiableSquads();
   var
     I: Integer;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squad: TAISquad;
   begin
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
       AvaiableSquads[GT].Count := 0;
       SetLength(AvaiableSquads[GT].Squads, fSquads[GT].Count);
     end;
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := 0 to fSquads[GT].Count - 1 do
       begin
         Squad := fSquads[GT].Items[I];
@@ -654,7 +654,7 @@ var
     Polygon: Word;
     I,K,L: Integer;
     SqrDist, SqrClosestDist, SqrClosestDistToRanged: Single;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squad: TAISquad;
     GroupsInFightArr: TKMUnitGroupArray;
   begin
@@ -664,7 +664,7 @@ var
       // Get closest distance to Ranged groups and all groups
       SqrClosestDist := INIT_DIST;
       SqrClosestDistToRanged := INIT_DIST;
-      for GT := Low(TGroupType) to High(TGroupType) do
+      for GT := Low(TKMGroupType) to High(TKMGroupType) do
         for K := 0 to fSquads[GT].Count - 1 do
         begin
           Squad := fSquads[GT].Items[K];
@@ -697,7 +697,7 @@ var
             DistantThreat := DistantThreat * Byte(SQR_RANGE_OF_PROJECTILES > SqrClosestDist);
             // Close threat level is computed with using influences
             Polygon := gAIFields.NavMesh.KMPoint2Polygon[ UGA[I].Position ];
-            for GT := Low(TGroupType) to High(TGroupType) do
+            for GT := Low(TKMGroupType) to High(TKMGroupType) do
               if (GT <> gt_Ranged) then
                 CloseThreat := CloseThreat + gAIFields.Influences.EnemyGroupPresence[fOwner, Polygon, GT]; // Tune parameters
             if (DistantThreat < CloseThreat) then
@@ -725,7 +725,7 @@ var
   function SelectTargetGroups(): Boolean;
   const
     INIT_THREAT = -1000000;
-    BEST_TARGET: array[TGroupType] of array[0..3] of TGroupType = (
+    BEST_TARGET: array[TKMGroupType] of array[0..3] of TKMGroupType = (
         (gt_Melee, gt_Ranged, gt_Mounted, gt_AntiHorse), // against gt_Melee
         (gt_Melee, gt_Ranged, gt_AntiHorse, gt_Mounted), // against gt_AntiHorse
         (gt_Mounted, gt_Ranged, gt_Melee, gt_AntiHorse), // against gt_Ranged
@@ -736,7 +736,7 @@ var
     TargetIdx: Word;
     I,K,L: Integer;
     Threat, HighestThreat, Dist, BestDist: Single;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squad: TAISquad;
   begin
     Output := False;
@@ -804,13 +804,13 @@ var
   var
     Cnt: Word;
     I: Integer;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squad: TAISquad;
     Positions: TKMPointArray;
     InitPolygons: TKMWordArray;
   begin
     Cnt := 0;
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Cnt := Cnt + AvaiableSquads[GT].Count;
 
     if (Cnt = 0) then
@@ -822,7 +822,7 @@ var
     gAIFields.NavMesh.Positioning.FindPositions(Cnt, InitPolygons, Positions);
 
     Cnt := 0;
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := 0 to AvaiableSquads[GT].Count - 1 do
       begin
         Squad := AvaiableSquads[GT].Squads[I];
@@ -847,7 +847,7 @@ var
     TargetIdx: Word;
     I,K: Integer;
     Dist, BestDist: Single;
-    GT: TGroupType;
+    GT: TKMGroupType;
     U: TKMUnit;
     GroupAttackCnt: TKMWordArray;
   begin
@@ -890,7 +890,7 @@ var
     end;
 
     // Target everything else with close combat units
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
       if (GT = gt_Ranged) then
         continue;
@@ -1007,7 +1007,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
     I, K, Dist, ClosestDist, ClosestIdx: Integer;
     Dir: TKMDirection;
     Position: TKMPoint;
-    GT: TGroupType;
+    GT: TKMGroupType;
     Squads: array of TAISquad;
     AvaiableSquads: TBooleanArray;
     TagPositions: TKMPointTagList;
@@ -1024,7 +1024,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
       SetLength(Squads, aCnt);
       SetLength(AvaiableSquads, aCnt);
       K := 0;
-      for GT := Low(TGroupType) to High(TGroupType) do
+      for GT := Low(TKMGroupType) to High(TKMGroupType) do
         for I := 0 to fSquads[GT].Count - 1 do
         begin
           Squads[K] := fSquads[GT].Items[I];
@@ -1095,9 +1095,9 @@ begin
 end;
 
 
-function TAICompany.SquadCnt(aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): Word;
+function TAICompany.SquadCnt(aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): Word;
 var
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   Result := 0;
   for GT in aTypes do
@@ -1111,7 +1111,7 @@ begin
 end;
 
 
-procedure TAICompany.DeleteSquad(aGT: TGroupType; aIdx: Integer);
+procedure TAICompany.DeleteSquad(aGT: TKMGroupType; aIdx: Integer);
 var
   Squad: TAISquad;
 begin
@@ -1132,11 +1132,11 @@ function TAICompany.GetPosition(aIgnorePassability: Boolean = False): TKMPoint;
 var
   I, Count: Integer;
   Output: TKMPoint;
-  G: TGroupType;
+  G: TKMGroupType;
 begin
   Output := KMPOINT_ZERO;
   Count := 0;
-  for G := Low(TGroupType) to High(TGroupType) do
+  for G := Low(TKMGroupType) to High(TKMGroupType) do
     for I := 0 to fSquads[G].Count-1 do
     begin
       Output := KMPointAdd(Output, TAISquad(fSquads[G].Items[I]).Group.Position);
@@ -1151,7 +1151,7 @@ begin
 
   // If we cannot walk there choose first group instead
   if not (aIgnorePassability OR gTerrain.CheckPassability(Output, tpWalk)) then
-    for G := Low(TGroupType) to High(TGroupType) do
+    for G := Low(TKMGroupType) to High(TKMGroupType) do
       if (fSquads[G].Count > 0) then
       begin
         Output := TAISquad(fSquads[G].Items[0]).Group.Position;
@@ -1164,12 +1164,12 @@ end;
 function TAICompany.GetPosition(var aSQRRadius: Single): TKMPoint;
 var
   I: Integer;
-  G: TGroupType;
+  G: TKMGroupType;
 begin
   Result := GetPosition(True);
 
   aSQRRadius := 0;
-  for G := Low(TGroupType) to High(TGroupType) do
+  for G := Low(TKMGroupType) to High(TKMGroupType) do
     for I := 0 to fSquads[G].Count-1 do
       aSQRRadius := Max(aSQRRadius, KMDistanceSqr(Result, TAISquad(fSquads[G].Items[I]).Group.Position));
 end;
@@ -1203,10 +1203,10 @@ end;
 function TAICompany.IsGroupInCompany(aGroup: TKMUnitGroup): Boolean;
 var
   I: Integer;
-  G: TGroupType;
+  G: TKMGroupType;
 begin
   Result := True;
-  for G := Low(TGroupType) to High(TGroupType) do
+  for G := Low(TKMGroupType) to High(TKMGroupType) do
     for I := 0 to fSquads[G].Count-1 do
       if (TAISquad(fSquads[G].Items[I]).Group = aGroup) then
         Exit;
@@ -1282,11 +1282,11 @@ procedure TKMArmyAttack.UpdateState(aTick: Cardinal);
   function DetectEnemyPresence(aPoint: TKMPoint): Boolean;
   var
     Idx: Integer;
-    GT: TGroupType;
+    GT: TKMGroupType;
   begin
     Result := True;
     Idx := gAIFields.NavMesh.KMPoint2Polygon[aPoint];
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       if (gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ] > 0) then
         Exit;
     Result := False;
@@ -1453,7 +1453,7 @@ var
   I,K,J: Integer;
   Col: Cardinal;
   Position: TKMPoint;
-  GT: TGroupType;
+  GT: TKMGroupType;
   Company: TAICompany;
   Squad: TAISquad;
 begin
@@ -1494,7 +1494,7 @@ begin
         gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], $60000000 OR COLOR_YELLOW);
 
     // Pathfinding (squads) + targets
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for K := Company.Squads[GT].Count - 1 downto 0 do
       begin
         Squad := Company.Squads[GT].Items[K];
@@ -1570,7 +1570,7 @@ function SelectNewTargetHouse(aPosition: TKMPoint): TKMHouse;
 var
   PLIdx: Word;
   Enemies: TKMHandIndexArray;
-  HT: THouseType;
+  HT: TKMHouseType;
   H: TKMHouse;
 begin
   Result := nil;

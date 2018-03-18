@@ -21,7 +21,7 @@ type
                      end;
 
   //Specially optimized mission parser for map previews
-  TMissionParserPreview = class(TMissionParserCommon)
+  TKMMissionParserPreview = class(TKMMissionParserCommon)
   private
     fMapX: Integer;
     fMapY: Integer;
@@ -52,20 +52,20 @@ uses
 
 
 { TMissionParserPreview }
-function TMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
+function TKMMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
 begin
   Result := fMapPreview[(Y-1)*fMapX + X-1];
 end;
 
 
-function TMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
+function TKMMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
 begin
   Result := fHandPreview[aIndex];
 end;
 
 
 //Load terrain data into liteweight structure, take only what we need for preview
-function TMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
+function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStream;
@@ -105,7 +105,7 @@ begin
 end;
 
 
-function TMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
 
   function PointInMap(X, Y: Integer): Boolean;
   begin
@@ -152,6 +152,7 @@ var
 begin
   case CommandType of
     ct_SetCurrPlayer:   fLastHand := P[0];
+
     ct_SetHouse:        if InRange(P[0], Low(HouseIndexToType), High(HouseIndexToType))
                           and PointInMap(P[1]+1, P[2]+1) then
                         begin
@@ -162,18 +163,24 @@ begin
                               if InRange(P[1]+1+k-3, 1, fMapX) and InRange(P[2]+1+i-4, 1, fMapY) then
                                 SetOwner(P[1]+1+k-3, P[2]+1+i-4);
                         end;
+
     ct_SetMapColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := gRes.Palettes.DefaultPalette.Color32(P[0]);
+
     ct_SetRGBColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := P[0] or $FF000000;
+
     ct_CenterScreen:    if PointInMap(P[0]+1, P[1]+1) then
                           fHandPreview[fLastHand].StartingLoc := KMPoint(P[0]+1,P[1]+1);
+
     ct_HumanPlayer:     //Default human player can be human, obviously
                         fHandPreview[P[0]].CanHuman := True;
+
     ct_UserPlayer:      if P[0] = -1 then
                           fHandPreview[fLastHand].CanHuman := True
                         else
                           fHandPreview[P[0]].CanHuman := True;
+
     ct_AIPlayer:        if P[0] = -1 then
                           fHandPreview[fLastHand].CanAI := True
                         else
@@ -185,12 +192,14 @@ begin
     ct_SetWinefieldStaged:
                         if PointInMap(P[0]+1, P[1]+1) then
                           SetOwner(P[0]+1, P[1]+1);
+
     ct_SetUnit:         if PointInMap(P[1]+1, P[2]+1) and
                           not (UnitOldIndexToType[P[0]] in [ANIMAL_MIN..ANIMAL_MAX]) then //Skip animals
                         begin
                           SetOwner(P[1]+1, P[2]+1);
                           RevealCircle(P[1]+1, P[2]+1, gRes.Units[UnitOldIndexToType[P[0]]].Sight);
                         end;
+
     ct_SetStock:        if PointInMap(P[1]+1, P[2]+1) then
                         begin
                           //Set Store and roads below
@@ -199,6 +208,7 @@ begin
                           ProcessCommand(ct_SetRoad, [   P[0]-1,P[1]+1]);
                           ProcessCommand(ct_SetRoad, [   P[0]  ,P[1]+1]);
                         end;
+
     ct_SetGroup:        if InRange(P[0], Low(UnitIndexToType), High(UnitIndexToType)) and (UnitIndexToType[P[0]] <> ut_None)
                           and PointInMap(P[1]+1, P[2]+1) then
                           for I := 0 to P[5] - 1 do
@@ -210,6 +220,7 @@ begin
                               RevealCircle(P[1]+1, P[2]+1, gRes.Units[UnitOldIndexToType[P[0]]].Sight);
                             end;
                           end;
+
     ct_ClearUp:         begin
                           if (P[0] = 255) then
                           begin
@@ -227,7 +238,7 @@ end;
 
 
 //We use custom mission loader for speed (compare only used commands)
-function TMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
+function TKMMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
 const
   Commands: array [0..15] of AnsiString = (
     '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!CENTER_SCREEN',

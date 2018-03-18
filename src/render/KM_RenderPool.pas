@@ -92,7 +92,7 @@ type
     procedure PaintRallyPoint(aHouseEntrance, aRallyPoint: TKMPoint; aColor: Cardinal; aTexId: Word; aPass: Byte; aDoImmediateRender: Boolean = False);
     procedure PaintRallyPoints(aPass: Byte);
 
-    procedure RenderWireHousePlan(P: TKMPoint; aHouseType: THouseType);
+    procedure RenderWireHousePlan(P: TKMPoint; aHouseType: TKMHouseType);
     procedure RenderMapEdLayers(aRect: TKMRect);
     procedure RenderTileOwnerLayer(aRect: TKMRect);
     procedure RenderGridLayer(aRect: TKMRect);
@@ -101,22 +101,22 @@ type
     destructor Destroy; override;
 
     procedure AddAlert(aLoc: TKMPointF; aId: Word; aFlagColor: TColor4);
-    procedure AddProjectile(aProj: TProjectileType; aRenderPos, aTilePos: TKMPointF; aDir: TKMDirection; aFlight: Single);
-    procedure AddHouse(aHouse: THouseType; aLoc: TKMPoint; aWoodStep, aStoneStep, aSnowStep: Single; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure AddProjectile(aProj: TKMProjectileType; aRenderPos, aTilePos: TKMPointF; aDir: TKMDirection; aFlight: Single);
+    procedure AddHouse(aHouse: TKMHouseType; aLoc: TKMPoint; aWoodStep, aStoneStep, aSnowStep: Single; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
     procedure AddWholeHouse(H: TKMHouse; FlagColor: Cardinal; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 
-    procedure AddHouseTablet(aHouse: THouseType; Loc: TKMPoint);
-    procedure AddHouseBuildSupply(aHouse: THouseType; Loc: TKMPoint; Wood,Stone: Byte);
-    procedure AddHouseWork(aHouse: THouseType; Loc: TKMPoint; aActSet: THouseActionSet; AnimStep: Cardinal; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
-    procedure AddHouseSupply(aHouse: THouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
-    procedure AddHouseMarketSupply(Loc: TKMPoint; ResType: TWareType; ResCount:word; AnimStep: Integer);
-    procedure AddHouseStableBeasts(aHouse: THouseType; Loc: TKMPoint; BeastId,BeastAge,AnimStep: Integer; aRX: TRXType = rxHouses);
-    procedure AddHouseEater(Loc: TKMPoint; aUnit: TUnitType; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; OffX,OffY: Single; FlagColor: TColor4);
-    procedure AddUnit(aUnit: TUnitType; aUID: Integer; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; NewInst: Boolean; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
-    procedure AddUnitCarry(aCarry: TWareType; aUID: Integer; aDir: TKMDirection; StepId: Integer; pX,pY: Single);
-    procedure AddUnitThought(aUnit: TUnitType; aAct: TUnitActionType; aDir: TKMDirection; Thought: TKMUnitThought; pX,pY: Single);
-    procedure AddUnitFlag(aUnit: TUnitType; aAct: TUnitActionType; aDir: TKMDirection; FlagAnim: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False);
-    procedure AddUnitWithDefaultArm(aUnit: TUnitType; aUID: Integer; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHignlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure AddHouseTablet(aHouse: TKMHouseType; Loc: TKMPoint);
+    procedure AddHouseBuildSupply(aHouse: TKMHouseType; Loc: TKMPoint; Wood,Stone: Byte);
+    procedure AddHouseWork(aHouse: TKMHouseType; Loc: TKMPoint; aActSet: TKMHouseActionSet; AnimStep: Cardinal; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure AddHouseSupply(aHouse: TKMHouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure AddHouseMarketSupply(Loc: TKMPoint; ResType: TKMWareType; ResCount:word; AnimStep: Integer);
+    procedure AddHouseStableBeasts(aHouse: TKMHouseType; Loc: TKMPoint; BeastId,BeastAge,AnimStep: Integer; aRX: TRXType = rxHouses);
+    procedure AddHouseEater(Loc: TKMPoint; aUnit: TKMUnitType; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; OffX,OffY: Single; FlagColor: TColor4);
+    procedure AddUnit(aUnit: TKMUnitType; aUID: Integer; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; NewInst: Boolean; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+    procedure AddUnitCarry(aCarry: TKMWareType; aUID: Integer; aDir: TKMDirection; StepId: Integer; pX,pY: Single);
+    procedure AddUnitThought(aUnit: TKMUnitType; aAct: TKMUnitActionType; aDir: TKMDirection; Thought: TKMUnitThought; pX,pY: Single);
+    procedure AddUnitFlag(aUnit: TKMUnitType; aAct: TKMUnitActionType; aDir: TKMDirection; FlagAnim: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False);
+    procedure AddUnitWithDefaultArm(aUnit: TKMUnitType; aUID: Integer; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHignlight: Boolean = False; HighlightColor: TColor4 = 0);
 
     procedure RenderMapElement(aIndex: Byte; AnimStep,pX,pY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
     procedure RenderSpriteOnTile(aLoc: TKMPoint; aId: Word; aFlagColor: TColor4 = $FFFFFFFF);
@@ -141,7 +141,8 @@ uses
   KM_RenderAux, KM_HandsCollection, KM_Game, KM_Sound, KM_Resource, KM_ResUnits,
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
-  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils;
+  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils,
+  KM_GameTypes;
 
 
 const
@@ -383,7 +384,7 @@ begin
     gMySpectator.Hand.GetPlansTablets(fTabletsList, aRect);
 
   for I := 0 to fTabletsList.Count - 1 do
-    AddHouseTablet(THouseType(fTabletsList.Tag[I]), fTabletsList[I]);
+    AddHouseTablet(TKMHouseType(fTabletsList.Tag[I]), fTabletsList[I]);
 end;
 
 
@@ -563,7 +564,7 @@ end;
 
 
 // Render house WIP tablet
-procedure TRenderPool.AddHouseTablet(aHouse: THouseType; Loc: TKMPoint);
+procedure TRenderPool.AddHouseTablet(aHouse: TKMHouseType; Loc: TKMPoint);
 var
   Id: Integer;
   CornerX, CornerY, gX, gY: Single;
@@ -581,7 +582,7 @@ end;
 
 
 // Render house build supply
-procedure TRenderPool.AddHouseBuildSupply(aHouse: THouseType; Loc: TKMPoint; Wood, Stone: Byte);
+procedure TRenderPool.AddHouseBuildSupply(aHouse: TKMHouseType; Loc: TKMPoint; Wood, Stone: Byte);
 var
   rx: TRXData;
   id: Integer;
@@ -624,7 +625,7 @@ end;
 
 
 // Render house in wood
-procedure TRenderPool.AddHouse(aHouse: THouseType; aLoc: TKMPoint; aWoodStep, aStoneStep, aSnowStep: Single; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddHouse(aHouse: TKMHouseType; aLoc: TKMPoint; aWoodStep, aStoneStep, aSnowStep: Single; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   R: TRXData;
   PicWood, PicStone, PicSnow: Integer;
@@ -691,10 +692,10 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseWork(aHouse: THouseType; Loc: TKMPoint; aActSet: THouseActionSet; AnimStep: Cardinal; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddHouseWork(aHouse: TKMHouseType; Loc: TKMPoint; aActSet: TKMHouseActionSet; AnimStep: Cardinal; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   Id: Cardinal;
-  AT: THouseActionType;
+  AT: TKMHouseActionType;
   A: TKMAnimLoop;
   R: TRXData;
   CornerX, CornerY: Single;
@@ -704,7 +705,7 @@ begin
   R := fRXData[rxHouses];
 
   //See if action is in set and render it
-  for AT := Low(THouseActionType) to High(THouseActionType) do
+  for AT := Low(TKMHouseActionType) to High(TKMHouseActionType) do
   if AT in aActSet then
   begin
     A := gRes.Houses[aHouse].Anim[AT];
@@ -724,7 +725,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseSupply(aHouse: THouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte;
+procedure TRenderPool.AddHouseSupply(aHouse: TKMHouseType; Loc: TKMPoint; const R1, R2, R3: array of Byte;
                                      DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   Id, I, K, I2, Count: Integer;
@@ -793,7 +794,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseMarketSupply(Loc: TKMPoint; ResType: TWareType; ResCount:word; AnimStep: Integer);
+procedure TRenderPool.AddHouseMarketSupply(Loc: TKMPoint; ResType: TKMWareType; ResCount:word; AnimStep: Integer);
 var
   i, Id: Integer;
   CornerX, CornerY: Single;
@@ -817,7 +818,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseStableBeasts(aHouse: THouseType; Loc: TKMPoint; BeastId,BeastAge,AnimStep: Integer; aRX: TRXType = rxHouses);
+procedure TRenderPool.AddHouseStableBeasts(aHouse: TKMHouseType; Loc: TKMPoint; BeastId,BeastAge,AnimStep: Integer; aRX: TRXType = rxHouses);
 var
   CornerX, CornerY: Single;
   Id: Integer;
@@ -837,7 +838,7 @@ end;
 
 
 // aRenderPos has gTerrain.HeightAt factored in already, aTilePos is on tile coordinates for Z ordering
-procedure TRenderPool.AddProjectile(aProj: TProjectileType; aRenderPos, aTilePos: TKMPointF; aDir: TKMDirection; aFlight: Single);
+procedure TRenderPool.AddProjectile(aProj: TKMProjectileType; aRenderPos, aTilePos: TKMPointF; aDir: TKMDirection; aFlight: Single);
 var
   FOW: Byte;
   Id: Integer;
@@ -880,7 +881,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddUnit(aUnit: TUnitType; aUID: Integer; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; NewInst: Boolean; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddUnit(aUnit: TKMUnitType; aUID: Integer; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; NewInst: Boolean; DoImmediateRender: Boolean = False; DoHighlight: Boolean = False; HighlightColor: TColor4 = 0);
 var
   CornerX, CornerY, Ground: Single;
   Id, Id0: Integer;
@@ -914,7 +915,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddHouseEater(Loc: TKMPoint; aUnit: TUnitType; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; OffX,OffY: Single; FlagColor: TColor4);
+procedure TRenderPool.AddHouseEater(Loc: TKMPoint; aUnit: TKMUnitType; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; OffX,OffY: Single; FlagColor: TColor4);
 var
   CornerX, CornerY: Single;
   Id: Integer;
@@ -935,7 +936,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddUnitCarry(aCarry: TWareType; aUID: Integer; aDir: TKMDirection; StepId: Integer; pX,pY: Single);
+procedure TRenderPool.AddUnitCarry(aCarry: TKMWareType; aUID: Integer; aDir: TKMDirection; StepId: Integer; pX,pY: Single);
 var
   CornerX, CornerY: Single;
   Id: Integer;
@@ -953,7 +954,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddUnitThought(aUnit: TUnitType; aAct: TUnitActionType;
+procedure TRenderPool.AddUnitThought(aUnit: TKMUnitType; aAct: TKMUnitActionType;
                                      aDir: TKMDirection;
                                      Thought: TKMUnitThought; pX,pY: Single);
 var
@@ -985,17 +986,17 @@ begin
 end;
 
 
-procedure TRenderPool.AddUnitFlag(aUnit: TUnitType; aAct: TUnitActionType; aDir: TKMDirection;
+procedure TRenderPool.AddUnitFlag(aUnit: TKMUnitType; aAct: TKMUnitActionType; aDir: TKMDirection;
                                   FlagAnim: Integer; pX, pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False);
 const
   // Offsets for flags rendering in pixels
-  FlagXOffset: array [TGroupType, TKMDirection] of shortint = (
+  FlagXOffset: array [TKMGroupType, TKMDirection] of shortint = (
     ( 0, 10, -1,  2,  1, -6,-10,  4, 13),  // gt_Melee
     ( 0,  6,  5,  7, -3,-10, -4, 10,  9),  // gt_AntiHorse
     ( 0,  8,  6,  6, -6, -8, -3,  8,  6),  // gt_Ranged
     ( 0,  6,  2,  3, -5,-10, -8,  5,  6)); // gt_Mounted
 
-  FlagYOffset: array [TGroupType, TKMDirection] of shortint = (
+  FlagYOffset: array [TKMGroupType, TKMDirection] of shortint = (
     ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gt_Melee
     ( 0, 23, 25, 25, 21, 20, 19, 20, 22),  // gt_AntiHorse
     ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gt_Ranged
@@ -1030,7 +1031,7 @@ begin
 end;
 
 
-procedure TRenderPool.AddUnitWithDefaultArm(aUnit: TUnitType; aUID: Integer; aAct: TUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHignlight: Boolean = False; HighlightColor: TColor4 = 0);
+procedure TRenderPool.AddUnitWithDefaultArm(aUnit: TKMUnitType; aUID: Integer; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHignlight: Boolean = False; HighlightColor: TColor4 = 0);
 begin
   if aUnit = ut_Fish then aAct := FishCountAct[5]; // In map editor always render 5 fish
   AddUnit(aUnit, aUID, aAct, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
@@ -1320,7 +1321,7 @@ begin
 end;
 
 
-procedure TRenderPool.RenderWireHousePlan(P: TKMPoint; aHouseType: THouseType);
+procedure TRenderPool.RenderWireHousePlan(P: TKMPoint; aHouseType: TKMHouseType);
 var
   I: Integer;
 begin
@@ -1430,7 +1431,7 @@ begin
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
-    cmHouses:     RenderWireHousePlan(KMPointAdd(P, gGameCursor.DragOffset), THouseType(gGameCursor.Tag1)); // Cyan quads and red Xs
+    cmHouses:     RenderWireHousePlan(KMPointAdd(P, gGameCursor.DragOffset), TKMHouseType(gGameCursor.Tag1)); // Cyan quads and red Xs
     cmBrush:      if gGameCursor.Tag1 <> 0 then
                   begin
                     Rad := gGameCursor.MapEdSize;
@@ -1583,8 +1584,8 @@ begin
   end
   else begin
     P := gGameCursor.Cell;
-    if gTerrain.CanPlaceUnit(P, TUnitType(gGameCursor.Tag1)) then
-      AddUnitWithDefaultArm(TUnitType(gGameCursor.Tag1), 0, ua_Walk, dir_S, UnitStillFrames[dir_S], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
+    if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
+      AddUnitWithDefaultArm(TKMUnitType(gGameCursor.Tag1), 0, ua_Walk, dir_S, UnitStillFrames[dir_S], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
     else
       RenderSpriteOnTile(P, TC_BLOCK); // Red X
   end;

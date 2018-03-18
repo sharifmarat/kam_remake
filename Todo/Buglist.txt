@@ -36,6 +36,7 @@ Bugs:
  +  Apply password letters restrictions for password input field
  +  Atlas binpacking - large textures were always placed to the new atlas
  +  Fixed loud echo, when many notifications comes at the same time (f.e. many units are hungry now, or house is empty etc)
+ +  Fixed coloring in Memo control for long (wrapped) texts. F.e. if server description contains long colored text it will be colored only only on the very first line
  +  Update Cinematics speed due to changes in GameSpeed
  +  MapEd: bug with group formatting when reducing group size with more then 1 row to less then row size units (F.e. you have 5x2 group and reduce its size to 3 units)
  +  MapEd: when placing markers(reveal FOW/center screen/AI start/defence AI)/units/houses/roads/fields/tile brushes/tile objects - after RBM click buttons are still selected, even if you can't use them actually.
@@ -92,6 +93,7 @@ Improvements:
  +    Select area to work in for woodcutters
  +    Woodcutter's house new woodcutter mode - Plant only
  +    New house delivery mode (ability to take ware out of the house, using house same as storage)
+ +    Ability to dismiss citizens. They will go to school and leave town forever
  +    Redispatch serf with ware when delivery target was destroyed (house demolished or warrior died)
  +    Ability to select ally's house/unit (without control on it)
  +    Set maximum feed limit as 0.55, below trained units condition (0.6)
@@ -121,11 +123,13 @@ Improvements:
         Visual improvements
  
  Game menu:
+ +    Game speed calculation is improved, that is why we need to reevaluate lobby game speed into values x1 - x1.25 - x1.5 - x1.75 - x2. Actual game speed remains the same
  +    New ability to mute annoying player in chat (both lobby chat and game chat) - text and also beacons
  +  L House not occupied message mentions which house it is ("This farm is not occupied")
  +  L Do switching of main game menu tabs with F1-F4 even if settings/save/load sub-menus are open
  +    Game stats 'Weapons produced' now contains horses as well
  +    Added beacons cooldown to preven spam with beacons
+ +    Ability to change game speed for saved game, f.e. after Back to Lobby
  +    MP chat could be unfocused without closing it so any keyboard input processed as hotkeys
  +    Market small GUI visual improvement (removed unnecessary colon sign's)
  +    Label for group members count on group panel (same as in MapEd)
@@ -155,8 +159,12 @@ Improvements:
  +    MP game description improvement
  +    Replays list - significally improved replays list loading speed (about 10 times faster on average), by skipping CRC calc
  +    Lobby reset bans - added cooldown 2s, to prohibit annoying spam with it
- +    Map Editor page - added map description and 'view PDF' button, same as in lobby
- +    Map Editor page - added 'Map Rename' button
+ +    SinglePlayer menu: added separatation by map type: scenario/build/fight/special. Also added PlayableBySp map tag, to make it possible to play MP maps from singleplayer menu (against AI)
+      Map Editor page:
+        + added map description and 'view PDF' button, same as in lobby
+        + added 'Map Rename' button
+        + added Map filter - Special and Coop maps
+        + added ability to setup Favorite maps (with a star)
  
  Hotkeys:
  +  L Allow to customize and save hotkeys settings
@@ -180,6 +188,7 @@ Improvements:
  +    Enable 'Quit mission' (renamed to 'Quit Replay') button when watching replay
  
  Campaign:
+ +    Added original TPR and TSK campaigns fixes, made by Vatrix and Strangelove
  +    Ability to specify the title of the mission separately for each campaign rather than globally for all
  +    Added animation for mission nodes on Campaign page
  
@@ -201,12 +210,13 @@ Improvements:
  +    Added option to export png's from Units.rxx and Houses.rxx and splitting them into different folders with associated texture/masks/txt
  
  MapEditor:
+ +    Added RMG for MapEditor (on terrain selection submenu) - random map generator by Toxic
  +  L Eyedropper tool like in Photoshop to select the type of tile under the cursor
  +  L Allow to set troops order destination with mouse on map (Shift+RMB)
  +    Added objects palette
  +    New tool - universal eraser
  +    Map resize feature
- +    Try Map feature - to start map directly from editor
+ +    Quick Play feature - to start map directly from editor
  +    House damage addition/reduction by 1/10/100/1000 instead of 5/50/500
  +    Shortcut to change row count in group (same as for numbers, orders etc)
  +    Set default 'center screen' position of all players in the center of screen for new map
@@ -220,11 +230,25 @@ Improvements:
  +    New ability to set corn/wine stage
  +  L Allow to grab an object with a MouseDown and drag it around until MouseUp
  +    Added posibility to change warrior conditions to arbitrary value
- +    Added new hotkeys for road/field/wine/erase plans
+ +    Added new hotkeys maped pages actions (defaults are q-w-e-r-t-y-u)
  +    New terrain pass layer - tbBuildNoObj - shows when its possible to build house on a tile after removing object (tree f.e.) from it or house near it.
- +    Added display color code for color page in KaM format (BGR)
+ +    Added ability to setup player color via RGB/BGR color code
  +    Load menu at toolbar - load map on double click
- +    Change brush size on Ctrl+mouse wheel
+ +    Change brush sizes on Ctrl+Mouse wheel/Height trackbars on Ctrl/Alt/Shift+Mouse wheel
+ +    Added ability to setup map text parameters (which are stored in %MAP_NAME%.txt file)
+ +    Added 'Remove player button' - completely delete existing player from the map
+ +    Added Z coordinate for corner between tiles - its vertex height (0-100)
+ +    New in extras menu:
+        Passability trackbar:
+          + Can Cut - shows tiles, where there is a cuttable tree
+          + Can Build without house/tree passability - show tiles, where it will be possible to build, after tree or house is removed
+        New layers:
+          + Show tile overlays (road/field/corn)
+          + Show mining ranges - show mining ranges for cola/iron/gold mines
+          + Show towers attack radius
+          + Show units attack radius - for ranged units only
+          + Show tile owner
+          + Show tiles grid
  
  Dynamic scripts:
  +    Update to current version of remObjects PascalScript. 
@@ -247,6 +271,7 @@ Improvements:
  +    Version label moved from all game menu to F11 Status bar
  +    Translation manager: Added filter on label name and label ID
  +    Images, loaded from Sprites folder are applied with soften shadows
+ +    When crash happens on replay - send replay files, instead of autosaves
  
    
    

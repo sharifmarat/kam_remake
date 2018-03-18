@@ -10,21 +10,21 @@ uses
 type
   TKMMenuSinglePlayer = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     procedure ButtonClick(Sender: TObject);
     procedure BackClick(Sender: TObject);
   protected
     Panel_SinglePlayer: TKMPanel;
-    Panel_SPButtons: TKMPanel;
-    Button_SP_Tutor: TKMButton;
-    Button_SP_Fight: TKMButton;
-    Button_SP_Camp: TKMButton;
-    Button_SP_Single: TKMButton;
-    Button_SP_Load: TKMButton;
-    Button_SP_Back: TKMButton;
+      Panel_SPButtons: TKMPanel;
+      Button_SP_Tutor: TKMButton;
+      Button_SP_Fight: TKMButton;
+      Button_SP_Camp: TKMButton;
+      Button_SP_Single: TKMButton;
+      Button_SP_Load: TKMButton;
+      Button_SP_Back: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     procedure Show;
   end;
 
@@ -35,7 +35,7 @@ uses
 
 
 { TKMGUIMenuSinglePlayer }
-constructor TKMMenuSinglePlayer.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuSinglePlayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

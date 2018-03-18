@@ -22,7 +22,7 @@ type
     ObjectUID: Integer;   //Object found below cursor
 
     MapEdDir: Byte;
-    MapEdShape: (hsCircle, hsSquare);
+    MapEdShape: TKMMapEdShape;
     MapEdSlope: Byte;
     MapEdSize: Byte;
     MapEdSpeed: Byte;

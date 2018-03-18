@@ -20,7 +20,7 @@ type
 
     procedure SetGroup(aGroup: TKMUnitGroup);
     procedure SetPosition(const Value: TKMPointDir);
-    function GetGroupType(): TGroupType;
+    function GetGroupType(): TKMGroupType;
   public
     constructor Create(aWeight: Word; aPos: TKMPointDir);
     constructor Load(LoadStream: TKMemoryStream);
@@ -31,7 +31,7 @@ type
     property Weight: Word read fWeight write fWeight;
     property Position: TKMPointDir read fPosition write SetPosition; //Position and direction the group defending will stand
     property Group: TKMUnitGroup read fGroup write SetGroup;
-    property GroupType: TGroupType read GetGroupType;
+    property GroupType: TKMGroupType read GetGroupType;
 
     function CanAccept(aGroup: TKMUnitGroup; aMaxUnits: Integer): Boolean;
     procedure UpdateState(aTick: Cardinal);
@@ -52,7 +52,7 @@ type
     function GetPosition(aIndex: Integer): TKMDefencePosition; inline;
     procedure UpdateDefences();
   public
-    TroopFormations: array [TGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
+    TroopFormations: array [TKMGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
 
     constructor Create(aPlayer: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
     destructor Destroy; override;
@@ -149,7 +149,7 @@ begin
 end;
 
 
-function TKMDefencePosition.GetGroupType(): TGroupType;
+function TKMDefencePosition.GetGroupType(): TKMGroupType;
 begin
   Result := gt_Melee;
   if (Group <> nil) then
@@ -176,9 +176,9 @@ begin
   //Tell group to walk to its position
   //It's easier to repeat the order than check that all members are in place
   if (Group <> nil)
-    AND Group.IsIdleToAI(True)
+    AND Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
     AND Group.CanWalkTo(Position.Loc, 0) then
-    Group.OrderWalk(Position.Loc, True, Position.Dir);
+    Group.OrderWalk(Position.Loc, True, wtokAIGotoDefencePos, Position.Dir);
 end;
 
 
@@ -188,7 +188,7 @@ end;
 { TKMArmyDefence }
 constructor TKMArmyDefence.Create(aPlayer: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
 var
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   inherited Create;
 
@@ -197,7 +197,7 @@ begin
   fPositions := TKMList.Create;
   fAttack := aAttack;
 
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     TroopFormations[GT].NumUnits := MAX_SOLDIERS_IN_GROUP;
     TroopFormations[GT].UnitsPerRow := FORMATION_OF_GROUP;
@@ -319,7 +319,7 @@ begin
         end;
       end;
       UG := Positions[BestIdx].Group;
-      UG.OrderWalk( Positions[BestIdx].Position.Loc, True, Positions[BestIdx].Position.Dir );
+      UG.OrderWalk( Positions[BestIdx].Position.Loc, True, wtokAIGotoDefencePos, Positions[BestIdx].Position.Dir );
     end
     // Restock
     else
@@ -531,7 +531,7 @@ var
   I, Idx, Threat: Integer;
   Loc: TKMPoint;
   Group: TKMUnitGroup;
-  GT: TGroupType;
+  GT: TKMGroupType;
   UGA: TKMUnitGroupArray;
 begin
   fCityUnderAttack := False;
@@ -540,7 +540,7 @@ begin
   begin
     Threat := 0;
     Idx := fDefPolyFirstLine[I];
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Threat := Threat + gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ];
     if (Threat > 0) then
     begin
@@ -612,7 +612,7 @@ var
   I, K, Idx, Threat: Integer;
   Col: Cardinal;
   Loc, Pos: TKMPoint;
-  GT: TGroupType;
+  GT: TKMGroupType;
   PolyArr: TPolygonArray;
   NodeArr: TNodeArray;
   UGA: TKMUnitGroupArray;
@@ -640,7 +640,7 @@ begin
   begin
     Threat := 0;
     Idx := fDefPolyFirstLine[I];
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Threat := Threat + gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ];
 
     // Draw defensive lines as a triangles

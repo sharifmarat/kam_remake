@@ -20,11 +20,11 @@ type
   TNetGameState = (lgs_None, lgs_Connecting, lgs_Query, lgs_Lobby, lgs_Loading, lgs_Game, lgs_Reconnecting);
   TNetGameKind = (ngk_None, ngk_Map, ngk_Save);
   TChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
-  TChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
+  TKMChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
   TChatState =  record
                   Messages: UnicodeString;
                   ChatText: UnicodeString;
-                  Mode: TChatMode;
+                  Mode: TKMChatMode;
                   WhisperRecipient: TKMNetHandleIndex;
                 end;
 
@@ -202,7 +202,7 @@ type
     function  Connected: boolean;
     procedure MatchPlayersToSave(aPlayerID:integer=-1);
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
-    procedure SelectMap(const aName: UnicodeString; aMapFolder: TMapFolder);
+    procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
     procedure SelectSave(const aName: UnicodeString);
     procedure SelectLoc(aIndex:integer; aPlayerIndex:integer);
     procedure SelectTeam(aIndex:integer; aPlayerIndex:integer);
@@ -229,7 +229,7 @@ type
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
     procedure PostMessage(aTextID: Integer; aSound: TChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
-    procedure PostChat(const aText: UnicodeString; aMode: TChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
+    procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
     procedure PostLocalMessage(const aText: UnicodeString; aSound: TChatSound);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
@@ -619,7 +619,7 @@ end;
 
 //Tell other players which map we will be using
 //Players will reset their starting locations and "Ready" status on their own
-procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TMapFolder);
+procedure TKMNetworking.SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
 begin
   Assert(IsHost, 'Only host can select maps');
   FreeAndNil(fMapInfo);
@@ -1115,7 +1115,7 @@ end;
 
 //We route the message through Server to ensure everyone sees messages in the same order
 //with exact same timestamps (possibly added by Server?)
-procedure TKMNetworking.PostChat(const aText: UnicodeString; aMode: TChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
+procedure TKMNetworking.PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
 var
   I: Integer;
   M: TKMemoryStream;
@@ -1529,7 +1529,7 @@ var
   tmpCardinal, tmpCardinal2: Cardinal;
   tmpStringA: AnsiString;
   tmpStringW, replyStringW: UnicodeString;
-  tmpChatMode: TChatMode;
+  tmpChatMode: TKMChatMode;
   I,LocID,TeamID,ColorID,PlayerIndex: Integer;
   ChatSound: TChatSound;
 begin

@@ -65,7 +65,7 @@ type
 
   //Settings that are irrelevant to the game (game does not cares about them)
   //Everything gets written through setter to set fNeedsSave flag
-  TMainSettings = class
+  TKMainSettings = class
   private
     fNeedsSave: Boolean;
     fFullScreen: Boolean;
@@ -96,7 +96,7 @@ type
 
   //Gameplay settings, those that affect the game
   //Everything gets written through setter to set fNeedsSave flag
-  TGameSettings = class
+  TKMGameSettings = class
   private
     fNeedsSave: Boolean;
 
@@ -138,7 +138,8 @@ type
     fServerWelcomeMessage: UnicodeString;
     fWareDistribution: TKMWareDistribution;
 
-    fMenu_FavouriteMPMapsStr: UnicodeString;
+    fMenu_FavouriteMapsStr: UnicodeString;
+    fMenu_MapSPType: Byte;
     fMenu_ReplaysType: Byte;
     fMenu_MapEdMapType: Byte;
     fMenu_MapEdNewMapX: Word;
@@ -146,10 +147,14 @@ type
     fMenu_MapEdSPMapCRC: Cardinal;
     fMenu_MapEdMPMapCRC: Cardinal;
     fMenu_MapEdMPMapName: UnicodeString;
+    fMenu_MapEdDLMapCRC: Cardinal;
     fMenu_CampaignName: UnicodeString;
     fMenu_ReplaySPSaveName: UnicodeString;
     fMenu_ReplayMPSaveName: UnicodeString;
-    fMenu_SPMapCRC: Cardinal;
+    fMenu_SPScenarioMapCRC: Cardinal;
+    fMenu_SPMissionMapCRC: Cardinal;
+    fMenu_SPTacticMapCRC: Cardinal;
+    fMenu_SPSpecialMapCRC: Cardinal;
     fMenu_SPSaveFileName: UnicodeString;
     fMenu_LobbyMapType: Byte;
 
@@ -188,7 +193,8 @@ type
     procedure SetServerPacketsAccumulatingDelay(aValue: Integer);
     procedure SetFlashOnMessage(aValue: Boolean);
 
-    procedure SetMenuFavouriteMPMapsStr(const aValue: UnicodeString);
+    procedure SetMenuFavouriteMapsStr(const aValue: UnicodeString);
+    procedure SetMenuMapSPType(aValue: Byte);
     procedure SetMenuReplaysType(aValue: Byte);
     procedure SetMenuMapEdMapType(aValue: Byte);
     procedure SetMenuMapEdNewMapX(aValue: Word);
@@ -196,10 +202,14 @@ type
     procedure SetMenuMapEdSPMapCRC(aValue: Cardinal);
     procedure SetMenuMapEdMPMapCRC(aValue: Cardinal);
     procedure SetMenuMapEdMPMapName(const aValue: UnicodeString);
+    procedure SetMenuMapEdDLMapCRC(aValue: Cardinal);
     procedure SetMenuCampaignName(const aValue: UnicodeString);
     procedure SetMenuReplaySPSaveName(const aValue: UnicodeString);
     procedure SetMenuReplayMPSaveName(const aValue: UnicodeString);
-    procedure SetMenuSPMapCRC(aValue: Cardinal);
+    procedure SetMenuSPScenarioMapCRC(aValue: Cardinal);
+    procedure SetMenuSPMissionMapCRC(aValue: Cardinal);
+    procedure SetMenuSPTacticMapCRC(aValue: Cardinal);
+    procedure SetMenuSPSpecialMapCRC(aValue: Cardinal);
     procedure SetMenuSPSaveFileName(const aValue: UnicodeString);
     procedure SetMenuLobbyMapType(aValue: Byte);
   protected
@@ -250,7 +260,7 @@ type
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
     property WareDistribution: TKMWareDistribution read fWareDistribution;
 
-    property MenuFavouriteMPMapsStr: UnicodeString read fMenu_FavouriteMPMapsStr write SetMenuFavouriteMPMapsStr;
+    property MenuMapSPType: Byte read fMenu_MapSPType write SetMenuMapSPType;
     property MenuReplaysType: Byte read fMenu_ReplaysType write SetMenuReplaysType;
     property MenuMapEdMapType: Byte read fMenu_MapEdMapType write SetMenuMapEdMapType;
     property MenuMapEdNewMapX: Word read fMenu_MapEdNewMapX write SetMenuMapEdNewMapX;
@@ -258,10 +268,14 @@ type
     property MenuMapEdSPMapCRC: Cardinal read fMenu_MapEdSPMapCRC write SetMenuMapEdSPMapCRC;
     property MenuMapEdMPMapCRC: Cardinal read fMenu_MapEdMPMapCRC write SetMenuMapEdMPMapCRC;
     property MenuMapEdMPMapName: UnicodeString read fMenu_MapEdMPMapName write SetMenuMapEdMPMapName;
+    property MenuMapEdDLMapCRC: Cardinal read fMenu_MapEdDLMapCRC write SetMenuMapEdDLMapCRC;
     property MenuCampaignName: UnicodeString read fMenu_CampaignName write SetMenuCampaignName;
     property MenuReplaySPSaveName: UnicodeString read fMenu_ReplaySPSaveName write SetMenuReplaySPSaveName;
     property MenuReplayMPSaveName: UnicodeString read fMenu_ReplayMPSaveName write SetMenuReplayMPSaveName;
-    property MenuSPMapCRC: Cardinal read fMenu_SPMapCRC write SetMenuSPMapCRC;
+    property MenuSPScenarioMapCRC: Cardinal read fMenu_SPScenarioMapCRC write SetMenuSPScenarioMapCRC;
+    property MenuSPMissionMapCRC: Cardinal read fMenu_SPMissionMapCRC write SetMenuSPMissionMapCRC;
+    property MenuSPTacticMapCRC: Cardinal read fMenu_SPTacticMapCRC write SetMenuSPTacticMapCRC;
+    property MenuSPSpecialMapCRC: Cardinal read fMenu_SPSpecialMapCRC write SetMenuSPSpecialMapCRC;
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
 
@@ -279,7 +293,7 @@ const
 
 
 { TMainSettings }
-constructor TMainSettings.Create;
+constructor TKMainSettings.Create;
 begin
   inherited;
   fWindowParams := TKMWindowParams.Create;
@@ -289,7 +303,7 @@ begin
 end;
 
 
-destructor TMainSettings.Destroy;
+destructor TKMainSettings.Destroy;
 begin
   SaveToINI(ExeDir+SETTINGS_FILE);
   FreeAndNil(fWindowParams);
@@ -297,13 +311,13 @@ begin
 end;
 
 
-procedure TMainSettings.Changed;
+procedure TKMainSettings.Changed;
 begin
   fNeedsSave := True;
 end;
 
 
-function TMainSettings.LoadFromINI(const aFileName: UnicodeString): Boolean;
+function TKMainSettings.LoadFromINI(const aFileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
 begin
@@ -340,7 +354,7 @@ end;
 
 
 //Don't rewrite the file for each individual change, do it in one batch for simplicity
-procedure TMainSettings.SaveToINI(const aFileName: UnicodeString);
+procedure TKMainSettings.SaveToINI(const aFileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
@@ -364,34 +378,34 @@ begin
   fNeedsSave := False;
 end;
 
-procedure TMainSettings.SetFullScreen(aValue: boolean);
+procedure TKMainSettings.SetFullScreen(aValue: boolean);
 begin
   fFullScreen := aValue;
   Changed;
 end;
 
 
-procedure TMainSettings.SetResolution(const Value: TKMScreenRes);
+procedure TKMainSettings.SetResolution(const Value: TKMScreenRes);
 begin
   fResolution := Value;
   Changed;
 end;
 
 
-procedure TMainSettings.SetVSync(aValue: boolean);
+procedure TKMainSettings.SetVSync(aValue: boolean);
 begin
   fVSync := aValue;
   Changed;
 end;
 
 
-procedure TMainSettings.ReloadSettings;
+procedure TKMainSettings.ReloadSettings;
 begin
   LoadFromINI(ExeDir + SETTINGS_FILE);
 end;
 
 
-procedure TMainSettings.SaveSettings(aForce: Boolean);
+procedure TKMainSettings.SaveSettings(aForce: Boolean);
 begin
   if fNeedsSave or aForce or fWindowParams.IsChanged then
     SaveToINI(ExeDir + SETTINGS_FILE);
@@ -399,25 +413,26 @@ end;
 
 
 { TGameSettings }
-procedure TGameSettings.Changed;
+procedure TKMGameSettings.Changed;
 begin
   fNeedsSave := True;
 end;
 
 
-constructor TGameSettings.Create;
+constructor TKMGameSettings.Create;
 begin
   inherited;
 
   fWareDistribution := TKMWareDistribution.Create;
+
   fFavouriteMaps := TKMFavouriteMaps.Create;
-  fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMPMapsStr;
+  fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMapsStr;
 
   ReloadSettings;
 end;
 
 
-destructor TGameSettings.Destroy;
+destructor TKMGameSettings.Destroy;
 begin
   SaveToINI(ExeDir + SETTINGS_FILE);
   FreeAndNil(fWareDistribution);
@@ -428,21 +443,21 @@ end;
 
 
 //Save only when needed
-procedure TGameSettings.SaveSettings(aForce: Boolean = False);
+procedure TKMGameSettings.SaveSettings(aForce: Boolean = False);
 begin
   if fNeedsSave or fWareDistribution.Changed or aForce then
     SaveToINI(ExeDir + SETTINGS_FILE);
 end;
 
 
-procedure TGameSettings.ReloadSettings;
+procedure TKMGameSettings.ReloadSettings;
 begin
   LoadFromINI(ExeDir + SETTINGS_FILE);
   gLog.AddTime('Game settings loaded from ' + SETTINGS_FILE);
 end;
 
 
-function TGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
+function TKMGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
 begin
@@ -500,9 +515,10 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
-    fMenu_FavouriteMPMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
-    fFavouriteMaps.LoadFromString(fMenu_FavouriteMPMapsStr);
+    fMenu_FavouriteMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
+    fFavouriteMaps.LoadFromString(fMenu_FavouriteMapsStr);
 
+    fMenu_MapSPType         := F.ReadInteger('Menu', 'MapSPType',  0);
     fMenu_ReplaysType       := F.ReadInteger('Menu', 'ReplaysType',  0);
     fMenu_MapEdMapType      := F.ReadInteger('Menu', 'MapEdMapType', 0);
     fMenu_MapEdNewMapX      := F.ReadInteger('Menu', 'MapEdNewMapX', 64);
@@ -510,10 +526,14 @@ begin
     fMenu_MapEdSPMapCRC     := StrToInt64(F.ReadString('Menu', 'MapEdSPMapCRC', '0'));
     fMenu_MapEdMPMapCRC     := StrToInt64(F.ReadString('Menu', 'MapEdMPMapCRC', '0'));
     fMenu_MapEdMPMapName    := F.ReadString('Menu', 'MapEdMPMapName', '');
+    fMenu_MapEdDLMapCRC     := StrToInt64(F.ReadString('Menu', 'MapEdDLMapCRC', '0'));
     fMenu_CampaignName      := F.ReadString('Menu', 'CampaignName', '');
     fMenu_ReplaySPSaveName  := F.ReadString('Menu', 'ReplaySPSaveName', '');
     fMenu_ReplayMPSaveName  := F.ReadString('Menu', 'ReplayMPSaveName', '');
-    fMenu_SPMapCRC          := StrToInt64(F.ReadString('Menu', 'SPMapCRC', '0'));
+    fMenu_SPScenarioMapCRC  := StrToInt64(F.ReadString('Menu', 'SPScenarioMapCRC', '0'));
+    fMenu_SPMissionMapCRC   := StrToInt64(F.ReadString('Menu', 'SPMissionMapCRC', '0'));
+    fMenu_SPTacticMapCRC    := StrToInt64(F.ReadString('Menu', 'SPTacticMapCRC',  '0'));
+    fMenu_SPSpecialMapCRC   := StrToInt64(F.ReadString('Menu', 'SPSpecialMapCRC', '0'));
     fMenu_SPSaveFileName    := F.ReadString('Menu', 'SPSaveFileName', '');
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
   finally
@@ -525,7 +545,7 @@ end;
 
 
 //Don't rewrite the file for each individual change, do it in one batch for simplicity
-procedure TGameSettings.SaveToINI(const FileName: UnicodeString);
+procedure TKMGameSettings.SaveToINI(const FileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
@@ -578,7 +598,8 @@ begin
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
 
-    F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMPMapsStr);
+    F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMapsStr);
+    F.WriteInteger('Menu',  'MapSPType',          fMenu_MapSPType);
     F.WriteInteger('Menu',  'ReplaysType',        fMenu_ReplaysType);
     F.WriteInteger('Menu',  'MapEdMapType',       fMenu_MapEdMapType);
     F.WriteInteger('Menu',  'MapEdNewMapX',       fMenu_MapEdNewMapX);
@@ -586,10 +607,14 @@ begin
     F.WriteString ('Menu',  'MapEdSPMapCRC',      IntToStr(fMenu_MapEdSPMapCRC));
     F.WriteString ('Menu',  'MapEdMPMapCRC',      IntToStr(fMenu_MapEdMPMapCRC));
     F.WriteString ('Menu',  'MapEdMPMapName',     fMenu_MapEdMPMapName);
+    F.WriteString ('Menu',  'MapEdDLMapCRC',      IntToStr(fMenu_MapEdDLMapCRC));
     F.WriteString ('Menu',  'CampaignName',       fMenu_CampaignName);
     F.WriteString ('Menu',  'ReplaySPSaveName',   fMenu_ReplaySPSaveName);
     F.WriteString ('Menu',  'ReplayMPSaveName',   fMenu_ReplayMPSaveName);
-    F.WriteString ('Menu',  'SPMapCRC',           IntToStr(fMenu_SPMapCRC));
+    F.WriteString ('Menu',  'SPScenarioMapCRC',   IntToStr(fMenu_SPScenarioMapCRC));
+    F.WriteString ('Menu',  'SPMissionMapCRC',    IntToStr(fMenu_SPMissionMapCRC));
+    F.WriteString ('Menu',  'SPTacticMapCRC',     IntToStr(fMenu_SPTacticMapCRC));
+    F.WriteString ('Menu',  'SPSpecialMapCRC',    IntToStr(fMenu_SPSpecialMapCRC));
     F.WriteString ('Menu',  'SPSaveFileName',     fMenu_SPSaveFileName);
     F.WriteInteger('Menu',  'LobbyMapType',       fMenu_LobbyMapType);
 
@@ -602,7 +627,7 @@ begin
 end;
 
 
-procedure TGameSettings.SetLocale(const aLocale: AnsiString);
+procedure TKMGameSettings.SetLocale(const aLocale: AnsiString);
 begin
   //We can get some unsupported LocaleCode, but that is fine, it will have Eng fallback anyway
   fLocale := aLocale;
@@ -610,63 +635,70 @@ begin
 end;
 
 
-procedure TGameSettings.SetBrightness(aValue: Byte);
+procedure TKMGameSettings.SetBrightness(aValue: Byte);
 begin
   fBrightness := EnsureRange(aValue, 0, 20);
   Changed;
 end;
 
 
-procedure TGameSettings.SetFlashOnMessage(aValue: Boolean);
+procedure TKMGameSettings.SetFlashOnMessage(aValue: Boolean);
 begin
   fFlashOnMessage := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuFavouriteMPMapsStr(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuFavouriteMapsStr(const aValue: UnicodeString);
 begin
-  fMenu_FavouriteMPMapsStr := aValue;
+  fMenu_FavouriteMapsStr := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuReplaysType(aValue: Byte);
+procedure TKMGameSettings.SetMenuMapSPType(aValue: Byte);
+begin
+  fMenu_MapSPType := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuReplaysType(aValue: Byte);
 begin
   fMenu_ReplaysType := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuMapEdMapType(aValue: Byte);
+procedure TKMGameSettings.SetMenuMapEdMapType(aValue: Byte);
 begin
   fMenu_MapEdMapType := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuMapEdNewMapX(aValue: Word);
+procedure TKMGameSettings.SetMenuMapEdNewMapX(aValue: Word);
 begin
   fMenu_MapEdNewMapX := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuMapEdNewMapY(aValue: Word);
+procedure TKMGameSettings.SetMenuMapEdNewMapY(aValue: Word);
 begin
   fMenu_MapEdNewMapY := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuMapEdSPMapCRC(aValue: Cardinal);
+procedure TKMGameSettings.SetMenuMapEdSPMapCRC(aValue: Cardinal);
 begin
   fMenu_MapEdSPMapCRC := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuMapEdMPMapCRC(aValue: Cardinal);
+procedure TKMGameSettings.SetMenuMapEdMPMapCRC(aValue: Cardinal);
 begin
   fMenu_MapEdMPMapCRC := aValue;
   Changed;
@@ -674,252 +706,280 @@ end;
 
 
 
-procedure TGameSettings.SetMenuMapEdMPMapName(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuMapEdMPMapName(const aValue: UnicodeString);
 begin
   fMenu_MapEdMPMapName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuCampaignName(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuMapEdDLMapCRC(aValue: Cardinal);
+begin
+  fMenu_MapEdDLMapCRC := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuCampaignName(const aValue: UnicodeString);
 begin
   fMenu_CampaignName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuReplaySPSaveName(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuReplaySPSaveName(const aValue: UnicodeString);
 begin
   fMenu_ReplaySPSaveName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuReplayMPSaveName(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuReplayMPSaveName(const aValue: UnicodeString);
 begin
   fMenu_ReplayMPSaveName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuSPMapCRC(aValue: Cardinal);
+procedure TKMGameSettings.SetMenuSPScenarioMapCRC(aValue: Cardinal);
 begin
-  fMenu_SPMapCRC := aValue;
+  fMenu_SPScenarioMapCRC := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuSPSaveFileName(const aValue: UnicodeString);
+procedure TKMGameSettings.SetMenuSPMissionMapCRC(aValue: Cardinal);
+begin
+  fMenu_SPMissionMapCRC := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuSPTacticMapCRC(aValue: Cardinal);
+begin
+  fMenu_SPTacticMapCRC := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuSPSpecialMapCRC(aValue: Cardinal);
+begin
+  fMenu_SPSpecialMapCRC := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMenuSPSaveFileName(const aValue: UnicodeString);
 begin
   fMenu_SPSaveFileName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMenuLobbyMapType(aValue: Byte);
+procedure TKMGameSettings.SetMenuLobbyMapType(aValue: Byte);
 begin
   fMenu_LobbyMapType := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetAutosave(aValue: Boolean);
+procedure TKMGameSettings.SetAutosave(aValue: Boolean);
 begin
   fAutosave := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetAutosaveCount(aValue: Integer);
+procedure TKMGameSettings.SetAutosaveCount(aValue: Integer);
 begin
   fAutosaveCount := EnsureRange(aValue, AUTOSAVE_COUNT_MIN, AUTOSAVE_COUNT_MAX);
   Changed;
 end;
 
 
-procedure TGameSettings.SetAutosaveFrequency(aValue: Integer);
+procedure TKMGameSettings.SetAutosaveFrequency(aValue: Integer);
 begin
   fAutosaveFrequency := EnsureRange(aValue, AUTOSAVE_FREQUENCY_MIN, AUTOSAVE_FREQUENCY_MAX);
   Changed;
 end;
 
 
-procedure TGameSettings.SetReplayAutopause(aValue: Boolean);
+procedure TKMGameSettings.SetReplayAutopause(aValue: Boolean);
 begin
   fReplayAutopause := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetReplayShowBeacons(aValue: Boolean);
+procedure TKMGameSettings.SetReplayShowBeacons(aValue: Boolean);
 begin
   fReplayShowBeacons := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetSpecShowBeacons(aValue: Boolean);
+procedure TKMGameSettings.SetSpecShowBeacons(aValue: Boolean);
 begin
   fSpecShowBeacons := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetScrollSpeed(aValue: Byte);
+procedure TKMGameSettings.SetScrollSpeed(aValue: Byte);
 begin
   fScrollSpeed := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetAlphaShadows(aValue: Boolean);
+procedure TKMGameSettings.SetAlphaShadows(aValue: Boolean);
 begin
   fAlphaShadows := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetLoadFullFonts(aValue: Boolean);
+procedure TKMGameSettings.SetLoadFullFonts(aValue: Boolean);
 begin
   fLoadFullFonts := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetSoundFXVolume(aValue: Single);
+procedure TKMGameSettings.SetSoundFXVolume(aValue: Single);
 begin
   fSoundFXVolume := EnsureRange(aValue, 0, 1);
   Changed;
 end;
 
 
-procedure TGameSettings.SetMultiplayerName(const aValue: AnsiString);
+procedure TKMGameSettings.SetMultiplayerName(const aValue: AnsiString);
 begin
   fMultiplayerName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetLastIP(const aValue: string);
+procedure TKMGameSettings.SetLastIP(const aValue: string);
 begin
   fLastIP := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMasterServerAddress(const aValue: string);
+procedure TKMGameSettings.SetMasterServerAddress(const aValue: string);
 begin
   fMasterServerAddress := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetServerName(const aValue: AnsiString);
+procedure TKMGameSettings.SetServerName(const aValue: AnsiString);
 begin
   fServerName := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetLastPort(const aValue: string);
+procedure TKMGameSettings.SetLastPort(const aValue: string);
 begin
   fLastPort := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetLastRoom(const aValue: string);
+procedure TKMGameSettings.SetLastRoom(const aValue: string);
 begin
   fLastRoom := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetLastPassword(const aValue: string);
+procedure TKMGameSettings.SetLastPassword(const aValue: string);
 begin
   fLastPassword := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetServerPacketsAccumulatingDelay(aValue: Integer);
+procedure TKMGameSettings.SetServerPacketsAccumulatingDelay(aValue: Integer);
 begin
   fServerPacketsAccumulatingDelay := EnsureRange(aValue, 0, 1000); //This is rough restrictions. Real one are in TKMNetServer
   Changed;
 end;
 
 
-procedure TGameSettings.SetServerPort(const aValue: string);
+procedure TKMGameSettings.SetServerPort(const aValue: string);
 begin
   fServerPort := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMusicVolume(aValue: Single);
+procedure TKMGameSettings.SetMusicVolume(aValue: Single);
 begin
   fMusicVolume := EnsureRange(aValue, 0, 1);
   Changed;
 end;
 
 
-procedure TGameSettings.SetMusicOff(aValue: Boolean);
+procedure TKMGameSettings.SetMusicOff(aValue: Boolean);
 begin
   fMusicOff := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetShuffleOn(aValue: Boolean);
+procedure TKMGameSettings.SetShuffleOn(aValue: Boolean);
 begin
   fShuffleOn := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMaxRooms(eValue: Integer);
+procedure TKMGameSettings.SetMaxRooms(eValue: Integer);
 begin
   fMaxRooms := eValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetHTMLStatusFile(const eValue: UnicodeString);
+procedure TKMGameSettings.SetHTMLStatusFile(const eValue: UnicodeString);
 begin
   fHTMLStatusFile := eValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetMasterAnnounceInterval(eValue: Integer);
+procedure TKMGameSettings.SetMasterAnnounceInterval(eValue: Integer);
 begin
   fMasterAnnounceInterval := eValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetPingInterval(aValue: Integer);
+procedure TKMGameSettings.SetPingInterval(aValue: Integer);
 begin
   fPingInterval := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetAutoKickTimeout(aValue: Integer);
+procedure TKMGameSettings.SetAutoKickTimeout(aValue: Integer);
 begin
   fAutoKickTimeout := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetAnnounceServer(aValue: Boolean);
+procedure TKMGameSettings.SetAnnounceServer(aValue: Boolean);
 begin
   fAnnounceServer := aValue;
   Changed;
 end;
 
 
-procedure TGameSettings.SetServerWelcomeMessage(const aValue: UnicodeString);
+procedure TKMGameSettings.SetServerWelcomeMessage(const aValue: UnicodeString);
 begin
   fServerWelcomeMessage := aValue;
   Changed;

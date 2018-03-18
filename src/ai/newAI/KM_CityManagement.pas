@@ -140,7 +140,7 @@ begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(4);
   //gGame.GameOptions.Peacetime := 90;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+//  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -245,15 +245,15 @@ var
   end;
 
 const
-  TRAINING_PRIORITY: array[0..13] of TUnitType = (
+  TRAINING_PRIORITY: array[0..13] of TKMUnitType = (
     ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker, ut_Recruit
   );
 var
   I,K,cnt: Integer;
   GoldProduced: Cardinal;
-  HT: THouseType;
-  UT: TUnitType;
+  HT: TKMHouseType;
+  UT: TKMUnitType;
   Schools: array of TKMHouseSchool;
   UnitReq: array[CITIZEN_MIN..CITIZEN_MAX] of Integer;
 begin
@@ -336,8 +336,8 @@ end;
 procedure TKMCityManagement.CheckMarketplaces();
 var
   RequiedCnt, AvaiableCnt: Word;
-  RequiredWares, AvaiableWares: array of TWareType;
-  procedure AddWare(aWare: TWareType; IsRequired: Boolean = True);
+  RequiredWares, AvaiableWares: array of TKMWareType;
+  procedure AddWare(aWare: TKMWareType; IsRequired: Boolean = True);
   begin
     if IsRequired then
     begin
@@ -351,7 +351,7 @@ var
     end;
   end;
 
-  procedure TryBuyItem(aResFrom, aResTo: TWareType);
+  procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
   const
     TRADE_QUANTITY = 20;
   var
@@ -384,7 +384,7 @@ var
     end;
   end;
 const
-  SOLD_ORDER: array[0..27] of TWareType = (
+  SOLD_ORDER: array[0..27] of TKMWareType = (
     wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
     wt_Skin,         wt_Leather,  wt_Pig,
     wt_Trunk,        wt_Stone,    wt_Wood,
@@ -560,16 +560,16 @@ function TKMCityManagement.WeaponsBalance(): TKMWarfareArr;
 var
   EnemyEval, AllyEval: TKMArmyEval;
 
-  procedure ComputeGroupDemands(aGT: TGroupType; aIronRatio: Single);
+  procedure ComputeGroupDemands(aGT: TKMGroupType; aIronRatio: Single);
   const
     // It doesnt depends on future "optimalization" of parameters: against cav should be always good pikes etc. so this array doesnt have to be computed
-    BEST_VERSUS_OPTION: array[TGroupType] of TGroupType = (gt_Melee, gt_Melee, gt_Ranged, gt_AntiHorse);
+    BEST_VERSUS_OPTION: array[TKMGroupType] of TKMGroupType = (gt_Melee, gt_Melee, gt_Ranged, gt_AntiHorse);
   var
     Wood, Iron: Boolean;
     I: Integer;
     EnemyAttack, EnemyDefence, MyAttack, MyDefence, AttackReq, DefenceReq: Single;
-    UT: TUnitType;
-    antiGT: TGroupType;
+    UT: TKMUnitType;
+    antiGT: TKMGroupType;
     UnitEval: TKMGroupEval;
   begin
     // Get best type of oponent and compute iron ratio
@@ -636,7 +636,7 @@ var
     );
   var
     SoldierCnt: Integer;
-    UT: TUnitType;
+    UT: TKMUnitType;
   begin
     SoldierCnt := 0;
     for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
@@ -648,13 +648,13 @@ var
       if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
         fWarriorsDemands[UT] := fWarriorsDemands[UT] + DEFAULT_ARMY_REQUIREMENTS[UT] * DEFAULT_COEFICIENT;
   end;
-//AITroopTrainOrder: array [TGroupType, 1..3] of TUnitType = (
+//AITroopTrainOrder: array [TKMGroupType, 1..3] of TKMUnitType = (
 //  (ut_Swordsman,    ut_AxeFighter, ut_Militia),
 //  (ut_Hallebardman, ut_Pikeman,    ut_None),
 //  (ut_Arbaletman,   ut_Bowman,     ut_None),
 //  (ut_Cavalry,      ut_HorseScout, ut_None)
 //);
-//UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TGroupType = (
+//UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TKMGroupType = (
 //  gt_Melee,gt_Melee,gt_Melee, //ut_Militia, ut_AxeFighter, ut_Swordsman
 //  gt_Ranged,gt_Ranged,        //ut_Bowman, ut_Arbaletman
 //  gt_AntiHorse,gt_AntiHorse,  //ut_Pikeman, ut_Hallebardman,
@@ -666,7 +666,7 @@ var
 //  gt_Melee,            //ut_MetalBarbarian
 //  gt_Mounted           //ut_Horseman
 //);
-//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TWareType = (
+//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
 //  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
 //  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
 //  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -686,9 +686,9 @@ var
 var
   I, SmithyCnt, WorkshopCnt, ArmorCnt, Sum: Integer;
   IronRatio: Single;
-  WT: TWareType;
-  GT: TGroupType;
-  UT: TUnitType;
+  WT: TKMWareType;
+  GT: TKMGroupType;
+  UT: TKMUnitType;
   Warfare: TKMWarfareArr;
 begin
   ArmorCnt := gHands[fOwner].Stats.GetHouseQty(ht_ArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(ht_ArmorWorkshop);
@@ -709,7 +709,7 @@ begin
   // Compute requirements of warriors
   for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
     fWarriorsDemands[UT] := 0;
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     ComputeGroupDemands(GT, IronRatio);
 
   // Make sure that we always produce something
@@ -756,8 +756,8 @@ const
 var
   I, K, MaxIdx, HouseCnt: Integer;
   MostRequired: Single;
-  HT: THouseType;
-  WT, MaxWT: TWareType;
+  HT: TKMHouseType;
+  WT, MaxWT: TKMWareType;
   H: TKMHouse;
 begin
   for HT in PRODUCTION_HOUSES do
@@ -805,7 +805,7 @@ const
   COLOR_GREEN = '[$00FF00]';
   WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString = ('Shield', 'MetalShield', 'Armor', 'MetalArmor', 'Axe', 'Sword', 'Pike', 'Hallebard', 'Bow', 'Arbalet', 'Horse');
 var
-  WT: TWareType;
+  WT: TKMWareType;
 begin
   aBalanceText := aBalanceText + '||Weapons orders (weapon: avaiable, required, fraction)|';
   for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do

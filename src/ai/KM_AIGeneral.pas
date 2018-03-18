@@ -14,7 +14,7 @@ type
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fOwner: TKMHandIndex;
     fSetup: TKMHandAISetup;
-    fAttacks: TAIAttacks;
+    fAttacks: TKMAIAttacks;
     fDefencePositions: TAIDefencePositions;
 
     procedure CheckArmy;
@@ -22,14 +22,14 @@ type
     procedure CheckAttacks;
     procedure CheckAutoAttack;
     procedure CheckAutoDefend;
-    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy; override;
 
     procedure AfterMissionInit;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
-    property Attacks: TAIAttacks read fAttacks;
+    property Attacks: TKMAIAttacks read fAttacks;
     property DefencePositions: TAIDefencePositions read fDefencePositions;
     procedure RetaliateAgainstThreat(aAttacker: TKMUnit);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
@@ -64,7 +64,7 @@ begin
   fOwner := aPlayer;
   fSetup := aSetup;
 
-  fAttacks := TAIAttacks.Create;
+  fAttacks := TKMAIAttacks.Create;
   fDefencePositions := TAIDefencePositions.Create;
 end;
 
@@ -131,10 +131,10 @@ procedure TKMGeneral.CheckArmyCount;
 var
   Barracks: array of TKMHouseBarracks;
   HB: TKMHouseBarracks;
-  GT: TGroupType;
+  GT: TKMGroupType;
   I,K: Integer;
-  UT: TUnitType;
-  GroupReq: TGroupTypeArray;
+  UT: TKMUnitType;
+  GroupReq: TKMGroupTypeArray;
 begin
   if gGame.IsPeaceTime then Exit; //Do not train soldiers during peacetime
 
@@ -178,7 +178,7 @@ begin
     //Chose a random group type that we are going to attempt to train (so we don't always train certain group types first)
     K := 0;
     repeat
-      GT := TGroupType(KaMRandom(4)); //Pick random from overall count
+      GT := TKMGroupType(KaMRandom(4)); //Pick random from overall count
       Inc(K);
     until (GroupReq[GT] > 0) or (K > 9); //Limit number of attempts to guarantee it doesn't loop forever
 
@@ -212,11 +212,11 @@ end;
 procedure TKMGeneral.CheckArmy;
 var
   I: Integer;
-  GroupType: TGroupType;
+  GroupType: TKMGroupType;
   Group: TKMUnitGroup;
-  NeedsLinkingTo: array [TGroupType] of TKMUnitGroup;
+  NeedsLinkingTo: array [TKMGroupType] of TKMUnitGroup;
 begin
-  for GroupType := Low(TGroupType) to High(TGroupType) do
+  for GroupType := Low(TKMGroupType) to High(TKMGroupType) do
     NeedsLinkingTo[GroupType] := nil;
 
   //Check: Hunger, (feed) formation, (units per row) position (from defence positions)
@@ -225,7 +225,7 @@ begin
     Group := gHands[fOwner].UnitGroups[I];
 
     if not Group.IsDead
-    and Group.IsIdleToAI then
+      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder]) then
     begin
       //Check hunger and order food
       if (Group.Condition < UNIT_MIN_CONDITION) then
@@ -268,13 +268,13 @@ end;
 
 procedure TKMGeneral.CheckAttacks;
 var
-  MenAvailable: TGroupTypeArray; //Total number of warriors available to attack the enemy
-  GroupsAvailable: TGroupTypeArray;
+  MenAvailable: TKMGroupTypeArray; //Total number of warriors available to attack the enemy
+  GroupsAvailable: TKMGroupTypeArray;
   MaxGroupsAvailable: Integer;
-  AttackGroups: array [TGroupType] of array of TKMUnitGroup;
+  AttackGroups: array [TKMGroupType] of array of TKMUnitGroup;
 
   procedure AddAvailable(aGroup: TKMUnitGroup);
-  var GT: TGroupType;
+  var GT: TKMGroupType;
   begin
     GT := UnitGroups[aGroup.UnitType];
     if Length(AttackGroups[GT]) <= GroupsAvailable[GT] then
@@ -287,7 +287,7 @@ var
 
 var
   I, K, J: Integer;
-  G: TGroupType;
+  G: TKMGroupType;
   Group: TKMUnitGroup;
   DP: TAIDefencePosition;
   UnitsSent: Integer;
@@ -301,7 +301,7 @@ begin
   repeat
     AttackLaunched := False;
     MaxGroupsAvailable := 0;
-    for G := Low(TGroupType) to High(TGroupType) do
+    for G := Low(TKMGroupType) to High(TKMGroupType) do
     begin
       GroupsAvailable[G] := 0;
       MenAvailable[G] := 0;
@@ -313,7 +313,7 @@ begin
     begin
       Group := gHands[fOwner].UnitGroups[I];
       if not Group.IsDead
-      and Group.IsIdleToAI(True) then
+        and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder]) then
       begin
         DP := fDefencePositions.FindPositionOf(Group);
         if DP = nil then
@@ -325,7 +325,7 @@ begin
       if (fDefencePositions[I].DefenceType = adt_BackLine)
       and (fDefencePositions[I].CurrentGroup <> nil)
       and not fDefencePositions[I].CurrentGroup.IsDead
-      and fDefencePositions[I].CurrentGroup.IsIdleToAI(True) then
+      and fDefencePositions[I].CurrentGroup.IsIdleToAI([wtokFlagPoint, wtokHaltOrder, wtokAIGotoDefencePos]) then
         AddAvailable(fDefencePositions[I].CurrentGroup);
 
     //Now process AI attacks (we have compiled a list of warriors available to attack)
@@ -339,7 +339,7 @@ begin
       begin
         //Repeatedly send one of each group type until we have sent the required amount (mixed army)
         for K := 0 to MaxGroupsAvailable - 1 do
-          for G := Low(TGroupType) to High(TGroupType) do
+          for G := Low(TKMGroupType) to High(TKMGroupType) do
             if (UnitsSent < Attacks[I].TotalMen) and (K < GroupsAvailable[G]) then
             begin
               OrderAttack(AttackGroups[G, K], Attacks[I].Target, Attacks[I].CustomPosition);
@@ -349,7 +349,7 @@ begin
       else
       begin
         //First send the number of each group as requested by the attack
-        for G := Low(TGroupType) to High(TGroupType) do
+        for G := Low(TKMGroupType) to High(TKMGroupType) do
           for K := 0 to Attacks[I].GroupAmounts[G] - 1 do
           begin
             OrderAttack(AttackGroups[G, K], Attacks[I].Target, Attacks[I].CustomPosition);
@@ -359,7 +359,7 @@ begin
         //If we still haven't sent enough men, send more groups out of the types allowed until we have
         if UnitsSent < Attacks[I].TotalMen then
           for K := 0 to MaxGroupsAvailable - 1 do
-            for G := Low(TGroupType) to High(TGroupType) do
+            for G := Low(TKMGroupType) to High(TKMGroupType) do
             begin
               //Start index after the ones we've already sent above (ones required by attack)
               J := K + Attacks[I].GroupAmounts[G];
@@ -382,14 +382,14 @@ end;
 
 procedure TKMGeneral.CheckAutoAttack;
 var
-  SimpleAttack: TAIAttack;
+  SimpleAttack: TKMAIAttack;
   H: TKMHouse;
 begin
   //Simple test for now
   FillChar(SimpleAttack, SizeOf(SimpleAttack), #0);
 
   SimpleAttack.AttackType := aat_Repeating;
-  SimpleAttack.Target := att_ClosestBuildingFromStartPos;
+  SimpleAttack.Target := attClosestBuildingFromStartPos;
   SimpleAttack.TotalMen := fDefencePositions.AverageUnitsPerGroup *
                            fDefencePositions.GetBacklineCount div 2;
   SimpleAttack.TakeAll := True;
@@ -455,7 +455,7 @@ var
   //FaceDir: TKMDirection;
   //SegLength, Ratio: Single;
   //DefCount: Byte;
-  GT: TGroupType;
+  GT: TKMGroupType;
   DPT: TAIDefencePosType;
   //Weight: Cardinal;
   BacklineCount: Integer;
@@ -563,7 +563,7 @@ end;
 
 
 //See if we can attack our enemies
-procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TAIAttackTarget; aCustomPos: TKMPoint);
+procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
 const
   TARGET_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 var
@@ -575,10 +575,10 @@ begin
 
   //Find target
   case aTarget of
-    att_ClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-    att_ClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
-    att_ClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
-    att_CustomPosition:               begin
+    attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
+    attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
+    attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
+    attCustomPosition:               begin
                                         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
                                         if (TargetHouse <> nil) and
                                            (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = at_Ally) then
@@ -597,8 +597,8 @@ begin
     aGroup.OrderAttackHouse(TargetHouse, True)
   else if TargetUnit <> nil then
     aGroup.OrderAttackUnit(TargetUnit, True)
-  else if aTarget = att_CustomPosition then
-    aGroup.OrderWalk(aCustomPos, True);
+  else if aTarget = attCustomPosition then
+    aGroup.OrderWalk(aCustomPos, True, wtokAIAttackCustomPos);
 end;
 
 
@@ -619,8 +619,9 @@ begin
   begin
     Group := fDefencePositions[I].CurrentGroup;
     if (Group <> nil)
-    and not Group.IsDead
-    and Group.IsIdleToAI(True) //Units walking to their defence position can retaliate (but not if pursuing an enemy)
+      and not Group.IsDead
+      and Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder, wtokAIGotoDefencePos])
+    //Units walking to their defence position can retaliate (but not if pursuing an enemy)
     //@Lewin: Is it right that Group defends against attackers within the Rad
     //rather than defending property within the Rad?
     //Think of archer, he attacks property in AI defense radius, but stands utself outside of the radius
@@ -668,4 +669,4 @@ begin
 end;
 
 
-end.
+end.

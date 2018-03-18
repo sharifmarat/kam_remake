@@ -95,19 +95,19 @@ type
     fPerfIdx: Byte;
     fPerfArr: TKMByte2Array;
 
-    procedure AddPlan(aHT: THouseType; aLoc: TKMPoint); overload;
-    procedure AddPlan(aHT: THouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False); overload;
-    function GetPlan(aHT: THouseType; out aLoc: TKMPoint; out aIdx: Integer): Boolean;
+    procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint); overload;
+    procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False); overload;
+    function GetPlan(aHT: TKMHouseType; out aLoc: TKMPoint; out aIdx: Integer): Boolean;
 
-    function ObstaclesInHousePlan(aHT: THouseType; aLoc: TKMPoint): Single;
-    function FieldCrit(aHT: THouseType; aLoc: TKMPoint): Single;
-    function SnapCrit(aHT: THouseType; aLoc: TKMPoint): Single;
-    function DistCrit(aHT: THouseType; aLoc: TKMPoint): Single;
+    function ObstaclesInHousePlan(aHT: TKMHouseType; aLoc: TKMPoint): Single;
+    function FieldCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
+    function SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
+    function DistCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 
     procedure PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
     procedure PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
-    function FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: THouseType; out aBestLocs: TKMPointArray): Byte;
-    function FindPlaceForMines(aHT: THouseType): Boolean;
+    function FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
+    function FindPlaceForMines(aHT: TKMHouseType): Boolean;
     function FindPlaceForWoodcutter(aCenter: TKMPoint; aChopOnly: Boolean = False): Boolean;
     function FindForestAndWoodcutter(): Boolean;
     function PlanDefenceTowers(): Boolean;
@@ -126,16 +126,16 @@ type
     property PlannedHouses: TPlannedHousesArray read fPlannedHouses write fPlannedHouses;
     property DefenceTowersPlanned: Boolean read fDefenceTowersPlanned;
 
-    procedure MarkAsExhausted(aHT: THouseType; aLoc: TKMPoint);
+    procedure MarkAsExhausted(aHT: TKMHouseType; aLoc: TKMPoint);
 
-    procedure RemovePlan(aHT: THouseType; aLoc: TKMPoint); overload;
-    procedure RemovePlan(aHT: THouseType; aIdx: Integer); overload;
+    procedure RemovePlan(aHT: TKMHouseType; aLoc: TKMPoint); overload;
+    procedure RemovePlan(aHT: TKMHouseType; aIdx: Integer); overload;
 
-    function GetHousePlan(aUnlockProcedure, aIgnoreExistingPlans: Boolean; aHT: THouseType; var aLoc: TKMPoint; var aIdx: Integer): Boolean;
-    function GetRoadBetweenPoints(aStart, aEnd: TKMPoint; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
-    function GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
-    function GetFieldToHouse(aHT: THouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
-    function GetTreesInHousePlan(aHT: THouseType; aIdx: Integer; var aField: TKMPointList): Byte;
+    function GetHousePlan(aUnlockProcedure, aIgnoreExistingPlans: Boolean; aHT: TKMHouseType; var aLoc: TKMPoint; var aIdx: Integer): Boolean;
+    function GetRoadBetweenPoints(aStart, aEnd: TKMPoint; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
+    function GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
+    function GetFieldToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
+    function GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList): Byte;
     function FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
 
     procedure Paint();
@@ -143,7 +143,7 @@ type
 
 
 const
-  HOUSE_DEPENDENCE: array[HOUSE_MIN..HOUSE_MAX] of set of THouseType = (  // This array is sorted by priority
+  HOUSE_DEPENDENCE: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (  // This array is sorted by priority
     {ht_ArmorSmithy}    [ ht_IronSmithy,     ht_CoalMine,       ht_Barracks,       ht_IronMine       ],
     {ht_ArmorWorkshop}  [ ht_Tannery,        ht_Barracks,       ht_Sawmill,        ht_ArmorWorkshop  ],
     {ht_Bakery}         [ ht_Inn,            ht_Mill,           ht_Store,          ht_Bakery         ],
@@ -209,7 +209,7 @@ end;
 
 procedure TKMCityPlanner.Save(SaveStream: TKMemoryStream);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   I, K, Len: Integer;
 begin
   SaveStream.WriteA('CityPlanner');
@@ -242,7 +242,7 @@ end;
 
 procedure TKMCityPlanner.Load(LoadStream: TKMemoryStream);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   I, K, Len: Integer;
 begin
   LoadStream.ReadAssert('CityPlanner');
@@ -280,7 +280,7 @@ procedure TKMCityPlanner.AfterMissionInit();
 var
   I: Integer;
   Houses: TKMHousesCollection;
-  HT: THouseType;
+  HT: TKMHouseType;
   IdxArr: array [HOUSE_MIN..HOUSE_MAX] of Word;
 begin
   fPerfIdx := 255; // fPerfArr will be reset in next step
@@ -377,7 +377,7 @@ const
 var
   CheckChopOnly, CheckExistHouse: Boolean;
   I,K: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
   H: TKMHouse;
 begin
   CheckChopOnly := (aTick mod WOODCUT_CHOP_ONLY_CHECK = fOwner);
@@ -434,12 +434,12 @@ begin
 end;
 
 
-procedure TKMCityPlanner.AddPlan(aHT: THouseType; aLoc: TKMPoint);
+procedure TKMCityPlanner.AddPlan(aHT: TKMHouseType; aLoc: TKMPoint);
 begin
   AddPlan(aHT, aLoc, KMPOINT_ZERO); // Cannot declare KMPOINT_ZERO as a default value so overload method is used instead
 end;
 
-procedure TKMCityPlanner.AddPlan(aHT: THouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False);
+procedure TKMCityPlanner.AddPlan(aHT: TKMHouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False);
 const
   ADD_VALUE = 8;
 begin
@@ -462,7 +462,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetPlan(aHT: THouseType; out aLoc: TKMPoint; out aIdx: Integer): Boolean;
+function TKMCityPlanner.GetPlan(aHT: TKMHouseType; out aLoc: TKMPoint; out aIdx: Integer): Boolean;
 const
   MAX_BID = 1000000;
   CHOP_ONLY_ADVANTAGE = 10;
@@ -590,13 +590,13 @@ begin
 end;
 
 
-procedure TKMCityPlanner.MarkAsExhausted(aHT: THouseType; aLoc: TKMPoint);
+procedure TKMCityPlanner.MarkAsExhausted(aHT: TKMHouseType; aLoc: TKMPoint);
 begin
   RemovePlan(aHT, aLoc);
 end;
 
 
-procedure TKMCityPlanner.RemovePlan(aHT: THouseType; aLoc: TKMPoint);
+procedure TKMCityPlanner.RemovePlan(aHT: TKMHouseType; aLoc: TKMPoint);
 var
   I: Integer;
 begin
@@ -608,7 +608,7 @@ begin
     end;
 end;
 
-procedure TKMCityPlanner.RemovePlan(aHT: THouseType; aIdx: Integer);
+procedure TKMCityPlanner.RemovePlan(aHT: TKMHouseType; aIdx: Integer);
 begin
   with fPlannedHouses[aHT] do
   begin
@@ -622,7 +622,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetHousePlan(aUnlockProcedure, aIgnoreExistingPlans: Boolean; aHT: THouseType; var aLoc: TKMPoint; var aIdx: Integer): Boolean;
+function TKMCityPlanner.GetHousePlan(aUnlockProcedure, aIgnoreExistingPlans: Boolean; aHT: TKMHouseType; var aLoc: TKMPoint; var aIdx: Integer): Boolean;
 var
   Output: Boolean;
   Cnt: Byte;
@@ -664,7 +664,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
+function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
   function IsRoad(aP: TKMPoint): Boolean;
   begin
     Result := (gAIFields.Influences.AvoidBuilding[aP.Y, aP.X] = AVOID_BUILDING_NODE_LOCK_ROAD) // Reserved road plan
@@ -726,7 +726,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: THouseType; aIdx: Integer; var aFiel
     I: Integer;
     Dist, BestDist: Single;
     Loc: TKMPoint;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     BestDist := INIT_DIST;
     for HT := HOUSE_MIN to HOUSE_MAX do
@@ -774,7 +774,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetRoadBetweenPoints(aStart, aEnd: TKMPoint; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
+function TKMCityPlanner.GetRoadBetweenPoints(aStart, aEnd: TKMPoint; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
 var
   Output: Boolean;
 begin
@@ -786,7 +786,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetFieldToHouse(aHT: THouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TFieldType): Boolean;
+function TKMCityPlanner.GetFieldToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
 begin
   Result := True;
   aField.Clear;
@@ -805,7 +805,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetTreesInHousePlan(aHT: THouseType; aIdx: Integer; var aField: TKMPointList): Byte;
+function TKMCityPlanner.GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList): Byte;
 var
   I: Integer;
   Point: TKMPoint;
@@ -839,7 +839,7 @@ const
 var
   I,Dist: Integer;
   Dir: TDirection;
-  HT: THouseType;
+  HT: TKMHouseType;
   FieldLoc: TKMPoint;
   HMA: THouseMappingArray;
 begin
@@ -877,7 +877,7 @@ const
 var
   I,Dist: Integer;
   Dir, BestDir: TDirection;
-  HT: THouseType;
+  HT: TKMHouseType;
   FieldLoc: TKMPoint;
   HMA: THouseMappingArray;
   PriceArr: TDirArrInt;
@@ -942,7 +942,7 @@ begin
 end;
 
 
-function TKMCityPlanner.ObstaclesInHousePlan(aHT: THouseType; aLoc: TKMPoint): Single;
+function TKMCityPlanner.ObstaclesInHousePlan(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 var
   I,X,Y,Road,Tree: Integer;
   HMA: THouseMappingArray;
@@ -961,7 +961,7 @@ begin
 end;
 
 
-function TKMCityPlanner.FieldCrit(aHT: THouseType; aLoc: TKMPoint): Single;
+function TKMCityPlanner.FieldCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 const
   MIN_CORN_FIELDS = 15;
   MIN_WINE_FIELDS = 9;
@@ -997,8 +997,8 @@ begin
 end;
 
 
-function TKMCityPlanner.SnapCrit(aHT: THouseType; aLoc: TKMPoint): Single;
-  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean;
+function TKMCityPlanner.SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
+  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock; aField: TKMFieldType): Boolean;
   begin
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
@@ -1051,14 +1051,14 @@ begin
 end;
 
 
-function TKMCityPlanner.DistCrit(aHT: THouseType; aLoc: TKMPoint): Single;
+function TKMCityPlanner.DistCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
   function ClosestDistance(): Single;
   const
     MAX_DIST = 1000;
   var
     I: Integer;
     Output, Bid: Single;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     Output := MAX_DIST;
     for HT in HOUSE_DEPENDENCE[aHT] do
@@ -1075,7 +1075,7 @@ function TKMCityPlanner.DistCrit(aHT: THouseType; aLoc: TKMPoint): Single;
   function AllDistances(): Single;
   var
     I: Integer;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     Result := 0;
     for HT in HOUSE_DEPENDENCE[aHT] do
@@ -1092,7 +1092,7 @@ end;
 
 // Faster method for placing house (old in at the end of this file)
 //{
-function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: THouseType; out aBestLocs: TKMPointArray): Byte;
+function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
 const
   BEST_PLANS_CNT = 8;
   INIT_BEST_BID = -1E20;
@@ -1154,7 +1154,7 @@ var
       end;
   end;
 
-  procedure FindPlaceAroundHType(aHT_HMA: THouseType);
+  procedure FindPlaceAroundHType(aHT_HMA: TKMHouseType);
   const
     INFLUENCE_LIMIT = 100;
   var
@@ -1205,7 +1205,7 @@ var
 var
   I: Integer;
   Probability: Single;
-  HT: THouseType;
+  HT: TKMHouseType;
   CCPArr: TKMPointArray;
 begin
   Result := 0;
@@ -1242,12 +1242,12 @@ begin
 end;
 //}
 
-function TKMCityPlanner.FindPlaceForMines(aHT: THouseType): Boolean;
+function TKMCityPlanner.FindPlaceForMines(aHT: TKMHouseType): Boolean;
 const
   MAX_LOCS = 5;
 
   // Get closest mine
-  function FindPlaceForMine(aMine: THouseType): Boolean;
+  function FindPlaceForMine(aMine: TKMHouseType): Boolean;
   const
     BEST_BID = -10000;
   var
@@ -1713,7 +1713,7 @@ const
 var
   I,K: Integer;
   Division: Single;
-  HT: THouseType;
+  HT: TKMHouseType;
   Loc: TKMPoint;
   Color: Cardinal;
   HMA: THouseMappingArray;
@@ -1899,11 +1899,11 @@ GA_PLANNER_DistCrit_Sawmill_Set                   : Single = 10.2895546;
 //}
 
 {
-function TKMCityPlanner.DistCrit(aHT: THouseType; aLoc: TKMPoint): Single;
+function TKMCityPlanner.DistCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 const
   MAX_BID = 1000000;
 
-  function DistFromHouses(aHTs: array of THouseType): Single;
+  function DistFromHouses(aHTs: array of TKMHouseType): Single;
   var
     I,K: Integer;
     Output: Single;
@@ -1915,7 +1915,7 @@ const
     Result := Output;
   end;
 
-  function DistFromHouse(aHTs: array of THouseType): Single;
+  function DistFromHouse(aHTs: array of TKMHouseType): Single;
   var
     I,K: Integer;
     Output, Bid: Single;
@@ -1976,14 +1976,14 @@ end;
 
 // Original method (no optimalization)
 {
-function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: THouseType; out aBestLocs: TKMPointArray): Byte;
+function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
 const
   BEST_PLANS_CNT = 5;
   INIT_BEST_BID = -1000000;
 var
   I,K,L,Dist: Integer;
   Dir: TDirection;
-  HType: THouseType;
+  HType: TKMHouseType;
   Loc: TKMPoint;
   Bid, POMBid: Single;
   HMA: THouseMappingArray;
@@ -2037,10 +2037,10 @@ end;
 //}
 
 {
-function GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
-function GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+function GetBlockingTrees(aHT: TKMHouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+function GetBlockingFields(aHT: TKMHouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
 
-function TKMCityPlanner.GetBlockingTrees(aHT: THouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
+function TKMCityPlanner.GetBlockingTrees(aHT: TKMHouseType; aLoc: TKMPoint; var aTrees: TKMPointArray): Boolean;
 var
   Output: Boolean;
   I,X,Y, TreeCnt: Integer;
@@ -2074,7 +2074,7 @@ begin
 end;
 
 
-function TKMCityPlanner.GetBlockingFields(aHT: THouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
+function TKMCityPlanner.GetBlockingFields(aHT: TKMHouseType; aLoc: TKMPoint; var aFields: TKMPointArray): Boolean;
 var
   I,X,Y, FieldCnt: Integer;
   HMA: THouseMappingArray;
@@ -2115,7 +2115,7 @@ var
   MaxP, MinP, Point: TKMPoint;
   Weight: Cardinal;
   Dir: TDirection;
-  HT: THouseType;
+  HT: TKMHouseType;
   FieldLoc: TKMPoint;
   HMA: THouseMappingArray;
   PriceArr: array of array of Word;
@@ -2173,7 +2173,7 @@ var
   MaxP, MinP, Point: TKMPoint;
   Weight: Cardinal;
   Dir: TDirection;
-  HT: THouseType;
+  HT: TKMHouseType;
   FieldLoc: TKMPoint;
   HMA: THouseMappingArray;
   //PriceArr: array of array of Word;

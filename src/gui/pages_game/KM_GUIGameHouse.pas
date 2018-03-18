@@ -7,7 +7,7 @@ uses
   KM_InterfaceGame, KM_Houses, KM_HouseMarket, KM_ResWares;
 
 const LINE_HEIGHT = 25; //Each new Line is placed ## pixels after previous
-const WORKSHOP_WARE: array [1..2] of TWareType = (wt_Wood, wt_Leather);
+const WORKSHOP_WARE: array [1..2] of TKMWareType = (wt_Wood, wt_Leather);
 
 type
   TKMGUIGameHouse = class
@@ -170,7 +170,7 @@ begin
     Image_House_Logo := TKMImage.Create(Panel_House,90,41,32,32,338);
     Image_House_Logo.ImageCenter;
 
-    HealthBar_House := TKMPercentBar.Create(Panel_House,120,57,55,15);
+    HealthBar_House := TKMPercentBar.Create(Panel_House,120,50,55,15);
     Label_House_UnderConstruction := TKMLabel.Create(Panel_House,0,110,TB_WIDTH,0,gResTexts[TX_HOUSE_UNDER_CONSTRUCTION],fnt_Grey,taCenter);
 
     Image_HouseConstructionWood  := TKMImage.Create(Panel_House,40,170,40,40,655);
@@ -766,7 +766,7 @@ end;
 
 
 procedure TKMGUIGameHouse.ShowCommonOrders(aHouse: TKMHouse; Base: Integer;var Line, RowRes: Integer);
-var I: Integer; Res: TWareType;
+var I: Integer; Res: TKMWareType;
 begin
   //Show Orders
   if gRes.Houses[aHouse.HouseType].DoesOrders then
@@ -919,7 +919,7 @@ end;
 
 procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
 
-  procedure SetDeliveryMode(aMode: TDeliveryMode);
+  procedure SetDeliveryMode(aMode: TKMDeliveryMode);
   begin
     case aMode of
       dm_Delivery:  begin
@@ -1329,12 +1329,12 @@ end;
 
 procedure TKMGUIGameHouse.House_MarketFill(aMarket: TKMHouseMarket);
 var
-  R: TWareType;
+  R: TKMWareType;
   I, Tmp: Integer;
 begin
   for I := 0 to STORE_RES_COUNT - 1 do
   begin
-    R := TWareType(Button_Market[I].Tag);
+    R := TKMWareType(Button_Market[I].Tag);
     if aMarket.AllowedToTrade(R) then
     begin
       Button_Market[I].TexID := gRes.Wares[R].GUIIcon;
@@ -1414,9 +1414,9 @@ begin
   M := TKMHouseMarket(gMySpectator.Selected);
 
   if Shift = [ssLeft] then
-    gGame.GameInputProcess.CmdHouse(gic_HouseMarketFrom, M, TWareType(TKMButtonFlat(Sender).Tag));
+    gGame.GameInputProcess.CmdHouse(gic_HouseMarketFrom, M, TKMWareType(TKMButtonFlat(Sender).Tag));
   if Shift = [ssRight] then
-    gGame.GameInputProcess.CmdHouse(gic_HouseMarketTo, M, TWareType(TKMButtonFlat(Sender).Tag));
+    gGame.GameInputProcess.CmdHouse(gic_HouseMarketTo, M, TKMWareType(TKMButtonFlat(Sender).Tag));
 
   House_MarketFill(M); //Update costs and order count
 end;

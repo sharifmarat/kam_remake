@@ -35,13 +35,13 @@ type
     fCityFlood: Boolean;
     fDecreaseCoef: Word;
     fUnitStrength, fMaxDistance, fHouseInfluence: Word;
-    fGroupType: TGroupType;
+    fGroupType: TKMGroupType;
   protected
     fOwner: TKMHandIndex;
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
   public
-    function MilitaryPresence(aPlayer: TKMHandIndex; aUnitStrength, aMaxDistance, aMaximalIdx: Word; aGroupType: TGroupType; aInitIdxArray: TKMWordArray): Boolean;
+    function MilitaryPresence(aPlayer: TKMHandIndex; aUnitStrength, aMaxDistance, aMaximalIdx: Word; aGroupType: TKMGroupType; aInitIdxArray: TKMWordArray): Boolean;
     function HouseInfluence(aPlayer: TKMHandIndex; aHouseInfluence, aMaxDistance, aMaximalIdx: Word; aInitIdxArray: TKMWordArray): Boolean;
   end;
 
@@ -166,7 +166,7 @@ begin
 end;
 
 
-function TKMInfluenceFloodFill.MilitaryPresence(aPlayer: TKMHandIndex; aUnitStrength, aMaxDistance, aMaximalIdx: Word; aGroupType: TGroupType; aInitIdxArray: TKMWordArray): Boolean;
+function TKMInfluenceFloodFill.MilitaryPresence(aPlayer: TKMHandIndex; aUnitStrength, aMaxDistance, aMaximalIdx: Word; aGroupType: TKMGroupType; aInitIdxArray: TKMWordArray): Boolean;
 begin
   fCityFlood := False;
   fOwner := aPlayer;

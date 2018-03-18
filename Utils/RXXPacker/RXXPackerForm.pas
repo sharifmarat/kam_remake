@@ -42,8 +42,9 @@ var
 begin
   ListBox1.Items.Clear;
   for RT := Low(TRXType) to High(TRXType) do
-    if FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
-      ListBox1.Items.Add(GetEnumName(TypeInfo(TRXType), Integer(RT)));
+    if (RT = rxTiles) //Tiles are always in the list
+      or FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
+      ListBox1.Items.AddPair(GetEnumName(TypeInfo(TRXType), Integer(RT)), IntToStr(Integer(RT)));
 
   if ListBox1.Items.Count = 0 then
   begin
@@ -69,8 +70,6 @@ begin
 end;
 
 procedure TRXXForm1.FormCreate(Sender: TObject);
-var
-  RT: TRXType;
 begin
   ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
 
@@ -84,7 +83,6 @@ begin
   fPalettes.LoadPalettes(ExeDir + 'data\gfx\');
 
   UpdateList;
-
 end;
 
 
@@ -99,7 +97,7 @@ end;
 procedure TRXXForm1.btnPackRXXClick(Sender: TObject);
 var
   RT: TRXType;
-  I: Integer;
+  I,J: Integer;
   Tick: Cardinal;
 begin
   btnPackRXX.Enabled := False;
@@ -110,15 +108,16 @@ begin
          'Please make sure this folder exists.');
 
   for I := 0 to ListBox1.Items.Count - 1 do
-  if ListBox1.Selected[I] then
-  begin
-    RT := TRXType(I);
+    if ListBox1.Selected[I] then
+    begin
+      J := StrToInt(ListBox1.Items.ValueFromIndex[I]);
+      RT := TRXType(J);
 
-    fRxxPacker.Pack(RT, fPalettes);
+      fRxxPacker.Pack(RT, fPalettes);
 
-    ListBox1.Selected[I] := False;
-    ListBox1.Refresh;
-  end;
+      ListBox1.Selected[I] := False;
+      ListBox1.Refresh;
+    end;
 
   Label1.Caption := IntToStr(GetTickCount - Tick) + ' ms';
   btnPackRXX.Enabled := True;

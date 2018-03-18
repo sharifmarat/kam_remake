@@ -9,7 +9,7 @@ type
     HitPoints, Attack, AttackHorse, Defence, DefenceProjectiles: Single;
   end;
 
-  TKMArmyEval = array[TGroupType] of TKMGroupEval;
+  TKMArmyEval = array[TKMGroupType] of TKMGroupEval;
   TKMGameEval = array[0 .. MAX_HANDS - 1] of TKMArmyEval;
 
 
@@ -19,18 +19,18 @@ type
     fEvals: TKMGameEval; //Results of evaluation
 
     procedure EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
-    function GetUnitEvaluation(aUT: TUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
+    function GetUnitEvaluation(aUT: TKMUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
     function GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
-    function GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TAllianceType): TKMArmyEval;
+    function GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TKMAllianceType): TKMArmyEval;
   public
     constructor Create();
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
-    property UnitEvaluation[aUT: TUnitType; aConsiderHitChance: Boolean]: TKMGroupEval read GetUnitEvaluation;
+    property UnitEvaluation[aUT: TKMUnitType; aConsiderHitChance: Boolean]: TKMGroupEval read GetUnitEvaluation;
     property Evaluation[aPlayer: TKMHandIndex]: TKMArmyEval read GetEvaluation;
-    property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TAllianceType]: TKMArmyEval read GetAllianceStrength;
+    property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TKMAllianceType]: TKMArmyEval read GetAllianceStrength;
 
     //function AttackForceChance(aOponent: TKMHandIndex; aGroups: TKMUnitGroupArray): Single;
     function CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
@@ -75,7 +75,7 @@ begin
 end;
 
 
-function TKMArmyEvaluation.GetUnitEvaluation(aUT: TUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
+function TKMArmyEvaluation.GetUnitEvaluation(aUT: TKMUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
 var
   US: TKMUnitSpec;
 begin
@@ -100,12 +100,12 @@ begin
 end;
 
 
-function TKMArmyEvaluation.GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TAllianceType): TKMArmyEval;
+function TKMArmyEvaluation.GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TKMAllianceType): TKMArmyEval;
 var
   PL: Integer;
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
     with Result[GT] do
     begin
       Hitpoints := 0;
@@ -116,7 +116,7 @@ begin
     end;
   for PL := 0 to gHands.Count - 1 do
     if gHands[PL].Enabled AND (gHands[aPlayer].Alliances[PL] = aAlliance) then
-      for GT := Low(TGroupType) to High(TGroupType) do
+      for GT := Low(TKMGroupType) to High(TKMGroupType) do
         with Result[GT] do
         begin
           Hitpoints := Hitpoints                   + fEvals[PL,GT].Hitpoints;
@@ -139,14 +139,14 @@ end;
 // Approximate way how to compute strength of 2 alliances
 function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
 type
-  TKMGroupStrengthArray = array[TGroupType] of Single;
+  TKMGroupStrengthArray = array[TKMGroupType] of Single;
   function CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
   const
     DEF_COEFICIENT = 100; // Increase weight of defence
   var
-    GT: TGroupType;
+    GT: TKMGroupType;
   begin
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       with aEval[GT] do
       begin
         Result[GT] := Attack * Hitpoints * Defence;
@@ -156,7 +156,7 @@ type
   end;
 var
   Sum, Diff: Single;
-  GT: TGroupType;
+  GT: TKMGroupType;
   AllyEval, EnemyEval: TKMArmyEval;
   AllyArmy, EnemyArmy: TKMGroupStrengthArray;
 begin
@@ -166,7 +166,7 @@ begin
   EnemyArmy := CalculateStrength(EnemyEval);
   Sum := 0;
   Diff := 0;
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     Sum := Sum + AllyArmy[GT] + EnemyArmy[GT];
     Diff := Diff + AllyArmy[GT] - EnemyArmy[GT];
@@ -196,13 +196,13 @@ var
   Stats: TKMHandStats;
   Qty: Integer;
   US: TKMUnitSpec;
-  UT: TUnitType;
-  GT: TGroupType;
+  UT: TKMUnitType;
+  GT: TKMGroupType;
 begin
   Stats := gHands[aPlayer].Stats;
 
   // Clear array
-  for GT := Low(TGroupType) to High(TGroupType)  do
+  for GT := Low(TKMGroupType) to High(TKMGroupType)  do
     with fEvals[aPlayer,GT] do
     begin
       Hitpoints := 0;

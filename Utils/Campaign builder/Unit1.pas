@@ -562,7 +562,6 @@ function  TForm1.DlgQuestionShow(aCaption, aMsg: string): boolean;
 var
   VarBool: boolean;
 begin
-  VarBool := false;
   {$IFDEF MSWindows}
   if MessageBox(Handle, PChar(aCaption), PChar(aMsg), MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON2) = ID_YES then
     VarBool := true
@@ -711,7 +710,7 @@ procedure TForm1.rgBriefingPosClick(Sender: TObject);
 begin
   if fUpdating or (fSelectedMap = -1) then Exit;
 
-  C.Maps[fSelectedMap].TextPos := TBriefingCorner(rgBriefingPos.ItemIndex);
+  C.Maps[fSelectedMap].TextPos := TKMBriefingCorner(rgBriefingPos.ItemIndex);
 
   RefreshFlags;
 end;

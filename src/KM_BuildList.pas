@@ -8,7 +8,7 @@ uses
 
 
 type
-  TJobStatus = (
+  TKMJobStatus = (
     js_Empty,   // Empty - empty spot for a new job
     js_Open,    // Open - job is free to take by anyone
     js_Taken    // Taken - job is taken by some worker
@@ -41,9 +41,9 @@ type
 
 
   TKMHousePlan = record
-    HouseType: THouseType;
+    HouseType: TKMHouseType;
     Loc: TKMPoint;
-    JobStatus: TJobStatus;
+    JobStatus: TKMJobStatus;
     Worker: TKMUnit; //So we can tell Worker if plan is cancelled
   end;
 
@@ -55,7 +55,7 @@ type
     fPlans: array of TKMHousePlan;
   public
     //Player orders
-    procedure AddPlan(aHouseType: THouseType; aLoc: TKMPoint);
+    procedure AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
     function HasPlan(aLoc: TKMPoint): Boolean;
     procedure RemPlan(aLoc: TKMPoint);
     function TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
@@ -82,14 +82,14 @@ type
     fFieldsCount: Integer;
     fFields: array of record
       Loc: TKMPoint;
-      FieldType: TFieldType;
-      JobStatus: TJobStatus;
+      FieldType: TKMFieldType;
+      JobStatus: TKMJobStatus;
       Worker: TKMUnit;
     end;
     //List of fields which are shown visually but not verified by the server
     fFakeFields: array of record
       Loc: TKMPoint;
-      FieldType: TFieldType;
+      FieldType: TKMFieldType;
       Active: Boolean;
     end;
     //List of fields which are being deleted, so fields can disappear as soon as the player deleted them
@@ -99,11 +99,11 @@ type
     end;
   public
     //Player orders
-    procedure AddFakeField(aLoc: TKMPoint; aFieldType: TFieldType);
+    procedure AddFakeField(aLoc: TKMPoint; aFieldType: TKMFieldType);
     procedure AddFakeDeletedField(aLoc: TKMPoint);
-    procedure AddField(aLoc: TKMPoint; aFieldType: TFieldType);
-    function HasField(aLoc: TKMPoint): TFieldType;
-    function HasFakeField(aLoc: TKMPoint): TFieldType;
+    procedure AddField(aLoc: TKMPoint; aFieldType: TKMFieldType);
+    function HasField(aLoc: TKMPoint): TKMFieldType;
+    function HasFakeField(aLoc: TKMPoint): TKMFieldType;
     procedure RemFieldPlan(aLoc: TKMPoint);
     procedure RemFakeField(aLoc: TKMPoint);
     procedure RemFakeDeletedField(aLoc: TKMPoint);
@@ -116,7 +116,7 @@ type
     procedure CloseField(aIndex: Integer); //Worker has finished the task
 
     procedure GetFields(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake:Boolean);
-    function FieldCount(aFieldType: TFieldType): Integer;
+    function FieldCount(aFieldType: TKMFieldType): Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -202,7 +202,7 @@ const
   BID_MODIF = 5; // Modificator for every next assigned worker
 
   //Limit number of workers building each house, so they all fit in around
-  MAX_WORKERS: array [THouseType] of Byte = (
+  MAX_WORKERS: array [TKMHouseType] of Byte = (
     0,0, //ht_None, ht_Any
     8, {ht_ArmorSmithy}  8,{ht_ArmorWorkshop}  8, {ht_Bakery}      12,{ht_Barracks}      8, {ht_Butchers}
     6, {ht_CoalMine}     8,{ht_Farm}           7, {ht_FisherHut}   3, {ht_GoldMine}      10,{ht_Inn}
@@ -425,7 +425,7 @@ begin
 end;
 
 
-function TKMFieldworksList.FieldCount(aFieldType: TFieldType): Integer;
+function TKMFieldworksList.FieldCount(aFieldType: TKMFieldType): Integer;
 var I: Integer;
 begin
   Result := 0;
@@ -444,7 +444,7 @@ end;
 
 
 //Fake plan that will be visible until real one is verified by Server
-procedure TKMFieldworksList.AddFakeField(aLoc: TKMPoint; aFieldType: TFieldType);
+procedure TKMFieldworksList.AddFakeField(aLoc: TKMPoint; aFieldType: TKMFieldType);
 var I: Integer;
 begin
   I := 0;
@@ -477,7 +477,7 @@ end;
 
 
 //Keep list items in place, since Workers use indexes to address them
-procedure TKMFieldworksList.AddField(aLoc: TKMPoint; aFieldType: TFieldType);
+procedure TKMFieldworksList.AddField(aLoc: TKMPoint; aFieldType: TKMFieldType);
 var
   I: Integer;
 begin
@@ -538,7 +538,7 @@ end;
 
 
 //Will return the field as the game should see it, ignoring all fakes.
-function TKMFieldworksList.HasField(aLoc: TKMPoint): TFieldType;
+function TKMFieldworksList.HasField(aLoc: TKMPoint): TKMFieldType;
 var
   I: Integer;
 begin
@@ -556,7 +556,7 @@ end;
 //Will return the field as the user should see it.
 //Fake fields are shown when the command has not yet been processed, and
 //real fields which the user deleted are hidden with the FakeDeletedFields array
-function TKMFieldworksList.HasFakeField(aLoc: TKMPoint): TFieldType;
+function TKMFieldworksList.HasFakeField(aLoc: TKMPoint): TKMFieldType;
 var
   I, K: Integer;
   Found: Boolean;
@@ -648,7 +648,7 @@ end;
 
 
 { TKMHousePlanList }
-procedure TKMHousePlanList.AddPlan(aHouseType: THouseType; aLoc: TKMPoint);
+procedure TKMHousePlanList.AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
 var
   I: Integer;
 begin

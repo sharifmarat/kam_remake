@@ -124,6 +124,7 @@ type
     class function AllTilesInOneAtlas: Boolean;
 
     property Sprites[aRT: TRXType]: TKMSpritePack read GetSprites; default;
+    property GameResLoadCompleted: Boolean read fGameResLoadCompleted;
 
     //Used externally to access raw RGBA data (e.g. by ExportAnim)
     function LoadSprites(aRT: TRXType; aAlphaShadows: Boolean): Boolean;
@@ -144,7 +145,7 @@ type
     function IsTerminated: Boolean;
   public
     RXType: TRXType;
-    LoadDone: Boolean;    // flag to show, when another rxx load is completed
+    LoadStepDone: Boolean;    // flag to show, when another rxx load is completed
     constructor Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
     procedure Execute; override;
   end;
@@ -174,10 +175,10 @@ type
 const
   MAX_GAME_ATLAS_SIZE = 2048; //Max atlas size for KaM. No need for bigger atlases
   SPRITE_TYPE_EXPORT_NAME: array [TSpriteAtlasType] of string = ('Base', 'Mask');
+  LOG_EXTRA_GFX: Boolean = False;
 
 var
-  LOG_EXTRA_GFX: Boolean = False;
-  ALL_TILES_IN_ONE_TEXTURE: Boolean = False;
+  AllTilesInOneTexture: Boolean = False;
   MaxAtlasSize: Integer;
 
   gGFXPrepData: array[TSpriteAtlasType] of  // for each atlas type
@@ -218,7 +219,7 @@ end;
 function TKMSpritePack.GetSoftenShadowType(aID: Integer): TSoftenShadowType;
 var
   Step, SpriteID: Integer;
-  UT: TUnitType;
+  UT: TKMUnitType;
   Dir: TKMDirection;
 begin
   Result := sstNone;
@@ -230,7 +231,7 @@ begin
               else
                 Result := sstOnlyShadow;
     rxUnits:  begin
-                if InRange(aID, 6251, 6314) then     //Smooth thought bubbles
+                if InRange(aID, 6251, 6322) then     //Smooth thought bubbles
                 begin
                   Result := sstBoth;
                   Exit;
@@ -651,6 +652,7 @@ var
   I, K: Integer;
   pngWidth, pngHeight: Word;
   pngData: TKMCardinalArray;
+  MaskColor: Cardinal;
 begin
   pngWidth := fRXData.Size[aIndex].X;
   pngHeight := fRXData.Size[aIndex].Y;
@@ -661,8 +663,17 @@ begin
   if fRXData.HasMask[aIndex] then
   begin
     for I := 0 to pngHeight - 1 do
-    for K := 0 to pngWidth - 1 do
-      pngData[I * pngWidth + K] := (Byte(fRXData.Mask[aIndex, I * pngWidth + K] > 0) * $FFFFFF) or $FF000000;
+      for K := 0 to pngWidth - 1 do
+      begin
+        if fRT = rxHouses then
+        begin
+          MaskColor := fRXData.Mask[aIndex, I * pngWidth + K];
+          if MaskColor <> 0 then
+            MaskColor := GetGreyColor(MaskColor) or $FF000000;
+        end else
+          MaskColor := (Byte(fRXData.Mask[aIndex, I * pngWidth + K] > 0) * $FFFFFF) or $FF000000;
+        pngData[I * pngWidth + K] := MaskColor;
+      end;
 
     SaveToPng(pngWidth, pngHeight, pngData, aFile);
   end;
@@ -845,6 +856,8 @@ procedure TKMSpritePack.MakeGFX_BinPacking(aTexType: TTexFormat; aStartingIndex:
         //Now that we know texture IDs we can fill GFXData structure
         SetGFXData(Tx, SpriteInfo[I], aMode, Self, fRT);
       end else begin
+        Assert(InRange(I, Low(gGFXPrepData[aMode]), High(gGFXPrepData[aMode])),
+               Format('Preloading sprite index out of range: %d, range [%d;%d]', [I, Low(gGFXPrepData[aMode]), High(gGFXPrepData[aMode])]));
         // Save prepared data for generating later (in main thread)
         gGFXPrepData[aMode, I].SpriteInfo := SpriteInfo[I];
         gGFXPrepData[aMode, I].TexType := aTexType;
@@ -898,7 +911,7 @@ begin
     AllTilesAtlasSize := MakePOT(Ceil(sqrt(K))*(32+2*fPad)); //Tiles are 32x32
     AtlasSize := Min(MaxAtlasSize, AllTilesAtlasSize);       //Use smallest possible atlas size for tiles (should be 1024, until many new tiles were added)
     if AtlasSize = AllTilesAtlasSize then
-      ALL_TILES_IN_ONE_TEXTURE := True;
+      AllTilesInOneTexture := True;
   end else
     AtlasSize := MaxAtlasSize;
 
@@ -1147,7 +1160,7 @@ end;
 
 class function TKMResSprites.AllTilesInOneAtlas: Boolean;
 begin
-  Result := ALL_TILES_IN_ONE_TEXTURE;
+  Result := AllTilesInOneTexture;
 end;
 
 
@@ -1161,7 +1174,7 @@ procedure TKMResSprites.ManageResLoader;
 var
   NextRXTypeI: Integer;
 begin
-  if (fGameResLoader <> nil) and fGameResLoader.LoadDone then
+  if (fGameResLoader <> nil) and fGameResLoader.LoadStepDone then
   begin
     // Generate texture atlas from prepared data for game resources
     // OpenGL work mainly with 1 thread only, so we have to call gl functions only from main thread
@@ -1178,7 +1191,7 @@ begin
       fGameResLoadCompleted := True; // mark loading game res as completed
     end else begin
       fGameResLoader.RXType := TRXType(StrToInt(fGameRXTypes[NextRXTypeI]));
-      fGameResLoader.LoadDone := False;
+      fGameResLoader.LoadStepDone := False;
     end;
   end;
 end;
@@ -1204,7 +1217,6 @@ end;
 constructor TTGameResourceLoader.Create(aResSprites: TKMResSprites; aAlphaShadows: Boolean; aRxType: TRXType);
 begin
   inherited Create(False);
-//  DoTerminate := False;
   fResSprites := aResSprites;
   fAlphaShadows := aAlphaShadows;
   RXType := aRxType;
@@ -1217,12 +1229,12 @@ begin
   inherited;
   while not Terminated do
   begin
-    if not LoadDone then
+    if not LoadStepDone then
     begin
       fResSprites.LoadSprites(RXType, fAlphaShadows);
       if Terminated then Exit;
       fResSprites.fSprites[RXType].MakeGFX(fAlphaShadows, 1, False, IsTerminated);
-      LoadDone := True;
+      LoadStepDone := True;
     end;
     Sleep(1); // sleep a a bit
   end;

@@ -11,7 +11,7 @@ uses
 type
   TKMMenuReplays = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fSaves: TKMSavesCollection;
     fMinimap: TKMMinimap;
@@ -65,7 +65,7 @@ type
         Edit_Rename: TKMEdit;
         Button_Rename, Button_RenameConfirm, Button_RenameCancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -82,7 +82,7 @@ const
 
 
 { TKMGUIMenuReplays }
-constructor TKMMenuReplays.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuReplays.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

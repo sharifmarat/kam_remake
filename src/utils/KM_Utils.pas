@@ -14,16 +14,15 @@ uses
 
   function KMPathLength(aNodeList: TKMPointList): Single;
 
-  function GetHintWHotKey(aTextId, aHotkeyId: Integer): String;
+  function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
+  function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String; overload;
+  function GetHintWHotKey(aTextId, aHotkeyId: Integer): String; overload;
 
 	function GetShiftState(aButton: TMouseButton): TShiftState;
   function GetMultiplicator(aButton: TMouseButton): Word; overload;
   function GetMultiplicator(aShift: TShiftState): Word; overload;
 
   function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
-
-  function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
-
 
 implementation
 uses
@@ -88,34 +87,31 @@ begin
 end;
 
 
-function GetHintWHotKey(aTextId, aHotkeyId: Integer): String;
+function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
 var
   HotKeyStr: String;
 begin
-  Result := gResTexts[aTextId];
+  Result := aText;
   HotKeyStr := gResKeys.GetKeyNameById(aHotkeyId);
   if HotKeyStr <> '' then
     Result := Result + Format(' (''%s'')', [HotKeyStr]);
-
 end;
 
 
-//Multiply color by channels
-function ApplyColorCoef(aColor: Cardinal; aRed, aGreen, aBlue: Single): Cardinal;
-var
-  R, G, B, R2, G2, B2: Byte;
+function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String;
 begin
-  //We split color to RGB values
-  R := aColor and $FF;
-  G := aColor shr 8 and $FF;
-  B := aColor shr 16 and $FF;
-
-  R2 := Min(Round(aRed * R), 255);
-  G2 := Min(Round(aGreen * G), 255);
-  B2 := Min(Round(aBlue * B), 255);
-
-  Result := (R2 + G2 shl 8 + B2 shl 16) or $FF000000;
+  Result := gResTexts[aTextId];
+  aHotkeyStr := Trim(aHotkeyStr);
+  if aHotkeyStr <> '' then
+    Result := Result + Format(' (''%s'')', [aHotkeyStr]);
 end;
+
+
+function GetHintWHotKey(aTextId, aHotkeyId: Integer): String;
+begin
+  Result := GetHintWHotKey(aTextId, gResKeys.GetKeyNameById(aHotkeyId));
+end;
+
 
 
 end.

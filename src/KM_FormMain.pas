@@ -4,17 +4,16 @@ interface
 uses
   Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
   KM_RenderControl, KM_Settings,
+  KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
   {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType; {$ENDIF}
 
 
 type
-
-  { TFormMain }
-
   TFormMain = class(TForm)
     MenuItem1: TMenuItem;
+    SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
     OpenDialog1: TOpenDialog;
     StatusBar1: TStatusBar;
@@ -97,7 +96,10 @@ type
     SaveSettings: TMenuItem;
     N4: TMenuItem;
     ReloadSettings: TMenuItem;
+    SaveDialog1: TSaveDialog;
     chkLogCommands: TCheckBox;
+    N5: TMenuItem;
+    ScriptData1: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -114,6 +116,7 @@ type
     procedure Export_TreesRXClick(Sender: TObject);
     procedure Export_HousesRXClick(Sender: TObject);
     procedure Export_UnitsRXClick(Sender: TObject);
+    procedure Export_ScriptDataClick(Sender: TObject);
     procedure Export_GUIClick(Sender: TObject);
     procedure Export_GUIMainRXClick(Sender: TObject);
     procedure Export_CustomClick(Sender: TObject);
@@ -146,8 +149,10 @@ type
     procedure Civilians1Click(Sender: TObject);
     procedure ReloadSettingsClick(Sender: TObject);
     procedure SaveSettingsClick(Sender: TObject);
+    procedure SaveEditableMission1Click(Sender: TObject);
   private
     fUpdating: Boolean;
+    fMissionDefOpenPath: UnicodeString;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     {$IFDEF MSWindows}
@@ -155,12 +160,16 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+  protected
+    procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
   public
     RenderArea: TKMRenderControl;
+    SuppressAltForMenu: Boolean; //Suppress Alt key 'activate window menu' function
     procedure ControlsSetVisibile(aShowCtrls: Boolean);
     procedure ControlsReset;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
+    procedure SetSaveEditableMission(aEnabled: Boolean);
   end;
 
 
@@ -183,7 +192,7 @@ uses
   KM_Pics,
   KM_RenderPool,
   KM_Hand,
-  KM_ResKeys, KM_FormLogistics,
+  KM_ResKeys, KM_FormLogistics, KM_Game,
   KM_Log;
 
 
@@ -199,6 +208,7 @@ begin
   RenderArea.OnMouseUp := RenderAreaMouseUp;
   RenderArea.OnResize := RenderAreaResize;
   RenderArea.OnRender := RenderAreaRender;
+  SuppressAltForMenu := False;
 
   chkSuperSpeed.Caption := 'Speed x' + IntToStr(DEBUG_SPEEDUP_SPEED);
 
@@ -234,6 +244,13 @@ begin
     Top := gMain.Settings.WindowParams.Top;
   end;
 
+  fMissionDefOpenPath:= ExeDir;
+end;
+
+
+procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
+begin
+  SaveEditableMission1.Enabled := aEnabled;
 end;
 
 
@@ -321,11 +338,17 @@ end;
 
 
 procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 
 
 procedure TFormMain.RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y);
+end;
 
 
 procedure TFormMain.RenderAreaResize(aWidth, aHeight: Integer);
@@ -343,15 +366,32 @@ end;
 //Open
 procedure TFormMain.Open_MissionMenuClick(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
     gGameApp.NewSingleMap(OpenDialog1.FileName, TruncateExt(ExtractFileName(OpenDialog1.FileName)));
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
 end;
 
 
 procedure TFormMain.MenuItem1Click(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
     gGameApp.NewMapEditor(OpenDialog1.FileName, 0, 0);
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
+end;
+
+
+procedure TFormMain.SaveEditableMission1Click(Sender: TObject);
+begin
+  if gGameApp.Game = nil then Exit;
+
+  if not gGameApp.Game.IsMapEditor then Exit;
+
+  if RunSaveDialog(SaveDialog1, gGameApp.Game.MapEditor.MissionDefSavePath, ExtractFileDir(gGameApp.Game.MapEditor.MissionDefSavePath), 'Knights & Merchants Mission (*.dat)|*.dat') then
+    gGameApp.SaveMapEditor(SaveDialog1.FileName);
 end;
 
 
@@ -404,6 +444,13 @@ end;
 procedure TFormMain.Export_UnitsRXClick(Sender: TObject);
 begin
   gRes.Sprites.ExportToPNG(rxUnits);
+end;
+
+procedure TFormMain.Export_ScriptDataClick(Sender: TObject);
+begin
+  if (gGame <> nil)
+    and (gGame.Scripting <> nil) then
+    gGame.Scripting.ExportDataToText;
 end;
 
 procedure TFormMain.Export_GUIClick(Sender: TObject);
@@ -484,6 +531,7 @@ begin
   gGameApp.GameSettings.SaveSettings(True);
 end;
 
+
 procedure TFormMain.ShowLogisticsClick(Sender: TObject);
 begin
   if not Assigned(FormLogistics) then
@@ -515,9 +563,9 @@ procedure TFormMain.Button_StopClick(Sender: TObject);
 begin
   if gGameApp.Game <> nil then
     if gGameApp.Game.IsMapEditor then
-      gGameApp.Stop(gr_MapEdEnd)
+      gGameApp.StopGame(gr_MapEdEnd)
     else
-      gGameApp.Stop(gr_Cancel);
+      gGameApp.StopGame(gr_Cancel);
 end;
 
 
@@ -860,6 +908,17 @@ begin
      end;
   end;
   {$ENDIF}
+end;
+
+
+//Supress default activation of window menu when Alt pressed, as Alt used in some shortcuts
+procedure TFormMain.WndProc(var Message : TMessage);
+begin
+  if (Message.Msg = WM_SYSCOMMAND)
+    and (Message.WParam = SC_KEYMENU)
+    and SuppressAltForMenu then Exit;
+
+  inherited WndProc(Message);
 end;
 
 

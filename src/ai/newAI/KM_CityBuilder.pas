@@ -22,7 +22,7 @@ type
     Active, RemoveTreesMode, ShortcutMode: Boolean;
     FreeWorkers, RequiredWorkers, MaxReqWorkers: Integer;
     CenterPoint: TKMPoint;
-    FieldType: TFieldType; //ft_Corn, ft_Wine, ft_Road
+    FieldType: TKMFieldType; //ft_Corn, ft_Wine, ft_Road
     FieldList: TKMPointList;
   end;
 
@@ -41,7 +41,7 @@ type
     procedure UpdateBuildNodes(out aFreeWorkersCnt: Integer);
     procedure UpdateBuildNode(var aNode: TBuildNode);
 
-    function BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreExistingPlans: Boolean; aHT: THouseType): TConstructionState;
+    function BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreExistingPlans: Boolean; aHT: TKMHouseType): TConstructionState;
     procedure LockNode(var aNode: TBuildNode);
     procedure UnlockPointOfNode(aPoint: TKMPoint; aCheckHousePlan: Boolean = False);
     procedure UnlockNode(var aNode: TBuildNode; aCheckHousePlan: Boolean = False);
@@ -60,8 +60,8 @@ type
     procedure UpdateState(aTick: Cardinal; out aFreeWorkersCnt: Integer);
     procedure ChooseHousesToBuild(aFreeWorkersCnt: Integer; aTick: Cardinal);
 
-    procedure LockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
-    procedure UnlockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
+    procedure LockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
+    procedure UnlockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -130,7 +130,7 @@ begin
       SaveStream.Write(RequiredWorkers);
       SaveStream.Write(MaxReqWorkers);
       SaveStream.Write(CenterPoint, SizeOf(CenterPoint));
-      SaveStream.Write(FieldType, SizeOf(TFieldType));
+      SaveStream.Write(FieldType, SizeOf(TKMFieldType));
       FieldList.SaveToStream(SaveStream);
     end;
 
@@ -162,7 +162,7 @@ begin
     LoadStream.Read(RequiredWorkers);
     LoadStream.Read(MaxReqWorkers);
     LoadStream.Read(CenterPoint, SizeOf(CenterPoint));
-    LoadStream.Read(FieldType, SizeOf(TFieldType));
+    LoadStream.Read(FieldType, SizeOf(TKMFieldType));
     FieldList := TKMPointList.Create();
     FieldList.LoadFromStream(LoadStream);
   end;
@@ -190,7 +190,7 @@ begin
     begin
       U := gHands[fOwner].Units[I];
       if (U <> nil) then
-        U.KillUnit(fOwner, False, False);
+        U.Kill(fOwner, False, False);
     end;
 end;
 
@@ -212,7 +212,7 @@ begin
 end;
 
 
-procedure TKMCityBuilder.LockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
+procedure TKMCityBuilder.LockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
 var
   I,Dist: Integer;
   Point: TKMPoint;
@@ -235,7 +235,7 @@ begin
 end;
 
 
-procedure TKMCityBuilder.UnlockHouseLoc(aHT: THouseType; aLoc: TKMPoint);
+procedure TKMCityBuilder.UnlockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
 var
   I,Dist: Integer;
   Point: TKMPoint;
@@ -397,7 +397,7 @@ end;
 
 //{
 procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
-  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean;
+  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock; aField: TKMFieldType): Boolean;
   begin
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
@@ -427,7 +427,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
     Result := IsCompletedWine(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
   end;
 
-  function BuildField(aIdx: Integer; aFieldType: TFieldType): Boolean;
+  function BuildField(aIdx: Integer; aFieldType: TKMFieldType): Boolean;
   var
     Output: Boolean;
   begin
@@ -633,9 +633,9 @@ end;
 // aUnlockprocedure: Boolean = build house as fast as possible (add max workers to construction, no remove trees in house plan mode)
 // aHouseReservation: Boolean = plan house plan and create reservation but dont place it (roads and fields will be constructed)
 // aIgnoreExistingPlans: Boolean = planner will ignore existing plans and find new place for house (-> allow to plan multiple houses of 1 type)
-// aHT: THouseType = type of house
+// aHT: TKMHouseType = type of house
 // Result: TConstructionState = state of construction
-function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreExistingPlans: Boolean; aHT: THouseType): TConstructionState;
+function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreExistingPlans: Boolean; aHT: TKMHouseType): TConstructionState;
 var
   Output: TConstructionState;
   FieldsComplete: Boolean;
@@ -777,8 +777,8 @@ end;
 
 procedure TKMCityBuilder.ChooseHousesToBuild(aFreeWorkersCnt: Integer; aTick: Cardinal);
 type
-  TSetOfWare = set of TWareType;
-  TSetOfHouseType = set of THouseType;
+  TSetOfWare = set of TKMWareType;
+  TSetOfHouseType = set of TKMHouseType;
 const
 
   //ht_Woodcutters,    ht_Quary,         ht_Sawmill,        ht_IronMine,      ht_GoldMine,
@@ -793,7 +793,7 @@ const
   //BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish];
   WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
-  BUILD_ORDER_WARE: array[0..5] of TWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
+  BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
 var
   StoneShortage, WoodShortage, TrunkShortage, TrunkRequired, GoldShortage: Boolean;
   MaxPlans: Integer;
@@ -801,10 +801,10 @@ var
   WareBalance: TWareBalanceArray;
 
 
-  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: THouseType): Boolean;
+  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: TKMHouseType): Boolean;
   var
     Output: Boolean;
-    initHT: THouseType;
+    initHT: TKMHouseType;
   begin
     Output := True;
     // Repeat until is avaiable house finded (to unlock target house)
@@ -826,10 +826,10 @@ var
   end;
 
 
-  function AddToConstruction(aHT: THouseType; aUnlockProcedureRequired: Boolean = False; aIgnoreWareReserves: Boolean = False): TConstructionState;
+  function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureRequired: Boolean = False; aIgnoreWareReserves: Boolean = False): TConstructionState;
   var
     UnlockProcedure, MaterialShortage: Boolean;
-    FollowingHouse: THouseType;
+    FollowingHouse: TKMHouseType;
     Output: TConstructionState;
   begin
     Output := cs_CannotPlaceHouse;
@@ -856,8 +856,8 @@ var
     Output: Boolean;
     I: Integer;
     Priority: Single;
-    Ware, WT, POM_WT: TWareType;
-    WareOrder: array[0..5] of TWareType;
+    Ware, WT, POM_WT: TKMWareType;
+    WareOrder: array[0..5] of TKMWareType;
     WarePriority: array[0..5] of Single;
   begin
     Output := False;
@@ -913,7 +913,7 @@ var
   procedure SelectHouseBySetOrder();
   var
     I: Integer;
-    WT: TWareType;
+    WT: TKMWareType;
   begin
     // Find the most required house to be build
     for I := Low(BUILD_ORDER_WARE) to High(BUILD_ORDER_WARE) do
@@ -940,7 +940,7 @@ var
     RESERVATION_FullSet: TSetOfHouseType = [ht_ArmorSmithy, ht_ArmorWorkshop, ht_Bakery, ht_Barracks, ht_Butchers, ht_CoalMine, ht_Farm, ht_FisherHut, ht_GoldMine, ht_Inn, ht_IronMine, ht_IronSmithy, ht_Marketplace, ht_Metallurgists, ht_Mill, ht_Quary, ht_Sawmill, ht_School, ht_SiegeWorkshop, ht_Stables, ht_Store, ht_Swine, ht_Tannery, ht_TownHall, ht_WatchTower, ht_WeaponSmithy, ht_WeaponWorkshop, ht_Wineyard, ht_Woodcutters];
   var
     I: Integer;
-    HT: THouseType;
+    HT: TKMHouseType;
     ActualHouseSet: TSetOfHouseType;
   begin
     if StoneShortage then
@@ -978,7 +978,7 @@ const
   BUILD_TOWER_DELAY = 17 * 60 * 10; // 17 minutes before end of peace
 var
   TrunkBalance: Single;
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   StoneShortage := False;
   TrunkShortage := False;
@@ -1063,7 +1063,7 @@ const
   MAX_SHORTCUTS_PER_HOUSE_TYPE = 2;
   MAX_DISTANCE_TO_ALL_HOUSES = 8;
   MAX_WORKERS_FOR_NODE = 4;
-  HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of THouseType = (
+  HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (
     {ht_ArmorSmithy}    [ ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ],
     {ht_ArmorWorkshop}  [ ht_Tannery,       ht_Barracks                     ],
     {ht_Bakery}         [ ht_Inn,           ht_Store,        ht_Mill        ],
@@ -1095,10 +1095,10 @@ const
     {ht_Woodcutters}    [ ht_None                                           ]
   );
 
-  function FindAndMarkNewHouse(var aHT: THouseType; var aLoc: TKMPoint): Boolean;
+  function FindAndMarkNewHouse(var aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
   var
     I: Integer;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     Result := True;
     for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
@@ -1164,7 +1164,7 @@ const
 
 var
   I,K,NodeIdx, Dist: Integer;
-  HT, BaseHT: THouseType;
+  HT, BaseHT: TKMHouseType;
   BaseLoc: TKMPoint;
   PlannedHouses: TPlannedHousesArray;
   Locs: TKMPointTagList;
@@ -1249,7 +1249,7 @@ const
   );
 var
   I, cnt: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   aBalanceText := aBalanceText + '|Construction: ';
   cnt := 0;
@@ -1337,14 +1337,14 @@ end;
 
 
 
-function BuildHouse_GA_MODE(aHT: THouseType): TConstructionState;
+function BuildHouse_GA_MODE(aHT: TKMHouseType): TConstructionState;
 
 // Build house na GA mode (for Runner)
-// aHT: THouseType = type of house
+// aHT: TKMHouseType = type of house
 // Result: TConstructionState = state of construction
-function TKMCityBuilder.BuildHouse_GA_MODE(aHT: THouseType): TConstructionState;
+function TKMCityBuilder.BuildHouse_GA_MODE(aHT: TKMHouseType): TConstructionState;
 var
-  FieldType: TFieldType;
+  FieldType: TKMFieldType;
   FieldList: TKMPointList;
 
   procedure AddField();
@@ -1417,17 +1417,17 @@ var
 
 function TKMCityBuilder.ChooseHousesToBuildGA(aWorkerCnt: Integer): Boolean;
 const
-  BASIC_HOUSES: set of THouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
+  BASIC_HOUSES: set of TKMHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
 var
   MaxPlans: Integer;
   RequiredHouses: TRequiredHousesArray;
   WareBalance: TWareBalanceArray;
 
 
-  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: THouseType): Boolean;
+  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: TKMHouseType): Boolean;
   var
     Output: Boolean;
-    initHT: THouseType;
+    initHT: TKMHouseType;
   begin
     Output := True;
     // Repeat until is avaiable house finded (to unlock target house)
@@ -1449,10 +1449,10 @@ var
   end;
 
 
-  function AddToConstruction(aHT: THouseType; aUnlockProcedureRequired: Boolean = False): TConstructionState;
+  function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureRequired: Boolean = False): TConstructionState;
   var
     UnlockProcedure: Boolean;
-    FollowingHouse: THouseType;
+    FollowingHouse: TKMHouseType;
     Output: TConstructionState;
   begin
     Output := cs_CannotPlaceHouse;
@@ -1475,7 +1475,7 @@ var
   procedure SelectBestHouses();
   var
     I: Integer;
-    WT, HighWT: TWareType;
+    WT, HighWT: TKMWareType;
     HighPriority: Single;
     WarePriorityArr: array[WARE_MIN..WARE_MAX] of Single;
   begin
@@ -1519,7 +1519,7 @@ var
   procedure CheckHouseReservation();
   var
     I: Integer;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
       for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
@@ -1532,7 +1532,7 @@ var
           end;
   end;
 var
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   RequiredHouses := fPredictor.RequiredHouses;
   WareBalance := fPredictor.WareBalance;
@@ -1555,9 +1555,9 @@ end;
 
 function TKMCityBuilder.ChooseHousesToBuild(aMaxCnt: Integer): Boolean;
 type
-  TSetOfWare = set of TWareType;
+  TSetOfWare = set of TKMWareType;
 const
-  BASIC_HOUSES: set of THouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
+  BASIC_HOUSES: set of TKMHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
   BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish];
   WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
@@ -1566,10 +1566,10 @@ var
   WareBalance: TWareBalanceArray;
 
 
-  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: THouseType): Boolean;
+  function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: TKMHouseType): Boolean;
   var
     Output: Boolean;
-    initHT: THouseType;
+    initHT: TKMHouseType;
   begin
     Output := True;
     // Repeat until is avaiable house finded (to unlock target house)
@@ -1591,10 +1591,10 @@ var
   end;
 
 
-  function AddToConstruction(aHT: THouseType; aUnlockProcedureRequired: Boolean = False): TConstructionState;
+  function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureRequired: Boolean = False): TConstructionState;
   var
     UnlockProcedure: Boolean;
-    FollowingHouse: THouseType;
+    FollowingHouse: TKMHouseType;
     Output: TConstructionState;
   begin
     Output := cs_CannotPlaceHouse;
@@ -1622,8 +1622,8 @@ var
     Output: Boolean;
     I: Integer;
     Priority, POM_Priority: Single;
-    Ware, WT, POM_WT: TWareType;
-    WareOrder: array[0..5] of TWareType;
+    Ware, WT, POM_WT: TKMWareType;
+    WareOrder: array[0..5] of TKMWareType;
     WarePriority: array[0..5] of Single;
   begin
     Output := False;
@@ -1683,7 +1683,7 @@ var
   procedure CheckHouseReservation();
   var
     I: Integer;
-    HT: THouseType;
+    HT: TKMHouseType;
   begin
     for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
       for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
@@ -1698,7 +1698,7 @@ var
 var
   Output: Boolean;
   POMCoal: Integer;
-  HT: THouseType;
+  HT: TKMHouseType;
 begin
   Output := False;
   RequiredHouses := fPredictor.RequiredHouses;
@@ -1743,7 +1743,7 @@ begin
 end;
 
 procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
-  function IsPlan(aPoint: TKMPoint; aLock: TTileLock; aField: TFieldType): Boolean;
+  function IsPlan(aPoint: TKMPoint; aLock: TKMTileLock; aField: TKMFieldType): Boolean;
   begin
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
@@ -1773,7 +1773,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
     Result := IsCompletedWine(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
   end;
 
-  function BuildField(aIdx: Integer; aFieldType: TFieldType): Boolean;
+  function BuildField(aIdx: Integer; aFieldType: TKMFieldType): Boolean;
   var
     Output: Boolean;
   begin

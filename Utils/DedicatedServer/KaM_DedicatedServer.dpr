@@ -5,6 +5,13 @@ program KaM_DedicatedServer;
   {$APPTYPE CONSOLE}
 {$ENDIF}
 
+//Next instructions could help sometimes for cross-compile builds
+//{$IFDEF FPC_CROSSCOMPILING}
+//  {$IFDEF UNIX}
+//    {$linklib libc_nonshared.a}
+//  {$ENDIF}
+//{$ENDIF}
+
 uses
   {$IFDEF UNIX}
     {$DEFINE UseCThreads}
@@ -19,13 +26,15 @@ uses
   KM_Log in '..\..\src\KM_Log.pas',
   KM_Settings in '..\..\src\KM_Settings.pas',
   KM_DedicatedServer in '..\..\src\net\other\KM_DedicatedServer.pas',
+  {$IFDEF WDC}
   KM_ConsoleTimer in '..\..\src\utils\KM_ConsoleTimer.pas',
+  {$ENDIF}
   KM_ServerEventHandler in 'KM_ServerEventHandler.pas';
 
 var
   fEventHandler: TKMServerEventHandler;
   fDedicatedServer: TKMDedicatedServer;
-  fSettings: TGameSettings;
+  fSettings: TKMGameSettings;
   fSettingsLastModified: Integer;
   fLastSettingsFileCheck: Cardinal;
 
@@ -83,8 +92,8 @@ begin
     {$IFDEF WDC}
     MyProcessMessages; //This will process network (or other) events
     Sleep(1); //Don't hog CPU (this can also be used to create an artifical latency)
-    CheckSynchronize(); //Update threads synchronization, as our custom TKMConsoleTimer is working in a separate thread
     {$ENDIF}
+    CheckSynchronize(); //Update threads synchronization, as Console Timers work in a separate thread
   end;
 end;
 
@@ -143,6 +152,10 @@ end;
 {$ENDIF}
 
 begin
+  //Define CONSOLE for Lazarus
+  {$IFDEF FPC}
+    {$DEFINE CONSOLE}
+  {$ENDIF}
   {$IFDEF UNIX}
   //Handle interupts (requests for our process to terminate)
   FpSignal(SIGTerm, @OnInterrupt);
@@ -161,7 +174,7 @@ begin
 
   fEventHandler.ServerStatusMessage('Using protocol for clients running '+NET_PROTOCOL_REVISON);
 
-  fSettings := TGameSettings.Create;
+  fSettings := TKMGameSettings.Create;
   fSettings.SaveSettings(true);
   fSettingsLastModified := FileAge(ExeDir+SETTINGS_FILE);
   fLastSettingsFileCheck := TimeGet;

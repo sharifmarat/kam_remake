@@ -23,8 +23,8 @@ type
     procedure HouseHealthChange(Sender: TObject; Shift: TShiftState);
     procedure HouseHealthClickHold(Sender: TObject; AButton: TMouseButton; var aHandled: Boolean);
 
-    procedure House_SetDeliveryMode(aMode: TDeliveryMode);
-    procedure House_UpdateDeliveryMode(aMode: TDeliveryMode);
+    procedure House_SetDeliveryMode(aMode: TKMDeliveryMode);
+    procedure House_UpdateDeliveryMode(aMode: TKMDeliveryMode);
     procedure House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
     procedure House_RepairToggle(Sender: TObject);
     procedure House_ClosedForWorkerToggle(Sender: TObject);
@@ -315,7 +315,7 @@ end;
 procedure TKMMapEdHouse.ShowCommonResources;
 var
   I: Integer;
-  Res: TWareType;
+  Res: TKMWareType;
   HouseDat: TKMHouseSpec;
 begin
   HouseDat := gRes.Houses[fHouse.HouseType];
@@ -538,7 +538,7 @@ end;
 procedure TKMMapEdHouse.HouseChange(Sender: TObject; aValue: Integer);
 var
   I: Integer;
-  Res: TWareType;
+  Res: TKMWareType;
   NewCountAdd: Integer;
   HouseDat: TKMHouseSpec;
 begin
@@ -622,7 +622,7 @@ begin
 end;
 
 
-procedure TKMMapEdHouse.House_UpdateDeliveryMode(aMode: TDeliveryMode);
+procedure TKMMapEdHouse.House_UpdateDeliveryMode(aMode: TKMDeliveryMode);
 var
   TexId: Word;
 begin
@@ -636,7 +636,7 @@ var
 end;
 
 
-procedure TKMMapEdHouse.House_SetDeliveryMode(aMode: TDeliveryMode);
+procedure TKMMapEdHouse.House_SetDeliveryMode(aMode: TKMDeliveryMode);
 begin
   fHouse.SetDeliveryModeInstantly(aMode);
   House_UpdateDeliveryMode(aMode);
@@ -715,7 +715,7 @@ end;
 
 procedure TKMMapEdHouse.BarracksChange(Sender: TObject; Shift: TShiftState);
 var
-  Res: TWareType;
+  Res: TKMWareType;
   Barracks: TKMHouseBarracks;
   NewCount: Word;
 begin
@@ -756,7 +756,7 @@ end;
 
 procedure TKMMapEdHouse.StoreChange(Sender: TObject; Shift: TShiftState);
 var
-  Res: TWareType;
+  Res: TKMWareType;
   Store: TKMHouseStore;
   NewCount: Word;
 begin

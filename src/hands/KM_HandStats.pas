@@ -9,7 +9,7 @@ uses
 
 //These are stats for each player
 type
-  THouseStats = packed record
+  TKMHouseStats = packed record
     Planned,             //Houseplans were placed
     PlanRemoved,         //Houseplans were removed
     Started,             //Construction started
@@ -22,7 +22,7 @@ type
     Destroyed: Cardinal; //damage to other players
   end;
 
-  TUnitStats = packed record
+  TKMUnitStats = packed record
     Initial,          //Provided at mission start
     Training,         //Currently in training queue
     Trained,          //Trained by player
@@ -30,7 +30,7 @@ type
     Killed: Cardinal; //Killed (incl. self)
   end;
 
-  TWareStats = packed record
+  TKMWareStats = packed record
     Initial: Cardinal;
     Produced: Cardinal;
     Consumed: Cardinal;
@@ -56,53 +56,53 @@ type
     // It's important to use cak_Total instead of cak_Instantenious, because Inst. can be empty even after load and 1 update state!
     fArmyEmpty: array[cak_Total..cak_Lost] of array [WARRIOR_MIN..WARRIOR_MAX] of Boolean;
 
-    Houses: array [THouseType] of THouseStats;
-    Units: array [HUMANS_MIN..HUMANS_MAX] of TUnitStats;
-    Wares: array [WARE_MIN..WARE_MAX] of TWareStats;
+    Houses: array [TKMHouseType] of TKMHouseStats;
+    Units: array [HUMANS_MIN..HUMANS_MAX] of TKMUnitStats;
+    Wares: array [WARE_MIN..WARE_MAX] of TKMWareStats;
     MilitiaTrainedInTownHall: Cardinal;
 
     fWareDistribution: TKMWareDistribution;
-    function GetChartWares(aWare: TWareType): TKMCardinalArray;
-    function GetChartArmy(aChartKind: TKMChartArmyKind; aWarrior: TUnitType): TKMCardinalArray;
-    function GetArmyChartValue(aChartKind: TKMChartArmyKind; aUnitType: TUnitType): Integer;
+    function GetChartWares(aWare: TKMWareType): TKMCardinalArray;
+    function GetChartArmy(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): TKMCardinalArray;
+    function GetArmyChartValue(aChartKind: TKMChartArmyKind; aUnitType: TKMUnitType): Integer;
   public
     constructor Create;
     destructor Destroy; override;
 
     //Input reported by Player
-    procedure WareInitial(aRes: TWareType; aCount: Cardinal);
-    procedure WareProduced(aRes: TWareType; aCount: Cardinal);
-    procedure WareConsumed(aRes: TWareType; aCount: Cardinal = 1);
-    procedure HousePlanned(aType: THouseType);
-    procedure HousePlanRemoved(aType: THouseType);
-    procedure HouseStarted(aType: THouseType);
-    procedure HouseClosed(aWasClosed: Boolean; aType: THouseType);
-    procedure HouseEnded(aType: THouseType);
-    procedure HouseCreated(aType: THouseType; aWasBuilt: Boolean);
-    procedure HouseLost(aType: THouseType);
-    procedure HouseSelfDestruct(aType: THouseType);
-    procedure HouseDestroyed(aType: THouseType);
-    procedure UnitCreated(aType: TUnitType; aWasTrained: Boolean; aFromTownHall: Boolean = False);
-    procedure UnitAddedToTrainingQueue(aType: TUnitType);
-    procedure UnitRemovedFromTrainingQueue(aType: TUnitType);
-    procedure UnitLost(aType: TUnitType);
-    procedure UnitKilled(aType: TUnitType);
+    procedure WareInitial(aRes: TKMWareType; aCount: Cardinal);
+    procedure WareProduced(aRes: TKMWareType; aCount: Cardinal);
+    procedure WareConsumed(aRes: TKMWareType; aCount: Cardinal = 1);
+    procedure HousePlanned(aType: TKMHouseType);
+    procedure HousePlanRemoved(aType: TKMHouseType);
+    procedure HouseStarted(aType: TKMHouseType);
+    procedure HouseClosed(aWasClosed: Boolean; aType: TKMHouseType);
+    procedure HouseEnded(aType: TKMHouseType);
+    procedure HouseCreated(aType: TKMHouseType; aWasBuilt: Boolean);
+    procedure HouseLost(aType: TKMHouseType);
+    procedure HouseSelfDestruct(aType: TKMHouseType);
+    procedure HouseDestroyed(aType: TKMHouseType);
+    procedure UnitCreated(aType: TKMUnitType; aWasTrained: Boolean; aFromTownHall: Boolean = False);
+    procedure UnitAddedToTrainingQueue(aType: TKMUnitType);
+    procedure UnitRemovedFromTrainingQueue(aType: TKMUnitType);
+    procedure UnitLost(aType: TKMUnitType);
+    procedure UnitKilled(aType: TKMUnitType);
 
     property WareDistribution: TKMWareDistribution read fWareDistribution;
 
     //Output
-    function GetHouseQty(aType: THouseType): Integer; overload;
-    function GetHouseOpenedQty(aType: THouseType): Integer; overload;
-    function GetHouseQty(aType: array of THouseType): Integer; overload;
-    function GetHouseWip(aType: THouseType): Integer; overload;
-    function GetHousePlans(aType: THouseType): Integer; overload;
-    function GetHouseWip(aType: array of THouseType): Integer; overload;
-    function GetHouseTotal(aType: THouseType): Integer;
-    function GetUnitQty(aType: TUnitType): Integer;
-    function GetUnitWip(aType: TUnitType): Integer;
-    function GetUnitKilledQty(aType: TUnitType): Integer;
-    function GetUnitLostQty(aType: TUnitType): Integer;
-    function GetWareBalance(aRT: TWareType): Integer;
+    function GetHouseQty(aType: TKMHouseType): Integer; overload;
+    function GetHouseOpenedQty(aType: TKMHouseType): Integer; overload;
+    function GetHouseQty(aType: array of TKMHouseType): Integer; overload;
+    function GetHouseWip(aType: TKMHouseType): Integer; overload;
+    function GetHousePlans(aType: TKMHouseType): Integer; overload;
+    function GetHouseWip(aType: array of TKMHouseType): Integer; overload;
+    function GetHouseTotal(aType: TKMHouseType): Integer;
+    function GetUnitQty(aType: TKMUnitType): Integer;
+    function GetUnitWip(aType: TKMUnitType): Integer;
+    function GetUnitKilledQty(aType: TKMUnitType): Integer;
+    function GetUnitLostQty(aType: TKMUnitType): Integer;
+    function GetWareBalance(aRT: TKMWareType): Integer;
     function GetArmyCount: Integer;
     function GetCitizensCount: Integer;
 
@@ -113,10 +113,10 @@ type
     function GetHousesLost: Cardinal;
     function GetHousesDestroyed: Cardinal;
     function GetWarriorsTrained: Cardinal;
-    function GetWarriorsTotal(aWarriorType: TUnitType): Cardinal;
+    function GetWarriorsTotal(aWarriorType: TKMUnitType): Cardinal;
     function GetWarriorsKilled: Cardinal;
     function GetWarriorsLost: Cardinal;
-    function GetWaresProduced(aRT: TWareType): Cardinal;
+    function GetWaresProduced(aRT: TKMWareType): Cardinal;
     function GetCivilProduced: Cardinal;
     function GetWeaponsProduced: Cardinal;
     function GetWarfareProduced: Cardinal;
@@ -124,11 +124,11 @@ type
     property ChartCount: Integer read fChartCount;
     property ChartHouses: TKMCardinalArray read fChartHouses;
     property ChartCitizens: TKMCardinalArray read fChartCitizens;
-    property ChartWares[aWare: TWareType]: TKMCardinalArray read GetChartWares;
+    property ChartWares[aWare: TKMWareType]: TKMCardinalArray read GetChartWares;
 
-    property ChartArmy[aChartKind: TKMChartArmyKind; aWarrior: TUnitType]: TKMCardinalArray read GetChartArmy;
-    function ChartWaresEmpty(aWare: TWareType): Boolean;
-    function ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TUnitType): Boolean;
+    property ChartArmy[aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType]: TKMCardinalArray read GetChartArmy;
+    function ChartWaresEmpty(aWare: TKMWareType): Boolean;
+    function ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -146,7 +146,7 @@ uses
 { TKMHandStats }
 constructor TKMHandStats.Create;
 var
-  WT: TUnitType;
+  WT: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
   inherited;
@@ -166,20 +166,20 @@ begin
 end;
 
 
-procedure TKMHandStats.HousePlanned(aType: THouseType);
+procedure TKMHandStats.HousePlanned(aType: TKMHouseType);
 begin
   Inc(Houses[aType].Planned);
 end;
 
 
-procedure TKMHandStats.HousePlanRemoved(aType: THouseType);
+procedure TKMHandStats.HousePlanRemoved(aType: TKMHouseType);
 begin
   Inc(Houses[aType].PlanRemoved);
 end;
 
 
 //New house in progress
-procedure TKMHandStats.HouseStarted(aType: THouseType);
+procedure TKMHandStats.HouseStarted(aType: TKMHouseType);
 begin
   Inc(Houses[aType].Started);
 end;
@@ -187,14 +187,14 @@ end;
 
 //House building process was ended. We don't really know if it was canceled or destroyed or finished
 //Other House** methods will handle that
-procedure TKMHandStats.HouseEnded(aType: THouseType);
+procedure TKMHandStats.HouseEnded(aType: TKMHouseType);
 begin
   Inc(Houses[aType].Ended);
 end;
 
 
 //House closed for worker
-procedure TKMHandStats.HouseClosed(aWasClosed: Boolean; aType: THouseType);
+procedure TKMHandStats.HouseClosed(aWasClosed: Boolean; aType: TKMHouseType);
 begin
   if aWasClosed then
     Inc(Houses[aType].Closed)
@@ -204,7 +204,7 @@ end;
 
 
 //New house, either built by player or created by mission script
-procedure TKMHandStats.HouseCreated(aType: THouseType; aWasBuilt:boolean);
+procedure TKMHandStats.HouseCreated(aType: TKMHouseType; aWasBuilt:boolean);
 begin
   if aWasBuilt then
     Inc(Houses[aType].Built)
@@ -214,38 +214,38 @@ end;
 
 
 //Destroyed by enemy
-procedure TKMHandStats.HouseLost(aType: THouseType);
+procedure TKMHandStats.HouseLost(aType: TKMHouseType);
 begin
   Inc(Houses[aType].Lost);
 end;
 
 
-procedure TKMHandStats.HouseSelfDestruct(aType: THouseType);
+procedure TKMHandStats.HouseSelfDestruct(aType: TKMHouseType);
 begin
   Inc(Houses[aType].SelfDestruct);
 end;
 
 
 //Player has destroyed an enemy house
-procedure TKMHandStats.HouseDestroyed(aType: THouseType);
+procedure TKMHandStats.HouseDestroyed(aType: TKMHouseType);
 begin
   Inc(Houses[aType].Destroyed);
 end;
 
 
-procedure TKMHandStats.UnitAddedToTrainingQueue(aType: TUnitType);
+procedure TKMHandStats.UnitAddedToTrainingQueue(aType: TKMUnitType);
 begin
   Inc(Units[aType].Training);
 end;
 
 
-procedure TKMHandStats.UnitRemovedFromTrainingQueue(aType: TUnitType);
+procedure TKMHandStats.UnitRemovedFromTrainingQueue(aType: TKMUnitType);
 begin
   Dec(Units[aType].Training);
 end;
 
 
-procedure TKMHandStats.UnitCreated(aType: TUnitType; aWasTrained: Boolean; aFromTownHall: Boolean = False);
+procedure TKMHandStats.UnitCreated(aType: TKMUnitType; aWasTrained: Boolean; aFromTownHall: Boolean = False);
 begin
   if aWasTrained then
   begin
@@ -257,27 +257,27 @@ begin
 end;
 
 
-procedure TKMHandStats.UnitLost(aType: TUnitType);
+procedure TKMHandStats.UnitLost(aType: TKMUnitType);
 begin
   Inc(Units[aType].Lost);
 end;
 
 
-procedure TKMHandStats.UnitKilled(aType: TUnitType);
+procedure TKMHandStats.UnitKilled(aType: TKMUnitType);
 begin
   Inc(Units[aType].Killed);
 end;
 
 
-procedure TKMHandStats.WareInitial(aRes: TWareType; aCount: Cardinal);
+procedure TKMHandStats.WareInitial(aRes: TKMWareType; aCount: Cardinal);
 begin
   if aRes <> wt_None then
     Inc(Wares[aRes].Initial, aCount);
 end;
 
 
-procedure TKMHandStats.WareProduced(aRes: TWareType; aCount: Cardinal);
-var R: TWareType;
+procedure TKMHandStats.WareProduced(aRes: TKMWareType; aCount: Cardinal);
+var R: TKMWareType;
 begin
   if aRes <> wt_None then
     case aRes of
@@ -290,7 +290,7 @@ begin
 end;
 
 
-procedure TKMHandStats.WareConsumed(aRes: TWareType; aCount: Cardinal = 1);
+procedure TKMHandStats.WareConsumed(aRes: TKMWareType; aCount: Cardinal = 1);
 begin
   if aRes <> wt_None then
     Inc(Wares[aRes].Consumed, aCount);
@@ -298,8 +298,8 @@ end;
 
 
 //How many complete houses are there
-function TKMHandStats.GetHouseQty(aType: THouseType): Integer;
-var H: THouseType;
+function TKMHandStats.GetHouseQty(aType: TKMHouseType): Integer;
+var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
@@ -312,8 +312,8 @@ end;
 
 
 //How many complete opened houses are there
-function TKMHandStats.GetHouseOpenedQty(aType: THouseType): Integer;
-var H: THouseType;
+function TKMHandStats.GetHouseOpenedQty(aType: TKMHouseType): Integer;
+var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
@@ -326,10 +326,10 @@ end;
 
 
 //How many complete houses there are
-function TKMHandStats.GetHouseQty(aType: array of THouseType): Integer;
+function TKMHandStats.GetHouseQty(aType: array of TKMHouseType): Integer;
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
 begin
   Result := 0;
   if (Length(aType) = 0) then
@@ -350,8 +350,8 @@ end;
 
 
 //How many houses are planned and in progress
-function TKMHandStats.GetHouseWip(aType: THouseType): Integer;
-var H: THouseType;
+function TKMHandStats.GetHouseWip(aType: TKMHouseType): Integer;
+var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
@@ -364,24 +364,24 @@ end;
 
 
 //How many house plans player has at certain moment...
-function TKMHandStats.GetHousePlans(aType: THouseType): Integer;
+function TKMHandStats.GetHousePlans(aType: TKMHouseType): Integer;
 begin
   Result := Houses[aType].Planned - Houses[aType].PlanRemoved;
 end;
 
 
 //How many houses are planned in progress and ready
-function TKMHandStats.GetHouseTotal(aType: THouseType): Integer;
+function TKMHandStats.GetHouseTotal(aType: TKMHouseType): Integer;
 begin
   Result := GetHouseQty(aType) + GetHouseWip(aType);
 end;
 
 
 //How many houses are planned and in progress
-function TKMHandStats.GetHouseWip(aType: array of THouseType): Integer;
+function TKMHandStats.GetHouseWip(aType: array of TKMHouseType): Integer;
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
 begin
   Result := 0;
   if (Length(aType) = 0) then
@@ -401,9 +401,9 @@ begin
 end;
 
 
-function TKMHandStats.GetUnitQty(aType: TUnitType): Integer;
+function TKMHandStats.GetUnitQty(aType: TKMUnitType): Integer;
 var
-  UT: TUnitType;
+  UT: TKMUnitType;
 begin
   Result := 0;
   case aType of
@@ -423,9 +423,9 @@ begin
 end;
 
 
-function TKMHandStats.GetUnitWip(aType: TUnitType): Integer;
+function TKMHandStats.GetUnitWip(aType: TKMUnitType): Integer;
 var
-  UT: TUnitType;
+  UT: TKMUnitType;
 begin
   Result := 0;
   case aType of
@@ -437,22 +437,22 @@ begin
 end;
 
 
-function TKMHandStats.GetUnitKilledQty(aType: TUnitType): Integer;
+function TKMHandStats.GetUnitKilledQty(aType: TKMUnitType): Integer;
 begin
   Result := Units[aType].Killed;
 end;
 
 
-function TKMHandStats.GetUnitLostQty(aType: TUnitType): Integer;
+function TKMHandStats.GetUnitLostQty(aType: TKMUnitType): Integer;
 begin
   Result := Units[aType].Lost;
 end;
 
 
 //How many wares player has right now
-function TKMHandStats.GetWareBalance(aRT: TWareType): Integer;
+function TKMHandStats.GetWareBalance(aRT: TKMWareType): Integer;
 var
-  RT: TWareType;
+  RT: TKMWareType;
 begin
   Result := 0;
   case aRT of
@@ -467,7 +467,7 @@ end;
 
 
 function TKMHandStats.GetArmyCount: Integer;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := WARRIOR_MIN to WARRIOR_MAX do
@@ -476,7 +476,7 @@ end;
 
 
 function TKMHandStats.GetCitizensCount: Integer;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := CITIZEN_MIN to CITIZEN_MAX do
@@ -486,7 +486,7 @@ end;
 
 //The value includes only citizens, Warriors are counted separately
 function TKMHandStats.GetCitizensTrained: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := CITIZEN_MIN to CITIZEN_MAX do
@@ -495,7 +495,7 @@ end;
 
 
 function TKMHandStats.GetCitizensLost: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := CITIZEN_MIN to CITIZEN_MAX do
@@ -504,7 +504,7 @@ end;
 
 
 function TKMHandStats.GetCitizensKilled: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := CITIZEN_MIN to CITIZEN_MAX do
@@ -513,7 +513,7 @@ end;
 
 
 function TKMHandStats.GetHousesBuilt: Cardinal;
-var HT: THouseType;
+var HT: TKMHouseType;
 begin
   Result := 0;
   for HT := HOUSE_MIN to HOUSE_MAX do
@@ -522,7 +522,7 @@ end;
 
 
 function TKMHandStats.GetHousesLost: Cardinal;
-var HT: THouseType;
+var HT: TKMHouseType;
 begin
   Result := 0;
   for HT := HOUSE_MIN to HOUSE_MAX do
@@ -531,7 +531,7 @@ end;
 
 
 function TKMHandStats.GetHousesDestroyed: Cardinal;
-var HT: THouseType;
+var HT: TKMHouseType;
 begin
   Result := 0;
   for HT := HOUSE_MIN to HOUSE_MAX do
@@ -541,7 +541,7 @@ end;
 
 //The value includes all Warriors
 function TKMHandStats.GetWarriorsTrained: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := WARRIOR_MIN to WARRIOR_MAX do
@@ -549,14 +549,14 @@ begin
 end;
 
 
-function TKMHandStats.GetWarriorsTotal(aWarriorType: TUnitType): Cardinal;
+function TKMHandStats.GetWarriorsTotal(aWarriorType: TKMUnitType): Cardinal;
 begin
   Result := Units[aWarriorType].Initial + Units[aWarriorType].Trained;
 end;
 
 
 function TKMHandStats.GetWarriorsLost: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := WARRIOR_MIN to WARRIOR_MAX do
@@ -565,7 +565,7 @@ end;
 
 
 function TKMHandStats.GetWarriorsKilled: Cardinal;
-var UT: TUnitType;
+var UT: TKMUnitType;
 begin
   Result := 0;
   for UT := WARRIOR_MIN to WARRIOR_MAX do
@@ -573,8 +573,8 @@ begin
 end;
 
 
-function TKMHandStats.GetWaresProduced(aRT: TWareType): Cardinal;
-var RT: TWareType;
+function TKMHandStats.GetWaresProduced(aRT: TKMWareType): Cardinal;
+var RT: TKMWareType;
 begin
   Result := 0;
   case aRT of
@@ -590,7 +590,7 @@ end;
 
 //Everything except weapons
 function TKMHandStats.GetCivilProduced: Cardinal;
-var RT: TWareType;
+var RT: TKMWareType;
 begin
   Result := 0;
   for RT := WARE_MIN to WARE_MAX do
@@ -601,7 +601,7 @@ end;
 
 //KaM includes all weapons and armor, but not horses
 function TKMHandStats.GetWeaponsProduced: Cardinal;
-var RT: TWareType;
+var RT: TKMWareType;
 begin
   Result := 0;
   for RT := WEAPON_MIN to WEAPON_MAX do
@@ -610,7 +610,7 @@ end;
 
 
 function TKMHandStats.GetWarfareProduced: Cardinal;
-var RT: TWareType;
+var RT: TKMWareType;
 begin
   Result := 0;
   for RT := WARFARE_MIN to WARFARE_MAX do
@@ -618,9 +618,9 @@ begin
 end;
 
 
-function TKMHandStats.GetChartWares(aWare: TWareType): TKMCardinalArray;
+function TKMHandStats.GetChartWares(aWare: TKMWareType): TKMCardinalArray;
 var
-  RT: TWareType;
+  RT: TKMWareType;
   I: Integer;
 begin
   case aWare of
@@ -659,9 +659,9 @@ begin
 end;
 
 
-function TKMHandStats.GetChartArmy(aChartKind: TKMChartArmyKind; aWarrior: TUnitType): TKMCardinalArray;
+function TKMHandStats.GetChartArmy(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): TKMCardinalArray;
 var
-  WT: TUnitType;
+  WT: TKMUnitType;
   I: Integer;
 begin
   case aWarrior of
@@ -685,9 +685,9 @@ begin
 end;
 
 
-function TKMHandStats.ChartWaresEmpty(aWare: TWareType): Boolean;
+function TKMHandStats.ChartWaresEmpty(aWare: TKMWareType): Boolean;
 var
-  RT: TWareType;
+  RT: TKMWareType;
 begin
   case aWare of
     WARE_MIN..WARE_MAX: Result := (fChartCount = 0) or (ChartWares[aWare][fChartCount-1] = 0);
@@ -727,9 +727,9 @@ begin
 end;
 
 
-function TKMHandStats.ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TUnitType): Boolean;
+function TKMHandStats.ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): Boolean;
 var
-  WT: TUnitType;
+  WT: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
   CKind := GetArmyEmptyCKind(aChartKind);
@@ -753,8 +753,8 @@ end;
 
 procedure TKMHandStats.Save(SaveStream: TKMemoryStream);
 var
-  R: TWareType;
-  W: TUnitType;
+  R: TKMWareType;
+  W: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
   SaveStream.WriteA('PlayerStats');
@@ -782,8 +782,8 @@ end;
 
 procedure TKMHandStats.Load(LoadStream: TKMemoryStream);
 var
-  I: TWareType;
-  W: TUnitType;
+  I: TKMWareType;
+  W: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
   LoadStream.ReadAssert('PlayerStats');
@@ -816,7 +816,7 @@ begin
 end;
 
 
-function TKMHandStats.GetArmyChartValue(aChartKind: TKMChartArmyKind; aUnitType: TUnitType): Integer;
+function TKMHandStats.GetArmyChartValue(aChartKind: TKMChartArmyKind; aUnitType: TKMUnitType): Integer;
 begin
   case aChartKind of
     cak_Instantaneous:  Result := GetUnitQty(aUnitType);
@@ -830,8 +830,8 @@ end;
 
 procedure TKMHandStats.UpdateState;
 var
-  I: TWareType;
-  W: TUnitType;
+  I: TKMWareType;
+  W: TKMUnitType;
   ArmyQty: Integer;
   CKind, ArmyEmptyCKind: TKMChartArmyKind;
 begin

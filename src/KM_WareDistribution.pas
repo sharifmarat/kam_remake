@@ -21,12 +21,12 @@ type
   TKMWareDistribution = class
   private
     fWareDistribution: array [1..4, 1..4] of Byte;
-    procedure SetWareDistribution(aWare: TWareType; aHouse: THouseType; aValue: Byte);
-    function GetWareDistribution(aWare: TWareType; aHouse: THouseType): Byte;
+    procedure SetWareDistribution(aWare: TKMWareType; aHouse: TKMHouseType; aValue: Byte);
+    function GetWareDistribution(aWare: TKMWareType; aHouse: TKMHouseType): Byte;
   public
     Changed: Boolean;
     constructor Create;
-    property WareDistribution[aWare: TWareType; aHouse: THouseType]: Byte read GetWareDistribution write SetWareDistribution; default;
+    property WareDistribution[aWare: TKMWareType; aHouse: TKMHouseType]: Byte read GetWareDistribution write SetWareDistribution; default;
     procedure LoadFromStr(aString: String);
     function PackToStr: String;
 
@@ -48,7 +48,7 @@ begin
 end;
 
 
-procedure TKMWareDistribution.SetWareDistribution(aWare: TWareType; aHouse: THouseType; aValue: Byte);
+procedure TKMWareDistribution.SetWareDistribution(aWare: TKMWareType; aHouse: TKMHouseType; aValue: Byte);
 begin
   case aWare of
     wt_Steel: if aHouse = ht_WeaponSmithy   then fWareDistribution[1,1] := aValue else
@@ -68,7 +68,7 @@ begin
 end;
 
 
-function TKMWareDistribution.GetWareDistribution(aWare: TWareType; aHouse: THouseType): Byte;
+function TKMWareDistribution.GetWareDistribution(aWare: TKMWareType; aHouse: TKMHouseType): Byte;
 begin
   Result := 5; //Default should be 5, for house/resource combinations that don't have a setting (on a side note this should be the only place the resourse limit is defined)
   case aWare of

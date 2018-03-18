@@ -27,7 +27,7 @@ type
     fUsedNodes: array of TNavMeshNode;
 
     fOwner: TKMHandIndex;
-    fGroupType: TGroupType;
+    fGroupType: TKMGroupType;
     fMode: TPathfindingMode;
 
     function HeapCmp(A,B: Pointer): Boolean;
@@ -51,7 +51,7 @@ type
     function ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
     function ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
     function AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
-    function AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+    function AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
   end;
 
 
@@ -124,7 +124,7 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
 
   function AvoidSpecEnemy(): Word;
   const
-    CHANCES: array[TGroupType] of array[TGroupType] of Single = (
+    CHANCES: array[TKMGroupType] of array[TKMGroupType] of Single = (
     // gt_Melee gt_AntiHorse gt_Ranged gt_Mounted
       (1,       0.5,         0.5,      2   ), // gt_Melee
       (0.5,     1,           1,        0.5 ), // gt_AntiHorse
@@ -132,10 +132,10 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
       (0.5,     3,           0.5,      1   )  // gt_Mounted
     );
   var
-    GT: TGroupType;
+    GT: TKMGroupType;
     Weight: Single;
   begin
-    for GT := Low(TGroupType) to High(TGroupType) do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
       Weight := CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT];
     Result := Round(Weight);
   end;
@@ -368,7 +368,7 @@ begin
 end;
 
 
-function TNavMeshPathFinding.AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+function TNavMeshPathFinding.AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
 begin
   fOwner := aOwner;
   fMode := pm_AvoidSpecEnemy;

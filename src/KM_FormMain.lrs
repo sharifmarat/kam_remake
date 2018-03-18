@@ -1,7 +1,7 @@
 { This is an automatically generated lazarus resource file }
 
 LazarusResources.Add('TFormMain','FORMDATA',[
-  'TPF0'#9'TFormMain'#8'FormMain'#4'Left'#3#224#1#6'Height'#3#238#2#3'Top'#3#197
+  'TPF0'#9'TFormMain'#8'FormMain'#4'Left'#3#224#1#6'Height'#3#238#2#3'Top'#3#135
   +#0#5'Width'#3#17#2#8'HelpType'#7#9'htKeyword'#11'BorderStyle'#7#6'bsNone'#12
   +'ClientHeight'#3#218#2#11'ClientWidth'#3#17#2#5'Color'#7#9'clBtnFace'#10'Fon'
   +'t.Color'#7#12'clWindowText'#11'Font.Height'#2#245#9'Font.Name'#6#13'MS Sans'
@@ -41,8 +41,8 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'ngleZ'#4'Left'#2#4#6'Height'#2#17#3'Top'#2' '#5'Width'#2'_'#9'Frequency'#2#5
   +#3'Max'#2'Z'#3'Min'#2#166#8'OnChange'#7#14'ControlsUpdate'#8'PageSize'#2#5#8
   +'Position'#2#0#9'TickMarks'#7#6'tmBoth'#9'TickStyle'#7#6'tsNone'#8'TabOrder'
-  +#2#3#0#0#0#9'TGroupBox'#9'GroupBox3'#4'Left'#2#8#6'Height'#2'8'#3'Top'#3'p'#1
-  +#5'Width'#3#177#0#7'Caption'#6#16' User Interface '#12'ClientHeight'#2'&'#11
+  +#2#3#0#0#0#9'TGroupBox'#9'GroupBox3'#4'Left'#2#8#6'Height'#2'9'#3'Top'#3'P'#1
+  +#5'Width'#3#177#0#7'Caption'#6#16' User Interface '#12'ClientHeight'#2''''#11
   +'ClientWidth'#3#173#0#8'TabOrder'#2#3#0#9'TCheckBox'#19'chkUIControlsBounds'
   +#4'Left'#2#8#6'Height'#2#19#3'Top'#2#0#5'Width'#2'`'#7'Caption'#6#15'Control'
   +'s bounds'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#0#0#0#9'TCheckBox'
@@ -134,47 +134,52 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'le1'#7'Caption'#6#4'File'#0#9'TMenuItem'#15'OpenMissionMenu'#7'Caption'#6#15
   +'Open mission...'#7'OnClick'#7#21'Open_MissionMenuClick'#0#0#9'TMenuItem'#9
   +'MenuItem1'#7'Caption'#6#15'Edit mission...'#7'OnClick'#7#14'MenuItem1Click'
-  +#0#0#9'TMenuItem'#2'N4'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14'ReloadSettings'
-  +#7'Caption'#6#19'Reload settings.ini'#7'OnClick'#7#19'ReloadSettingsClick'#0
-  +#0#9'TMenuItem'#12'SaveSettings'#7'Caption'#6#17'Save settings.ini'#7'OnClic'
-  +'k'#7#17'SaveSettingsClick'#0#0#9'TMenuItem'#2'N1'#7'Caption'#6#1'-'#0#0#9'T'
-  +'MenuItem'#5'Exit1'#7'Caption'#6#4'Exit'#7'OnClick'#7#9'ExitClick'#0#0#0#9'T'
-  +'MenuItem'#6'Debug1'#7'Caption'#6#5'Debug'#0#9'TMenuItem'#17'Debug_PrintScre'
-  +'en'#7'Caption'#6#11'PrintScreen'#7'OnClick'#7#22'Debug_PrintScreenClick'#0#0
-  +#9'TMenuItem'#15'Debug_ShowPanel'#7'Caption'#6#16'Show Debug panel'#7'OnClic'
-  +'k'#7#20'Debug_ShowPanelClick'#0#0#9'TMenuItem'#14'ExportMainMenu'#7'Caption'
-  +#6#15'Export MainMenu'#7'OnClick'#7#21'Debug_ExportMenuClick'#0#0#9'TMenuIte'
-  +'m'#18'Debug_EnableCheats'#7'Caption'#6#12'Debug Cheats'#7'OnClick'#7#23'Deb'
-  +'ug_EnableCheatsClick'#0#0#9'TMenuItem'#13'ExportUIPages'#7'Caption'#6#15'Ex'
-  +'port UI pages'#7'OnClick'#7#24'Debug_ExportUIPagesClick'#0#0#9'TMenuItem'#13
-  +'ShowLogistics'#7'Caption'#6#14'Show Logistics'#7'OnClick'#7#18'ShowLogistic'
-  +'sClick'#0#0#0#9'TMenuItem'#7'Export1'#7'Caption'#6#11'Export Data'#0#9'TMen'
-  +'uItem'#10'Resources1'#7'Caption'#6#9'Resources'#0#9'TMenuItem'#13'Export_Fo'
-  +'nts1'#7'Caption'#6#5'Fonts'#7'OnClick'#7#18'Export_Fonts1Click'#0#0#9'TMenu'
-  +'Item'#14'Export_Sounds1'#7'Caption'#6#6'Sounds'#7'OnClick'#7#19'Export_Soun'
-  +'ds1Click'#0#0#9'TMenuItem'#6'Other1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'T'
-  +'MenuItem'#14'Export_TreesRX'#7'Caption'#6#8'Trees.rx'#7'OnClick'#7#19'Expor'
-  +'t_TreesRXClick'#0#0#9'TMenuItem'#15'Export_HousesRX'#7'Caption'#6#9'Houses.'
-  +'rx'#7'OnClick'#7#20'Export_HousesRXClick'#0#0#9'TMenuItem'#14'Export_UnitsR'
-  +'X'#7'Caption'#6#8'Units.rx'#7'OnClick'#7#19'Export_UnitsRXClick'#0#0#9'TMen'
-  +'uItem'#12'Export_GUIRX'#7'Caption'#6#6'GUI.rx'#7'OnClick'#7#15'Export_GUICl'
-  +'ick'#0#0#9'TMenuItem'#16'Export_GUIMainRX'#7'Caption'#6#11'GUI Main.rx'#7'O'
-  +'nClick'#7#21'Export_GUIMainRXClick'#0#0#9'TMenuItem'#13'Export_Custom'#7'Ca'
-  +'ption'#6#6'Custom'#7'OnClick'#7#18'Export_CustomClick'#0#0#9'TMenuItem'#14
-  +'Export_Tileset'#7'Caption'#6#7'Tileset'#7'OnClick'#7#19'Export_TilesetClick'
-  +#0#0#0#9'TMenuItem'#9'AnimData1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'TMenuI'
-  +'tem'#16'Export_TreeAnim1'#7'Caption'#6#9'Tree Anim'#7'OnClick'#7#21'Export_'
-  +'TreeAnim1Click'#0#0#9'TMenuItem'#17'Export_HouseAnim1'#7'Caption'#6#10'Hous'
-  +'e Anim'#7'OnClick'#7#22'Export_HouseAnim1Click'#0#0#9'TMenuItem'#16'Export_'
-  +'UnitAnim1'#7'Caption'#6#9'Unit Anim'#0#9'TMenuItem'#12'UnitAnim_All'#7'Capt'
-  +'ion'#6#3'All'#7'OnClick'#7#17'UnitAnim_AllClick'#0#0#9'TMenuItem'#2'N3'#7'C'
-  +'aption'#6#1'-'#0#0#9'TMenuItem'#8'Soldiers'#7'Caption'#6#8'Soldiers'#7'OnCl'
-  +'ick'#7#13'SoldiersClick'#0#0#9'TMenuItem'#10'Civilians1'#7'Caption'#6#9'Civ'
-  +'ilians'#7'OnClick'#7#15'Civilians1Click'#0#0#0#9'TMenuItem'#2'N2'#7'Caption'
-  +#6#1'-'#0#0#9'TMenuItem'#15'ResourceValues1'#7'Caption'#6#15'Resource Values'
-  +#7'OnClick'#7#20'ResourceValues1Click'#0#0#9'TMenuItem'#20'Export_Deliverlis'
-  +'ts1'#7'Caption'#6#20'Export Deliver lists'#7'OnClick'#7#25'Export_Deliverli'
-  +'sts1Click'#0#0#9'TMenuItem'#10'HousesDat1'#7'Caption'#6#10'Houses Dat'#7'On'
-  +'Click'#7#15'HousesDat1Click'#0#0#0#9'TMenuItem'#6'About1'#7'Caption'#6#7'Ab'
-  +'out..'#7'OnClick'#7#10'AboutClick'#0#0#0#0
+  +#0#0#9'TMenuItem'#20'SaveEditableMission1'#7'Caption'#6#24'Save editable mis'
+  +'sion...'#7'Enabled'#8#7'OnClick'#7#25'SaveEditableMission1Click'#0#0#9'TMen'
+  +'uItem'#2'N4'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14'ReloadSettings'#7'Captio'
+  +'n'#6#19'Reload settings.ini'#7'OnClick'#7#19'ReloadSettingsClick'#0#0#9'TMe'
+  +'nuItem'#12'SaveSettings'#7'Caption'#6#17'Save settings.ini'#7'OnClick'#7#17
+  +'SaveSettingsClick'#0#0#9'TMenuItem'#2'N1'#7'Caption'#6#1'-'#0#0#9'TMenuItem'
+  +#5'Exit1'#7'Caption'#6#4'Exit'#7'OnClick'#7#9'ExitClick'#0#0#0#9'TMenuItem'#6
+  +'Debug1'#7'Caption'#6#5'Debug'#0#9'TMenuItem'#17'Debug_PrintScreen'#7'Captio'
+  +'n'#6#11'PrintScreen'#7'OnClick'#7#22'Debug_PrintScreenClick'#0#0#9'TMenuIte'
+  +'m'#15'Debug_ShowPanel'#7'Caption'#6#16'Show Debug panel'#7'OnClick'#7#20'De'
+  +'bug_ShowPanelClick'#0#0#9'TMenuItem'#14'ExportMainMenu'#7'Caption'#6#15'Exp'
+  +'ort MainMenu'#7'OnClick'#7#21'Debug_ExportMenuClick'#0#0#9'TMenuItem'#18'De'
+  +'bug_EnableCheats'#7'Caption'#6#12'Debug Cheats'#7'OnClick'#7#23'Debug_Enabl'
+  +'eCheatsClick'#0#0#9'TMenuItem'#13'ExportUIPages'#7'Caption'#6#15'Export UI '
+  +'pages'#7'OnClick'#7#24'Debug_ExportUIPagesClick'#0#0#9'TMenuItem'#13'ShowLo'
+  +'gistics'#7'Caption'#6#14'Show Logistics'#7'OnClick'#7#18'ShowLogisticsClick'
+  +#0#0#0#9'TMenuItem'#7'Export1'#7'Caption'#6#11'Export Data'#0#9'TMenuItem'#10
+  +'Resources1'#7'Caption'#6#9'Resources'#0#9'TMenuItem'#13'Export_Fonts1'#7'Ca'
+  +'ption'#6#5'Fonts'#7'OnClick'#7#18'Export_Fonts1Click'#0#0#9'TMenuItem'#14'E'
+  +'xport_Sounds1'#7'Caption'#6#6'Sounds'#7'OnClick'#7#19'Export_Sounds1Click'#0
+  +#0#9'TMenuItem'#6'Other1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'TMenuItem'#14
+  +'Export_TreesRX'#7'Caption'#6#8'Trees.rx'#7'OnClick'#7#19'Export_TreesRXClic'
+  +'k'#0#0#9'TMenuItem'#15'Export_HousesRX'#7'Caption'#6#9'Houses.rx'#7'OnClick'
+  +#7#20'Export_HousesRXClick'#0#0#9'TMenuItem'#14'Export_UnitsRX'#7'Caption'#6
+  +#8'Units.rx'#7'OnClick'#7#19'Export_UnitsRXClick'#0#0#9'TMenuItem'#12'Export'
+  +'_GUIRX'#7'Caption'#6#6'GUI.rx'#7'OnClick'#7#15'Export_GUIClick'#0#0#9'TMenu'
+  +'Item'#16'Export_GUIMainRX'#7'Caption'#6#11'GUI Main.rx'#7'OnClick'#7#21'Exp'
+  +'ort_GUIMainRXClick'#0#0#9'TMenuItem'#13'Export_Custom'#7'Caption'#6#6'Custo'
+  +'m'#7'OnClick'#7#18'Export_CustomClick'#0#0#9'TMenuItem'#14'Export_Tileset'#7
+  +'Caption'#6#7'Tileset'#7'OnClick'#7#19'Export_TilesetClick'#0#0#0#9'TMenuIte'
+  +'m'#9'AnimData1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'TMenuItem'#16'Export_T'
+  +'reeAnim1'#7'Caption'#6#9'Tree Anim'#7'OnClick'#7#21'Export_TreeAnim1Click'#0
+  +#0#9'TMenuItem'#17'Export_HouseAnim1'#7'Caption'#6#10'House Anim'#7'OnClick'
+  +#7#22'Export_HouseAnim1Click'#0#0#9'TMenuItem'#16'Export_UnitAnim1'#7'Captio'
+  +'n'#6#9'Unit Anim'#0#9'TMenuItem'#12'UnitAnim_All'#7'Caption'#6#3'All'#7'OnC'
+  +'lick'#7#17'UnitAnim_AllClick'#0#0#9'TMenuItem'#2'N3'#7'Caption'#6#1'-'#0#0#9
+  +'TMenuItem'#8'Soldiers'#7'Caption'#6#8'Soldiers'#7'OnClick'#7#13'SoldiersCli'
+  +'ck'#0#0#9'TMenuItem'#10'Civilians1'#7'Caption'#6#9'Civilians'#7'OnClick'#7
+  +#15'Civilians1Click'#0#0#0#9'TMenuItem'#2'N2'#7'Caption'#6#1'-'#0#0#9'TMenuI'
+  +'tem'#15'ResourceValues1'#7'Caption'#6#15'Resource Values'#7'OnClick'#7#20'R'
+  +'esourceValues1Click'#0#0#9'TMenuItem'#20'Export_Deliverlists1'#7'Caption'#6
+  +#20'Export Deliver lists'#7'OnClick'#7#25'Export_Deliverlists1Click'#0#0#9'T'
+  +'MenuItem'#10'HousesDat1'#7'Caption'#6#10'Houses Dat'#7'OnClick'#7#15'Houses'
+  +'Dat1Click'#0#0#9'TMenuItem'#2'N5'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'TMen'
+  +'uItem'#11'ScriptData1'#7'Caption'#6#11'Script Data'#7'OnClick'#7#22'Export_'
+  +'ScriptDataClick'#0#0#0#9'TMenuItem'#6'About1'#7'Caption'#6#7'About..'#7'OnC'
+  +'lick'#7#10'AboutClick'#0#0#0#11'TSaveDialog'#11'SaveDialog1'#4'left'#3#144#0
+  +#3'top'#2#8#0#0#0
 ]);

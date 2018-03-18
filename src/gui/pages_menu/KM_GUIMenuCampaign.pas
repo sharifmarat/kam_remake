@@ -10,7 +10,7 @@ uses
 type
   TKMMenuCampaign = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fCampaign: TKMCampaign;
     fMapIndex: Byte;
@@ -36,7 +36,7 @@ type
       Image_ScrollRestore: TKMImage;
       Button_CampaignStart, Button_CampaignBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure MouseMove(Shift: TShiftState; X,Y: Integer);
     procedure Resize(X, Y: Word);
@@ -56,7 +56,7 @@ const
   CAMP_NODE_ANIMATION_PERIOD = 5;
 
 { TKMGUIMainCampaign }
-constructor TKMMenuCampaign.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuCampaign.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 var
   I: Integer;
 begin

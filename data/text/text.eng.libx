@@ -555,9 +555,9 @@
 566:Unable to assign random locations
 567:Server has assigned hosting rights to you
 568:Game started
-569:Building Map
-570:Fighting Map
-571:Co-operative Map
+569:Building map
+570:Fighting map
+571:Co-operative map
 572:Special map
 573:Game options:
 574:Peacetime (minutes)
@@ -995,7 +995,7 @@
 1043:Total equipped
 1044:Defeated
 1045:Lost
-1046:Back to Game results
+1046:Back to game results
 1047:by Players
 1048:by Teams
 1049:More|statistics
@@ -1067,3 +1067,63 @@
 1116:Are you sure you want to clear the player?|All his data will be erased!
 1117:Close
 1118:Multiplayer maps
+1119:Disable music
+1120:Shuffle tracks
+1121:Shuffle tracks on/off
+1122:Map type
+1123:Scenario map
+1124:Playable as SP
+1125:Choppable tree
+1126:Blocks diagonal walking
+1127:Blocks walking and building
+1128:Show roads/fields/winefields
+1129:Sub-menu action 1
+1130:Sub-menu action 2
+1131:Sub-menu action 3
+1132:Sub-menu action 4
+1133:Sub-menu action 5
+1134:Sub-menu action 6
+1135:Sub-menu action 7
+1136:Paint bucket (change owner)
+1137:Add AI attack
+1138:Remove AI attack
+1139:Retiring
+1140:Dismiss
+1141:Do you really want to dismiss this unit?|He will go to school and leave your town forever
+1142:Dismiss unit
+1143:Cancel unit dismiss
+1144:Dismiss is not available because of lack of schools in your town
+1145:Mission|parameters
+1146:Modify mission parameters
+1147:Mission parameters
+1148:Author
+1149:Small description
+1150:Big description
+1151:Libx text ID
+1152:This map will be always visible in singleplayer maps list
+1153:Block team selection
+1154:Blocks team selection in lobby
+1155:Block peacetime
+1156:Blocks peacetime change in lobby
+1157:Block full map preview
+1158:Blocks full map preview in lobby
+1159:Text
+1160:Show mining radius
+1161:Show towers attack radius
+1162:Show units attack radius
+1163:Color code:
+1164:Blue / Green / Red
+1165:Red / Green / Blue
+1166:Text color:
+1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
+1168:Maps filter
+1169:Reset filter
+1170:By players number
+1171:Back to game
+1172:Show detailed game statistics
+1173:Difficulty
+1174:Easy
+1175:Normal
+1176:Hard
+1177:Difficulty levels
+1178:Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty

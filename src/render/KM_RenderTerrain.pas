@@ -44,8 +44,8 @@ type
     procedure DoWater(aAnimStep: Integer; aFOW: TKMFogOfWarCommon);
     procedure DoShadows;
     function VBOSupported: Boolean;
-    procedure RenderFence(aFence: TFenceType; Pos: TKMDirection; pX,pY: Integer);
-    procedure RenderMarkup(pX, pY: Word; aFieldType: TFieldType);
+    procedure RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
+    procedure RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
   public
     constructor Create;
     destructor Destroy; override;
@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  KM_Render;
+  KM_Render, KM_Game;
 
 type
   TAnimLayer = (alWater, alFalls, alSwamp);
@@ -509,6 +509,9 @@ procedure TRenderTerrain.DoOverlays;
 var
   I, K: Integer;
 begin
+  if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
+    Exit;
+
   for I := fClipRect.Top to fClipRect.Bottom do
     for K := fClipRect.Left to fClipRect.Right do
       RenderTileOverlay(K, I);
@@ -519,15 +522,22 @@ procedure TRenderTerrain.RenderFences;
 var
   I,K: Integer;
 begin
+  if gGame.IsMapEditor and not (mlOverlays in gGame.MapEditor.VisibleLayers) then
+    Exit;
+
   with gTerrain do
-  for I := fClipRect.Top to fClipRect.Bottom do
-  for K := fClipRect.Left to fClipRect.Right do
-  begin
-    if Land[I,K].FenceSide and 1 = 1 then RenderFence(Land[I,K].Fence, dir_N, K, I);
-    if Land[I,K].FenceSide and 2 = 2 then RenderFence(Land[I,K].Fence, dir_E, K, I);
-    if Land[I,K].FenceSide and 4 = 4 then RenderFence(Land[I,K].Fence, dir_W, K, I);
-    if Land[I,K].FenceSide and 8 = 8 then RenderFence(Land[I,K].Fence, dir_S, K, I);
-  end;
+    for I := fClipRect.Top to fClipRect.Bottom do
+      for K := fClipRect.Left to fClipRect.Right do
+      begin
+        if Land[I,K].FenceSide and 1 = 1 then
+          RenderFence(Land[I,K].Fence, dir_N, K, I);
+        if Land[I,K].FenceSide and 2 = 2 then
+          RenderFence(Land[I,K].Fence, dir_E, K, I);
+        if Land[I,K].FenceSide and 4 = 4 then
+          RenderFence(Land[I,K].Fence, dir_W, K, I);
+        if Land[I,K].FenceSide and 8 = 8 then
+          RenderFence(Land[I,K].Fence, dir_S, K, I);
+      end;
 end;
 
 
@@ -538,7 +548,7 @@ var
 begin
   //Rope field marks
   for I := 0 to aFieldsList.Count - 1 do
-    RenderMarkup(aFieldsList[I].X, aFieldsList[I].Y, TFieldType(aFieldsList.Tag[I]));
+    RenderMarkup(aFieldsList[I].X, aFieldsList[I].Y, TKMFieldType(aFieldsList.Tag[I]));
 
   //Rope outlines
   for I := 0 to aHousePlansList.Count - 1 do
@@ -868,7 +878,7 @@ begin
 end;
 
 
-procedure TRenderTerrain.RenderFence(aFence: TFenceType; Pos: TKMDirection; pX,pY: Integer);
+procedure TRenderTerrain.RenderFence(aFence: TKMFenceType; Pos: TKMDirection; pX,pY: Integer);
 const
   FO = 4; //Fence overlap
   VO = -4; //Move fences a little down to avoid visible overlap when unit stands behind fence, but is rendered ontop of it, due to Z sorting algo we use
@@ -939,9 +949,9 @@ begin
 end;
 
 
-procedure TRenderTerrain.RenderMarkup(pX, pY: Word; aFieldType: TFieldType);
+procedure TRenderTerrain.RenderMarkup(pX, pY: Word; aFieldType: TKMFieldType);
 const
-  MarkupTex: array [TFieldType] of Word = (0, 105, 107, 0, 108);
+  MarkupTex: array [TKMFieldType] of Word = (0, 105, 107, 0, 108);
 var
   ID: Integer;
   UVa,UVb: TKMPointF;

@@ -9,12 +9,12 @@ uses
 type
   TKMMenuLoading = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
   protected
     Panel_Loading: TKMPanel;
     Label_Loading: TKMLabel;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure AppendText(const aText: UnicodeString);
     procedure Show(const aText: UnicodeString);
@@ -27,7 +27,7 @@ uses
 
 
 { TKMGUIMenuLoading }
-constructor TKMMenuLoading.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuLoading.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 
