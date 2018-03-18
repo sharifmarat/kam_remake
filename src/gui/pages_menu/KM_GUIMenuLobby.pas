@@ -358,7 +358,8 @@ procedure TKMMenuLobby.CreateControls(aParent: TKMPanel);
     end;
   end;
 const
-  CW = 690; C1 = 35; C2 = 195; C3 = 355; C4 = 445; C5 = 570; C6 = 650;
+  CW = 690; C1 = 35; C2 = 200; C3 = 360; C4 = 445; C5 = 570; C6 = 650;
+  C1W = 155; C2W = 150; C3W = 75; C4W = 80;
   TC2_ADD = 50;
 var
   I, K, OffY, SlotTxtWidth, AllTxtWidth: Integer;
@@ -387,19 +388,19 @@ begin
     OffY := 49;
 
       //Column titles
-      TKMLabel.Create(Panel_Players, C1, OffY, 150,  20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C2, OffY, 150,  20, gResTexts[TX_LOBBY_HEADER_STARTLOCATION], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C3, OffY,  80,  20, gResTexts[TX_LOBBY_HEADER_TEAM], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C4, OffY,  80,  20, gResTexts[TX_LOBBY_HEADER_FLAGCOLOR], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_Players, C1, OffY, C1W,  20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_Players, C2, OffY, C2W,  20, gResTexts[TX_LOBBY_HEADER_STARTLOCATION], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_Players, C3, OffY, C3W,  20, gResTexts[TX_LOBBY_HEADER_TEAM], fnt_Outline, taLeft);
+      TKMLabel.Create(Panel_Players, C4, OffY, C4W,  20, gResTexts[TX_LOBBY_HEADER_FLAGCOLOR], fnt_Outline, taLeft);
       TKMLabel.Create(Panel_Players, C5, OffY, gResTexts[TX_LOBBY_HEADER_READY], fnt_Outline, taCenter);
       TKMLabel.Create(Panel_Players, C6, OffY, gResTexts[TX_LOBBY_HEADER_PING], fnt_Outline, taCenter);
 
       Bevel_SpecsDivide := TKMBevel.Create(Panel_Players, 10, 50, CW-20, 3);
 
-      Image_HostStar := TKMImage.Create(Panel_Players, C2-20, 50, 20, 20, 77, rxGuiMain);
+      Image_HostStar := TKMImage.Create(Panel_Players, C2-25, 50, 20, 20, 77, rxGuiMain);
       Image_HostStar.Hide;
 
-      SlotTxtWidth := Max(105, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
+      SlotTxtWidth := Max(C1W - 45, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
                                                                                gResTexts[TX_LOBBY_SLOT_CLOSED],
                                                                                gResTexts[TX_LOBBY_SLOT_AI_PLAYER]]));
 
@@ -416,11 +417,11 @@ begin
         Image_Flag[I].OnClick := PlayerMenuShow;
         Image_Flag[I].HighlightOnMouseOver := True;
 
-        Label_Player[I] := TKMLabel.Create(Panel_Players, C1, OffY+2, 150, 20, '', fnt_Grey, taLeft);
+        Label_Player[I] := TKMLabel.Create(Panel_Players, C1, OffY+2, C1W, 20, '', fnt_Grey, taLeft);
         Label_Player[I].Hide;
 
 
-        DropBox_PlayerSlot[I] := TKMDropColumns.Create(Panel_Players, C1, OffY, 150, 20, fnt_Grey, '', bsMenu, False);
+        DropBox_PlayerSlot[I] := TKMDropColumns.Create(Panel_Players, C1, OffY, C1W, 20, fnt_Grey, '', bsMenu, False);
         DropBox_PlayerSlot[I].DropWidth := SlotTxtWidth + 5 + AllTxtWidth;
         DropBox_PlayerSlot[I].SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, SlotTxtWidth + 5], [True, False]);
         //1st column is used to set 'All' (All Open/All AI/All Closed),
@@ -442,7 +443,7 @@ begin
         DropBox_PlayerSlot[I].List.OnCellClick := DropBoxPlayers_CellClick;
         DropBox_PlayerSlot[I].OnShowList := DropBoxPlayers_Show;
 
-        DropBox_Loc[I] := TKMDropList.Create(Panel_Players, C2, OffY, 150, 20, fnt_Grey, '', bsMenu);
+        DropBox_Loc[I] := TKMDropList.Create(Panel_Players, C2, OffY, C2W, 20, fnt_Grey, '', bsMenu);
         DropBox_Loc[I].Add(gResTexts[TX_LOBBY_RANDOM], LOC_RANDOM);
         DropBox_Loc[I].OnChange := PlayersSetupChange;
         DropBox_Loc[I].DropCount := MAX_LOBBY_PLAYERS + 2; //also 'Random' and possible 'Spectator'
@@ -452,12 +453,12 @@ begin
         PercentBar_DownloadProgress[I].Hide;
         PercentBar_DownloadProgress[I].TextYOffset := -3;
 
-        DropBox_Team[I] := TKMDropList.Create(Panel_Players, C3, OffY, 80, 20, fnt_Grey, '', bsMenu);
+        DropBox_Team[I] := TKMDropList.Create(Panel_Players, C3, OffY, C3W, 20, fnt_Grey, '', bsMenu);
         DropBox_Team[I].Add('-');
         for K := 1 to MAX_TEAMS do DropBox_Team[I].Add(IntToStr(K));
         DropBox_Team[I].OnChange := PlayersSetupChange;
 
-        DropBox_Colors[I] := TKMDropColumns.Create(Panel_Players, C4, OffY, 80, 20, fnt_Grey, '', bsMenu);
+        DropBox_Colors[I] := TKMDropColumns.Create(Panel_Players, C4, OffY, C4W, 20, fnt_Grey, '', bsMenu);
         DropBox_Colors[I].SetColumns(fnt_Outline, [''], [0]);
         DropBox_Colors[I].List.ShowHeader := False;
         DropBox_Colors[I].DropCount := 13;
