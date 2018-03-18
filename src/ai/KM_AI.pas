@@ -57,7 +57,7 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
-    procedure SyncLoad;
+    procedure SyncLoad();
     procedure UpdateState(aTick: Cardinal);
     procedure AfterMissionInit();
   end;
@@ -410,20 +410,21 @@ begin
 end;
 
 
-procedure TKMHandAI.SyncLoad;
+procedure TKMHandAI.SyncLoad();
 begin
-  fGeneral.SyncLoad;
-  fArmyManagement.SyncLoad;
+  fGeneral.SyncLoad();
+  fArmyManagement.SyncLoad();
+  fCityManagement.SyncLoad();
 end;
 
 
 procedure TKMHandAI.AfterMissionInit();
 begin
-  fMayor.AfterMissionInit;
+  fMayor.AfterMissionInit();
 
   gAIFields.Eye.OwnerUpdate(fOwner);
-  fCityManagement.AfterMissionInit;
-  fArmyManagement.AfterMissionInit;
+  fCityManagement.AfterMissionInit();
+  fArmyManagement.AfterMissionInit();
 end;
 
 
