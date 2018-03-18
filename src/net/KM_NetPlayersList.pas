@@ -629,7 +629,8 @@ end;
 
 
 function TKMNetPlayersList.LocAvailable(aIndex: Integer): Boolean;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := True;
   if (aIndex = LOC_RANDOM) or (aIndex = LOC_SPECTATE) then Exit;
@@ -640,7 +641,8 @@ end;
 
 
 function TKMNetPlayersList.ColorAvailable(aIndex: Integer): Boolean;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := True;
   if aIndex = 0 then Exit;
@@ -651,7 +653,8 @@ end;
 
 
 function TKMNetPlayersList.AllReady: Boolean;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := true;
   for I := 1 to fCount do
@@ -660,10 +663,11 @@ begin
 end;
 
 
-function TKMNetPlayersList.AllReadyToPlay:boolean;
-var I: Integer;
+function TKMNetPlayersList.AllReadyToPlay: Boolean;
+var
+  I: Integer;
 begin
-  Result := true;
+  Result := True;
   for I := 1 to fCount do
     if fNetPlayers[I].Connected and fNetPlayers[I].IsHuman then
       Result := Result and fNetPlayers[I].ReadyToPlay;
@@ -671,7 +675,8 @@ end;
 
 
 function TKMNetPlayersList.AllReadyToReturnToLobby: Boolean;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := True;
   for I:=1 to fCount do
@@ -680,8 +685,9 @@ begin
 end;
 
 
-function TKMNetPlayersList.GetMaxHighestRoundTripLatency:word;
-var I: Integer; Highest, Highest2, PlayerPing: word;
+function TKMNetPlayersList.GetMaxHighestRoundTripLatency: Word;
+var
+  I: Integer; Highest, Highest2, PlayerPing: Word;
 begin
   Highest := 0;
   Highest2 := 0;
@@ -718,27 +724,30 @@ end;
 
 
 function TKMNetPlayersList.GetAICount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
     if fNetPlayers[I].PlayerNetType = nptComputer then
-      inc(Result);
+      Inc(Result);
 end;
 
 
 function TKMNetPlayersList.GetClosedCount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
     if fNetPlayers[I].PlayerNetType = nptClosed then
-      inc(Result);
+      Inc(Result);
 end;
 
 
 function TKMNetPlayersList.GetSpectatorCount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
@@ -748,7 +757,8 @@ end;
 
 
 function TKMNetPlayersList.GetConnectedCount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
@@ -758,7 +768,8 @@ end;
 
 
 function TKMNetPlayersList.GetConnectedPlayersCount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
@@ -772,7 +783,8 @@ end;
 //Number of not Dropped players
 //Player could be disconnected already, but not dropped yet.
 function TKMNetPlayersList.GetNotDroppedCount: Integer;
-var I: Integer;
+var
+  I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
