@@ -202,7 +202,7 @@ end;
 destructor TKMCityPlanner.Destroy();
 var
   HT: TKMHouseType;
-  I, K, Len: Integer;
+  I: Integer;
 begin
   for HT := HOUSE_MIN to HOUSE_MAX do
     for I := 0 to fPlannedHouses[HT].Count - 1 do
@@ -480,6 +480,8 @@ begin
         end
         else // House was destroyed
         begin
+          if (House <> nil) then
+            gHands.CleanUpHousePointer(House);
           SumCalculated := SumCalculated - 1;
         end;
       end;
@@ -570,6 +572,7 @@ const
   var
     Exhausted: Boolean;
   begin
+    Exhausted := False;
     with fPlannedHouses[aHT].Plans[aIdx] do
     begin
       case aHT of
@@ -607,10 +610,10 @@ var
   Output: Boolean;
   I, BestIdx: Integer;
   Bid, BestBid: Single;
-  SpecPoint: TKMPoint;
 begin
   Output := False;
   BestBid := MAX_BID;
+  BestIdx := 0; // For compiler
   for I := fPlannedHouses[aHT].Count - 1 downto 0 do
     with fPlannedHouses[aHT].Plans[I] do
       if not Placed then
@@ -619,12 +622,9 @@ begin
         begin
           if (aHT in [ht_GoldMine, ht_IronMine, ht_CoalMine, ht_Quary]) AND CheckMine(I) then // Filter mines / chop-only woodcutters
             continue;
-          Bid := DistFromStore(Loc) + ObstaclesInHousePlan(aHT, Loc);
-          if  (aHT = ht_Woodcutters) then
-          begin
-            SpecPoint := SpecPoint;
-            Bid := Bid - Byte(gAIFields.Influences.AvoidBuilding[SpecPoint.Y, SpecPoint.X] = 0) * CHOP_ONLY_ADVANTAGE; // Chop only mode
-          end;
+          Bid := + DistFromStore(Loc)
+                 + ObstaclesInHousePlan(aHT, Loc)
+                 - Byte((aHT = ht_Woodcutters) AND ChopOnly) * CHOP_ONLY_ADVANTAGE; // Chop only mode
           if (Bid < BestBid) then
           begin
             BestBid := Bid;
@@ -1319,6 +1319,7 @@ const
       begin
         Locs.SortByTag();
         BestBid := BEST_BID;
+        BestIdx := 0; // For compiler
         for I := Locs.Count-1 downto 0 do
         begin
           // Check reserved mines
@@ -1391,6 +1392,7 @@ const
       begin
         Locs.SortByTag();
         BestBid := INIT_BID;
+        BestIdx := 0; // For compiler
         for I := Locs.Count-1 downto 0 do
           if gAIFields.Eye.CanAddHousePlan(Locs.Items[I], ht_CoalMine, True, False, False) then
           begin
