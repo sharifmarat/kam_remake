@@ -262,6 +262,8 @@ var
     Result := aDefIdx;
     // Find un/visited surrounding polygons (in case that there are 2 visited polygons defece line will be with unvisited and vice versa)
     VisitedCnt := 0;
+    VisitedIdx := 0; // For compiler
+    UnVisitedIdx := 0; // For compiler
     for I := 0 to PolyArr[aDefIdx].NearbyCount-1 do
     begin
       NearbyIdx := PolyArr[aDefIdx].Nearby[I];
