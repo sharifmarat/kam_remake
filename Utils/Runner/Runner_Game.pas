@@ -173,7 +173,7 @@ begin
   fResults.Value[aRun, 0] := gHands[0].Stats.GetUnitQty(ut_Any);
   fResults.Value[aRun, 1] := gHands[1].Stats.GetUnitQty(ut_Any);
 
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
 end;
 
 
@@ -280,7 +280,7 @@ begin
                [HRunT/HandsCnt, WRunT/HandsCnt, WFRunT/HandsCnt,  GRunT/HandsCnt]));
   gLog.AddTime('Time: ' + IntToStr(GetTimeSince(StartT)));
 
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
 end;
 
 
@@ -316,7 +316,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
 end;
 
 
@@ -348,7 +348,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
 end;
 
 
@@ -388,7 +388,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
 end;
 
 initialization

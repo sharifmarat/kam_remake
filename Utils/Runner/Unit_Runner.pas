@@ -149,7 +149,7 @@ end;
 
 procedure TKMRunnerCommon.TearDown;
 begin
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
   FreeAndNil(gGameApp);
   FreeAndNil(gLog);
   if Assigned(OnProgress) then
