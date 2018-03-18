@@ -565,13 +565,10 @@ begin
     if (Group <> nil) AND not Group.IsDead then
     begin
       Loc := Group.Position;
-      if (gAIFields.Influences.Ownership[ fOwner, Loc.Y, Loc.X ] > 0) AND not IsCompanyAround(Loc) then
-      begin
-        fCityUnderAttack := True;
-        UGA := FindDefenceGroups(Loc);
-        if (Length(UGA) > 0) then
-          fAttack.CreateCompany(Loc, UGA, cm_Defence);
-      end;
+      fCityUnderAttack := True;
+      UGA := FindDefenceGroups(Loc);
+      if (Length(UGA) > 0) then
+        fAttack.CreateCompany(Loc, UGA, cm_Defence);
     end;
   end;
 end;
@@ -664,8 +661,8 @@ begin
       for K := 0 to Length(UGA) - 1 do
       begin
         Pos := UGA[K].Position;
-        gRenderAux.CircleOnTerrain(Pos.X, Pos.Y, 1, ($44 shl 24) OR COLOR_RED, $FF000000 OR COLOR_RED);
-        //gRenderAux.LineOnTerrain(Pos, Loc, ($AA shl 24) OR COLOR_BLACK);
+        gRenderAux.CircleOnTerrain(Pos.X, Pos.Y, 1, $44000000 OR COLOR_RED, $FF000000 OR COLOR_RED);
+        //gRenderAux.LineOnTerrain(Pos, Loc, $AA000000 OR COLOR_BLACK);
       end;
     end;
   end;
