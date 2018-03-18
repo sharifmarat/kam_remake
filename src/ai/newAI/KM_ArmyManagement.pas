@@ -25,7 +25,7 @@ type
     procedure RecruitSoldiers();
     procedure CheckGroupsState();
     procedure CheckAttack();
-    procedure AddNewThreat(aAttacker: TKMUnitWarrior);
+    procedure AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
     procedure CheckThreats();
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
@@ -455,21 +455,30 @@ end;
 procedure TKMArmyManagement.CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit);
 begin
   //Attacker may be already dying (e.g. killed by script)
-  if (aAttacker = nil) OR aAttacker.IsDeadOrDying OR not (aAttacker is TKMUnitWarrior) then
+  if (aAttacker = nil) OR aAttacker.IsDeadOrDying OR not (aAttacker is TKMUnitWarrior) OR aUnit.IsDeadOrDying  then
     Exit;
-  AddNewThreat( TKMUnitWarrior(aAttacker) );
+  AddNewThreat( TKMUnitWarrior(aAttacker), aUnit );
 end;
 
 
-procedure TKMArmyManagement.AddNewThreat(aAttacker: TKMUnitWarrior);
+procedure TKMArmyManagement.AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
 var
-  Group: TKMUnitGroup;
+  Group, DefenceGroup: TKMUnitGroup;
 begin
   Group := gHands[ aAttacker.Owner ].UnitGroups.GetGroupByMember( aAttacker );
   if (Group = nil) OR Group.IsDead then
     Exit;
-  if (fHostileGroups.IndexOf(Group) = -1) then
-    fHostileGroups.Add( Group.GetGroupPointer() );
+  if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
+  begin
+    if (aUnit = nil) OR not (aUnit is TKMUnitWarrior) then // Does attacker attack house or citizen?
+      fHostileGroups.Add( Group.GetGroupPointer() )
+    else // Does attacker attack at soldier in defence position?
+    begin
+      DefenceGroup := gHands[ aUnit.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(aUnit) );
+      if (DefenceGroup <> nil) AND not DefenceGroup.IsDead AND (fDefence.FindPositionOf(DefenceGroup) <> nil) then
+        fHostileGroups.Add( Group.GetGroupPointer() );
+    end;
+  end;
 end;
 
 
@@ -521,8 +530,7 @@ end;
 
 procedure TKMArmyManagement.Paint();
 begin
-  //gRenderAux.CircleOnTerrain(X, Y, 5, $09FFFFFF, $99FFFFFF);
-  //gRenderAux.Quad(X, Y, Color: Cardinal);
+
 end;
 
 
