@@ -339,7 +339,7 @@ TX_MENU_MAP_LOCATION = 300; //Location
 TX_MENU_OPTIONS_CONTROLS = 301; //Controls:
 TX_MENU_OPTIONS_GAMEPLAY = 302; //Gameplay:
 TX_MENU_OPTIONS_SOUND = 303; //Sound:
-TX_MENU_OPTIONS_MUSIC_DISABLE_SHORT = 1119;
+TX_MENU_OPTIONS_MUSIC_DISABLE_SHORT = 1119; //Disable music
 TX_MENU_OPTIONS_MUSIC_DISABLE = 304; //Disable music
 TX_MENU_OPTIONS_GRAPHICS = 305; //Graphics:
 TX_MENU_OPTIONS_BRIGHTNESS = 306; //Brightness
@@ -464,7 +464,7 @@ TX_MAPED_UNITS = 697; //Units
 TX_MAPED_OBJECTS = 398; //Objects
 TX_MAPED_VIEW_DEPOSISTS = 399; //Show deposits
 TX_MAPED_VIEW_OVERLAYS = 1128; //Show roads/fields/winefields
-TX_MAPED_VIEW_MINING_RADIUS = 1160; //Show houses ranges
+TX_MAPED_VIEW_MINING_RADIUS = 1160; //Show mining radius
 TX_MAPED_VIEW_TOWERS_ATTACK_RADIUS = 1161; //Show towers attack radius
 TX_MAPED_VIEW_UNITS_ATTACK_RADIUS = 1162; //Show units attack radius
 TX_MAPED_VIEW_UNITS = 400; //Show units
@@ -1056,7 +1056,7 @@ TX_RESULTS_ARMY_INSTANTANEOUS = 1042; //Instantaneous
 TX_RESULTS_ARMY_TOTAL_EQUIPPED = 1043; //Total equipped
 TX_RESULTS_ARMY_DEFEATED = 1044; //Defeated
 TX_RESULTS_ARMY_LOST = 1045; //Lost
-TX_RESULTS_BACK_TO_RESULTS = 1046; //Back to Game results
+TX_RESULTS_BACK_TO_RESULTS = 1046; //Back to game results
 TX_RESULTS_BY_PLAYERS = 1047; //by Players
 TX_RESULTS_BY_TEAMS = 1048; //by Teams
 TX_RESULTS_MORE_STATS = 1049; //More|statistics
@@ -1136,10 +1136,10 @@ TX_WORD_TEAMS = 1105; //Teams
 TX_WORD_CLOSE = 1117; //Close
 TX_WORD_TEXT = 1159; //Text
 
-TX_MAPED_PLAYER_DELETE = 1114; //Button / Clear Player
+TX_MAPED_PLAYER_DELETE = 1114; //Delete Player %d
 
-TX_MAPED_PLAYER_DELETE_TITLE = 1115; //Title / Clear Player
-TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?
+TX_MAPED_PLAYER_DELETE_TITLE = 1115; //Deleting Player %d
+TX_MAPED_PLAYER_DELETE_CONFIRM = 1116; //Are you sure you want to clear the player?|All his data will be erased!
 
 TX_MENU_MAP_TYPE = 1122; //Map type
 TX_MENU_SP_MAP_SCENARIO = 1123; //Scenario map
@@ -1147,7 +1147,7 @@ TX_MENU_MAP_PLAYABLE_AS_SP = 1124; //Playable as SP
 
 TX_MAPED_OBJ_DESC_CHOPPABLE = 1125; //Choppable tree
 TX_MAPED_OBJ_DESC_BLOCK_DIAG = 1126; //Blocks diagonal walking
-TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; //Blocks walking / building
+TX_MAPED_OBJ_DESC_BLOCK_ALL = 1127; //Blocks walking and building
 
 TX_MAPED_MISSION_PARAMETERS_BTN = 1145; //Mission|parameters
 TX_MAPED_MISSION_PARAMETERS_BTN_HINT = 1146; //Modify mission parameters
