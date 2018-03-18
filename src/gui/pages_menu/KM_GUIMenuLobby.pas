@@ -361,7 +361,7 @@ const
   CW = 690; C1 = 35; C2 = 195; C3 = 355; C4 = 445; C5 = 570; C6 = 650;
   TC2_ADD = 50;
 var
-  I, K, OffY, DropWidth, TxtWidth: Integer;
+  I, K, OffY, SlotTxtWidth, AllTxtWidth: Integer;
 begin
   Panel_Lobby := TKMPanel.Create(aParent,0,0,aParent.Width, aParent.Height);
   Panel_Lobby.AnchorsStretch;
@@ -399,6 +399,14 @@ begin
       Image_HostStar := TKMImage.Create(Panel_LobbyPlayers, C2-20, 50, 20, 20, 77, rxGuiMain);
       Image_HostStar.Hide;
 
+      SlotTxtWidth := Max(105, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
+                                                                               gResTexts[TX_LOBBY_SLOT_CLOSED],
+                                                                               gResTexts[TX_LOBBY_SLOT_AI_PLAYER]]));
+
+      AllTxtWidth := Max(40, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
+                                                                             gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
+                                                                             gResTexts[TX_LOBBY_SLOT_AI_ALL]]));
+
       for I := 1 to MAX_LOBBY_SLOTS do
       begin
         OffY := 70 + (I-1) * 23;
@@ -411,13 +419,10 @@ begin
         Label_LobbyPlayer[I] := TKMLabel.Create(Panel_LobbyPlayers, C1, OffY+2, 150, 20, '', fnt_Grey, taLeft);
         Label_LobbyPlayer[I].Hide;
 
-        TxtWidth := gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
-                                                                    gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
-                                                                    gResTexts[TX_LOBBY_SLOT_AI_ALL]]);
-        DropWidth := Max(150, 110 + TxtWidth);
+
         DropBox_LobbyPlayerSlot[I] := TKMDropColumns.Create(Panel_LobbyPlayers, C1, OffY, 150, 20, fnt_Grey, '', bsMenu, False);
-        DropBox_LobbyPlayerSlot[I].DropWidth := DropWidth;
-        DropBox_LobbyPlayerSlot[I].SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, 100 + Max(0, 40 - TxtWidth)], [True, False]);
+        DropBox_LobbyPlayerSlot[I].DropWidth := SlotTxtWidth + 5 + AllTxtWidth;
+        DropBox_LobbyPlayerSlot[I].SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, SlotTxtWidth + 5], [True, False]);
         //1st column is used to set 'All' (All Open/All AI/All Closed),
         //Its external button analogue, so we do not want to invoke f.e. OnChange (AI) when 'AI All' clicked
         DropBox_LobbyPlayerSlot[I].List.Columns[1].TriggerOnChange := False;
