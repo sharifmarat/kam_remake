@@ -25,7 +25,7 @@ type
     function GetNiknameU: UnicodeString;
     function GetHandIndex: Integer;
   public
-    PlayerNetType: TNetPlayerType; //Human, Computer, Closed
+    PlayerNetType: TKMNetPlayerType; //Human, Computer, Closed
     StartLocation: Integer;  //Start location, 0 means random, -1 means spectate
     Team: Integer;
     ReadyToStart: Boolean;
@@ -110,7 +110,7 @@ type
     function GetMaxHighestRoundTripLatency: Word;
     function GetNotReadyToPlayPlayers: TKMByteArray;
     function GetAICount(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Integer;
-    function GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TNetPlayerType)..High(TNetPlayerType)]): Integer;
+    function GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TKMNetPlayerType)..High(TKMNetPlayerType)]): Integer;
     function GetClosedCount: Integer;
     function GetSpectatorCount: Integer;
     function GetConnectedCount: Integer;
@@ -237,7 +237,7 @@ end;
 
 function TKMNetPlayerInfo.GetPlayerType: TKMHandType;
 const
-  PlayerTypes: array [TNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer, hndComputer);
+  PlayerTypes: array [TKMNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer, hndComputer);
 begin
   Result := PlayerTypes[PlayerNetType];
 end;
@@ -750,7 +750,7 @@ begin
 end;
 
 
-function TKMNetPlayersList.GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TNetPlayerType)..High(TNetPlayerType)]): Integer;
+function TKMNetPlayersList.GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TKMNetPlayerType)..High(TKMNetPlayerType)]): Integer;
 var
   I: Integer;
 begin
