@@ -379,6 +379,7 @@ begin
   // 1. There must be enought soldiers for defences
   // In case that there are not defeces maps is in combat mode so we should launch everything
   TakeAllIn := False;
+  ForceToAttack := False;
   case fDefence.DefenceStatus() of
     ds_Empty: Exit;
     ds_Half: ForceToAttack := False;
@@ -388,7 +389,7 @@ begin
       ForceToAttack := True;
     end;
   end;
-  // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic);
+  // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic); // Maybe force attack in mm_Tactic map? But some of mm_Tactic map are also defensive...
 
   // Get array of pointers to avaiable groups
   Cnt := 0;
