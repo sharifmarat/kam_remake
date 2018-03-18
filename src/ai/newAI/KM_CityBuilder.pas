@@ -1298,14 +1298,13 @@ end;
 
 procedure TKMCityBuilder.Paint();
 const
-  COLOR_WHITE = $80FFFFFF;
-  COLOR_BLACK = $20000000;
-  COLOR_GREEN = $6000FF00;
-  COLOR_RED = $800000FF;
-  COLOR_YELLOW = $8000FFFF;
-  COLOR_GREEN_Field = $4400FF00;
-  COLOR_GREEN_Wine = $3355FFFF;
-  COLOR_BLUE = $60FF0000;
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $0000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+  COLOR_NEW = $FFFF00;
 var
   I,K: Integer;
   Color: Cardinal;
@@ -1316,14 +1315,14 @@ begin
       if Active then
       begin
         case FieldType of
-          ft_Corn: Color := COLOR_GREEN_Field;
-          ft_Wine: Color := COLOR_GREEN_Wine;
-          ft_Road: Color := COLOR_YELLOW;
+          ft_Corn: Color := $80000000 OR COLOR_GREEN;
+          ft_Wine: Color := $BB000000 OR COLOR_GREEN;
+          ft_Road: Color := $80000000 OR COLOR_NEW;//COLOR_YELLOW;
         end;
         if RemoveTreesMode then
-          Color := COLOR_BLUE;
+          Color := $60000000 OR COLOR_BLUE;
         if ShortcutMode then
-          Color := COLOR_BLACK;
+          Color := $20000000 OR COLOR_BLACK;
         for K := 0 to FieldList.Count - 1 do
         begin
           Point := FieldList.Items[K];
