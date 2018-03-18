@@ -1073,7 +1073,8 @@ procedure TKMScriptActions.AIAutoAttackRange(aPlayer: Byte; aRange: Word);
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
-    and InRange(aRange, 1, 20) then
+      and InRange(aRange, 1, 20)
+      and not gHands[aPlayer].AI.Setup.NewAI then // Do not allow AutoAttackRange if we are using newAI
       gHands[aPlayer].AI.Setup.AutoAttackRange := aRange
     else
       LogParamWarning('Actions.AIAutoAttackRange', [aPlayer, aRange]);
