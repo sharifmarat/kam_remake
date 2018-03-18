@@ -161,6 +161,7 @@ const
 
 implementation
 uses
+  Types,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_NavMesh, KM_CommonUtils, KM_AISetup, KM_AI, KM_RenderAux,
   KM_Units_Warrior;
@@ -648,7 +649,7 @@ var
     INIT_DIST = 1000000;
     SQR_MAX_RANGE_INTEREST = 12*12;
     SQR_RANGE_OF_PROJECTILES = 11*11; // Sqr(  Max( Max(RANGE_BOWMAN_MAX,RANGE_ARBALETMAN_MAX),RANGE_SLINGSHOT_MAX )  );
-    SQR_RANGED_PROTECT_RADIUS = 7*7; // Radius around ranged units where requires close combat protection
+    SQR_RANGED_PROTECT_RADIUS = 8*8; // Radius around ranged units where requires close combat protection
   var
     Polygon: Word;
     I,K,L: Integer;
