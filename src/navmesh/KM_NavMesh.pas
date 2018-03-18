@@ -65,15 +65,6 @@ type
     procedure TieUpPolygonsWithTiles();
 
     function GetPolygonFromPoint(const aPoint: TKMPoint): Word;
-
-    //function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
-    //function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
-    //function RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
-    //function EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
-
-    //function GetBestOwner(aIndex: Integer): TKMHandIndex;
-    //function NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
-    //function PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -641,7 +632,194 @@ begin
 end;
 
 
+procedure TKMNavMesh.UpdateState(aTick: Cardinal);
+begin
+  //if aTick mod 600 = 0 then
+  //  UpdateOwnership;
+end;
 
+
+//Render debug symbols
+procedure TKMNavMesh.Paint(aRect: TKMRect);
+var
+  I, K, J: Integer;
+  T1, T2: TKMPointF;
+//  Col, Col2: Cardinal;
+//  Sz: Single;
+//  Outline1, Outline2: TKMWeightSegments;
+
+  W: Word;
+  Owner: TKMHandIndex;
+  Point: TKMPoint;
+  DefLines: TKMDefenceLines;
+  FFF: TForwardFF;
+  DefencePosArr: TKMDefencePosArr;
+begin
+  if not AI_GEN_NAVMESH then Exit;
+
+  //{ Test defences
+  // Show this defences only in case that show combat AI is not enabled;
+  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
+  if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
+  begin
+    FFF := TForwardFF.Create(true);
+    Owner := gMySpectator.HandIndex;
+    try
+
+      if FFF.FindDefenceLines(Owner, DefLines) then
+        for K := 0 to DefLines.Count - 1 do
+        begin
+          I := DefLines.Lines[K].Polygon;
+          gRenderAux.TriangleOnTerrain(
+            fNodes[fPolygons[I].Indices[0]].Loc.X,
+            fNodes[fPolygons[I].Indices[0]].Loc.Y,
+            fNodes[fPolygons[I].Indices[1]].Loc.X,
+            fNodes[fPolygons[I].Indices[1]].Loc.Y,
+            fNodes[fPolygons[I].Indices[2]].Loc.X,
+            fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
+        end;
+
+      W := 40;
+      if FFF.FindDefensivePolygons(Owner, W, DefencePosArr, False) then
+        for K := 0 to Length(DefencePosArr) - 1 do
+        begin
+          Point := DefencePosArr[K].DirPoint.Loc;
+          gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
+        end;
+
+      //PolygonArr := FFF.D_FF_INIT_ARR;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $900000FF);
+      //end;
+
+      //PolygonArr := FFF.D_FF_INIT_FLOOD;
+      //for K := 0 to Length(PolygonArr) - 1 do
+      //begin
+      //  I := PolygonArr[K];
+      //  gRenderAux.TriangleOnTerrain(
+      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
+      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $9000FF00);
+      //end;
+    finally
+      FFF.Free;
+    end;
+  end;//}
+
+
+  {Raw obstacle outlines
+  if OVERLAY_NAVMESH then
+    for I := 0 to fRawOutlines.Count - 1 do
+    for K := 0 to fRawOutlines.Shape[I].Count - 1 do
+    with fRawOutlines.Shape[I] do
+      gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);//}
+
+  {NavMesh polys coverage
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+      //if fPolygons[I].NearbyCount = 3 then
+      gRenderAux.TriangleOnTerrain(
+        fNodes[fPolygons[I].Indices[0]].Loc.X,
+        fNodes[fPolygons[I].Indices[0]].Loc.Y,
+        fNodes[fPolygons[I].Indices[1]].Loc.X,
+        fNodes[fPolygons[I].Indices[1]].Loc.Y,
+        fNodes[fPolygons[I].Indices[2]].Loc.X,
+        fNodes[fPolygons[I].Indices[2]].Loc.Y, $90FF0000);//}
+
+  //NavMesh edges
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+    for K := 0 to 2 do
+    begin
+      T1 := KMPointF(fNodes[Indices[K]].Loc);
+      J := (K + 1) mod 2;
+      T2 := KMPointF(fNodes[Indices[J]].Loc);
+      gRenderAux.LineOnTerrain(T1, T2, $80FF8000, $F0F0);
+    end;
+
+  {//NavMesh vertice ids
+  if OVERLAY_NAVMESH then
+    for I := 0 to High(fVertices) do
+      gRenderAux.Text(fVertices[I].X,fVertices[I].Y, IntToStr(I), $FF000000); //}
+
+  //{//NavMesh polys ids
+  if OVERLAY_NAVMESH then
+    for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+    begin
+      T1.X := (fNodes[Indices[0]].Loc.X + fNodes[Indices[1]].Loc.X + fNodes[Indices[2]].Loc.X) / 3;
+      T1.Y := (fNodes[Indices[0]].Loc.Y + fNodes[Indices[1]].Loc.Y + fNodes[Indices[2]].Loc.Y) / 3;
+      gRenderAux.Text(Round(T1.X), Round(T1.Y) + 1, IntToStr(I), $FF000000);
+    end;//}
+
+  {//Simplified obstacle outlines
+  if OVERLAY_NAVMESH then
+    for I := 0 to fSimpleOutlines.Count - 1 do
+    for K := 0 to fSimpleOutlines.Shape[I].Count - 1 do
+    with fSimpleOutlines.Shape[I] do
+      gRenderAux.Line(Nodes[K], Nodes[(K + 1) mod Count], $FF00FF00, $FF00);//}
+
+  {//NavMesh influences
+  if OVERLAY_NAVMESH then
+    for I := 0 to fNodeCount - 1 do
+    begin
+      K := GetBestOwner(I);
+      if K <> PLAYER_NONE then
+      begin
+        //Col := fPlayers[K].FlagColor or $FF000000;
+        Col := $FF000000;
+        Col2 := IfThen(fNodes[I].Owner[K] = 255, $FFFFFFFF);
+        Sz := Max(fNodes[I].Owner[K] - 128, 0) / 64;
+
+        gRenderAux.CircleOnTerrain(
+          fNodes[I].Loc.X,
+          fNodes[I].Loc.Y, Sz, Col, Col2);
+      end;
+    end;//}
+
+  {//Defence outlines
+  if OVERLAY_DEFENCES then
+    for I := 0 to gHands.Count - 1 do
+    begin
+      fAI.Setup.NewAI
+      GetDefenceOutline(I, Outline1, Outline2);
+
+      for K := 0 to High(Outline1) do
+        gRenderAux.LineOnTerrain(Outline1[K].A, Outline1[K].B, $FF00FFFF, $FF00);
+
+      for K := 0 to High(Outline2) do
+      begin
+        gRenderAux.LineOnTerrain(Outline2[K].A, Outline2[K].B, $A000FF00);
+        T1 := KMPointF(Outline2[K].A);
+        T2 := KMPerpendecular(Outline2[K].A, Outline2[K].B);
+        gRenderAux.LineOnTerrain(T1.X, T1.Y, T2.X, T2.Y, $A000FF00);
+      end;
+    end;//}
+end;
+
+
+
+
+//function GetOwnerPolys(aOwner: TKMHandIndex): TKMWordArray;
+//function ConvertPolysToEdges(aPolys: TKMWordArray): TKMEdgesArray;
+//function RemoveInnerEdges(const aEdges: TKMEdgesArray): TKMEdgesArray;
+//function EdgesToWeightOutline(const aEdges: TKMEdgesArray; aOwner: TKMHandIndex): TKMWeightSegments;
+
+//function GetBestOwner(aIndex: Integer): TKMHandIndex;
+//function NodeEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
+//function PolyEnemyPresence(aIndex: Integer; aOwner: TKMHandIndex): Word;
 
 {
 function TKMNavMesh.GetBestOwner(aIndex: Integer): TKMHandIndex;
@@ -903,186 +1081,6 @@ begin
   //   also they dont need defence line between them
 end;
 //}
-
-
-procedure TKMNavMesh.UpdateState(aTick: Cardinal);
-begin
-  //if aTick mod 600 = 0 then
-  //  UpdateOwnership;
-end;
-
-
-//Render debug symbols
-procedure TKMNavMesh.Paint(aRect: TKMRect);
-var
-  I, K, J: Integer;
-  T1, T2: TKMPointF;
-//  Col, Col2: Cardinal;
-//  Sz: Single;
-//  Outline1, Outline2: TKMWeightSegments;
-
-
-  W: Word;
-  Owner: TKMHandIndex;
-  Point: TKMPoint;
-  DefLines: TKMDefenceLines;
-  FFF: TForwardFF;
-  DefencePosArr: TKMDefencePosArr;
-
-begin
-  if not AI_GEN_NAVMESH then Exit;
-
-  //{ Test defences
-  // Show this defences only in case that show combat AI is not enabled;
-  // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
-  if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
-  begin
-    FFF := TForwardFF.Create(true);
-    Owner := gMySpectator.HandIndex;
-    try
-
-      if FFF.FindDefenceLines(Owner, DefLines) then
-        for K := 0 to DefLines.Count - 1 do
-        begin
-          I := DefLines.Lines[K].Polygon;
-          gRenderAux.TriangleOnTerrain(
-            fNodes[fPolygons[I].Indices[0]].Loc.X,
-            fNodes[fPolygons[I].Indices[0]].Loc.Y,
-            fNodes[fPolygons[I].Indices[1]].Loc.X,
-            fNodes[fPolygons[I].Indices[1]].Loc.Y,
-            fNodes[fPolygons[I].Indices[2]].Loc.X,
-            fNodes[fPolygons[I].Indices[2]].Loc.Y, $300000FF);
-        end;
-
-      W := 40;
-      if FFF.FindDefensivePolygons(Owner, W, DefencePosArr, False) then
-        for K := 0 to Length(DefencePosArr) - 1 do
-        begin
-          Point := DefencePosArr[K].DirPoint.Loc;
-          gRenderAux.CircleOnTerrain(Point.X, Point.Y, 2, $0900FFFF, $FFFFFFFF);
-        end;
-
-      //PolygonArr := FFF.D_FF_INIT_ARR;
-      //for K := 0 to Length(PolygonArr) - 1 do
-      //begin
-      //  I := PolygonArr[K];
-      //  gRenderAux.TriangleOnTerrain(
-      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
-      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
-      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $900000FF);
-      //end;
-
-      //PolygonArr := FFF.D_FF_INIT_FLOOD;
-      //for K := 0 to Length(PolygonArr) - 1 do
-      //begin
-      //  I := PolygonArr[K];
-      //  gRenderAux.TriangleOnTerrain(
-      //    fNodes[fPolygons[I].Indices[0]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[0]].Loc.Y,
-      //    fNodes[fPolygons[I].Indices[1]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[1]].Loc.Y,
-      //    fNodes[fPolygons[I].Indices[2]].Loc.X,
-      //    fNodes[fPolygons[I].Indices[2]].Loc.Y, $9000FF00);
-      //end;
-    finally
-      FFF.Free;
-    end;
-  end;//}
-
-
-  {Raw obstacle outlines
-  if OVERLAY_NAVMESH then
-    for I := 0 to fRawOutlines.Count - 1 do
-    for K := 0 to fRawOutlines.Shape[I].Count - 1 do
-    with fRawOutlines.Shape[I] do
-      gRenderAux.LineOnTerrain(Nodes[K], Nodes[(K + 1) mod Count], $FFFF00FF);//}
-
-  {NavMesh polys coverage
-  if OVERLAY_NAVMESH then
-    for I := 0 to fPolyCount - 1 do
-      //if fPolygons[I].NearbyCount = 3 then
-      gRenderAux.TriangleOnTerrain(
-        fNodes[fPolygons[I].Indices[0]].Loc.X,
-        fNodes[fPolygons[I].Indices[0]].Loc.Y,
-        fNodes[fPolygons[I].Indices[1]].Loc.X,
-        fNodes[fPolygons[I].Indices[1]].Loc.Y,
-        fNodes[fPolygons[I].Indices[2]].Loc.X,
-        fNodes[fPolygons[I].Indices[2]].Loc.Y, $90FF0000);//}
-
-  //NavMesh edges
-  if OVERLAY_NAVMESH then
-    for I := 0 to fPolyCount - 1 do
-    with fPolygons[I] do
-    for K := 0 to 2 do
-    begin
-      T1 := KMPointF(fNodes[Indices[K]].Loc);
-      J := (K + 1) mod 2;
-      T2 := KMPointF(fNodes[Indices[J]].Loc);
-      gRenderAux.LineOnTerrain(T1, T2, $80FF8000, $F0F0);
-    end;
-
-  {//NavMesh vertice ids
-  if OVERLAY_NAVMESH then
-    for I := 0 to High(fVertices) do
-      gRenderAux.Text(fVertices[I].X,fVertices[I].Y, IntToStr(I), $FF000000); //}
-
-  //{//NavMesh polys ids
-  if OVERLAY_NAVMESH then
-    for I := 0 to fPolyCount - 1 do
-    with fPolygons[I] do
-    begin
-      T1.X := (fNodes[Indices[0]].Loc.X + fNodes[Indices[1]].Loc.X + fNodes[Indices[2]].Loc.X) / 3;
-      T1.Y := (fNodes[Indices[0]].Loc.Y + fNodes[Indices[1]].Loc.Y + fNodes[Indices[2]].Loc.Y) / 3;
-      gRenderAux.Text(Round(T1.X), Round(T1.Y) + 1, IntToStr(I), $FF000000);
-    end;//}
-
-  {//Simplified obstacle outlines
-  if OVERLAY_NAVMESH then
-    for I := 0 to fSimpleOutlines.Count - 1 do
-    for K := 0 to fSimpleOutlines.Shape[I].Count - 1 do
-    with fSimpleOutlines.Shape[I] do
-      gRenderAux.Line(Nodes[K], Nodes[(K + 1) mod Count], $FF00FF00, $FF00);//}
-
-  {//NavMesh influences
-  if OVERLAY_NAVMESH then
-    for I := 0 to fNodeCount - 1 do
-    begin
-      K := GetBestOwner(I);
-      if K <> PLAYER_NONE then
-      begin
-        //Col := fPlayers[K].FlagColor or $FF000000;
-        Col := $FF000000;
-        Col2 := IfThen(fNodes[I].Owner[K] = 255, $FFFFFFFF);
-        Sz := Max(fNodes[I].Owner[K] - 128, 0) / 64;
-
-        gRenderAux.CircleOnTerrain(
-          fNodes[I].Loc.X,
-          fNodes[I].Loc.Y, Sz, Col, Col2);
-      end;
-    end;//}
-
-  {//Defence outlines
-  if OVERLAY_DEFENCES then
-    for I := 0 to gHands.Count - 1 do
-    begin
-      fAI.Setup.NewAI
-      GetDefenceOutline(I, Outline1, Outline2);
-
-      for K := 0 to High(Outline1) do
-        gRenderAux.LineOnTerrain(Outline1[K].A, Outline1[K].B, $FF00FFFF, $FF00);
-
-      for K := 0 to High(Outline2) do
-      begin
-        gRenderAux.LineOnTerrain(Outline2[K].A, Outline2[K].B, $A000FF00);
-        T1 := KMPointF(Outline2[K].A);
-        T2 := KMPerpendecular(Outline2[K].A, Outline2[K].B);
-        gRenderAux.LineOnTerrain(T1.X, T1.Y, T2.X, T2.Y, $A000FF00);
-      end;
-    end;//}
-end;
 
 
 {
