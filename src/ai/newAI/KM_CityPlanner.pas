@@ -55,11 +55,11 @@ var
 type
   THousePlan = record
     Placed, ShortcutsCompleted, RemoveTreeInPlanProcedure, HouseReservation, ChopOnly: Boolean;
-    UID: Integer;
+    House: TKMHouse;
     Loc, SpecPoint: TKMPoint;
   end;
   THousePlanArray = record
-    Count: Word;
+    Count, Calculated: Word;
     Plans: array of THousePlan;
   end;
   TPlannedHousesArray = array [HOUSE_MIN..HOUSE_MAX] of THousePlanArray;
@@ -117,6 +117,7 @@ type
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
+    procedure SyncLoad();
 
     procedure AfterMissionInit();
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
@@ -199,7 +200,14 @@ end;
 
 
 destructor TKMCityPlanner.Destroy();
+var
+  HT: TKMHouseType;
+  I, K, Len: Integer;
 begin
+  for HT := HOUSE_MIN to HOUSE_MAX do
+    for I := 0 to fPlannedHouses[HT].Count - 1 do
+      if (fPlannedHouses[HT].Plans[I].House <> nil) then
+        gHands.CleanUpHousePointer(fPlannedHouses[HT].Plans[I].House);
   fRoadPlanner.Free;
   fForestsNearby.Free;
   fRoadShortcutPlanner.Free;
@@ -220,10 +228,24 @@ begin
   for HT := HOUSE_MIN to HOUSE_MAX do
   begin
     SaveStream.Write(fPlannedHouses[HT].Count);
+    SaveStream.Write(fPlannedHouses[HT].Calculated);
     Len := Length(fPlannedHouses[HT].Plans);
     SaveStream.Write( Len );
     for I := 0 to fPlannedHouses[HT].Count - 1 do
-      SaveStream.Write(fPlannedHouses[HT].Plans[I], SizeOf(THousePlan));
+      with fPlannedHouses[HT].Plans[I] do
+      begin
+        SaveStream.Write(Placed);
+        SaveStream.Write(ShortcutsCompleted);
+        SaveStream.Write(RemoveTreeInPlanProcedure);
+        SaveStream.Write(HouseReservation);
+        SaveStream.Write(ChopOnly);
+        if (House <> nil) then
+          SaveStream.Write(House.UID) // Store ID
+        else
+          SaveStream.Write(Integer(0));
+        SaveStream.Write(Loc, SizeOf(Loc));
+        SaveStream.Write(SpecPoint, SizeOf(SpecPoint));
+      end;
   end;
 
   SaveStream.Write(fPerfIdx);
@@ -253,10 +275,21 @@ begin
   for HT := HOUSE_MIN to HOUSE_MAX do
   begin
     LoadStream.Read(fPlannedHouses[HT].Count);
+    LoadStream.Read(fPlannedHouses[HT].Calculated);
     LoadStream.Read(Len);
     SetLength(fPlannedHouses[HT].Plans, Len);
     for I := 0 to fPlannedHouses[HT].Count - 1 do
-      LoadStream.Read(fPlannedHouses[HT].Plans[I], SizeOf(THousePlan));
+      with fPlannedHouses[HT].Plans[I] do
+      begin
+        LoadStream.Read(Placed);
+        LoadStream.Read(ShortcutsCompleted);
+        LoadStream.Read(RemoveTreeInPlanProcedure);
+        LoadStream.Read(HouseReservation);
+        LoadStream.Read(ChopOnly);
+        LoadStream.Read(House, 4); // Load ID
+        LoadStream.Read(Loc, SizeOf(Loc));
+        LoadStream.Read(SpecPoint, SizeOf(SpecPoint));
+      end;
   end;
 
   LoadStream.Read(fPerfIdx);
@@ -272,6 +305,18 @@ begin
 
   fRoadPlanner.Load(LoadStream);
   fRoadShortcutPlanner.Load(LoadStream);
+end;
+
+
+procedure TKMCityPlanner.SyncLoad();
+var
+  HT: TKMHouseType;
+  I: Integer;
+begin
+  for HT := HOUSE_MIN to HOUSE_MAX do
+    for I := 0 to fPlannedHouses[HT].Count - 1 do
+      with fPlannedHouses[HT].Plans[I] do
+        House := gHands.GetHouseByUID( Cardinal(House) );
 end;
 
 
@@ -300,13 +345,15 @@ begin
     Dec(IdxArr[HT], 1);
     with fPlannedHouses[HT].Plans[ IdxArr[HT] ] do
     begin
-      Placed := True;
+      Placed := False;
       ShortcutsCompleted := False;
       RemoveTreeInPlanProcedure := False;
       HouseReservation := False;
       Loc := Houses[I].Entrance;
       SpecPoint := KMPOINT_ZERO;
-      UID := Houses[I].UID;
+      if (HT = ht_Woodcutters) then
+        SpecPoint := TKMHouseWoodcutters(Houses[I]).FlagPoint;
+      House := Houses[I].GetHousePointer;
     end;
   end;
 end;
@@ -331,13 +378,13 @@ procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
       Exit;
     for I := 0 to fPlannedHouses[ht_Woodcutters].Count - 1 do
       with fPlannedHouses[ht_Woodcutters].Plans[I] do
-        if Placed then
+        if Placed
+          AND (House <> nil)
+          AND not House.IsDestroyed
+          AND House.IsComplete then
         begin
-          W := TKMHouseWoodcutters( gHands[fOwner].Houses.GetHouseByUID(UID) );
-          if (W <> nil)
-            AND not W.IsDestroyed
-            AND (W.IsComplete)
-            AND (W.WoodcutterMode <> wcm_Chop)
+          W := TKMHouseWoodcutters( House );
+          if (W.WoodcutterMode <> wcm_Chop)
             AND (KMDistanceSQR(aW.FlagPoint, W.FlagPoint) < SQR_RAD) then
           begin
             MarkAsExhausted(aW.HouseType, aW.Entrance);
@@ -346,15 +393,15 @@ procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
         end;
   end;
 
-  procedure CheckWoodcutter(aHousePlan: THousePlan; aHouse: TKMHouse; aCheckChopOnly: Boolean);
+  procedure CheckWoodcutter(aHousePlan: THousePlan; aCheckChopOnly: Boolean);
   var
     Point: TKMPoint;
     W: TKMHouseWoodcutters;
   begin
     // Make sure that this house is woodcutter
-    if (aHouse.HouseType <> ht_Woodcutters) then
+    if (aHousePlan.House.HouseType <> ht_Woodcutters) then
       Exit;
-    W := TKMHouseWoodcutters(aHouse);
+    W := TKMHouseWoodcutters(aHousePlan.House);
     // Check if is cutting point required (compare with default cutting point)
     if not KMSamePoint(aHousePlan.SpecPoint, KMPOINT_ZERO) AND not W.IsFlagPointSet then
     // Set the cutting point - do it only once because it reset empty message (woodcutters in chop only mode will not be destroyed)
@@ -376,39 +423,14 @@ const
   WOODCUT_CHOP_ONLY_CHECK = MAX_HANDS * 100;
 var
   CheckChopOnly, CheckExistHouse: Boolean;
+  SumCalculated: Word;
   I,K: Integer;
   HT: TKMHouseType;
   H: TKMHouse;
 begin
-  CheckChopOnly := (aTick mod WOODCUT_CHOP_ONLY_CHECK = fOwner);
   // Priority: function is called from CityBuilder only in right time
-  for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
-    for I := 0 to fPlannedHouses[HT].Count - 1 do
-      with fPlannedHouses[HT].Plans[I] do
-      begin
-        if Placed then
-        begin
-          H := gHands[fOwner].Houses.GetHouseByUID(UID);
-          Placed := (H <> nil) AND not H.IsDestroyed;
-          if (HT = ht_Woodcutters) AND Placed AND (H.IsComplete) then
-            CheckWoodcutter(fPlannedHouses[HT].Plans[I], H, CheckChopOnly);
-        end
-        else
-          for K := 0 to gHands[fOwner].Houses.Count - 1 do
-            if KMSamePoint(Loc, gHands[fOwner].Houses[K].Entrance) then
-            begin
-              Placed := not gHands[fOwner].Houses[K].IsDestroyed;
-              if Placed then
-              begin
-                gHands[fOwner].AI.CityManagement.Builder.UnlockHouseLoc(HT, fPlannedHouses[HT].Plans[I].Loc);
-                HouseReservation := False;
-                RemoveTreeInPlanProcedure := False;
-                UID := gHands[fOwner].Houses[K].UID;
-              end;
-              break;
-            end;
-      end;
-  // Find new houses which are added by player / script etc. and add them to city plan
+  CheckChopOnly := (aTick mod WOODCUT_CHOP_ONLY_CHECK = fOwner);
+  // Find new houses which are added by player / script etc. and connect them with city plan
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
@@ -417,19 +439,51 @@ begin
       HT := H.HouseType;
       CheckExistHouse := False;
       for K := 0 to fPlannedHouses[HT].Count - 1 do
-        if KMSamePoint(fPlannedHouses[HT].Plans[K].Loc, gHands[fOwner].Houses[I].Entrance) then
+        if KMSamePoint(fPlannedHouses[HT].Plans[K].Loc, H.Entrance) then
         begin
+          if (fPlannedHouses[HT].Plans[K].House <> H) then
+          begin
+            // Make sure that reservation is no longer used
+            gHands[fOwner].AI.CityManagement.Builder.UnlockHouseLoc(HT, H.Entrance);
+            if (fPlannedHouses[HT].Plans[K].House <> nil) then
+              gHands.CleanUpHousePointer(fPlannedHouses[HT].Plans[K].House);
+            fPlannedHouses[HT].Plans[K].House := H.GetHousePointer;
+          end;
           CheckExistHouse := True;
           break;
         end;
-      if not CheckExistHouse then
+      if not CheckExistHouse then // House was added by script / spectator in debug mode
       begin
         if (HT = ht_Woodcutters) then
-          AddPlan(HT, gHands[fOwner].Houses[I].Entrance, TKMHouseWoodcutters(H).FlagPoint, TKMHouseWoodcutters(H).WoodcutterMode = wcm_Chop)
+          AddPlan(HT, H.Entrance, TKMHouseWoodcutters(H).FlagPoint, TKMHouseWoodcutters(H).WoodcutterMode = wcm_Chop)
         else
-          AddPlan(HT, gHands[fOwner].Houses[I].Entrance);
+          AddPlan(HT, H.Entrance);
       end;
     end;
+  end;
+  // Check if are existing houses completed / destroyed
+  for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
+  begin
+    SumCalculated := fPlannedHouses[HT].Count;
+    for I := 0 to fPlannedHouses[HT].Count - 1 do
+      with fPlannedHouses[HT].Plans[I] do
+      begin
+        Placed := ((House <> nil) AND not House.IsDestroyed) OR gHands[fOwner].BuildList.HousePlanList.ExistPlan(Loc, HT);
+        if Placed then // House was placed
+        begin
+          if (HT = ht_Woodcutters) AND (House <> nil) AND (House.IsComplete) then
+            CheckWoodcutter(fPlannedHouses[HT].Plans[I], CheckChopOnly);
+        end
+        else if (HouseReservation OR RemoveTreeInPlanProcedure) then // House was reserved
+        begin
+          // Do nothing
+        end
+        else // House was destroyed
+        begin
+          SumCalculated := SumCalculated - 1;
+        end;
+      end;
+    fPlannedHouses[HT].Calculated := SumCalculated;
   end;
 end;
 
@@ -456,7 +510,7 @@ begin
     ChopOnly := aChopOnly;
     Loc := aLoc;
     SpecPoint := aSpecPoint;
-    //UID := ...; UID cannot be added when house does not exist in hands
+    House := nil;
   end;
   fPlannedHouses[aHT].Count := fPlannedHouses[aHT].Count + 1;
 end;
@@ -558,28 +612,29 @@ begin
   Output := False;
   BestBid := MAX_BID;
   for I := fPlannedHouses[aHT].Count - 1 downto 0 do
-    if not fPlannedHouses[aHT].Plans[I].Placed then
-    begin
-      if fPlannedHouses[aHT].Plans[I].RemoveTreeInPlanProcedure OR gAIFields.Eye.CanAddHousePlan(fPlannedHouses[aHT].Plans[I].Loc, aHT, True, True) then
+    with fPlannedHouses[aHT].Plans[I] do
+      if not Placed then
       begin
-        if (aHT in [ht_GoldMine, ht_IronMine, ht_CoalMine, ht_Quary]) AND CheckMine(I) then // Filter mines / chop-only woodcutters
-          continue;
-        Bid := DistFromStore(fPlannedHouses[aHT].Plans[I].Loc) + ObstaclesInHousePlan(aHT, fPlannedHouses[aHT].Plans[I].Loc);
-        if  (aHT = ht_Woodcutters) then
+        if RemoveTreeInPlanProcedure OR gAIFields.Eye.CanAddHousePlan(Loc, aHT, True, True) then
         begin
-          SpecPoint := fPlannedHouses[aHT].Plans[I].SpecPoint;
-          Bid := Bid - Byte(gAIFields.Influences.AvoidBuilding[SpecPoint.Y, SpecPoint.X] = 0) * CHOP_ONLY_ADVANTAGE; // Chop only mode
-        end;
-        if (Bid < BestBid) then
-        begin
-          BestBid := Bid;
-          BestIdx := I;
-        end;
-        break;
-      end
-      else
-        RemovePlan(aHT, I);
-    end;
+          if (aHT in [ht_GoldMine, ht_IronMine, ht_CoalMine, ht_Quary]) AND CheckMine(I) then // Filter mines / chop-only woodcutters
+            continue;
+          Bid := DistFromStore(Loc) + ObstaclesInHousePlan(aHT, Loc);
+          if  (aHT = ht_Woodcutters) then
+          begin
+            SpecPoint := SpecPoint;
+            Bid := Bid - Byte(gAIFields.Influences.AvoidBuilding[SpecPoint.Y, SpecPoint.X] = 0) * CHOP_ONLY_ADVANTAGE; // Chop only mode
+          end;
+          if (Bid < BestBid) then
+          begin
+            BestBid := Bid;
+            BestIdx := I;
+          end;
+          break;
+        end
+        else
+          RemovePlan(aHT, I);
+      end;
   if (BestBid <> MAX_BID) then
   begin
     aLoc := fPlannedHouses[aHT].Plans[BestIdx].Loc;
@@ -614,7 +669,7 @@ begin
   begin
     if (aIdx >= Count) then
       Exit;
-    if not Plans[aIdx].Placed then // Unlock house plan
+    if (Plans[aIdx].House = nil) then // Unlock house plan
       gHands[fOwner].AI.CityManagement.Builder.UnLockHouseLoc(aHT, Plans[aIdx].Loc);
     Count := Count - 1;
     Plans[aIdx] := Plans[Count];
