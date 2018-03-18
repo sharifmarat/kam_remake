@@ -741,14 +741,15 @@ begin
 end;
 
 
-// Check if this plan exist
+// Check if this plan exist - aLoc is given by house entrance (offset of plans is moved back to entrance)
 function TKMHousePlanList.ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
 var
   I: Integer;
 begin
   Result := True;
   for I := 0 to Length(fPlans) - 1 do
-    if (fPlans[I].HouseType = aHT) AND KMSamePoint(aLoc, fPlans[I].Loc) then
+    if (fPlans[I].HouseType = aHT)
+      AND KMSamePoint(  aLoc, KMPointAdd( fPlans[I].Loc, KMPoint(gRes.Houses[aHT].EntranceOffsetX,0) )  ) then
 	    Exit;
   Result := False;
 end;
