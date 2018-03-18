@@ -25,7 +25,7 @@ type
     function GetNiknameU: UnicodeString;
     function GetHandIndex: Integer;
   public
-    PlayerNetType: TNetPlayerType; //Human, Computer, Closed
+    PlayerNetType: TKMNetPlayerType; //Human, Computer, Closed
     StartLocation: Integer;  //Start location, 0 means random, -1 means spectate
     Team: Integer;
     ReadyToStart: Boolean;
@@ -42,6 +42,8 @@ type
     function GetMaxPing: Word;
     function IsHuman: Boolean;
     function IsComputer: Boolean;
+    function IsClassicComputer: Boolean;
+    function IsAdvancedComputer: Boolean;
     function IsClosed: Boolean;
     function IsSpectator: Boolean;
     function GetPlayerType: TKMHandType;
@@ -83,7 +85,7 @@ type
     property Count:integer read fCount;
 
     procedure AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString);
-    procedure AddAIPlayer(aSlot: Integer = -1);
+    procedure AddAIPlayer(aAdvancedAI: Boolean; aSlot: Integer = -1);
     procedure AddClosedPlayer(aSlot: Integer = -1);
     procedure DisconnectPlayer(aIndexOnServer: TKMNetHandleIndex);
     procedure DisconnectAllClients(const aOwnNikname: AnsiString);
@@ -107,7 +109,8 @@ type
     function AllReadyToReturnToLobby: Boolean;
     function GetMaxHighestRoundTripLatency: Word;
     function GetNotReadyToPlayPlayers: TKMByteArray;
-    function GetAICount: Integer;
+    function GetAICount(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Integer;
+    function GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TKMNetPlayerType)..High(TKMNetPlayerType)]): Integer;
     function GetClosedCount: Integer;
     function GetSpectatorCount: Integer;
     function GetConnectedCount: Integer;
@@ -203,7 +206,20 @@ end;
 
 function TKMNetPlayerInfo.IsComputer: Boolean;
 begin
-  Result := PlayerNetType = nptComputer;
+  Result := PlayerNetType in [nptComputerClassic, nptComputerAdvanced];
+end;
+
+
+
+function TKMNetPlayerInfo.IsClassicComputer: Boolean;
+begin
+  Result := PlayerNetType = nptComputerClassic;
+end;
+
+
+function TKMNetPlayerInfo.IsAdvancedComputer: Boolean;
+begin
+  Result := PlayerNetType = nptComputerAdvanced;
 end;
 
 
@@ -221,7 +237,7 @@ end;
 
 function TKMNetPlayerInfo.GetPlayerType: TKMHandType;
 const
-  PlayerTypes: array [TNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer);
+  PlayerTypes: array [TKMNetPlayerType] of TKMHandType = (hndHuman, hndComputer, hndComputer, hndComputer);
 begin
   Result := PlayerTypes[PlayerNetType];
 end;
@@ -231,8 +247,10 @@ function TKMNetPlayerInfo.SlotName: UnicodeString;
 begin
   case PlayerNetType of
     nptHuman:     Result := NiknameU;
-    nptComputer:  //In lobby AI players don't have numbers yet (they are added on mission start)
+    nptComputerClassic:  //In lobby AI players don't have numbers yet (they are added on mission start)
                   Result := gResTexts[TX_LOBBY_SLOT_AI_PLAYER];
+    nptComputerAdvanced:  //In lobby AI players don't have numbers yet (they are added on mission start)
+                  Result := gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED];
     nptClosed:    Result := gResTexts[TX_LOBBY_SLOT_CLOSED];
     else          Result := NO_TEXT;
   end;
@@ -437,7 +455,7 @@ begin
 end;
 
 
-procedure TKMNetPlayersList.AddAIPlayer(aSlot: Integer = -1);
+procedure TKMNetPlayersList.AddAIPlayer(aAdvancedAI: Boolean; aSlot: Integer = -1);
 begin
   if aSlot = -1 then
   begin
@@ -448,7 +466,10 @@ begin
   fNetPlayers[aSlot].fNikname := '';
   fNetPlayers[aSlot].fLangCode := '';
   fNetPlayers[aSlot].fIndexOnServer := -1;
-  fNetPlayers[aSlot].PlayerNetType := nptComputer;
+  if aAdvancedAI then
+    fNetPlayers[aSlot].PlayerNetType := nptComputerAdvanced
+  else
+    fNetPlayers[aSlot].PlayerNetType := nptComputerClassic;
   fNetPlayers[aSlot].Team := 0;
   fNetPlayers[aSlot].FlagColorID := 0;
   fNetPlayers[aSlot].StartLocation := 0;
@@ -723,13 +744,19 @@ begin
 end;
 
 
-function TKMNetPlayersList.GetAICount: Integer;
+function TKMNetPlayersList.GetAICount(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Integer;
+begin
+  Result := GetPlayerCount(aAIPlayerTypes * [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]);
+end;
+
+
+function TKMNetPlayersList.GetPlayerCount(aPlayerTypes: TKMNetPlayerTypeSet = [Low(TKMNetPlayerType)..High(TKMNetPlayerType)]): Integer;
 var
   I: Integer;
 begin
   Result := 0;
   for I := 1 to fCount do
-    if fNetPlayers[I].PlayerNetType = nptComputer then
+    if fNetPlayers[I].PlayerNetType in aPlayerTypes then
       Inc(Result);
 end;
 
@@ -886,10 +913,10 @@ procedure TKMNetPlayersList.SetAIReady;
 var I: Integer;
 begin
   for I := 1 to fCount do
-    if fNetPlayers[I].PlayerNetType in [nptComputer,nptClosed] then
+    if fNetPlayers[I].PlayerNetType in [nptComputerClassic, nptComputerAdvanced, nptClosed] then
     begin
-      fNetPlayers[I].ReadyToStart := true;
-      fNetPlayers[I].ReadyToPlay := true;
+      fNetPlayers[I].ReadyToStart := True;
+      fNetPlayers[I].ReadyToPlay := True;
     end;
 end;
 
@@ -962,8 +989,8 @@ begin
   //All wrong start locations will be reset to random (fallback since UI should block that anyway)
   for I := 1 to fCount do
     if (fNetPlayers[I].StartLocation <> LOC_RANDOM) and (fNetPlayers[I].StartLocation <> LOC_SPECTATE) then
-      if ((fNetPlayers[I].PlayerNetType = nptHuman) and not IsHumanLoc(fNetPlayers[I].StartLocation))
-      or ((fNetPlayers[I].PlayerNetType = nptComputer) and not IsAILoc(fNetPlayers[I].StartLocation)) then
+      if (fNetPlayers[I].IsHuman and not IsHumanLoc(fNetPlayers[I].StartLocation))
+        or (fNetPlayers[I].IsComputer and not IsAILoc(fNetPlayers[I].StartLocation)) then
         fNetPlayers[I].StartLocation := LOC_RANDOM;
 
   for I := 1 to MAX_HANDS do
@@ -976,7 +1003,7 @@ begin
       if UsedLoc[fNetPlayers[I].StartLocation] then
         fNetPlayers[I].StartLocation := LOC_RANDOM
       else
-        UsedLoc[fNetPlayers[I].StartLocation] := true;
+        UsedLoc[fNetPlayers[I].StartLocation] := True;
     end;
 
   //Collect available locations in a list

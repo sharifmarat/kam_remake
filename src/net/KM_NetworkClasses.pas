@@ -20,7 +20,7 @@ type
                                             Team: Integer;
                                             IsSpectator: Boolean;
                                             IsHost: Boolean;
-                                            PlayerType: TNetPlayerType;
+                                            PlayerType: TKMNetPlayerType;
                                           end;
     Description: UnicodeString;
     Map: UnicodeString;
