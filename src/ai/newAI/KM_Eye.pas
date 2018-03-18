@@ -636,19 +636,19 @@ var
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
+  Mines := nil;
   case aHT of
     ht_GoldMine: Mines := fGoldMines;
     ht_IronMine: Mines := fIronMines;
-    else
-      Exit;
   end;
 
-  for I := Mines.Count - 1 downto 0 do
-    if (gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X] > 0) then
-      if CanAddHousePlan(Mines.Items[I], aHT, True, False) AND CheckResourcesNearMine(Mines.Items[I], aHT) then
-        Output.Add(Mines.Items[I], gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X])
-      else
-        Mines.Delete(I);
+  if (Mines <> nil) then
+    for I := Mines.Count - 1 downto 0 do
+      if (gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X] > 0) then
+        if CanAddHousePlan(Mines.Items[I], aHT, True, False) AND CheckResourcesNearMine(Mines.Items[I], aHT) then
+          Output.Add(Mines.Items[I], gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X])
+        else
+          Mines.Delete(I);
   Result := Output;
 end;
 
