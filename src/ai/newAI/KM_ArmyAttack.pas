@@ -742,6 +742,7 @@ var
     Output := False;
     // Ranged groups view: our ranged unit -> select target => each unit should fire
     GT := gt_Ranged;
+    TargetIdx := 0; // Only for compiler
     for I := AvaiableSquads[GT].Count - 1 downto 0 do
     begin
       Squad := AvaiableSquads[GT].Squads[I];
@@ -858,6 +859,7 @@ var
 
     // Target watchtowers with archers
     GT := gt_Ranged;
+    TargetIdx := 0; // Only for compiler
     for I := AvaiableSquads[GT].Count - 1 downto 0 do
     begin
       BestDist := INIT_THREAT;
@@ -1031,6 +1033,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
           AvaiableSquads[K] := True;
           K := K + 1;
         end;
+      ClosestIdx := 0; // Only for compiler
       for I := TagPositions.Count - 1 downto 0 do
       begin
         Position := TagPositions.Items[I];
@@ -1045,7 +1048,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
               ClosestIdx := K;
             end;
           end;
-        if (ClosestIdx = INIT_DIST) then
+        if (ClosestDist = INIT_DIST) then
           break;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
         Squads[ClosestIdx].TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
@@ -1376,6 +1379,7 @@ begin
   EnemyStats := gAIFields.Influences.InfluenceSearch.EnemiesStats;
 
   // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
+  BestComparison := -1;
   if (Length(EnemyStats) > 0) then
   begin
     // Find closest enemy
@@ -1384,7 +1388,6 @@ begin
       if (MinDist > EnemyStats[I].Distance) then
         MinDist := EnemyStats[I].Distance;
 
-    BestComparison := -2;
     for I := 0 to Length(EnemyStats) - 1 do
     begin
       Comparison := gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player) - (EnemyStats[I].Distance / Max(1,MinDist) - 1) * DISTANCE_COEF;
@@ -1465,6 +1468,7 @@ begin
   begin
     // Company status log
     Company := fCompanies.Items[I];
+    Col := 0; // For compiler
     case Company.State of
       cs_Attack: Col := COLOR_RED;
       cs_Walking: Col := COLOR_BLUE;
