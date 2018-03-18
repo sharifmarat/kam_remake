@@ -6668,7 +6668,8 @@ begin
 end;
 
 
-procedure TKMColumnBox.DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean; aAllowHighlight: Boolean = True);
+procedure TKMColumnBox.DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean;
+                                   aAllowHighlight: Boolean = True);
   function IsHighlightOverCell(aCellIndex: Integer): Boolean;
   begin
     Result := aAllowHighlight
@@ -7300,11 +7301,16 @@ end;
 
 
 procedure TKMDropList.Paint;
-var Col: TColor4;
+var
+  Col: TColor4;
 begin
   inherited;
 
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
+  if fEnabled then
+    Col := icWhite
+  else
+    Col := icGray2;
+
   TKMRenderUI.WriteText(AbsLeft+4, AbsTop+4, Width-8, fCaption, fFont, taLeft, Col);
 end;
 
@@ -7473,16 +7479,20 @@ end;
 
 
 procedure TKMDropColumns.Paint;
-var Col: TColor4;
+var
+  Col: TColor4;
 begin
   inherited;
 
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
-
-  if ItemIndex <> -1 then
-    fList.DoPaintLine(ItemIndex, AbsLeft, AbsTop, Width - fButton.Width, fColumnsToShowWhenListHidden, False)
+  if fEnabled then
+    Col := icWhite
   else
-    TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 4, Width - 8 - fButton.Width, fDefaultCaption, fFont, taLeft, Col);
+    Col := icGray2;
+
+  if ItemIndex = -1 then
+    TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 4, Width - 8 - fButton.Width, fDefaultCaption, fFont, taLeft, Col)
+  else
+    fList.DoPaintLine(ItemIndex, AbsLeft, AbsTop, Width - fButton.Width, fColumnsToShowWhenListHidden, False);
 end;
 
 
