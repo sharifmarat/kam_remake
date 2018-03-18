@@ -80,8 +80,8 @@ const
 
 implementation
 uses
-  KM_Game, KM_HandsCollection, KM_Terrain, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo,
+  Classes, KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_Resource,
+  KM_AIFields, KM_Units, KM_UnitsCollection, KM_UnitTaskDelivery, KM_UnitActionWalkTo,
   KM_NavMesh, KM_RenderAux, KM_ResMapElements;
 
 { TKMCityBuilder }
@@ -642,7 +642,6 @@ var
   I, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
 begin
-  Output := cs_NoNodeAvailable;
   FieldsComplete := False;
   // Find at least 2 non active build nodes
   Node1Idx := -1;
@@ -795,7 +794,7 @@ const
   WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
   BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
 var
-  StoneShortage, WoodShortage, TrunkShortage, TrunkRequired, GoldShortage: Boolean;
+  StoneShortage, WoodShortage, TrunkShortage, GoldShortage: Boolean;
   MaxPlans: Integer;
   RequiredHouses: TRequiredHousesArray;
   WareBalance: TWareBalanceArray;
@@ -983,7 +982,6 @@ begin
   StoneShortage := False;
   TrunkShortage := False;
   WoodShortage := False;
-  TrunkRequired := False;
   GoldShortage := False;
   RequiredHouses := fPredictor.RequiredHouses;
   WareBalance := fPredictor.WareBalance;
