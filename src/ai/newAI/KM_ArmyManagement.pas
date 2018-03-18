@@ -20,8 +20,6 @@ type
     fAttack: TKMArmyAttack;
     fDefence: TKMArmyDefence;
 
-    fBalanceText: UnicodeString;
-
     procedure RecruitSoldiers();
     procedure CheckGroupsState();
     procedure CheckAttack();
