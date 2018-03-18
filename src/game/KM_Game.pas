@@ -556,7 +556,7 @@ end;
 procedure TKMGame.MultiplayerRig;
 var
   I: Integer;
-  handIndex: TKMHandIndex;
+  HIndex: TKMHandIndex;
 begin
   //Copy game options from lobby to this game
   fGameOptions.Peacetime := fNetworking.NetGameOptions.Peacetime;
@@ -569,16 +569,19 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     if not fNetworking.NetPlayers[I].IsSpectator then
     begin
-      handIndex := fNetworking.NetPlayers[I].StartLocation - 1;
-      gHands[handIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
-      gHands[handIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
+      HIndex := fNetworking.NetPlayers[I].HandIndex;
+      gHands[HIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
+      gHands[HIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
+
+      if fNetworking.NetPlayers[I].IsAdvancedComputer then
+        gHands[HIndex].AI.Setup.ApplyAgressiveBuilderSetup(True);
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
       if fNetworking.SelectGameKind = ngk_Save then
-        TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(handIndex, gHands[handIndex].HandType);
+        TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(HIndex, gHands[HIndex].HandType);
 
       //Set owners name so we can write it into savegame/replay
-      gHands[handIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
+      gHands[HIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
     end;
 
   //Setup alliances

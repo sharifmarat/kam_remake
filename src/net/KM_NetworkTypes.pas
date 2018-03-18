@@ -177,20 +177,25 @@ type
   PKMNetHandleIndex = ^TKMNetHandleIndex;
   TMPGameState = (mgsNone, mgsLobby, mgsLoading, mgsGame);
   TKMServerType = (mstClient, mstDedicated, mstLocal);
-  TNetPlayerType = (nptHuman, nptComputer, nptClosed);
+  TNetPlayerType = (nptHuman, nptClosed, nptComputerClassic, nptComputerAdvanced);
+  TKMNetPlayerTypeSet = set of TNetPlayerType;
 
 const
+  AI_PLAYER_TYPE_MIN = nptComputerClassic;
+  AI_PLAYER_TYPE_MAX = nptComputerAdvanced;
   //Used in the dedicated server display as it does not care about translations (translated ones are in KM_TextLibrary)
   GameStateText: array [TMPGameState] of UnicodeString = ('None', 'Lobby', 'Loading', 'Game');
-  NetPlayerTypeName: array [TNetPlayerType] of UnicodeString = ('Human', 'AI Player', 'Closed');
+  NetPlayerTypeName: array [TNetPlayerType] of UnicodeString = ('Human', 'Classic AI Player', 'Advanced AI Player', 'Closed');
   ServerTypePic: array [TKMServerType] of Word = (74, 75, 79);
 
 
   function GetNetAddressStr(aNetworkAddress: Integer): String;
+  function GetAIPlayerIcon(aNetPlayerType: TNetPlayerType): Word;
 
 implementation
 
-uses SysUtils;
+uses
+  SysUtils;
 
 
 function GetNetAddressStr(aNetworkAddress: Integer): String;
@@ -202,6 +207,16 @@ begin
     NET_ADDRESS_HOST    : Result := 'HOST';
     NET_ADDRESS_SERVER  : Result := 'SERVER';
     else                  Result := IntToStr(aNetworkAddress);
+  end;
+end;
+
+
+function GetAIPlayerIcon(aNetPlayerType: TNetPlayerType): Word;
+begin
+  case aNetPlayerType of
+    nptComputerClassic:   Result := 62; //PC Icon
+    nptComputerAdvanced:  Result := 74; //Large PC Icon
+    else                  Result := 0;  //None
   end;
 end;
 

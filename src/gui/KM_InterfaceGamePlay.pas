@@ -2675,7 +2675,7 @@ begin
     begin
       // Show players locale flag
       if gGame.Networking.NetPlayers[NetI].IsComputer then
-        Image_AlliesFlag[I].TexID := 62 // PC icon
+        Image_AlliesFlag[I].TexID := GetAIPlayerIcon(gGame.Networking.NetPlayers[NetI].PlayerNetType)
       else
       begin
         LocaleID := gResLocales.IndexByCode(gGame.Networking.NetPlayers[NetI].LangCode);
