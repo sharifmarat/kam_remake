@@ -146,8 +146,8 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(4);
-  //gGame.GameOptions.Peacetime := 90;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+  gGame.GameOptions.Peacetime := 90;
+  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -179,11 +179,11 @@ begin
   if (aTick mod MAX_HANDS = fOwner) AND fSetup.AutoBuild then
   begin
     fBalanceText := '';
+    FreeWorkersCnt := 0;
+    fBuilder.UpdateState(aTick, FreeWorkersCnt);
     fPredictor.UpdateState(aTick);
     if not SKIP_RENDER then
       fPredictor.LogStatus(fBalanceText);
-    FreeWorkersCnt := 0;
-    fBuilder.UpdateState(aTick, FreeWorkersCnt);
     fBuilder.ChooseHousesToBuild(FreeWorkersCnt, aTick);
     if not SKIP_RENDER then // Builder LogStatus cannot be merged with predictor
     begin
