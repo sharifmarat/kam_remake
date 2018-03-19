@@ -9,11 +9,17 @@ uses
 
 
 var
-  GA_BUILDER_BuildHouse_RoadMaxWork                   : Single = 6;
-  GA_BUILDER_BuildHouse_FieldMaxWork                  : Single = 1;
-  GA_BUILDER_BuildHouse_RTPMaxWork                    : Single = 10;
-  GA_BUILDER_CreateShortcuts_MaxWork                  : Single = 6;
-  GA_BUILDER_ChooseHousesToBuild_FC                   : Single = 8.512814522;
+  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 5.697831631;
+  GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
+  GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
+  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 1.886523724;
+  GA_BUILDER_ChHTB_FractionCoef         : Single = 22.06742477;
+  GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.568861008;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single = 2.400017023;
+  GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 10;
+  GA_BUILDER_WOOD_SHORTAGE              : Single = 10;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 20;
 
 
 type
@@ -70,13 +76,6 @@ type
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
   end;
-
-
-const
-  STONE_SHORTAGE = 10;
-  TRUNK_SHORTAGE = 3;
-  WOOD_SHORTAGE = 10;
-  GOLD_SHORTAGE = 20;
 
 
 implementation
@@ -575,7 +574,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
         if (FreeWorkers <= 0) then
           Exit;
         // Detect obstacles in house plan
-        if gTerrain.ObjectIsChopableTree(FieldList.Items[I].X, FieldList.Items[I].Y) then
+        if gTerrain.ObjectIsChopableTree(FieldList.Items[I], [caAge1,caAge2,caAge3,caAgeFull]) then
         begin
           // Check if is wine plan already placed
           if IsPlan(FieldList.Items[I], tlFieldWork, ft_Wine) then
@@ -873,7 +872,7 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION[WT] ] > 0) then
       begin
-        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChooseHousesToBuild_FC;
+        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef;
         for I := Low(WareOrder) to High(WareOrder) do
           if (WT = wt_None) then
             break
@@ -992,24 +991,24 @@ begin
   MaxPlans := Ceil(aFreeWorkersCnt / 5);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wt_Stone is OK
-  if (WareBalance[wt_Stone].Exhaustion < STONE_SHORTAGE) then
+  if (WareBalance[wt_Stone].Exhaustion < GA_BUILDER_STONE_SHORTAGE) then
     StoneShortage := True;
 
   // Secure wood production: only process trunk -> wood => minimal delay, exhaustion is OK
-  if (WareBalance[wt_Wood].Exhaustion < WOOD_SHORTAGE) then
+  if (WareBalance[wt_Wood].Exhaustion < GA_BUILDER_WOOD_SHORTAGE) then
     WoodShortage := True;
 
   // Make sure that gold will be produced ASAP -> minimal delay, exhaustion is OK
-  if (WareBalance[wt_Gold].Exhaustion < GOLD_SHORTAGE) then
+  if (WareBalance[wt_Gold].Exhaustion < GA_BUILDER_GOLD_SHORTAGE) then
     GoldShortage := True;
 
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   TrunkBalance := (gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,WareBalance[wt_Trunk].ActualConsumption);
-  if (TrunkBalance < TRUNK_SHORTAGE) then
+  if (TrunkBalance < GA_BUILDER_TRUNK_SHORTAGE) then
     TrunkShortage := True;
 
   // Find place for chop-only woodcutters when we start to be out of wood
-  if ((6 - TrunkBalance) / 3 - GetChopOnlyCnt() > 0) then // Max 2 chop-only woodcutters
+  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then // Max 2 chop-only woodcutters
     fPlanner.FindForestAround(KMPOINT_ZERO, True);
 
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
@@ -1287,13 +1286,13 @@ begin
     if fBuildNodes[I].Active then
       cnt := cnt + 1;
   aBalanceText := aBalanceText + '|Active nodes:' + IntToStr(cnt);
-  if (fPredictor.WareBalance[wt_Stone].Exhaustion < STONE_SHORTAGE) then
+  if (fPredictor.WareBalance[wt_Stone].Exhaustion < GA_BUILDER_STONE_SHORTAGE) then
     aBalanceText := aBalanceText + '|Stone shortage';
-  if ((gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,fPredictor.WareBalance[wt_Trunk].ActualConsumption) < TRUNK_SHORTAGE) then
+  if ((gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,fPredictor.WareBalance[wt_Trunk].ActualConsumption) < GA_BUILDER_TRUNK_SHORTAGE) then
     aBalanceText := aBalanceText + '|Trunk shortage';
-  if (fPredictor.WareBalance[wt_Wood].Exhaustion < WOOD_SHORTAGE) then
+  if (fPredictor.WareBalance[wt_Wood].Exhaustion < GA_BUILDER_WOOD_SHORTAGE) then
     aBalanceText := aBalanceText + 'Wood shortage';
-  if (fPredictor.WareBalance[wt_Gold].Exhaustion < GOLD_SHORTAGE) then
+  if (fPredictor.WareBalance[wt_Gold].Exhaustion < GA_BUILDER_GOLD_SHORTAGE) then
     aBalanceText := aBalanceText + '|Gold shortage';
 end;
 
@@ -1907,7 +1906,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
         if (FreeWorkers <= 0) then
           Exit;
         // Detect obstacles in house plan
-        if gTerrain.ObjectIsChopableTree(FieldList.Items[I].X, FieldList.Items[I].Y) then
+        if gTerrain.ObjectIsChopableTree(FieldList.Items[I], [caAge1,caAge2,caAge3,caAgeFull]) then
         begin
           // Check if is wine plan already placed
           if IsPlan(FieldList.Items[I], tlFieldWork, ft_Wine) then
