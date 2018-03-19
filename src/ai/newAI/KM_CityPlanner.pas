@@ -181,7 +181,7 @@ uses
   KM_Game, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
   KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_Eye,
-  KM_RenderAux;
+  KM_RenderAux, KM_ResMapElements;
 
 
 
@@ -871,7 +871,7 @@ begin
   for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
   begin
     Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, HMA[aHT].Tiles[I] );
-    if gTerrain.ObjectIsChopableTree(Point.X, Point.Y) then
+    if gTerrain.ObjectIsChopableTree(Point, [caAge1,caAge2,caAge3,caAgeFull]) then
       aField.Add(Point);
   end;
   if (aField.Count > 0) then
@@ -1009,7 +1009,7 @@ begin
   begin
     X := aLoc.X + HMA[aHT].Tiles[I].X;
     Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
-    Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(X, Y));
+    Tree := Tree + Byte(gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]));
     Road := Road + Byte(tpWalkRoad in gTerrain.Land[Y, X].Passability);
   end;
   Result := Tree * GA_PLANNER_ObstaclesInHousePlan_Tree + Road * GA_PLANNER_ObstaclesInHousePlan_Road;
@@ -1728,7 +1728,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
   end;
 
 const
-  DISTANCE_BETWEEN_TOWERS = 6;
+  DISTANCE_BETWEEN_TOWERS = 5.5;
 var
   I, K, DefCount: Integer;
   P1,P2: TKMPoint;
@@ -2119,7 +2119,7 @@ begin
     X := aLoc.X + HMA[aHT].Tiles[I].X;
     Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
     Output := Output AND (tpBuild in gTerrain.Land[Y,X].Passability);
-    if gTerrain.ObjectIsChopableTree(X, Y) then
+    if gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]) then
     begin
       aTrees[TreeCnt] := KMPoint(X,Y);
       TreeCnt := TreeCnt + 1;
