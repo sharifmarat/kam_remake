@@ -369,7 +369,7 @@ end;
 // Basic house requirements
 procedure TKMCityPredictor.UpdateBasicHouses(aInitialization: Boolean = False);
 const
-  INN_TIME_LIMIT = 9000; // ~ 15 minutes from start
+  INN_TIME_LIMIT = 60 * 10 * 14; // ~ 14 minutes from start
   SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
   FIRST_MARKETPLACE = 10 * 60 * 80;
   SECOND_MARKETPLACE = 10 * 60 * 100;
