@@ -2,15 +2,13 @@ unit KM_AI;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_Defaults,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults,
   KM_Houses, KM_Units, KM_Units_Warrior,
   KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral,
   KM_CityManagement, KM_ArmyManagement;
 
 
 type
-  TWonOrLost = (wol_None, wol_Won, wol_Lost);
-
   //Things that player does automatically
   //Player AI exists both for AI and Human players, but for AI it does significantly more
   TKMHandAI = class

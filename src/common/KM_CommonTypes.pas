@@ -65,6 +65,8 @@ type
     mkQuill //Utility message (warnings in script loading)
     );
 
+  TWonOrLost = (wol_None, wol_Won, wol_Lost);
+
 
 implementation
 
