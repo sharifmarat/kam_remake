@@ -458,6 +458,13 @@ begin
     end;
   end;
 
+  if gGame.IsMultiplayer then
+  begin
+    if fNetworking.Connected then
+      fNetworking.AnnounceDisconnect;
+    fNetworking.Disconnect;
+  end;
+
   gGame.ReadyToStop := True;
 end;
 
@@ -474,13 +481,6 @@ begin
   if gGame = nil then Exit;
 
   PrepageStopGame(aMsg);
-
-  if gGame.IsMultiplayer then
-  begin
-    if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
-    fNetworking.Disconnect;
-  end;
 
   case aMsg of
     gr_Win,
