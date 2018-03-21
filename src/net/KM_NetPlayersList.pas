@@ -82,7 +82,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    property Count:integer read fCount;
+    property Count: Integer read fCount;
 
     procedure AddPlayer(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex; const aLang: AnsiString);
     procedure AddAIPlayer(aAdvancedAI: Boolean; aSlot: Integer = -1);
@@ -335,10 +335,12 @@ end;
 
 { TKMNetPlayersList }
 constructor TKMNetPlayersList.Create;
-var I: Integer;
+var
+  I: Integer;
 begin
   inherited;
   SpectatorSlotsOpen := MAX_LOBBY_SPECTATORS;
+
   for I := 1 to MAX_LOBBY_SLOTS do
     fNetPlayers[I] := TKMNetPlayerInfo.Create;
 end;
@@ -448,7 +450,7 @@ begin
   fNetPlayers[fCount].Dropped := false;
   fNetPlayers[fCount].ResetPingRecord;
   //Check if this player must go in a spectator slot
-  if fCount-GetSpectatorCount > MAX_LOBBY_PLAYERS then
+  if fCount - GetSpectatorCount > MAX_LOBBY_PLAYERS then
     fNetPlayers[fCount].StartLocation := LOC_SPECTATE
   else
     fNetPlayers[fCount].StartLocation := LOC_RANDOM;
