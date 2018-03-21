@@ -1846,7 +1846,7 @@ begin
                   if not fNetPlayers[PlayerIndex].Dropped then
                   begin
                     PostMessage(TX_NET_LOST_CONNECTION, csLeave, fNetPlayers[PlayerIndex].NiknameColoredU);
-                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU+' lost connection');
+                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU + ' lost connection');
                   end;
                   if fNetGameState = lgs_Game then
                     fNetPlayers.DisconnectPlayer(tmpHandleIndex)
@@ -2458,6 +2458,12 @@ begin
       MPGameInfo.Players[I].IsSpectator := NetPlayers[I].IsSpectator;
       MPGameInfo.Players[I].IsHost      := HostIndex = I;
       MPGameInfo.Players[I].PlayerType  := NetPlayers[I].PlayerNetType;
+      if (gHands = nil) //Game is not loaded yet...
+        or MPGameInfo.Players[I].IsSpectator
+        or (NetPlayers[I].HandIndex = -1) then
+        MPGameInfo.Players[I].WonOrLost := wol_None
+      else
+        MPGameInfo.Players[I].WonOrLost := gHands[NetPlayers[I].HandIndex].AI.WonOrLost;
     end;
 
     M := TKMemoryStream.Create;
