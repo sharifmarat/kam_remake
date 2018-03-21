@@ -606,7 +606,7 @@ var I: Integer;
 begin
   Result := -1;
   for I := 1 to Count do
-    if (aIndex = fNetPlayers[I].StartLocation - 1) then
+    if (aIndex = fNetPlayers[I].HandIndex) then
       Result := I;
 end;
 

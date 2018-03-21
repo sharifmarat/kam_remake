@@ -378,8 +378,7 @@ begin
                 FillChar(PlayerEnabled, SizeOf(PlayerEnabled), #0);
                 for I := 1 to fNetworking.NetPlayers.Count do
                   if not fNetworking.NetPlayers[I].IsSpectator then
-                    //PlayerID is 0 based
-                    PlayerEnabled[fNetworking.NetPlayers[I].StartLocation - 1] := True;
+                    PlayerEnabled[fNetworking.NetPlayers[I].HandIndex] := True;
 
                 //Fixed AIs are always enabled (e.g. coop missions)
                 for I := 0 to fNetworking.MapInfo.LocCount - 1 do
@@ -596,7 +595,7 @@ begin
     gMySpectator.FOWIndex := PLAYER_NONE; //Show all by default while spectating
   end
   else
-    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.StartLocation - 1);
+    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.HandIndex);
 
   //We cannot remove a player from a save (as they might be interacting with other players)
 
@@ -637,11 +636,11 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     if not fNetworking.NetPlayers[I].IsSpectator then
     begin
-      PlayerI := gHands[fNetworking.NetPlayers[I].StartLocation - 1]; //PlayerID is 0 based
+      PlayerI := gHands[fNetworking.NetPlayers[I].HandIndex];
       for K := 1 to fNetworking.NetPlayers.Count do
         if not fNetworking.NetPlayers[K].IsSpectator then
         begin
-          PlayerK := fNetworking.NetPlayers[K].StartLocation - 1; //PlayerID is 0 based
+          PlayerK := fNetworking.NetPlayers[K].HandIndex;
 
           //Players are allies if they belong to same team (team 0 means free-for-all)
           if (I = K)
