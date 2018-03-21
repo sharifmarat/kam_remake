@@ -1190,3 +1190,5 @@ TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT = 1178; //Setup different difficulty lev
 
 TX_PLAYER_WON = 1182; //Player won the game
 TX_PLAYER_LOST = 1183; //Player lost the game
+
+TX_PLAYER_HOST = 1184; //Host

@@ -1166,6 +1166,7 @@ begin
 
     Label_PeacetimeRemaining := TKMLabel.Create(Panel_Allies,400,15,'',fnt_Outline,taCenter);
     Image_AlliesHostStar := TKMImage.Create(Panel_Allies, 50, 82, 20, 20, 77, rxGuiMain);
+    Image_AlliesHostStar.Hint := gResTexts[TX_PLAYER_HOST];
     Image_AlliesHostStar.Hide;
 
     for I := 0 to MAX_LOBBY_SLOTS - 1 do
