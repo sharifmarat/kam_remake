@@ -55,12 +55,14 @@ type
     fSaves: TKMSavesCollection;
     fTeamNames: TList;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
-    fAlliesToNetPlayers: array [0..MAX_LOBBY_SLOTS-1] of Integer;
+
+    fLineIdToNetPlayerId: array [0..MAX_LOBBY_SLOTS - 1] of Integer;
+    fPlayerLinesCnt: Integer;
 
     // Saved (in singleplayer only)
     fLastSaveName: UnicodeString; // The file name we last used to save this file (used as default in Save menu)
     fMessageStack: TKMMessageStack;
-    fSelection: array [0..DYNAMIC_HOTKEYS_NUM-1] of Integer;
+    fSelection: array [0..DYNAMIC_HOTKEYS_NUM - 1] of Integer;
 
     procedure Create_Controls;
     procedure Create_Replay;
@@ -131,7 +133,7 @@ type
     procedure Allies_Close(Sender: TObject);
     procedure Allies_Mute(Sender: TObject);
     procedure Update_Image_AlliesMute(aImage: TKMImage);
-    procedure AlliesUpdateMapping;
+    procedure UpdateNetPlayersMapping;
     procedure Menu_Update;
     procedure SetPause(aValue:boolean);
     procedure DirectionCursorShow(X,Y: Integer; Dir: TKMDirection);
@@ -1587,7 +1589,7 @@ begin
   if (Sender is TKMImage) then
   begin
     Image := TKMImage(Sender);
-    gGame.Networking.ToggleMuted(fAlliesToNetPlayers[Image.Tag]);
+    gGame.Networking.ToggleMuted(fLineIdToNetPlayerId[Image.Tag]);
     Update_Image_AlliesMute(Image);
   end;
 end;
@@ -1595,7 +1597,7 @@ end;
 
 procedure TKMGamePlayInterface.Update_Image_AlliesMute(aImage: TKMImage);
 begin
-  if gGame.Networking.IsMuted(fAlliesToNetPlayers[aImage.Tag]) then
+  if gGame.Networking.IsMuted(fLineIdToNetPlayerId[aImage.Tag]) then
   begin
     aImage.Hint := gResTexts[TX_UNMUTE_PLAYER];
     aImage.TexId := 84;
@@ -1606,31 +1608,44 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.AlliesUpdateMapping;
+procedure TKMGamePlayInterface.UpdateNetPlayersMapping;
 var
-  I, K, T: Integer;
+  I, J, K: Integer;
+  Teams: TKMByteSetArray;
+  HandIdToNetPlayersId: array [0..MAX_HANDS - 1] of Integer;
 begin
   // First empty everything
-  for I:=0 to MAX_LOBBY_SLOTS-1 do
-    fAlliesToNetPlayers[I] := -1;
+  fPlayerLinesCnt := 0;
+
+  for I := 0 to MAX_LOBBY_SLOTS - 1 do
+    fLineIdToNetPlayerId[I] := -1;
+
+  for I := 0 to MAX_HANDS - 1 do
+    HandIdToNetPlayersId[I] := -1;
+
+  for I := 1 to gGame.Networking.NetPlayers.Count do
+    if not gGame.Networking.NetPlayers[I].IsSpectator then
+      HandIdToNetPlayersId[gGame.Networking.NetPlayers[I].HandIndex] := I;
+
+  Teams := gHands.GetFullTeams();
 
   K := 0;
-  // Players, sorted by team
-  for T := 0 to MAX_TEAMS do
-    for I := 1 to gGame.Networking.NetPlayers.Count do
-      if not gGame.Networking.NetPlayers[I].IsSpectator and (gGame.Networking.NetPlayers[I].Team = T) then
-      begin
-        fAlliesToNetPlayers[K] := I;
-        Inc(K);
-      end;
-
-  // Spectators
-  for I:=1 to gGame.Networking.NetPlayers.Count do
-    if gGame.Networking.NetPlayers[I].IsSpectator then
+  for J := Low(Teams) to High(Teams) do
+    for I in Teams[J] do
     begin
-      fAlliesToNetPlayers[K] := I;
+      fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
       Inc(K);
     end;
+
+  // Spectators
+  for I := 1 to gGame.Networking.NetPlayers.Count do
+    if gGame.Networking.NetPlayers[I].IsSpectator then
+    begin
+      fLineIdToNetPlayerId[K] := I;
+      Inc(K);
+    end;
+
+  fPlayerLinesCnt := K;
 end;
 
 
@@ -2653,7 +2668,8 @@ end;
 
 procedure TKMGamePlayInterface.AlliesOnPlayerSetup(Sender: TObject);
 var
-  I, NetI, LocaleID: Integer;
+  I, NetI: Integer;
+  LocaleID: Integer;
 begin
   Image_AlliesHostStar.Hide;
   // Can't vote if we already have, and spectators don't get to vote unless there's only spectators left
@@ -2661,96 +2677,101 @@ begin
                                      and (gGame.Networking.NetPlayers.HasOnlySpectators
                                           or not gGame.Networking.MyNetPlayer.IsSpectator);
 
-  AlliesUpdateMapping;
-  for I := 0 to MAX_LOBBY_SLOTS-1 do
+  UpdateNetPlayersMapping;
+
+  //Hide extra player lines
+  for I := fPlayerLinesCnt to MAX_LOBBY_SLOTS - 1 do
   begin
-    NetI := fAlliesToNetPlayers[I];
-    if NetI = -1 then
+    Label_AlliesPlayer[I].Hide;
+    DropBox_AlliesTeam[I].Hide;
+    Label_AlliesTeam[I].Hide;
+  end;
+
+
+  for I := 0 to fPlayerLinesCnt - 1 do
+  begin
+    NetI := fLineIdToNetPlayerId[I];
+    // Show players locale flag
+    if gGame.Networking.NetPlayers[NetI].IsComputer then
+      Image_AlliesFlag[I].TexID := GetAIPlayerIcon(gGame.Networking.NetPlayers[NetI].PlayerNetType)
+    else
     begin
-      Label_AlliesPlayer[I].Hide;
-      DropBox_AlliesTeam[I].Hide;
-      Label_AlliesTeam[I].Hide;
+      LocaleID := gResLocales.IndexByCode(gGame.Networking.NetPlayers[NetI].LangCode);
+      if LocaleID <> -1 then
+        Image_AlliesFlag[I].TexID := gResLocales[LocaleID].FlagSpriteID
+      else
+        Image_AlliesFlag[I].TexID := 0;
+    end;
+    if gGame.Networking.HostIndex = NetI then
+    begin
+      Image_AlliesHostStar.Visible := True;
+      Image_AlliesHostStar.Left := 190 + (I div ALLIES_ROWS)*380;
+      Image_AlliesHostStar.Top := 80 + (I mod ALLIES_ROWS)*20;
+    end;
+
+    if gGame.Networking.NetPlayers[NetI].IsHuman then
+      Label_AlliesPlayer[I].Caption := gGame.Networking.NetPlayers[NetI].NiknameU
+    else
+      Label_AlliesPlayer[I].Caption := gHands[gGame.Networking.NetPlayers[NetI].HandIndex].OwnerName;
+
+    if (gGame.Networking.MyIndex <> NetI)                // If not my player
+      and gGame.Networking.NetPlayers[NetI].IsHuman then // and is not Computer
+    begin
+      Update_Image_AlliesMute(Image_AlliesMute[I]);
+      Image_AlliesMute[I].Visible := True; //Do not use .Show here, because we do not want change Parent.Visible status from here
+    end;
+
+    if gGame.Networking.NetPlayers[NetI].IsSpectator then
+    begin
+      Label_AlliesPlayer[I].FontColor := gGame.Networking.NetPlayers[NetI].FlagColor;
+      DropBox_AlliesTeam[I].ItemIndex := 0;
+      Label_AlliesTeam[I].Caption := gResTexts[TX_LOBBY_SPECTATOR];
     end
     else
     begin
-      // Show players locale flag
-      if gGame.Networking.NetPlayers[NetI].IsComputer then
-        Image_AlliesFlag[I].TexID := GetAIPlayerIcon(gGame.Networking.NetPlayers[NetI].PlayerNetType)
+      Label_AlliesPlayer[I].FontColor := gHands[gGame.Networking.NetPlayers[NetI].HandIndex].FlagColor;
+      DropBox_AlliesTeam[I].ItemIndex := gGame.Networking.NetPlayers[NetI].Team;
+      if gGame.Networking.NetPlayers[NetI].Team = 0 then
+        Label_AlliesTeam[I].Caption := '-'
       else
-      begin
-        LocaleID := gResLocales.IndexByCode(gGame.Networking.NetPlayers[NetI].LangCode);
-        if LocaleID <> -1 then
-          Image_AlliesFlag[I].TexID := gResLocales[LocaleID].FlagSpriteID
-        else
-          Image_AlliesFlag[I].TexID := 0;
-      end;
-      if gGame.Networking.HostIndex = NetI then
-      begin
-        Image_AlliesHostStar.Visible := True;
-        Image_AlliesHostStar.Left := 190+(I div ALLIES_ROWS)*380;
-        Image_AlliesHostStar.Top := 80+(I mod ALLIES_ROWS)*20;
-      end;
-
-      if gGame.Networking.NetPlayers[NetI].IsHuman then
-        Label_AlliesPlayer[I].Caption := gGame.Networking.NetPlayers[NetI].NiknameU
-      else
-        Label_AlliesPlayer[I].Caption := gHands[gGame.Networking.NetPlayers[NetI].StartLocation-1].OwnerName;
-
-      if (gGame.Networking.MyIndex <> NetI)                // If not my player
-        and gGame.Networking.NetPlayers[NetI].IsHuman then // and is not Computer
-      begin
-        Update_Image_AlliesMute(Image_AlliesMute[I]);
-        Image_AlliesMute[I].Visible := True; //Do not use .Show here, because we do not want change Parent.Visible status from here
-      end;
-
-      if gGame.Networking.NetPlayers[NetI].IsSpectator then
-      begin
-        Label_AlliesPlayer[I].FontColor := gGame.Networking.NetPlayers[NetI].FlagColor;
-        DropBox_AlliesTeam[I].ItemIndex := 0;
-        Label_AlliesTeam[I].Caption := gResTexts[TX_LOBBY_SPECTATOR];
-      end
-      else
-      begin
-        Label_AlliesPlayer[I].FontColor := gHands[gGame.Networking.NetPlayers[NetI].StartLocation - 1].FlagColor;
-        DropBox_AlliesTeam[I].ItemIndex := gGame.Networking.NetPlayers[NetI].Team;
-        if gGame.Networking.NetPlayers[NetI].Team = 0 then
-          Label_AlliesTeam[I].Caption := '-'
-        else
-          Label_AlliesTeam[I].Caption := IntToStr(gGame.Networking.NetPlayers[NetI].Team);
-      end;
-      // Strikethrough for disconnected players
-      Image_AlliesMute[I].Enabled := not gGame.Networking.NetPlayers[NetI].Dropped;
-      if gGame.Networking.NetPlayers[NetI].Dropped then Image_AlliesMute[I].Hint := '';
-      Image_AlliesFlag[I].Enabled := not gGame.Networking.NetPlayers[NetI].Dropped;
-      Label_AlliesPlayer[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
-      Label_AlliesTeam[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped
-        and (gGame.Networking.NetPlayers[NetI].Team <> 0); // Do not strike throught '-' symbol, when player has no team
-      Label_AlliesPing[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
-      Label_AlliesFPS[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
-      DropBox_AlliesTeam[I].Enabled := (NetI = gGame.Networking.MyIndex); // Our index
-      DropBox_AlliesTeam[I].Hide; // Use label for demos until we fix exploits
+        Label_AlliesTeam[I].Caption := IntToStr(gGame.Networking.NetPlayers[NetI].Team);
     end;
+    // Strikethrough for disconnected players
+    Image_AlliesMute[I].Enabled := not gGame.Networking.NetPlayers[NetI].Dropped;
+    if gGame.Networking.NetPlayers[NetI].Dropped then
+      Image_AlliesMute[I].Hint := '';
+    Image_AlliesFlag[I].Enabled := not gGame.Networking.NetPlayers[NetI].Dropped;
+    Label_AlliesPlayer[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
+    // Do not strike throught '-' symbol, when player has no team
+    Label_AlliesTeam[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped
+                                         and (gGame.Networking.NetPlayers[NetI].Team <> 0);
+    Label_AlliesPing[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
+    Label_AlliesFPS[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
+    DropBox_AlliesTeam[I].Enabled := (NetI = gGame.Networking.MyIndex); // Our index
+    DropBox_AlliesTeam[I].Hide; // Use label for demos until we fix exploits
   end;
+
 end;
 
 
 procedure TKMGamePlayInterface.AlliesOnPingInfo(Sender: TObject);
 var
   I, NetI: Integer;
-  ping: Word;
-  fps: Cardinal;
+  Ping: Word;
+  Fps: Cardinal;
 begin
-  AlliesUpdateMapping;
-  for I := 0 to MAX_LOBBY_SLOTS - 1 do
+  UpdateNetPlayersMapping;
+
+  for I := 0 to fPlayerLinesCnt - 1 do
   begin
-    NetI := fAlliesToNetPlayers[I];
+    NetI := fLineIdToNetPlayerId[I];
     if (I < gGame.Networking.NetPlayers.Count) and (gGame.Networking.NetPlayers[NetI].IsHuman) then
     begin
-      ping := gGame.Networking.NetPlayers[NetI].GetInstantPing;
-      fps := gGame.Networking.NetPlayers[NetI].FPS;
-      Label_AlliesPing[I].Caption := WrapColor(IntToStr(ping), GetPingColor(ping));
+      Ping := gGame.Networking.NetPlayers[NetI].GetInstantPing;
+      Fps := gGame.Networking.NetPlayers[NetI].FPS;
+      Label_AlliesPing[I].Caption := WrapColor(IntToStr(Ping), GetPingColor(Ping));
       Label_AlliesPingFpsSlash[I].Caption := '/';
-      Label_AlliesFPS[I].Caption := WrapColor(IntToStr(fps), GetFPSColor(fps));
+      Label_AlliesFPS[I].Caption := WrapColor(IntToStr(Fps), GetFPSColor(Fps));
     end else begin
       Label_AlliesPing[I].Caption := '';
       Label_AlliesPingFpsSlash[I].Caption := '';
