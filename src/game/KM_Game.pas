@@ -205,7 +205,7 @@ var
 
 implementation
 uses
-  Classes, Controls, Dialogs, SysUtils, KromUtils, Math,
+  Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
   {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
@@ -884,6 +884,8 @@ end;
 
 //Get list of players we are waiting for. We do it here because fNetworking does not knows about GIP
 function TKMGame.WaitingPlayersList: TKMByteArray;
+var
+  ErrorMsg: UnicodeString;
 begin
   case fNetworking.NetGameState of
     lgs_Game, lgs_Reconnecting:
@@ -892,8 +894,12 @@ begin
     lgs_Loading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
-    else
-        raise Exception.Create('WaitingPlayersList from wrong state');
+    else  begin
+            ErrorMsg := 'WaitingPlayersList from wrong state: '
+                       + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
+            gLog.AddTime(ErrorMsg);
+            raise Exception.Create(ErrorMsg);
+          end;
   end;
 end;
 
