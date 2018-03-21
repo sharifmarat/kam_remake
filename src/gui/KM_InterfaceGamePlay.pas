@@ -776,6 +776,8 @@ begin
   // Panel_Main.Width := aScreenX;
   // Panel_Main.Height := aScreenY;
   // UpdatePositions; //Reposition messages stack etc.
+
+  AfterCreateComplete;
 end;
 
 
@@ -2750,7 +2752,6 @@ begin
     DropBox_AlliesTeam[I].Enabled := (NetI = gGame.Networking.MyIndex); // Our index
     DropBox_AlliesTeam[I].Hide; // Use label for demos until we fix exploits
   end;
-
 end;
 
 
