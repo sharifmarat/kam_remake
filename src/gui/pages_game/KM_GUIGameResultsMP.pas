@@ -178,7 +178,7 @@ const
   CHART_ECO_HEIGHT = 285;
   BACK_BTN_Y_TO_BOTTOM = 60;
   SUBMENU_RIGHT_WIDTH = 160;
-  BTN_BACK_TO_GAME_LEFT = RESULTS_X_PADDING + 290;
+  BTN_BACK_TO_GAME_LEFT = RESULTS_X_PADDING + 330;
 
   WARRIORS_POWER_RATES: array [WARRIOR_MIN..WARRIOR_MAX] of Single = (
     1, 2.4, 5.2,    // ut_Militia, ut_AxeFighter, ut_Swordsman
@@ -1694,12 +1694,12 @@ begin
     CreateChartArmy(Panel_ResultsMP);
 
     Button_Back := TKMButton.Create(Panel_ResultsMP, 50 + RESULTS_X_PADDING, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
-                                    220, 30, NO_TEXT, bsMenu);
+                                    270, 30, NO_TEXT, bsMenu);
     Button_Back.Anchors := [anLeft];
     Button_Back.OnClick := BackClick;
 
     Button_BackToGame := TKMButton.Create(Panel_ResultsMP, BTN_BACK_TO_GAME_LEFT, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
-                                          220, 30, gResTexts[TX_RESULTS_BACK_TO_GAME], bsMenu);
+                                          250, 30, gResTexts[TX_RESULTS_BACK_TO_GAME], bsMenu);
     Button_BackToGame.Anchors := [anLeft];
     Button_BackToGame.OnClick := BackClick;
 end;
