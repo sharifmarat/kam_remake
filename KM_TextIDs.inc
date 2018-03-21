@@ -1187,3 +1187,6 @@ TX_MISSION_DIFFICULTY_HARD = 1176; //Hard
 
 TX_MAPED_MISSION_DIFFICULTY_LEVELS = 1177; //Difficulty levels
 TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT = 1178; //Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty
+
+TX_PLAYER_WON = 1182; //Player won the game
+TX_PLAYER_LOST = 1183; //Player lost the game

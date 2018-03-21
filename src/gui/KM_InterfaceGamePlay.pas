@@ -202,6 +202,7 @@ type
       Label_PeacetimeRemaining: TKMLabel;
       Image_AlliesHostStar: TKMImage;
       Image_AlliesMute: array [0..MAX_LOBBY_SLOTS-1] of TKMImage;
+      Image_AlliesWinLoss: array [0..MAX_LOBBY_SLOTS-1] of TKMImage;
       Image_AlliesFlag: array [0..MAX_LOBBY_SLOTS-1] of TKMImage;
       Label_AlliesPlayer: array [0..MAX_LOBBY_SLOTS-1] of TKMLabel;
       DropBox_AlliesTeam: array [0..MAX_LOBBY_SLOTS-1] of TKMDropList;
@@ -323,8 +324,9 @@ uses
   KM_InterfaceMapEditor, KM_HouseWoodcutters,
   KM_GameTypes;
 
-const ALLIES_ROWS = 7;
-      PANEL_ALLIES_WIDTH = 810;
+const
+  ALLIES_ROWS = 7;
+  PANEL_ALLIES_WIDTH = 840;
 
 
 procedure TKMGamePlayInterface.Menu_Save_ListChange(Sender: TObject);
@@ -1150,7 +1152,10 @@ end;
 
 { Allies page }
 procedure TKMGamePlayInterface.Create_Allies;
-var I,K: Integer;
+const
+  LINE_W = 395;
+var
+  I,K: Integer;
 begin
   Panel_Allies := TKMPanel.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - MESSAGE_AREA_HEIGHT - 50,
                                                              PANEL_ALLIES_WIDTH, MESSAGE_AREA_HEIGHT + 50);
@@ -1167,29 +1172,33 @@ begin
     begin
       if (I mod ALLIES_ROWS) = 0 then // Header for each column
       begin
-        TKMLabel.Create(Panel_Allies, 80+(I div ALLIES_ROWS)*380, 60, 140, 20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
-        TKMLabel.Create(Panel_Allies, 230+(I div ALLIES_ROWS)*380, 60, 140, 20, gResTexts[TX_LOBBY_HEADER_TEAM], fnt_Outline, taLeft);
-        TKMLabel.Create(Panel_Allies, 360+(I div ALLIES_ROWS)*380, 60, gResTexts[TX_LOBBY_HEADER_PINGFPS], fnt_Outline, taCenter);
+        TKMLabel.Create(Panel_Allies, 80+(I div ALLIES_ROWS)*LINE_W, 60, 140, 20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
+        TKMLabel.Create(Panel_Allies, 230+(I div ALLIES_ROWS)*LINE_W, 60, 140, 20, gResTexts[TX_LOBBY_HEADER_TEAM], fnt_Outline, taLeft);
+        TKMLabel.Create(Panel_Allies, 360+(I div ALLIES_ROWS)*LINE_W, 60, gResTexts[TX_LOBBY_HEADER_PINGFPS], fnt_Outline, taCenter);
       end;
-      Image_AlliesMute[I] := TKMImage.Create(Panel_Allies, 45+(I div ALLIES_ROWS)*380, 82+(I mod ALLIES_ROWS)*20, 11, 11, 0, rxGuiMain);
+
+      Image_AlliesWinLoss[I] := TKMImage.Create(Panel_Allies, 42 +(I div ALLIES_ROWS)*LINE_W, 79+(I mod ALLIES_ROWS)*20, 16, 16, 0, rxGuiMain);
+      Image_AlliesWinLoss[I].Hide;
+      
+      Image_AlliesMute[I] := TKMImage.Create(Panel_Allies, 45 + 15 +(I div ALLIES_ROWS)*LINE_W, 82+(I mod ALLIES_ROWS)*20, 11, 11, 0, rxGuiMain);
       Image_AlliesMute[I].OnClick := Allies_Mute;
       Image_AlliesMute[I].Tag := I;
       Image_AlliesMute[I].HighlightOnMouseOver := True;
       Image_AlliesMute[I].Hide;
-
-      Image_AlliesFlag[I] := TKMImage.Create(Panel_Allies,     60+(I div ALLIES_ROWS)*380, 82+(I mod ALLIES_ROWS)*20, 16,  11,  0, rxGuiMain);
-      Label_AlliesPlayer[I] := TKMLabel.Create(Panel_Allies,   80+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, 140, 20, '', fnt_Grey, taLeft);
-      Label_AlliesTeam[I]   := TKMLabel.Create(Panel_Allies,   230+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, 120, 20, '', fnt_Grey, taLeft);
-      DropBox_AlliesTeam[I] := TKMDropList.Create(Panel_Allies,230+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, 120, 20, fnt_Grey, '', bsGame);
+                                  
+      Image_AlliesFlag[I] := TKMImage.Create(Panel_Allies,     15 + 60+(I div ALLIES_ROWS)*LINE_W, 82+(I mod ALLIES_ROWS)*20, 16,  11,  0, rxGuiMain);
+      Label_AlliesPlayer[I] := TKMLabel.Create(Panel_Allies,   15 + 80+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, 140, 20, '', fnt_Grey, taLeft);
+      Label_AlliesTeam[I]   := TKMLabel.Create(Panel_Allies,   15 + 230+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, 120, 20, '', fnt_Grey, taLeft);
+      DropBox_AlliesTeam[I] := TKMDropList.Create(Panel_Allies,15 + 230+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, 120, 20, fnt_Grey, '', bsGame);
       DropBox_AlliesTeam[I].Hide; // Use label for demos until we fix exploits
       DropBox_AlliesTeam[I].Add('-');
       for K := 1 to MAX_TEAMS do
         DropBox_AlliesTeam[I].Add(IntToStr(K));
       DropBox_AlliesTeam[I].OnChange := AlliesTeamChange;
       DropBox_AlliesTeam[I].DropUp := True; // Doesn't fit if it drops down
-      Label_AlliesPing[I] :=          TKMLabel.Create(Panel_Allies, 347+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taRight);
-      Label_AlliesPingFpsSlash[I] :=  TKMLabel.Create(Panel_Allies, 354+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taCenter);
-      Label_AlliesFPS[I] :=           TKMLabel.Create(Panel_Allies, 361+(I div ALLIES_ROWS)*380, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taLeft);
+      Label_AlliesPing[I] :=          TKMLabel.Create(Panel_Allies, 15 + 347+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taRight);
+      Label_AlliesPingFpsSlash[I] :=  TKMLabel.Create(Panel_Allies, 15 + 354+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taCenter);
+      Label_AlliesFPS[I] :=           TKMLabel.Create(Panel_Allies, 15 + 361+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, '', fnt_Grey, taLeft);
     end;
 
     Image_AlliesClose:=TKMImage.Create(Panel_Allies,PANEL_ALLIES_WIDTH-98,24,32,32,52,rxGui);
@@ -2719,8 +2728,8 @@ begin
     if (gGame.Networking.MyIndex <> NetI)                // If not my player
       and gGame.Networking.NetPlayers[NetI].IsHuman then // and is not Computer
     begin
-      Update_Image_AlliesMute(Image_AlliesMute[I]);
-      Image_AlliesMute[I].Visible := True; //Do not use .Show here, because we do not want change Parent.Visible status from here
+      Update_Image_AlliesMute(Image_AlliesMute[I]);
+      Image_AlliesMute[I].DoSetVisible; //Do not use .Show here, because we do not want change Parent.Visible status from here
     end;
 
     if gGame.Networking.NetPlayers[NetI].IsSpectator then
@@ -2737,6 +2746,20 @@ begin
         Label_AlliesTeam[I].Caption := '-'
       else
         Label_AlliesTeam[I].Caption := IntToStr(gGame.Networking.NetPlayers[NetI].Team);
+
+      case gHands[gGame.Networking.NetPlayers[NetI].HandIndex].AI.WonOrLost of
+        wol_None: Image_AlliesWinLoss[I].Hide;
+        wol_Won:  begin
+                    Image_AlliesWinLoss[I].TexId := 8;
+                    Image_AlliesWinLoss[I].Hint := gResTexts[TX_PLAYER_WON];
+                    Image_AlliesWinLoss[I].DoSetVisible;
+                  end;
+        wol_Lost: begin
+                    Image_AlliesWinLoss[I].TexId := 87;
+                    Image_AlliesWinLoss[I].Hint := gResTexts[TX_PLAYER_LOST];
+                    Image_AlliesWinLoss[I].DoSetVisible;
+                  end;
+      end;
     end;
     // Strikethrough for disconnected players
     Image_AlliesMute[I].Enabled := not gGame.Networking.NetPlayers[NetI].Dropped;

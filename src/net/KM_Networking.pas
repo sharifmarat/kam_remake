@@ -258,7 +258,7 @@ type
     property OnFileTransferProgress: TTransferProgressEvent write fOnFileTransferProgress;    //file transfer progress to this player
     property OnPlayerFileTransferProgress: TTransferProgressPlayerEvent write fOnPlayerFileTransferProgress; //File transfer progress to other player
 
-    property OnPlayersSetup: TNotifyEvent write fOnPlayersSetup; //Player list updated
+    property OnPlayersSetup: TNotifyEvent read fOnPlayersSetup write fOnPlayersSetup; //Player list updated
     property OnUpdateMinimap: TNotifyEvent write fOnUpdateMinimap; //Update minimap
     property OnGameOptions: TNotifyEvent write fOnGameOptions; //Game options updated
     property OnMapName: TUnicodeStringEvent write fOnMapName;           //Map name updated

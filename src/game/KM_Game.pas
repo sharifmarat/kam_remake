@@ -818,8 +818,15 @@ end;
 procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
 begin
   if IsMultiplayer then
-    fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
-      [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+  begin
+    fNetworking.PostLocalMessage(
+      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
+             [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+      csSystem);
+
+    if Assigned(fNetworking.OnPlayersSetup) then
+      fNetworking.OnPlayersSetup(nil); //Update players panel
+  end;
 
   if fGameMode = gmMultiSpectate then
     Exit;
@@ -873,10 +880,22 @@ begin
                   GameResult := gr_Defeat;
                   fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
                 end;
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+
               end;
-    gmMultiSpectate:  if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
-                        fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
-                          [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+    gmMultiSpectate:
+              begin
+                if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
+                  fNetworking.PostLocalMessage(
+                    Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
+                           [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+                    csSystem);
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+              end;
     //We have not thought of anything to display on players defeat in Replay
   end;
 end;
