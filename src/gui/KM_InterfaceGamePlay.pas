@@ -990,7 +990,11 @@ begin
     Button_ReplayResume.Disable; // Initial state
 
   Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
-    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 0, 5, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fnt_Metal);
+    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 0, 22, 22, 669, rxGui, bsGame);
+    Button_ShowStatsSpec.OnClick := ShowStats;
+    Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
+
+    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 27, 5, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fnt_Metal);
     Checkbox_ReplayFOW.OnClick := ReplayClick;
 
     Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 27, 180, 20, fnt_Metal, '', bsGame, False, 0.5);
@@ -1002,10 +1006,6 @@ begin
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
     Dropbox_ReplayFOW.List.SeparatorHeight := 4;
     Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
-
-    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, Dropbox_ReplayFOW.Right - 22, 0, 22, 22, 669, rxGui, bsGame);
-    Button_ShowStatsSpec.OnClick := ShowStats;
-    Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
  end;
 
 
