@@ -3,23 +3,36 @@ unit KM_CityBuilder;
 interface
 uses
   KromUtils, Math, SysUtils,
-  KM_Defaults, KM_CommonClasses, KM_Points,
+  KM_Defaults, KM_CommonClasses, KM_CommonUtils, KM_Points,
   KM_ResHouses, KM_ResWares, KM_BuildList,
   KM_AIInfluences, KM_CityPlanner, KM_CityPredictor, KM_Eye;
 
 
 var
-  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 5.697831631;
   GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
   GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
+  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10;
   GA_BUILDER_CreateShortcuts_MaxWork    : Single = 1.886523724;
   GA_BUILDER_ChHTB_FractionCoef         : Single = 22.06742477;
   GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.568861008;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single = 2.400017023;
-  GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 10;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single = 5.72991991;
+  GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 8;
+  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 5;
+  GA_BUILDER_TRUNK_SHORTAGE             : Single = 0;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 15;
   GA_BUILDER_WOOD_SHORTAGE              : Single = 10;
-  GA_BUILDER_GOLD_SHORTAGE              : Single = 20;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 30;
+  //GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10.71040344;
+  //GA_BUILDER_CreateShortcuts_MaxWork    : Single = 1;
+  //GA_BUILDER_ChHTB_FractionCoef         : Single = 19.29274178;
+  //GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.16288662;
+  //GA_BUILDER_ChHTB_TrunkBalance         : Single = 5.72991991;
+  //GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 4.31668663;
+  //GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 2.113031864;
+  //GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
+  //GA_BUILDER_STONE_SHORTAGE             : Single = 13.36853027;
+  //GA_BUILDER_WOOD_SHORTAGE              : Single = 10.41192532;
+  //GA_BUILDER_GOLD_SHORTAGE              : Single = 33.83456802;
 
 
 type
@@ -285,7 +298,7 @@ begin
         Exit;
       end;
 
-  if (gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked
+  if aCheckHousePlan OR (gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
     gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] := AVOID_BUILDING_UNLOCK;
 end;
 
@@ -521,9 +534,14 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       RequiredWorkers := FieldList.Count;
       for I := 0 to FieldList.Count - 1 do
       begin
+        // Check if field was replaced by road
+        if (gAIFields.Influences.AvoidBuilding[FieldList.Items[I].Y, FieldList.Items[I].X] <> AVOID_BUILDING_NODE_LOCK_FIELD) then
+        begin
+          RequiredWorkers := RequiredWorkers - 1;
+        end
         // Check if field already exists ...
-        if   ((FieldType = ft_Wine) AND IsCompletedWine(FieldList.Items[I]))
-          OR ((FieldType = ft_Corn) AND IsCompletedField(FieldList.Items[I])) then
+        else if ((FieldType = ft_Wine) AND IsCompletedWine(FieldList.Items[I]))
+             OR ((FieldType = ft_Corn) AND IsCompletedField(FieldList.Items[I])) then
         begin
           RequiredWorkers := RequiredWorkers - 1;
         end
@@ -571,8 +589,8 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       RequiredWorkers := FieldList.Count;
       for I := FieldList.Count - 1 downto 0 do
       begin
-        if (FreeWorkers <= 0) then
-          Exit;
+        //if (FreeWorkers <= 0) then // Ignore FreeWorkers distribution system
+        //  Exit;
         // Detect obstacles in house plan
         if gTerrain.ObjectIsChopableTree(FieldList.Items[I], [caAge1,caAge2,caAge3,caAgeFull]) then
         begin
@@ -598,7 +616,18 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
               FieldList.Delete(I);
           end;
         end
-        // Tree could be cut down
+        // Tree was destroyed while worker is going to do it -> remove wine or corn plan and remove point from build node
+        else if (gHands[fOwner].BuildList.FieldworksList.HasField(FieldList.Items[I]) <> ft_None) then // ft_None is fine, road was checked before
+        begin
+          gHands[fOwner].BuildList.FieldworksList.RemFieldPlan(FieldList.Items[I]);
+          FieldList.Delete(I);
+        end
+        // There is digged wine / field
+        else if (gTerrain.Land[FieldList.Items[I].Y, FieldList.Items[I].X].TileLock = tlFieldWork) then
+        begin
+          // do nothing (wait till worker finish tile and place road
+        end
+        // Tree was destroyed for example by script
         else
         begin
           FieldList.Delete(I);
@@ -762,9 +791,9 @@ begin
       // There is another problem...
       else
         Planner.RemovePlan(aHT, Loc);
-    end;
-    //else
-    //  Planner.RemovePlan(aHT, Loc);
+    end
+    else
+      Output := cs_RemoveTreeProcedure; // Remove tree procedure is active
   end
   else
   begin
@@ -790,8 +819,10 @@ const
 
   BASIC_HOUSES: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
   //BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
-  FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish];
-  WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
+  //FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood];
+  //WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
+  ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor, wt_Flour, wt_Bread];
+  //BUILD_ORDER_WARE: array[0..8] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood, wt_Corn, wt_Pig, wt_Sausages);
   BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
 var
   StoneShortage, WoodShortage, TrunkShortage, GoldShortage: Boolean;
@@ -837,8 +868,8 @@ var
     if GetHouseToUnlock(UnlockProcedure, aHT, FollowingHouse) then
     begin
       MaterialShortage := not aIgnoreWareReserves AND (WoodShortage OR TrunkShortage OR StoneShortage OR GoldShortage);
-      //MaterialShortage := False;
-      Output := BuildHouse(UnlockProcedure OR (aHT = ht_Farm) OR MaterialShortage, MaterialShortage, MaterialShortage, aHT); // Farm must be placed outside of forest
+      //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
+      Output := BuildHouse(UnlockProcedure OR (aHT = ht_Farm) OR MaterialShortage, MaterialShortage, MaterialShortage, aHT); // Farm should be placed outside of forest
     end
     else if (FollowingHouse <> ht_none) AND (gHands[fOwner].Stats.GetHouseQty(ht_School) > 0) then // Activate house reservation (only when is first school completed)
     begin
@@ -890,6 +921,8 @@ var
     begin
       if (WareOrder[I] = wt_None) then
         break;
+      if (RequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] <= 0) then // wt_Leather and wt_Pig require the same building so avoid to place 2 houses at once
+        continue;
       case AddToConstruction(PRODUCTION[ WareOrder[I] ]) of
         cs_NoNodeAvailable: break;
         cs_HouseReservation, cs_RemoveTreeProcedure: Output := True;
@@ -914,19 +947,24 @@ var
     I: Integer;
     WT: TKMWareType;
   begin
-    // Find the most required house to be build
+    // Find the most required house to be build - use specific order
     for I := Low(BUILD_ORDER_WARE) to High(BUILD_ORDER_WARE) do
     begin
       WT := BUILD_ORDER_WARE[I];
-      if (RequiredHouses[ PRODUCTION[WT] ] > 0) AND (WareBalance[WT].Exhaustion < 20) then
+      if (RequiredHouses[ PRODUCTION[WT] ] > 0) AND (WareBalance[WT].Exhaustion < 30) then
       begin
+        // Make sure that next cycle will not scan this house in this tick
+        RequiredHouses[ PRODUCTION[WT] ] := 0;
         // Try build required houses
         if (AddToConstruction(PRODUCTION[WT], False, True) = cs_HousePlaced) then
-          MaxPlans := MaxPlans - 1;
-        RequiredHouses[ PRODUCTION[WT] ] := 0; // Make sure that next cycle will not scan this house in this tick
+        begin
+          MaxPlans := 0; // This house is critical so dont plan anything else
+          Exit;
+          //MaxPlans := MaxPlans - 1;
+        end;
       end;
-      if (MaxPlans <= 0) then
-        Break;
+      //if (MaxPlans <= 0) then
+      //  Break;
     end;
   end;
 
@@ -988,7 +1026,10 @@ begin
   WareBalance := fPredictor.WareBalance;
 
   // Analyze basic force stats (max possible plans, construction ware, gold)
-  MaxPlans := Ceil(aFreeWorkersCnt / 5);
+  //MaxPlans := Ceil(aFreeWorkersCnt / 5);
+  //MaxPlans := Ceil(gHands[fOwner].Stats.GetUnitQty(ut_Worker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses;
+  MaxPlans := Ceil(gHands[fOwner].Stats.GetUnitQty(ut_Worker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses;
+  MaxPlans := Max(MaxPlans, Ceil(aFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef));
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wt_Stone is OK
   if (WareBalance[wt_Stone].Exhaustion < GA_BUILDER_STONE_SHORTAGE) then
@@ -1035,6 +1076,8 @@ begin
     end;
 
   SelectHouseBySetOrder();
+  if (MaxPlans <= 0) then
+    Exit;
 
   HT := ht_WatchTower;
   if (not Planner.DefenceTowersPlanned OR (gHands[fOwner].Stats.GetHouseTotal(HT) < Planner.PlannedHouses[HT].Count))
@@ -1046,11 +1089,14 @@ begin
         Exit;
     end;
 
+  SelectHouse(ALL_WARE);
   if (MaxPlans > 0) then
   begin
-    SelectHouse(FOOD_WARE);
+
+    //SelectHouse(FOOD_WARE);
     //if (MaxPlans > 0) then
-      SelectHouse(WEAPON_WARE);
+    //if (KaMRandom < 0.5) then
+    //  SelectHouse(WEAPON_WARE);
   end;
 end;
 
@@ -1316,8 +1362,8 @@ begin
       if Active then
       begin
         case FieldType of
-          ft_Corn: Color := $80000000 OR COLOR_GREEN;
-          ft_Wine: Color := $BB000000 OR COLOR_GREEN;
+          ft_Corn: Color := $40000000 OR COLOR_GREEN;
+          ft_Wine: Color := $88000000 OR COLOR_GREEN;
           ft_Road: Color := $80000000 OR COLOR_NEW;//COLOR_YELLOW;
         end;
         if RemoveTreesMode then
