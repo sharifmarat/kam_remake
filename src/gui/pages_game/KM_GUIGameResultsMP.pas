@@ -44,7 +44,6 @@ type
   public
     constructor Create(aType: TKMChartWarriorType; aKind: TKMChartArmyKind; aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
-    procedure AddLine(aPlayerId: TKMHandIndex; const aTitle: UnicodeString; aColor: Cardinal);
     function IsEmpty(aPlayer: TKMHandIndex): Boolean;
     function GetChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
     property Chart: TKMChart read fChart;
@@ -289,12 +288,6 @@ begin
     Result := gHands[aPlayer].Stats.ChartArmy[fKind,fType.UnitType]
   else
     Result := GetArmyPowerChartData(aPlayer);
-end;
-
-
-procedure TKMChartArmyMP.AddLine(aPlayerId: TKMHandIndex; const aTitle: UnicodeString; aColor: Cardinal);
-begin
-  Chart.AddLine(aTitle, aColor, GetChartData(aPlayerId), aPlayerId);
 end;
 
 
