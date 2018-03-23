@@ -668,7 +668,7 @@ procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
 begin
   LoadGameFromScript(aCampaign.MissionFile(aMap), aCampaign.MissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -678,7 +678,7 @@ procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; 
 begin
   LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -688,7 +688,7 @@ begin
   //Convert SaveName to local FilePath
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, False), gmSingle);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -708,11 +708,10 @@ begin
   begin
     //Copy text from lobby to in-game chat
     gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+
+    if Assigned(fOnGameStart) and (gGame <> nil) then
+      fOnGameStart(gGame.GameMode);
   end;
-
-  if Assigned(fOnGameStart) then
-    fOnGameStart(gGame.GameMode);
-
 end;
 
 
@@ -730,7 +729,7 @@ begin
   //Copy the chat and typed lobby message to the in-game chat
   gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -747,7 +746,7 @@ begin
   else
     fMainMenuInterface.PageChange(gpError, 'Can not repeat last mission');
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -757,7 +756,7 @@ procedure TKMGameApp.NewEmptyMap(aSizeX, aSizeY: Integer);
 begin
   LoadGameFromScratch(aSizeX, aSizeY, gmSingle);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -770,7 +769,7 @@ begin
   else
     LoadGameFromScratch(aSizeX, aSizeY, gmMapEd);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -787,7 +786,7 @@ begin
   Assert(ExtractFileExt(aFilePath) = EXT_SAVE_BASE_DOT);
   LoadGameFromSave(aFilePath, gmReplaySingle); //Will be changed to gmReplayMulti depending on save contents
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
