@@ -254,6 +254,7 @@ begin
   end;
 
   HidePages;
+  AfterCreateComplete;
 end;
 
 

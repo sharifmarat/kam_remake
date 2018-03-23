@@ -205,7 +205,7 @@ var
 
 implementation
 uses
-  Classes, Controls, Dialogs, SysUtils, KromUtils, Math,
+  Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
   {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
@@ -378,8 +378,7 @@ begin
                 FillChar(PlayerEnabled, SizeOf(PlayerEnabled), #0);
                 for I := 1 to fNetworking.NetPlayers.Count do
                   if not fNetworking.NetPlayers[I].IsSpectator then
-                    //PlayerID is 0 based
-                    PlayerEnabled[fNetworking.NetPlayers[I].StartLocation - 1] := True;
+                    PlayerEnabled[fNetworking.NetPlayers[I].HandIndex] := True;
 
                 //Fixed AIs are always enabled (e.g. coop missions)
                 for I := 0 to fNetworking.MapInfo.LocCount - 1 do
@@ -596,7 +595,7 @@ begin
     gMySpectator.FOWIndex := PLAYER_NONE; //Show all by default while spectating
   end
   else
-    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.StartLocation - 1);
+    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.HandIndex);
 
   //We cannot remove a player from a save (as they might be interacting with other players)
 
@@ -637,11 +636,11 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     if not fNetworking.NetPlayers[I].IsSpectator then
     begin
-      PlayerI := gHands[fNetworking.NetPlayers[I].StartLocation - 1]; //PlayerID is 0 based
+      PlayerI := gHands[fNetworking.NetPlayers[I].HandIndex];
       for K := 1 to fNetworking.NetPlayers.Count do
         if not fNetworking.NetPlayers[K].IsSpectator then
         begin
-          PlayerK := fNetworking.NetPlayers[K].StartLocation - 1; //PlayerID is 0 based
+          PlayerK := fNetworking.NetPlayers[K].HandIndex;
 
           //Players are allies if they belong to same team (team 0 means free-for-all)
           if (I = K)
@@ -819,8 +818,15 @@ end;
 procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
 begin
   if IsMultiplayer then
-    fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
-      [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+  begin
+    fNetworking.PostLocalMessage(
+      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
+             [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+      csSystem);
+
+    if Assigned(fNetworking.OnPlayersSetup) then
+      fNetworking.OnPlayersSetup(nil); //Update players panel
+  end;
 
   if fGameMode = gmMultiSpectate then
     Exit;
@@ -874,10 +880,22 @@ begin
                   GameResult := gr_Defeat;
                   fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
                 end;
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+
               end;
-    gmMultiSpectate:  if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
-                        fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
-                          [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+    gmMultiSpectate:
+              begin
+                if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
+                  fNetworking.PostLocalMessage(
+                    Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
+                           [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+                    csSystem);
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+              end;
     //We have not thought of anything to display on players defeat in Replay
   end;
 end;
@@ -885,6 +903,8 @@ end;
 
 //Get list of players we are waiting for. We do it here because fNetworking does not knows about GIP
 function TKMGame.WaitingPlayersList: TKMByteArray;
+var
+  ErrorMsg: UnicodeString;
 begin
   case fNetworking.NetGameState of
     lgs_Game, lgs_Reconnecting:
@@ -893,8 +913,12 @@ begin
     lgs_Loading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
-    else
-        raise Exception.Create('WaitingPlayersList from wrong state');
+    else  begin
+            ErrorMsg := 'WaitingPlayersList from wrong state: '
+                       + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
+            gLog.AddTime(ErrorMsg);
+            raise Exception.Create(ErrorMsg);
+          end;
   end;
 end;
 

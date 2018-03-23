@@ -1821,7 +1821,8 @@ begin
 
     //Do not do anything for while in MapEd
     //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
-    if gGame.IsMapEditor then Exit;
+    //gGame could be nil here, but that does not change final CRC, so we can Exit
+    if (gGame = nil) or gGame.IsMapEditor then Exit;
 
     try
       DirectiveParams := TStringList.Create;

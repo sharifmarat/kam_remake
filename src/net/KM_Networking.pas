@@ -75,8 +75,8 @@ type
     fServerAddress: string; // Used for reconnecting
     fServerPort: Word; // Used for reconnecting
     fRoomToJoin: Integer; // The room we should join once we hear from the server
-    fLastProcessedTick: cardinal;
-    fReconnectRequested: cardinal; // TickCount at which a reconnection was requested
+    fLastProcessedTick: Cardinal;
+    fReconnectRequested: Cardinal; // TickCount at which a reconnection was requested
     fMyNikname: AnsiString;
     fWelcomeMessage: UnicodeString;
     fServerName: AnsiString; // Name of the server we are currently in (shown in the lobby)
@@ -84,9 +84,9 @@ type
     fDescription: UnicodeString;
     fEnteringPassword: Boolean;
     fMyIndexOnServer: TKMNetHandleIndex;
-    fMyIndex: integer; // In NetPlayers list
+    fMyIndex: Integer; // In NetPlayers list
     fHostIndex: Integer; //In NetPlayers list
-    fIgnorePings: integer; // During loading ping measurements will be high, so discard them. (when networking is threaded this might be unnecessary)
+    fIgnorePings: Integer; // During loading ping measurements will be high, so discard them. (when networking is threaded this might be unnecessary)
     fJoinTimeout, fLastVoteTime: Cardinal;
     fReturnedToLobby: Boolean; //Did we get to the lobby by return to lobby feature?
     fNetPlayers: TKMNetPlayersList;
@@ -258,7 +258,7 @@ type
     property OnFileTransferProgress: TTransferProgressEvent write fOnFileTransferProgress;    //file transfer progress to this player
     property OnPlayerFileTransferProgress: TTransferProgressPlayerEvent write fOnPlayerFileTransferProgress; //File transfer progress to other player
 
-    property OnPlayersSetup: TNotifyEvent write fOnPlayersSetup; //Player list updated
+    property OnPlayersSetup: TNotifyEvent read fOnPlayersSetup write fOnPlayersSetup; //Player list updated
     property OnUpdateMinimap: TNotifyEvent write fOnUpdateMinimap; //Update minimap
     property OnGameOptions: TNotifyEvent write fOnGameOptions; //Game options updated
     property OnMapName: TUnicodeStringEvent write fOnMapName;           //Map name updated
@@ -887,7 +887,8 @@ end;
 
 
 function TKMNetworking.CanStart:boolean;
-var i:integer;
+var
+  I: Integer;
 begin
   case fSelectGameKind of
     ngk_Map:  Result := fNetPlayers.AllReady and fMapInfo.IsValid;
@@ -899,7 +900,7 @@ begin
     else      Result := False;
   end;
   //At least one player must NOT be a spectator or closed
-  for i:=1 to fNetPlayers.Count do
+  for I := 1 to fNetPlayers.Count do
     if not fNetPlayers[i].IsSpectator and not fNetPlayers[i].IsClosed then
       Exit; //Exit with result from above
 
@@ -988,19 +989,19 @@ begin
 
   //In saves we should load team and color from the SaveInfo
   if (fNetGameState = lgs_Lobby) and (fSelectGameKind = ngk_Save) then
-    for i:=1 to NetPlayers.Count do
-      if (NetPlayers[i].StartLocation <> LOC_RANDOM) and (NetPlayers[i].StartLocation <> LOC_SPECTATE) then
+    for I := 1 to NetPlayers.Count do
+      if (NetPlayers[I].StartLocation <> LOC_RANDOM) and (NetPlayers[I].StartLocation <> LOC_SPECTATE) then
       begin
-        NetPlayers[i].FlagColorID := fSaveInfo.Info.ColorID[NetPlayers[i].StartLocation-1];
-        NetPlayers[i].Team := fSaveInfo.Info.Team[NetPlayers[i].StartLocation-1];
+        NetPlayers[I].FlagColorID := fSaveInfo.Info.ColorID[NetPlayers[I].HandIndex];
+        NetPlayers[I].Team := fSaveInfo.Info.Team[NetPlayers[I].HandIndex];
       end
       else
       begin
-        NetPlayers[i].Team := 0;
+        NetPlayers[I].Team := 0;
         //Spectators may still change their color, but may not use one from the save
-        if (NetPlayers[i].FlagColorID <> 0)
-        and SaveInfo.Info.ColorUsed(NetPlayers[i].FlagColorID) then
-          NetPlayers[i].FlagColorID := 0;
+        if (NetPlayers[I].FlagColorID <> 0)
+        and SaveInfo.Info.ColorUsed(NetPlayers[I].FlagColorID) then
+          NetPlayers[I].FlagColorID := 0;
       end;
 
   fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname); //The host's index can change when players are removed
@@ -1845,7 +1846,7 @@ begin
                   if not fNetPlayers[PlayerIndex].Dropped then
                   begin
                     PostMessage(TX_NET_LOST_CONNECTION, csLeave, fNetPlayers[PlayerIndex].NiknameColoredU);
-                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU+' lost connection');
+                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU + ' lost connection');
                   end;
                   if fNetGameState = lgs_Game then
                     fNetPlayers.DisconnectPlayer(tmpHandleIndex)
@@ -2457,6 +2458,12 @@ begin
       MPGameInfo.Players[I].IsSpectator := NetPlayers[I].IsSpectator;
       MPGameInfo.Players[I].IsHost      := HostIndex = I;
       MPGameInfo.Players[I].PlayerType  := NetPlayers[I].PlayerNetType;
+      if (gHands = nil) //Game is not loaded yet...
+        or MPGameInfo.Players[I].IsSpectator
+        or (NetPlayers[I].HandIndex = -1) then
+        MPGameInfo.Players[I].WonOrLost := wol_None
+      else
+        MPGameInfo.Players[I].WonOrLost := gHands[NetPlayers[I].HandIndex].AI.WonOrLost;
     end;
 
     M := TKMemoryStream.Create;

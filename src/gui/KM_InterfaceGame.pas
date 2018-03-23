@@ -28,6 +28,7 @@ type
 
     function IsDragScrollingAllowed: Boolean; virtual;
     procedure DisplayHint(Sender: TObject);
+    procedure AfterCreateComplete;
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -165,6 +166,18 @@ begin
   fMinimap := TKMMinimap.Create(False, False);
   fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
 
+  fDragScrolling := False;
+  fDragScrollingCursorPos.X := 0;
+  fDragScrollingCursorPos.Y := 0;
+  fDragScrollingViewportPos := KMPOINTF_ZERO;
+
+  gRenderPool := TRenderPool.Create(fViewport, aRender);
+end;
+
+
+procedure TKMUserInterfaceGame.AfterCreateComplete;
+begin
+  //Hints should be created last, as they should be above everything in UI, to be show on top of all other Controls
   Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
   Bevel_HintBG.BackAlpha := 0.5;
   Bevel_HintBG.EdgeAlpha := 0.5;
@@ -175,13 +188,6 @@ begin
 
   // Controls without a hint will reset the Hint to ''
   fMyControls.OnHint := DisplayHint;
-
-  fDragScrolling := False;
-  fDragScrollingCursorPos.X := 0;
-  fDragScrollingCursorPos.Y := 0;
-  fDragScrollingViewportPos := KMPOINTF_ZERO;
-
-  gRenderPool := TRenderPool.Create(fViewport, aRender);
 end;
 
 

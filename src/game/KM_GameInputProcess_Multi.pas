@@ -397,7 +397,7 @@ begin
     begin
       if not fNetworking.NetPlayers[I].Dropped
       //Don't allow exploits like moving enemy soldiers (but maybe one day you can control disconnected allies?)
-      and ((fNetworking.NetPlayers[I].StartLocation - 1 = fSchedule[Tick, I].Items[K].HandIndex)
+      and ((fNetworking.NetPlayers[I].HandIndex = fSchedule[Tick, I].Items[K].HandIndex)
            or (fSchedule[Tick, I].Items[K].CommandType in AllowedBySpectators)) then
       begin
         StoreCommand(fSchedule[Tick, I].Items[K]); //Store the command first so if Exec fails we still have it in the replay

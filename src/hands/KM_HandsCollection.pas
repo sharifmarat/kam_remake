@@ -723,18 +723,21 @@ begin
   //Gather aliance info into 'Allies' variable
   for I := 0 to Count - 1 do
   begin
+    if not fHandsList[I].Enabled then
+      Continue;
+
     Allies[I] := [I]; // every hand is Ally to himself by default
     for J := 0 to Count - 1 do
-    begin
       if (I <> J) and (CheckAlliance(I,J) = at_Ally) then
         Include(Allies[I], J);
-    end;
   end;
 
   K := 0;
   HandsChecked := [];
   for I := 0 to Count - 1 do
   begin
+    if not fHandsList[I].Enabled then
+      Continue;
     CollisionFound := False;
     if (Allies[I] = [I])          //hand has no allies, so we can ignore it
       or (I in HandsChecked) then //hand was checked in other iteration before, ignore it
@@ -784,10 +787,11 @@ begin
     NonTeamHands := NonTeamHands - Teams[I];
 
   for I in NonTeamHands do
-  begin
-    Include(Result[K], I);
-    Inc(K);
-  end;
+    if fHandsList[I].Enabled then
+    begin
+      Include(Result[K], I);
+      Inc(K);
+    end;
 
   for I := Low(Teams) to High(Teams) do
   begin
