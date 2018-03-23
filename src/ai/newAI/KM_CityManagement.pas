@@ -146,7 +146,7 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(4);
-  //gGame.GameOptions.Peacetime := 90;
+  //gGame.GameOptions.Peacetime := 80;
   //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -421,12 +421,12 @@ begin
        AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
        AddWare(wt_Gold);
     // Gold ore
-    if ( GetHouseQty(ht_GoldMine) < GetHouseQty(ht_Metallurgists) )
+    if ( fPredictor.WareBalance[wt_GoldOre].Exhaustion < 20 )
       AND ( GetWareBalance(wt_Gold) < MIN_GOLD_AMOUNT )
       AND ( GetWareBalance(wt_GoldOre) < MIN_GOLD_AMOUNT ) then
       AddWare(wt_GoldOre);
     // Coal
-    if ( GetHouseQty(ht_CoalMine) < (GetHouseQty(ht_Metallurgists) + GetHouseQty(ht_IronSmithy) + GetHouseQty(ht_WeaponSmithy) + GetHouseQty(ht_ArmorSmithy)) )
+    if ( fPredictor.WareBalance[wt_Coal].Exhaustion < 20 )
       AND ( GetWareBalance(wt_Coal) < MIN_GOLD_AMOUNT ) then
       AddWare(wt_Coal);
     // Stone
@@ -478,11 +478,11 @@ begin
       // Materials
       S.NotAcceptFlag[wt_Trunk] := (aTick > TRUNK_STORE_DELAY); // Trunk should not be blocked because of forest cleaning
       S.NotAcceptFlag[wt_Wood] := (aTick > WOOD_STORE_DELAY);// AND (Predictor.WareBalance[wt_Wood].Exhaustion > 40);
-      S.NotAcceptFlag[wt_Stone] := (Predictor.WareBalance[wt_Stone].Exhaustion > 40) OR (aTick > STONE_STORE_DELAY);
+      S.NotAcceptFlag[wt_Stone] := (aTick > STONE_STORE_DELAY) OR (S.CheckResIn(wt_Stone) > gHands[fOwner].Stats.GetUnitQty(ut_Worker));
       S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 400; // Everyone needs as much gold as possible
 
       // Food - don't store food when we have enought (it will cause trafic before storehouse)
-      S.NotAcceptFlag[wt_Wine] := gHands[fOwner].Stats.GetWareBalance(wt_Wine)  > 100;
+      S.NotAcceptFlag[wt_Wine] := gHands[fOwner].Stats.GetWareBalance(wt_Wine) > 100;
       S.NotAcceptFlag[wt_Sausages] := gHands[fOwner].Stats.GetWareBalance(wt_Sausages) > 100;
       S.NotAcceptFlag[wt_Bread] := gHands[fOwner].Stats.GetWareBalance(wt_Bread) > 100;
       S.NotAcceptFlag[wt_Fish] := gHands[fOwner].Stats.GetWareBalance(wt_Fish) > 100;
