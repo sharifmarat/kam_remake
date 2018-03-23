@@ -2680,7 +2680,7 @@ end;
 
 procedure TKMGamePlayInterface.AlliesOnPlayerSetup(Sender: TObject);
 var
-  I, NetI: Integer;
+  I, K, NetI: Integer;
   LocaleID: Integer;
 begin
   Image_AlliesHostStar.Hide;
@@ -2699,10 +2699,13 @@ begin
     Label_AlliesTeam[I].Hide;
   end;
 
-
-  for I := 0 to fPlayerLinesCnt - 1 do
+  I := 0;
+  for K := 0 to fPlayerLinesCnt - 1 do
   begin
-    NetI := fLineIdToNetPlayerId[I];
+    NetI := fLineIdToNetPlayerId[K];
+
+    if NetI = -1 then Continue; //In case we have AI players at hand, without NetI
+    
     // Show players locale flag
     if gGame.Networking.NetPlayers[NetI].IsComputer then
       Image_AlliesFlag[I].TexID := GetAIPlayerIcon(gGame.Networking.NetPlayers[NetI].PlayerNetType)
@@ -2775,21 +2778,27 @@ begin
     Label_AlliesFPS[I].Strikethrough := gGame.Networking.NetPlayers[NetI].Dropped;
     DropBox_AlliesTeam[I].Enabled := (NetI = gGame.Networking.MyIndex); // Our index
     DropBox_AlliesTeam[I].Hide; // Use label for demos until we fix exploits
+
+    Inc(I);
   end;
 end;
 
 
 procedure TKMGamePlayInterface.AlliesOnPingInfo(Sender: TObject);
 var
-  I, NetI: Integer;
+  I, K, NetI: Integer;
   Ping: Word;
   Fps: Cardinal;
 begin
   UpdateNetPlayersMapping;
 
-  for I := 0 to fPlayerLinesCnt - 1 do
+  I := 0;
+  for K := 0 to fPlayerLinesCnt - 1 do
   begin
-    NetI := fLineIdToNetPlayerId[I];
+    NetI := fLineIdToNetPlayerId[K];
+
+    if NetI = -1 then Continue; //In case we have AI players at hand, without NetI
+
     if (I < gGame.Networking.NetPlayers.Count) and (gGame.Networking.NetPlayers[NetI].IsHuman) then
     begin
       Ping := gGame.Networking.NetPlayers[NetI].GetInstantPing;
@@ -2802,6 +2811,7 @@ begin
       Label_AlliesPingFpsSlash[I].Caption := '';
       Label_AlliesFPS[I].Caption := '';
     end;
+    Inc(I);
   end;
 end;
 
