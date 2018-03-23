@@ -35,6 +35,40 @@ var
   //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75.74541473;
   //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2.960519552;
 
+  //GA_PLANNER_FieldCrit_FarmPosition                   : Single = 42,03913879;
+  //GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 14,78533936;
+  //GA_PLANNER_SnapCrit_SnapToFields                    : Single = 43,49087906;
+  //GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 169,157486;
+  //GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 94,99848175;
+  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 36,5508194;
+  //GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 6,558880806;
+  //GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 50;
+  //GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 48,24608231;
+  //GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 2,661625862;
+  //GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 1;
+  //GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 45,62419128;
+  //GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 1,329562426;
+  //GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 8,541898727;
+  //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 170,6947327;
+  //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2,92606926;
+
+  //GA_PLANNER_FieldCrit_FarmPosition                   : Single = 58,63625336;
+  //GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 12,58267593;
+  //GA_PLANNER_SnapCrit_SnapToFields                    : Single = 40,3471756;
+  //GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 163,5126648;
+  //GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 7,262886524;
+  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 2,572668076;
+  //GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 12,82201099;
+  //GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 34,02655411;
+  //GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 50;
+  //GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 38,85832596;
+  //GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 7,758883476;
+  //GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 49,92569351;
+  //GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 2,463844538;
+  //GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 6,993527412;
+  //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 132,0156708;
+  //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 7,655327797;
+
   GA_PLANNER_FieldCrit_FarmPosition                   : Single = 54.46446991;
   GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 37.58007431;
   GA_PLANNER_SnapCrit_SnapToFields                    : Single = 45.52814484;
@@ -51,6 +85,21 @@ var
   GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 3.259504318;
   GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75;//37.63645935;
   GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 8.272258759;
+
+
+  GA_PATHFINDING_BasePrice    : Word = 0;
+  GA_PATHFINDING_HouseOutside : Word = 1;
+  GA_PATHFINDING_Field        : Word = 3;
+  GA_PATHFINDING_noBuildArea  : Word = 1;
+  GA_PATHFINDING_Forest       : Word = 3;
+  GA_PATHFINDING_OtherCase    : Word = 3;
+
+  GA_SHORTCUTS_BasePrice      : Word = 1;
+  GA_SHORTCUTS_HouseOutside   : Word = 1;
+  GA_SHORTCUTS_Field          : Word = 8;
+  GA_SHORTCUTS_noBuildArea    : Word = 1;
+  GA_SHORTCUTS_Forest         : Word = 4;
+  GA_SHORTCUTS_OtherCase      : Word = 2;
 
 type
   THousePlan = record
@@ -85,6 +134,7 @@ type
   TKMCityPlanner = class
   private
     fOwner: TKMHandIndex;
+    fConstructedHouses: Word;
     fDefenceTowersPlanned: Boolean;
     fPlannedHouses: TPlannedHousesArray;
     fForestsNearby: TKMPointTagList;
@@ -124,6 +174,7 @@ type
     procedure UpdateState(aTick: Cardinal);
 
     // Properties for GA (in Runner)
+    property ConstructedHouses: Word read fConstructedHouses;
     property PlannedHouses: TPlannedHousesArray read fPlannedHouses write fPlannedHouses;
     property DefenceTowersPlanned: Boolean read fDefenceTowersPlanned;
 
@@ -191,6 +242,7 @@ uses
 { TKMCityPlanner }
 constructor TKMCityPlanner.Create(aPlayer: TKMHandIndex);
 begin
+  fConstructedHouses := 0;
   fOwner := aPlayer;
   fDefenceTowersPlanned := False;
   fForestsNearby := TKMPointTagList.Create();
@@ -222,6 +274,7 @@ var
 begin
   SaveStream.WriteA('CityPlanner');
   SaveStream.Write(fOwner);
+  SaveStream.Write(fConstructedHouses);
   SaveStream.Write(fDefenceTowersPlanned);
   fForestsNearby.SaveToStream(SaveStream);
 
@@ -269,6 +322,7 @@ var
 begin
   LoadStream.ReadAssert('CityPlanner');
   LoadStream.Read(fOwner);
+  LoadStream.Read(fConstructedHouses);
   LoadStream.Read(fDefenceTowersPlanned);
   fForestsNearby.LoadFromStream(LoadStream);
 
@@ -462,6 +516,7 @@ begin
     end;
   end;
   // Check if are existing houses completed / destroyed
+  fConstructedHouses := 0;
   for HT := Low(fPlannedHouses) to High(fPlannedHouses) do
   begin
     SumCalculated := fPlannedHouses[HT].Count;
@@ -471,6 +526,7 @@ begin
         Placed := ((House <> nil) AND not House.IsDestroyed) OR gHands[fOwner].BuildList.HousePlanList.ExistPlan(Loc, HT);
         if Placed then // House was placed
         begin
+          fConstructedHouses := fConstructedHouses + Byte((House = nil) OR not House.IsComplete);
           if (HT = ht_Woodcutters) AND (House <> nil) AND (House.IsComplete) then
             CheckWoodcutter(fPlannedHouses[HT].Plans[I], CheckChopOnly);
         end
@@ -1058,9 +1114,11 @@ function TKMCityPlanner.SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
     Result := (gHands[fOwner].BuildList.FieldworksList.HasField(aPoint) = aField)
               OR (gTerrain.Land[aPoint.Y, aPoint.X].TileLock = aLock);
   end;
-  function IsRoad(aPoint: TKMPoint): Boolean; inline;
+  function IsRoad(aAvoidBuilding: Byte; aPoint: TKMPoint): Boolean; inline;
   begin
-    Result := gTerrain.TileIsWalkableRoad(aPoint) OR IsPlan(aPoint, tlRoadWork, ft_Road);
+    Result := (aAvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)
+              OR gTerrain.TileIsWalkableRoad(aPoint)
+              OR IsPlan(aPoint, tlRoadWork, ft_Road);
   end;
   function IsCornField(aPoint: TKMPoint): Boolean; inline;
   begin
@@ -1070,19 +1128,17 @@ function TKMCityPlanner.SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
   begin
     Result := gTerrain.TileIsWineField(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
   end;
-  function IsNearHouse(aPoint: TKMPoint): Boolean; inline;
+  function IsNearHouse(aAvoidBuilding: Byte; aPoint: TKMPoint): Boolean; inline;
   begin
-    Result := not (tpBuild in gTerrain.Land[aPoint.Y,aPoint.X].Passability);
+    Result := (aAvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
+              OR not (tpBuild in gTerrain.Land[aPoint.Y,aPoint.X].Passability);
   end;
-  function IsAvoidBuilding(aPoint: TKMPoint): Boolean; inline;
+  function IsSomeReservedField(aAvoidBuilding: Byte): Boolean; inline;
   begin
-    Result := gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] > 0;
-  end;
-  function IsSomeReservedField(aPoint: TKMPoint): Boolean; inline;
-  begin
-    Result := (gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] >= AVOID_BUILDING_NODE_LOCK_FIELD);
+    Result := (aAvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD);
   end;
 var
+  AvoidBuilding: Byte;
   I,Dist: Integer;
   Output: Single;
   Point: TKMPoint;
@@ -1096,11 +1152,12 @@ begin
     for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
     begin
       Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      AvoidBuilding := gAIFields.Influences.AvoidBuilding[Point.Y, Point.X];
       Output := Output
-                + Byte(IsNearHouse(Point)) * GA_PLANNER_SnapCrit_SnapToHouse
-                + Byte(IsAvoidBuilding(Point) ) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
-                + Byte(IsRoad(Point)) * GA_PLANNER_SnapCrit_SnapToRoads
-                - Byte((Dir = dirS) AND IsSomeReservedField(Point)) * GA_PLANNER_SnapCrit_ClearEntrance;
+                + Byte(IsNearHouse(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToHouse
+                + Byte(IsSomeReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_SnapToFields // OR IsCornField(Point) OR IsWineField(Point)
+                + Byte(IsRoad(AvoidBuilding,Point)) * GA_PLANNER_SnapCrit_SnapToRoads
+                - Byte((Dir = dirS) AND IsSomeReservedField(AvoidBuilding)) * GA_PLANNER_SnapCrit_ClearEntrance;
     end;
   Result := Output;
 end;
@@ -1838,7 +1895,7 @@ var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
 begin
-  Result := 0;
+  Result := GA_PATHFINDING_BasePrice;
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
@@ -1848,8 +1905,8 @@ begin
   if not IsRoad then
     //Building roads over fields is discouraged unless unavoidable
     case AvoidBuilding of
-      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, 1); end; // 1 tile from future house
-      AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, 6); // Corn / wine field
+      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, GA_PATHFINDING_HouseOutside); end; // 1 tile from future house
+      AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, GA_PATHFINDING_Field); // Corn / wine field
       //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
       //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
       //AVOID_BUILDING_COAL_TILE: begin end;
@@ -1858,11 +1915,11 @@ begin
       begin
         // Snap to no-build areas (1 tile from house)
         if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then
-          Inc(Result, 1)
+          Inc(Result, GA_PATHFINDING_noBuildArea)
         else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then // Forest or coal etc.
-          Inc(Result, 4)
+          Inc(Result, GA_PATHFINDING_Forest)
         else
-          Inc(Result, 2);
+          Inc(Result, GA_PATHFINDING_OtherCase);
       end;
     end;
 end;
@@ -1874,7 +1931,7 @@ var
   IsRoad: Boolean;
   AvoidBuilding: Byte;
 begin
-  Result := 1;
+  Result := GA_SHORTCUTS_BasePrice;
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
@@ -1884,8 +1941,8 @@ begin
   if not IsRoad then
     //Building roads over fields is discouraged unless unavoidable
     case AvoidBuilding of
-      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, 0); end; // 1 tile from future house
-      AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, 10); // Corn / wine field
+      AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, GA_SHORTCUTS_HouseOutside); end; // 1 tile from future house
+      AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, GA_SHORTCUTS_Field); // Corn / wine field
       //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
       //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
       //AVOID_BUILDING_COAL_TILE: begin end;
@@ -1894,11 +1951,11 @@ begin
       begin
         // Snap to no-build areas (1 tile from house)
         if not (tpBuild in gTerrain.Land[aToY,aToX].Passability) then
-          Inc(Result, 0)
+          Inc(Result, GA_SHORTCUTS_noBuildArea)
         else if (AvoidBuilding > AVOID_BUILDING_FOREST_MINIMUM) then // Forest or coal etc.
-          Inc(Result, 4)
+          Inc(Result, GA_SHORTCUTS_Forest)
         else
-          Inc(Result, 2);
+          Inc(Result, GA_PATHFINDING_OtherCase);
       end;
     end;
 end;
