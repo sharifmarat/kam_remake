@@ -84,7 +84,7 @@ type
     function PostKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     function IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
 
-    function SlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
+    function AISlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
     procedure MinimapLocClick(aValue: Integer);
 
     procedure Lobby_OnDisconnect(const aData: UnicodeString);
@@ -1189,22 +1189,26 @@ begin
 end;
 
 
-function TKMMenuLobby.SlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
+function TKMMenuLobby.AISlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
 var
-  BaseCnt: Byte;
+  OpenedHumansAtAISlots: Byte;
 begin
-  BaseCnt := 0;
+  Result := 0;
 
   aAIPlayerTypes := aAIPlayerTypes * [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]; //Restrict with AI player types only
 
   if (fNetworking.MapInfo <> nil) and fNetworking.MapInfo.IsValid then
-    BaseCnt := fNetworking.MapInfo.LocCount
-  else if (fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid then
-    BaseCnt := fNetworking.SaveInfo.Info.HumanCount;
-
-  Result := Max(0, BaseCnt
+  begin
+    OpenedHumansAtAISlots := Max(0, fNetworking.MapInfo.CanBeHumanAndAICount - fNetworking.NetPlayers.GetConnectedPlayersCount);
+    Result := Max(0, OpenedHumansAtAISlots
+                   //+ fNetworking.MapInfo.CanBeOnlyAICount // Only AI is added at the start of the game...
+                   - fNetworking.NetPlayers.GetAICount(aAIPlayerTypes));
+  end else if (fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid then
+  begin
+    Result := Max(0, fNetworking.SaveInfo.Info.HumanCount
                    - fNetworking.NetPlayers.GetConnectedPlayersCount
                    - fNetworking.NetPlayers.GetAICount(aAIPlayerTypes));
+  end;
 end;
 
 
@@ -1233,7 +1237,7 @@ begin
   if X = 1 then
   begin
     AISlotsChanged := 0;  //Used to count changed slots while setting ALL to AI
-    AISlotsToChange := SlotsAvailable([TKMNetPlayerType(Y)]); //Luckily row in column box is the same as TKMNetPlayer type (for AI)
+    AISlotsToChange := AISlotsAvailable([TKMNetPlayerType(Y)]); //Luckily row in column box is the same as TKMNetPlayer type (for AI)
 
     for I := 1 to MAX_LOBBY_SLOTS do
     begin
