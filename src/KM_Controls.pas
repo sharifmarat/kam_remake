@@ -1440,6 +1440,8 @@ type
 
   TKMGraphLine = record
                 Title: UnicodeString;
+                TitleDetailed: TStringArray;
+                TitleDetailedColor: TKMCardinalArray;
                 Tag: Integer;
                 Color: TColor4;
                 Visible: Boolean;
@@ -1462,6 +1464,8 @@ type
     fMaxTime: Cardinal; //Maximum time (in sec), used only for Rendering time ticks
     fMaxValue: Cardinal; //Maximum value (by vertical axis)
     fPeaceTime: Cardinal;
+
+    //Legend separators
     fSeparatorPositions: TXStringList;
     fSeparatorHeight: Byte;
     fSeparatorColor: TColor4;
@@ -1476,7 +1480,9 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
 
-    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+                      const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
     procedure AddAltLine(const aAltValues: TKMCardinalArray);
     procedure TrimToFirstVariation;
     property Caption: UnicodeString read fCaption write fCaption;
@@ -7880,8 +7886,22 @@ end;
 
 
 procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
+var
+  TitleDetailed: TStringArray;
+  TitleDetailedColor: TKMCardinalArray;
+begin
+  SetLength(TitleDetailed, 0);
+  SetLength(TitleDetailedColor, 0);
+  AddLine(aTitle, aColor, TitleDetailed, TitleDetailedColor, aValues, aTag);
+end;
+
+
+procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+                           const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1);
 begin
   if fMaxLength = 0 then Exit;
+
+  Assert(Length(aTitleDetailed) = Length(aTitleDetailedColor), 'aTitleDetailed and aTitleDetailedColor should have same length');
 
   //Make sure there is enough Values to copy to local storage with Move procedure
   Assert(Length(aValues) >= fMaxLength);
@@ -7892,6 +7912,8 @@ begin
   fLines[fCount].Title := aTitle;
   fLines[fCount].Tag := aTag;
   fLines[fCount].Visible := True;
+  fLines[fCount].TitleDetailed := aTitleDetailed;
+  fLines[fCount].TitleDetailedColor := aTitleDetailedColor;
   SetLength(fLines[fCount].Values, fMaxLength);
   if SizeOf(aValues) <> 0 then
     Move(aValues[0], fLines[fCount].Values[0], SizeOf(aValues[0]) * fMaxLength);
@@ -8031,7 +8053,7 @@ end;
 
 function TKMChart.GetLineNumber(aY: Integer): Integer;
 var
-  I, S, LineTop, LienBottom: Integer;
+  I, S, LineTop, LineBottom: Integer;
 begin
   Result := -1;
   S := 0;
@@ -8043,13 +8065,13 @@ begin
       Inc(LineTop, fSeparatorHeight);
       Inc(S);
     end;
-    LienBottom := LineTop + fItemHeight;
-    if InRange(aY, LineTop, LienBottom) then
+    LineBottom := LineTop + fItemHeight*(1 + Length(Lines[I].TitleDetailed));
+    if InRange(aY, LineTop, LineBottom) then
     begin
       Result := I;
       Exit;
     end;
-    LineTop := LienBottom;
+    LineTop := LineBottom;
   end;
 end;
 
@@ -8133,11 +8155,22 @@ var
           PaintAxisLabel(I * Best);
   end;
 
+  function GetLineColor(aColor: Cardinal): Cardinal;
+  begin
+    //Adjust the color if it blends with black background
+    Result := EnsureBrightness(aColor, 0.3);
+
+    // If color is similar to highlight color, then use alternative HL color
+    if GetColorDistance(Result, clChartHighlight) < 0.1 then
+      Result := clChartHighlight2;
+  end;
+
   procedure RenderChartAndLegend;
   const
     MARKS_FONT: TKMFont = fnt_Grey;
   var
-    I, S, CheckSize, XPos, YPos, Height: Integer;
+    I, J, S, CheckSize, XPos, YPos, Height: Integer;
+    TitleDetailedH: Integer;
     NewColor: TColor4;
   begin
     CheckSize := gRes.Fonts[MARKS_FONT].GetTextSize('v').Y + 1;
@@ -8145,21 +8178,11 @@ var
     XPos := G.Right + 10;
     YPos := G.Top + 8 + 20*Byte(fLegendCaption <> '');
 
-    //Legend title and outline
-    Height := fItemHeight*fCount + 6 + 20*Byte(fLegendCaption <> '') + fSeparatorPositions.Count*fSeparatorHeight;
-    TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
-    TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
-    if fLegendCaption <> '' then
-      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
+    TitleDetailedH := 0;
     //Charts and legend
     for I := 0 to fCount - 1 do
     begin
-      //Adjust the color if it blends with black background
-      NewColor := EnsureBrightness(fLines[I].Color, 0.3);
-
-      // If color is similar to highlight color, then use alternative HL color
-      if GetColorDistance(NewColor, clChartHighlight) < 0.1 then
-        NewColor := clChartHighlight2;
+      NewColor := GetLineColor(fLines[I].Color);
 
       if (csOver in State) and (I = fLineOver) then
         NewColor := clChartHighlight;
@@ -8187,7 +8210,22 @@ var
       //Legend
       TKMRenderUI.WriteText(XPos + CheckSize, YPos, 0, fLines[I].Title, fnt_Game, taLeft, NewColor);
       Inc(YPos, fItemHeight);
+
+      //Detailed legend
+      for J := Low(fLines[I].TitleDetailed) to High(fLines[I].TitleDetailed) do
+      begin
+        TKMRenderUI.WriteText(XPos + CheckSize + 5, YPos, 0, fLines[I].TitleDetailed[J], fnt_Grey, taLeft, GetLineColor(fLines[I].TitleDetailedColor[J]));
+        Inc(YPos, fItemHeight);
+        Inc(TitleDetailedH, fItemHeight);
+      end;
     end;
+
+    //Legend title and outline
+    Height := fItemHeight*fCount + TitleDetailedH + 6 + 20*Byte(fLegendCaption <> '') + fSeparatorPositions.Count*fSeparatorHeight;
+    TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
+    TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
+    if fLegendCaption <> '' then
+      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
   end;
 
 var
