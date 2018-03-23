@@ -158,7 +158,7 @@ begin
 
   // Requred houses should be saved because of public variable
   SaveStream.Write(RequiredHouses, SizeOf(TRequiredHousesArray));
-  // fWareBalance must be saved because of FinalConsumption
+  // fWareBalance must be saved because of FinalConsumption, Trading and building algorithm
   for WT := WARE_MIN to WARE_MAX do
     SaveStream.Write(fWareBalance[WT], SizeOf(TWareBalance));
   // Stats are updated each cycle and doesn't have to be saved
@@ -229,12 +229,11 @@ procedure TKMCityPredictor.UpdateFoodConsumption(aInitialization: Boolean = Fals
 const
   CITIZEN_FOOD_COEF = 0.05; // On average citizen needs to eat each 40min but takes 2 food to full status = 1/20 = 0.05
   SOLDIER_FOOD_COEF = 0.025; // On average soldier needs to eat each 40min and takes 1 food to full status = 1/40 = 0.025
-  CITIZEN_RESERVE = 3.5 * 15; // Production of food suffer by ~15 min delay -> add some citizens (1 school = 3.5 citizen / min * estimated delay)
 var
   Consumption: Single;
 begin
   // Get consumption of city + army
-  Consumption := ((fCityStats.CitizensCnt + CITIZEN_RESERVE) * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
+  Consumption := (fCityStats.CitizensCnt * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
   // Calculate consumption of leather armor / minute and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
   fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
@@ -268,7 +267,7 @@ begin
     // Calculate when will be ware depleted
     Exhaustion := 99;
     if (ActualConsumption - Production > 0) then
-      Exhaustion := gHands[fOwner].Stats.GetWareBalance(aWT) / (ActualConsumption - Production);
+      Exhaustion := Min( Exhaustion, gHands[fOwner].Stats.GetWareBalance(aWT) / (ActualConsumption - Production) );
     HouseReqCnt := Ceil(( Max(ActualConsumption, FinalConsumption) - Production) / Max(0.0001, ProductionRate[aWT]*1.0));
     Fraction := HouseReqCnt / Max(1.0,((fCityStats.Houses[HT] + HouseReqCnt)*1.0));
   end;
@@ -437,7 +436,7 @@ begin
   UpdateWareBalance(True);
 
   // Corn delay to stop build swine or mill before farm (another way is to check if we have corn but it does not work well)
-  fCornDelay := Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+  fCornDelay := Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 30);
 end;
 
 
@@ -454,51 +453,48 @@ begin
   UpdateBasicHouses(GA_PLANNER);
   UpdateWareBalance();
 
-  if (fCornDelay = 0) AND (fCityStats.Houses[ht_Farm] > 0) then
+  if (fCornDelay = 0) AND (gHands[fOwner].Stats.GetHouseTotal(ht_Farm) > 0) then // Dont use fCityStats because it consider planned houses
   begin
     fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce corn)
   end;
-  if not GA_PLANNER then
+  // Corn delay (should not wait till is first corn produced because it have huge impact)
+  if (gGame.GameTickCount < fCornDelay) AND not gHands[fOwner].Locks.HouseBlocked[ht_Farm] then // Consider corn delay (~10 minutes) -> time saved by construction
   begin
-    // Corn delay (should not wait till is first corn produced because it have huge impact)
-    if (gGame.GameTickCount < fCornDelay) then // Consider corn delay (~10 minutes) -> time saved by construction
-    begin
-      RequiredHouses[ht_Mill] := 0;
-      RequiredHouses[ht_Bakery] := 0;
-      RequiredHouses[ht_Swine] := 0;
-      RequiredHouses[ht_Tannery] := 0;
-      RequiredHouses[ht_ArmorWorkshop] := 0;
-    end;
-    // Pig delay
-    //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-    RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(fCityStats.Houses[ht_Swine] > 0);
-    //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
-    //begin
-    //  RequiredHouses[ht_Tannery] := 0;
-    //  RequiredHouses[ht_ArmorWorkshop] := 0;
-    //end;
-
-    if (gGame.GameTickCount < 22000) then
-      RequiredHouses[ht_Wineyard] := 0;
-
-    RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) );
-
-    // Loghical house requirements (delay takes too long so it is not used)
-    {
-    RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
-    RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-    RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
-    RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
-    RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
-    RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
-    //}
-    // Iron production (it will give time to build more mines)
-    {
-    RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
-    RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
-    RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
-    //}
+    RequiredHouses[ht_Mill] := 0;
+    RequiredHouses[ht_Bakery] := 0;
+    RequiredHouses[ht_Swine] := 0;
+    RequiredHouses[ht_Tannery] := 0;
+    RequiredHouses[ht_ArmorWorkshop] := 0;
   end;
+  // Pig delay
+  //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetHouseQty(ht_Swine) > 0);
+  //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
+  //begin
+  //  RequiredHouses[ht_Tannery] := 0;
+  //  RequiredHouses[ht_ArmorWorkshop] := 0;
+  //end;
+
+  if (gGame.GameTickCount < 22000) then
+    RequiredHouses[ht_Wineyard] := 0;
+
+  RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
+
+  // Loghical house requirements (delay takes too long so it is not used)
+  {
+  RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
+  RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
+  RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
+  RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
+  RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+  //}
+  // Iron production (it will give time to build more mines)
+  {
+  RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
+  RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+  RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+  //}
 end;
 
 
