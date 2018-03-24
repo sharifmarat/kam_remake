@@ -37,6 +37,7 @@ type
   TIntegerEvent = procedure (aValue: Integer) of object;
   TObjectIntegerEvent = procedure (Sender: TObject; X: Integer) of object;
   TSingleEvent = procedure (aValue: Single) of object;
+  TAnsiStringEvent = procedure (const aData: AnsiString) of object;
   TUnicodeStringEvent = procedure (const aData: UnicodeString) of object;
   TUnicodeStringWDefEvent = procedure (const aData: UnicodeString = '') of object;
   TUnicodeStringEventProc = procedure (const aData: UnicodeString);
