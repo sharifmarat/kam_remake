@@ -493,7 +493,7 @@ procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
           Count := Cnt;
         end;
       end;
-      Cnt := gHands[fOwner].Stats.GetHouseQty(ht_Farm);
+      Cnt := gHands[fOwner].Stats.GetHouseQty(htFarm);
       if (Quantity[Count-1] <> Cnt) then
       begin
         if (Length(Quantity) <= Count) then
@@ -529,22 +529,22 @@ begin
   UpdateWareBalance();
 
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
-  if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[ht_Farm] then
+  if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then
   begin
-    RequiredHouses[ht_Mill] := 0;
-    RequiredHouses[ht_Swine] := 0;
-    RequiredHouses[ht_Stables] := 0;
+    RequiredHouses[htMill] := 0;
+    RequiredHouses[htSwine] := 0;
+    RequiredHouses[htStables] := 0;
   end;
   // Houses in dependence on corn delay
-  RequiredHouses[ht_Bakery] := Min(RequiredHouses[ht_Bakery], Stats.GetHouseQty(ht_Mill) - fCityStats.Houses[ht_Bakery]);
-  RequiredHouses[ht_Butchers] := Min(RequiredHouses[ht_Butchers], Ceil(Stats.GetHouseQty(ht_Swine)/3 - fCityStats.Houses[ht_Butchers]));
-  RequiredHouses[ht_Tannery] := Min(RequiredHouses[ht_Tannery], Ceil(Stats.GetHouseQty(ht_Swine)/2 - fCityStats.Houses[ht_Tannery]));
-  RequiredHouses[ht_ArmorWorkshop] := Min(RequiredHouses[ht_ArmorWorkshop], Stats.GetHouseTotal(ht_Tannery)*2 - fCityStats.Houses[ht_ArmorWorkshop]);
+  RequiredHouses[htBakery] := Min(RequiredHouses[htBakery], Stats.GetHouseQty(htMill) - fCityStats.Houses[htBakery]);
+  RequiredHouses[htButchers] := Min(RequiredHouses[htButchers], Ceil(Stats.GetHouseQty(htSwine)/3 - fCityStats.Houses[htButchers]));
+  RequiredHouses[htTannery] := Min(RequiredHouses[htTannery], Ceil(Stats.GetHouseQty(htSwine)/2 - fCityStats.Houses[htTannery]));
+  RequiredHouses[htArmorWorkshop] := Min(RequiredHouses[htArmorWorkshop], Stats.GetHouseTotal(htTannery)*2 - fCityStats.Houses[htArmorWorkshop]);
 
-  RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
+  RequiredHouses[htWeaponWorkshop] := RequiredHouses[htWeaponWorkshop] * Byte( (RequiredHouses[htTannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
 
   if (gGame.GameTickCount < WINEYARD_DELAY) then
-    RequiredHouses[ht_Wineyard] := 0;
+    RequiredHouses[htWineyard] := 0;
 
 
 
