@@ -30,32 +30,9 @@ type
   end;
   TKMDefencePosArr = array of TKMDefencePosition;
 
-
-  TBackwardFF = class(TNavMeshFloodFill)
-  private
-  protected
-    fDefLinesRequired: Boolean;
-    fOwner: TKMHandIndex;
-    fBestEvaluation: Single;
-    fDefInfo: TDefInfoArray;
-
-    function CanBeExpanded(const aIdx: Word): Boolean; override;
-    procedure BackwardFlood();
-    procedure EvaluateDefence(const aIdx: Word);
-    function FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
-  public
-    //D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
-    BestDefLines: TKMDefenceLines;
-    DefPosArr: TKMDefencePosArr;
-
-    procedure UpdatePointers(var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr);
-    procedure NewQueue(aVisitedIdx: Byte);
-    procedure AddPolygon(aIdx: Word);
-    function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
-
-    //procedure DEBUG();
-  end;
+  TForwardFF = class;
+  TBackwardFF = class;
+  TFilterFF = class;
 
   TForwardFF = class(TNavMeshFloodFill)
   private
@@ -84,6 +61,48 @@ type
   end;
 
 
+  TBackwardFF = class(TNavMeshFloodFill)
+  private
+  protected
+    fDefLinesRequired: Boolean;
+    fOwner: TKMHandIndex;
+    fBestEvaluation: Single;
+    fDefInfo: TDefInfoArray;
+    fFilterFF: TFilterFF;
+
+    function CanBeExpanded(const aIdx: Word): Boolean; override;
+    procedure BackwardFlood();
+    procedure EvaluateDefence(const aIdx: Word);
+    function FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
+  public
+    //D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
+    BestDefLines: TKMDefenceLines;
+    DefPosArr: TKMDefencePosArr;
+
+    constructor Create(aSorted: Boolean = False); reintroduce;
+    destructor Destroy(); override;
+
+    procedure UpdatePointers(var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr);
+    procedure NewQueue(aVisitedIdx: Byte);
+    procedure AddPolygon(aIdx: Word);
+    function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
+    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
+
+    //procedure DEBUG();
+  end;
+
+
+  TFilterFF = class(TNavMeshFloodFill)
+  private
+  protected
+    procedure InitQueue(const aMaxIdx: Word; aInitIdxArray: TKMWordArray); override;
+    function IsVisited(const aIdx: Word): Boolean; override;
+  public
+    BestDefLines, AllDefLines: TKMDefenceLines;
+    procedure FilterDefenceLine(var aAllDefLines: TKMDefenceLines);
+  end;
+
+
 const
   OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
   MAX_ENEMY_INFLUENCE = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
@@ -95,13 +114,13 @@ const
   POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
   ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
-  ENEMY_INFLUENCE_PENALIZATION = 4; // Enemy penalization (dont place defences inside of enemy city)
+  ENEMY_INFLUENCE_PENALIZATION = 6; // Enemy penalization (dont place defences inside of enemy city)
   MINIMAL_DEFENCE_DISTANCE = 5; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
   MAXIMAL_DEFENCE_DISTANCE = 100; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
 
 implementation
 uses
-  KM_AIFields, KM_AIInfluences, KM_NavMesh;
+  KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh;
 
 
 { TForwardFF }
@@ -122,7 +141,7 @@ end;
 // Prepare new Queue
 procedure TForwardFF.MakeNewQueue();
 begin
-  fVisitedIdx := fVisitedIdx + 3; // There is 1 FF forward, 1 FF backward and 1 FF for positioning in 1 cycle
+  fVisitedIdx := fVisitedIdx + 3; // There is 1 FF forward, 1 FF backward and 1 FF for positioning in 1 cycle; filter have its own array
   // Check length
   if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
   begin
@@ -132,7 +151,7 @@ begin
     ClearVisitIdx();
   end;
   // Reset VisitIdx if needed
-  if (fVisitedIdx = High(Byte)-2) then
+  if (fVisitedIdx >= High(Byte)-3) then
     ClearVisitIdx();
   // Init also backward FF
   fBackwardFF.NewQueue(fVisitedIdx+1);
@@ -160,17 +179,14 @@ var
 begin
   // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
-  Distance := aDistance; // Min(fDefInfo[aIdx].Influence shr 2, Distance);
-  if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) then
+  fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
+  Distance := aDistance;
+  if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) OR (fDefInfo[aIdx].AllyInfluence > OWNER_INFLUENCE_LIMIT) then
     Distance := 0;
   inherited MarkAsVisited(aIdx, Distance, aPoint);
-  // For special polygons calculate also alliance influence
+  // For special polygons calculate also ene influence
   if (gAIFields.NavMesh.Polygons[aIdx].NearbyCount = 3) then
-  begin
     fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
-    if (Distance < MAXIMAL_DEFENCE_DISTANCE) then // We dont need to know about ally influence far behind maximal defence distance so save some time and do nothing
-      fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
-  end;
 end;
 
 
@@ -178,19 +194,32 @@ end;
 // ForwardFF will find enemies, compute distance and detect empty areas which does not requires defences
 function TForwardFF.ForwardFF(): Boolean;
 var
-  I: Integer;
+  PL: TKMHandIndex;
+  I, Cnt: Integer;
   CityCenterPoints: TKMPointArray;
   StartPolygons: TKMWordArray;
 begin
   Result := False;
-  // Get center city points
-  CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-  if (Length(CityCenterPoints) < 1) then
-    Exit;
-  // Transform it to polygons
-  SetLength(StartPolygons, Length(CityCenterPoints));
-  for I := Low(StartPolygons) to High(StartPolygons) do
-    StartPolygons[I] := gAIFields.NavMesh.KMPoint2Polygon[ CityCenterPoints[I] ];
+  // Get center points of all allied cities
+  Cnt := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (gHands[fOwner].Alliances[PL] = at_Ally) then
+    begin
+      gAIFields.Eye.OwnerUpdate(PL);
+      CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+      if (PL = fOwner) AND (Length(CityCenterPoints) < 1) then
+        Exit;
+      // Transform it to polygons
+      SetLength(StartPolygons, Cnt + Length(CityCenterPoints));
+      for I := 0 to Length(CityCenterPoints) - 1 do
+      begin
+        StartPolygons[Cnt] := gAIFields.NavMesh.KMPoint2Polygon[ CityCenterPoints[I] ];
+        Cnt := Cnt + 1;
+      end;
+    end;
+  // Update owner
+  gAIFields.Eye.OwnerUpdate(fOwner);
+
   // Flood fill
   Result := FillPolygons(Length(StartPolygons), StartPolygons);
 end;
@@ -226,6 +255,20 @@ end;
 
 
 { TBackwardFF }
+constructor TBackwardFF.Create(aSorted: Boolean = False);
+begin
+  inherited Create(aSorted);
+  fFilterFF := TFilterFF.Create(False);
+end;
+
+
+destructor TBackwardFF.Destroy();
+begin
+  fFilterFF.Free;
+  inherited Destroy;
+end;
+
+
 procedure TBackwardFF.UpdatePointers(var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr);
 begin
   fDefInfo := aDefInfo;
@@ -323,7 +366,7 @@ begin
                   - Byte(    ((fDefInfo[aIdx].AllyInfluence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].AllyInfluence < ALLY_INFLUENCE_LIMIT))
                           OR ((fDefInfo[aIdx].Influence > MIN_OPTIMAL_INFLUENCE) AND (fDefInfo[aIdx].Influence < ALLY_INFLUENCE_LIMIT))
                          ) * OPTIMAL_INFLUENCE_ADD
-                  + Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
+                  //+ Byte(fDefInfo[aIdx].AllyInfluence > ALLY_INFLUENCE_LIMIT) * ALLY_INFLUENCE_PENALIZATION
                   + Byte(fDefInfo[aIdx].EnemyInfluence > ENEMY_INFLUENCE_LIMIT) * ENEMY_INFLUENCE_PENALIZATION;
     QueueIdx := fQueueArray[QueueIdx].Next;
   end;
@@ -388,7 +431,7 @@ var
       begin
         fQueueArray[NearbyIdx].Visited := fVisitedIdx; // Mark as visited
         fDefInfo[NearbyIdx].Distance := fQueueArray[NearbyIdx].Distance; // Save distance for future calculation
-        if (PolyArr[NearbyIdx].NearbyCount = 3) then
+        if (PolyArr[NearbyIdx].NearbyCount = 3) then // Defences are created only from polygons with 3 surrounding polygons
         begin
           fQueueArray[NearbyIdx].Distance := High(Word) - fQueueArray[NearbyIdx].Distance; // Invert distance (only polygons which will be inserted)
           InsertAndSort(NearbyIdx); // Insert ONLY polygons with 3 nearby polygons because it is possible to create defence line from them and also it save performance
@@ -507,6 +550,7 @@ function TBackwardFF.FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
 begin
   fDefLinesRequired := True;
   BackwardFlood();
+  fFilterFF.FilterDefenceLine(BestDefLines);
   Result := BestDefLines;
 end;
 
@@ -515,12 +559,85 @@ function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, a
 begin
   fDefLinesRequired := aDefLinesRequired;
   BackwardFlood();
+  fFilterFF.FilterDefenceLine(BestDefLines);
   FindDefencePos(aBaseCnt, aFirstLine, aMinDefeces);
   aBestDefLines := BestDefLines;
   Result := DefPosArr;
 end;
 
 
+
+
+{ TFilterFF }
+function TFilterFF.IsVisited(const aIdx: Word): Boolean;
+var
+  I: Integer;
+begin
+  if (fQueueArray[aIdx].Visited = fVisitedIdx - 1) then
+  begin
+    for I := 0 to AllDefLines.Count - 1 do
+      if (AllDefLines.Lines[I].Polygon = aIdx) then
+      begin
+        BestDefLines.Lines[ BestDefLines.Count ] := AllDefLines.Lines[I]; // Length was already checked
+        BestDefLines.Count := BestDefLines.Count + 1;
+        break;
+      end;
+    fQueueArray[aIdx].Visited := fVisitedIdx;
+  end;
+  Result := (fQueueArray[aIdx].Visited = fVisitedIdx);
+end;
+
+
+procedure TFilterFF.InitQueue(const aMaxIdx: Word; aInitIdxArray: TKMWordArray);
+var
+  I, Idx: Integer;
+begin
+  // Index will be increased by 2 so clear it now if it is needed
+  if (fVisitedIdx >= High(Byte) - 3) OR (fVisitedIdx = 0) then
+  begin
+    fVisitedIdx := $FE;
+    MakeNewQueue(); // Init array and clear index
+  end;
+  // Mark exist defence lines as a visited in previous step (faster than check each node whether is part of defensive line)
+  fVisitedIdx := fVisitedIdx + 1;
+  for I := 0 to AllDefLines.Count - 1 do
+  begin
+    Idx := AllDefLines.Lines[I].Polygon;
+    fQueueArray[Idx].Visited := fVisitedIdx;
+  end;
+  // Init queue - fVisitedIdx will be increased inside of this function
+  inherited InitQueue(aMaxIdx, aInitIdxArray);
+end;
+
+
+procedure TFilterFF.FilterDefenceLine(var aAllDefLines: TKMDefenceLines);
+var
+  I: Integer;
+  CityCenterPoints: TKMPointArray;
+  StartPolygons: TKMWordArray;
+begin
+  AllDefLines := aAllDefLines;
+  BestDefLines.Count := 0;
+  if (Length(BestDefLines.Lines) < AllDefLines.Count) then
+    SetLength(BestDefLines.Lines, AllDefLines.Count);
+  // Get center points of city
+  CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+  if (Length(CityCenterPoints) < 1) then
+    Exit;
+  // Transform it to polygons
+  SetLength(StartPolygons, Length(CityCenterPoints));
+  for I := 0 to Length(CityCenterPoints) - 1 do
+    StartPolygons[I] := gAIFields.NavMesh.KMPoint2Polygon[ CityCenterPoints[I] ];
+
+  InitQueue(Length(StartPolygons)-1, StartPolygons);
+  Flood();
+  aAllDefLines.Count := 0;
+  for I := 0 to BestDefLines.Count - 1 do
+  begin
+    aAllDefLines.Lines[ aAllDefLines.Count ] := BestDefLines.Lines[I];
+    aAllDefLines.Count := aAllDefLines.Count + 1;
+  end;
+end;
 
 
 {
@@ -567,6 +684,5 @@ begin
   SetLength(D_INIT_FLOOD, cnt);
 end;
 //}
-
 
 end.
