@@ -766,7 +766,7 @@ var
 begin
   Result := 0;
   for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
       Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
 end;
 
@@ -777,7 +777,7 @@ var
 begin
   Result := 0;
   for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
       Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
 end;
 
