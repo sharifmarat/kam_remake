@@ -365,6 +365,7 @@ type
     ImageAnchors: TKMAnchorsSet;
     Highlight: Boolean;
     HighlightOnMouseOver: Boolean;
+    HighlightCoef: Single;
     Lightness: Single;
     ClipToBounds: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui);
@@ -2772,8 +2773,9 @@ begin
   fTexID := aTexID;
   fFlagColor := $FFFF00FF;
   ImageAnchors := [anLeft, anTop];
-  Highlight := false;
-  HighlightOnMouseOver := false;
+  Highlight := False;
+  HighlightOnMouseOver := False;
+  HighlightCoef := 0.4;
 end;
 
 
@@ -2822,7 +2824,7 @@ begin
     TKMRenderUI.SetupClipY(AbsTop,  AbsTop + Height);
   end;
 
-  PaintLightness := Lightness + 0.4 * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
+  PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
   TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness);
   TKMRenderUI.ReleaseClipX;
