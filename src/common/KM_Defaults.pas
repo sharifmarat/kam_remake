@@ -595,8 +595,8 @@ type
     ftNone,
     ftRoad,
     ftCorn,
-    ftInitWine, //Reset rotation and set grapes ground, but without Grapes yet
-    ftWine
+    ftWine,
+    ftInitWine //Reset rotation and set grapes ground, but without Grapes yet
     );
 
   TKMHouseStage = (
