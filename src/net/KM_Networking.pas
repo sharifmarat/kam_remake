@@ -861,7 +861,7 @@ end;
 
 
 //Joiner indicates that he is ready to start
-function TKMNetworking.ReadyToStart:boolean;
+function TKMNetworking.ReadyToStart: Boolean;
 begin
   if (fSelectGameKind = ngk_Save) and (MyNetPlayer.StartLocation = 0) then
   begin
@@ -886,7 +886,7 @@ begin
 end;
 
 
-function TKMNetworking.CanStart:boolean;
+function TKMNetworking.CanStart: Boolean;
 var
   I: Integer;
 begin
