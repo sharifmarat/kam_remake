@@ -1194,3 +1194,5 @@ TX_PLAYER_LOST = 1183; //Player lost the game
 TX_PLAYER_HOST = 1184; //Host
 
 TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
+
+TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit

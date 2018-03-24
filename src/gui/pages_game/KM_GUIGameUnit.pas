@@ -11,11 +11,14 @@ type
   private
     fAskDismiss: Boolean;
     fJoiningGroups: Boolean;
+    fSetViewportEvent: TPointFEvent;
+
     procedure Unit_Dismiss(Sender: TObject);
     procedure Dismiss_Click(Sender: TObject);
     procedure Army_ActivateControls(aGroup: TKMUnitGroup);
     procedure Army_Issue_Order(Sender: TObject);
     procedure ShowDismissBtn;
+    procedure Unit_Scroll_Click(Sender: TObject);
   protected
     Panel_Unit: TKMPanel;
       Label_UnitName: TKMLabel;
@@ -45,7 +48,7 @@ type
     OnUnitDismiss: TEvent;
     OnSelectingTroopDirection: TBooleanFunc;
     OnArmyCanTakeOrder: TBooleanFunc;
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
     property AskDismiss: Boolean read fAskDismiss write fAskDismiss;
     property JoiningGroups: Boolean read fJoiningGroups write fJoiningGroups;
 
@@ -69,11 +72,19 @@ uses
 
 { TKMGUIGameUnit }
 
-constructor TKMGUIGameUnit.Create(aParent: TKMPanel);
+constructor TKMGUIGameUnit.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 begin
+  fSetViewportEvent := aSetViewportEvent;
+
   Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 400);
     Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,30,'',fnt_Outline,taCenter);
+
     Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
+    Image_UnitPic.Hint    := gResTexts[TX_UNIT_SCROLL_HINT];
+    Image_UnitPic.OnClick := Unit_Scroll_Click;
+    Image_UnitPic.HighlightOnMouseOver := True;
+    Image_UnitPic.HighlightCoef := 0.1; //highlight just a little bit
+
     Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,30,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
     ConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
 
@@ -187,6 +198,7 @@ begin
   Label_UnitName.Caption      := gRes.Units[aUnit.UnitType].GUIName;
   Image_UnitPic.TexID         := gRes.Units[aUnit.UnitType].GUIScroll;
   Image_UnitPic.FlagColor     := gHands[aUnit.Owner].FlagColor;
+
   ConditionBar_Unit.Position  := aUnit.Condition / UNIT_MAX_CONDITION;
   Label_UnitTask.Caption      := aUnit.GetActivityText;
 
@@ -291,6 +303,31 @@ begin
     else
       ShowUnitInfo(TKMUnit(gMySpectator.Selected), False);  // Cancel and return to selected unit
   end;
+end;
+
+
+procedure TKMGUIGameUnit.Unit_Scroll_Click(Sender: TObject);
+var
+  U: TKMUnit;
+  G: TKMUnitGroup;
+begin
+  if (gMySpectator.Selected = nil)
+    or not ((gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected is TKMUnitGroup)) then
+    Exit;
+
+  U := nil;
+
+  if gMySpectator.Selected is TKMUnitGroup then
+  begin
+    G := TKMUnitGroup(gMySpectator.Selected);
+    if G.SelectedUnit <> nil then
+      U := TKMUnit(G.SelectedUnit);
+  end else
+  if gMySpectator.Selected is TKMUnit then
+    U := TKMUnit(gMySpectator.Selected);
+
+  if Assigned(fSetViewportEvent) then
+    fSetViewportEvent(U.PositionF);
 end;
 
 
