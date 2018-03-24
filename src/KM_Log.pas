@@ -29,12 +29,13 @@ type
     fPreviousTick: cardinal;
     fPreviousDate: TDateTime;
     fOnLogMessage: TUnicodeStringEvent;
+
     procedure Lock;
     procedure Unlock;
 
-    procedure AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType); overload;
-    procedure AddLineTime(const aText: UnicodeString); overload;
-    procedure AddLineNoTime(const aText: UnicodeString);
+    procedure AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True); overload;
+    procedure AddLineTime(const aText: UnicodeString; aFlushImmidiately: Boolean = True); overload;
+    procedure AddLineNoTime(const aText: UnicodeString; aDoCloseFile: Boolean = True);
   public
     MultithreadLogging: Boolean; // Enable thread safe mode (resource protection) while logging with multi threads
     MessageTypes: TKMLogMessageTypeSet;
@@ -43,6 +44,7 @@ type
     procedure InitLog;
     // AppendLog adds the line to Log along with time passed since previous line added
     procedure AddTime(const aText: UnicodeString); overload;
+    procedure AddTimeNoFlush(const aText: UnicodeString); overload;
     procedure AddTime(const aText: UnicodeString; num: Integer); overload;
     procedure AddTime(const aText: UnicodeString; num: Single); overload;
     procedure AddTime(num: Integer; const aText: UnicodeString); overload;
@@ -58,6 +60,7 @@ type
     procedure AddAssert(const aMessageText: UnicodeString);
     // AddToLog simply adds the text
     procedure AddNoTime(const aText: UnicodeString);
+    procedure AddNoTimeNoFlush(const aText: UnicodeString);
     procedure DeleteOldLogs;
     property LogPath: UnicodeString read fLogPath; //Used by dedicated server
     property OnLogMessage: TUnicodeStringEvent read fOnLogMessage write fOnLogMessage;
@@ -177,7 +180,7 @@ end;
 
 //Lines are timestamped, each line invokes file open/close for writing,
 //meaning that no lines will be lost if Remake crashes
-procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType);
+procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True);
 begin
   if not (aLogType in MessageTypes) then // write into log only for allowed types
     Exit;
@@ -188,7 +191,7 @@ begin
   try
     if not FileExists(fLogPath) then
       InitLog;  // Recreate log file, if it was deleted
-    AssignFile(fl, fLogPath);
+
     Append(fl);
     //Write a line when the day changed since last time (useful for dedicated server logs that could be over months)
     if Abs(Trunc(fPreviousDate) - Trunc(Now)) >= 1 then
@@ -202,7 +205,10 @@ begin
                   GetTimeSince(fFirstTick) / 1000,
                   GetTimeSince(fPreviousTick),
                   aText]));
-    CloseFile(fl);
+
+    if aDoCloseFile then
+      CloseFile(fl);
+
     fPreviousTick := TimeGet;
     fPreviousDate := Now;
   finally
@@ -216,14 +222,14 @@ end;
 
 
 //Add line with timestamp
-procedure TKMLog.AddLineTime(const aText: UnicodeString);
+procedure TKMLog.AddLineTime(const aText: UnicodeString; aFlushImmidiately: Boolean = True);
 begin
-  AddLineTime(aText, lmt_Default);
+  AddLineTime(aText, lmt_Default, aFlushImmidiately);
 end;
 
 
 //Same line but without timestamp
-procedure TKMLog.AddLineNoTime(const aText: UnicodeString);
+procedure TKMLog.AddLineNoTime(const aText: UnicodeString; aDoCloseFile: Boolean = True);
 begin
   if not FileExists(fLogPath) then
     InitLog;  // Recreate log file, if it was deleted
@@ -232,10 +238,10 @@ begin
   if MultithreadLogging then
     Lock;
   try
-    AssignFile(fl, fLogPath);
     Append(fl);
     WriteLn(fl, '                                      ' + aText);
-    CloseFile(fl);
+    if aDoCloseFile then
+      CloseFile(fl);
   finally
     if MultithreadLogging then
       UnLock;
@@ -248,9 +254,15 @@ end;
 
 procedure TKMLog.AddTime(const aText: UnicodeString);
 begin
+  AddLineTime(aText);
+end;
+
+
+procedure TKMLog.AddTimeNoFlush(const aText: UnicodeString);
+begin
   if Self = nil then Exit;
 
-  AddLineTime(aText);
+  AddLineTime(aText, False);
 end;
 
 
@@ -361,6 +373,15 @@ begin
   if Self = nil then Exit;
 
   AddLineNoTime(aText);
+end;
+
+
+
+procedure TKMLog.AddNoTimeNoFlush(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+
+  AddLineNoTime(aText, False);
 end;
 
 
