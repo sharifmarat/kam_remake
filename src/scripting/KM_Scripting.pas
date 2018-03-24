@@ -319,6 +319,15 @@ begin
     Sender.AddTypeS('TByteSet', 'set of Byte'); //Needed for Closest*MultipleTypes
     Sender.AddTypeS('TKMPoint', 'record X,Y: Integer; end;'); //Could be very useful
 
+    Sender.AddTypeS('TKMFieldType', '(ftNone, ftRoad, ftCorn, ftWine)'); //No need to add InitWine for scripts
+    Sender.AddTypeS('TKMHouseType', '(htNone, htAny, '
+      + 'htArmorSmithy,     htArmorWorkshop,   htBakery,        htBarracks,      htButchers,'
+      + 'htCoalMine,        htFarm,            htFisherHut,     htGoldMine,      htInn,'
+      + 'htIronMine,        htIronSmithy,      htMarketplace,   htMetallurgists, htMill,'
+      + 'htQuary,           htSawmill,         htSchool,        htSiegeWorkshop, htStables,'
+      + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
+      + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
+
     Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
@@ -405,6 +414,12 @@ begin
     RegisterMethodCheck(c, 'function IsFieldAt(aPlayer: ShortInt; X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function IsRoadAt(aPlayer: ShortInt; X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean');
+
+    RegisterMethodCheck(c, 'function IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
 
     RegisterMethodCheck(c, 'function KaMRandom: Single');
     RegisterMethodCheck(c, 'function KaMRandomI(aMax:Integer): Integer');
@@ -931,6 +946,12 @@ begin
       RegisterMethod(@TKMScriptStates.IsFieldAt,                                'IsFieldAt');
       RegisterMethod(@TKMScriptStates.IsRoadAt,                                 'IsRoadAt');
       RegisterMethod(@TKMScriptStates.IsWinefieldAt,                            'IsWinefieldAt');
+
+      RegisterMethod(@TKMScriptStates.IsPlanAt,                                 'IsPlanAt');
+      RegisterMethod(@TKMScriptStates.IsFieldPlanAt,                            'IsFieldPlanAt');
+      RegisterMethod(@TKMScriptStates.IsHousePlanAt,                            'IsHousePlanAt');
+      RegisterMethod(@TKMScriptStates.IsRoadPlanAt,                             'IsRoadPlanAt');
+      RegisterMethod(@TKMScriptStates.IsWinefieldPlanAt,                        'IsWinefieldPlanAt');
 
       RegisterMethod(@TKMScriptStates.KaMRandom,                                'KaMRandom');
       RegisterMethod(@TKMScriptStates.KaMRandomI,                               'KaMRandomI');

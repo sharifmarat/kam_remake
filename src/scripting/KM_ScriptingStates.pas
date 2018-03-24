@@ -3,7 +3,7 @@ unit KM_ScriptingStates;
 interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
-  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Maps,
+  KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Maps,
   KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
 
 
@@ -82,6 +82,12 @@ type
     function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
     function IsRoadAt(aPlayer: ShortInt; X, Y: Word): Boolean;
 
+    function IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean;
+    function IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+    function IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean;
+    function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+    function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
     function KaMRandom: Single;
     function KaMRandomI(aMax: Integer): Integer;
     function LocationCount: Integer;
@@ -157,7 +163,7 @@ type
 
 implementation
 uses
-  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
+  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_Units_Warrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall;
@@ -2162,6 +2168,272 @@ begin
                 and ((aPlayer = -1) or (gTerrain.Land[Y, X].TileOwner = aPlayer))
     else
       LogParamWarning('States.IsWinefieldAt', [aPlayer, X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan of the specified type at the specified location.
+//* If aPlayer index is -1 it will return true if any player has plan of the specified type at the specified location.
+//* If aFieldType is ftNone it will return if the specified player has a field plan of the any type (ftCorn, ftRoad, ftWine) at the specified location.
+//* If aPlayer index is -1 and aFieldType is ftNone it will return if any player has a field plan of the any type (ftCorn, ftRoad, ftWine) at the specified location.
+//* If Plan found then aPlayer will contain its player id and aFieldType its type
+//* Result: Is plan found
+function TKMScriptStates.IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word; var aFieldType: TKMFieldType): Boolean; inline;
+  var
+    FT: TKMFieldType;
+  begin
+    FT := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY));
+    if aFieldType = ftNone then
+    begin
+      Result := FT in [ftCorn, ftRoad, ftWine];
+      if Result then
+        aFieldType := FT;
+    end else
+      Result := FT = aFieldType;
+  end;
+
+var
+  I: Integer;
+  HandFilter, FieldTypeFilter: Boolean;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      HandFilter := InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled);
+      FieldTypeFilter := aFieldType in [ftCorn, ftRoad, ftWine];
+
+      if HandFilter and FieldTypeFilter then
+        Result := FindPlan(aPlayer, X, Y, aFieldType)
+      else
+      if HandFilter then
+      begin
+        aFieldType := ftNone;
+        Result := FindPlan(aPlayer, X, Y, aFieldType);
+      end else
+      begin
+        if not FieldTypeFilter then
+          aFieldType := ftNone;
+
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y, aFieldType);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+      end
+    end
+    else
+      LogParamWarning('States.IsPlanAt', [aPlayer, Byte(aFieldType), X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftCorn) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has field plan at the specified location.
+//* If Corn (Field) Plan found then aPlayer will contain its player id
+//* Result: Is field plan found
+function TKMScriptStates.IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftCorn;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsFieldPlanAt', [aPlayer, X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a house plan of the specified type at the specified location.
+//* If aPlayer index is -1 it will return true if any player has house plan of the specified type at the specified location.
+//* If aHouseType is htNone it will return if the specified player has a house plan of the any type at the specified location.
+//* If aPlayer index is -1 and aHouseType is htNone it will return if any player has a house plan of the any type at the specified location.
+//* If house plan found then after execution aPlayer will contain its player id and aHouseType its type
+//* Result: Is house plan found
+function TKMScriptStates.IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word; var aHouseType: TKMHouseType): Boolean; inline;
+  var
+    HT: TKMHouseType;
+  begin
+    Result := gHands[aHandId].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY), HT);
+    if Result then
+    begin
+      if aHouseType = htNone then
+        aHouseType := HT
+      else
+        Result := aHouseType = HT;
+    end;
+  end;
+
+var
+  I: Integer;
+  HandFilter, HTypeFilter: Boolean;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      HandFilter := InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled);
+      HTypeFilter := aHouseType in [HOUSE_MIN..HOUSE_MAX];
+
+      if HandFilter and HTypeFilter then
+        Result := FindPlan(aPlayer, X, Y, aHouseType)
+      else
+      if HandFilter then
+      begin
+        aHouseType := htNone;
+        Result := FindPlan(aPlayer, X, Y, aHouseType);
+      end else
+      begin
+        if not HTypeFilter then
+          aHouseType := htNone;
+
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y, aHouseType);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+      end;
+    end
+    else
+      LogParamWarning('States.IsHousePlanAt', [X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftRoad) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has road plan at the specified location.
+//* If Road plan found then aPlayer will contain its player id
+//* Result: Is road plan found
+function TKMScriptStates.IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftRoad;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsRoadPlanAt', [X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftWine) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has winefield plan at the specified location.
+//* If Winefield Plan found then aPlayer will contain its player id
+//* Result: Is winefield plan found
+function TKMScriptStates.IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftWine;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsWinefieldPlanAt', [X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
