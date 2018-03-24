@@ -19,8 +19,10 @@ type
     procedure Army_Issue_Order(Sender: TObject);
     procedure ShowDismissBtn;
     procedure Unit_Scroll_Click(Sender: TObject);
+    procedure Show_Common(aUnit: TKMUnit);
   protected
     Panel_Unit: TKMPanel;
+      Image_PlayerFlag: TKMImage;
       Label_UnitName: TKMLabel;
       Label_UnitCondition: TKMLabel;
       Label_UnitTask: TKMLabel;
@@ -65,6 +67,7 @@ type
 
 implementation
 uses
+  Math,
   KM_Game, KM_GameInputProcess, KM_HandsCollection, KM_Hand, KM_HandSpectator, KM_InterfaceGame, KM_RenderUI,
   KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResKeys, KM_ResHouses, KM_ResSound, KM_ResCursors, KM_ResUnits, KM_Pics,
   KM_Units_Warrior, KM_Utils, KM_Defaults, KM_Sound, KM_CommonUtils;
@@ -77,6 +80,7 @@ begin
   fSetViewportEvent := aSetViewportEvent;
 
   Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 400);
+    Image_PlayerFlag := TKMImage.Create(Panel_Unit, 0, 19, 20, 13, 1159, rxHouses); // before unit name label
     Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,30,'',fnt_Outline,taCenter);
 
     Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
@@ -184,6 +188,30 @@ begin
 end;
 
 
+procedure TKMGUIGameUnit.Show_Common(aUnit: TKMUnit);
+var
+  HLabelWidth: Integer;
+begin
+  Image_PlayerFlag.FlagColor := gHands[aUnit.Owner].FlagColor;
+  Image_PlayerFlag.Hint      := Format(gResTexts[TX_PLAYER_FLAG_HINT], [gHands[aUnit.Owner].OwnerName]);
+
+  // Common properties
+  Label_UnitName.Caption      := gRes.Units[aUnit.UnitType].GUIName;
+  Image_UnitPic.TexID         := gRes.Units[aUnit.UnitType].GUIScroll;
+  Image_UnitPic.FlagColor     := gHands[aUnit.Owner].FlagColor;
+
+  ConditionBar_Unit.Position  := aUnit.Condition / UNIT_MAX_CONDITION;
+
+  HLabelWidth := gRes.Fonts[fnt_Outline].GetTextSize(Label_UnitName.Caption).X;
+  if HLabelWidth <= TB_WIDTH - 2*Image_PlayerFlag.Width then
+    Label_UnitName.Left := 0
+  else if HLabelWidth <= TB_WIDTH - Image_PlayerFlag.Width then
+    Label_UnitName.Left := Image_PlayerFlag.Width
+  else
+    Label_UnitName.Left := Max(TB_WIDTH - HLabelWidth, 0);
+end;
+
+
 procedure TKMGUIGameUnit.ShowUnitInfo(aUnit: TKMUnit; aAskDismiss: Boolean = False);
 var
   HasSchools: Boolean;
@@ -195,11 +223,8 @@ begin
   Panel_Unit.Show;
 
   // Common properties
-  Label_UnitName.Caption      := gRes.Units[aUnit.UnitType].GUIName;
-  Image_UnitPic.TexID         := gRes.Units[aUnit.UnitType].GUIScroll;
-  Image_UnitPic.FlagColor     := gHands[aUnit.Owner].FlagColor;
+  Show_Common(aUnit);
 
-  ConditionBar_Unit.Position  := aUnit.Condition / UNIT_MAX_CONDITION;
   Label_UnitTask.Caption      := aUnit.GetActivityText;
 
   Button_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN
@@ -243,11 +268,7 @@ begin
   W := Sender.SelectedUnit;
   Panel_Unit.Show;
 
-  // Common properties
-  Label_UnitName.Caption      := gRes.Units[W.UnitType].GUIName;
-  Image_UnitPic.TexID         := gRes.Units[W.UnitType].GUIScroll;
-  Image_UnitPic.FlagColor     := gHands[W.Owner].FlagColor;
-  ConditionBar_Unit.Position  := W.Condition / UNIT_MAX_CONDITION;
+  Show_Common(TKMUnit(W));
 
   // We show what this individual is doing, not the whole group.
   // However this can be useful for debugging: Sender.GetOrderText
