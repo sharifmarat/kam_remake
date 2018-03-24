@@ -172,7 +172,7 @@ uses
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> ht_None); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
 end;
 
 
@@ -554,7 +554,7 @@ begin
     Result := -1;
     HTS := [];
     for B := Low(HouseIndexToType) to High(HouseIndexToType) do
-      if (B in aHouseTypes) and (HouseIndexToType[B] <> ht_None) then
+      if (B in aHouseTypes) and (HouseIndexToType[B] <> htNone) then
         HTS := HTS + [HouseIndexToType[B]];
 
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
@@ -830,7 +830,7 @@ begin
     and (gHands[aPlayer].Enabled) then
     begin
       for B := Low(HouseIndexToType) to High(HouseIndexToType) do
-        if (B in aTypes) and (HouseIndexToType[B] <> ht_None) then
+        if (B in aTypes) and (HouseIndexToType[B] <> htNone) then
           inc(Result, gHands[aPlayer].Stats.GetHouseQty(HouseIndexToType[B]));
     end
     else

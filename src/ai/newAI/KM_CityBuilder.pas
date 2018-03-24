@@ -400,7 +400,7 @@ begin
       if fBuildNodes[I].Active then
         ReqWorkerCnt := ReqWorkerCnt + fBuildNodes[I].RequiredWorkers;
     end;
-  if (gHands[fOwner].Stats.GetHouseQty(ht_Any) > 15) then
+  if (gHands[fOwner].Stats.GetHouseQty(htAny) > 15) then
     aFreeWorkersCnt := Max(aFreeWorkersCnt, Byte(ReqWorkerCnt < 5));
 
   fWorkersPos := WorkersPos;
@@ -713,7 +713,7 @@ begin
         Output := cs_HousePlaced; // Nodes will be updated -> workers will have something to do
         gHands[fOwner].AddHousePlan(aHT, Loc); // Place house
         // Add avoid building for Barracks and Store (road will be build later in shortcut procedure)
-        if ((aHT = ht_Store) OR (aHT = ht_Barracks)) AND (Loc.Y+2 < gTerrain.MapY) then
+        if ((aHT = htStore) OR (aHT = htBarracks)) AND (Loc.Y+2 < gTerrain.MapY) then
           for I := Loc.X-1 to Loc.X+1 do
             gAIFields.Influences.AvoidBuilding[Loc.Y+2, I] := 255;
         // Add road to node
@@ -817,7 +817,7 @@ const
   //ht_WeaponSmithy,   ht_Stables,       ht_FisherHut
 
 
-  BASIC_HOUSES: TSetOfHouseType = [ht_School, ht_Barracks, ht_Inn, ht_MarketPlace, ht_Store];
+  BASIC_HOUSES: TSetOfHouseType = [htSchool, htBarracks, htInn, htMarketplace, htStore];
   //BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   //FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood];
   //WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
@@ -839,7 +839,7 @@ var
     Output := True;
     // Repeat until is avaiable house finded (to unlock target house)
     initHT := aHT;
-    aFollowingHouse := ht_None;
+    aFollowingHouse := htNone;
     while Output AND not gHands[fOwner].Locks.HouseCanBuild(aHT) do
     begin
       aUnlockProcedure := True;
@@ -869,9 +869,9 @@ var
     begin
       MaterialShortage := not aIgnoreWareReserves AND (WoodShortage OR TrunkShortage OR StoneShortage OR GoldShortage);
       //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
-      Output := BuildHouse(UnlockProcedure OR (aHT = ht_Farm) OR MaterialShortage, MaterialShortage, MaterialShortage, aHT); // Farm should be placed outside of forest
+      Output := BuildHouse(UnlockProcedure OR (aHT = htFarm) OR MaterialShortage, MaterialShortage, MaterialShortage, aHT); // Farm should be placed outside of forest
     end
-    else if (FollowingHouse <> ht_none) AND (gHands[fOwner].Stats.GetHouseQty(ht_School) > 0) then // Activate house reservation (only when is first school completed)
+    else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
     begin
       Output := BuildHouse(True, True, False, FollowingHouse);
     end;
@@ -970,11 +970,11 @@ var
 
   procedure CheckHouseReservation();
   const // Reservation sets must be able to unlock specific houses!!!
-    RESERVATION_StoneShortage: TSetOfHouseType = [ht_School, ht_Store, ht_Quary, ht_MarketPlace];
-    RESERVATION_WoodShortage: TSetOfHouseType = [ht_School, ht_MarketPlace, ht_Store, ht_Quary, ht_Woodcutters, ht_Sawmill];
-    RESERVATION_TrunkShortage: TSetOfHouseType = [ht_School, ht_Store, ht_Quary, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_Woodcutters];
-    RESERVATION_GoldShortage: TSetOfHouseType = [ht_School, ht_MarketPlace, ht_Store, ht_Quary, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_Woodcutters, ht_Sawmill];
-    RESERVATION_FullSet: TSetOfHouseType = [ht_ArmorSmithy, ht_ArmorWorkshop, ht_Bakery, ht_Barracks, ht_Butchers, ht_CoalMine, ht_Farm, ht_FisherHut, ht_GoldMine, ht_Inn, ht_IronMine, ht_IronSmithy, ht_Marketplace, ht_Metallurgists, ht_Mill, ht_Quary, ht_Sawmill, ht_School, ht_SiegeWorkshop, ht_Stables, ht_Store, ht_Swine, ht_Tannery, ht_TownHall, ht_WatchTower, ht_WeaponSmithy, ht_WeaponWorkshop, ht_Wineyard, ht_Woodcutters];
+    RESERVATION_StoneShortage: TSetOfHouseType = [htSchool, htStore, htQuary, htMarketplace];
+    RESERVATION_WoodShortage: TSetOfHouseType = [htSchool, htMarketplace, htStore, htQuary, htWoodcutters, htSawmill];
+    RESERVATION_TrunkShortage: TSetOfHouseType = [htSchool, htStore, htQuary, htGoldMine, htCoalMine, htMetallurgists, htWoodcutters];
+    RESERVATION_GoldShortage: TSetOfHouseType = [htSchool, htMarketplace, htStore, htQuary, htGoldMine, htCoalMine, htMetallurgists, htWoodcutters, htSawmill];
+    RESERVATION_FullSet: TSetOfHouseType = [htArmorSmithy, htArmorWorkshop, htBakery, htBarracks, htButchers, htCoalMine, htFarm, htFisherHut, htGoldMine, htInn, htIronMine, htIronSmithy, htMarketplace, htMetallurgists, htMill, htQuary, htSawmill, htSchool, htSiegeWorkshop, htStables, htStore, htSwine, htTannery, htTownHall, htWatchTower, htWeaponSmithy, htWeaponWorkshop, htWineyard, htWoodcutters];
   var
     I: Integer;
     HT: TKMHouseType;
@@ -1007,8 +1007,8 @@ var
     I: Integer;
   begin
     Result := 0;
-    for I := 0 to fPlanner.PlannedHouses[ht_Woodcutters].Count - 1 do
-      if fPlanner.PlannedHouses[ht_Woodcutters].Plans[I].ChopOnly then
+    for I := 0 to fPlanner.PlannedHouses[htWoodcutters].Count - 1 do
+      if fPlanner.PlannedHouses[htWoodcutters].Plans[I].ChopOnly then
         Result := Result + 1;
   end;
 
@@ -1053,12 +1053,12 @@ begin
     fPlanner.FindForestAround(KMPOINT_ZERO, True);
 
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
-  HT := ht_Woodcutters;
+  HT := htWoodcutters;
   if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
   begin
     MaxPlans := MaxPlans - 1;
-    RequiredHouses[ht_Woodcutters] := 0;
+    RequiredHouses[htWoodcutters] := 0;
   end;
 
 
@@ -1079,7 +1079,7 @@ begin
   if (MaxPlans <= 0) then
     Exit;
 
-  HT := ht_WatchTower;
+  HT := htWatchTower;
   if (not Planner.DefenceTowersPlanned OR (gHands[fOwner].Stats.GetHouseTotal(HT) < Planner.PlannedHouses[HT].Count))
     AND (aTick + BUILD_TOWER_DELAY > gGame.GameOptions.Peacetime * 600)
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
@@ -1109,35 +1109,35 @@ const
   MAX_DISTANCE_TO_ALL_HOUSES = 8;
   MAX_WORKERS_FOR_NODE = 4;
   HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (
-    {ht_ArmorSmithy}    [ ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ],
-    {ht_ArmorWorkshop}  [ ht_Tannery,       ht_Barracks                     ],
-    {ht_Bakery}         [ ht_Inn,           ht_Store,        ht_Mill        ],
-    {ht_Barracks}       [ ht_School                                         ],
-    {ht_Butchers}       [ ht_Inn,           ht_Store,        ht_Swine       ],
-    {ht_CoalMine}       [ ht_None                                           ],
-    {ht_Farm}           [ ht_None                                           ],
-    {ht_FisherHut}      [ ht_None                                           ],
-    {ht_GoldMine}       [ ht_Metallurgists                                  ],
-    {ht_Inn}            [ ht_Store,         ht_Inn                          ],
-    {ht_IronMine}       [ ht_IronSmithy                                     ],
-    {ht_IronSmithy}     [ ht_CoalMine,      ht_WeaponSmithy, ht_ArmorSmithy ],
-    {ht_Marketplace}    [ ht_Store                                          ],
-    {ht_Metallurgists}  [ ht_School,        ht_GoldMine,     ht_CoalMine    ],
-    {ht_Mill}           [ ht_Farm,          ht_Bakery                       ],
-    {ht_Quary}          [ ht_Store                                          ],
-    {ht_Sawmill}        [ ht_ArmorWorkshop, ht_Store                        ],
-    {ht_School}         [ ht_Metallurgists, ht_Store,        ht_Barracks    ],
-    {ht_SiegeWorkshop}  [ ht_IronSmithy,    ht_Sawmill,      ht_Store       ],
-    {ht_Stables}        [ ht_Farm,          ht_Barracks                     ],
-    {ht_Store}          [ ht_Inn,           ht_Barracks,     ht_School      ],
-    {ht_Swine}          [ ht_Farm,          ht_Butchers                     ],
-    {ht_Tannery}        [ ht_ArmorWorkshop, ht_Swine                        ],
-    {ht_TownHall}       [ ht_Metallurgists, ht_Store                        ],
-    {ht_WatchTower}     [ ht_None                                           ],
-    {ht_WeaponSmithy}   [ ht_IronSmithy,    ht_CoalMine,     ht_Barracks    ],
-    {ht_WeaponWorkshop} [ ht_Sawmill,       ht_Barracks                     ],
-    {ht_Wineyard}       [ ht_Inn                                            ],
-    {ht_Woodcutters}    [ ht_None                                           ]
+    {ht_ArmorSmithy}    [ htIronSmithy,    htCoalMine,     htBarracks    ],
+    {ht_ArmorWorkshop}  [ htTannery,       htBarracks                     ],
+    {ht_Bakery}         [ htInn,           htStore,        htMill        ],
+    {ht_Barracks}       [ htSchool                                         ],
+    {ht_Butchers}       [ htInn,           htStore,        htSwine       ],
+    {ht_CoalMine}       [ htNone                                           ],
+    {ht_Farm}           [ htNone                                           ],
+    {ht_FisherHut}      [ htNone                                           ],
+    {ht_GoldMine}       [ htMetallurgists                                  ],
+    {ht_Inn}            [ htStore,         htInn                          ],
+    {ht_IronMine}       [ htIronSmithy                                     ],
+    {ht_IronSmithy}     [ htCoalMine,      htWeaponSmithy, htArmorSmithy ],
+    {ht_Marketplace}    [ htStore                                          ],
+    {ht_Metallurgists}  [ htSchool,        htGoldMine,     htCoalMine    ],
+    {ht_Mill}           [ htFarm,          htBakery                       ],
+    {ht_Quary}          [ htStore                                          ],
+    {ht_Sawmill}        [ htArmorWorkshop, htStore                        ],
+    {ht_School}         [ htMetallurgists, htStore,        htBarracks    ],
+    {ht_SiegeWorkshop}  [ htIronSmithy,    htSawmill,      htStore       ],
+    {ht_Stables}        [ htFarm,          htBarracks                     ],
+    {ht_Store}          [ htInn,           htBarracks,     htSchool      ],
+    {ht_Swine}          [ htFarm,          htButchers                     ],
+    {ht_Tannery}        [ htArmorWorkshop, htSwine                        ],
+    {ht_TownHall}       [ htMetallurgists, htStore                        ],
+    {ht_WatchTower}     [ htNone                                           ],
+    {ht_WeaponSmithy}   [ htIronSmithy,    htCoalMine,     htBarracks    ],
+    {ht_WeaponWorkshop} [ htSawmill,       htBarracks                     ],
+    {ht_Wineyard}       [ htInn                                            ],
+    {ht_Woodcutters}    [ htNone                                           ]
   );
 
   function FindAndMarkNewHouse(var aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
@@ -1148,7 +1148,7 @@ const
     Result := True;
     for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
     begin
-      if (HT = ht_Woodcutters) then
+      if (HT = htWoodcutters) then
         continue;
       with fPlanner.PlannedHouses[HT] do
         for I := 0 to Count - 1 do
@@ -1232,7 +1232,7 @@ begin
     Exit;
 
   // Special case for entrance of Store and Barrack
-  if (BaseHT = ht_Store) OR (BaseHT = ht_Barracks) then
+  if (BaseHT = htStore) OR (BaseHT = htBarracks) then
     if (BaseLoc.Y < gTerrain.MapY - 1) then
       for I := BaseLoc.X-1 to BaseLoc.X+1 do
       begin
@@ -1244,12 +1244,12 @@ begin
   // Find houses which should be connected
   PlannedHouses := fPlanner.PlannedHouses;
   Locs := TKMPointTagList.Create();
-  HT := ht_None; // For compiler
+  HT := htNone; // For compiler
   try
     // Create basic connection to houses which are part of specific distribution network
     for HT in HOUSE_CONNECTION[BaseHT] do
     begin
-      if (HT = ht_None) then
+      if (HT = htNone) then
         break;
 
       Locs.Clear();
@@ -1262,10 +1262,10 @@ begin
 
     // Create additional shortcuts to closest houses
     Locs.Clear();
-    if (HT <> ht_None) then
+    if (HT <> htNone) then
       for HT := Low(PlannedHouses) to High(PlannedHouses) do
       begin
-        if (HT = ht_Woodcutters) then
+        if (HT = htWoodcutters) then
           continue;
         for I := 0 to PlannedHouses[HT].Count - 1 do
           with PlannedHouses[HT].Plans[I] do

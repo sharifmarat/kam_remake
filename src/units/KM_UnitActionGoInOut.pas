@@ -241,7 +241,7 @@ begin
   gTerrain.UnitAdd(fUnit.NextPosition, fUnit); //Unit was not occupying tile while inside
 
   if (fUnit.GetHome <> nil)
-  and (fUnit.GetHome.HouseType = ht_Barracks) //Unit home is barracks
+  and (fUnit.GetHome.HouseType = htBarracks) //Unit home is barracks
   and (fUnit.GetHome = fHouse) then //And is the house we are walking from
     TKMHouseBarracks(fHouse).RecruitsRemove(fUnit);
 
@@ -359,7 +359,7 @@ begin
       fUnit.PositionF := KMPointF(fDoor);
       if (fUnit.GetHome <> nil)
       and (fUnit.GetHome = fHouse)
-      and (fUnit.GetHome.HouseType = ht_Barracks) //Unit home is barracks
+      and (fUnit.GetHome.HouseType = htBarracks) //Unit home is barracks
       and not fUnit.GetHome.IsDestroyed then //And is the house we are walking into and it's not destroyed
         TKMHouseBarracks(fUnit.GetHome).RecruitsAdd(fUnit); //Add the recruit once it is inside, otherwise it can be equipped while still walking in!
       //Set us as inside even if the house is destroyed. In that case UpdateVisibility will sort things out.
@@ -368,7 +368,7 @@ begin
       //(this might happen when he walks home or when mining is done)
       if (fUnit.UnitType = ut_Woodcutter)
       and (fUnit.GetHome <> nil)
-      and (fUnit.GetHome.HouseType = ht_Woodcutters)
+      and (fUnit.GetHome.HouseType = htWoodcutters)
       and (fUnit.GetHome = fHouse) then //And is the house we are walking from
         fHouse.CurrentAction.SubActionAdd([ha_Flagpole]);
 

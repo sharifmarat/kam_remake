@@ -250,7 +250,7 @@ begin
 
   //Now we need to fill only specific properties
   case aUnit.UnitType of
-    ut_Woodcutter:    if aHome = ht_Woodcutters then
+    ut_Woodcutter:    if aHome = htWoodcutters then
                       begin
                         HW := TKMHouseWoodcutters(aUnit.GetHome);
                         HW.ValidateFlagPoint; //Validate Cutting point. It will be set to a valid one if needed.
@@ -280,7 +280,7 @@ begin
                                         ResourceDepleted := True;   //No place for trees to plant
                           end;
                       end;
-    ut_Miner:         if aHome = ht_CoalMine then
+    ut_Miner:         if aHome = htCoalMine then
                       begin
                         fIssued := gTerrain.FindOre(aLoc, wt_Coal, Tmp.Loc);
                         if fIssued then
@@ -294,7 +294,7 @@ begin
                         end else
                           ResourceDepleted := True;
                       end else
-                      if aHome = ht_IronMine then
+                      if aHome = htIronMine then
                       begin
                         fIssued := gTerrain.FindOre(aLoc, wt_IronOre, Tmp.Loc);
                         if fIssued then
@@ -308,7 +308,7 @@ begin
                         end else
                           ResourceDepleted := True;
                       end else
-                      if aHome = ht_GoldMine then
+                      if aHome = htGoldMine then
                       begin
                         fIssued := gTerrain.FindOre(aLoc, wt_GoldOre, Tmp.Loc);
                         if fIssued then
@@ -322,7 +322,7 @@ begin
                         end else
                           ResourceDepleted := True;
                       end;
-    ut_AnimalBreeder: if aHome = ht_Swine then
+    ut_AnimalBreeder: if aHome = htSwine then
                       begin
                         ResourcePlan(wt_Corn,1,wt_None,0,wt_Pig,wt_Skin);
                         GatheringScript := gs_SwineBreeder;
@@ -335,7 +335,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if aHome = ht_Stables then
+                      if aHome = htStables then
                       begin
                         ResourcePlan(wt_Corn,1,wt_None,0,wt_Horse);
                         GatheringScript := gs_HorseBreeder;
@@ -346,7 +346,7 @@ begin
                         SubActAdd(ha_Work5,1);
                         fIssued := True;
                       end;
-    ut_Farmer:        if aHome = ht_Farm then
+    ut_Farmer:        if aHome = htFarm then
                       begin
                         fIssued := gTerrain.FindCornField(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, aPlantAct, PlantAct, Tmp);
                         if fIssued then
@@ -360,7 +360,7 @@ begin
                           end;
                       end else
 
-                      if aHome = ht_Wineyard then
+                      if aHome = htWineyard then
                       begin
                         fIssued := gTerrain.FindWineField(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, Tmp);
                         if fIssued then
@@ -372,7 +372,7 @@ begin
                           SubActAdd(ha_Work5,1);
                         end;
                       end;
-    ut_Lamberjack:    if aHome = ht_Sawmill then
+    ut_Lamberjack:    if aHome = htSawmill then
                       begin
                         ResourcePlan(wt_Trunk,1,wt_None,0,wt_Wood);
                         SubActAdd(ha_Work1,1);
@@ -381,7 +381,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_ArmorWorkshop) and (aProduct = wt_Armor) then
+                      if (aHome = htArmorWorkshop) and (aProduct = wt_Armor) then
                       begin
                         ResourcePlan(wt_Leather,1,wt_None,0,wt_Armor);
                         for I := 0 to 3 do
@@ -394,7 +394,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_ArmorWorkshop) and (aProduct = wt_Shield) then
+                      if (aHome = htArmorWorkshop) and (aProduct = wt_Shield) then
                       begin
                         ResourcePlan(wt_Wood,1,wt_None,0,wt_Shield);
                         for I := 0 to 3 do
@@ -407,7 +407,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponWorkshop) and (aProduct = wt_Axe) then
+                      if (aHome = htWeaponWorkshop) and (aProduct = wt_Axe) then
                       begin
                         ResourcePlan(wt_Wood,2,wt_None,0,wt_Axe);
                         SubActAdd(ha_Work1,1);
@@ -421,7 +421,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponWorkshop) and (aProduct = wt_Pike) then
+                      if (aHome = htWeaponWorkshop) and (aProduct = wt_Pike) then
                       begin
                         ResourcePlan(wt_Wood,2,wt_None,0,wt_Pike);
                         SubActAdd(ha_Work1,1);
@@ -435,7 +435,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponWorkshop) and (aProduct = wt_Bow) then
+                      if (aHome = htWeaponWorkshop) and (aProduct = wt_Bow) then
                       begin
                         ResourcePlan(wt_Wood,2,wt_None,0,wt_Bow);
                         SubActAdd(ha_Work1,1);
@@ -448,14 +448,14 @@ begin
                         SubActAdd(ha_Work5,1);
                         fIssued := True;
                       end;
-    ut_Baker:         if aHome = ht_Mill then
+    ut_Baker:         if aHome = htMill then
                       begin
                         ResourcePlan(wt_Corn,1,wt_None,0,wt_Flour);
                         SubActAdd(ha_Work2,47);
                         fIssued := True;
                       end else
 
-                      if aHome = ht_Bakery then
+                      if aHome = htBakery then
                       begin
                         ResourcePlan(wt_Flour,1,wt_None,0,wt_Bread);
                         for I := 0 to 6 do
@@ -465,7 +465,7 @@ begin
                         end;
                         fIssued := True;
                       end;
-    ut_Butcher:       if aHome = ht_Tannery then
+    ut_Butcher:       if aHome = htTannery then
                       begin
                         ResourcePlan(wt_Skin,1,wt_None,0,wt_Leather);
                         SubActAdd(ha_Work1,1);
@@ -473,7 +473,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if aHome = ht_Butchers then
+                      if aHome = htButchers then
                       begin
                         ResourcePlan(wt_Pig,1,wt_None,0,wt_Sausages);
                         SubActAdd(ha_Work1,1);
@@ -485,7 +485,7 @@ begin
                         end;
                         fIssued := True;
                       end;
-    ut_Fisher:        if aHome = ht_FisherHut then
+    ut_Fisher:        if aHome = htFisherHut then
                       begin
                         fIssued := gTerrain.FindFishWater(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, False, Tmp);
                         if fIssued then
@@ -496,7 +496,7 @@ begin
                           //We must check again this time ignoring working units since they don't indicate the resource is depleted
                           ResourceDepleted := not gTerrain.FindFishWater(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, True, Tmp);
                       end;
-    ut_StoneCutter:   if aHome = ht_Quary then
+    ut_StoneCutter:   if aHome = htQuary then
                       begin
                         fIssued := gTerrain.FindStone(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, False, Tmp);
                         if fIssued then
@@ -510,7 +510,7 @@ begin
                           //We must check again this time ignoring working units since they don't indicate the resource is depleted
                           ResourceDepleted := not gTerrain.FindStone(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, True, Tmp);
                       end;
-    ut_Smith:         if (aHome = ht_ArmorSmithy) and (aProduct = wt_MetalShield) then
+    ut_Smith:         if (aHome = htArmorSmithy) and (aProduct = wt_MetalShield) then
                       begin
                         ResourcePlan(wt_Steel,1,wt_Coal,1,wt_MetalShield);
                         for I := 0 to 3 do
@@ -524,7 +524,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_ArmorSmithy) and (aProduct = wt_MetalArmor) then
+                      if (aHome = htArmorSmithy) and (aProduct = wt_MetalArmor) then
                       begin
                         ResourcePlan(wt_Steel,1,wt_Coal,1,wt_MetalArmor);
                         for I := 0 to 3 do
@@ -538,7 +538,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponSmithy) and (aProduct = wt_Sword) then
+                      if (aHome = htWeaponSmithy) and (aProduct = wt_Sword) then
                       begin
                         ResourcePlan(wt_Steel,1,wt_Coal,1,wt_Sword);
                         SubActAdd(ha_Work1,1);
@@ -552,7 +552,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponSmithy) and (aProduct = wt_Hallebard) then
+                      if (aHome = htWeaponSmithy) and (aProduct = wt_Hallebard) then
                       begin
                         ResourcePlan(wt_Steel,1,wt_Coal,1,wt_Hallebard);
                         SubActAdd(ha_Work1,1);
@@ -566,7 +566,7 @@ begin
                         fIssued := True;
                       end else
 
-                      if (aHome = ht_WeaponSmithy) and (aProduct = wt_Arbalet) then
+                      if (aHome = htWeaponSmithy) and (aProduct = wt_Arbalet) then
                       begin
                         ResourcePlan(wt_Steel,1,wt_Coal,1,wt_Arbalet);
                         SubActAdd(ha_Work1,1);
@@ -579,7 +579,7 @@ begin
                         SubActAdd(ha_Work5,1);
                         fIssued := True;
                       end;
-    ut_Metallurgist:  if aHome = ht_IronSmithy then
+    ut_Metallurgist:  if aHome = htIronSmithy then
                       begin
                         ResourcePlan(wt_IronOre,1,wt_Coal,1,wt_Steel);
                         for I := 0 to 3 do
@@ -591,7 +591,7 @@ begin
                         SubActAdd(ha_Work3,0.25);
                         fIssued := True;
                       end else
-                      if aHome = ht_Metallurgists then
+                      if aHome = htMetallurgists then
                       begin
                         ResourcePlan(wt_GoldOre,1,wt_Coal,1,wt_Gold);
                         for I := 0 to 3 do

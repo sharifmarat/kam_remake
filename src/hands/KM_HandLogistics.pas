@@ -635,12 +635,12 @@ begin
 
       //Gold to Schools
       if (Ware = wt_Gold)
-        and (Loc_House <> nil) and (Loc_House.HouseType = ht_School) then
+        and (Loc_House <> nil) and (Loc_House.HouseType = htSchool) then
         Importance := diHigh1;
 
       //Food to Inn
       if (Ware in [wt_Bread, wt_Sausages, wt_Wine, wt_Fish])
-        and (Loc_House <> nil) and (Loc_House.HouseType = ht_Inn) then
+        and (Loc_House <> nil) and (Loc_House.HouseType = htInn) then
         Importance := diHigh3;
     end;
   end;
@@ -671,17 +671,17 @@ begin
 
   //If Demand is a ArmorWorkshop and it accepts current ware delivery
   Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> ht_ArmorWorkshop) or
+                        (fDemand[iD].Loc_House.HouseType <> htArmorWorkshop) or
                         (TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fOffer[iO].Ware)));
 
   //If Demand is TownHall and its max gold count value > gold count value
   Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> ht_TownHall) or
+                        (fDemand[iD].Loc_House.HouseType <> htTownHall) or
                         (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt));
 
   //If Demand is a Storehouse and it has WareDelivery toggled ON
   Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> ht_Store) or
+                        (fDemand[iD].Loc_House.HouseType <> htStore) or
                         (not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware]));
 
   //Warfare has a preference to be delivered to Barracks
@@ -690,18 +690,18 @@ begin
     and (fDemand[iD].Loc_House <> nil) then
   begin
     //If Demand is a Barracks and it has WareDelivery toggled OFF
-    if (fDemand[iD].Loc_House.HouseType = ht_Barracks)
+    if (fDemand[iD].Loc_House.HouseType = htBarracks)
     and TKMHouseBarracks(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware] then
       Result := False;
 
     //Permit delivery of warfares to Store only if player has no Barracks or they all have blocked ware
     if (fDemand[iD].Loc_House <> nil)
-      and (fDemand[iD].Loc_House.HouseType = ht_Store) then
+      and (fDemand[iD].Loc_House.HouseType = htStore) then
     begin
       //Scan through players Barracks, if none accepts - allow deliver to Store
       I := 1;
       repeat
-        B := TKMHouseBarracks(gHands[fDemand[iD].Loc_House.Owner].FindHouse(ht_Barracks, I));
+        B := TKMHouseBarracks(gHands[fDemand[iD].Loc_House.Owner].FindHouse(htBarracks, I));
         //If the barracks will take the ware, don't allow the store to take it (disallow current delivery)
         if (B <> nil) and (B.DeliveryMode = dm_Delivery) and not B.NotAcceptFlag[fOffer[iO].Ware] then
         begin
@@ -715,17 +715,17 @@ begin
 
   //If Demand and Offer are different HouseTypes, means forbid Store<->Store deliveries except the case where 2nd store is being built and requires building materials
   Result := Result and ((fDemand[iD].Loc_House = nil)
-                        or not ((fOffer[iO].Loc_House.HouseType = ht_Store) and (fDemand[iD].Loc_House.HouseType = ht_Store))
+                        or not ((fOffer[iO].Loc_House.HouseType = htStore) and (fDemand[iD].Loc_House.HouseType = htStore))
                         or (fOffer[iO].Loc_House.IsComplete <> fDemand[iD].Loc_House.IsComplete));
 
   //Do not allow transfers between Barracks (for now)
   Result := Result and ((fDemand[iD].Loc_House = nil)
-                        or not ((fOffer[iO].Loc_House.HouseType = ht_Barracks) and (fDemand[iD].Loc_House.HouseType = ht_Barracks)));
+                        or not ((fOffer[iO].Loc_House.HouseType = htBarracks) and (fDemand[iD].Loc_House.HouseType = htBarracks)));
 
   //Do not permit Barracks -> Store deliveries
   Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> ht_Store) or
-                        (fOffer[iO].Loc_House.HouseType <> ht_Barracks));
+                        (fDemand[iD].Loc_House.HouseType <> htStore) or
+                        (fOffer[iO].Loc_House.HouseType <> htBarracks));
 
   Result := Result and (
             ( //House-House delivery should be performed only if there's a connecting road
@@ -1002,7 +1002,7 @@ begin
     aBidBasicValue := aBidBasicValue + KaMRandom(5);
 
   if (fDemand[iD].Ware = wt_All)        // Always prefer deliveries House>House instead of House>Store
-    or ((aOfferHouseType = ht_Store)    // Prefer taking wares from House rather than Store...
+    or ((aOfferHouseType = htStore)    // Prefer taking wares from House rather than Store...
     and (fDemand[iD].Ware <> wt_Warfare)) then //...except weapons Store>Barracks, that is also prefered
     aBidBasicValue := aBidBasicValue + 1000;
 
@@ -1025,11 +1025,11 @@ begin
   if (fDemand[iD].Loc_House <> nil) //Prefer delivering to houses with fewer supply
     and (fDemand[iD].Ware <> wt_All)
     and (fDemand[iD].Ware <> wt_Warfare) //Except Barracks and Store, where supply doesn't matter or matter less
-    and (fDemand[iD].Loc_House.HouseType <> ht_TownHall) then //Except TownHall as well, where supply doesn't matter or matter less
+    and (fDemand[iD].Loc_House.HouseType <> htTownHall) then //Except TownHall as well, where supply doesn't matter or matter less
     aBidValue := aBidValue + 20 * fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware);
 
   if (fDemand[iD].Loc_House <> nil)
-    and (fDemand[iD].Loc_House.HouseType = ht_TownHall) then
+    and (fDemand[iD].Loc_House.HouseType = htTownHall) then
   begin
     //Delivering gold to TH - if there are already more then 300 gold, then make this delivery very low priority
     if (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 300) then
@@ -1042,8 +1042,8 @@ begin
   //In some missions the storehouse has vast amounts of weapons, and we don't want the serfs to spend the whole game moving these.
   //In KaM, if the barracks has >200 weapons the serfs will stop delivering from the storehouse. I think our solution is better.
   if (fDemand[iD].Loc_House <> nil)
-    and (fDemand[iD].Loc_House.HouseType = ht_Barracks)
-    and (fOffer[iO].Loc_House.HouseType = ht_Store)
+    and (fDemand[iD].Loc_House.HouseType = htBarracks)
+    and (fOffer[iO].Loc_House.HouseType = htStore)
     and (fDemand[iD].Loc_House.CheckResIn(fOffer[iO].Ware) > 50) then
     aBidValue := aBidValue + 10000;
 
@@ -1171,7 +1171,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
         and (iD <> fQueue[aDeliveryId].DemandID)
         and (fDemand[iD].Importance >= BestImportance)
         and ValidBestDemand(iD)
-        and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid)
+        and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid)
         and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then //Calc bid to find the best demand
       begin
         Result := iD;
@@ -1187,7 +1187,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
           and (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
           and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
-          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;
@@ -1199,7 +1199,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wt_All)
           and not fDemand[iD].Loc_House.IsDestroyed //choose between all storages, including current delivery. But not destroyed
-          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, ht_None, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;

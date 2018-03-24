@@ -203,7 +203,7 @@ begin
   if gGame.IsPeaceTime
     OR ((fSetup.MaxSoldiers <> -1) AND (gHands[fOwner].Stats.GetArmyCount >= fSetup.MaxSoldiers))
     OR (not CanEquipIron AND not CanEquipLeather)
-    OR (gHands[fOwner].Stats.GetHouseQty(ht_Barracks) = 0)
+    OR (gHands[fOwner].Stats.GetHouseQty(htBarracks) = 0)
     OR (fDefence.Count = 0) then
     Exit;
 
@@ -230,14 +230,14 @@ begin
     Exit;
 
   //Find barracks
-  SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(ht_Barracks));
+  SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));
   for I := 0 to Length(Barracks) - 1 do
     Barracks[I] := nil; // Just to be sure
   K := 0;
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
-    if (H.HouseType = ht_Barracks) AND not H.IsDestroyed AND H.IsComplete then
+    if (H.HouseType = htBarracks) AND not H.IsDestroyed AND H.IsComplete then
     begin
       Barracks[K] := TKMHouseBarracks(H);
       Inc(K);

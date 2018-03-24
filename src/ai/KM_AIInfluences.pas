@@ -253,11 +253,11 @@ procedure TKMInfluences.InitAvoidBuilding();
   begin
     for Y := Max(1,aY-3) to Min(fMapY-1,aY-1) do
     for X := Max(1,aX-1) to Min(fMapX-1,aX+1) do
-      if   ((aHT = ht_IronMine) AND (gTerrain.TileIsIron(X,Y) > 1))
-        OR ((aHT = ht_GoldMine) AND (gTerrain.TileIsGold(X,Y) > 1)) then
+      if   ((aHT = htIronMine) AND (gTerrain.TileIsIron(X,Y) > 1))
+        OR ((aHT = htGoldMine) AND (gTerrain.TileIsGold(X,Y) > 1)) then
       begin
         for Y2 := aY to Min(fMapY-1,aY+1) do
-        for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = ht_IronMine)) do
+        for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = htIronMine)) do
           AvoidBuilding[Y2, X2] := $FF;
         Exit;
       end;
@@ -273,10 +273,10 @@ begin
   //Avoid areas where Gold/Iron mines should be
   for Y := 3 to fMapY - 2 do
   for X := 2 to fMapX - 2 do
-    if gTerrain.CanPlaceHouse(KMPoint(X,Y), ht_IronMine) then
-      CheckAndMarkMine(X,Y, ht_IronMine)
-    else if gTerrain.CanPlaceHouse(KMPoint(X,Y), ht_GoldMine) then
-      CheckAndMarkMine(X,Y, ht_GoldMine);
+    if gTerrain.CanPlaceHouse(KMPoint(X,Y), htIronMine) then
+      CheckAndMarkMine(X,Y, htIronMine)
+    else if gTerrain.CanPlaceHouse(KMPoint(X,Y), htGoldMine) then
+      CheckAndMarkMine(X,Y, htGoldMine);
 
   //Avoid Coal fields
   for Y := 1 to fMapY - 1 do
@@ -286,7 +286,7 @@ begin
   //Leave free space BELOW all players Stores
   for I := 0 to gHands.Count - 1 do
   begin
-    H := gHands[I].FindHouse(ht_Store);
+    H := gHands[I].FindHouse(htStore);
     if (H <> nil) then
     for Y := Max(H.Entrance.Y + 1, 1) to Min(H.Entrance.Y + 2, fMapY - 1) do
     for X := Max(H.Entrance.X - 1, 1) to Min(H.Entrance.X + 1, fMapX - 1) do
@@ -522,7 +522,7 @@ begin
   for I := 0 to gHands[aPL].Houses.Count - 1 do
   begin
     H := gHands[aPL].Houses[I];
-    if not H.IsDestroyed AND (H.HouseType <> ht_WatchTower) AND (H.HouseType <> ht_Woodcutters) then
+    if not H.IsDestroyed AND (H.HouseType <> htWatchTower) AND (H.HouseType <> htWoodcutters) then
     begin
         IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.GetPosition ];
         Cnt := Cnt + 1;

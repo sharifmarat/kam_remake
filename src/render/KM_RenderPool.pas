@@ -758,7 +758,7 @@ begin
 
     // Need to swap Coal and Steel for the ArmorSmithy
     // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
-    if (aHouse = ht_ArmorSmithy) and (I in [1,2]) then
+    if (aHouse = htArmorSmithy) and (I in [1,2]) then
       I2 := 3-I;
 
     Id := gRes.Houses[aHouse].SupplyIn[I2, Count] + 1;
@@ -774,7 +774,7 @@ begin
 
         // Need to swap Shields and Armor for the ArmorSmithy
         // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
-        if (aHouse = ht_ArmorSmithy) and (I2 in [1,2]) then
+        if (aHouse = htArmorSmithy) and (I2 in [1,2]) then
           I2 := 3-R3[K];
 
         Id := gRes.Houses[aHouse].SupplyOut[I2, K mod MAX_WARES_IN_HOUSE + 1] + 1;
@@ -802,7 +802,7 @@ var
 begin
   if ResType = wt_Horse then // Horses are a beast, BeastId is the count, age is 1
     for i:=1 to Min(ResCount, MarketWares[ResType].Count) do // Render each beast
-      AddHouseStableBeasts(ht_Marketplace, Loc, i, 1, AnimStep, rxHouses)
+      AddHouseStableBeasts(htMarketplace, Loc, i, 1, AnimStep, rxHouses)
   else
   begin
     if MarketWares[ResType].Count = 0 then exit;

@@ -217,7 +217,7 @@ begin
     Button_Barracks_RallyPoint := TKMButtonFlat.Create(Panel_HouseBarracks, 0, 8, TB_WIDTH, 22, 0);
     Button_Barracks_RallyPoint.CapOffsetY := -11;
     Button_Barracks_RallyPoint.Caption := gResTexts[TX_HOUSES_RALLY_POINT];
-    Button_Barracks_RallyPoint.Hint := Format(gResTexts[TX_MAPED_RALLY_POINT_HINT], [gRes.Houses[ht_TownHall].HouseName]);;
+    Button_Barracks_RallyPoint.Hint := Format(gResTexts[TX_MAPED_RALLY_POINT_HINT], [gRes.Houses[htTownHall].HouseName]);;
     Button_Barracks_RallyPoint.OnClick := SetRallyPointClick;
 
     for I := 1 to BARRACKS_RES_COUNT do
@@ -263,7 +263,7 @@ begin
     Button_TownHall_RallyPoint := TKMButtonFlat.Create(Panel_HouseTownHall, 0, 8, TB_WIDTH, 22, 0);
     Button_TownHall_RallyPoint.CapOffsetY := -11;
     Button_TownHall_RallyPoint.Caption := gResTexts[TX_HOUSES_RALLY_POINT];
-    Button_TownHall_RallyPoint.Hint := Format(gResTexts[TX_MAPED_RALLY_POINT_HINT], [gRes.Houses[ht_Barracks].HouseName]);
+    Button_TownHall_RallyPoint.Hint := Format(gResTexts[TX_MAPED_RALLY_POINT_HINT], [gRes.Houses[htBarracks].HouseName]);
     Button_TownHall_RallyPoint.OnClick := SetRallyPointClick;
 
     WaresRow_TH_Gold_Input := TKMWareOrderRow.Create(Panel_HouseTownHall, 0, 34, TB_WIDTH, TH_MAX_GOLDMAX_VALUE);
@@ -291,9 +291,9 @@ procedure TKMMapEdHouse.UpdateState;
 begin
   if Visible then
     case fHouse.HouseType of
-      ht_Barracks:    Button_Barracks_RallyPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
-      ht_TownHall:    Button_TownHall_RallyPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
-      ht_Woodcutters: Button_Woodcutters_CuttingPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
+      htBarracks:    Button_Barracks_RallyPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
+      htTownHall:    Button_TownHall_RallyPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
+      htWoodcutters: Button_Woodcutters_CuttingPoint.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT);
     end;
 end;
 
@@ -387,7 +387,7 @@ begin
   KMHealthBar_House.Caption := IntToStr(Round(fHouse.GetHealth)) + '/' + IntToStr(HouseDat.MaxHealth);
   KMHealthBar_House.Position := fHouse.GetHealth / HouseDat.MaxHealth;
 
-  if fHouse.HouseType <> ht_TownHall then //Do not show common resources input/output for TownHall
+  if fHouse.HouseType <> htTownHall then //Do not show common resources input/output for TownHall
     ShowCommonResources
   else
     HideAllCommonResources;
@@ -395,13 +395,13 @@ begin
   House_RefreshCommon;
 
   case fHouse.HouseType of
-    ht_Store:       begin
+    htStore:       begin
                       Panel_HouseStore.Show;
                       StoreRefresh;
                       //Reselect the ware so the display is updated
                       StoreSelectWare(Button_Store[fStorehouseItem]);
                     end;
-    ht_Barracks:   begin
+    htBarracks:   begin
                       Panel_HouseBarracks.Show;
                       BarracksRefresh;
                       //In the barrack the recruit icon is always enabled
@@ -415,11 +415,11 @@ begin
                       else
                         BarracksSelectWare(Button_Barracks[fBarracksItem]);
                     end;
-    ht_TownHall:    begin
+    htTownHall:    begin
                       Panel_HouseTownHall.Show;
                       TownHallRefresh;
                     end;
-    ht_Woodcutters: begin
+    htWoodcutters: begin
                       Panel_HouseWoodcutters.Show;
                       WoodcuttersRefresh;
                     end;

@@ -208,14 +208,14 @@ begin
       if (VisitArr[Y,X] = 0) then
       begin
         Loc := KMPoint(X,Y);
-        if CanAddHousePlan(Loc, ht_GoldMine, True, False) then
+        if CanAddHousePlan(Loc, htGoldMine, True, False) then
         begin
-          if CheckResourcesNearMine(Loc, ht_GoldMine) then
+          if CheckResourcesNearMine(Loc, htGoldMine) then
             fGoldMines.Add(Loc);
         end
-        else if CanAddHousePlan(Loc, ht_IronMine, True, False) then
+        else if CanAddHousePlan(Loc, htIronMine, True, False) then
         begin
-          if CheckResourcesNearMine(Loc, ht_IronMine) then
+          if CheckResourcesNearMine(Loc, htIronMine) then
             fIronMines.Add(Loc);
         end
         else if (gTerrain.TileIsCoal(X, Y) > 1) then
@@ -245,10 +245,10 @@ var
   X,Y: Integer;
 begin
   Result := True;
-  for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = ht_GoldMine), gTerrain.MapX-1) do
+  for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = htGoldMine), gTerrain.MapX-1) do
     for Y := Max(aLoc.Y-8, 1) to aLoc.Y do
-      if   (aHT = ht_GoldMine) AND (gTerrain.TileIsGold(X, Y) > 0)
-        OR (aHT = ht_IronMine) AND (gTerrain.TileIsIron(X, Y) > 0) then
+      if   (aHT = htGoldMine) AND (gTerrain.TileIsGold(X, Y) > 0)
+        OR (aHT = htIronMine) AND (gTerrain.TileIsIron(X, Y) > 0) then
         Exit;
   Result := False; //Didn't find any ore
 end;
@@ -445,7 +445,7 @@ var
           begin
             // Check if this mine is overlapping with already counted
             if (MineList.Items[K].Y <> MineList.Items[I].Y)
-              OR (  Abs(MineList.Items[K].X - MineList.Items[I].X) > (3 + Byte(aMineType = ht_IronMine)) ) then
+              OR (  Abs(MineList.Items[K].X - MineList.Items[I].X) > (3 + Byte(aMineType = htIronMine)) ) then
               continue
             else
             begin
@@ -472,8 +472,8 @@ begin
   if (Length(CenterPointArr) > 0) then
     CenterPolygon := gAIFields.NavMesh.KMPoint2Polygon[ CenterPointArr[0] ];
   // Scan Resources - gold, iron
-  aIronMineCnt := FindSeparateMines(ht_IronMine, fIronMines);
-  aGoldMineCnt := FindSeparateMines(ht_GoldMine, fGoldMines);
+  aIronMineCnt := FindSeparateMines(htIronMine, fIronMines);
+  aGoldMineCnt := FindSeparateMines(htGoldMine, fGoldMines);
   // Scan Resources - stones
   TagList := GetStoneLocs(True);
   try
@@ -541,8 +541,8 @@ begin
     Output := Output AND gTerrain.TileInMapCoords(X, Y, 1);
     // Mines have specific requirements
     case aHT of
-      ht_IronMine: Output := Output AND gTerrain.TileGoodForIron(X, Y);
-      ht_GoldMine: Output := Output AND gTerrain.CanPlaceGoldmine(X, Y);
+      htIronMine: Output := Output AND gTerrain.TileGoodForIron(X, Y);
+      htGoldMine: Output := Output AND gTerrain.CanPlaceGoldmine(X, Y);
       else         Output := Output AND ( (tpBuild in gTerrain.Land[Y,X].Passability)
                                           OR (aIgnoreTrees
                                               AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])
@@ -611,12 +611,12 @@ begin
       if (gHands[fOwner].Alliances[PL] = at_Ally) then
         if gHands[PL].BuildList.HousePlanList.HasPlan(KMPoint(X,Y)) then
           Exit;
-    if (aHT in [ht_GoldMine, ht_IronMine]) then
+    if (aHT in [htGoldMine, htIronMine]) then
       continue;
     // Make sure we can add road below house;
     // Woodcutters / CoalMine may take place for mine so its arena must be scaned completely
     if (  // Direction south + not in case of house reservation OR specific house which can be build in avoid build areas
-         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT = ht_Woodcutters) OR (aHT = ht_CoalMine) OR (aHT = ht_WatchTower)
+         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT = htWoodcutters) OR (aHT = htCoalMine) OR (aHT = htWatchTower)
        ) AND not (
          (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ftRoad)
          OR (gTerrain.Land[Y, X].TileLock = tlRoadWork)
@@ -638,8 +638,8 @@ begin
   Output := TKMPointTagList.Create();
   Mines := nil;
   case aHT of
-    ht_GoldMine: Mines := fGoldMines;
-    ht_IronMine: Mines := fIronMines;
+    htGoldMine: Mines := fGoldMines;
+    htIronMine: Mines := fIronMines;
   end;
 
   if (Mines <> nil) then
@@ -869,7 +869,7 @@ end;
 
 function TKMEye.GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 const
-  SCANNED_HOUSES = [ht_Store, ht_School, ht_Barracks];
+  SCANNED_HOUSES = [htStore, htSchool, htBarracks];
 var
   I, Cnt: Integer;
   HT: TKMHouseType;
@@ -1014,7 +1014,7 @@ end;
 procedure TKMSearchResource.MarkAsVisited(const aX,aY: SmallInt);
 begin
   fVisitArr[aY,aX] := fSearch;
-  if ((fSearch = 1) AND gAIFields.Eye.CanAddHousePlan(KMPoint(aX,aY), ht_CoalMine, True, True))
+  if ((fSearch = 1) AND gAIFields.Eye.CanAddHousePlan(KMPoint(aX,aY), htCoalMine, True, True))
     OR (  (fSearch = 2) AND (aY < fMaxLimit.Y) AND (tpWalk in gTerrain.Land[aY+1,aX].Passability)  ) then
     fListOfPoints.Add(KMPoint(aX,aY));
 end;

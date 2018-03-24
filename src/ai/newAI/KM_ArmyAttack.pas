@@ -155,9 +155,9 @@ const
   SQR_COMPANY_ATTACK_RAD = COMPANY_ATTACK_RAD * COMPANY_ATTACK_RAD;
   SQR_MAXIMAL_ATTACK_VAR_RAD = MAXIMAL_ATTACK_VAR_RAD * MAXIMAL_ATTACK_VAR_RAD;
   // Houses in TARGET_HOUSES will be selected as a primary target (so company will come to the closest but will not attack it)
-  TARGET_HOUSES: THouseTypeSet = [ht_Barracks, ht_Store, ht_School];
+  TARGET_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool];
   // Houses in SCAN_HOUSES will be destroyed when they are in radius (it should also contain TARGET_HOUSES)
-  SCAN_HOUSES: THouseTypeSet = [ht_WatchTower, ht_Barracks, ht_Store, ht_School];
+  SCAN_HOUSES: THouseTypeSet = [htWatchTower, htBarracks, htStore, htSchool];
 
 implementation
 uses
@@ -864,7 +864,7 @@ var
     begin
       BestDist := INIT_THREAT;
       for K := 0 to Length(HA) - 1 do
-        if (HA[K].HouseType = ht_WatchTower)
+        if (HA[K].HouseType = htWatchTower)
           AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE)
           AND (HA[K].CheckResIn(wt_Stone) > 1)
           AND HA[K].HasOwner then // Ignore towers without stone and without recruit inside
@@ -901,7 +901,7 @@ var
         BestDist := INIT_THREAT;
         for K := 0 to Length(HA) - 1 do
           if (
-               (HA[K].HouseType <> ht_WatchTower)
+               (HA[K].HouseType <> htWatchTower)
                OR ( KMDistanceAbs(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
              )
             AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE) then

@@ -130,12 +130,12 @@ procedure TKMCityManagement.AfterMissionInit();
   procedure SetWareDistribution();
   begin
     // Top priority for gold mines
-    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_Metallurgists] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_WeaponSmithy] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_IronSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, ht_ArmorSmithy] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_wood, ht_ArmorWorkshop] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_wood, ht_WeaponWorkshop] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, htMetallurgists] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, htWeaponSmithy] := 2;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, htIronSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_coal, htArmorSmithy] := 2;
+    gHands[fOwner].Stats.WareDistribution[wt_wood, htArmorWorkshop] := 2;
+    gHands[fOwner].Stats.WareDistribution[wt_wood, htWeaponWorkshop] := 5;
 
     gHands[fOwner].Houses.UpdateResRequest;
   end;
@@ -215,7 +215,7 @@ var
   var
     Output: Integer;
   begin
-    Output := Stats.GetHouseQty(ht_WatchTower);
+    Output := Stats.GetHouseQty(htWatchTower);
 
     if aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600 then
     begin
@@ -240,7 +240,7 @@ var
   var
     I: Integer;
   begin
-    Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) + Round(gHands[fOwner].Stats.GetHouseTotal(ht_Any) * HOUSE_COEF) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
+    Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) + Round(gHands[fOwner].Stats.GetHouseTotal(htAny) * HOUSE_COEF) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
     //Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
     for I := 0 to P.Units.Count - 1 do
       if not P.Units[I].IsDeadOrDying
@@ -275,17 +275,17 @@ begin
   begin
     UnitReq[ut_Serf] := 3; // 3x Serf
     UnitReq[ut_Worker] := Byte(fSetup.WorkerCount > 0);// 1x Worker
-    UnitReq[ut_Miner] := Stats.GetHouseTotal(ht_CoalMine) + Stats.GetHouseTotal(ht_GoldMine) + Stats.GetHouseQty(ht_IronMine); // Miner can go into iron / gold / coal mines (idealy we need 1 gold and 1 coal but it is hard to catch it)
-    UnitReq[ut_Metallurgist] := Stats.GetHouseTotal(ht_Metallurgists) + Stats.GetHouseQty(ht_IronSmithy); // Metallurgist (same problem like in case of miner)
-    UnitReq[ut_Woodcutter] := Byte(Stats.GetHouseQty(ht_Woodcutters) > 0); // 1x Woodcutter
-    UnitReq[ut_StoneCutter] := Byte(Stats.GetHouseQty(ht_Quary) > 0); // 1x StoneCutter
-    UnitReq[ut_Lamberjack] := Byte(Stats.GetHouseQty(ht_Sawmill) > 0); // 1x Lamberjack
+    UnitReq[ut_Miner] := Stats.GetHouseTotal(htCoalMine) + Stats.GetHouseTotal(htGoldMine) + Stats.GetHouseQty(htIronMine); // Miner can go into iron / gold / coal mines (idealy we need 1 gold and 1 coal but it is hard to catch it)
+    UnitReq[ut_Metallurgist] := Stats.GetHouseTotal(htMetallurgists) + Stats.GetHouseQty(htIronSmithy); // Metallurgist (same problem like in case of miner)
+    UnitReq[ut_Woodcutter] := Byte(Stats.GetHouseQty(htWoodcutters) > 0); // 1x Woodcutter
+    UnitReq[ut_StoneCutter] := Byte(Stats.GetHouseQty(htQuary) > 0); // 1x StoneCutter
+    UnitReq[ut_Lamberjack] := Byte(Stats.GetHouseQty(htSawmill) > 0); // 1x Lamberjack
   end
   //Count overall unit requirement (excluding Barracks and ownerless houses)
   else
   begin
     for HT := HOUSE_MIN to HOUSE_MAX do
-      if (gRes.Houses[HT].OwnerType <> ut_None) AND (HT <> ht_Barracks) then
+      if (gRes.Houses[HT].OwnerType <> ut_None) AND (HT <> htBarracks) then
         //Inc(UnitReq[gRes.Houses[HT].OwnerType], Stats.GetHouseTotal(HT));
         Inc(UnitReq[gRes.Houses[HT].OwnerType], Stats.GetHouseQty(HT));
 
@@ -307,12 +307,12 @@ begin
 
   // Find completed schools, decrease UnitReq by already trained citizens
   cnt := 0;
-  SetLength(Schools, Stats.GetHouseQty(ht_School));
+  SetLength(Schools, Stats.GetHouseQty(htSchool));
   for I := 0 to P.Houses.Count - 1 do
     if (P.Houses[I] <> nil)
        AND not (P.Houses[I].IsDestroyed)
        AND (P.Houses[I].IsComplete)
-       AND (P.Houses[I].HouseType = ht_School) then
+       AND (P.Houses[I].HouseType = htSchool) then
     begin
       Schools[cnt] := TKMHouseSchool(P.Houses[I]);
       for K := Schools[cnt].QueueLength - 1 downto 0 do
@@ -369,7 +369,7 @@ var
     Houses := gHands[fOwner].Houses;
     IdleHM := nil;
     for I := 0 to Houses.Count - 1 do
-      if (Houses[I].HouseType = ht_Marketplace)
+      if (Houses[I].HouseType = htMarketplace)
         AND Houses[I].IsComplete
         AND not Houses[I].IsDestroyed then
       begin
@@ -408,7 +408,7 @@ var
   MarketCnt, I, WareCnt: Word;
 begin
 
-  MarketCnt := gHands[fOwner].Stats.GetHouseQty(ht_Marketplace);
+  MarketCnt := gHands[fOwner].Stats.GetHouseQty(htMarketplace);
   if MarketCnt = 0 then
     Exit;
 
@@ -417,7 +417,7 @@ begin
   with gHands[fOwner].Stats do
   begin
     // Gold
-    if (GetHouseQty(ht_Metallurgists) = 0)
+    if (GetHouseQty(htMetallurgists) = 0)
        AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
        AddWare(wt_Gold);
     // Gold ore
@@ -431,7 +431,7 @@ begin
       AddWare(wt_Coal);
     // Stone
     if (GetWareBalance(wt_Stone) < LACK_OF_STONE)
-      AND (GetHouseQty(ht_Quary) = 0) then
+      AND (GetHouseQty(htQuary) = 0) then
       AddWare(wt_Stone);
   end;
 
@@ -469,7 +469,7 @@ var
 begin
   //Iterate through all Stores and block certain wares to reduce serf usage
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
-    if (gHands[fOwner].Houses[I].HouseType = ht_Store)
+    if (gHands[fOwner].Houses[I].HouseType = htStore)
       AND gHands[fOwner].Houses[I].IsComplete
       AND not gHands[fOwner].Houses[I].IsDestroyed then
     begin
@@ -495,8 +495,8 @@ begin
       S.NotAcceptFlag[wt_GoldOre] := True;
       S.NotAcceptFlag[wt_IronOre] := True;
       S.NotAcceptFlag[wt_Coal] := True;
-      S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(ht_WeaponSmithy) +
-                                   gHands[fOwner].Stats.GetHouseQty(ht_ArmorSmithy) > 0;
+      S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy) +
+                                   gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) > 0;
       //S.NotAcceptFlag[wt_Corn] := gHands[fOwner].Stats.GetHouseQty(ht_Mill) +
       //                            gHands[fOwner].Stats.GetHouseQty(ht_Swine) +
       //                            gHands[fOwner].Stats.GetHouseQty(ht_Stables) > 0;
@@ -524,7 +524,7 @@ begin
   begin
     Loc := gHands[fOwner].Houses[I].Entrance;
     // Remove avoid building around coal mine
-    if (gHands[fOwner].Houses[I].HouseType = ht_CoalMine) then
+    if (gHands[fOwner].Houses[I].HouseType = htCoalMine) then
       gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
     // Mark house plan as exhausted
     Builder.Planner.MarkAsExhausted(gHands[fOwner].Houses[I].HouseType, Loc);
@@ -546,7 +546,7 @@ begin
       for I := 0 to Houses.Count - 1 do
       begin
         Houses[I].BuildingRepair := false;
-        if (Houses[I].HouseType = ht_Watchtower) AND (Houses[I].DeliveryMode = dm_Delivery) then
+        if (Houses[I].HouseType = htWatchTower) AND (Houses[I].DeliveryMode = dm_Delivery) then
           Houses[I].SetDeliveryModeInstantly(dm_Closed);
       end;
     end
@@ -555,7 +555,7 @@ begin
       for I := 0 to Houses.Count - 1 do
       begin
         Houses[I].BuildingRepair := fSetup.AutoRepair;
-        if (Houses[I].HouseType = ht_Watchtower) AND (Houses[I].DeliveryMode = dm_Closed) then
+        if (Houses[I].HouseType = htWatchTower) AND (Houses[I].DeliveryMode = dm_Closed) then
           Houses[I].SetDeliveryModeInstantly(dm_Delivery);
       end;
     end;
@@ -698,9 +698,9 @@ var
   UT: TKMUnitType;
   Warfare: TKMWarfareArr;
 begin
-  ArmorCnt := gHands[fOwner].Stats.GetHouseQty(ht_ArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(ht_ArmorWorkshop);
-  SmithyCnt := gHands[fOwner].Stats.GetHouseQty(ht_WeaponSmithy);
-  WorkshopCnt := gHands[fOwner].Stats.GetHouseQty(ht_WeaponWorkshop);
+  ArmorCnt := gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(htArmorWorkshop);
+  SmithyCnt := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy);
+  WorkshopCnt := gHands[fOwner].Stats.GetHouseQty(htWeaponWorkshop);
   if (ArmorCnt + SmithyCnt + WorkshopCnt = 0) then // Save time when nothing can be produced
     Exit;
   IronRatio := 0.5;
@@ -759,7 +759,7 @@ end;
 procedure TKMCityManagement.OrderWeapons(aWarfare: TKMWarfareArr);
 const
   WEAPONS_PER_A_UPDATE = 3;
-  PRODUCTION_HOUSES = [ht_ArmorSmithy, ht_ArmorWorkshop, ht_WeaponSmithy, ht_WeaponWorkshop];
+  PRODUCTION_HOUSES = [htArmorSmithy, htArmorWorkshop, htWeaponSmithy, htWeaponWorkshop];
 var
   I, K, MaxIdx, HouseCnt: Integer;
   MostRequired: Single;
@@ -798,7 +798,7 @@ begin
           for K := 1 to 4 do
             H.ResOrder[K] := 0;
           H.ResOrder[MaxIdx] := WEAPONS_PER_A_UPDATE; // With update each 1-2 minutes there is not need to calculate something more
-          if (HT = ht_ArmorWorkshop) then
+          if (HT = htArmorWorkshop) then
             H.ResOrder[2] := 10;
         end;
   end;

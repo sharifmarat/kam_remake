@@ -45,10 +45,10 @@ const
   //ResRatioHint: array [TKMRatioTab] of Word = (298, 300, 302, 304);
   ResRatioHouseCount: array [TKMRatioTab] of Byte = (2, 4, 2, 3);
   ResRatioHouse: array [TKMRatioTab, 0..3] of TKMHouseType = (
-      (ht_WeaponSmithy,   ht_ArmorSmithy,     ht_None,          ht_None),
-      (ht_IronSmithy,     ht_Metallurgists,   ht_WeaponSmithy,  ht_ArmorSmithy),
-      (ht_ArmorWorkshop,  ht_WeaponWorkshop,  ht_None,          ht_None),
-      (ht_Mill,           ht_Swine,           ht_Stables,       ht_None));
+      (htWeaponSmithy,   htArmorSmithy,     htNone,          htNone),
+      (htIronSmithy,     htMetallurgists,   htWeaponSmithy,  htArmorSmithy),
+      (htArmorWorkshop,  htWeaponWorkshop,  htNone,          htNone),
+      (htMill,           htSwine,           htStables,       htNone));
 
 
 { TKMGUIGameRatios }

@@ -789,15 +789,15 @@ begin
       begin
         H := gHands[I].Houses[J];
         case H.HouseType of
-          ht_IronMine:  begin
+          htIronMine:  begin
                           gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_IronOre, OreP);
                           AddOrePoints(OreP, IronOreP);
                         end;
-          ht_GoldMine:  begin
+          htGoldMine:  begin
                           gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_GoldOre, OreP);
                           AddOrePoints(OreP, GoldOreP);
                         end;
-          ht_CoalMine:  begin
+          htCoalMine:  begin
                           gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_Coal, OreP);
                           AddOrePoints(OreP, CoalOreP);
                         end;

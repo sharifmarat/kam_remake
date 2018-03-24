@@ -160,14 +160,14 @@ begin
   if I = 0 then Exit;
 
   //Find barracks
-  SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(ht_Barracks));
+  SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));
   I := 0;
-  HB := TKMHouseBarracks(gHands[fOwner].FindHouse(ht_Barracks, I+1));
+  HB := TKMHouseBarracks(gHands[fOwner].FindHouse(htBarracks, I+1));
   while HB <> nil do
   begin
     Barracks[I] := HB;
     Inc(I);
-    HB := TKMHouseBarracks(gHands[fOwner].FindHouse(ht_Barracks, I+1));
+    HB := TKMHouseBarracks(gHands[fOwner].FindHouse(htBarracks, I+1));
   end;
 
   //Train troops where possible in each barracks
@@ -400,7 +400,7 @@ begin
   //If start position isn't set, set it to first storehouse (used for targeting attacks)
   if (fSetup.StartPosition.X <= 1) and (fSetup.StartPosition.Y <= 1) then
   begin
-    H := gHands[fOwner].Houses.FindHouse(ht_Store, 0, 0, 1);
+    H := gHands[fOwner].Houses.FindHouse(htStore, 0, 0, 1);
     if H <> nil then
       fSetup.StartPosition := H.Entrance;
   end;

@@ -707,7 +707,7 @@ end;
 
 procedure TKMHousePlanList.ClosePlan(aIndex: Integer);
 begin
-  fPlans[aIndex].HouseType := ht_None;
+  fPlans[aIndex].HouseType := htNone;
   fPlans[aIndex].Loc       := KMPOINT_ZERO;
   fPlans[aIndex].JobStatus := js_Empty;
   gHands.CleanUpUnitPointer(fPlans[aIndex].Worker);
@@ -727,7 +727,7 @@ begin
   HD := gRes.Houses;
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((fPlans[I].Loc.X + HD[fPlans[I].HouseType].EntranceOffsetX <> aSkip.X) or (fPlans[I].Loc.Y <> aSkip.Y)) then
   begin
     Entrance := KMPoint(fPlans[I].Loc.X + HD[fPlans[I].HouseType].EntranceOffsetX, fPlans[I].Loc.Y + 1);
@@ -769,10 +769,10 @@ var
   I: Integer;
 begin
   Result := False;
-  aHouseType := ht_None;
+  aHouseType := htNone;
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
@@ -798,7 +798,7 @@ var
   I: Integer;
 begin
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
@@ -818,7 +818,7 @@ var
 begin
   Result := False;
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
@@ -850,7 +850,7 @@ begin
 
   //Test all plans. We use Loc-2 to test plans centers
   for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> ht_None)
+    if (fPlans[I].HouseType <> htNone)
     and InRange(fPlans[I].Loc.X - 2, Rect.Left, Rect.Right)
     and InRange(fPlans[I].Loc.Y - 2, Rect.Top, Rect.Bottom) then
     begin
@@ -884,7 +884,7 @@ begin
   Rect := KMRectGrow(aRect, 2);
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and InRange(fPlans[I].Loc.X - 2, Rect.Left, Rect.Right)
   and InRange(fPlans[I].Loc.Y - 2, Rect.Top, Rect.Bottom) then
     aList.Add(KMPoint(fPlans[I].Loc.X + gRes.Houses[fPlans[I].HouseType].EntranceOffsetX, fPlans[I].Loc.Y), Byte(fPlans[I].HouseType));

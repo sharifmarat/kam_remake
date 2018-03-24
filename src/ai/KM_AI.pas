@@ -177,14 +177,14 @@ procedure TKMHandAI.CheckGoals;
       //gc_Time is disabled as we process messages in Event system now. Return true so players
       //do not have to wait for all messages to show before they are allowed to win (same in TPR)
       gc_Time:              Result := True; //Deprecated
-      gc_Buildings:         Result := (Stat.GetHouseQty([ht_Store, ht_School, ht_Barracks, ht_TownHall]) > 0);
+      gc_Buildings:         Result := (Stat.GetHouseQty([htStore, htSchool, htBarracks, htTownHall]) > 0);
       gc_Troops:            Result := (Stat.GetArmyCount > 0);
       gc_MilitaryAssets:    Result := (Stat.GetArmyCount > 0) or
-                                      (Stat.GetHouseQty([ht_Barracks, ht_CoalMine, ht_WeaponWorkshop, ht_ArmorWorkshop, ht_Stables,
-                                                         ht_IronMine, ht_IronSmithy ,ht_WeaponSmithy, ht_ArmorSmithy, ht_TownHall,
-                                                         ht_SiegeWorkshop]) > 0);
-      gc_SerfsAndSchools:   Result := (Stat.GetHouseQty([ht_School]) > 0) or (Stat.GetUnitQty(ut_Serf) > 0);
-      gc_EconomyBuildings:  Result := (Stat.GetHouseQty([ht_Store, ht_School, ht_Inn]) > 0);
+                                      (Stat.GetHouseQty([htBarracks, htCoalMine, htWeaponWorkshop, htArmorWorkshop, htStables,
+                                                         htIronMine, htIronSmithy ,htWeaponSmithy, htArmorSmithy, htTownHall,
+                                                         htSiegeWorkshop]) > 0);
+      gc_SerfsAndSchools:   Result := (Stat.GetHouseQty([htSchool]) > 0) or (Stat.GetUnitQty(ut_Serf) > 0);
+      gc_EconomyBuildings:  Result := (Stat.GetHouseQty([htStore, htSchool, htInn]) > 0);
       else                  raise Exception.Create('Unknown goal');
     end;
     if aGoal.GoalStatus = gs_False then

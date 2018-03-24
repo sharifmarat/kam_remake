@@ -106,7 +106,7 @@ begin
   inherited;
   //A new Barracks should inherit the accept properies of the first Barracks of that player,
   //which stops a sudden flow of unwanted wares to it as soon as it is created.
-  FirstBarracks := TKMHouseBarracks(gHands[fOwner].FindHouse(ht_Barracks, 1));
+  FirstBarracks := TKMHouseBarracks(gHands[fOwner].FindHouse(htBarracks, 1));
   if (FirstBarracks <> nil) and not FirstBarracks.IsDestroyed then
   begin
     for WT := WARFARE_MIN to WARFARE_MAX do

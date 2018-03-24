@@ -63,7 +63,7 @@ begin
 
       OffX := 0;
       for K := Low(StatPlan[I].HouseType) to High(StatPlan[I].HouseType) do
-        if StatPlan[I].HouseType[K] <> ht_None then
+        if StatPlan[I].HouseType[K] <> htNone then
         begin
           HT := StatPlan[I].HouseType[K];
           Stat_HousePic[HT] := TKMImage.Create(Panel_StatBlock[I], OffX, 0, HOUSE_W, 30, 41); //Filled with [?] at start
@@ -159,7 +159,7 @@ begin
   begin
     HTotalConstrOpenedQty := 0;
     for K := Low(StatPlan[I].HouseType) to High(StatPlan[I].HouseType) do
-    if not (StatPlan[I].HouseType[K] in [ht_None, ht_Any]) then
+    if not (StatPlan[I].HouseType[K] in [htNone, htAny]) then
     begin
       HT := StatPlan[I].HouseType[K];
       Qty := gMySpectator.Hand.Stats.GetHouseQty(HT);

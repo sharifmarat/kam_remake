@@ -201,7 +201,7 @@ begin
     Button_Unit_Dismiss.Enabled := aUnit.IsDismissCancelAvailable;
     Panel_Unit_Dismiss.Visible := False;
   end else begin
-    HasSchools := gMySpectator.Hand.Stats.GetHouseQty(ht_School) > 0;
+    HasSchools := gMySpectator.Hand.Stats.GetHouseQty(htSchool) > 0;
     Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools;
     Button_Unit_Dismiss.TexID := 667;
     Button_Unit_Dismiss.Hint  := IfThenS(fAskDismiss or HasSchools, gResTexts[TX_UNIT_TASK_DISMISS_HINT],

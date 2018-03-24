@@ -188,7 +188,7 @@ const
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> ht_None); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
 end;
 
 
@@ -1483,7 +1483,7 @@ begin
     and InRange(aCount, 0, High(Word))
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Store, 1);
+      H := gHands[aPlayer].FindHouse(htStore, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
@@ -1513,7 +1513,7 @@ begin
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)])
     and (WareIndexToType[aType] in [WARFARE_MIN .. WARFARE_MAX]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Barracks, 1);
+      H := gHands[aPlayer].FindHouse(htBarracks, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);

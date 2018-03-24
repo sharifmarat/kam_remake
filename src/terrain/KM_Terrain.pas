@@ -2145,8 +2145,8 @@ begin
 
       //Check house-specific conditions, e.g. allow shipyards only near water and etc..
       case aHouseType of
-        ht_IronMine: AllowBuild := TileGoodForIron(P2.X, P2.Y);
-        ht_GoldMine: AllowBuild := CanPlaceGoldmine(P2.X, P2.Y);
+        htIronMine: AllowBuild := TileGoodForIron(P2.X, P2.Y);
+        htGoldMine: AllowBuild := CanPlaceGoldmine(P2.X, P2.Y);
         else         AllowBuild := (tpBuild in Land[P2.Y,P2.X].Passability);
       end;
 
@@ -2173,7 +2173,7 @@ begin
         if HA[I,K] = 2 then
           MarkPoint(P2, TC_BLOCK_ENTRANCE)
         else
-          if aHouseType in [ht_GoldMine, ht_IronMine] then
+          if aHouseType in [htGoldMine, htIronMine] then
             MarkPoint(P2, TC_BLOCK_MINE)
           else
             MarkPoint(P2, TC_BLOCK);
@@ -3310,8 +3310,8 @@ var i,k:integer; HA: THouseArea;
 begin
   HA := gRes.Houses[aHouseType].BuildArea;
   case aHouseType of
-    ht_None:    Land[Loc.Y,Loc.X].TileOwner := aOwner;
-    ht_Any:     ; //Do nothing
+    htNone:    Land[Loc.Y,Loc.X].TileOwner := aOwner;
+    htAny:     ; //Do nothing
     else        for i:=1 to 4 do for k:=1 to 4 do //If this is a house make change for whole place
                   if HA[i,k]<>0 then
                     if TileInMapCoords(Loc.X+k-3,Loc.Y+i-4) then
@@ -3369,8 +3369,8 @@ begin
       Result := Result and TileInMapCoords(X, Y, 1);
 
       case aHouseType of
-        ht_IronMine: Result := Result and TileGoodForIron(X, Y);
-        ht_GoldMine: Result := Result and CanPlaceGoldmine(X, Y);
+        htIronMine: Result := Result and TileGoodForIron(X, Y);
+        htGoldMine: Result := Result and CanPlaceGoldmine(X, Y);
         else         Result := Result and (tpBuild in Land[Y,X].Passability);
       end;
     end;
@@ -3400,9 +3400,9 @@ begin
     Result := Result and not TileIsWineField(KMPoint(TX, TY));
 
     //Mines must be on a mountain edge
-    if aHouseType = ht_IronMine then
+    if aHouseType = htIronMine then
       Result := Result and (Land[TY,TX].Terrain in [109, 166..170]) and (Land[TY,TX].Rotation mod 4 = 0);
-    if aHouseType = ht_GoldMine then
+    if aHouseType = htGoldMine then
       Result := Result and (Land[TY,TX].Terrain in [171..175     ]) and (Land[TY,TX].Rotation mod 4 = 0);
 
     //Check surrounding tiles for another house that overlaps

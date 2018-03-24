@@ -73,12 +73,12 @@ const
   }
   // Array of wares which are produced by specific houses
   PRODUCTION: array[WARE_MIN..WARE_MAX] of TKMHouseType = (
-    ht_Woodcutters,    ht_Quary,         ht_Sawmill,        ht_IronMine,      ht_GoldMine,
-    ht_CoalMine,       ht_IronSmithy,    ht_Metallurgists,  ht_Wineyard,      ht_Farm,
-    ht_Bakery,         ht_Mill,          ht_Tannery,        ht_Butchers,      ht_Swine,
-    ht_Swine,          ht_ArmorWorkshop, ht_ArmorSmithy,    ht_ArmorWorkshop, ht_ArmorSmithy,
-    ht_WeaponWorkshop, ht_WeaponSmithy,  ht_WeaponWorkshop, ht_WeaponSmithy,  ht_WeaponWorkshop,
-    ht_WeaponSmithy,   ht_Stables,       ht_FisherHut
+    htWoodcutters,    htQuary,         htSawmill,        htIronMine,      htGoldMine,
+    htCoalMine,       htIronSmithy,    htMetallurgists,  htWineyard,      htFarm,
+    htBakery,         htMill,          htTannery,        htButchers,      htSwine,
+    htSwine,          htArmorWorkshop, htArmorSmithy,    htArmorWorkshop, htArmorSmithy,
+    htWeaponWorkshop, htWeaponSmithy,  htWeaponWorkshop, htWeaponSmithy,  htWeaponWorkshop,
+    htWeaponSmithy,   htStables,       htFisherHut
   );
   // Possible transformation of wares: resource -> product
   CONSUMPTION: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMWareType = (         // wt_Shield are ignored
@@ -305,7 +305,7 @@ begin
         begin
         end;
       // Update Materials / Gold
-      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[ht_School] + RequiredHouses[ht_School]) * GOLD_NEED_PER_A_SCHOOL);
+      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
       wt_Stone:
         begin
           fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, fSetup.WorkerCount) * STONE_NEED_PER_A_WORKER;
@@ -374,15 +374,15 @@ const
   SECOND_MARKETPLACE = 10 * 60 * 100;
 begin
   // 1 Storehouse
-  RequiredHouses[ht_Store] := 1 - fCityStats.Houses[ht_Store];
+  RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
   // 1 Barracks (build only when we have or produce axe / armors)
-  RequiredHouses[ht_Barracks] := Byte(aInitialization OR (gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0)) - fCityStats.Houses[ht_Barracks];
+  RequiredHouses[htBarracks] := Byte(aInitialization OR (gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0)) - fCityStats.Houses[htBarracks];
   // Schools (at least 1 + WarriorsPerMinute criterium)
-  RequiredHouses[ht_School] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[ht_Barracks] > 0) OR aInitialization ) * (Round(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[ht_School]  );
+  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Round(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
   // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
-  RequiredHouses[ht_Inn] := Max(0, Ceil(  Byte( (gGame.GameTickCount > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[ht_Inn]);
+  RequiredHouses[htInn] := Max(0, Ceil(  Byte( (gGame.GameTickCount > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]);
   // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
-  RequiredHouses[ht_MarketPlace] := Byte( aInitialization OR (gGame.GameTickCount > FIRST_MARKETPLACE) ) + Byte( aInitialization OR (gGame.GameTickCount > SECOND_MARKETPLACE) ) - fCityStats.Houses[ht_Marketplace];
+  RequiredHouses[htMarketplace] := Byte( aInitialization OR (gGame.GameTickCount > FIRST_MARKETPLACE) ) + Byte( aInitialization OR (gGame.GameTickCount > SECOND_MARKETPLACE) ) - fCityStats.Houses[htMarketplace];
 end;
 
 
@@ -453,22 +453,22 @@ begin
   UpdateBasicHouses(GA_PLANNER);
   UpdateWareBalance();
 
-  if (fCornDelay = 0) AND (gHands[fOwner].Stats.GetHouseTotal(ht_Farm) > 0) then // Dont use fCityStats because it consider planned houses
+  if (fCornDelay = 0) AND (gHands[fOwner].Stats.GetHouseTotal(htFarm) > 0) then // Dont use fCityStats because it consider planned houses
   begin
     fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce corn)
   end;
   // Corn delay (should not wait till is first corn produced because it have huge impact)
-  if (gGame.GameTickCount < fCornDelay) AND not gHands[fOwner].Locks.HouseBlocked[ht_Farm] then // Consider corn delay (~10 minutes) -> time saved by construction
+  if (gGame.GameTickCount < fCornDelay) AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then // Consider corn delay (~10 minutes) -> time saved by construction
   begin
-    RequiredHouses[ht_Mill] := 0;
-    RequiredHouses[ht_Bakery] := 0;
-    RequiredHouses[ht_Swine] := 0;
-    RequiredHouses[ht_Tannery] := 0;
-    RequiredHouses[ht_ArmorWorkshop] := 0;
+    RequiredHouses[htMill] := 0;
+    RequiredHouses[htBakery] := 0;
+    RequiredHouses[htSwine] := 0;
+    RequiredHouses[htTannery] := 0;
+    RequiredHouses[htArmorWorkshop] := 0;
   end;
   // Pig delay
   //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetHouseQty(ht_Swine) > 0);
+  RequiredHouses[htButchers] := RequiredHouses[htButchers] * Byte(gHands[fOwner].Stats.GetHouseQty(htSwine) > 0);
   //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
   //begin
   //  RequiredHouses[ht_Tannery] := 0;
@@ -476,9 +476,9 @@ begin
   //end;
 
   if (gGame.GameTickCount < 22000) then
-    RequiredHouses[ht_Wineyard] := 0;
+    RequiredHouses[htWineyard] := 0;
 
-  RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
+  RequiredHouses[htWeaponWorkshop] := RequiredHouses[htWeaponWorkshop] * Byte( (RequiredHouses[htTannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
 
   // Loghical house requirements (delay takes too long so it is not used)
   {

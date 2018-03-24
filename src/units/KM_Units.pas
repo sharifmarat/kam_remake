@@ -359,7 +359,7 @@ var
 begin
   if (fHome <> nil)
     and not fHome.IsDestroyed
-    and (fHome.IsClosedForWorker or ((fHome.HouseType = ht_Barracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
+    and (fHome.IsClosedForWorker or ((fHome.HouseType = htBarracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
     and not (fUnitTask is TKMTaskDie)
     and not (fUnitTask is TKMTaskDismiss) then
     begin
@@ -397,7 +397,7 @@ begin
             CleanHousePointer(True);    // Clean house pointer and free task
           end else
           if (wIsInsideHouse or wWantToGoOutShowHungry)
-            and not (fHome.HouseType = ht_Barracks) then // Recruits should not go out of Barracks
+            and not (fHome.HouseType = htBarracks) then // Recruits should not go out of Barracks
           begin
             SetActionGoIn(ua_Walk, gd_GoOutside, fHome); //Walk outside the house
             // If working inside - first we need to set house state to Idle, then to Empty
@@ -549,15 +549,15 @@ var
   Msg: Word;
 begin
   case fHome.HouseType of
-    ht_Quary:       Msg := TX_MSG_STONE_DEPLETED;
-    ht_CoalMine:    Msg := TX_MSG_COAL_DEPLETED;
-    ht_IronMine:    Msg := TX_MSG_IRON_DEPLETED;
-    ht_GoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    ht_Woodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
+    htQuary:       Msg := TX_MSG_STONE_DEPLETED;
+    htCoalMine:    Msg := TX_MSG_COAL_DEPLETED;
+    htIronMine:    Msg := TX_MSG_IRON_DEPLETED;
+    htGoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
+    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
                       Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
                     else
                       Msg := TX_MSG_WOODCUTTER_DEPLETED;
-    ht_FisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fUnitType].MiningRange) then
+    htFisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fUnitType].MiningRange) then
                       Msg := TX_MSG_FISHERMAN_TOO_FAR
                     else
                       Msg := TX_MSG_FISHERMAN_CANNOT_CATCH;
@@ -593,7 +593,7 @@ begin
   // Don't bother creating a task if there's no room for resulting ware
   // Saves us time on Fishers/Stonecutters/Woodcutters when they calculate routes to nearby deposits
   // Other houses where workers walk out can choose between cut/plant
-  if (fHome.HouseType in [ht_FisherHut, ht_Quary, ht_Wineyard])
+  if (fHome.HouseType in [htFisherHut, htQuary, htWineyard])
   and (fHome.CheckResOut(gRes.Houses[fHome.HouseType].ResOutput[Res]) >= MAX_WARES_IN_HOUSE) then
     Exit;
 

@@ -626,19 +626,19 @@ begin
   Panel_House.Show;
 
   case aHouse.HouseType of
-    ht_Marketplace:
+    htMarketplace:
         begin
           House_MarketFill(TKMHouseMarket(aHouse));
           Panel_HouseMarket.Show;
         end;
 
-    ht_Store:
+    htStore:
         begin
           House_StoreFill;
           Panel_HouseStore.Show;
         end;
 
-    ht_School:
+    htSchool:
         begin
           ResRow_School_Resource.WareCount := aHouse.CheckResIn(wt_Gold) - Byte(TKMHouseSchool(aHouse).HideOneGold);
           Button_School_UnitWIP.FlagColor := gHands[aHouse.Owner].FlagColor;
@@ -651,13 +651,13 @@ begin
           Panel_House_School.Show;
         end;
 
-    ht_Barracks:
+    htBarracks:
         begin
           House_BarracksUnitChange(nil, []);
           Panel_HouseBarracks.Show;
         end;
 
-    ht_Woodcutters:
+    htWoodcutters:
         begin
           House_WoodcutterChange(nil);
           Panel_HouseWoodcutter.Show;
@@ -677,8 +677,8 @@ begin
           ResRow_Common_Resource[1].Show;
           ResRow_Common_Resource[1].Top := 2 + LINE_HEIGHT;
         end;
-    ht_ArmorWorkshop: ShowArmorWorkshop(aHouse);
-    ht_TownHall:      ShowTownHall(aHouse);
+    htArmorWorkshop: ShowArmorWorkshop(aHouse);
+    htTownHall:      ShowTownHall(aHouse);
     else
         begin
           //First thing - hide everything

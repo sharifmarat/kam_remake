@@ -303,8 +303,8 @@ var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
-    ht_None:    ;
-    ht_Any:     for H := HOUSE_MIN to HOUSE_MAX do
+    htNone:    ;
+    htAny:     for H := HOUSE_MIN to HOUSE_MAX do
                   Inc(Result, Houses[H].Initial + Houses[H].Built - Houses[H].SelfDestruct - Houses[H].Lost);
     else        Result := Houses[aType].Initial + Houses[aType].Built - Houses[aType].SelfDestruct - Houses[aType].Lost;
   end;
@@ -317,8 +317,8 @@ var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
-    ht_None:    ;
-    ht_Any:     for H := HOUSE_MIN to HOUSE_MAX do
+    htNone:    ;
+    htAny:     for H := HOUSE_MIN to HOUSE_MAX do
                   Inc(Result, Houses[H].Initial + Houses[H].Built - Houses[H].SelfDestruct - Houses[H].Lost - Houses[H].Closed);
     else        Result := Houses[aType].Initial + Houses[aType].Built - Houses[aType].SelfDestruct - Houses[aType].Lost - Houses[aType].Closed;
   end;
@@ -335,7 +335,7 @@ begin
   if (Length(aType) = 0) then
     raise Exception.Create('Quering wrong house type')
   else
-  if (Length(aType) = 1) and (aType[0] = ht_Any) then
+  if (Length(aType) = 1) and (aType[0] = htAny) then
   begin
     for H := HOUSE_MIN to HOUSE_MAX do
       Inc(Result, Houses[H].Initial + Houses[H].Built - Houses[H].SelfDestruct - Houses[H].Lost);
@@ -355,8 +355,8 @@ var H: TKMHouseType;
 begin
   Result := 0;
   case aType of
-    ht_None:    ;
-    ht_Any:     for H := HOUSE_MIN to HOUSE_MAX do
+    htNone:    ;
+    htAny:     for H := HOUSE_MIN to HOUSE_MAX do
                   Inc(Result, Houses[H].Started + Houses[H].Planned - Houses[H].Ended - Houses[H].PlanRemoved);
     else        Result := Houses[aType].Started + Houses[aType].Planned - Houses[aType].Ended - Houses[aType].PlanRemoved;
   end;
@@ -387,7 +387,7 @@ begin
   if (Length(aType) = 0) then
     raise Exception.Create('Quering wrong house type')
   else
-  if (Length(aType) = 1) and (aType[0] = ht_Any) then
+  if (Length(aType) = 1) and (aType[0] = htAny) then
   begin
     for H := HOUSE_MIN to HOUSE_MAX do
       Inc(Result, Houses[H].Started + Houses[H].Planned - Houses[H].Ended - Houses[H].PlanRemoved);
@@ -849,7 +849,7 @@ begin
       for W := WARRIOR_MIN to WARRIOR_MAX do
         SetLength(fChartArmy[CKind,W], fChartCapacity);
   end;
-  fChartHouses[fChartCount] := GetHouseQty(ht_Any);
+  fChartHouses[fChartCount] := GetHouseQty(htAny);
   //We don't want recruits on the citizens Chart on the results screen.
   //If we include recruits the citizens Chart drops by 50-100 at peacetime because all the recruits
   //become soldiers, and continually fluctuates. Recruits dominate the Chart, meaning you can't use
