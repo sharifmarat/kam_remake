@@ -16,6 +16,8 @@ type
     fLastBarracksUnit: Byte; //Last unit that was selected in Barracks, global for all barracks player owns
     fLastTHUnit: Byte; //Last unit that was selected in Townhall, global for all townhalls player owns
 
+    fSetViewportEvent: TPointFEvent;
+
     procedure Create_HouseTownhall;
     procedure Create_HouseBarracks;
     procedure Create_HouseMarket;
@@ -31,6 +33,8 @@ type
 
     procedure House_ClosedForWorkerToggle(Sender: TObject);
     procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
+
+    procedure HouseLogo_Click(Sender: TObject);
 
     procedure House_BarracksAcceptFlag(Sender: TObject);
     procedure House_BarracksUnitChange(Sender: TObject; Shift: TShiftState);
@@ -120,7 +124,7 @@ type
     AskDemolish: Boolean;
     OnHouseDemolish: TEvent;
 
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 
     procedure Show(aHouse: TKMHouse); overload;
     procedure Show(aHouse: TKMHouse; aAskDemolish: Boolean); overload;
@@ -137,14 +141,16 @@ uses
   KM_Game, KM_GameInputProcess, KM_Hand, 
   KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_HandsCollection, KM_RenderUI, KM_CommonUtils,
-  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils;
+  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils, KM_Points;
 
 
-constructor TKMGUIGameHouse.Create(aParent: TKMPanel);
+constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 var
   I: Integer;
 begin
   inherited Create;
+
+  fSetViewportEvent := aSetViewportEvent;
 
   Panel_House := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
     //Thats common things
@@ -169,6 +175,9 @@ begin
 
     Image_House_Logo := TKMImage.Create(Panel_House,90,41,32,32,338);
     Image_House_Logo.ImageCenter;
+    Image_House_Logo.HighlightOnMouseOver := True;
+    Image_House_Logo.OnClick := HouseLogo_Click;
+    Image_House_Logo.Hint := gResTexts[TX_HOUSE_LOGO_HINT];
 
     HealthBar_House := TKMPercentBar.Create(Panel_House,120,50,55,15);
     Label_House_UnderConstruction := TKMLabel.Create(Panel_House,0,110,TB_WIDTH,0,gResTexts[TX_HOUSE_UNDER_CONSTRUCTION],fnt_Grey,taCenter);
@@ -967,7 +976,7 @@ procedure TKMGUIGameHouse.House_ClosedForWorkerToggle(Sender: TObject);
 var
   House: TKMHouse;
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) 
+  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse)
     or (gMySpectator.Selected is TKMHouseBarracks) then Exit;
 
   House := TKMHouse(gMySpectator.Selected);
@@ -987,6 +996,21 @@ begin
   end else begin
     Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
     Image_House_Worker_Closed.Hide;
+  end;
+end;
+
+
+procedure TKMGUIGameHouse.HouseLogo_Click(Sender: TObject);
+var
+  H: TKMHouse;
+begin
+  if not (gMySpectator.Selected is TKMHouse) then Exit;
+
+  H := TKMHouse(gMySpectator.Selected);
+  if not H.IsDestroyed then
+  begin
+    if Assigned(fSetViewportEvent) then
+      fSetViewportEvent(KMPointF(H.Entrance));
   end;
 end;
 

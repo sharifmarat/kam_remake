@@ -154,6 +154,8 @@ type
     procedure StopGame(const aText: UnicodeString = '');
     procedure ShowMPStats;
     procedure ShowSPStats;
+
+    procedure SetViewportPos(const aLoc: TKMPointF);
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -1148,7 +1150,7 @@ begin
   fGuiGameUnit.OnUnitDismiss := Reset_Menu;
   fGuiGameUnit.OnArmyCanTakeOrder := ArmyCanTakeOrder;
   fGuiGameUnit.OnSelectingTroopDirection := IsSelectingTroopDirection;
-  fGuiGameHouse := TKMGUIGameHouse.Create(Panel_Controls);
+  fGuiGameHouse := TKMGUIGameHouse.Create(Panel_Controls, SetViewportPos);
   fGuiGameHouse.OnHouseDemolish := House_Demolish;
 end;
 
@@ -3968,6 +3970,12 @@ procedure TKMGamePlayInterface.ShowSPStats;
 begin
   fGuiGameResultsMP.Hide;
   fGuiGameResultsSP.Show(fGuiGameResultsMP.GameResultMsg);
+end;
+
+
+procedure TKMGamePlayInterface.SetViewportPos(const aLoc: TKMPointF);
+begin
+  fViewport.Position := aLoc;
 end;
 
 
