@@ -760,28 +760,6 @@ begin
 end;
 
 
-function TKMHousePlanList.GetPlansStoneDemands(): Integer;
-var
-  I: Integer;
-begin
-  Result := 0;
-  for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
-      Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
-end;
-
-
-function TKMHousePlanList.GetPlansWoodDemands(): Integer;
-var
-  I: Integer;
-begin
-  Result := 0;
-  for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
-      Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
-end;
-
-
 procedure TKMHousePlanList.GiveTask(aIndex: Integer; aWorker: TKMUnitWorker);
 begin
   aWorker.BuildHouseArea(fPlans[aIndex].HouseType, fPlans[aIndex].Loc, aIndex);
@@ -1421,3 +1399,25 @@ end;
 
 
 end.
+
+function TKMHousePlanList.GetPlansStoneDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
+end;
+
+
+function TKMHousePlanList.GetPlansWoodDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
+end;
+
