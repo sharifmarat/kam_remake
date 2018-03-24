@@ -4,7 +4,7 @@ interface
 uses
   Classes, Graphics, KromUtils, Math, SysUtils,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes,
-  KM_AISetup, KM_ResHouses, KM_ResWares;
+  KM_AISetup, KM_ResHouses, KM_ResWares, KM_HandStats;
 
 type
   TWareBalance = record
@@ -17,6 +17,11 @@ type
     Warriors: array[WARRIOR_MIN..WARRIOR_MAX] of Word;
     Houses: array[HOUSE_MIN..HOUSE_MAX] of Word;
   end;
+  THouseBuildHistory = record
+    Count: Word;
+    Quantity: TKMWordArray;
+    Tick: TKMCardinalArray;
+  end;
   TWareBalanceArray = array[WARE_MIN..WARE_MAX] of TWareBalance;
   //TWarfareDemands = array[WARFARE_MIN..WARFARE_MAX] of Single;
   TRequiredHousesArray = array[HOUSE_MIN..HOUSE_MAX] of Integer;
@@ -25,10 +30,10 @@ type
   TKMCityPredictor = class
   private
     fOwner: TKMHandIndex;
-    fCornDelay: Cardinal;
     fMaxSoldiersInMin: Single;
     fCityStats: TCityStats;
     fWareBalance: TWareBalanceArray;
+    fFarmBuildHistory: THouseBuildHistory;
     fSetup: TKMHandAISetup;
 
     procedure UpdateWareProduction(aWT: TKMWareType);
@@ -139,6 +144,14 @@ begin
   inherited Create;
   fOwner := aPlayer;
   fSetup := aSetup;
+  with fFarmBuildHistory do
+  begin
+    Count := 1;
+    SetLength(Quantity,1);
+    SetLength(Tick,1);
+    Quantity[0] := 0;
+    Tick[0] := 10 * 60 * 10; // Init delay 10 min
+  end;
 end;
 
 destructor TKMCityPredictor.Destroy();
@@ -153,8 +166,13 @@ var
 begin
   SaveStream.WriteA('CityPredictor');
   SaveStream.Write(fOwner);
-  SaveStream.Write(fCornDelay);
   SaveStream.Write(fMaxSoldiersInMin);
+  SaveStream.Write(fFarmBuildHistory.Count);
+  if (fFarmBuildHistory.Count > 0) then
+  begin
+    SaveStream.Write(fFarmBuildHistory.Quantity[0], SizeOf(fFarmBuildHistory.Quantity[0]) * fFarmBuildHistory.Count);
+    SaveStream.Write(fFarmBuildHistory.Tick[0], SizeOf(fFarmBuildHistory.Tick[0]) * fFarmBuildHistory.Count);
+  end;
 
   // Requred houses should be saved because of public variable
   SaveStream.Write(RequiredHouses, SizeOf(TRequiredHousesArray));
@@ -172,8 +190,15 @@ var
 begin
   LoadStream.ReadAssert('CityPredictor');
   LoadStream.Read(fOwner);
-  LoadStream.Read(fCornDelay);
   LoadStream.Read(fMaxSoldiersInMin);
+  LoadStream.Read(fFarmBuildHistory.Count);
+  if (fFarmBuildHistory.Count > 0) then
+  begin
+    SetLength(fFarmBuildHistory.Quantity, fFarmBuildHistory.Count);
+    SetLength(fFarmBuildHistory.Tick, fFarmBuildHistory.Count);
+    LoadStream.Read(fFarmBuildHistory.Quantity[0], SizeOf(fFarmBuildHistory.Quantity[0]) * fFarmBuildHistory.Count);
+    LoadStream.Read(fFarmBuildHistory.Tick[0], SizeOf(fFarmBuildHistory.Tick[0]) * fFarmBuildHistory.Count);
+  end;
 
   // Requred houses should be saved because of public variable
   LoadStream.Read(RequiredHouses, SizeOf(TRequiredHousesArray));
@@ -434,18 +459,68 @@ begin
   fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
   fCityStats.WarriorsCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
   UpdateWareBalance(True);
-
-  // Corn delay to stop build swine or mill before farm (another way is to check if we have corn but it does not work well)
-  fCornDelay := Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 30);
 end;
 
 
 procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
+  function UpdateFarmHistory(): Boolean;
+  const
+    CORN_DELAY = 10 * 60 * 6; // Delay 8 minutes or use array ProductionLag from KM_ResWares (but there is 6 and it is not enought)
+  var
+    I, K, Cnt: Integer;
+  begin
+    with fFarmBuildHistory do
+    begin
+      // Remove old history
+      if (Count > 1) then // Keep at least 1 element (the latest)
+      begin
+        I := 0;
+        while (I < Count) do // Find the actual tick
+        begin
+          if (Tick[I] > aTick) then
+            break;
+          I := I + 1;
+        end;
+        if (I > 1) then // Keep the latest older element
+        begin
+          Cnt := 0;
+          for K := I - 1 to Count - 1 do // Remove old ticks
+          begin
+            Quantity[Cnt] := Quantity[K];
+            Tick[Cnt] := Tick[K];
+            Cnt := Cnt + 1;
+          end;
+          Count := Cnt;
+        end;
+      end;
+      Cnt := gHands[fOwner].Stats.GetHouseQty(ht_Farm);
+      if (Quantity[Count-1] <> Cnt) then
+      begin
+        if (Length(Quantity) <= Count) then
+        begin
+          SetLength(Quantity, Length(Quantity) + 5);
+          SetLength(Tick, Length(Tick) + 5);
+        end;
+        Quantity[Count] := Cnt;
+        Tick[Count] := aTick + CORN_DELAY;
+        Count := Count + 1;
+      end;
+    end;
+    Result := + fWareBalance[wt_Flour].Production
+              + fWareBalance[wt_Pig].Production * 4
+              + fWareBalance[wt_Horse].Production * 4
+              >=
+              + fFarmBuildHistory.Quantity[0] * ProductionRate[wt_Corn]
+              + gHands[fOwner].Stats.GetWareBalance(wt_Corn) * 0.25;
+  end;
 const
   WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
+  WINEYARD_DELAY = 50 * 60 * 10;
 var
   HT: TKMHouseType;
+  Stats: TKMHandStats;
 begin
+  Stats := gHands[fOwner].Stats;
   for HT := Low(RequiredHouses) to High(RequiredHouses) do
     RequiredHouses[HT] := 0;
 
@@ -453,47 +528,39 @@ begin
   UpdateBasicHouses(GA_PLANNER);
   UpdateWareBalance();
 
-  if (fCornDelay = 0) AND (gHands[fOwner].Stats.GetHouseTotal(ht_Farm) > 0) then // Dont use fCityStats because it consider planned houses
-  begin
-    fCornDelay := gGame.GameTickCount + 6000; // 10 ticks = 1 sec (farm requires 10 min to produce corn)
-  end;
-  // Corn delay (should not wait till is first corn produced because it have huge impact)
-  if (gGame.GameTickCount < fCornDelay) AND not gHands[fOwner].Locks.HouseBlocked[ht_Farm] then // Consider corn delay (~10 minutes) -> time saved by construction
+  // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
+  if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[ht_Farm] then
   begin
     RequiredHouses[ht_Mill] := 0;
-    RequiredHouses[ht_Bakery] := 0;
     RequiredHouses[ht_Swine] := 0;
-    RequiredHouses[ht_Tannery] := 0;
-    RequiredHouses[ht_ArmorWorkshop] := 0;
+    RequiredHouses[ht_Stables] := 0;
   end;
-  // Pig delay
-  //RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetHouseQty(ht_Swine) > 0);
-  //if (gHands[fOwner].Stats.GetWareBalance(wt_Skin) = 0) then
-  //begin
-  //  RequiredHouses[ht_Tannery] := 0;
-  //  RequiredHouses[ht_ArmorWorkshop] := 0;
-  //end;
-
-  if (gGame.GameTickCount < 22000) then
-    RequiredHouses[ht_Wineyard] := 0;
+  // Houses in dependence on corn delay
+  RequiredHouses[ht_Bakery] := Min(RequiredHouses[ht_Bakery], Stats.GetHouseQty(ht_Mill) - fCityStats.Houses[ht_Bakery]);
+  RequiredHouses[ht_Butchers] := Min(RequiredHouses[ht_Butchers], Ceil(Stats.GetHouseQty(ht_Swine)/3 - fCityStats.Houses[ht_Butchers]));
+  RequiredHouses[ht_Tannery] := Min(RequiredHouses[ht_Tannery], Ceil(Stats.GetHouseQty(ht_Swine)/2 - fCityStats.Houses[ht_Tannery]));
+  RequiredHouses[ht_ArmorWorkshop] := Min(RequiredHouses[ht_ArmorWorkshop], Stats.GetHouseTotal(ht_Tannery)*2 - fCityStats.Houses[ht_ArmorWorkshop]);
 
   RequiredHouses[ht_WeaponWorkshop] := RequiredHouses[ht_WeaponWorkshop] * Byte( (RequiredHouses[ht_Tannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
 
+  if (gGame.GameTickCount < WINEYARD_DELAY) then
+    RequiredHouses[ht_Wineyard] := 0;
+
+
   // Loghical house requirements (delay takes too long so it is not used)
   {
-  RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
-  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Pig) > 0);
-  RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Leather) > 0);
-  RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Skin) > 0);
-  RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Flour) > 0);
-  RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Corn) > 0);
+  RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(Stats.GetWareBalance(wt_Corn) > 0);
+  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(Stats.GetWareBalance(wt_Pig) > 0);
+  RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(Stats.GetWareBalance(wt_Leather) > 0);
+  RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(Stats.GetWareBalance(wt_Skin) > 0);
+  RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(Stats.GetWareBalance(wt_Flour) > 0);
+  RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(Stats.GetWareBalance(wt_Corn) > 0);
   //}
   // Iron production (it will give time to build more mines)
   {
-  RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_IronOre) > 0);
-  RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
-  RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(gHands[fOwner].Stats.GetWareBalance(wt_Steel) > 0);
+  RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(Stats.GetWareBalance(wt_IronOre) > 0);
+  RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(Stats.GetWareBalance(wt_Steel) > 0);
+  RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(Stats.GetWareBalance(wt_Steel) > 0);
   //}
 end;
 
