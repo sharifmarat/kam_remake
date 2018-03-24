@@ -89,7 +89,7 @@ var
 
   GA_PATHFINDING_BasePrice    : Word = 0;
   GA_PATHFINDING_HouseOutside : Word = 1;
-  GA_PATHFINDING_Field        : Word = 3;
+  GA_PATHFINDING_Field        : Word = 5;
   GA_PATHFINDING_noBuildArea  : Word = 1;
   GA_PATHFINDING_Forest       : Word = 3;
   GA_PATHFINDING_OtherCase    : Word = 3;
@@ -376,40 +376,10 @@ end;
 
 
 procedure TKMCityPlanner.AfterMissionInit();
-var
-  I: Integer;
-  Houses: TKMHousesCollection;
-  HT: TKMHouseType;
-  IdxArr: array [HOUSE_MIN..HOUSE_MAX] of Word;
 begin
   fPerfIdx := 255; // fPerfArr will be reset in next step
   SetLength(fPerfArr, gTerrain.MapY, gTerrain.MapX);
-
-  for HT := HOUSE_MIN to HOUSE_MAX do
-  begin
-    IdxArr[HT] := gHands[fOwner].Stats.GetHouseQty(HT);
-    fPlannedHouses[HT].Count := IdxArr[HT];
-    SetLength(fPlannedHouses[HT].Plans, IdxArr[HT]);
-  end;
-
-  Houses := gHands[fOwner].Houses;
-  for I := 0 to Houses.Count - 1 do
-  begin
-    HT := Houses[I].HouseType;
-    Dec(IdxArr[HT], 1);
-    with fPlannedHouses[HT].Plans[ IdxArr[HT] ] do
-    begin
-      Placed := False;
-      ShortcutsCompleted := False;
-      RemoveTreeInPlanProcedure := False;
-      HouseReservation := False;
-      Loc := Houses[I].Entrance;
-      SpecPoint := KMPOINT_ZERO;
-      if (HT = htWoodcutters) then
-        SpecPoint := TKMHouseWoodcutters(Houses[I]).FlagPoint;
-      House := Houses[I].GetHousePointer;
-    end;
-  end;
+  // Actual houses will be added in UpdateState (script may remove / add something after mission init ...)
 end;
 
 procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandIndex);
@@ -484,7 +454,7 @@ var
 begin
   // Priority: function is called from CityBuilder only in right time
   CheckChopOnly := (aTick mod WOODCUT_CHOP_ONLY_CHECK = fOwner);
-  // Find new houses which are added by player / script etc. and connect them with city plan
+  // Find new houses which are added by player / script / at the start of mission etc. and connect them with city plan
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
@@ -931,15 +901,12 @@ begin
       aField.Add(Point);
   end;
   if (aField.Count > 0) then
-  begin
-    fPlannedHouses[aHT].Plans[aIdx].RemoveTreeInPlanProcedure := True;
     for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
     begin
       Point := KMPointAdd( fPlannedHouses[aHT].Plans[aIdx].Loc, HMA[aHT].Tiles[I] );
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] = 0) then
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := 10;
     end;
-  end;
   Result := aField.Count;
 end;
 
