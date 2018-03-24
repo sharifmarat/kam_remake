@@ -1146,7 +1146,7 @@ begin
     fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls);
     Create_Quit;
 
-  fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls);
+  fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls, SetViewportPos);
   fGuiGameUnit.OnUnitDismiss := Reset_Menu;
   fGuiGameUnit.OnArmyCanTakeOrder := ArmyCanTakeOrder;
   fGuiGameUnit.OnSelectingTroopDirection := IsSelectingTroopDirection;
