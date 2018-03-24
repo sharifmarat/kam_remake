@@ -1080,8 +1080,8 @@ begin
     RequiredHouses[ht_Woodcutters] := 0;
   end;
 
-  RequiredStones := 0;
-  RequiredWood := 0;
+  RequiredStones := gHands[fOwner].BuildList.HousePlanList.GetPlansStoneDemands();
+  RequiredWood := gHands[fOwner].BuildList.HousePlanList.GetPlansWoodDemands();
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
@@ -1091,8 +1091,8 @@ begin
       RequiredWood := RequiredWood + gRes.Houses[H.HouseType].WoodCost - H.GetBuildWoodDelivered;
     end;
   end;
-  fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones + 10);
-  fWoodShortage := fWoodShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood + 5);
+  fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones);
+  fWoodShortage := fWoodShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
 
   CheckHouseReservation();
   if (MaxPlans <= 0) then
