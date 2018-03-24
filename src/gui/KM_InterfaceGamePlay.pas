@@ -1139,7 +1139,7 @@ begin
 
   fGuiGameBuild := TKMGUIGameBuild.Create(Panel_Controls);
   fGuiGameRatios := TKMGUIGameRatios.Create(Panel_Controls, fUIMode in [umSP, umMP]);
-  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls, ShowStats);
+  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls, ShowStats, SetViewportPos);
   Create_Menu;
     Create_Save;
     Create_Load;
