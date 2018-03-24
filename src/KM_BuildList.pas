@@ -60,7 +60,11 @@ type
     procedure RemPlan(aLoc: TKMPoint);
     function TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
     function FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
+
+    // AI Informations
     function ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+    function GetPlansStoneDemands(): Integer;
+    function GetPlansWoodDemands(): Integer;
 
     //Game events
     function BestBid(aWorker: TKMUnitWorker; out aBid: Single): Integer; //Calculate best bid for a given worker
@@ -752,6 +756,26 @@ begin
       AND KMSamePoint(  aLoc, KMPointAdd( fPlans[I].Loc, KMPoint(gRes.Houses[aHT].EntranceOffsetX,0) )  ) then
 	    Exit;
   Result := False;
+end;
+
+
+function TKMHousePlanList.GetPlansStoneDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to Length(fPlans) - 1 do
+    Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
+end;
+
+
+function TKMHousePlanList.GetPlansWoodDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to Length(fPlans) - 1 do
+    Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
 end;
 
 
