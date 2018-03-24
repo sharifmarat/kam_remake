@@ -483,37 +483,11 @@ Result
     nil: if NO other house found
 }
 function TKMHandsCollection.GetNextHouseWSameType(aHouse: TKMHouse): TKMHouse;
-var Houses: TKMHousesCollection;
-    House, FirstH: TKMHouse;
-    Found: Boolean;
-    I: Integer;
 begin
   Result := nil;
   if (aHouse = nil) or aHouse.IsDestroyed then Exit;
 
-  Found := False;
-  FirstH := nil;
-
-  Houses := fHandsList[aHouse.Owner].Houses;
-
-  for I := 0 to Houses.Count - 1 do
-  begin
-    House := Houses[I];
-    if (House.HouseType = aHouse.HouseType) // we are interested in houses with the same type
-      and not House.IsDestroyed then        // not destroyed
-    begin
-      if House = aHouse then
-        Found := True               // Mark that we found our house
-      else if Found then
-      begin
-        Result := House;            // Save the next house after Found to Result and Break
-        Break;
-      end else if FirstH = nil then
-        FirstH := House;            // Save 1st house in list in case our house is the last one
-    end;
-  end;
-  if (Result = nil) and Found then // Found should be always True here
-    Result := FirstH;
+  Result := fHandsList[aHouse.Owner].GetNextHouseWSameType(aHouse.HouseType, aHouse.UID);
 end;
 
 
