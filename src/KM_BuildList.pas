@@ -751,7 +751,7 @@ var
   I: Integer;
 begin
   Result := True;
-  for I := 0 to Length(fPlans) - 1 do
+  for I := 0 to fPlansCount - 1 do
     if (fPlans[I].HouseType = aHT)
       AND KMSamePoint(  aLoc, KMPointAdd( fPlans[I].Loc, KMPoint(gRes.Houses[aHT].EntranceOffsetX,0) )  ) then
 	    Exit;
@@ -764,8 +764,9 @@ var
   I: Integer;
 begin
   Result := 0;
-  for I := 0 to Length(fPlans) - 1 do
-    Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
 end;
 
 
@@ -774,8 +775,9 @@ var
   I: Integer;
 begin
   Result := 0;
-  for I := 0 to Length(fPlans) - 1 do
-    Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> ht_None) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
 end;
 
 
