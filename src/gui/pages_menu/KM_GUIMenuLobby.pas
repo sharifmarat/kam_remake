@@ -99,6 +99,7 @@ type
     procedure Lobby_OnReassignedToJoiner(Sender: TObject);
     procedure Lobby_OnFileTransferProgress(aTotal, aProgress: Cardinal);
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
+    procedure Lobby_OnSetPassword(const aPassword: AnsiString);
 
     function DetectMapType: Integer;
     procedure SettingsClick(Sender: TObject);
@@ -125,6 +126,7 @@ type
         Label_ServerName: TKMLabel;
 
       Panel_Players: TKMPanel;
+        Image_PasswordLock: TKMImage;
         Bevel_Players: TKMBevel;
         CheckBox_HostControl: TKMCheckBox;
         CheckBox_RandomizeTeamLocations: TKMCheckBox;
@@ -386,6 +388,9 @@ begin
       CheckBox_RandomizeTeamLocations.OnClick := PlayersSetupChange;
 
     OffY := 49;
+
+      Image_PasswordLock := TKMImage.Create(Panel_Players, 13, OffY, 12, 16, 73, rxGuiMain);
+      Image_PasswordLock.Hide;
 
       //Column titles
       TKMLabel.Create(Panel_Players, C1, OffY, C1W,  20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
@@ -833,6 +838,7 @@ begin
   fNetworking.OnReassignedJoiner := Lobby_OnReassignedToJoiner;
   fNetworking.OnFileTransferProgress := Lobby_OnFileTransferProgress;
   fNetworking.OnPlayerFileTransferProgress := Lobby_OnPlayerFileTransferProgress;
+  fNetworking.OnSetPassword := Lobby_OnSetPassword;
 
   ChatMenuSelect(CHAT_MENU_ALL); //All
 
@@ -2306,6 +2312,12 @@ begin
     PercentBar_DownloadProgress[Row].SetCaptions(IntToStr(aProgress div 1024) + 'kb ', '/', ' ' + IntToStr(aTotal div 1024) + 'kb');
     PercentBar_PlayerDl_ChVisibility(Row, True);
   end;
+end;
+
+
+procedure TKMMenuLobby.Lobby_OnSetPassword(const aPassword: AnsiString);
+begin
+  Image_PasswordLock.Visible := aPassword <> '';
 end;
 
 
