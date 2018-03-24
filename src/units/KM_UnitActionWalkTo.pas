@@ -184,7 +184,8 @@ begin
 
   //If route fails to build that's a serious issue, (consumes CPU) Can*** should mean that never happens
   if not RouteBuilt then //NoList.Count = 0, means it will exit in Execute
-    gLog.AddNoTime('Unable to make a route for ' + gRes.Units[aUnit.UnitType].GUIName +
+    //NoFlush logging here because this log is not much important
+    gLog.AddNoTimeNoFlush('Unable to make a route for ' + gRes.Units[aUnit.UnitType].GUIName +
                    ' from ' + KM_Points.TypeToString(fWalkFrom) + ' to ' + KM_Points.TypeToString(fWalkTo) +
                    ' with "' + PassabilityGuiText[fPass] + '"');
 end;
