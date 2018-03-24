@@ -592,11 +592,11 @@ const
 {Terrain}
 type
   TKMFieldType = (
-    ft_None = 0,
-    ft_Road,
-    ft_Corn,
-    ft_InitWine, //Reset rotation and set grapes ground, but without Grapes yet
-    ft_Wine
+    ftNone,
+    ftRoad,
+    ftCorn,
+    ftInitWine, //Reset rotation and set grapes ground, but without Grapes yet
+    ftWine
     );
 
   TKMHouseStage = (

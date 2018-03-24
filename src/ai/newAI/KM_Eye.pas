@@ -510,7 +510,7 @@ begin
     begin
       if (tpBuild in gTerrain.Land[Y,X].Passability) then
         aBuildCnt := aBuildCnt + 1;
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ft_Corn) then
+      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
         aFieldCnt := aFieldCnt + 1;
     end;
 
@@ -546,7 +546,7 @@ begin
       else         Output := Output AND ( (tpBuild in gTerrain.Land[Y,X].Passability)
                                           OR (aIgnoreTrees
                                               AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])
-                                              AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ft_Wine))
+                                              AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftWine))
                                         );
     end;
     if not Output then
@@ -595,7 +595,7 @@ begin
     //This tile must not contain fields/houseplans of allied players
     for PL := 0 to gHands.Count - 1 do
       if (gHands[fOwner].Alliances[PL] = at_Ally) then// AND (PL <> fOwner) then
-        if (gHands[PL].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ft_None) then
+        if (gHands[PL].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ftNone) then
           Exit;
   end;
 
@@ -618,7 +618,7 @@ begin
     if (  // Direction south + not in case of house reservation OR specific house which can be build in avoid build areas
          ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT = ht_Woodcutters) OR (aHT = ht_CoalMine) OR (aHT = ht_WatchTower)
        ) AND not (
-         (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ft_Road)
+         (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ftRoad)
          OR (gTerrain.Land[Y, X].TileLock = tlRoadWork)
          OR (gTerrain.Land[Y, X].Passability * [tpMakeRoads, tpWalkRoad] <> [])
        ) then

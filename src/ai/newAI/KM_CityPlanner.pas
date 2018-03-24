@@ -780,7 +780,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
   begin
     Result := (gAIFields.Influences.AvoidBuilding[aP.Y, aP.X] = AVOID_BUILDING_NODE_LOCK_ROAD) // Reserved road plan
               OR (tpWalkRoad in gTerrain.Land[aP.Y, aP.X].Passability)                         // Completed road
-              OR (gHands[fOwner].BuildList.FieldworksList.HasField(aP) = ft_Road)              // Placed road plan
+              OR (gHands[fOwner].BuildList.FieldworksList.HasField(aP) = ftRoad)              // Placed road plan
               OR (gTerrain.Land[aP.Y, aP.X].TileLock = tlRoadWork);                            // Road under construction
   end;
 // New house plan may overlap existing road -> new road must be done (new road will extend aField list)
@@ -866,7 +866,7 @@ var
   NewLoc, ExistLoc: TKMPoint;
   //H: TKMHouse;
 begin
-  aFieldType := ft_Road;
+  aFieldType := ftRoad;
   ExistLoc := KMPOINT_ZERO;
   NewLoc := fPlannedHouses[aHT].Plans[aIdx].Loc;
   Output := FindClosestHouseEntrance((aHT = ht_WatchTower), NewLoc, ExistLoc); // Only placed in case of ht_WatchTower (ht_WatchTower are planned at once)
@@ -890,7 +890,7 @@ var
   Output: Boolean;
 begin
   Output := False;
-  aFieldType := ft_Road;
+  aFieldType := ftRoad;
   if fRoadShortcutPlanner.Route_Make(aEnd, aStart, aField) then
     Output := True;
   Result := Output;
@@ -903,12 +903,12 @@ begin
   aField.Clear;
   if (aHT = ht_Farm) then
   begin
-    aFieldType := ft_Corn;
+    aFieldType := ftCorn;
     PlanFarmFields( fPlannedHouses[aHT].Plans[aIdx].Loc, aField );
   end
   else if (aHT = ht_Wineyard) then
   begin
-    aFieldType := ft_Wine;
+    aFieldType := ftWine;
     PlanWineFields( fPlannedHouses[aHT].Plans[aIdx].Loc, aField );
   end
   else
@@ -963,7 +963,7 @@ begin
     begin
       FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
       if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)                         // Tile must be in map
-        AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ft_Wine)                     // Plan can be placed
+        AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftWine)                     // Plan can be placed
         AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then // Tile is not reserved
         aNodeList.Add(FieldLoc);
       if (aNodeList.Count >= MAX_VINE) then
@@ -1015,7 +1015,7 @@ begin
       begin
         FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
         if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)                          // Tile must be in map
-          AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ft_Corn)                      // Plan can be placed
+          AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn)                      // Plan can be placed
           AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then  // Tile is not reserved
           CntArr[Dir] := CntArr[Dir] + FIELD_PRICE;
       end;
@@ -1042,7 +1042,7 @@ begin
       begin
         FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
         if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)
-          AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ft_Corn)
+          AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn)
           AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then
           aNodeList.Add(FieldLoc);
       end;
@@ -1094,7 +1094,7 @@ begin
     Y := aLoc.Y + HMA[aHT].Surroundings[Dist,Dir,I].Y;
     if gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ft_Corn) then
+      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
         Fields := Fields + 1;
       //if not gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
       //  Obstacles := Obstacles + 1;
@@ -1118,15 +1118,15 @@ function TKMCityPlanner.SnapCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
   begin
     Result := (aAvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)
               OR gTerrain.TileIsWalkableRoad(aPoint)
-              OR IsPlan(aPoint, tlRoadWork, ft_Road);
+              OR IsPlan(aPoint, tlRoadWork, ftRoad);
   end;
   function IsCornField(aPoint: TKMPoint): Boolean; inline;
   begin
-    Result := gTerrain.TileIsCornField(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Corn);
+    Result := gTerrain.TileIsCornField(aPoint) OR IsPlan(aPoint, tlFieldWork, ftCorn);
   end;
   function IsWineField(aPoint: TKMPoint): Boolean; inline;
   begin
-    Result := gTerrain.TileIsWineField(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
+    Result := gTerrain.TileIsWineField(aPoint) OR IsPlan(aPoint, tlFieldWork, ftWine);
   end;
   function IsNearHouse(aAvoidBuilding: Byte; aPoint: TKMPoint): Boolean; inline;
   begin
@@ -1899,7 +1899,7 @@ begin
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
-            OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ft_Road) // Placed road plan
+            OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ftRoad) // Placed road plan
             OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                                // Road under construction
 
   if not IsRoad then
@@ -1935,7 +1935,7 @@ begin
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
   IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
             OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
-            OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ft_Road) // Placed road plan
+            OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ftRoad) // Placed road plan
             OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                                // Road under construction
 
   if not IsRoad then

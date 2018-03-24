@@ -396,7 +396,7 @@ begin
   RemFakeDeletedField(fFields[aIndex].Loc);
 
   fFields[aIndex].Loc := KMPOINT_ZERO;
-  fFields[aIndex].FieldType := ft_None;
+  fFields[aIndex].FieldType := ftNone;
   fFields[aIndex].JobStatus := js_Empty;
   gHands.CleanUpUnitPointer(fFields[aIndex].Worker); //Will nil the worker as well
 end;
@@ -409,7 +409,7 @@ procedure TKMFieldworksList.GetFields(aList: TKMPointTagList; aRect: TKMRect; aI
 var I: Integer;
 begin
   for I := 0 to fFieldsCount - 1 do
-  if (fFields[I].FieldType <> ft_None) and KMInRect(fFields[I].Loc, aRect) then
+  if (fFields[I].FieldType <> ftNone) and KMInRect(fFields[I].Loc, aRect) then
     aList.Add(fFields[I].Loc, Byte(fFields[I].FieldType));
 
   if aIncludeFake then
@@ -544,7 +544,7 @@ function TKMFieldworksList.HasField(aLoc: TKMPoint): TKMFieldType;
 var
   I: Integer;
 begin
-  Result := ft_None;
+  Result := ftNone;
 
   for I := 0 to fFieldsCount - 1 do
   if KMSamePoint(fFields[I].Loc, aLoc) then
@@ -563,7 +563,7 @@ var
   I, K: Integer;
   Found: Boolean;
 begin
-  Result := ft_None;
+  Result := ftNone;
 
   //First check fake fields
   for I := 0 to Length(fFakeFields) - 1 do

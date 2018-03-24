@@ -834,9 +834,9 @@ end;
 procedure TKMUnitWorker.BuildField(aField: TKMFieldType; aLoc: TKMPoint; aIndex: Integer);
 begin
   case aField of
-    ft_Road: fUnitTask := TKMTaskBuildRoad.Create(Self, aLoc, aIndex);
-    ft_Corn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
-    ft_Wine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
+    ftRoad: fUnitTask := TKMTaskBuildRoad.Create(Self, aLoc, aIndex);
+    ftCorn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
+    ftWine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
   else
     raise Exception.Create('Unexpected TKMFieldType');
   end;

@@ -531,14 +531,14 @@ var IsFieldSet: Boolean;
 begin
   IsFieldSet := False;
   //If we have corn/wine object on that tile, set appropriate field/wine stage
-  if (aFieldType = ft_Corn) and not gTerrain.TileIsCornField(aLoc) then
+  if (aFieldType = ftCorn) and not gTerrain.TileIsCornField(aLoc) then
   begin
     if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 58, 59) then
     begin
       gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
-  end else if (aFieldType = ft_Wine) and not gTerrain.TileIsWineField(aLoc) then
+  end else if (aFieldType = ftWine) and not gTerrain.TileIsWineField(aLoc) then
   begin
     if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 54, 57) then
     begin
@@ -560,7 +560,7 @@ begin
   //Don't allow placing on allies plans either
   for I := 0 to gHands.Count - 1 do
     if (I <> fHandIndex) and (fAlliances[I] = at_Ally) then
-      Result := Result and (gHands[i].fBuildList.FieldworksList.HasField(aLoc) = ft_None)
+      Result := Result and (gHands[i].fBuildList.FieldworksList.HasField(aLoc) = ftNone)
                        and not gHands[i].fBuildList.HousePlanList.HasPlan(aLoc);
 end;
 
@@ -569,7 +569,7 @@ end;
 function TKMHand.CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
-            and (fBuildList.FieldworksList.HasField(aLoc) = ft_None)
+            and (fBuildList.FieldworksList.HasField(aLoc) = ftNone)
             and not fBuildList.HousePlanList.HasPlan(aLoc)
             and LocHasNoAllyPlans(aLoc);
 end;
@@ -581,7 +581,7 @@ end;
 function TKMHand.CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
-            and (fBuildList.FieldworksList.HasFakeField(aLoc) = ft_None)
+            and (fBuildList.FieldworksList.HasFakeField(aLoc) = ftNone)
             and not fBuildList.HousePlanList.HasPlan(aLoc)
             and LocHasNoAllyPlans(aLoc);
 end;
@@ -618,7 +618,7 @@ begin
     for J := 0 to gHands.Count - 1 do
       if fAlliances[J] = at_Ally then
       begin
-        Result := Result and (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) = ft_None);
+        Result := Result and (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) = ftNone);
         //Surrounding tiles must not be a house
         for S := -1 to 1 do
           for T := -1 to 1 do
@@ -692,7 +692,7 @@ begin
     for J := 0 to gHands.Count - 1 do
       if fAlliances[J] = at_Ally then
       begin
-        if (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) <> ft_None) then
+        if (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) <> ftNone) then
           Exit;
 
         //Surrounding tiles must not be a house
@@ -713,7 +713,7 @@ end;
 procedure TKMHand.ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
 var Plan: TKMFieldType;
 begin
-  Assert(aFieldType in [ft_Road, ft_Corn, ft_Wine], 'Placing wrong FieldType');
+  Assert(aFieldType in [ftRoad, ftCorn, ftWine], 'Placing wrong FieldType');
 
   Plan := fBuildList.FieldworksList.HasField(aLoc);
   if aFieldType = Plan then //Same plan - remove it
@@ -726,9 +726,9 @@ begin
         gSoundPlayer.Play(sfx_placemarker);
       fBuildList.FieldworksList.AddField(aLoc, aFieldType);
       case aFieldType of
-         ft_Road: gScriptEvents.ProcPlanRoadPlaced(fHandIndex, aLoc.X, aLoc.Y);
-         ft_Corn: gScriptEvents.ProcPlanFieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
-         ft_Wine: gScriptEvents.ProcPlanWinefieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
+         ftRoad: gScriptEvents.ProcPlanRoadPlaced(fHandIndex, aLoc.X, aLoc.Y);
+         ftCorn: gScriptEvents.ProcPlanFieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
+         ftWine: gScriptEvents.ProcPlanWinefieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
       else
         raise Exception.Create('Unknown aFieldType');
       end;
@@ -738,7 +738,7 @@ begin
       if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
         and (HandIndex = gMySpectator.HandIndex) then
         gSoundPlayer.Play(sfx_CantPlace, 4);
-      if Plan = ft_None then //If we can't build because there's some other plan, that's ok
+      if Plan = ftNone then //If we can't build because there's some other plan, that's ok
       begin
         //Can't build here anymore because something changed between click and command processing, so remove any fake plans
         fBuildList.FieldworksList.RemFakeField(aLoc);
@@ -753,7 +753,7 @@ end;
 procedure TKMHand.ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType);
 var Plan: TKMFieldType;
 begin
-  Assert(aFieldType in [ft_Road, ft_Corn, ft_Wine], 'Placing wrong fake FieldType');
+  Assert(aFieldType in [ftRoad, ftCorn, ftWine], 'Placing wrong fake FieldType');
 
   Plan := fBuildList.FieldworksList.HasFakeField(aLoc);
   if aFieldType = Plan then //Same plan - remove it
@@ -861,13 +861,13 @@ var
   fieldType: TKMFieldType;
 begin
   fieldType := fBuildList.FieldworksList.HasField(Position);
-  if fieldType = ft_None then Exit; //Can happen due to network delays
+  if fieldType = ftNone then Exit; //Can happen due to network delays
   fBuildList.FieldworksList.RemFieldPlan(Position);
 
   case fieldType of
-    ft_Road: gScriptEvents.ProcPlanRoadRemoved(fHandIndex, Position.X, Position.Y);
-    ft_Corn: gScriptEvents.ProcPlanFieldRemoved(fHandIndex, Position.X, Position.Y);
-    ft_Wine: gScriptEvents.ProcPlanWinefieldRemoved(fHandIndex, Position.X, Position.Y);
+    ftRoad: gScriptEvents.ProcPlanRoadRemoved(fHandIndex, Position.X, Position.Y);
+    ftCorn: gScriptEvents.ProcPlanFieldRemoved(fHandIndex, Position.X, Position.Y);
+    ftWine: gScriptEvents.ProcPlanWinefieldRemoved(fHandIndex, Position.X, Position.Y);
   else
     raise Exception.Create('Unknown fieldType');
   end;
@@ -1232,7 +1232,7 @@ begin
     if AllowBuild then
     for J := 0 to gHands.Count - 1 do
     if (gHands[fHandIndex].Alliances[J] = at_Ally)
-    and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ft_None)
+    and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
        or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
        AllowBuild := False;
 

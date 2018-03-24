@@ -3149,9 +3149,9 @@ begin
     P := gGameCursor.Cell; // Get cursor position tile-wise
     if gMySpectator.Hand.FogOfWar.CheckTileRevelation(P.X, P.Y) > 0 then
       case gGameCursor.Mode of
-        cmRoad:   HandleFieldLMBDown(P, ft_Road);
-        cmField:  HandleFieldLMBDown(P, ft_Corn);
-        cmWine:   HandleFieldLMBDown(P, ft_Wine);
+        cmRoad:   HandleFieldLMBDown(P, ftRoad);
+        cmField:  HandleFieldLMBDown(P, ftCorn);
+        cmWine:   HandleFieldLMBDown(P, ftWine);
       end;
   end;
 
@@ -3289,9 +3289,9 @@ begin
     P := gGameCursor.Cell; // Get cursor position tile-wise
     if gMySpectator.Hand.FogOfWar.CheckTileRevelation(P.X, P.Y) > 0 then
       case gGameCursor.Mode of
-        cmRoad:   HandleFieldLMBDrag(P, ft_Road);
-        cmField:  HandleFieldLMBDrag(P, ft_Corn);
-        cmWine:   HandleFieldLMBDrag(P, ft_Wine);
+        cmRoad:   HandleFieldLMBDrag(P, ftRoad);
+        cmField:  HandleFieldLMBDrag(P, ftCorn);
+        cmWine:   HandleFieldLMBDrag(P, ftWine);
         cmErase:  if not KMSamePoint(fLastDragPoint, P) then
                   begin
                     if gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P) then
@@ -3300,7 +3300,7 @@ begin
                       fLastDragPoint := gGameCursor.Cell;
                     end
                     else
-                      if (gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None) then
+                      if (gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ftNone) then
                       begin
                         gGame.GameInputProcess.CmdBuild(gic_BuildRemoveFieldPlan, P); // Remove any plans
                         fLastDragPoint := gGameCursor.Cell;
@@ -3527,7 +3527,7 @@ begin
                   if gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P) then
                     gGame.GameInputProcess.CmdBuild(gic_BuildRemoveHousePlan, P)
                   else
-                    if gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None then
+                    if gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ftNone then
                       gGame.GameInputProcess.CmdBuild(gic_BuildRemoveFieldPlan, P) // Remove plans
                     else
                       gSoundPlayer.Play(sfx_CantPlace, P, False, 4); // Otherwise there is nothing to erase

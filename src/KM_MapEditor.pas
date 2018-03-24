@@ -305,20 +305,20 @@ begin
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
                     FieldStage := (gTerrain.GetCornStage(P) + aStageIncrement + CORN_STAGES_COUNT) mod CORN_STAGES_COUNT;
-                end else if gMySpectator.Hand.CanAddFieldPlan(P, ft_Corn) then
+                end else if gMySpectator.Hand.CanAddFieldPlan(P, ftCorn) then
                   FieldStage := 0;
                 if FieldStage >= 0 then
-                  gMySpectator.Hand.AddField(P, ft_Corn, FieldStage);
+                  gMySpectator.Hand.AddField(P, ftCorn, FieldStage);
               end;
     cmWine:   begin
                 if gTerrain.TileIsWineField(P) then
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
                     FieldStage := (gTerrain.GetWineStage(P) + aStageIncrement + WINE_STAGES_COUNT) mod WINE_STAGES_COUNT;
-                end else if gMySpectator.Hand.CanAddFieldPlan(P, ft_Wine) then
+                end else if gMySpectator.Hand.CanAddFieldPlan(P, ftWine) then
                   FieldStage := 0;
                 if FieldStage >= 0 then
-                  gMySpectator.Hand.AddField(P, ft_Wine, FieldStage);
+                  gMySpectator.Hand.AddField(P, ftWine, FieldStage);
               end;
   end;
 end;
@@ -350,7 +350,7 @@ begin
   begin
     fTerrainPainter.MakeCheckpoint;
     if gTerrain.TileIsCornField(P) and (gTerrain.GetCornStage(P) in [4,5]) then
-      gTerrain.SetField(P, gTerrain.Land[P.Y,P.X].TileOwner, ft_Corn, 3)  // For corn, when delete corn object reduce field stage to 3
+      gTerrain.SetField(P, gTerrain.Land[P.Y,P.X].TileOwner, ftCorn, 3)  // For corn, when delete corn object reduce field stage to 3
     else if gTerrain.TileIsWineField(P) then
       gTerrain.RemField(P)
     else
@@ -464,7 +464,7 @@ begin
 
   P := gGameCursor.Cell;
   case gGameCursor.Mode of
-    cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ft_Road) then
+    cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ftRoad) then
                   begin
                     //If there's a field remove it first so we don't get road on top of the field tile (undesired in MapEd)
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
@@ -531,7 +531,7 @@ begin
   P := gGameCursor.Cell; //Get cursor position tile-wise
   case Button of
     mbLeft:   case gGameCursor.Mode of
-                cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ft_Road) then
+                cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ftRoad) then
                               begin
                                 //If there's a field remove it first so we don't get road on top of the field tile (undesired in MapEd)
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then

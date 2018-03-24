@@ -1409,7 +1409,7 @@ begin
     cmNone:       ;
     cmErase:      if not gGame.IsMapEditor then
                   begin
-                    if ((gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None)
+                    if ((gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ftNone)
                         or gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P)
                         or (gMySpectator.Hand.HousesHitTest(P.X, P.Y) <> nil))
                     then
@@ -1417,16 +1417,16 @@ begin
                     else
                       RenderSpriteOnTile(P, TC_BLOCK); // Red X
                   end;
-    cmRoad:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Road)) and (gGameCursor.Tag1 <> Ord(cfmErase)) then
+    cmRoad:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftRoad)) and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
-    cmField:      if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Corn) or (gGame.IsMapEditor and gTerrain.TileIsCornField(P)))
+    cmField:      if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftCorn) or (gGame.IsMapEditor and gTerrain.TileIsCornField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
-    cmWine:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Wine) or (gGame.IsMapEditor and gTerrain.TileIsWineField(P)))
+    cmWine:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftWine) or (gGame.IsMapEditor and gTerrain.TileIsWineField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else

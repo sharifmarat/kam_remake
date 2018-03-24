@@ -484,8 +484,8 @@ begin
 
     for I := 0 to NodeList.Count - 1 do
       //We must check if we can add the plan ontop of plans placed earlier in this turn
-      if P.CanAddFieldPlan(NodeList[I], ft_Road) then
-        P.BuildList.FieldworksList.AddField(NodeList[I], ft_Road);
+      if P.CanAddFieldPlan(NodeList[I], ftRoad) then
+        P.BuildList.FieldworksList.AddField(NodeList[I], ftRoad);
     Result := True;
   finally
     NodeList.Free;
@@ -538,7 +538,7 @@ begin
     try
       for I := Min(Loc.Y - 2, gTerrain.MapY - 1) to Min(Loc.Y + 2 + AI_FIELD_HEIGHT - 1, gTerrain.MapY - 1) do
       for K := Max(Loc.X - AI_FIELD_WIDTH, 1) to Min(Loc.X + AI_FIELD_WIDTH, gTerrain.MapX - 1) do
-        if P.CanAddFieldPlan(KMPoint(K,I), ft_Corn) then
+        if P.CanAddFieldPlan(KMPoint(K,I), ftCorn) then
         begin
           //Base weight is distance from door (weight X higher so nice rectangle is formed)
           Weight := Abs(K - Loc.X)*3 + Abs(I - 2 - Loc.Y);
@@ -553,7 +553,7 @@ begin
 
       NodeTagList.SortByTag;
       for I := 0 to Min(NodeTagList.Count, 16) - 1 do
-        P.BuildList.FieldworksList.AddField(NodeTagList[I], ft_Corn);
+        P.BuildList.FieldworksList.AddField(NodeTagList[I], ftCorn);
     finally
       NodeTagList.Free;
     end;
@@ -566,7 +566,7 @@ begin
     try
       for I := Min(Loc.Y - 2, gTerrain.MapY - 1) to Min(Loc.Y + 2 + AI_FIELD_HEIGHT - 1, gTerrain.MapY - 1) do
       for K := Max(Loc.X - AI_FIELD_WIDTH, 1) to Min(Loc.X + AI_FIELD_WIDTH, gTerrain.MapX - 1) do
-        if P.CanAddFieldPlan(KMPoint(K,I), ft_Wine) then
+        if P.CanAddFieldPlan(KMPoint(K,I), ftWine) then
         begin
           //Base weight is distance from door (weight X higher so nice rectangle is formed)
           Weight := Abs(K - Loc.X)*3 + Abs(I - 2 - Loc.Y);
@@ -581,7 +581,7 @@ begin
 
       NodeTagList.SortByTag;
       for I := 0 to Min(NodeTagList.Count, 10) - 1 do
-        P.BuildList.FieldworksList.AddField(NodeTagList[I], ft_Wine);
+        P.BuildList.FieldworksList.AddField(NodeTagList[I], ftWine);
     finally
       NodeTagList.Free;
     end;
@@ -595,8 +595,8 @@ begin
   if aHouse = ht_Store then
     for I := Max(Loc.Y - 3, 1) to Min(Loc.Y + 2, gTerrain.MapY - 1) do
     for K := Max(Loc.X - 2, 1) to Min(Loc.X + 2, gTerrain.MapY - 1) do
-    if P.CanAddFieldPlan(KMPoint(K, I), ft_Road) then
-      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ft_Road);
+    if P.CanAddFieldPlan(KMPoint(K, I), ftRoad) then
+      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ftRoad);
 
   Result := True;
 end;
@@ -767,8 +767,8 @@ begin
 
     for I := Max(StoreLoc.Y - 3, 1) to Min(StoreLoc.Y + 2, gTerrain.MapY - 1) do
     for K := StoreLoc.X - 2 to StoreLoc.X + 2 do
-    if P.CanAddFieldPlan(KMPoint(K, I), ft_Road) then
-      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ft_Road);
+    if P.CanAddFieldPlan(KMPoint(K, I), ftRoad) then
+      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ftRoad);
   end;
 
   //Check if we need to connect separate branches of road network
@@ -802,8 +802,8 @@ begin
 
             for K := 0 to NodeList.Count - 1 do
               //We must check if we can add the plan ontop of plans placed earlier in this turn
-              if P.CanAddFieldPlan(NodeList[K], ft_Road) then
-                P.BuildList.FieldworksList.AddField(NodeList[K], ft_Road);
+              if P.CanAddFieldPlan(NodeList[K], ftRoad) then
+                P.BuildList.FieldworksList.AddField(NodeList[K], ftRoad);
           end;
         end;
     end;

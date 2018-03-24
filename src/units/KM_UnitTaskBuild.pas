@@ -155,7 +155,7 @@ begin
   //Yet unstarted
   if BuildID <> -1 then
   begin
-    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Road) then
+    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ftRoad) then
       //Allow other workers to take this task
       gHands[fUnit.Owner].BuildList.FieldworksList.ReOpenField(BuildID)
     else
@@ -165,8 +165,8 @@ begin
   else
     //Autobuild AI should rebuild roads when worker dies (otherwise house is never built)
     if (gGame <> nil) and not gGame.IsExiting and gHands[fUnit.Owner].AI.Setup.AutoBuild and (fPhase < 9)
-    and gHands[fUnit.Owner].CanAddFieldPlan(fLoc, ft_Road) then
-      gHands[fUnit.Owner].BuildList.FieldworksList.AddField(fLoc, ft_Road);
+    and gHands[fUnit.Owner].CanAddFieldPlan(fLoc, ftRoad) then
+      gHands[fUnit.Owner].BuildList.FieldworksList.AddField(fLoc, ftRoad);
 
   inherited;
 end;
@@ -175,7 +175,7 @@ end;
 function TKMTaskBuildRoad.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
-  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Road);
+  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ftRoad);
 end;
 
 
@@ -298,7 +298,7 @@ destructor TKMTaskBuildWine.Destroy;
 begin
   //Yet unstarted
   if BuildID <> -1 then
-    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Wine) then
+    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ftWine) then
       //Allow other workers to take this task
       gHands[fUnit.Owner].BuildList.FieldworksList.ReOpenField(BuildID)
     else
@@ -314,7 +314,7 @@ end;
 function TKMTaskBuildWine.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
-  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Wine);
+  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ftWine);
 end;
 
 
@@ -385,7 +385,7 @@ begin
         Thought := th_None;
       end;
    7: begin
-        gTerrain.SetField(fLoc, Owner, ft_Wine);
+        gTerrain.SetField(fLoc, Owner, ftWine);
         SetActionStay(5, ua_Walk);
         gTerrain.UnlockTile(fLoc);
         TileLockSet := False;
@@ -430,7 +430,7 @@ destructor TKMTaskBuildField.Destroy;
 begin
   //Yet unstarted
   if BuildID <> -1 then
-    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Corn) then
+    if gTerrain.CanAddField(fLoc.X, fLoc.Y, ftCorn) then
       //Allow other workers to take this task
       gHands[fUnit.Owner].BuildList.FieldworksList.ReOpenField(BuildID)
     else
@@ -445,7 +445,7 @@ end;
 function TKMTaskBuildField.WalkShouldAbandon: Boolean;
 begin
   //Walk should abandon if other player has built something there before we arrived
-  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ft_Corn);
+  Result := (BuildID <> -1) and not gTerrain.CanAddField(fLoc.X, fLoc.Y, ftCorn);
 end;
 
 
@@ -488,7 +488,7 @@ begin
        end;
     3: begin
         Thought := th_None; //Keep thinking build until it's done
-        gTerrain.SetField(fLoc, Owner, ft_Corn);
+        gTerrain.SetField(fLoc, Owner, ftCorn);
         SetActionStay(5,ua_Walk);
         gTerrain.UnlockTile(fLoc);
         TileLockSet := False;

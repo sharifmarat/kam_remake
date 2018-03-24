@@ -86,7 +86,7 @@ function TPathFindingRoad.MovementCost(aFromX, aFromY, aToX, aToY: Word): Word;
 var IsRoad: Boolean;
 begin
   IsRoad := (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)
-            or (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ft_Road)
+            or (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ftRoad)
             or (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);
 
   //Since we don't allow roads to be built diagonally we can assume
@@ -119,7 +119,7 @@ end;
 function TPathFindingRoad.IsWalkableTile(aX, aY: Word): Boolean;
 begin
   Result := ( ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[aY,aX].Passability <> []) OR (gTerrain.Land[aY, aX].TileLock = tlRoadWork) )
-            AND (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ft_None, ft_Road])
+            AND (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) in [ftNone, ftRoad])
             AND not gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY)); // This will ignore allied plans but I guess that it will not cause trouble
 end;
 
@@ -157,7 +157,7 @@ begin
 
   //Off road costs extra
   IsRoad := (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)
-            or (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ft_Road)
+            or (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ftRoad)
             or (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);
   if not IsRoad then
     Inc(Result, 3);

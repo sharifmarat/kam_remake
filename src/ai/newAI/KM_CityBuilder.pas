@@ -275,7 +275,7 @@ var
   I: Integer;
 begin
   case aNode.FieldType of
-    ft_Road: NODE_TYPE := AVOID_BUILDING_NODE_LOCK_ROAD;
+    ftRoad: NODE_TYPE := AVOID_BUILDING_NODE_LOCK_ROAD;
     else     NODE_TYPE := AVOID_BUILDING_NODE_LOCK_FIELD;
   end;
   with aNode.FieldList do
@@ -428,15 +428,15 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
   end;
   function IsRoad(aPoint: TKMPoint): Boolean;
   begin
-    Result := IsCompletedRoad(aPoint) OR IsPlan(aPoint, tlRoadWork, ft_Road);
+    Result := IsCompletedRoad(aPoint) OR IsPlan(aPoint, tlRoadWork, ftRoad);
   end;
   function IsCornField(aPoint: TKMPoint): Boolean;
   begin
-    Result := IsCompletedField(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Corn);
+    Result := IsCompletedField(aPoint) OR IsPlan(aPoint, tlFieldWork, ftCorn);
   end;
   function IsWineField(aPoint: TKMPoint): Boolean;
   begin
-    Result := IsCompletedWine(aPoint) OR IsPlan(aPoint, tlFieldWork, ft_Wine);
+    Result := IsCompletedWine(aPoint) OR IsPlan(aPoint, tlFieldWork, ftWine);
   end;
 
   function BuildField(aIdx: Integer; aFieldType: TKMFieldType): Boolean;
@@ -481,7 +481,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       for I := FieldList.Count - 1 downto 0 do
       begin
         // Is there road plan / work in progress?
-        if IsPlan(FieldList.Items[I], tlRoadWork, ft_Road) then
+        if IsPlan(FieldList.Items[I], tlRoadWork, ftRoad) then
           ActiveWorkers := ActiveWorkers + 1
         // Is there completed road?
         else if IsCompletedRoad(FieldList.Items[I]) then
@@ -495,7 +495,7 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
           // Does we have free workers? (this condition cannot be earlier because we need detection of ActiveWorkers)
           if (FreeWorkers <= 0) then
             break;
-          if not BuildField(I, ft_Road) then
+          if not BuildField(I, ftRoad) then
           begin
             if ShortcutMode then
             begin
@@ -540,13 +540,13 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
           RequiredWorkers := RequiredWorkers - 1;
         end
         // Check if field already exists ...
-        else if ((FieldType = ft_Wine) AND IsCompletedWine(FieldList.Items[I]))
-             OR ((FieldType = ft_Corn) AND IsCompletedField(FieldList.Items[I])) then
+        else if ((FieldType = ftWine) AND IsCompletedWine(FieldList.Items[I]))
+             OR ((FieldType = ftCorn) AND IsCompletedField(FieldList.Items[I])) then
         begin
           RequiredWorkers := RequiredWorkers - 1;
         end
-        else if ((FieldType = ft_Wine) AND IsPlan(FieldList.Items[I], tlFieldWork, ft_Wine))
-             OR ((FieldType = ft_Corn) AND IsPlan(FieldList.Items[I], tlFieldWork, ft_Corn)) then
+        else if ((FieldType = ftWine) AND IsPlan(FieldList.Items[I], tlFieldWork, ftWine))
+             OR ((FieldType = ftCorn) AND IsPlan(FieldList.Items[I], tlFieldWork, ftCorn)) then
         begin
           ActiveWorkers := ActiveWorkers + 1;
         end
@@ -595,12 +595,12 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
         if gTerrain.ObjectIsChopableTree(FieldList.Items[I], [caAge1,caAge2,caAge3,caAgeFull]) then
         begin
           // Check if is wine plan already placed
-          if IsPlan(FieldList.Items[I], tlFieldWork, ft_Wine) then
+          if IsPlan(FieldList.Items[I], tlFieldWork, ftWine) then
           begin
             RequiredWorkers := RequiredWorkers - 1;
           end
           // If we cannot remove tree by placing wineyard remove point from list
-          else if not BuildField(I, ft_Wine) then
+          else if not BuildField(I, ftWine) then
             FieldList.Delete(I);
         end
         // If is plan blocked by fields which could be compensated by road do it
@@ -609,15 +609,15 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
           if IsCompletedRoad(FieldList.Items[I]) then
             FieldList.Delete(I) // Now can be item [I] deleted
           // Else try place road plan or delete point
-          else if not IsPlan(FieldList.Items[I], tlRoadWork, ft_Road) then
+          else if not IsPlan(FieldList.Items[I], tlRoadWork, ftRoad) then
           begin
             // Delete item [I] only in case that we cannot place road plan (point must be removed only in moment when is road completed)
-            if not BuildField(I, ft_Road) then
+            if not BuildField(I, ftRoad) then
               FieldList.Delete(I);
           end;
         end
         // Tree was destroyed while worker is going to do it -> remove wine or corn plan and remove point from build node
-        else if (gHands[fOwner].BuildList.FieldworksList.HasField(FieldList.Items[I]) <> ft_None) then // ft_None is fine, road was checked before
+        else if (gHands[fOwner].BuildList.FieldworksList.HasField(FieldList.Items[I]) <> ftNone) then // ft_None is fine, road was checked before
         begin
           gHands[fOwner].BuildList.FieldworksList.RemFieldPlan(FieldList.Items[I]);
           FieldList.Delete(I);
@@ -646,8 +646,8 @@ begin
   else
   begin
     case aNode.FieldType of
-      ft_Road: BuildRoad();
-      ft_Wine, ft_Corn: BuildFields();
+      ftRoad: BuildRoad();
+      ftWine, ftCorn: BuildFields();
       else
         begin
         end;
@@ -1237,8 +1237,8 @@ begin
       for I := BaseLoc.X-1 to BaseLoc.X+1 do
       begin
         gAIFields.Influences.AvoidBuilding[BaseLoc.Y+1, I] := 255;
-        if gHands[fOwner].CanAddFieldPlan(KMPoint(I, BaseLoc.Y+1) , ft_Road) then
-          gHands[fOwner].BuildList.FieldworksList.AddField(KMPoint(I, BaseLoc.Y+1) , ft_Road);
+        if gHands[fOwner].CanAddFieldPlan(KMPoint(I, BaseLoc.Y+1) , ftRoad) then
+          gHands[fOwner].BuildList.FieldworksList.AddField(KMPoint(I, BaseLoc.Y+1) , ftRoad);
       end;
 
   // Find houses which should be connected
@@ -1362,9 +1362,9 @@ begin
       if Active then
       begin
         case FieldType of
-          ft_Corn: Color := $40000000 OR COLOR_GREEN;
-          ft_Wine: Color := $88000000 OR COLOR_GREEN;
-          ft_Road: Color := $80000000 OR COLOR_NEW;//COLOR_YELLOW;
+          ftCorn: Color := $40000000 OR COLOR_GREEN;
+          ftWine: Color := $88000000 OR COLOR_GREEN;
+          ftRoad: Color := $80000000 OR COLOR_NEW;//COLOR_YELLOW;
         end;
         if RemoveTreesMode then
           Color := $60000000 OR COLOR_BLUE;

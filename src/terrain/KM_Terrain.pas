@@ -1617,7 +1617,7 @@ begin
         if (Land[I, K].Obj <> 255) then
         begin
           if TileIsCornField(KMPoint) and (GetCornStage(KMPoint) in [4,5]) then
-            SetField(KMPoint, Land[I, K].TileOwner, ft_Corn, 3)  // For corn, when delete corn object reduce field stage to 3
+            SetField(KMPoint, Land[I, K].TileOwner, ftCorn, 3)  // For corn, when delete corn object reduce field stage to 3
           else if TileIsWineField(KMPoint) then
             RemField(KMPoint)
           else
@@ -1659,7 +1659,7 @@ begin
   UpdateFences(Loc);
   UpdatePassability(KMRectGrow(KMRect(Loc), 1));
   //Walk and Road because Grapes are blocking diagonal moves
-  UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrowTopLeft(KMRect(Loc)), (aFieldType = ft_Wine)); //Grape object blocks diagonal, others don't
+  UpdateWalkConnect([wcWalk, wcRoad, wcWork], KMRectGrowTopLeft(KMRect(Loc)), (aFieldType = ftWine)); //Grape object blocks diagonal, others don't
 end;
 
 
@@ -1669,7 +1669,7 @@ begin
 
   Land[Loc.Y,Loc.X].TileOverlay := to_Road;
 
-  SetField_Complete(Loc, ft_Road);
+  SetField_Complete(Loc, ftRoad);
   gScriptEvents.ProcRoadBuilt(aOwner, Loc.X, Loc.Y);
 end;
 
@@ -1681,7 +1681,7 @@ begin
   Land[Loc.Y,Loc.X].Terrain  := 55;
   Land[Loc.Y,Loc.X].Rotation := 0;
 
-  SetField_Complete(Loc, ft_InitWine);
+  SetField_Complete(Loc, ftInitWine);
 end;
 
 
@@ -2211,12 +2211,12 @@ begin
     // Special cases for corn fields 
     58: if TileIsCornField(Loc) and (GetCornStage(Loc) <> 4) then
         begin
-          SetField(Loc, Land[Loc.Y,Loc.X].TileOwner, ft_Corn, 4, False);
+          SetField(Loc, Land[Loc.Y,Loc.X].TileOwner, ftCorn, 4, False);
           IsObjectSet := True;
         end;
     59: if TileIsCornField(Loc) and (GetCornStage(Loc) <> 4) then
         begin
-          SetField(Loc, Land[Loc.Y,Loc.X].TileOwner, ft_Corn, 5, False);
+          SetField(Loc, Land[Loc.Y,Loc.X].TileOwner, ftCorn, 5, False);
           IsObjectSet := True;
         end
   end;
@@ -2385,7 +2385,7 @@ procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: T
   function GetObj: Integer;
   begin
     Result := -1;
-    if aFieldType = ft_Corn then
+    if aFieldType = ftCorn then
     begin
       if not aKeepOldObject //Keep old object, when loading from script via old SetField command
         and ((Land[Loc.Y,Loc.X].Obj = 58) or (Land[Loc.Y,Loc.X].Obj = 59)) then
@@ -2395,11 +2395,11 @@ procedure TKMTerrain.SetField(Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: T
 
 var FieldAge: Byte;
 begin
-  Assert(aFieldType in [ft_Corn, ft_Wine], 'SetField is allowed to use only for corn or wine.');
+  Assert(aFieldType in [ftCorn, ftWine], 'SetField is allowed to use only for corn or wine.');
 
   SetField_Init(Loc, aOwner);
 
-  if (aFieldType = ft_Corn)
+  if (aFieldType = ftCorn)
     and (InRange(aStage, 0, CORN_STAGES_COUNT - 1)) then
   begin
     if fMapEditor then
@@ -2437,7 +2437,7 @@ begin
     end;
   end;
 
-  if (aFieldType = ft_Wine)
+  if (aFieldType = ftWine)
     and (InRange(aStage, 0, WINE_STAGES_COUNT - 1)) then
   begin
     if fMapEditor then
@@ -2468,9 +2468,9 @@ begin
 
   SetField_Complete(Loc, aFieldType);
 
-  if (aFieldType = ft_Wine) then
+  if (aFieldType = ftWine) then
     gScriptEvents.ProcWinefieldBuilt(aOwner, Loc.X, Loc.Y)
-  else if (aFieldType = ft_Corn) then
+  else if (aFieldType = ftCorn) then
     gScriptEvents.ProcFieldBuilt(aOwner, Loc.X, Loc.Y);
 end;
 
@@ -3426,9 +3426,9 @@ begin
   Result := TileInMapCoords(aX, aY);
 
   case aFieldType of
-    ft_Road:  Result := Result and (tpMakeRoads in Land[aY, aX].Passability);
-    ft_Corn,
-    ft_Wine:  Result := Result and TileGoodForField(aX, aY);
+    ftRoad:  Result := Result and (tpMakeRoads in Land[aY, aX].Passability);
+    ftCorn,
+    ftWine:  Result := Result and TileGoodForField(aX, aY);
     else      Result := False;
   end;
 end;
