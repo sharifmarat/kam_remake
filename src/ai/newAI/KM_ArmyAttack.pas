@@ -680,6 +680,9 @@ var
           end;
         end;
 
+      if (SqrClosestDistToRanged = INIT_DIST) then
+        SqrClosestDistToRanged := SqrClosestDist; 
+
       // Calculate threat level
       with fTargetU[I] do
       begin
