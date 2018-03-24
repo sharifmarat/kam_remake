@@ -67,7 +67,7 @@ uses
   KM_Units_Warrior, KM_Utils, KM_Defaults, KM_Sound, KM_CommonUtils;
 
 
-{ TKMGUIGameHouse }
+{ TKMGUIGameUnit }
 
 constructor TKMGUIGameUnit.Create(aParent: TKMPanel);
 begin
