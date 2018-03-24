@@ -56,7 +56,8 @@ type
   public
     //Player orders
     procedure AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
-    function HasPlan(aLoc: TKMPoint): Boolean;
+    function HasPlan(aLoc: TKMPoint): Boolean; overload;
+    function HasPlan(aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean; overload;
     procedure RemPlan(aLoc: TKMPoint);
     function TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
     function FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
@@ -763,11 +764,12 @@ begin
 end;
 
 
-function TKMHousePlanList.HasPlan(aLoc: TKMPoint): Boolean;
+function TKMHousePlanList.HasPlan(aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean;
 var
   I: Integer;
 begin
   Result := False;
+  aHouseType := ht_None;
 
   for I := 0 to fPlansCount - 1 do
   if (fPlans[I].HouseType <> ht_None)
@@ -776,9 +778,18 @@ begin
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
   then
   begin
+    aHouseType := fPlans[I].HouseType;
     Result := True;
     Exit;
   end;
+end;
+
+
+function TKMHousePlanList.HasPlan(aLoc: TKMPoint): Boolean;
+var
+  HT: TKMHouseType;
+begin
+  Result := HasPlan(aLoc, HT);
 end;
 
 
