@@ -82,7 +82,7 @@ type
 
     function GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
     function GetStoneLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
-    function GetCoalLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
+    function GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
     procedure GetForests(var aForests: TKMPointTagList; aInitialization: Boolean = False);
     function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
@@ -488,7 +488,7 @@ begin
     TagList.Free;
   end;
   // Scan Resources - coal
-  TagList := GetCoalLocs(True);
+  TagList := GetCoalMineLocs(True);
   try
     X := 0;
     Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
@@ -689,7 +689,7 @@ begin
 end;
 
 
-function TKMEye.GetCoalLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
+function TKMEye.GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
 var
   Own: Byte;
   I, K, Cnt: Integer;
@@ -711,7 +711,7 @@ begin
         Loc := gAIFields.NavMesh.Polygon2Point[K];
         if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
         begin
-          if (tpBuild in gTerrain.Land[ Loc.Y, Loc.X ].Passability) then
+          if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
             Output.Add(Loc, Own);
           Cnt := Cnt + 1;
         end;
@@ -972,10 +972,7 @@ begin
   //}
   { Stone mining tiles
   for I := 0 to fStoneMiningTiles.Count - 1 do
-  begin
-    Point := fStoneMiningTiles.Items[I];
-    gRenderAux.Quad(Point.X, Point.Y, COLOR_RED);
-  end;
+    gRenderAux.Quad(fStoneMiningTiles.Items[I].X, fStoneMiningTiles.Items[I].Y, COLOR_RED);
   //}
   { Init forests
   for I := 0 to fInitForests.Count - 1 do
