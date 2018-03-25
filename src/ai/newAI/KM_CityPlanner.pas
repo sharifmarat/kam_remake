@@ -1746,6 +1746,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
   const
     RADIUS = 3;
     MAX_BID = 100000;
+    MAX_ENEMY_INFLUENCE = 100;
   var
     PL: TKMHandIndex;
     X,Y: Integer;
@@ -1756,6 +1757,9 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
     PL := gAIFields.Influences.GetBestAllianceOwner(fOwner, aCenter, at_Ally);
     if (PL <> fOwner) AND (PL <> PLAYER_NONE) then
       Exit;
+    if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.Point2Polygon[aCenter.Y,aCenter.X], at_Enemy) > MAX_ENEMY_INFLUENCE) then
+      Exit;
+
     BestBid := MAX_BID;
     for Y := Max(1, aCenter.Y - RADIUS) to Min(gTerrain.MapY, aCenter.Y + RADIUS) do
     for X := Max(1, aCenter.X - RADIUS) to Min(gTerrain.MapX, aCenter.X + RADIUS) do
