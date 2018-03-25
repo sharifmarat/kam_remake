@@ -144,6 +144,7 @@ type
 
     fPerfIdx: Byte;
     fPerfArr: TKMByte2Array;
+    procedure ClearPerfArr();
 
     procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint); overload;
     procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False); overload;
@@ -1173,6 +1174,17 @@ begin
 end;
 
 
+procedure TKMCityPlanner.ClearPerfArr();
+var
+  X,Y: Integer;
+begin
+  fPerfIdx := 0;
+  for Y := 0 to Length(fPerfArr) - 1 do
+    for X := 0 to Length(fPerfArr[Y]) - 1 do
+      fPerfArr[Y,X] := 0;
+end;
+
+
 // Faster method for placing house (old in at the end of this file)
 //{
 function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
@@ -1183,16 +1195,6 @@ var
   Count: Word;
   CityCenter: TKMPoint;
   BestBidArr: array[0..BEST_PLANS_CNT-1] of Double;
-
-  procedure ClearPerfArr();
-  var
-    X,Y: Integer;
-  begin
-    fPerfIdx := 0;
-    for Y := 0 to Length(fPerfArr) - 1 do
-      for X := 0 to Length(fPerfArr[Y]) - 1 do
-        fPerfArr[Y,X] := 0;
-  end;
 
   function EvalFreeEntrance(aLoc: TKMPoint): Single;
   const
@@ -1427,12 +1429,12 @@ const
             Coal := CoalUnderPlan(Locs.Items[I]);
             if (Coal = 0) then
               continue;
-            Bid := + Locs.Tag[I]
-                   + DistCrit(htCoalMine, Locs.Items[I]) * 10
-                   + CoalUnderPlan(Locs.Items[I]) * 10
-                   + SnapCrit(htCoalMine, Locs.Items[I]) * 10
-                   - ObstaclesInHousePlan(htCoalMine, Locs.Items[I]) * 10
-                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y) * 10;
+            Bid := + (Locs.Tag[I] shr 3)
+                   + DistCrit(htCoalMine, Locs.Items[I])
+                   + CoalUnderPlan(Locs.Items[I])
+                   + SnapCrit(htCoalMine, Locs.Items[I])
+                   - ObstaclesInHousePlan(htCoalMine, Locs.Items[I])
+                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y);
             if (Bid > BestBid) then
             begin
               BestIdx := I;
@@ -1486,6 +1488,10 @@ const
     Locs: TKMPointTagList;
   begin
     Output := False;
+    if (fPerfIdx >= 255) then
+      ClearPerfArr();
+    fPerfIdx := fPerfIdx + 1;
+
     Locs := gAIFields.Eye.GetStoneLocs();
     try
       // Calculate criterium = ownership + actual Tag2 (= used by other miners) + owner criterium
@@ -1499,20 +1505,22 @@ const
       for I := 0 to Locs.Count - 1 do
       begin
         for Y := Max(1,Locs.Items[I].Y-SCAN_RAD) to Min(Locs.Items[I].Y+SCAN_RAD,gTerrain.MapY-1) do
-        for X := Max(1,Locs.Items[I].X-SCAN_RAD) to Min(Locs.Items[I].X+SCAN_RAD,gTerrain.MapX-1) do
-        begin
-          Loc := KMPoint(X,Y);
-          if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, False, False) then
-          begin
-            Bid := + DistCrit(htQuary, Loc) * 40 + SnapCrit(htQuary, Loc);
-            if (Bid > BestBid) then
+          for X := Max(1,Locs.Items[I].X-SCAN_RAD) to Min(Locs.Items[I].X+SCAN_RAD,gTerrain.MapX-1) do
+            if (fPerfArr[Y,X] <> fPerfIdx) then
             begin
-              BestBid := Bid;
-              BestLoc := Loc;
-              Output := True;
+              fPerfArr[Y,X] := fPerfIdx;
+              Loc := KMPoint(X,Y);
+              if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, False, False) then
+              begin
+                Bid := + DistCrit(htQuary, Loc) * 40 + SnapCrit(htQuary, Loc);
+                if (Bid > BestBid) then
+                begin
+                  BestBid := Bid;
+                  BestLoc := Loc;
+                  Output := True;
+                end;
+              end;
             end;
-          end;
-        end;
         if Output AND (I >= min(5,Locs.Count-1)) then // Do several points
         begin
           AddPlan(aHT, BestLoc);
