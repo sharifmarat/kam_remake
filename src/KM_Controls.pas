@@ -106,6 +106,7 @@ type
     fClickHoldHandled: Boolean;
     fTimeOfLastMouseDown: Cardinal;
     fLastMouseDownButton: TMouseButton;
+    fLastClickPos: TKMPoint;
 
     fOnClick: TNotifyEvent;
     fOnClickShift: TNotifyEventShift;
@@ -1682,6 +1683,7 @@ begin
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
+  fLastClickPos := KMPOINT_ZERO;
 
   if aParent <> nil then
     fID := aParent.fMasterControl.GetNextCtrlID
@@ -2063,8 +2065,9 @@ begin
   //because we would not like to delay Click just to make sure it is single.
   //On the ther hand it does no harm to call Click first
   if (Button = mbLeft)
-  and Assigned(fOnDoubleClick)
-  and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
+    and Assigned(fOnDoubleClick)
+    and KMSamePoint(fLastClickPos, KMPoint(X,Y))
+    and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
   begin
     fTimeOfLastClick := 0;
     fOnDoubleClick(Self);
@@ -2072,7 +2075,10 @@ begin
   else
   begin
     if (Button = mbLeft) and Assigned(fOnDoubleClick) then
+    begin
       fTimeOfLastClick := TimeGet;
+      fLastClickPos := KMPoint(X,Y);
+    end;
 
     if Assigned(fOnClickShift) then
       fOnClickShift(Self, Shift)
