@@ -973,9 +973,13 @@ var
   G: TKMUnitGroup;
 begin
   Cnt := 0;
-  U := nil;
   for I := 0 to Count - 1 do
-    if Members[I].InFightAgaist(U, False) then
+  begin
+    U := nil;
+    if not Members[I].IsDeadOrDying
+      AND Members[I].InFightAgaist(U, False)
+      AND (U <> nil)
+      AND not U.IsDeadOrDying then
     begin
       G := gHands[ U.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(U) );
       Check := True;
@@ -993,6 +997,7 @@ begin
         Cnt := Cnt + 1;
       end;
     end;
+  end;
   SetLength(aGroupArray,Cnt);
 
   Result := (Length(aGroupArray) > 0);
