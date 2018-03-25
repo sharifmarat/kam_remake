@@ -829,12 +829,12 @@ type
   TSetOfHouseType = set of TKMHouseType;
 const
 
-  //ht_Woodcutters,    ht_Quary,         ht_Sawmill,        ht_IronMine,      ht_GoldMine,
-  //ht_CoalMine,       ht_IronSmithy,    ht_Metallurgists,  ht_Wineyard,      ht_Farm,
-  //ht_Bakery,         ht_Mill,          ht_Tannery,        ht_Butchers,      ht_Swine,
-  //ht_Swine,          ht_ArmorWorkshop, ht_ArmorSmithy,    ht_ArmorWorkshop, ht_ArmorSmithy,
-  //ht_WeaponWorkshop, ht_WeaponSmithy,  ht_WeaponWorkshop, ht_WeaponSmithy,  ht_WeaponWorkshop,
-  //ht_WeaponSmithy,   ht_Stables,       ht_FisherHut
+  //htWoodcutters,    htQuary,         htSawmill,        htIronMine,      htGoldMine,
+  //htCoalMine,       htIronSmithy,    htMetallurgists,  htWineyard,      htFarm,
+  //htBakery,         htMill,          htTannery,        htButchers,      htSwine,
+  //htSwine,          htArmorWorkshop, htArmorSmithy,    htArmorWorkshop, htArmorSmithy,
+  //htWeaponWorkshop, htWeaponSmithy,  htWeaponWorkshop, htWeaponSmithy,  htWeaponWorkshop,
+  //htWeaponSmithy,   htStables,       htFisherHut
 
 
   BASIC_HOUSES: TSetOfHouseType = [htSchool, htBarracks, htInn, htMarketplace, htStore];
@@ -922,7 +922,8 @@ var
       WT := Ware;
       if (RequiredHouses[ PRODUCTION[WT] ] > 0) then
       begin
-        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef;
+        Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
+                    - Byte(PRODUCTION[WT] = htBakery) * 1000;
         for I := Low(WareOrder) to High(WareOrder) do
           if (WT = wt_None) then
             break
@@ -1033,6 +1034,7 @@ var
 
 const
   BUILD_TOWER_DELAY = 17 * 60 * 10; // 17 minutes before end of peace
+  MINIMAL_TOWER_DELAY = 50 * 60 * 10; // Towers will not be build before 50 minute
 var
   I, RequiredStones, RequiredWood: Integer;
   TrunkBalance: Single;
@@ -1114,6 +1116,7 @@ begin
   HT := htWatchTower;
   if (not Planner.DefenceTowersPlanned OR (gHands[fOwner].Stats.GetHouseTotal(HT) < Planner.PlannedHouses[HT].Count))
     AND (aTick + BUILD_TOWER_DELAY > gGame.GameOptions.Peacetime * 600)
+    AND (aTick > MINIMAL_TOWER_DELAY)
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
     begin
       MaxPlans := MaxPlans - 1;
@@ -1256,7 +1259,7 @@ begin
   for NodeIdx := Low(fBuildNodes) to High(fBuildNodes) do
     if not fBuildNodes[NodeIdx].Active then
       Break;
-  if fBuildNodes[NodeIdx].Active then
+  if fBuildNodes[ Min(High(fBuildNodes),NodeIdx) ].Active then
     Exit;
 
   // Find house which was not checked for shortcuts
