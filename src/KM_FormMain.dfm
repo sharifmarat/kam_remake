@@ -363,6 +363,15 @@ object FormMain: TFormMain
         Visible = False
         OnChange = ControlsUpdate
       end
+      object chkBevel: TCheckBox
+        Left = 119
+        Top = 16
+        Width = 73
+        Height = 17
+        Caption = 'Bevel'
+        TabOrder = 9
+        OnClick = ControlsUpdate
+      end
     end
     object GroupBox5: TGroupBox
       Left = 8

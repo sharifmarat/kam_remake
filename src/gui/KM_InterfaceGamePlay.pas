@@ -159,6 +159,7 @@ type
     Sidebar_Middle: TKMImage;
     Sidebar_Bottom: array of TKMImage;
     MinimapView: TKMMinimapView;
+    Bevel_DebugInfo: TKMBevel;
     Label_DebugInfo: TKMLabel;
 
     Image_MPChat, Image_MPAllies: TKMImage; // Multiplayer buttons
@@ -725,6 +726,8 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 100);
+  Bevel_DebugInfo.BackAlpha := 0.5;
   Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fnt_Outline,taLeft);
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
@@ -3823,6 +3826,7 @@ var
   mKind: TKMessageKind;
   Received, Sent, RTotal, STotal, Period: Cardinal;
   S, SPackets, S2: String;
+  TextSize: TKMPoint;
 begin
   S := '';
 
@@ -3898,6 +3902,12 @@ begin
 
   Label_DebugInfo.Font := fnt_Arial;
   Label_DebugInfo.Caption := S;
+  TextSize := gRes.Fonts[fnt_Arial].GetTextSize(S);
+
+  Bevel_DebugInfo.Width := TextSize.X + 20;
+  Bevel_DebugInfo.Height := TextSize.Y + 20;
+
+  Bevel_DebugInfo.Visible := SHOW_OVERLAY_BEVEL and (Trim(S) <> '') ;
 end;
 
 

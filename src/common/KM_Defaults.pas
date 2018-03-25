@@ -142,6 +142,7 @@ var
   SHOW_NETWORK_DELAY    :Boolean = False; //Show the current delay in multiplayer game
   SHOW_ARMYEVALS        :Boolean = False; //Show result of enemy armies evaluation
   SHOW_AI_WARE_BALANCE  :Boolean = False; //Show wares balance (Produced - Consumed)
+  SHOW_OVERLAY_BEVEL :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
   SHOW_NET_PACKETS_STATS:Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT:Integer = 1;
   INI_HITPOINT_RESTORE  :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM

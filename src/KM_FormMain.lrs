@@ -92,7 +92,9 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +#2#19#3'Top'#2'P'#5'Width'#2'8'#7'Caption'#6#8'Build AI'#7'OnClick'#7#14'Con'
   +'trolsUpdate'#8'TabOrder'#2#7#0#0#9'TCheckBox'#11'chkCombatAI'#4'Left'#2#10#6
   +'Height'#2#19#3'Top'#2'`'#5'Width'#2'E'#7'Caption'#6#9'Combat AI'#7'OnClick'
-  +#7#14'ControlsUpdate'#8'TabOrder'#2#8#0#0#0#9'TGroupBox'#9'GroupBox5'#4'Left'
+  +#7#14'ControlsUpdate'#8'TabOrder'#2#8#0#0#9'TCheckBox'#8'chkBevel'#4'Left'#2
+  +'w'#6'Height'#2#19#3'Top'#2#0#5'Width'#2'/'#7'Caption'#6#5'Bevel'#7'OnClick'
+  +#7#14'ControlsUpdate'#8'TabOrder'#2#9#0#0#0#9'TGroupBox'#9'GroupBox5'#4'Left'
   +#2#8#6'Height'#2'a'#3'Top'#2'h'#5'Width'#3#177#0#7'Caption'#6#14' Debug rend'
   +'er '#12'ClientHeight'#2'O'#11'ClientWidth'#3#173#0#8'TabOrder'#2#5#0#6'TLab'
   +'el'#6'Label2'#4'Left'#2'j'#6'Height'#2#13#3'Top'#2#0#5'Width'#2'1'#7'Captio'
@@ -127,9 +129,9 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'ft'#2#9#6'Height'#2#19#3'Top'#2'}'#5'Width'#2'{'#7'Caption'#6#20'Show logs '
   +'in MP chat'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#3#0#0#9'TCheckBox'
   +#14'chkLogCommands'#4'Left'#2'Z'#6'Height'#2#19#3'Top'#2#0#5'Width'#2'H'#7'C'
-  +'aption'#6#8'Commands'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#4#0#0#0
+  ,'aption'#6#8'Commands'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#4#0#0#0
   +#0#11'TOpenDialog'#11'OpenDialog1'#10'InitialDir'#6#1'.'#7'Options'#11#14'of'
-  ,'HideReadOnly'#15'ofFileMustExist'#14'ofEnableSizing'#0#4'left'#2'P'#3'top'#2
+  +'HideReadOnly'#15'ofFileMustExist'#14'ofEnableSizing'#0#4'left'#2'P'#3'top'#2
   +#8#0#0#9'TMainMenu'#9'MainMenu1'#4'left'#2#16#3'top'#2#8#0#9'TMenuItem'#5'Fi'
   +'le1'#7'Caption'#6#4'File'#0#9'TMenuItem'#15'OpenMissionMenu'#7'Caption'#6#15
   +'Open mission...'#7'OnClick'#7#21'Open_MissionMenuClick'#0#0#9'TMenuItem'#9
