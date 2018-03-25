@@ -34,7 +34,7 @@ type
     fIsPaused: Boolean;
     fGameSpeed: Single; //Actual speedup value
     fGameSpeedMultiplier: Word; //How many ticks are compressed into one
-    fGameMode: TGameMode;
+    fGameMode: TKMGameMode;
     fWaitingForNetwork: Boolean; //Indicates that we are waiting for other players commands in MP
     fAdvanceFrame: Boolean; //Replay variable to advance 1 frame, afterwards set to false
     fSaveFile: UnicodeString;  //Relative pathname to savegame we are playing, so it gets saved to crashreport
@@ -92,7 +92,7 @@ type
     ///	<param name="aNetworking">
     ///	  Pointer to networking class, required if this is a multiplayer game.
     ///	</param>
-    constructor Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
+    constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
     destructor Destroy; override;
 
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
@@ -155,7 +155,7 @@ type
     property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
 
     property Scripting: TKMScripting read fScripting;
-    property GameMode: TGameMode read fGameMode;
+    property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
     function GetMissionFile: UnicodeString;
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
@@ -219,9 +219,9 @@ uses
 //Create template for the Game
 //aRender - who will be rendering the Game session
 //aNetworking - access to MP stuff
-constructor TKMGame.Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
+constructor TKMGame.Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
 const
-  UIMode: array[TGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
+  UIMode: array[TKMGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
   inherited Create;
 
@@ -337,7 +337,7 @@ end;
 procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                             aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
 const
-  GAME_PARSE: array [TGameMode] of TKMMissionParsingMode = (
+  GAME_PARSE: array [TKMGameMode] of TKMMissionParsingMode = (
     mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
 var
   I: Integer;

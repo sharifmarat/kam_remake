@@ -33,14 +33,14 @@ type
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
+    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
     procedure LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                 aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
-    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+                                 aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
+    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
-    procedure GameStart(aGameMode: TGameMode);
-    procedure GameEnd(aGameMode: TGameMode);
+    procedure GameStart(aGameMode: TKMGameMode);
+    procedure GameEnd(aGameMode: TKMGameMode);
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -70,7 +70,7 @@ type
     procedure NewSingleSave(const aSaveName: UnicodeString);
     procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId;
+    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode; aCampName: TKMCampaignId;
                              aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
     procedure NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
@@ -554,7 +554,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
+procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
 var
   LoadError: UnicodeString;
 begin
@@ -593,7 +593,7 @@ end;
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
 procedure TKMGameApp.LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                        aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
+                                        aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 var
   LoadError: UnicodeString;
 begin
@@ -629,7 +629,7 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
 var
   LoadError: string;
 begin
@@ -695,7 +695,7 @@ end;
 
 
 procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
-var GameMode: TGameMode;
+var GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -716,7 +716,7 @@ end;
 
 
 procedure TKMGameApp.NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-var GameMode: TGameMode;
+var GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -735,7 +735,7 @@ begin
 end;
 
 
-procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode;
+procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode;
                                     aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
   if FileExists(ExeDir + aMission) then
@@ -791,14 +791,14 @@ begin
 end;
 
 
-procedure TKMGameApp.GameStart(aGameMode: TGameMode);
+procedure TKMGameApp.GameStart(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
     gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
 end;
 
 
-procedure TKMGameApp.GameEnd(aGameMode: TGameMode);
+procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
     gMain.FormMain.SetSaveEditableMission(False);
