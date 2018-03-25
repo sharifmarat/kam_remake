@@ -14,7 +14,7 @@ type
 
   TNavMeshNode = class
     Idx,Estim: Word; // Index of navMeshNode in navmesh, estimated cost from navMeshNode to end
-    CostTo: Longword; // Cost to Idx navMeshNode
+    CostTo: Cardinal; // Cost to Idx navMeshNode
     Point: TKMPoint; // Point in navMeshNode of navmesh (each triangle [created by points in navMeshNode] have its point -> multiple poits will create path)
     Parent: TNavMeshNode; // Parent navMeshNode
   end;
@@ -34,7 +34,7 @@ type
     procedure Flush(aDestroy: Boolean = False);
   protected
     function GetNodeAt(aIdx: Word): TNavMeshNode;
-    function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Longword;
+    function MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Cardinal;
     function EstimateToFinish(aIdx: Word): Word;
 
     function InitPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
@@ -115,11 +115,13 @@ begin
 end;
 
 
-function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Longword;
+function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint: TKMPoint): Cardinal;
 
-  function AvoidTraffic(): Word;
+  function AvoidTraffic(): Cardinal;
+  const
+    COEFICIENT = 2; // 1 tile is max 10 points, max value of ArmyTraffic is 20, this coefficient must increase the price
   begin
-    Result := 0;
+    Result := gAIFields.Influences.ArmyTraffic[fOwner, aTo] * COEFICIENT;
   end;
 
   function AvoidSpecEnemy(): Word;
@@ -142,7 +144,7 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
 
 var
   DX,DY: Word;
-  Output: Longword;
+  Output: Cardinal;
 begin
   Output := 0;
   //Do not add extra cost if the tile is the target, as it can cause a longer route to be chosen
@@ -187,7 +189,8 @@ const
   c_closed = 65535; // High(Word)
 var
   N: TNavMeshNode;
-  I, Idx, NewCost: Word;
+  I, Idx: Word;
+  NewCost: Cardinal;
   POMPoint: TKMPoint;
   PolyArr: TPolygonArray;
 begin
@@ -317,7 +320,6 @@ begin
     OR (fStart >= Length(gAIFields.NavMesh.Polygons))
     OR (fEnd >= Length(gAIFields.NavMesh.Polygons)) then  // Non-Existing polygon
     Exit;
-  fMode := pm_ShortestWay;
   Output := MakeRoute();
   if Output then
   begin
@@ -337,7 +339,6 @@ begin
   fEnd := gAIFields.NavMesh.KMPoint2Polygon[ aEnd ];
   if (fStart = High(Word)) OR (fEnd = High(Word)) then  // Non-Existing polygon
     Exit;
-  fMode := pm_ShortestWay;
   Output := MakeRoute();
   if Output then
   begin
@@ -350,12 +351,14 @@ end;
 
 function TNavMeshPathFinding.ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
 begin
+  fMode := pm_ShortestWay;
   Result := InitPolygonRoute(aStart, aEnd, aDistance, aRoutePolygonArray);
 end;
 
 
 function TNavMeshPathFinding.ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
 begin
+  fMode := pm_ShortestWay;
   Result := InitRoute(aStart, aEnd, aDistance, aRoutePointArray);
 end;
 
