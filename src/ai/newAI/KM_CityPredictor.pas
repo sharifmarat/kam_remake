@@ -261,7 +261,7 @@ begin
   Consumption := (fCityStats.CitizensCnt * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
   // Calculate consumption of leather armor / minute and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
-  fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
+  fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption);
   // Split rest of consumtion into other houses
   Consumption := Max(0, Consumption - fWareBalance[wt_Sausages].ActualConsumption);
   fWareBalance[wt_Bread].ActualConsumption := Consumption * 0.7;
