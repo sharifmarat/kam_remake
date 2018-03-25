@@ -222,7 +222,7 @@ var
       if fSetup.UnlimitedEquip then
       begin
         // Iron soldiers
-        Output := Min(  Stats.GetWareBalance(wt_MetalArmor), Stats.GetWareBalance(wt_Arbalet) + Stats.GetWareBalance(wt_Hallebard) + Min( Stats.GetWareBalance(wt_Sword), Stats.GetWareBalance(wt_MetalShield) )  );
+        Inc(  Output, Min( Stats.GetWareBalance(wt_MetalArmor), Stats.GetWareBalance(wt_Arbalet) + Stats.GetWareBalance(wt_Hallebard) + Min( Stats.GetWareBalance(wt_Sword), Stats.GetWareBalance(wt_MetalShield)) )  );
         // Leather soldiers we can make
         Inc(  Output, Min( Stats.GetWareBalance(wt_Armor), Stats.GetWareBalance(wt_Bow) + Stats.GetWareBalance(wt_Pike) + Min(Stats.GetWareBalance(wt_Axe), Stats.GetWareBalance(wt_Shield)) )  );
         // Militia with leftover axes
