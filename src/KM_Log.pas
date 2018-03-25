@@ -182,6 +182,8 @@ end;
 //meaning that no lines will be lost if Remake crashes
 procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True);
 begin
+  if Self = nil then Exit;
+  
   if not (aLogType in MessageTypes) then // write into log only for allowed types
     Exit;
 
@@ -231,6 +233,8 @@ end;
 //Same line but without timestamp
 procedure TKMLog.AddLineNoTime(const aText: UnicodeString; aDoCloseFile: Boolean = True);
 begin
+  if Self = nil then Exit;
+
   if not FileExists(fLogPath) then
     InitLog;  // Recreate log file, if it was deleted
 
