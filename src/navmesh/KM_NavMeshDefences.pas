@@ -106,17 +106,17 @@ type
 const
   OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
   MAX_ENEMY_INFLUENCE = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
-  ALLY_INFLUENCE_LIMIT = 200; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ALLY_INFLUENCE_LIMIT = 230; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
   ENEMY_INFLUENCE_LIMIT = 10; // When enemy influence will be greter than this constant there will be applied penalization ENEMY_INFLUENCE_PENALIZATION in weight function of actual defensive line
 
   // Weights of defensive line calculation
-  MIN_OPTIMAL_INFLUENCE = 100; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
+  MIN_OPTIMAL_INFLUENCE = 150; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
   POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
   ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
   ENEMY_INFLUENCE_PENALIZATION = 6; // Enemy penalization (dont place defences inside of enemy city)
-  MINIMAL_DEFENCE_DISTANCE = 5; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
-  MAXIMAL_DEFENCE_DISTANCE = 100; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
+  MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
+  MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
 
 implementation
 uses
@@ -180,13 +180,13 @@ begin
   // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
   fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
-  Distance := aDistance;
+  fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
+  Distance := aDistance + fDefInfo[aIdx].EnemyInfluence shr 2;
   if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) OR (fDefInfo[aIdx].AllyInfluence > OWNER_INFLUENCE_LIMIT) then
     Distance := 0;
   inherited MarkAsVisited(aIdx, Distance, aPoint);
   // For special polygons calculate also ene influence
-  if (gAIFields.NavMesh.Polygons[aIdx].NearbyCount = 3) then
-    fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
+  //if (gAIFields.NavMesh.Polygons[aIdx].NearbyCount = 3) then
 end;
 
 
