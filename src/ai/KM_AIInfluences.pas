@@ -6,7 +6,7 @@ uses
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KM_Units, KM_UnitGroups,
   KM_NavMesh, KM_NavMeshInfluences,
-  KM_NavMeshFloodFill;
+  KM_NavMeshFloodFill, KM_FloodFill;
 
 
 const
@@ -16,12 +16,27 @@ const
   AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
   AVOID_BUILDING_NODE_LOCK_FIELD = 45;
   AVOID_BUILDING_NODE_LOCK_ROAD = 50;
+  AVOID_BUILDING_COAL_TILE = 80;
+  AVOID_BUILDING_MINE_TILE = 100;
+  AVOID_BUILDING_INACCESSIBLE_TILES = 120;
   AVOID_BUILDING_FOREST_RANGE = 150; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
   AVOID_BUILDING_FOREST_MINIMUM = 255 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
-  AVOID_BUILDING_COAL_TILE = 254;
 
 
 type
+
+  TKKRoadableFF = class(TKMQuickFlood)
+  private
+    fVisitIdx: Byte;
+    fVisitArr, fSearchArr: TKMByte2Array;
+  protected
+    procedure MakeNewQueue(); override;
+    function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
+    function IsVisited(const aX,aY: SmallInt): Boolean; override;
+    procedure MarkAsVisited(const aX,aY: SmallInt); override;
+  public
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+  end;
 
   //Collection of influence maps
   TKMInfluences = class
@@ -261,17 +276,47 @@ procedure TKMInfluences.InitAvoidBuilding();
       begin
         for Y2 := aY to Min(fMapY-1,aY+1) do
         for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = htIronMine)) do
-          AvoidBuilding[Y2, X2] := $FF;
+          AvoidBuilding[Y2, X2] := AVOID_BUILDING_MINE_TILE;
         Exit;
       end;
+  end;
+
+  procedure InitReachableArea();
+  var
+    PL: TKMHandIndex;
+    I: Integer;
+    MinP, MaxP: TKMPoint;
+    CenterPoints: TKMPointArray;
+    RoadableFF: TKKRoadableFF;
+  begin
+    if (Length(AvoidBuilding) = 0) then
+      Exit;
+    MinP := KMPoint(1,1);
+    MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
+    RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
+    try
+      for PL := 0 to gHands.Count - 1 do
+      begin
+        gAIFields.Eye.OwnerUpdate(PL);
+        CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+        for I := 0 to Length(CenterPoints) - 1 do
+          RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
+      end;
+    finally
+      RoadableFF.Free;
+    end;
   end;
 var
   H: TKMHouse;
   I,X,Y: Integer;
 begin
-  for Y := 0 to fMapY - 1 do
-  for X := 0 to fMapX - 1 do
-    AvoidBuilding[Y,X] := 0;
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+    if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
+      AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
+    else
+      AvoidBuilding[Y,X] := 0;
+  InitReachableArea();
 
   //Avoid areas where Gold/Iron mines should be
   for Y := 3 to fMapY - 2 do
@@ -642,6 +687,7 @@ procedure TKMInfluences.AfterMissionInit();
     for Y := 1 to fMapY - 1 do
     for X := 1 to fMapX - 1 do
     begin
+      //cnt := 0;
       cnt := MAX_ELEMENTS;
       for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
       for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
@@ -863,8 +909,51 @@ end;
 
 
 
+{ TKKRoadableFF }
+constructor TKKRoadableFF.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
+begin
+  inherited Create(aScanEightTiles);
+  fVisitIdx := High(Byte);
+  fSearchArr := aSearchArr;
+  fMinLimit := aMinLimit;
+  fMaxLimit := aMaxLimit;
+  SetLength(fVisitArr, Length(fSearchArr), Length(fSearchArr[0]));
+end;
 
 
+procedure TKKRoadableFF.MakeNewQueue();
+var
+  X,Y: Integer;
+begin
+  if (fVisitIdx >= High(Byte) - 1) then
+  begin
+    fVisitIdx := 0;
+    for Y := Low(fVisitArr) to High(fVisitArr) do
+      for X := Low(fVisitArr[Y]) to High(fVisitArr[Y]) do
+        fVisitArr[Y,X] := 0;
+  end;
+  fVisitIdx := fVisitIdx + 1;
+  inherited MakeNewQueue();
+end;
+
+
+function TKKRoadableFF.CanBeVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+end;
+
+
+function TKKRoadableFF.IsVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := fVisitArr[aY,aX] = fVisitIdx;
+end;
+
+
+procedure TKKRoadableFF.MarkAsVisited(const aX,aY: SmallInt);
+begin
+  fVisitArr[aY,aX] := fVisitIdx;
+  fSearchArr[aY,aX] := 0;
+end;
 
 
 end.
