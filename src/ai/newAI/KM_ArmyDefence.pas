@@ -377,6 +377,7 @@ end;
 function TKMArmyDefence.DefenceStatus(): TKMDefenceStatus;
 const
   FIRST_LINE_COEF = 2; // We should have at least 2 lines of defences
+  FORCE_ATTACK_LIMIT = 4; // We must have [FORCE_ATTACK_LIMIT]x more soldiers in defences to lauch force attack
 var
   I, Cnt: Integer;
 begin
@@ -387,7 +388,9 @@ begin
     for I := 0 to Count - 1 do
       if (Positions[I].Group <> nil) then
         Cnt := Cnt + 1;
-    case Byte(Cnt >= Min(fFirstLineCnt * FIRST_LINE_COEF, Count * 0.5)) + Byte(Cnt >= Count * 0.8) of // In case that defence is too long keep max cnt decreased
+    case + Byte(Cnt >= Min(fFirstLineCnt * FIRST_LINE_COEF, Count * 0.5))
+         + Byte(Cnt >= Count * 0.8)
+         + Byte(Cnt >= fFirstLineCnt * FORCE_ATTACK_LIMIT) of // In case that defence is too long keep max cnt decreased
       0: Result := ds_Empty;
       1: Result := ds_Half;
       2: Result := ds_Full;
