@@ -642,7 +642,6 @@ procedure TKMInfluences.AfterMissionInit();
     for Y := 1 to fMapY - 1 do
     for X := 1 to fMapX - 1 do
     begin
-      cnt := 0;
       cnt := MAX_ELEMENTS;
       for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
       for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do

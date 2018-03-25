@@ -120,7 +120,7 @@ const
 
 implementation
 uses
-  KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh;
+  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh;
 
 
 { TForwardFF }
