@@ -232,7 +232,7 @@ uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_CommonUtils, KM_ResTexts, KM_RenderPool,
   KM_Hungarian, KM_UnitActionWalkTo, KM_PerfLog, KM_AI, KM_ResUnits, KM_ScriptingEvents,
   KM_UnitActionStormAttack,
-  KM_GameTypes;
+  KM_GameTypes, KM_Log;
 
 
 const
@@ -1321,7 +1321,10 @@ begin
     //What if fSelected died by now
     if not fSelected.IsDeadOrDying then
     begin
-      Assert(aTargetGroup.HasMember(fSelected), 'Make sure we joined selected unit');
+      if not aTargetGroup.HasMember(fSelected) then
+        gLog.AddNoTimeNoFlush(
+          Format('Make sure we joined selected unit. Group UID: %d; TargetGroup UID: %d Selected member UID: %d',
+                 [UID, aTargetGroup.UID, fSelected.UID]));
       aTargetGroup.fSelected := fSelected;
     end;
   end;
