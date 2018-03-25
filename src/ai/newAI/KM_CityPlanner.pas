@@ -201,30 +201,30 @@ const
     {ht_Bakery}         [ htInn,            htMill,           htStore,          htBakery         ],
     {ht_Barracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
     {ht_Butchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
-    {ht_CoalMine}       [ htStore                                                                   ],
+    {ht_CoalMine}       [ htStore                                                                ],
     {ht_Farm}           [ htFarm,           htSwine,          htMill,           htStables        ],
-    {ht_FisherHut}      [ htStore                                                                   ],
-    {ht_GoldMine}       [ htStore                                                                   ],
+    {ht_FisherHut}      [ htStore                                                                ],
+    {ht_GoldMine}       [ htStore                                                                ],
     {ht_Inn}            [ htButchers,       htBakery,         htStore,          htWineyard       ],
-    {ht_IronMine}       [ htStore                                                                   ],
+    {ht_IronMine}       [ htStore                                                                ],
     {ht_IronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy     ],
     {ht_Marketplace}    [ htStore,          htMetallurgists,  htBarracks,       htMarketplace    ],
     {ht_Metallurgists}  [ htGoldMine,       htCoalMine,       htSchool,         htStore          ],
-    {ht_Mill}           [ htBakery,         htInn,            htMill,           htFarm           ],
-    {ht_Quary}          [ htStore                                                                   ],
-    {ht_Sawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                    ],
-    {ht_School}         [ htMetallurgists,  htStore,          htSchool                            ],
+    {ht_Mill}           [ htBakery,         htInn,            htMill                             ],
+    {ht_Quary}          [ htStore                                                                ],
+    {ht_Sawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                   ],
+    {ht_School}         [ htMetallurgists,  htStore,          htSchool                           ],
     {ht_SiegeWorkshop}  [ htIronSmithy,     htSawmill,        htStore,          htSiegeWorkshop  ],
-    {ht_Stables}        [ htFarm,           htBarracks,       htStables                           ],
-    {ht_Store}          [ htInn,            htBarracks,       htSchool                            ],
-    {ht_Swine}          [ htFarm,           htButchers,       htSwine                             ],
-    {ht_Tannery}        [ htArmorWorkshop,  htTannery,        htBarracks                          ],
-    {ht_TownHall}       [ htMetallurgists,  htStore,          htTownHall                          ],
-    {ht_WatchTower}     [ htStore                                                                   ],
+    {ht_Stables}        [ htFarm,           htBarracks,       htStables                          ],
+    {ht_Store}          [ htInn,            htBarracks,       htSchool                           ],
+    {ht_Swine}          [ htFarm,           htButchers,       htSwine                            ],
+    {ht_Tannery}        [ htArmorWorkshop,  htTannery,        htBarracks                         ],
+    {ht_TownHall}       [ htMetallurgists,  htStore,          htTownHall                         ],
+    {ht_WatchTower}     [ htStore                                                                ],
     {ht_WeaponSmithy}   [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
-    {ht_WeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                    ],
-    {ht_Wineyard}       [ htInn,            htQuary                                                ],
-    {ht_Woodcutters}    [ htStore                                                                   ]
+    {ht_WeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                   ],
+    {ht_Wineyard}       [ htInn,            htQuary                                              ],
+    {ht_Woodcutters}    [ htStore                                                                ]
   );
 
 implementation
@@ -933,7 +933,10 @@ begin
       if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)                         // Tile must be in map
         AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftWine)                     // Plan can be placed
         AND (gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] <= AVOID_BUILDING_HOUSE_OUTSIDE_LOCK) then // Tile is not reserved
+      begin
         aNodeList.Add(FieldLoc);
+        gAIFields.Influences.AvoidBuilding[FieldLoc.Y, FieldLoc.X] := AVOID_BUILDING_NODE_LOCK_FIELD;
+      end;
       if (aNodeList.Count >= MAX_VINE) then
         Exit;
     end;
