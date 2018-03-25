@@ -380,6 +380,7 @@ begin
   fPerfIdx := 255; // fPerfArr will be reset in next step
   SetLength(fPerfArr, gTerrain.MapY, gTerrain.MapX);
   // Actual houses will be added in UpdateState (script may remove / add something after mission init ...)
+  UpdateState(0);
 end;
 
 procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandIndex);
@@ -1541,18 +1542,20 @@ const
   RADIUS = 5;
   MIN_BID = -100000;
 var
-  Output: Boolean;
-  X,Y: Integer;
+  Output, Check: Boolean;
+  I,X,Y: Integer;
   Bid, BestBid: Single;
-  Loc, BestLoc: TKMPoint;
+  Loc, BestLoc, Point: TKMPoint;
+  HMA: THouseMappingArray;
 begin
   Output := False;
+  HMA := gAIFields.Eye.HousesMapping;
   BestBid := MIN_BID;
   for Y := Max(1, aCenter.Y - RADIUS) to Min(gTerrain.MapY, aCenter.Y + RADIUS) do
   for X := Max(1, aCenter.X - RADIUS) to Min(gTerrain.MapX, aCenter.X + RADIUS) do
   begin
     Loc := KMPoint(X,Y);
-    if (gTerrain.TileIsCoal(X, Y) = 0) AND gAIFields.Eye.CanAddHousePlan(Loc, htWoodcutters, not aChopOnly, False, False) then
+    if gAIFields.Eye.CanAddHousePlan(Loc, htWoodcutters, not aChopOnly, False, False) then
     //if gAIFields.Eye.CanAddHousePlan(Loc, ht_Woodcutters, True, False, False) then
     begin
       Bid := - GA_PLANNER_PlaceWoodcutter_DistFromForest * KMDistanceAbs(aCenter, Loc)
@@ -1561,8 +1564,21 @@ begin
              //- Byte(gAIFields.Influences.AvoidBuilding[Loc.Y, Loc.X] >= AVOID_BUILDING_COAL_TILE) * 100000; // Try not to place woodcutter into full forest or coal tile
       if (Bid > BestBid) then
       begin
-        BestBid := Bid;
-        BestLoc := Loc;
+        Check := True;
+        for I := Low(HMA[htWoodcutters].Tiles) to High(HMA[htWoodcutters].Tiles) do
+        begin
+          Point := KMPointAdd( Loc, HMA[htWoodcutters].Tiles[I] );
+          if (gTerrain.TileIsCoal(Point.X, Point.Y) <> 0) then
+          begin
+            Check := False;
+            break;
+          end;
+        end;
+        if Check then
+        begin
+          BestBid := Bid;
+          BestLoc := Loc;
+        end;
       end;
     end;
   end;
@@ -1725,10 +1741,15 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
     RADIUS = 3;
     MAX_BID = 100000;
   var
+    PL: TKMHandIndex;
     X,Y: Integer;
     Bid, BestBid: Single;
     Loc, BestLoc: TKMPoint;
   begin
+    // Filter defence positions, build towers only at the closest
+    PL := gAIFields.Influences.GetBestAllianceOwner(fOwner, aCenter, at_Ally);
+    if (PL <> fOwner) AND (PL <> PLAYER_NONE) then
+      Exit;
     BestBid := MAX_BID;
     for Y := Max(1, aCenter.Y - RADIUS) to Min(gTerrain.MapY, aCenter.Y + RADIUS) do
     for X := Max(1, aCenter.X - RADIUS) to Min(gTerrain.MapX, aCenter.X + RADIUS) do
