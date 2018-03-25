@@ -566,6 +566,10 @@ var
 begin
   Result := False;
 
+  // The loc is out of map or in inaccessible area
+  if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y, 1) OR (gAIFields.Influences.AvoidBuilding[aLoc.Y,aLoc.X] = AVOID_BUILDING_INACCESSIBLE_TILES) then
+    Exit;
+
   // Check if we can place house on terrain, this also makes sure the house is
   // at least 1 tile away from map border (skip that below)
   if not CanPlaceHouse(aLoc, aHT, aIgnoreTrees) then
