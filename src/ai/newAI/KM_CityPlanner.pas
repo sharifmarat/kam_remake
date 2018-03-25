@@ -1432,6 +1432,7 @@ const
                    + CoalUnderPlan(Locs.Items[I]) * 10
                    + SnapCrit(htCoalMine, Locs.Items[I]) * 10
                    - ObstaclesInHousePlan(htCoalMine, Locs.Items[I]) * 10;
+                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y) * 10
             if (Bid > BestBid) then
             begin
               BestIdx := I;
