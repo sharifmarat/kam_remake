@@ -531,7 +531,7 @@ begin
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
   if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then
   begin
-    RequiredHouses[htMill] := 0;
+    //RequiredHouses[htMill] := 0;
     RequiredHouses[htSwine] := 0;
     RequiredHouses[htStables] := 0;
   end;
