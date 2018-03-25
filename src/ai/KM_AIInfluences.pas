@@ -44,6 +44,7 @@ type
     procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
     procedure SetIncPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
     function GetAllPresences(const aPL: TKMHandIndex; const aIdx: Word): Word; inline;
+    function GetArmyTraffic(const aOwner: TKMHandIndex; const aIdx: Word): Word;
     function GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
     //function GetAlliancePresence(const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TKMAllianceType): Word;
     procedure UpdateMilitaryPresence(const aPL: TKMHandIndex);
@@ -69,6 +70,7 @@ type
     property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word read GetPresence write SetPresence;
     property IncPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word write SetIncPresence;
     property PresenceAllGroups[const aPL: TKMHandIndex; const aIdx: Word]: Word read GetAllPresences;
+    property ArmyTraffic[const aOwner: TKMHandIndex; const aIdx: Word]: Word read GetArmyTraffic;
     property EnemyGroupPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word read GetEnemyGroupPresence;
     //property AlliancePresence[const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TKMAllianceType]: Word read GetAlliancePresence;
     // City influence
@@ -85,6 +87,7 @@ type
     // City influence
     function GetBestOwner(const aX,aY: Word): TKMHandIndex; overload;
     function GetBestOwner(const aIdx: Word): TKMHandIndex; overload;
+    function GetBestAllianceOwner(const aPL: TKMHandIndex; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandIndex;
     //function GetAllAllianceOwnership(const aPL: TKMHandIndex; const aX,aY: Word; const aAllianceType: TKMAllianceType): TKMHandIndexArray;
     function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
     function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
@@ -309,6 +312,26 @@ begin
 end;
 
 
+function TKMInfluences.GetArmyTraffic(const aOwner: TKMHandIndex; const aIdx: Word): Word;
+const
+  MAX_SOLDIERS_IN_POLYGON = 20; // Maximal count of soldiers in 1 triangle of NavMesh - it depends on NavMesh size!!!
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (PL <> aOwner) then
+    begin
+      Result := Result + GetAllPresences(PL, aIdx);
+      if (Result > MAX_SOLDIERS_IN_POLYGON) then // Influences may overlap but in 1 polygon can be max [MAX_SOLDIERS_IN_POLYGON] soldiers
+      begin
+        Result := MAX_SOLDIERS_IN_POLYGON;
+        break;
+      end;
+    end;
+end;
+
+
 function TKMInfluences.GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
 begin
   Result := fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)];
@@ -434,6 +457,27 @@ begin
     if (OwnPoly[PL,aIdx] > Best) then
     begin
       Best := OwnPoly[PL,aIdx];
+      Result := PL;
+    end;
+end;
+
+
+function TKMInfluences.GetBestAllianceOwner(const aPL: TKMHandIndex; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandIndex;
+var
+  PL: TKMHandIndex;
+  Idx: Word;
+  Best: Integer;
+begin
+  Result := PLAYER_NONE;
+  Idx := fNavMesh.Point2Polygon[aPoint.Y,aPoint.X];
+  if not AI_GEN_INFLUENCE_MAPS OR (Idx = High(Word)) then
+    Exit;
+
+  Best := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (gHands[aPL].Alliances[PL] = aAllianceType) AND (OwnPoly[PL,Idx] > Best) then
+    begin
+      Best := OwnPoly[PL,Idx];
       Result := PL;
     end;
 end;
@@ -590,18 +634,23 @@ procedure TKMInfluences.AfterMissionInit();
   const
     RAD = 6;
     MAX_ELEMENTS = (RAD+1) * (RAD+1) * 4;
+    //MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
+    COEF = Round(255 / MAX_ELEMENTS - 0.5);
   var
     X,Y, X0,Y0, cnt: Integer;
   begin
     for Y := 1 to fMapY - 1 do
     for X := 1 to fMapX - 1 do
     begin
+      cnt := 0;
       cnt := MAX_ELEMENTS;
       for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
       for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
+        //cnt := cnt + Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
         cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+      //fAreas[Y,X] := $FF - cnt * COEF;
       fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
-      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+      //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
     end;
   end;
   //procedure InitNavMeshAreas();
@@ -677,32 +726,33 @@ begin
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
   begin
-    Col := fAreas[Y,X] * 65793 OR $80000000;
+    //Col := fAreas[Y,X] * $010101 OR $80000000;
+    Col := (fAreas[Y,X] shl 24) OR COLOR_BLACK;
     gRenderAux.Quad(X, Y, Col);
   end;
-  PolyArr := fNavMesh.Polygons;
-  NodeArr := fNavMesh.Nodes;
-    MaxW := 0;
-    MinW := High(Word);
-    for I := Low(fAreas) to High(fAreas) do
-      if (fAreas[I] > MaxW) then
-        MaxW := fAreas[I]
-      else if (fAreas[I] < MinW) then
-        MinW := fAreas[I];
-    for I := Low(fAreas) to High(fAreas) do
-    begin
-      B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
-      Col := $FFFFFF OR (B shl 24);
-
-      //NavMesh polys coverage
-      gRenderAux.TriangleOnTerrain(
-        NodeArr[PolyArr[I].Indices[0]].Loc.X,
-        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-        NodeArr[PolyArr[I].Indices[1]].Loc.X,
-        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-        NodeArr[PolyArr[I].Indices[2]].Loc.X,
-        NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
-    end;
+  //PolyArr := fNavMesh.Polygons;
+  //NodeArr := fNavMesh.Nodes;
+  //  MaxW := 0;
+  //  MinW := High(Word);
+  //  for I := Low(fAreas) to High(fAreas) do
+  //    if (fAreas[I] > MaxW) then
+  //      MaxW := fAreas[I]
+  //    else if (fAreas[I] < MinW) then
+  //      MinW := fAreas[I];
+  //  for I := Low(fAreas) to High(fAreas) do
+  //  begin
+  //    B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
+  //    Col := $FFFFFF OR (B shl 24);
+  //
+  //    //NavMesh polys coverage
+  //    gRenderAux.TriangleOnTerrain(
+  //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+  //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+  //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+  //  end;
   //}
 
 
