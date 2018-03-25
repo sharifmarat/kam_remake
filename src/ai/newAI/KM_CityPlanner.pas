@@ -1409,40 +1409,34 @@ const
     INIT_BID = -10000;
   var
     Output: Boolean;
-    Coal: Byte;
     I, BestIdx: Integer;
     Bid, BestBid: Single;
     Locs: TKMPointTagList;
   begin
     Output := False;
 
-    Locs := gAIFields.Eye.GetCoalLocs();
+    Locs := gAIFields.Eye.GetCoalMineLocs(False);
     try
       if (Locs.Count > 0) then
       begin
         Locs.SortByTag();
         BestBid := INIT_BID;
         BestIdx := 0; // For compiler
-        for I := Locs.Count-1 downto 0 do
-          if gAIFields.Eye.CanAddHousePlan(Locs.Items[I], htCoalMine, True, False, False) then
+        for I := Locs.Count-1 downto 0 do // Start from highest influence
+        begin
+          Bid := + Locs.Tag[I]
+                 + DistCrit(htCoalMine, Locs.Items[I])
+                 + SnapCrit(htCoalMine, Locs.Items[I])
+                 - ObstaclesInHousePlan(htCoalMine, Locs.Items[I])
+                 - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y);
+          if (Bid > BestBid) then
           begin
-            Coal := CoalUnderPlan(Locs.Items[I]);
-            if (Coal = 0) then
-              continue;
-            Bid := + (Locs.Tag[I] shr 3)
-                   + DistCrit(htCoalMine, Locs.Items[I])
-                   + CoalUnderPlan(Locs.Items[I])
-                   + SnapCrit(htCoalMine, Locs.Items[I])
-                   - ObstaclesInHousePlan(htCoalMine, Locs.Items[I])
-                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y);
-            if (Bid > BestBid) then
-            begin
-              BestIdx := I;
-              BestBid := Bid;
-            end;
-            if (I > 200) AND (BestBid <> INIT_BID) then
-              break;
+            BestIdx := I;
+            BestBid := Bid;
           end;
+          if (I > 50) AND (BestBid <> INIT_BID) then
+            break;
+        end;
         if (BestBid <> INIT_BID) then
         begin
           AddPlan(aHT, Locs.Items[BestIdx]);
