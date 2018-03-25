@@ -223,7 +223,7 @@ begin
           //if CanAddHousePlan(Loc, ht_CoalMine, True, False) then
           Inc(fCoalPolygons[  gAIFields.NavMesh.KMPoint2Polygon[ Loc ]  ]);
         end
-        else if (gTerrain.TileIsStone(X, Y) > 1) then
+        else if (gTerrain.TileIsStone(X, Y) > 0) then
         begin
           if (Y < gTerrain.MapY - 1) AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
             fStoneMiningTiles.Add(KMPoint(X,Y));

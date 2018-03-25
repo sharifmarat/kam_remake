@@ -1513,7 +1513,7 @@ const
             end;
           end;
         end;
-        if Output AND (I > min(5,Locs.Count-1)) then // Do several points
+        if Output AND (I >= min(5,Locs.Count-1)) then // Do several points
         begin
           AddPlan(aHT, BestLoc);
           gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, BestLoc);
