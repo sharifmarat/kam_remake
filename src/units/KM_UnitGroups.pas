@@ -995,7 +995,7 @@ begin
     end;
   SetLength(aGroupArray,Cnt);
 
-  Result := Cnt > 0;
+  Result := (Length(aGroupArray) > 0);
 end;
 
 
