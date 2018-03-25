@@ -332,6 +332,7 @@ const
   DISTANCE_BETWEEN_TOWERS = 7;
 var
   P: TKMHand;
+  PL1, PL2: TKMHandIndex;
   pom: boolean;
   //Outline1, Outline2: TKMWeightSegments;
   I, K, DefCount: Integer;
@@ -357,6 +358,10 @@ begin
     begin
       Point1 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[0] ].Loc;
       Point2 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[1] ].Loc;
+      PL1 := gAIFields.Influences.GetBestAllianceOwner(fOwner, Point1, at_Ally);
+      PL2 := gAIFields.Influences.GetBestAllianceOwner(fOwner, Point2, at_Ally);
+      if (PL1 <> fOwner) AND (PL2 <> fOwner) AND (PL1 <> PLAYER_NONE) AND (PL2 <> PLAYER_NONE) then
+        continue;
       DefCount := Ceil( KMLength(Point1, Point2) / DISTANCE_BETWEEN_TOWERS );
       for K := 0 to DefCount - 1 do
       begin
