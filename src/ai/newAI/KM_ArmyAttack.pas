@@ -25,7 +25,7 @@ type
     CenterPoint: TKMPoint;
     CloseThreat, DistantThreat: Single;
   end;
-  TKMCompanyMode = (cm_Attack, cm_Defence);
+  TKMCompanyMode = (cm_Attack, cm_Defence, cm_Destruction);
   TKMCompanyState = (cs_Attack, cs_Walking, cs_Idle);
 
   TAISquad = class
@@ -158,6 +158,8 @@ const
   TARGET_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool];
   // Houses in SCAN_HOUSES will be destroyed when they are in radius (it should also contain TARGET_HOUSES)
   SCAN_HOUSES: THouseTypeSet = [htWatchTower, htBarracks, htStore, htSchool];
+  // All houses for final stage of attack algorithm
+  ALL_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 
 implementation
 uses
@@ -567,7 +569,10 @@ begin
 
   fScanPosition := GetPosition(SQRRadius);
   ScanRad := SQR_COMPANY_ATTACK_RAD + Min(SQR_MAXIMAL_ATTACK_VAR_RAD, SQRRadius);
-  HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy, SCAN_HOUSES, True);
+  if (fCompanyMode = cm_Destruction) then
+    HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy, ALL_HOUSES, False)
+  else
+    HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy, SCAN_HOUSES, True);
   //UGA := gHands.GetGroupsInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, at_Enemy);
   UA := gHands.GetGroupsMemberInRadius(ScanPosition, ScanRad, fOwner, at_Enemy, UGA);
 
@@ -630,7 +635,8 @@ var
       for I := 0 to fSquads[GT].Count - 1 do
       begin
         Squad := fSquads[GT].Items[I];
-        if not Squad.InFight then
+        if not Squad.InFight
+          AND ((fCompanyMode <> cm_Destruction) OR (Squad.TargetHouse = nil)) then
         begin
           // Make sure that unit will not hunt target over the whole map and better stay inside company
           if (GT <> gt_Ranged) then // ranged units are fixed in Squad class (set / reset target cause that they dont shoot)
@@ -1194,10 +1200,17 @@ begin
     if (TargetGroup = nil) then
     begin
       if not aAimCivilians then
-        Exit;
-      aTargetUnit := gHands.GetClosestUnit(aInitPosition, fOwner, at_Enemy);
-      if (aTargetUnit = nil) then
-        Exit;
+      begin
+        aTargetHouse := gHands.GetClosestHouse(aInitPosition, fOwner, at_Enemy, ALL_HOUSES, True);
+        if (aTargetHouse <> nil) then
+          fCompanyMode := cm_Destruction;
+      end
+      else
+      begin
+        aTargetUnit := gHands.GetClosestUnit(aInitPosition, fOwner, at_Enemy);
+        if (aTargetUnit = nil) then
+          Exit;
+      end;
     end
     else
       aTargetUnit := TargetGroup.GetAliveMember;
@@ -1306,7 +1319,7 @@ begin
     Company := fCompanies.Items[I];
     Company.UpdateState(aTick);
     if (  (Company.SquadCnt = 0) OR (Company.State = cs_Idle)  )
-      AND (  (Company.CompanyMode = cm_Attack) OR not DetectEnemyPresence(Company.TargetPoint)  )  then
+      AND (  (Company.CompanyMode in [cm_Attack, cm_Destruction]) OR not DetectEnemyPresence(Company.TargetPoint)  )  then
       fCompanies.Remove( Company );
   end;
 end;
