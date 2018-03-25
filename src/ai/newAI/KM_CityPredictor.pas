@@ -573,12 +573,12 @@ const
   COLOR_YELLOW = '[$00FFFF]';
   COLOR_GREEN = '[$00FF00]';
   WARE_TO_STRING: array[WARE_MIN..WARE_MAX] of UnicodeString = (
-    'Trunk',   'Stone',   'Wood',        'IronOre',   'GoldOre',
-    'Coal',    'Steel',   'Gold',        'Wine',      'Corn',
-    'Bread',   'Flour',   'Leather',     'Sausages',  'Pig',
-    'Skin',    'Shield',  'MetalShield', 'Armor',     'MetalArmor',
-    'Axe',     'Sword',   'Pike',        'Hallebard', 'Bow',
-    'Arbalet', 'Horse',   'Fish'
+    'Trunk       ', 'Stone       ',  'Wood        ', 'IronOre     ', 'GoldOre     ',
+    'Coal        ', 'Steel       ',  'Gold        ', 'Wine        ', 'Corn        ',
+    'Bread       ', 'Flour       ',  'Leather     ', 'Sausages  ',   'Pig         ',
+    'Skin        ', 'Shield      ',  'MetalShield ', 'Armor       ', 'MetalArmor  ',
+    'Axe         ', 'Sword       ',  'Pike        ', 'Hallebard   ', 'Bow         ',
+    'Arbalet     ', 'Horse       ',  'Fish        '
   );
   //HOUSE_TO_STRING: array[HOUSE_MIN..HOUSE_MAX] of UnicodeString = (
   //  'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
@@ -612,13 +612,14 @@ const
       else                             FractionColor := COLOR_RED;
       if (Exhaustion > 10) then        ExhaustionColor := COLOR_GREEN
       else if (Exhaustion > 1) then    ExhaustionColor := COLOR_YELLOW;
-      aBalanceText := aBalanceText + Format(HouseCntColor+'%Dx '+COLOR_WHITE, [Cnt]) //
-                        + aSpecificText + Format(':   ('
-                        +ProductionColor+'%.2f'+COLOR_WHITE+'; '
-                        +ActualConsumptionColor+'%.2f'+COLOR_WHITE+'; '
-                        +FinalConsumptionColor+'%.2f'+COLOR_WHITE+'; '
-                        +FractionColor+'%.2f '+COLOR_WHITE+'; '
-                        +ExhaustionColor+'%.2f'+COLOR_WHITE+')|', [Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
+      aBalanceText := aBalanceText + Format(HouseCntColor+'%dx '+COLOR_WHITE, [Cnt]) //
+                        + Format(#9 + '%s ' + #9 + '('
+                          + ProductionColor+'%.2f'+COLOR_WHITE+';' + #9
+                          + ActualConsumptionColor+'%.2f'+COLOR_WHITE+';' + #9
+                          + FinalConsumptionColor+'%.2f'+COLOR_WHITE+';'  + #9
+                          + FractionColor+'%.2f '+COLOR_WHITE+';' + #9
+                          + ExhaustionColor+'%.2f'+COLOR_WHITE+')|',
+                          [aSpecificText, Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
     end;
   end;
 var
@@ -627,10 +628,10 @@ begin
   aBalanceText := aBalanceText + 'Ware balance|Required houses (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
   for I := CO_WARE_MIN to CO_WARE_MAX do
     AddWare(CONSUMPTION_ORDER[I], WARE_TO_STRING[ CONSUMPTION_ORDER[I] ]);
-  AddWare(wt_Armor, 'Armors');
-  AddWare(wt_Axe, 'Weapons');
-  AddWare(wt_MetalArmor, 'Iron Armors');
-  AddWare(wt_Sword, 'Iron Weapons');
+  AddWare(wt_Armor, 'Armor           ');
+  AddWare(wt_Axe, 'Weapon       ');
+  AddWare(wt_MetalArmor, 'Iron Armor   ');
+  AddWare(wt_Sword, 'Iron Weapon');
 end;
 
 

@@ -811,17 +811,19 @@ const
   COLOR_RED = '[$0000FF]';
   COLOR_YELLOW = '[$00FFFF]';
   COLOR_GREEN = '[$00FF00]';
-  WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString = ('Shield', 'MetalShield', 'Armor', 'MetalArmor', 'Axe', 'Sword', 'Pike', 'Hallebard', 'Bow', 'Arbalet', 'Horse');
+  WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString =
+    ('Shield     ', 'MetalShield', 'Armor      ', 'MetalArmor', 'Axe         ', 'Sword      ',
+     'Pike       ', 'Hallebard  ', 'Bow        ', 'Arbalet   ', 'Horse      ');
 var
   WT: TKMWareType;
 begin
   aBalanceText := aBalanceText + '||Weapons orders (weapon: avaiable, required, fraction)|';
   for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
     with fRequiredWeapons[WT] do
-      aBalanceText := aBalanceText + WARFARE[WT] + ':   ('
+      aBalanceText := aBalanceText + WARFARE[WT] + #9 + '('
                       + Format(
-                         COLOR_GREEN+'%D'+COLOR_WHITE+'; '
-                        +COLOR_RED+'%D'+COLOR_WHITE+'; '
+                         COLOR_GREEN+'%D'+COLOR_WHITE+';' + #9
+                        +COLOR_RED+'%D'+COLOR_WHITE+';' + #9
                         +COLOR_YELLOW+'%.2f'+COLOR_WHITE+')|', [Avaiable, Required, Fraction]
                       );
 end;
