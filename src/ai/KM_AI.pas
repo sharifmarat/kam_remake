@@ -288,18 +288,21 @@ begin
       end;
     hndComputer:
       begin
-        if fSetup.NewAI then
+        if not (WonOrLost <> wol_None) then
         begin
-          fArmyManagement.CheckNewThreat(aHouse, aAttacker);
-        end
-        else
-        begin
-          fGeneral.RetaliateAgainstThreat(aAttacker);
-          //Our allies might like to help us too
-          for I := 0 to gHands.Count-1 do
-            if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-            and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
-              gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+          if fSetup.NewAI then
+          begin
+            fArmyManagement.CheckNewThreat(aHouse, aAttacker);
+          end
+          else
+          begin
+            fGeneral.RetaliateAgainstThreat(aAttacker);
+            //Our allies might like to help us too
+            for I := 0 to gHands.Count-1 do
+              if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
+              and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+                gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+          end;
         end;
       end;
   end;
@@ -310,9 +313,12 @@ end;
 
 procedure TKMHandAI.UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 begin
-  if fSetup.NewAI AND (gHands[fOwner].HandType <> hndHuman) then // Make sure that it is not player
+  if not (WonOrLost <> wol_None) then
   begin
-    fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+    if fSetup.NewAI AND (gHands[fOwner].HandType <> hndHuman) then // Make sure that it is not player
+    begin
+      fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+    end;
   end;
   if aNotifyScript then
     gScriptEvents.ProcUnitWounded(aUnit, aAttacker); //At the end since it could kill the unit
@@ -335,36 +341,39 @@ begin
         gGame.GamePlayInterface.Alerts.AddFight(aUnit.PositionF, fOwner, NotifyKind[aUnit is TKMUnitWarrior], gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
     hndComputer:
       begin
-        if fSetup.NewAI then
+        if not (WonOrLost <> wol_None) then
         begin
-          // Calls too often
-          //fArmyManagement.CheckNewThreat(aUnit, aAttacker);
-        end
-        else
-        begin
-          //If we are attacked, then we should counter attack the attacker (except if he is a recruit in tower)
-          if aAttacker is TKMUnitWarrior then
+          if fSetup.NewAI then
           begin
-            fGeneral.RetaliateAgainstThreat(aAttacker); //Nearby soldiers should come to assist
-
-            //Our allies might like to help us too
-            for I := 0 to gHands.Count-1 do
-              if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-              and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
-                gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
-
-            //If we are a warrior we can also attack that unit ourselves
-            if aUnit is TKMUnitWarrior then
+            // Calls too often
+            //fArmyManagement.CheckNewThreat(aUnit, aAttacker);
+          end
+          else
+          begin
+            //If we are attacked, then we should counter attack the attacker (except if he is a recruit in tower)
+            if aAttacker is TKMUnitWarrior then
             begin
-              Group := gHands[fOwner].UnitGroups.GetGroupByMember(TKMUnitWarrior(aUnit));
-              //It's ok for the group to be nil, the warrior could still be walking out of the barracks
-              if (Group <> nil) and not Group.IsDead then
-                //If we are already in the process of attacking something, don't change our minds,
-                //otherwise you can make a unit walk backwards and forwards forever between two groups of archers
-                if not Group.InFight then
-                  //Make sure the group could possibly reach the offenders
-                  if Group.CanWalkTo(aAttacker.GetPosition, Group.FightMaxRange) then
-                    Group.OrderAttackUnit(aAttacker, True);
+              fGeneral.RetaliateAgainstThreat(aAttacker); //Nearby soldiers should come to assist
+
+              //Our allies might like to help us too
+              for I := 0 to gHands.Count-1 do
+                if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
+                and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+                  gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
+
+              //If we are a warrior we can also attack that unit ourselves
+              if aUnit is TKMUnitWarrior then
+              begin
+                Group := gHands[fOwner].UnitGroups.GetGroupByMember(TKMUnitWarrior(aUnit));
+                //It's ok for the group to be nil, the warrior could still be walking out of the barracks
+                if (Group <> nil) and not Group.IsDead then
+                  //If we are already in the process of attacking something, don't change our minds,
+                  //otherwise you can make a unit walk backwards and forwards forever between two groups of archers
+                  if not Group.InFight then
+                    //Make sure the group could possibly reach the offenders
+                    if Group.CanWalkTo(aAttacker.GetPosition, Group.FightMaxRange) then
+                      Group.OrderAttackUnit(aAttacker, True);
+              end;
             end;
           end;
         end;
@@ -428,6 +437,8 @@ end;
 
 procedure TKMHandAI.UpdateState(aTick: Cardinal);
 begin
+  if (WonOrLost <> wol_None) then
+    Exit;
   //Check goals for all players to maintain multiplayer consistency
   //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)
   if (aTick + Byte(fOwner)) mod MAX_HANDS = 0 then
