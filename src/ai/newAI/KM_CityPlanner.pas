@@ -39,6 +39,7 @@ var
   GA_PATHFINDING_HouseOutside : Word = 1;
   GA_PATHFINDING_Field        : Word = 5;
   GA_PATHFINDING_noBuildArea  : Word = 1;
+  GA_PATHFINDING_Coal         : Word = 2;
   GA_PATHFINDING_Forest       : Word = 3;
   GA_PATHFINDING_OtherCase    : Word = 3;
 
@@ -46,6 +47,7 @@ var
   GA_SHORTCUTS_HouseOutside   : Word = 1;
   GA_SHORTCUTS_Field          : Word = 8;
   GA_SHORTCUTS_noBuildArea    : Word = 1;
+  GA_SHORTCUTS_Coal           : Word = 2;
   GA_SHORTCUTS_Forest         : Word = 4;
   GA_SHORTCUTS_OtherCase      : Word = 2;
 
@@ -1850,9 +1852,9 @@ begin
     case AvoidBuilding of
       AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, GA_PATHFINDING_HouseOutside); end; // 1 tile from future house
       AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, GA_PATHFINDING_Field); // Corn / wine field
+      AVOID_BUILDING_COAL_TILE: Inc(Result, GA_PATHFINDING_Coal);
       //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
       //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
-      //AVOID_BUILDING_COAL_TILE: begin end;
       //AVOID_BUILDING_FOREST_MINIMUM: begin end;
       else
       begin
@@ -1876,19 +1878,19 @@ var
 begin
   Result := GA_SHORTCUTS_BasePrice;
   AvoidBuilding := gAIFields.Influences.AvoidBuilding[aToY, aToX];
-  IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                      // Reserved road plan
-            OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                             // Completed road
+  IsRoad := (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_ROAD)                                     // Reserved road plan
+            OR (tpWalkRoad in gTerrain.Land[aToY, aToX].Passability)                            // Completed road
             OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(aToX, aToY)) = ftRoad) // Placed road plan
-            OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                                // Road under construction
+            OR (gTerrain.Land[aToY, aToX].TileLock = tlRoadWork);                               // Road under construction
 
   if not IsRoad then
     //Building roads over fields is discouraged unless unavoidable
     case AvoidBuilding of
       AVOID_BUILDING_HOUSE_OUTSIDE_LOCK: begin Inc(Result, GA_SHORTCUTS_HouseOutside); end; // 1 tile from future house
       AVOID_BUILDING_NODE_LOCK_FIELD: Inc(Result, GA_SHORTCUTS_Field); // Corn / wine field
+      AVOID_BUILDING_COAL_TILE: Inc(Result, GA_SHORTCUTS_Coal);
       //AVOID_BUILDING_HOUSE_INSIDE_LOCK: begin end; // Tiles inside future house (forbiden)
       //AVOID_BUILDING_NODE_LOCK_ROAD: begin end; // This will not occur
-      //AVOID_BUILDING_COAL_TILE: begin end;
       //AVOID_BUILDING_FOREST_MINIMUM: begin end;
       else
       begin
