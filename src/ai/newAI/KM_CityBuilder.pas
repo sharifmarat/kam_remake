@@ -742,12 +742,13 @@ begin
                 if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, at_Enemy) > 150) then
                 begin
                   Planner.RemovePlan(aHT, Loc);
+                  gHands[fOwner].RemHousePlan(Loc);
                   Exit;
                 end;
                 I := I + 5;
               end;
-            LockNode(fBuildNodes[Node1Idx]);
 
+            LockNode(fBuildNodes[Node1Idx]);
             Active := True;
             RemoveTreesMode := False;
             ShortcutMode := False;
