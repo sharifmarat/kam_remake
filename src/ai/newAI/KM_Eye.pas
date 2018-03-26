@@ -1010,8 +1010,8 @@ const
   COLOR_RED = $800000FF;
   COLOR_YELLOW = $8000FFFF;
   COLOR_BLUE = $80FF0000;
-var
-  I: Integer;
+//var
+//  I: Integer;
 begin
   { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
