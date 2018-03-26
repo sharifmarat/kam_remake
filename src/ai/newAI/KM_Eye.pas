@@ -460,7 +460,8 @@ var
     Result := Output;
   end;
 var
-  X,Y, Increment: Integer;
+  I,K, Increment: Integer;
+  Loc: TKMPoint;
   CenterPointArr: TKMPointArray;
   TagList: TKMPointTagList;
   FFInitPlace: TKMFFInitPlace;
@@ -477,12 +478,12 @@ begin
   // Scan Resources - stones
   TagList := GetStoneLocs(True);
   try
-    X := 0;
+    I := 0;
     Increment := Ceil(TagList.Count / 5.0); // Max 5 paths
-    while (X < TagList.Count) do
+    while (I < TagList.Count) do
     begin
-      ScanLocArea(TagList.Items[X]);
-      X := X + Increment;
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
     end;
   finally
     TagList.Free;
@@ -490,29 +491,35 @@ begin
   // Scan Resources - coal
   TagList := GetCoalMineLocs(True);
   try
-    X := 0;
+    I := 0;
     Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
-    while (X < TagList.Count) do
+    while (I < TagList.Count) do
     begin
-      ScanLocArea(TagList.Items[X]);
-      X := X + Increment;
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
     end;
   finally
     TagList.Free;
   end;
 
-
   aFieldCnt := 0;
   aBuildCnt := 0;
-  for Y := 1 to gTerrain.MapY - 1 do
-  for X := 1 to gTerrain.MapX - 1 do
-    if (gAIFields.Influences.GetBestOwner(X, Y) = fOwner) then
-    begin
-      if (tpBuild in gTerrain.Land[Y,X].Passability) then
-        aBuildCnt := aBuildCnt + 1;
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
-        aFieldCnt := aFieldCnt + 1;
-    end;
+  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+    if (gAIFields.Influences.GetBestOwner(I) = fOwner) then
+      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
+      begin
+        Loc := gAIFields.NavMesh.Polygon2Point[K];
+        if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
+        begin
+          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
+            aBuildCnt := aBuildCnt + 1;
+          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+            aFieldCnt := aFieldCnt + 1;
+        end
+        else if gTerrain.CheckHeightPass(Loc, hpWalking)
+          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          aFieldCnt := aFieldCnt + 1;
+      end;
 
   if (PolygonsCnt > 0) then
   begin
@@ -695,33 +702,73 @@ end;
 
 function TKMEye.GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
 var
-  Own: Byte;
-  I, K, Cnt: Integer;
+  Count: Word;
+  CoalPolygons, PolygonEvaluation: TKMWordArray;
+
+  procedure InsertionSort(aIdx,aEval: Word);
+  var
+    I: Integer;
+  begin
+    if (Length(CoalPolygons) >= Count) then
+    begin
+      SetLength(CoalPolygons, Count + 64);
+      SetLength(PolygonEvaluation, Count + 64);
+    end;
+    Count := Count + 1;
+    I := Count - 2;
+    while I > 0 do
+    begin
+      if (PolygonEvaluation[I] > aEval) then
+      begin
+        PolygonEvaluation[I+1] := PolygonEvaluation[I];
+        CoalPolygons[I+1] := CoalPolygons[I];
+      end
+      else
+        break;
+      I := I - 1;
+    end;
+    PolygonEvaluation[I+1] := aEval;
+    CoalPolygons[I+1] := aIdx;
+  end;
+const
+  MAX_LOCS = 25;
+var
+  Own: Word;
+  I, K, Cnt, Idx: Integer;
   Loc: TKMPoint;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
+  Count := 0;
   for I := 0 to Length(fCoalPolygons) - 1 do
     if (fCoalPolygons[I] > 0) then
     begin
       if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
         continue;
-      Own := gAIFields.Influences.OwnPoly[fOwner, I];
-      if (Own = 0) then
-        continue;
-      Cnt := 0;
-      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
-      begin
-        Loc := gAIFields.NavMesh.Polygon2Point[K];
-        if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
-        begin
-          if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
-            Output.Add(Loc, Own);
-          Cnt := Cnt + 1;
-        end;
-      end;
-      fCoalPolygons[I] := Cnt;
+      Own := Max(0, High(Word) - 300 + gAIFields.Influences.OwnPoly[fOwner, I] - gAIFields.Influences.GetOtherOwnerships(fOwner, I));
+      if (Own <> 0) then
+        InsertionSort(I,Own);
     end;
+
+  for I := Count - 1 downto 0 do
+  begin
+    Idx := CoalPolygons[I];
+    Cnt := 0;
+    for K := gAIFields.NavMesh.Polygons[Idx].Poly2PointStart to gAIFields.NavMesh.Polygons[Idx].Poly2PointCnt - 1 do
+    begin
+      Loc := gAIFields.NavMesh.Polygon2Point[K];
+      if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
+      begin
+        Cnt := Cnt + 1;
+        if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
+          Output.Add(Loc, PolygonEvaluation[I]);
+      end;
+    end;
+    fCoalPolygons[Idx] := Cnt;
+    if (Output.Count > MAX_LOCS) then
+      break;
+  end;
+
   Result := Output;
 end;
 
@@ -963,10 +1010,10 @@ const
   COLOR_RED = $800000FF;
   COLOR_YELLOW = $8000FFFF;
   COLOR_BLUE = $80FF0000;
-//var
-//  I: Integer;
+var
+  I: Integer;
 begin
-  { Coal
+  //{ Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
     DrawTriangle(I, $FF00FF OR (Min($FF,Round(fCoalPolygons[I]*5)) shl 24));
   //}

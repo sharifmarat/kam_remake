@@ -105,7 +105,8 @@ type
     function GetBestAllianceOwner(const aPL: TKMHandIndex; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandIndex;
     //function GetAllAllianceOwnership(const aPL: TKMHandIndex; const aX,aY: Word; const aAllianceType: TKMAllianceType): TKMHandIndexArray;
     function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
-    function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
+    function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word; overload;
+    function GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word; overload;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -576,19 +577,23 @@ end;
 
 
 function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
+begin
+  Result := GetOtherOwnerships(aPL, fNavMesh.Point2Polygon[aY,aX]);
+end;
+
+
+function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word;
 var
   PL: TKMHandIndex;
-  Idx: Word;
 begin
   Result := 0;
   if not AI_GEN_INFLUENCE_MAPS then
     Exit;
 
-  Idx := fNavMesh.Point2Polygon[aY,aX];
   Result := 0;
   for PL := 0 to gHands.Count - 1 do
     if (PL <> aPL) then
-      Result := Result + OwnPoly[PL,Idx];
+      Result := Result + OwnPoly[PL,aIdx];
 end;
 
 

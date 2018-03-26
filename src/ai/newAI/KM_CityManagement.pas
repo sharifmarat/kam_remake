@@ -130,23 +130,23 @@ procedure TKMCityManagement.AfterMissionInit();
   procedure SetWareDistribution();
   begin
     // Top priority for gold mines
-    gHands[fOwner].Stats.WareDistribution[wt_coal, htMetallurgists] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, htWeaponSmithy] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, htIronSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_coal, htArmorSmithy] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_wood, htArmorWorkshop] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_wood, htWeaponWorkshop] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_Wood, htArmorWorkshop] := 2;
+    gHands[fOwner].Stats.WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
+    gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 4;
 
     gHands[fOwner].Houses.UpdateResRequest;
   end;
-const
-  WORKER_COEF = 135.0; // Max build cnt ~ 5400
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-  //SetKaMSeed(1215322464);
-  //gGame.GameOptions.Peacetime := 80;
+  //SetKaMSeed(666);
+  //gGame.GameOptions.Peacetime := 60;
   //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -160,9 +160,6 @@ begin
   FieldCnt := 0;
   BuildCnt := 0;
   gAIFields.Eye.ScanLocResources(GoldCnt, IronCnt, FieldCnt, BuildCnt);
-
-  // Decide count of workers + build nodes
-  gHands[fOwner].AI.Setup.WorkerCount := Min(35, Round((BuildCnt+1000) / WORKER_COEF));
 
   fBuilder.AfterMissionInit(GoldCnt, IronCnt, FieldCnt, BuildCnt);
 

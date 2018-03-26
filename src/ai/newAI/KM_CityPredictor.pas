@@ -261,7 +261,7 @@ begin
   Consumption := (fCityStats.CitizensCnt * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
   // Calculate consumption of leather armor / minute and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
-  fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption);
+  fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
   // Split rest of consumtion into other houses
   Consumption := Max(0, Consumption - fWareBalance[wt_Sausages].ActualConsumption);
   fWareBalance[wt_Bread].ActualConsumption := Consumption * 0.7;
@@ -411,7 +411,7 @@ begin
 end;
 
 
-//
+// City initialization, estimation of maximal possible production and restriction by peace time and loc properties
 procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
 
   procedure AddCitizens(aUT: TKMUnitType; aCnt: Word; aOverride: Boolean = False);
@@ -433,22 +433,43 @@ procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aField
 const
   IRON_WARFARE: set of TKMWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
   STANDARD_WARFARE: array[0..3] of TKMWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
+  SPACE_COEF = 1 / 750.0; // factor for iron weapons
+  FERTILITY_COEF = 1 / 800.0; // factor for wood weapons
+  MIN_WOOD_PRODUCTION = 1;
+  MAX_WOOD_PRODUCTION = 4;
+  SCALE_MIN_PEACE_TIME = 50;
+  SCALE_MAX_PEACE_TIME = 90;
+  SCALE_PEACE_FACTOR = 1.0 / ((SCALE_MAX_PEACE_TIME - SCALE_MIN_PEACE_TIME)*1.0);
+  WORKER_COEF = 1 / 105.0;
 var
   I: Integer;
-  MaxIronWeapProd, MaxWoodWeapProd: Single;
+  MaxIronWeapProd, MaxWoodWeapProd, PeaceFactor: Single;
   WT: TKMWareType;
 begin
+  // Max field / build cnt ~ 8000 tiles in real map it is 1500-2500 for fields and 2000-4000 for build
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
+
+  PeaceFactor := (Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME) * SCALE_PEACE_FACTOR;
+
   // Iron weapons
-  MaxIronWeapProd := aIronMineCnt * ProductionRate[wt_IronOre] / 2.0; // / 2.0 for iron weapon and armor
+  MaxIronWeapProd := Min(Round(aBuildCnt / SPACE_COEF), aIronMineCnt) * ProductionRate[wt_IronOre] * 0.5; // Division into half because of iron weapon and armor
   for WT in IRON_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
-  // Wood weapons (depends on avaiable space)
-  MaxWoodWeapProd := Round((aBuildCnt + 1500) / 1500) * ProductionRate[wt_Axe];
+
+  // Wood weapons (depends on avaiable space) - here is maximal possible production in this loc
+  MaxWoodWeapProd := Round(Min(aFieldCnt,aBuildCnt) * FERTILITY_COEF);
+  // Consider peace time
+  MaxWoodWeapProd := Max(1, MaxWoodWeapProd * PeaceFactor);
+  // Transform to house production
+  MaxWoodWeapProd := MaxWoodWeapProd * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
     fWareBalance[ STANDARD_WARFARE[I] ].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Shield].FinalConsumption := MaxWoodWeapProd / 5;
+
+  // Decide count of workers + build nodes
+  gHands[fOwner].AI.Setup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / WORKER_COEF));
+
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
   // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
@@ -617,7 +638,7 @@ const
                           + ProductionColor+'%.2f'+COLOR_WHITE+';' + #9
                           + ActualConsumptionColor+'%.2f'+COLOR_WHITE+';' + #9
                           + FinalConsumptionColor+'%.2f'+COLOR_WHITE+';'  + #9
-                          + FractionColor+'%.2f '+COLOR_WHITE+';' + #9
+                          + FractionColor+'%.2f'+COLOR_WHITE+';' + #9
                           + ExhaustionColor+'%.2f'+COLOR_WHITE+')|',
                           [aSpecificText, Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
     end;

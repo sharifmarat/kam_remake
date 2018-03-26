@@ -678,6 +678,7 @@ function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreE
 var
   Output: TConstructionState;
   FieldsComplete, Check: Boolean;
+  PolygonIdx: Word;
   I, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
 begin
@@ -730,10 +731,23 @@ begin
         // Add road to node
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
-        begin
-          LockNode(fBuildNodes[Node1Idx]);
-          with fBuildNodes[Node1Idx] do
-          begin
+           with fBuildNodes[Node1Idx] do
+           begin
+            // Check road and if it goes to enemy influence remove house plan
+            I := 0;
+            if (aHT = htWatchtower) then
+              while (I < FieldList.Count) do
+              begin
+                PolygonIdx := gAIFields.NavMesh.KMPoint2Polygon[ FieldList[I] ];
+                if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, at_Enemy) > 150) then
+                begin
+                  Planner.RemovePlan(aHT, Loc);
+                  Exit;
+                end;
+                I := I + 5;
+              end;
+            LockNode(fBuildNodes[Node1Idx]);
+
             Active := True;
             RemoveTreesMode := False;
             ShortcutMode := False;
@@ -741,7 +755,6 @@ begin
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
           end;
-        end;
         // Add field to node (if is required [ht_Farm, ht_Wineyard])
         if not FieldsComplete AND fPlanner.GetFieldToHouse(aHT, HouseIdx, fBuildNodes[Node2Idx].FieldList, fBuildNodes[Node2Idx].FieldType) then
         begin
@@ -813,7 +826,17 @@ begin
       end;
     end
     else
-      Output := cs_RemoveTreeProcedure; // Remove tree procedure is active
+    begin
+      // Plan cannot be placed - maybe because of terrain changes -> find build node with remove tree procedure and check if is active
+      for I := Low(fBuildNodes) to High(fBuildNodes) do
+        if fBuildNodes[I].Active AND fBuildNodes[I].RemoveTreesMode AND KMSamePoint(Loc,fBuildNodes[I].CenterPoint) then
+        begin
+          Output := cs_RemoveTreeProcedure; // Remove tree procedure is active
+          break;
+        end;
+      if (Output = cs_NoPlaceCanBeFound) then // Remove tree procedure is not active plan cannot be placed
+        Planner.RemovePlan(aHT, Loc);
+    end;
   end
   else
   begin
