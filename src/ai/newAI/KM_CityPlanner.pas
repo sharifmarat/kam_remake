@@ -14,78 +14,26 @@ var
   GA_PLANNER_FindPlaceForHouse_Influence            : Single = 200; // 0..XXX
   GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
 
-  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 112.0931396;
+
+  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 133.0841522;
   GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 119.0917969;
   GA_PLANNER_FieldCrit_MissingFields                  : Single = 128.2703094;
-
-  //GA_PLANNER_FieldCrit_FarmPosition                   : Single = 16.2791214;
-  //GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 30.75907516;
-  //GA_PLANNER_SnapCrit_SnapToFields                    : Single = 1;
-  //GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 34.78717804;
-  //GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 32.60704803;
-  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 6.382278442;
-  //GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 29.5424881;
-  //GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 5.122374535;
-  //GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 29.24962997;
-  //GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 28.23965836;
-  //GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 18.83926201;
-  //GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 69.65605927;
-  //GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 3.314490318;
-  //GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 1;
-  //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75.74541473;
-  //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2.960519552;
-
-  //GA_PLANNER_FieldCrit_FarmPosition                   : Single = 42,03913879;
-  //GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 14,78533936;
-  //GA_PLANNER_SnapCrit_SnapToFields                    : Single = 43,49087906;
-  //GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 169,157486;
-  //GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 94,99848175;
-  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 36,5508194;
-  //GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 6,558880806;
-  //GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 50;
-  //GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 48,24608231;
-  //GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 2,661625862;
-  //GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 1;
-  //GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 45,62419128;
-  //GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 1,329562426;
-  //GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 8,541898727;
-  //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 170,6947327;
-  //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 2,92606926;
-
-  //GA_PLANNER_FieldCrit_FarmPosition                   : Single = 58,63625336;
-  //GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 12,58267593;
-  //GA_PLANNER_SnapCrit_SnapToFields                    : Single = 40,3471756;
-  //GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 163,5126648;
-  //GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 7,262886524;
-  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 2,572668076;
-  //GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 12,82201099;
-  //GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 34,02655411;
-  //GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 50;
-  //GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 38,85832596;
-  //GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 7,758883476;
-  //GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 49,92569351;
-  //GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 2,463844538;
-  //GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 6,993527412;
-  //GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 132,0156708;
-  //GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 7,655327797;
-
-  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 54.46446991;
-  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 37.58007431;
-  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 45.52814484;
-  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 112.8556213;
-  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 35.73310852;
-  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 16.74302101;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 13.72853088;
-  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 34.18622589;
-  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 39.71033478;
-  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 21.58207703;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 15.41100121;
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 68.38710785;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 3.980914116;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 3.259504318;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 75;//37.63645935;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 8.272258759;
-
+  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 45.47183609;
+  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 14.75268459;
+  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 36.5965538;
+  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 63.20629883;
+  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 84.24632263;
+  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 8.930147171;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 36.38843536;
+  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 4.585587025;
+  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 47.33288956;
+  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 55;
+  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 25.80095482;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 51.33926773;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 2.934615374;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 17.95151138;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 171.9592438;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 7.18941021;
 
   GA_PATHFINDING_BasePrice    : Word = 0;
   GA_PATHFINDING_HouseOutside : Word = 1;
@@ -1419,10 +1367,9 @@ const
     try
       if (Locs.Count > 0) then
       begin
-        Locs.SortByTag();
         BestBid := INIT_BID;
         BestIdx := 0; // For compiler
-        for I := Locs.Count-1 downto 0 do // Start from highest influence
+        for I := 0 to Locs.Count - 1 do
         begin
           Bid := + Locs.Tag[I]
                  + DistCrit(htCoalMine, Locs.Items[I])
@@ -1434,8 +1381,6 @@ const
             BestIdx := I;
             BestBid := Bid;
           end;
-          if (I > 50) AND (BestBid <> INIT_BID) then
-            break;
         end;
         if (BestBid <> INIT_BID) then
         begin
