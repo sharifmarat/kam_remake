@@ -695,33 +695,73 @@ end;
 
 function TKMEye.GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
 var
+  Count: Word;
+  CoalPolygons, PolygonEvaluation: TKMWordArray;
+
+  procedure InsertionSort(aIdx,aEval: Word);
+  var
+    I: Integer;
+  begin
+    if (Length(CoalPolygons) >= Count) then
+    begin
+      SetLength(CoalPolygons, Count + 64);
+      SetLength(PolygonEvaluation, Count + 64);
+    end;
+    Count := Count + 1;
+    I := Count - 2;
+    while I > 0 do
+    begin
+      if (PolygonEvaluation[I] > aEval) then
+      begin
+        PolygonEvaluation[I+1] := PolygonEvaluation[I];
+        CoalPolygons[I+1] := CoalPolygons[I];
+      end
+      else
+        break;
+      I := I - 1;
+    end;
+    PolygonEvaluation[I+1] := aEval;
+    CoalPolygons[I+1] := aIdx;
+  end;
+const
+  MAX_LOCS = 25;
+var
   Own: Byte;
-  I, K, Cnt: Integer;
+  I, K, Cnt, Idx: Integer;
   Loc: TKMPoint;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
+  Count := 0;
   for I := 0 to Length(fCoalPolygons) - 1 do
     if (fCoalPolygons[I] > 0) then
     begin
       if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
         continue;
       Own := gAIFields.Influences.OwnPoly[fOwner, I];
-      if (Own = 0) then
-        continue;
-      Cnt := 0;
-      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
-      begin
-        Loc := gAIFields.NavMesh.Polygon2Point[K];
-        if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
-        begin
-          if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
-            Output.Add(Loc, Own);
-          Cnt := Cnt + 1;
-        end;
-      end;
-      fCoalPolygons[I] := Cnt;
+      if (Own <> 0) then
+        InsertionSort(I,Own);
     end;
+
+  for I := Count - 1 downto 0 do
+  begin
+    Idx := CoalPolygons[I];
+    Cnt := 0;
+    for K := gAIFields.NavMesh.Polygons[Idx].Poly2PointStart to gAIFields.NavMesh.Polygons[Idx].Poly2PointCnt - 1 do
+    begin
+      Loc := gAIFields.NavMesh.Polygon2Point[K];
+      if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
+      begin
+        Cnt := Cnt + 1;
+        if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
+          Output.Add(Loc, PolygonEvaluation[I]);
+      end;
+    end;
+    fCoalPolygons[Idx] := Cnt;
+    if (Output.Count > MAX_LOCS) then
+      break;
+  end;
+
   Result := Output;
 end;
 
