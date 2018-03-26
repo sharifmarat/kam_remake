@@ -733,7 +733,7 @@ var
 const
   MAX_LOCS = 25;
 var
-  Own: Byte;
+  Own: Word;
   I, K, Cnt, Idx: Integer;
   Loc: TKMPoint;
   Output: TKMPointTagList;
@@ -745,7 +745,7 @@ begin
     begin
       if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
         continue;
-      Own := gAIFields.Influences.OwnPoly[fOwner, I];
+      Own := Max(0, High(Word) - 300 + gAIFields.Influences.OwnPoly[fOwner, I] - gAIFields.Influences.GetOtherOwnerships(fOwner, I));
       if (Own <> 0) then
         InsertionSort(I,Own);
     end;
@@ -1010,10 +1010,10 @@ const
   COLOR_RED = $800000FF;
   COLOR_YELLOW = $8000FFFF;
   COLOR_BLUE = $80FF0000;
-//var
-//  I: Integer;
+var
+  I: Integer;
 begin
-  { Coal
+  //{ Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
     DrawTriangle(I, $FF00FF OR (Min($FF,Round(fCoalPolygons[I]*5)) shl 24));
   //}
