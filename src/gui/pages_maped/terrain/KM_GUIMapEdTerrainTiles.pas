@@ -60,6 +60,8 @@ const
 
 
 constructor TKMMapEdTerrainTiles.Create(aParent: TKMPanel);
+const
+  BTN_SIZE = 36;
 var
   J,K: Integer;
 begin
@@ -68,31 +70,25 @@ begin
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
 
-  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 2, 22, TB_WIDTH - 4, 20, 0);
-  TilesMagicWater.Caption := gResTexts[TX_MAPED_TERRAIN_MAGIC_WATER];
-  TilesMagicWater.CapOffsetY := -10;
+  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 10, 25, BTN_SIZE, BTN_SIZE, 670);
   TilesMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
   TilesMagicWater.OnClick := TilesChange;
 
-  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, 2, 46, TB_WIDTH - 4, 20, 0);
-  TilesEyedropper.Caption := gResTexts[TX_MAPED_TERRAIN_EYEDROPPER];
-  TilesEyedropper.CapOffsetY := -10;
+  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, ((TB_WIDTH - BTN_SIZE) div 2), 25, BTN_SIZE, BTN_SIZE, 671);
   TilesEyedropper.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_EYEDROPPER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
   TilesEyedropper.OnClick := TilesChange;
 
-  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 2, 70, TB_WIDTH - 4, 20, 0);
-  TilesRotate.Caption := gResTexts[TX_MAPED_TERRAIN_ROTATE_TILE];
-  TilesRotate.CapOffsetY := -10;
+  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, TB_WIDTH - 10 - BTN_SIZE, 25, BTN_SIZE, BTN_SIZE, 672);
   TilesRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
   TilesRotate.OnClick := TilesChange;
 
-  TilesRandom := TKMCheckBox.Create(Panel_Tiles, 0, 106, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM], fnt_Metal);
+  TilesRandom := TKMCheckBox.Create(Panel_Tiles, 0, 25 + BTN_SIZE + 5, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_TILES_RANDOM], fnt_Metal);
   TilesRandom.Checked := True;
   TilesRandom.OnClick := TilesChange;
   TilesRandom.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_TILES_RANDOM_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
 
   //Create scroll first to link to its MouseWheel event
-  TilesScroll := TKMScrollBar.Create(Panel_Tiles, 2, 136 + 4 + MAPED_TILES_Y * 32, 194, 20, sa_Horizontal, bsGame);
+  TilesScroll := TKMScrollBar.Create(Panel_Tiles, 0, 25 + BTN_SIZE + 28 + 4 + MAPED_TILES_Y * 32, 194, 20, sa_Horizontal, bsGame);
   TilesScroll.MaxValue := 256 div MAPED_TILES_Y - MAPED_TILES_X; // 32 - 6
   TilesScroll.Position := 0;
   TilesScroll.OnChange := TilesRefresh;
@@ -100,7 +96,7 @@ begin
   for J := 0 to MAPED_TILES_Y - 1 do
     for K := 0 to MAPED_TILES_X - 1 do
     begin
-      TilesTable[J * MAPED_TILES_X + K] := TKMButtonFlat.Create(Panel_Tiles, K * 32, 136 + J * 32, 32, 32, 1, rxTiles);
+      TilesTable[J * MAPED_TILES_X + K] := TKMButtonFlat.Create(Panel_Tiles, K * 32, 25 + BTN_SIZE + 28 + J * 32, 32, 32, 1, rxTiles);
       TilesTable[J * MAPED_TILES_X + K].Tag :=  J * MAPED_TILES_X + K; //Store ID
       TilesTable[J * MAPED_TILES_X + K].OnClick := TilesChange;
       TilesTable[J * MAPED_TILES_X + K].OnMouseWheel := TilesScroll.MouseWheel;
@@ -125,29 +121,36 @@ begin
   TilesRotate.Down := (Sender = TilesRotate) and not TilesRotate.Down;
 
   if Sender = TilesMagicWater then
+  begin
     if TilesMagicWater.Down then
       gGameCursor.Mode := cmMagicWater
     else
       gGameCursor.Mode := cmNone;
+  end else
 
   if Sender = TilesEyedropper then
+  begin
     if TilesEyedropper.Down then
       gGameCursor.Mode := cmEyedropper
     else
       gGameCursor.Mode := cmNone;
+  end else
 
   if Sender = TilesRotate then
+  begin
     if TilesRotate.Down then
       gGameCursor.Mode := cmRotateTile
     else
       gGameCursor.Mode := cmNone;
+  end else
 
   if Sender = TilesRandom then
-    gGameCursor.MapEdDir := 4 * Byte(TilesRandom.Checked); //Defined=0..3 or Random=4
+    gGameCursor.MapEdDir := 4 * Byte(TilesRandom.Checked) //Defined=0..3 or Random=4
+  else
 
   if (Sender is TKMButtonFlat)
-  and not (Sender = TilesMagicWater)
-  and not (Sender = TilesEyedropper) then
+    and not (Sender = TilesMagicWater)
+    and not (Sender = TilesEyedropper) then
     TilesSet(TKMButtonFlat(Sender).TexID)
   else
     TilesRefresh(nil);

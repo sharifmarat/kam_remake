@@ -154,6 +154,8 @@ type
     procedure StopGame(const aText: UnicodeString = '');
     procedure ShowMPStats;
     procedure ShowSPStats;
+
+    procedure SetViewportPos(const aLoc: TKMPointF);
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -728,6 +730,7 @@ begin
   // Debugging displays
   Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 100);
   Bevel_DebugInfo.BackAlpha := 0.5;
+  Bevel_DebugInfo.Hitable := False;
   Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fnt_Outline,taLeft);
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
@@ -1137,18 +1140,18 @@ begin
 
   fGuiGameBuild := TKMGUIGameBuild.Create(Panel_Controls);
   fGuiGameRatios := TKMGUIGameRatios.Create(Panel_Controls, fUIMode in [umSP, umMP]);
-  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls, ShowStats);
+  fGuiGameStats := TKMGUIGameStats.Create(Panel_Controls, ShowStats, SetViewportPos);
   Create_Menu;
     Create_Save;
     Create_Load;
     fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls);
     Create_Quit;
 
-  fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls);
+  fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls, SetViewportPos);
   fGuiGameUnit.OnUnitDismiss := Reset_Menu;
   fGuiGameUnit.OnArmyCanTakeOrder := ArmyCanTakeOrder;
   fGuiGameUnit.OnSelectingTroopDirection := IsSelectingTroopDirection;
-  fGuiGameHouse := TKMGUIGameHouse.Create(Panel_Controls);
+  fGuiGameHouse := TKMGUIGameHouse.Create(Panel_Controls, SetViewportPos);
   fGuiGameHouse.OnHouseDemolish := House_Demolish;
 end;
 
@@ -2188,7 +2191,7 @@ begin
       gmReplayMulti,
       gmMultiSpectate:  Replay_Multi_SetPlayersDropbox;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
-                                                      [GetEnumName(TypeInfo(TGameMode), Integer(gGame.GameMode))]));
+                                                      [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));
     end;
     gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(Dropbox_ReplayFOW.ItemIndex); //Update HandIndex
   end;
@@ -3968,6 +3971,12 @@ procedure TKMGamePlayInterface.ShowSPStats;
 begin
   fGuiGameResultsMP.Hide;
   fGuiGameResultsSP.Show(fGuiGameResultsMP.GameResultMsg);
+end;
+
+
+procedure TKMGamePlayInterface.SetViewportPos(const aLoc: TKMPointF);
+begin
+  fViewport.Position := aLoc;
 end;
 
 

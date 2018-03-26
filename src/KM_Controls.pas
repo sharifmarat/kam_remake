@@ -106,6 +106,7 @@ type
     fClickHoldHandled: Boolean;
     fTimeOfLastMouseDown: Cardinal;
     fLastMouseDownButton: TMouseButton;
+    fLastClickPos: TKMPoint;
 
     fOnClick: TNotifyEvent;
     fOnClickShift: TNotifyEventShift;
@@ -365,6 +366,7 @@ type
     ImageAnchors: TKMAnchorsSet;
     Highlight: Boolean;
     HighlightOnMouseOver: Boolean;
+    HighlightCoef: Single;
     Lightness: Single;
     ClipToBounds: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui);
@@ -1681,6 +1683,7 @@ begin
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
+  fLastClickPos := KMPOINT_ZERO;
 
   if aParent <> nil then
     fID := aParent.fMasterControl.GetNextCtrlID
@@ -2062,8 +2065,9 @@ begin
   //because we would not like to delay Click just to make sure it is single.
   //On the ther hand it does no harm to call Click first
   if (Button = mbLeft)
-  and Assigned(fOnDoubleClick)
-  and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
+    and Assigned(fOnDoubleClick)
+    and KMSamePoint(fLastClickPos, KMPoint(X,Y))
+    and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
   begin
     fTimeOfLastClick := 0;
     fOnDoubleClick(Self);
@@ -2071,7 +2075,10 @@ begin
   else
   begin
     if (Button = mbLeft) and Assigned(fOnDoubleClick) then
+    begin
       fTimeOfLastClick := TimeGet;
+      fLastClickPos := KMPoint(X,Y);
+    end;
 
     if Assigned(fOnClickShift) then
       fOnClickShift(Self, Shift)
@@ -2772,8 +2779,9 @@ begin
   fTexID := aTexID;
   fFlagColor := $FFFF00FF;
   ImageAnchors := [anLeft, anTop];
-  Highlight := false;
-  HighlightOnMouseOver := false;
+  Highlight := False;
+  HighlightOnMouseOver := False;
+  HighlightCoef := 0.4;
 end;
 
 
@@ -2822,7 +2830,7 @@ begin
     TKMRenderUI.SetupClipY(AbsTop,  AbsTop + Height);
   end;
 
-  PaintLightness := Lightness + 0.4 * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
+  PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
   TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness);
   TKMRenderUI.ReleaseClipX;

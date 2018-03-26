@@ -42,7 +42,7 @@ const
     [mk_AskForAuth,mk_AskToJoin,mk_ClientLost,mk_ReassignHost,mk_Disconnect,mk_Ping,mk_PingInfo,mk_PlayersList,
      mk_StartingLocQuery,mk_SetTeam,mk_FlagColorQuery,mk_ResetMap,mk_MapSelect,mk_SaveSelect,
      mk_ReadyToStart,mk_Start,mk_TextChat,mk_Kicked,mk_LangCode,mk_GameOptions,mk_ServerName,
-     mk_FileRequest,mk_FileChunk,mk_FileEnd,mk_FileAck,mk_FileProgress,mk_TextTranslated,mk_HasMapOrSave],
+     mk_FileRequest,mk_FileChunk,mk_FileEnd,mk_FileAck,mk_FileProgress,mk_TextTranslated,mk_HasMapOrSave,mk_SetPassword],
     //lgs_Loading
     [mk_AskForAuth,mk_ClientLost,mk_ReassignHost,mk_Disconnect,mk_Ping,mk_PingInfo,mk_PlayersList,
      mk_ReadyToPlay,mk_Play,mk_TextChat,mk_Kicked,mk_TextTranslated,mk_Vote],
@@ -133,6 +133,7 @@ type
     fOnMPGameInfoChanged: TNotifyEvent;
     fOnCommands: TStreamIntEvent;
     fOnResyncFromTick: TResyncEvent;
+    fOnSetPassword: TAnsiStringEvent;
 
     procedure DecodePingInfo(aStream: TKMemoryStream);
     procedure ForcedDisconnect(Sender: TObject);
@@ -271,6 +272,7 @@ type
     property OnReadyToPlay: TNotifyEvent write fOnReadyToPlay;   //Update the list of players ready to play
     property OnPingInfo: TNotifyEvent write fOnPingInfo;         //Ping info updated
     property OnMPGameInfoChanged: TNotifyEvent write fOnMPGameInfoChanged;
+    property OnSetPassword: TAnsiStringEvent write fOnSetPassword;
 
     property OnDisconnect: TUnicodeStringEvent write fOnDisconnect;     //Lost connection, was kicked
     property OnJoinerDropped: TIntegerEvent write fOnJoinerDropped; //Other player disconnected
@@ -856,12 +858,17 @@ begin
   Assert(IsHost, 'Only host can set password');
   fPassword := aPassword;
   fOnMPGameInfoChanged(Self); //Send the password state to the server so it is shown in server list
-  PacketSendA(NET_ADDRESS_SERVER, mk_SetPassword, fPassword);
+  PacketSendA(NET_ADDRESS_SERVER, mk_SetPassword, fPassword); //Send to server
+
+  PacketSendA(NET_ADDRESS_OTHERS, mk_SetPassword, fPassword); //Send to other players as well, just to let them know we have password here
+
+  if Assigned(fOnSetPassword) then
+    fOnSetPassword(fPassword);
 end;
 
 
 //Joiner indicates that he is ready to start
-function TKMNetworking.ReadyToStart:boolean;
+function TKMNetworking.ReadyToStart: Boolean;
 begin
   if (fSelectGameKind = ngk_Save) and (MyNetPlayer.StartLocation = 0) then
   begin
@@ -886,7 +893,7 @@ begin
 end;
 
 
-function TKMNetworking.CanStart:boolean;
+function TKMNetworking.CanStart: Boolean;
 var
   I: Integer;
 begin
@@ -1227,6 +1234,7 @@ procedure TKMNetworking.PlayerJoined(aServerIndex: TKMNetHandleIndex; const aPla
 begin
   fNetPlayers.AddPlayer(aPlayerName, aServerIndex, '');
   PacketSend(aServerIndex, mk_AllowToJoin);
+  PacketSendA(aServerIndex, mk_SetPassword, fPassword); //Send joiner password, just to tell him
   SendMapOrSave(aServerIndex); //Send the map first so it doesn't override starting locs
 
   if fSelectGameKind = ngk_Save then
@@ -2068,6 +2076,15 @@ begin
                 fNetPlayers.LoadFromStream(M);
                 fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname);
                 StartGame;
+              end;
+
+      mk_SetPassword:
+              if not IsHost then //Save password for joiner's only, as it's used to show Lock image
+              begin
+                M.ReadA(tmpStringA); //Password
+                fPassword := tmpStringA;
+                if Assigned(fOnSetPassword) then
+                  fOnSetPassword(fPassword);
               end;
 
       mk_ReadyToReturnToLobby:

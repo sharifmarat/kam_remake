@@ -120,6 +120,8 @@ type
 
     function TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
 
+    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
+
     function CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
     function CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
     function CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
@@ -502,6 +504,45 @@ begin
 
   if not gGame.IsMapEditor then
     fAI.AfterMissionInit;
+end;
+
+
+function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
+var House, FirstH: TKMHouse;
+    Found: Boolean;
+    I: Integer;
+begin
+  Result := nil;
+
+  Found := False;
+  FirstH := nil;
+
+  for I := 0 to fHouses.Count - 1 do
+  begin
+    House := fHouses[I];
+    if (House.HouseType = aHouseType) // we are interested in houses with the same type
+      and not House.IsDestroyed then        // not destroyed
+    begin
+      //Just find any first house
+      if (aStartFromUID = 0) then
+      begin
+        Result := House;
+        Break;
+      end;
+
+      //Find first house from specified UID
+      if (House.UID = aStartFromUID) then
+        Found := True               // Mark that we found our house
+      else if Found then
+      begin
+        Result := House;            // Save the next house after Found to Result and Break
+        Break;
+      end else if FirstH = nil then
+        FirstH := House;            // Save 1st house in list in case our house is the last one
+    end;
+  end;
+  if (Result = nil) and Found then // Found should be always True here
+    Result := FirstH;
 end;
 
 

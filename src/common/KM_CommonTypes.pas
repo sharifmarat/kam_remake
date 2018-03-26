@@ -3,7 +3,7 @@ unit KM_CommonTypes;
 interface
 
 uses
-  KM_Defaults;
+  KM_Points, KM_Defaults;
 
 type
   TBooleanArray = array of Boolean;
@@ -32,10 +32,12 @@ type
   TEvent = procedure of object;
   TPointEvent = procedure (Sender: TObject; const X,Y: Integer) of object;
   TPointEventFunc = function (Sender: TObject; const X,Y: Integer): Boolean of object;
+  TPointFEvent = procedure (const aPoint: TKMPointF) of object;
   TBooleanEvent = procedure (aValue: Boolean) of object;
   TIntegerEvent = procedure (aValue: Integer) of object;
   TObjectIntegerEvent = procedure (Sender: TObject; X: Integer) of object;
   TSingleEvent = procedure (aValue: Single) of object;
+  TAnsiStringEvent = procedure (const aData: AnsiString) of object;
   TUnicodeStringEvent = procedure (const aData: UnicodeString) of object;
   TUnicodeStringWDefEvent = procedure (const aData: UnicodeString = '') of object;
   TUnicodeStringEventProc = procedure (const aData: UnicodeString);

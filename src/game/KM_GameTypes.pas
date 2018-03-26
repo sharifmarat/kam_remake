@@ -3,7 +3,7 @@ unit KM_GameTypes;
 interface
 
 type
-  TGameMode = (
+  TKMGameMode = (
     gmSingle,
     gmCampaign,
     gmMulti,        //Different GIP, networking,
@@ -13,7 +13,7 @@ type
     gmReplayMulti   //No input, different results screen to gmReplaySingle
     );
 
-  TKMGameModeChangeEvent = procedure (aGameMode: TGameMode) of Object;
+  TKMGameModeChangeEvent = procedure (aGameMode: TKMGameMode) of Object;
 
 implementation
 
