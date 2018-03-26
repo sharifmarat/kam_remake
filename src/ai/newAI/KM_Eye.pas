@@ -1013,7 +1013,7 @@ const
 var
   I: Integer;
 begin
-  //{ Coal
+  { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
     DrawTriangle(I, $FF00FF OR (Min($FF,Round(fCoalPolygons[I]*5)) shl 24));
   //}
