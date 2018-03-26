@@ -327,7 +327,7 @@ begin
     FinPos := FinalPosition.Loc;
     if PlanPath(ActPos, FinPos, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else
+    else if not KMSamePoint(Group.Position, FinalPosition.Loc) then
       Group.OrderWalk(FinalPosition.Loc, True, wtokAISquad, FinalPosition.Dir);
   end;
 end;
