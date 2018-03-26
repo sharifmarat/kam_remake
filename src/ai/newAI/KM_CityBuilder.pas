@@ -813,7 +813,17 @@ begin
       end;
     end
     else
-      Output := cs_RemoveTreeProcedure; // Remove tree procedure is active
+    begin
+      // Plan cannot be placed - maybe because of terrain changes -> find build node with remove tree procedure and check if is active
+      for I := Low(fBuildNodes) to High(fBuildNodes) do
+        if fBuildNodes[I].Active AND fBuildNodes[I].RemoveTreesMode AND KMSamePoint(Loc,fBuildNodes[I].CenterPoint) then
+        begin
+          Output := cs_RemoveTreeProcedure; // Remove tree procedure is active
+          break;
+        end;
+      if (Output = cs_NoPlaceCanBeFound) then // Remove tree procedure is not active plan cannot be placed
+        Planner.RemovePlan(aHT, Loc);
+    end;
   end
   else
   begin
