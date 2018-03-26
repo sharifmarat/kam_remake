@@ -460,7 +460,8 @@ var
     Result := Output;
   end;
 var
-  X,Y, Increment: Integer;
+  I,K, Increment: Integer;
+  Loc: TKMPoint;
   CenterPointArr: TKMPointArray;
   TagList: TKMPointTagList;
   FFInitPlace: TKMFFInitPlace;
@@ -477,12 +478,12 @@ begin
   // Scan Resources - stones
   TagList := GetStoneLocs(True);
   try
-    X := 0;
+    I := 0;
     Increment := Ceil(TagList.Count / 5.0); // Max 5 paths
-    while (X < TagList.Count) do
+    while (I < TagList.Count) do
     begin
-      ScanLocArea(TagList.Items[X]);
-      X := X + Increment;
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
     end;
   finally
     TagList.Free;
@@ -490,29 +491,35 @@ begin
   // Scan Resources - coal
   TagList := GetCoalMineLocs(True);
   try
-    X := 0;
+    I := 0;
     Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
-    while (X < TagList.Count) do
+    while (I < TagList.Count) do
     begin
-      ScanLocArea(TagList.Items[X]);
-      X := X + Increment;
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
     end;
   finally
     TagList.Free;
   end;
 
-
   aFieldCnt := 0;
   aBuildCnt := 0;
-  for Y := 1 to gTerrain.MapY - 1 do
-  for X := 1 to gTerrain.MapX - 1 do
-    if (gAIFields.Influences.GetBestOwner(X, Y) = fOwner) then
-    begin
-      if (tpBuild in gTerrain.Land[Y,X].Passability) then
-        aBuildCnt := aBuildCnt + 1;
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
-        aFieldCnt := aFieldCnt + 1;
-    end;
+  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+    if (gAIFields.Influences.GetBestOwner(I) = fOwner) then
+      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
+      begin
+        Loc := gAIFields.NavMesh.Polygon2Point[K];
+        if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
+        begin
+          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
+            aBuildCnt := aBuildCnt + 1;
+          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+            aFieldCnt := aFieldCnt + 1;
+        end
+        else if gTerrain.CheckHeightPass(Loc, hpWalking)
+          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          aFieldCnt := aFieldCnt + 1;
+      end;
 
   if (PolygonsCnt > 0) then
   begin
