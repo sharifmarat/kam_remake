@@ -727,23 +727,9 @@ begin
         // Add road to node
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
-           with fBuildNodes[Node1Idx] do
-           begin
-            // Check road and if it goes to enemy influence remove house plan
-            I := 0;
-            if (aHT = htWatchtower) then
-              while (I < FieldList.Count) do
-              begin
-                PolygonIdx := gAIFields.NavMesh.KMPoint2Polygon[ FieldList[I] ];
-                if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, at_Enemy) > 150) then
-                begin
-                  Planner.RemovePlan(aHT, Loc);
-                  gHands[fOwner].RemHousePlan(Loc);
-                  Exit;
-                end;
-                I := I + 5;
-              end;
-
+        begin
+          with fBuildNodes[Node1Idx] do
+          begin
             LockNode(fBuildNodes[Node1Idx]);
             Active := True;
             RemoveTreesMode := False;
@@ -752,19 +738,25 @@ begin
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
           end;
-        // Add field to node (if is required [ht_Farm, ht_Wineyard])
-        if not FieldsComplete AND fPlanner.GetFieldToHouse(aHT, HouseIdx, fBuildNodes[Node2Idx].FieldList, fBuildNodes[Node2Idx].FieldType) then
-        begin
-          LockNode(fBuildNodes[Node2Idx]);
-          with fBuildNodes[Node2Idx] do
+          // Add field to node (if is required [ht_Farm, ht_Wineyard])
+          if not FieldsComplete AND fPlanner.GetFieldToHouse(aHT, HouseIdx, fBuildNodes[Node2Idx].FieldList, fBuildNodes[Node2Idx].FieldType) then
           begin
-            Active := True;
-            RemoveTreesMode := False;
-            ShortcutMode := False;
-            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_FieldMaxWork);
-            RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
-            CenterPoint := Loc;
+            LockNode(fBuildNodes[Node2Idx]);
+            with fBuildNodes[Node2Idx] do
+            begin
+              Active := True;
+              RemoveTreesMode := False;
+              ShortcutMode := False;
+              MaxReqWorkers := Round(GA_BUILDER_BuildHouse_FieldMaxWork);
+              RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
+              CenterPoint := Loc;
+            end;
           end;
+        end
+        else
+        begin
+          gHands[fOwner].RemHousePlan(Loc);
+          Exit;
         end;
         // Reserve house place
         if aHouseReservation then
