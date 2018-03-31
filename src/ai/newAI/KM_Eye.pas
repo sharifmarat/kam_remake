@@ -54,7 +54,6 @@ type
     fOwner: TKMHandIndex;
     fHousesMapping: THouseMappingArray;
     fGoldMines, fIronMines, fStoneMiningTiles: TKMPointList;
-    fInitForests: TKMPointTagList;
     fCoalPolygons, fPolygonRoutes: TKMByteArray;  // fFertility
 
     fArmyEvaluation: TKMArmyEvaluation;
@@ -68,7 +67,6 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property HousesMapping: THouseMappingArray read fHousesMapping write fHousesMapping;
-    property InitForests: TKMPointTagList read fInitForests write fInitForests;
     property ArmyEvaluation: TKMArmyEvaluation read fArmyEvaluation;
     property PolygonRoutes: TKMByteArray read fPolygonRoutes;
 
@@ -83,7 +81,7 @@ type
     function GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
     function GetStoneLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
     function GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
-    procedure GetForests(var aForests: TKMPointTagList; aInitialization: Boolean = False);
+    procedure GetForests(var aForests: TKMPointTagList);
     function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
     function GetClosestUnitAroundHouse(aHT: TKMHouseType; aLoc: TKMPoint; aInitPoint: TKMPoint): TKMUnit;
@@ -105,7 +103,6 @@ begin
   fGoldMines := TKMPointList.Create();
   fIronMines := TKMPointList.Create();
   fStoneMiningTiles := TKMPointList.Create();
-  fInitForests := TKMPointTagList.Create();
 
   fArmyEvaluation := TKMArmyEvaluation.Create();
 
@@ -117,7 +114,6 @@ begin
   fGoldMines.Free;
   fIronMines.Free;
   fStoneMiningTiles.Free;
-  fInitForests.Free;
 
   fArmyEvaluation.Free;
 
@@ -141,7 +137,6 @@ begin
   fGoldMines.SaveToStream(SaveStream);
   fIronMines.SaveToStream(SaveStream);
   fStoneMiningTiles.SaveToStream(SaveStream);
-  fInitForests.SaveToStream(SaveStream);
 
   SaveByteArr(fPolygonRoutes);
   SaveByteArr(fCoalPolygons);
@@ -168,7 +163,6 @@ begin
   fGoldMines.LoadFromStream(LoadStream);
   fIronMines.LoadFromStream(LoadStream);
   fStoneMiningTiles.LoadFromStream(LoadStream);
-  fInitForests.LoadFromStream(LoadStream);
 
   LoadByteArr(fPolygonRoutes);
   LoadByteArr(fCoalPolygons);
@@ -220,7 +214,6 @@ begin
         end
         else if (gTerrain.TileIsCoal(X, Y) > 1) then
         begin
-          //if CanAddHousePlan(Loc, ht_CoalMine, True, False) then
           Inc(fCoalPolygons[  gAIFields.NavMesh.KMPoint2Polygon[ Loc ]  ]);
         end
         else if (gTerrain.TileIsStone(X, Y) > 0) then
@@ -228,14 +221,10 @@ begin
           if (Y < gTerrain.MapY - 1) AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
             fStoneMiningTiles.Add(KMPoint(X,Y));
         end;
-        //else if (gTerrain.ObjectIsChopableTree(X, Y)) then
-        //  VisitArr[Y,X] := TREE_NUM;
       end;
   finally
     SearchResource.Free();
   end;
-
-  GetForests(fInitForests, True);
 end;
 
 
@@ -776,7 +765,7 @@ end;
 
 // Cluster algorithm (inspired by DBSCAN but clusters may overlap)
 // Create possible places for forests and return count of already existed forests
-procedure TKMEye.GetForests(var aForests: TKMPointTagList; aInitialization: Boolean = False);
+procedure TKMEye.GetForests(var aForests: TKMPointTagList);
 const
   OWNERSHIP_LIMIT = 120;
   RANDOM_POINTS_OWNERSHIP_LIMIT = 220;
@@ -784,137 +773,112 @@ const
 
   RADIUS = 5;
   MAX_DIST = RADIUS+1; // When is max radius = 5 and max distance = 6 and use KMDistanceAbs it will give area similar to circle (without need to calculate euclidean distance!)
-  VISIT_MARK = RADIUS+1;
   MIN_POINTS_CNT = 3;
 
-  POLYGON_SCAN_RAD = 4;
   UNVISITED_TILE = 0;
   VISITED_TILE = 1;
   UNVISITED_TREE = 2;
   UNVISITED_TREE_IN_FOREST = 3;
   VISITED_TREE = 4;
   VISITED_TREE_IN_FOREST = 5;
-  TREE_IN_FULL_FOREST = 6;
 var
   PartOfForest: Boolean;
   Ownership, AvoidBulding: Byte;
-  I,X,X2,Y,Y2, Distance, SparePointsCnt: Integer;
+  I,K,X,Y, Distance, SparePointsCnt: Integer;
   Cnt: Single;
-  Point, sumPoint, newPoint: TKMPoint;
+  Point, sumPoint: TKMPoint;
   VisitArr: TKMByte2Array;
   SparePoints: array[0..20] of Integer;
   Polygons: TPolygonArray;
 begin
   aForests.Clear;
+  Polygons := gAIFields.NavMesh.Polygons;
 
+  // Init visit array
   SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := 1 to gTerrain.MapY - 1 do
-  for X := 1 to gTerrain.MapX - 1 do
-    VisitArr[Y,X] := UNVISITED_TILE;
-
-  SparePointsCnt := 0;
-  Polygons := gAIFields.NavMesh.Polygons;
-  if aInitialization then
-  begin
-    for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
-      if gTerrain.ObjectIsChopableTree(KMPoint(X,Y), caAgeFull) then
-      //if gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]) then
-        VisitArr[Y,X] := UNVISITED_TREE;
-  end
-  else
+      VisitArr[Y,X] := UNVISITED_TILE;
+
+  // Try to find trees only in owner's influence areas
+  SparePointsCnt := 0;
+  for I := 0 to Length(Polygons) - 1 do
   begin
-    // Scan influence on 255*255 tiles takes performance -> use polygons from NavMesh instead
-    for I := 0 to Length(Polygons) - 1 do
+    Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
+    if (Ownership > OWNERSHIP_LIMIT) then
     begin
-      Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
-      if (Ownership > OWNERSHIP_LIMIT) AND (fOwner = gAIFields.Influences.GetBestOwner(I)) then
+      for K := Polygons[I].Poly2PointStart to Polygons[I].Poly2PointCnt - 1 do
       begin
-        Point := Polygons[I].CenterPoint;
-        for Y := Max(1, Point.Y - POLYGON_SCAN_RAD) to Min(gTerrain.MapY - 1, Point.Y + POLYGON_SCAN_RAD) do
-        for X := Max(1, Point.X - POLYGON_SCAN_RAD) to Min(gTerrain.MapX - 1, Point.X + POLYGON_SCAN_RAD) do
+        Point := gAIFields.NavMesh.Polygon2Point[K];
+        if (VisitArr[Point.Y,Point.X] = UNVISITED_TILE) then
         begin
-          if (VisitArr[Y,X] = UNVISITED_TILE) then
+          //if gTerrain.ObjectIsChopableTree(Point, caAgeFull) then // Consider only caAgeFull trees
+          if gTerrain.ObjectIsChopableTree(Point, [caAge1,caAge2,caAge3,caAgeFull]) then // Consider all trees
           begin
-            if gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull]) then
-            //if gTerrain.ObjectIsChopableTree(KMPoint(X,Y), caAgeFull) then
-            begin
-              AvoidBulding := gAIFields.Influences.AvoidBuilding[Y,X];
-              if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
-                VisitArr[Y,X] := UNVISITED_TREE
-              else if (AvoidBulding < AVOID_BUILDING_FOREST_LIMIT) then
-                VisitArr[Y,X] := UNVISITED_TREE_IN_FOREST;
-              //else
-              //  VisitArr[Y,X] := TREE_IN_FULL_FOREST;
-            end
+            AvoidBulding := gAIFields.Influences.AvoidBuilding[Point.Y,Point.X];
+            if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
+              VisitArr[Point.Y,Point.X] := UNVISITED_TREE
+            else if (AvoidBulding < AVOID_BUILDING_FOREST_LIMIT) then
+              VisitArr[Point.Y,Point.X] := UNVISITED_TREE_IN_FOREST
             else
-              VisitArr[Y,X] := VISITED_TILE;
-          end;
+              VisitArr[Y,X] := VISITED_TILE; // Tree in full forest -> ignore it
+          end
+          else
+            VisitArr[Point.Y,Point.X] := VISITED_TILE;
         end;
-        // In case that there is no forest save those points which should be in "ideal" distance from city to start forest
-        if (Ownership < RANDOM_POINTS_OWNERSHIP_LIMIT) AND (SparePointsCnt < High(SparePoints)) AND (KaMRandom() > 0.7) then
-        begin
-          SparePoints[SparePointsCnt] := I;
-          SparePointsCnt := SparePointsCnt + 1;
-        end;
+      end;
+      if (Ownership < RANDOM_POINTS_OWNERSHIP_LIMIT) AND (SparePointsCnt < High(SparePoints)) AND (KaMRandom() > 0.7) then
+      begin
+        SparePoints[SparePointsCnt] := I;
+        SparePointsCnt := SparePointsCnt + 1;
       end;
     end;
   end;
 
-  for Y := 1 to gTerrain.MapY - 1 do
-  for X := 1 to gTerrain.MapX - 1 do
-    if (VisitArr[Y,X] = UNVISITED_TREE) OR (VisitArr[Y,X] = UNVISITED_TREE_IN_FOREST) then
-    //if (VisitArr[Y,X] = UNVISITED_TREE) then
-    begin
-      PartOfForest := False;
-      Point := KMPoint(X,Y);
-      sumPoint := KMPOINT_ZERO;
-      Cnt := 0;
-      // It is faster to try find points in required radius than find closest points from list of points (when is radius small)
-      for Y2 := Max(1, Y-RADIUS) to Min(Y+RADIUS, gTerrain.MapY-1) do
-      for X2 := Max(1, X-RADIUS) to Min(X+RADIUS, gTerrain.MapX-1) do
-        if (VisitArr[Y2,X2] >= UNVISITED_TREE) then
+  // Restrict searching area by best owner (but consider also other trees in owner influence area = it may create shared forests)
+  for I := 0 to Length(Polygons) - 1 do
+    if (fOwner = gAIFields.Influences.GetBestOwner(I)) then
+      for K := Polygons[I].Poly2PointStart to Polygons[I].Poly2PointCnt - 1 do
+      begin
+        Point := gAIFields.NavMesh.Polygon2Point[K];
+        if (VisitArr[Point.Y,Point.X] = UNVISITED_TREE) OR (VisitArr[Point.Y,Point.X] = UNVISITED_TREE_IN_FOREST) then
         begin
-          newPoint := KMPoint(X2,Y2);
-          Distance := KMDistanceAbs(Point, newPoint);
-          if (Distance < MAX_DIST) then
-          begin
-            Cnt := Cnt + 1;
-            sumPoint := KMPointAdd(sumPoint, newPoint);
-            if (Distance < VISIT_MARK) then
+          PartOfForest := False;
+          sumPoint := KMPOINT_ZERO;
+          Cnt := 0;
+          // It is faster to try find points in required radius than find closest points from list of points (when is radius small)
+          for Y := Max(1, Point.Y-RADIUS) to Min(Point.Y+RADIUS, gTerrain.MapY-1) do
+          for X := Max(1, Point.X-RADIUS) to Min(Point.X+RADIUS, gTerrain.MapX-1) do
+            if (VisitArr[Y,X] >= UNVISITED_TREE) then // Detect tree
             begin
-              if (VisitArr[Y2,X2] = UNVISITED_TREE) then
-                VisitArr[Y2,X2] := VISITED_TREE
-              else if (VisitArr[Y2,X2] = UNVISITED_TREE_IN_FOREST) then
+              Distance := KMDistanceAbs(Point, KMPoint(X,Y));
+              if (Distance < MAX_DIST) then // Check distance
               begin
-                PartOfForest := True;
-                VisitArr[Y2,X2] := VISITED_TREE_IN_FOREST;
+                Cnt := Cnt + 1;
+                sumPoint := KMPointAdd(sumPoint, KMPoint(X,Y));
+                if (VisitArr[Y,X] = UNVISITED_TREE) then
+                  VisitArr[Y,X] := VISITED_TREE
+                else if (VisitArr[Y,X] = UNVISITED_TREE_IN_FOREST) then
+                begin
+                  PartOfForest := True;
+                  VisitArr[Y,X] := VISITED_TREE_IN_FOREST;
+                end;
               end;
             end;
+          if (Cnt > MIN_POINTS_CNT) then
+          begin
+            Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
+            aForests.Add( Point, Round(Cnt) );
+            aForests.Tag2[aForests.Count-1] := Cardinal(PartOfForest);
           end;
         end;
-      if (Cnt > MIN_POINTS_CNT) then
-      begin
-        Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-        aForests.Add( Point, Round(Cnt) );
-        aForests.Tag2[aForests.Count-1] := Cardinal(PartOfForest);
       end;
-    end;
 
-  if not aInitialization then
-    for I := 0 to SparePointsCnt - 1 do
-    begin
-      X := SparePoints[I];
-      aForests.Add( Polygons[X].CenterPoint, 0 );
-      aForests.Tag2[aForests.Count-1] := 1;
-    end;
-
-  //if aInitialization then
-  //  for I := aForests.Count - 1 downto 0 do
-  //    if (aForests.Tag2[I] > 3) then // Save forests with 3+ trees
-  //      aForests.Tag2[I] := gAIFields.NavMesh.KMPoint2Polygon[ aForests.Items[I] ]
-  //    else
-  //      aForests.Delete(I);
+  for I := 0 to SparePointsCnt - 1 do
+  begin
+    aForests.Add(  Polygons[ SparePoints[I] ].CenterPoint, 0  );
+    aForests.Tag2[ aForests.Count-1 ] := 0;
+  end;
 end;
 
 
@@ -1024,10 +988,6 @@ begin
   { Stone mining tiles
   for I := 0 to fStoneMiningTiles.Count - 1 do
     gRenderAux.Quad(fStoneMiningTiles.Items[I].X, fStoneMiningTiles.Items[I].Y, COLOR_RED);
-  //}
-  { Init forests
-  for I := 0 to fInitForests.Count - 1 do
-    gRenderAux.Quad(fInitForests.Items[I].X, fInitForests.Items[I].Y, COLOR_RED);
   //}
 end;
 
