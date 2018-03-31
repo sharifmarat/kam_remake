@@ -14,26 +14,25 @@ var
   GA_PLANNER_FindPlaceForHouse_Influence            : Single = 200; // 0..XXX
   GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
 
-
-  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 133.0841522;
-  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 119.0917969;
-  GA_PLANNER_FieldCrit_MissingFields                  : Single = 128.2703094;
-  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 45.47183609;
-  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 14.75268459;
-  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 36.5965538;
-  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 63.20629883;
-  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 84.24632263;
-  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 8.930147171;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 36.38843536;
-  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 4.585587025;
-  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 47.33288956;
-  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 55;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 25.80095482;
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 51.33926773;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 2.934615374;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 17.95151138;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 171.9592438;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 7.18941021;
+  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 146.4402008;
+  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 122.669342;
+  GA_PLANNER_FieldCrit_MissingFields                  : Single = 133.574173;
+  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 50.25531006;
+  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 9.67427063;
+  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 44.00505447;
+  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 69.20513153;
+  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 50.13886261;
+  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 1.469583392;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 10.59704971;
+  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 40.41218185;
+  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 39.48143005;
+  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 99.74505615;
+  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 7.817649841;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 97.99571991;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 5.305774212;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 21.0926075;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 155.5762634;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 10.45453072;
 
   GA_PATHFINDING_BasePrice    : Word = 0;
   GA_PATHFINDING_HouseOutside : Word = 1;
@@ -147,35 +146,35 @@ type
 
 const
   HOUSE_DEPENDENCE: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (  // This array is sorted by priority
-    {ht_ArmorSmithy}    [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
-    {ht_ArmorWorkshop}  [ htTannery,        htBarracks,       htSawmill,        htArmorWorkshop  ],
-    {ht_Bakery}         [ htInn,            htMill,           htStore,          htBakery         ],
-    {ht_Barracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
-    {ht_Butchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
-    {ht_CoalMine}       [ htStore                                                                ],
-    {ht_Farm}           [ htFarm,           htSwine,          htMill,           htStables        ],
-    {ht_FisherHut}      [ htStore                                                                ],
-    {ht_GoldMine}       [ htStore                                                                ],
-    {ht_Inn}            [ htButchers,       htBakery,         htStore,          htWineyard       ],
-    {ht_IronMine}       [ htStore                                                                ],
-    {ht_IronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy     ],
-    {ht_Marketplace}    [ htStore,          htMetallurgists,  htBarracks,       htMarketplace    ],
-    {ht_Metallurgists}  [ htGoldMine,       htCoalMine,       htSchool,         htStore          ],
-    {ht_Mill}           [ htBakery,         htInn,            htMill                             ],
-    {ht_Quary}          [ htStore                                                                ],
-    {ht_Sawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                   ],
-    {ht_School}         [ htMetallurgists,  htStore,          htSchool                           ],
-    {ht_SiegeWorkshop}  [ htIronSmithy,     htSawmill,        htStore,          htSiegeWorkshop  ],
-    {ht_Stables}        [ htFarm,           htBarracks,       htStables                          ],
-    {ht_Store}          [ htInn,            htBarracks,       htSchool                           ],
-    {ht_Swine}          [ htFarm,           htButchers,       htSwine                            ],
-    {ht_Tannery}        [ htArmorWorkshop,  htTannery,        htBarracks                         ],
-    {ht_TownHall}       [ htMetallurgists,  htStore,          htTownHall                         ],
-    {ht_WatchTower}     [ htStore                                                                ],
-    {ht_WeaponSmithy}   [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
-    {ht_WeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                   ],
-    {ht_Wineyard}       [ htInn,            htQuary                                              ],
-    {ht_Woodcutters}    [ htStore                                                                ]
+    {htArmorSmithy}    [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
+    {htArmorWorkshop}  [ htTannery,        htBarracks,       htSawmill,        htArmorWorkshop  ],
+    {htBakery}         [ htInn,            htMill,           htStore,          htBakery         ],
+    {htBarracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
+    {htButchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
+    {htCoalMine}       [ htStore                                                                ],
+    {htFarm}           [ htFarm,           htSwine,          htMill,           htStables        ],
+    {htFisherHut}      [ htStore                                                                ],
+    {htGoldMine}       [ htMetallurgists,  htStore                                              ],
+    {htInn}            [ htButchers,       htBakery,         htStore,          htWineyard       ],
+    {htIronMine}       [ htStore                                                                ],
+    {htIronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy     ],
+    {htMarketplace}    [ htStore,          htMetallurgists,  htBarracks,       htMarketplace    ],
+    {htMetallurgists}  [ htGoldMine,       htCoalMine,       htSchool,         htStore          ],
+    {htMill}           [ htBakery,         htInn,            htMill                             ],
+    {htQuary}          [ htStore                                                                ],
+    {htSawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                   ],
+    {htSchool}         [ htMetallurgists,  htStore,          htSchool                           ],
+    {htSiegeWorkshop}  [ htIronSmithy,     htSawmill,        htStore,          htSiegeWorkshop  ],
+    {htStables}        [ htFarm,           htBarracks,       htStables                          ],
+    {htStore}          [ htInn,            htBarracks,       htSchool                           ],
+    {htSwine}          [ htFarm,           htButchers,       htSwine                            ],
+    {htTannery}        [ htArmorWorkshop,  htTannery,        htBarracks                         ],
+    {htTownHall}       [ htMetallurgists,  htStore,          htTownHall                         ],
+    {htWatchTower}     [ htStore                                                                ],
+    {htWeaponSmithy}   [ htIronSmithy,     htCoalMine,       htBarracks,       htIronMine       ],
+    {htWeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                   ],
+    {htWineyard}       [ htInn,            htQuary                                              ],
+    {htWoodcutters}    [ htStore                                                                ]
   );
 
 implementation
@@ -1316,7 +1315,7 @@ const
           end;
           if not Check then
             continue;
-          Bid := Locs.Tag[I] + DistCrit(aMine, Locs.Items[I]) * 10;
+          Bid := Locs.Tag[I] + DistCrit(aMine, Locs.Items[I]) * 4;
           if (Bid > BestBid) then
           begin
             BestIdx := I;
