@@ -821,7 +821,7 @@ begin
             else if (AvoidBulding < AVOID_BUILDING_FOREST_LIMIT) then
               VisitArr[Point.Y,Point.X] := UNVISITED_TREE_IN_FOREST
             else
-              VisitArr[Y,X] := VISITED_TILE; // Tree in full forest -> ignore it
+              VisitArr[Point.Y,Point.X] := VISITED_TILE; // Tree in full forest -> ignore it
           end
           else
             VisitArr[Point.Y,Point.X] := VISITED_TILE;
