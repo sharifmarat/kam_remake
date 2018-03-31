@@ -917,7 +917,7 @@ begin
             ErrorMsg := 'WaitingPlayersList from wrong state: '
                        + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
             gLog.AddTime(ErrorMsg);
-            raise Exception.Create(ErrorMsg);
+            //raise Exception.Create(ErrorMsg); //This error sometimes occur when host quits, but that's not critical, so we can just log it
           end;
   end;
 end;
