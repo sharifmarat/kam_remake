@@ -11,28 +11,20 @@ uses
 var
   GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
   GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
-  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10;
-  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 1.886523724;
-  GA_BUILDER_ChHTB_FractionCoef         : Single = 20.06742477;
-  GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.568861008;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single = 5.72991991;
-  GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 8;
-  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 5;
-  GA_BUILDER_TRUNK_SHORTAGE             : Single = 0;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 15;
-  GA_BUILDER_WOOD_SHORTAGE              : Single = 10;
-  GA_BUILDER_GOLD_SHORTAGE              : Single = 30;
-  //GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10.71040344;
-  //GA_BUILDER_CreateShortcuts_MaxWork    : Single = 1;
-  //GA_BUILDER_ChHTB_FractionCoef         : Single = 19.29274178;
-  //GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.16288662;
+  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10.94186592;
+  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 10.81381607;
+  //GA_BUILDER_ChHTB_FractionCoef         : Single = 20.06742477;
+  GA_BUILDER_ChHTB_FractionCoef         : Single = 40;//11.58820248;
+  //GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.568861008;
   //GA_BUILDER_ChHTB_TrunkBalance         : Single = 5.72991991;
-  //GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 4.31668663;
-  //GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 2.113031864;
-  //GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
-  //GA_BUILDER_STONE_SHORTAGE             : Single = 13.36853027;
-  //GA_BUILDER_WOOD_SHORTAGE              : Single = 10.41192532;
-  //GA_BUILDER_GOLD_SHORTAGE              : Single = 33.83456802;
+  GA_BUILDER_ChHTB_TrunkFactor          : Single = 5.920251846;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single = 3.946866512;
+  GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
+  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
+  GA_BUILDER_TRUNK_SHORTAGE             : Single = 0;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 10.40034485;
+  GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 23.72795486;
 
 
 type
@@ -357,11 +349,12 @@ begin
       with gHands[fOwner].Units[I] do
       begin
         if ( (UnitTask = nil)
-            OR ( (UnitTask.TaskName = utn_BuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
+            //OR ( (UnitTask.TaskName = utn_BuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
             //OR ( (UnitTask.TaskName = utn_BuildField) AND (UnitTask.Phase > 3) ) // GA set fields max 1 worker so it have no sense to check it
             //OR ( (UnitTask.TaskName = utn_BuildWine)  AND (UnitTask.Phase > 6) ) // GA set fields max 1 worker so it have no sense to check it
             //OR (UnitTask.TaskName = utn_BuildHouse)
            ) then
+        //if (gHands[fOwner].Units[I].IsIdle) then
         begin
           WorkersPos[aFreeWorkersCnt] := GetPosition;
           aFreeWorkersCnt := aFreeWorkersCnt + 1;
@@ -491,7 +484,10 @@ procedure TKMCityBuilder.UpdateBuildNode(var aNode: TBuildNode);
       begin
         // Is there road plan / work in progress?
         if IsPlan(FieldList.Items[I], tlRoadWork, ftRoad) then
-          ActiveWorkers := ActiveWorkers + 1
+        begin
+          ActiveWorkers := ActiveWorkers + 1;
+          RequiredWorkers := RequiredWorkers - 1;
+        end
         // Is there completed road?
         else if IsCompletedRoad(FieldList.Items[I]) then
         begin
@@ -1410,11 +1406,22 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
   COLOR_NEW = $FFFF00;
+  COLOR_NEW2 = $FF00FF;
 var
   I,K: Integer;
   Color: Cardinal;
   Point: TKMPoint;
 begin
+  for I := 0 to gHands[fOwner].Units.Count - 1 do
+    with gHands[fOwner].Units[I] do
+      if not IsDeadOrDying then
+      begin
+        if (gHands[fOwner].Units[I] is TKMUnitSerf) AND IsIdle then
+          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $FF000000 OR COLOR_BLUE)
+        else if (gHands[fOwner].Units[I] is TKMUnitWorker) AND IsIdle then
+          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $FF000000 OR COLOR_NEW2);
+      end;
+
   Color := 0; // For compiler
   for I := Low(fBuildNodes) to High(fBuildNodes) do
     with fBuildNodes[I] do
