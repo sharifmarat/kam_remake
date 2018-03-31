@@ -567,8 +567,6 @@ begin
   if (gGame.GameTickCount < WINEYARD_DELAY) then
     RequiredHouses[htWineyard] := 0;
 
-
-
   // Loghical house requirements (delay takes too long so it is not used)
   {
   RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(Stats.GetWareBalance(wt_Corn) > 0);
