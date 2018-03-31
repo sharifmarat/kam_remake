@@ -6,6 +6,9 @@ uses
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats,
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
+var
+  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.2;
+
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
     Avaiable, Required: Word;
@@ -146,8 +149,8 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 60;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+  gGame.GameOptions.Peacetime := 60;
+  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -206,15 +209,16 @@ var
   P: TKMHand;
   Stats: TKMHandStats;
 
-  function RecruitsNeeded(): Integer;
+  function RecruitsNeeded(aCompletedWatchtowers: Word): Integer;
   const
     RECRUIT_PEACE_DELAY = 17 * 60 * 10;
   var
     Output: Integer;
   begin
-    Output := Stats.GetHouseQty(htWatchTower);
+    Output := aCompletedWatchtowers;
 
-    if aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600 then
+    if (aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600)
+      AND (Stats.GetHouseQty(htBarracks) > 0) then
     begin
       if fSetup.UnlimitedEquip then
       begin
@@ -232,20 +236,20 @@ var
   end;
 
   function RequiredServCount(): Integer;
-  const
-    HOUSE_COEF = 0.5;
   var
-    I: Integer;
+    I,Serfs, Cnt: Integer;
   begin
-    Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) + Round(gHands[fOwner].Stats.GetHouseTotal(htAny) * HOUSE_COEF) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
-    //Result := Max(0, gHands[fOwner].Stats.GetUnitQty(ut_Worker) - gHands[fOwner].Stats.GetUnitQty(ut_Serf));
+    Serfs := gHands[fOwner].Stats.GetUnitQty(ut_Serf);
+    Result := Max(0, Round(gHands[fOwner].Stats.GetUnitQty(ut_Worker) - Serfs));
+    Cnt := 0;
     for I := 0 to P.Units.Count - 1 do
       if not P.Units[I].IsDeadOrDying
          AND (P.Units[I] is TKMUnitSerf)
-         AND (P.Units[I].UnitTask = nil) then
-           Exit;
-    // Increase count of serfs carefully
-    Result := Max( 1 + Byte(gHands[fOwner].Stats.GetUnitQty(ut_Serf) < 80)*2, Result);
+         AND (P.Units[I].IsIdle) then
+        Cnt := Cnt + 1;
+    // Increase count of serfs carefully (compute fraction of serfs who does not have job)
+    if (Cnt / (Serfs*1.0) < GA_MANAGER_CheckUnitCount_SerfCoef) then
+      Result := Max( 1 + Byte(Serfs < 40) + Byte(Serfs < 60), Result);
   end;
 
 const
@@ -256,14 +260,17 @@ const
 var
   I,K,cnt: Integer;
   GoldProduced: Cardinal;
+  H: TKMHouse;
   HT: TKMHouseType;
   UT: TKMUnitType;
   Schools: array of TKMHouseSchool;
+  Houses: array[HOUSE_MIN..HOUSE_MAX] of Integer;
   UnitReq: array[CITIZEN_MIN..CITIZEN_MAX] of Integer;
 begin
   P := gHands[fOwner];
   Stats := P.Stats;
   FillChar(UnitReq, SizeOf(UnitReq), #0); //Clear up
+  FillChar(Houses, SizeOf(Houses), #0); //Clear up
 
   //Citizens
   // Make sure we have enough gold left for self-sufficient city
@@ -281,21 +288,33 @@ begin
   //Count overall unit requirement (excluding Barracks and ownerless houses)
   else
   begin
+    // We need completed houses, houses in specific stage of construction and only completed watchtowers -> we have to scan houses
+    for I := 0 to gHands[fOwner].Houses.Count - 1 do
+    begin
+      H := gHands[fOwner].Houses[I];
+      if (H <> nil) AND not H.IsDestroyed then
+      begin
+        if H.IsComplete then
+          Inc(Houses[H.HouseType], 1)
+        else if (H.BuildingProgress > 0) AND (H.HouseType <> htWatchTower) then
+          Inc(Houses[H.HouseType], 1);
+      end;
+    end;
+
     for HT := HOUSE_MIN to HOUSE_MAX do
       if (gRes.Houses[HT].OwnerType <> ut_None) AND (HT <> htBarracks) then
-        //Inc(UnitReq[gRes.Houses[HT].OwnerType], Stats.GetHouseTotal(HT));
-        Inc(UnitReq[gRes.Houses[HT].OwnerType], Stats.GetHouseQty(HT));
+        Inc(UnitReq[gRes.Houses[HT].OwnerType], Houses[HT]);
 
     UnitReq[ut_Recruit] := 0;
     UnitReq[ut_Serf] := 0;
     UnitReq[ut_Worker] := 0;
-    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
-      //UnitReq[ut_Serf] := Stats.GetUnitQty(ut_Serf) + Round(fSetup.SerfsPerHouse * (Stats.GetHouseQty(ht_Any) + Stats.GetUnitQty(ut_Worker)/2));
-      UnitReq[ut_Serf] := Stats.GetUnitQty(ut_Serf) + RequiredServCount();
       UnitReq[ut_Worker] :=  fSetup.WorkerCount;
-      UnitReq[ut_Recruit] := RecruitsNeeded();
+      UnitReq[ut_Recruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
+    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+      UnitReq[ut_Serf] := Stats.GetUnitQty(ut_Serf) + RequiredServCount();
   end;
 
   // Get required houses
@@ -475,7 +494,7 @@ begin
       // Materials
       S.NotAcceptFlag[wt_Trunk] := (aTick > TRUNK_STORE_DELAY); // Trunk should not be blocked because of forest cleaning
       S.NotAcceptFlag[wt_Wood] := (aTick > WOOD_STORE_DELAY);// AND (Predictor.WareBalance[wt_Wood].Exhaustion > 40);
-      S.NotAcceptFlag[wt_Stone] := (aTick > STONE_STORE_DELAY) OR (S.CheckResIn(wt_Stone) > gHands[fOwner].Stats.GetUnitQty(ut_Worker));
+      S.NotAcceptFlag[wt_Stone] := (aTick > STONE_STORE_DELAY) OR (S.CheckResIn(wt_Stone)*2 > gHands[fOwner].Stats.GetUnitQty(ut_Worker));
       S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 400; // Everyone needs as much gold as possible
 
       // Food - don't store food when we have enought (it will cause trafic before storehouse)
@@ -485,24 +504,17 @@ begin
       S.NotAcceptFlag[wt_Fish] := gHands[fOwner].Stats.GetWareBalance(wt_Fish) > 100;
 
       // Others
-      //S.NotAcceptFlag[wt_GoldOre] := gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) > 0;
-      //S.NotAcceptFlag[wt_IronOre] := gHands[fOwner].Stats.GetHouseQty(ht_IronSmithy) > 0;
-      //S.NotAcceptFlag[wt_Coal] := gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) +
-      //                            gHands[fOwner].Stats.GetHouseQty(ht_IronSmithy) > 0;
       S.NotAcceptFlag[wt_GoldOre] := True;
-      S.NotAcceptFlag[wt_IronOre] := True;
       S.NotAcceptFlag[wt_Coal] := True;
+      S.NotAcceptFlag[wt_IronOre] := gHands[fOwner].Stats.GetHouseQty(htIronSmithy) > 0;
       S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy) +
                                    gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) > 0;
-      //S.NotAcceptFlag[wt_Corn] := gHands[fOwner].Stats.GetHouseQty(ht_Mill) +
-      //                            gHands[fOwner].Stats.GetHouseQty(ht_Swine) +
-      //                            gHands[fOwner].Stats.GetHouseQty(ht_Stables) > 0;
       S.NotAcceptFlag[wt_Corn] := (aTick > CORN_STORE_DELAY);
       S.NotAcceptFlag[wt_Leather] := True;
       S.NotAcceptFlag[wt_Flour] := True;
       //Pigs and skin cannot be blocked since if swinefarm is full of one it stops working (blocks other)
-      //S.NotAcceptFlag[wt_Skin] := gHands[fOwner].Stats.GetHouseQty(ht_Tannery) > 0;
-      //S.NotAcceptFlag[wt_Pig] := gHands[fOwner].Stats.GetHouseQty(ht_Butchers) > 0;
+      //S.NotAcceptFlag[wt_Skin] := gHands[fOwner].Stats.GetHouseQty(htTannery) > 0;
+      //S.NotAcceptFlag[wt_Pig] := gHands[fOwner].Stats.GetHouseQty(htButchers) > 0;
     end;
 end;
 
