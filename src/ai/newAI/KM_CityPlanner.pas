@@ -782,6 +782,26 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
     Result := BestDist <> INIT_DIST;
   end;
 
+  function CheckRoadToTowers(): Boolean;
+  const
+    MAX_ENEMY_INFLUENCE = 150;
+  var
+    PolygonIdx: Word;
+    I: Integer;
+  begin
+    Result := False;
+    // Check road and if it goes to enemy influence remove house plan
+    I := 0;
+    while (I < aField.Count) do
+    begin
+      PolygonIdx := gAIFields.NavMesh.KMPoint2Polygon[ aField[I] ];
+      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, at_Enemy) > MAX_ENEMY_INFLUENCE) then
+        Exit;
+      I := I + 5;
+    end;
+    Result := True;
+  end;
+
 var
   Output: Boolean;
   NewLoc, ExistLoc: TKMPoint;
@@ -801,7 +821,15 @@ begin
   begin
     Output := True;
     ReplaceOverlappingRoad( fPlannedHouses[aHT].Plans[aIdx].Loc );
-  end;
+
+    if (aHT = htWatchtower) AND not CheckRoadToTowers() then
+    begin
+      Output := False;
+      RemovePlan(aHT,aIdx);
+    end;
+  end
+  else
+    RemovePlan(aHT,aIdx);
   Result := Output;
 end;
 
