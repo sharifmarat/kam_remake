@@ -51,7 +51,7 @@ const
 
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
-  CALC_EXPECTED_TICK    :Boolean = True;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
+  CALC_EXPECTED_TICK    :Boolean = False;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
   MAKE_ANIM_TERRAIN     :Boolean = True;  //Should we animate water and swamps
   MAKE_TEAM_COLORS      :Boolean = True;  //Whenever to make team colors or not, saves RAM for debug
   DYNAMIC_TERRAIN       :Boolean = True;  //Update terrain each tick to grow things
@@ -160,6 +160,7 @@ var
   ALLOW_MP_MODS         :Boolean = False; //Don't let people enter MP mode if they are using mods (unit.dat, house.dat, etc.)
   ALLOW_TAKE_AI_PLAYERS :Boolean = False; //Allow to load SP maps without Human player (usefull for AI testing)
   {Data output}
+  BLOCK_FILE_WRITE      :Boolean = False; //Block to write into txt file (used in parallel Runner)
   WRITE_DECODED_MISSION :Boolean = False; //Save decoded mission as txt file
   WRITE_WALKTO_LOG      :Boolean = False; //Write even more output into log + slows down game noticably
   WriteResourceInfoToTXT:Boolean = False; //Whenever to write txt files with defines data properties on loading
