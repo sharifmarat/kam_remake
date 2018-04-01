@@ -67,7 +67,7 @@ type
     procedure MultiplayerRig;
     procedure SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
     procedure UpdatePeaceTime;
-    function WaitingPlayersList: TKMByteArray;
+    function GetWaitingPlayersList: TKMByteArray;
     function FindHandToSpec: Integer;
     procedure UpdateTickCounters;
     function GetTicksBehindCnt: Single;
@@ -902,7 +902,7 @@ end;
 
 
 //Get list of players we are waiting for. We do it here because fNetworking does not knows about GIP
-function TKMGame.WaitingPlayersList: TKMByteArray;
+function TKMGame.GetWaitingPlayersList: TKMByteArray;
 var
   ErrorMsg: UnicodeString;
 begin
@@ -914,10 +914,10 @@ begin
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
     else  begin
-            ErrorMsg := 'WaitingPlayersList from wrong state: '
+            ErrorMsg := 'GetWaitingPlayersList from wrong state: '
                        + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
             gLog.AddTime(ErrorMsg);
-            raise Exception.Create(ErrorMsg);
+            //raise Exception.Create(ErrorMsg); //This error sometimes occur when host quits, but that's not critical, so we can just log it
           end;
   end;
 end;
@@ -926,13 +926,13 @@ end;
 procedure TKMGame.WaitingPlayersDisplay(aWaiting: Boolean);
 begin
   fWaitingForNetwork := aWaiting;
-  fGamePlayInterface.ShowNetworkLag(aWaiting, WaitingPlayersList, fNetworking.IsHost);
+  fGamePlayInterface.ShowNetworkLag(aWaiting, GetWaitingPlayersList, fNetworking.IsHost);
 end;
 
 
 procedure TKMGame.WaitingPlayersDrop;
 begin
-  fNetworking.DropPlayers(WaitingPlayersList);
+  fNetworking.DropPlayers(GetWaitingPlayersList);
 end;
 
 
