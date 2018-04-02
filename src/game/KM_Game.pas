@@ -914,6 +914,7 @@ begin
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
     else  begin
+            SetLength(Result, 0);
             ErrorMsg := 'GetWaitingPlayersList from wrong state: '
                        + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
             gLog.AddTime(ErrorMsg);
