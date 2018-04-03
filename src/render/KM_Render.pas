@@ -59,7 +59,7 @@ type
 
 implementation
 uses
-  KM_Log, KM_ResSprites;
+  SysUtils, KM_Log, KM_ResSprites;
 
 
 { TRender }
@@ -208,7 +208,8 @@ end;
 class procedure TRender.UpdateTexture(aTexture: GLuint; DestX, DestY: Word; Mode: TTexFormat; const Data: Pointer);
 begin
   if not Assigned(glTexImage2D) then Exit;
-  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)), 'Game designed to handle only POT textures');
+  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)),
+         Format('Game designed to handle only POT textures. Texture size: [%d:%d]', [DestX,DestY]));
 
   BindTexture(aTexture);
 
