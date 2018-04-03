@@ -8,7 +8,7 @@ uses
 
 var
   GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.3677794933;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 3;
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 3.057023287;
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -141,7 +141,7 @@ procedure TKMCityManagement.AfterMissionInit();
     gHands[fOwner].Stats.WareDistribution[wt_Wood, htArmorWorkshop] := 2;
     gHands[fOwner].Stats.WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
     gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 4;
+    gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 5;
 
     gHands[fOwner].Houses.UpdateResRequest;
   end;
