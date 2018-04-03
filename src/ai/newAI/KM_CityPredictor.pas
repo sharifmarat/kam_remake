@@ -432,7 +432,7 @@ begin
   // Max field / build cnt ~ 8000 tiles in real map it is 1500-2500 for fields and 2000-4000 for build
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
 
-  PeaceFactor := (Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME) * SCALE_PEACE_FACTOR;
+  PeaceFactor := Max(0,(Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)) * SCALE_PEACE_FACTOR;
 
   // Iron weapons
   MaxIronWeapProd := Min(Round(aBuildCnt / GA_PREDICTOR_CityInitialization_Space), aIronMineCnt) * ProductionRate[wt_IronOre] * 0.5; // Division into half because of iron weapon and armor
