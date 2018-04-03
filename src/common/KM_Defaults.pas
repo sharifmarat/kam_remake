@@ -51,7 +51,7 @@ const
 
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
-  CALC_EXPECTED_TICK    :Boolean = True;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
+  CALC_EXPECTED_TICK    :Boolean = False;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
   MAKE_ANIM_TERRAIN     :Boolean = True;  //Should we animate water and swamps
   MAKE_TEAM_COLORS      :Boolean = True;  //Whenever to make team colors or not, saves RAM for debug
   DYNAMIC_TERRAIN       :Boolean = True;  //Update terrain each tick to grow things
@@ -169,9 +169,6 @@ var
   EXPORT_INFLUENCE      :Boolean = False;
   //Statistic
   CtrlPaintCount: Word; //How many Controls were painted in last frame
-  {AI_GA_Tests}
-  GA_PLANNER            :Boolean = False; // Activation of special code for genetic algorithm (class Planner)
-  GA_BUILDER            :Boolean = False; // Activation of special code for genetic algorithm (class Builder)
 
 
 const
