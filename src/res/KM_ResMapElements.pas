@@ -44,6 +44,9 @@ type
   function ObjectIsChoppableTree(aObjId: Integer; aStage: TKMChopableAge): Boolean; overload;
   function ObjectIsChoppableTree(aObjId: Integer; aStages: TKMChopableAgeSet): Boolean; overload;
 
+  function ObjectIsCorn(aObjId: Integer): Boolean;
+  function ObjectIsWine(aObjId: Integer): Boolean;
+
 
 var
   //MapElem is in global access because of the recursive FloodFill algorithm
@@ -233,6 +236,18 @@ begin
       if (aObjId = ChopableTrees[I, Stage]) then Exit;
 
   Result := False;
+end;
+
+
+function ObjectIsCorn(aObjId: Integer): Boolean;
+begin
+  Result := aObjId in [58..59];
+end;
+
+
+function ObjectIsWine(aObjId: Integer): Boolean;
+begin
+  Result := aObjId in [54..57];
 end;
 
 

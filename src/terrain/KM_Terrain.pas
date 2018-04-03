@@ -235,6 +235,12 @@ type
     function ScriptTrySetTileObject(X, Y: Integer; aObject: Byte): Boolean;
     function ScriptTrySetTilesArray(var aTiles: array of TKMTerrainTileBrief; aRevertOnFail: Boolean; var aErrors: TKMTerrainTileChangeErrorArray): Boolean;
 
+    function ObjectIsCorn(const Loc: TKMPoint): Boolean; overload;
+    function ObjectIsCorn(X,Y: Word): Boolean; overload;
+
+    function ObjectIsWine(const Loc: TKMPoint): Boolean; overload;
+    function ObjectIsWine(X,Y: Word): Boolean; overload;
+
     function ObjectIsChopableTree(X,Y: Word): Boolean; overload;
     function ObjectIsChopableTree(Loc: TKMPoint; aStage: TKMChopableAge): Boolean; overload;
     function ObjectIsChopableTree(Loc: TKMPoint; aStages: TKMChopableAgeSet): Boolean; overload;
@@ -1177,7 +1183,7 @@ begin
   if not fMapEditor then
     Result := fTileset.TileIsWineField(Land[Loc.Y, Loc.X].Terrain)
               and (Land[Loc.Y,Loc.X].TileOverlay = to_None)
-              and (Land[Loc.Y,Loc.X].Obj in [54..57])
+              and ObjectIsWine(Loc)
   else
     Result := (Land[Loc.Y,Loc.X].CornOrWine = 2);
 end;
@@ -1409,19 +1415,43 @@ end;
 
 function TKMTerrain.ObjectIsChopableTree(X,Y: Word): Boolean;
 begin
-  Result := ObjectIsChoppableTree(Land[Y,X].Obj);
+  Result := KM_ResMapElements.ObjectIsChoppableTree(Land[Y,X].Obj);
 end;
 
 
 function TKMTerrain.ObjectIsChopableTree(Loc: TKMPoint; aStage: TKMChopableAge): Boolean;
 begin
-  Result := ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStage);
+  Result := KM_ResMapElements.ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStage);
 end;
 
 
 function TKMTerrain.ObjectIsChopableTree(Loc: TKMPoint; aStages: TKMChopableAgeSet): Boolean;
 begin
-  Result := ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStages);
+  Result := KM_ResMapElements.ObjectIsChoppableTree(Land[Loc.Y,Loc.X].Obj, aStages);
+end;
+
+
+function TKMTerrain.ObjectIsWine(const Loc: TKMPoint): Boolean;
+begin
+  Result := KM_ResMapElements.ObjectIsWine(Land[Loc.Y,Loc.X].Obj)
+end;
+
+
+function TKMTerrain.ObjectIsWine(X,Y: Word): Boolean;
+begin
+  Result := KM_ResMapElements.ObjectIsWine(Land[Y,X].Obj);
+end;
+
+
+function TKMTerrain.ObjectIsCorn(const Loc: TKMPoint): Boolean;
+begin
+  Result := KM_ResMapElements.ObjectIsCorn(Land[Loc.Y,Loc.X].Obj)
+end;
+
+
+function TKMTerrain.ObjectIsCorn(X,Y: Word): Boolean;
+begin
+  Result := KM_ResMapElements.ObjectIsCorn(Land[Y,X].Obj);
 end;
 
 
