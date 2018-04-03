@@ -130,9 +130,12 @@ begin
 
   ExeDir := ExtractFilePath(ParamStr(0));
 
-  CreateDir(ExeDir + 'Logs' + PathDelim);
-  gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
-  gLog.DeleteOldLogs;
+  if not BLOCK_FILE_WRITE then
+  begin
+    CreateDir(ExeDir + 'Logs' + PathDelim);
+    gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
+    gLog.DeleteOldLogs;
+  end;
 
   //Resolutions are created first so that we could check Settings against them
   fResolutions := TKMResolutions.Create;
