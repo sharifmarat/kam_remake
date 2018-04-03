@@ -556,8 +556,16 @@ end;
 // aIgnoreAvoidBuilding = ignore avoid building areas
 // aIgnoreTrees = ignore trees inside of house plan
 function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
+  function CheckRoad(X,Y: Integer): Boolean;
+  begin
+    Result := (gTerrain.Land[Y, X].Passability * [tpMakeRoads, tpWalkRoad] <> [])
+              OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ftNone) // We dont need strictly road just make sure that it is possible to place something here (and replace it by road later)
+              OR (gTerrain.Land[Y, X].TileLock = tlRoadWork);
+  end;
 var
+  LeftSideFree, RightSideFree: Boolean;
   X, Y, I, K, PL: Integer;
+  Point: TKMPoint;
   Dir: TDirection;
 begin
   Result := False;
@@ -580,6 +588,7 @@ begin
   begin
     X := aLoc.X + fHousesMapping[aHT].Tiles[I].X;
     Y := aLoc.Y + fHousesMapping[aHT].Tiles[I].Y;
+    Point := KMPoint(X,Y);
 
     // Check with AvoidBuilding array to secure that new house will not be build in forests / coal tiles
     if aIgnoreAvoidBuilding then
@@ -595,33 +604,39 @@ begin
     //This tile must not contain fields/houseplans of allied players
     for PL := 0 to gHands.Count - 1 do
       if (gHands[fOwner].Alliances[PL] = at_Ally) then// AND (PL <> fOwner) then
-        if (gHands[PL].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ftNone) then
+        if (gHands[PL].BuildList.FieldworksList.HasField(Point) <> ftNone) then
           Exit;
   end;
 
   // Scan tiles in distance 1 from house plan
+  LeftSideFree := True;
+  RightSideFree := True;
   I := 1;
   for Dir := Low(fHousesMapping[aHT].Surroundings[I]) to High(fHousesMapping[aHT].Surroundings[I]) do
   for K := Low(fHousesMapping[aHT].Surroundings[I,Dir]) to High(fHousesMapping[aHT].Surroundings[I,Dir]) do
   begin
     Y := aLoc.Y + fHousesMapping[aHT].Surroundings[I,Dir,K].Y;
     X := aLoc.X + fHousesMapping[aHT].Surroundings[I,Dir,K].X;
+    Point := KMPoint(X,Y);
     // Surrounding tiles must not be a house
     for PL := 0 to gHands.Count - 1 do
       if (gHands[fOwner].Alliances[PL] = at_Ally) then
-        if gHands[PL].BuildList.HousePlanList.HasPlan(KMPoint(X,Y)) then
+        if gHands[PL].BuildList.HousePlanList.HasPlan(Point) then
           Exit;
     if (aHT in [htGoldMine, htIronMine]) then
       continue;
     // Make sure we can add road below house;
-    // Woodcutters / CoalMine may take place for mine so its arena must be scaned completely
+    // Woodcutters / CoalMine / Towers may take place for mine so its arena must be scaned completely
     if (  // Direction south + not in case of house reservation OR specific house which can be build in avoid build areas
-         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT = htWoodcutters) OR (aHT = htCoalMine) OR (aHT = htWatchTower)
-       ) AND not (
-         (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) = ftRoad)
-         OR (gTerrain.Land[Y, X].TileLock = tlRoadWork)
-         OR (gTerrain.Land[Y, X].Passability * [tpMakeRoads, tpWalkRoad] <> [])
-       ) then
+         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT in [htWoodcutters, htCoalMine, htWatchTower])
+       ) AND not CheckRoad(X,Y) then
+      Exit
+    // For "normal" houses there must be at least 1 side also free (on the left or right from house plan)
+    else if ((Dir = dirE) AND not aIgnoreAvoidBuilding) then // Direction east for other houses
+      RightSideFree := RightSideFree AND CheckRoad(X,Y)
+    else if ((Dir = dirW) AND not aIgnoreAvoidBuilding) then // Direction west for other houses
+      LeftSideFree := LeftSideFree AND CheckRoad(X,Y);
+    if not (LeftSideFree AND RightSideFree) then
       Exit;
   end;
 
