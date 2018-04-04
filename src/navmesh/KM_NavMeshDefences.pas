@@ -459,24 +459,31 @@ const
   SQR_MIN_DEF_POINT_DISTANCE = 3*3;
 var
   Check: Boolean;
-  Idx, NearbyIdx, Cnt: Word;
+  PL: TKMHandIndex;
+  Idx, NearbyIdx, Cnt, ScannedCnt, AllianceCnt: Word;
   I, K: Integer;
   Direction: TKMDirection;
   PolyArr: TPolygonArray;
 begin
   Result := False;
+
+  AllianceCnt := 1;
+  for PL := 0 to gHands.Count - 1 do
+    if (fOwner <> PL) AND (gHands[fOwner].Alliances[PL] = at_Ally) then
+      AllianceCnt := AllianceCnt + 1;
+
   // Check and determine counts
+  aFirstLine := BestDefLines.Count;
   if (BestDefLines.Count = 0) then
     Exit
   else if aMinDefeces then
     aBaseCnt := Max(4,BestDefLines.Count)
   else
-    aBaseCnt := Max(aBaseCnt,BestDefLines.Count);
+    aBaseCnt := Max(aBaseCnt * AllianceCnt,BestDefLines.Count * 2); // We need much more defeces because most of them will be used by allies
 
   PolyArr := gAIFields.NavMesh.Polygons;
   // Prepare defensive FF - add all polygon is BestDefLines to queue
   NewQueue(fVisitedIdx + 1);
-  aFirstLine := BestDefLines.Count;
   for I := 0 to BestDefLines.Count - 1 do
   begin
     Idx := BestDefLines.Lines[I].Polygon;
@@ -504,8 +511,10 @@ begin
   // Execute FF
   SetLength(DefPosArr, aBaseCnt);
   Cnt := 0;
+  ScannedCnt := 0;
   while RemoveFromQueue(Idx) AND (Cnt < aBaseCnt) do
   begin
+    ScannedCnt := ScannedCnt + 1;
     // Add only defence points with specicific distance
     Check := True;
     for I := 0 to Cnt - 1 do
@@ -521,10 +530,12 @@ begin
         Polygon := Idx;
         Direction := KMGetDirection( fQueueArray[Idx].DistPoint, fDefInfo[Idx].PointInDir );
         DirPoint := KMPointDir( fQueueArray[Idx].DistPoint, Direction );
-        if (Cnt < aFirstLine) then
-          Weight := High(Word) // First line, max importance
-        else
-          Weight := Min(High(Word),  Max( 0,(High(Word) shr 1) - fDefInfo[Idx].Distance + fDefInfo[Idx].EnemyInfluence )  );
+        Weight := Max( 0, (High(Word) shr 1) // Init value
+                           + (fDefInfo[Idx].Influence shl 1) // Increase weight of owner's city
+                           - ((ScannedCnt div aFirstLine) * 100) // Penalize back lines
+                           - fDefInfo[Idx].AllyInfluence // Penalize allied influence
+                           + fDefInfo[Idx].EnemyInfluence // Add more soldiers closer to enemy influence
+                     );
       end;
       if (Direction <> dir_NA) then
         Cnt := Cnt + 1;
@@ -541,6 +552,10 @@ begin
       end;
     end;
   end;
+
+  // Determine first line (divided by count of allies - it is rought because allies can have different size of defensive line but better than nothing)
+  aFirstLine := Round(aFirstLine / AllianceCnt);
+
   SetLength(DefPosArr, Cnt);
   Result := True;
 end;
