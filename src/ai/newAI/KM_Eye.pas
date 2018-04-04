@@ -736,6 +736,7 @@ var
   end;
 const
   MAX_LOCS = 25;
+  MAX_ENEMY_OWNERSHIP = 150;
 var
   Own: Word;
   I, K, Cnt, Idx: Integer;
@@ -748,6 +749,8 @@ begin
     if (fCoalPolygons[I] > 0) then
     begin
       if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
+        continue;
+      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, I, at_Enemy) > MAX_ENEMY_OWNERSHIP) then
         continue;
       Own := Max(0, High(Word) - 300 + gAIFields.Influences.OwnPoly[fOwner, I] - gAIFields.Influences.GetOtherOwnerships(fOwner, I));
       if (Own <> 0) then
