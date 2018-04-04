@@ -582,24 +582,13 @@ procedure TKMArmyDefence.UpdateState(aTick: Cardinal);
 const
   PERF_TIME_LIMIT = MAX_HANDS * 10 * 10 + MAX_HANDS; // Every 10 sec * MAX_HANDS + MAX_HANDS find new defence line
 var
-  I,K: Integer;
+  I: Integer;
 begin
   if (aTick mod PERF_TIME_LIMIT = fOwner) then
     UpdateDefences();
 
   for I := 0 to Count - 1 do
     Positions[I].UpdateState(aTick);
-
-  // Move troops closer to the edge of defence line
-  for I := 0 to Count - 1 do
-    if (Positions[I].Group = nil) then
-      for K := I + 1 to Count - 1 do
-        if Positions[I].GroupType = Positions[K].GroupType then
-        begin
-          Positions[I].Group := Positions[K].Group; //Take new position
-          Positions[K].Group := nil; //Leave current position
-          Break;
-        end;
 end;
 
 
