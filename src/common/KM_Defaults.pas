@@ -160,6 +160,8 @@ var
   ALLOW_MP_MODS         :Boolean = False; //Don't let people enter MP mode if they are using mods (unit.dat, house.dat, etc.)
   ALLOW_TAKE_AI_PLAYERS :Boolean = False; //Allow to load SP maps without Human player (usefull for AI testing)
   {Data output}
+  BLOCK_SAVE            :Boolean = False; //Block saving game (used in parallel Runner)
+  BLOCK_FILE_WRITE      :Boolean = False; //Block to write into txt file (used in parallel Runner)
   WRITE_DECODED_MISSION :Boolean = False; //Save decoded mission as txt file
   WRITE_WALKTO_LOG      :Boolean = False; //Write even more output into log + slows down game noticably
   WriteResourceInfoToTXT:Boolean = False; //Whenever to write txt files with defines data properties on loading
@@ -167,9 +169,6 @@ var
   EXPORT_INFLUENCE      :Boolean = False;
   //Statistic
   CtrlPaintCount: Word; //How many Controls were painted in last frame
-  {AI_GA_Tests}
-  GA_PLANNER            :Boolean = False; // Activation of special code for genetic algorithm (class Planner)
-  GA_BUILDER            :Boolean = False; // Activation of special code for genetic algorithm (class Builder)
 
 
 const
@@ -187,9 +186,9 @@ const
   MAX_LOBBY_SLOTS      = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
   MAX_TEAMS            = MAX_LOBBY_PLAYERS div 2;
 
+  AUTOSAVE_COUNT          = 5;    //How many autosaves to backup - this MUST be variable (Parallel Runner)
   AUTOSAVE_COUNT_MIN      = 2;
   AUTOSAVE_COUNT_MAX      = 10;
-  AUTOSAVE_COUNT          = 5;    //How many autosaves to backup
   AUTOSAVE_FREQUENCY_MIN  = 600;
   AUTOSAVE_FREQUENCY_MAX  = 3000;
   AUTOSAVE_FREQUENCY      = 600; //How often to do autosave, every N ticks

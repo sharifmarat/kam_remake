@@ -1,4 +1,4 @@
-﻿unit KM_Game;
+unit KM_Game;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -914,6 +914,7 @@ begin
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
     else  begin
+            SetLength(Result, 0);
             ErrorMsg := 'GetWaitingPlayersList from wrong state: '
                        + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
             gLog.AddTime(ErrorMsg);
@@ -1371,6 +1372,8 @@ var
   gameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
+  if BLOCK_SAVE then // This must be here because of paraller Runner
+    Exit;
   gLog.AddTime('Saving game start: ' + aPathName);
 
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
@@ -1982,4 +1985,3 @@ end;
 
 
 end.
-

@@ -1,4 +1,4 @@
-﻿unit KM_Settings;
+unit KM_Settings;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -358,6 +358,8 @@ procedure TKMainSettings.SaveToINI(const aFileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
+  if BLOCK_FILE_WRITE then
+    Exit;
   F := TMemIniFile.Create(aFileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
 
   F.WriteBool   ('GFX','FullScreen',      fFullScreen);
@@ -549,6 +551,8 @@ procedure TKMGameSettings.SaveToINI(const FileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
+  if BLOCK_FILE_WRITE then
+    Exit;
   F := TMemIniFile.Create(FileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
   try
     F.WriteInteger('GFX','Brightness',    fBrightness);

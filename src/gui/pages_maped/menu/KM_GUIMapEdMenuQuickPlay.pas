@@ -5,7 +5,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes,
-  KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave;
+  KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave, KM_CommonTypes;
 
 type
   TKMMapEdMenuQuickPlay = class
@@ -27,10 +27,9 @@ type
       Label_QuickPlay: TKMLabel;
       Button_QuickPlay, Button_Cancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aOnMapTypChanged: TBooleanEvent);
     destructor Destroy; override;
 
-    procedure MapTypeChanged(aIsMultiplayer: Boolean);
     procedure SetLoadMode(aMultiplayer: Boolean);
     procedure Show;
     procedure Hide;
@@ -46,7 +45,7 @@ uses
   KM_RenderUI, KM_ResFonts, KM_ResTexts, KM_Resource, Math;
 
 
-constructor TKMMapEdMenuQuickPlay.Create(aParent: TKMPanel);
+constructor TKMMapEdMenuQuickPlay.Create(aParent: TKMPanel; aOnMapTypChanged: TBooleanEvent);
 const
   ControlsWidth = 220;
 var
@@ -73,8 +72,7 @@ begin
     Button_Cancel.Hint := gResTexts[TX_WORD_CANCEL];
     Button_Cancel.OnClick := Cancel_Click;
 
-  fMenuSave := TKMMapEdMenuSave.Create(Panel_Save, SaveDone, 10, 220);
-  fMenuSave.OnChangeMapType := MapTypeChanged;
+  fMenuSave := TKMMapEdMenuSave.Create(Panel_Save, SaveDone, aOnMapTypChanged, 10, 220);
 
   fMenuSave.Button_SaveCancel.Hide;
 
@@ -121,12 +119,6 @@ begin
     VK_ESCAPE:  if Button_Cancel.IsClickable then
                   Cancel_Click(Button_Cancel);
   end;
-end;
-
-
-procedure TKMMapEdMenuQuickPlay.MapTypeChanged(aIsMultiplayer: Boolean);
-begin
-  SetLoadMode(aIsMultiplayer);
 end;
 
 

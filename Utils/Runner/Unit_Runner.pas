@@ -3,7 +3,7 @@ unit Unit_Runner;
 interface
 uses Classes, Math, SysUtils,
   KM_Defaults, KM_CommonClasses, KM_CommonTypes, KromUtils,
-  KM_GameApp, KM_ResLocales, KM_Log, KM_ResTexts, KM_CommonUtils, KM_RenderControl;
+  KM_GameApp, KM_ResLocales, KM_Log, KM_ResTexts, KM_CommonUtils, KM_RenderControl, ComInterface;
 
 
 type
@@ -124,6 +124,12 @@ procedure TKMRunnerCommon.SetUp;
 var
   tgtWidth, tgtHeight: Word;
 begin
+  if PARALLEL_RUN then
+  begin
+    BLOCK_FILE_WRITE := True;
+    BLOCK_SAVE := True;
+  end;
+
   SKIP_RENDER := (fRenderTarget = nil);
   SKIP_SOUND := True;
   SKIP_LOADING_CURSOR := True;

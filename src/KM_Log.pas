@@ -156,6 +156,8 @@ end;
 
 procedure TKMLog.InitLog;
 begin
+  if BLOCK_FILE_WRITE then Exit;
+
   ForceDirectories(ExtractFilePath(fLogPath));
 
   AssignFile(fl, fLogPath);
@@ -183,6 +185,8 @@ end;
 procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True);
 begin
   if Self = nil then Exit;
+
+  if BLOCK_FILE_WRITE then Exit;
   
   if not (aLogType in MessageTypes) then // write into log only for allowed types
     Exit;

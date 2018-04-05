@@ -1676,6 +1676,8 @@ var
   fl: TextFile;
   LogErrorMsg: UnicodeString;
 begin
+  if BLOCK_FILE_WRITE then Exit;
+
   if aDetailedErrorString <> '' then
     LogErrorMsg := aDetailedErrorString
   else

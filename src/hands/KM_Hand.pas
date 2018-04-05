@@ -581,7 +581,7 @@ begin
     end;
   end else if (aFieldType = ftWine) and not gTerrain.TileIsWineField(aLoc) then
   begin
-    if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 54, 57) then
+    if gTerrain.ObjectIsWine(aLoc) then
     begin
       gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;

@@ -469,7 +469,9 @@ procedure TKMHouse.Activate(aWasBuilt: Boolean);
 
   function ObjectShouldBeCleared(X,Y: Integer): Boolean;
   begin
-    Result := not gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull,caAgeFall]);
+    Result := not gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull,caAgeFall])
+              and not gTerrain.ObjectIsCorn(X,Y)
+              and not gTerrain.ObjectIsWine(X,Y);
   end;
 
 var
