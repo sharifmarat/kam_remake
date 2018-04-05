@@ -150,8 +150,8 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 70;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+  gGame.GameOptions.Peacetime := 70;
+  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -260,6 +260,7 @@ const
     ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker, ut_Recruit
   );
 var
+  GoldShortage: Boolean;
   I,K,cnt: Integer;
   GoldProduced: Cardinal;
   H: TKMHouse;
@@ -277,7 +278,8 @@ begin
   //Citizens
   // Make sure we have enough gold left for self-sufficient city
   GoldProduced := Stats.GetWaresProduced(wt_Gold);
-  if (Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (GoldProduced = 0) then
+  GoldShortage := (Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (GoldProduced = 0);
+  if GoldShortage then
   begin
     UnitReq[ut_Serf] := 3; // 3x Serf
     UnitReq[ut_Worker] := Byte(fSetup.WorkerCount > 0);// 1x Worker
@@ -333,6 +335,8 @@ begin
        AND (P.Houses[I].HouseType = htSchool) then
     begin
       Schools[cnt] := TKMHouseSchool(P.Houses[I]);
+      if GoldShortage AND (Schools[cnt].CheckResIn(wt_Gold) = 0) then // Ignore empty schools when we are out of gold
+        continue;
       for K := Schools[cnt].QueueLength - 1 downto 0 do
         if (Schools[cnt].Queue[K] <> ut_None) then
         begin
@@ -495,7 +499,7 @@ begin
 
       // Materials
       S.NotAcceptFlag[wt_Trunk] := (aTick > TRUNK_STORE_DELAY); // Trunk should not be blocked because of forest cleaning
-      S.NotAcceptFlag[wt_Wood] := (aTick > WOOD_STORE_DELAY);// AND (Predictor.WareBalance[wt_Wood].Exhaustion > 40);
+      S.NotAcceptFlag[wt_Wood] := (S.CheckResIn(wt_Wood) > 20) OR (aTick > WOOD_STORE_DELAY);// AND (Predictor.WareBalance[wt_Wood].Exhaustion > 40);
       S.NotAcceptFlag[wt_Stone] := (aTick > STONE_STORE_DELAY) OR (S.CheckResIn(wt_Stone)*2 > gHands[fOwner].Stats.GetUnitQty(ut_Worker));
       S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 400; // Everyone needs as much gold as possible
 
