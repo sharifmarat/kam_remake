@@ -9,22 +9,20 @@ uses
 
 
 var
+
+  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 15;
   GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
   GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
-  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 10.94186592;
-  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 10.81381607;
-  //GA_BUILDER_ChHTB_FractionCoef         : Single = 20.06742477;
-  GA_BUILDER_ChHTB_FractionCoef         : Single = 40;//11.58820248;
-  //GA_BUILDER_ChHTB_TrunkFactor          : Single = 8.568861008;
-  //GA_BUILDER_ChHTB_TrunkBalance         : Single = 5.72991991;
-  GA_BUILDER_ChHTB_TrunkFactor          : Single = 5.920251846;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single = 3.946866512;
+  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 9.321095646;
+  GA_BUILDER_ChHTB_FractionCoef         : Single = 9.673275352;
+  GA_BUILDER_ChHTB_TrunkFactor          : Single = 5.370502472;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single = 9.370810389;
   GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
-  GA_BUILDER_TRUNK_SHORTAGE             : Single = 0;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 10.40034485;
+  GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 5.60124576; //10.40034485;
   GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
-  GA_BUILDER_GOLD_SHORTAGE              : Single = 23.72795486;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 32.64543295;
 
 
 type
@@ -674,7 +672,6 @@ function TKMCityBuilder.BuildHouse(aUnlockProcedure, aHouseReservation, aIgnoreE
 var
   Output: TConstructionState;
   FieldsComplete, Check: Boolean;
-  PolygonIdx: Word;
   I, Node1Idx, Node2Idx, HouseIdx: Integer;
   Loc: TKMPoint;
 begin
@@ -855,9 +852,9 @@ const
   //WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
   ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor, wt_Flour, wt_Bread];
   //BUILD_ORDER_WARE: array[0..8] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood, wt_Corn, wt_Pig, wt_Sausages);
-  BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood);
+  BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_GoldOre, wt_Coal, wt_Gold, wt_Trunk, wt_Wood);
 var
-  MaxPlans: Integer;
+  MaxPlans, MaxPlace: Integer;
   RequiredHouses: TRequiredHousesArray;
   WareBalance: TWareBalanceArray;
 
@@ -889,7 +886,7 @@ var
 
   function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureRequired: Boolean = False; aIgnoreWareReserves: Boolean = False): TConstructionState;
   var
-    UnlockProcedure, MaterialShortage: Boolean;
+    UnlockProcedure, HouseReservation, IgnoreExistingPlans, MaterialShortage: Boolean;
     FollowingHouse: TKMHouseType;
     Output: TConstructionState;
   begin
@@ -899,8 +896,12 @@ var
     if GetHouseToUnlock(UnlockProcedure, aHT, FollowingHouse) then
     begin
       MaterialShortage := not aIgnoreWareReserves AND (fWoodShortage OR fTrunkShortage OR fStoneShortage OR fGoldShortage);
+      MaterialShortage := MaterialShortage OR (MaxPlace <= 0);
+      UnlockProcedure := UnlockProcedure OR (aHT = htFarm) OR MaterialShortage; // Farm should be placed outside of forest
+      HouseReservation := MaterialShortage;
+      IgnoreExistingPlans := MaterialShortage AND not (aHT in [htWoodcutters, htGoldMine, htIronMine, htCoalMine]);
       //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
-      Output := BuildHouse(UnlockProcedure OR (aHT = htFarm) OR MaterialShortage, MaterialShortage, MaterialShortage, aHT); // Farm should be placed outside of forest
+      Output := BuildHouse(UnlockProcedure, HouseReservation, IgnoreExistingPlans, aHT);
     end
     else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
     begin
@@ -955,13 +956,14 @@ var
         break;
       if (RequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] <= 0) then // wt_Leather and wt_Pig require the same building so avoid to place 2 houses at once
         continue;
-      case AddToConstruction(PRODUCTION[ WareOrder[I] ]) of
+      case AddToConstruction(PRODUCTION[ WareOrder[I] ], False, False) of
         cs_NoNodeAvailable: break;
         cs_HouseReservation, cs_RemoveTreeProcedure: Output := True;
         cs_HousePlaced:
         begin
           Output := True;
           MaxPlans := MaxPlans - 1;
+          MaxPlace := MaxPlace - 1;
           if (MaxPlans <= 0) then
             break;
         end;
@@ -992,46 +994,56 @@ var
         begin
           MaxPlans := 0; // This house is critical so dont plan anything else
           Exit;
-          //MaxPlans := MaxPlans - 1;
         end;
       end;
-      //if (MaxPlans <= 0) then
-      //  Break;
     end;
   end;
 
   procedure CheckHouseReservation();
-  const // Reservation sets must be able to unlock specific houses!!!
-    RESERVATION_StoneShortage: TSetOfHouseType = [htSchool, htStore, htQuary, htMarketplace];
-    RESERVATION_WoodShortage: TSetOfHouseType = [htSchool, htMarketplace, htStore, htQuary, htWoodcutters, htSawmill];
-    RESERVATION_TrunkShortage: TSetOfHouseType = [htSchool, htStore, htQuary, htGoldMine, htCoalMine, htMetallurgists, htWoodcutters];
-    RESERVATION_GoldShortage: TSetOfHouseType = [htSchool, htMarketplace, htStore, htQuary, htGoldMine, htCoalMine, htMetallurgists, htWoodcutters, htSawmill];
-    RESERVATION_FullSet: TSetOfHouseType = [htArmorSmithy, htArmorWorkshop, htBakery, htBarracks, htButchers, htCoalMine, htFarm, htFisherHut, htGoldMine, htInn, htIronMine, htIronSmithy, htMarketplace, htMetallurgists, htMill, htQuary, htSawmill, htSchool, htSiegeWorkshop, htStables, htStore, htSwine, htTannery, htTownHall, htWatchTower, htWeaponSmithy, htWeaponWorkshop, htWineyard, htWoodcutters];
+  const
+    // Reservation sets must be able to unlock specific houses!!!
+    RESERVATION_FullSet: array[0..28] of TKMHouseType = (
+      htSchool, htQuary, htMarketplace, htWoodcutters, htSawmill,
+      htGoldMine, htCoalMine, htMetallurgists, htBarracks, htInn,
+      htFarm, htMill, htBakery, htSwine, htButchers, htStables, htFisherHut,
+      htIronMine, htIronSmithy, htArmorSmithy, htWeaponSmithy,
+      htTannery, htArmorWorkshop, htWeaponWorkshop,
+      htSiegeWorkshop, htTownHall, htWineyard, htStore, htWatchTower
+    );
+    STONE_SHORTAGE_IDX = 2;
+    TRUNK_SHORTAGE_IDX = 3;
+    WOOD_SHORTAGE_IDX = 4;
+    GOLD_SHORTAGE_IDX = 7;
+    FULL_SET = 28;
   var
-    I: Integer;
+    I,K, MaxIdx: Integer;
     HT: TKMHouseType;
-    ActualHouseSet: TSetOfHouseType;
   begin
     if fStoneShortage then
-      ActualHouseSet := RESERVATION_StoneShortage
-    else if fGoldShortage then
-      ActualHouseSet := RESERVATION_GoldShortage
+      MaxIdx := STONE_SHORTAGE_IDX
     else if fTrunkShortage then
-      ActualHouseSet := RESERVATION_TrunkShortage
+      MaxIdx := TRUNK_SHORTAGE_IDX
     else if fWoodShortage then
-      ActualHouseSet := RESERVATION_WoodShortage
+      MaxIdx := WOOD_SHORTAGE_IDX
+    else if fGoldShortage then
+      MaxIdx := GOLD_SHORTAGE_IDX
     else
-      ActualHouseSet := RESERVATION_FullSet;
-    for HT in ActualHouseSet do
-      for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
-        with fPlanner.PlannedHouses[HT].Plans[I] do
+      MaxIdx := FULL_SET;
+    for I := 0 to MaxIdx do
+    begin
+      HT := RESERVATION_FullSet[I];
+      for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
+        with fPlanner.PlannedHouses[HT].Plans[K] do
           if not Placed
              AND (HouseReservation OR RemoveTreeInPlanProcedure)
              AND (cs_HousePlaced = AddToConstruction(HT,False,True)) then
           begin
-            MaxPlans := MaxPlans - 1;
+            MaxPlace := MaxPlace - 1;
             RequiredHouses[HT] := 0;
+            if (MaxPlace <= 0) then
+              Exit;
           end;
+    end;
   end;
 
   function GetChopOnlyCnt(): Word;
@@ -1079,7 +1091,10 @@ begin
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   TrunkBalance := (gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,WareBalance[wt_Trunk].ActualConsumption);
   if (TrunkBalance < GA_BUILDER_TRUNK_SHORTAGE) then
+  begin
+    RequiredHouses[htWineyard] := 0; // Dont try to place wine
     fTrunkShortage := True;
+  end;
 
   // Find place for chop-only woodcutters when we start to be out of wood
   if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then // Max 2 chop-only woodcutters
@@ -1094,6 +1109,7 @@ begin
     RequiredHouses[htWoodcutters] := 0;
   end;
 
+  // Compute building materials
   RequiredStones := gHands[fOwner].BuildList.HousePlanList.GetPlansStoneDemands();
   RequiredWood := gHands[fOwner].BuildList.HousePlanList.GetPlansWoodDemands();
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
@@ -1105,10 +1121,12 @@ begin
       RequiredWood := RequiredWood + gRes.Houses[H.HouseType].WoodCost - H.GetBuildWoodDelivered;
     end;
   end;
-  fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones);
-  fWoodShortage := fWoodShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
+  //fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones);
+  fTrunkShortage := fTrunkShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
+  MaxPlace := Round((gHands[fOwner].Stats.GetWareBalance(wt_Trunk)*2 + gHands[fOwner].Stats.GetWareBalance(wt_Wood) - RequiredWood) / 3 - 0.5);
 
-  CheckHouseReservation();
+  if (MaxPlace > 0) then
+    CheckHouseReservation();
   if (MaxPlans <= 0) then
     Exit;
 
@@ -1137,14 +1155,6 @@ begin
     end;
 
   SelectHouse(ALL_WARE);
-  if (MaxPlans > 0) then
-  begin
-
-    //SelectHouse(FOOD_WARE);
-    //if (MaxPlans > 0) then
-    //if (KaMRandom < 0.5) then
-    //  SelectHouse(WEAPON_WARE);
-  end;
 end;
 
 
