@@ -1446,7 +1446,7 @@ const
   const
     OVERFLOW = 10;
     OWNER_PENALIZATION = 50;
-    SCAN_RAD = 8;
+    SCAN_RAD = 5;
     USED_TILES_PER_A_MINE = 5;
     USED_TILE_PRICE = 5;
   var
@@ -1480,7 +1480,7 @@ const
             begin
               fPerfArr[Y,X] := fPerfIdx;
               Loc := KMPoint(X,Y);
-              if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, False, False) then
+              if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, True, False) then
               begin
                 Bid := + DistCrit(htQuary, Loc) * 40 + SnapCrit(htQuary, Loc);
                 if (Bid > BestBid) then
