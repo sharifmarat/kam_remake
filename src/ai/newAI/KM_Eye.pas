@@ -628,7 +628,7 @@ begin
     // Make sure we can add road below house;
     // Woodcutters / CoalMine / Towers may take place for mine so its arena must be scaned completely
     if (  // Direction south + not in case of house reservation OR specific house which can be build in avoid build areas
-         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT in [htWoodcutters, htCoalMine, htWatchTower])
+         ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT in [htQuary, htWoodcutters, htCoalMine, htWatchTower])
        ) AND not CheckRoad(X,Y) then
       Exit
     // For "normal" houses there must be at least 1 side also free (on the left or right from house plan)
