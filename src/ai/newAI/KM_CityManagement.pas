@@ -8,7 +8,7 @@ uses
 
 var
   GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.3677794933;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 3.057023287;
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 4.057023287;
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -135,9 +135,9 @@ procedure TKMCityManagement.AfterMissionInit();
   begin
     // Top priority for gold mines
     gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 3;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 4;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 4;
+    gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 4;
     gHands[fOwner].Stats.WareDistribution[wt_Wood, htArmorWorkshop] := 2;
     gHands[fOwner].Stats.WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
     gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
@@ -150,8 +150,8 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 70;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
+  gGame.GameOptions.Peacetime := 70;
+  fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
