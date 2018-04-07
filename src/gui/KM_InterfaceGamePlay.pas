@@ -3345,7 +3345,7 @@ begin
     Owner := GetGameObjectOwnerIndex(Obj);
     if (Owner <> -1) and
       ((Owner = gMySpectator.HandIndex)
-      or (gMySpectator.Hand.Alliances[Owner] = at_Ally)
+      or ((ALLOW_SELECT_ALLY_UNITS or (Obj is TKMHouse)) and (gMySpectator.Hand.Alliances[Owner] = at_Ally))
       or (ALLOW_SELECT_ENEMIES and (gMySpectator.Hand.Alliances[Owner] = at_Enemy)) // Enemies can be selected for debug
       or (fUIMode in [umReplay, umSpectate])) then
     begin
