@@ -187,6 +187,8 @@ uses
 
 const
   RESET_BANS_COOLDOWN = 2000;
+  SPEED_MAX_VALUE = 2.5;
+  SPEED_STEP = 0.1;
 
 
 { TKMGUIMenuLobby }
@@ -364,7 +366,7 @@ const
   C1W = 155; C2W = 150; C3W = 75; C4W = 80;
   TC2_ADD = 50;
 var
-  I, K, OffY, SlotTxtWidth, AllTxtWidth: Integer;
+  I, K, OffY, SlotTxtWidth, AllTxtWidth, SpeedsCnt: Integer;
 begin
   Panel_Lobby := TKMPanel.Create(aParent,0,0,aParent.Width, aParent.Height);
   Panel_Lobby.AnchorsStretch;
@@ -563,13 +565,15 @@ begin
         TrackBar_LobbyPeacetime.Step := 5; //Round to 5min steps
         TrackBar_LobbyPeacetime.OnChange := GameOptionsChange;
 
-        TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, 5);
+        SpeedsCnt := Round((SPEED_MAX_VALUE - 1) / SPEED_STEP) + 1;
+
+        TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, SpeedsCnt);
         TrackBar_SpeedPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
         TrackBar_SpeedPT.ThumbWidth := 55; //Enough to fit 'x1.25'
         TrackBar_SpeedPT.OnChange := GameOptionsChange;
 
-        TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, 5);
+        TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, SpeedsCnt);
         TrackBar_SpeedAfterPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
         TrackBar_SpeedAfterPT.ThumbWidth := 55; //Enough to fit 'x1.25'
@@ -1019,8 +1023,8 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 begin
   //Update the game options
   fNetworking.UpdateGameOptions(EnsureRange(TrackBar_LobbyPeacetime.Position, 0, 300),
-                                (TrackBar_SpeedPT.Position - 1) / 4 + 1,
-                                (TrackBar_SpeedAfterPT.Position - 1) / 4 + 1);
+                                (TrackBar_SpeedPT.Position - 1) * SPEED_STEP + 1,
+                                (TrackBar_SpeedAfterPT.Position - 1) * SPEED_STEP + 1);
 
   //Refresh the data to controls
   Lobby_OnGameOptions(nil);
@@ -1051,11 +1055,11 @@ begin
   TrackBar_LobbyPeacetime.Position := fNetworking.NetGameOptions.Peacetime;
 
   TrackBar_SpeedPT.Enabled   := (TrackBar_LobbyPeacetime.Position > 0) and TrackBar_SpeedAfterPT.Enabled;
-  TrackBar_SpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) * 4 + 1);
-  TrackBar_SpeedPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedPT);
+  TrackBar_SpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) / SPEED_STEP) + 1;
+  TrackBar_SpeedPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedPT);
 
-  TrackBar_SpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) * 4 + 1);
-  TrackBar_SpeedAfterPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedAfterPT);
+  TrackBar_SpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) / SPEED_STEP) + 1;
+  TrackBar_SpeedAfterPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedAfterPT);
 end;
 
 
