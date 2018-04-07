@@ -106,6 +106,7 @@ type
     fReplayAutopause: Boolean;
     fReplayShowBeacons: Boolean; //Replay variable - show beacons during replay
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
+    fShowGameTime: Boolean;      //Show game time label (always)
     fBrightness: Byte;
     fScrollSpeed: Byte;
     fAlphaShadows: Boolean;
@@ -166,6 +167,7 @@ type
     procedure SetReplayAutopause(aValue: Boolean);
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
+    procedure SetShowGameTime(aValue: Boolean);
     procedure SetBrightness(aValue: Byte);
     procedure SetScrollSpeed(aValue: Byte);
     procedure SetAlphaShadows(aValue: Boolean);
@@ -228,6 +230,7 @@ type
     property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
     property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
+    property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
     property Brightness: Byte read fBrightness write SetBrightness;
     property ScrollSpeed: Byte read fScrollSpeed write SetScrollSpeed;
     property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
@@ -477,6 +480,7 @@ begin
     fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
+    fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
     fScrollSpeed        := F.ReadInteger  ('Game', 'ScrollSpeed',       10);
     fSpeedPace          := F.ReadInteger  ('Game', 'SpeedPace',         100);
     fSpeedMedium        := F.ReadFloat    ('Game', 'SpeedMedium',       3);
@@ -565,6 +569,7 @@ begin
     F.WriteBool   ('Game','ReplayAutopause',    fReplayAutopause);
     F.WriteBool   ('Game','ReplayShowBeacons',  fReplayShowBeacons);
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
+    F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
     F.WriteInteger('Game','ScrollSpeed',        fScrollSpeed);
     F.WriteInteger('Game','SpeedPace',          fSpeedPace);
     F.WriteFloat  ('Game','SpeedMedium',        fSpeedMedium);
@@ -825,6 +830,13 @@ end;
 procedure TKMGameSettings.SetSpecShowBeacons(aValue: Boolean);
 begin
   fSpecShowBeacons := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetShowGameTime(aValue: Boolean);
+begin
+  fShowGameTime := aValue;
   Changed;
 end;
 

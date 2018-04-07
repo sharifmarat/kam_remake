@@ -2200,14 +2200,19 @@ end;
 
 procedure TKMGamePlayInterface.ShowClock(aSpeed: Single);
 begin
-  Image_Clock.Visible := aSpeed <> 1;
-  Label_Clock.Visible := aSpeed <> 1;
+  Image_Clock.Visible := (aSpeed <> 1);
+  Label_Clock.Visible := (aSpeed <> 1) or gGameApp.GameSettings.ShowGameTime;
   Label_ClockSpeedup.Visible := aSpeed <> 1;
   Label_ClockSpeedup.Caption := 'x' + FormatFloat('##0.##', aSpeed);
 
+  if not Image_Clock.Visible and Label_Clock.Visible then
+    Label_Clock.Top := 8
+  else
+    Label_Clock.Top := 80;
+
   // With slow GPUs it will keep old values till next frame, that can take some seconds
   // Thats why we refresh Clock.Caption here
-  if aSpeed <> 1 then
+  if (aSpeed <> 1) then
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
 end;
 
@@ -3740,10 +3745,10 @@ begin
 
   // Update speedup clocks
   if Image_Clock.Visible then
-  begin
     Image_Clock.TexID := ((Image_Clock.TexID - 556) + 1) mod 16 + 556;
+
+  if Label_Clock.Visible then
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
-  end;
 
   // Keep on updating these menu pages as game data keeps on changing
   if fGuiGameBuild.Visible then fGuiGameBuild.UpdateState;
