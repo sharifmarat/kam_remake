@@ -772,9 +772,9 @@ begin
       begin
         I2 := R3[K];
 
-        // Need to swap Shields and Armor for the ArmorSmithy
+        // Need to swap Shields and Armor for the ArmorWorkshop
         // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
-        if (aHouse = htArmorSmithy) and (I2 in [1,2]) then
+        if (aHouse = htArmorWorkshop) and (I2 in [1,2]) then
           I2 := 3-R3[K];
 
         Id := gRes.Houses[aHouse].SupplyOut[I2, K mod MAX_WARES_IN_HOUSE + 1] + 1;
