@@ -1481,10 +1481,10 @@ var
   Company: TAICompany;
   Squad: TAISquad;
 begin
-  //if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
-  //  Exit;
-  if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
+  if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
     Exit;
+  //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
+  //  Exit;
   for I := 0 to Count - 1 do
   begin
     // Company status log
