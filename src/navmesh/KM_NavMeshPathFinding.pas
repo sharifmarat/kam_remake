@@ -128,17 +128,18 @@ function TNavMeshPathFinding.MovementCost(aFrom, aTo: Word; var aSPoint, aEPoint
   const
     CHANCES: array[TKMGroupType] of array[TKMGroupType] of Single = (
     // gt_Melee gt_AntiHorse gt_Ranged gt_Mounted
-      (1,       0.5,         0.5,      2   ), // gt_Melee
-      (0.5,     1,           1,        0.5 ), // gt_AntiHorse
-      (2,       1,           0.5,      3   ), // gt_Ranged
-      (0.5,     3,           0.5,      1   )  // gt_Mounted
+      (   5,          1,          1,        10   ), // gt_Melee
+      (  10,          5,          1,         1   ), // gt_AntiHorse
+      (  10,          5,          1,        20   ), // gt_Ranged
+      (   5,         15,          1,         5   )  // gt_Mounted
     );
   var
     GT: TKMGroupType;
     Weight: Single;
   begin
+    Weight := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      Weight := CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT];
+      Weight := Weight + CHANCES[fGroupType,GT] * gAIFields.Influences.EnemyGroupPresence[fOwner, aTo, GT];
     Result := Round(Weight);
   end;
 
