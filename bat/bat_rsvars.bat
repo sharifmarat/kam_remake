@@ -10,4 +10,4 @@ call bat_rsvars_local.bat
 @SET KMRPrevVersionDir=%KMRPrevVersionDir_LOCAL%
 @SET BuildFullDir=%BuildFullDir_LOCAL%
 @SET PATH=%FrameworkDir%;%FrameworkSDKDir%;%BDS%\bin;%BDS%\bin64;%PATH%
-@SET kam_version=Beta 8k+
+@SET kam_version=Beta 9k+
