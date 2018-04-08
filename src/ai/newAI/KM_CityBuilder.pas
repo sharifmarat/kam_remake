@@ -865,7 +865,7 @@ var
     initHT: TKMHouseType;
   begin
     Output := True;
-    // Repeat until is avaiable house finded (to unlock target house)
+    // Repeat until is available house finded (to unlock target house)
     initHT := aHT;
     aFollowingHouse := htNone;
     while Output AND not gHands[fOwner].Locks.HouseCanBuild(aHT) do
@@ -1553,7 +1553,7 @@ var
     initHT: TKMHouseType;
   begin
     Output := True;
-    // Repeat until is avaiable house finded (to unlock target house)
+    // Repeat until is available house finded (to unlock target house)
     initHT := aHT;
     aFollowingHouse := ht_None;
     while Output AND not gHands[fOwner].Locks.HouseCanBuild(aHT) do
@@ -1695,7 +1695,7 @@ var
     initHT: TKMHouseType;
   begin
     Output := True;
-    // Repeat until is avaiable house finded (to unlock target house)
+    // Repeat until is available house finded (to unlock target house)
     initHT := aHT;
     aFollowingHouse := ht_None;
     while Output AND not gHands[fOwner].Locks.HouseCanBuild(aHT) do
