@@ -620,10 +620,10 @@ end;
 
 function TAICompany.OrderToAttack(aActualPosition: TKMPoint; UA: TKMUnitArray; UGA: TKMUnitGroupArray; HA: TKMHouseArray): Boolean;
 var
-  AvaiableSquads: TKMSquadsArray;
+  AvailableSquads: TKMSquadsArray;
   //fTargetU: TKMTargetSelection;
 
-  procedure FindAvaiableSquads();
+  procedure FindAvailableSquads();
   var
     I: Integer;
     GT: TKMGroupType;
@@ -631,8 +631,8 @@ var
   begin
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
-      AvaiableSquads[GT].Count := 0;
-      SetLength(AvaiableSquads[GT].Squads, fSquads[GT].Count);
+      AvailableSquads[GT].Count := 0;
+      SetLength(AvailableSquads[GT].Squads, fSquads[GT].Count);
     end;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := 0 to fSquads[GT].Count - 1 do
@@ -647,8 +647,8 @@ var
             Squad.TargetUnit := nil;
             //Squad.TargetHouse := nil; // This cause same problem like with archers
           end;
-          AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ] := Squad;
-          AvaiableSquads[GT].Count := AvaiableSquads[GT].Count + 1;
+          AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ] := Squad;
+          AvailableSquads[GT].Count := AvailableSquads[GT].Count + 1;
         end;
       end;
   end;
@@ -753,9 +753,9 @@ var
     // Ranged groups view: our ranged unit -> select target => each unit should fire
     GT := gt_Ranged;
     TargetIdx := 0; // Only for compiler
-    for I := AvaiableSquads[GT].Count - 1 downto 0 do
+    for I := AvailableSquads[GT].Count - 1 downto 0 do
     begin
-      Squad := AvaiableSquads[GT].Squads[I];
+      Squad := AvailableSquads[GT].Squads[I];
       HighestThreat := INIT_THREAT;
       for K := 0 to Length(fTargetU) - 1 do
         if (fTargetU[K].DistantThreat > 0) then
@@ -775,8 +775,8 @@ var
         // Unit will be targeted by Ranged group -> if there was minimal priority for close combat then remove it
         if (fTargetU[TargetIdx].CloseThreat = 1) then
           fTargetU[TargetIdx].CloseThreat := 0;
-        Dec(AvaiableSquads[GT].Count);
-        AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+        Dec(AvailableSquads[GT].Count);
+        AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
       end
       else
         Squad.TargetUnit := nil;
@@ -790,12 +790,12 @@ var
           GT := BEST_TARGET[  UGA[ fTargetU[I].Index ].GroupType, K  ];
           if (GT = gt_Ranged) then // Skip ranged groups
             continue;
-          while (fTargetU[I].CloseThreat > 0) AND (AvaiableSquads[GT].Count > 0) do
+          while (fTargetU[I].CloseThreat > 0) AND (AvailableSquads[GT].Count > 0) do
           begin
             BestDist := 100000;
-            for L := 0 to AvaiableSquads[GT].Count - 1 do
+            for L := 0 to AvailableSquads[GT].Count - 1 do
             begin
-              Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[L].Position, UA[ fTargetU[I].Index ].GetPosition);
+              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ fTargetU[I].Index ].GetPosition);
               if (Dist < BestDist) then
               begin
                 BestDist := Dist;
@@ -803,12 +803,12 @@ var
               end;
             end;
 
-            Squad := AvaiableSquads[GT].Squads[TargetIdx];
+            Squad := AvailableSquads[GT].Squads[TargetIdx];
             Squad.TargetUnit := UGA[ fTargetU[I].Index ].GetAliveMember;
             Output := True;
             fTargetU[I].CloseThreat := fTargetU[I].CloseThreat - Squad.Group.Count;
-            Dec(AvaiableSquads[GT].Count);
-            AvaiableSquads[GT].Squads[TargetIdx] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+            Dec(AvailableSquads[GT].Count);
+            AvailableSquads[GT].Squads[TargetIdx] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
           end;
         end;
     Result := Output;
@@ -825,7 +825,7 @@ var
   begin
     Cnt := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      Cnt := Cnt + AvaiableSquads[GT].Count;
+      Cnt := Cnt + AvailableSquads[GT].Count;
 
     if (Cnt = 0) then
       Exit;
@@ -837,9 +837,9 @@ var
 
     Cnt := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      for I := 0 to AvaiableSquads[GT].Count - 1 do
+      for I := 0 to AvailableSquads[GT].Count - 1 do
       begin
-        Squad := AvaiableSquads[GT].Squads[I];
+        Squad := AvailableSquads[GT].Squads[I];
         Squad.FinalPosition := KMPointDir(  Positions[Cnt], KMGetDirection( Squad.Position, Positions[Cnt] )  );
         // Time limit does not make sence for unit in combat
         //Squad.TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
@@ -874,7 +874,7 @@ var
     // Target watchtowers with archers
     GT := gt_Ranged;
     TargetIdx := 0; // Only for compiler
-    for I := AvaiableSquads[GT].Count - 1 downto 0 do
+    for I := AvailableSquads[GT].Count - 1 downto 0 do
     begin
       BestDist := INIT_THREAT;
       for K := 0 to Length(HA) - 1 do
@@ -883,7 +883,7 @@ var
           AND (HA[K].CheckResIn(wt_Stone) > 1)
           AND HA[K].HasOwner then // Ignore towers without stone and without recruit inside
         begin
-          Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition);
+          Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
           if (Dist > BestDist) then
           begin
             BestDist := Dist;
@@ -892,16 +892,16 @@ var
         end;
       if (BestDist <> INIT_THREAT) then
       begin
-        GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
+        GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvailableSquads[GT].Squads[I].Group.Count;
         // Find and kill workers who want to repair house
-        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvailableSquads[GT].Squads[I].Position);
         if (U <> nil) then
-          AvaiableSquads[GT].Squads[I].TargetUnit := U
+          AvailableSquads[GT].Squads[I].TargetUnit := U
         else
-          AvaiableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
+          AvailableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
         Output := True;
-        Dec(AvaiableSquads[GT].Count);
-        AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+        Dec(AvailableSquads[GT].Count);
+        AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
       end;
     end;
 
@@ -910,17 +910,17 @@ var
     begin
       if (GT = gt_Ranged) then
         continue;
-      for I := AvaiableSquads[GT].Count - 1 downto 0 do
+      for I := AvailableSquads[GT].Count - 1 downto 0 do
       begin
         BestDist := INIT_THREAT;
         for K := 0 to Length(HA) - 1 do
           if (
                (HA[K].HouseType <> htWatchTower)
-               OR ( KMDistanceAbs(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
+               OR ( KMDistanceAbs(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
              )
             AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE) then
           begin
-            Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition);
+            Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
             if (Dist > BestDist) AND (Dist <= SQR_CLOSE_COMBAT_DISTANCE_LIMIT) then
             begin
               BestDist := Dist;
@@ -929,17 +929,17 @@ var
           end;
         if (BestDist <> INIT_THREAT) then
         begin
-          GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
+          GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvailableSquads[GT].Squads[I].Group.Count;
           // Find and kill workers who want to repair house
-          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvailableSquads[GT].Squads[I].Position);
           if (U <> nil)
-            AND ((GT = gt_Ranged) OR (KMDistanceSqr(U.GetPosition, AvaiableSquads[GT].Squads[I].Position) < SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST)) then
-            AvaiableSquads[GT].Squads[I].TargetUnit := U
+            AND ((GT = gt_Ranged) OR (KMDistanceSqr(U.GetPosition, AvailableSquads[GT].Squads[I].Position) < SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST)) then
+            AvailableSquads[GT].Squads[I].TargetUnit := U
           else
-            AvaiableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
+            AvailableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
           Output := True;
-          Dec(AvaiableSquads[GT].Count);
-          AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+          Dec(AvailableSquads[GT].Count);
+          AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
         end;
       end;
     end;
@@ -953,8 +953,8 @@ var
 begin
   Output := False;
 
-  // Find avaiable squads (groups who obey orders / are not in combat)
-  FindAvaiableSquads();
+  // Find Available squads (groups who obey orders / are not in combat)
+  FindAvailableSquads();
 
   // Attack hostile units in radius
   if (Length(UA) > 0) then
@@ -1025,7 +1025,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
     Position: TKMPoint;
     GT: TKMGroupType;
     Squads: array of TAISquad;
-    AvaiableSquads: TBooleanArray;
+    AvailableSquads: TBooleanArray;
     TagPositions: TKMPointTagList;
   begin
     TagPositions := TKMPointTagList.Create;
@@ -1038,13 +1038,13 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
       Dir := KMGetDirection( aActualPosition, fPathPosition );
 
       SetLength(Squads, aCnt);
-      SetLength(AvaiableSquads, aCnt);
+      SetLength(AvailableSquads, aCnt);
       K := 0;
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         for I := 0 to fSquads[GT].Count - 1 do
         begin
           Squads[K] := fSquads[GT].Items[I];
-          AvaiableSquads[K] := True;
+          AvailableSquads[K] := True;
           K := K + 1;
         end;
       ClosestIdx := 0; // Only for compiler
@@ -1053,7 +1053,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
         Position := TagPositions.Items[I];
         ClosestDist := INIT_DIST;
         for K := 0 to Length(Squads) - 1 do
-          if AvaiableSquads[K] then
+          if AvailableSquads[K] then
           begin
             Dist := KMDistanceAbs(Position, Squads[K].Position);
             if (Dist < ClosestDist) then
@@ -1066,7 +1066,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
           break;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
         Squads[ClosestIdx].TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
-        AvaiableSquads[ClosestIdx] := False;
+        AvailableSquads[ClosestIdx] := False;
       end;
     finally
       TagPositions.Free;
@@ -1481,10 +1481,10 @@ var
   Company: TAICompany;
   Squad: TAISquad;
 begin
-  if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
-    Exit;
-  //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
+  //if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
   //  Exit;
+  if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
+    Exit;
   for I := 0 to Count - 1 do
   begin
     // Company status log
