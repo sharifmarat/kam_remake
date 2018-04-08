@@ -12,7 +12,7 @@ var
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
-    Avaiable, Required: Word;
+    Available, Required: Word;
     Fraction: Single;
   end;
   TKMWarriorsDemands = array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Integer;
@@ -36,8 +36,8 @@ type
     procedure CheckExhaustedHouses();
     procedure CheckAutoRepair();
 
-    function WeaponsBalance(): TKMWarfareArr;
-    procedure OrderWeapons(aWarfare: TKMWarfareArr);
+    procedure WeaponsBalance();
+    procedure OrderWeapons();
 
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
@@ -150,8 +150,8 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  gGame.GameOptions.Peacetime := 70;
-  fSetup.ApplyAgressiveBuilderSetup(True);
+  //gGame.GameOptions.Peacetime := 70;
+  //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
@@ -199,7 +199,8 @@ begin
     CheckMarketplaces();
     CheckStoreWares(aTick);
     CheckAutoRepair();
-    OrderWeapons( WeaponsBalance() );
+    WeaponsBalance();
+    OrderWeapons();
     CheckExhaustedHouses();
   end;
 end;
@@ -364,8 +365,8 @@ end;
 //Check if specific woodcutters are in Fell only mode
 procedure TKMCityManagement.CheckMarketplaces();
 var
-  RequiedCnt, AvaiableCnt: Word;
-  RequiredWares, AvaiableWares: array of TKMWareType;
+  RequiedCnt, AvailableCnt: Word;
+  RequiredWares, AvailableWares: array of TKMWareType;
   procedure AddWare(aWare: TKMWareType; IsRequired: Boolean = True);
   begin
     if IsRequired then
@@ -375,8 +376,8 @@ var
     end
     else
     begin
-      AvaiableWares[AvaiableCnt] := aWare;
-      AvaiableCnt := AvaiableCnt + 1;
+      AvailableWares[AvailableCnt] := aWare;
+      AvailableCnt := AvailableCnt + 1;
     end;
   end;
 
@@ -460,10 +461,10 @@ begin
   if RequiedCnt = 0 then
     Exit;
 
-  AvaiableCnt := 0;
-  SetLength(AvaiableWares, RequiedCnt);
+  AvailableCnt := 0;
+  SetLength(AvailableWares, RequiedCnt);
   for I := 0 to Length(SOLD_ORDER) - 1 do
-    if (AvaiableCnt < RequiedCnt) then
+    if (AvailableCnt < RequiedCnt) then
     begin
       WareCnt := gHands[fOwner].Stats.GetWareBalance( SOLD_ORDER[I] );
       if (  (SOLD_ORDER[I] in [WARFARE_MIN..WARFARE_MAX]) AND (WareCnt > WARFARE_SELL_LIMIT)  )
@@ -472,8 +473,8 @@ begin
     end;
 
   for I := 0 to RequiedCnt - 1 do
-    if (I < AvaiableCnt) then
-      TryBuyItem(AvaiableWares[I], RequiredWares[I])
+    if (I < AvailableCnt) then
+      TryBuyItem(AvailableWares[I], RequiredWares[I])
   else
     break;
 end;
@@ -578,7 +579,7 @@ end;
 
 
 // Calculate weapons demand from combat AI requirements
-function TKMCityManagement.WeaponsBalance(): TKMWarfareArr;
+procedure TKMCityManagement.WeaponsBalance();
 var
   EnemyEval, AllyEval: TKMArmyEval;
 
@@ -650,25 +651,44 @@ var
 
   procedure CheckMinArmyReq();
   const
-    DEFAULT_COEFICIENT = 100;
-    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Word = (
+    DEFAULT_COEFICIENT = 5;
+    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Single = (
       1, 1, 1, 3,//ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
-      3, 1, 1, 1,//ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
-      1//ut_Cavalry
+      3, 1, 1, 0.5,//ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
+      0.5//ut_Cavalry
     );
+    WOOD_ARMY: set of TKMUnitType = [ut_AxeFighter, ut_Bowman, ut_Pikeman]; //ut_HorseScout,
+    IRON_ARMY: set of TKMUnitType = [ut_Swordsman, ut_Arbaletman, ut_Hallebardman]; //ut_Cavalry
   var
-    SoldierCnt: Integer;
+    I, WoodReq, IronReq: Integer;
     UT: TKMUnitType;
   begin
-    SoldierCnt := 0;
-    for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
-      SoldierCnt := SoldierCnt + fWarriorsDemands[UT];
-    if (SoldierCnt > 30) then
-      Exit;
+    WoodReq := Max(+ fRequiredWeapons[wt_Armor].Available - fRequiredWeapons[wt_Armor].Required,
+                   + fRequiredWeapons[wt_Axe].Available - fRequiredWeapons[wt_Axe].Required
+                   + fRequiredWeapons[wt_Bow].Available - fRequiredWeapons[wt_Bow].Required
+                   + fRequiredWeapons[wt_Pike].Available - fRequiredWeapons[wt_Pike].Required
+                  );
+    IronReq := Max(+ fRequiredWeapons[wt_MetalArmor].Available - fRequiredWeapons[wt_MetalArmor].Required,
+                   + fRequiredWeapons[wt_Sword].Available - fRequiredWeapons[wt_Sword].Required
+                   + fRequiredWeapons[wt_Arbalet].Available - fRequiredWeapons[wt_Arbalet].Required
+                   + fRequiredWeapons[wt_Hallebard].Available - fRequiredWeapons[wt_Hallebard].Required
+                  );
+    WoodReq := Round((Max(0, WoodReq) + DEFAULT_COEFICIENT)/5.0);
+    IronReq := Round((Max(0, IronReq) + DEFAULT_COEFICIENT)/5.0);
 
-    for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
+    for UT in WOOD_ARMY do
       if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-        fWarriorsDemands[UT] := fWarriorsDemands[UT] + DEFAULT_ARMY_REQUIREMENTS[UT] * DEFAULT_COEFICIENT;
+        for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+          if (TroopCost[UT,I] <> wt_None) then
+            with fRequiredWeapons[ TroopCost[UT,I] ] do
+              Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
+
+    for UT in IRON_ARMY do
+      if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
+        for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+          if (TroopCost[UT,I] <> wt_None) then
+            with fRequiredWeapons[ TroopCost[UT,I] ] do
+              Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
   end;
 //AITroopTrainOrder: array [TKMGroupType, 1..3] of TKMUnitType = (
 //  (ut_Swordsman,    ut_AxeFighter, ut_Militia),
@@ -705,13 +725,15 @@ var
 //  ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
 //  ut_Cavalry,      ut_Barbarian,
 
+const
+  IRON_WEAPONS: set of TKMWareType = [wt_Sword, wt_Hallebard, wt_Arbalet];
+  IRON_ARMORS: set of TKMWareType = [wt_MetalArmor, wt_MetalShield];
 var
-  I, SmithyCnt, WorkshopCnt, ArmorCnt, Sum: Integer;
-  IronRatio: Single;
+  I, SmithyCnt, WorkshopCnt, ArmorCnt: Integer;
+  IronRatio, WeaponFraction, ArmorFraction: Single;
   WT: TKMWareType;
   GT: TKMGroupType;
   UT: TKMUnitType;
-  Warfare: TKMWarfareArr;
 begin
   ArmorCnt := gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(htArmorWorkshop);
   SmithyCnt := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy);
@@ -734,18 +756,11 @@ begin
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     ComputeGroupDemands(GT, IronRatio);
 
-  // Make sure that we always produce something
-  Sum := 0;
-  for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
-    Sum := Sum + fWarriorsDemands[UT];
-  if (Sum < 20) then
-    CheckMinArmyReq();
-
   // Get weapons reserves
-  for WT := Low(Warfare) to High(Warfare) do
+  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
   begin
-    Warfare[WT].Avaiable := gHands[fOwner].Stats.GetWareBalance(WT);
-    Warfare[WT].Required := 0;
+    fRequiredWeapons[WT].Available := gHands[fOwner].Stats.GetWareBalance(WT);
+    fRequiredWeapons[WT].Required := 0;
   end;
 
   // Get count of needed weapons
@@ -754,24 +769,36 @@ begin
       if (TroopCost[UT,I] <> wt_None) then
       begin
         WT := TroopCost[UT,I];
-        Warfare[WT].Required := Warfare[WT].Required + fWarriorsDemands[UT];
+        fRequiredWeapons[WT].Required := fRequiredWeapons[WT].Required + fWarriorsDemands[UT];
       end
       else
         break;
 
+  // Make sure that we always produce something
+  CheckMinArmyReq();
+
   // Calculate fraction of demands
-  for WT := Low(Warfare) to High(Warfare) do
-    Warfare[WT].Fraction := Warfare[WT].Avaiable / Max(1,Warfare[WT].Required);
-
-  Result := Warfare;
-
   for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
-    fRequiredWeapons[WT] := Warfare[WT];
+    with fRequiredWeapons[WT] do
+      Fraction := Available / Max(1,Required);
+
+  // Calculate mean fraction of iron weapons and distribute steal
+  WeaponFraction := 0;
+  ArmorFraction := 0;
+  for WT in IRON_WEAPONS do
+    WeaponFraction := WeaponFraction + fRequiredWeapons[WT].Fraction;
+  for WT in IRON_ARMORS do
+    ArmorFraction := ArmorFraction + fRequiredWeapons[WT].Fraction;
+  WeaponFraction := WeaponFraction / 3.0;
+  ArmorFraction := ArmorFraction / 2.0;
+  // Ware distribution = fraction / sum of fractions * 5
+  gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := Max(  1, Min(5, Round( ArmorFraction / (WeaponFraction + ArmorFraction) * 5) )  );
+  gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := Max(  1, Min(5, Round( WeaponFraction / (WeaponFraction + ArmorFraction) * 5) )  );
 end;
 
 
 // Distribute required weapons into exist houses (first will be produced the larger amount of wares)
-procedure TKMCityManagement.OrderWeapons(aWarfare: TKMWarfareArr);
+procedure TKMCityManagement.OrderWeapons();
 const
   WEAPONS_PER_A_UPDATE = 3;
   PRODUCTION_HOUSES = [htArmorSmithy, htArmorWorkshop, htWeaponSmithy, htWeaponWorkshop];
@@ -795,9 +822,9 @@ begin
     for I := 1 to 4 do
     begin
       WT := gRes.Houses[HT].ResOutput[I];
-      if (WT <> wt_None) AND (aWarfare[WT].Fraction < MostRequired) then
+      if (WT <> wt_None) AND (fRequiredWeapons[WT].Fraction < MostRequired) then
       begin
-        MostRequired := aWarfare[WT].Fraction;
+        MostRequired := fRequiredWeapons[WT].Fraction;
         MaxWT := WT;
         MaxIdx := I;
       end;
@@ -832,14 +859,14 @@ const
 var
   WT: TKMWareType;
 begin
-  aBalanceText := aBalanceText + '||Weapons orders (weapon: avaiable, required, fraction)|';
+  aBalanceText := aBalanceText + '||Weapons orders (weapon: Available, required, fraction)|';
   for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
     with fRequiredWeapons[WT] do
       aBalanceText := aBalanceText + WARFARE[WT] + #9 + '('
                       + Format(
                          COLOR_GREEN+'%D'+COLOR_WHITE+';' + #9
                         +COLOR_RED+'%D'+COLOR_WHITE+';' + #9
-                        +COLOR_YELLOW+'%.2f'+COLOR_WHITE+')|', [Avaiable, Required, Fraction]
+                        +COLOR_YELLOW+'%.2f'+COLOR_WHITE+')|', [Available, Required, Fraction]
                       );
 end;
 
