@@ -11,6 +11,14 @@ const
   MAX_SCAN_DIST_FROM_HOUSE = 10;
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
+var
+  GA_EYE_GetForests_RndOwnLim     : Single = 4.376474;
+  GA_EYE_GetForests_InflLimit     : Single = 220.1373;
+  GA_EYE_GetForests_OwnLimit      : Single = 89.57248;
+  GA_EYE_GetForests_MinTrees      : Single = 3.430406;
+  GA_EYE_GetForests_Radius        : Single = 5.34699;
+
+
 type
   TDirection = (dirN,dirE,dirS,dirW);
   THouseMapping = record // Record of vectors from loc of house to specific point
@@ -555,6 +563,7 @@ end;
 // Modified version of TKMHand.CanAddHousePlan - added possibilities
 // aIgnoreAvoidBuilding = ignore avoid building areas
 // aIgnoreTrees = ignore trees inside of house plan
+// aIgnoreLocks = ignore existing house plans inside of house plan tiles
 function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
   function CheckRoad(X,Y: Integer): Boolean;
   begin
@@ -785,13 +794,8 @@ end;
 // Create possible places for forests and return count of already existed forests
 procedure TKMEye.GetForests(var aForests: TKMPointTagList);
 const
-  OWNERSHIP_LIMIT = 120;
-  RANDOM_POINTS_OWNERSHIP_LIMIT = 220;
-  AVOID_BUILDING_FOREST_LIMIT = 240;
-
-  RADIUS = 5;
-  MAX_DIST = RADIUS+1; // When is max radius = 5 and max distance = 6 and use KMDistanceAbs it will give area similar to circle (without need to calculate euclidean distance!)
-  MIN_POINTS_CNT = 3;
+  //RADIUS = 5;
+  //MAX_DIST = RADIUS+1; // When is max radius = 5 and max distance = 6 and use KMDistanceAbs it will give area similar to circle (without need to calculate euclidean distance!)
 
   UNVISITED_TILE = 0;
   VISITED_TILE = 1;
@@ -802,6 +806,7 @@ const
 var
   PartOfForest: Boolean;
   Ownership, AvoidBulding: Byte;
+  RADIUS, MAX_DIST: Word;
   I,K,X,Y, Distance, SparePointsCnt: Integer;
   Cnt: Single;
   Point, sumPoint: TKMPoint;
@@ -811,6 +816,9 @@ var
 begin
   aForests.Clear;
   Polygons := gAIFields.NavMesh.Polygons;
+
+  RADIUS := Round(GA_EYE_GetForests_Radius);
+  MAX_DIST := RADIUS + 1;
 
   // Init visit array
   SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
@@ -823,7 +831,7 @@ begin
   for I := 0 to Length(Polygons) - 1 do
   begin
     Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
-    if (Ownership > OWNERSHIP_LIMIT) then
+    if (Ownership > GA_EYE_GetForests_OwnLimit) then
     begin
       for K := Polygons[I].Poly2PointStart to Polygons[I].Poly2PointCnt - 1 do
       begin
@@ -836,7 +844,7 @@ begin
             AvoidBulding := gAIFields.Influences.AvoidBuilding[Point.Y,Point.X];
             if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
               VisitArr[Point.Y,Point.X] := UNVISITED_TREE
-            else if (AvoidBulding < AVOID_BUILDING_FOREST_LIMIT) then
+            else if (AvoidBulding < GA_EYE_GetForests_InflLimit) then
               VisitArr[Point.Y,Point.X] := UNVISITED_TREE_IN_FOREST
             else
               VisitArr[Point.Y,Point.X] := VISITED_TILE; // Tree in full forest -> ignore it
@@ -845,7 +853,7 @@ begin
             VisitArr[Point.Y,Point.X] := VISITED_TILE;
         end;
       end;
-      if (Ownership < RANDOM_POINTS_OWNERSHIP_LIMIT) AND (SparePointsCnt < High(SparePoints)) AND (KaMRandom() > 0.7) then
+      if (Ownership < GA_EYE_GetForests_RndOwnLim) AND (SparePointsCnt < High(SparePoints)) AND (KaMRandom() > 0.7) then
       begin
         SparePoints[SparePointsCnt] := I;
         SparePointsCnt := SparePointsCnt + 1;
@@ -870,7 +878,7 @@ begin
             if (VisitArr[Y,X] >= UNVISITED_TREE) then // Detect tree
             begin
               Distance := KMDistanceAbs(Point, KMPoint(X,Y));
-              if (Distance < MAX_DIST) then // Check distance
+              if (Distance < MAX_DIST + 1) then // Check distance
               begin
                 Cnt := Cnt + 1;
                 sumPoint := KMPointAdd(sumPoint, KMPoint(X,Y));
@@ -883,11 +891,11 @@ begin
                 end;
               end;
             end;
-          if (Cnt > MIN_POINTS_CNT) then
+          if (Cnt > GA_EYE_GetForests_MinTrees) then
           begin
             Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-            aForests.Add( Point, Round(Cnt) );
-            aForests.Tag2[aForests.Count-1] := Cardinal(PartOfForest);
+            aForests.Add( Point, Cardinal(PartOfForest) );
+            aForests.Tag2[aForests.Count-1] := Round(Cnt);
           end;
         end;
       end;
@@ -985,16 +993,128 @@ procedure TKMEye.Paint(aRect: TKMRect);
       NodeArr[ PolyArr[aIdx].Indices[2] ].Loc.X,
       NodeArr[ PolyArr[aIdx].Indices[2] ].Loc.Y, aColor);
   end;
+
+  {
+  procedure pom();
+  begin
+    // Scan tiles inside house plan
+    for I := Low(fHousesMapping[aHT].Tiles) to High(fHousesMapping[aHT].Tiles) do
+    begin
+      Point := KMPoint(X,Y);
+
+      // Check with AvoidBuilding array to secure that new house will not be build in forests / coal tiles
+      if aIgnoreAvoidBuilding then
+      begin
+        if not aIgnoreLocks AND
+          ((gAIFields.Influences.AvoidBuilding[Y, X] = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)
+            OR (gAIFields.Influences.AvoidBuilding[Y, X] = AVOID_BUILDING_HOUSE_INSIDE_LOCK)) then
+        Exit;
+      end
+      else if (gAIFields.Influences.AvoidBuilding[Y, X] > 0) then
+        Exit;
+
+      //This tile must not contain fields/houseplans of allied players
+      for PL := 0 to gHands.Count - 1 do
+        if (gHands[fOwner].Alliances[PL] = at_Ally) then// AND (PL <> fOwner) then
+          if (gHands[PL].BuildList.FieldworksList.HasField(Point) <> ftNone) then
+            Exit;
+    end;
+
+    // Scan tiles in distance 1 from house plan
+    LeftSideFree := True;
+    RightSideFree := True;
+    I := 1;
+    for Dir := Low(fHousesMapping[aHT].Surroundings[I]) to High(fHousesMapping[aHT].Surroundings[I]) do
+    for K := Low(fHousesMapping[aHT].Surroundings[I,Dir]) to High(fHousesMapping[aHT].Surroundings[I,Dir]) do
+    begin
+      Y := aLoc.Y + fHousesMapping[aHT].Surroundings[I,Dir,K].Y;
+      X := aLoc.X + fHousesMapping[aHT].Surroundings[I,Dir,K].X;
+      Point := KMPoint(X,Y);
+      // Surrounding tiles must not be a house
+      for PL := 0 to gHands.Count - 1 do
+        if (gHands[fOwner].Alliances[PL] = at_Ally) then
+          if gHands[PL].BuildList.HousePlanList.HasPlan(Point) then
+            Exit;
+      if (aHT in [htGoldMine, htIronMine]) then
+        continue;
+      // Make sure we can add road below house;
+      // Woodcutters / CoalMine / Towers may take place for mine so its arena must be scaned completely
+      if (  // Direction south + not in case of house reservation OR specific house which can be build in avoid build areas
+           ((Dir = dirS) AND not aIgnoreAvoidBuilding) OR (aHT in [htQuary, htWoodcutters, htCoalMine, htWatchTower])
+         ) AND not CheckRoad(X,Y) then
+        Exit
+      // For "normal" houses there must be at least 1 side also free (on the left or right from house plan)
+      else if ((Dir = dirE) AND not aIgnoreAvoidBuilding) then // Direction east for other houses
+        RightSideFree := RightSideFree AND CheckRoad(X,Y)
+      else if ((Dir = dirW) AND not aIgnoreAvoidBuilding) then // Direction west for other houses
+        LeftSideFree := LeftSideFree AND CheckRoad(X,Y);
+      if not (LeftSideFree AND RightSideFree) then
+        Exit;
+    end;
+  end
+  //}
+
+
+
 const
-  COLOR_WHITE = $80FFFFFF;
-  COLOR_BLACK = $80000000;
-  COLOR_GREEN = $CC00FF00;
-  COLOR_RED = $800000FF;
-  COLOR_YELLOW = $8000FFFF;
-  COLOR_BLUE = $80FF0000;
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $8000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+
+  NO_BUILD = 0;
+  BUILD = 1;
+  TREE = 2;
+  FOREST = 3;
+  COAL = 4;
+  RESERVE = 5;
 //var
 //  I: Integer;
+//  aIgnoreTrees: Boolean;
+//  AB: Byte;
+//  X,Y: Integer;
+//  VisitArr: TKMByte2Array;
 begin
+  //aIgnoreTrees := True;
+  //
+  //SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
+  //for Y := 1 to gTerrain.MapY - 1 do
+  //  for X := 1 to gTerrain.MapX - 1 do
+  //  begin
+  //    VisitArr[Y,X] := NO_BUILD;
+  //    if (tpBuild in gTerrain.Land[Y,X].Passability) then
+  //      VisitArr[Y,X] := BUILD
+  //    else if (aIgnoreTrees
+  //          AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])
+  //          AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftWine))then
+  //      VisitArr[Y,X] := TREE;
+  //    AB := gAIFields.Influences.AvoidBuilding[Y, X];
+  //    if (AB = AVOID_BUILDING_COAL_TILE) then
+  //    begin
+  //      if (VisitArr[Y,X] = TREE) then
+  //        VisitArr[Y,X] := NO_BUILD
+  //      else
+  //        VisitArr[Y,X] := COAL;
+  //    end
+  //    else if (AB > AVOID_BUILDING_FOREST_MINIMUM) then
+  //      VisitArr[Y,X] := FOREST
+  //    else if (AB > 0) then
+  //      VisitArr[Y,X] := RESERVE
+  //  end;
+  //
+  //for Y := 1 to gTerrain.MapY - 1 do
+  //  for X := 1 to gTerrain.MapX - 1 do
+  //    case VisitArr[Y,X] of
+  //      BUILD:  gRenderAux.Quad(X, Y, $66000000 OR COLOR_YELLOW);
+  //      TREE: gRenderAux.Quad(X, Y, $DD000000 OR COLOR_GREEN);
+  //      FOREST: gRenderAux.Quad(X, Y, $66000000 OR COLOR_GREEN);
+  //      COAL: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
+  //      RESERVE: gRenderAux.Quad(X, Y, $66000000 OR COLOR_RED);
+  //      else begin end;
+  //    end;
+
   { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
     DrawTriangle(I, $FF00FF OR (Min($FF,Round(fCoalPolygons[I]*5)) shl 24));
