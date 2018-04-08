@@ -288,7 +288,7 @@ end;
 
 // Update ware derivation - 2 views:
 // 1. Exhaustion = estimation of time when will be ware depleted (determine which house should be built at first)
-// 2. Fraction = fraction of required and avaiable houses
+// 2. Fraction = fraction of required and available houses
 procedure TKMCityPredictor.UpdateWareDerivation(aWT: TKMWareType; aInitialization: Boolean = False);
 var
   HouseReqCnt: Integer;
@@ -439,7 +439,7 @@ begin
   for WT in IRON_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
-  // Wood weapons (depends on avaiable space) - here is maximal possible production in this loc
+  // Wood weapons (depends on available space) - here is maximal possible production in this loc
   MaxWoodWeapProd := Round(Min(aFieldCnt,aBuildCnt) * GA_PREDICTOR_CityInitialization_Fertility);
   // Consider peace time
   MaxWoodWeapProd := Max(1, MaxWoodWeapProd * PeaceFactor);
