@@ -231,21 +231,21 @@ end;
 procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
 var
   X,Y: Integer;
-  Dist, MaxDist: Single;
+  SqrDist, SqrMaxDist: Single;
 begin
   if (aRad = 0) then
     Exit;
-  MaxDist := Sqr(aRad);
+  SqrMaxDist := Sqr(aRad);
   for Y := Max(aY - Ceil(aRad), 1) to Min(aY + Ceil(aRad), fMapY - 1) do
   for X := Max(aX - Ceil(aRad), 1) to Min(aX + Ceil(aRad), fMapX - 1) do
     if (AvoidBuilding[Y,X] = 0) OR (AvoidBuilding[Y,X] >= AVOID_BUILDING_FOREST_MINIMUM) then // Protect reservation tiles
     begin
-      Dist := Sqr(aX-X) + Sqr(aY-Y);
-      if (Dist <= MaxDist) then
+      SqrDist := Sqr(aX-X) + Sqr(aY-Y);
+      if (SqrDist <= SqrMaxDist) then
       begin
         if aDecreasing then
           //AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round((1 - Dist * MaxDistInv) * aValue)), 255)
-          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - Dist * aDecreaseSpeed)), 255)
+          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseSpeed)), 255)
         else
           AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + aValue, 255);
       end;
@@ -281,7 +281,7 @@ procedure TKMInfluences.InitAvoidBuilding();
         Exit;
       end;
   end;
-
+  // New AI does not use flood fill -> unreachable areas must be detected and building of houses must be avoided here
   procedure InitReachableArea();
   var
     PL: TKMHandIndex;
@@ -450,7 +450,7 @@ begin
 
     if (Cnt > 0) then
       //fFloodFill.MilitaryPresence(aPL, gAIFields.Eye.ArmyEvaluation.GroupStrength(G), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
-      fFloodFill.MilitaryPresence(aPL, Max(G.Count,30), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+      fFloodFill.MilitaryPresence(aPL, Min(G.Count,30), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
   end;
 end;
 
@@ -703,6 +703,24 @@ procedure TKMInfluences.AfterMissionInit();
       //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
     end;
   end;
+  //procedure InitAreas();
+  //const
+  //  RAD = 4;
+  //  MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
+  //  COEF = Round(255 / MAX_ELEMENTS - 0.5);
+  //var
+  //  X,Y, X0,Y0, cnt: Integer;
+  //begin
+  //  for Y := 1 to fMapY - 1 do
+  //  for X := 1 to fMapX - 1 do
+  //  begin
+  //    cnt := MAX_ELEMENTS;
+  //    for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
+  //    for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
+  //      cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+  //    fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+  //  end;
+  //end;
   //procedure InitNavMeshAreas();
   //var
   //  WAD: TKMWalkableAreasDetector;
