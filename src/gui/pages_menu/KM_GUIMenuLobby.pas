@@ -186,7 +186,7 @@ uses
   KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp;
 
 const
-  RESET_BANS_COOLDOWN = 2000;
+  RESET_BANS_COOLDOWN = 1000;
   SPEED_MAX_VALUE = 2.5;
   SPEED_STEP = 0.1;
 
