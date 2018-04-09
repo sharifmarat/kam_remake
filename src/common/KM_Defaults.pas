@@ -843,7 +843,11 @@ const
 
   clMinimapSelf = icRed;
   clMinimapAlly = icYellow;
-  clMinimapEnemy = icBlue;
+  clMinimapEnemy = icCyan;
+
+  clGameSelf = icRed;
+  clGameAlly = icYellow;
+  clGameEnemy = icCyan;
 
 var
   ExeDir: UnicodeString;

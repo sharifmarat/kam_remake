@@ -107,11 +107,17 @@ type
     fReplayShowBeacons: Boolean; //Replay variable - show beacons during replay
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
     fShowGameTime: Boolean;      //Show game time label (always)
+
     fShowPlayersColorOnMinimap: Boolean; //Show player colors on minimap, if false then show enemy/ally colors
+    fShowPlayersColorInGame: Boolean; //Show player colors in game, if false then show enemy/ally colors
 
     fMinimapColorSelf: Cardinal;
     fMinimapColorAlly: Cardinal;
     fMinimapColorEnemy: Cardinal;
+
+    fGameColorSelf: Cardinal;
+    fGameColorAlly: Cardinal;
+    fGameColorEnemy: Cardinal;
 
     fBrightness: Byte;
     fScrollSpeed: Byte;
@@ -174,10 +180,16 @@ type
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
+
     procedure SetShowPlayersColorOnMinimap(aValue: Boolean);
+    procedure SetShowPlayersColorInGame(aValue: Boolean);
     procedure SetMinimapColorSelf(aValue: Cardinal);
     procedure SetMinimapColorAlly(aValue: Cardinal);
     procedure SetMinimapColorEnemy(aValue: Cardinal);
+    procedure SetGameColorSelf(aValue: Cardinal);
+    procedure SetGameColorAlly(aValue: Cardinal);
+    procedure SetGameColorEnemy(aValue: Cardinal);
+
     procedure SetBrightness(aValue: Byte);
     procedure SetScrollSpeed(aValue: Byte);
     procedure SetAlphaShadows(aValue: Boolean);
@@ -241,10 +253,16 @@ type
     property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
+
     property ShowPlayersColorOnMinimap: Boolean read fShowPlayersColorOnMinimap write SetShowPlayersColorOnMinimap;
+    property ShowPlayersColorInGame: Boolean read fShowPlayersColorInGame write SetShowPlayersColorInGame;
     property MinimapColorSelf: Cardinal read fMinimapColorSelf write SetMinimapColorSelf;
     property MinimapColorAlly: Cardinal read fMinimapColorAlly write SetMinimapColorAlly;
     property MinimapColorEnemy: Cardinal read fMinimapColorEnemy write SetMinimapColorEnemy;
+    property GameColorSelf: Cardinal read fGameColorSelf write SetGameColorSelf;
+    property GameColorAlly: Cardinal read fGameColorAlly write SetGameColorAlly;
+    property GameColorEnemy: Cardinal read fGameColorEnemy write SetGameColorEnemy;
+
     property Brightness: Byte read fBrightness write SetBrightness;
     property ScrollSpeed: Byte read fScrollSpeed write SetScrollSpeed;
     property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
@@ -496,9 +514,10 @@ begin
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
-    fShowPlayersColorOnMinimap := F.ReadBool     ('Game', 'ShowPlayersColorOnMinimap', True);
+    fShowPlayersColorOnMinimap := F.ReadBool('Game', 'ShowPlayersColorOnMinimap', True); //Enabled by default
+    fShowPlayersColorOnMinimap := F.ReadBool('Game', 'ShowPlayersColorInGame', True); //Enabled by default
 
-    //Load minima colors as hex strings 6-hex digits width
+    //Load minimap colors as hex strings 6-hex digits width
     if TryStrToInt64('$' + F.ReadString('Game', 'MinimapColorSelf', IntToHex(Integer(clMinimapSelf and $FFFFFF), 6)), TempCard) then
       fMinimapColorSelf := $FF000000 or TempCard
     else
@@ -513,6 +532,22 @@ begin
       fMinimapColorEnemy := $FF000000 or TempCard
     else
       fMinimapColorEnemy := clMinimapEnemy;
+
+    //Load game colors as hex strings 6-hex digits width
+    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorSelf', IntToHex(Integer(clGameSelf and $FFFFFF), 6)), TempCard) then
+      fGameColorSelf := $FF000000 or TempCard
+    else
+      fGameColorSelf := clGameSelf;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorAlly', IntToHex(Integer(clGameAlly and $FFFFFF), 6)), TempCard) then
+      fGameColorAlly := $FF000000 or TempCard
+    else
+      fGameColorAlly := clGameAlly;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorEnemy', IntToHex(Integer(clGameEnemy and $FFFFFF), 6)), TempCard) then
+      fGameColorEnemy := $FF000000 or TempCard
+    else
+      fGameColorEnemy := clGameEnemy;
 
     fScrollSpeed        := F.ReadInteger  ('Game', 'ScrollSpeed',       10);
     fSpeedPace          := F.ReadInteger  ('Game', 'SpeedPace',         100);
@@ -605,10 +640,15 @@ begin
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
 
     F.WriteBool   ('Game','ShowPlayersColorOnMinimap', fShowPlayersColorOnMinimap);
+    F.WriteBool   ('Game','ShowPlayersColorInGame', fShowPlayersColorInGame);
 
     F.WriteString ('Game','MinimapColorSelf',   IntToHex(fMinimapColorSelf and $FFFFFF, 6));
     F.WriteString ('Game','MinimapColorAlly',   IntToHex(fMinimapColorAlly and $FFFFFF, 6));
     F.WriteString ('Game','MinimapColorEnemy',  IntToHex(fMinimapColorEnemy and $FFFFFF, 6));
+
+    F.WriteString ('Game','GameColorSelf',   IntToHex(fGameColorSelf and $FFFFFF, 6));
+    F.WriteString ('Game','GameColorAlly',   IntToHex(fGameColorAlly and $FFFFFF, 6));
+    F.WriteString ('Game','GameColorEnemy',  IntToHex(fGameColorEnemy and $FFFFFF, 6));
 
     F.WriteInteger('Game','ScrollSpeed',        fScrollSpeed);
     F.WriteInteger('Game','SpeedPace',          fSpeedPace);
@@ -888,6 +928,13 @@ begin
 end;
 
 
+procedure TKMGameSettings.SetShowPlayersColorInGame(aValue: Boolean);
+begin
+  fShowPlayersColorInGame := aValue;
+  Changed;
+end;
+
+
 procedure TKMGameSettings.SetMinimapColorSelf(aValue: Cardinal);
 begin
   fMinimapColorSelf := aValue;
@@ -907,6 +954,28 @@ begin
   fMinimapColorEnemy := aValue;
   Changed;
 end;
+
+
+procedure TKMGameSettings.SetGameColorSelf(aValue: Cardinal);
+begin
+  fGameColorSelf := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetGameColorAlly(aValue: Cardinal);
+begin
+  fGameColorAlly := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetGameColorEnemy(aValue: Cardinal);
+begin
+  fGameColorEnemy := aValue;
+  Changed;
+end;
+
 
 
 procedure TKMGameSettings.SetScrollSpeed(aValue: Byte);

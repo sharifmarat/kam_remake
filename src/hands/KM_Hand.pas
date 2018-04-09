@@ -75,6 +75,7 @@ type
     procedure UnitTrained(aUnit: TKMUnit);
     procedure WarriorWalkedOut(aUnit: TKMUnitWarrior);
     function LocHasNoAllyPlans(aLoc: TKMPoint): Boolean;
+    function GetFlagColor: Cardinal;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -101,7 +102,8 @@ type
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
-    property FlagColor: Cardinal read fFlagColor write fFlagColor;
+    property FlagColor: Cardinal read GetFlagColor write fFlagColor;
+    property DefaultFlagColor: Cardinal read fFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
     property Alliances[aIndex: Integer]: TKMAllianceType read GetAlliances write SetAlliances;
     property ShareFOW[aIndex: Integer]: Boolean read GetShareFOW write SetShareFOW;
@@ -178,7 +180,7 @@ type
 implementation
 uses
   Classes, SysUtils, KromUtils, Math,
-  KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
+  KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ScriptingEvents,
   KM_GameTypes;
@@ -603,6 +605,24 @@ begin
     if (I <> fHandIndex) and (fAlliances[I] = at_Ally) then
       Result := Result and (gHands[i].fBuildList.FieldworksList.HasField(aLoc) = ftNone)
                        and not gHands[i].fBuildList.HousePlanList.HasPlan(aLoc);
+end;
+
+
+function TKMHand.GetFlagColor: Cardinal;
+begin
+  Result := fFlagColor;
+  if (gGame <> nil) then
+  begin
+    if not gGame.IsMapEditor and not gGameApp.GameSettings.ShowPlayersColorInGame then
+    begin
+      if HandIndex = gMySpectator.HandIndex then
+        Result := gGameApp.GameSettings.GameColorSelf
+      else if (Alliances[gMySpectator.HandIndex] = at_Ally) then
+        Result := gGameApp.GameSettings.GameColorAlly
+      else
+        Result := gGameApp.GameSettings.GameColorEnemy;
+    end;
+  end;
 end;
 
 
