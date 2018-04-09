@@ -852,7 +852,7 @@ var
 
   function OrderAttackHouse(): Boolean;
   const
-    INIT_THREAT = -1000000;
+    INIT_THREAT = 1000000;
     SQR_CLOSE_COMBAT_DISTANCE_LIMIT = 12*12;
     MAX_SOLDIERS_VS_HOUSE = 12;
     ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5;
@@ -884,7 +884,7 @@ var
           AND HA[K].HasOwner then // Ignore towers without stone and without recruit inside
         begin
           Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
-          if (Dist > BestDist) then
+          if (Dist < BestDist) then
           begin
             BestDist := Dist;
             TargetIdx := K;
@@ -921,7 +921,7 @@ var
             AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE) then
           begin
             Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
-            if (Dist > BestDist) AND (Dist <= SQR_CLOSE_COMBAT_DISTANCE_LIMIT) then
+            if (Dist < BestDist) AND (Dist <= SQR_CLOSE_COMBAT_DISTANCE_LIMIT) then
             begin
               BestDist := Dist;
               TargetIdx := K;
