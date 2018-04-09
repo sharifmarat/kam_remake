@@ -107,6 +107,12 @@ type
     fReplayShowBeacons: Boolean; //Replay variable - show beacons during replay
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
     fShowGameTime: Boolean;      //Show game time label (always)
+    fShowPlayersColorOnMinimap: Boolean; //Show player colors on minimap, if false then show enemy/ally colors
+
+    fMinimapColorSelf: Cardinal;
+    fMinimapColorAlly: Cardinal;
+    fMinimapColorEnemy: Cardinal;
+
     fBrightness: Byte;
     fScrollSpeed: Byte;
     fAlphaShadows: Boolean;
@@ -168,6 +174,10 @@ type
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
+    procedure SetShowPlayersColorOnMinimap(aValue: Boolean);
+    procedure SetMinimapColorSelf(aValue: Cardinal);
+    procedure SetMinimapColorAlly(aValue: Cardinal);
+    procedure SetMinimapColorEnemy(aValue: Cardinal);
     procedure SetBrightness(aValue: Byte);
     procedure SetScrollSpeed(aValue: Byte);
     procedure SetAlphaShadows(aValue: Boolean);
@@ -231,6 +241,10 @@ type
     property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
+    property ShowPlayersColorOnMinimap: Boolean read fShowPlayersColorOnMinimap write SetShowPlayersColorOnMinimap;
+    property MinimapColorSelf: Cardinal read fMinimapColorSelf write SetMinimapColorSelf;
+    property MinimapColorAlly: Cardinal read fMinimapColorAlly write SetMinimapColorAlly;
+    property MinimapColorEnemy: Cardinal read fMinimapColorEnemy write SetMinimapColorEnemy;
     property Brightness: Byte read fBrightness write SetBrightness;
     property ScrollSpeed: Byte read fScrollSpeed write SetScrollSpeed;
     property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
@@ -465,6 +479,7 @@ end;
 function TKMGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
+  TempCard: Int64;
 begin
   Result := FileExists(FileName);
 
@@ -481,6 +496,24 @@ begin
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
+    fShowPlayersColorOnMinimap := F.ReadBool     ('Game', 'ShowPlayersColorOnMinimap', True);
+
+    //Load minima colors as hex strings 6-hex digits width
+    if TryStrToInt64('$' + F.ReadString('Game', 'MinimapColorSelf', IntToHex(Integer(clMinimapSelf and $FFFFFF), 6)), TempCard) then
+      fMinimapColorSelf := $FF000000 or TempCard
+    else
+      fMinimapColorSelf := clMinimapSelf;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'MinimapColorAlly', IntToHex(Integer(clMinimapAlly and $FFFFFF), 6)), TempCard) then
+      fMinimapColorAlly := $FF000000 or TempCard
+    else
+      fMinimapColorAlly := clMinimapAlly;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'MinimapColorEnemy', IntToHex(Integer(clMinimapEnemy and $FFFFFF), 6)), TempCard) then
+      fMinimapColorEnemy := $FF000000 or TempCard
+    else
+      fMinimapColorEnemy := clMinimapEnemy;
+
     fScrollSpeed        := F.ReadInteger  ('Game', 'ScrollSpeed',       10);
     fSpeedPace          := F.ReadInteger  ('Game', 'SpeedPace',         100);
     fSpeedMedium        := F.ReadFloat    ('Game', 'SpeedMedium',       3);
@@ -570,6 +603,13 @@ begin
     F.WriteBool   ('Game','ReplayShowBeacons',  fReplayShowBeacons);
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
+
+    F.WriteBool   ('Game','ShowPlayersColorOnMinimap', fShowPlayersColorOnMinimap);
+
+    F.WriteString ('Game','MinimapColorSelf',   IntToHex(fMinimapColorSelf and $FFFFFF, 6));
+    F.WriteString ('Game','MinimapColorAlly',   IntToHex(fMinimapColorAlly and $FFFFFF, 6));
+    F.WriteString ('Game','MinimapColorEnemy',  IntToHex(fMinimapColorEnemy and $FFFFFF, 6));
+
     F.WriteInteger('Game','ScrollSpeed',        fScrollSpeed);
     F.WriteInteger('Game','SpeedPace',          fSpeedPace);
     F.WriteFloat  ('Game','SpeedMedium',        fSpeedMedium);
@@ -837,6 +877,34 @@ end;
 procedure TKMGameSettings.SetShowGameTime(aValue: Boolean);
 begin
   fShowGameTime := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetShowPlayersColorOnMinimap(aValue: Boolean);
+begin
+  fShowPlayersColorOnMinimap := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMinimapColorSelf(aValue: Cardinal);
+begin
+  fMinimapColorSelf := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMinimapColorAlly(aValue: Cardinal);
+begin
+  fMinimapColorAlly := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetMinimapColorEnemy(aValue: Cardinal);
+begin
+  fMinimapColorEnemy := aValue;
   Changed;
 end;
 

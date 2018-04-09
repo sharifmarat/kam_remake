@@ -841,6 +841,10 @@ const
 
   clChkboxOutline = icLightGrayTrans;
 
+  clMinimapSelf = icRed;
+  clMinimapAlly = icYellow;
+  clMinimapEnemy = icBlue;
+
 var
   ExeDir: UnicodeString;
 

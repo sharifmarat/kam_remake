@@ -1196,3 +1196,5 @@ TX_PLAYER_HOST = 1184; //Host
 TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
 
 TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit
+
+TX_MINIMAP_COLOR_MODE = 1187; //Minimap player color mode: player color or self/ally/enemy color
