@@ -159,7 +159,7 @@ type
     function FindOre(aLoc: TKMPoint; aRes: TKMWareType; out OrePoint: TKMPoint): Boolean;
     procedure FindOrePoints(aLoc: TKMPoint; aRes: TKMWareType; var aPoints: TKMPointListArray);
     procedure FindOrePointsByDistance(aLoc: TKMPoint; aRes: TKMWareType; var aPoints: TKMPointListArray);
-    function CanFindTree(aLoc: TKMPoint; aRadius: Word):Boolean;
+    function CanFindTree(aLoc: TKMPoint; aRadius: Word; aOnlyAgeFull: Boolean = False):Boolean; 
     procedure FindTree(aLoc: TKMPoint; aRadius: Word; aAvoidLoc: TKMPoint; aPlantAct: TKMPlantAct; Trees: TKMPointDirList; BestToPlant,SecondBestToPlant: TKMPointList);
     function FindFishWater(aLoc: TKMPoint; aRadius:integer; aAvoidLoc: TKMPoint; aIgnoreWorkingUnits:Boolean; out FishPoint: TKMPointDir): Boolean;
     function CanFindFishingWater(aLoc: TKMPoint; aRadius:integer): Boolean;
@@ -1995,7 +1995,7 @@ begin
 end;
 
 
-function TKMTerrain.CanFindTree(aLoc: TKMPoint; aRadius: Word): Boolean;
+function TKMTerrain.CanFindTree(aLoc: TKMPoint; aRadius: Word; aOnlyAgeFull: Boolean = False): Boolean;
 var
   ValidTiles: TKMPointList;
   I: Integer;
@@ -2012,9 +2012,14 @@ begin
     T := ValidTiles[I];
 
     if (KMLengthDiag(aLoc, T) <= aRadius)
-    //Any age tree will do
-    and (ObjectIsChopableTree(T, caAge1) or ObjectIsChopableTree(T, caAge2) or
-         ObjectIsChopableTree(T, caAge3) or ObjectIsChopableTree(T, caAgeFull))
+    // Only full age
+    and ( (aOnlyAgeFull and ObjectIsChopableTree(T, caAgeFull))
+    // Any age tree will do
+          or (not aOnlyAgeFull and (
+            ObjectIsChopableTree(T, caAge1) or ObjectIsChopableTree(T, caAge2) or
+            ObjectIsChopableTree(T, caAge3) or ObjectIsChopableTree(T, caAgeFull) )
+          )
+        )
     and Route_CanBeMadeToVertex(aLoc, T, tpWalk)
     and ChooseCuttingDirection(aLoc, T, CuttingPoint) then
     begin
@@ -2023,7 +2028,7 @@ begin
     end;
   end;
   ValidTiles.Free;
-end;
+end; 
 
 
 //Return location of a Tree or a place to plant a tree depending on TreeAct
