@@ -836,7 +836,7 @@ begin
   UnitPos.X := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
   UnitPos.Y := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
-  gRenderPool.AddUnit(fUnitType, fUID, Act, Direction, AnimStep, UnitPos.X, UnitPos.Y, gHands[fOwner].FlagColor, True);
+  gRenderPool.AddUnit(fUnitType, fUID, Act, Direction, AnimStep, UnitPos.X, UnitPos.Y, gHands[fOwner].GameFlagColor, True);
 
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, UnitPos.X, UnitPos.Y);

@@ -1708,7 +1708,7 @@ begin
                       gRenderPool.AddHouse(fHouseType, fPosition, 1, 1, 0);
                     gRenderPool.AddHouseSupply(fHouseType, fPosition, fResourceIn, fResourceOut, fResourceOutPool);
                     if CurrentAction <> nil then
-                      gRenderPool.AddHouseWork(fHouseType, fPosition, CurrentAction.SubAction, WorkAnimStep, gHands[fOwner].FlagColor);
+                      gRenderPool.AddHouseWork(fHouseType, fPosition, CurrentAction.SubAction, WorkAnimStep, gHands[fOwner].GameFlagColor);
                   end
                   else
                     gRenderPool.AddHouse(fHouseType, fPosition,
@@ -1793,7 +1793,7 @@ begin
   if CurrentAction <> nil then
     gRenderPool.AddHouseWork(fHouseType, fPosition,
                             CurrentAction.SubAction * [ha_Work1, ha_Work2, ha_Work3, ha_Work4, ha_Work5],
-                            WorkAnimStep, gHands[fOwner].FlagColor);
+                            WorkAnimStep, gHands[fOwner].GameFlagColor);
 end;
 
 

@@ -75,7 +75,7 @@ type
     procedure UnitTrained(aUnit: TKMUnit);
     procedure WarriorWalkedOut(aUnit: TKMUnitWarrior);
     function LocHasNoAllyPlans(aLoc: TKMPoint): Boolean;
-    function GetFlagColor: Cardinal;
+    function GetGameFlagColor: Cardinal;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -102,8 +102,8 @@ type
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
-    property FlagColor: Cardinal read GetFlagColor write fFlagColor;
-    property DefaultFlagColor: Cardinal read fFlagColor;
+    property FlagColor: Cardinal read fFlagColor write fFlagColor;
+    property GameFlagColor: Cardinal read GetGameFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
     property Alliances[aIndex: Integer]: TKMAllianceType read GetAlliances write SetAlliances;
     property ShareFOW[aIndex: Integer]: Boolean read GetShareFOW write SetShareFOW;
@@ -608,7 +608,7 @@ begin
 end;
 
 
-function TKMHand.GetFlagColor: Cardinal;
+function TKMHand.GetGameFlagColor: Cardinal;
 begin
   Result := fFlagColor;
   if (gGame <> nil) then

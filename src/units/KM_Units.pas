@@ -500,16 +500,16 @@ begin
   case fCurrentAction.fActionType of
     ua_Walk:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
         if gRes.Units[fUnitType].SupportsAction(ua_WalkArm) then
-          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
     ua_Work..ua_Eat:
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
     ua_WalkArm .. ua_WalkBooty2:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
   end;
 
@@ -641,16 +641,16 @@ begin
   case fCurrentAction.fActionType of
     ua_Walk:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
         if gRes.Units[fUnitType].SupportsAction(ua_WalkArm) then
-          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
     ua_Work..ua_Eat:
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
     ua_WalkArm .. ua_WalkBooty2:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
   end;
 
@@ -754,14 +754,14 @@ begin
 
   ID := fUID * Byte(not (fCurrentAction.fActionType in [ua_Die, ua_Eat]));
 
-  gRenderPool.AddUnit(UnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+  gRenderPool.AddUnit(UnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
 
   if fUnitTask is TKMTaskDie then Exit; //Do not show unnecessary arms
 
   if Carry <> wt_None then
     gRenderPool.AddUnitCarry(Carry, ID, Direction, AnimStep, XPaintPos, YPaintPos)
   else
-    gRenderPool.AddUnit(UnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+    gRenderPool.AddUnit(UnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
 
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, XPaintPos, YPaintPos);
@@ -895,7 +895,7 @@ begin
 
   ID := fUID * Byte(not (fCurrentAction.fActionType in [ua_Die, ua_Eat]));
 
-  gRenderPool.AddUnit(UnitType, ID, fCurrentAction.fActionType, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+  gRenderPool.AddUnit(UnitType, ID, fCurrentAction.fActionType, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
 
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, fCurrentAction.ActionType, Direction, fThought, XPaintPos, YPaintPos);

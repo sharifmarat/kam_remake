@@ -1703,7 +1703,7 @@ end;
 function TKMUnitGroup.GetFlagColor: Cardinal;
 begin
   //Highlight selected group
-  Result := gHands[FlagBearer.Owner].FlagColor;
+  Result := gHands[FlagBearer.Owner].GameFlagColor;
   if gMySpectator.Selected = Self then
     //If base color is brighter than $FFFF40 then use black highlight
     if (Result and $FF) + (Result shr 8 and $FF) + (Result shr 16 and $FF) > $240 then
@@ -1851,7 +1851,7 @@ end;
 
 procedure TKMUnitGroup.Paint;
 begin
-  PaintHighlighted(gHands[FlagBearer.Owner].FlagColor, FlagColor);
+  PaintHighlighted(gHands[FlagBearer.Owner].GameFlagColor, FlagColor);
 end;
 
 

@@ -200,7 +200,7 @@ procedure TKMMinimap.UpdateMinimapFromGame;
     if (gGame <> nil) then
     begin
       if (gGame.IsMapEditor or gGameApp.GameSettings.ShowPlayersColorOnMinimap) then
-        Result := gHands[aHandId].DefaultFlagColor
+        Result := gHands[aHandId].FlagColor
       else begin
         if aHandId = gMySpectator.HandIndex then
           Result := gGameApp.GameSettings.MinimapColorSelf
@@ -210,7 +210,7 @@ procedure TKMMinimap.UpdateMinimapFromGame;
           Result := gGameApp.GameSettings.MinimapColorEnemy;
       end;
     end else
-      Result := gHands[aHandId].DefaultFlagColor;
+      Result := gHands[aHandId].FlagColor;
   end;
 
 var

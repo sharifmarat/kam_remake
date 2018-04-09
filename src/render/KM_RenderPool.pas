@@ -427,7 +427,7 @@ begin
   begin
     HWFP := TKMHouseWFlagPoint(gMySpectator.Selected);
     if HWFP.IsFlagPointSet then
-      PaintRallyPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].FlagColor, HWFP.FlagPointTexId, aPass);
+      PaintRallyPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].GameFlagColor, HWFP.FlagPointTexId, aPass);
   end;
 end;
 

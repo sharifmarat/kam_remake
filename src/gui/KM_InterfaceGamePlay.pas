@@ -3714,6 +3714,7 @@ begin
   MinimapView.SetViewport(fViewport);
 
   ButtonFlat_AllyEnemyColorOnMM.Down := not gGameApp.GameSettings.ShowPlayersColorOnMinimap;
+  ButtonFlat_AllyEnemyColorInGame.Down := not gGameApp.GameSettings.ShowPlayersColorInGame;
 
   SetMenuState(gGame.MissionMode = mm_Tactic);
 end;
