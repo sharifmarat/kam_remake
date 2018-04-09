@@ -521,7 +521,7 @@ const
   WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
   WINEYARD_DELAY = 50 * 60 * 10;
 var
-  HT: TKMHouseType;
+//  HT: TKMHouseType;
   Stats: TKMHandStats;
   Planner: TKMCityPlanner;
 begin
