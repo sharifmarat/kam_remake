@@ -3,7 +3,7 @@ unit KM_CityManagement;
 interface
 uses
   Math, KM_CommonUtils, SysUtils, KM_Defaults, KM_CommonClasses, KM_Points,
-  KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats, KM_HouseCollection,
+  KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats,
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
@@ -62,7 +62,7 @@ type
 
 implementation
 uses
-  Classes, KM_Game, KM_Houses, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
+  Classes, KM_Game, KM_Houses, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket;
 
 
@@ -150,7 +150,7 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 70;
+  //gGame.GameOptions.Peacetime := 60;
   //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -583,6 +583,19 @@ procedure TKMCityManagement.WeaponsBalance();
 var
   EnemyEval, AllyEval: TKMArmyEval;
 
+  function ThirdRoot(aValue: Single): Single;
+  var
+     Output, X: Double;
+  begin
+     Output := Sqrt(aValue);
+     while (Abs( aValue - Power(Output, 3) ) > 0.1) do
+     begin
+        X := (1/3) * (((3-1) * Output) + (aValue/(Power(Output, 3 - 1))));
+        Output := X;
+     end;
+     Result := Output;
+  end;
+
   procedure ComputeGroupDemands(aGT: TKMGroupType; aIronRatio: Single);
   const
     // It doesnt depends on future "optimalization" of parameters: against cav should be always good pikes etc. so this array doesnt have to be computed
@@ -590,7 +603,7 @@ var
   var
     Wood, Iron: Boolean;
     I: Integer;
-    EnemyAttack, EnemyDefence, MyAttack, MyDefence, AttackReq, DefenceReq: Single;
+    EnemyStrength, UnitStrength, UnitsRequired: Single;
     UT: TKMUnitType;
     antiGT: TKMGroupType;
     UnitEval: TKMGroupEval;
@@ -617,33 +630,32 @@ var
 
     // Compute strength of specific enemy group
     with EnemyEval[aGT] do
-    begin
-      EnemyAttack := Attack + AttackHorse * Byte(antiGT = gt_Mounted);
-      EnemyDefence := ifthen( (antiGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
-    end;
+      EnemyStrength := (Attack + AttackHorse * Byte(antiGT = gt_Mounted))
+                        * ifthen( (antiGT = gt_Ranged), DefenceProjectiles, Defence )
+                        * HitPoints;
+
     // Decrease strength by owner's existing units
     with AllyEval[antiGT] do
-    begin
-      EnemyAttack := EnemyAttack - ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
-      EnemyDefence := EnemyDefence - Attack - AttackHorse * Byte(aGT = gt_Mounted);
-    end;
+      EnemyStrength := EnemyStrength - (Attack + AttackHorse * Byte(aGT = gt_Mounted))
+                                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
+                                        * HitPoints;
+
     // Compute unit requirements
     for I := 1 to 3 do
     begin
       UT := AITroopTrainOrder[antiGT,I];
-      // Skip unit type if case that it is blocked
+      // Skip unit type in case that it is blocked
       if (UT = ut_None) OR gHands[fOwner].Locks.GetUnitBlocked(UT) then
         continue;
       // Calculate required count of specific unit type
       UnitEval := gAIFields.Eye.ArmyEvaluation.UnitEvaluation[UT, True];
       with UnitEval do
-      begin
-        MyAttack := Attack + AttackHorse * Byte(aGT = gt_Mounted);
-        MyDefence := ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence) * HitPoints;
-      end;
-      AttackReq := EnemyAttack / MyDefence;
-      DefenceReq := EnemyDefence / MyAttack;
-      fWarriorsDemands[UT] := fWarriorsDemands[UT] + Max(0, Round(  Max(AttackReq, DefenceReq) * ifthen( (I = 1), aIronRatio, 1-aIronRatio )  )   );
+        UnitStrength := Attack + AttackHorse * Byte(aGT = gt_Mounted)
+                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
+                        * HitPoints;
+
+      UnitsRequired := ThirdRoot(EnemyStrength / UnitStrength) * ifthen( (I = 1), aIronRatio, 1-aIronRatio );
+      fWarriorsDemands[UT] := fWarriorsDemands[UT] + Max(0, Round(UnitsRequired)   );
       if (I = 2) then // In case that ut_AxeFighter is not blocked skip militia
         break;
     end;
@@ -651,7 +663,7 @@ var
 
   procedure CheckMinArmyReq();
   const
-    DEFAULT_COEFICIENT = 5;
+    DEFAULT_COEFICIENT = 15;
     DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Single = (
       1, 1, 1, 3,//ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
       3, 1, 1, 0.5,//ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
@@ -663,32 +675,37 @@ var
     I, WoodReq, IronReq: Integer;
     UT: TKMUnitType;
   begin
-    WoodReq := Max(+ fRequiredWeapons[wt_Armor].Available - fRequiredWeapons[wt_Armor].Required,
-                   + fRequiredWeapons[wt_Axe].Available - fRequiredWeapons[wt_Axe].Required
-                   + fRequiredWeapons[wt_Bow].Available - fRequiredWeapons[wt_Bow].Required
-                   + fRequiredWeapons[wt_Pike].Available - fRequiredWeapons[wt_Pike].Required
+    WoodReq := Max(+ fRequiredWeapons[wt_Armor].Required - fRequiredWeapons[wt_Armor].Available,
+                   + fRequiredWeapons[wt_Axe].Required - fRequiredWeapons[wt_Axe].Available
+                   + fRequiredWeapons[wt_Bow].Required - fRequiredWeapons[wt_Bow].Available
+                   + fRequiredWeapons[wt_Pike].Required - fRequiredWeapons[wt_Pike].Available
                   );
-    IronReq := Max(+ fRequiredWeapons[wt_MetalArmor].Available - fRequiredWeapons[wt_MetalArmor].Required,
-                   + fRequiredWeapons[wt_Sword].Available - fRequiredWeapons[wt_Sword].Required
-                   + fRequiredWeapons[wt_Arbalet].Available - fRequiredWeapons[wt_Arbalet].Required
-                   + fRequiredWeapons[wt_Hallebard].Available - fRequiredWeapons[wt_Hallebard].Required
+    if (WoodReq < 5) then
+    begin
+      WoodReq := Round((DEFAULT_COEFICIENT - WoodReq) / 5.0);
+      for UT in WOOD_ARMY do
+        if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
+                Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
+    end;
+
+    IronReq := Max(+ fRequiredWeapons[wt_MetalArmor].Required - fRequiredWeapons[wt_MetalArmor].Available,
+                   + fRequiredWeapons[wt_Sword].Required - fRequiredWeapons[wt_Sword].Available
+                   + fRequiredWeapons[wt_Arbalet].Required - fRequiredWeapons[wt_Arbalet].Available
+                   + fRequiredWeapons[wt_Hallebard].Required - fRequiredWeapons[wt_Hallebard].Available
                   );
-    WoodReq := Round((Max(0, WoodReq) + DEFAULT_COEFICIENT)/5.0);
-    IronReq := Round((Max(0, IronReq) + DEFAULT_COEFICIENT)/5.0);
-
-    for UT in WOOD_ARMY do
-      if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-        for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-          if (TroopCost[UT,I] <> wt_None) then
-            with fRequiredWeapons[ TroopCost[UT,I] ] do
-              Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
-
-    for UT in IRON_ARMY do
-      if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-        for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-          if (TroopCost[UT,I] <> wt_None) then
-            with fRequiredWeapons[ TroopCost[UT,I] ] do
-              Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
+    if (IronReq < 5) then
+    begin
+      IronReq := Round((DEFAULT_COEFICIENT - IronReq)/5.0);
+      for UT in IRON_ARMY do
+        if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
+                Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
+    end;
   end;
 //AITroopTrainOrder: array [TKMGroupType, 1..3] of TKMUnitType = (
 //  (ut_Swordsman,    ut_AxeFighter, ut_Militia),
