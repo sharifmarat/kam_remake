@@ -187,12 +187,8 @@ implementation
 uses
   KM_Game, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_Eye,
+  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_Eye, KM_ResUnits,
   KM_RenderAux, KM_ResMapElements;
-
-
-
-
 
 
 { TKMCityPlanner }
