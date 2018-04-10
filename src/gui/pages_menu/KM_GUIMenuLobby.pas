@@ -17,6 +17,7 @@ type
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fLastTimeResetBans: Cardinal;
+    fLastTimeAskReady: Cardinal;
 
     fMapsMP: TKMapsCollection;
     fSavesMP: TKMSavesCollection;
@@ -73,6 +74,8 @@ type
     procedure MapList_ScanUpdate(Sender: TObject);
     procedure MapList_ScanComplete(Sender: TObject);
 
+    procedure WakeUpNotReadyClick(Sender: TObject);
+
     procedure RefreshMapList(aJumpToSelected: Boolean);
     procedure RefreshSaveList(aJumpToSelected: Boolean);
     procedure MapChange(Sender: TObject);
@@ -101,6 +104,8 @@ type
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
     procedure Lobby_OnSetPassword(const aPassword: AnsiString);
 
+    procedure StartBtnChangeEnabled(aEnable: Boolean);
+
     function DetectMapType: Integer;
     procedure SettingsClick(Sender: TObject);
     procedure StartClick(Sender: TObject);
@@ -115,6 +120,7 @@ type
         Button_SettingsUseLastPassword: TKMButton;
         Checkbox_RememberPassword: TKMCheckbox;
         Button_SettingsResetBans: TKMButton;
+        Button_SettingsAskReady: TKMButton;
         Button_SettingsSave: TKMButton;
         Button_SettingsCancel: TKMButton;
 
@@ -187,6 +193,7 @@ uses
 
 const
   RESET_BANS_COOLDOWN = 1000;
+  ASK_READY_COOLDOWN = 1000;
   SPEED_MAX_VALUE = 2.5;
   SPEED_STEP = 0.1;
 
@@ -203,6 +210,9 @@ begin
   fMapsSortUpdateNeeded := False;
 
   fMinimap := TKMMinimap.Create(True, True);
+
+  fLastTimeResetBans := 0;
+  fLastTimeAskReady := 0;
 
   fMapsMP := TKMapsCollection.Create([mfMP, mfDL], smByNameDesc, True);
   fSavesMP := TKMSavesCollection.Create;
@@ -590,6 +600,7 @@ begin
     Button_Start := TKMButton.Create(Panel_Lobby, 500, 723, 220, 30, NO_TEXT, bsMenu);
     Button_Start.Anchors := [anLeft, anBottom];
     Button_Start.OnClick := StartClick;
+    Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
 
   UpdateSpectatorDivide;
 end;
@@ -654,9 +665,12 @@ begin
     Button_SettingsResetBans.OnClick := SettingsClick;
     Button_SettingsUseLastPassword.OnClick := SettingsClick;
 
-    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 260, 280, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
+    Button_SettingsAskReady := TKMButton.Create(Panel_Settings, 20, 260, 280, 30, gResTexts[TX_LOBBY_ALERT_READY_BTN], bsMenu);
+    Button_SettingsAskReady.OnClick := WakeUpNotReadyClick;
+    Button_SettingsAskReady.Enabled := False;
+    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
     Button_SettingsSave.OnClick := SettingsClick;
-    Button_SettingsCancel := TKMButton.Create(Panel_Settings, 20, 300, 280, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
+    Button_SettingsCancel := TKMButton.Create(Panel_Settings, 170, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
     Button_SettingsCancel.OnClick := SettingsClick;
 end;
 
@@ -1801,6 +1815,16 @@ begin
 end;
 
 
+procedure TKMMenuLobby.WakeUpNotReadyClick(Sender: TObject);
+begin
+  if GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN then
+  begin
+    fNetworking.WakeUpNotReady;
+    Button_SettingsAskReady.Disable;
+    fLastTimeAskReady := TimeGet;
+  end;
+end;
+
 
 procedure TKMMenuLobby.RefreshMapList(aJumpToSelected:Boolean);
   procedure SelectByName(const aName: UnicodeString);
@@ -2325,6 +2349,14 @@ begin
 end;
 
 
+procedure TKMMenuLobby.StartBtnChangeEnabled(aEnable: Boolean);
+begin
+  Button_SettingsAskReady.Enabled := (((fNetworking.MapInfo <> nil) and fNetworking.MapInfo.IsValid)
+                                        or ((fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid))
+                                     and not fNetworking.NetPlayers.AllReady;
+end;
+
+
 procedure TKMMenuLobby.StartClick(Sender: TObject);
 begin
   if fNetworking.IsHost then
@@ -2399,9 +2431,17 @@ begin
   if fMapsMP <> nil then fMapsMP.UpdateState;
   if fSavesMP <> nil then fSavesMP.UpdateState;
 
-  if GetTimeSince(fLastTimeResetBans) > RESET_BANS_COOLDOWN then
+  if (fLastTimeResetBans <> 0) and (GetTimeSince(fLastTimeResetBans) > RESET_BANS_COOLDOWN) then
+  begin
     Button_SettingsResetBans.Enable;
+    fLastTimeResetBans := 0;
+  end;
 
+  if (fLastTimeAskReady <> 0) and (GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN) then
+  begin
+    StartBtnChangeEnabled(Button_Start.Enabled);
+    fLastTimeAskReady := 0;
+  end;
 end;
 
 

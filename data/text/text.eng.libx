@@ -1137,3 +1137,6 @@
 1186:Go to selected unit
 1187:Minimap player color mode: player color or self/ally/enemy color
 1188:In-game player color mode: player color or self/ally/enemy color
+1189:[$404040]Host is ready to start. Please press '[][$0707FF]%s[][$404040]'[]
+1190:Ask to press Ready
+1191:Alert to get ready was sent to %s players
