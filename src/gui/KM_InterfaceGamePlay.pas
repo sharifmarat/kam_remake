@@ -765,10 +765,12 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
-  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 100);
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 0);
   Bevel_DebugInfo.BackAlpha := 0.5;
   Bevel_DebugInfo.Hitable := False;
+  Bevel_DebugInfo.Hide;
   Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fnt_Outline,taLeft);
+  Label_DebugInfo.Hide;
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
 { ========================================================================================== }
@@ -3952,8 +3954,8 @@ begin
   Label_DebugInfo.Caption := S;
   TextSize := gRes.Fonts[fnt_Arial].GetTextSize(S);
 
-  Bevel_DebugInfo.Width := TextSize.X + 20;
-  Bevel_DebugInfo.Height := TextSize.Y + 20;
+  Bevel_DebugInfo.Width := IfThen(TextSize.X <= 1, 0, TextSize.X + 20);
+  Bevel_DebugInfo.Height := IfThen(TextSize.Y <= 1, 0, TextSize.Y + 20);
 
   Bevel_DebugInfo.Visible := SHOW_OVERLAY_BEVEL and (Trim(S) <> '') ;
 end;
