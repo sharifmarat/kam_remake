@@ -226,6 +226,7 @@ type
     procedure RequestFileTransfer;
     procedure VoteReturnToLobby;
     procedure AnnounceReadyToReturnToLobby;
+    procedure WakeUpNotReady;
 
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
@@ -2553,6 +2554,23 @@ procedure TKMNetworking.AnnounceReadyToReturnToLobby;
 begin
   //Send it to ourselves too, that's simplest
   PacketSend(NET_ADDRESS_ALL, mk_ReadyToReturnToLobby);
+end;
+
+
+procedure TKMNetworking.WakeUpNotReady;
+var
+  I, K: Integer;
+begin
+  K := 0;
+  for I := 1 to fNetPlayers.Count do
+  begin
+    if fNetPlayers[I].Connected and not fNetPlayers[I].ReadyToStart then
+    begin
+      PostMessage(TX_LOBBY_ALERT_NOT_READY, csSystem, gResTexts[TX_LOBBY_READY], '', fNetPlayers[I].IndexOnServer);
+      Inc(K);
+    end;
+  end;
+  PostLocalMessage(Format(gResTexts[TX_LOBBY_ALERT_GET_READY_SENT], [IntToStr(K)]), csSystem);
 end;
 
 

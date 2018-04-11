@@ -234,7 +234,7 @@ const
     BuildIcon:        311;
     TabletSpriteId:   261;
     Input:            (wt_Coal,       wt_Steel,      wt_None,       wt_None);
-    Output:           (wt_MetalShield,wt_MetalArmor, wt_None,       wt_None);
+    Output:           (wt_MetalArmor, wt_MetalShield,wt_None,       wt_None);
     UnlockedByHouse:  htIronSmithy;
     SnowSpriteId:     -1;
     ),
@@ -244,7 +244,7 @@ const
     BuildIcon:        321;
     TabletSpriteId:   271;
     Input:            (wt_Wood,       wt_Leather,    wt_None,       wt_None);
-    Output:           (wt_Shield,     wt_Armor,      wt_None,       wt_None);
+    Output:           (wt_Armor,      wt_Shield,     wt_None,       wt_None);
     UnlockedByHouse:  htTannery;
     SnowSpriteId:     2067;
     ),

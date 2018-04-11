@@ -94,19 +94,20 @@ var
 
   //These are debug things, should be False
   {User interface options}
-  DEBUG_SPEEDUP_SPEED   :Integer = 300;   //Speed for speedup from debug menu
-  ALLOW_SELECT_ENEMIES  :Boolean = False; //Do we allow to select enemies houses/units/froups
-  SHOW_ENEMIES_STATS    :Boolean = False; //Do we allow to show enemies stats during the game
-  SHOW_DEBUG_CONTROLS   :Boolean = False; //Show debug panel / Form1 menu (F11)
-  SHOW_CONTROLS_OVERLAY :Boolean = False; //Draw colored overlays ontop of controls! always Off here
-  SHOW_CONTROLS_ID      :Boolean = False; //Draw controls ID
-  SHOW_CONTROLS_FOCUS   :Boolean = False; //Outline focused control
-  SHOW_TEXT_OUTLINES    :Boolean = False; //Display text areas outlines
-  ENABLE_DESIGN_CONTORLS:Boolean = False; //Enable special mode to allow to move/edit controls
-  MODE_DESIGN_CONTORLS  :Boolean = False; //Special mode to move/edit controls activated by F7, it must block OnClick events! always Off here
-  OVERLAY_RESOLUTIONS   :Boolean = False; //Render constraining frame
-  LOCAL_SERVER_LIST     :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
-  SHOW_LOGS_IN_CHAT     :Boolean = False; //Show log messages in MP game chat
+  DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
+  ALLOW_SELECT_ALLY_UNITS :Boolean = False; //Do we allow to select ally units or groups
+  ALLOW_SELECT_ENEMIES    :Boolean = False; //Do we allow to select enemies houses/units/groups
+  SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
+  SHOW_DEBUG_CONTROLS     :Boolean = False; //Show debug panel / Form1 menu (F11)
+  SHOW_CONTROLS_OVERLAY   :Boolean = False; //Draw colored overlays ontop of controls! always Off here
+  SHOW_CONTROLS_ID        :Boolean = False; //Draw controls ID
+  SHOW_CONTROLS_FOCUS     :Boolean = False; //Outline focused control
+  SHOW_TEXT_OUTLINES      :Boolean = False; //Display text areas outlines
+  ENABLE_DESIGN_CONTORLS  :Boolean = False; //Enable special mode to allow to move/edit controls
+  MODE_DESIGN_CONTORLS    :Boolean = False; //Special mode to move/edit controls activated by F7, it must block OnClick events! always Off here
+  OVERLAY_RESOLUTIONS     :Boolean = False; //Render constraining frame
+  LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
+  SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
   {Gameplay display}
   SKIP_RENDER           :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
@@ -839,6 +840,14 @@ const
   clChartSeparator = icTransparent;
 
   clChkboxOutline = icLightGrayTrans;
+
+  clPlayerSelf = icRed;
+  clPlayerAlly = icYellow;
+  clPlayerEnemy = icCyan;
+
+//  clGameSelf = icRed;
+//  clGameAlly = icYellow;
+//  clGameEnemy = icCyan;
 
 var
   ExeDir: UnicodeString;

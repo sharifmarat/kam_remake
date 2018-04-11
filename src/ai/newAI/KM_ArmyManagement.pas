@@ -220,14 +220,14 @@ begin
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
       if (AITroopTrainOrder[GT,I] <> ut_None) then
-        Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ]);
+        Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ] + 1); // Always recruit something
 
   //If we don't need anyone - Exit
-  I := 0;
-  for GT := Low(GroupReq) to High(GroupReq) do
-    Inc(I, GroupReq[GT]);
-  if (I = 0) then
-    Exit;
+  //I := 0;
+  //for GT := Low(GroupReq) to High(GroupReq) do
+  //  Inc(I, GroupReq[GT]);
+  //if (I = 0) then
+  //  Exit;
 
   //Find barracks
   SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));

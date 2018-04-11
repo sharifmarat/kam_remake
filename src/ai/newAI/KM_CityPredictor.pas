@@ -233,7 +233,7 @@ end;
 // Update ware production
 procedure TKMCityPredictor.UpdateWareProduction(aWT: TKMWareType);
 begin
-  fWareBalance[aWT].Production := fCityStats.Houses[ PRODUCTION[aWT] ] * ProductionRate[aWT];
+  fWareBalance[aWT].Production := fCityStats.Houses[ PRODUCTION[aWT] ] * (ProductionRate[aWT] - Byte(aWT = wt_Coal) * 0.2);
 end;
 
 
@@ -288,7 +288,7 @@ end;
 
 // Update ware derivation - 2 views:
 // 1. Exhaustion = estimation of time when will be ware depleted (determine which house should be built at first)
-// 2. Fraction = fraction of required and avaiable houses
+// 2. Fraction = fraction of required and available houses
 procedure TKMCityPredictor.UpdateWareDerivation(aWT: TKMWareType; aInitialization: Boolean = False);
 var
   HouseReqCnt: Integer;
@@ -404,9 +404,9 @@ begin
   // 1 Storehouse
   RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
   // 1 Barracks (build only when we have weapons and (from X tick or Y ticks before peace end -> avoid to build barracks in 1 minute when is still peace and we have predefined weapons in storehouse))
-  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
+  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
   // Schools (at least 1 + WarriorsPerMinute criterium)
-  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Round(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
+  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
   // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
   RequiredHouses[htInn] := Max(0, Ceil(  Byte( (aTick > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]);
   // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
@@ -439,7 +439,7 @@ begin
   for WT in IRON_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
-  // Wood weapons (depends on avaiable space) - here is maximal possible production in this loc
+  // Wood weapons (depends on available space) - here is maximal possible production in this loc
   MaxWoodWeapProd := Round(Min(aFieldCnt,aBuildCnt) * GA_PREDICTOR_CityInitialization_Fertility);
   // Consider peace time
   MaxWoodWeapProd := Max(1, MaxWoodWeapProd * PeaceFactor);
@@ -450,14 +450,18 @@ begin
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Shield].FinalConsumption := MaxWoodWeapProd / 5;
 
-  // Decide count of workers + build nodes
-  gHands[fOwner].AI.Setup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
-
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
-  // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
-  fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
-  fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
+
+  //Temp bugfix - do not update standart Setup params here, as they will overwrite params, set in the Map Editor
+  if fSetup.NewAI then
+  begin
+    // Decide count of workers + build nodes
+    fSetup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
+    // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
+    fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
+    fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
+  end;
 
   // Predict final city stats (by potential size of city)
   fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
@@ -521,15 +525,28 @@ const
   WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
   WINEYARD_DELAY = 50 * 60 * 10;
 var
-  HT: TKMHouseType;
+//  HT: TKMHouseType;
   Stats: TKMHandStats;
+  Planner: TKMCityPlanner;
 begin
+  Planner := gHands[fOwner].AI.CityManagement.Builder.Planner;
   Stats := gHands[fOwner].Stats;
-  for HT := Low(RequiredHouses) to High(RequiredHouses) do
-    RequiredHouses[HT] := 0;
 
+  // Clear required houses
+  FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
+  // Compute city stats
   UpdateCityStats();
+  // Compute basic house requirements
   UpdateBasicHouses(aTick, False);
+  // Dont build anything if there is not completed school
+  if (Stats.GetHouseQty(htSchool) = 0)
+    OR ((Stats.GetHouseQty(htSchool) = 1)
+      AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
+           OR not (Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete)
+          )
+        )then
+    Exit;
+  // Update prediction
   UpdateWareBalance();
 
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
@@ -544,7 +561,7 @@ begin
   RequiredHouses[htButchers] := Min(RequiredHouses[htButchers], Ceil(Stats.GetHouseQty(htSwine)/3 - fCityStats.Houses[htButchers]));
   RequiredHouses[htTannery] := Min(RequiredHouses[htTannery], Ceil(Stats.GetHouseQty(htSwine)/2 - fCityStats.Houses[htTannery]));
   RequiredHouses[htArmorWorkshop] := Min(RequiredHouses[htArmorWorkshop], Stats.GetHouseTotal(htTannery)*2 - fCityStats.Houses[htArmorWorkshop]);
-
+  // Consideration of wood production
   RequiredHouses[htWeaponWorkshop] := RequiredHouses[htWeaponWorkshop] * Byte( (RequiredHouses[htTannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
 
   if (gGame.GameTickCount < WINEYARD_DELAY) then

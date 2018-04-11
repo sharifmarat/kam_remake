@@ -46,13 +46,14 @@ type
     JobStatus: TKMJobStatus;
     Worker: TKMUnit; //So we can tell Worker if plan is cancelled
   end;
+  TKMHousePlanArray = array of TKMHousePlan;
 
 
   //List of house plans and workers assigned to them
   TKMHousePlanList = class
   private
     fPlansCount: Integer;
-    fPlans: array of TKMHousePlan;
+    fPlans: TKMHousePlanArray;
   public
     //Player orders
     procedure AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
@@ -63,6 +64,8 @@ type
     function FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
 
     // AI Informations
+    property Count: Integer read fPlansCount;
+    property Plans: TKMHousePlanArray read fPlans;
     function ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
     function GetPlansStoneDemands(): Integer;
     function GetPlansWoodDemands(): Integer;
@@ -83,15 +86,19 @@ type
   end;
 
 
+  TKMFieldPlan = record
+    Loc: TKMPoint;
+    FieldType: TKMFieldType;
+    JobStatus: TKMJobStatus;
+    Worker: TKMUnit;
+  end;
+  TKMFieldPlanArray = array of TKMFieldPlan;
+
+
   TKMFieldworksList = class
   private
     fFieldsCount: Integer;
-    fFields: array of record
-      Loc: TKMPoint;
-      FieldType: TKMFieldType;
-      JobStatus: TKMJobStatus;
-      Worker: TKMUnit;
-    end;
+    fFields: TKMFieldPlanArray;
     //List of fields which are shown visually but not verified by the server
     fFakeFields: array of record
       Loc: TKMPoint;
@@ -113,6 +120,10 @@ type
     procedure RemFieldPlan(aLoc: TKMPoint);
     procedure RemFakeField(aLoc: TKMPoint);
     procedure RemFakeDeletedField(aLoc: TKMPoint);
+
+    // AI Informations
+    property Count: Integer read fFieldsCount;
+    property Fields: TKMFieldPlanArray read fFields;
 
     //Game events
     function BestBid(aWorker: TKMUnitWorker; out aBid: Single): Integer; //Calculate best bid for a given worker
@@ -1420,4 +1431,3 @@ begin
 end;
 
 end.
-

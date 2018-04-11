@@ -17,6 +17,7 @@ type
     fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fLastTimeResetBans: Cardinal;
+    fLastTimeAskReady: Cardinal;
 
     fMapsMP: TKMapsCollection;
     fSavesMP: TKMSavesCollection;
@@ -73,6 +74,8 @@ type
     procedure MapList_ScanUpdate(Sender: TObject);
     procedure MapList_ScanComplete(Sender: TObject);
 
+    procedure WakeUpNotReadyClick(Sender: TObject);
+
     procedure RefreshMapList(aJumpToSelected: Boolean);
     procedure RefreshSaveList(aJumpToSelected: Boolean);
     procedure MapChange(Sender: TObject);
@@ -101,6 +104,8 @@ type
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
     procedure Lobby_OnSetPassword(const aPassword: AnsiString);
 
+    procedure StartBtnChangeEnabled(aEnable: Boolean);
+
     function DetectMapType: Integer;
     procedure SettingsClick(Sender: TObject);
     procedure StartClick(Sender: TObject);
@@ -115,6 +120,7 @@ type
         Button_SettingsUseLastPassword: TKMButton;
         Checkbox_RememberPassword: TKMCheckbox;
         Button_SettingsResetBans: TKMButton;
+        Button_SettingsAskReady: TKMButton;
         Button_SettingsSave: TKMButton;
         Button_SettingsCancel: TKMButton;
 
@@ -186,7 +192,10 @@ uses
   KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp;
 
 const
-  RESET_BANS_COOLDOWN = 2000;
+  RESET_BANS_COOLDOWN = 1000;
+  ASK_READY_COOLDOWN = 1000;
+  SPEED_MAX_VALUE = 2.5;
+  SPEED_STEP = 0.1;
 
 
 { TKMGUIMenuLobby }
@@ -201,6 +210,9 @@ begin
   fMapsSortUpdateNeeded := False;
 
   fMinimap := TKMMinimap.Create(True, True);
+
+  fLastTimeResetBans := 0;
+  fLastTimeAskReady := 0;
 
   fMapsMP := TKMapsCollection.Create([mfMP, mfDL], smByNameDesc, True);
   fSavesMP := TKMSavesCollection.Create;
@@ -364,7 +376,7 @@ const
   C1W = 155; C2W = 150; C3W = 75; C4W = 80;
   TC2_ADD = 50;
 var
-  I, K, OffY, SlotTxtWidth, AllTxtWidth: Integer;
+  I, K, OffY, SlotTxtWidth, AllTxtWidth, SpeedsCnt: Integer;
 begin
   Panel_Lobby := TKMPanel.Create(aParent,0,0,aParent.Width, aParent.Height);
   Panel_Lobby.AnchorsStretch;
@@ -563,13 +575,15 @@ begin
         TrackBar_LobbyPeacetime.Step := 5; //Round to 5min steps
         TrackBar_LobbyPeacetime.OnChange := GameOptionsChange;
 
-        TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, 5);
+        SpeedsCnt := Round((SPEED_MAX_VALUE - 1) / SPEED_STEP) + 1;
+
+        TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, SpeedsCnt);
         TrackBar_SpeedPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
         TrackBar_SpeedPT.ThumbWidth := 55; //Enough to fit 'x1.25'
         TrackBar_SpeedPT.OnChange := GameOptionsChange;
 
-        TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, 5);
+        TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, SpeedsCnt);
         TrackBar_SpeedAfterPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
         TrackBar_SpeedAfterPT.ThumbWidth := 55; //Enough to fit 'x1.25'
@@ -586,6 +600,7 @@ begin
     Button_Start := TKMButton.Create(Panel_Lobby, 500, 723, 220, 30, NO_TEXT, bsMenu);
     Button_Start.Anchors := [anLeft, anBottom];
     Button_Start.OnClick := StartClick;
+    Button_Start.OnChangeEnableStatus := StartBtnChangeEnabled;
 
   UpdateSpectatorDivide;
 end;
@@ -650,9 +665,12 @@ begin
     Button_SettingsResetBans.OnClick := SettingsClick;
     Button_SettingsUseLastPassword.OnClick := SettingsClick;
 
-    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 260, 280, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
+    Button_SettingsAskReady := TKMButton.Create(Panel_Settings, 20, 260, 280, 30, gResTexts[TX_LOBBY_ALERT_READY_BTN], bsMenu);
+    Button_SettingsAskReady.OnClick := WakeUpNotReadyClick;
+    Button_SettingsAskReady.Enabled := False;
+    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
     Button_SettingsSave.OnClick := SettingsClick;
-    Button_SettingsCancel := TKMButton.Create(Panel_Settings, 20, 300, 280, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
+    Button_SettingsCancel := TKMButton.Create(Panel_Settings, 170, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
     Button_SettingsCancel.OnClick := SettingsClick;
 end;
 
@@ -1019,8 +1037,8 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 begin
   //Update the game options
   fNetworking.UpdateGameOptions(EnsureRange(TrackBar_LobbyPeacetime.Position, 0, 300),
-                                (TrackBar_SpeedPT.Position - 1) / 4 + 1,
-                                (TrackBar_SpeedAfterPT.Position - 1) / 4 + 1);
+                                (TrackBar_SpeedPT.Position - 1) * SPEED_STEP + 1,
+                                (TrackBar_SpeedAfterPT.Position - 1) * SPEED_STEP + 1);
 
   //Refresh the data to controls
   Lobby_OnGameOptions(nil);
@@ -1051,11 +1069,11 @@ begin
   TrackBar_LobbyPeacetime.Position := fNetworking.NetGameOptions.Peacetime;
 
   TrackBar_SpeedPT.Enabled   := (TrackBar_LobbyPeacetime.Position > 0) and TrackBar_SpeedAfterPT.Enabled;
-  TrackBar_SpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) * 4 + 1);
-  TrackBar_SpeedPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedPT);
+  TrackBar_SpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) / SPEED_STEP) + 1;
+  TrackBar_SpeedPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedPT);
 
-  TrackBar_SpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) * 4 + 1);
-  TrackBar_SpeedAfterPT.ThumbText := 'x' + FloatToStr(fNetworking.NetGameOptions.SpeedAfterPT);
+  TrackBar_SpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) / SPEED_STEP) + 1;
+  TrackBar_SpeedAfterPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedAfterPT);
 end;
 
 
@@ -1797,6 +1815,16 @@ begin
 end;
 
 
+procedure TKMMenuLobby.WakeUpNotReadyClick(Sender: TObject);
+begin
+  if GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN then
+  begin
+    fNetworking.WakeUpNotReady;
+    Button_SettingsAskReady.Disable;
+    fLastTimeAskReady := TimeGet;
+  end;
+end;
+
 
 procedure TKMMenuLobby.RefreshMapList(aJumpToSelected:Boolean);
   procedure SelectByName(const aName: UnicodeString);
@@ -2321,6 +2349,14 @@ begin
 end;
 
 
+procedure TKMMenuLobby.StartBtnChangeEnabled(aEnable: Boolean);
+begin
+  Button_SettingsAskReady.Enabled := (((fNetworking.MapInfo <> nil) and fNetworking.MapInfo.IsValid)
+                                        or ((fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid))
+                                     and not fNetworking.NetPlayers.AllReady;
+end;
+
+
 procedure TKMMenuLobby.StartClick(Sender: TObject);
 begin
   if fNetworking.IsHost then
@@ -2395,9 +2431,17 @@ begin
   if fMapsMP <> nil then fMapsMP.UpdateState;
   if fSavesMP <> nil then fSavesMP.UpdateState;
 
-  if GetTimeSince(fLastTimeResetBans) > RESET_BANS_COOLDOWN then
+  if (fLastTimeResetBans <> 0) and (GetTimeSince(fLastTimeResetBans) > RESET_BANS_COOLDOWN) then
+  begin
     Button_SettingsResetBans.Enable;
+    fLastTimeResetBans := 0;
+  end;
 
+  if (fLastTimeAskReady <> 0) and (GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN) then
+  begin
+    StartBtnChangeEnabled(Button_Start.Enabled);
+    fLastTimeAskReady := 0;
+  end;
 end;
 
 

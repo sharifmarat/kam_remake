@@ -1320,7 +1320,7 @@ begin
   end;
 
   //don't show speed clock in MP since you can't turn it on/off
-  if (fGamePlayInterface <> nil) and IsSpeedUpAllowed then
+  if (fGamePlayInterface <> nil) and (IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime) then
     fGamePlayInterface.ShowClock(fGameSpeed);
 
   //Need to adjust the delay immediately in MP

@@ -9,30 +9,36 @@ uses
   KM_AIInfluences, KM_NavMeshDefences;
 
 
+
+
 var
 
   GA_PLANNER_FindPlaceForHouse_Influence            : Single = 200; // 0..XXX
   GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
 
-  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 146.4402008;
-  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 122.669342;
-  GA_PLANNER_FieldCrit_MissingFields                  : Single = 133.574173;
-  GA_PLANNER_FieldCrit_FarmPosition                   : Single = 50.25531006;
-  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 9.67427063;
-  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 44.00505447;
-  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 69.20513153;
-  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 50.13886261;
-  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 1.469583392;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 10.59704971;
-  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 40.41218185;
-  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 39.48143005;
-  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 99.74505615;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 7.817649841;
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 97.99571991;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 5.305774212;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 21.0926075;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 155.5762634;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 10.45453072;
+  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 155.3616107;
+  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 115.6175673;
+  GA_PLANNER_FieldCrit_FarmPolyRoute                  : Single = 2.021839842;
+  GA_PLANNER_FieldCrit_EvalArea                       : Single = 14.96748626;
+  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 41.11732841;
+  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 4.409770668;
+  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 88.02675605;
+  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 70.25580555;
+  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 38.96143138;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 28.02496851;
+  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 1;
+  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 66.22454971;
+  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
+  GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
+
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 117.487;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 0.278462;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 22.83274;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 115.4185;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 23.94809;
+  GA_PLANNER_FindPlaceForWoodcutter_ABDecSpeed        : Single = 7.547523;
+
+
 
   GA_PATHFINDING_BasePrice    : Word = 0;
   GA_PATHFINDING_HouseOutside : Word = 1;
@@ -181,12 +187,8 @@ implementation
 uses
   KM_Game, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Terrain, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitTaskDelivery, KM_UnitActionWalkTo, KM_UnitTaskGoEat, KM_UnitsCollection,
-  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_Eye,
+  KM_NavMesh, KM_HouseMarket, KM_HouseWoodcutters, KM_Eye, KM_ResUnits,
   KM_RenderAux, KM_ResMapElements;
-
-
-
-
 
 
 { TKMCityPlanner }
@@ -343,29 +345,14 @@ end;
 
 procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
   procedure ScanChopOnly(aW: TKMHouseWoodcutters);
-  const
-    SQR_RAD = 10*10;
-  var
-    I: Integer;
-    W: TKMHouseWoodcutters;
   begin
-    if (aW.CheckResOut(wt_All) <> 0) then
+    if (aW.CheckResOut(wt_All) <> 0) then // There is still trunk
       Exit;
-    for I := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
-      with fPlannedHouses[htWoodcutters].Plans[I] do
-        if Placed
-          AND (House <> nil)
-          AND not House.IsDestroyed
-          AND House.IsComplete then
-        begin
-          W := TKMHouseWoodcutters( House );
-          if (W.WoodcutterMode <> wcm_Chop)
-            AND (KMDistanceSQR(aW.FlagPoint, W.FlagPoint) < SQR_RAD) then
-          begin
-            MarkAsExhausted(aW.HouseType, aW.Entrance);
-            aW.DemolishHouse(fOwner);
-          end;
-        end;
+    if not gTerrain.CanFindTree(aW.FlagPoint, gRes.Units[ut_Woodcutter].MiningRange, True) then
+    begin
+      RemovePlan(htWoodcutters, aW.Entrance);
+      aW.DemolishHouse(fOwner);
+    end;
   end;
 
   procedure CheckWoodcutter(aHousePlan: THousePlan; aCheckChopOnly: Boolean);
@@ -448,8 +435,13 @@ begin
         if Placed then // House was placed
         begin
           fConstructedHouses := fConstructedHouses + Byte((House = nil) OR not House.IsComplete);
-          if (HT = htWoodcutters) AND (House <> nil) AND (House.IsComplete) then
-            CheckWoodcutter(fPlannedHouses[HT].Plans[I], CheckChopOnly);
+          if (HT = htWoodcutters) then // Another exception for woodcutters
+          begin
+            if ChopOnly then // Dont consider choponly woodcutters
+              SumCalculated := SumCalculated - 1;
+            if (House <> nil) AND (House.IsComplete) then
+              CheckWoodcutter(fPlannedHouses[HT].Plans[I], CheckChopOnly);
+          end;
         end
         else if (HouseReservation OR RemoveTreeInPlanProcedure) then // House was reserved
         begin
@@ -1025,35 +1017,31 @@ function TKMCityPlanner.FieldCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
 const
   MIN_CORN_FIELDS = 15;
   MIN_WINE_FIELDS = 9;
-  DECREASE_CRIT = 100;
+  DECREASE_CRIT = 1000;
 var
-  X,Y,I,Dist: Integer;
-  Fields, Obstacles: Single;
+  X,Y,I,Dist,Fields: Integer;
   Dir: TDirection;
   HMA: THouseMappingArray;
 begin
   HMA := gAIFields.Eye.HousesMapping;
   Fields := 0;
-  Obstacles := 0;
   for Dist := 1 to (Byte(aHT = htWineyard) shl 1) + (Byte(aHT = htFarm) * 5) do
-  for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
-  for I := Low(HMA[aHT].Surroundings[Dist,Dir]) + Dist to High(HMA[aHT].Surroundings[Dist,Dir]) - Dist + 1 do
-  begin
-    X := aLoc.X + HMA[aHT].Surroundings[Dist,Dir,I].X;
-    Y := aLoc.Y + HMA[aHT].Surroundings[Dist,Dir,I].Y;
-    if gTerrain.TileInMapCoords(X,Y) then
-    begin
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
-        Fields := Fields + 1;
-      //if not gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
-      //  Obstacles := Obstacles + 1;
-    end;
-  end;
-  Result := - GA_PLANNER_FieldCrit_MissingFields * (
+    for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
+      for I := Low(HMA[aHT].Surroundings[Dist,Dir]) + Dist to High(HMA[aHT].Surroundings[Dist,Dir]) - Dist + 1 do
+      begin
+        X := aLoc.X + HMA[aHT].Surroundings[Dist,Dir,I].X;
+        Y := aLoc.Y + HMA[aHT].Surroundings[Dist,Dir,I].Y;
+        if gTerrain.TileInMapCoords(X,Y)
+          AND (gAIFields.Influences.AvoidBuilding[Y,X] = 0) // Tile is not reserved (house / road / field / forest)
+          AND gHands[fOwner].CanAddFieldPlan(KMPoint(X,Y), ftCorn) then
+            Fields := Fields + 1;
+      end;
+  Result := - (
               + Max(0, MIN_WINE_FIELDS - Fields) * Byte(aHT = htWineyard) * DECREASE_CRIT
-              + Max(0, MIN_CORN_FIELDS - Fields) * Byte(aHT = htFarm) * DECREASE_CRIT + Obstacles
+              + Max(0, MIN_CORN_FIELDS - Fields) * Byte(aHT = htFarm) * DECREASE_CRIT
             )
-            - gAIFields.Eye.PolygonRoutes[ gAIFields.NavMesh.KMPoint2Polygon[aLoc] ] * GA_PLANNER_FieldCrit_FarmPosition;
+            - gAIFields.Eye.PolygonRoutes[ gAIFields.NavMesh.KMPoint2Polygon[aLoc] ] * GA_PLANNER_FieldCrit_FarmPolyRoute
+            - gAIFields.Influences.EvalArea[aLoc.Y, aLoc.X] * GA_PLANNER_FieldCrit_EvalArea;
 end;
 
 
@@ -1162,7 +1150,7 @@ begin
 end;
 
 
-// Faster method for placing house (old in at the end of this file)
+// Faster method for placing house (old is at the end of this file)
 //{
 function TKMCityPlanner.FindPlaceForHouse(aUnlockProcedure: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
 const
@@ -1265,7 +1253,7 @@ var
   end;
 
 var
-  I: Integer;
+  I, EditedCount: Integer;
   Probability: Single;
   HT: TKMHouseType;
   CCPArr: TKMPointArray;
@@ -1288,8 +1276,10 @@ begin
   for HT in HOUSE_DEPENDENCE[aHT] do
     FindPlaceAroundHType(HT);
 
-  // Probability will change in dependence on count of avaiable plans
-  Probability := (BEST_PLANS_CNT - Min(Count, BEST_PLANS_CNT-1)) / (BEST_PLANS_CNT*1.0); // 1 <> 0.125
+  // In case that we have plans but criterium is not positive try to find better place everywhere
+  EditedCount := Count * Byte(BestBidArr[0] > 0);
+  // Probability will change in dependence on count of available plans
+  Probability := (BEST_PLANS_CNT - Min(EditedCount, BEST_PLANS_CNT-1)) / (BEST_PLANS_CNT*1.0); // 1 <> 0.125
   for HT := HOUSE_MIN to HOUSE_MAX do
     if (HT <> htWatchTower)
       AND (fPlannedHouses[HT].Count > 0)
@@ -1297,9 +1287,6 @@ begin
       AND not (HT in HOUSE_DEPENDENCE[aHT]) then
       FindPlaceAroundHType(HT);
 
-  for I := High(BestBidArr) downto Low(BestBidArr) do
-    if (BestBidArr[I] <> INIT_BEST_BID) then
-      break;
   Result := Min(Count, BEST_PLANS_CNT);
 end;
 //}
@@ -1478,7 +1465,7 @@ const
             begin
               fPerfArr[Y,X] := fPerfIdx;
               Loc := KMPoint(X,Y);
-              if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, False, False) then
+              if gAIFields.Eye.CanAddHousePlan(Loc, htQuary, True, False) then
               begin
                 Bid := + DistCrit(htQuary, Loc) * 40 + SnapCrit(htQuary, Loc);
                 if (Bid > BestBid) then
@@ -1594,30 +1581,43 @@ function TKMCityPlanner.FindForestAndWoodcutter(): Boolean;
   end;
 
 const
-  BLOCK_RAD = 8.0;
+  BLOCK_RAD = 9.5;
   SQR_MIN_DIST_FROM_CHOP_ONLY = 12*12;
   SQR_DEC_SPEED = AVOID_BUILDING_FOREST_RANGE / (BLOCK_RAD * BLOCK_RAD);
 var
   Output, PartOfForest: Boolean;
-  I,K: Integer;
+  I,K, Cnt: Integer;
   Point: TKMPoint;
 begin
   Output := False;
 
   gAIFields.Eye.GetForests(fForestsNearby);
   // Delete used forests (used by woodcutter - no matter if in chop only or chop and plant mode)
-  for I := fForestsNearby.Count-1 downto 0 do
-    if (gAIFields.Influences.AvoidBuilding[  fForestsNearby.Items[I].Y, fForestsNearby.Items[I].X  ] >= 250)
-      OR not EnoughTreeSeedTiles( fForestsNearby.Items[I] ) then
-      fForestsNearby.Delete(I)
-    else
+  for I := 0 to fForestsNearby.Count - 1 do
+    if not (fForestsNearby.Tag2[I] > 0) AND ( // Skip detection of exist forest (map maker should be able to produce good forest)
+        (gAIFields.Influences.AvoidBuilding[  fForestsNearby.Items[I].Y, fForestsNearby.Items[I].X  ] >= 250) // Skip center point inside of exist forest
+         OR not EnoughTreeSeedTiles( fForestsNearby.Items[I] ) // Check count of good terrain
+      ) then
+    begin
+      // Delete will remove element and move all others to left -> this array is not sorted yet so just switch actual and last
+      Cnt := fForestsNearby.Count - 1;
+      fForestsNearby.Items[I] := fForestsNearby.Items[Cnt];
+      fForestsNearby.Tag[I] := fForestsNearby.Tag[Cnt];
+      fForestsNearby.Tag2[I] := fForestsNearby.Tag2[Cnt];
+      fForestsNearby.Delete(Cnt);
+    end
+    else // Remove potential forests around chop only woodcutters
       for K := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
       begin
         Point := fPlannedHouses[htWoodcutters].Plans[K].SpecPoint;
-        if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] < AVOID_BUILDING_FOREST_MINIMUM) // Chop-only mode
+        if (fPlannedHouses[htWoodcutters].Plans[K].ChopOnly) // Chop-only mode
           AND (KMDistanceSqr(fForestsNearby.Items[I], Point) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
         begin
-          fForestsNearby.Delete(I);
+          Cnt := fForestsNearby.Count - 1;
+          fForestsNearby.Items[I] := fForestsNearby.Items[Cnt];
+          fForestsNearby.Tag[I] := fForestsNearby.Tag[Cnt];
+          fForestsNearby.Tag2[I] := fForestsNearby.Tag2[Cnt];
+          fForestsNearby.Delete(Cnt);
           break;
         end;
       end;
@@ -1626,13 +1626,12 @@ begin
   for I := fForestsNearby.Count-1 downto 0 do
   begin
     Point := fForestsNearby.Items[I];
-    PartOfForest := Boolean(fForestsNearby.Tag2[I]);
-    fForestsNearby.Tag2[I] := fForestsNearby.Tag[I];
+    PartOfForest := Boolean(fForestsNearby.Tag[I]);
     fForestsNearby.Tag[I] := Max(0, Round(
                                   + 1000000 // Base price
-                                  + fForestsNearby.Tag[I] * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt
-                                  - gAIFields.Eye.PolygonRoutes[ gAIFields.NavMesh.KMPoint2Polygon[Point] ] * GA_PLANNER_FindPlaceForWoodcutter_PolyRoute
+                                  + fForestsNearby.Tag2[I] * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt
                                   + Byte(PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest
+                                  - gAIFields.Eye.PolygonRoutes[ gAIFields.NavMesh.KMPoint2Polygon[Point] ] * GA_PLANNER_FindPlaceForWoodcutter_PolyRoute
                                   - gAIFields.Influences.EvalArea[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_EvalArea
                                   + gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_DistCrit
                                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Point.X, Point.Y) * GA_PLANNER_FindPlaceForWoodcutter_Influence
@@ -1648,7 +1647,7 @@ begin
     Point := fForestsNearby.Items[I]; // Get the best forest
     Output := FindPlaceForWoodcutter(Point);
     if Output then
-      gAIFields.Influences.AddAvoidBuilding(Point.X, Point.Y, BLOCK_RAD, 255, True, SQR_DEC_SPEED);
+      gAIFields.Influences.AddAvoidBuilding(Point.X, Point.Y, BLOCK_RAD, 255, True, GA_PLANNER_FindPlaceForWoodcutter_ABDecSpeed);
   end;
   Result := Output;
 end;

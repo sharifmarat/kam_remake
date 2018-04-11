@@ -10,7 +10,7 @@ type
 
 const
   // There are total of 96 different functions in the game that can have a shortcut
-  FUNC_COUNT = 96;
+  FUNC_COUNT = 97;
 
   // Load key IDs from inc file
   {$I KM_KeyIDs.inc}
@@ -70,6 +70,7 @@ const
     66, 80, 84,                             // Beacon/Pause/Show team in MP (B, P, T)
     32, 46, 13,                             // Center to alert/Delete message/Show chat (Space, Delete, Return)
     9,                                      // Select next building/unit/group with same type (Tab)
+    0,                                      // Player color mode
     82, 67, 87, 68,                         // Plan road/corn/wine/erase plan(building) (R, C, W, D)
     49, 50, 51, 52, 53, 54, 55, 56, 57, 48, // Dynamic selection groups 1-10 (1-9, 0)
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,           // Dynamic selection groups 11-20 (no defaults)
@@ -107,6 +108,7 @@ const
     TX_KEY_FUNC_BEACON, TX_KEY_FUNC_PAUSE, TX_KEY_FUNC_SHOW_TEAMS,                                        // Beacon/Pause/Show team in MP
     TX_KEY_FUNC_CENTER_ALERT, TX_KEY_FUNC_DELETE_MSG, TX_KEY_FUNC_SHOW_GAME_CHAT,                         // Center to alert/Delete message/Show chat
     TX_KEY_FUNC_SEL_NXT_BLD_UNIT_SAME_TYPE,                                                               // Select next building/unit/group with same type
+    TX_KEY_FUNC_PLAYER_COLOR_MODE,                                                                        // Player color mode
     TX_KEY_FUNC_PLAN_ROAD, TX_KEY_FUNC_PLAN_FIELD, TX_KEY_FUNC_PLAN_WINE, TX_KEY_FUNC_ERASE_PLAN,         // Plan road/corn/wine/erase plan(building)
     TX_KEY_FUNC_SELECT_1, TX_KEY_FUNC_SELECT_2, TX_KEY_FUNC_SELECT_3, TX_KEY_FUNC_SELECT_4, TX_KEY_FUNC_SELECT_5,   // Dynamic selection groups 1-5
     TX_KEY_FUNC_SELECT_6, TX_KEY_FUNC_SELECT_7, TX_KEY_FUNC_SELECT_8, TX_KEY_FUNC_SELECT_9, TX_KEY_FUNC_SELECT_10,  // Dynamic selection groups 6-10
@@ -150,8 +152,8 @@ begin
 
     case I of
       0..13:  fFuncs[I].Area := faCommon;
-      14..61: fFuncs[I].Area := faGame;
-      62..73: fFuncs[I].Area := faSpecReplay;
+      14..62: fFuncs[I].Area := faGame;
+      63..74: fFuncs[I].Area := faSpecReplay;
       else    fFuncs[I].Area := faMapEdit;
     end;
 

@@ -327,7 +327,7 @@ begin
     FinPos := FinalPosition.Loc;
     if PlanPath(ActPos, FinPos, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else if not KMSamePoint(Group.Position, FinalPosition.Loc) then
+    else if not KMSamePoint(Group.Position, FinalPosition.Loc) then // Dont repeat order and let archers fire
       Group.OrderWalk(FinalPosition.Loc, True, wtokAISquad, FinalPosition.Dir);
   end;
 end;
@@ -335,8 +335,8 @@ end;
 
 function TAISquad.PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False): Boolean;
 const
-  SQR_TARGET_REACHED_TOLERANCE = 5*5;
-  SQR_TARGET_REACHED_RANGED = 14*14; // This should be more than maximal range (11*11)
+  SQR_TARGET_REACHED_TOLERANCE = 3*3;
+  SQR_TARGET_REACHED_RANGED = 15*15; // This should be more than maximal range (11*11)
 var
   InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
@@ -345,7 +345,7 @@ begin
   Result := False;
   fOnPlace := False;
   // Time limit (time limit MUST be always set by higher rank (platoon))
-  if (fTimeLimit < gGame.GameTickCount)
+  if (not aOrderAttack AND (fTimeLimit < gGame.GameTickCount)) // Time limit is set to 0 in case that unit attack something
     // Target point is reached
     OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_TARGET_REACHED_TOLERANCE)
     // Archers should start fire as soon as possible
@@ -356,12 +356,15 @@ begin
   end;
   // Plan path with respect to enemy presence
   if gAIFields.NavMesh.Pathfinding.AvoidEnemyRoute(Group.Owner, Group.GroupType, aActualPosition, aTargetPosition, Distance, PointPath) then
-    if (Distance < 6) then // Just to be sure ...
-      Exit
+    if (Distance < 5) then // Just to be sure ...
+    begin
+      fOnPlace := True;
+      Exit;
+    end
     else
     begin
       InitPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aActualPosition];
-      I := Length(PointPath)-2;
+      I := Length(PointPath)-2; // Skip next polygon -> fluent movement
       repeat
         aTargetPosition := PointPath[ Max(0, I) ];
         ClosestPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aTargetPosition ];
@@ -617,10 +620,10 @@ end;
 
 function TAICompany.OrderToAttack(aActualPosition: TKMPoint; UA: TKMUnitArray; UGA: TKMUnitGroupArray; HA: TKMHouseArray): Boolean;
 var
-  AvaiableSquads: TKMSquadsArray;
+  AvailableSquads: TKMSquadsArray;
   //fTargetU: TKMTargetSelection;
 
-  procedure FindAvaiableSquads();
+  procedure FindAvailableSquads();
   var
     I: Integer;
     GT: TKMGroupType;
@@ -628,8 +631,8 @@ var
   begin
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
-      AvaiableSquads[GT].Count := 0;
-      SetLength(AvaiableSquads[GT].Squads, fSquads[GT].Count);
+      AvailableSquads[GT].Count := 0;
+      SetLength(AvailableSquads[GT].Squads, fSquads[GT].Count);
     end;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
       for I := 0 to fSquads[GT].Count - 1 do
@@ -644,8 +647,8 @@ var
             Squad.TargetUnit := nil;
             //Squad.TargetHouse := nil; // This cause same problem like with archers
           end;
-          AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ] := Squad;
-          AvaiableSquads[GT].Count := AvaiableSquads[GT].Count + 1;
+          AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ] := Squad;
+          AvailableSquads[GT].Count := AvailableSquads[GT].Count + 1;
         end;
       end;
   end;
@@ -659,7 +662,7 @@ var
   var
     Polygon: Word;
     I,K,L: Integer;
-    SqrDist, SqrClosestDist, SqrClosestDistToRanged: Single;
+    SqrDist, SqrClosestDist, SqrClosestDistToRanged, CloseCombatProtection: Single;
     GT: TKMGroupType;
     Squad: TAISquad;
     GroupsInFightArr: TKMUnitGroupArray;
@@ -686,9 +689,6 @@ var
           end;
         end;
 
-      if (SqrClosestDistToRanged = INIT_DIST) then
-        SqrClosestDistToRanged := SqrClosestDist; 
-
       // Calculate threat level
       with fTargetU[I] do
       begin
@@ -705,14 +705,15 @@ var
             // Calculate distant threat level (determine whether archers are shooting at our troops)
             DistantThreat := DistantThreat * Byte(SQR_RANGE_OF_PROJECTILES > SqrClosestDist);
             // Close threat level is computed with using influences
+            CloseCombatProtection := 0;
             Polygon := gAIFields.NavMesh.KMPoint2Polygon[ UGA[I].Position ];
             for GT := Low(TKMGroupType) to High(TKMGroupType) do
               if (GT <> gt_Ranged) then
-                CloseThreat := CloseThreat + gAIFields.Influences.EnemyGroupPresence[fOwner, Polygon, GT]; // Tune parameters
-            if (DistantThreat < CloseThreat) then
-              CloseThreat := 0
-            else
-              DistantThreat := 0;
+                CloseCombatProtection := CloseCombatProtection + gAIFields.Influences.EnemyGroupPresence[fOwner, Polygon, GT]; // Tune parameters
+            if (DistantThreat < CloseCombatProtection) then // Ranged units are well protected -> try shoot them
+              CloseThreat := Byte(SqrClosestDistToRanged <= SQR_RANGE_OF_PROJECTILES) // Lowest priority but dont ignore them (if we have no archers call infantry)
+            else // Ranged units are not protected -> attack with close combat units
+              DistantThreat := Byte(SqrClosestDist <= SQR_RANGE_OF_PROJECTILES); // Lowest priority but dont ignore them (if they are in range of archers shoot at them)
           end
           else
           begin
@@ -752,9 +753,9 @@ var
     // Ranged groups view: our ranged unit -> select target => each unit should fire
     GT := gt_Ranged;
     TargetIdx := 0; // Only for compiler
-    for I := AvaiableSquads[GT].Count - 1 downto 0 do
+    for I := AvailableSquads[GT].Count - 1 downto 0 do
     begin
-      Squad := AvaiableSquads[GT].Squads[I];
+      Squad := AvailableSquads[GT].Squads[I];
       HighestThreat := INIT_THREAT;
       for K := 0 to Length(fTargetU) - 1 do
         if (fTargetU[K].DistantThreat > 0) then
@@ -771,8 +772,11 @@ var
         Squad.TargetUnit := UA[ fTargetU[TargetIdx].Index ];
         Output := True;
         fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
-        Dec(AvaiableSquads[GT].Count);
-        AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+        // Unit will be targeted by Ranged group -> if there was minimal priority for close combat then remove it
+        if (fTargetU[TargetIdx].CloseThreat = 1) then
+          fTargetU[TargetIdx].CloseThreat := 0;
+        Dec(AvailableSquads[GT].Count);
+        AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
       end
       else
         Squad.TargetUnit := nil;
@@ -786,12 +790,12 @@ var
           GT := BEST_TARGET[  UGA[ fTargetU[I].Index ].GroupType, K  ];
           if (GT = gt_Ranged) then // Skip ranged groups
             continue;
-          while (fTargetU[I].CloseThreat > 0) AND (AvaiableSquads[GT].Count > 0) do
+          while (fTargetU[I].CloseThreat > 0) AND (AvailableSquads[GT].Count > 0) do
           begin
             BestDist := 100000;
-            for L := 0 to AvaiableSquads[GT].Count - 1 do
+            for L := 0 to AvailableSquads[GT].Count - 1 do
             begin
-              Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[L].Position, UA[ fTargetU[I].Index ].GetPosition);
+              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ fTargetU[I].Index ].GetPosition);
               if (Dist < BestDist) then
               begin
                 BestDist := Dist;
@@ -799,12 +803,12 @@ var
               end;
             end;
 
-            Squad := AvaiableSquads[GT].Squads[TargetIdx];
+            Squad := AvailableSquads[GT].Squads[TargetIdx];
             Squad.TargetUnit := UGA[ fTargetU[I].Index ].GetAliveMember;
             Output := True;
             fTargetU[I].CloseThreat := fTargetU[I].CloseThreat - Squad.Group.Count;
-            Dec(AvaiableSquads[GT].Count);
-            AvaiableSquads[GT].Squads[TargetIdx] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+            Dec(AvailableSquads[GT].Count);
+            AvailableSquads[GT].Squads[TargetIdx] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
           end;
         end;
     Result := Output;
@@ -821,7 +825,7 @@ var
   begin
     Cnt := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      Cnt := Cnt + AvaiableSquads[GT].Count;
+      Cnt := Cnt + AvailableSquads[GT].Count;
 
     if (Cnt = 0) then
       Exit;
@@ -833,11 +837,12 @@ var
 
     Cnt := 0;
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      for I := 0 to AvaiableSquads[GT].Count - 1 do
+      for I := 0 to AvailableSquads[GT].Count - 1 do
       begin
-        Squad := AvaiableSquads[GT].Squads[I];
+        Squad := AvailableSquads[GT].Squads[I];
         Squad.FinalPosition := KMPointDir(  Positions[Cnt], KMGetDirection( Squad.Position, Positions[Cnt] )  );
-        //Squads[ClosestIdx].TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
+        // Time limit does not make sence for unit in combat
+        //Squad.TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
         Cnt := Cnt + 1;
         if (Cnt >= Length(Positions)) then
           Exit;
@@ -847,7 +852,7 @@ var
 
   function OrderAttackHouse(): Boolean;
   const
-    INIT_THREAT = -1000000;
+    INIT_THREAT = 1000000;
     SQR_CLOSE_COMBAT_DISTANCE_LIMIT = 12*12;
     MAX_SOLDIERS_VS_HOUSE = 12;
     ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5;
@@ -869,7 +874,7 @@ var
     // Target watchtowers with archers
     GT := gt_Ranged;
     TargetIdx := 0; // Only for compiler
-    for I := AvaiableSquads[GT].Count - 1 downto 0 do
+    for I := AvailableSquads[GT].Count - 1 downto 0 do
     begin
       BestDist := INIT_THREAT;
       for K := 0 to Length(HA) - 1 do
@@ -878,8 +883,8 @@ var
           AND (HA[K].CheckResIn(wt_Stone) > 1)
           AND HA[K].HasOwner then // Ignore towers without stone and without recruit inside
         begin
-          Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition);
-          if (Dist > BestDist) then
+          Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
+          if (Dist < BestDist) then
           begin
             BestDist := Dist;
             TargetIdx := K;
@@ -887,16 +892,16 @@ var
         end;
       if (BestDist <> INIT_THREAT) then
       begin
-        GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
+        GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvailableSquads[GT].Squads[I].Group.Count;
         // Find and kill workers who want to repair house
-        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+        U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvailableSquads[GT].Squads[I].Position);
         if (U <> nil) then
-          AvaiableSquads[GT].Squads[I].TargetUnit := U
+          AvailableSquads[GT].Squads[I].TargetUnit := U
         else
-          AvaiableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
+          AvailableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
         Output := True;
-        Dec(AvaiableSquads[GT].Count);
-        AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+        Dec(AvailableSquads[GT].Count);
+        AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
       end;
     end;
 
@@ -905,18 +910,18 @@ var
     begin
       if (GT = gt_Ranged) then
         continue;
-      for I := AvaiableSquads[GT].Count - 1 downto 0 do
+      for I := AvailableSquads[GT].Count - 1 downto 0 do
       begin
         BestDist := INIT_THREAT;
         for K := 0 to Length(HA) - 1 do
           if (
                (HA[K].HouseType <> htWatchTower)
-               OR ( KMDistanceAbs(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
+               OR ( KMDistanceAbs(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
              )
             AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE) then
           begin
-            Dist := KMDistanceSqr(AvaiableSquads[GT].Squads[I].Position, HA[K].GetPosition);
-            if (Dist > BestDist) AND (Dist <= SQR_CLOSE_COMBAT_DISTANCE_LIMIT) then
+            Dist := KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition);
+            if (Dist < BestDist) AND (Dist <= SQR_CLOSE_COMBAT_DISTANCE_LIMIT) then
             begin
               BestDist := Dist;
               TargetIdx := K;
@@ -924,17 +929,17 @@ var
           end;
         if (BestDist <> INIT_THREAT) then
         begin
-          GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvaiableSquads[GT].Squads[I].Group.Count;
+          GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvailableSquads[GT].Squads[I].Group.Count;
           // Find and kill workers who want to repair house
-          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvaiableSquads[GT].Squads[I].Position);
+          U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvailableSquads[GT].Squads[I].Position);
           if (U <> nil)
-            AND ((GT = gt_Ranged) OR (KMDistanceSqr(U.GetPosition, AvaiableSquads[GT].Squads[I].Position) < SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST)) then
-            AvaiableSquads[GT].Squads[I].TargetUnit := U
+            AND ((GT = gt_Ranged) OR (KMDistanceSqr(U.GetPosition, AvailableSquads[GT].Squads[I].Position) < SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST)) then
+            AvailableSquads[GT].Squads[I].TargetUnit := U
           else
-            AvaiableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
+            AvailableSquads[GT].Squads[I].TargetHouse := HA[TargetIdx];
           Output := True;
-          Dec(AvaiableSquads[GT].Count);
-          AvaiableSquads[GT].Squads[I] := AvaiableSquads[GT].Squads[ AvaiableSquads[GT].Count ];
+          Dec(AvailableSquads[GT].Count);
+          AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
         end;
       end;
     end;
@@ -948,8 +953,8 @@ var
 begin
   Output := False;
 
-  // Find avaiable squads (groups who obey orders / are not in combat)
-  FindAvaiableSquads();
+  // Find Available squads (groups who obey orders / are not in combat)
+  FindAvailableSquads();
 
   // Attack hostile units in radius
   if (Length(UA) > 0) then
@@ -1020,7 +1025,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
     Position: TKMPoint;
     GT: TKMGroupType;
     Squads: array of TAISquad;
-    AvaiableSquads: TBooleanArray;
+    AvailableSquads: TBooleanArray;
     TagPositions: TKMPointTagList;
   begin
     TagPositions := TKMPointTagList.Create;
@@ -1033,13 +1038,13 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
       Dir := KMGetDirection( aActualPosition, fPathPosition );
 
       SetLength(Squads, aCnt);
-      SetLength(AvaiableSquads, aCnt);
+      SetLength(AvailableSquads, aCnt);
       K := 0;
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         for I := 0 to fSquads[GT].Count - 1 do
         begin
           Squads[K] := fSquads[GT].Items[I];
-          AvaiableSquads[K] := True;
+          AvailableSquads[K] := True;
           K := K + 1;
         end;
       ClosestIdx := 0; // Only for compiler
@@ -1048,7 +1053,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
         Position := TagPositions.Items[I];
         ClosestDist := INIT_DIST;
         for K := 0 to Length(Squads) - 1 do
-          if AvaiableSquads[K] then
+          if AvailableSquads[K] then
           begin
             Dist := KMDistanceAbs(Position, Squads[K].Position);
             if (Dist < ClosestDist) then
@@ -1061,7 +1066,7 @@ function TAICompany.OrderMove(aActualPosition: TKMPoint): Boolean;
           break;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
         Squads[ClosestIdx].TimeLimit := gGame.GameTickCount + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
-        AvaiableSquads[ClosestIdx] := False;
+        AvailableSquads[ClosestIdx] := False;
       end;
     finally
       TagPositions.Free;
@@ -1524,20 +1529,23 @@ begin
         // Position
         Position := Squad.Position;
         gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, $99000000 OR COLOR_GREEN);
-        // Target house
-        if (Squad.TargetHouse <> nil) then
-          if not Squad.TargetHouse.IsDestroyed then
+
+        // Target unit
+        if (Squad.TargetUnit <> nil) then
+        begin
+          if not Squad.TargetUnit.IsDeadOrDying then
           begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, $99000000 OR COLOR_RED);
+            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
                 gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
           end;
-        // Target unit
-        if (Squad.TargetUnit <> nil) then
-          if not Squad.TargetUnit.IsDeadOrDying then
+        end
+        // Target house
+        else if (Squad.TargetHouse <> nil) then
+          if not Squad.TargetHouse.IsDestroyed then
           begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.GetPosition, $99000000 OR COLOR_RED);
+            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.GetPosition, $99000000 OR COLOR_RED);
             if (Length(Squad.PointPath) > 0) then
               for J := Length(Squad.PointPath)-2 downto 0 do
                 gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);

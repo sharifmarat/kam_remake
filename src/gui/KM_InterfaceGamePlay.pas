@@ -107,6 +107,9 @@ type
     procedure Minimap_Update(Sender: TObject; const X,Y:integer);
     procedure Minimap_RightClick(Sender: TObject; const X,Y:integer);
     procedure Minimap_Click(Sender: TObject; const X,Y:integer);
+    procedure GameSettingsUpdated;
+//    procedure PlayersColorOnMM_Click(Sender: TObject);
+//    procedure PlayersColorInGame_Click(Sender: TObject);
 
     procedure Menu_Save_RefreshList(Sender: TObject);
     procedure Menu_Save_ListChange(Sender: TObject);
@@ -161,6 +164,8 @@ type
     Sidebar_Middle: TKMImage;
     Sidebar_Bottom: array of TKMImage;
     MinimapView: TKMMinimapView;
+//    ButtonFlat_AllyEnemyColorOnMM: TKMButtonFlat;
+//    ButtonFlat_AllyEnemyColorInGame: TKMButtonFlat;
     Bevel_DebugInfo: TKMBevel;
     Label_DebugInfo: TKMLabel;
 
@@ -682,8 +687,38 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.GameSettingsUpdated;
+begin
+  //Update minimap
+  fMinimap.Update(False);
+end;
+
+
+//procedure TKMGamePlayInterface.PlayersColorOnMM_Click(Sender: TObject);
+//begin
+//  ButtonFlat_AllyEnemyColorOnMM.Down := not ButtonFlat_AllyEnemyColorOnMM.Down;
+//
+//  gGameApp.GameSettings.ShowPlayersColorOnMinimap := not ButtonFlat_AllyEnemyColorOnMM.Down;
+//
+//  //Update minimap immidiately
+//  fMinimap.Update(False);
+//end;
+//
+//
+//procedure TKMGamePlayInterface.PlayersColorInGame_Click(Sender: TObject);
+//begin
+//  ButtonFlat_AllyEnemyColorInGame.Down := not ButtonFlat_AllyEnemyColorInGame.Down;
+//
+//  gGameApp.GameSettings.ShowPlayersColorInGame := not ButtonFlat_AllyEnemyColorInGame.Down;
+//end;
+
+
 constructor TKMGamePlayInterface.Create(aRender: TRender; aUIMode: TUIMode);
-var S: TKMShape; I: Integer;
+const
+  COLOR_B_SIZE = 20;
+var
+  I: Integer;
+  S: TKMShape;
 begin
   inherited Create(aRender);
   fUIMode := aUIMode;
@@ -715,6 +750,16 @@ begin
   MinimapView.OnClickRight := Minimap_RightClick;
   MinimapView.OnMinimapClick := Minimap_Click; // For placing beacons
 
+//  ButtonFlat_AllyEnemyColorOnMM := TKMButtonFlat.Create(Panel_Main, 197, 198 - 10 - COLOR_B_SIZE * 2, COLOR_B_SIZE, COLOR_B_SIZE, 378);
+//  ButtonFlat_AllyEnemyColorOnMM.OnClick := PlayersColorOnMM_Click;
+//  ButtonFlat_AllyEnemyColorOnMM.Down := False;
+//  ButtonFlat_AllyEnemyColorOnMM.Hint := gResTexts[TX_MINIMAP_COLOR_MODE];
+//
+//  ButtonFlat_AllyEnemyColorInGame := TKMButtonFlat.Create(Panel_Main, 197, 198 - COLOR_B_SIZE, COLOR_B_SIZE, COLOR_B_SIZE, 75);
+//  ButtonFlat_AllyEnemyColorInGame.OnClick := PlayersColorInGame_Click;
+//  ButtonFlat_AllyEnemyColorInGame.Down := False;
+//  ButtonFlat_AllyEnemyColorInGame.Hint := gResTexts[TX_GAME_COLOR_MODE];
+
   Image_Clock := TKMImage.Create(Panel_Main,232,8,67,65,556);
   Image_Clock.Hide;
   Label_Clock := TKMLabel.Create(Panel_Main,265,80,'mm:ss',fnt_Outline,taCenter);
@@ -728,10 +773,12 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
-  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 100);
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 0);
   Bevel_DebugInfo.BackAlpha := 0.5;
   Bevel_DebugInfo.Hitable := False;
+  Bevel_DebugInfo.Hide;
   Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fnt_Outline,taLeft);
+  Label_DebugInfo.Hide;
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
 { ========================================================================================== }
@@ -1144,7 +1191,7 @@ begin
   Create_Menu;
     Create_Save;
     Create_Load;
-    fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls);
+    fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls, GameSettingsUpdated);
     Create_Quit;
 
   fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls, SetViewportPos);
@@ -2200,14 +2247,19 @@ end;
 
 procedure TKMGamePlayInterface.ShowClock(aSpeed: Single);
 begin
-  Image_Clock.Visible := aSpeed <> 1;
-  Label_Clock.Visible := aSpeed <> 1;
+  Image_Clock.Visible := (aSpeed <> 1);
+  Label_Clock.Visible := (aSpeed <> 1) or gGameApp.GameSettings.ShowGameTime;
   Label_ClockSpeedup.Visible := aSpeed <> 1;
   Label_ClockSpeedup.Caption := 'x' + FormatFloat('##0.##', aSpeed);
 
+  if not Image_Clock.Visible and Label_Clock.Visible then
+    Label_Clock.Top := 8
+  else
+    Label_Clock.Top := 80;
+
   // With slow GPUs it will keep old values till next frame, that can take some seconds
   // Thats why we refresh Clock.Caption here
-  if aSpeed <> 1 then
+  if (aSpeed <> 1) then
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
 end;
 
@@ -3020,6 +3072,13 @@ begin
     SelectNextGameObjWSameType;
   end;
 
+  if (Key = gResKeys[SC_PLAYER_COLOR_MODE].Key) then
+  begin
+    gGameApp.GameSettings.ShowPlayersColors := not gGameApp.GameSettings.ShowPlayersColors;
+    //Update minimap immidiately
+    fMinimap.Update(False);
+  end;
+
   if (fUIMode in [umSP, umReplay])
     or gGame.IsMPGameSpeedUpAllowed
     or MULTIPLAYER_SPEEDUP then
@@ -3345,7 +3404,7 @@ begin
     Owner := GetGameObjectOwnerIndex(Obj);
     if (Owner <> -1) and
       ((Owner = gMySpectator.HandIndex)
-      or (gMySpectator.Hand.Alliances[Owner] = at_Ally)
+      or ((ALLOW_SELECT_ALLY_UNITS or (Obj is TKMHouse)) and (gMySpectator.Hand.Alliances[Owner] = at_Ally))
       or (ALLOW_SELECT_ENEMIES and (gMySpectator.Hand.Alliances[Owner] = at_Enemy)) // Enemies can be selected for debug
       or (fUIMode in [umReplay, umSpectate])) then
     begin
@@ -3671,6 +3730,9 @@ begin
   MinimapView.SetMinimap(fMinimap);
   MinimapView.SetViewport(fViewport);
 
+//  ButtonFlat_AllyEnemyColorOnMM.Down := not gGameApp.GameSettings.ShowPlayersColorOnMinimap;
+//  ButtonFlat_AllyEnemyColorInGame.Down := not gGameApp.GameSettings.ShowPlayersColorInGame;
+
   SetMenuState(gGame.MissionMode = mm_Tactic);
 end;
 
@@ -3740,10 +3802,10 @@ begin
 
   // Update speedup clocks
   if Image_Clock.Visible then
-  begin
     Image_Clock.TexID := ((Image_Clock.TexID - 556) + 1) mod 16 + 556;
+
+  if Label_Clock.Visible then
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
-  end;
 
   // Keep on updating these menu pages as game data keeps on changing
   if fGuiGameBuild.Visible then fGuiGameBuild.UpdateState;
@@ -3907,8 +3969,8 @@ begin
   Label_DebugInfo.Caption := S;
   TextSize := gRes.Fonts[fnt_Arial].GetTextSize(S);
 
-  Bevel_DebugInfo.Width := TextSize.X + 20;
-  Bevel_DebugInfo.Height := TextSize.Y + 20;
+  Bevel_DebugInfo.Width := IfThen(TextSize.X <= 1, 0, TextSize.X + 20);
+  Bevel_DebugInfo.Height := IfThen(TextSize.Y <= 1, 0, TextSize.Y + 20);
 
   Bevel_DebugInfo.Visible := SHOW_OVERLAY_BEVEL and (Trim(S) <> '') ;
 end;
