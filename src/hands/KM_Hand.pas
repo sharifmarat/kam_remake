@@ -1295,14 +1295,13 @@ begin
     if (gHands[fHandIndex].Alliances[J] = at_Ally)
     and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
        or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
-       AllowBuild := False;
+              AllowBuild := False;
 
-    //Check surrounding tiles in +/- 1 range for other houses pressence
-    if AllowBuild then
+        //Check surrounding tiles in +/- 1 range for other houses pressence
     for S := -1 to 1 do for T := -1 to 1 do
-      if (S<>0) or (T<>0) then //This is a surrounding tile, not the actual tile
-        for J := 0 to gHands.Count - 1 do
-          if (gHands[fHandIndex].Alliances[J] = at_Ally)
+            if (S <> 0) or (T <> 0) then //This is a surrounding tile, not the actual tile
+              for J := 0 to gHands.Count - 1 do
+                if (gHands[fHandIndex].Alliances[J] = at_Ally)
           and gHands[J].fBuildList.HousePlanList.HasPlan(KMPoint(P2.X+S,P2.Y+T)) then
           begin
             BlockPoint(KMPoint(P2.X+S,P2.Y+T), TC_BLOCK); //Block surrounding points
