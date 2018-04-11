@@ -613,14 +613,14 @@ begin
   Result := fFlagColor;
   if (gGame <> nil) then
   begin
-    if not gGame.IsMapEditor and not gGameApp.GameSettings.ShowPlayersColorInGame then
+    if not gGame.IsMapEditor and not gGameApp.GameSettings.ShowPlayersColors then
     begin
       if HandIndex = gMySpectator.HandIndex then
-        Result := gGameApp.GameSettings.GameColorSelf
+        Result := gGameApp.GameSettings.PlayerColorSelf
       else if (Alliances[gMySpectator.HandIndex] = at_Ally) then
-        Result := gGameApp.GameSettings.GameColorAlly
+        Result := gGameApp.GameSettings.PlayerColorAlly
       else
-        Result := gGameApp.GameSettings.GameColorEnemy;
+        Result := gGameApp.GameSettings.PlayerColorEnemy;
     end;
   end;
 end;

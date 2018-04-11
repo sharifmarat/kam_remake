@@ -3,16 +3,18 @@ unit KM_GUIGameMenuSettings;
 interface
 uses
    Classes, SysUtils,
-   KM_Controls, KM_Defaults;
+   KM_Controls, KM_Defaults, KM_CommonTypes;
 
 type
   TKMGameMenuSettings = class
   private
+    fOnChangeSetting: TEvent;
     procedure Menu_Settings_Change(Sender: TObject);
     procedure UpdateControlsPosition;
   protected
     Panel_Settings: TKMPanel;
       CheckBox_Autosave: TKMCheckBox;
+      CheckBox_AllyEnemy_ColorMode: TKMCheckBox;
       CheckBox_ReplayAutopauseAtPTEnd: TKMCheckBox;
       CheckBox_ReplaySpecShowBeacons: TKMCheckBox;
       TrackBar_Brightness: TKMTrackBar;
@@ -22,7 +24,7 @@ type
       CheckBox_MusicOff: TKMCheckBox;
       CheckBox_ShuffleOn: TKMCheckBox;
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aOnChangeSetting: TEvent);
 
     procedure Menu_Settings_Fill;
     procedure SetAutosaveEnabled(aEnabled: Boolean);
@@ -40,7 +42,7 @@ uses
 
 
 { TKMMapEdMenuQuit }
-constructor TKMGameMenuSettings.Create(aParent: TKMPanel);
+constructor TKMGameMenuSettings.Create(aParent: TKMPanel; aOnChangeSetting: TEvent);
 const
   PAD = 3;
   WID = TB_WIDTH - PAD * 2;
@@ -49,11 +51,19 @@ var
 begin
   inherited Create;
 
+  fOnChangeSetting := aOnChangeSetting;
+
   Panel_Settings := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 412);
     TopPos := 15;
     CheckBox_Autosave := TKMCheckBox.Create(Panel_Settings,PAD,TopPos,WID,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE],fnt_Metal);
     CheckBox_Autosave.OnClick := Menu_Settings_Change;
     Inc(TopPos, 25);
+
+    CheckBox_AllyEnemy_ColorMode := TKMCheckBox.Create(Panel_Settings,PAD,TopPos,WID,20,gResTexts[TX_GAME_SETTINGS_COLOR_MODE],fnt_Metal);
+    CheckBox_AllyEnemy_ColorMode.Hint := gResTexts[TX_GAME_SETTINGS_COLOR_MODE_HINT];
+    CheckBox_AllyEnemy_ColorMode.OnClick := Menu_Settings_Change;
+    Inc(TopPos, 40);
+
     CheckBox_ReplayAutopauseAtPTEnd := TKMCheckBox.Create(Panel_Settings,PAD,TopPos,WID,20,gResTexts[TX_GAME_SETTINGS_REPLAY_AUTOPAUSE],fnt_Metal);
     CheckBox_ReplayAutopauseAtPTEnd.Hint := gResTexts[TX_GAME_SETTINGS_REPLAY_AUTOPAUSE_HINT];
     CheckBox_ReplayAutopauseAtPTEnd.OnClick := Menu_Settings_Change;
@@ -107,6 +117,9 @@ begin
     Inc(Top, 25);
   end;
 
+  CheckBox_AllyEnemy_ColorMode.Show;
+  Inc(Top, 40);
+
   if gGame.GameMode = gmReplayMulti then
   begin
     CheckBox_ReplayAutopauseAtPTEnd.Top := Top;
@@ -148,6 +161,7 @@ begin
   TrackBar_Music.Position          := Round(gGameApp.GameSettings.MusicVolume * TrackBar_Music.MaxValue);
   CheckBox_MusicOff.Checked        := gGameApp.GameSettings.MusicOff;
   CheckBox_ShuffleOn.Checked       := gGameApp.GameSettings.ShuffleOn;
+  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
 
   if gGame.IsReplay then
     CheckBox_ReplaySpecShowBeacons.Checked := gGameApp.GameSettings.ReplayShowBeacons
@@ -177,6 +191,7 @@ begin
   gGameApp.GameSettings.MusicVolume           := TrackBar_Music.Position / TrackBar_Music.MaxValue;
   gGameApp.GameSettings.MusicOff              := CheckBox_MusicOff.Checked;
   gGameApp.GameSettings.ShuffleOn             := CheckBox_ShuffleOn.Checked;
+  gGameApp.GameSettings.ShowPlayersColors     := not CheckBox_AllyEnemy_ColorMode.Checked;
 
   if gGame.IsReplay then
     gGameApp.GameSettings.ReplayShowBeacons   := CheckBox_ReplaySpecShowBeacons.Checked
@@ -196,6 +211,10 @@ begin
 
   TrackBar_Music.Enabled := not CheckBox_MusicOff.Checked;
   CheckBox_ShuffleOn.Enabled := not CheckBox_MusicOff.Checked;
+
+
+  if Assigned(fOnChangeSetting) then
+    fOnChangeSetting();
 end;
 
 

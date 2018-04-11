@@ -841,13 +841,13 @@ const
 
   clChkboxOutline = icLightGrayTrans;
 
-  clMinimapSelf = icRed;
-  clMinimapAlly = icYellow;
-  clMinimapEnemy = icCyan;
+  clPlayerSelf = icRed;
+  clPlayerAlly = icYellow;
+  clPlayerEnemy = icCyan;
 
-  clGameSelf = icRed;
-  clGameAlly = icYellow;
-  clGameEnemy = icCyan;
+//  clGameSelf = icRed;
+//  clGameAlly = icYellow;
+//  clGameEnemy = icCyan;
 
 var
   ExeDir: UnicodeString;

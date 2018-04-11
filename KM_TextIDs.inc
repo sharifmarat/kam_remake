@@ -1197,10 +1197,11 @@ TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
 
 TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit
 
-TX_MINIMAP_COLOR_MODE = 1187; //Minimap player color mode: player color or self/ally/enemy color
-TX_GAME_COLOR_MODE = 1188; //In-game player color mode: player color or self/ally/enemy color
+TX_GAME_SETTINGS_COLOR_MODE = 1187; //Ally / enemy color mode
+TX_GAME_SETTINGS_COLOR_MODE_HINT = 1188; //Use self/ally/enemy colors for players instead of initial player colors
 
 TX_LOBBY_ALERT_NOT_READY = 1189; //Host is ready to start. Please press '%s'
 TX_LOBBY_ALERT_READY_BTN = 1190; //Ask to press Ready
 TX_LOBBY_ALERT_GET_READY_SENT = 1191; //Alert to get ready was sent to %s players
 
+TX_KEY_FUNC_PLAYER_COLOR_MODE = 1192; //Switch players color mode
