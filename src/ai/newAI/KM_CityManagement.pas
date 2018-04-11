@@ -3,7 +3,7 @@ unit KM_CityManagement;
 interface
 uses
   Math, KM_CommonUtils, SysUtils, KM_Defaults, KM_CommonClasses, KM_Points,
-  KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats,
+  KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats, KM_HouseCollection,
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
@@ -62,7 +62,7 @@ type
 
 implementation
 uses
-  Classes, KM_Game, KM_Houses, KM_HouseCollection, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
+  Classes, KM_Game, KM_Houses, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
   KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket;
 
 
