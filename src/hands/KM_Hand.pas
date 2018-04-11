@@ -1279,45 +1279,47 @@ begin
   //Override marks if there are House/FieldPlans (only we know about our plans) and or FogOfWar
   HA := gRes.Houses[aHouseType].BuildArea;
 
-  for I := 1 to 4 do for K := 1 to 4 do
-  if (HA[I,K] <> 0)
-  and gTerrain.TileInMapCoords(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4, 1) then
-  begin
-    //This can't be done earlier since values can be off-map
-    P2 := KMPoint(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4);
+  for I := 1 to 4 do
+    for K := 1 to 4 do
+      if (HA[I,K] <> 0)
+        and gTerrain.TileInMapCoords(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4, 1) then
+      begin
+        //This can't be done earlier since values can be off-map
+        P2 := KMPoint(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4);
 
-    //Forbid planning on unrevealed areas and fieldplans
-    AllowBuild := (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
+        //Forbid planning on unrevealed areas and fieldplans
+        AllowBuild := (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
 
-    //This tile must not contain fields/houses of allied players or self
-    if AllowBuild then
-    for J := 0 to gHands.Count - 1 do
-    if (gHands[fHandIndex].Alliances[J] = at_Ally)
-    and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
-       or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
+        //This tile must not contain fields/houses of allied players or self
+        if AllowBuild then
+          for J := 0 to gHands.Count - 1 do
+            if (gHands[fHandIndex].Alliances[J] = at_Ally)
+              and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
+                or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
               AllowBuild := False;
 
         //Check surrounding tiles in +/- 1 range for other houses pressence
-    for S := -1 to 1 do for T := -1 to 1 do
+        for S := -1 to 1 do
+          for T := -1 to 1 do
             if (S <> 0) or (T <> 0) then //This is a surrounding tile, not the actual tile
               for J := 0 to gHands.Count - 1 do
                 if (gHands[fHandIndex].Alliances[J] = at_Ally)
-          and gHands[J].fBuildList.HousePlanList.HasPlan(KMPoint(P2.X+S,P2.Y+T)) then
-          begin
-            BlockPoint(KMPoint(P2.X+S,P2.Y+T), TC_BLOCK); //Block surrounding points
-            AllowBuild := False;
-          end;
+                  and gHands[J].fBuildList.HousePlanList.HasPlan(KMPoint(P2.X+S,P2.Y+T)) then
+                begin
+                  BlockPoint(KMPoint(P2.X+S,P2.Y+T), TC_BLOCK); //Block surrounding points
+                  AllowBuild := False;
+                end;
 
-    //Mark the tile according to previous check results
-    if not AllowBuild then
-      if HA[I,K] = 2 then
-        BlockPoint(P2, TC_BLOCK_ENTRANCE)
-      else
-        if aHouseType in [htGoldMine, htIronMine] then
-          BlockPoint(P2, TC_BLOCK_MINE)
-        else
-          BlockPoint(P2, TC_BLOCK);
-  end;
+        //Mark the tile according to previous check results
+        if not AllowBuild then
+          if HA[I,K] = 2 then
+            BlockPoint(P2, TC_BLOCK_ENTRANCE)
+          else
+            if aHouseType in [htGoldMine, htIronMine] then
+              BlockPoint(P2, TC_BLOCK_MINE)
+            else
+              BlockPoint(P2, TC_BLOCK);
+      end;
 end;
 
 
