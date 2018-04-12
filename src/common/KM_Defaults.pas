@@ -136,6 +136,7 @@ var
   OVERLAY_AVOID         :Boolean = False; //Show avoidance map
   OVERLAY_AI_BUILD      :Boolean = False; //Show build progress of new AI
   OVERLAY_AI_COMBAT     :Boolean = False; //Show combat marks of new AI
+  OVERLAY_AI_EYE        :Boolean = False; //Show eye vision of new AI
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked
