@@ -12,11 +12,11 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_RndOwnLim     : Single = 4.376474;
-  GA_EYE_GetForests_InflLimit     : Single = 220.1373;
-  GA_EYE_GetForests_OwnLimit      : Single = 89.57248;
-  GA_EYE_GetForests_MinTrees      : Single = 3.430406;
-  GA_EYE_GetForests_Radius        : Single = 5.34699;
+  GA_EYE_GetForests_RndOwnLim     : Single = 39.67771;
+  GA_EYE_GetForests_InflLimit     : Single = 103.3557;
+  GA_EYE_GetForests_OwnLimit      : Single = 94.6905;
+  GA_EYE_GetForests_MinTrees      : Single = 3.11;
+  GA_EYE_GetForests_Radius        : Single = 5.0698;
 
 
 type
@@ -658,7 +658,8 @@ begin
   Result := False;
 
   // The loc is out of map or in inaccessible area
-  if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y, 1) OR (gAIFields.Influences.AvoidBuilding[aLoc.Y,aLoc.X] = AVOID_BUILDING_INACCESSIBLE_TILES) then
+  if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y, 1) then
+    //OR (gAIFields.Influences.AvoidBuilding[aLoc.Y,aLoc.X] = AVOID_BUILDING_INACCESSIBLE_TILES) then // Use only with old placing algorithm without flood fill
     Exit;
 
   // Check if we can place house on terrain, this also makes sure the house is
@@ -888,107 +889,91 @@ const
   UNVISITED_TREE_IN_FOREST = 3;
   VISITED_TREE = 4;
   VISITED_TREE_IN_FOREST = 5;
+  MAX_SPARE_POINTS = 20;
 var
   PartOfForest: Boolean;
   Ownership, AvoidBulding: Byte;
   RADIUS, MAX_DIST: Word;
-  I,K,X,Y, Distance, SparePointsCnt: Integer;
+  I,X,Y,X2,Y2, Distance, SparePointsCnt: Integer;
   Cnt: Single;
   Point, sumPoint: TKMPoint;
   VisitArr: TKMByte2Array;
-  SparePoints: array[0..20] of Integer;
   Polygons: TPolygonArray;
 begin
+  fBuildFF.UpdateState(); // Mark walkable area in owner's city
   aForests.Clear;
   Polygons := gAIFields.NavMesh.Polygons;
 
   RADIUS := Round(GA_EYE_GetForests_Radius);
   MAX_DIST := RADIUS + 1;
 
-  // Init visit array
+  // Init visit array and fill trees
   SetLength(VisitArr, gTerrain.MapY, gTerrain.MapX);
   for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
-      VisitArr[Y,X] := UNVISITED_TILE;
+    begin
+      VisitArr[Y,X] := VISITED_TILE;
+      if (BuildFF.VisitIdx = BuildFF.Visited[Y,X])
+         AND (BuildFF.State[Y,X] = bsTree) then
+      begin
+        AvoidBulding := gAIFields.Influences.AvoidBuilding[Y,X];
+        if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
+          VisitArr[Y,X] := UNVISITED_TREE
+        else if (AvoidBulding < GA_EYE_GetForests_InflLimit) then
+          VisitArr[Y,X] := UNVISITED_TREE_IN_FOREST;
+      end;
+    end;
 
-  // Try to find trees only in owner's influence areas
+  for Y := 1 to gTerrain.MapY - 1 do
+    for X := 1 to gTerrain.MapX - 1 do
+      if ((VisitArr[Y,X] = UNVISITED_TREE) OR (VisitArr[Y,X] = UNVISITED_TREE_IN_FOREST))
+         AND (fOwner = gAIFields.Influences.GetBestOwner(X,Y)) then
+      begin
+        Point := KMPoint(X,Y);
+        PartOfForest := False;
+        sumPoint := KMPOINT_ZERO;
+        Cnt := 0;
+        // It is faster to try find points in required radius than find closest points from list of points (when is radius small)
+        for Y2 := Max(1, Point.Y-RADIUS) to Min(Point.Y+RADIUS, gTerrain.MapY-1) do
+        for X2 := Max(1, Point.X-RADIUS) to Min(Point.X+RADIUS, gTerrain.MapX-1) do
+          if (VisitArr[Y2,X2] >= UNVISITED_TREE) then // Detect tree
+          begin
+            Distance := KMDistanceAbs(Point, KMPoint(X2,Y2));
+            if (Distance < MAX_DIST + 1) then // Check distance
+            begin
+              Cnt := Cnt + 1;
+              sumPoint := KMPointAdd(sumPoint, KMPoint(X2,Y2));
+              if (VisitArr[Y2,X2] = UNVISITED_TREE) then
+                VisitArr[Y2,X2] := VISITED_TREE
+              else if (VisitArr[Y2,X2] = UNVISITED_TREE_IN_FOREST) then
+              begin
+                PartOfForest := True;
+                VisitArr[Y2,X2] := VISITED_TREE_IN_FOREST;
+              end;
+            end;
+          end;
+        if (Cnt > GA_EYE_GetForests_MinTrees) then
+        begin
+          Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
+          aForests.Add( Point, Cardinal(PartOfForest) );
+          aForests.Tag2[aForests.Count-1] := Round(Cnt);
+        end;
+      end;
+
+  // Try to find potential forests only in owner's influence areas
   SparePointsCnt := 0;
   for I := 0 to Length(Polygons) - 1 do
   begin
     Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
-    if (Ownership > GA_EYE_GetForests_OwnLimit) then
-    begin
-      for K := Polygons[I].Poly2PointStart to Polygons[I].Poly2PointCnt - 1 do
+    if (Ownership > GA_EYE_GetForests_OwnLimit)
+       AND (Ownership < GA_EYE_GetForests_RndOwnLim)
+       AND (SparePointsCnt < MAX_SPARE_POINTS)
+       AND (KaMRandom() > 0.7) then
       begin
-        Point := gAIFields.NavMesh.Polygon2Point[K];
-        if (VisitArr[Point.Y,Point.X] = UNVISITED_TILE) then
-        begin
-          //if gTerrain.ObjectIsChopableTree(Point, caAgeFull) then // Consider only caAgeFull trees
-          if gTerrain.ObjectIsChopableTree(Point, [caAge1,caAge2,caAge3,caAgeFull]) then // Consider all trees
-          begin
-            AvoidBulding := gAIFields.Influences.AvoidBuilding[Point.Y,Point.X];
-            if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
-              VisitArr[Point.Y,Point.X] := UNVISITED_TREE
-            else if (AvoidBulding < GA_EYE_GetForests_InflLimit) then
-              VisitArr[Point.Y,Point.X] := UNVISITED_TREE_IN_FOREST
-            else
-              VisitArr[Point.Y,Point.X] := VISITED_TILE; // Tree in full forest -> ignore it
-          end
-          else
-            VisitArr[Point.Y,Point.X] := VISITED_TILE;
-        end;
-      end;
-      if (Ownership < GA_EYE_GetForests_RndOwnLim) AND (SparePointsCnt < High(SparePoints)) AND (KaMRandom() > 0.7) then
-      begin
-        SparePoints[SparePointsCnt] := I;
+        aForests.Add( Polygons[I].CenterPoint, 0 );
+        aForests.Tag2[ aForests.Count-1 ] := 0;
         SparePointsCnt := SparePointsCnt + 1;
       end;
-    end;
-  end;
-
-  // Restrict searching area by best owner (but consider also other trees in owner influence area = it may create shared forests)
-  for I := 0 to Length(Polygons) - 1 do
-    if (fOwner = gAIFields.Influences.GetBestOwner(I)) then
-      for K := Polygons[I].Poly2PointStart to Polygons[I].Poly2PointCnt - 1 do
-      begin
-        Point := gAIFields.NavMesh.Polygon2Point[K];
-        if (VisitArr[Point.Y,Point.X] = UNVISITED_TREE) OR (VisitArr[Point.Y,Point.X] = UNVISITED_TREE_IN_FOREST) then
-        begin
-          PartOfForest := False;
-          sumPoint := KMPOINT_ZERO;
-          Cnt := 0;
-          // It is faster to try find points in required radius than find closest points from list of points (when is radius small)
-          for Y := Max(1, Point.Y-RADIUS) to Min(Point.Y+RADIUS, gTerrain.MapY-1) do
-          for X := Max(1, Point.X-RADIUS) to Min(Point.X+RADIUS, gTerrain.MapX-1) do
-            if (VisitArr[Y,X] >= UNVISITED_TREE) then // Detect tree
-            begin
-              Distance := KMDistanceAbs(Point, KMPoint(X,Y));
-              if (Distance < MAX_DIST + 1) then // Check distance
-              begin
-                Cnt := Cnt + 1;
-                sumPoint := KMPointAdd(sumPoint, KMPoint(X,Y));
-                if (VisitArr[Y,X] = UNVISITED_TREE) then
-                  VisitArr[Y,X] := VISITED_TREE
-                else if (VisitArr[Y,X] = UNVISITED_TREE_IN_FOREST) then
-                begin
-                  PartOfForest := True;
-                  VisitArr[Y,X] := VISITED_TREE_IN_FOREST;
-                end;
-              end;
-            end;
-          if (Cnt > GA_EYE_GetForests_MinTrees) then
-          begin
-            Point := KMPoint( Round(sumPoint.X/Cnt), Round(sumPoint.Y/Cnt) );
-            aForests.Add( Point, Cardinal(PartOfForest) );
-            aForests.Tag2[aForests.Count-1] := Round(Cnt);
-          end;
-        end;
-      end;
-
-  for I := 0 to SparePointsCnt - 1 do
-  begin
-    aForests.Add(  Polygons[ SparePoints[I] ].CenterPoint, 0  );
-    aForests.Tag2[ aForests.Count-1 ] := 0;
   end;
 end;
 
@@ -1014,7 +999,7 @@ begin
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
-    if (H.HouseType in SCANNED_HOUSES) AND not H.IsDestroyed AND H.IsComplete then
+    if (H <> nil) AND not H.IsDestroyed AND H.IsComplete AND (H.HouseType in SCANNED_HOUSES) then
     begin
       Result[Cnt] := KMPointBelow(H.Entrance);
       Cnt := Cnt + 1;
@@ -1563,11 +1548,8 @@ begin
   InitQueue(True);
   for I := 0 to Length(InitPointsArr) - 1 do
     with InitPointsArr[I] do
-    begin
-      if not CanBeVisited(X,Y,Y*fMapX + X, True) then
-        FML();
-      MarkAsVisited(X,Y, InsertInQueue(Y*fMapX + X), 0);
-    end;
+      if CanBeVisited(X,Y,Y*fMapX + X, True) then
+        MarkAsVisited(X,Y, InsertInQueue(Y*fMapX + X), 0);
 
   HouseFF();
 end;
