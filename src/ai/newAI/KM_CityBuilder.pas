@@ -275,7 +275,7 @@ var
 begin
   case aNode.FieldType of
     ftRoad: NODE_TYPE := AVOID_BUILDING_NODE_LOCK_ROAD;
-    else     NODE_TYPE := AVOID_BUILDING_NODE_LOCK_FIELD;
+    else    NODE_TYPE := AVOID_BUILDING_NODE_LOCK_FIELD;
   end;
   with aNode.FieldList do
     for I := 0 to Count-1 do
@@ -850,7 +850,8 @@ const
   //BUILD_WARE: TSetOfWare = [wt_GoldOre, wt_Coal, wt_Gold, wt_Stone, wt_Trunk, wt_Wood];
   //FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood];
   //WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
-  ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor, wt_Flour, wt_Bread];
+  // All considerable ware (from weapons / armors just 1 piece of ware type because it is produced in same house)
+  ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Armor, wt_Sword, wt_MetalArmor, wt_Flour, wt_Bread];
   //BUILD_ORDER_WARE: array[0..8] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood, wt_Corn, wt_Pig, wt_Sausages);
   BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_GoldOre, wt_Coal, wt_Gold, wt_Trunk, wt_Wood);
 var
@@ -919,8 +920,8 @@ var
     I: Integer;
     Priority: Single;
     Ware, WT, POM_WT: TKMWareType;
-    WareOrder: array[0..5] of TKMWareType;
-    WarePriority: array[0..5] of Single;
+    WareOrder: array[0..10] of TKMWareType;
+    WarePriority: array[0..10] of Single;
   begin
     Output := False;
     // Basic producing houses (secure resources for building)
@@ -1103,6 +1104,8 @@ begin
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
   HT := htWoodcutters;
   if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
+    AND not fGoldShortage
+    AND not fStoneShortage
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
   begin
     MaxPlans := MaxPlans - 1;
@@ -1419,9 +1422,9 @@ begin
       if not IsDeadOrDying then
       begin
         if (gHands[fOwner].Units[I] is TKMUnitSerf) AND IsIdle then
-          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $FF000000 OR COLOR_BLUE)
+          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $44000000 OR COLOR_BLUE)
         else if (gHands[fOwner].Units[I] is TKMUnitWorker) AND IsIdle then
-          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $FF000000 OR COLOR_NEW2);
+          gRenderAux.Quad(GetPosition.X, GetPosition.Y, $44000000 OR COLOR_NEW2);
       end;
 
   Color := 0; // For compiler
