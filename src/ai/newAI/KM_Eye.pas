@@ -832,10 +832,6 @@ var
     PolygonEvaluation[I+1] := aBid;
     CoalPolygons[I+1] := aIdx;
   end;
-  procedure wtf();
-  begin
-
-  end;
 const
   MAX_LOCS = 30;
   MAX_ENEMY_OWNERSHIP = 150;
@@ -883,8 +879,6 @@ begin
       if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 0) then // There are stored only coal tiles > 1 so here > 0 is ok because we can expect that surrouding tiles are also coal
       begin
         Cnt := Cnt + 1;
-        if Loc.Y >= 176 then
-         wtf();
         if fBuildFF.CanBePlacedHouse(Loc) then // BuildFF can see more than CanAddHousePlan
           Output.Add(Loc, BuildFF.Distance[Loc]);
       end;
