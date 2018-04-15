@@ -313,9 +313,9 @@ var
 begin
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
-    if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
-      AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
-    else
+    //if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
+    //  AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
+    //else
       AvoidBuilding[Y,X] := 0;
   //InitReachableArea();
 
