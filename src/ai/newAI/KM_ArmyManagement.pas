@@ -237,7 +237,7 @@ begin
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
     H := gHands[fOwner].Houses[I];
-    if (H.HouseType = htBarracks) AND not H.IsDestroyed AND H.IsComplete then
+    if (H <> nil) AND not H.IsDestroyed AND (H.HouseType = htBarracks) AND H.IsComplete then
     begin
       Barracks[K] := TKMHouseBarracks(H);
       Inc(K);
@@ -320,7 +320,7 @@ end;
 
 procedure TKMArmyManagement.CheckAttack();
   // Order multiple companies
-  procedure OrderAttack(aTargetPoint: TKMPoint; aAvaiableGroups: TKMUnitGroupArray);
+  procedure OrderAttack(aTargetPoint: TKMPoint; aAvailableGroups: TKMUnitGroupArray);
   const
     MAX_GROUPS_IN_COMPANY = 9;
   var
@@ -329,13 +329,13 @@ procedure TKMArmyManagement.CheckAttack();
     GTArr: array[TKMGroupType] of Integer;
     Groups: TKMUnitGroupArray;
   begin
-    // Get count of avaiable group types
+    // Get count of available group types
     FillChar(GTArr, SizeOf(GTArr), #0);
-    for I := 0 to Length(aAvaiableGroups) - 1 do
-      Inc(  GTArr[ aAvaiableGroups[I].GroupType ]  );
+    for I := 0 to Length(aAvailableGroups) - 1 do
+      Inc(  GTArr[ aAvailableGroups[I].GroupType ]  );
 
-    CompaniesCnt := Max(1, Ceil(Length(aAvaiableGroups) / MAX_GROUPS_IN_COMPANY));
-    HighAG := Length(aAvaiableGroups) - 1;
+    CompaniesCnt := Max(1, Ceil(Length(aAvailableGroups) / MAX_GROUPS_IN_COMPANY));
+    HighAG := Length(aAvailableGroups) - 1;
     for I := 0 to CompaniesCnt - 1 do
     begin
       GCnt := 0;
@@ -346,13 +346,13 @@ procedure TKMArmyManagement.CheckAttack();
         for K := HighAG downto 0 do
           if (GTMaxCnt <= 0) then
             break
-          else if (aAvaiableGroups[K].GroupType = GT) then
+          else if (aAvailableGroups[K].GroupType = GT) then
           begin
             if (Length(Groups) <= GCnt) then
               SetLength(Groups, GCnt + MAX_GROUPS_IN_COMPANY);
-            Groups[GCnt] := aAvaiableGroups[K];
+            Groups[GCnt] := aAvailableGroups[K];
             GCnt := GCnt + 1;
-            aAvaiableGroups[K] := aAvaiableGroups[HighAG];
+            aAvailableGroups[K] := aAvailableGroups[HighAG];
             HighAG := HighAG - 1;
             GTMaxCnt := GTMaxCnt - 1;
           end;
@@ -371,7 +371,7 @@ var
   TargetOwner: TKMHandIndex;
   TargetPoint: TKMPoint;
   Group: TKMUnitGroup;
-  AvaiableGroups: TKMUnitGroupArray;
+  AvailableGroups: TKMUnitGroupArray;
 begin
   //Do not process attack or defence during peacetime
   if gGame.IsPeaceTime then Exit;
@@ -391,7 +391,7 @@ begin
   end;
   // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic); // Maybe force attack in mm_Tactic map? But some of mm_Tactic map are also defensive...
 
-  // Get array of pointers to avaiable groups
+  // Get array of pointers to available groups
   Cnt := 0;
   for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
   begin
@@ -405,9 +405,9 @@ begin
       // Take all groups out of attack class
       if not fAttack.IsGroupInAction(Group) then
       begin
-        if (Length(AvaiableGroups) <= Cnt) then
-          SetLength(AvaiableGroups, Length(AvaiableGroups) + 16);
-        AvaiableGroups[Cnt] := Group;
+        if (Length(AvailableGroups) <= Cnt) then
+          SetLength(AvailableGroups, Length(AvailableGroups) + 16);
+        AvailableGroups[Cnt] := Group;
         Cnt := Cnt + 1;
       end;
     end
@@ -416,9 +416,9 @@ begin
       // Take group in defence position
       if (fDefence.FindPositionOf(Group) <> nil) then
       begin
-        if (Length(AvaiableGroups) <= Cnt) then
-          SetLength(AvaiableGroups, Length(AvaiableGroups) + 16);
-        AvaiableGroups[Cnt] := Group;
+        if (Length(AvailableGroups) <= Cnt) then
+          SetLength(AvailableGroups, Length(AvailableGroups) + 16);
+        AvailableGroups[Cnt] := Group;
         Cnt := Cnt + 1;
       end;
     end;
@@ -430,15 +430,15 @@ begin
 
   if fAttack.FindBestTarget(TargetOwner, TargetPoint, ForceToAttack) then
   begin
-    SetLength(AvaiableGroups, Cnt);
-    for I := Low(AvaiableGroups) to High(AvaiableGroups) do
-      fDefence.ReleaseGroup(AvaiableGroups[I]);
-    OrderAttack(TargetPoint, AvaiableGroups);
-    //if ForceToAttack OR (gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(TargetOwner, AvaiableGroups) > COMPANY_MIN_ATTACK_CHANCE) then
+    SetLength(AvailableGroups, Cnt);
+    for I := Low(AvailableGroups) to High(AvailableGroups) do
+      fDefence.ReleaseGroup(AvailableGroups[I]);
+    OrderAttack(TargetPoint, AvailableGroups);
+    //if ForceToAttack OR (gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(TargetOwner, AvailableGroups) > COMPANY_MIN_ATTACK_CHANCE) then
   end;
 
   //Comparison := gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player) - (EnemyStats[I].Distance / MinDist - 1) * DISTANCE_COEF;
-  //fAttack.AttackChance(AvaiableGroups);
+  //fAttack.AttackChance(AvailableGroups);
 end;
 
 
@@ -507,6 +507,7 @@ end;
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 const
   PERF_TIME_LIMIT = MAX_HANDS * 10 * 10;
+  //PERF_TIME_LIMIT = 10;
 begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
