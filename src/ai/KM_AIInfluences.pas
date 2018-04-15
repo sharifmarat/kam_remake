@@ -282,31 +282,31 @@ procedure TKMInfluences.InitAvoidBuilding();
       end;
   end;
   // New AI does not use flood fill -> unreachable areas must be detected and building of houses must be avoided here
-  procedure InitReachableArea();
-  var
-    PL: TKMHandIndex;
-    I: Integer;
-    MinP, MaxP: TKMPoint;
-    CenterPoints: TKMPointArray;
-    RoadableFF: TKKRoadableFF;
-  begin
-    if (Length(AvoidBuilding) = 0) then
-      Exit;
-    MinP := KMPoint(1,1);
-    MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
-    RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
-    try
-      for PL := 0 to gHands.Count - 1 do
-      begin
-        gAIFields.Eye.OwnerUpdate(PL);
-        CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-        for I := 0 to Length(CenterPoints) - 1 do
-          RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
-      end;
-    finally
-      RoadableFF.Free;
-    end;
-  end;
+  //procedure InitReachableArea();
+  //var
+  //  PL: TKMHandIndex;
+  //  I: Integer;
+  //  MinP, MaxP: TKMPoint;
+  //  CenterPoints: TKMPointArray;
+  //  RoadableFF: TKKRoadableFF;
+  //begin
+  //  if (Length(AvoidBuilding) = 0) then
+  //    Exit;
+  //  MinP := KMPoint(1,1);
+  //  MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
+  //  RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
+  //  try
+  //    for PL := 0 to gHands.Count - 1 do
+  //    begin
+  //      gAIFields.Eye.OwnerUpdate(PL);
+  //      CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+  //      for I := 0 to Length(CenterPoints) - 1 do
+  //        RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
+  //    end;
+  //  finally
+  //    RoadableFF.Free;
+  //  end;
+  //end;
 var
   H: TKMHouse;
   I,X,Y: Integer;
@@ -317,7 +317,7 @@ begin
       AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
     else
       AvoidBuilding[Y,X] := 0;
-  InitReachableArea();
+  //InitReachableArea();
 
   //Avoid areas where Gold/Iron mines should be
   for Y := 3 to fMapY - 2 do
