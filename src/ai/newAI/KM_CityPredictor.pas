@@ -450,18 +450,14 @@ begin
   fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
   fWareBalance[wt_Shield].FinalConsumption := MaxWoodWeapProd / 5;
 
+  // Decide count of workers + build nodes
+  gHands[fOwner].AI.Setup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
+
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
-
-  //Temp bugfix - do not update standart Setup params here, as they will overwrite params, set in the Map Editor
-  if fSetup.NewAI then
-  begin
-    // Decide count of workers + build nodes
-    fSetup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
-    // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
-    fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
-    fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
-  end;
+  // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
+  fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
+  fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
 
   // Predict final city stats (by potential size of city)
   fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
@@ -525,7 +521,6 @@ const
   WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
   WINEYARD_DELAY = 50 * 60 * 10;
 var
-//  HT: TKMHouseType;
   Stats: TKMHandStats;
   Planner: TKMCityPlanner;
 begin
@@ -540,11 +535,13 @@ begin
   UpdateBasicHouses(aTick, False);
   // Dont build anything if there is not completed school
   if (Stats.GetHouseQty(htSchool) = 0)
-    OR ((Stats.GetHouseQty(htSchool) = 1)
-      AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
-           OR not (Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete)
-          )
-        )then
+    OR ( (Stats.GetHouseQty(htSchool) = 1)
+         AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
+              OR not ( (Planner.PlannedHouses[htSchool].Plans[0].House <> nil)
+                       AND Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete
+                     )
+             )
+       ) then
     Exit;
   // Update prediction
   UpdateWareBalance();
