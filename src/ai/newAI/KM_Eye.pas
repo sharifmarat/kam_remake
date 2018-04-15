@@ -51,6 +51,7 @@ type
   TKMBuildFF = class
   private
     fOwner: TKMHandIndex;
+    fOwnerUpdateInfo: TKMByteArray;
     fVisitIdx, fVisitIdxHouse: Byte;
     fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
     fUpdateTick: Cardinal;
@@ -63,6 +64,7 @@ type
     procedure SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
     function GetVisited(const aY,aX: Word): Byte;
     procedure SetVisited(const aY,aX: Word; const aVisited: Byte);
+    function GetOwnersIndex(const aOwner: TKMHandIndex): Byte;
     function GetState(const aY,aX: Word): TKMBuildState;
     procedure SetState(const aY,aX: Word; const aState: TKMBuildState);
     function GetStateFromIdx(const aIdx: Word): TKMBuildState;
@@ -79,7 +81,6 @@ type
     procedure MarkAsVisited(const aY,aIdx,aDistance: Word; const aState: TKMBuildState); overload;
     procedure MarkAsVisited(const aX,aY,aIdx,aDistance: Word); overload;
 
-    function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
     function GetTerrainState(const aX,aY: Word): TKMBuildState;
     procedure MarkPlans();
     procedure TerrainFF();
@@ -92,14 +93,17 @@ type
     property VisitIdx: Byte read fVisitIdx;
     property VisitIdxHouse: Byte read fVisitIdxHouse;
     property Visited[const aY,aX: Word]: Byte read GetVisited write SetVisited;
+    property VisitIdxOwner[const aOwner: TKMHandIndex]: Byte read GetOwnersIndex;
     property State[const aY,aX: Word]: TKMBuildState read GetState write SetState;
     property StateIdx[const aIdx: Word]: TKMBuildState read GetStateFromIdx;
     property Distance[const aPoint: TKMPoint]: Word read GetDistance;
     property Next[const aY,aX: Word]: Word read GetNext write SetNext;
     property Locs: TKMPointList read fLocs write fLocs;
+    property HouseRequirements: TKMHouseRequirements read fHouseReq write fHouseReq;
 
     procedure UpdateState();
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
     procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
   end;
 
@@ -801,7 +805,7 @@ var
   Count: Word;
   CoalPolygons, PolygonEvaluation: TKMWordArray;
 
-  procedure InsertionSort(aIdx,aEval: Word);
+  procedure InsertionSort(aIdx,aBid: Word);
   var
     I: Integer;
   begin
@@ -809,12 +813,14 @@ var
     begin
       SetLength(CoalPolygons, Count + 64);
       SetLength(PolygonEvaluation, Count + 64);
+      for I := Count to High(PolygonEvaluation) do
+        PolygonEvaluation[I] := High(Word);
     end;
     Count := Count + 1;
     I := Count - 2;
-    while I > 0 do
+    while (I >= 0) do
     begin
-      if (PolygonEvaluation[I] > aEval) then
+      if (PolygonEvaluation[I] > aBid) then
       begin
         PolygonEvaluation[I+1] := PolygonEvaluation[I];
         CoalPolygons[I+1] := CoalPolygons[I];
@@ -823,47 +829,58 @@ var
         break;
       I := I - 1;
     end;
-    PolygonEvaluation[I+1] := aEval;
+    PolygonEvaluation[I+1] := aBid;
     CoalPolygons[I+1] := aIdx;
   end;
 const
-  MAX_LOCS = 25;
+  MAX_LOCS = 30;
   MAX_ENEMY_OWNERSHIP = 150;
 var
-  Own: Word;
+  Dist: Word;
   I, K, Cnt, Idx: Integer;
   Loc: TKMPoint;
+  HouseReq: TKMHouseRequirements;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
+  fBuildFF.UpdateState(); // Mark walkable area in owner's city
   Count := 0;
-  for I := 0 to Length(fCoalPolygons) - 1 do
-    if (fCoalPolygons[I] > 0) then
+  for Idx := 0 to Length(fCoalPolygons) - 1 do
+    if (fCoalPolygons[Idx] > 0) then
     begin
-      if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(I) <> fOwner)) then
+      if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(Idx) <> fOwner)) then
         continue;
-      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, I, at_Enemy) > MAX_ENEMY_OWNERSHIP) then
+      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Idx, at_Enemy) > MAX_ENEMY_OWNERSHIP) then
         continue;
-      Own := gAIFields.Influences.OwnPoly[fOwner, I];
-      if (Own = 0) then
+      Loc := gAIFields.NavMesh.Polygons[Idx].CenterPoint;
+      if (fBuildFF.VisitIdx <> fBuildFF.Visited[ Loc.Y, Loc.X ]) then
         continue;
-      Own := Max(0, High(Word) - 300 + Own - gAIFields.Influences.GetOtherOwnerships(fOwner, I));
-      if (Own > 0) then
-        InsertionSort(I,Own);
+      Dist := BuildFF.Distance[Loc];
+      InsertionSort(Idx,Dist);
     end;
 
-  for I := Count - 1 downto 0 do
+  with HouseReq do
+  begin
+    HouseType := htCoalMine;
+    IgnoreTrees := False;
+    IgnoreAvoidBuilding := True;
+    MaxCnt := 0;
+    MaxDist := 0;
+  end;
+  BuildFF.HouseRequirements := HouseReq;
+
+  for I := 0 to Count - 1 do
   begin
     Idx := CoalPolygons[I];
     Cnt := 0;
     for K := gAIFields.NavMesh.Polygons[Idx].Poly2PointStart to gAIFields.NavMesh.Polygons[Idx].Poly2PointCnt - 1 do
     begin
       Loc := gAIFields.NavMesh.Polygon2Point[K];
-      if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 1) then
+      if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 0) then // There are stored only coal tiles > 1 so here > 0 is ok because we can expect that surrouding tiles are also coal
       begin
         Cnt := Cnt + 1;
-        if CanAddHousePlan(Loc, htCoalMine, True, False, False) then
-          Output.Add(Loc, PolygonEvaluation[I]);
+        if fBuildFF.CanBePlacedHouse(Loc) then // BuildFF can see more than CanAddHousePlan
+          Output.Add(Loc, BuildFF.Distance[Loc]);
       end;
     end;
     fCoalPolygons[Idx] := Cnt;
@@ -1088,7 +1105,7 @@ begin
   //{ Build flood fill
   for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
-      if (fBuildFF.Visited[Y,X] = fBuildFF.fVisitIdx) then
+      if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
         case fBuildFF.State[Y,X] of
           bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
           bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
@@ -1163,6 +1180,11 @@ begin
   fInfoArr[aY*fMapX + aX].Visited := aVisited;
 end;
 
+function TKMBuildFF.GetOwnersIndex(const aOwner: TKMHandIndex): Byte;
+begin
+  Result := fOwnerUpdateInfo[aOwner];
+end;
+
 function TKMBuildFF.GetState(const aY,aX: Word): TKMBuildState;
 begin
   Result := fInfoArr[aY*fMapX + aX].State;
@@ -1204,6 +1226,7 @@ begin
     fMapX := gTerrain.MapX;
     fMapY := gTerrain.MapY;
     SetLength(fInfoArr, fMapX * fMapY);
+    SetLength(fOwnerUpdateInfo, MAX_HANDS);
     fVisitIdx := 255; // Fill char will be required
     fVisitIdxHouse := 255;
   end;
@@ -1295,6 +1318,7 @@ var
   LeftSideFree, RightSideFree: Boolean;
   I: Integer;
   Point: TKMPoint;
+  Dir: TDirection;
 begin
   Result := False;
   with fHMA[fHouseReq.HouseType] do
@@ -1325,34 +1349,37 @@ begin
     end;
 
     // Scan tiles in distance 1 from house plan
-    for I := Low(Surroundings[DIST,dirS]) to High(Surroundings[DIST,dirS]) do
-    begin
-      Point := KMPointAdd(aLoc, Surroundings[DIST,dirS,I]);
-      if not (State[Point.Y, Point.X] in [bsBuild, bsRoad, bsRoadPlan, bsTree]) then
-        Exit;
-    end;
+    I := 1;
     LeftSideFree := True;
     RightSideFree := True;
-    for I := Low(Surroundings[DIST,dirE]) to High(Surroundings[DIST,dirE]) do
-    begin
-      Point := KMPointAdd(aLoc, Surroundings[DIST,dirE,I]);
-      if not (State[Point.Y, Point.X] in [bsBuild, bsRoad, bsRoadPlan, bsFieldPlan, bsTree]) then
+    for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
+      for I:= Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
       begin
-        RightSideFree := False;
-        break;
+        Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,I]);
+        if (Dir = dirS) then
+          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
+            Exit;
+        if fHouseReq.IgnoreAvoidBuilding then
+        begin
+          if (State[Point.Y, Point.X] = bsHousePlan) then
+            Exit;
+        end
+        else
+        begin
+          if (Dir = dirS) then
+          begin
+            if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
+              RightSideFree := False;
+          end
+          else if (Dir = dirW) then
+          begin
+            if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
+              LeftSideFree := False;
+          end;
+          if not (LeftSideFree OR RightSideFree) then
+            Exit;
+        end;
       end;
-    end;
-    for I := Low(Surroundings[DIST,dirW]) to High(Surroundings[DIST,dirW]) do
-    begin
-      Point := KMPointAdd(aLoc, Surroundings[DIST,dirW,I]);
-      if not (State[Point.Y, Point.X] in [bsBuild, bsRoad, bsRoadPlan, bsFieldPlan, bsTree]) then
-      begin
-        LeftSideFree := False;
-        break;
-      end;
-    end;
-    if not (LeftSideFree OR RightSideFree) then
-      Exit;
   end;
   Result := True;
 end;
@@ -1507,6 +1534,7 @@ begin
   if (fUpdateTick = 0) OR (fUpdateTick < gGame.GameTickCount) then // Dont scan multile times terrain in 1 tick
   begin
     InitQueue(False);
+    fOwnerUpdateInfo[fOwner] := fVisitIdx; // Debug tool
     for I := 0 to gHands[fOwner].Houses.Count - 1 do
     begin
       H := gHands[fOwner].Houses[I];
