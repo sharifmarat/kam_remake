@@ -1,890 +1,982 @@
-unit KM_CityManagement;
+unit KM_AIInfluences;
 {$I KaM_Remake.inc}
 interface
 uses
-  Math, KM_CommonUtils, SysUtils, KM_Defaults, KM_CommonClasses, KM_Points,
-  KM_AISetup, KM_ResHouses, KM_ResWares, KM_ResUnits, KM_HandStats, KM_HouseCollection,
-  KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
+  Math,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
+  KM_Units, KM_UnitGroups,
+  KM_NavMesh, KM_NavMeshInfluences,
+  KM_NavMeshFloodFill, KM_FloodFill;
 
-var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.3677794933;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 4.057023287;
+
+const
+  // Avoid bulding values of specific actions (tile lock by specific action)
+  AVOID_BUILDING_UNLOCK = 0;
+  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
+  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
+  AVOID_BUILDING_COAL_TILE = 50;
+  AVOID_BUILDING_NODE_LOCK_FIELD = 65;
+  AVOID_BUILDING_NODE_LOCK_ROAD = 70;
+  AVOID_BUILDING_MINE_TILE = 100;
+  AVOID_BUILDING_INACCESSIBLE_TILES = 120;
+  AVOID_BUILDING_FOREST_RANGE = 150; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
+  AVOID_BUILDING_FOREST_MINIMUM = 255 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
+
 
 type
-  TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
-    Available, Required: Word;
-    Fraction: Single;
-  end;
-  TKMWarriorsDemands = array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Integer;
 
-  TKMCityManagement = class
+  TKKRoadableFF = class(TKMQuickFlood)
   private
-    fOwner: TKMHandIndex;
-    fSetup: TKMHandAISetup;
-
-    fBuilder: TKMCityBuilder;
-    fPredictor: TKMCityPredictor;
-
-    fRequiredWeapons: TKMWarfareArr;
-    fWarriorsDemands: TKMWarriorsDemands;
-
-    fBalanceText: UnicodeString;
-
-    procedure CheckUnitCount(aTick: Cardinal);
-    procedure CheckMarketplaces();
-    procedure CheckStoreWares(aTick: Cardinal);
-    procedure CheckExhaustedHouses();
-    procedure CheckAutoRepair();
-
-    procedure WeaponsBalance();
-    procedure OrderWeapons();
-
+    fVisitIdx: Byte;
+    fVisitArr, fSearchArr: TKMByte2Array;
+  protected
+    procedure MakeNewQueue(); override;
+    function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
+    function IsVisited(const aX,aY: SmallInt): Boolean; override;
+    procedure MarkAsVisited(const aX,aY: SmallInt); override;
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
+  end;
+
+  //Collection of influence maps
+  TKMInfluences = class
+  private
+    fMapX, fMapY, fPolygons: Word; // Limits of arrays
+
+    fUpdateCityIdx, fUpdateArmyIdx: TKMHandIndex; // Update index
+    fPresence: TKMWordArray; // Military presence
+    fOwnership: TKMByteArray; // City mark the space around itself
+    fAreas: TKMByte2Array;
+
+    fFloodFill: TKMInfluenceFloodFill;
+    fInfluenceSearch: TNavMeshInfluenceSearch;
+    fNavMesh: TKMNavMesh;
+
+    // Avoid building
+    procedure InitAvoidBuilding();
+    // Army presence
+    function GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word; inline;
+    procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
+    procedure SetIncPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
+    function GetAllPresences(const aPL: TKMHandIndex; const aIdx: Word): Word; inline;
+    function GetArmyTraffic(const aOwner: TKMHandIndex; const aIdx: Word): Word;
+    function GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
+    //function GetAlliancePresence(const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TKMAllianceType): Word;
+    procedure UpdateMilitaryPresence(const aPL: TKMHandIndex);
+    // City influence
+    function GetOwnership(const aPL: TKMHandIndex; const aIdx: Word): Byte; inline;
+    procedure SetOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aOwnership: Byte); inline;
+    function GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte; inline; // For property -> aY, aX are switched!
+    procedure SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte); inline; // For property -> aY, aX are switched!
+    procedure UpdateOwnership(const aPL: TKMHandIndex);
+    // Common
+    procedure InitArrays();
+    function GetAreaEval(const aY,aX: Word): Byte;
+  public
+    AvoidBuilding: TKMByte2Array; //Common map of areas where building is undesired (around Store, Mines, Woodcutters)
+
+    constructor Create(aNavMesh: TKMNavMesh);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
-    procedure SyncLoad();
+
+    // Avoid building
+    // Army presence
+    property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word read GetPresence write SetPresence;
+    property IncPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word write SetIncPresence;
+    property PresenceAllGroups[const aPL: TKMHandIndex; const aIdx: Word]: Word read GetAllPresences;
+    property ArmyTraffic[const aOwner: TKMHandIndex; const aIdx: Word]: Word read GetArmyTraffic;
+    property EnemyGroupPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word read GetEnemyGroupPresence;
+    //property AlliancePresence[const aPL: TKMHandIndex; aIdx: Word; const aAllianceType: TKMAllianceType]: Word read GetAlliancePresence;
+    // City influence
+    property Ownership[const aPL: TKMHandIndex; const aY,aX: Word]: Byte read GetOwnershipFromPoint write SetOwnershipFromPoint; // To secure compatibility with old AI
+    property OwnPoly[const aPL: TKMHandIndex; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
+    // Common
+    property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
+    property EvalArea[const aY,aX: Word]: Byte read GetAreaEval;
+
+    // Avoid building
+    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
+    procedure RemAvoidBuilding(aArea: TKMRect);
+    // Army presence
+    // City influence
+    function GetBestOwner(const aX,aY: Word): TKMHandIndex; overload;
+    function GetBestOwner(const aIdx: Word): TKMHandIndex; overload;
+    function GetBestAllianceOwner(const aPL: TKMHandIndex; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandIndex;
+    //function GetAllAllianceOwnership(const aPL: TKMHandIndex; const aX,aY: Word; const aAllianceType: TKMAllianceType): TKMHandIndexArray;
+    function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
+    function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word; overload;
+    function GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word; overload;
 
     procedure AfterMissionInit();
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
-
-    property Builder: TKMCityBuilder read fBuilder write fBuilder;
-    property Predictor: TKMCityPredictor read fPredictor;
-    property BalanceText: UnicodeString read fBalanceText;
-    property WarriorsDemands: TKMWarriorsDemands read fWarriorsDemands;
-
     procedure UpdateState(aTick: Cardinal);
-    procedure LogStatus(var aBalanceText: UnicodeString);
-
+    procedure Paint(aRect: TKMRect);
   end;
 
 
 implementation
 uses
-  Classes, KM_Game, KM_Houses, KM_HouseSchool, KM_HandsCollection, KM_Hand, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitsCollection, KM_NavMesh, KM_HouseMarket;
+  Classes, Graphics, SysUtils,
+  KM_RenderAux, KM_Resource,
+  KM_Terrain, KM_Houses, KM_HouseCollection,
+  KM_Hand, KM_HandsCollection, KM_ResHouses,
+  KM_AIFields;
 
 
 const
-  LACK_OF_GOLD = 8;
+  GROUPS = 4;
+  INIT_HOUSE_INFLUENCE = 255;
+  MAX_INFLUENCE_DISTANCE = 150;
 
-
-{ TKMCityManagement }
-constructor TKMCityManagement.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+{ TKMInfluenceMaps }
+constructor TKMInfluences.Create(aNavMesh: TKMNavMesh);
 begin
-  inherited Create;
+  inherited Create();
 
-  fOwner := aPlayer;
-  fSetup := aSetup;
-
-  fPredictor := TKMCityPredictor.Create(aPlayer, aSetup);
-  fBuilder := TKMCityBuilder.Create(aPlayer, fPredictor);
+  fNavMesh := aNavMesh;
+  fUpdateCityIdx := 0;
+  fUpdateArmyIdx := 0;
+  fFloodFill := TKMInfluenceFloodFill.Create(False); // Check if True is better
+  fInfluenceSearch := TNavMeshInfluenceSearch.Create(False);
 end;
 
 
-destructor TKMCityManagement.Destroy();
+destructor TKMInfluences.Destroy();
 begin
-  fPredictor.Free;
-  fBuilder.Free;
-
+  fFloodFill.Free;
+  fInfluenceSearch.Free;
   inherited;
 end;
 
 
-procedure TKMCityManagement.Save(SaveStream: TKMemoryStream);
-begin
-  SaveStream.WriteA('CityManagement');
-  SaveStream.Write(fOwner);
-  SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Usend for Army management -> must be saved
-  //SaveStream.Write(TKMWarfareArr, SizeOf(TKMWarfareArr)); // TKMWarfareArr is just local variable which is computed in each loop
-
-  fPredictor.Save(SaveStream);
-  fBuilder.Save(SaveStream);
-end;
-
-
-procedure TKMCityManagement.Load(LoadStream: TKMemoryStream);
-begin
-  LoadStream.ReadAssert('CityManagement');
-  LoadStream.Read(fOwner);
-  LoadStream.Read(fWarriorsDemands, SizeOf(fWarriorsDemands));
-  //LoadStream.Read(TKMWarfareArr, SizeOf(TKMWarfareArr));
-
-  fPredictor.Load(LoadStream);
-  fBuilder.Load(LoadStream);
-end;
-
-
-procedure TKMCityManagement.SyncLoad();
-begin
-  fBuilder.SyncLoad();
-end;
-
-
-procedure TKMCityManagement.OwnerUpdate(aPlayer: TKMHandIndex);
-begin
-  fOwner := aPlayer;
-  fPredictor.OwnerUpdate(aPlayer);
-  fBuilder.OwnerUpdate(aPlayer);
-end;
-
-
-procedure TKMCityManagement.AfterMissionInit();
-  procedure SetWareDistribution();
-  begin
-    // Top priority for gold mines
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 4;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 4;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 4;
-    gHands[fOwner].Stats.WareDistribution[wt_Wood, htArmorWorkshop] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 5;
-
-    gHands[fOwner].Houses.UpdateResRequest;
-  end;
+procedure TKMInfluences.Save(SaveStream: TKMemoryStream);
 var
-  GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
+  PCount: Word;
+  Y, Len: Integer;
 begin
-  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-  //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 60;
-  //fSetup.ApplyAgressiveBuilderSetup(True);
-  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
+  PCount := gHands.Count;
 
-  // Change distribution
-  SetWareDistribution();
-  fPredictor.AfterMissionInit();
+  SaveStream.WriteA('Influences');
+  SaveStream.Write(PCount);
+  SaveStream.Write(fMapX);
+  SaveStream.Write(fMapY);
+  SaveStream.Write(fPolygons);
+  SaveStream.Write(fUpdateCityIdx);
+  SaveStream.Write(fUpdateArmyIdx);
 
-  // Find resources around Loc and change building policy
-  GoldCnt := 0;
-  IronCnt := 0;
-  FieldCnt := 0;
-  BuildCnt := 0;
-  gAIFields.Eye.ScanLocResources(GoldCnt, IronCnt, FieldCnt, BuildCnt);
+  SaveStream.WriteA('AvoidBuilding');
+  for Y := 0 to fMapY - 1 do
+    SaveStream.Write(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
 
-  fBuilder.AfterMissionInit(GoldCnt, IronCnt, FieldCnt, BuildCnt);
+  SaveStream.WriteA('Ownership');
+  Len := Length(fOwnership);
+  SaveStream.Write(Len);
+  SaveStream.Write(fOwnership[0], SizeOf(fOwnership[0]) * Len);
 
-  fPredictor.CityInitialization(GoldCnt, IronCnt, FieldCnt, BuildCnt);
+  SaveStream.WriteA('ArmyPresence');
+  Len := Length(fPresence);
+  SaveStream.Write(Len);
+  SaveStream.Write(fPresence[0], SizeOf(fPresence[0]) * Len);
+
+  SaveStream.WriteA('AreasEvaluation');
+  for Y := 0 to fMapY - 1 do
+    SaveStream.Write(fAreas[Y,0], fMapX * SizeOf(fAreas[0,0]));
+  //Len := Length(fAreas);
+  //SaveStream.Write(Len);
+  //SaveStream.Write(fAreas[0], SizeOf(fAreas[0]) * Len);
 end;
 
 
-procedure TKMCityManagement.UpdateState(aTick: Cardinal);
-const
-  LONG_UPDATE = MAX_HANDS * 25; // 30 sec
+procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
 var
-  FreeWorkersCnt: Integer;
+  PCount: Word;
+  Y, Len: Integer;
 begin
-  if (aTick mod MAX_HANDS = fOwner) AND fSetup.AutoBuild then
-  begin
-    fBalanceText := '';
-    FreeWorkersCnt := 0;
-    fBuilder.UpdateState(aTick, FreeWorkersCnt);
-    fPredictor.UpdateState(aTick);
-    if not SKIP_RENDER then
-      fPredictor.LogStatus(fBalanceText);
-    fBuilder.ChooseHousesToBuild(FreeWorkersCnt, aTick);
-    if not SKIP_RENDER then // Builder LogStatus cannot be merged with predictor
-    begin
-      fBuilder.LogStatus(fBalanceText);
-      LogStatus(fBalanceText);
-    end;
-  end;
+  LoadStream.ReadAssert('Influences');
+  LoadStream.Read(PCount);
+  LoadStream.Read(fMapX);
+  LoadStream.Read(fMapY);
+  LoadStream.Read(fPolygons);
+  LoadStream.Read(fUpdateCityIdx);
+  LoadStream.Read(fUpdateArmyIdx);
 
-  if (aTick mod LONG_UPDATE = fOwner) then
-  begin
-    CheckUnitCount(aTick);
-    CheckMarketplaces();
-    CheckStoreWares(aTick);
-    CheckAutoRepair();
-    WeaponsBalance();
-    OrderWeapons();
-    CheckExhaustedHouses();
-  end;
+  LoadStream.ReadAssert('AvoidBuilding');
+  SetLength(AvoidBuilding, fMapY, fMapX);
+  for Y := 0 to fMapY - 1 do
+    LoadStream.Read(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
+
+  LoadStream.ReadAssert('Ownership');
+  LoadStream.Read(Len);
+  SetLength(fOwnership, Len);
+  LoadStream.Read(fOwnership[0], SizeOf(fOwnership[0]) * Len);
+
+  LoadStream.ReadAssert('ArmyPresence');
+  LoadStream.Read(Len);
+  SetLength(fPresence, Len);
+  LoadStream.Read(fPresence[0], SizeOf(fPresence[0]) * Len);
+
+  LoadStream.ReadAssert('AreasEvaluation');
+  SetLength(fAreas, fMapY, fMapX);
+  for Y := 0 to fMapY - 1 do
+    LoadStream.Read(fAreas[Y,0], fMapX * SizeOf(fAreas[0,0]));
+  //LoadStream.Read(Len);
+  //SetLength(fAreas, Len);
+  //LoadStream.Read(fAreas[0], SizeOf(fAreas[0]) * Len);
 end;
 
 
-procedure TKMCityManagement.CheckUnitCount(aTick: Cardinal);
+
+
+//Make the area around to be avoided by common houses
+procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
 var
-  P: TKMHand;
-  Stats: TKMHandStats;
-
-  function RecruitsNeeded(aCompletedWatchtowers: Word): Integer;
-  const
-    RECRUIT_PEACE_DELAY = 17 * 60 * 10;
-  var
-    Output: Integer;
-  begin
-    Output := aCompletedWatchtowers;
-
-    if (aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600)
-      AND (Stats.GetHouseQty(htBarracks) > 0) then
-    begin
-      if fSetup.UnlimitedEquip then
-      begin
-        // Iron soldiers
-        Inc(  Output, Min( Stats.GetWareBalance(wt_MetalArmor), Stats.GetWareBalance(wt_Arbalet) + Stats.GetWareBalance(wt_Hallebard) + Min( Stats.GetWareBalance(wt_Sword), Stats.GetWareBalance(wt_MetalShield)) )  );
-        // Leather soldiers we can make
-        Inc(  Output, Min( Stats.GetWareBalance(wt_Armor), Stats.GetWareBalance(wt_Bow) + Stats.GetWareBalance(wt_Pike) + Min(Stats.GetWareBalance(wt_Axe), Stats.GetWareBalance(wt_Shield)) )  );
-        // Militia with leftover axes
-        Inc(  Output, Max( 0, Stats.GetWareBalance(wt_Axe) - Min(Stats.GetWareBalance(wt_Armor), Stats.GetWareBalance(wt_Shield)) )  );
-      end
-      else
-        Output := Output + 10;
-    end;
-    Result := Output;
-  end;
-
-  function RequiredServCount(): Integer;
-  var
-    I,Serfs, Cnt: Integer;
-  begin
-    Serfs := gHands[fOwner].Stats.GetUnitQty(ut_Serf);
-    Result := Max(0, Round(gHands[fOwner].Stats.GetUnitQty(ut_Worker) - Serfs));
-    Cnt := 0;
-    for I := 0 to P.Units.Count - 1 do
-      if not P.Units[I].IsDeadOrDying
-         AND (P.Units[I] is TKMUnitSerf)
-         AND (P.Units[I].IsIdle) then
-        Cnt := Cnt + 1;
-    // Increase count of serfs carefully (compute fraction of serfs who does not have job)
-    if (Cnt < GA_MANAGER_CheckUnitCount_SerfLimit)
-       AND (Cnt / (Serfs*1.0) < GA_MANAGER_CheckUnitCount_SerfCoef) then
-      Result := Max( 1 + Byte(Serfs < 40) + Byte(Serfs < 60), Result);
-  end;
-
-const
-  TRAINING_PRIORITY: array[0..13] of TKMUnitType = (
-    ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
-    ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker, ut_Recruit
-  );
-var
-  GoldShortage: Boolean;
-  I,K,cnt: Integer;
-  GoldProduced: Cardinal;
-  H: TKMHouse;
-  HT: TKMHouseType;
-  UT: TKMUnitType;
-  Schools: array of TKMHouseSchool;
-  Houses: array[HOUSE_MIN..HOUSE_MAX] of Integer;
-  UnitReq: array[CITIZEN_MIN..CITIZEN_MAX] of Integer;
+  X,Y: Integer;
+  SqrDist, SqrMaxDist: Single;
 begin
-  P := gHands[fOwner];
-  Stats := P.Stats;
-  FillChar(UnitReq, SizeOf(UnitReq), #0); //Clear up
-  FillChar(Houses, SizeOf(Houses), #0); //Clear up
-
-  //Citizens
-  // Make sure we have enough gold left for self-sufficient city
-  GoldProduced := Stats.GetWaresProduced(wt_Gold);
-  GoldShortage := (Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (GoldProduced = 0);
-  if GoldShortage then
-  begin
-    UnitReq[ut_Serf] := 3; // 3x Serf
-    UnitReq[ut_Worker] := Byte(fSetup.WorkerCount > 0);// 1x Worker
-    UnitReq[ut_Miner] := Stats.GetHouseTotal(htCoalMine) + Stats.GetHouseTotal(htGoldMine) + Stats.GetHouseQty(htIronMine); // Miner can go into iron / gold / coal mines (idealy we need 1 gold and 1 coal but it is hard to catch it)
-    UnitReq[ut_Metallurgist] := Stats.GetHouseTotal(htMetallurgists) + Stats.GetHouseQty(htIronSmithy); // Metallurgist (same problem like in case of miner)
-    UnitReq[ut_Woodcutter] := Byte(Stats.GetHouseQty(htWoodcutters) > 0); // 1x Woodcutter
-    UnitReq[ut_StoneCutter] := Byte(Stats.GetHouseQty(htQuary) > 0); // 1x StoneCutter
-    UnitReq[ut_Lamberjack] := Byte(Stats.GetHouseQty(htSawmill) > 0); // 1x Lamberjack
-  end
-  //Count overall unit requirement (excluding Barracks and ownerless houses)
-  else
-  begin
-    // We need completed houses, houses in specific stage of construction and only completed watchtowers -> we have to scan houses
-    for I := 0 to gHands[fOwner].Houses.Count - 1 do
-    begin
-      H := gHands[fOwner].Houses[I];
-      if (H <> nil) AND not H.IsDestroyed then
-      begin
-        if H.IsComplete then
-          Inc(Houses[H.HouseType], 1)
-        else if (H.BuildingProgress > 0) AND (H.HouseType <> htWatchTower) then
-          Inc(Houses[H.HouseType], 1);
-      end;
-    end;
-
-    for HT := HOUSE_MIN to HOUSE_MAX do
-      if (gRes.Houses[HT].OwnerType <> ut_None) AND (HT <> htBarracks) then
-        Inc(UnitReq[gRes.Houses[HT].OwnerType], Houses[HT]);
-
-    UnitReq[ut_Recruit] := 0;
-    UnitReq[ut_Serf] := 0;
-    UnitReq[ut_Worker] := 0;
-    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
-    begin
-      UnitReq[ut_Worker] :=  fSetup.WorkerCount;
-      UnitReq[ut_Recruit] := RecruitsNeeded(Houses[htWatchTower]);
-    end;
-    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
-      UnitReq[ut_Serf] := Stats.GetUnitQty(ut_Serf) + RequiredServCount();
-  end;
-
-  // Get required houses
-  for UT := Low(UnitReq) to High(UnitReq) do
-    Dec(UnitReq[UT], Stats.GetUnitQty(UT));
-
-  // Find completed schools, decrease UnitReq by already trained citizens
-  cnt := 0;
-  SetLength(Schools, Stats.GetHouseQty(htSchool));
-  for I := 0 to P.Houses.Count - 1 do
-    if (P.Houses[I] <> nil)
-       AND not (P.Houses[I].IsDestroyed)
-       AND (P.Houses[I].IsComplete)
-       AND (P.Houses[I].HouseType = htSchool) then
-    begin
-      Schools[cnt] := TKMHouseSchool(P.Houses[I]);
-      if GoldShortage AND (Schools[cnt].CheckResIn(wt_Gold) = 0) then // Ignore empty schools when we are out of gold
-        continue;
-      for K := Schools[cnt].QueueLength - 1 downto 0 do
-        if (Schools[cnt].Queue[K] <> ut_None) then
-        begin
-          if K = 0 then // Queue is already active
-            Dec(UnitReq[ Schools[Cnt].Queue[K] ],1)
-          else // Remove from Queue (it doesn't have to be actual ... when is city under attack we have to save gold)
-            Schools[Cnt].RemUnitFromQueue(K);
-        end;
-      cnt := cnt + 1;
-    end;
-
-  //Order citizen training
-  for K := Low(TRAINING_PRIORITY) to High(TRAINING_PRIORITY) do
-  begin
-    UT := TRAINING_PRIORITY[K];
-    for I := 0 to cnt - 1 do
-      if (UnitReq[UT] <= 0) then // Check unit requirements
-        break
-      else if (Schools[I].QueueCount <= 2) then // Order citizen, decrease unit requirement
-        Dec(  UnitReq[UT], Schools[I].AddUnitToQueue( UT, Min(UnitReq[UT], 3-Schools[I].QueueCount) )  )
-  end;
-end;
-
-
-//Check if specific woodcutters are in Fell only mode
-procedure TKMCityManagement.CheckMarketplaces();
-var
-  RequiedCnt, AvailableCnt: Word;
-  RequiredWares, AvailableWares: array of TKMWareType;
-  procedure AddWare(aWare: TKMWareType; IsRequired: Boolean = True);
-  begin
-    if IsRequired then
-    begin
-      RequiredWares[RequiedCnt] := aWare;
-      RequiedCnt := RequiedCnt + 1;
-    end
-    else
-    begin
-      AvailableWares[AvailableCnt] := aWare;
-      AvailableCnt := AvailableCnt + 1;
-    end;
-  end;
-
-  procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
-  const
-    TRADE_QUANTITY = 20;
-  var
-    I: Integer;
-    Houses: TKMHousesCollection;
-    HM, IdleHM: TKMHouseMarket;
-  begin
-    Houses := gHands[fOwner].Houses;
-    IdleHM := nil;
-    for I := 0 to Houses.Count - 1 do
-      if (Houses[I].HouseType = htMarketplace)
-        AND Houses[I].IsComplete
-        AND not Houses[I].IsDestroyed then
-      begin
-        HM := TKMHouseMarket(Houses[I]);
-        if (TKMHouseMarket(HM).ResOrder[0] <> 0)
-          AND (HM.ResTo = aResTo) then
-          Exit
-        else if HM.AllowedToTrade(aResFrom)
-          AND HM.AllowedToTrade(aResTo)
-          AND (TKMHouseMarket(HM).ResOrder[0] = 0) then
-          IdleHM := HM;
-      end;
-    if (IdleHM <> nil) then  // AND (IdleHM.ResFrom <> aResFrom) or (IdleHM.ResTo <> aResTo) then
-    begin
-      //IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
-      IdleHM.ResFrom := aResFrom;
-      IdleHM.ResTo := aResTo;
-      IdleHM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
-    end;
-  end;
-const
-  SOLD_ORDER: array[0..27] of TKMWareType = (
-    wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
-    wt_Skin,         wt_Leather,  wt_Pig,
-    wt_Trunk,        wt_Stone,    wt_Wood,
-    wt_Shield,       wt_Axe,      wt_Pike,       wt_Bow,      wt_Armor,
-    wt_MetalShield,  wt_Sword,    wt_Hallebard,  wt_Arbalet,  wt_MetalArmor,
-    wt_Horse,        wt_Corn,     wt_Flour,
-    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre
-  );
-  MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
-  LACK_OF_STONE = 50;
-  WARFARE_SELL_LIMIT = 20;
-  SELL_LIMIT = 100;
-var
-  MarketCnt, I, WareCnt: Word;
-begin
-
-  MarketCnt := gHands[fOwner].Stats.GetHouseQty(htMarketplace);
-  if MarketCnt = 0 then
+  if (aRad = 0) then
     Exit;
-
-  RequiedCnt := 0;
-  SetLength(RequiredWares,4);
-  with gHands[fOwner].Stats do
-  begin
-    // Gold
-    if (GetHouseQty(htMetallurgists) = 0)
-       AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
-       AddWare(wt_Gold);
-    // Gold ore
-    if ( fPredictor.WareBalance[wt_GoldOre].Exhaustion < 20 )
-      AND ( GetWareBalance(wt_Gold) < MIN_GOLD_AMOUNT )
-      AND ( GetWareBalance(wt_GoldOre) < MIN_GOLD_AMOUNT ) then
-      AddWare(wt_GoldOre);
-    // Coal
-    if ( fPredictor.WareBalance[wt_Coal].Exhaustion < 20 )
-      AND ( GetWareBalance(wt_Coal) < MIN_GOLD_AMOUNT ) then
-      AddWare(wt_Coal);
-    // Stone
-    if (GetWareBalance(wt_Stone) < LACK_OF_STONE)
-      AND (GetHouseQty(htQuary) = 0) then
-      AddWare(wt_Stone);
-  end;
-
-  if RequiedCnt = 0 then
-    Exit;
-
-  AvailableCnt := 0;
-  SetLength(AvailableWares, RequiedCnt);
-  for I := 0 to Length(SOLD_ORDER) - 1 do
-    if (AvailableCnt < RequiedCnt) then
+  SqrMaxDist := Sqr(aRad);
+  for Y := Max(aY - Ceil(aRad), 1) to Min(aY + Ceil(aRad), fMapY - 1) do
+  for X := Max(aX - Ceil(aRad), 1) to Min(aX + Ceil(aRad), fMapX - 1) do
+    if (AvoidBuilding[Y,X] = 0) OR (AvoidBuilding[Y,X] >= AVOID_BUILDING_FOREST_MINIMUM) then // Protect reservation tiles
     begin
-      WareCnt := gHands[fOwner].Stats.GetWareBalance( SOLD_ORDER[I] );
-      if (  (SOLD_ORDER[I] in [WARFARE_MIN..WARFARE_MAX]) AND (WareCnt > WARFARE_SELL_LIMIT)  )
-         OR (WareCnt > SELL_LIMIT) then
-        AddWare(SOLD_ORDER[I], False);
-    end;
-
-  for I := 0 to RequiedCnt - 1 do
-    if (I < AvailableCnt) then
-      TryBuyItem(AvailableWares[I], RequiredWares[I])
-  else
-    break;
-end;
-
-
-procedure TKMCityManagement.CheckStoreWares(aTick: Cardinal);
-const
-  TRUNK_STORE_DELAY = 45 * 60 * 10;
-  WOOD_STORE_DELAY = 60 * 60 * 10;
-  STONE_STORE_DELAY = 60 * 60 * 10;
-  CORN_STORE_DELAY = 60 * 60 * 10;
-var
-  I: Integer;
-  S: TKMHouseStore;
-begin
-  //Iterate through all Stores and block certain wares to reduce serf usage
-  for I := 0 to gHands[fOwner].Houses.Count - 1 do
-    if (gHands[fOwner].Houses[I].HouseType = htStore)
-      AND gHands[fOwner].Houses[I].IsComplete
-      AND not gHands[fOwner].Houses[I].IsDestroyed then
-    begin
-      S := TKMHouseStore(gHands[fOwner].Houses[I]);
-
-      // Materials
-      S.NotAcceptFlag[wt_Trunk] := (aTick > TRUNK_STORE_DELAY); // Trunk should not be blocked because of forest cleaning
-      S.NotAcceptFlag[wt_Wood] := (S.CheckResIn(wt_Wood) > 20) OR (aTick > WOOD_STORE_DELAY);// AND (Predictor.WareBalance[wt_Wood].Exhaustion > 40);
-      S.NotAcceptFlag[wt_Stone] := (aTick > STONE_STORE_DELAY) OR (S.CheckResIn(wt_Stone)*2 > gHands[fOwner].Stats.GetUnitQty(ut_Worker));
-      S.NotAcceptFlag[wt_Gold] := S.CheckResIn(wt_Gold) > 400; // Everyone needs as much gold as possible
-
-      // Food - don't store food when we have enought (it will cause trafic before storehouse)
-      S.NotAcceptFlag[wt_Wine] := gHands[fOwner].Stats.GetWareBalance(wt_Wine) > 100;
-      S.NotAcceptFlag[wt_Sausages] := gHands[fOwner].Stats.GetWareBalance(wt_Sausages) > 100;
-      S.NotAcceptFlag[wt_Bread] := gHands[fOwner].Stats.GetWareBalance(wt_Bread) > 100;
-      S.NotAcceptFlag[wt_Fish] := gHands[fOwner].Stats.GetWareBalance(wt_Fish) > 100;
-
-      // Others
-      S.NotAcceptFlag[wt_GoldOre] := True;
-      S.NotAcceptFlag[wt_Coal] := True;
-      S.NotAcceptFlag[wt_IronOre] := gHands[fOwner].Stats.GetHouseQty(htIronSmithy) > 0;
-      S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy) +
-                                   gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) > 0;
-      S.NotAcceptFlag[wt_Corn] := (aTick > CORN_STORE_DELAY);
-      S.NotAcceptFlag[wt_Leather] := True;
-      S.NotAcceptFlag[wt_Flour] := True;
-      //Pigs and skin cannot be blocked since if swinefarm is full of one it stops working (blocks other)
-      //S.NotAcceptFlag[wt_Skin] := gHands[fOwner].Stats.GetHouseQty(htTannery) > 0;
-      //S.NotAcceptFlag[wt_Pig] := gHands[fOwner].Stats.GetHouseQty(htButchers) > 0;
-    end;
-end;
-
-
-//Demolish any exhausted mines, they will be rebuilt if needed
-procedure TKMCityManagement.CheckExhaustedHouses();
-var
-  I: Integer;
-  Loc: TKMPoint;
-begin
-  //Wait until resource is depleted and output is empty
-  for I := 0 to gHands[fOwner].Houses.Count - 1 do
-  if not gHands[fOwner].Houses[I].IsDestroyed
-    AND gHands[fOwner].Houses[I].ResourceDepletedMsgIssued
-    AND (gHands[fOwner].Houses[I].CheckResOut(wt_All) = 0) then
-  begin
-    Loc := gHands[fOwner].Houses[I].Entrance;
-    // Remove avoid building around coal mine
-    if (gHands[fOwner].Houses[I].HouseType = htCoalMine) then
-      gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
-    // Mark house plan as exhausted
-    Builder.Planner.MarkAsExhausted(gHands[fOwner].Houses[I].HouseType, Loc);
-    gHands[fOwner].Houses[I].DemolishHouse(fOwner);
-  end;
-end;
-
-
-// Allow auto repair procedure
-procedure TKMCityManagement.CheckAutoRepair();
-var
-  I: Integer;
-begin
-  if (gHands[fOwner].HandType <> hndComputer) then
-    Exit;
-  with gHands[fOwner] do
-    if gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack then
-    begin
-      for I := 0 to Houses.Count - 1 do
+      SqrDist := Sqr(aX-X) + Sqr(aY-Y);
+      if (SqrDist <= SqrMaxDist) then
       begin
-        Houses[I].BuildingRepair := false;
-        if (Houses[I].HouseType = htWatchTower) AND (Houses[I].DeliveryMode = dm_Delivery) then
-          Houses[I].SetDeliveryModeInstantly(dm_Closed);
-      end;
-    end
-    else
-    begin
-      for I := 0 to Houses.Count - 1 do
-      begin
-        Houses[I].BuildingRepair := fSetup.AutoRepair;
-        if (Houses[I].HouseType = htWatchTower) AND (Houses[I].DeliveryMode = dm_Closed) then
-          Houses[I].SetDeliveryModeInstantly(dm_Delivery);
-      end;
-    end;
-end;
-
-
-// Calculate weapons demand from combat AI requirements
-procedure TKMCityManagement.WeaponsBalance();
-var
-  EnemyEval, AllyEval: TKMArmyEval;
-
-  function ThirdRoot(aValue: Single): Single;
-  var
-     Output, X: Double;
-  begin
-     Output := Sqrt(aValue);
-     while (Abs( aValue - Power(Output, 3) ) > 0.1) do
-     begin
-        X := (1/3) * (((3-1) * Output) + (aValue/(Power(Output, 3 - 1))));
-        Output := X;
-     end;
-     Result := Output;
-  end;
-
-  procedure ComputeGroupDemands(aGT: TKMGroupType; aIronRatio: Single);
-  const
-    // It doesnt depends on future "optimalization" of parameters: against cav should be always good pikes etc. so this array doesnt have to be computed
-    BEST_VERSUS_OPTION: array[TKMGroupType] of TKMGroupType = (gt_Melee, gt_Melee, gt_Ranged, gt_AntiHorse);
-  var
-    Wood, Iron: Boolean;
-    I: Integer;
-    EnemyStrength, UnitStrength, UnitsRequired: Single;
-    UT: TKMUnitType;
-    antiGT: TKMGroupType;
-    UnitEval: TKMGroupEval;
-  begin
-    // Get best type of oponent and compute iron ratio
-    antiGT := BEST_VERSUS_OPTION[aGT];
-    Wood := False;
-    Iron := False;
-    for I := 1 to 3 do
-    begin
-      UT := AITroopTrainOrder[antiGT,I];
-      if (UT <> ut_None) AND not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-        if (I = 1) then
-          Iron := True
+        if aDecreasing then
+          //AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round((1 - Dist * MaxDistInv) * aValue)), 255)
+          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseSpeed)), 255)
         else
-          Wood := True;
+          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + aValue, 255);
+      end;
     end;
-    if Wood AND not Iron then
-      aIronRatio := 0
-    else if not Wood AND Iron then
-      aIronRatio := 1
-    else if not Wood AND not Iron then
+end;
+
+
+procedure TKMInfluences.RemAvoidBuilding(aArea: TKMRect);
+var
+  X,Y: Integer;
+begin
+  for Y := Max(aArea.Top , 1) to Min(aArea.Bottom, fMapY - 1) do
+  for X := Max(aArea.Left, 1) to Min(aArea.Right , fMapX - 1) do
+    if (AvoidBuilding[Y,X] = AVOID_BUILDING_COAL_TILE) then // It is not used otherwise anyway
+      AvoidBuilding[Y,X] := 0;
+end;
+
+
+//AI should avoid certain areas, keeping them for special houses
+procedure TKMInfluences.InitAvoidBuilding();
+  procedure CheckAndMarkMine(aX,aY: Integer; aHT: TKMHouseType);
+  var
+    X,Y,X2,Y2: Integer;
+  begin
+    for Y := Max(1,aY-3) to Min(fMapY-1,aY-1) do
+    for X := Max(1,aX-1) to Min(fMapX-1,aX+1) do
+      if   ((aHT = htIronMine) AND (gTerrain.TileIsIron(X,Y) > 1))
+        OR ((aHT = htGoldMine) AND (gTerrain.TileIsGold(X,Y) > 1)) then
+      begin
+        for Y2 := aY to Min(fMapY-1,aY+1) do
+        for X2 := Max(1,aX-2) to Min(fMapX-1,aX+1+Byte(aHT = htIronMine)) do
+          AvoidBuilding[Y2, X2] := AVOID_BUILDING_MINE_TILE;
+        Exit;
+      end;
+  end;
+  // New AI does not use flood fill -> unreachable areas must be detected and building of houses must be avoided here
+  //procedure InitReachableArea();
+  //var
+  //  PL: TKMHandIndex;
+  //  I: Integer;
+  //  MinP, MaxP: TKMPoint;
+  //  CenterPoints: TKMPointArray;
+  //  RoadableFF: TKKRoadableFF;
+  //begin
+  //  if (Length(AvoidBuilding) = 0) then
+  //    Exit;
+  //  MinP := KMPoint(1,1);
+  //  MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
+  //  RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
+  //  try
+  //    for PL := 0 to gHands.Count - 1 do
+  //    begin
+  //      gAIFields.Eye.OwnerUpdate(PL);
+  //      CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+  //      for I := 0 to Length(CenterPoints) - 1 do
+  //        RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
+  //    end;
+  //  finally
+  //    RoadableFF.Free;
+  //  end;
+  //end;
+var
+  H: TKMHouse;
+  I,X,Y: Integer;
+begin
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+    //if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
+    //  AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
+    //else
+      AvoidBuilding[Y,X] := 0;
+  //InitReachableArea();
+
+  //Avoid areas where Gold/Iron mines should be
+  for Y := 3 to fMapY - 2 do
+  for X := 2 to fMapX - 2 do
+    if gTerrain.CanPlaceHouse(KMPoint(X,Y), htIronMine) then
+      CheckAndMarkMine(X,Y, htIronMine)
+    else if gTerrain.CanPlaceHouse(KMPoint(X,Y), htGoldMine) then
+      CheckAndMarkMine(X,Y, htGoldMine);
+
+  //Avoid Coal fields
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+   AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or (Byte(gTerrain.TileIsCoal(X, Y) > 1) * AVOID_BUILDING_COAL_TILE);
+
+  //Leave free space BELOW all players Stores
+  for I := 0 to gHands.Count - 1 do
+  begin
+    H := gHands[I].FindHouse(htStore);
+    if (H <> nil) then
+    for Y := Max(H.Entrance.Y + 1, 1) to Min(H.Entrance.Y + 2, fMapY - 1) do
+    for X := Max(H.Entrance.X - 1, 1) to Min(H.Entrance.X + 1, fMapX - 1) do
+      AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or $FF;
+  end;
+end;
+
+
+
+
+function TKMInfluences.GetAllPresences(const aPL: TKMHandIndex; const aIdx: Word): Word;
+var
+  Idx: Integer;
+  GT: TKMGroupType;
+begin
+  Result := 0;
+  Idx := (aPL*fPolygons + aIdx) shl 2;
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
+    Result := Min(High(Word), Result + fPresence[Idx + Byte(GT)]);
+end;
+
+
+function TKMInfluences.GetArmyTraffic(const aOwner: TKMHandIndex; const aIdx: Word): Word;
+const
+  MAX_SOLDIERS_IN_POLYGON = 20; // Maximal count of soldiers in 1 triangle of NavMesh - it depends on NavMesh size!!!
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (PL <> aOwner) then
+    begin
+      Result := Result + GetAllPresences(PL, aIdx);
+      if (Result > MAX_SOLDIERS_IN_POLYGON) then // Influences may overlap but in 1 polygon can be max [MAX_SOLDIERS_IN_POLYGON] soldiers
+      begin
+        Result := MAX_SOLDIERS_IN_POLYGON;
+        break;
+      end;
+    end;
+end;
+
+
+function TKMInfluences.GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
+begin
+  Result := fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)];
+end;
+
+
+procedure TKMInfluences.SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word);
+begin
+  fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)] := aPresence;
+end;
+
+
+procedure TKMInfluences.SetIncPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word);
+var
+  Idx: Integer;
+begin
+  Idx := ((aPL*fPolygons + aIdx) shl 2) + Byte(aGT);
+  fPresence[Idx] := fPresence[Idx] + aPresence;
+end;
+
+
+function TKMInfluences.GetEnemyGroupPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = at_Enemy) then
+      Result := Result + Presence[PL, aIdx, aGT];
+end;
+
+
+procedure TKMInfluences.UpdateMilitaryPresence(const aPL: TKMHandIndex);
+const
+  EACH_X_MEMBER_COEF = 10;
+  MAX_DISTANCE = 20;
+var
+  I, K, Cnt: Integer;
+  GT: TKMGroupType;
+  G: TKMUnitGroup;
+  U: TKMUnit;
+  PointArr: TKMWordArray;
+begin
+  InitArrays();
+
+  SetLength(PointArr,16);
+  for I := 0 to fPolygons-1 do
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
+      Presence[aPL,I,GT] := 0;
+
+  for I := 0 to gHands[aPL].UnitGroups.Count-1 do
+  begin
+    G := gHands[aPL].UnitGroups.Groups[I];
+    if (G = nil) OR G.IsDead then
+      continue;
+    K := 0;
+    Cnt := 0;
+    while (K < G.Count) do
+    begin
+      U := G.Members[K];
+      if (U <> nil) AND not U.IsDeadOrDying then
+      begin
+        if (Length(PointArr) <= Cnt) then
+          SetLength(PointArr, Cnt + 16);
+        PointArr[Cnt] := gAIFields.NavMesh.KMPoint2Polygon[ U.GetPosition ];
+        Cnt := Cnt + 1;
+      end;
+      K := K + EACH_X_MEMBER_COEF; // Pick each X member (Huge groups cover large areas so be sure that influence will be accurate)
+    end;
+
+    if (Cnt > 0) then
+      //fFloodFill.MilitaryPresence(aPL, gAIFields.Eye.ArmyEvaluation.GroupStrength(G), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+      fFloodFill.MilitaryPresence(aPL, Min(G.Count,30), MAX_DISTANCE, Cnt-1, G.GroupType, PointArr);
+  end;
+end;
+
+
+
+
+
+
+function TKMInfluences.GetOwnership(const aPL: TKMHandIndex; const aIdx: Word): Byte;
+begin
+  Result := fOwnership[aPL * fPolygons + aIdx];
+end;
+
+
+procedure TKMInfluences.SetOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aOwnership: Byte);
+begin
+  fOwnership[aPL * fPolygons + aIdx] := aOwnership;
+end;
+
+
+function TKMInfluences.GetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word): Byte;
+begin
+  Result := GetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX]);
+end;
+
+
+procedure TKMInfluences.SetOwnershipFromPoint(const aPL: TKMHandIndex; const aY, aX: Word; const aOwnership: Byte);
+begin
+  SetOwnership(aPL, fNavMesh.Point2Polygon[aY,aX], aOwnership);
+end;
+
+
+function TKMInfluences.GetBestOwner(const aX,aY: Word): TKMHandIndex;
+begin
+  Result := GetBestOwner( fNavMesh.Point2Polygon[aY,aX] );
+end;
+
+
+function TKMInfluences.GetBestOwner(const aIdx: Word): TKMHandIndex;
+var
+  PL: TKMHandIndex;
+  Best: Integer;
+begin
+  Result := PLAYER_NONE;
+  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
+    Exit;
+
+  Best := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (OwnPoly[PL,aIdx] > Best) then
+    begin
+      Best := OwnPoly[PL,aIdx];
+      Result := PL;
+    end;
+end;
+
+
+function TKMInfluences.GetBestAllianceOwner(const aPL: TKMHandIndex; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandIndex;
+var
+  PL: TKMHandIndex;
+  Idx: Word;
+  Best: Integer;
+begin
+  Result := PLAYER_NONE;
+  Idx := fNavMesh.Point2Polygon[aPoint.Y,aPoint.X];
+  if not AI_GEN_INFLUENCE_MAPS OR (Idx = High(Word)) then
+    Exit;
+
+  Best := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (gHands[aPL].Alliances[PL] = aAllianceType) AND (OwnPoly[PL,Idx] > Best) then
+    begin
+      Best := OwnPoly[PL,Idx];
+      Result := PL;
+    end;
+end;
+
+
+//function TKMInfluences.GetAllAllianceOwnership(const aPL: TKMHandIndex; const aX,aY: Word; const aAllianceType: TKMAllianceType): TKMHandIndexArray;
+//var
+//  PL: TKMHandIndex;
+//  I,K,Idx, Cnt: Integer;
+//  Output: TKMHandIndexArray;
+//begin
+//  SetLength(Result,0);
+//  if not AI_GEN_INFLUENCE_MAPS then
+//    Exit;
+//
+//  SetLength(Output, MAX_HANDS);
+//  Cnt := 0;
+//  Idx := fNavMesh.Point2Polygon[aY,aX];
+//  for PL := 0 to gHands.Count - 1 do
+//    if (aPL <> PL) AND (gHands[aPL].Alliances[PL] = aAllianceType) AND (OwnPoly[PL,Idx] > 0) then
+//    begin
+//      Output[Cnt] := OwnPoly[PL,Idx];
+//      Cnt := Cnt + 1;
+//    end;
+//  SetLength(Output, MAX_HANDS);
+//  // Sort results by influence (in real game 1 <-> 3 elements)
+//  for I := Cnt - 1 downto 0 do
+//    for K := 0 to I - 1 do
+//      if (OwnPoly[ Output[K],Idx ] < OwnPoly[ Output[K+1],Idx ]) then
+//      begin
+//        PL := Output[K];
+//        Output[K] := Output[K+1];
+//        Output[K+1] := K;
+//      end;
+//  Result := Output;
+//end;
+
+
+function TKMInfluences.GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  if not AI_GEN_INFLUENCE_MAPS then
+    Exit;
+
+  for PL := 0 to gHands.Count - 1 do
+    if (aPL <> PL) AND (gHands[aPL].Alliances[PL] = aAllianceType) AND (OwnPoly[PL,aIdx] > Result) then
+      Result := OwnPoly[PL,aIdx];
+end;
+
+
+function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word;
+begin
+  Result := GetOtherOwnerships(aPL, fNavMesh.Point2Polygon[aY,aX]);
+end;
+
+
+function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word;
+var
+  PL: TKMHandIndex;
+begin
+  Result := 0;
+  if not AI_GEN_INFLUENCE_MAPS then
+    Exit;
+
+  Result := 0;
+  for PL := 0 to gHands.Count - 1 do
+    if (PL <> aPL) then
+      Result := Result + OwnPoly[PL,aIdx];
+end;
+
+
+// Here is the main reason for reworking influences: only 1 flood fill for city per a update + ~25x less elements in array
+procedure TKMInfluences.UpdateOwnership(const aPL: TKMHandIndex);
+var
+  I, Idx, Cnt: Integer;
+  H: TKMHouse;
+  IdxArray: TKMWordArray;
+begin
+  InitArrays();
+
+  //Clear array (again is better to clear less than 2000 polygons instead of 255*255 tiles)
+  for Idx := 0 to fPolygons - 1 do
+    OwnPoly[aPL, Idx] := 0;
+
+  // Create array of polygon indexes
+  SetLength(IdxArray, gHands[aPL].Houses.Count);
+  Cnt := 0;
+  for I := 0 to gHands[aPL].Houses.Count - 1 do
+  begin
+    H := gHands[aPL].Houses[I];
+    if not H.IsDestroyed AND (H.HouseType <> htWatchTower) AND (H.HouseType <> htWoodcutters) then
+    begin
+        IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.GetPosition ];
+        Cnt := Cnt + 1;
+    end;
+  end;
+
+  if (Cnt > 0) then
+    fFloodFill.HouseInfluence(aPL, INIT_HOUSE_INFLUENCE, MAX_INFLUENCE_DISTANCE, Cnt - 1, IdxArray);
+end;
+
+
+function TKMInfluences.GetAreaEval(const aY,aX: Word): Byte;
+begin
+  Result := fAreas[aY,aX];
+end;
+
+
+//function TKMInfluences.GetAreaEval(const aY,aX: Word): Byte;
+//var
+//  Idx: Integer;
+//begin
+//  Idx := fNavMesh.Point2Polygon[aY,aX];
+//  Result := fAreas[Idx];
+//end;
+
+
+
+procedure TKMInfluences.InitArrays();
+var
+  I: Integer;
+begin
+  if (fPolygons <> Length(gAIFields.NavMesh.Polygons)) then
+  begin
+    fPolygons := Length(gAIFields.NavMesh.Polygons);
+    SetLength(fPresence, gHands.Count * fPolygons * GROUPS);
+    SetLength(fOwnership, gHands.Count * fPolygons);
+    for I := 0 to Length(fPresence) - 1 do
+      fPresence[I] := 0;
+    for I := 0 to Length(fOwnership) - 1 do
+      fOwnership[I] := 0;
+  end;
+end;
+
+
+procedure TKMInfluences.AfterMissionInit();
+  //procedure InitAreas();
+  //const
+  //  RAD = 6;
+  //var
+  //  cnt: Word;
+  //  X,Y, X0,Y0: Integer;
+  //begin
+  //  for Y := 1 to fMapY - 1 do
+  //  for X := 1 to fMapX - 1 do
+  //  begin
+  //    cnt := 0;
+  //    for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
+  //    for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
+  //      cnt := cnt + Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+  //    fAreas[Y,X] := Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  );
+  //    fAreas[Y,X] := Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  );
+  //  end;
+  //end;
+  procedure InitAreas();
+  const
+    RAD = 6;
+    MAX_ELEMENTS = (RAD+1) * (RAD+1) * 4;
+    //MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
+    COEF = Round(255 / MAX_ELEMENTS - 0.5);
+  var
+    X,Y, X0,Y0, cnt: Integer;
+  begin
+    for Y := 1 to fMapY - 1 do
+    for X := 1 to fMapX - 1 do
+    begin
+      //cnt := 0;
+      cnt := MAX_ELEMENTS;
+      for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
+      for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
+        //cnt := cnt + Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+        cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+      //fAreas[Y,X] := $FF - cnt * COEF;
+      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+      //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+    end;
+  end;
+  //procedure InitAreas();
+  //const
+  //  RAD = 4;
+  //  MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
+  //  COEF = Round(255 / MAX_ELEMENTS - 0.5);
+  //var
+  //  X,Y, X0,Y0, cnt: Integer;
+  //begin
+  //  for Y := 1 to fMapY - 1 do
+  //  for X := 1 to fMapX - 1 do
+  //  begin
+  //    cnt := MAX_ELEMENTS;
+  //    for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
+  //    for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
+  //      cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+  //    fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+  //  end;
+  //end;
+  //procedure InitNavMeshAreas();
+  //var
+  //  WAD: TKMWalkableAreasDetector;
+  //begin
+  //  if AI_GEN_INFLUENCE_MAPS then
+  //  begin
+  //    WAD := TKMWalkableAreasDetector.Create(True);
+  //    try
+  //      WAD.MarkPolygons();
+  //      fAreas := WAD.WalkableAreas;
+  //    finally
+  //      WAD.Free;
+  //    end;
+  //  end;
+  //end;
+var
+  PL: TKMHandIndex;
+begin
+  fMapX := gTerrain.MapX;
+  fMapY := gTerrain.MapY;
+  SetLength(AvoidBuilding, fMapY, fMapX);
+  InitAvoidBuilding();
+  InitArrays();
+  if AI_GEN_INFLUENCE_MAPS then
+    for PL := 0 to gHands.Count - 1 do
+      UpdateOwnership(PL);
+  SetLength(fAreas, fMapY, fMapX);
+  InitAreas();
+  //InitNavMeshAreas();
+end;
+
+
+procedure TKMInfluences.UpdateState(aTick: Cardinal);
+begin
+  // City:
+  if aTick mod 150 = 15 then // Update every 15 sec 1 player
+  begin
+    fUpdateCityIdx := (fUpdateCityIdx + 1) mod gHands.Count;
+    UpdateOwnership(fUpdateCityIdx);
+  end;
+  // Army:
+  if (aTick mod 5 = 0) then // Update every 0.5 sec 1 player
+  begin
+    fUpdateArmyIdx := (fUpdateArmyIdx + 1) mod gHands.Count;
+    UpdateMilitaryPresence(fUpdateArmyIdx);
+  end;
+end;
+
+
+//Render debug symbols
+procedure TKMInfluences.Paint(aRect: TKMRect);
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $0000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+var
+  PL, WatchedPL: TKMHandIndex;
+  I, Cnt: Word;
+  X,Y: Integer;
+  PolyArr: TPolygonArray;
+  NodeArr: TNodeArray;
+  Col: Cardinal;
+
+  //MaxW,MinW: Word;
+  //B: Byte;
+begin
+  {
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+  begin
+    //Col := fAreas[Y,X] * $010101 OR $80000000;
+    Col := (fAreas[Y,X] shl 24) OR COLOR_BLACK;
+    gRenderAux.Quad(X, Y, Col);
+  end;
+  //PolyArr := fNavMesh.Polygons;
+  //NodeArr := fNavMesh.Nodes;
+  //  MaxW := 0;
+  //  MinW := High(Word);
+  //  for I := Low(fAreas) to High(fAreas) do
+  //    if (fAreas[I] > MaxW) then
+  //      MaxW := fAreas[I]
+  //    else if (fAreas[I] < MinW) then
+  //      MinW := fAreas[I];
+  //  for I := Low(fAreas) to High(fAreas) do
+  //  begin
+  //    B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
+  //    Col := $FFFFFF OR (B shl 24);
+  //
+  //    //NavMesh polys coverage
+  //    gRenderAux.TriangleOnTerrain(
+  //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+  //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+  //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
+  //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+  //  end;
+  //}
+
+
+
+  if not AI_GEN_NAVMESH OR not AI_GEN_INFLUENCE_MAPS then
+    Exit;
+
+  if OVERLAY_AVOID then
+    for Y := aRect.Top to aRect.Bottom do
+    for X := aRect.Left to aRect.Right do
+    begin
+      Col := AvoidBuilding[Y,X] * 65793 OR $80000000;
+      gRenderAux.Quad(X, Y, Col);
+    end;
+
+  if (OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP) AND not OVERLAY_AI_COMBAT then
+  begin
+    PolyArr := fNavMesh.Polygons;
+    NodeArr := fNavMesh.Nodes;
+    for I := 0 to fPolygons - 1 do
+    begin
+      PL := GetBestOwner(I);
+      if (PL = PLAYER_NONE) then
+        continue
+      else
+        Col := (gHands[PL].FlagColor AND COLOR_WHITE) OR (OwnPoly[PL,I] shl 24);
+
+      //NavMesh polys coverage
+      gRenderAux.TriangleOnTerrain(
+        NodeArr[PolyArr[I].Indices[0]].Loc.X,
+        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[1]].Loc.X,
+        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+        NodeArr[PolyArr[I].Indices[2]].Loc.X,
+        NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+    end;
+  end;
+
+  if (OVERLAY_INFLUENCE OR OVERLAY_OWNERSHIP) AND OVERLAY_AI_COMBAT then
+  begin
+    WatchedPL := gMySpectator.HandIndex;
+    if (WatchedPL = PLAYER_NONE) then
       Exit;
 
-    // Compute strength of specific enemy group
-    with EnemyEval[aGT] do
-      EnemyStrength := (Attack + AttackHorse * Byte(antiGT = gt_Mounted))
-                        * ifthen( (antiGT = gt_Ranged), DefenceProjectiles, Defence )
-                        * HitPoints;
+    PolyArr := fNavMesh.Polygons;
+    NodeArr := fNavMesh.Nodes;
 
-    // Decrease strength by owner's existing units
-    with AllyEval[antiGT] do
-      EnemyStrength := EnemyStrength - (Attack + AttackHorse * Byte(aGT = gt_Mounted))
-                                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
-                                        * HitPoints;
-
-    // Compute unit requirements
-    for I := 1 to 3 do
+    for PL := 0 to gHands.Count - 1 do
     begin
-      UT := AITroopTrainOrder[antiGT,I];
-      // Skip unit type in case that it is blocked
-      if (UT = ut_None) OR gHands[fOwner].Locks.GetUnitBlocked(UT) then
-        continue;
-      // Calculate required count of specific unit type
-      UnitEval := gAIFields.Eye.ArmyEvaluation.UnitEvaluation[UT, True];
-      with UnitEval do
-        UnitStrength := Attack + AttackHorse * Byte(aGT = gt_Mounted)
-                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
-                        * HitPoints;
-
-      UnitsRequired := ThirdRoot(EnemyStrength / UnitStrength) * ifthen( (I = 1), aIronRatio, 1-aIronRatio );
-      fWarriorsDemands[UT] := fWarriorsDemands[UT] + Max(0, Round(UnitsRequired)   );
-      if (I = 2) then // In case that ut_AxeFighter is not blocked skip militia
-        break;
-    end;
-  end;
-
-  procedure CheckMinArmyReq();
-  const
-    DEFAULT_COEFICIENT = 15;
-    DEFAULT_ARMY_REQUIREMENTS: array[WARRIOR_EQUIPABLE_MIN..WARRIOR_EQUIPABLE_MAX] of Single = (
-      1, 1, 1, 3,//ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
-      3, 1, 1, 0.5,//ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
-      0.5//ut_Cavalry
-    );
-    WOOD_ARMY: set of TKMUnitType = [ut_AxeFighter, ut_Bowman, ut_Pikeman]; //ut_HorseScout,
-    IRON_ARMY: set of TKMUnitType = [ut_Swordsman, ut_Arbaletman, ut_Hallebardman]; //ut_Cavalry
-  var
-    I, WoodReq, IronReq: Integer;
-    UT: TKMUnitType;
-  begin
-    WoodReq := Max(+ fRequiredWeapons[wt_Armor].Required - fRequiredWeapons[wt_Armor].Available,
-                   + fRequiredWeapons[wt_Axe].Required - fRequiredWeapons[wt_Axe].Available
-                   + fRequiredWeapons[wt_Bow].Required - fRequiredWeapons[wt_Bow].Available
-                   + fRequiredWeapons[wt_Pike].Required - fRequiredWeapons[wt_Pike].Available
-                  );
-    if (WoodReq < 5) then
-    begin
-      WoodReq := Round((DEFAULT_COEFICIENT - WoodReq) / 5.0);
-      for UT in WOOD_ARMY do
-        if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-            if (TroopCost[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TroopCost[UT,I] ] do
-                Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
-    end;
-
-    IronReq := Max(+ fRequiredWeapons[wt_MetalArmor].Required - fRequiredWeapons[wt_MetalArmor].Available,
-                   + fRequiredWeapons[wt_Sword].Required - fRequiredWeapons[wt_Sword].Available
-                   + fRequiredWeapons[wt_Arbalet].Required - fRequiredWeapons[wt_Arbalet].Available
-                   + fRequiredWeapons[wt_Hallebard].Required - fRequiredWeapons[wt_Hallebard].Available
-                  );
-    if (IronReq < 5) then
-    begin
-      IronReq := Round((DEFAULT_COEFICIENT - IronReq)/5.0);
-      for UT in IRON_ARMY do
-        if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-            if (TroopCost[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TroopCost[UT,I] ] do
-                Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
-    end;
-  end;
-//AITroopTrainOrder: array [TKMGroupType, 1..3] of TKMUnitType = (
-//  (ut_Swordsman,    ut_AxeFighter, ut_Militia),
-//  (ut_Hallebardman, ut_Pikeman,    ut_None),
-//  (ut_Arbaletman,   ut_Bowman,     ut_None),
-//  (ut_Cavalry,      ut_HorseScout, ut_None)
-//);
-//UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TKMGroupType = (
-//  gt_Melee,gt_Melee,gt_Melee, //ut_Militia, ut_AxeFighter, ut_Swordsman
-//  gt_Ranged,gt_Ranged,        //ut_Bowman, ut_Arbaletman
-//  gt_AntiHorse,gt_AntiHorse,  //ut_Pikeman, ut_Hallebardman,
-//  gt_Mounted,gt_Mounted,      //ut_HorseScout, ut_Cavalry,
-//  gt_Melee,                   //ut_Barbarian
-//  //TPR Army
-//  gt_AntiHorse,        //ut_Peasant
-//  gt_Ranged,           //ut_Slingshot
-//  gt_Melee,            //ut_MetalBarbarian
-//  gt_Mounted           //ut_Horseman
-//);
-//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
-//  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
-//  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
-//  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
-//  (wt_Armor,        wt_Bow,         wt_None,  wt_None ), //Bowman
-//  (wt_MetalArmor,   wt_Arbalet,     wt_None,  wt_None ), //Crossbowman
-//  (wt_Armor,        wt_Pike,        wt_None,  wt_None ), //Lance Carrier
-//  (wt_MetalArmor,   wt_Hallebard,   wt_None,  wt_None ), //Pikeman
-//  (wt_Shield,       wt_Armor,       wt_Axe,   wt_Horse), //Scout
-//  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_Horse)  //Knight
-//);
-//WARRIOR_EQUIPABLE_MIN = ut_Militia;
-//WARRIOR_EQUIPABLE_MAX = ut_Cavalry;
-//  ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
-//  ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
-//  ut_Cavalry,      ut_Barbarian,
-
-const
-  IRON_WEAPONS: set of TKMWareType = [wt_Sword, wt_Hallebard, wt_Arbalet];
-  IRON_ARMORS: set of TKMWareType = [wt_MetalArmor, wt_MetalShield];
-var
-  I, SmithyCnt, WorkshopCnt, ArmorCnt: Integer;
-  IronRatio, WeaponFraction, ArmorFraction: Single;
-  WT: TKMWareType;
-  GT: TKMGroupType;
-  UT: TKMUnitType;
-begin
-  ArmorCnt := gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) + gHands[fOwner].Stats.GetHouseQty(htArmorWorkshop);
-  SmithyCnt := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy);
-  WorkshopCnt := gHands[fOwner].Stats.GetHouseQty(htWeaponWorkshop);
-  if (ArmorCnt + SmithyCnt + WorkshopCnt = 0) then // Save time when nothing can be produced
-    Exit;
-  IronRatio := 0.5;
-  if (SmithyCnt + WorkshopCnt > 0) then // This will avoid to divide by zero
-    IronRatio := SmithyCnt / ((SmithyCnt + WorkshopCnt)*1.0);
-
-  // Humans may spam archers -> AI will not produce long-range support because of balancing units in team
-  // So it is better to calculate AllyEval just for Owner
-  //AllyEval := gAIFields.Eye.ArmyEvaluation.GetAllianceStrength(aPlayer, at_Ally);
-  AllyEval := gAIFields.Eye.ArmyEvaluation.Evaluation[fOwner];
-  EnemyEval := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[fOwner, at_Enemy];
-
-  // Compute requirements of warriors
-  for UT := Low(fWarriorsDemands) to High(fWarriorsDemands) do
-    fWarriorsDemands[UT] := 0;
-  for GT := Low(TKMGroupType) to High(TKMGroupType) do
-    ComputeGroupDemands(GT, IronRatio);
-
-  // Get weapons reserves
-  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
-  begin
-    fRequiredWeapons[WT].Available := gHands[fOwner].Stats.GetWareBalance(WT);
-    fRequiredWeapons[WT].Required := 0;
-  end;
-
-  // Get count of needed weapons
-  for UT := ut_AxeFighter to WARRIOR_EQUIPABLE_MAX do // Skip militia
-    for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-      if (TroopCost[UT,I] <> wt_None) then
-      begin
-        WT := TroopCost[UT,I];
-        fRequiredWeapons[WT].Required := fRequiredWeapons[WT].Required + fWarriorsDemands[UT];
-      end
+      if (WatchedPL = PL) then
+        Col := COLOR_GREEN
+      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+        Col := COLOR_BLUE
       else
-        break;
+        Col := COLOR_RED;
 
-  // Make sure that we always produce something
-  CheckMinArmyReq();
-
-  // Calculate fraction of demands
-  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
-    with fRequiredWeapons[WT] do
-      Fraction := Available / Max(1,Required);
-
-  // Calculate mean fraction of iron weapons and distribute steal
-  WeaponFraction := 0;
-  ArmorFraction := 0;
-  for WT in IRON_WEAPONS do
-    WeaponFraction := WeaponFraction + fRequiredWeapons[WT].Fraction;
-  for WT in IRON_ARMORS do
-    ArmorFraction := ArmorFraction + fRequiredWeapons[WT].Fraction;
-  WeaponFraction := WeaponFraction / 3.0;
-  ArmorFraction := ArmorFraction / 2.0;
-  // Ware distribution = fraction / sum of fractions * 5
-  gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := Max(  1, Min(5, Round( ArmorFraction / (WeaponFraction + ArmorFraction) * 5) )  );
-  gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := Max(  1, Min(5, Round( WeaponFraction / (WeaponFraction + ArmorFraction) * 5) )  );
-end;
-
-
-// Distribute required weapons into exist houses (first will be produced the larger amount of wares)
-procedure TKMCityManagement.OrderWeapons();
-const
-  WEAPONS_PER_A_UPDATE = 3;
-  PRODUCTION_HOUSES = [htArmorSmithy, htArmorWorkshop, htWeaponSmithy, htWeaponWorkshop];
-var
-  I, K, MaxIdx, HouseCnt: Integer;
-  MostRequired: Single;
-  HT: TKMHouseType;
-  WT, MaxWT: TKMWareType;
-  H: TKMHouse;
-begin
-  MaxIdx := 0; // For compiler
-  for HT in PRODUCTION_HOUSES do
-  begin
-    // Check house cnt
-    HouseCnt := gHands[fOwner].Stats.GetHouseQty(HT);
-    if (HouseCnt = 0) then
-      continue;
-    // Find produced ware which is the most required
-    MostRequired := 1.0;
-    MaxWT := wt_None;
-    for I := 1 to 4 do
-    begin
-      WT := gRes.Houses[HT].ResOutput[I];
-      if (WT <> wt_None) AND (fRequiredWeapons[WT].Fraction < MostRequired) then
+      for I := 0 to fPolygons - 1 do
       begin
-        MostRequired := fRequiredWeapons[WT].Fraction;
-        MaxWT := WT;
-        MaxIdx := I;
+        Cnt := PresenceAllGroups[PL,I];
+        if (Cnt > 0) then
+        begin
+          Cnt := Min(Cnt,$5F);
+          //NavMesh polys coverage
+          gRenderAux.TriangleOnTerrain(
+            NodeArr[PolyArr[I].Indices[0]].Loc.X,
+            NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[1]].Loc.X,
+            NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+            NodeArr[PolyArr[I].Indices[2]].Loc.X,
+            NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
+        end;
       end;
     end;
-    // Set order
-    if (MaxWT <> wt_None) then
-      for I := 0 to gHands[fOwner].Houses.Count - 1 do
-        if not gHands[fOwner].Houses[I].IsDestroyed then
+    {
+    for I := 0 to fPolygons - 1 do
+    begin
+      BestCnt := 0;
+      for PL := 0 to gHands.Count - 1 do
+      begin
+        Cnt := PresenceAllGroups[PL,I];
+        if (Cnt > BestCnt) then
         begin
-          H := gHands[fOwner].Houses[I];
-          if (H.HouseType <> HT) then
-            continue;
-          for K := 1 to 4 do
-            H.ResOrder[K] := 0;
-          H.ResOrder[MaxIdx] := WEAPONS_PER_A_UPDATE; // With update each 1-2 minutes there is not need to calculate something more
-          if (HT = htArmorWorkshop) then
-            H.ResOrder[1] := 10;
+          BestCnt := Cnt;
+          if (WatchedPL = PL) then
+            Col := COLOR_GREEN
+          else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+            Col := COLOR_BLUE
+          else
+            Col := COLOR_RED;
         end;
+      end;
+      if (BestCnt > 0) then
+      begin
+        BestCnt := Min(BestCnt,$9F);
+        //NavMesh polys coverage
+        gRenderAux.TriangleOnTerrain(
+          NodeArr[PolyArr[I].Indices[0]].Loc.X,
+          NodeArr[PolyArr[I].Indices[0]].Loc.Y,
+          NodeArr[PolyArr[I].Indices[1]].Loc.X,
+          NodeArr[PolyArr[I].Indices[1]].Loc.Y,
+          NodeArr[PolyArr[I].Indices[2]].Loc.X,
+          NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (BestCnt shl 24)) );
+      end;
+    end;
+    //}
   end;
 end;
 
 
-procedure TKMCityManagement.LogStatus(var aBalanceText: UnicodeString);
-const
-  COLOR_WHITE = '[$FFFFFF]';
-  COLOR_RED = '[$0000FF]';
-  COLOR_YELLOW = '[$00FFFF]';
-  COLOR_GREEN = '[$00FF00]';
-  WARFARE: array[WARFARE_MIN..WARFARE_MAX] of UnicodeString =
-    ('Shield     ', 'MetalShield', 'Armor      ', 'MetalArmor', 'Axe         ', 'Sword      ',
-     'Pike       ', 'Hallebard  ', 'Bow        ', 'Arbalet   ', 'Horse      ');
-var
-  WT: TKMWareType;
+
+
+{ TKKRoadableFF }
+constructor TKKRoadableFF.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
 begin
-  aBalanceText := aBalanceText + '||Weapons orders (weapon: Available, required, fraction)|';
-  for WT := Low(fRequiredWeapons) to High(fRequiredWeapons) do
-    with fRequiredWeapons[WT] do
-      aBalanceText := aBalanceText + WARFARE[WT] + #9 + '('
-                      + Format(
-                         COLOR_GREEN+'%D'+COLOR_WHITE+';' + #9
-                        +COLOR_RED+'%D'+COLOR_WHITE+';' + #9
-                        +COLOR_YELLOW+'%.2f'+COLOR_WHITE+')|', [Available, Required, Fraction]
-                      );
+  inherited Create(aScanEightTiles);
+  fVisitIdx := High(Byte);
+  fSearchArr := aSearchArr;
+  fMinLimit := aMinLimit;
+  fMaxLimit := aMaxLimit;
+  SetLength(fVisitArr, Length(fSearchArr), Length(fSearchArr[0]));
 end;
+
+
+procedure TKKRoadableFF.MakeNewQueue();
+var
+  X,Y: Integer;
+begin
+  if (fVisitIdx >= High(Byte) - 1) then
+  begin
+    fVisitIdx := 0;
+    for Y := Low(fVisitArr) to High(fVisitArr) do
+      for X := Low(fVisitArr[Y]) to High(fVisitArr[Y]) do
+        fVisitArr[Y,X] := 0;
+  end;
+  fVisitIdx := fVisitIdx + 1;
+  inherited MakeNewQueue();
+end;
+
+
+function TKKRoadableFF.CanBeVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+end;
+
+
+function TKKRoadableFF.IsVisited(const aX,aY: SmallInt): Boolean;
+begin
+  Result := fVisitArr[aY,aX] = fVisitIdx;
+end;
+
+
+procedure TKKRoadableFF.MarkAsVisited(const aX,aY: SmallInt);
+begin
+  fVisitArr[aY,aX] := fVisitIdx;
+  fSearchArr[aY,aX] := 0;
+end;
+
 
 end.
