@@ -31,15 +31,13 @@ var
   GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 127.1812;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 15;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 7.651976;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 120.1112;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 34.69155;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.073275;
-  GA_PLANNER_FindPlaceForWoodcutter_MaxAB             : Single = 97.91979;
-  GA_PLANNER_FindPlaceForWoodcutter_ABDecSpeed        : Single = 6.323951;
-
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 91.24905765;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 7.225309313;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 15.88302255;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 112.1442005;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 46.19561732;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.059596062;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 76.02567672;
 
 
   GA_PATHFINDING_BasePrice    : Word = 0;
@@ -514,7 +512,7 @@ const
     begin
       X := aCoalLoc.X + HMA[htCoalMine].Tiles[I].X;
       Y := aCoalLoc.Y + HMA[htCoalMine].Tiles[I].Y;
-      if (gTerrain.TileIsCoal(X, Y) > 1) then
+      if (gTerrain.TileIsCoal(X, Y) > 0) then
         Exit;
     end;
     Result := True;
@@ -1095,7 +1093,8 @@ function TKMCityPlanner.DistCrit(aHT: TKMHouseType; aLoc: TKMPoint): Single;
     for HT in HOUSE_DEPENDENCE[aHT] do
       for I := 0 to fPlannedHouses[HT].Count - 1 do
       begin
-        Bid := KMDistanceAbs(aLoc, fPlannedHouses[HT].Plans[I].Loc);
+        with fPlannedHouses[HT].Plans[I].Loc do
+          Bid := abs(aLoc.X - X) + abs(aLoc.Y - Y) * 1.5;
         if (Bid < Output) then
           Output := Bid;
       end;
@@ -1570,7 +1569,9 @@ const
 var
   Time: Cardinal;
   Output, PartOfForest: Boolean;
+  AddValue: Byte;
   I,K, Cnt: Integer;
+  DecreaseSpeed: Single;
   Point: TKMPoint;
 begin
   Time := TimeGet();
@@ -1632,8 +1633,18 @@ begin
     I := I - 1;
     Point := fForestsNearby.Items[I]; // Get the best forest
     Output := FindPlaceForWoodcutter(Point);
+    // Mark forest by protected radius
     if Output then
-      gAIFields.Influences.AddAvoidBuilding(Point.X, Point.Y, GA_PLANNER_FindPlaceForWoodcutter_Radius, Min(255, Round(AVOID_BUILDING_FOREST_MINIMUM + GA_PLANNER_FindPlaceForWoodcutter_MaxAB)), True, GA_PLANNER_FindPlaceForWoodcutter_ABDecSpeed);
+    begin
+      AddValue := Min( 255, Round(AVOID_BUILDING_FOREST_MINIMUM + GA_PLANNER_FindPlaceForWoodcutter_AddAB) );
+      // Rounding of paramters from GA may change border limit for forest +- 1 so substract it
+      DecreaseSpeed := Min(AVOID_BUILDING_FOREST_RANGE-1, GA_PLANNER_FindPlaceForWoodcutter_AddAB-1) / sqr(GA_PLANNER_FindPlaceForWoodcutter_Radius);
+      gAIFields.Influences.AddAvoidBuilding(
+        Point.X, Point.Y,
+        GA_PLANNER_FindPlaceForWoodcutter_Radius, AddValue,
+        DecreaseSpeed
+      );
+    end;
   end;
   Result := Output;
 
