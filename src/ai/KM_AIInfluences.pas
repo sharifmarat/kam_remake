@@ -12,14 +12,14 @@ uses
 const
   // Avoid bulding values of specific actions (tile lock by specific action)
   AVOID_BUILDING_UNLOCK = 0;
-  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
-  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
-  AVOID_BUILDING_COAL_TILE = 50;
-  AVOID_BUILDING_NODE_LOCK_FIELD = 65;
-  AVOID_BUILDING_NODE_LOCK_ROAD = 70;
-  AVOID_BUILDING_MINE_TILE = 100;
-  AVOID_BUILDING_INACCESSIBLE_TILES = 120;
-  AVOID_BUILDING_FOREST_RANGE = 150; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
+  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 10;
+  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 15;
+  AVOID_BUILDING_COAL_TILE = 20;
+  AVOID_BUILDING_NODE_LOCK_FIELD = 25;
+  AVOID_BUILDING_NODE_LOCK_ROAD = 30;
+  AVOID_BUILDING_MINE_TILE = 40;
+  AVOID_BUILDING_INACCESSIBLE_TILES = 45;
+  AVOID_BUILDING_FOREST_RANGE = 200; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
   AVOID_BUILDING_FOREST_MINIMUM = 255 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
 
 
@@ -96,7 +96,7 @@ type
     property EvalArea[const aY,aX: Word]: Byte read GetAreaEval;
 
     // Avoid building
-    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
+    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
     procedure RemAvoidBuilding(aArea: TKMRect);
     // Army presence
     // City influence
@@ -228,7 +228,7 @@ end;
 
 
 //Make the area around to be avoided by common houses
-procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
+procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
 var
   X,Y: Integer;
   SqrDist, SqrMaxDist: Single;
@@ -242,13 +242,7 @@ begin
     begin
       SqrDist := Sqr(aX-X) + Sqr(aY-Y);
       if (SqrDist <= SqrMaxDist) then
-      begin
-        if aDecreasing then
-          //AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round((1 - Dist * MaxDistInv) * aValue)), 255)
-          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseSpeed)), 255)
-        else
-          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + aValue, 255);
-      end;
+        AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseCoef)), 255);
     end;
 end;
 
