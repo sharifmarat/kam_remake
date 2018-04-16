@@ -12,9 +12,9 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_RndOwnLim     : Single = 39.67771;
-  GA_EYE_GetForests_InflLimit     : Single = 103.3557;
-  GA_EYE_GetForests_OwnLimit      : Single = 94.6905;
+  GA_EYE_GetForests_RndOwnLim     : Single = 114.1913161;
+  GA_EYE_GetForests_InflLimit     : Single = 30.38689868;
+  GA_EYE_GetForests_OwnLimit      : Single = 144.4874704;
   GA_EYE_GetForests_MinTrees      : Single = 3.11;
   GA_EYE_GetForests_Radius        : Single = 5.0698;
 
@@ -1105,7 +1105,8 @@ begin
   //{ Build flood fill
   for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
-      if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
+      //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
+      if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
         case fBuildFF.State[Y,X] of
           bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
           bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
