@@ -491,12 +491,12 @@ const
   var
     Y, X: Integer;
   const
-    RADIUS = 8;
+    RADIUS = 15;
   begin
     Result := False;
     for Y := Max(aQuaryLoc.Y-RADIUS, 1) to Min(aQuaryLoc.Y+RADIUS, gTerrain.MapY-1) do
     for X := Max(aQuaryLoc.X-RADIUS, 1) to Min(aQuaryLoc.X+RADIUS, gTerrain.MapX-1) do
-      if (gTerrain.TileIsStone(X, Y) > 1) then
+      if (gTerrain.TileIsStone(X, Y) > 0) then
         Exit;
     Result := True;
   end;
@@ -903,7 +903,6 @@ const
   SNAP_TO_EDGE = 5;
   FIELD_PRICE = 1;
   DIR_PRICE: array[TDirection] of Byte = (5,15,20,15); //(dirN,dirE,dirS,dirW);
-  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
   PRICE_ARR_CONST: TDirArrInt = (0,0,0,0);
   CNT_ARR_CONST: TDirArrByte = (0,0,0,0);
 var
@@ -1390,7 +1389,7 @@ const
       IgnoreTrees := False;
       IgnoreAvoidBuilding := True;
       MaxCnt := 30;
-      MaxDist := 6;
+      MaxDist := 11;
     end;
 
     StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
@@ -1438,7 +1437,9 @@ const
           for I := 0 to BuildFF.Locs.Count - 1 do
           begin
             Loc := BuildFF.Locs.Items[I];
-            Bid := 10000 - BuildFF.Distance[Loc] * 5 + SnapCrit(aHT, Loc);
+            Bid := 10000
+                   - BuildFF.Distance[Loc] * 100 // Snap crit is agresive
+                   + SnapCrit(aHT, Loc);
             if (Bid > BestBid) then
             begin
               BestBid := Bid;
