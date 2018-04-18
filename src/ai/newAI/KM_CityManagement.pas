@@ -7,8 +7,8 @@ uses
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.3677794933;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 4.057023287;
+  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.516044855;
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.938630491;
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -150,7 +150,7 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 70;
+  //gGame.GameOptions.Peacetime := 90;
   //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -627,9 +627,9 @@ var
 
     // Decrease strength by owner's existing units
     with AllyEval[antiGT] do
-      EnemyStrength := EnemyStrength - (Attack + AttackHorse * Byte(aGT = gt_Mounted))
-                                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
-                                        * HitPoints;
+      EnemyStrength := Max(0, EnemyStrength - (Attack + AttackHorse * Byte(aGT = gt_Mounted))
+                                               * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
+                                               * HitPoints);
 
     // Compute unit requirements
     for I := 1 to 3 do
@@ -641,11 +641,11 @@ var
       // Calculate required count of specific unit type
       UnitEval := gAIFields.Eye.ArmyEvaluation.UnitEvaluation[UT, True];
       with UnitEval do
-        UnitStrength := Attack + AttackHorse * Byte(aGT = gt_Mounted)
-                        * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
-                        * HitPoints;
+        UnitStrength := Max(0, Attack + AttackHorse * Byte(aGT = gt_Mounted)
+                               * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
+                               * HitPoints);
 
-      UnitsRequired := Power(EnemyStrength / UnitStrength, 1/3) * IfThen( (I = 1), aIronRatio, 1-aIronRatio );
+      UnitsRequired := Power(EnemyStrength / UnitStrength, 1/3) * ifthen( (I = 1), aIronRatio, 1-aIronRatio );
       fWarriorsDemands[UT] := fWarriorsDemands[UT] + Max(0, Round(UnitsRequired)   );
       if (I = 2) then // In case that ut_AxeFighter is not blocked skip militia
         break;
