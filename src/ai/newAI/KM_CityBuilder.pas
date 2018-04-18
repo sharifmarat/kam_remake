@@ -20,7 +20,7 @@ var
   GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
   GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 5.60124576; //10.40034485;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 3.034022748;
   GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
   GA_BUILDER_GOLD_SHORTAGE              : Single = 32.64543295;
 
@@ -851,7 +851,7 @@ const
   //FOOD_WARE: TSetOfWare = [wt_Corn, wt_Flour, wt_Bread, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood];
   //WEAPON_WARE: TSetOfWare = [wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Bow, wt_Pike, wt_Armor, wt_Shield, wt_Sword, wt_Arbalet, wt_Hallebard, wt_MetalShield, wt_MetalArmor];
   // All considerable ware (from weapons / armors just 1 piece of ware type because it is produced in same house)
-  ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Armor, wt_Sword, wt_MetalArmor, wt_Flour, wt_Bread];
+  ALL_WARE: TSetOfWare = [wt_Corn, wt_Pig, wt_Sausages, wt_Wine, wt_Fish, wt_Stone, wt_Trunk, wt_Wood, wt_Skin, wt_Leather, wt_Horse, wt_IronOre, wt_Coal, wt_Steel, wt_Axe, wt_Armor, wt_Sword, wt_MetalArmor, wt_Flour, wt_Bread];
   //BUILD_ORDER_WARE: array[0..8] of TKMWareType = (wt_Stone, wt_Gold, wt_GoldOre, wt_Coal, wt_Trunk, wt_Wood, wt_Corn, wt_Pig, wt_Sausages);
   BUILD_ORDER_WARE: array[0..5] of TKMWareType = (wt_Stone, wt_GoldOre, wt_Coal, wt_Gold, wt_Trunk, wt_Wood);
 var
@@ -898,7 +898,7 @@ var
     begin
       MaterialShortage := not aIgnoreWareReserves AND (fWoodShortage OR fTrunkShortage OR fStoneShortage OR fGoldShortage);
       MaterialShortage := MaterialShortage OR (MaxPlace <= 0);
-      UnlockProcedure := UnlockProcedure OR (aHT = htFarm) OR MaterialShortage; // Farm should be placed outside of forest
+      UnlockProcedure := UnlockProcedure OR MaterialShortage;
       HouseReservation := MaterialShortage;
       IgnoreExistingPlans := MaterialShortage AND not (aHT in [htWoodcutters, htGoldMine, htIronMine, htCoalMine]);
       //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
@@ -919,6 +919,7 @@ var
     Output: Boolean;
     I: Integer;
     Priority: Single;
+    HT: TKMHouseType;
     Ware, WT, POM_WT: TKMWareType;
     WareOrder: array[0..10] of TKMWareType;
     WarePriority: array[0..10] of Single;
@@ -955,9 +956,11 @@ var
     begin
       if (WareOrder[I] = wt_None) then
         break;
-      if (RequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] <= 0) then // wt_Leather and wt_Pig require the same building so avoid to place 2 houses at once
+      HT := PRODUCTION[ WareOrder[I] ];
+      if (RequiredHouses[HT] <= 0) then // wt_Leather and wt_Pig require the same building so avoid to place 2 houses at once
         continue;
-      case AddToConstruction(PRODUCTION[ WareOrder[I] ], False, False) of
+      // Farms and wineyards should be placed ASAP because fields may change evaluation of terrain and change tpBuild status of surrouding tiles!
+      case AddToConstruction(HT, HT in [htFarm, htWineyard], False) of
         cs_NoNodeAvailable: break;
         cs_HouseReservation, cs_RemoveTreeProcedure: Output := True;
         cs_HousePlaced:
@@ -972,7 +975,7 @@ var
         begin
         end;
       end;
-      RequiredHouses[  PRODUCTION[ WareOrder[I] ]  ] := 0; // Make sure that next node will not scan this house in this tick
+      RequiredHouses[HT] := 0; // Make sure that next node will not scan this house in this tick
     end;
     Result := Output;
   end;
@@ -1092,10 +1095,7 @@ begin
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
   TrunkBalance := (gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,WareBalance[wt_Trunk].ActualConsumption);
   if (TrunkBalance < GA_BUILDER_TRUNK_SHORTAGE) then
-  begin
-    RequiredHouses[htWineyard] := 0; // Dont try to place wine
     fTrunkShortage := True;
-  end;
 
   // Find place for chop-only woodcutters when we start to be out of wood
   if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then // Max 2 chop-only woodcutters
@@ -1127,6 +1127,9 @@ begin
   //fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones);
   fTrunkShortage := fTrunkShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
   MaxPlace := Round((gHands[fOwner].Stats.GetWareBalance(wt_Trunk)*2 + gHands[fOwner].Stats.GetWareBalance(wt_Wood) - RequiredWood) / 3 - 0.5);
+
+  if fTrunkShortage then
+    RequiredHouses[htWineyard] := 0; // Dont try to place wine we are out of wood
 
   if (MaxPlace > 0) then
     CheckHouseReservation();
