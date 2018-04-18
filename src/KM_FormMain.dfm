@@ -72,13 +72,13 @@ object FormMain: TFormMain
     Left = 320
     Top = 8
     Width = 193
-    Height = 666
+    Height = 688
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
-      Top = 424
+      Top = 442
       Width = 177
       Height = 89
       Caption = ' Graphics tweaks '
@@ -171,7 +171,7 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Top = 368
+      Top = 384
       Width = 177
       Height = 57
       Caption = ' User Interface '
@@ -251,12 +251,12 @@ object FormMain: TFormMain
       Left = 8
       Top = 200
       Width = 177
-      Height = 169
+      Height = 185
       Caption = ' AI '
       TabOrder = 2
       object Label5: TLabel
         Left = 108
-        Top = 132
+        Top = 148
         Width = 32
         Height = 13
         Caption = 'Margin'
@@ -264,7 +264,7 @@ object FormMain: TFormMain
       end
       object Label6: TLabel
         Left = 108
-        Top = 148
+        Top = 164
         Width = 47
         Height = 13
         Caption = 'Threshold'
@@ -333,22 +333,16 @@ object FormMain: TFormMain
         TabOrder = 6
         OnClick = ControlsUpdate
       end
-      object tbOwnMargin: TTrackBar
-        Left = 4
-        Top = 132
-        Width = 101
+      object chkAIEye: TCheckBox
+        Left = 8
+        Top = 128
+        Width = 97
         Height = 17
-        Max = 255
-        Min = 64
-        Position = 64
+        Caption = 'AI Eye'
         TabOrder = 7
-        ThumbLength = 14
-        TickMarks = tmBoth
-        TickStyle = tsNone
-        Visible = False
-        OnChange = ControlsUpdate
+        OnClick = ControlsUpdate
       end
-      object tbOwnThresh: TTrackBar
+      object tbOwnMargin: TTrackBar
         Left = 4
         Top = 148
         Width = 101
@@ -363,13 +357,28 @@ object FormMain: TFormMain
         Visible = False
         OnChange = ControlsUpdate
       end
+      object tbOwnThresh: TTrackBar
+        Left = 4
+        Top = 164
+        Width = 101
+        Height = 17
+        Max = 255
+        Min = 64
+        Position = 64
+        TabOrder = 9
+        ThumbLength = 14
+        TickMarks = tmBoth
+        TickStyle = tsNone
+        Visible = False
+        OnChange = ControlsUpdate
+      end
       object chkBevel: TCheckBox
         Left = 119
         Top = 16
         Width = 73
         Height = 17
         Caption = 'Bevel'
-        TabOrder = 9
+        TabOrder = 10
         OnClick = ControlsUpdate
       end
     end
@@ -430,7 +439,7 @@ object FormMain: TFormMain
     end
     object GroupBoxLogs: TGroupBox
       Left = 8
-      Top = 513
+      Top = 529
       Width = 177
       Height = 150
       Caption = 'Logs'

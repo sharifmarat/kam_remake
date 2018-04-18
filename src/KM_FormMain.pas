@@ -15,7 +15,7 @@ type
   { TFormMain }
 
   TFormMain = class(TForm)
-    chkEye: TCheckBox;
+    chkAIEye: TCheckBox;
     MenuItem1: TMenuItem;
     SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
@@ -670,7 +670,7 @@ begin
     OVERLAY_DEFENCES := chkShowDefences.Checked;
     OVERLAY_AI_BUILD := chkBuildAI.Checked;
     OVERLAY_AI_COMBAT := chkCombatAI.Checked;
-    OVERLAY_AI_EYE := chkEye.Checked;
+    OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;
