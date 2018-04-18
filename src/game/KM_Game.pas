@@ -77,6 +77,7 @@ type
     function GetGameTickDuration: Single;
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
+    procedure IncGameTick;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -1817,6 +1818,14 @@ begin
 end;
 
 
+procedure TKMGame.IncGameTick;
+begin
+  Inc(fGameTickCount); //Thats our tick counter for gameplay events
+  if LOG_GAME_TICK then
+    gLog.AddTime('Tick: ' + IntToStr(fGameTickCount));
+end;
+
+
 function TKMGame.PlayNextTick: Boolean;
 var
   PeaceTimeLeft: Cardinal;
@@ -1840,7 +1849,8 @@ begin
                       if fWaitingForNetwork then
                         WaitingPlayersDisplay(False);
 
-                      Inc(fGameTickCount); //Thats our tick counter for gameplay events
+                      IncGameTick;
+
                       if (fGameMode in [gmMulti, gmMultiSpectate]) then
                         fNetworking.LastProcessedTick := fGameTickCount;
                       //Tell the master server about our game on the specific tick (host only)
@@ -1889,7 +1899,8 @@ begin
                   end;
     gmReplaySingle,gmReplayMulti:
                   begin
-                    Inc(fGameTickCount); //Thats our tick counter for gameplay events
+                    IncGameTick;
+
                     fScripting.UpdateState;
                     UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                     gTerrain.UpdateState;
