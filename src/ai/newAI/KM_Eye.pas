@@ -146,6 +146,7 @@ type
 
     procedure InitHousesMapping();
     function CheckResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+    function GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -332,6 +333,157 @@ begin
 end;
 
 
+function TKMEye.GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
+var
+  X,Y: Integer;
+begin
+  Result := 0;
+  for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = htGoldMine), gTerrain.MapX-1) do
+    for Y := Max(aLoc.Y-8, 1) to aLoc.Y do
+      if (aHT = htGoldMine) then
+        Result := Result + gTerrain.TileIsGold(X, Y)
+      else if (aHT = htIronMine) then
+        Result := Result + gTerrain.TileIsIron(X, Y);
+end;
+
+
+procedure TKMEye.ScanLocResources(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+var
+  CenterPolygon, PolygonsCnt: Integer;
+  InitPolygons: TKMWordArray;
+
+  procedure ScanLocArea(aStartPoint: TKMPoint);
+  var
+    Distance, StartPolygon: Word;
+    I: Integer;
+    PolygonRoute: TKMWordArray;
+  begin
+    if (CenterPolygon = High(Word)) then
+      Exit;
+    Distance := 0;
+    StartPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aStartPoint ];
+    SetLength(PolygonRoute, 0);
+    if gAIFields.NavMesh.Pathfinding.ShortestPolygonRoute(StartPolygon, CenterPolygon, Distance, PolygonRoute) then
+    begin
+      if (Length(PolygonRoute) + PolygonsCnt >= Length(InitPolygons)) then
+        SetLength(InitPolygons, Length(PolygonRoute) + PolygonsCnt + 64);
+      for I := 0 to Length(PolygonRoute) - 1 do
+      begin
+        InitPolygons[PolygonsCnt] := PolygonRoute[I];
+        //fPolygonRoutes[ PolygonRoute[I] ] := 255;
+        //fPolygonRoutes[ PolygonRoute[I] ] := Min(250, fPolygonRoutes[ PolygonRoute[I] ] + 100);
+        PolygonsCnt := PolygonsCnt + 1;
+      end;
+    end;
+  end;
+
+  function FindSeparateMines(aMineType: TKMHouseType; var MineList: TKMPointList): Word;
+  var
+    I,K, Output: Integer;
+    InfluenceArr: array of Boolean;
+  begin
+    Output := 0;
+    SetLength(InfluenceArr, MineList.Count);
+    for I := Low(InfluenceArr) to High(InfluenceArr) do
+      InfluenceArr[I] := False;
+    for I := 0 to MineList.Count-1 do
+      if (gAIFields.Influences.GetBestOwner(MineList.Items[I].X, MineList.Items[I].Y) = fOwner) then
+      begin
+        InfluenceArr[I] := True;
+        Output := Output + 1;
+        for K := 0 to I-1 do
+          if InfluenceArr[K] then
+          begin
+            // Check if this mine is overlapping with already counted
+            if (MineList.Items[K].Y <> MineList.Items[I].Y)
+              OR (  Abs(MineList.Items[K].X - MineList.Items[I].X) > (3 + Byte(aMineType = htIronMine)) ) then
+              continue
+            else
+            begin
+              Output := Output - 1;
+              InfluenceArr[I] := False;
+              break;
+            end;
+          end;
+        if InfluenceArr[I] then
+          ScanLocArea( MineList.Items[I] );
+       end;
+    Result := Output;
+  end;
+var
+  I,K, Increment: Integer;
+  Loc: TKMPoint;
+  CenterPointArr: TKMPointArray;
+  TagList: TKMPointTagList;
+  FFInitPlace: TKMFFInitPlace;
+begin
+  PolygonsCnt := 0;
+  // Init city center point (storehouse / school etc.)
+  CenterPointArr := GetCityCenterPoints(False);
+  CenterPolygon := High(Word);
+  if (Length(CenterPointArr) > 0) then
+    CenterPolygon := gAIFields.NavMesh.KMPoint2Polygon[ CenterPointArr[0] ];
+  // Scan Resources - gold, iron
+  aIronMineCnt := FindSeparateMines(htIronMine, fIronMines);
+  aGoldMineCnt := FindSeparateMines(htGoldMine, fGoldMines);
+  // Scan Resources - stones
+  TagList := GetStoneLocs(True);
+  try
+    I := 0;
+    Increment := Ceil(TagList.Count / 5.0); // Max 5 paths
+    while (I < TagList.Count) do
+    begin
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
+    end;
+  finally
+    TagList.Free;
+  end;
+  // Scan Resources - coal
+  TagList := GetCoalMineLocs(True);
+  try
+    I := 0;
+    Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
+    while (I < TagList.Count) do
+    begin
+      ScanLocArea(TagList.Items[I]);
+      I := I + Increment;
+    end;
+  finally
+    TagList.Free;
+  end;
+
+  aFieldCnt := 0;
+  aBuildCnt := 0;
+  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
+    if (gAIFields.Influences.GetBestOwner(I) = fOwner) then
+      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
+      begin
+        Loc := gAIFields.NavMesh.Polygon2Point[K];
+        if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
+        begin
+          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
+            aBuildCnt := aBuildCnt + 1;
+          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+            aFieldCnt := aFieldCnt + 1;
+        end
+        else if gTerrain.CheckHeightPass(Loc, hpWalking)
+          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          aFieldCnt := aFieldCnt + 1;
+      end;
+
+  if (PolygonsCnt > 0) then
+  begin
+    FFInitPlace := TKMFFInitPlace.Create;
+    try
+      FFInitPlace.FillPolygons(PolygonsCnt-1, InitPolygons, fPolygonRoutes);
+    finally
+      FFInitPlace.Free;
+    end;
+  end;
+end;
+
+
 // Create mapping of surrounding tiles for each house
 procedure TKMEye.InitHousesMapping();
 var
@@ -472,143 +624,6 @@ begin
   fOwner := aPlayer;
   fBuildFF.OwnerUpdate(aPlayer);
   //fFinder.OwnerUpdate(fOwner);
-end;
-
-
-procedure TKMEye.ScanLocResources(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
-var
-  CenterPolygon, PolygonsCnt: Integer;
-  InitPolygons: TKMWordArray;
-
-  procedure ScanLocArea(aStartPoint: TKMPoint);
-  var
-    Distance, StartPolygon: Word;
-    I: Integer;
-    PolygonRoute: TKMWordArray;
-  begin
-    if (CenterPolygon = High(Word)) then
-      Exit;
-    Distance := 0;
-    StartPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aStartPoint ];
-    SetLength(PolygonRoute, 0);
-    if gAIFields.NavMesh.Pathfinding.ShortestPolygonRoute(StartPolygon, CenterPolygon, Distance, PolygonRoute) then
-    begin
-      if (Length(PolygonRoute) + PolygonsCnt >= Length(InitPolygons)) then
-        SetLength(InitPolygons, Length(PolygonRoute) + PolygonsCnt + 64);
-      for I := 0 to Length(PolygonRoute) - 1 do
-      begin
-        InitPolygons[PolygonsCnt] := PolygonRoute[I];
-        //fPolygonRoutes[ PolygonRoute[I] ] := 255;
-        //fPolygonRoutes[ PolygonRoute[I] ] := Min(250, fPolygonRoutes[ PolygonRoute[I] ] + 100);
-        PolygonsCnt := PolygonsCnt + 1;
-      end;
-    end;
-  end;
-
-  function FindSeparateMines(aMineType: TKMHouseType; var MineList: TKMPointList): Word;
-  var
-    I,K, Output: Integer;
-    InfluenceArr: array of Boolean;
-  begin
-    Output := 0;
-    SetLength(InfluenceArr, MineList.Count);
-    for I := Low(InfluenceArr) to High(InfluenceArr) do
-      InfluenceArr[I] := False;
-    for I := 0 to MineList.Count-1 do
-      if (gAIFields.Influences.GetBestOwner(MineList.Items[I].X, MineList.Items[I].Y) = fOwner) then
-      begin
-        InfluenceArr[I] := True;
-        Output := Output + 1;
-        for K := 0 to I-1 do
-          if InfluenceArr[K] then
-          begin
-            // Check if this mine is overlapping with already counted
-            if (MineList.Items[K].Y <> MineList.Items[I].Y)
-              OR (  Abs(MineList.Items[K].X - MineList.Items[I].X) > (3 + Byte(aMineType = htIronMine)) ) then
-              continue
-            else
-            begin
-              Output := Output - 1;
-              InfluenceArr[I] := False;
-              break;
-            end;
-          end;
-        if InfluenceArr[I] then
-          ScanLocArea( MineList.Items[I] );
-       end;
-    Result := Output;
-  end;
-var
-  I,K, Increment: Integer;
-  Loc: TKMPoint;
-  CenterPointArr: TKMPointArray;
-  TagList: TKMPointTagList;
-  FFInitPlace: TKMFFInitPlace;
-begin
-  PolygonsCnt := 0;
-  // Init city center point (storehouse / school etc.)
-  CenterPointArr := GetCityCenterPoints(False);
-  CenterPolygon := High(Word);
-  if (Length(CenterPointArr) > 0) then
-    CenterPolygon := gAIFields.NavMesh.KMPoint2Polygon[ CenterPointArr[0] ];
-  // Scan Resources - gold, iron
-  aIronMineCnt := FindSeparateMines(htIronMine, fIronMines);
-  aGoldMineCnt := FindSeparateMines(htGoldMine, fGoldMines);
-  // Scan Resources - stones
-  TagList := GetStoneLocs(True);
-  try
-    I := 0;
-    Increment := Ceil(TagList.Count / 5.0); // Max 5 paths
-    while (I < TagList.Count) do
-    begin
-      ScanLocArea(TagList.Items[I]);
-      I := I + Increment;
-    end;
-  finally
-    TagList.Free;
-  end;
-  // Scan Resources - coal
-  TagList := GetCoalMineLocs(True);
-  try
-    I := 0;
-    Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
-    while (I < TagList.Count) do
-    begin
-      ScanLocArea(TagList.Items[I]);
-      I := I + Increment;
-    end;
-  finally
-    TagList.Free;
-  end;
-
-  aFieldCnt := 0;
-  aBuildCnt := 0;
-  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
-    if (gAIFields.Influences.GetBestOwner(I) = fOwner) then
-      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
-      begin
-        Loc := gAIFields.NavMesh.Polygon2Point[K];
-        if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
-        begin
-          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
-            aBuildCnt := aBuildCnt + 1;
-          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
-            aFieldCnt := aFieldCnt + 1;
-        end
-        else if gTerrain.CheckHeightPass(Loc, hpWalking)
-          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
-          aFieldCnt := aFieldCnt + 1;
-      end;
-
-  if (PolygonsCnt > 0) then
-  begin
-    FFInitPlace := TKMFFInitPlace.Create;
-    try
-      FFInitPlace.FillPolygons(PolygonsCnt-1, InitPolygons, fPolygonRoutes);
-    finally
-      FFInitPlace.Free;
-    end;
-  end;
 end;
 
 
