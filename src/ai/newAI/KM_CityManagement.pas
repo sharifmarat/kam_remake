@@ -587,19 +587,6 @@ procedure TKMCityManagement.WeaponsBalance();
 var
   EnemyEval, AllyEval: TKMArmyEval;
 
-  function ThirdRoot(aValue: Single): Single;
-  var
-     Output, X: Double;
-  begin
-     Output := Sqrt(aValue);
-     while (Abs( aValue - Power(Output, 3) ) > 0.1) do
-     begin
-        X := (1/3) * (((3-1) * Output) + (aValue/(Power(Output, 3 - 1))));
-        Output := X;
-     end;
-     Result := Output;
-  end;
-
   procedure ComputeGroupDemands(aGT: TKMGroupType; aIronRatio: Single);
   const
     // It doesnt depends on future "optimalization" of parameters: against cav should be always good pikes etc. so this array doesnt have to be computed
@@ -658,7 +645,7 @@ var
                         * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
                         * HitPoints;
 
-      UnitsRequired := ThirdRoot(EnemyStrength / UnitStrength) * ifthen( (I = 1), aIronRatio, 1-aIronRatio );
+      UnitsRequired := Power(EnemyStrength / UnitStrength, 1/3) * IfThen( (I = 1), aIronRatio, 1-aIronRatio );
       fWarriorsDemands[UT] := fWarriorsDemands[UT] + Max(0, Round(UnitsRequired)   );
       if (I = 2) then // In case that ut_AxeFighter is not blocked skip militia
         break;
