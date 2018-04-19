@@ -12,9 +12,9 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_RndOwnLim     : Single = 114.1913161;
-  GA_EYE_GetForests_InflLimit     : Single = 30.38689868;
-  GA_EYE_GetForests_OwnLimit      : Single = 144.4874704;
+  GA_EYE_GetForests_RndOwnLim     : Single = 45.3447774;
+  GA_EYE_GetForests_InflLimit     : Single = 222.1944779;
+  GA_EYE_GetForests_OwnLimit      : Single = 118.2537183;
   GA_EYE_GetForests_MinTrees      : Single = 3.11;
   GA_EYE_GetForests_Radius        : Single = 5.0698;
 
@@ -103,6 +103,7 @@ type
 
     procedure UpdateState();
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure ActualizeTile(aX, aY: Word);
     function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
     procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
   end;
@@ -1121,7 +1122,7 @@ begin
   for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
       //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
-      if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
+      //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
         case fBuildFF.State[Y,X] of
           bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
           bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
@@ -1561,8 +1562,8 @@ begin
     TerrainFF();
 
     fUpdateTick := gGame.GameTickCount;
+    MarkPlans(); // Plans may change durring placing houses but this event is caught CityBuilder
   end;
-  MarkPlans(); // Plans may change durring placing houses so this must be updated every call
 end;
 
 
@@ -1570,6 +1571,12 @@ procedure TKMBuildFF.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
   fUpdateTick := 0; // Make sure that area will be scanned in next update
+end;
+
+
+procedure TKMBuildFF.ActualizeTile(aX, aY: Word);
+begin
+  State[aY, aX] := GetTerrainState(aX,aY);
 end;
 
 
