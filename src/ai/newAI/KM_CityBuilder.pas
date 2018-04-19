@@ -76,7 +76,6 @@ type
     procedure LockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
     procedure UnlockHouseLoc(aHT: TKMHouseType; aLoc: TKMPoint);
 
-
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
   end;
@@ -232,7 +231,11 @@ begin
   HMA := gAIFields.Eye.HousesMapping;
   // Reserve all tiles inside house plan
   for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-    gAIFields.Influences.AvoidBuilding[aLoc.Y + HMA[aHT].Tiles[I].Y, aLoc.X + HMA[aHT].Tiles[I].X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
+  begin
+    Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+    gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
+    gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
+  end;
   // Reserve all tiles in distance 1 from house plan
   Dist := 1;
   for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
@@ -240,7 +243,10 @@ begin
     begin
       Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] < AVOID_BUILDING_HOUSE_INSIDE_LOCK) then
+      begin
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_OUTSIDE_LOCK;
+        gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
+      end;
     end;
 end;
 
@@ -255,7 +261,10 @@ begin
   HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
   for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-    gAIFields.Influences.AvoidBuilding[aLoc.Y + HMA[aHT].Tiles[I].Y, aLoc.X + HMA[aHT].Tiles[I].X] := AVOID_BUILDING_UNLOCK;
+  begin
+    Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+    gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
+  end;
   // Free all tiles in distance 1 from house plan
   Dist := 1;
   for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
@@ -280,7 +289,10 @@ begin
   with aNode.FieldList do
     for I := 0 to Count-1 do
       if (gAIFields.Influences.AvoidBuilding[Items[I].Y, Items[I].X] < NODE_TYPE) then
+      begin
         gAIFields.Influences.AvoidBuilding[Items[I].Y, Items[I].X] := NODE_TYPE;
+        gAIFields.Eye.BuildFF.ActualizeTile(Items[I].X, Items[I].Y);
+      end;
 end;
 
 
