@@ -63,7 +63,13 @@ type
     procedure SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False); override;
   end;
 
-  TKMRunnerGA_CityPlannerForest = class(TKMRunnerGA_Common)
+  TKMRunnerGA_Forest = class(TKMRunnerGA_Common)
+  protected
+    procedure InitGAParameters(); override;
+    procedure SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False); override;
+  end;
+
+  TKMRunnerGA_Farm = class(TKMRunnerGA_Common)
   protected
     procedure InitGAParameters(); override;
     procedure SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False); override;
@@ -264,7 +270,7 @@ const
   IRON_SOLDIER = 20;
   WOOD_SOLDIER = 10;
   MILITIA_SOLDIER = 3;
-  COMPLETE_HOUSE = 10;
+  COMPLETE_HOUSE = 5;
 var
   I: Integer;
   IronArmy, WoodArmy, Militia, Output: Single;
@@ -433,37 +439,54 @@ end;
 
 
 
-{ TKMRunnerGA_CityPlannerForest }
-procedure TKMRunnerGA_CityPlannerForest.InitGAParameters();
+{ TKMRunnerGA_Forest }
+procedure TKMRunnerGA_Forest.InitGAParameters();
 begin
   f_GA_SIMULATION_TIME_IN_MIN    := 60;
   f_GA_POPULATION_CNT            := 40;
   f_GA_INDIVIDUALS_IN_TOURNAMENT := 3;
-  f_GA_GENE_CNT                  := 7;
-  f_GA_MAPS_CNT                  := 10;
-  f_GA_START_MUTATION            := 0.1;
-  f_GA_FINAL_MUTATION            := 0.005;
-  f_GA_CROSSOVER_COEF            := 0.95;
+  f_GA_GENE_CNT                  := 10;
+  f_GA_MAPS_CNT                  := 20;
+  f_GA_START_MUTATION            := 0.2;
+  f_GA_FINAL_MUTATION            := 0.05;
+  f_GA_CROSSOVER_COEF            := 1;
 end;
 
 
-procedure TKMRunnerGA_CityPlannerForest.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
+procedure TKMRunnerGA_Forest.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
 var
   I: Integer;
 begin
   I := 0;
   // Please do NOT break this order and style use alt + shift + click if you want select / edit multiple colums at once!!!
-  GA_PLANNER_PlaceWoodcutter_DistFromForest         := Max(1, aIdv.Gene[Incr(I)] * 100);
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit        := Max(1, aIdv.Gene[Incr(I)] * 10);
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         := Max(1, aIdv.Gene[Incr(I)] * 100);
-  GA_PLANNER_FindPlaceForWoodcutter_Influence       := Max(1, aIdv.Gene[Incr(I)] * 15);
+
+  GA_EYE_GetForests_RndOwnLim                       := Max(1, aIdv.Gene[Incr(I)] * 250);
+  GA_EYE_GetForests_InflLimit                       := Max(1, aIdv.Gene[Incr(I)] * 250);
+  GA_EYE_GetForests_OwnLimit                        := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
+  //GA_EYE_GetForests_MinTrees                        := Max(1, aIdv.Gene[Incr(I)] * 5);
+  //GA_EYE_GetForests_Radius                          := Max(4, aIdv.Gene[Incr(I)] * 2 + 4);
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute       := Max(1, aIdv.Gene[Incr(I)] * 25);
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea        := Max(1, aIdv.Gene[Incr(I)] * 25);
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest     := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit        := Max(1, aIdv.Gene[Incr(I)] * 50);
+  GA_PLANNER_FindPlaceForWoodcutter_Radius          := Max(1, aIdv.Gene[Incr(I)] * 10);
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB           := Max(1, aIdv.Gene[Incr(I)] * 200);
 
   if aLogIt then
   begin
-    fLogPar.AddTime('GA_PLANNER_PlaceWoodcutter_DistFromForest         : Single = ' + FloatToStr( GA_PLANNER_PlaceWoodcutter_DistFromForest         ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistCrit        : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_DistCrit        ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_Influence       ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_RndOwnLim                     : Single = ' + FloatToStr( GA_EYE_GetForests_RndOwnLim                   ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_InflLimit                     : Single = ' + FloatToStr( GA_EYE_GetForests_InflLimit                   ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_OwnLimit                      : Single = ' + FloatToStr( GA_EYE_GetForests_OwnLimit                    ) + ';');
+    //fLogPar.AddTime('GA_EYE_GetForests_MinTrees                      : Single = ' + FloatToStr( GA_EYE_GetForests_MinTrees                    ) + ';');
+    //fLogPar.AddTime('GA_EYE_GetForests_Radius                        : Single = ' + FloatToStr( GA_EYE_GetForests_Radius                      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_TreeCnt     ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_PolyRoute     : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_PolyRoute   ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_EvalArea      : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_EvalArea    ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_ExistForest ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_DistCrit    ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_Radius      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_AddAB         : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_AddAB       ) + ';');
   end;
 end;
 
@@ -519,6 +542,39 @@ begin
 end;
 
 
+{ TKMRunnerGA_Farm }
+procedure TKMRunnerGA_Farm.InitGAParameters();
+begin
+  f_GA_SIMULATION_TIME_IN_MIN    := 60;
+  f_GA_POPULATION_CNT            := 39;
+  f_GA_INDIVIDUALS_IN_TOURNAMENT := 3;
+  f_GA_GENE_CNT                  := 2;
+  f_GA_MAPS_CNT                  := 20;//9;
+  f_GA_START_MUTATION            := 0.2;
+  f_GA_FINAL_MUTATION            := 0.01;
+  f_GA_CROSSOVER_COEF            := 1;
+end;
+
+
+procedure TKMRunnerGA_Farm.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
+var
+  I: Integer;
+begin
+  I := 0;
+  //GA_PLANNER := True;
+  // House build
+  // Please do NOT break this order and style use alt + shift + click if you want select / edit multiple colums at once!!!
+  GA_PLANNER_FieldCrit_FarmPolyRoute                := Max(1, aIdv.Gene[Incr(I)] * 100);
+  GA_PLANNER_FieldCrit_EvalArea                     := Max(1, aIdv.Gene[Incr(I)] * 100);
+
+  if aLogIt then
+  begin
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_FarmPolyRoute                  : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_FarmPolyRoute                ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_EvalArea                       : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_EvalArea                     ) + ';');
+  end;
+end;
+
+
 { TKMRunnerGA_CityPlanner }
 procedure TKMRunnerGA_CityPlanner.InitGAParameters();
 begin
@@ -543,8 +599,8 @@ begin
   // Please do NOT break this order and style use alt + shift + click if you want select / edit multiple colums at once!!!
   GA_PLANNER_ObstaclesInHousePlan_Tree              := Max(1, aIdv.Gene[Incr(I)] * 100 + 75);
   GA_PLANNER_ObstaclesInHousePlan_Road              := Max(1, aIdv.Gene[Incr(I)] * 100 + 75);
-  GA_PLANNER_FieldCrit_MissingFields                := Max(1, aIdv.Gene[Incr(I)] * 100 + 75);
-  GA_PLANNER_FieldCrit_FarmPosition                 := Max(1, aIdv.Gene[Incr(I)] * 80);
+  GA_PLANNER_FieldCrit_FarmPolyRoute                := Max(1, aIdv.Gene[Incr(I)] * 100);
+  GA_PLANNER_FieldCrit_EvalArea                     := Max(1, aIdv.Gene[Incr(I)] * 100);
   GA_PLANNER_SnapCrit_SnapToHouse                   := Max(1, aIdv.Gene[Incr(I)] * 50);
   GA_PLANNER_SnapCrit_SnapToFields                  := Max(1, aIdv.Gene[Incr(I)] * 50);
   GA_PLANNER_SnapCrit_SnapToRoads                   := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
@@ -565,8 +621,8 @@ begin
   begin
     fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = ' + FloatToStr( GA_PLANNER_ObstaclesInHousePlan_Tree              ) + ';');
     fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Road                : Single = ' + FloatToStr( GA_PLANNER_ObstaclesInHousePlan_Road              ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FieldCrit_MissingFields                  : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_MissingFields                ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FieldCrit_FarmPosition                   : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_FarmPosition                 ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_FarmPolyRoute                  : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_FarmPolyRoute                ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_EvalArea                       : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_EvalArea                     ) + ';');
     fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToHouse                     : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToHouse                   ) + ';');
     fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToFields                    : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToFields                  ) + ';');
     fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToRoads                     : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToRoads                   ) + ';');
@@ -592,7 +648,7 @@ begin
   f_GA_SIMULATION_TIME_IN_MIN    := 10;
   f_GA_POPULATION_CNT            := 2;
   f_GA_INDIVIDUALS_IN_TOURNAMENT := 2;
-  f_GA_GENE_CNT                  := 5;
+  f_GA_GENE_CNT                  := 8;
   f_GA_MAPS_CNT                  := 9;
   f_GA_START_MUTATION            := 0.2;
   f_GA_FINAL_MUTATION            := 0.01;
@@ -605,19 +661,25 @@ var
   I: Integer;
 begin
   I := 0;
-  GA_PREDICTOR_CityInitialization_Space        := aIdv.Gene[Incr(I)] * 1 / 100.0;
-  GA_PREDICTOR_CityInitialization_Fertility    := aIdv.Gene[Incr(I)] * 1 / 100.0;
+  GA_PREDICTOR_CityInitialization_Space        := aIdv.Gene[Incr(I)] * 1 / 500.0;
+  GA_PREDICTOR_CityInitialization_Fertility    := aIdv.Gene[Incr(I)] * 1 / 500.0;
   GA_PREDICTOR_CityInitialization_Worker       := aIdv.Gene[Incr(I)] * 1 / 10.0;
-  GA_MANAGER_CheckUnitCount_SerfCoef           := aIdv.Gene[Incr(I)];
+  GA_PREDICTOR_STONE_NEED_PER_A_WORKER         := aIdv.Gene[Incr(I)] * 1;
+  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER          := aIdv.Gene[Incr(I)] * 1;
+  GA_MANAGER_CheckUnitCount_SerfCoef           := aIdv.Gene[Incr(I)] * 1;
   GA_MANAGER_CheckUnitCount_SerfLimit          := Max(1, aIdv.Gene[Incr(I)] * 10);
+  GA_BUILDER_STONE_SHORTAGE                    := Max(1, aIdv.Gene[Incr(I)] * 10);
 
   if aLogIt then
   begin
     fLogPar.AddTime('GA_PREDICTOR_CityInitialization_Space          : Single = ' + FloatToStr( GA_PREDICTOR_CityInitialization_Space     ) + ';');
     fLogPar.AddTime('GA_PREDICTOR_CityInitialization_Fertility      : Single = ' + FloatToStr( GA_PREDICTOR_CityInitialization_Fertility ) + ';');
     fLogPar.AddTime('GA_PREDICTOR_CityInitialization_Worker         : Single = ' + FloatToStr( GA_PREDICTOR_CityInitialization_Worker    ) + ';');
+    fLogPar.AddTime('GA_PREDICTOR_STONE_NEED_PER_A_WORKER           : Single = ' + FloatToStr( GA_PREDICTOR_STONE_NEED_PER_A_WORKER      ) + ';');
+    fLogPar.AddTime('GA_PREDICTOR_WOOD_NEED_PER_A_WORKER            : Single = ' + FloatToStr( GA_PREDICTOR_WOOD_NEED_PER_A_WORKER       ) + ';');
     fLogPar.AddTime('GA_MANAGER_CheckUnitCount_SerfCoef             : Single = ' + FloatToStr( GA_MANAGER_CheckUnitCount_SerfCoef        ) + ';');
     fLogPar.AddTime('GA_MANAGER_CheckUnitCount_SerfLimit            : Single = ' + FloatToStr( GA_MANAGER_CheckUnitCount_SerfLimit       ) + ';');
+    fLogPar.AddTime('GA_BUILDER_STONE_SHORTAGE                      : Single = ' + FloatToStr( GA_BUILDER_STONE_SHORTAGE                 ) + ';');
   end;
 end;
 
@@ -1114,7 +1176,8 @@ end;
 initialization
   RegisterRunner(TKMRunnerGA_TestManager);
   RegisterRunner(TKMRunnerGA_CityRoadPlanner);
-  RegisterRunner(TKMRunnerGA_CityPlannerForest);
+  RegisterRunner(TKMRunnerGA_Forest);
+  RegisterRunner(TKMRunnerGA_Farm);
   RegisterRunner(TKMRunnerGA_CityBuilder);
   RegisterRunner(TKMRunnerGA_CityPlanner);
   RegisterRunner(TKMRunnerGA_CityPredictor);
