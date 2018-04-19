@@ -663,11 +663,11 @@ end;
 // aIgnoreTrees = ignore trees inside of house plan
 // aIgnoreLocks = ignore existing house plans inside of house plan tiles
 function TKMEye.CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
-  function CheckRoad(X,Y: Integer): Boolean;
+  function CanBeRoad(X,Y: Integer): Boolean;
   begin
     Result := (gTerrain.Land[Y, X].Passability * [tpMakeRoads, tpWalkRoad] <> [])
               OR (gHands[fOwner].BuildList.FieldworksList.HasField(KMPoint(X,Y)) <> ftNone) // We dont need strictly road just make sure that it is possible to place something here (and replace it by road later)
-              OR (gTerrain.Land[Y, X].TileLock = tlRoadWork);
+              OR (gTerrain.Land[Y, X].TileLock in [tlFieldWork, tlRoadWork]);
   end;
 var
   LeftSideFree, RightSideFree: Boolean;
@@ -722,8 +722,8 @@ begin
   for Dir := Low(fHousesMapping[aHT].Surroundings[I]) to High(fHousesMapping[aHT].Surroundings[I]) do
   for K := Low(fHousesMapping[aHT].Surroundings[I,Dir]) to High(fHousesMapping[aHT].Surroundings[I,Dir]) do
   begin
-    Y := aLoc.Y + fHousesMapping[aHT].Surroundings[I,Dir,K].Y;
     X := aLoc.X + fHousesMapping[aHT].Surroundings[I,Dir,K].X;
+    Y := aLoc.Y + fHousesMapping[aHT].Surroundings[I,Dir,K].Y;
     Point := KMPoint(X,Y);
     // Surrounding tiles must not be a house
     for PL := 0 to gHands.Count - 1 do
@@ -733,7 +733,7 @@ begin
     if (aHT in [htGoldMine, htIronMine]) then
       continue;
     // Make sure we can add road below house;
-    if (Dir = dirS) AND not CheckRoad(X,Y) then // Direction south
+    if (Dir = dirS) AND not CanBeRoad(X,Y) then // Direction south
       Exit;
     // Quarry / Woodcutters / CoalMine / Towers may take place for mine so its arena must be scaned completely
     if aIgnoreAvoidBuilding then
@@ -743,9 +743,9 @@ begin
     end
     // For "normal" houses there must be at least 1 side also free (on the left or right from house plan)
     else if (Dir = dirE) then // Direction east
-      RightSideFree := RightSideFree AND CheckRoad(X,Y)
+      RightSideFree := RightSideFree AND CanBeRoad(X,Y)
     else if (Dir = dirW) then // Direction west
-      LeftSideFree := LeftSideFree AND CheckRoad(X,Y);
+      LeftSideFree := LeftSideFree AND CanBeRoad(X,Y);
     if not (LeftSideFree AND RightSideFree) then
       Exit;
   end;
@@ -1114,11 +1114,17 @@ const
   COAL = 12;
   RESERVE = 255;
 var
+  PL: TKMHandIndex;
   I,X,Y: Integer;
 begin
   if not OVERLAY_AI_EYE then
     Exit;
   //{ Build flood fill
+  for PL := 0 to gHands.Count - 1 do
+  begin
+    OwnerUpdate(PL);
+    fBuildFF.UpdateState();
+  end;
   for Y := 1 to gTerrain.MapY - 1 do
     for X := 1 to gTerrain.MapX - 1 do
       //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
