@@ -10,11 +10,11 @@ var
   //GA_PREDICTOR_CityInitialization_Space         : Single = 1 / 750.0; // factor for iron weapons
   //GA_PREDICTOR_CityInitialization_Fertility     : Single = 1 / 800.0; // factor for wood weapons
   //GA_PREDICTOR_CityInitialization_Worker        : Single = 1 / 105.0;
-  GA_PREDICTOR_CityInitialization_Space         : Single = 0.005257239;
-  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.002; // factor for wood weapons
-  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.023373525;
-  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.536727965;
-  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.3;
+  GA_PREDICTOR_CityInitialization_Space         : Single = 0.001866;//0.005257239;
+  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.00125; // factor for wood weapons
+  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.009;
+  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.578927;
+  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.226166;
 
 type
   TWareBalance = record
@@ -42,7 +42,7 @@ type
     fOwner: TKMHandIndex;
     fWorkerCount: Word;
     fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
-    fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin: Single;
+    fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor: Single;
     fCityStats: TCityStats;
     fWareBalance: TWareBalanceArray;
     fFarmBuildHistory: THouseBuildHistory;
@@ -67,12 +67,14 @@ type
 
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
+    property WorkerCount: Word read fWorkerCount;
 
     procedure AfterMissionInit();
     procedure CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure MarkExhaustedIronMine();
 
   end;
 
@@ -187,6 +189,7 @@ begin
   SaveStream.Write(fMaxIronWeapProd);
   SaveStream.Write(fMaxWoodWeapProd);
   SaveStream.Write(fMaxSoldiersInMin);
+  SaveStream.Write(fPeaceFactor);
   SaveStream.Write(fFarmBuildHistory.Count);
   if (fFarmBuildHistory.Count > 0) then
   begin
@@ -218,6 +221,7 @@ begin
   LoadStream.Read(fMaxIronWeapProd);
   LoadStream.Read(fMaxWoodWeapProd);
   LoadStream.Read(fMaxSoldiersInMin);
+  LoadStream.Read(fPeaceFactor);
   LoadStream.Read(fFarmBuildHistory.Count);
   if (fFarmBuildHistory.Count > 0) then
   begin
@@ -240,6 +244,13 @@ end;
 procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
+end;
+
+
+procedure TKMCityPredictor.MarkExhaustedIronMine();
+begin
+  fIronMineCnt := fIronMineCnt - 1;
+  ActualizeWeaponProduction();
 end;
 
 
@@ -360,7 +371,7 @@ begin
       wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
       wt_Stone:
         begin
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+15, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
           fWareBalance[wt_Stone].FinalConsumption := fWorkerCount * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
         end;
       wt_Wood:
@@ -440,16 +451,22 @@ const
   STANDARD_WARFARE: array[0..3] of TKMWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
   MIN_WOOD_PRODUCTION = 1;
   MAX_WOOD_PRODUCTION = 4;
+  AFTER_PEACE_SCALING = 1 / (40*10*60); // Peace factor will be completely removed after {40} ticks since end of peace
 var
   I: Integer;
-  MaxIronWeapProd, MaxWoodWeapProd, PeaceFactor: Single;
+  MaxIronWeapProd, MaxWoodWeapProd, fUpdatedPeaceFactor: Single;
   WT: TKMWareType;
 begin
   // Max field / build cnt -> max ~ 8000 tiles; in real map ~ 1500-2500 for fields and ~ 2000-4000 for build
   // Maximal 4 houses for production of weapons and minimal 1 house
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
 
-  PeaceFactor := 0;
+  // Update peace factor if it is needed
+  fUpdatedPeaceFactor := Min(1,
+                             fPeaceFactor + Max(0,
+                                                (gGame.GameTickCount - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
+                                               )
+                            );
 
   // Iron weapons
   MaxIronWeapProd := Min(Round(fBuildCnt * GA_PREDICTOR_CityInitialization_Space), fIronMineCnt);
@@ -462,8 +479,11 @@ begin
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
   // Wood weapons
-  // Consider peace time
-  MaxWoodWeapProd := Max(1, MaxWoodWeapProd * PeaceFactor);
+  MaxWoodWeapProd := Max(MIN_WOOD_PRODUCTION,
+                         Min(MAX_WOOD_PRODUCTION,
+                             Max(0, MaxWoodWeapProd - MaxIronWeapProd) * fUpdatedPeaceFactor // Consider also peace time
+                            )
+                        );
   // Transform to house production
   MaxWoodWeapProd := MaxWoodWeapProd * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
@@ -477,6 +497,10 @@ begin
   fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
   fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
 
+  // Predict final city stats (by potential size of city)
+  fCityStats.CitizensCnt := Round(  Max(0,Min(fBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
+  fCityStats.WarriorsCnt := Round(  Max(0,Min(fBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
+  UpdateWareBalance(True);
 end;
 
 
@@ -486,26 +510,21 @@ const
   SCALE_MIN_PEACE_TIME = 60;
   SCALE_MAX_PEACE_TIME = 90;
   SCALE_PEACE_FACTOR = 1.0 / ((SCALE_MAX_PEACE_TIME - SCALE_MIN_PEACE_TIME)*1.0);
-var
-  PeaceFactor: Single;
 begin
   fGoldMineCnt := aGoldMineCnt;
   fIronMineCnt := aIronMineCnt;
   fFieldCnt := aFieldCnt;
   fBuildCnt := aBuildCnt;
 
-  ActualizeWeaponProduction();
+  fPeaceFactor := Max(0,
+                      (Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)
+                     ) * SCALE_PEACE_FACTOR;
 
-  PeaceFactor := Max(0,(Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)) * SCALE_PEACE_FACTOR;
+  ActualizeWeaponProduction();
 
   // Decide count of workers + build nodes
   // gHands[fOwner].AI.Setup.WorkerCount -> better use local variable
-  fWorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
-
-  // Predict final city stats (by potential size of city)
-  fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
-  fCityStats.WarriorsCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
-  UpdateWareBalance(True);
+  fWorkerCount := Min(20 + Round(15 * fPeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) * GA_PREDICTOR_CityInitialization_Worker));
 end;
 
 
@@ -588,6 +607,13 @@ begin
     Exit;
   // Update prediction
   UpdateWareBalance();
+  // Remove unused houses (iron production)
+  if (RequiredHouses[htIronSmithy] < 0) AND (Stats.GetWareBalance(wt_IronOre) < 20) then // Dont destroy iron production when there is still iron ore
+    Planner.RemoveHouseType(htIronSmithy);
+  if (RequiredHouses[htArmorSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then // And dont destroy following production if you dont want to destroy IronSmithy
+    Planner.RemoveHouseType(htArmorSmithy);
+  if (RequiredHouses[htWeaponSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then
+    Planner.RemoveHouseType(htWeaponSmithy);
 
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
   if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then
