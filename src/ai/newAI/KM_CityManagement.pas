@@ -7,8 +7,10 @@ uses
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.516044855;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.938630491;
+  //GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.3677794933;
+  //GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 4.057023287;
+  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.193077;
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 2.178943;
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -67,7 +69,7 @@ uses
 
 
 const
-  LACK_OF_GOLD = 8;
+  LACK_OF_GOLD = 10;
 
 
 { TKMCityManagement }
@@ -150,7 +152,7 @@ var
 begin
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
   //SetKaMSeed(666);
-  //gGame.GameOptions.Peacetime := 90;
+  //gGame.GameOptions.Peacetime := 60;
   //fSetup.ApplyAgressiveBuilderSetup(True);
   // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
@@ -283,7 +285,7 @@ begin
   if GoldShortage then
   begin
     UnitReq[ut_Serf] := 3; // 3x Serf
-    UnitReq[ut_Worker] := Byte(fSetup.WorkerCount > 0);// 1x Worker
+    UnitReq[ut_Worker] := Byte(fPredictor.WorkerCount > 0);// 1x Worker
     UnitReq[ut_Miner] := Stats.GetHouseTotal(htCoalMine) + Stats.GetHouseTotal(htGoldMine) + Stats.GetHouseQty(htIronMine); // Miner can go into iron / gold / coal mines (idealy we need 1 gold and 1 coal but it is hard to catch it)
     UnitReq[ut_Metallurgist] := Stats.GetHouseTotal(htMetallurgists) + Stats.GetHouseQty(htIronSmithy); // Metallurgist (same problem like in case of miner)
     UnitReq[ut_Woodcutter] := Byte(Stats.GetHouseQty(htWoodcutters) > 0); // 1x Woodcutter
@@ -315,7 +317,7 @@ begin
     UnitReq[ut_Worker] := 0;
     if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
-      UnitReq[ut_Worker] :=  fSetup.WorkerCount;
+      UnitReq[ut_Worker] :=  fPredictor.WorkerCount;
       UnitReq[ut_Recruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
     if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
@@ -535,20 +537,24 @@ procedure TKMCityManagement.CheckExhaustedHouses();
 var
   I: Integer;
   Loc: TKMPoint;
+  H: TKMHouse;
 begin
   //Wait until resource is depleted and output is empty
   for I := 0 to gHands[fOwner].Houses.Count - 1 do
-  if not gHands[fOwner].Houses[I].IsDestroyed
-    AND gHands[fOwner].Houses[I].ResourceDepletedMsgIssued
-    AND (gHands[fOwner].Houses[I].CheckResOut(wt_All) = 0) then
   begin
-    Loc := gHands[fOwner].Houses[I].Entrance;
-    // Remove avoid building around coal mine
-    if (gHands[fOwner].Houses[I].HouseType = htCoalMine) then
-      gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
-    // Mark house plan as exhausted
-    Builder.Planner.MarkAsExhausted(gHands[fOwner].Houses[I].HouseType, Loc);
-    gHands[fOwner].Houses[I].DemolishHouse(fOwner);
+    H := gHands[fOwner].Houses[I];
+    if not H.IsDestroyed
+      AND H.ResourceDepletedMsgIssued
+      AND (H.CheckResOut(wt_All) = 0) then
+    begin
+      Loc := H.Entrance;
+      // Remove avoid building around coal mine
+      if (H.HouseType = htCoalMine) then
+        gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-3, Loc.Y-3, Loc.X+4, Loc.Y+2));
+      // Mark house plan as exhausted
+      Builder.Planner.MarkAsExhausted(H.HouseType, Loc);
+      H.DemolishHouse(fOwner);
+    end;
   end;
 end;
 
