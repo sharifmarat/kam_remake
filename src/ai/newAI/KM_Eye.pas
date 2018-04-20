@@ -1587,10 +1587,6 @@ end;
 
 
 procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
-  procedure FML();
-  begin
-
-  end;
 var
   I: Integer;
 begin
