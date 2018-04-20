@@ -9,7 +9,6 @@ uses
 
 
 var
-
   GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 15;
   GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
   GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
@@ -20,7 +19,7 @@ var
   GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
   GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 3.034022748;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 6.846969;
   GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
   GA_BUILDER_GOLD_SHORTAGE              : Single = 32.64543295;
 
@@ -983,9 +982,16 @@ var
           if (MaxPlans <= 0) then
             break;
         end;
-        cs_CannotPlaceHouse:
+        cs_NoPlaceCanBeFound:
         begin
-        end;
+          if (HT = htIronMine) then
+            fPredictor.MarkExhaustedIronMine();
+        end
+        //cs_CannotPlaceHouse:
+        else
+          begin
+
+          end;
       end;
       RequiredHouses[HT] := 0; // Make sure that next node will not scan this house in this tick
     end;
