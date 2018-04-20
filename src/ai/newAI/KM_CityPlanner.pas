@@ -31,16 +31,16 @@ var
   GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 91.24905765;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 7.225309313;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 15.88302255;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 112.1442005;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 46.19561732;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.059596062;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 76.02567672;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 108.1650317;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 23.14184606;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 22.13742584;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 104.5395549;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 13.23579103;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.190876186;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 113.4269953;
 
 
-  GA_PATHFINDING_BasePrice    : Word = 0;
+  GA_PATHFINDING_BasePrice    : Word = 2;
   GA_PATHFINDING_HouseOutside : Word = 1;
   GA_PATHFINDING_Field        : Word = 5;
   GA_PATHFINDING_noBuildArea  : Word = 1;
@@ -134,6 +134,7 @@ type
 
     procedure MarkAsExhausted(aHT: TKMHouseType; aLoc: TKMPoint);
 
+    procedure RemoveHouseType(aHT: TKMHouseType);
     procedure RemovePlan(aHT: TKMHouseType; aLoc: TKMPoint); overload;
     procedure RemovePlan(aHT: TKMHouseType; aIdx: Integer); overload;
 
@@ -601,6 +602,38 @@ begin
 end;
 
 
+// Remove one of placed houses
+procedure TKMCityPlanner.RemoveHouseType(aHT: TKMHouseType);
+const
+  INIT_BID = 10000;
+  RESOURCE_PRICE = 1;
+  PRODUCT_PRICE = 5;
+  MAX_BID = 8;
+var
+  Idx, BestIdx: Integer;
+  Bid, BestBid: Single;
+  H: TKMHouse;
+begin
+  BestBid := INIT_BID;
+  BestIdx := 0;
+  for Idx := 0 to fPlannedHouses[aHT].Count - 1 do
+    if (fPlannedHouses[aHT].Plans[Idx].House <> nil) then
+    begin
+      H := fPlannedHouses[aHT].Plans[Idx].House;
+      Bid := H.CheckResIn(wt_All) * RESOURCE_PRICE + H.CheckResOut(wt_All) * PRODUCT_PRICE;
+      if (Bid < BestBid) then
+      begin
+        BestBid := Bid;
+        BestIdx := Idx;
+      end;
+    end;
+  if (Bid < MAX_BID) then
+  begin
+    fPlannedHouses[aHT].Plans[BestIdx].House.DemolishHouse(fOwner);
+    RemovePlan(aHT, BestIdx);
+  end;
+end;
+
 procedure TKMCityPlanner.RemovePlan(aHT: TKMHouseType; aLoc: TKMPoint);
 var
   I: Integer;
@@ -654,11 +687,11 @@ begin
         Cnt := FindPlaceForHouse(aUnlockProcedure, aHT, BestLocs);
         if (Cnt > 0) then
         begin
-          AddPlan(aHT, BestLocs[0]);
-          gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, BestLocs[0]);
           aLoc := BestLocs[0];
-          Output := True;
+          AddPlan(aHT, aLoc);
+          gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, aLoc);
           FindForestAround(aLoc);
+          Output := True;
         end;
       end;
     end;
@@ -1437,8 +1470,8 @@ const
           for I := 0 to BuildFF.Locs.Count - 1 do
           begin
             Loc := BuildFF.Locs.Items[I];
-            Bid := 10000
-                   - BuildFF.Distance[Loc] * 100 // Snap crit is agresive
+            Bid := 100000
+                   - BuildFF.Distance[Loc] * 200; // Snap crit is aggressive
                    + SnapCrit(aHT, Loc);
             if (Bid > BestBid) then
             begin
