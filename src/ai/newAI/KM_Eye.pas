@@ -12,11 +12,11 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_RndOwnLim     : Single = 45.3447774;
-  GA_EYE_GetForests_InflLimit     : Single = 222.1944779;
-  GA_EYE_GetForests_OwnLimit      : Single = 118.2537183;
-  GA_EYE_GetForests_MinTrees      : Single = 3.11;
-  GA_EYE_GetForests_Radius        : Single = 5.0698;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 150;
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 200;
+  GA_EYE_GetForests_InflLimit      : Single = 222.1944779;
+  GA_EYE_GetForests_MinTrees       : Single = 3.11;
+  GA_EYE_GetForests_Radius         : Single = 5.0698;
 
 
 type
@@ -183,7 +183,7 @@ type
 implementation
 uses
   KM_Game, KM_Terrain, KM_Hand, KM_Resource, KM_AIFields, KM_HandsCollection, KM_RenderAux, KM_ResMapElements,
-  KM_NavMesh;
+  KM_NavMesh, KM_CityPlanner;
 
 
 { TKMEye }
@@ -428,6 +428,7 @@ begin
   aIronMineCnt := FindSeparateMines(htIronMine, fIronMines);
   aGoldMineCnt := FindSeparateMines(htGoldMine, fGoldMines);
   // Scan Resources - stones
+  {
   TagList := GetStoneLocs(True);
   try
     I := 0;
@@ -440,6 +441,7 @@ begin
   finally
     TagList.Free;
   end;
+  //}
   // Scan Resources - coal
   TagList := GetCoalMineLocs(True);
   try
@@ -998,8 +1000,8 @@ begin
   for I := 0 to Length(Polygons) - 1 do
   begin
     Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
-    if (Ownership > GA_EYE_GetForests_OwnLimit)
-       AND (Ownership < GA_EYE_GetForests_RndOwnLim)
+    if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
+       AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
        AND (SparePointsCnt < MAX_SPARE_POINTS)
        AND (KaMRandom() > 0.7) then
       begin
@@ -1550,20 +1552,39 @@ end;
 
 
 procedure TKMBuildFF.UpdateState();
+  procedure MarkHouse(Loc: TKMPoint);
+  begin
+    MarkAsVisited(Loc.Y, InsertInQueue(Loc.Y*fMapX + Loc.X), 0, GetTerrainState(Loc.X,Loc.Y));
+  end;
 var
   I: Integer;
   H: TKMHouse;
+  HT: TKMHouseType;
+  Planner: TKMCityPlanner;
 begin
+  Planner := gHands[fOwner].AI.CityManagement.Builder.Planner;
+
   if (fUpdateTick = 0) OR (fUpdateTick < gGame.GameTickCount) then // Dont scan multile times terrain in 1 tick
   begin
     InitQueue(False);
     fOwnerUpdateInfo[fOwner] := fVisitIdx; // Debug tool
-    for I := 0 to gHands[fOwner].Houses.Count - 1 do
+
+    if (gGame.GameTickCount <= MAX_HANDS) then // Make sure that Planner is already updated otherwise take only available houses
     begin
-      H := gHands[fOwner].Houses[I];
-      if (H <> nil) AND not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
-        with H.Entrance do
-          MarkAsVisited(Y, InsertInQueue(Y*fMapX + X), 0, GetTerrainState(X,Y));
+      for I := 0 to gHands[fOwner].Houses.Count - 1 do
+      begin
+        H := gHands[fOwner].Houses[I];
+        if (H <> nil) AND not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
+          MarkHouse(H.Entrance);
+      end;
+    end
+    else
+    begin
+      for HT := HOUSE_MIN to HOUSE_MAX do
+        if not (HT in [htWatchTower, htWoodcutters]) then
+          with Planner.PlannedHouses[HT] do
+            for I := 0 to Count - 1 do
+              MarkHouse(Plans[I].Loc);
     end;
     TerrainFF();
 
@@ -1582,7 +1603,8 @@ end;
 
 procedure TKMBuildFF.ActualizeTile(aX, aY: Word);
 begin
-  State[aY, aX] := GetTerrainState(aX,aY);
+  if (fUpdateTick = gGame.GameTickCount) then // Actualize tile only when we need scan in this tick
+    State[aY, aX] := GetTerrainState(aX,aY);
 end;
 
 
