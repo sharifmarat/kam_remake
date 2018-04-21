@@ -746,6 +746,7 @@ var
   function SelectTargetGroups(): Boolean;
   const
     INIT_THREAT = -1000000;
+    SQR_MINIMAL_RANGED_DISTANCE = 4*4;
     BEST_TARGET: array[TKMGroupType] of array[0..3] of TKMGroupType = (
         (gt_Melee, gt_Ranged, gt_Mounted, gt_AntiHorse), // against gt_Melee
         (gt_Melee, gt_Ranged, gt_AntiHorse, gt_Mounted), // against gt_AntiHorse
@@ -768,12 +769,15 @@ var
     begin
       Squad := AvailableSquads[GT].Squads[I];
       HighestThreat := INIT_THREAT;
+      BestDist := 0;
       for K := 0 to Length(fTargetU) - 1 do
         if (fTargetU[K].DistantThreat > 0) then
         begin
-          Threat := fTargetU[K].DistantThreat - KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ fTargetU[K].Index ].GetPosition);
+          Dist := KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ fTargetU[K].Index ].GetPosition);
+          Threat := fTargetU[K].DistantThreat - Dist;
           if (Threat > HighestThreat) then
           begin
+            BestDist := Dist;
             HighestThreat := Threat;
             TargetIdx := K;
           end;
@@ -782,7 +786,8 @@ var
       begin
         Squad.TargetUnit := UA[ fTargetU[TargetIdx].Index ];
         Output := True;
-        fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
+        if (Dist >= SQR_MINIMAL_RANGED_DISTANCE) then // If is enemy too cloose aim him but dont decrease threat level so next part of code can call close combat support
+          fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
         // Unit will be targeted by Ranged group -> if there was minimal priority for close combat then remove it
         if (fTargetU[TargetIdx].CloseThreat = 1) then
           fTargetU[TargetIdx].CloseThreat := 0;
@@ -1106,7 +1111,8 @@ begin
     Exit;
 
   // Try find path to the target point
-  if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
+  //if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
+  if gAIFields.NavMesh.Pathfinding.AvoidTrafficRoute(fOwner, aActualPosition, TargetPoint, Distance, PointPath) then
   begin
     fDEBUGPointPath := PointPath;
     Cnt := SquadCnt(); // Count of groups in company
