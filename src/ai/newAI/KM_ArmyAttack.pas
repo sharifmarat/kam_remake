@@ -339,6 +339,7 @@ const
   SQR_TARGET_REACHED_TOLERANCE = 3*3; // Target unit should have lower tolerance because of group type pathfinding (cav will avoid spears etc)
   SQR_HOUSE_REACHED_TOLERANCE = 8*8; // Houses should have larger tolerance because NavMesh does not work in cities properly
   SQR_TARGET_REACHED_RANGED = 15*15; // This should be more than maximal range of ranged groups (11*11)
+  SQR_MIN_WALK_DISTANCE = 4*4; // Avoid group to be stucked in cities (higher = less stuck)
 var
   InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
@@ -377,7 +378,9 @@ begin
         aTargetPosition := PointPath[ Max(0, I) ];
         ClosestPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aTargetPosition ];
         I := I - 1;
-      until ((InitPolygon <> ClosestPolygon) AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)) OR (I < 0);
+      until (I < 0) OR ( (InitPolygon <> ClosestPolygon)
+                         AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)
+                         AND (aOrderAttack OR (KMDistanceSqr(aActualPosition, aTargetPosition) > SQR_MIN_WALK_DISTANCE)) );
 
       fDEBUGPointPath := PointPath;//  DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
     end;
