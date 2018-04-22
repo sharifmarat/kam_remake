@@ -13,8 +13,8 @@ var
   GA_PREDICTOR_CityInitialization_Space         : Single = 0.001866;//0.005257239;
   GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.00125; // factor for wood weapons
   GA_PREDICTOR_CityInitialization_Worker        : Single = 0.009;
-  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.578927;
-  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.226166;
+  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.678927;
+  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.326166;
 
 type
   TWareBalance = record
@@ -22,10 +22,10 @@ type
   end;
   // Information about city (it can be replaced by player's stats but it doesnt allow prediction with different values)
   TCityStats = record
-    CitizensCnt, WarriorsCnt, HousesCnt: Word;
-    Citizens: array[CITIZEN_MIN..CITIZEN_MAX] of Word;
-    Warriors: array[WARRIOR_MIN..WARRIOR_MAX] of Word;
-    Houses: array[HOUSE_MIN..HOUSE_MAX] of Word;
+    CitizensCnt, WarriorsCnt, HousesCnt: Integer;
+    Citizens: array[CITIZEN_MIN..CITIZEN_MAX] of Integer; // Stats sometimes throw negative number in case of Recruit so keep integer
+    Warriors: array[WARRIOR_MIN..WARRIOR_MAX] of Integer;
+    Houses: array[HOUSE_MIN..HOUSE_MAX] of Integer;
   end;
   THouseBuildHistory = record
     Count: Word;
@@ -615,6 +615,8 @@ begin
   if (RequiredHouses[htWeaponSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then
     Planner.RemoveHouseType(htWeaponSmithy);
 
+
+  // Change house requirements due to nonlinear delay, toons of exceptions and unlock order
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
   if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then
   begin
@@ -629,6 +631,22 @@ begin
   RequiredHouses[htArmorWorkshop] := Min(RequiredHouses[htArmorWorkshop], Stats.GetHouseTotal(htTannery)*2 - fCityStats.Houses[htArmorWorkshop]);
   // Consideration of wood production
   RequiredHouses[htWeaponWorkshop] := RequiredHouses[htWeaponWorkshop] * Byte( (RequiredHouses[htTannery] > 0) OR (WEAP_WORKSHOP_DELAY < aTick) OR (aTick > (gGame.GameOptions.Peacetime-20) * 10 * 60) );
+
+  // Coal mines are used by top priority houses (Metallurgists) and low priority houses (smithy)
+  // To get reasonable production there should be something like following logic, good luck with understanding ;)
+  if (aTick < 60 * 10 * 40) then
+    RequiredHouses[htCoalMine] := Min( RequiredHouses[htCoalMine],
+                                       Max( Max( Planner.PlannedHouses[htMetallurgists].Count, // Gold production requirements
+                                                 Planner.PlannedHouses[htGoldMine].Count
+                                               ),
+                                            RequiredHouses[htGoldMine] // Build coal mine in parallel to gold mine
+                                          )
+                                       - Planner.PlannedHouses[htCoalMine].Count
+                                       + Stats.GetHouseTotal(htIronSmithy) // Iron production requirements
+                                       + Stats.GetHouseTotal(htArmorSmithy)
+                                       + Stats.GetHouseTotal(htWeaponSmithy)
+                                     );
+
 
   if (gGame.GameTickCount < WINEYARD_DELAY) then
     RequiredHouses[htWineyard] := 0;
