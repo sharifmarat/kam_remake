@@ -126,7 +126,7 @@ type
 
     function GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
     procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
-    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): word;
+    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): Word;
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
 
@@ -528,13 +528,13 @@ procedure TKMDeliveries.RemDemand(aHouse: TKMHouse);
 var
   I: Integer;
 begin
-  assert(aHouse <> nil);
+  Assert(aHouse <> nil);
   for I := 1 to fDemandCount do
     if fDemand[I].Loc_House = aHouse then
     begin
       if fDemand[I].BeingPerformed > 0 then
         //Can't free it yet, some serf is using it
-        fDemand[I].IsDeleted := true
+        fDemand[I].IsDeleted := True
       else
         CloseDemand(I); //Clear up demand
       //Keep on scanning cos House can have multiple demands entries
@@ -544,37 +544,38 @@ end;
 
 //Remove Demand from the list
 // List is stored without sorting so we parse it to find all entries..
-procedure TKMDeliveries.RemDemand(aUnit:TKMUnit);
+procedure TKMDeliveries.RemDemand(aUnit: TKMUnit);
 var
-  i:integer;
+  I: Integer;
 begin
-  assert(aUnit <> nil);
-  for i:=1 to fDemandCount do
-  if fDemand[i].Loc_Unit = aUnit then
+  Assert(aUnit <> nil);
+  for I := 1 to fDemandCount do
+  if fDemand[I].Loc_Unit = aUnit then
   begin
-    if fDemand[i].BeingPerformed > 0 then
+    if fDemand[I].BeingPerformed > 0 then
       //Can't free it yet, some serf is using it
-      fDemand[i].IsDeleted := true
+      fDemand[I].IsDeleted := True
     else
-      CloseDemand(i); //Clear up demand
+      CloseDemand(I); //Clear up demand
     //Keep on scanning cos Unit can have multiple demands entries (foreseeing Walls building)
   end;
 end;
 
 
 //Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
-function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TKMWareType; aCount:word):word;
-var i:integer;
+function TKMDeliveries.TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): Word;
+var
+  I: Integer;
 begin
   Result := 0;
-  if aCount = 0 then exit;
-  assert(aHouse <> nil);
-  for i:=1 to fDemandCount do
-    if (fDemand[i].Loc_House = aHouse) and (fDemand[i].Ware = aResource) then
-      if fDemand[i].BeingPerformed = 0 then
+  if aCount = 0 then Exit;
+  Assert(aHouse <> nil);
+  for I:=1 to fDemandCount do
+    if (fDemand[I].Loc_House = aHouse) and (fDemand[I].Ware = aResource) then
+      if fDemand[I].BeingPerformed = 0 then
       begin
-        CloseDemand(i); //Clear up demand
-        inc(Result);
+        CloseDemand(I); //Clear up demand
+        Inc(Result);
         if Result = aCount then exit; //We have removed enough demands
       end;
 end;
@@ -771,7 +772,7 @@ end;
 //Get the total number of possible deliveries with current Offers and Demands
 function TKMDeliveries.GetAvailableDeliveriesCount: Integer;
 var
-  iD,iO:integer;
+  iD,iO: Integer;
   OffersTaken:Cardinal;
   DemandTaken:array of Boolean; //Each demand can only be taken once in our measurements
 begin
@@ -1155,7 +1156,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
   end;
 
-  function FindBestDemandId: Integer;
+  function FindBestDemandId(): Integer;
   var
     iD: Integer;
     Bid, BestBid: Single;
@@ -1211,7 +1212,7 @@ var
   BestDemandId, OldDemandId: Integer; // Keep Int to assign to Delivery down below
 begin
   OldDemandId := fQueue[aDeliveryId].DemandID;
-  BestDemandId := FindBestDemandId;
+  BestDemandId := FindBestDemandId();
 
   // Did we find anything?
   if BestDemandId = -1 then

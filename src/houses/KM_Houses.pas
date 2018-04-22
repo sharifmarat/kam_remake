@@ -1958,6 +1958,7 @@ begin
   fAcceptLeather := True;
 end;
 
+
 constructor TKMHouseArmorWorkshop.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
