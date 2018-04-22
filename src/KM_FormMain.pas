@@ -11,7 +11,11 @@ uses
 
 
 type
+
+  { TFormMain }
+
   TFormMain = class(TForm)
+    chkAIEye: TCheckBox;
     MenuItem1: TMenuItem;
     SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
@@ -61,6 +65,8 @@ type
     Label5: TLabel;
     Label6: TLabel;
     chkShowDefences: TCheckBox;
+    chkBuildAI: TCheckBox;
+    chkCombatAI: TCheckBox;
     ResourceValues1: TMenuItem;
     GroupBox3: TGroupBox;
     chkUIControlsBounds: TCheckBox;
@@ -100,6 +106,7 @@ type
     chkLogCommands: TCheckBox;
     N5: TMenuItem;
     ScriptData1: TMenuItem;
+    chkBevel: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -663,7 +670,11 @@ begin
   if AllowDebugChange then
   begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
+    SHOW_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
+    OVERLAY_AI_BUILD := chkBuildAI.Checked;
+    OVERLAY_AI_COMBAT := chkCombatAI.Checked;
+    OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;

@@ -44,7 +44,6 @@ type
   public
     constructor Create(aType: TKMChartWarriorType; aKind: TKMChartArmyKind; aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
-    procedure AddLine(aPlayerId: TKMHandIndex; const aTitle: UnicodeString; aColor: Cardinal);
     function IsEmpty(aPlayer: TKMHandIndex): Boolean;
     function GetChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
     property Chart: TKMChart read fChart;
@@ -73,6 +72,9 @@ type
 
     fChartSeparatorsPos: array[TKMStatType] of TStringList;
     fNamesToShow: array[TKMStatType] of array[0 .. MAX_HANDS - 1] of String;
+    fTeamMembersNames: array[0 .. MAX_HANDS - 1] of array[0 .. MAX_HANDS - 1] of String;
+    fTeamMembersColors: array[0 .. MAX_HANDS - 1] of array[0 .. MAX_HANDS - 1] of Cardinal;
+    fTeamMembersCounts: array[0 .. MAX_HANDS - 1] of Byte;
     fColorsToShow: array[TKMStatType] of array[0 .. MAX_HANDS - 1] of Cardinal;
     fListToShow: array[TKMStatType] of TStringList;
     fStatsValues: array[TKMStatType] of TKMStatsValues;
@@ -104,6 +106,9 @@ type
     procedure RadioEconomyTypeChange(Sender: TObject);
     procedure RadioWareTypeChange(Sender: TObject);
     procedure RadioArmyTypeChange(Sender: TObject);
+
+    function GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TStringArray;
+    function GetChartLegendDetailedColors(aStatType: TKMStatType; aLineI: Integer): TKMCardinalArray;
 
     procedure Reinit;
     procedure ReinitPlayersToShow;
@@ -178,7 +183,7 @@ const
   CHART_ECO_HEIGHT = 285;
   BACK_BTN_Y_TO_BOTTOM = 60;
   SUBMENU_RIGHT_WIDTH = 160;
-  BTN_BACK_TO_GAME_LEFT = RESULTS_X_PADDING + 290;
+  BTN_BACK_TO_GAME_LEFT = RESULTS_X_PADDING + 330;
 
   WARRIORS_POWER_RATES: array [WARRIOR_MIN..WARRIOR_MAX] of Single = (
     1, 2.4, 5.2,    // ut_Militia, ut_AxeFighter, ut_Swordsman
@@ -289,12 +294,6 @@ begin
     Result := gHands[aPlayer].Stats.ChartArmy[fKind,fType.UnitType]
   else
     Result := GetArmyPowerChartData(aPlayer);
-end;
-
-
-procedure TKMChartArmyMP.AddLine(aPlayerId: TKMHandIndex; const aTitle: UnicodeString; aColor: Cardinal);
-begin
-  Chart.AddLine(aTitle, aColor, GetChartData(aPlayerId), aPlayerId);
 end;
 
 
@@ -643,6 +642,36 @@ begin
   Button_Teams.Down   := fStatType = st_ByTeams;
 
   UpdateVisibleTab;
+end;
+
+
+function TKMGameResultsMP.GetChartLegendDetailedTitles(aStatType: TKMStatType; aLineI: Integer): TStringArray;
+var
+  I: Integer;
+begin
+  case aStatType of
+    st_ByPlayers: SetLength(Result, 0);
+    st_ByTeams:   begin
+                    SetLength(Result, fTeamMembersCounts[aLineI]);
+                    for I := 0 to fTeamMembersCounts[aLineI] - 1 do
+                      Result[I] := fTeamMembersNames[aLineI, I];
+                  end;
+  end;
+end;
+
+
+function TKMGameResultsMP.GetChartLegendDetailedColors(aStatType: TKMStatType; aLineI: Integer): TKMCardinalArray;
+var
+  I: Integer;
+begin
+  case aStatType of
+    st_ByPlayers: SetLength(Result, 0);
+    st_ByTeams:   begin
+                    SetLength(Result, fTeamMembersCounts[aLineI]);
+                    for I := 0 to fTeamMembersCounts[aLineI] - 1 do
+                      Result[I] := fTeamMembersColors[aLineI, I];
+                  end;
+  end;
 end;
 
 
@@ -1141,20 +1170,32 @@ procedure TKMGameResultsMP.ReinitTeamsToShow;
   procedure AddToNewTeam(aFirstHandId: Integer; aPlayersList: TStringList);
   var
     PlayersList: TStringList;
+    Cnt: Integer;
   begin
     PlayersList := TStringList.Create;
     PlayersList.AddStrings(aPlayersList);
     fListToShow[st_ByTeams].AddObject(IntToStr(aFirstHandId), PlayersList);
-    fNamesToShow[st_ByTeams, fListToShow[st_ByTeams].Count - 1] := gResTexts[TX_LOBBY_HEADER_TEAM] + ' ' + IntToStr(fListToShow[st_ByTeams].Count);
-    fColorsToShow[st_ByTeams, fListToShow[st_ByTeams].Count - 1] := gHands[aFirstHandId].FlagColor;
+    Cnt := fListToShow[st_ByTeams].Count - 1;
+    fNamesToShow[st_ByTeams, Cnt] := gResTexts[TX_LOBBY_HEADER_TEAM] + ' ' + IntToStr(fListToShow[st_ByTeams].Count);
+    fColorsToShow[st_ByTeams, Cnt] := gHands[aFirstHandId].FlagColor;
+
+    fTeamMembersNames[Cnt][0] := GetOwnerName(aFirstHandId);
+    fTeamMembersColors[Cnt][0] := gHands[aFirstHandId].FlagColor;
+    fTeamMembersCounts[Cnt] := 1;
   end;
 
-  procedure AddToTeam(aTeamI: Integer; aPlayersList: TStringList);
+  procedure AddToTeam(aHandId, aTeamI: Integer; aPlayersList: TStringList);
   var
     PlayersList: TStringList;
+    Cnt: Integer;
   begin
     PlayersList := TStringList(fListToShow[st_ByTeams].Objects[aTeamI]);
     PlayersList.AddStrings(aPlayersList);
+    Cnt := fListToShow[st_ByTeams].Count - 1;
+
+    fTeamMembersNames[Cnt][fTeamMembersCounts[Cnt]] := GetOwnerName(aHandId);
+    fTeamMembersColors[Cnt][fTeamMembersCounts[Cnt]] := gHands[aHandId].FlagColor;
+    Inc(fTeamMembersCounts[Cnt]);
   end;
 
 var
@@ -1179,21 +1220,33 @@ begin
 
       if HandId in Teams[J] then
       begin
-        DoShowTeam := True; //Team coould be hidden in case we show stats during the game
+        DoShowTeam := True; //Team could be hidden in case we show stats during the game
         if TeamIsNew then
         begin
           TeamIsNew := False;
           AddToNewTeam(HandId, PlayersList);
         end else
-          AddToTeam(TeamI, PlayersList);
+          AddToTeam(HandId, TeamI, PlayersList);
       end;
     end;
+
     if not TeamIsNew then //check if there was empty teams
       Inc(TeamI);
 
     if DoShowTeam and (J <> Low(Teams)) then
       fChartSeparatorsPos[st_ByTeams].Add(IntToStr(J));
   end;
+
+  //Remove detailed chart legend, if we have only 1 player in the team
+  for I := 0 to fListToShow[st_ByTeams].Count - 1 do
+  begin
+    if fTeamMembersCounts[I] = 1 then
+    begin
+      fTeamMembersCounts[I] := 0;
+      fNamesToShow[st_ByTeams, I] := fTeamMembersNames[I, 0];
+    end;
+  end;
+
   if fListToShow[st_ByTeams].Count <= 1 then
     fChartSeparatorsPos[st_ByTeams].Clear; //In case we have only 1 team to show (f.e. when stats are shown during the game)
 end;
@@ -1400,7 +1453,10 @@ procedure TKMGameResultsMP.ReinitChartEconomy;
 
       HandId := StrToInt(PlayersList[0]);
       Chart^.MaxLength := Max(Chart^.MaxLength, gHands[HandId].Stats.ChartCount);
-      Chart^.AddLine(fNamesToShow[aStatType, I], fColorsToShow[aStatType, I], ChartData, I);
+      Chart^.AddLine(fNamesToShow[aStatType, I], fColorsToShow[aStatType, I],
+                     GetChartLegendDetailedTitles(aStatType, I),
+                     GetChartLegendDetailedColors(aStatType, I),
+                     ChartData, I);
     end;
   end;
 
@@ -1463,7 +1519,10 @@ const
 
       HandId := StrToInt(PlayersList[0]);
       aChart^.MaxLength := Max(aChart^.MaxLength, gHands[HandId].Stats.ChartCount);
-      aChart^.AddLine(fNamesToShow[aStatType, I], fColorsToShow[aStatType, I], ChartData, I);
+      aChart^.AddLine(fNamesToShow[aStatType, I], fColorsToShow[aStatType, I],
+                      GetChartLegendDetailedTitles(aStatType, I),
+                      GetChartLegendDetailedColors(aStatType, I),
+                      ChartData, I);
     end;
   end;
 
@@ -1605,7 +1664,10 @@ begin
 
           HandId := StrToInt(PlayersList[0]);
           Chart^.MaxLength := Max(Chart^.MaxLength, gHands[HandId].Stats.ChartCount);
-          Chart^.AddLine(fNamesToShow[ST, I], fColorsToShow[ST, I], ChartData, I);
+          Chart^.AddLine(fNamesToShow[ST, I], fColorsToShow[ST, I],
+                         GetChartLegendDetailedTitles(ST, I),
+                         GetChartLegendDetailedColors(ST, I),
+                         ChartData, I);
         end;
 
         Chart^.TrimToFirstVariation; // Trim Army charts, as usually they are same before PeaceTime
@@ -1694,12 +1756,12 @@ begin
     CreateChartArmy(Panel_ResultsMP);
 
     Button_Back := TKMButton.Create(Panel_ResultsMP, 50 + RESULTS_X_PADDING, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
-                                    220, 30, NO_TEXT, bsMenu);
+                                    270, 30, NO_TEXT, bsMenu);
     Button_Back.Anchors := [anLeft];
     Button_Back.OnClick := BackClick;
 
     Button_BackToGame := TKMButton.Create(Panel_ResultsMP, BTN_BACK_TO_GAME_LEFT, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
-                                          220, 30, gResTexts[TX_RESULTS_BACK_TO_GAME], bsMenu);
+                                          250, 30, gResTexts[TX_RESULTS_BACK_TO_GAME], bsMenu);
     Button_BackToGame.Anchors := [anLeft];
     Button_BackToGame.OnClick := BackClick;
 end;

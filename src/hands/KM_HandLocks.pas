@@ -48,7 +48,7 @@ begin
     AllowToTrade[W] := True;
 
   //Release Store at the start of the game by default
-  fHouseUnlocked[ht_Store] := True;
+  fHouseUnlocked[htStore] := True;
 end;
 
 

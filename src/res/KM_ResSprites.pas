@@ -666,6 +666,7 @@ var
   I, K: Integer;
   pngWidth, pngHeight: Word;
   pngData: TKMCardinalArray;
+  MaskColor: Cardinal;
 begin
   pngWidth := fRXData.Size[aIndex].X;
   pngHeight := fRXData.Size[aIndex].Y;
@@ -676,8 +677,17 @@ begin
   if fRXData.HasMask[aIndex] then
   begin
     for I := 0 to pngHeight - 1 do
-    for K := 0 to pngWidth - 1 do
-      pngData[I * pngWidth + K] := (Byte(fRXData.Mask[aIndex, I * pngWidth + K] > 0) * $FFFFFF) or $FF000000;
+      for K := 0 to pngWidth - 1 do
+      begin
+        if fRT = rxHouses then
+        begin
+          MaskColor := fRXData.Mask[aIndex, I * pngWidth + K];
+          if MaskColor <> 0 then
+            MaskColor := GetGreyColor(MaskColor) or $FF000000;
+        end else
+          MaskColor := (Byte(fRXData.Mask[aIndex, I * pngWidth + K] > 0) * $FFFFFF) or $FF000000;
+        pngData[I * pngWidth + K] := MaskColor;
+      end;
 
     SaveToPng(pngWidth, pngHeight, pngData, aFile);
   end;

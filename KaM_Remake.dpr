@@ -33,6 +33,15 @@ uses
   KM_AIMayorBalance in 'src\ai\KM_AIMayorBalance.pas',
   KM_AISetup in 'src\ai\KM_AISetup.pas',
 
+  KM_Eye in 'src\ai\newAI\KM_Eye.pas',
+  KM_CityManagement in 'src\ai\newAI\KM_CityManagement.pas',
+  KM_CityPredictor in 'src\ai\newAI\KM_CityPredictor.pas',
+  KM_CityBuilder in 'src\ai\newAI\KM_CityBuilder.pas',
+  KM_CityPlanner in 'src\ai\newAI\KM_CityPlanner.pas',
+  KM_ArmyManagement in 'src\ai\newAI\KM_ArmyManagement.pas',
+  KM_ArmyAttack in 'src\ai\newAI\KM_ArmyAttack.pas',
+  KM_ArmyDefence in 'src\ai\newAI\KM_ArmyDefence.pas',
+
   KM_Alerts in 'src\KM_Alerts.pas',
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
@@ -167,6 +176,11 @@ uses
   KM_Outline in 'src\navmesh\KM_Outline.pas',
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',
   KM_PolySimplify in 'src\navmesh\KM_PolySimplify.pas',
+  KM_NavMeshPathFinding in 'src\navmesh\KM_NavMeshPathFinding.pas',
+  KM_NavMeshFloodFill in 'src\navmesh\KM_NavMeshFloodFill.pas',
+  KM_NavMeshFloodPositioning in 'src\navmesh\KM_NavMeshFloodPositioning.pas',
+  KM_NavMeshInfluences in 'src\navmesh\KM_NavMeshInfluences.pas',
+  KM_NavMeshDefences in 'src\navmesh\KM_NavMeshDefences.pas',
 
   {$IFDEF USESECUREAUTH}
     KM_NetAuthSecure in 'src\net\KM_NetAuthSecure.pas',

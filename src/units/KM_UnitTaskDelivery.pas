@@ -163,12 +163,7 @@ begin
     dk_ToHouse:         if fPhase <= 8 then
                         begin
                           Result := Result or fToHouse.IsDestroyed
-                                   or (not fForceDelivery
-                                      and ((fToHouse.DeliveryMode <> dm_Delivery)
-                                        or ((fToHouse is TKMHouseStore) and TKMHouseStore(fToHouse).NotAcceptFlag[fWareType])
-                                        or ((fToHouse is TKMHouseBarracks) and TKMHouseBarracks(fToHouse).NotAcceptFlag[fWareType])
-                                        or ((fToHouse is TKMHouseArmorWorkshop) and not TKMHouseArmorWorkshop(fToHouse).AcceptWareForDelivery(fWareType)))
-                                        or ((fToHouse is TKMHouseTownHall) and (TKMHouseTownHall(fToHouse).GoldMaxCnt <= TKMHouseTownHall(fToHouse).GoldCnt)));
+                                   or (not fForceDelivery and fToHouse.ShouldAbandonDelivery(fWareType));
                         end;
     dk_ToConstruction:  if fPhase <= 6 then
                           Result := Result or fToHouse.IsDestroyed;

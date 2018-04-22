@@ -63,7 +63,7 @@ begin
         SpritePack.LoadFromFolder(ExeDir + 'SpriteResource\');
 
       //Tiles must stay the same size as they can't use pivots
-      if RT <> rxTiles then
+      if (RT <> rxTiles) and (gLog <> nil) then
         gLog.AddTime('Trimmed ' + IntToStr(SpritePack.TrimSprites));
 
       //Houses need some special treatment to adapt to GL_ALPHA_TEST that we use for construction steps

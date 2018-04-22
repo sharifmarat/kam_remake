@@ -100,7 +100,7 @@ begin
   for I := 0 to gHands.Count - 1 do
   begin
     CheckBox_PlayerTypes[I, 0].Enabled := gHands[I].HasAssets;
-    CheckBox_PlayerTypes[I, 1].Enabled := gHands[I].HasAssets;
+    CheckBox_PlayerTypes[I, 1].Enabled := gHands[I].HasAssets and not (gGame.MapEditor.DefaultHuman = I);
     CheckBox_PlayerTypes[I, 2].Enabled := gHands[I].HasAssets;
 
     CheckBox_PlayerTypes[I, 0].Checked := gHands[I].HasAssets and (gGame.MapEditor.DefaultHuman = I);
@@ -149,7 +149,10 @@ begin
 
   //There should be exactly one default human player
   if Sender = CheckBox_PlayerTypes[PlayerId, 0] then
+  begin
     gGame.MapEditor.DefaultHuman := PlayerId;
+    gGame.MapEditor.PlayerHuman[PlayerId] := True;
+  end;
 
 
   if Sender = CheckBox_PlayerTypes[PlayerId, 1] then
@@ -167,7 +170,7 @@ begin
     //User cannot set player type undetermined
     if (not CheckBox_PlayerTypes[PlayerId, 1].Checked)
         and (not CheckBox_PlayerTypes[PlayerId, 2].Checked) then
-        gGame.MapEditor.PlayerHuman[PlayerId] := true;
+        gGame.MapEditor.PlayerHuman[PlayerId] := True;
   end;
 
   Mission_PlayerTypesUpdate;

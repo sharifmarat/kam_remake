@@ -94,13 +94,6 @@ begin
     begin
       writeln(sLineBreak + 'KaM Remake RXX Packer' + sLineBreak);
 
-      if ParamCount = 0 then
-      begin
-        writeln('No rx packages were set');
-        writeln('Usage example: RXXPacker.exe gui guimain houses trees units');
-        Exit;
-      end;
-
       ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
       fRXXPacker := TRXXPacker.Create;
       fPalettes := TKMResPalettes.Create;
@@ -130,7 +123,13 @@ begin
         fRXXPacker.Free;
         fPalettes.Free;
       end;
-    end;
+    end else
+    if ParamCount = 0 then
+      begin
+        writeln('No rx packages were set');
+        writeln('Usage example: RXXPacker.exe gui guimain houses trees units');
+        Exit;
+      end;
   end else
   begin
     FreeConsole; // Used to hide the console

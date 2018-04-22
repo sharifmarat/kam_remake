@@ -37,7 +37,7 @@ type
       {LastTerrain: Byte;
       LastHeight: Byte;
       LastObj: Byte;
-      LastHouse: THouseType;}
+      LastHouse: TKMHouseType;}
     end;*)
     procedure SetMapSize(X,Y: Word);
     function CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word): Byte;

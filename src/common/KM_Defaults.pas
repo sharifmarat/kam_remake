@@ -51,7 +51,7 @@ const
 
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
-  CALC_EXPECTED_TICK    :Boolean = False;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
+  CALC_EXPECTED_TICK    :Boolean = True;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
   MAKE_ANIM_TERRAIN     :Boolean = True;  //Should we animate water and swamps
   MAKE_TEAM_COLORS      :Boolean = True;  //Whenever to make team colors or not, saves RAM for debug
   DYNAMIC_TERRAIN       :Boolean = True;  //Update terrain each tick to grow things
@@ -94,19 +94,21 @@ var
 
   //These are debug things, should be False
   {User interface options}
-  DEBUG_SPEEDUP_SPEED   :Integer = 300;   //Speed for speedup from debug menu
-  ALLOW_SELECT_ENEMIES  :Boolean = False; //Do we allow to select enemies houses/units/froups
-  SHOW_ENEMIES_STATS    :Boolean = False; //Do we allow to show enemies stats during the game
-  SHOW_DEBUG_CONTROLS   :Boolean = False; //Show debug panel / Form1 menu (F11)
-  SHOW_CONTROLS_OVERLAY :Boolean = False; //Draw colored overlays ontop of controls! always Off here
-  SHOW_CONTROLS_ID      :Boolean = False; //Draw controls ID
-  SHOW_CONTROLS_FOCUS   :Boolean = False; //Outline focused control
-  SHOW_TEXT_OUTLINES    :Boolean = False; //Display text areas outlines
-  ENABLE_DESIGN_CONTORLS:Boolean = False; //Enable special mode to allow to move/edit controls
-  MODE_DESIGN_CONTORLS  :Boolean = False; //Special mode to move/edit controls activated by F7, it must block OnClick events! always Off here
-  OVERLAY_RESOLUTIONS   :Boolean = False; //Render constraining frame
-  LOCAL_SERVER_LIST     :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
-  SHOW_LOGS_IN_CHAT     :Boolean = False; //Show log messages in MP game chat
+  DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
+  ALLOW_SELECT_ALLY_UNITS :Boolean = False; //Do we allow to select ally units or groups
+  ALLOW_SELECT_ENEMIES    :Boolean = False; //Do we allow to select enemies houses/units/groups
+  SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
+  SHOW_DEBUG_CONTROLS     :Boolean = False; //Show debug panel / Form1 menu (F11)
+  SHOW_CONTROLS_OVERLAY   :Boolean = False; //Draw colored overlays ontop of controls! always Off here
+  SHOW_CONTROLS_ID        :Boolean = False; //Draw controls ID
+  SHOW_CONTROLS_FOCUS     :Boolean = False; //Outline focused control
+  SHOW_TEXT_OUTLINES      :Boolean = False; //Display text areas outlines
+  ENABLE_DESIGN_CONTORLS  :Boolean = False; //Enable special mode to allow to move/edit controls
+  MODE_DESIGN_CONTORLS    :Boolean = False; //Special mode to move/edit controls activated by F7, it must block OnClick events! always Off here
+  OVERLAY_RESOLUTIONS     :Boolean = False; //Render constraining frame
+  LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
+  SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
+  LOG_GAME_TICK           :Boolean = False; //Log game tick
   {Gameplay display}
   SKIP_RENDER           :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
@@ -136,6 +138,9 @@ var
   OVERLAY_INFLUENCE     :Boolean = False; //Show influence map
   OVERLAY_OWNERSHIP     :Boolean = False; //Show ownership map
   OVERLAY_AVOID         :Boolean = False; //Show avoidance map
+  OVERLAY_AI_BUILD      :Boolean = False; //Show build progress of new AI
+  OVERLAY_AI_COMBAT     :Boolean = False; //Show combat marks of new AI
+  OVERLAY_AI_EYE        :Boolean = False; //Show eye vision of new AI
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked
@@ -143,6 +148,7 @@ var
   SHOW_NETWORK_DELAY    :Boolean = False; //Show the current delay in multiplayer game
   SHOW_ARMYEVALS        :Boolean = False; //Show result of enemy armies evaluation
   SHOW_AI_WARE_BALANCE  :Boolean = False; //Show wares balance (Produced - Consumed)
+  SHOW_OVERLAY_BEVEL :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
   SHOW_NET_PACKETS_STATS:Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT:Integer = 1;
   INI_HITPOINT_RESTORE  :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM
@@ -160,6 +166,8 @@ var
   ALLOW_MP_MODS         :Boolean = False; //Don't let people enter MP mode if they are using mods (unit.dat, house.dat, etc.)
   ALLOW_TAKE_AI_PLAYERS :Boolean = False; //Allow to load SP maps without Human player (usefull for AI testing)
   {Data output}
+  BLOCK_SAVE            :Boolean = False; //Block saving game (used in parallel Runner)
+  BLOCK_FILE_WRITE      :Boolean = False; //Block to write into txt file (used in parallel Runner)
   WRITE_DECODED_MISSION :Boolean = False; //Save decoded mission as txt file
   WRITE_WALKTO_LOG      :Boolean = False; //Write even more output into log + slows down game noticably
   WriteResourceInfoToTXT:Boolean = False; //Whenever to write txt files with defines data properties on loading
@@ -184,9 +192,9 @@ const
   MAX_LOBBY_SLOTS      = MAX_LOBBY_PLAYERS + MAX_LOBBY_SPECTATORS;
   MAX_TEAMS            = MAX_LOBBY_PLAYERS div 2;
 
+  AUTOSAVE_COUNT          = 5;    //How many autosaves to backup - this MUST be variable (Parallel Runner)
   AUTOSAVE_COUNT_MIN      = 2;
   AUTOSAVE_COUNT_MAX      = 10;
-  AUTOSAVE_COUNT          = 5;    //How many autosaves to backup
   AUTOSAVE_FREQUENCY_MIN  = 600;
   AUTOSAVE_FREQUENCY_MAX  = 3000;
   AUTOSAVE_FREQUENCY      = 600; //How often to do autosave, every N ticks
@@ -590,11 +598,11 @@ const
 {Terrain}
 type
   TKMFieldType = (
-    ft_None = 0,
-    ft_Road,
-    ft_Corn,
-    ft_InitWine, //Reset rotation and set grapes ground, but without Grapes yet
-    ft_Wine
+    ftNone,
+    ftRoad,
+    ftCorn,
+    ftWine,
+    ftInitWine //Reset rotation and set grapes ground, but without Grapes yet
     );
 
   TKMHouseStage = (
@@ -838,6 +846,14 @@ const
   clChartSeparator = icTransparent;
 
   clChkboxOutline = icLightGrayTrans;
+
+  clPlayerSelf = icRed;
+  clPlayerAlly = icYellow;
+  clPlayerEnemy = icCyan;
+
+//  clGameSelf = icRed;
+//  clGameAlly = icYellow;
+//  clGameEnemy = icCyan;
 
 var
   ExeDir: UnicodeString;

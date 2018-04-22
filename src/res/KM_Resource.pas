@@ -398,9 +398,9 @@ begin
   for Q := 1 to 2 do
   begin
     if Q = 1 then
-      ID := ht_Swine
+      ID := htSwine
     else
-      ID := ht_Stables;
+      ID := htStables;
     ForceDirectories(Folder + '_' + HD[ID].HouseName+PathDelim);
     for Beast := 1 to 5 do
       for I := 1 to 3 do

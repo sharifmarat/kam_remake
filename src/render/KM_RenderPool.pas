@@ -439,7 +439,7 @@ begin
   begin
     HWFP := TKMHouseWFlagPoint(gMySpectator.Selected);
     if HWFP.IsFlagPointSet then
-      PaintRallyPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].FlagColor, HWFP.FlagPointTexId, aPass);
+      PaintRallyPoint(HWFP.Entrance, HWFP.FlagPoint, gHands[HWFP.Owner].GameFlagColor, HWFP.FlagPointTexId, aPass);
   end;
 end;
 
@@ -773,7 +773,7 @@ begin
 
     // Need to swap Coal and Steel for the ArmorSmithy
     // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
-    if (aHouse = ht_ArmorSmithy) and (I in [1,2]) then
+    if (aHouse = htArmorSmithy) and (I in [1,2]) then
       I2 := 3-I;
 
     Id := gRes.Houses[aHouse].SupplyIn[I2, Count] + 1;
@@ -787,9 +787,9 @@ begin
       begin
         I2 := R3[K];
 
-        // Need to swap Shields and Armor for the ArmorSmithy
+        // Need to swap Shields and Armor for the ArmorWorkshop
         // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
-        if (aHouse = ht_ArmorSmithy) and (I2 in [1,2]) then
+        if (aHouse = htArmorWorkshop) and (I2 in [1,2]) then
           I2 := 3-R3[K];
 
         Id := gRes.Houses[aHouse].SupplyOut[I2, K mod MAX_WARES_IN_HOUSE + 1] + 1;
@@ -817,7 +817,7 @@ var
 begin
   if ResType = wt_Horse then // Horses are a beast, BeastId is the count, age is 1
     for i:=1 to Min(ResCount, MarketWares[ResType].Count) do // Render each beast
-      AddHouseStableBeasts(ht_Marketplace, Loc, i, 1, AnimStep, rxHouses)
+      AddHouseStableBeasts(htMarketplace, Loc, i, 1, AnimStep, rxHouses)
   else
   begin
     if MarketWares[ResType].Count = 0 then exit;
@@ -1529,7 +1529,7 @@ begin
     cmNone:       ;
     cmErase:      if not gGame.IsMapEditor then
                   begin
-                    if ((gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ft_None)
+                    if ((gMySpectator.Hand.BuildList.FieldworksList.HasFakeField(P) <> ftNone)
                         or gMySpectator.Hand.BuildList.HousePlanList.HasPlan(P)
                         or (gMySpectator.Hand.HousesHitTest(P.X, P.Y) <> nil))
                     then
@@ -1537,16 +1537,16 @@ begin
                     else
                       RenderSpriteOnTile(P, TC_BLOCK); // Red X
                   end;
-    cmRoad:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Road)) and (gGameCursor.Tag1 <> Ord(cfmErase)) then
+    cmRoad:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftRoad)) and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
-    cmField:      if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Corn) or (gGame.IsMapEditor and gTerrain.TileIsCornField(P)))
+    cmField:      if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftCorn) or (gGame.IsMapEditor and gTerrain.TileIsCornField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else
                     RenderSpriteOnTile(P, TC_BLOCK);       // Red X
-    cmWine:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ft_Wine) or (gGame.IsMapEditor and gTerrain.TileIsWineField(P)))
+    cmWine:       if (gMySpectator.Hand.CanAddFakeFieldPlan(P, ftWine) or (gGame.IsMapEditor and gTerrain.TileIsWineField(P)))
                     and (gGameCursor.Tag1 <> Ord(cfmErase)) then
                     RenderWireTile(P, $FFFFFF00) // Cyan quad
                   else

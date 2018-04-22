@@ -79,6 +79,11 @@ type
     function GetSizeText: String;
     function DetermineReadmeFilePath: String;
     function GetFavouriteMapPic: TKMPic;
+    function GetCanBeHumanCount: Byte;
+    function GetCanBeOnlyHumanCount: Byte;
+    function GetCanBeAICount: Byte;
+    function GetCanBeOnlyAICount: Byte;
+    function GetCanBeHumanAndAICount: Byte;
   public
     MapSizeX, MapSizeY: Integer;
     MissionMode: TKMissionMode;
@@ -127,6 +132,11 @@ type
     function IsNormalMission: Boolean;
     function IsTacticMission: Boolean;
     property FavouriteMapPic: TKMPic read GetFavouriteMapPic;
+    property CanBeHumanCount: Byte read GetCanBeHumanCount;
+    property CanBeOnlyHumanCount: Byte read GetCanBeOnlyHumanCount;
+    property CanBeAICount: Byte read GetCanBeAICount;
+    property CanBeOnlyAICount: Byte read GetCanBeOnlyAICount;
+    property CanBeHumanAndAICount: Byte read GetCanBeHumanAndAICount;
   end;
 
 
@@ -696,6 +706,61 @@ end;
 function TKMapInfo.GetFavouriteMapPic: TKMPic;
 begin
   Result := MakePic(rxGuiMain, IfThen(IsFavourite, 77, 85), True);
+end;
+
+
+function TKMapInfo.GetCanBeHumanCount: Byte;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeHuman[I] then
+      Inc(Result);
+end;
+
+
+function TKMapInfo.GetCanBeOnlyHumanCount: Byte;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeHuman[I] and not CanBeAI[I] then
+      Inc(Result);
+end;
+
+
+function TKMapInfo.GetCanBeAICount: Byte;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Low(CanBeAI) to High(CanBeAI) do
+    if CanBeAI[I] then
+      Inc(Result);
+end;
+
+
+function TKMapInfo.GetCanBeOnlyAICount: Byte;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeAI[I] and not CanBeHuman[I] then
+      Inc(Result);
+end;
+
+
+function TKMapInfo.GetCanBeHumanAndAICount: Byte;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeAI[I] and CanBeHuman[I] then
+      Inc(Result);
 end;
 
 

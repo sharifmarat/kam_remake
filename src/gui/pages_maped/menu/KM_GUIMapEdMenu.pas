@@ -9,7 +9,8 @@ uses
    KM_GUIMapEdMenuLoad,
    KM_GUIMapEdMenuSave,
    KM_GUIMapEdMenuQuit,
-   KM_GUIMapEdMenuSettings;
+   KM_GUIMapEdMenuSettings,
+   KM_CommonTypes;
 
 type
   TKMMapEdMenu = class (TKMMapEdMenuPage)
@@ -22,7 +23,6 @@ type
     fGuiMenuQuit: TKMMapEdMenuQuit;
     procedure MenuClick(Sender: TObject);
     procedure MenuDone(Sender: TObject);
-    procedure MapTypeChange(aIsMultiplayer: Boolean);
   protected
     Panel_Menu: TKMPanel;
       Button_Resize: TKMButton;
@@ -33,12 +33,12 @@ type
       Button_Menu_Quit: TKMButton;
     procedure DoShowSubMenu(aIndex: Byte); override;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aOnMapTypChanged: TBooleanEvent);
     destructor Destroy; override;
 
     property GuiMenuResize: TKMMapEdMenuResize read fGuiMenuResize;
     property GuiMenuQuickPlay: TKMMapEdMenuQuickPlay read fGuiMenuQuickPlay write fGuiMenuQuickPlay;
-    procedure SetLoadMode(aMultiplayer:boolean);
+    procedure SetLoadMode(aMultiplayer: Boolean);
     procedure Show;
     procedure Hide;
     function Visible: Boolean; override;
@@ -52,14 +52,13 @@ uses
 
 
 { TKMapEdInterface }
-constructor TKMMapEdMenu.Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
+constructor TKMMapEdMenu.Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent; aOnMapTypChanged: TBooleanEvent);
 begin
   inherited Create;
 
   fGuiMenuResize := TKMMapEdMenuResize.Create(aParent, MenuDone, aOnPageChange);
   fGuiMenuLoad := TKMMapEdMenuLoad.Create(aParent, MenuDone);
-  fGuiMenuSave := TKMMapEdMenuSave.Create(aParent, MenuDone);
-  fGuiMenuSave.OnChangeMapType := MapTypeChange;
+  fGuiMenuSave := TKMMapEdMenuSave.Create(aParent, MenuDone, aOnMapTypChanged);
   fGuiMenuQuit := TKMMapEdMenuQuit.Create(aParent, MenuDone);
   fGuiMenuSettings := TKMMapEdMenuSettings.Create(aParent);
 
@@ -113,12 +112,6 @@ begin
     4: Button_Menu_Settings.Click;
     5: Button_Menu_Quit.Click;
   end;
-end;
-
-
-procedure TKMMapEdMenu.MapTypeChange(aIsMultiplayer: Boolean);
-begin
-  fGuiMenuQuickPlay.MapTypeChanged(aIsMultiplayer);
 end;
 
 
@@ -186,7 +179,7 @@ begin
 end;
 
 
-procedure TKMMapEdMenu.SetLoadMode(aMultiplayer:boolean);
+procedure TKMMapEdMenu.SetLoadMode(aMultiplayer: Boolean);
 begin
   fGuiMenuResize.SetLoadMode(aMultiplayer);
   fGuiMenuQuickPlay.SetLoadMode(aMultiplayer);

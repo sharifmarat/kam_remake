@@ -328,7 +328,7 @@ begin
     ct_SetUnitByStock:  if fLastHand <> PLAYER_NONE then
                           if UnitOldIndexToType[P[0]] in [HUMANS_MIN..HUMANS_MAX] then
                           begin
-                            H := gHands[fLastHand].FindHouse(ht_Store, 1);
+                            H := gHands[fLastHand].FindHouse(htStore, 1);
                             if (H <> nil) and PointInMap(H.Entrance.X, H.Entrance.Y+1) then
                               gHands[fLastHand].AddUnit(UnitOldIndexToType[P[0]], KMPoint(H.Entrance.X, H.Entrance.Y+1));
                           end;
@@ -351,20 +351,20 @@ begin
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0]+1,P[1]+1));
 
     ct_SetField:        if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ft_Corn,0,True);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,0,True);
 
     ct_SetFieldStaged:  if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ft_Corn,P[2]);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftCorn,P[2]);
 
     ct_SetWinefield:    if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ft_Wine,0,True);
+                          gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,0,True);
 
     ct_SetWinefieldStaged:  if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                              gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ft_Wine,P[2]);
+                              gHands[fLastHand].AddField(KMPoint(P[0]+1,P[1]+1),ftWine,P[2]);
 
     ct_SetStock:        if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
                         begin //This command basically means: Put a SH here with road bellow it
-                          fLastHouse := gHands[fLastHand].AddHouse(ht_Store, P[0]+1,P[1]+1, False);
+                          fLastHouse := gHands[fLastHand].AddHouse(htStore, P[0]+1,P[1]+1, False);
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0]+1,P[1]+2));
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0],P[1]+2));
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0]-1,P[1]+2));
@@ -374,7 +374,7 @@ begin
                         begin
                           Qty := EnsureRange(P[1], -1, High(Word)); //Sometimes user can define it to be 999999
                           if Qty = -1 then Qty := High(Word); //-1 means maximum resources
-                          H := gHands[fLastHand].FindHouse(ht_Store,1);
+                          H := gHands[fLastHand].FindHouse(htStore,1);
                           if (H <> nil) and H.ResCanAddToIn(WareIndexToType[P[0]]) then
                           begin
                             H.ResAddToIn(WareIndexToType[P[0]], Qty, True);
@@ -387,7 +387,7 @@ begin
                           if Qty = -1 then Qty := High(Word); //-1 means maximum resources
                           for I := 0 to gHands.Count - 1 do
                           begin
-                            H := gHands[i].FindHouse(ht_Store, 1);
+                            H := gHands[i].FindHouse(htStore, 1);
                             if (H <> nil) and H.ResCanAddToIn(WareIndexToType[P[0]]) then
                             begin
                               H.ResAddToIn(WareIndexToType[P[0]], Qty, True);
@@ -401,7 +401,7 @@ begin
                           Qty := EnsureRange(P[1], -1, High(Word)); //Sometimes user can define it to be 999999
                           if Qty = -1 then Qty := High(Word); //-1 means maximum resources
 
-                          H := TKMHouseStore(gHands[fLastHand].FindHouse(ht_Store, 2));
+                          H := TKMHouseStore(gHands[fLastHand].FindHouse(htStore, 2));
                           if (H <> nil) and H.ResCanAddToIn(WareIndexToType[P[0]]) then
                           begin
                             H.ResAddToIn(WareIndexToType[P[0]], Qty, True);
@@ -444,7 +444,7 @@ begin
                         begin
                           Qty := EnsureRange(P[1], -1, High(Word)); //Sometimes user can define it to be 999999
                           if Qty = -1 then Qty := High(Word); //-1 means maximum weapons
-                          H := gHands[fLastHand].FindHouse(ht_Barracks, 1);
+                          H := gHands[fLastHand].FindHouse(htBarracks, 1);
                           if (H <> nil) and H.ResCanAddToIn(WareIndexToType[P[0]]) then
                           begin
                             H.ResAddToIn(WareIndexToType[P[0]], Qty, True);
@@ -642,7 +642,7 @@ begin
                         end;
 
     ct_AIDefence:       if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
-                          if InRange(P[3], Integer(Low(TKMGroupType)), Integer(High(TKMGroupType))) then //TPR 3 tries to set TGroupType 240 due to a missing space
+                          if InRange(P[3], Integer(Low(TKMGroupType)), Integer(High(TKMGroupType))) then //TPR 3 tries to set TKMGroupType 240 due to a missing space
                             gHands[fLastHand].AI.General.DefencePositions.Add(KMPointDir(P[0]+1, P[1]+1, TKMDirection(P[2]+1)),TKMGroupType(P[3]),P[4],TAIDefencePosType(P[5]));
 
     ct_SetMapColor:     if fLastHand <> PLAYER_NONE then
@@ -975,7 +975,7 @@ begin
 
         //Process any wares in this house
         //First two Stores use special KaM commands
-        if (H.HouseType = ht_Store) and (StoreCount < 2) then
+        if (H.HouseType = htStore) and (StoreCount < 2) then
         begin
           Inc(StoreCount);
           for Res := WARE_MIN to WARE_MAX do
@@ -987,7 +987,7 @@ begin
         end
         else
         //First Barracks uses special KaM command
-        if (H.HouseType = ht_Barracks) and (BarracksCount = 0) then
+        if (H.HouseType = htBarracks) and (BarracksCount = 0) then
         begin
           Inc(BarracksCount);
           for Res := WARFARE_MIN to WARFARE_MAX do

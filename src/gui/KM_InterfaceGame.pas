@@ -28,6 +28,7 @@ type
 
     function IsDragScrollingAllowed: Boolean; virtual;
     procedure DisplayHint(Sender: TObject);
+    procedure AfterCreateComplete;
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -63,12 +64,12 @@ const
 
   GUI_HOUSE_COUNT = 28;   // Number of KaM houses to show in GUI
   GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of TKMHouseType = (
-    ht_School, ht_Inn, ht_Quary, ht_Woodcutters, ht_Sawmill,
-    ht_Farm, ht_Mill, ht_Bakery, ht_Swine, ht_Butchers,
-    ht_Wineyard, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_WeaponWorkshop,
-    ht_Tannery, ht_ArmorWorkshop, ht_Stables, ht_IronMine, ht_IronSmithy,
-    ht_WeaponSmithy, ht_ArmorSmithy, ht_Barracks, ht_Store, ht_WatchTower,
-    ht_FisherHut, ht_Marketplace, ht_TownHall);
+    htSchool, htInn, htQuary, htWoodcutters, htSawmill,
+    htFarm, htMill, htBakery, htSwine, htButchers,
+    htWineyard, htGoldMine, htCoalMine, htMetallurgists, htWeaponWorkshop,
+    htTannery, htArmorWorkshop, htStables, htIronMine, htIronSmithy,
+    htWeaponSmithy, htArmorSmithy, htBarracks, htStore, htWatchTower,
+    htFisherHut, htMarketplace, htTownHall);
 
   // Template for how resources are shown in Barracks
   BARRACKS_RES_COUNT = 11;
@@ -104,19 +105,19 @@ const
     HouseType: array [0..3] of TKMHouseType;
     UnitType: array [0..1] of TKMUnitType;
   end = (
-    (HouseType: (ht_Quary, ht_None, ht_None, ht_None);                      UnitType: (ut_StoneCutter, ut_None)),
-    (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None);                UnitType: (ut_Woodcutter, ut_None)),
-    (HouseType: (ht_FisherHut, ht_None, ht_None, ht_None);                  UnitType: (ut_Fisher, ut_None)),
-    (HouseType: (ht_Farm, ht_Wineyard, ht_None, ht_None);                   UnitType: (ut_Farmer, ut_None)),
-    (HouseType: (ht_Mill, ht_Bakery, ht_None, ht_None);                     UnitType: (ut_Baker, ut_None)),
-    (HouseType: (ht_Swine, ht_Stables, ht_None, ht_None);                   UnitType: (ut_AnimalBreeder, ut_None)),
-    (HouseType: (ht_Butchers, ht_Tannery, ht_None, ht_None);                UnitType: (ut_Butcher, ut_None)),
-    (HouseType: (ht_Metallurgists, ht_IronSmithy, ht_None, ht_None);        UnitType: (ut_Metallurgist, ut_None)),
-    (HouseType: (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None);        UnitType: (ut_Smith, ut_None)),
-    (HouseType: (ht_CoalMine, ht_IronMine, ht_GoldMine, ht_None);           UnitType: (ut_Miner, ut_None)),
-    (HouseType: (ht_Sawmill, ht_WeaponWorkshop, ht_ArmorWorkshop, ht_None); UnitType: (ut_Lamberjack, ut_None)),
-    (HouseType: (ht_Barracks, ht_TownHall, ht_WatchTower, ht_None);         UnitType: (ut_Recruit, ut_None)),
-    (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace);              UnitType: (ut_Serf, ut_Worker))
+    (HouseType: (htQuary, htNone, htNone, htNone);                      UnitType: (ut_StoneCutter, ut_None)),
+    (HouseType: (htWoodcutters, htNone, htNone, htNone);                UnitType: (ut_Woodcutter, ut_None)),
+    (HouseType: (htFisherHut, htNone, htNone, htNone);                  UnitType: (ut_Fisher, ut_None)),
+    (HouseType: (htFarm, htWineyard, htNone, htNone);                   UnitType: (ut_Farmer, ut_None)),
+    (HouseType: (htMill, htBakery, htNone, htNone);                     UnitType: (ut_Baker, ut_None)),
+    (HouseType: (htSwine, htStables, htNone, htNone);                   UnitType: (ut_AnimalBreeder, ut_None)),
+    (HouseType: (htButchers, htTannery, htNone, htNone);                UnitType: (ut_Butcher, ut_None)),
+    (HouseType: (htMetallurgists, htIronSmithy, htNone, htNone);        UnitType: (ut_Metallurgist, ut_None)),
+    (HouseType: (htArmorSmithy, htWeaponSmithy, htNone, htNone);        UnitType: (ut_Smith, ut_None)),
+    (HouseType: (htCoalMine, htIronMine, htGoldMine, htNone);           UnitType: (ut_Miner, ut_None)),
+    (HouseType: (htSawmill, htWeaponWorkshop, htArmorWorkshop, htNone); UnitType: (ut_Lamberjack, ut_None)),
+    (HouseType: (htBarracks, htTownHall, htWatchTower, htNone);         UnitType: (ut_Recruit, ut_None)),
+    (HouseType: (htStore, htSchool, htInn, htMarketplace);              UnitType: (ut_Serf, ut_Worker))
     );
 
   MapEd_Order: array [0..13] of TKMUnitType = (
@@ -165,6 +166,18 @@ begin
   fMinimap := TKMMinimap.Create(False, False);
   fViewport := TKMViewport.Create(aRender.ScreenX, aRender.ScreenY);
 
+  fDragScrolling := False;
+  fDragScrollingCursorPos.X := 0;
+  fDragScrollingCursorPos.Y := 0;
+  fDragScrollingViewportPos := KMPOINTF_ZERO;
+
+  gRenderPool := TRenderPool.Create(fViewport, aRender);
+end;
+
+
+procedure TKMUserInterfaceGame.AfterCreateComplete;
+begin
+  //Hints should be created last, as they should be above everything in UI, to be show on top of all other Controls
   Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
   Bevel_HintBG.BackAlpha := 0.5;
   Bevel_HintBG.EdgeAlpha := 0.5;
@@ -175,13 +188,6 @@ begin
 
   // Controls without a hint will reset the Hint to ''
   fMyControls.OnHint := DisplayHint;
-
-  fDragScrolling := False;
-  fDragScrollingCursorPos.X := 0;
-  fDragScrollingCursorPos.Y := 0;
-  fDragScrollingViewportPos := KMPOINTF_ZERO;
-
-  gRenderPool := TRenderPool.Create(fViewport, aRender);
 end;
 
 

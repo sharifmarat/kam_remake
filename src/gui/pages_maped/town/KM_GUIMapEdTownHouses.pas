@@ -69,7 +69,7 @@ begin
 
   TKMLabel.Create(Panel_Build,0,65,TB_WIDTH,0,gResTexts[TX_MAPED_HOUSES_TITLE],fnt_Outline,taCenter);
   for I := 1 to GUI_HOUSE_COUNT do
-    if GUIHouseOrder[I] <> ht_None then begin
+    if GUIHouseOrder[I] <> htNone then begin
       Button_Build[I] := TKMButtonFlat.Create(Panel_Build, ((I-1) mod 5)*37,83+((I-1) div 5)*37,33,33,gRes.Houses[GUIHouseOrder[I]].GUIIcon);
       Button_Build[I].OnClick := Town_BuildChange;
       if InRange(I-1, 0, High(fSubMenuActionsCtrls) - 4) then
@@ -139,7 +139,7 @@ begin
   else
 
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
   if Sender = Button_Build[I] then
   begin
     gGameCursor.Mode := cmHouses;
@@ -160,7 +160,7 @@ begin
   Button_BuildWine.Down   := (gGameCursor.Mode = cmWine);
 
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
     Button_Build[I].Down := (gGameCursor.Mode = cmHouses) and (gGameCursor.Tag1 = Byte(GUIHouseOrder[I]));
 end;
 

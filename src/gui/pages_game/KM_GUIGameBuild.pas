@@ -75,7 +75,7 @@ begin
     Button_BuildCancel.Hint := GetHintWHotKey(TX_BUILD_CANCEL_HINT, SC_ERASE_PLAN);
 
     for I := 1 to GUI_HOUSE_COUNT do
-    if GUIHouseOrder[I] <> ht_None then
+    if GUIHouseOrder[I] <> htNone then
     begin
       Button_Build[I] := TKMButtonFlat.Create(Panel_Build, ((I-1) mod 5)*37, 120+((I-1) div 5)*37, 33, 33,
                                               gRes.Houses[GUIHouseOrder[I]].GUIIcon);
@@ -194,7 +194,7 @@ var
   I: Integer;
 begin
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
   if gMySpectator.Hand.Locks.HouseCanBuild(GUIHouseOrder[I]) then
   begin
     Button_Build[I].Enable;

@@ -186,8 +186,9 @@ begin
     except
       on E : Exception do //todo: For some reason this doesn't catch exceptions that occur within network events e.g. OnReceive (once server is running errors can really only occur in these events)
       begin
-        fEventHandler.ServerStatusMessage('EXCEPTION: '+E.ClassName+': '+E.Message);
+        fEventHandler.ServerStatusMessage('EXCEPTION: ' + E.ClassName + ': ' + E.Message);
         {$IFDEF FPC} fEventHandler.ServerStatusMessage(GetExceptionCallStack()); {$ENDIF}
+        {$IFDEF WDC} fEventHandler.ServerStatusMessage(E.StackTrace); {$ENDIF}
         fEventHandler.ServerStatusMessage('Server restarting...');
         FreeAndNil(fDedicatedServer);
         fEventHandler.ServerStatusMessage('Sleeping for 5 seconds...');

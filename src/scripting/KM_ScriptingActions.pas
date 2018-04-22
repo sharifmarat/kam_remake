@@ -188,7 +188,7 @@ const
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> ht_None); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
 end;
 
 
@@ -1073,7 +1073,8 @@ procedure TKMScriptActions.AIAutoAttackRange(aPlayer: Byte; aRange: Word);
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
-    and InRange(aRange, 1, 20) then
+      and InRange(aRange, 1, 20)
+      and not gHands[aPlayer].AI.Setup.NewAI then // Do not allow AutoAttackRange if we are using newAI
       gHands[aPlayer].AI.Setup.AutoAttackRange := aRange
     else
       LogParamWarning('Actions.AIAutoAttackRange', [aPlayer, aRange]);
@@ -1396,10 +1397,10 @@ begin
       and (gHands[aPlayer].Enabled)
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn, 0, False, True);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftCorn, 0, False, True);
       end
       else
         LogWarning('Actions.GiveField', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1425,11 +1426,11 @@ begin
       and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn)
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn)
         or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn, aStage, aRandomAge);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftCorn, aStage, aRandomAge);
       end
       else
         LogWarning('Actions.GiveFieldAged', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1451,7 +1452,7 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1)
     and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y) then
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Road) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftRoad) then
       begin
         Result := True;
         gTerrain.SetRoad(KMPoint(X, Y), aPlayer);
@@ -1482,7 +1483,7 @@ begin
     and InRange(aCount, 0, High(Word))
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Store, 1);
+      H := gHands[aPlayer].FindHouse(htStore, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
@@ -1512,7 +1513,7 @@ begin
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)])
     and (WareIndexToType[aType] in [WARFARE_MIN .. WARFARE_MAX]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Barracks, 1);
+      H := gHands[aPlayer].FindHouse(htBarracks, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
@@ -1539,10 +1540,10 @@ begin
       and (gHands[aPlayer].Enabled)
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine, 0, False, True);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftWine, 0, False, True);
       end
       else
         LogWarning('Actions.GiveWineField', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1568,11 +1569,11 @@ begin
       and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine)
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine)
         or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine, aStage, aRandomAge);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftWine, aStage, aRandomAge);
       end
       else
         LogWarning('Actions.GiveWineFieldAged', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -2807,10 +2808,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Road) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftRoad) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Road);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftRoad);
       end;
     end
     else
@@ -2833,10 +2834,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Corn);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftCorn);
       end;
     end
     else
@@ -2859,10 +2860,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Wine);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftWine);
       end;
     end
     else
@@ -2903,9 +2904,9 @@ begin
         if not PlanExists then
           Exit;
         for I := 0 to Points.Count - 1 do
-          if gHands[aPlayer].CanAddFieldPlan(Points[I], ft_Road) then
+          if gHands[aPlayer].CanAddFieldPlan(Points[I], ftRoad) then
             if not aCompleted then
-              gHands[aPlayer].BuildList.FieldworksList.AddField(Points[I], ft_Road)
+              gHands[aPlayer].BuildList.FieldworksList.AddField(Points[I], ftRoad)
             else
             begin
               gTerrain.SetRoad(Points[I], aPlayer);
@@ -2947,7 +2948,7 @@ begin
         gHands[aPlayer].Stats.HousePlanRemoved(HPlan.HouseType);
         Result := True;
       end;
-      if gHands[aPlayer].BuildList.FieldworksList.HasField(KMPoint(X, Y)) <> ft_None then
+      if gHands[aPlayer].BuildList.FieldworksList.HasField(KMPoint(X, Y)) <> ftNone then
       begin
         gHands[aPlayer].BuildList.FieldworksList.RemFieldPlan(KMPoint(X, Y));
         Result := True;

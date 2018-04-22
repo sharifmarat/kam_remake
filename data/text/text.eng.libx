@@ -1059,7 +1059,7 @@
 1110:Current map size:
 1111:New map size:
 1112:Resize Map
-1113:House owner: %s
+1113:Owner: %s
 1114:Delete Player %d
 1115:Deleting Player %d
 1116:Are you sure you want to clear the player?|All his data will be erased!
@@ -1125,3 +1125,17 @@
 1176:Hard
 1177:Difficulty levels
 1178:Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty
+1179:Advanced AI Player
+1180:Advanced AI
+1181:Classic AI
+1182:Winner
+1183:Defeated
+1184:Host
+1185:Go to selected house
+1186:Go to selected unit
+1187:Ally / enemy |color mode
+1188:Use self / ally / enemy colors for players instead of initial player colors
+1189:[$404040]Host is ready to start. Please press '[][$0707FF]%s[][$404040]'[]
+1190:Ask to press Ready
+1191:Alert to get ready was sent to %s players
+1192:Switch players color mode

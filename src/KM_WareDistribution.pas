@@ -51,17 +51,17 @@ end;
 procedure TKMWareDistribution.SetWareDistribution(aWare: TKMWareType; aHouse: TKMHouseType; aValue: Byte);
 begin
   case aWare of
-    wt_Steel: if aHouse = ht_WeaponSmithy   then fWareDistribution[1,1] := aValue else
-              if aHouse = ht_ArmorSmithy    then fWareDistribution[1,2] := aValue;
-    wt_Coal:  if aHouse = ht_IronSmithy     then fWareDistribution[2,1] := aValue else
-              if aHouse = ht_Metallurgists  then fWareDistribution[2,2] := aValue else
-              if aHouse = ht_WeaponSmithy   then fWareDistribution[2,3] := aValue else
-              if aHouse = ht_ArmorSmithy    then fWareDistribution[2,4] := aValue;
-    wt_Wood:  if aHouse = ht_ArmorWorkshop  then fWareDistribution[3,1] := aValue else
-              if aHouse = ht_WeaponWorkshop then fWareDistribution[3,2] := aValue;
-    wt_Corn:  if aHouse = ht_Mill           then fWareDistribution[4,1] := aValue else
-              if aHouse = ht_Swine          then fWareDistribution[4,2] := aValue else
-              if aHouse = ht_Stables        then fWareDistribution[4,3] := aValue;
+    wt_Steel: if aHouse = htWeaponSmithy   then fWareDistribution[1,1] := aValue else
+              if aHouse = htArmorSmithy    then fWareDistribution[1,2] := aValue;
+    wt_Coal:  if aHouse = htIronSmithy     then fWareDistribution[2,1] := aValue else
+              if aHouse = htMetallurgists  then fWareDistribution[2,2] := aValue else
+              if aHouse = htWeaponSmithy   then fWareDistribution[2,3] := aValue else
+              if aHouse = htArmorSmithy    then fWareDistribution[2,4] := aValue;
+    wt_Wood:  if aHouse = htArmorWorkshop  then fWareDistribution[3,1] := aValue else
+              if aHouse = htWeaponWorkshop then fWareDistribution[3,2] := aValue;
+    wt_Corn:  if aHouse = htMill           then fWareDistribution[4,1] := aValue else
+              if aHouse = htSwine          then fWareDistribution[4,2] := aValue else
+              if aHouse = htStables        then fWareDistribution[4,3] := aValue;
     else      raise Exception.Create('Unexpected resource at SetWareDistribution');
   end;
   Changed := True;
@@ -72,17 +72,17 @@ function TKMWareDistribution.GetWareDistribution(aWare: TKMWareType; aHouse: TKM
 begin
   Result := 5; //Default should be 5, for house/resource combinations that don't have a setting (on a side note this should be the only place the resourse limit is defined)
   case aWare of
-    wt_Steel: if aHouse = ht_WeaponSmithy   then Result := fWareDistribution[1,1] else
-              if aHouse = ht_ArmorSmithy    then Result := fWareDistribution[1,2];
-    wt_Coal:  if aHouse = ht_IronSmithy     then Result := fWareDistribution[2,1] else
-              if aHouse = ht_Metallurgists  then Result := fWareDistribution[2,2] else
-              if aHouse = ht_WeaponSmithy   then Result := fWareDistribution[2,3] else
-              if aHouse = ht_ArmorSmithy    then Result := fWareDistribution[2,4];
-    wt_Wood:  if aHouse = ht_ArmorWorkshop  then Result := fWareDistribution[3,1] else
-              if aHouse = ht_WeaponWorkshop then Result := fWareDistribution[3,2];
-    wt_Corn:  if aHouse = ht_Mill           then Result := fWareDistribution[4,1] else
-              if aHouse = ht_Swine          then Result := fWareDistribution[4,2] else
-              if aHouse = ht_Stables        then Result := fWareDistribution[4,3];
+    wt_Steel: if aHouse = htWeaponSmithy   then Result := fWareDistribution[1,1] else
+              if aHouse = htArmorSmithy    then Result := fWareDistribution[1,2];
+    wt_Coal:  if aHouse = htIronSmithy     then Result := fWareDistribution[2,1] else
+              if aHouse = htMetallurgists  then Result := fWareDistribution[2,2] else
+              if aHouse = htWeaponSmithy   then Result := fWareDistribution[2,3] else
+              if aHouse = htArmorSmithy    then Result := fWareDistribution[2,4];
+    wt_Wood:  if aHouse = htArmorWorkshop  then Result := fWareDistribution[3,1] else
+              if aHouse = htWeaponWorkshop then Result := fWareDistribution[3,2];
+    wt_Corn:  if aHouse = htMill           then Result := fWareDistribution[4,1] else
+              if aHouse = htSwine          then Result := fWareDistribution[4,2] else
+              if aHouse = htStables        then Result := fWareDistribution[4,3];
     else      //Handled in 1st row to avoid repeating in if .. else lines
   end;
 end;

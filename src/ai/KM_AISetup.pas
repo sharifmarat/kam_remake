@@ -10,10 +10,11 @@ type
   // Could be a record, but we want to have default values initialization in constructor
   TKMHandAISetup = class
   public
+    NewAI: Boolean; // Enable new AI
     Aggressiveness: Integer; //-1 means not used or default
     AutoAttack: Boolean;
     AutoRepair: Boolean;
-    AutoBuild: Boolean;
+    AutoBuild: Boolean; // Enable build
     AutoDefend: Boolean;
     DefendAllies: Boolean;
     UnlimitedEquip: Boolean;
@@ -26,14 +27,14 @@ type
     StartPosition: TKMPoint; //Defines roughly where to defend and build around
     TownDefence: Integer; //-1 means not used or default
     WorkerCount: Byte;
-    AutoAttackRange: Byte;
+    AutoAttackRange: Byte; // Auto attack range for close combat warriors (used in KM_Units_Warrior)
 
     constructor Create;
     function GetEquipRate(aUnit: TKMUnitType): Word;
     function WarriorsPerMinute(aArmy: TKMArmyType): Single; overload;
     function WarriorsPerMinute: Single; overload;
 
-    procedure ApplyAgressiveBuilderSetup;
+    procedure ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -105,8 +106,9 @@ end;
 
 
 //Used from MapEd to give multiplayer building maps an AI builder config
-procedure TKMHandAISetup.ApplyAgressiveBuilderSetup;
+procedure TKMHandAISetup.ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
 begin
+  NewAI := aNewAI;
   SerfsPerHouse := 1;
   WorkerCount := 20;
   ArmyType := atIronAndLeather; //Mixed army
@@ -123,12 +125,15 @@ begin
   RecruitDelay := 0;
   RecruitCount := 10;
   AutoAttackRange := 6;
+  if NewAI then
+    AutoAttackRange := 0; // It force units to attack the closest enemy (it should decide AI not command)
 end;
 
 
 procedure TKMHandAISetup.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.WriteA('AISetup');
+  SaveStream.Write(NewAI);
   SaveStream.Write(Aggressiveness);
   SaveStream.Write(AutoAttack);
   SaveStream.Write(AutoBuild);
@@ -153,6 +158,7 @@ end;
 procedure TKMHandAISetup.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.ReadAssert('AISetup');
+  LoadStream.Read(NewAI);
   LoadStream.Read(Aggressiveness);
   LoadStream.Read(AutoAttack);
   LoadStream.Read(AutoBuild);

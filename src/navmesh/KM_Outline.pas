@@ -44,12 +44,13 @@ var
     PrevStep := NextStep;
 
     //Assemble bitmask
-    State :=  Byte(IsTilePassable(X  ,Y  )) +
-              Byte(IsTilePassable(X+1,Y  )) * 2 +
-              Byte(IsTilePassable(X  ,Y+1)) * 4 +
-              Byte(IsTilePassable(X+1,Y+1)) * 8;
+    State := + (Byte(IsTilePassable(X  ,Y  )) shl 0)
+             + (Byte(IsTilePassable(X+1,Y  )) shl 1)
+             + (Byte(IsTilePassable(X  ,Y+1)) shl 2)
+             + (Byte(IsTilePassable(X+1,Y+1)) shl 3);
 
     //Where do we go from here
+    // Toxic: maybe vectors could be better than this (relative vectors always look first to left -> forward -> right -> back)
     case State of
       1:  NextStep := sdUp;
       2:  NextStep := sdRight;

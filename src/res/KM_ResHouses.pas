@@ -8,20 +8,20 @@ uses
 
 
 type
-  TKMHouseType = (ht_None, ht_Any,
-    ht_ArmorSmithy,     ht_ArmorWorkshop,   ht_Bakery,        ht_Barracks,      ht_Butchers,
-    ht_CoalMine,        ht_Farm,            ht_FisherHut,     ht_GoldMine,      ht_Inn,
-    ht_IronMine,        ht_IronSmithy,      ht_Marketplace,   ht_Metallurgists, ht_Mill,
-    ht_Quary,           ht_Sawmill,         ht_School,        ht_SiegeWorkshop, ht_Stables,
-    ht_Store,           ht_Swine,           ht_Tannery,       ht_TownHall,      ht_WatchTower,
-    ht_WeaponSmithy,    ht_WeaponWorkshop,  ht_Wineyard,      ht_Woodcutters    );
+  TKMHouseType = (htNone, htAny,
+    htArmorSmithy,     htArmorWorkshop,   htBakery,        htBarracks,      htButchers,
+    htCoalMine,        htFarm,            htFisherHut,     htGoldMine,      htInn,
+    htIronMine,        htIronSmithy,      htMarketplace,   htMetallurgists, htMill,
+    htQuary,           htSawmill,         htSchool,        htSiegeWorkshop, htStables,
+    htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,
+    htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    );
 
   THouseTypeSet = set of TKMHouseType;
 
 const
-  HOUSE_MIN = ht_ArmorSmithy;
-  HOUSE_MAX = ht_Woodcutters;
-  HOUSE_WORKSHOP = [ht_WeaponSmithy, ht_ArmorSmithy, ht_WeaponWorkshop, ht_ArmorWorkshop];
+  HOUSE_MIN = htArmorSmithy;
+  HOUSE_MAX = htWoodcutters;
+  HOUSE_WORKSHOP = [htWeaponSmithy, htArmorSmithy, htWeaponWorkshop, htArmorWorkshop];
 
 type
   THouseAnim = array [TKMHouseActionType] of TKMAnimLoop;
@@ -192,14 +192,14 @@ const
   HOUSE_DAT_COUNT = 30;
   //KaM scripts and HouseDat address houses in this order
   HouseIndexToType: array [0 .. HOUSE_DAT_COUNT - 1] of TKMHouseType = (
-    ht_Sawmill, ht_IronSmithy, ht_WeaponSmithy, ht_CoalMine, ht_IronMine,
-    ht_GoldMine, ht_FisherHut, ht_Bakery, ht_Farm, ht_Woodcutters,
-    ht_ArmorSmithy, ht_Store, ht_Stables, ht_School, ht_Quary,
-    ht_Metallurgists, ht_Swine, ht_WatchTower, ht_TownHall, ht_WeaponWorkshop,
-    ht_ArmorWorkshop, ht_Barracks, ht_Mill, ht_SiegeWorkshop, ht_Butchers,
-    ht_Tannery, ht_None, ht_Inn, ht_Wineyard, ht_Marketplace);
+    htSawmill, htIronSmithy, htWeaponSmithy, htCoalMine, htIronMine,
+    htGoldMine, htFisherHut, htBakery, htFarm, htWoodcutters,
+    htArmorSmithy, htStore, htStables, htSchool, htQuary,
+    htMetallurgists, htSwine, htWatchTower, htTownHall, htWeaponWorkshop,
+    htArmorWorkshop, htBarracks, htMill, htSiegeWorkshop, htButchers,
+    htTannery, htNone, htInn, htWineyard, htMarketplace);
 
-  //THouseType corresponds to this index in KaM scripts and libs
+  //TKMHouseType corresponds to this index in KaM scripts and libs
   //KaM scripts are 0 based, so we must use HouseTypeToIndex[H]-1 in script usage. Other cases are 1 based.
   HouseTypeToIndex: array [TKMHouseType] of Byte = (0, 0,
     11, 21, 8, 22, 25, 4, 9, 7, 6, 28,
@@ -234,8 +234,8 @@ const
     BuildIcon:        311;
     TabletSpriteId:   261;
     Input:            (wt_Coal,       wt_Steel,      wt_None,       wt_None);
-    Output:           (wt_MetalShield,wt_MetalArmor, wt_None,       wt_None);
-    UnlockedByHouse:  ht_IronSmithy;
+    Output:           (wt_MetalArmor, wt_MetalShield,wt_None,       wt_None);
+    UnlockedByHouse:  htIronSmithy;
     SnowSpriteId:     -1;
     ),
     ( //Armor workshop
@@ -244,8 +244,8 @@ const
     BuildIcon:        321;
     TabletSpriteId:   271;
     Input:            (wt_Wood,       wt_Leather,    wt_None,       wt_None);
-    Output:           (wt_Shield,     wt_Armor,      wt_None,       wt_None);
-    UnlockedByHouse:  ht_Tannery;
+    Output:           (wt_Armor,      wt_Shield,     wt_None,       wt_None);
+    UnlockedByHouse:  htTannery;
     SnowSpriteId:     2067;
     ),
     ( //Bakery
@@ -255,7 +255,7 @@ const
     TabletSpriteId:   258;
     Input:            (wt_Flour,      wt_None,       wt_None,       wt_None);
     Output:           (wt_Bread,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Mill;
+    UnlockedByHouse:  htMill;
     SnowSpriteId:     2054;
     ),
     ( //Barracks
@@ -265,7 +265,7 @@ const
     TabletSpriteId:   272;
     Input:            (wt_Warfare,    wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     -1;
     ),
     ( //Butchers
@@ -275,7 +275,7 @@ const
     TabletSpriteId:   275;
     Input:            (wt_Pig,        wt_None,       wt_None,       wt_None);
     Output:           (wt_Sausages,   wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Swine;
+    UnlockedByHouse:  htSwine;
     SnowSpriteId:     2066;
     ),
     ( //Coal mine
@@ -285,7 +285,7 @@ const
     TabletSpriteId:   254;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Coal,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     -1;
     ),
     ( //Farm
@@ -295,7 +295,7 @@ const
     TabletSpriteId:   259;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Corn,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     2055;
     ),
     ( //Fisher hut
@@ -305,7 +305,7 @@ const
     TabletSpriteId:   257;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Fish,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     2053;
     ),
     ( //Gold mine
@@ -315,7 +315,7 @@ const
     TabletSpriteId:   256;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_GoldOre,    wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     -1;
     ),
     ( //Inn
@@ -325,7 +325,7 @@ const
     TabletSpriteId:   278;
     Input:            (wt_Bread,      wt_Sausages,   wt_Wine,       wt_Fish);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Store;
+    UnlockedByHouse:  htStore;
     SnowSpriteId:     2063;
     ),
     ( //Iron mine
@@ -335,7 +335,7 @@ const
     TabletSpriteId:   255;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_IronOre,    wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     2052;
     ),
     ( //Iron smithy
@@ -345,7 +345,7 @@ const
     TabletSpriteId:   252;
     Input:            (wt_IronOre,    wt_Coal,       wt_None,       wt_None);
     Output:           (wt_Steel,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_IronMine;
+    UnlockedByHouse:  htIronMine;
     SnowSpriteId:     2051;
     ),
     ( //Marketplace
@@ -355,7 +355,7 @@ const
     TabletSpriteId:   277;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     -1;
     ),
     ( //Metallurgist
@@ -365,7 +365,7 @@ const
     TabletSpriteId:   266;
     Input:            (wt_GoldOre,    wt_Coal,       wt_None,       wt_None);
     Output:           (wt_Gold,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_GoldMine;
+    UnlockedByHouse:  htGoldMine;
     SnowSpriteId:     2068;
     ),
     ( //Mill
@@ -375,7 +375,7 @@ const
     TabletSpriteId:   273;
     Input:            (wt_Corn,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Flour,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Farm;
+    UnlockedByHouse:  htFarm;
     SnowSpriteId:     2062;
     ),
     ( //Quarry
@@ -385,7 +385,7 @@ const
     TabletSpriteId:   265;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Stone,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_School;
+    UnlockedByHouse:  htSchool;
     SnowSpriteId:     2058;
     ),
     ( //Sawmill
@@ -395,7 +395,7 @@ const
     TabletSpriteId:   251;
     Input:            (wt_Trunk,      wt_None,       wt_None,       wt_None);
     Output:           (wt_Wood,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Woodcutters;
+    UnlockedByHouse:  htWoodcutters;
     SnowSpriteId:     2050;
     ),
     ( //School
@@ -405,7 +405,7 @@ const
     TabletSpriteId:   264;
     Input:            (wt_Gold,       wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Store;
+    UnlockedByHouse:  htStore;
     SnowSpriteId:     2059;
     ),
     ( //Siege workshop
@@ -415,7 +415,7 @@ const
     TabletSpriteId:   274;
     Input:            (wt_Wood,       wt_Steel,      wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_IronSmithy;
+    UnlockedByHouse:  htIronSmithy;
     SnowSpriteId:     -1;
     ),
     ( //Stables
@@ -425,7 +425,7 @@ const
     TabletSpriteId:   263;
     Input:            (wt_Corn,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Horse,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Farm;
+    UnlockedByHouse:  htFarm;
     SnowSpriteId:     -1;
     ),
     ( //Store
@@ -435,7 +435,7 @@ const
     TabletSpriteId:   262;
     Input:            (wt_All,        wt_None,       wt_None,       wt_None);
     Output:           (wt_All,        wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_None; //
+    UnlockedByHouse:  htNone; //
     SnowSpriteId:     2056;
     ),
     ( //Swine
@@ -445,7 +445,7 @@ const
     TabletSpriteId:   267;
     Input:            (wt_Corn,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Pig,        wt_Skin,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Farm;
+    UnlockedByHouse:  htFarm;
     SnowSpriteId:     2064;
     ),
     ( //Tannery
@@ -455,7 +455,7 @@ const
     TabletSpriteId:   276;
     Input:            (wt_Skin,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Leather,    wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Swine;
+    UnlockedByHouse:  htSwine;
     SnowSpriteId:     -1;
     ),
     ( //Town hall
@@ -465,7 +465,7 @@ const
     TabletSpriteId:   269;
     Input:            (wt_Gold,       wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Metallurgists;
+    UnlockedByHouse:  htMetallurgists;
     SnowSpriteId:     -1;
     ),
     ( //Watch tower
@@ -475,7 +475,7 @@ const
     TabletSpriteId:   268;
     Input:            (wt_Stone,      wt_None,       wt_None,       wt_None);
     Output:           (wt_None,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Quary;
+    UnlockedByHouse:  htQuary;
     SnowSpriteId:     2060;
     ),
     ( //Weapon smithy
@@ -485,7 +485,7 @@ const
     TabletSpriteId:   253;
     Input:            (wt_Coal,       wt_Steel,      wt_None,       wt_None);
     Output:           (wt_Sword,      wt_Hallebard,  wt_Arbalet,    wt_None);
-    UnlockedByHouse:  ht_IronSmithy;
+    UnlockedByHouse:  htIronSmithy;
     SnowSpriteId:     -1;
     ),
     ( //Weapon workshop
@@ -495,7 +495,7 @@ const
     TabletSpriteId:   270;
     Input:            (wt_Wood,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Axe,        wt_Pike,       wt_Bow,        wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     2061;
     ),
     ( //Wineyard
@@ -505,7 +505,7 @@ const
     TabletSpriteId:   279;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Wine,       wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_Sawmill;
+    UnlockedByHouse:  htSawmill;
     SnowSpriteId:     2065;
     ),
     ( //Woodcutter
@@ -515,7 +515,7 @@ const
     TabletSpriteId:   260;
     Input:            (wt_None,       wt_None,       wt_None,       wt_None);
     Output:           (wt_Trunk,      wt_None,       wt_None,       wt_None);
-    UnlockedByHouse:  ht_School;
+    UnlockedByHouse:  htSchool;
     SnowSpriteId:     2057;
     )
     );
@@ -559,7 +559,7 @@ end;
 function TKMHouseSpec.AcceptsWares: boolean;
 begin
   Result := (ResInput[1] <> wt_None)          //Exclude houses that do not receive wares
-            or (fHouseType = ht_Marketplace); //Marketplace also accepts wares
+            or (fHouseType = htMarketplace); //Marketplace also accepts wares
 end;
 
 
@@ -711,48 +711,48 @@ begin
 
   fCRC := LoadHouseDat(ExeDir+'data' + PathDelim + 'defines' + PathDelim + 'houses.dat');
 
-  fItems[ht_Tannery].fHouseDat.Anim[ha_Flag3].Count := 0; //fix for tannery 2 flags at one place. Flag3 is unnecessary
+  fItems[htTannery].fHouseDat.Anim[ha_Flag3].Count := 0; //fix for tannery 2 flags at one place. Flag3 is unnecessary
 
-  fItems[ht_Marketplace].fHouseType := ht_Marketplace;
-  fItems[ht_Marketplace].fHouseDat.OwnerType := -1; //No unit works here (yet anyway)
-  fItems[ht_Marketplace].fHouseDat.StonePic := 150;
-  fItems[ht_Marketplace].fHouseDat.WoodPic := 151;
-  fItems[ht_Marketplace].fHouseDat.WoodPal := 152;
-  fItems[ht_Marketplace].fHouseDat.StonePal := 153;
-  fItems[ht_Marketplace].fHouseDat.SupplyIn[1,1] := 154;
-  fItems[ht_Marketplace].fHouseDat.SupplyIn[1,2] := 155;
-  fItems[ht_Marketplace].fHouseDat.SupplyIn[1,3] := 156;
-  fItems[ht_Marketplace].fHouseDat.SupplyIn[1,4] := 157;
-  fItems[ht_Marketplace].fHouseDat.SupplyIn[1,5] := 158;
-  fItems[ht_Marketplace].fHouseDat.WoodPicSteps := 23;
-  fItems[ht_Marketplace].fHouseDat.StonePicSteps := 140;
-  fItems[ht_Marketplace].fHouseDat.EntranceOffsetX := 1;
-  fItems[ht_Marketplace].fHouseDat.EntranceOffsetXpx := 4; //Enterance is slightly to the left
-  fItems[ht_Marketplace].fHouseDat.EntranceOffsetYpx := 10;
-  fItems[ht_Marketplace].fHouseDat.WoodCost := 5;
-  fItems[ht_Marketplace].fHouseDat.StoneCost := 6;
+  fItems[htMarketplace].fHouseType := htMarketplace;
+  fItems[htMarketplace].fHouseDat.OwnerType := -1; //No unit works here (yet anyway)
+  fItems[htMarketplace].fHouseDat.StonePic := 150;
+  fItems[htMarketplace].fHouseDat.WoodPic := 151;
+  fItems[htMarketplace].fHouseDat.WoodPal := 152;
+  fItems[htMarketplace].fHouseDat.StonePal := 153;
+  fItems[htMarketplace].fHouseDat.SupplyIn[1,1] := 154;
+  fItems[htMarketplace].fHouseDat.SupplyIn[1,2] := 155;
+  fItems[htMarketplace].fHouseDat.SupplyIn[1,3] := 156;
+  fItems[htMarketplace].fHouseDat.SupplyIn[1,4] := 157;
+  fItems[htMarketplace].fHouseDat.SupplyIn[1,5] := 158;
+  fItems[htMarketplace].fHouseDat.WoodPicSteps := 23;
+  fItems[htMarketplace].fHouseDat.StonePicSteps := 140;
+  fItems[htMarketplace].fHouseDat.EntranceOffsetX := 1;
+  fItems[htMarketplace].fHouseDat.EntranceOffsetXpx := 4; //Enterance is slightly to the left
+  fItems[htMarketplace].fHouseDat.EntranceOffsetYpx := 10;
+  fItems[htMarketplace].fHouseDat.WoodCost := 5;
+  fItems[htMarketplace].fHouseDat.StoneCost := 6;
   for I := 1 to 6 do begin
-    fItems[ht_Marketplace].fHouseDat.BuildSupply[1,I].MoveX := -55+ BuildSupplyOffsets[1,I].MoveX;
-    fItems[ht_Marketplace].fHouseDat.BuildSupply[1,I].MoveY := 15 + BuildSupplyOffsets[1,I].MoveY;
-    fItems[ht_Marketplace].fHouseDat.BuildSupply[2,I].MoveX := 28 + BuildSupplyOffsets[2,I].MoveX;
-    fItems[ht_Marketplace].fHouseDat.BuildSupply[2,I].MoveY := 20 + BuildSupplyOffsets[2,I].MoveY;
+    fItems[htMarketplace].fHouseDat.BuildSupply[1,I].MoveX := -55+ BuildSupplyOffsets[1,I].MoveX;
+    fItems[htMarketplace].fHouseDat.BuildSupply[1,I].MoveY := 15 + BuildSupplyOffsets[1,I].MoveY;
+    fItems[htMarketplace].fHouseDat.BuildSupply[2,I].MoveX := 28 + BuildSupplyOffsets[2,I].MoveX;
+    fItems[htMarketplace].fHouseDat.BuildSupply[2,I].MoveY := 20 + BuildSupplyOffsets[2,I].MoveY;
   end;
-  fItems[ht_Marketplace].fHouseDat.Sight := 10;
-  fItems[ht_Marketplace].fHouseDat.SizeArea := 11;
-  fItems[ht_Marketplace].fHouseDat.SizeX := 4;
-  fItems[ht_Marketplace].fHouseDat.SizeY := 3;
-  fItems[ht_Marketplace].fHouseDat.MaxHealth := 550;
-  AddAnimation(ht_Marketplace, ha_Flag1, -80, -33, [1165,1166,1167,1163,1164]);
-  AddAnimation(ht_Marketplace, ha_Flag2, -73, -7, [1163,1164,1165,1166,1167]);
-  AddAnimation(ht_Marketplace, ha_Flag3, 73, -80, [1161,1162,1158,1159,1160]);
-  AddAnimation(ht_Marketplace, ha_Fire1, 18, -83, [1623,1624,1625,1620,1621,1622]);
-  AddAnimation(ht_Marketplace, ha_Fire2, 78, -67, [1637,1632,1633,1634,1635,1636]);
-  AddAnimation(ht_Marketplace, ha_Fire3, -30, -103, [1620,1621,1622,1623,1624,1625]);
-  AddAnimation(ht_Marketplace, ha_Fire4, -3, -54, [1617,1618,1619,1614,1615,1616]);
-  AddAnimation(ht_Marketplace, ha_Fire5, -12, -38, [1632,1633,1634,1635,1636,1637]);
-  AddAnimation(ht_Marketplace, ha_Fire6, 39, -47, [1629,1630,1631,1626,1627,1628]);
-  AddAnimation(ht_Marketplace, ha_Fire7, 25, 13, [1635,1636,1637,1632,1633,1634]);
-  AddAnimation(ht_Marketplace, ha_Fire8, -82, -40, [1621,1622,1623,1624,1625,1620]);
+  fItems[htMarketplace].fHouseDat.Sight := 10;
+  fItems[htMarketplace].fHouseDat.SizeArea := 11;
+  fItems[htMarketplace].fHouseDat.SizeX := 4;
+  fItems[htMarketplace].fHouseDat.SizeY := 3;
+  fItems[htMarketplace].fHouseDat.MaxHealth := 550;
+  AddAnimation(htMarketplace, ha_Flag1, -80, -33, [1165,1166,1167,1163,1164]);
+  AddAnimation(htMarketplace, ha_Flag2, -73, -7, [1163,1164,1165,1166,1167]);
+  AddAnimation(htMarketplace, ha_Flag3, 73, -80, [1161,1162,1158,1159,1160]);
+  AddAnimation(htMarketplace, ha_Fire1, 18, -83, [1623,1624,1625,1620,1621,1622]);
+  AddAnimation(htMarketplace, ha_Fire2, 78, -67, [1637,1632,1633,1634,1635,1636]);
+  AddAnimation(htMarketplace, ha_Fire3, -30, -103, [1620,1621,1622,1623,1624,1625]);
+  AddAnimation(htMarketplace, ha_Fire4, -3, -54, [1617,1618,1619,1614,1615,1616]);
+  AddAnimation(htMarketplace, ha_Fire5, -12, -38, [1632,1633,1634,1635,1636,1637]);
+  AddAnimation(htMarketplace, ha_Fire6, 39, -47, [1629,1630,1631,1626,1627,1628]);
+  AddAnimation(htMarketplace, ha_Fire7, 25, 13, [1635,1636,1637,1632,1633,1634]);
+  AddAnimation(htMarketplace, ha_Fire8, -82, -40, [1621,1622,1623,1624,1625,1620]);
   //Now add horse animations for the market
   AddMarketBeastAnim(1,[278, 277, 276, 275, 274, 273, 272, 271, 271, 271, 271, 271, 272,
                         273, 274, 275, 276, 277, 277, 278, 279, 280, 281, 282, 282, 282,
@@ -795,13 +795,13 @@ end;
 
 function TKMResHouses.GetBeastAnim(aType: TKMHouseType; aBeast, aAge: Integer): TKMAnimLoop;
 begin
-  Assert(aType in [ht_Swine, ht_Stables, ht_Marketplace]);
+  Assert(aType in [htSwine, htStables, htMarketplace]);
   Assert(InRange(aBeast, 1, 5));
   Assert(InRange(aAge, 1, 3));
   case aType of
-    ht_Swine:       Result := fBeastAnim[1, aBeast, aAge];
-    ht_Stables:     Result := fBeastAnim[2, aBeast, aAge];
-    ht_Marketplace: Result := fMarketBeastAnim[aBeast];
+    htSwine:       Result := fBeastAnim[1, aBeast, aAge];
+    htStables:     Result := fBeastAnim[2, aBeast, aAge];
+    htMarketplace: Result := fMarketBeastAnim[aBeast];
   end;
 end;
 
@@ -823,7 +823,7 @@ begin
 
     //Read the records one by one because we need to reorder them and skip one in the middle
     for i:=0 to 28 do //KaM has only 28 houses
-    if HouseIndexToType[i] <> ht_None then
+    if HouseIndexToType[i] <> htNone then
       fItems[HouseIndexToType[i]].LoadFromStream(S)
     else
       S.Seek(SizeOf(TKMHouseDat), soFromCurrent);

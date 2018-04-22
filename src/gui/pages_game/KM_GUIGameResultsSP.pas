@@ -14,7 +14,7 @@ type
     fOnStopGame: TUnicodeStringWDefEvent; //will be in ancestor class
     fOnShowDetailedStats: TEvent; //will be in ancestor class
     fGameResultMsg: TKMGameResultMsg; //So we know where to go after results screen
-    fGameMode: TGameMode;
+    fGameMode: TKMGameMode;
 
     //Story behind these seemingly superflous elements that
     //we need to carry on from previous Game:

@@ -4,7 +4,7 @@ interface
 uses
   Classes,
   KM_Hand, KM_HandSpectator, KM_HouseCollection,
-  KM_Houses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
+  KM_Houses, KM_ResHouses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
@@ -32,8 +32,12 @@ type
     function HousesHitTest(X,Y: Integer): TKMHouse;
     function UnitsHitTest(X, Y: Integer): TKMUnit;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
+    function GetClosestGroup(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
     function GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
-    function GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
+    function GetHousesInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function DistanceToEnemyTowers(const aLoc: TKMPoint; aIndex: TKMHandIndex): Single;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -84,7 +88,7 @@ uses
   Math, KromUtils,
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection,
-  KM_Resource, KM_ResHouses, KM_ResUnits,
+  KM_Resource, KM_ResUnits,
   KM_Log, KM_CommonUtils;
 
 
@@ -245,7 +249,78 @@ end;
 
 
 //Check opponents for closest Unit with given Alliance setting
-function TKMHandsCollection.GetClosestUnit(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
+function TKMHandsCollection.GetClosestGroup(const  aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+var
+  I: Integer;
+  G: TKMUnitGroup;
+begin
+  Result := nil;
+
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    G := fHandsList[I].UnitGroups.GetClosestGroup(aLoc, aTypes);
+    if (G <> nil)
+    and ((Result = nil) or (KMLengthSqr(G.Position, aLoc) < KMLengthSqr(Result.Position, aLoc))) then
+      Result := G;
+  end;
+end;
+
+
+function TKMHandsCollection.GetGroupsInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+var
+  I,K,Idx: Integer;
+  UGA: TKMUnitGroupArray;
+begin
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    UGA := fHandsList[I].UnitGroups.GetGroupsInRadius(aLoc, aSqrRadius, aTypes);
+    if (Idx + Length(UGA) > Length(Result)) then
+      SetLength(Result, Idx + Length(UGA) + 12);
+    for K := Low(UGA) to High(UGA) do
+    begin
+      Result[Idx] := UGA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+
+  SetLength(Result, Idx);
+end;
+
+
+// Aproximative function to get closest units in specific radius
+function TKMHandsCollection.GetGroupsMemberInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
+var
+  I,K,Idx: Integer;
+  UA: TKMUnitArray;
+  UGA: TKMUnitGroupArray;
+begin
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (fHandsList[aIndex].Alliances[I] = aAlliance) then
+  begin
+    UA := fHandsList[I].UnitGroups.GetGroupsMemberInRadius(aLoc, aSqrRadius, UGA, aTypes);
+    if (Idx + Length(UA) > Length(Result)) then
+    begin
+      SetLength(Result, Idx + Length(UA) + 12);
+      SetLength(aUGA, Idx + Length(UA) + 12);
+    end;
+    for K := Low(UA) to High(UA) do
+    begin
+      Result[Idx] := UA[K];
+      aUGA[Idx] := UGA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+
+  SetLength(Result, Idx);
+end;
+
+
+//Check opponents for closest Unit with given Alliance setting
+function TKMHandsCollection.GetClosestUnit(aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType): TKMUnit;
 var
   I: Integer;
   U: TKMUnit;
@@ -265,7 +340,7 @@ end;
 
 //Check opponents for closest House with given Alliance setting
 //Note: we check by house cells, not by entrance
-function TKMHandsCollection.GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aOnlyCompleted: Boolean = True): TKMHouse;
+function TKMHandsCollection.GetClosestHouse(const aLoc: TKMPoint; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouse;
 var
   I: Integer;
   H: TKMHouse;
@@ -276,10 +351,34 @@ begin
   for I := 0 to fCount - 1 do
   if (aIndex <> I) and (Hands[aIndex].Alliances[I] = aAlliance) then
   begin
-    H := fHandsList[I].Houses.FindHouse(ht_Any, aLoc.X, aLoc.Y, 1, aOnlyCompleted);
+    H := fHandsList[I].Houses.FindHouse(aTypes, aLoc.X, aLoc.Y, 1, aOnlyCompleted);
     if (H <> nil) and ((Result = nil) or (H.GetDistance(aLoc) < Result.GetDistance(aLoc))) then
       Result := H;
   end;
+end;
+
+
+function TKMHandsCollection.GetHousesInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandIndex; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+var
+  I,K,Idx: Integer;
+  HA: TKMHouseArray;
+begin
+  SetLength(Result, 12);
+
+  Idx := 0;
+  for I := 0 to fCount - 1 do
+  if (I <> aIndex) and (Hands[aIndex].Alliances[I] = aAlliance) then
+  begin
+    HA := fHandsList[I].Houses.FindHousesInRadius(aLoc, aSqrRadius, aTypes, aOnlyCompleted);
+    if (Idx + Length(HA) > Length(Result)) then
+      SetLength(Result, Idx + Length(HA) + 12);
+    for K := Low(HA) to High(HA) do
+    begin
+      Result[Idx] := HA[K];
+      Idx := Idx + 1;
+    end;
+  end;
+  SetLength(Result, Idx);
 end;
 
 
@@ -384,37 +483,11 @@ Result
     nil: if NO other house found
 }
 function TKMHandsCollection.GetNextHouseWSameType(aHouse: TKMHouse): TKMHouse;
-var Houses: TKMHousesCollection;
-    House, FirstH: TKMHouse;
-    Found: Boolean;
-    I: Integer;
 begin
   Result := nil;
   if (aHouse = nil) or aHouse.IsDestroyed then Exit;
 
-  Found := False;
-  FirstH := nil;
-
-  Houses := fHandsList[aHouse.Owner].Houses;
-
-  for I := 0 to Houses.Count - 1 do
-  begin
-    House := Houses[I];
-    if (House.HouseType = aHouse.HouseType) // we are interested in houses with the same type
-      and not House.IsDestroyed then        // not destroyed
-    begin
-      if House = aHouse then
-        Found := True               // Mark that we found our house
-      else if Found then
-      begin
-        Result := House;            // Save the next house after Found to Result and Break
-        Break;
-      end else if FirstH = nil then
-        FirstH := House;            // Save 1st house in list in case our house is the last one
-    end;
-  end;
-  if (Result = nil) and Found then // Found should be always True here
-    Result := FirstH;
+  Result := fHandsList[aHouse.Owner].GetNextHouseWSameType(aHouse.HouseType, aHouse.UID);
 end;
 
 
@@ -502,16 +575,18 @@ end;
 
 
 function TKMHandsCollection.GetGroupByMember(aWarrior: TKMUnitWarrior): TKMUnitGroup;
-var
-  I: Integer;
+//var
+//  I: Integer;
 begin
   Result := nil;
 
-  for I := 0 to fCount - 1 do
-  begin
-    Result := fHandsList[I].UnitGroups.GetGroupByMember(aWarrior);
-    if Result <> nil then Exit; //else keep on testing
-  end;
+  if (aWarrior <> nil) then
+    Result := TKMUnitGroup(aWarrior.Group);
+  //for I := 0 to fCount - 1 do
+  //begin
+  //  Result := fHandsList[I].UnitGroups.GetGroupByMember(aWarrior);
+  //  if Result <> nil then Exit; //else keep on testing
+  //end;
 end;
 
 
@@ -622,18 +697,21 @@ begin
   //Gather aliance info into 'Allies' variable
   for I := 0 to Count - 1 do
   begin
+    if not fHandsList[I].Enabled then
+      Continue;
+
     Allies[I] := [I]; // every hand is Ally to himself by default
     for J := 0 to Count - 1 do
-    begin
       if (I <> J) and (CheckAlliance(I,J) = at_Ally) then
         Include(Allies[I], J);
-    end;
   end;
 
   K := 0;
   HandsChecked := [];
   for I := 0 to Count - 1 do
   begin
+    if not fHandsList[I].Enabled then
+      Continue;
     CollisionFound := False;
     if (Allies[I] = [I])          //hand has no allies, so we can ignore it
       or (I in HandsChecked) then //hand was checked in other iteration before, ignore it
@@ -683,10 +761,11 @@ begin
     NonTeamHands := NonTeamHands - Teams[I];
 
   for I in NonTeamHands do
-  begin
-    Include(Result[K], I);
-    Inc(K);
-  end;
+    if fHandsList[I].Enabled then
+    begin
+      Include(Result[K], I);
+      Inc(K);
+    end;
 
   for I := Low(Teams) to High(Teams) do
   begin

@@ -46,20 +46,29 @@ type
     JobStatus: TKMJobStatus;
     Worker: TKMUnit; //So we can tell Worker if plan is cancelled
   end;
+  TKMHousePlanArray = array of TKMHousePlan;
 
 
   //List of house plans and workers assigned to them
   TKMHousePlanList = class
   private
     fPlansCount: Integer;
-    fPlans: array of TKMHousePlan;
+    fPlans: TKMHousePlanArray;
   public
     //Player orders
     procedure AddPlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
-    function HasPlan(const aLoc: TKMPoint): Boolean;
+    function HasPlan(const aLoc: TKMPoint): Boolean; overload;
+    function HasPlan(const aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean; overload;
     procedure RemPlan(const aLoc: TKMPoint);
     function TryGetPlan(const aLoc: TKMPoint; out aHousePlan: TKMHousePlan): Boolean;
     function FindHousePlan(const aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
+
+    // AI Informations
+    property Count: Integer read fPlansCount;
+    property Plans: TKMHousePlanArray read fPlans;
+    function ExistPlan(const aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+    function GetPlansStoneDemands(): Integer;
+    function GetPlansWoodDemands(): Integer;
 
     //Game events
     function BestBid(aWorker: TKMUnitWorker; out aBid: Single): Integer; //Calculate best bid for a given worker
@@ -77,15 +86,19 @@ type
   end;
 
 
+  TKMFieldPlan = record
+    Loc: TKMPoint;
+    FieldType: TKMFieldType;
+    JobStatus: TKMJobStatus;
+    Worker: TKMUnit;
+  end;
+  TKMFieldPlanArray = array of TKMFieldPlan;
+
+
   TKMFieldworksList = class
   private
     fFieldsCount: Integer;
-    fFields: array of record
-      Loc: TKMPoint;
-      FieldType: TKMFieldType;
-      JobStatus: TKMJobStatus;
-      Worker: TKMUnit;
-    end;
+    fFields: TKMFieldPlanArray;
     //List of fields which are shown visually but not verified by the server
     fFakeFields: array of record
       Loc: TKMPoint;
@@ -107,6 +120,10 @@ type
     procedure RemFieldPlan(const aLoc: TKMPoint);
     procedure RemFakeField(const aLoc: TKMPoint);
     procedure RemFakeDeletedField(const aLoc: TKMPoint);
+
+    // AI Informations
+    property Count: Integer read fFieldsCount;
+    property Fields: TKMFieldPlanArray read fFields;
 
     //Game events
     function BestBid(aWorker: TKMUnitWorker; out aBid: Single): Integer; //Calculate best bid for a given worker
@@ -394,7 +411,7 @@ begin
   RemFakeDeletedField(fFields[aIndex].Loc);
 
   fFields[aIndex].Loc := KMPOINT_ZERO;
-  fFields[aIndex].FieldType := ft_None;
+  fFields[aIndex].FieldType := ftNone;
   fFields[aIndex].JobStatus := js_Empty;
   gHands.CleanUpUnitPointer(fFields[aIndex].Worker); //Will nil the worker as well
 end;
@@ -407,7 +424,7 @@ procedure TKMFieldworksList.GetFields(aList: TKMPointTagList; const aRect: TKMRe
 var I: Integer;
 begin
   for I := 0 to fFieldsCount - 1 do
-  if (fFields[I].FieldType <> ft_None) and KMInRect(fFields[I].Loc, aRect) then
+  if (fFields[I].FieldType <> ftNone) and KMInRect(fFields[I].Loc, aRect) then
     aList.Add(fFields[I].Loc, Byte(fFields[I].FieldType));
 
   if aIncludeFake then
@@ -542,7 +559,7 @@ function TKMFieldworksList.HasField(const aLoc: TKMPoint): TKMFieldType;
 var
   I: Integer;
 begin
-  Result := ft_None;
+  Result := ftNone;
 
   for I := 0 to fFieldsCount - 1 do
   if KMSamePoint(fFields[I].Loc, aLoc) then
@@ -561,7 +578,7 @@ var
   I, K: Integer;
   Found: Boolean;
 begin
-  Result := ft_None;
+  Result := ftNone;
 
   //First check fake fields
   for I := 0 to Length(fFakeFields) - 1 do
@@ -705,7 +722,7 @@ end;
 
 procedure TKMHousePlanList.ClosePlan(aIndex: Integer);
 begin
-  fPlans[aIndex].HouseType := ht_None;
+  fPlans[aIndex].HouseType := htNone;
   fPlans[aIndex].Loc       := KMPOINT_ZERO;
   fPlans[aIndex].JobStatus := js_Empty;
   gHands.CleanUpUnitPointer(fPlans[aIndex].Worker);
@@ -725,7 +742,7 @@ begin
   HD := gRes.Houses;
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((fPlans[I].Loc.X + HD[fPlans[I].HouseType].EntranceOffsetX <> aSkip.X) or (fPlans[I].Loc.Y <> aSkip.Y)) then
   begin
     Entrance := KMPoint(fPlans[I].Loc.X + HD[fPlans[I].HouseType].EntranceOffsetX, fPlans[I].Loc.Y + 1);
@@ -740,6 +757,20 @@ begin
 end;
 
 
+// Check if this plan exist - aLoc is given by house entrance (offset of plans is moved back to entrance)
+function TKMHousePlanList.ExistPlan(const aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType = aHT)
+      AND KMSamePoint(  aLoc, KMPointAdd( fPlans[I].Loc, KMPoint(gRes.Houses[aHT].EntranceOffsetX,0) )  ) then
+	    Exit;
+  Result := False;
+end;
+
+
 procedure TKMHousePlanList.GiveTask(aIndex: Integer; aWorker: TKMUnitWorker);
 begin
   aWorker.BuildHouseArea(fPlans[aIndex].HouseType, fPlans[aIndex].Loc, aIndex);
@@ -748,22 +779,32 @@ begin
 end;
 
 
-function TKMHousePlanList.HasPlan(const aLoc: TKMPoint): Boolean;
+function TKMHousePlanList.HasPlan(const aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean;
 var
   I: Integer;
 begin
   Result := False;
+  aHouseType := htNone;
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
   then
   begin
+    aHouseType := fPlans[I].HouseType;
     Result := True;
     Exit;
   end;
+end;
+
+
+function TKMHousePlanList.HasPlan(const aLoc: TKMPoint): Boolean;
+var
+  HT: TKMHouseType;
+begin
+  Result := HasPlan(aLoc, HT);
 end;
 
 
@@ -772,7 +813,7 @@ var
   I: Integer;
 begin
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
@@ -792,7 +833,7 @@ var
 begin
   Result := False;
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and ((aLoc.X - fPlans[I].Loc.X + 3 in [1..4]) and
        (aLoc.Y - fPlans[I].Loc.Y + 4 in [1..4]) and
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
@@ -824,7 +865,7 @@ begin
 
   //Test all plans. We use Loc-2 to test plans centers
   for I := 0 to fPlansCount - 1 do
-    if (fPlans[I].HouseType <> ht_None)
+    if (fPlans[I].HouseType <> htNone)
     and InRange(fPlans[I].Loc.X - 2, Rect.Left, Rect.Right)
     and InRange(fPlans[I].Loc.Y - 2, Rect.Top, Rect.Bottom) then
     begin
@@ -858,7 +899,7 @@ begin
   Rect := KMRectGrow(aRect, 2);
 
   for I := 0 to fPlansCount - 1 do
-  if (fPlans[I].HouseType <> ht_None)
+  if (fPlans[I].HouseType <> htNone)
   and InRange(fPlans[I].Loc.X - 2, Rect.Left, Rect.Right)
   and InRange(fPlans[I].Loc.Y - 2, Rect.Top, Rect.Bottom) then
     aList.Add(KMPoint(fPlans[I].Loc.X + gRes.Houses[fPlans[I].HouseType].EntranceOffsetX, fPlans[I].Loc.Y), Byte(fPlans[I].HouseType));
@@ -1367,5 +1408,26 @@ begin
   AssignHouses;
 end;
 
+
+function TKMHousePlanList.GetPlansStoneDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].StoneCost;
+end;
+
+
+function TKMHousePlanList.GetPlansWoodDemands(): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to fPlansCount - 1 do
+    if (fPlans[I].HouseType <> htNone) then // fPlansCount may not be updated
+      Result := Result + gRes.Houses[ fPlans[I].HouseType ].WoodCost;
+end;
 
 end.

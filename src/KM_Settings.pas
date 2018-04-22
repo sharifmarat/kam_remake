@@ -1,4 +1,4 @@
-﻿unit KM_Settings;
+unit KM_Settings;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -106,6 +106,19 @@ type
     fReplayAutopause: Boolean;
     fReplayShowBeacons: Boolean; //Replay variable - show beacons during replay
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
+    fShowGameTime: Boolean;      //Show game time label (always)
+
+    fShowPlayersColors: Boolean; //Show player colors, if false then show self/enemy/ally colors
+//    fShowPlayersColorInGame: Boolean; //Show player colors in game, if false then show enemy/ally colors
+
+    fPlayerColorSelf: Cardinal;
+    fPlayerColorAlly: Cardinal;
+    fPlayerColorEnemy: Cardinal;
+
+//    fGameColorSelf: Cardinal;
+//    fGameColorAlly: Cardinal;
+//    fGameColorEnemy: Cardinal;
+
     fBrightness: Byte;
     fScrollSpeed: Byte;
     fAlphaShadows: Boolean;
@@ -166,6 +179,17 @@ type
     procedure SetReplayAutopause(aValue: Boolean);
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
+    procedure SetShowGameTime(aValue: Boolean);
+
+    procedure SetShowPlayersColors(aValue: Boolean);
+//    procedure SetShowPlayersColorInGame(aValue: Boolean);
+    procedure SetPlayerColorSelf(aValue: Cardinal);
+    procedure SetPlayerColorAlly(aValue: Cardinal);
+    procedure SetPlayerColorEnemy(aValue: Cardinal);
+//    procedure SetGameColorSelf(aValue: Cardinal);
+//    procedure SetGameColorAlly(aValue: Cardinal);
+//    procedure SetGameColorEnemy(aValue: Cardinal);
+
     procedure SetBrightness(aValue: Byte);
     procedure SetScrollSpeed(aValue: Byte);
     procedure SetAlphaShadows(aValue: Boolean);
@@ -228,6 +252,17 @@ type
     property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
     property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
+    property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
+
+    property ShowPlayersColors: Boolean read fShowPlayersColors write SetShowPlayersColors;
+//    property ShowPlayersColorInGame: Boolean read fShowPlayersColorInGame write SetShowPlayersColorInGame;
+    property PlayerColorSelf: Cardinal read fPlayerColorSelf write SetPlayerColorSelf;
+    property PlayerColorAlly: Cardinal read fPlayerColorAlly write SetPlayerColorAlly;
+    property PlayerColorEnemy: Cardinal read fPlayerColorEnemy write SetPlayerColorEnemy;
+//    property GameColorSelf: Cardinal read fGameColorSelf write SetGameColorSelf;
+//    property GameColorAlly: Cardinal read fGameColorAlly write SetGameColorAlly;
+//    property GameColorEnemy: Cardinal read fGameColorEnemy write SetGameColorEnemy;
+
     property Brightness: Byte read fBrightness write SetBrightness;
     property ScrollSpeed: Byte read fScrollSpeed write SetScrollSpeed;
     property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
@@ -358,6 +393,8 @@ procedure TKMainSettings.SaveToINI(const aFileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
+  if BLOCK_FILE_WRITE then
+    Exit;
   F := TMemIniFile.Create(aFileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
 
   F.WriteBool   ('GFX','FullScreen',      fFullScreen);
@@ -460,6 +497,7 @@ end;
 function TKMGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
+  TempCard: Int64;
 begin
   Result := FileExists(FileName);
 
@@ -475,6 +513,42 @@ begin
     fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
+    fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
+    fShowPlayersColors := F.ReadBool('Game', 'ShowPlayersColors', True); //Enabled by default
+//    fShowPlayersColors := F.ReadBool('Game', 'ShowPlayersColorInGame', True); //Enabled by default
+
+    //Load minimap colors as hex strings 6-hex digits width
+    if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorSelf', IntToHex(Integer(clPlayerSelf and $FFFFFF), 6)), TempCard) then
+      fPlayerColorSelf := $FF000000 or TempCard
+    else
+      fPlayerColorSelf := clPlayerSelf;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorAlly', IntToHex(Integer(clPlayerAlly and $FFFFFF), 6)), TempCard) then
+      fPlayerColorAlly := $FF000000 or TempCard
+    else
+      fPlayerColorAlly := clPlayerAlly;
+
+    if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorEnemy', IntToHex(Integer(clPlayerEnemy and $FFFFFF), 6)), TempCard) then
+      fPlayerColorEnemy := $FF000000 or TempCard
+    else
+      fPlayerColorEnemy := clPlayerEnemy;
+
+    //Load game colors as hex strings 6-hex digits width
+//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorSelf', IntToHex(Integer(clGameSelf and $FFFFFF), 6)), TempCard) then
+//      fGameColorSelf := $FF000000 or TempCard
+//    else
+//      fGameColorSelf := clGameSelf;
+//
+//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorAlly', IntToHex(Integer(clGameAlly and $FFFFFF), 6)), TempCard) then
+//      fGameColorAlly := $FF000000 or TempCard
+//    else
+//      fGameColorAlly := clGameAlly;
+//
+//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorEnemy', IntToHex(Integer(clGameEnemy and $FFFFFF), 6)), TempCard) then
+//      fGameColorEnemy := $FF000000 or TempCard
+//    else
+//      fGameColorEnemy := clGameEnemy;
+
     fScrollSpeed        := F.ReadInteger  ('Game', 'ScrollSpeed',       10);
     fSpeedPace          := F.ReadInteger  ('Game', 'SpeedPace',         100);
     fSpeedMedium        := F.ReadFloat    ('Game', 'SpeedMedium',       3);
@@ -549,6 +623,8 @@ procedure TKMGameSettings.SaveToINI(const FileName: UnicodeString);
 var
   F: TMemIniFile;
 begin
+  if BLOCK_FILE_WRITE then
+    Exit;
   F := TMemIniFile.Create(FileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
   try
     F.WriteInteger('GFX','Brightness',    fBrightness);
@@ -561,6 +637,19 @@ begin
     F.WriteBool   ('Game','ReplayAutopause',    fReplayAutopause);
     F.WriteBool   ('Game','ReplayShowBeacons',  fReplayShowBeacons);
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
+    F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
+
+    F.WriteBool   ('Game','ShowPlayersColors', fShowPlayersColors);
+//    F.WriteBool   ('Game','ShowPlayersColorInGame', fShowPlayersColorInGame);
+
+    F.WriteString ('Game','PlayerColorSelf',   IntToHex(fPlayerColorSelf and $FFFFFF, 6));
+    F.WriteString ('Game','PlayerColorAlly',   IntToHex(fPlayerColorAlly and $FFFFFF, 6));
+    F.WriteString ('Game','PlayerColorEnemy',  IntToHex(fPlayerColorEnemy and $FFFFFF, 6));
+
+//    F.WriteString ('Game','GameColorSelf',   IntToHex(fGameColorSelf and $FFFFFF, 6));
+//    F.WriteString ('Game','GameColorAlly',   IntToHex(fGameColorAlly and $FFFFFF, 6));
+//    F.WriteString ('Game','GameColorEnemy',  IntToHex(fGameColorEnemy and $FFFFFF, 6));
+
     F.WriteInteger('Game','ScrollSpeed',        fScrollSpeed);
     F.WriteInteger('Game','SpeedPace',          fSpeedPace);
     F.WriteFloat  ('Game','SpeedMedium',        fSpeedMedium);
@@ -823,6 +912,70 @@ begin
   fSpecShowBeacons := aValue;
   Changed;
 end;
+
+
+procedure TKMGameSettings.SetShowGameTime(aValue: Boolean);
+begin
+  fShowGameTime := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetShowPlayersColors(aValue: Boolean);
+begin
+  fShowPlayersColors := aValue;
+  Changed;
+end;
+
+
+//procedure TKMGameSettings.SetShowPlayersColorInGame(aValue: Boolean);
+//begin
+//  fShowPlayersColorInGame := aValue;
+//  Changed;
+//end;
+
+
+procedure TKMGameSettings.SetPlayerColorSelf(aValue: Cardinal);
+begin
+  fPlayerColorSelf := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetPlayerColorAlly(aValue: Cardinal);
+begin
+  fPlayerColorAlly := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetPlayerColorEnemy(aValue: Cardinal);
+begin
+  fPlayerColorEnemy := aValue;
+  Changed;
+end;
+
+
+//procedure TKMGameSettings.SetGameColorSelf(aValue: Cardinal);
+//begin
+//  fGameColorSelf := aValue;
+//  Changed;
+//end;
+//
+//
+//procedure TKMGameSettings.SetGameColorAlly(aValue: Cardinal);
+//begin
+//  fGameColorAlly := aValue;
+//  Changed;
+//end;
+//
+//
+//procedure TKMGameSettings.SetGameColorEnemy(aValue: Cardinal);
+//begin
+//  fGameColorEnemy := aValue;
+//  Changed;
+//end;
+
 
 
 procedure TKMGameSettings.SetScrollSpeed(aValue: Byte);

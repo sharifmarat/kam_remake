@@ -57,7 +57,7 @@ type
 implementation
 uses
   SysUtils, KromUtils, Math,
-  KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
+  KM_GameApp, KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
   KM_Units, KM_UnitGroups, KM_Hand, KM_HandsCollection,
   KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils,
   KM_GameTypes;
@@ -194,6 +194,25 @@ end;
 
 //MapEditor stores only commanders instead of all groups members
 procedure TKMMinimap.UpdateMinimapFromGame;
+
+  function GetColor(aHandId: TKMHandIndex): Cardinal;
+  begin
+    if (gGame <> nil) then
+    begin
+      if (gGame.IsMapEditor or gGameApp.GameSettings.ShowPlayersColors) then
+        Result := gHands[aHandId].FlagColor
+      else begin
+        if aHandId = gMySpectator.HandIndex then
+          Result := gGameApp.GameSettings.PlayerColorSelf
+        else if (gHands[aHandId].Alliances[gMySpectator.HandIndex] = at_Ally) then
+          Result := gGameApp.GameSettings.PlayerColorAlly
+        else
+          Result := gGameApp.GameSettings.PlayerColorEnemy;
+      end;
+    end else
+      Result := gHands[aHandId].FlagColor;
+  end;
+
 var
   FOW: Byte;
   ID: Word;
@@ -202,22 +221,22 @@ var
   P: TKMPoint;
   DoesFit: Boolean;
   Light: Smallint;
-  Owner: TKMHandIndex;
+//  Owner: TKMHandIndex;
   Group: TKMUnitGroup;
 begin
-  if OVERLAY_OWNERSHIP then
-  begin
-    for I := 0 to fMapY - 1 do
-      for K := 0 to fMapX - 1 do
-      begin
-        Owner := gAIFields.Influences.GetBestOwner(K,I);
-        if Owner <> PLAYER_NONE then
-          fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
-        else
-          fBase[I*fMapX + K] := $FF000000;
-      end;
-    Exit;
-  end;
+  //if OVERLAY_OWNERSHIP then
+  //begin
+  //  for I := 0 to fMapY - 1 do
+  //    for K := 0 to fMapX - 1 do
+  //    begin
+  //      Owner := gAIFields.Influences.GetBestOwner(K,I);
+  //      if Owner <> PLAYER_NONE then
+  //        fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
+  //      else
+  //        fBase[I*fMapX + K] := $FF000000;
+  //    end;
+  //  Exit;
+  //end;
 
   for I := 0 to fMapY - 1 do
     for K := 0 to fMapX - 1 do
@@ -230,13 +249,13 @@ begin
         if (fMyTerrain.Land[I+1,K+1].TileOwner <> -1)
           and not fMyTerrain.TileIsCornField(KMPoint(K+1, I+1)) //Do not show corn and wine on minimap
           and not fMyTerrain.TileIsWineField(KMPoint(K+1, I+1)) then
-          fBase[I*fMapX + K] := gHands[fMyTerrain.Land[I+1,K+1].TileOwner].FlagColor
+          fBase[I*fMapX + K] := GetColor(fMyTerrain.Land[I+1,K+1].TileOwner)
         else
         begin
           U := fMyTerrain.Land[I+1,K+1].IsUnit;
           if U <> nil then
             if U.Owner <> PLAYER_ANIMAL then
-              fBase[I*fMapX + K] := gHands[U.Owner].FlagColor
+              fBase[I*fMapX + K] := GetColor(U.Owner)
             else
               fBase[I*fMapX + K] := gRes.Units[U.UnitType].MinimapColor
           else
@@ -271,7 +290,7 @@ begin
       end;
 
   //Draw 'Resize map' feature on minimap
-  if (gGame <> nil) and (gGame.GameMode = gmMapEd)
+  if (gGame <> nil) and gGame.IsMapEditor
     and (mlMapResize in gGame.MapEditor.VisibleLayers)
     and not KMSameRect(gGame.MapEditor.ResizeMapRect, KMRECT_ZERO) then
     for I := 0 to fMapY - 1 do

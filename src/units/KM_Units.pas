@@ -19,6 +19,8 @@ type
 
   TKMActionResult = (ar_ActContinues, ar_ActDone, ar_ActAborted); //
 
+  TKMUnitArray = array of TKMUnit;
+
   TKMUnitAction = class
   protected
     fActionType: TKMUnitActionType;
@@ -357,7 +359,7 @@ var
 begin
   if (fHome <> nil)
     and not fHome.IsDestroyed
-    and (fHome.IsClosedForWorker or ((fHome.HouseType = ht_Barracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
+    and (fHome.IsClosedForWorker or ((fHome.HouseType = htBarracks) and (TKMHouseBarracks(fHome).NotAcceptRecruitFlag)))
     and not (fUnitTask is TKMTaskDie)
     and not (fUnitTask is TKMTaskDismiss) then
     begin
@@ -395,7 +397,7 @@ begin
             CleanHousePointer(True);    // Clean house pointer and free task
           end else
           if (wIsInsideHouse or wWantToGoOutShowHungry)
-            and not (fHome.HouseType = ht_Barracks) then // Recruits should not go out of Barracks
+            and not (fHome.HouseType = htBarracks) then // Recruits should not go out of Barracks
           begin
             SetActionGoIn(ua_Walk, gd_GoOutside, fHome); //Walk outside the house
             // If working inside - first we need to set house state to Idle, then to Empty
@@ -498,16 +500,16 @@ begin
   case fCurrentAction.fActionType of
     ua_Walk:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
         if gRes.Units[fUnitType].SupportsAction(ua_WalkArm) then
-          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
     ua_Work..ua_Eat:
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
     ua_WalkArm .. ua_WalkBooty2:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
   end;
 
@@ -547,15 +549,15 @@ var
   Msg: Word;
 begin
   case fHome.HouseType of
-    ht_Quary:       Msg := TX_MSG_STONE_DEPLETED;
-    ht_CoalMine:    Msg := TX_MSG_COAL_DEPLETED;
-    ht_IronMine:    Msg := TX_MSG_IRON_DEPLETED;
-    ht_GoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    ht_Woodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
+    htQuary:       Msg := TX_MSG_STONE_DEPLETED;
+    htCoalMine:    Msg := TX_MSG_COAL_DEPLETED;
+    htIronMine:    Msg := TX_MSG_IRON_DEPLETED;
+    htGoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
+    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
                       Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
                     else
                       Msg := TX_MSG_WOODCUTTER_DEPLETED;
-    ht_FisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fUnitType].MiningRange) then
+    htFisherHut:   if not gTerrain.CanFindFishingWater(fHome.PointBelowEntrance, gRes.Units[fUnitType].MiningRange) then
                       Msg := TX_MSG_FISHERMAN_TOO_FAR
                     else
                       Msg := TX_MSG_FISHERMAN_CANNOT_CATCH;
@@ -591,7 +593,7 @@ begin
   // Don't bother creating a task if there's no room for resulting ware
   // Saves us time on Fishers/Stonecutters/Woodcutters when they calculate routes to nearby deposits
   // Other houses where workers walk out can choose between cut/plant
-  if (fHome.HouseType in [ht_FisherHut, ht_Quary, ht_Wineyard])
+  if (fHome.HouseType in [htFisherHut, htQuary, htWineyard])
   and (fHome.CheckResOut(gRes.Houses[fHome.HouseType].ResOutput[Res]) >= MAX_WARES_IN_HOUSE) then
     Exit;
 
@@ -639,16 +641,16 @@ begin
   case fCurrentAction.fActionType of
     ua_Walk:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
         if gRes.Units[fUnitType].SupportsAction(ua_WalkArm) then
-          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+          gRenderPool.AddUnit(fUnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
     ua_Work..ua_Eat:
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
     ua_WalkArm .. ua_WalkBooty2:
       begin
-        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
-        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+        gRenderPool.AddUnit(fUnitType, ID, ua_Walk, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
+        gRenderPool.AddUnit(fUnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
       end;
   end;
 
@@ -752,14 +754,14 @@ begin
 
   ID := fUID * Byte(not (fCurrentAction.fActionType in [ua_Die, ua_Eat]));
 
-  gRenderPool.AddUnit(UnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+  gRenderPool.AddUnit(UnitType, ID, Act, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
 
   if fUnitTask is TKMTaskDie then Exit; //Do not show unnecessary arms
 
   if Carry <> wt_None then
     gRenderPool.AddUnitCarry(Carry, ID, Direction, AnimStep, XPaintPos, YPaintPos)
   else
-    gRenderPool.AddUnit(UnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, false);
+    gRenderPool.AddUnit(UnitType, ID, ua_WalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
 
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, Act, Direction, fThought, XPaintPos, YPaintPos);
@@ -832,11 +834,11 @@ end;
 procedure TKMUnitWorker.BuildField(aField: TKMFieldType; aLoc: TKMPoint; aIndex: Integer);
 begin
   case aField of
-    ft_Road: fUnitTask := TKMTaskBuildRoad.Create(Self, aLoc, aIndex);
-    ft_Corn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
-    ft_Wine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
+    ftRoad: fUnitTask := TKMTaskBuildRoad.Create(Self, aLoc, aIndex);
+    ftCorn: fUnitTask := TKMTaskBuildField.Create(Self, aLoc, aIndex);
+    ftWine: fUnitTask := TKMTaskBuildWine.Create(Self, aLoc, aIndex);
   else
-    raise Exception.Create('Unexpected TFieldType');
+    raise Exception.Create('Unexpected TKMFieldType');
   end;
 end;
 
@@ -893,7 +895,7 @@ begin
 
   ID := fUID * Byte(not (fCurrentAction.fActionType in [ua_Die, ua_Eat]));
 
-  gRenderPool.AddUnit(UnitType, ID, fCurrentAction.fActionType, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].FlagColor, true);
+  gRenderPool.AddUnit(UnitType, ID, fCurrentAction.fActionType, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
 
   if fThought <> th_None then
     gRenderPool.AddUnitThought(fUnitType, fCurrentAction.ActionType, Direction, fThought, XPaintPos, YPaintPos);
@@ -1417,7 +1419,7 @@ begin
 
   fHitPoints := Max(fHitPoints - aAmount, 0);
 
-  gScriptEvents.ProcUnitWounded(Self, aAttacker);
+  gHands[Owner].AI.UnitHPDecreaseNotification(Self, aAttacker);
 
   //Make sure to kill only once
   if (fHitPoints = 0) and not IsDeadOrDying then

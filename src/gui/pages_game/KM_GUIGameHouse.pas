@@ -16,6 +16,8 @@ type
     fLastBarracksUnit: Byte; //Last unit that was selected in Barracks, global for all barracks player owns
     fLastTHUnit: Byte; //Last unit that was selected in Townhall, global for all townhalls player owns
 
+    fSetViewportEvent: TPointFEvent;
+
     procedure Create_HouseTownhall;
     procedure Create_HouseBarracks;
     procedure Create_HouseMarket;
@@ -31,6 +33,8 @@ type
 
     procedure House_ClosedForWorkerToggle(Sender: TObject);
     procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
+
+    procedure HouseLogo_Click(Sender: TObject);
 
     procedure House_BarracksAcceptFlag(Sender: TObject);
     procedure House_BarracksUnitChange(Sender: TObject; Shift: TShiftState);
@@ -120,7 +124,7 @@ type
     AskDemolish: Boolean;
     OnHouseDemolish: TEvent;
 
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 
     procedure Show(aHouse: TKMHouse); overload;
     procedure Show(aHouse: TKMHouse; aAskDemolish: Boolean); overload;
@@ -137,14 +141,16 @@ uses
   KM_Game, KM_GameInputProcess, KM_Hand, 
   KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_HandsCollection, KM_RenderUI, KM_CommonUtils,
-  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils;
+  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils, KM_Points;
 
 
-constructor TKMGUIGameHouse.Create(aParent: TKMPanel);
+constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 var
   I: Integer;
 begin
   inherited Create;
+
+  fSetViewportEvent := aSetViewportEvent;
 
   Panel_House := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
     //Thats common things
@@ -169,6 +175,9 @@ begin
 
     Image_House_Logo := TKMImage.Create(Panel_House,90,41,32,32,338);
     Image_House_Logo.ImageCenter;
+    Image_House_Logo.HighlightOnMouseOver := True;
+    Image_House_Logo.OnClick := HouseLogo_Click;
+    Image_House_Logo.Hint := gResTexts[TX_HOUSE_LOGO_HINT];
 
     HealthBar_House := TKMPercentBar.Create(Panel_House,120,50,55,15);
     Label_House_UnderConstruction := TKMLabel.Create(Panel_House,0,110,TB_WIDTH,0,gResTexts[TX_HOUSE_UNDER_CONSTRUCTION],fnt_Grey,taCenter);
@@ -548,7 +557,7 @@ begin
   Label_House.Width := TB_WIDTH - Label_House.Left;
 
   Image_PlayerFlag.FlagColor := gHands[aHouse.Owner].FlagColor;
-  Image_PlayerFlag.Hint      := Format(gResTexts[TX_MAPED_HOUSE_FLAG_FOR_PLAYER_HINT], [gHands[aHouse.Owner].OwnerName]);
+  Image_PlayerFlag.Hint      := Format(gResTexts[TX_PLAYER_FLAG_HINT], [gHands[aHouse.Owner].OwnerName]);
   Image_House_Logo.TexID     := gRes.Houses[aHouse.HouseType].GUIIcon;
   Image_House_Worker.TexID   := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
   Image_House_Worker.Hint    := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName;
@@ -626,19 +635,19 @@ begin
   Panel_House.Show;
 
   case aHouse.HouseType of
-    ht_Marketplace:
+    htMarketplace:
         begin
           House_MarketFill(TKMHouseMarket(aHouse));
           Panel_HouseMarket.Show;
         end;
 
-    ht_Store:
+    htStore:
         begin
           House_StoreFill;
           Panel_HouseStore.Show;
         end;
 
-    ht_School:
+    htSchool:
         begin
           ResRow_School_Resource.WareCount := aHouse.CheckResIn(wt_Gold) - Byte(TKMHouseSchool(aHouse).HideOneGold);
           Button_School_UnitWIP.FlagColor := gHands[aHouse.Owner].FlagColor;
@@ -651,13 +660,13 @@ begin
           Panel_House_School.Show;
         end;
 
-    ht_Barracks:
+    htBarracks:
         begin
           House_BarracksUnitChange(nil, []);
           Panel_HouseBarracks.Show;
         end;
 
-    ht_Woodcutters:
+    htWoodcutters:
         begin
           House_WoodcutterChange(nil);
           Panel_HouseWoodcutter.Show;
@@ -677,8 +686,8 @@ begin
           ResRow_Common_Resource[1].Show;
           ResRow_Common_Resource[1].Top := 2 + LINE_HEIGHT;
         end;
-    ht_ArmorWorkshop: ShowArmorWorkshop(aHouse);
-    ht_TownHall:      ShowTownHall(aHouse);
+    htArmorWorkshop: ShowArmorWorkshop(aHouse);
+    htTownHall:      ShowTownHall(aHouse);
     else
         begin
           //First thing - hide everything
@@ -967,7 +976,7 @@ procedure TKMGUIGameHouse.House_ClosedForWorkerToggle(Sender: TObject);
 var
   House: TKMHouse;
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) 
+  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse)
     or (gMySpectator.Selected is TKMHouseBarracks) then Exit;
 
   House := TKMHouse(gMySpectator.Selected);
@@ -987,6 +996,21 @@ begin
   end else begin
     Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
     Image_House_Worker_Closed.Hide;
+  end;
+end;
+
+
+procedure TKMGUIGameHouse.HouseLogo_Click(Sender: TObject);
+var
+  H: TKMHouse;
+begin
+  if not (gMySpectator.Selected is TKMHouse) then Exit;
+
+  H := TKMHouse(gMySpectator.Selected);
+  if not H.IsDestroyed then
+  begin
+    if Assigned(fSetViewportEvent) then
+      fSetViewportEvent(KMPointF(H.Entrance));
   end;
 end;
 

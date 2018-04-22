@@ -33,14 +33,14 @@ type
     procedure SaveCampaignsProgress;
     procedure GameLoadingStep(const aText: UnicodeString);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
+    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
     procedure LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                 aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
-    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+                                 aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
+    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
-    procedure GameStart(aGameMode: TGameMode);
-    procedure GameEnd(aGameMode: TGameMode);
+    procedure GameStart(aGameMode: TKMGameMode);
+    procedure GameEnd(aGameMode: TKMGameMode);
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -70,7 +70,7 @@ type
     procedure NewSingleSave(const aSaveName: UnicodeString);
     procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId;
+    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode; aCampName: TKMCampaignId;
                              aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
     procedure NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
@@ -458,6 +458,13 @@ begin
     end;
   end;
 
+  if gGame.IsMultiplayer then
+  begin
+    if fNetworking.Connected then
+      fNetworking.AnnounceDisconnect;
+    fNetworking.Disconnect;
+  end;
+
   gGame.ReadyToStop := True;
 end;
 
@@ -474,13 +481,6 @@ begin
   if gGame = nil then Exit;
 
   PrepageStopGame(aMsg);
-
-  if gGame.IsMultiplayer then
-  begin
-    if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
-    fNetworking.Disconnect;
-  end;
 
   case aMsg of
     gr_Win,
@@ -554,7 +554,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TGameMode);
+procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
 var
   LoadError: UnicodeString;
 begin
@@ -593,7 +593,7 @@ end;
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(gr_Silent) (pointing to a wrong value)
 procedure TKMGameApp.LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                        aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
+                                        aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 var
   LoadError: UnicodeString;
 begin
@@ -629,7 +629,7 @@ begin
 end;
 
 
-procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
 var
   LoadError: string;
 begin
@@ -668,7 +668,7 @@ procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
 begin
   LoadGameFromScript(aCampaign.MissionFile(aMap), aCampaign.MissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -678,7 +678,7 @@ procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; 
 begin
   LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -688,14 +688,14 @@ begin
   //Convert SaveName to local FilePath
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, False), gmSingle);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
 
 
 procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
-var GameMode: TGameMode;
+var GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -708,16 +708,15 @@ begin
   begin
     //Copy text from lobby to in-game chat
     gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+
+    if Assigned(fOnGameStart) and (gGame <> nil) then
+      fOnGameStart(gGame.GameMode);
   end;
-
-  if Assigned(fOnGameStart) then
-    fOnGameStart(gGame.GameMode);
-
 end;
 
 
 procedure TKMGameApp.NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-var GameMode: TGameMode;
+var GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -730,13 +729,13 @@ begin
   //Copy the chat and typed lobby message to the in-game chat
   gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
 
 
-procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode;
+procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode;
                                     aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
   if FileExists(ExeDir + aMission) then
@@ -747,7 +746,7 @@ begin
   else
     fMainMenuInterface.PageChange(gpError, 'Can not repeat last mission');
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -757,7 +756,7 @@ procedure TKMGameApp.NewEmptyMap(aSizeX, aSizeY: Integer);
 begin
   LoadGameFromScratch(aSizeX, aSizeY, gmSingle);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 
 end;
@@ -770,7 +769,7 @@ begin
   else
     LoadGameFromScratch(aSizeX, aSizeY, gmMapEd);
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
@@ -787,20 +786,22 @@ begin
   Assert(ExtractFileExt(aFilePath) = EXT_SAVE_BASE_DOT);
   LoadGameFromSave(aFilePath, gmReplaySingle); //Will be changed to gmReplayMulti depending on save contents
 
-  if Assigned(fOnGameStart) then
+  if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
 end;
 
 
-procedure TKMGameApp.GameStart(aGameMode: TGameMode);
+procedure TKMGameApp.GameStart(aGameMode: TKMGameMode);
 begin
-  gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+  if gMain <> nil then
+    gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
 end;
 
 
-procedure TKMGameApp.GameEnd(aGameMode: TGameMode);
+procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
 begin
-  gMain.FormMain.SetSaveEditableMission(False);
+  if gMain <> nil then
+    gMain.FormMain.SetSaveEditableMission(False);
 end;
 
 

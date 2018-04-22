@@ -42,7 +42,7 @@ const
     [mk_AskForAuth,mk_AskToJoin,mk_ClientLost,mk_ReassignHost,mk_Disconnect,mk_Ping,mk_PingInfo,mk_PlayersList,
      mk_StartingLocQuery,mk_SetTeam,mk_FlagColorQuery,mk_ResetMap,mk_MapSelect,mk_SaveSelect,
      mk_ReadyToStart,mk_Start,mk_TextChat,mk_Kicked,mk_LangCode,mk_GameOptions,mk_ServerName,
-     mk_FileRequest,mk_FileChunk,mk_FileEnd,mk_FileAck,mk_FileProgress,mk_TextTranslated,mk_HasMapOrSave],
+     mk_FileRequest,mk_FileChunk,mk_FileEnd,mk_FileAck,mk_FileProgress,mk_TextTranslated,mk_HasMapOrSave,mk_SetPassword],
     //lgs_Loading
     [mk_AskForAuth,mk_ClientLost,mk_ReassignHost,mk_Disconnect,mk_Ping,mk_PingInfo,mk_PlayersList,
      mk_ReadyToPlay,mk_Play,mk_TextChat,mk_Kicked,mk_TextTranslated,mk_Vote],
@@ -75,8 +75,8 @@ type
     fServerAddress: string; // Used for reconnecting
     fServerPort: Word; // Used for reconnecting
     fRoomToJoin: Integer; // The room we should join once we hear from the server
-    fLastProcessedTick: cardinal;
-    fReconnectRequested: cardinal; // TickCount at which a reconnection was requested
+    fLastProcessedTick: Cardinal;
+    fReconnectRequested: Cardinal; // TickCount at which a reconnection was requested
     fMyNikname: AnsiString;
     fWelcomeMessage: UnicodeString;
     fServerName: AnsiString; // Name of the server we are currently in (shown in the lobby)
@@ -84,9 +84,9 @@ type
     fDescription: UnicodeString;
     fEnteringPassword: Boolean;
     fMyIndexOnServer: TKMNetHandleIndex;
-    fMyIndex: integer; // In NetPlayers list
+    fMyIndex: Integer; // In NetPlayers list
     fHostIndex: Integer; //In NetPlayers list
-    fIgnorePings: integer; // During loading ping measurements will be high, so discard them. (when networking is threaded this might be unnecessary)
+    fIgnorePings: Integer; // During loading ping measurements will be high, so discard them. (when networking is threaded this might be unnecessary)
     fJoinTimeout, fLastVoteTime: Cardinal;
     fReturnedToLobby: Boolean; //Did we get to the lobby by return to lobby feature?
     fNetPlayers: TKMNetPlayersList;
@@ -133,6 +133,7 @@ type
     fOnMPGameInfoChanged: TNotifyEvent;
     fOnCommands: TStreamIntEvent;
     fOnResyncFromTick: TResyncEvent;
+    fOnSetPassword: TAnsiStringEvent;
 
     procedure DecodePingInfo(aStream: TKMemoryStream);
     procedure ForcedDisconnect(Sender: TObject);
@@ -225,6 +226,7 @@ type
     procedure RequestFileTransfer;
     procedure VoteReturnToLobby;
     procedure AnnounceReadyToReturnToLobby;
+    procedure WakeUpNotReady;
 
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
@@ -258,7 +260,7 @@ type
     property OnFileTransferProgress: TTransferProgressEvent write fOnFileTransferProgress;    //file transfer progress to this player
     property OnPlayerFileTransferProgress: TTransferProgressPlayerEvent write fOnPlayerFileTransferProgress; //File transfer progress to other player
 
-    property OnPlayersSetup: TNotifyEvent write fOnPlayersSetup; //Player list updated
+    property OnPlayersSetup: TNotifyEvent read fOnPlayersSetup write fOnPlayersSetup; //Player list updated
     property OnUpdateMinimap: TNotifyEvent write fOnUpdateMinimap; //Update minimap
     property OnGameOptions: TNotifyEvent write fOnGameOptions; //Game options updated
     property OnMapName: TUnicodeStringEvent write fOnMapName;           //Map name updated
@@ -271,6 +273,7 @@ type
     property OnReadyToPlay: TNotifyEvent write fOnReadyToPlay;   //Update the list of players ready to play
     property OnPingInfo: TNotifyEvent write fOnPingInfo;         //Ping info updated
     property OnMPGameInfoChanged: TNotifyEvent write fOnMPGameInfoChanged;
+    property OnSetPassword: TAnsiStringEvent write fOnSetPassword;
 
     property OnDisconnect: TUnicodeStringEvent write fOnDisconnect;     //Lost connection, was kicked
     property OnJoinerDropped: TIntegerEvent write fOnJoinerDropped; //Other player disconnected
@@ -856,12 +859,17 @@ begin
   Assert(IsHost, 'Only host can set password');
   fPassword := aPassword;
   fOnMPGameInfoChanged(Self); //Send the password state to the server so it is shown in server list
-  PacketSendA(NET_ADDRESS_SERVER, mk_SetPassword, fPassword);
+  PacketSendA(NET_ADDRESS_SERVER, mk_SetPassword, fPassword); //Send to server
+
+  PacketSendA(NET_ADDRESS_OTHERS, mk_SetPassword, fPassword); //Send to other players as well, just to let them know we have password here
+
+  if Assigned(fOnSetPassword) then
+    fOnSetPassword(fPassword);
 end;
 
 
 //Joiner indicates that he is ready to start
-function TKMNetworking.ReadyToStart:boolean;
+function TKMNetworking.ReadyToStart: Boolean;
 begin
   if (fSelectGameKind = ngk_Save) and (MyNetPlayer.StartLocation = 0) then
   begin
@@ -886,8 +894,9 @@ begin
 end;
 
 
-function TKMNetworking.CanStart:boolean;
-var i:integer;
+function TKMNetworking.CanStart: Boolean;
+var
+  I: Integer;
 begin
   case fSelectGameKind of
     ngk_Map:  Result := fNetPlayers.AllReady and fMapInfo.IsValid;
@@ -899,7 +908,7 @@ begin
     else      Result := False;
   end;
   //At least one player must NOT be a spectator or closed
-  for i:=1 to fNetPlayers.Count do
+  for I := 1 to fNetPlayers.Count do
     if not fNetPlayers[i].IsSpectator and not fNetPlayers[i].IsClosed then
       Exit; //Exit with result from above
 
@@ -964,6 +973,7 @@ begin
 
   //Init random seed for all the players
   fNetGameOptions.RandomSeed := RandomRange(1, 2147483646);
+  gLog.AddTime('Game Seed: ' + IntToStr(fNetGameOptions.RandomSeed));
 
   //Let everyone start with final version of fNetPlayers and fNetGameOptions
   SendGameOptions;
@@ -987,19 +997,19 @@ begin
 
   //In saves we should load team and color from the SaveInfo
   if (fNetGameState = lgs_Lobby) and (fSelectGameKind = ngk_Save) then
-    for i:=1 to NetPlayers.Count do
-      if (NetPlayers[i].StartLocation <> LOC_RANDOM) and (NetPlayers[i].StartLocation <> LOC_SPECTATE) then
+    for I := 1 to NetPlayers.Count do
+      if (NetPlayers[I].StartLocation <> LOC_RANDOM) and (NetPlayers[I].StartLocation <> LOC_SPECTATE) then
       begin
-        NetPlayers[i].FlagColorID := fSaveInfo.Info.ColorID[NetPlayers[i].StartLocation-1];
-        NetPlayers[i].Team := fSaveInfo.Info.Team[NetPlayers[i].StartLocation-1];
+        NetPlayers[I].FlagColorID := fSaveInfo.Info.ColorID[NetPlayers[I].HandIndex];
+        NetPlayers[I].Team := fSaveInfo.Info.Team[NetPlayers[I].HandIndex];
       end
       else
       begin
-        NetPlayers[i].Team := 0;
+        NetPlayers[I].Team := 0;
         //Spectators may still change their color, but may not use one from the save
-        if (NetPlayers[i].FlagColorID <> 0)
-        and SaveInfo.Info.ColorUsed(NetPlayers[i].FlagColorID) then
-          NetPlayers[i].FlagColorID := 0;
+        if (NetPlayers[I].FlagColorID <> 0)
+        and SaveInfo.Info.ColorUsed(NetPlayers[I].FlagColorID) then
+          NetPlayers[I].FlagColorID := 0;
       end;
 
   fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname); //The host's index can change when players are removed
@@ -1225,6 +1235,7 @@ procedure TKMNetworking.PlayerJoined(aServerIndex: TKMNetHandleIndex; const aPla
 begin
   fNetPlayers.AddPlayer(aPlayerName, aServerIndex, '');
   PacketSend(aServerIndex, mk_AllowToJoin);
+  PacketSendA(aServerIndex, mk_SetPassword, fPassword); //Send joiner password, just to tell him
   SendMapOrSave(aServerIndex); //Send the map first so it doesn't override starting locs
 
   if fSelectGameKind = ngk_Save then
@@ -1844,7 +1855,7 @@ begin
                   if not fNetPlayers[PlayerIndex].Dropped then
                   begin
                     PostMessage(TX_NET_LOST_CONNECTION, csLeave, fNetPlayers[PlayerIndex].NiknameColoredU);
-                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU+' lost connection');
+                    gLog.LogNetConnection(fNetPlayers[PlayerIndex].NiknameU + ' lost connection');
                   end;
                   if fNetGameState = lgs_Game then
                     fNetPlayers.DisconnectPlayer(tmpHandleIndex)
@@ -2066,6 +2077,15 @@ begin
                 fNetPlayers.LoadFromStream(M);
                 fMyIndex := fNetPlayers.NiknameToLocal(fMyNikname);
                 StartGame;
+              end;
+
+      mk_SetPassword:
+              if not IsHost then //Save password for joiner's only, as it's used to show Lock image
+              begin
+                M.ReadA(tmpStringA); //Password
+                fPassword := tmpStringA;
+                if Assigned(fOnSetPassword) then
+                  fOnSetPassword(fPassword);
               end;
 
       mk_ReadyToReturnToLobby:
@@ -2456,6 +2476,12 @@ begin
       MPGameInfo.Players[I].IsSpectator := NetPlayers[I].IsSpectator;
       MPGameInfo.Players[I].IsHost      := HostIndex = I;
       MPGameInfo.Players[I].PlayerType  := NetPlayers[I].PlayerNetType;
+      if (gHands = nil) //Game is not loaded yet...
+        or MPGameInfo.Players[I].IsSpectator
+        or (NetPlayers[I].HandIndex = -1) then
+        MPGameInfo.Players[I].WonOrLost := wol_None
+      else
+        MPGameInfo.Players[I].WonOrLost := gHands[NetPlayers[I].HandIndex].AI.WonOrLost;
     end;
 
     M := TKMemoryStream.Create;
@@ -2528,6 +2554,23 @@ procedure TKMNetworking.AnnounceReadyToReturnToLobby;
 begin
   //Send it to ourselves too, that's simplest
   PacketSend(NET_ADDRESS_ALL, mk_ReadyToReturnToLobby);
+end;
+
+
+procedure TKMNetworking.WakeUpNotReady;
+var
+  I, K: Integer;
+begin
+  K := 0;
+  for I := 1 to fNetPlayers.Count do
+  begin
+    if fNetPlayers[I].Connected and not fNetPlayers[I].ReadyToStart then
+    begin
+      PostMessage(TX_LOBBY_ALERT_NOT_READY, csSystem, gResTexts[TX_LOBBY_READY], '', fNetPlayers[I].IndexOnServer);
+      Inc(K);
+    end;
+  end;
+  PostLocalMessage(Format(gResTexts[TX_LOBBY_ALERT_GET_READY_SENT], [IntToStr(K)]), csSystem);
 end;
 
 

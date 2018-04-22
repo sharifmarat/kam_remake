@@ -24,6 +24,7 @@ type
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); override;
     function GetResIn(aI: Byte): Word; override;
     procedure SetResIn(aI: Byte; aValue: Word); override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -237,6 +238,14 @@ procedure TKMHouseTownHall.SetResIn(aI: Byte; aValue: Word);
 begin
   if aI = 1 then
     GoldCnt := aValue;
+end;
+
+
+function TKMHouseTownHall.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited;
+  if not Result then
+    Result := GoldCnt + gHands[Owner].Deliveries.Queue.GetDeliveriesToHouseCnt(Self, wt_Gold) > GoldMaxCnt;
 end;
 
 

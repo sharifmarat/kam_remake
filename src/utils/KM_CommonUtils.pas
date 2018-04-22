@@ -26,6 +26,7 @@ uses
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+  function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
@@ -66,6 +67,10 @@ uses
   procedure KMSwapInt(var A,B: Word); overload;
   procedure KMSwapInt(var A,B: Integer); overload;
   procedure KMSwapInt(var A,B: Cardinal); overload;
+
+  procedure KMSwapFloat(var A,B: Single); overload;
+  procedure KMSwapFloat(var A,B: Double); overload;
+  procedure KMSwapFloat(var A,B: Extended); overload;
 
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
@@ -171,6 +176,25 @@ end;
 
 procedure KMSwapInt(var A,B: Cardinal);
 var S: cardinal;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+
+procedure KMSwapFloat(var A,B: Single);
+var S: Single;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+procedure KMSwapFloat(var A,B: Double);
+var S: Double;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+procedure KMSwapFloat(var A,B: Extended);
+var S: Extended;
 begin
   S:=A; A:=B; B:=S;
 end;
@@ -504,6 +528,15 @@ begin
   A2 := Min(Round(aAlpha * A), 255);
 
   Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
+end;
+
+
+function GetGreyColor(aGreyLevel: Byte): Cardinal;
+begin
+  Result := aGreyLevel
+            or (aGreyLevel shl 8)
+            or (aGreyLevel shl 16)
+            or $FF000000;
 end;
 
 

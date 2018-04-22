@@ -1,4 +1,4 @@
-﻿unit KM_Game;
+unit KM_Game;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -34,7 +34,7 @@ type
     fIsPaused: Boolean;
     fGameSpeed: Single; //Actual speedup value
     fGameSpeedMultiplier: Word; //How many ticks are compressed into one
-    fGameMode: TGameMode;
+    fGameMode: TKMGameMode;
     fWaitingForNetwork: Boolean; //Indicates that we are waiting for other players commands in MP
     fAdvanceFrame: Boolean; //Replay variable to advance 1 frame, afterwards set to false
     fSaveFile: UnicodeString;  //Relative pathname to savegame we are playing, so it gets saved to crashreport
@@ -67,7 +67,7 @@ type
     procedure MultiplayerRig;
     procedure SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
     procedure UpdatePeaceTime;
-    function WaitingPlayersList: TKMByteArray;
+    function GetWaitingPlayersList: TKMByteArray;
     function FindHandToSpec: Integer;
     procedure UpdateTickCounters;
     function GetTicksBehindCnt: Single;
@@ -77,6 +77,7 @@ type
     function GetGameTickDuration: Single;
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
+    procedure IncGameTick;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -92,7 +93,7 @@ type
     ///	<param name="aNetworking">
     ///	  Pointer to networking class, required if this is a multiplayer game.
     ///	</param>
-    constructor Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
+    constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
     destructor Destroy; override;
 
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
@@ -155,7 +156,7 @@ type
     property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
 
     property Scripting: TKMScripting read fScripting;
-    property GameMode: TGameMode read fGameMode;
+    property GameMode: TKMGameMode read fGameMode;
     property SaveFile: UnicodeString read fSaveFile;
     function GetMissionFile: UnicodeString;
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
@@ -205,7 +206,7 @@ var
 
 implementation
 uses
-  Classes, Controls, Dialogs, SysUtils, KromUtils, Math,
+  Classes, Controls, Dialogs, SysUtils, KromUtils, Math, TypInfo,
   {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
@@ -219,9 +220,9 @@ uses
 //Create template for the Game
 //aRender - who will be rendering the Game session
 //aNetworking - access to MP stuff
-constructor TKMGame.Create(aGameMode: TGameMode; aRender: TRender; aNetworking: TKMNetworking);
+constructor TKMGame.Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
 const
-  UIMode: array[TGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
+  UIMode: array[TKMGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
   inherited Create;
 
@@ -261,8 +262,6 @@ begin
   gTerrain := TKMTerrain.Create;
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
-
-  InitUnitStatEvals; //Army
 
   if DO_PERF_LOGGING then fPerfLog := TKMPerfLog.Create;
   gLog.AddTime('<== Game creation is done ==>');
@@ -339,7 +338,7 @@ end;
 procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                             aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
 const
-  GAME_PARSE: array [TGameMode] of TKMMissionParsingMode = (
+  GAME_PARSE: array [TKMGameMode] of TKMMissionParsingMode = (
     mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
 var
   I: Integer;
@@ -380,8 +379,7 @@ begin
                 FillChar(PlayerEnabled, SizeOf(PlayerEnabled), #0);
                 for I := 1 to fNetworking.NetPlayers.Count do
                   if not fNetworking.NetPlayers[I].IsSpectator then
-                    //PlayerID is 0 based
-                    PlayerEnabled[fNetworking.NetPlayers[I].StartLocation - 1] := True;
+                    PlayerEnabled[fNetworking.NetPlayers[I].HandIndex] := True;
 
                 //Fixed AIs are always enabled (e.g. coop missions)
                 for I := 0 to fNetworking.MapInfo.LocCount - 1 do
@@ -558,7 +556,7 @@ end;
 procedure TKMGame.MultiplayerRig;
 var
   I: Integer;
-  handIndex: TKMHandIndex;
+  HIndex: TKMHandIndex;
 begin
   //Copy game options from lobby to this game
   fGameOptions.Peacetime := fNetworking.NetGameOptions.Peacetime;
@@ -571,16 +569,19 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     if not fNetworking.NetPlayers[I].IsSpectator then
     begin
-      handIndex := fNetworking.NetPlayers[I].StartLocation - 1;
-      gHands[handIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
-      gHands[handIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
+      HIndex := fNetworking.NetPlayers[I].HandIndex;
+      gHands[HIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
+      gHands[HIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
+
+      if fNetworking.NetPlayers[I].IsAdvancedComputer then
+        gHands[HIndex].AI.Setup.ApplyAgressiveBuilderSetup(True);
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
       if fNetworking.SelectGameKind = ngk_Save then
-        TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(handIndex, gHands[handIndex].HandType);
+        TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(HIndex, gHands[HIndex].HandType);
 
       //Set owners name so we can write it into savegame/replay
-      gHands[handIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
+      gHands[HIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
     end;
 
   //Setup alliances
@@ -595,7 +596,7 @@ begin
     gMySpectator.FOWIndex := PLAYER_NONE; //Show all by default while spectating
   end
   else
-    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.StartLocation - 1);
+    gMySpectator := TKMSpectator.Create(fNetworking.MyNetPlayer.HandIndex);
 
   //We cannot remove a player from a save (as they might be interacting with other players)
 
@@ -636,11 +637,11 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     if not fNetworking.NetPlayers[I].IsSpectator then
     begin
-      PlayerI := gHands[fNetworking.NetPlayers[I].StartLocation - 1]; //PlayerID is 0 based
+      PlayerI := gHands[fNetworking.NetPlayers[I].HandIndex];
       for K := 1 to fNetworking.NetPlayers.Count do
         if not fNetworking.NetPlayers[K].IsSpectator then
         begin
-          PlayerK := fNetworking.NetPlayers[K].StartLocation - 1; //PlayerID is 0 based
+          PlayerK := fNetworking.NetPlayers[K].HandIndex;
 
           //Players are allies if they belong to same team (team 0 means free-for-all)
           if (I = K)
@@ -818,8 +819,15 @@ end;
 procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
 begin
   if IsMultiplayer then
-    fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
-      [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+  begin
+    fNetworking.PostLocalMessage(
+      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
+             [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+      csSystem);
+
+    if Assigned(fNetworking.OnPlayersSetup) then
+      fNetworking.OnPlayersSetup(nil); //Update players panel
+  end;
 
   if fGameMode = gmMultiSpectate then
     Exit;
@@ -873,17 +881,31 @@ begin
                   GameResult := gr_Defeat;
                   fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
                 end;
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+
               end;
-    gmMultiSpectate:  if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
-                        fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
-                          [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
+    gmMultiSpectate:
+              begin
+                if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
+                  fNetworking.PostLocalMessage(
+                    Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
+                           [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+                    csSystem);
+
+                if Assigned(fNetworking.OnPlayersSetup) then
+                  fNetworking.OnPlayersSetup(nil); //Update players panel
+              end;
     //We have not thought of anything to display on players defeat in Replay
   end;
 end;
 
 
 //Get list of players we are waiting for. We do it here because fNetworking does not knows about GIP
-function TKMGame.WaitingPlayersList: TKMByteArray;
+function TKMGame.GetWaitingPlayersList: TKMByteArray;
+var
+  ErrorMsg: UnicodeString;
 begin
   case fNetworking.NetGameState of
     lgs_Game, lgs_Reconnecting:
@@ -892,8 +914,13 @@ begin
     lgs_Loading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
-    else
-        raise Exception.Create('WaitingPlayersList from wrong state');
+    else  begin
+            SetLength(Result, 0);
+            ErrorMsg := 'GetWaitingPlayersList from wrong state: '
+                       + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
+            gLog.AddTime(ErrorMsg);
+            //raise Exception.Create(ErrorMsg); //This error sometimes occur when host quits, but that's not critical, so we can just log it
+          end;
   end;
 end;
 
@@ -901,13 +928,13 @@ end;
 procedure TKMGame.WaitingPlayersDisplay(aWaiting: Boolean);
 begin
   fWaitingForNetwork := aWaiting;
-  fGamePlayInterface.ShowNetworkLag(aWaiting, WaitingPlayersList, fNetworking.IsHost);
+  fGamePlayInterface.ShowNetworkLag(aWaiting, GetWaitingPlayersList, fNetworking.IsHost);
 end;
 
 
 procedure TKMGame.WaitingPlayersDrop;
 begin
-  fNetworking.DropPlayers(WaitingPlayersList);
+  fNetworking.DropPlayers(GetWaitingPlayersList);
 end;
 
 
@@ -1294,7 +1321,7 @@ begin
   end;
 
   //don't show speed clock in MP since you can't turn it on/off
-  if (fGamePlayInterface <> nil) and IsSpeedUpAllowed then
+  if (fGamePlayInterface <> nil) and (IsSpeedUpAllowed or gGameApp.GameSettings.ShowGameTime) then
     fGamePlayInterface.ShowClock(fGameSpeed);
 
   //Need to adjust the delay immediately in MP
@@ -1346,6 +1373,8 @@ var
   gameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
+  if BLOCK_SAVE then // This must be here because of paraller Runner
+    Exit;
   gLog.AddTime('Saving game start: ' + aPathName);
 
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
@@ -1789,6 +1818,14 @@ begin
 end;
 
 
+procedure TKMGame.IncGameTick;
+begin
+  Inc(fGameTickCount); //Thats our tick counter for gameplay events
+  if LOG_GAME_TICK then
+    gLog.AddTime('Tick: ' + IntToStr(fGameTickCount));
+end;
+
+
 function TKMGame.PlayNextTick: Boolean;
 var
   PeaceTimeLeft: Cardinal;
@@ -1812,7 +1849,8 @@ begin
                       if fWaitingForNetwork then
                         WaitingPlayersDisplay(False);
 
-                      Inc(fGameTickCount); //Thats our tick counter for gameplay events
+                      IncGameTick;
+
                       if (fGameMode in [gmMulti, gmMultiSpectate]) then
                         fNetworking.LastProcessedTick := fGameTickCount;
                       //Tell the master server about our game on the specific tick (host only)
@@ -1861,7 +1899,8 @@ begin
                   end;
     gmReplaySingle,gmReplayMulti:
                   begin
-                    Inc(fGameTickCount); //Thats our tick counter for gameplay events
+                    IncGameTick;
+
                     fScripting.UpdateState;
                     UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                     gTerrain.UpdateState;
@@ -1957,4 +1996,3 @@ end;
 
 
 end.
-

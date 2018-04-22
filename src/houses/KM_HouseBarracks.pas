@@ -16,6 +16,7 @@ type
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
   protected
     function GetFlagPointTexId: Word; override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
@@ -106,7 +107,7 @@ begin
   inherited;
   //A new Barracks should inherit the accept properies of the first Barracks of that player,
   //which stops a sudden flow of unwanted wares to it as soon as it is created.
-  FirstBarracks := TKMHouseBarracks(gHands[fOwner].FindHouse(ht_Barracks, 1));
+  FirstBarracks := TKMHouseBarracks(gHands[fOwner].FindHouse(htBarracks, 1));
   if (FirstBarracks <> nil) and not FirstBarracks.IsDestroyed then
   begin
     for WT := WARFARE_MIN to WARFARE_MAX do
@@ -210,6 +211,12 @@ end;
 function TKMHouseBarracks.GetFlagPointTexId: Word;
 begin
   Result := 249;
+end;
+
+
+function TKMHouseBarracks.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or NotAcceptFlag[aWareType];
 end;
 
 

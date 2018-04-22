@@ -27,6 +27,7 @@ type
     function FindEmptyHouse(aUnitType: TKMUnitType; const Loc: TKMPoint): TKMHouse;
     function FindHouse(aType: TKMHouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
+    function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -72,17 +73,17 @@ begin
   ID := gGame.GetNewUID;
 
   case aHouseType of
-    ht_Swine,
-    ht_Stables:       Result := TKMHouseSwineStable.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_Inn:           Result := TKMHouseInn.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_Marketplace:   Result := TKMHouseMarket.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_School:        Result := TKMHouseSchool.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_Barracks:      Result := TKMHouseBarracks.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_TownHall:      Result := TKMHouseTownHall.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_Store:         Result := TKMHouseStore.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_WatchTower:    Result := TKMHouseTower.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_Woodcutters:   Result := TKMHouseWoodcutters.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
-    ht_ArmorWorkshop: Result := TKMHouseArmorWorkshop.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htSwine,
+    htStables:       Result := TKMHouseSwineStable.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htInn:           Result := TKMHouseInn.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htMarketplace:   Result := TKMHouseMarket.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htSchool:        Result := TKMHouseSchool.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htBarracks:      Result := TKMHouseBarracks.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htTownHall:      Result := TKMHouseTownHall.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htStore:         Result := TKMHouseStore.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htWatchTower:    Result := TKMHouseTower.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htWoodcutters:   Result := TKMHouseWoodcutters.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
+    htArmorWorkshop: Result := TKMHouseArmorWorkshop.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
     else              Result := TKMHouse.Create(ID, aHouseType,PosX,PosY, aOwner, aHBS);
   end;
 
@@ -200,7 +201,7 @@ begin
        not Houses[I].IsClosedForWorker then                         // if house is not closed for worker
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
-      if (Houses[I].HouseType = ht_Barracks)
+      if (Houses[I].HouseType = htBarracks)
         and ((Houses[I].DeliveryMode <> dm_Delivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
       if not gTerrain.Route_CanBeMade(Loc, Houses[I].PointBelowEntrance, tpWalk, 0) then Continue;
 
@@ -208,7 +209,7 @@ begin
 
       //Always prefer Towers to Barracks by making Barracks Bid much less attractive
       //In case of multiple barracks, prefer the closer one (players should make multiple schools or use WareDelivery to control it)
-      if Houses[I].HouseType = ht_Barracks then
+      if Houses[I].HouseType = htBarracks then
         Dist := Dist * 1000;
 
       if Dist < BestBid then
@@ -219,7 +220,7 @@ begin
 
     end;
 
-  if (Result <> nil) and (Result.HouseType <> ht_Barracks) then
+  if (Result <> nil) and (Result.HouseType <> htBarracks) then
     Result.HasOwner := True; //Become owner except Barracks;
 end;
 
@@ -227,7 +228,7 @@ end;
 function TKMHousesCollection.FindHouse(aType: TKMHouseType; X, Y: word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse;
 var HT: THouseTypeSet;
 begin
-  if aType = ht_Any then HT := [Low(TKMHouseType)..High(TKMHouseType)]
+  if aType = htAny then HT := [Low(TKMHouseType)..High(TKMHouseType)]
   else                   HT := [aType];
   Result := FindHouse(HT, X, Y, aIndex, aOnlyCompleted);
 end;
@@ -275,6 +276,29 @@ begin
 end;
 
 
+function TKMHousesCollection.FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
+var
+  I,Idx: Integer;
+begin
+  SetLength(Result, 12);
+  Idx := 0;
+  for I := 0 to Count - 1 do
+    if (Houses[I].HouseType in aTypes)
+      AND (not aOnlyCompleted OR Houses[I].IsComplete)
+      AND not Houses[I].IsDestroyed then
+    begin
+      if (KMLengthSqr(Houses[I].GetPosition, aLoc) <= aSqrRadius) then
+      begin
+        if (Idx >= Length(Result)) then
+          SetLength(Result, Idx + 12);
+        Result[Idx] := Houses[I];
+        Idx := Idx + 1;
+      end;
+    end;
+  SetLength(Result,Idx);
+end;
+
+
 procedure TKMHousesCollection.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
@@ -303,17 +327,17 @@ begin
   begin
     LoadStream.Read(HouseType, SizeOf(HouseType));
     case HouseType of
-      ht_Swine,
-      ht_Stables:       T := TKMHouseSwineStable.Load(LoadStream);
-      ht_Inn:           T := TKMHouseInn.Load(LoadStream);
-      ht_Marketplace:   T := TKMHouseMarket.Load(LoadStream);
-      ht_School:        T := TKMHouseSchool.Load(LoadStream);
-      ht_Barracks:      T := TKMHouseBarracks.Load(LoadStream);
-      ht_Store:         T := TKMHouseStore.Load(LoadStream);
-      ht_WatchTower:    T := TKMHouseTower.Load(LoadStream);
-      ht_Woodcutters:   T := TKMHouseWoodcutters.Load(LoadStream);
-      ht_ArmorWorkshop: T := TKMHouseArmorWorkshop.Load(LoadStream);
-      ht_TownHall:      T := TKMHouseTownHall.Load(LoadStream);
+      htSwine,
+      htStables:       T := TKMHouseSwineStable.Load(LoadStream);
+      htInn:           T := TKMHouseInn.Load(LoadStream);
+      htMarketplace:   T := TKMHouseMarket.Load(LoadStream);
+      htSchool:        T := TKMHouseSchool.Load(LoadStream);
+      htBarracks:      T := TKMHouseBarracks.Load(LoadStream);
+      htStore:         T := TKMHouseStore.Load(LoadStream);
+      htWatchTower:    T := TKMHouseTower.Load(LoadStream);
+      htWoodcutters:   T := TKMHouseWoodcutters.Load(LoadStream);
+      htArmorWorkshop: T := TKMHouseArmorWorkshop.Load(LoadStream);
+      htTownHall:      T := TKMHouseTownHall.Load(LoadStream);
       else              T := TKMHouse.Load(LoadStream);
     end;
 

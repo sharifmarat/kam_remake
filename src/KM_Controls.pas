@@ -106,6 +106,7 @@ type
     fClickHoldHandled: Boolean;
     fTimeOfLastMouseDown: Cardinal;
     fLastMouseDownButton: TMouseButton;
+    fLastClickPos: TKMPoint;
 
     fOnClick: TNotifyEvent;
     fOnClickShift: TNotifyEventShift;
@@ -366,6 +367,7 @@ type
     ImageAnchors: TKMAnchorsSet;
     Highlight: Boolean;
     HighlightOnMouseOver: Boolean;
+    HighlightCoef: Single;
     Lightness: Single;
     ClipToBounds: Boolean;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui);
@@ -1191,6 +1193,7 @@ type
   private
     fCaption: UnicodeString; //Current caption (Default or from list)
     fDefaultCaption: UnicodeString;
+    fDropWidth: Integer;
     fList: TKMListBox;
     fListTopIndex: Integer;
     procedure UpdateDropPosition; override;
@@ -1202,6 +1205,7 @@ type
     function GetItem(aIndex: Integer): UnicodeString;
     function GetItemIndex: smallint; override;
     procedure SetItemIndex(aIndex: smallint); override;
+    procedure SetDropWidth(aDropWidth: Integer);
   protected
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
@@ -1218,6 +1222,7 @@ type
     property DefaultCaption: UnicodeString read fDefaultCaption write fDefaultCaption;
     property Item[aIndex: Integer]: UnicodeString read GetItem;
     property List: TKMListBox read fList;
+    property DropWidth: Integer read fDropWidth write SetDropWidth;
 
     procedure Paint; override;
   end;
@@ -1238,9 +1243,9 @@ type
     procedure ListHide(Sender: TObject); override;
     function ListVisible: Boolean; override;
     function GetItem(aIndex: Integer): TKMListRow;
-    function GetItemIndex: smallint; override;
-    procedure SetItemIndex(aIndex: smallint); override;
-    procedure SetDropWidth(aDropWidth:Integer);
+    function GetItemIndex: Smallint; override;
+    procedure SetItemIndex(aIndex: Smallint); override;
+    procedure SetDropWidth(aDropWidth: Integer);
   protected
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
@@ -1437,6 +1442,8 @@ type
 
   TKMGraphLine = record
                 Title: UnicodeString;
+                TitleDetailed: TStringArray;
+                TitleDetailedColor: TKMCardinalArray;
                 Tag: Integer;
                 Color: TColor4;
                 Visible: Boolean;
@@ -1459,6 +1466,8 @@ type
     fMaxTime: Cardinal; //Maximum time (in sec), used only for Rendering time ticks
     fMaxValue: Cardinal; //Maximum value (by vertical axis)
     fPeaceTime: Cardinal;
+
+    //Legend separators
     fSeparatorPositions: TXStringList;
     fSeparatorHeight: Byte;
     fSeparatorColor: TColor4;
@@ -1473,7 +1482,9 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
 
-    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
+    procedure AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+                      const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1); overload;
     procedure AddAltLine(const aAltValues: TKMCardinalArray);
     procedure TrimToFirstVariation;
     property Caption: UnicodeString read fCaption write fCaption;
@@ -1672,6 +1683,7 @@ begin
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
+  fLastClickPos := KMPOINT_ZERO;
 
   if aParent <> nil then
     fID := aParent.fMasterControl.GetNextCtrlID
@@ -2053,8 +2065,9 @@ begin
   //because we would not like to delay Click just to make sure it is single.
   //On the ther hand it does no harm to call Click first
   if (Button = mbLeft)
-  and Assigned(fOnDoubleClick)
-  and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
+    and Assigned(fOnDoubleClick)
+    and KMSamePoint(fLastClickPos, KMPoint(X,Y))
+    and (GetTimeSince(fTimeOfLastClick) <= GetDoubleClickTime) then
   begin
     fTimeOfLastClick := 0;
     fOnDoubleClick(Self);
@@ -2062,7 +2075,10 @@ begin
   else
   begin
     if (Button = mbLeft) and Assigned(fOnDoubleClick) then
+    begin
       fTimeOfLastClick := TimeGet;
+      fLastClickPos := KMPoint(X,Y);
+    end;
 
     if Assigned(fOnClickShift) then
       fOnClickShift(Self, Shift)
@@ -2763,8 +2779,9 @@ begin
   fTexID := aTexID;
   fFlagColor := $FFFF00FF;
   ImageAnchors := [anLeft, anTop];
-  Highlight := false;
-  HighlightOnMouseOver := false;
+  Highlight := False;
+  HighlightOnMouseOver := False;
+  HighlightCoef := 0.4;
 end;
 
 
@@ -2813,7 +2830,7 @@ begin
     TKMRenderUI.SetupClipY(AbsTop,  AbsTop + Height);
   end;
 
-  PaintLightness := Lightness + 0.4 * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
+  PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
   TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness);
   TKMRenderUI.ReleaseClipX;
@@ -6665,7 +6682,8 @@ begin
 end;
 
 
-procedure TKMColumnBox.DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean; aAllowHighlight: Boolean = True);
+procedure TKMColumnBox.DoPaintLine(aIndex: Integer; X, Y: Integer; PaintWidth: Integer; aColumnsToShow: array of Boolean;
+                                   aAllowHighlight: Boolean = True);
   function IsHighlightOverCell(aCellIndex: Integer): Boolean;
   begin
     Result := aAllowHighlight
@@ -6780,11 +6798,11 @@ begin
 
     if IsFocused then
     begin
-      ShapeColor := clListSelShape;//$88888888;
-      OutlineColor := clListSelOutline;//$FFFFFFFF;
+      ShapeColor := clListSelShape;
+      OutlineColor := clListSelOutline;
     end else begin
-      ShapeColor := clListSelShapeUnfocused;//$66666666;
-      OutlineColor := clListSelOutlineUnfocused;//$FFA0A0A0;
+      ShapeColor := clListSelShapeUnfocused;
+      OutlineColor := clListSelOutlineUnfocused;
     end;
 
     TKMRenderUI.WriteShape(AbsLeft, Y + fItemHeight * (fItemIndex - TopIndex), PaintWidth, fItemHeight, ShapeColor);
@@ -7122,6 +7140,8 @@ begin
   fList.fOnClick := ListClick;
   fList.fOnChange := ListChange;
 
+  DropWidth := aWidth;
+
   ListHide(nil);
   fList.OnKeyDown := ListKeyDown;
 end;
@@ -7191,6 +7211,14 @@ begin
 end;
 
 
+procedure TKMDropList.SetDropWidth(aDropWidth: Integer);
+begin
+  fDropWidth := aDropWidth;
+  fList.AbsLeft := AbsLeft + Width - aDropWidth;
+  fList.Width := aDropWidth;
+end;
+
+
 procedure TKMDropList.SetEnabled(aValue: Boolean);
 begin
   inherited;
@@ -7218,14 +7246,14 @@ procedure TKMDropList.UpdateDropPosition;
 begin
   if Count > 0 then
   begin
-    fList.Height := Math.min(fDropCount, fList.Count) * fList.ItemHeight + fList.SeparatorsCount*fList.SeparatorHeight;
+    fList.Height := Math.Min(fDropCount, fList.Count) * fList.ItemHeight + fList.SeparatorsCount*fList.SeparatorHeight;
 
     if fDropUp then
       fList.AbsTop := AbsTop - fList.Height
     else
       fList.AbsTop := AbsTop + Height;
 
-    fList.Left := AbsLeft - MasterParent.AbsLeft;
+    fList.Left := AbsLeft + Width - DropWidth - MasterParent.AbsLeft;
   end;
 end;
 
@@ -7287,11 +7315,16 @@ end;
 
 
 procedure TKMDropList.Paint;
-var Col: TColor4;
+var
+  Col: TColor4;
 begin
   inherited;
 
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
+  if fEnabled then
+    Col := icWhite
+  else
+    Col := icGray2;
+
   TKMRenderUI.WriteText(AbsLeft+4, AbsTop+4, Width-8, fCaption, fFont, taLeft, Col);
 end;
 
@@ -7429,7 +7462,7 @@ procedure TKMDropColumns.UpdateDropPosition;
 begin
   if Count > 0 then
   begin
-    fList.Height := Math.min(fDropCount, fList.RowCount) * fList.ItemHeight + fList.Header.Height * Ord(fList.ShowHeader);
+    fList.Height := Math.Min(fDropCount, fList.RowCount) * fList.ItemHeight + fList.Header.Height * Ord(fList.ShowHeader);
 
     if fDropUp then
       fList.AbsTop := AbsTop - fList.Height
@@ -7460,16 +7493,20 @@ end;
 
 
 procedure TKMDropColumns.Paint;
-var Col: TColor4;
+var
+  Col: TColor4;
 begin
   inherited;
 
-  if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
-
-  if ItemIndex <> -1 then
-    fList.DoPaintLine(ItemIndex, AbsLeft, AbsTop, Width - fButton.Width, fColumnsToShowWhenListHidden, False)
+  if fEnabled then
+    Col := icWhite
   else
-    TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 4, Width - 8 - fButton.Width, fDefaultCaption, fFont, taLeft, Col);
+    Col := icGray2;
+
+  if ItemIndex = -1 then
+    TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 4, Width - 8 - fButton.Width, fDefaultCaption, fFont, taLeft, Col)
+  else
+    fList.DoPaintLine(ItemIndex, AbsLeft, AbsTop, Width - fButton.Width, fColumnsToShowWhenListHidden, False);
 end;
 
 
@@ -7857,8 +7894,22 @@ end;
 
 
 procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aValues: TKMCardinalArray; aTag: Integer = -1);
+var
+  TitleDetailed: TStringArray;
+  TitleDetailedColor: TKMCardinalArray;
+begin
+  SetLength(TitleDetailed, 0);
+  SetLength(TitleDetailedColor, 0);
+  AddLine(aTitle, aColor, TitleDetailed, TitleDetailedColor, aValues, aTag);
+end;
+
+
+procedure TKMChart.AddLine(const aTitle: UnicodeString; aColor: TColor4; const aTitleDetailed: TStringArray;
+                           const aTitleDetailedColor: TKMCardinalArray; const aValues: TKMCardinalArray; aTag: Integer = -1);
 begin
   if fMaxLength = 0 then Exit;
+
+  Assert(Length(aTitleDetailed) = Length(aTitleDetailedColor), 'aTitleDetailed and aTitleDetailedColor should have same length');
 
   //Make sure there is enough Values to copy to local storage with Move procedure
   Assert(Length(aValues) >= fMaxLength);
@@ -7869,6 +7920,8 @@ begin
   fLines[fCount].Title := aTitle;
   fLines[fCount].Tag := aTag;
   fLines[fCount].Visible := True;
+  fLines[fCount].TitleDetailed := aTitleDetailed;
+  fLines[fCount].TitleDetailedColor := aTitleDetailedColor;
   SetLength(fLines[fCount].Values, fMaxLength);
   if SizeOf(aValues) <> 0 then
     Move(aValues[0], fLines[fCount].Values[0], SizeOf(aValues[0]) * fMaxLength);
@@ -8008,7 +8061,7 @@ end;
 
 function TKMChart.GetLineNumber(aY: Integer): Integer;
 var
-  I, S, LineTop, LienBottom: Integer;
+  I, S, LineTop, LineBottom: Integer;
 begin
   Result := -1;
   S := 0;
@@ -8020,13 +8073,13 @@ begin
       Inc(LineTop, fSeparatorHeight);
       Inc(S);
     end;
-    LienBottom := LineTop + fItemHeight;
-    if InRange(aY, LineTop, LienBottom) then
+    LineBottom := LineTop + fItemHeight*(1 + Length(Lines[I].TitleDetailed));
+    if InRange(aY, LineTop, LineBottom) then
     begin
       Result := I;
       Exit;
     end;
-    LineTop := LienBottom;
+    LineTop := LineBottom;
   end;
 end;
 
@@ -8110,11 +8163,22 @@ var
           PaintAxisLabel(I * Best);
   end;
 
+  function GetLineColor(aColor: Cardinal): Cardinal;
+  begin
+    //Adjust the color if it blends with black background
+    Result := EnsureBrightness(aColor, 0.3);
+
+    // If color is similar to highlight color, then use alternative HL color
+    if GetColorDistance(Result, clChartHighlight) < 0.1 then
+      Result := clChartHighlight2;
+  end;
+
   procedure RenderChartAndLegend;
   const
     MARKS_FONT: TKMFont = fnt_Grey;
   var
-    I, S, CheckSize, XPos, YPos, Height: Integer;
+    I, J, S, CheckSize, XPos, YPos, Height: Integer;
+    TitleDetailedH: Integer;
     NewColor: TColor4;
   begin
     CheckSize := gRes.Fonts[MARKS_FONT].GetTextSize('v').Y + 1;
@@ -8122,21 +8186,11 @@ var
     XPos := G.Right + 10;
     YPos := G.Top + 8 + 20*Byte(fLegendCaption <> '');
 
-    //Legend title and outline
-    Height := fItemHeight*fCount + 6 + 20*Byte(fLegendCaption <> '') + fSeparatorPositions.Count*fSeparatorHeight;
-    TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
-    TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
-    if fLegendCaption <> '' then
-      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
+    TitleDetailedH := 0;
     //Charts and legend
     for I := 0 to fCount - 1 do
     begin
-      //Adjust the color if it blends with black background
-      NewColor := EnsureBrightness(fLines[I].Color, 0.3);
-
-      // If color is similar to highlight color, then use alternative HL color
-      if GetColorDistance(NewColor, clChartHighlight) < 0.1 then
-        NewColor := clChartHighlight2;
+      NewColor := GetLineColor(fLines[I].Color);
 
       if (csOver in State) and (I = fLineOver) then
         NewColor := clChartHighlight;
@@ -8164,7 +8218,22 @@ var
       //Legend
       TKMRenderUI.WriteText(XPos + CheckSize, YPos, 0, fLines[I].Title, fnt_Game, taLeft, NewColor);
       Inc(YPos, fItemHeight);
+
+      //Detailed legend
+      for J := Low(fLines[I].TitleDetailed) to High(fLines[I].TitleDetailed) do
+      begin
+        TKMRenderUI.WriteText(XPos + CheckSize + 5, YPos, 0, fLines[I].TitleDetailed[J], fnt_Grey, taLeft, GetLineColor(fLines[I].TitleDetailedColor[J]));
+        Inc(YPos, fItemHeight);
+        Inc(TitleDetailedH, fItemHeight);
+      end;
     end;
+
+    //Legend title and outline
+    Height := fItemHeight*fCount + TitleDetailedH + 6 + 20*Byte(fLegendCaption <> '') + fSeparatorPositions.Count*fSeparatorHeight;
+    TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
+    TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
+    if fLegendCaption <> '' then
+      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
   end;
 
 var

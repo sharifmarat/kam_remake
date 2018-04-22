@@ -4,13 +4,17 @@ interface
 uses
   Classes, Math, StrUtils, SysUtils,
   KM_Controls, KM_Defaults,
-  KM_InterfaceGame, KM_ResHouses;
+  KM_InterfaceGame, KM_ResHouses, KM_CommonTypes;
 
 
 type
   TKMGUIGameStats = class
   private
     fOnShowStats: TNotifyEvent;
+    fLastHouseUIDs: array [HOUSE_MIN..HOUSE_MAX] of Cardinal;
+    fSetViewportEvent: TPointFEvent;
+    procedure House_Stat_Clicked(Sender: TObject);
+    procedure ResetUIDs;
   protected
     Panel_Stats: TKMPanel;
       Panel_StatBlock: array [0..STATS_LINES_CNT-1] of TKMPanel;
@@ -20,7 +24,7 @@ type
       Stat_UnitQty, Stat_UnitWip: array [CITIZEN_MIN..CITIZEN_MAX] of TKMLabel;
       Button_ShowStats: TKMButtonFlat;
   public
-    constructor Create(aParent: TKMPanel; aOnShowStats: TNotifyEvent);
+    constructor Create(aParent: TKMPanel; aOnShowStats: TNotifyEvent; aSetViewportEvent: TPointFEvent);
 
     procedure Show;
     procedure Hide;
@@ -33,11 +37,11 @@ type
 implementation
 uses
   KM_RenderUI, KM_HandsCollection, KM_ResTexts, KM_Resource, KM_ResFonts, KM_ResUnits,
-  KM_Hand, KM_Pics;
+  KM_Houses, KM_Hand, KM_Pics, KM_Points;
 
 
 { TKMGUIGameStats }
-constructor TKMGUIGameStats.Create(aParent: TKMPanel; aOnShowStats: TNotifyEvent);
+constructor TKMGUIGameStats.Create(aParent: TKMPanel; aOnShowStats: TNotifyEvent; aSetViewportEvent: TPointFEvent);
 const
   HOUSE_W = 30;
   UNIT_W = 26;
@@ -50,6 +54,8 @@ begin
   inherited Create;
 
   fOnShowStats := aOnShowStats;
+  fSetViewportEvent := aSetViewportEvent;
+  ResetUIDs;
 
   Panel_Stats := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
   Panel_Stats.Anchors := [anLeft, anTop, anBottom];
@@ -63,12 +69,13 @@ begin
 
       OffX := 0;
       for K := Low(StatPlan[I].HouseType) to High(StatPlan[I].HouseType) do
-        if StatPlan[I].HouseType[K] <> ht_None then
+        if StatPlan[I].HouseType[K] <> htNone then
         begin
           HT := StatPlan[I].HouseType[K];
           Stat_HousePic[HT] := TKMImage.Create(Panel_StatBlock[I], OffX, 0, HOUSE_W, 30, 41); //Filled with [?] at start
           Stat_HousePic[HT].Hint := gRes.Houses[HT].HouseName;
           Stat_HousePic[HT].ImageCenter;
+          Stat_HousePic[HT].Tag := Byte(HT);
           Stat_HouseWip[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W  ,  0,  '', fnt_Grey, taRight);
           Stat_HouseWip[HT].Hitable := False;
           Stat_HouseQty[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W-2, 16, '-', fnt_Grey, taRight);
@@ -159,7 +166,7 @@ begin
   begin
     HTotalConstrOpenedQty := 0;
     for K := Low(StatPlan[I].HouseType) to High(StatPlan[I].HouseType) do
-    if not (StatPlan[I].HouseType[K] in [ht_None, ht_Any]) then
+    if not (StatPlan[I].HouseType[K] in [htNone, htAny]) then
     begin
       HT := StatPlan[I].HouseType[K];
       Qty := gMySpectator.Hand.Stats.GetHouseQty(HT);
@@ -176,6 +183,14 @@ begin
       begin
         Stat_HousePic[HT].TexID := 41;
         Stat_HousePic[HT].Hint := gResTexts[TX_HOUSE_NOT_AVAILABLE]; //Building not available
+      end;
+      if Qty > 0 then
+      begin
+        Stat_HousePic[HT].HighlightOnMouseOver := True;
+        Stat_HousePic[HT].OnClick := House_Stat_Clicked;
+      end else begin
+        Stat_HousePic[HT].HighlightOnMouseOver := False;
+        Stat_HousePic[HT].OnClick := nil;
       end;
     end;
 
@@ -200,6 +215,35 @@ begin
       Stat_UnitPic[UT].Hint := gRes.Units[UT].GUIName;
       Stat_UnitPic[UT].FlagColor := gMySpectator.Hand.FlagColor;
     end;
+  end;
+end;
+
+
+procedure TKMGUIGameStats.ResetUIDs;
+var
+  HT: TKMHouseType;
+begin
+  for HT := Low(fLastHouseUIDs) to High(fLastHouseUIDs) do
+    fLastHouseUIDs[HT] := 0;
+end;
+
+
+procedure TKMGUIGameStats.House_Stat_Clicked(Sender: TObject);
+var
+  NextHouse: TKMHouse;
+  HT: TKMHouseType;
+begin
+  Assert(Sender is TKMImage);
+  if not Assigned(fSetViewportEvent) then Exit;
+
+  HT := TKMHouseType(TKMImage(Sender).Tag);
+
+  NextHouse := gMySpectator.Hand.GetNextHouseWSameType(HT, fLastHouseUIDs[HT]);
+  if NextHouse <> nil then
+  begin
+    gMySpectator.Highlight := NextHouse;
+    fSetViewportEvent(KMPointF(NextHouse.Entrance)); //center viewport on that house
+    fLastHouseUIDs[HT] := NextHouse.UID;
   end;
 end;
 

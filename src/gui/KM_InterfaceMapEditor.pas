@@ -85,6 +85,7 @@ type
     procedure ShowSubMenu(aIndex: Byte);
     procedure ExecuteSubMenuAction(aIndex: Byte);
     procedure Update_Label_Coordinates;
+    procedure MapTypeChanged(aIsMultiplayer: Boolean);
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
@@ -219,7 +220,7 @@ begin
   fGuiTown := TKMMapEdTown.Create(Panel_Common, PageChanged);
   fGuiPlayer := TKMMapEdPlayer.Create(Panel_Common, PageChanged);
   fGuiMission := TKMMapEdMission.Create(Panel_Common, PageChanged);
-  fGuiMenu := TKMMapEdMenu.Create(Panel_Common, PageChanged);
+  fGuiMenu := TKMMapEdMenu.Create(Panel_Common, PageChanged, MapTypeChanged);
 
   //Objects pages
   fGuiUnit := TKMMapEdUnit.Create(Panel_Common);
@@ -232,7 +233,7 @@ begin
   fGuiFormations := TKMMapEdTownFormations.Create(Panel_Main);
   fGuiGoal := TKMMapEdPlayerGoal.Create(Panel_Main);
   fGuiRMG := TKMMapEdRMG.Create(Panel_Main);
-  fGuiMenuQuickPlay := TKMMapEdMenuQuickPlay.Create(Panel_Main);
+  fGuiMenuQuickPlay := TKMMapEdMenuQuickPlay.Create(Panel_Main, MapTypeChanged);
 
   //Pass pop-ups to their dispatchers
   fGuiTown.GuiDefence.FormationsPopUp := fGuiFormations;
@@ -254,6 +255,7 @@ begin
   end;
 
   HidePages;
+  AfterCreateComplete;
 end;
 
 
@@ -848,6 +850,12 @@ begin
 end;
 
 
+procedure TKMapEdInterface.MapTypeChanged(aIsMultiplayer: Boolean);
+begin
+  SetLoadMode(aIsMultiplayer);
+end;
+
+
 procedure TKMapEdInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
 begin
   inherited MouseMove(Shift, X, Y, aHandled);
@@ -1200,7 +1208,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.SetLoadMode(aMultiplayer:boolean);
+procedure TKMapEdInterface.SetLoadMode(aMultiplayer: Boolean);
 begin
   fGuiMenu.SetLoadMode(aMultiplayer);
 end;

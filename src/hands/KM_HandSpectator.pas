@@ -191,16 +191,16 @@ procedure TKMSpectator.UpdateSelect;
 var
   NewSelected: TObject;
 
-  procedure CheckNewSelected;
+  procedure CheckNewSelected(aAllowSelectAllies: Boolean);
   var
     OwnerIndex: TKMHandIndex;
   begin
     OwnerIndex := GetGameObjectOwnerIndex(NewSelected);
     if OwnerIndex <> -1 then
     begin
-      if (OwnerIndex <> fHandIndex) then  // check if we selected our unit/ally's or enemy's
+      if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
       begin
-        if (Hand.Alliances[OwnerIndex] = at_Ally)
+        if (aAllowSelectAllies and (Hand.Alliances[OwnerIndex] = at_Ally))
           or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
           fIsSelectedMyObj := False
         else
@@ -216,7 +216,7 @@ begin
   NewSelected := gHands.GetUnitByUID(gGameCursor.ObjectUID);
   //In-game player can select only own and ally Units
   if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-    CheckNewSelected;
+    CheckNewSelected(False or ALLOW_SELECT_ALLY_UNITS);
 
   //Don't allow the player to select dead units
   if ((NewSelected is TKMUnit) and TKMUnit(NewSelected).IsDeadOrDying)
@@ -229,7 +229,7 @@ begin
     NewSelected := gHands.GetGroupByMember(TKMUnitWarrior(NewSelected));
 
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected;
+      CheckNewSelected(False or ALLOW_SELECT_ALLY_UNITS);
   end;
 
   //Update selected groups selected unit
@@ -243,7 +243,7 @@ begin
 
     //In-game player can select only own and ally Units
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected;
+      CheckNewSelected(True);
 
     //Don't allow the player to select destroyed houses
     if (NewSelected is TKMHouse) and TKMHouse(NewSelected).IsDestroyed then

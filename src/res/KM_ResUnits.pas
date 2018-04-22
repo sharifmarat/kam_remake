@@ -461,7 +461,7 @@ begin
     closefile(ft);
 
     {AssignFile(ft,ExeDir+'Units.txt'); rewrite(ft);
-    for ii:=Low(TUnitType) to High(TUnitType) do
+    for ii:=Low(TKMUnitType) to High(TKMUnitType) do
     if UnitsDat[ii].IsValid then
     begin
       writeln(ft);
