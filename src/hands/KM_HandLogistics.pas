@@ -130,6 +130,8 @@ type
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
 
+    function GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType = wt_All): Integer;
+
     function GetAvailableDeliveriesCount: Integer;
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
     procedure AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
@@ -562,6 +564,26 @@ begin
 end;
 
 
+function TKMDeliveries.GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType): Integer;
+var
+  I, iD: Integer;
+begin
+  Result := 0;
+  for I := 1 to fQueueCount do
+  begin
+    if fQueue[I].JobStatus = js_Taken then
+    begin
+      iD := fQueue[I].DemandId;
+      if (fDemand[iD].Loc_House = aHouse)
+        and (fDemand[iD].Ware = aWareType)
+        and not fDemand[iD].IsDeleted
+        and (fDemand[iD].BeingPerformed > 0) then
+        Inc(Result);
+    end;
+  end;
+end;
+
+
 //Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
 function TKMDeliveries.TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): Word;
 var
@@ -667,37 +689,16 @@ begin
   //If Demand and Offer aren't deleted
   Result := Result and (not fDemand[iD].IsDeleted) and (aIgnoreOffer or not fOffer[iO].IsDeleted);
 
-  //If Demand house has WareDelivery toggled ON
-  Result := Result and ((fDemand[iD].Loc_House = nil) or (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery));
-
-  //If Demand is a ArmorWorkshop and it accepts current ware delivery
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htArmorWorkshop) or
-                        (TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fOffer[iO].Ware)));
-
-  //If Demand is TownHall and its max gold count value > gold count value
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htTownHall) or
-                        (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt));
-
-  //If Demand is a Storehouse and it has WareDelivery toggled ON
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htStore) or
-                        (not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware]));
+  //If Demand house should abandon delivery
+  Result := Result and ((fDemand[iD].Loc_House = nil) or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
 
   //Warfare has a preference to be delivered to Barracks
   if Result
     and (fOffer[iO].Ware in [WARFARE_MIN..WARFARE_MAX])
     and (fDemand[iD].Loc_House <> nil) then
   begin
-    //If Demand is a Barracks and it has WareDelivery toggled OFF
-    if (fDemand[iD].Loc_House.HouseType = htBarracks)
-    and TKMHouseBarracks(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware] then
-      Result := False;
-
     //Permit delivery of warfares to Store only if player has no Barracks or they all have blocked ware
-    if (fDemand[iD].Loc_House <> nil)
-      and (fDemand[iD].Loc_House.HouseType = htStore) then
+    if fDemand[iD].Loc_House.HouseType = htStore then
     begin
       //Scan through players Barracks, if none accepts - allow deliver to Store
       I := 1;

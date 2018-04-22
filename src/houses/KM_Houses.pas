@@ -59,11 +59,11 @@ type
 
     fResourceIn: array [1..4] of Byte; //Resource count in input
     fResourceDeliveryCount: array[1..4] of Word; //Count of the resources we have ordered for the input (used for ware distribution)
-    fResourceOut: array [1..4]of Byte; //Resource count in output
-    fResourceOrder: array [1..4]of Word; //If HousePlaceOrders=true then here are production orders
+    fResourceOut: array [1..4] of Byte; //Resource count in output
+    fResourceOrder: array [1..4] of Word; //If HousePlaceOrders=true then here are production orders
     fResourceOutPool: array[0..19] of Byte;
     fLastOrderProduced: Byte;
-    fResOrderDesired: array [1..4]of Single;
+    fResOrderDesired: array [1..4] of Single;
 
     fIsOnSnow: Boolean;
     fSnowStep: Single;
@@ -142,6 +142,8 @@ type
     property NewDeliveryMode: TKMDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
     procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
+
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -241,6 +243,7 @@ type
     WaresCount: array [WARE_MIN .. WARE_MAX] of Word;
   protected
     procedure Activate(aWasBuilt: Boolean); override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -265,6 +268,8 @@ type
   private
     fAcceptWood: Boolean;
     fAcceptLeather: Boolean;
+  protected
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
@@ -658,6 +663,12 @@ end;
 function TKMHouse.AllowDeliveryModeChange: Boolean;
 begin
   Result := gRes.Houses[fHouseType].AcceptsWares;
+end;
+
+
+function TKMHouse.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := DeliveryMode <> dm_Delivery;
 end;
 
 
@@ -1950,6 +1961,12 @@ begin
 end;
 
 
+function TKMHouseStore.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or NotAcceptFlag[aWareType];
+end;
+
+
 { TKMHouseArmorWorkshop }
 constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
@@ -1991,6 +2008,12 @@ begin
     wt_Wood: Result := fAcceptWood;
     wt_Leather: Result := fAcceptLeather;
   end;
+end;
+
+
+function TKMHouseArmorWorkshop.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or not AcceptWareForDelivery(aWareType);
 end;
 
 
