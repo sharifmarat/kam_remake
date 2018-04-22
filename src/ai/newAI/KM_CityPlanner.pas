@@ -1471,7 +1471,7 @@ const
           begin
             Loc := BuildFF.Locs.Items[I];
             Bid := 100000
-                   - BuildFF.Distance[Loc] * 200; // Snap crit is aggressive
+                   - BuildFF.Distance[Loc] * 200 // Snap crit is aggressive
                    + SnapCrit(aHT, Loc);
             if (Bid > BestBid) then
             begin
