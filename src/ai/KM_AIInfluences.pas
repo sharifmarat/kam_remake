@@ -12,14 +12,14 @@ uses
 const
   // Avoid bulding values of specific actions (tile lock by specific action)
   AVOID_BUILDING_UNLOCK = 0;
-  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 30;
-  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 40;
-  AVOID_BUILDING_COAL_TILE = 50;
-  AVOID_BUILDING_NODE_LOCK_FIELD = 65;
-  AVOID_BUILDING_NODE_LOCK_ROAD = 70;
-  AVOID_BUILDING_MINE_TILE = 100;
-  AVOID_BUILDING_INACCESSIBLE_TILES = 120;
-  AVOID_BUILDING_FOREST_RANGE = 150; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
+  AVOID_BUILDING_HOUSE_OUTSIDE_LOCK = 10;
+  AVOID_BUILDING_HOUSE_INSIDE_LOCK = 15;
+  AVOID_BUILDING_COAL_TILE = 20;
+  AVOID_BUILDING_NODE_LOCK_FIELD = 25;
+  AVOID_BUILDING_NODE_LOCK_ROAD = 30;
+  AVOID_BUILDING_MINE_TILE = 40;
+  AVOID_BUILDING_INACCESSIBLE_TILES = 45;
+  AVOID_BUILDING_FOREST_RANGE = 200; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
   AVOID_BUILDING_FOREST_MINIMUM = 255 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
 
 
@@ -96,7 +96,7 @@ type
     property EvalArea[const aY,aX: Word]: Byte read GetAreaEval;
 
     // Avoid building
-    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
+    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
     procedure RemAvoidBuilding(aArea: TKMRect);
     // Army presence
     // City influence
@@ -228,7 +228,7 @@ end;
 
 
 //Make the area around to be avoided by common houses
-procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreasing: Boolean = False; aDecreaseSpeed: Single = 1);
+procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
 var
   X,Y: Integer;
   SqrDist, SqrMaxDist: Single;
@@ -242,13 +242,7 @@ begin
     begin
       SqrDist := Sqr(aX-X) + Sqr(aY-Y);
       if (SqrDist <= SqrMaxDist) then
-      begin
-        if aDecreasing then
-          //AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round((1 - Dist * MaxDistInv) * aValue)), 255)
-          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseSpeed)), 255)
-        else
-          AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + aValue, 255);
-      end;
+        AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseCoef)), 255);
     end;
 end;
 
@@ -282,42 +276,42 @@ procedure TKMInfluences.InitAvoidBuilding();
       end;
   end;
   // New AI does not use flood fill -> unreachable areas must be detected and building of houses must be avoided here
-  procedure InitReachableArea();
-  var
-    PL: TKMHandIndex;
-    I: Integer;
-    MinP, MaxP: TKMPoint;
-    CenterPoints: TKMPointArray;
-    RoadableFF: TKKRoadableFF;
-  begin
-    if (Length(AvoidBuilding) = 0) then
-      Exit;
-    MinP := KMPoint(1,1);
-    MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
-    RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
-    try
-      for PL := 0 to gHands.Count - 1 do
-      begin
-        gAIFields.Eye.OwnerUpdate(PL);
-        CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-        for I := 0 to Length(CenterPoints) - 1 do
-          RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
-      end;
-    finally
-      RoadableFF.Free;
-    end;
-  end;
+  //procedure InitReachableArea();
+  //var
+  //  PL: TKMHandIndex;
+  //  I: Integer;
+  //  MinP, MaxP: TKMPoint;
+  //  CenterPoints: TKMPointArray;
+  //  RoadableFF: TKKRoadableFF;
+  //begin
+  //  if (Length(AvoidBuilding) = 0) then
+  //    Exit;
+  //  MinP := KMPoint(1,1);
+  //  MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
+  //  RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
+  //  try
+  //    for PL := 0 to gHands.Count - 1 do
+  //    begin
+  //      gAIFields.Eye.OwnerUpdate(PL);
+  //      CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
+  //      for I := 0 to Length(CenterPoints) - 1 do
+  //        RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
+  //    end;
+  //  finally
+  //    RoadableFF.Free;
+  //  end;
+  //end;
 var
   H: TKMHouse;
   I,X,Y: Integer;
 begin
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
-    if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
-      AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
-    else
+    //if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
+    //  AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
+    //else
       AvoidBuilding[Y,X] := 0;
-  InitReachableArea();
+  //InitReachableArea();
 
   //Avoid areas where Gold/Iron mines should be
   for Y := 3 to fMapY - 2 do

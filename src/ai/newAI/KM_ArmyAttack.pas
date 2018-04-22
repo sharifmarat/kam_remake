@@ -41,7 +41,7 @@ type
 
     function SquadInFight(): Boolean; inline;
     function GetGroupPosition(): TKMPoint; inline;
-    function PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False): Boolean;
+    function PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False; aOrderDestroy: Boolean = False): Boolean;
 
     procedure SetTargetHouse(aHouse: TKMHouse);
     procedure SetTargetUnit(aUnit: TKMUnit);
@@ -279,7 +279,7 @@ end;
 procedure TAISquad.UpdateState(aTick: Cardinal);
 const
   RANGE_AIM_DELAY = 80;
-  HOUSE_AIM_DELAY = 1000;
+  HOUSE_AIM_DELAY = 100;
 var
   ActPos, FinPos: TKMPoint;
 begin
@@ -299,7 +299,7 @@ begin
   if (fTargetUnit <> nil) then
   begin
     FinPos := fTargetUnit.GetPosition;
-    if PlanPath(ActPos, FinPos, True) then
+    if PlanPath(ActPos, FinPos, True, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if (fGroup.GroupType <> gt_Ranged) OR (fTargetChanged AND (fAttackTimeLimit < aTick)) then
     begin
@@ -312,7 +312,7 @@ begin
   else if (fTargetHouse <> nil) then
   begin
     FinPos := fTargetHouse.GetPosition;
-    if PlanPath(ActPos, FinPos, True) then
+    if PlanPath(ActPos, FinPos, False, True) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
@@ -325,7 +325,7 @@ begin
   else
   begin
     FinPos := FinalPosition.Loc;
-    if PlanPath(ActPos, FinPos, False) then
+    if PlanPath(ActPos, FinPos, False, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if not KMSamePoint(Group.Position, FinalPosition.Loc) then // Dont repeat order and let archers fire
       Group.OrderWalk(FinalPosition.Loc, True, wtokAISquad, FinalPosition.Dir);
@@ -333,30 +333,39 @@ begin
 end;
 
 
-function TAISquad.PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False): Boolean;
+function TAISquad.PlanPath(var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False; aOrderDestroy: Boolean = False): Boolean;
 const
-  SQR_TARGET_REACHED_TOLERANCE = 3*3;
-  SQR_TARGET_REACHED_RANGED = 15*15; // This should be more than maximal range (11*11)
+  SQR_POSITION_REACHED_TOLERANCE = 3*3; // Tolerance between reached point and actual position it is useful in traffic problems
+  SQR_TARGET_REACHED_TOLERANCE = 3*3; // Target unit should have lower tolerance because of group type pathfinding (cav will avoid spears etc)
+  SQR_HOUSE_REACHED_TOLERANCE = 8*8; // Houses should have larger tolerance because NavMesh does not work in cities properly
+  SQR_TARGET_REACHED_RANGED = 15*15; // This should be more than maximal range of ranged groups (11*11)
+  SQR_MIN_WALK_DISTANCE = 4*4; // Avoid group to be stucked in cities (higher = less stuck)
 var
   InitPolygon, ClosestPolygon, Distance: Word;
   I: Integer;
+  SQRDist: Single;
   PointPath: TKMPointArray;
 begin
   Result := False;
   fOnPlace := False;
+  SQRDist := KMDistanceSqr(aActualPosition, aTargetPosition);
   // Time limit (time limit MUST be always set by higher rank (platoon))
-  if (not aOrderAttack AND (fTimeLimit < gGame.GameTickCount)) // Time limit is set to 0 in case that unit attack something
-    // Target point is reached
-    OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_TARGET_REACHED_TOLERANCE)
+  if (not (aOrderAttack OR aOrderDestroy) AND (fTimeLimit < gGame.GameTickCount)) // Time limit is set to 0 in case that unit attack something
+    // Target position is reached
+    OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_POSITION_REACHED_TOLERANCE)
+    // Target unit is close
+    OR (aOrderAttack AND (SQRDist < SQR_TARGET_REACHED_TOLERANCE))
+    // Target house is close
+    OR (aOrderDestroy AND (SQRDist < SQR_HOUSE_REACHED_TOLERANCE))
     // Archers should start fire as soon as possible
-    OR (aOrderAttack AND (fGroup.GroupType = gt_Ranged) AND (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_TARGET_REACHED_RANGED)) then
+    OR ((aOrderAttack OR aOrderDestroy) AND (fGroup.GroupType = gt_Ranged) AND (SQRDist < SQR_TARGET_REACHED_RANGED)) then
   begin
     fOnPlace := True;
     Exit;
   end;
   // Plan path with respect to enemy presence
   if gAIFields.NavMesh.Pathfinding.AvoidEnemyRoute(Group.Owner, Group.GroupType, aActualPosition, aTargetPosition, Distance, PointPath) then
-    if (Distance < 5) then // Just to be sure ...
+    if (Distance < 5) then // Just to be sure (default value of pathfinding, if is group stuck it should not influence platoon)
     begin
       fOnPlace := True;
       Exit;
@@ -369,7 +378,9 @@ begin
         aTargetPosition := PointPath[ Max(0, I) ];
         ClosestPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aTargetPosition ];
         I := I - 1;
-      until ((InitPolygon <> ClosestPolygon) AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)) OR (I < 0);
+      until (I < 0) OR ( (InitPolygon <> ClosestPolygon)
+                         AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)
+                         AND (aOrderAttack OR (KMDistanceSqr(aActualPosition, aTargetPosition) > SQR_MIN_WALK_DISTANCE)) );
 
       fDEBUGPointPath := PointPath;//  DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
     end;
@@ -735,6 +746,7 @@ var
   function SelectTargetGroups(): Boolean;
   const
     INIT_THREAT = -1000000;
+    SQR_MINIMAL_RANGED_DISTANCE = 4*4;
     BEST_TARGET: array[TKMGroupType] of array[0..3] of TKMGroupType = (
         (gt_Melee, gt_Ranged, gt_Mounted, gt_AntiHorse), // against gt_Melee
         (gt_Melee, gt_Ranged, gt_AntiHorse, gt_Mounted), // against gt_AntiHorse
@@ -757,12 +769,15 @@ var
     begin
       Squad := AvailableSquads[GT].Squads[I];
       HighestThreat := INIT_THREAT;
+      BestDist := 0;
       for K := 0 to Length(fTargetU) - 1 do
         if (fTargetU[K].DistantThreat > 0) then
         begin
-          Threat := fTargetU[K].DistantThreat - KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ fTargetU[K].Index ].GetPosition);
+          Dist := KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ fTargetU[K].Index ].GetPosition);
+          Threat := fTargetU[K].DistantThreat - Dist;
           if (Threat > HighestThreat) then
           begin
+            BestDist := Dist;
             HighestThreat := Threat;
             TargetIdx := K;
           end;
@@ -771,7 +786,8 @@ var
       begin
         Squad.TargetUnit := UA[ fTargetU[TargetIdx].Index ];
         Output := True;
-        fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
+        if (Dist >= SQR_MINIMAL_RANGED_DISTANCE) then // If is enemy too cloose aim him but dont decrease threat level so next part of code can call close combat support
+          fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
         // Unit will be targeted by Ranged group -> if there was minimal priority for close combat then remove it
         if (fTargetU[TargetIdx].CloseThreat = 1) then
           fTargetU[TargetIdx].CloseThreat := 0;
@@ -855,7 +871,7 @@ var
     INIT_THREAT = 1000000;
     SQR_CLOSE_COMBAT_DISTANCE_LIMIT = 12*12;
     MAX_SOLDIERS_VS_HOUSE = 12;
-    ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5;
+    SQR_ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5*5;
     SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST = 3*3;
   var
     Output: Boolean;
@@ -916,7 +932,7 @@ var
         for K := 0 to Length(HA) - 1 do
           if (
                (HA[K].HouseType <> htWatchTower)
-               OR ( KMDistanceAbs(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition) < ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
+               OR ( KMDistanceSqr(AvailableSquads[GT].Squads[I].Position, HA[K].GetPosition) < SQR_ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST)
              )
             AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE) then
           begin
@@ -1095,7 +1111,8 @@ begin
     Exit;
 
   // Try find path to the target point
-  if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
+  //if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
+  if gAIFields.NavMesh.Pathfinding.AvoidTrafficRoute(fOwner, aActualPosition, TargetPoint, Distance, PointPath) then
   begin
     fDEBUGPointPath := PointPath;
     Cnt := SquadCnt(); // Count of groups in company

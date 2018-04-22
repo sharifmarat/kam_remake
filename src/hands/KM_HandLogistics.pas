@@ -126,9 +126,11 @@ type
 
     function GetDemandsCnt(aHouse: TKMHouse; aResource: TKMWareType; aType: TKMDemandType; aImp: TKMDemandImportance): Integer;
     procedure AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: TKMWareType; aCount: Integer; aType: TKMDemandType; aImp: TKMDemandImportance);
-    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): word;
+    function TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): Word;
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
+
+    function GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType = wt_All): Integer;
 
     function GetAvailableDeliveriesCount: Integer;
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
@@ -528,13 +530,13 @@ procedure TKMDeliveries.RemDemand(aHouse: TKMHouse);
 var
   I: Integer;
 begin
-  assert(aHouse <> nil);
+  Assert(aHouse <> nil);
   for I := 1 to fDemandCount do
     if fDemand[I].Loc_House = aHouse then
     begin
       if fDemand[I].BeingPerformed > 0 then
         //Can't free it yet, some serf is using it
-        fDemand[I].IsDeleted := true
+        fDemand[I].IsDeleted := True
       else
         CloseDemand(I); //Clear up demand
       //Keep on scanning cos House can have multiple demands entries
@@ -544,37 +546,58 @@ end;
 
 //Remove Demand from the list
 // List is stored without sorting so we parse it to find all entries..
-procedure TKMDeliveries.RemDemand(aUnit:TKMUnit);
+procedure TKMDeliveries.RemDemand(aUnit: TKMUnit);
 var
-  i:integer;
+  I: Integer;
 begin
-  assert(aUnit <> nil);
-  for i:=1 to fDemandCount do
-  if fDemand[i].Loc_Unit = aUnit then
+  Assert(aUnit <> nil);
+  for I := 1 to fDemandCount do
+  if fDemand[I].Loc_Unit = aUnit then
   begin
-    if fDemand[i].BeingPerformed > 0 then
+    if fDemand[I].BeingPerformed > 0 then
       //Can't free it yet, some serf is using it
-      fDemand[i].IsDeleted := true
+      fDemand[I].IsDeleted := True
     else
-      CloseDemand(i); //Clear up demand
+      CloseDemand(I); //Clear up demand
     //Keep on scanning cos Unit can have multiple demands entries (foreseeing Walls building)
   end;
 end;
 
 
-//Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
-function TKMDeliveries.TryRemoveDemand(aHouse:TKMHouse; aResource:TKMWareType; aCount:word):word;
-var i:integer;
+function TKMDeliveries.GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType): Integer;
+var
+  I, iD: Integer;
 begin
   Result := 0;
-  if aCount = 0 then exit;
-  assert(aHouse <> nil);
-  for i:=1 to fDemandCount do
-    if (fDemand[i].Loc_House = aHouse) and (fDemand[i].Ware = aResource) then
-      if fDemand[i].BeingPerformed = 0 then
+  for I := 1 to fQueueCount do
+  begin
+    if fQueue[I].JobStatus = js_Taken then
+    begin
+      iD := fQueue[I].DemandId;
+      if (fDemand[iD].Loc_House = aHouse)
+        and (fDemand[iD].Ware = aWareType)
+        and not fDemand[iD].IsDeleted
+        and (fDemand[iD].BeingPerformed > 0) then
+        Inc(Result);
+    end;
+  end;
+end;
+
+
+//Attempt to remove aCount demands from this house and report the number (only ones that are not yet being performed)
+function TKMDeliveries.TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType; aCount: Word): Word;
+var
+  I: Integer;
+begin
+  Result := 0;
+  if aCount = 0 then Exit;
+  Assert(aHouse <> nil);
+  for I:=1 to fDemandCount do
+    if (fDemand[I].Loc_House = aHouse) and (fDemand[I].Ware = aResource) then
+      if fDemand[I].BeingPerformed = 0 then
       begin
-        CloseDemand(i); //Clear up demand
-        inc(Result);
+        CloseDemand(I); //Clear up demand
+        Inc(Result);
         if Result = aCount then exit; //We have removed enough demands
       end;
 end;
@@ -666,37 +689,16 @@ begin
   //If Demand and Offer aren't deleted
   Result := Result and (not fDemand[iD].IsDeleted) and (aIgnoreOffer or not fOffer[iO].IsDeleted);
 
-  //If Demand house has WareDelivery toggled ON
-  Result := Result and ((fDemand[iD].Loc_House = nil) or (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery));
-
-  //If Demand is a ArmorWorkshop and it accepts current ware delivery
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htArmorWorkshop) or
-                        (TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fOffer[iO].Ware)));
-
-  //If Demand is TownHall and its max gold count value > gold count value
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htTownHall) or
-                        (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt));
-
-  //If Demand is a Storehouse and it has WareDelivery toggled ON
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htStore) or
-                        (not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware]));
+  //If Demand house should abandon delivery
+  Result := Result and ((fDemand[iD].Loc_House = nil) or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
 
   //Warfare has a preference to be delivered to Barracks
   if Result
     and (fOffer[iO].Ware in [WARFARE_MIN..WARFARE_MAX])
     and (fDemand[iD].Loc_House <> nil) then
   begin
-    //If Demand is a Barracks and it has WareDelivery toggled OFF
-    if (fDemand[iD].Loc_House.HouseType = htBarracks)
-    and TKMHouseBarracks(fDemand[iD].Loc_House).NotAcceptFlag[fOffer[iO].Ware] then
-      Result := False;
-
     //Permit delivery of warfares to Store only if player has no Barracks or they all have blocked ware
-    if (fDemand[iD].Loc_House <> nil)
-      and (fDemand[iD].Loc_House.HouseType = htStore) then
+    if fDemand[iD].Loc_House.HouseType = htStore then
     begin
       //Scan through players Barracks, if none accepts - allow deliver to Store
       I := 1;
@@ -771,9 +773,9 @@ end;
 //Get the total number of possible deliveries with current Offers and Demands
 function TKMDeliveries.GetAvailableDeliveriesCount: Integer;
 var
-  iD,iO:integer;
-  OffersTaken:Cardinal;
-  DemandTaken:array of Boolean; //Each demand can only be taken once in our measurements
+  iD,iO: Integer;
+  OffersTaken: Cardinal;
+  DemandTaken: array of Boolean; //Each demand can only be taken once in our measurements
 begin
   SetLength(DemandTaken,fDemandCount+1);
   FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
@@ -1155,7 +1157,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
   end;
 
-  function FindBestDemandId: Integer;
+  function FindBestDemandId(): Integer;
   var
     iD: Integer;
     Bid, BestBid: Single;
@@ -1211,7 +1213,7 @@ var
   BestDemandId, OldDemandId: Integer; // Keep Int to assign to Delivery down below
 begin
   OldDemandId := fQueue[aDeliveryId].DemandID;
-  BestDemandId := FindBestDemandId;
+  BestDemandId := FindBestDemandId();
 
   // Did we find anything?
   if BestDemandId = -1 then
@@ -1233,7 +1235,9 @@ begin
     begin
       // Remove old demand
       Dec(fDemand[OldDemandId].BeingPerformed);
-      if (fDemand[OldDemandId].BeingPerformed = 0) and fDemand[OldDemandId].IsDeleted then
+      if (fDemand[OldDemandId].BeingPerformed = 0)
+        and (fDemand[OldDemandId].IsDeleted
+          or (fDemand[OldDemandId].Loc_House.HouseType = htTownHall)) then
         CloseDemand(OldDemandId);
 
       // Take new demand

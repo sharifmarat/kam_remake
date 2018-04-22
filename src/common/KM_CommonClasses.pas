@@ -659,13 +659,7 @@ end;
 function TKMPointTagList.Remove(aLoc: TKMPoint): Integer;
 begin
   Result := inherited Remove(aLoc);
-
-  //Note that fCount is already decreased by 1
-  if (Result <> -1) and (Result <> fCount) then
-  begin
-    Move(Tag[Result+1], Tag[Result], SizeOf(Tag[Result]) * (fCount - Result));
-    Move(Tag2[Result+1], Tag2[Result], SizeOf(Tag2[Result]) * (fCount - Result));
-  end;
+  //Tags are moved by Delete function. No need to move them here
 end;
 
 

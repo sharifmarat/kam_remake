@@ -149,8 +149,11 @@ end;
 
 destructor TKMTaskBuildRoad.Destroy;
 begin
-  if DemandSet   then gHands[fUnit.Owner].Deliveries.Queue.RemDemand(fUnit);
-  if TileLockSet then gTerrain.UnlockTile(fLoc);
+  if DemandSet then
+    gHands[fUnit.Owner].Deliveries.Queue.RemDemand(fUnit);
+
+  if TileLockSet then
+    gTerrain.UnlockTile(fLoc);
 
   //Yet unstarted
   if BuildID <> -1 then
@@ -305,8 +308,11 @@ begin
       //This plan is not valid anymore
       gHands[fUnit.Owner].BuildList.FieldworksList.CloseField(BuildID);
 
-  if DemandSet   then gHands[fUnit.Owner].Deliveries.Queue.RemDemand(fUnit);
-  if TileLockSet then gTerrain.UnlockTile(fLoc);
+  if DemandSet then
+    gHands[fUnit.Owner].Deliveries.Queue.RemDemand(fUnit);
+
+  if TileLockSet then
+    gTerrain.UnlockTile(fLoc);
   inherited;
 end;
 

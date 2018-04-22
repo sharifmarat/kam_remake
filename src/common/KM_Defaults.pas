@@ -108,6 +108,7 @@ var
   OVERLAY_RESOLUTIONS     :Boolean = False; //Render constraining frame
   LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
   SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
+  LOG_GAME_TICK           :Boolean = False; //Log game tick
   {Gameplay display}
   SKIP_RENDER           :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
@@ -136,6 +137,7 @@ var
   OVERLAY_AVOID         :Boolean = False; //Show avoidance map
   OVERLAY_AI_BUILD      :Boolean = False; //Show build progress of new AI
   OVERLAY_AI_COMBAT     :Boolean = False; //Show combat marks of new AI
+  OVERLAY_AI_EYE        :Boolean = False; //Show eye vision of new AI
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked

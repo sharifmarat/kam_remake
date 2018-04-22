@@ -345,7 +345,7 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
 // Is inside triangle (source: https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle)
   function Sign(const aP1, aP2, aP3: TKMPointF): Single;
   begin
-      Result := (aP1.X - aP3.X) * (aP2.Y - aP3.Y) - (aP2.X - aP3.X) * (aP1.Y - aP3.Y);
+    Result := (aP1.X - aP3.X) * (aP2.Y - aP3.Y) - (aP2.X - aP3.X) * (aP1.Y - aP3.Y);
   end;
 
   function PointInTriangle(const aPt, aV1, aV2, aV3: TKMPointF): Boolean;
@@ -362,6 +362,7 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
   var
     SecondPoint: Boolean;
     I,K,L, ToIdx: Integer;
+    P: TKMPoint;
     Indices: array[0..1] of Word;
   begin
     for I := 0 to fPolygons[aIdx].NearbyCount - 1 do
@@ -376,7 +377,11 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
           SecondPoint := True;
           break;
         end;
-      fPolygons[aIdx].NearbyPoints[I] := KMPointAverage(fNodes[ Indices[0] ].Loc, fNodes[ Indices[1] ].Loc);
+       P := KMPointAverage(fNodes[ Indices[0] ].Loc, fNodes[ Indices[1] ].Loc);
+       fPolygons[aIdx].NearbyPoints[I] := KMPoint(
+                                                   Min( gTerrain.MapX-1, Max(1,P.X) ),
+                                                   Min( gTerrain.MapY-1, Max(1,P.Y) )
+                                                  );
     end;
   end;
 var
@@ -401,8 +406,11 @@ begin
     v1 := KMPointF(fNodes[i1].Loc.X, fNodes[i1].Loc.Y);
     v2 := KMPointF(fNodes[i2].Loc.X, fNodes[i2].Loc.Y);
     v3 := KMPointF(fNodes[i3].Loc.X, fNodes[i3].Loc.Y);
-    //CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
-    fPolygons[I].CenterPoint := KMPoint( Round((v1.X+v2.X+v3.X)/3), Round((v1.Y+v2.Y+v3.Y)/3) );
+    // Center point must be inside of map coords
+    fPolygons[I].CenterPoint := KMPoint(
+                                         Min(  gTerrain.MapX-1, Max( 1, Round((v1.X+v2.X+v3.X)/3) )  ),
+                                         Min(  gTerrain.MapY-1, Max( 1, Round((v1.Y+v2.Y+v3.Y)/3) )  )
+                                       );
 
     MinPoint.X := Min(  Min( fNodes[i1].Loc.X, fNodes[i2].Loc.X ), fNodes[i3].Loc.X  );
     MinPoint.Y := Min(  Min( fNodes[i1].Loc.Y, fNodes[i2].Loc.Y ), fNodes[i3].Loc.Y  );
@@ -717,6 +725,14 @@ begin
     end;
   end;//}
 
+  {Center points and transitions of polygons
+  for I := 0 to fPolyCount - 1 do
+    with fPolygons[I] do
+    begin
+      gRenderAux.Quad(CenterPoint.X, CenterPoint.Y, $AAFFFFFF);
+      for K := 0 to NearbyCount - 1 do
+        gRenderAux.Quad(NearbyPoints[K].X, NearbyPoints[K].Y, $AA000000);
+    end;//}
 
   {Raw obstacle outlines
   if OVERLAY_NAVMESH then

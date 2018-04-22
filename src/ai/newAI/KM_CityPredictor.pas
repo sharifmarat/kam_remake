@@ -10,9 +10,11 @@ var
   //GA_PREDICTOR_CityInitialization_Space         : Single = 1 / 750.0; // factor for iron weapons
   //GA_PREDICTOR_CityInitialization_Fertility     : Single = 1 / 800.0; // factor for wood weapons
   //GA_PREDICTOR_CityInitialization_Worker        : Single = 1 / 105.0;
-  GA_PREDICTOR_CityInitialization_Space         : Single = 0.005257239565;
-  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0; // factor for wood weapons
-  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.052704036;
+  GA_PREDICTOR_CityInitialization_Space         : Single = 0.001866;//0.005257239;
+  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.00125; // factor for wood weapons
+  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.009;
+  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.578927;
+  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.226166;
 
 type
   TWareBalance = record
@@ -38,7 +40,9 @@ type
   TKMCityPredictor = class
   private
     fOwner: TKMHandIndex;
-    fMaxSoldiersInMin: Single;
+    fWorkerCount: Word;
+    fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
+    fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor: Single;
     fCityStats: TCityStats;
     fWareBalance: TWareBalanceArray;
     fFarmBuildHistory: THouseBuildHistory;
@@ -51,6 +55,7 @@ type
     procedure UpdateWareBalance(aInitialization: Boolean = False);
 
     procedure UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
+    procedure ActualizeWeaponProduction();
     procedure UpdateCityStats();
   public
     RequiredHouses: TRequiredHousesArray;
@@ -62,12 +67,14 @@ type
 
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
+    property WorkerCount: Word read fWorkerCount;
 
     procedure AfterMissionInit();
     procedure CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure MarkExhaustedIronMine();
 
   end;
 
@@ -174,7 +181,15 @@ var
 begin
   SaveStream.WriteA('CityPredictor');
   SaveStream.Write(fOwner);
+  SaveStream.Write(fWorkerCount);
+  SaveStream.Write(fGoldMineCnt);
+  SaveStream.Write(fIronMineCnt);
+  SaveStream.Write(fFieldCnt);
+  SaveStream.Write(fBuildCnt);
+  SaveStream.Write(fMaxIronWeapProd);
+  SaveStream.Write(fMaxWoodWeapProd);
   SaveStream.Write(fMaxSoldiersInMin);
+  SaveStream.Write(fPeaceFactor);
   SaveStream.Write(fFarmBuildHistory.Count);
   if (fFarmBuildHistory.Count > 0) then
   begin
@@ -198,7 +213,15 @@ var
 begin
   LoadStream.ReadAssert('CityPredictor');
   LoadStream.Read(fOwner);
+  LoadStream.Read(fWorkerCount);
+  LoadStream.Read(fGoldMineCnt);
+  LoadStream.Read(fIronMineCnt);
+  LoadStream.Read(fFieldCnt);
+  LoadStream.Read(fBuildCnt);
+  LoadStream.Read(fMaxIronWeapProd);
+  LoadStream.Read(fMaxWoodWeapProd);
   LoadStream.Read(fMaxSoldiersInMin);
+  LoadStream.Read(fPeaceFactor);
   LoadStream.Read(fFarmBuildHistory.Count);
   if (fFarmBuildHistory.Count > 0) then
   begin
@@ -221,6 +244,13 @@ end;
 procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
+end;
+
+
+procedure TKMCityPredictor.MarkExhaustedIronMine();
+begin
+  fIronMineCnt := fIronMineCnt - 1;
+  ActualizeWeaponProduction();
 end;
 
 
@@ -341,17 +371,18 @@ begin
       wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
       wt_Stone:
         begin
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+10, fSetup.WorkerCount) * STONE_NEED_PER_A_WORKER;
-          fWareBalance[wt_Stone].FinalConsumption := fSetup.WorkerCount * STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+15, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].FinalConsumption := fWorkerCount * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
         end;
       wt_Wood:
         begin
           UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
-          fWareBalance[wt_Wood].ActualConsumption := Max(fWareBalance[wt_Wood].ActualConsumption, fCityStats.Citizens[ut_Worker] * WOOD_NEED_PER_A_WORKER);
-          fWareBalance[wt_Wood].FinalConsumption := Max(fWareBalance[wt_Wood].FinalConsumption, fSetup.WorkerCount * WOOD_NEED_PER_A_WORKER);
+          fWareBalance[wt_Wood].ActualConsumption := Max(fWareBalance[wt_Wood].ActualConsumption, fCityStats.Citizens[ut_Worker] * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
+          fWareBalance[wt_Wood].FinalConsumption := Max(fWareBalance[wt_Wood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
         end;
       // Other cases
-      else UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
+      else
+        UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
     end;
     UpdateWareDerivation(CONSUMPTION_ORDER[I],aInitialization);
   end;
@@ -396,7 +427,7 @@ procedure TKMCityPredictor.UpdateBasicHouses(aTick: Cardinal; aInitialization: B
 const
   INN_TIME_LIMIT = 60 * 10 * 14; // ~ 14 minutes from start
   SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
-  FIRST_MARKETPLACE = 10 * 60 * 80;
+  FIRST_MARKETPLACE = 10 * 60 * 50;
   SECOND_MARKETPLACE = 10 * 60 * 180;
   BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min before
   BARRACKS_BEFORE_PEACE_END = 20; // Allow to build barracks before peace time
@@ -414,35 +445,45 @@ begin
 end;
 
 
-// City initialization, estimation of maximal possible production and restriction by peace time and loc properties
-procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+procedure TKMCityPredictor.ActualizeWeaponProduction();
 const
   IRON_WARFARE: set of TKMWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
   STANDARD_WARFARE: array[0..3] of TKMWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
   MIN_WOOD_PRODUCTION = 1;
   MAX_WOOD_PRODUCTION = 4;
-  SCALE_MIN_PEACE_TIME = 60;
-  SCALE_MAX_PEACE_TIME = 90;
-  SCALE_PEACE_FACTOR = 1.0 / ((SCALE_MAX_PEACE_TIME - SCALE_MIN_PEACE_TIME)*1.0);
+  AFTER_PEACE_SCALING = 1 / (40*10*60); // Peace factor will be completely removed after {40} ticks since end of peace
 var
   I: Integer;
-  MaxIronWeapProd, MaxWoodWeapProd, PeaceFactor: Single;
+  MaxIronWeapProd, MaxWoodWeapProd, fUpdatedPeaceFactor: Single;
   WT: TKMWareType;
 begin
-  // Max field / build cnt ~ 8000 tiles in real map it is 1500-2500 for fields and 2000-4000 for build
+  // Max field / build cnt -> max ~ 8000 tiles; in real map ~ 1500-2500 for fields and ~ 2000-4000 for build
+  // Maximal 4 houses for production of weapons and minimal 1 house
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
 
-  PeaceFactor := Max(0,(Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)) * SCALE_PEACE_FACTOR;
+  // Update peace factor if it is needed
+  fUpdatedPeaceFactor := Min(1,
+                             fPeaceFactor + Max(0,
+                                                (gGame.GameTickCount - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
+                                               )
+                            );
 
   // Iron weapons
-  MaxIronWeapProd := Min(Round(aBuildCnt / GA_PREDICTOR_CityInitialization_Space), aIronMineCnt) * ProductionRate[wt_IronOre] * 0.5; // Division into half because of iron weapon and armor
+  MaxIronWeapProd := Min(Round(fBuildCnt * GA_PREDICTOR_CityInitialization_Space), fIronMineCnt);
+  // Wood weapons (depends on available space) - here is maximal possible production in this loc
+  MaxWoodWeapProd := Round(Min(fFieldCnt,fBuildCnt) * GA_PREDICTOR_CityInitialization_Fertility);
+
+  // Iron weapons
+  MaxIronWeapProd := MaxIronWeapProd * ProductionRate[wt_IronOre] * 0.5; // Division into half because of iron weapon and armor
   for WT in IRON_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
-  // Wood weapons (depends on available space) - here is maximal possible production in this loc
-  MaxWoodWeapProd := Round(Min(aFieldCnt,aBuildCnt) * GA_PREDICTOR_CityInitialization_Fertility);
-  // Consider peace time
-  MaxWoodWeapProd := Max(1, MaxWoodWeapProd * PeaceFactor);
+  // Wood weapons
+  MaxWoodWeapProd := Max(MIN_WOOD_PRODUCTION,
+                         Min(MAX_WOOD_PRODUCTION,
+                             Max(0, MaxWoodWeapProd - MaxIronWeapProd) * fUpdatedPeaceFactor // Consider also peace time
+                            )
+                        );
   // Transform to house production
   MaxWoodWeapProd := MaxWoodWeapProd * ProductionRate[wt_Axe];
   for I := Low(STANDARD_WARFARE) to High(STANDARD_WARFARE) do
@@ -452,21 +493,38 @@ begin
 
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
-
-  //Temp bugfix - do not update standart Setup params here, as they will overwrite params, set in the Map Editor
-  if fSetup.NewAI then
-  begin
-    // Decide count of workers + build nodes
-    fSetup.WorkerCount := Min(20 + Round(15 * PeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) / GA_PREDICTOR_CityInitialization_Worker));
-    // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
-    fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
-    fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
-  end;
+  // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
+  fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
+  fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
 
   // Predict final city stats (by potential size of city)
-  fCityStats.CitizensCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
-  fCityStats.WarriorsCnt := Round(  Max(0,Min(aBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
+  fCityStats.CitizensCnt := Round(  Max(0,Min(fBuildCnt,4000)-1500)*0.052+70  ); // Min cnt of citizens is 70 and max 200
+  fCityStats.WarriorsCnt := Round(  Max(0,Min(fBuildCnt,4000)-1500)*0.042+50  ); // Min cnt of soldiers is 50 and max 150
   UpdateWareBalance(True);
+end;
+
+
+// City initialization, estimation of maximal possible production and restriction by peace time and loc properties
+procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+const
+  SCALE_MIN_PEACE_TIME = 60;
+  SCALE_MAX_PEACE_TIME = 90;
+  SCALE_PEACE_FACTOR = 1.0 / ((SCALE_MAX_PEACE_TIME - SCALE_MIN_PEACE_TIME)*1.0);
+begin
+  fGoldMineCnt := aGoldMineCnt;
+  fIronMineCnt := aIronMineCnt;
+  fFieldCnt := aFieldCnt;
+  fBuildCnt := aBuildCnt;
+
+  fPeaceFactor := Max(0,
+                      (Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)
+                     ) * SCALE_PEACE_FACTOR;
+
+  ActualizeWeaponProduction();
+
+  // Decide count of workers + build nodes
+  // gHands[fOwner].AI.Setup.WorkerCount -> better use local variable
+  fWorkerCount := Min(20 + Round(15 * fPeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) * GA_PREDICTOR_CityInitialization_Worker));
 end;
 
 
@@ -522,10 +580,9 @@ procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
               + gHands[fOwner].Stats.GetWareBalance(wt_Corn) * 0.25;
   end;
 const
-  WEAP_WORKSHOP_DELAY = 40 * 60 * 10;
+  WEAP_WORKSHOP_DELAY = 35 * 60 * 10;
   WINEYARD_DELAY = 50 * 60 * 10;
 var
-//  HT: TKMHouseType;
   Stats: TKMHandStats;
   Planner: TKMCityPlanner;
 begin
@@ -540,14 +597,23 @@ begin
   UpdateBasicHouses(aTick, False);
   // Dont build anything if there is not completed school
   if (Stats.GetHouseQty(htSchool) = 0)
-    OR ((Stats.GetHouseQty(htSchool) = 1)
-      AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
-           OR not (Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete)
-          )
-        )then
+    OR ( (Stats.GetHouseQty(htSchool) = 1)
+         AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
+              OR not ( (Planner.PlannedHouses[htSchool].Plans[0].House <> nil)
+                       AND Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete
+                     )
+             )
+       ) then
     Exit;
   // Update prediction
   UpdateWareBalance();
+  // Remove unused houses (iron production)
+  if (RequiredHouses[htIronSmithy] < 0) AND (Stats.GetWareBalance(wt_IronOre) < 20) then // Dont destroy iron production when there is still iron ore
+    Planner.RemoveHouseType(htIronSmithy);
+  if (RequiredHouses[htArmorSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then // And dont destroy following production if you dont want to destroy IronSmithy
+    Planner.RemoveHouseType(htArmorSmithy);
+  if (RequiredHouses[htWeaponSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then
+    Planner.RemoveHouseType(htWeaponSmithy);
 
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
   if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then

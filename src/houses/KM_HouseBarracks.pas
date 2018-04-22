@@ -16,6 +16,7 @@ type
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
   protected
     function GetFlagPointTexId: Word; override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
@@ -210,6 +211,12 @@ end;
 function TKMHouseBarracks.GetFlagPointTexId: Word;
 begin
   Result := 249;
+end;
+
+
+function TKMHouseBarracks.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or NotAcceptFlag[aWareType];
 end;
 
 
