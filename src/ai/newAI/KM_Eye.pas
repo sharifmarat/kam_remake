@@ -1147,6 +1147,7 @@ begin
         end;
   for I := 0 to fBuildFF.Locs.Count - 1 do
     gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $66000000 OR COLOR_BLACK);
+
   //}
   { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
@@ -1391,7 +1392,7 @@ begin
         end
         else
         begin
-          if (Dir = dirS) then
+          if (Dir = dirE) then
           begin
             if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
               RightSideFree := False;
