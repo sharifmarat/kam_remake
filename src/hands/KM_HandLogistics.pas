@@ -774,8 +774,8 @@ end;
 function TKMDeliveries.GetAvailableDeliveriesCount: Integer;
 var
   iD,iO: Integer;
-  OffersTaken:Cardinal;
-  DemandTaken:array of Boolean; //Each demand can only be taken once in our measurements
+  OffersTaken: Cardinal;
+  DemandTaken: array of Boolean; //Each demand can only be taken once in our measurements
 begin
   SetLength(DemandTaken,fDemandCount+1);
   FillChar(DemandTaken[0], SizeOf(Boolean)*(fDemandCount+1), #0);
@@ -1235,7 +1235,9 @@ begin
     begin
       // Remove old demand
       Dec(fDemand[OldDemandId].BeingPerformed);
-      if (fDemand[OldDemandId].BeingPerformed = 0) and fDemand[OldDemandId].IsDeleted then
+      if (fDemand[OldDemandId].BeingPerformed = 0)
+        and (fDemand[OldDemandId].IsDeleted
+          or (fDemand[OldDemandId].Loc_House.HouseType = htTownHall)) then
         CloseDemand(OldDemandId);
 
       // Take new demand
