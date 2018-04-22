@@ -21,7 +21,7 @@ var
   GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
   GA_BUILDER_STONE_SHORTAGE             : Single = 6.846969;
   GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
-  GA_BUILDER_GOLD_SHORTAGE              : Single = 32.64543295;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 35.64543295;
 
 
 type
@@ -297,6 +297,7 @@ end;
 
 procedure TKMCityBuilder.UnlockPointOfNode(aPoint: TKMPoint; aCheckHousePlan: Boolean = False);
 var
+  AB: Byte;
   X,Y: Integer;
 begin
   if aCheckHousePlan then
@@ -307,8 +308,8 @@ begin
         gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] := AVOID_BUILDING_HOUSE_OUTSIDE_LOCK;
         Exit;
       end;
-
-  if aCheckHousePlan OR (gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
+  AB := gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X];
+  if (aCheckHousePlan AND (AB <> High(Byte))) OR (AB = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
     gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] := AVOID_BUILDING_UNLOCK;
 end;
 
@@ -1038,9 +1039,12 @@ var
     GOLD_SHORTAGE_IDX = 7;
     FULL_SET = 28;
   var
-    I,K, MaxIdx: Integer;
-    HT: TKMHouseType;
+    I,K, MaxIdx, Overflow: Integer;
+    Gain, BestGain: Single;
+    HT, BestHT: TKMHouseType;
+    ReservationsCntArr: array[HOUSE_MIN..HOUSE_MAX] of Word;
   begin
+    FillChar(ReservationsCntArr, SizeOf(ReservationsCntArr), #0);
     if fStoneShortage then
       MaxIdx := STONE_SHORTAGE_IDX
     else if fTrunkShortage then
@@ -1051,20 +1055,40 @@ var
       MaxIdx := GOLD_SHORTAGE_IDX
     else
       MaxIdx := FULL_SET;
+
     for I := 0 to MaxIdx do
     begin
       HT := RESERVATION_FullSet[I];
       for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
         with fPlanner.PlannedHouses[HT].Plans[K] do
-          if not Placed
-             AND (HouseReservation OR RemoveTreeInPlanProcedure)
-             AND (cs_HousePlaced = AddToConstruction(HT,False,True)) then
+          if not Placed AND (HouseReservation OR RemoveTreeInPlanProcedure) then
+            Inc(ReservationsCntArr[HT], 1);
+    end;
+
+    Overflow := 0;
+    while (MaxPlace > 0) AND (Overflow <= MaxIdx) do
+    begin
+      Overflow := Overflow + 1;
+      BestGain := 0;
+      for I := 0 to MaxIdx do
+        if (ReservationsCntArr[ RESERVATION_FullSet[I] ] > 0) then
+        begin
+          HT := RESERVATION_FullSet[I];
+          Gain := ReservationsCntArr[HT] * 2 + MaxIdx - I;
+          if (Gain > BestGain) then
           begin
-            MaxPlace := MaxPlace - 1;
-            RequiredHouses[HT] := 0;
-            if (MaxPlace <= 0) then
-              Exit;
+            BestHT := HT;
+            BestGain := Gain;
           end;
+        end;
+      if (BestGain = 0) then
+        Exit;
+      if (cs_HousePlaced = AddToConstruction(BestHT,False,True)) then
+      begin
+        MaxPlace := MaxPlace - 1;
+        RequiredHouses[BestHT] := 0;
+      end;
+      ReservationsCntArr[BestHT] := 0; // Dont place more than 1 reserved house type in 1 tick
     end;
   end;
 
@@ -1082,7 +1106,7 @@ const
   BUILD_TOWER_DELAY = 17 * 60 * 10; // 17 minutes before end of peace
   MINIMAL_TOWER_DELAY = 50 * 60 * 10; // Towers will not be build before 50 minute
 var
-  I, RequiredStones, RequiredWood: Integer;
+  I, RequiredStones, RequiredWood, WoodReserves, Wood, Trunk: Integer;
   TrunkBalance: Single;
   HT: TKMHouseType;
   H: TKMHouse;
@@ -1111,24 +1135,12 @@ begin
     fGoldShortage := True;
 
   // Woodcutters have huge delay (8 min) + trunk is used only to produce wood -> decide shortage based on actual consumption and reserves
-  TrunkBalance := (gHands[fOwner].Stats.GetWareBalance(wt_Trunk) + gHands[fOwner].Stats.GetWareBalance(wt_Wood) / 2) / Max(0.1,WareBalance[wt_Trunk].ActualConsumption);
+  Trunk := gHands[fOwner].Stats.GetWareBalance(wt_Trunk);
+  Wood := gHands[fOwner].Stats.GetWareBalance(wt_Wood);
+  WoodReserves := Trunk * 2 + Wood;
+  TrunkBalance := WoodReserves / (2 * Max(0.1, WareBalance[wt_Trunk].ActualConsumption));
   if (TrunkBalance < GA_BUILDER_TRUNK_SHORTAGE) then
     fTrunkShortage := True;
-
-  // Find place for chop-only woodcutters when we start to be out of wood
-  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then // Max 2 chop-only woodcutters
-    fPlanner.FindForestAround(KMPOINT_ZERO, True);
-
-  // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
-  HT := htWoodcutters;
-  if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
-    AND not fGoldShortage
-    AND not fStoneShortage
-    AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
-  begin
-    MaxPlans := MaxPlans - 1;
-    RequiredHouses[htWoodcutters] := 0;
-  end;
 
   // Compute building materials
   RequiredStones := gHands[fOwner].BuildList.HousePlanList.GetPlansStoneDemands();
@@ -1143,11 +1155,28 @@ begin
     end;
   end;
   //fStoneShortage := fStoneShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Stone) < RequiredStones);
-  fTrunkShortage := fTrunkShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
-  MaxPlace := Round((gHands[fOwner].Stats.GetWareBalance(wt_Trunk)*2 + gHands[fOwner].Stats.GetWareBalance(wt_Wood) - RequiredWood) / 3 - 0.5);
+  //fTrunkShortage := fTrunkShortage OR (gHands[fOwner].Stats.GetWareBalance(wt_Wood) < RequiredWood);
+  fTrunkShortage := fTrunkShortage OR (WoodReserves < RequiredWood);
+  MaxPlace := Round((Wood // Available wood
+                     + Min(Trunk * 2 , gHands[fOwner].Stats.GetHouseQty(htSawmill) * 4) // Trunk which can be turned into wood while the house is digged
+                     - RequiredWood) / 3 // Consideration of required wood per a plan (approx 3)
+                   );
+  RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(fTrunkShortage OR (MaxPlace < 3)); // Dont try to place wine we are out of wood
 
-  if fTrunkShortage then
-    RequiredHouses[htWineyard] := 0; // Dont try to place wine we are out of wood
+  // Find place for chop-only woodcutters when we start to be out of wood
+  if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then
+    fPlanner.FindForestAround(KMPOINT_ZERO, True);
+
+  // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
+  HT := htWoodcutters;
+  if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
+    AND (not fGoldShortage OR fTrunkShortage)
+    AND not fStoneShortage
+    AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
+  begin
+    MaxPlans := MaxPlans - 1;
+    RequiredHouses[htWoodcutters] := 0;
+  end;
 
   if (MaxPlace > 0) then
     CheckHouseReservation();
@@ -1163,10 +1192,12 @@ begin
         Exit;
     end;
 
+  // The most important houses for city production which will be soon depleted
   SelectHouseBySetOrder();
   if (MaxPlans <= 0) then
     Exit;
 
+  // Watchtowers
   HT := htWatchTower;
   if (not Planner.DefenceTowersPlanned OR (gHands[fOwner].Stats.GetHouseTotal(HT) < Planner.PlannedHouses[HT].Count))
     AND (aTick + BUILD_TOWER_DELAY > gGame.GameOptions.Peacetime * 600)
@@ -1178,6 +1209,7 @@ begin
         Exit;
     end;
 
+  // All other houses (food and weapon production) + houses which will be required in final city size
   SelectHouse(ALL_WARE);
 end;
 
