@@ -691,9 +691,9 @@ procedure TKMInfluences.AfterMissionInit();
       for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
       for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
         //cnt := cnt + Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
-        cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+        cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].BaseLayer.Terrain )  );
       //fAreas[Y,X] := $FF - cnt * COEF;
-      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].BaseLayer.Terrain )  ));
       //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
     end;
   end;
@@ -956,7 +956,7 @@ end;
 
 function TKKRoadableFF.CanBeVisited(const aX,aY: SmallInt): Boolean;
 begin
-  Result := gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+  Result := gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].BaseLayer.Terrain );
 end;
 
 

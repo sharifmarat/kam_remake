@@ -71,6 +71,7 @@ var
 
 constructor TKMMapEdTerrainTiles.Create(aParent: TKMPanel);
 const
+  BTN_SIZE_S = 34;
   BTN_SIZE = 36;
 var
   J,K: Integer;
@@ -83,20 +84,19 @@ begin
   Panel_Tiles := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_Tiles, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_HINTS_TILES], fnt_Outline, taCenter);
 
-  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 10, 25, BTN_SIZE, BTN_SIZE, 670);
+  TilesMagicWater := TKMButtonFlat.Create(Panel_Tiles, 0, 25, BTN_SIZE_S, BTN_SIZE_S, 670);
   TilesMagicWater.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_MAGIC_WATER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
   TilesMagicWater.OnClick := TilesChange;
 
-  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, ((TB_WIDTH - BTN_SIZE) div 2), 25, BTN_SIZE, BTN_SIZE, 671);
+  TilesEyedropper := TKMButtonFlat.Create(Panel_Tiles, BTN_SIZE_S + 3, 25, BTN_SIZE_S, BTN_SIZE_S, 671);
   TilesEyedropper.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_EYEDROPPER_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
   TilesEyedropper.OnClick := TilesChange;
 
-  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, TB_WIDTH - 10 - BTN_SIZE, 25, BTN_SIZE, BTN_SIZE, 672);
+  TilesRotate := TKMButtonFlat.Create(Panel_Tiles, 2*BTN_SIZE_S + 6, 25, BTN_SIZE_S, BTN_SIZE_S, 672);
   TilesRotate.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_ROTATE_TILE, SC_MAPEDIT_SUB_MENU_ACTION_3);
   TilesRotate.OnClick := TilesChange;
 
-  TKMLabel.Create(Panel_Tiles, 89, 30, 'ID:', fnt_Metal, taLeft); //Todo translate
-  NumEdit_SetTileNumber := TKMNumericEdit.Create(Panel_Tiles, 115, 29, 0, MAX_TILE_TO_SHOW - 1);
+  NumEdit_SetTileNumber := TKMNumericEdit.Create(Panel_Tiles, 112, 29, 0, MAX_TILE_TO_SHOW - 1);
   NumEdit_SetTileNumber.Hint := 'Enter tile ID to select it'; // Todo translate
   NumEdit_SetTileNumber.OnChange := TilesChange;
   NumEdit_SetTileNumber.AutoFocusable := False;

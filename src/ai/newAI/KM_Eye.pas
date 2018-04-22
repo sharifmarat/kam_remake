@@ -465,13 +465,13 @@ begin
         Loc := gAIFields.NavMesh.Polygon2Point[K];
         if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
         begin
-          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
+          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].BaseLayer.Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
             aBuildCnt := aBuildCnt + 1;
-          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].BaseLayer.Terrain ) then // Scan just tile + height (ignore object and everything else)
             aFieldCnt := aFieldCnt + 1;
         end
         else if gTerrain.CheckHeightPass(Loc, hpWalking)
-          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].BaseLayer.Terrain ) then // Scan just tile + height (ignore object and everything else)
           aFieldCnt := aFieldCnt + 1;
       end;
 
@@ -1304,9 +1304,9 @@ end;
 function TKMBuildFF.CanBeVisited(const aX,aY,aIdx: Word; const aHouseQueue: Boolean = False): Boolean;
 begin
   if aHouseQueue then
-    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain )
+    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].BaseLayer.Terrain )
   else
-    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].BaseLayer.Terrain );
 end;
 
 

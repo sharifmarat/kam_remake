@@ -958,7 +958,7 @@ begin
     begin
       FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
       if not gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)
-        OR not gRes.Tileset.TileIsRoadable( gTerrain.Land[FieldLoc.Y,FieldLoc.X].Terrain ) then
+        OR not gRes.Tileset.TileIsRoadable( gTerrain.Land[FieldLoc.Y,FieldLoc.X].BaseLayer.Terrain ) then
         PriceArr[Dir] := PriceArr[Dir] + SNAP_TO_EDGE;
     end;
   // Get count of possible fields
@@ -1591,7 +1591,7 @@ function TKMCityPlanner.FindForestAndWoodcutter(): Boolean;
     Cnt := 0;
     for Y := Max(1,aLoc.Y-RADIUS) to Min(gTerrain.MapY-1, aLoc.Y+RADIUS) do
     for X := Max(1,aLoc.X-RADIUS) to Min(gTerrain.MapX-1, aLoc.X+RADIUS) do
-      if gRes.Tileset.TileIsSoil( gTerrain.Land[Y, X].Terrain ) then
+      if gRes.Tileset.TileIsSoil( gTerrain.Land[Y, X].BaseLayer.Terrain ) then
         Cnt := Cnt + 1;
     Result := Cnt >= MIN_TREES_TILES;
   end;
