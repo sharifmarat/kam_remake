@@ -339,10 +339,10 @@ begin
             TextAtCorner(J, I, K,
                          IntToStr(BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]]),
                          TILE_TERRAIN_LAYERS_COLORS[0]);
-          for L := 0 to gTerrain.Land[I,J].LayersCnt - 1 do
-            if K in gTerrain.Land[I,J].Layer[L].Corners then
+          for L := 0 to LayersCnt - 1 do
+            if K in Layer[L].Corners then
               TextAtCorner(J, I, K,
-                           IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(gTerrain.Land[I,J].Layer[L].Terrain).TerKind]),
+                           IntToStr(BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind]),
                            TILE_TERRAIN_LAYERS_COLORS[L+1]);
         end;
     end;

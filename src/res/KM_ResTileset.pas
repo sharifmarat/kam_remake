@@ -644,7 +644,8 @@ end;
 {Check if requested tile is soil suitable for fields and trees}
 function TKMResTileset.TileIsSoil(aTile: Word): Boolean;
 begin
-  Result := aTile in [0..3,5,6, 8,9,11,13,14, 16..21, 26..28, 34..39, 47, 49, 55..58, 64..69, 72..80, 84..87, 88,89, 93..98,180,182..183,188,190..191,220,247];
+  Result := aTile in [0..3,5,6, 8,9,11,13,14, 16..21, 26..28, 34..39, 47, 49, 55..58, 64..69, 72..80, 84..87,
+                      88,89, 93..98,180,182..183,188,190..191,220,247];
 end;
 
 
@@ -690,12 +691,6 @@ begin
   //List of tiles that cannot be factored (coordinates outside the map return true)
   Result := not (aTile in [7,15,24,50,53,144..151,156..165,198,199,202,206]);
 end;
-
-
-//function TKMResTileset.GetTransTerrainId(aTerKind: TKMTerrainKind; aMaskType: TKMTileMaskType): Word;
-//begin
-//
-//end;
 
 
 end.
