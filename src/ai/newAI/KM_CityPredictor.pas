@@ -7,14 +7,11 @@ uses
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_HandStats;
 
 var
-  //GA_PREDICTOR_CityInitialization_Space         : Single = 1 / 750.0; // factor for iron weapons
-  //GA_PREDICTOR_CityInitialization_Fertility     : Single = 1 / 800.0; // factor for wood weapons
-  //GA_PREDICTOR_CityInitialization_Worker        : Single = 1 / 105.0;
-  GA_PREDICTOR_CityInitialization_Space         : Single = 0.001866;//0.005257239;
-  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.00125; // factor for wood weapons
-  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.009;
-  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.678927;
-  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.326166;
+  GA_PREDICTOR_CityInitialization_Space         : Single = 0.001962816; // factor for iron weapons
+  GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.001023545; // factor for wood weapons
+  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.046542886;
+  GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.648239613;
+  GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.280672461;
 
 type
   TWareBalance = record
