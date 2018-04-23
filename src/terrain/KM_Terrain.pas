@@ -1151,22 +1151,6 @@ begin
 end;
 
 
-function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
-var
-  K, Cnt: Integer;
-  Corners: TKMWordArray;
-begin
-  Cnt := 0;
-  Corners := TileCornerTerrains(X,Y);
-  for K := 0 to 3 do
-    if aCheckTileFunc(Corners[K]) then
-      Inc(Cnt);
-
-  Result := Cnt >= 3;
-
-end;
-
-
 //Check if requested tile is Stone and returns Stone deposit
 function TKMTerrain.TileIsStone(X,Y: Word): Byte;
 begin
@@ -1220,6 +1204,21 @@ end;
 function TKMTerrain.TileIsSoil(X,Y: Word): Boolean;
 begin
   Result := TileHasParameter(X, Y, fTileset.TileIsSoil);
+end;
+
+
+function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
+var
+  K, L, Cnt: Integer;
+  Corners: TKMWordArray;
+begin
+  Cnt := 0;
+  Corners := TileCornersTerrains(X,Y);
+  for K := 0 to 3 do
+    if aCheckTileFunc(Corners[K]) then
+      Inc(Cnt);
+
+  Result := (Cnt >= 3) or ((Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
 end;
 
 
