@@ -12,9 +12,9 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 204;
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 172;
-  GA_EYE_GetForests_InflLimit      : Single = 222.1944779;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 184;
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 107;
+  GA_EYE_GetForests_InflLimit      : Single = 224.3747;
   GA_EYE_GetForests_MinTrees       : Single = 3.11;
   GA_EYE_GetForests_Radius         : Single = 5.0698;
 
