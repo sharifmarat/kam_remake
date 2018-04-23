@@ -2695,60 +2695,116 @@ end;
 
 {Extract one unit of stone}
 procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
+type
+  TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttShallowSnow);
 
-  procedure UpdateTransition(X,Y: Integer);
-  const
-    TileID: array[0..15] of Word = (0,139,139,138,139,140,138,141,139,138,140,141,138,141,141,128);
-     RotID: array[0..15] of Byte = (0,  0,  1,  0,  2,  0,  1,  3,  3,  3,  1,  2,  2,  1,  0,  0);
+const
+  TranTiles: array[TStoneTransitionType] of array[0..5] of Word =
+              ((  0, 139, 138, 140, 141, 274),
+               (  0, 139, 138, 140, 141, 274),
+               ( 32, 269, 268, 270, 271, 273),
+               ( 35, 278, 277, 279, 280, 282),
+               ( 46, 286, 285, 287, 288, 290),
+               ( 47, 294, 293, 295, 296, 298));
+
+  TileIDIndex: array[0..15] of Word = (0,1,1,2,1,3,2,4,1,2,3,4,2,4,4,0);
+  RotID:       array[0..15] of Byte = (0,0,1,0,2,0,1,3,3,3,1,2,2,1,0,0);
+  RotIdDiag:   array[0..15] of Byte = (4,1,2,2,3,3,3,3,0,0,0,0,0,0,0,0);
+
+  function GetStoneTransitionType(X, Y: Word): TStoneTransitionType;
+  begin
+    Result := sttNone;
+    if Land[Y,X].BaseLayer.Rotation = 0 then
+      case Land[Y,X].BaseLayer.Terrain of
+        0, 139:  Result := sttGrass;
+        32,269:  Result := sttCoastSand;
+        35,278:  Result := sttDirt;
+        46,286:  Result := sttSnow;
+        47,294:  Result := sttShallowSnow;
+      end;
+  end;
+
+  procedure UpdateTransition(X,Y: Integer; aTransitionType: TStoneTransitionType);
+
+    function GetBits(aX,aY: Integer): Byte;
+    begin
+      Result := Byte(TileInMapCoords(aX,aY) and TileHasStone(aX,aY));
+    end;
+
   var
-    Bits: Byte;
+    Bits, BitsDiag: Byte;
   begin
     if not TileInMapCoords(X,Y) or TileHasStone(X,Y) then Exit;
 
-    Bits := Byte(TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1))*1 +
-            Byte(TileInMapCoords(X+1,  Y) and TileHasStone(X+1,  Y))*2 +
-            Byte(TileInMapCoords(  X,Y+1) and TileHasStone(  X,Y+1))*4 +
-            Byte(TileInMapCoords(X-1,  Y) and TileHasStone(X-1,  Y))*8;
+    Bits := GetBits(X  ,Y-1)*1 +
+            GetBits(X+1,Y  )*2 +
+            GetBits(X  ,Y+1)*4 +
+            GetBits(X-1,Y  )*8;
 
-//    if Bits = 0 then
-//    begin
-//      if (TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1)) then
-//      begin
-//
-//      end else
-//        Land[Y,X].BaseLayer.Terrain  := 0;
-//    end else
-//    begin
+    if Bits = 0 then
+    begin
+      BitsDiag := GetBits(X-1,Y-1)*1 +
+                  GetBits(X+1,Y-1)*2 +
+                  GetBits(X+1,Y+1)*4 +
+                  GetBits(X-1,Y+1)*8;
+
+      if BitsDiag = 0 then
+        Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType, 0]
+      else begin
+        Land[Y,X].BaseLayer.Terrain := TranTiles[aTransitionType, 5];
+        Land[Y,X].BaseLayer.Rotation := (RotIdDiag[BitsDiag] + 2) mod 4;
+      end;
+    end else
+    begin
 
       //We UpdateTransition when the stone becomes grass, Bits can never = 15
       //The tile in center is fully mined and one below has Stoncutter on it,
       //hence there cant be any tile surrounded by stones from all sides
       Assert(Bits < 15);
-      Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
+      Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType,TileIDIndex[Bits]];
       Land[Y,X].BaseLayer.Rotation := RotID[Bits];
-//    end;
-    if Land[Y,X].BaseLayer.Terrain = 0 then
-      Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
+    end;
+    if Land[Y,X].BaseLayer.Terrain = TranTiles[aTransitionType, 0] then
+      Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of no-stone terrain tiles
     UpdatePassability(Loc);
   end;
 
+var
+  Transition: TStoneTransitionType;
 begin
+  Transition := GetStoneTransitionType(Loc.X,Loc.Y + 1); //Check transition type by lower point (Y + 1)
+
   //Replace with smaller ore deposit tile (there are 2 sets of tiles, we can choose random)
   case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
     132, 137: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 131 + KaMRandom(2)*5;
     131, 136: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 130 + KaMRandom(2)*5;
     130, 135: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 129 + KaMRandom(2)*5;
-    129, 134: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 128 + KaMRandom(2)*5;
-    128, 133: begin
-                Land[Loc.Y,Loc.X].BaseLayer.Terrain  := 0;
+    129, 134: case Transition of
+                sttNone,
+                sttGrass:       Land[Loc.Y,Loc.X].BaseLayer.Terrain := 128 + KaMRandom(2)*5;
+                sttCoastSand:   Land[Loc.Y,Loc.X].BaseLayer.Terrain := 266 + KaMRandom(2);
+                sttDirt:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 275 + KaMRandom(2);
+                sttSnow:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 283 + KaMRandom(2);
+                sttShallowSnow: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 291 + KaMRandom(2);
+              end;
+    128, 133,
+    266, 267,
+    275, 276,
+    283, 284,
+    291, 292: begin
+                Land[Loc.Y,Loc.X].BaseLayer.Terrain  := TranTiles[Transition, 0];
                 Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4);
 
                 //Tile type has changed and we need to update these 5 tiles transitions:
-                UpdateTransition(Loc.X,Loc.Y);
-                UpdateTransition(Loc.X,Loc.Y-1); //    x
-                UpdateTransition(Loc.X+1,Loc.Y); //  x X x
-                UpdateTransition(Loc.X,Loc.Y+1); //    x
-                UpdateTransition(Loc.X-1,Loc.Y);
+                UpdateTransition(Loc.X,  Loc.Y,   Transition);
+                UpdateTransition(Loc.X,  Loc.Y-1, Transition); //  x x x
+                UpdateTransition(Loc.X+1,Loc.Y,   Transition); //  x X x
+                UpdateTransition(Loc.X,  Loc.Y+1, Transition); //  x x x
+                UpdateTransition(Loc.X-1,Loc.Y,   Transition);
+                UpdateTransition(Loc.X-1,Loc.Y-1, Transition);
+                UpdateTransition(Loc.X+1,Loc.Y-1, Transition);
+                UpdateTransition(Loc.X+1,Loc.Y+1, Transition);
+                UpdateTransition(Loc.X-1,Loc.Y+1, Transition);
               end;
     else      Exit;
   end;
