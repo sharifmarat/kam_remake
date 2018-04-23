@@ -31,13 +31,13 @@ var
   GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 108.1650317;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 23.14184606;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 22.13742584;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 104.5395549;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 13.23579103;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.190876186;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 113.4269953;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 135.6183;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 5.7336;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 28.51978;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 130.4515;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 84.80867;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.856276;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 106.9715;
 
 
   GA_PATHFINDING_BasePrice    : Word = 2;
@@ -1656,7 +1656,7 @@ begin
                                   + Byte(PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest
                                   - gAIFields.Eye.PolygonRoutes[ gAIFields.NavMesh.KMPoint2Polygon[Point] ] * GA_PLANNER_FindPlaceForWoodcutter_PolyRoute
                                   - gAIFields.Influences.EvalArea[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_EvalArea
-                                  + gAIFields.Influences.Ownership[fOwner, Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_DistCrit
+                                  - gAIFields.Eye.BuildFF.Distance[Point] * GA_PLANNER_FindPlaceForWoodcutter_DistCrit
                                   - gAIFields.Influences.GetOtherOwnerships(fOwner, Point.X, Point.Y) * GA_PLANNER_FindPlaceForWoodcutter_Influence
                                 ));
   end;
