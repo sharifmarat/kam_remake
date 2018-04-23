@@ -264,7 +264,7 @@ type
     function TileHasGold(X, Y: Word): Boolean;
 
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
-    function TileCornerTerrains(aX, aY: Word): TKMWordArray;
+    function TileCornersTerrains(aX, aY: Word): TKMWordArray;
 
     function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
     function TileHasRoad(X,Y: Integer): Boolean; overload;
@@ -1017,7 +1017,7 @@ begin
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    Corners := TileCornerTerrains(X, Y);
+    Corners := TileCornersTerrains(X, Y);
     Result :=
       (fTileset.TileIsIron(Corners[0]) > 0)
         and (fTileset.TileIsIron(Corners[1]) > 0)
@@ -1047,7 +1047,7 @@ begin
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    Corners := TileCornerTerrains(X, Y);
+    Corners := TileCornersTerrains(X, Y);
     Result :=
       (fTileset.TileIsGold(Corners[0]) > 0)
         and (fTileset.TileIsGold(Corners[1]) > 0)
@@ -1373,7 +1373,7 @@ end;
 
 
 //Get tile corners terrain id
-function TKMTerrain.TileCornerTerrains(aX, aY: Word): TKMWordArray;
+function TKMTerrain.TileCornersTerrains(aX, aY: Word): TKMWordArray;
 const
   TOO_BIG_VALUE = 10000;
 var
