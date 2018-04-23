@@ -115,6 +115,8 @@ type
     function TileIsRoadable(const Loc: TKMPoint): Boolean;
     function TileIsFactorable(const Loc: TKMPoint): Boolean;
 
+    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
+
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
     function ChooseCuttingDirection(const aLoc, aTree: TKMPoint; out CuttingPoint: TKMPointDir): Boolean;
@@ -131,6 +133,8 @@ type
     function TrySetTileHeight(X, Y: Integer; aHeight: Byte; aUpdatePassability: Boolean = True): Boolean;
     function TrySetTileObject(X, Y: Integer; aObject: Word; aUpdatePassability: Boolean = True): Boolean; overload;
     function TrySetTileObject(X, Y: Integer; aObject: Word; out aDiagonalChanged: Boolean; aUpdatePassability: Boolean = True): Boolean; overload;
+
+    function HousesNearTile(X,Y: Word): Boolean;
   public
     Land: array [1..MAX_MAP_SIZE, 1..MAX_MAP_SIZE] of TKMTerrainTile;
     FallingTrees: TKMPointTagList;
@@ -166,7 +170,8 @@ type
     procedure ResetDigState(const Loc: TKMPoint);
 
     function CanPlaceUnit(const Loc: TKMPoint; aUnitType: TKMUnitType): Boolean;
-    function CanPlaceGoldmine(X,Y: Word): Boolean;
+    function CanPlaceGoldMine(X, Y: Word): Boolean;
+    function CanPlaceIronMine(X, Y: Word): Boolean;
     function CanPlaceHouse(Loc: TKMPoint; aHouseType: TKMHouseType): Boolean;
     function CanPlaceHouseFromScript(aHouseType: TKMHouseType; const Loc: TKMPoint): Boolean;
     function CanAddField(aX, aY: Word; aFieldType: TKMFieldType): Boolean;
@@ -237,7 +242,7 @@ type
     function VerticeInMapCoords(aCell: TKMPoint; Inset: Byte = 0): Boolean; overload;
     function EnsureTileInMapCoords(X, Y: Integer; Inset: Byte = 0): TKMPoint;
 
-    function TileGoodForIron(X, Y: Word): Boolean;
+    function TileGoodForIronMine(X, Y: Word): Boolean;
     function TileGoodForGoldmine(X, Y: Word): Boolean;
     function TileGoodForField(X, Y: Word): Boolean;
     function TileGoodForTree(X, Y: Word): Boolean;
@@ -252,6 +257,9 @@ type
     function TileIsWineField(const Loc: TKMPoint): Boolean;
     function TileIsWalkableRoad(const Loc: TKMPoint): Boolean;
     function TileIsLocked(const aLoc: TKMPoint): Boolean;
+
+    function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
+    function TileCornerTerrains(aX, aY: Word): TKMWordArray;
 
     function TileHasRoad(const Loc: TKMPoint): Boolean; overload;
     function TileHasRoad(X,Y: Integer): Boolean; overload;
@@ -995,32 +1003,52 @@ begin
 end;
 
 
-function TKMTerrain.TileGoodForIron(X,Y: Word): Boolean;
-  function HousesNearTile: Boolean;
-  var I,K: Integer;
-  begin
-    Result := False;
-    for I := -1 to 1 do
-    for K := -1 to 1 do
-      if (Land[Y+I,X+K].TileLock in [tlFenced,tlDigged,tlHouse]) then
-        Result := True;
-  end;
+function TKMTerrain.TileGoodForIronMine(X,Y: Word): Boolean;
+var
+  Corners: TKMWordArray;
 begin
-  Result := (Land[Y,X].BaseLayer.Terrain in [109,166..170])
-    and (Land[Y,X].BaseLayer.Rotation mod 4 = 0) //only horizontal mountain edges allowed
+  Result :=
+    (fTileset.TileIsGoodForIronMine(Land[Y,X].BaseLayer.Terrain)
+      and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
+  if not Result then
+  begin
+    Corners := TileCornerTerrains(X, Y);
+    Result :=
+      (fTileset.TileIsIron(Corners[0]) > 0)
+        and (fTileset.TileIsIron(Corners[1]) > 0)
+        and (fTileset.TileIsRoadable(Corners[2]))
+        and (fTileset.TileIsRoadable(Corners[3]));
+  end;
+end;
+
+
+function TKMTerrain.CanPlaceIronMine(X,Y: Word): Boolean;
+begin
+  Result := TileGoodForIronMine(X,Y)
     and ((Land[Y,X].Obj = OBJ_NONE) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
     and TileInMapCoords(X,Y, 1)
-    and not HousesNearTile
+    and not HousesNearTile(X,Y)
     and (Land[Y,X].TileLock = tlNone)
     and CheckHeightPass(KMPoint(X,Y), hpBuildingMines);
 end;
 
 
-function TKMTerrain.TileGoodForGoldmine(X,Y: Word): Boolean;
+function TKMTerrain.TileGoodForGoldMine(X,Y: Word): Boolean;
+var
+  Corners: TKMWordArray;
 begin
-  Result := TileInMapCoords(X,Y, 1)
-    and (Land[Y,X].BaseLayer.Terrain in [171..175])
-    and (Land[Y,X].BaseLayer.Rotation mod 4 = 0); //only horizontal mountain edges allowed
+  Result :=
+    (fTileset.TileIsGoodForGoldMine(Land[Y,X].BaseLayer.Terrain)
+      and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
+  if not Result then
+  begin
+    Corners := TileCornerTerrains(X, Y);
+    Result :=
+      (fTileset.TileIsGold(Corners[0]) > 0)
+        and (fTileset.TileIsGold(Corners[1]) > 0)
+        and (fTileset.TileIsRoadable(Corners[2]))
+        and (fTileset.TileIsRoadable(Corners[3]));
+  end;
 end;
 
 
@@ -1101,99 +1129,118 @@ end;
 
 function TKMTerrain.TileIsWater(X,Y : Word): Boolean;
 begin
-  Result := fTileset.TileIsWater(Land[Y, X].BaseLayer.Terrain);
+  Result := TileHasParameter(X, Y, fTileset.TileIsWater);
 end;
 
 
 //Check if requested tile is sand suitable for crabs
 function TKMTerrain.TileIsSand(const Loc: TKMPoint): Boolean;
 begin
-  Result := fTileset.TileIsSand(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsSand);
 end;
 
 
 function TKMTerrain.TileIsSnow(X, Y: Word): Boolean;
 begin
-  Result := fTileset.TileIsSnow(Land[Y, X].BaseLayer.Terrain);
+  Result := TileHasParameter(X, Y, fTileset.TileIsSnow);
 end;
+
+
+function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
+var
+  K, Cnt: Integer;
+  Corners: TKMWordArray;
+begin
+  Cnt := 0;
+  Corners := TileCornerTerrains(X,Y);
+  for K := 0 to 3 do
+    if aCheckTileFunc(Corners[K]) then
+      Inc(Cnt);
+
+  Result := Cnt >= 3;
+
+end;
+
 
 //Check if requested tile is Stone and returns Stone deposit
 function TKMTerrain.TileIsStone(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsStone(Land[Y, X].BaseLayer.Terrain);
+  Result := IfThen(Land[Y, X].LayersCnt = 0, fTileset.TileIsStone(Land[Y, X].BaseLayer.Terrain), 0);
 end;
 
 
 function TKMTerrain.TileIsCoal(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsCoal(Land[Y, X].BaseLayer.Terrain);
+  Result := IfThen(Land[Y, X].LayersCnt = 0, fTileset.TileIsCoal(Land[Y, X].BaseLayer.Terrain), 0);
 end;
 
 
 function TKMTerrain.TileIsIron(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsIron(Land[Y, X].BaseLayer.Terrain);
+  Result := IfThen(Land[Y, X].LayersCnt = 0, fTileset.TileIsIron(Land[Y, X].BaseLayer.Terrain), 0);
 end;
 
 
 function TKMTerrain.TileIsGold(X,Y: Word): Byte;
 begin
-  Result := fTileset.TileIsGold(Land[Y, X].BaseLayer.Terrain);
+  Result := IfThen(Land[Y, X].LayersCnt = 0, fTileset.TileIsGold(Land[Y, X].BaseLayer.Terrain), 0);
 end;
 
 
 //Check if requested tile is soil suitable for fields and trees
 function TKMTerrain.TileIsSoil(X,Y: Word): Boolean;
 begin
-  Result := fTileset.TileIsSoil(Land[Y, X].BaseLayer.Terrain);
+  Result := TileHasParameter(X, Y, fTileset.TileIsSoil);
 end;
 
 
 //Check if requested tile is generally walkable
 function TKMTerrain.TileIsWalkable(const Loc: TKMPoint): Boolean;
-var
-  L: Integer;
-  Ter: Word;
-  TerInfo: TKMGenTerrainInfo;
+//var
+//  L: Integer;
+//  Ter: Word;
+//  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
-  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
-  begin
-    if not Result then Exit;
-      
-    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
-    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
-    // Check if this layer walkable
-    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
-    Result := Result
-                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,0] = 0)
-                  or fTileset.TileIsWalkable(BASE_TERRAIN[TerInfo.TerKind]));
-
-  end;
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsWalkable);
+//  Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+//  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
+//  begin
+//    if not Result then Exit;
+//
+//    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
+//    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
+//    // Check if this layer walkable
+//    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
+//    Result := Result
+//                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,0] = 0)
+//                  or fTileset.TileIsWalkable(BASE_TERRAIN[TerInfo.TerKind]));
+//
+//  end;
 end;
 
 
 //Check if requested tile is generally suitable for road building
 function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
-var
-  L: Integer;
-  Ter: Word;
-  TerInfo: TKMGenTerrainInfo;
+//var
+//  L: Integer;
+//  Ter: Word;
+//  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
-  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
-  begin
-    if not Result then Exit;
-
-    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
-    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
-    // Check if this layer walkable
-    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
-    Result := Result
-                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,1] = 0)
-                  or fTileset.TileIsRoadable(BASE_TERRAIN[TerInfo.TerKind]));
-
-  end;
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable);
+//  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
+//  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
+//  begin
+//    if not Result then Exit;
+//
+//    Ter := Land[Loc.Y, Loc.X].Layer[L].Terrain;
+//    TerInfo := gRes.Sprites.GetGenTerrainInfo(Ter);
+//    // Check if this layer walkable
+//    // It could be, if its mask does not restrict walkability or its BASE terrain is walkable
+//    Result := Result
+//                and ((TILE_MASKS_PASS_RESTRICTIONS[TerInfo.Mask.MType,TerInfo.Mask.SubType,1] = 0)
+//                  or fTileset.TileIsRoadable(BASE_TERRAIN[TerInfo.TerKind]));
+//
+//  end;
 end;
 
 
@@ -1271,6 +1318,56 @@ begin
     Result := False
   else
     Result := (U <> nil) and (U.GetUnitAction.Locked);
+end;
+
+
+//Get tile corner terrain id
+function TKMTerrain.TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
+const
+  TOO_BIG_VALUE = 10000;
+var
+  L: Integer;
+begin
+  Assert(InRange(aCorner, 0, 3), 'aCorner = ' + IntToStr(aCorner) + ' is not in range [0-3]');
+  Result := TOO_BIG_VALUE;
+  with gTerrain.Land[aY,aX] do
+  begin
+    if aCorner in BaseLayer.Corners then
+      Result := BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (aCorner + 4 - BaseLayer.Rotation) mod 4]]
+    else
+      for L := 0 to LayersCnt - 1 do
+        if aCorner in Layer[L].Corners then
+          Result := BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind];
+  end;
+  Assert(Result <> TOO_BIG_VALUE, Format('[TileCornerTerrain] Can''t determine tile [%d:%d] terrain at Corner [%d]', [aX, aY, aCorner]));
+end;
+
+
+//Get tile corners terrain id
+function TKMTerrain.TileCornerTerrains(aX, aY: Word): TKMWordArray;
+const
+  TOO_BIG_VALUE = 10000;
+var
+  K, L: Integer;
+begin
+  SetLength(Result, 4);
+  for K := 0 to 3 do
+  begin
+    Result[K] := TOO_BIG_VALUE;
+    with gTerrain.Land[aY,aX] do
+    begin
+      if K in BaseLayer.Corners then
+        Result[K] := BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]]
+      else
+        for L := 0 to LayersCnt - 1 do
+          if K in Layer[L].Corners then
+          begin
+            Result[K] := BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind];
+            Break;
+          end;
+    end;
+    Assert(Result[K] <> TOO_BIG_VALUE, Format('[TileCornerTerrains] Can''t determine tile [%d:%d] terrain at Corner [%d]', [aX, aY, K]));
+  end;
 end;
 
 
@@ -2242,8 +2339,8 @@ begin
 
           //Check house-specific conditions, e.g. allow shipyards only near water and etc..
           case aHouseType of
-            htIronMine: AllowBuild := TileGoodForIron(P2.X, P2.Y);
-            htGoldMine: AllowBuild := CanPlaceGoldmine(P2.X, P2.Y);
+            htIronMine: AllowBuild := CanPlaceIronMine(P2.X, P2.Y);
+            htGoldMine: AllowBuild := CanPlaceGoldMine(P2.X, P2.Y);
             else        AllowBuild := (tpBuild in Land[P2.Y,P2.X].Passability);
           end;
 
@@ -2578,17 +2675,17 @@ procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
   begin
     if not TileInMapCoords(X,Y) or (TileIsStone(X,Y) > 0) then Exit;
 
-    Bits := Byte(TileInMapCoords(  X,Y-1) and (TileIsStone(  X,Y-1)>0))*1 +
-            Byte(TileInMapCoords(X+1,  Y) and (TileIsStone(X+1,  Y)>0))*2 +
-            Byte(TileInMapCoords(  X,Y+1) and (TileIsStone(  X,Y+1)>0))*4 +
-            Byte(TileInMapCoords(X-1,  Y) and (TileIsStone(X-1,  Y)>0))*8;
+    Bits := Byte(TileInMapCoords(  X,Y-1) and (TileIsStone(  X,Y-1) > 0))*1 +
+            Byte(TileInMapCoords(X+1,  Y) and (TileIsStone(X+1,  Y) > 0))*2 +
+            Byte(TileInMapCoords(  X,Y+1) and (TileIsStone(  X,Y+1) > 0))*4 +
+            Byte(TileInMapCoords(X-1,  Y) and (TileIsStone(X-1,  Y) > 0))*8;
 
-    //We UpdateTransition when the stone becomes grass, Bits can never = 15
-    //The tile in center is fully mined and one below has Stoncutter on it,
-    //hence there cant be any tile surrounded by stones from all sides
-    Assert(Bits < 15);
-    Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
-    Land[Y,X].BaseLayer.Rotation := RotID[Bits];
+      //We UpdateTransition when the stone becomes grass, Bits can never = 15
+      //The tile in center is fully mined and one below has Stoncutter on it,
+      //hence there cant be any tile surrounded by stones from all sides
+      Assert(Bits < 15);
+      Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
+      Land[Y,X].BaseLayer.Rotation := RotID[Bits];
     if Land[Y,X].BaseLayer.Terrain = 0 then Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
     UpdatePassability(Loc);
   end;
@@ -2656,7 +2753,7 @@ procedure TKMTerrain.UpdatePassability(const Loc: TKMPoint);
   end;
 var
   I, K: Integer;
-  HousesNearTile, HousesNearVertex, IsBuildNoObj: Boolean;
+  HasHousesNearTile, HousesNearVertex, IsBuildNoObj: Boolean;
 begin
   Assert(TileInMapCoords(Loc.X, Loc.Y)); //First of all exclude all tiles outside of actual map
 
@@ -2680,12 +2777,12 @@ begin
       AddPassability(tpWalkRoad);
 
     //Check for houses around this tile/vertex
-    HousesNearTile := False;
+    HasHousesNearTile := False;
     for I := -1 to 1 do
       for K := -1 to 1 do
         if TileInMapCoords(Loc.X+K, Loc.Y+I)
           and (Land[Loc.Y+I,Loc.X+K].TileLock in [tlFenced,tlDigged,tlHouse]) then
-          HousesNearTile := True;
+          HasHousesNearTile := True;
 
     IsBuildNoObj := False;
     if TileIsRoadable(Loc)
@@ -2699,7 +2796,7 @@ begin
       IsBuildNoObj := True;
     end;
 
-    if IsBuildNoObj and not HousesNearTile
+    if IsBuildNoObj and not HasHousesNearTile
       and((Land[Loc.Y,Loc.X].Obj = OBJ_NONE) or (gMapElements[Land[Loc.Y,Loc.X].Obj].CanBeRemoved)) then //Only certain objects are excluded
       AddPassability(tpBuild);
 
@@ -3426,20 +3523,23 @@ begin
 end;
 
 
-function TKMTerrain.CanPlaceGoldmine(X,Y: Word): Boolean;
-  function HousesNearTile: Boolean;
-  var I,K: Integer;
-  begin
-    Result := False;
-    for I := -1 to 1 do
+function TKMTerrain.HousesNearTile(X,Y: Word): Boolean;
+var
+  I,K: Integer;
+begin
+  Result := False;
+  for I := -1 to 1 do
     for K := -1 to 1 do
       if (Land[Y+I,X+K].TileLock in [tlFenced,tlDigged,tlHouse]) then
         Result := True;
-  end;
+end;
+
+
+function TKMTerrain.CanPlaceGoldMine(X,Y: Word): Boolean;
 begin
   Result := TileGoodForGoldmine(X,Y)
     and ((Land[Y,X].Obj = OBJ_NONE) or (gMapElements[Land[Y,X].Obj].CanBeRemoved))
-    and not HousesNearTile
+    and not HousesNearTile(X,Y)
     and (Land[Y,X].TileLock = tlNone)
     and CheckHeightPass(KMPoint(X,Y), hpBuildingMines);
 end;
@@ -3465,8 +3565,8 @@ begin
       Result := Result and TileInMapCoords(X, Y, 1);
 
       case aHouseType of
-        htIronMine: Result := Result and TileGoodForIron(X, Y);
-        htGoldMine: Result := Result and CanPlaceGoldmine(X, Y);
+        htIronMine: Result := Result and CanPlaceIronMine(X, Y);
+        htGoldMine: Result := Result and CanPlaceGoldMine(X, Y);
         else         Result := Result and (tpBuild in Land[Y,X].Passability);
       end;
     end;
@@ -3497,9 +3597,9 @@ begin
 
     //Mines must be on a mountain edge
     if aHouseType = htIronMine then
-      Result := Result and (Land[TY,TX].BaseLayer.Terrain in [109, 166..170]) and (Land[TY,TX].BaseLayer.Rotation mod 4 = 0);
+      Result := Result and TileGoodForIronMine(TX,TY);
     if aHouseType = htGoldMine then
-      Result := Result and (Land[TY,TX].BaseLayer.Terrain in [171..175     ]) and (Land[TY,TX].BaseLayer.Rotation mod 4 = 0);
+      Result := Result and TileGoodForGoldMine(TX,TY);
 
     //Check surrounding tiles for another house that overlaps
     for L := -1 to 1 do

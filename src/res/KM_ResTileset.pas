@@ -147,15 +147,15 @@ const
 
   // Does masks apply Walkable/Buildable restrictions on tile.
   // F.e. mt_2Corner mask does not add any restrictions
-  TILE_MASKS_PASS_RESTRICTIONS: array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType]
-                            of array[0..1] of Byte =  // (Walkable, Buildable) (0,1): 0 = False/1 = True
-     (((0,1), (0,0)),  // mt_2Straight
-      ((1,1), (0,0)),  // mt_2Diagonal
-      ((0,0), (0,0)),  // mt_2Corner
-      ((0,1), (0,0)),  // mt_2Opposite
-      ((0,0), (0,1)),  // mt_3Straight
-      ((0,0), (0,1)),  // mt_3Opposite
-      ((0,0), (0,0))); // mt_4Square
+//  TILE_MASKS_PASS_RESTRICTIONS: array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType]
+//                            of array[0..1] of Byte =  // (Walkable, Buildable) (0,1): 0 = False/1 = True
+//     (((0,1), (0,0)),  // mt_2Straight
+//      ((1,1), (0,0)),  // mt_2Diagonal
+//      ((0,0), (0,0)),  // mt_2Corner
+//      ((0,1), (0,0)),  // mt_2Opposite
+//      ((0,0), (0,1)),  // mt_3Straight
+//      ((0,0), (0,1)),  // mt_3Opposite
+//      ((0,0), (0,0))); // mt_4Square
 
 
 
@@ -441,6 +441,9 @@ type
     function TileIsCornField(aTile: Word): Boolean;
     function TileIsWineField(aTile: Word): Boolean;
     function TileIsFactorable(aTile: Word): Boolean;
+
+    function TileIsGoodForIronMine(aTile: Word): Boolean;
+    function TileIsGoodForGoldMine(aTile: Word): Boolean;
   end;
 
 
@@ -613,6 +616,18 @@ begin
       if aTile = 263 then
         Result := 5;
   end;
+end;
+
+
+function TKMResTileset.TileIsGoodForIronMine(aTile: Word): Boolean;
+begin
+  Result := aTile in [109,166..170];
+end;
+
+
+function TKMResTileset.TileIsGoodForGoldMine(aTile: Word): Boolean;
+begin
+  Result := aTile in [171..175];
 end;
 
 

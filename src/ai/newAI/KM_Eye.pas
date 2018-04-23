@@ -645,8 +645,8 @@ begin
     Output := Output AND gTerrain.TileInMapCoords(X, Y, 1);
     // Mines have specific requirements
     case aHT of
-      htIronMine: Output := Output AND gTerrain.TileGoodForIron(X, Y);
-      htGoldMine: Output := Output AND gTerrain.CanPlaceGoldmine(X, Y);
+      htIronMine: Output := Output AND gTerrain.CanPlaceIronMine(X, Y);
+      htGoldMine: Output := Output AND gTerrain.CanPlaceGoldMine(X, Y);
       else         Output := Output AND ( (tpBuild in gTerrain.Land[Y,X].Passability)
                                           OR (aIgnoreTrees
                                               AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])

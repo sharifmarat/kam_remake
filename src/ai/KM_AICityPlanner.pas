@@ -567,7 +567,7 @@ begin
   //Check for specific passabilities
   case FindType of
     fnIron:   Result := (fPassability * gTerrain.Land[Y,X].Passability <> [])
-                        or gTerrain.TileGoodForIron(X, Y);
+                        or gTerrain.CanPlaceIronMine(X, Y);
 
     fnGold:   Result := (fPassability * gTerrain.Land[Y,X].Passability <> [])
                         or gTerrain.TileGoodForGoldmine(X, Y);
