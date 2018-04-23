@@ -7,8 +7,8 @@ uses
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.193077;
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 2.178943;
+  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.226425767; //0.193077
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.582493335; //2.178943
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
