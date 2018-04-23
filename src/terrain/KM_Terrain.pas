@@ -2710,15 +2710,15 @@ procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
             Byte(TileInMapCoords(  X,Y+1) and TileHasStone(  X,Y+1))*4 +
             Byte(TileInMapCoords(X-1,  Y) and TileHasStone(X-1,  Y))*8;
 
-    if Bits = 0 then
-    begin
-      if (TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1)) then
-      begin
-
-      end else
-        Land[Y,X].BaseLayer.Terrain  := 0;
-    end else
-    begin
+//    if Bits = 0 then
+//    begin
+//      if (TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1)) then
+//      begin
+//
+//      end else
+//        Land[Y,X].BaseLayer.Terrain  := 0;
+//    end else
+//    begin
 
       //We UpdateTransition when the stone becomes grass, Bits can never = 15
       //The tile in center is fully mined and one below has Stoncutter on it,
@@ -2726,7 +2726,7 @@ procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
       Assert(Bits < 15);
       Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
       Land[Y,X].BaseLayer.Rotation := RotID[Bits];
-    end;
+//    end;
     if Land[Y,X].BaseLayer.Terrain = 0 then
       Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
     UpdatePassability(Loc);
