@@ -4054,6 +4054,7 @@ begin
   case Key of
     VK_UP:      SetValueNCheckRange(Int64(Value) + 1 + 9*Byte(ssShift in Shift));
     VK_DOWN:    SetValueNCheckRange(Int64(Value) - 1 - 9*Byte(ssShift in Shift));
+    VK_DELETE:  ValidateText; //Update value, cause we just deleted text and KeyPress was not invoked
   end;
 end;
 
