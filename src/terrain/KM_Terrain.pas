@@ -258,6 +258,11 @@ type
     function TileIsWalkableRoad(const Loc: TKMPoint): Boolean;
     function TileIsLocked(const aLoc: TKMPoint): Boolean;
 
+    function TileHasStone(X, Y: Word): Boolean;
+    function TileHasCoal(X, Y: Word): Boolean;
+    function TileHasIron(X, Y: Word): Boolean;
+    function TileHasGold(X, Y: Word): Boolean;
+
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
     function TileCornerTerrains(aX, aY: Word): TKMWordArray;
 
@@ -1187,6 +1192,30 @@ begin
 end;
 
 
+function TKMTerrain.TileHasStone(X, Y: Word): Boolean;
+begin
+  Result := TileIsStone(X, Y) > 0;
+end;
+
+
+function TKMTerrain.TileHasCoal(X, Y: Word): Boolean;
+begin
+  Result := TileIsCoal(X, Y) > 0;
+end;
+
+
+function TKMTerrain.TileHasIron(X, Y: Word): Boolean;
+begin
+  Result := TileIsIron(X, Y) > 0;
+end;
+
+
+function TKMTerrain.TileHasGold(X, Y: Word): Boolean;
+begin
+  Result := TileIsGold(X, Y) > 0;
+end;
+
+
 //Check if requested tile is soil suitable for fields and trees
 function TKMTerrain.TileIsSoil(X,Y: Word): Boolean;
 begin
@@ -1991,7 +2020,7 @@ begin
     P := ValidTiles[I];
     if (P.Y >= 2) //Can't mine stone from top row of the map (don't call TileIsStone with Y=0)
     and not KMSamePoint(aAvoidLoc, P)
-    and (TileIsStone(P.X, P.Y - 1) > 0)
+    and TileHasStone(P.X, P.Y - 1)
     and (aIgnoreWorkingUnits or not TileIsLocked(P)) //Already taken by another stonemason
     and Route_CanBeMade(aLoc, P, tpWalk, 0) then
       ChosenTiles.Add(P);
@@ -2057,9 +2086,9 @@ begin
   for I := Max(aLoc.Y - MiningRect.Top, 1) to Min(aLoc.Y + MiningRect.Bottom, fMapY - 1) do
     for K := Max(aLoc.X - MiningRect.Left, 1) to Min(aLoc.X + MiningRect.Right, fMapX - 1) do
     begin
-      if ((aRes = wt_IronOre)   and (TileIsIron(K,I) > 0))
-        or ((aRes = wt_GoldOre) and (TileIsGold(K,I) > 0))
-        or ((aRes = wt_Coal)    and (TileIsCoal(K,I) > 0)) then
+      if ((aRes = wt_IronOre)   and TileHasIron(K,I))
+        or ((aRes = wt_GoldOre) and TileHasGold(K,I))
+        or ((aRes = wt_Coal)    and TileHasCoal(K,I)) then
       begin
         //Poorest ore gets mined in range - 2
         if InRange(I - aLoc.Y, - MiningRect.Top + 2, MiningRect.Bottom - 2)
@@ -2668,17 +2697,29 @@ end;
 {Extract one unit of stone}
 procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
 
-  procedure UpdateTransition(X,Y:integer);
-  const TileID:array[0..15]of Word = (0,139,139,138,139,140,138,141,139,138,140,141,138,141,141,128);
-         RotID:array[0..15]of byte = (0,  0,  1,  0,  2,  0,  1,  3,  3,  3,  1,  2,  2,  1,  0,  0);
-  var Bits: Byte;
+  procedure UpdateTransition(X,Y: Integer);
+  const
+    TileID: array[0..15] of Word = (0,139,139,138,139,140,138,141,139,138,140,141,138,141,141,128);
+     RotID: array[0..15] of Byte = (0,  0,  1,  0,  2,  0,  1,  3,  3,  3,  1,  2,  2,  1,  0,  0);
+  var
+    Bits: Byte;
   begin
-    if not TileInMapCoords(X,Y) or (TileIsStone(X,Y) > 0) then Exit;
+    if not TileInMapCoords(X,Y) or TileHasStone(X,Y) then Exit;
 
-    Bits := Byte(TileInMapCoords(  X,Y-1) and (TileIsStone(  X,Y-1) > 0))*1 +
-            Byte(TileInMapCoords(X+1,  Y) and (TileIsStone(X+1,  Y) > 0))*2 +
-            Byte(TileInMapCoords(  X,Y+1) and (TileIsStone(  X,Y+1) > 0))*4 +
-            Byte(TileInMapCoords(X-1,  Y) and (TileIsStone(X-1,  Y) > 0))*8;
+    Bits := Byte(TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1))*1 +
+            Byte(TileInMapCoords(X+1,  Y) and TileHasStone(X+1,  Y))*2 +
+            Byte(TileInMapCoords(  X,Y+1) and TileHasStone(  X,Y+1))*4 +
+            Byte(TileInMapCoords(X-1,  Y) and TileHasStone(X-1,  Y))*8;
+
+    if Bits = 0 then
+    begin
+      if (TileInMapCoords(  X,Y-1) and TileHasStone(  X,Y-1)) then
+      begin
+
+      end else
+        Land[Y,X].BaseLayer.Terrain  := 0;
+    end else
+    begin
 
       //We UpdateTransition when the stone becomes grass, Bits can never = 15
       //The tile in center is fully mined and one below has Stoncutter on it,
@@ -2686,7 +2727,9 @@ procedure TKMTerrain.DecStoneDeposit(const Loc: TKMPoint);
       Assert(Bits < 15);
       Land[Y,X].BaseLayer.Terrain  := TileID[Bits];
       Land[Y,X].BaseLayer.Rotation := RotID[Bits];
-    if Land[Y,X].BaseLayer.Terrain = 0 then Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
+    end;
+    if Land[Y,X].BaseLayer.Terrain = 0 then
+      Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of grass tiles
     UpdatePassability(Loc);
   end;
 

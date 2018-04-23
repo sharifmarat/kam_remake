@@ -482,8 +482,8 @@ const
     Result := False;
     for X := Max(aMineLoc.X-4, 1) to Min(aMineLoc.X+3, gTerrain.MapX-1) do
     for Y := Max(aMineLoc.Y-8, 1) to aMineLoc.Y do
-      if ( not aIsGold AND (gTerrain.TileIsIron(X, Y) > 0) )
-          OR ( aIsGold AND (gTerrain.TileIsGold(X, Y) > 0) ) then
+      if ( not aIsGold AND gTerrain.TileHasIron(X, Y) )
+          OR ( aIsGold AND gTerrain.TileHasGold(X, Y) ) then
       Exit;
     Result := True;
   end;
@@ -497,7 +497,7 @@ const
     Result := False;
     for Y := Max(aQuaryLoc.Y-RADIUS, 1) to Min(aQuaryLoc.Y+RADIUS, gTerrain.MapY-1) do
     for X := Max(aQuaryLoc.X-RADIUS, 1) to Min(aQuaryLoc.X+RADIUS, gTerrain.MapX-1) do
-      if (gTerrain.TileIsStone(X, Y) > 0) then
+      if gTerrain.TileHasStone(X, Y) then
         Exit;
     Result := True;
   end;
@@ -513,7 +513,7 @@ const
     begin
       X := aCoalLoc.X + HMA[htCoalMine].Tiles[I].X;
       Y := aCoalLoc.Y + HMA[htCoalMine].Tiles[I].Y;
-      if (gTerrain.TileIsCoal(X, Y) > 0) then
+      if gTerrain.TileHasCoal(X, Y) then
         Exit;
     end;
     Result := True;

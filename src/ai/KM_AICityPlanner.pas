@@ -539,7 +539,7 @@ begin
                 if Result then
                   for I:=Max(X-4, 1) to Min(X+3, gTerrain.MapX) do
                     for K:=Max(Y-8, 1) to Y do
-                      if gTerrain.TileIsIron(I, K) > 0 then
+                      if gTerrain.TileHasIron(I, K) then
                         Exit;
                 Result := False; //Didn't find any ore
               end;
@@ -550,7 +550,7 @@ begin
                 if Result then
                   for I:=Max(X-4, 1) to Min(X+4, gTerrain.MapX) do
                     for K:=Max(Y-8, 1) to Y do
-                      if gTerrain.TileIsGold(I, K) > 0 then
+                      if gTerrain.TileHasGold(I, K) then
                         Exit;
                 Result := False; //Didn't find any ore
               end;
