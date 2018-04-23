@@ -39,7 +39,7 @@ type
 
   TKMTileMaskSubType = (mst_Main, mst_Extra);
 
-  TKMTileMaskKind = (mkNone, mkSoft, mkSofter, mkHard, mkHarder);
+  TKMTileMaskKind = (mkNone, mkSoftest, mkSoft, mkHard, mkHardest);
 
   TKMMaskFullType = record
     Kind: TKMTileMaskKind;
@@ -103,7 +103,7 @@ const
   TILE_MASK_KINDS_PREVIEW: array[TKMTileMaskKind] of Integer =
     (-1, 551, 561, 571, 571); //+1 here, so -1 is no image, and not grass
 
-  TILE_MASKS_FOR_LAYERS: array[mkSoft..mkHarder] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
+  TILE_MASKS_FOR_LAYERS: array[mkSoftest..mkHardest] of array[mt_2Straight..mt_4Square] of array[TKMTileMaskSubType] of Integer =
      //Soft
     (((549, -1),
       (550, -1),

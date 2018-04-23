@@ -118,7 +118,7 @@ begin
     BrushMasks[MK].OnClick := BrushChange;
   end;
 
-  BrushMasks[mkHarder].Hide;
+  BrushMasks[mkHardest].Hide;
 
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 320, 34, 34, 673, rxGui);
   MagicBrush.Hint := 'Magic brush - automatically fix all tile transitions with chosen mask'; //Todo translate
