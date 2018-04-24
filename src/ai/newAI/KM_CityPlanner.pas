@@ -31,13 +31,13 @@ var
   GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 135.6183;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 5.7336;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 28.51978;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 130.4515;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 84.80867;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.856276;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 106.9715;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 140.4927;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 0;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 29.42858;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 127.5861;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 92.88818;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.906583;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 63.63115;    
 
 
   GA_PATHFINDING_BasePrice    : Word = 2;
