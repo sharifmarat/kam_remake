@@ -2700,17 +2700,18 @@ type
   TStoneTransitionType = (sttNone, sttGrass, sttCoastSand, sttDirt, sttSnow, sttShallowSnow);
 
 const
-  TranTiles: array[TStoneTransitionType] of array[0..5] of Word =
-              ((  0, 139, 138, 140, 141, 274),
-               (  0, 139, 138, 140, 141, 274),
-               ( 32, 269, 268, 270, 271, 273),
-               ( 35, 278, 277, 279, 280, 282),
-               ( 46, 286, 285, 287, 288, 290),
-               ( 47, 294, 293, 295, 296, 298));
+  TranTiles: array[TStoneTransitionType] of array[0..6] of Word =
+              ((  0, 139, 138, 140, 141, 274, 301),
+               (  0, 139, 138, 140, 141, 274, 301),
+               ( 32, 269, 268, 270, 271, 273, 302),
+               ( 35, 278, 277, 279, 280, 282, 303),
+               ( 46, 286, 285, 287, 288, 290, 305),
+               ( 47, 294, 293, 295, 296, 298, 306));
 
   TileIDIndex: array[0..15] of Word = (0,1,1,2,1,3,2,4,1,2,3,4,2,4,4,0);
   RotID:       array[0..15] of Byte = (0,0,1,0,2,0,1,3,3,3,1,2,2,1,0,0);
-  RotIdDiag:   array[0..15] of Byte = (4,1,2,2,3,3,3,3,0,0,0,0,0,0,0,0);
+  TileIDDiagIndex: array[0..15] of Word = (5,5,5,6,5,5,6,5,5,6,5,5,6,5,5,5);
+  RotIdDiag:       array[0..15] of Byte = (4,3,0,0,1,3,1,3,2,3,0,0,2,0,0,0);
 
   function GetStoneTransitionType(X, Y: Word): TStoneTransitionType;
   begin
@@ -2752,8 +2753,8 @@ const
       if BitsDiag = 0 then
         Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType, 0]
       else begin
-        Land[Y,X].BaseLayer.Terrain := TranTiles[aTransitionType, 5];
-        Land[Y,X].BaseLayer.Rotation := (RotIdDiag[BitsDiag] + 2) mod 4;
+        Land[Y,X].BaseLayer.Terrain := TranTiles[aTransitionType, TileIDDiagIndex[BitsDiag]];
+        Land[Y,X].BaseLayer.Rotation := RotIdDiag[BitsDiag] mod 4;
       end;
     end else
     begin

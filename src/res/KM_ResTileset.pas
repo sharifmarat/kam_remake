@@ -7,8 +7,8 @@ uses
 
 
 const
-  TILES_CNT = 301;
-  MAX_TILE_TO_SHOW = 301;
+  TILES_CNT = 307;
+  MAX_TILE_TO_SHOW = 307;
   MAX_STATIC_TERRAIN_ID = 4997;
   WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
@@ -388,7 +388,12 @@ const
   (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone), (tkStone,tkStone,tkStone,tkStone),
   (tkShallowSnow,tkStone,tkShallowSnow,tkShallowSnow),
    //299
-  (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount), (tkIronMount,tkIronMount,tkLava,tkIronMount)
+  (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount), (tkIronMount,tkIronMount,tkLava,tkIronMount),
+   //301
+  (tkStone,tkStone,tkGrass,tkGrass), (tkStone,tkStone,tkCoastSand,tkCoastSand),
+  (tkStone,tkStone,tkDirt,tkDirt),   (tkStone,tkStone,tkSnow,tkSnow),
+   //305
+  (tkCustom,tkCustom,tkCustom,tkCustom), (tkStone,tkStone,tkShallowSnow,tkShallowSnow)
   );
 
 type
