@@ -87,6 +87,8 @@ type
     procedure RebuildMap(const aRect: TKMRect); overload;
     function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 
+    class function GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
+
     function CanUndo: Boolean;
     function CanRedo: Boolean;
 
@@ -160,7 +162,7 @@ const
     (3,41,42,43,0,0,0,0,0,0,0,0,0,0,0,0),  // Swamp
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),     // Ice
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),     // ShallowSnow
-    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),     // Sbow
+    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),     // Snow
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),     // DeepSnow
     (8,129,130,131,132,134,135,136,137,0,0,0,0,0,0,0),    // StoneMount
     (5,156,157,158,159,201{?},0,0,0,0,0,0,0,0,0,0),       // GoldMount
@@ -313,16 +315,24 @@ end;
 
 function TKMTerrainPainter.PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
 begin
+  Result := GetRandomTile(aTerrainKind, not RandomizeTiling);
+end;
+
+
+class function TKMTerrainPainter.GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
+begin
   Result := Abs(Combo[aTerrainKind, aTerrainKind, 1]);
-  if not RandomizeTiling or (RandomTiling[aTerrainKind, 0] = 0) then Exit;
+
+  if aSkipRandom or (RandomTiling[aTerrainKind, 0] = 0) then Exit;
+
 
   if aTerrainKind in [tkStone..tkIronMount, tkCoal..tkIron] then
     //Equal chance
-    Result := RandomTiling[aTerrainKind, Random(RandomTiling[aTerrainKind, 0]) + 1]
+    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0]) + 1]
   else
-  if Random(6) = 1 then
+  if KaMRandom(6) = 1 then
     //Chance reduced to 1/6
-    Result := RandomTiling[aTerrainKind, Random(RandomTiling[aTerrainKind, 0]) + 1];
+    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0]) + 1];
 end;
 
 

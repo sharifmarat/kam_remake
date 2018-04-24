@@ -391,9 +391,9 @@ const
   (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount), (tkIronMount,tkIronMount,tkLava,tkIronMount),
    //301
   (tkStone,tkStone,tkGrass,tkGrass), (tkStone,tkStone,tkCoastSand,tkCoastSand),
-  (tkStone,tkStone,tkDirt,tkDirt),   (tkStone,tkStone,tkSnow,tkSnow),
+  (tkStone,tkStone,tkDirt,tkDirt),   (tkCustom,tkCustom,tkCustom,tkCustom),
    //305
-  (tkCustom,tkCustom,tkCustom,tkCustom), (tkStone,tkStone,tkShallowSnow,tkShallowSnow)
+  (tkStone,tkStone,tkSnow,tkSnow), (tkStone,tkStone,tkShallowSnow,tkShallowSnow)
   );
 
 type
@@ -467,10 +467,10 @@ end;
 
 procedure TKMResTileset.InitRemakeTiles;
 const
-  WalkBuild:      array[0..7] of Integer = (257,262,264,274,275,283,291,299);
-  WalkNoBuild:    array[0..5] of Integer = (258,263,270,279,287,295);
-  NoWalkNoBuild: array[0..30] of Integer = (259,260,261,265,266,267,268,169,271,272,273,276,277,278,280,281,282,284,285,
-                                            286,288,289,290,292,293,294,296,297,298,300,301);
+  WalkBuild:     array[0..12] of Integer = (257,262,264,274,275,283,291,299,302,303,304,306,307);
+  WalkNoBuild:   array[0..17] of Integer = (258,263,269,270,271,272,278,279,280,281,286,287,288,289,294,295,296,297);
+  NoWalkNoBuild: array[0..19] of Integer = (259,260,261,265,266,267,268,169,273,276,277,282,284,285,
+                                            290,292,293,298,300,301);
 var
   I: Integer;
 begin
