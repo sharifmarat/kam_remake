@@ -205,10 +205,12 @@ begin
     and (gGFXData[rxTiles, aTerId].Tex.ID <> 0);
   if Result then
     if InRange(aTerId, 305, 349) then
+    begin
+      Result := False;
       for I := Low(WATER_ANIM_BELOW_350) to High(WATER_ANIM_BELOW_350) do
-        Result := Result and (aTerId <> WATER_ANIM_BELOW_350[I])
-    else
-      Result := Result and not InRange(aTerId, 549, 600);
+        Result := Result or (aTerId = WATER_ANIM_BELOW_350[I])
+    end else
+      Result := Result and not InRange(aTerId, 549, 600); //Masks Ids are in that range
 end;
 
 
