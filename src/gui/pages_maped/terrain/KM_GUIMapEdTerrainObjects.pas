@@ -214,6 +214,7 @@ procedure TKMMapEdTerrainObjects.UpdateObjButtonDescription(aBtn: TKMButtonFlat;
 var
   ChoppableTree: Boolean;
 begin
+  aBtn.CapColor := icWhite;
   aBtn.Hint := aBtn.Caption;
 
   ChoppableTree := False;
