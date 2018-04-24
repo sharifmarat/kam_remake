@@ -24,7 +24,6 @@ type
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); override;
     function GetResIn(aI: Byte): Word; override;
     procedure SetResIn(aI: Byte; aValue: Word); override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -36,6 +35,8 @@ type
     property GoldMaxCnt: Word read fGoldMaxCnt write SetGoldMaxCnt;
 
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
+
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
 
     function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
     function CanEquip(aUnitType: TKMUnitType): Boolean;
