@@ -75,6 +75,9 @@ uses
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
 
+  function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean; overload;
+  function ArrayContains(aValue: Word; const aArray: array of Word): Boolean; overload;
+
   function Pack4ByteToInteger(aByte1, aByte2, aByte3, aByte4: Byte): Integer;
   procedure UnpackIntegerTo4Byte(aInt: Integer; out aByte1, aByte2, aByte3, aByte4: Byte);
 
@@ -226,6 +229,34 @@ begin
   begin
     Inc(aArr1^[I], aArr2^[I]);
   end;
+end;
+
+
+function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aValue: Word; const aArray: array of Word): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
 end;
 
 

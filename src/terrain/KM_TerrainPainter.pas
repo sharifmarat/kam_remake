@@ -1233,7 +1233,8 @@ end;
 
 procedure TKMTerrainPainter.GenerateAddnData;
 const
-  SPECIAL_TILES = [24,25,194,198,199,202,206,207,214,216..219,221..233,246]; //Waterfalls and bridges
+  SPECIAL_TILES: array[0..28] of Word = ( 24, 25,194,198,199,202,206,207,214,216,217,218,219,221,222,223,224,225,226,227,228,
+                                         229,230,231,232,233,246,264,265); //Waterfalls and bridges
   OTHER_WATER_TILES = [193,208,209,240,244]; //Water tiles not used in painting (fast, straight, etc.)
   //Accuracies
   ACC_MAX = 5;  //Special tiles
@@ -1250,8 +1251,8 @@ var
     if not gTerrain.TileInMapCoords(X,Y) then Exit;
 
     //Special rules to fix stone hill corners:
-    // - Never overwrite tkStoneMount with tkGrass
-    // - Always allow tkStoneMount to overwrite tkGrass
+    // - Never overwrite tkStone with tkGrass
+    // - Always allow tkStone to overwrite tkGrass
     if (LandTerKind[Y,X].TerKind = tkStone) and (T = tkGrass) then Exit;
     if (LandTerKind[Y,X].TerKind = tkGrass) and (T = tkStone) then aAccuracy := ACC_MAX;
 
@@ -1287,7 +1288,7 @@ begin
   for I := 1 to gTerrain.MapY do
   for K := 1 to gTerrain.MapX do
     //Special tiles such as bridges should remain as tkCustom
-    if gTerrain.Land[I,K].BaseLayer.Terrain in SPECIAL_TILES then
+    if ArrayContains(gTerrain.Land[I,K].BaseLayer.Terrain, SPECIAL_TILES) then
       SetTerrainKindTile(K, I, tkCustom, ACC_MAX) //Maximum accuracy
     else
       //Water tiles not used in painting (fast, straight, etc.)

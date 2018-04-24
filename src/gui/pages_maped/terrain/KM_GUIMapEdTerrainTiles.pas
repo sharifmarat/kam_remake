@@ -43,16 +43,16 @@ type
 
 implementation
 uses
-  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_GameCursor, KM_RenderUI, KM_InterfaceGame, KM_ResKeys, KM_Utils;
+  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResTileset, KM_ResKeys,
+  KM_GameCursor, KM_RenderUI, KM_InterfaceGame,
+  KM_CommonUtils, KM_Utils;
 
 const
-  TILES_NOT_ALLOWED_TO_SET = [55..55,59..63, //wine and corn
-                              108..110, //duplicates of 189/169/185
-                              246..246, //some strange bridge...
-                              248..255 //roads and overlays
-                              ];
-  //Todo refactor
-  TILES_NOT_ALLOWED_TO_SET2 = 304; //water anim
+  TILES_NOT_ALLOWED_TO_SET: array[0..18] of Word = (55,59,60,61,62,63, //wine and corn
+                                                    108,109,110, //duplicates of 189/169/185
+                                                    246, //some strange bridge...
+                                                    248,249,250,251,252,253,254,255, //roads and overlays
+                                                    304); //water anim
 
   TABLE_ELEMS = 336;
   //Tiles table was initially made by JBSnorro, thanks to him :)
@@ -172,8 +172,7 @@ begin
 
   if Sender = NumEdit_SetTileNumber then
   begin
-    if not (NumEdit_SetTileNumber.Value in TILES_NOT_ALLOWED_TO_SET)
-      and (NumEdit_SetTileNumber.Value <> TILES_NOT_ALLOWED_TO_SET2) then //Todo refactor
+    if not ArrayContains(NumEdit_SetTileNumber.Value, TILES_NOT_ALLOWED_TO_SET) then
     begin
       TilesSet(NumEdit_SetTileNumber.Value + 1);
       TilesTableSetTileTexId(NumEdit_SetTileNumber.Value);
