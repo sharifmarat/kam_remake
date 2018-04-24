@@ -1209,7 +1209,7 @@ end;
 
 function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
 var
-  K, L, Cnt: Integer;
+  K, Cnt: Integer;
   Corners: TKMWordArray;
 begin
   Cnt := 0;
@@ -1218,6 +1218,7 @@ begin
     if aCheckTileFunc(Corners[K]) then
       Inc(Cnt);
 
+  //Consider tile has parameter if he has 3 corners with that parameter or if he has 2 corners and base layer has the parameter
   Result := (Cnt >= 3) or ((Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
 end;
 
