@@ -77,6 +77,8 @@ uses
 
   function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean; overload;
   function ArrayContains(aValue: Word; const aArray: array of Word): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean; overload;
 
   function Pack4ByteToInteger(aByte1, aByte2, aByte3, aByte4: Byte): Integer;
   procedure UnpackIntegerTo4Byte(aInt: Integer; out aByte1, aByte2, aByte3, aByte4: Byte);
@@ -253,6 +255,34 @@ begin
   Result := False;
   for I := Low(aArray) to High(aArray) do
     if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if KMSamePoint(aPoint, aArray[I]) then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to aElemCnt - 1 do
+    if KMSamePoint(aPoint, aArray[I]) then
     begin
       Result := True;
       Exit;
