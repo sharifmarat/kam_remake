@@ -507,19 +507,20 @@ end;
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
 const
   PERF_TIME_LIMIT = MAX_HANDS * 10 * 10;
-  //PERF_TIME_LIMIT = 10;
+  PERF_TIME_LIMIT_Tactic = MAX_HANDS * 5;
 begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     CheckThreats();
-    if (aTick mod PERF_TIME_LIMIT = fOwner) then
+    if ((gGame.MissionMode = mm_Tactic) AND (aTick mod PERF_TIME_LIMIT_Tactic = fOwner))
+      OR (aTick mod PERF_TIME_LIMIT = fOwner) then
       CheckAttack();
     RecruitSoldiers();
     CheckGroupsState();
     fAttack.UpdateState(aTick);
     fDefence.UpdateState(aTick);
   end;
-end;
+end; 
 
 
 procedure TKMArmyManagement.LogStatus(var aBalanceText: UnicodeString);
