@@ -243,11 +243,11 @@ type
     WaresCount: array [WARE_MIN .. WARE_MAX] of Word;
   protected
     procedure Activate(aWasBuilt: Boolean); override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
     procedure ToggleAcceptFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
@@ -268,8 +268,7 @@ type
   private
     fAcceptWood: Boolean;
     fAcceptLeather: Boolean;
-  protected
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
@@ -278,6 +277,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
     function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   end;
 
 
