@@ -27,8 +27,6 @@ type
     HeightAdd: Byte; //Fraction part of height, for smooth height editing
   end;
 
-  TKMTerrainKindsArray = array of TKMTerrainKind;
-
   //Terrain helper that is used to paint terrain types in Map Editor
   TKMTerrainPainter = class
   private
