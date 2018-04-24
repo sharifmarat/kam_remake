@@ -2766,7 +2766,7 @@ const
     end;
     if Land[Y,X].BaseLayer.Terrain = TranTiles[aTransitionType, 0] then
       Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of no-stone terrain tiles
-    UpdatePassability(Loc);
+    UpdatePassability(KMPoint(X,Y));
   end;
 
 var
