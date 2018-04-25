@@ -9,7 +9,7 @@ type
   TKMFuncArea = (faCommon, faGame, faSpecReplay, faMapEdit);
 
 const
-  // There are total of 96 different functions in the game that can have a shortcut
+  // Total number of different functions in the game that can have a shortcut
   FUNC_COUNT = 97;
 
   // Load key IDs from inc file
