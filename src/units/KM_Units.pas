@@ -142,7 +142,6 @@ type
     function HitTest(X,Y: Integer; const UT: TKMUnitType = ut_Any): Boolean;
 
     procedure SetActionAbandonWalk(aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
-    procedure SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
     procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); virtual;
     procedure SetActionStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = True; aStillFrame: Byte = 0; aStep: Integer = 0);
     procedure SetActionStorm(aRow: Integer);
@@ -1521,29 +1520,6 @@ begin
     fCurrentAction.Free;
     fCurrentAction := aAction;
   end;
-end;
-
-
-procedure TKMUnit.SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
-var
-  Cycle, Step: Byte;
-begin
-  //Archers should start in the reloading if they shot recently phase to avoid rate of fire exploit
-  Step := 0; //Default
-  Cycle := max(gRes.Units[UnitType].UnitAnim[aAction, Direction].Count, 1);
-  if (TKMUnitWarrior(Self).IsRanged) and TKMUnitWarrior(Self).NeedsToReload(Cycle) then
-  begin
-    //Skip the unit's animation forward to 1 step AFTER firing
-    case UnitType of
-      ut_Arbaletman,
-      ut_Bowman:     Step := (FIRING_DELAY+(gGame.GameTickCount-TKMUnitWarrior(Self).LastShootTime)) mod Cycle;
-      ut_Slingshot:  Step := (SLINGSHOT_FIRING_DELAY+(gGame.GameTickCount-TKMUnitWarrior(Self).LastShootTime)) mod Cycle;
-    end;
-  end;
-
-  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
-    raise ELocError.Create('Unit fight overrides walk', fCurrPosition);
-  SetAction(TKMUnitActionFight.Create(Self, aAction, aOpponent), Step);
 end;
 
 

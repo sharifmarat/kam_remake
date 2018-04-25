@@ -76,6 +76,8 @@ type
     procedure OrderAttackHouse(aTargetHouse: TKMHouse);
     procedure OrderFight(aTargetUnit: TKMUnit);
 
+    procedure SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
+
     function GetFightMinRange: Single;
     function GetFightMaxRange(aTileBased: Boolean = False): Single;
     function WithinFightRange(Value: TKMPoint): Boolean;
@@ -606,6 +608,23 @@ begin
   //Only stop attacking a house if it's a warrior
   if (fUnitTask <> nil) and (fUnitTask is TKMTaskAttackHouse) and (GetUnitAction is TKMUnitActionStay) and not (Result is TKMUnitWarrior) then
     Result := nil;
+end;
+
+
+procedure TKMUnitWarrior.SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
+var
+  Cycle, Step: Byte;
+begin
+  //Archers should start in the reloading if they shot recently phase to avoid rate of fire exploit
+  Step := 0; //Default
+  Cycle := Max(gRes.Units[UnitType].UnitAnim[aAction, Direction].Count, 1);
+  if (TKMUnitWarrior(Self).IsRanged) and TKMUnitWarrior(Self).NeedsToReload(Cycle) then
+    //Skip the unit's animation forward to 1 step AFTER firing
+    Step := (FiringDelay + (gGame.GameTickCount - TKMUnitWarrior(Self).LastShootTime)) mod Cycle;
+
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+    raise ELocError.Create('Unit fight overrides walk', fCurrPosition);
+  SetAction(TKMUnitActionFight.Create(Self, aAction, aOpponent), Step);
 end;
 
 
