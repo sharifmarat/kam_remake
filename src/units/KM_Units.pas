@@ -1578,7 +1578,7 @@ end;
 
 
 //Same as above but we will ignore get-out-of-the-way (push) requests from interaction system
-procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = true;
+procedure TKMUnit.SetActionLockedStay(aTimeToStay: Integer; aAction: TKMUnitActionType; aStayStill: Boolean = True;
                                       aStillFrame: Byte = 0; aStep: Integer = 0);
 begin
   //When standing still in walk, use default frame

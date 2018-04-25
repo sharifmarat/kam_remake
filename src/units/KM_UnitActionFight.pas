@@ -15,13 +15,13 @@ type
 
     //Execute is broken up into multiple methods
       function ExecuteValidateOpponent(Step: Byte): TKMActionResult;
-      function ExecuteProcessRanged(Step: Byte):boolean;
-      function ExecuteProcessMelee(Step: Byte):boolean;
+      function ExecuteProcessRanged(Step: Byte): Boolean;
+      function ExecuteProcessMelee(Step: Byte): Boolean;
 
     function UpdateVertexUsage(aFrom, aTo: TKMPoint): Boolean;
     procedure IncVertex(aFrom, aTo: TKMPoint);
     procedure DecVertex;
-    procedure MakeSound(IsHit:boolean);
+    procedure MakeSound(IsHit: Boolean);
   public
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aOpponent: TKMUnit);
     constructor Load(LoadStream:TKMemoryStream); override;
@@ -149,7 +149,7 @@ begin
 end;
 
 
-procedure TKMUnitActionFight.MakeSound(IsHit:boolean);
+procedure TKMUnitActionFight.MakeSound(IsHit: Boolean);
 var
   //Battlecry is the most noticable random sound, we would like to repeat it exactly the same in each replay (?)
   MakeBattleCry: Boolean;

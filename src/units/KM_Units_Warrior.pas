@@ -345,7 +345,7 @@ end;
 
 
 //At which range we can fight
-function TKMUnitWarrior.GetFightMinRange:single;
+function TKMUnitWarrior.GetFightMinRange: Single;
 begin
   case fUnitType of
     ut_Bowman:      Result := RANGE_BOWMAN_MIN;
