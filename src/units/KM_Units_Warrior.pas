@@ -4,7 +4,7 @@ interface
 uses
   Classes, SysUtils, KromUtils, Math,
   KM_CommonClasses, KM_Defaults, KM_Points,
-  KM_Houses, KM_Terrain, KM_Units;
+  KM_Houses, KM_Terrain, KM_Units, KM_Projectiles;
 
 
 type
@@ -48,6 +48,13 @@ type
     procedure TakeNextOrder;
     procedure WalkedOut;
     function CanInterruptAction: Boolean;
+
+    function GetFiringDelay: Byte;
+    function GetAimingDelay: Byte;
+    function GetRangeMin: Single;
+    function GetRangeMax: Single;
+    function GetProjectileType: TKMProjectileType;
+    function GetAimSoundDelay: Byte;
   public
     OnWarriorDied: TKMWarriorEvent; //Separate event from OnUnitDied to report to Group
     OnPickedFight: TKMWarrior2Event;
@@ -75,6 +82,14 @@ type
     procedure OrderWalk(aLoc: TKMPoint; aUseExactTarget: Boolean = True);
     procedure OrderAttackHouse(aTargetHouse: TKMHouse);
     procedure OrderFight(aTargetUnit: TKMUnit);
+
+    //Ranged units properties
+    property AimingDelay: Byte read GetAimingDelay;
+    property FiringDelay: Byte read GetFiringDelay;
+    property RangeMin: Single read GetRangeMin;
+    property RangeMax: Single read GetRangeMax;
+    property ProjectileType: TKMProjectileType read GetProjectileType;
+    property AimSoundDelay: Byte read GetAimSoundDelay;
 
     procedure SetActionFight(aAction: TKMUnitActionType; aOpponent: TKMUnit);
 
@@ -108,7 +123,7 @@ uses
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
   KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroups,
-  KM_ResWares, KM_Game, KM_ResHouses;
+  KM_ResWares, KM_Game, KM_ResHouses, KM_CommonUtils;
 
 
 { TKMUnitWarrior }
@@ -334,9 +349,9 @@ end;
 function TKMUnitWarrior.GetFightMaxRange(aTileBased: Boolean = False): Single;
 begin
   case fUnitType of
-    ut_Bowman:      Result := RANGE_BOWMAN_MAX / (Byte(REDUCE_SHOOTING_RANGE) + 1);
-    ut_Arbaletman:  Result := RANGE_ARBALETMAN_MAX / (Byte(REDUCE_SHOOTING_RANGE) + 1);
-    ut_Slingshot:   Result := RANGE_SLINGSHOT_MAX / (Byte(REDUCE_SHOOTING_RANGE) + 1);
+    ut_Bowman,
+    ut_Arbaletman,
+    ut_Slingshot:   Result := RangeMax / (Byte(REDUCE_SHOOTING_RANGE) + 1);
     //During storm attack we look for enemies 1.42 tiles away so we engage enemies easier and don't accidentially walk past them diagonally
     else            if aTileBased and not (GetUnitAction is TKMUnitActionStormAttack) then
                       Result := 1 //Enemy must maximum be 1 tile away
@@ -350,9 +365,9 @@ end;
 function TKMUnitWarrior.GetFightMinRange: Single;
 begin
   case fUnitType of
-    ut_Bowman:      Result := RANGE_BOWMAN_MIN;
-    ut_Arbaletman:  Result := RANGE_ARBALETMAN_MIN;
-    ut_Slingshot:   Result := RANGE_SLINGSHOT_MIN;
+    ut_Bowman,
+    ut_Arbaletman,
+    ut_Slingshot:   Result := RangeMin;
     else            Result := 0.5;
   end;
 end;
@@ -655,6 +670,98 @@ begin
     Result := True //We can abandon attack house if the action is stay
   else
     Result := GetUnitAction.CanBeInterrupted;
+end;
+
+
+function TKMUnitWarrior.GetFiringDelay: Byte;
+const
+  SLINGSHOT_FIRING_DELAY = 15; //on which frame slinger fires his rock
+  FIRING_DELAY = 0; //on which frame archer fires his arrow/bolt
+begin
+  Result := 0;
+  if IsRanged then
+    case UnitType of
+      ut_Bowman,
+      ut_Arbaletman: Result := FIRING_DELAY;
+      ut_SlingShot:  Result := SLINGSHOT_FIRING_DELAY;
+      else raise Exception.Create('Unknown shooter');
+    end;
+end;
+
+
+function TKMUnitWarrior.GetAimingDelay: Byte;
+const
+  BOWMEN_AIMING_DELAY_MIN      = 6; //minimum time for bowmen to aim
+  BOWMEN_AIMING_DELAY_ADD      = 6; //random component
+  SLINGSHOT_AIMING_DELAY_MIN   = 0; //minimum time for slingshot to aim
+  SLINGSHOT_AIMING_DELAY_ADD   = 4; //random component
+  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for crossbowmen to aim
+  CROSSBOWMEN_AIMING_DELAY_ADD = 8; //random component
+begin
+  Result := 0;
+  if IsRanged then
+    case UnitType of
+      ut_Bowman:     Result := BOWMEN_AIMING_DELAY_MIN + KaMRandom(BOWMEN_AIMING_DELAY_ADD);
+      ut_Arbaletman: Result := CROSSBOWMEN_AIMING_DELAY_MIN + KaMRandom(CROSSBOWMEN_AIMING_DELAY_ADD);
+      ut_SlingShot:  Result := SLINGSHOT_AIMING_DELAY_MIN + KaMRandom(SLINGSHOT_AIMING_DELAY_ADD);
+      else raise Exception.Create('Unknown shooter');
+    end;
+end;
+
+
+function TKMUnitWarrior.GetAimSoundDelay: Byte;
+const
+  SLINGSHOT_AIMING_SOUND_DELAY = 2;
+begin
+  Result := 0;
+  if UnitType = ut_SlingShot then
+    Result := SLINGSHOT_AIMING_SOUND_DELAY;
+end;
+
+
+function TKMUnitWarrior.GetRangeMin: Single;
+const
+  RANGE_ARBALETMAN_MIN  = 4; //KaM: We will shoot a unit standing 4 tiles away, but not one standing 3 tiles away
+  RANGE_BOWMAN_MIN      = 4;
+  RANGE_SLINGSHOT_MIN   = 4;
+begin
+  Result := 0;
+  if IsRanged then
+    case UnitType of
+      ut_Bowman:     Result := RANGE_BOWMAN_MIN;
+      ut_Arbaletman: Result := RANGE_ARBALETMAN_MIN;
+      ut_SlingShot:  Result := RANGE_SLINGSHOT_MIN;
+      else raise Exception.Create('Unknown shooter');
+    end;
+end;
+
+
+function TKMUnitWarrior.GetRangeMax: Single;
+const
+  RANGE_ARBALETMAN_MAX  = 10.99; //KaM: Unit standing 10 tiles from us will be shot, 11 tiles not
+  RANGE_BOWMAN_MAX      = 10.99;
+  RANGE_SLINGSHOT_MAX   = 10.99;
+begin
+  Result := 0;
+  if IsRanged then
+    case UnitType of
+      ut_Bowman:     Result := RANGE_BOWMAN_MAX;
+      ut_Arbaletman: Result := RANGE_ARBALETMAN_MAX;
+      ut_SlingShot:  Result := RANGE_SLINGSHOT_MAX;
+      else raise Exception.Create('Unknown shooter');
+    end;
+end;
+
+
+function TKMUnitWarrior.GetProjectileType: TKMProjectileType;
+begin
+  Assert(IsRanged, 'Can''t get projectile type for not ranged warriors');
+  case UnitType of
+    ut_Bowman:     Result := pt_Arrow;
+    ut_Arbaletman: Result := pt_Bolt;
+    ut_SlingShot:  Result := pt_SlingRock;
+    else raise Exception.Create('Unknown shooter');
+  end;
 end;
 
 
