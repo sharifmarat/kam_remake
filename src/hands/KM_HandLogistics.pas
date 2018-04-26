@@ -130,7 +130,7 @@ type
     procedure RemDemand(aHouse: TKMHouse); overload;
     procedure RemDemand(aUnit: TKMUnit); overload;
 
-    function GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType = wt_All): Integer;
+    function GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType): Integer;
 
     function GetAvailableDeliveriesCount: Integer;
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
