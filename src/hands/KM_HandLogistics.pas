@@ -38,6 +38,7 @@ type
     BeingPerformed: Cardinal; //How many items are being delivered atm from total Count offered
     //Keep offer until serfs that do it abandons it
     IsDeleted: Boolean;
+    Item: TListItem;
   end;
 
   PKMDeliveryDemand = ^TKMDeliveryDemand;
@@ -49,6 +50,7 @@ type
     Loc_Unit: TKMUnit;
     BeingPerformed: Cardinal; //Can be performed multiple times for dt_Always
     IsDeleted: Boolean; //So we don't get pointer issues
+    Item: TListItem;
   end;
 
   {$IFDEF WDC}
@@ -178,7 +180,7 @@ type
 
 implementation
 uses
-  Classes, SysUtils, Math,
+  Classes, SysUtils, Math, TypInfo,
   KM_Terrain,
   KM_FormLogistics,
   KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
@@ -476,6 +478,21 @@ begin
     Ware := aWare;
     Count := aCount;
     Assert((BeingPerformed = 0) and not IsDeleted); //Make sure this item has been closed properly, if not there is a flaw
+
+    if Assigned(FormLogistics) then
+    begin
+      Item := FormLogistics.OffersList.Items.Add;
+      Item.Caption := gRes.Wares[Ware].Title;
+
+      if aHouse <> nil then
+        Item.SubItems.Add(gRes.Houses[aHouse.HouseType].HouseName)
+      else
+        Item.SubItems.Add('nil');
+
+      Item.SubItems.Add(IntToStr(Count));
+      Item.SubItems.Add(IntToStr(BeingPerformed));
+      Item.SubItems.Add(BoolToStr(IsDeleted, True));
+    end;
   end;
 end;
 
@@ -665,6 +682,24 @@ begin
       if (Ware in [wt_Bread, wt_Sausages, wt_Wine, wt_Fish])
         and (Loc_House <> nil) and (Loc_House.HouseType = htInn) then
         Importance := diHigh3;
+
+      if Assigned(FormLogistics) then
+      begin
+        Item := FormLogistics.DemandsList.Items.Add;
+        Item.Caption := gRes.Wares[Ware].Title;
+
+        if aHouse <> nil then
+          Item.SubItems.Add('H: ' + gRes.Houses[aHouse.HouseType].HouseName)
+        else if aUnit <> nil then
+          Item.SubItems.Add('U: ' + gRes.Units[aUnit.UnitType].UnitName)
+        else
+          Item.SubItems.Add('nil');
+
+        Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandType), Integer(DemandType)));
+        Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandImportance), Integer(Importance)));
+        Item.SubItems.Add(IntToStr(BeingPerformed));
+        Item.SubItems.Add(BoolToStr(IsDeleted, True));
+      end;
     end;
   end;
 end;
@@ -1308,7 +1343,7 @@ begin
 
   if Assigned(FormLogistics) then
   begin
-    fQueue[I].Item := FormLogistics.ListView.Items.Add;
+    fQueue[I].Item := FormLogistics.DeliveriesList.Items.Add;
     fQueue[I].Item.Caption := gRes.Wares[fOffer[fQueue[I].OfferID].Ware].Title;
 
     if fOffer[fQueue[I].OfferID].Loc_House = nil then
@@ -1404,6 +1439,7 @@ begin
   fQueue[aID].OfferID := 0;
   fQueue[aID].DemandID := 0;
   fQueue[aID].JobStatus := js_Empty; //Open slot
+
   if Assigned(fQueue[aID].Item) then
     fQueue[aID].Item.Delete;
 end;
@@ -1418,6 +1454,9 @@ begin
   gHands.CleanUpHousePointer(fDemand[aID].Loc_House);
   gHands.CleanUpUnitPointer(fDemand[aID].Loc_Unit);
   fDemand[aID].IsDeleted := False;
+
+  if Assigned(fDemand[aID].Item) then
+    fDemand[aID].Item.Delete;
 end;
 
 
@@ -1428,6 +1467,9 @@ begin
   fOffer[aID].Ware := wt_None;
   fOffer[aID].Count := 0;
   gHands.CleanUpHousePointer(fOffer[aID].Loc_House);
+
+  if Assigned(fOffer[aID].Item) then
+    fOffer[aID].Item.Delete;
 end;
 
 
