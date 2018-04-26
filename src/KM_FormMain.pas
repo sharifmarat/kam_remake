@@ -171,7 +171,8 @@ type
   public
     RenderArea: TKMRenderControl;
     SuppressAltForMenu: Boolean; //Suppress Alt key 'activate window menu' function
-    procedure ControlsSetVisibile(aShowCtrls: Boolean);
+    procedure ControlsSetVisibile(aShowCtrls, aShowGroupBox: Boolean); overload;
+    procedure ControlsSetVisibile(aShowCtrls: Boolean); overload;
     procedure ControlsReset;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
@@ -267,9 +268,10 @@ end;
 
 procedure TFormMain.FormKeyUpProc(aKey: Word; aShift: TShiftState);
 begin
-  if aKey = gResKeys[SC_DEBUG_WINDOW].Key then begin
+  if aKey = gResKeys[SC_DEBUG_WINDOW].Key then
+  begin
     SHOW_DEBUG_CONTROLS := not SHOW_DEBUG_CONTROLS;
-    ControlsSetVisibile(SHOW_DEBUG_CONTROLS);
+    ControlsSetVisibile(SHOW_DEBUG_CONTROLS, not (ssCtrl in aShift)); //Hide groupbox when Ctrl is pressed
   end;
 
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
@@ -612,11 +614,18 @@ end;
 
 
 procedure TFormMain.ControlsSetVisibile(aShowCtrls: Boolean);
-var I: Integer;
+begin
+  ControlsSetVisibile(aShowCtrls, aShowCtrls);
+end;
+
+
+procedure TFormMain.ControlsSetVisibile(aShowCtrls, aShowGroupBox: Boolean);
+var
+  I: Integer;
 begin
   Refresh;
 
-  GroupBox1.Visible  := aShowCtrls;
+  GroupBox1.Visible  := aShowGroupBox and aShowCtrls;
   StatusBar1.Visible := aShowCtrls;
 
   //For some reason cycling Form.Menu fixes the black bar appearing under the menu upon making it visible.
@@ -624,7 +633,7 @@ begin
   Menu := nil;
   if aShowCtrls then Menu := MainMenu1;
 
-  GroupBox1.Enabled  := aShowCtrls;
+  GroupBox1.Enabled  := aShowGroupBox and aShowCtrls;
   StatusBar1.Enabled := aShowCtrls;
   for I := 0 to MainMenu1.Items.Count - 1 do
     MainMenu1.Items[I].Enabled := aShowCtrls;

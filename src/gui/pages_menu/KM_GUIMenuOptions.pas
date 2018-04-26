@@ -546,6 +546,7 @@ const
 var
   I, prevI: Integer;
   K: TKMFuncArea;
+  KeyName: UnicodeString;
 begin
   prevI := ColumnBox_OptionsKeys.TopIndex;
 
@@ -559,8 +560,13 @@ begin
     // Do not show the debug keys
     for I := 0 to fTempKeys.Count - 1 do
       if (fTempKeys[I].Area = K) and not fTempKeys[I].IsChangableByPlayer then
-        ColumnBox_OptionsKeys.AddItem(MakeListRow([GetFunctionName(fTempKeys[I].TextId), fTempKeys.GetKeyNameById(I)],
+      begin
+        KeyName := fTempKeys.GetKeyNameById(I);
+        if I = SC_DEBUG_WINDOW then
+          KeyName := KeyName + ' / Ctrl + ' + KeyName; //Also show Ctrl + F11, for debug window hotkey
+        ColumnBox_OptionsKeys.AddItem(MakeListRow([GetFunctionName(fTempKeys[I].TextId), KeyName],
                                                   [$FFFFFFFF, $FFFFFFFF], [$FF0000FF, $FF0000FF], I));
+      end;
   end;
 
   ColumnBox_OptionsKeys.TopIndex := prevI;
