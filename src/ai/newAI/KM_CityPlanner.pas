@@ -16,19 +16,19 @@ var
   GA_PLANNER_FindPlaceForHouse_Influence            : Single = 200; // 0..XXX
   GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
 
-  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 155.3616107;
-  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 115.6175673;
-  GA_PLANNER_FieldCrit_FarmPolyRoute                  : Single = 2.021839842;
-  GA_PLANNER_FieldCrit_EvalArea                       : Single = 14.96748626;
-  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 41.11732841;
-  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 4.409770668;
-  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 88.02675605;
-  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 70.25580555;
-  GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 38.96143138;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 28.02496851;
-  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 1;
-  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 66.22454971;
-  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 128.3957005;
+  GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 78.74821;
+  GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 166.9093;
+  GA_PLANNER_FieldCrit_FarmPolyRoute                  : Single = 68.94883;
+  GA_PLANNER_FieldCrit_EvalArea                       : Single = 40.58227;
+  GA_PLANNER_SnapCrit_SnapToHouse                     : Single = 23.96991;
+  GA_PLANNER_SnapCrit_SnapToFields                    : Single = 23.04258;
+  GA_PLANNER_SnapCrit_SnapToRoads                     : Single = 45;
+  GA_PLANNER_SnapCrit_ClearEntrance                   : Single = 63.76414;
+  //GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = 38.96143138;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = 4.484678;
+  GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = 39.34738;
+  GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = 17.97188;
+  GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 59.41017;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
   GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 140.4927;
@@ -37,24 +37,24 @@ var
   GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 127.5861;
   GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 92.88818;
   GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.906583;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 63.63115;    
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 63.63115;
 
 
-  GA_PATHFINDING_BasePrice    : Word = 2;
-  GA_PATHFINDING_HouseOutside : Word = 1;
-  GA_PATHFINDING_Field        : Word = 5;
-  GA_PATHFINDING_noBuildArea  : Word = 1;
+  GA_PATHFINDING_BasePrice    : Word = 6;
+  GA_PATHFINDING_HouseOutside : Word = 4;
+  GA_PATHFINDING_Field        : Word = 6;
+  GA_PATHFINDING_noBuildArea  : Word = 7;
   GA_PATHFINDING_Coal         : Word = 2;
-  GA_PATHFINDING_Forest       : Word = 3;
-  GA_PATHFINDING_OtherCase    : Word = 3;
+  GA_PATHFINDING_Forest       : Word = 7;
+  GA_PATHFINDING_OtherCase    : Word = 8;
 
-  GA_SHORTCUTS_BasePrice      : Word = 1;
-  GA_SHORTCUTS_HouseOutside   : Word = 1;
-  GA_SHORTCUTS_Field          : Word = 8;
+  GA_SHORTCUTS_BasePrice      : Word = 3;
+  GA_SHORTCUTS_HouseOutside   : Word = 4;
+  GA_SHORTCUTS_Field          : Word = 4;
   GA_SHORTCUTS_noBuildArea    : Word = 1;
   GA_SHORTCUTS_Coal           : Word = 2;
-  GA_SHORTCUTS_Forest         : Word = 4;
-  GA_SHORTCUTS_OtherCase      : Word = 2;
+  GA_SHORTCUTS_Forest         : Word = 5;
+  GA_SHORTCUTS_OtherCase      : Word = 8;
 
 type
   THousePlan = record
@@ -1185,13 +1185,12 @@ var
     L: Integer;
     Gain: Double;
   begin
-    Gain := //- InitBid * GA_PLANNER_FindPlaceForHouse_CloseWorker
-           + SnapCrit(aHT, aLoc) * GA_PLANNER_FindPlaceForHouse_SnapCrit
-           + DistCrit(aHT, aLoc) * GA_PLANNER_FindPlaceForHouse_DistCrit
-           - KMDistanceSqr(CityCenter, aLoc) * GA_PLANNER_FindPlaceForHouse_CityCenter
-           - ObstaclesInHousePlan(aHT, aLoc)
-           - gAIFields.Influences.GetOtherOwnerships(fOwner, aLoc.X, aLoc.Y) * GA_PLANNER_FindPlaceForHouse_Influence
-           + gAIFields.Influences.EvalArea[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_EvalArea;
+    Gain := + SnapCrit(aHT, aLoc) * GA_PLANNER_FindPlaceForHouse_SnapCrit
+            + DistCrit(aHT, aLoc) * GA_PLANNER_FindPlaceForHouse_DistCrit
+            - KMDistanceSqr(CityCenter, aLoc) * GA_PLANNER_FindPlaceForHouse_CityCenter
+            - ObstaclesInHousePlan(aHT, aLoc)
+            - gAIFields.Influences.GetOtherOwnerships(fOwner, aLoc.X, aLoc.Y) * GA_PLANNER_FindPlaceForHouse_Influence
+            + gAIFields.Influences.EvalArea[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_EvalArea;
     if (aHT = htFarm) OR (aHT = htWineyard) then
       Gain := Gain + FieldCrit(aHT, aLoc)
     else if (aHT = htStore) OR (aHT = htBarracks) then
