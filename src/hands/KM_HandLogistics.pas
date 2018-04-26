@@ -1177,19 +1177,11 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     //Check if unit is alive
     Result := Result and ((fDemand[iD].Loc_Unit = nil) or not fDemand[iD].Loc_Unit.IsDeadOrDying);
 
-    //Check if demand house has enabled delivery
-    if fDemand[iD].Loc_House <> nil then
-    begin
-      //Check delivery flag
-      Result := Result
-                and (not fDemand[iD].Loc_House.IsComplete or (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery));
-      //for ArmorWorkshop also check accept ware flag
-      if fDemand[iD].Loc_House is TKMHouseArmorWorkshop then
-        Result := Result and TKMHouseArmorWorkshop(fDemand[iD].Loc_House).AcceptWareForDelivery(fDemand[iD].Ware);
-      if fDemand[iD].Loc_House is TKMHouseTownHall then
-        Result := Result and (TKMHouseTownHall(fDemand[iD].Loc_House).GoldMaxCnt > TKMHouseTownHall(fDemand[iD].Loc_House).GoldCnt);
-    end;
-//    gGame.Pathfinding.Route_Make(aFromPos, aToPos, [tpWalkRoad], 1, nil, fNodeList)
+    //If Demand house should abandon delivery
+    Result := Result and ((fDemand[iD].Loc_House = nil)
+                          or not fDemand[iD].Loc_House.IsComplete
+                          or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fDemand[iD].Ware));
+
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
   end;
