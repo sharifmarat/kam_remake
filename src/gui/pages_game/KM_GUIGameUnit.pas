@@ -239,10 +239,20 @@ begin
     Panel_Unit_Dismiss.Visible := False;
   end else begin
     HasSchools := gMySpectator.Hand.Stats.GetHouseQty(htSchool) > 0;
-    Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools;
+
+    if fAskDismiss and not aUnit.IsDismissAvailable then
+      fAskDismiss := False; //Hide dismiss panel if dismiss is not available anymore
+
+    Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools and aUnit.IsDismissAvailable;
     Button_Unit_Dismiss.TexID := 667;
-    Button_Unit_Dismiss.Hint  := IfThenS(fAskDismiss or HasSchools, gResTexts[TX_UNIT_TASK_DISMISS_HINT],
-                                 gResTexts[TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT]);
+
+    if not HasSchools then
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT]
+    else if not aUnit.IsDismissAvailable then
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT]
+    else
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_HINT];
+
     Panel_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN and fAskDismiss;
   end;
 

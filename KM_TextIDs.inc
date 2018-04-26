@@ -1205,3 +1205,5 @@ TX_LOBBY_ALERT_READY_BTN = 1190; //Ask to press Ready
 TX_LOBBY_ALERT_GET_READY_SENT = 1191; //Alert to get ready was sent to %s players
 
 TX_KEY_FUNC_PLAYER_COLOR_MODE = 1192; //Switch players color mode
+
+TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during current unit action

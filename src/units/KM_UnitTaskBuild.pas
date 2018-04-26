@@ -12,6 +12,7 @@ type
   TKMTaskBuild = class(TKMUnitTask)
   public
     procedure CancelThePlan; virtual; abstract;
+    function CouldBeCancelled: Boolean; override;
   end;
 
   TKMTaskBuildRoad = class(TKMTaskBuild)
@@ -125,7 +126,14 @@ uses
   KM_ResWares, KM_Game, KM_Hand, KM_ScriptingEvents;
 
 
-{ TTaskBuildRoad }
+{ TKMTaskBuild }
+function TKMTaskBuild.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                   <= 0; //Allow cancel task only at walking phases
+end;
+
+{ TKMTaskBuildRoad }
 constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
 begin
   inherited Create(aWorker);

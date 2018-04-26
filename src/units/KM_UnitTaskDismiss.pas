@@ -66,7 +66,7 @@ end;
 
 function TKMTaskDismiss.CouldBeCancelled: Boolean;
 begin
-  Result := fPhase <= 1;
+  Result := fPhase <= 1; //Allow cancel dismiss only while walking to the school point below entrance
 end;
 
 

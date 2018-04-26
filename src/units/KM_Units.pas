@@ -60,6 +60,8 @@ type
     property TaskName: TKMUnitTaskName read fTaskName;
     function WalkShouldAbandon: Boolean; dynamic;
 
+    function CouldBeCancelled: Boolean; virtual;
+
     function Execute: TKMTaskResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
   end;
@@ -179,6 +181,7 @@ type
     property  IsDead: Boolean read fIsDead;
     function  IsDeadOrDying: Boolean;
     function  IsDismissing: Boolean;
+    function  IsDismissAvailable: Boolean;
     function  IsDismissCancelAvailable: Boolean;
     property  GetPosition: TKMPoint read fCurrPosition;
     procedure SetPosition(aPos: TKMPoint);
@@ -1740,6 +1743,12 @@ begin
 end;
 
 
+function TKMUnit.IsDismissAvailable: Boolean;
+begin
+  Result := (fUnitTask = nil) or fUnitTask.CouldBeCancelled;
+end;
+
+
 function TKMUnit.IsDismissCancelAvailable: Boolean;
 begin
   Result := fDismissASAP
@@ -2250,6 +2259,12 @@ end;
 
 
 function TKMUnitTask.WalkShouldAbandon: Boolean;
+begin
+  Result := False; //Only used in some child classes
+end;
+
+
+function TKMUnitTask.CouldBeCancelled: Boolean;
 begin
   Result := False; //Only used in some child classes
 end;

@@ -26,6 +26,7 @@ type
     function GetActivityText: UnicodeString;
     property WorkPlan: TKMUnitWorkPlan read fWorkPlan;
     function Execute: TKMTaskResult; override;
+    function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -201,6 +202,13 @@ begin
                         end;
     else                Result := True;
   end;
+end;
+
+
+function TKMTaskMining.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+              in [1, 7]; //Allow cancel task only at walking phases
 end;
 
 

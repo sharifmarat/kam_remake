@@ -32,6 +32,7 @@ type
     function WalkShouldAbandon: Boolean; override;
     property DeliverKind: TKMDeliverKind read fDeliverKind;
     function Execute: TKMTaskResult; override;
+    function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -251,6 +252,16 @@ begin
   // Error
     raise Exception.Create('Both destinations could not be');
 end;
+
+
+function TKMTaskDeliver.CouldBeCancelled: Boolean;
+begin
+  //Allow cancel task only at walking phases
+  Result := ((fPhase - 1) //phase was increased at the end of execution
+              <= 0)       //<= because fPhase is 0 when task is just created
+            or ((fPhase - 1) = 5);
+end;
+
 
 function TKMTaskDeliver.Execute: TKMTaskResult;
 var
