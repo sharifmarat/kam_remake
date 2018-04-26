@@ -18,6 +18,7 @@ type
   private
 
   public
+    procedure Clear;
 
   end;
 
@@ -50,5 +51,14 @@ begin
         end;
   end;
 end;
+
+
+procedure TFormLogistics.Clear;
+begin
+  DeliveriesList.Clear;
+  OffersList.Clear;
+  DemandsList.Clear;
+end;
+
 
 end.

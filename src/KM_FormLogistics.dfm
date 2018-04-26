@@ -33,6 +33,10 @@ object FormLogistics: TFormLogistics
       Align = alClient
       Columns = <
         item
+          Caption = '#'
+          Width = 30
+        end
+        item
           Caption = 'Resource'
           Width = 120
         end
@@ -50,39 +54,6 @@ object FormLogistics: TFormLogistics
       ExplicitWidth = 285
       ExplicitHeight = 183
     end
-    object OffersList: TListView
-      Left = 4
-      Top = 24
-      Width = 601
-      Height = 589
-      Align = alClient
-      Columns = <
-        item
-          Caption = 'Resource'
-          Width = 120
-        end
-        item
-          Caption = 'HouseFrom'
-          Width = 120
-        end
-        item
-          Caption = 'Count'
-          Width = 80
-        end
-        item
-          Caption = 'Performed'
-          Width = 80
-        end
-        item
-          Caption = 'Deleted'
-          Width = 80
-        end>
-      TabOrder = 1
-      ViewStyle = vsReport
-      Visible = False
-      ExplicitLeft = 8
-      ExplicitTop = 28
-    end
     object DemandsList: TListView
       Left = 4
       Top = 24
@@ -90,6 +61,10 @@ object FormLogistics: TFormLogistics
       Height = 589
       Align = alClient
       Columns = <
+        item
+          Caption = '#'
+          Width = 30
+        end
         item
           Caption = 'Resource'
           Width = 120
@@ -119,6 +94,43 @@ object FormLogistics: TFormLogistics
       Visible = False
       ExplicitLeft = 132
       ExplicitTop = 64
+    end
+    object OffersList: TListView
+      Left = 4
+      Top = 24
+      Width = 601
+      Height = 589
+      Align = alClient
+      Columns = <
+        item
+          Caption = '#'
+          Width = 30
+        end
+        item
+          Caption = 'Resource'
+          Width = 120
+        end
+        item
+          Caption = 'HouseFrom'
+          Width = 120
+        end
+        item
+          Caption = 'Count'
+          Width = 80
+        end
+        item
+          Caption = 'Performed'
+          Width = 80
+        end
+        item
+          Caption = 'Deleted'
+          Width = 80
+        end>
+      TabOrder = 1
+      ViewStyle = vsReport
+      Visible = False
+      ExplicitLeft = 8
+      ExplicitTop = 28
     end
   end
 end

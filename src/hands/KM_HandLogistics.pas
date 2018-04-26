@@ -433,6 +433,33 @@ end;
 //(it matters only for Demand to keep everything in waiting its order in line),
 //so we just find an empty place and write there.
 procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
+
+  procedure UpdatItem(aI: Integer);
+  begin
+    with fOffer[aI] do
+      if Assigned(FormLogistics) and (gGame <> nil) and not gGame.ReadyToStop then
+      begin
+        if Item = nil then
+          Item := FormLogistics.OffersList.Items.Add;
+
+        if Item = nil then Exit;
+        
+        Item.Caption := IntToStr(Item.Index);
+        Item.SubItems.Clear;
+
+        Item.SubItems.Add(gRes.Wares[Ware].Title);
+
+        if aHouse <> nil then
+          Item.SubItems.Add(gRes.Houses[aHouse.HouseType].HouseName)
+        else
+          Item.SubItems.Add('nil');
+
+        Item.SubItems.Add(IntToStr(Count));
+        Item.SubItems.Add(IntToStr(BeingPerformed));
+        Item.SubItems.Add(BoolToStr(IsDeleted, True));
+      end;
+  end;
+
 var
   I, K: Integer;
 begin
@@ -449,11 +476,16 @@ begin
         Assert(fOffer[I].BeingPerformed > 0);
         fOffer[I].Count :=  aCount;
         fOffer[I].IsDeleted := False;
+
+        UpdatItem(I);
         Exit; //Count added, thats all
       end
       else
       begin
         Inc(fOffer[I].Count, aCount);
+
+        UpdatItem(I);
+
         Exit; //Count added, thats all
       end;
     end;
@@ -479,20 +511,7 @@ begin
     Count := aCount;
     Assert((BeingPerformed = 0) and not IsDeleted); //Make sure this item has been closed properly, if not there is a flaw
 
-    if Assigned(FormLogistics) then
-    begin
-      Item := FormLogistics.OffersList.Items.Add;
-      Item.Caption := gRes.Wares[Ware].Title;
-
-      if aHouse <> nil then
-        Item.SubItems.Add(gRes.Houses[aHouse.HouseType].HouseName)
-      else
-        Item.SubItems.Add('nil');
-
-      Item.SubItems.Add(IntToStr(Count));
-      Item.SubItems.Add(IntToStr(BeingPerformed));
-      Item.SubItems.Add(BoolToStr(IsDeleted, True));
-    end;
+    UpdatItem(I);
   end;
 end;
 
@@ -692,7 +711,9 @@ begin
       if Assigned(FormLogistics) then
       begin
         Item := FormLogistics.DemandsList.Items.Add;
-        Item.Caption := gRes.Wares[Ware].Title;
+
+        Item.Caption := IntToStr(Item.Index);
+        Item.SubItems.Add(gRes.Wares[Ware].Title);
 
         if aHouse <> nil then
           Item.SubItems.Add('H: ' + gRes.Houses[aHouse.HouseType].HouseName)
@@ -1339,20 +1360,24 @@ begin
   fQueue[I].JobStatus := js_Taken;
   fQueue[I].Item := nil;
 
+
   if Assigned(FormLogistics) then
+    with fQueue[I] do
   begin
-    fQueue[I].Item := FormLogistics.DeliveriesList.Items.Add;
-    fQueue[I].Item.Caption := gRes.Wares[fOffer[fQueue[I].OfferID].Ware].Title;
+      Item := FormLogistics.DeliveriesList.Items.Add;
 
-    if fOffer[fQueue[I].OfferID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('nil')
-    else
-      fQueue[I].Item.SubItems.Add(gRes.Houses[fOffer[fQueue[I].OfferID].Loc_House.HouseType].HouseName);
+      Item.Caption := IntToStr(Item.Index);
+      Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
 
-    if fDemand[fQueue[I].DemandID].Loc_House = nil then
-      fQueue[I].Item.SubItems.Add('nil')
+      if fOffer[OfferID].Loc_House = nil then
+        Item.SubItems.Add('nil')
     else
-      fQueue[I].Item.SubItems.Add(gRes.Houses[fDemand[fQueue[I].DemandID].Loc_House.HouseType].HouseName);
+        Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
+
+      if fDemand[DemandID].Loc_House = nil then
+        Item.SubItems.Add('nil')
+    else
+        Item.SubItems.Add(gRes.Houses[fDemand[DemandID].Loc_House.HouseType].HouseName);
   end;
 
   Inc(fOffer[iO].BeingPerformed); //Places a virtual "Reserved" sign on Offer
