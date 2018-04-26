@@ -668,8 +668,12 @@ begin
 
     with fDemand[I] do
     begin
-      if aHouse <> nil then Loc_House := aHouse.GetHousePointer;
-      if aUnit <> nil then Loc_Unit := aUnit.GetUnitPointer;
+      if aHouse <> nil then
+        Loc_House := aHouse.GetHousePointer;
+
+      if aUnit <> nil then
+        Loc_Unit := aUnit.GetUnitPointer;
+
       DemandType := aType; //Once or Always
       Ware := aResource;
       Importance := aImp;
