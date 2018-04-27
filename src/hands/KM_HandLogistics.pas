@@ -1044,9 +1044,9 @@ begin
     and gRes.Houses[fDemand[iD].Loc_House.HouseType].DoesOrders
     and (aOfferCnt <= 3) //Little resources to share around
     and (fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware) <= 2) then //Few resources already delivered
-    aBidBasicValue := 10
+    aBidBasicValue := 7
     //Resource ratios are also considered
-    + KaMRandom(25 - 2*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType])
+    + KaMRandom(65 - 13*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType])
   else
   begin
     //For all other cases - use distance approach. Direct length (rough) or pathfinding (exact)
@@ -1056,7 +1056,7 @@ begin
       Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
       aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
-        + KaMRandom(15 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
+        + KaMRandom(16 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
@@ -1086,7 +1086,7 @@ begin
     //For all other deliveries, add some random element so in the case of identical
     //bids the same resource will not always be chosen (e.g. weapons storehouse->barracks
     //should take random weapon types not sequentially)
-    aBidBasicValue := aBidBasicValue + KaMRandom(5);
+    aBidBasicValue := aBidBasicValue + KaMRandom(10);
 
   if (fDemand[iD].Ware = wt_All)        // Always prefer deliveries House>House instead of House>Store
     or ((aOfferHouseType = htStore)    // Prefer taking wares from House rather than Store...

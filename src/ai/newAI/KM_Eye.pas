@@ -12,11 +12,11 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 150;
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 200;
-  GA_EYE_GetForests_InflLimit      : Single = 222.1944779;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 148;
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 65;
+  GA_EYE_GetForests_InflLimit      : Single = 231.602;
   GA_EYE_GetForests_MinTrees       : Single = 3.11;
-  GA_EYE_GetForests_Radius         : Single = 5.0698;
+  GA_EYE_GetForests_Radius         : Single = 5.0698;     
 
 
 type
@@ -1147,6 +1147,7 @@ begin
         end;
   for I := 0 to fBuildFF.Locs.Count - 1 do
     gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $66000000 OR COLOR_BLACK);
+
   //}
   { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
@@ -1391,7 +1392,7 @@ begin
         end
         else
         begin
-          if (Dir = dirS) then
+          if (Dir = dirE) then
           begin
             if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
               RightSideFree := False;
