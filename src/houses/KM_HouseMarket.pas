@@ -106,7 +106,8 @@ end;
 
 
 function TKMHouseMarket.RatioFrom: Byte;
-var CostFrom, CostTo: Single;
+var
+  CostFrom, CostTo: Single;
 begin
   if (fResFrom <> wt_None) and (fResTo <> wt_None) then
   begin
@@ -175,7 +176,8 @@ end;
 
 
 procedure TKMHouseMarket.AttemptExchange;
-var TradeCount: Word;
+var
+  TradeCount: Word;
 begin
   Assert((fResFrom <> wt_None) and (fResTo <> wt_None) and (fResFrom <> fResTo));
 
@@ -303,7 +305,7 @@ begin
   //If player cancelled exchange then move all remainders of From resource to Offers list
   if (fTradeAmount = 0) and (fMarketResIn[fResFrom] > 0) then
   begin
-    inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
+    Inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResFrom, fMarketResIn[fResFrom]);
     fMarketResIn[fResFrom] := 0;
   end;
