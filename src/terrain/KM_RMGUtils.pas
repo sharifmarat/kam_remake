@@ -930,6 +930,7 @@ end;
 procedure TKMBalancedResources.ClearArray();
 begin
   SetLength(fResources, 0);
+  fResCnt := 0;
 end;
 
 
