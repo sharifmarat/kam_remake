@@ -18,6 +18,10 @@ type
     procedure AttemptExchange;
     procedure SetResFrom(aRes: TKMWareType);
     procedure SetResTo(aRes: TKMWareType);
+
+    function GetMarkerResToTrade(aWare: TKMWareType): Word;
+    procedure SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+    property MarkerResToTrade[aWare: TKMWareType]: Word read GetMarkerResToTrade write SetMarkerResToTrade;
   protected
     function GetResOrder(aId: Byte): Integer; override;
     procedure SetResOrder(aId: Byte; aValue: Integer); override;
@@ -183,12 +187,12 @@ begin
     Exit;
   end;
 
-  if TradeInProgress and (fMarketResIn[fResFrom] >= RatioFrom) then
+  if TradeInProgress and (MarkerResToTrade[fResFrom] >= RatioFrom) then
   begin
     //How much can we trade
-    TradeCount := Min((fMarketResIn[fResFrom] div RatioFrom), fTradeAmount);
+    TradeCount := Min((MarkerResToTrade[fResFrom] div RatioFrom), fTradeAmount);
 
-    Dec(fMarketResIn[fResFrom], TradeCount * RatioFrom);
+    MarkerResToTrade[fResFrom] := MarkerResToTrade[fResFrom] - TradeCount * RatioFrom;
     gHands[fOwner].Stats.WareConsumed(fResFrom, TradeCount * RatioFrom);
     Dec(fTradeAmount, TradeCount);
     Inc(fMarketResOut[fResTo], TradeCount * RatioTo);
@@ -244,6 +248,34 @@ begin
   fResTo := aRes;
   if fResFrom = fResTo then
     fResFrom := wt_None;
+end;
+
+
+function TKMHouseMarket.GetMarkerResToTrade(aWare: TKMWareType): Word;
+begin
+  Result := fMarketResIn[aWare] + fMarketResOut[aWare];
+end;
+
+
+procedure TKMHouseMarket.SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+var
+  CurCnt, DecFromIn, DecFromOut: Word;
+
+begin
+  CurCnt := GetMarkerResToTrade(aWare);
+  if aCnt > CurCnt then
+  begin
+    Inc(fMarketResIn[aWare], aCnt - CurCnt);
+
+  end else
+  if aCnt < CurCnt then
+  begin
+    DecFromIn := Min(fMarketResIn[aWare], CurCnt - aCnt);
+    Dec(fMarketResIn[aWare], DecFromIn);
+    DecFromOut := CurCnt - aCnt - DecFromIn;
+    Dec(fMarketResOut[aWare], DecFromOut);
+    gHands[fOwner].Deliveries.Queue.RemOffer(Self, aWare, DecFromOut);
+  end;
 end;
 
 
