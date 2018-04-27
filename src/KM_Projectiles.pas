@@ -34,13 +34,13 @@ type
       fMaxLength: Single; //Maximum length the archer could have shot
     end;
 
-    function AddItem(aStart,aAim,aEnd: TKMPointF; aSpeed, aArc, aMaxLength: Single; aProjType: TKMProjectileType; aOwner: TKMUnit):word;
+    function AddItem(const aStart,aAim,aEnd: TKMPointF; aSpeed, aArc, aMaxLength: Single; aProjType: TKMProjectileType; aOwner: TKMUnit):word;
     procedure RemItem(aIndex: Integer);
     function ProjectileVisible(aIndex: Integer): Boolean;
   public
     constructor Create;
-    function AimTarget(aStart: TKMPointF; aTarget: TKMUnit; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single):word; overload;
-    function AimTarget(aStart: TKMPointF; aTarget: TKMHouse; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single):word; overload;
+    function AimTarget(const aStart: TKMPointF; aTarget: TKMUnit; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single):word; overload;
+    function AimTarget(const aStart: TKMPointF; aTarget: TKMHouse; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single):word; overload;
 
     procedure UpdateState;
     procedure Paint;
@@ -90,7 +90,7 @@ begin
 end;
 
 
-function TKMProjectiles.AimTarget(aStart: TKMPointF; aTarget: TKMUnit; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single): Word;
+function TKMProjectiles.AimTarget(const aStart: TKMPointF; aTarget: TKMUnit; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single): Word;
 var
   TargetVector,Target,TargetPosition: TKMPointF;
   A,B,C,D: Single;
@@ -190,7 +190,7 @@ begin
 end;
 
 
-function TKMProjectiles.AimTarget(aStart: TKMPointF; aTarget: TKMHouse; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single): Word;
+function TKMProjectiles.AimTarget(const aStart: TKMPointF; aTarget: TKMHouse; aProjType: TKMProjectileType; aOwner: TKMUnit; aMaxRange,aMinRange: Single): Word;
 var
   Speed, Arc: Single;
   DistanceToHit, DistanceInRange: Single;
@@ -212,7 +212,7 @@ end;
 
 
 { Return flight time (archers like to know when they hit target before firing again) }
-function TKMProjectiles.AddItem(aStart,aAim,aEnd: TKMPointF; aSpeed,aArc,aMaxLength: Single; aProjType: TKMProjectileType; aOwner: TKMUnit): Word;
+function TKMProjectiles.AddItem(const aStart,aAim,aEnd: TKMPointF; aSpeed,aArc,aMaxLength: Single; aProjType: TKMProjectileType; aOwner: TKMUnit): Word;
 const //TowerRock position is a bit different for reasons said below
   OffsetX: array [TKMProjectileType] of Single = (0.5, 0.5, 0.5, -0.25); //Recruit stands in entrance, Tower middleline is X-0.75
   OffsetY: array [TKMProjectileType] of Single = (0.2, 0.2, 0.2, -0.5); //Add towers height

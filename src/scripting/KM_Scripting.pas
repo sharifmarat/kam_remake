@@ -43,7 +43,7 @@ type
 
     property Included[I: Integer]: TKMScriptFileInfo read GetIncluded; default;
     property IncludedCount: Integer read fIncludedCnt;
-    procedure AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+    procedure AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
     function FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
   end;
 
@@ -292,6 +292,8 @@ end;
 //For example: uses ii1, ii2;
 //This will call this function 3 times. First with 'SYSTEM' then 'II1' and then 'II2'
 function TKMScripting.ScriptOnUses(Sender: TPSPascalCompiler; const Name: AnsiString): Boolean;
+  //Register classes and methods to the script engine.
+  //After that they can be used from within the script.
   procedure RegisterMethodCheck(aClass: TPSCompileTimeClass; const aDecl: String);
   begin
     // We are fine with Assert, cos it will trigger for devs during development
@@ -333,7 +335,7 @@ begin
     // Types needed for MapTilesArraySet function
     Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctRotation, tctHeight, tctObject)');
     Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
-    Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
+    Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain: Word; Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
 
     Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit, attClosestBuildingFromArmy, attClosestBuildingFromStartPos, attCustomPosition)');
 
@@ -1915,7 +1917,7 @@ begin
 end;
 
 
-procedure TKMScriptFilesCollection.AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+procedure TKMScriptFilesCollection.AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
 begin
   if Length(fIncluded) >= fIncludedCnt then
     SetLength(fIncluded, fIncludedCnt + 8);
@@ -1950,7 +1952,7 @@ function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFil
     Inc(aFoundCnt);
   end;
 
-  procedure FindLine(var aFoundCnt: Integer; aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
+  procedure FindLine(var aFoundCnt: Integer; const aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
   var I: Integer;
   begin
     aStrings.Clear;

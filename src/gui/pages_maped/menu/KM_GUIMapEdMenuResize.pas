@@ -153,10 +153,10 @@ var
   SaveName: string;
 begin
   SaveName := TKMapsCollection.FullPath(gGame.GameName, '.dat', fIsMultiplayer);
-  gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value, NumEdit_Resize_Top.Value, NumEdit_Resize_Right.Value, NumEdit_Resize_Bottom.Value));
+  gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value,  NumEdit_Resize_Top.Value,
+                                       NumEdit_Resize_Right.Value, NumEdit_Resize_Bottom.Value));
   FreeThenNil(gGame);
   gGameApp.NewMapEditor(SaveName, 0, 0);
-  gGame.MapEditor.TerrainPainter.RebuildMap(KMRect(1,1,gTerrain.MapX, gTerrain.MapY));
 end;
 
 

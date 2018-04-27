@@ -18,8 +18,8 @@ type
       function ExecuteProcessRanged(Step: Byte): Boolean;
       function ExecuteProcessMelee(Step: Byte): Boolean;
 
-    function UpdateVertexUsage(aFrom, aTo: TKMPoint): Boolean;
-    procedure IncVertex(aFrom, aTo: TKMPoint);
+    function UpdateVertexUsage(const aFrom, aTo: TKMPoint): Boolean;
+    procedure IncVertex(const aFrom, aTo: TKMPoint);
     procedure DecVertex;
     procedure MakeSound(IsHit: Boolean);
   public
@@ -109,7 +109,7 @@ begin
 end;
 
 
-function TKMUnitActionFight.UpdateVertexUsage(aFrom, aTo: TKMPoint):boolean;
+function TKMUnitActionFight.UpdateVertexUsage(const aFrom, aTo: TKMPoint): Boolean;
 begin
   Result := True;
   if KMStepIsDiag(aFrom, aTo) then
@@ -129,7 +129,7 @@ begin
 end;
 
 
-procedure TKMUnitActionFight.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionFight.IncVertex(const aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Fight vertex in use');

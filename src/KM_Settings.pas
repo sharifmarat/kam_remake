@@ -33,7 +33,7 @@ type
     property IsChanged: Boolean read fIsChanged;
     property NeedResetToDefaults: Boolean read fNeedResetToDefaults write fNeedResetToDefaults;
 
-    procedure ApplyWindowParams(aParams: TKMWindowParamsRecord; aDefaults: Boolean = False);
+    procedure ApplyWindowParams(const aParams: TKMWindowParamsRecord; aDefaults: Boolean = False);
     procedure LockParams;
     procedure UnlockParams;
     function IsValid(aMonitorsInfo: TKMPointArray): Boolean;
@@ -1149,7 +1149,7 @@ begin
 end;
 
 
-procedure TKMWindowParams.ApplyWindowParams(aParams: TKMWindowParamsRecord; aDefaults: Boolean = False);
+procedure TKMWindowParams.ApplyWindowParams(const aParams: TKMWindowParamsRecord; aDefaults: Boolean = False);
 begin
   if not fLockParams then
   begin

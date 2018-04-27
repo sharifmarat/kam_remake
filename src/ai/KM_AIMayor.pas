@@ -29,7 +29,7 @@ type
     procedure SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single);
 
     function TryBuildHouse(aHouse: TKMHouseType): Boolean;
-    function TryConnectToRoad(aLoc: TKMPoint): Boolean;
+    function TryConnectToRoad(const aLoc: TKMPoint): Boolean;
     function GetMaxPlans: Byte;
 
     procedure CheckAutoRepair;
@@ -457,7 +457,7 @@ end;
 
 
 //We want to connect to nearest road piece (not necessarily built yet)
-function TKMayor.TryConnectToRoad(aLoc: TKMPoint): Boolean;
+function TKMayor.TryConnectToRoad(const aLoc: TKMPoint): Boolean;
 var
   I: Integer;
   P: TKMHand;

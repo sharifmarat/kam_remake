@@ -77,6 +77,7 @@ begin
     fRenderControl.CreateRenderContext;
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, @MaxTextureSize); //Get max supported texture size by video adapter
+    gLog.AddTime('GL_MAX_TEXTURE_SIZE = ' + IntToStr(MaxTextureSize));
     TKMResSprites.SetMaxAtlasSize(MaxTextureSize);       //Save it for texture processing
 
     glClearColor(0, 0, 0, 0); 	   //Background

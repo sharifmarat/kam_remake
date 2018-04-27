@@ -16,9 +16,10 @@ type
   private
     fHome: TKMHouseType;
     fIssued: Boolean;
-    function ChooseTree(aLoc, aAvoid: TKMPoint; aRadius: Integer; aPlantAct: TKMPlantAct; aUnit: TKMUnit; out Tree: TKMPointDir; out PlantAct: TKMPlantAct): Boolean;
+    function ChooseTree(const aLoc, aAvoid: TKMPoint; aRadius: Integer; aPlantAct: TKMPlantAct; aUnit: TKMUnit;
+                        out Tree: TKMPointDir; out PlantAct: TKMPlantAct): Boolean;
     procedure Clear;
-    procedure WalkStyle(aLoc2: TKMPointDir; aTo, aWork: TKMUnitActionType; aCycles, aDelay: byte; aFrom: TKMUnitActionType; aScript: TKMGatheringScript);
+    procedure WalkStyle(const aLoc2: TKMPointDir; aTo, aWork: TKMUnitActionType; aCycles, aDelay: Byte; aFrom: TKMUnitActionType; aScript: TKMGatheringScript);
     procedure SubActAdd(aAct: TKMHouseActionType; aCycles: Single);
     procedure ResourcePlan(Res1: TKMWareType; Qty1: Byte; Res2: TKMWareType; Qty2: Byte; Prod1: TKMWareType; Prod2: TKMWareType = wt_None);
   public
@@ -45,7 +46,7 @@ type
   public
     procedure FindPlan(aUnit: TKMUnit; aHome: TKMHouseType; aProduct: TKMWareType;
                        aLoc: TKMPoint; aPlantAct: TKMPlantAct);
-    function FindDifferentResource(aUnit: TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
+    function FindDifferentResource(aUnit: TKMUnit; aLoc: TKMPoint; const aAvoidLoc: TKMPoint): Boolean;
     property IsIssued: Boolean read fIssued;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -97,7 +98,7 @@ begin
 end;
 
 
-procedure TKMUnitWorkPlan.WalkStyle(aLoc2:TKMPointDir; aTo,aWork:TKMUnitActionType; aCycles,aDelay:byte; aFrom:TKMUnitActionType; aScript:TKMGatheringScript);
+procedure TKMUnitWorkPlan.WalkStyle(const aLoc2: TKMPointDir; aTo, aWork: TKMUnitActionType; aCycles,aDelay: Byte; aFrom: TKMUnitActionType; aScript: TKMGatheringScript);
 begin
   Loc := aLoc2.Loc;
   HasToWalk := True;
@@ -129,7 +130,7 @@ begin
 end;
 
 
-function TKMUnitWorkPlan.FindDifferentResource(aUnit:TKMUnit; aLoc, aAvoidLoc: TKMPoint): Boolean;
+function TKMUnitWorkPlan.FindDifferentResource(aUnit: TKMUnit; aLoc: TKMPoint; const aAvoidLoc: TKMPoint): Boolean;
 var
   NewLoc: TKMPointDir;
   PlantAct: TKMPlantAct;
@@ -182,7 +183,7 @@ begin
 end;
 
 
-function TKMUnitWorkPlan.ChooseTree(aLoc, aAvoid: TKMPoint; aRadius:Integer; aPlantAct: TKMPlantAct; aUnit:TKMUnit; out Tree:TKMPointDir; out PlantAct: TKMPlantAct):Boolean;
+function TKMUnitWorkPlan.ChooseTree(const aLoc, aAvoid: TKMPoint; aRadius: Integer; aPlantAct: TKMPlantAct; aUnit: TKMUnit; out Tree: TKMPointDir; out PlantAct: TKMPlantAct): Boolean;
 var
   I: Integer;
   T: TKMPoint;

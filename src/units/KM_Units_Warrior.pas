@@ -61,7 +61,7 @@ type
     OnWarriorWalkOut: TKMWarriorEvent;
     FaceDir: TKMDirection; //Direction we should face after walking. Only check for enemies in this direction.
 
-    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); override;
@@ -79,7 +79,7 @@ type
     procedure OrderFood;
     procedure OrderNone;
     procedure OrderStorm(aDelay: Word);
-    procedure OrderWalk(aLoc: TKMPoint; aUseExactTarget: Boolean = True);
+    procedure OrderWalk(const aLoc: TKMPoint; aUseExactTarget: Boolean = True);
     procedure OrderAttackHouse(aTargetHouse: TKMHouse);
     procedure OrderFight(aTargetUnit: TKMUnit);
 
@@ -95,7 +95,7 @@ type
 
     function GetFightMinRange: Single;
     function GetFightMaxRange(aTileBased: Boolean = False): Single;
-    function WithinFightRange(Value: TKMPoint): Boolean;
+    function WithinFightRange(const Value: TKMPoint): Boolean;
     function OrderDone: Boolean;
     property RequestedFood: Boolean read fRequestedFood write fRequestedFood; //Cleared by Serf delivering food
     property LastShootTime: Cardinal read fLastShootTime;
@@ -105,7 +105,7 @@ type
     function InAGroup: Boolean;
     function NeedsToReload(aFightAnimLength: Byte): Boolean;
     procedure SetLastShootTime;
-    function FindLinkUnit(aLoc: TKMPoint): TKMUnitWarrior;
+    function FindLinkUnit(const aLoc: TKMPoint): TKMUnitWarrior;
     function CheckForEnemy: Boolean;
     function FindEnemy: TKMUnit;
     function PathfindingShouldAvoid: Boolean; override;
@@ -127,7 +127,7 @@ uses
 
 
 { TKMUnitWarrior }
-constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TKMUnitType; aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
 begin
   inherited;
   fGroup             := nil;
@@ -373,7 +373,7 @@ begin
 end;
 
 
-function TKMUnitWarrior.WithinFightRange(Value: TKMPoint): Boolean;
+function TKMUnitWarrior.WithinFightRange(const Value: TKMPoint): Boolean;
 begin
   Result := InRange(KMLength(NextPosition, Value), GetFightMinRange, GetFightMaxRange);
 end;
@@ -426,7 +426,7 @@ begin
 end;
 
 
-function TKMUnitWarrior.FindLinkUnit(aLoc: TKMPoint): TKMUnitWarrior;
+function TKMUnitWarrior.FindLinkUnit(const aLoc: TKMPoint): TKMUnitWarrior;
 var
   I: Integer;
   FoundUnits: TList;
@@ -503,7 +503,7 @@ begin
 end;
 
 
-procedure TKMUnitWarrior.OrderWalk(aLoc: TKMPoint; aUseExactTarget: Boolean = True);
+procedure TKMUnitWarrior.OrderWalk(const aLoc: TKMPoint; aUseExactTarget: Boolean = True);
 begin
   ClearOrderTarget;
 

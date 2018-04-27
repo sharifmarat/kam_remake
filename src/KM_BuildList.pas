@@ -56,17 +56,17 @@ type
     fPlans: TKMHousePlanArray;
   public
     //Player orders
-    procedure AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
-    function HasPlan(aLoc: TKMPoint): Boolean; overload;
-    function HasPlan(aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean; overload;
-    procedure RemPlan(aLoc: TKMPoint);
-    function TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
-    function FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
+    procedure AddPlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
+    function HasPlan(const aLoc: TKMPoint): Boolean; overload;
+    function HasPlan(const aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean; overload;
+    procedure RemPlan(const aLoc: TKMPoint);
+    function TryGetPlan(const aLoc: TKMPoint; out aHousePlan: TKMHousePlan): Boolean;
+    function FindHousePlan(const aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
 
     // AI Informations
     property Count: Integer read fPlansCount;
     property Plans: TKMHousePlanArray read fPlans;
-    function ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+    function ExistPlan(const aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
     function GetPlansStoneDemands(): Integer;
     function GetPlansWoodDemands(): Integer;
 
@@ -77,8 +77,8 @@ type
     procedure ReOpenPlan(aIndex: Integer); //Worker has died while walking to the Field, allow other worker to take the task
     procedure ClosePlan(aIndex: Integer); //Worker has finished the task
 
-    procedure GetOutlines(aList: TKMPointDirList; aRect: TKMRect);
-    procedure GetTablets(aList: TKMPointTagList; aRect: TKMRect);
+    procedure GetOutlines(aList: TKMPointDirList; const aRect: TKMRect);
+    procedure GetTablets(aList: TKMPointTagList; const aRect: TKMRect);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -112,14 +112,14 @@ type
     end;
   public
     //Player orders
-    procedure AddFakeField(aLoc: TKMPoint; aFieldType: TKMFieldType);
-    procedure AddFakeDeletedField(aLoc: TKMPoint);
-    procedure AddField(aLoc: TKMPoint; aFieldType: TKMFieldType);
-    function HasField(aLoc: TKMPoint): TKMFieldType;
-    function HasFakeField(aLoc: TKMPoint): TKMFieldType;
-    procedure RemFieldPlan(aLoc: TKMPoint);
-    procedure RemFakeField(aLoc: TKMPoint);
-    procedure RemFakeDeletedField(aLoc: TKMPoint);
+    procedure AddFakeField(const aLoc: TKMPoint; aFieldType: TKMFieldType);
+    procedure AddFakeDeletedField(const aLoc: TKMPoint);
+    procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType);
+    function HasField(const aLoc: TKMPoint): TKMFieldType;
+    function HasFakeField(const aLoc: TKMPoint): TKMFieldType;
+    procedure RemFieldPlan(const aLoc: TKMPoint);
+    procedure RemFakeField(const aLoc: TKMPoint);
+    procedure RemFakeDeletedField(const aLoc: TKMPoint);
 
     // AI Informations
     property Count: Integer read fFieldsCount;
@@ -132,7 +132,7 @@ type
     procedure ReOpenField(aIndex: Integer); //Worker has died while walking to the Field, allow other worker to take the task
     procedure CloseField(aIndex: Integer); //Worker has finished the task
 
-    procedure GetFields(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake:Boolean);
+    procedure GetFields(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake:Boolean);
     function FieldCount(aFieldType: TKMFieldType): Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
@@ -183,8 +183,8 @@ type
     end;
     procedure RemWorker(aIndex: Integer);
     procedure RemoveExtraWorkers;
-    function GetIdleWorkerCount:Integer;
-    function GetBestWorker(aPoint:TKMPoint):TKMUnitWorker;
+    function GetIdleWorkerCount: Integer;
+    function GetBestWorker(const aPoint: TKMPoint): TKMUnitWorker;
 
     procedure AssignFieldworks;
     procedure AssignHousePlans;
@@ -420,7 +420,7 @@ end;
 //Returns the list of fields inside aRect.
 //aIncludeFake means the list of fields will be as the user should see it, with additional fake fields
 //and some of the real fields removed if the user has deleted them but the command has not yet been processed.
-procedure TKMFieldworksList.GetFields(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake:Boolean);
+procedure TKMFieldworksList.GetFields(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
 var I: Integer;
 begin
   for I := 0 to fFieldsCount - 1 do
@@ -461,7 +461,7 @@ end;
 
 
 //Fake plan that will be visible until real one is verified by Server
-procedure TKMFieldworksList.AddFakeField(aLoc: TKMPoint; aFieldType: TKMFieldType);
+procedure TKMFieldworksList.AddFakeField(const aLoc: TKMPoint; aFieldType: TKMFieldType);
 var I: Integer;
 begin
   I := 0;
@@ -478,7 +478,7 @@ end;
 
 
 //Indicator that the real plan on this tile has been deleted, so hide it from the user
-procedure TKMFieldworksList.AddFakeDeletedField(aLoc: TKMPoint);
+procedure TKMFieldworksList.AddFakeDeletedField(const aLoc: TKMPoint);
 var I: Integer;
 begin
   I := 0;
@@ -494,7 +494,7 @@ end;
 
 
 //Keep list items in place, since Workers use indexes to address them
-procedure TKMFieldworksList.AddField(aLoc: TKMPoint; aFieldType: TKMFieldType);
+procedure TKMFieldworksList.AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType);
 var
   I: Integer;
 begin
@@ -520,7 +520,7 @@ end;
 
 
 //Removes the fake marker showing the user he has placed a field here
-procedure TKMFieldworksList.RemFakeField(aLoc: TKMPoint);
+procedure TKMFieldworksList.RemFakeField(const aLoc: TKMPoint);
 var I: Integer;
 begin
   for I := 0 to Length(fFakeFields) - 1 do
@@ -530,7 +530,7 @@ end;
 
 
 //Removes the fake deleted field which is used to hide a real field until the command can be processed
-procedure TKMFieldworksList.RemFakeDeletedField(aLoc: TKMPoint);
+procedure TKMFieldworksList.RemFakeDeletedField(const aLoc: TKMPoint);
 var I: Integer;
 begin
   for I := 0 to Length(fFakeDeletedFields) - 1 do
@@ -539,7 +539,7 @@ begin
 end;
 
 
-procedure TKMFieldworksList.RemFieldPlan(aLoc: TKMPoint);
+procedure TKMFieldworksList.RemFieldPlan(const aLoc: TKMPoint);
 var I: Integer;
 begin
   RemFakeDeletedField(aLoc);
@@ -555,7 +555,7 @@ end;
 
 
 //Will return the field as the game should see it, ignoring all fakes.
-function TKMFieldworksList.HasField(aLoc: TKMPoint): TKMFieldType;
+function TKMFieldworksList.HasField(const aLoc: TKMPoint): TKMFieldType;
 var
   I: Integer;
 begin
@@ -573,7 +573,7 @@ end;
 //Will return the field as the user should see it.
 //Fake fields are shown when the command has not yet been processed, and
 //real fields which the user deleted are hidden with the FakeDeletedFields array
-function TKMFieldworksList.HasFakeField(aLoc: TKMPoint): TKMFieldType;
+function TKMFieldworksList.HasFakeField(const aLoc: TKMPoint): TKMFieldType;
 var
   I, K: Integer;
   Found: Boolean;
@@ -665,7 +665,7 @@ end;
 
 
 { TKMHousePlanList }
-procedure TKMHousePlanList.AddPlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
+procedure TKMHousePlanList.AddPlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
 var
   I: Integer;
 begin
@@ -730,7 +730,7 @@ end;
 
 
 //Find plan nearest to aLoc but skip said location
-function TKMHousePlanList.FindHousePlan(aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
+function TKMHousePlanList.FindHousePlan(const aLoc: TKMPoint; aSkip: TKMPoint; out aOut: TKMPoint): Boolean;
 var
   I: Integer;
   Entrance: TKMPoint;
@@ -758,7 +758,7 @@ end;
 
 
 // Check if this plan exist - aLoc is given by house entrance (offset of plans is moved back to entrance)
-function TKMHousePlanList.ExistPlan(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
+function TKMHousePlanList.ExistPlan(const aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
 var
   I: Integer;
 begin
@@ -779,7 +779,7 @@ begin
 end;
 
 
-function TKMHousePlanList.HasPlan(aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean;
+function TKMHousePlanList.HasPlan(const aLoc: TKMPoint; out aHouseType: TKMHouseType): Boolean;
 var
   I: Integer;
 begin
@@ -800,7 +800,7 @@ begin
 end;
 
 
-function TKMHousePlanList.HasPlan(aLoc: TKMPoint): Boolean;
+function TKMHousePlanList.HasPlan(const aLoc: TKMPoint): Boolean;
 var
   HT: TKMHouseType;
 begin
@@ -808,7 +808,7 @@ begin
 end;
 
 
-procedure TKMHousePlanList.RemPlan(aLoc: TKMPoint);
+procedure TKMHousePlanList.RemPlan(const aLoc: TKMPoint);
 var
   I: Integer;
 begin
@@ -827,7 +827,7 @@ begin
 end;
 
 
-function TKMHousePlanList.TryGetPlan(aLoc: TKMPoint; out oHousePlan: TKMHousePlan): Boolean;
+function TKMHousePlanList.TryGetPlan(const aLoc: TKMPoint; out aHousePlan: TKMHousePlan): Boolean;
 var
   I: Integer;
 begin
@@ -839,7 +839,7 @@ begin
        (gRes.Houses[fPlans[I].HouseType].BuildArea[aLoc.Y - fPlans[I].Loc.Y + 4, aLoc.X - fPlans[I].Loc.X + 3] <> 0))
   then
   begin
-    oHousePlan := fPlans[I];
+    aHousePlan := fPlans[I];
     Result := True;
     Exit;
   end;
@@ -854,7 +854,7 @@ begin
 end;
 
 
-procedure TKMHousePlanList.GetOutlines(aList: TKMPointDirList; aRect: TKMRect);
+procedure TKMHousePlanList.GetOutlines(aList: TKMPointDirList; const aRect: TKMRect);
 var
   I,J,K: Integer;
   Rect: TKMRect;
@@ -890,7 +890,7 @@ begin
 end;
 
 
-procedure TKMHousePlanList.GetTablets(aList: TKMPointTagList; aRect: TKMRect);
+procedure TKMHousePlanList.GetTablets(aList: TKMPointTagList; const aRect: TKMRect);
 var
   I: Integer;
   Rect: TKMRect;
@@ -1239,7 +1239,7 @@ begin
 end;
 
 
-function TKMBuildList.GetBestWorker(aPoint: TKMPoint): TKMUnitWorker;
+function TKMBuildList.GetBestWorker(const aPoint: TKMPoint): TKMUnitWorker;
 var
   I: Integer;
   NewBid, BestBid: Single;

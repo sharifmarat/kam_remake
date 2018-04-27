@@ -214,7 +214,8 @@ procedure TKMMinimap.UpdateMinimapFromGame;
   end;
 
 var
-  FOW,ID: Byte;
+  FOW: Byte;
+  ID: Word;
   I,J,K: Integer;
   U: TKMUnit;
   P: TKMPoint;
@@ -259,7 +260,7 @@ begin
               fBase[I*fMapX + K] := gRes.Units[U.UnitType].MinimapColor
           else
           begin
-            ID := fMyTerrain.Land[I+1,K+1].Terrain;
+            ID := fMyTerrain.Land[I+1,K+1].BaseLayer.Terrain;
             // Do not use fMyTerrain.Land[].Light for borders of the map, because it is set to -1 for fading effect
             // So assume fMyTerrain.Land[].Light as 0 in this case
             if (I = 0) or (I = fMapY - 1) or (K = 0) or (K = fMapX - 1) then
@@ -288,7 +289,7 @@ begin
         end;
       end;
 
-  //Draw
+  //Draw 'Resize map' feature on minimap
   if (gGame <> nil) and gGame.IsMapEditor
     and (mlMapResize in gGame.MapEditor.VisibleLayers)
     and not KMSameRect(gGame.MapEditor.ResizeMapRect, KMRECT_ZERO) then
@@ -296,7 +297,7 @@ begin
       for K := 0 to fMapX - 1 do
       begin
         if not KMInRect(KMPoint(K+1,I+1), gGame.MapEditor.ResizeMapRect) then
-          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1);
+          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1); // make red margins where current map is cut
       end;
 
 end;

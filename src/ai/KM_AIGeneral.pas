@@ -22,7 +22,7 @@ type
     procedure CheckAttacks;
     procedure CheckAutoAttack;
     procedure CheckAutoDefend;
-    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
+    procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; const aCustomPos: TKMPoint);
   public
     constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
     destructor Destroy; override;
@@ -563,7 +563,7 @@ end;
 
 
 //See if we can attack our enemies
-procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; aCustomPos: TKMPoint);
+procedure TKMGeneral.OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; const aCustomPos: TKMPoint);
 const
   TARGET_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 var
@@ -669,4 +669,4 @@ begin
 end;
 
 
-end.
+end.

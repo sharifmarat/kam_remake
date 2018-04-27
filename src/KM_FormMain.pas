@@ -93,6 +93,8 @@ type
     chkLogsShowInChat: TCheckBox;
     chkUIControlsID: TCheckBox;
     ShowLogistics: TMenuItem;
+    chkShowTerrainIds: TCheckBox;
+    chkShowTerrainKinds: TCheckBox;
     UnitAnim_All: TMenuItem;
     N3: TMenuItem;
     Soldiers: TMenuItem;
@@ -667,6 +669,8 @@ begin
     Label2.Caption := IfThen(I <> 0, PassabilityGuiText[TKMTerrainPassability(I)], '');
     SHOW_TERRAIN_PASS := I;
     SHOW_TERRAIN_WIRES := chkShowWires.Checked;
+    SHOW_TERRAIN_IDS := chkShowTerrainIds.Checked;
+    SHOW_TERRAIN_KINDS := chkShowTerrainKinds.Checked;
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
   end;

@@ -96,9 +96,9 @@ type
 
     fEnabled: Boolean;
     fVisible: Boolean;
-    fHint: UnicodeString;
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
+    fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
 
     fTimeOfLastClick: Cardinal; //Required to handle double-clicks
 
@@ -179,6 +179,7 @@ type
     Scale: Single; //Child controls position is scaled
 
     Tag: Integer; //Some tag which can be used for various needs
+    Tag2: Integer; //Some tag which can be used for various needs
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; virtual;
@@ -727,7 +728,6 @@ type
 
     procedure SetValueNCheckRange(aValue: Int64);
     procedure SetValue(aValue: Integer);
-    procedure SetSharedHint(const aHint: UnicodeString);
     procedure CheckValueOnUnfocus;
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
   protected
@@ -735,6 +735,7 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
+    procedure SetHint(aValue: UnicodeString); override;
     function GetSelfAbsLeft: Integer; override;
     function GetSelfWidth: Integer; override;
     function GetMaxLength: Word; override;
@@ -749,7 +750,6 @@ type
     ValueMax: Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
     property Value: Integer read fValue write SetValue;
-    property SharedHint: UnicodeString read GetHint write SetSharedHint;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
@@ -1679,7 +1679,7 @@ begin
   fEnabled      := True;
   fVisible      := True;
   Tag           := 0;
-  Hint          := '';
+  fHint         := '';
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
@@ -2856,10 +2856,10 @@ begin
   fColumns := Math.max(1, aColumns);
   fHighlightID := aHighlightID;
 
-  fDrawWidth  := EnsureRange(Width div fColumns, 8, GFXData[fRX, fTexID1].PxWidth);
-  fDrawHeight := EnsureRange(Height div Ceil(fCount/fColumns), 6, GFXData[fRX, fTexID1].PxHeight);
+  fDrawWidth  := EnsureRange(Width div fColumns, 8, gGFXData[fRX, fTexID1].PxWidth);
+  fDrawHeight := EnsureRange(Height div Ceil(fCount/fColumns), 6, gGFXData[fRX, fTexID1].PxHeight);
 
-  Aspect := GFXData[fRX, fTexID1].PxWidth / GFXData[fRX, fTexID1].PxHeight;
+  Aspect := gGFXData[fRX, fTexID1].PxWidth / gGFXData[fRX, fTexID1].PxHeight;
   if fDrawHeight * Aspect <= fDrawWidth then
     fDrawWidth  := Round(fDrawHeight * Aspect)
   else
@@ -4141,14 +4141,6 @@ begin
 end;
 
 
-procedure TKMNumericEdit.SetSharedHint(const aHint: UnicodeString);
-begin
-  Hint := aHint;
-  fButtonInc.Hint := aHint;
-  fButtonDec.Hint := aHint;
-end;
-
-
 procedure TKMNumericEdit.SetTop(aValue: Integer);
 begin
   inherited;
@@ -4172,6 +4164,14 @@ begin
   inherited;
   fButtonDec.Enabled := fEnabled;
   fButtonInc.Enabled := fEnabled;
+end;
+
+
+procedure TKMNumericEdit.SetHint(aValue: UnicodeString);
+begin
+  inherited;
+  fButtonDec.Hint := aValue;
+  fButtonInc.Hint := aValue;
 end;
 
 

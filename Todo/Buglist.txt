@@ -1,7 +1,7 @@
 ﻿Since r6720:
 <===================================================================================>
 Todo:
-  Update translation for labels: 153, 270, 276, 537, 548, 549, 642
+  Update translation for labels: 153, 270, 276, 537, 548, 549, 642. Remove 964, 671
 Bugs:
  +  Lobby map list should show 8 locations at most, since only 8 locations can be used by humans at once
  +  Armour smithy has iron as 1st input, weapon smithy has iron as 2nd input (iron/coal swapped). Would make sense to match them (note: simpply swapping in KM_ResourceHouses causes game logic to be swapped with GUI)
@@ -240,7 +240,6 @@ Improvements:
  +    Added Z coordinate for corner between tiles - its vertex height (0-100)
  +    New in extras menu:
         Passability trackbar:
-          + Can Cut - shows tiles, where there is a cuttable tree
           + Can Build without house/tree passability - show tiles, where it will be possible to build, after tree or house is removed
         New layers:
           + Show tile overlays (road/field/corn)
@@ -266,7 +265,7 @@ Improvements:
  +    All save files are placed in 1 folder. Same as for maps
  +    Ability to set decimal values for game speedups in INI file
  +    GIP commands are packed now. We have to send only needed field. It will reduce nettraffic and '.rpl' file size.
- +    Added ability to set Tabulation in game labels/texts. Can be used by scriptmakers to make better output
+ +		Added ability to set Tabulation in game labels/texts. Can be used by scriptmakers to make better output
  +    Added setting FPSCap to set max fps limit
  +    Version label moved from all game menu to F11 Status bar
  +    Translation manager: Added filter on label name and label ID

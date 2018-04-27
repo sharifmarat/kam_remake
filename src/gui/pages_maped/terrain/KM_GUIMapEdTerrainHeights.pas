@@ -158,6 +158,7 @@ begin
   gGameCursor.Mode := fLastCursorMode;
   gGameCursor.MapEdShape := fLastShape;
   UpdateHeightParams;
+  gGameCursor.MapEdSpeed := HeightSpeed.Position;
   HeightRefresh;
   Panel_Heights.Show;
 end;

@@ -25,9 +25,9 @@ type
 
 implementation
 uses
-  SysUtils,
+  SysUtils, Math,
   KM_Resource,
-  KM_CommonClasses, KM_Defaults;
+  KM_CommonClasses, KM_Defaults, KM_Utils;
 
 
 { TMissionParserInfo }
@@ -126,24 +126,30 @@ end;
 //Acquire essential terrain details
 function TKMMissionParserInfo.LoadMapInfo(const aFileName: string): Boolean;
 var
-  F: TKMemoryStream;
+  S: TKMemoryStream;
   newX, newY: Integer;
+  ErrorStr: UnicodeString;
 begin
   Result := False;
   if not FileExists(aFileName) then Exit;
 
-  F := TKMemoryStream.Create;
+  ErrorStr := '';
+  S := TKMemoryStream.Create;
   try
-    F.LoadFromFile(aFileName);
-    F.Read(newX);
-    F.Read(newY);
+    S.LoadFromFile(aFileName);
+    try
+      LoadMapHeader(S, newX, newY);
+    except
+      on E: Exception do
+        ErrorStr := E.Message;
+    end;
   finally
-    F.Free;
+    S.Free;
   end;
 
-  if (newX > MAX_MAP_SIZE) or (newY > MAX_MAP_SIZE) then
+  if ErrorStr <> '' then
   begin
-    AddError('MissionParser can''t open the map because it''s too big.', True);
+    AddError(ErrorStr, True);
     Exit;
   end;
 

@@ -119,7 +119,7 @@ type
     procedure AutoSave(aTimestamp: TDateTime);
     procedure AutoSaveAfterPT(aTimestamp: TDateTime);
     procedure SaveMapEditor(const aPathName: UnicodeString); overload;
-    procedure SaveMapEditor(const aPathName: UnicodeString; aInsetRect: TKMRect); overload;
+    procedure SaveMapEditor(const aPathName: UnicodeString; const aInsetRect: TKMRect); overload;
     procedure RestartReplay; //Restart the replay but keep current viewport position/zoom
 
     property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty;
@@ -138,8 +138,8 @@ type
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
-    procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint; aHandIndex: TKMHandIndex);
-    procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; aLoc: TKMPoint);
+    procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
+    procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
     procedure OverlayUpdate;
     procedure OverlaySet(const aText: UnicodeString; aPlayer: Shortint);
     procedure OverlayAppend(const aText: UnicodeString; aPlayer: Shortint);
@@ -1010,7 +1010,7 @@ end;
 
 
 //aPathName - full path to DAT file
-procedure TKMGame.SaveMapEditor(const aPathName: UnicodeString; aInsetRect: TKMRect);
+procedure TKMGame.SaveMapEditor(const aPathName: UnicodeString; const aInsetRect: TKMRect);
 var
   I: Integer;
   fMissionParser: TKMMissionParserStandard;
@@ -1168,7 +1168,7 @@ begin
 end;
 
 
-procedure TKMGame.ShowMessage(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint; aHandIndex: TKMHandIndex);
+procedure TKMGame.ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
 begin
   //Once you have lost no messages can be received
   if gHands[aHandIndex].AI.HasLost then Exit;
@@ -1182,7 +1182,7 @@ begin
 end;
 
 
-procedure TKMGame.ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; aLoc: TKMPoint);
+procedure TKMGame.ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
 begin
   fGamePlayInterface.MessageIssue(aKind, aText, aLoc);
 end;
@@ -1961,7 +1961,7 @@ begin
     fActiveInterface.UpdateState(aGlobalTickCount);
 
   if (aGlobalTickCount mod 10 = 0) and (fMapEditor <> nil) then
-    fMapEditor.Update;
+    fMapEditor.UpdateState;
 end;
 
 

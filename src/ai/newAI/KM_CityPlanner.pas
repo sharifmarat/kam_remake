@@ -482,8 +482,8 @@ const
     Result := False;
     for X := Max(aMineLoc.X-4, 1) to Min(aMineLoc.X+3, gTerrain.MapX-1) do
     for Y := Max(aMineLoc.Y-8, 1) to aMineLoc.Y do
-      if ( not aIsGold AND (gTerrain.TileIsIron(X, Y) > 0) )
-          OR ( aIsGold AND (gTerrain.TileIsGold(X, Y) > 0) ) then
+      if ( not aIsGold AND gTerrain.TileHasIron(X, Y) )
+          OR ( aIsGold AND gTerrain.TileHasGold(X, Y) ) then
       Exit;
     Result := True;
   end;
@@ -497,7 +497,7 @@ const
     Result := False;
     for Y := Max(aQuaryLoc.Y-RADIUS, 1) to Min(aQuaryLoc.Y+RADIUS, gTerrain.MapY-1) do
     for X := Max(aQuaryLoc.X-RADIUS, 1) to Min(aQuaryLoc.X+RADIUS, gTerrain.MapX-1) do
-      if (gTerrain.TileIsStone(X, Y) > 0) then
+      if gTerrain.TileHasStone(X, Y) then
         Exit;
     Result := True;
   end;
@@ -513,7 +513,7 @@ const
     begin
       X := aCoalLoc.X + HMA[htCoalMine].Tiles[I].X;
       Y := aCoalLoc.Y + HMA[htCoalMine].Tiles[I].Y;
-      if (gTerrain.TileIsCoal(X, Y) > 0) then
+      if gTerrain.TileHasCoal(X, Y) then
         Exit;
     end;
     Result := True;
@@ -960,7 +960,7 @@ begin
     begin
       FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
       if not gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y)
-        OR not gRes.Tileset.TileIsRoadable( gTerrain.Land[FieldLoc.Y,FieldLoc.X].Terrain ) then
+        OR not gRes.Tileset.TileIsRoadable( gTerrain.Land[FieldLoc.Y,FieldLoc.X].BaseLayer.Terrain ) then
         PriceArr[Dir] := PriceArr[Dir] + SNAP_TO_EDGE;
     end;
   // Get count of possible fields
@@ -1592,7 +1592,7 @@ function TKMCityPlanner.FindForestAndWoodcutter(): Boolean;
     Cnt := 0;
     for Y := Max(1,aLoc.Y-RADIUS) to Min(gTerrain.MapY-1, aLoc.Y+RADIUS) do
     for X := Max(1,aLoc.X-RADIUS) to Min(gTerrain.MapX-1, aLoc.X+RADIUS) do
-      if gRes.Tileset.TileIsSoil( gTerrain.Land[Y, X].Terrain ) then
+      if gRes.Tileset.TileIsSoil( gTerrain.Land[Y, X].BaseLayer.Terrain ) then
         Cnt := Cnt + 1;
     Result := Cnt >= MIN_TREES_TILES;
   end;

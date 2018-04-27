@@ -6,11 +6,13 @@ uses
   KM_Points, KM_Defaults;
 
 type
+  TKMByteSet = set of Byte;
+
   TBooleanArray = array of Boolean;
   TBoolean2Array = array of array of Boolean;
   TKMByteArray = array of Byte;
   TKMByte2Array = array of array of Byte;
-  TKMByteSetArray = array of set of Byte;
+  TKMByteSetArray = array of TKMByteSet;
   PKMByte2Array = ^TKMByte2Array;
   TKMWordArray = array of Word;
   TKMWord2Array = array of array of Word;
@@ -29,8 +31,11 @@ type
   TKMStaticByteArray = array [0..MaxInt - 1] of Byte;
   PKMStaticByteArray = ^TKMStaticByteArray;
 
+
+
   TEvent = procedure of object;
   TPointEvent = procedure (Sender: TObject; const X,Y: Integer) of object;
+  TPointEventSimple = procedure (const X,Y: Integer) of object;
   TPointEventFunc = function (Sender: TObject; const X,Y: Integer): Boolean of object;
   TPointFEvent = procedure (const aPoint: TKMPointF) of object;
   TBooleanEvent = procedure (aValue: Boolean) of object;
@@ -50,6 +55,7 @@ type
   TResyncEvent = procedure (aSender: ShortInt; aTick: cardinal) of object;
   TIntegerStringEvent = procedure (aValue: Integer; const aText: UnicodeString) of object;
   TBooleanFunc = function(Obj: TObject): Boolean of object;
+  TBooleanWordFunc = function (aValue: Word): Boolean of object;
   TBooleanFuncSimple = function: Boolean of object;
   TObjectIntBoolEvent = procedure (Sender: TObject; aIntValue: Integer; aBoolValue: Boolean) of object;
 

@@ -250,6 +250,7 @@ end;
 procedure TKMMapEdTerrain.RightClickCancel;
 begin
   fGuiObjects.RightClickCancel;
+  fGuiBrushes.RightClickCancel;
 end;
 
 

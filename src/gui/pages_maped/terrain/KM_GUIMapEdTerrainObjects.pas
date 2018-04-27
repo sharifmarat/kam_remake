@@ -71,7 +71,7 @@ type
 
 implementation
 uses
-  KM_Resource, KM_ResFonts, KM_ResMapElements, KM_ResTexts, KM_ResKeys,
+  KM_Resource, KM_ResFonts, KM_ResMapElements, KM_ResTexts, KM_ResKeys, KM_Terrain,
   KM_HandsCollection, KM_RenderUI, KM_InterfaceGame, KM_Utils;
 
 const
@@ -111,12 +111,12 @@ begin
     end;
   ObjectErase := TKMButtonFlat.Create(Panel_Objects, 0, 8, 32, 32, 340);
   ObjectErase.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_OBJECTS_REMOVE, SC_MAPEDIT_SUB_MENU_ACTION_1);
-  ObjectErase.Tag := 255; //no object
+  ObjectErase.Tag := OBJ_NONE; //no object
   ObjectErase.OnClick := ObjectsChange;
 
   ObjectBlock := TKMButtonFlat.Create(Panel_Objects, TB_WIDTH-32, 8, 32, 32, 254,rxTrees);
   ObjectBlock.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_OBJECTS_BLOCK, SC_MAPEDIT_SUB_MENU_ACTION_2);
-  ObjectBlock.Tag := 61; //no object
+  ObjectBlock.Tag := OBJ_BLOCK; //block object
   ObjectBlock.OnClick := ObjectsChange;
 
   ObjectsPalette_Button := TKMButtonFlat.Create(Panel_Objects, 2, 320, TB_WIDTH - 2, 21, 0);
@@ -166,12 +166,12 @@ begin
 
     Button_ObjPaletteErase := TKMButtonFlat.Create(PopUp_ObjectsPalette, 0, 0, OBJ_CELL_W, 32, 340);
     Button_ObjPaletteErase.Hint := gResTexts[TX_MAPED_TERRAIN_OBJECTS_REMOVE];
-    Button_ObjPaletteErase.Tag := 255; //no object
+    Button_ObjPaletteErase.Tag := OBJ_NONE; //no object
     Button_ObjPaletteErase.OnClickShift := ObjPalette_ClickShift;
 
     Button_ObjPaletteBlock := TKMButtonFlat.Create(PopUp_ObjectsPalette, 0, 0, OBJ_CELL_W, 32, 254, rxTrees);
     Button_ObjPaletteBlock.Hint := gResTexts[TX_MAPED_TERRAIN_OBJECTS_BLOCK];
-    Button_ObjPaletteBlock.Tag := 61; //no object
+    Button_ObjPaletteBlock.Tag := OBJ_BLOCK; //block object
     Button_ObjPaletteBlock.OnClickShift := ObjPalette_ClickShift;
 
     Button_ClosePalette  := TKMButton.Create(PopUp_ObjectsPalette, PopUp_ObjectsPalette.Center.X - 100, PopUp_ObjectsPalette.Bottom - 50,
@@ -214,6 +214,7 @@ procedure TKMMapEdTerrainObjects.UpdateObjButtonDescription(aBtn: TKMButtonFlat;
 var
   ChoppableTree: Boolean;
 begin
+  aBtn.CapColor := icWhite;
   aBtn.Hint := aBtn.Caption;
 
   ChoppableTree := False;
@@ -284,7 +285,7 @@ begin
   // Update palette buttons Down state
   for I := 0 to fCountCompact - 1 do
     ObjectsPaletteTable[I].Down := (gGameCursor.Mode = cmObjects)
-                                and not (gGameCursor.Tag1 in [255, 61])
+                                and not (gGameCursor.Tag1 in [OBJ_NONE, OBJ_BLOCK])
                                 and (ObjectsPaletteTable[I].Tag = fMapElemToCompact[gGameCursor.Tag1]);
 end;
 
@@ -336,13 +337,13 @@ var
 begin
   fCountCompact := 0;
   for I := 0 to gRes.MapElements.Count - 1 do
-  if (I <> 61) and (gMapElements[I].Anim.Count > 0) and (gMapElements[I].Anim.Step[1] > 0)
-  and (gMapElements[I].Stump = -1) then //Hide falling trees and invisible wall (61)
-  begin
-    fCompactToMapElem[fCountCompact] := I; //pointer
-    fMapElemToCompact[I] := fCountCompact; //Reverse lookup
-    Inc(fCountCompact);
-  end;
+    if (I <> OBJ_BLOCK) and (gMapElements[I].Anim.Count > 0) and (gMapElements[I].Anim.Step[1] > 0)
+      and (gMapElements[I].Stump = -1) then //Hide falling trees and invisible wall (61)
+    begin
+      fCompactToMapElem[fCountCompact] := I; //pointer
+      fMapElemToCompact[I] := fCountCompact; //Reverse lookup
+      Inc(fCountCompact);
+    end;
 end;
 
 
@@ -380,14 +381,15 @@ var
   ObjIndex: Integer;
 begin
   case TKMButtonFlat(Sender).Tag of
-    61, 255:  ObjIndex := TKMButtonFlat(Sender).Tag; // Block or Erase
-    else      ObjIndex := ObjectsScroll.Position * 3 + TKMButtonFlat(Sender).Tag; //0..n-1
+    OBJ_BLOCK,
+    OBJ_NONE:  ObjIndex := TKMButtonFlat(Sender).Tag; // Block or Erase
+    else       ObjIndex := ObjectsScroll.Position * 3 + TKMButtonFlat(Sender).Tag; //0..n-1
   end;
 
   ObjectsUpdate(ObjIndex);
 
   // Update Objects Palette scroll position
-  if not (ObjIndex in [61, 255])
+  if not (ObjIndex in [OBJ_BLOCK, OBJ_NONE])
     and not InRange(ObjIndex,
                     Scroll_ObjectsPalette.Position*fObjPaletteTableSize.X,
                     Scroll_ObjectsPalette.Position*fObjPaletteTableSize.X + fObjPaletteTableSize.X*fObjPaletteTableSize.Y - 1) then
@@ -399,13 +401,13 @@ procedure TKMMapEdTerrainObjects.ObjectsUpdate(aObjIndex: Integer);
 begin
   //Skip indexes out of range
   if not InRange(aObjIndex, 0, fCountCompact - 1)
-    and not (aObjIndex in [61, 255]) then
+    and not (aObjIndex in [OBJ_BLOCK, OBJ_NONE]) then
     Exit;
 
   gGameCursor.Mode := cmObjects;
   case aObjIndex of
-    61,                                 //Block
-    255: gGameCursor.Tag1 := aObjIndex; //Erase
+    OBJ_BLOCK,                               //Block
+    OBJ_NONE: gGameCursor.Tag1 := aObjIndex; //Erase
     else gGameCursor.Tag1 := fCompactToMapElem[aObjIndex];
   end;
 
@@ -452,11 +454,13 @@ begin
       ObjectsTable[I].Disable;
     end;
     //Mark the selected one using reverse lookup
-    ObjectsTable[I].Down := (gGameCursor.Mode = cmObjects) and not (gGameCursor.Tag1 in [255, 61]) and (ObjIndex = fMapElemToCompact[gGameCursor.Tag1]);
+    ObjectsTable[I].Down := (gGameCursor.Mode = cmObjects)
+                            and not (gGameCursor.Tag1 in [OBJ_NONE, OBJ_BLOCK])
+                              and (ObjIndex = fMapElemToCompact[gGameCursor.Tag1]);
   end;
 
-  ObjectErase.Down := (gGameCursor.Mode = cmObjects) and (gGameCursor.Tag1 = 255); //or delete button
-  ObjectBlock.Down := (gGameCursor.Mode = cmObjects) and (gGameCursor.Tag1 = 61); //or block button
+  ObjectErase.Down := (gGameCursor.Mode = cmObjects) and (gGameCursor.Tag1 = OBJ_NONE);  //or delete button
+  ObjectBlock.Down := (gGameCursor.Mode = cmObjects) and (gGameCursor.Tag1 = OBJ_BLOCK); //or block button
 end;
 
 
@@ -464,8 +468,8 @@ procedure TKMMapEdTerrainObjects.Show;
 begin
   case fLastObjectIndex of
     -1:   ; // Do not update Objects if no last object was selected
-    61:   ObjectsChange(ObjectBlock);
-    255:  ObjectsChange(ObjectErase);
+    OBJ_BLOCK: ObjectsChange(ObjectBlock);
+    OBJ_NONE:  ObjectsChange(ObjectErase);
     else  begin
             UpdateObjectsScrollPosToIndex(fLastObjectIndex);
             ObjectsChange(ObjectsTable[fLastObjectIndex - ObjectsScroll.Position*3]);

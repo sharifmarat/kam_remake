@@ -53,9 +53,9 @@ type
     procedure CheckOpenALError;
     function IsSoundPlaying(aIndex: Integer): Boolean;
 
-    function PlayWave(const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
+    function PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
                       Volume: Single = 1; FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
-    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType;
+    function PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType;
                        Attenuated: Boolean; Volume: Single; Radius: Single; FadeMusic, aLooped: Boolean; aFromScript: Boolean = False): Integer;
   public
     constructor Create(aVolume: Single);
@@ -389,7 +389,7 @@ end;
 
 
 {Wrapper WAV files}
-function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
+function TKMSoundPlayer.PlayWave(const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType; Attenuated: Boolean = True;
                                  Volume: Single = 1; FadeMusic: Boolean = False; aLoop: Boolean = False): Integer;
 begin
   Result := -1;
@@ -401,7 +401,7 @@ end;
 {Call to this procedure will find free spot and start to play sound immediately}
 {Will need to make another one for unit sounds, which will take WAV file path as parameter}
 {Attenuated means if sound should fade over distance or not}
-function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; Loc: TKMPointF; aSoundType: TKMSoundType;
+function TKMSoundPlayer.PlaySound(SoundID: TSoundFX; const aFile: UnicodeString; const Loc: TKMPointF; aSoundType: TKMSoundType;
                                   Attenuated: Boolean; Volume: Single; Radius: Single; FadeMusic, aLooped: Boolean;
                                   aFromScript: Boolean = False): Integer;
 var
