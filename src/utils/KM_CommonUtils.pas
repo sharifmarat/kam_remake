@@ -19,7 +19,7 @@ uses
   function KMGetCursorDirection(X,Y: integer): TKMDirection;
 
   function GetPositionInGroup2(OriginX, OriginY: Word; aDir: TKMDirection; aIndex, aUnitPerRow: Word; MapX, MapY: Word; out aTargetCanBeReached: Boolean): TKMPoint;
-  function GetPositionFromIndex(aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
+  function GetPositionFromIndex(const aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
@@ -74,6 +74,11 @@ uses
 
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
+
+  function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean; overload;
+  function ArrayContains(aValue: Word; const aArray: array of Word): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean; overload;
 
   function Pack4ByteToInteger(aByte1, aByte2, aByte3, aByte4: Byte): Integer;
   procedure UnpackIntegerTo4Byte(aInt: Integer; out aByte1, aByte2, aByte3, aByte4: Byte);
@@ -226,6 +231,62 @@ begin
   begin
     Inc(aArr1^[I], aArr2^[I]);
   end;
+end;
+
+
+function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aValue: Word; const aArray: array of Word): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if KMSamePoint(aPoint, aArray[I]) then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to aElemCnt - 1 do
+    if KMSamePoint(aPoint, aArray[I]) then
+    begin
+      Result := True;
+      Exit;
+    end;
 end;
 
 
@@ -412,7 +473,7 @@ end;
 
 
 //See Docs\GetPositionFromIndex.xls for explanation
-function GetPositionFromIndex(aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
+function GetPositionFromIndex(const aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
 const
   Rings: array[1..10] of Word =
 //Ring#  1  2  3  4   5   6   7    8    9    10

@@ -642,35 +642,37 @@ end;
 
 
 procedure TKMMenuLobby.CreateSettingsPopUp(aParent: TKMPanel);
+const
+  SET_W = 400;
 begin
-  Panel_Settings := TKMPanel.Create(aParent, 362, 250, 320, 350);
+  Panel_Settings := TKMPanel.Create(aParent, 362, 250, SET_W, 350);
   Panel_Settings.AnchorsCenter;
     TKMBevel.Create(Panel_Settings, -1000,  -1000, 4000, 4000);
-    with TKMImage.Create(Panel_Settings, -20, -75, 360, 440, 15, rxGuiMain) do ImageStretch;
-    TKMBevel.Create(Panel_Settings,   0,  0, 320, 343);
-    TKMLabel.Create(Panel_Settings,  20, 10, 280, 20, gResTexts[TX_LOBBY_ROOMSETTINGS], fnt_Outline, taCenter);
+    with TKMImage.Create(Panel_Settings, -20, -75, SET_W + 40, 440, 15, rxGuiMain) do ImageStretch;
+    TKMBevel.Create(Panel_Settings,   0,  0, SET_W, 343);
+    TKMLabel.Create(Panel_Settings,  20, 10, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOMSETTINGS], fnt_Outline, taCenter);
 
-    TKMLabel.Create(Panel_Settings, 20, 50, 280, 20, gResTexts[TX_LOBBY_ROOM_DESCRIPTION], fnt_Outline, taCenter);
-    Edit_Description := TKMEdit.Create(Panel_Settings, 20, 70, 280, 20, fnt_Grey);
+    TKMLabel.Create(Panel_Settings, 20, 50, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_DESCRIPTION], fnt_Outline, taCenter);
+    Edit_Description := TKMEdit.Create(Panel_Settings, 20, 70, SET_W - 40, 20, fnt_Grey);
     Edit_Description.AllowedChars := acText;
     Edit_Description.MaxLen := 60;
 
-    TKMLabel.Create(Panel_Settings, 20, 100, 280, 20, gResTexts[TX_LOBBY_ROOM_PASSWORD], fnt_Outline, taCenter);
-    Edit_Password := TKMEdit.Create(Panel_Settings, 20, 120, 280, 20, fnt_Grey);
+    TKMLabel.Create(Panel_Settings, 20, 100, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_PASSWORD], fnt_Outline, taCenter);
+    Edit_Password := TKMEdit.Create(Panel_Settings, 20, 120, SET_W - 40, 20, fnt_Grey);
     Edit_Password.AllowedChars := acANSI7; //Passwords are basic ANSI so everyone can type them
-    Checkbox_RememberPassword := TKMCheckbox.Create(Panel_Settings, 20, 153, 300, 30, gResTexts[TX_LOBBY_REMEMBER_PASSWORD], fnt_Grey);
+    Checkbox_RememberPassword := TKMCheckbox.Create(Panel_Settings, 20, 153, SET_W - 20, 30, gResTexts[TX_LOBBY_REMEMBER_PASSWORD], fnt_Grey);
 
-    Button_SettingsResetBans := TKMButton.Create(Panel_Settings, 20, 180, 280, 30, gResTexts[TX_LOBBY_RESET_BANS], bsMenu);
-    Button_SettingsUseLastPassword := TKMButton.Create(Panel_Settings, 20, 220, 280, 30, gResTexts[TX_LOBBY_USE_LAST_PASSWORD], bsMenu);
+    Button_SettingsResetBans := TKMButton.Create(Panel_Settings, 20, 180, SET_W - 40, 30, gResTexts[TX_LOBBY_RESET_BANS], bsMenu);
+    Button_SettingsUseLastPassword := TKMButton.Create(Panel_Settings, 20, 220, SET_W - 40, 30, gResTexts[TX_LOBBY_USE_LAST_PASSWORD], bsMenu);
     Button_SettingsResetBans.OnClick := SettingsClick;
     Button_SettingsUseLastPassword.OnClick := SettingsClick;
 
-    Button_SettingsAskReady := TKMButton.Create(Panel_Settings, 20, 260, 280, 30, gResTexts[TX_LOBBY_ALERT_READY_BTN], bsMenu);
+    Button_SettingsAskReady := TKMButton.Create(Panel_Settings, 20, 260, SET_W - 40, 30, gResTexts[TX_LOBBY_ALERT_READY_BTN], bsMenu);
     Button_SettingsAskReady.OnClick := WakeUpNotReadyClick;
     Button_SettingsAskReady.Enabled := False;
-    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
+    Button_SettingsSave := TKMButton.Create(Panel_Settings, 20, 300, (SET_W - 50) div 2, 30, gResTexts[TX_LOBBY_ROOM_OK], bsMenu);
     Button_SettingsSave.OnClick := SettingsClick;
-    Button_SettingsCancel := TKMButton.Create(Panel_Settings, 170, 300, 135, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
+    Button_SettingsCancel := TKMButton.Create(Panel_Settings, (SET_W div 2) + 10, 300, (SET_W - 50) div 2, 30, gResTexts[TX_LOBBY_ROOM_CANCEL], bsMenu);
     Button_SettingsCancel.OnClick := SettingsClick;
 end;
 

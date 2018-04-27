@@ -70,9 +70,9 @@ type
     procedure MouseMove;
     procedure MouseUp(Button: TMouseButton; aOverMap: Boolean);
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
-    procedure Update;
+    procedure UpdateState;
     procedure UpdateStateIdle;
-    procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+    procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 
     procedure DeletePlayer(aIndex: TKMHandIndex);
   end;
@@ -346,7 +346,7 @@ begin
   end;
 
   //Delete tile object (including corn/wine objects as well)
-  if (gTerrain.Land[P.Y,P.X].Obj <> 255) then
+  if (gTerrain.Land[P.Y,P.X].Obj <> OBJ_NONE) then
   begin
     fTerrainPainter.MakeCheckpoint;
     if gTerrain.TileIsCornField(P) and (gTerrain.GetCornStage(P) in [4,5]) then
@@ -354,7 +354,7 @@ begin
     else if gTerrain.TileIsWineField(P) then
       gTerrain.RemField(P)
     else
-      gTerrain.SetObject(P, 255);
+      gTerrain.SetObject(P, OBJ_NONE);
     if not aEraseAll then Exit;
   end;
 
@@ -555,7 +555,7 @@ begin
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);
                                 if (gGame.ActiveInterface is TKMapEdInterface) then
-                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableScrollToTileTexId(gGameCursor.Tag1);
+                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableSetTileTexId(gGameCursor.Tag1);
                                 if not (ssShift in gGameCursor.SState) then  //Holding shift allows to choose another tile
                                   gGameCursor.Mode := cmTiles;
                               end;
@@ -593,16 +593,6 @@ begin
                 cmRotateTile: gGameCursor.Mode := cmNone;
               end;
   end;
-end;
-
-
-procedure TKMMapEditor.Update;
-begin
-  if mlDeposits in VisibleLayers then
-    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
-
-  //todo: if mlNavMesh in VisibleLayers then
-    //gAIFields.NavMesh.Init;
 end;
 
 
@@ -830,7 +820,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 var
   I, K: Integer;
   P: TKMPoint;
@@ -886,11 +876,23 @@ begin
 end;
 
 
+procedure TKMMapEditor.UpdateState;
+begin
+  if mlDeposits in VisibleLayers then
+    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
+
+  fTerrainPainter.UpdateState;
+
+  //todo: if mlNavMesh in VisibleLayers then
+    //gAIFields.NavMesh.Init;
+end;
+
+
 procedure TKMMapEditor.UpdateStateIdle;
 begin
-  if fTerrainPainter <> nil then
-    fTerrainPainter.UpdateStateIdle;
+  fTerrainPainter.UpdateStateIdle;
 end;
 
 
 end.
+

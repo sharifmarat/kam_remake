@@ -15,13 +15,13 @@ type
 
     //Execute is broken up into multiple methods
       function ExecuteValidateOpponent(Step: Byte): TKMActionResult;
-      function ExecuteProcessRanged(Step: Byte):boolean;
-      function ExecuteProcessMelee(Step: Byte):boolean;
+      function ExecuteProcessRanged(Step: Byte): Boolean;
+      function ExecuteProcessMelee(Step: Byte): Boolean;
 
-    function UpdateVertexUsage(aFrom, aTo: TKMPoint): Boolean;
-    procedure IncVertex(aFrom, aTo: TKMPoint);
+    function UpdateVertexUsage(const aFrom, aTo: TKMPoint): Boolean;
+    procedure IncVertex(const aFrom, aTo: TKMPoint);
     procedure DecVertex;
-    procedure MakeSound(IsHit:boolean);
+    procedure MakeSound(IsHit: Boolean);
   public
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aOpponent: TKMUnit);
     constructor Load(LoadStream:TKMemoryStream); override;
@@ -109,7 +109,7 @@ begin
 end;
 
 
-function TKMUnitActionFight.UpdateVertexUsage(aFrom, aTo: TKMPoint):boolean;
+function TKMUnitActionFight.UpdateVertexUsage(const aFrom, aTo: TKMPoint): Boolean;
 begin
   Result := True;
   if KMStepIsDiag(aFrom, aTo) then
@@ -129,7 +129,7 @@ begin
 end;
 
 
-procedure TKMUnitActionFight.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionFight.IncVertex(const aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Fight vertex in use');
@@ -149,7 +149,7 @@ begin
 end;
 
 
-procedure TKMUnitActionFight.MakeSound(IsHit:boolean);
+procedure TKMUnitActionFight.MakeSound(IsHit: Boolean);
 var
   //Battlecry is the most noticable random sound, we would like to repeat it exactly the same in each replay (?)
   MakeBattleCry: Boolean;
@@ -219,51 +219,39 @@ end;
 
 //A result of true means exit from Execute
 function TKMUnitActionFight.ExecuteProcessRanged(Step: Byte): Boolean;
+var
+  W: TKMUnitWarrior;
 begin
   Result := False;
 
-  if Step = FIRING_DELAY then
+  W := TKMUnitWarrior(fUnit);
+
+  if Step = 0 then
   begin
     if fFightDelay = -1 then //Initialize
-    begin
-      if fUnit.UnitType <> ut_Slingshot then
-        MakeSound(False);
-
-      case fUnit.UnitType of
-        ut_Bowman:     fFightDelay := BOWMEN_AIMING_DELAY_MIN + KaMRandom(BOWMEN_AIMING_DELAY_ADD);
-        ut_Arbaletman: fFightDelay := CROSSBOWMEN_AIMING_DELAY_MIN + KaMRandom(CROSSBOWMEN_AIMING_DELAY_ADD);
-        ut_SLingShot:  fFightDelay := SLINGSHOT_AIMING_DELAY_MIN + KaMRandom(SLINGSHOT_AIMING_DELAY_ADD);
-      end;
-    end;
-
+      fFightDelay := W.AimingDelay;
+    
     if fFightDelay > 0 then
     begin
       Dec(fFightDelay);
       Result := True; //do not increment AnimStep, just exit;
       Exit;
     end;
+  end;
 
-    if fUnit.UnitType = ut_Slingshot then MakeSound(False);
-    TKMUnitWarrior(fUnit).SetLastShootTime; //Record last time the warrior shot
+  //Slingshot sound should happen a bit later
+  if Step = W.AimSoundDelay then
+    MakeSound(False);
+  
+  if Step = W.FiringDelay then
+  begin
+    W.SetLastShootTime; //Record last time the warrior shot
 
     //Fire the arrow
-    case fUnit.UnitType of
-      ut_Arbaletman:  gProjectiles.AimTarget(fUnit.PositionF, fOpponent, pt_Bolt, fUnit, RANGE_ARBALETMAN_MAX, RANGE_ARBALETMAN_MIN);
-      ut_Bowman:      gProjectiles.AimTarget(fUnit.PositionF, fOpponent, pt_Arrow, fUnit, RANGE_BOWMAN_MAX, RANGE_BOWMAN_MIN);
-      ut_Slingshot:   ;
-      else            raise Exception.Create('Unknown shooter');
-    end;
+    gProjectiles.AimTarget(fUnit.PositionF, fOpponent, W.ProjectileType, fUnit, W.RangeMax, W.RangeMin);
 
     fFightDelay := -1; //Reset
   end;
-
-  //todo: @Lewin: Looks like this can be adjoined with above?
-  if Step = SLINGSHOT_FIRING_DELAY then
-    if fUnit.UnitType = ut_Slingshot then
-    begin
-      gProjectiles.AimTarget(fUnit.PositionF, fOpponent, pt_SlingRock, fUnit, RANGE_SLINGSHOT_MAX, RANGE_SLINGSHOT_MIN);
-      TKMUnitWarrior(fUnit).SetLastShootTime; //Record last time the warrior shot
-    end;
 end;
 
 

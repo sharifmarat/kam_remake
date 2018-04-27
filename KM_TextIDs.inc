@@ -453,9 +453,8 @@ TX_MAPED_TERRAIN_TILES_RANDOM_HINT = 390; //Tick for randomized tile direction o
 TX_MAPED_TERRAIN_OBJECTS_BLOCK = 392; //Block walking
 TX_MAPED_TERRAIN_OBJECTS_REMOVE = 393; //Remove an object
 TX_MAPED_TERRAIN_MAGIC_WATER = 672; //Magic water
-TX_MAPED_TERRAIN_EYEDROPPER = 964; //Eyedropper
-TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Sets the direction for all tiles in a body of water
-TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Use this tool to select the type of tile under the cursor
+TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Magic water - sets the direction for all tiles in a body of water
+TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Eyedropper - select the type of tile under the cursor
 TX_MAPED_VILLAGE = 394; //Village planning
 TX_MAPED_SCRIPTS_VISUAL = 395; //Visual scripts
 TX_MAPED_SCRIPTS_GLOBAL = 396; //Global scripting
@@ -1205,3 +1204,5 @@ TX_LOBBY_ALERT_READY_BTN = 1190; //Ask to press Ready
 TX_LOBBY_ALERT_GET_READY_SENT = 1191; //Alert to get ready was sent to %s players
 
 TX_KEY_FUNC_PLAYER_COLOR_MODE = 1192; //Switch players color mode
+
+TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during current unit action

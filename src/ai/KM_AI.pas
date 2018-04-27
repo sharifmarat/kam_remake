@@ -155,7 +155,7 @@ end;
 
 procedure TKMHandAI.CheckGoals;
 
-  function GoalConditionSatisfied(aGoal: TKMGoal): Boolean;
+  function GoalConditionSatisfied(const aGoal: TKMGoal): Boolean;
   var
     Stat: TKMHandStats;
   begin

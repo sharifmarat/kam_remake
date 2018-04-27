@@ -350,7 +350,7 @@ begin
       //K := (Y-1)*(gTerrain.MapX-1)+X-1;
       aTiles[K].Y := Y;
       aTiles[K].X := X;
-      aTiles[K].Terrain := TilesPartsArr.Terrain[Y,X];
+      aTiles[K].Terrain := Word(TilesPartsArr.Terrain[Y,X]);
       aTiles[K].Rotation := TilesPartsArr.Rotation[Y,X];
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];
@@ -2137,9 +2137,6 @@ end;
 // Locs = locs of players positions
 // TilesPartsArr = tiles composition array
 procedure TKMRandomMapGenerator.NoGoZones(Locs: TKMPointArray; var TilesPartsArr: TTileParts);
-const
-  NO_WALK_TILE_OBJ = 61; // Number of no-walk object
-  NO_OBJECT = 255; // Tile without object
 var
   Y1,X1,Y0,Y2,X0,X2, i, step: Integer;
   PathArr: TInteger2Array;
@@ -2196,14 +2193,14 @@ begin
         step := step + 1;
       end;
       if WT[ TilesPartsArr.Terrain[Y1,X1] ] then
-        FillObject.QuickFlood(X1, Y1, 0, 1, NO_OBJECT);
+        FillObject.QuickFlood(X1, Y1, 0, 1, OBJ_NONE);
     end;
 
     // Now find accessible tiles which are not visited and replace object
     for Y1 := 1 to gTerrain.MapY-1 do
       for X1 := 1 to gTerrain.MapX-1 do
         if (PathArr[Y1,X1] = 0) AND WT[ TilesPartsArr.Terrain[Y1,X1] ] then
-          FillObject.QuickFlood(X1, Y1, 0, 1, NO_WALK_TILE_OBJ);
+          FillObject.QuickFlood(X1, Y1, 0, 1, OBJ_BLOCK);
   finally
     FillObject.Free;
   end;

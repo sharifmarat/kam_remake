@@ -67,13 +67,13 @@ type
     function GetMember(aIndex: Integer): TKMUnitWarrior;
     function GetFlagBearer: TKMUnitWarrior;
     function GetNearestMember(aUnit: TKMUnitWarrior): Integer; overload;
-    function GetNearestMember(aLoc: TKMPoint): TKMUnitWarrior; overload;
+    function GetNearestMember(const aLoc: TKMPoint): TKMUnitWarrior; overload;
     function GetMemberLoc(aIndex: Integer): TKMPointExact;
     procedure SetMapEdCount(aCount: Word);
     procedure SetUnitsPerRow(aCount: Word);
     procedure SetDirection(Value: TKMDirection);
     procedure SetCondition(aValue: Integer);
-    procedure SetPosition(aValue: TKMPoint);
+    procedure SetPosition(const aValue: TKMPoint);
     procedure ClearOrderTarget;
     procedure ClearOffenders;
     procedure HungarianReorderMembers;
@@ -128,9 +128,9 @@ type
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
     function IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
-    function IsPositioned(aLoc: TKMPoint; Dir: TKMDirection): Boolean;
+    function IsPositioned(const aLoc: TKMPoint; Dir: TKMDirection): Boolean;
     function CanTakeOrders: Boolean;
-    function CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
+    function CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
     function FightMaxRange: Single;
     function IsRanged: Boolean;
     function IsDead: Boolean;
@@ -176,7 +176,7 @@ type
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
-    procedure OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
 
     procedure OrderRepeat;
     procedure CopyOrderFrom(aGroup: TKMUnitGroup);
@@ -212,7 +212,7 @@ type
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
-    function GetClosestGroup(aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+    function GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
     function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
 
@@ -223,7 +223,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -533,7 +533,7 @@ begin
 end;
 
 
-function TKMUnitGroup.GetNearestMember(aLoc: TKMPoint): TKMUnitWarrior;
+function TKMUnitGroup.GetNearestMember(const aLoc: TKMPoint): TKMUnitWarrior;
 var
   I: Integer;
   Dist, Best: Single;
@@ -581,7 +581,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.SetPosition(aValue: TKMPoint);
+procedure TKMUnitGroup.SetPosition(const aValue: TKMPoint);
 begin
   Assert(gGame.IsMapEditor);
   Members[0].SetPosition(aValue);
@@ -674,7 +674,7 @@ begin
 end;
 
 
-function TKMUnitGroup.CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
+function TKMUnitGroup.CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
 begin
   Result := (Count > 0) and Members[0].CanWalkTo(aTo, aDistance);
 end;
@@ -1040,7 +1040,7 @@ begin
 end;
 
 
-function TKMUnitGroup.IsPositioned(aLoc:TKMPoint; Dir: TKMDirection): Boolean;
+function TKMUnitGroup.IsPositioned(const aLoc:TKMPoint; Dir: TKMDirection): Boolean;
 var I: Integer; P: TKMPointExact; U: TKMUnitWarrior;
 begin
   Result := True;
@@ -1568,7 +1568,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
 var
   I: Integer;
   NewDir: TKMDirection;
@@ -2039,7 +2039,7 @@ begin
 end;
 
 
-function TKMUnitGroups.GetClosestGroup(aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+function TKMUnitGroups.GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
 var
   I: Integer;
   BestDist, Dist: Single;
@@ -2195,7 +2195,7 @@ begin
 end;
 
 
-procedure TKMUnitGroups.Paint(aRect: TKMRect);
+procedure TKMUnitGroups.Paint(const aRect: TKMRect);
 const
   Margin = 2;
 var

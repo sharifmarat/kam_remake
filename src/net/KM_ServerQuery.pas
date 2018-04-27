@@ -540,7 +540,7 @@ end;
 procedure TKMServerQuery.Sort;
 var TempRooms: array of TKMRoomInfo;
 
-  function Compare(A, B: TKMRoomInfo): Boolean;
+  function Compare(const A, B: TKMRoomInfo): Boolean;
   var AServerInfo, BServerInfo: TKMServerInfo;
   const StateSortOrder: array[TMPGameState] of byte = (4,1,2,3);
   begin

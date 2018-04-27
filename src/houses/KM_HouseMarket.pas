@@ -18,6 +18,10 @@ type
     procedure AttemptExchange;
     procedure SetResFrom(aRes: TKMWareType);
     procedure SetResTo(aRes: TKMWareType);
+
+    function GetMarkerResToTrade(aWare: TKMWareType): Word;
+    procedure SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+    property MarkerResToTrade[aWare: TKMWareType]: Word read GetMarkerResToTrade write SetMarkerResToTrade;
   protected
     function GetResOrder(aId: Byte): Integer; override;
     procedure SetResOrder(aId: Byte; aValue: Integer); override;
@@ -102,7 +106,8 @@ end;
 
 
 function TKMHouseMarket.RatioFrom: Byte;
-var CostFrom, CostTo: Single;
+var
+  CostFrom, CostTo: Single;
 begin
   if (fResFrom <> wt_None) and (fResTo <> wt_None) then
   begin
@@ -171,7 +176,8 @@ end;
 
 
 procedure TKMHouseMarket.AttemptExchange;
-var TradeCount: Word;
+var
+  TradeCount: Word;
 begin
   Assert((fResFrom <> wt_None) and (fResTo <> wt_None) and (fResFrom <> fResTo));
 
@@ -183,12 +189,12 @@ begin
     Exit;
   end;
 
-  if TradeInProgress and (fMarketResIn[fResFrom] >= RatioFrom) then
+  if TradeInProgress and (MarkerResToTrade[fResFrom] >= RatioFrom) then
   begin
     //How much can we trade
-    TradeCount := Min((fMarketResIn[fResFrom] div RatioFrom), fTradeAmount);
+    TradeCount := Min((MarkerResToTrade[fResFrom] div RatioFrom), fTradeAmount);
 
-    Dec(fMarketResIn[fResFrom], TradeCount * RatioFrom);
+    MarkerResToTrade[fResFrom] := MarkerResToTrade[fResFrom] - TradeCount * RatioFrom;
     gHands[fOwner].Stats.WareConsumed(fResFrom, TradeCount * RatioFrom);
     Dec(fTradeAmount, TradeCount);
     Inc(fMarketResOut[fResTo], TradeCount * RatioTo);
@@ -247,6 +253,34 @@ begin
 end;
 
 
+function TKMHouseMarket.GetMarkerResToTrade(aWare: TKMWareType): Word;
+begin
+  Result := fMarketResIn[aWare] + fMarketResOut[aWare];
+end;
+
+
+procedure TKMHouseMarket.SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+var
+  CurCnt, DecFromIn, DecFromOut: Word;
+
+begin
+  CurCnt := GetMarkerResToTrade(aWare);
+  if aCnt > CurCnt then
+  begin
+    Inc(fMarketResIn[aWare], aCnt - CurCnt);
+
+  end else
+  if aCnt < CurCnt then
+  begin
+    DecFromIn := Min(fMarketResIn[aWare], CurCnt - aCnt);
+    Dec(fMarketResIn[aWare], DecFromIn);
+    DecFromOut := CurCnt - aCnt - DecFromIn;
+    Dec(fMarketResOut[aWare], DecFromOut);
+    gHands[fOwner].Deliveries.Queue.RemOffer(Self, aWare, DecFromOut);
+  end;
+end;
+
+
 function TKMHouseMarket.TradeInProgress: Boolean;
 begin
   Result := fTradeAmount > 0;
@@ -271,7 +305,7 @@ begin
   //If player cancelled exchange then move all remainders of From resource to Offers list
   if (fTradeAmount = 0) and (fMarketResIn[fResFrom] > 0) then
   begin
-    inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
+    Inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResFrom, fMarketResIn[fResFrom]);
     fMarketResIn[fResFrom] := 0;
   end;

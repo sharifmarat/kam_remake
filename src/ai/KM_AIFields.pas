@@ -27,7 +27,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -97,7 +97,7 @@ end;
 
 
 //Render debug symbols
-procedure TKMAIFields.Paint(aRect: TKMRect);
+procedure TKMAIFields.Paint(const aRect: TKMRect);
 begin
   fEye.Paint(aRect);  // Debug (remove)
 

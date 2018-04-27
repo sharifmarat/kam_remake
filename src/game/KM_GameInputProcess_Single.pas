@@ -11,7 +11,7 @@ type
     fCurrTick: Cardinal;
     fLastTick: Cardinal;
   protected
-    procedure TakeCommand(aCommand: TKMGameInputCommand); override;
+    procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
     procedure SaveExtra(aStream: TKMemoryStream); override;
     procedure LoadExtra(aStream: TKMemoryStream); override;
   public
@@ -28,7 +28,7 @@ uses
   KM_Game, KM_Defaults, KM_CommonUtils;
 
 
-procedure TKMGameInputProcess_Single.TakeCommand(aCommand: TKMGameInputCommand);
+procedure TKMGameInputProcess_Single.TakeCommand(const aCommand: TKMGameInputCommand);
 begin
   if gGame.IsReplay then Exit;
 

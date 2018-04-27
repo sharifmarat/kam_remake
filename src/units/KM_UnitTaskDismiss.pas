@@ -19,7 +19,7 @@ type
     procedure SyncLoad; override;
     procedure Save(SaveStream: TKMemoryStream); override;
     function ShouldBeCancelled: Boolean;
-    function CouldBeCancelled: BOolean;
+    function CouldBeCancelled: Boolean; override;
 
     property School: TKMHouse read fSchool;
     function FindNewSchool: TKMHouse;
@@ -66,7 +66,7 @@ end;
 
 function TKMTaskDismiss.CouldBeCancelled: Boolean;
 begin
-  Result := fPhase <= 1;
+  Result := fPhase <= 1; //Allow cancel dismiss only while walking to the school point below entrance
 end;
 
 

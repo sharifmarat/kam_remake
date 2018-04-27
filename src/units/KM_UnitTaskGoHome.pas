@@ -11,7 +11,9 @@ type
   public
     constructor Create(aUnit: TKMUnit);
     destructor Destroy; override;
-    function Execute:TKMTaskResult; override;
+
+    function Execute: TKMTaskResult; override;
+    function CouldBeCancelled: Boolean; override;
   end;
 
 
@@ -30,6 +32,13 @@ end;
 destructor TKMTaskGoHome.Destroy;
 begin
   inherited;
+end;
+
+
+function TKMTaskGoHome.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                   <= 0; //Allow cancel task only at walking phases
 end;
 
 

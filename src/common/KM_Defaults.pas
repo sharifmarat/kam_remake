@@ -114,6 +114,9 @@ var
   SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR   :Boolean = False; //Skip loading and setting cursor
   AGGRESSIVE_REPLAYS    :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  SHOW_TERRAIN_IDS      :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
+  SHOW_TERRAIN_KINDS    :Boolean = False; //Show terrain kind ids on every tile corner
+  SHOW_BRUSH_APPLY_AREA :BOolean = False; //Show brushes apply area
   SHOW_TERRAIN_WIRES    :Boolean = False; //Makes terrain height visible
   SHOW_TERRAIN_PASS     :Byte = 0; //Byte(TKMTerrainPassability)
   SHOW_UNIT_ROUTES      :Boolean = False; //Draw unit routes
@@ -233,28 +236,11 @@ const
   DEFAULT_HITPOINT_RESTORE  = 100;        //1 hitpoint is restored to units every X ticks (using Humbelum's advice)
   TIME_BETWEEN_MESSAGES     = 4*600;      //Time between messages saying house is unoccupied or unit is hungry. In KaM it's 4 minutes
 
-  //Archer properties
-  RANGE_ARBALETMAN_MAX  = 10.99; //KaM: Unit standing 10 tiles from us will be shot, 11 tiles not
-  RANGE_BOWMAN_MAX      = 10.99;
-  RANGE_SLINGSHOT_MAX   = 10.99;
   RANGE_WATCHTOWER_MAX  = 6.99; //Measured in KaM. Distance from the doorway of tower
-
-  RANGE_ARBALETMAN_MIN  = 4; //KaM: We will shoot a unit standing 4 tiles away, but not one standing 3 tiles away
-  RANGE_BOWMAN_MIN      = 4;
-  RANGE_SLINGSHOT_MIN   = 4;
   RANGE_WATCHTOWER_MIN  = 0; //In KaM towers have no minimum range, they will shoot any unit less than the range
 
   LINK_RADIUS = 5; //Radius to search for groups to link to after being trained at the barracks (measured from KaM)
 
-  BOWMEN_AIMING_DELAY_MIN      = 6; //minimum time for bowmen to aim
-  BOWMEN_AIMING_DELAY_ADD      = 6; //random component
-  SLINGSHOT_AIMING_DELAY_MIN   = 0; //minimum time for slingshot to aim
-  SLINGSHOT_AIMING_DELAY_ADD   = 4; //random component
-  CROSSBOWMEN_AIMING_DELAY_MIN = 8; //minimum time for crossbowmen to aim
-  CROSSBOWMEN_AIMING_DELAY_ADD = 8; //random component
-
-  SLINGSHOT_FIRING_DELAY = 12; //on which frame slinger fires his rock
-  FIRING_DELAY = 0; //on which frame archer fires his arrow/bolt
   FRIENDLY_FIRE = True; //Whenever archers could kill fellow men with their arrows
 
   NET_DROP_PLAYER_MIN_WAIT = 30; //Host must wait at least this long before dropping disconnected players
@@ -784,6 +770,7 @@ const
   icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;
+  icLightCyan   = $FFFFFF80;
   icLightOrange = $FF80CCFF;
   icLightRed   = $FF7070FF;
   icLight2Red   = $FFB0B0FF;

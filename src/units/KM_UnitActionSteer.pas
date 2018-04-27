@@ -11,7 +11,7 @@ type
     fDesireToSteer, fStuckFor: Byte; //Likelihood of changing direction
     fVertexOccupied: TKMPoint; //The diagonal vertex we are currently occupying
     fNextPos: TKMPoint; //The tile we are currently walking to
-    procedure IncVertex(aFrom, aTo: TKMPoint);
+    procedure IncVertex(const aFrom, aTo: TKMPoint);
     procedure DecVertex;
     function ChooseNextStep(out Point: TKMPoint): Boolean;
   public
@@ -70,7 +70,7 @@ begin
 end;
 
 
-procedure TKMUnitActionSteer.IncVertex(aFrom, aTo: TKMPoint);
+procedure TKMUnitActionSteer.IncVertex(const aFrom, aTo: TKMPoint);
 begin
   //Tell gTerrain that this vertex is being used so no other unit walks over the top of us
   Assert(KMSamePoint(fVertexOccupied, KMPOINT_ZERO), 'Steer vertex in use');
@@ -93,7 +93,7 @@ end;
 function TKMUnitActionSteer.ChooseNextStep(out Point: TKMPoint): Boolean;
 var
   I,K,J: Integer;
-  Loc:TKMPoint;
+  Loc: TKMPoint;
   List: TKMPointList;
   GoodSpot: Boolean;
 begin

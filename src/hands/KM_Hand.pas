@@ -26,8 +26,8 @@ type
     property HandIndex: TKMHandIndex read fHandIndex;
     property Units: TKMUnitsCollection read fUnits;
 
-    function AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint): TKMUnit;
-    procedure RemUnit(Position: TKMPoint);
+    function AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint): TKMUnit;
+    procedure RemUnit(const Position: TKMPoint);
     function UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
     function UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
 
@@ -36,7 +36,7 @@ type
     procedure SyncLoad; virtual;
 
     procedure UpdateState(aTick: Cardinal); virtual;
-    procedure Paint(aRect: TKMRect); virtual;
+    procedure Paint(const aRect: TKMRect); virtual;
   end;
 
 
@@ -74,7 +74,7 @@ type
     procedure UnitDied(aUnit: TKMUnit; aFrom: TKMHandIndex);
     procedure UnitTrained(aUnit: TKMUnit);
     procedure WarriorWalkedOut(aUnit: TKMUnitWarrior);
-    function LocHasNoAllyPlans(aLoc: TKMPoint): Boolean;
+    function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
   public
     Enabled: Boolean;
@@ -117,46 +117,46 @@ type
 
     procedure AfterMissionInit(aFlattenRoads: Boolean);
 
-    function AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit; reintroduce;
-    function AddUnitGroup(aUnitType: TKMUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
+    function AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit; reintroduce;
+    function AddUnitGroup(aUnitType: TKMUnitType; const Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 
-    function TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
+    function TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
 
-    function CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
-    function CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
-    function CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
-    function CanAddHousePlan(aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
+    function CanAddFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanAddFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanRemFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+    function CanAddHousePlan(const aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
     function CanAddHousePlanAI(aX, aY: Word; aHouseType: TKMHouseType; aCheckInfluence: Boolean): Boolean;
 
-    procedure AddRoadToList(aLoc: TKMPoint);
-    procedure AddRoad(aLoc: TKMPoint);
-    procedure AddField(aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
-    procedure ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
-    procedure ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType);
+    procedure AddRoadToList(const aLoc: TKMPoint);
+    procedure AddRoad(const aLoc: TKMPoint);
+    procedure AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+    procedure ToggleFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
+    procedure ToggleFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType);
     function AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
-    procedure AddHousePlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
-    function AddHouseWIP(aHouseType: TKMHouseType; aLoc: TKMPoint): TKMHouse;
-    procedure RemGroup(Position: TKMPoint);
-    procedure RemHouse(Position: TKMPoint; DoSilent: Boolean; IsEditor: Boolean = False);
-    procedure RemHousePlan(Position: TKMPoint);
-    procedure RemFieldPlan(Position: TKMPoint; aMakeSound:Boolean);
-    procedure RemFakeFieldPlan(Position: TKMPoint);
+    procedure AddHousePlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
+    function AddHouseWIP(aHouseType: TKMHouseType; const aLoc: TKMPoint): TKMHouse;
+    procedure RemGroup(const Position: TKMPoint);
+    procedure RemHouse(const Position: TKMPoint; DoSilent: Boolean; IsEditor: Boolean = False);
+    procedure RemHousePlan(const Position: TKMPoint);
+    procedure RemFieldPlan(const Position: TKMPoint; aMakeSound:Boolean);
+    procedure RemFakeFieldPlan(const Position: TKMPoint);
     function FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean = False): TKMHouseInn;
-    function FindHouse(aType: TKMHouseType; aPosition: TKMPoint; Index: Byte=1): TKMHouse; overload;
+    function FindHouse(aType: TKMHouseType; const aPosition: TKMPoint; Index: Byte = 1): TKMHouse; overload;
     function FindHouse(aType: TKMHouseType; Index: Byte=1): TKMHouse; overload;
-    function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+    function FindHousesInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function HitTest(X,Y: Integer): TObject;
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function ObjectByUID(aUID: Integer): TObject;
-    procedure GetHouseMarks(aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
 
     function GetFieldsCount: Integer;
-    procedure GetFieldPlans(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake: Boolean);
-    procedure GetHousePlans(aList: TKMPointDirList; aRect: TKMRect);
-    procedure GetPlansTablets(aList: TKMPointTagList; aRect: TKMRect);
+    procedure GetFieldPlans(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
+    procedure GetHousePlans(aList: TKMPointDirList; const aRect: TKMRect);
+    procedure GetPlansTablets(aList: TKMPointTagList; const aRect: TKMRect);
 
     function CanDoStatsUpdate(aTick: Cardinal): Boolean;
 
@@ -165,7 +165,7 @@ type
     procedure SyncLoad; override;
     procedure IncAnimStep;
     procedure UpdateState(aTick: Cardinal); override;
-    procedure Paint(aRect: TKMRect); override;
+    procedure Paint(const aRect: TKMRect); override;
   end;
 
 
@@ -182,7 +182,7 @@ uses
   Classes, SysUtils, KromUtils, Math,
   KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
-  KM_Resource, KM_ResSound, KM_ResTexts, KM_ScriptingEvents,
+  KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
   KM_GameTypes;
 
 
@@ -206,21 +206,21 @@ begin
 end;
 
 
-function TKMHandCommon.AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint): TKMUnit;
+function TKMHandCommon.AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint): TKMUnit;
 begin
   //Animals are autoplaced by default
   Result := fUnits.AddUnit(fHandIndex, aUnitType, aLoc, True);
 end;
 
 
-procedure TKMHandCommon.Paint(aRect: TKMRect);
+procedure TKMHandCommon.Paint(const aRect: TKMRect);
 begin
   if not gGame.IsMapEditor or (mlUnits in gGame.MapEditor.VisibleLayers) then
     fUnits.Paint(aRect);
 end;
 
 
-procedure TKMHandCommon.RemUnit(Position: TKMPoint);
+procedure TKMHandCommon.RemUnit(const Position: TKMPoint);
 var U: TKMUnit;
 begin
   Assert(gGame.IsMapEditor);
@@ -330,7 +330,7 @@ end;
 
 //Place unit of aUnitType to aLoc via script
 //AutoPlace - add unit to nearest available spot if aLoc is already taken (or unwalkable)
-function TKMHand.AddUnit(aUnitType: TKMUnitType; aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit;
+function TKMHand.AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint; AutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0; aCheat: Boolean = False): TKMUnit;
 var
   G: TKMUnitGroup;
 begin
@@ -375,7 +375,7 @@ end;
 
 //Start training unit in School/Barracks
 //User can cancel the training, so we don't add unit to stats just yet
-function TKMHand.TrainUnit(aUnitType: TKMUnitType; Position: TKMPoint): TKMUnit;
+function TKMHand.TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 begin
   Result := fUnits.AddUnit(fHandIndex, aUnitType, Position, False);
   Result.OnUnitDied := UnitDied;
@@ -446,7 +446,7 @@ begin
 end;
 
 
-function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
+function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; const Position: TKMPoint; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 var
   I: Integer;
 begin
@@ -470,7 +470,7 @@ end;
 
 //When adding roads from script we want to batch them all into one list to save time
 //on WalkConnect and other calculations
-procedure TKMHand.AddRoadToList(aLoc: TKMPoint);
+procedure TKMHand.AddRoadToList(const aLoc: TKMPoint);
 begin
   Assert(fRoadsList <> nil);
 
@@ -563,29 +563,32 @@ begin
 end;
 
 
-procedure TKMHand.AddRoad(aLoc: TKMPoint);
+procedure TKMHand.AddRoad(const aLoc: TKMPoint);
 begin
   gTerrain.SetRoad(aLoc, fHandIndex);
 end;
 
 
-procedure TKMHand.AddField(aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
-var IsFieldSet: Boolean;
+procedure TKMHand.AddField(const aLoc: TKMPoint; aFieldType: TKMFieldType; aStage: Byte = 0; aKeepOldObject: Boolean = False);
+var
+  IsFieldSet: Boolean;
+  Obj: Word;
 begin
   IsFieldSet := False;
+  Obj := gTerrain.Land[aLoc.Y,aLoc.X].Obj;
   //If we have corn/wine object on that tile, set appropriate field/wine stage
   if (aFieldType = ftCorn) and not gTerrain.TileIsCornField(aLoc) then
   begin
-    if InRange(gTerrain.Land[aLoc.Y,aLoc.X].Obj, 58, 59) then
+    if ObjectIsCorn(Obj) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fHandIndex, aFieldType, Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end else if (aFieldType = ftWine) and not gTerrain.TileIsWineField(aLoc) then
   begin
-    if gTerrain.ObjectIsWine(aLoc) then
+    if ObjectIsWine(Obj) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, gTerrain.Land[aLoc.Y,aLoc.X].Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fHandIndex, aFieldType, Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end;
@@ -595,7 +598,7 @@ begin
 end;
 
 
-function TKMHand.LocHasNoAllyPlans(aLoc: TKMPoint): Boolean;
+function TKMHand.LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
 var
   I: Integer;
 begin
@@ -627,7 +630,7 @@ end;
 
 
 //See comment on CanAddFakeFieldPlan
-function TKMHand.CanAddFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+function TKMHand.CanAddFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
             and (fBuildList.FieldworksList.HasField(aLoc) = ftNone)
@@ -639,7 +642,7 @@ end;
 //This differs from above only in that it uses HasFakeField instead of HasField.
 //We need it because the user expects to be blocked by fake field plans, but the gameplay should not.
 //When the result effects the outcome of the game, the above function should be used instead.
-function TKMHand.CanAddFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+function TKMHand.CanAddFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := gTerrain.CanAddField(aLoc.X, aLoc.Y, aFieldType)
             and (fBuildList.FieldworksList.HasFakeField(aLoc) = ftNone)
@@ -649,14 +652,14 @@ end;
 
 
 // Same as for CanAddFakeFieldPlan, but check can we delete plan
-function TKMHand.CanRemFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
+function TKMHand.CanRemFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
 begin
   Result := (fBuildList.FieldworksList.HasFakeField(aLoc) = aFieldType)
             and LocHasNoAllyPlans(aLoc);
 end;
 
 
-function TKMHand.CanAddHousePlan(aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
+function TKMHand.CanAddHousePlan(const aLoc: TKMPoint; aHouseType: TKMHouseType): Boolean;
 var I,K,J,S,T,Tx,Ty: Integer; HA: THouseArea;
 begin
   Result := gTerrain.CanPlaceHouse(aLoc, aHouseType);
@@ -771,7 +774,7 @@ end;
 //Due to lag there could be already plans placed by user in previous ticks
 //Check if Plan can be placed once again, as we might have conflicting commands caused by lag
 //This is called by GIP when a place field command is processed
-procedure TKMHand.ToggleFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
+procedure TKMHand.ToggleFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType; aMakeSound: Boolean);
 var Plan: TKMFieldType;
 begin
   Assert(aFieldType in [ftRoad, ftCorn, ftWine], 'Placing wrong FieldType');
@@ -811,7 +814,7 @@ end;
 
 //This procedure does not effect gameplay, it only changes fake field plans to make it look better for the user
 //It is called when the user clicks to place a field plan
-procedure TKMHand.ToggleFakeFieldPlan(aLoc: TKMPoint; aFieldType: TKMFieldType);
+procedure TKMHand.ToggleFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType);
 var Plan: TKMFieldType;
 begin
   Assert(aFieldType in [ftRoad, ftCorn, ftWine], 'Placing wrong fake FieldType');
@@ -864,7 +867,7 @@ end;
 
 
 //Add plan of a house, house is not created until after worker flattens the terrain
-procedure TKMHand.AddHousePlan(aHouseType: TKMHouseType; aLoc: TKMPoint);
+procedure TKMHand.AddHousePlan(aHouseType: TKMHouseType; const aLoc: TKMPoint);
 var
   Loc: TKMPoint;
 begin
@@ -880,7 +883,7 @@ begin
 end;
 
 
-function TKMHand.AddHouseWIP(aHouseType: TKMHouseType; aLoc: TKMPoint): TKMHouse;
+function TKMHand.AddHouseWIP(aHouseType: TKMHouseType; const aLoc: TKMPoint): TKMHouse;
 begin
   Result := fHouses.AddHouseWIP(aHouseType, aLoc.X, aLoc.Y, fHandIndex);
   Result.OnDestroyed := HouseDestroyed;
@@ -890,7 +893,7 @@ end;
 
 
 //Player wants to remove own house
-procedure TKMHand.RemHouse(Position: TKMPoint; DoSilent: Boolean; IsEditor: Boolean = False);
+procedure TKMHand.RemHouse(const Position: TKMPoint; DoSilent: Boolean; IsEditor: Boolean = False);
 var H: TKMHouse;
 begin
   //Sound is handled in DemolishHouse
@@ -901,7 +904,7 @@ begin
 end;
 
 
-procedure TKMHand.RemHousePlan(Position: TKMPoint);
+procedure TKMHand.RemHousePlan(const Position: TKMPoint);
 var
   HPlan: TKMHousePlan;
 begin
@@ -917,7 +920,7 @@ end;
 
 
 //This is called by the GIP when an erase command is processed
-procedure TKMHand.RemFieldPlan(Position: TKMPoint; aMakeSound: Boolean);
+procedure TKMHand.RemFieldPlan(const Position: TKMPoint; aMakeSound: Boolean);
 var
   fieldType: TKMFieldType;
 begin
@@ -939,7 +942,7 @@ begin
 end;
 
 
-procedure TKMHand.RemGroup(Position: TKMPoint);
+procedure TKMHand.RemGroup(const Position: TKMPoint);
 var Group: TKMUnitGroup;
 begin
   Assert(gGame.IsMapEditor);
@@ -954,7 +957,7 @@ end;
 //We know that an erase command is queued and will be processed in some ticks,
 //so we AddFakeDeletedField which lets the user think the field was removed,
 //while the game does not know the difference.
-procedure TKMHand.RemFakeFieldPlan(Position: TKMPoint);
+procedure TKMHand.RemFakeFieldPlan(const Position: TKMPoint);
 begin
   fBuildList.FieldworksList.RemFakeField(Position); //Remove our fake marker which is shown to the user
   fBuildList.FieldworksList.AddFakeDeletedField(Position); //This will hide the real field until it is deleted from game
@@ -962,7 +965,7 @@ begin
 end;
 
 
-function TKMHand.FindHouse(aType: TKMHouseType; aPosition: TKMPoint; Index: Byte = 1): TKMHouse;
+function TKMHand.FindHouse(aType: TKMHouseType; const aPosition: TKMPoint; Index: Byte=1): TKMHouse;
 begin
   Result := fHouses.FindHouse(aType, aPosition.X, aPosition.Y, Index);
 end;
@@ -974,13 +977,13 @@ begin
 end;
 
 
-function TKMHand.FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
+function TKMHand.FindHousesInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
 begin
   Result := fHouses.FindHousesInRadius(aLoc, aSqrRadius, aTypes, aOnlyCompleted);
 end;
 
 
-function TKMHand.FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean=false): TKMHouseInn;
+function TKMHand.FindInn(Loc: TKMPoint; aUnit: TKMUnit; UnitIsAtHome: Boolean = False): TKMHouseInn;
 var
   H: TKMHouseInn;
   I: Integer;
@@ -991,7 +994,7 @@ begin
   Result := nil;
   I := 1;
   BestMatch := MaxSingle;
-  if UnitIsAtHome then inc(Loc.Y); //From outside the door of the house
+  if UnitIsAtHome then Inc(Loc.Y); //From outside the door of the house
 
   H := TKMHouseInn(FindHouse(htInn));
   repeat
@@ -1221,7 +1224,7 @@ begin
 end;
 
 
-procedure TKMHand.GetFieldPlans(aList: TKMPointTagList; aRect: TKMRect; aIncludeFake: Boolean);
+procedure TKMHand.GetFieldPlans(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
 var
   I: TKMHandIndex;
 begin
@@ -1232,7 +1235,7 @@ begin
 end;
 
 
-procedure TKMHand.GetHousePlans(aList: TKMPointDirList; aRect: TKMRect);
+procedure TKMHand.GetHousePlans(aList: TKMPointDirList; const aRect: TKMRect);
 var
   I: TKMHandIndex;
 begin
@@ -1243,7 +1246,7 @@ begin
 end;
 
 
-procedure TKMHand.GetPlansTablets(aList: TKMPointTagList; aRect: TKMRect);
+procedure TKMHand.GetPlansTablets(aList: TKMPointTagList; const aRect: TKMRect);
 var
   I: TKMHandIndex;
 begin
@@ -1254,9 +1257,9 @@ begin
 end;
 
 
-procedure TKMHand.GetHouseMarks(aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+procedure TKMHand.GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
   //Replace existing icon with a Block
-  procedure BlockPoint(aPoint: TKMPoint; aID: Integer);
+  procedure BlockPoint(const aPoint: TKMPoint; aID: Integer);
   var I: Integer;
   begin
     //Remove all existing marks on this tile (entrance can have 2 entries)
@@ -1489,7 +1492,7 @@ begin
 end;
 
 
-procedure TKMHand.Paint(aRect: TKMRect);
+procedure TKMHand.Paint(const aRect: TKMRect);
 begin
   if not Enabled then Exit;
 

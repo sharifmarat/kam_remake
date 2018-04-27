@@ -307,7 +307,7 @@ begin
         begin
           Inc(fCoalPolygons[  gAIFields.NavMesh.KMPoint2Polygon[ Loc ]  ]);
         end
-        else if (gTerrain.TileIsStone(X, Y) > 0) then
+        else if gTerrain.TileHasStone(X, Y) then
         begin
           if (Y < gTerrain.MapY - 1) AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
             fStoneMiningTiles.Add(KMPoint(X,Y));
@@ -327,8 +327,8 @@ begin
   Result := True;
   for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = htGoldMine), gTerrain.MapX-1) do
     for Y := Max(aLoc.Y-8, 1) to aLoc.Y do
-      if   (aHT = htGoldMine) AND (gTerrain.TileIsGold(X, Y) > 0)
-        OR (aHT = htIronMine) AND (gTerrain.TileIsIron(X, Y) > 0) then
+      if   (aHT = htGoldMine) AND gTerrain.TileHasGold(X, Y)
+        OR (aHT = htIronMine) AND gTerrain.TileHasIron(X, Y) then
         Exit;
   Result := False; //Didn't find any ore
 end;
@@ -465,13 +465,13 @@ begin
         Loc := gAIFields.NavMesh.Polygon2Point[K];
         if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
         begin
-          if gRes.Tileset.TileIsRoadable( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Roadable tile + height pass + other conditions = tpbuild
+          if gTerrain.TileIsRoadable( Loc ) then // Roadable tile + height pass + other conditions = tpbuild
             aBuildCnt := aBuildCnt + 1;
-          if gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          if gTerrain.TileIsSoil( Loc ) then // Scan just tile + height (ignore object and everything else)
             aFieldCnt := aFieldCnt + 1;
         end
         else if gTerrain.CheckHeightPass(Loc, hpWalking)
-          AND gRes.Tileset.TileIsSoil( gTerrain.Land[Loc.Y,Loc.X].Terrain ) then // Scan just tile + height (ignore object and everything else)
+          AND gTerrain.TileIsSoil( Loc ) then // Scan just tile + height (ignore object and everything else)
           aFieldCnt := aFieldCnt + 1;
       end;
 
@@ -645,8 +645,8 @@ begin
     Output := Output AND gTerrain.TileInMapCoords(X, Y, 1);
     // Mines have specific requirements
     case aHT of
-      htIronMine: Output := Output AND gTerrain.TileGoodForIron(X, Y);
-      htGoldMine: Output := Output AND gTerrain.CanPlaceGoldmine(X, Y);
+      htIronMine: Output := Output AND gTerrain.CanPlaceIronMine(X, Y);
+      htGoldMine: Output := Output AND gTerrain.CanPlaceGoldMine(X, Y);
       else         Output := Output AND ( (tpBuild in gTerrain.Land[Y,X].Passability)
                                           OR (aIgnoreTrees
                                               AND gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull])
@@ -795,10 +795,10 @@ begin
     Y := fStoneMiningTiles.Items[I].Y;
     MaxDist := Max(1, Y-SCAN_LIMIT);
     // Find actual stone tile (if exist)
-    while (gTerrain.TileIsStone(X, Y) = 0) AND (Y > MaxDist) do
+    while not gTerrain.TileHasStone(X, Y) AND (Y > MaxDist) do
       Y := Y - 1;
     // Check if is possible to mine it
-    if (gTerrain.TileIsStone(X, Y) > 0)
+    if gTerrain.TileHasStone(X, Y)
        AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
     begin
       // Save tile as a potential point for quarry
@@ -894,7 +894,7 @@ begin
     for K := gAIFields.NavMesh.Polygons[Idx].Poly2PointStart to gAIFields.NavMesh.Polygons[Idx].Poly2PointCnt - 1 do
     begin
       Loc := gAIFields.NavMesh.Polygon2Point[K];
-      if (gTerrain.TileIsCoal(Loc.X, Loc.Y) > 0) then // There are stored only coal tiles > 1 so here > 0 is ok because we can expect that surrouding tiles are also coal
+      if gTerrain.TileHasCoal(Loc.X, Loc.Y) then // There are stored only coal tiles > 1 so here > 0 is ok because we can expect that surrouding tiles are also coal
       begin
         Cnt := Cnt + 1;
         if fBuildFF.CanBePlacedHouse(Loc) then // BuildFF can see more than CanAddHousePlan
@@ -1305,9 +1305,9 @@ end;
 function TKMBuildFF.CanBeVisited(const aX,aY,aIdx: Word; const aHouseQueue: Boolean = False): Boolean;
 begin
   if aHouseQueue then
-    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain )
+    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) )
   else
-    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) );
 end;
 
 
@@ -1646,8 +1646,8 @@ function TKMSearchResource.CanBeVisited(const aX,aY: SmallInt): Boolean;
 begin
   Result := (fVisitArr[aY,aX] = 0);
   case fSearch of
-    1: Result := Result AND (gTerrain.TileIsCoal(aX, aY) > 0); // Coal
-    2: Result := Result AND (gTerrain.TileIsStone(aX, aY) > 0); // Stone
+    1: Result := Result AND gTerrain.TileHasCoal(aX, aY); // Coal
+    2: Result := Result AND gTerrain.TileHasStone(aX, aY); // Stone
     else
       begin
       end;

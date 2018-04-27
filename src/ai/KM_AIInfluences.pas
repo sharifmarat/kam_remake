@@ -110,7 +110,7 @@ type
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -691,9 +691,9 @@ procedure TKMInfluences.AfterMissionInit();
       for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
       for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
         //cnt := cnt + Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
-        cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
+        cnt := cnt - Byte(  not gTerrain.TileIsWalkable(KMPoint(X0, Y0))  );
       //fAreas[Y,X] := $FF - cnt * COEF;
-      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
+      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gTerrain.TileIsWalkable(KMPoint(X, Y))  ));
       //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
     end;
   end;
@@ -765,7 +765,7 @@ end;
 
 
 //Render debug symbols
-procedure TKMInfluences.Paint(aRect: TKMRect);
+procedure TKMInfluences.Paint(const aRect: TKMRect);
 const
   COLOR_WHITE = $FFFFFF;
   COLOR_BLACK = $000000;
@@ -956,7 +956,7 @@ end;
 
 function TKKRoadableFF.CanBeVisited(const aX,aY: SmallInt): Boolean;
 begin
-  Result := gRes.Tileset.TileIsRoadable( gTerrain.Land[aY,aX].Terrain );
+  Result := gTerrain.TileIsRoadable( KMPoint(aX, aY) );
 end;
 
 

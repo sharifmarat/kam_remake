@@ -115,6 +115,7 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   SysUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
+  KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
   KM_Saves, KM_CommonUtils;
@@ -802,6 +803,9 @@ procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
     gMain.FormMain.SetSaveEditableMission(False);
+
+  if Assigned(FormLogistics) then
+    FormLogistics.Clear;
 end;
 
 
@@ -943,4 +947,5 @@ end;
 
 
 end.
+
 

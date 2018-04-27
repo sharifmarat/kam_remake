@@ -412,28 +412,46 @@ object FormMain: TFormMain
       object chkShowRoutes: TCheckBox
         Left = 8
         Top = 56
-        Width = 97
+        Width = 81
         Height = 17
-        Caption = 'Show unit routes'
+        Caption = 'Unit routes'
         TabOrder = 1
         OnClick = ControlsUpdate
       end
       object chkShowWires: TCheckBox
         Left = 8
         Top = 40
-        Width = 105
+        Width = 89
         Height = 17
-        Caption = 'Show terrain wires'
+        Caption = 'Terrain wires'
         TabOrder = 2
         OnClick = ControlsUpdate
       end
       object chkSelectionBuffer: TCheckBox
         Left = 8
         Top = 72
-        Width = 121
+        Width = 97
         Height = 17
-        Caption = 'Show selection buffer'
+        Caption = 'Selection buffer'
         TabOrder = 3
+        OnClick = ControlsUpdate
+      end
+      object chkShowTerrainIds: TCheckBox
+        Left = 100
+        Top = 40
+        Width = 79
+        Height = 17
+        Caption = 'Terrain IDs'
+        TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkShowTerrainKinds: TCheckBox
+        Left = 100
+        Top = 56
+        Width = 79
+        Height = 17
+        Caption = 'Terr. Kinds'
+        TabOrder = 5
         OnClick = ControlsUpdate
       end
     end

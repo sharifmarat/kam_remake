@@ -9,7 +9,7 @@ type
   TKMFuncArea = (faCommon, faGame, faSpecReplay, faMapEdit);
 
 const
-  // There are total of 96 different functions in the game that can have a shortcut
+  // Total number of different functions in the game that can have a shortcut
   FUNC_COUNT = 97;
 
   // Load key IDs from inc file
@@ -28,7 +28,7 @@ type
     fFuncs: array [0..FUNC_COUNT-1] of TKMFuncInfo;
     fKeymapPath: string;
     function GetFunc(aIndex: Word): TKMFuncInfo;
-    procedure SetFunc(aIndex: Word; aFuncInfo: TKMFuncInfo);
+    procedure SetFunc(aIndex: Word; const aFuncInfo: TKMFuncInfo);
   public
     constructor Create;
     function GetKeyName(aKey: Word): string;
@@ -213,7 +213,7 @@ begin
 end;
 
 
-procedure TKMKeyLibrary.SetFunc(aIndex: Word; aFuncInfo :TKMFuncInfo);
+procedure TKMKeyLibrary.SetFunc(aIndex: Word; const aFuncInfo :TKMFuncInfo);
 begin
   fFuncs[aIndex] := aFuncInfo;
 end;

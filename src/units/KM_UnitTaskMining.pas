@@ -26,6 +26,7 @@ type
     function GetActivityText: UnicodeString;
     property WorkPlan: TKMUnitWorkPlan read fWorkPlan;
     function Execute: TKMTaskResult; override;
+    function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -174,7 +175,7 @@ var P: TKMPoint;
 begin
   with gTerrain do
   case WorkPlan.GatheringScript of
-    gs_StoneCutter:     Result := TileIsStone(WorkPlan.Loc.X, WorkPlan.Loc.Y-1) > 0; //Check stone deposit above Loc, which is walkable tile
+    gs_StoneCutter:     Result := TileHasStone(WorkPlan.Loc.X, WorkPlan.Loc.Y-1); //Check stone deposit above Loc, which is walkable tile
     gs_FarmerSow:       Result := TileIsCornField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = 0);
     gs_FarmerCorn:      begin
                           Result := TileIsCornField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = CORN_AGE_MAX);
@@ -201,6 +202,13 @@ begin
                         end;
     else                Result := True;
   end;
+end;
+
+
+function TKMTaskMining.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+              in [1, 7]; //Allow cancel task only at walking phases
 end;
 
 

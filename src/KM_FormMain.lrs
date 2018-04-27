@@ -103,87 +103,91 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'Caption'#6#11'Passability'#11'ParentColor'#8#0#0#9'TTrackBar'#13'tbPassabil'
   +'ity'#4'Left'#2#4#6'Height'#2#17#3'Top'#2#0#5'Width'#2'_'#3'Max'#2#14#8'OnCh'
   +'ange'#7#14'ControlsUpdate'#8'PageSize'#2#1#8'Position'#2#0#9'TickMarks'#7#6
-  +'tmBoth'#9'TickStyle'#7#6'tsNone'#8'TabOrder'#2#0#0#0#9'TCheckBox'#13'chkSho'
-  +'wRoutes'#4'Left'#2#9#6'Height'#2#19#3'Top'#2'0'#5'Width'#2'c'#7'Caption'#6
-  +#16'Show unit routes'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#1#0#0#9
-  +'TCheckBox'#12'chkShowWires'#4'Left'#2#9#6'Height'#2#19#3'Top'#2#16#5'Width'
-  +#2'j'#7'Caption'#6#18'Show terrain wires'#7'OnClick'#7#14'ControlsUpdate'#8
-  +'TabOrder'#2#2#0#0#9'TCheckBox'#18'chkSelectionBuffer'#4'Left'#2#9#6'Height'
-  +#2#19#3'Top'#2' '#5'Width'#2'z'#7'Caption'#6#21'Show selection buffer'#7'OnC'
-  +'lick'#7#14'ControlsUpdate'#8'TabOrder'#2#3#0#0#0#9'TGroupBox'#12'GroupBoxLo'
-  +'gs'#4'Left'#2#8#6'Height'#3#160#0#3'Top'#3#0#2#5'Width'#3#177#0#7'Caption'#6
-  +#4'Logs'#12'ClientHeight'#3#142#0#11'ClientWidth'#3#173#0#8'TabOrder'#2#6#0#9
-  +'TCheckBox'#14'chkLogDelivery'#4'Left'#2#9#6'Height'#2#19#3'Top'#2#0#5'Width'
-  +#2':'#7'Caption'#6#8'Delivery'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2
-  +#0#0#0#9'TCheckBox'#19'chkLogNetConnection'#4'Left'#2#8#6'Height'#2#19#3'Top'
-  +#2#16#5'Width'#2']'#7'Caption'#6#14'Net connection'#7'Checked'#9#7'OnClick'#7
-  +#14'ControlsUpdate'#5'State'#7#9'cbChecked'#8'TabOrder'#2#1#0#0#11'TRadioGro'
-  +'up'#15'RGLogNetPackets'#4'Left'#2#4#6'Height'#2'X'#3'Top'#2'$'#5'Width'#3
-  +#161#0#8'AutoFill'#9#7'Caption'#6#21'Net packets log level'#28'ChildSizing.L'
-  +'eftRightSpacing'#2#6#29'ChildSizing.EnlargeHorizontal'#7#24'crsHomogenousCh'
-  +'ildResize'#27'ChildSizing.EnlargeVertical'#7#24'crsHomogenousChildResize'#28
-  +'ChildSizing.ShrinkHorizontal'#7#14'crsScaleChilds'#26'ChildSizing.ShrinkVer'
-  +'tical'#7#14'crsScaleChilds'#18'ChildSizing.Layout'#7#29'cclLeftToRightThenT'
-  +'opToBottom'#27'ChildSizing.ControlsPerLine'#2#1#12'ClientHeight'#2'F'#11'Cl'
-  +'ientWidth'#3#157#0#9'ItemIndex'#2#0#13'Items.Strings'#1#6#5'None '#6#25'All'
-  +' but commands/ping/fps'#6#16'All but ping/fps'#6#11'All packets'#0#7'OnClic'
-  +'k'#7#14'ControlsUpdate'#8'TabOrder'#2#2#0#0#9'TCheckBox'#17'chkLogsShowInCh'
-  +'at'#4'Left'#2#9#6'Height'#2#19#3'Top'#2'}'#5'Width'#2'{'#7'Caption'#6#20'Sh'
-  ,'ow logs in MP chat'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#3#0#0#9'T'
-  +'CheckBox'#14'chkLogCommands'#4'Left'#2'Z'#6'Height'#2#19#3'Top'#2#0#5'Width'
-  +#2'H'#7'Caption'#6#8'Commands'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2
-  +#4#0#0#0#0#11'TOpenDialog'#11'OpenDialog1'#10'InitialDir'#6#1'.'#7'Options'
-  +#11#14'ofHideReadOnly'#15'ofFileMustExist'#14'ofEnableSizing'#0#4'left'#2'P'
-  +#3'top'#2#8#0#0#9'TMainMenu'#9'MainMenu1'#4'left'#2#16#3'top'#2#8#0#9'TMenuI'
-  +'tem'#5'File1'#7'Caption'#6#4'File'#0#9'TMenuItem'#15'OpenMissionMenu'#7'Cap'
-  +'tion'#6#15'Open mission...'#7'OnClick'#7#21'Open_MissionMenuClick'#0#0#9'TM'
-  +'enuItem'#9'MenuItem1'#7'Caption'#6#15'Edit mission...'#7'OnClick'#7#14'Menu'
-  +'Item1Click'#0#0#9'TMenuItem'#20'SaveEditableMission1'#7'Caption'#6#24'Save '
-  +'editable mission...'#7'Enabled'#8#7'OnClick'#7#25'SaveEditableMission1Click'
-  +#0#0#9'TMenuItem'#2'N4'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14'ReloadSettings'
-  +#7'Caption'#6#19'Reload settings.ini'#7'OnClick'#7#19'ReloadSettingsClick'#0
-  +#0#9'TMenuItem'#12'SaveSettings'#7'Caption'#6#17'Save settings.ini'#7'OnClic'
-  +'k'#7#17'SaveSettingsClick'#0#0#9'TMenuItem'#2'N1'#7'Caption'#6#1'-'#0#0#9'T'
-  +'MenuItem'#5'Exit1'#7'Caption'#6#4'Exit'#7'OnClick'#7#9'ExitClick'#0#0#0#9'T'
-  +'MenuItem'#6'Debug1'#7'Caption'#6#5'Debug'#0#9'TMenuItem'#17'Debug_PrintScre'
-  +'en'#7'Caption'#6#11'PrintScreen'#7'OnClick'#7#22'Debug_PrintScreenClick'#0#0
-  +#9'TMenuItem'#15'Debug_ShowPanel'#7'Caption'#6#16'Show Debug panel'#7'OnClic'
-  +'k'#7#20'Debug_ShowPanelClick'#0#0#9'TMenuItem'#14'ExportMainMenu'#7'Caption'
-  +#6#15'Export MainMenu'#7'OnClick'#7#21'Debug_ExportMenuClick'#0#0#9'TMenuIte'
-  +'m'#18'Debug_EnableCheats'#7'Caption'#6#12'Debug Cheats'#7'OnClick'#7#23'Deb'
-  +'ug_EnableCheatsClick'#0#0#9'TMenuItem'#13'ExportUIPages'#7'Caption'#6#15'Ex'
-  +'port UI pages'#7'OnClick'#7#24'Debug_ExportUIPagesClick'#0#0#9'TMenuItem'#13
-  +'ShowLogistics'#7'Caption'#6#14'Show Logistics'#7'OnClick'#7#18'ShowLogistic'
-  +'sClick'#0#0#0#9'TMenuItem'#7'Export1'#7'Caption'#6#11'Export Data'#0#9'TMen'
-  +'uItem'#10'Resources1'#7'Caption'#6#9'Resources'#0#9'TMenuItem'#13'Export_Fo'
-  +'nts1'#7'Caption'#6#5'Fonts'#7'OnClick'#7#18'Export_Fonts1Click'#0#0#9'TMenu'
-  +'Item'#14'Export_Sounds1'#7'Caption'#6#6'Sounds'#7'OnClick'#7#19'Export_Soun'
-  +'ds1Click'#0#0#9'TMenuItem'#6'Other1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'T'
-  +'MenuItem'#14'Export_TreesRX'#7'Caption'#6#8'Trees.rx'#7'OnClick'#7#19'Expor'
-  +'t_TreesRXClick'#0#0#9'TMenuItem'#15'Export_HousesRX'#7'Caption'#6#9'Houses.'
-  +'rx'#7'OnClick'#7#20'Export_HousesRXClick'#0#0#9'TMenuItem'#14'Export_UnitsR'
-  +'X'#7'Caption'#6#8'Units.rx'#7'OnClick'#7#19'Export_UnitsRXClick'#0#0#9'TMen'
-  +'uItem'#12'Export_GUIRX'#7'Caption'#6#6'GUI.rx'#7'OnClick'#7#15'Export_GUICl'
-  +'ick'#0#0#9'TMenuItem'#16'Export_GUIMainRX'#7'Caption'#6#11'GUI Main.rx'#7'O'
-  +'nClick'#7#21'Export_GUIMainRXClick'#0#0#9'TMenuItem'#13'Export_Custom'#7'Ca'
-  +'ption'#6#6'Custom'#7'OnClick'#7#18'Export_CustomClick'#0#0#9'TMenuItem'#14
-  +'Export_Tileset'#7'Caption'#6#7'Tileset'#7'OnClick'#7#19'Export_TilesetClick'
-  +#0#0#0#9'TMenuItem'#9'AnimData1'#7'Caption'#6#1'-'#7'Enabled'#8#0#0#9'TMenuI'
-  +'tem'#16'Export_TreeAnim1'#7'Caption'#6#9'Tree Anim'#7'OnClick'#7#21'Export_'
-  +'TreeAnim1Click'#0#0#9'TMenuItem'#17'Export_HouseAnim1'#7'Caption'#6#10'Hous'
-  +'e Anim'#7'OnClick'#7#22'Export_HouseAnim1Click'#0#0#9'TMenuItem'#16'Export_'
-  +'UnitAnim1'#7'Caption'#6#9'Unit Anim'#0#9'TMenuItem'#12'UnitAnim_All'#7'Capt'
-  +'ion'#6#3'All'#7'OnClick'#7#17'UnitAnim_AllClick'#0#0#9'TMenuItem'#2'N3'#7'C'
-  +'aption'#6#1'-'#0#0#9'TMenuItem'#8'Soldiers'#7'Caption'#6#8'Soldiers'#7'OnCl'
-  +'ick'#7#13'SoldiersClick'#0#0#9'TMenuItem'#10'Civilians1'#7'Caption'#6#9'Civ'
-  +'ilians'#7'OnClick'#7#15'Civilians1Click'#0#0#0#9'TMenuItem'#2'N2'#7'Caption'
-  +#6#1'-'#0#0#9'TMenuItem'#15'ResourceValues1'#7'Caption'#6#15'Resource Values'
-  +#7'OnClick'#7#20'ResourceValues1Click'#0#0#9'TMenuItem'#20'Export_Deliverlis'
-  +'ts1'#7'Caption'#6#20'Export Deliver lists'#7'OnClick'#7#25'Export_Deliverli'
-  +'sts1Click'#0#0#9'TMenuItem'#10'HousesDat1'#7'Caption'#6#10'Houses Dat'#7'On'
-  +'Click'#7#15'HousesDat1Click'#0#0#9'TMenuItem'#2'N5'#7'Caption'#6#1'-'#7'Ena'
-  +'bled'#8#0#0#9'TMenuItem'#11'ScriptData1'#7'Caption'#6#11'Script Data'#7'OnC'
-  +'lick'#7#22'Export_ScriptDataClick'#0#0#0#9'TMenuItem'#6'About1'#7'Caption'#6
-  +#7'About..'#7'OnClick'#7#10'AboutClick'#0#0#0#11'TSaveDialog'#11'SaveDialog1'
-  +#4'left'#3#144#0#3'top'#2#8#0#0#0
+  +'tmBoth'#9'TickStyle'#7#6'tsNone'#8'TabOrder'#2#0#0#0#9'TCheckBox'#12'chkSho'
+  +'wWires'#4'Left'#2#9#6'Height'#2#19#3'Top'#2#16#5'Width'#2'P'#7'Caption'#6#13
+  +'Terrain wires'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#1#0#0#9'TCheck'
+  +'Box'#13'chkShowRoutes'#4'Left'#2#9#6'Height'#2#19#3'Top'#2' '#5'Width'#2'G'
+  +#7'Caption'#6#11'Unit routes'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#2
+  +#0#0#9'TCheckBox'#18'chkSelectionBuffer'#4'Left'#2#9#6'Height'#2#19#3'Top'#2
+  +'0'#5'Width'#2'^'#7'Caption'#6#16'Selection buffer'#7'OnClick'#7#14'Controls'
+  +'Update'#8'TabOrder'#2#3#0#0#9'TCheckBox'#17'chkShowTerrainIds'#4'Left'#2'd'
+  +#6'Height'#2#19#3'Top'#2#16#5'Width'#2'H'#7'Caption'#6#11'Terrain IDs'#7'OnC'
+  +'lick'#7#14'ControlsUpdate'#8'TabOrder'#2#4#0#0#9'TCheckBox'#19'chkShowTerra'
+  +'inKinds'#4'Left'#2'd'#6'Height'#2#19#3'Top'#2' '#5'Width'#2'G'#7'Caption'#6
+  +#11'Terr. Kinds'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#5#0#0#0#9'TGr'
+  +'oupBox'#12'GroupBoxLogs'#4'Left'#2#8#6'Height'#3#160#0#3'Top'#3#0#2#5'Width'
+  +#3#177#0#7'Caption'#6#4'Logs'#12'ClientHeight'#3#142#0#11'ClientWidth'#3#173
+  +#0#8'TabOrder'#2#6#0#9'TCheckBox'#14'chkLogDelivery'#4'Left'#2#9#6'Height'#2
+  +#19#3'Top'#2#0#5'Width'#2':'#7'Caption'#6#8'Delivery'#7'OnClick'#7#14'Contro'
+  +'lsUpdate'#8'TabOrder'#2#0#0#0#9'TCheckBox'#19'chkLogNetConnection'#4'Left'#2
+  +#8#6'Height'#2#19#3'Top'#2#16#5'Width'#2']'#7'Caption'#6#14'Net connection'#7
+  +'Checked'#9#7'OnClick'#7#14'ControlsUpdate'#5'State'#7#9'cbChecked'#8'TabOrd'
+  +'er'#2#1#0#0#11'TRadioGroup'#15'RGLogNetPackets'#4'Left'#2#4#6'Height'#2'X'#3
+  +'Top'#2'$'#5'Width'#3#161#0#8'AutoFill'#9#7'Caption'#6#21'Net packets log le'
+  +'vel'#28'ChildSizing.LeftRightSpacing'#2#6#29'ChildSizing.EnlargeHorizontal'
+  +#7#24'crsHomogenousChildResize'#27'ChildSizing.EnlargeVertical'#7#24'crsHomo'
+  +'genousChildResize'#28'ChildSizing.ShrinkHorizontal'#7#14'crsScaleChilds'#26
+  +'ChildSizing.ShrinkVertical'#7#14'crsScaleChilds'#18'ChildSizing.Layout'#7#29
+  +'cclLeftToRightThenTopToBottom'#27'ChildSizing.ControlsPerLine'#2#1#12'Clien'
+  ,'tHeight'#2'F'#11'ClientWidth'#3#157#0#9'ItemIndex'#2#0#13'Items.Strings'#1#6
+  +#5'None '#6#25'All but commands/ping/fps'#6#16'All but ping/fps'#6#11'All pa'
+  +'ckets'#0#7'OnClick'#7#14'ControlsUpdate'#8'TabOrder'#2#2#0#0#9'TCheckBox'#17
+  +'chkLogsShowInChat'#4'Left'#2#9#6'Height'#2#19#3'Top'#2'}'#5'Width'#2'{'#7'C'
+  +'aption'#6#20'Show logs in MP chat'#7'OnClick'#7#14'ControlsUpdate'#8'TabOrd'
+  +'er'#2#3#0#0#9'TCheckBox'#14'chkLogCommands'#4'Left'#2'Z'#6'Height'#2#19#3'T'
+  +'op'#2#0#5'Width'#2'H'#7'Caption'#6#8'Commands'#7'OnClick'#7#14'ControlsUpda'
+  +'te'#8'TabOrder'#2#4#0#0#0#0#11'TOpenDialog'#11'OpenDialog1'#10'InitialDir'#6
+  +#1'.'#7'Options'#11#14'ofHideReadOnly'#15'ofFileMustExist'#14'ofEnableSizing'
+  +#0#4'left'#2'P'#3'top'#2#8#0#0#9'TMainMenu'#9'MainMenu1'#4'left'#2#16#3'top'
+  +#2#8#0#9'TMenuItem'#5'File1'#7'Caption'#6#4'File'#0#9'TMenuItem'#15'OpenMiss'
+  +'ionMenu'#7'Caption'#6#15'Open mission...'#7'OnClick'#7#21'Open_MissionMenuC'
+  +'lick'#0#0#9'TMenuItem'#9'MenuItem1'#7'Caption'#6#15'Edit mission...'#7'OnCl'
+  +'ick'#7#14'MenuItem1Click'#0#0#9'TMenuItem'#20'SaveEditableMission1'#7'Capti'
+  +'on'#6#24'Save editable mission...'#7'Enabled'#8#7'OnClick'#7#25'SaveEditabl'
+  +'eMission1Click'#0#0#9'TMenuItem'#2'N4'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14
+  +'ReloadSettings'#7'Caption'#6#19'Reload settings.ini'#7'OnClick'#7#19'Reload'
+  +'SettingsClick'#0#0#9'TMenuItem'#12'SaveSettings'#7'Caption'#6#17'Save setti'
+  +'ngs.ini'#7'OnClick'#7#17'SaveSettingsClick'#0#0#9'TMenuItem'#2'N1'#7'Captio'
+  +'n'#6#1'-'#0#0#9'TMenuItem'#5'Exit1'#7'Caption'#6#4'Exit'#7'OnClick'#7#9'Exi'
+  +'tClick'#0#0#0#9'TMenuItem'#6'Debug1'#7'Caption'#6#5'Debug'#0#9'TMenuItem'#17
+  +'Debug_PrintScreen'#7'Caption'#6#11'PrintScreen'#7'OnClick'#7#22'Debug_Print'
+  +'ScreenClick'#0#0#9'TMenuItem'#15'Debug_ShowPanel'#7'Caption'#6#16'Show Debu'
+  +'g panel'#7'OnClick'#7#20'Debug_ShowPanelClick'#0#0#9'TMenuItem'#14'ExportMa'
+  +'inMenu'#7'Caption'#6#15'Export MainMenu'#7'OnClick'#7#21'Debug_ExportMenuCl'
+  +'ick'#0#0#9'TMenuItem'#18'Debug_EnableCheats'#7'Caption'#6#12'Debug Cheats'#7
+  +'OnClick'#7#23'Debug_EnableCheatsClick'#0#0#9'TMenuItem'#13'ExportUIPages'#7
+  +'Caption'#6#15'Export UI pages'#7'OnClick'#7#24'Debug_ExportUIPagesClick'#0#0
+  +#9'TMenuItem'#13'ShowLogistics'#7'Caption'#6#14'Show Logistics'#7'OnClick'#7
+  +#18'ShowLogisticsClick'#0#0#0#9'TMenuItem'#7'Export1'#7'Caption'#6#11'Export'
+  +' Data'#0#9'TMenuItem'#10'Resources1'#7'Caption'#6#9'Resources'#0#9'TMenuIte'
+  +'m'#13'Export_Fonts1'#7'Caption'#6#5'Fonts'#7'OnClick'#7#18'Export_Fonts1Cli'
+  +'ck'#0#0#9'TMenuItem'#14'Export_Sounds1'#7'Caption'#6#6'Sounds'#7'OnClick'#7
+  +#19'Export_Sounds1Click'#0#0#9'TMenuItem'#6'Other1'#7'Caption'#6#1'-'#7'Enab'
+  +'led'#8#0#0#9'TMenuItem'#14'Export_TreesRX'#7'Caption'#6#8'Trees.rx'#7'OnCli'
+  +'ck'#7#19'Export_TreesRXClick'#0#0#9'TMenuItem'#15'Export_HousesRX'#7'Captio'
+  +'n'#6#9'Houses.rx'#7'OnClick'#7#20'Export_HousesRXClick'#0#0#9'TMenuItem'#14
+  +'Export_UnitsRX'#7'Caption'#6#8'Units.rx'#7'OnClick'#7#19'Export_UnitsRXClic'
+  +'k'#0#0#9'TMenuItem'#12'Export_GUIRX'#7'Caption'#6#6'GUI.rx'#7'OnClick'#7#15
+  +'Export_GUIClick'#0#0#9'TMenuItem'#16'Export_GUIMainRX'#7'Caption'#6#11'GUI '
+  +'Main.rx'#7'OnClick'#7#21'Export_GUIMainRXClick'#0#0#9'TMenuItem'#13'Export_'
+  +'Custom'#7'Caption'#6#6'Custom'#7'OnClick'#7#18'Export_CustomClick'#0#0#9'TM'
+  +'enuItem'#14'Export_Tileset'#7'Caption'#6#7'Tileset'#7'OnClick'#7#19'Export_'
+  +'TilesetClick'#0#0#0#9'TMenuItem'#9'AnimData1'#7'Caption'#6#1'-'#7'Enabled'#8
+  +#0#0#9'TMenuItem'#16'Export_TreeAnim1'#7'Caption'#6#9'Tree Anim'#7'OnClick'#7
+  +#21'Export_TreeAnim1Click'#0#0#9'TMenuItem'#17'Export_HouseAnim1'#7'Caption'
+  +#6#10'House Anim'#7'OnClick'#7#22'Export_HouseAnim1Click'#0#0#9'TMenuItem'#16
+  +'Export_UnitAnim1'#7'Caption'#6#9'Unit Anim'#0#9'TMenuItem'#12'UnitAnim_All'
+  +#7'Caption'#6#3'All'#7'OnClick'#7#17'UnitAnim_AllClick'#0#0#9'TMenuItem'#2'N'
+  +'3'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#8'Soldiers'#7'Caption'#6#8'Soldiers'#7
+  +'OnClick'#7#13'SoldiersClick'#0#0#9'TMenuItem'#10'Civilians1'#7'Caption'#6#9
+  +'Civilians'#7'OnClick'#7#15'Civilians1Click'#0#0#0#9'TMenuItem'#2'N2'#7'Capt'
+  +'ion'#6#1'-'#0#0#9'TMenuItem'#15'ResourceValues1'#7'Caption'#6#15'Resource V'
+  +'alues'#7'OnClick'#7#20'ResourceValues1Click'#0#0#9'TMenuItem'#20'Export_Del'
+  +'iverlists1'#7'Caption'#6#20'Export Deliver lists'#7'OnClick'#7#25'Export_De'
+  +'liverlists1Click'#0#0#9'TMenuItem'#10'HousesDat1'#7'Caption'#6#10'Houses Da'
+  +'t'#7'OnClick'#7#15'HousesDat1Click'#0#0#9'TMenuItem'#2'N5'#7'Caption'#6#1'-'
+  +#7'Enabled'#8#0#0#9'TMenuItem'#11'ScriptData1'#7'Caption'#6#11'Script Data'#7
+  +'OnClick'#7#22'Export_ScriptDataClick'#0#0#0#9'TMenuItem'#6'About1'#7'Captio'
+  +'n'#6#7'About..'#7'OnClick'#7#10'AboutClick'#0#0#0#11'TSaveDialog'#11'SaveDi'
+  +'alog1'#4'left'#3#144#0#3'top'#2#8#0#0#0
 ]);

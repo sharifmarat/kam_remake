@@ -657,8 +657,7 @@
 668:Save Map
 669:Delay in minutes before the AI starts training recruits
 670:Recruit delay (mins)
-671:Sets the direction for all tiles in a body of water
-672:Magic water
+671:Magic water - sets the direction for all tiles in a body of water
 673:Copy
 674:Paste
 675:Paste apply
@@ -913,8 +912,7 @@
 961:Common Keys
 962:Game Keys
 963:Map Editor Keys
-964:Eyedropper
-965:Use this tool to select the type of tile under the cursor
+965:Eyedropper - select the type of tile under the cursor
 966:This armor smithy is not occupied
 967:This armory workshop is not occupied
 968:This bakery is not occupied
@@ -1141,3 +1139,4 @@
 1190:Ask to press Ready
 1191:Alert to get ready was sent to %s players
 1192:Switch players color mode
+1193:Dismiss is not available during current unit action

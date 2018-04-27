@@ -45,6 +45,8 @@ uses
 
 { TKMMapEdExtras }
 constructor TKMMapEdExtras.Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
+const
+  PANEL_HEIGHT = 240;
 var
   I: Integer;
 begin
@@ -52,11 +54,11 @@ begin
 
   fOnChange := aOnChange;
 
-  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH + 30, aParent.Height - 240, 600, 240);
+  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - PANEL_HEIGHT, 600, PANEL_HEIGHT);
   Panel_Extra.Anchors := [anLeft, anBottom];
   Panel_Extra.Hide;
 
-  with TKMImage.Create(Panel_Extra, 0, 0, 600, 190, 409) do
+  with TKMImage.Create(Panel_Extra, 0, 0, 600, PANEL_HEIGHT, 409) do
   begin
     Anchors := [anLeft, anTop, anBottom];
     ImageAnchors := [anLeft, anRight, anTop];

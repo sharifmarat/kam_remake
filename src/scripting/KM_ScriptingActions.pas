@@ -2658,7 +2658,7 @@ function TKMScriptActions.MapTileObjectSet(X, Y, Obj: Integer): Boolean;
 begin
   try
     //Objects are vertex based not tile based
-    if gTerrain.VerticeInMapCoords(X, Y) and InRange(Obj, 0, 255) then
+    if gTerrain.VerticeInMapCoords(X, Y) and InRange(Obj, 0, OBJECTS_CNT) then
       Result := gTerrain.ScriptTrySetTileObject(X, Y, Obj)
     else
     begin

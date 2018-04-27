@@ -12,6 +12,7 @@ type
   TKMTaskBuild = class(TKMUnitTask)
   public
     procedure CancelThePlan; virtual; abstract;
+    function CouldBeCancelled: Boolean; override;
   end;
 
   TKMTaskBuildRoad = class(TKMTaskBuild)
@@ -22,7 +23,7 @@ type
     DemandSet: Boolean;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -39,7 +40,7 @@ type
     DemandSet: Boolean;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -54,7 +55,7 @@ type
     BuildID: Integer;
     TileLockSet: Boolean;
   public
-    constructor Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -75,7 +76,7 @@ type
     LastToDig: ShortInt;
     function GetHouseEntranceLoc: TKMPoint;
   public
-    constructor Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; aLoc: TKMPoint; aID: Integer);
+    constructor Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
@@ -125,8 +126,15 @@ uses
   KM_ResWares, KM_Game, KM_Hand, KM_ScriptingEvents;
 
 
-{ TTaskBuildRoad }
-constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+{ TKMTaskBuild }
+function TKMTaskBuild.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                   <= 0; //Allow cancel task only at walking phases
+end;
+
+{ TKMTaskBuildRoad }
+constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; const aLoc:TKMPoint; aID:integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildRoad;
@@ -276,7 +284,7 @@ end;
 
 
 { TTaskBuildWine }
-constructor TKMTaskBuildWine.Create(aWorker: TKMUnitWorker; aLoc: TKMPoint; aID: Integer);
+constructor TKMTaskBuildWine.Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildWine;
@@ -413,7 +421,7 @@ end;
 
 
 { TTaskBuildField }
-constructor TKMTaskBuildField.Create(aWorker:TKMUnitWorker; aLoc:TKMPoint; aID:integer);
+constructor TKMTaskBuildField.Create(aWorker:TKMUnitWorker; const aLoc:TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
   fTaskName := utn_BuildField;
@@ -515,7 +523,7 @@ end;
 
 
 { TTaskBuildHouseArea }
-constructor TKMTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; aLoc: TKMPoint; aID: Integer);
+constructor TKMTaskBuildHouseArea.Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; const aLoc: TKMPoint; aID: Integer);
 var
   I,K: Integer;
   HA: THouseArea;

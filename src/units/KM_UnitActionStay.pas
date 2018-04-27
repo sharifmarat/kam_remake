@@ -95,23 +95,23 @@ var
 begin
   if not StayStill then
   begin
-    Cycle := max(gRes.Units[fUnit.UnitType].UnitAnim[ActionType, fUnit.Direction].Count, 1);
+    Cycle := Max(gRes.Units[fUnit.UnitType].UnitAnim[ActionType, fUnit.Direction].Count, 1);
     Step  := fUnit.AnimStep mod Cycle;
 
     StepDone := fUnit.AnimStep mod Cycle = 0;
 
     if TimeToStay >= 1 then MakeSound(Cycle, Step);
 
-    inc(fUnit.AnimStep);
+    Inc(fUnit.AnimStep);
   end
   else
   begin
     fUnit.AnimStep := StillFrame;
-    StepDone := true;
+    StepDone := True;
   end;
 
-  dec(TimeToStay);
-  if TimeToStay<=0 then
+  Dec(TimeToStay);
+  if TimeToStay <= 0 then
     Result := ar_ActDone
   else
     Result := ar_ActContinues;

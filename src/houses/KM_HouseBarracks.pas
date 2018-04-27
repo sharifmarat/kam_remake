@@ -16,7 +16,6 @@ type
     fResourceCount: array [WARFARE_MIN..WARFARE_MAX] of Word;
   protected
     function GetFlagPointTexId: Word; override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
@@ -33,6 +32,8 @@ type
     procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
     function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
+
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
 
     function ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean; override;
     function CanEquip(aUnitType: TKMUnitType): Boolean;

@@ -123,14 +123,14 @@ type
     property BuildingProgress: Word read fBuildingProgress;
 
     property GetPosition: TKMPoint read fPosition;
-    procedure SetPosition(aPos: TKMPoint); //Used only by map editor
+    procedure SetPosition(const aPos: TKMPoint); //Used only by map editor
     procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
-    function GetClosestCell(aPos: TKMPoint): TKMPoint;
-    function GetDistance(aPos: TKMPoint): Single;
-    function InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+    function GetClosestCell(const aPos: TKMPoint): TKMPoint;
+    function GetDistance(const aPos: TKMPoint): Single;
+    function InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
     procedure GetListOfCellsAround(Cells: TKMPointDirList; aPassability: TKMTerrainPassability);
     procedure GetListOfCellsWithin(Cells: TKMPointList);
     function GetRandomCellWithin: TKMPoint;
@@ -243,11 +243,11 @@ type
     WaresCount: array [WARE_MIN .. WARE_MAX] of Word;
   protected
     procedure Activate(aWasBuilt: Boolean); override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
     procedure ToggleAcceptFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
@@ -268,8 +268,7 @@ type
   private
     fAcceptWood: Boolean;
     fAcceptLeather: Boolean;
-  protected
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
@@ -278,6 +277,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
     function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   end;
 
 
@@ -573,7 +573,7 @@ end;
 
 //Used by MapEditor
 //Set house to new position
-procedure TKMHouse.SetPosition(aPos: TKMPoint);
+procedure TKMHouse.SetPosition(const aPos: TKMPoint);
 var
   WasOnSnow, IsRallyPointSet: Boolean;
 begin
@@ -682,7 +682,7 @@ end;
 
 
 {Returns the closest cell of the house to aPos}
-function TKMHouse.GetClosestCell(aPos: TKMPoint): TKMPoint;
+function TKMHouse.GetClosestCell(const aPos: TKMPoint): TKMPoint;
 var
   C: TKMPointList;
 begin
@@ -699,7 +699,7 @@ end;
 
 
 {Return distance from aPos to the closest house tile}
-function TKMHouse.GetDistance(aPos: TKMPoint): Single;
+function TKMHouse.GetDistance(const aPos: TKMPoint): Single;
 var
   I, K: Integer;
   Loc: TKMPoint;
@@ -718,7 +718,7 @@ end;
 
 //Check if house is within reach of given Distance (optimized version for PathFinding)
 //Check precise distance when we are close enough
-function TKMHouse.InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+function TKMHouse.InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
 begin
   //+6 is the worst case with the barracks, distance from fPosition to top left tile of house could be > 5
   if KMLengthDiag(aPos, fPosition) >= aDistance + 6 then

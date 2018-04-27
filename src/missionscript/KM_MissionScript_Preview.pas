@@ -8,7 +8,7 @@ uses
 
 type
   TKMTilePreview = record
-                       TileID: Byte;
+                       TileID: Word;
                        TileHeight: Byte; //Used for calculating light
                        TileOwner: TKMHandIndex;
                        Revealed: Boolean;
@@ -47,8 +47,9 @@ type
 implementation
 uses
   Classes, SysUtils, Math,
+  KM_Terrain,
   KM_Resource, KM_ResHouses, KM_ResUnits,
-  KM_CommonClasses, KM_CommonUtils;
+  KM_CommonClasses, KM_CommonUtils, KM_Utils;
 
 
 { TMissionParserPreview }
@@ -69,7 +70,8 @@ function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStream;
-  NewX, NewY: Integer;
+  UseKaMFormat: Boolean;
+  TileBasic: TKMTerrainTileBasic;
 begin
   Result := False;
 
@@ -78,25 +80,22 @@ begin
 
   S := TKMemoryStream.Create;
   try
+    UseKaMFormat := True;
     S.LoadFromFile(aFileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
-    S.Read(NewY);
-    Assert((NewX <= MAX_MAP_SIZE) and (NewY <= MAX_MAP_SIZE), 'Can''t open the map cos it has too big dimensions');
-    fMapX := NewX;
-    fMapY := NewY;
+
+    LoadMapHeader(S, fMapX, fMapY, UseKaMFormat);
 
     SetLength(fMapPreview, fMapX * fMapY);
-    for I := 0 to fMapX * fMapY - 1 do
-    begin
-      S.Read(fMapPreview[I].TileID);
-      S.Seek(1, soFromCurrent);
-      S.Read(fMapPreview[I].TileHeight); //Height (for lighting)
-      S.Seek(20, soFromCurrent);
+     for I := 0 to fMapX * fMapY - 1 do
+      begin
+        TKMTerrain.ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        fMapPreview[I].TileID := TileBasic.BaseLayer.Terrain;
+        fMapPreview[I].TileHeight := TileBasic.Height;
 
-      //Fill in blanks
-      fMapPreview[I].TileOwner := PLAYER_NONE;
-      fMapPreview[I].Revealed := False;
-    end;
+        //Fill in blanks
+        fMapPreview[I].TileOwner := PLAYER_NONE;
+        fMapPreview[I].Revealed := False;
+      end;
   finally
     S.Free;
   end;

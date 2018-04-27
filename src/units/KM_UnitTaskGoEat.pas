@@ -18,6 +18,9 @@ type
     destructor Destroy; override;
     function Eating: Boolean;
     function Execute: TKMTaskResult; override;
+
+    function CouldBeCancelled: Boolean; override;
+
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -70,6 +73,13 @@ end;
 function TKMTaskGoEat.Eating: Boolean;
 begin
   Result := fPlace <> -1;
+end;
+
+
+function TKMTaskGoEat.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                    = 1; //Allow cancel task only at walking phases
 end;
 
 
