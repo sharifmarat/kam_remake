@@ -636,7 +636,8 @@ begin
       begin
         CloseDemand(I); //Clear up demand
         Inc(Result);
-        if Result = aCount then exit; //We have removed enough demands
+        if Result = aCount then
+          Exit; //We have removed enough demands
       end;
 end;
 
