@@ -254,23 +254,10 @@ end;
 procedure TKMRandomMapGenerator.GenerateMap(var aTiles: TKMTerrainTileBriefArray);
 var
   Y, X, K: Integer;
-  //Pmin,Pmax: TKMPoint;
-  //S1,S2,S3,S4: TInteger2Array;
   A,TileTemplateArr: TKMByte2Array;
   S: TInteger2Array;
-  //TDAP: TKMPoint2Array;
-  //P: TKMPointArray;
-  //Points: TKMPoint2Array;
-  //Resources: TBalancedResource1Array;
   TilesPartsArr: TTileParts;
-
-  //Queue: TKMQuickFlood;
-  //FillBiome: TKMFillBiome;
-  //
-  //LocMin, LocMax: TKMPoint;
   Locs: TKMPointArray;
-
-
   diff: Cardinal;
   Sdiff: String;
 begin
@@ -278,15 +265,10 @@ begin
   // Seed MUST be <> 0!!!
   if RMGSettings.Seed = 0 then
     RMGSettings.Seed := Round(High(Integer)*Random);
-    //RMGSettings.Seed := Round(High(Integer)*KaMRandom);
-    //RMGSettings.Seed := 648161831;
-    //RMGSettings.Seed := 8;
-  //RMGSettings.Seed := RandomRange(1,High(Integer));
 
-  //RMGSettings.Seed := 141; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+  //RMGSettings.Seed := 8; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+
   fRNG.Seed := RMGSettings.Seed;
-  //gLog.AddTime('RMG seed: ' + IntToStr(fRNG.Seed));
-
 
   SetLength(A, gTerrain.MapY+1, gTerrain.MapX+1);
   SetLength(TilesPartsArr.Terrain, gTerrain.MapY+1, gTerrain.MapX+1);
@@ -302,69 +284,10 @@ begin
 
   diff := TimeGet;
 
-
   SetLength(S, gTerrain.MapY+1, gTerrain.MapX+1);
   for Y := Low(S) to High(S) do
   	for X := Low(S[Y]) to High(S[Y]) do
       S[Y,X] := 0;
-
-  {
-  for Y := 5 to 10 do
-    for X := 5 to 10 do
-      S[Y,X] := 5;
-  for Y := 15 to 20 do
-    for X := 5 to 10 do
-      S[Y,X] := 5;
-  for Y := 5 to 20 do
-    for X := 8 to 8 do
-      S[Y,X] := 5;
-  for Y := 13 to 15 do
-    for X := 10 to 30 do
-      S[Y,X] := 5;
-  for Y := 20 to 25 do
-    for X := 10 to 30 do
-      S[Y,X] := 5;
-  for Y := 12 to 15 do
-    for X := 2 to 5 do
-      S[Y,X] := 5;
-  for Y := 20 to 23 do
-     for X := 2 to 5 do
-       S[Y,X] := 5;
-  for Y := 25 to 25 do
-     for X := 4 to 10 do
-       S[Y,X] := 5;
-  for Y := 25 to 28 do
-     for X := 3 to 5 do
-       S[Y,X] := 5;
-  for Y := 26 to 27 do
-     for X := 31 to 32 do
-       S[Y,X] := 5;
-  for Y := 18 to 19 do
-     for X := 31 to 32 do
-       S[Y,X] := 5;
-  for Y := 2 to 4 do
-     for X := 2 to 4 do
-       S[Y,X] := 5;
-  for Y := 29 to 31 do
-     for X := 1 to 2 do
-       S[Y,X] := 5;
-  Pmin := KMPoint(0,0);
-  Pmax := KMPoint(High(A[0]),High(A));
-  FillBiome := TKMFillBiome.Create(Pmin, Pmax, S, A);
-  FillBiome.QuickFlood(8,13, 5, 0, 5);
-  {
-  for Y := Low(S) to High(S) do
-  	for X := Low(S[Y]) to High(S[Y]) do
-      if S[Y,X] <> 0 then
-      begin
-        Queue.FloodFillWithQueue(X,Y);
-      end;
-  //}
-
-  //if RMGSettings.CA then
-  //  FloodFill(7,7,5, 5, A,S);
-
-  //GenerateBasicTiles(TilesPartsArr,A);
 
   //{
   SetLength(Locs, 0);
@@ -383,7 +306,7 @@ begin
   if RMGSettings.CA then
     CellularAutomaton(A);
 
-  if RMGSettings.Locs.Resource.MineFix then
+  if RMGSettings.Locs.Resource.MineFix AND (Length(Locs) > 0) then
     MineFix(A);
 
   fRNG.Seed := RMGSettings.Seed;
@@ -400,7 +323,7 @@ begin
     GenerateTiles(TilesPartsArr, A, TileTemplateArr);
 
   fRNG.Seed := RMGSettings.Seed;
-  if RMGSettings.OnePath.NoGoZones AND (length(Locs) > 0) then
+  if RMGSettings.OnePath.NoGoZones AND (Length(Locs) > 0) then
     NoGoZones(Locs, TilesPartsArr);
 
   fRNG.Seed := RMGSettings.Seed;
@@ -418,94 +341,6 @@ begin
 
   Str(diff,Sdiff);
   //ShowMessage(Sdiff);
-  // Show loc postion (Debug)
-  //
-  {
-  if Length(Locs) > 0 then
-    for i := Low(Locs) to High(Locs) do
-    begin
-      A[Locs[I].Y,Locs[I].X] := Byte(btDark);
-      A[Locs[I].Y+1,Locs[I].X] := Byte(btDark);
-      A[Locs[I].Y,Locs[I].X+1] := Byte(btDark);
-      A[Locs[I].Y+1,Locs[I].X+1] := Byte(btDark);
-    end;
-  GenerateBasicTiles(TilesPartsArr,A);
-  //}
-  {
-  Pmin.X := 1;
-  Pmax.X := High(A[1])-1;
-  Pmin.Y := 1;
-  Pmax.Y := High(A)-1;
-  P := POMRNDPointsInGrid(RMGSettings.Obstacle.Density, RMGSettings.Objects.Trees,Pmin,Pmax,A);
-  for Y := 0 to High(P) do
-    A[P[Y].Y,P[Y].X] := Byte(btDark);
-  GenerateBasicTiles(TilesPartsArr,A);
-  //}
-  {
-  Seed := RMGSettings.Seed;
-  S := VoronoiMod(3,Points);
-  i := 0;
-  for Y := 0 to High(Points) do
-    for X := 0 to High(Points[Y]) do
-    begin
-      aX := Points[Y,X].X;
-      aY := Points[Y,X].Y;
-      i := i + 1;
-      if i > High(BIO) then
-        i := 0;
-      FloodFill(aX,aY,S[aY,aX], Byte(BIO[I]), A,S);
-      A[aY,aX] := Byte(btDark);
-    end;
-  GenerateBasicTiles(TilesPartsArr,A);
-  {
-  X := Points[5,5].X;
-  Y := Points[5,5].Y;
-  FloodFill(X,Y,S[Y,X], Byte(btGrassGround), A,S);
-  X := Points[5,6].X;
-  Y := Points[5,6].Y;
-  FloodFill(X,Y,S[Y,X], Byte(btGround), A,S);
-  X := Points[6,5].X;
-  Y := Points[6,5].Y;
-  FloodFill(X,Y,S[Y,X], Byte(btSnow1), A,S);
-  X := Points[6,6].X;
-  Y := Points[6,6].Y;
-  FloodFill(X,Y,S[Y,X], Byte(btSnow2), A,S);
-  GenerateBasicTiles(TilesPartsArr,A);
-  }
-  {
-  for Y := 0 to gTerrain.MapY do
-  begin
-    S[Y,0] := 0;
-    S[Y,gTerrain.MapX] := 0;
-  end;
-  for X := 0 to gTerrain.MapX do
-  begin
-    S[0,X] := 0;
-    S[gTerrain.MapY,X] := 0;
-  end;
-  for Y := 1 to gTerrain.MapY-1 do
-    for X := 1 to gTerrain.MapX-1 do
-    begin
-      if S[Y,X] <> 0 then
-        FloodFill(X,Y,S[Y,X], Byte(BIO[TGRandomI(Length(BIO))]), A,S);
-    end;
-  GenerateBasicTiles(TilesPartsArr,A);
-  //}
-
-  // Generate objects
-  //GenerateObjects(aTiles, A);
-
-  {
-  Pmin.X := 50;
-  Pmin.Y := 50;
-  Pmax.X := 100;
-  Pmax.Y := 100;;
-  P := RNDPointsInGrid(50,0,Pmin,Pmax);
-  for i := Low(P) to High(P) do
-  begin
-    A[P[I].Y,P[I].X] := Byte(BtDark);
-  end;
-  //}
 
   SetLength(aTiles, gTerrain.MapY * gTerrain.MapX);
   K := 0;
@@ -1550,7 +1385,7 @@ begin
   OBST_Probability[otEIron] := 1;
 
   // Make obstacles
-  Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 10000;
+  Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 7500;
   ObstacleSeeds := RNDPointsInGrid(Round(Factor), 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
   FillObstacle := TKMFillBiome.Create( KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), aVoronoi, A);
   try
