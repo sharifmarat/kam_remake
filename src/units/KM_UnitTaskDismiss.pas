@@ -19,7 +19,7 @@ type
     procedure SyncLoad; override;
     procedure Save(SaveStream: TKMemoryStream); override;
     function ShouldBeCancelled: Boolean;
-    function CouldBeCancelled: BOolean;
+    function CouldBeCancelled: Boolean; override;
 
     property School: TKMHouse read fSchool;
     function FindNewSchool: TKMHouse;
