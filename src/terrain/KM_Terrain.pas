@@ -109,12 +109,6 @@ type
 
     fBoundsWC: TKMRect; //WC rebuild bounds used in FlattenTerrain (put outside to fight with recursion SO error in FlattenTerrain EnsureWalkable)
 
-    function TileIsSand(const Loc: TKMPoint): Boolean;
-    function TileIsSoil(X,Y: Word): Boolean;
-    function TileIsWalkable(const Loc: TKMPoint): Boolean;
-    function TileIsRoadable(const Loc: TKMPoint): Boolean;
-    function TileIsFactorable(const Loc: TKMPoint): Boolean;
-
     function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
 
     function GetMiningRect(aRes: TKMWareType): TKMRect;
@@ -265,6 +259,13 @@ type
 
     function TileHasStonePart(X, Y: Word): Boolean;
 
+    function TileIsSand(const Loc: TKMPoint): Boolean;
+    function TileIsSoil(X,Y: Word): Boolean; overload;
+    function TileIsSoil(const Loc: TKMPoint): Boolean; overload;
+    function TileIsFactorable(const Loc: TKMPoint): Boolean;
+    function TileIsWalkable(const Loc: TKMPoint): Boolean;
+    function TileIsRoadable(const Loc: TKMPoint): Boolean;
+
     function TileCornerTerrain(aX, aY: Word; aCorner: Byte): Word;
     function TileCornersTerrains(aX, aY: Word): TKMWordArray;
     function TileCornersTerKinds(aX, aY: Word): TKMTerrainKindsArray;
@@ -373,13 +374,13 @@ begin
       with Land[I, K] do
       begin
         //Apply some random tiles for artisticity
-    //    if KaMRandom(5) = 0 then
-          BaseLayer.Terrain := RandomTiling[tkGrass, KaMRandom(RandomTiling[tkGrass, 0]) + 1];
-    //    else
+        if KaMRandom(5) = 0 then
+          BaseLayer.Terrain := RandomTiling[tkGrass, KaMRandom(RandomTiling[tkGrass, 0]) + 1]
+        else
           BaseLayer.Terrain := 0;
         LayersCnt    := 0;
         BaseLayer.Corners := [0,1,2,3];
-        Height       := 30;// + KaMRandom(7);  //variation in Height
+        Height       := 30 + KaMRandom(7);  //variation in Height
         BaseLayer.Rotation     := KaMRandom(4);  //Make it random
         Obj          := OBJ_NONE;             //none
         IsCustom     := False;
@@ -1223,6 +1224,12 @@ end;
 function TKMTerrain.TileIsSoil(X,Y: Word): Boolean;
 begin
   Result := TileHasParameter(X, Y, fTileset.TileIsSoil);
+end;
+
+
+function TKMTerrain.TileIsSoil(const Loc: TKMPoint): Boolean;
+begin
+  Result := TileIsSoil(Loc.X, Loc.Y);
 end;
 
 

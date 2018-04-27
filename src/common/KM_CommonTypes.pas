@@ -31,8 +31,6 @@ type
   TKMStaticByteArray = array [0..MaxInt - 1] of Byte;
   PKMStaticByteArray = ^TKMStaticByteArray;
 
-
-
   TEvent = procedure of object;
   TPointEvent = procedure (Sender: TObject; const X,Y: Integer) of object;
   TPointEventSimple = procedure (const X,Y: Integer) of object;
