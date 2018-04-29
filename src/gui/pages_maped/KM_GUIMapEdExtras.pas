@@ -39,6 +39,7 @@ type
 
 implementation
 uses
+  KM_Main,
   KM_HandsCollection, KM_Sound, KM_ResSound,
   KM_RenderUI, KM_ResFonts, KM_ResTexts;
 
@@ -134,6 +135,8 @@ begin
     Label_Passability.Caption := PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)]
   else
     Label_Passability.Caption := gResTexts[TX_MAPED_PASSABILITY_OFF];
+
+  gMain.FormMain.ControlsRefill;
 
   fOnChange(Self);
 end;

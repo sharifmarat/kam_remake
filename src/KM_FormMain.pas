@@ -177,6 +177,7 @@ type
     procedure ControlsSetVisibile(aShowCtrls, aShowGroupBox: Boolean); overload;
     procedure ControlsSetVisibile(aShowCtrls: Boolean); overload;
     procedure ControlsReset;
+    procedure ControlsRefill;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
   end;
@@ -617,6 +618,22 @@ begin
     FormLogistics.Clear;
 
   ControlsUpdate(nil);
+end;
+
+
+procedure TFormMain.ControlsRefill;
+begin
+  if (gGame = nil) or not gGame.IsMapEditor then Exit;
+
+  tbPassability.Max := Byte(High(TKMTerrainPassability));
+  tbPassability.Position := SHOW_TERRAIN_PASS;
+  Label2.Caption := IfThen(SHOW_TERRAIN_PASS <> 0, PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)], '');
+  chkShowWires.Checked := SHOW_TERRAIN_WIRES;
+  chkShowTerrainIds.Checked := SHOW_TERRAIN_IDS;
+  chkShowTerrainKinds.Checked := SHOW_TERRAIN_KINDS;
+  chkTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
+  chkShowRoutes.Checked := SHOW_UNIT_ROUTES;
+  chkSelectionBuffer.Checked := SHOW_SEL_BUFFER;
 end;
 
 
