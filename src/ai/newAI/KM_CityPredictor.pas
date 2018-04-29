@@ -451,7 +451,8 @@ const
   AFTER_PEACE_SCALING = 1 / (40*10*60); // Peace factor will be completely removed after {40} ticks since end of peace
 var
   I: Integer;
-  MaxIronWeapProd, MaxWoodWeapProd, fUpdatedPeaceFactor: Single;
+  MaxIronWeapProd, MaxWoodWeapProd, UpdatedPeaceFactor: Single;
+  //PeaceFactorChange:
   WT: TKMWareType;
 begin
   // Max field / build cnt -> max ~ 8000 tiles; in real map ~ 1500-2500 for fields and ~ 2000-4000 for build
@@ -459,9 +460,10 @@ begin
   // Estimation of final weapons production (productions are independence - in builder will be higher priority given to iron weapons)
 
   // Update peace factor if it is needed
-  fUpdatedPeaceFactor := Min(1,
+  UpdatedPeaceFactor := Min(1,
                              fPeaceFactor + Max(0,
-                                                (gGame.GameTickCount - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
+                                                (Integer(gGame.GameTickCount) //Cast to Integer to avoid Integer overflow error for possible negative Cardinal during calc
+                                                  - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
                                                )
                             );
 
@@ -478,7 +480,7 @@ begin
   // Wood weapons
   MaxWoodWeapProd := Max(MIN_WOOD_PRODUCTION,
                          Min(MAX_WOOD_PRODUCTION,
-                             Max(0, MaxWoodWeapProd - MaxIronWeapProd) * fUpdatedPeaceFactor // Consider also peace time
+                             Max(0, MaxWoodWeapProd - MaxIronWeapProd) * UpdatedPeaceFactor // Consider also peace time
                             )
                         );
   // Transform to house production

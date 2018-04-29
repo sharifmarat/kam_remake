@@ -217,7 +217,7 @@ end;
 
 function TKMHouseBarracks.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
 begin
-  Result := inherited or NotAcceptFlag[aWareType];
+  Result := inherited or not (aWareType in [WARFARE_MIN .. WARFARE_MAX]) or NotAcceptFlag[aWareType];
 end;
 
 

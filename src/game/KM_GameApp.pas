@@ -315,9 +315,6 @@ begin
   //  F4 and F9 are used in debug to control run-flow
   //  others.. unknown
 
-  //GLOBAL KEYS
-  if DEBUG_CHEATS and (Key = VK_F12) then SHOW_CONTROLS_OVERLAY := not SHOW_CONTROLS_OVERLAY;
-
   if gGame <> nil then
     gGame.ActiveInterface.KeyUp(Key, Shift, KeyHandled)
   else

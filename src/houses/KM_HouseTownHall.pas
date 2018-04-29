@@ -244,7 +244,7 @@ end;
 
 function TKMHouseTownHall.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
 begin
-  Result := inherited;
+  Result := inherited or (aWareType <> wt_Gold);
   if not Result then
     Result := GoldCnt + gHands[Owner].Deliveries.Queue.GetDeliveriesToHouseCnt(Self, wt_Gold) > GoldMaxCnt;
 end;

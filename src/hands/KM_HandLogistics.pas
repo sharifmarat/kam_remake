@@ -105,6 +105,7 @@ type
     fNodeList: TKMPointList; // Used to calc delivery bid
     {$ENDIF}
 
+    function AllowFormLogisticsChange: Boolean;
     procedure UpdateOfferItem(aI: Integer);
     procedure UpdateDemandItem(aI: Integer);
 
@@ -186,7 +187,7 @@ uses
   Classes, SysUtils, Math, TypInfo,
   KM_Terrain,
   KM_FormLogistics,
-  KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
+  KM_Main, KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
   KM_Resource, KM_ResUnits,
   KM_Log, KM_Utils, KM_CommonUtils;
 
@@ -432,10 +433,18 @@ begin
 end;
 
 
+function TKMDeliveries.AllowFormLogisticsChange: Boolean;
+begin
+  Result := gMain.IsDebugChangeAllowed and Assigned(FormLogistics);
+end;
+
+
 procedure TKMDeliveries.UpdateOfferItem(aI: Integer);
 begin
+  if aI >= fOfferCount then Exit;
+
   with fOffer[aI] do
-    if Assigned(FormLogistics)
+    if AllowFormLogisticsChange
       and (gGame <> nil) and not gGame.ReadyToStop
       and (Ware <> wt_None) then
     begin
@@ -463,8 +472,10 @@ end;
 
 procedure TKMDeliveries.UpdateDemandItem(aI: Integer);
 begin
+  if aI >= fDemandCount then Exit;
+
   with fDemand[aI] do
-    if Assigned(FormLogistics)
+    if AllowFormLogisticsChange
       and (gGame <> nil) and not gGame.ReadyToStop
       and (Ware <> wt_None) then
     begin
@@ -775,7 +786,9 @@ begin
   Result := Result and (not fDemand[iD].IsDeleted) and (aIgnoreOffer or not fOffer[iO].IsDeleted);
 
   //If Demand house should abandon delivery
-  Result := Result and ((fDemand[iD].Loc_House = nil) or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
+  Result := Result and ((fDemand[iD].Loc_House = nil)
+                         or not fDemand[iD].Loc_House.IsComplete
+                         or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
 
   //Warfare has a preference to be delivered to Barracks
   if Result
@@ -1320,7 +1333,7 @@ begin
       Dec(fDemand[OldDemandId].BeingPerformed);
       if (fDemand[OldDemandId].BeingPerformed = 0)
         and (fDemand[OldDemandId].IsDeleted
-          or (fDemand[OldDemandId].Loc_House.HouseType = htTownHall)) then
+          or ((fDemand[OldDemandId].Loc_House <> nil) and (fDemand[OldDemandId].Loc_House.HouseType = htTownHall))) then
         CloseDemand(OldDemandId);
 
       UpdateDemandItem(OldDemandId);
@@ -1384,7 +1397,7 @@ begin
 
   if I > fQueueCount then
   begin
-    inc(fQueueCount, LENGTH_INC);
+    Inc(fQueueCount, LENGTH_INC);
     SetLength(fQueue, fQueueCount + 1);
   end;
 
@@ -1394,7 +1407,7 @@ begin
   fQueue[I].Item := nil;
 
 
-  if Assigned(FormLogistics) then
+  if AllowFormLogisticsChange then
     with fQueue[I] do
     begin
       Item := FormLogistics.DeliveriesList.Items.Add;

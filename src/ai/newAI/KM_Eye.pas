@@ -1453,7 +1453,7 @@ begin
       end;
     else
     begin
-      if (AB > AVOID_BUILDING_FOREST_MINIMUM) then
+      if (AB > AVOID_BUILDING_FOREST_MINIMUM) AND (Output <> bsTree) then
         Output := bsForest;
     end;
   end;

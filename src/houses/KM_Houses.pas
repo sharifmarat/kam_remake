@@ -2003,7 +2003,7 @@ end;
 
 function TKMHouseArmorWorkshop.AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
 begin
-  Result := True;
+  Result := False;
   case aWareType of
     wt_Wood: Result := fAcceptWood;
     wt_Leather: Result := fAcceptLeather;
