@@ -39,6 +39,7 @@ type
 
 implementation
 uses
+  KM_Main,
   KM_HandsCollection, KM_Sound, KM_ResSound,
   KM_RenderUI, KM_ResFonts, KM_ResTexts;
 
@@ -128,11 +129,14 @@ procedure TKMMapEdExtras.Extra_Change(Sender: TObject);
 begin
   SHOW_TERRAIN_WIRES := TrackBar_Passability.Position <> 0;
   SHOW_TERRAIN_PASS := TrackBar_Passability.Position;
+  SHOW_TERRAIN_TILES_GRID := CheckBox_ShowTilesGrid.Checked;
 
   if TrackBar_Passability.Position <> 0 then
     Label_Passability.Caption := PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)]
   else
     Label_Passability.Caption := gResTexts[TX_MAPED_PASSABILITY_OFF];
+
+  gMain.FormMain.ControlsRefill;
 
   fOnChange(Self);
 end;

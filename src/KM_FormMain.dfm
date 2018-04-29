@@ -437,7 +437,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainIds: TCheckBox
-        Left = 100
+        Left = 105
         Top = 40
         Width = 79
         Height = 17
@@ -446,12 +446,21 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainKinds: TCheckBox
-        Left = 100
+        Left = 105
         Top = 56
         Width = 79
         Height = 17
-        Caption = 'Terr. Kinds'
+        Caption = 'Ter. Kinds'
         TabOrder = 5
+        OnClick = ControlsUpdate
+      end
+      object chkTilesGrid: TCheckBox
+        Left = 105
+        Top = 72
+        Width = 79
+        Height = 17
+        Caption = 'Tiles grid'
+        TabOrder = 6
         OnClick = ControlsUpdate
       end
     end

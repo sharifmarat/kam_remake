@@ -63,6 +63,7 @@ type
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
+    function GetTerKind(aTKValue: Byte; aUseKamFormat: Boolean): TKMTerrainKind;
 
     function IsTerrainRepresentTerKind(aTerId: Word; aTerKind: TKMTerrainKind): Boolean;
 
@@ -98,8 +99,6 @@ type
     procedure UpdateState;
   end;
 
-
-  function GetCombo(aTerKindFrom, aTerKindTo: TKMTerrainKind; aTransition: Byte; var aFound: Boolean): SmallInt;
 
 const
   //Table of combinations between terrain types (0-based)
@@ -175,6 +174,7 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)       // Lava
   );
 
+
 //  RMG2Painter: array [0..255] of TKMTerrainKind = (
 //    tkGrass, tkGrass, tkGrass, tkGrass, tkSnow, tkGrass, tkGrass, tkCustom, tkMoss, tkMoss, tkSnow, tkGrass, tkWater,
 //    tkGrass, tkGrass, tkCustom, tkPaleGrass, tkPaleGrass, tkGrass, tkGrass, tkDirt, tkDirt, tkWater, tkWater,
@@ -227,6 +227,51 @@ begin
     and (aTerKindFrom <> tkCustom) then
     //We have no direct transition
     aFound := False;
+end;
+
+
+//Convert terrain kind from old format (before r9371, new automatic tile transitions) to new terrain kind
+function TKMTerrainPainter.GetTerKind(aTKValue: Byte; aUseKamFormat: Boolean): TKMTerrainKind;
+begin
+  Result := tkCustom;
+  if InRange(aTKValue, ShortInt(Low(TKMTerrainKind)), ShortInt(High(TKMTerrainKind))) then
+  begin
+    if not aUseKamFormat then
+      Result := TKMTerrainKind(aTKValue)
+    else begin
+      case aTKValue of                //In old format it was:
+        0:  Result := tkCustom;       //tkCustom
+        1:  Result := tkGrass;        //tkGrass
+        2:  Result := tkMoss;         //tkMoss
+        3:  Result := tkPaleGrass;    //tkRustyGrass1
+        4:  Result := tkGrassSand1;   //tkRustyGrass2
+        5:  Result := tkGrassDirt;    //tkDirtGrass
+        6:  Result := tkCoastSand;    //tkSand
+        7:  Result := tkSand;         //tkRichSand
+        8:  Result := tkDirt;         //tkDirt
+        9:  Result := tkCobbleStone;  //tkCobbleStone
+        10: Result := tkGrassSand3;   //tkGrassSand1
+        11: Result := tkGrassSand2;   //tkGrassSand2
+        12: Result := tkGrassyWater;  //tkGrassyWater
+        13: Result := tkSwamp;        //tkSwamp
+        14: Result := tkIce;          //tkIce
+        15: Result := tkShallowSnow;  //tkShallowSnow
+        16: Result := tkSnow;         //tkSnow
+        17: Result := tkDeepSnow;     //tkDeepSnow
+        18: Result := tkStone;        //tkStoneMount
+        19: Result := tkGoldMount;    //tkGoldMount
+        20: Result := tkIronMount;    //tkIronMount,
+        21: Result := tkAbyss;        //tkAbyss
+        22: Result := tkGravel;       //tkGravel
+        23: Result := tkWater;        //tkCoal
+        24: Result := tkCoal;         //tkGold
+        25: Result := tkGold;         //tkIron
+        26: Result := tkIron;         //tkWater
+        27: Result := tkFastWater;    //tkFastWater
+        28: Result := tkLava;         //tkLava
+      end;
+    end;
+  end;
 end;
 
 
@@ -1512,10 +1557,7 @@ begin
           begin
             //Krom's editor saves negative numbers for tiles placed manually
             S.Read(TerType, 1);
-            if InRange(TerType, ShortInt(Low(TKMTerrainKind)), ShortInt(High(TKMTerrainKind))) then
-              LandTerKind[I,K].TerKind := TKMTerrainKind(TerType)
-            else
-              LandTerKind[I,K].TerKind := tkCustom;
+            LandTerKind[I,K].TerKind := GetTerKind(TerType, UseKaMFormat);
           end;
           MapEdChunkFound := True; //Only set it once it's all loaded successfully
         end

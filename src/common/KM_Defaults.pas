@@ -110,37 +110,38 @@ var
   SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
   LOG_GAME_TICK           :Boolean = False; //Log game tick
   {Gameplay display}
-  SKIP_RENDER           :Boolean = False; //Skip all the rendering in favor of faster logic
-  SKIP_SOUND            :Boolean = False; //Skip all the sounds in favor of faster logic
-  SKIP_LOADING_CURSOR   :Boolean = False; //Skip loading and setting cursor
-  AGGRESSIVE_REPLAYS    :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
-  SHOW_TERRAIN_IDS      :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
-  SHOW_TERRAIN_KINDS    :Boolean = False; //Show terrain kind ids on every tile corner
-  SHOW_BRUSH_APPLY_AREA :BOolean = False; //Show brushes apply area
-  SHOW_TERRAIN_WIRES    :Boolean = False; //Makes terrain height visible
-  SHOW_TERRAIN_PASS     :Byte = 0; //Byte(TKMTerrainPassability)
-  SHOW_UNIT_ROUTES      :Boolean = False; //Draw unit routes
-  SHOW_SEL_BUFFER       :Boolean = False; //Display selection buffer
-  SHOW_PROJECTILES      :Boolean = False; //Shows projectiles trajectory
-  SHOW_POINTER_DOTS     :Boolean = False; //Show pointer count as small dots below unit/houses
-  SHOW_GROUND_LINES     :Boolean = False; //Show a line below all sprites to mark the ground height used in Z-Order
-  SHOW_UNIT_MOVEMENT    :Boolean = False; //Draw unit movement overlay (occupied tile), Only if unit interaction enabled
-  SHOW_WALK_CONNECT     :Boolean = False; //Show floodfill areas of interconnected areas
-  SHOW_DEFENCE_POSITIONS:Boolean = False;
-  TEST_VIEW_CLIP_INSET  :Boolean = False; //Renders smaller area to see if everything gets clipped well
-  OUTLINE_ALL_SPRITES   :Boolean = False; //Render outline around every sprite
-  SHOW_ATTACK_RADIUS    :Boolean = False; //Render towers/archers attack radius
-  DISPLAY_SOUNDS        :Boolean = False; //Display sounds on map
-  RENDER_3D             :Boolean = False; //Experimental 3D render
-  HOUSE_BUILDING_STEP   :Single = 0;
-  OVERLAY_NAVMESH       :Boolean = False; //Show navmesh
-  OVERLAY_DEFENCES      :Boolean = False; //Show AI defence perimeters
-  OVERLAY_INFLUENCE     :Boolean = False; //Show influence map
-  OVERLAY_OWNERSHIP     :Boolean = False; //Show ownership map
-  OVERLAY_AVOID         :Boolean = False; //Show avoidance map
-  OVERLAY_AI_BUILD      :Boolean = False; //Show build progress of new AI
-  OVERLAY_AI_COMBAT     :Boolean = False; //Show combat marks of new AI
-  OVERLAY_AI_EYE        :Boolean = False; //Show eye vision of new AI
+  SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
+  SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
+  SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
+  AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
+  SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
+  SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
+  SHOW_BRUSH_APPLY_AREA   :Boolean = False; //Show brushes apply area
+  SHOW_TERRAIN_WIRES      :Boolean = False; //Makes terrain height visible
+  SHOW_TERRAIN_PASS       :Byte = 0; //Byte(TKMTerrainPassability)
+  SHOW_UNIT_ROUTES        :Boolean = False; //Draw unit routes
+  SHOW_SEL_BUFFER         :Boolean = False; //Display selection buffer
+  SHOW_PROJECTILES        :Boolean = False; //Shows projectiles trajectory
+  SHOW_POINTER_DOTS       :Boolean = False; //Show pointer count as small dots below unit/houses
+  SHOW_GROUND_LINES       :Boolean = False; //Show a line below all sprites to mark the ground height used in Z-Order
+  SHOW_UNIT_MOVEMENT      :Boolean = False; //Draw unit movement overlay (occupied tile), Only if unit interaction enabled
+  SHOW_WALK_CONNECT       :Boolean = False; //Show floodfill areas of interconnected areas
+  SHOW_DEFENCE_POSITIONS  :Boolean = False;
+  TEST_VIEW_CLIP_INSET    :Boolean = False; //Renders smaller area to see if everything gets clipped well
+  OUTLINE_ALL_SPRITES     :Boolean = False; //Render outline around every sprite
+  SHOW_ATTACK_RADIUS      :Boolean = False; //Render towers/archers attack radius
+  DISPLAY_SOUNDS          :Boolean = False; //Display sounds on map
+  RENDER_3D               :Boolean = False; //Experimental 3D render
+  HOUSE_BUILDING_STEP     :Single = 0;
+  OVERLAY_NAVMESH         :Boolean = False; //Show navmesh
+  OVERLAY_DEFENCES        :Boolean = False; //Show AI defence perimeters
+  OVERLAY_INFLUENCE       :Boolean = False; //Show influence map
+  OVERLAY_OWNERSHIP       :Boolean = False; //Show ownership map
+  OVERLAY_AVOID           :Boolean = False; //Show avoidance map
+  OVERLAY_AI_BUILD        :Boolean = False; //Show build progress of new AI
+  OVERLAY_AI_COMBAT       :Boolean = False; //Show combat marks of new AI
+  OVERLAY_AI_EYE          :Boolean = False; //Show eye vision of new AI
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked
@@ -336,7 +337,7 @@ const
 
 const
   DirCursorCircleRadius  = 32; //Radius of the direction selector cursor restriction area
-  DirCursorNARadius = 15;  //Radius of centeral part that has no direction
+  DirCursorNARadius = 20;  //Radius of centeral part that has no direction
 
 
 type
@@ -693,7 +694,6 @@ type
     mlSelection,
     mlWaterFlow,
     mlTileOwner,
-    mlTilesGrid,
     mlMapResize);  //Enum representing mapEditor visible layers
   TKMMapEdLayerSet = set of TKMMapEdLayer;                                   //Set of above enum
 

@@ -839,8 +839,8 @@ begin
   fHandsList[aPlayer].FogOfWar.RevealCircle(Pos,Radius,Amount);
 
   for I := 0 to fCount - 1 do
-  if (I <> aPlayer) and (fHandsList[aPlayer].Alliances[I] = at_Ally) and fHandsList[aPlayer].ShareFOW[I] then
-    fHandsList[I].FogOfWar.RevealCircle(Pos, Radius, Amount);
+    if (I <> aPlayer) and (fHandsList[aPlayer].Alliances[I] = at_Ally) and fHandsList[aPlayer].ShareFOW[I] then
+      fHandsList[I].FogOfWar.RevealCircle(Pos, Radius, Amount);
 end;
 
 

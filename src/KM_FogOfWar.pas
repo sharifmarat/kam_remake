@@ -249,7 +249,8 @@ end;
 
 {Reveal whole map to max value}
 procedure TKMFogOfWar.RevealEverything;
-var I,K: Word;
+var
+  I,K: Word;
 begin
   for I := 0 to MapY - 1 do
     for K := 0 to MapX - 1 do
@@ -261,7 +262,8 @@ end;
 
 
 procedure TKMFogOfWar.CoverEverything;
-var I,K: Word;
+var
+  I,K: Word;
 begin
   for I := 0 to MapY - 1 do
     for K := 0 to MapX - 1 do
@@ -346,12 +348,21 @@ begin
 
   //Check all four corners and choose max
   Result := CheckVerticeRev(aRevArray,X-1,Y-1);
-  if Result = 255 then exit;
-  if X <= MapX-1 then Result := max(Result, CheckVerticeRev(aRevArray,X,Y-1));
-  if Result = 255 then exit;
-  if (X <= MapX-1) and (Y <= MapY-1) then Result := max(Result, CheckVerticeRev(aRevArray,X,Y));
-  if Result = 255 then exit;
-  if Y <= MapY-1 then Result := max(Result, CheckVerticeRev(aRevArray,X-1,Y));
+
+  if Result = 255 then Exit;
+
+  if X <= MapX-1 then
+    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y-1));
+
+  if Result = 255 then Exit;
+
+  if (X <= MapX-1) and (Y <= MapY-1) then
+    Result := Max(Result, CheckVerticeRev(aRevArray,X,Y));
+
+  if Result = 255 then Exit;
+
+  if Y <= MapY-1 then
+    Result := Max(Result, CheckVerticeRev(aRevArray,X-1,Y));
 end;
 
 
@@ -387,7 +398,10 @@ var I,K: Word;
 begin
   for I := 0 to MapY - 1 do
     for K := 0 to MapX - 1 do
-      Revelation[I, K] := Math.max(Revelation[I, K], aFOW.Revelation[I, K]);
+    begin
+      Revelation[I, K] := Max(Revelation[I, K], aFOW.Revelation[I, K]);
+      RenderRevelation[I, K] := Max(RenderRevelation[I, K], aFOW.RenderRevelation[I, K]);
+    end;
 end;
 
 
@@ -400,7 +414,10 @@ begin
   //Because each player has FOW it can become a bottleneck (8.7ms per run) due to autosaving (e.g. on Paradise Island)
   //so save it out 1 row at a time (due to 2D arrays not being continguous we can't save it all at once)
   for I := 0 to MapY - 1 do
+  begin
     SaveStream.Write(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
+    SaveStream.Write(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
+  end;
 end;
 
 
@@ -412,7 +429,10 @@ begin
   LoadStream.Read(fAnimStep);
   SetMapSize(MapX, MapY);
   for I := 0 to MapY - 1 do
+  begin
     LoadStream.Read(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
+    LoadStream.Read(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
+  end;
 end;
 
 
@@ -426,19 +446,19 @@ begin
   Inc(fAnimStep);
 
   for I := 0 to MapY - 1 do
-  for K := 0 to MapX - 1 do
-  if (Revelation[I, K] > FOG_OF_WAR_MIN)
-  and ((I * MapX + K + fAnimStep) mod FOW_PACE = 0) then
-  begin
-    Dec(Revelation[I, K], FOG_OF_WAR_DEC);
+    for K := 0 to MapX - 1 do
+      if (Revelation[I, K] > FOG_OF_WAR_MIN)
+        and ((I * MapX + K + fAnimStep) mod FOW_PACE = 0) then
+      begin
+        Dec(Revelation[I, K], FOG_OF_WAR_DEC);
 
-    {//Remember waht we have seen last
-    if Revelation[I, K].Visibility <= FOG_OF_WAR_MIN then
-    begin
-      Revelation[I, K].LastTerrain := gTerrain.Land[I, K].BaseLayer.Terrain;
+        {//Remember what we have seen last
+        if Revelation[I, K].Visibility <= FOG_OF_WAR_MIN then
+        begin
+          Revelation[I, K].LastTerrain := gTerrain.Land[I, K].BaseLayer.Terrain;
 
-    end;}
-  end;
+        end;}
+      end;
 end;
 
 
@@ -453,7 +473,6 @@ begin
   Result := 255;
 end;
 
-
 function TKMFogOfWarOpen.CheckTileRenderRev(const X, Y: Word): Byte;
 begin
   Result := 255;
@@ -463,7 +482,6 @@ function TKMFogOfWarOpen.CheckTileRevelation(const X, Y: Word): Byte;
 begin
   Result := 255;
 end;
-
 
 function TKMFogOfWarOpen.CheckVerticeRenderRev(const X, Y: Word): Byte;
 begin

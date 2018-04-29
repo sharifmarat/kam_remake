@@ -1014,19 +1014,21 @@ end;
 
 function TKMTerrain.TileGoodForIronMine(X,Y: Word): Boolean;
 var
-  Corners: TKMWordArray;
+  CornersTKinds: TKMTerrainKindsArray;
+  CornersTerrains: TKMWordArray;
 begin
   Result :=
     (fTileset.TileIsGoodForIronMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    Corners := TileCornersTerrains(X, Y);
+    CornersTerrains := TileCornersTerrains(X, Y);
+    CornersTKinds := TileCornersTerKinds(X, Y);
     Result :=
-      (fTileset.TileIsIron(Corners[0]) > 0)
-        and (fTileset.TileIsIron(Corners[1]) > 0)
-        and (fTileset.TileIsRoadable(Corners[2]))
-        and (fTileset.TileIsRoadable(Corners[3]));
+          (CornersTKinds[0] in [tkIron, tkIronMount])
+      and (CornersTKinds[1] in [tkIron, tkIronMount])
+      and fTileset.TileIsRoadable(CornersTerrains[2])
+      and fTileset.TileIsRoadable(CornersTerrains[3]);
   end;
 end;
 
@@ -1044,19 +1046,21 @@ end;
 
 function TKMTerrain.TileGoodForGoldMine(X,Y: Word): Boolean;
 var
-  Corners: TKMWordArray;
+  CornersTKinds: TKMTerrainKindsArray;
+  CornersTerrains: TKMWordArray;
 begin
   Result :=
     (fTileset.TileIsGoodForGoldMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    Corners := TileCornersTerrains(X, Y);
+    CornersTerrains := TileCornersTerrains(X, Y);
+    CornersTKinds := TileCornersTerKinds(X, Y);
     Result :=
-      (fTileset.TileIsGold(Corners[0]) > 0)
-        and (fTileset.TileIsGold(Corners[1]) > 0)
-        and (fTileset.TileIsRoadable(Corners[2]))
-        and (fTileset.TileIsRoadable(Corners[3]));
+          (CornersTKinds[0] in [tkGold, tkGoldMount])
+      and (CornersTKinds[1] in [tkGold, tkGoldMount])
+      and fTileset.TileIsRoadable(CornersTerrains[2])
+      and fTileset.TileIsRoadable(CornersTerrains[3]);
   end;
 end;
 
@@ -2825,7 +2829,7 @@ var
   begin
     Result := False;
     if not TileInMapCoords(X,Y) //Skip for tiles not in map coords
-      or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
+      //or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
       or TileHasStone(X,Y)      //If tile has stone no need to change it
       or ArrayContains(KMPoint(X,Y), Visited, fVisitedCnt) //If we already changed this tile
       or ((aStep <> 0) and not TileHasStonePart(X,Y)) then //If tile has no stone parts (except initial step)

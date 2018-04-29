@@ -99,6 +99,7 @@ type
     procedure SetDirection(aValue: TKMDirection);
     procedure SetAction(aAction: TKMUnitAction; aStep: Integer = 0);
     procedure SetNextPosition(const aLoc: TKMPoint);
+    procedure SetCurrPosition(const aLoc: TKMPoint);
     procedure SetCondition(aValue: Integer);
     function CanAccessHome: Boolean;
 
@@ -109,6 +110,8 @@ type
     procedure UpdateHitPoints;
     procedure DoKill(aShowAnimation: Boolean);
     procedure DoDismiss;
+
+    property CurrPosition: TKMPoint read fCurrPosition write SetCurrPosition;
   public
     AnimStep: Integer;
     IsExchanging: Boolean; //Current walk is an exchange, used for sliding
@@ -973,7 +976,7 @@ function TKMUnitAnimal.UpdateState: Boolean;
 begin
   Result := True; //Required for override compatibility
 
-  fCurrPosition := KMPointRound(fPosition);
+  CurrPosition := KMPointRound(fPosition);
 
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnitAnimal.UpdateState', fCurrPosition);
@@ -990,7 +993,7 @@ begin
     ar_ActDone:      FreeAndNil(fCurrentAction);
     ar_ActAborted:   FreeAndNil(fCurrentAction);
   end;
-  fCurrPosition := KMPointRound(fPosition);
+  CurrPosition := KMPointRound(fPosition);
 
 
   Assert((fUnitTask = nil) or (fUnitTask is TKMTaskDie));
@@ -1487,9 +1490,17 @@ procedure TKMUnit.SetNextPosition(const aLoc: TKMPoint);
 begin
   fPrevPosition := NextPosition;
   fNextPosition := aLoc;
-  //If we're not using dynamic fog of war we only need to update it when the unit steps on a new tile
-  if not DYNAMIC_FOG_OF_WAR and (fOwner <> PLAYER_ANIMAL) then
-    gHands.RevealForTeam(fOwner, fCurrPosition, gRes.Units[fUnitType].Sight, FOG_OF_WAR_MAX);
+end;
+
+
+procedure TKMUnit.SetCurrPosition(const aLoc: TKMPoint);
+begin
+  if not DYNAMIC_FOG_OF_WAR
+    and (fOwner <> PLAYER_ANIMAL)
+    and (fCurrPosition <> aLoc) then  //Update FOW only for new loc
+    gHands.RevealForTeam(fOwner, aLoc, gRes.Units[fUnitType].Sight, FOG_OF_WAR_MAX);
+
+  fCurrPosition := aLoc;
 end;
 
 
@@ -1834,6 +1845,8 @@ end;
 
 //Return true if the unit has to be killed due to lack of space
 function TKMUnit.UpdateVisibility: Boolean;
+var
+  NewCurrPosition: TKMPoint;
 begin
   Result := False;
   if fInHouse = nil then Exit; //There's nothing to update, we are always visible
@@ -1847,7 +1860,7 @@ begin
     or (TKMUnitActionGoInOut(GetUnitAction).GetWaitingForPush) then
     begin
       //Position in a spiral nearest to entrance of house, updating IsUnit.
-      if not gHands.FindPlaceForUnit(fInHouse.Entrance.X, fInHouse.Entrance.Y, UnitType, fCurrPosition, gTerrain.GetWalkConnectID(fInHouse.Entrance)) then
+      if not gHands.FindPlaceForUnit(fInHouse.Entrance.X, fInHouse.Entrance.Y, UnitType, NewCurrPosition, gTerrain.GetWalkConnectID(fInHouse.Entrance)) then
       begin
         //There is no space for this unit so it must be destroyed
         //todo: re-route to KillUnit and let it sort out that unit is invisible and cant be placed
@@ -1863,6 +1876,7 @@ begin
         Result := true;
         exit;
       end;
+      CurrPosition := NewCurrPosition; //will update FOW
 
       //Make sure these are reset properly
       Assert(not gTerrain.HasUnit(fCurrPosition));
@@ -2176,13 +2190,14 @@ begin
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action in TKMUnit.UpdateState',fCurrPosition);
 
-  fCurrPosition := KMPointRound(fPosition);
+  CurrPosition := KMPointRound(fPosition); //will update FOW
+
   case fCurrentAction.Execute of
-    ar_ActContinues: begin fCurrPosition := KMPointRound(fPosition); Exit; end;
+    ar_ActContinues: begin CurrPosition := KMPointRound(fPosition); Exit; end; //will update FOW
     ar_ActAborted:   begin FreeAndNil(fCurrentAction); FreeAndNil(fUnitTask); end;
     ar_ActDone:      FreeAndNil(fCurrentAction);
   end;
-  fCurrPosition := KMPointRound(fPosition);
+  CurrPosition := KMPointRound(fPosition); //will update FOW
 
   if fUnitTask <> nil then
   case fUnitTask.Execute of

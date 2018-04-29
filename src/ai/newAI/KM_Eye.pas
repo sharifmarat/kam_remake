@@ -60,8 +60,8 @@ type
     fLocs: TKMPointList;
     fInfoArr: TKMBuildInfoArray;
 
-    function GetInfo(const aY,aX: Word): TKMBuildInfo;
-    procedure SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
+//    function GetInfo(const aY,aX: Word): TKMBuildInfo;
+//    procedure SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
     function GetVisited(const aY,aX: Word): Byte;
     procedure SetVisited(const aY,aX: Word; const aVisited: Byte);
     function GetOwnersIndex(const aOwner: TKMHandIndex): Byte;
@@ -147,7 +147,7 @@ type
 
     procedure InitHousesMapping();
     function CheckResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Boolean;
-    function GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
+//    function GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -334,18 +334,18 @@ begin
 end;
 
 
-function TKMEye.GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
-var
-  X,Y: Integer;
-begin
-  Result := 0;
-  for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = htGoldMine), gTerrain.MapX-1) do
-    for Y := Max(aLoc.Y-8, 1) to aLoc.Y do
-      if (aHT = htGoldMine) then
-        Result := Result + gTerrain.TileIsGold(X, Y)
-      else if (aHT = htIronMine) then
-        Result := Result + gTerrain.TileIsIron(X, Y);
-end;
+//function TKMEye.GetResourcesNearMine(aLoc: TKMPoint; aHT: TKMHouseType): Word;
+//var
+//  X,Y: Integer;
+//begin
+//  Result := 0;
+//  for X := Max(aLoc.X-4, 1) to Min(aLoc.X+3+Byte(aHT = htGoldMine), gTerrain.MapX-1) do
+//    for Y := Max(aLoc.Y-8, 1) to aLoc.Y do
+//      if (aHT = htGoldMine) then
+//        Result := Result + gTerrain.TileIsGold(X, Y)
+//      else if (aHT = htIronMine) then
+//        Result := Result + gTerrain.TileIsIron(X, Y);
+//end;
 
 
 procedure TKMEye.ScanLocResources(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
@@ -1182,20 +1182,20 @@ end;
 
 
 // Transform 1D array to 2D
-function TKMBuildFF.GetInfo(const aY,aX: Word): TKMBuildInfo;
-begin
-  Result := fInfoArr[aY*fMapX + aX];
-end;
-procedure TKMBuildFF.SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
-begin
-  with fInfoArr[aY*fMapX + aX] do
-  begin
-    Visited := aVisited;
-    State := aState;
-    Next := aNext;
-    Distance := aDistance;
-  end;
-end;
+//function TKMBuildFF.GetInfo(const aY,aX: Word): TKMBuildInfo;
+//begin
+//  Result := fInfoArr[aY*fMapX + aX];
+//end;
+//procedure TKMBuildFF.SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
+//begin
+//  with fInfoArr[aY*fMapX + aX] do
+//  begin
+//    Visited := aVisited;
+//    State := aState;
+//    Next := aNext;
+//    Distance := aDistance;
+//  end;
+//end;
 
 function TKMBuildFF.GetVisited(const aY,aX: Word): Byte;
 begin
@@ -1375,7 +1375,6 @@ begin
     end;
 
     // Scan tiles in distance 1 from house plan
-    I := 1;
     LeftSideFree := True;
     RightSideFree := True;
     for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
