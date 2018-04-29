@@ -72,21 +72,25 @@ end;
 
 
 procedure TKMMapEdMenuSave.Menu_SaveClick(Sender: TObject);
-var
-  SaveName: string;
-begin
-  SaveName := TKMapsCollection.FullPath(Trim(Edit_SaveName.Text), '.dat', Radio_Save_MapType.ItemIndex = 1);
 
+  function GetSaveName: UnicodeString;
+  begin
+    Result := TKMapsCollection.FullPath(Trim(Edit_SaveName.Text), '.dat', Radio_Save_MapType.ItemIndex = 1);
+  end;
+
+begin
   if (Sender = Edit_SaveName) or (Sender = Radio_Save_MapType) then
   begin
-    CheckBox_SaveExists.Enabled := FileExists(SaveName);
+    CheckBox_SaveExists.Enabled := FileExists(GetSaveName);
     Label_SaveExists.Visible := CheckBox_SaveExists.Enabled;
     CheckBox_SaveExists.Checked := False;
     Button_SaveSave.Enabled := not CheckBox_SaveExists.Enabled and (Length(Trim(Edit_SaveName.Text)) > 0);
-  end;
+  end
+  else
 
   if Sender = CheckBox_SaveExists then
-    Button_SaveSave.Enabled := CheckBox_SaveExists.Checked;
+    Button_SaveSave.Enabled := CheckBox_SaveExists.Checked
+  else
 
   if Sender = Button_SaveSave then
   begin
@@ -94,14 +98,15 @@ begin
     if Assigned(fOnMapTypChanged) then
       fOnMapTypChanged(fIsMultiplayer);
 
-    gGame.SaveMapEditor(SaveName);
+    gGame.SaveMapEditor(GetSaveName);
     gGame.MapEditor.WereSaved := True;
 
     //Player colors and mapname has changed
     gGame.ActiveInterface.SyncUI(False); //Don't move the viewport
 
     fOnDone(Self);
-  end;
+  end
+  else
 
   if Sender = Button_SaveCancel then
     fOnDone(Self);
