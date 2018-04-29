@@ -56,6 +56,8 @@ type
     procedure FlashingStart;
     procedure FlashingStop;
 
+    function IsDebugChangeAllowed: Boolean;
+
     function LockMutex: Boolean;
     procedure UnlockMutex;
 
@@ -459,6 +461,13 @@ begin
     FlashWindowEx(flashInfo);
   end
   {$ENDIF}
+end;
+
+
+function TKMMain.IsDebugChangeAllowed: Boolean;
+begin
+  Result := (gGameApp.Game = nil)
+            or (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS)
 end;
 
 

@@ -611,6 +611,10 @@ begin
   tbOwnThresh.Position := OWN_THRESHOLD_DEF;
 
   fUpdating := False;
+
+  if Assigned(FormLogistics) then
+    FormLogistics.Clear;
+
   ControlsUpdate(nil);
 end;
 
@@ -657,9 +661,8 @@ begin
   if fUpdating then Exit;
 
   //You could possibly cheat in multiplayer by seeing debug render info
-  AllowDebugChange := (gGameApp.Game = nil)
-                   or (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS)
-                   or (Sender = nil); //Happens in ControlsReset only (using this anywhere else could allow MP cheating)
+  AllowDebugChange := gMain.IsDebugChangeAllowed
+                      or (Sender = nil); //Happens in ControlsReset only (using this anywhere else could allow MP cheating)
 
   //Debug render
   if AllowDebugChange then
