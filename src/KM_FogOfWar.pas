@@ -398,7 +398,10 @@ var I,K: Word;
 begin
   for I := 0 to MapY - 1 do
     for K := 0 to MapX - 1 do
+    begin
       Revelation[I, K] := Max(Revelation[I, K], aFOW.Revelation[I, K]);
+      RenderRevelation[I, K] := Max(RenderRevelation[I, K], aFOW.RenderRevelation[I, K]);
+    end;
 end;
 
 
@@ -411,7 +414,10 @@ begin
   //Because each player has FOW it can become a bottleneck (8.7ms per run) due to autosaving (e.g. on Paradise Island)
   //so save it out 1 row at a time (due to 2D arrays not being continguous we can't save it all at once)
   for I := 0 to MapY - 1 do
+  begin
     SaveStream.Write(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
+    SaveStream.Write(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
+  end;
 end;
 
 
@@ -423,7 +429,10 @@ begin
   LoadStream.Read(fAnimStep);
   SetMapSize(MapX, MapY);
   for I := 0 to MapY - 1 do
+  begin
     LoadStream.Read(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
+    LoadStream.Read(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
+  end;
 end;
 
 
