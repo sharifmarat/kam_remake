@@ -434,6 +434,8 @@ end;
 
 procedure TKMDeliveries.UpdateOfferItem(aI: Integer);
 begin
+  if aI >= fOfferCount then Exit;
+
   with fOffer[aI] do
     if Assigned(FormLogistics)
       and (gGame <> nil) and not gGame.ReadyToStop
@@ -463,6 +465,8 @@ end;
 
 procedure TKMDeliveries.UpdateDemandItem(aI: Integer);
 begin
+  if aI >= fDemandCount then Exit;
+
   with fDemand[aI] do
     if Assigned(FormLogistics)
       and (gGame <> nil) and not gGame.ReadyToStop
