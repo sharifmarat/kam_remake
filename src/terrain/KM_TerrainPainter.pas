@@ -99,8 +99,6 @@ type
   end;
 
 
-  function GetCombo(aTerKindFrom, aTerKindTo: TKMTerrainKind; aTransition: Byte; var aFound: Boolean): SmallInt;
-
 const
   //Table of combinations between terrain types (0-based)
   //1 - no transition
@@ -174,6 +172,7 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),      // FastWater
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)       // Lava
   );
+
 
 //  RMG2Painter: array [0..255] of TKMTerrainKind = (
 //    tkGrass, tkGrass, tkGrass, tkGrass, tkSnow, tkGrass, tkGrass, tkCustom, tkMoss, tkMoss, tkSnow, tkGrass, tkWater,
