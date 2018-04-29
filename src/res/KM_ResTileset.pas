@@ -479,18 +479,21 @@ var
 begin
   for I := Low(WalkBuild) to High(WalkBuild) do
   begin
+    Assert(WalkBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[WalkBuild[I]].Walkable := 1;
     PatternDAT[WalkBuild[I]].Buildable := 1;
   end;
 
   for I := Low(WalkNoBuild) to High(WalkNoBuild) do
   begin
+    Assert(WalkNoBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[WalkNoBuild[I]].Walkable := 1;
     PatternDAT[WalkNoBuild[I]].Buildable := 0;
   end;
 
   for I := Low(NoWalkNoBuild) to High(NoWalkNoBuild) do
   begin
+    Assert(NoWalkNoBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[NoWalkNoBuild[I]].Walkable := 0;
     PatternDAT[NoWalkNoBuild[I]].Buildable := 0;
   end;
