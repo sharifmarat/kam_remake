@@ -336,7 +336,7 @@ const
 
 const
   DirCursorCircleRadius  = 32; //Radius of the direction selector cursor restriction area
-  DirCursorNARadius = 15;  //Radius of centeral part that has no direction
+  DirCursorNARadius = 20;  //Radius of centeral part that has no direction
 
 
 type
