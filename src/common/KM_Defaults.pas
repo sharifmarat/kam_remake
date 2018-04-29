@@ -116,6 +116,7 @@ var
   AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
+  SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
   SHOW_BRUSH_APPLY_AREA   :Boolean = False; //Show brushes apply area
   SHOW_TERRAIN_WIRES      :Boolean = False; //Makes terrain height visible
   SHOW_TERRAIN_PASS       :Byte = 0; //Byte(TKMTerrainPassability)
@@ -693,7 +694,6 @@ type
     mlSelection,
     mlWaterFlow,
     mlTileOwner,
-    mlTilesGrid,
     mlMapResize);  //Enum representing mapEditor visible layers
   TKMMapEdLayerSet = set of TKMMapEdLayer;                                   //Set of above enum
 

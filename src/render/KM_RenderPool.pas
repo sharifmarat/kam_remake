@@ -98,7 +98,7 @@ type
     procedure RenderWireHousePlan(const P: TKMPoint; aHouseType: TKMHouseType);
     procedure RenderMapEdLayers(const aRect: TKMRect);
     procedure RenderTileOwnerLayer(const aRect: TKMRect);
-    procedure RenderGridLayer(const aRect: TKMRect);
+    procedure RenderTilesGrid(const aRect: TKMRect);
 
     procedure RenderWireTileInt(const X,Y: Integer);
     procedure RenderTileInt(const X, Y: Integer);
@@ -349,6 +349,9 @@ begin
 
   if SHOW_TERRAIN_KINDS then
     gRenderAux.TileTerrainKinds(aRect);
+
+  if SHOW_TERRAIN_TILES_GRID then
+    RenderTilesGrid(aRect);
 
   if SHOW_UNIT_MOVEMENT then
     gRenderAux.UnitMoves(aRect);
@@ -1480,17 +1483,17 @@ end;
 
 
 //Render tiles grid layer
-procedure TRenderPool.RenderGridLayer(const aRect: TKMRect);
+procedure TRenderPool.RenderTilesGrid(const aRect: TKMRect);
 var I, K: Integer;
     P: TKMPoint;
 begin
-  if (mlTilesGrid in gGame.MapEditor.VisibleLayers) then
-  for I := aRect.Top to aRect.Bottom do
-    for K := aRect.Left to aRect.Right do
-    begin
-      P := KMPoint(K, I);
-      RenderWireTile(P, icDarkCyan, 0, 0.2);
-    end;
+  if SHOW_TERRAIN_TILES_GRID then
+    for I := aRect.Top to aRect.Bottom do
+      for K := aRect.Left to aRect.Right do
+      begin
+        P := KMPoint(K, I);
+        RenderWireTile(P, icDarkCyan, 0, 0.2);
+      end;
 end;
 
 
@@ -1500,7 +1503,6 @@ begin
   if not gGame.IsMapEditor then Exit;
 
   RenderTileOwnerLayer(aRect);
-  RenderGridLayer(aRect);
 end;
 
 

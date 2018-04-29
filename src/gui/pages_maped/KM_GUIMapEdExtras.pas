@@ -128,6 +128,7 @@ procedure TKMMapEdExtras.Extra_Change(Sender: TObject);
 begin
   SHOW_TERRAIN_WIRES := TrackBar_Passability.Position <> 0;
   SHOW_TERRAIN_PASS := TrackBar_Passability.Position;
+  SHOW_TERRAIN_TILES_GRID := CheckBox_ShowTilesGrid.Checked;
 
   if TrackBar_Passability.Position <> 0 then
     Label_Passability.Caption := PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)]

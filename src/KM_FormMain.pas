@@ -107,6 +107,7 @@ type
     N5: TMenuItem;
     ScriptData1: TMenuItem;
     chkBevel: TCheckBox;
+    chkTilesGrid: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -674,6 +675,7 @@ begin
     SHOW_TERRAIN_WIRES := chkShowWires.Checked;
     SHOW_TERRAIN_IDS := chkShowTerrainIds.Checked;
     SHOW_TERRAIN_KINDS := chkShowTerrainKinds.Checked;
+    SHOW_TERRAIN_TILES_GRID := chkTilesGrid.Checked;
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
   end;
