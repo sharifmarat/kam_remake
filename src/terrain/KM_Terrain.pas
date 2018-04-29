@@ -2829,7 +2829,7 @@ var
   begin
     Result := False;
     if not TileInMapCoords(X,Y) //Skip for tiles not in map coords
-      or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
+      //or (aStep > MAX_STEPS)    //Limit for steps (no limit for now)
       or TileHasStone(X,Y)      //If tile has stone no need to change it
       or ArrayContains(KMPoint(X,Y), Visited, fVisitedCnt) //If we already changed this tile
       or ((aStep <> 0) and not TileHasStonePart(X,Y)) then //If tile has no stone parts (except initial step)

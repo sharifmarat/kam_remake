@@ -668,7 +668,6 @@ var
   Cnt: Byte;
   BestLocs: TKMPointArray;
 begin
-  Output := False;
   if not aIgnoreExistingPlans AND GetPlan(aHT, False, aLoc, aIdx) then
     Output := True
   else
@@ -693,7 +692,6 @@ begin
           AddPlan(aHT, aLoc);
           gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, aLoc);
           FindForestAround(aLoc, False);
-          Output := True;
         end;
       end;
     end;
@@ -1218,6 +1216,7 @@ var
   BuildFF: TKMBuildFF;
   CCPArr: TKMPointArray;
 begin
+  Result := 0;
 
   Time := TimeGet();
 
@@ -1495,11 +1494,8 @@ const
   end;
 
 var
-  Time: Cardinal;
   Output: Boolean;
 begin
-  Time := TimeGet();
-
   case aHT of
     htGoldMine:  Output := FindPlaceForMine(htGoldMine);
     htIronMine:  Output := FindPlaceForMine(htIronMine);
@@ -1508,9 +1504,6 @@ begin
     else         Output := False;
   end;
   Result := Output;
-
-  Time := TimeGet() - Time;
-
 end;
 
 
