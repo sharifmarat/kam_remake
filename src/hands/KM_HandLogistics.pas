@@ -775,7 +775,9 @@ begin
   Result := Result and (not fDemand[iD].IsDeleted) and (aIgnoreOffer or not fOffer[iO].IsDeleted);
 
   //If Demand house should abandon delivery
-  Result := Result and ((fDemand[iD].Loc_House = nil) or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
+  Result := Result and ((fDemand[iD].Loc_House = nil)
+                         or not fDemand[iD].Loc_House.IsComplete
+                         or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
 
   //Warfare has a preference to be delivered to Barracks
   if Result
@@ -1320,7 +1322,7 @@ begin
       Dec(fDemand[OldDemandId].BeingPerformed);
       if (fDemand[OldDemandId].BeingPerformed = 0)
         and (fDemand[OldDemandId].IsDeleted
-          or (fDemand[OldDemandId].Loc_House.HouseType = htTownHall)) then
+          or ((fDemand[OldDemandId].Loc_House <> nil) and (fDemand[OldDemandId].Loc_House.HouseType = htTownHall))) then
         CloseDemand(OldDemandId);
 
       UpdateDemandItem(OldDemandId);
