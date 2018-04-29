@@ -472,25 +472,28 @@ procedure TKMResTileset.InitRemakeTiles;
 const
   WalkBuild:     array[0..12] of Integer = (257,262,264,274,275,283,291,299,302,303,304,306,307);
   WalkNoBuild:   array[0..17] of Integer = (258,263,269,270,271,272,278,279,280,281,286,287,288,289,294,295,296,297);
-  NoWalkNoBuild: array[0..19] of Integer = (259,260,261,265,266,267,268,169,273,276,277,282,284,285,
+  NoWalkNoBuild: array[0..19] of Integer = (259,260,261,265,266,267,268,269,273,276,277,282,284,285,
                                             290,292,293,298,300,301);
 var
   I: Integer;
 begin
   for I := Low(WalkBuild) to High(WalkBuild) do
   begin
+    Assert(WalkBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[WalkBuild[I]].Walkable := 1;
     PatternDAT[WalkBuild[I]].Buildable := 1;
   end;
 
   for I := Low(WalkNoBuild) to High(WalkNoBuild) do
   begin
+    Assert(WalkNoBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[WalkNoBuild[I]].Walkable := 1;
     PatternDAT[WalkNoBuild[I]].Buildable := 0;
   end;
 
   for I := Low(NoWalkNoBuild) to High(NoWalkNoBuild) do
   begin
+    Assert(NoWalkNoBuild[I] > 255); //We init only new tiles with ID > 255
     PatternDAT[NoWalkNoBuild[I]].Walkable := 0;
     PatternDAT[NoWalkNoBuild[I]].Buildable := 0;
   end;
