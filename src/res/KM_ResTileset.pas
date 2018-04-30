@@ -7,8 +7,8 @@ uses
 
 
 const
-  TILES_CNT = 307;
-  MAX_TILE_TO_SHOW = 307;
+  TILES_CNT = 308;
+  MAX_TILE_TO_SHOW = TILES_CNT;
   MAX_STATIC_TERRAIN_ID = 4997;
   WATER_ANIM_BELOW_350: array[0..6] of Word = (305, 311, 313, 323, 324, 345, 349);
 
@@ -394,9 +394,10 @@ const
   (tkGoldMount,tkIronMount,tkGoldMount,tkGoldMount), (tkIronMount,tkIronMount,tkLava,tkIronMount),
    //301
   (tkStone,tkStone,tkGrass,tkGrass), (tkStone,tkStone,tkCoastSand,tkCoastSand),
-  (tkStone,tkStone,tkDirt,tkDirt),   (tkCustom,tkCustom,tkCustom,tkCustom),
+  (tkStone,tkStone,tkDirt,tkDirt),
+  (tkCustom,tkCustom,tkCustom,tkCustom), //water animation...
    //305
-  (tkStone,tkStone,tkSnow,tkSnow), (tkStone,tkStone,tkShallowSnow,tkShallowSnow)
+  (tkStone,tkStone,tkSnow,tkSnow), (tkStone,tkStone,tkShallowSnow,tkShallowSnow),(tkGoldMount,tkGoldMount,tkGoldMount,tkSnow)
   );
 
 type
@@ -472,8 +473,8 @@ procedure TKMResTileset.InitRemakeTiles;
 const
   WalkBuild:     array[0..12] of Integer = (257,262,264,274,275,283,291,299,302,303,304,306,307);
   WalkNoBuild:   array[0..17] of Integer = (258,263,269,270,271,272,278,279,280,281,286,287,288,289,294,295,296,297);
-  NoWalkNoBuild: array[0..19] of Integer = (259,260,261,265,266,267,268,269,273,276,277,282,284,285,
-                                            290,292,293,298,300,301);
+  NoWalkNoBuild: array[0..20] of Integer = (259,260,261,265,266,267,268,269,273,276,277,282,284,285,
+                                            290,292,293,298,300,301,308);
 var
   I: Integer;
 begin
