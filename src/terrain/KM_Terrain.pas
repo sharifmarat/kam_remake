@@ -1242,6 +1242,10 @@ var
   K, Cnt: Integer;
   Corners: TKMWordArray;
 begin
+  Result := False;
+
+  if not TileInMapCoords(X, Y) then Exit;
+
   if Land[Y,X].LayersCnt = 0 then
     Result := aCheckTileFunc(Land[Y, X].BaseLayer.Terrain)
   else
@@ -1252,7 +1256,7 @@ begin
       if aCheckTileFunc(Corners[K]) then
         Inc(Cnt);
 
-    //Consider tile has parameter if he has 3 corners with that parameter or if he has 2 corners and base layer has the parameter
+    //Consider tile has parameter if it has 3 corners with that parameter or if it has 2 corners and base layer has the parameter
     Result := (Cnt >= 3) or ((Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
   end;
 end;
