@@ -63,7 +63,7 @@ type
     procedure EditTile(const aLoc: TKMPoint; aTile: Word; aRotation: Byte; aIsCustom: Boolean = True);
     procedure GenerateAddnData;
     procedure InitSize(X,Y: Word);
-    function GetTerKind(aTKValue: Byte; aUseKamFormat: Boolean): TKMTerrainKind;
+    function GetTerKind(aTKValue: Integer; aUseKamFormat: Boolean): TKMTerrainKind;
 
     function IsTerrainRepresentTerKind(aTerId: Word; aTerKind: TKMTerrainKind): Boolean;
 
@@ -231,7 +231,7 @@ end;
 
 
 //Convert terrain kind from old format (before r9371, new automatic tile transitions) to new terrain kind
-function TKMTerrainPainter.GetTerKind(aTKValue: Byte; aUseKamFormat: Boolean): TKMTerrainKind;
+function TKMTerrainPainter.GetTerKind(aTKValue: Integer; aUseKamFormat: Boolean): TKMTerrainKind;
 begin
   Result := tkCustom;
   if InRange(aTKValue, ShortInt(Low(TKMTerrainKind)), ShortInt(High(TKMTerrainKind))) then
