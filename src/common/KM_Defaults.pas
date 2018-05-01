@@ -93,6 +93,9 @@ var
   WARFARE_ORDER_PROPORTIONAL  :Boolean = False; //New proportional way (looks like a bad idea)
 
   //These are debug things, should be False
+  {AI}
+  SP_DEFAULT_ADVANCED_AI  :Boolean = False; //Set advanced AI as default for SP games
+  SP_DEFAULT_PEACETIME    :Integer = 70;    //Default peacetime for SP games when SP_DEFAULT_ADVANCED_AI set to True
   {User interface options}
   DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
   ALLOW_SELECT_ALLY_UNITS :Boolean = False; //Do we allow to select ally units or groups
@@ -174,7 +177,7 @@ var
   WriteResourceInfoToTXT:Boolean = False; //Whenever to write txt files with defines data properties on loading
   EXPORT_SPRITE_ATLASES :Boolean = False; //Whenever to write all generated textures to BMP on loading (extremely time consuming)
   EXPORT_INFLUENCE      :Boolean = False;
-  //Statistic
+  {Statistic}
   CtrlPaintCount: Word; //How many Controls were painted in last frame
 
 
