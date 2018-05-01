@@ -64,6 +64,65 @@ uses
 
 { TKMGUIMapEdGoal }
 constructor TKMMapEdRMG.Create(aParent: TKMPanel);
+  procedure SetDebugSettings();
+  begin
+    // COLUMN 1: Locs + Resources
+      Check_Locs.Checked := False;
+      CheckGroup_LocPosition.ItemIndex := 0;
+      TBar_ProtectedRadius.Position := 6;
+      Check_Resources.Checked := True;
+      Check_ConnectLocs.Checked := True;
+      Check_MineFix.Checked := True;
+      TBar_Res_Stone.Position := 5;
+      TBar_Res_Gold.Position := 5;
+      TBar_Res_Iron.Position := 5;
+
+    // COLUMN 2: NonWalk textures column
+      Check_Obstacles.Checked := True;
+      // Ratio of biomes
+      TBar_NonWalk_EGold.Position := 8;
+      TBar_NonWalk_EIron.Position := 7;
+      TBar_NonWalk_Swamp.Position := 0;
+      TBar_NonWalk_Wetland.Position := 0;
+      TBar_NonWalk_Water.Position := 0;
+      TBar_NonWalk_Density.Position := 1;
+      TBar_NonWalk_Size.Position := 20;
+      TBar_NonWalk_Variance.Position := 5;
+
+    // COLUMN 3: Walk textures
+      Check_Biomes.Checked := False;
+      Check_Ground.Checked := True;
+      Check_Snow.Checked := True;
+      Check_Sand.Checked := True;
+      // First Layer
+      TBar_Biomes1_Step.Position := 5;
+      TBar_Biomes1_Limit.Position := 6;
+      // Second Layer
+      TBar_Biomes2_Step.Position := 5;
+      TBar_Biomes2_Limit.Position := 6;
+
+    // COLUMN 4: Height
+      Check_Height.Checked := True;
+      Check_HideNonSmoothTransition.Checked := True;
+    // COLUMN 4: One path fix (it gives no-walk object to islands and create only 1 walkable area - in KaM is possible to have max 255 separated areas and RMG sometimes makes more which cause crash of the game)
+      Check_NoGo.Checked := False;
+      Check_ReplaceTerrain.Checked := False;
+    // COLUMN 4: Objects
+      Check_Objects.Checked := False;
+      Check_Animals.Checked := False;
+      TBar_ObjectDensity.Position := 6;
+      TBar_Forests.Position := 10;
+      TBar_Trees.Position := 20;
+
+    // COLUMN 4: Seed
+      NumSeed.Value := 417;
+    // COLUMN 4: Players
+      TBar_Players.Position := 1;
+
+    // DEBUG (COLUMN 4)
+      Check_BasicTiles.Checked := False;
+      Check_CA.Checked := True;
+  end;
 const
   POS_X = 300;
   POS_Y = 0;
@@ -252,6 +311,8 @@ begin
   Button_RMG_Generate.OnClick := RMG_Generate_Map;
   Button_RMG_Cancel := TKMButton.Create(Panel_RMG, SIZE_X-20-160, SIZE_Y - 50, 160, 30, gResTexts[TX_MAPED_CANCEL], bsMenu);
   Button_RMG_Cancel.OnClick := RMG_Close;
+
+  //SetDebugSettings();
 end;
 
 
@@ -299,10 +360,10 @@ begin
       Ground := Check_Ground.Checked;
       Snow := Check_Snow.Checked;
       Sand := Check_Sand.Checked;
-      FirstLayerStep :=TBar_Biomes1_Step.Position;
-      FirstLayerLimit :=TBar_Biomes1_Limit.Position;
-      SecondLayerStep :=TBar_Biomes2_Step.Position;
-      SecondLayerLimit :=TBar_Biomes2_Limit.Position;
+      FirstLayerStep := TBar_Biomes1_Step.Position;
+      FirstLayerLimit := TBar_Biomes1_Limit.Position;
+      SecondLayerStep := TBar_Biomes2_Step.Position;
+      SecondLayerLimit := TBar_Biomes2_Limit.Position;
     end;
     with Obstacle do
     begin
