@@ -872,6 +872,22 @@ var
   WareBalance: TWareBalanceArray;
 
 
+  function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
+  var
+    HT: TKMHouseType;
+  begin
+    Result := False;
+    for HT := HOUSE_MIN to HOUSE_MAX do
+      if not gHands[fOwner].Locks.HouseBlocked[HT]
+        AND gHands[fOwner].Locks.HouseCanBuild(HT)
+        AND (gHands[fOwner].Stats.GetHouseTotal(HT) = 0) then
+      begin
+        aHT := HT;
+        Result := True;
+        Exit;
+      end;
+  end;
+
   function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: TKMHouseType): Boolean;
   var
     Output: Boolean;
@@ -919,6 +935,10 @@ var
     else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
     begin
       Output := BuildHouse(True, True, False, FollowingHouse);
+    end
+    else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+    begin
+      Output := BuildHouse(True, False, False, aHT);
     end;
     Result := Output;
   end;
