@@ -2861,12 +2861,12 @@ var
       end;
     end else
     begin
-      //We UpdateTransition when the stone becomes no-stone terrain tile, Bits can never = 15
-      //The tile in center is fully mined and one below has Stoncutter on it,
-      //hence there cant be any tile surrounded by stones from all sides
-      Assert(Bits < 15);
-      Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType,TileIDIndex[Bits]];
-      Land[Y,X].BaseLayer.Rotation := RotID[Bits];
+      //If tile is surrounded with other stone tiles no need to change it
+      if Bits <> 15 then
+      begin
+        Land[Y,X].BaseLayer.Terrain  := TranTiles[aTransitionType,TileIDIndex[Bits]];
+        Land[Y,X].BaseLayer.Rotation := RotID[Bits];
+      end;
     end;
     UpdatePassability(KMPoint(X,Y));
     AddToVisited(X,Y);
