@@ -77,13 +77,16 @@ begin
   SI.cb := SizeOf(StartUpInfo);
   GetStartupInfo(SI);
   Result := (SI.dwFlags and STARTF_USESHOWWINDOW) = 0;
+  {$IFDEF FPC}
+  Result := False
+  {$ENDIF}
 end;
 
 
 begin
   ForcedConsoleMode :=
   {$IFDEF FPC}
-    True
+    False //Set this to True to use as console app in lazarus
   {$ELSE}
     False
   {$ENDIF}
