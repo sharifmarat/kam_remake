@@ -12,6 +12,7 @@ type
     Next: TElementPointer;
   end;
 
+
 // Fast flood algorithm (Queue + for cycle instead of recursion)
   TKMQuickFlood = class
   private
@@ -41,6 +42,8 @@ implementation
   constructor TKMQuickFlood.Create(const aScanEightTiles: Boolean = False);
   begin
     fScanEightTiles := aScanEightTiles;
+    fStartQueue := nil;
+    fEndQueue := nil;
   end;
 
   destructor TKMQuickFlood.Destroy();
@@ -55,6 +58,7 @@ implementation
   procedure TKMQuickFlood.MakeNewQueue();
   begin
     new(fStartQueue);
+    fStartQueue^.Next := nil;
     fEndQueue := fStartQueue;
   end;
 
@@ -64,6 +68,7 @@ implementation
     fEndQueue^.Y := aY;
     new(fEndQueue^.Next);
     fEndQueue := fEndQueue^.Next;
+    fEndQueue^.Next := nil;
   end;
 
   function TKMQuickFlood.RemoveFromQueue(var aX, aY: SmallInt): Boolean;
