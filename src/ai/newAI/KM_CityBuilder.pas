@@ -1033,7 +1033,7 @@ var
         // Make sure that next cycle will not scan this house in this tick
         RequiredHouses[ PRODUCTION[WT] ] := 0;
         // Try build required houses
-        if (AddToConstruction(PRODUCTION[WT], False, True) = cs_HousePlaced) then
+        if (AddToConstruction(PRODUCTION[WT], False, False) = cs_HousePlaced) then
         begin
           MaxPlans := 0; // This house is critical so dont plan anything else
           Exit;
@@ -1059,24 +1059,30 @@ var
     GOLD_SHORTAGE_IDX = 7;
     FULL_SET = 28;
   var
-    I,K, MaxIdx, Overflow: Integer;
+    I,K, MinIdx, MaxIdx, Overflow: Integer;
     Gain, BestGain: Single;
     HT, BestHT: TKMHouseType;
     ReservationsCntArr: array[HOUSE_MIN..HOUSE_MAX] of Word;
   begin
+    MinIdx := 0;
     FillChar(ReservationsCntArr, SizeOf(ReservationsCntArr), #0);
     if fStoneShortage then
       MaxIdx := STONE_SHORTAGE_IDX
+    else if fWoodShortage then
+    begin
+      MaxIdx := WOOD_SHORTAGE_IDX;
+      MinIdx := TRUNK_SHORTAGE_IDX;
+      if (gHands[fOwner].Stats.GetHouseTotal(htWoodcutters) > 0) then
+        MinIdx := WOOD_SHORTAGE_IDX;
+    end
     else if fTrunkShortage then
       MaxIdx := TRUNK_SHORTAGE_IDX
-    else if fWoodShortage then
-      MaxIdx := WOOD_SHORTAGE_IDX
     else if fGoldShortage then
       MaxIdx := GOLD_SHORTAGE_IDX
     else
       MaxIdx := FULL_SET;
 
-    for I := 0 to MaxIdx do
+    for I := MinIdx to MaxIdx do
     begin
       HT := RESERVATION_FullSet[I];
       for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
@@ -1090,7 +1096,7 @@ var
     begin
       Overflow := Overflow + 1;
       BestGain := 0;
-      for I := 0 to MaxIdx do
+      for I := MinIdx to MaxIdx do
         if (ReservationsCntArr[ RESERVATION_FullSet[I] ] > 0) then
         begin
           HT := RESERVATION_FullSet[I];
@@ -1190,7 +1196,7 @@ begin
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
   HT := htWoodcutters;
   if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
-    AND (not fGoldShortage OR fTrunkShortage)
+    AND ((fTrunkShortage OR not fGoldShortage) AND not fWoodShortage)
     AND not fStoneShortage
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
   begin
