@@ -138,7 +138,6 @@ type
     procedure Update_Image_AlliesMute(aImage: TKMImage);
     procedure UpdateNetPlayersMapping;
     procedure Menu_Update;
-    procedure SetPause(aValue:boolean);
     procedure DirectionCursorShow(X,Y: Integer; Dir: TKMDirection);
     procedure DirectionCursorHide;
     function HasLostMPGame: Boolean;
@@ -283,7 +282,7 @@ type
     procedure MessageIssue(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint); overload;
     procedure SetMenuState(aTactic: Boolean);
     procedure ShowClock(aSpeed: Single);
-    procedure ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
+    procedure ShowPlayMore(DoShow: Boolean; Msg: TKMGameResultMsg);
     procedure ShowMPPlayMore(Msg: TKMGameResultMsg);
     procedure ShowNetworkLag(aShow: Boolean; aPlayers: TKMByteArray; IsHost: Boolean);
     procedure SetScriptedOverlay(const aText: UnicodeString);
@@ -299,6 +298,8 @@ type
     procedure LoadHotkeysFromHand;
     procedure SetButtons(aPaused: Boolean);
     property UIMode: TUIMode read fUIMode;
+
+    procedure SetPause(aValue: Boolean);
 
     property Alerts: TKMAlerts read fAlerts;
 
@@ -2264,7 +2265,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.SetPause(aValue:boolean);
+procedure TKMGamePlayInterface.SetPause(aValue: Boolean);
 begin
   ReleaseDirectionSelector; // Don't restrict cursor movement to direction selection while paused
   fViewport.ReleaseScrollKeys;
@@ -2273,7 +2274,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.ShowPlayMore(DoShow:boolean; Msg: TKMGameResultMsg);
+procedure TKMGamePlayInterface.ShowPlayMore(DoShow: Boolean; Msg: TKMGameResultMsg);
 begin
   ReleaseDirectionSelector;
   fPlayMoreMsg := Msg;

@@ -78,6 +78,7 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
     procedure IncGameTick;
+    procedure CheckPauseGameAtTick;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -1839,9 +1840,39 @@ begin
 end;
 
 
-function TKMGame.PlayNextTick: Boolean;
+procedure TKMGame.CheckPauseGameAtTick;
+
+  procedure SetReplayPause;
+  begin
+    IsPaused := True;
+    //Set replay UI to paused state, sync replay timer and other UI elements
+    fGamePlayInterface.SetButtons(False);
+    fGamePlayInterface.UpdateState(fGameTickCount);
+  end;
+
 var
-  PeaceTimeLeft: Cardinal;
+  PeaceTimeLeft, PTTicks: Cardinal;
+begin
+  PeaceTimeLeft := 0;
+  PTTicks := fGameOptions.Peacetime * 600;
+
+  if (fGameMode = gmReplayMulti) and (PTTicks >= fGameTickCount) then
+    PeaceTimeLeft := PTTicks - fGameTickCount;
+
+  if fGameTickCount = PAUSE_GAME_AT_TICK then
+  begin
+    if IsReplay then
+      SetReplayPause
+    else
+      fGamePlayInterface.SetPause(True);
+  end;
+
+  if (PeaceTimeLeft = 1) and gGameApp.GameSettings.ReplayAutopause then
+    SetReplayPause;
+end;
+
+
+function TKMGame.PlayNextTick: Boolean;
 begin
   Result := False;
   //Some PCs seem to change 8087CW randomly between events like Timers and OnMouse*,
@@ -1869,8 +1900,8 @@ begin
 
                       //Tell the master server about our game on the specific tick (host only)
                       if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
-                      and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
-                      or ((fMissionMode = mm_Tactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
+                        and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
+                        or ((fMissionMode = mm_Tactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
                         fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                       fScripting.UpdateState;
@@ -1903,6 +1934,8 @@ begin
                         IssueAutosaveCommand;
 
                       if DO_PERF_LOGGING then fPerfLog.LeaveSection(psTick);
+
+                      CheckPauseGameAtTick;
 
                       Result := True;
                     end
@@ -1943,20 +1976,8 @@ begin
                     if DoGameHold then
                       Exit;
 
-                    if fGameOptions.Peacetime * 600 < fGameTickCount then
-                      PeaceTimeLeft := 0
-                    else
-                      PeaceTimeLeft := fGameOptions.Peacetime * 600 - fGameTickCount;
+                    CheckPauseGameAtTick;
 
-                    if (PeaceTimeLeft = 1)
-                      and (fGameMode = gmReplayMulti)
-                      and (gGameApp.GameSettings.ReplayAutopause) then
-                    begin
-                      IsPaused := True;
-                      //Set replay UI to paused state, sync replay timer and other UI elements
-                      fGamePlayInterface.SetButtons(False);
-                      fGamePlayInterface.UpdateState(fGameTickCount);
-                    end;
                     Result := True;
                   end;
     gmMapEd:   begin
