@@ -79,7 +79,7 @@ begin
   BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 30, 100, 0, BRUSH_MAX_SIZE);
   BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
-  BrushSize.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, 'Ctrl + MouseWheel');
+  BrushSize.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, gResTexts[TX_KEY_CTRL_MOUSEWHEEL]);
   BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 28, 24, 24, 592);
   BrushCircle.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_CIRCLE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   BrushCircle.OnClick := BrushChange;

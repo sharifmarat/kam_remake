@@ -1006,6 +1006,9 @@ TX_KEY_COMMON = 961; //Common Keys
 TX_KEY_GAME = 962; //Game Keys
 TX_KEY_MAPEDIT = 963; //Map Editor Keys
 TX_KEY_SPECTATE_REPLAY = 1018; //Spectate/Replay view Keys
+TX_KEY_CTRL_MOUSEWHEEL = 1194; //Ctrl + Mouse wheel
+TX_KEY_ALT_MOUSEWHEEL = 1195; //Alt + Mouse wheel
+TX_KEY_SHIFT_MOUSEWHEEL = 1196; //Shift + Mouse wheel
 
 TX_MSG_HOUSE_UNOCCUPIED__22 = 966; //This armor smithy is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_ARMORYWORKSHOP = 967; //This armory workshop is not occupied
