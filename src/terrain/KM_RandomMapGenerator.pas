@@ -20,8 +20,9 @@ type
   TBiomeTypeArray = array of TBiomeType;
 
 
-  TTileParts = record
-    Terrain, Rotation, Height, Obj: TKMByte2Array;  // This construction allows to make search classes universal (they will work with TKMByte2Array instead of TTileParts)
+  TTileParts = record // This construction allows to make search classes universal (they will work with TKMByte2Array instead of TTileParts)
+    Terrain: TKMWord2Array;
+    Rotation, Height, Obj: TKMByte2Array;
   end;
 
   TKMRMGSettings = record
@@ -75,7 +76,7 @@ type
     procedure Rules(const aTopLim,aTopLim2,aDownLim,aDownLim2: Integer; var aArr: TInteger2Array);
   // Procedures wich make composition of biomes
     procedure CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array);
-    procedure CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi: TInteger2Array; var aPointsArr: TKMPoint2Array);
+    procedure CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi,aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
     procedure CreateBiomes(var A: TKMByte2Array);
   // Fix of mountain to be able to construct mine there
     //procedure MineFix(const Position: TKMPoint; const MINESIZE, Resource: Byte; var Visited: TBoolean2Array; var A: TKMByte2Array);
@@ -350,7 +351,7 @@ begin
       //K := (Y-1)*(gTerrain.MapX-1)+X-1;
       aTiles[K].Y := Y;
       aTiles[K].X := X;
-      aTiles[K].Terrain := Word(TilesPartsArr.Terrain[Y,X]);
+      aTiles[K].Terrain := TilesPartsArr.Terrain[Y,X];
       aTiles[K].Rotation := TilesPartsArr.Rotation[Y,X];
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];
@@ -1008,7 +1009,7 @@ const
   const
     RESRAD = 2;
     BREAK_LIMIT = 20;
-    INC_RADIUS = 1.4;
+    INC_RADIUS = 0.4;
     MAX_RADIUS = 30;
   var
     I,X,Y, BestResCnt, ResCnt: Integer;
@@ -1019,14 +1020,14 @@ const
       Exit;
     aResLoc := KMPOINT_ZERO;
     BestResCnt := 0;
-    for I := 0 to 10 do
+    for I := 0 to 20 do
     begin
       ResCnt := 0;
       ResPoint := RNDPointInCircle(aMin,aMax,aCenter, aRADIUS);
       if (aIgnoreNegativeValues AND (aCountArr[ResPoint.Y,ResPoint.X] > 0))
         OR (not aIgnoreNegativeValues AND (aCountArr[ResPoint.Y,ResPoint.X] <> 0)) then
         for Y := Max(Low(aCountArr), ResPoint.Y-RESRAD) to Min(High(aCountArr), ResPoint.Y+RESRAD) do
-        for X := Max(Low(aCountArr[0]), ResPoint.X-RESRAD) to Min(High(aCountArr[0]), ResPoint.X+RESRAD) do
+        for X := Max(Low(aCountArr[Y]), ResPoint.X-RESRAD) to Min(High(aCountArr[Y]), ResPoint.X+RESRAD) do
           if (aIgnoreNegativeValues AND (aCountArr[Y,X] > 0))
             OR (not aIgnoreNegativeValues AND (aCountArr[Y,X] <> 0)) then
             ResCnt := ResCnt + 1;
@@ -1039,7 +1040,11 @@ const
         break;
     end;
     if KMSamePoint(aResLoc, KMPOINT_ZERO) then
-      Result := FindBestResLoc(aIgnoreNegativeValues, aRADIUS*INC_RADIUS, aMin,aMax,aCenter, aCountArr, aResLoc)
+    begin
+      aMin := KMPoint(   Max(  1, Round( aMin.X*(1.0-INC_RADIUS) )  ), Max(  1, Round( aMin.Y*(1.0-INC_RADIUS) )  )   );
+      aMax := KMPoint(   Min(  High(aCountArr[0]), Round( aMax.X*(1.0+INC_RADIUS) )  ), Min(  High(aCountArr), Round( aMax.Y*(1.0+INC_RADIUS) )  )   );
+      Result := FindBestResLoc(aIgnoreNegativeValues, aRADIUS*(1.0+INC_RADIUS), aMin,aMax,aCenter, aCountArr, aResLoc)
+    end
     else
       Result := True;
   end;
@@ -1085,9 +1090,10 @@ const
     SetLength(aPointArr, elements);
   end;
 
+  // Mark map edges to negative counts = it prevents placing resources here
   procedure MarkEdges(var aCountArr: TInteger2Array);
   const
-    DIST_FROM_BOTTOM = 3; // Iron, Gold and Stone mines will be placed in distance [DIST_FROM_BOTTOM] of Voronoi steps from bottom of the map
+    DIST_FROM_BOTTOM = 1; // Iron, Gold and Stone mines will be placed max in distance [DIST_FROM_BOTTOM] of Voronoi steps from bottom of the map
   var
     X,Y,XMin,YMin,XMax,YMax: Integer;
   begin
@@ -1095,9 +1101,11 @@ const
     YMax := High(aCountArr);
     XMin := Low(aCountArr[YMin]);
     XMax := High(aCountArr[YMin]);
+    // Distance from bottom
     for Y := Max(YMax-DIST_FROM_BOTTOM, YMin) to YMax do
       for X := XMin to XMax do
         aCountArr[Y,X] := -aCountArr[Y,X];
+    // 1 shape from map sides
     for Y := YMin to Max(YMax-DIST_FROM_BOTTOM-1, YMin) do
     begin
       aCountArr[Y,XMin] := -aCountArr[Y,XMin];
@@ -1105,6 +1113,33 @@ const
     end;
     for X := XMin to XMax do
       aCountArr[YMin,X] := -aCountArr[YMin,X];
+  end;
+
+  // Create protected belt around resources so obstacles will not be here
+  procedure ProtectResourceArea(var aCountArr: TInteger2Array);
+  const
+    X_RANGE = 1;
+    Y_RANGE_1 = 1;
+    Y_RANGE_2 = 1;
+  var
+    Check: Boolean;
+    X,Y,X2,Y2: Integer;
+  begin
+    for Y := High(aCountArr) downto Low(aCountArr) do
+      for X := Low(aCountArr[Y]) to High(aCountArr[Y]) do
+        if (aCountArr[Y,X] < 0) then
+        begin
+          Check := False;
+          for Y2 := Max( Low(aCountArr),Y-Y_RANGE_1 ) to Max( Low(aCountArr),Y-Y_RANGE_2 ) do
+            for X2 := Max( Low(aCountArr[Y2]),X-X_RANGE ) to Min( High(aCountArr[Y2]),X+X_RANGE ) do
+              if (aCountArr[Y2,X2] = 0) then
+              begin
+                Check := True;
+                break;
+              end;
+          if Check then
+            aCountArr[Y,X] := 0;
+        end;
   end;
 
 var
@@ -1209,7 +1244,7 @@ begin
             fRes.AddResource( Loc, RESOURCE, Round( Fraction * MinesCnt[I] ), // Owner, Resource, MinesCnt
                               Round( Fraction * ResAmount[I] ), // Quantity
                               ResPoints // Centers of Voronoi shapes
-                             );
+                            );
             cnt_PREVIOUS := cnt_ACTUAL;
             size_Mountain := new_Size + 1; // Size of requested mines + edge (= 1)
           end;
@@ -1219,12 +1254,12 @@ begin
       FillResource.Free;
     end;
 
-    MarkEdges(CountArr);
+    ProtectResourceArea(CountArr);
   end;
   //}
 
   if RMGSettings.Obstacle.Active then
-    CreateObstacles(Locs, A,  Voronoi,  PointsArr);
+    CreateObstacles(Locs, A,  Voronoi, CountArr, PointsArr);
 
 end;
 //}
@@ -1236,10 +1271,15 @@ end;
 // A = TKMByte2Array for obstacles
 // aVoronoi = Voronoi diagram (same diagram for resource generator and for obstacle generator => avoid to replace resources with obstacles)
 // aPointsArr = points of Voronoi diagram (easy way how to find each shape)
-procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi: TInteger2Array; var aPointsArr: TKMPoint2Array);
+procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKMByte2Array; var aVoronoi, aCountArr: TInteger2Array; var aPointsArr: TKMPoint2Array);
+const
+  OBST2BIOME: array[TObstacleType] of TBiomeType = (btSwamp,btWater,btWetland,btEgold,btEIron);
+var
+  FillObstacle: TKMFillBiome;
+  P: TSingle2Array;
 
 // Connect points with zero chance to create obstacles = secure that player in loc X can walk to player with loc Y
-  function LinearConnection(Probability: Single; FinP,StartP: TKMPoint; var P: TSingle2Array): Boolean;
+  function LinearConnection(Probability: Single; FinP,StartP: TKMPoint): Boolean;
   var
     Owerflow: Integer;
     Vector, ActP: TKMPoint;
@@ -1279,7 +1319,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
   end;
 
 // Linear connection is too ugly -> generate several random points in map and create linear connection between those points and player Loc
-  procedure ConnectLocs(aLocs: TKMPointArray; var P: TSingle2Array);
+  procedure ConnectLocs(aLocs: TKMPointArray);
   const
     POINT_RADIUS = 10;
     MAX_ATTEMPTS = 15;
@@ -1326,7 +1366,7 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
             BestPoint := NewPoint;
           end;
         end;
-        Connected := LinearConnection(Probability, StartLoc,BestPoint, P) OR KMSamePoint(StartLoc, Loc);
+        Connected := LinearConnection(Probability, StartLoc,BestPoint) OR KMSamePoint(StartLoc, Loc);
         StartLoc := BestPoint;
       end;
 
@@ -1334,21 +1374,112 @@ procedure TKMRandomMapGenerator.CreateObstacles(aLocs: TKMPointArray; var A: TKM
     end;
   end;
 
+  procedure RndPointsInRadius(aObstacle: TObstacleType; aX,aY: Integer);
+  const
+    ADAPTIVE_RADIUS: array[TObstacleType] of Single = (0.6,0.5,0.8,0.5,0.5); //(otSwamp,otWater,otWetland,otEgold,otEIron);
   var
-    X,Y,I,K, MaxIdx, MaxCnt, cntr, finalCnt, ObstBiome: Integer;
-    Factor,Probability, ProbabilityReducer: Single;
+    X,Y, Cnt, MaxCnt, Overflow, MaxAttempt: Integer;
+    Radius, RandomSize: Single;
+    Point, MaxP, MinP: TKMPoint;
+  begin
+    MinP := KMPoint(Low(aPointsArr[0]), Low(aPointsArr));
+    MaxP := KMPoint(High(aPointsArr[0]), High(aPointsArr));
+    RandomSize := 1 - fRNG.Random() * RMGSettings.Obstacle.Variance * 0.1;
+    MaxCnt := Max(1, Round( RMGSettings.Obstacle.Size * RandomSize) );
+    Radius := Max(1, Round(sqrt(MaxCnt)) * ADAPTIVE_RADIUS[aObstacle] );
+    MaxAttempt := MaxCnt * 5;
+    Overflow := 0;
+    Cnt := 0;
+    while (Cnt < MaxCnt) AND (Overflow < MaxAttempt) do
+    begin
+      Overflow := Overflow + 1;
+      Point := RNDPointInCircle(MinP,MaxP,KMPoint(aX,aY),Radius);
+      if (fRNG.Random() < P[Point.Y,Point.X]) AND (aVoronoi[Point.Y,Point.X] <> 0) then
+      begin
+        X := aPointsArr[ Point.Y, Point.X ].X;
+        Y := aPointsArr[ Point.Y, Point.X ].Y;
+        FillObstacle.QuickFlood(X, Y, aVoronoi[Y,X], 0, Byte(OBST2BIOME[aObstacle]));
+        Cnt := Cnt + 1;
+      end;
+    end;
+  end;
+
+  procedure RndWalk(aObstacle: TObstacleType; aX,aY: Integer);
+  const
+    EXPAND_RESTRICTION: array[TObstacleType] of Byte = (3,1,2,4,4);
+  var
+    X,Y,X1,Y1,K, MaxIdx, MaxCnt, cntr, finalCnt: Integer;
     check: Boolean;
-    Obstacle: TObstacleType;
     ProbIdx: array[0..3] of Byte;
     Prob: array[0..3] of Single;
     Dir: array[0..3] of TKMPoint;
-    P: TSingle2Array;
+  begin
+    X := aX;
+    Y := aY;
+    // Fill array A with obstacles with using random walk
+    cntr := 0;
+    finalCnt := Max(1,Round((1 - fRNG.Random() * RMGSettings.Obstacle.Variance * 0.1) * (RMGSettings.Obstacle.Size)));
+    if (otWater = aObstacle) then
+      finalCnt := Round(finalCnt*1.5);
+    check := True;
+    while check AND (cntr < finalCnt) do
+    begin
+      // Scan surrounding points
+      cntr := cntr + 1;
+      Dir[0] := KMPoint( X, Min(Y+1, High(P)) );
+      Dir[1] := KMPoint( X, Max(Y-1, Low(P)) );
+      Dir[2] := KMPoint( Min(X+1, High(P[Y])), Y );
+      Dir[3] := KMPoint( Max(X-1, Low(P[Y])), Y );
+
+      // Get highest probability
+      MaxIdx := 0;
+      for K := Low(Dir) to High(Dir) do
+      begin
+        Prob[K] := P[Dir[K].Y,Dir[K].X];
+        if (Prob[MaxIdx] < Prob[K]) then
+          MaxIdx := K;
+      end;
+      // Mark all indexes with highest probability
+      MaxCnt := 0;
+      for K := Low(Dir) to High(Dir) do
+        if (Prob[MaxIdx] = Prob[K]) then
+        begin
+          ProbIdx[MaxCnt] := K;
+          MaxCnt := MaxCnt + 1;
+        end;
+      // Fill several surrounding shapes with our biome
+      check := False;
+      for K := 1 to Min(MaxCnt, fRNG.RandomI(EXPAND_RESTRICTION[aObstacle]) + 1) do
+      begin
+        MaxIdx := fRNG.RandomI(MaxCnt);
+        if (fRNG.Random < Prob[ ProbIdx[MaxIdx] ]) then
+        begin
+          X1 := aPointsArr[  Dir[ ProbIdx[MaxIdx] ].Y, Dir[ ProbIdx[MaxIdx] ].X  ].X;
+          Y1 := aPointsArr[  Dir[ ProbIdx[MaxIdx] ].Y, Dir[ ProbIdx[MaxIdx] ].X  ].Y;
+          if (aVoronoi[Y1,X1] <> 0) then
+            FillObstacle.QuickFlood(X1, Y1, aVoronoi[Y1,X1], 0, Byte(OBST2BIOME[aObstacle]));
+          // Get coords of next shape
+          X := Dir[ ProbIdx[MaxIdx] ].X;
+          Y := Dir[ ProbIdx[MaxIdx] ].Y;
+          // Set probability to zero (shape will not be longer used)
+          P[Y,X] := 0;
+          ProbIdx[MaxIdx] := ProbIdx[MaxCnt-1];
+          MaxCnt := MaxCnt - 1;
+          check := True;
+        end;
+      end;
+    end;
+  end;
+
+  var
+    X,Y,I, MaxCnt: Integer;
+    Factor,Probability, ProbabilityReducer: Single;
+    MinP, MaxP: TKMPoint;
+    Obstacle: TObstacleType;
     ObstacleSeeds: TKMPointArray;
+    VisitedArr: TKMByte2Array;
+    ShapeFixer: TKMSharpShapeFixer;
     OBST_Probability: array[TObstacleType] of Single;
-    FillObstacle: TKMFillBiome;
-  const
-    EXPAND_RESTRICTION: array[TObstacleType] of Byte = (3,1,2,4,4);
-    OBST2BIOME: array[TObstacleType] of TBiomeType = (btSwamp,btWater,btWetland,btEgold,btEIron);
 begin
 
 // Initialization
@@ -1357,13 +1488,13 @@ begin
     for X := Low(aPointsArr[Y]) to High(aPointsArr[Y]) do
       P[Y,X] := 1;
 
-  // Create protected radius = array with smaller chance to spawn obstacle near aLocs
+// Create protected radius = array with smaller chance to spawn obstacle near aLocs
   if RMGSettings.Locs.Resource.Active then
   begin
     ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.02;
     MaxCnt := Round(1 / ProbabilityReducer);
     if RMGSettings.Locs.Resource.ConnectLocs then
-      ConnectLocs(aLocs, P);
+      ConnectLocs(aLocs);
     for I := Low(aLocs) to High(aLocs) do
       for Y := Max(  Low(P), aLocs[I].Y - MaxCnt  ) to Min(  High(P), aLocs[I].Y + MaxCnt  ) do
         for X := Max(  Low(P[Y]), aLocs[I].X - MaxCnt  ) to Min(  High(P[Y]), aLocs[I].X + MaxCnt  ) do
@@ -1372,9 +1503,14 @@ begin
           if (P[Y,X] > Probability) then
             P[Y,X] := Probability;
         end;
+    // Set zero probability for shapes which are used by resources and protected radius around them
+    for Y := Low(P) to High(P) do
+      for X := Low(P[Y]) to High(P[Y]) do
+        if (aCountArr[Y,X] = 0) then
+          P[Y,X] := 0;
   end;
 
-  // Calculate probability of all obstacles from RMGSettings (obstacles are selected by random number in interval <0,1) )
+// Calculate probability of all obstacles from RMGSettings (obstacles are selected by random number in interval <0,1) )
   Factor := 0;
   for Obstacle := Low(TObstacleType) to High(TObstacleType) do
     Factor := Factor + Trunc(RMGSettings.Obstacle.Ratio[ Obstacle ]);
@@ -1384,73 +1520,48 @@ begin
   OBST_Probability[otEgold] := OBST_Probability[otWetland] + RMGSettings.Obstacle.Ratio[ otEgold ] / Factor;
   OBST_Probability[otEIron] := 1;
 
-  // Make obstacles
-  Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 7500;
-  ObstacleSeeds := RNDPointsInGrid(Round(Factor), 0, KMPoint( Low(P[0]), Low(P) ), KMPoint( High(P[0]), High(P) ));
-  FillObstacle := TKMFillBiome.Create( KMPoint(  Low(A[0]), Low(A) ), KMPoint( High(A[0]), High(A) ), aVoronoi, A);
+// Make obstacles
+  Factor := gTerrain.MapX * gTerrain.MapY * RMGSettings.Obstacle.Density / 5000;
+  MinP := KMPoint(Low(P[0]), Low(P));
+  MaxP := KMPoint(High(P[0]), High(P));
+  ObstacleSeeds := RNDPointsInGrid(Max(1,Round(Factor)), 0, MinP, MaxP);
+  MinP := KMPoint(Low(A[0]), Low(A));
+  MaxP := KMPoint(High(A[0]), High(A));
+  FillObstacle := TKMFillBiome.Create( MinP, MaxP, aVoronoi, A);
   try
     for I := Low(ObstacleSeeds) to High(ObstacleSeeds) do
     begin
-      // Get seed
+      // Get seed and obstacle biome
       X := ObstacleSeeds[I].X;
       Y := ObstacleSeeds[I].Y;
       Probability := fRNG.Random();
       for Obstacle := Low(TObstacleType) to High(TObstacleType) do
         if (Probability < OBST_Probability[Obstacle]) then
           break;
-      ObstBiome := Byte( OBST2BIOME[Obstacle] );
 
-      // Fill array A with obstacles
-      cntr := 0;
-      finalCnt := Max(1,Round((1 - fRNG.Random() * RMGSettings.Obstacle.Variance * 0.1) * (RMGSettings.Obstacle.Size * 2)));
-      check := True;
-      while check AND (cntr < finalCnt) do
-      begin
-        // Scan surrounding points
-        cntr := cntr + 1;
-        Dir[0] := KMPoint( X, Min(Y+1, High(P)) );
-        Dir[1] := KMPoint( X, Max(Y-1, Low(P)) );
-        Dir[2] := KMPoint( Min(X+1, High(P[Y])), Y );
-        Dir[3] := KMPoint( Max(X-1, Low(P[Y])), Y );
-
-        MaxIdx := 0;
-        for K := Low(Dir) to High(Dir) do
-        begin
-          Prob[K] := P[Dir[K].Y,Dir[K].X];
-          if (Prob[MaxIdx] < Prob[K]) then
-            MaxIdx := K;
-        end;
-        MaxCnt := 0;
-        for K := Low(Dir) to High(Dir) do
-          if (Prob[MaxIdx] = Prob[K]) then
-          begin
-            ProbIdx[MaxCnt] := K;
-            MaxCnt := MaxCnt + 1;
-          end;
-
-        check := False;
-        for K := 1 to Min(MaxCnt, fRNG.RandomI(EXPAND_RESTRICTION[Obstacle]) + 1) do
-        begin
-          MaxIdx := fRNG.RandomI(MaxCnt);
-          if (fRNG.Random < Prob[ ProbIdx[MaxIdx] ]) then
-          begin
-            X := aPointsArr[  Dir[ ProbIdx[MaxIdx] ].Y, Dir[ ProbIdx[MaxIdx] ].X  ].X;
-            Y := aPointsArr[  Dir[ ProbIdx[MaxIdx] ].Y, Dir[ ProbIdx[MaxIdx] ].X  ].Y;
-            if (aVoronoi[Y,X] <> 0) then
-              FillObstacle.QuickFlood(X, Y, aVoronoi[Y,X], 0, ObstBiome);
-
-            X := Dir[ ProbIdx[MaxIdx] ].X;
-            Y := Dir[ ProbIdx[MaxIdx] ].Y;
-            P[Y,X] := 0;
-            ProbIdx[MaxIdx] := ProbIdx[MaxCnt-1];
-            MaxCnt := MaxCnt - 1;
-            check := True;
-          end;
-        end;
+      case Obstacle of
+        otSwamp, otWetland: RndPointsInRadius(Obstacle, X,Y);
+        otWater, otEgold, otEIron: RndWalk(Obstacle, X,Y);
+        else begin end;
       end;
     end;
   finally
     FillObstacle.Free;
+  end;
+
+  // Fix ugly mountains edges (edges with 1 or 2 tiles - 1 tiles will be fixed by CA but still 2xN tiles are ugly)
+  SetLength(VisitedArr, Length(A), Length(A[0]));
+  for Y := Low(VisitedArr) to High(VisitedArr) do
+    for X := Low(VisitedArr[Y]) to High(VisitedArr[Y]) do
+      VisitedArr[Y,X] := 0;
+  ShapeFixer := TKMSharpShapeFixer.Create( MinP, MaxP, A, VisitedArr );
+  try
+    for Y := Low(VisitedArr) to High(VisitedArr) do
+      for X := Low(VisitedArr[Y]) to High(VisitedArr[Y]) do
+        if (VisitedArr[Y,X] = 0) AND (A[Y,X] >= Byte(btStone)) then
+          ShapeFixer.QuickFlood( X,Y, A[Y,X], 1 );
+  finally
+    ShapeFixer.Free;
   end;
 end;
 
@@ -2215,7 +2326,7 @@ end;
 // B = array of biome-decomposition
 procedure TKMRandomMapGenerator.GenerateTiles(var TilesPartsArr: TTileParts; var A: TKMByte2Array; var B: TKMByte2Array);
 const
-  TT: array[0..23,0..23,0..5] of Byte = ( // Textures of transitions + direction set
+  TT: array[0..23,0..23,0..5] of Word = ( // Textures of transitions + direction set
     ((1,1,1,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(58,57,56,1,1,1),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(74,73,72,1,1,1),			(0,0,0,0,0,0),			(95,94,93,1,1,1),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0)),
     ((18,19,8,1,1,1),			(1,1,1,0,0,0),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(0,0,0,0,0,0),			(18,19,8,1,1,1),			(0,0,0,0,0,0),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(18,19,8,1,1,1),			(0,0,0,0,0,0)),
     ((120,121,122,0,0,0),			(120,121,122,0,0,0),			(1,1,1,0,0,0),			(120,121,122,0,0,0),			(0,0,0,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(0,0,0,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(0,0,0,0,0,0),			(120,121,122,0,0,0),			(0,0,0,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(120,121,122,0,0,0),			(0,0,0,0,0,0)),
@@ -2298,7 +2409,7 @@ const
   );
 
   // Return full texture of specific biome (with variance)
-  function GetFullTexture(Biome: Byte): Byte;
+  function GetFullTexture(Biome: Word): Word;
   var
     rnd: Single;
     i: Integer;
@@ -2335,7 +2446,7 @@ const
   }
 
   // Finds right transition texture by specific rules
-  procedure TransitionTexture(var T1, T2, Terrain, Rotation: Byte; const T1dir, T2dir, T1E, T2E, T1ER, T2ER: Byte);
+  procedure TransitionTexture(var T1, T2, Rotation: Byte; var Terrain: Word; const T1dir, T2dir, T1E, T2E, T1ER, T2ER: Byte);
   begin
     if (T1 < T2) then
     begin
@@ -2395,8 +2506,9 @@ const
   end;
 
 var
+   Rotation: Byte;
+   Terrain: Word;
    X1,X2,Y1,Y2,sum,I,K,L, MaxLen: Integer;
-   Terrain, Rotation: Byte;
    S,S2: TInteger2Array;
    BalanceResArr: TInteger2Array;
    TileFloodSearch: TKMTileFloodSearch;
@@ -2458,13 +2570,13 @@ begin
               Rotation := fRNG.RandomI(3);
             end;
       // Transitions (line)
-        $A: TransitionTexture(B[Y1,X1], B[Y1,X2], Terrain, Rotation, 1, 3, 1, 1, 4, 4);// Vertical transition
-        $5: TransitionTexture(B[Y1,X1], B[Y2,X1], Terrain, Rotation, 2, 0, 1, 1, 4, 4);// Horizontal transition
+        $A: TransitionTexture(B[Y1,X1], B[Y1,X2], Rotation, Terrain, 1, 3, 1, 1, 4, 4);// Vertical transition
+        $5: TransitionTexture(B[Y1,X1], B[Y2,X1], Rotation, Terrain, 2, 0, 1, 1, 4, 4);// Horizontal transition
       // Transitions (big edge for dominant texture and vice versa)
-        $3: TransitionTexture(B[Y1,X1], B[Y2,X1], Terrain, Rotation, 1, 3, 2, 0, 5, 3);
-        $6: TransitionTexture(B[Y1,X1], B[Y1,X2], Terrain, Rotation, 0, 2, 0, 2, 3, 5);
-        $C: TransitionTexture(B[Y1,X1], B[Y2,X2], Terrain, Rotation, 1, 3, 0, 2, 3, 5);
-        $9: TransitionTexture(B[Y1,X1], B[Y2,X1], Terrain, Rotation, 2, 0, 0, 2, 3, 5);
+        $3: TransitionTexture(B[Y1,X1], B[Y2,X1], Rotation, Terrain, 1, 3, 2, 0, 5, 3);
+        $6: TransitionTexture(B[Y1,X1], B[Y1,X2], Rotation, Terrain, 0, 2, 0, 2, 3, 5);
+        $C: TransitionTexture(B[Y1,X1], B[Y2,X2], Rotation, Terrain, 1, 3, 0, 2, 3, 5);
+        $9: TransitionTexture(B[Y1,X1], B[Y2,X1], Rotation, Terrain, 2, 0, 0, 2, 3, 5);
         else
         begin
           // 3-4 biom transitions will never happen (TileTemplate will fix it)
@@ -2767,28 +2879,120 @@ const
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
     (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
   );
+  DECREASE_HEIGHT_SET: set of Byte = [Byte(btWater),Byte(btWetland),Byte(btSwamp)];
 var
-  X_0,Y_0,X_1,Y_1,X_2,Y_2,X1,X2,Y1,Y2,sum: Integer;
-  H1,H2: TInteger2Array;
+  I, X_0,Y_0,X_1,Y_1,X_2,Y_2,X1,X2,Y1,Y2,sum: Integer;
+  H1,H2,H3: TInteger2Array;
+  HillSeeds,ShapePoints: TKMPointArray;
+  VisitedArr: TKMByte2Array;
+  HFWA: TKMHeightFillWalkableAreas;
+  SPE: TKMShapePointsExtractor;
 begin
 
-  H1 := LinearInterpolation(7,20);
-  H2 := LinearInterpolation(5,60);
+  SetLength(H3, Length(TilesPartsArr.Terrain), Length(TilesPartsArr.Terrain[0]));
+  for Y1 := Low(H3) to High(H3) do
+    for X1 := Low(H3[Y1]) to High(H3[Y1]) do
+      H3[Y1,X1] := 0;
+  //{
+  HFWA := TKMHeightFillWalkableAreas.Create(A,H3);
+  try
+    //HillSeeds := RNDPointsInGrid(100, 1, KMPoint( Low(H3[0]), Low(H3) ), KMPoint( High(H3[0]), High(H3) ));
+    //for I := 0 to Length(HillSeeds) - 1 do
+    //begin
+    //  sign := ifthen(fRNG.Random() < 0.5, 1, -1);
+    //  HFWA.ExpandHeight(HillSeeds[I], sign*(20+fRNG.RandomI(10)), 1+fRNG.RandomI(3));
+    //end;
+    // RMGSettings.Walkable.FirstLayerStep FirstLayerLimit SecondLayerStep SecondLayerLimit
+
+    //SetLength(HillSeeds, 3);
+    //HillSeeds[0] := KMPoint(158,145);
+    //HillSeeds[1] := KMPoint(153,161);
+    //HillSeeds[2] := KMPoint(143,161);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 3);
+    //HFWA.ExpandHeight(HillSeeds[1], 100, 3);
+    //HFWA.ExpandHeight(HillSeeds[2], 100, 3);
+    //
+    //SetLength(HillSeeds, 1);
+    //HillSeeds[0] := KMPoint(131,147);
+    //HFWA.ExpandHeight(HillSeeds[0], -100, 5);
+
+
+    //HillSeeds[0] := KMPoint(157,201);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 3);
+
+    //HillSeeds[0] := KMPoint(165,198);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 6);
+    //HillSeeds[0] := KMPoint(160,207);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 6);
+    //HillSeeds[0] := KMPoint(151,207);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 6);
+    //HillSeeds[0] := KMPoint(144,201);
+    //HFWA.ExpandHeight(HillSeeds[0], 100, 6);
+
+    //SetLength(ShapePoints,1);
+    //
+    //HillSeeds := RNDPointsInGrid(50, 1, KMPoint( Low(H3[0]), Low(H3) ), KMPoint( High(H3[0]), High(H3) ));
+    //for I := 0 to Length(HillSeeds) - 1 do
+    //begin
+    //  ShapePoints[0] := HillSeeds[I];
+    //  HFWA.ExpandHeight(ShapePoints, 70+fRNG.RandomI(40), 3+fRNG.RandomI(2));
+    //end;
+    //
+    //HillSeeds := RNDPointsInGrid(700, 1, KMPoint( Low(H3[0]), Low(H3) ), KMPoint( High(H3[0]), High(H3) ));
+    //for I := 0 to Length(HillSeeds) - 1 do
+    //begin
+    //  ShapePoints[0] := HillSeeds[I];
+    //  HFWA.ExpandHeight(ShapePoints, -40-fRNG.RandomI(10), 5+fRNG.RandomI(2));
+    //end;
+    //
+    //HillSeeds := RNDPointsInGrid(800, 1, KMPoint( Low(H3[0]), Low(H3) ), KMPoint( High(H3[0]), High(H3) ));
+    //for I := 0 to Length(HillSeeds) - 1 do
+    //begin
+    //  sign := ifthen(fRNG.Random() < 0.5, 1, -1);
+    //  HFWA.ExpandHeight(HillSeeds[I], 20+fRNG.RandomI(10), 5+fRNG.RandomI(3));
+    //end;
+  //}
+
+   // Decrease height of swamp / wetland / water
+    // Init VisitedArr
+    SetLength(VisitedArr,Length(TilesPartsArr.Terrain), Length(TilesPartsArr.Terrain[0]));
+    for Y1 := Low(VisitedArr) to High(VisitedArr) do
+      for X1 := Low(VisitedArr[Y1]) to High(VisitedArr[Y1]) do
+        VisitedArr[Y1,X1] := 0;
+
+    SPE := TKMShapePointsExtractor.Create(KMPoint( Low(VisitedArr[0]), Low(VisitedArr) ), KMPoint( High(VisitedArr[0]), High(VisitedArr) ), A, VisitedArr, False);
+    try
+      for Y1 := Low(VisitedArr) to High(VisitedArr) do
+        for X1 := Low(VisitedArr[Y1]) to High(VisitedArr[Y1]) do
+          if (VisitedArr[Y1,X1] = 0) AND (A[Y1,X1] in DECREASE_HEIGHT_SET) then
+          begin
+            SPE.QuickFlood(X1,Y1,A[Y1,X1],1, ShapePoints);
+            case A[Y1,X1] of
+              Byte(btWater):   HFWA.ExpandHeight(ShapePoints, -10 -fRNG.RandomI(5), 6 + fRNG.RandomI(3));
+              Byte(btWetland): HFWA.ExpandHeight(ShapePoints, -3 -fRNG.RandomI(3),  5 + fRNG.RandomI(3));
+              Byte(btSwamp):   HFWA.ExpandHeight(ShapePoints, -3 -fRNG.RandomI(3),  5 + fRNG.RandomI(3));
+            end;
+          end;
+    finally
+      SPE.Free;
+    end;
+
+  finally
+    HFWA.Free();
+  end;
+
+  H1 := LinearInterpolation(7,50);
+  //H2 := LinearInterpolation(5,20);
+  H2 := LinearInterpolation(2,10);
 	for Y1 := 1 to gTerrain.MapY-1 do
     for X1 := 1 to gTerrain.MapX-1 do
     begin
-      TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
-      //TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + HeightMix[ A[Y1,X1] ]*2 + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
+      TilesPartsArr.Height[Y1,X1] := Min(100, Min(80,Max(0, H1[Y1,X1] + H2[Y1,X1] + H3[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
+      //TilesPartsArr.Height[Y1,X1] := Min(100, Min(93,Max(0, H2[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
+      //TilesPartsArr.Height[Y1,X1] := Min(100, Min(93,Max(0, H1[Y1,X1] + H2[Y1,X1])) + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]));
     end;
 
-  //constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
-  //procedure QuickFlood(aX,aY,aSearch,aNewSearch,aFill: SmallInt); reintroduce;
-  //FillHeight := TKMFillBiome.Create();
-  //try
 
-  //finally
-  //  Fillheight.Free;
-  //end;
 
   for Y_1 := 1 to gTerrain.MapY-1 do
   begin
@@ -2816,19 +3020,17 @@ begin
                  + Byte(A[Y_2,X_1] = A[Y_1,X_1])
                  + Byte(A[Y_2,X_2] = A[Y_1,X_1])
         else
-          sum := + Byte(A[Y_0,X_0] >= A[Y_1,X_1])
-                 + Byte(A[Y_0,X_1] >= A[Y_1,X_1])
-                 + Byte(A[Y_0,X_2] >= A[Y_1,X_1])
-                 + Byte(A[Y_1,X_2] >= A[Y_1,X_1])
-                 + Byte(A[Y_1,X_0] >= A[Y_1,X_1])
-                 + Byte(A[Y_2,X_0] >= A[Y_1,X_1])
-                 + Byte(A[Y_2,X_1] >= A[Y_1,X_1])
-                 + Byte(A[Y_2,X_2] >= A[Y_1,X_1]);
+          sum := + Byte(A[Y_0,X_0] >= Byte(btStone))
+                 + Byte(A[Y_0,X_1] >= Byte(btStone))
+                 + Byte(A[Y_0,X_2] >= Byte(btStone))
+                 + Byte(A[Y_1,X_2] >= Byte(btStone))
+                 + Byte(A[Y_1,X_0] >= Byte(btStone))
+                 + Byte(A[Y_2,X_0] >= Byte(btStone))
+                 + Byte(A[Y_2,X_1] >= Byte(btStone))
+                 + Byte(A[Y_2,X_2] >= Byte(btStone));
         if (sum = 8) then
           TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(70)+30;
       end;
-      //else if (TilesPartsArr.Obj[Y_1,X_1] = 61) AND (  (A[Y_1,X_1] = Byte(btGroundSnow)) OR (A[Y_1,X_1] = Byte(btSnow1)) OR (A[Y_1,X_1] = Byte(btSnow2))  ) then
-        //TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(30)+60;
 
     // Set lower height to non-smooth transitions (hide it)
       if RMGSettings.Height.HideNonSmoothTransition then
@@ -2838,185 +3040,11 @@ begin
                + HNST[ TileTempl[Y1,X2] ][ TileTempl[Y2,X2] ]
                + HNST[ TileTempl[Y2,X1] ][ TileTempl[Y2,X2] ];
         if (sum > 0) then
-          TilesPartsArr.Height[Y_1,X_1] := Max(0, H1[Y_1,X_1] + H2[Y_1,X_1] - sum);
+          TilesPartsArr.Height[Y_1,X_1] := Max(0, TilesPartsArr.Height[Y_1,X_1] - sum);
       end;
-    // Change height of water
-    {
-      if (A[Y_1,X_1] = Byte(btWater)) then
-      begin
-        sum :=   Byte(A[Y_2,X_1] = Byte(btWater))
-               + Byte(A[Y_0,X_1] = Byte(btWater))
-               + Byte(A[Y_1,X_2] = Byte(btWater))
-               + Byte(A[Y_1,X_0] = Byte(btWater))
-               + Byte(A[Y_2,X_2] = Byte(btWater))
-               + Byte(A[Y_2,X_0] = Byte(btWater))
-               + Byte(A[Y_0,X_2] = Byte(btWater))
-               + Byte(A[Y_0,X_0] = Byte(btWater));
-        TilesPartsArr.Height[Y_1,X_1] := Max(0,TilesPartsArr.Height[Y_1,X_1] - (sum * 2));
-      end;
-      }
-
     end;
   end;
 end;
-
-
-//procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPartsArr: TTileParts; var A: TKMByte2Array; var TileTempl: TKMByte2Array);
-//const
-//  HeightMix: array [0..23] of Byte = (
-//    //20,18,15,15,15,21,19,22,23,24,25,20,20,19,18,17,18,21,20,20,20,20,20,20
-//    10,10,5,5,3,5,10,1,10,10,20,20,0,5,10,10,15,20,10,20,20,20,20,0
-//  );
-//  //TBiomeType = (
-//  //10,15,0,0,0,10,5,0,15,15,20,20,10,5,btGrassSand1,btGrassSand2,btGrassSand3,btSand,btStone,btGold,btEgold,btIron,btEIron,btDark);
-//
-//  HeightVariance: array [0..23] of Byte = (
-//    10,10,5,5,3,5,10,10,10,10,20,20,0,5,10,10,15,20,10,20,20,0,0,0
-//  );
-//  HNST: array[0..23,0..23] of Byte = ( // Hide Non-Smooth Transition (height fix)
-//    (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
-//    (0,0,0,2,3,5,2,5,1,5,5,5,5,3,1,4,3,4,0,0,0,0,0,0),
-//    (0,0,0,2,0,5,2,3,2,5,5,5,5,2,1,2,3,4,0,0,0,0,0,0),
-//    (2,2,2,0,3,5,0,1,2,5,5,5,5,3,3,3,4,5,0,0,0,0,0,0),
-//    (3,3,0,3,0,5,3,3,3,3,5,5,5,3,3,3,3,3,0,0,0,0,0,0),
-//    (5,5,5,5,5,0,2,0,0,5,5,5,5,4,4,4,4,4,0,0,0,0,0,0),
-//    (2,2,2,0,3,2,0,0,0,5,5,5,5,5,5,5,5,3,0,0,0,0,0,0),
-//    (5,5,3,1,3,0,0,0,5,5,5,5,5,4,4,4,4,3,0,0,0,0,0,0),
-//    (1,1,2,2,3,0,0,5,0,5,5,5,5,5,5,5,5,5,0,0,0,0,0,0),
-//    (5,5,5,5,3,5,5,5,5,0,5,5,5,5,5,5,5,5,0,0,0,0,0,0),
-//    (5,5,5,5,5,5,5,5,5,5,0,5,5,5,5,5,5,5,0,0,0,0,0,0),
-//    (5,5,5,5,5,5,5,5,5,5,5,0,5,5,5,5,5,5,0,0,0,0,0,0),
-//    (5,5,5,5,5,5,5,5,5,5,5,5,0,3,3,3,3,3,0,0,0,0,0,0),
-//    (3,3,2,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
-//    (1,1,1,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
-//    (4,4,2,3,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
-//    (3,3,3,4,3,4,5,4,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
-//    (4,4,4,5,3,4,3,3,5,5,5,5,3,0,0,0,0,0,0,0,0,0,0,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,0,0,0),
-//    (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-//  );
-//var
-//  X,Y,I,MaxCnt,X_0,Y_0,X_1,Y_1,X_2,Y_2,X0,X1,X2,Y0,Y1,Y2,sum: Integer;
-//  Factor,Probability, ProbabilityReducer: Single;
-//  P: TSingle2Array;
-//  H1,H2, H3,H4: TInteger2Array;
-//  FillHeight: TKMFillBiome;
-//begin
-//
-//// Initialization
-//  SetLength(P, Length(A), Length(A[Low(A)]));
-//  for Y := Low(P) to High(P) do
-//    for X := Low(P[Y]) to High(P[Y]) do
-//      P[Y,X] := 1;
-//
-//  // Create protected radius = array with smaller chance to spawn obstacle near aLocs
-//  if RMGSettings.Locs.Resource.Active then
-//  begin
-//    ProbabilityReducer := (11 - RMGSettings.Obstacle.ProtectedRadius) * 0.02;
-//    MaxCnt := Round(1 / ProbabilityReducer);
-//    for I := Low(aLocs) to High(aLocs) do
-//      for Y := Max(  Low(P), aLocs[I].Y - MaxCnt  ) to Min(  High(P), aLocs[I].Y + MaxCnt  ) do
-//        for X := Max(  Low(P[Y]), aLocs[I].X - MaxCnt  ) to Min(  High(P[Y]), aLocs[I].X + MaxCnt  ) do
-//        begin
-//          Probability := KMLengthDiag(X,Y,aLocs[I]) * ProbabilityReducer;
-//          if (P[Y,X] > Probability) then
-//            P[Y,X] := Probability;
-//        end;
-//  end;
-//
-//  H1 := LinearInterpolation(7,20);
-//  H2 := LinearInterpolation(5,40);
-//  H3 := LinearInterpolation(8,80);
-//  H4 := LinearInterpolation(6,80);
-//	for Y1 := 1 to gTerrain.MapY-1 do
-//    for X1 := 1 to gTerrain.MapX-1 do
-//    begin
-//      //TilesPartsArr.Height[Y1,X1] := Max(0,   H1[Y1,X1] + H2[Y1,X1] + Round((H3[Y1,X1] - H4[Y1,X1]) * P[Y1,X1])  + fRNG.RandomI(HeightVariance[ A[Y1,X1] ])   );
-//      TilesPartsArr.Height[Y1,X1] := H1[Y1,X1] + H2[Y1,X1] + HeightMix[ A[Y1,X1] ]*2 + fRNG.RandomI(HeightVariance[ A[Y1,X1] ]);
-//    end;
-//
-//  //constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TInteger2Array; var aFillArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
-//  //procedure QuickFlood(aX,aY,aSearch,aNewSearch,aFill: SmallInt); reintroduce;
-//  //FillHeight := TKMFillBiome.Create();
-//  //try
-//
-//  //finally
-//  //  Fillheight.Free;
-//  //end;
-//
-//  for Y_1 := 1 to gTerrain.MapY-1 do
-//  begin
-//    Y2 := Y_1 shl 1;
-//    Y1 := Y2 - 1;
-//    Y_0 := Max(0, Y_1 - 2);
-//    Y_2 := Min(gTerrain.MapY, Y_1 + 1);
-//    for X_1 := 1 to gTerrain.MapX-1 do
-//    begin
-//      X2 := X_1 shl 1;
-//      X1 := X2 - 1;
-//      X_0 := Max(0, X_1 - 2);
-//      X_2 := Min(gTerrain.MapX, X_1 + 1);
-//
-//      // Mountains
-//      if (A[Y_1,X_1] >= Byte(btStone)) then
-//      begin
-//        if A[Y_1,X_1] = Byte(btStone) then
-//          sum := + Byte(A[Y_0,X_0] = A[Y_1,X_1])
-//                 + Byte(A[Y_0,X_1] = A[Y_1,X_1])
-//                 + Byte(A[Y_0,X_2] = A[Y_1,X_1])
-//                 + Byte(A[Y_1,X_2] = A[Y_1,X_1])
-//                 + Byte(A[Y_1,X_0] = A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_0] = A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_1] = A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_2] = A[Y_1,X_1])
-//        else
-//          sum := + Byte(A[Y_0,X_0] >= A[Y_1,X_1])
-//                 + Byte(A[Y_0,X_1] >= A[Y_1,X_1])
-//                 + Byte(A[Y_0,X_2] >= A[Y_1,X_1])
-//                 + Byte(A[Y_1,X_2] >= A[Y_1,X_1])
-//                 + Byte(A[Y_1,X_0] >= A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_0] >= A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_1] >= A[Y_1,X_1])
-//                 + Byte(A[Y_2,X_2] >= A[Y_1,X_1]);
-//        if (sum = 8) then
-//          TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(70)+30;
-//      end;
-//      //else if (TilesPartsArr.Obj[Y_1,X_1] = 61) AND (  (A[Y_1,X_1] = Byte(btGroundSnow)) OR (A[Y_1,X_1] = Byte(btSnow1)) OR (A[Y_1,X_1] = Byte(btSnow2))  ) then
-//        //TilesPartsArr.Height[Y_1,X_1] := fRNG.RandomI(30)+60;
-//
-//    // Set lower height to non-smooth transitions (hide it)
-//      if RMGSettings.Height.HideNonSmoothTransition then
-//      begin
-//        sum := + HNST[ TileTempl[Y1,X1] ][ TileTempl[Y2,X1] ]
-//               + HNST[ TileTempl[Y1,X1] ][ TileTempl[Y1,X2] ]
-//               + HNST[ TileTempl[Y1,X2] ][ TileTempl[Y2,X2] ]
-//               + HNST[ TileTempl[Y2,X1] ][ TileTempl[Y2,X2] ];
-//        if (sum > 0) then
-//          TilesPartsArr.Height[Y_1,X_1] := Max(0, H1[Y_1,X_1] + H2[Y_1,X_1] - sum);
-//      end;
-//    // Change height of water
-//    {
-//      if (A[Y_1,X_1] = Byte(btWater)) then
-//      begin
-//        sum :=   Byte(A[Y_2,X_1] = Byte(btWater))
-//               + Byte(A[Y_0,X_1] = Byte(btWater))
-//               + Byte(A[Y_1,X_2] = Byte(btWater))
-//               + Byte(A[Y_1,X_0] = Byte(btWater))
-//               + Byte(A[Y_2,X_2] = Byte(btWater))
-//               + Byte(A[Y_2,X_0] = Byte(btWater))
-//               + Byte(A[Y_0,X_2] = Byte(btWater))
-//               + Byte(A[Y_0,X_0] = Byte(btWater));
-//        TilesPartsArr.Height[Y_1,X_1] := Max(0,TilesPartsArr.Height[Y_1,X_1] - (sum * 2));
-//      end;
-//      }
-//
-//    end;
-//  end;
-//end;
 
 
 

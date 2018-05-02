@@ -872,6 +872,22 @@ var
   WareBalance: TWareBalanceArray;
 
 
+  function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
+  var
+    HT: TKMHouseType;
+  begin
+    Result := False;
+    for HT := HOUSE_MIN to HOUSE_MAX do
+      if not gHands[fOwner].Locks.HouseBlocked[HT]
+        AND gHands[fOwner].Locks.HouseCanBuild(HT)
+        AND (gHands[fOwner].Stats.GetHouseTotal(HT) = 0) then
+      begin
+        aHT := HT;
+        Result := True;
+        Exit;
+      end;
+  end;
+
   function GetHouseToUnlock(var aUnlockProcedure: Boolean; var aHT, aFollowingHouse: TKMHouseType): Boolean;
   var
     Output: Boolean;
@@ -920,6 +936,10 @@ var
     begin
       Output := BuildHouse(True, True, False, FollowingHouse);
     end;
+    //else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+    //begin
+    //  Output := BuildHouse(True, False, False, aHT);
+    //end;
     Result := Output;
   end;
 
@@ -1013,7 +1033,7 @@ var
         // Make sure that next cycle will not scan this house in this tick
         RequiredHouses[ PRODUCTION[WT] ] := 0;
         // Try build required houses
-        if (AddToConstruction(PRODUCTION[WT], False, True) = cs_HousePlaced) then
+        if (AddToConstruction(PRODUCTION[WT], False, False) = cs_HousePlaced) then
         begin
           MaxPlans := 0; // This house is critical so dont plan anything else
           Exit;
@@ -1039,24 +1059,30 @@ var
     GOLD_SHORTAGE_IDX = 7;
     FULL_SET = 28;
   var
-    I,K, MaxIdx, Overflow: Integer;
+    I,K, MinIdx, MaxIdx, Overflow: Integer;
     Gain, BestGain: Single;
     HT, BestHT: TKMHouseType;
     ReservationsCntArr: array[HOUSE_MIN..HOUSE_MAX] of Word;
   begin
+    MinIdx := 0;
     FillChar(ReservationsCntArr, SizeOf(ReservationsCntArr), #0);
     if fStoneShortage then
       MaxIdx := STONE_SHORTAGE_IDX
+    else if fWoodShortage then
+    begin
+      MaxIdx := WOOD_SHORTAGE_IDX;
+      MinIdx := TRUNK_SHORTAGE_IDX;
+      if (gHands[fOwner].Stats.GetHouseTotal(htWoodcutters) > 0) then
+        MinIdx := WOOD_SHORTAGE_IDX;
+    end
     else if fTrunkShortage then
       MaxIdx := TRUNK_SHORTAGE_IDX
-    else if fWoodShortage then
-      MaxIdx := WOOD_SHORTAGE_IDX
     else if fGoldShortage then
       MaxIdx := GOLD_SHORTAGE_IDX
     else
       MaxIdx := FULL_SET;
 
-    for I := 0 to MaxIdx do
+    for I := MinIdx to MaxIdx do
     begin
       HT := RESERVATION_FullSet[I];
       for K := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
@@ -1065,12 +1091,13 @@ var
             Inc(ReservationsCntArr[HT], 1);
     end;
 
+    BestHT := htNone; // I make compiler happy
     Overflow := 0;
     while (MaxPlace > 0) AND (Overflow <= MaxIdx) do
     begin
       Overflow := Overflow + 1;
       BestGain := 0;
-      for I := 0 to MaxIdx do
+      for I := MinIdx to MaxIdx do
         if (ReservationsCntArr[ RESERVATION_FullSet[I] ] > 0) then
         begin
           HT := RESERVATION_FullSet[I];
@@ -1170,7 +1197,7 @@ begin
   // Build woodcutter when is forest near new house (or when is woodcutter destroyed but this is not primarly intended)
   HT := htWoodcutters;
   if (gHands[fOwner].Stats.GetHouseTotal(HT) < fPlanner.PlannedHouses[HT].Count)
-    AND (not fGoldShortage OR fTrunkShortage)
+    AND ((fTrunkShortage OR not fGoldShortage) AND not fWoodShortage)
     AND not fStoneShortage
     AND (AddToConstruction(HT, True, True) = cs_HousePlaced) then
   begin
@@ -1330,7 +1357,8 @@ begin
   // Don't build shortcuts with low Exhaustion
   if   (fPredictor.WareBalance[wt_Stone].Exhaustion < 60)
     //OR (fPredictor.WareBalance[wt_Wood].Exhaustion < 60)
-    OR (fPredictor.WareBalance[wt_Gold].Exhaustion < 60) then
+    OR (fPredictor.WareBalance[wt_Gold].Exhaustion < 60)
+    OR (gHands[fOwner].Stats.GetHouseQty(htSchool) = 0) then
     Exit;
 
   // Check if there is free build node

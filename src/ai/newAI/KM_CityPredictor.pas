@@ -478,7 +478,7 @@ begin
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
   // Wood weapons
-  MaxWoodWeapProd := Max(MIN_WOOD_PRODUCTION,
+  MaxWoodWeapProd := Max(MIN_WOOD_PRODUCTION + Byte(MaxIronWeapProd = 0),
                          Min(MAX_WOOD_PRODUCTION,
                              Max(0, MaxWoodWeapProd - MaxIronWeapProd) * UpdatedPeaceFactor // Consider also peace time
                             )
