@@ -51,7 +51,9 @@ type
     fMapXc, fMapYc: Integer; //Cursor position cell
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
-    function GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean; aUseOnlyTileOwnTK: Boolean = False; aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
+    function GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+    function GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+    function GetTileCornersTKinds(aCell: TKMPoint; aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
     procedure CheckpointToTerrain;
     procedure BrushTile(const X, Y: Integer);
     procedure BrushTerrainTile(const X, Y: Integer; aTerKind: TKMTerrainKind);
@@ -495,9 +497,22 @@ begin
 end;
 
 
-function TKMTerrainPainter.GetTileCornersTerrainKinds(aCell: TKMPoint; aUseTempLand: Boolean;
-                                                      aUseOnlyTileOwnTK: Boolean = False;
-                                                      aUseOnlyNodeTK: Boolean = False): TKMTerrainKindsArray;
+//Get tile corners terkinds (TKinds, based on TILE_CORNERS_TERRAIN_KINDS or generated mask)
+function TKMTerrainPainter.GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+begin
+  Result := GetTileCornersTKinds(aCell, True);
+end;
+
+
+function TKMTerrainPainter.GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
+begin
+  Result := GetTileCornersTKinds(aCell, False, True);
+end;
+
+
+function TKMTerrainPainter.GetTileCornersTKinds(aCell: TKMPoint;
+                                                      aGetOnlyTileCornersTK: Boolean = False;
+                                                      aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
 var
   TerKindFound: array [0..3] of Boolean;
 
@@ -506,7 +521,7 @@ var
     TerKind: TKMTerrainKind;
   begin
     if not gTerrain.VerticeInMapCoords(aX, aY)
-      or (not aUseOnlyNodeTK and aUseOnlyTileOwnTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
+      or (aGetOnlyTileCornersTK and not BrushAreaTerKindContains(KMPoint(aX, aY))) then
       Exit;
 
     TerKind := LandTerKind[aY,aX].TerKind;
@@ -522,15 +537,19 @@ var
   Tile: TKMTerrainTileBasic;
 
 begin
+  Assert(not (aGetOnlyTileCornersTK and aGetOnlyLandNodeTK)); //At least 1 of those parameters should be False
+
   SetLength(Result, 4);
 
+  //Init with tkCustom
   for I := 0 to 3 do
   begin
     TerKindFound[I] := False;
     Result[I] := tkCustom;
   end;
 
-  if not aUseOnlyTileOwnTK then
+  //Get tile corners TKinds based on LandTerKind
+  if not aGetOnlyTileCornersTK then
   begin
     CheckTerKind(aCell.X,   aCell.Y,   0);
     CheckTerKind(aCell.X+1, aCell.Y,   1);
@@ -538,9 +557,10 @@ begin
     CheckTerKind(aCell.X,   aCell.Y+1, 3);
   end;
 
-  if not aUseOnlyNodeTK and gTerrain.TileInMapCoords(aCell) then
+  //Get tile corners terkinds (TKinds, based on TILE_CORNERS_TERRAIN_KINDS or generated mask)
+  if not aGetOnlyLandNodeTK and gTerrain.TileInMapCoords(aCell) then
   begin
-    if aUseTempLand then
+    if fUseTempLand then
       Tile := fTempLand[aCell.Y, aCell.X]
     else
       Tile := GetTerrainTileBasic(gTerrain.Land[aCell.Y, aCell.X]);
@@ -861,7 +881,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
         //so f.e. for 0 corner, and tile 'above' (tile to the top from tasrget cell(aCell)) we have to get terrainKind from corner 3
         //3 = 1 (I, start from top left alwaysm top tile is the 2nd tile) + 0 (aCorner) + 2
         //and so on
-        TerKinds[K] := GetTileCornersTerrainKinds(RectCorners[J], fUseTempLand)[(I+aCorner+2) mod 4];
+        TerKinds[K] := GetTileCornersTKinds(RectCorners[J])[(I+aCorner+2) mod 4];
         // Find diagTerKind, as its preferrable over other cells
         if (aCell.X <> RectCorners[J].X) and (aCell.Y <> RectCorners[J].Y) then
           DiagTerKind := TerKinds[K];
@@ -943,13 +963,13 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
     LayerOrder: array of TKMTileMaskInfo;
     MaskType: TKMTileMaskType;
   begin
-    TileNodeTerKinds := GetTileCornersTerrainKinds(KMPoint(X,Y), fUseTempLand, False, True);
+    TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
 
-    for I := 0 to 3 do
-      if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
-        Exit;
+      for I := 0 to 3 do
+        if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
+          Exit;
 
-    TileOwnTerKinds := GetTileCornersTerrainKinds(KMPoint(X,Y), fUseTempLand, True);
+    TileOwnTerKinds := GetTileOwnCornersTKinds(KMPoint(X,Y));
     AroundTerKinds := GetTerKindsAround(KMPoint(X,Y));
 
     for I := 0 to 3 do
