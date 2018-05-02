@@ -107,10 +107,6 @@ begin
   RandomElements.OnClick := BrushChange;
   RandomElements.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_RANDOM, SC_MAPEDIT_SUB_MENU_ACTION_3);
 
-  ForcePaint := TKMCheckBox.Create(Panel_Brushes, 0, 315, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fnt_Metal);
-  ForcePaint.OnClick := BrushChange;
-  ForcePaint.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_FORCE_PAINT_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
-
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
     BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 335, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
@@ -126,6 +122,10 @@ begin
   MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 335, 34, 34, 673, rxGui);
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
+
+  ForcePaint := TKMCheckBox.Create(Panel_Brushes, 0, 374, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fnt_Metal);
+  ForcePaint.OnClick := BrushChange;
+  ForcePaint.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_FORCE_PAINT_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
 
   fSubMenuActionsEvents[0] := BrushChange;
   fSubMenuActionsEvents[1] := BrushChange;
