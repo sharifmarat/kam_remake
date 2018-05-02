@@ -973,7 +973,6 @@ begin
 
   //Init random seed for all the players
   fNetGameOptions.RandomSeed := RandomRange(1, 2147483646);
-  gLog.AddTime('Game Seed: ' + IntToStr(fNetGameOptions.RandomSeed));
 
   //Let everyone start with final version of fNetPlayers and fNetGameOptions
   SendGameOptions;

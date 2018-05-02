@@ -185,6 +185,8 @@ type
     property MapEditor: TKMMapEditor read fMapEditor;
     property TextMission: TKMTextLibraryMulti read fTextMission;
 
+    procedure SetSeed(aSeed: Integer);
+
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
@@ -258,7 +260,6 @@ begin
   fGameSpeedChangeTime := TimeGet;
 
   //Here comes terrain/mission init
-  SetKaMSeed(4); //Every time the game will be the same as previous. Good for debug.
   gTerrain := TKMTerrain.Create;
   gHands := TKMHandsCollection.Create;
   gAIFields := TKMAIFields.Create;
@@ -501,9 +502,9 @@ begin
 
   //Random after StartGame and ViewReplay should match
   if IsMultiplayer then
-    SetKaMSeed(fNetworking.NetGameOptions.RandomSeed)
+    SetSeed(fNetworking.NetGameOptions.RandomSeed)
   else
-    SetKaMSeed(RandomRange(1, 2147483646));
+    SetSeed(RandomRange(1, 2147483646));
 
   //We need to make basesave.bas since we don't know the savegame name
   //until after user saves it, but we need to attach replay base to it.
@@ -1667,7 +1668,7 @@ begin
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
-    SetKaMSeed(LoadedSeed); //Seed is used in MultiplayerRig when changing humans to AIs through GIP for replay
+    SetSeed(LoadedSeed); //Seed is used in MultiplayerRig when changing humans to AIs through GIP for replay
 
     gLog.AddTime('Loading game', True);
   finally
@@ -1815,6 +1816,17 @@ begin
       fGameInputProcess.CmdGame(GICType, UTCNow);
       fLastAutosaveTime := TimeGet;
     end;
+end;
+
+
+procedure TKMGame.SetSeed(aSeed: Integer);
+begin
+  if USE_CUSTOM_SEED then
+    aSeed := CUSTOM_SEED_VALUE;
+
+  gLog.AddTime('Set game seed: ' + IntToStr(aSeed));
+
+  KM_CommonUtils.SetKaMSeed(aSeed);
 end;
 
 

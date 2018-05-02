@@ -161,6 +161,8 @@ var
   DO_PERF_LOGGING       :Boolean = False; //Write each ticks time to log
   MP_RESULTS_IN_SP      :Boolean = False; //Display each players stats in SP
   {Gameplay cheats}
+  USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
+  CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
   UNLOCK_CAMPAIGN_MAPS  :Boolean = False; //Unlock more maps for debug
   REDUCE_SHOOTING_RANGE :Boolean = False; //Reduce shooting range for debug
   MULTIPLAYER_CHEATS    :Boolean = False; //Allow cheats and debug overlays (e.g. CanWalk) in Multiplayer
