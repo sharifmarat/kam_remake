@@ -1143,3 +1143,10 @@
 1194:Ctrl + Mouse wheel
 1195:Alt + Mouse wheel
 1196:Shift + Mouse wheel
+1197:Force paint
+1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
+1199:Magic brush - automatically fix all generated or missing tile transitions with chosen mask
+1200:No mask - use exiting tiles for transitions
+1201:Softest mask - use automatically created transitions
+1202:Soft mask - use automatically created transitions
+1203:Hard mask - use automatically created transitions
