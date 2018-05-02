@@ -73,6 +73,7 @@ type
   public
     LandTerKind: array of array of TKMPainterTile;
     RandomizeTiling: Boolean;
+    ForcePaint: Boolean;
     procedure InitEmpty;
 
     procedure LoadFromFile(const aFileName: UnicodeString);
@@ -397,7 +398,7 @@ begin
 //    or (LandTerKind[pY  ,pX+1].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX].TerKind <> tkCustom)
 //    or (LandTerKind[pY+1,pX+1].TerKind <> tkCustom) then
-  if gTerrain.Land[pY,pX].IsCustom then Exit;
+  if not ForcePaint and gTerrain.Land[pY,pX].IsCustom then Exit;
 
   A := (LandTerKind[pY    , pX    ].TerKind);
   B := (LandTerKind[pY    , pX + 1].TerKind);
@@ -965,9 +966,9 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
   begin
     TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
 
-      for I := 0 to 3 do
-        if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
-          Exit;
+    for I := 0 to 3 do
+      if TileNodeTerKinds[I] = tkCustom then  // Do not set masks for tiles with at least 1 custom real corner
+        Exit;
 
     TileOwnTerKinds := GetTileOwnCornersTKinds(KMPoint(X,Y));
     AroundTerKinds := GetTerKindsAround(KMPoint(X,Y));
@@ -1014,7 +1015,7 @@ var
   MaskKind: TKMTileMaskKind;
   GenInfo: TKMGenTerrainInfo;
 begin
-  if not gTerrain.TileInMapCoords(X, Y) or gTerrain.Land[Y,X].IsCustom then Exit;
+  if not gTerrain.TileInMapCoords(X, Y) or (not ForcePaint and gTerrain.Land[Y,X].IsCustom) then Exit;
 
   MaskKind := TKMTileMaskKind(gGameCursor.MapEdBrushMask);
   if (MaskKind = mkNone) and not fReplaceLayers then Exit;

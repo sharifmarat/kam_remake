@@ -28,7 +28,7 @@ type
       BrushTable: array [0..6, 0..4] of TKMButtonFlat;
       BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
       MagicBrush: TKMButtonFlat;
-      BrushRandom: TKMCheckBox;
+      RandomElements, ForcePaint: TKMCheckBox;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -107,6 +107,10 @@ begin
   RandomElements.OnClick := BrushChange;
   RandomElements.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_RANDOM, SC_MAPEDIT_SUB_MENU_ACTION_3);
 
+  ForcePaint := TKMCheckBox.Create(Panel_Brushes, 0, 315, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fnt_Metal);
+  ForcePaint.OnClick := BrushChange;
+  ForcePaint.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_FORCE_PAINT_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
+
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
     BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 335, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
@@ -126,10 +130,12 @@ begin
   fSubMenuActionsEvents[0] := BrushChange;
   fSubMenuActionsEvents[1] := BrushChange;
   fSubMenuActionsEvents[2] := BrushChange;
+  fSubMenuActionsEvents[3] := BrushChange;
 
   fSubMenuActionsCtrls[0] := BrushCircle;
   fSubMenuActionsCtrls[1] := BrushSquare;
   fSubMenuActionsCtrls[2] := RandomElements;
+  fSubMenuActionsCtrls[3] := ForcePaint;
 end;
 
 
@@ -139,7 +145,8 @@ begin
     gGameCursor.Mode := cmBrush;    // This will reset Tag
 
   gGameCursor.MapEdSize := BrushSize.Position;
-  gGame.MapEditor.TerrainPainter.RandomizeTiling := BrushRandom.Checked;
+  gGame.MapEditor.TerrainPainter.RandomizeTiling := RandomElements.Checked;
+  gGame.MapEditor.TerrainPainter.ForcePaint := ForcePaint.Checked;
 
   if Sender = MagicBrush then
   begin

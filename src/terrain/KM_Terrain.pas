@@ -61,7 +61,7 @@ type
 //    StoneLayer: TKMTerrainLayer;
     Height: Byte;
     Obj: Word;
-    IsCustom: Boolean;
+    IsCustom: Boolean; //Custom tile (rotated tile, atm)
 
     //Age of tree, another independent variable since trees can grow on fields
     TreeAge: Byte; //Not init=0 .. Full=TreeAgeFull Depending on this tree gets older and thus could be chopped
