@@ -460,9 +460,9 @@ begin
   I := 0;
   // Please do NOT break this order and style use alt + shift + click if you want select / edit multiple colums at once!!!
 
-  GA_EYE_GetForests_RndOwnLim                       := Max(1, aIdv.Gene[Incr(I)] * 250);
-  GA_EYE_GetForests_InflLimit                       := Max(1, aIdv.Gene[Incr(I)] * 250);
-  GA_EYE_GetForests_OwnLimit                        := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
+//  GA_EYE_GetForests_RndOwnLim                       := Max(1, aIdv.Gene[Incr(I)] * 250);
+//  GA_EYE_GetForests_InflLimit                       := Max(1, aIdv.Gene[Incr(I)] * 250);
+//  GA_EYE_GetForests_OwnLimit                        := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
   //GA_EYE_GetForests_MinTrees                        := Max(1, aIdv.Gene[Incr(I)] * 5);
   //GA_EYE_GetForests_Radius                          := Max(4, aIdv.Gene[Incr(I)] * 2 + 4);
   GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
@@ -475,9 +475,9 @@ begin
 
   if aLogIt then
   begin
-    fLogPar.AddTime('GA_EYE_GetForests_RndOwnLim                     : Single = ' + FloatToStr( GA_EYE_GetForests_RndOwnLim                   ) + ';');
-    fLogPar.AddTime('GA_EYE_GetForests_InflLimit                     : Single = ' + FloatToStr( GA_EYE_GetForests_InflLimit                   ) + ';');
-    fLogPar.AddTime('GA_EYE_GetForests_OwnLimit                      : Single = ' + FloatToStr( GA_EYE_GetForests_OwnLimit                    ) + ';');
+//    fLogPar.AddTime('GA_EYE_GetForests_RndOwnLim                     : Single = ' + FloatToStr( GA_EYE_GetForests_RndOwnLim                   ) + ';');
+//    fLogPar.AddTime('GA_EYE_GetForests_InflLimit                     : Single = ' + FloatToStr( GA_EYE_GetForests_InflLimit                   ) + ';');
+//    fLogPar.AddTime('GA_EYE_GetForests_OwnLimit                      : Single = ' + FloatToStr( GA_EYE_GetForests_OwnLimit                    ) + ';');
     //fLogPar.AddTime('GA_EYE_GetForests_MinTrees                      : Single = ' + FloatToStr( GA_EYE_GetForests_MinTrees                    ) + ';');
     //fLogPar.AddTime('GA_EYE_GetForests_Radius                        : Single = ' + FloatToStr( GA_EYE_GetForests_Radius                      ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_TreeCnt     ) + ';');
@@ -605,7 +605,7 @@ begin
   GA_PLANNER_SnapCrit_SnapToFields                  := Max(1, aIdv.Gene[Incr(I)] * 50);
   GA_PLANNER_SnapCrit_SnapToRoads                   := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
   GA_PLANNER_SnapCrit_ClearEntrance                 := Max(1, aIdv.Gene[Incr(I)] * 50 + 50);
-  GA_PLANNER_FindPlaceForHouse_CloseWorker          := Max(1, aIdv.Gene[Incr(I)] * 100);
+//  GA_PLANNER_FindPlaceForHouse_CloseWorker          := Max(1, aIdv.Gene[Incr(I)] * 100);
   GA_PLANNER_FindPlaceForHouse_SnapCrit             := Max(1, aIdv.Gene[Incr(I)] * 50);
   GA_PLANNER_FindPlaceForHouse_DistCrit             := Max(1, aIdv.Gene[Incr(I)] * 50);
   GA_PLANNER_FindPlaceForHouse_CityCenter           := Max(1, aIdv.Gene[Incr(I)] * 75);
@@ -627,7 +627,7 @@ begin
     fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToFields                    : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToFields                  ) + ';');
     fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToRoads                     : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToRoads                   ) + ';');
     fLogPar.AddTime('GA_PLANNER_SnapCrit_ClearEntrance                   : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_ClearEntrance                 ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_CloseWorker          ) + ';');
+//    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_CloseWorker          ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_SnapCrit             ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_DistCrit             ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_CityCenter           ) + ';');

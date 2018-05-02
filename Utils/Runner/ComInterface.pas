@@ -1,6 +1,8 @@
 unit ComInterface;
 
+{$IFDEF FPC}
 {$mode delphi}
+{$ENDIF}
 
 interface
 uses
