@@ -1368,13 +1368,13 @@ begin
 
   for iD := 1 to fDemandCount do
     if (fDemand[iD].Ware <> wt_None)
-    and (fDemand[iD].Importance >= BestImportance) then //Skip any less important than the best we found
+      and (fDemand[iD].Importance >= BestImportance) then //Skip any less important than the best we found
       for iO := 1 to fOfferCount do
         if ((aHouse = nil) or (fOffer[iO].Loc_House = aHouse))  //Make sure from house is the one requested
-        and (fOffer[iO].Ware <> wt_None)
-        and PermitDelivery(iO, iD, aSerf)
-        and TryCalculateBid(iO, iD, Bid, aSerf)
-        and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
+          and (fOffer[iO].Ware <> wt_None)
+          and PermitDelivery(iO, iD, aSerf)
+          and TryCalculateBid(iO, iD, Bid, aSerf)
+          and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then
         begin
           BestO := iO;
           BestD := iD;
