@@ -935,11 +935,11 @@ var
     else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
     begin
       Output := BuildHouse(True, True, False, FollowingHouse);
-    end
-    else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
-    begin
-      Output := BuildHouse(True, False, False, aHT);
     end;
+    //else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+    //begin
+    //  Output := BuildHouse(True, False, False, aHT);
+    //end;
     Result := Output;
   end;
 
@@ -1091,6 +1091,7 @@ var
             Inc(ReservationsCntArr[HT], 1);
     end;
 
+    BestHT := htNone; // I make compiler happy
     Overflow := 0;
     while (MaxPlace > 0) AND (Overflow <= MaxIdx) do
     begin
