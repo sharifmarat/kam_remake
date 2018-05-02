@@ -1756,6 +1756,18 @@ end;
 
 
 procedure TKMTerrainPainter.RotateTile(const aLoc: TKMPoint);
+
+  procedure RotateCorners(var aLayer: TKMTerrainLayer);
+  var
+    C: Byte;
+    Corners: TKMByteSet;
+  begin
+    Corners := aLayer.Corners;
+    aLayer.Corners := [];
+    for C in Corners do
+      Include(aLayer.Corners, (C + 1) mod 4);
+  end;
+
 var
   L: Integer;
 begin
@@ -1763,8 +1775,13 @@ begin
 
   gTerrain.Land[aLoc.Y, aLoc.X].IsCustom := True;
   gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer.Rotation := (gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer.Rotation + 1) mod 4;
+  RotateCorners(gTerrain.Land[aLoc.Y, aLoc.X].BaseLayer);
+
   for L := 0 to gTerrain.Land[aLoc.Y, aLoc.X].LayersCnt - 1 do
+  begin
     gTerrain.Land[aLoc.Y, aLoc.X].Layer[L].Rotation := (gTerrain.Land[aLoc.Y, aLoc.X].Layer[L].Rotation + 1) mod 4;
+    RotateCorners(gTerrain.Land[aLoc.Y, aLoc.X].Layer[L]);
+  end;
 
   gTerrain.UpdatePassability(aLoc);
   MakeCheckpoint;
