@@ -1,6 +1,8 @@
 unit ManagerInterface;
 
+{$IFDEF FPC}
 {$mode delphi}
+{$ENDIF}
 
 interface
 uses

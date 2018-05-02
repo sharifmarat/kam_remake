@@ -43,7 +43,7 @@ begin
   gMySpectator := TKMSpectator.Create(0);
 
   fUnit := TKMUnit.Create(0, ut_Serf, KMPoint(8, 10), 0);
-  fHouse := TKMHouse.Create(0, ht_Store, 9, 9, 0, hbs_Done);
+  fHouse := TKMHouse.Create(0, htStore, 9, 9, 0, hbs_Done);
   FUnitActionGoInOut := TKMUnitActionGoInOut.Create(fUnit, ua_Walk, gd_GoInside, fHouse);
 end;
 

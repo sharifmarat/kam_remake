@@ -166,7 +166,7 @@ begin
                           Result := Result or fToHouse.IsDestroyed
                                    or (not fForceDelivery and fToHouse.ShouldAbandonDelivery(fWareType));
                         end;
-    dk_ToConstruction:  if fPhase <= 6 then
+    dk_ToConstruction:  if fPhase <= 7 then
                           Result := Result or fToHouse.IsDestroyed;
     dk_ToUnit:          if fPhase <= 6 then
                           Result := Result or (fToUnit = nil) or fToUnit.IsDeadOrDying;

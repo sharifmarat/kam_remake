@@ -32,6 +32,7 @@ type
 
     // Drag object feature fields
     fDragObjectReady: Boolean;   // Ready to start drag object
+    fDragObjMousePosStart: TKMPoint;
     fDragingObject: Boolean;     // Flag when drag object is happening
     fDragObject: TObject;        // Object to drag
     fDragHouseOffset: TKMPoint;  // Offset for house position, to let grab house with any of its points
@@ -826,6 +827,7 @@ begin
       if Obj is TKMHouse then
         fDragHouseOffset := KMPointSubtract(TKMHouse(Obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
       fDragObjectReady := True;
+      fDragObjMousePosStart := KMPoint(X,Y);
     end;
   end;
 
@@ -854,13 +856,15 @@ end;
 
 
 procedure TKMapEdInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
+const
+  DRAG_OBJECT_MOUSE_MOVE_DIST = 15; //distance in pixels, when drag object mode starts
 begin
   inherited MouseMove(Shift, X, Y, aHandled);
   if aHandled then Exit;
 
   aHandled := True;
 
-  if fDragObjectReady then
+  if fDragObjectReady and (KMLength(fDragObjMousePosStart, KMPoint(X,Y)) > DRAG_OBJECT_MOUSE_MOVE_DIST) then
   begin
     if not (ssLeft in Shift) then
     begin
@@ -1043,6 +1047,7 @@ begin
   fDragObjectReady := False;
   fDragingObject := False;
   fDragHouseOffset := KMPOINT_ZERO;
+  fDragObjMousePosStart := KMPOINT_ZERO;
   fDragObject := nil;
 
   if gRes.Cursors.Cursor = kmc_Drag then

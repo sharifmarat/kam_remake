@@ -78,6 +78,7 @@ type
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     function GetControlledHandIndex: TKMHandIndex;
     procedure IncGameTick;
+    procedure CheckPauseGameAtTick;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -184,6 +185,8 @@ type
     property GamePlayInterface: TKMGamePlayInterface read fGamePlayInterface;
     property MapEditor: TKMMapEditor read fMapEditor;
     property TextMission: TKMTextLibraryMulti read fTextMission;
+
+    procedure SetSeed(aSeed: Integer);
 
     procedure Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
     {$IFDEF USE_MAD_EXCEPT}
@@ -501,9 +504,9 @@ begin
 
   //Random after StartGame and ViewReplay should match
   if IsMultiplayer then
-    SetKaMSeed(fNetworking.NetGameOptions.RandomSeed)
+    SetSeed(fNetworking.NetGameOptions.RandomSeed)
   else
-    SetKaMSeed(RandomRange(1, 2147483646));
+    SetSeed(RandomRange(1, 2147483646));
 
   //We need to make basesave.bas since we don't know the savegame name
   //until after user saves it, but we need to attach replay base to it.
@@ -1667,7 +1670,7 @@ begin
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
-    SetKaMSeed(LoadedSeed); //Seed is used in MultiplayerRig when changing humans to AIs through GIP for replay
+    SetSeed(LoadedSeed); //Seed is used in MultiplayerRig when changing humans to AIs through GIP for replay
 
     gLog.AddTime('Loading game', True);
   finally
@@ -1818,6 +1821,17 @@ begin
 end;
 
 
+procedure TKMGame.SetSeed(aSeed: Integer);
+begin
+  if USE_CUSTOM_SEED then
+    aSeed := CUSTOM_SEED_VALUE;
+
+  gLog.AddTime('Set game seed: ' + IntToStr(aSeed));
+
+  KM_CommonUtils.SetKaMSeed(aSeed);
+end;
+
+
 procedure TKMGame.IncGameTick;
 begin
   Inc(fGameTickCount); //Thats our tick counter for gameplay events
@@ -1826,9 +1840,39 @@ begin
 end;
 
 
-function TKMGame.PlayNextTick: Boolean;
+procedure TKMGame.CheckPauseGameAtTick;
+
+  procedure SetReplayPause;
+  begin
+    IsPaused := True;
+    //Set replay UI to paused state, sync replay timer and other UI elements
+    fGamePlayInterface.SetButtons(False);
+    fGamePlayInterface.UpdateState(fGameTickCount);
+  end;
+
 var
-  PeaceTimeLeft: Cardinal;
+  PeaceTimeLeft, PTTicks: Cardinal;
+begin
+  PeaceTimeLeft := 0;
+  PTTicks := fGameOptions.Peacetime * 600;
+
+  if (fGameMode = gmReplayMulti) and (PTTicks >= fGameTickCount) then
+    PeaceTimeLeft := PTTicks - fGameTickCount;
+
+  if fGameTickCount = PAUSE_GAME_AT_TICK then
+  begin
+    if IsReplay then
+      SetReplayPause
+    else
+      fGamePlayInterface.SetPause(True);
+  end;
+
+  if (PeaceTimeLeft = 1) and gGameApp.GameSettings.ReplayAutopause then
+    SetReplayPause;
+end;
+
+
+function TKMGame.PlayNextTick: Boolean;
 begin
   Result := False;
   //Some PCs seem to change 8087CW randomly between events like Timers and OnMouse*,
@@ -1853,10 +1897,11 @@ begin
 
                       if (fGameMode in [gmMulti, gmMultiSpectate]) then
                         fNetworking.LastProcessedTick := fGameTickCount;
+
                       //Tell the master server about our game on the specific tick (host only)
                       if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
-                      and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
-                      or ((fMissionMode = mm_Tactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
+                        and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
+                        or ((fMissionMode = mm_Tactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
                         fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                       fScripting.UpdateState;
@@ -1864,12 +1909,15 @@ begin
                       gTerrain.UpdateState;
                       gAIFields.UpdateState(fGameTickCount);
                       gHands.UpdateState(fGameTickCount); //Quite slow
+
                       if gGame = nil then Exit; //Quit the update if game was stopped for some reason
+
                       gMySpectator.UpdateState(fGameTickCount);
                       fPathfinding.UpdateState;
                       gProjectiles.UpdateState; //If game has stopped it's NIL
 
                       fGameInputProcess.RunningTimer(fGameTickCount); //GIP_Multi issues all commands for this tick
+
                       //Returning to the lobby (through MP GIP) ends the game
                       if gGame = nil then Exit;
 
@@ -1886,6 +1934,8 @@ begin
                         IssueAutosaveCommand;
 
                       if DO_PERF_LOGGING then fPerfLog.LeaveSection(psTick);
+
+                      CheckPauseGameAtTick;
 
                       Result := True;
                     end
@@ -1924,24 +1974,10 @@ begin
                     end;
 
                     if DoGameHold then
-                    begin
                       Exit;
-                    end;
 
-                    if fGameOptions.Peacetime * 600 < fGameTickCount then
-                      PeaceTimeLeft := 0
-                    else
-                      PeaceTimeLeft := fGameOptions.Peacetime * 600 - fGameTickCount;
+                    CheckPauseGameAtTick;
 
-                    if (PeaceTimeLeft = 1)
-                      and (fGameMode = gmReplayMulti)
-                      and (gGameApp.GameSettings.ReplayAutopause) then
-                    begin
-                      IsPaused := True;
-                      //Set replay UI to paused state, sync replay timer and other UI elements
-                      fGamePlayInterface.SetButtons(False);
-                      fGamePlayInterface.UpdateState(fGameTickCount);
-                    end;
                     Result := True;
                   end;
     gmMapEd:   begin
