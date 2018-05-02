@@ -1865,6 +1865,7 @@ begin
 
                       if (fGameMode in [gmMulti, gmMultiSpectate]) then
                         fNetworking.LastProcessedTick := fGameTickCount;
+
                       //Tell the master server about our game on the specific tick (host only)
                       if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
                       and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
@@ -1876,12 +1877,15 @@ begin
                       gTerrain.UpdateState;
                       gAIFields.UpdateState(fGameTickCount);
                       gHands.UpdateState(fGameTickCount); //Quite slow
+
                       if gGame = nil then Exit; //Quit the update if game was stopped for some reason
+
                       gMySpectator.UpdateState(fGameTickCount);
                       fPathfinding.UpdateState;
                       gProjectiles.UpdateState; //If game has stopped it's NIL
 
                       fGameInputProcess.RunningTimer(fGameTickCount); //GIP_Multi issues all commands for this tick
+
                       //Returning to the lobby (through MP GIP) ends the game
                       if gGame = nil then Exit;
 
@@ -1936,9 +1940,7 @@ begin
                     end;
 
                     if DoGameHold then
-                    begin
                       Exit;
-                    end;
 
                     if fGameOptions.Peacetime * 600 < fGameTickCount then
                       PeaceTimeLeft := 0
