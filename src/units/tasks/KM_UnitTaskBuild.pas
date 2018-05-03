@@ -98,8 +98,9 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
-    function WalkShouldAbandon:boolean; override;
-    function Execute:TKMTaskResult; override;
+    function WalkShouldAbandon: Boolean; override;
+    function CouldBeCancelled: Boolean; override;
+    function Execute: TKMTaskResult; override;
     procedure Save(SaveStream:TKMemoryStream); override;
   end;
 
@@ -115,6 +116,7 @@ type
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
+    function CouldBeCancelled: Boolean; override;
     function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
@@ -132,6 +134,7 @@ begin
   Result := (fPhase - 1) //phase was increased at the end of execution
                    <= 0; //Allow cancel task only at walking phases
 end;
+
 
 { TKMTaskBuildRoad }
 constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; const aLoc:TKMPoint; aID:integer);
@@ -801,6 +804,13 @@ begin
 end;
 
 
+function TKMTaskBuildHouse.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                   <= 0; //Allow cancel task only at walking phases
+end;
+
+
 {Build the house}
 function TKMTaskBuildHouse.Execute: TKMTaskResult;
 begin
@@ -918,6 +928,13 @@ begin
   Result := fHouse.IsDestroyed
             or not fHouse.IsDamaged
             or not fHouse.BuildingRepair;
+end;
+
+
+function TKMTaskBuildHouseRepair.CouldBeCancelled: Boolean;
+begin
+  Result := (fPhase - 1) //phase was increased at the end of execution
+                   <= 0; //Allow cancel task only at walking phases
 end;
 
 
