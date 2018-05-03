@@ -12,11 +12,12 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 148;
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 65;
-  GA_EYE_GetForests_InflLimit      : Single = 231.602;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 219.373;
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 7.841;
+  GA_EYE_GetForests_InflLimit      : Single = 202.809;
   GA_EYE_GetForests_MinTrees       : Single = 3.11;
-  GA_EYE_GetForests_Radius         : Single = 5.0698;     
+  GA_EYE_GetForests_Radius         : Single = 5.0698;
+  GA_EYE_GetForests_MinRndSoil     : Single = 15.969; //0<->25
 
 
 type
@@ -34,7 +35,7 @@ type
   TKMBuildInfo = record
     Visited, VisitedHouse: Byte;
     State: TKMBuildState;
-    Next,Distance,Y: Word;
+    Next,Distance,DistanceInitPoint,Y: Word;
   end;
 
   TKMHouseRequirements = record
@@ -69,6 +70,7 @@ type
     procedure SetState(const aY,aX: Word; const aState: TKMBuildState);
     function GetStateFromIdx(const aIdx: Word): TKMBuildState;
     function GetDistance(const aPoint: TKMPoint): Word;
+    function GetDistanceInitPoint(const aPoint: TKMPoint): Word;
     function GetNext(const aY,aX: Word): Word;
     procedure SetNext(const aY,aX,aNext: Word);
 
@@ -97,6 +99,7 @@ type
     property State[const aY,aX: Word]: TKMBuildState read GetState write SetState;
     property StateIdx[const aIdx: Word]: TKMBuildState read GetStateFromIdx;
     property Distance[const aPoint: TKMPoint]: Word read GetDistance;
+    property DistanceInitPoint[const aPoint: TKMPoint]: Word read GetDistanceInitPoint;
     property Next[const aY,aX: Word]: Word read GetNext write SetNext;
     property Locs: TKMPointList read fLocs write fLocs;
     property HouseRequirements: TKMHouseRequirements read fHouseReq write fHouseReq;
@@ -1004,11 +1007,20 @@ begin
        AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
        AND (SparePointsCnt < MAX_SPARE_POINTS)
        AND (KaMRandom() > 0.7) then
+    begin
+      Point := Polygons[I].CenterPoint;
+      Cnt := 0;
+      for Y := Max(1,Point.Y-2) to Min(Point.Y+2,gTerrain.MapY-1) do
+        for X := Max(1,Point.X-2) to Min(Point.X+2,gTerrain.MapX-1) do
+          if gTerrain.TileIsSoil(X,Y) AND (BuildFF.State[Y,X] in [bsBuild, bsTree, bsForest]) then
+            Cnt := Cnt + 1;
+      if (Cnt > GA_EYE_GetForests_MinRndSoil) then
       begin
-        aForests.Add( Polygons[I].CenterPoint, 0 );
+        aForests.Add( Point, 0 );
         aForests.Tag2[ aForests.Count-1 ] := 0;
         SparePointsCnt := SparePointsCnt + 1;
       end;
+    end;
   end;
 end;
 
@@ -1229,6 +1241,10 @@ function TKMBuildFF.GetDistance(const aPoint: TKMPoint): Word;
 begin
   Result := fInfoArr[aPoint.Y*fMapX + aPoint.X].Distance;
 end;
+function TKMBuildFF.GetDistanceInitPoint(const aPoint: TKMPoint): Word;
+begin
+  Result := fInfoArr[aPoint.Y*fMapX + aPoint.X].DistanceInitPoint;
+end;
 
 function TKMBuildFF.GetNext(const aY,aX: Word): Word;
 begin
@@ -1328,7 +1344,7 @@ begin
   with fInfoArr[aIdx] do
   begin
     VisitedHouse := fVisitIdxHouse;
-    Distance := aDistance;
+    DistanceInitPoint := aDistance;
 
     Point := KMPoint(aX,aY);
     if CanBePlacedHouse(Point) then
@@ -1381,29 +1397,22 @@ begin
       for I:= Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
       begin
         Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,I]);
-        if (Dir = dirS) then
-          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
+        if (Dir = dirS) AND (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
             Exit;
-        if fHouseReq.IgnoreAvoidBuilding then
+        if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] = bsHousePlan) then
+            Exit;
+        if (Dir = dirE) then
         begin
-          if (State[Point.Y, Point.X] = bsHousePlan) then
-            Exit;
+          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
+            RightSideFree := False;
         end
-        else
+        else if (Dir = dirW) then
         begin
-          if (Dir = dirE) then
-          begin
-            if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
-              RightSideFree := False;
-          end
-          else if (Dir = dirW) then
-          begin
-            if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
-              LeftSideFree := False;
-          end;
-          if not (LeftSideFree OR RightSideFree) then
-            Exit;
+          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
+            LeftSideFree := False;
         end;
+        if not (LeftSideFree OR RightSideFree) then
+          Exit;
       end;
   end;
   Result := True;
@@ -1538,7 +1547,7 @@ var
 begin
   while RemoveFromQueue(X,Y,Idx) do
   begin
-    Distance := fInfoArr[Idx].Distance + 1;
+    Distance := fInfoArr[Idx].DistanceInitPoint + 1;
     if (Distance > MAX_DIST)
       OR (fHouseReq.MaxCnt <= fLocs.Count)
       OR (Distance > fHouseReq.MaxDist) then
