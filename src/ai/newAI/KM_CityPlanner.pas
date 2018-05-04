@@ -31,13 +31,13 @@ var
   GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = 59.41017;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 140.4927;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 0;
-  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 29.42858;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 127.5861;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 92.88818;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.906583;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 63.63115;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 177.171;
+  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 0.8647;
+  GA_PLANNER_FindPlaceForWoodcutter_EvalArea          : Single = 5.6298;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 150;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 136.839;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 5.8;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 184.006;
 
 
   GA_PATHFINDING_BasePrice    : Word = 6;
@@ -1422,7 +1422,7 @@ const
       IgnoreTrees := False;
       IgnoreAvoidBuilding := True;
       MaxCnt := 30;
-      MaxDist := 11;
+      MaxDist := 13;
     end;
 
     StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
@@ -1466,13 +1466,14 @@ const
           // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
           BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
           // Evaluate new locs
-          BestGain := 0;
+          BestGain := -10000000;
           for I := 0 to BuildFF.Locs.Count - 1 do
           begin
             Loc := BuildFF.Locs.Items[I];
-            Gain := 100000
-                   - BuildFF.Distance[Loc] * 200 // Snap crit is aggressive
-                   + SnapCrit(aHT, Loc);
+            Gain := - ObstaclesInHousePlan(htQuary,Loc) * 10
+                    - BuildFF.Distance[Loc] * 20 // Snap crit is aggressive
+                    - BuildFF.DistanceInitPoint[Loc] * 5
+                    + SnapCrit(aHT, Loc);
             if (Gain > BestGain) then
             begin
               BestGain := Gain;
@@ -1543,7 +1544,7 @@ begin
   for I := 0 to BuildFF.Locs.Count - 1 do
   begin
     Loc := BuildFF.Locs.Items[I];
-    Gain := - GA_PLANNER_PlaceWoodcutter_DistFromForest * BuildFF.Distance[Loc]
+    Gain := - GA_PLANNER_PlaceWoodcutter_DistFromForest * BuildFF.DistanceInitPoint[Loc]
            + DistCrit(htWoodcutters, Loc)
            + SnapCrit(htWoodcutters, Loc);
     if (Gain > BestGain) then // No need to check for coal tiles everything
