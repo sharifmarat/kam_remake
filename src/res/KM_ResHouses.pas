@@ -871,6 +871,8 @@ begin
     SL.Append(S);
   end;
 
+  ForceDirectories(ExtractFilePath(aPath));
+
   SL.SaveToFile(aPath);
   SL.Free;
 end;
