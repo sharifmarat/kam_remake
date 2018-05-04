@@ -145,6 +145,9 @@ type
 
 
   TKMStabilityTest = class(TKMRunnerCommon)
+  private
+    fTime: Cardinal;
+    fRuns: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown(); override;
@@ -1225,12 +1228,19 @@ procedure TKMStabilityTest.SetUp;
 begin
   inherited;
   // Do something before simulation
+  if gLog = nil then
+    gLog := TKMLog.Create(ExeDir + 'Utils\Runner\Runner_Log.log');
+
+  fTime := TimeGet;
 end;
 
 
 procedure TKMStabilityTest.TearDown;
 begin
   // Do something after simulation
+  gLog.AddTime('TimeAver: ' + IntToStr(Round(GetTimeSince(fTime)/fRuns)));
+  gLog.AddTime('Time: ' + IntToStr(GetTimeSince(fTime)));
+
   inherited;
 end;
 
@@ -1241,6 +1251,7 @@ const
 var
   aIdx: Integer;
 begin
+  Inc(fRuns);
   for aIdx := 0 to MAPS_COUNT - 1 do
   begin
 	  gGameApp.NewSingleMap(ExtractFilePath(ParamStr(0)) + '..\..\MapsMP\Cursed Ravine\Cursed Ravine.dat', 'GA');
