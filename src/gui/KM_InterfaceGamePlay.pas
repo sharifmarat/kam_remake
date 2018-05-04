@@ -2927,7 +2927,7 @@ var
 begin
   aHandled := True; // assume we handle all keys here
 
-  if gGame.IsPaused and ((fUIMode = umSP) or (PAUSE_GAME_AT_TICK >= 0)) then
+  if gGame.IsPaused and (fUIMode = umSP) then
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
@@ -2941,9 +2941,9 @@ begin
 
   if (fUIMode = umReplay) and (Key = gResKeys[SC_PAUSE].Key) then
   begin
-    if Button_ReplayPause.Enabled then
+    if Button_ReplayPause.Enabled or not gGame.IsPaused then
       ReplayClick(Button_ReplayPause)
-    else if Button_ReplayResume.Enabled then
+    else if Button_ReplayResume.Enabled or gGame.IsPaused then
       ReplayClick(Button_ReplayResume);
   end;
 
