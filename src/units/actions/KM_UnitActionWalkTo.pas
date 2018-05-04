@@ -1184,7 +1184,8 @@ end;
 procedure TKMUnitActionWalkTo.Paint;
 begin
   if SHOW_UNIT_ROUTES then
-    gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
+    if not (gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected = fUnit) then
+      gRenderAux.UnitRoute(NodeList, NodePos, byte(fUnit.UnitType));
 end;
 
 

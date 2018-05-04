@@ -91,6 +91,7 @@ type
     fQueueCount: Integer;
     fQueue: array of
     record
+      Serf: TKMUnitSerf;
       OfferID, DemandID: Integer;
       JobStatus: TKMDeliveryJobStatus; //Empty slot, resource Taken, job Done
       Item: TListItem;
@@ -101,9 +102,9 @@ type
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
     fSerfToOfferCache: TDictionary<TKMDeliveryBidKey, Single>;
+    {$ENDIF}
 
     fNodeList: TKMPointList; // Used to calc delivery bid
-    {$ENDIF}
 
     function AllowFormLogisticsChange: Boolean;
     procedure UpdateOfferItem(aI: Integer);
@@ -139,6 +140,7 @@ type
     function GetDeliveriesToHouseCnt(aHouse: TKMHouse; aWareType: TKMWareType): Integer;
 
     function GetAvailableDeliveriesCount: Integer;
+    procedure ReAssignDelivery(iQ: Integer; aSerf: TKMUnitSerf);
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
     procedure AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
     procedure CheckForBetterDemand(aDeliveryID: Integer; out aToHouse: TKMHouse; out aToUnit: TKMUnit; aSerf: TKMUnitSerf);
@@ -186,7 +188,7 @@ implementation
 uses
   Classes, SysUtils, Math, TypInfo,
   KM_Terrain,
-  KM_FormLogistics,
+  KM_FormLogistics, KM_UnitTaskDelivery,
   KM_Main, KM_Game, KM_Hand, KM_HandsCollection, KM_HouseBarracks, KM_HouseTownHall,
   KM_Resource, KM_ResUnits,
   KM_Log, KM_Utils, KM_CommonUtils;
@@ -410,9 +412,9 @@ begin
     fSerfToOfferCache := TDictionary<TKMDeliveryBidKey, Single>.Create(CacheKeyComparer);
   end;
 
+  {$ENDIF}
   if DELIVERY_BID_CALC_USE_PATHFINDING then
     fNodeList := TKMPointList.Create;
-  {$ENDIF}
 end;
 
 
@@ -424,10 +426,9 @@ begin
     FreeAndNil(fSerfToOfferCache);
     FreeAndNil(fOfferToDemandCache);
   end;
-  
+  {$ENDIF}
   if DELIVERY_BID_CALC_USE_PATHFINDING then
     FreeAndNil(fNodeList);
-  {$ENDIF}
 
   inherited;
 end;
@@ -960,9 +961,7 @@ end;
 function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single;
                                         aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
 var
-  {$IFDEF WDC}
   Distance: Single;
-  {$ENDIF}
   PassToUse: TKMTerrainPassability;
 begin
   PassToUse := aMainPass;
@@ -973,7 +972,6 @@ begin
     Result := gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0);
   end;
 
-  {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
   if DELIVERY_BID_CALC_USE_PATHFINDING and (Distance < BID_CALC_MAX_DIST_FOR_PATHF) then
   begin
@@ -988,7 +986,6 @@ begin
       Result := False;
   end
   else
-  {$ENDIF}
     //Basic Bid is length of route
     if Result then
       aRoutCost := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cove
@@ -1355,7 +1352,7 @@ end;
 //Serf may ask for a job from within a house after completing previous delivery
 procedure TKMDeliveries.AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
 var
-  iD, iO, BestD, BestO: Integer;
+  iQ, iD, iO, BestD, BestO, BestQ: Integer;
   Bid, BestBid: Single;
   BestImportance: TKMDemandImportance;
 begin
@@ -1383,12 +1380,52 @@ begin
         end;
 
   if (BestO <> -1) and (BestD <> -1) then
-    AssignDelivery(BestO, BestD, aSerf);
+    AssignDelivery(BestO, BestD, aSerf)
+  else
+    //Try to find ongoing delivery task from specified house and took it from serf, which is on the way to that house
+    if aHouse <> nil then
+    begin
+      BestBid := MaxSingle;
+      BestQ := -1;
+      BestImportance := Low(TKMDemandImportance);
+      for iQ := 1 to fQueueCount do
+        if (fQueue[iQ].JobStatus = js_Taken)
+          and (fOffer[fQueue[iQ].OfferID].Loc_House = aHouse)
+          and (fQueue[iQ].Serf <> nil)                                                //Should be always true
+          and (fQueue[iQ].Serf.UnitTask is TKMTaskDeliver)                            //Should be always true
+          and (TKMTaskDeliver(fQueue[iQ].Serf.UnitTask).DeliverStage = dsToFromHouse) //Should be always true
+          and TryCalculateBid(fQueue[iQ].OfferID, fQueue[iQ].DemandID, Bid, aSerf)
+          and ((Bid < BestBid) or (fDemand[fQueue[iQ].DemandID].Importance > BestImportance)) then
+        begin
+          BestQ := iQ;
+          BestBid := Bid;
+          BestImportance := fDemand[fQueue[iQ].DemandID].Importance;
+        end;
+      if (BestQ <> -1) then
+        ReAssignDelivery(BestQ, aSerf);
+    end;
+end;
+
+
+procedure TKMDeliveries.ReAssignDelivery(iQ: Integer; aSerf: TKMUnitSerf);
+var
+  iD, iO: Integer;
+begin
+  Assert(iQ <= fQueueCount, 'iQ < fQueueCount');
+  Assert(fQueue[iQ].JobStatus = js_Taken);
+
+  gLog.LogDelivery(Format('Hand [%d] - Reassign delivery ID %d from serf ID: %d to serf ID: %d', [fOwner, iQ, fQueue[iQ].Serf.UID, aSerf.UID]));
+
+  fQueue[iQ].Serf.DelegateDelivery(aSerf);
+
+  gHands.CleanUpUnitPointer(TKMUnit(fQueue[iQ].Serf));
+  fQueue[iQ].Serf := TKMUnitSerf(aSerf.GetUnitPointer);
 end;
 
 
 procedure TKMDeliveries.AssignDelivery(iO,iD: Integer; aSerf: TKMUnitSerf);
-var I: Integer;
+var
+  I: Integer;
 begin
   //Find a place where Delivery will be written to after Offer-Demand pair is found
   I := 1;
@@ -1404,8 +1441,8 @@ begin
   fQueue[I].DemandID := iD;
   fQueue[I].OfferID := iO;
   fQueue[I].JobStatus := js_Taken;
+  fQueue[I].Serf := TKMUnitSerf(aSerf.GetUnitPointer);
   fQueue[I].Item := nil;
-
 
   if AllowFormLogisticsChange then
     with fQueue[I] do
@@ -1519,6 +1556,7 @@ begin
   fQueue[aID].OfferID := 0;
   fQueue[aID].DemandID := 0;
   fQueue[aID].JobStatus := js_Empty; //Open slot
+  gHands.CleanUpUnitPointer(TKMUnit(fQueue[aID].Serf));
 
   if Assigned(fQueue[aID].Item) then
     fQueue[aID].Item.Delete;
@@ -1600,6 +1638,7 @@ begin
     SaveStream.Write(fQueue[I].OfferID);
     SaveStream.Write(fQueue[I].DemandID);
     SaveStream.Write(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
+    if fQueue[I].Serf  <> nil then SaveStream.Write(fQueue[I].Serf.UID ) else SaveStream.Write(Integer(0));
   end;
 
   {$IFDEF WDC}
@@ -1663,11 +1702,12 @@ begin
 
   LoadStream.Read(fQueueCount);
   SetLength(fQueue, fQueueCount+1);
-  for I:=1 to fQueueCount do
+  for I := 1 to fQueueCount do
   begin
     LoadStream.Read(fQueue[I].OfferID);
     LoadStream.Read(fQueue[I].DemandID);
     LoadStream.Read(fQueue[I].JobStatus, SizeOf(fQueue[I].JobStatus));
+    LoadStream.Read(fQueue[I].Serf, 4);
   end;
 
   {$IFDEF WDC}
@@ -1702,14 +1742,17 @@ var
   I: Integer;
 begin
   for I := 1 to fOfferCount do
-    fOffer[I].Loc_House := gHands.GetHouseByUID(cardinal(fOffer[I].Loc_House));
+    fOffer[I].Loc_House := gHands.GetHouseByUID(Cardinal(fOffer[I].Loc_House));
 
   for I := 1 to fDemandCount do
-  with fDemand[I] do
-  begin
-    Loc_House := gHands.GetHouseByUID(cardinal(Loc_House));
-    Loc_Unit := gHands.GetUnitByUID(cardinal(Loc_Unit));
-  end;
+    with fDemand[I] do
+    begin
+      Loc_House := gHands.GetHouseByUID(Cardinal(Loc_House));
+      Loc_Unit := gHands.GetUnitByUID(Cardinal(Loc_Unit));
+    end;
+
+  for I := 1 to fQueueCount do
+    fQueue[I].Serf := TKMUnitSerf(gHands.GetUnitByUID(Cardinal(fQueue[I].Serf)));
 end;
 
 

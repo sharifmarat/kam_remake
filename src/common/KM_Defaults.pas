@@ -83,9 +83,8 @@ var
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
   PathFinderToUse       :Byte = 1;
 
+  DELIVERY_BID_CALC_USE_PATHFINDING :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   {$IFDEF WDC} //Work only in Delphi
-  DELIVERY_BID_CALC_USE_PATHFINDING
-                        :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   CACHE_DELIVERY_BIDS   :Boolean = True; //Cache delivery bids cost. Must be turned ON if we want to use pathfinding for bid calc, huge impact on performance in that case
   {$ENDIF}
 
@@ -117,6 +116,7 @@ var
   SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
   AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  SHOW_GAME_TICK          :Boolean = False; //Show game tick next to game time
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
   SHOW_TERRAIN_TILES_GRID :Boolean = False; //Show terrain tiles grid
@@ -152,7 +152,7 @@ var
   SHOW_NETWORK_DELAY    :Boolean = False; //Show the current delay in multiplayer game
   SHOW_ARMYEVALS        :Boolean = False; //Show result of enemy armies evaluation
   SHOW_AI_WARE_BALANCE  :Boolean = False; //Show wares balance (Produced - Consumed)
-  SHOW_OVERLAY_BEVEL :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
+  SHOW_OVERLAY_BEVEL    :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
   SHOW_NET_PACKETS_STATS:Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT:Integer = 1;
   INI_HITPOINT_RESTORE  :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM

@@ -2249,7 +2249,7 @@ end;
 procedure TKMGamePlayInterface.ShowClock(aSpeed: Single);
 begin
   Image_Clock.Visible := (aSpeed <> 1);
-  Label_Clock.Visible := (aSpeed <> 1) or gGameApp.GameSettings.ShowGameTime;
+  Label_Clock.Visible := (aSpeed <> 1) or gGameApp.GameSettings.ShowGameTime or SHOW_GAME_TICK;
   Label_ClockSpeedup.Visible := aSpeed <> 1;
   Label_ClockSpeedup.Caption := 'x' + FormatFloat('##0.##', aSpeed);
 
@@ -2941,9 +2941,9 @@ begin
 
   if (fUIMode = umReplay) and (Key = gResKeys[SC_PAUSE].Key) then
   begin
-    if Button_ReplayPause.Enabled then
+    if Button_ReplayPause.Enabled or not gGame.IsPaused then
       ReplayClick(Button_ReplayPause)
-    else if Button_ReplayResume.Enabled then
+    else if Button_ReplayResume.Enabled or gGame.IsPaused then
       ReplayClick(Button_ReplayResume);
   end;
 
@@ -3806,7 +3806,12 @@ begin
     Image_Clock.TexID := ((Image_Clock.TexID - 556) + 1) mod 16 + 556;
 
   if Label_Clock.Visible then
+  begin
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
+    if SHOW_GAME_TICK then
+      Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTickCount);
+  end;
+
 
   // Keep on updating these menu pages as game data keeps on changing
   if fGuiGameBuild.Visible then fGuiGameBuild.UpdateState;

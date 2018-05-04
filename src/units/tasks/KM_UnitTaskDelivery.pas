@@ -9,6 +9,10 @@ uses
 
 type
   TKMDeliverKind = (dk_ToHouse, dk_ToConstruction, dk_ToUnit);
+  TKMDeliverStage = (dsToFromHouse,     //Serf is walking to the offer house
+                     dsAtFromHouse,     //Serf is getting in / out from offer house
+                     dsToDestination,   //Serf is walking to destination (unit/house)
+                     dsAtDestination);  //Serf is operating with destination
 
   TKMTaskDeliver = class(TKMUnitTask)
   private
@@ -23,6 +27,7 @@ type
     fForceDelivery: Boolean;
     procedure CheckForBetterDestination;
     function FindBestDestination: Boolean;
+    function GetDeliverStage: TKMDeliverStage;
   public
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
@@ -31,6 +36,8 @@ type
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     property DeliverKind: TKMDeliverKind read fDeliverKind;
+    property DeliverStage: TKMDeliverStage read GetDeliverStage;
+    procedure DelegateToOtherSerf(aToSerf: TKMUnitSerf);
     function Execute: TKMTaskResult; override;
     function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -260,6 +267,48 @@ begin
   Result := ((fPhase - 1) //phase was increased at the end of execution
               <= 0)       //<= because fPhase is 0 when task is just created
             or ((fPhase - 1) = 5);
+end;
+
+
+//Get Delivery stage
+function TKMTaskDeliver.GetDeliverStage: TKMDeliverStage;
+var
+  Phase: Integer;
+begin
+  Phase := fPhase - 1; //fPhase is increased at the phase end
+  case Phase of
+    -10..0,4: Result := dsToFromHouse;
+    1..3:     Result := dsAtFromHouse;
+    else
+      case fDeliverKind of
+        dk_ToHouse:         begin
+                              case Phase of
+                                5:    Result := dsToDestination;
+                                else  Result := dsAtDestination;
+                              end;
+                            end;
+        dk_ToConstruction,
+        dk_ToUnit:          begin
+                              case Phase of
+                                5,6:  Result := dsToDestination;
+                                else  Result := dsAtDestination;
+                              end;
+                            end;
+      end;
+  end;
+end;
+
+
+//Delegate delivery task to other serf
+procedure TKMTaskDeliver.DelegateToOtherSerf(aToSerf: TKMUnitSerf);
+begin
+  //Allow to delegate task only while serf is walking to From House
+  Assert(DeliverStage = dsToFromHouse, 'DeliverStage <> dsToFromHouse');
+
+  gHands.CleanUpUnitPointer(fUnit);
+  fUnit := aToSerf.GetUnitPointer;
+
+  InitDefaultAction; //InitDefaultAction, otherwise serf will not have any action
 end;
 
 

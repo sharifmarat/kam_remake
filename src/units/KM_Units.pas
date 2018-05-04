@@ -178,7 +178,7 @@ type
     procedure HitPointsChangeFromScript(aAmount: Integer);
     procedure HitPointsDecrease(aAmount: Byte; aAttacker: TKMUnit);
     property  HitPointsMax: Byte read GetHitPointsMax;
-    procedure CancelUnitTask;
+    procedure CancelUnitTask(aFreeTaskObject: Boolean = True);
     property  Visible: Boolean read fVisible write fVisible;
     property  InHouse: TKMHouse read fInHouse write SetInHouse;
     property  IsDead: Boolean read fIsDead;
@@ -259,6 +259,7 @@ type
     procedure Deliver(aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: integer); overload;
     procedure Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: integer); overload;
     function TryDeliverFrom(aFrom: TKMHouse): Boolean;
+    procedure DelegateDelivery(aToSerf: TKMUnitSerf);
 
     property Carry: TKMWareType read fCarry;
     procedure CarryGive(Res: TKMWareType);
@@ -733,6 +734,19 @@ begin
   //If we got ourselves a new task then skip to resource-taking part, as we are already in this house
   if Result and (aFrom <> nil) then
     fUnitTask.Phase := 2; //Skip  of the new task
+end;
+
+
+//Delegate delivery to other serf
+procedure TKMUnitSerf.DelegateDelivery(aToSerf: TKMUnitSerf);
+begin
+  Assert(UnitTask is TKMTaskDeliver, 'UnitTask is not TKMTaskDeliver');
+
+  TKMTaskDeliver(UnitTask).DelegateToOtherSerf(aToSerf); //Update task to be used with new serf
+  aToSerf.fUnitTask := UnitTask; //Set delivery task to new serf
+
+  //AbandonWalk if needed and cleanup task pointer, but do not free task object, as it was delegated to other serf already
+  CancelUnitTask(False);
 end;
 
 
@@ -1450,13 +1464,16 @@ begin
 end;
 
 
-procedure TKMUnit.CancelUnitTask;
+procedure TKMUnit.CancelUnitTask(aFreeTaskObject: Boolean = True);
 begin
   if (fUnitTask <> nil)
     and (fCurrentAction is TKMUnitActionWalkTo)
     and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
     AbandonWalk;
-  FreeAndNil(fUnitTask);
+  if aFreeTaskObject then
+    FreeAndNil(fUnitTask)
+  else
+    fUnitTask := nil;
 end;
 
 
