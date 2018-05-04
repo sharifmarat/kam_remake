@@ -1087,7 +1087,7 @@ begin
     and not fDemand[iD].Loc_House.IsComplete then
   begin
     //Give priority to almost built houses
-    aBidBasicValue := aBidBasicValue - 2*fDemand[iD].Loc_House.GetBuildResDeliveredPercent;
+    aBidBasicValue := aBidBasicValue - 4*fDemand[iD].Loc_House.GetBuildResDeliveredPercent;
     //Only add a small amount so houses at different distances will be prioritized separately
     if (fDemand[iD].Ware = wt_Stone) then
       aBidBasicValue := aBidBasicValue + 0.1;
