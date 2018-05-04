@@ -1408,8 +1408,6 @@ end;
 
 
 procedure TKMDeliveries.ReAssignDelivery(iQ: Integer; aSerf: TKMUnitSerf);
-var
-  iD, iO: Integer;
 begin
   Assert(iQ <= fQueueCount, 'iQ < fQueueCount');
   Assert(fQueue[iQ].JobStatus = js_Taken);
