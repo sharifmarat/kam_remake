@@ -108,8 +108,6 @@ type
     procedure Minimap_RightClick(Sender: TObject; const X,Y:integer);
     procedure Minimap_Click(Sender: TObject; const X,Y:integer);
     procedure GameSettingsUpdated;
-//    procedure PlayersColorOnMM_Click(Sender: TObject);
-//    procedure PlayersColorInGame_Click(Sender: TObject);
 
     procedure Menu_Save_RefreshList(Sender: TObject);
     procedure Menu_Save_ListChange(Sender: TObject);
@@ -163,8 +161,6 @@ type
     Sidebar_Middle: TKMImage;
     Sidebar_Bottom: array of TKMImage;
     MinimapView: TKMMinimapView;
-//    ButtonFlat_AllyEnemyColorOnMM: TKMButtonFlat;
-//    ButtonFlat_AllyEnemyColorInGame: TKMButtonFlat;
     Bevel_DebugInfo: TKMBevel;
     Label_DebugInfo: TKMLabel;
 
@@ -697,25 +693,6 @@ begin
 end;
 
 
-//procedure TKMGamePlayInterface.PlayersColorOnMM_Click(Sender: TObject);
-//begin
-//  ButtonFlat_AllyEnemyColorOnMM.Down := not ButtonFlat_AllyEnemyColorOnMM.Down;
-//
-//  gGameApp.GameSettings.ShowPlayersColorOnMinimap := not ButtonFlat_AllyEnemyColorOnMM.Down;
-//
-//  //Update minimap immidiately
-//  fMinimap.Update(False);
-//end;
-//
-//
-//procedure TKMGamePlayInterface.PlayersColorInGame_Click(Sender: TObject);
-//begin
-//  ButtonFlat_AllyEnemyColorInGame.Down := not ButtonFlat_AllyEnemyColorInGame.Down;
-//
-//  gGameApp.GameSettings.ShowPlayersColorInGame := not ButtonFlat_AllyEnemyColorInGame.Down;
-//end;
-
-
 constructor TKMGamePlayInterface.Create(aRender: TRender; aUIMode: TUIMode);
 const
   COLOR_B_SIZE = 20;
@@ -752,16 +729,6 @@ begin
   MinimapView.OnChange := Minimap_Update; // Allow dragging with LMB pressed
   MinimapView.OnClickRight := Minimap_RightClick;
   MinimapView.OnMinimapClick := Minimap_Click; // For placing beacons
-
-//  ButtonFlat_AllyEnemyColorOnMM := TKMButtonFlat.Create(Panel_Main, 197, 198 - 10 - COLOR_B_SIZE * 2, COLOR_B_SIZE, COLOR_B_SIZE, 378);
-//  ButtonFlat_AllyEnemyColorOnMM.OnClick := PlayersColorOnMM_Click;
-//  ButtonFlat_AllyEnemyColorOnMM.Down := False;
-//  ButtonFlat_AllyEnemyColorOnMM.Hint := gResTexts[TX_MINIMAP_COLOR_MODE];
-//
-//  ButtonFlat_AllyEnemyColorInGame := TKMButtonFlat.Create(Panel_Main, 197, 198 - COLOR_B_SIZE, COLOR_B_SIZE, COLOR_B_SIZE, 75);
-//  ButtonFlat_AllyEnemyColorInGame.OnClick := PlayersColorInGame_Click;
-//  ButtonFlat_AllyEnemyColorInGame.Down := False;
-//  ButtonFlat_AllyEnemyColorInGame.Hint := gResTexts[TX_GAME_COLOR_MODE];
 
   Image_Clock := TKMImage.Create(Panel_Main,232,8,67,65,556);
   Image_Clock.Hide;
@@ -3733,9 +3700,6 @@ begin
 
   MinimapView.SetMinimap(fMinimap);
   MinimapView.SetViewport(fViewport);
-
-//  ButtonFlat_AllyEnemyColorOnMM.Down := not gGameApp.GameSettings.ShowPlayersColorOnMinimap;
-//  ButtonFlat_AllyEnemyColorInGame.Down := not gGameApp.GameSettings.ShowPlayersColorInGame;
 
   SetMenuState(gGame.MissionMode = mm_Tactic);
 end;
