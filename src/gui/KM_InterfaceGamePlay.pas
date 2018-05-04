@@ -2227,6 +2227,7 @@ begin
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
   Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
+  Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
 
   if fUIMode in [umSpectate, umReplay] then
   begin
