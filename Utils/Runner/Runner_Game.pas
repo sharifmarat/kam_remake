@@ -144,6 +144,14 @@ type
   end;
 
 
+  TKMStabilityTest = class(TKMRunnerCommon)
+  protected
+    procedure SetUp; override;
+    procedure TearDown(); override;
+    procedure Execute(aRun: Integer); override;
+  end;
+
+
 implementation
 uses KM_HandSpectator, KM_ResWares, KM_ResHouses, KM_Hand, KM_UnitsCollection;
 
@@ -1211,6 +1219,48 @@ begin
   gGameApp.StopGame(gr_Silent);
 end;
 
+
+{ TKMStabilityTest }
+procedure TKMStabilityTest.SetUp;
+begin
+  inherited;
+  // Do something before simulation
+end;
+
+
+procedure TKMStabilityTest.TearDown;
+begin
+  // Do something after simulation
+  inherited;
+end;
+
+
+procedure TKMStabilityTest.Execute(aRun: Integer);
+const
+  MAPS_COUNT = 1;
+var
+  aIdx: Integer;
+begin
+  for aIdx := 0 to MAPS_COUNT - 1 do
+  begin
+	  gGameApp.NewSingleMap(ExtractFilePath(ParamStr(0)) + '..\..\MapsMP\Cursed Ravine\Cursed Ravine.dat', 'GA');
+	  // Set Runner interface (only in case that you want to watch game in real time)
+	  //gMySpectator.Hand.FogOfWar.RevealEverything;
+	  //gGameApp.Game.GamePlayInterface.Viewport.PanTo(KMPointF(0, 60), 0);
+	  //gGameApp.Game.GamePlayInterface.Viewport.Zoom := 0.25;
+	  // Set seed
+	  SetKaMSeed(aRun + 1);
+	  // Save game before starts (save map and seed)
+	  gGameApp.Game.Save('Stability Test ' + IntToStr(aRun) + ' map number ' + IntToStr(aIdx), Now);
+	  SimulateGame;
+	  // Save after is simulation done
+	  //gGameApp.Game.Save('Stability Test #' + IntToStr(aRun) + '; map number: ' + IntToStr(aIdx), Now);
+  end;
+
+  gGameApp.StopGame(gr_Silent);
+end;
+
+
 initialization
   RegisterRunner(TKMRunnerGA_TestManager);
   RegisterRunner(TKMRunnerGA_HandLogistics);
@@ -1226,6 +1276,5 @@ initialization
   RegisterRunner(TKMVortamicPF);
   RegisterRunner(TKMReplay);
   RegisterRunner(TKMVas01);
-
-
+  RegisterRunner(TKMStabilityTest);
 end.
