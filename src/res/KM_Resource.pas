@@ -176,7 +176,8 @@ begin
   gLog.AddTime('Read fonts is done');
 
   fTileset := TKMResTileset.Create(ExeDir + 'data'+PathDelim+'defines'+PathDelim+'pattern.dat');
-  fTileset.TileColor := fSprites.Sprites[rxTiles].GetSpriteColors(TILES_CNT);
+  if not SKIP_RENDER then
+    fTileset.TileColor := fSprites.Sprites[rxTiles].GetSpriteColors(TILES_CNT);
 
   fMapElements := TKMResMapElements.Create;
   fMapElements.LoadFromFile(ExeDir + 'data'+PathDelim+'defines'+PathDelim+'mapelem.dat');
