@@ -480,13 +480,20 @@ procedure TKMHouse.Activate(aWasBuilt: Boolean);
   end;
 
 var
+  I, K: Integer;
   P1, P2: TKMPoint;
+  HA: THouseArea;
 begin
   // Only activated houses count
   gHands[fOwner].Locks.HouseCreated(fHouseType);
   gHands[fOwner].Stats.HouseCreated(fHouseType, aWasBuilt);
 
-  gHands.RevealForTeam(fOwner, fPosition, gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+  HA := gRes.Houses[fHouseType].BuildArea;
+  //Reveal house from all points it covers
+  for I := 1 to 4 do
+    for K := 1 to 4 do
+      if HA[I,K] <> 0 then
+        gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
 
   CurrentAction := TKMHouseAction.Create(Self, hst_Empty);
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
