@@ -1010,7 +1010,10 @@ begin
   if not H.IsDestroyed then
   begin
     if Assigned(fSetViewportEvent) then
+    begin
+      gMySpectator.Highlight := H;
       fSetViewportEvent(KMPointF(H.Entrance));
+    end;
   end;
 end;
 
