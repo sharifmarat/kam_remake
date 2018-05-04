@@ -101,9 +101,9 @@ type
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
     fSerfToOfferCache: TDictionary<TKMDeliveryBidKey, Single>;
+    {$ENDIF}
 
     fNodeList: TKMPointList; // Used to calc delivery bid
-    {$ENDIF}
 
     function AllowFormLogisticsChange: Boolean;
     procedure UpdateOfferItem(aI: Integer);
@@ -410,9 +410,9 @@ begin
     fSerfToOfferCache := TDictionary<TKMDeliveryBidKey, Single>.Create(CacheKeyComparer);
   end;
 
+  {$ENDIF}
   if DELIVERY_BID_CALC_USE_PATHFINDING then
     fNodeList := TKMPointList.Create;
-  {$ENDIF}
 end;
 
 
@@ -424,10 +424,9 @@ begin
     FreeAndNil(fSerfToOfferCache);
     FreeAndNil(fOfferToDemandCache);
   end;
-  
+  {$ENDIF}
   if DELIVERY_BID_CALC_USE_PATHFINDING then
     FreeAndNil(fNodeList);
-  {$ENDIF}
 
   inherited;
 end;
@@ -960,9 +959,7 @@ end;
 function TKMDeliveries.TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single;
                                         aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
 var
-  {$IFDEF WDC}
   Distance: Single;
-  {$ENDIF}
   PassToUse: TKMTerrainPassability;
 begin
   PassToUse := aMainPass;
@@ -973,7 +970,6 @@ begin
     Result := gTerrain.Route_CanBeMade(aFromPos, aToPos, PassToUse, 0);
   end;
 
-  {$IFDEF WDC}
   Distance := KMLength(aFromPos, aToPos);
   if DELIVERY_BID_CALC_USE_PATHFINDING and (Distance < BID_CALC_MAX_DIST_FOR_PATHF) then
   begin
@@ -988,7 +984,6 @@ begin
       Result := False;
   end
   else
-  {$ENDIF}
     //Basic Bid is length of route
     if Result then
       aRoutCost := KMLengthDiag(aFromPos, aToPos); //Use KMLengthDiag, as it closer to what distance serf will actually cove
@@ -1388,7 +1383,8 @@ end;
 
 
 procedure TKMDeliveries.AssignDelivery(iO,iD: Integer; aSerf: TKMUnitSerf);
-var I: Integer;
+var
+  I: Integer;
 begin
   //Find a place where Delivery will be written to after Offer-Demand pair is found
   I := 1;
@@ -1405,7 +1401,6 @@ begin
   fQueue[I].OfferID := iO;
   fQueue[I].JobStatus := js_Taken;
   fQueue[I].Item := nil;
-
 
   if AllowFormLogisticsChange then
     with fQueue[I] do
