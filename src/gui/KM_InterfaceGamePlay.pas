@@ -301,6 +301,8 @@ type
 
     procedure SetPause(aValue: Boolean);
 
+    property GuiGameResultsMP: TKMGameResultsMP read fGuiGameResultsMP;
+
     property Alerts: TKMAlerts read fAlerts;
 
     procedure ExportPages(const aPath: string); override;

@@ -524,6 +524,8 @@ begin
   else
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
+  fGamePlayInterface.GuiGameResultsMP.ResetControls;
+
   gLog.AddTime('After game start', True);
 end;
 
