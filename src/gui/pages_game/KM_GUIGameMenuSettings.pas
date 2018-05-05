@@ -107,9 +107,11 @@ end;
 
 
 procedure TKMGameMenuSettings.UpdateControlsPosition;
-var Top: Integer;
+var
+  Top: Integer;
 begin
   Top := 15;
+
   if gGame.IsReplay then
     CheckBox_Autosave.Hide
   else begin
@@ -117,6 +119,7 @@ begin
     Inc(Top, 25);
   end;
 
+  CheckBox_AllyEnemy_ColorMode.Top := Top;
   CheckBox_AllyEnemy_ColorMode.Show;
   Inc(Top, 40);
 

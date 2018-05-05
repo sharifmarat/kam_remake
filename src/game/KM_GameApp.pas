@@ -41,6 +41,7 @@ type
 
     procedure GameStart(aGameMode: TKMGameMode);
     procedure GameEnd(aGameMode: TKMGameMode);
+    procedure GameDestroy;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -563,7 +564,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
   try
     gGame.Load(aFilePath);
   except
@@ -602,7 +603,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
   try
     gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty);
   except
@@ -638,7 +639,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, nil);
+  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroy);
   gGame.SetSeed(4); //Every time the game will be the same as previous. Good for debug.
   try
     gGame.MapEdStartEmptyMap(aSizeX, aSizeY);
@@ -793,17 +794,30 @@ end;
 procedure TKMGameApp.GameStart(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
+  begin
+    gMain.FormMain.SetExportGameStats(aGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]);
     gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+  end;
 end;
 
 
 procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
+  begin
+    gMain.FormMain.SetExportGameStats((aGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
+                                       or (gGame.GameResult in [gr_Win, gr_Defeat]));
     gMain.FormMain.SetSaveEditableMission(False);
+  end;
 
   if Assigned(FormLogistics) then
     FormLogistics.Clear;
+end;
+
+
+procedure TKMGameApp.GameDestroy;
+begin
+  gMain.FormMain.SetExportGameStats(False);
 end;
 
 

@@ -117,8 +117,6 @@ type
     procedure ReinitChartEconomy;
     procedure ReinitChartWares;
     procedure ReinitChartArmy;
-
-    procedure ResetControls;
   protected
     Panel_ResultsMP: TKMPanel;
       Button_Bars,
@@ -162,6 +160,7 @@ type
 
     property GameResultMsg: TKMGameResultMsg read fGameResultMsg;
 
+    procedure ResetControls;
     procedure Show(aMsg: TKMGameResultMsg; aReinitLastTime: Boolean = False);
     function Visible: Boolean;
     procedure Hide;
@@ -346,6 +345,7 @@ begin
   end;
 
   Create_ResultsMP(aParent);
+  ResetControls;
 end;
 
 
@@ -1855,8 +1855,6 @@ end;
 procedure TKMGameResultsMP.Show(aMsg: TKMGameResultMsg; aReinitLastTime: Boolean = False);
 begin
   fGameResultMsg := aMsg;
-
-  ResetControls;
 
   if not fReinitedLastTime then
     Reinit;

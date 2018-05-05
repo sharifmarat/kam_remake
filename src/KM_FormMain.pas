@@ -104,10 +104,11 @@ type
     ReloadSettings: TMenuItem;
     SaveDialog1: TSaveDialog;
     chkLogCommands: TCheckBox;
-    N5: TMenuItem;
     ScriptData1: TMenuItem;
     chkBevel: TCheckBox;
     chkTilesGrid: TCheckBox;
+    N6: TMenuItem;
+    GameStats: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -141,6 +142,7 @@ type
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure Debug_ExportUIPagesClick(Sender: TObject);
     procedure HousesDat1Click(Sender: TObject);
+    procedure GameStatsClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ResourceValues1Click(Sender: TObject);
     procedure ControlsUpdate(Sender: TObject);
@@ -180,6 +182,7 @@ type
     procedure ControlsRefill;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
     procedure SetSaveEditableMission(aEnabled: Boolean);
+    procedure SetExportGameStats(aEnabled: Boolean);
   end;
 
 
@@ -261,6 +264,12 @@ end;
 procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
 begin
   SaveEditableMission1.Enabled := aEnabled;
+end;
+
+
+procedure TFormMain.SetExportGameStats(aEnabled: Boolean);
+begin
+  GameStats.Enabled := aEnabled;
 end;
 
 
@@ -503,6 +512,19 @@ end;
 procedure TFormMain.HousesDat1Click(Sender: TObject);
 begin
   gRes.Houses.ExportCSV(ExeDir + 'Export' + PathDelim + 'houses.dat.csv')
+end;
+
+
+procedure TFormMain.GameStatsClick(Sender: TObject);
+var
+  DateS: UnicodeString;
+begin
+  if (gGame <> nil) and not gGame.IsMapEditor then
+  begin
+    DateS := FormatDateTime('yyyy-mm-dd_hh-nn', Now);
+    gHands.ExportGameStatsToCSV(ExeDir + 'Export' + PathDelim + gGame.GameName + '_' + DateS + '.csv',
+                            Format('Statistics for game at map ''%s'' on %s', [gGame.GameName, DateS]));
+  end;
 end;
 
 

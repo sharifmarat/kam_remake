@@ -76,6 +76,8 @@ type
 
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
+
+    procedure ExportGameStatsToCSV(const aPath: UnicodeString; aHeader: UnicodeString = '');
   end;
 
 var
@@ -85,6 +87,7 @@ var
 
 implementation
 uses
+  SysUtils,
   Math, KromUtils,
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection,
@@ -650,7 +653,7 @@ begin
   Result := False; // if function fails to find valid position
   Pass := gRes.Units[aUnitType].AllowedPassability;
 
-  for I := 0 to 255 do
+  for I := 0 to MAX_UNITS_AROUND_HOUSE do
   begin
     P := GetPositionFromIndex(KMPoint(PosX, PosY), I);
     if gTerrain.TileInMapCoords(P.X, P.Y) then
@@ -940,6 +943,88 @@ begin
     Exit;
 
   PlayerAnimals.UpdateState(aTick); //Animals don't have any AI yet
+end;
+
+
+procedure TKMHandsCollection.ExportGameStatsToCSV(const aPath: UnicodeString; aHeader: UnicodeString = '');
+var
+  I,J,K: Integer;
+  SL: TStringList;
+  Teams: TKMByteSetArray;
+  TStr: UnicodeString;
+begin
+  SL := TStringList.Create;
+
+  try
+    SL.Append(aHeader);
+    SL.Append('');
+
+    SL.Append('Game time:;' + TimeToString(gGame.MissionTime));
+
+
+    //Teams info
+    Teams := GetFullTeams;
+
+    TStr := 'Teams: ';
+    for J := Low(Teams) to High(Teams) do
+    begin
+      if J <> Low(Teams) then
+        TStr := TStr + ' vs ';
+
+      TStr := TStr + '[ ';
+      K := 0;
+      for I in Teams[J] do
+      begin
+        if K > 0 then
+          TStr := TStr + ' + ';
+
+        TStr := TStr + fHandsList[I].GetOwnerName;
+
+        Inc(K);
+      end;
+      TStr := TStr + ' ]';
+    end;
+
+    SL.Append(TStr);
+    SL.Append('');
+
+    //Game stats
+    for I := 0 to fCount - 1 do
+      if fHandsList[I].Enabled then
+      begin
+        SL.Append(Format('Player ''%s'' at Location %d', [fHandsList[I].GetOwnerName, I]));
+        fHandsList[I].Stats.ToCSV(SL);
+        SL.Append('');
+      end;
+
+    //Stats fields legend
+    SL.Append('');
+    SL.Append('House fields legend:');
+    SL.Append('Planned;Houseplans were placed');
+    SL.Append('PlanRemoved;Houseplans were removed');
+    SL.Append('Started;Construction started');
+    SL.Append('Ended;Construction ended (either done or destroyed/cancelled)');
+    SL.Append('Initial;Created by script on mission start');
+    SL.Append('Built;Constructed by player');
+    SL.Append('SelfDestruct;Deconstructed by player');
+    SL.Append('Lost;Lost from attacks and self-demolished');
+    SL.Append('ClosedATM;Closed for worker at the current moment');
+    SL.Append('Destroyed;Destroyed other players houses');
+    SL.Append('');
+    SL.Append('Unit fields legend:');
+    SL.Append('Initial;Provided at mission start');
+    SL.Append('Training;Currently in training queue (at this current moment)');
+    SL.Append('Trained;Trained by player');
+    SL.Append('Lost;Died of hunger or killed');
+    SL.Append('Killed;Killed (incl. friendly)');
+    SL.Append('');
+
+    ForceDirectories(ExtractFilePath(aPath));
+
+    SL.SaveToFile(aPath);
+  finally
+    SL.Free;
+  end;
 end;
 
 

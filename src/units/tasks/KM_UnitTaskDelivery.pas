@@ -9,7 +9,8 @@ uses
 
 type
   TKMDeliverKind = (dk_ToHouse, dk_ToConstruction, dk_ToUnit);
-  TKMDeliverStage = (dsToFromHouse,     //Serf is walking to the offer house
+  TKMDeliverStage = (dsUnknown,
+                     dsToFromHouse,     //Serf is walking to the offer house
                      dsAtFromHouse,     //Serf is getting in / out from offer house
                      dsToDestination,   //Serf is walking to destination (unit/house)
                      dsAtDestination);  //Serf is operating with destination
@@ -275,6 +276,7 @@ function TKMTaskDeliver.GetDeliverStage: TKMDeliverStage;
 var
   Phase: Integer;
 begin
+  Result := dsUnknown;
   Phase := fPhase - 1; //fPhase is increased at the phase end
   case Phase of
     -10..0,4: Result := dsToFromHouse;
