@@ -29,6 +29,7 @@ type
     fMapEditorInterface: TKMapEdInterface;
     fMapEditor: TKMMapEditor;
     fScripting: TKMScripting;
+    fOnDestroy: TEvent;
 
     fIsExiting: Boolean; //Set this to true on Exit and unit/house pointers will be released without cross-checking
     fIsPaused: Boolean;
@@ -94,7 +95,7 @@ type
     ///	<param name="aNetworking">
     ///	  Pointer to networking class, required if this is a multiplayer game.
     ///	</param>
-    constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
+    constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;
 
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
@@ -223,7 +224,7 @@ uses
 //Create template for the Game
 //aRender - who will be rendering the Game session
 //aNetworking - access to MP stuff
-constructor TKMGame.Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking);
+constructor TKMGame.Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
 const
   UIMode: array[TKMGameMode] of TUIMode = (umSP, umSP, umMP, umSpectate, umSP, umReplay, umReplay);
 begin
@@ -231,6 +232,7 @@ begin
 
   fGameMode := aGameMode;
   fNetworking := aNetworking;
+  fOnDestroy := aOnDestroy;
 
   fAdvanceFrame := False;
   fUIDTracker   := 0;
@@ -326,6 +328,9 @@ begin
   gRes.Cursors.Cursor := kmc_Default;
 
   FreeAndNil(gMySpectator);
+
+  if Assigned(fOnDestroy) then
+    fOnDestroy();
 
   inherited;
 end;

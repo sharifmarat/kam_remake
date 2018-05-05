@@ -2,6 +2,7 @@ unit KM_HandStats;
 {$I KaM_Remake.inc}
 interface
 uses
+  Classes,
   KM_WareDistribution,
   KM_ResWares, KM_ResHouses,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults;
@@ -65,6 +66,10 @@ type
     function GetChartWares(aWare: TKMWareType): TKMCardinalArray;
     function GetChartArmy(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): TKMCardinalArray;
     function GetArmyChartValue(aChartKind: TKMChartArmyKind; aUnitType: TKMUnitType): Integer;
+
+    procedure HousesToCSV(aStrings: TStringList);
+    procedure UnitsToCSV(aStrings: TStringList);
+    procedure WaresToCSV(aStrings: TStringList);
   public
     constructor Create;
     destructor Destroy; override;
@@ -134,6 +139,8 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateState;
+
+    procedure ToCSV(aStrings: TStringList);
   end;
 
 
@@ -813,6 +820,109 @@ begin
         LoadStream.Read(fChartArmy[CKind,W,0], SizeOf(fChartArmy[CKind,W,0]) * fChartCount);
       end;
   end;
+end;
+
+
+procedure TKMHandStats.ToCSV(aStrings: TStringList);
+begin
+  HousesToCSV(aStrings);
+  aStrings.Append('');
+  UnitsToCSV(aStrings);
+  aStrings.Append('');
+  WaresToCSV(aStrings);
+end;
+
+
+procedure TKMHandStats.HousesToCSV(aStrings: TStringList);
+var
+  S: string;
+  HT: TKMHouseType;
+  
+  procedure AddField(const aField: string); overload;
+  begin S := S + aField + ';'; end;
+  procedure AddField(aField: Cardinal); overload;
+  begin S := S + IntToStr(aField) + ';'; end;
+
+begin
+  aStrings.Append('Houses stats');
+  aStrings.Append('Name;Planned;PlanRemoved;Started;Ended;Initial;Built;SelfDestruct;Lost;ClosedATM;Destroyed');
+
+  for HT := HOUSE_MIN to HOUSE_MAX do
+    if HT <> htSiegeWorkshop then
+      with Houses[HT] do
+      begin
+        S := '';
+        AddField(gRes.Houses[HT].HouseName);
+        AddField(Planned);
+        AddField(PlanRemoved);
+        AddField(Started);
+        AddField(Ended);
+        AddField(Initial);
+        AddField(Built);
+        AddField(SelfDestruct);
+        AddField(Lost);
+        AddField(Closed);
+        AddField(Destroyed);
+        aStrings.Append(S);
+      end;
+end;
+
+
+procedure TKMHandStats.UnitsToCSV(aStrings: TStringList);
+var
+  S: string;
+  UT: TKMUnitType;
+  
+  procedure AddField(const aField: string); overload;
+  begin S := S + aField + ';'; end;
+  procedure AddField(aField: Cardinal); overload;
+  begin S := S + IntToStr(aField) + ';'; end;
+
+begin
+  aStrings.Append('Units stats');
+  aStrings.Append('Name;Initial;TrainingATM;Trained;Lost;Killed');
+
+  for UT := HUMANS_MIN to HUMANS_MAX do
+    with Units[UT] do
+    begin
+      S := '';
+      AddField(gRes.Units[UT].GUIName);
+      AddField(Initial);
+      AddField(Training);
+      AddField(Trained);
+      AddField(Lost);
+      AddField(Killed);
+      aStrings.Append(S);
+    end;
+
+  aStrings.Append('Militia trained in the TownHall: ' + IntToStr(MilitiaTrainedInTownHall));
+end;
+
+
+procedure TKMHandStats.WaresToCSV(aStrings: TStringList);
+var
+  S: string;
+  WT: TKMWareType;
+  
+  procedure AddField(const aField: string); overload;
+  begin S := S + aField + ';'; end;
+  procedure AddField(aField: Cardinal); overload;
+  begin S := S + IntToStr(aField) + ';'; end;
+
+begin
+  aStrings.Append('Wares stats');
+  aStrings.Append('Name;Initial;Produced;Consumed');
+
+  for WT := WARE_MIN to WARE_MAX do
+    with Wares[WT] do
+    begin
+      S := '';
+      AddField(gRes.Wares[WT].Title);
+      AddField(Initial);
+      AddField(Produced);
+      AddField(Consumed);
+      aStrings.Append(S);
+    end;
 end;
 
 

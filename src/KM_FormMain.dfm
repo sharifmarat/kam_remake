@@ -686,12 +686,17 @@ object FormMain: TFormMain
         Caption = 'Houses Dat'
         OnClick = HousesDat1Click
       end
-      object N5: TMenuItem
-        Caption = '-'
-      end
       object ScriptData1: TMenuItem
         Caption = 'Script Data'
         OnClick = Export_ScriptDataClick
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object GameStats: TMenuItem
+        Caption = 'Game statistics'
+        Enabled = False
+        OnClick = GameStatsClick
       end
     end
     object About1: TMenuItem

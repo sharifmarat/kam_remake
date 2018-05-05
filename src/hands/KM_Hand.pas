@@ -100,6 +100,7 @@ type
     procedure SetOwnerNikname(const aName: AnsiString); //MP owner nikname (empty in SP)
     property OwnerNikname: AnsiString read fOwnerNikname;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
+    function GetOwnerName: UnicodeString;
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property FlagColor: Cardinal read fFlagColor write fFlagColor;
@@ -1169,6 +1170,12 @@ begin
   //If this location is controlled by an MP player - show his nik
   if fOwnerNikname <> '' then
     Result := UnicodeString(fOwnerNikname);
+end;
+
+
+function TKMHand.GetOwnerName: UnicodeString;
+begin
+  Result := OwnerName(not (gGame.GameMode in [gmSingle, gmCampaign, gmReplaySingle]));
 end;
 
 
