@@ -143,6 +143,9 @@ uses
   KM_HandsCollection, KM_RenderUI, KM_CommonUtils,
   KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils, KM_Points;
 
+const
+  MAX_UNITS_TO_EQUIP = 100;
+
 
 constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 var
@@ -1118,7 +1121,7 @@ begin
   if (Sender=Button_Barracks_Right)and(fLastBarracksUnit < High(Barracks_Order)) then inc(fLastBarracksUnit);
 
   if Sender = Button_Barracks_Train then //Equip unit
-    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], GetMultiplicator(Shift));
+    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
 
   Button_Barracks_Train.Enabled := not gGame.IsPeaceTime and Barracks.CanEquip(Barracks_Order[fLastBarracksUnit]);
   Button_Barracks_Left.Enabled := fLastBarracksUnit > 0;
@@ -1182,7 +1185,7 @@ begin
     Inc(fLastTHUnit);
 
   if Sender = Button_TH_Train then //Equip unit
-    gGame.GameInputProcess.CmdHouse(gic_HouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], GetMultiplicator(Shift));
+    gGame.GameInputProcess.CmdHouse(gic_HouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
 
   Button_TH_Train.Enabled := not gGame.IsPeaceTime and TownHall.CanEquip(TownHall_Order[fLastTHUnit]);
   Button_TH_Left.Enabled := fLastTHUnit > 0;
