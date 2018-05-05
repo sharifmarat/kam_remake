@@ -650,7 +650,7 @@ begin
   Result := False; // if function fails to find valid position
   Pass := gRes.Units[aUnitType].AllowedPassability;
 
-  for I := 0 to 255 do
+  for I := 0 to MAX_UNITS_AROUND_HOUSE do
   begin
     P := GetPositionFromIndex(KMPoint(PosX, PosY), I);
     if gTerrain.TileInMapCoords(P.X, P.Y) then
