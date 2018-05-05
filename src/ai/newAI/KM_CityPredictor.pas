@@ -348,9 +348,9 @@ begin
   for I := CO_WEAPONS_MAX downto CO_WEAPONS_MIN do
   begin
     UpdateWareProduction(CONSUMPTION_ORDER[I]);
+    // Final and actual consumptions for weapons are constant
+    fWareBalance[ CONSUMPTION_ORDER[I] ].ActualConsumption :=  fWareBalance[ CONSUMPTION_ORDER[I] ].FinalConsumption;
     UpdateWareDerivation(CONSUMPTION_ORDER[I],aInitialization);
-    // Final consumption for weapons is constant and actual is computed only for resource demands (coal mines etc.)
-    fWareBalance[ CONSUMPTION_ORDER[I] ].ActualConsumption :=  fWareBalance[ CONSUMPTION_ORDER[I] ].FinalConsumption * (1.0 - fWareBalance[ CONSUMPTION_ORDER[I] ].Fraction);
   end;
 
   // Update "Normal" ware flow
