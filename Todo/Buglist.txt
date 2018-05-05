@@ -121,6 +121,8 @@ Improvements:
  +    Swap wooden shield and leather jacket in Armor workshop to make same order with Iron smithy (armors first, shields second)
  +    Limit max possible weapons to 5 in the houses producing warfare
  +    Enlarge troops direction selector change dir from 15 to 20 pixels
+ +    Limit number of units appeared after house destroy to 50 (was 255)
+ +    Limit max number of equpped units at once to 100
  +    Game statistics:
         Ability to see stats while watching replay / spectating. Or allied players stats while playing
         Army: Separate statistics for different warrior types with filters (total/instantenious/lost/defeated)
@@ -228,6 +230,9 @@ Improvements:
  
  MapEditor:
  +    Added RMG for MapEditor (on terrain selection submenu) - random map generator by Toxic
+ +    Added new automatic transitions between different terrain kinds via masks
+ +    Added support for up to 65k tiles and objects
+ +    Added 50+ new tiles
  +  L Eyedropper tool like in Photoshop to select the type of tile under the cursor
  +  L Allow to set troops order destination with mouse on map (Shift+RMB)
  +    Added objects palette
@@ -293,6 +298,7 @@ Improvements:
  +    Images, loaded from Sprites folder are applied with soften shadows
  +    When crash happens on replay - send replay files, instead of autosaves
  +    Added ini setting to always show game time label (ShowGameTime)
+ +    Map format was changed (*.map file), that will significantly reduce map file sizes (~3 times)
  
    
    
