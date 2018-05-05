@@ -964,7 +964,7 @@ procedure TKMTerrainPainter.MagicBrush(const X,Y: Integer);
     LayerOrder: array of TKMTileMaskInfo;
     MaskType: TKMTileMaskType;
   begin
-    //Do not check tile node corners when useing 'force paint' mode
+    //Do not check tile node corners when using 'force paint' mode
     if not ForcePaint then
     begin
       TileNodeTerKinds := GetTileLandNodeTKinds(KMPoint(X,Y));
