@@ -135,6 +135,7 @@ type
     function CheckTime(aTimeTicks: Cardinal): Boolean;
     function IsPeaceTime: Boolean;
     function IsMapEditor: Boolean;
+    function IsCampaign: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
     function IsSingleplayer: Boolean;
@@ -1144,6 +1145,12 @@ end;
 function TKMGame.IsMapEditor: Boolean;
 begin
   Result := fGameMode = gmMapEd;
+end;
+
+
+function TKMGame.IsCampaign: Boolean;
+begin
+  Result := fGameMode = gmCampaign;
 end;
 
 

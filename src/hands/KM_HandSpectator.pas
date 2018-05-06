@@ -191,7 +191,7 @@ procedure TKMSpectator.UpdateSelect;
 var
   NewSelected: TObject;
 
-  procedure CheckNewSelected(aAllowSelectAllies: Boolean);
+  procedure CheckNewSelected(aAllowSelectAllies: Boolean = False);
   var
     OwnerIndex: TKMHandIndex;
   begin
@@ -200,8 +200,11 @@ var
     begin
       if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
       begin
-        if (aAllowSelectAllies and (Hand.Alliances[OwnerIndex] = at_Ally))
-          or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
+        if (ALLOW_SELECT_ALLY_UNITS or
+            ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
+              and aAllowSelectAllies)
+          and (Hand.Alliances[OwnerIndex] = at_Ally))
+            or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
           fIsSelectedMyObj := False
         else
           NewSelected := nil;
@@ -216,7 +219,7 @@ begin
   NewSelected := gHands.GetUnitByUID(gGameCursor.ObjectUID);
   //In-game player can select only own and ally Units
   if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-    CheckNewSelected(False or ALLOW_SELECT_ALLY_UNITS);
+    CheckNewSelected;
 
   //Don't allow the player to select dead units
   if ((NewSelected is TKMUnit) and TKMUnit(NewSelected).IsDeadOrDying)
@@ -229,7 +232,7 @@ begin
     NewSelected := gHands.GetGroupByMember(TKMUnitWarrior(NewSelected));
 
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected(False or ALLOW_SELECT_ALLY_UNITS);
+      CheckNewSelected;
   end;
 
   //Update selected groups selected unit
