@@ -952,6 +952,8 @@ var
   SL: TStringList;
   Teams: TKMByteSetArray;
   TStr: UnicodeString;
+  MS: TKMemoryStream;
+  CRC: Cardinal;
 begin
   SL := TStringList.Create;
 
@@ -1017,8 +1019,18 @@ begin
     SL.Append('Training;Currently in training queue (at this current moment)');
     SL.Append('Trained;Trained by player');
     SL.Append('Lost;Died of hunger or killed');
-    SL.Append('Killed;Killed (incl. friendly)');
-    SL.Append('');
+    SL.Append('Killed;Killed (including friendly)');
+
+    MS := TKMemoryStream.Create;
+    try
+      MS.WriteHugeString(SL.Text);
+      CRC := Adler32CRC(MS);
+    finally
+      MS.Free;
+    end;
+
+    //Put CRC at first row
+    SL.Insert(0, IntToStr(CRC));
 
     ForceDirectories(ExtractFilePath(aPath));
 
