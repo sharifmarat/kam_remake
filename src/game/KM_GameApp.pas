@@ -465,6 +465,9 @@ begin
   end;
 
   gGame.ReadyToStop := True;
+
+  if Assigned(fOnGameEnd) then
+    fOnGameEnd(gGame.GameMode);
 end;
 
 
@@ -505,9 +508,6 @@ begin
     gr_Silent:      ;//Used when loading new savegame from gameplay UI
     gr_MapEdEnd:    fMainMenuInterface.PageChange(gpMapEditor);
   end;
-
-  if Assigned(fOnGameEnd) then
-    fOnGameEnd(gGame.GameMode);
 
   FreeThenNil(gGame);
   gLog.AddTime('Gameplay ended - ' + GetEnumName(TypeInfo(TKMGameResultMsg), Integer(aMsg)) + ' /' + aTextMsg);
