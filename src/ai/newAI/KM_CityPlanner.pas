@@ -619,21 +619,46 @@ begin
   BestBid := INIT_BID;
   BestIdx := 0;
   for Idx := 0 to fPlannedHouses[aHT].Count - 1 do
-    if (fPlannedHouses[aHT].Plans[Idx].House <> nil) then
+    with fPlannedHouses[aHT].Plans[Idx] do
     begin
-      H := fPlannedHouses[aHT].Plans[Idx].House;
-      Bid := H.CheckResIn(wt_All) * RESOURCE_PRICE + H.CheckResOut(wt_All) * PRODUCT_PRICE;
-      if (Bid < BestBid) then
+      if not Placed then // Only plan -> remove it have high priority
       begin
-        BestBid := Bid;
+        BestBid := 0;
         BestIdx := Idx;
+        break;
+      end
+      else // Plan was placed or there is already house
+      begin
+        if (fPlannedHouses[aHT].Plans[Idx].House = nil) then // Plan was placed
+        begin
+          BestBid := 0;
+          BestIdx := Idx;
+          // Dont break for cycle - maybe there is unplaced plan
+        end
+        else // There is house
+        begin
+          H := fPlannedHouses[aHT].Plans[Idx].House;
+          Bid := H.CheckResIn(wt_All) * RESOURCE_PRICE + H.CheckResOut(wt_All) * PRODUCT_PRICE;
+          if (Bid < BestBid) then // Select house with lowest amount of resources
+          begin
+            BestBid := Bid;
+            BestIdx := Idx;
+          end;
+        end;
       end;
     end;
   if (BestBid < MAX_BID) then
-  begin
-    fPlannedHouses[aHT].Plans[BestIdx].House.DemolishHouse(fOwner);
-    RemovePlan(aHT, BestIdx);
-  end;
+    with fPlannedHouses[aHT].Plans[BestIdx] do
+    begin
+      if Placed then
+      begin
+        if (House = nil) then
+          gHands[fOwner].RemHousePlan(Loc)
+        else
+          House.DemolishHouse(fOwner);
+      end;
+      RemovePlan(aHT, BestIdx);
+    end;
 end;
 
 procedure TKMCityPlanner.RemovePlan(aHT: TKMHouseType; aLoc: TKMPoint);
