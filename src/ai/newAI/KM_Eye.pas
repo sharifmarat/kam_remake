@@ -12,9 +12,12 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 219.373;
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 7.841;
-  GA_EYE_GetForests_InflLimit      : Single = 202.809;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 52.91167;
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 237.3961;
+  GA_EYE_GetForests_AddRndPosition : Single = 15.86685;
+  GA_EYE_GetForests_RndCount       : Single = 10;
+  GA_EYE_GetForests_RndLimit       : Single = 0.62351;
+  GA_EYE_GetForests_InflLimit      : Single = 220.5552;
   GA_EYE_GetForests_MinTrees       : Single = 3.11;
   GA_EYE_GetForests_Radius         : Single = 5.0698;
   GA_EYE_GetForests_MinRndSoil     : Single = 15.969; //0<->25
@@ -1000,28 +1003,29 @@ begin
 
   // Try to find potential forests only in owner's influence areas
   SparePointsCnt := 0;
-  for I := 0 to Length(Polygons) - 1 do
-  begin
-    Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
-    if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
-       AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
-       AND (SparePointsCnt < MAX_SPARE_POINTS)
-       AND (KaMRandom() > 0.7) then
+  if (aForests.Count < GA_EYE_GetForests_AddRndPosition) then
+    for I := 0 to Length(Polygons) - 1 do
     begin
-      Point := Polygons[I].CenterPoint;
-      Cnt := 0;
-      for Y := Max(1,Point.Y-2) to Min(Point.Y+2,gTerrain.MapY-1) do
-        for X := Max(1,Point.X-2) to Min(Point.X+2,gTerrain.MapX-1) do
-          if gTerrain.TileIsSoil(X,Y) AND (BuildFF.State[Y,X] in [bsBuild, bsTree, bsForest]) then
-            Cnt := Cnt + 1;
-      if (Cnt > GA_EYE_GetForests_MinRndSoil) then
+      Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
+      if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
+         AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
+         AND (SparePointsCnt < GA_EYE_GetForests_RndCount)
+         AND (KaMRandom() > GA_EYE_GetForests_RndLimit) then
       begin
-        aForests.Add( Point, 0 );
-        aForests.Tag2[ aForests.Count-1 ] := 0;
-        SparePointsCnt := SparePointsCnt + 1;
+        Point := Polygons[I].CenterPoint;
+        Cnt := 0;
+        for Y := Max(1,Point.Y-2) to Min(Point.Y+2,gTerrain.MapY-1) do
+          for X := Max(1,Point.X-2) to Min(Point.X+2,gTerrain.MapX-1) do
+            if gTerrain.TileIsSoil(X,Y) AND (BuildFF.State[Y,X] in [bsBuild, bsTree, bsForest]) then
+              Cnt := Cnt + 1;
+        if (Cnt > GA_EYE_GetForests_MinRndSoil) then
+        begin
+          aForests.Add( Point, 0 );
+          aForests.Tag2[ aForests.Count-1 ] := 0;
+          SparePointsCnt := SparePointsCnt + 1;
+        end;
       end;
     end;
-  end;
 end;
 
 
