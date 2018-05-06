@@ -195,7 +195,7 @@ begin
   for I := aIndex to fCount - 2 do
   begin
     fHandsList[I] := fHandsList[I + 1];
-    fHandsList[I].SeTKMHandIndex(I);
+    fHandsList[I].SetHandIndex(I);
   end;
 
   Dec(fCount);

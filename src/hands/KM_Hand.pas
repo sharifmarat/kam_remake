@@ -96,7 +96,7 @@ type
     property UnitGroups: TKMUnitGroups read fUnitGroups;
     property MessageLog: TKMMessageLog read fMessageLog;
 
-    procedure SeTKMHandIndex(aNewIndex: TKMHandIndex);
+    procedure SetHandIndex(aNewIndex: TKMHandIndex);
     procedure SetOwnerNikname(const aName: AnsiString); //MP owner nikname (empty in SP)
     property OwnerNikname: AnsiString read fOwnerNikname;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
@@ -549,7 +549,7 @@ begin
 end;
 
 
-procedure TKMHand.SeTKMHandIndex(aNewIndex: TKMHandIndex);
+procedure TKMHand.SetHandIndex(aNewIndex: TKMHandIndex);
 begin
   fHandIndex := aNewIndex;
   fUnits.OwnerUpdate(aNewIndex);
