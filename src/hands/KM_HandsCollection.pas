@@ -956,11 +956,11 @@ begin
   SL := TStringList.Create;
 
   try
+    SL.Append('Game revision: ' + GAME_REVISION);
     SL.Append(aHeader);
     SL.Append('');
 
     SL.Append('Game time:;' + TimeToString(gGame.MissionTime));
-
 
     //Teams info
     Teams := GetFullTeams;
