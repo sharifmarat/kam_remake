@@ -407,7 +407,7 @@ begin
           Worker := gHands[fUnit.Owner].UnitsHitTest(fToHouse.PointBelowEntrance, ut_Worker);
           if (Worker <> nil) and (Worker.UnitTask <> nil)
             and (Worker.UnitTask is TKMTaskBuildHouse)
-            and (Worker.UnitTask.Phase >= 2) then
+            and (Worker.UnitTask.Phase >= 1) then
             // If so, then allow to bring resources diagonally
             SetActionWalkToSpot(fToHouse.Entrance, ua_Walk, 1.42)
           else

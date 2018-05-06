@@ -832,6 +832,7 @@ begin
         end
         else
           Result := tr_TaskDone;
+    //WARNING!!! THIS PHASE VALUE IS USED IN TKMTaskDelivery to construction !!!
     1:  begin
           //Face the building
           Direction := BuildFrom.Dir;
