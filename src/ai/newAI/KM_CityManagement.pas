@@ -151,7 +151,7 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(666);
-    gGame.GameOptions.Peacetime := 75;//SP_DEFAULT_PEACETIME;
+    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
     fSetup.ApplyAgressiveBuilderSetup(True);
   end;
 
