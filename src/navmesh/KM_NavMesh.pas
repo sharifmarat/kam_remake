@@ -89,9 +89,9 @@ type
 
 const
   // Constants in KM_PolySimplify must be also changed!!!
-  NAVMESH_POINT_TOLERANCE = 1; // Shape edges (points) closer than this will be skipped
-  NAVMESH_EDGE_DENSITY = 3; // Density of NavMesh edge points (affect count and size of points)
-  NAVMESH_DENSITY = NAVMESH_EDGE_DENSITY + 1; // Density of NavMesh
+  NAVMESH_SUPPORT_DENSITY = 7; // Density of NavMesh
+  NAVMESH_EDGE_POINTS_TOLERANCE = 1; // Shape edges (points) closer than this will be skipped (SHOULD be equal to 1)
+  NAVMESH_SUPPORT_POINTS_TOLERANCE = 4; // Grid points closer than this will be skipped (+- 0.5 * NAVMESH_SUPPORT_DENSITY)
 
 
 implementation
@@ -489,7 +489,7 @@ begin
   fDelaunay := TDelaunay.Create(-1, -1, gTerrain.MapX, gTerrain.MapY);
   try
     //Points that are closer than that will be skipped
-    fDelaunay.Tolerance := NAVMESH_POINT_TOLERANCE;
+    fDelaunay.Tolerance := NAVMESH_EDGE_POINTS_TOLERANCE;
     for I := 0 to fSimpleOutlines.Count - 1 do
     with fSimpleOutlines.Shape[I] do
       for K := 0 to Count - 1 do
@@ -498,8 +498,8 @@ begin
     //Add more points along edges to get even density
     SizeX := gTerrain.MapX-1;
     SizeY := gTerrain.MapY-1;
-    MeshDensityX := SizeX div NAVMESH_EDGE_DENSITY;
-    MeshDensityY := SizeY div NAVMESH_EDGE_DENSITY;
+    MeshDensityX := SizeX div NAVMESH_SUPPORT_DENSITY;
+    MeshDensityY := SizeY div NAVMESH_SUPPORT_DENSITY;
     for I := 0 to MeshDensityY do
     for K := 0 to MeshDensityX do
     if (I = 0) or (I = MeshDensityY) or (K = 0) or (K = MeshDensityX) then
@@ -527,7 +527,7 @@ begin
     //Add more supporting points into the middle to get more even mesh
     //Tolerance must be a little higher than longest span we expect from polysimplification
     //so that not a single node was placed on an outline segment (otherwise RemObstaclePolys will not be able to trace outlines)
-    fDelaunay.Tolerance := NAVMESH_DENSITY;
+    fDelaunay.Tolerance := NAVMESH_SUPPORT_POINTS_TOLERANCE;
     for I := 1 to MeshDensityY - 1 do
     for K := 1 to MeshDensityX - Byte(I mod 2 = 1) - 1 do
       fDelaunay.AddPoint(Round(SizeX / MeshDensityX * (K + Byte(I mod 2 = 1) / 2)), Round(SizeY / MeshDensityY * I));
