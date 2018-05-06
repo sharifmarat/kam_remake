@@ -992,7 +992,8 @@ begin
     for I := 0 to fCount - 1 do
       if fHandsList[I].Enabled then
       begin
-        SL.Append(Format('Player ''%s'' at Location %d', [fHandsList[I].GetOwnerName, I]));
+        SL.Append(Format('Player ''%s'' at Location %d. Player game result: %s',
+                         [fHandsList[I].GetOwnerName, I, fHandsList[I].AI.GetWonOrLostString]));
         fHandsList[I].Stats.ToCSV(SL);
         SL.Append('');
       end;

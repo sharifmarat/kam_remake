@@ -48,6 +48,7 @@ type
     property HasWon: Boolean read GetHasWon;
     property HasLost: Boolean read GetHasLost;
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
+    function GetWonOrLostString: UnicodeString; //Get string represantation of Hand WonOrLost
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
     procedure UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
@@ -258,6 +259,17 @@ end;
 function TKMHandAI.GetIsNotWinnerNotLoser: Boolean;
 begin
   Result := fWonOrLost = wol_None;
+end;
+
+
+function TKMHandAI.GetWonOrLostString: UnicodeString;
+begin
+  Result := '';
+  case fWonOrLost of
+    wol_None: Result := 'Undefined';
+    wol_Won:  Result := 'Won';
+    wol_Lost: Result := 'Lost';
+  end;
 end;
 
 
