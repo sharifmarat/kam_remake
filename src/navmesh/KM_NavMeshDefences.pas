@@ -99,6 +99,7 @@ type
     function IsVisited(const aIdx: Word): Boolean; override;
   public
     BestDefLines, AllDefLines: TKMDefenceLines;
+    function IsPolyInsideDef(aIdx: Word): Boolean;
     procedure FilterDefenceLine(var aAllDefLines: TKMDefenceLines);
   end;
 
@@ -496,7 +497,8 @@ begin
     for K := 0 to PolyArr[Idx].NearbyCount-1 do
     begin
       NearbyIdx := PolyArr[Idx].Nearby[K];
-      if (fDefInfo[ NearbyIdx ].Distance > fDefInfo[ Idx ].Distance) then
+      //if (fDefInfo[ NearbyIdx ].Distance > fDefInfo[ Idx ].Distance) then // Sometimes distances does not match with polygons inside of def line
+      if not fFilterFF.IsPolyInsideDef(NearbyIdx) then
       begin
         Cnt := Cnt + 1;
         fDefInfo[Idx].PointInDir := KMPointAdd(fDefInfo[Idx].PointInDir, PolyArr[NearbyIdx].CenterPoint);
@@ -584,6 +586,12 @@ end;
 
 
 { TFilterFF }
+function TFilterFF.IsPolyInsideDef(aIdx: Word): Boolean;
+begin
+  Result := fQueueArray[aIdx].Visited = fVisitedIdx;
+end;
+
+
 function TFilterFF.IsVisited(const aIdx: Word): Boolean;
 var
   I: Integer;
@@ -612,16 +620,18 @@ begin
   begin
     fVisitedIdx := $FE;
     MakeNewQueue(); // Init array and clear index
-  end;
+  end
+  else
+    // Increase visited idx
+    fVisitedIdx := fVisitedIdx + 1;
   // Mark exist defence lines as a visited in previous step (faster than check each node whether is part of defensive line)
-  fVisitedIdx := fVisitedIdx + 1;
   for I := 0 to AllDefLines.Count - 1 do
   begin
     Idx := AllDefLines.Lines[I].Polygon;
     fQueueArray[Idx].Visited := fVisitedIdx;
   end;
   // Init queue - fVisitedIdx will be increased inside of this function
-  inherited InitQueue(aMaxIdx, aInitIdxArray);
+  inherited InitQueue(aMaxIdx, aInitIdxArray); // InitQueue calls MakeNewQueue which also increase fVisitedIdx
 end;
 
 
