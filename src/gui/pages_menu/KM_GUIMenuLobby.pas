@@ -2183,7 +2183,7 @@ begin
                   end;
                 end;
                 Label_MapName.Caption := WrapColor(M.FileName, M.GetLobbyColor);
-                Memo_MapDesc.Text := M.TxtInfo.BigDesc;
+                Memo_MapDesc.Text := M.BigDesc;
             end;
   end;
 end;

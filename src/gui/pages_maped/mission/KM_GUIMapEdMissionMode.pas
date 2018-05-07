@@ -320,11 +320,11 @@ begin
 
   case Radio_BigDescType.ItemIndex of
     0:  begin
-          gGame.MapEditor.MapTxtInfo.BigDesc     := Edit_BigDesc.Text;
+          gGame.MapEditor.MapTxtInfo.SetBigDesc(Edit_BigDesc.Text);
           gGame.MapEditor.MapTxtInfo.BigDescLIBX := -1
         end;
     1:  begin
-          gGame.MapEditor.MapTxtInfo.BigDesc     := '';
+          gGame.MapEditor.MapTxtInfo.SetBigDesc('');
           gGame.MapEditor.MapTxtInfo.BigDescLIBX := NumEdit_BigDesc.Value;
         end;
   end;
@@ -363,7 +363,7 @@ begin
 
   Edit_SmallDesc.Text     := gGame.MapEditor.MapTxtInfo.SmallDesc;
   NumEdit_SmallDesc.Value := gGame.MapEditor.MapTxtInfo.SmallDescLibx;
-  Edit_BigDesc.Text       := gGame.MapEditor.MapTxtInfo.BigDesc;
+  Edit_BigDesc.Text       := gGame.MapEditor.MapTxtInfo.GetBigDesc;
   NumEdit_BigDesc.Value   := gGame.MapEditor.MapTxtInfo.BigDescLibx;
   Memo_BigDesc.Text       := Edit_BigDesc.Text;
 

@@ -87,6 +87,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure InitDefaults;
+
     property Items[aType: TKMUnitType]: TKMUnitSpec read GetItem; default;
     property SerfCarry[aType: TKMWareType; aDir: TKMDirection]: TKMAnimLoop read GetSerfCarry;
     property CRC: Cardinal read fCRC; //Return hash of all values
@@ -149,18 +151,26 @@ const
     (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_Horse)  //Knight
   );
 
-  //TownHall units troops cost (number of gold chests needed)
-  TH_TROOP_COST: array[0..5] of Byte = (
-    3, 3, 3, 5, 10, 10
-  );
+
 
   //The frame shown when a unit is standing still in ua_Walk. Same for all units!
   UnitStillFrames: array [TKMDirection] of Byte = (0,3,2,2,1,6,7,6,6);
+
+var
+  //TownHall default units troops cost (number of gold chests needed)
+  //Could be modified by script functions
+  TH_TROOP_COST: array[0..5] of Byte;
 
 
 implementation
 uses
   KromUtils, KM_ResTexts;
+
+const
+  //TownHall default units troops cost (number of gold chests needed)
+  TH_DEFAULT_TROOP_COST: array[0..5] of Byte = (
+    3, 3, 3, 5, 10, 10
+  );
 
 
 { TKMUnitsDatClass }
@@ -482,6 +492,15 @@ begin
           end;
     end;
     closefile(ft);}
+end;
+
+
+procedure TKMResUnits.InitDefaults;
+var
+  I: Integer;
+begin
+  for I := 0 to 5 do
+    TH_TROOP_COST[I] := TH_DEFAULT_TROOP_COST[I];
 end;
 
 

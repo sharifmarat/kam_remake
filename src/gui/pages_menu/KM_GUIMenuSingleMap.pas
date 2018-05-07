@@ -383,7 +383,7 @@ begin
       end;
 
       Label_Title.Caption   := fMaps[MapId].FileName;
-      Memo_Desc.Text        := fMaps[MapId].TxtInfo.BigDesc;
+      Memo_Desc.Text        := fMaps[MapId].BigDesc;
       MinimapView.Show;
 
       //Location

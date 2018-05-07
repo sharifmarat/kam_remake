@@ -73,6 +73,14 @@ type
 
   TWonOrLost = (wol_None, wol_Won, wol_Lost);
 
+  TKMCustomScriptParam = (tsmTHTroopCosts);
+
+  TKMCustomScriptParamData = record
+    Added: Boolean;
+    Data: AnsiString;
+  end;
+
+  TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
 
 implementation
 
