@@ -223,6 +223,7 @@ var
   Light: Smallint;
 //  Owner: TKMHandIndex;
   Group: TKMUnitGroup;
+  TileOwner: TKMHandIndex;
 begin
   //if OVERLAY_OWNERSHIP then
   //begin
@@ -245,11 +246,20 @@ begin
 
       if FOW = 0 then
         fBase[I*fMapX + K] := $FF000000
-      else
-        if (fMyTerrain.Land[I+1,K+1].TileOwner <> -1)
+      else begin
+        TileOwner := -1;
+        if fMyTerrain.Land[I+1,K+1].TileOwner <> -1 then
+        begin
+          if fMyTerrain.TileHasRoad(K+1, I+1) and (fMyTerrain.Land[I+1,K+1].IsUnit <> nil) then
+            TileOwner := TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner
+          else
+            TileOwner := fMyTerrain.Land[I+1,K+1].TileOwner;
+        end;
+
+        if (TileOwner <> -1)
           and not fMyTerrain.TileIsCornField(KMPoint(K+1, I+1)) //Do not show corn and wine on minimap
           and not fMyTerrain.TileIsWineField(KMPoint(K+1, I+1)) then
-          fBase[I*fMapX + K] := GetColor(fMyTerrain.Land[I+1,K+1].TileOwner)
+          fBase[I*fMapX + K] := GetColor(TileOwner)
         else
         begin
           U := fMyTerrain.Land[I+1,K+1].IsUnit;
@@ -272,6 +282,7 @@ begin
                                   Byte(EnsureRange(gRes.Tileset.TileColor[ID].B+Light,0,255)) shl 16 or $FF000000;
           end;
         end;
+      end;
     end;
 
   //Scan all players units and paint all virtual group members in MapEd
