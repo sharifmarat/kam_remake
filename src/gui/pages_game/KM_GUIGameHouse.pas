@@ -1102,7 +1102,7 @@ begin
     //Set highlights
     Button_Barracks[I].Down := False;
     for K := 1 to 4 do
-      if BarracksResType[I] = TroopCost[Barracks_Order[fLastBarracksUnit], K] then
+      if BarracksResType[I] = TROOP_COST[Barracks_Order[fLastBarracksUnit], K] then
         Button_Barracks[I].Down := True;
 
     Image_Barracks_Accept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
@@ -1209,7 +1209,7 @@ begin
   if fLastTHUnit < High(TownHall_Order) then
     Image_TH_Right.TexID := gRes.Units[TownHall_Order[fLastTHUnit+1]].GUIScroll;
 
-  ResRow_TH_Cost.Count := TH_TroopCost[fLastTHUnit];
+  ResRow_TH_Cost.Count := TH_TROOP_COST[fLastTHUnit];
 end;
 
 

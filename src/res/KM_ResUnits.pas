@@ -137,7 +137,7 @@ const
 
 
   //Number means ResourceType as it is stored in Barracks, hence it's not rt_Something
-  TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
+  TROOP_COST: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
     (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
     (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
     (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -150,7 +150,7 @@ const
   );
 
   //TownHall units troops cost (number of gold chests needed)
-  TH_TroopCost: array[0..5] of Byte = (
+  TH_TROOP_COST: array[0..5] of Byte = (
     3, 3, 3, 5, 10, 10
   );
 

@@ -235,8 +235,8 @@ begin
   Result := Result and not gHands[fOwner].Locks.GetUnitBlocked(aUnitType);
 
   for I := 1 to 4 do
-  if TroopCost[aUnitType, I] <> wt_None then //Can't equip if we don't have a required resource
-    Result := Result and (fResourceCount[TroopCost[aUnitType, I]] > 0);
+  if TROOP_COST[aUnitType, I] <> wt_None then //Can't equip if we don't have a required resource
+    Result := Result and (fResourceCount[TROOP_COST[aUnitType, I]] > 0);
 end;
 
 
@@ -257,11 +257,11 @@ begin
 
     //Take resources
     for I := 1 to 4 do
-    if TroopCost[aUnitType, I] <> wt_None then
+    if TROOP_COST[aUnitType, I] <> wt_None then
     begin
-      Dec(fResourceCount[TroopCost[aUnitType, I]]);
-      gHands[fOwner].Stats.WareConsumed(TroopCost[aUnitType, I]);
-      gHands[fOwner].Deliveries.Queue.RemOffer(Self, TroopCost[aUnitType, I], 1);
+      Dec(fResourceCount[TROOP_COST[aUnitType, I]]);
+      gHands[fOwner].Stats.WareConsumed(TROOP_COST[aUnitType, I]);
+      gHands[fOwner].Deliveries.Queue.RemOffer(Self, TROOP_COST[aUnitType, I], 1);
     end;
 
     //Special way to kill the Recruit because it is in a house

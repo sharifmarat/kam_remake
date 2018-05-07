@@ -133,7 +133,7 @@ begin
   THUnitIndex := GetTHUnitOrderIndex(aUnitType);
 
   if THUnitIndex <> -1 then
-    Result := Result and (fGoldCnt >= TH_TroopCost[THUnitIndex]);  //Can't equip if we don't have a required resource
+    Result := Result and (fGoldCnt >= TH_TROOP_COST[THUnitIndex]);  //Can't equip if we don't have a required resource
 end;
 
 
@@ -165,7 +165,7 @@ begin
     if not CanEquip(aUnitType) then Exit;
 
     //Take resources
-    for I := 0 to TH_TroopCost[THUnitIndex] - 1 do
+    for I := 0 to TH_TROOP_COST[THUnitIndex] - 1 do
     begin  
       ResTakeFromIn(wt_Gold); //Do the goldtaking
       gHands[fOwner].Stats.WareConsumed(wt_Gold);
