@@ -659,6 +659,7 @@ type
     fOnChange: TNotifyEvent;
     procedure UpdateMouseOverPositions(X,Y: Integer);
     function GetItem(aIndex: Integer): TKMRadioGroupItem;
+    function GetItemIndexByRow(aRowIndex: Integer): Integer;
     function GetVisibleCount: Integer;
     function GetLineHeight: Single;
   protected
@@ -3792,15 +3793,16 @@ end;
 
 procedure TKMRadioGroup.UpdateMouseOverPositions(X,Y: Integer);
 var
-  LineHeight, MouseOverRow: Integer;
+  MouseOverRow, ItemIndex: Integer;
 begin
   fMouseOverItem := -1;
-  LineHeight := Round(fHeight / Count);
+
   if InRange(Y, AbsTop, AbsTop + Height) and (LineHeight > 0) then
   begin
-    MouseOverRow := EnsureRange((Y - AbsTop) div LineHeight, 0, fCount - 1);
-    if InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[MouseOverRow].Text).X) then
-      fMouseOverItem := MouseOverRow;
+    MouseOverRow := EnsureRange((Y - AbsTop) div Round(LineHeight), 0, VisibleCount - 1);
+    ItemIndex := GetItemIndexByRow(MouseOverRow);
+    if (ItemIndex <> -1) and InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[ItemIndex].Text).X) then
+      fMouseOverItem := ItemIndex;
   end;
 end;
 
@@ -3809,6 +3811,26 @@ function TKMRadioGroup.GetItem(aIndex: Integer): TKMRadioGroupItem;
 begin
   Assert(aIndex < fCount, 'Can''t get radio group item for index ' + IntToStr(aIndex));
   Result := fItems[aIndex];
+end;
+
+
+function TKMRadioGroup.GetItemIndexByRow(aRowIndex: Integer): Integer;
+var
+  I, K: Integer;
+begin
+  Assert(aRowIndex < VisibleCount, 'GetItemByRow: aRowIndex >= VisibleCount');
+  K := 0;
+  Result := -1;
+  for I := 0 to fCount - 1 do
+  begin
+    if not fItems[I].Visible then Continue;
+    if aRowIndex = K then
+    begin
+      Result := I;
+      Exit;
+    end;
+    Inc(K);
+  end;
 end;
 
 
