@@ -954,9 +954,6 @@ begin
         if H.IsDamaged then
           AddCommand(ct_SetHouseDamage, [H.GetDamage]);
 
-        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
-          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
-
         if H.BuildingRepair then // Repair mode is turned off by default
           AddCommand(ct_SetHouseRepairMode, []);
 
@@ -1002,6 +999,10 @@ begin
             if H.CheckResOut(Res) > 0 then
               AddCommand(ct_AddWareToLast, [WareTypeToIndex[Res], H.CheckResOut(Res)]);
           end;
+
+        //Set Delivery mode after Wares, so in case there are some wares and delivery mode TakeOut, then we will need to add proper Offers
+        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
+          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
       end;
     end;
     AddData(''); //NL
