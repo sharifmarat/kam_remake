@@ -493,7 +493,7 @@ begin
       if Loc_House <> nil then
         Item.SubItems.Add('H: ' + gRes.Houses[Loc_House.HouseType].HouseName)
       else if Loc_Unit <> nil then
-        Item.SubItems.Add('U: ' + gRes.Units[Loc_Unit.UnitType].UnitName)
+        Item.SubItems.Add('U: ' + gRes.Units[Loc_Unit.UnitType].GUIName)
       else
         Item.SubItems.Add('nil');
 
