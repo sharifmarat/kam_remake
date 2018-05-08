@@ -221,7 +221,6 @@ var
   P: TKMPoint;
   DoesFit: Boolean;
   Light: Smallint;
-//  Owner: TKMHandIndex;
   Group: TKMUnitGroup;
   TileOwner: TKMHandIndex;
 begin
@@ -250,7 +249,9 @@ begin
         TileOwner := -1;
         if fMyTerrain.Land[I+1,K+1].TileOwner <> -1 then
         begin
-          if fMyTerrain.TileHasRoad(K+1, I+1) and (fMyTerrain.Land[I+1,K+1].IsUnit <> nil) then
+          if fMyTerrain.TileHasRoad(K+1, I+1)
+            and (fMyTerrain.Land[I+1,K+1].IsUnit <> nil)
+            and InRange(TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner, 0, MAX_HANDS) then
             TileOwner := TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner
           else
             TileOwner := fMyTerrain.Land[I+1,K+1].TileOwner;
