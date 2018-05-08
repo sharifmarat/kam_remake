@@ -47,12 +47,13 @@ object FormLogistics: TFormLogistics
         item
           Caption = 'To'
           Width = 120
+        end
+        item
+          Caption = 'Serf'
+          Width = 100
         end>
       TabOrder = 0
       ViewStyle = vsReport
-      ExplicitTop = 6
-      ExplicitWidth = 285
-      ExplicitHeight = 183
     end
     object DemandsList: TListView
       Left = 4
@@ -92,8 +93,6 @@ object FormLogistics: TFormLogistics
       TabOrder = 2
       ViewStyle = vsReport
       Visible = False
-      ExplicitLeft = 132
-      ExplicitTop = 64
     end
     object OffersList: TListView
       Left = 4
@@ -129,8 +128,6 @@ object FormLogistics: TFormLogistics
       TabOrder = 1
       ViewStyle = vsReport
       Visible = False
-      ExplicitLeft = 8
-      ExplicitTop = 28
     end
   end
 end

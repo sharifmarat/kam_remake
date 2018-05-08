@@ -109,6 +109,7 @@ type
     function AllowFormLogisticsChange: Boolean;
     procedure UpdateOfferItem(aI: Integer);
     procedure UpdateDemandItem(aI: Integer);
+    procedure UpdateQueueItem(aI: Integer);
 
     function GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
     procedure CloseDelivery(aID: Integer);
@@ -501,6 +502,38 @@ begin
       Item.SubItems.Add(GetEnumName(TypeInfo(TKMDemandImportance), Integer(Importance)));
       Item.SubItems.Add(IntToStr(BeingPerformed));
       Item.SubItems.Add(BoolToStr(IsDeleted, True));
+    end;
+end;
+
+
+procedure TKMDeliveries.UpdateQueueItem(aI: Integer);
+begin
+  if aI >= fQueueCount then Exit;
+
+  if AllowFormLogisticsChange then
+    with fQueue[aI] do
+    begin
+      if Item = nil then
+        Item := FormLogistics.DeliveriesList.Items.Add;
+
+      Item.Caption := IntToStr(Item.Index);
+      Item.SubItems.Clear;
+      Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
+
+      if fOffer[OfferID].Loc_House = nil then
+        Item.SubItems.Add('nil')
+      else
+        Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
+
+      if fDemand[DemandID].Loc_House = nil then
+        Item.SubItems.Add('nil')
+      else
+        Item.SubItems.Add(gRes.Houses[fDemand[DemandID].Loc_House.HouseType].HouseName);
+
+      if Serf = nil then
+        Item.SubItems.Add('nil')
+      else
+        Item.SubItems.Add(IntToStr(Serf.UID));
     end;
 end;
 
@@ -1340,6 +1373,7 @@ begin
       Inc(fDemand[BestDemandId].BeingPerformed); //Places a virtual "Reserved" sign on Demand
 
       UpdateDemandItem(BestDemandId);
+      UpdateQueueItem(aDeliveryId);
     end;
 
     // Return chosen unit and house
@@ -1418,6 +1452,7 @@ begin
 
   gHands.CleanUpUnitPointer(TKMUnit(fQueue[iQ].Serf));
   fQueue[iQ].Serf := TKMUnitSerf(aSerf.GetUnitPointer);
+  UpdateQueueItem(iQ);
 end;
 
 
@@ -1442,24 +1477,7 @@ begin
   fQueue[I].Serf := TKMUnitSerf(aSerf.GetUnitPointer);
   fQueue[I].Item := nil;
 
-  if AllowFormLogisticsChange then
-    with fQueue[I] do
-    begin
-      Item := FormLogistics.DeliveriesList.Items.Add;
-
-      Item.Caption := IntToStr(Item.Index);
-      Item.SubItems.Add(gRes.Wares[fOffer[OfferID].Ware].Title);
-
-      if fOffer[OfferID].Loc_House = nil then
-        Item.SubItems.Add('nil')
-      else
-        Item.SubItems.Add(gRes.Houses[fOffer[OfferID].Loc_House.HouseType].HouseName);
-
-      if fDemand[DemandID].Loc_House = nil then
-        Item.SubItems.Add('nil')
-      else
-        Item.SubItems.Add(gRes.Houses[fDemand[DemandID].Loc_House.HouseType].HouseName);
-    end;
+  UpdateQueueItem(I);
 
   Inc(fOffer[iO].BeingPerformed); //Places a virtual "Reserved" sign on Offer
   Inc(fDemand[iD].BeingPerformed); //Places a virtual "Reserved" sign on Demand
@@ -1495,7 +1513,8 @@ begin
     else
       CloseOffer(iO);
 
-  UpdateOfferItem(aID);
+//  UpdateQueueItem(aID);
+  UpdateOfferItem(iO);
 end;
 
 
