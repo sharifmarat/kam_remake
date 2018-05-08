@@ -250,7 +250,11 @@ procedure TKMMenuReplays.LoadMinimap(aID: Integer = -1);
 begin
   if (aID <> -1) and IsSaveValid(aID) then
   begin
-    if fMinimapLastListId = aID then Exit; //Do not reload same minimap
+    if fMinimapLastListId = aID then
+    begin
+      MinimapView_Replay.Show;
+      Exit; //Do not reload same minimap
+    end;
 
     if fSaves[aID].LoadMinimap(fMinimap) then
     begin
