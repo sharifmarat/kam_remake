@@ -2157,7 +2157,7 @@ end;
 
 procedure TKMGamePlayInterface.SetMenuState(aTactic: Boolean);
 begin
-  Button_Main[tbBuild].Enabled := not aTactic and (fUIMode in [umSP, umMP]) and not HasLostMPGame and not gMySpectator.Hand.InCinematic;
+  Button_Main[tbBuild].Enabled := not aTactic and not HasLostMPGame and not gMySpectator.Hand.InCinematic; //Allow to 'test build' if we are in replay / spectate mode
   Button_Main[tbRatio].Enabled := not aTactic and ((fUIMode in [umReplay, umSpectate]) or (not HasLostMPGame and not gMySpectator.Hand.InCinematic));
   Button_Main[tbStats].Enabled := not aTactic;
 
@@ -3500,10 +3500,14 @@ begin
           Exit;
         end;
 
+        //Manage only cmNone while spectating / watchingreplay
+        if (gGameCursor.Mode <> cmNone) and gGame.IsReplayOrSpectate then
+          Exit;
+
         // Only allow placing of roads etc. with the left mouse button
         if gMySpectator.FogOfWar.CheckTileRevelation(P.X, P.Y) = 0 then
         begin
-          if gGameCursor.Mode in [cmErase, cmRoad, cmField, cmWine, cmHouses] then
+          if (gGameCursor.Mode in [cmErase, cmRoad, cmField, cmWine, cmHouses]) and not gGame.IsReplayOrSpectate then
             // Can't place noise when clicking on unexplored areas
             gSoundPlayer.Play(sfx_CantPlace, P, False, 4);
         end

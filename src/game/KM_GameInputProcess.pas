@@ -814,10 +814,12 @@ procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; co
 begin
   Assert(aCommandType in [gic_BuildRemoveFieldPlan, gic_BuildRemoveHouse, gic_BuildRemoveHousePlan]);
 
+  if gGame.IsReplayOrSpectate then Exit;
+
   //Remove fake markup that will be visible only to gMySpectator until Server verifies it.
   //Must go before TakeCommand as it could execute command immediately (in singleplayer)
   //and the fake markup must be added first otherwise our logic in FieldsList fails
-  if gGame.IsMultiplayer and (aCommandType = gic_BuildRemoveFieldPlan) then
+  if (gGame.GameMode = gmMulti) and (aCommandType = gic_BuildRemoveFieldPlan) then
     gMySpectator.Hand.RemFakeFieldPlan(aLoc);
 
   TakeCommand(MakeCommand(aCommandType, aLoc.X, aLoc.Y));
@@ -828,10 +830,12 @@ procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; co
 begin
   Assert(aCommandType in [gic_BuildAddFieldPlan]);
 
+  if gGame.IsReplayOrSpectate then Exit;
+
   //Add fake markup that will be visible only to gMySpectator until Server verifies it.
   //Must go before TakeCommand as it could execute command immediately (in singleplayer)
   //and the fake markup must be added first otherwise our logic in FieldsList fails
-  if gGame.IsMultiplayer then
+  if gGame.GameMode = gmMulti then
     gMySpectator.Hand.ToggleFakeFieldPlan(aLoc, aFieldType);
 
   TakeCommand(MakeCommand(aCommandType, aLoc.X, aLoc.Y, Byte(aFieldType)));
@@ -841,6 +845,9 @@ end;
 procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint; aHouseType: TKMHouseType);
 begin
   Assert(aCommandType = gic_BuildHousePlan);
+
+  if gGame.IsReplayOrSpectate then Exit;
+
   TakeCommand(MakeCommand(aCommandType, Byte(aHouseType), aLoc.X, aLoc.Y));
 end;
 

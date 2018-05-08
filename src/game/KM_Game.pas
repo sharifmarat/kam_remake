@@ -138,6 +138,7 @@ type
     function IsCampaign: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
+    function IsReplayOrSpectate: Boolean;
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
@@ -1183,6 +1184,12 @@ end;
 function TKMGame.IsReplay: Boolean;
 begin
   Result := fGameMode in [gmReplaySingle, gmReplayMulti];
+end;
+
+
+function TKMGame.IsReplayOrSpectate: Boolean;
+begin
+  Result := fGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti];
 end;
 
 
