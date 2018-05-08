@@ -141,9 +141,6 @@ end;
 
 procedure TKMMapEdTerrainBrushes.BrushChange(Sender: TObject);
 begin
-  if gGameCursor.Mode <> cmBrush then
-    gGameCursor.Mode := cmBrush;    // This will reset Tag
-
   gGameCursor.MapEdSize := BrushSize.Position;
   gGame.MapEditor.TerrainPainter.RandomizeTiling := RandomElements.Checked;
   gGame.MapEditor.TerrainPainter.ForcePaint := ForcePaint.Checked;
@@ -178,6 +175,9 @@ begin
         gGameCursor.MapEdBrushMask := TKMButtonFlat(Sender).Tag;
     end;
   end;
+
+  if (gGameCursor.Mode <> cmBrush) and (gGameCursor.Tag1 <> 0) then
+    gGameCursor.Mode := cmBrush;    // This will reset Tag
 
   BrushRefresh;
 end;
