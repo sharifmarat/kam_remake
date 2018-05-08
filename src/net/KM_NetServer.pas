@@ -169,6 +169,8 @@ type
 
 
 implementation
+uses
+  KM_CommonTypes;
 
 const
   //Server needs to use some text constants locally but can't know about gResTexts
@@ -1180,6 +1182,11 @@ begin
               SetAttribute('color', ColorToText(fRoomInfo[i].GameInfo.Players[k].Color));
               SetAttribute('connected', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].Connected]);
               SetAttribute('type', NetPlayerTypeName[fRoomInfo[i].GameInfo.Players[k].PlayerType]);
+              SetAttribute('langcode', fRoomInfo[i].GameInfo.Players[k].LangCode);
+              SetAttribute('team', IntToStr(fRoomInfo[i].GameInfo.Players[k].Team));
+              SetAttribute('spectator', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].IsSpectator]);
+              SetAttribute('host', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].IsHost]);
+              SetAttribute('won_or_lost', WonOrLostText[fRoomInfo[i].GameInfo.Players[k].WonOrLost]);
             end;
         end;
       end;

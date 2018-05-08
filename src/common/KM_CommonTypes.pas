@@ -82,6 +82,9 @@ type
 
   TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
 
+  const
+    WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
+
 implementation
 
 
