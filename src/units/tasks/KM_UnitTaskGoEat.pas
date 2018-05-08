@@ -104,8 +104,9 @@ begin
           SetActionLockedStay(0, ua_Walk); //Skip this step
       end;
    1: SetActionWalkToSpot(fInn.PointBelowEntrance);
-   2: begin
-        SetActionGoIn(ua_Walk, gd_GoInside, fInn); //Enter Inn
+   2: SetActionGoIn(ua_Walk, gd_GoInside, fInn); //Enter Inn
+   3: begin
+        SetActionLockedStay(0, ua_Walk);
         fPlace := fInn.EaterGetsInside(UnitType);
         //If there's no free place in the Inn skip to the step where we go out hungry
         if fPlace = -1 then
@@ -114,7 +115,7 @@ begin
           Exit;
         end;
       end;
-   3: //Typically when unit comes to Inn he is at 13%
+   4: //Typically when unit comes to Inn he is at 13%
       //Order is Bread-Sausages-Wine-Fish
       //We allow unit to eat foods until he is over 90% condition
       if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
@@ -127,7 +128,7 @@ begin
         fInn.UpdateEater(fPlace, wt_Bread);
       end else
         SetActionLockedStay(0, ua_Walk);
-   4: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
+   5: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Sausages) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Sausages);
@@ -137,7 +138,7 @@ begin
         fInn.UpdateEater(fPlace, wt_Sausages);
       end else
         SetActionLockedStay(0, ua_Walk);
-   5: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
+   6: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Wine) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Wine);
@@ -147,7 +148,7 @@ begin
         fInn.UpdateEater(fPlace, wt_Wine);
       end else
         SetActionLockedStay(0, ua_Walk);
-   6: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
+   7: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Fish) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Fish);
@@ -157,7 +158,7 @@ begin
         fInn.UpdateEater(fPlace, wt_Fish);
       end else
         SetActionLockedStay(0, ua_Walk);
-   7: begin
+   8: begin
         //Stop showing hungry if we no longer are,
         //but if we are then walk out of the inn thinking hungry
         //so that the player will know that we haven't been fed
