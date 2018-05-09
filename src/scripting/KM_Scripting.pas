@@ -1957,9 +1957,6 @@ const
     end;
   end;
 
-var
-  I: Integer;
-
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing

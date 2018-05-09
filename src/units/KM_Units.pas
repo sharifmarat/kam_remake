@@ -832,7 +832,6 @@ function TKMUnitSerf.UpdateState: Boolean;
 var
   OldThought: TKMUnitThought;
   WasIdle: Boolean;
-  H: TKMHouseInn;
 begin
   Result := True; //Required for override compatibility
   WasIdle := IsIdle;
@@ -951,8 +950,6 @@ end;
 
 
 function TKMUnitWorker.UpdateState: Boolean;
-var
-  H: TKMHouseInn;
 begin
   Result := True; //Required for override compatibility
   if fCurrentAction = nil then

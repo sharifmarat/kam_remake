@@ -195,6 +195,7 @@ implementation
 //{$ENDIF}
 
 uses
+  {$IFDEF WDC} UITypes, {$ENDIF}
   KromUtils,
   KromShellUtils,
   KM_Defaults,

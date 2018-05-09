@@ -2527,7 +2527,6 @@ end;
 // Assign Object to a Key
 // we use ID to avoid use of pointer counter
 procedure TKMGamePlayInterface.Selection_Assign(aId: Word; aObject: TObject);
-var I: Integer;
 begin
   if not InRange(aId, Low(fSelection), High(fSelection)) then Exit;
 
