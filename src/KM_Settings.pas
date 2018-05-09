@@ -154,6 +154,10 @@ type
     fHTMLStatusFile: UnicodeString;
     fServerWelcomeMessage: UnicodeString;
 
+    fServerLimitPTFrom, fServerLimitPTTo: Integer;
+    fServerLimitSpeedFrom, fServerLimitSpeedTo: Single;
+    fServerLimitSpeedAfterPTFrom, fServerLimitSpeedAfterPTTo: Single;
+
     //Menu
     fMenu_FavouriteMapsStr: UnicodeString;
     fMenu_MapSPType: Byte;
@@ -307,6 +311,13 @@ type
     property PingInterval: Integer read fPingInterval write SetPingInterval;
     property HTMLStatusFile: UnicodeString read fHTMLStatusFile write SetHTMLStatusFile;
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
+
+    property ServerLimitPTFrom: Integer read fServerLimitPTFrom;
+    property ServerLimitPTTo: Integer read fServerLimitPTTo;
+    property ServerLimitSpeedFrom: Single read fServerLimitSpeedFrom;
+    property ServerLimitSpeedTo: Single read fServerLimitSpeedTo;
+    property ServerLimitSpeedAfterPTFrom: Single read fServerLimitSpeedAfterPTFrom;
+    property ServerLimitSpeedAfterPTTo: Single read fServerLimitSpeedAfterPTTo;
 
     //Menu
     property MenuMapSPType: Byte read fMenu_MapSPType write SetMenuMapSPType;
@@ -587,6 +598,13 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
+    fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     -1);
+    fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       -1);
+    fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  -1);
+    fServerLimitSpeedTo     := F.ReadFloat  ('Server', 'LimitSpeedTo',    -1);
+    fServerLimitSpeedAfterPTFrom  := F.ReadFloat('Server', 'LimitSpeedAfterPTFrom', -1);
+    fServerLimitSpeedAfterPTTo    := F.ReadFloat('Server', 'LimitSpeedAfterPTTo',   -1);
+
     fMenu_FavouriteMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
     fFavouriteMaps.LoadFromString(fMenu_FavouriteMapsStr);
 
@@ -679,6 +697,13 @@ begin
     F.WriteString ('Server','MasterServerAddressNew',       fMasterServerAddress);
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
+
+    F.WriteInteger('Server','LimitPTFrom',            fServerLimitPTFrom);
+    F.WriteInteger('Server','LimitPTTo',              fServerLimitPTTo);
+    F.WriteFloat  ('Server','LimitSpeedFrom',         fServerLimitSpeedFrom);
+    F.WriteFloat  ('Server','LimitSpeedTo',           fServerLimitSpeedTo);
+    F.WriteFloat  ('Server','LimitSpeedAfterPTFrom',  fServerLimitSpeedAfterPTFrom);
+    F.WriteFloat  ('Server','LimitSpeedAfterPTTo',    fServerLimitSpeedAfterPTTo);
 
     F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMapsStr);
     F.WriteInteger('Menu',  'MapSPType',          fMenu_MapSPType);
