@@ -16,12 +16,12 @@ uses
   ;
 
 type
-  TNetPlayerKind = (lpk_Host, lpk_Joiner);
-  TNetGameState = (lgs_None, lgs_Connecting, lgs_Query, lgs_Lobby, lgs_Loading, lgs_Game, lgs_Reconnecting);
-  TNetGameKind = (ngk_None, ngk_Map, ngk_Save);
-  TChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
+  TKMNetPlayerKind = (lpk_Host, lpk_Joiner);
+  TKMNetGameState = (lgs_None, lgs_Connecting, lgs_Query, lgs_Lobby, lgs_Loading, lgs_Game, lgs_Reconnecting);
+  TKMNetGameKind = (ngk_None, ngk_Map, ngk_Save);
+  TKMChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
   TKMChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
-  TChatState =  record
+  TKMChatState =  record
                   Messages: UnicodeString;
                   ChatText: UnicodeString;
                   Mode: TKMChatMode;
@@ -29,8 +29,8 @@ type
                 end;
 
 const
-  NetMPGameState: array [TNetGameState] of TMPGameState = (mgsNone, mgsNone, mgsNone, mgsLobby, mgsLoading, mgsGame, mgsGame);
-  NetAllowedPackets: array [TNetGameState] of set of TKMessageKind = (
+  NetMPGameState: array [TKMNetGameState] of TMPGameState = (mgsNone, mgsNone, mgsNone, mgsLobby, mgsLoading, mgsGame, mgsGame);
+  NetAllowedPackets: array [TKMNetGameState] of set of TKMessageKind = (
     //lgs_None
     [],
     //lgs_Connecting
@@ -70,8 +70,8 @@ type
     fNetServer: TKMDedicatedServer;
     fNetClient: TKMNetClient;
     fServerQuery: TKMServerQuery;
-    fNetPlayerKind: TNetPlayerKind; // Our role (Host or Joiner)
-    fNetGameState: TNetGameState;
+    fNetPlayerKind: TKMNetPlayerKind; // Our role (Host or Joiner)
+    fNetGameState: TKMNetGameState;
     fServerAddress: string; // Used for reconnecting
     fServerPort: Word; // Used for reconnecting
     fRoomToJoin: Integer; // The room we should join once we hear from the server
@@ -95,12 +95,12 @@ type
 
     fMapInfo: TKMapInfo; // Everything related to selected map
     fSaveInfo: TKMSaveInfo;
-    fSelectGameKind: TNetGameKind;
+    fSelectGameKind: TKMNetGameKind;
     fNetGameOptions: TKMGameOptions;
 
     fFileReceiver: TKMFileReceiver;
     fFileSenderManager: TKMFileSenderManager;
-    fMissingFileType: TNetGameKind;
+    fMissingFileType: TKMNetGameKind;
     fMissingFileName: UnicodeString;
     fMissingFileCRC: Cardinal;
 
@@ -140,7 +140,7 @@ type
     procedure StartGame;
     procedure TryPlayGame;
     procedure PlayGame;
-    procedure SetGameState(aState: TNetGameState);
+    procedure SetGameState(aState: TKMNetGameState);
     procedure SendMapOrSave(Recipient: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
     procedure DoReconnection;
     function IsPlayerHandStillInGame(aPlayerIndex: Integer): Boolean;
@@ -177,7 +177,7 @@ type
     property MyIndex: Integer read fMyIndex;
     property MyIndexOnServer: TKMNetHandleIndex read fMyIndexOnServer;
     property HostIndex: Integer read fHostIndex;
-    property NetGameState: TNetGameState read fNetGameState;
+    property NetGameState: TKMNetGameState read fNetGameState;
     function MyIPString:string;
     property ServerName: AnsiString read fServerName;
     property ServerAddress: string read fServerAddress;
@@ -230,20 +230,20 @@ type
 
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
-    procedure PostMessage(aTextID: Integer; aSound: TChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
+    procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
     procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
-    procedure PostLocalMessage(const aText: UnicodeString; aSound: TChatSound);
+    procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
     //Gameplay
     property MapInfo: TKMapInfo read fMapInfo;
     property SaveInfo: TKMSaveInfo read fSaveInfo;
     property NetGameOptions: TKMGameOptions read fNetGameOptions;
-    property SelectGameKind: TNetGameKind read fSelectGameKind;
+    property SelectGameKind: TKMNetGameKind read fSelectGameKind;
     property NetPlayers: TKMNetPlayersList read fNetPlayers;
     property MyNetPlayer: TKMNetPlayerInfo read GetMyNetPlayer;
     property LastProcessedTick: Cardinal write fLastProcessedTick;
-    property MissingFileType: TNetGameKind read fMissingFileType;
+    property MissingFileType: TKMNetGameKind read fMissingFileType;
     property MissingFileName: UnicodeString read fMissingFileName;
     procedure GameCreated;
     procedure SendCommands(aStream: TKMemoryStream; aPlayerIndex: ShortInt = -1);
@@ -1165,7 +1165,7 @@ begin
 end;
 
 
-procedure TKMNetworking.PostMessage(aTextID: Integer; aSound: TChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
+procedure TKMNetworking.PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
 var M: TKMemoryStream;
 begin
   M := TKMemoryStream.Create;
@@ -1178,9 +1178,9 @@ begin
 end;
 
 
-procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TChatSound);
+procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
 const
-  ChatSound: array[TChatSound] of TSoundFXNew = (sfxn_MPChatSystem, //csNone
+  ChatSound: array[TKMChatSound] of TSoundFXNew = (sfxn_MPChatSystem, //csNone
                                                  sfxn_MPChatSystem, //csJoin
                                                  sfxn_MPChatSystem, //csLeave
                                                  sfxn_MPChatSystem, //csSystem
@@ -1541,7 +1541,7 @@ var
   tmpStringW, replyStringW: UnicodeString;
   tmpChatMode: TKMChatMode;
   I,LocID,TeamID,ColorID,PlayerIndex: Integer;
-  ChatSound: TChatSound;
+  ChatSound: TKMChatSound;
 begin
   Assert(aLength >= 1, 'Unexpectedly short message'); //Kind, Message
   if not Connected then Exit;
@@ -1559,7 +1559,7 @@ begin
       if not (fNetGameState in [lgs_Query, lgs_Reconnecting]) then
       begin
         err := 'Received a packet not intended for this state (' +
-          GetEnumName(TypeInfo(TNetGameState), Integer(fNetGameState)) + '): ' +
+          GetEnumName(TypeInfo(TKMNetGameState), Integer(fNetGameState)) + '): ' +
           GetEnumName(TypeInfo(TKMessageKind), Integer(Kind));
         //These warnings sometimes happen when returning to lobby, log them but don't show user
         gLog.AddTime(err);
@@ -2423,7 +2423,7 @@ begin
 end;
 
 
-procedure TKMNetworking.SetGameState(aState: TNetGameState);
+procedure TKMNetworking.SetGameState(aState: TKMNetGameState);
 begin
   fNetGameState := aState;
   if (fNetGameState in [lgs_Lobby,lgs_Loading,lgs_Game]) and IsHost and (fMyIndexOnServer <> -1) then

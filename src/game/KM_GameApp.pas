@@ -532,7 +532,7 @@ end;
 
 
 procedure TKMGameApp.StopGameReturnToLobby(Sender: TObject);
-var ChatState: TChatState;
+var ChatState: TKMChatState;
 begin
   if gGame = nil then Exit;
 

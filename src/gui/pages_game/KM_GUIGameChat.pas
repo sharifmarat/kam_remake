@@ -36,8 +36,8 @@ type
   public
     constructor Create(aParent: TKMPanel);
 
-    procedure SetChatState(const aChatState: TChatState);
-    function GetChatState: TChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
+    function GetChatState: TKMChatState;
     procedure ChatMessage(const aData: UnicodeString);
     procedure Unfocus;
     procedure Focus;
@@ -280,7 +280,7 @@ end;
 
 
 //Access text that user was typing to copy it over to lobby chat
-function TKMGUIGameChat.GetChatState: TChatState;
+function TKMGUIGameChat.GetChatState: TKMChatState;
 begin
   if fChatMode = cmWhisper then
     Result.WhisperRecipient := gGame.Networking.NetPlayers[fChatWhisperRecipient].IndexOnServer
@@ -292,7 +292,7 @@ begin
 end;
 
 
-procedure TKMGUIGameChat.SetChatState(const aChatState: TChatState);
+procedure TKMGUIGameChat.SetChatState(const aChatState: TKMChatState);
 const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam

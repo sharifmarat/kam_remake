@@ -286,8 +286,8 @@ type
     procedure SetScriptedOverlay(const aText: UnicodeString);
     procedure UpdateOverlayControls;
     procedure ReleaseDirectionSelector;
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
+    function GetChatState: TKMChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
     procedure ChatMessage(const aData: UnicodeString);
     procedure AlliesOnPlayerSetup(Sender: TObject);
     procedure AlliesOnPingInfo(Sender: TObject);
@@ -2509,13 +2509,13 @@ end;
 
 
 // Access chat messages history to copy it over to lobby chat
-function TKMGamePlayInterface.GetChatState: TChatState;
+function TKMGamePlayInterface.GetChatState: TKMChatState;
 begin
   Result := fGuiGameChat.GetChatState;
 end;
 
 
-procedure TKMGamePlayInterface.SetChatState(const aChatState: TChatState);
+procedure TKMGamePlayInterface.SetChatState(const aChatState: TKMChatState);
 begin
   fGuiGameChat.SetChatState(aChatState);
 

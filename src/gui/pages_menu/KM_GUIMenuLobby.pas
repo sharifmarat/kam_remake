@@ -44,7 +44,7 @@ type
     procedure CreatePlayerMenus(aParent: TKMPanel);
     procedure CreateSettingsPopUp(aParent: TKMPanel);
 
-    procedure Reset(aKind: TNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+    procedure Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
     procedure GameOptionsTabSwitch(Sender: TObject);
     procedure GameOptionsChange(Sender: TObject);
     procedure FileDownloadClick(Sender: TObject);
@@ -177,9 +177,9 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
-    procedure Show(aKind: TNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
+    function GetChatState: TKMChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
+    procedure Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
     procedure Lobby_Resize(aMainHeight: Word);
     procedure ReturnToLobby(const aSaveName: UnicodeString);
     procedure UpdateState;
@@ -803,7 +803,7 @@ end;
 
 
 //Access text that user was typing to copy it over to gameplay chat
-function TKMMenuLobby.GetChatState: TChatState;
+function TKMMenuLobby.GetChatState: TKMChatState;
 begin
   Result.WhisperRecipient := fChatWhisperRecipient;
   Result.Mode := fChatMode;
@@ -812,7 +812,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.SetChatState(const aChatState: TChatState);
+procedure TKMMenuLobby.SetChatState(const aChatState: TKMChatState);
 const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
@@ -829,7 +829,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.Show(aKind: TNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
+procedure TKMMenuLobby.Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
 var I: Integer;
 begin
   fNetworking := aNetworking;
@@ -947,7 +947,7 @@ end;
 
 
 //Reset everything to it's defaults depending on users role (Host/Joiner/Reassigned)
-procedure TKMMenuLobby.Reset(aKind: TNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+procedure TKMMenuLobby.Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
 var I: Integer;
 begin
   Label_ServerName.Caption := '';
