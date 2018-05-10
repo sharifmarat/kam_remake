@@ -2,7 +2,7 @@ unit KM_CommonClasses;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils, KM_Points;
+  Classes, SysUtils, KM_Points, KM_CommonTypes;
 
 
 type
@@ -158,6 +158,29 @@ type
   end;
 
 
+  TKMMapsCRCList = class
+  private
+    fMapsList: TStringList;
+    fOnMapsUpdate: TUnicodeStringEvent;
+
+    procedure MapsUpdated;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure LoadFromString(const aString: UnicodeString);
+    function PackToString: UnicodeString;
+
+    property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
+
+    procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
+    function Contains(aMapCRC: Cardinal): Boolean;
+    procedure Add(aMapCRC: Cardinal);
+    procedure Remove(aMapCRC: Cardinal);
+    procedure Replace(aOldCRC, aNewCRC: Cardinal);
+  end;
+
+
   //Custom Exception that includes a TKMPoint
   ELocError = class(Exception)
     Loc: TKMPoint;
@@ -168,6 +191,9 @@ type
 implementation
 uses
   Math, KM_CommonUtils;
+
+const
+  MAPS_CRC_DELIMITER = ':';
 
 {TXStringList}
 //List custom comparation, using Integer value, instead of its String represantation
@@ -839,6 +865,124 @@ begin
   SetLength(Tag, fCount);
   if fCount > 0 then
     LoadStream.Read(Tag[0], SizeOf(Tag[0]) * fCount);
+end;
+
+
+{ TKMMapsCRCList }
+constructor TKMMapsCRCList.Create;
+begin
+  inherited;
+  fMapsList := TStringList.Create;
+  fMapsList.Delimiter       := MAPS_CRC_DELIMITER;
+  fMapsList.StrictDelimiter := True; // Requires D2006 or newer.
+end;
+
+
+destructor TKMMapsCRCList.Destroy;
+begin
+  FreeAndNil(fMapsList);
+  inherited;
+end;
+
+
+procedure TKMMapsCRCList.MapsUpdated;
+begin
+  if Assigned(fOnMapsUpdate) then
+    fOnMapsUpdate(PackToString);
+end;
+
+
+procedure TKMMapsCRCList.LoadFromString(const aString: UnicodeString);
+var I: Integer;
+    MapCRC : Int64;
+    StringList: TStringList;
+begin
+  fMapsList.Clear;
+  StringList := TStringList.Create;
+  StringList.Delimiter := MAPS_CRC_DELIMITER;
+  StringList.DelimitedText   := Trim(aString);
+
+  for I := 0 to StringList.Count - 1 do
+  begin
+    if TryStrToInt64(Trim(StringList[I]), MapCRC)
+      and (MapCRC > 0)
+      and not Contains(Cardinal(MapCRC)) then
+      fMapsList.Add(Trim(StringList[I]));
+  end;
+
+  StringList.Free;
+end;
+
+
+function TKMMapsCRCList.PackToString: UnicodeString;
+begin
+  Result := fMapsList.DelimitedText;
+end;
+
+
+//Remove missing Favourites Maps from list, check if are of them are presented in the given maps CRC array.
+procedure TKMMapsCRCList.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
+  function ArrayContains(aValue: Cardinal): Boolean;
+  var I: Integer;
+  begin
+    Result := False;
+    for I := Low(aMapsCRCArray) to High(aMapsCRCArray) do
+      if aMapsCRCArray[I] = aValue then
+      begin
+        Result := True;
+        Break;
+      end;
+  end;
+var I: Integer;
+begin
+  I := fMapsList.Count - 1;
+  //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
+  while (fMapsList.Count > 0) and (I >= 0) do
+  begin
+    if not ArrayContains(StrToInt64(fMapsList[I])) then
+    begin
+      fMapsList.Delete(I);
+      MapsUpdated;
+    end;
+
+    Dec(I);
+  end;
+end;
+
+
+function TKMMapsCRCList.Contains(aMapCRC: Cardinal): Boolean;
+begin
+  Result := fMapsList.IndexOf(IntToStr(aMapCRC)) <> -1;
+end;
+
+
+procedure TKMMapsCRCList.Add(aMapCRC: Cardinal);
+begin
+  if not Contains(aMapCRC) then
+  begin
+    fMapsList.Add(IntToStr(aMapCRC));
+    MapsUpdated;
+  end;
+end;
+
+
+procedure TKMMapsCRCList.Remove(aMapCRC: Cardinal);
+var Index: Integer;
+begin
+  Index := fMapsList.IndexOf(IntToStr(aMapCRC));
+  if Index <> -1 then
+    fMapsList.Delete(Index);
+  MapsUpdated;
+end;
+
+
+procedure TKMMapsCRCList.Replace(aOldCRC, aNewCRC: Cardinal);
+begin
+  if Contains(aOldCRC) then
+  begin
+    Remove(aOldCRC);
+    Add(aNewCRC);
+  end;
 end;
 
 

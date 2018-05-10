@@ -6,7 +6,7 @@ uses
   {$IFDEF FPC}Forms,{$ENDIF}   //Lazarus do not know UITypes
   {$IFDEF WDC}UITypes,{$ENDIF} //We use settings in console modules
   KM_Resolutions, KM_WareDistribution,
-  KM_Defaults, KM_Points, KM_CommonTypes;
+  KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses;
 
 
 type
@@ -37,29 +37,6 @@ type
     procedure LockParams;
     procedure UnlockParams;
     function IsValid(aMonitorsInfo: TKMPointArray): Boolean;
-  end;
-
-
-  TKMMapsCRCList = class
-  private
-    fMapsList: TStringList;
-    fOnMapsUpdate: TUnicodeStringEvent;
-
-    procedure FavoriteMapsUpdated;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure LoadFromString(const aString: UnicodeString);
-    function PackToString: UnicodeString;
-
-    property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
-
-    procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
-    function Contains(aMapCRC: Cardinal): Boolean;
-    procedure Add(aMapCRC: Cardinal);
-    procedure Remove(aMapCRC: Cardinal);
-    procedure Replace(aOldCRC, aNewCRC: Cardinal);
   end;
 
 
@@ -347,9 +324,6 @@ implementation
 uses
   SysUtils, INIfiles, Math,
   KM_Log;
-
-const
-  FAVOURITE_MAPS_DELIMITER = ':';
 
 
 { TMainSettings }
@@ -1188,124 +1162,6 @@ begin
         and (fHeight >= MIN_RESOLUTION_HEIGHT)
         and (fHeight <= ScreenMaxHeight)
         and (fState in [TWindowState.wsNormal, TWindowState.wsMaximized]);
-end;
-
-
-{TKMFavouriteMaps}
-constructor TKMMapsCRCList.Create;
-begin
-  inherited;
-  fMapsList := TStringList.Create;
-  fMapsList.Delimiter       := FAVOURITE_MAPS_DELIMITER;
-  fMapsList.StrictDelimiter := True; // Requires D2006 or newer.
-end;
-
-
-destructor TKMMapsCRCList.Destroy;
-begin
-  FreeAndNil(fMapsList);
-  inherited;
-end;
-
-
-procedure TKMMapsCRCList.FavoriteMapsUpdated;
-begin
-  if Assigned(fOnMapsUpdate) then
-    fOnMapsUpdate(PackToString);
-end;
-
-
-procedure TKMMapsCRCList.LoadFromString(const aString: UnicodeString);
-var I: Integer;
-    MapCRC : Int64;
-    StringList: TStringList;
-begin
-  fMapsList.Clear;
-  StringList := TStringList.Create;
-  StringList.Delimiter := FAVOURITE_MAPS_DELIMITER;
-  StringList.DelimitedText   := Trim(aString);
-
-  for I := 0 to StringList.Count - 1 do
-  begin
-    if TryStrToInt64(Trim(StringList[I]), MapCRC)
-      and (MapCRC > 0)
-      and not Contains(Cardinal(MapCRC)) then
-      fMapsList.Add(Trim(StringList[I]));
-  end;
-
-  StringList.Free;
-end;
-
-
-function TKMMapsCRCList.PackToString: UnicodeString;
-begin
-  Result := fMapsList.DelimitedText;
-end;
-
-
-//Remove missing Favourites Maps from list, check if are of them are presented in the given maps CRC array.
-procedure TKMMapsCRCList.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
-  function ArrayContains(aValue: Cardinal): Boolean;
-  var I: Integer;
-  begin
-    Result := False;
-    for I := Low(aMapsCRCArray) to High(aMapsCRCArray) do
-      if aMapsCRCArray[I] = aValue then
-      begin
-        Result := True;
-        Break;
-      end;
-  end;
-var I: Integer;
-begin
-  I := fMapsList.Count - 1;
-  //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
-  while (fMapsList.Count > 0) and (I >= 0) do
-  begin
-    if not ArrayContains(StrToInt64(fMapsList[I])) then
-    begin
-      fMapsList.Delete(I);
-      FavoriteMapsUpdated;
-    end;
-
-    Dec(I);
-  end;
-end;
-
-
-function TKMMapsCRCList.Contains(aMapCRC: Cardinal): Boolean;
-begin
-  Result := fMapsList.IndexOf(IntToStr(aMapCRC)) <> -1;
-end;
-
-
-procedure TKMMapsCRCList.Add(aMapCRC: Cardinal);
-begin
-  if not Contains(aMapCRC) then
-  begin
-    fMapsList.Add(IntToStr(aMapCRC));
-    FavoriteMapsUpdated;
-  end;
-end;
-
-
-procedure TKMMapsCRCList.Remove(aMapCRC: Cardinal);
-var Index: Integer;
-begin
-  Index := fMapsList.IndexOf(IntToStr(aMapCRC));
-  if Index <> -1 then
-    fMapsList.Delete(Index);
-  FavoriteMapsUpdated;
-end;
-
-
-procedure TKMMapsCRCList.Replace(aOldCRC, aNewCRC: Cardinal);
-begin
-  if Contains(aOldCRC) then
-  begin
-    Remove(aOldCRC);
-    Add(aNewCRC);
-  end;
 end;
 
 
