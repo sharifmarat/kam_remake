@@ -1184,7 +1184,14 @@ begin
   end;
 
   // If we cannot walk there choose first group instead
-  if not (aIgnorePassability OR gTerrain.CheckPassability(Output, tpWalk)) then
+  I := gAIFields.NavMesh.KMPoint2Polygon[Output];
+  if not (aIgnorePassability
+          OR (gTerrain.CheckPassability(Output, tpWalk)
+              AND ((gAIFields.Influences.PresenceAllGroups[ fOwner, I ] > 0)
+                   //OR (gAIFields.Influences.ArmyTraffic[ fOwner, I ] > 0)
+                  )
+             )
+         ) then
     for G := Low(TKMGroupType) to High(TKMGroupType) do
       if (fSquads[G].Count > 0) then
       begin
