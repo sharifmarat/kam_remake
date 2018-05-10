@@ -40,9 +40,9 @@ type
   end;
 
 
-  TKMFavouriteMaps = class
+  TKMMapsCRCList = class
   private
-    fFavouriteMPMaps: TStringList;
+    fMapsList: TStringList;
     fOnMapsUpdate: TUnicodeStringEvent;
 
     procedure FavoriteMapsUpdated;
@@ -179,7 +179,7 @@ type
     fMenu_SPSaveFileName: UnicodeString;
     fMenu_LobbyMapType: Byte;
 
-    fFavouriteMaps: TKMFavouriteMaps;
+    fFavouriteMaps: TKMMapsCRCList;
 
     //GFX
     procedure SetBrightness(aValue: Byte);
@@ -339,7 +339,7 @@ type
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
 
-    property FavouriteMaps: TKMFavouriteMaps read fFavouriteMaps;
+    property FavouriteMaps: TKMMapsCRCList read fFavouriteMaps;
   end;
 
 
@@ -487,7 +487,7 @@ begin
 
   fWareDistribution := TKMWareDistribution.Create;
 
-  fFavouriteMaps := TKMFavouriteMaps.Create;
+  fFavouriteMaps := TKMMapsCRCList.Create;
   fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMapsStr;
 
   ReloadSettings;
@@ -1192,35 +1192,35 @@ end;
 
 
 {TKMFavouriteMaps}
-constructor TKMFavouriteMaps.Create;
+constructor TKMMapsCRCList.Create;
 begin
   inherited;
-  fFavouriteMPMaps := TStringList.Create;
-  fFavouriteMPMaps.Delimiter       := FAVOURITE_MAPS_DELIMITER;
-  fFavouriteMPMaps.StrictDelimiter := True; // Requires D2006 or newer.
+  fMapsList := TStringList.Create;
+  fMapsList.Delimiter       := FAVOURITE_MAPS_DELIMITER;
+  fMapsList.StrictDelimiter := True; // Requires D2006 or newer.
 end;
 
 
-destructor TKMFavouriteMaps.Destroy;
+destructor TKMMapsCRCList.Destroy;
 begin
-  FreeAndNil(fFavouriteMPMaps);
+  FreeAndNil(fMapsList);
   inherited;
 end;
 
 
-procedure TKMFavouriteMaps.FavoriteMapsUpdated;
+procedure TKMMapsCRCList.FavoriteMapsUpdated;
 begin
   if Assigned(fOnMapsUpdate) then
     fOnMapsUpdate(PackToString);
 end;
 
 
-procedure TKMFavouriteMaps.LoadFromString(const aString: UnicodeString);
+procedure TKMMapsCRCList.LoadFromString(const aString: UnicodeString);
 var I: Integer;
     MapCRC : Int64;
     StringList: TStringList;
 begin
-  fFavouriteMPMaps.Clear;
+  fMapsList.Clear;
   StringList := TStringList.Create;
   StringList.Delimiter := FAVOURITE_MAPS_DELIMITER;
   StringList.DelimitedText   := Trim(aString);
@@ -1230,21 +1230,21 @@ begin
     if TryStrToInt64(Trim(StringList[I]), MapCRC)
       and (MapCRC > 0)
       and not Contains(Cardinal(MapCRC)) then
-      fFavouriteMPMaps.Add(Trim(StringList[I]));
+      fMapsList.Add(Trim(StringList[I]));
   end;
 
   StringList.Free;
 end;
 
 
-function TKMFavouriteMaps.PackToString: UnicodeString;
+function TKMMapsCRCList.PackToString: UnicodeString;
 begin
-  Result := fFavouriteMPMaps.DelimitedText;
+  Result := fMapsList.DelimitedText;
 end;
 
 
 //Remove missing Favourites Maps from list, check if are of them are presented in the given maps CRC array.
-procedure TKMFavouriteMaps.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
+procedure TKMMapsCRCList.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
   function ArrayContains(aValue: Cardinal): Boolean;
   var I: Integer;
   begin
@@ -1258,13 +1258,13 @@ procedure TKMFavouriteMaps.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
   end;
 var I: Integer;
 begin
-  I := fFavouriteMPMaps.Count - 1;
+  I := fMapsList.Count - 1;
   //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
-  while (fFavouriteMPMaps.Count > 0) and (I >= 0) do
+  while (fMapsList.Count > 0) and (I >= 0) do
   begin
-    if not ArrayContains(StrToInt64(fFavouriteMPMaps[I])) then
+    if not ArrayContains(StrToInt64(fMapsList[I])) then
     begin
-      fFavouriteMPMaps.Delete(I);
+      fMapsList.Delete(I);
       FavoriteMapsUpdated;
     end;
 
@@ -1273,33 +1273,33 @@ begin
 end;
 
 
-function TKMFavouriteMaps.Contains(aMapCRC: Cardinal): Boolean;
+function TKMMapsCRCList.Contains(aMapCRC: Cardinal): Boolean;
 begin
-  Result := fFavouriteMPMaps.IndexOf(IntToStr(aMapCRC)) <> -1;
+  Result := fMapsList.IndexOf(IntToStr(aMapCRC)) <> -1;
 end;
 
 
-procedure TKMFavouriteMaps.Add(aMapCRC: Cardinal);
+procedure TKMMapsCRCList.Add(aMapCRC: Cardinal);
 begin
   if not Contains(aMapCRC) then
   begin
-    fFavouriteMPMaps.Add(IntToStr(aMapCRC));
+    fMapsList.Add(IntToStr(aMapCRC));
     FavoriteMapsUpdated;
   end;
 end;
 
 
-procedure TKMFavouriteMaps.Remove(aMapCRC: Cardinal);
+procedure TKMMapsCRCList.Remove(aMapCRC: Cardinal);
 var Index: Integer;
 begin
-  Index := fFavouriteMPMaps.IndexOf(IntToStr(aMapCRC));
+  Index := fMapsList.IndexOf(IntToStr(aMapCRC));
   if Index <> -1 then
-    fFavouriteMPMaps.Delete(Index);
+    fMapsList.Delete(Index);
   FavoriteMapsUpdated;
 end;
 
 
-procedure TKMFavouriteMaps.Replace(aOldCRC, aNewCRC: Cardinal);
+procedure TKMMapsCRCList.Replace(aOldCRC, aNewCRC: Cardinal);
 begin
   if Contains(aOldCRC) then
   begin
