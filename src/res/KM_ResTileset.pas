@@ -457,6 +457,8 @@ type
 
 
 implementation
+uses
+  KM_CommonUtils;
 
 
 { TKMResTileset }
@@ -591,8 +593,11 @@ end;}
 
 {Check if requested tile is sand suitable for crabs}
 function TKMResTileset.TileIsSand(aTile: Word): Boolean;
+const
+  SAND_TILES: array[0..21] of Word =
+                (31,32,33, 70,71, 99,100,102,103, 108,109, 112, 113, 116,117, 169, 173, 181, 189, 269, 273, 302);
 begin
-  Result := aTile in [31..33, 70,71, 99,100,102,103, 108,109, 112,113, 116,117, 169, 173, 181, 189];
+  Result := ArrayContains(aTile, SAND_TILES);
 end;
 
 
@@ -612,8 +617,12 @@ end;
 
 {Check if requested tile is sand suitable for crabs}
 function TKMResTileset.TileIsSnow(aTile: Word): Boolean;
+const
+  SNOW_TILES: array[0..24] of Word =
+                (45, 46, 47, 49, 52, 64, 65, 166, 171, 203, 204, 205, 212, 213, 220, 256, 257, 261, 262,
+                 286, 290, 294, 298, 305, 306);
 begin
-  Result := aTile in [45, 46, 47, 49, 52, 64, 65, 166, 171, 203, 204, 205, 212, 213, 220];
+  Result := ArrayContains(aTile, SNOW_TILES);
 end;
 
 
@@ -670,9 +679,13 @@ end;
 
 {Check if requested tile is soil suitable for fields and trees}
 function TKMResTileset.TileIsSoil(aTile: Word): Boolean;
+const
+  SOIL_TILES: array[0..71] of Word =
+                (0,1,2,3,5,6, 8,9,11,13,14, 16,17,18,19,20,21, 26,27,28, 34,35,36,37,38,39, 47, 49, 55,56,
+                57,58,64,65,66,67,68,69,71,72,73,74,75,76,77,78,79,80, 84,85,86,87,88,89, 93,94,95,96,97,98,
+                180,182,183,188,190,191,220,247,274, 282, 301, 303);
 begin
-  Result := aTile in [0..3,5,6, 8,9,11,13,14, 16..21, 26..28, 34..39, 47, 49, 55..58, 64..69, 72..80, 84..87,
-                      88,89, 93..98,180,182..183,188,190..191,220,247];
+  Result := ArrayContains(aTile, SOIL_TILES);
 end;
 
 
