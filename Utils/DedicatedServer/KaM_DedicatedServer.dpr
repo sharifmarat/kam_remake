@@ -23,8 +23,10 @@ uses
   {$IFDEF FPC} Interfaces, {$ENDIF}
   KM_CommonUtils in '..\..\src\utils\KM_CommonUtils.pas',
   KM_Defaults in '..\..\src\common\KM_Defaults.pas',
+  KM_Points in '..\..\src\common\KM_Points.pas',
   KM_Log in '..\..\src\KM_Log.pas',
   KM_Settings in '..\..\src\KM_Settings.pas',
+  KM_NetworkTypes in '..\..\src\net\KM_NetworkTypes.pas',
   KM_DedicatedServer in '..\..\src\net\other\KM_DedicatedServer.pas',
   {$IFDEF WDC}
   KM_ConsoleTimer in '..\..\src\utils\KM_ConsoleTimer.pas',
@@ -52,6 +54,8 @@ end;
 {$ENDIF}
 
 procedure RunTheServer;
+var
+  GameFilter: TKMPGameFilter;
 begin
   fDedicatedServer := TKMDedicatedServer.Create(fSettings.MaxRooms,
                                                 fSettings.AutoKickTimeout,
@@ -61,6 +65,12 @@ begin
                                                 fSettings.HTMLStatusFile,
                                                 fSettings.ServerWelcomeMessage,
                                                 True);
+  GameFilter := TKMPGameFilter.Create(fSettings.ServerMapsRosterEnabled,
+                                      fSettings.ServerMapsRosterStr,
+                                      KMRange(fSettings.ServerLimitPTFrom, fSettings.ServerLimitPTTo),
+                                      KMRange(fSettings.ServerLimitSpeedFrom, fSettings.ServerLimitSpeedTo),
+                                      KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
+  fDedicatedServer.Server.GameFilter := GameFilter;
   fDedicatedServer.OnMessage := fEventHandler.ServerStatusMessage;
   fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
 

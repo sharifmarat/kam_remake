@@ -39,6 +39,8 @@ type
     function Write(const Value:TKMPoint ): Longint; reintroduce; overload;
     function Write(const Value:TKMPointW): Longint; reintroduce; overload;
     function Write(const Value:TKMPointF): Longint; reintroduce; overload;
+    function Write(const Value:TKMRangeInt): Longint; reintroduce; overload;
+    function Write(const Value:TKMRangeSingle): Longint; reintroduce; overload;
     function Write(const Value:TKMRect  ): Longint; reintroduce; overload;
     function Write(const Value:Single   ): Longint; reintroduce; overload;
     function Write(const Value:Integer  ): Longint; reintroduce; overload;
@@ -55,6 +57,8 @@ type
     function Read(out Value:TKMPoint    ): Longint; reintroduce; overload;
     function Read(out Value:TKMPointW   ): Longint; reintroduce; overload;
     function Read(out Value:TKMPointF   ): Longint; reintroduce; overload;
+    function Read(out Value:TKMRangeInt ): Longint; reintroduce; overload;
+    function Read(out Value:TKMRangeSingle): Longint; reintroduce; overload;
     function Read(out Value:TKMRect     ): Longint; reintroduce; overload;
     function Read(out Value:Single      ): Longint; reintroduce; overload;
     function Read(out Value:Integer     ): Longint; reintroduce; overload;
@@ -173,6 +177,7 @@ type
 
     property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
 
+    procedure Clear;
     procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
     function Contains(aMapCRC: Cardinal): Boolean;
     procedure Add(aMapCRC: Cardinal);
@@ -310,30 +315,49 @@ end;
 
 function TKMemoryStream.Write(const Value: TKMDirection): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPoint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPointW): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPointF): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Write(const Value:TKMRangeInt): Longint;
+begin Result := inherited Write(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Write(const Value:TKMRangeSingle): Longint;
+begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMRect): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:single): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:integer): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:cardinal): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:byte): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:boolean): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:word): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:shortint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:smallint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TDateTime): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
 
@@ -356,30 +380,49 @@ end;
 
 function TKMemoryStream.Read(out Value:TKMDirection): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPoint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPointW): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPointF): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Read(out Value:TKMRangeInt ): Longint;
+begin Result := inherited Read(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Read(out Value:TKMRangeSingle ): Longint;
+begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMRect): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:single): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:integer): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:cardinal): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:byte): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:boolean): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:word): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:shortint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:smallint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TDateTime): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
 
@@ -917,6 +960,12 @@ end;
 function TKMMapsCRCList.PackToString: UnicodeString;
 begin
   Result := fMapsList.DelimitedText;
+end;
+
+
+procedure TKMMapsCRCList.Clear;
+begin
+  fMapsList.Clear;
 end;
 
 

@@ -8,7 +8,7 @@ uses
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Maps, KM_Networking, KM_Settings, KM_Render,
-  KM_GameTypes;
+  KM_GameTypes, KM_Points;
 
 type
   //Methods relevant to gameplay
@@ -833,7 +833,12 @@ begin
     fNetworking := TKMNetworking.Create(fGameSettings.MasterServerAddress,
                                         fGameSettings.AutoKickTimeout,
                                         fGameSettings.PingInterval,
-                                        fGameSettings.MasterAnnounceInterval);
+                                        fGameSettings.MasterAnnounceInterval,
+                                        fGameSettings.ServerMapsRosterEnabled,
+                                        fGameSettings.ServerMapsRosterStr,
+                                        KMRange(fGameSettings.ServerLimitPTFrom, fGameSettings.ServerLimitPTTo),
+                                        KMRange(fGameSettings.ServerLimitSpeedFrom, fGameSettings.ServerLimitSpeedTo),
+                                        KMRange(fGameSettings.ServerLimitSpeedAfterPTFrom, fGameSettings.ServerLimitSpeedAfterPTTo));
   fNetworking.OnMPGameInfoChanged := SendMPGameInfo;
   fNetworking.OnStartMap := NewMultiplayerMap;
   fNetworking.OnStartSave := NewMultiplayerSave;

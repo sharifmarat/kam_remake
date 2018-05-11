@@ -4,7 +4,7 @@ interface
 uses
   {$IFDEF Unix} LCLIntf, {$ENDIF}
   Classes, SysUtils, TypInfo, Forms, KromUtils,
-  KM_CommonClasses, KM_CommonTypes, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults,
+  KM_CommonClasses, KM_CommonTypes, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_Points,
   KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_NetPlayersList,
   KM_DedicatedServer, KM_NetClient, KM_ServerQuery,
   {$IFDEF USESECUREAUTH}
@@ -97,6 +97,7 @@ type
     fSaveInfo: TKMSaveInfo;
     fSelectGameKind: TKMNetGameKind;
     fNetGameOptions: TKMGameOptions;
+    fNetGameFilter: TKMPGameFilter;
 
     fFileReceiver: TKMFileReceiver;
     fFileSenderManager: TKMFileSenderManager;
@@ -171,13 +172,16 @@ type
     function GetPacketsReceived(aKind: TKMessageKind): Cardinal;
     function GetPacketsSent(aKind: TKMessageKind): Cardinal;
   public
-    constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word);
+    constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+                       aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                       const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
     destructor Destroy; override;
 
     property MyIndex: Integer read fMyIndex;
     property MyIndexOnServer: TKMNetHandleIndex read fMyIndexOnServer;
     property HostIndex: Integer read fHostIndex;
     property NetGameState: TKMNetGameState read fNetGameState;
+    property NetGameFilter: TKMPGameFilter read fNetGameFilter;
     function MyIPString:string;
     property ServerName: AnsiString read fServerName;
     property ServerAddress: string read fServerAddress;
@@ -302,12 +306,22 @@ uses
 
 
 { TKMNetworking }
-constructor TKMNetworking.Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word);
+constructor TKMNetworking.Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+                                 aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                                 const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
+var
+  GameFilter: TKMPGameFilter;
 begin
   inherited Create;
 
   SetGameState(lgs_None);
+
   fNetServer := TKMDedicatedServer.Create(1, aKickTimeout, aPingInterval, aAnnounceInterval, aMasterServerAddress, '', '', False);
+  GameFilter := TKMPGameFilter.Create(aMapsFilterEnabled, aMapsCRCListStr, aPeacetimeRng, aSpeedRng, aSpeedRngAfterPT);
+  fNetServer.Server.GameFilter := GameFilter;
+
+  fNetGameFilter := TKMPGameFilter.Create;
+
   fNetClient := TKMNetClient.Create;
   fNetPlayers := TKMNetPlayersList.Create;
   fServerQuery := TKMServerQuery.Create(aMasterServerAddress);
@@ -332,6 +346,7 @@ begin
   FreeAndNil(fMapInfo);
   FreeAndNil(fSaveInfo);
   FreeAndNil(fNetGameOptions);
+  FreeAndNil(fNetGameFilter);
 
   inherited;
 end;
@@ -1607,6 +1622,7 @@ begin
       mk_ConnectedToRoom:
               begin
                 M.Read(tmpHandleIndex); //Host's index
+                fNetGameFilter.Load(M);
                 //See if the server assigned hosting rights to us
                 if tmpHandleIndex = fMyIndexOnServer then
                 begin

@@ -88,6 +88,9 @@ var
 
 
 implementation
+uses
+  KM_NetworkTypes, KM_Points;
+
 {$IFDEF WDC}
   {$R *.dfm}
 {$ENDIF}
@@ -173,6 +176,8 @@ end;
 
 
 procedure TFormMain.ChangeServerStatus(aStatus: TKMServerStatus);
+var
+  GameFilter: TKMPGameFilter;
 begin
   case aStatus of
     ssOnline:
@@ -187,6 +192,12 @@ begin
                                                       fSettings.HTMLStatusFile,
                                                       fSettings.ServerWelcomeMessage,
                                                       True);
+        GameFilter := TKMPGameFilter.Create(fSettings.ServerMapsRosterEnabled,
+                                            fSettings.ServerMapsRosterStr,
+                                            KMRange(fSettings.ServerLimitPTFrom, fSettings.ServerLimitPTTo),
+                                            KMRange(fSettings.ServerLimitSpeedFrom, fSettings.ServerLimitSpeedTo),
+                                            KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
+        fDedicatedServer.Server.GameFilter := GameFilter;
         fDedicatedServer.OnMessage := ServerStatusMessage;
         fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
 

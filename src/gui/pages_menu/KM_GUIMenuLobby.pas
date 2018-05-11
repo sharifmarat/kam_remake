@@ -1716,7 +1716,10 @@ end;
 procedure TKMMenuLobby.InitDropColMapsList;
 begin
   DropCol_Maps.DropWidth := 460;
-  DropCol_Maps.SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 20, 320, 350], [False, True, True, True]);
+  DropCol_Maps.SetColumns(fnt_Outline,
+                          ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]],
+                          [0, 20, 320, 350],
+                          [False, True, True, True]);
 end;
 
 
@@ -1867,7 +1870,7 @@ begin
         else  AddMap := False; //Other cases are already handled in Lobby_MapTypeSelect
       end;
 
-      if AddMap then
+      if AddMap and fNetworking.NetGameFilter.FilterMap(fMapsMP[I].CRC) then
       begin
         Row := MakeListRow(['', fMapsMP[I].FileName, IntToStr(fMapsMP[I].HumanPlayerCountMP), fMapsMP[I].SizeText], //Texts
                            [fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor], //Colors

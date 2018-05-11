@@ -131,6 +131,8 @@ type
     fHTMLStatusFile: UnicodeString;
     fServerWelcomeMessage: UnicodeString;
 
+    fServerMapsRosterEnabled: Boolean;
+    fServerMapsRosterStr: UnicodeString;
     fServerLimitPTFrom, fServerLimitPTTo: Integer;
     fServerLimitSpeedFrom, fServerLimitSpeedTo: Single;
     fServerLimitSpeedAfterPTFrom, fServerLimitSpeedAfterPTTo: Single;
@@ -289,6 +291,8 @@ type
     property HTMLStatusFile: UnicodeString read fHTMLStatusFile write SetHTMLStatusFile;
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
 
+    property ServerMapsRosterEnabled: Boolean read fServerMapsRosterEnabled;
+    property ServerMapsRosterStr: UnicodeString read fServerMapsRosterStr;
     property ServerLimitPTFrom: Integer read fServerLimitPTFrom;
     property ServerLimitPTTo: Integer read fServerLimitPTTo;
     property ServerLimitSpeedFrom: Single read fServerLimitSpeedFrom;
@@ -572,6 +576,8 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
+    fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
+    fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
     fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     -1);
     fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       -1);
     fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  -1);
@@ -672,6 +678,8 @@ begin
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
 
+    F.WriteBool   ('Server','MapsRosterEnabled',      fServerMapsRosterEnabled);
+    F.WriteString ('Server','MapsRoster',             fServerMapsRosterStr);
     F.WriteInteger('Server','LimitPTFrom',            fServerLimitPTFrom);
     F.WriteInteger('Server','LimitPTTo',              fServerLimitPTTo);
     F.WriteFloat  ('Server','LimitSpeedFrom',         fServerLimitSpeedFrom);
