@@ -434,7 +434,7 @@ begin
     Chart_Wares.Caption := gResTexts[TX_GRAPH_TITLE_RESOURCES];
     Chart_Wares.Anchors := [anLeft];
 
-    Button_MoreStats := TKMButtonFlat.Create(Panel_StatsCharts, 610 - LEGEND_WIDTH + 2, Chart_Wares.Bottom - 60, LEGEND_WIDTH, 40, 663, rxGui);
+    Button_MoreStats := TKMButtonFlat.Create(Panel_StatsCharts, 610 - LEGEND_WIDTH + 2, 0, LEGEND_WIDTH, 42, 663, rxGui);
     Button_MoreStats.TexOffsetX := -LEGEND_WIDTH div 2 + 14;
     Button_MoreStats.TexOffsetY := 6;
     Button_MoreStats.Anchors := [anLeft];
