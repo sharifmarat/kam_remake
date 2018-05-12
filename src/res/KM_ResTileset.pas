@@ -180,7 +180,7 @@ const
   (tkGrass,tkGrass,tkGrass,tkGrass), (tkLava,tkLava,tkLava,tkLava),     (tkMoss,tkMoss,tkMoss,tkMoss),
   (tkMoss,tkMoss,tkMoss,tkMoss),
   //10
-  (tkSnow,tkIce,tkSnow,tkSnow),      (tkMoss,tkMoss,tkMoss,tkMoss),     (tkIce,tkIce,tkWater,tkWater),
+  (tkSnow,tkIce,tkSnow,tkSnow),      (tkGrass,tkGrass,tkGrass,tkGrass), (tkIce,tkIce,tkWater,tkWater),
   (tkGrass,tkGrass,tkGrass,tkGrass), (tkGrass,tkGrass,tkGrass,tkGrass), (tkGoldMount,tkLava,tkLava,tkLava),
   (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkPaleGrass), (tkPaleGrass,tkPaleGrass,tkPaleGrass,tkPaleGrass),
   (tkGrass,tkGrass,tkMoss,tkMoss),   (tkMoss,tkGrass,tkMoss,tkMoss),    //??? not sure if they are good there
