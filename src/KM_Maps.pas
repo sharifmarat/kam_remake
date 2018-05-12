@@ -542,9 +542,6 @@ begin
   fTxtInfo.Load(S);
 
   IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
-
-  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
-    S.Read(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 end;
 
 
@@ -601,9 +598,6 @@ begin
     S.Write(CanBeHuman, SizeOf(CanBeHuman));
 
     fTxtInfo.Save(S);
-
-    for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
-      S.Write(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 
     //Try to save map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
