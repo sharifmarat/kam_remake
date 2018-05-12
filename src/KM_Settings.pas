@@ -327,7 +327,7 @@ type
 implementation
 uses
   SysUtils, INIfiles, Math,
-  KM_Log;
+  KM_Log, KM_CommonUtils;
 
 
 { TMainSettings }
@@ -501,6 +501,7 @@ function TKMGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
   TempCard: Int64;
+  ServerName: UnicodeString;
 begin
   Result := FileExists(FileName);
 
@@ -568,7 +569,10 @@ begin
     fMasterServerAddress    := F.ReadString ('Server','MasterServerAddressNew','http://kam.hodgman.id.au/');
     fMasterAnnounceInterval := F.ReadInteger('Server','MasterServerAnnounceInterval',180);
     fAnnounceServer         := F.ReadBool   ('Server','AnnounceDedicatedServer',True);
-    fServerName             := AnsiString(F.ReadString ('Server','ServerName','KaM Remake Server'));
+
+    ServerName              := F.ReadString ('Server','ServerName','KaM Remake Server');
+    fServerName             := AnsiString(StrTrimChar(ServerName, #39)); //Trim single quotes from the start and from the end of servername
+
     fMaxRooms               := F.ReadInteger('Server','MaxRooms',16);
     ServerPacketsAccumulatingDelay := F.ReadInteger('Server','PacketsAccumulatingDelay',20);
     fAutoKickTimeout        := F.ReadInteger('Server','AutoKickTimeout',20);
@@ -666,7 +670,7 @@ begin
     F.WriteString ('Multiplayer','LastPassword',    fLastPassword);
     F.WriteBool   ('Multiplayer','FlashOnMessage',  fFlashOnMessage);
 
-    F.WriteString ('Server','ServerName',                   UnicodeString(fServerName));
+    F.WriteString ('Server','ServerName',                   '''' + UnicodeString(fServerName) + ''''); //Add single quotes for server name
     F.WriteString ('Server','WelcomeMessage',               {$IFDEF FPC} UTF8Encode {$ENDIF}(fServerWelcomeMessage));
     F.WriteString ('Server','ServerPort',                   fServerPort);
     F.WriteBool   ('Server','AnnounceDedicatedServer',      fAnnounceServer);

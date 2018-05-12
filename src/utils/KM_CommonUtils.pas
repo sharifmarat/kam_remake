@@ -99,6 +99,7 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
+  function StrTrimChar(const Str: String; Ch: Char): String;
   procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings);
   {$IFDEF WDC}
   procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
@@ -1091,6 +1092,18 @@ begin
       Break;
   end;
   Result := Copy(aStr, 1, I);
+end;
+
+
+function StrTrimChar(const Str: String; Ch: Char): string;
+var
+  S, E: Integer;
+begin
+  S := 1;
+  while (S <= Length(Str)) and (Str[S] = Ch) do Inc(S);
+  E := Length(Str);
+  while (E >= 1) and (Str[E] = Ch) do Dec(E);
+  SetString(Result, PChar(@Str[S]), E - S + 1);
 end;
 
 
