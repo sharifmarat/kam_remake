@@ -80,16 +80,22 @@ begin
   Panel_Brushes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
   TKMLabel.Create(Panel_Brushes, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_TERRAIN_BRUSH], fnt_Outline, taCenter);
-  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 27, 100, 0, BRUSH_MAX_SIZE);
+  BrushSize   := TKMTrackBar.Create(Panel_Brushes, 0, 27, 36*5 - 60, 0, BRUSH_MAX_SIZE);
   BrushSize.Position := 4;
   BrushSize.OnChange := BrushChange;
   BrushSize.Hint := GetHintWHotKey(TX_MAPED_TERRAIN_HEIGHTS_SIZE_HINT, gResTexts[TX_KEY_CTRL_MOUSEWHEEL]);
-  BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 106, 25, 24, 24, 592);
+
+  BrushCircle := TKMButtonFlat.Create(Panel_Brushes, 36*5 - 54 - 1, 25, 24, 24, 592);
   BrushCircle.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_CIRCLE, SC_MAPEDIT_SUB_MENU_ACTION_1);
   BrushCircle.OnClick := BrushChange;
-  BrushSquare := TKMButtonFlat.Create(Panel_Brushes, 134, 25, 24, 24, 593);
+  BrushCircle.TexOffsetX := 1;
+  BrushCircle.TexOffsetY := 1;
+
+  BrushSquare := TKMButtonFlat.Create(Panel_Brushes, 36*5 - 24 - 1, 25, 24, 24, 593);
   BrushSquare.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_HEIGHTS_SQUARE, SC_MAPEDIT_SUB_MENU_ACTION_2);
   BrushSquare.OnClick := BrushChange;
+  BrushSquare.TexOffsetX := 1;
+  BrushSquare.TexOffsetY := 1;
 
   for I := Low(SURFACES) to High(SURFACES) do
     for K := Low(SURFACES[I]) to High(SURFACES[I]) do
