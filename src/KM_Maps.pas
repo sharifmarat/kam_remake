@@ -376,6 +376,7 @@ end;
 
 destructor TKMapInfo.Destroy;
 begin
+  FreeAndNil(fTxtInfo);
 
   inherited;
 end;
@@ -537,12 +538,13 @@ begin
   S.Read(MissionMode, SizeOf(TKMissionMode));
   S.Read(LocCount);
   S.Read(CanBeHuman, SizeOf(CanBeHuman));
-  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
-    S.Read(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 
   fTxtInfo.Load(S);
 
   IsFavourite := gGameApp.GameSettings.FavouriteMaps.Contains(fCRC);
+
+  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+    S.Read(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 end;
 
 
@@ -597,10 +599,11 @@ begin
     S.Write(MissionMode, SizeOf(TKMissionMode));
     S.Write(LocCount);
     S.Write(CanBeHuman, SizeOf(CanBeHuman));
-    for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
-      S.Write(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 
     fTxtInfo.Save(S);
+
+    for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+      S.Write(fCustomScriptParams[CSP], SizeOf(fCustomScriptParams[CSP]));
 
     //Try to save map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
