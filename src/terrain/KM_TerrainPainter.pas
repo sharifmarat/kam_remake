@@ -53,6 +53,7 @@ type
     fMapXc, fMapYc: Integer; //Cursor position cell
 
     function BrushAreaTerKindContains(aCell: TKMPoint): Boolean;
+    function GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
     function GetTileOwnCornersTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
     function GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
     function GetTileCornersTKinds(aCell: TKMPoint; aGetOnlyTileCornersTK: Boolean = False; aGetOnlyLandNodeTK: Boolean = False): TKMTerrainKindsArray;
@@ -90,6 +91,8 @@ type
     procedure RebuildMap(X,Y,aSize: Integer; aSquare: Boolean; aAroundTiles: Boolean = False); overload;
     procedure RebuildMap(const aRect: TKMRect); overload;
     function PickRandomTile(aTerrainKind: TKMTerrainKind): Word;
+
+    procedure FixTerrainKindInfo;
 
     class function GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
 
@@ -367,6 +370,69 @@ begin
 end;
 
 
+procedure TKMTerrainPainter.FixTerrainKindInfo;
+
+  function EqualTKinds(aTK1, aTK2: TKMTerrainKind): Boolean;
+  var
+    I: Integer;
+  begin
+    Result := aTK1 = aTK2;
+    if not Result then
+      for I := Low(TERRAIN_EQUALITY_PAIRS) to High(TERRAIN_EQUALITY_PAIRS) do
+        if (TERRAIN_EQUALITY_PAIRS[I].TK1 in [aTK1, aTK2])
+          and (TERRAIN_EQUALITY_PAIRS[I].TK2 in [aTK1, aTK2]) then
+          Result := True;
+  end;
+
+var
+  I,J,K,M: Integer;
+  VertexTKinds: TKMTerrainKindsArray;
+  SameTKind, NoCustomTK: Boolean;
+  TKCounts: array[0..3] of Integer;
+  MostTKI: Integer;
+begin
+  for I := 1 to gTerrain.MapY do
+    for J := 1 to gTerrain.MapX do
+    begin
+      VertexTKinds := GetVertexCornerTerKinds(J,I);
+      SameTKind := True;
+
+      for K := 0 to 3 do
+        TKCounts[K] := 0;
+
+      //Find most popular TerKind
+      //Count all TerKinds occurrences first
+      for K := 0 to 3 do
+        for M := K + 1 to 3 do
+          if VertexTKinds[K] = VertexTKinds[M] then
+            Inc(TKCounts[K]);
+
+      //Get Most popular one index
+      MostTKI := 0;
+      for K := 1 to 3 do
+        if TKCounts[K] > TKCounts[MostTKI] then
+          MostTKI := K;
+
+
+      NoCustomTK := VertexTKinds[0] <> tkCustom;
+      for K := 1 to 3 do
+      begin
+        SameTKind := SameTKind and EqualTKinds(VertexTKinds[K], VertexTKinds[K-1]);
+        NoCustomTK := NoCustomTK and (VertexTKinds[K] <> tkCustom);
+      end;
+
+      //Replace TerKind with most popular one if there all TerKinds are equal or if there is no custom TerKinds
+      if SameTKind or NoCustomTK then
+      begin
+        LandTerKind[I,J].TerKind := VertexTKinds[MostTKI];
+        LandTerKind[I,J].Tiles := High(SmallInt);
+      end;
+    end;
+
+  MakeCheckpoint;
+end;
+
+
 class function TKMTerrainPainter.GetRandomTile(aTerrainKind: TKMTerrainKind; aSkipRandom: Boolean = False): Word;
 begin
   Result := Abs(Combo[aTerrainKind, aTerrainKind, 1]);
@@ -510,6 +576,17 @@ end;
 function TKMTerrainPainter.GetTileLandNodeTKinds(aCell: TKMPoint): TKMTerrainKindsArray;
 begin
   Result := GetTileCornersTKinds(aCell, False, True);
+end;
+
+
+function TKMTerrainPainter.GetVertexCornerTerKinds(X,Y: Word): TKMTerrainKindsArray;
+begin
+  SetLength(Result, 4);
+  Result[0] := GetTileOwnCornersTKinds(KMPoint(X-1, Y-1))[2];
+  Result[1] := GetTileOwnCornersTKinds(KMPoint(X,   Y-1))[3];
+  Result[2] := GetTileOwnCornersTKinds(KMPoint(X,   Y))[0];
+  Result[3] := GetTileOwnCornersTKinds(KMPoint(X-1, Y))[1];
+
 end;
 
 

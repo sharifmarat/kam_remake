@@ -1218,3 +1218,14 @@ TX_KEY_FUNC_PLAYER_COLOR_MODE = 1192; //Switch players color mode
 TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during current unit action
 
 TX_MAP_CUSTOM_PARAM_TH_TROOP_COST = 1204; //Custom TownHall units cost
+
+TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1205; //Options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1206; //Change brush options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1207; //Brush options
+
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1208; //Fix terrain brushes
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1209; //Try to repair internal terrain information to make brushes work
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1210; //Fix terrain brushes
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1211; //Are you sure want to repair all terrain brushes internal info? That will allow to use brushes over manually set tiles from tiles palette
+
+

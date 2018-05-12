@@ -20,6 +20,9 @@ type
     fLastMagicBrush: Boolean;
     procedure BrushChange(Sender: TObject);
     procedure BrushRefresh;
+    procedure BrushSettings_Click(Sender: TObject);
+    procedure BrushFixTerrain_Click(Sender: TObject);
+    procedure FixTerrainBrushes(Sender: TObject);
   protected
     Panel_Brushes: TKMPanel;
       BrushSize: TKMTrackBar;
@@ -28,7 +31,13 @@ type
       BrushTable: array [0..6, 0..4] of TKMButtonFlat;
       BrushMasks: array [TKMTileMaskKind] of TKMButtonFlat;
       MagicBrush: TKMButtonFlat;
-      RandomElements, ForcePaint: TKMCheckBox;
+      BrushOptions: TKMButtonFlat;
+      PopUp_BrushOptions: TKMPopUpPanel;
+        RandomElements, ForcePaint: TKMCheckBox;
+        Button_FixTerrainBrushes: TKMButton;
+        Button_CloseOptions: TKMButton;
+        PopUp_FixTerrainConfirm: TKMPopUpPanel;
+          Button_FixTerrain_Yes, Button_FixTerrain_No: TKMButton;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -36,6 +45,7 @@ type
     procedure Hide;
     function Visible: Boolean; override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean);
+    procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure RightClickCancel;
     procedure UpdateState;
   end;
@@ -109,13 +119,9 @@ begin
       BrushTable[I,K].OnClick := BrushChange;
     end;
 
-  RandomElements := TKMCheckBox.Create(Panel_Brushes, 0, 295, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
-  RandomElements.OnClick := BrushChange;
-  RandomElements.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_RANDOM, SC_MAPEDIT_SUB_MENU_ACTION_3);
-
   for MK := Low(TKMTileMaskKind) to High(TKMTileMaskKind) do
   begin
-    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 335, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
+    BrushMasks[MK] := TKMButtonFlat.Create(Panel_Brushes, Byte(MK) * 36, 295, 34, 34, TILE_MASK_KINDS_PREVIEW[MK] + 1, rxTiles);
     BrushMasks[MK].Tag := Byte(MK);
     BrushMasks[MK].Tag2 := Byte(bbtMask);
 
@@ -125,23 +131,52 @@ begin
 
   BrushMasks[mkHardest].Hide;
 
-  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 335, 34, 34, 673, rxGui);
+  MagicBrush := TKMButtonFlat.Create(Panel_Brushes, 36*4, 295, 34, 34, 673, rxGui);
   MagicBrush.Hint := gResTexts[TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT];
   MagicBrush.OnClick := BrushChange;
 
-  ForcePaint := TKMCheckBox.Create(Panel_Brushes, 0, 374, TB_WIDTH, 20, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fnt_Metal);
-  ForcePaint.OnClick := BrushChange;
-  ForcePaint.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_FORCE_PAINT_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
+  BrushOptions := TKMButtonFlat.Create(Panel_Brushes, 2, 335, TB_WIDTH - 2, 21, 0);
+  BrushOptions.Caption := gResTexts[TX_MAPED_TERRAIN_BRUSH_OPTIONS];
+  BrushOptions.CapOffsetY := -11;
+  BrushOptions.Hint := GetHintWHotkey(TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
+  BrushOptions.OnClick := BrushSettings_Click;
+
+  PopUp_BrushOptions := TKMPopUpPanel.Create(aParent.MasterParent, 400, 200, gResTexts[TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE], pubgit_Gray);
+
+    RandomElements := TKMCheckBox.Create(PopUp_BrushOptions, 10, 10, 280, 40, gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM], fnt_Metal);
+    RandomElements.OnClick := BrushChange;
+    RandomElements.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_RANDOM];
+
+    ForcePaint := TKMCheckBox.Create(PopUp_BrushOptions, 10, 35, 280, 40, gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT], fnt_Metal);
+    ForcePaint.OnClick := BrushChange;
+    ForcePaint.Hint := gResTexts[TX_MAPED_TERRAIN_FORCE_PAINT_HINT];
+
+    Button_FixTerrainBrushes := TKMButton.Create(PopUp_BrushOptions, (PopUp_BrushOptions.Width div 2) - 190, 110,
+                                                 380, 30, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN], bsGame);
+    Button_FixTerrainBrushes.Hint := gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT];
+    Button_FixTerrainBrushes.OnClick := BrushFixTerrain_Click;
+
+    PopUp_FixTerrainConfirm := TKMPopUpPanel.Create(aParent.MasterParent, 400, 200, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE], pubgit_Gray);
+      TKMLabel.Create(PopUp_FixTerrainConfirm, PopUp_FixTerrainConfirm.Width div 2, 10, gResTexts[TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM], fnt_Grey, taCenter);
+
+      Button_FixTerrain_Yes := TKMButton.Create(PopUp_FixTerrainConfirm, 10, PopUp_FixTerrainConfirm.Height - 40, 
+                                               (PopUp_FixTerrainConfirm.Width div 2) - 20, 30, gResTexts[TX_WORD_YES], bsGame);  
+      Button_FixTerrain_Yes.OnClick := FixTerrainBrushes;
+      Button_FixTerrain_No := TKMButton.Create(PopUp_FixTerrainConfirm, (PopUp_FixTerrainConfirm.Width div 2) + 10, PopUp_FixTerrainConfirm.Height - 40,
+                                               (PopUp_FixTerrainConfirm.Width div 2) - 20, 30, gResTexts[TX_WORD_CANCEL], bsGame);  
+      Button_FixTerrain_No.OnClick := BrushFixTerrain_Click;
+
+    Button_CloseOptions  := TKMButton.Create(PopUp_BrushOptions, (PopUp_BrushOptions.Width div 2) - 60, PopUp_BrushOptions.Height - 40,
+                                              120, 30, gResTexts[TX_WORD_CLOSE], bsGame);
+    Button_CloseOptions.OnClick := BrushSettings_Click;
 
   fSubMenuActionsEvents[0] := BrushChange;
   fSubMenuActionsEvents[1] := BrushChange;
-  fSubMenuActionsEvents[2] := BrushChange;
-  fSubMenuActionsEvents[3] := BrushChange;
+  fSubMenuActionsEvents[2] := BrushSettings_Click;
 
   fSubMenuActionsCtrls[0] := BrushCircle;
   fSubMenuActionsCtrls[1] := BrushSquare;
-  fSubMenuActionsCtrls[2] := RandomElements;
-  fSubMenuActionsCtrls[3] := ForcePaint;
+  fSubMenuActionsCtrls[2] := BrushOptions;
 end;
 
 
@@ -212,6 +247,25 @@ begin
 end;
 
 
+procedure TKMMapEdTerrainBrushes.BrushSettings_Click(Sender: TObject);
+begin
+  PopUp_BrushOptions.Visible := not PopUp_BrushOptions.Visible;
+end;
+
+
+procedure TKMMapEdTerrainBrushes.BrushFixTerrain_Click(Sender: TObject);
+begin
+  PopUp_FixTerrainConfirm.Visible := not PopUp_FixTerrainConfirm.Visible;
+end;
+
+
+procedure TKMMapEdTerrainBrushes.FixTerrainBrushes(Sender: TObject);
+begin
+  gGame.MapEditor.TerrainPainter.FixTerrainKindInfo;
+  PopUp_FixTerrainConfirm.Hide;
+end;
+
+
 procedure TKMMapEdTerrainBrushes.Hide;
 begin
   Panel_Brushes.Hide;
@@ -246,6 +300,16 @@ begin
   begin
     BrushSize.Position := Max(0, BrushSize.Position - (WheelDelta div 100)); //can't set negative number
     BrushChange(nil);
+    aHandled := True;
+  end;
+end;
+
+
+procedure TKMMapEdTerrainBrushes.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+begin
+  if (Key = VK_ESCAPE) and PopUp_BrushOptions.Visible then
+  begin
+    PopUp_BrushOptions.Hide;
     aHandled := True;
   end;
 end;
