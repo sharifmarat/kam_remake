@@ -19,6 +19,8 @@ type
     Obj: Byte;
     IsCustom: Boolean;
     TerKind: TKMTerrainKind;
+    Tiles: SmallInt;
+    HeightAdd: Byte;
   end;
 
   TKMPainterTile = packed record
@@ -1692,6 +1694,8 @@ begin
         Data[I,J].Obj       := gTerrain.Land[I,J].Obj;
         Data[I,J].IsCustom  := gTerrain.Land[I,J].IsCustom;
         Data[I,J].TerKind   := LandTerKind[I,J].TerKind;
+        Data[I,J].Tiles     := LandTerKind[I,J].Tiles;
+        Data[I,J].HeightAdd := LandTerKind[I,J].HeightAdd;
         for L := 0 to 2 do
           Data[I,J].Layer[L] := gTerrain.Land[I,J].Layer[L];
       end;
@@ -1757,7 +1761,9 @@ begin
         gTerrain.Land[I,J].Height             := Data[I,J].Height;
         gTerrain.Land[I,J].Obj                := Data[I,J].Obj;
         gTerrain.Land[I,J].IsCustom           := Data[I,J].IsCustom;
-        LandTerKind[I,J].TerKind := Data[I,J].TerKind;
+        LandTerKind[I,J].TerKind   := Data[I,J].TerKind;
+        LandTerKind[I,J].Tiles     := Data[I,J].Tiles;
+        LandTerKind[I,J].HeightAdd := Data[I,J].HeightAdd;
         for L := 0 to 2 do
         begin
           gTerrain.Land[I,J].Layer[L].Terrain := Data[I,J].Layer[L].Terrain;
