@@ -186,7 +186,7 @@ const
 
 implementation
 uses
-  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils;
+  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares;
 
 const
   SCRIPT_LOG_EXT = '.log.txt';
@@ -1850,6 +1850,7 @@ procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProces
 const
   CUSTOM_EVENT_DIRECTIVE = 'EVENT';
   CUSTOM_TH_TROOP_COST_DIRECTIVE = 'CUSTOM_TH_TROOP_COST';
+  CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE = 'CUSTOM_MARKET_GOLD_PRICE_X';
 
   function AllowGameUpdate: Boolean;
   begin
@@ -1929,8 +1930,8 @@ const
 
           if not HasError then
           begin
-            fCustomScriptParams[tsmTHTroopCosts].Added := True;
-            fCustomScriptParams[tsmTHTroopCosts].Data := DirectiveParam;
+            fCustomScriptParams[cspTHTroopCosts].Added := True;
+            fCustomScriptParams[cspTHTroopCosts].Data := DirectiveParam;
           end else
             Exit;
 
@@ -1957,6 +1958,71 @@ const
     end;
   end;
 
+  procedure LoadCustomMarketGoldPrice;
+  var
+    I: Integer;
+    ErrorStr: UnicodeString;
+    DirectiveParamSL: TStringList;
+    HasError: Boolean;
+    GoldOrePriceX, GoldPriceX: Single;
+  begin
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ',', DirectiveParamSL);
+
+          if DirectiveParamSL.Count <> 2 then
+            fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 2, actual: %d. At [%d:%d]' + sLineBreak,
+                                                [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+
+          HasError := False;
+            if TryStrToFloat(StringReplace(DirectiveParamSL[0], '.', ',', [rfReplaceAll]), GoldOrePriceX)
+              and TryStrToFloat(StringReplace(DirectiveParamSL[1], '.', ',', [rfReplaceAll]), GoldPriceX) then
+            begin
+              GoldOrePriceX := EnsureRange(GoldOrePriceX, 0.1, 10);
+              GoldPriceX := EnsureRange(GoldPriceX, 0.1, 10);
+            end else begin
+              HasError := True;
+              fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has not a number parameter: [%s]. At [%d:%d]' + sLineBreak,
+                                                  [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParam, Parser.Row, Parser.Col]));
+            end;
+
+          if not HasError then
+          begin
+            fCustomScriptParams[cspMarketGoldPrice].Added := True;
+            fCustomScriptParams[cspMarketGoldPrice].Data :=
+              Format('%s: x%s %s: x%s', [gRes.Wares[wt_GoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
+                                         gRes.Wares[wt_Gold].Title,    FormatFloat('#0.#', GoldPriceX)]);
+          end else
+            Exit;
+
+          //Do not do anything for while in MapEd
+          //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+          //gGame could be nil here, but that does not change final CRC, so we can Exit
+          if not AllowGameUpdate then Exit;
+
+          //Update actual troop cost
+          gRes.Wares[wt_GoldOre].MarketPriceMultiplier := GoldOrePriceX;
+          gRes.Wares[wt_Gold].MarketPriceMultiplier := GoldPriceX;
+
+        finally
+          DirectiveParamSL.Free;
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+          end;
+      end;
+    end;
+  end;
+
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
@@ -1967,6 +2033,7 @@ begin
 
   LoadCustomEventDirectives;
   LoadCustomTHTroopCost;
+  LoadCustomMarketGoldPrice;
 end;
 
 

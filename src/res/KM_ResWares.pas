@@ -22,16 +22,20 @@ type
   private
     fType: TKMWareType;
     fMarketPrice: Single;
+    fMarketPriceMultiplier: Single;
     function GetGUIIcon: Word;
     function GetTextID: Integer;
     function GetTitle: UnicodeString;
     function GetGUIColor: Cardinal;
+    function GetMarketPrice: Single;
+    procedure SetMarketPriceMultiplier(aValue: Single);
   public
     constructor Create(aType: TKMWareType);
     function IsValid: Boolean;
     property GUIColor: Cardinal read GetGUIColor;
     property GUIIcon: Word read GetGUIIcon;
-    property MarketPrice: Single read fMarketPrice;
+    property MarketPriceMultiplier: Single read fMarketPriceMultiplier write SetMarketPriceMultiplier;
+    property MarketPrice: Single read GetMarketPrice;
     property Title: UnicodeString read GetTitle;
     property TextID: Integer read GetTextID;
   end;
@@ -124,13 +128,15 @@ const
 
 implementation
 uses
-  KM_ResTexts;
+  Math, KM_ResTexts;
 
 
 { TKMWare }
 constructor TKMWare.Create(aType: TKMWareType);
 begin
   inherited Create;
+
+  fMarketPriceMultiplier := 1;
 
   fType := aType;
 end;
@@ -149,6 +155,18 @@ const
     $101080, $0080FF, $FFBF00);
 begin
   Result := WareColor[fType];
+end;
+
+
+function TKMWare.GetMarketPrice: Single;
+begin
+  Result := fMarketPrice * fMarketPriceMultiplier;
+end;
+
+
+procedure TKMWare.SetMarketPriceMultiplier(aValue: Single);
+begin
+  fMarketPriceMultiplier := EnsureRange(aValue, 0.01, 100);
 end;
 
 

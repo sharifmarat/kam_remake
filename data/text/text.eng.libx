@@ -1151,10 +1151,11 @@
 1202:Soft mask - use automatically created transitions
 1203:Hard mask - use automatically created transitions
 1204:Custom TownHall units cost
-1205:Additional options
-1206:Additional brush options
+1205:Custom gold market prices 
+1206:Additional options
 1207:Additional brush options
-1208:Fix terrain brushes
-1209:Try to repair internal terrain information to make brushes work
-1210:Fix terrain brushes
-1211:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+1208:Additional brush options
+1209:Fix terrain brushes
+1210:Try to repair internal terrain information to make brushes work
+1211:Fix terrain brushes
+1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
