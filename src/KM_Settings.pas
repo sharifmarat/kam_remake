@@ -578,12 +578,12 @@ begin
 
     fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
     fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
-    fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     -1);
-    fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       -1);
-    fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  -1);
-    fServerLimitSpeedTo     := F.ReadFloat  ('Server', 'LimitSpeedTo',    -1);
-    fServerLimitSpeedAfterPTFrom  := F.ReadFloat('Server', 'LimitSpeedAfterPTFrom', -1);
-    fServerLimitSpeedAfterPTTo    := F.ReadFloat('Server', 'LimitSpeedAfterPTTo',   -1);
+    fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     0);
+    fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       300);
+    fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  0);
+    fServerLimitSpeedTo     := F.ReadFloat  ('Server', 'LimitSpeedTo',    10);
+    fServerLimitSpeedAfterPTFrom  := F.ReadFloat('Server', 'LimitSpeedAfterPTFrom', 0);
+    fServerLimitSpeedAfterPTTo    := F.ReadFloat('Server', 'LimitSpeedAfterPTTo',   10);
 
     fMenu_FavouriteMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
     fFavouriteMaps.LoadFromString(fMenu_FavouriteMapsStr);

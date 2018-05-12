@@ -150,6 +150,12 @@ type
   function KMInRange(aValue: Integer; const aRangeInt: TKMRangeInt): Boolean; overload;
   function KMInRange(aValue: Single; const aRangeSingle: TKMRangeSingle): Boolean; overload;
 
+  function KMEnsureRange(aValue: Integer; const aRange: TKMRangeInt): Integer; overload;
+  function KMEnsureRange(aValue: Single; const aRange: TKMRangeSingle): Single; overload;
+
+  function KMEnlargeRange(const aRange: TKMRangeInt; aValue: Integer): TKMRangeInt; overload;
+  function KMEnlargeRange(const aRange: TKMRangeSingle; aValue: Single): TKMRangeSingle; overload;
+
 
 const
   KMPOINT_ZERO: TKMPoint = (X: 0; Y: 0);
@@ -891,15 +897,15 @@ end;
 
 function KMRange(aMin, aMax: Integer): TKMRangeInt;
 begin
-  Result.Min := aMin;
-  Result.Max := aMax;
+  Result.Min := Min(aMin, aMax);
+  Result.Max := Max(aMin, aMax);
 end;
 
 
 function KMRange(aMin, aMax: Single): TKMRangeSingle;
 begin
-  Result.Min := aMin;
-  Result.Max := aMax;
+  Result.Min := Min(aMin, aMax);
+  Result.Max := Max(aMin, aMax);
 end;
 
 
@@ -912,6 +918,32 @@ end;
 function KMInRange(aValue: Single; const aRangeSingle: TKMRangeSingle): Boolean;
 begin
   Result := InRange(aValue, aRangeSingle.Min, aRangeSingle.Max);
+end;
+
+
+function KMEnsureRange(aValue: Integer; const aRange: TKMRangeInt): Integer;
+begin
+  Result := EnsureRange(aValue, aRange.Min, aRange.Max);
+end;
+
+
+function KMEnsureRange(aValue: Single; const aRange: TKMRangeSingle): Single;
+begin
+  Result := EnsureRange(aValue, aRange.Min, aRange.Max);
+end;
+
+
+function KMEnlargeRange(const aRange: TKMRangeInt; aValue: Integer): TKMRangeInt;
+begin
+  Result.Min := Min(aRange.Min, aValue);
+  Result.Max := Max(aRange.Max, aValue);
+end;
+
+
+function KMEnlargeRange(const aRange: TKMRangeSingle; aValue: Single): TKMRangeSingle;
+begin
+  Result.Min := Min(aRange.Min, aValue);
+  Result.Max := Max(aRange.Max, aValue);
 end;
 
 
