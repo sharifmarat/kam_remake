@@ -1390,7 +1390,7 @@ end;
 function TKMArmyAttack.FindBestTarget(var TargetOwner: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean = False): Boolean;
 const
   DISTANCE_COEF = 0.75; // If second enemy is twice as far away decrease chance by 3/8
-  MIN_COMPARSION = 0.3; // 30% advantage for attacker
+  MIN_COMPARSION = 0.2; // 20% advantage for attacker
 var
   I, MinDist: Integer;
   Comparison, BestComparison: Single;
