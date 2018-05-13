@@ -49,7 +49,8 @@ type
     RevealAll: array [0..MAX_HANDS-1] of Boolean;
     DefaultHuman: TKMHandIndex;
     PlayerHuman: array [0..MAX_HANDS - 1] of Boolean;
-    PlayerAI: array [0..MAX_HANDS - 1] of Boolean;
+    PlayerClassicAI: array [0..MAX_HANDS - 1] of Boolean;
+    PlayerAdvancedAI: array [0..MAX_HANDS - 1] of Boolean;
 
     IsNewMap: Boolean;  // set True for new empty map
     WereSaved: Boolean; // set True when at least 1 map save has been done
@@ -99,8 +100,9 @@ begin
 
   for I := 0 to MAX_HANDS - 1 do
   begin
-    PlayerHuman[I] := true;
-    PlayerAI[I] := true;
+    PlayerHuman[I] := True;
+    PlayerClassicAI[I] := True;
+    PlayerAdvancedAI[I] := True;
   end;
 
   fDeposits := TKMDeposits.Create;

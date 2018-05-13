@@ -425,8 +425,8 @@ begin
       SlotTxtWidth := Max(C1W - 45,
                           gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
                                                                           gResTexts[TX_LOBBY_SLOT_CLOSED],
-                                                                          gResTexts[TX_LOBBY_SLOT_AI_PLAYER],
-                                                                          gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED]]));
+                                                                          gResTexts[TX_AI_PLAYER_CLASSIC],
+                                                                          gResTexts[TX_AI_PLAYER_ADVANCED]]));
 
       AllTxtWidth := Max(40, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
@@ -455,8 +455,8 @@ begin
         begin
           DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_OPEN], gResTexts[TX_LOBBY_SLOT_OPEN_ALL]], I)); //Player can join into this slot
           DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_CLOSED], gResTexts[TX_LOBBY_SLOT_CLOSED_ALL]], I)); //Closed, nobody can join it
-          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_AI_PLAYER], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an AI player
-          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an advanced AI player
+          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_AI_PLAYER_CLASSIC], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an AI player
+          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_AI_PLAYER_ADVANCED], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an advanced AI player
         end
         else
         begin
@@ -1614,7 +1614,12 @@ begin
                       //AI-only locations should not be listed for AIs in lobby, since those ones are
                       //automatically added when the game starts (so AI checks CanBeHuman too)
                       if (CurPlayer.IsHuman and (fNetworking.MapInfo.CanBeHuman[K] or ALLOW_TAKE_AI_PLAYERS))
-                        or (CurPlayer.IsComputer and fNetworking.MapInfo.CanBeHuman[K] and fNetworking.MapInfo.CanBeAI[K]) then
+                        or (CurPlayer.IsClassicComputer
+                          and fNetworking.MapInfo.CanBeHuman[K]
+                          and fNetworking.MapInfo.CanBeAI[K])
+                        or (CurPlayer.IsAdvancedComputer
+                          and fNetworking.MapInfo.CanBeHuman[K]
+                          and fNetworking.MapInfo.CanBeAdvancedAI[K]) then
                         AddLocation(fNetworking.MapInfo.LocationName(K), I, K+1);
                   end;
       end;

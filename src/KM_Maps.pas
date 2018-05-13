@@ -97,6 +97,7 @@ type
     LocCount: Byte;
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     CanBeAI: array [0..MAX_HANDS-1] of Boolean;
+    CanBeAdvancedAI: array [0..MAX_HANDS-1] of Boolean;
     DefaultHuman: TKMHandIndex;
     GoalsVictoryCount, GoalsSurviveCount: array [0..MAX_HANDS-1] of Byte;
     GoalsVictory: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
@@ -145,6 +146,7 @@ type
     property CanBeAICount: Byte read GetCanBeAICount;
     property CanBeOnlyAICount: Byte read GetCanBeOnlyAICount;
     property CanBeHumanAndAICount: Byte read GetCanBeHumanAndAICount;
+    function HasDifferentAITypes: Boolean;
   end;
 
 
@@ -503,6 +505,7 @@ begin
     FlagColors[I] := DefaultTeamColors[I];
     CanBeHuman[I] := False;
     CanBeAI[I] := False;
+    CanBeAdvancedAI[I] := False;
     GoalsVictoryCount[I] := 0;
     SetLength(GoalsVictory[I], 0);
     GoalsSurviveCount[I] := 0;
@@ -519,7 +522,6 @@ end;
 procedure TKMapInfo.LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
 var
   S: TKMemoryStream;
-  CSP: TKMCustomScriptParam;
 begin
   Assert(aStreamObj is TKMemoryStream, 'Wrong stream object class');
 
@@ -581,7 +583,6 @@ procedure TKMapInfo.SaveToFile(const aPath: UnicodeString);
 var
   S: TKMemoryStream;
   ErrorStr: UnicodeString;
-  CSP: TKMCustomScriptParam;
 begin
   S := TKMemoryStream.Create;
   try
@@ -642,7 +643,7 @@ var I: Integer;
 begin
   Result := 0;
   for I := 0 to MAX_HANDS - 1 do
-    if CanBeAI[I] and not CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and not CanBeHuman[I] then
       Inc(Result);
 end;
 
@@ -750,7 +751,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeHuman[I] and not CanBeAI[I] then
+    if CanBeHuman[I] and not CanBeAI[I] and not CanBeAdvancedAI[I] then
       Inc(Result);
 end;
 
@@ -761,7 +762,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeAI) to High(CanBeAI) do
-    if CanBeAI[I] then
+    if CanBeAI[I] or CanBeAdvancedAI[I] then
       Inc(Result);
 end;
 
@@ -772,7 +773,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeAI[I] and not CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and not CanBeHuman[I] then
       Inc(Result);
 end;
 
@@ -783,8 +784,19 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeAI[I] and CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and CanBeHuman[I] then
       Inc(Result);
+end;
+
+
+function TKMapInfo.HasDifferentAITypes: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeAI[I] and CanBeAdvancedAI[I] then
+      Result := True;
 end;
 
 

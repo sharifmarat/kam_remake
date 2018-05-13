@@ -664,10 +664,10 @@ TX_LOBBY_HEADER_PINGFPS = 535; //Ping / FPS
 TX_LOBBY_HEADER_SPECTATORS = 780; //Spectators
 TX_LOBBY_ALLOW_SPECTATORS = 778; //Allow spectators
 TX_LOBBY_SLOT_OPEN = 536; //Open
-TX_LOBBY_SLOT_AI_PLAYER = 537; //Classic AI Player
-TX_LOBBY_SLOT_AI_PLAYER_ADVANCED = 1179; //Advanced AI Player
-TX_LOBBY_SLOT_AI_PLAYER_ADVANCED_SHORT = 1180; //Advanced AI
-TX_LOBBY_SLOT_AI_PLAYER_CLASSIC_SHORT = 1181; //Classic AI
+TX_AI_PLAYER_CLASSIC = 537; //Classic AI Player
+TX_AI_PLAYER_ADVANCED = 1179; //Advanced AI Player
+TX_AI_PLAYER_ADVANCED_SHORT = 1180; //Advanced AI
+TX_AI_PLAYER_CLASSIC_SHORT = 1181; //Classic AI
 TX_LOBBY_SELECT = 538; //Select...
 TX_LOBBY_RANDOM = 539; //Random
 TX_LOBBY_MAP_NONE = 540; //None
@@ -1229,4 +1229,10 @@ TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1211; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair all terrain brushes internal info? That will allow to use brushes over manually set tiles from tiles palette
 
+TX_MAPED_PLAYERS_DEFAULT_SHORT = 1213; //Def.
+TX_PLAYER_HUMAN = 1214; //Human
+TX_CLASSIC_AI_PLAYER_X = 1215; //Classic AI Player %d
+TX_ADVANCED_AI_PLAYER_X = 1216; //Advanced AI Player %d
+TX_CLASSIC_AI_PLAYER = 1217; //Classic AI Player
+TX_AI_PLAYER_TYPE = 1218; //AI Player type
 

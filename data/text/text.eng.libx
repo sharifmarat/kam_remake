@@ -1159,3 +1159,9 @@
 1210:Try to repair internal terrain information to make brushes work
 1211:Fix terrain brushes
 1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+1213:Def.
+1214:Human player
+1215:Classic AI player %d
+1216:Advanced AI Player %d
+1217:Classic AI Player
+1218:AI Player Type

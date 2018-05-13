@@ -248,9 +248,9 @@ begin
   case PlayerNetType of
     nptHuman:     Result := NiknameU;
     nptComputerClassic:  //In lobby AI players don't have numbers yet (they are added on mission start)
-                  Result := gResTexts[TX_LOBBY_SLOT_AI_PLAYER];
+                  Result := gResTexts[TX_AI_PLAYER_CLASSIC];
     nptComputerAdvanced:  //In lobby AI players don't have numbers yet (they are added on mission start)
-                  Result := gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED];
+                  Result := gResTexts[TX_AI_PLAYER_ADVANCED];
     nptClosed:    Result := gResTexts[TX_LOBBY_SLOT_CLOSED];
     else          Result := NO_TEXT;
   end;

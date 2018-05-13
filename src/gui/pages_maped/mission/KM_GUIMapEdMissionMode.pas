@@ -230,7 +230,8 @@ begin
   if Sender = Button_AIBuilderOK then
     for I := 0 to gHands.Count-1 do
     begin
-      gGame.MapEditor.PlayerAI[I] := True;
+      gGame.MapEditor.PlayerClassicAI[I] := True;
+      gGame.MapEditor.PlayerAdvancedAI[I] := True;
       gHands[I].AI.General.DefencePositions.Clear;
       gHands[I].AI.General.Attacks.Clear;
       gHands[I].AI.Setup.ApplyAgressiveBuilderSetup;

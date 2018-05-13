@@ -55,6 +55,7 @@ type
 
     fOwnerNikname: AnsiString; //Multiplayer owner nikname
     fHandType: TKMHandType;
+    fHandAITypes: TKMAITypeSet;
     fFlagColor: Cardinal;
     fCenterScreen: TKMPoint;
     fAlliances: array [0 .. MAX_HANDS - 1] of TKMAllianceType;
@@ -103,6 +104,7 @@ type
     function GetOwnerName: UnicodeString;
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
+    property HandAITypes: TKMAITypeSet read fHandAITypes;
     property FlagColor: Cardinal read fFlagColor write fFlagColor;
     property GameFlagColor: Cardinal read GetGameFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
@@ -110,6 +112,8 @@ type
     property ShareFOW[aIndex: Integer]: Boolean read GetShareFOW write SetShareFOW;
     property ShareBeacons[aIndex: Integer]: Boolean read GetShareBeacons write SetShareBeacons;
     property CenterScreen: TKMPoint read fCenterScreen write fCenterScreen;
+
+    procedure AddAIType(aHandAIType: TKMAIType);
 
     procedure PostLoadMission;
 
@@ -292,6 +296,7 @@ begin
 
   fOwnerNikname := '';
   fHandType   := hndComputer;
+  fHandAITypes := [];
   for I := 0 to MAX_HANDS - 1 do
   begin
     fShareFOW[I] := True; //Share FOW between allies by default (it only affects allied players)
@@ -1025,6 +1030,12 @@ begin
 end;
 
 
+procedure TKMHand.AddAIType(aHandAIType: TKMAIType);
+begin
+  Include(fHandAITypes, aHandAIType);
+end;
+
+
 procedure TKMHand.PostLoadMission;
 var
   I: Integer;
@@ -1153,10 +1164,18 @@ begin
   if HandType = hndHuman then
     Result := gResTexts[TX_PLAYER_YOU]
   else
-    if aNumberedAIs then
-      Result := Format(gResTexts[TX_PLAYER_X], [fHandIndex + 1])
-    else
-      Result := gResTexts[TX_LOBBY_SLOT_AI_PLAYER];
+    if AI.Setup.NewAI then
+    begin
+      if aNumberedAIs then
+        Result := Format(gResTexts[TX_ADVANCED_AI_PLAYER_X], [fHandIndex + 1])
+      else
+        Result := gResTexts[TX_AI_PLAYER_ADVANCED];
+    end else begin
+      if aNumberedAIs then
+        Result := Format(gResTexts[TX_PLAYER_X], [fHandIndex + 1])
+      else
+        Result := gResTexts[TX_AI_PLAYER_CLASSIC];
+    end;
 
   //Try to take player name from mission text if we are in SP
   //Do not use names in MP ot avoid confusion of AI players with real player niknames
@@ -1353,6 +1372,7 @@ begin
   SaveStream.Write(fHandIndex);
   SaveStream.WriteA(fOwnerNikname);
   SaveStream.Write(fHandType, SizeOf(fHandType));
+  SaveStream.Write(fHandAITypes, SizeOf(fHandAITypes));
   SaveStream.Write(fAlliances, SizeOf(fAlliances));
   SaveStream.Write(fShareFOW, SizeOf(fShareFOW));
   SaveStream.Write(fShareBeacons, SizeOf(fShareBeacons));
@@ -1382,6 +1402,7 @@ begin
   LoadStream.Read(fHandIndex);
   LoadStream.ReadA(fOwnerNikname);
   LoadStream.Read(fHandType, SizeOf(fHandType));
+  LoadStream.Read(fHandAITypes, SizeOf(fHandAITypes));
   LoadStream.Read(fAlliances, SizeOf(fAlliances));
   LoadStream.Read(fShareFOW, SizeOf(fShareFOW));
   LoadStream.Read(fShareBeacons, SizeOf(fShareBeacons));

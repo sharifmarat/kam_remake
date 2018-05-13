@@ -162,6 +162,10 @@ type
   end;
 
 
+  TKMAIType = (aitNone, aitClassic, aitAdvanced);
+  TKMAITypeSet = set of TKMAIType;
+
+
   TKMMapsCRCList = class
   private
     fMapsList: TStringList;
