@@ -441,7 +441,7 @@ begin
     end;
   end;
   // If we dont have enought groups then exit
-  if (AG.Count = 0) OR (not ForceToAttack AND (AG.Count >= MIN_GROUPS_IN_ATTACK + fDefence.FirstLineCnt)) then
+  if (AG.Count = 0) OR (not ForceToAttack AND (AG.Count < MIN_GROUPS_IN_ATTACK + fDefence.FirstLineCnt)) then
     Exit
   // Else remove first line from available groups
   else if not ForceToAttack then
@@ -462,16 +462,6 @@ begin
         Price[BestIdx] := Price[Count];
       end;
     end;
-
-  case fDefence.DefenceStatus() of
-    ds_Empty: Exit;
-    ds_Half: ForceToAttack := False;
-    ds_Full: ForceToAttack := True;
-    ds_None: begin
-      TakeAllIn := True;
-      ForceToAttack := True;
-    end;
-  end;
 
   if fAttack.FindBestTarget(TargetOwner, TargetPoint, ForceToAttack) then
     with AG do
@@ -514,7 +504,8 @@ begin
     Exit;
   if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
   begin
-    if (aUnit = nil) OR not (aUnit is TKMUnitWarrior) then // Does attacker attack house or citizen?
+    if (aUnit = nil) // Does attacker attack house
+      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.GetPosition.Y,aUnit.GetPosition.X] > 50)) then // Or citizen which is inside of city?
       fHostileGroups.Add( Group.GetGroupPointer() )
     else // Does attacker attack at soldier in defence position?
     begin
