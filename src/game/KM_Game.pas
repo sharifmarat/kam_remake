@@ -44,6 +44,7 @@ type
     fIgnoreConsistencyCheckErrors: Boolean; // User can ignore all consistency check errors while watching SP replay
 
     fMissionDifficulty: TKMMissionDifficulty;
+    fAIType: TKMAIType;
 
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
@@ -99,7 +100,8 @@ type
     destructor Destroy; override;
 
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                        aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
+                        aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone;
+                        aAIType: TKMAIType = aitNone);
 
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
@@ -125,6 +127,7 @@ type
     procedure RestartReplay; //Restart the replay but keep current viewport position/zoom
 
     property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty;
+    property AIType: TKMAIType read fAIType;
 
     property IsExiting: Boolean read fIsExiting;
     property IsPaused: Boolean read fIsPaused write SetIsPaused;
@@ -135,8 +138,10 @@ type
     function CheckTime(aTimeTicks: Cardinal): Boolean;
     function IsPeaceTime: Boolean;
     function IsMapEditor: Boolean;
+    function IsCampaign: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplay: Boolean;
+    function IsReplayOrSpectate: Boolean;
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
@@ -344,7 +349,8 @@ end;
 
 //New mission
 procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                            aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone);
+                            aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal;
+                            aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 const
   GAME_PARSE: array [TKMGameMode] of TKMMissionParsingMode = (
     mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
@@ -367,6 +373,7 @@ begin
     fCampaignName := NO_CAMPAIGN;
   fCampaignMap := aCampMap;
   fMissionDifficulty := aMapDifficulty;
+  fAIType := aAIType;
 
   if IsMultiplayer then
     fMissionFileSP := '' //In MP map could be in DL or MP folder, so don't store path
@@ -391,7 +398,8 @@ begin
 
                 //Fixed AIs are always enabled (e.g. coop missions)
                 for I := 0 to fNetworking.MapInfo.LocCount - 1 do
-                  if fNetworking.MapInfo.CanBeAI[I] and not fNetworking.MapInfo.CanBeHuman[I] then
+                  if (fNetworking.MapInfo.CanBeAI[I] or fNetworking.MapInfo.CanBeAdvancedAI[I])
+                    and not fNetworking.MapInfo.CanBeHuman[I] then
                     PlayerEnabled[I] := True;
               end;
     gmSingle, gmCampaign: //Setup should tell us which player is AI and which not
@@ -444,6 +452,15 @@ begin
       // If no color specified use default from mission file (don't overwrite it)
       if aColor <> $00000000 then
         gMySpectator.Hand.FlagColor := aColor;
+
+      //Set Advanced AI for only advanced locs and if choosen Advanced AI in Single map setup  
+      for I := 0 to gHands.Count - 1 do
+        if (gHands[I].HandType = hndComputer) 
+          and ((gHands[I].HandAITypes = [aitAdvanced])
+            or (gHands[I].HandAITypes = [aitClassic, aitAdvanced])
+              and (aAIType = aitAdvanced)) then
+            gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True)
+          
     end;
 
     if Parser.MinorErrors <> '' then
@@ -575,6 +592,13 @@ begin
   fGameOptions.SpeedAfterPT := fNetworking.NetGameOptions.SpeedAfterPT;
 
   SetGameSpeed(GetNormalGameSpeed, False);
+
+  //Check for default advanced AI's
+  for I := 0 to fNetworking.MapInfo.LocCount - 1 do
+    if fNetworking.MapInfo.CanBeAdvancedAI[I]
+      and not fNetworking.MapInfo.CanBeAI[I]
+      and not fNetworking.MapInfo.CanBeHuman[I] then
+      gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True);
 
   //Assign existing NetPlayers(1..N) to map players(0..N-1)
   for I := 1 to fNetworking.NetPlayers.Count do
@@ -928,7 +952,7 @@ begin
     else  begin
             SetLength(Result, 0);
             ErrorMsg := 'GetWaitingPlayersList from wrong state: '
-                       + GetEnumName(TypeInfo(TNetGameState), Integer(fNetworking.NetGameState));
+                       + GetEnumName(TypeInfo(TKMNetGameState), Integer(fNetworking.NetGameState));
             gLog.AddTime(ErrorMsg);
             //raise Exception.Create(ErrorMsg); //This error sometimes occur when host quits, but that's not critical, so we can just log it
           end;
@@ -1147,6 +1171,12 @@ begin
 end;
 
 
+function TKMGame.IsCampaign: Boolean;
+begin
+  Result := fGameMode = gmCampaign;
+end;
+
+
 function TKMGame.IsSpeedUpAllowed: Boolean;
 begin
   Result := not IsMultiplayer or IsMPGameSpeedUpAllowed;
@@ -1176,6 +1206,12 @@ end;
 function TKMGame.IsReplay: Boolean;
 begin
   Result := fGameMode in [gmReplaySingle, gmReplayMulti];
+end;
+
+
+function TKMGame.IsReplayOrSpectate: Boolean;
+begin
+  Result := fGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti];
 end;
 
 
@@ -1503,6 +1539,7 @@ begin
     fScripting.Save(SaveStream);
     gScriptSounds.Save(SaveStream);
     SaveStream.Write(fMissionDifficulty, SizeOf(fMissionDifficulty));
+    SaveStream.Write(fAIType, SizeOf(fAIType));
 
     fTextMission.Save(SaveStream);
 
@@ -1652,6 +1689,7 @@ begin
     fScripting.Load(LoadStream);
     gScriptSounds.Load(LoadStream);
     LoadStream.Read(fMissionDifficulty, SizeOf(fMissionDifficulty));
+    LoadStream.Read(fAIType, SizeOf(fAIType));
 
     fTextMission := TKMTextLibraryMulti.Create;
     fTextMission.Load(LoadStream);

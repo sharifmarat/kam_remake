@@ -109,6 +109,8 @@ type
     chkTilesGrid: TCheckBox;
     N6: TMenuItem;
     GameStats: TMenuItem;
+    ExportGameStats: TMenuItem;
+    ValidateGameStats: TMenuItem;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -142,7 +144,7 @@ type
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure Debug_ExportUIPagesClick(Sender: TObject);
     procedure HousesDat1Click(Sender: TObject);
-    procedure GameStatsClick(Sender: TObject);
+    procedure ExportGameStatsClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ResourceValues1Click(Sender: TObject);
     procedure ControlsUpdate(Sender: TObject);
@@ -160,6 +162,7 @@ type
     procedure ReloadSettingsClick(Sender: TObject);
     procedure SaveSettingsClick(Sender: TObject);
     procedure SaveEditableMission1Click(Sender: TObject);
+    procedure ValidateGameStatsClick(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -192,6 +195,7 @@ implementation
 //{$ENDIF}
 
 uses
+  {$IFDEF WDC} UITypes, {$ENDIF}
   KromUtils,
   KromShellUtils,
   KM_Defaults,
@@ -206,7 +210,7 @@ uses
   KM_RenderPool,
   KM_Hand,
   KM_ResKeys, KM_FormLogistics, KM_Game,
-  KM_Log;
+  KM_Log, KM_CommonClasses;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead
@@ -257,7 +261,7 @@ begin
     Top := gMain.Settings.WindowParams.Top;
   end;
 
-  fMissionDefOpenPath:= ExeDir;
+  fMissionDefOpenPath := ExeDir;
 end;
 
 
@@ -269,7 +273,7 @@ end;
 
 procedure TFormMain.SetExportGameStats(aEnabled: Boolean);
 begin
-  GameStats.Enabled := aEnabled;
+  ExportGameStats.Enabled := aEnabled;
 end;
 
 
@@ -515,7 +519,7 @@ begin
 end;
 
 
-procedure TFormMain.GameStatsClick(Sender: TObject);
+procedure TFormMain.ExportGameStatsClick(Sender: TObject);
 var
   DateS: UnicodeString;
 begin
@@ -846,6 +850,50 @@ end;
 procedure TFormMain.UnitAnim_AllClick(Sender: TObject);
 begin
   gRes.ExportUnitAnim(UNIT_MIN, UNIT_MAX, True);
+end;
+
+
+procedure TFormMain.ValidateGameStatsClick(Sender: TObject);
+var
+  MS: TKMemoryStream;
+  SL: TStringList;
+  CRC: Int64;
+  IsValid: Boolean;
+begin
+  if RunOpenDialog(OpenDialog1, '', ExeDir, 'KaM Remake statistics (*.csv)|*.csv') then
+  begin
+    IsValid := False;
+    SL := TStringList.Create;
+    try
+      try
+        SL.LoadFromFile(OpenDialog1.FileName);
+        if TryStrToInt64(SL[0], CRC) then
+        begin
+          SL.Delete(0); //Delete CRC from file
+          MS := TKMemoryStream.Create;
+          try
+            MS.WriteHugeString(SL.Text);
+            if CRC = Adler32CRC(MS) then
+              IsValid := True;
+          finally
+            MS.Free;
+          end;
+        end;
+
+        if IsValid then
+          MessageDlg('Game statistics from file [ ' + OpenDialog1.FileName + ' ] is valid', mtInformation , [mbOK ], 0)
+        else
+          MessageDlg('Game statistics from file [ ' + OpenDialog1.FileName + ' ] is NOT valid !', mtError, [mbClose], 0);
+
+      except
+        on E: Exception do
+          MessageDlg('Error while validating game statistics from file [ ' + OpenDialog1.FileName + ' ] :' + EolW
+                     + E.Message, mtError, [mbClose], 0);
+      end;
+    finally
+      SL.Free;
+    end;
+  end;
 end;
 
 

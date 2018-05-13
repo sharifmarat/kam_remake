@@ -4,7 +4,7 @@ interface
 uses
   SysUtils, Classes, Math,
   {$IFDEF MSWindows}Windows,{$ENDIF}
-  KM_NetServer, KM_MasterServer, KM_NetUDP, KM_CommonTypes, KM_Defaults;
+  KM_NetServer, KM_MasterServer, KM_NetUDP, KM_CommonTypes, KM_Defaults, KM_Points;
 
 type
   TKMDedicatedServer = class
@@ -23,8 +23,8 @@ type
     procedure MasterServerError(const aData: string);
   public
     constructor Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval: Word;
-                       const aMasterServerAddress: string; const aHTMLStatusFile: string;
-                       const aWelcomeMessage:UnicodeString; aDedicated:Boolean);
+                       const aMasterServerAddress: String; const aHTMLStatusFile: String;
+                       const aWelcomeMessage: UnicodeString; aDedicated: Boolean);
     destructor Destroy; override;
 
     procedure Start(const aServerName: AnsiString; const aPort: Word; aPublishServer:boolean);
@@ -37,6 +37,8 @@ type
     
     procedure GetServerInfo(var aList: TList);
     function IsListening: Boolean;
+
+    property Server: TKMNetServer read fNetServer;
   end;
 
 
@@ -50,9 +52,9 @@ const
 
 
 //Announce interval of -1 means the server will not be published (LAN)
-constructor TKMDedicatedServer.Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval:word;
-                                      const aMasterServerAddress:string; const aHTMLStatusFile:string;
-                                      const aWelcomeMessage:UnicodeString; aDedicated:Boolean);
+constructor TKMDedicatedServer.Create(aMaxRooms, aKickTimeout, aPingInterval, aAnnounceInterval: Word;
+                                      const aMasterServerAddress: String; const aHTMLStatusFile: String;
+                                      const aWelcomeMessage: UnicodeString; aDedicated: Boolean);
 begin
   inherited Create;
   fNetServer := TKMNetServer.Create(aMaxRooms, aKickTimeout, aHTMLStatusFile, aWelcomeMessage);

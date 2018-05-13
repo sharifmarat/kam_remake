@@ -711,7 +711,7 @@ object FormMain: TFormMain
         OnClick = ResourceValues1Click
       end
       object Export_Deliverlists1: TMenuItem
-        Caption = 'Export Deliver lists'
+        Caption = 'Deliver lists'
         OnClick = Export_Deliverlists1Click
       end
       object HousesDat1: TMenuItem
@@ -727,8 +727,15 @@ object FormMain: TFormMain
       end
       object GameStats: TMenuItem
         Caption = 'Game statistics'
-        Enabled = False
-        OnClick = GameStatsClick
+        object ExportGameStats: TMenuItem
+          Caption = 'Export'
+          Enabled = False
+          OnClick = ExportGameStatsClick
+        end
+        object ValidateGameStats: TMenuItem
+          Caption = 'Validate'
+          OnClick = ValidateGameStatsClick
+        end
       end
     end
     object About1: TMenuItem

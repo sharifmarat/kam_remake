@@ -147,7 +147,7 @@ type
 implementation
 uses
   SysUtils,
-  KM_Resource;
+  KM_Resource, KM_ResUnits;
 
 
 { TKMHandStats }

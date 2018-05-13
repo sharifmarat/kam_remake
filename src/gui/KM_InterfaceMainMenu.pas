@@ -50,8 +50,8 @@ type
     destructor Destroy; override;
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
+    function GetChatState: TKMChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
     procedure ExportPages(const aPath: string); override;
     procedure ReturnToLobby(const aSaveName: UnicodeString);
 
@@ -166,13 +166,13 @@ begin
 end;
 
 
-function TKMMainMenuInterface.GetChatState: TChatState;
+function TKMMainMenuInterface.GetChatState: TKMChatState;
 begin
   Result := fMenuLobby.GetChatState;
 end;
 
 
-procedure TKMMainMenuInterface.SetChatState(const aChatState: TChatState);
+procedure TKMMainMenuInterface.SetChatState(const aChatState: TKMChatState);
 begin
   fMenuLobby.SetChatState(aChatState);
 end;

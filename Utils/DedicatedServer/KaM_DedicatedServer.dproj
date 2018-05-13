@@ -80,8 +80,10 @@
         </DelphiCompile>
         <DCCReference Include="..\..\src\utils\KM_CommonUtils.pas"/>
         <DCCReference Include="..\..\src\common\KM_Defaults.pas"/>
+        <DCCReference Include="..\..\src\common\KM_Points.pas"/>
         <DCCReference Include="..\..\src\KM_Log.pas"/>
         <DCCReference Include="..\..\src\KM_Settings.pas"/>
+        <DCCReference Include="..\..\src\net\KM_NetworkTypes.pas"/>
         <DCCReference Include="..\..\src\net\other\KM_DedicatedServer.pas"/>
         <DCCReference Include="..\..\src\utils\KM_ConsoleTimer.pas"/>
         <DCCReference Include="KM_ServerEventHandler.pas"/>

@@ -6,7 +6,7 @@ uses
   {$IFDEF FPC}Forms,{$ENDIF}   //Lazarus do not know UITypes
   {$IFDEF WDC}UITypes,{$ENDIF} //We use settings in console modules
   KM_Resolutions, KM_WareDistribution,
-  KM_Defaults, KM_Points, KM_CommonTypes;
+  KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses;
 
 
 type
@@ -37,29 +37,6 @@ type
     procedure LockParams;
     procedure UnlockParams;
     function IsValid(aMonitorsInfo: TKMPointArray): Boolean;
-  end;
-
-
-  TKMFavouriteMaps = class
-  private
-    fFavouriteMPMaps: TStringList;
-    fOnMapsUpdate: TUnicodeStringEvent;
-
-    procedure FavoriteMapsUpdated;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure LoadFromString(const aString: UnicodeString);
-    function PackToString: UnicodeString;
-
-    property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
-
-    procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
-    function Contains(aMapCRC: Cardinal): Boolean;
-    procedure Add(aMapCRC: Cardinal);
-    procedure Remove(aMapCRC: Cardinal);
-    procedure Replace(aOldCRC, aNewCRC: Cardinal);
   end;
 
 
@@ -100,6 +77,12 @@ type
   private
     fNeedsSave: Boolean;
 
+    //GFX
+    fBrightness: Byte;
+    fAlphaShadows: Boolean;
+    fLoadFullFonts: Boolean;
+
+    //Game
     fAutosave: Boolean;
     fAutosaveFrequency: Integer;
     fAutosaveCount: Integer;
@@ -109,48 +92,52 @@ type
     fShowGameTime: Boolean;      //Show game time label (always)
 
     fShowPlayersColors: Boolean; //Show player colors, if false then show self/enemy/ally colors
-//    fShowPlayersColorInGame: Boolean; //Show player colors in game, if false then show enemy/ally colors
-
     fPlayerColorSelf: Cardinal;
     fPlayerColorAlly: Cardinal;
     fPlayerColorEnemy: Cardinal;
 
-//    fGameColorSelf: Cardinal;
-//    fGameColorAlly: Cardinal;
-//    fGameColorEnemy: Cardinal;
-
-    fBrightness: Byte;
     fScrollSpeed: Byte;
-    fAlphaShadows: Boolean;
-    fLoadFullFonts: Boolean;
     fLocale: AnsiString;
-    fMusicOff: Boolean;
-    fShuffleOn: Boolean;
-    fMusicVolume: Single;
-    fSoundFXVolume: Single;
     fSpeedPace: Word;
     fSpeedMedium: Single;
     fSpeedFast: Single;
     fSpeedVeryFast: Single;
+    fWareDistribution: TKMWareDistribution;
+
+    //SFX
+    fMusicOff: Boolean;
+    fShuffleOn: Boolean;
+    fMusicVolume: Single;
+    fSoundFXVolume: Single;
+
+    //Multiplayer
     fMultiplayerName: AnsiString;
     fLastIP: string;
     fLastPort: string;
     fLastRoom: string;
     fLastPassword: string;
+    fFlashOnMessage: Boolean;
+
+    //Server
     fServerPort: string;
     fMasterServerAddress: string;
     fServerName: AnsiString;
     fMasterAnnounceInterval: Integer;
     fMaxRooms: Integer;
     fServerPacketsAccumulatingDelay: Integer;
-    fFlashOnMessage: Boolean;
     fAutoKickTimeout: Integer;
     fPingInterval: Integer;
     fAnnounceServer: Boolean;
     fHTMLStatusFile: UnicodeString;
     fServerWelcomeMessage: UnicodeString;
-    fWareDistribution: TKMWareDistribution;
 
+    fServerMapsRosterEnabled: Boolean;
+    fServerMapsRosterStr: UnicodeString;
+    fServerLimitPTFrom, fServerLimitPTTo: Integer;
+    fServerLimitSpeedFrom, fServerLimitSpeedTo: Single;
+    fServerLimitSpeedAfterPTFrom, fServerLimitSpeedAfterPTTo: Single;
+
+    //Menu
     fMenu_FavouriteMapsStr: UnicodeString;
     fMenu_MapSPType: Byte;
     fMenu_ReplaysType: Byte;
@@ -171,41 +158,45 @@ type
     fMenu_SPSaveFileName: UnicodeString;
     fMenu_LobbyMapType: Byte;
 
-    fFavouriteMaps: TKMFavouriteMaps;
+    fFavouriteMaps: TKMMapsCRCList;
 
+    //GFX
+    procedure SetBrightness(aValue: Byte);
+    procedure SetAlphaShadows(aValue: Boolean);
+    procedure SetLoadFullFonts(aValue: Boolean);
+
+    //Game
     procedure SetAutosave(aValue: Boolean);
     procedure SetAutosaveFrequency(aValue: Integer);
     procedure SetAutosaveCount(aValue: Integer);
+    procedure SetLocale(const aLocale: AnsiString);
+    procedure SetScrollSpeed(aValue: Byte);
     procedure SetReplayAutopause(aValue: Boolean);
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
-
     procedure SetShowPlayersColors(aValue: Boolean);
-//    procedure SetShowPlayersColorInGame(aValue: Boolean);
     procedure SetPlayerColorSelf(aValue: Cardinal);
     procedure SetPlayerColorAlly(aValue: Cardinal);
     procedure SetPlayerColorEnemy(aValue: Cardinal);
-//    procedure SetGameColorSelf(aValue: Cardinal);
-//    procedure SetGameColorAlly(aValue: Cardinal);
-//    procedure SetGameColorEnemy(aValue: Cardinal);
 
-    procedure SetBrightness(aValue: Byte);
-    procedure SetScrollSpeed(aValue: Byte);
-    procedure SetAlphaShadows(aValue: Boolean);
-    procedure SetLoadFullFonts(aValue: Boolean);
-    procedure SetLocale(const aLocale: AnsiString);
+    //SFX
     procedure SetMusicOff(aValue: Boolean);
     procedure SetShuffleOn(aValue: Boolean);
     procedure SetMusicVolume(aValue: Single);
     procedure SetSoundFXVolume(aValue: Single);
+
+    //Multiplayer
     procedure SetMultiplayerName(const aValue: AnsiString);
     procedure SetLastIP(const aValue: string);
-    procedure SetMasterServerAddress(const aValue: string);
-    procedure SetServerName(const aValue: AnsiString);
     procedure SetLastPort(const aValue: string);
     procedure SetLastRoom(const aValue: string);
     procedure SetLastPassword(const aValue: string);
+    procedure SetFlashOnMessage(aValue: Boolean);
+
+    //Server
+    procedure SetMasterServerAddress(const aValue: string);
+    procedure SetServerName(const aValue: AnsiString);
     procedure SetServerPort(const aValue: string);
     procedure SetServerWelcomeMessage(const aValue: UnicodeString);
     procedure SetAnnounceServer(aValue: Boolean);
@@ -215,8 +206,8 @@ type
     procedure SetHTMLStatusFile(const eValue: UnicodeString);
     procedure SetMaxRooms(eValue: Integer);
     procedure SetServerPacketsAccumulatingDelay(aValue: Integer);
-    procedure SetFlashOnMessage(aValue: Boolean);
 
+    //Menu
     procedure SetMenuFavouriteMapsStr(const aValue: UnicodeString);
     procedure SetMenuMapSPType(aValue: Byte);
     procedure SetMenuReplaysType(aValue: Byte);
@@ -246,6 +237,12 @@ type
     procedure SaveSettings(aForce: Boolean=False);
     procedure ReloadSettings;
 
+    //GFX
+    property Brightness: Byte read fBrightness write SetBrightness;
+    property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
+    property LoadFullFonts: Boolean read fLoadFullFonts write SetLoadFullFonts;
+
+    //Game
     property Autosave: Boolean read fAutosave write SetAutosave;
     property AutosaveFrequency: Integer read fAutosaveFrequency write SetAutosaveFrequency;
     property AutosaveCount: Integer read fAutosaveCount write SetAutosaveCount;
@@ -255,32 +252,32 @@ type
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
 
     property ShowPlayersColors: Boolean read fShowPlayersColors write SetShowPlayersColors;
-//    property ShowPlayersColorInGame: Boolean read fShowPlayersColorInGame write SetShowPlayersColorInGame;
     property PlayerColorSelf: Cardinal read fPlayerColorSelf write SetPlayerColorSelf;
     property PlayerColorAlly: Cardinal read fPlayerColorAlly write SetPlayerColorAlly;
     property PlayerColorEnemy: Cardinal read fPlayerColorEnemy write SetPlayerColorEnemy;
-//    property GameColorSelf: Cardinal read fGameColorSelf write SetGameColorSelf;
-//    property GameColorAlly: Cardinal read fGameColorAlly write SetGameColorAlly;
-//    property GameColorEnemy: Cardinal read fGameColorEnemy write SetGameColorEnemy;
 
-    property Brightness: Byte read fBrightness write SetBrightness;
     property ScrollSpeed: Byte read fScrollSpeed write SetScrollSpeed;
-    property AlphaShadows: Boolean read fAlphaShadows write SetAlphaShadows;
-    property LoadFullFonts: Boolean read fLoadFullFonts write SetLoadFullFonts;
     property Locale: AnsiString read fLocale write SetLocale;
-    property MusicOff: Boolean read fMusicOff write SetMusicOff;
-    property ShuffleOn: Boolean read fShuffleOn write SetShuffleOn;
-    property MusicVolume: Single read fMusicVolume write SetMusicVolume;
-    property SoundFXVolume: Single read fSoundFXVolume write SetSoundFXVolume;
     property SpeedPace: Word read fSpeedPace;
     property SpeedMedium: Single read fSpeedMedium;
     property SpeedFast: Single read fSpeedFast;
     property SpeedVeryFast: Single read fSpeedVeryFast;
+    property WareDistribution: TKMWareDistribution read fWareDistribution;
+
+    //SFX
+    property MusicOff: Boolean read fMusicOff write SetMusicOff;
+    property ShuffleOn: Boolean read fShuffleOn write SetShuffleOn;
+    property MusicVolume: Single read fMusicVolume write SetMusicVolume;
+    property SoundFXVolume: Single read fSoundFXVolume write SetSoundFXVolume;
+
+    //Multiplayer
     property MultiplayerName: AnsiString read fMultiplayerName write SetMultiplayerName;
     property LastIP: string read fLastIP write SetLastIP;
     property LastPort: string read fLastPort write SetLastPort;
     property LastRoom: string read fLastRoom write SetLastRoom;
     property LastPassword: string read fLastPassword write SetLastPassword;
+
+    //Server
     property ServerPort: string read fServerPort write SetServerPort;
     property MasterServerAddress: string read fMasterServerAddress write SetMasterServerAddress;
     property ServerName: AnsiString read fServerName write SetServerName;
@@ -293,8 +290,17 @@ type
     property PingInterval: Integer read fPingInterval write SetPingInterval;
     property HTMLStatusFile: UnicodeString read fHTMLStatusFile write SetHTMLStatusFile;
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
-    property WareDistribution: TKMWareDistribution read fWareDistribution;
 
+    property ServerMapsRosterEnabled: Boolean read fServerMapsRosterEnabled;
+    property ServerMapsRosterStr: UnicodeString read fServerMapsRosterStr;
+    property ServerLimitPTFrom: Integer read fServerLimitPTFrom;
+    property ServerLimitPTTo: Integer read fServerLimitPTTo;
+    property ServerLimitSpeedFrom: Single read fServerLimitSpeedFrom;
+    property ServerLimitSpeedTo: Single read fServerLimitSpeedTo;
+    property ServerLimitSpeedAfterPTFrom: Single read fServerLimitSpeedAfterPTFrom;
+    property ServerLimitSpeedAfterPTTo: Single read fServerLimitSpeedAfterPTTo;
+
+    //Menu
     property MenuMapSPType: Byte read fMenu_MapSPType write SetMenuMapSPType;
     property MenuReplaysType: Byte read fMenu_ReplaysType write SetMenuReplaysType;
     property MenuMapEdMapType: Byte read fMenu_MapEdMapType write SetMenuMapEdMapType;
@@ -314,17 +320,14 @@ type
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
 
-    property FavouriteMaps: TKMFavouriteMaps read fFavouriteMaps;
+    property FavouriteMaps: TKMMapsCRCList read fFavouriteMaps;
   end;
 
 
 implementation
 uses
   SysUtils, INIfiles, Math,
-  KM_Log;
-
-const
-  FAVOURITE_MAPS_DELIMITER = ':';
+  KM_Log, KM_CommonUtils;
 
 
 { TMainSettings }
@@ -462,7 +465,7 @@ begin
 
   fWareDistribution := TKMWareDistribution.Create;
 
-  fFavouriteMaps := TKMFavouriteMaps.Create;
+  fFavouriteMaps := TKMMapsCRCList.Create;
   fFavouriteMaps.OnMapsUpdate := SetMenuFavouriteMapsStr;
 
   ReloadSettings;
@@ -498,6 +501,7 @@ function TKMGameSettings.LoadFromINI(const FileName: UnicodeString): Boolean;
 var
   F: TMemIniFile;
   TempCard: Int64;
+  ServerName: UnicodeString;
 begin
   Result := FileExists(FileName);
 
@@ -515,7 +519,6 @@ begin
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
     fShowPlayersColors := F.ReadBool('Game', 'ShowPlayersColors', True); //Enabled by default
-//    fShowPlayersColors := F.ReadBool('Game', 'ShowPlayersColorInGame', True); //Enabled by default
 
     //Load minimap colors as hex strings 6-hex digits width
     if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorSelf', IntToHex(Integer(clPlayerSelf and $FFFFFF), 6)), TempCard) then
@@ -532,22 +535,6 @@ begin
       fPlayerColorEnemy := $FF000000 or TempCard
     else
       fPlayerColorEnemy := clPlayerEnemy;
-
-    //Load game colors as hex strings 6-hex digits width
-//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorSelf', IntToHex(Integer(clGameSelf and $FFFFFF), 6)), TempCard) then
-//      fGameColorSelf := $FF000000 or TempCard
-//    else
-//      fGameColorSelf := clGameSelf;
-//
-//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorAlly', IntToHex(Integer(clGameAlly and $FFFFFF), 6)), TempCard) then
-//      fGameColorAlly := $FF000000 or TempCard
-//    else
-//      fGameColorAlly := clGameAlly;
-//
-//    if TryStrToInt64('$' + F.ReadString('Game', 'GameColorEnemy', IntToHex(Integer(clGameEnemy and $FFFFFF), 6)), TempCard) then
-//      fGameColorEnemy := $FF000000 or TempCard
-//    else
-//      fGameColorEnemy := clGameEnemy;
 
     fScrollSpeed        := F.ReadInteger  ('Game', 'ScrollSpeed',       10);
     fSpeedPace          := F.ReadInteger  ('Game', 'SpeedPace',         100);
@@ -575,19 +562,32 @@ begin
     fLastRoom               := F.ReadString ('Multiplayer','LastRoom','0');
     fLastPassword           := F.ReadString('Multiplayer','LastPassword','');
     fFlashOnMessage         := F.ReadBool   ('Multiplayer','FlashOnMessage',True);
+
     fServerPort             := F.ReadString ('Server','ServerPort','56789');
     //We call it MasterServerAddressNew to force it to update in everyone's .ini file when we changed address.
     //If the key stayed the same then everyone would still be using the old value from their settings.
     fMasterServerAddress    := F.ReadString ('Server','MasterServerAddressNew','http://kam.hodgman.id.au/');
     fMasterAnnounceInterval := F.ReadInteger('Server','MasterServerAnnounceInterval',180);
     fAnnounceServer         := F.ReadBool   ('Server','AnnounceDedicatedServer',True);
-    fServerName             := AnsiString(F.ReadString ('Server','ServerName','KaM Remake Server'));
+
+    ServerName              := F.ReadString ('Server','ServerName','KaM Remake Server');
+    fServerName             := AnsiString(StrTrimChar(ServerName, #39)); //Trim single quotes from the start and from the end of servername
+
     fMaxRooms               := F.ReadInteger('Server','MaxRooms',16);
     ServerPacketsAccumulatingDelay := F.ReadInteger('Server','PacketsAccumulatingDelay',20);
     fAutoKickTimeout        := F.ReadInteger('Server','AutoKickTimeout',20);
     fPingInterval           := F.ReadInteger('Server','PingMeasurementInterval',1000);
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
+
+    fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
+    fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
+    fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     0);
+    fServerLimitPTTo        := F.ReadInteger('Server', 'LimitPTTo',       300);
+    fServerLimitSpeedFrom   := F.ReadFloat  ('Server', 'LimitSpeedFrom',  0);
+    fServerLimitSpeedTo     := F.ReadFloat  ('Server', 'LimitSpeedTo',    10);
+    fServerLimitSpeedAfterPTFrom  := F.ReadFloat('Server', 'LimitSpeedAfterPTFrom', 0);
+    fServerLimitSpeedAfterPTTo    := F.ReadFloat('Server', 'LimitSpeedAfterPTTo',   10);
 
     fMenu_FavouriteMapsStr   := F.ReadString('Menu', 'FavouriteMaps', '');
     fFavouriteMaps.LoadFromString(fMenu_FavouriteMapsStr);
@@ -640,15 +640,10 @@ begin
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
 
     F.WriteBool   ('Game','ShowPlayersColors', fShowPlayersColors);
-//    F.WriteBool   ('Game','ShowPlayersColorInGame', fShowPlayersColorInGame);
 
     F.WriteString ('Game','PlayerColorSelf',   IntToHex(fPlayerColorSelf and $FFFFFF, 6));
     F.WriteString ('Game','PlayerColorAlly',   IntToHex(fPlayerColorAlly and $FFFFFF, 6));
     F.WriteString ('Game','PlayerColorEnemy',  IntToHex(fPlayerColorEnemy and $FFFFFF, 6));
-
-//    F.WriteString ('Game','GameColorSelf',   IntToHex(fGameColorSelf and $FFFFFF, 6));
-//    F.WriteString ('Game','GameColorAlly',   IntToHex(fGameColorAlly and $FFFFFF, 6));
-//    F.WriteString ('Game','GameColorEnemy',  IntToHex(fGameColorEnemy and $FFFFFF, 6));
 
     F.WriteInteger('Game','ScrollSpeed',        fScrollSpeed);
     F.WriteInteger('Game','SpeedPace',          fSpeedPace);
@@ -675,7 +670,7 @@ begin
     F.WriteString ('Multiplayer','LastPassword',    fLastPassword);
     F.WriteBool   ('Multiplayer','FlashOnMessage',  fFlashOnMessage);
 
-    F.WriteString ('Server','ServerName',                   UnicodeString(fServerName));
+    F.WriteString ('Server','ServerName',                   '''' + UnicodeString(fServerName) + ''''); //Add single quotes for server name
     F.WriteString ('Server','WelcomeMessage',               {$IFDEF FPC} UTF8Encode {$ENDIF}(fServerWelcomeMessage));
     F.WriteString ('Server','ServerPort',                   fServerPort);
     F.WriteBool   ('Server','AnnounceDedicatedServer',      fAnnounceServer);
@@ -686,6 +681,15 @@ begin
     F.WriteString ('Server','MasterServerAddressNew',       fMasterServerAddress);
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
+
+    F.WriteBool   ('Server','MapsRosterEnabled',      fServerMapsRosterEnabled);
+    F.WriteString ('Server','MapsRoster',             fServerMapsRosterStr);
+    F.WriteInteger('Server','LimitPTFrom',            fServerLimitPTFrom);
+    F.WriteInteger('Server','LimitPTTo',              fServerLimitPTTo);
+    F.WriteFloat  ('Server','LimitSpeedFrom',         fServerLimitSpeedFrom);
+    F.WriteFloat  ('Server','LimitSpeedTo',           fServerLimitSpeedTo);
+    F.WriteFloat  ('Server','LimitSpeedAfterPTFrom',  fServerLimitSpeedAfterPTFrom);
+    F.WriteFloat  ('Server','LimitSpeedAfterPTTo',    fServerLimitSpeedAfterPTTo);
 
     F.WriteString ('Menu',  'FavouriteMaps',      fMenu_FavouriteMapsStr);
     F.WriteInteger('Menu',  'MapSPType',          fMenu_MapSPType);
@@ -928,13 +932,6 @@ begin
 end;
 
 
-//procedure TKMGameSettings.SetShowPlayersColorInGame(aValue: Boolean);
-//begin
-//  fShowPlayersColorInGame := aValue;
-//  Changed;
-//end;
-
-
 procedure TKMGameSettings.SetPlayerColorSelf(aValue: Cardinal);
 begin
   fPlayerColorSelf := aValue;
@@ -954,28 +951,6 @@ begin
   fPlayerColorEnemy := aValue;
   Changed;
 end;
-
-
-//procedure TKMGameSettings.SetGameColorSelf(aValue: Cardinal);
-//begin
-//  fGameColorSelf := aValue;
-//  Changed;
-//end;
-//
-//
-//procedure TKMGameSettings.SetGameColorAlly(aValue: Cardinal);
-//begin
-//  fGameColorAlly := aValue;
-//  Changed;
-//end;
-//
-//
-//procedure TKMGameSettings.SetGameColorEnemy(aValue: Cardinal);
-//begin
-//  fGameColorEnemy := aValue;
-//  Changed;
-//end;
-
 
 
 procedure TKMGameSettings.SetScrollSpeed(aValue: Byte);
@@ -1199,124 +1174,6 @@ begin
         and (fHeight >= MIN_RESOLUTION_HEIGHT)
         and (fHeight <= ScreenMaxHeight)
         and (fState in [TWindowState.wsNormal, TWindowState.wsMaximized]);
-end;
-
-
-{TKMFavouriteMaps}
-constructor TKMFavouriteMaps.Create;
-begin
-  inherited;
-  fFavouriteMPMaps := TStringList.Create;
-  fFavouriteMPMaps.Delimiter       := FAVOURITE_MAPS_DELIMITER;
-  fFavouriteMPMaps.StrictDelimiter := True; // Requires D2006 or newer.
-end;
-
-
-destructor TKMFavouriteMaps.Destroy;
-begin
-  FreeAndNil(fFavouriteMPMaps);
-  inherited;
-end;
-
-
-procedure TKMFavouriteMaps.FavoriteMapsUpdated;
-begin
-  if Assigned(fOnMapsUpdate) then
-    fOnMapsUpdate(PackToString);
-end;
-
-
-procedure TKMFavouriteMaps.LoadFromString(const aString: UnicodeString);
-var I: Integer;
-    MapCRC : Int64;
-    StringList: TStringList;
-begin
-  fFavouriteMPMaps.Clear;
-  StringList := TStringList.Create;
-  StringList.Delimiter := FAVOURITE_MAPS_DELIMITER;
-  StringList.DelimitedText   := Trim(aString);
-
-  for I := 0 to StringList.Count - 1 do
-  begin
-    if TryStrToInt64(Trim(StringList[I]), MapCRC)
-      and (MapCRC > 0)
-      and not Contains(Cardinal(MapCRC)) then
-      fFavouriteMPMaps.Add(Trim(StringList[I]));
-  end;
-
-  StringList.Free;
-end;
-
-
-function TKMFavouriteMaps.PackToString: UnicodeString;
-begin
-  Result := fFavouriteMPMaps.DelimitedText;
-end;
-
-
-//Remove missing Favourites Maps from list, check if are of them are presented in the given maps CRC array.
-procedure TKMFavouriteMaps.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
-  function ArrayContains(aValue: Cardinal): Boolean;
-  var I: Integer;
-  begin
-    Result := False;
-    for I := Low(aMapsCRCArray) to High(aMapsCRCArray) do
-      if aMapsCRCArray[I] = aValue then
-      begin
-        Result := True;
-        Break;
-      end;
-  end;
-var I: Integer;
-begin
-  I := fFavouriteMPMaps.Count - 1;
-  //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
-  while (fFavouriteMPMaps.Count > 0) and (I >= 0) do
-  begin
-    if not ArrayContains(StrToInt64(fFavouriteMPMaps[I])) then
-    begin
-      fFavouriteMPMaps.Delete(I);
-      FavoriteMapsUpdated;
-    end;
-
-    Dec(I);
-  end;
-end;
-
-
-function TKMFavouriteMaps.Contains(aMapCRC: Cardinal): Boolean;
-begin
-  Result := fFavouriteMPMaps.IndexOf(IntToStr(aMapCRC)) <> -1;
-end;
-
-
-procedure TKMFavouriteMaps.Add(aMapCRC: Cardinal);
-begin
-  if not Contains(aMapCRC) then
-  begin
-    fFavouriteMPMaps.Add(IntToStr(aMapCRC));
-    FavoriteMapsUpdated;
-  end;
-end;
-
-
-procedure TKMFavouriteMaps.Remove(aMapCRC: Cardinal);
-var Index: Integer;
-begin
-  Index := fFavouriteMPMaps.IndexOf(IntToStr(aMapCRC));
-  if Index <> -1 then
-    fFavouriteMPMaps.Delete(Index);
-  FavoriteMapsUpdated;
-end;
-
-
-procedure TKMFavouriteMaps.Replace(aOldCRC, aNewCRC: Cardinal);
-begin
-  if Contains(aOldCRC) then
-  begin
-    Remove(aOldCRC);
-    Add(aNewCRC);
-  end;
 end;
 
 

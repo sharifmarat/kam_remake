@@ -44,7 +44,7 @@ type
     procedure CreatePlayerMenus(aParent: TKMPanel);
     procedure CreateSettingsPopUp(aParent: TKMPanel);
 
-    procedure Reset(aKind: TNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+    procedure Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
     procedure GameOptionsTabSwitch(Sender: TObject);
     procedure GameOptionsChange(Sender: TObject);
     procedure FileDownloadClick(Sender: TObject);
@@ -89,6 +89,11 @@ type
 
     function AISlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
     procedure MinimapLocClick(aValue: Integer);
+
+    function Speed2TrackBarPos(aSpeed: Single): Integer;
+    function TrackBarPos2Speed(aTrackPos: Integer): Single;
+
+    procedure UpdateGameOptionsUI;
 
     procedure Lobby_OnDisconnect(const aData: UnicodeString);
     procedure Lobby_OnGameOptions(Sender: TObject);
@@ -177,9 +182,9 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
-    procedure Show(aKind: TNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
+    function GetChatState: TKMChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
+    procedure Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
     procedure Lobby_Resize(aMainHeight: Word);
     procedure ReturnToLobby(const aSaveName: UnicodeString);
     procedure UpdateState;
@@ -189,7 +194,7 @@ type
 implementation
 uses
   KM_CommonTypes, KM_ResTexts, KM_ResLocales, KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI,
-  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp;
+  KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points;
 
 const
   RESET_BANS_COOLDOWN = 1000;
@@ -420,8 +425,8 @@ begin
       SlotTxtWidth := Max(C1W - 45,
                           gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
                                                                           gResTexts[TX_LOBBY_SLOT_CLOSED],
-                                                                          gResTexts[TX_LOBBY_SLOT_AI_PLAYER],
-                                                                          gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED]]));
+                                                                          gResTexts[TX_AI_PLAYER_CLASSIC],
+                                                                          gResTexts[TX_AI_PLAYER_ADVANCED]]));
 
       AllTxtWidth := Max(40, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
@@ -450,8 +455,8 @@ begin
         begin
           DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_OPEN], gResTexts[TX_LOBBY_SLOT_OPEN_ALL]], I)); //Player can join into this slot
           DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_CLOSED], gResTexts[TX_LOBBY_SLOT_CLOSED_ALL]], I)); //Closed, nobody can join it
-          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_AI_PLAYER], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an AI player
-          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an advanced AI player
+          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_AI_PLAYER_CLASSIC], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an AI player
+          DropBox_PlayerSlot[I].Add(MakeRow([gResTexts[TX_AI_PLAYER_ADVANCED], gResTexts[TX_LOBBY_SLOT_AI_ALL]], I)); //This slot is an advanced AI player
         end
         else
         begin
@@ -580,13 +585,13 @@ begin
         TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, SpeedsCnt);
         TrackBar_SpeedPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
-        TrackBar_SpeedPT.ThumbWidth := 55; //Enough to fit 'x1.25'
+        TrackBar_SpeedPT.ThumbWidth := 45; //Enough to fit 'x1.5' 'x1.25'
         TrackBar_SpeedPT.OnChange := GameOptionsChange;
 
         TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, SpeedsCnt);
         TrackBar_SpeedAfterPT.Anchors := [anLeft,anBottom];
         TrackBar_SpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
-        TrackBar_SpeedAfterPT.ThumbWidth := 55; //Enough to fit 'x1.25'
+        TrackBar_SpeedAfterPT.ThumbWidth := 45; //Enough to fit 'x1.25'
         TrackBar_SpeedAfterPT.OnChange := GameOptionsChange;
 
     Button_Back := TKMButton.Create(Panel_Lobby, 30, 723, 220, 30, gResTexts[TX_LOBBY_QUIT], bsMenu);
@@ -803,7 +808,7 @@ end;
 
 
 //Access text that user was typing to copy it over to gameplay chat
-function TKMMenuLobby.GetChatState: TChatState;
+function TKMMenuLobby.GetChatState: TKMChatState;
 begin
   Result.WhisperRecipient := fChatWhisperRecipient;
   Result.Mode := fChatMode;
@@ -812,7 +817,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.SetChatState(const aChatState: TChatState);
+procedure TKMMenuLobby.SetChatState(const aChatState: TKMChatState);
 const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
@@ -829,7 +834,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.Show(aKind: TNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
+procedure TKMMenuLobby.Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
 var I: Integer;
 begin
   fNetworking := aNetworking;
@@ -947,7 +952,7 @@ end;
 
 
 //Reset everything to it's defaults depending on users role (Host/Joiner/Reassigned)
-procedure TKMMenuLobby.Reset(aKind: TNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+procedure TKMMenuLobby.Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
 var I: Integer;
 begin
   Label_ServerName.Caption := '';
@@ -1039,8 +1044,8 @@ procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
 begin
   //Update the game options
   fNetworking.UpdateGameOptions(EnsureRange(TrackBar_LobbyPeacetime.Position, 0, 300),
-                                (TrackBar_SpeedPT.Position - 1) * SPEED_STEP + 1,
-                                (TrackBar_SpeedAfterPT.Position - 1) * SPEED_STEP + 1);
+                                TrackBarPos2Speed(TrackBar_SpeedPT.Position),
+                                TrackBarPos2Speed(TrackBar_SpeedAfterPT.Position));
 
   //Refresh the data to controls
   Lobby_OnGameOptions(nil);
@@ -1066,16 +1071,23 @@ begin
 end;
 
 
+procedure TKMMenuLobby.UpdateGameOptionsUI;
+begin
+  TrackBar_SpeedPT.ThumbText := 'x' + FormatFloat('##0.##', TrackBarPos2Speed(TrackBar_SpeedPT.Position));
+  TrackBar_SpeedAfterPT.ThumbText := 'x' + FormatFloat('##0.##', TrackBarPos2Speed(TrackBar_SpeedAfterPT.Position));
+end;
+
+
 procedure TKMMenuLobby.Lobby_OnGameOptions(Sender: TObject);
 begin
   TrackBar_LobbyPeacetime.Position := fNetworking.NetGameOptions.Peacetime;
 
   TrackBar_SpeedPT.Enabled   := (TrackBar_LobbyPeacetime.Position > 0) and TrackBar_SpeedAfterPT.Enabled;
-  TrackBar_SpeedPT.Position  := Round((fNetworking.NetGameOptions.SpeedPT - 1) / SPEED_STEP) + 1;
-  TrackBar_SpeedPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedPT);
+  TrackBar_SpeedPT.Position  := Speed2TrackBarPos(fNetworking.NetGameOptions.SpeedPT);
 
-  TrackBar_SpeedAfterPT.Position  := Round((fNetworking.NetGameOptions.SpeedAfterPT - 1) / SPEED_STEP) + 1;
-  TrackBar_SpeedAfterPT.ThumbText := 'x' + FormatFloat('##0.##', fNetworking.NetGameOptions.SpeedAfterPT);
+  TrackBar_SpeedAfterPT.Position  := Speed2TrackBarPos(fNetworking.NetGameOptions.SpeedAfterPT);
+
+  UpdateGameOptionsUI;
 end;
 
 
@@ -1427,9 +1439,27 @@ begin
 end;
 
 
+function TKMMenuLobby.Speed2TrackBarPos(aSpeed: Single): Integer;
+begin
+  Result := Round((aSpeed - 1) / SPEED_STEP) + 1;
+end;
+
+
+function TKMMenuLobby.TrackBarPos2Speed(aTrackPos: Integer): Single;
+begin
+  Result := (aTrackPos - 1) * SPEED_STEP + 1
+end;
+
+
 //Players list has been updated
 //We should reflect it to UI
 procedure TKMMenuLobby.Lobby_OnPlayersSetup(Sender: TObject);
+
+  function ConvertSpeedRange(aSpeedRng: TKMRangeSingle): TKMRangeInt;
+  begin
+    Result.Min := Speed2TrackBarPos(aSpeedRng.Min);
+    Result.Max := Speed2TrackBarPos(aSpeedRng.Max);
+  end;
 
   procedure AddLocation(LocationName: UnicodeString; aIndex, aLocation: Integer);
   begin
@@ -1447,6 +1477,18 @@ begin
   UpdateMappings;
 
   IsSave := fNetworking.SelectGameKind = ngk_Save;
+
+
+  if Radio_MapType.ItemIndex < 4 then //Limit PT for new game
+    TrackBar_LobbyPeacetime.Range := fNetworking.NetGameFilter.PeacetimeRng
+  else
+    TrackBar_LobbyPeacetime.ResetRange; //No limit for saved game
+
+  //Apply speed range filter for all games, even for saves
+  TrackBar_SpeedPT.Range := ConvertSpeedRange(fNetworking.NetGameFilter.SpeedRng);
+  TrackBar_SpeedAfterPT.Range := ConvertSpeedRange(fNetworking.NetGameFilter.SpeedAfterPTRng);
+
+  UpdateGameOptionsUI;
 
   FirstUnused := True;
   for I := 1 to MAX_LOBBY_SLOTS do
@@ -1572,7 +1614,12 @@ begin
                       //AI-only locations should not be listed for AIs in lobby, since those ones are
                       //automatically added when the game starts (so AI checks CanBeHuman too)
                       if (CurPlayer.IsHuman and (fNetworking.MapInfo.CanBeHuman[K] or ALLOW_TAKE_AI_PLAYERS))
-                        or (CurPlayer.IsComputer and fNetworking.MapInfo.CanBeHuman[K] and fNetworking.MapInfo.CanBeAI[K]) then
+                        or (CurPlayer.IsClassicComputer
+                          and fNetworking.MapInfo.CanBeHuman[K]
+                          and fNetworking.MapInfo.CanBeAI[K])
+                        or (CurPlayer.IsAdvancedComputer
+                          and fNetworking.MapInfo.CanBeHuman[K]
+                          and fNetworking.MapInfo.CanBeAdvancedAI[K]) then
                         AddLocation(fNetworking.MapInfo.LocationName(K), I, K+1);
                   end;
       end;
@@ -1716,7 +1763,10 @@ end;
 procedure TKMMenuLobby.InitDropColMapsList;
 begin
   DropCol_Maps.DropWidth := 460;
-  DropCol_Maps.SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]], [0, 20, 320, 350], [False, True, True, True]);
+  DropCol_Maps.SetColumns(fnt_Outline,
+                          ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]],
+                          [0, 20, 320, 350],
+                          [False, True, True, True]);
 end;
 
 
@@ -1867,7 +1917,7 @@ begin
         else  AddMap := False; //Other cases are already handled in Lobby_MapTypeSelect
       end;
 
-      if AddMap then
+      if AddMap and fNetworking.NetGameFilter.FilterMap(fMapsMP[I].CRC) then
       begin
         Row := MakeListRow(['', fMapsMP[I].FileName, IntToStr(fMapsMP[I].HumanPlayerCountMP), fMapsMP[I].SizeText], //Texts
                            [fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor, fMapsMP[I].GetLobbyColor], //Colors
@@ -2183,7 +2233,7 @@ begin
                   end;
                 end;
                 Label_MapName.Caption := WrapColor(M.FileName, M.GetLobbyColor);
-                Memo_MapDesc.Text := M.TxtInfo.BigDesc;
+                Memo_MapDesc.Text := M.BigDesc;
             end;
   end;
 end;

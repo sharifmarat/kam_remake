@@ -3,7 +3,7 @@ unit KM_Maps;
 interface
 uses
   Classes, SyncObjs,
-  KM_CommonClasses, KM_Defaults, KM_Pics, KM_ResTexts;
+  KM_CommonTypes, KM_CommonClasses, KM_Defaults, KM_Pics, KM_ResTexts;
 
 
 type
@@ -31,12 +31,13 @@ type
 
   TKMMapTxtInfo = class
   private
+    fBigDesc: UnicodeString;
     function IsEmpty: Boolean;
     procedure ResetInfo;
     procedure Load(aStream: TKMemoryStream);
     procedure Save(aStream: TKMemoryStream);
   public
-    Author, SmallDesc, BigDesc: UnicodeString;
+    Author, SmallDesc: UnicodeString;
     SmallDescLibx, BigDescLibx: Integer;
     IsCoop: Boolean; //Some multiplayer missions are defined as coop
     IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
@@ -49,6 +50,8 @@ type
     BlockFullMapPreview: Boolean;
 
     constructor Create;
+    procedure SetBigDesc(aBigDesc: UnicodeString);
+    function GetBigDesc: UnicodeString;
 
     function IsSmallDescLibxSet: Boolean;
     function IsBigDescLibxSet: Boolean;
@@ -57,6 +60,7 @@ type
     procedure LoadTXTInfo(aFilePath: UnicodeString);
     function HasDifficultyLevels: Boolean;
   end;
+
 
   TKMapInfo = class
   private
@@ -70,6 +74,7 @@ type
     fTxtInfo: TKMMapTxtInfo;
     fSize: TKMMapSize;
     fSizeText: String;
+    fCustomScriptParams: TKMCustomScriptParamDataArray;
     procedure ResetInfo;
     procedure LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
     procedure LoadFromFile(const aPath: UnicodeString);
@@ -84,12 +89,15 @@ type
     function GetCanBeAICount: Byte;
     function GetCanBeOnlyAICount: Byte;
     function GetCanBeHumanAndAICount: Byte;
+    function GetBigDesc: UnicodeString;
+    procedure SetBigDesc(aBigDesc: UnicodeString);
   public
     MapSizeX, MapSizeY: Integer;
     MissionMode: TKMissionMode;
     LocCount: Byte;
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     CanBeAI: array [0..MAX_HANDS-1] of Boolean;
+    CanBeAdvancedAI: array [0..MAX_HANDS-1] of Boolean;
     DefaultHuman: TKMHandIndex;
     GoalsVictoryCount, GoalsSurviveCount: array [0..MAX_HANDS-1] of Byte;
     GoalsVictory: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
@@ -105,6 +113,7 @@ type
     procedure LoadExtra;
 
     property TxtInfo: TKMMapTxtInfo read fTxtInfo;
+    property BigDesc: UnicodeString read GetBigDesc write SetBigDesc;
     property InfoAmount: TKMMapInfoAmount read fInfoAmount;
     property Path: string read fPath;
     property MapFolder: TKMapFolder read fMapFolder;
@@ -137,6 +146,7 @@ type
     property CanBeAICount: Byte read GetCanBeAICount;
     property CanBeOnlyAICount: Byte read GetCanBeOnlyAICount;
     property CanBeHumanAndAICount: Byte read GetCanBeHumanAndAICount;
+    function HasDifferentAITypes: Boolean;
   end;
 
 
@@ -240,6 +250,8 @@ const
   //Map folder name by folder type. Containing single maps, for SP/MP/DL mode
   MAP_FOLDER: array [TKMapFolder] of string = (MAPS_FOLDER_NAME, MAPS_MP_FOLDER_NAME, MAPS_DL_FOLDER_NAME);
 
+  CUSTOM_MAP_PARAM_DESCR_TX: array[TKMCustomScriptParam] of Integer = (TX_MAP_CUSTOM_PARAM_TH_TROOP_COST, TX_MAP_CUSTOM_PARAM_MARKET_PRICE);
+
 
 { TKMapInfo }
 constructor TKMapInfo.Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TKMapFolder);
@@ -263,6 +275,7 @@ var
   fMissionParser: TKMMissionParserInfo;
   ScriptPreProcessor: TKMScriptingPreProcessor;
   ScriptFiles: TKMScriptFilesCollection;
+  CSP: TKMCustomScriptParam;
 begin
   inherited Create;
 
@@ -270,6 +283,12 @@ begin
   fPath := ExeDir + MAP_FOLDER[aMapFolder] + PathDelim + aFolder + PathDelim;
   fFileName := aFolder;
   fMapFolder := aMapFolder;
+
+  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+  begin
+    fCustomScriptParams[CSP].Added := False;
+    fCustomScriptParams[CSP].Data := '';
+  end;
 
   DatFile := fPath + fFileName + '.dat';
   MapFile := fPath + fFileName + '.map';
@@ -303,6 +322,10 @@ begin
       try
         if ScriptPreProcessor.PreProcessFile(ScriptFile) then
         begin
+          //Copy custom script params
+          for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+            fCustomScriptParams[CSP] := ScriptPreProcessor.CustomScriptParams[CSP];
+
           ScriptFiles := ScriptPreProcessor.ScriptFilesInfo;
           for I := 0 to ScriptFiles.IncludedCount - 1 do
             OthersCRC := OthersCRC xor Adler32CRC(ScriptFiles[I].FullFilePath);
@@ -355,6 +378,7 @@ end;
 
 destructor TKMapInfo.Destroy;
 begin
+  FreeAndNil(fTxtInfo);
 
   inherited;
 end;
@@ -481,6 +505,7 @@ begin
     FlagColors[I] := DefaultTeamColors[I];
     CanBeHuman[I] := False;
     CanBeAI[I] := False;
+    CanBeAdvancedAI[I] := False;
     GoalsVictoryCount[I] := 0;
     SetLength(GoalsVictory[I], 0);
     GoalsSurviveCount[I] := 0;
@@ -618,7 +643,7 @@ var I: Integer;
 begin
   Result := 0;
   for I := 0 to MAX_HANDS - 1 do
-    if CanBeAI[I] and not CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and not CanBeHuman[I] then
       Inc(Result);
 end;
 
@@ -726,7 +751,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeHuman[I] and not CanBeAI[I] then
+    if CanBeHuman[I] and not CanBeAI[I] and not CanBeAdvancedAI[I] then
       Inc(Result);
 end;
 
@@ -737,7 +762,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeAI) to High(CanBeAI) do
-    if CanBeAI[I] then
+    if CanBeAI[I] or CanBeAdvancedAI[I] then
       Inc(Result);
 end;
 
@@ -748,7 +773,7 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeAI[I] and not CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and not CanBeHuman[I] then
       Inc(Result);
 end;
 
@@ -759,8 +784,39 @@ var
 begin
   Result := 0;
   for I := Low(CanBeHuman) to High(CanBeHuman) do
-    if CanBeAI[I] and CanBeHuman[I] then
+    if (CanBeAI[I] or CanBeAdvancedAI[I]) and CanBeHuman[I] then
       Inc(Result);
+end;
+
+
+function TKMapInfo.HasDifferentAITypes: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(CanBeHuman) to High(CanBeHuman) do
+    if CanBeAI[I] and CanBeAdvancedAI[I] then
+      Result := True;
+end;
+
+
+function TKMapInfo.GetBigDesc: UnicodeString;
+var
+  CSP: TKMCustomScriptParam;
+begin
+  Result := '';
+  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+    if fCustomScriptParams[CSP].Added then
+      Result := Result + WrapColor(gResTexts[CUSTOM_MAP_PARAM_DESCR_TX[CSP]] + ':', icRed) + '|'
+                       + WrapColor('[' + fCustomScriptParams[CSP].Data + ']', icOrange) + '||';
+
+  Result := Result + TxtInfo.fBigDesc;
+end;
+
+
+procedure TKMapInfo.SetBigDesc(aBigDesc: UnicodeString);
+begin
+  TxtInfo.fBigDesc := aBigDesc;
 end;
 
 
@@ -790,6 +846,7 @@ constructor TKMMapTxtInfo.Create;
 begin
   ResetInfo;
 end;
+
 
 procedure TKMMapTxtInfo.SaveTXTInfo(aFilePath: UnicodeString);
 var
@@ -827,8 +884,8 @@ begin
 
   if BigDescLibx <> -1 then
     WriteLine('BigDescLIBX', IntToStr(BigDescLibx))
-  else if BigDesc <> '' then
-    WriteLine('BigDesc', BigDesc);
+  else if fBigDesc <> '' then
+    WriteLine('BigDesc', fBigDesc);
 
   if IsCoop then
     WriteLine('SetCoop');
@@ -902,13 +959,13 @@ begin
       if SameText(St, 'Author') then
         Readln(ft, Author);
       if SameText(St, 'BigDesc') then
-        Readln(ft, BigDesc);
+        Readln(ft, fBigDesc);
 
       if SameText(St, 'BigDescLIBX') then
       begin
         Readln(ft, S);
         BigDescLibx := StrToIntDef(S, -1);
-        BigDesc := LoadDescriptionFromLIBX(BigDescLibx);
+        fBigDesc := LoadDescriptionFromLIBX(BigDescLibx);
       end;
 
       if SameText(St, 'SmallDesc') then
@@ -962,6 +1019,18 @@ begin
 end;
 
 
+procedure TKMMapTxtInfo.SetBigDesc(aBigDesc: UnicodeString);
+begin
+  fBigDesc := aBigDesc;
+end;
+
+
+function TKMMapTxtInfo.GetBigDesc: UnicodeString;
+begin
+  Result := fBigDesc;
+end;
+
+
 function TKMMapTxtInfo.IsSmallDescLibxSet: Boolean;
 begin
   Result := SmallDescLibx <> -1;
@@ -981,7 +1050,7 @@ begin
             or BlockTeamSelection or BlockPeacetime or BlockFullMapPreview
             or (Author <> '')
             or (SmallDesc <> '') or IsSmallDescLibxSet
-            or (BigDesc <> '') or IsBigDescLibxSet
+            or (fBigDesc <> '') or IsBigDescLibxSet
             or HasDifficultyLevels);
 end;
 
@@ -1008,7 +1077,7 @@ begin
   Author := '';
   SmallDesc := '';
   SmallDescLibx := -1;
-  BigDesc := '';
+  fBigDesc := '';
   BigDescLibx := -1;
 end;
 
@@ -1025,7 +1094,7 @@ begin
 
   aStream.ReadW(SmallDesc);
   aStream.Read(SmallDescLibx);
-//  aStream.ReadW(BigDesc);
+//  aStream.ReadW(fBigDesc);
 end;
 
 
@@ -1041,7 +1110,7 @@ begin
 
   aStream.WriteW(SmallDesc);
   aStream.Write(SmallDescLibx);
-//  aStream.WriteW(BigDesc);
+//  aStream.WriteW(fBigDesc);
 end;
 
 

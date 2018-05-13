@@ -73,6 +73,17 @@ type
 
   TWonOrLost = (wol_None, wol_Won, wol_Lost);
 
+  TKMCustomScriptParam = (cspTHTroopCosts, cspMarketGoldPrice);
+
+  TKMCustomScriptParamData = record
+    Added: Boolean;
+    Data: UnicodeString;
+  end;
+
+  TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
+
+  const
+    WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');
 
 implementation
 

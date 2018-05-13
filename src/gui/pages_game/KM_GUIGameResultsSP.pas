@@ -5,7 +5,7 @@ uses
   Controls, SysUtils,
   KM_Controls, KM_Defaults, KM_Pics,
   KM_InterfaceDefaults, KM_Campaigns, KM_Maps,
-  KM_GameTypes, KM_CommonTypes;
+  KM_GameTypes, KM_CommonTypes, KM_CommonClasses;
 
 
 type
@@ -29,6 +29,7 @@ type
     fRepeatLocation: Byte;
     fRepeatColor: Cardinal;
     fRepeatDifficulty: TKMMissionDifficulty;
+    fRepeatAIType: TKMAIType;
 
     fReinitedLastTime: Boolean;
 
@@ -141,6 +142,7 @@ begin
   fRepeatLocation := gGame.PlayerLoc;
   fRepeatColor := gGame.PlayerColor;
   fRepeatDifficulty := gGame.MissionDifficulty;
+  fRepeatAIType := gGame.AIType;
 
   // When exit mission update stats to build actual charts
   // without CHARTS_SAMPLING_FOR_TACTICS or CHARTS_SAMPLING_FOR_ECONOMY delays
@@ -434,7 +436,7 @@ begin
     Chart_Wares.Caption := gResTexts[TX_GRAPH_TITLE_RESOURCES];
     Chart_Wares.Anchors := [anLeft];
 
-    Button_MoreStats := TKMButtonFlat.Create(Panel_StatsCharts, 610 - LEGEND_WIDTH + 2, Chart_Wares.Bottom - 60, LEGEND_WIDTH, 40, 663, rxGui);
+    Button_MoreStats := TKMButtonFlat.Create(Panel_StatsCharts, 610 - LEGEND_WIDTH + 2, 0, LEGEND_WIDTH, 42, 663, rxGui);
     Button_MoreStats.TexOffsetX := -LEGEND_WIDTH div 2 + 14;
     Button_MoreStats.TexOffsetY := 6;
     Button_MoreStats.Anchors := [anLeft];
@@ -491,7 +493,8 @@ end;
 procedure TKMGameResultsSP.RepeatClick(Sender: TObject);
 begin
   //Means replay last map
-  gGameApp.NewRestartLast(fRepeatGameName, fRepeatMission, fRepeatSave, fGameMode, fRepeatCampName, fRepeatCampMap, fRepeatLocation, fRepeatColor, fRepeatDifficulty);
+  gGameApp.NewRestartLast(fRepeatGameName, fRepeatMission, fRepeatSave, fGameMode, fRepeatCampName, fRepeatCampMap,
+                          fRepeatLocation, fRepeatColor, fRepeatDifficulty, fRepeatAIType);
 end;
 
 

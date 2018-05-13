@@ -48,8 +48,8 @@ type
 implementation
 uses
   Math,
-  KM_HandsCollection, KM_Hand,
-  KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall,
+  KM_HandsCollection, KM_Hand, KM_ResHouses,
+  KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
   KM_UnitTaskBuild, KM_Log;
 
 
@@ -381,6 +381,19 @@ begin
           gHands[Owner].Deliveries.Queue.AbandonDelivery(fDeliverID);
           fDeliverID := 0; //So that it can't be abandoned if unit dies while trying to GoOut
 
+          //If serf bring smth into the Inn and he is hungry - let him eat immidiately
+          if fUnit.IsHungry
+            and (fToHouse.HouseType = htInn)
+            and TKMHouseInn(fToHouse).HasFood
+            and TKMHouseInn(fToHouse).HasSpace then
+          begin
+            if TKMUnitSerf(fUnit).GoEat(TKMHouseInn(fToHouse)) then
+            begin
+              TKMUnitSerf(fUnit).UnitTask.Phase := 3; //We are inside Inn already
+              Self.Free;
+              Exit;
+            end;
+          end else
           //Now look for another delivery from inside this house
           if TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
           begin
@@ -407,7 +420,7 @@ begin
           Worker := gHands[fUnit.Owner].UnitsHitTest(fToHouse.PointBelowEntrance, ut_Worker);
           if (Worker <> nil) and (Worker.UnitTask <> nil)
             and (Worker.UnitTask is TKMTaskBuildHouse)
-            and (Worker.UnitTask.Phase >= 2) then
+            and (Worker.UnitTask.Phase >= 1) then
             // If so, then allow to bring resources diagonally
             SetActionWalkToSpot(fToHouse.Entrance, ua_Walk, 1.42)
           else

@@ -711,14 +711,14 @@ begin
                       end;
         nptComputerClassic:
                       begin
-                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_LOBBY_SLOT_AI_PLAYER_CLASSIC_SHORT];
+                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_AI_PLAYER_CLASSIC_SHORT];
                         Label_MP_PlayersTeams[I].Caption := GetTeamStr(fSelectedRoomInfo.GameInfo.Players[K].Team, fSelectedRoomInfo.GameInfo.Players[K].IsSpectator);
                         Image_MP_PlayerSpecIcons[I].TexId := 0;
                         Image_MP_PlayerIcons[I].TexID := GetAIPlayerIcon(nptComputerClassic);
                       end;
         nptComputerAdvanced:
                       begin
-                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_LOBBY_SLOT_AI_PLAYER_ADVANCED_SHORT];
+                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_AI_PLAYER_ADVANCED_SHORT];
                         Label_MP_PlayersTeams[I].Caption := GetTeamStr(fSelectedRoomInfo.GameInfo.Players[K].Team, fSelectedRoomInfo.GameInfo.Players[K].IsSpectator);
                         Image_MP_PlayerSpecIcons[I].TexId := 0;
                         Image_MP_PlayerIcons[I].TexID := GetAIPlayerIcon(nptComputerAdvanced);

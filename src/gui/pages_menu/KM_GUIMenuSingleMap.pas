@@ -4,7 +4,7 @@ interface
 uses
   Controls, Math, SysUtils,
   KM_Defaults,
-  KM_Controls, KM_Maps, KM_Pics, KM_InterfaceDefaults, KM_Minimap;
+  KM_Controls, KM_Maps, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_CommonClasses;
 
 
 const
@@ -28,6 +28,7 @@ type
     fSingleColor: Cardinal;
 
     fDifficulty: TKMMissionDifficulty;
+    fAIType: TKMAIType;
 
     procedure Create_SingleMap(aParent: TKMPanel);
     procedure MapTypeChanged(Sender: TObject);
@@ -62,6 +63,8 @@ type
         DropBox_Color: TKMDropColumns;
         Label_Difficulty: TKMLabel;
         DropBox_Difficulty: TKMDropList;
+        Label_AIPlayerType: TKMLabel;
+        DropBox_AIPlayerType: TKMDropList;
         Image_Allies: array [0..MAX_HANDS-1] of TKMImage;
         Image_Enemies: array [0..MAX_HANDS-1] of TKMImage;
         Image_VictGoal: array [0..MAX_UI_GOALS-1] of TKMImage;
@@ -211,6 +214,14 @@ begin
       DropBox_Difficulty.Anchors := [anLeft, anBottom];
       DropBox_Difficulty.OnChange := OptionsChange;
       DropBox_Difficulty.Hide;
+
+      Label_AIPlayerType := TKMLabel.Create(Panel_Desc, 200, 440, gResTexts[TX_AI_PLAYER_TYPE], fnt_Metal, taLeft);
+      Label_AIPlayerType.Anchors := [anLeft, anBottom];
+      Label_AIPlayerType.Hide;
+      DropBox_AIPlayerType := TKMDropList.Create(Panel_Desc, 200, 460, 240, 20, fnt_Metal, gResTexts[TX_AI_PLAYER_TYPE], bsMenu);
+      DropBox_AIPlayerType.Anchors := [anLeft, anBottom];
+      DropBox_AIPlayerType.OnChange := OptionsChange;
+      DropBox_AIPlayerType.Hide;
 
       //Goals
       B := TKMBevel.Create(Panel_Desc, 0, 530, Half, 30);
@@ -368,6 +379,12 @@ begin
 
       DropBox_Loc.Clear;
       DropBox_Color.Clear;
+
+      Label_Difficulty.Hide;
+      DropBox_Difficulty.Hide;
+
+      Label_AIPlayerType.Hide;
+      DropBox_AIPlayerType.Hide;
     end
     else
     begin
@@ -383,7 +400,7 @@ begin
       end;
 
       Label_Title.Caption   := fMaps[MapId].FileName;
-      Memo_Desc.Text        := fMaps[MapId].TxtInfo.BigDesc;
+      Memo_Desc.Text        := fMaps[MapId].BigDesc;
       MinimapView.Show;
 
       //Location
@@ -392,6 +409,7 @@ begin
         if fMaps[MapId].CanBeHuman[I] or ALLOW_TAKE_AI_PLAYERS then
           DropBox_Loc.Add(fMaps[MapId].LocationName(I), I);
 
+      //Difficulty levels
       DropBox_Difficulty.Clear;
       if fMaps[MapId].TxtInfo.HasDifficultyLevels then
       begin
@@ -410,6 +428,23 @@ begin
       end else begin
         Label_Difficulty.Hide;
         DropBox_Difficulty.Hide;
+      end;
+
+      //AI type
+      DropBox_AIPlayerType.Clear;
+      if fMaps[MapId].HasDifferentAITypes then
+      begin
+        DropBox_AIPlayerType.Add(gResTexts[TX_AI_PLAYER_CLASSIC_SHORT], Byte(aitClassic));
+        DropBox_AIPlayerType.Add(gResTexts[TX_AI_PLAYER_ADVANCED_SHORT], Byte(aitAdvanced));
+
+        if not DropBox_AIPlayerType.IsSelected then
+          DropBox_AIPlayerType.ItemIndex := 0;
+
+        DropBox_AIPlayerType.DoSetVisible;
+        Label_AIPlayerType.DoSetVisible;
+      end else begin
+        Label_AIPlayerType.Hide;
+        DropBox_AIPlayerType.Hide;
       end;
 
       DropBox_Loc.SelectByTag(fMaps[MapId].DefaultHuman);
@@ -525,6 +560,11 @@ begin
   else
     fDifficulty := mdNone;
 
+  if DropBox_AIPlayerType.Visible and DropBox_AIPlayerType.IsSelected then
+    fAIType := TKMAIType(DropBox_AIPlayerType.GetSelectedTag)
+  else
+    fAIType := aitNone;
+
   //Don't allow selecting separator
   if DropBox_Color.ItemIndex = 1 then
     DropBox_Color.ItemIndex := 0;
@@ -632,7 +672,7 @@ begin
         fMaps.TerminateScan;
 
         //Provide mission FileName mask and title here
-        gGameApp.NewSingleMap(fMaps[I].FullPath('.dat'), fMaps[I].FileName, fSingleLoc, fSingleColor, fDifficulty);
+        gGameApp.NewSingleMap(fMaps[I].FullPath('.dat'), fMaps[I].FileName, fSingleLoc, fSingleColor, fDifficulty, fAIType);
         Exit;
       end;
   finally

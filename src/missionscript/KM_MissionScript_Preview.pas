@@ -180,7 +180,8 @@ begin
                         else
                           fHandPreview[P[0]].CanHuman := True;
 
-    ct_AIPlayer:        if P[0] = -1 then
+    ct_AIPlayer,
+    ct_AdvancedAIPlayer:if P[0] = -1 then
                           fHandPreview[fLastHand].CanAI := True
                         else
                           fHandPreview[P[0]].CanAI := True;
@@ -239,8 +240,8 @@ end;
 //We use custom mission loader for speed (compare only used commands)
 function TKMMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
 const
-  Commands: array [0..15] of AnsiString = (
-    '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!CENTER_SCREEN',
+  Commands: array [0..16] of AnsiString = (
+    '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!SET_ADVANCED_AI_PLAYER', '!CENTER_SCREEN',
     '!SET_CURR_PLAYER', '!SET_HUMAN_PLAYER', '!SET_USER_PLAYER',
     '!SET_STREET', '!SET_FIELD', '!SET_WINEFIELD', '!SET_STOCK',
     '!SET_HOUSE', '!CLEAR_UP', '!SET_UNIT', '!SET_GROUP');

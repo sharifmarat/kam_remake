@@ -15,8 +15,8 @@ type
     procedure PlayerDeleteConfirm(aVisible: Boolean);
   protected
     Panel_PlayerTypes: TKMPanel;
-    CheckBox_PlayerTypes: array [0..MAX_HANDS-1, 0..2] of TKMCheckBox;
-    Label_PlayerId : array [0..MAX_HANDS-1] of TKMLabel;
+      CheckBox_PlayerTypes: array [0..MAX_HANDS-1, 0..3] of TKMCheckBox;
+      Label_PlayerId : array [0..MAX_HANDS-1] of TKMLabel;
 
     PopUp_Confirm_PlayerDelete: TKMPopUpMenu;
       Image_Confirm_PlayerDelete: TKMImage;
@@ -49,16 +49,23 @@ begin
   Panel_PlayerTypes := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
   TKMLabel.Create(Panel_PlayerTypes, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS_TYPE], fnt_Outline, taCenter);
   TKMLabel.Create(Panel_PlayerTypes,  4, 30, 20, 20, '#',       fnt_Grey, taLeft);
-  TKMLabel.Create(Panel_PlayerTypes, 24, 30, 60, 20, gResTexts[TX_MAPED_PLAYERS_DEFAULT], fnt_Grey, taLeft);
-  TKMImage.Create(Panel_PlayerTypes,100, 30, 60, 20, 588, rxGui);
-  TKMImage.Create(Panel_PlayerTypes,160, 30, 20, 20,  62, rxGuiMain);
+
+  with TKMLabel.Create(Panel_PlayerTypes, 24, 30, 30, 20, gResTexts[TX_MAPED_PLAYERS_DEFAULT_SHORT], fnt_Grey, taLeft) do
+    Hint := gResTexts[TX_MAPED_PLAYERS_DEFAULT];
+  with TKMImage.Create(Panel_PlayerTypes,75, 30, 60, 20, 588, rxGui) do
+    Hint := gResTexts[TX_PLAYER_HUMAN];
+  with TKMImage.Create(Panel_PlayerTypes,118, 30, 20, 20,  62, rxGuiMain) do
+    Hint := gResTexts[TX_AI_PLAYER_CLASSIC];
+  with TKMImage.Create(Panel_PlayerTypes,160, 30, 20, 20,  74, rxGuiMain) do
+    Hint := gResTexts[TX_AI_PLAYER_ADVANCED];
+
   for I := 0 to MAX_HANDS - 1 do
   begin                                                         //   25
-    Label_PlayerId[i] := TKMLabel.Create(Panel_PlayerTypes,  4, 50+I*22, 20, 20, IntToStr(I+1), fnt_Outline, taLeft);
+    Label_PlayerId[I] := TKMLabel.Create(Panel_PlayerTypes,  4, 50+I*22, 20, 20, IntToStr(I+1), fnt_Outline, taLeft);
 
-    for K := 0 to 2 do
+    for K := 0 to 3 do
     begin
-      CheckBox_PlayerTypes[I,K] := TKMCheckBox.Create(Panel_PlayerTypes, 44+K*58, 48+I*22, 20, 20, '', fnt_Metal);
+      CheckBox_PlayerTypes[I,K] := TKMCheckBox.Create(Panel_PlayerTypes, 34+K*42, 48+I*22, 20, 20, '', fnt_Metal);
       CheckBox_PlayerTypes[I,K].Tag       := I;
       CheckBox_PlayerTypes[I,K].OnClick   := Mission_PlayerTypesChange;
     end;
@@ -102,10 +109,12 @@ begin
     CheckBox_PlayerTypes[I, 0].Enabled := gHands[I].HasAssets;
     CheckBox_PlayerTypes[I, 1].Enabled := gHands[I].HasAssets and not (gGame.MapEditor.DefaultHuman = I);
     CheckBox_PlayerTypes[I, 2].Enabled := gHands[I].HasAssets;
+    CheckBox_PlayerTypes[I, 3].Enabled := gHands[I].HasAssets;
 
     CheckBox_PlayerTypes[I, 0].Checked := gHands[I].HasAssets and (gGame.MapEditor.DefaultHuman = I);
     CheckBox_PlayerTypes[I, 1].Checked := gHands[I].HasAssets and gGame.MapEditor.PlayerHuman[I];
-    CheckBox_PlayerTypes[I, 2].Checked := gHands[I].HasAssets and gGame.MapEditor.PlayerAI[I];
+    CheckBox_PlayerTypes[I, 2].Checked := gHands[I].HasAssets and gGame.MapEditor.PlayerClassicAI[I];
+    CheckBox_PlayerTypes[I, 3].Checked := gHands[I].HasAssets and gGame.MapEditor.PlayerAdvancedAI[I];
   end;
 end;
 
@@ -134,10 +143,9 @@ begin
   begin
     gGame.MapEditor.DeletePlayer(gMySpectator.HandIndex);
     PlayerDeleteConfirm(False);
-    Mission_PlayerTypesChange(CheckBox_PlayerTypes[gMySpectator.HandIndex][0]);
-    Mission_PlayerTypesChange(CheckBox_PlayerTypes[gMySpectator.HandIndex][1]);
-    Mission_PlayerTypesChange(CheckBox_PlayerTypes[gMySpectator.HandIndex][2]);
+
     Mission_PlayerIdUpdate;
+    Mission_PlayerTypesUpdate;
   end;
 end;
 
@@ -154,30 +162,45 @@ begin
     gGame.MapEditor.PlayerHuman[PlayerId] := True;
   end;
 
-
   if Sender = CheckBox_PlayerTypes[PlayerId, 1] then
   begin
     gGame.MapEditor.PlayerHuman[PlayerId] := CheckBox_PlayerTypes[PlayerId, 1].Checked;
     //User cannot set player type undetermined
-    if (not CheckBox_PlayerTypes[PlayerId, 1].Checked)
-        and (not CheckBox_PlayerTypes[PlayerId, 2].Checked) then
-        gGame.MapEditor.PlayerAI[PlayerId] := true;
+    if not CheckBox_PlayerTypes[PlayerId, 1].Checked
+        and not CheckBox_PlayerTypes[PlayerId, 2].Checked
+        and not CheckBox_PlayerTypes[PlayerId, 3].Checked then
+        gGame.MapEditor.PlayerClassicAI[PlayerId] := True;
   end;
 
-  if Sender = CheckBox_PlayerTypes[PlayerId, 2] then
+  if (Sender = CheckBox_PlayerTypes[PlayerId, 2])
+    or (Sender = CheckBox_PlayerTypes[PlayerId, 3]) then
   begin
-    gGame.MapEditor.PlayerAI[PlayerId] := CheckBox_PlayerTypes[PlayerId, 2].Checked;
-    //User cannot set player type undetermined
-    if (not CheckBox_PlayerTypes[PlayerId, 1].Checked)
-        and (not CheckBox_PlayerTypes[PlayerId, 2].Checked) then
+    gGame.MapEditor.PlayerClassicAI[PlayerId] := CheckBox_PlayerTypes[PlayerId, 2].Checked;
+    gGame.MapEditor.PlayerAdvancedAI[PlayerId] := CheckBox_PlayerTypes[PlayerId, 3].Checked;
+    if not CheckBox_PlayerTypes[PlayerId, 1].Checked then
+    begin
+      //User cannot set player type undetermined
+      if not CheckBox_PlayerTypes[PlayerId, 2].Checked
+        and not CheckBox_PlayerTypes[PlayerId, 3].Checked then
         gGame.MapEditor.PlayerHuman[PlayerId] := True;
+      //Can't be 2 default AI types (without human)
+//      if CheckBox_PlayerTypes[PlayerId, 2].Checked
+//        and CheckBox_PlayerTypes[PlayerId, 3].Checked then
+//      begin
+//        if (Sender = CheckBox_PlayerTypes[PlayerId, 2]) then
+//          gGame.MapEditor.PlayerAdvancedAI[PlayerId] := False
+//        else
+//          gGame.MapEditor.PlayerClassicAI[PlayerId] := False;
+//      end;
+    end;
   end;
 
   Mission_PlayerTypesUpdate;
 end;
 
 procedure TKMMapEdMissionPlayers.Mission_PlayerIdUpdate;
-var I : integer;
+var
+  I: Integer;
 begin
   UpdatePlayer;
 

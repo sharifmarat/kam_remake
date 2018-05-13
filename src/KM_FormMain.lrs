@@ -185,13 +185,15 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'lians1'#7'Caption'#6#9'Civilians'#7'OnClick'#7#15'Civilians1Click'#0#0#0#9
   +'TMenuItem'#2'N2'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#15'ResourceValues1'#7'C'
   +'aption'#6#15'Resource Values'#7'OnClick'#7#20'ResourceValues1Click'#0#0#9'T'
-  +'MenuItem'#20'Export_Deliverlists1'#7'Caption'#6#20'Export Deliver lists'#7
-  +'OnClick'#7#25'Export_Deliverlists1Click'#0#0#9'TMenuItem'#10'HousesDat1'#7
-  +'Caption'#6#10'Houses Dat'#7'OnClick'#7#15'HousesDat1Click'#0#0#9'TMenuItem'
-  +#11'ScriptData1'#7'Caption'#6#11'Script Data'#7'OnClick'#7#22'Export_ScriptD'
-  +'ataClick'#0#0#9'TMenuItem'#2'N6'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#9'GameS'
-  +'tats'#7'Caption'#6#15'Game statistics'#7'Enabled'#8#7'OnClick'#7#14'GameSta'
-  +'tsClick'#0#0#0#9'TMenuItem'#6'About1'#7'Caption'#6#7'About..'#7'OnClick'#7
-  +#10'AboutClick'#0#0#0#11'TSaveDialog'#11'SaveDialog1'#4'left'#3#144#0#3'top'
-  ,#2#8#0#0#0
+  +'MenuItem'#20'Export_Deliverlists1'#7'Caption'#6#13'Deliver lists'#7'OnClick'
+  +#7#25'Export_Deliverlists1Click'#0#0#9'TMenuItem'#10'HousesDat1'#7'Caption'#6
+  +#10'Houses Dat'#7'OnClick'#7#15'HousesDat1Click'#0#0#9'TMenuItem'#11'ScriptD'
+  +'ata1'#7'Caption'#6#11'Script Data'#7'OnClick'#7#22'Export_ScriptDataClick'#0
+  +#0#9'TMenuItem'#2'N6'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#9'GameStats'#7'Capt'
+  +'ion'#6#15'Game statistics'#0#9'TMenuItem'#15'ExportGameStats'#7'Caption'#6#6
+  +'Export'#7'Enabled'#8#7'OnClick'#7#20'ExportGameStatsClick'#0#0#9'TMenuItem'
+  +#17'ValidateGameStats'#7'Caption'#6#8'Validate'#7'OnClick'#7#22'ValidateGame'
+  ,'StatsClick'#0#0#0#0#9'TMenuItem'#6'About1'#7'Caption'#6#7'About..'#7'OnClic'
+  +'k'#7#10'AboutClick'#0#0#0#11'TSaveDialog'#11'SaveDialog1'#4'left'#3#144#0#3
+  +'top'#2#8#0#0#0
 ]);

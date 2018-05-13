@@ -1150,3 +1150,18 @@
 1201:Softest mask - use automatically created transitions
 1202:Soft mask - use automatically created transitions
 1203:Hard mask - use automatically created transitions
+1204:Custom TownHall units cost
+1205:Custom gold market prices 
+1206:Additional options
+1207:Additional brush options
+1208:Additional brush options
+1209:Fix terrain brushes
+1210:Try to repair internal terrain information to make brushes work
+1211:Fix terrain brushes
+1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+1213:Def.
+1214:Human player
+1215:Classic AI player %d
+1216:Advanced AI Player %d
+1217:Classic AI Player
+1218:AI Player Type

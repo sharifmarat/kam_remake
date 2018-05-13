@@ -659,6 +659,7 @@ type
     fOnChange: TNotifyEvent;
     procedure UpdateMouseOverPositions(X,Y: Integer);
     function GetItem(aIndex: Integer): TKMRadioGroupItem;
+    function GetItemIndexByRow(aRowIndex: Integer): Integer;
     function GetVisibleCount: Integer;
     function GetLineHeight: Single;
   protected
@@ -814,8 +815,10 @@ type
     fCaption: UnicodeString;
     fPosition: Word;
     fFont: TKMFont;
+    fRange: TKMRangeInt;
     procedure SetCaption(const aValue: UnicodeString);
     procedure SetPosition(aValue: Word);
+    procedure SetRange(const aRange: TKMRangeInt);
   protected
     function DoHandleMouseWheelByDefault: Boolean; override;
   public
@@ -825,13 +828,16 @@ type
     CaptionWidth: Integer;
     SliderFont: TKMFont;
 
+
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth: Integer; aMin, aMax: Word);
 
     property Caption: UnicodeString read fCaption write SetCaption;
     property Position: Word read fPosition write SetPosition;
+    property Range: TKMRangeInt read fRange write SetRange;
     property Font: TKMFont read fFont write fFont;
     property MinValue: Word read fMinValue;
     property MaxValue: Word read fMaxValue;
+    procedure ResetRange;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
     procedure MouseDown(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
@@ -3792,15 +3798,16 @@ end;
 
 procedure TKMRadioGroup.UpdateMouseOverPositions(X,Y: Integer);
 var
-  LineHeight, MouseOverRow: Integer;
+  MouseOverRow, ItemIndex: Integer;
 begin
   fMouseOverItem := -1;
-  LineHeight := Round(fHeight / Count);
+
   if InRange(Y, AbsTop, AbsTop + Height) and (LineHeight > 0) then
   begin
-    MouseOverRow := EnsureRange((Y - AbsTop) div LineHeight, 0, fCount - 1);
-    if InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[MouseOverRow].Text).X) then
-      fMouseOverItem := MouseOverRow;
+    MouseOverRow := EnsureRange((Y - AbsTop) div Round(LineHeight), 0, VisibleCount - 1);
+    ItemIndex := GetItemIndexByRow(MouseOverRow);
+    if (ItemIndex <> -1) and InRange(X, AbsLeft, AbsLeft + LineHeight + gRes.Fonts[fFont].GetTextSize(fItems[ItemIndex].Text).X) then
+      fMouseOverItem := ItemIndex;
   end;
 end;
 
@@ -3809,6 +3816,26 @@ function TKMRadioGroup.GetItem(aIndex: Integer): TKMRadioGroupItem;
 begin
   Assert(aIndex < fCount, 'Can''t get radio group item for index ' + IntToStr(aIndex));
   Result := fItems[aIndex];
+end;
+
+
+function TKMRadioGroup.GetItemIndexByRow(aRowIndex: Integer): Integer;
+var
+  I, K: Integer;
+begin
+  Assert(aRowIndex < VisibleCount, 'GetItemByRow: aRowIndex >= VisibleCount');
+  K := 0;
+  Result := -1;
+  for I := 0 to fCount - 1 do
+  begin
+    if not fItems[I].Visible then Continue;
+    if aRowIndex = K then
+    begin
+      Result := I;
+      Exit;
+    end;
+    Inc(K);
+  end;
 end;
 
 
@@ -4511,6 +4538,7 @@ begin
   fMinValue := aMin;
   fMaxValue := aMax;
   fTrackHeight := 20;
+  fRange := KMRange(aMin, aMax); //set Range before position
   Position := (fMinValue + fMaxValue) div 2;
   Caption := '';
   ThumbWidth := gRes.Fonts[fFont].GetTextSize(IntToStr(MaxValue)).X + 24;
@@ -4541,8 +4569,23 @@ end;
 
 procedure TKMTrackBar.SetPosition(aValue: Word);
 begin
-  fPosition := EnsureRange(aValue, MinValue, MaxValue);
-  ThumbText := IntToStr(Position);
+  fPosition := KMEnsureRange(aValue, Range);
+  ThumbText := IntToStr(fPosition);
+end;
+
+
+procedure TKMTrackBar.SetRange(const aRange: TKMRangeInt);
+begin
+  fRange.Min := EnsureRange(aRange.Min, MinValue, MaxValue);
+  fRange.Max := EnsureRange(aRange.Max, MinValue, MaxValue);
+  Position := fPosition; //Update position due to range change
+end;
+
+
+procedure TKMTrackBar.ResetRange;
+begin
+  fRange.Min := MinValue;
+  fRange.Max := MaxValue;
 end;
 
 
@@ -4610,7 +4653,7 @@ procedure TKMTrackBar.Paint;
 const //Text color for disabled and enabled control
   TextColor: array [Boolean] of TColor4 = ($FF888888, $FFFFFFFF);
 var
-  ThumbPos, ThumbHeight: Word;
+  ThumbPos, ThumbHeight,RangeMinPos, RangeMaxPos: Word;
   CapWidth: Integer;
 begin
   inherited;
@@ -4625,9 +4668,14 @@ begin
     TKMRenderUI.WriteText(AbsLeft, AbsTop, CapWidth, fCaption, fFont, taLeft, TextColor[fEnabled]);
   end;
 
-  TKMRenderUI.WriteBevel(AbsLeft,AbsTop+fTrackTop+2,Width,fTrackHeight-4);
-  ThumbPos := Round(Mix (0, Width - ThumbWidth, 1-(Position-fMinValue) / (fMaxValue - fMinValue)));
+  RangeMinPos := Round(Width*(fRange.Min-fMinValue) / (fMaxValue - fMinValue));
+  RangeMaxPos := Round(Width*(fRange.Max-fMinValue) / (fMaxValue - fMinValue));
 
+  TKMRenderUI.WriteBevel(AbsLeft,               AbsTop+fTrackTop+1, RangeMinPos,               fTrackHeight-2, 0, 0.3);
+  TKMRenderUI.WriteBevel(AbsLeft + RangeMinPos, AbsTop+fTrackTop+2, RangeMaxPos - RangeMinPos, fTrackHeight-4);
+  TKMRenderUI.WriteBevel(AbsLeft + RangeMaxPos, AbsTop+fTrackTop+1, Width - RangeMaxPos,       fTrackHeight-2, 0, 0.3);
+
+  ThumbPos := Round(Mix (0, Width - ThumbWidth, 1-(Position-fMinValue) / (fMaxValue - fMinValue)));
   ThumbHeight := gRes.Sprites[rxGui].RXData.Size[132].Y;
 
   TKMRenderUI.WritePicture(AbsLeft + ThumbPos, AbsTop+fTrackTop, ThumbWidth, ThumbHeight, [anLeft,anRight], rxGui, 132);

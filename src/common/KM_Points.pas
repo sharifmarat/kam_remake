@@ -37,6 +37,14 @@ type
   TKMRect = packed record Left, Top, Right, Bottom: Integer end;
   TKMRectF = packed record Left, Top, Right, Bottom: Single end;
 
+  TKMRangeInt = record
+    Min, Max: Integer;
+  end;
+
+  TKMRangeSingle = record
+    Min, Max: Single;
+  end;
+
   TKMPointFunction = function(aPoint: TKMPoint): Boolean of object;
 
   function KMPoint(X,Y: Integer): TKMPoint;
@@ -135,6 +143,18 @@ type
   function TypeToString(const T: TKMDirection): string; overload;
 
   function StringToType(const Str: String): TKMPoint; overload;
+
+  function KMRange(aMin, aMax: Integer): TKMRangeInt; overload;
+  function KMRange(aMin, aMax: Single): TKMRangeSingle; overload;
+
+  function KMInRange(aValue: Integer; const aRangeInt: TKMRangeInt): Boolean; overload;
+  function KMInRange(aValue: Single; const aRangeSingle: TKMRangeSingle): Boolean; overload;
+
+  function KMEnsureRange(aValue: Integer; const aRange: TKMRangeInt): Integer; overload;
+  function KMEnsureRange(aValue: Single; const aRange: TKMRangeSingle): Single; overload;
+
+  function KMEnlargeRange(const aRange: TKMRangeInt; aValue: Integer): TKMRangeInt; overload;
+  function KMEnlargeRange(const aRange: TKMRangeSingle; aValue: Single): TKMRangeSingle; overload;
 
 
 const
@@ -872,6 +892,58 @@ const
   S: array [TKMDirection] of string = ('N/A', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW');
 begin
   Result := S[T];
+end;
+
+
+function KMRange(aMin, aMax: Integer): TKMRangeInt;
+begin
+  Result.Min := Min(aMin, aMax);
+  Result.Max := Max(aMin, aMax);
+end;
+
+
+function KMRange(aMin, aMax: Single): TKMRangeSingle;
+begin
+  Result.Min := Min(aMin, aMax);
+  Result.Max := Max(aMin, aMax);
+end;
+
+
+function KMInRange(aValue: Integer; const aRangeInt: TKMRangeInt): Boolean;
+begin
+  Result := InRange(aValue, aRangeInt.Min, aRangeInt.Max);
+end;
+
+
+function KMInRange(aValue: Single; const aRangeSingle: TKMRangeSingle): Boolean;
+begin
+  Result := InRange(aValue, aRangeSingle.Min, aRangeSingle.Max);
+end;
+
+
+function KMEnsureRange(aValue: Integer; const aRange: TKMRangeInt): Integer;
+begin
+  Result := EnsureRange(aValue, aRange.Min, aRange.Max);
+end;
+
+
+function KMEnsureRange(aValue: Single; const aRange: TKMRangeSingle): Single;
+begin
+  Result := EnsureRange(aValue, aRange.Min, aRange.Max);
+end;
+
+
+function KMEnlargeRange(const aRange: TKMRangeInt; aValue: Integer): TKMRangeInt;
+begin
+  Result.Min := Min(aRange.Min, aValue);
+  Result.Max := Max(aRange.Max, aValue);
+end;
+
+
+function KMEnlargeRange(const aRange: TKMRangeSingle; aValue: Single): TKMRangeSingle;
+begin
+  Result.Min := Min(aRange.Min, aValue);
+  Result.Max := Max(aRange.Max, aValue);
 end;
 
 

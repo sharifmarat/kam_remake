@@ -84,6 +84,10 @@ type
     fScriptFilesInfo: TKMScriptFilesCollection;
     fErrorHandler: TKMScriptErrorHandler;
 
+    fCustomScriptParams: TKMCustomScriptParamDataArray;
+
+    function GetCustomScriptParamData(aParam: TKMCustomScriptParam): TKMCustomScriptParamData;
+
     procedure AfterPreProcess;
     procedure BeforePreProcess(const aMainFileName: UnicodeString; const aMainFileText: AnsiString);
 
@@ -96,6 +100,7 @@ type
     constructor Create(aOnScriptError: TUnicodeStringEvent; aErrorHandler: TKMScriptErrorHandler); overload;
     destructor Destroy; override;
 
+    property CustomScriptParams[aParam: TKMCustomScriptParam]: TKMCustomScriptParamData read GetCustomScriptParamData;
     property ScriptFilesInfo: TKMScriptFilesCollection read fScriptFilesInfo;
 
     function ScriptMightChangeAfterPreProcessing: Boolean;
@@ -181,10 +186,9 @@ const
 
 implementation
 uses
-  TypInfo, Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
+  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares;
 
 const
-  CUSTOM_EVENT_DIRECTIVE = 'EVENT';
   SCRIPT_LOG_EXT = '.log.txt';
 
 var
@@ -1762,11 +1766,26 @@ end;
 
 
 procedure TKMScriptingPreProcessor.BeforePreProcess(const aMainFileName: UnicodeString; const aMainFileText: AnsiString);
+var
+  CSP: TKMCustomScriptParam;
 begin
   fScriptFilesInfo.fMainFilePath := ExtractFilePath(aMainFileName);
   fScriptFilesInfo.fMainFileInfo.FullFilePath := aMainFileName;
   fScriptFilesInfo.fMainFileInfo.FileName := ExtractFileName(aMainFileName);
   fScriptFilesInfo.fMainFileInfo.FileText := aMainFileText;
+
+  //Reset custom script parameters
+  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+  begin
+    fCustomScriptParams[CSP].Added := False;
+    fCustomScriptParams[CSP].Data := '';
+  end;
+end;
+
+
+function TKMScriptingPreProcessor.GetCustomScriptParamData(aParam: TKMCustomScriptParam): TKMCustomScriptParamData;
+begin
+  Result := fCustomScriptParams[aParam];
 end;
 
 
@@ -1783,7 +1802,8 @@ end;
 
 
 function TKMScriptingPreProcessor.PreProcessFile(const aFileName: UnicodeString): Boolean;
-var ScriptCode: AnsiString;
+var
+  ScriptCode: AnsiString;
 begin
   Result := PreProcessFile(aFileName, ScriptCode);
 end;
@@ -1827,10 +1847,182 @@ end;
 
 procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
                                                             const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
-var
-  ErrorStr: UnicodeString;
-  EventType: Integer;
-  DirectiveParams: TStringList;
+const
+  CUSTOM_EVENT_DIRECTIVE = 'EVENT';
+  CUSTOM_TH_TROOP_COST_DIRECTIVE = 'CUSTOM_TH_TROOP_COST';
+  CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE = 'CUSTOM_MARKET_GOLD_PRICE_X';
+
+  function AllowGameUpdate: Boolean;
+  begin
+    Result := (gGame <> nil) and not gGame.IsMapEditor;
+  end;
+
+  procedure LoadCustomEventDirectives;
+  var
+    ErrorStr: UnicodeString;
+    EventType: Integer;
+    DirectiveParamSL: TStringList;
+  begin
+    //Load custom event handlers
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      //Do not do anything for while in MapEd
+      //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+      //gGame could be nil here, but that does not change final CRC, so we can Exit
+      if not AllowGameUpdate then Exit;
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ':', DirectiveParamSL);
+          EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParamSL[0]));
+
+          if EventType = -1 then
+            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
+
+          gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
+        finally
+          DirectiveParamSL.Free;
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomTHTroopCost;
+  var
+    I, TroopCost: Integer;
+    ErrorStr: UnicodeString;
+    DirectiveParamSL: TStringList;
+    HasError: Boolean;
+    THTroopCost: array[0..5] of Integer;
+  begin
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_TH_TROOP_COST_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ',', DirectiveParamSL);
+
+          if DirectiveParamSL.Count <> 6 then
+            fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 6, actual: %d. At [%d:%d]' + sLineBreak,
+                                                [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+
+          HasError := False;
+          for I := 0 to 5 do
+            if TryStrToInt(DirectiveParamSL[I], TroopCost) then
+              THTroopCost[I] := EnsureRange(TroopCost, 1, 255)
+            else begin
+              HasError := True;
+              fErrorHandler.AppendErrorStr(Format('Directive ''%s'' wrong parameter: [%s] is not a number. At [%d:%d]' + sLineBreak,
+                                                  [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL[I], Parser.Row, Parser.Col]));
+            end;
+
+          if not HasError then
+          begin
+            fCustomScriptParams[cspTHTroopCosts].Added := True;
+            fCustomScriptParams[cspTHTroopCosts].Data := DirectiveParam;
+          end else
+            Exit;
+
+          //Do not do anything for while in MapEd
+          //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+          //gGame could be nil here, but that does not change final CRC, so we can Exit
+          if not AllowGameUpdate then Exit;
+
+          //Update actual troop cost
+          for I := 0 to 5 do
+            TH_TROOP_COST[I] := THTroopCost[I];
+
+        finally
+          DirectiveParamSL.Free;
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomMarketGoldPrice;
+  var
+    I: Integer;
+    ErrorStr: UnicodeString;
+    DirectiveParamSL: TStringList;
+    HasError: Boolean;
+    GoldOrePriceX, GoldPriceX: Single;
+  begin
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ',', DirectiveParamSL);
+
+          if DirectiveParamSL.Count <> 2 then
+            fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 2, actual: %d. At [%d:%d]' + sLineBreak,
+                                                [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+
+          HasError := False;
+            if TryStrToFloat(StringReplace(DirectiveParamSL[0], '.', ',', [rfReplaceAll]), GoldOrePriceX)
+              and TryStrToFloat(StringReplace(DirectiveParamSL[1], '.', ',', [rfReplaceAll]), GoldPriceX) then
+            begin
+              GoldOrePriceX := EnsureRange(GoldOrePriceX, 0.1, 10);
+              GoldPriceX := EnsureRange(GoldPriceX, 0.1, 10);
+            end else begin
+              HasError := True;
+              fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has not a number parameter: [%s]. At [%d:%d]' + sLineBreak,
+                                                  [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParam, Parser.Row, Parser.Col]));
+            end;
+
+          if not HasError then
+          begin
+            fCustomScriptParams[cspMarketGoldPrice].Added := True;
+            fCustomScriptParams[cspMarketGoldPrice].Data :=
+              Format('%s: x%s %s: x%s', [gRes.Wares[wt_GoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
+                                         gRes.Wares[wt_Gold].Title,    FormatFloat('#0.#', GoldPriceX)]);
+          end else
+            Exit;
+
+          //Do not do anything for while in MapEd
+          //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+          //gGame could be nil here, but that does not change final CRC, so we can Exit
+          if not AllowGameUpdate then Exit;
+
+          //Update actual troop cost
+          gRes.Wares[wt_GoldOre].MarketPriceMultiplier := GoldOrePriceX;
+          gRes.Wares[wt_Gold].MarketPriceMultiplier := GoldPriceX;
+
+        finally
+          DirectiveParamSL.Free;
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+          end;
+      end;
+    end;
+  end;
+
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
@@ -1839,35 +2031,9 @@ begin
     and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
 
-  //Load custom event handlers
-  if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
-  begin
-    aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
-
-    //Do not do anything for while in MapEd
-    //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
-    //gGame could be nil here, but that does not change final CRC, so we can Exit
-    if (gGame = nil) or gGame.IsMapEditor then Exit;
-
-    try
-      DirectiveParams := TStringList.Create;
-      StringSplit(DirectiveParam, ':', DirectiveParams);
-      EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParams[0]));
-
-      if EventType = -1 then
-        fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParams[0]), Parser.Row, Parser.Col]));
-
-      gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParams[1])));
-      DirectiveParams.Free;
-    except
-      on E: Exception do
-        begin
-          ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
-          fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
-            {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
-        end;
-    end;
-  end;
+  LoadCustomEventDirectives;
+  LoadCustomTHTroopCost;
+  LoadCustomMarketGoldPrice;
 end;
 
 

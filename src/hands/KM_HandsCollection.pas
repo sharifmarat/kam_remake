@@ -195,7 +195,7 @@ begin
   for I := aIndex to fCount - 2 do
   begin
     fHandsList[I] := fHandsList[I + 1];
-    fHandsList[I].SeTKMHandIndex(I);
+    fHandsList[I].SetHandIndex(I);
   end;
 
   Dec(fCount);
@@ -952,15 +952,17 @@ var
   SL: TStringList;
   Teams: TKMByteSetArray;
   TStr: UnicodeString;
+  MS: TKMemoryStream;
+  CRC: Cardinal;
 begin
   SL := TStringList.Create;
 
   try
+    SL.Append('Game revision: ' + GAME_REVISION);
     SL.Append(aHeader);
     SL.Append('');
 
     SL.Append('Game time:;' + TimeToString(gGame.MissionTime));
-
 
     //Teams info
     Teams := GetFullTeams;
@@ -992,7 +994,8 @@ begin
     for I := 0 to fCount - 1 do
       if fHandsList[I].Enabled then
       begin
-        SL.Append(Format('Player ''%s'' at Location %d', [fHandsList[I].GetOwnerName, I]));
+        SL.Append(Format('Player ''%s'' at Location %d. Player game result: %s',
+                         [fHandsList[I].GetOwnerName, I, fHandsList[I].AI.GetWonOrLostString]));
         fHandsList[I].Stats.ToCSV(SL);
         SL.Append('');
       end;
@@ -1016,8 +1019,18 @@ begin
     SL.Append('Training;Currently in training queue (at this current moment)');
     SL.Append('Trained;Trained by player');
     SL.Append('Lost;Died of hunger or killed');
-    SL.Append('Killed;Killed (incl. friendly)');
-    SL.Append('');
+    SL.Append('Killed;Killed (including friendly)');
+
+    MS := TKMemoryStream.Create;
+    try
+      MS.WriteHugeString(SL.Text);
+      CRC := Adler32CRC(MS);
+    finally
+      MS.Free;
+    end;
+
+    //Put CRC at first row
+    SL.Insert(0, IntToStr(CRC));
 
     ForceDirectories(ExtractFilePath(aPath));
 

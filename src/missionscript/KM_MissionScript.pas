@@ -13,7 +13,7 @@ type
                         );
 
   TKMCommandType = (ct_Unknown=0,ct_SetMap,ct_SetMaxPlayer,ct_SetCurrPlayer,ct_HumanPlayer,ct_UserPlayer,ct_SetHouse,
-                    ct_SetTactic,ct_AIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
+                    ct_SetTactic,ct_AIPlayer,ct_AdvancedAIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
                     ct_ClearUp,ct_BlockTrade, ct_BlockUnit, ct_BlockHouse,ct_ReleaseHouse,ct_ReleaseAllHouses,ct_AddGoal,ct_AddLostGoal,
                     ct_SetUnit,ct_SetRoad,ct_SetField,ct_SetWinefield,ct_SetFieldStaged,ct_SetWinefieldStaged, ct_SetStock,ct_AddWare,ct_SetAlliance,
                     ct_SetHouseDamage,ct_SetHouseDeliveryMode,ct_SetHouseRepairMode,ct_SetHouseClosedForWorker,
@@ -33,6 +33,7 @@ const
     'SET_HOUSE',
     'SET_TACTIC',
     'SET_AI_PLAYER', //Player can be AI
+    'SET_ADVANCED_AI_PLAYER', //Player can be Advanced AI
     'ENABLE_PLAYER',
     'SET_NEW_REMAP',
     'SET_MAP_COLOR',

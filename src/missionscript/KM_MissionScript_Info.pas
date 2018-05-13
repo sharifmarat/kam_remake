@@ -35,10 +35,10 @@ function TKMMissionParserInfo.LoadMission(const aFileName: string; aMapInfo: TKM
 const
   CommandsBase: array [0..3] of AnsiString = (
     '!SET_MAX_PLAYER', '!SET_TACTIC', '!SET_CURR_PLAYER', '!SET_USER_PLAYER');
-  CommandsExtra: array [0..10] of AnsiString = (
+  CommandsExtra: array [0..11] of AnsiString = (
     '!SET_MAX_PLAYER', '!SET_TACTIC',
     '!SET_CURR_PLAYER', '!SET_HUMAN_PLAYER', '!SET_USER_PLAYER',
-    '!SET_AI_PLAYER', '!ADD_GOAL', '!ADD_LOST_GOAL', '!SET_ALLIANCE', '!SET_MAP_COLOR', '!SET_RGB_COLOR');
+    '!SET_AI_PLAYER', '!SET_ADVANCED_AI_PLAYER', '!ADD_GOAL', '!ADD_LOST_GOAL', '!SET_ALLIANCE', '!SET_MAP_COLOR', '!SET_RGB_COLOR');
 var
   FileText: AnsiString;
 begin
@@ -90,6 +90,11 @@ begin
                           fMapInfo.CanBeAI[fLastHand] := True
                         else
                           fMapInfo.CanBeAI[P[0]] := True;
+
+    ct_AdvancedAIPlayer:if P[0] = -1 then
+                          fMapInfo.CanBeAdvancedAI[fLastHand] := True
+                        else
+                          fMapInfo.CanBeAdvancedAI[P[0]] := True;
 
     ct_AddGoal:         if fLastHand >= 0 then
                           //If the condition is time then P[3] is the time, else it is player ID

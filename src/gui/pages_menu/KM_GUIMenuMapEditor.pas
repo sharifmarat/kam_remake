@@ -1013,7 +1013,7 @@ begin
     MinimapView_MapEd.Show;
     Panel_MapInfo.Show;
     Map.LoadExtra;
-    Memo_MapDesc.Text := Map.TxtInfo.BigDesc;
+    Memo_MapDesc.Text := Map.BigDesc;
     if Map.HasReadme then
       Button_ViewReadme.Show
     else

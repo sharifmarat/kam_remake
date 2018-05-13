@@ -101,6 +101,7 @@ type
     procedure Message_GoTo(Sender: TObject);
     procedure Message_UpdateStack;
     procedure MessageLog_Click(Sender: TObject);
+    procedure MessageLog_ShowMessage(aMessageId: Integer);
     procedure MessageLog_ItemClick(Sender: TObject);
     procedure MessageLog_Close(Sender: TObject);
     procedure MessageLog_Update(aFullRefresh: Boolean);
@@ -156,6 +157,7 @@ type
     procedure ShowSPStats;
 
     procedure SetViewportPos(const aLoc: TKMPointF);
+    procedure CheckMessageKeys(Key: Word);
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -284,8 +286,8 @@ type
     procedure SetScriptedOverlay(const aText: UnicodeString);
     procedure UpdateOverlayControls;
     procedure ReleaseDirectionSelector;
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
+    function GetChatState: TKMChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
     procedure ChatMessage(const aData: UnicodeString);
     procedure AlliesOnPlayerSetup(Sender: TObject);
     procedure AlliesOnPingInfo(Sender: TObject);
@@ -1890,22 +1892,15 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.MessageLog_ItemClick(Sender: TObject);
+procedure TKMGamePlayInterface.MessageLog_ShowMessage(aMessageId: Integer);
 var
-  ItemId, MessageId: Integer;
   Msg: TKMLogMessage;
   H: TKMHouse;
   G: TKMUnitGroup;
 begin
-  ItemId := ColumnBox_MessageLog.ItemIndex;
-  if ItemId = -1 then Exit;
-
-  MessageId := ColumnBox_MessageLog.Rows[ItemId].Tag;
-  if MessageId = -1 then Exit;
-
-  Msg := gMySpectator.Hand.MessageLog[MessageId];
+  Msg := gMySpectator.Hand.MessageLog[aMessageId];
   Msg.IsReadLocal := True;
-  gGame.GameInputProcess.CmdGame(gic_GameMessageLogRead, MessageId);
+  gGame.GameInputProcess.CmdGame(gic_GameMessageLogRead, aMessageId);
 
   // Jump to location
   fViewport.Position := KMPointF(Msg.Loc);
@@ -1937,6 +1932,20 @@ begin
   end;
 
   MessageLog_Update(True);
+end;
+
+
+procedure TKMGamePlayInterface.MessageLog_ItemClick(Sender: TObject);
+var
+  ItemId, MessageId: Integer;
+begin
+  ItemId := ColumnBox_MessageLog.ItemIndex;
+  if ItemId = -1 then Exit;
+
+  MessageId := ColumnBox_MessageLog.Rows[ItemId].Tag;
+  if MessageId = -1 then Exit;
+
+  MessageLog_ShowMessage(MessageId);
 end;
 
 
@@ -2148,7 +2157,7 @@ end;
 
 procedure TKMGamePlayInterface.SetMenuState(aTactic: Boolean);
 begin
-  Button_Main[tbBuild].Enabled := not aTactic and (fUIMode in [umSP, umMP]) and not HasLostMPGame and not gMySpectator.Hand.InCinematic;
+  Button_Main[tbBuild].Enabled := not aTactic and not HasLostMPGame and not gMySpectator.Hand.InCinematic; //Allow to 'test build' if we are in replay / spectate mode
   Button_Main[tbRatio].Enabled := not aTactic and ((fUIMode in [umReplay, umSpectate]) or (not HasLostMPGame and not gMySpectator.Hand.InCinematic));
   Button_Main[tbStats].Enabled := not aTactic;
 
@@ -2500,13 +2509,13 @@ end;
 
 
 // Access chat messages history to copy it over to lobby chat
-function TKMGamePlayInterface.GetChatState: TChatState;
+function TKMGamePlayInterface.GetChatState: TKMChatState;
 begin
   Result := fGuiGameChat.GetChatState;
 end;
 
 
-procedure TKMGamePlayInterface.SetChatState(const aChatState: TChatState);
+procedure TKMGamePlayInterface.SetChatState(const aChatState: TKMChatState);
 begin
   fGuiGameChat.SetChatState(aChatState);
 
@@ -2518,7 +2527,6 @@ end;
 // Assign Object to a Key
 // we use ID to avoid use of pointer counter
 procedure TKMGamePlayInterface.Selection_Assign(aId: Word; aObject: TObject);
-var I: Integer;
 begin
   if not InRange(aId, Low(fSelection), High(fSelection)) then Exit;
 
@@ -2532,14 +2540,6 @@ begin
     fSelection[aId] := TKMUnitGroup(aObject).UID
   else
     fSelection[aId] := -1;
-
-  // If aObject is assigned to another Key, reset previous assignation
-  for I := 0 to length(fSelection) - 1 do
-    if (I <> aId) and (fSelection[aId] <> -1) and (fSelection[I] = fSelection[aId]) then
-    begin
-      fSelection[I] := -1;
-      gGame.GameInputProcess.CmdGame(gic_GameHotkeySet, I, -1);
-    end;
 
   gGame.GameInputProcess.CmdGame(gic_GameHotkeySet, aId, fSelection[aId]);
 end;
@@ -2885,12 +2885,59 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.CheckMessageKeys(Key: Word);
+var
+  I: Integer;
+  LastAlert: TKMAlert;
+  Msg: TKMLogMessage;
+begin
+  // Messages
+  if Key = gResKeys[SC_CENTER_ALERT].Key then
+  begin
+    // Spacebar centers you on the latest alert
+    LastAlert := fAlerts.GetLatestAlert;
+    if LastAlert <> nil then
+      fViewport.Position := LastAlert.Loc
+    else
+    begin
+      //If there are no active alerts, then centers on last unread message in log (house / unit)
+      for I := gMySpectator.Hand.MessageLog.CountLog - 1 downto Max(gMySpectator.Hand.MessageLog.CountLog - MAX_LOG_MSGS, 0) do
+      begin
+        Msg := gMySpectator.Hand.MessageLog[I];
+        
+        if not Msg.IsRead and Msg.IsGoto then
+        begin
+          MessageLog_ShowMessage(I);
+          Break;
+        end;
+      end;
+    end;
+  end;
+
+  if Key = gResKeys[SC_DELETE_MSG].Key then
+    Button_MessageDelete.Click;
+
+  // Enter is the shortcut to bring up chat in multiplayer
+  if (Key = gResKeys[SC_CHAT_MP].Key) and (fUIMode in [umMP, umSpectate]) then
+  begin
+    if not fGuiGameChat.Visible then
+    begin
+      Allies_Close(nil);
+      Message_Close(nil);
+      MessageLog_Close(nil);
+      Label_MPChatUnread.Caption := ''; // No unread messages
+      fGuiGameChat.Show;
+    end else
+      fGuiGameChat.Focus;
+  end;
+end;
+
+
 // Note: we deliberately don't pass any Keys to MyControls when game is not running
 // thats why MyControls.KeyUp is only in gsRunning clause
 // Ignore all keys if game is on 'Pause'
 procedure TKMGamePlayInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
-  LastAlert: TKMAlert;
   SelectId: Integer;
   SpecPlayerIndex: ShortInt;
   KeyHandled: Boolean;
@@ -3101,30 +3148,9 @@ begin
     end;
   end;
 
-  // Messages
-  if Key = gResKeys[SC_CENTER_ALERT].Key then
-  begin
-    // Spacebar centers you on the latest alert
-    LastAlert := fAlerts.GetLatestAlert;
-    if LastAlert <> nil then
-      fViewport.Position := LastAlert.Loc;
-  end;
-  if Key = gResKeys[SC_DELETE_MSG].Key then Button_MessageDelete.Click;
-  if Key = gResKeys[SC_CHAT_MP].Key then            // Enter is the shortcut to bring up chat in multiplayer
-    if (fUIMode in [umMP, umSpectate]) then
-    begin
-      if not fGuiGameChat.Visible then
-      begin
-        Allies_Close(nil);
-        Message_Close(nil);
-        MessageLog_Close(nil);
-        Label_MPChatUnread.Caption := ''; // No unread messages
-        fGuiGameChat.Show;
-      end else
-        fGuiGameChat.Focus;
-    end;
+  CheckMessageKeys(Key);
 
-    // General function keys
+  // General function keys
   if Key = gResKeys[SC_PAUSE].Key then
     if (fUIMode = umSP) then SetPause(True); // Display pause overlay
 
@@ -3375,7 +3401,9 @@ begin
     Owner := GetGameObjectOwnerIndex(Obj);
     if (Owner <> -1) and
       ((Owner = gMySpectator.HandIndex)
-      or ((ALLOW_SELECT_ALLY_UNITS or (Obj is TKMHouse)) and (gMySpectator.Hand.Alliances[Owner] = at_Ally))
+      or ((ALLOW_SELECT_ALLY_UNITS
+          or ((Obj is TKMHouse) and (gHands[Owner].IsHuman or not gGame.IsCampaign))) //Do not allow to select allied AI in campaigns
+        and (gMySpectator.Hand.Alliances[Owner] = at_Ally))
       or (ALLOW_SELECT_ENEMIES and (gMySpectator.Hand.Alliances[Owner] = at_Enemy)) // Enemies can be selected for debug
       or (fUIMode in [umReplay, umSpectate])) then
     begin
@@ -3471,10 +3499,14 @@ begin
           Exit;
         end;
 
+        //Manage only cmNone while spectating / watchingreplay
+        if (gGameCursor.Mode <> cmNone) and gGame.IsReplayOrSpectate then
+          Exit;
+
         // Only allow placing of roads etc. with the left mouse button
         if gMySpectator.FogOfWar.CheckTileRevelation(P.X, P.Y) = 0 then
         begin
-          if gGameCursor.Mode in [cmErase, cmRoad, cmField, cmWine, cmHouses] then
+          if (gGameCursor.Mode in [cmErase, cmRoad, cmField, cmWine, cmHouses]) and not gGame.IsReplayOrSpectate then
             // Can't place noise when clicking on unexplored areas
             gSoundPlayer.Play(sfx_CantPlace, P, False, 4);
         end

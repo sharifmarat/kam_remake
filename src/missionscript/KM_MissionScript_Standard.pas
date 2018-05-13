@@ -169,7 +169,7 @@ function TKMMissionParserStandard.ProcessCommand(CommandType: TKMCommandType; P:
 
 var
   I: Integer;
-  Qty: Integer;
+  Qty, HandI: Integer;
   H: TKMHouse;
   HT: TKMHouseType;
   UT: TKMUnitType;
@@ -198,7 +198,8 @@ begin
                             if fParsingMode = mpm_Editor then
                             begin
                               gGame.MapEditor.PlayerHuman[I] := False;
-                              gGame.MapEditor.PlayerAI[I] := False;
+                              gGame.MapEditor.PlayerClassicAI[I] := False;
+                              gGame.MapEditor.PlayerAdvancedAI[I] := False;
                             end;
                           end;
                         end;
@@ -242,11 +243,28 @@ begin
     ct_AIPlayer:        //New command added by KMR - mark player as allowed to be human
                         //MP and SP set human players themselves
                         //Remains usefull for map preview and MapEd
-                        if (fParsingMode = mpm_Editor) and (gHands <> nil) then
-                          if InRange(P[0], 0, gHands.Count - 1) then
-                            gGame.MapEditor.PlayerAI[P[0]] := True
+                        if (gHands <> nil) then
+                        begin
+                          HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
+
+                          if (fParsingMode = mpm_Editor) then
+                            gGame.MapEditor.PlayerClassicAI[HandI] := True
                           else
-                            gGame.MapEditor.PlayerAI[fLastHand] := True;
+                            gHands[HandI].AddAIType(aitClassic);
+                        end;
+
+    ct_AdvancedAIPlayer://New command added by KMR - mark player as allowed to be human
+                        //MP and SP set human players themselves
+                        //Remains usefull for map preview and MapEd
+                        if (gHands <> nil) then
+                        begin
+                          HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
+
+                          if (fParsingMode = mpm_Editor) then
+                            gGame.MapEditor.PlayerAdvancedAI[HandI] := True
+                          else
+                            gHands[HandI].AddAIType(aitAdvanced);
+                        end;
 
     ct_CenterScreen:    if (fLastHand <> PLAYER_NONE)
                           and PointInMap(P[0]+1, P[1]+1) then
@@ -803,8 +821,16 @@ begin
     AddCommand(ct_SetCurrPlayer, [I]);
     AddCommand(ct_EnablePlayer, [I]);
 
+//    Assert(gGame.MapEditor.PlayerHuman[I]
+//        or (not gGame.MapEditor.PlayerClassicAI[I] and not gGame.MapEditor.PlayerAdvancedAI[I]),
+//          'There can''t be ');
+    Assert(gGame.MapEditor.PlayerHuman[I]
+        or gGame.MapEditor.PlayerClassicAI[I]
+        or gGame.MapEditor.PlayerAdvancedAI[I], 'At least one player type should be available');
+
     if gGame.MapEditor.PlayerHuman[I] then AddCommand(ct_UserPlayer, []);
-    if gGame.MapEditor.PlayerAI[I] then AddCommand(ct_AIPlayer, []);
+    if gGame.MapEditor.PlayerClassicAI[I] then AddCommand(ct_AIPlayer, []);
+    if gGame.MapEditor.PlayerAdvancedAI[I] then AddCommand(ct_AdvancedAIPlayer, []);
 
     //Write RGB command second so it will be used if color is not from KaM palette
     AddCommand(ct_SetRGBColor, [gHands[I].FlagColor and $00FFFFFF]);
@@ -954,9 +980,6 @@ begin
         if H.IsDamaged then
           AddCommand(ct_SetHouseDamage, [H.GetDamage]);
 
-        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
-          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
-
         if H.BuildingRepair then // Repair mode is turned off by default
           AddCommand(ct_SetHouseRepairMode, []);
 
@@ -1002,6 +1025,10 @@ begin
             if H.CheckResOut(Res) > 0 then
               AddCommand(ct_AddWareToLast, [WareTypeToIndex[Res], H.CheckResOut(Res)]);
           end;
+
+        //Set Delivery mode after Wares, so in case there are some wares and delivery mode TakeOut, then we will need to add proper Offers
+        if H.DeliveryMode <> dm_Delivery then //Default delivery mode is dm_Delivery
+          AddCommand(ct_SetHouseDeliveryMode, [Byte(H.DeliveryMode)]);
       end;
     end;
     AddData(''); //NL
