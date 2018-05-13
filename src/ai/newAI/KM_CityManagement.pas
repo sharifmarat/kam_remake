@@ -51,8 +51,8 @@ type
 
     property Builder: TKMCityBuilder read fBuilder write fBuilder;
     property Predictor: TKMCityPredictor read fPredictor;
-    property BalanceText: UnicodeString read fBalanceText;
     property WarriorsDemands: TKMWarriorsDemands read fWarriorsDemands;
+    property BalanceText: UnicodeString read fBalanceText;
 
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
@@ -180,14 +180,14 @@ var
 begin
   if (aTick mod MAX_HANDS = fOwner) AND fSetup.AutoBuild then
   begin
-    fBalanceText := '';
     FreeWorkersCnt := 0;
     fBuilder.UpdateState(aTick, FreeWorkersCnt);
     fPredictor.UpdateState(aTick);
-    if not SKIP_RENDER then
+    fBalanceText := '';
+    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
       fPredictor.LogStatus(fBalanceText);
     fBuilder.ChooseHousesToBuild(FreeWorkersCnt, aTick);
-    if not SKIP_RENDER then // Builder LogStatus cannot be merged with predictor
+    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then // Builder LogStatus cannot be merged with predictor
     begin
       fBuilder.LogStatus(fBalanceText);
       LogStatus(fBalanceText);
