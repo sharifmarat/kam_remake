@@ -438,7 +438,7 @@ begin
         DropBox_AIPlayerType.Add(gResTexts[TX_AI_PLAYER_ADVANCED_SHORT], Byte(aitAdvanced));
 
         if not DropBox_AIPlayerType.IsSelected then
-          DropBox_AIPlayerType.ItemIndex := 0;
+          DropBox_AIPlayerType.ItemIndex := 1;
 
         DropBox_AIPlayerType.DoSetVisible;
         Label_AIPlayerType.DoSetVisible;
