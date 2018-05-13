@@ -24,10 +24,10 @@ LazarusResources.Add('TFormMain','FORMDATA',[
   +'s '#12'ClientHeight'#2'F'#11'ClientWidth'#3#173#0#8'TabOrder'#2#4#0#6'TLabe'
   +'l'#6'Label3'#4'Left'#2'd'#6'Height'#2#13#3'Top'#2#0#5'Width'#2#27#7'Caption'
   +#6#5'Angle'#11'ParentColor'#8#0#0#6'TLabel'#6'Label4'#4'Left'#2'd'#6'Height'
-  +#2#13#3'Top'#2' '#5'Width'#2#27#7'Caption'#6#5'Angle'#11'ParentColor'#8#0#0#6
+  +#2#13#3'Top'#2#16#5'Width'#2#27#7'Caption'#6#5'Angle'#11'ParentColor'#8#0#0#6
   +'TLabel'#6'Label1'#4'Left'#2'd'#6'Height'#2#13#3'Top'#2'0'#5'Width'#2'<'#7'C'
   +'aption'#6#13'Building step'#11'ParentColor'#8#0#0#6'TLabel'#6'Label7'#4'Lef'
-  +'t'#2'd'#6'Height'#2#13#3'Top'#2#16#5'Width'#2#27#7'Caption'#6#5'Angle'#11'P'
+  +'t'#2'd'#6'Height'#2#13#3'Top'#2' '#5'Width'#2#27#7'Caption'#6#5'Angle'#11'P'
   +'arentColor'#8#0#0#9'TTrackBar'#8'tbAngleX'#4'Left'#2#4#6'Height'#2#17#3'Top'
   +#2#0#5'Width'#2'_'#9'Frequency'#2#5#3'Max'#2'Z'#3'Min'#2#166#8'OnChange'#7#14
   +'ControlsUpdate'#8'PageSize'#2#5#8'Position'#2#0#9'TickMarks'#7#6'tmBoth'#9
