@@ -470,7 +470,7 @@ begin
 
   AllianceCnt := 1;
   for PL := 0 to gHands.Count - 1 do
-    if (fOwner <> PL) AND (gHands[fOwner].Alliances[PL] = at_Ally) then
+    if gHands[PL].Enabled AND (fOwner <> PL) AND (gHands[fOwner].Alliances[PL] = at_Ally) then
       AllianceCnt := AllianceCnt + 1;
 
   // Check and determine counts
@@ -565,6 +565,7 @@ end;
 
 function TBackwardFF.FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
 begin
+  fOwner := aOwner;
   fDefLinesRequired := True;
   BackwardFlood();
   fFilterFF.FilterDefenceLine(BestDefLines);
@@ -574,6 +575,7 @@ end;
 
 function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
 begin
+  fOwner := aOwner;
   fDefLinesRequired := aDefLinesRequired;
   BackwardFlood();
   fFilterFF.FilterDefenceLine(BestDefLines);
