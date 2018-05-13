@@ -1,4 +1,4 @@
-﻿unit KM_InterfaceGamePlay;
+unit KM_InterfaceGamePlay;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -1203,13 +1203,13 @@ begin
 
       Image_AlliesWinLoss[I] := TKMImage.Create(Panel_Allies, 42 +(I div ALLIES_ROWS)*LINE_W, 81+(I mod ALLIES_ROWS)*20, 16, 16, 0, rxGuiMain);
       Image_AlliesWinLoss[I].Hide;
-      
+
       Image_AlliesMute[I] := TKMImage.Create(Panel_Allies, 45 + 15 +(I div ALLIES_ROWS)*LINE_W, 82+(I mod ALLIES_ROWS)*20, 11, 11, 0, rxGuiMain);
       Image_AlliesMute[I].OnClick := Allies_Mute;
       Image_AlliesMute[I].Tag := I;
       Image_AlliesMute[I].HighlightOnMouseOver := True;
       Image_AlliesMute[I].Hide;
-                                  
+
       Image_AlliesFlag[I] := TKMImage.Create(Panel_Allies,     15 + 60+(I div ALLIES_ROWS)*LINE_W, 82+(I mod ALLIES_ROWS)*20, 16,  11,  0, rxGuiMain);
       Label_AlliesPlayer[I] := TKMLabel.Create(Panel_Allies,   15 + 80+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, 140, 20, '', fnt_Grey, taLeft);
       Label_AlliesTeam[I]   := TKMLabel.Create(Panel_Allies,   15 + 230+(I div ALLIES_ROWS)*LINE_W, 80+(I mod ALLIES_ROWS)*20, 120, 20, '', fnt_Grey, taLeft);
@@ -2734,7 +2734,7 @@ begin
     NetI := fLineIdToNetPlayerId[K];
 
     if NetI = -1 then Continue; //In case we have AI players at hand, without NetI
-    
+
     // Show players locale flag
     if gGame.Networking.NetPlayers[NetI].IsComputer then
       Image_AlliesFlag[I].TexID := GetAIPlayerIcon(gGame.Networking.NetPlayers[NetI].PlayerNetType)
@@ -3905,7 +3905,10 @@ begin
     else
     begin
       if gMySpectator.Hand.AI.Setup.NewAI then
-        S := S + gMySpectator.Hand.AI.CityManagement.BalanceText + '|'
+      begin
+        S := S + gMySpectator.Hand.AI.CityManagement.BalanceText + '|';
+        S := S + gMySpectator.Hand.AI.ArmyManagement.BalanceText + '|';
+      end
       else
         S := S + gMySpectator.Hand.AI.Mayor.BalanceText + '|'
     end;
