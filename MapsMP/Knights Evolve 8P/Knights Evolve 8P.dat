@@ -1,4 +1,4 @@
-!SET_MAP "data\mission\smaps\Knights Evolve 8.map"
+!SET_MAP "data\mission\smaps\Knights Evolve 8P.map"
 !SET_TACTIC
 !SET_MAX_PLAYER 9
 !SET_HUMAN_PLAYER 0
@@ -467,4 +467,4 @@
 !SET_UNIT 29 84 1
 !SET_UNIT 31 90 6
 
-//This mission was made with KaM Remake Map Editor version Next Demo Release Candidate 2 r6547 at 2014-08-27 19:16:42
+//This mission was made with KaM Remake Map Editor version r9482 at 14.05.2018 11:07:36
