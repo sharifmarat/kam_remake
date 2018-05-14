@@ -281,4 +281,30 @@ object Form1: TForm1
     TabOrder = 18
     OnClick = Button12Click
   end
+  object Button13: TButton
+    Left = 615
+    Top = 336
+    Width = 154
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'Resave all maps'
+    TabOrder = 19
+    OnClick = Button13Click
+  end
+  object Button14: TButton
+    Left = 213
+    Top = 200
+    Width = 132
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'Add missing AI players'
+    TabOrder = 20
+    OnClick = Button14Click
+  end
 end
