@@ -99,7 +99,7 @@ begin
       fOnMapTypChanged(fIsMultiplayer);
 
     gGame.SaveMapEditor(GetSaveName);
-    gGame.MapEditor.WereSaved := True;
+    gGame.MapEditor.WasSaved := True;
 
     //Player colors and mapname has changed
     gGame.ActiveInterface.SyncUI(False); //Don't move the viewport

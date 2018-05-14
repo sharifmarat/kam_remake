@@ -119,8 +119,9 @@ type
     property MapFolder: TKMapFolder read fMapFolder;
     property FileName: UnicodeString read fFileName;
     function FullPath(const aExt: string): string;
-    function HumanUsableLocations: TKMHandIndexArray;
-    function AIUsableLocations: TKMHandIndexArray;
+    function HumanUsableLocs: TKMHandIndexArray;
+    function AIUsableLocs: TKMHandIndexArray;
+    function AdvancedAIUsableLocs: TKMHandIndexArray;
     property CRC: Cardinal read fCRC;
     function LocationName(aIndex: TKMHandIndex): string;
     property Size: TKMMapSize read GetSize;
@@ -413,7 +414,7 @@ begin
 end;
 
 
-function TKMapInfo.HumanUsableLocations: TKMHandIndexArray;
+function TKMapInfo.HumanUsableLocs: TKMHandIndexArray;
 var
   I: Integer;
 begin
@@ -427,13 +428,27 @@ begin
 end;
 
 
-function TKMapInfo.AIUsableLocations: TKMHandIndexArray;
+function TKMapInfo.AIUsableLocs: TKMHandIndexArray;
 var
   I: Integer;
 begin
   SetLength(Result, 0);
   for I := 0 to MAX_HANDS - 1 do
     if CanBeAI[I] then
+    begin
+      SetLength(Result, Length(Result)+1);
+      Result[Length(Result)-1] := I;
+    end;
+end;
+
+
+function TKMapInfo.AdvancedAIUsableLocs: TKMHandIndexArray;
+var
+  I: Integer;
+begin
+  SetLength(Result, 0);
+  for I := 0 to MAX_HANDS - 1 do
+    if CanBeAdvancedAI[I] then
     begin
       SetLength(Result, Length(Result)+1);
       Result[Length(Result)-1] := I;
@@ -697,7 +712,7 @@ end;
 
 function TKMapInfo.FileNameWithoutHash: UnicodeString;
 begin
-  if (MapFolder = mfDL) and IsFilenameEndMatchHash then
+  if (fMapFolder = mfDL) and IsFilenameEndMatchHash then
     Result := LeftStr(FileName, Length(FileName)-9)
   else
     Result := FileName;
@@ -1238,7 +1253,7 @@ end;
 
 procedure TKMapsCollection.RenameMap(aIndex: Integer; const aName: UnicodeString);
 begin
-  MoveMap(aIndex, aName, fMaps[aIndex].MapFolder);
+  MoveMap(aIndex, aName, fMaps[aIndex].fMapFolder);
 end;
 
 

@@ -512,10 +512,14 @@ end;
 
 procedure TKMMapEdHouse.TownHallChange(Sender: TObject; aValue: Integer);
 var
-  TH: TKMHouseTownHall;
-  NewCountAdd: Integer;
-begin
-  TH := TKMHouseTownHall(fHouse);
+
+  TH: TKMHouseTownHall;
+
+  NewCountAdd: Integer;
+
+begin
+
+  TH := TKMHouseTownHall(fHouse);
   if aValue > 0 then
   begin
     if TH.GoldMaxCnt < aValue + TH.GoldCnt then
@@ -624,10 +628,14 @@ end;
 
 procedure TKMMapEdHouse.House_UpdateDeliveryMode(aMode: TKMDeliveryMode);
 var
-  TexId: Word;
-begin
-  TexId := 0;
-  case aMode of
+
+  TexId: Word;
+
+begin
+
+  TexId := 0;
+
+  case aMode of
     dm_Delivery:  TexId := 37;
     dm_Closed:    TexId := 38;
     dm_TakeOut:   TexId := 664;

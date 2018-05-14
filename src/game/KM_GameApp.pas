@@ -77,7 +77,7 @@ type
                              aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone;
                              aAIType: TKMAIType = aitNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
-    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
+    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
 
     procedure SaveMapEditor(const aPathName: UnicodeString);
@@ -768,12 +768,15 @@ begin
 end;
 
 
-procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
+procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
 begin
   if aFileName <> '' then
     LoadGameFromScript(aFileName, TruncateExt(ExtractFileName(aFileName)), aMapCRC, nil, 0, gmMapEd, 0, 0)
-  else
+  else begin
+    aSizeX := EnsureRange(aSizeX, MIN_MAP_SIZE, MAX_MAP_SIZE);
+    aSizeY := EnsureRange(aSizeY, MIN_MAP_SIZE, MAX_MAP_SIZE);
     LoadGameFromScratch(aSizeX, aSizeY, gmMapEd);
+  end;
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
@@ -823,7 +826,8 @@ end;
 
 procedure TKMGameApp.GameDestroy;
 begin
-  gMain.FormMain.SetExportGameStats(False);
+  if gMain <> nil then
+    gMain.FormMain.SetExportGameStats(False);
 end;
 
 

@@ -937,7 +937,7 @@ end;
 //Tell other players we want to start
 procedure TKMNetworking.StartClick;
 var
-  HumanUsableLocs, AIUsableLocs: TKMHandIndexArray;
+  HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs: TKMHandIndexArray;
   ErrorMessage: UnicodeString;
   M: TKMemoryStream;
   CheckMapInfo: TKMapInfo;
@@ -950,8 +950,9 @@ begin
   //This will also remove odd players from the List, they will lose Host in few seconds
   case fSelectGameKind of
     ngk_Map:  begin
-                HumanUsableLocs := fMapInfo.HumanUsableLocations;
-                AIUsableLocs := fMapInfo.AIUsableLocations;
+                HumanUsableLocs := fMapInfo.HumanUsableLocs;
+                AIUsableLocs := fMapInfo.AIUsableLocs;
+                AdvancedAIUsableLocs := fMapInfo.AdvancedAIUsableLocs;
                 //Check that map's hash hasn't changed
                 CheckMapInfo := TKMapInfo.Create(fMapInfo.FileName, True, fMapInfo.MapFolder);
                 try
@@ -965,16 +966,17 @@ begin
                 end;
               end;
     ngk_Save: begin
-                HumanUsableLocs := fSaveInfo.Info.HumanUsableLocations;
+                HumanUsableLocs := fSaveInfo.Info.HumanUsableLocs;
                 //AIs may replace humans
-                AIUsableLocs := fSaveInfo.Info.HumanUsableLocations;
+                AIUsableLocs := fSaveInfo.Info.HumanUsableLocs;
+                AdvancedAIUsableLocs := fSaveInfo.Info.HumanUsableLocs;
               end;
     else      begin
                 SetLength(HumanUsableLocs, 0);
                 SetLength(AIUsableLocs, 0);
               end;
   end;
-  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, ErrorMessage) then
+  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs, ErrorMessage) then
   begin
     PostLocalMessage(Format(gResTexts[TX_LOBBY_CANNOT_START], [ErrorMessage]), csSystem);
     Exit;

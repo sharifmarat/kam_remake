@@ -2216,7 +2216,7 @@ begin
                 //Only load the minimap preview if the map is valid
                 if M.IsValid then
                 begin
-                  fMinimap.LoadFromMission(M.FullPath('.dat'), M.HumanUsableLocations);
+                  fMinimap.LoadFromMission(M.FullPath('.dat'), M.HumanUsableLocs);
                   fMinimap.Update(not M.TxtInfo.BlockFullMapPreview);
                   MinimapView.SetMinimap(fMinimap);
 

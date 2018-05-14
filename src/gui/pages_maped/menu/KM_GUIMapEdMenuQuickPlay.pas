@@ -132,7 +132,7 @@ begin
     else
       PlayerSelectFirst;
   end;
-  Button_QuickPlay.Enabled := (not gGame.MapEditor.IsNewMap or gGame.MapEditor.WereSaved) and DropList_SelectHand.List.Selected;
+  Button_QuickPlay.Enabled := (not gGame.MapEditor.IsNewMap or gGame.MapEditor.WasSaved) and DropList_SelectHand.List.Selected;
 end;
 
 

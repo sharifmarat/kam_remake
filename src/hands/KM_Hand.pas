@@ -1167,14 +1167,14 @@ begin
     if AI.Setup.NewAI then
     begin
       if aNumberedAIs then
-        Result := Format(gResTexts[TX_ADVANCED_AI_PLAYER_X], [fHandIndex + 1])
+        Result := Format(gResTexts[TX_ADVANCED_AI_PLAYER_SHORT_X], [fHandIndex + 1])
       else
-        Result := gResTexts[TX_AI_PLAYER_ADVANCED];
+        Result := gResTexts[TX_AI_PLAYER_ADVANCED_SHORT];
     end else begin
       if aNumberedAIs then
-        Result := Format(gResTexts[TX_PLAYER_X], [fHandIndex + 1])
+        Result := Format(gResTexts[TX_CLASSIC_AI_PLAYER_SHORT_X], [fHandIndex + 1])
       else
-        Result := gResTexts[TX_AI_PLAYER_CLASSIC];
+        Result := gResTexts[TX_AI_PLAYER_CLASSIC_SHORT];
     end;
 
   //Try to take player name from mission text if we are in SP
