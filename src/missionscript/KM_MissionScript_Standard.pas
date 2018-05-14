@@ -826,7 +826,7 @@ begin
 //          'There can''t be ');
     Assert(gGame.MapEditor.PlayerHuman[I]
         or gGame.MapEditor.PlayerClassicAI[I]
-        or gGame.MapEditor.PlayerAdvancedAI[I], 'At least one player type should be available');
+        or gGame.MapEditor.PlayerAdvancedAI[I], 'At least one player type should be available for hand ' + IntToStr(I));
 
     if gGame.MapEditor.PlayerHuman[I] then AddCommand(ct_UserPlayer, []);
     if gGame.MapEditor.PlayerClassicAI[I] then AddCommand(ct_AIPlayer, []);
