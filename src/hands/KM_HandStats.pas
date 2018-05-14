@@ -825,7 +825,8 @@ end;
 
 procedure TKMHandStats.ToCSV(aStrings: TStringList);
 begin
-  HousesToCSV(aStrings);
+
+  HousesToCSV(aStrings);
   aStrings.Append('');
   UnitsToCSV(aStrings);
   aStrings.Append('');

@@ -87,6 +87,10 @@ uses
 
   function GetNoColorMarkupText(const aText: UnicodeString): UnicodeString;
 
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True); overload;
+
   function DeleteDoubleSpaces(const aString: string): string;
 
   function CountOccurrences(const aSubstring, aText: String): Integer;
@@ -983,6 +987,56 @@ begin
         Result := Result + aText[I];
     Inc(I);
   end;
+end;
+
+
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True);
+begin
+  GetAllPathsInDir(aDir, aSL, nil, aIncludeSubdirs);
+end;
+
+
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True);
+var
+  SR: TSearchRec;
+begin
+  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+    try
+      repeat
+        if (SR.Attr and faDirectory) = 0 then
+        begin
+          if AnsiEndsStr(aExt, SR.Name) then
+            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+        end
+        else
+        if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
+          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
+      until FindNext(Sr) <> 0;
+    finally
+      SysUtils.FindClose(SR);
+    end;
+end;
+
+
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True);
+var
+  SR: TSearchRec;
+begin
+  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+    try
+      repeat
+        if (SR.Attr and faDirectory) = 0 then
+        begin
+          if not Assigned(aValidateFn) or aValidateFn(SR.Name) then
+            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+        end
+        else
+        if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
+          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
+      until FindNext(Sr) <> 0;
+    finally
+      SysUtils.FindClose(SR);
+    end;
 end;
 
 

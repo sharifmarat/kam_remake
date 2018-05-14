@@ -339,16 +339,23 @@ end;
 
 procedure TKMGUIGameUnit.Unit_Scroll_Click(Sender: TObject);
 var
-  U: TKMUnit;
-  G: TKMUnitGroup;
-begin
-  if (gMySpectator.Selected = nil)
-    or not ((gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected is TKMUnitGroup)) then
+
+  U: TKMUnit;
+
+  G: TKMUnitGroup;
+
+begin
+
+  if (gMySpectator.Selected = nil)
+
+    or not ((gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected is TKMUnitGroup)) then
     Exit;
 
-  U := nil;
 
-  if gMySpectator.Selected is TKMUnitGroup then
+  U := nil;
+
+
+  if gMySpectator.Selected is TKMUnitGroup then
   begin
     G := TKMUnitGroup(gMySpectator.Selected);
     if G.SelectedUnit <> nil then
