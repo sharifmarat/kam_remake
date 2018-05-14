@@ -950,8 +950,8 @@ begin
   //This will also remove odd players from the List, they will lose Host in few seconds
   case fSelectGameKind of
     ngk_Map:  begin
-                HumanUsableLocs := fMapInfo.HumanUsableLocations;
-                AIUsableLocs := fMapInfo.AIUsableLocations;
+                HumanUsableLocs := fMapInfo.HumanUsableLocs;
+                AIUsableLocs := fMapInfo.AIUsableLocs;
                 //Check that map's hash hasn't changed
                 CheckMapInfo := TKMapInfo.Create(fMapInfo.FileName, True, fMapInfo.MapFolder);
                 try
@@ -965,9 +965,9 @@ begin
                 end;
               end;
     ngk_Save: begin
-                HumanUsableLocs := fSaveInfo.Info.HumanUsableLocations;
+                HumanUsableLocs := fSaveInfo.Info.HumanUsableLocs;
                 //AIs may replace humans
-                AIUsableLocs := fSaveInfo.Info.HumanUsableLocations;
+                AIUsableLocs := fSaveInfo.Info.HumanUsableLocs;
               end;
     else      begin
                 SetLength(HumanUsableLocs, 0);
