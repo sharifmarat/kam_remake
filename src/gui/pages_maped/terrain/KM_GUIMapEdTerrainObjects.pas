@@ -299,10 +299,12 @@ begin
   PopUp_ObjectsPalette.Width := PopUp_ObjectsPalette.MasterParent.Width - 50;
   PopUp_ObjectsPalette.Height := PopUp_ObjectsPalette.MasterParent.Height - 50;
 
-  RowsCnt := (PopUp_ObjectsPalette.Height - 80) div (OBJ_CELL_H + 1);
-  ColsCnt := Min(OBJECTS_PALETTE_MAX_COLS_CNT, (PopUp_ObjectsPalette.Width) div (OBJ_CELL_W + 1)); // Calc cols count without Scroll first
+  RowsCnt := Max(1, (PopUp_ObjectsPalette.Height - 80) div (OBJ_CELL_H + 1));
+  //Calc cols count without Scroll first
+  ColsCnt := EnsureRange(PopUp_ObjectsPalette.Width div (OBJ_CELL_W + 1), 1, OBJECTS_PALETTE_MAX_COLS_CNT);
   Scroll_ObjectsPalette.Visible := RowsCnt*ColsCnt < fCountCompact;
-  ColsCnt := Min(OBJECTS_PALETTE_MAX_COLS_CNT, (PopUp_ObjectsPalette.Width - 25*Byte(Scroll_ObjectsPalette.Visible)) div (OBJ_CELL_W + 1)); // Recalc ColsCount considering possible scroll width
+  //Recalc ColsCount considering possible scroll width
+  ColsCnt := EnsureRange((PopUp_ObjectsPalette.Width - 25*Byte(Scroll_ObjectsPalette.Visible)) div (OBJ_CELL_W + 1), 1, OBJECTS_PALETTE_MAX_COLS_CNT);
 
   fObjPaletteTableSize := KMPoint(ColsCnt, RowsCnt);
 
