@@ -937,7 +937,7 @@ end;
 //Tell other players we want to start
 procedure TKMNetworking.StartClick;
 var
-  HumanUsableLocs, AIUsableLocs: TKMHandIndexArray;
+  HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs: TKMHandIndexArray;
   ErrorMessage: UnicodeString;
   M: TKMemoryStream;
   CheckMapInfo: TKMapInfo;
@@ -952,6 +952,7 @@ begin
     ngk_Map:  begin
                 HumanUsableLocs := fMapInfo.HumanUsableLocs;
                 AIUsableLocs := fMapInfo.AIUsableLocs;
+                AdvancedAIUsableLocs := fMapInfo.AdvancedAIUsableLocs;
                 //Check that map's hash hasn't changed
                 CheckMapInfo := TKMapInfo.Create(fMapInfo.FileName, True, fMapInfo.MapFolder);
                 try
@@ -968,13 +969,14 @@ begin
                 HumanUsableLocs := fSaveInfo.Info.HumanUsableLocs;
                 //AIs may replace humans
                 AIUsableLocs := fSaveInfo.Info.HumanUsableLocs;
+                AdvancedAIUsableLocs := fSaveInfo.Info.HumanUsableLocs;
               end;
     else      begin
                 SetLength(HumanUsableLocs, 0);
                 SetLength(AIUsableLocs, 0);
               end;
   end;
-  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, ErrorMessage) then
+  if not fNetPlayers.ValidateSetup(HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs, ErrorMessage) then
   begin
     PostLocalMessage(Format(gResTexts[TX_LOBBY_CANNOT_START], [ErrorMessage]), csSystem);
     Exit;
