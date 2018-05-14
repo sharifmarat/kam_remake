@@ -247,10 +247,13 @@ begin
                         begin
                           HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
 
-                          if (fParsingMode = mpm_Editor) then
-                            gGame.MapEditor.PlayerClassicAI[HandI] := True
-                          else
-                            gHands[HandI].AddAIType(aitClassic);
+                          if (HandI <> -1) then
+                          begin
+                            if (fParsingMode = mpm_Editor) then
+                              gGame.MapEditor.PlayerClassicAI[HandI] := True
+                            else
+                              gHands[HandI].AddAIType(aitClassic);
+                          end;
                         end;
 
     ct_AdvancedAIPlayer://New command added by KMR - mark player as allowed to be human
@@ -260,10 +263,13 @@ begin
                         begin
                           HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
 
-                          if (fParsingMode = mpm_Editor) then
-                            gGame.MapEditor.PlayerAdvancedAI[HandI] := True
-                          else
-                            gHands[HandI].AddAIType(aitAdvanced);
+                          if (HandI <> -1) then
+                          begin
+                            if (fParsingMode = mpm_Editor) then
+                              gGame.MapEditor.PlayerAdvancedAI[HandI] := True
+                            else
+                              gHands[HandI].AddAIType(aitAdvanced);
+                          end;
                         end;
 
     ct_CenterScreen:    if (fLastHand <> PLAYER_NONE)
