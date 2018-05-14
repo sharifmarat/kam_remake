@@ -62,6 +62,7 @@ type
 
     property Count: Integer read GetCount;
     property Positions[aIndex: Integer]: TKMDefencePosition read GetPosition; default;
+    property FirstLineCnt: Word read fFirstLineCnt;
     property CityUnderAttack: Boolean read fCityUnderAttack;
 
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
@@ -73,6 +74,7 @@ type
     procedure FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray);
 
     procedure UpdateState(aTick: Cardinal);
+    procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
   end;
 
@@ -388,9 +390,8 @@ begin
     for I := 0 to Count - 1 do
       if (Positions[I].Group <> nil) then
         Cnt := Cnt + 1;
-    case + Byte(Cnt >= Min(fFirstLineCnt * FIRST_LINE_COEF, Count * 0.5))
-         + Byte(Cnt >= Count * 0.8)
-         + Byte(Cnt >= fFirstLineCnt * FORCE_ATTACK_LIMIT) of // In case that defence is too long keep max cnt decreased
+    case + Byte(Cnt >= Min(fFirstLineCnt * FIRST_LINE_COEF, Count * 0.5)) // In case that defence is too long keep max cnt decreased
+         + Byte(Cnt >= Count * 0.8) of
       0: Result := ds_Empty;
       1: Result := ds_Half;
       2: Result := ds_Full;
@@ -589,6 +590,12 @@ begin
 
   for I := 0 to Count - 1 do
     Positions[I].UpdateState(aTick);
+end;
+
+
+procedure TKMArmyDefence.LogStatus(var aBalanceText: UnicodeString);
+begin
+  //aBalanceText := '';
 end;
 
 

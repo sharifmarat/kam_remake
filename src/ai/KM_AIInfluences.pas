@@ -313,6 +313,12 @@ begin
       AvoidBuilding[Y,X] := 0;
   //InitReachableArea();
 
+  //Avoid Coal fields (must be BEFORE Gold/Iron mines)
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+    if (gTerrain.TileIsCoal(X, Y) > 1) then
+      AvoidBuilding[Y,X] := AVOID_BUILDING_COAL_TILE;
+
   //Avoid areas where Gold/Iron mines should be
   for Y := 3 to fMapY - 2 do
   for X := 2 to fMapX - 2 do
@@ -320,11 +326,6 @@ begin
       CheckAndMarkMine(X,Y, htIronMine)
     else if gTerrain.CanPlaceHouse(KMPoint(X,Y), htGoldMine) then
       CheckAndMarkMine(X,Y, htGoldMine);
-
-  //Avoid Coal fields
-  for Y := 1 to fMapY - 1 do
-  for X := 1 to fMapX - 1 do
-   AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or (Byte(gTerrain.TileIsCoal(X, Y) > 1) * AVOID_BUILDING_COAL_TILE);
 
   //Leave free space BELOW all players Stores
   for I := 0 to gHands.Count - 1 do

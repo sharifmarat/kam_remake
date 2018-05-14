@@ -51,8 +51,8 @@ type
 
     property Builder: TKMCityBuilder read fBuilder write fBuilder;
     property Predictor: TKMCityPredictor read fPredictor;
-    property BalanceText: UnicodeString read fBalanceText;
     property WarriorsDemands: TKMWarriorsDemands read fWarriorsDemands;
+    property BalanceText: UnicodeString read fBalanceText;
 
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
@@ -148,14 +148,12 @@ procedure TKMCityManagement.AfterMissionInit();
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
-  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
-  //SetKaMSeed(666);
   if SP_DEFAULT_ADVANCED_AI then
   begin
+    //SetKaMSeed(666);
     gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
     fSetup.ApplyAgressiveBuilderSetup(True);
   end;
-  // DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG DELETE DEBUG
 
   // Change distribution
   SetWareDistribution();
@@ -182,14 +180,14 @@ var
 begin
   if (aTick mod MAX_HANDS = fOwner) AND fSetup.AutoBuild then
   begin
-    fBalanceText := '';
     FreeWorkersCnt := 0;
     fBuilder.UpdateState(aTick, FreeWorkersCnt);
     fPredictor.UpdateState(aTick);
-    if not SKIP_RENDER then
+    fBalanceText := '';
+    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then
       fPredictor.LogStatus(fBalanceText);
     fBuilder.ChooseHousesToBuild(FreeWorkersCnt, aTick);
-    if not SKIP_RENDER then // Builder LogStatus cannot be merged with predictor
+    if not SKIP_RENDER AND SHOW_AI_WARE_BALANCE then // Builder LogStatus cannot be merged with predictor
     begin
       fBuilder.LogStatus(fBalanceText);
       LogStatus(fBalanceText);
@@ -745,7 +743,7 @@ const
   IRON_ARMORS: set of TKMWareType = [wt_MetalArmor, wt_MetalShield];
 var
   I, SmithyCnt, WorkshopCnt, ArmorCnt: Integer;
-  IronRatio, WeaponFraction, ArmorFraction: Single;
+  IronRatio, WeaponFraction, ArmorFraction, IronShare: Single;
   WT: TKMWareType;
   GT: TKMGroupType;
   UT: TKMUnitType;
@@ -799,16 +797,23 @@ begin
 
   // Calculate mean fraction of iron weapons and distribute steal
   WeaponFraction := 0;
-  ArmorFraction := 0;
   for WT in IRON_WEAPONS do
     WeaponFraction := WeaponFraction + fRequiredWeapons[WT].Fraction;
-  for WT in IRON_ARMORS do
-    ArmorFraction := ArmorFraction + fRequiredWeapons[WT].Fraction;
   WeaponFraction := WeaponFraction / 3.0;
-  ArmorFraction := ArmorFraction / 2.0;
+  if (fRequiredWeapons[wt_MetalArmor].Fraction > fRequiredWeapons[wt_MetalShield].Fraction) then
+  begin
+    ArmorFraction := 0;
+    for WT in IRON_ARMORS do
+      ArmorFraction := ArmorFraction + fRequiredWeapons[WT].Fraction;
+    ArmorFraction := ArmorFraction / 2.0;
+  end
+  else
+    ArmorFraction := fRequiredWeapons[wt_MetalArmor].Fraction; // Consider only metal armor in case that we have enought metal shields
+  // We always want the higher requirements equal to 5 + something between 1 <-> 5 for second production
+  IronShare := 5 * (WeaponFraction + ArmorFraction) / Max(WeaponFraction, ArmorFraction);
   // Ware distribution = fraction / sum of fractions * 5
-  gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := Max(  1, Min(5, Round( ArmorFraction / (WeaponFraction + ArmorFraction) * 5) )  );
-  gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := Max(  1, Min(5, Round( WeaponFraction / (WeaponFraction + ArmorFraction) * 5) )  );
+  gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := Max(  1, Min(5, Round( ArmorFraction / (WeaponFraction + ArmorFraction) * IronShare) )  );
+  gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := Max(  1, Min(5, Round( WeaponFraction / (WeaponFraction + ArmorFraction) * IronShare) )  );
 end;
 
 

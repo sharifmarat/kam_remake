@@ -873,6 +873,8 @@ var
 
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
+  const
+    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall];
   var
     HT: TKMHouseType;
   begin
@@ -880,7 +882,8 @@ var
     for HT := HOUSE_MIN to HOUSE_MAX do
       if not gHands[fOwner].Locks.HouseBlocked[HT]
         AND gHands[fOwner].Locks.HouseCanBuild(HT)
-        AND (gHands[fOwner].Stats.GetHouseTotal(HT) = 0) then
+        AND (gHands[fOwner].Stats.GetHouseTotal(HT) = 0)
+        AND not (HT in FORBIDDEN_HOUSES) then
       begin
         aHT := HT;
         Result := True;
@@ -935,11 +938,11 @@ var
     else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
     begin
       Output := BuildHouse(True, True, False, FollowingHouse);
+    end
+    else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+    begin
+      Output := BuildHouse(True, False, False, aHT);
     end;
-    //else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
-    //begin
-    //  Output := BuildHouse(True, False, False, aHT);
-    //end;
     Result := Output;
   end;
 
@@ -1249,35 +1252,35 @@ const
   MAX_DISTANCE_TO_ALL_HOUSES = 8;
   MAX_WORKERS_FOR_NODE = 4;
   HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (
-    {ht_ArmorSmithy}    [ htIronSmithy,    htCoalMine,     htBarracks    ],
+    {ht_ArmorSmithy}    [ htIronSmithy,    htCoalMine,     htBarracks     ],
     {ht_ArmorWorkshop}  [ htTannery,       htBarracks                     ],
-    {ht_Bakery}         [ htInn,           htStore,        htMill        ],
-    {ht_Barracks}       [ htSchool                                         ],
-    {ht_Butchers}       [ htInn,           htStore,        htSwine       ],
-    {ht_CoalMine}       [ htNone                                           ],
-    {ht_Farm}           [ htNone                                           ],
-    {ht_FisherHut}      [ htNone                                           ],
-    {ht_GoldMine}       [ htMetallurgists                                  ],
+    {ht_Bakery}         [ htInn,           htStore,        htMill         ],
+    {ht_Barracks}       [ htSchool                                        ],
+    {ht_Butchers}       [ htInn,           htStore,        htSwine        ],
+    {ht_CoalMine}       [ htNone                                          ],
+    {ht_Farm}           [ htNone                                          ],
+    {ht_FisherHut}      [ htNone                                          ],
+    {ht_GoldMine}       [ htMetallurgists                                 ],
     {ht_Inn}            [ htStore,         htInn                          ],
-    {ht_IronMine}       [ htIronSmithy                                     ],
-    {ht_IronSmithy}     [ htCoalMine,      htWeaponSmithy, htArmorSmithy ],
-    {ht_Marketplace}    [ htStore                                          ],
-    {ht_Metallurgists}  [ htSchool,        htGoldMine,     htCoalMine    ],
+    {ht_IronMine}       [ htIronSmithy                                    ],
+    {ht_IronSmithy}     [ htCoalMine,      htWeaponSmithy, htArmorSmithy  ],
+    {ht_Marketplace}    [ htStore                                         ],
+    {ht_Metallurgists}  [ htSchool,        htGoldMine,     htCoalMine     ],
     {ht_Mill}           [ htFarm,          htBakery                       ],
-    {ht_Quary}          [ htStore                                          ],
+    {ht_Quary}          [ htStore                                         ],
     {ht_Sawmill}        [ htArmorWorkshop, htStore                        ],
-    {ht_School}         [ htMetallurgists, htStore,        htBarracks    ],
-    {ht_SiegeWorkshop}  [ htIronSmithy,    htSawmill,      htStore       ],
+    {ht_School}         [ htMetallurgists, htStore,        htBarracks     ],
+    {ht_SiegeWorkshop}  [ htIronSmithy,    htSawmill,      htStore        ],
     {ht_Stables}        [ htFarm,          htBarracks                     ],
-    {ht_Store}          [ htInn,           htBarracks,     htSchool      ],
+    {ht_Store}          [ htInn,           htBarracks,     htSchool       ],
     {ht_Swine}          [ htFarm,          htButchers                     ],
     {ht_Tannery}        [ htArmorWorkshop, htSwine                        ],
     {ht_TownHall}       [ htMetallurgists, htStore                        ],
-    {ht_WatchTower}     [ htNone                                           ],
-    {ht_WeaponSmithy}   [ htIronSmithy,    htCoalMine,     htBarracks    ],
+    {ht_WatchTower}     [ htNone                                          ],
+    {ht_WeaponSmithy}   [ htIronSmithy,    htCoalMine,     htBarracks     ],
     {ht_WeaponWorkshop} [ htSawmill,       htBarracks                     ],
-    {ht_Wineyard}       [ htInn                                            ],
-    {ht_Woodcutters}    [ htNone                                           ]
+    {ht_Wineyard}       [ htInn                                           ],
+    {ht_Woodcutters}    [ htNone                                          ]
   );
 
   function FindAndMarkNewHouse(var aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
