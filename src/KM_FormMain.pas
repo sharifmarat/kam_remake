@@ -402,7 +402,7 @@ procedure TFormMain.MenuItem1Click(Sender: TObject);
 begin
   if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
   begin
-    gGameApp.NewMapEditor(OpenDialog1.FileName, 0, 0);
+    gGameApp.NewMapEditor(OpenDialog1.FileName);
     fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
   end;
 end;

@@ -697,7 +697,7 @@ end;
 
 function TKMapInfo.FileNameWithoutHash: UnicodeString;
 begin
-  if (MapFolder = mfDL) and IsFilenameEndMatchHash then
+  if (fMapFolder = mfDL) and IsFilenameEndMatchHash then
     Result := LeftStr(FileName, Length(FileName)-9)
   else
     Result := FileName;
@@ -1238,7 +1238,7 @@ end;
 
 procedure TKMapsCollection.RenameMap(aIndex: Integer; const aName: UnicodeString);
 begin
-  MoveMap(aIndex, aName, fMaps[aIndex].MapFolder);
+  MoveMap(aIndex, aName, fMaps[aIndex].fMapFolder);
 end;
 
 

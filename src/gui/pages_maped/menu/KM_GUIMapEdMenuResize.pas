@@ -156,7 +156,7 @@ begin
   gGame.SaveMapEditor(SaveName, KMRect(NumEdit_Resize_Left.Value,  NumEdit_Resize_Top.Value,
                                        NumEdit_Resize_Right.Value, NumEdit_Resize_Bottom.Value));
   FreeThenNil(gGame);
-  gGameApp.NewMapEditor(SaveName, 0, 0);
+  gGameApp.NewMapEditor(SaveName);
 end;
 
 
