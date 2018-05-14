@@ -37,6 +37,9 @@ type
     btnSetDefColor: TButton;
     btnRemoveNewRemap: TButton;
     btnDeleteUnusedSetMapColor: TButton;
+    Button10: TButton;
+    Button11: TButton;
+    Button12: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -50,7 +53,13 @@ type
     procedure btnCheckColorClick(Sender: TObject);
     procedure btnRemoveNewRemapClick(Sender: TObject);
     procedure btnDeleteUnusedSetMapColorClick(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
   private
+    function ValidateUnitName(aValue: String): Boolean;
+    procedure AddAIPlayersToMPMaps(aAICommandTxt: String);
+    procedure AddAdvancedAIPlayersToMPMaps;
     procedure ResetCommands(var aCommands: TKMMissionColorInfoArray);
     procedure GetColorCommandsInfo(aTxt: AnsiString; var aColorInfoArray: TKMMissionColorInfoArray);
     function XorUnXor(UnXor: Boolean; F: TMemoryStream): Boolean;
@@ -382,7 +391,7 @@ begin
 end;
 
 
-procedure TForm1.Button5Click(Sender: TObject);
+procedure TForm1.AddAIPlayersToMPMaps(aAICommandTxt: String);
 var
   I, K: Integer;
   PathToMaps: TStringList;
@@ -393,8 +402,6 @@ var
   PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
   s: string;
 begin
-  SetUp(True);
-
   //Intent of this design is to rip the specified lines with least impact
   MP := TKMMissionParserPatcher.Create;
 
@@ -425,17 +432,17 @@ begin
           PlayerId := StrToInt(s);
 
           NextCurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc+1);
-          AILoc := PosEx('!SET_AI_PLAYER', Txt, CurrLoc+1);
+          AILoc := PosEx(aAICommandTxt, Txt, CurrLoc+1);
           AiId := -1;
           if AILoc <> 0 then
           begin
             //Many maps have letters aligned in columns, meaning that
             //command length is varying cos of spaces between arguments
             //Look for command end marker (!, eol, /)
-            AIEnd := AILoc + 14;
+            AIEnd := AILoc + Length(aAICommandTxt);
             while (AIEnd < Length(Txt)) and not (Txt[AIEnd] in ['!', #13, '/']) do
               Inc(AIEnd);
-            s := Trim(Copy(Txt, AILoc + 14, AIEnd - (AILoc + 14)));
+            s := Trim(Copy(Txt, AILoc + Length(aAICommandTxt), AIEnd - (AILoc + Length(aAICommandTxt))));
             AiId := StrToIntDef(s, -1);
           end;
 
@@ -444,7 +451,7 @@ begin
             if (AILoc = 0) or ((AILoc > NextCurrLoc) and (NextCurrLoc <> 0)) then
             begin
               //Add from new line
-              Insert(EolA + '!SET_AI_PLAYER', Txt, CurrEnd);
+              Insert(EolW + aAICommandTxt, Txt, CurrEnd);
               if AiId <> -1 then
                 PlayersSet[AiId] := True
               else
@@ -466,12 +473,228 @@ begin
   finally
     PathToMaps.Free;
   end;
+end;
+
+
+procedure TForm1.AddAdvancedAIPlayersToMPMaps;
+var
+  CommandTxt: String;
+  I, K: Integer;
+  PathToMaps: TStringList;
+  CurrLoc, CurrEnd, NextCurrLoc, UserLoc, UserEnd, AILoc, AIEnd, AdvAILoc, AdvAIEnd: Integer;
+  Txt: AnsiString;
+  PlayerId, AiId, UserId, AdvAiId: Integer;
+  MP: TKMMissionParserPatcher;
+  PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
+  s: string;
+begin
+  //Intent of this design is to rip the specified lines with least impact
+  MP := TKMMissionParserPatcher.Create;
+
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    //Parse only MP maps
+    for I := 0 to PathToMaps.Count - 1 do
+    if Pos('\MapsMP\', PathToMaps[I]) <> 0 then
+    begin
+      Txt := MP.ReadMissionFileWOChanges(PathToMaps[I]);
+
+      CurrLoc := 1;
+      FillChar(PlayersSet, SizeOf(PlayersSet), #0);
+      repeat
+        //SET_CURR_PLAYER player_id
+        CurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc);
+        if CurrLoc <> 0 then
+        begin
+          //Many maps have letters aligned in columns, meaning that
+          //command length is varying cos of spaces between arguments
+          //Look for command end marker (!, eol, /)
+          CurrEnd := CurrLoc + 16;
+          while (CurrEnd < Length(Txt)) and not (Txt[CurrEnd] in ['!', #13, '/']) do
+            Inc(CurrEnd);
+          s := Trim(Copy(Txt, CurrLoc + 16, CurrEnd - (CurrLoc + 16)));
+          PlayerId := StrToInt(s);
+
+          NextCurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc+1);
+
+          CommandTxt := '!SET_AI_PLAYER';
+          AILoc := PosEx(CommandTxt, Txt, CurrLoc+1);
+          AiId := -1;
+          if AILoc <> 0 then
+          begin
+            //Many maps have letters aligned in columns, meaning that
+            //command length is varying cos of spaces between arguments
+            //Look for command end marker (!, eol, /)
+            AIEnd := AILoc + Length(CommandTxt);
+            while (AIEnd < Length(Txt)) and not (Txt[AIEnd] in ['!', #13, '/']) do
+              Inc(AIEnd);
+            s := Trim(Copy(Txt, AILoc + Length(CommandTxt), AIEnd - (AILoc + Length(CommandTxt))));
+            AiId := StrToIntDef(s, -1);
+          end;
+
+          CommandTxt := '!SET_ADVANCED_AI_PLAYER';
+          AdvAILoc := PosEx(CommandTxt, Txt, CurrLoc+1);
+          AdvAiId := -1;
+          if AdvAILoc <> 0 then
+          begin
+            //Many maps have letters aligned in columns, meaning that
+            //command length is varying cos of spaces between arguments
+            //Look for command end marker (!, eol, /)
+            AdvAIEnd := AdvAILoc + Length(CommandTxt);
+            while (AdvAIEnd < Length(Txt)) and not (Txt[AdvAIEnd] in ['!', #13, '/']) do
+              Inc(AdvAIEnd);
+            s := Trim(Copy(Txt, AdvAILoc + Length(CommandTxt), AdvAIEnd - (AdvAILoc + Length(CommandTxt))));
+            AdvAiId := StrToIntDef(s, -1);
+          end;
+
+          CommandTxt := '!SET_USER_PLAYER';
+          UserLoc := PosEx(CommandTxt, Txt, CurrLoc+1);
+          UserId := -1;
+          if UserLoc <> 0 then
+          begin
+            //Many maps have letters aligned in columns, meaning that
+            //command length is varying cos of spaces between arguments
+            //Look for command end marker (!, eol, /)
+            UserEnd := UserLoc + Length(CommandTxt);
+            while (UserEnd < Length(Txt)) and not (Txt[UserEnd] in ['!', #13, '/']) do
+              Inc(UserEnd);
+            s := Trim(Copy(Txt, UserLoc + Length(CommandTxt), UserEnd - (UserLoc + Length(CommandTxt))));
+            UserId := StrToIntDef(s, -1);
+          end;
+
+          CommandTxt := '!SET_ADVANCED_AI_PLAYER';
+          //Many times MP maps change CURR player to adjoin similar stuff in sections
+          if not PlayersSet[PlayerId] then
+            if ((AdvAILoc = 0) or ((AdvAILoc > NextCurrLoc) and (NextCurrLoc <> 0))) //No advanced AI player
+              and ((UserLoc <> 0) and ((UserLoc < NextCurrLoc) or (NextCurrLoc = 0))) //Has Human player
+              and ((AILoc <> 0) and ((AILoc < NextCurrLoc) or (NextCurrLoc = 0))) then //Has AI Player
+            begin
+              //Add from new line
+              Insert(EolW + CommandTxt, Txt, AIEnd);
+              if AdvAiId <> -1 then
+                PlayersSet[AiId] := True
+              else
+                PlayersSet[PlayerId] := True;
+            end;
+
+          CurrLoc := CurrEnd;
+        end;
+      until (CurrLoc = 0);
+
+      MP.SaveToFile(Txt, PathToMaps[I]);
+
+      s := '';
+      for K := 0 to MAX_HANDS - 1 do
+        s := s + IfThen(PlayersSet[K], '1', '0');
+
+      Memo1.Lines.Append(s + ' ' + TruncateExt(ExtractFileName(PathToMaps[I])));
+    end;
+  finally
+    PathToMaps.Free;
+  end;
+end;
+
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  SetUp(True);
+
+  AddAIPlayersToMPMaps('!SET_AI_PLAYER');
 
   Memo1.Lines.Append(IntToStr(Memo1.Lines.Count));
 
   TearDown;
 end;
 
+
+procedure TForm1.Button10Click(Sender: TObject);
+begin
+  SetUp(True);
+
+  AddAdvancedAIPlayersToMPMaps;
+
+  Memo1.Lines.Append(IntToStr(Memo1.Lines.Count));
+
+  TearDown;
+end;
+
+
+procedure TForm1.Button11Click(Sender: TObject);
+var
+  I, Cnt: Integer;
+  SL, PathToMaps: TStringList;
+begin
+  SetUp(True);
+
+  SL := TStringList.Create;
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    Cnt := PathToMaps.Count;
+    for I := 0 to PathToMaps.Count - 1 do
+    begin
+      SL.Clear;
+      //Load and save all .DAT files
+      SL.LoadFromFile(PathToMaps[I]);
+      SL.SaveToFile(PathToMaps[I]);
+    end;
+  finally
+    PathToMaps.Free;
+    SL.Free;
+  end;
+
+  Memo1.Lines.Append(IntToStr(Cnt));
+
+  TearDown;
+end;
+
+
+function TForm1.ValidateUnitName(aValue: String): Boolean;
+begin
+  Result := AnsiEndsText('.pas', aValue) and AnsiStartsText('KM_', aValue);
+end;
+
+
+procedure TForm1.Button12Click(Sender: TObject);
+var
+  I, Cnt: Integer;
+  SL, PathToUnits: TStringList;
+  PathToExt: UnicodeString;
+begin
+  SetUp(True);
+
+  SL := TStringList.Create;
+  PathToUnits := TStringList.Create;
+  try
+    GetAllPathsInDir(IncludeTrailingBackslash(ExeDir) + PathDelim + 'src', PathToUnits, ValidateUnitName);
+
+    PathToExt := IncludeTrailingBackslash(ExeDir) + PathDelim + 'src' + PathDelim + 'ext' + PathDelim;
+    PathToUnits.Add(PathToExt + 'KromUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromIOUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromOGLUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromShellUtils.pas');
+
+    Cnt := PathToUnits.Count;
+    for I := 0 to PathToUnits.Count - 1 do
+    begin
+      Memo1.Lines.Append(PathToUnits[I]);
+      SL.Clear;
+      //Load and save all units
+      SL.LoadFromFile(PathToUnits[I]);
+      SL.SaveToFile(PathToUnits[I]);
+    end;
+  finally
+    PathToUnits.Free;
+    SL.Free;
+  end;
+
+  Memo1.Lines.Append(IntToStr(Cnt));
+
+  TearDown;
+end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 
