@@ -538,7 +538,7 @@ object FormMain: TFormMain
     object File1: TMenuItem
       Caption = 'File'
       object OpenMissionMenu: TMenuItem
-        Caption = 'Open mission...'
+        Caption = 'Start mission...'
         OnClick = Open_MissionMenuClick
       end
       object MenuItem1: TMenuItem
