@@ -826,7 +826,8 @@ end;
 
 procedure TKMGameApp.GameDestroy;
 begin
-  gMain.FormMain.SetExportGameStats(False);
+  if gMain <> nil then
+    gMain.FormMain.SetExportGameStats(False);
 end;
 
 
