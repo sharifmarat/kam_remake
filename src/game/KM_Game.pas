@@ -2035,7 +2035,8 @@ begin
   except
       on E: Exception do
       begin
-        gLog.AddTime('Exception on tick ' + IntToStr(fGameTickCount) + ': ' + E.Message);
+        gLog.AddTime('Exception on tick ' + IntToStr(fGameTickCount) + ': ' + E.Message
+                     {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
         raise E;
       end;
   end;
