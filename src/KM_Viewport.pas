@@ -21,7 +21,7 @@ type
     fPanImmidiately : Boolean;
     fPanDuration, fPanProgress: Cardinal;
     function GetPosition: TKMPointF;
-    procedure SetPosition(Value: TKMPointF);
+    procedure SetPosition(const Value: TKMPointF);
     procedure SetZoom(aZoom: Single);
   public
     ScrollKeyLeft, ScrollKeyRight, ScrollKeyUp, ScrollKeyDown, ZoomKeyIn, ZoomKeyOut: boolean;
@@ -121,7 +121,7 @@ begin
 end;
 
 
-procedure TKMViewport.SetPosition(Value: TKMPointF);
+procedure TKMViewport.SetPosition(const Value: TKMPointF);
 var PadTop, TilesX, TilesY: Single;
 begin
   PadTop := fTopHill + 0.75; //Leave place on top for highest hills + 1 unit

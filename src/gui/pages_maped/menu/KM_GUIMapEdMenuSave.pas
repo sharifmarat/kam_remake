@@ -9,7 +9,9 @@ uses
 type
   TKMMapEdMenuSave = class
   private
+    fIsMultiplayer: Boolean;
     fOnDone: TNotifyEvent;
+    fOnMapTypChanged: TBooleanEvent;
 
     procedure Menu_SaveClick(Sender: TObject);
   protected
@@ -19,12 +21,12 @@ type
       Label_SaveExists: TKMLabel;
       CheckBox_SaveExists: TKMCheckBox;
   public
-    OnChangeMapType: TBooleanEvent;
     Button_SaveSave: TKMButton;
     Button_SaveCancel: TKMButton;
-    constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_WIDTH);
+    constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapTypChanged: TBooleanEvent;
+                       aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_WIDTH);
 
-    procedure SetLoadMode(aMultiplayer:boolean);
+    procedure SetLoadMode(aMultiplayer: Boolean);
     procedure Show;
     procedure Hide;
   end;
@@ -36,11 +38,14 @@ uses
 
 
 { TKMMapEdMenuSave }
-constructor TKMMapEdMenuSave.Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_WIDTH);
+constructor TKMMapEdMenuSave.Create(aParent: TKMPanel; aOnDone: TNotifyEvent; aOnMapTypChanged: TBooleanEvent;
+                                    aTopPanelInset: Integer = 45; aControlsWidth: Integer = TB_WIDTH);
 begin
   inherited Create;
 
   fOnDone := aOnDone;
+  fOnMapTypChanged := aOnMapTypChanged;
+  fIsMultiplayer := False;
 
   Panel_Save := TKMPanel.Create(aParent, 0, aTopPanelInset, aControlsWidth, 230);
   TKMLabel.Create(Panel_Save,0,0,aControlsWidth,20,gResTexts[TX_MAPED_SAVE_TITLE],fnt_Outline,taLeft);
@@ -49,7 +54,7 @@ begin
   Radio_Save_MapType  := TKMRadioGroup.Create(Panel_Save,4,27,aControlsWidth,35,fnt_Grey);
   Radio_Save_MapType.ItemIndex := 0;
   Radio_Save_MapType.Add(gResTexts[TX_MENU_MAPED_SPMAPS]);
-  Radio_Save_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS]);
+  Radio_Save_MapType.Add(gResTexts[TX_MENU_MAPED_MPMAPS_SHORT]);
   Radio_Save_MapType.OnChange := Menu_SaveClick;
 
   Edit_SaveName       := TKMEdit.Create(Panel_Save,0,80,aControlsWidth,20, fnt_Grey);
@@ -67,35 +72,41 @@ end;
 
 
 procedure TKMMapEdMenuSave.Menu_SaveClick(Sender: TObject);
-var
-  SaveName: string;
-begin
-  SaveName := TKMapsCollection.FullPath(Trim(Edit_SaveName.Text), '.dat', Radio_Save_MapType.ItemIndex = 1);
 
+  function GetSaveName: UnicodeString;
+  begin
+    Result := TKMapsCollection.FullPath(Trim(Edit_SaveName.Text), '.dat', Radio_Save_MapType.ItemIndex = 1);
+  end;
+
+begin
   if (Sender = Edit_SaveName) or (Sender = Radio_Save_MapType) then
   begin
-    CheckBox_SaveExists.Enabled := FileExists(SaveName);
+    CheckBox_SaveExists.Enabled := FileExists(GetSaveName);
     Label_SaveExists.Visible := CheckBox_SaveExists.Enabled;
     CheckBox_SaveExists.Checked := False;
     Button_SaveSave.Enabled := not CheckBox_SaveExists.Enabled and (Length(Trim(Edit_SaveName.Text)) > 0);
-  end;
-
-  if (Sender = Radio_Save_MapType) and Assigned(OnChangeMapType) then
-    OnChangeMapType(Radio_Save_MapType.ItemIndex = 1);
+  end
+  else
 
   if Sender = CheckBox_SaveExists then
-    Button_SaveSave.Enabled := CheckBox_SaveExists.Checked;
+    Button_SaveSave.Enabled := CheckBox_SaveExists.Checked
+  else
 
   if Sender = Button_SaveSave then
   begin
-    gGame.SaveMapEditor(SaveName);
-    gGame.MapEditor.WereSaved := True;
+    fIsMultiplayer := Radio_Save_MapType.ItemIndex = 1;
+    if Assigned(fOnMapTypChanged) then
+      fOnMapTypChanged(fIsMultiplayer);
+
+    gGame.SaveMapEditor(GetSaveName);
+    gGame.MapEditor.WasSaved := True;
 
     //Player colors and mapname has changed
     gGame.ActiveInterface.SyncUI(False); //Don't move the viewport
 
     fOnDone(Self);
-  end;
+  end
+  else
 
   if Sender = Button_SaveCancel then
     fOnDone(Self);
@@ -110,6 +121,7 @@ end;
 
 procedure TKMMapEdMenuSave.Show;
 begin
+  SetLoadMode(fIsMultiplayer);
   Edit_SaveName.Text := gGame.GameName;
   Menu_SaveClick(Edit_SaveName);
   Panel_Save.Show;
@@ -118,6 +130,7 @@ end;
 
 procedure TKMMapEdMenuSave.SetLoadMode(aMultiplayer: Boolean);
 begin
+  fIsMultiplayer := aMultiplayer;
   if aMultiplayer then
     Radio_Save_MapType.ItemIndex := 1
   else

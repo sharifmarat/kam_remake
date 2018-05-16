@@ -18,7 +18,7 @@ type
     function CanUse(const X,Y: Word): Boolean; override;
   public
     FindType: TFindNearest;
-    HouseType: THouseType;
+    HouseType: TKMHouseType;
     constructor Create(aOwner: TKMHandIndex);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -31,13 +31,13 @@ type
     fListGold: TKMPointList; //List of possible goldmine locations
     fFinder: TKMTerrainFinderCity;
 
-    function GetSeeds(aHouseType: array of THouseType): TKMPointArray;
+    function GetSeeds(aHouseType: array of TKMHouseType): TKMPointArray;
 
-    function NextToOre(aHouse: THouseType; aOreType: TWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
-    function NextToHouse(aHouse: THouseType; aSeed, aAvoid: array of THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToStone(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToTrees(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
-    function NextToGrass(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
+    function NextToOre(aHouse: TKMHouseType; aOreType: TKMWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
+    function NextToHouse(aHouse: TKMHouseType; aSeed, aAvoid: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToStone(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToTrees(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+    function NextToGrass(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
   public
     constructor Create(aPlayer: TKMHandIndex);
     destructor Destroy; override;
@@ -46,8 +46,8 @@ type
 
     function FindNearest(const aStart: TKMPoint; aRadius: Byte; aType: TFindNearest; out aResultLoc: TKMPoint): Boolean; overload;
     procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aType: TFindNearest; aPass: TKMTerrainPassabilitySet; aMaxCount: Word; aLocs: TKMPointTagList); overload;
-    procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: THouseType; aMaxCount: Word; aLocs: TKMPointTagList); overload;
-    function FindPlaceForHouse(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+    procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: TKMHouseType; aMaxCount: Word; aLocs: TKMPointTagList); overload;
+    function FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -65,8 +65,8 @@ uses
   Math,
   KM_Hand, KM_AIFields, KM_AIInfluences,
   KM_Terrain, KM_HandsCollection,
-  KM_Resource, KM_ResUnits,
-  KM_Houses, KM_CommonUtils;
+  KM_Resource, KM_ResUnits, KM_NavMesh,
+  KM_Houses, KM_CommonUtils, KM_CommonTypes;
 
 
 { TKMCityPlanner }
@@ -89,39 +89,39 @@ begin
 end;
 
 
-function TKMCityPlanner.FindPlaceForHouse(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
 begin
   Result := False;
 
   case aHouse of
-    ht_Store:           Result := NextToHouse(aHouse, [ht_Any], [ht_Store], aLoc);
-    ht_ArmorSmithy:     Result := NextToHouse(aHouse, [ht_IronSmithy, ht_CoalMine, ht_Barracks], [], aLoc);
-    ht_ArmorWorkshop:   Result := NextToHouse(aHouse, [ht_Tannery, ht_Barracks], [], aLoc);
-    ht_Bakery:          Result := NextToHouse(aHouse, [ht_Mill], [], aLoc);
-    ht_Barracks:        Result := NextToHouse(aHouse, [ht_Any], [], aLoc);
-    ht_WatchTower:      Result := NextToHouse(aHouse, [ht_Barracks], [], aLoc);
-    ht_Butchers:        Result := NextToHouse(aHouse, [ht_Swine], [], aLoc);
-    ht_Inn:             Result := NextToHouse(aHouse, [ht_Any], [ht_Inn], aLoc);
-    ht_IronSmithy:      Result := NextToHouse(aHouse, [ht_IronMine, ht_CoalMine], [], aLoc);
-    ht_Metallurgists:   Result := NextToHouse(aHouse, [ht_GoldMine], [], aLoc);
-    ht_Mill:            Result := NextToHouse(aHouse, [ht_Farm], [], aLoc);
-    ht_Sawmill:         Result := NextToHouse(aHouse, [ht_Woodcutters], [], aLoc);
-    ht_School:          Result := NextToHouse(aHouse, [ht_Store, ht_Barracks], [], aLoc);
-    ht_Stables:         Result := NextToHouse(aHouse, [ht_Farm], [], aLoc);
-    ht_Swine:           Result := NextToHouse(aHouse, [ht_Farm], [], aLoc);
-    ht_Tannery:         Result := NextToHouse(aHouse, [ht_Swine], [], aLoc);
-    ht_WeaponSmithy:    Result := NextToHouse(aHouse, [ht_IronSmithy, ht_CoalMine, ht_Barracks], [], aLoc);
-    ht_WeaponWorkshop:  Result := NextToHouse(aHouse, [ht_Sawmill, ht_Barracks], [], aLoc);
+    htStore:           Result := NextToHouse(aHouse, [htAny], [htStore], aLoc);
+    htArmorSmithy:     Result := NextToHouse(aHouse, [htIronSmithy, htCoalMine, htBarracks], [], aLoc);
+    htArmorWorkshop:   Result := NextToHouse(aHouse, [htTannery, htBarracks], [], aLoc);
+    htBakery:          Result := NextToHouse(aHouse, [htMill], [], aLoc);
+    htBarracks:        Result := NextToHouse(aHouse, [htAny], [], aLoc);
+    htWatchTower:      Result := NextToHouse(aHouse, [htBarracks], [], aLoc);
+    htButchers:        Result := NextToHouse(aHouse, [htSwine], [], aLoc);
+    htInn:             Result := NextToHouse(aHouse, [htAny], [htInn], aLoc);
+    htIronSmithy:      Result := NextToHouse(aHouse, [htIronMine, htCoalMine], [], aLoc);
+    htMetallurgists:   Result := NextToHouse(aHouse, [htGoldMine], [], aLoc);
+    htMill:            Result := NextToHouse(aHouse, [htFarm], [], aLoc);
+    htSawmill:         Result := NextToHouse(aHouse, [htWoodcutters], [], aLoc);
+    htSchool:          Result := NextToHouse(aHouse, [htStore, htBarracks], [], aLoc);
+    htStables:         Result := NextToHouse(aHouse, [htFarm], [], aLoc);
+    htSwine:           Result := NextToHouse(aHouse, [htFarm], [], aLoc);
+    htTannery:         Result := NextToHouse(aHouse, [htSwine], [], aLoc);
+    htWeaponSmithy:    Result := NextToHouse(aHouse, [htIronSmithy, htCoalMine, htBarracks], [], aLoc);
+    htWeaponWorkshop:  Result := NextToHouse(aHouse, [htSawmill, htBarracks], [], aLoc);
 
-    ht_CoalMine:      Result := NextToOre(aHouse, wt_Coal, aLoc);
-    ht_GoldMine:      Result := NextToOre(aHouse, wt_GoldOre, aLoc);
-    ht_IronMine:      Result := NextToOre(aHouse, wt_IronOre, aLoc);
+    htCoalMine:      Result := NextToOre(aHouse, wt_Coal, aLoc);
+    htGoldMine:      Result := NextToOre(aHouse, wt_GoldOre, aLoc);
+    htIronMine:      Result := NextToOre(aHouse, wt_IronOre, aLoc);
 
-    ht_Quary:         Result := NextToStone(aHouse, aLoc);
-    ht_Woodcutters:   Result := NextToTrees(aHouse, [ht_Store, ht_Woodcutters, ht_Sawmill], aLoc);
-    ht_Farm:          Result := NextToGrass(aHouse, [ht_Any], aLoc);
-    ht_Wineyard:      Result := NextToGrass(aHouse, [ht_Any], aLoc);
-    ht_FisherHut:     {Result := NextToWater(aHouse, aLoc)};
+    htQuary:         Result := NextToStone(aHouse, aLoc);
+    htWoodcutters:   Result := NextToTrees(aHouse, [htStore, htWoodcutters, htSawmill], aLoc);
+    htFarm:          Result := NextToGrass(aHouse, [htAny], aLoc);
+    htWineyard:      Result := NextToGrass(aHouse, [htAny], aLoc);
+    htFisherHut:     {Result := NextToWater(aHouse, aLoc)};
 
     //ht_Marketplace:;
     //ht_SiegeWorkshop:;
@@ -130,17 +130,17 @@ begin
   end;
 
   //If we failed to find something, try to place the house anywhere (better than ignoring it)
-  if not Result and not (aHouse in [ht_CoalMine, ht_GoldMine, ht_IronMine, ht_Quary, ht_Farm, ht_Wineyard, ht_FisherHut]) then
-    Result := NextToHouse(aHouse, [ht_Any], [], aLoc);
+  if not Result and not (aHouse in [htCoalMine, htGoldMine, htIronMine, htQuary, htFarm, htWineyard, htFisherHut]) then
+    Result := NextToHouse(aHouse, [htAny], [], aLoc);
 end;
 
 
 //Receive list of desired house types
 //Output list of locations below these houses
-function TKMCityPlanner.GetSeeds(aHouseType: array of THouseType): TKMPointArray;
+function TKMCityPlanner.GetSeeds(aHouseType: array of TKMHouseType): TKMPointArray;
 var
   I, K: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   Count, HQty: Integer;
   House: TKMHouse;
 begin
@@ -152,7 +152,7 @@ begin
     H := aHouseType[I];
     HQty := gHands[fOwner].Stats.GetHouseQty(H);
     //ht_Any picks three random houses for greater variety
-    for K := 0 to 1 + Byte(H = ht_Any) * 2 do
+    for K := 0 to 1 + Byte(H = htAny) * 2 do
     begin
       House := gHands[fOwner].Houses.FindHouse(H, 0, 0, KaMRandom(HQty) + 1);
       if House <> nil then
@@ -180,8 +180,8 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToGrass(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
-  function CanPlaceHouse(aHouse: THouseType; aX, aY: Word): Boolean;
+function TKMCityPlanner.NextToGrass(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
+  function CanPlaceHouse(aHouse: TKMHouseType; aX, aY: Word): Boolean;
   var
     I, K: Integer;
     FieldCount: Integer;
@@ -192,14 +192,14 @@ function TKMCityPlanner.NextToGrass(aHouse: THouseType; aSeed: array of THouseTy
       FieldCount := 0;
       for I := Min(aY - 2, gTerrain.MapY - 1) to Max(aY + 2 + AI_FIELD_HEIGHT - 1, 1) do
       for K := Max(aX - AI_FIELD_WIDTH, 1) to Min(aX + AI_FIELD_WIDTH, gTerrain.MapX - 1) do
-      if gHands[fOwner].CanAddFieldPlan(KMPoint(K,I), ft_Corn)
+      if gHands[fOwner].CanAddFieldPlan(KMPoint(K,I), ftCorn)
       //Skip fields within actual house areas
-      and ((aHouse <> ht_Farm)     or not InRange(I, aY-2, aY) or not InRange(K, aX-1, aX+2))
-      and ((aHouse <> ht_Wineyard) or not InRange(I, aY-1, aY) or not InRange(K, aX-2, aX)) then
+      and ((aHouse <> htFarm)     or not InRange(I, aY-2, aY) or not InRange(K, aX-1, aX+2))
+      and ((aHouse <> htWineyard) or not InRange(I, aY-1, aY) or not InRange(K, aX-2, aX)) then
       begin
         Inc(FieldCount);
         //Request slightly more than we need to have a good choice
-        if FieldCount >= Min(AI_FIELD_MAX_AREA, IfThen(aHouse = ht_Farm, 16, 10)) then
+        if FieldCount >= Min(AI_FIELD_MAX_AREA, IfThen(aHouse = htFarm, 16, 10)) then
         begin
           Result := True;
           Exit;
@@ -214,7 +214,7 @@ var
   S: TKMPoint;
 begin
   Result := False;
-  Assert(aHouse in [ht_Farm, ht_Wineyard]);
+  Assert(aHouse in [htFarm, htWineyard]);
 
   SeedLocs := GetSeeds(aSeed);
 
@@ -240,7 +240,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToHouse(aHouse: THouseType; aSeed, aAvoid: array of THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToHouse(aHouse: TKMHouseType; aSeed, aAvoid: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
 var
   I: Integer;
   Bid, BestBid: Single;
@@ -274,7 +274,7 @@ end;
 
 
 //Called when AI needs to find a good spot for a new Quary
-function TKMCityPlanner.NextToStone(aHouse: THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToStone(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
 const
   SEARCH_RAD = 8;
 var
@@ -288,7 +288,7 @@ var
 begin
   Result := False;
 
-  SeedLocs := GetSeeds([ht_Any]);
+  SeedLocs := GetSeeds([htAny]);
 
   Locs := TKMPointTagList.Create;
   try
@@ -332,7 +332,7 @@ end;
 function TKMCityPlanner.FindNearest(const aStart: TKMPoint; aRadius: Byte; aType: TFindNearest; out aResultLoc: TKMPoint): Boolean;
 begin
   fFinder.FindType := aType;
-  fFinder.HouseType := ht_None;
+  fFinder.HouseType := htNone;
   Result := fFinder.FindNearest(aStart, aRadius, [tpWalkRoad, tpMakeRoads], aResultLoc);
 end;
 
@@ -340,12 +340,12 @@ end;
 procedure TKMCityPlanner.FindNearest(const aStart: TKMPointArray; aRadius: Byte; aType: TFindNearest; aPass: TKMTerrainPassabilitySet; aMaxCount: Word; aLocs: TKMPointTagList);
 begin
   fFinder.FindType := aType;
-  fFinder.HouseType := ht_None;
+  fFinder.HouseType := htNone;
   fFinder.FindNearest(aStart, aRadius, aPass, aMaxCount, aLocs);
 end;
 
 
-procedure TKMCityPlanner.FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: THouseType; aMaxCount: Word; aLocs: TKMPointTagList);
+procedure TKMCityPlanner.FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: TKMHouseType; aMaxCount: Word; aLocs: TKMPointTagList);
 begin
   fFinder.FindType := fnHouse;
   fFinder.HouseType := aHouse;
@@ -353,7 +353,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToOre(aHouse: THouseType; aOreType: TWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
+function TKMCityPlanner.NextToOre(aHouse: TKMHouseType; aOreType: TKMWareType; out aLoc: TKMPoint; aNearAnyHouse: Boolean = False): Boolean;
 var
   P: TKMPoint;
   SeedLocs: TKMPointArray;
@@ -365,12 +365,12 @@ begin
   case aOreType of
     wt_Coal:    begin
                   if aNearAnyHouse then
-                    SeedLocs := GetSeeds([ht_Any])
+                    SeedLocs := GetSeeds([htAny])
                   else
-                    if gHands[fOwner].Stats.GetHouseTotal(ht_CoalMine) > 0 then
-                      SeedLocs := GetSeeds([ht_CoalMine])
+                    if gHands[fOwner].Stats.GetHouseTotal(htCoalMine) > 0 then
+                      SeedLocs := GetSeeds([htCoalMine])
                     else
-                      SeedLocs := GetSeeds([ht_Store]);
+                      SeedLocs := GetSeeds([htStore]);
                   if Length(SeedLocs) = 0 then Exit;
                   if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnCoal, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
@@ -378,12 +378,12 @@ begin
                 end;
     wt_IronOre: begin
                   if aNearAnyHouse then
-                    SeedLocs := GetSeeds([ht_Any])
+                    SeedLocs := GetSeeds([htAny])
                   else
-                    if gHands[fOwner].Stats.GetHouseTotal(ht_IronMine) > 0 then
-                      SeedLocs := GetSeeds([ht_IronMine, ht_CoalMine])
+                    if gHands[fOwner].Stats.GetHouseTotal(htIronMine) > 0 then
+                      SeedLocs := GetSeeds([htIronMine, htCoalMine])
                     else
-                      SeedLocs := GetSeeds([ht_CoalMine, ht_Store]);
+                      SeedLocs := GetSeeds([htCoalMine, htStore]);
                   if Length(SeedLocs) = 0 then Exit;
                   if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnIron, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
@@ -391,12 +391,12 @@ begin
                 end;
     wt_GoldOre: begin
                   if aNearAnyHouse then
-                    SeedLocs := GetSeeds([ht_Any])
+                    SeedLocs := GetSeeds([htAny])
                   else
-                    if gHands[fOwner].Stats.GetHouseTotal(ht_GoldMine) > 0 then
-                      SeedLocs := GetSeeds([ht_GoldMine, ht_CoalMine])
+                    if gHands[fOwner].Stats.GetHouseTotal(htGoldMine) > 0 then
+                      SeedLocs := GetSeeds([htGoldMine, htCoalMine])
                     else
-                      SeedLocs := GetSeeds([ht_CoalMine, ht_Store]);
+                      SeedLocs := GetSeeds([htCoalMine, htStore]);
                   if Length(SeedLocs) = 0 then Exit;
                   if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnGold, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
@@ -412,7 +412,7 @@ begin
 end;
 
 
-function TKMCityPlanner.NextToTrees(aHouse: THouseType; aSeed: array of THouseType; out aLoc: TKMPoint): Boolean;
+function TKMCityPlanner.NextToTrees(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
 const
   SEARCH_RES = 7;
   SEARCH_RAD = 20; //Search for forests within this radius
@@ -531,26 +531,26 @@ begin
     fnStone:  Result := (gTerrain.TileIsStone(X, Max(Y-1, 1)) > 1);
 
     fnCoal:   Result := (gTerrain.TileIsCoal(X, Y) > 1)
-                         and gHands[fOwner].CanAddHousePlanAI(X, Y, ht_CoalMine, False);
+                         and gHands[fOwner].CanAddHousePlanAI(X, Y, htCoalMine, False);
 
     fnIron:   begin
-                Result := gHands[fOwner].CanAddHousePlanAI(X, Y, ht_IronMine, False);
+                Result := gHands[fOwner].CanAddHousePlanAI(X, Y, htIronMine, False);
                 //If we can build a mine here then search for ore
                 if Result then
                   for I:=Max(X-4, 1) to Min(X+3, gTerrain.MapX) do
                     for K:=Max(Y-8, 1) to Y do
-                      if gTerrain.TileIsIron(I, K) > 0 then
+                      if gTerrain.TileHasIron(I, K) then
                         Exit;
                 Result := False; //Didn't find any ore
               end;
 
     fnGold:   begin
-                Result := gHands[fOwner].CanAddHousePlanAI(X, Y, ht_GoldMine, False);
+                Result := gHands[fOwner].CanAddHousePlanAI(X, Y, htGoldMine, False);
                 //If we can build a mine here then search for ore
                 if Result then
                   for I:=Max(X-4, 1) to Min(X+4, gTerrain.MapX) do
                     for K:=Max(Y-8, 1) to Y do
-                      if gTerrain.TileIsGold(I, K) > 0 then
+                      if gTerrain.TileHasGold(I, K) then
                         Exit;
                 Result := False; //Didn't find any ore
               end;
@@ -567,7 +567,7 @@ begin
   //Check for specific passabilities
   case FindType of
     fnIron:   Result := (fPassability * gTerrain.Land[Y,X].Passability <> [])
-                        or gTerrain.TileGoodForIron(X, Y);
+                        or gTerrain.CanPlaceIronMine(X, Y);
 
     fnGold:   Result := (fPassability * gTerrain.Land[Y,X].Passability <> [])
                         or gTerrain.TileGoodForGoldmine(X, Y);

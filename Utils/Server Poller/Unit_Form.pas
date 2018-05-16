@@ -18,7 +18,7 @@ type
     procedure Timer1Timer(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
   private
-    fGameSettings: TGameSettings;
+    fGameSettings: TKMGameSettings;
     fServerQuery: TKMServerQuery;
     fBaseTime: TDateTime;
     fBase: array [0..63] of record
@@ -46,7 +46,7 @@ begin
   Application.OnIdle := DoIdle;
   ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
 
-  fGameSettings := TGameSettings.Create;
+  fGameSettings := TKMGameSettings.Create;
 
   Label1.Caption := 'Master-server: ' + fGameSettings.MasterServerAddress;
 

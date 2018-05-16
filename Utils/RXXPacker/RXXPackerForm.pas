@@ -10,6 +10,11 @@ uses
 
 
 type
+  TRXXPackData = record
+    Name: String;
+    Id: Integer;
+  end;
+
   TRXXForm1 = class(TForm)
     btnPackRXX: TButton;
     ListBox1: TListBox;
@@ -22,6 +27,10 @@ type
   private
     fPalettes: TKMResPalettes;
     fRxxPacker: TRXXPacker;
+    fPacksData: array of TRXXPackData;
+    fPacksCnt: Integer;
+
+    function AddPackData(aName: String; aId: Integer): TRXXPackData;
 
     procedure UpdateList;
   end;
@@ -36,14 +45,31 @@ implementation
 uses KM_ResHouses, KM_ResUnits, KM_Points;
 
 
+function TRXXForm1.AddPackData(aName: String; aId: Integer): TRXXPackData;
+begin
+  Result.Name := aName;
+  Result.Id := aId;
+  Inc(fPacksCnt);
+  SetLength(fPacksData, fPacksCnt);
+  fPacksData[fPacksCnt - 1] := Result;
+end;
+
+
 procedure TRXXForm1.UpdateList;
 var
   RT: TRXType;
+  PackData: TRXXPackData;
 begin
   ListBox1.Items.Clear;
+  fPacksCnt := 0;
+  SetLength(fPacksData, fPacksCnt);
   for RT := Low(TRXType) to High(TRXType) do
-    if FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
-      ListBox1.Items.Add(GetEnumName(TypeInfo(TRXType), Integer(RT)));
+    if (RT = rxTiles) //Tiles are always in the list
+      or FileExists(ExeDir + 'SpriteResource\' + RXInfo[RT].FileName + '.rx') then
+    begin
+      PackData := AddPackData(GetEnumName(TypeInfo(TRXType), Integer(RT)), Integer(RT));
+      ListBox1.Items.Add(PackData.Name);
+    end;
 
   if ListBox1.Items.Count = 0 then
   begin
@@ -69,8 +95,6 @@ begin
 end;
 
 procedure TRXXForm1.FormCreate(Sender: TObject);
-var
-  RT: TRXType;
 begin
   ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
 
@@ -83,8 +107,10 @@ begin
   fPalettes := TKMResPalettes.Create;
   fPalettes.LoadPalettes(ExeDir + 'data\gfx\');
 
-  UpdateList;
+  fPacksCnt := 0;
+  SetLength(fPacksData, 0);
 
+  UpdateList;
 end;
 
 
@@ -110,15 +136,15 @@ begin
          'Please make sure this folder exists.');
 
   for I := 0 to ListBox1.Items.Count - 1 do
-  if ListBox1.Selected[I] then
-  begin
-    RT := TRXType(I);
+    if ListBox1.Selected[I] then
+    begin
+      RT := TRXType(fPacksData[I].Id);
 
-    fRxxPacker.Pack(RT, fPalettes);
+      fRxxPacker.Pack(RT, fPalettes);
 
-    ListBox1.Selected[I] := False;
-    ListBox1.Refresh;
-  end;
+      ListBox1.Selected[I] := False;
+      ListBox1.Refresh;
+    end;
 
   Label1.Caption := IntToStr(GetTickCount - Tick) + ' ms';
   btnPackRXX.Enabled := True;

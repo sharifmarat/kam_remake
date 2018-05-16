@@ -24,7 +24,7 @@ type
     Enabled: array [0..MAX_HANDS-1] of Boolean;
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     OwnerNikname: array [0..MAX_HANDS-1] of AnsiString; //Nikname of the player who plays this location
-    HandTypes: array [0..MAX_HANDS-1] of THandType;
+    HandTypes: array [0..MAX_HANDS-1] of TKMHandType;
     ColorID: array [0..MAX_HANDS-1] of Integer;
     Team: array [0..MAX_HANDS-1] of Integer;
 
@@ -36,7 +36,7 @@ type
     function IsValid(aCheckDATCRC: Boolean): Boolean;
     function AICount: Byte;
     function HumanCount: Byte;
-    function HumanUsableLocations: TKMHandIndexArray;
+    function HumanUsableLocs: TKMHandIndexArray;
     function GetTimeText: UnicodeString;
     function GetTitleWithTime: UnicodeString;
     function GetSaveTimestamp: UnicodeString;
@@ -151,7 +151,7 @@ begin
 end;
 
 
-function TKMGameInfo.HumanUsableLocations: TKMHandIndexArray;
+function TKMGameInfo.HumanUsableLocs: TKMHandIndexArray;
 var
   I: Integer;
 begin

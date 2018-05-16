@@ -32,6 +32,18 @@ object Form1: TForm1
     Anchors = [akLeft, akTop, akRight, akBottom]
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goThumbTracking]
     TabOrder = 0
+    ColWidths = (
+      64
+      64
+      64
+      64
+      64)
+    RowHeights = (
+      24
+      24
+      24
+      24
+      24)
   end
   object Button2: TButton
     Left = 128

@@ -110,6 +110,8 @@ type
     IsLoaded: boolean;
   end;
 
+  TKMSoundType = (stGame, stMenu);
+
   TKMResSounds = class
   private
     fLocaleString: AnsiString; //Locale used to access warrior sounds
@@ -129,10 +131,15 @@ type
 
     constructor Create(const aLocale, aFallback, aDefault: AnsiString);
 
-    function FileOfCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech): UnicodeString;
+    function FileOfCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech): UnicodeString;
     function FileOfNewSFX(aSFX: TSoundFXNew): UnicodeString;
     function FileOfNotification(aSound: TAttackNotification; aNumber: Byte): UnicodeString;
-    function FileOfWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; aNumber: Byte): UnicodeString;
+    function FileOfWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech; aNumber: Byte): UnicodeString;
+
+    function GetSoundType(aNewSFX: TSoundFXNew): TKMSoundType; overload;
+    function GetSoundType(aSFX: TSoundFX): TKMSoundType; overload;
+    function GetSoundType(aSFX: TWarriorSpeech): TKMSoundType; overload;
+    function GetSoundType(aSFX: TAttackNotification): TKMSoundType; overload;
 
     procedure ExportSounds;
   end;
@@ -163,7 +170,7 @@ const
   AttackNotifications: array[TAttackNotification] of string = ('citiz', 'town', 'units');
 
   CitizenSFX: array[CITIZEN_MIN..CITIZEN_MAX] of record
-    WarriorVoice: TUnitType;
+    WarriorVoice: TKMUnitType;
     SelectID, DeathID: byte;
   end = (
     (WarriorVoice: ut_Militia;      SelectID:3; DeathID:1), //ut_Serf
@@ -280,7 +287,7 @@ begin
 end;
 
 
-function TKMResSounds.FileOfCitizen(aUnitType: TUnitType; aSound: TWarriorSpeech): UnicodeString;
+function TKMResSounds.FileOfCitizen(aUnitType: TKMUnitType; aSound: TWarriorSpeech): UnicodeString;
 var SoundID: Byte;
 begin
   if not (aUnitType in [CITIZEN_MIN..CITIZEN_MAX]) then Exit;
@@ -294,7 +301,7 @@ begin
 end;
 
 
-function TKMResSounds.FileOfWarrior(aUnitType: TUnitType; aSound: TWarriorSpeech; aNumber: Byte): UnicodeString;
+function TKMResSounds.FileOfWarrior(aUnitType: TKMUnitType; aSound: TWarriorSpeech; aNumber: Byte): UnicodeString;
 var
   S: UnicodeString;
 begin
@@ -325,11 +332,46 @@ begin
 end;
 
 
+function TKMResSounds.GetSoundType(aSFX: TSoundFX): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
+end;
+
+
+function TKMResSounds.GetSoundType(aNewSFX: TSoundFXNew): TKMSoundType;
+begin
+  if aNewSFX in [sfxn_ButtonClick,
+    sfxn_MPChatMessage,
+    sfxn_MPChatTeam,
+    sfxn_MPChatSystem,
+    sfxn_MPChatOpen,
+    sfxn_MPChatClose,
+//    sfxn_Victory,
+//    sfxn_Defeat,
+    sfxn_Error] then
+    Result := stMenu
+  else
+    Result := stGame;
+end;
+
+
+function TKMResSounds.GetSoundType(aSFX: TWarriorSpeech): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
+end;
+
+
+function TKMResSounds.GetSoundType(aSFX: TAttackNotification): TKMSoundType;
+begin
+  Result := stGame; //All TSoundFX sounds considered as game sounds
+end;
+
+
 //Scan and count the number of warrior sounds
 procedure TKMResSounds.ScanWarriorSounds;
 var
   I: Integer;
-  U: TUnitType;
+  U: TKMUnitType;
   WS: TWarriorSpeech;
   AN: TAttackNotification;
   SpeechPath: string;
@@ -389,7 +431,7 @@ begin
   try
     MS.LoadFromFile(aFile);
     MS.ReadA(S);
-    if S = GAME_REVISION then
+    if S = AnsiString(GAME_REVISION) then
     begin
       MS.Read(WarriorSoundCount, SizeOf(WarriorSoundCount));
       MS.Read(fWarriorUseBackup, SizeOf(fWarriorUseBackup));

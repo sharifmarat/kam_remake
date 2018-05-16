@@ -49,7 +49,7 @@ procedure TKMMapEdMenuQuit.Menu_QuitClick(Sender: TObject);
 begin
   if Sender = Button_Quit_Yes then
   begin
-    gGameApp.Stop(gr_MapEdEnd);
+    gGameApp.StopGame(gr_MapEdEnd);
     Exit; //Must exit immediately since Self is destroyed
   end;
   if Sender = Button_Quit_No then

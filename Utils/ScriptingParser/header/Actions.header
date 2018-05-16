@@ -10,8 +10,11 @@ Actions are placed in a form **Actions.ACT_NAME(ACT_PARAMETERS);** like so:
 
 <sub>"-" Means this will not be implemented.</sub>
 
+***
+
 Other scripts functions:
-* [Mission Scripts Dynamic Events](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicEvents)<br>
-* [Mission Scripts Dynamic States](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicStates)<br>
-* [Mission Scripts Dynamic Utils](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicUtils)<br>
+* [Mission Scripts Dynamic Events](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicEvents)
+* [Mission Scripts Dynamic States](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicStates)
+* [Mission Scripts Dynamic Utils](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicUtils)
+<br />
 

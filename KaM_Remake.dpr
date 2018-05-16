@@ -18,6 +18,7 @@ uses
 
   KromOGLUtils in 'src\ext\KromOGLUtils.pas',
   KromUtils in 'src\ext\KromUtils.pas',
+	KromShellUtils in 'src\ext\KromShellUtils.pas',
 
   KM_AI in 'src\ai\KM_AI.pas',
   KM_AIArmyEvaluation in 'src\ai\KM_AIArmyEvaluation.pas',
@@ -32,6 +33,15 @@ uses
   KM_AIMayorBalance in 'src\ai\KM_AIMayorBalance.pas',
   KM_AISetup in 'src\ai\KM_AISetup.pas',
 
+  KM_Eye in 'src\ai\newAI\KM_Eye.pas',
+  KM_CityManagement in 'src\ai\newAI\KM_CityManagement.pas',
+  KM_CityPredictor in 'src\ai\newAI\KM_CityPredictor.pas',
+  KM_CityBuilder in 'src\ai\newAI\KM_CityBuilder.pas',
+  KM_CityPlanner in 'src\ai\newAI\KM_CityPlanner.pas',
+  KM_ArmyManagement in 'src\ai\newAI\KM_ArmyManagement.pas',
+  KM_ArmyAttack in 'src\ai\newAI\KM_ArmyAttack.pas',
+  KM_ArmyDefence in 'src\ai\newAI\KM_ArmyDefence.pas',
+
   KM_Alerts in 'src\KM_Alerts.pas',
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
@@ -44,7 +54,8 @@ uses
   KM_Controls in 'src\KM_Controls.pas',
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
   KM_FogOfWar in 'src\KM_FogOfWar.pas',
-	
+
+  KM_GameTypes in 'src\game\KM_GameTypes.pas',  
   KM_Game in 'src\game\KM_Game.pas',
   KM_GameApp in 'src\game\KM_GameApp.pas',
   KM_GameCursor in 'src\game\KM_GameCursor.pas',
@@ -57,10 +68,12 @@ uses
   KM_GUIGameBuild in 'src\gui\pages_game\KM_GUIGameBuild.pas',
   KM_GUIGameChat in 'src\gui\pages_game\KM_GUIGameChat.pas',
   KM_GUIGameHouse in 'src\gui\pages_game\KM_GUIGameHouse.pas',
-	KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
+  KM_GUIGameUnit in 'src\gui\pages_game\KM_GUIGameUnit.pas',
   KM_GUIGameRatios in 'src\gui\pages_game\KM_GUIGameRatios.pas',
   KM_GUIGameStats in 'src\gui\pages_game\KM_GUIGameStats.pas',
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
+  KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
+  KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
   KM_GUIGameSpectator in 'src\gui\pages_game\KM_GUIGameSpectator.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
@@ -98,6 +111,7 @@ uses
   KM_GUIMapEdTerrainTiles in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainTiles.pas',
   KM_GUIMapEdTerrainObjects in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainObjects.pas',
   KM_GUIMapEdTerrainSelection in 'src\gui\pages_maped\terrain\KM_GUIMapEdTerrainSelection.pas',
+  KM_GUIMapEdRMG in 'src\gui\pages_maped\terrain\KM_GUIMapEdRMG.pas',
 	
   KM_GUIMapEdTown in 'src\gui\pages_maped\town\KM_GUIMapEdTown.pas',
   KM_GUIMapEdTownUnits in 'src\gui\pages_maped\town\KM_GUIMapEdTownUnits.pas',
@@ -122,8 +136,6 @@ uses
   KM_GUIMenuMultiplayer in 'src\gui\pages_menu\KM_GUIMenuMultiplayer.pas',
   KM_GUIMenuOptions in 'src\gui\pages_menu\KM_GUIMenuOptions.pas',
   KM_GUIMenuReplays in 'src\gui\pages_menu\KM_GUIMenuReplays.pas',
-  KM_GUIMenuResultsMP in 'src\gui\pages_menu\KM_GUIMenuResultsMP.pas',
-  KM_GUIMenuResultsSP in 'src\gui\pages_menu\KM_GUIMenuResultsSP.pas',
   KM_GUIMenuSingleMap in 'src\gui\pages_menu\KM_GUIMenuSingleMap.pas',
   KM_GUIMenuSinglePlayer in 'src\gui\pages_menu\KM_GUIMenuSinglePlayer.pas',
 
@@ -165,6 +177,11 @@ uses
   KM_Outline in 'src\navmesh\KM_Outline.pas',
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',
   KM_PolySimplify in 'src\navmesh\KM_PolySimplify.pas',
+  KM_NavMeshPathFinding in 'src\navmesh\KM_NavMeshPathFinding.pas',
+  KM_NavMeshFloodFill in 'src\navmesh\KM_NavMeshFloodFill.pas',
+  KM_NavMeshFloodPositioning in 'src\navmesh\KM_NavMeshFloodPositioning.pas',
+  KM_NavMeshInfluences in 'src\navmesh\KM_NavMeshInfluences.pas',
+  KM_NavMeshDefences in 'src\navmesh\KM_NavMeshDefences.pas',
 
   {$IFDEF USESECUREAUTH}
     KM_NetAuthSecure in 'src\net\KM_NetAuthSecure.pas',
@@ -247,29 +264,34 @@ uses
   KM_TerrainPainter in 'src\terrain\KM_TerrainPainter.pas',
   KM_TerrainSelection in 'src\terrain\KM_TerrainSelection.pas',
   KM_TerrainWalkConnect in 'src\terrain\KM_TerrainWalkConnect.pas',
+  KM_RandomMapGenerator in 'src\terrain\KM_RandomMapGenerator.pas',
+  KM_RMGUtils in 'src\terrain\KM_RMGUtils.pas',
 
-  KM_UnitActionAbandonWalk in 'src\units\KM_UnitActionAbandonWalk.pas',
-  KM_UnitActionFight in 'src\units\KM_UnitActionFight.pas',
-  KM_UnitActionGoInOut in 'src\units\KM_UnitActionGoInOut.pas',
-  KM_UnitActionStay in 'src\units\KM_UnitActionStay.pas',
-  KM_UnitActionSteer in 'src\units\KM_UnitActionSteer.pas',
-  KM_UnitActionStormAttack in 'src\units\KM_UnitActionStormAttack.pas',
-  KM_UnitActionWalkTo in 'src\units\KM_UnitActionWalkTo.pas',
+  KM_UnitActionAbandonWalk in 'src\units\actions\KM_UnitActionAbandonWalk.pas',
+  KM_UnitActionFight in 'src\units\actions\KM_UnitActionFight.pas',
+  KM_UnitActionGoInOut in 'src\units\actions\KM_UnitActionGoInOut.pas',
+  KM_UnitActionStay in 'src\units\actions\KM_UnitActionStay.pas',
+  KM_UnitActionSteer in 'src\units\actions\KM_UnitActionSteer.pas',
+  KM_UnitActionStormAttack in 'src\units\actions\KM_UnitActionStormAttack.pas',
+  KM_UnitActionWalkTo in 'src\units\actions\KM_UnitActionWalkTo.pas',
+  
   KM_UnitGroups in 'src\units\KM_UnitGroups.pas',
   KM_Units in 'src\units\KM_Units.pas',
   KM_UnitsCollection in 'src\units\KM_UnitsCollection.pas',
   KM_Units_Warrior in 'src\units\KM_Units_Warrior.pas',
   KM_Units_WorkPlan in 'src\units\KM_Units_WorkPlan.pas',
-  KM_UnitTaskAttackHouse in 'src\units\KM_UnitTaskAttackHouse.pas',
-  KM_UnitTaskBuild in 'src\units\KM_UnitTaskBuild.pas',
-  KM_UnitTaskDelivery in 'src\units\KM_UnitTaskDelivery.pas',
-  KM_UnitTaskDie in 'src\units\KM_UnitTaskDie.pas',
-  KM_UnitTaskGoEat in 'src\units\KM_UnitTaskGoEat.pas',
-  KM_UnitTaskGoHome in 'src\units\KM_UnitTaskGoHome.pas',
-  KM_UnitTaskGoOutShowHungry in 'src\units\KM_UnitTaskGoOutShowHungry.pas',
-  KM_UnitTaskMining in 'src\units\KM_UnitTaskMining.pas',
-  KM_UnitTaskSelfTrain in 'src\units\KM_UnitTaskSelfTrain.pas',
-  KM_UnitTaskThrowRock in 'src\units\KM_UnitTaskThrowRock.pas',
+  
+  KM_UnitTaskAttackHouse in 'src\units\tasks\KM_UnitTaskAttackHouse.pas',
+  KM_UnitTaskBuild in 'src\units\tasks\KM_UnitTaskBuild.pas',
+  KM_UnitTaskDelivery in 'src\units\tasks\KM_UnitTaskDelivery.pas',
+  KM_UnitTaskDie in 'src\units\tasks\KM_UnitTaskDie.pas',
+  KM_UnitTaskGoEat in 'src\units\tasks\KM_UnitTaskGoEat.pas',
+  KM_UnitTaskGoHome in 'src\units\tasks\KM_UnitTaskGoHome.pas',
+	KM_UnitTaskDismiss in 'src\units\tasks\KM_UnitTaskDismiss.pas',
+  KM_UnitTaskGoOutShowHungry in 'src\units\tasks\KM_UnitTaskGoOutShowHungry.pas',
+  KM_UnitTaskMining in 'src\units\tasks\KM_UnitTaskMining.pas',
+  KM_UnitTaskSelfTrain in 'src\units\tasks\KM_UnitTaskSelfTrain.pas',
+  KM_UnitTaskThrowRock in 'src\units\tasks\KM_UnitTaskThrowRock.pas',
 	
   KM_BinPacking in 'src\utils\KM_BinPacking.pas',
   KM_CommonUtils in 'src\utils\KM_CommonUtils.pas',
@@ -278,6 +300,8 @@ uses
   KM_Pics in 'src\utils\KM_Pics.pas',
   KM_PNG in 'src\utils\KM_PNG.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
+  KM_FloodFill in 'src\utils\KM_FloodFill.pas',
+
 	
   KM_Viewport in 'src\KM_Viewport.pas',
   KM_WareDistribution in 'src\KM_WareDistribution.pas';

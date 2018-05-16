@@ -12,7 +12,7 @@ uses
 type
   TKMMenuMultiplayer = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     fServerSelected: Boolean;
     fSelectedRoomInfo: TKMRoomInfo;
@@ -74,6 +74,7 @@ type
         Label_MP_PlayersTeams: array[1..MAX_LOBBY_SLOTS] of TKMLabel;
         Image_MP_PlayerIcons: array[1..MAX_LOBBY_SLOTS] of TKMImage;
         Image_MP_PlayerSpecIcons: array[1..MAX_LOBBY_SLOTS] of TKMImage;
+        Image_MP_PlayerWolIcons: array[1..MAX_LOBBY_SLOTS] of TKMImage; //Win or lose
         Image_MP_Host: TKMImage;
 
       //PopUps
@@ -96,7 +97,7 @@ type
         Button_MP_PasswordOk: TKMButton;
         Button_MP_PasswordCancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure Show(const aText: UnicodeString);
     procedure Resize(X, Y: Word);
@@ -106,15 +107,16 @@ type
 implementation
 uses
   KM_Main, KM_NetworkTypes, KM_ResTexts, KM_GameApp, KM_ResLocales,
-  KM_CommonUtils, KM_Sound, KM_ResSound, KM_RenderUI, KM_ResFonts, KM_Resource;
+  KM_CommonUtils, KM_CommonTypes, KM_Sound, KM_ResSound, KM_RenderUI, KM_ResFonts, KM_Resource;
 
 
 const
   MAX_NIKNAME_LENGTH = 16;
+  IMG_COL2 = 8 + 22 + 156 + 35;
 
 
 { TKMGUIMainMultiplayer }
-constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMultiplayer.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
   procedure CreateServerPopUp;
   begin
     Panel_MPCreateServer := TKMPanel.Create(aParent, 362, 250, 320, 300);
@@ -237,14 +239,14 @@ begin
       Label_MP_PT_Times.FontColor := clMPSrvDetailsGameInfoFont;
       Label_MP_GameTime := TKMLabel.Create(Panel_MPServerDetails, 8, 90, 304, 20, '', fnt_Metal, taRight);
       Label_MP_GameTime.FontColor := clMPSrvDetailsGameInfoFont;
-      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, 304, 20, 'Map:', fnt_Outline, taLeft); //Todo: translate
+      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, 304, 20, gResTexts[TX_WORD_MAP] + ':', fnt_Outline, taLeft);
       Label_MP_MapName := TKMLabel.Create(Panel_MPServerDetails, 8, 130, 304, 20, '', fnt_Metal, taLeft);
       Label_MP_PlayerList_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 150, 304, 20, gResTexts[TX_MP_MENU_PLAYER_LIST], fnt_Outline, taLeft);
 
       Label_MP_Team_Header := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 156, 150, 150, 20, 'Team', fnt_Outline, taLeft);
-      Label_MP_Team_Header.Visible := False;
+      Label_MP_Team_Header.Hide;
 
-      Image_MP_Host := TKMImage.Create(Panel_MPServerDetails, 8 + 22 + 156 + 35, 148, 14, 15, 77, rxGuiMain);
+      Image_MP_Host := TKMImage.Create(Panel_MPServerDetails, IMG_COL2, 148, 14, 15, 77, rxGuiMain);
       Image_MP_Host.Visible := False;
       for I := 1 to MAX_LOBBY_SLOTS do
       begin
@@ -252,8 +254,10 @@ begin
         Label_MP_PlayersNames[I].Anchors := [anLeft, anTop, anBottom];
         Label_MP_PlayersTeams[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 166, 170 + 20*(I-1), 20, 20, '', fnt_Metal, taLeft);
         Image_MP_PlayerIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8, 170 + 20*(I-1), 16, 11, 0, rxGuiMain);
-        Image_MP_PlayerSpecIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8 + 22 + 160, 170 + 20*(I-1), 16, 11, 0, rxGuiMain);
-        Image_MP_PlayerSpecIcons[I].Visible := False;
+        Image_MP_PlayerWolIcons[I] := TKMImage.Create(Panel_MPServerDetails, IMG_COL2, 169 + 20*(I-1), 16, 16, 0, rxGuiMain);
+        Image_MP_PlayerWolIcons[I].Hide;
+        Image_MP_PlayerSpecIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8 + 22 + 160, 171 + 20*(I-1), 16, 11, 0, rxGuiMain);
+        Image_MP_PlayerSpecIcons[I].Hide;
       end;
 
     Button_MP_Back    := TKMButton.Create(Panel_MultiPlayer,  45, 720, 220, 30, gResTexts[TX_MENU_BACK], bsMenu);
@@ -313,6 +317,7 @@ begin
     Label_MP_PlayersTeams[I].Visible := ShowExtraInfo;
 
     Image_MP_PlayerSpecIcons[I].Visible := ShowExtraInfo;
+    Image_MP_PlayerWolIcons[I].Visible := ShowExtraInfo;
   end;
   Label_MP_Team_Header.Visible := ShowExtraInfo;
   Image_MP_Host.Visible := ShowExtraInfo;
@@ -460,8 +465,9 @@ begin
     Label_MP_PlayersNames[I].Strikethrough := False;
     Label_MP_PlayersTeams[I].Caption := '';
     Label_MP_PlayersTeams[I].Strikethrough := False;
-    Label_MP_PlayersTeams[I].Visible := False;
-    Image_MP_PlayerSpecIcons[I].Visible := False;
+    Label_MP_PlayersTeams[I].Hide;
+    Image_MP_PlayerSpecIcons[I].Hide;
+    Image_MP_PlayerWolIcons[I].Hide;
     Image_MP_PlayerIcons[I].TexID := 0;
     Image_MP_PlayerIcons[I].Lightness := 0;
   end;
@@ -674,24 +680,48 @@ begin
     begin
       K := SortedNetPlayersIndexes[I];
       if K = -1 then raise Exception.Create('Unexpected sorted value'); ;
+
+      case fSelectedRoomInfo.GameInfo.Players[K].WonOrLost of
+        wol_None: Image_MP_PlayerWolIcons[I].TexId := 0;
+        wol_Won:  Image_MP_PlayerWolIcons[I].TexId := 8;  //Red medal
+        wol_Lost: Image_MP_PlayerWolIcons[I].TexId := 87; //Death skull
+      end;
+
       case fSelectedRoomInfo.GameInfo.Players[K].PlayerType of
         nptHuman:     begin
                         Label_MP_PlayersNames[I].Caption := UnicodeString(fSelectedRoomInfo.GameInfo.Players[K].Name);
                         Label_MP_PlayersTeams[I].Caption := GetTeamStr(fSelectedRoomInfo.GameInfo.Players[K].Team, fSelectedRoomInfo.GameInfo.Players[K].IsSpectator);
+
                         Image_MP_PlayerSpecIcons[I].TexId := IfThen(fSelectedRoomInfo.GameInfo.Players[K].IsSpectator, 86, 0); //spectator eye icon
+
                         if fSelectedRoomInfo.GameInfo.Players[K].IsHost then
-                          Image_MP_Host.Top := Label_MP_PlayersNames[1].Top + 20*(I-1) - 2;
+                        begin
+                          Image_MP_Host.Top := Label_MP_PlayersNames[1].Top + 20*(I-1) - 1;
+                          if fSelectedRoomInfo.GameInfo.Players[K].WonOrLost = wol_None then
+                            Image_MP_Host.Left := IMG_COL2
+                          else
+                            Image_MP_Host.Left := IMG_COL2 + 25; //Move Host star to the right when we have Win/Loss icon
+                        end;
+
                         LocaleID := gResLocales.IndexByCode(fSelectedRoomInfo.GameInfo.Players[K].LangCode);
                         if LocaleID <> -1 then
                           Image_MP_PlayerIcons[I].TexID := gResLocales[LocaleID].FlagSpriteID
                         else
                           Image_MP_PlayerIcons[I].TexID := 0;
                       end;
-        nptComputer:  begin
-                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_LOBBY_SLOT_AI_PLAYER];
+        nptComputerClassic:
+                      begin
+                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_AI_PLAYER_CLASSIC_SHORT];
                         Label_MP_PlayersTeams[I].Caption := GetTeamStr(fSelectedRoomInfo.GameInfo.Players[K].Team, fSelectedRoomInfo.GameInfo.Players[K].IsSpectator);
                         Image_MP_PlayerSpecIcons[I].TexId := 0;
-                        Image_MP_PlayerIcons[I].TexID := 62; //PC Icon
+                        Image_MP_PlayerIcons[I].TexID := GetAIPlayerIcon(nptComputerClassic);
+                      end;
+        nptComputerAdvanced:
+                      begin
+                        Label_MP_PlayersNames[I].Caption := gResTexts[TX_AI_PLAYER_ADVANCED_SHORT];
+                        Label_MP_PlayersTeams[I].Caption := GetTeamStr(fSelectedRoomInfo.GameInfo.Players[K].Team, fSelectedRoomInfo.GameInfo.Players[K].IsSpectator);
+                        Image_MP_PlayerSpecIcons[I].TexId := 0;
+                        Image_MP_PlayerIcons[I].TexID := GetAIPlayerIcon(nptComputerAdvanced);
                       end;
         nptClosed:    begin
                         Label_MP_PlayersNames[I].Caption := gResTexts[TX_LOBBY_SLOT_CLOSED];
@@ -711,6 +741,7 @@ begin
       Label_MP_PlayersTeams[I].Caption := '';
       Label_MP_PlayersTeams[I].Strikethrough := False;
       Image_MP_PlayerSpecIcons[I].TexId := 0;
+      Image_MP_PlayerWolIcons[I].TexId := 0;
       Image_MP_PlayerIcons[I].TexId := 0;
       Image_MP_PlayerIcons[I].Lightness := 0;
     end;

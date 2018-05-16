@@ -11,7 +11,7 @@ uses
 type
   TKMMenuReplays = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fSaves: TKMSavesCollection;
     fMinimap: TKMMinimap;
@@ -65,7 +65,7 @@ type
         Edit_Rename: TKMEdit;
         Button_Rename, Button_RenameConfirm, Button_RenameCancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -82,7 +82,7 @@ const
 
 
 { TKMGUIMenuReplays }
-constructor TKMMenuReplays.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuReplays.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 
@@ -250,7 +250,11 @@ procedure TKMMenuReplays.LoadMinimap(aID: Integer = -1);
 begin
   if (aID <> -1) and IsSaveValid(aID) then
   begin
-    if fMinimapLastListId = aID then Exit; //Do not reload same minimap
+    if fMinimapLastListId = aID then
+    begin
+      MinimapView_Replay.Show;
+      Exit; //Do not reload same minimap
+    end;
 
     if fSaves[aID].LoadMinimap(fMinimap) then
     begin

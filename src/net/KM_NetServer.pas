@@ -5,7 +5,20 @@ uses
   {$IFDEF MSWINDOWS}Windows, {$ENDIF}
    {$IFDEF WDC}KM_NetServerOverbyte, {$ENDIF}
    {$IFDEF FPC}KM_NetServerLNet, {$ENDIF}
-  Classes, ExtCtrls, SysUtils, Math, KM_CommonClasses, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_CommonUtils, VerySimpleXML{, KM_Log};
+  Classes, SysUtils, Math, VerySimpleXML,
+  KM_CommonClasses, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_CommonUtils, KM_Points,
+  {$IFDEF WDC}
+    {$IFDEF CONSOLE}
+      KM_ConsoleTimer
+    {$ELSE}
+      ExtCtrls
+    {$ENDIF}
+  {$ELSE}
+    FPTimer
+    {$IFDEF UNIX}
+      , cthreads
+    {$ENDIF}
+  {$ENDIF};
 
 
 { Contains basic items we need for smooth Net experience:
@@ -76,7 +89,16 @@ type
   private
     {$IFDEF WDC} fServer:TKMNetServerOverbyte; {$ENDIF}
     {$IFDEF FPC} fServer:TKMNetServerLNet;     {$ENDIF}
-    fTimer: TTimer;
+
+    {$IFDEF WDC}
+      {$IFDEF CONSOLE}
+      fTimer: TKMConsoleTimer; //Use our custom TKMConsoleTimer instead of ExtCtrls.TTimer, to be able to use it in console application (DedicatedServer)
+      {$ELSE}
+      fTimer: TTimer;
+      {$ENDIF}
+    {$ELSE}
+      fTimer: TFPTimer;
+    {$ENDIF}
 
     fClientList: TKMClientsList;
     fListening: Boolean;
@@ -91,6 +113,7 @@ type
     fKickTimeout: Word;
     fRoomCount: Integer;
     fEmptyGameInfo: TMPGameInfo;
+    fGameFilter: TKMPGameFilter;
     fRoomInfo: array of record
                          HostHandle: TKMNetHandleIndex;
                          Password: AnsiString;
@@ -126,8 +149,9 @@ type
     procedure BanPlayerFromRoom(aHandle: TKMNetHandleIndex; aRoom: Integer);
     procedure SaveHTMLStatus;
     procedure SetPacketsAccumulatingDelay(aValue: Integer);
+    procedure SetGameFilter(aGameFilter: TKMPGameFilter);
   public
-    constructor Create(aMaxRooms:word; aKickTimeout: Word; const aHTMLStatusFile, aWelcomeMessage: UnicodeString;
+    constructor Create(aMaxRooms, aKickTimeout: Word; const aHTMLStatusFile, aWelcomeMessage: UnicodeString;
                        aPacketsAccDelay: Integer = -1);
     destructor Destroy; override;
     procedure StartListening(aPort: Word; const aServerName: AnsiString);
@@ -142,11 +166,13 @@ type
     procedure UpdateSettings(aKickTimeout: Word; const aHTMLStatusFile: UnicodeString; const aWelcomeMessage: UnicodeString; const aServerName: AnsiString; const aPacketsAccDelay: Integer);
     procedure GetServerInfo(aList: TList);
     property PacketsAccumulatingDelay: Integer read fPacketsAccumulatingDelay write SetPacketsAccumulatingDelay;
-
+    property GameFilter: TKMPGameFilter read fGameFilter write SetGameFilter;
   end;
 
 
 implementation
+uses
+  KM_CommonTypes;
 
 const
   //Server needs to use some text constants locally but can't know about gResTexts
@@ -240,25 +266,29 @@ end;
 
 
 function TKMClientsList.GetByHandle(aHandle: TKMNetHandleIndex): TKMServerClient;
-var i:integer;
+var
+  I: Integer;
 begin
   Result := nil;
-  for i:=0 to fCount-1 do
-    if fItems[i].Handle = aHandle then
+  for I := 0 to fCount-1 do
+    if fItems[I].Handle = aHandle then
     begin
-      Result := fItems[i];
+      Result := fItems[I];
       Exit;
     end;
 end;
 
 
 { TKMNetServer }
-constructor TKMNetServer.Create(aMaxRooms: Word; aKickTimeout: word; const aHTMLStatusFile, aWelcomeMessage: UnicodeString;
+constructor TKMNetServer.Create(aMaxRooms, aKickTimeout: Word; const aHTMLStatusFile, aWelcomeMessage: UnicodeString;
                                 aPacketsAccDelay: Integer = -1);
 begin
   inherited Create;
   fEmptyGameInfo := TMPGameInfo.Create;
   fEmptyGameInfo.GameTime := -1;
+
+  fGameFilter := TKMPGameFilter.Create;
+
   fMaxRooms := aMaxRooms;
 
   if aPacketsAccDelay = -1 then
@@ -275,10 +305,23 @@ begin
   fListening := false;
   fRoomCount := 0;
 
-  fTimer := TTimer.Create(nil);
-  fTimer.Interval := fPacketsAccumulatingDelay;
-  fTimer.OnTimer  := UpdateState;
-  fTimer.Enabled  := True;
+  {$IFDEF WDC}
+    {$IFDEF CONSOLE}
+      fTimer := TKMConsoleTimer.Create;
+      fTimer.OnTimerEvent := UpdateState;
+    {$ELSE}
+      fTimer := TTimer.Create(nil);
+      fTimer.OnTimer := UpdateState;
+    {$ENDIF}
+    fTimer.Interval := fPacketsAccumulatingDelay;
+    fTimer.Enabled  := True;
+  {$ELSE}
+    fTimer := TFPTimer.Create(nil);
+    fTimer.OnTimer  := UpdateState;
+    fTimer.Interval := fPacketsAccumulatingDelay;
+    fTimer.Enabled  := True;
+    fTimer.StartTimer;
+  {$ENDIF}
 end;
 
 
@@ -289,6 +332,10 @@ begin
   fClientList.Free;
   fEmptyGameInfo.Free;
   FreeAndNil(fTimer);
+
+  if fGameFilter <> nil then
+    FreeAndNil(fGameFilter);
+
   inherited;
 end;
 
@@ -439,7 +486,9 @@ end;
 
 
 procedure TKMNetServer.AddClientToRoom(aHandle: TKMNetHandleIndex; aRoom: Integer);
-var I: Integer;
+var
+  I: Integer;
+  M: TKMemoryStream;
 begin
   if fClientList.GetByHandle(aHandle).Room <> -1 then exit; //Changing rooms is not allowed yet
 
@@ -491,7 +540,12 @@ begin
     Status('Host rights assigned to '+IntToStr(fRoomInfo[aRoom].HostHandle));
   end;
 
-  SendMessageInd(aHandle, mk_ConnectedToRoom, fRoomInfo[aRoom].HostHandle);
+  M := TKMemoryStream.Create;
+  M.Write(fRoomInfo[aRoom].HostHandle);
+  fGameFilter.Save(M);
+  SendMessage(aHandle, mk_ConnectedToRoom, M);
+  M.Free;
+
   MeasurePings;
   SaveHTMLStatus;
 end;
@@ -669,16 +723,17 @@ end;
 
 
 procedure TKMNetServer.SendScheduledData(aServerClient: TKMServerClient);
-var P: Pointer;
+var
+  P: Pointer;
 begin
   if aServerClient.fScheduledPacketsCnt > 0 then
   begin
-    GetMem(P, aServerClient.fScheduledPacketsSize + 1);
+    GetMem(P, aServerClient.fScheduledPacketsSize + 1); //+1 byte for packets number
     try
+      //packets size into 1st byte
       PByte(P)^ := aServerClient.fScheduledPacketsCnt;
-
-      Move(aServerClient.fScheduledPackets[0], Pointer(Cardinal(P) + 1)^, aServerClient.fScheduledPacketsSize);
-
+      //Copy collected packets data with 1 byte shift
+      Move(aServerClient.fScheduledPackets[0], Pointer(NativeUInt(P) + 1)^, aServerClient.fScheduledPacketsSize);
       DoSendData(aServerClient.fHandle, P, aServerClient.fScheduledPacketsSize + 1);
       aServerClient.ClearScheduledPackets;
     finally
@@ -692,6 +747,14 @@ procedure TKMNetServer.SetPacketsAccumulatingDelay(aValue: Integer);
 begin
   fPacketsAccumulatingDelay := EnsureRange(aValue, PACKET_ACC_DELAY_MIN, PACKET_ACC_DELAY_MAX);
   fTimer.Interval := fPacketsAccumulatingDelay;
+end;
+
+
+procedure TKMNetServer.SetGameFilter(aGameFilter: TKMPGameFilter);
+begin
+  if fGameFIlter <> nil then
+    FreeAndNil(fGameFilter);
+  fGameFilter := aGameFilter;
 end;
 
 
@@ -725,7 +788,7 @@ begin
   if SenderClient = nil then Exit;
 
   if (SenderClient.fScheduledPacketsSize + aLength > MAX_CUMULATIVE_PACKET_SIZE)
-    or (SenderClient.fScheduledPacketsCnt = 255) then
+    or (SenderClient.fScheduledPacketsCnt = 255) then //Max number of packets = 255 (we use 1 byte for that)
   begin
     //gLog.AddTime(Format('@@@ FLUSH fScheduledPacketsSize + aLength = %d > %d', [SenderClient.fScheduledPacketsSize + aLength, MAX_CUMULATIVE_PACKET_SIZE]));
     SendScheduledData(SenderClient);
@@ -1144,6 +1207,11 @@ begin
               SetAttribute('color', ColorToText(fRoomInfo[i].GameInfo.Players[k].Color));
               SetAttribute('connected', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].Connected]);
               SetAttribute('type', NetPlayerTypeName[fRoomInfo[i].GameInfo.Players[k].PlayerType]);
+              SetAttribute('langcode', fRoomInfo[i].GameInfo.Players[k].LangCode);
+              SetAttribute('team', IntToStr(fRoomInfo[i].GameInfo.Players[k].Team));
+              SetAttribute('spectator', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].IsSpectator]);
+              SetAttribute('host', BOOL_TEXT[fRoomInfo[i].GameInfo.Players[k].IsHost]);
+              SetAttribute('won_or_lost', WonOrLostText[fRoomInfo[i].GameInfo.Players[k].WonOrLost]);
             end;
         end;
       end;

@@ -11,15 +11,15 @@ type
   TKMHouseInn = class(TKMHouse)
   private
     Eater: array [0..5] of record //only 6 units are allowed in the inn
-      UnitType: TUnitType;
-      FoodKind: TWareType; //What kind of food eater eats
+      UnitType: TKMUnitType;
+      FoodKind: TKMWareType; //What kind of food eater eats
       EatStep: Cardinal;
     end;
   public
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
-    function EaterGetsInside(aUnitType: TUnitType): ShortInt;
-    procedure UpdateEater(aIndex: ShortInt; aFoodKind: TWareType);
+    function EaterGetsInside(aUnitType: TKMUnitType): ShortInt;
+    procedure UpdateEater(aIndex: ShortInt; aFoodKind: TKMWareType);
     procedure EatersGoesOut(aIndex: ShortInt);
     function HasFood: Boolean;
     function HasSpace: Boolean;
@@ -36,7 +36,7 @@ uses
 
 
 { TKMHouseInn }
-constructor TKMHouseInn.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseInn.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 var
   I: Integer;
 begin
@@ -55,7 +55,7 @@ end;
 
 
 //EatStep := FlagAnimStep, cos increases it each frame, we don't need to increase all 6 AnimSteps manually
-function TKMHouseInn.EaterGetsInside(aUnitType: TUnitType): ShortInt;
+function TKMHouseInn.EaterGetsInside(aUnitType: TKMUnitType): ShortInt;
 var
   I: Integer;
 begin
@@ -72,7 +72,7 @@ begin
 end;
 
 
-procedure TKMHouseInn.UpdateEater(aIndex: ShortInt; aFoodKind: TWareType);
+procedure TKMHouseInn.UpdateEater(aIndex: ShortInt; aFoodKind: TKMWareType);
 begin
   if aIndex = -1 then Exit;
   Assert(aFoodKind in [wt_Wine, wt_Bread, wt_Sausages, wt_Fish], 'Wrong kind of food in Inn');
@@ -143,7 +143,7 @@ begin
     gRenderPool.AddHouseEater(fPosition, Eater[I].UnitType, ua_Eat,
                               AnimDir(I), AnimStep,
                               offX[I mod 3], offY[I mod 3],
-                              gHands[fOwner].FlagColor);
+                              gHands[fOwner].GameFlagColor);
   end;
 end;
 

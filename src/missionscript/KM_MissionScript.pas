@@ -6,14 +6,14 @@ uses
 
 
 type
-  TMissionParsingMode = (
+  TKMMissionParsingMode = (
                           mpm_Single,
                           mpm_Multi,  //Skip players
                           mpm_Editor  //Ignore errors, load armies differently
                         );
 
   TKMCommandType = (ct_Unknown=0,ct_SetMap,ct_SetMaxPlayer,ct_SetCurrPlayer,ct_HumanPlayer,ct_UserPlayer,ct_SetHouse,
-                    ct_SetTactic,ct_AIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
+                    ct_SetTactic,ct_AIPlayer,ct_AdvancedAIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
                     ct_ClearUp,ct_BlockTrade, ct_BlockUnit, ct_BlockHouse,ct_ReleaseHouse,ct_ReleaseAllHouses,ct_AddGoal,ct_AddLostGoal,
                     ct_SetUnit,ct_SetRoad,ct_SetField,ct_SetWinefield,ct_SetFieldStaged,ct_SetWinefieldStaged, ct_SetStock,ct_AddWare,ct_SetAlliance,
                     ct_SetHouseDamage,ct_SetHouseDeliveryMode,ct_SetHouseRepairMode,ct_SetHouseClosedForWorker,
@@ -33,6 +33,7 @@ const
     'SET_HOUSE',
     'SET_TACTIC',
     'SET_AI_PLAYER', //Player can be AI
+    'SET_ADVANCED_AI_PLAYER', //Player can be Advanced AI
     'ENABLE_PLAYER',
     'SET_NEW_REMAP',
     'SET_MAP_COLOR',
@@ -52,7 +53,7 @@ const
     'SET_RALLY_POINT');
 
 type
-  TMissionParserCommon = class
+  TKMMissionParserCommon = class
   protected
     fMissionFileName: string;
     fLastHand: TKMHandIndex; //Current Player
@@ -76,7 +77,7 @@ uses
 
 
 { TMissionParserCommon }
-function TMissionParserCommon.LoadMission(const aFileName: string):boolean;
+function TKMMissionParserCommon.LoadMission(const aFileName: string):boolean;
 begin
   fMissionFileName := aFileName;
   fLastHand := -1;
@@ -85,7 +86,7 @@ begin
 end;
 
 
-function TMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
+function TKMMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
 var
   I: TKMCommandType;
 begin
@@ -106,7 +107,7 @@ end;
 
 
 //Read mission file to a string and if necessary - decode it
-function TMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
+function TKMMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
 var
   I,Num: Cardinal;
   F: TMemoryStream;
@@ -171,7 +172,7 @@ begin
 end;
 
 
-function TMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
+function TKMMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
 var
   CommandText, strParam, TextParam: AnsiString;
   ParamList: array of Integer;
@@ -249,7 +250,7 @@ end;
 
 //A nice way of debugging script errors.
 //Shows the error to the user so they know exactly what they did wrong.
-procedure TMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
+procedure TKMMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
 begin
   if aFatal then
     fFatalErrors := fFatalErrors + ErrorMsg + '|'

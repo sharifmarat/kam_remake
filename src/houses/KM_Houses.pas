@@ -9,25 +9,26 @@ uses
 
 //Everything related to houses is here
 type
-  TDeliveryMode = (dm_Closed = 0, dm_Delivery = 1, dm_TakeOut = 2);
+  TKMDeliveryMode = (dm_Closed = 0, dm_Delivery = 1, dm_TakeOut = 2);
 
   TKMHouse = class;
   TKMHouseEvent = procedure(aHouse: TKMHouse) of object;
   TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandIndex) of object;
+  TKMHouseArray = array of TKMHouse;
 
-  THouseAction = class
+  TKMHouseAction = class
   private
     fHouse: TKMHouse;
-    fHouseState: THouseState;
-    fSubAction: THouseActionSet;
-    procedure SetHouseState(aHouseState: THouseState);
+    fHouseState: TKMHouseState;
+    fSubAction: TKMHouseActionSet;
+    procedure SetHouseState(aHouseState: TKMHouseState);
   public
-    constructor Create(aHouse: TKMHouse; aHouseState: THouseState);
-    procedure SubActionWork(aActionSet: THouseActionType);
-    procedure SubActionAdd(aActionSet: THouseActionSet);
-    procedure SubActionRem(aActionSet: THouseActionSet);
-    property State: THouseState read fHouseState write SetHouseState;
-    property SubAction: THouseActionSet read fSubAction;
+    constructor Create(aHouse: TKMHouse; aHouseState: TKMHouseState);
+    procedure SubActionWork(aActionSet: TKMHouseActionType);
+    procedure SubActionAdd(aActionSet: TKMHouseActionSet);
+    procedure SubActionRem(aActionSet: TKMHouseActionSet);
+    property State: TKMHouseState read fHouseState write SetHouseState;
+    property SubAction: TKMHouseActionSet read fSubAction;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream); 
   end;
@@ -36,7 +37,7 @@ type
   TKMHouse = class
   private
     fUID: Integer; //unique ID, used for save/load to sync to
-    fHouseType: THouseType; //House type
+    fHouseType: TKMHouseType; //House type
 
     fBuildSupplyWood: Byte; //How much Wood was delivered to house building site
     fBuildSupplyStone: Byte; //How much Stone was delivered to house building site
@@ -49,8 +50,8 @@ type
     fBuildingRepair: Boolean; //If on and the building is damaged then labourers will come and repair it
 
     //Switch between delivery modes: delivery on/off/or make an offer from resources available
-    fDeliveryMode: TDeliveryMode; // REAL delivery mode - using in game interactions and actual deliveries
-    fNewDeliveryMode: TDeliveryMode; // Fake, NEW delivery mode, used just for UI. After few tick it will be set as REAL, if there will be no other clicks from player
+    fDeliveryMode: TKMDeliveryMode; // REAL delivery mode - using in game interactions and actual deliveries
+    fNewDeliveryMode: TKMDeliveryMode; // Fake, NEW delivery mode, used just for UI. After few tick it will be set as REAL, if there will be no other clicks from player
     // Delivery mode set with small delay (couple of ticks), to avoid occasional clicks on delivery mode button
     fUpdateDeliveryModeOnTick: Cardinal; // Tick, on which we have to update real delivery mode with its NEW value
 
@@ -58,11 +59,11 @@ type
 
     fResourceIn: array [1..4] of Byte; //Resource count in input
     fResourceDeliveryCount: array[1..4] of Word; //Count of the resources we have ordered for the input (used for ware distribution)
-    fResourceOut: array [1..4]of Byte; //Resource count in output
-    fResourceOrder: array [1..4]of Word; //If HousePlaceOrders=true then here are production orders
+    fResourceOut: array [1..4] of Byte; //Resource count in output
+    fResourceOrder: array [1..4] of Word; //If HousePlaceOrders=true then here are production orders
     fResourceOutPool: array[0..19] of Byte;
     fLastOrderProduced: Byte;
-    fResOrderDesired: array [1..4]of Single;
+    fResOrderDesired: array [1..4] of Single;
 
     fIsOnSnow: Boolean;
     fSnowStep: Single;
@@ -80,6 +81,7 @@ type
 
     function GetResourceInArray: TKMByteArray;
     function GetResourceOutArray: TKMByteArray;
+    function GetResourceOutPoolArray: TKMByteArray;
 
     procedure MakeSound; dynamic; //Swine/stables make extra sounds
     function GetResDistribution(aID: Byte): Byte; //Will use GetRatio from mission settings to find distribution amount
@@ -88,27 +90,27 @@ type
     procedure SetIsClosedForWorker(aIsClosed: Boolean);
     procedure UpdateDeliveryMode;
   protected
-    fBuildState: THouseBuildState; // = (hbs_Glyph, hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
+    fBuildState: TKMHouseBuildState; // = (hbs_Glyph, hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
     FlagAnimStep: Cardinal; //Used for Flags and Burning animation
     //WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
     fOwner: TKMHandIndex; //House owner player, determines flag color as well
     fPosition: TKMPoint; //House position on map, kinda virtual thing cos it doesn't match with entrance
     procedure Activate(aWasBuilt: Boolean); virtual;
-    procedure AddDemandsOnActivate; virtual;
+    procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
     function GetResOrder(aId: Byte): Integer; virtual;
     function GetResIn(aI: Byte): Word; virtual;
     procedure SetResIn(aI: Byte; aValue: Word); virtual;
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
-    procedure SetNewDeliveryMode(aValue: TDeliveryMode); virtual;
+    procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
   public
-    CurrentAction: THouseAction; //Current action, withing HouseTask or idle
+    CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
     ResourceDepletedMsgIssued: Boolean;
     DoorwayUse: Byte; //number of units using our door way. Used for sliding.
     OnDestroyed: TKMHouseFromEvent;
 
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -121,25 +123,27 @@ type
     property BuildingProgress: Word read fBuildingProgress;
 
     property GetPosition: TKMPoint read fPosition;
-    procedure SetPosition(aPos: TKMPoint); //Used only by map editor
+    procedure SetPosition(const aPos: TKMPoint); //Used only by map editor
     procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
-    function GetClosestCell(aPos: TKMPoint): TKMPoint;
-    function GetDistance(aPos: TKMPoint): Single;
-    function InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+    function GetClosestCell(const aPos: TKMPoint): TKMPoint;
+    function GetDistance(const aPos: TKMPoint): Single;
+    function InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
     procedure GetListOfCellsAround(Cells: TKMPointDirList; aPassability: TKMTerrainPassability);
     procedure GetListOfCellsWithin(Cells: TKMPointList);
     function GetRandomCellWithin: TKMPoint;
     function HitTest(X, Y: Integer): Boolean;
-    property HouseType: THouseType read fHouseType;
+    property HouseType: TKMHouseType read fHouseType;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
 
-    property DeliveryMode: TDeliveryMode read fDeliveryMode;
-    property NewDeliveryMode: TDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
-    procedure SetDeliveryModeInstantly(aValue: TDeliveryMode);
+    property DeliveryMode: TKMDeliveryMode read fDeliveryMode;
+    property NewDeliveryMode: TKMDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
+    procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
+
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -153,8 +157,9 @@ type
 
     property ResourceInArray: TKMByteArray read GetResourceInArray;
     property ResourceOutArray: TKMByteArray read GetResourceOutArray;
+    property ResourceOutPoolArray: TKMByteArray read GetResourceOutPoolArray;
 
-    property BuildingState: THouseBuildState read fBuildState write fBuildState;
+    property BuildingState: TKMHouseBuildState read fBuildState write fBuildState;
     procedure IncBuildingProgress;
     function MaxHealth: Word;
     procedure AddDamage(aAmount: Word; aAttacker: TObject; aIsEditor: Boolean = False);
@@ -167,23 +172,23 @@ type
     property IsDestroyed: Boolean read fIsDestroyed;
     property GetDamage: Word read fDamage;
 
-    procedure SetState(aState: THouseState);
-    function GetState: THouseState;
+    procedure SetState(aState: TKMHouseState);
+    function GetState: TKMHouseState;
 
-    function CheckResIn(aWare: TWareType): Word; virtual;
-    function CheckResOut(aWare: TWareType): Word; virtual;
+    function CheckResIn(aWare: TKMWareType): Word; virtual;
+    function CheckResOut(aWare: TKMWareType): Word; virtual;
     function PickOrder: Byte;
     function CheckResToBuild: Boolean;
     function GetMaxInRes: Word;
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); virtual; //override for School and etc..
-    procedure ResAddToOut(aWare: TWareType; const aCount: Integer = 1);
-    procedure ResAddToEitherFromScript(aWare: TWareType; aCount: Integer);
-    procedure ResAddToBuild(aWare: TWareType);
-    procedure ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
-    function ResCanAddToIn(aWare: TWareType): Boolean; virtual;
-    function ResCanAddToOut(aWare: TWareType): Boolean;
-    function ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean; virtual;
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); virtual; //override for School and etc..
+    procedure ResAddToOut(aWare: TKMWareType; const aCount: Integer = 1);
+    procedure ResAddToEitherFromScript(aWare: TKMWareType; aCount: Integer);
+    procedure ResAddToBuild(aWare: TKMWareType);
+    procedure ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); virtual;
+    function ResCanAddToIn(aWare: TKMWareType): Boolean; virtual;
+    function ResCanAddToOut(aWare: TKMWareType): Boolean;
+    function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; virtual;
     property ResOrder[aId: Byte]: Integer read GetResOrder write SetResOrder;
     property ResIn[aId: Byte]: Word read GetResIn write SetResIn;
 
@@ -206,7 +211,7 @@ type
     function GetFlagPointTexId: Word; virtual; abstract;
     function GetMaxDistanceToPoint: Integer; virtual;
   public
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -242,12 +247,13 @@ type
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
-    procedure ToggleAcceptFlag(aWare: TWareType);
-    procedure ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
-    function CheckResIn(aWare: TWareType): Word; override;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    function ResCanAddToIn(aWare: TWareType): Boolean; override;
-    function ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean; override;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+    procedure ToggleAcceptFlag(aWare: TKMWareType);
+    procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
+    function CheckResIn(aWare: TKMWareType): Word; override;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    function ResCanAddToIn(aWare: TKMWareType): Boolean; override;
+    function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -262,14 +268,16 @@ type
   private
     fAcceptWood: Boolean;
     fAcceptLeather: Boolean;
+
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
-    procedure ToggleResDelivery(aWareType: TWareType);
-    function AcceptWareForDelivery(aWareType: TWareType): Boolean;
+    procedure ToggleResDelivery(aWareType: TKMWareType);
+    function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
+    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
   end;
 
 
@@ -282,7 +290,8 @@ uses
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResUnits, KM_ResMapElements,
-  KM_Log, KM_ScriptingEvents, KM_CommonUtils;
+  KM_Log, KM_ScriptingEvents, KM_CommonUtils,
+  KM_GameTypes;
 
 const
   //Delay, In ticks, from user click on DeliveryMode btn, to tick, when mode will be really set.
@@ -292,7 +301,7 @@ const
 
 
 { TKMHouse }
-constructor TKMHouse.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 var
   I: Byte;
 begin
@@ -399,7 +408,7 @@ begin
   LoadStream.Read(HasAct);
   if HasAct then
   begin
-    CurrentAction := THouseAction.Create(nil, hst_Empty); //Create action object
+    CurrentAction := TKMHouseAction.Create(nil, hst_Empty); //Create action object
     CurrentAction.Load(LoadStream); //Load actual data into object
   end;
   LoadStream.Read(ResourceDepletedMsgIssued);
@@ -438,10 +447,10 @@ begin
 end;
 
 
-procedure TKMHouse.AddDemandsOnActivate;
+procedure TKMHouse.AddDemandsOnActivate(aWasBuilt: Boolean);
 var
   I, DemandsCnt: Integer;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   for I := 1 to 4 do
   begin
@@ -465,23 +474,32 @@ procedure TKMHouse.Activate(aWasBuilt: Boolean);
 
   function ObjectShouldBeCleared(X,Y: Integer): Boolean;
   begin
-    Result := not gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull,caAgeFall]);
+    Result := not gTerrain.ObjectIsChopableTree(KMPoint(X,Y), [caAge1,caAge2,caAge3,caAgeFull,caAgeFall])
+              and not gTerrain.ObjectIsCorn(X,Y)
+              and not gTerrain.ObjectIsWine(X,Y);
   end;
 
 var
+  I, K: Integer;
   P1, P2: TKMPoint;
+  HA: THouseArea;
 begin
   // Only activated houses count
   gHands[fOwner].Locks.HouseCreated(fHouseType);
   gHands[fOwner].Stats.HouseCreated(fHouseType, aWasBuilt);
 
-  gHands.RevealForTeam(fOwner, fPosition, gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+  HA := gRes.Houses[fHouseType].BuildArea;
+  //Reveal house from all points it covers
+  for I := 1 to 4 do
+    for K := 1 to 4 do
+      if HA[I,K] <> 0 then
+        gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
 
-  CurrentAction := THouseAction.Create(Self, hst_Empty);
+  CurrentAction := TKMHouseAction.Create(Self, hst_Empty);
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
 
   UpdateDamage; //House might have been damaged during construction, so show flames when it is built
-  AddDemandsOnActivate;
+  AddDemandsOnActivate(aWasBuilt);
 
   //Fix for diagonal blocking objects near house entrance
   if aWasBuilt then
@@ -504,7 +522,7 @@ end;
 procedure TKMHouse.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
 var
   I: Integer;
-  R: TWareType;
+  R: TKMWareType;
 begin
   if IsDestroyed or fIsBeingDemolished then Exit;
 
@@ -562,7 +580,7 @@ end;
 
 //Used by MapEditor
 //Set house to new position
-procedure TKMHouse.SetPosition(aPos: TKMPoint);
+procedure TKMHouse.SetPosition(const aPos: TKMPoint);
 var
   WasOnSnow, IsRallyPointSet: Boolean;
 begin
@@ -605,7 +623,7 @@ procedure TKMHouse.UpdateDeliveryMode;
 var
   I: Integer;
   ResCnt: Word;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   if fNewDeliveryMode = fDeliveryMode then Exit;
 
@@ -633,7 +651,7 @@ end;
 
 
 //Set NewDelivery mode. Its going to become a real delivery mode few ticks later
-procedure TKMHouse.SetNewDeliveryMode(aValue: TDeliveryMode);
+procedure TKMHouse.SetNewDeliveryMode(aValue: TKMDeliveryMode);
 begin
   fNewDeliveryMode := aValue;
 
@@ -642,7 +660,7 @@ end;
 
 
 //Set delivery mdoe immidiately
-procedure TKMHouse.SetDeliveryModeInstantly(aValue: TDeliveryMode);
+procedure TKMHouse.SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
 begin
   fNewDeliveryMode := aValue;
   UpdateDeliveryMode;
@@ -652,6 +670,12 @@ end;
 function TKMHouse.AllowDeliveryModeChange: Boolean;
 begin
   Result := gRes.Houses[fHouseType].AcceptsWares;
+end;
+
+
+function TKMHouse.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := DeliveryMode <> dm_Delivery;
 end;
 
 
@@ -665,7 +689,7 @@ end;
 
 
 {Returns the closest cell of the house to aPos}
-function TKMHouse.GetClosestCell(aPos: TKMPoint): TKMPoint;
+function TKMHouse.GetClosestCell(const aPos: TKMPoint): TKMPoint;
 var
   C: TKMPointList;
 begin
@@ -682,7 +706,7 @@ end;
 
 
 {Return distance from aPos to the closest house tile}
-function TKMHouse.GetDistance(aPos: TKMPoint): Single;
+function TKMHouse.GetDistance(const aPos: TKMPoint): Single;
 var
   I, K: Integer;
   Loc: TKMPoint;
@@ -701,7 +725,7 @@ end;
 
 //Check if house is within reach of given Distance (optimized version for PathFinding)
 //Check precise distance when we are close enough
-function TKMHouse.InReach(aPos: TKMPoint; aDistance: Single): Boolean;
+function TKMHouse.InReach(const aPos: TKMPoint; aDistance: Single): Boolean;
 begin
   //+6 is the worst case with the barracks, distance from fPosition to top left tile of house could be > 5
   if KMLengthDiag(aPos, fPosition) >= aDistance + 6 then
@@ -991,13 +1015,13 @@ begin
 end;
 
 
-procedure TKMHouse.SetState(aState: THouseState);
+procedure TKMHouse.SetState(aState: TKMHouseState);
 begin
   CurrentAction.State := aState;
 end;
 
 
-function TKMHouse.GetState: THouseState;
+function TKMHouse.GetState: TKMHouseState;
 begin
   Result := CurrentAction.State;
 end;
@@ -1025,6 +1049,16 @@ begin
 end;
 
 
+function TKMHouse.GetResourceOutPoolArray: TKMByteArray;
+var
+  I: Integer;
+begin
+  SetLength(Result, Length(fResourceOutPool));
+  for I := Low(Result) to High(Result) do
+    Result[I] := fResourceOutPool[I];
+end;
+
+
 // Check if house is placed mostly on snow
 procedure TKMHouse.CheckOnSnow;
 var
@@ -1047,7 +1081,7 @@ end;
 
 
 {How much resources house has in Input}
-function TKMHouse.CheckResIn(aWare: TWareType): Word;
+function TKMHouse.CheckResIn(aWare: TKMWareType): Word;
 var I: Integer;
 begin
   Result := 0;
@@ -1058,7 +1092,7 @@ end;
 
 
 {How much resources house has in Output}
-function TKMHouse.CheckResOut(aWare: TWareType): Word;
+function TKMHouse.CheckResOut(aWare: TKMWareType): Word;
 var I: Integer;
 begin
   Result := 0;
@@ -1099,7 +1133,7 @@ end;
 function TKMHouse.PickOrder: Byte;
 var
   I, Res: Byte;
-  Ware: TWareType;
+  Ware: TKMWareType;
   BestBid: Single;
   TotalLeft: Integer;
   LeftRatio: array [1..4] of Single;
@@ -1186,7 +1220,7 @@ end;
 
 function TKMHouse.GetMaxInRes: Word;
 begin
-  if fHouseType in [ht_Store, ht_Barracks, ht_Marketplace] then
+  if fHouseType in [htStore, htBarracks, htMarketplace] then
     Result := High(Word)
   else
     Result := MAX_WARES_IN_HOUSE; //All other houses can only stock 5 for now
@@ -1201,7 +1235,7 @@ end;
 
 //Maybe it's better to rule out In/Out? No, it is required to separate what can be taken out of the house and what not.
 //But.. if we add "Evacuate" button to all house the separation becomes artificial..
-procedure TKMHouse.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 var I,OrdersRemoved: Integer;
 begin
   Assert(aWare <> wt_None);
@@ -1223,7 +1257,7 @@ begin
 end;
 
 
-procedure TKMHouse.ResAddToOut(aWare: TWareType; const aCount:integer=1);
+procedure TKMHouse.ResAddToOut(aWare: TKMWareType; const aCount:integer=1);
 var
   I, p, count: Integer;
 begin
@@ -1253,7 +1287,7 @@ begin
 end;
 
 
-procedure TKMHouse.ResAddToEitherFromScript(aWare: TWareType; aCount: Integer);
+procedure TKMHouse.ResAddToEitherFromScript(aWare: TKMWareType; aCount: Integer);
 var I: Integer;
 begin
   for I := 1 to 4 do
@@ -1278,7 +1312,7 @@ end;
 
 
 // Add resources to building process
-procedure TKMHouse.ResAddToBuild(aWare: TWareType);
+procedure TKMHouse.ResAddToBuild(aWare: TKMWareType);
 begin
   case aWare of
     wt_Wood:  Inc(fBuildSupplyWood);
@@ -1288,7 +1322,7 @@ begin
 end;
 
 
-function TKMHouse.ResCanAddToIn(aWare: TWareType): Boolean;
+function TKMHouse.ResCanAddToIn(aWare: TKMWareType): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1298,7 +1332,7 @@ begin
 end;
 
 
-function TKMHouse.ResCanAddToOut(aWare: TWareType): Boolean;
+function TKMHouse.ResCanAddToOut(aWare: TKMWareType): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1320,7 +1354,7 @@ begin
 end;
 
 
-function TKMHouse.ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean;
+function TKMHouse.ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean;
 var I: Integer;
 begin
   Result := False;
@@ -1336,7 +1370,7 @@ end;
 
 
 // Take resource from Input and order more of that kind if DistributionRatios allow
-procedure TKMHouse.ResTakeFromIn(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResTakeFromIn(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 var I,K: Integer;
 begin
   Assert(aWare <> wt_None);
@@ -1368,12 +1402,12 @@ begin
 end;
 
 
-procedure TKMHouse.ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouse.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 var
   I, K, p, count: integer;
 begin
   Assert(aWare <> wt_None);
-  Assert(not(fHouseType in [ht_Store,ht_Barracks,ht_TownHall]));
+  Assert(not(fHouseType in [htStore,htBarracks,htTownHall]));
   for I := 1 to 4 do
   if aWare = gRes.Houses[fHouseType].ResOutput[I] then
   begin
@@ -1440,7 +1474,7 @@ end;
 
 procedure TKMHouse.MakeSound;
 var
-  Work: THouseActionType;
+  Work: TKMHouseActionType;
   Step: Byte;
 begin
   if SKIP_SOUND then Exit;
@@ -1464,45 +1498,45 @@ begin
   if gMySpectator.FogOfWar.CheckTileRevelation(fPosition.X, fPosition.Y) < 255 then exit;
 
   case fHouseType of //Various buildings and HouseActions producing sounds
-    ht_School:        if (Work = ha_Work5)and(Step = 28) then gSoundPlayer.Play(sfx_SchoolDing, fPosition); //Ding as the clock strikes 12
-    ht_Mill:          if (Work = ha_Work2)and(Step = 0) then gSoundPlayer.Play(sfx_mill, fPosition);
-    ht_CoalMine:      if (Work = ha_Work1)and(Step = 5) then gSoundPlayer.Play(sfx_coalDown, fPosition)
+    htSchool:        if (Work = ha_Work5)and(Step = 28) then gSoundPlayer.Play(sfx_SchoolDing, fPosition); //Ding as the clock strikes 12
+    htMill:          if (Work = ha_Work2)and(Step = 0) then gSoundPlayer.Play(sfx_mill, fPosition);
+    htCoalMine:      if (Work = ha_Work1)and(Step = 5) then gSoundPlayer.Play(sfx_coalDown, fPosition)
                       else if (Work = ha_Work1)and(Step = 24) then gSoundPlayer.Play(sfx_CoalMineThud, fPosition,true,0.8)
                       else if (Work = ha_Work2)and(Step = 7) then gSoundPlayer.Play(sfx_mine, fPosition)
                       else if (Work = ha_Work5)and(Step = 1) then gSoundPlayer.Play(sfx_coalDown, fPosition);
-    ht_IronMine:      if (Work = ha_Work2)and(Step = 7) then gSoundPlayer.Play(sfx_mine, fPosition);
-    ht_GoldMine:      if (Work = ha_Work2)and(Step = 5) then gSoundPlayer.Play(sfx_mine, fPosition);
-    ht_Sawmill:       if (Work = ha_Work2)and(Step = 1) then gSoundPlayer.Play(sfx_saw, fPosition);
-    ht_Wineyard:      if (Work = ha_Work2)and(Step in [1,7,13,19]) then gSoundPlayer.Play(sfx_wineStep, fPosition)
+    htIronMine:      if (Work = ha_Work2)and(Step = 7) then gSoundPlayer.Play(sfx_mine, fPosition);
+    htGoldMine:      if (Work = ha_Work2)and(Step = 5) then gSoundPlayer.Play(sfx_mine, fPosition);
+    htSawmill:       if (Work = ha_Work2)and(Step = 1) then gSoundPlayer.Play(sfx_saw, fPosition);
+    htWineyard:      if (Work = ha_Work2)and(Step in [1,7,13,19]) then gSoundPlayer.Play(sfx_wineStep, fPosition)
                       else if (Work = ha_Work5)and(Step = 14) then gSoundPlayer.Play(sfx_wineDrain, fPosition,true,1.5)
                       else if (Work = ha_Work1)and(Step = 10) then gSoundPlayer.Play(sfx_wineDrain, fPosition,true,1.5);
-    ht_Bakery:        if (Work = ha_Work3)and(Step in [6,25]) then gSoundPlayer.Play(sfx_BakerSlap, fPosition);
-    ht_Quary:         if (Work = ha_Work2)and(Step in [4,13]) then gSoundPlayer.Play(sfx_QuarryClink, fPosition)
+    htBakery:        if (Work = ha_Work3)and(Step in [6,25]) then gSoundPlayer.Play(sfx_BakerSlap, fPosition);
+    htQuary:         if (Work = ha_Work2)and(Step in [4,13]) then gSoundPlayer.Play(sfx_QuarryClink, fPosition)
                       else if (Work = ha_Work5)and(Step in [4,13,22]) then gSoundPlayer.Play(sfx_QuarryClink, fPosition);
-    ht_WeaponSmithy:  if (Work = ha_Work1)and(Step in [17,22]) then gSoundPlayer.Play(sfx_BlacksmithFire, fPosition)
+    htWeaponSmithy:  if (Work = ha_Work1)and(Step in [17,22]) then gSoundPlayer.Play(sfx_BlacksmithFire, fPosition)
                       else if (Work = ha_Work2)and(Step in [10,25]) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition)
                       else if (Work = ha_Work3)and(Step in [10,25]) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition)
                       else if (Work = ha_Work4)and(Step in [8,22]) then gSoundPlayer.Play(sfx_BlacksmithFire, fPosition)
                       else if (Work = ha_Work5)and(Step = 12) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition);
-    ht_ArmorSmithy:   if (Work = ha_Work2)and(Step in [13,28]) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition)
+    htArmorSmithy:   if (Work = ha_Work2)and(Step in [13,28]) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition)
                       else if (Work = ha_Work3)and(Step in [13,28]) then gSoundPlayer.Play(sfx_BlacksmithBang, fPosition)
                       else if (Work = ha_Work4)and(Step in [8,22]) then gSoundPlayer.Play(sfx_BlacksmithFire, fPosition)
                       else if (Work = ha_Work5)and(Step in [8,22]) then gSoundPlayer.Play(sfx_BlacksmithFire, fPosition);
-    ht_Metallurgists: if (Work = ha_Work3)and(Step = 6) then gSoundPlayer.Play(sfx_metallurgists, fPosition)
+    htMetallurgists: if (Work = ha_Work3)and(Step = 6) then gSoundPlayer.Play(sfx_metallurgists, fPosition)
                       else if (Work = ha_Work4)and(Step in [16,20]) then gSoundPlayer.Play(sfx_wineDrain, fPosition);
-    ht_IronSmithy:    if (Work = ha_Work2)and(Step in [1,16]) then gSoundPlayer.Play(sfx_metallurgists, fPosition)
+    htIronSmithy:    if (Work = ha_Work2)and(Step in [1,16]) then gSoundPlayer.Play(sfx_metallurgists, fPosition)
                       else if (Work = ha_Work3)and(Step = 1) then gSoundPlayer.Play(sfx_metallurgists, fPosition)
                       else if (Work = ha_Work3)and(Step = 13) then gSoundPlayer.Play(sfx_wineDrain, fPosition);
-    ht_WeaponWorkshop:if (Work = ha_Work2)and(Step in [1,10,19]) then gSoundPlayer.Play(sfx_saw, fPosition)
+    htWeaponWorkshop:if (Work = ha_Work2)and(Step in [1,10,19]) then gSoundPlayer.Play(sfx_saw, fPosition)
                       else if (Work = ha_Work3)and(Step in [10,21]) then gSoundPlayer.Play(sfx_CarpenterHammer, fPosition)
                       else if (Work = ha_Work4)and(Step in [2,13]) then gSoundPlayer.Play(sfx_CarpenterHammer, fPosition);
-    ht_ArmorWorkshop: if (Work = ha_Work2)and(Step in [3,13,23]) then gSoundPlayer.Play(sfx_saw, fPosition)
+    htArmorWorkshop: if (Work = ha_Work2)and(Step in [3,13,23]) then gSoundPlayer.Play(sfx_saw, fPosition)
                       else if (Work = ha_Work3)and(Step in [17,28]) then gSoundPlayer.Play(sfx_CarpenterHammer, fPosition)
                       else if (Work = ha_Work4)and(Step in [10,20]) then gSoundPlayer.Play(sfx_CarpenterHammer, fPosition);
-    ht_Tannery:       if (Work = ha_Work2)and(Step = 5) then gSoundPlayer.Play(sfx_Leather, fPosition,true,0.8);
-    ht_Butchers:      if (Work = ha_Work2)and(Step in [8,16,24]) then gSoundPlayer.Play(sfx_ButcherCut, fPosition)
+    htTannery:       if (Work = ha_Work2)and(Step = 5) then gSoundPlayer.Play(sfx_Leather, fPosition,true,0.8);
+    htButchers:      if (Work = ha_Work2)and(Step in [8,16,24]) then gSoundPlayer.Play(sfx_ButcherCut, fPosition)
                       else if (Work = ha_Work3)and(Step in [9,21]) then gSoundPlayer.Play(sfx_SausageString, fPosition);
-    ht_Swine:         if ((Work = ha_Work2)and(Step in [10,20]))or((Work = ha_Work3)and(Step = 1)) then gSoundPlayer.Play(sfx_ButcherCut, fPosition);
+    htSwine:         if ((Work = ha_Work2)and(Step in [10,20]))or((Work = ha_Work3)and(Step = 1)) then gSoundPlayer.Play(sfx_ButcherCut, fPosition);
     //ht_WatchTower:  Sound handled by projectile itself
   end;
 end;
@@ -1602,7 +1636,7 @@ var
   Count, Excess: ShortInt;
 begin
   for I := 1 to 4 do
-    if not (fHouseType = ht_TownHall) and not (gRes.Houses[fHouseType].ResInput[I] in [wt_All, wt_Warfare, wt_None]) then
+    if not (fHouseType = htTownHall) and not (gRes.Houses[fHouseType].ResInput[I] in [wt_All, wt_Warfare, wt_None]) then
     begin
       //Not enough resources ordered, add new demand
       if fResourceDeliveryCount[I] < GetResDistribution(I) then
@@ -1642,7 +1676,7 @@ begin
   //Show unoccupied message if needed and house belongs to human player and can have owner at all
   //and is not closed for worker and not a barracks
   if not fDisableUnoccupiedMessage and not fHasOwner and not fIsClosedForWorker
-  and (gRes.Houses[fHouseType].OwnerType <> ut_None) and (fHouseType <> ht_Barracks) then
+  and (gRes.Houses[fHouseType].OwnerType <> ut_None) and (fHouseType <> htBarracks) then
   begin
     Dec(fTimeSinceUnoccupiedReminder);
     if fTimeSinceUnoccupiedReminder = 0 then
@@ -1692,7 +1726,7 @@ begin
                       gRenderPool.AddHouse(fHouseType, fPosition, 1, 1, 0);
                     gRenderPool.AddHouseSupply(fHouseType, fPosition, fResourceIn, fResourceOut, fResourceOutPool);
                     if CurrentAction <> nil then
-                      gRenderPool.AddHouseWork(fHouseType, fPosition, CurrentAction.SubAction, WorkAnimStep, gHands[fOwner].FlagColor);
+                      gRenderPool.AddHouseWork(fHouseType, fPosition, CurrentAction.SubAction, WorkAnimStep, gHands[fOwner].GameFlagColor);
                   end
                   else
                     gRenderPool.AddHouse(fHouseType, fPosition,
@@ -1747,9 +1781,9 @@ begin
   if BeastAge[I+1] > 0 then
   if (FlagAnimStep + 20*I) mod 100 = 0 then
   begin
-    if fHouseType = ht_Stables then
+    if fHouseType = htStables then
       gSoundPlayer.Play(TSoundFX(byte(sfx_Horse1) + Random(4)), fPosition); //sfx_Horse1..sfx_Horse4
-    if fHouseType = ht_Swine   then
+    if fHouseType = htSwine   then
       gSoundPlayer.Play(TSoundFX(byte(sfx_Pig1)   + Random(4)), fPosition); //sfx_Pig1..sfx_Pig4
   end;
 end;
@@ -1777,7 +1811,7 @@ begin
   if CurrentAction <> nil then
     gRenderPool.AddHouseWork(fHouseType, fPosition,
                             CurrentAction.SubAction * [ha_Work1, ha_Work2, ha_Work3, ha_Work4, ha_Work5],
-                            WorkAnimStep, gHands[fOwner].FlagColor);
+                            WorkAnimStep, gHands[fOwner].GameFlagColor);
 end;
 
 
@@ -1785,12 +1819,12 @@ end;
 procedure TKMHouseStore.Activate(aWasBuilt:boolean);
 var
   FirstStore: TKMHouseStore;
-  RT: TWareType;
+  RT: TKMWareType;
 begin
   inherited;
   //A new storehouse should inherrit the accept properies of the first storehouse of that player,
   //which stops a sudden flow of unwanted resources to it as soon as it is create.
-  FirstStore := TKMHouseStore(gHands[fOwner].FindHouse(ht_Store, 1));
+  FirstStore := TKMHouseStore(gHands[fOwner].FindHouse(htStore, 1));
   if (FirstStore <> nil) and not FirstStore.IsDestroyed then
     for RT := WARE_MIN to WARE_MAX do
       NotAcceptFlag[RT] := FirstStore.NotAcceptFlag[RT];
@@ -1805,8 +1839,8 @@ begin
 end;
 
 
-procedure TKMHouseStore.ResAddToIn(aWare: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
-var R: TWareType;
+procedure TKMHouseStore.ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+var R: TKMWareType;
 begin
   case aWare of
     wt_All:     for R := Low(WaresCount) to High(WaresCount) do begin
@@ -1823,20 +1857,20 @@ begin
 end;
 
 
-function TKMHouseStore.ResCanAddToIn(aWare: TWareType): Boolean;
+function TKMHouseStore.ResCanAddToIn(aWare: TKMWareType): Boolean;
 begin
   Result := (aWare in [WARE_MIN..WARE_MAX]);
 end;
 
 
-function TKMHouseStore.ResOutputAvailable(aWare: TWareType; const aCount: Word): Boolean;
+function TKMHouseStore.ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aWare in [WARE_MIN..WARE_MAX]);
   Result := (WaresCount[aWare] >= aCount);
 end;
 
 
-function TKMHouseStore.CheckResIn(aWare: TWareType): Word;
+function TKMHouseStore.CheckResIn(aWare: TKMWareType): Word;
 begin
   if aWare in [WARE_MIN..WARE_MAX] then
     Result := WaresCount[aWare]
@@ -1847,7 +1881,7 @@ end;
 
 procedure TKMHouseStore.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
 var
-  R: TWareType;
+  R: TKMWareType;
 begin
   for R := WARE_MIN to WARE_MAX do
     gHands[fOwner].Stats.WareConsumed(R, WaresCount[R]);
@@ -1856,7 +1890,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ResTakeFromOut(aWare: TWareType; aCount: Word=1; aFromScript: Boolean = False);
+procedure TKMHouseStore.ResTakeFromOut(aWare: TKMWareType; aCount: Word=1; aFromScript: Boolean = False);
 begin
   if aFromScript then
   begin
@@ -1873,7 +1907,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ToggleAcceptFlag(aWare: TWareType);
+procedure TKMHouseStore.ToggleAcceptFlag(aWare: TKMWareType);
 const
   //Using shortints instead of bools makes it look much neater in code-view
   CHEAT_SP_PATTERN: array [WARE_MIN..WARE_MAX] of Byte = (
@@ -1884,7 +1918,7 @@ const
     1,1,1,1,1,
     0,0,0);
 var
-  ware: TWareType;
+  ware: TKMWareType;
   cheatPattern: Boolean;
 begin
   // Dunno why thats happening sometimes..
@@ -1934,13 +1968,20 @@ begin
 end;
 
 
+function TKMHouseStore.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or NotAcceptFlag[aWareType];
+end;
+
+
 { TKMHouseArmorWorkshop }
-constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
   fAcceptWood := True;
   fAcceptLeather := True;
 end;
+
 
 constructor TKMHouseArmorWorkshop.Load(LoadStream: TKMemoryStream);
 begin
@@ -1958,7 +1999,7 @@ begin
 end;
 
 
-procedure TKMHouseArmorWorkshop.ToggleResDelivery(aWareType: TWareType);
+procedure TKMHouseArmorWorkshop.ToggleResDelivery(aWareType: TKMWareType);
 begin
   case aWareType of
     wt_Wood: fAcceptWood := not fAcceptWood;
@@ -1967,9 +2008,9 @@ begin
 end;
 
 
-function TKMHouseArmorWorkshop.AcceptWareForDelivery(aWareType: TWareType): Boolean;
+function TKMHouseArmorWorkshop.AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
 begin
-  Result := True;
+  Result := False;
   case aWareType of
     wt_Wood: Result := fAcceptWood;
     wt_Leather: Result := fAcceptLeather;
@@ -1977,8 +2018,14 @@ begin
 end;
 
 
+function TKMHouseArmorWorkshop.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or not AcceptWareForDelivery(aWareType);
+end;
+
+
 { THouseAction }
-constructor THouseAction.Create(aHouse: TKMHouse; aHouseState: THouseState);
+constructor TKMHouseAction.Create(aHouse: TKMHouse; aHouseState: TKMHouseState);
 begin
   inherited Create;
   fHouse := aHouse;
@@ -1986,7 +2033,7 @@ begin
 end;
 
 
-procedure THouseAction.SetHouseState(aHouseState: THouseState);
+procedure TKMHouseAction.SetHouseState(aHouseState: TKMHouseState);
 begin
   fHouseState := aHouseState;
   case fHouseState of
@@ -2000,27 +2047,27 @@ begin
 end;
 
 
-procedure THouseAction.SubActionWork(aActionSet: THouseActionType);
+procedure TKMHouseAction.SubActionWork(aActionSet: TKMHouseActionType);
 begin
   SubActionRem([ha_Work1..ha_Work5]); //Remove all work
   fSubAction := fSubAction + [aActionSet];
-  if fHouse.fHouseType <> ht_Mill then fHouse.WorkAnimStep := 0; //Exception for mill so that the windmill doesn't jump frames
+  if fHouse.fHouseType <> htMill then fHouse.WorkAnimStep := 0; //Exception for mill so that the windmill doesn't jump frames
 end;
 
 
-procedure THouseAction.SubActionAdd(aActionSet: THouseActionSet);
+procedure TKMHouseAction.SubActionAdd(aActionSet: TKMHouseActionSet);
 begin
   fSubAction := fSubAction + aActionSet;
 end;
 
 
-procedure THouseAction.SubActionRem(aActionSet: THouseActionSet);
+procedure TKMHouseAction.SubActionRem(aActionSet: TKMHouseActionSet);
 begin
   fSubAction := fSubAction - aActionSet;
 end;
 
 
-procedure THouseAction.Save(SaveStream: TKMemoryStream);
+procedure TKMHouseAction.Save(SaveStream: TKMemoryStream);
 begin
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID)
@@ -2031,7 +2078,7 @@ begin
 end;
 
 
-procedure THouseAction.Load(LoadStream: TKMemoryStream);
+procedure TKMHouseAction.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fHouseState, SizeOf(fHouseState));
@@ -2042,20 +2089,26 @@ end;
 procedure TKMHouseTower.Paint;
 var
   I, K: Integer;
+  Color: Cardinal;
 begin
   inherited;
 
-  if SHOW_ATTACK_RADIUS then
+  if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlTowersAttackRadius in gGame.MapEditor.VisibleLayers)) then
+  begin
+    Color := $40FFFFFF;
+    if gMySpectator.Selected = Self then
+      Color := icRed and Color;
     for I := -Round(RANGE_WATCHTOWER_MAX) - 1 to Round(RANGE_WATCHTOWER_MAX) do
       for K := -Round(RANGE_WATCHTOWER_MAX) - 1 to Round(RANGE_WATCHTOWER_MAX) do
-        if InRange(GetLength(I, K), RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX) then
-          if gTerrain.TileInMapCoords(GetPosition.X+K, GetPosition.Y+I) then
-            gRenderAux.Quad(GetPosition.X+K, GetPosition.Y+I, $40FFFFFF);
+        if InRange(GetLength(I, K), RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX)
+          and gTerrain.TileInMapCoords(GetPosition.X+K, GetPosition.Y+I) then
+            gRenderAux.Quad(GetPosition.X+K, GetPosition.Y+I, Color);
+  end;
 end;
 
 
 { TKMHouseWPoint }
-constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 

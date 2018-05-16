@@ -22,16 +22,17 @@ uses
    KM_GUIMapEdMarkerReveal,
    KM_GUIMapEdMenu,
    KM_GUIMapEdMenuQuickPlay,
-   KM_GUIMapEdUnit;
+   KM_GUIMapEdUnit,
+   KM_GUIMapEdRMG;
 
 type
   TKMapEdInterface = class (TKMUserInterfaceGame)
   private
-    fPrevHint: TObject;
     fMouseDownOnMap: Boolean;
 
     // Drag object feature fields
     fDragObjectReady: Boolean;   // Ready to start drag object
+    fDragObjMousePosStart: TKMPoint;
     fDragingObject: Boolean;     // Flag when drag object is happening
     fDragObject: TObject;        // Object to drag
     fDragHouseOffset: TKMPoint;  // Offset for house position, to let grab house with any of its points
@@ -46,6 +47,7 @@ type
     fGuiMission: TKMMapEdMission;
     fGuiAttack: TKMMapEdTownAttack;
     fGuiGoal: TKMMapEdPlayerGoal;
+    fGuiRMG: TKMMapEdRMG;
     fGuiFormations: TKMMapEdTownFormations;
     fGuiMenuQuickPlay: TKMMapEdMenuQuickPlay;
     fGuiExtras: TKMMapEdExtras;
@@ -66,7 +68,6 @@ type
     procedure UpdateCursor(X, Y: Integer; Shift: TShiftState);
     procedure Main_ButtonClick(Sender: TObject);
     procedure HidePages;
-    procedure DisplayHint(Sender: TObject);
     procedure RightClick_Cancel;
     procedure ShowMarkerInfo(aMarker: TKMMapEdMarker);
     procedure Player_SetActive(aIndex: TKMHandIndex);
@@ -77,19 +78,23 @@ type
     procedure SetUniversalEraserMode(aSetUniversalEraserMode: Boolean);
     procedure MoveObjectToCursorCell(aObjectToMove: TObject);
     procedure UpdateSelection;
-    procedure DragHouseModeStart(aHouseNewPos: TKMPoint; aHouseOldPos: TKMPoint);
+    procedure DragHouseModeStart(const aHouseNewPos, aHouseOldPos: TKMPoint);
     procedure DragHouseModeEnd;
     function IsDragHouseModeOn: Boolean;
     procedure ResetDragObject;
     procedure ResetCursorMode;
+    procedure ShowSubMenu(aIndex: Byte);
+    procedure ExecuteSubMenuAction(aIndex: Byte);
+    procedure Update_Label_Coordinates;
+    procedure MapTypeChanged(aIsMultiplayer: Boolean);
   protected
     MinimapView: TKMMinimapView;
     Label_Coordinates: TKMLabel;
     Button_PlayerSelect: array [0..MAX_HANDS-1] of TKMFlatButtonShape; //Animals are common for all
     Button_ChangeOwner: TKMButtonFlat;
     Button_UniversalEraser: TKMButtonFlat;
-    Label_Stat,Label_Hint: TKMLabel;
-    Bevel_HintBG: TKMBevel;
+
+    Label_Stat: TKMLabel;
 
     Panel_Common: TKMPanel;
       Button_Main: array [1..5] of TKMButton; //5 buttons
@@ -111,9 +116,9 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean); override;
     procedure Resize(X,Y: Word); override;
-    procedure SetLoadMode(aMultiplayer:boolean);
+    procedure SetLoadMode(aMultiplayer: Boolean);
 
     procedure SyncUI(aMoveViewport: Boolean = True); override;
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -128,10 +133,10 @@ uses
   KM_HandsCollection, KM_ResTexts, KM_Game, KM_Main, KM_GameCursor, KM_RenderPool,
   KM_Resource, KM_TerrainDeposits, KM_ResCursors, KM_ResKeys, KM_GameApp, KM_CommonUtils,
   KM_Hand, KM_AIDefensePos, KM_RenderUI, KM_ResFonts, KM_CommonClasses, KM_Units_Warrior,
-  KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters, KM_ResHouses;
+  KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters, KM_ResHouses, KM_Utils;
 
 const
-  GROUP_IMG: array [TGroupType] of Word = (
+  GROUP_IMG: array [TKMGroupType] of Word = (
     371, 374,
     376, 377);
 
@@ -163,26 +168,28 @@ begin
   TKMLabel.Create(Panel_Main, TB_PAD, 190, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS], fnt_Outline, taLeft);
   for I := 0 to MAX_HANDS - 1 do
   begin
-    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, 6 + (I mod 6)*23, 208 + 23*(I div 6), 21, 21, IntToStr(I+1), fnt_Grey, $FF0000FF);
+    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, TB_PAD + (I mod 6)*24, 208 + 24*(I div 6), 21, 21, IntToStr(I+1), fnt_Grey, $FF0000FF);
     Button_PlayerSelect[I].Tag     := I;
     Button_PlayerSelect[I].OnClick := Player_ActiveClick;
   end;
   Button_PlayerSelect[0].Down := True; //First player selected by default
 
-  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, 151, 203, 26, 26, 662);
+  Button_ChangeOwner := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 203, 26, 26, 662);
   Button_ChangeOwner.Down := False;
   Button_ChangeOwner.OnClick := ChangeOwner_Click;
-  Button_ChangeOwner.Hint := 'Change owner for object'; // Todo Translate
+  Button_ChangeOwner.Hint := GetHintWHotKey(TX_MAPED_PAINT_BUCKET_CH_OWNER, SC_MAPEDIT_PAINT_BUCKET);
 
-  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, 151, 231, 26, 26, 340);
+  Button_UniversalEraser := TKMButtonFlat.Create(Panel_Main, TB_WIDTH - 26 + TB_PAD, 231, 26, 26, 340);
   Button_UniversalEraser.Down := False;
   Button_UniversalEraser.OnClick := UniversalEraser_Click;
-  Button_UniversalEraser.Hint := Format('Universal eraser (''%s'')', [gResKeys.GetKeyNameById(SC_MAPEDIT_UNIV_ERASOR)]); //Todo translate; //Todo use GetHintWHotKey instead; // Todo Translate
+  Button_UniversalEraser.Hint := GetHintWHotKey(TX_MAPED_UNIVERSAL_ERASER, SC_MAPEDIT_UNIV_ERASOR);
 
   Image_Extra := TKMImage.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - 48, 30, 48, 494);
   Image_Extra.Anchors := [anLeft, anBottom];
   Image_Extra.HighlightOnMouseOver := True;
   Image_Extra.OnClick := Message_Click;
+  Image_Extra.Hint := GetHintWHotKey(TX_KEY_FUNC_MAPEDIT_EXTRA, SC_MAPEDIT_EXTRA);
+
   Image_Message := TKMImage.Create(Panel_Main, TOOLBAR_WIDTH, Panel_Main.Height - 48*2, 30, 48, 496);
   Image_Message.Anchors := [anLeft, anBottom];
   Image_Message.HighlightOnMouseOver := True;
@@ -201,20 +208,20 @@ begin
   Button_Main[3] := TKMButton.Create(Panel_Common, BIG_PAD_W*2, 0, BIG_TAB_W, BIG_TAB_H, 392, rxGui, bsGame);
   Button_Main[4] := TKMButton.Create(Panel_Common, BIG_PAD_W*3, 0, BIG_TAB_W, BIG_TAB_H, 441, rxGui, bsGame);
   Button_Main[5] := TKMButton.Create(Panel_Common, BIG_PAD_W*4, 0, BIG_TAB_W, BIG_TAB_H, 389, rxGui, bsGame);
-  Button_Main[1].Hint := gResTexts[TX_MAPED_TERRAIN];
-  Button_Main[2].Hint := gResTexts[TX_MAPED_VILLAGE];
-  Button_Main[3].Hint := gResTexts[TX_MAPED_SCRIPTS_VISUAL];
-  Button_Main[4].Hint := gResTexts[TX_MAPED_SCRIPTS_GLOBAL];
-  Button_Main[5].Hint := gResTexts[TX_MAPED_MENU];
+  Button_Main[1].Hint := GetHintWHotKey(TX_MAPED_TERRAIN, SC_MAPEDIT_TERRAIN);
+  Button_Main[2].Hint := GetHintWHotKey(TX_MAPED_VILLAGE, SC_MAPEDIT_VILLAGE);
+  Button_Main[3].Hint := GetHintWHotKey(TX_MAPED_SCRIPTS_VISUAL, SC_MAPEDIT_VISUAL);
+  Button_Main[4].Hint := GetHintWHotKey(TX_MAPED_SCRIPTS_GLOBAL, SC_MAPEDIT_GLOBAL);
+  Button_Main[5].Hint := GetHintWHotKey(TX_MAPED_MENU, SC_MAPEDIT_MAIN_MANU);
   for I := 1 to 5 do
     Button_Main[I].OnClick := Main_ButtonClick;
 
   //Terrain editing pages
-  fGuiTerrain := TKMMapEdTerrain.Create(Panel_Common, PageChanged);
+  fGuiTerrain := TKMMapEdTerrain.Create(Panel_Common, PageChanged, HidePages);
   fGuiTown := TKMMapEdTown.Create(Panel_Common, PageChanged);
   fGuiPlayer := TKMMapEdPlayer.Create(Panel_Common, PageChanged);
   fGuiMission := TKMMapEdMission.Create(Panel_Common, PageChanged);
-  fGuiMenu := TKMMapEdMenu.Create(Panel_Common, PageChanged);
+  fGuiMenu := TKMMapEdMenu.Create(Panel_Common, PageChanged, MapTypeChanged);
 
   //Objects pages
   fGuiUnit := TKMMapEdUnit.Create(Panel_Common);
@@ -226,23 +233,15 @@ begin
   fGuiAttack := TKMMapEdTownAttack.Create(Panel_Main);
   fGuiFormations := TKMMapEdTownFormations.Create(Panel_Main);
   fGuiGoal := TKMMapEdPlayerGoal.Create(Panel_Main);
-  fGuiMenuQuickPlay := TKMMapEdMenuQuickPlay.Create(Panel_Main);
+  fGuiRMG := TKMMapEdRMG.Create(Panel_Main);
+  fGuiMenuQuickPlay := TKMMapEdMenuQuickPlay.Create(Panel_Main, MapTypeChanged);
 
   //Pass pop-ups to their dispatchers
   fGuiTown.GuiDefence.FormationsPopUp := fGuiFormations;
   fGuiTown.GuiOffence.AttackPopUp := fGuiAttack;
   fGuiPlayer.GuiPlayerGoals.GoalPopUp := fGuiGoal;
   fGuiMenu.GuiMenuQuickPlay := fGuiMenuQuickPlay;
-
-  //Hints go above everything
-  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+32,Panel_Main.Height-23,300,21);
-  Bevel_HintBG.BackAlpha := 0.5;
-  Bevel_HintBG.Hide;
-  Bevel_HintBG.Anchors := [anLeft, anBottom];
-  Label_Hint := TKMLabel.Create(Panel_Main, 224 + 36, Panel_Main.Height - 21, 0, 0, '', fnt_Outline, taLeft);
-  Label_Hint.Anchors := [anLeft, anBottom];
-
-  fMyControls.OnHint := DisplayHint;
+  fGuiTerrain.GuiSelection.GuiRMGPopUp := fGuiRMG;
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -257,6 +256,7 @@ begin
   end;
 
   HidePages;
+  AfterCreateComplete;
 end;
 
 
@@ -328,26 +328,6 @@ begin
 end;
 
 
-procedure TKMapEdInterface.DisplayHint(Sender: TObject);
-begin
-  if (fPrevHint = Sender) then exit; //Hint didn't changed
-
-  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
-  begin
-    Label_Hint.Caption := '';
-    Bevel_HintBG.Hide;
-  end
-  else
-  begin
-    Label_Hint.Caption := TKMControl(Sender).Hint;
-    Bevel_HintBG.Show;
-    Bevel_HintBG.Width := 8 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
-  end;
-
-  fPrevHint := Sender;
-end;
-
-
 procedure TKMapEdInterface.UpdatePlayerSelectButtons;
 const
   CAP_COLOR: array [Boolean] of Cardinal = ($80808080, $FFFFFFFF);
@@ -363,12 +343,12 @@ end;
 procedure TKMapEdInterface.UpdateState(aTickCount: Cardinal);
 begin
   inherited;
-  //Update minimap every 1000ms
-  if aTickCount mod 10 = 0 then
+  //Update minimap every 500ms
+  if aTickCount mod 5 = 0 then
     fMinimap.Update(False);
 
   //Show players without assets in grey
-  if aTickCount mod 10 = 0 then
+  if aTickCount mod 5 = 0 then
     UpdatePlayerSelectButtons;
 
   UpdateStateInternal;
@@ -401,6 +381,7 @@ begin
   //Check to see if we need to scroll
   fViewport.UpdateStateIdle(aFrameTime, False);
   fGuiTown.UpdateStateIdle;
+  Update_Label_Coordinates;
 end;
 
 
@@ -444,35 +425,44 @@ begin
 
   gGame.MapEditor.VisibleLayers := [];
 
-  if fGuiPlayer.Visible(ptView) or fGuiMarkerReveal.Visible then
+  if fGuiPlayer.IsVisible(ptView) or fGuiMarkerReveal.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlRevealFOW, mlCenterScreen];
 
-  if fGuiTown.Visible(ttScript) then
+  if fGuiTown.IsVisible(ttScript) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlAIStart];
 
-  if fGuiTown.Visible(ttDefences) or fGuiMarkerDefence.Visible then
+  if fGuiTown.IsVisible(ttDefences) or fGuiMarkerDefence.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlDefences];
 
-  if fGuiExtras.CheckBox_ShowObjects.Checked or fGuiTerrain.Visible(ttObject) then
+  if fGuiExtras.CheckBox_ShowObjects.Checked or fGuiTerrain.IsVisible(ttObject) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlObjects];
 
-  if fGuiExtras.CheckBox_ShowHouses.Checked or fGuiTown.Visible(ttHouses) or fGuiHouse.Visible then
+  if fGuiExtras.CheckBox_ShowHouses.Checked or fGuiTown.IsVisible(ttHouses) or fGuiHouse.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlHouses];
 
-  if fGuiExtras.CheckBox_ShowUnits.Checked or fGuiTown.Visible(ttUnits) or fGuiUnit.Visible then
+  if fGuiExtras.CheckBox_ShowUnits.Checked or fGuiTown.IsVisible(ttUnits) or fGuiUnit.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlUnits];
 
-  if fGuiTerrain.Visible(ttSelection) then
+  if fGuiTerrain.IsVisible(ttSelection) then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlSelection];
 
   if fGuiExtras.CheckBox_ShowDeposits.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlDeposits];
 
+  if fGuiExtras.CheckBox_ShowMiningRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlMiningRadius];
+
+  if fGuiExtras.CheckBox_ShowTowersAttackRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlTowersAttackRadius];
+
+  if fGuiExtras.CheckBox_ShowUnitsAttackRadius.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlUnitsAttackRadius];
+
+  if fGuiExtras.CheckBox_ShowOverlays.Checked then
+    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlOverlays];
+
   if fGuiExtras.CheckBox_ShowTileOwners.Checked then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlTileOwner];
-
-  if fGuiExtras.CheckBox_ShowTilesGrid.Checked then
-    gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlTilesGrid];
 
   if fGuiMenu.GuiMenuResize.Visible then
     gGame.MapEditor.VisibleLayers := gGame.MapEditor.VisibleLayers + [mlMapResize];
@@ -536,6 +526,7 @@ var
   I: Integer;
 begin
   gMySpectator.HandIndex := aIndex;
+  fGuiMission.GuiMissionPlayers.UpdatePlayer;
 
   for I := 0 to MAX_HANDS - 1 do
     Button_PlayerSelect[I].Down := (I = gMySpectator.HandIndex);
@@ -596,13 +587,15 @@ begin
   //select the placed warrior.
 
   // When global tools are used, just cancel the tool, even if some page is open
-  if (gGameCursor.Mode <> cmPaintBucket) and (gGameCursor.Mode <> cmUniversalEraser) then
+  if not (gGameCursor.Mode in [cmPaintBucket, cmUniversalEraser]) then
   begin
     //These pages use RMB
-    if fGuiTerrain.Visible(ttHeights) then Exit;
-    if fGuiTerrain.Visible(ttTile) then Exit;
+    if fGuiTerrain.IsVisible(ttHeights) then Exit;
+    if fGuiTerrain.IsVisible(ttTile) then Exit;
     if fGuiUnit.Visible then Exit;
     if fGuiHouse.Visible then Exit;
+    if fGuiMarkerDefence.Visible then Exit;
+    if fGuiMarkerReveal.Visible then Exit;
   end;
 
   fGuiTerrain.RightClickCancel;
@@ -719,6 +712,8 @@ begin
 
   //For Objects Palette
   fGuiTerrain.KeyDown(Key, Shift, KeyHandled);
+
+  fGuiMission.KeyDown(Key, Shift, KeyHandled);
   if KeyHandled then Exit;
 
   inherited KeyDown(Key, Shift, KeyHandled);
@@ -728,6 +723,8 @@ begin
 
   KeyPassedToModal := False;
   //Pass Key to Modal pages first
+  //Todo refactoring - remove fGuiAttack.KeyDown and similar methods,
+  //as KeyDown should be handled in Controls them selves (TKMPopUpWindow, f.e.)
   if (fGuiAttack.Visible and fGuiAttack.KeyDown(Key, Shift))
     or (fGuiFormations.Visible and fGuiFormations.KeyDown(Key, Shift))
     or (fGuiGoal.Visible and fGuiGoal.KeyDown(Key, Shift))
@@ -747,8 +744,28 @@ begin
 end;
 
 
+procedure TKMapEdInterface.ShowSubMenu(aIndex: Byte);
+begin
+  fGuiTerrain.ShowSubMenu(aIndex);
+  fGuiTown.ShowSubMenu(aIndex);
+  fGuiPlayer.ShowSubMenu(aIndex);
+  fGuiMission.ShowSubMenu(aIndex);
+  fGuiMenu.ShowSubMenu(aIndex);
+end;
+
+
+procedure TKMapEdInterface.ExecuteSubMenuAction(aIndex: Byte);
+begin
+  fGuiTerrain.ExecuteSubMenuAction(aIndex);
+  fGuiTown.ExecuteSubMenuAction(aIndex);
+  fGuiPlayer.ExecuteSubMenuAction(aIndex);
+  fGuiMission.ExecuteSubMenuAction(aIndex);
+end;
+
+
 procedure TKMapEdInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 var
+  I: Integer;
   KeyHandled: Boolean;
 begin
   aHandled := True; // assume we handle all keys here
@@ -770,66 +787,22 @@ begin
   if Key = gResKeys[SC_MAPEDIT_MAIN_MANU].Key then Button_Main[5].Click;
 
   //1-6 submenu shortcuts
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_1].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(0) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(0) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(0) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(0);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_2].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(1) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(1) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(1) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(1);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_3].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(2) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(2) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(2) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(2);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_4].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(3) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(3) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(3) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(3);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_5].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(4) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(4) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(4) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(4);
-  if Key = gResKeys[SC_MAPEDIT_SUB_MENU_6].Key then
-    if fGuiTerrain.Visible then fGuiTerrain.ShowIndex(5) else
-    if fGuiTown.Visible    then fGuiTown.ShowIndex(5) else
-    if fGuiPlayer.Visible  then fGuiPlayer.ShowIndex(5) else
-    if fGuiMission.Visible then fGuiMission.ShowIndex(5);
+  for I := Low(MAPED_SUBMENU_HOTKEYS) to High(MAPED_SUBMENU_HOTKEYS) do
+    if Key = gResKeys[MAPED_SUBMENU_HOTKEYS[I]].Key then
+      ShowSubMenu(I);
 
-  // Build road/field/wine/cancel build
-  if Key = gResKeys[SC_PLAN_ROAD].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildRoad;
-  end;
-  if Key = gResKeys[SC_PLAN_FIELD].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildField;
-  end;
-  if Key = gResKeys[SC_PLAN_WINE].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildWine;
-  end;
-  if Key = gResKeys[SC_ERASE_PLAN].Key then
-  begin
-    if not fGuiTown.Visible then
-      Button_Main[2].Click;
-    fGuiTown.GuiHouses.BuildCancel;
-  end;
+  //q-w-e-r-t-y-u submenu actions shortcuts
+  for I := Low(MAPED_SUBMENU_ACTIONS_HOTKEYS) to High(MAPED_SUBMENU_ACTIONS_HOTKEYS) do
+    if Key = gResKeys[MAPED_SUBMENU_ACTIONS_HOTKEYS[I]].Key then
+      ExecuteSubMenuAction(I);
 
   //Universal erasor
   if Key = gResKeys[SC_MAPEDIT_UNIV_ERASOR].Key then
     UniversalEraser_Click(Button_UniversalEraser);
+
+  //Universal erasor
+  if Key = gResKeys[SC_MAPEDIT_PAINT_BUCKET].Key then
+    ChangeOwner_Click(Button_ChangeOwner);
 
   gGameCursor.SState := Shift; // Update Shift state on KeyUp
 end;
@@ -854,6 +827,7 @@ begin
       if Obj is TKMHouse then
         fDragHouseOffset := KMPointSubtract(TKMHouse(Obj).Entrance, gGameCursor.Cell); //Save drag point adjustement to house position
       fDragObjectReady := True;
+      fDragObjMousePosStart := KMPoint(X,Y);
     end;
   end;
 
@@ -867,14 +841,30 @@ begin
 end;
 
 
+procedure TKMapEdInterface.Update_Label_Coordinates;
+begin
+  Label_Coordinates.Caption := Format('X: %d, Y: %d, Z: %d', [gGameCursor.Cell.X, gGameCursor.Cell.Y,
+                                                              gTerrain.Land[EnsureRange(Round(gGameCursor.Float.Y + 1), 1, gTerrain.MapY),
+                                                                            EnsureRange(Round(gGameCursor.Float.X + 1), 1, gTerrain.MapX)].Height]);
+end;
+
+
+procedure TKMapEdInterface.MapTypeChanged(aIsMultiplayer: Boolean);
+begin
+  SetLoadMode(aIsMultiplayer);
+end;
+
+
 procedure TKMapEdInterface.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
+const
+  DRAG_OBJECT_MOUSE_MOVE_DIST = 15; //distance in pixels, when drag object mode starts
 begin
   inherited MouseMove(Shift, X, Y, aHandled);
   if aHandled then Exit;
 
   aHandled := True;
 
-  if fDragObjectReady then
+  if fDragObjectReady and (KMLength(fDragObjMousePosStart, KMPoint(X,Y)) > DRAG_OBJECT_MOUSE_MOVE_DIST) then
   begin
     if not (ssLeft in Shift) then
     begin
@@ -903,8 +893,6 @@ begin
     fMouseDownOnMap := True;
 
   UpdateCursor(X, Y, Shift);
-
-  Label_Coordinates.Caption := Format('X: %d, Y: %d', [gGameCursor.Cell.X, gGameCursor.Cell.Y]);
 
   gGame.MapEditor.MouseMove;
 end;
@@ -940,20 +928,20 @@ begin
     if not fViewport.Scrolling then
       gRes.Cursors.Cursor := kmc_Default;
   end;
+
+  Update_Label_Coordinates;
 end;
 
 
 procedure TKMapEdInterface.ResetCursorMode;
 begin
   gGameCursor.Mode := cmNone;
-  gGameCursor.Tag1 := 0;
-  gGameCursor.DragOffset := KMPOINT_ZERO;
 end;
 
 
 //Start drag house move mode (with cursor mode cmHouse)
-procedure TKMapEdInterface.DragHouseModeStart(aHouseNewPos: TKMPoint; aHouseOldPos: TKMPoint);
-  procedure SetCursorModeHouse(aHouseType: THouseType);
+procedure TKMapEdInterface.DragHouseModeStart(const aHouseNewPos, aHouseOldPos: TKMPoint);
+  procedure SetCursorModeHouse(aHouseType: TKMHouseType);
   begin
     gGameCursor.Mode := cmHouses;
     gGameCursor.Tag1 := Byte(aHouseType);
@@ -1059,6 +1047,7 @@ begin
   fDragObjectReady := False;
   fDragingObject := False;
   fDragHouseOffset := KMPOINT_ZERO;
+  fDragObjMousePosStart := KMPOINT_ZERO;
   fDragObject := nil;
 
   if gRes.Cursors.Cursor = kmc_Drag then
@@ -1127,7 +1116,6 @@ begin
                 if (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_RALLY_POINT) then
                 begin
                   gGameCursor.Mode := cmNone;
-                  gGameCursor.Tag1 := 0;
                   Exit;
                 end;
 
@@ -1198,20 +1186,16 @@ begin
 end;
 
 
-procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer);
-var
-  Handled: Boolean;
+procedure TKMapEdInterface.MouseWheel(Shift: TShiftState; WheelDelta, X,Y: Integer; var aHandled: Boolean);
 begin
   if gGameCursor.Mode in [cmField, cmWine] then
   begin
     if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 
-    // Allow to zoom only when cursor is over map. Controls handle zoom on their own
-    if (fMyControls.CtrlOver = nil) then
-      gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
+    gGame.MapEditor.MouseWheel(Shift, WheelDelta, X, Y);
   end else begin
-    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, Handled);
-    if not Handled then
+    fGuiTerrain.MouseWheel(Shift, WheelDelta, X, Y, aHandled);
+    if not aHandled then
       inherited;
   end;
 end;
@@ -1226,7 +1210,7 @@ begin
 end;
 
 
-procedure TKMapEdInterface.SetLoadMode(aMultiplayer:boolean);
+procedure TKMapEdInterface.SetLoadMode(aMultiplayer: Boolean);
 begin
   fGuiMenu.SetLoadMode(aMultiplayer);
 end;
@@ -1250,14 +1234,14 @@ const
   DefenceLine: array [TAIDefencePosType] of Cardinal = ($FF80FF00, $FFFF8000);
 var
   I, K: Integer;
-  R: TRawDeposit;
+  R: TKMRawDeposit;
   DP: TAIDefencePosition;
   LocF: TKMPointF;
   ScreenLoc: TKMPoint;
 begin
   if mlDeposits in gGame.MapEditor.VisibleLayers then
   begin
-    for R := Low(TRawDeposit) to High(TRawDeposit) do
+    for R := Low(TKMRawDeposit) to High(TKMRawDeposit) do
       for I := 0 to gGame.MapEditor.Deposits.Count[R] - 1 do
       //Ignore water areas with 0 fish in them
       if gGame.MapEditor.Deposits.Amount[R, I] > 0 then
@@ -1293,3 +1277,4 @@ end;
 
 
 end.
+

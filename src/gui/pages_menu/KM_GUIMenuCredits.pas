@@ -13,7 +13,7 @@ uses
 type
   TKMMenuCredits = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     procedure LinkClick(Sender: TObject);
     procedure BackClick(Sender: TObject);
@@ -25,7 +25,7 @@ type
     Button_CreditsFacebook: TKMButton;
     Button_CreditsBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure Show;
   end;
@@ -37,7 +37,7 @@ uses
 
 
 { TKMGUIMainCredits }
-constructor TKMMenuCredits.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuCredits.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 const
   OFFSET = 312;
 begin
@@ -94,8 +94,8 @@ procedure TKMMenuCredits.LinkClick(Sender: TObject);
   end;
 
 begin
-  if Sender = Button_CreditsHomepage then GoToURL('http://www.kamremake.com/redirect.php?page=homepage&rev=' + GAME_REVISION);
-  if Sender = Button_CreditsFacebook then GoToURL('http://www.kamremake.com/redirect.php?page=facebook&rev=' + GAME_REVISION);
+  if Sender = Button_CreditsHomepage then GoToURL('http://www.kamremake.com/redirect.php?page=homepage&rev=' + UnicodeString(GAME_REVISION));
+  if Sender = Button_CreditsFacebook then GoToURL('http://www.kamremake.com/redirect.php?page=facebook&rev=' + UnicodeString(GAME_REVISION));
 end;
 
 

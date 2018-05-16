@@ -2,14 +2,21 @@ unit KM_ScriptingActions;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Math, SysUtils, StrUtils, uPSRuntime,
+  Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
   KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
 
 type
   TKMScriptActions = class(TKMScriptEntity)
+  private
+    procedure LogStr(aText: String);
   public
+    function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
+                         aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
+                         aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+    function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+    procedure AIAttackRemoveAll(aPlayer: Byte);
     procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word);
     procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean);
     procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean);
@@ -93,7 +100,7 @@ type
 
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
-    function MapTilesArraySetS(aTilesS: array of string; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
+    function MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
 
@@ -150,6 +157,9 @@ type
 
     procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean);
     function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean;
+    procedure UnitDismiss(aUnitID: Integer);
+    procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
+    procedure UnitDismissCancel(aUnitID: Integer);
     procedure UnitHPChange(aUnitID, aHP: Integer);
     procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean);
     procedure UnitHungerSet(aUnitID, aHungerLevel: Integer);
@@ -178,7 +188,7 @@ const
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> ht_None); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
 end;
 
 
@@ -398,7 +408,7 @@ end;
 //* aCompliment: Both ways
 procedure TKMScriptActions.PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean);
 const
-  ALLIED: array [Boolean] of TAllianceType = (at_Enemy, at_Ally);
+  ALLIED: array [Boolean] of TKMAllianceType = (at_Enemy, at_Ally);
 begin
   try
     //Verify all input parameters
@@ -978,6 +988,83 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Add AI attack 
+//** <b>aPlayer</b> - playerID
+//** <b>aRepeating</b> - is attack repeating
+//** <b>aDelay</b> - attack delay
+//** <b>aTotalMen</b> - total soldiers to attack
+//** <b>aMelleCount</b>, <b>aAntiHorseCount</b>, <b>aRangedCount</b>, <b>aMountedCount</b> - soldiers groups count
+//** <b>aRandomGroups</b> - use random groups for attack
+//** <b>aTarget</b> - attack target of TKMAIAttackTarget type. Possible values:
+//** <pre>TKMAIAttackTarget = (
+//**  attClosestUnit, //Closest enemy unit
+//**  attClosestBuildingFromArmy,
+//**    //Closest building from the group lauching the attack
+//**  attClosestBuildingFromStartPos,
+//**    //Closest building from the AI's start position
+//**  attCustomPosition
+//**    //Custom point defined with aCustomPosition
+//** );</pre>
+//** <b>aCustomPosition</b> - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
+//** <b>Result</b>: Attack Id, that could be used to remove this attack later on
+function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer; aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
+var
+  AttackType: TKMAIAttackType;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    begin
+      if aRepeating then
+        AttackType := aat_Repeating
+      else
+        AttackType := aat_Once;
+        
+      Result := gHands[aPlayer].AI.General.Attacks.AddAttack(AttackType, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount, aRandomGroups, aTarget, 0, aCustomPosition);
+    end else
+      LogParamWarning('Actions.AIAttackAdd', [aPlayer, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove AI attack by attack ID
+//* Result: true, if attack was succesfully removed, false, if attack was not found
+function TKMScriptActions.AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.General.Attacks.RemoveAttack(aAIAttackId)
+    else
+      LogParamWarning('Actions.AIAttackRemove', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Remove all AI attacks
+procedure TKMScriptActions.AIAttackRemoveAll(aPlayer: Byte);
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      gHands[aPlayer].AI.General.Attacks.Clear
+    else
+      LogParamWarning('Actions.AIAttackRemoveAll', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6251
 //* Sets AI auto attack range.
 //* AI groups will automatically attack if you are closer than this many tiles.
@@ -986,7 +1073,8 @@ procedure TKMScriptActions.AIAutoAttackRange(aPlayer: Byte; aRange: Word);
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
-    and InRange(aRange, 1, 20) then
+      and InRange(aRange, 1, 20)
+      and not gHands[aPlayer].AI.Setup.NewAI then // Do not allow AutoAttackRange if we are using newAI
       gHands[aPlayer].AI.Setup.AutoAttackRange := aRange
     else
       LogParamWarning('Actions.AIAutoAttackRange', [aPlayer, aRange]);
@@ -1052,10 +1140,10 @@ begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and (TAIDefencePosType(aDefType) in [adt_FrontLine..adt_BackLine])
-    and (TGroupType(aGroupType) in [gt_Melee..gt_Mounted])
+    and (TKMGroupType(aGroupType) in [gt_Melee..gt_Mounted])
     and (TKMDirection(aDir+1) in [dir_N..dir_NW])
     and (gTerrain.TileInMapCoords(X, Y)) then
-      gHands[aPlayer].AI.General.DefencePositions.Add(KMPointDir(X, Y, TKMDirection(aDir + 1)), TGroupType(aGroupType), aRadius, TAIDefencePosType(aDefType))
+      gHands[aPlayer].AI.General.DefencePositions.Add(KMPointDir(X, Y, TKMDirection(aDir + 1)), TKMGroupType(aGroupType), aRadius, TAIDefencePosType(aDefType))
   else
     LogParamWarning('Actions.AIDefencePositionAdd', [aPlayer, X, Y, aDir, aGroupType, aRadius, aDefType]);
   except
@@ -1154,14 +1242,14 @@ end;
 //* Sets the formation the AI uses for defence positions
 procedure TKMScriptActions.AIGroupsFormationSet(aPlayer, aType: Byte; aCount, aColumns: Word);
 var
-  gt: TGroupType;
+  gt: TKMGroupType;
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and InRange(aType, 0, 3)
     and (aCount > 0) and (aColumns > 0) then
     begin
-      gt := TGroupType(aType);
+      gt := TKMGroupType(aType);
       gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits := aCount;
       gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow := aColumns;
     end
@@ -1309,10 +1397,10 @@ begin
       and (gHands[aPlayer].Enabled)
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftCorn, 0, False, True);
       end
       else
         LogWarning('Actions.GiveField', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1338,11 +1426,11 @@ begin
       and (InRange(aStage, 0, CORN_STAGES_COUNT - 1))
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn)
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn)
         or (gTerrain.TileIsCornField(KMPoint(X, Y))) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Corn, aStage, aRandomAge);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftCorn, aStage, aRandomAge);
       end
       else
         LogWarning('Actions.GiveFieldAged', Format('Cannot give field for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1364,7 +1452,7 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1)
     and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y) then
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Road) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftRoad) then
       begin
         Result := True;
         gTerrain.SetRoad(KMPoint(X, Y), aPlayer);
@@ -1395,7 +1483,7 @@ begin
     and InRange(aCount, 0, High(Word))
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Store, 1);
+      H := gHands[aPlayer].FindHouse(htStore, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
@@ -1425,7 +1513,7 @@ begin
     and (aType in [Low(WareIndexToType) .. High(WareIndexToType)])
     and (WareIndexToType[aType] in [WARFARE_MIN .. WARFARE_MAX]) then
     begin
-      H := gHands[aPlayer].FindHouse(ht_Barracks, 1);
+      H := gHands[aPlayer].FindHouse(htBarracks, 1);
       if H <> nil then
       begin
         H.ResAddToIn(WareIndexToType[aType], aCount);
@@ -1452,10 +1540,10 @@ begin
       and (gHands[aPlayer].Enabled)
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftWine, 0, False, True);
       end
       else
         LogWarning('Actions.GiveWineField', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1481,11 +1569,11 @@ begin
       and (InRange(aStage, 0, WINE_STAGES_COUNT - 1))
       and gTerrain.TileInMapCoords(X, Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine)
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine)
         or (gTerrain.TileIsWineField(KMPoint(X, Y))) then
       begin
         Result := True;
-        gTerrain.SetField(KMPoint(X, Y), aPlayer, ft_Wine, aStage, aRandomAge);
+        gTerrain.SetField(KMPoint(X, Y), aPlayer, ftWine, aStage, aRandomAge);
       end
       else
         LogWarning('Actions.GiveWineFieldAged', Format('Cannot give winefield for player %d at [%d:%d]', [aPlayer,X,Y]));
@@ -1886,7 +1974,7 @@ end;
 procedure TKMScriptActions.HouseAddWaresTo(aHouseID: Integer; aType, aCount: Word);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0) and (aType in [Low(WareIndexToType)..High(WareIndexToType)]) then
@@ -1922,7 +2010,7 @@ end;
 procedure TKMScriptActions.HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0) and (aType in [Low(WareIndexToType)..High(WareIndexToType)]) then
@@ -2033,12 +2121,12 @@ procedure TKMScriptActions.HouseDeliveryMode(aHouseID: Integer; aDeliveryMode: B
 var H: TKMHouse;
 begin
   try
-    if (aHouseID > 0) and (aDeliveryMode <= Byte(High(TDeliveryMode))) then
+    if (aHouseID > 0) and (aDeliveryMode <= Byte(High(TKMDeliveryMode))) then
     begin
       H := fIDCache.GetHouse(aHouseID);
       if (H <> nil)
         and gRes.Houses[H.HouseType].AcceptsWares then
-        H.SetDeliveryModeInstantly(TDeliveryMode(aDeliveryMode));
+        H.SetDeliveryModeInstantly(TKMDeliveryMode(aDeliveryMode));
     end
     else
       LogParamWarning('Actions.HouseDeliveryState', [aHouseID, aDeliveryMode]);
@@ -2126,7 +2214,7 @@ end;
 procedure TKMScriptActions.HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     if (aHouseID > 0)
@@ -2153,7 +2241,7 @@ end;
 procedure TKMScriptActions.HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer);
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
   I: Integer;
 begin
   try
@@ -2289,6 +2377,13 @@ begin
 end;
 
 
+//private utility function
+procedure TKMScriptActions.LogStr(aText: String);
+begin
+  Log(AnsiString(aText));
+end;
+
+
 //* Version: 6587
 //* Sets the tile type and rotation at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -2315,7 +2410,7 @@ end;
 
 //* Version: 7000+
 //* Sets array of tiles info, with possible change of
-//* 1. terrain (tile type), rotation (same as for MapTileSet),
+//* 1. terrain (tile type) and/or rotation (same as for MapTileSet),
 //* 2. tile height (same as for MapTileHeightSet)
 //* 3. tile object (same as for MapTileObjectSet)
 //* Works much faster, then applying all changes successively for every tile, because pathfinding compute is executed only once after all changes have been done
@@ -2328,7 +2423,8 @@ end;
 //*   ChangeSet: TKMTileChangeTypeSet; // Set of changes.
 //* end;
 //* TKMTileChangeTypeSet = set of TKMTileChangeType
-//* TKMTileChangeType = (tctTerrain, tctRotation, tctHeight, tctObject)</pre>
+//* TKMTileChangeType =
+//*   (tctTerrain, tctRotation, tctHeight, tctObject)</pre>
 //* ChangeSet determines what should be changed on tile
 //* F.e. if we want to change terrain type and height, then ChangeSet should contain tctTerrain and tctHeight
 //* Note: aTiles elements should start from 0, as for dynamic array. So f.e. to change map tile 1,1 we should set aTiles[0][0].
@@ -2383,7 +2479,7 @@ end;
 
 //* Version: 7000+
 //* Sets array of tiles info, like MapTilesArraySet, but parameters are
-//* passed as an array of string instead of array of TKMTerrainTileBrief.
+//* passed as an TAnsiStringArray instead of array of TKMTerrainTileBrief.
 //* This function is useful if you need to create dynamic map from scratch.
 //* Array must contain strings in following format: 'X,Y,Terrain,Rotation,Height,Obj'
 //* f.e. '1,1,20,2,87,12'
@@ -2394,7 +2490,7 @@ end;
 //* Skipping rotation for tile [7,2]: '7,2,20,-1,87,12'
 //* Skipping obj for tile [7,2]: '7,2,20,2,87,-1'
 //* Skipping height for tile [7,2]: '7,2,20,2,-1,5' etc.
-function TKMScriptActions.MapTilesArraySetS(aTilesS: array of string; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
+function TKMScriptActions.MapTilesArraySetS(aTilesS: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
   function GetTileErrorsStr(aErrorsIn: TKMTileChangeTypeSet): string;
   var TileChangeType: TKMTileChangeType;
   begin
@@ -2411,10 +2507,11 @@ function TKMScriptActions.MapTilesArraySetS(aTilesS: array of string; aRevertOnF
 var I: Integer;
     Errors: TKMTerrainTileChangeErrorArray;
     aTiles: array of TKMTerrainTileBrief;
-    aArrElem: TStrings;
+    aArrElem: TAnsiStringArray;
     aParsedValue: Integer;
     aParserError: Boolean;
 begin
+{$WARN SUSPICIOUS_TYPECAST OFF}
   try
     Result := True;
     SetLength(Errors, 16);
@@ -2423,35 +2520,35 @@ begin
     SetLength(aTiles, Length(aTilesS));
     for I := Low(aTilesS) to High(aTilesS) do
     begin
-      aArrElem := StrSplit(ReplaceStr(aTilesS[I], ' ', ''), ',');
+      aArrElem := StrSplitA(ReplaceStr(String(aTilesS[I]), ' ', ''), ',');
       aParserError := false;
 
       //checking params count, if count is invalid we cannot proceed
-      if (aArrElem.Count <> 6) then
-        Log(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
+      if (Length(aArrElem) <> 6) then
+        LogStr(Format('Actions.MapTilesArraySetS: Invalid number of parameters in string [%s]', [aTilesS[I]]))
       else
       begin
         //checking X, if X <= 0 we cannot proceed
-        if ((TryStrToInt(aArrElem[0], aParsedValue)) and (aParsedValue > 0)) then
+        if ((TryStrToInt(string(PChar(aArrElem[0])), aParsedValue)) and (aParsedValue > 0)) then
           aTiles[I].X := aParsedValue
         else
         begin
-          Log(Format('Actions.MapTilesArraySetS: Parameter X = [%s] in line [%s] is not a valid integer.', [aArrElem[0], aTilesS[I]]));
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter X = [%s] in line [%s] is not a valid integer.', [aArrElem[0], aTilesS[I]]));
           aParserError := true;
         end;
         //checking Y, if Y <= 0 we cannot proceed
-        if ((TryStrToInt(aArrElem[1], aParsedValue)) and (aParsedValue > 0)) then
+        if ((TryStrToInt(string(PChar(aArrElem[1])), aParsedValue)) and (aParsedValue > 0)) then
           aTiles[I].Y := aParsedValue
         else
         begin
-          Log(Format('Actions.MapTilesArraySetS: Parameter Y = [%s] in line [%s] is not a valid integer.', [aArrElem[1], aTilesS[I]]));
+          LogStr(Format('Actions.MapTilesArraySetS: Parameter Y = [%s] in line [%s] is not a valid integer.', [aArrElem[1], aTilesS[I]]));
           aParserError := true;
         end;
 
         //if X and Y are correctly defined we can proceed with terrain changes
         if (not aParserError) then
         begin
-          if (TryStrToInt(aArrElem[2], aParsedValue)) then
+          if (TryStrToInt(string(PChar(aArrElem[2])), aParsedValue)) then
           begin
             if (aParsedValue >= 0) then
             begin
@@ -2461,9 +2558,9 @@ begin
             end;
           end
           else
-             Log(Format('Actions.MapTilesArraySetS: Parameter Terrain = [%s] in line [%s] is not a valid integer.', [aArrElem[2], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Terrain = [%s] in line [%s] is not a valid integer.', [aArrElem[2], aTilesS[I]]));
 
-          if (TryStrToInt(aArrElem[3], aParsedValue)) then
+          if (TryStrToInt(string(PChar(aArrElem[3])), aParsedValue)) then
           begin
             if (aParsedValue >= 0) then
             begin
@@ -2473,9 +2570,9 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Rotation = [%s] in line [%s] is not a valid integer.', [aArrElem[3], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Rotation = [%s] in line [%s] is not a valid integer.', [aArrElem[3], aTilesS[I]]));
 
-          if (TryStrToInt(aArrElem[4], aParsedValue)) then
+          if (TryStrToInt(string(PChar(aArrElem[4])), aParsedValue)) then
           begin
             if (aParsedValue >= 0) then
             begin
@@ -2485,9 +2582,9 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Height = [%s] in line [%s] is not a valid integer.', [aArrElem[4], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Height = [%s] in line [%s] is not a valid integer.', [aArrElem[4], aTilesS[I]]));
 
-          if (TryStrToInt(aArrElem[5], aParsedValue)) then
+          if (TryStrToInt(string(PChar(aArrElem[5])), aParsedValue)) then
           begin
             if (aParsedValue >= 0) then
             begin
@@ -2497,7 +2594,7 @@ begin
             end;
           end
           else
-            Log(Format('Actions.MapTilesArraySetS: Parameter Obj = [%s] in line [%s] is not a valid integer.', [aArrElem[5], aTilesS[I]]));
+            LogStr(Format('Actions.MapTilesArraySetS: Parameter Obj = [%s] in line [%s] is not a valid integer.', [aArrElem[5], aTilesS[I]]));
         end;
       end;
     end;
@@ -2523,6 +2620,7 @@ begin
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
   end;
+{$WARN SUSPICIOUS_TYPECAST ON}
 end;
 
 
@@ -2560,7 +2658,7 @@ function TKMScriptActions.MapTileObjectSet(X, Y, Obj: Integer): Boolean;
 begin
   try
     //Objects are vertex based not tile based
-    if gTerrain.VerticeInMapCoords(X, Y) and InRange(Obj, 0, 255) then
+    if gTerrain.VerticeInMapCoords(X, Y) and InRange(Obj, 0, OBJECTS_CNT) then
       Result := gTerrain.ScriptTrySetTileObject(X, Y, Obj)
     else
     begin
@@ -2667,7 +2765,7 @@ end;
 procedure TKMScriptActions.MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 var
   H: TKMHouse;
-  ResFrom, ResTo: TWareType;
+  ResFrom, ResTo: TKMWareType;
 begin
   try
     if (aMarketID > 0)
@@ -2710,10 +2808,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Road) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftRoad) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Road);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftRoad);
       end;
     end
     else
@@ -2736,10 +2834,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Corn) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftCorn) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Corn);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftCorn);
       end;
     end
     else
@@ -2762,10 +2860,10 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X,Y) then
     begin
-      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ft_Wine) then
+      if gHands[aPlayer].CanAddFieldPlan(KMPoint(X, Y), ftWine) then
       begin
         Result := True;
-        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ft_Wine);
+        gHands[aPlayer].BuildList.FieldworksList.AddField(KMPoint(X, Y), ftWine);
       end;
     end
     else
@@ -2806,9 +2904,9 @@ begin
         if not PlanExists then
           Exit;
         for I := 0 to Points.Count - 1 do
-          if gHands[aPlayer].CanAddFieldPlan(Points[I], ft_Road) then
+          if gHands[aPlayer].CanAddFieldPlan(Points[I], ftRoad) then
             if not aCompleted then
-              gHands[aPlayer].BuildList.FieldworksList.AddField(Points[I], ft_Road)
+              gHands[aPlayer].BuildList.FieldworksList.AddField(Points[I], ftRoad)
             else
             begin
               gTerrain.SetRoad(Points[I], aPlayer);
@@ -2850,7 +2948,7 @@ begin
         gHands[aPlayer].Stats.HousePlanRemoved(HPlan.HouseType);
         Result := True;
       end;
-      if gHands[aPlayer].BuildList.FieldworksList.HasField(KMPoint(X, Y)) <> ft_None then
+      if gHands[aPlayer].BuildList.FieldworksList.HasField(KMPoint(X, Y)) <> ftNone then
       begin
         gHands[aPlayer].BuildList.FieldworksList.RemFieldPlan(KMPoint(X, Y));
         Result := True;
@@ -3006,6 +3104,72 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Dismiss the specified unit
+procedure TKMScriptActions.UnitDismiss(aUnitID: Integer);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismiss;
+    end
+    else
+      LogParamWarning('Actions.UnitDismiss', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Makes the specified unit 'dismiss' command available
+procedure TKMScriptActions.UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.Dismissable := aDismissable;
+    end
+    else
+      LogParamWarning('Actions.UnitDismissableSet', [aUnitID, Byte(aDismissable)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Cancel dismiss task for the specified unit
+procedure TKMScriptActions.UnitDismissCancel(aUnitID: Integer);
+var
+  U: TKMUnit;
+begin
+  try
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        U.DismissCancel;
+    end
+    else
+      LogParamWarning('Actions.UnitDismissCancel', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Order the specified unit to walk somewhere.
 //* Note: Only works on idle units so as not to interfere with game logic and cause crashes.
@@ -3055,7 +3219,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
         //Force delay to let the unit choose when to die, because this could be called in the middle of an event
-        U.KillUnit(PLAYER_NONE, not aSilent, True);
+        U.Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.UnitKill', [aUnitID]);
@@ -3151,7 +3315,7 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if G <> nil then
         for I := G.Count - 1 downto 0 do
-          G.Members[I].KillUnit(PLAYER_NONE, not aSilent, True);
+          G.Members[I].Kill(PLAYER_NONE, not aSilent, True);
     end
     else
       LogParamWarning('Actions.GroupKillAll', [aGroupID]);
@@ -3175,7 +3339,7 @@ begin
     begin
       G := fIDCache.GetGroup(aGroupID);
       if (G <> nil) and G.CanWalkTo(KMPoint(X,Y), 0) then
-        G.OrderWalk(KMPoint(X,Y), True, TKMDirection(aDirection+1));
+        G.OrderWalk(KMPoint(X,Y), True, wtokScript, TKMDirection(aDirection+1));
     end
     else
       LogParamWarning('Actions.GroupOrderWalk', [aGroupID, X, Y, aDirection]);

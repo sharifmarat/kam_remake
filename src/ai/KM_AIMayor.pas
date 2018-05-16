@@ -5,7 +5,8 @@ uses
   KM_AIMayorBalance, KM_AICityPlanner, KM_AISetup,
   KM_PathfindingRoad,
   KM_ResHouses, KM_HouseCollection,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_Points,
+  KM_NavMeshDefences;
 
 
 type
@@ -27,8 +28,8 @@ type
 
     procedure SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single);
 
-    function TryBuildHouse(aHouse: THouseType): Boolean;
-    function TryConnectToRoad(aLoc: TKMPoint): Boolean;
+    function TryBuildHouse(aHouse: TKMHouseType): Boolean;
+    function TryConnectToRoad(const aLoc: TKMPoint): Boolean;
     function GetMaxPlans: Byte;
 
     procedure CheckAutoRepair;
@@ -70,16 +71,16 @@ uses
 
 
 const //Sample list made by AntonP
-  WarriorHouses: array [0..44] of THouseType = (
-  ht_School, ht_Inn, ht_Quary, ht_Quary, ht_Quary,
-  ht_Woodcutters, ht_Woodcutters, ht_Woodcutters, ht_Woodcutters, ht_Woodcutters,
-  ht_Sawmill, ht_Sawmill, ht_Woodcutters, ht_GoldMine, ht_CoalMine,
-  ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_CoalMine, ht_CoalMine,
-  ht_IronMine, ht_IronMine, ht_CoalMine, ht_IronMine, ht_WeaponSmithy,
-  ht_WeaponSmithy, ht_Wineyard, ht_Wineyard, ht_Wineyard, ht_Store,
-  ht_Barracks, ht_Farm, ht_Farm, ht_Farm, ht_Mill,
-  ht_Mill, ht_Bakery, ht_Bakery, ht_School, ht_IronSmithy,
-  ht_IronSmithy, ht_Farm, ht_Swine, ht_WeaponSmithy, ht_ArmorSmithy
+  WarriorHouses: array [0..44] of TKMHouseType = (
+  htSchool, htInn, htQuary, htQuary, htQuary,
+  htWoodcutters, htWoodcutters, htWoodcutters, htWoodcutters, htWoodcutters,
+  htSawmill, htSawmill, htWoodcutters, htGoldMine, htCoalMine,
+  htGoldMine, htCoalMine, htMetallurgists, htCoalMine, htCoalMine,
+  htIronMine, htIronMine, htCoalMine, htIronMine, htWeaponSmithy,
+  htWeaponSmithy, htWineyard, htWineyard, htWineyard, htStore,
+  htBarracks, htFarm, htFarm, htFarm, htMill,
+  htMill, htBakery, htBakery, htSchool, htIronSmithy,
+  htIronSmithy, htFarm, htSwine, htWeaponSmithy, htArmorSmithy
   );
 
   //Vital (Store, School, Inn)
@@ -149,7 +150,7 @@ var
               or (P.Stats.GetWareBalance(wt_Gold) > 20);
   end;
 
-  function TryToTrain(aSchool: TKMHouseSchool; aUnitType: TUnitType; aRequiredCount: Integer): Boolean;
+  function TryToTrain(aSchool: TKMHouseSchool; aUnitType: TKMUnitType; aRequiredCount: Integer): Boolean;
   begin
     // We summ up requirements for e.g. Recruits required at Towers and Barracks
     if P.Stats.GetUnitQty(aUnitType) < (aRequiredCount + UnitReq[aUnitType]) then
@@ -165,7 +166,7 @@ var
   function RecruitsNeeded: Integer;
   var AxesLeft: Integer;
   begin
-    if P.Stats.GetHouseQty(ht_Barracks) = 0 then
+    if P.Stats.GetHouseQty(htBarracks) = 0 then
       Result := 0
     else
       if gGame.IsPeaceTime then
@@ -185,13 +186,13 @@ var
           Inc(Result, AxesLeft);
       end
       else
-        Result := fSetup.RecruitCount * P.Stats.GetHouseQty(ht_Barracks);
+        Result := fSetup.RecruitCount * P.Stats.GetHouseQty(htBarracks);
   end;
 
 var
   I,K: Integer;
-  H: THouseType;
-  UT: TUnitType;
+  H: TKMHouseType;
+  UT: TKMUnitType;
   Schools: array of TKMHouseSchool;
   HS: TKMHouseSchool;
   serfCount: Integer;
@@ -206,14 +207,14 @@ begin
   //Count overall unit requirement (excluding Barracks and ownerless houses)
   FillChar(UnitReq, SizeOf(UnitReq), #0); //Clear up
   for H := HOUSE_MIN to HOUSE_MAX do
-    if (gRes.Houses[H].OwnerType <> ut_None) and (H <> ht_Barracks) then
+    if (gRes.Houses[H].OwnerType <> ut_None) and (H <> htBarracks) then
       Inc(UnitReq[gRes.Houses[H].OwnerType], P.Stats.GetHouseQty(H));
 
   //Schools
   //Count overall schools count and exclude already training units from UnitReq
-  SetLength(Schools, P.Stats.GetHouseQty(ht_School));
+  SetLength(Schools, P.Stats.GetHouseQty(htSchool));
   K := 1;
-  HS := TKMHouseSchool(P.FindHouse(ht_School, K));
+  HS := TKMHouseSchool(P.FindHouse(htSchool, K));
   while HS <> nil do
   begin
     Schools[K-1] := HS;
@@ -221,7 +222,7 @@ begin
       if HS.Queue[I] <> ut_None then
         Dec(UnitReq[HS.Queue[I]]); //Can be negative and compensated by e.g. ReqRecruits
     Inc(K);
-    HS := TKMHouseSchool(P.FindHouse(ht_School, K));
+    HS := TKMHouseSchool(P.FindHouse(htSchool, K));
   end;
 
   //Order the training. Keep up to 2 units in the queue so the school doesn't have to wait
@@ -249,7 +250,7 @@ begin
         // If we are low on Gold don't hire more ppl (next school will fail this too, so we can exit)
         if not HasEnoughGoldForAux then Exit;
 
-        serfCount := Round(fSetup.SerfsPerHouse * (P.Stats.GetHouseQty(ht_Any) + P.Stats.GetUnitQty(ut_Worker)/2));
+        serfCount := Round(fSetup.SerfsPerHouse * (P.Stats.GetHouseQty(htAny) + P.Stats.GetUnitQty(ut_Worker)/2));
 
         if not TryToTrain(HS, ut_Serf, serfCount) then
           if not TryToTrain(HS, ut_Worker, fSetup.WorkerCount) then
@@ -291,19 +292,19 @@ begin
 
     if not H.IsDestroyed and (ResOrder = 0) then
     case H.HouseType of
-      ht_ArmorSmithy:     for K := 1 to 4 do
+      htArmorSmithy:     for K := 1 to 4 do
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_MetalShield then
                               H.ResOrder[K] := Round(WarfareRatios[wt_MetalShield] * PORTIONS)
                             else
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_MetalArmor then
                               H.ResOrder[K] := Round(WarfareRatios[wt_MetalArmor] * PORTIONS);
-      ht_ArmorWorkshop:   for K := 1 to 4 do
+      htArmorWorkshop:   for K := 1 to 4 do
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_Shield then
                               H.ResOrder[K] := Round(WarfareRatios[wt_Shield] * PORTIONS)
                             else
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_Armor then
                               H.ResOrder[K] := Round(WarfareRatios[wt_Armor] * PORTIONS);
-      ht_WeaponSmithy:    for K := 1 to 4 do
+      htWeaponSmithy:    for K := 1 to 4 do
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_Sword then
                               H.ResOrder[K] := Round(WarfareRatios[wt_Sword] * PORTIONS)
                             else
@@ -312,7 +313,7 @@ begin
                             else
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_Arbalet then
                               H.ResOrder[K] := Round(WarfareRatios[wt_Arbalet] * PORTIONS);
-      ht_WeaponWorkshop:  for K := 1 to 4 do
+      htWeaponWorkshop:  for K := 1 to 4 do
                             if gRes.Houses[H.HouseType].ResOutput[K] = wt_Axe then
                               H.ResOrder[K] := Round(WarfareRatios[wt_Axe] * PORTIONS)
                             else
@@ -328,34 +329,63 @@ end;
 
 procedure TKMayor.PlanDefenceTowers;
 const
-  DISTANCE_BETWEEN_TOWERS = 10;
+  DISTANCE_BETWEEN_TOWERS = 7;
 var
   P: TKMHand;
-  Outline1, Outline2: TKMWeightSegments;
+  PL1, PL2: TKMHandIndex;
+  pom: boolean;
+  //Outline1, Outline2: TKMWeightSegments;
   I, K, DefCount: Integer;
-  Loc: TKMPoint;
-  SegLength, Ratio: Single;
+  // DefCount: Integer;
+  Point1, Point2: TKMPoint;
+  //Loc: TKMPoint;
+  Ratio: Single;
+  //SegLength: Single;
+  DefLines: TKMDefenceLines;
 begin
-  if fDefenceTowersPlanned then Exit;
+  if fDefenceTowersPlanned then
+    Exit;
   fDefenceTowersPlanned := True;
   P := gHands[fOwner];
-  if not P.Locks.HouseCanBuild(ht_WatchTower) then Exit;
+  if not P.Locks.HouseCanBuild(htWatchTower) then
+    Exit;
+  pom := not gAIFields.NavMesh.Defences.FindDefenceLines(fOwner, DefLines) OR (DefLines.Count < 1);
+  if pom then
+    Exit;
+
+  for I := 0 to DefLines.Count - 1 do
+    with DefLines.Lines[I] do
+    begin
+      Point1 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[0] ].Loc;
+      Point2 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[1] ].Loc;
+      PL1 := gAIFields.Influences.GetBestAllianceOwner(fOwner, Point1, at_Ally);
+      PL2 := gAIFields.Influences.GetBestAllianceOwner(fOwner, Point2, at_Ally);
+      if (PL1 <> fOwner) AND (PL2 <> fOwner) AND (PL1 <> PLAYER_NONE) AND (PL2 <> PLAYER_NONE) then
+        continue;
+      DefCount := Ceil( KMLength(Point1, Point2) / DISTANCE_BETWEEN_TOWERS );
+      for K := 0 to DefCount - 1 do
+      begin
+        Ratio := (K + 1) / (DefCount + 1);
+        fDefenceTowers.Add( KMPointRound(KMLerp(Point1, Point2, Ratio)), gAIFields.Influences.GetBestAllianceOwnership(fOwner, Polygon, at_Enemy));
+      end;
+    end;
 
   //Get defence Outline with weights representing how important each segment is
-  gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
+  //gAIFields.NavMesh.GetDefenceOutline(fOwner, Outline1, Outline2);
+
   //Make list of defence positions
-  for I := 0 to High(Outline2) do
-  begin
-    //Longer segments will get several towers
-    SegLength := KMLength(Outline2[I].A, Outline2[I].B);
-    DefCount := Max(Trunc(SegLength / DISTANCE_BETWEEN_TOWERS), 1);
-    for K := 0 to DefCount - 1 do
-    begin
-      Ratio := (K + 1) / (DefCount + 1);
-      Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
-      fDefenceTowers.Add(Loc, Trunc(1000*Outline2[I].Weight));
-    end;
-  end;
+  //for I := 0 to High(Outline2) do
+  //begin
+  //  //Longer segments will get several towers
+  //  SegLength := KMLength(Outline2[I].A, Outline2[I].B);
+  //  DefCount := Max(Trunc(SegLength / DISTANCE_BETWEEN_TOWERS), 1);
+  //  for K := 0 to DefCount - 1 do
+  //  begin
+  //    Ratio := (K + 1) / (DefCount + 1);
+  //    Loc := KMPointRound(KMLerp(Outline2[I].A, Outline2[I].B, Ratio));
+  //    fDefenceTowers.Add(Loc, Trunc(1000*Outline2[I].Weight));
+  //  end;
+  //end;
   fDefenceTowers.SortByTag;
   fDefenceTowers.Inverse; //So highest weight is first
 end;
@@ -364,7 +394,7 @@ end;
 procedure TKMayor.TryBuildDefenceTower;
 const
   SEARCH_RAD = 6;
-  MAX_ROAD_DISTANCE = 25;
+  MAX_ROAD_DISTANCE = 50;
 var
   P: TKMHand;
   IY, IX: Integer;
@@ -389,7 +419,7 @@ begin
     for IX := Max(1, Loc.X-SEARCH_RAD) to Min(gTerrain.MapX, Loc.X+SEARCH_RAD) do
     begin
       DistSqr := KMLengthSqr(Loc, KMPoint(IX, IY));
-      if (DistSqr < BestDistSqr) and P.CanAddHousePlanAI(IX, IY, ht_WatchTower, False) then
+      if (DistSqr < BestDistSqr) and P.CanAddHousePlanAI(IX, IY, htWatchTower, False) then
       begin
         BestLoc := KMPoint(IX, IY);
         BestDistSqr := DistSqr;
@@ -398,12 +428,12 @@ begin
   if (BestLoc.X > 0) then
   begin
     //See if the road required is too long (tower might be across unwalkable terrain)
-    H := P.Houses.FindHouse(ht_Any, BestLoc.X, BestLoc.Y, 1, False);
+    H := P.Houses.FindHouse(htAny, BestLoc.X, BestLoc.Y, 1, False);
     if H = nil then Exit; //We are screwed, no houses left
     LocTo := H.PointBelowEntrance;
 
     //Find nearest complete house to get the road connect ID
-    H := P.Houses.FindHouse(ht_Any, BestLoc.X, BestLoc.Y, 1, True);
+    H := P.Houses.FindHouse(htAny, BestLoc.X, BestLoc.Y, 1, True);
     if H = nil then Exit; //We are screwed, no houses left
     RoadConnectID := gTerrain.GetRoadConnectID(H.PointBelowEntrance);
 
@@ -412,7 +442,7 @@ begin
     //If length of road is short enough, build the tower
     if RoadExists and (NodeList.Count <= MAX_ROAD_DISTANCE) then
     begin
-      gHands[fOwner].AddHousePlan(ht_WatchTower, BestLoc);
+      gHands[fOwner].AddHousePlan(htWatchTower, BestLoc);
       TryConnectToRoad(KMPointBelow(BestLoc));
     end;
     NodeList.Free;
@@ -427,7 +457,7 @@ end;
 
 
 //We want to connect to nearest road piece (not necessarily built yet)
-function TKMayor.TryConnectToRoad(aLoc: TKMPoint): Boolean;
+function TKMayor.TryConnectToRoad(const aLoc: TKMPoint): Boolean;
 var
   I: Integer;
   P: TKMHand;
@@ -441,12 +471,12 @@ begin
   P := gHands[fOwner];
 
   //Find nearest wip or ready house
-  H := P.Houses.FindHouse(ht_Any, aLoc.X, aLoc.Y, 1, False);
+  H := P.Houses.FindHouse(htAny, aLoc.X, aLoc.Y, 1, False);
   if H = nil then Exit; //We are screwed, no houses left
   LocTo := H.PointBelowEntrance;
 
   //Find nearest complete house to get the road connect ID
-  H := P.Houses.FindHouse(ht_Any, aLoc.X, aLoc.Y, 1, True);
+  H := P.Houses.FindHouse(htAny, aLoc.X, aLoc.Y, 1, True);
   if H = nil then Exit; //We are screwed, no houses left
   RoadConnectID := gTerrain.GetRoadConnectID(H.PointBelowEntrance);
 
@@ -459,8 +489,8 @@ begin
 
     for I := 0 to NodeList.Count - 1 do
       //We must check if we can add the plan ontop of plans placed earlier in this turn
-      if P.CanAddFieldPlan(NodeList[I], ft_Road) then
-        P.BuildList.FieldworksList.AddField(NodeList[I], ft_Road);
+      if P.CanAddFieldPlan(NodeList[I], ftRoad) then
+        P.BuildList.FieldworksList.AddField(NodeList[I], ftRoad);
     Result := True;
   finally
     NodeList.Free;
@@ -470,7 +500,7 @@ end;
 
 //Try to place a building plan for requested house
 //Report back if failed to do so (that will allow requester to choose different action)
-function TKMayor.TryBuildHouse(aHouse: THouseType): Boolean;
+function TKMayor.TryBuildHouse(aHouse: TKMHouseType): Boolean;
 var
   I, K: Integer;
   Loc: TKMPoint;
@@ -485,7 +515,7 @@ begin
   if not P.Locks.HouseCanBuild(aHouse) then Exit;
 
   //Number of simultaneous WIP houses is limited
-  if (P.Stats.GetHouseWip(ht_Any) > GetMaxPlans) then Exit;
+  if (P.Stats.GetHouseWip(htAny) > GetMaxPlans) then Exit;
 
   //Maybe we get more lucky next tick
   //todo: That only works if FindPlaceForHouse is quick, right now it takes ~11ms for iron/gold/coal mines (to decide that they can't be placed).
@@ -507,13 +537,13 @@ begin
   end;
 
   //Build fields for Farm
-  if aHouse = ht_Farm then
+  if aHouse = htFarm then
   begin
     NodeTagList := TKMPointTagList.Create;
     try
       for I := Min(Loc.Y - 2, gTerrain.MapY - 1) to Min(Loc.Y + 2 + AI_FIELD_HEIGHT - 1, gTerrain.MapY - 1) do
       for K := Max(Loc.X - AI_FIELD_WIDTH, 1) to Min(Loc.X + AI_FIELD_WIDTH, gTerrain.MapX - 1) do
-        if P.CanAddFieldPlan(KMPoint(K,I), ft_Corn) then
+        if P.CanAddFieldPlan(KMPoint(K,I), ftCorn) then
         begin
           //Base weight is distance from door (weight X higher so nice rectangle is formed)
           Weight := Abs(K - Loc.X)*3 + Abs(I - 2 - Loc.Y);
@@ -528,20 +558,20 @@ begin
 
       NodeTagList.SortByTag;
       for I := 0 to Min(NodeTagList.Count, 16) - 1 do
-        P.BuildList.FieldworksList.AddField(NodeTagList[I], ft_Corn);
+        P.BuildList.FieldworksList.AddField(NodeTagList[I], ftCorn);
     finally
       NodeTagList.Free;
     end;
   end;
 
   //Build fields for Wineyard
-  if aHouse = ht_Wineyard then
+  if aHouse = htWineyard then
   begin
     NodeTagList := TKMPointTagList.Create;
     try
       for I := Min(Loc.Y - 2, gTerrain.MapY - 1) to Min(Loc.Y + 2 + AI_FIELD_HEIGHT - 1, gTerrain.MapY - 1) do
       for K := Max(Loc.X - AI_FIELD_WIDTH, 1) to Min(Loc.X + AI_FIELD_WIDTH, gTerrain.MapX - 1) do
-        if P.CanAddFieldPlan(KMPoint(K,I), ft_Wine) then
+        if P.CanAddFieldPlan(KMPoint(K,I), ftWine) then
         begin
           //Base weight is distance from door (weight X higher so nice rectangle is formed)
           Weight := Abs(K - Loc.X)*3 + Abs(I - 2 - Loc.Y);
@@ -556,22 +586,22 @@ begin
 
       NodeTagList.SortByTag;
       for I := 0 to Min(NodeTagList.Count, 10) - 1 do
-        P.BuildList.FieldworksList.AddField(NodeTagList[I], ft_Wine);
+        P.BuildList.FieldworksList.AddField(NodeTagList[I], ftWine);
     finally
       NodeTagList.Free;
     end;
   end;
 
   //Block any buildings nearby
-  if aHouse = ht_Woodcutters then
+  if aHouse = htWoodcutters then
     gAIFields.Influences.AddAvoidBuilding(Loc.X-1, Loc.Y, WOOD_BLOCK_RAD); //X-1 because entrance is on right
 
   //Build more roads around 2nd Store
-  if aHouse = ht_Store then
+  if aHouse = htStore then
     for I := Max(Loc.Y - 3, 1) to Min(Loc.Y + 2, gTerrain.MapY - 1) do
     for K := Max(Loc.X - 2, 1) to Min(Loc.X + 2, gTerrain.MapY - 1) do
-    if P.CanAddFieldPlan(KMPoint(K, I), ft_Road) then
-      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ft_Road);
+    if P.CanAddFieldPlan(KMPoint(K, I), ftRoad) then
+      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ftRoad);
 
   Result := True;
 end;
@@ -596,7 +626,7 @@ begin
 
   //Iterate through all Stores and block certain wares to reduce serf usage
   for I := 0 to Houses.Count - 1 do
-    if (Houses[I].HouseType = ht_Store)
+    if (Houses[I].HouseType = htStore)
     and Houses[I].IsComplete
     and not Houses[I].IsDestroyed then
     begin
@@ -610,18 +640,18 @@ begin
       //Storing these causes lots of congestion with very little gain
       //Auto build AI aims for perfectly balanced village where these goods don't need storing
       //Keep them only until we have the house which consumes them.
-      S.NotAcceptFlag[wt_Trunk] := gHands[fOwner].Stats.GetHouseQty(ht_Sawmill) > 0;
-      S.NotAcceptFlag[wt_GoldOre] := gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) > 0;
-      S.NotAcceptFlag[wt_IronOre] := gHands[fOwner].Stats.GetHouseQty(ht_IronSmithy) > 0;
-      S.NotAcceptFlag[wt_Coal] := gHands[fOwner].Stats.GetHouseQty(ht_Metallurgists) +
-                                  gHands[fOwner].Stats.GetHouseQty(ht_IronSmithy) > 0;
-      S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(ht_WeaponSmithy) +
-                                   gHands[fOwner].Stats.GetHouseQty(ht_ArmorSmithy) > 0;
-      S.NotAcceptFlag[wt_Corn] := gHands[fOwner].Stats.GetHouseQty(ht_Mill) +
-                                  gHands[fOwner].Stats.GetHouseQty(ht_Swine) +
-                                  gHands[fOwner].Stats.GetHouseQty(ht_Stables) > 0;
-      S.NotAcceptFlag[wt_Leather] := gHands[fOwner].Stats.GetHouseQty(ht_ArmorWorkshop) > 0;
-      S.NotAcceptFlag[wt_Flour] := gHands[fOwner].Stats.GetHouseQty(ht_Bakery) > 0;
+      S.NotAcceptFlag[wt_Trunk] := gHands[fOwner].Stats.GetHouseQty(htSawmill) > 0;
+      S.NotAcceptFlag[wt_GoldOre] := gHands[fOwner].Stats.GetHouseQty(htMetallurgists) > 0;
+      S.NotAcceptFlag[wt_IronOre] := gHands[fOwner].Stats.GetHouseQty(htIronSmithy) > 0;
+      S.NotAcceptFlag[wt_Coal] := gHands[fOwner].Stats.GetHouseQty(htMetallurgists) +
+                                  gHands[fOwner].Stats.GetHouseQty(htIronSmithy) > 0;
+      S.NotAcceptFlag[wt_Steel] := gHands[fOwner].Stats.GetHouseQty(htWeaponSmithy) +
+                                   gHands[fOwner].Stats.GetHouseQty(htArmorSmithy) > 0;
+      S.NotAcceptFlag[wt_Corn] := gHands[fOwner].Stats.GetHouseQty(htMill) +
+                                  gHands[fOwner].Stats.GetHouseQty(htSwine) +
+                                  gHands[fOwner].Stats.GetHouseQty(htStables) > 0;
+      S.NotAcceptFlag[wt_Leather] := gHands[fOwner].Stats.GetHouseQty(htArmorWorkshop) > 0;
+      S.NotAcceptFlag[wt_Flour] := gHands[fOwner].Stats.GetHouseQty(htBakery) > 0;
       //Pigs and skin cannot be blocked since if swinefarm is full of one it stops working (blocks other)
       //S.NotAcceptFlag[wt_Skin] := gHands[fOwner].Stats.GetHouseQty(ht_Tannery) > 0;
       //S.NotAcceptFlag[wt_Pig] := gHands[fOwner].Stats.GetHouseQty(ht_Butchers) > 0;
@@ -645,7 +675,7 @@ begin
   and (Houses[I].CheckResOut(wt_All) = 0) then
   begin
     //Set it so we can build over coal that was removed
-    if Houses[I].HouseType = ht_CoalMine then
+    if Houses[I].HouseType = htCoalMine then
     begin
       Loc := Houses[I].Entrance;
       gAIFields.Influences.RemAvoidBuilding(KMRect(Loc.X-2, Loc.Y-2, Loc.X+3, Loc.Y+1));
@@ -663,13 +693,13 @@ var
   begin
     Result := GetMaxPlans;
     //Once there are 2 towers wip then allow balance to build something
-    if (fBalance.Peek <> ht_None) and (P.Stats.GetHouseWip(ht_WatchTower) >= 2) then
+    if (fBalance.Peek <> htNone) and (P.Stats.GetHouseWip(htWatchTower) >= 2) then
       Result := Result - 1;
     Result := Max(1, Result);
   end;
 
 var
-  H: THouseType;
+  H: TKMHouseType;
 begin
   P := gHands[fOwner];
 
@@ -681,21 +711,21 @@ begin
   //Reject - we can't build this house (that could affect other houses in queue)
 
   //Build towers if village is done, or peacetime is nearly over
-  if P.Locks.HouseCanBuild(ht_WatchTower) then
-    if ((fBalance.Peek = ht_None) and (P.Stats.GetHouseWip(ht_Any) = 0)) //Finished building
+  if P.Locks.HouseCanBuild(htWatchTower) then
+    if ((fBalance.Peek = htNone) and (P.Stats.GetHouseWip(htAny) = 0)) //Finished building
     or ((gGame.GameOptions.Peacetime <> 0) and gGame.CheckTime(600 * Max(0, gGame.GameOptions.Peacetime - 15))) then
       PlanDefenceTowers;
 
   if fDefenceTowersPlanned then
-    while (fDefenceTowers.Count > 0) and (P.Stats.GetHouseWip(ht_Any) < MaxPlansForTowers) do
+    while (fDefenceTowers.Count > 0) and (P.Stats.GetHouseWip(htAny) < MaxPlansForTowers) do
       TryBuildDefenceTower;
 
-  while (P.Stats.GetHouseWip(ht_Any) < GetMaxPlans) do
+  while (P.Stats.GetHouseWip(htAny) < GetMaxPlans) do
   begin
     H := fBalance.Peek;
 
     //There are no more suggestions
-    if H = ht_None then
+    if H = htNone then
       Break;
 
     //See if we can build that
@@ -732,18 +762,18 @@ begin
 
   //This is one time task to build roads around Store
   //When town becomes larger add road around Store to make traffic smoother
-  if not fRoadBelowStore and (P.Stats.GetHouseQty(ht_Any) > 14) then
+  if not fRoadBelowStore and (P.Stats.GetHouseQty(htAny) > 14) then
   begin
     fRoadBelowStore := True;
 
-    Store := P.Houses.FindHouse(ht_Store, 0, 0, 1);
+    Store := P.Houses.FindHouse(htStore, 0, 0, 1);
     if Store = nil then Exit;
     StoreLoc := Store.Entrance;
 
     for I := Max(StoreLoc.Y - 3, 1) to Min(StoreLoc.Y + 2, gTerrain.MapY - 1) do
     for K := StoreLoc.X - 2 to StoreLoc.X + 2 do
-    if P.CanAddFieldPlan(KMPoint(K, I), ft_Road) then
-      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ft_Road);
+    if P.CanAddFieldPlan(KMPoint(K, I), ftRoad) then
+      P.BuildList.FieldworksList.AddField(KMPoint(K, I), ftRoad);
   end;
 
   //Check if we need to connect separate branches of road network
@@ -758,13 +788,13 @@ begin
       if KaMRandom(gHands[fOwner].Stats.GetUnitQty(ut_Serf)) >= SHORTCUT_CHECKS_PER_UPDATE then
         Continue;
       if not gHands[fOwner].Units[I].IsDeadOrDying
-      and (gHands[fOwner].Units[I].GetUnitAction is TUnitActionWalkTo) then
-        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].UnitTask is TTaskDeliver)
-                                                     and (TTaskDeliver(gHands[fOwner].Units[I].UnitTask).DeliverKind <> dk_ToUnit))
-        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].UnitTask is TTaskGoEat)) then
+      and (gHands[fOwner].Units[I].GetUnitAction is TKMUnitActionWalkTo) then
+        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].UnitTask is TKMTaskDeliver)
+                                                     and (TKMTaskDeliver(gHands[fOwner].Units[I].UnitTask).DeliverKind <> dk_ToUnit))
+        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].UnitTask is TKMTaskGoEat)) then
         begin
-          FromLoc := TUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkFrom;
-          ToLoc := TUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkTo;
+          FromLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkFrom;
+          ToLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkTo;
           //Unit's route must be using road network, not f.e. delivering to soldiers
           if gTerrain.Route_CanBeMade(FromLoc, ToLoc, tpWalkRoad, 0) then
           begin
@@ -777,8 +807,8 @@ begin
 
             for K := 0 to NodeList.Count - 1 do
               //We must check if we can add the plan ontop of plans placed earlier in this turn
-              if P.CanAddFieldPlan(NodeList[K], ft_Road) then
-                P.BuildList.FieldworksList.AddField(NodeList[K], ft_Road);
+              if P.CanAddFieldPlan(NodeList[K], ftRoad) then
+                P.BuildList.FieldworksList.AddField(NodeList[K], ftRoad);
           end;
         end;
     end;
@@ -804,12 +834,12 @@ procedure TKMayor.SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single)
 
   function IsIronProduced: Boolean;
   begin
-    Result := (  gHands[fOwner].Stats.GetHouseQty(ht_IronMine)
-               + gHands[fOwner].Stats.GetHouseWip(ht_IronMine)
-               + gHands[fOwner].Stats.GetHousePlans(ht_IronMine)) > 0;
+    Result := (  gHands[fOwner].Stats.GetHouseQty(htIronMine)
+               + gHands[fOwner].Stats.GetHouseWip(htIronMine)
+               + gHands[fOwner].Stats.GetHousePlans(htIronMine)) > 0;
   end;
 
-  function GroupBlocked(aGT: TGroupType; aIron: Boolean): Boolean;
+  function GroupBlocked(aGT: TKMGroupType; aIron: Boolean): Boolean;
   begin
     if aIron then
       case aGT of
@@ -830,7 +860,7 @@ procedure TKMayor.SetArmyDemand(aFootmen, aPikemen, aHorsemen, aArchers: Single)
       end;
   end;
 
-  function GetUnitRatio(aUT: TUnitType): Byte;
+  function GetUnitRatio(aUT: TKMUnitType): Byte;
   begin
     if gHands[fOwner].Locks.GetUnitBlocked(aUT) then
       Result := 0 //This warrior is blocked
@@ -846,7 +876,7 @@ var
   Summ: Single;
   Footmen, Pikemen, Horsemen, Archers: Single;
   IronPerMin, LeatherPerMin: Single;
-  WT: TWareType;
+  WT: TKMWareType;
   WarfarePerMinute: TWarfareDemands;
 begin
   Summ := aFootmen + aPikemen + aHorsemen + aArchers;
