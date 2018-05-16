@@ -1648,7 +1648,8 @@ end;
 
 procedure TTMapsCacheUpdater.Stop;
 begin
-  fIsStopped := True;
+  if Self <> nil then
+    fIsStopped := True;
 end;
 
 
