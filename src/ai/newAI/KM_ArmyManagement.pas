@@ -340,9 +340,6 @@ end;
   begin
     // Get count of available group types
     FillChar(GTArr, SizeOf(GTArr), #0);
-    //for GT in TKMGroupType do
-    //  GTArr[GT] := 0;
-
     for I := 0 to aAGCnt - 1 do
       Inc(  GTArr[ aAvailableGroups[I].GroupType ]  );
 
@@ -407,31 +404,30 @@ begin
   // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic); // Maybe force attack in mm_Tactic map? But some of mm_Tactic map are also defensive...
 
   // Get array of pointers to available groups
-  AG.Count := 0;
-  SetLength(AG.GroupArr, 4);
-  SetLength(AG.Price, 4);
   for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
   begin
     Group := gHands[fOwner].UnitGroups[I];
-    if (Group = nil)
-      OR Group.IsDead
+    if Group.IsDead
       OR not Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
       OR (not TakeAllIn AND (Group.Count < MIN_TROOPS_IN_GROUP)) then
       Continue;
     // Add grop pointer to array (but dont increase count now so it will be ignored)
-    if (Length(AG.GroupArr) <= AG.Count) then
+    with AG do
     begin
-      SetLength(AG.GroupArr, AG.Count + 16);
-      SetLength(AG.Price, AG.Count + 16);
+      if (Length(GroupArr) <= Count) then
+      begin
+        SetLength(GroupArr, Count + 16);
+        SetLength(Price, Count + 16);
+      end;
+      GroupArr[Count] := Group;
+      Price[Count] := 0;
     end;
-    AG.GroupArr[AG.Count] := Group;
-    AG.Price[AG.Count] := 0;
     // Check if group can be in array
     if ForceToAttack then
     begin
       // Take all groups out of attack class
       if not fAttack.IsGroupInAction(Group) then
-        Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
+        Inc(AG.Count); // Confirm that the group should be in array GroupArr
     end
     else
     begin
@@ -440,7 +436,7 @@ begin
       if (DP <> nil) then
       begin
         AG.Price[AG.Count] := DP.Weight; // Change weight
-        Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
+        Inc(AG.Count); // Confirm that the group should be in array GroupArr
       end;
     end;
   end;
@@ -459,18 +455,22 @@ begin
           BestPrice := AG.Price[K];
           BestIdx := K;
         end;
-      Dec(AG.Count,1);
-      AG.GroupArr[BestIdx] := AG.GroupArr[AG.Count];
-      AG.Price[BestIdx] := AG.Price[AG.Count];
+      with AG do
+      begin
+        Dec(Count);
+        GroupArr[BestIdx] := GroupArr[Count];
+        Price[BestIdx] := Price[Count];
+      end;
     end;
 
   if fAttack.FindBestTarget(TargetOwner, TargetPoint, ForceToAttack) then
-  begin
-    for I := 0 to AG.Count - 1 do
-      fDefence.ReleaseGroup(AG.GroupArr[I]);
-    OrderAttack(TargetPoint, AG.Count, AG.GroupArr);
-    //if ForceToAttack OR (gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(TargetOwner, AvailableGroups) > COMPANY_MIN_ATTACK_CHANCE) then
-  end;
+    with AG do
+    begin
+      for I := 0 to Count - 1 do
+        fDefence.ReleaseGroup(GroupArr[I]);
+      OrderAttack(TargetPoint, Count, GroupArr);
+      //if ForceToAttack OR (gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(TargetOwner, AvailableGroups) > COMPANY_MIN_ATTACK_CHANCE) then
+    end;
 
   //Comparison := gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player) - (EnemyStats[I].Distance / MinDist - 1) * DISTANCE_COEF;
   //fAttack.AttackChance(AvailableGroups);
