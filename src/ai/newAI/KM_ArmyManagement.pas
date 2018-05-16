@@ -403,6 +403,8 @@ begin
   end;
   // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic); // Maybe force attack in mm_Tactic map? But some of mm_Tactic map are also defensive...
 
+  AG.Count := 0; //Init is important. FOr some reason its not init with 0 in Delphi
+
   // Get array of pointers to available groups
   for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
   begin
