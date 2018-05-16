@@ -235,27 +235,35 @@ end;
 
 procedure TKMMain.Stop(Sender: TObject);
 begin
-  //Reset the resolution
-  FreeThenNil(fResolutions);
-  FreeThenNil(fMainSettings);
-  if fMapCacheUpdater <> nil then
-    fMapCacheUpdater.Stop;
-  FreeThenNil(gGameApp);
-  FreeThenNil(gLog);
+  try
+    //Reset the resolution
+    FreeThenNil(fResolutions);
+    FreeThenNil(fMainSettings);
+    if fMapCacheUpdater <> nil then
+      fMapCacheUpdater.Stop;
+    FreeThenNil(gGameApp);
+    FreeThenNil(gLog);
 
-  {$IFDEF MSWindows}
-  TimeEndPeriod(1);
-  ClipCursor(nil); //Release the cursor restriction
-  {$ENDIF}
+    {$IFDEF MSWindows}
+    TimeEndPeriod(1);
+    ClipCursor(nil); //Release the cursor restriction
+    {$ENDIF}
 
-  // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
-  // In first case Form will take care about closing itself
+    // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
+    // In first case Form will take care about closing itself
 
-  // Do not call gMain.Stop from FormClose handler again
-  fFormMain.OnClose := nil;
+    // Do not call gMain.Stop from FormClose handler again
+    fFormMain.OnClose := nil;
 
-  if Sender <> fFormMain then
-    fFormMain.Close;
+    if Sender <> fFormMain then
+      fFormMain.Close;
+  except
+    on E: Exception do
+      begin
+        gLog.AddTime('Exception while closing game app: ' + E.Message
+                     {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+      end;
+  end;
 end;
 
 
