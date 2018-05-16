@@ -1240,3 +1240,5 @@ TX_ADVANCED_AI_PLAYER_SHORT_X = 1218; //Advanced AI %d
 
 TX_AI_PLAYER_TYPE = 1220; //AI Player type
 
+TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END = 1221; //Autosave on game end
+

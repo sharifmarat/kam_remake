@@ -47,6 +47,7 @@ type
         TrackBar_Options_ScrollSpeed: TKMTrackBar;
       Panel_Options_Game: TKMPanel;
         CheckBox_Options_Autosave: TKMCheckBox;
+        CheckBox_Options_AutosaveAtGameEnd: TKMCheckBox;
       Panel_Options_Replays: TKMPanel;
         CheckBox_Options_ReplayAutopause: TKMCheckBox;
       Panel_Options_Sound: TKMPanel;
@@ -117,13 +118,16 @@ begin
       TrackBar_Options_ScrollSpeed.OnChange := Change;
 
     // Gameplay section
-    Panel_Options_Game:=TKMPanel.Create(Panel_Options,60,230,280,50);
+    Panel_Options_Game := TKMPanel.Create(Panel_Options,60,210,280,70);
     Panel_Options_Game.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Game,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GAMEPLAY],fnt_Outline,taLeft);
-      TKMBevel.Create(Panel_Options_Game,0,20,280,30);
+      TKMBevel.Create(Panel_Options_Game,0,20,280,50);
 
       CheckBox_Options_Autosave := TKMCheckBox.Create(Panel_Options_Game,12,27,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE], fnt_Metal);
       CheckBox_Options_Autosave.OnClick := Change;
+
+      CheckBox_Options_AutosaveAtGameEnd := TKMCheckBox.Create(Panel_Options_Game,12,47,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END], fnt_Metal);
+      CheckBox_Options_AutosaveAtGameEnd.OnClick := Change;
 
     // SFX section
     Panel_Options_Sound:=TKMPanel.Create(Panel_Options,60,300,280,180);
@@ -278,6 +282,7 @@ end;
 procedure TKMMenuOptions.Refresh;
 begin
   CheckBox_Options_Autosave.Checked        := fGameSettings.Autosave;
+  CheckBox_Options_AutosaveAtGameEnd.Checked := fGameSettings.AutosaveAtGameEnd;
   CheckBox_Options_ReplayAutopause.Checked := fGameSettings.ReplayAutopause;
   TrackBar_Options_Brightness.Position     := fGameSettings.Brightness;
   CheckBox_Options_VSync.Checked           := fMainSettings.VSync;
@@ -309,6 +314,7 @@ begin
   ShuffleToggled := (fGameSettings.ShuffleOn <> CheckBox_Options_ShuffleOn.Checked);
 
   fGameSettings.Autosave        := CheckBox_Options_Autosave.Checked;
+  fGameSettings.AutosaveAtGameEnd := CheckBox_Options_AutosaveAtGameEnd.Checked;
   fGameSettings.ReplayAutopause := CheckBox_Options_ReplayAutopause.Checked;
   fGameSettings.Brightness      := TrackBar_Options_Brightness.Position;
   fMainSettings.VSync           := CheckBox_Options_VSync.Checked;

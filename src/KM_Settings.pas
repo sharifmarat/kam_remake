@@ -84,6 +84,7 @@ type
 
     //Game
     fAutosave: Boolean;
+    fAutosaveAtGameEnd: Boolean;
     fAutosaveFrequency: Integer;
     fAutosaveCount: Integer;
     fReplayAutopause: Boolean;
@@ -167,6 +168,7 @@ type
 
     //Game
     procedure SetAutosave(aValue: Boolean);
+    procedure SetAutosaveAtGameEnd(aValue: Boolean);
     procedure SetAutosaveFrequency(aValue: Integer);
     procedure SetAutosaveCount(aValue: Integer);
     procedure SetLocale(const aLocale: AnsiString);
@@ -244,6 +246,8 @@ type
 
     //Game
     property Autosave: Boolean read fAutosave write SetAutosave;
+    property AutosaveAtGameEnd: Boolean read fAutosaveAtGameEnd write SetAutosaveAtGameEnd;
+
     property AutosaveFrequency: Integer read fAutosaveFrequency write SetAutosaveFrequency;
     property AutosaveCount: Integer read fAutosaveCount write SetAutosaveCount;
     property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
@@ -512,6 +516,7 @@ begin
     fLoadFullFonts      := F.ReadBool     ('GFX', 'LoadFullFonts',      False);
 
     fAutosave           := F.ReadBool     ('Game', 'Autosave',          True); //Should be ON by default
+    fAutosaveAtGameEnd  := F.ReadBool     ('Game', 'AutosaveOnGameEnd', False); //Should be OFF by default
     SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY));
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
     fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
@@ -632,6 +637,7 @@ begin
     F.WriteBool   ('GFX','LoadFullFonts', fLoadFullFonts);
 
     F.WriteBool   ('Game','Autosave',           fAutosave);
+    F.WriteBool   ('Game','AutosaveOnGameEnd',  fAutosaveAtGameEnd);
     F.WriteInteger('Game','AutosaveFrequency',  fAutosaveFrequency);
     F.WriteInteger('Game','AutosaveCount',      fAutosaveCount);
     F.WriteBool   ('Game','ReplayAutopause',    fReplayAutopause);
@@ -879,6 +885,13 @@ end;
 procedure TKMGameSettings.SetAutosave(aValue: Boolean);
 begin
   fAutosave := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetAutosaveAtGameEnd(aValue: Boolean);
+begin
+  fAutosaveAtGameEnd := aValue;
   Changed;
 end;
 

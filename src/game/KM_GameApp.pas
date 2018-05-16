@@ -469,6 +469,9 @@ begin
 
   gGame.ReadyToStop := True;
 
+  if (gGame.GameResult in [gr_Win, gr_Defeat]) and fGameSettings.AutosaveAtGameEnd then
+    gGame.Save(gGame.GameName + '_' + FormatDateTime('yyyy-mm-dd_hh-nn', Now), Now);
+
   if Assigned(fOnGameEnd) then
     fOnGameEnd(gGame.GameMode);
 end;
