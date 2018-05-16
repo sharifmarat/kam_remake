@@ -174,6 +174,7 @@ type
     Focusable: Boolean; //Can this control have focus (e.g. TKMEdit sets this true)
     AutoFocusable: Boolean; //Can we focus on this element automatically (f.e. if set to False we will able to Focus only by manual mouse click)
     HandleMouseWheelByDefault: Boolean; //Do control handle MW by default? Usually it is
+    CanChangeEnable: Boolean; //Enable state could be changed
 
     State: TKMControlStateSet; //Each control has it localy to avoid quering Collection on each Render
     Scale: Single; //Child controls position is scaled
@@ -282,9 +283,12 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer); overload;
     destructor Destroy; override;
     function AddChild(aChild: TKMControl): Integer;
+    procedure SetCanChangeEnable(aEnable: Boolean; aAlsoSetEnable: Boolean = True);
+
     function FindFocusableControl(aFindNext: Boolean): TKMControl;
     procedure FocusNext;
     procedure ResetFocusedControlIndex;
+
     procedure Paint; override;
 
     procedure UpdateState(aTickCount: Cardinal); override;
@@ -1676,6 +1680,7 @@ begin
   inherited Create;
   Scale         := 1;
   Hitable       := True; //All controls can be clicked by default
+  CanChangeEnable := True; //All controls can change enable status by default
   fLeft         := aLeft;
   fTop          := aTop;
   fWidth        := aWidth;
@@ -2116,6 +2121,8 @@ procedure TKMControl.SetEnabled(aValue: Boolean);
 var
   OldEnabled: Boolean;
 begin
+  if not CanChangeEnable then Exit; //Change enability is blocked
+
   OldEnabled := fEnabled;
   fEnabled := aValue;
 
@@ -2399,6 +2406,33 @@ begin
   Childs[ChildCount] := aChild;
   Result := ChildCount;
   Inc(ChildCount);
+end;
+
+
+procedure TKMPanel.SetCanChangeEnable(aEnable: Boolean; aAlsoSetEnable: Boolean = True);
+var
+  I: Integer;
+begin
+  if aEnable and aAlsoSetEnable then
+    Enabled := aEnable;
+  for I := 0 to ChildCount - 1 do
+  begin
+    if Childs[I] is TKMPanel then
+      TKMPanel(Childs[I]).SetCanChangeEnable(aEnable)
+    else begin
+      //Unblock first to be able to change Enable status
+      if aEnable then
+        Childs[I].CanChangeEnable := aEnable;
+
+      if aAlsoSetEnable then
+        Childs[I].Enabled := aEnable;
+
+      if not aEnable then
+        Childs[I].CanChangeEnable := aEnable;
+    end;
+  end;
+  if not aEnable and aAlsoSetEnable then
+    Enabled := aEnable;
 end;
 
 
@@ -4738,8 +4772,8 @@ end;
 procedure TKMScrollBar.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fScrollDec.Enabled := aValue;
-  fScrollInc.Enabled := aValue;
+  fScrollDec.Enabled := fEnabled;
+  fScrollInc.Enabled := fEnabled;
 end;
 
 
@@ -4977,7 +5011,7 @@ end;
 procedure TKMMemo.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fScrollBar.Enabled := aValue;
+  fScrollBar.Enabled := fEnabled;
 end;
 
 
@@ -5646,7 +5680,7 @@ end;
 procedure TKMListBox.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fScrollBar.Enabled := aValue;
+  fScrollBar.Enabled := fEnabled;
 end;
 
 
@@ -6316,8 +6350,8 @@ end;
 procedure TKMColumnBox.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fHeader.Enabled := aValue;
-  fScrollBar.Enabled := aValue;
+  fHeader.Enabled := fEnabled;
+  fScrollBar.Enabled := fEnabled;
 end;
 
 
@@ -7135,7 +7169,7 @@ end;
 procedure TKMDropCommon.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fButton.Enabled := aValue;
+  fButton.Enabled := fEnabled;
 end;
 
 
@@ -7271,8 +7305,8 @@ end;
 procedure TKMDropList.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fList.Enabled := aValue;
-  if not aValue and fList.Visible then
+  fList.Enabled := fEnabled;
+  if not fEnabled and fList.Visible then
     ListHide(nil);
 end;
 
@@ -7489,7 +7523,7 @@ end;
 procedure TKMDropColumns.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fList.Enabled := aValue;
+  fList.Enabled := fEnabled;
 end;
 
 
@@ -7620,8 +7654,8 @@ end;
 procedure TKMDropColors.SetEnabled(aValue: Boolean);
 begin
   inherited;
-  fButton.Enabled := aValue;
-  fSwatch.Enabled := aValue;
+  fButton.Enabled := fEnabled;
+  fSwatch.Enabled := fEnabled;
 end;
 
 

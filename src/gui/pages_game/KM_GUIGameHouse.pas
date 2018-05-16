@@ -540,6 +540,8 @@ begin
     if Panel_House.Childs[I] is TKMPanel then
       Panel_House.Childs[I].Hide;
 
+  Panel_House.SetCanChangeEnable(gMySpectator.IsSelectedMyObj);
+
   if aHouse = nil then
   begin
     Hide;
