@@ -443,10 +443,12 @@ end;
 
 { TKMGUIGameSpectator }
 constructor TKMGUIGameSpectator.Create(aParent: TKMPanel);
+const
+  DROPBOX_W = 270;
 begin
   inherited Create;
 
-  FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - 310, 0, 310, 30);
+  FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - DROPBOX_W - 10, 0, DROPBOX_W + 10, 30);
   FDropBoxPanel.Anchors := [anTop, anRight];
   //FDropBoxPanel.Focusable := false;
   FDropBoxPanel.Show;
@@ -465,7 +467,7 @@ begin
   AddLineType(7, TKMGUIGameSpectatorItemLineArmyKilling);
   AddLineType(8, TKMGUIGameSpectatorItemLineArmyLost);
 
-  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, 300, 20, fnt_Metal, '', bsGame);
+  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fnt_Metal, '', bsGame);
   FDropBox.OnChange := ChangePage;
 
   FDropBox.Add(gResTexts[TX_WORD_NONE]);
