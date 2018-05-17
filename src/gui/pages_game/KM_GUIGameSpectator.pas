@@ -35,15 +35,15 @@ const
 
 
 type
-  TKMGUIGameSpectatorPageTypes = (
-    gsptNothing = 0,
-    gsptResources = 1,
-    gsptBuildings = 2,
-    gsptProduction = 3,
-    gsptArmy = 4,
-    gsptPopulation = 5,
-    gsptLosses = 6
-  );
+//  TKMGUIGameSpectatorPageTypes = (
+//    gsptNothing = 0,
+//    gsptResources = 1,
+//    gsptBuildings = 2,
+//    gsptProduction = 3,
+//    gsptArmy = 4,
+//    gsptPopulation = 5,
+//    gsptLosses = 6
+//  );
 
   TKMGUIGameSpectatorItem = class(TKMControl)
   private
@@ -133,6 +133,11 @@ type
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   end;
 
+  TKMGUIGameSpectatorItemLineArmyTotal = class(TKMGUIGameSpectatorItemLineArmy)
+  protected
+    function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+  end;
+
   TKMGUIGameSpectatorItemLineArmyKilling = class(TKMGUIGameSpectatorItemLineArmy)
   protected
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
@@ -163,10 +168,9 @@ type
 implementation
 
 uses
-  KM_RenderUI, KM_ResFonts, KM_Resource;
+  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts;
 
 { TKMGUIGameSpectatorItem }
-
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
 begin
   inherited Create(aParent, 0, 0, GUI_SPECTATOR_ITEM_WIDTH, GUI_SPECTATOR_ITEM_HEIGHT);
@@ -195,7 +199,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLine }
-
 constructor TKMGUIGameSpectatorItemLine.Create(aParent: TKMPanel; AHandIndex: Integer);
 var
   i: Integer;
@@ -271,7 +274,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineResources }
-
 function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TKMWareType(ATag)].GUIIcon, gRes.Wares[TKmWareType(ATag)].Title, FHandIndex);
@@ -297,7 +299,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineCustomBuildings }
-
 function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Houses[TKMHouseType(ATag)].GUIIcon, gRes.Houses[TKMHouseType(ATag)].HouseName, FHandIndex);
@@ -315,7 +316,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineBuild }
-
 function TKMGUIGameSpectatorItemLineBuild.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
@@ -348,7 +348,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineBuildings }
-
 function TKMGUIGameSpectatorItemLineBuildings.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
@@ -366,7 +365,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLinePopulation }
-
 function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
@@ -374,21 +372,23 @@ end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
 begin
-
+  Result := Integer(CITIZEN_MAX) - Integer(CITIZEN_MIN) + 1;
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTag(AIndex: Integer): Integer;
 begin
-
+  Result := Integer(CITIZEN_MIN) + AIndex;
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetValue(AHandIndex: Integer; ATag: Integer): String;
+var
+  Value: Integer;
 begin
-
+  Value := gHands[AHandIndex].Stats.GetUnitQty(TKMUnitType(ATag));
+  Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
 { TKMGUIGameSpectatorItemLineArmy }
-
 function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
@@ -412,8 +412,18 @@ begin
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
-{ TKMGUIGameSpectatorItemLineArmyKilling }
 
+{ TKMGUIGameSpectatorItemLineArmyTotal }
+function TKMGUIGameSpectatorItemLineArmyTotal.GetValue(AHandIndex: Integer; ATag: Integer): String;
+var
+  Value: Integer;
+begin
+  Value := gHands[AHandIndex].Stats.GetWarriorsTotal(TKMUnitType(ATag));
+  Result := IfThen(Value > 0, IntToStr(Value), '');
+end;
+
+
+{ TKMGUIGameSpectatorItemLineArmyKilling }
 function TKMGUIGameSpectatorItemLineArmyKilling.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
@@ -423,7 +433,6 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineArmyLost }
-
 function TKMGUIGameSpectatorItemLineArmyLost.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
@@ -433,38 +442,41 @@ begin
 end;
 
 { TKMGUIGameSpectator }
-
 constructor TKMGUIGameSpectator.Create(aParent: TKMPanel);
 begin
   inherited Create;
 
-  FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - 210, 0, 210, 30);
+  FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - 310, 0, 310, 30);
   FDropBoxPanel.Anchors := [anTop, anRight];
   //FDropBoxPanel.Focusable := false;
   FDropBoxPanel.Show;
 
   FLastIndex := 0;
 
-  SetLength(FLines, 7);
+  SetLength(FLines, 9);
 
   AddLineType(0, nil);
   AddLineType(1, TKMGUIGameSpectatorItemLineResources);
   AddLineType(2, TKMGUIGameSpectatorItemLineBuildings);
   AddLineType(3, TKMGUIGameSpectatorItemLineBuild);
-  AddLineType(4, TKMGUIGameSpectatorItemLineArmy);
-  AddLineType(5, TKMGUIGameSpectatorItemLineArmyKilling);
-  AddLineType(6, TKMGUIGameSpectatorItemLineArmyLost);
+  AddLineType(4, TKMGUIGameSpectatorItemLinePopulation);
+  AddLineType(5, TKMGUIGameSpectatorItemLineArmy);
+  AddLineType(6, TKMGUIGameSpectatorItemLineArmyTotal);
+  AddLineType(7, TKMGUIGameSpectatorItemLineArmyKilling);
+  AddLineType(8, TKMGUIGameSpectatorItemLineArmyLost);
 
-  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, 200, 20, fnt_Metal, '', bsGame);
+  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, 300, 20, fnt_Metal, '', bsGame);
   FDropBox.OnChange := ChangePage;
 
-  FDropBox.Add('Ничего');
-  FDropBox.Add('Ресурсы');
-  FDropBox.Add('Здания');
-  FDropBox.Add('Строительство');
-  FDropBox.Add('Армия');
-  FDropBox.Add('Убийства');
-  FDropBox.Add('Потери');
+  FDropBox.Add(gResTexts[TX_WORD_NONE]);
+  FDropBox.Add(gResTexts[TX_WORD_RESOURCES]);
+  FDropBox.Add(gResTexts[TX_WORD_HOUSES]);
+  FDropBox.Add(gResTexts[TX_WORD_CONSTRUCTING]);
+  FDropBox.Add(gResTexts[TX_WORD_CITIZENS]);
+  FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_INSTANTANEOUS]);
+  FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_TOTAL_EQUIPPED]);
+  FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_DEFEATED]);
+  FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_LOST]);
 
   FDropBox.ItemIndex := 0;
 end;
