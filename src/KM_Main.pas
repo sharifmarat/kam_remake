@@ -50,7 +50,7 @@ type
     procedure ApplyCursorRestriction;
     function GetScreenBounds(out Bounds: TRect): Boolean;
     function IsFormActive: Boolean;
-    function ClientRect: TRect;
+    function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
     procedure ReinitRender(aReturnToOptions: Boolean);
     procedure FlashingStart;
@@ -479,11 +479,15 @@ begin
 end;
 
 
-function TKMMain.ClientRect: TRect;
+function TKMMain.ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
 begin
   Result := fFormMain.RenderArea.ClientRect;
   Result.TopLeft := ClientToScreen(Result.TopLeft);
+  Result.TopLeft.X := Result.TopLeft.X + aPixelsCntToReduce;
+  Result.TopLeft.Y := Result.TopLeft.Y + aPixelsCntToReduce;
   Result.BottomRight := ClientToScreen(Result.BottomRight);
+  Result.BottomRight.X := Result.BottomRight.X - aPixelsCntToReduce;
+  Result.BottomRight.Y := Result.BottomRight.Y - aPixelsCntToReduce;
 end;
 
 

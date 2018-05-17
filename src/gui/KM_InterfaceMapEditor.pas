@@ -379,7 +379,7 @@ end;
 procedure TKMapEdInterface.UpdateStateIdle(aFrameTime: Cardinal);
 begin
   //Check to see if we need to scroll
-  fViewport.UpdateStateIdle(aFrameTime, False);
+  fViewport.UpdateStateIdle(aFrameTime, not fDragScrolling, False);
   fGuiTown.UpdateStateIdle;
   Update_Label_Coordinates;
 end;

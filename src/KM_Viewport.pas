@@ -46,7 +46,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
-    procedure UpdateStateIdle(aFrameTime: Cardinal; aInCinematic: Boolean);
+    procedure UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
   end;
 
 
@@ -209,7 +209,7 @@ end;
 
 //Here we must test each edge to see if we need to scroll in that direction
 //We scroll at SCROLLSPEED per 100 ms. That constant is defined in KM_Defaults
-procedure TKMViewport.UpdateStateIdle(aFrameTime: Cardinal; aInCinematic: Boolean);
+procedure TKMViewport.UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
 const
   SCROLL_ACCEL_TIME = 400; // Time in ms that scrolling will be affected by acceleration
   SCROLL_FLEX = 4;         // Number of pixels either side of the edge of the screen which will count as scrolling
@@ -261,7 +261,8 @@ begin
   CursorPoint.Y := EnsureRange(MousePos.Y, ScreenBounds.Top , ScreenBounds.Bottom);
 
   //Do not do scrolling when the form is not focused (player has switched to another application)
-  if not gMain.IsFormActive or
+  if not aAllowMouseScrolling or
+     not gMain.IsFormActive or
     (not ScrollKeyLeft  and
      not ScrollKeyUp    and
      not ScrollKeyRight and

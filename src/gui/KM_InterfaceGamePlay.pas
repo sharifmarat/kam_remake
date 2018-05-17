@@ -3877,7 +3877,7 @@ end;
 procedure TKMGamePlayInterface.UpdateStateIdle(aFrameTime: Cardinal);
 begin
   // Check to see if we need to scroll
-  fViewport.UpdateStateIdle(aFrameTime, gMySpectator.Hand.InCinematic);
+  fViewport.UpdateStateIdle(aFrameTime, not fDragScrolling, gMySpectator.Hand.InCinematic);
 end;
 
 
