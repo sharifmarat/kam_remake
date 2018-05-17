@@ -113,8 +113,7 @@ begin
   ColumnBox_Replays.OnColumnClick := Replays_Sort;
   ColumnBox_Replays.OnDoubleClick := Replays_Play;
 
-  with TKMBevel.Create(Panel_Replays, 805, 290, 199, 199) do Anchors := [anLeft];
-  MinimapView_Replay := TKMMinimapView.Create(Panel_Replays,809,294,191,191);
+  MinimapView_Replay := TKMMinimapView.Create(Panel_Replays, 809, 294, 191, 191, True);
   MinimapView_Replay.Anchors := [anLeft];
 
   Button_ReplaysBack := TKMButton.Create(Panel_Replays, 337, 700, 350, 30, gResTexts[TX_MENU_BACK], bsMenu);

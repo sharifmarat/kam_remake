@@ -541,8 +541,7 @@ begin
       Label_MapName := TKMLabel.Create(Panel_Setup, 10, 95, 250, 20, '', fnt_Metal, taLeft);
 
       Panel_SetupMinimap := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
-        TKMBevel.Create(Panel_SetupMinimap, 35, 0, 199, 199);
-        MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191);
+        MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191, True);
         MinimapView.ShowLocs := True; //In the minimap we want player locations to be shown
         MinimapView.OnLocClick := MinimapLocClick;
 

@@ -183,9 +183,7 @@ begin
       Memo_Desc.AutoWrap := True;
 
       //Minimap preview
-      B := TKMBevel.Create(Panel_Desc, 0, 330, 195, 195);
-      B.Anchors := [anLeft, anBottom];
-      MinimapView := TKMMinimapView.Create(Panel_Desc, 2, 332, 191, 191);
+      MinimapView := TKMMinimapView.Create(Panel_Desc, 2, 332, 191, 191, True);
       MinimapView.Anchors := [anLeft, anBottom];
       MinimapView.OnLocClick := MinimapLocClick;
 
