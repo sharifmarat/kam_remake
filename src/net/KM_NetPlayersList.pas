@@ -1221,9 +1221,16 @@ var
   PlayersC: TPlayersArr;
   LocsC: TLocsArr;
 begin
+  //No players means there is nothing to randomize
+  if Length(Players) = 0 then
+  begin
+    fFilled := True;
+    Exit(True);
+  end;
+
   Result := False;
   fFilled := False;
-  if (Length(Players) > Length(Locs)) or (Length(Locs) = 0) or (Length(Players) = 0) then
+  if (Length(Players) > Length(Locs)) or (Length(Locs) = 0) then
     Exit;
 
   //Generate all possible fill orders
