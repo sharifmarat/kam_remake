@@ -1242,3 +1242,11 @@ TX_AI_PLAYER_TYPE = 1220; //AI Player type
 
 TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END = 1221; //Autosave on game end
 
+TX_WORD_NONE = 1222; //None
+TX_WORD_RESOURCES = 1223; //Resources
+TX_WORD_HOUSES = 1224; //Houses
+TX_WORD_CONSTRUCTING = 1225; //Constructing
+TX_WORD_CITIZENS = 1226; //Citizens
+TX_WORD_ARMY = 1227; //Army
+
+

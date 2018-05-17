@@ -10,7 +10,8 @@ uses
   KM_UnitGroups, KM_Units_Warrior, KM_Saves, KM_MessageStack, KM_ResHouses, KM_Alerts, KM_Networking,
   KM_GUIGameResultsSP,
   KM_GUIGameResultsMP,
-  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings;
+  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings,
+  KM_GUIGameSpectator;
 
 
 const
@@ -38,6 +39,7 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
+    fGuiMenuSpectator: TKMGUIGameSpectator;
     fGuiGameResultsSP: TKMGameResultsSP;
     fGuiGameResultsMP: TKMGameResultsMP;
 
@@ -821,6 +823,8 @@ begin
   fGuiMenuSettings.Free;
   fGuiGameResultsSP.Free;
   fGuiGameResultsMP.Free;
+  if Assigned(fGuiMenuSpectator) then
+    fGuiMenuSpectator.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -2216,7 +2220,10 @@ begin
       // Use team info from ally states:
       // consider team as a group of hands where all members are allied to each other and not allied to any other hands.
       gmReplayMulti,
-      gmMultiSpectate:  Replay_Multi_SetPlayersDropbox;
+      gmMultiSpectate:  begin
+                          Replay_Multi_SetPlayersDropbox;
+                          fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer);
+                        end;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));
     end;

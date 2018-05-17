@@ -74,6 +74,7 @@ uses
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
   KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
   KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
+  KM_GUIGameSpectator in 'src\gui\pages_game\KM_GUIGameSpectator.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',
