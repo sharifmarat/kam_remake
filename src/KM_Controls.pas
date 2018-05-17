@@ -1531,6 +1531,7 @@ type
   //MinimapView itself is just a painter
   TKMMinimapView = class(TKMControl)
   private
+    fBevel: TKMBevel;
     fMinimap: TKMMinimap;
     fView: TKMViewport;
     fPaintWidth: Integer;
@@ -1542,10 +1543,12 @@ type
     fShowLocs: Boolean;
     fLocRad: Byte;
     fClickableOnce: Boolean;
+  protected
+    procedure SetAnchors(aValue: TKMAnchorsSet); override;
   public
     OnLocClick: TIntegerEvent;
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aWithBevel: Boolean = False);
 
     function LocalToMapCoords(X,Y: Integer): TKMPoint;
     function MapCoordsToLocal(X,Y: Single; const Inset: ShortInt = 0): TKMPoint;
@@ -7702,8 +7705,13 @@ end;
 
 
 { TKMMinimap }
-constructor TKMMinimapView.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMMinimapView.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aWithBevel: Boolean = False);
 begin
+  //Create Bevel first
+  if aWithBevel then
+    fBevel := TKMBevel.Create(aParent, aLeft - 4, aTop - 4, aWidth + 8, aHeight + 8);
+
+  //Then Minimap control itself
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
 
   //Radius of circle around player location
@@ -7750,6 +7758,15 @@ begin
   Assert(Inset >= -1, 'Min allowed inset is -1, to be within TKMPoint range of 0..n');
   Result.X := AbsLeft + fLeftOffset + EnsureRange(Round(X * fPaintWidth /  fMinimap.MapX), Inset, fPaintWidth  - Inset);
   Result.Y := AbsTop  + fTopOffset  + EnsureRange(Round(Y * fPaintHeight / fMinimap.MapY), Inset, fPaintHeight - Inset);
+end;
+
+
+procedure TKMMinimapView.SetAnchors(aValue: TKMAnchorsSet);
+begin
+  inherited;
+
+  if fBevel <> nil then
+    fBevel.SetAnchors(aValue);
 end;
 
 
