@@ -12,7 +12,7 @@ type
     fScripting: TKMScripting;
     fUnit: TKMUnit;
     fHouse: TKMHouse;
-    FUnitActionGoInOut: TUnitActionGoInOut;
+    FUnitActionGoInOut: TKMUnitActionGoInOut;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -43,8 +43,8 @@ begin
   gMySpectator := TKMSpectator.Create(0);
 
   fUnit := TKMUnit.Create(0, ut_Serf, KMPoint(8, 10), 0);
-  fHouse := TKMHouse.Create(0, ht_Store, 9, 9, 0, hbs_Done);
-  FUnitActionGoInOut := TUnitActionGoInOut.Create(fUnit, ua_Walk, gd_GoInside, fHouse);
+  fHouse := TKMHouse.Create(0, htStore, 9, 9, 0, hbs_Done);
+  FUnitActionGoInOut := TKMUnitActionGoInOut.Create(fUnit, ua_Walk, gd_GoInside, fHouse);
 end;
 
 

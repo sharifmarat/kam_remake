@@ -11,7 +11,7 @@ uses
 type
   TKMMenuLoad = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fSaves: TKMSavesCollection;
     fMinimap: TKMMinimap;
@@ -49,7 +49,7 @@ type
       Button_DeleteYes, Button_DeleteNo: TKMButton;
 
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -63,7 +63,7 @@ uses
 
 
 { TKMGUIMenuLoad }
-constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 
@@ -99,8 +99,7 @@ begin
     Button_LoadBack.Anchors := [anLeft,anBottom];
     Button_LoadBack.OnClick := BackClick;
 
-    with TKMBevel.Create(Panel_Load, 805, 226, 199, 199) do Anchors := [anLeft];
-    MinimapView_Load := TKMMinimapView.Create(Panel_Load, 809, 230, 191, 191);
+    MinimapView_Load := TKMMinimapView.Create(Panel_Load, 809, 230, 191, 191, True);
     MinimapView_Load.Anchors := [anLeft];
 
     //Delete PopUp

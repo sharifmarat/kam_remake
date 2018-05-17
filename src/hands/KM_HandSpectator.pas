@@ -51,7 +51,8 @@ implementation
 uses
   KM_Game, KM_GameCursor, KM_HandsCollection,
   KM_Units, KM_UnitGroups, KM_Units_Warrior, KM_Houses,
-  KM_Utils, KM_CommonUtils;
+  KM_Utils, KM_CommonUtils,
+  KM_GameTypes;
 
 
 { TKMSpectator }
@@ -190,17 +191,20 @@ procedure TKMSpectator.UpdateSelect;
 var
   NewSelected: TObject;
 
-  procedure CheckNewSelected;
+  procedure CheckNewSelected(aAllowSelectAllies: Boolean = False);
   var
     OwnerIndex: TKMHandIndex;
   begin
     OwnerIndex := GetGameObjectOwnerIndex(NewSelected);
     if OwnerIndex <> -1 then
     begin
-      if (OwnerIndex <> fHandIndex) then  // check if we selected our unit/ally's or enemy's
+      if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
       begin
-        if (Hand.Alliances[OwnerIndex] = at_Ally)
-          or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
+        if (ALLOW_SELECT_ALLY_UNITS or
+            ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
+              and aAllowSelectAllies)
+          and (Hand.Alliances[OwnerIndex] = at_Ally))
+            or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
           fIsSelectedMyObj := False
         else
           NewSelected := nil;
@@ -242,7 +246,7 @@ begin
 
     //In-game player can select only own and ally Units
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected;
+      CheckNewSelected(True);
 
     //Don't allow the player to select destroyed houses
     if (NewSelected is TKMHouse) and TKMHouse(NewSelected).IsDestroyed then

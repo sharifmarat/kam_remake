@@ -7,7 +7,7 @@ uses
   KM_InterfaceGame, KM_Houses, KM_HouseMarket, KM_ResWares;
 
 const LINE_HEIGHT = 25; //Each new Line is placed ## pixels after previous
-const WORKSHOP_WARE: array [1..2] of TWareType = (wt_Wood, wt_Leather);
+const WORKSHOP_WARE: array [1..2] of TKMWareType = (wt_Wood, wt_Leather);
 
 type
   TKMGUIGameHouse = class
@@ -15,6 +15,8 @@ type
     fLastSchoolUnit: Byte;  //Last unit that was selected in School, global for all schools player owns
     fLastBarracksUnit: Byte; //Last unit that was selected in Barracks, global for all barracks player owns
     fLastTHUnit: Byte; //Last unit that was selected in Townhall, global for all townhalls player owns
+
+    fSetViewportEvent: TPointFEvent;
 
     procedure Create_HouseTownhall;
     procedure Create_HouseBarracks;
@@ -31,6 +33,8 @@ type
 
     procedure House_ClosedForWorkerToggle(Sender: TObject);
     procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
+
+    procedure HouseLogo_Click(Sender: TObject);
 
     procedure House_BarracksAcceptFlag(Sender: TObject);
     procedure House_BarracksUnitChange(Sender: TObject; Shift: TShiftState);
@@ -120,7 +124,7 @@ type
     AskDemolish: Boolean;
     OnHouseDemolish: TEvent;
 
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 
     procedure Show(aHouse: TKMHouse); overload;
     procedure Show(aHouse: TKMHouse; aAskDemolish: Boolean); overload;
@@ -137,14 +141,19 @@ uses
   KM_Game, KM_GameInputProcess, KM_Hand, 
   KM_HouseBarracks, KM_HouseSchool, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_HandsCollection, KM_RenderUI, KM_CommonUtils,
-  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils;
+  KM_Resource, KM_ResFonts, KM_ResHouses, KM_ResTexts, KM_ResUnits, KM_Utils, KM_Points;
+
+const
+  MAX_UNITS_TO_EQUIP = 100;
 
 
-constructor TKMGUIGameHouse.Create(aParent: TKMPanel);
+constructor TKMGUIGameHouse.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 var
   I: Integer;
 begin
   inherited Create;
+
+  fSetViewportEvent := aSetViewportEvent;
 
   Panel_House := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
     //Thats common things
@@ -169,8 +178,11 @@ begin
 
     Image_House_Logo := TKMImage.Create(Panel_House,90,41,32,32,338);
     Image_House_Logo.ImageCenter;
+    Image_House_Logo.HighlightOnMouseOver := True;
+    Image_House_Logo.OnClick := HouseLogo_Click;
+    Image_House_Logo.Hint := gResTexts[TX_HOUSE_LOGO_HINT];
 
-    HealthBar_House := TKMPercentBar.Create(Panel_House,120,57,55,15);
+    HealthBar_House := TKMPercentBar.Create(Panel_House,120,50,55,15);
     Label_House_UnderConstruction := TKMLabel.Create(Panel_House,0,110,TB_WIDTH,0,gResTexts[TX_HOUSE_UNDER_CONSTRUCTION],fnt_Grey,taCenter);
 
     Image_HouseConstructionWood  := TKMImage.Create(Panel_House,40,170,40,40,655);
@@ -380,9 +392,9 @@ begin
     ResRow_TH_MaxGold := TKMWareOrderRow.Create(Panel_HouseTownhall, 0, dy, TB_WIDTH, TH_MAX_GOLDMAX_VALUE);
     ResRow_TH_MaxGold.WareRow.RX := rxGui;
     ResRow_TH_MaxGold.WareRow.TexID := gRes.Wares[wt_Gold].GUIIcon;
-    ResRow_TH_MaxGold.WareRow.Caption := 'Max Gold'; //Todo translate
+    ResRow_TH_MaxGold.WareRow.Caption := gResTexts[TX_HOUSES_TOWNHALL_MAX_GOLD];
     ResRow_TH_MaxGold.WareRow.WareCount := 1;
-    ResRow_TH_MaxGold.Hint := 'Maximum amount of gold to deliver into townhall'; //Todo translate
+    ResRow_TH_MaxGold.Hint := gResTexts[TX_HOUSES_TOWNHALL_MAX_GOLD_HINT];
     ResRow_TH_MaxGold.OnChange := House_TownHall_Change;
     Inc(dy, 29);
 
@@ -486,7 +498,7 @@ begin
     Radio_Woodcutter.ItemIndex := 0;
     Radio_Woodcutter.Add(gResTexts[TX_HOUSES_WOODCUTTER_PLANT_CHOP]);
     Radio_Woodcutter.Add(gResTexts[TX_HOUSES_WOODCUTTER_CHOP_ONLY]);
-    Radio_Woodcutter.Add('Plant only'); //Todo translate
+    Radio_Woodcutter.Add(gResTexts[TX_HOUSES_WOODCUTTER_PLANT_ONLY]);
     Radio_Woodcutter.OnChange := House_WoodcutterChange;
 end;
 
@@ -518,6 +530,8 @@ end;
 
 
 procedure TKMGUIGameHouse.Show(aHouse: TKMHouse; aAskDemolish: Boolean);
+const
+  DoNotDisableControls: array[0..1] of TKMControlClass = (TKMLabel, TKMImage);
 var
   I, RowRes, Base, Line, HLabelWidth: Integer;
 begin
@@ -527,6 +541,10 @@ begin
   for I := 0 to Panel_House.ChildCount - 1 do
     if Panel_House.Childs[I] is TKMPanel then
       Panel_House.Childs[I].Hide;
+
+
+
+  Panel_House.SetCanChangeEnable(gMySpectator.IsSelectedMyObj, DoNotDisableControls);
 
   if aHouse = nil then
   begin
@@ -548,6 +566,7 @@ begin
   Label_House.Width := TB_WIDTH - Label_House.Left;
 
   Image_PlayerFlag.FlagColor := gHands[aHouse.Owner].FlagColor;
+  Image_PlayerFlag.Hint      := Format(gResTexts[TX_PLAYER_FLAG_HINT], [gHands[aHouse.Owner].OwnerName]);
   Image_House_Logo.TexID     := gRes.Houses[aHouse.HouseType].GUIIcon;
   Image_House_Worker.TexID   := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
   Image_House_Worker.Hint    := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName;
@@ -555,10 +574,10 @@ begin
 
   Button_House_Worker.TexID  := gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIIcon;
   HandleHouseClosedForWorker(aHouse);
-  Button_House_Worker.Hint := Format('Open / Close house for %s', [gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName]); //Todo translate
+  Button_House_Worker.Hint := Format(gResTexts[TX_HOUSES_CLOSED_FOR_WORKER_HINT], [gRes.Units[gRes.Houses[aHouse.HouseType].OwnerType].GUIName]);
   Button_House_Worker.FlagColor := gHands[aHouse.Owner].FlagColor;
 
-  HealthBar_House.Caption   := inttostr(round(aHouse.GetHealth))+'/'+inttostr(gRes.Houses[aHouse.HouseType].MaxHealth);
+  HealthBar_House.Caption   := IntToStr(round(aHouse.GetHealth)) + '/' + IntToStr(gRes.Houses[aHouse.HouseType].MaxHealth);
   HealthBar_House.Position  := aHouse.GetHealth / gRes.Houses[aHouse.HouseType].MaxHealth;
 
   if AskDemolish then
@@ -625,19 +644,19 @@ begin
   Panel_House.Show;
 
   case aHouse.HouseType of
-    ht_Marketplace:
+    htMarketplace:
         begin
           House_MarketFill(TKMHouseMarket(aHouse));
           Panel_HouseMarket.Show;
         end;
 
-    ht_Store:
+    htStore:
         begin
           House_StoreFill;
           Panel_HouseStore.Show;
         end;
 
-    ht_School:
+    htSchool:
         begin
           ResRow_School_Resource.WareCount := aHouse.CheckResIn(wt_Gold) - Byte(TKMHouseSchool(aHouse).HideOneGold);
           Button_School_UnitWIP.FlagColor := gHands[aHouse.Owner].FlagColor;
@@ -650,13 +669,13 @@ begin
           Panel_House_School.Show;
         end;
 
-    ht_Barracks:
+    htBarracks:
         begin
           House_BarracksUnitChange(nil, []);
           Panel_HouseBarracks.Show;
         end;
 
-    ht_Woodcutters:
+    htWoodcutters:
         begin
           House_WoodcutterChange(nil);
           Panel_HouseWoodcutter.Show;
@@ -676,8 +695,8 @@ begin
           ResRow_Common_Resource[1].Show;
           ResRow_Common_Resource[1].Top := 2 + LINE_HEIGHT;
         end;
-    ht_ArmorWorkshop: ShowArmorWorkshop(aHouse);
-    ht_TownHall:      ShowTownHall(aHouse);
+    htArmorWorkshop: ShowArmorWorkshop(aHouse);
+    htTownHall:      ShowTownHall(aHouse);
     else
         begin
           //First thing - hide everything
@@ -765,7 +784,7 @@ end;
 
 
 procedure TKMGUIGameHouse.ShowCommonOrders(aHouse: TKMHouse; Base: Integer;var Line, RowRes: Integer);
-var I: Integer; Res: TWareType;
+var I: Integer; Res: TKMWareType;
 begin
   //Show Orders
   if gRes.Houses[aHouse.HouseType].DoesOrders then
@@ -918,7 +937,7 @@ end;
 
 procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
 
-  procedure SetDeliveryMode(aMode: TDeliveryMode);
+  procedure SetDeliveryMode(aMode: TKMDeliveryMode);
   begin
     case aMode of
       dm_Delivery:  begin
@@ -937,7 +956,10 @@ procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShif
   end;
 
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) then Exit;
+  if (gMySpectator.Selected = nil)
+    or not (gMySpectator.Selected is TKMHouse)
+    or not gMySpectator.IsSelectedMyObj then
+    Exit;
 
   case Button_HouseDeliveryMode.TexID of
     37: // dm_Delivery
@@ -963,12 +985,12 @@ procedure TKMGUIGameHouse.House_ClosedForWorkerToggle(Sender: TObject);
 var
   House: TKMHouse;
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) 
+  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse)
     or (gMySpectator.Selected is TKMHouseBarracks) then Exit;
 
   House := TKMHouse(gMySpectator.Selected);
   
-  gGame.GameInputProcess.CmdHouse(gic_HouseClosedForWorkerToggle, House);
+  gGame.GameInputProcess.CmdHouse(gic_HouseClosedForWorkerTgl, House);
 
   HandleHouseClosedForWorker(House);
 end;
@@ -983,6 +1005,24 @@ begin
   end else begin
     Button_House_Worker.ShowImageEnabled := aHouse.HasOwner;
     Image_House_Worker_Closed.Hide;
+  end;
+end;
+
+
+procedure TKMGUIGameHouse.HouseLogo_Click(Sender: TObject);
+var
+  H: TKMHouse;
+begin
+  if not (gMySpectator.Selected is TKMHouse) then Exit;
+
+  H := TKMHouse(gMySpectator.Selected);
+  if not H.IsDestroyed then
+  begin
+    if Assigned(fSetViewportEvent) then
+    begin
+      gMySpectator.Highlight := H;
+      fSetViewportEvent(KMPointF(H.Entrance));
+    end;
   end;
 end;
 
@@ -1068,7 +1108,7 @@ begin
     //Set highlights
     Button_Barracks[I].Down := False;
     for K := 1 to 4 do
-      if BarracksResType[I] = TroopCost[Barracks_Order[fLastBarracksUnit], K] then
+      if BarracksResType[I] = TROOP_COST[Barracks_Order[fLastBarracksUnit], K] then
         Button_Barracks[I].Down := True;
 
     Image_Barracks_Accept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
@@ -1087,7 +1127,7 @@ begin
   if (Sender=Button_Barracks_Right)and(fLastBarracksUnit < High(Barracks_Order)) then inc(fLastBarracksUnit);
 
   if Sender = Button_Barracks_Train then //Equip unit
-    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], GetMultiplicator(Shift));
+    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
 
   Button_Barracks_Train.Enabled := not gGame.IsPeaceTime and Barracks.CanEquip(Barracks_Order[fLastBarracksUnit]);
   Button_Barracks_Left.Enabled := fLastBarracksUnit > 0;
@@ -1151,7 +1191,7 @@ begin
     Inc(fLastTHUnit);
 
   if Sender = Button_TH_Train then //Equip unit
-    gGame.GameInputProcess.CmdHouse(gic_HouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], GetMultiplicator(Shift));
+    gGame.GameInputProcess.CmdHouse(gic_HouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
 
   Button_TH_Train.Enabled := not gGame.IsPeaceTime and TownHall.CanEquip(TownHall_Order[fLastTHUnit]);
   Button_TH_Left.Enabled := fLastTHUnit > 0;
@@ -1175,7 +1215,7 @@ begin
   if fLastTHUnit < High(TownHall_Order) then
     Image_TH_Right.TexID := gRes.Units[TownHall_Order[fLastTHUnit+1]].GUIScroll;
 
-  ResRow_TH_Cost.Count := TH_TroopCost[fLastTHUnit];
+  ResRow_TH_Cost.Count := TH_TROOP_COST[fLastTHUnit];
 end;
 
 
@@ -1309,7 +1349,7 @@ begin
   if Sender <> Button_BarracksRecruit then
     gGame.GameInputProcess.CmdHouse(gic_HouseBarracksAcceptFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag])
   else
-    gGame.GameInputProcess.CmdHouse(gic_HouseBarracksAcceptRecruitsToggle, TKMHouse(gMySpectator.Selected));
+    gGame.GameInputProcess.CmdHouse(gic_HBarracksAcceptRecruitsTgl, TKMHouse(gMySpectator.Selected));
 end;
 
 
@@ -1325,12 +1365,12 @@ end;
 
 procedure TKMGUIGameHouse.House_MarketFill(aMarket: TKMHouseMarket);
 var
-  R: TWareType;
+  R: TKMWareType;
   I, Tmp: Integer;
 begin
   for I := 0 to STORE_RES_COUNT - 1 do
   begin
-    R := TWareType(Button_Market[I].Tag);
+    R := TKMWareType(Button_Market[I].Tag);
     if aMarket.AllowedToTrade(R) then
     begin
       Button_Market[I].TexID := gRes.Wares[R].GUIIcon;
@@ -1410,9 +1450,9 @@ begin
   M := TKMHouseMarket(gMySpectator.Selected);
 
   if Shift = [ssLeft] then
-    gGame.GameInputProcess.CmdHouse(gic_HouseMarketFrom, M, TWareType(TKMButtonFlat(Sender).Tag));
+    gGame.GameInputProcess.CmdHouse(gic_HouseMarketFrom, M, TKMWareType(TKMButtonFlat(Sender).Tag));
   if Shift = [ssRight] then
-    gGame.GameInputProcess.CmdHouse(gic_HouseMarketTo, M, TWareType(TKMButtonFlat(Sender).Tag));
+    gGame.GameInputProcess.CmdHouse(gic_HouseMarketTo, M, TKMWareType(TKMButtonFlat(Sender).Tag));
 
   House_MarketFill(M); //Update costs and order count
 end;

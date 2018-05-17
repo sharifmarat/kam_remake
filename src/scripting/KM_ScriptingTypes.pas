@@ -3,6 +3,46 @@ unit KM_ScriptingTypes;
 interface
 
 type
+  TKMScriptEventType = (
+    evtBeacon,
+    evtFieldBuilt,
+    evtHouseAfterDestroyed,
+    evtHouseBuilt,
+    evtHousePlanDigged,
+    evtHousePlanPlaced,
+    evtHousePlanRemoved,
+    evtHouseDamaged,
+    evtHouseDestroyed,
+    evtGroupHungry,
+    evtGroupOrderAttackHouse,
+    evtGroupOrderAttackUnit,
+    evtGroupOrderLink,
+    evtGroupOrderSplit,
+    evtMarketTrade,
+    evtMissionStart,
+    evtPlanRoadDigged,
+    evtPlanRoadPlaced,
+    evtPlanRoadRemoved,
+    evtPlanFieldPlaced,
+    evtPlanFieldRemoved,
+    evtPlanWinefieldDigged,
+    evtPlanWinefieldPlaced,
+    evtPlanWinefieldRemoved,
+    evtPlayerDefeated,
+    evtPlayerVictory,
+    evtRoadBuilt,
+    evtTick,
+    evtUnitAfterDied,
+    evtUnitDied,
+    evtUnitTrained,
+    evtUnitWounded,
+    evtUnitAttacked,
+    evtWareProduced,
+    evtWarriorEquipped,
+    evtWarriorWalked,
+    evtWinefieldBuilt
+  );
+
 
   TKMScriptFileInfo = record
     FullFilePath: UnicodeString;

@@ -2,7 +2,7 @@ unit KM_CommonClasses;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils, KM_Points;
+  Classes, SysUtils, KM_Points, KM_CommonTypes;
 
 
 type
@@ -39,6 +39,8 @@ type
     function Write(const Value:TKMPoint      ): Longint; reintroduce; overload;
     function Write(const Value:TKMPointW     ): Longint; reintroduce; overload;
     function Write(const Value:TKMPointF     ): Longint; reintroduce; overload;
+    function Write(const Value:TKMRangeInt): Longint; reintroduce; overload;
+    function Write(const Value:TKMRangeSingle): Longint; reintroduce; overload;
     function Write(const Value:TKMRect       ): Longint; reintroduce; overload;
     function Write(const Value:Single        ): Longint; reintroduce; overload;
     function Write(const Value:Integer       ): Longint; reintroduce; overload;
@@ -56,6 +58,8 @@ type
     function Read(out Value:TKMPoint         ): Longint; reintroduce; overload;
     function Read(out Value:TKMPointW        ): Longint; reintroduce; overload;
     function Read(out Value:TKMPointF        ): Longint; reintroduce; overload;
+    function Read(out Value:TKMRangeInt ): Longint; reintroduce; overload;
+    function Read(out Value:TKMRangeSingle): Longint; reintroduce; overload;
     function Read(out Value:TKMRect          ): Longint; reintroduce; overload;
     function Read(out Value:Single           ): Longint; reintroduce; overload;
     function Read(out Value:Integer          ): Longint; reintroduce; overload;
@@ -100,12 +104,15 @@ type
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
-    procedure Add(aLoc: TKMPoint);
-    function  Remove(aLoc: TKMPoint): Integer; virtual;
-    procedure Delete(aIndex: Integer);
-    procedure Insert(ID: Integer; aLoc: TKMPoint);
+    procedure Add(const aLoc: TKMPoint);
+    procedure AddList(aList: TKMPointList);
+    procedure AddUnique(const aLoc: TKMPoint);
+    procedure AddListUnique(aList: TKMPointList);
+    function  Remove(const aLoc: TKMPoint): Integer; virtual;
+    procedure Delete(aIndex: Integer); virtual;
+    procedure Insert(ID: Integer; const aLoc: TKMPoint);
     function  GetRandom(out Point: TKMPoint): Boolean;
-    function  GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
+    function  GetClosest(const aLoc: TKMPoint; out Point: TKMPoint): Boolean;
     function Contains(const aLoc: TKMPoint): Boolean;
     function IndexOf(const aLoc: TKMPoint): Integer;
     procedure Inverse;
@@ -115,15 +122,17 @@ type
     procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
   end;
 
+  TKMPointListArray = array of TKMPointList;
 
   TKMPointTagList = class(TKMPointList)
   public
     Tag, Tag2: array of Cardinal; //0..Count-1
     procedure Clear; override;
-    procedure Add(aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0); reintroduce;
+    procedure Add(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0); reintroduce;
     function IndexOf(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal): Integer;
     procedure SortByTag;
-    function Remove(aLoc: TKMPoint): Integer; override;
+    function Remove(const aLoc: TKMPoint): Integer; override;
+    procedure Delete(aIndex: Integer); override;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
@@ -136,7 +145,7 @@ type
     function GetItem(aIndex: Integer): TKMPointDir;
   public
     procedure Clear;
-    procedure Add(aLoc: TKMPointDir);
+    procedure Add(const aLoc: TKMPointDir);
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMPointDir read GetItem; default;
     function GetRandom(out Point: TKMPointDir):Boolean;
@@ -148,23 +157,54 @@ type
   TKMPointDirTagList = class(TKMPointDirList)
   public
     Tag: array of Cardinal; //0..Count-1
-    procedure Add(aLoc: TKMPointDir; aTag: Cardinal); reintroduce;
+    procedure Add(const aLoc: TKMPointDir; aTag: Cardinal); reintroduce;
     procedure SortByTag;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
     procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
 
 
+  TKMAIType = (aitNone, aitClassic, aitAdvanced);
+  TKMAITypeSet = set of TKMAIType;
+
+
+  TKMMapsCRCList = class
+  private
+    fMapsList: TStringList;
+    fOnMapsUpdate: TUnicodeStringEvent;
+
+    procedure MapsUpdated;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure LoadFromString(const aString: UnicodeString);
+    function PackToString: UnicodeString;
+
+    property OnMapsUpdate: TUnicodeStringEvent read fOnMapsUpdate write fOnMapsUpdate;
+
+    procedure Clear;
+    procedure RemoveMissing(aMapsCRCArray: TKMCardinalArray);
+    function Contains(aMapCRC: Cardinal): Boolean;
+    procedure Add(aMapCRC: Cardinal);
+    procedure Remove(aMapCRC: Cardinal);
+    procedure Replace(aOldCRC, aNewCRC: Cardinal);
+  end;
+
+
   //Custom Exception that includes a TKMPoint
   ELocError = class(Exception)
     Loc: TKMPoint;
-    constructor Create(const aMsg: UnicodeString; aLoc: TKMPoint);
+    constructor Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
   end;
 
 
 implementation
 uses
   Math, KM_CommonUtils;
+
+const
+  MAPS_CRC_DELIMITER = ':';
 
 {TXStringList}
 //List custom comparation, using Integer value, instead of its String represantation
@@ -180,7 +220,7 @@ begin
 end;
 
 { ELocError }
-constructor ELocError.Create(const aMsg: UnicodeString; aLoc: TKMPoint);
+constructor ELocError.Create(const aMsg: UnicodeString; const aLoc: TKMPoint);
 begin
   inherited Create(aMsg);
   Loc := aLoc;
@@ -281,30 +321,49 @@ end;
 
 function TKMemoryStream.Write(const Value: TKMDirection): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPoint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPointW): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMPointF): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Write(const Value:TKMRangeInt): Longint;
+begin Result := inherited Write(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Write(const Value:TKMRangeSingle): Longint;
+begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TKMRect): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:single): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:integer): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:cardinal): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:byte): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:boolean): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:word): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:shortint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:smallint): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Write(const Value:TDateTime): Longint;
 begin Result := inherited Write(Value, SizeOf(Value)); end;
 
@@ -332,30 +391,49 @@ end;
 
 function TKMemoryStream.Read(out Value:TKMDirection): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPoint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPointW): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMPointF): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Read(out Value:TKMRangeInt ): Longint;
+begin Result := inherited Read(Value, SizeOf(Value)); end;
+
+function TKMemoryStream.Read(out Value:TKMRangeSingle ): Longint;
+begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TKMRect): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:single): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:integer): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:cardinal): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:byte): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:boolean): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:word): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:shortint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:smallint): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
+
 function TKMemoryStream.Read(out Value:TDateTime): Longint;
 begin Result := inherited Read(Value, SizeOf(Value)); end;
 
@@ -403,7 +481,7 @@ begin
 end;
 
 
-procedure TKMPointList.Add(aLoc: TKMPoint);
+procedure TKMPointList.Add(const aLoc: TKMPoint);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 32);
@@ -412,8 +490,33 @@ begin
 end;
 
 
+procedure TKMPointList.AddList(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    Add(aList[I]);
+end;
+
+
+procedure TKMPointList.AddUnique(const aLoc: TKMPoint);
+begin
+  if not Contains(aLoc) then
+    Add(aLoc);
+end;
+
+
+procedure TKMPointList.AddListUnique(aList: TKMPointList);
+var
+  I: Integer;
+begin
+  for I := 0 to aList.Count - 1 do
+    AddUnique(aList[I]);
+end;
+
+
 //Remove point from the list if is there. Return index of removed entry or -1 on failure
-function TKMPointList.Remove(aLoc: TKMPoint): Integer;
+function TKMPointList.Remove(const aLoc: TKMPoint): Integer;
 var
   I: Integer;
 begin
@@ -430,7 +533,7 @@ begin
 end;
 
 
-procedure TKMPointList.Delete(aIndex:Integer);
+procedure TKMPointList.Delete(aIndex: Integer);
 begin
   if not InRange(aIndex, 0, Count-1) then Exit;
   if (aIndex <> fCount - 1) then
@@ -441,7 +544,7 @@ end;
 
 //Insert an entry and check if list is still walkable
 //Walkable means that every point is next to neighbour points }
-procedure TKMPointList.Insert(ID: Integer; aLoc: TKMPoint);
+procedure TKMPointList.Insert(ID: Integer; const aLoc: TKMPoint);
 begin
   Assert(InRange(ID, 0, fCount));
 
@@ -466,7 +569,7 @@ begin
 end;
 
 
-function TKMPointList.GetClosest(aLoc: TKMPoint; out Point: TKMPoint): Boolean;
+function TKMPointList.GetClosest(const aLoc: TKMPoint; out Point: TKMPoint): Boolean;
 var
   I: Integer;
 begin
@@ -616,7 +719,7 @@ begin
 end;
 
 
-procedure TKMPointTagList.Add(aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0);
+procedure TKMPointTagList.Add(const aLoc: TKMPoint; aTag: Cardinal; aTag2: Cardinal = 0);
 begin
   inherited Add(aLoc);
 
@@ -641,15 +744,24 @@ begin
 end;
 
 
-function TKMPointTagList.Remove(aLoc: TKMPoint): Integer;
+function TKMPointTagList.Remove(const aLoc: TKMPoint): Integer;
 begin
   Result := inherited Remove(aLoc);
+  //Tags are moved by Delete function. No need to move them here
+end;
+
+
+procedure TKMPointTagList.Delete(aIndex: Integer);
+begin
+  if not InRange(aIndex, 0, Count-1) then Exit;
+
+  inherited Delete(aIndex);
 
   //Note that fCount is already decreased by 1
-  if (Result <> -1) and (Result <> fCount) then
+  if (aIndex <> fCount) then
   begin
-    Move(Tag[Result+1], Tag[Result], SizeOf(Tag[Result]) * (fCount - Result));
-    Move(Tag2[Result+1], Tag2[Result], SizeOf(Tag2[Result]) * (fCount - Result));
+    Move(Tag[aIndex+1], Tag[aIndex], SizeOf(Tag[aIndex]) * (fCount - aIndex));
+    Move(Tag2[aIndex+1], Tag2[aIndex], SizeOf(Tag2[aIndex]) * (fCount - aIndex));
   end;
 end;
 
@@ -667,16 +779,47 @@ end;
 
 
 procedure TKMPointTagList.SortByTag;
-var I,K: Integer;
-begin
-  for I := 0 to fCount - 1 do
-    for K := I + 1 to fCount - 1 do
-      if Tag[K] < Tag[I] then
+  // Quicksort implementation (because there is not specified count of elements buble does not give any sense)
+  procedure QuickSort(MinIdx,MaxIdx: Integer);
+  var
+    I,K,X: Integer;
+  begin
+    I := MinIdx;
+    K := MaxIdx;
+    X := Tag[ (MinIdx+MaxIdx) div 2 ];
+    repeat
+      while (Tag[I] < X) do
+        I := I + 1;
+      while (X < Tag[K]) do
+        K := K - 1;
+      if (I <= K) then
       begin
         KMSwapPoints(fItems[I], fItems[K]);
         KMSwapInt(Tag[I], Tag[K]);
         KMSwapInt(Tag2[I], Tag2[K]);
+        I := I + 1;
+        K := K - 1;
       end;
+    until (I > K);
+    if (MinIdx < K) then
+      QuickSort(MinIdx,K);
+    if (I < MaxIdx) then
+      QuickSort(I,MaxIdx);
+  end;
+
+//var I,K: Integer;
+begin
+  // Buble sort
+  //for I := 0 to fCount - 1 do
+  //  for K := I + 1 to fCount - 1 do
+  //    if Tag[K] < Tag[I] then
+  //    begin
+  //      KMSwapPoints(fItems[I], fItems[K]);
+  //      KMSwapInt(Tag[I], Tag[K]);
+  //      KMSwapInt(Tag2[I], Tag2[K]);
+  //    end;
+  if (fCount > 1) then
+    QuickSort(0, fCount - 1);
 end;
 
 
@@ -701,7 +844,7 @@ begin
 end;
 
 
-procedure TKMPointDirList.Add(aLoc: TKMPointDir);
+procedure TKMPointDirList.Add(const aLoc: TKMPointDir);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 32);
@@ -745,7 +888,7 @@ begin
 end;
 
 
-procedure TKMPointDirTagList.Add(aLoc: TKMPointDir; aTag: Cardinal);
+procedure TKMPointDirTagList.Add(const aLoc: TKMPointDir; aTag: Cardinal);
 begin
   inherited Add(aLoc);
 
@@ -784,6 +927,130 @@ begin
   SetLength(Tag, fCount);
   if fCount > 0 then
     LoadStream.Read(Tag[0], SizeOf(Tag[0]) * fCount);
+end;
+
+
+{ TKMMapsCRCList }
+constructor TKMMapsCRCList.Create;
+begin
+  inherited;
+  fMapsList := TStringList.Create;
+  fMapsList.Delimiter       := MAPS_CRC_DELIMITER;
+  fMapsList.StrictDelimiter := True; // Requires D2006 or newer.
+end;
+
+
+destructor TKMMapsCRCList.Destroy;
+begin
+  FreeAndNil(fMapsList);
+  inherited;
+end;
+
+
+procedure TKMMapsCRCList.MapsUpdated;
+begin
+  if Assigned(fOnMapsUpdate) then
+    fOnMapsUpdate(PackToString);
+end;
+
+
+procedure TKMMapsCRCList.LoadFromString(const aString: UnicodeString);
+var I: Integer;
+    MapCRC : Int64;
+    StringList: TStringList;
+begin
+  fMapsList.Clear;
+  StringList := TStringList.Create;
+  StringList.Delimiter := MAPS_CRC_DELIMITER;
+  StringList.DelimitedText   := Trim(aString);
+
+  for I := 0 to StringList.Count - 1 do
+  begin
+    if TryStrToInt64(Trim(StringList[I]), MapCRC)
+      and (MapCRC > 0)
+      and not Contains(Cardinal(MapCRC)) then
+      fMapsList.Add(Trim(StringList[I]));
+  end;
+
+  StringList.Free;
+end;
+
+
+function TKMMapsCRCList.PackToString: UnicodeString;
+begin
+  Result := fMapsList.DelimitedText;
+end;
+
+
+procedure TKMMapsCRCList.Clear;
+begin
+  fMapsList.Clear;
+end;
+
+
+//Remove missing Favourites Maps from list, check if are of them are presented in the given maps CRC array.
+procedure TKMMapsCRCList.RemoveMissing(aMapsCRCArray: TKMCardinalArray);
+  function ArrayContains(aValue: Cardinal): Boolean;
+  var I: Integer;
+  begin
+    Result := False;
+    for I := Low(aMapsCRCArray) to High(aMapsCRCArray) do
+      if aMapsCRCArray[I] = aValue then
+      begin
+        Result := True;
+        Break;
+      end;
+  end;
+var I: Integer;
+begin
+  I := fMapsList.Count - 1;
+  //We must check, that all values from favorites are presented in maps CRC array. If not - then remove it from favourites
+  while (fMapsList.Count > 0) and (I >= 0) do
+  begin
+    if not ArrayContains(StrToInt64(fMapsList[I])) then
+    begin
+      fMapsList.Delete(I);
+      MapsUpdated;
+    end;
+
+    Dec(I);
+  end;
+end;
+
+
+function TKMMapsCRCList.Contains(aMapCRC: Cardinal): Boolean;
+begin
+  Result := fMapsList.IndexOf(IntToStr(aMapCRC)) <> -1;
+end;
+
+
+procedure TKMMapsCRCList.Add(aMapCRC: Cardinal);
+begin
+  if not Contains(aMapCRC) then
+  begin
+    fMapsList.Add(IntToStr(aMapCRC));
+    MapsUpdated;
+  end;
+end;
+
+
+procedure TKMMapsCRCList.Remove(aMapCRC: Cardinal);
+var Index: Integer;
+begin
+  Index := fMapsList.IndexOf(IntToStr(aMapCRC));
+  if Index <> -1 then
+    fMapsList.Delete(Index);
+  MapsUpdated;
+end;
+
+
+procedure TKMMapsCRCList.Replace(aOldCRC, aNewCRC: Cardinal);
+begin
+  if Contains(aOldCRC) then
+  begin
+    Remove(aOldCRC);
+    Add(aNewCRC);
+  end;
 end;
 
 

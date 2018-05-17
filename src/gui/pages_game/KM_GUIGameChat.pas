@@ -11,7 +11,7 @@ uses
 type
   TKMGUIGameChat = class
   private
-    fChatMode: TChatMode;
+    fChatMode: TKMChatMode;
     fChatWhisperRecipient: Integer; //NetPlayer index of the player who will receive the whisper
     fLastChatTime: Cardinal; //Last time a chat message was sent to enforce cooldown
     procedure Chat_Close(Sender: TObject);
@@ -36,8 +36,8 @@ type
   public
     constructor Create(aParent: TKMPanel);
 
-    procedure SetChatState(const aChatState: TChatState);
-    function GetChatState: TChatState;
+    procedure SetChatState(const aChatState: TKMChatState);
+    function GetChatState: TKMChatState;
     procedure ChatMessage(const aData: UnicodeString);
     procedure Unfocus;
     procedure Focus;
@@ -147,8 +147,8 @@ begin
       if not gGame.Networking.NetPlayers[fChatWhisperRecipient].Connected
         or gGame.Networking.NetPlayers[fChatWhisperRecipient].Dropped then
       begin
-        gGame.Networking.PostLocalMessage(Format('%s is not connected to game anymore.',
-                                                [gGame.Networking.NetPlayers[fChatWhisperRecipient].NiknameColored]), // Todo translate
+        gGame.Networking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_CHAT_PLAYER_NOT_CONNECTED_ANYMORE],
+                                                [gGame.Networking.NetPlayers[fChatWhisperRecipient].NiknameColored]),
                                           csSystem);
         Chat_MenuSelect(CHAT_MENU_ALL);
       end else
@@ -280,7 +280,7 @@ end;
 
 
 //Access text that user was typing to copy it over to lobby chat
-function TKMGUIGameChat.GetChatState: TChatState;
+function TKMGUIGameChat.GetChatState: TKMChatState;
 begin
   if fChatMode = cmWhisper then
     Result.WhisperRecipient := gGame.Networking.NetPlayers[fChatWhisperRecipient].IndexOnServer
@@ -292,8 +292,8 @@ begin
 end;
 
 
-procedure TKMGUIGameChat.SetChatState(const aChatState: TChatState);
-const CHAT_TAG: array[TChatMode] of Integer = (
+procedure TKMGUIGameChat.SetChatState(const aChatState: TKMChatState);
+const CHAT_TAG: array[TKMChatMode] of Integer = (
   -1,  //cmAll
   -2,  //cmTeam
   -3,  //cmSpectators

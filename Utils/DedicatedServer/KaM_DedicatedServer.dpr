@@ -5,6 +5,13 @@ program KaM_DedicatedServer;
   {$APPTYPE CONSOLE}
 {$ENDIF}
 
+//Next instructions could help sometimes for cross-compile builds
+//{$IFDEF FPC_CROSSCOMPILING}
+//  {$IFDEF UNIX}
+//    {$linklib libc_nonshared.a}
+//  {$ENDIF}
+//{$ENDIF}
+
 uses
   {$IFDEF UNIX}
     {$DEFINE UseCThreads}
@@ -16,16 +23,20 @@ uses
   {$IFDEF FPC} Interfaces, {$ENDIF}
   KM_CommonUtils in '..\..\src\utils\KM_CommonUtils.pas',
   KM_Defaults in '..\..\src\common\KM_Defaults.pas',
+  KM_Points in '..\..\src\common\KM_Points.pas',
   KM_Log in '..\..\src\KM_Log.pas',
   KM_Settings in '..\..\src\KM_Settings.pas',
+  KM_NetworkTypes in '..\..\src\net\KM_NetworkTypes.pas',
   KM_DedicatedServer in '..\..\src\net\other\KM_DedicatedServer.pas',
+  {$IFDEF WDC}
   KM_ConsoleTimer in '..\..\src\utils\KM_ConsoleTimer.pas',
+  {$ENDIF}
   KM_ServerEventHandler in 'KM_ServerEventHandler.pas';
 
 var
   fEventHandler: TKMServerEventHandler;
   fDedicatedServer: TKMDedicatedServer;
-  fSettings: TGameSettings;
+  fSettings: TKMGameSettings;
   fSettingsLastModified: Integer;
   fLastSettingsFileCheck: Cardinal;
 
@@ -43,6 +54,8 @@ end;
 {$ENDIF}
 
 procedure RunTheServer;
+var
+  GameFilter: TKMPGameFilter;
 begin
   fDedicatedServer := TKMDedicatedServer.Create(fSettings.MaxRooms,
                                                 fSettings.AutoKickTimeout,
@@ -52,6 +65,12 @@ begin
                                                 fSettings.HTMLStatusFile,
                                                 fSettings.ServerWelcomeMessage,
                                                 True);
+  GameFilter := TKMPGameFilter.Create(fSettings.ServerMapsRosterEnabled,
+                                      fSettings.ServerMapsRosterStr,
+                                      KMRange(fSettings.ServerLimitPTFrom, fSettings.ServerLimitPTTo),
+                                      KMRange(fSettings.ServerLimitSpeedFrom, fSettings.ServerLimitSpeedTo),
+                                      KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
+  fDedicatedServer.Server.GameFilter := GameFilter;
   fDedicatedServer.OnMessage := fEventHandler.ServerStatusMessage;
   fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
 
@@ -83,8 +102,8 @@ begin
     {$IFDEF WDC}
     MyProcessMessages; //This will process network (or other) events
     Sleep(1); //Don't hog CPU (this can also be used to create an artifical latency)
-    CheckSynchronize(); //Update threads synchronization, as our custom TKMConsoleTimer is working in a separate thread
     {$ENDIF}
+    CheckSynchronize(); //Update threads synchronization, as Console Timers work in a separate thread
   end;
 end;
 
@@ -143,6 +162,10 @@ end;
 {$ENDIF}
 
 begin
+  //Define CONSOLE for Lazarus
+  {$IFDEF FPC}
+    {$DEFINE CONSOLE}
+  {$ENDIF}
   {$IFDEF UNIX}
   //Handle interupts (requests for our process to terminate)
   FpSignal(SIGTerm, @OnInterrupt);
@@ -161,7 +184,7 @@ begin
 
   fEventHandler.ServerStatusMessage('Using protocol for clients running '+NET_PROTOCOL_REVISON);
 
-  fSettings := TGameSettings.Create;
+  fSettings := TKMGameSettings.Create;
   fSettings.SaveSettings(true);
   fSettingsLastModified := FileAge(ExeDir+SETTINGS_FILE);
   fLastSettingsFileCheck := TimeGet;
@@ -173,8 +196,9 @@ begin
     except
       on E : Exception do //todo: For some reason this doesn't catch exceptions that occur within network events e.g. OnReceive (once server is running errors can really only occur in these events)
       begin
-        fEventHandler.ServerStatusMessage('EXCEPTION: '+E.ClassName+': '+E.Message);
+        fEventHandler.ServerStatusMessage('EXCEPTION: ' + E.ClassName + ': ' + E.Message);
         {$IFDEF FPC} fEventHandler.ServerStatusMessage(GetExceptionCallStack()); {$ENDIF}
+        {$IFDEF WDC} fEventHandler.ServerStatusMessage(E.StackTrace); {$ENDIF}
         fEventHandler.ServerStatusMessage('Server restarting...');
         FreeAndNil(fDedicatedServer);
         fEventHandler.ServerStatusMessage('Sleeping for 5 seconds...');

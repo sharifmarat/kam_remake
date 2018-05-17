@@ -11,11 +11,18 @@ type
   private
     fAskDismiss: Boolean;
     fJoiningGroups: Boolean;
+    fSetViewportEvent: TPointFEvent;
+
     procedure Unit_Dismiss(Sender: TObject);
+    procedure Dismiss_Click(Sender: TObject);
     procedure Army_ActivateControls(aGroup: TKMUnitGroup);
     procedure Army_Issue_Order(Sender: TObject);
+    procedure ShowDismissBtn;
+    procedure Unit_Scroll_Click(Sender: TObject);
+    procedure Show_Common(aUnit: TKMUnit);
   protected
     Panel_Unit: TKMPanel;
+      Image_PlayerFlag: TKMImage;
       Label_UnitName: TKMLabel;
       Label_UnitCondition: TKMLabel;
       Label_UnitTask: TKMLabel;
@@ -43,7 +50,7 @@ type
     OnUnitDismiss: TEvent;
     OnSelectingTroopDirection: TBooleanFunc;
     OnArmyCanTakeOrder: TBooleanFunc;
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
     property AskDismiss: Boolean read fAskDismiss write fAskDismiss;
     property JoiningGroups: Boolean read fJoiningGroups write fJoiningGroups;
 
@@ -51,7 +58,7 @@ type
     procedure Hide;
     procedure KeyUp(Key: Word; Shift: TShiftState);
 
-    procedure ShowUnitInfo(Sender: TKMUnit; aAskDismiss:boolean=false);
+    procedure ShowUnitInfo(aUnit: TKMUnit; aAskDismiss:boolean=false);
     procedure ShowGroupInfo(Sender: TKMUnitGroup; aAskDismiss: Boolean = False);
     procedure Army_HideJoinMenu(Sender: TObject);
   end;
@@ -60,30 +67,44 @@ type
 
 implementation
 uses
+  Math,
   KM_Game, KM_GameInputProcess, KM_HandsCollection, KM_Hand, KM_HandSpectator, KM_InterfaceGame, KM_RenderUI,
-  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResKeys, KM_ResSound, KM_ResCursors, KM_ResUnits, KM_Pics,
-  KM_Units_Warrior, KM_Utils, KM_Defaults, KM_Sound;
+  KM_Resource, KM_ResFonts, KM_ResTexts, KM_ResKeys, KM_ResHouses, KM_ResSound, KM_ResCursors, KM_ResUnits, KM_Pics,
+  KM_Units_Warrior, KM_Utils, KM_Defaults, KM_Sound, KM_CommonUtils;
 
 
-{ TKMGUIGameHouse }
+{ TKMGUIGameUnit }
 
-constructor TKMGUIGameUnit.Create(aParent: TKMPanel);
+constructor TKMGUIGameUnit.Create(aParent: TKMPanel; aSetViewportEvent: TPointFEvent);
 begin
-  Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
+  fSetViewportEvent := aSetViewportEvent;
+
+  Panel_Unit := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 400);
+    Image_PlayerFlag := TKMImage.Create(Panel_Unit, 0, 19, 20, 13, 1159, rxHouses); // before unit name label
     Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,30,'',fnt_Outline,taCenter);
+
     Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
+    Image_UnitPic.Hint    := gResTexts[TX_UNIT_SCROLL_HINT];
+    Image_UnitPic.OnClick := Unit_Scroll_Click;
+    Image_UnitPic.HighlightOnMouseOver := True;
+    Image_UnitPic.HighlightCoef := 0.1; //highlight just a little bit
+
     Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,30,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
     ConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
+
+    Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,65,41,30,30,667, rxGui, bsGame);
+    Button_Unit_Dismiss.OnClick := Dismiss_Click;
+
     Label_UnitTask        := TKMLabel.Create(Panel_Unit,65,80,116,60,'',fnt_Grey,taLeft);
     Label_UnitTask.AutoWrap := True;
     Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,152,TB_WIDTH,200,'',fnt_Grey,taLeft); // Taken from LIB resource
     Label_UnitDescription.AutoWrap := True;
-    Button_Unit_Dismiss   := TKMButton.Create(Panel_Unit,124,120,56,34,29, rxGui, bsGame);
 
-    Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 160, TB_WIDTH, 182);
-    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,16,TB_WIDTH,20,'Are you sure?',fnt_Outline,taCenter);
-    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,30, 50,TB_WIDTH-60,30,'Dismiss',bsGame);
-    Button_Unit_DismissNo          := TKMButton.Create(Panel_Unit_Dismiss,30,100,TB_WIDTH-60,30,'Cancel',bsGame);
+    Panel_Unit_Dismiss := TKMPanel.Create(Panel_Unit, 0, 132, TB_WIDTH, 182);
+    Label_Unit_Dismiss             := TKMLabel.Create(Panel_Unit_Dismiss,0,2,TB_WIDTH,20,gResTexts[TX_UNIT_TASK_DISMISS_CONFIRMATION],fnt_Grey,taCenter);
+    Label_Unit_Dismiss.AutoWrap    := True;
+    Button_Unit_DismissYes         := TKMButton.Create(Panel_Unit_Dismiss,0,100,TB_WIDTH,30,gResTexts[TX_UNIT_TASK_DISMISS_BTN],bsGame);
+    Button_Unit_DismissNo          := TKMButton.Create(Panel_Unit_Dismiss,0,135,TB_WIDTH,30,gResTexts[TX_WORD_CANCEL],bsGame);
     Button_Unit_DismissYes.OnClick := Unit_Dismiss;
     Button_Unit_DismissNo.OnClick  := Unit_Dismiss;
 
@@ -116,7 +137,6 @@ begin
     Button_Army_Split.OnClick   := Army_Issue_Order;
     Button_Army_Join.OnClick    := Army_Issue_Order;
     Button_Army_Feed.OnClick    := Army_Issue_Order;
-    Button_Unit_Dismiss.OnClick := Army_Issue_Order;
 
     // Disable not working buttons
     Button_Army_GoTo.Hide;
@@ -134,7 +154,6 @@ begin
     Button_Army_Split.Hint    := GetHintWHotKey(TX_TROOP_SPLIT_HINT, SC_ARMY_SPLIT);
     Button_Army_Join.Hint     := GetHintWHotKey(TX_TROOP_LINK_HINT, SC_ARMY_LINK);
     Button_Army_Feed.Hint     := GetHintWHotKey(TX_ARMY_FEED_HINT, SC_ARMY_FOOD);
-    Button_Unit_Dismiss.Hint  := 'Dismiss unit';
 
     { Army controls...
     Go to     Stop      Attack
@@ -150,28 +169,101 @@ begin
 end;
 
 
-procedure TKMGUIGameUnit.ShowUnitInfo(Sender: TKMUnit; aAskDismiss: Boolean = False);
+procedure TKMGUIGameUnit.ShowDismissBtn;
+const
+  DISMISS_PADDING = 32;
 begin
-  Assert(gMySpectator.Selected = Sender);
+  if Button_Unit_Dismiss.Visible then
+  begin
+    Label_UnitCondition.Left := 65 + DISMISS_PADDING;
+    ConditionBar_Unit.Left   := 65 + DISMISS_PADDING;
+    Label_UnitCondition.Width := 116 - DISMISS_PADDING;
+    ConditionBar_Unit.Width   := 116 - DISMISS_PADDING;
+  end else begin
+    Label_UnitCondition.Left := 65;
+    ConditionBar_Unit.Left   := 65;
+    Label_UnitCondition.Width := 116;
+    ConditionBar_Unit.Width   := 116;
+  end;
+end;
+
+
+procedure TKMGUIGameUnit.Show_Common(aUnit: TKMUnit);
+var
+  HLabelWidth: Integer;
+begin
+  Image_PlayerFlag.FlagColor := gHands[aUnit.Owner].FlagColor;
+  Image_PlayerFlag.Hint      := Format(gResTexts[TX_PLAYER_FLAG_HINT], [gHands[aUnit.Owner].OwnerName]);
+
+  // Common properties
+  Label_UnitName.Caption      := gRes.Units[aUnit.UnitType].GUIName;
+  Image_UnitPic.TexID         := gRes.Units[aUnit.UnitType].GUIScroll;
+  Image_UnitPic.FlagColor     := gHands[aUnit.Owner].FlagColor;
+
+  ConditionBar_Unit.Position  := aUnit.Condition / UNIT_MAX_CONDITION;
+
+  HLabelWidth := gRes.Fonts[fnt_Outline].GetTextSize(Label_UnitName.Caption).X;
+  if HLabelWidth <= TB_WIDTH - 2*Image_PlayerFlag.Width then
+    Label_UnitName.Left := 0
+  else if HLabelWidth <= TB_WIDTH - Image_PlayerFlag.Width then
+    Label_UnitName.Left := Image_PlayerFlag.Width
+  else
+    Label_UnitName.Left := Max(TB_WIDTH - HLabelWidth, 0);
+end;
+
+
+procedure TKMGUIGameUnit.ShowUnitInfo(aUnit: TKMUnit; aAskDismiss: Boolean = False);
+var
+  HasSchools: Boolean;
+begin
+  Assert(gMySpectator.Selected = aUnit);
 
   fAskDismiss  := aAskDismiss;
 
   Panel_Unit.Show;
 
   // Common properties
-  Label_UnitName.Caption      := gRes.Units[Sender.UnitType].GUIName;
-  Image_UnitPic.TexID         := gRes.Units[Sender.UnitType].GUIScroll;
-  Image_UnitPic.FlagColor     := gHands[Sender.Owner].FlagColor;
-  ConditionBar_Unit.Position  := Sender.Condition / UNIT_MAX_CONDITION;
-  Label_UnitTask.Caption      := Sender.GetActivityText;
+  Show_Common(aUnit);
 
-  Label_UnitDescription.Show;
-  Button_Unit_Dismiss.Visible := SHOW_DISMISS_BUTTON and not fAskDismiss;
+  Label_UnitTask.Caption      := aUnit.GetActivityText;
+
+  Button_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN
+                                 and aUnit.Dismissable   // Its possible to block dismiss from scripts
+                                 and gMySpectator.IsSelectedMyObj; // Allow to dismiss only our units
+
+  if aUnit.IsDismissing then
+  begin
+    Button_Unit_Dismiss.TexID := 668;
+    Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_CANCEL_HINT];
+    Button_Unit_Dismiss.Enabled := aUnit.IsDismissCancelAvailable;
+    Panel_Unit_Dismiss.Visible := False;
+  end else begin
+    HasSchools := gMySpectator.Hand.Stats.GetHouseQty(htSchool) > 0;
+
+    if fAskDismiss and not aUnit.IsDismissAvailable then
+      fAskDismiss := False; //Hide dismiss panel if dismiss is not available anymore
+
+    Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools and aUnit.IsDismissAvailable;
+    Button_Unit_Dismiss.TexID := 667;
+
+    if not HasSchools then
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT]
+    else if not aUnit.IsDismissAvailable then
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT]
+    else
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_HINT];
+
+    Panel_Unit_Dismiss.Visible := SHOW_DISMISS_UNITS_BTN and fAskDismiss;
+  end;
+
+  ShowDismissBtn;
+
   Panel_Army.Hide;
   Panel_Army_JoinGroups.Hide;
-  Panel_Unit_Dismiss.Visible := SHOW_DISMISS_BUTTON and fAskDismiss;
 
-  Label_UnitDescription.Caption := gRes.Units[Sender.UnitType].Description;
+  Label_UnitDescription.Visible := not Panel_Unit_Dismiss.Visible;
+
+  Label_UnitDescription.Caption := gRes.Units[aUnit.UnitType].Description;
 end;
 
 
@@ -186,11 +278,8 @@ begin
   W := Sender.SelectedUnit;
   Panel_Unit.Show;
 
-  // Common properties
-  Label_UnitName.Caption      := gRes.Units[W.UnitType].GUIName;
-  Image_UnitPic.TexID         := gRes.Units[W.UnitType].GUIScroll;
-  Image_UnitPic.FlagColor     := gHands[W.Owner].FlagColor;
-  ConditionBar_Unit.Position  := W.Condition / UNIT_MAX_CONDITION;
+  Show_Common(TKMUnit(W));
+
   // We show what this individual is doing, not the whole group.
   // However this can be useful for debugging: Sender.GetOrderText
   Label_UnitTask.Caption      := W.GetWarriorActivityText(Sender.IsAttackingUnit);
@@ -201,10 +290,12 @@ begin
     Army_HideJoinMenu(nil); // Cannot be joining while in combat/charging
 
   Label_UnitDescription.Hide;
-  Button_Unit_Dismiss.Visible := SHOW_DISMISS_BUTTON and not fAskDismiss and not fJoiningGroups;
+  Button_Unit_Dismiss.Visible := SHOW_DISMISS_GROUP_BTN and not fAskDismiss and not fJoiningGroups;
   Panel_Army.Visible := not fAskDismiss and not fJoiningGroups;
   Panel_Army_JoinGroups.Visible := not fAskDismiss and fJoiningGroups;
-  Panel_Unit_Dismiss.Visible := SHOW_DISMISS_BUTTON and fAskDismiss and not fJoiningGroups;
+  Panel_Unit_Dismiss.Visible := SHOW_DISMISS_GROUP_BTN and fAskDismiss and not fJoiningGroups;
+
+  ShowDismissBtn;
 
   // Update army controls if required
   if Panel_Army.Visible then
@@ -233,12 +324,7 @@ begin
     if IsGroup then
       TKMUnitGroup(gMySpectator.Selected).KillGroup
     else
-      TKMUnit(gMySpectator.Selected).KillUnit(PLAYER_NONE, True, False);
-
-    gMySpectator.Selected := nil;
-    Hide;
-    if Assigned(OnUnitDismiss) then // Return to main menu after dismissing
-      OnUnitDismiss;
+      gGame.GameInputProcess.CmdUnit(gic_UnitDismiss, TKMUnit(gMySpectator.Selected));
   end
   else
   begin
@@ -251,23 +337,57 @@ begin
 end;
 
 
+procedure TKMGUIGameUnit.Unit_Scroll_Click(Sender: TObject);
+var
+
+  U: TKMUnit;
+
+  G: TKMUnitGroup;
+
+begin
+
+  if (gMySpectator.Selected = nil)
+
+    or not ((gMySpectator.Selected is TKMUnit) or (gMySpectator.Selected is TKMUnitGroup)) then
+    Exit;
+
+
+  U := nil;
+
+
+  if gMySpectator.Selected is TKMUnitGroup then
+  begin
+    G := TKMUnitGroup(gMySpectator.Selected);
+    if G.SelectedUnit <> nil then
+      U := TKMUnit(G.SelectedUnit);
+  end else
+  if gMySpectator.Selected is TKMUnit then
+    U := TKMUnit(gMySpectator.Selected);
+
+  if Assigned(fSetViewportEvent) then
+    fSetViewportEvent(U.PositionF);
+end;
+
+
+procedure TKMGUIGameUnit.Dismiss_Click(Sender: TObject);
+begin
+  if gMySpectator.Selected is TKMUnitGroup then
+    ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), True)
+  else if gMySpectator.Selected is TKMUnit then
+  begin
+    ShowUnitInfo(TKMUnit(gMySpectator.Selected), not TKMUnit(gMySpectator.Selected).IsDismissing);
+    if TKMUnit(gMySpectator.Selected).IsDismissCancelAvailable then
+      gGame.GameInputProcess.CmdUnit(gic_UnitDismissCancel, TKMUnit(gMySpectator.Selected));
+  end;
+end;
+
+
 procedure TKMGUIGameUnit.Army_Issue_Order(Sender: TObject);
 var
   Group: TKMUnitGroup;
 begin
-  if gMySpectator.Selected = nil then Exit;
-
-  // Not implemented yet
-  if Sender = Button_Unit_Dismiss then
-  begin
-    if gMySpectator.Selected is TKMUnitGroup then
-      ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), True)
-    else if gMySpectator.Selected is TKMUnit then
-      ShowUnitInfo(TKMUnit(gMySpectator.Selected), True);
-    Exit;
-  end;
-
-  if not (gMySpectator.Selected is TKMUnitGroup) then Exit;
+  if (gMySpectator.Selected = nil)
+    or not (gMySpectator.Selected is TKMUnitGroup) then Exit;
 
   Group := TKMUnitGroup(gMySpectator.Selected);
 

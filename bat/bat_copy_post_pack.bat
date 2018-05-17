@@ -16,7 +16,7 @@ xcopy ..\data\Sprites "%kam_folder%"\data\Sprites\ /y /r /s
 xcopy ..\data\text "%kam_folder%"\data\text\ /y /r /s
 xcopy ..\data\locales.txt "%kam_folder%"\data\locales.txt* /y /r /i
 xcopy ..\Campaigns "%kam_folder%"\Campaigns\ /y /r /s
-xcopy ..\Maps "%kam_folder%"\Maps\ /y /r /s
+xcopy ..\Maps "%kam_folder%"\Maps\ /y /r /s /exclude:excluded_test_maps.txt
 xcopy ..\MapsMP "%kam_folder%"\MapsMP\ /y /r /s
 xcopy ..\Tutorials "%kam_folder%"\Tutorials\ /y /r /s
 xcopy ..\Sounds "%kam_folder%"\Sounds\ /y /r /s
@@ -43,13 +43,17 @@ REM ============================================================
 @REM Adding * to the file name supresses the "Is it a file or a folder" query
 @REM xcopy ..\data.pack .\"%kam_folder%"\data.pack* /y /r /i
 xcopy ..\KaM_Remake.exe "%kam_folder%"\KaM_Remake.exe* /y /r /i
+xcopy ..\KM_TextIDs.inc "%kam_folder%"\KM_TextIDs.inc* /y /r /i
 xcopy ..\libzplay.dll "%kam_folder%"\libzplay.dll* /y /r /i
 xcopy ..\ogg.dll "%kam_folder%"\ogg.dll* /y /r /i
 xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
 @REM copy utility applications exe files
 xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\CampaignBuilder.exe* /y /r /i
-xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_DedicatedServer.exe* /y /r /i
-xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_DedicatedServerGUI.exe* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_Remake_Server_win32.exe* /y /r /i
+xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_Remake_ServerGUI_win32.exe* /y /r /i
 xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptValidator.exe* /y /r /i
 xcopy "..\Utils\TranslationManager\TranslationManager.exe" "%kam_folder%"\TranslationManager.exe* /y /r /i
+@REM copy linux dedicated servers
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86" "%kam_folder%"\KaM_Remake_Server_linux_x86* /y /r /i
+xcopy "..\Utils\DedicatedServer\KaM_Remake_Server_linux_x86_64" "%kam_folder%"\KaM_Remake_Server_linux_x86_64* /y /r /i

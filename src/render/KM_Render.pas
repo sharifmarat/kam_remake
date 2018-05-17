@@ -59,7 +59,7 @@ type
 
 implementation
 uses
-  KM_Log, KM_ResSprites;
+  SysUtils, KM_Log, KM_ResSprites;
 
 
 { TRender }
@@ -77,6 +77,7 @@ begin
     fRenderControl.CreateRenderContext;
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, @MaxTextureSize); //Get max supported texture size by video adapter
+    gLog.AddTime('GL_MAX_TEXTURE_SIZE = ' + IntToStr(MaxTextureSize));
     TKMResSprites.SetMaxAtlasSize(MaxTextureSize);       //Save it for texture processing
 
     glClearColor(0, 0, 0, 0); 	   //Background
@@ -208,7 +209,8 @@ end;
 class procedure TRender.UpdateTexture(aTexture: GLuint; DestX, DestY: Word; Mode: TTexFormat; const Data: Pointer);
 begin
   if not Assigned(glTexImage2D) then Exit;
-  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)), 'Game designed to handle only POT textures');
+  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)),
+         Format('Game designed to handle only POT textures. Texture size: [%d:%d]', [DestX,DestY]));
 
   BindTexture(aTexture);
 

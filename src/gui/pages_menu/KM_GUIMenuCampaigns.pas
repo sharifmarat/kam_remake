@@ -12,7 +12,7 @@ uses
 type
   TKMMenuCampaigns = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText; //will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; //will be in ancestor class
 
     procedure RefreshList;
     procedure ListChange(Sender: TObject);
@@ -20,12 +20,12 @@ type
     procedure BackClick(Sender: TObject);
   protected
     Panel_CampSelect: TKMPanel;
-    ColumnBox_Camps: TKMColumnBox;
-    Image_CampsPreview: TKMImage;
-    Memo_CampDesc: TKMMemo;
-    Button_Camp_Start, Button_Camp_Back: TKMButton;
+      ColumnBox_Camps: TKMColumnBox;
+      Image_CampsPreview: TKMImage;
+      Memo_CampDesc: TKMMemo;
+      Button_Camp_Start, Button_Camp_Back: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     procedure Show;
   end;
 
@@ -36,7 +36,7 @@ uses
 
 
 { TKMMainMenuInterface }
-constructor TKMMenuCampaigns.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuCampaigns.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 var
   L: TKMLabel;
 begin

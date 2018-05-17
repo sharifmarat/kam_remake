@@ -9,14 +9,14 @@ uses
 type
   TKMMenuError = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
     procedure BackClick(Sender: TObject);
   protected
     Panel_Error: TKMPanel;
     Label_Error: TKMLabel;
     Button_ErrorBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     procedure Show(const aText: UnicodeString);
   end;
 
@@ -27,7 +27,7 @@ uses
 
 
 { TKMGUIMenuError }
-constructor TKMMenuError.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuError.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

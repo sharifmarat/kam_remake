@@ -15,14 +15,20 @@ type
   private
     fDragScrollingCursorPos: TPoint;
     fDragScrollingViewportPos: TKMPointF;
-
+    fPrevHint: TObject;
+    fPrevHintMessage: UnicodeString;
     procedure ResetDragScrolling;
   protected
     fMinimap: TKMMinimap;
     fViewport: TKMViewport;
     fDragScrolling: Boolean;
 
+    Label_Hint: TKMLabel;
+    Bevel_HintBG: TKMBevel;
+
     function IsDragScrollingAllowed: Boolean; virtual;
+    procedure DisplayHint(Sender: TObject);
+    procedure AfterCreateComplete;
   public
     constructor Create(aRender: TRender); reintroduce;
     destructor Destroy; override;
@@ -34,12 +40,12 @@ type
 
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
 
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     procedure SyncUI(aMoveViewport: Boolean = True); virtual;
-    procedure SyncUIView(aCenter: TKMPointF; aZoom: Single = 1);
+    procedure SyncUIView(const aCenter: TKMPointF; aZoom: Single = 1);
     procedure UpdateGameCursor(X, Y: Integer; Shift: TShiftState);
     procedure UpdateStateIdle(aFrameTime: Cardinal); virtual; abstract;
   end;
@@ -57,23 +63,23 @@ const
   // naming collisions and confusion in discussions
 
   GUI_HOUSE_COUNT = 28;   // Number of KaM houses to show in GUI
-  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of THouseType = (
-    ht_School, ht_Inn, ht_Quary, ht_Woodcutters, ht_Sawmill,
-    ht_Farm, ht_Mill, ht_Bakery, ht_Swine, ht_Butchers,
-    ht_Wineyard, ht_GoldMine, ht_CoalMine, ht_Metallurgists, ht_WeaponWorkshop,
-    ht_Tannery, ht_ArmorWorkshop, ht_Stables, ht_IronMine, ht_IronSmithy,
-    ht_WeaponSmithy, ht_ArmorSmithy, ht_Barracks, ht_Store, ht_WatchTower,
-    ht_FisherHut, ht_Marketplace, ht_TownHall);
+  GUIHouseOrder: array [1..GUI_HOUSE_COUNT] of TKMHouseType = (
+    htSchool, htInn, htQuary, htWoodcutters, htSawmill,
+    htFarm, htMill, htBakery, htSwine, htButchers,
+    htWineyard, htGoldMine, htCoalMine, htMetallurgists, htWeaponWorkshop,
+    htTannery, htArmorWorkshop, htStables, htIronMine, htIronSmithy,
+    htWeaponSmithy, htArmorSmithy, htBarracks, htStore, htWatchTower,
+    htFisherHut, htMarketplace, htTownHall);
 
   // Template for how resources are shown in Barracks
   BARRACKS_RES_COUNT = 11;
-  BarracksResType: array [1..BARRACKS_RES_COUNT] of TWareType =
+  BarracksResType: array [1..BARRACKS_RES_COUNT] of TKMWareType =
     (wt_Shield, wt_MetalShield, wt_Armor, wt_MetalArmor, wt_Axe, wt_Sword,
      wt_Pike, wt_Hallebard, wt_Bow, wt_Arbalet, wt_Horse);
 
   // Layout of resources in Store
   STORE_RES_COUNT = 28;
-  StoreResType: array [1..STORE_RES_COUNT] of TWareType =
+  StoreResType: array [1..STORE_RES_COUNT] of TKMWareType =
     (wt_Trunk,    wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
      wt_Coal,     wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
      wt_Bread,    wt_Flour,   wt_Leather,     wt_Sausages,  wt_Pig,
@@ -81,40 +87,40 @@ const
      wt_Axe,      wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
      wt_Arbalet,  wt_Horse,   wt_Fish);
 
-  School_Order: array [0..13] of TUnitType = (
+  School_Order: array [0..13] of TKMUnitType = (
     ut_Serf, ut_Worker, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Fisher, ut_Farmer, ut_Baker, ut_AnimalBreeder, ut_Butcher,
     ut_Miner, ut_Metallurgist, ut_Smith, ut_Recruit);
 
-  Barracks_Order: array [0..8] of TUnitType = (
+  Barracks_Order: array [0..8] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry);
 
-  TownHall_Order: array [0..5] of TUnitType = (
+  TownHall_Order: array [0..5] of TKMUnitType = (
     ut_Peasant, ut_Militia, ut_Slingshot, ut_Horseman, ut_Barbarian, ut_MetalBarbarian);
 
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
   StatPlan: array [0..STATS_LINES_CNT-1] of record
-    HouseType: array [0..3] of THouseType;
-    UnitType: array [0..1] of TUnitType;
+    HouseType: array [0..3] of TKMHouseType;
+    UnitType: array [0..1] of TKMUnitType;
   end = (
-    (HouseType: (ht_Quary, ht_None, ht_None, ht_None); UnitType: (ut_StoneCutter, ut_None)),
-    (HouseType: (ht_Woodcutters, ht_None, ht_None, ht_None); UnitType: (ut_Woodcutter, ut_None)),
-    (HouseType: (ht_FisherHut, ht_None, ht_None, ht_None); UnitType: (ut_Fisher, ut_None)),
-    (HouseType: (ht_Farm, ht_Wineyard, ht_None, ht_None); UnitType: (ut_Farmer, ut_None)),
-    (HouseType: (ht_Mill, ht_Bakery, ht_None, ht_None); UnitType: (ut_Baker, ut_None)),
-    (HouseType: (ht_Swine, ht_Stables, ht_None, ht_None); UnitType: (ut_AnimalBreeder, ut_None)),
-    (HouseType: (ht_Butchers, ht_Tannery, ht_None, ht_None); UnitType: (ut_Butcher, ut_None)),
-    (HouseType: (ht_Metallurgists, ht_IronSmithy, ht_None, ht_None); UnitType: (ut_Metallurgist, ut_None)),
-    (HouseType: (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None); UnitType: (ut_Smith, ut_None)),
-    (HouseType: (ht_CoalMine, ht_IronMine, ht_GoldMine, ht_None); UnitType: (ut_Miner, ut_None)),
-    (HouseType: (ht_Sawmill, ht_WeaponWorkshop, ht_ArmorWorkshop, ht_None); UnitType: (ut_Lamberjack, ut_None)),
-    (HouseType: (ht_Barracks, ht_TownHall, ht_WatchTower, ht_None); UnitType: (ut_Recruit, ut_None)),
-    (HouseType: (ht_Store, ht_School, ht_Inn, ht_Marketplace); UnitType: (ut_Serf, ut_Worker))
+    (HouseType: (htQuary, htNone, htNone, htNone);                      UnitType: (ut_StoneCutter, ut_None)),
+    (HouseType: (htWoodcutters, htNone, htNone, htNone);                UnitType: (ut_Woodcutter, ut_None)),
+    (HouseType: (htFisherHut, htNone, htNone, htNone);                  UnitType: (ut_Fisher, ut_None)),
+    (HouseType: (htFarm, htWineyard, htNone, htNone);                   UnitType: (ut_Farmer, ut_None)),
+    (HouseType: (htMill, htBakery, htNone, htNone);                     UnitType: (ut_Baker, ut_None)),
+    (HouseType: (htSwine, htStables, htNone, htNone);                   UnitType: (ut_AnimalBreeder, ut_None)),
+    (HouseType: (htButchers, htTannery, htNone, htNone);                UnitType: (ut_Butcher, ut_None)),
+    (HouseType: (htMetallurgists, htIronSmithy, htNone, htNone);        UnitType: (ut_Metallurgist, ut_None)),
+    (HouseType: (htArmorSmithy, htWeaponSmithy, htNone, htNone);        UnitType: (ut_Smith, ut_None)),
+    (HouseType: (htCoalMine, htIronMine, htGoldMine, htNone);           UnitType: (ut_Miner, ut_None)),
+    (HouseType: (htSawmill, htWeaponWorkshop, htArmorWorkshop, htNone); UnitType: (ut_Lamberjack, ut_None)),
+    (HouseType: (htBarracks, htTownHall, htWatchTower, htNone);         UnitType: (ut_Recruit, ut_None)),
+    (HouseType: (htStore, htSchool, htInn, htMarketplace);              UnitType: (ut_Serf, ut_Worker))
     );
 
-  MapEd_Order: array [0..13] of TUnitType = (
+  MapEd_Order: array [0..13] of TKMUnitType = (
     ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
     ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry, ut_Barbarian,
     ut_Peasant, ut_Slingshot, ut_MetalBarbarian, ut_Horseman);
@@ -124,7 +130,7 @@ const
     66, 67, 68, 69, 70,
     79, 80, 81, 82);
 
-  Animal_Order: array [0..7] of TUnitType = (
+  Animal_Order: array [0..7] of TKMUnitType = (
     ut_Wolf, ut_Fish,        ut_Watersnake, ut_Seastar,
     ut_Crab, ut_Waterflower, ut_Waterleaf,  ut_Duck);
 
@@ -149,7 +155,7 @@ const
 
 implementation
 uses
-  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys;
+  KM_Main, KM_Game, KM_HandSpectator, KM_Terrain, KM_RenderPool, KM_Resource, KM_ResCursors, KM_ResKeys, KM_RenderUI, KM_ResFonts;
 
 
 { TKMUserInterfaceGame }
@@ -166,6 +172,22 @@ begin
   fDragScrollingViewportPos := KMPOINTF_ZERO;
 
   gRenderPool := TRenderPool.Create(fViewport, aRender);
+end;
+
+
+procedure TKMUserInterfaceGame.AfterCreateComplete;
+begin
+  //Hints should be created last, as they should be above everything in UI, to be show on top of all other Controls
+  Bevel_HintBG := TKMBevel.Create(Panel_Main,224+35,Panel_Main.Height-23,300,21);
+  Bevel_HintBG.BackAlpha := 0.5;
+  Bevel_HintBG.EdgeAlpha := 0.5;
+  Bevel_HintBG.Hide;
+  Bevel_HintBG.Anchors := [anLeft, anBottom];
+  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
+  Label_Hint.Anchors := [anLeft, anBottom];
+
+  // Controls without a hint will reset the Hint to ''
+  fMyControls.OnHint := DisplayHint;
 end;
 
 
@@ -200,7 +222,7 @@ begin
    // Restrict the cursor to the window, for now.
    //TODO: Allow one to drag out of the window, and still capture.
    {$IFDEF MSWindows}
-     WindowRect := gMain.ClientRect;
+     WindowRect := gMain.ClientRect(1); //Reduce ClientRect by 1 pixel, to fix 'jump viewport' bug when dragscrolling over the window border
      ClipCursor(@WindowRect);
    {$ENDIF}
    fDragScrollingCursorPos.X := gGameCursor.Pixel.X;
@@ -248,6 +270,32 @@ begin
 end;
 
 
+procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
+begin
+  if (fPrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
+
+  if (fPrevHint <> nil) and (Sender = fPrevHint)
+    and (TKMControl(fPrevHint).Hint = fPrevHintMessage) then Exit; // Hint didn't change (not only Hint object, but also Hint message didn't change)
+
+  if (Sender = Label_Hint) or (Sender = Bevel_HintBG) then Exit; // When previous Hint obj is covered by Label_Hint or Bevel_HintBG ignore it.
+
+  if (Sender = nil) or (TKMControl(Sender).Hint = '') then
+  begin
+    Label_Hint.Caption := '';
+    Bevel_HintBG.Hide;
+    fPrevHintMessage := '';
+  end
+  else
+  begin
+    Label_Hint.Caption := TKMControl(Sender).Hint;
+    Bevel_HintBG.Show;
+    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
+    fPrevHintMessage := TKMControl(Sender).Hint;
+  end;
+  fPrevHint := Sender;
+end;
+
+
 procedure TKMUserInterfaceGame.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
 var
   VP: TKMPointF;
@@ -269,7 +317,7 @@ begin
 end;
 
 
-procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer);
+procedure TKMUserInterfaceGame.MouseWheel(Shift: TShiftState; WheelDelta, X, Y: Integer; var aHandled: Boolean);
 var
   PrevCursor: TKMPointF;
 begin
@@ -278,17 +326,17 @@ begin
   if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 
   // Allow to zoom only when cursor is over map. Controls handle zoom on their own
-  if (fMyControls.CtrlOver = nil) then
-  begin
-    UpdateGameCursor(X, Y, Shift); // Make sure we have the correct cursor position to begin with
-    PrevCursor := gGameCursor.Float;
-    fViewport.Zoom := fViewport.Zoom + WheelDelta / 2000;
-    UpdateGameCursor(X, Y, Shift); // Zooming changes the cursor position
-    // Move the center of the screen so the cursor stays on the same tile, thus pivoting the zoom around the cursor
-    fViewport.Position := KMPointF(fViewport.Position.X + PrevCursor.X-gGameCursor.Float.X,
-                                   fViewport.Position.Y + PrevCursor.Y-gGameCursor.Float.Y);
-    UpdateGameCursor(X, Y, Shift); // Recentering the map changes the cursor position
-  end;
+  if aHandled then Exit;
+  
+  UpdateGameCursor(X, Y, Shift); // Make sure we have the correct cursor position to begin with
+  PrevCursor := gGameCursor.Float;
+  fViewport.Zoom := fViewport.Zoom + WheelDelta / 2000;
+  UpdateGameCursor(X, Y, Shift); // Zooming changes the cursor position
+  // Move the center of the screen so the cursor stays on the same tile, thus pivoting the zoom around the cursor
+  fViewport.Position := KMPointF(fViewport.Position.X + PrevCursor.X-gGameCursor.Float.X,
+                                 fViewport.Position.Y + PrevCursor.Y-gGameCursor.Float.Y);
+  UpdateGameCursor(X, Y, Shift); // Recentering the map changes the cursor position
+  aHandled := True;
 end;
 
 
@@ -311,7 +359,7 @@ begin
 end;
 
 
-procedure TKMUserInterfaceGame.SyncUIView(aCenter: TKMPointF; aZoom: Single = 1);
+procedure TKMUserInterfaceGame.SyncUIView(const aCenter: TKMPointF; aZoom: Single = 1);
 begin
   fViewport.Position := aCenter;
   fViewport.Zoom := aZoom;

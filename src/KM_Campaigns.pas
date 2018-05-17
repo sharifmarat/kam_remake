@@ -13,7 +13,7 @@ const
   MAX_CAMP_NODES = 64;
 
 type
-  TBriefingCorner = (bcBottomRight, bcBottomLeft);
+  TKMBriefingCorner = (bcBottomRight, bcBottomLeft);
   TMissionVideoTypes = (mvBefore, mvAfter);
   //Unique campaign identification, stored as 3 ANSI letters (TSK, TPR, etc)
   //3 bytes are used to avoid string types issues

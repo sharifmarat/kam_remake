@@ -1,6 +1,8 @@
 unit KM_NetworkTypes;
 {$I KaM_Remake.inc}
 interface
+uses
+  Math, KM_Points, KM_CommonClasses;
 
 
 const
@@ -177,20 +179,127 @@ type
   PKMNetHandleIndex = ^TKMNetHandleIndex;
   TMPGameState = (mgsNone, mgsLobby, mgsLoading, mgsGame);
   TKMServerType = (mstClient, mstDedicated, mstLocal);
-  TNetPlayerType = (nptHuman, nptComputer, nptClosed);
+  TKMNetPlayerType = (nptHuman, nptClosed, nptComputerClassic, nptComputerAdvanced);
+  TKMNetPlayerTypeSet = set of TKMNetPlayerType;
+
+
+  TKMPGameFilter = class
+  private
+    fMapsFilterEnabled: Boolean;
+    fMapsCRCList: TKMMapsCRCList;
+    fPeacetimeRng: TKMRangeInt;
+    fSpeedRng: TKMRangeSingle;
+    fSpeedAfterPTRng: TKMRangeSingle;
+    procedure Reset;
+  public
+    constructor Create; overload;
+    constructor Create(aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                       const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle); overload;
+    destructor Destroy; overload;
+
+    function FilterMap(aCRC: Cardinal): Boolean;
+
+    property MapsFilterEnabled: Boolean read fMapsFilterEnabled;
+    property MapsCRCList: TKMMapsCRCList read fMapsCRCList;
+    property PeacetimeRng: TKMRangeInt read fPeacetimeRng;
+    property SpeedRng: TKMRangeSingle read fSpeedRng;
+    property SpeedAfterPTRng: TKMRangeSingle read fSpeedAfterPTRng;
+
+    procedure Save(aStream: TKMemoryStream);
+    procedure Load(aStream: TKMemoryStream);
+  end;
 
 const
+  AI_PLAYER_TYPE_MIN = nptComputerClassic;
+  AI_PLAYER_TYPE_MAX = nptComputerAdvanced;
   //Used in the dedicated server display as it does not care about translations (translated ones are in KM_TextLibrary)
   GameStateText: array [TMPGameState] of UnicodeString = ('None', 'Lobby', 'Loading', 'Game');
-  NetPlayerTypeName: array [TNetPlayerType] of UnicodeString = ('Human', 'AI Player', 'Closed');
+  NetPlayerTypeName: array [TKMNetPlayerType] of UnicodeString = ('Human', 'Closed', 'Classic AI Player', 'Advanced AI Player');
   ServerTypePic: array [TKMServerType] of Word = (74, 75, 79);
 
-
   function GetNetAddressStr(aNetworkAddress: Integer): String;
+  function GetAIPlayerIcon(aNetPlayerType: TKMNetPlayerType): Word;
 
 implementation
 
-uses SysUtils;
+uses
+  SysUtils;
+
+
+{ TKMPGameFilter }
+constructor TKMPGameFilter.Create;
+begin
+  inherited;
+
+  fMapsCRCList := TKMMapsCRCList.Create;
+  Reset;
+end;
+
+
+constructor TKMPGameFilter.Create(aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                                  const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
+begin
+  inherited Create;
+
+  fMapsFilterEnabled := aMapsFilterEnabled;
+
+  fMapsCRCList := TKMMapsCRCList.Create;
+  fMapsCRCList.LoadFromString(aMapsCRCListStr);
+
+  fPeacetimeRng := aPeacetimeRng;
+  fSpeedRng := aSpeedRng;
+  fSpeedAfterPTRng := aSpeedRngAfterPT;
+end;
+
+
+destructor TKMPGameFilter.Destroy;
+begin
+  FreeAndNil(fMapsCRCList);
+
+  inherited;
+end;
+
+
+procedure TKMPGameFilter.Save(aStream: TKMemoryStream);
+begin
+  aStream.Write(fMapsFilterEnabled);
+  aStream.WriteA(AnsiString(fMapsCRCList.PackToString));
+  aStream.Write(fPeacetimeRng);
+  aStream.Write(fSpeedRng);
+  aStream.Write(fSpeedAfterPTRng);
+end;
+
+
+procedure TKMPGameFilter.Load(aStream: TKMemoryStream);
+var
+  StrA: AnsiString;
+begin
+  aStream.Read(fMapsFilterEnabled);
+  aStream.ReadA(StrA);
+  fMapsCRCList.LoadFromString(UnicodeString(StrA));
+  aStream.Read(fPeacetimeRng);
+  aStream.Read(fSpeedRng);
+  aStream.Read(fSpeedAfterPTRng);
+end;
+
+
+procedure TKMPGameFilter.Reset;
+begin
+  fMapsCRCList.Clear;
+  fMapsFilterEnabled := False;
+  fPeacetimeRng.Min := 0;
+  fPeacetimeRng.Max := MaxInt;
+  fSpeedRng.Min := 0;
+  fSpeedRng.Max := MaxSingle;
+  fSpeedAfterPTRng.Min := 0;
+  fSpeedAfterPTRng.Max := MaxSingle;
+end;
+
+
+function TKMPGameFilter.FilterMap(aCRC: Cardinal): Boolean;
+begin
+  Result := not fMapsFilterEnabled or fMapsCRCList.Contains(aCRC);
+end;
 
 
 function GetNetAddressStr(aNetworkAddress: Integer): String;
@@ -202,6 +311,16 @@ begin
     NET_ADDRESS_HOST    : Result := 'HOST';
     NET_ADDRESS_SERVER  : Result := 'SERVER';
     else                  Result := IntToStr(aNetworkAddress);
+  end;
+end;
+
+
+function GetAIPlayerIcon(aNetPlayerType: TKMNetPlayerType): Word;
+begin
+  case aNetPlayerType of
+    nptComputerClassic:   Result := 62; //PC Icon
+    nptComputerAdvanced:  Result := 74; //Large PC Icon
+    else                  Result := 0;  //None
   end;
 end;
 

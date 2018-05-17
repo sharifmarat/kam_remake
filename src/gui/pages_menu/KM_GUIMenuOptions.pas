@@ -13,10 +13,10 @@ type
     fTempKeys: TKMKeyLibrary;
     fLastAlphaShadows: Boolean;
 
-    fOnPageChange: TGUIEventText; // will be in ancestor class
+    fOnPageChange: TKMMenuChangeEventText; // will be in ancestor class
 
-    fMainSettings: TMainSettings;
-    fGameSettings: TGameSettings;
+    fMainSettings: TKMainSettings;
+    fGameSettings: TKMGameSettings;
     fResolutions: TKMResolutions;
 
     // We remember old values to enable/disable "Apply" button dynamicaly
@@ -47,6 +47,7 @@ type
         TrackBar_Options_ScrollSpeed: TKMTrackBar;
       Panel_Options_Game: TKMPanel;
         CheckBox_Options_Autosave: TKMCheckBox;
+        CheckBox_Options_AutosaveAtGameEnd: TKMCheckBox;
       Panel_Options_Replays: TKMPanel;
         CheckBox_Options_ReplayAutopause: TKMCheckBox;
       Panel_Options_Sound: TKMPanel;
@@ -73,7 +74,7 @@ type
             Button_OptionsKeysCancel: TKMButton;
       Button_OptionsBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
     procedure Show;
   end;
@@ -85,7 +86,7 @@ uses
 
 
 { TKMGUIMainOptions }
-constructor TKMMenuOptions.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuOptions.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 var
   I: Integer;
 begin
@@ -117,13 +118,16 @@ begin
       TrackBar_Options_ScrollSpeed.OnChange := Change;
 
     // Gameplay section
-    Panel_Options_Game:=TKMPanel.Create(Panel_Options,60,230,280,50);
+    Panel_Options_Game := TKMPanel.Create(Panel_Options,60,210,280,70);
     Panel_Options_Game.Anchors := [anLeft];
       TKMLabel.Create(Panel_Options_Game,6,0,270,20,gResTexts[TX_MENU_OPTIONS_GAMEPLAY],fnt_Outline,taLeft);
-      TKMBevel.Create(Panel_Options_Game,0,20,280,30);
+      TKMBevel.Create(Panel_Options_Game,0,20,280,50);
 
       CheckBox_Options_Autosave := TKMCheckBox.Create(Panel_Options_Game,12,27,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE], fnt_Metal);
       CheckBox_Options_Autosave.OnClick := Change;
+
+      CheckBox_Options_AutosaveAtGameEnd := TKMCheckBox.Create(Panel_Options_Game,12,47,256,20,gResTexts[TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END], fnt_Metal);
+      CheckBox_Options_AutosaveAtGameEnd.OnClick := Change;
 
     // SFX section
     Panel_Options_Sound:=TKMPanel.Create(Panel_Options,60,300,280,180);
@@ -145,10 +149,10 @@ begin
     //Replays section
     Panel_Options_Replays := TKMPanel.Create(Panel_Options,60,500,280,50);
     Panel_Options_Replays.Anchors := [anLeft];
-      TKMLabel.Create(Panel_Options_Replays,6,0,270,20,'Replays:',fnt_Outline,taLeft);   //TODO translate
+      TKMLabel.Create(Panel_Options_Replays,6,0,270,20,gResTexts[TX_WORD_REPLAY] + ':',fnt_Outline,taLeft);
       TKMBevel.Create(Panel_Options_Replays,0,20,280,30);
 
-      CheckBox_Options_ReplayAutopause := TKMCheckBox.Create(Panel_Options_Replays,12,27,256,20,'Pause at peacetime end', fnt_Metal);   //TODO translate
+      CheckBox_Options_ReplayAutopause := TKMCheckBox.Create(Panel_Options_Replays,12,27,256,20,gResTexts[TX_SETTINGS_PAUSE_AT_PT_END], fnt_Metal);
       CheckBox_Options_ReplayAutopause.OnClick := Change;
 
     // Keybindings button
@@ -278,6 +282,7 @@ end;
 procedure TKMMenuOptions.Refresh;
 begin
   CheckBox_Options_Autosave.Checked        := fGameSettings.Autosave;
+  CheckBox_Options_AutosaveAtGameEnd.Checked := fGameSettings.AutosaveAtGameEnd;
   CheckBox_Options_ReplayAutopause.Checked := fGameSettings.ReplayAutopause;
   TrackBar_Options_Brightness.Position     := fGameSettings.Brightness;
   CheckBox_Options_VSync.Checked           := fMainSettings.VSync;
@@ -309,6 +314,7 @@ begin
   ShuffleToggled := (fGameSettings.ShuffleOn <> CheckBox_Options_ShuffleOn.Checked);
 
   fGameSettings.Autosave        := CheckBox_Options_Autosave.Checked;
+  fGameSettings.AutosaveAtGameEnd := CheckBox_Options_AutosaveAtGameEnd.Checked;
   fGameSettings.ReplayAutopause := CheckBox_Options_ReplayAutopause.Checked;
   fGameSettings.Brightness      := TrackBar_Options_Brightness.Position;
   fMainSettings.VSync           := CheckBox_Options_VSync.Checked;
@@ -529,11 +535,24 @@ end;
 
 
 procedure TKMMenuOptions.KeysRefreshList;
+
+  function GetFunctionName(aTX_ID: Integer): String;
+  begin
+    case aTX_ID of
+      TX_KEY_FUNC_GAME_SPEED_2: Result := Format(gResTexts[aTX_ID], [FormatFloat('##0.##', gGameApp.GameSettings.SpeedMedium)]);
+      TX_KEY_FUNC_GAME_SPEED_3: Result := Format(gResTexts[aTX_ID], [FormatFloat('##0.##', gGameApp.GameSettings.SpeedFast)]);
+      TX_KEY_FUNC_GAME_SPEED_4: Result := Format(gResTexts[aTX_ID], [FormatFloat('##0.##', gGameApp.GameSettings.SpeedVeryFast)]);
+      else                      Result := gResTexts[aTX_ID];
+
+    end;
+  end;
+
 const
   KEY_TX: array [TKMFuncArea] of Word = (TX_KEY_COMMON, TX_KEY_GAME, TX_KEY_SPECTATE_REPLAY, TX_KEY_MAPEDIT);
 var
   I, prevI: Integer;
   K: TKMFuncArea;
+  KeyName: UnicodeString;
 begin
   prevI := ColumnBox_OptionsKeys.TopIndex;
 
@@ -547,8 +566,13 @@ begin
     // Do not show the debug keys
     for I := 0 to fTempKeys.Count - 1 do
       if (fTempKeys[I].Area = K) and not fTempKeys[I].IsChangableByPlayer then
-        ColumnBox_OptionsKeys.AddItem(MakeListRow([gResTexts[fTempKeys[I].TextId], fTempKeys.GetKeyNameById(I)],
+      begin
+        KeyName := fTempKeys.GetKeyNameById(I);
+        if I = SC_DEBUG_WINDOW then
+          KeyName := KeyName + ' / Ctrl + ' + KeyName; //Also show Ctrl + F11, for debug window hotkey
+        ColumnBox_OptionsKeys.AddItem(MakeListRow([GetFunctionName(fTempKeys[I].TextId), KeyName],
                                                   [$FFFFFFFF, $FFFFFFFF], [$FF0000FF, $FF0000FF], I));
+      end;
   end;
 
   ColumnBox_OptionsKeys.TopIndex := prevI;

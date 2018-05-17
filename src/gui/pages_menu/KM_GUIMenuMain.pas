@@ -9,7 +9,7 @@ uses
 type
   TKMMenuMain = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
     procedure ButtonClick(Sender: TObject);
   protected
     Panel_MainMenu: TKMPanel;
@@ -22,7 +22,7 @@ type
     Button_MM_Credits: TKMButton;
     Button_MM_Quit: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     procedure Show;
   end;
 
@@ -33,7 +33,7 @@ uses
 
 
 { TKMGUIMenuMain }
-constructor TKMMenuMain.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMain.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 

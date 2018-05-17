@@ -14,7 +14,7 @@ type
   private
     fPaintVirtualGroups: Boolean; //Paint missing army memmbers
     fSepia: Boolean; //Less saturated display for menu
-    fParser: TMissionParserPreview;
+    fParser: TKMMissionParserPreview;
     fMyTerrain: TKMTerrain;
     fAlerts: TKMAlerts;
 
@@ -57,9 +57,10 @@ type
 implementation
 uses
   SysUtils, KromUtils, Math,
-  KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
+  KM_GameApp, KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
   KM_Units, KM_UnitGroups, KM_Hand, KM_HandsCollection,
-  KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils;
+  KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils,
+  KM_GameTypes;
 
 
 { TKMMinimap }
@@ -73,7 +74,7 @@ begin
   //We don't need terrain on main menu, just a parser
   //Otherwise access synced Game terrain
   if aFromParser then
-    fParser := TMissionParserPreview.Create;
+    fParser := TKMMissionParserPreview.Create;
 end;
 
 
@@ -193,29 +194,49 @@ end;
 
 //MapEditor stores only commanders instead of all groups members
 procedure TKMMinimap.UpdateMinimapFromGame;
+
+  function GetColor(aHandId: TKMHandIndex): Cardinal;
+  begin
+    if (gGame <> nil) then
+    begin
+      if (gGame.IsMapEditor or gGameApp.GameSettings.ShowPlayersColors) then
+        Result := gHands[aHandId].FlagColor
+      else begin
+        if aHandId = gMySpectator.HandIndex then
+          Result := gGameApp.GameSettings.PlayerColorSelf
+        else if (gHands[aHandId].Alliances[gMySpectator.HandIndex] = at_Ally) then
+          Result := gGameApp.GameSettings.PlayerColorAlly
+        else
+          Result := gGameApp.GameSettings.PlayerColorEnemy;
+      end;
+    end else
+      Result := gHands[aHandId].FlagColor;
+  end;
+
 var
-  FOW,ID: Byte;
+  FOW: Byte;
+  ID: Word;
   I,J,K: Integer;
   U: TKMUnit;
   P: TKMPoint;
   DoesFit: Boolean;
   Light: Smallint;
-  Owner: TKMHandIndex;
   Group: TKMUnitGroup;
+  TileOwner: TKMHandIndex;
 begin
-  if OVERLAY_OWNERSHIP then
-  begin
-    for I := 0 to fMapY - 1 do
-      for K := 0 to fMapX - 1 do
-      begin
-        Owner := gAIFields.Influences.GetBestOwner(K,I);
-        if Owner <> PLAYER_NONE then
-          fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
-        else
-          fBase[I*fMapX + K] := $FF000000;
-      end;
-    Exit;
-  end;
+  //if OVERLAY_OWNERSHIP then
+  //begin
+  //  for I := 0 to fMapY - 1 do
+  //    for K := 0 to fMapX - 1 do
+  //    begin
+  //      Owner := gAIFields.Influences.GetBestOwner(K,I);
+  //      if Owner <> PLAYER_NONE then
+  //        fBase[I*fMapX + K] := ReduceBrightness(gHands[Owner].FlagColor, Byte(Max(gAIFields.Influences.Ownership[Owner,I,K],0)))
+  //      else
+  //        fBase[I*fMapX + K] := $FF000000;
+  //    end;
+  //  Exit;
+  //end;
 
   for I := 0 to fMapY - 1 do
     for K := 0 to fMapX - 1 do
@@ -224,22 +245,33 @@ begin
 
       if FOW = 0 then
         fBase[I*fMapX + K] := $FF000000
-      else
-        if (fMyTerrain.Land[I+1,K+1].TileOwner <> -1)
+      else begin
+        TileOwner := -1;
+        if fMyTerrain.Land[I+1,K+1].TileOwner <> -1 then
+        begin
+          if fMyTerrain.TileHasRoad(K+1, I+1)
+            and (fMyTerrain.Land[I+1,K+1].IsUnit <> nil)
+            and InRange(TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner, 0, MAX_HANDS) then
+            TileOwner := TKMUnit(fMyTerrain.Land[I+1,K+1].IsUnit).Owner
+          else
+            TileOwner := fMyTerrain.Land[I+1,K+1].TileOwner;
+        end;
+
+        if (TileOwner <> -1)
           and not fMyTerrain.TileIsCornField(KMPoint(K+1, I+1)) //Do not show corn and wine on minimap
           and not fMyTerrain.TileIsWineField(KMPoint(K+1, I+1)) then
-          fBase[I*fMapX + K] := gHands[fMyTerrain.Land[I+1,K+1].TileOwner].FlagColor
+          fBase[I*fMapX + K] := GetColor(TileOwner)
         else
         begin
           U := fMyTerrain.Land[I+1,K+1].IsUnit;
           if U <> nil then
             if U.Owner <> PLAYER_ANIMAL then
-              fBase[I*fMapX + K] := gHands[U.Owner].FlagColor
+              fBase[I*fMapX + K] := GetColor(U.Owner)
             else
               fBase[I*fMapX + K] := gRes.Units[U.UnitType].MinimapColor
           else
           begin
-            ID := fMyTerrain.Land[I+1,K+1].Terrain;
+            ID := fMyTerrain.Land[I+1,K+1].BaseLayer.Terrain;
             // Do not use fMyTerrain.Land[].Light for borders of the map, because it is set to -1 for fading effect
             // So assume fMyTerrain.Land[].Light as 0 in this case
             if (I = 0) or (I = fMapY - 1) or (K = 0) or (K = fMapX - 1) then
@@ -251,6 +283,7 @@ begin
                                   Byte(EnsureRange(gRes.Tileset.TileColor[ID].B+Light,0,255)) shl 16 or $FF000000;
           end;
         end;
+      end;
     end;
 
   //Scan all players units and paint all virtual group members in MapEd
@@ -268,15 +301,15 @@ begin
         end;
       end;
 
-  //Draw
-  if (gGame <> nil) and (gGame.GameMode = gmMapEd)
+  //Draw 'Resize map' feature on minimap
+  if (gGame <> nil) and gGame.IsMapEditor
     and (mlMapResize in gGame.MapEditor.VisibleLayers)
     and not KMSameRect(gGame.MapEditor.ResizeMapRect, KMRECT_ZERO) then
     for I := 0 to fMapY - 1 do
       for K := 0 to fMapX - 1 do
       begin
         if not KMInRect(KMPoint(K+1,I+1), gGame.MapEditor.ResizeMapRect) then
-          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 2, 1, 1);
+          fBase[I*fMapX + K] := ApplyColorCoef(fBase[I*fMapX + K], 1, 2, 1, 1); // make red margins where current map is cut
       end;
 
 end;

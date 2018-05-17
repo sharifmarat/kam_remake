@@ -4,8 +4,8 @@ interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  Classes, //SysUtils,
-  KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave;
+  Classes,
+  KM_Controls, KM_Defaults, KM_GUIMapEdMenuSave, KM_CommonTypes;
 
 type
   TKMMapEdMenuQuickPlay = class
@@ -27,14 +27,14 @@ type
       Label_QuickPlay: TKMLabel;
       Button_QuickPlay, Button_Cancel: TKMButton;
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aOnMapTypChanged: TBooleanEvent);
     destructor Destroy; override;
 
-    procedure MapTypeChanged(aIsMultiplayer: Boolean);
     procedure SetLoadMode(aMultiplayer: Boolean);
     procedure Show;
     procedure Hide;
     function Visible: Boolean;
+    //Todo refactoring - do not use KeyDown in TKMMapEdMenuQuickPlay, but use PopUp_QuickPlay.OnKeyDown instead
     function KeyDown(Key: Word; Shift: TShiftState): Boolean;
   end;
 
@@ -45,7 +45,7 @@ uses
   KM_RenderUI, KM_ResFonts, KM_ResTexts, KM_Resource, Math;
 
 
-constructor TKMMapEdMenuQuickPlay.Create(aParent: TKMPanel);
+constructor TKMMapEdMenuQuickPlay.Create(aParent: TKMPanel; aOnMapTypChanged: TBooleanEvent);
 const
   ControlsWidth = 220;
 var
@@ -53,33 +53,32 @@ var
 begin
   inherited Create;
 
-  PopUp_QuickPlay := TKMPopUpPanel.Create(aParent, 240, 420, 'Quick Play'); //Todo translate
+  PopUp_QuickPlay := TKMPopUpPanel.Create(aParent, 240, 420, gResTexts[TX_MAPED_MAP_QUICK_PLAY], pubgit_Gray);
 
   PopUp_QuickPlay.Width := Math.Max(240, gRes.Fonts[PopUp_QuickPlay.Font].GetTextSize(PopUp_QuickPlay.Caption).X + 40);
   Left := (PopUp_QuickPlay.Width - ControlsWidth) div 2;
-    TKMLabel.Create(PopUp_QuickPlay, PopUp_QuickPlay.Width div 2, 50, 'Select player:', fnt_Metal, taCenter); //Todo translate
+    TKMLabel.Create(PopUp_QuickPlay, PopUp_QuickPlay.Width div 2, 50, gResTexts[TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER], fnt_Metal, taCenter);
 
     DropList_SelectHand := TKMDropList.Create(PopUp_QuickPlay, Left, 75, ControlsWidth, 20, fnt_Game, '', bsGame);
-    DropList_SelectHand.Hint := 'Select player to start map with'; //Todo translate
+    DropList_SelectHand.Hint := gResTexts[TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER_TO_START];
 
     Panel_Save := TKMPanel.Create(PopUp_QuickPlay, Left, 95, ControlsWidth, 230);
 
-    Button_QuickPlay := TKMButton.Create(PopUp_QuickPlay, Left, 310, ControlsWidth, 30, 'Start without save', bsGame); //Todo translate
-    Button_QuickPlay.Hint := 'Discard changes and start game for selected player'; //Todo translate
+    Button_QuickPlay := TKMButton.Create(PopUp_QuickPlay, Left, 310, ControlsWidth, 30, gResTexts[TX_MAPED_MAP_QUICK_PLAY_START_NO_SAVE], bsGame);
+    Button_QuickPlay.Hint := gResTexts[TX_MAPED_MAP_QUICK_PLAY_START_NO_SAVE_HINT];
     Button_QuickPlay.OnClick := QuickPlay_Click;
 
-    Button_Cancel := TKMButton.Create(PopUp_QuickPlay, (PopUp_QuickPlay.Width - ControlsWidth) div 2, PopUp_QuickPlay.Height - 40, ControlsWidth, 30, 'Cancel', bsGame); //Todo translate
-    Button_Cancel.Hint := 'Cancel'; //Todo translate
+    Button_Cancel := TKMButton.Create(PopUp_QuickPlay, (PopUp_QuickPlay.Width - ControlsWidth) div 2, PopUp_QuickPlay.Height - 40, ControlsWidth, 30, gResTexts[TX_WORD_CANCEL], bsGame);
+    Button_Cancel.Hint := gResTexts[TX_WORD_CANCEL];
     Button_Cancel.OnClick := Cancel_Click;
 
-  fMenuSave := TKMMapEdMenuSave.Create(Panel_Save, SaveDone, 10, 220);
-  fMenuSave.OnChangeMapType := MapTypeChanged;
+  fMenuSave := TKMMapEdMenuSave.Create(Panel_Save, SaveDone, aOnMapTypChanged, 10, 220);
 
   fMenuSave.Button_SaveCancel.Hide;
 
   fMenuSave.Button_SaveSave.Top := fMenuSave.Button_SaveSave.Top + 10;
-  fMenuSave.Button_SaveSave.Caption := 'Save and start'; //Todo translate
-  fMenuSave.Button_SaveSave.Hint := 'Save map and start game for selected player'; //Todo translate
+  fMenuSave.Button_SaveSave.Caption := gResTexts[TX_MAPED_MAP_QUICK_PLAY_SAVE_AND_START];
+  fMenuSave.Button_SaveSave.Hint := gResTexts[TX_MAPED_MAP_QUICK_PLAY_SAVE_AND_START_HINT];
   fMenuSave.Button_SaveSave.OnChangeEnableStatus := SaveBtn_EnableStatusChanged;
 
 end;
@@ -112,6 +111,7 @@ begin
 end;
 
 
+//Todo refactoring - do not use KeyDown in TKMMapEdMenuQuickPlay, but use PopUp_QuickPlay.OnKeyDown instead
 function TKMMapEdMenuQuickPlay.KeyDown(Key: Word; Shift: TShiftState): Boolean;
 begin
   Result := True; //We want to handle all keys here
@@ -119,12 +119,6 @@ begin
     VK_ESCAPE:  if Button_Cancel.IsClickable then
                   Cancel_Click(Button_Cancel);
   end;
-end;
-
-
-procedure TKMMapEdMenuQuickPlay.MapTypeChanged(aIsMultiplayer: Boolean);
-begin
-  SetLoadMode(aIsMultiplayer);
 end;
 
 
@@ -138,7 +132,7 @@ begin
     else
       PlayerSelectFirst;
   end;
-  Button_QuickPlay.Enabled := (not gGame.MapEditor.IsNewMap or gGame.MapEditor.WereSaved) and DropList_SelectHand.List.Selected;
+  Button_QuickPlay.Enabled := (not gGame.MapEditor.IsNewMap or gGame.MapEditor.WasSaved) and DropList_SelectHand.List.Selected;
 end;
 
 

@@ -39,7 +39,7 @@ var
   RXName: string;
   resHouses: TKMResHouses;
   resUnits: TKMResUnits;
-  UT: TUnitType;
+  UT: TKMUnitType;
   Dir: TKMDirection;
 begin
   //ruCustom sprite packs do not have a main RXX file so don't need packing
@@ -63,7 +63,7 @@ begin
         SpritePack.LoadFromFolder(ExeDir + 'SpriteResource\');
 
       //Tiles must stay the same size as they can't use pivots
-      if RT <> rxTiles then
+      if (RT <> rxTiles) and (gLog <> nil) then
         gLog.AddTime('Trimmed ' + IntToStr(SpritePack.TrimSprites));
 
       //Houses need some special treatment to adapt to GL_ALPHA_TEST that we use for construction steps
@@ -92,7 +92,7 @@ begin
         end;
         if RT = rxUnits then
         begin
-          SpritePack.SoftenShadows(6251, 6314, False); //Smooth thought bubbles
+          SpritePack.SoftenShadows(6251, 6322, False); //Smooth thought bubbles
           //Smooth all death animations for all units
           resUnits := TKMResUnits.Create;
           DeathAnimCount := 0; //We need to remember which ones we've done because units reuse them

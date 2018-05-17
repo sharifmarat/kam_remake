@@ -71,7 +71,7 @@ type
 
     procedure ExportTreeAnim;
     procedure ExportHouseAnim;
-    procedure ExportUnitAnim(aUnitFrom, aUnitTo: TUnitType; aExportUnused: Boolean = False);
+    procedure ExportUnitAnim(aUnitFrom, aUnitTo: TKMUnitType; aExportUnused: Boolean = False);
   end;
 
 
@@ -176,7 +176,8 @@ begin
   gLog.AddTime('Read fonts is done');
 
   fTileset := TKMResTileset.Create(ExeDir + 'data'+PathDelim+'defines'+PathDelim+'pattern.dat');
-  fTileset.TileColor := fSprites.Sprites[rxTiles].GetSpriteColors(248); //Tiles 249..256 are road overlays
+  if not SKIP_RENDER then
+    fTileset.TileColor := fSprites.Sprites[rxTiles].GetSpriteColors(TILES_CNT);
 
   fMapElements := TKMResMapElements.Create;
   fMapElements.LoadFromFile(ExeDir + 'data'+PathDelim+'defines'+PathDelim+'mapelem.dat');
@@ -221,6 +222,7 @@ procedure TKMResource.LoadGameResources(aAlphaShadows: Boolean; aForceReload: Bo
 var
   DoForceReload: Boolean;
 begin
+  gLog.AddTime('LoadGameResources ... AlphaShadows: ' + BoolToStr(aAlphaShadows, True) + '. Forced: ' + BoolToStr(aForceReload, True));
   DoForceReload := aForceReload or (aAlphaShadows <> fSprites.AlphaShadows);
   if (fDataState <> rlsAll) or DoForceReload then
   begin
@@ -244,17 +246,16 @@ end;
 
 
 //Export Units graphics categorized by Unit and Action
-procedure TKMResource.ExportUnitAnim(aUnitFrom, aUnitTo: TUnitType; aExportUnused: Boolean = False);
+procedure TKMResource.ExportUnitAnim(aUnitFrom, aUnitTo: TKMUnitType; aExportUnused: Boolean = False);
 var
   FullFolder,Folder: string;
-  U: TUnitType;
-  A: TUnitActionType;
+  U: TKMUnitType;
+  A: TKMUnitActionType;
   Anim: TKMAnimLoop;
   D: TKMDirection;
-  R: TWareType;
+  R: TKMWareType;
   T: TKMUnitThought;
   i,ci:integer;
-  sy,sx,y,x:integer;
   Used:array of Boolean;
   RXData: TRXData;
   SpritePack: TKMSpritePack;
@@ -274,7 +275,7 @@ begin
       fUnits := TKMResUnits.Create;
 
     for U := aUnitFrom to aUnitTo do
-      for A := Low(TUnitActionType) to High(TUnitActionType) do
+      for A := Low(TKMUnitActionType) to High(TKMUnitActionType) do
       begin
         FolderCreated := False;
         for D := dir_N to dir_NW do
@@ -299,8 +300,8 @@ begin
     SetLength(Used, Length(RXData.Size));
 
     //Exclude actions
-    for U := Low(TUnitType) to High(TUnitType) do
-      for A := Low(TUnitActionType) to High(TUnitActionType) do
+    for U := Low(TKMUnitType) to High(TKMUnitType) do
+      for A := Low(TKMUnitActionType) to High(TKMUnitActionType) do
         for D := dir_N to dir_NW do
           if fUnits[U].UnitAnim[A,D].Step[1] <> -1 then
           for i := 1 to fUnits[U].UnitAnim[A,D].Count do
@@ -329,7 +330,7 @@ begin
                 begin
                   //Use default locale for Unit GUIName, as translation could be not good for file system (like russian 'Крестьянин/Винодел' with slash in it)
                   FullFolder := Folder + gResTexts.DefaultTexts[fUnits[ut_Serf].GUITextID] + PathDelim + 'Delivery' + PathDelim
-                                  + GetEnumName(TypeInfo(TWareType), Integer(R)) + PathDelim;
+                                  + GetEnumName(TypeInfo(TKMWareType), Integer(R)) + PathDelim;
                   ForceDirectories(FullFolder);
                   FolderCreated := True;
                 end;
@@ -369,16 +370,14 @@ procedure TKMResource.ExportHouseAnim;
 var
   FullFolder,Folder: string;
   HD: TKMResHouses;
-  ID: THouseType;
-  Ac: THouseActionType;
+  ID: TKMHouseType;
+  Ac: TKMHouseActionType;
   Q, Beast, I, K, ci: Integer;
-  RXData: TRXData;
   SpritePack: TKMSpritePack;
   SList: TStringList;
 begin
   fSprites.LoadSprites(rxHouses, False); //BMP can't show alpha shadows anyways
   SpritePack := fSprites[rxHouses];
-  RXData := SpritePack.RXData;
   SList := TStringList.Create;
 
   Folder := ExeDir + 'Export' + PathDelim + 'HouseAnim' + PathDelim;
@@ -400,9 +399,9 @@ begin
   for Q := 1 to 2 do
   begin
     if Q = 1 then
-      ID := ht_Swine
+      ID := htSwine
     else
-      ID := ht_Stables;
+      ID := htStables;
     ForceDirectories(Folder + '_' + HD[ID].HouseName+PathDelim);
     for Beast := 1 to 5 do
       for I := 1 to 3 do
@@ -425,7 +424,6 @@ end;
 //Export Trees graphics categorized by ID
 procedure TKMResource.ExportTreeAnim;
 var
-  RXData: TRXData;
   FullFolder, Folder: string;
   I, K: Integer;
 
@@ -435,7 +433,6 @@ var
 begin
   fSprites.LoadSprites(rxTrees, False);
   SpritePack := fSprites[rxTrees];
-  RXData := SpritePack.RXData;
 
   Folder := ExeDir + 'Export' + PathDelim + 'TreeAnim' + PathDelim;
   ForceDirectories(Folder);

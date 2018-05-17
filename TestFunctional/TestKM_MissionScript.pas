@@ -33,7 +33,7 @@ end;
 
 procedure TestKMMissionScript.TearDown;
 begin
-  gGameApp.Stop(gr_Silent);
+  gGameApp.StopGame(gr_Silent);
   FreeAndNil(gGameApp);
   FreeAndNil(gLog);
 end;

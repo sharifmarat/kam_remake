@@ -14,13 +14,19 @@ uses
   {$ENDIF}
   ;
 
+  function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+
   function KMGetCursorDirection(X,Y: integer): TKMDirection;
 
   function GetPositionInGroup2(OriginX, OriginY: Word; aDir: TKMDirection; aIndex, aUnitPerRow: Word; MapX, MapY: Word; out aTargetCanBeReached: Boolean): TKMPoint;
-  function GetPositionFromIndex(aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
+  function GetPositionFromIndex(const aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function RGB2BGR(aRGB: Cardinal): Cardinal;
+  function BGR2RGB(aRGB: Cardinal): Cardinal;
+  function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+  function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
@@ -50,8 +56,9 @@ uses
   function UTCNow: TDateTime;
   function UTCToLocal(Input: TDateTime): TDateTime;
 
-  function MapSizeIndex(X, Y: Word): Byte;
-  function MapSizeText(X,Y: Word): UnicodeString;
+  function MapSizeIndex(X, Y: Word): TKMMapSize;
+  function MapSizeText(X,Y: Word): UnicodeString; overload;
+  function MapSizeText(aMapSize: TKMMapSize): UnicodeString; overload;
 
   //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
   procedure KMSwapInt(var A,B: Byte); overload;
@@ -61,8 +68,17 @@ uses
   procedure KMSwapInt(var A,B: Integer); overload;
   procedure KMSwapInt(var A,B: Cardinal); overload;
 
+  procedure KMSwapFloat(var A,B: Single); overload;
+  procedure KMSwapFloat(var A,B: Double); overload;
+  procedure KMSwapFloat(var A,B: Extended); overload;
+
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
+
+  function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean; overload;
+  function ArrayContains(aValue: Word; const aArray: array of Word): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean; overload;
+  function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean; overload;
 
   function Pack4ByteToInteger(aByte1, aByte2, aByte3, aByte4: Byte): Integer;
   procedure UnpackIntegerTo4Byte(aInt: Integer; out aByte1, aByte2, aByte3, aByte4: Byte);
@@ -70,6 +86,10 @@ uses
   function GetFileDirName(const aFilePath: UnicodeString): UnicodeString;
 
   function GetNoColorMarkupText(const aText: UnicodeString): UnicodeString;
+
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True); overload;
 
   function DeleteDoubleSpaces(const aString: string): string;
 
@@ -83,17 +103,47 @@ uses
   function StrSubstring(const aStr: String; aFrom: Integer): String; overload;
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
-  function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
+  function StrTrimChar(const Str: String; Ch: Char): String;
+  procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings);
+  {$IFDEF WDC}
+  procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
+  {$ENDIF}
+  function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 
   procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer); overload;
   procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer); overload;
+
+const
+  DEFAULT_ATTEMPS_CNT_TO_TRY = 3;
+
+  function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                            aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+
+  function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                                aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
+
+  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                                aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
 
 implementation
 uses
   StrUtils, Types;
 
+const
+  //Pretend these are understandable in any language
+  MAP_SIZES: array [TKMMapSize] of String = ('???', 'XS', 'S', 'M', 'L', 'XL', 'XXL');
+
 var
   fKaMSeed: Integer;
+
+
+function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+begin
+  if aCondition then
+    Result := aIfTrue
+  else
+    Result := aIfFalse;
+end;
 
 
 //Taken from KromUtils to reduce dependancies (required so the dedicated server compiles on Linux without using Controls)
@@ -141,6 +191,25 @@ begin
 end;
 
 
+procedure KMSwapFloat(var A,B: Single);
+var S: Single;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+procedure KMSwapFloat(var A,B: Double);
+var S: Double;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+procedure KMSwapFloat(var A,B: Extended);
+var S: Extended;
+begin
+  S:=A; A:=B; B:=S;
+end;
+
+
 procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
 var
   I: Integer;
@@ -167,6 +236,62 @@ begin
   begin
     Inc(aArr1^[I], aArr2^[I]);
   end;
+end;
+
+
+function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aValue: Word; const aArray: array of Word): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if aValue = aArray[I] then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(aArray) to High(aArray) do
+    if KMSamePoint(aPoint, aArray[I]) then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+
+function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray; aElemCnt: Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to aElemCnt - 1 do
+    if KMSamePoint(aPoint, aArray[I]) then
+    begin
+      Result := True;
+      Exit;
+    end;
 end;
 
 
@@ -275,25 +400,29 @@ end;
 {$ENDIF}
 
 
-function MapSizeIndex(X, Y: Word): Byte;
+function MapSizeIndex(X, Y: Word): TKMMapSize;
 begin
   case X * Y of
-            1.. 48* 48: Result := 0;
-     48* 48+1.. 80* 80: Result := 1;
-     80* 80+1..128*128: Result := 2;
-    128*128+1..176*176: Result := 3;
-    176*176+1..224*224: Result := 4;
-    224*224+1..320*320: Result := 5;
-    else                Result := 6;
+            1.. 48* 48: Result := msXS;
+     48* 48+1.. 80* 80: Result := msS;
+     80* 80+1..128*128: Result := msM;
+    128*128+1..176*176: Result := msL;
+    176*176+1..224*224: Result := msXL;
+    224*224+1..320*320: Result := msXXL;
+    else                Result := msNone;
   end;
 end;
 
 
 function MapSizeText(X, Y: Word): UnicodeString;
-//Pretend these are understandable in any language
-const MAP_SIZES: array [0..6] of String = ('XS', 'S', 'M', 'L', 'XL', 'XXL', '???');
 begin
   Result := MAP_SIZES[MapSizeIndex(X, Y)];
+end;
+
+
+function MapSizeText(aMapSize: TKMMapSize): UnicodeString;
+begin
+  Result := MAP_SIZES[aMapSize];
 end;
 
 
@@ -349,7 +478,7 @@ end;
 
 
 //See Docs\GetPositionFromIndex.xls for explanation
-function GetPositionFromIndex(aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
+function GetPositionFromIndex(const aOrigin: TKMPoint; aIndex: Byte): TKMPoint;
 const
   Rings: array[1..10] of Word =
 //Ring#  1  2  3  4   5   6   7    8    9    10
@@ -417,6 +546,63 @@ begin
     13..15: Result := clFpsNormal;
     else    Result := clFpsHigh;
   end;
+end;
+
+
+function RGB2BGR(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  R := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  B := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := B + G shl 8 + R shl 16 + A shl 24;
+end;
+
+
+function BGR2RGB(aRGB: Cardinal): Cardinal;
+var
+  A, R, G, B: Byte;
+begin
+  //We split color to RGB values
+  B := aRGB and $FF;
+  G := aRGB shr 8 and $FF;
+  R := aRGB shr 16 and $FF;
+  A := aRGB shr 24 and $FF;
+
+  Result := R + G shl 8 + B shl 16 + A shl 24;
+end;
+
+
+//Multiply color by channels
+function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
+var
+  A, R, G, B, A2, R2, G2, B2: Byte;
+begin
+  //We split color to RGB values
+  R := aColor and $FF;
+  G := aColor shr 8 and $FF;
+  B := aColor shr 16 and $FF;
+  A := aColor shr 24 and $FF;
+
+  R2 := Min(Round(aRed * R), 255);
+  G2 := Min(Round(aGreen * G), 255);
+  B2 := Min(Round(aBlue * B), 255);
+  A2 := Min(Round(aAlpha * A), 255);
+
+  Result := R2 + G2 shl 8 + B2 shl 16 + A2 shl 24;
+end;
+
+
+function GetGreyColor(aGreyLevel: Byte): Cardinal;
+begin
+  Result := aGreyLevel
+            or (aGreyLevel shl 8)
+            or (aGreyLevel shl 16)
+            or $FF000000;
 end;
 
 
@@ -804,6 +990,56 @@ begin
 end;
 
 
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True);
+begin
+  GetAllPathsInDir(aDir, aSL, nil, aIncludeSubdirs);
+end;
+
+
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True);
+var
+  SR: TSearchRec;
+begin
+  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+    try
+      repeat
+        if (SR.Attr and faDirectory) = 0 then
+        begin
+          if AnsiEndsStr(aExt, SR.Name) then
+            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+        end
+        else
+        if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
+          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
+      until FindNext(Sr) <> 0;
+    finally
+      SysUtils.FindClose(SR);
+    end;
+end;
+
+
+procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True);
+var
+  SR: TSearchRec;
+begin
+  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+    try
+      repeat
+        if (SR.Attr and faDirectory) = 0 then
+        begin
+          if not Assigned(aValidateFn) or aValidateFn(SR.Name) then
+            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+        end
+        else
+        if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
+          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
+      until FindNext(Sr) <> 0;
+    finally
+      SysUtils.FindClose(SR);
+    end;
+end;
+
+
 //Replace continious spaces with single space
 function DeleteDoubleSpaces(const aString: string): string;
 var I: Integer;
@@ -913,10 +1149,39 @@ begin
 end;
 
 
+function StrTrimChar(const Str: String; Ch: Char): string;
+var
+  S, E: Integer;
+begin
+  S := 1;
+  while (S <= Length(Str)) and (Str[S] = Ch) do Inc(S);
+  E := Length(Str);
+  while (E >= 1) and (Str[E] = Ch) do Dec(E);
+  SetString(Result, PChar(@Str[S]), E - S + 1);
+end;
+
+
+procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings) ;
+begin
+   ListOfStrings.Clear;
+   ListOfStrings.Delimiter       := Delimiter;
+   ListOfStrings.StrictDelimiter := True;
+   ListOfStrings.DelimitedText   := Str;
+end;
+
+
 {$IFDEF WDC}
-function StrSplit(const aStr, aDelimiters: String): TAnsiStringArray;
-var StrArray: TStringDynArray;
-    I: Integer;
+procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
+var
+  StrArray: TStringDynArray;
+  I: Integer;
+begin
+  StrArray := SplitString(aStr, aDelimiters);
+  for I := Low(StrArray) to High(StrArray) do
+    aStrings.Add(StrArray[I]);
+end;
+
+function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 begin
   Result := TAnsiStringArray(SplitString(aStr, aDelimiters));
 end;
@@ -924,7 +1189,7 @@ end;
 
 
 {$IFDEF FPC}
-function StrSplit(const aStr, aDelimiters: string): TAnsiStringArray;
+function StrSplitA(const aStr, aDelimiters: string): TAnsiStringArray;
 var
   I: integer;
   PosDel: integer;
@@ -988,6 +1253,99 @@ begin
   Delete(Arr, Index, 1);
 end;
 {$ENDIF}
+
+
+function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                          aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethod(aObjParam, aStrParam);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameter: %s', [TryCnt, aMethodName, aStrParam]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameter: %s', [aAttemps, aMethodName, aStrParam]);
+
+  Result := Success;
+end;
+
+
+function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                              aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethodProc(aStrParam);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameter: %s', [TryCnt, aMethodName, aStrParam]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameter: %s', [aAttemps, aMethodName, aStrParam]);
+
+  Result := Success;
+end;
+
+
+function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+                              aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
+var
+  Success: Boolean;
+  TryCnt: Byte;
+begin
+  Success := False;
+  TryCnt := 0;
+  aErrorStr := '';
+  while not Success and (TryCnt < aAttemps) do
+    try
+      Inc(TryCnt);
+
+      aMethodProc(aStrParam1, aStrParam2);
+
+      Success := True;
+    except
+      on E: Exception do //Ignore IO exceptions here, try to save file up to 3 times
+      begin
+        aErrorStr := Format('Error at attemp #%d while executing method %s for parameters: [%s, %s]', [TryCnt, aMethodName, aStrParam1, aStrParam2]);
+        Sleep(10); // Wait a bit
+      end;
+    end;
+
+  if not Success then
+    aErrorStr := Format('Error executing method (%d tries) %s for parameters: [%s, %s]', [aAttemps, aMethodName, aStrParam1, aStrParam2]);
+
+  Result := Success;
+end;
 
 
 end.

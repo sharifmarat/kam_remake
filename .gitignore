@@ -14,11 +14,13 @@
 *.ini
 *.stat
 *.rar
+*.log.txt
 bugreport.txt
 /bat/bat_rsvars_local.bat
 /KaM_Remake.drc
 /KaM_Remake.map
 /KaM_Remake.res
+/Export
 /Saves
 /SavesMP
 /SpriteResource/gui.rx
@@ -37,6 +39,8 @@ bugreport.txt
 /Installer/BuildFull*
 /Installer/BuildUpdate*
 /Installer/CheckKaM.iss
+/Utils/DedicatedServer/KaM_Remake_Server_linux_x86
+/Utils/DedicatedServer/KaM_Remake_Server_linux_x86_64
 /dcu
 /src/net/KM_NetAuthSecure.pas
 __history

@@ -37,10 +37,10 @@ type
     property Count: Integer read fCount; //Used by UI
     property Items[aIndex: Integer]: TKMScreenResData read GetItem; //Used by UI
 
-    function IsValid(aResolution: TKMScreenRes): Boolean; //Check, if resolution is correct
-    function FindCorrect(aResolution: TKMScreenRes): TKMScreenRes; //Try to find correct resolution
-    function GetResolutionIDs(aResolution: TKMScreenRes): TKMScreenResIndex;  //prepares IDs for TMainSettings
-    procedure SetResolution(aResolution: TKMScreenRes); //Apply the resolution
+    function IsValid(const aResolution: TKMScreenRes): Boolean; //Check, if resolution is correct
+    function FindCorrect(const aResolution: TKMScreenRes): TKMScreenRes; //Try to find correct resolution
+    function GetResolutionIDs(const aResolution: TKMScreenRes): TKMScreenResIndex;  //prepares IDs for TMainSettings
+    procedure SetResolution(const aResolution: TKMScreenRes); //Apply the resolution
   end;
 
 
@@ -197,13 +197,13 @@ begin
 end;
 
 
-function TKMResolutions.IsValid(aResolution: TKMScreenRes): Boolean;
+function TKMResolutions.IsValid(const aResolution: TKMScreenRes): Boolean;
 begin
   Result := GetResolutionIDs(aResolution).RefID <> -1;
 end;
 
 
-procedure TKMResolutions.SetResolution(aResolution: TKMScreenRes);
+procedure TKMResolutions.SetResolution(const aResolution: TKMScreenRes);
 {$IFDEF MSWindows}
 var
   DeviceMode: TDeviceMode;
@@ -230,7 +230,7 @@ begin
 end;
 
 
-function TKMResolutions.FindCorrect(aResolution: TKMScreenRes): TKMScreenRes;
+function TKMResolutions.FindCorrect(const aResolution: TKMScreenRes): TKMScreenRes;
 {$IFDEF MSWindows}
 var
   DevMode: TDevMode;
@@ -268,7 +268,7 @@ end;
 
 //we need to set this IDs in settings, so we don't work on "physical" values
 //and everything is kept inside this class, not in TMainSettings
-function TKMResolutions.GetResolutionIDs(aResolution: TKMScreenRes): TKMScreenResIndex;
+function TKMResolutions.GetResolutionIDs(const aResolution: TKMScreenRes): TKMScreenResIndex;
 var
   I,J: Integer;
 begin

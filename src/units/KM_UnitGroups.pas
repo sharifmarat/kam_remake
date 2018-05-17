@@ -8,9 +8,17 @@ uses
 
 type
   TKMUnitGroup = class;
+  TKMUnitGroupArray = array of TKMUnitGroup;
   TKMUnitGroupEvent = procedure(aGroup: TKMUnitGroup) of object;
   TKMTurnDirection = (tdNone, tdCW, tdCCW);
   TKMInitialOrder = (ioNoOrder, ioSendGroup, ioAttackPosition);
+  TKMOrderWalkKind = (wtokNone,
+                      wtokPlayerOrder,  //player order
+                      wtokHaltOrder,    //could be player order, or AI order (as part of OrderRepeat)
+                      wtokFlagPoint,    //after warrior get out of barracks/townhall
+                      wtokAISquad, wtokAIGotoDefencePos, wtokAIAttackCustomPos, //initiated by AI
+                      wtokMissionScript, wtokScript); //initiated by mission script or script
+  TKMOrderWalkKindSet = set of TKMOrderWalkKind;
 
   TKMGroupOrder = (
     goNone,         //Last order was executed and now we have nothing to do
@@ -39,13 +47,14 @@ type
     fSelected: TKMUnitWarrior; //Unit selected by player in GUI. Should not be saved or affect game logic for MP consistency.
     fUnitsPerRow: Word;
     fTimeSinceHungryReminder: Integer;
-    fGroupType: TGroupType;
+    fGroupType: TKMGroupType;
     fDisableHungerMessage: Boolean;
     fBlockOrders: Boolean;
     fManualFormation: Boolean;
 
     fOrder: TKMGroupOrder; //Remember last order incase we need to repeat it (e.g. to joined members)
     fOrderLoc: TKMPointDir; //Dir is the direction to face after order
+    fOrderWalkKind: TKMOrderWalkKind;
 
     //Avoid accessing these directly
     fOrderTargetUnit: TKMUnit; //Unit we are ordered to attack. This property should never be accessed, use public OrderTarget instead.
@@ -58,13 +67,13 @@ type
     function GetMember(aIndex: Integer): TKMUnitWarrior;
     function GetFlagBearer: TKMUnitWarrior;
     function GetNearestMember(aUnit: TKMUnitWarrior): Integer; overload;
-    function GetNearestMember(aLoc: TKMPoint): TKMUnitWarrior; overload;
+    function GetNearestMember(const aLoc: TKMPoint): TKMUnitWarrior; overload;
     function GetMemberLoc(aIndex: Integer): TKMPointExact;
     procedure SetMapEdCount(aCount: Word);
     procedure SetUnitsPerRow(aCount: Word);
     procedure SetDirection(Value: TKMDirection);
     procedure SetCondition(aValue: Integer);
-    procedure SetPosition(aValue: TKMPoint);
+    procedure SetPosition(const aValue: TKMPoint);
     procedure ClearOrderTarget;
     procedure ClearOffenders;
     procedure HungarianReorderMembers;
@@ -100,7 +109,7 @@ type
     OnGroupDied: TKMUnitGroupEvent;
 
     constructor Create(aID: Cardinal; aCreator: TKMUnitWarrior); overload;
-    constructor Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
+    constructor Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
     constructor Create(LoadStream: TKMemoryStream); overload;
     procedure SyncLoad;
     procedure Save(SaveStream: TKMemoryStream);
@@ -115,22 +124,24 @@ type
     function  HasMember(aWarrior: TKMUnit): Boolean;
     procedure ResetAnimStep;
     function InFight(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
+    function InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean; //Fighting agaist specific groups
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
-    function IsIdleToAI(aAllowWalking: Boolean = False): Boolean;
-    function IsPositioned(aLoc: TKMPoint; Dir: TKMDirection): Boolean;
+    function IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
+    function IsPositioned(const aLoc: TKMPoint; Dir: TKMDirection): Boolean;
     function CanTakeOrders: Boolean;
-    function CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
+    function CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
     function FightMaxRange: Single;
     function IsRanged: Boolean;
     function IsDead: Boolean;
-    function UnitType: TUnitType;
+    function UnitType: TKMUnitType;
     function GetOrderText: UnicodeString;
-    property GroupType: TGroupType read fGroupType;
+    property GroupType: TKMGroupType read fGroupType;
     property UID: Integer read fUID;
     property Count: Integer read GetCount;
     property MapEdCount: Word read fMapEdCount write SetMapEdCount;
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
+    function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
     property Owner: TKMHandIndex read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
@@ -146,12 +157,14 @@ type
     property FlagColor: Cardinal read GetFlagColor;
     function IsFlagRenderBeforeUnit: Boolean;
 
+    property OrderLoc: TKMPointDir read fOrderLoc;
     property OrderTargetUnit: TKMUnit read GetOrderTargetUnit write SetOrderTargetUnit;
     property OrderTargetGroup: TKMUnitGroup read GetOrderTargetGroup;
     property OrderTargetHouse: TKMHouse read GetOrderTargetHouse write SetOrderTargetHouse;
 
     procedure SetOwner(aOwner: TKMHandIndex);
     procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+
     procedure OrderAttackHouse(aHouse: TKMHouse; aClearOffenders: Boolean);
     procedure OrderAttackUnit(aUnit: TKMUnit; aClearOffenders: Boolean);
     procedure OrderFood(aClearOffenders: Boolean; aHungryOnly: Boolean = False);
@@ -159,13 +172,15 @@ type
     procedure OrderHalt(aClearOffenders: Boolean);
     procedure OrderLinkTo(aTargetGroup: TKMUnitGroup; aClearOffenders: Boolean);
     procedure OrderNone;
-    procedure OrderRepeat;
-    procedure CopyOrderFrom(aGroup: TKMUnitGroup);
     function OrderSplit(aClearOffenders: Boolean; aSplitSingle: Boolean = False): TKMUnitGroup;
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
-    procedure OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aDir: TKMDirection = dir_NA);
+    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+
+    procedure OrderRepeat;
+    procedure CopyOrderFrom(aGroup: TKMUnitGroup);
+
     procedure KillGroup;
 
     procedure UpdateState;
@@ -186,17 +201,21 @@ type
     destructor Destroy; override;
 
     function AddGroup(aWarrior: TKMUnitWarrior): TKMUnitGroup; overload;
-    function AddGroup(aOwner: TKMHandIndex; aUnitType: TUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
+    function AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
     procedure AddGroupToList(aGroup: TKMUnitGroup);
     procedure DeleteGroupFromList(aGroup: TKMUnitGroup);
     procedure RemGroup(aGroup: TKMUnitGroup);
+    procedure RemAllGroups;
 
     property Count: Integer read GetCount;
     property Groups[aIndex: Integer]: TKMUnitGroup read GetGroup; default;
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
-    function GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+    function GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
+    function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+    function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
+
 
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
@@ -204,7 +223,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -212,7 +231,8 @@ implementation
 uses
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_CommonUtils, KM_ResTexts, KM_RenderPool,
   KM_Hungarian, KM_UnitActionWalkTo, KM_PerfLog, KM_AI, KM_ResUnits, KM_ScriptingEvents,
-  KM_UnitActionStormAttack;
+  KM_UnitActionStormAttack,
+  KM_GameTypes, KM_Log;
 
 
 const
@@ -240,7 +260,7 @@ end;
 
 
 //Create a Group from script (creates all the warriors as well)
-constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TUnitType;
+constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word);
 var
   Warrior: TKMUnitWarrior;
@@ -460,6 +480,20 @@ begin
 end;
 
 
+function TKMUnitGroup.GetAliveMember: TKMUnitWarrior;
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+  begin
+    Result := Members[I];
+    if not Result.IsDeadOrDying then
+      Exit;
+  end;
+  Result := nil;
+end;
+
+
 function TKMUnitGroup.GetFlagBearer: TKMUnitWarrior;
 begin
   Result := fMembers.Items[0];
@@ -499,7 +533,7 @@ begin
 end;
 
 
-function TKMUnitGroup.GetNearestMember(aLoc: TKMPoint): TKMUnitWarrior;
+function TKMUnitGroup.GetNearestMember(const aLoc: TKMPoint): TKMUnitWarrior;
 var
   I: Integer;
   Dist, Best: Single;
@@ -547,7 +581,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.SetPosition(aValue: TKMPoint);
+procedure TKMUnitGroup.SetPosition(const aValue: TKMPoint);
 begin
   Assert(gGame.IsMapEditor);
   Members[0].SetPosition(aValue);
@@ -615,6 +649,7 @@ begin
   //Member reports to Group if something happens to him, so that Group can apply its logic
   aWarrior.OnPickedFight := Member_PickedFight;
   aWarrior.OnWarriorDied := Member_Died;
+  aWarrior.SetGroup(Self);
 end;
 
 
@@ -639,7 +674,7 @@ begin
 end;
 
 
-function TKMUnitGroup.CanWalkTo(aTo: TKMPoint; aDistance: Single): Boolean;
+function TKMUnitGroup.CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
 begin
   Result := (Count > 0) and Members[0].CanWalkTo(aTo, aDistance);
 end;
@@ -662,7 +697,7 @@ procedure TKMUnitGroup.KillGroup;
 var I: Integer;
 begin
   for I := fMembers.Count - 1 downto 0 do
-    TKMUnit(fMembers[I]).KillUnit(PLAYER_NONE, True, False);
+    TKMUnit(fMembers[I]).Kill(PLAYER_NONE, True, False);
 end;
 
 
@@ -818,7 +853,7 @@ begin
                         else
                           //Guide Idle and pushed units back to their places
                           if Members[I].IsIdle
-                          or ((Members[I].GetUnitAction is TUnitActionWalkTo) and TUnitActionWalkTo(Members[I].GetUnitAction).WasPushed) then
+                          or ((Members[I].GetUnitAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].GetUnitAction).WasPushed) then
                           begin
                             P := GetMemberLoc(I);
                             Members[I].OrderWalk(P.Loc, P.Exact);
@@ -930,6 +965,45 @@ begin
 end;
 
 
+function TKMUnitGroup.InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean;
+var
+  Check: Boolean;
+  I,K,Cnt: Integer;
+  U: TKMUnit;
+  G: TKMUnitGroup;
+begin
+  Cnt := 0;
+  for I := 0 to Count - 1 do
+  begin
+    U := nil;
+    if not Members[I].IsDeadOrDying
+      AND Members[I].InFightAgaist(U, False)
+      AND (U <> nil)
+      AND not U.IsDeadOrDying then
+    begin
+      G := gHands[ U.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(U) );
+      Check := True;
+      for K := 0 to Cnt - 1 do
+        if (aGroupArray[K] = G) then
+        begin
+          Check := False;
+          break;
+        end;
+      if Check then
+      begin
+        if (Length(aGroupArray) >= Cnt) then
+          SetLength(aGroupArray, Cnt + 12);
+        aGroupArray[Cnt] := G;
+        Cnt := Cnt + 1;
+      end;
+    end;
+  end;
+  SetLength(aGroupArray,Cnt);
+
+  Result := (Length(aGroupArray) > 0);
+end;
+
+
 function TKMUnitGroup.IsAttackingHouse: Boolean;
 var I: Integer;
 begin
@@ -951,11 +1025,11 @@ begin
 end;
 
 
-function TKMUnitGroup.IsIdleToAI(aAllowWalking: Boolean = False): Boolean;
+function TKMUnitGroup.IsIdleToAI(aOrderWalkKindSet: TKMOrderWalkKindSet = []): Boolean;
 begin
   //First check that the previous order has completed
   if fOrder = goWalkTo then
-    Result := aAllowWalking or (KMLengthDiag(Position, fOrderLoc.Loc) < 2)
+    Result := (fOrderWalkKind in aOrderWalkKindSet) or (KMLengthDiag(Position, fOrderLoc.Loc) < 2)
   else
     Result := (fOrder = goNone);
 
@@ -966,7 +1040,7 @@ begin
 end;
 
 
-function TKMUnitGroup.IsPositioned(aLoc:TKMPoint; Dir: TKMDirection): Boolean;
+function TKMUnitGroup.IsPositioned(const aLoc:TKMPoint; Dir: TKMDirection): Boolean;
 var I: Integer; P: TKMPointExact; U: TKMUnitWarrior;
 begin
   Result := True;
@@ -1149,7 +1223,7 @@ begin
   begin
     //Walk in formation towards enemy,
     //Members will take care of attack when we approach
-    OrderWalk(aUnit.NextPosition, False);
+    OrderWalk(aUnit.NextPosition, False, wtokNone);
 
     //Revert Order to proper one (we disguise Walk)
     fOrder := goAttackUnit;
@@ -1206,13 +1280,13 @@ begin
   //hose target depends on previous activity
   case fOrder of
     goNone:         if not KMSamePoint(fOrderLoc.Loc, KMPOINT_ZERO) then
-                      OrderWalk(fOrderLoc.Loc, False)
+                      OrderWalk(fOrderLoc.Loc, False, wtokHaltOrder)
                     else
-                      OrderWalk(Members[0].NextPosition, False);
-    goWalkTo:       OrderWalk(Members[0].NextPosition, False);
-    goAttackHouse:  OrderWalk(Members[0].NextPosition, False);
-    goAttackUnit:   OrderWalk(Members[0].NextPosition, False);
-    goStorm:        OrderWalk(Members[0].NextPosition, False);
+                      OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goWalkTo:       OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goAttackHouse:  OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goAttackUnit:   OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
+    goStorm:        OrderWalk(Members[0].NextPosition, False, wtokHaltOrder);
   end;
 end;
 
@@ -1247,7 +1321,10 @@ begin
     //What if fSelected died by now
     if not fSelected.IsDeadOrDying then
     begin
-      Assert(aTargetGroup.HasMember(fSelected), 'Make sure we joined selected unit');
+      if not aTargetGroup.HasMember(fSelected) then
+        gLog.AddNoTimeNoFlush(
+          Format('Make sure we joined selected unit. Group UID: %d; TargetGroup UID: %d Selected member UID: %d',
+                 [UID, aTargetGroup.UID, fSelected.UID]));
       aTargetGroup.fSelected := fSelected;
     end;
   end;
@@ -1280,9 +1357,13 @@ begin
   if fOrder <> goNone then          //when there is no order, then use own fOrderLoc
     fOrderLoc := aGroup.fOrderLoc;  //otherwise - copy from target group
 
+  fOrderWalkKind := wtokNone;
+  if fOrder = goWalkTo then
+    fOrderWalkKind := aGroup.fOrderWalkKind;
+
   case fOrder of
     goNone:         OrderHalt(False);
-    goWalkTo:       OrderWalk(fOrderLoc.Loc, False);
+    goWalkTo:       OrderWalk(fOrderLoc.Loc, False, fOrderWalkKind);
     goAttackHouse:  if aGroup.OrderTargetHouse <> nil then OrderAttackHouse(aGroup.OrderTargetHouse, False);
     goAttackUnit:   if aGroup.OrderTargetUnit <> nil then OrderAttackUnit(aGroup.OrderTargetUnit, False);
     goStorm:        ;
@@ -1295,7 +1376,7 @@ procedure TKMUnitGroup.OrderRepeat;
 begin
   case fOrder of
     goNone:         OrderHalt(False);
-    goWalkTo:       OrderWalk(fOrderLoc.Loc, False);
+    goWalkTo:       OrderWalk(fOrderLoc.Loc, False, fOrderWalkKind);
     goAttackHouse:  if OrderTargetHouse <> nil then OrderAttackHouse(OrderTargetHouse, False);
     goAttackUnit:   if OrderTargetUnit <> nil then OrderAttackUnit(OrderTargetUnit, False);
     goStorm:        ;
@@ -1317,7 +1398,7 @@ begin
   if IsDead then Exit;
   if Count < 2 then Exit;
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
-  if Members[0].GetUnitAction is TUnitActionStormAttack then Exit;
+  if Members[0].GetUnitAction is TKMUnitActionStormAttack then Exit;
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If there are different unit types in the group, split should just split them first
@@ -1487,13 +1568,15 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OrderWalk(aLoc: TKMPoint; aClearOffenders: Boolean; aDir: TKMDirection = dir_NA);
+procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
 var
   I: Integer;
   NewDir: TKMDirection;
   P: TKMPointExact;
 begin
   if IsDead then Exit;
+
+  fOrderWalkKind := aOrderWalkKind;
 
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;
@@ -1524,7 +1607,7 @@ begin
 end;
 
 
-function TKMUnitGroup.UnitType: TUnitType;
+function TKMUnitGroup.UnitType: TKMUnitType;
 begin
   Result := Members[0].UnitType;
 end;
@@ -1620,7 +1703,7 @@ end;
 function TKMUnitGroup.GetFlagColor: Cardinal;
 begin
   //Highlight selected group
-  Result := gHands[FlagBearer.Owner].FlagColor;
+  Result := gHands[FlagBearer.Owner].GameFlagColor;
   if gMySpectator.Selected = Self then
     //If base color is brighter than $FFFF40 then use black highlight
     if (Result and $FF) + (Result shr 8 and $FF) + (Result shr 16 and $FF) > $240 then
@@ -1768,7 +1851,7 @@ end;
 
 procedure TKMUnitGroup.Paint;
 begin
-  PaintHighlighted(gHands[FlagBearer.Owner].FlagColor, FlagColor);
+  PaintHighlighted(gHands[FlagBearer.Owner].GameFlagColor, FlagColor);
 end;
 
 
@@ -1841,7 +1924,7 @@ begin
 end;
 
 
-function TKMUnitGroups.AddGroup(aOwner: TKMHandIndex; aUnitType: TUnitType;
+function TKMUnitGroups.AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 begin
   Result := nil;
@@ -1956,7 +2039,7 @@ begin
 end;
 
 
-function TKMUnitGroups.GetClosestGroup(aPoint: TKMPoint; aTypes: TGroupTypeSet = [Low(TGroupType)..High(TGroupType)]): TKMUnitGroup;
+function TKMUnitGroups.GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
 var
   I: Integer;
   BestDist, Dist: Single;
@@ -1964,7 +2047,7 @@ begin
   Result := nil;
   BestDist := MaxSingle; //Any distance will be closer than that
   for I := 0 to Count - 1 do
-    if (Groups[I].GroupType in aTypes) and not Groups[I].IsDead then
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
     begin
       Dist := KMLengthSqr(Groups[I].GetPosition, aPoint);
       if Dist < BestDist then
@@ -1976,9 +2059,90 @@ begin
 end;
 
 
+function TKMUnitGroups.GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
+var
+  I,K,Idx: Integer;
+  UW: TKMUnitWarrior;
+begin
+  Idx := 0;
+  for I := 0 to Count - 1 do
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
+    begin
+      K := 0;
+      while (K < Groups[I].Count) do // Large groups may be in radius too so check every fifth member
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
+        begin
+          UW := Groups[I].Members[K];
+          if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
+          begin
+            if (Idx >= Length(Result)) then
+              SetLength(Result, Idx + 12);
+            Result[Idx] := Groups[I];
+            Idx := Idx + 1;
+            break;
+          end;
+          K := K + 5;
+        end;
+    end;
+  SetLength(Result,Idx);
+end;
+
+
+function TKMUnitGroups.GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
+var
+  I,K,Idx: Integer;
+  Dist, MinDist: Single;
+  U, BestU: TKMUnit;
+begin
+  Idx := 0;
+  BestU := nil;
+  for I := 0 to Count - 1 do
+    if not Groups[I].IsDead AND (Groups[I].GroupType in aTypes) then
+    begin
+      K := 0;
+      MinDist := 1000000; //Any distance will be closer than that
+      while (K < Groups[I].Count) do
+        if Groups[I].Members[K].IsDeadOrDying then // Member must be alive
+          K := K + 1
+        else
+        begin
+          U := Groups[I].Members[K];
+          Dist := KMLengthSqr(U.GetPosition, aPoint);
+          if (Dist <= MinDist) then
+          begin
+            MinDist := Dist;
+            BestU := U;
+          end;
+          K := K + 5; // Large groups may be in radius too so check every fifth member
+        end;
+      if (MinDist <= aSqrRadius) then
+      begin
+        if (Idx >= Length(Result)) then
+        begin
+          SetLength(Result, Idx + 12);
+          SetLength(aUGA, Idx + 12);
+        end;
+        Result[Idx] := BestU;
+        aUGA[Idx] := Groups[I]; // Save also group (it is faster than search group via HandsCollection)
+        Idx := Idx + 1;
+      end;
+    end;
+  SetLength(Result,Idx);
+end;
+
+
 procedure TKMUnitGroups.RemGroup(aGroup: TKMUnitGroup);
 begin
   fGroups.Remove(aGroup);
+end;
+
+
+procedure TKMUnitGroups.RemAllGroups;
+begin
+  Assert(gGame.GameMode = gmMapEd);
+  fGroups.Clear;
 end;
 
 
@@ -2031,7 +2195,7 @@ begin
 end;
 
 
-procedure TKMUnitGroups.Paint(aRect: TKMRect);
+procedure TKMUnitGroups.Paint(const aRect: TKMRect);
 const
   Margin = 2;
 var
