@@ -274,7 +274,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TWareType(ATag)].GUIIcon, gRes.Wares[TWareType(ATag)].Title, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TKMWareType(ATag)].GUIIcon, gRes.Wares[TKmWareType(ATag)].Title, FHandIndex);
   Result.Visible := False;
 end;
 
@@ -292,7 +292,7 @@ function TKMGUIGameSpectatorItemLineResources.GetValue(AHandIndex: Integer; ATag
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetWareBalance(TWareType(ATag));
+  Value := gHands[AHandIndex].Stats.GetWareBalance(TKMWareType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
@@ -300,7 +300,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Houses[THouseType(ATag)].GUIIcon, gRes.Houses[THouseType(ATag)].HouseName, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Houses[TKMHouseType(ATag)].GUIIcon, gRes.Houses[TKMHouseType(ATag)].HouseName, FHandIndex);
   Result.Visible := False;
 end;
 
@@ -320,7 +320,7 @@ function TKMGUIGameSpectatorItemLineBuild.GetValue(AHandIndex: Integer; ATag: In
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetHouseWip(THouseType(ATag));
+  Value := gHands[AHandIndex].Stats.GetHouseWip(TKMHouseType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
@@ -328,13 +328,13 @@ function TKMGUIGameSpectatorItemLineBuild.GetProgress(AHandIndex: Integer; ATag:
 var
   i: Integer;
   House, HouseProgress: TKMHouse;
-  HouseType: THouseType;
+  HouseType: TKMHouseType;
 begin
   Result := inherited;
   if GetValue(AHandIndex, ATag) = '' then
     Exit;
 
-  HouseType := THouseType(ATag);
+  HouseType := TKMHouseType(ATag);
   HouseProgress := nil;
   for i := 0 to gHands[AHandIndex].Houses.Count - 1 do
   begin
@@ -353,7 +353,7 @@ function TKMGUIGameSpectatorItemLineBuildings.GetValue(AHandIndex: Integer; ATag
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetHouseQty(THouseType(ATag));
+  Value := gHands[AHandIndex].Stats.GetHouseQty(TKMHouseType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
@@ -361,7 +361,7 @@ function TKMGUIGameSpectatorItemLineBuildings.GetAdditionalValue(AHandIndex: Int
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetHouseWip(THouseType(ATag));
+  Value := gHands[AHandIndex].Stats.GetHouseWip(TKMHouseType(ATag));
   Result := IfThen(Value > 0, '+' + IntToStr(Value), '');
 end;
 
@@ -369,7 +369,7 @@ end;
 
 function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TUnitType(ATag)].GUIIcon, gRes.Units[TUnitType(ATag)].GUIName, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
@@ -391,7 +391,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TUnitType(ATag)].GUIIcon, gRes.Units[TUnitType(ATag)].GUIName, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
 end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTagCount: Integer;
@@ -408,7 +408,7 @@ function TKMGUIGameSpectatorItemLineArmy.GetValue(AHandIndex: Integer; ATag: Int
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetUnitQty(TUnitType(ATag));
+  Value := gHands[AHandIndex].Stats.GetUnitQty(TKMUnitType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
@@ -418,7 +418,7 @@ function TKMGUIGameSpectatorItemLineArmyKilling.GetValue(AHandIndex: Integer; AT
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetUnitKilledQty(TUnitType(ATag));
+  Value := gHands[AHandIndex].Stats.GetUnitKilledQty(TKMUnitType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
@@ -428,7 +428,7 @@ function TKMGUIGameSpectatorItemLineArmyLost.GetValue(AHandIndex: Integer; ATag:
 var
   Value: Integer;
 begin
-  Value := gHands[AHandIndex].Stats.GetUnitLostQty(TUnitType(ATag));
+  Value := gHands[AHandIndex].Stats.GetUnitLostQty(TKMUnitType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
