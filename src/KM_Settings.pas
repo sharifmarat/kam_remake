@@ -105,6 +105,9 @@ type
     fSpeedVeryFast: Single;
     fWareDistribution: TKMWareDistribution;
 
+    fDayGamesCount: Integer;
+    fLastDayGamePlayed: TDateTime;
+
     //SFX
     fMusicOff: Boolean;
     fShuffleOn: Boolean;
@@ -181,6 +184,9 @@ type
     procedure SetPlayerColorSelf(aValue: Cardinal);
     procedure SetPlayerColorAlly(aValue: Cardinal);
     procedure SetPlayerColorEnemy(aValue: Cardinal);
+
+    procedure SetDayGamesCount(aValue: Integer);
+    procedure SetLastDayGamePlayed(aValue: TDateTime);
 
     //SFX
     procedure SetMusicOff(aValue: Boolean);
@@ -267,6 +273,9 @@ type
     property SpeedFast: Single read fSpeedFast;
     property SpeedVeryFast: Single read fSpeedVeryFast;
     property WareDistribution: TKMWareDistribution read fWareDistribution;
+
+    property DayGamesCount: Integer read fDayGamesCount write SetDayGamesCount;
+    property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
 
     //SFX
     property MusicOff: Boolean read fMusicOff write SetMusicOff;
@@ -549,6 +558,9 @@ begin
 
     fLocale             := AnsiString(F.ReadString ('Game', 'Locale', UnicodeString(DEFAULT_LOCALE)));
 
+    fDayGamesCount      := F.ReadInteger  ('Game', 'DayGamesCount',     0);
+    fLastDayGamePlayed  := F.ReadDate     ('Game', 'LastDayGamePlayed', 0);
+
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
 
     fSoundFXVolume  := F.ReadFloat  ('SFX',  'SFXVolume',      0.5);
@@ -658,6 +670,9 @@ begin
     F.WriteFloat  ('Game','SpeedVeryFast',      fSpeedVeryFast);
 
     F.WriteString ('Game','Locale',          UnicodeString(fLocale));
+
+    F.WriteInteger('Game','ScrollSpeed',        fDayGamesCount);
+    F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
 
@@ -962,6 +977,20 @@ end;
 procedure TKMGameSettings.SetPlayerColorEnemy(aValue: Cardinal);
 begin
   fPlayerColorEnemy := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetDayGamesCount(aValue: Integer);
+begin
+  fDayGamesCount := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetLastDayGamePlayed(aValue: TDateTime);
+begin
+  fLastDayGamePlayed := aValue;
   Changed;
 end;
 

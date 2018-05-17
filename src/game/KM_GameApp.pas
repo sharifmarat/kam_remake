@@ -43,6 +43,7 @@ type
     procedure GameStart(aGameMode: TKMGameMode);
     procedure GameEnd(aGameMode: TKMGameMode);
     procedure GameDestroy;
+    procedure GamePlayed;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -117,7 +118,7 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  SysUtils, Math, TypInfo, KromUtils,
+  SysUtils, DateUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
@@ -469,8 +470,12 @@ begin
 
   gGame.ReadyToStop := True;
 
-  if (gGame.GameResult in [gr_Win, gr_Defeat]) and fGameSettings.AutosaveAtGameEnd then
-    gGame.Save(gGame.GameName + '_' + FormatDateTime('yyyy-mm-dd_hh-nn', Now), Now);
+  if (gGame.GameResult in [gr_Win, gr_Defeat]) then
+  begin
+    GamePlayed;
+    if fGameSettings.AutosaveAtGameEnd then
+      gGame.Save(Format('%s %s #%d', [gGame.GameName, FormatDateTime('yyyy-mm-dd', Now), fGameSettings.DayGamesCount]), Now);
+  end;
 
   if Assigned(fOnGameEnd) then
     fOnGameEnd(gGame.GameMode);
@@ -831,6 +836,16 @@ procedure TKMGameApp.GameDestroy;
 begin
   if gMain <> nil then
     gMain.FormMain.SetExportGameStats(False);
+end;
+
+
+procedure TKMGameApp.GamePlayed;
+begin
+  if CompareDate(fGameSettings.LastDayGamePlayed, Today) < 0 then
+    fGameSettings.DayGamesCount := 0;
+
+  fGameSettings.LastDayGamePlayed := Today;
+  fGameSettings.DayGamesCount := fGameSettings.DayGamesCount + 1;
 end;
 
 
