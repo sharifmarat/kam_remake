@@ -132,16 +132,16 @@ type
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   end;
-       
+
   TKMGUIGameSpectatorItemLineArmyKilling = class(TKMGUIGameSpectatorItemLineArmy)
   protected
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
-  end;     
-       
+  end;
+
   TKMGUIGameSpectatorItemLineArmyLost = class(TKMGUIGameSpectatorItemLineArmy)
   protected
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
-  end;  
+  end;
 
   ///
 
@@ -203,7 +203,7 @@ begin
   inherited Create(aParent, aParent.Width, 32 + AHandIndex * (GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V), 0, GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_HEADER_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V);
   Anchors := [anTop, anRight];
   FAnimStep := 0;
-  Focusable := false;  
+  Focusable := false;
   FHandIndex := AHandIndex;
   SetLength(fItems, GetTagCount);
   for i := 0 to GetTagCount - 1 do
@@ -443,10 +443,10 @@ begin
   //FDropBoxPanel.Focusable := false;
   FDropBoxPanel.Show;
 
-  FLastIndex := 0; 
-    
-  SetLength(FLines, 7);       
-     
+  FLastIndex := 0;
+
+  SetLength(FLines, 7);
+
   AddLineType(0, nil);
   AddLineType(1, TKMGUIGameSpectatorItemLineResources);
   AddLineType(2, TKMGUIGameSpectatorItemLineBuildings);
@@ -454,18 +454,18 @@ begin
   AddLineType(4, TKMGUIGameSpectatorItemLineArmy);
   AddLineType(5, TKMGUIGameSpectatorItemLineArmyKilling);
   AddLineType(6, TKMGUIGameSpectatorItemLineArmyLost);
-                 
+
   FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, 200, 20, fnt_Metal, '', bsGame);
   FDropBox.OnChange := ChangePage;
-  
-  FDropBox.Add('Ничего');  
+
+  FDropBox.Add('Ничего');
   FDropBox.Add('Ресурсы');
   FDropBox.Add('Здания');
   FDropBox.Add('Строительство');
   FDropBox.Add('Армия');
-  FDropBox.Add('Убийства');  
+  FDropBox.Add('Убийства');
   FDropBox.Add('Потери');
-  
+
   FDropBox.ItemIndex := 0;
 end;
 
@@ -473,9 +473,9 @@ procedure TKMGUIGameSpectator.AddLineType(AIndex: Integer; ALineClass: TKMGUIGam
 var
   i: Integer;
 begin
-  if ALineClass <> nil then  
+  if ALineClass <> nil then
     for i := 0 to MAX_LOBBY_PLAYERS - 1 do
-    begin     
+    begin
       FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i);
       FLines[AIndex, i].Visible := False;
     end;
@@ -483,47 +483,32 @@ end;
 
 procedure TKMGUIGameSpectator.ChangePage(Sender: TObject);
 var
-  LineClass: TKMGUIGameSpectatorItemLineClass;
-  i, j, TeamCount: Integer;
+  I, J: Integer;
   Teams: TKMByteSetArray;
   Position: Integer;
   NonTeamHands: set of Byte;
-begin    
-  for i := 0 to MAX_LOBBY_PLAYERS - 1 do
-    if Assigned(FLines[FLastIndex, i]) then    
-      FLines[FLastIndex, i].Visible := False;
-                                      
+begin
+  for I := 0 to MAX_LOBBY_PLAYERS - 1 do
+    if Assigned(FLines[FLastIndex, I]) then
+      FLines[FLastIndex, I].Visible := False;
+
   FLastIndex := FDropBox.ItemIndex;
 
   Position := 32;
-  Teams := gHands.GetTeams;
-  TeamCount := Length(Teams);
-  NonTeamHands := [0..gHands.Count - 1];
+  Teams := gHands.GetFullTeams;
 
-  for i := Low(Teams) to High(Teams) do
+  for I := Low(Teams) to High(Teams) do
   begin
-    NonTeamHands := NonTeamHands - Teams[I];
-
-    for j in Teams[i] do
+    for J in Teams[I] do
     begin
-      if Assigned(FLines[FLastIndex, j]) then
+      if Assigned(FLines[FLastIndex, J]) then
       begin
-        FLines[FLastIndex, j].Top := Position;
-        FLines[FLastIndex, j].Visible := True;
+        FLines[FLastIndex, J].Top := Position;
+        FLines[FLastIndex, J].Visible := True;
       end;
       Position := Position + GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V * 2 + GUI_SPECTATOR_HEADER_HEIGHT;
     end;
     Position := Position + GUI_SPECTATOR_ITEM_TEAM;
-  end;
-
-  for j in NonTeamHands do
-  begin
-    if Assigned(FLines[FLastIndex, j]) then
-    begin
-      FLines[FLastIndex, j].Top := Position;
-      FLines[FLastIndex, j].Visible := True;
-    end;
-    Position := Position + GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V * 2 + GUI_SPECTATOR_HEADER_HEIGHT;
   end;
 end;
 
