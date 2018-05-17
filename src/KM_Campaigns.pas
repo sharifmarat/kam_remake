@@ -29,7 +29,7 @@ type
     Flag: TKMPointW;
     NodeCount: Byte;
     Nodes: array [0 .. MAX_CAMP_NODES - 1] of TKMPointW;
-    TextPos: TBriefingCorner;
+    TextPos: TKMBriefingCorner;
     Video: array[TMissionVideoTypes] of TKMVideoInfo;
     Unlocked: Boolean;
   end;
@@ -492,7 +492,7 @@ procedure TKMCampaign.LoadFromDir(const aDirName: UnicodeString);
   begin
     AMap.Flag.X := AJson.O['Flag']['X'];
     AMap.Flag.Y := AJson.O['Flag']['Y'];
-    AMap.TextPos := TBriefingCorner(AJson['TextPos']);
+    AMap.TextPos := TKMBriefingCorner(AJson['TextPos']);
 
     AMap.Video[mvBefore].FileName := AJson['VideoBefore'];
     AMap.Video[mvBefore].Looked := False;
@@ -579,7 +579,7 @@ begin
         CampaignMemory.Read(Chapters[0].Maps[I].NodeCount);
         for K := 0 to Chapters[0].Maps[I].NodeCount - 1 do
           CampaignMemory.Read(Chapters[0].Maps[I].Nodes[K]);
-        CampaignMemory.Read(Chapters[0].Maps[I].TextPos, SizeOf(TBriefingCorner));
+        CampaignMemory.Read(Chapters[0].Maps[I].TextPos, SizeOf(TKMBriefingCorner));
       end;
 
       CampaignMemory.Free;
