@@ -2222,7 +2222,7 @@ begin
       gmReplayMulti,
       gmMultiSpectate:  begin
                           Replay_Multi_SetPlayersDropbox;
-                          fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main);
+                          fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer);
                         end;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));

@@ -67,9 +67,11 @@ type
 
   TKMGUIGameSpectatorItemLine = class(TKMPanel)
   protected
+    FOnJumpToPlayer: TIntegerEvent;
     FHandIndex: Integer;
     FAnimStep: Cardinal;
     FItems: array of TKMGUIGameSpectatorItem;
+    procedure DoubleClicked(Sender: TObject);
   protected
     function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; virtual; abstract;
     function GetTagCount: Integer; virtual; abstract;
@@ -78,7 +80,7 @@ type
     function GetAdditionalValue(AHandIndex: Integer; ATag: Integer): String; virtual;
     function GetProgress(AHandIndex: Integer; ATag: Integer): Single; virtual;
   public
-    constructor Create(aParent: TKMPanel; AHandIndex: Integer);
+    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent);
     procedure UpdateState(aTickCount: Cardinal); override;
     procedure Paint; override;
     property HandIndex: Integer read FHandIndex;
@@ -156,13 +158,14 @@ type
     FDropBox: TKMDropList;
     FLastIndex: Integer;
 
+    FOnJumpToPlayer: TIntegerEvent;
 
     FLines: array of array[0..MAX_LOBBY_PLAYERS] of TKMGUIGameSpectatorItemLine;
 
     procedure AddLineType(AIndex: Integer; ALineClass: TKMGUIGameSpectatorItemLineClass);
     procedure ChangePage(Sender: TObject);
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent);
   end;
 
 implementation
@@ -199,18 +202,29 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLine }
-constructor TKMGUIGameSpectatorItemLine.Create(aParent: TKMPanel; AHandIndex: Integer);
+constructor TKMGUIGameSpectatorItemLine.Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent);
 var
   i: Integer;
 begin
   inherited Create(aParent, aParent.Width, 32 + AHandIndex * (GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V), 0, GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_HEADER_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V);
+  fOnJumpToPlayer := aOnJumpToPlayer;
+  OnDoubleClick := DoubleClicked;
   Anchors := [anTop, anRight];
   FAnimStep := 0;
   Focusable := false;
   FHandIndex := AHandIndex;
   SetLength(fItems, GetTagCount);
   for i := 0 to GetTagCount - 1 do
+  begin
     fItems[i] := CreateItem(AHandIndex, GetTag(i));
+    fItems[i].OnDoubleClick := DoubleClicked;
+  end;
+end;
+
+procedure TKMGUIGameSpectatorItemLine.DoubleClicked(Sender: TObject);
+begin
+  if Assigned(fOnJumpToPlayer) then
+    fOnJumpToPlayer(FHandIndex);
 end;
 
 procedure TKMGUIGameSpectatorItemLine.UpdateState(aTickCount: Cardinal);
@@ -442,11 +456,13 @@ begin
 end;
 
 { TKMGUIGameSpectator }
-constructor TKMGUIGameSpectator.Create(aParent: TKMPanel);
+constructor TKMGUIGameSpectator.Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent);
 const
   DROPBOX_W = 270;
 begin
   inherited Create;
+
+  fOnJumpToPlayer := aOnJumpToPlayer;
 
   FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - DROPBOX_W - 10, 0, DROPBOX_W + 10, 30);
   FDropBoxPanel.Anchors := [anTop, anRight];
@@ -490,7 +506,7 @@ begin
   if ALineClass <> nil then
     for i := 0 to MAX_LOBBY_PLAYERS - 1 do
     begin
-      FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i);
+      FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i, fOnJumpToPlayer);
       FLines[AIndex, i].Visible := False;
     end;
 end;
