@@ -40,6 +40,7 @@ Bugs:
  +  Atlas binpacking - large textures were always placed to the new atlas
  +  Fixed loud echo, when many notifications comes at the same time (f.e. many units are hungry now, or house is empty etc)
  +  Fixed coloring in Memo control for long (wrapped) texts. F.e. if server description contains long colored text it will be colored only only on the very first line
+ +  When drag scrolling with middle mouse button close to window border viewport scroll start moving view position
  +  Update Cinematics speed due to changes in GameSpeed
  +  MapEd: bug with group formatting when reducing group size with more then 1 row to less then row size units (F.e. you have 5x2 group and reduce its size to 3 units)
  +  MapEd: when placing markers(reveal FOW/center screen/AI start/defence AI)/units/houses/roads/fields/tile brushes/tile objects - after RBM click buttons are still selected, even if you can't use them actually.
@@ -161,6 +162,7 @@ Improvements:
  +    Sort players due to their teams on the allies panel (same as for replay dropdown menu)
  +    Select house/unit, when clicked on icon from notification message (unit is hungry/house is empty etc)
  +    Added autosave after PT
+ +    Added 'Autosave at game end' option
  +    Added ini setting to change autosaves number and frequency (in reasonable range)
  
  Main menu:
@@ -202,6 +204,7 @@ Improvements:
  +    Added Ctrl + F11 hotkey to open debug menu with hidden panel. Convinient to make screenshots in FullScreen mode
  
  Spectating/watching replay:
+ +    Added panel with game stats for all players
  +    Change screen position when switch between players with dropbox by double click on player in list. Screen position changed to last selected object of this player if possible. Otherwise change screen position to player's starting location. Same behaviour if click Ctrl + replay/spectating player hotkey
  +    Players dropbox not closing automatically anymore
  +    Show 1st human player initially, not just 1st player
@@ -233,6 +236,7 @@ Improvements:
  +    Added logs customization
  +    Added show controls IDs option
  +    Added option to export png's from Units.rxx and Houses.rxx and splitting them into different folders with associated texture/masks/txt
+ +    Game statistics could be exported from the game results screen to csv with CRC and ability to validate CRC
  
  MapEditor:
  +    Added RMG for MapEditor (on terrain selection submenu) - random map generator by Toxic
@@ -306,7 +310,6 @@ Improvements:
  +    Images, loaded from Sprites folder are applied with soften shadows
  +    When crash happens on replay - send replay files, instead of autosaves
  +    Added ini setting to always show game time label (ShowGameTime)
- +    Game statistics could be exported from the game results screen to csv with CRC and ability to validate CRC
  +    Map format was changed (*.map file), that will significantly reduce map file sizes (~3 times)
  +    All maps were resaved to the new format, so they can't be open in older game version. Back compatibility is stored
  
