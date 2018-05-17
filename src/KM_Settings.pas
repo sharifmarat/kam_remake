@@ -671,7 +671,7 @@ begin
 
     F.WriteString ('Game','Locale',          UnicodeString(fLocale));
 
-    F.WriteInteger('Game','ScrollSpeed',        fDayGamesCount);
+    F.WriteInteger('Game','DayGamesCount',        fDayGamesCount);
     F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
