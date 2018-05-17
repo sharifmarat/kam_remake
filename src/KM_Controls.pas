@@ -258,6 +258,9 @@ type
     procedure UpdateState(aTickCount: Cardinal); virtual;
   end;
 
+  TKMControlClass = class of TKMControl;
+  TKMControlClassArray = array of TKMControlClass;
+
 
   { Panel which keeps child items in it, it's virtual and invisible }
   TKMPanel = class(TKMControl)
@@ -283,7 +286,7 @@ type
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer); overload;
     destructor Destroy; override;
     function AddChild(aChild: TKMControl): Integer;
-    procedure SetCanChangeEnable(aEnable: Boolean; aAlsoSetEnable: Boolean = True);
+    procedure SetCanChangeEnable(aEnable: Boolean; aExceptControls: array of TKMControlClass; aAlsoSetEnable: Boolean = True);
 
     function FindFocusableControl(aFindNext: Boolean): TKMControl;
     procedure FocusNext;
@@ -2412,17 +2415,29 @@ begin
 end;
 
 
-procedure TKMPanel.SetCanChangeEnable(aEnable: Boolean; aAlsoSetEnable: Boolean = True);
+procedure TKMPanel.SetCanChangeEnable(aEnable: Boolean; aExceptControls: array of TKMControlClass; aAlsoSetEnable: Boolean = True);
 var
-  I: Integer;
+  I, J: Integer;
+  SkipChild: Boolean;
 begin
   if aEnable and aAlsoSetEnable then
     Enabled := aEnable;
   for I := 0 to ChildCount - 1 do
   begin
     if Childs[I] is TKMPanel then
-      TKMPanel(Childs[I]).SetCanChangeEnable(aEnable)
+      TKMPanel(Childs[I]).SetCanChangeEnable(aEnable, aExceptControls, aAlsoSetEnable)
     else begin
+      SkipChild := False;
+      for J := Low(aExceptControls) to High(aExceptControls) do
+        if Childs[I] is aExceptControls[J] then
+        begin
+          SkipChild := True;
+          Break;
+        end;
+
+      if SkipChild then
+        Continue;
+
       //Unblock first to be able to change Enable status
       if aEnable then
         Childs[I].CanChangeEnable := aEnable;

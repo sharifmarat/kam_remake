@@ -530,6 +530,8 @@ end;
 
 
 procedure TKMGUIGameHouse.Show(aHouse: TKMHouse; aAskDemolish: Boolean);
+const
+  DoNotDisableControls: array[0..1] of TKMControlClass = (TKMLabel, TKMImage);
 var
   I, RowRes, Base, Line, HLabelWidth: Integer;
 begin
@@ -540,7 +542,9 @@ begin
     if Panel_House.Childs[I] is TKMPanel then
       Panel_House.Childs[I].Hide;
 
-  Panel_House.SetCanChangeEnable(gMySpectator.IsSelectedMyObj);
+
+
+  Panel_House.SetCanChangeEnable(gMySpectator.IsSelectedMyObj, DoNotDisableControls);
 
   if aHouse = nil then
   begin
