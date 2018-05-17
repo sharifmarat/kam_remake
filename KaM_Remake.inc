@@ -45,3 +45,5 @@
     {$IFEND}
   {$ENDIF}
 {$ENDIF}
+
+{$DEFINE PLAYVIDEO}
