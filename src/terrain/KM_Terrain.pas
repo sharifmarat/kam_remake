@@ -1015,20 +1015,18 @@ end;
 function TKMTerrain.TileGoodForIronMine(X,Y: Word): Boolean;
 var
   CornersTKinds: TKMTerrainKindsArray;
-  CornersTerrains: TKMWordArray;
 begin
   Result :=
     (fTileset.TileIsGoodForIronMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTerrains := TileCornersTerrains(X, Y);
     CornersTKinds := TileCornersTerKinds(X, Y);
     Result :=
           (CornersTKinds[0] in [tkIron, tkIronMount])
       and (CornersTKinds[1] in [tkIron, tkIronMount])
-      and fTileset.TileIsRoadable(CornersTerrains[2])
-      and fTileset.TileIsRoadable(CornersTerrains[3]);
+      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
   end;
 end;
 
@@ -1047,20 +1045,18 @@ end;
 function TKMTerrain.TileGoodForGoldMine(X,Y: Word): Boolean;
 var
   CornersTKinds: TKMTerrainKindsArray;
-  CornersTerrains: TKMWordArray;
 begin
   Result :=
     (fTileset.TileIsGoodForGoldMine(Land[Y,X].BaseLayer.Terrain)
       and (Land[Y,X].BaseLayer.Rotation mod 4 = 0)); //only horizontal mountain edges allowed
   if not Result then
   begin
-    CornersTerrains := TileCornersTerrains(X, Y);
     CornersTKinds := TileCornersTerKinds(X, Y);
     Result :=
           (CornersTKinds[0] in [tkGold, tkGoldMount])
       and (CornersTKinds[1] in [tkGold, tkGoldMount])
-      and fTileset.TileIsRoadable(CornersTerrains[2])
-      and fTileset.TileIsRoadable(CornersTerrains[3]);
+      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[2]])
+      and fTileset.TileIsRoadable(BASE_TERRAIN[CornersTKinds[3]]);
   end;
 end;
 
@@ -1238,9 +1234,11 @@ end;
 
 
 function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = True): Boolean;
+const
+  PROHIBIT_TERKINDS: array[0..1] of TKMTerrainKind = (tkLava, tkAbyss);
 var
-  K, Cnt: Integer;
-  Corners: TKMWordArray;
+  I, K, Cnt: Integer;
+  Corners: TKMTerrainKindsArray;
 begin
   Result := False;
 
@@ -1251,10 +1249,16 @@ begin
   else
   begin
     Cnt := 0;
-    Corners := TileCornersTerrains(X,Y);
+    Corners := TileCornersTerKinds(X,Y);
     for K := 0 to 3 do
-      if aCheckTileFunc(Corners[K]) then
+    begin
+      for I := 0 to High(PROHIBIT_TERKINDS) do
+        if Corners[K] = PROHIBIT_TERKINDS[I] then
+          Exit(False);
+
+      if aCheckTileFunc(BASE_TERRAIN[Corners[K]]) then
         Inc(Cnt);
+    end;
 
     //Consider tile has parameter if it has 3 corners with that parameter or if it has 2 corners and base layer has the parameter
     Result := (Cnt >= 3) or (aAllow2CornerTiles and (Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
@@ -1413,29 +1417,14 @@ end;
 
 //Get tile corners terrain id
 function TKMTerrain.TileCornersTerrains(aX, aY: Word): TKMWordArray;
-const
-  TOO_BIG_VALUE = 10000;
 var
-  K, L: Integer;
+  K: Integer;
+  TKinds: TKMTerrainKindsArray;
 begin
   SetLength(Result, 4);
+  TKinds := TileCornersTerKinds(aX, aY);
   for K := 0 to 3 do
-  begin
-    Result[K] := TOO_BIG_VALUE;
-    with gTerrain.Land[aY,aX] do
-    begin
-      if K in BaseLayer.Corners then
-        Result[K] := BASE_TERRAIN[TILE_CORNERS_TERRAIN_KINDS[BaseLayer.Terrain, (K + 4 - BaseLayer.Rotation) mod 4]]
-      else
-        for L := 0 to LayersCnt - 1 do
-          if K in Layer[L].Corners then
-          begin
-            Result[K] := BASE_TERRAIN[gRes.Sprites.GetGenTerrainInfo(Layer[L].Terrain).TerKind];
-            Break;
-          end;
-    end;
-    Assert(Result[K] <> TOO_BIG_VALUE, Format('[TileCornerTerrains] Can''t determine tile [%d:%d] terrain at Corner [%d]', [aX, aY, K]));
-  end;
+    Result[K] := BASE_TERRAIN[TKinds[K]];
 end;
 
 
