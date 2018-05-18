@@ -109,7 +109,7 @@ type
 
     fBoundsWC: TKMRect; //WC rebuild bounds used in FlattenTerrain (put outside to fight with recursion SO error in FlattenTerrain EnsureWalkable)
 
-    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
+    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = True): Boolean;
 
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
@@ -1237,7 +1237,7 @@ begin
 end;
 
 
-function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc): Boolean;
+function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = True): Boolean;
 var
   K, Cnt: Integer;
   Corners: TKMWordArray;
@@ -1257,7 +1257,7 @@ begin
         Inc(Cnt);
 
     //Consider tile has parameter if it has 3 corners with that parameter or if it has 2 corners and base layer has the parameter
-    Result := (Cnt >= 3) or ((Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
+    Result := (Cnt >= 3) or (aAllow2CornerTiles and (Cnt = 2) and aCheckTileFunc(Land[Y, X].BaseLayer.Terrain));
   end;
 end;
 
@@ -1294,7 +1294,7 @@ function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
 //  Ter: Word;
 //  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable);
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable, False);
 //  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 //  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
 //  begin
