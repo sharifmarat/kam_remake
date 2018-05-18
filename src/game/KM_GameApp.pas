@@ -470,6 +470,9 @@ begin
 
   gGame.ReadyToStop := True;
 
+  if (gGame.GamePlayInterface <> nil) and (gGame.GamePlayInterface.GuiGameSpectator <> nil) then
+    gGame.GamePlayInterface.GuiGameSpectator.CloseDropBox;
+
   if (gGame.GameResult in [gr_Win, gr_Defeat]) then
   begin
     GamePlayed;

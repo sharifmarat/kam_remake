@@ -39,7 +39,7 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
-    fGuiMenuSpectator: TKMGUIGameSpectator;
+    fGuiGameSpectator: TKMGUIGameSpectator;
     fGuiGameResultsSP: TKMGameResultsSP;
     fGuiGameResultsMP: TKMGameResultsMP;
 
@@ -302,6 +302,7 @@ type
     procedure SetPause(aValue: Boolean);
 
     property GuiGameResultsMP: TKMGameResultsMP read fGuiGameResultsMP;
+    property GuiGameSpectator: TKMGUIGameSpectator read fGuiGameSpectator;
 
     property Alerts: TKMAlerts read fAlerts;
 
@@ -823,8 +824,8 @@ begin
   fGuiMenuSettings.Free;
   fGuiGameResultsSP.Free;
   fGuiGameResultsMP.Free;
-  if Assigned(fGuiMenuSpectator) then
-    fGuiMenuSpectator.Free;
+  if Assigned(fGuiGameSpectator) then
+    fGuiGameSpectator.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -2222,7 +2223,7 @@ begin
       gmReplayMulti,
       gmMultiSpectate:  begin
                           Replay_Multi_SetPlayersDropbox;
-                          fGuiMenuSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer);
+                          fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer);
                         end;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));

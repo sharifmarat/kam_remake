@@ -166,6 +166,8 @@ type
     procedure ChangePage(Sender: TObject);
   public
     constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent);
+
+    procedure CloseDropBox;
   end;
 
 implementation
@@ -541,5 +543,13 @@ begin
     Position := Position + GUI_SPECTATOR_ITEM_TEAM;
   end;
 end;
+
+procedure TKMGUIGameSpectator.CloseDropBox;
+begin
+  FDropBox.ItemIndex := 0;
+  FDropBox.CloseList;
+  ChangePage(nil);
+end;
+
 
 end.
