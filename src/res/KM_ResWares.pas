@@ -101,7 +101,7 @@ const
   //Measured on a test map RES_COUNT / TIME in minutes
   ProductionRate: array [WARE_MIN..WARE_MAX] of Single = (
      88/120, 414/120, 390/120, 160/120, 160/120,
-    140/120, 218/120, 330/120, 120/120, 138/120, // Real production of coal is lower (original value was 155/120)
+    155/120, 218/120, 330/120, 120/120, 138/120,
     336/120, 162/120, 324/120, 510/120,  84/180,
      84/180, 180/120, 155/120, 180/120, 155/120,
     200/120, 195/120, 200/120, 195/120, 200/120,
