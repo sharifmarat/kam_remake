@@ -57,15 +57,15 @@ type
     fGameTickCount: Cardinal;
     fMissionMode: TKMissionMode;
 
+    fUIDTracker: Cardinal;       //Units-Houses tracker, to issue unique IDs
+    fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
 
+    //DO not save
     fGameSpeedChangeTick: Single;
     fGameSpeedChangeTime: Cardinal; //time of last game speed change
     fPausedTicksCnt: Cardinal;
 
     fLastAutosaveTime: Cardinal;
-
-    fUIDTracker: Cardinal;       //Units-Houses tracker, to issue unique IDs
-    fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
 
     fReadyToStop: Boolean;
 
@@ -1535,10 +1535,6 @@ begin
 
     SaveStream.Write(fDynamicFOW);
 
-    SaveStream.Write(fGameSpeedChangeTick);
-    SaveStream.Write(fGameSpeedChangeTime);
-    SaveStream.Write(fPausedTicksCnt);
-
     //We need to know which mission/savegame to try to restart. This is unused in MP
     if not IsMultiplayer then
       SaveStream.WriteW(fMissionFileSP);
@@ -1676,10 +1672,6 @@ begin
     LoadStream.Read(fCampaignMap);
 
     LoadStream.Read(fDynamicFOW);
-
-    LoadStream.Read(fGameSpeedChangeTick);
-    LoadStream.Read(fGameSpeedChangeTime);
-    LoadStream.Read(fPausedTicksCnt);
 
     //Check if this save is Campaign game save
     IsCampaign := False;
