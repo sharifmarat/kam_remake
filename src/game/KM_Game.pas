@@ -49,9 +49,14 @@ type
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
+
+    //Saved and loaded via GameInfo
     fGameName: UnicodeString;
     fGameMapCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
     fGameTickCount: Cardinal;
+    fMissionMode: TKMissionMode;
+
+
     fGameSpeedChangeTick: Single;
     fGameSpeedChangeTime: Cardinal; //time of last game speed change
     fPausedTicksCnt: Cardinal;
@@ -60,7 +65,6 @@ type
 
     fUIDTracker: Cardinal;       //Units-Houses tracker, to issue unique IDs
     fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
-    fMissionMode: TKMissionMode;
 
     fReadyToStop: Boolean;
 
@@ -247,6 +251,9 @@ begin
   fWaitingForNetwork := False;
   fGameOptions  := TKMGameOptions.Create;
   fMissionDifficulty := mdNone;
+  fGameSpeedChangeTick := 0;
+  fGameSpeedChangeTime := 0;
+  fPausedTicksCnt := 0;
 
   //UserInterface is different between Gameplay and MapEd
   if fGameMode = gmMapEd then
@@ -1522,6 +1529,10 @@ begin
     SaveStream.Write(fCampaignName, SizeOf(TKMCampaignId));
     SaveStream.Write(fCampaignMap);
 
+    SaveStream.Write(fGameSpeedChangeTick);
+    SaveStream.Write(fGameSpeedChangeTime);
+    SaveStream.Write(fPausedTicksCnt);
+
     //We need to know which mission/savegame to try to restart. This is unused in MP
     if not IsMultiplayer then
       SaveStream.WriteW(fMissionFileSP);
@@ -1657,6 +1668,10 @@ begin
     //We need to know which campaign to display after victory
     LoadStream.Read(fCampaignName, SizeOf(TKMCampaignId));
     LoadStream.Read(fCampaignMap);
+
+    LoadStream.Read(fGameSpeedChangeTick);
+    LoadStream.Read(fGameSpeedChangeTime);
+    LoadStream.Read(fPausedTicksCnt);
 
     //Check if this save is Campaign game save
     IsCampaign := False;
