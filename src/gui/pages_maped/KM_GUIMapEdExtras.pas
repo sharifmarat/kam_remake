@@ -127,7 +127,6 @@ end;
 
 procedure TKMMapEdExtras.Extra_Change(Sender: TObject);
 begin
-  SHOW_TERRAIN_WIRES := TrackBar_Passability.Position <> 0;
   SHOW_TERRAIN_PASS := TrackBar_Passability.Position;
   SHOW_TERRAIN_TILES_GRID := CheckBox_ShowTilesGrid.Checked;
 
