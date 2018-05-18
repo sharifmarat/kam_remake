@@ -596,11 +596,12 @@ begin
   SetGameSpeed(GetNormalGameSpeed, False);
 
   //Check for default advanced AI's
-  for I := 0 to fNetworking.MapInfo.LocCount - 1 do
-    if fNetworking.MapInfo.CanBeAdvancedAI[I]
-      and not fNetworking.MapInfo.CanBeAI[I]
-      and not fNetworking.MapInfo.CanBeHuman[I] then
-      gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True);
+  if fNetworking.IsMap then
+    for I := 0 to fNetworking.MapInfo.LocCount - 1 do
+      if fNetworking.MapInfo.CanBeAdvancedAI[I]
+        and not fNetworking.MapInfo.CanBeAI[I]
+        and not fNetworking.MapInfo.CanBeHuman[I] then
+        gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True);
 
   //Assign existing NetPlayers(1..N) to map players(0..N-1)
   for I := 1 to fNetworking.NetPlayers.Count do
