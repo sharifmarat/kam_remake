@@ -155,9 +155,9 @@ const
   SQR_COMPANY_ATTACK_RAD = COMPANY_ATTACK_RAD * COMPANY_ATTACK_RAD;
   SQR_MAXIMAL_ATTACK_VAR_RAD = MAXIMAL_ATTACK_VAR_RAD * MAXIMAL_ATTACK_VAR_RAD;
   // Houses in TARGET_HOUSES will be selected as a primary target (so company will come to the closest but will not attack it)
-  TARGET_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool];
+  TARGET_HOUSES: THouseTypeSet = [htBarracks, htStore, htSchool, htTownhall];
   // Houses in SCAN_HOUSES will be destroyed when they are in radius (it should also contain TARGET_HOUSES)
-  SCAN_HOUSES: THouseTypeSet = [htWatchTower, htBarracks, htStore, htSchool];
+  SCAN_HOUSES: THouseTypeSet = [htWatchTower, htBarracks, htStore, htSchool, htTownhall];
   // All houses for final stage of attack algorithm
   ALL_HOUSES: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX];
 
