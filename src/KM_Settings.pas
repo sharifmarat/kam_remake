@@ -135,6 +135,7 @@ type
     fHTMLStatusFile: UnicodeString;
     fServerWelcomeMessage: UnicodeString;
 
+    fServerDynamicFOW: Boolean;
     fServerMapsRosterEnabled: Boolean;
     fServerMapsRosterStr: UnicodeString;
     fServerLimitPTFrom, fServerLimitPTTo: Integer;
@@ -304,6 +305,7 @@ type
     property HTMLStatusFile: UnicodeString read fHTMLStatusFile write SetHTMLStatusFile;
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
 
+    property ServerDynamicFOW: Boolean read fServerDynamicFOW;
     property ServerMapsRosterEnabled: Boolean read fServerMapsRosterEnabled;
     property ServerMapsRosterStr: UnicodeString read fServerMapsRosterStr;
     property ServerLimitPTFrom: Integer read fServerLimitPTFrom;
@@ -597,6 +599,7 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
+    fServerDynamicFOW       := F.ReadBool  ('Server', 'DynamicFOW', False);
     fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
     fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
     fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     0);
@@ -703,6 +706,7 @@ begin
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
 
+    F.WriteBool   ('Server','DynamicFOW',             fServerDynamicFOW);
     F.WriteBool   ('Server','MapsRosterEnabled',      fServerMapsRosterEnabled);
     F.WriteString ('Server','MapsRoster',             fServerMapsRosterStr);
     F.WriteInteger('Server','LimitPTFrom',            fServerLimitPTFrom);

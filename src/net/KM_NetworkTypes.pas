@@ -185,6 +185,7 @@ type
 
   TKMPGameFilter = class
   private
+    fDynamicFOW: Boolean;
     fMapsFilterEnabled: Boolean;
     fMapsCRCList: TKMMapsCRCList;
     fPeacetimeRng: TKMRangeInt;
@@ -193,12 +194,13 @@ type
     procedure Reset;
   public
     constructor Create; overload;
-    constructor Create(aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+    constructor Create(aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                        const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle); overload;
     destructor Destroy; overload;
 
     function FilterMap(aCRC: Cardinal): Boolean;
 
+    property DynamicFOW: Boolean read fDynamicFOW;
     property MapsFilterEnabled: Boolean read fMapsFilterEnabled;
     property MapsCRCList: TKMMapsCRCList read fMapsCRCList;
     property PeacetimeRng: TKMRangeInt read fPeacetimeRng;
@@ -236,11 +238,12 @@ begin
 end;
 
 
-constructor TKMPGameFilter.Create(aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+constructor TKMPGameFilter.Create(aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                                   const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
 begin
   inherited Create;
 
+  fDynamicFOW := aDynamicFOW;
   fMapsFilterEnabled := aMapsFilterEnabled;
 
   fMapsCRCList := TKMMapsCRCList.Create;
@@ -262,6 +265,7 @@ end;
 
 procedure TKMPGameFilter.Save(aStream: TKMemoryStream);
 begin
+  aStream.Write(fDynamicFOW);
   aStream.Write(fMapsFilterEnabled);
   aStream.WriteA(AnsiString(fMapsCRCList.PackToString));
   aStream.Write(fPeacetimeRng);
@@ -274,6 +278,7 @@ procedure TKMPGameFilter.Load(aStream: TKMemoryStream);
 var
   StrA: AnsiString;
 begin
+  aStream.Read(fDynamicFOW);
   aStream.Read(fMapsFilterEnabled);
   aStream.ReadA(StrA);
   fMapsCRCList.LoadFromString(UnicodeString(StrA));
@@ -286,6 +291,7 @@ end;
 procedure TKMPGameFilter.Reset;
 begin
   fMapsCRCList.Clear;
+  fDynamicFOW := False;
   fMapsFilterEnabled := False;
   fPeacetimeRng.Min := 0;
   fPeacetimeRng.Max := MaxInt;

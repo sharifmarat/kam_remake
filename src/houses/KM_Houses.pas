@@ -286,7 +286,7 @@ type
 implementation
 uses
   SysUtils, Math, KromUtils,
-  KM_Game, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
+  KM_Game, KM_GameApp, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResUnits, KM_ResMapElements,
@@ -488,12 +488,15 @@ begin
   gHands[fOwner].Locks.HouseCreated(fHouseType);
   gHands[fOwner].Stats.HouseCreated(fHouseType, aWasBuilt);
 
-  HA := gRes.Houses[fHouseType].BuildArea;
-  //Reveal house from all points it covers
-  for I := 1 to 4 do
-    for K := 1 to 4 do
-      if HA[I,K] <> 0 then
-        gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+//  if not gGameApp.DynamicFOWEnabled then
+//  begin
+    HA := gRes.Houses[fHouseType].BuildArea;
+    //Reveal house from all points it covers
+    for I := 1 to 4 do
+      for K := 1 to 4 do
+        if HA[I,K] <> 0 then
+          gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+//  end;
 
   CurrentAction := TKMHouseAction.Create(Self, hst_Empty);
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
@@ -1602,7 +1605,9 @@ const
   //How much ticks it takes for a house to become completely covered in snow
   SNOW_TIME = 300;
 var
+  I, K: Integer;
   WasOnSnow: Boolean;
+  HA: THouseArea;
 begin
   Inc(FlagAnimStep);
   Inc(WorkAnimStep);
@@ -1619,9 +1624,15 @@ begin
     fSnowStep := Min(fSnowStep + (1 + Byte(gGame.IsMapEditor) * 10) / SNOW_TIME, 1);
 
   //FlagAnimStep is a sort of counter to reveal terrain once a sec
-  if DYNAMIC_FOG_OF_WAR then
-  if FlagAnimStep mod 10 = 0 then
-    gHands.RevealForTeam(fOwner, fPosition, gRes.Houses[fHouseType].Sight, FOG_OF_WAR_INC);
+  if gGameApp.DynamicFOWEnabled and (FlagAnimStep mod FOW_PACE = 0) then
+  begin
+    HA := gRes.Houses[fHouseType].BuildArea;
+    //Reveal house from all points it covers
+    for I := 1 to 4 do
+      for K := 1 to 4 do
+        if HA[I,K] <> 0 then
+          gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_INC);
+  end;
 end;
 
 
@@ -1663,9 +1674,26 @@ end;
 
 
 procedure TKMHouse.UpdateState(aTick: Cardinal);
-var HouseUnoccupiedMsgId: Integer;
+const
+  HOUSE_PLAN_SIGHT = 2;
+var
+  I, K: Integer;
+  HouseUnoccupiedMsgId: Integer;
+  HA: THouseArea;
 begin
-  if not IsComplete then Exit; //Don't update unbuilt houses
+  if not IsComplete then
+  begin
+    if gGameApp.DynamicFOWEnabled and ((aTick + fOwner) mod FOW_PACE = 0) then
+    begin
+      HA := gRes.Houses[fHouseType].BuildArea;
+      //Reveal house from all points it covers
+      for I := 1 to 4 do
+        for K := 1 to 4 do
+          if HA[I,K] <> 0 then
+            gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), HOUSE_PLAN_SIGHT, FOG_OF_WAR_INC);
+    end;
+    Exit; //Don't update unbuilt houses
+  end;
 
   fTick := aTick;
 

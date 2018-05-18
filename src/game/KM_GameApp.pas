@@ -100,6 +100,8 @@ type
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
     procedure FPSMeasurement(aFPS: Cardinal);
 
+    function DynamicFOWEnabled: Boolean;
+
     property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
@@ -396,6 +398,12 @@ end;
 procedure TKMGameApp.FPSMeasurement(aFPS: Cardinal);
 begin
   if fNetworking <> nil then fNetworking.FPSMeasurement(aFPS);
+end;
+
+
+function TKMGameApp.DynamicFOWEnabled: Boolean;
+begin
+  Result := DYNAMIC_FOG_OF_WAR or ((gGame <> nil) and gGame.DynamicFOW)
 end;
 
 
@@ -865,6 +873,7 @@ begin
                                         fGameSettings.AutoKickTimeout,
                                         fGameSettings.PingInterval,
                                         fGameSettings.MasterAnnounceInterval,
+                                        fGameSettings.ServerDynamicFOW,
                                         fGameSettings.ServerMapsRosterEnabled,
                                         fGameSettings.ServerMapsRosterStr,
                                         KMRange(fGameSettings.ServerLimitPTFrom, fGameSettings.ServerLimitPTTo),

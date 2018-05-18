@@ -49,6 +49,7 @@ type
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
+    fDynamicFOW: Boolean;
 
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
@@ -136,6 +137,7 @@ type
     property IsExiting: Boolean read fIsExiting;
     property IsPaused: Boolean read fIsPaused write SetIsPaused;
     property ReadyToStop: Boolean read fReadyToStop write fReadyToStop;
+    property DynamicFOW: Boolean read fDynamicFOW write fDynamicFOW;
 
     function MissionTime: TDateTime;
     function GetPeacetimeRemaining: TDateTime;
@@ -251,6 +253,7 @@ begin
   fWaitingForNetwork := False;
   fGameOptions  := TKMGameOptions.Create;
   fMissionDifficulty := mdNone;
+  fDynamicFOW := False;
   fGameSpeedChangeTick := 0;
   fGameSpeedChangeTime := 0;
   fPausedTicksCnt := 0;
@@ -400,6 +403,7 @@ begin
     gmMulti, gmMultiSpectate:
               begin
                 fNetworking.ResetPacketsStats;
+                fDynamicFOW := fNetworking.NetGameFilter.DynamicFOW;
                 FillChar(PlayerEnabled, SizeOf(PlayerEnabled), #0);
                 for I := 1 to fNetworking.NetPlayers.Count do
                   if not fNetworking.NetPlayers[I].IsSpectator then
@@ -1529,6 +1533,8 @@ begin
     SaveStream.Write(fCampaignName, SizeOf(TKMCampaignId));
     SaveStream.Write(fCampaignMap);
 
+    SaveStream.Write(fDynamicFOW);
+
     SaveStream.Write(fGameSpeedChangeTick);
     SaveStream.Write(fGameSpeedChangeTime);
     SaveStream.Write(fPausedTicksCnt);
@@ -1668,6 +1674,8 @@ begin
     //We need to know which campaign to display after victory
     LoadStream.Read(fCampaignName, SizeOf(TKMCampaignId));
     LoadStream.Read(fCampaignMap);
+
+    LoadStream.Read(fDynamicFOW);
 
     LoadStream.Read(fGameSpeedChangeTick);
     LoadStream.Read(fGameSpeedChangeTime);

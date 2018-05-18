@@ -308,7 +308,7 @@ type
 
 implementation
 uses
-  KM_CommonTypes, KM_Game, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
+  KM_CommonTypes, KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
 
@@ -1533,8 +1533,8 @@ end;
 
 procedure TKMUnit.SetCurrPosition(const aLoc: TKMPoint);
 begin
-  if not DYNAMIC_FOG_OF_WAR
-    and (fOwner <> PLAYER_ANIMAL)
+  if {not gGameApp.DynamicFOWEnabled
+    and }(fOwner <> PLAYER_ANIMAL)
     and (fCurrPosition <> aLoc) then  //Update FOW only for new loc
     gHands.RevealForTeam(fOwner, aLoc, gRes.Units[fUnitType].Sight, FOG_OF_WAR_MAX);
 
@@ -2201,7 +2201,7 @@ begin
     Kill(PLAYER_NONE, True, False);
 
   //We only need to update fog of war regularly if we're using dynamic fog of war, otherwise only update it when the unit moves
-  if DYNAMIC_FOG_OF_WAR and (fTicker mod 10 = 0) then
+  if gGameApp.DynamicFOWEnabled and (fTicker mod FOW_PACE = 0) then
     gHands.RevealForTeam(fOwner, fCurrPosition, gRes.Units[fUnitType].Sight, FOG_OF_WAR_INC);
 
   UpdateThoughts;

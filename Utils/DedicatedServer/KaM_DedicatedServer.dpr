@@ -65,7 +65,8 @@ begin
                                                 fSettings.HTMLStatusFile,
                                                 fSettings.ServerWelcomeMessage,
                                                 True);
-  GameFilter := TKMPGameFilter.Create(fSettings.ServerMapsRosterEnabled,
+  GameFilter := TKMPGameFilter.Create(fSettings.ServerDynamicFOW,
+                                      fSettings.ServerMapsRosterEnabled,
                                       fSettings.ServerMapsRosterStr,
                                       KMRange(fSettings.ServerLimitPTFrom, fSettings.ServerLimitPTTo),
                                       KMRange(fSettings.ServerLimitSpeedFrom, fSettings.ServerLimitSpeedTo),

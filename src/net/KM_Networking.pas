@@ -173,7 +173,7 @@ type
     function GetPacketsSent(aKind: TKMessageKind): Cardinal;
   public
     constructor Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
-                       aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                       aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                        const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
     destructor Destroy; override;
 
@@ -307,7 +307,7 @@ uses
 
 { TKMNetworking }
 constructor TKMNetworking.Create(const aMasterServerAddress: string; aKickTimeout, aPingInterval, aAnnounceInterval: Word;
-                                 aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
+                                 aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                                  const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle);
 var
   GameFilter: TKMPGameFilter;
@@ -317,7 +317,7 @@ begin
   SetGameState(lgs_None);
 
   fNetServer := TKMDedicatedServer.Create(1, aKickTimeout, aPingInterval, aAnnounceInterval, aMasterServerAddress, '', '', False);
-  GameFilter := TKMPGameFilter.Create(aMapsFilterEnabled, aMapsCRCListStr, aPeacetimeRng, aSpeedRng, aSpeedRngAfterPT);
+  GameFilter := TKMPGameFilter.Create(aDynamicFOW, aMapsFilterEnabled, aMapsCRCListStr, aPeacetimeRng, aSpeedRng, aSpeedRngAfterPT);
   fNetServer.Server.GameFilter := GameFilter;
 
   fNetGameFilter := TKMPGameFilter.Create;

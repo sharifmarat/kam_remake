@@ -30,6 +30,7 @@ type
     RevealedRadius: array [0..MAX_MAP_SIZE-1, 0..MAX_MAP_SIZE-1] of Word;
     RenderRevRevealedRad: array [0..MAX_MAP_SIZE-1, 0..MAX_MAP_SIZE-1] of Word;
     CoverHasBeenCalled: Boolean;
+    fRevealedToMax: TBoolean2Array;
 
     (*Revelation: array of array of packed record
       //Lies within range 0, TERRAIN_FOG_OF_WAR_MIN..TERRAIN_FOG_OF_WAR_MAX.
@@ -93,7 +94,7 @@ const
 
 implementation
 uses
-  Math;
+  Math, KM_GameApp;
 
 const
   //Addition to Revelation radius for Render revelation
@@ -113,6 +114,7 @@ procedure TKMFogOfWar.SetMapSize(X,Y: Word);
 begin
   MapX := X;
   MapY := Y;
+  SetLength(fRevealedToMax, Y, X);
   SetLength(Revelation, Y, X);
   SetLength(RenderRevelation, Y, X);
 end;
@@ -146,13 +148,21 @@ procedure TKMFogOfWar.RevealCircle(const Pos: TKMPoint; Radius, Amount: Word);
     begin
       for I := I1 to I2 do for K := K1 to K2 do
         if (Sqr(Pos.X - K) + Sqr(Pos.Y - I)) <= SqrRadius then
+        begin
           RevArray^[I, K] := FOG_OF_WAR_MAX;
+          if aForRevelation then
+            fRevealedToMax[I, K] := True;
+        end;
     end
     else
     begin
       for I := I1 to I2 do for K := K1 to K2 do
         if (Sqr(Pos.X - K) + Sqr(Pos.Y - I)) <= SqrRadius then
-          RevArray^[I, K] := min(RevArray^[I, K] + aAmount, FOG_OF_WAR_MAX);
+        begin
+          RevArray^[I, K] := Min(RevArray^[I, K] + aAmount, FOG_OF_WAR_MAX);
+          if aForRevelation and (RevArray^[I, K] = FOG_OF_WAR_MAX) then
+            fRevealedToMax[I, K] := True;
+        end;
     end;
   end;
 
@@ -160,7 +170,7 @@ var
   AroundRadius: Word;
 begin
   AroundRadius := Radius + RENDER_RADIUS_ADD;
-  if not CoverHasBeenCalled then
+  if not CoverHasBeenCalled and not gGameApp.DynamicFOWEnabled then
   begin
     if RevealedRadius[Pos.Y, Pos.X] < Radius then
     begin
@@ -221,7 +231,11 @@ var
 begin
   for I := TL.Y to BR.Y do
     for K := TL.X to BR.X do
+    begin
       Revelation[I,K] := Min(Revelation[I,K] + Amount, FOG_OF_WAR_MAX);
+      if Revelation[I,K] = FOG_OF_WAR_MAX then
+        fRevealedToMax[I,K] := True;
+    end;
 
   // Reveal with bigger radius for AroundRevelation
   for I := Max(0, TL.Y - RENDER_RADIUS_ADD) to Min(MapY - 1, BR.Y + RENDER_RADIUS_ADD) do
@@ -284,7 +298,7 @@ function TKMFogOfWar.CheckVerticeRev(aRevArray: PKMByte2Array; const X,Y: Word):
 begin
   //I like how "alive" the fog looks with some tweaks
   //pulsating around units and slowly thickening when they leave :)
-  if DYNAMIC_FOG_OF_WAR then
+  if gGameApp.DynamicFOWEnabled then
     if (aRevArray^[Y,X] >= FOG_OF_WAR_ACT) then
       Result := 255
     else
@@ -415,6 +429,7 @@ begin
   //so save it out 1 row at a time (due to 2D arrays not being continguous we can't save it all at once)
   for I := 0 to MapY - 1 do
   begin
+    SaveStream.Write(fRevealedToMax[I, 0], MapX * SizeOf(fRevealedToMax[I, 0]));
     SaveStream.Write(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
     SaveStream.Write(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
   end;
@@ -430,6 +445,7 @@ begin
   SetMapSize(MapX, MapY);
   for I := 0 to MapY - 1 do
   begin
+    LoadStream.Read(fRevealedToMax[I, 0], MapX * SizeOf(fRevealedToMax[I, 0]));
     LoadStream.Read(Revelation[I, 0], MapX * SizeOf(Revelation[I, 0]));
     LoadStream.Read(RenderRevelation[I, 0], MapX * SizeOf(RenderRevelation[I, 0]));
   end;
@@ -441,16 +457,24 @@ procedure TKMFogOfWar.UpdateState;
 var
   I, K: Word;
 begin
-  if not DYNAMIC_FOG_OF_WAR then Exit;
+  if not gGameApp.DynamicFOWEnabled then Exit;
 
   Inc(fAnimStep);
 
   for I := 0 to MapY - 1 do
     for K := 0 to MapX - 1 do
-      if (Revelation[I, K] > FOG_OF_WAR_MIN)
-        and ((I * MapX + K + fAnimStep) mod FOW_PACE = 0) then
+      if {(Revelation[I, K] > 0)//(Revelation[I, K] > FOG_OF_WAR_MIN)
+        and }((I * MapX + K + fAnimStep) mod FOW_PACE = 0) then
       begin
-        Dec(Revelation[I, K], FOG_OF_WAR_DEC);
+        if (Revelation[I, K] > FOG_OF_WAR_MAX - FOG_OF_WAR_DEC) then
+        begin
+          if not fRevealedToMax[I, K] then
+            Revelation[I, K] := Max(0, Revelation[I, K] - FOG_OF_WAR_DEC)
+          else
+            fRevealedToMax[I, K] := False;
+        end else
+          Revelation[I, K] := Max(0, Revelation[I, K] - FOG_OF_WAR_DEC);
+
 
         {//Remember what we have seen last
         if Revelation[I, K].Visibility <= FOG_OF_WAR_MIN then
