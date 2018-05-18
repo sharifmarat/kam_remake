@@ -87,7 +87,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure InitDefaults;
+    procedure ResetToDefaults;
 
     property Items[aType: TKMUnitType]: TKMUnitSpec read GetItem; default;
     property SerfCarry[aType: TKMWareType; aDir: TKMDirection]: TKMAnimLoop read GetSerfCarry;
@@ -495,7 +495,7 @@ begin
 end;
 
 
-procedure TKMResUnits.InitDefaults;
+procedure TKMResUnits.ResetToDefaults;
 var
   I: Integer;
 begin

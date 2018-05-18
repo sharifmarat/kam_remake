@@ -365,6 +365,8 @@ begin
   gLog.AddTime('GameStart');
   Assert(fGameMode in [gmMulti, gmMultiSpectate, gmMapEd, gmSingle, gmCampaign]);
 
+  gRes.Units.ResetToDefaults;
+
   fGameName := aGameName;
   fGameMapCRC := aCRC;
   if aCampaign <> nil then
