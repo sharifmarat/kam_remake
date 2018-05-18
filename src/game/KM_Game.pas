@@ -1928,7 +1928,7 @@ begin
   //so we need to set it right before we do game logic processing
   Set8087CW($133F);
 
-  if fIsPaused then Exit;
+  if fIsPaused or ReadyToStop then Exit;
 
   try
     case fGameMode of
