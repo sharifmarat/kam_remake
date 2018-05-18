@@ -109,7 +109,7 @@ type
 
     fBoundsWC: TKMRect; //WC rebuild bounds used in FlattenTerrain (put outside to fight with recursion SO error in FlattenTerrain EnsureWalkable)
 
-    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = True): Boolean;
+    function TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False): Boolean;
 
     function GetMiningRect(aRes: TKMWareType): TKMRect;
 
@@ -1233,7 +1233,7 @@ begin
 end;
 
 
-function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = True): Boolean;
+function TKMTerrain.TileHasParameter(X,Y: Word; aCheckTileFunc: TBooleanWordFunc; aAllow2CornerTiles: Boolean = False): Boolean;
 const
   PROHIBIT_TERKINDS: array[0..1] of TKMTerrainKind = (tkLava, tkAbyss);
 var
@@ -1273,7 +1273,7 @@ function TKMTerrain.TileIsWalkable(const Loc: TKMPoint): Boolean;
 //  Ter: Word;
 //  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsWalkable);
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsWalkable, True);
 //  Result := fTileset.TileIsWalkable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 //  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
 //  begin
@@ -1298,7 +1298,7 @@ function TKMTerrain.TileIsRoadable(const Loc: TKMPoint): Boolean;
 //  Ter: Word;
 //  TerInfo: TKMGenTerrainInfo;
 begin
-  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable, False);
+  Result := TileHasParameter(Loc.X, Loc.Y, fTileset.TileIsRoadable);
 //  Result := fTileset.TileIsRoadable(Land[Loc.Y, Loc.X].BaseLayer.Terrain);
 //  for L := 0 to Land[Loc.Y, Loc.X].LayersCnt - 1 do
 //  begin
