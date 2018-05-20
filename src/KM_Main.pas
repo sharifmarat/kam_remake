@@ -310,6 +310,7 @@ begin
   //if not Form1.Active then exit;
 
   //Counting FPS
+  if fMainSettings <> nil then //fMainSettings could be nil on Game Exit ?? Just check if its not nil
   begin
     FrameTime  := GetTimeSince(fOldTimeFPS);
     fOldTimeFPS := TimeGet;
