@@ -617,7 +617,7 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    gLog.LogCommands('Exec command: ' + GetCommandLogString(aCommand));
+    gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GetCommandLogString(aCommand)]));
 
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
