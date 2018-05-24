@@ -146,7 +146,8 @@ type
     procedure UpdateSelectedObject;
     procedure HidePages;
     procedure HideOverlay(Sender: TObject);
-    procedure Replay_JumpToPlayer(aPlayerIndex: Integer);
+    procedure Replay_DropBox_JumpToPlayer(aDropBoxIndex: Integer);
+    procedure Replay_JumpToPlayer(aHandIndex: Integer);
     procedure Replay_ViewPlayer(aPlayerIndex: Integer);
     procedure Replay_ListDoubleClick(Sender: TObject);
     procedure Replay_UpdatePlayerInterface(aFromPlayer, aToPlayer: Integer);
@@ -1699,14 +1700,21 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.Replay_JumpToPlayer(aPlayerIndex: Integer);
+procedure TKMGamePlayInterface.Replay_DropBox_JumpToPlayer(aDropBoxIndex: Integer);
+begin
+  Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aDropBoxIndex, Dropbox_ReplayFOW.Count - 1);
+
+  Replay_JumpToPlayer(Dropbox_ReplayFOW.GetTag(aDropBoxIndex));
+end;
+
+
+procedure TKMGamePlayInterface.Replay_JumpToPlayer(aHandIndex: Integer);
 var
   LastSelectedObj: TObject;
   OldHandIndex: Integer;
 begin
-  Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aPlayerIndex, Dropbox_ReplayFOW.Count - 1);
   OldHandIndex := gMySpectator.HandIndex;
-  gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(aPlayerIndex);
+  gMySpectator.HandIndex := aHandIndex;
 
   LastSelectedObj := gMySpectator.LastSpecSelectedObj;
   if LastSelectedObj <> nil then
@@ -1760,6 +1768,9 @@ begin
     gMySpectator.FOWIndex := -1;
   fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
   gGame.OverlayUpdate; // Display the overlay seen by the selected player
+
+  Dropbox_ReplayFOW.SelectByTag(aToPlayer);
+
   // When switch to other team player clear all beacons, except Spectators beacons
   if (gHands.CheckAlliance(aFromPlayer, aToPlayer) <> at_Ally)
     or not gHands[aFromPlayer].ShareBeacons[aToPlayer] then
@@ -1770,7 +1781,7 @@ end;
 procedure TKMGamePlayInterface.Replay_ListDoubleClick(Sender: TObject);
 begin
   //Double clicking on an item in the list jumps to the previously selected object of that player
-  Replay_JumpToPlayer(Dropbox_ReplayFOW.ItemIndex);
+  Replay_DropBox_JumpToPlayer(Dropbox_ReplayFOW.ItemIndex);
 end;
 
 
@@ -3005,7 +3016,7 @@ begin
     if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
     begin
       if ssCtrl in Shift then
-        Replay_JumpToPlayer(SpecPlayerIndex - 1)
+        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1)
       else
         Replay_ViewPlayer(SpecPlayerIndex - 1);
       Exit;
