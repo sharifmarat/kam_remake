@@ -94,6 +94,9 @@ type
     property CRC: Cardinal read fCRC; //Return hash of all values
 
     procedure ExportCSV(const aPath: UnicodeString);
+
+    procedure SaveCustomData(aSaveStream: TKMemoryStream);
+    procedure LoadCustomData(aLoadStream: TKMemoryStream);
   end;
 
 const
@@ -440,6 +443,18 @@ begin
     fItems[U].Free;
 
   inherited;
+end;
+
+
+procedure TKMResUnits.SaveCustomData(aSaveStream: TKMemoryStream);
+begin
+  aSaveStream.Write(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
+end;
+
+
+procedure TKMResUnits.LoadCustomData(aLoadStream: TKMemoryStream);
+begin
+  aLoadStream.Read(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
 end;
 
 

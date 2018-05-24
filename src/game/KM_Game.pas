@@ -376,6 +376,7 @@ begin
   Assert(fGameMode in [gmMulti, gmMultiSpectate, gmMapEd, gmSingle, gmCampaign]);
 
   gRes.Units.ResetToDefaults;
+  gRes.Wares.ResetToDefaults;
 
   fGameName := aGameName;
   fGameMapCRC := aCRC;
@@ -1559,6 +1560,9 @@ begin
 
     fTextMission.Save(SaveStream);
 
+    gRes.Units.SaveCustomData(SaveStream);
+    gRes.Wares.SaveCustomData(SaveStream);
+
     //Parameters that are not identical for all players should not be saved as we need saves to be
     //created identically on all player's computers. Eventually these things can go through the GIP
 
@@ -1711,6 +1715,9 @@ begin
 
     fTextMission := TKMTextLibraryMulti.Create;
     fTextMission.Load(LoadStream);
+
+    gRes.Units.LoadCustomData(LoadStream);
+    gRes.Wares.LoadCustomData(LoadStream);
 
     if gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti] then
     begin
