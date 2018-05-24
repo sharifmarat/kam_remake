@@ -160,7 +160,7 @@ type
 
     FOnJumpToPlayer: TIntegerEvent;
 
-    FLines: array of array[0..MAX_LOBBY_PLAYERS] of TKMGUIGameSpectatorItemLine;
+    FLines: array of array[0..MAX_HANDS - 1] of TKMGUIGameSpectatorItemLine;
 
     procedure AddLineType(AIndex: Integer; ALineClass: TKMGUIGameSpectatorItemLineClass);
     procedure ChangePage(Sender: TObject);
@@ -506,7 +506,7 @@ var
   i: Integer;
 begin
   if ALineClass <> nil then
-    for i := 0 to MAX_LOBBY_PLAYERS - 1 do
+    for i := 0 to MAX_HANDS - 1 do
     begin
       FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i, fOnJumpToPlayer);
       FLines[AIndex, i].Visible := False;
@@ -520,7 +520,7 @@ var
   Position: Integer;
   NonTeamHands: set of Byte;
 begin
-  for I := 0 to MAX_LOBBY_PLAYERS - 1 do
+  for I := 0 to MAX_HANDS - 1 do
     if Assigned(FLines[FLastIndex, I]) then
       FLines[FLastIndex, I].Visible := False;
 
