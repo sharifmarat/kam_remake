@@ -95,6 +95,7 @@ type
     fHeight: Integer;
 
     fEnabled: Boolean;
+    fEnabledVisually: Boolean;
     fVisible: Boolean;
     fControlIndex: Integer; //Index number of this control in his Parent's (TKMPanel) collection
     fID: Integer; //Control global ID
@@ -2443,7 +2444,12 @@ begin
         Childs[I].CanChangeEnable := aEnable;
 
       if aAlsoSetEnable then
+      begin
         Childs[I].Enabled := aEnable;
+        //Set fEnabledVisually for TKMButtonFlat. They looks better in that case
+        if Childs[I] is TKMButtonFlat then
+          Childs[I].fEnabledVisually := not aEnable;
+      end;
 
       if not aEnable then
         Childs[I].CanChangeEnable := aEnable;
@@ -3192,9 +3198,9 @@ begin
   if TexID <> 0 then
     TKMRenderUI.WritePicture(AbsLeft + TexOffsetX,
                              AbsTop + TexOffsetY - 6 * Byte(Caption <> ''),
-                             Width, Height, [], RX, TexID, fEnabled, FlagColor);
+                             Width, Height, [], RX, TexID, fEnabled or fEnabledVisually, FlagColor);
 
-  TextCol := IfThen(fEnabled, CapColor, icGray);
+  TextCol := IfThen(fEnabled or fEnabledVisually, CapColor, icGray);
   TKMRenderUI.WriteText(AbsLeft + CapOffsetX, AbsTop + (Height div 2) + 4 + CapOffsetY, Width, Caption, Font, taCenter, TextCol);
 
   if Down then
