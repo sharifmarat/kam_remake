@@ -1446,8 +1446,8 @@ const
       HouseType := aHT;
       IgnoreTrees := False;
       IgnoreAvoidBuilding := True;
-      MaxCnt := 30;
-      MaxDist := 13;
+      MaxCnt := 20;
+      MaxDist := 11;
     end;
 
     StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
