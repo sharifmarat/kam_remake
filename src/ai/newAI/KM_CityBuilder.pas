@@ -874,7 +874,7 @@ var
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
   const
-    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall];
+    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall, ht_SiegeWorkshop];
   var
     HT: TKMHouseType;
   begin
