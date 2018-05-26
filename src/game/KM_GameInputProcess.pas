@@ -243,17 +243,20 @@ type
   procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
 
 type
+
+  TKMStoredGIPCommand = packed record
+    Tick: Cardinal;
+    Command: TKMGameInputCommand;
+    Rand: Cardinal; //acts as CRC check
+  end;
+
   TKMGameInputProcess = class
   private
     fCount: Integer;
     fReplayState: TKMGIPReplayState;
   protected
     fCursor: Integer; //Used only in gipReplaying
-    fQueue: array of packed record
-      Tick: Cardinal;
-      Command: TKMGameInputCommand;
-      Rand: Cardinal; //acts as CRC check
-    end;
+    fQueue: array of TKMStoredGIPCommand;
 
     function MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand;
     function MakeCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; overload;
@@ -322,6 +325,9 @@ type
     property ReplayState: TKMGIPReplayState read fReplayState;
     function GetLastTick: Cardinal; virtual;
     function ReplayEnded: Boolean; virtual;
+
+    class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
+    class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
   end;
 
 
@@ -408,7 +414,7 @@ begin
 end;
 
 
-function GetCommandLogString(aGIC: TKMGameInputCommand): UnicodeString;
+class function TKMGameInputProcess.GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
 begin
   with aGIC do
   begin
@@ -617,7 +623,7 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GetCommandLogString(aCommand)]));
+    gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
 
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
@@ -1102,6 +1108,12 @@ var
 begin
   aStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
+end;
+
+
+class function TKMGameInputProcess.StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
+begin
+  Result := Format('Tick: %d; Rand: %d; Command: %s', [aCommand.Tick, aCommand.Rand, GIPCommandToString(aCommand.Command)]);
 end;
 
 

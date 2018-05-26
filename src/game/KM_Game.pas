@@ -206,7 +206,7 @@ type
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
-    procedure ReplayInconsistancy;
+    procedure ReplayInconsistancy(aCommand: TKMStoredGIPCommand);
     procedure SaveCampaignScriptData(SaveStream: TKMemoryStream);
 
     procedure Render(aRender: TRender);
@@ -822,9 +822,10 @@ end;
 
 
 //Occasional replay inconsistencies are a known bug, we don't need reports of it
-procedure TKMGame.ReplayInconsistancy;
+procedure TKMGame.ReplayInconsistancy(aCommand: TKMStoredGIPCommand);
 begin
   gLog.AddTime('Replay failed a consistency check at tick ' + IntToStr(fGameTickCount));
+  gLog.AddTime('Command: ' + TKMGameInputProcess.StoredGIPCommandToString(aCommand));
   if not fIgnoreConsistencyCheckErrors then
   begin
     //Stop game from executing while the user views the message
