@@ -1405,7 +1405,7 @@ begin
   CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
   if (Length(CenterPoints) = 0) then // No important houses were found -> try find soldier
   begin
-    Group := gHands[fOwner].UnitGroups.Groups[ KaMRandom(gHands[fOwner].UnitGroups.Count) ];
+    Group := gHands[fOwner].UnitGroups.Groups[ KaMRandom(gHands[fOwner].UnitGroups.Count, 'TKMArmyAttack.FindBestTarget') ];
     if (Group <> nil) then
     begin
       SetLength(CenterPoints, 1);

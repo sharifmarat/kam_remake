@@ -1059,7 +1059,7 @@ begin
 
   fQueue[fCount].Tick    := gGame.GameTickCount;
   fQueue[fCount].Command := aCommand;
-  fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt)); //This will be our check to ensure everything is consistent
+  fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess.StoreCommand')); //This will be our check to ensure everything is consistent
 end;
 
 

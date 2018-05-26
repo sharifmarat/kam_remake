@@ -1089,7 +1089,8 @@ begin
     and (fDemand[iD].Loc_House.CheckResIn(fDemand[iD].Ware) <= 2) then //Few resources already delivered
     aBidBasicValue := 7
     //Resource ratios are also considered
-    + KaMRandom(65 - 13*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType])
+    + KaMRandom(65 - 13*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType],
+                'TKMDeliveries.TryCalculateBidBasic')
   else
   begin
     //For all other cases - use distance approach. Direct length (rough) or pathfinding (exact)
@@ -1099,7 +1100,8 @@ begin
       Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_House.PointBelowEntrance, tpWalkRoad, aBidBasicValue);
       aBidBasicValue := aBidBasicValue
         //Resource ratios are also considered
-        + KaMRandom(16 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType]);
+        + KaMRandom(16 - 3*gHands[aOwner].Stats.WareDistribution[fDemand[iD].Ware, fDemand[iD].Loc_House.HouseType],
+                    'TKMDeliveries.TryCalculateBidBasic 2');
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
@@ -1129,7 +1131,7 @@ begin
     //For all other deliveries, add some random element so in the case of identical
     //bids the same resource will not always be chosen (e.g. weapons storehouse->barracks
     //should take random weapon types not sequentially)
-    aBidBasicValue := aBidBasicValue + KaMRandom(10);
+    aBidBasicValue := aBidBasicValue + KaMRandom(10, 'TKMDeliveries.TryCalculateBidBasic 3');
 
   if (fDemand[iD].Ware = wt_All)        // Always prefer deliveries House>House instead of House>Store
     or ((aOfferHouseType = htStore)    // Prefer taking wares from House rather than Store...
@@ -1180,7 +1182,8 @@ begin
   //When delivering food to warriors, add a random amount to bid to ensure that a variety of food is taken. Also prefer food which is more abundant.
   if (fDemand[iD].Loc_Unit <> nil)
     and (fDemand[iD].Ware = wt_Food) then
-    aBidValue := aBidValue + KaMRandom(5+(100 div fOffer[iO].Count)); //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
+    //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
+    aBidValue := aBidValue + KaMRandom(5+(100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 4');
 end;
 
 

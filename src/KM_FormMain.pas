@@ -111,6 +111,7 @@ type
     GameStats: TMenuItem;
     ExportGameStats: TMenuItem;
     ValidateGameStats: TMenuItem;
+    chkLogRngChecks: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -776,6 +777,11 @@ begin
       Include(gLog.MessageTypes, lmt_Commands)
     else
       Exclude(gLog.MessageTypes, lmt_Commands);
+
+    if chkLogRngChecks.Checked then
+      Include(gLog.MessageTypes, lmt_RandomChecks)
+    else
+      Exclude(gLog.MessageTypes, lmt_RandomChecks);
 
     if chkLogNetConnection.Checked then
       Include(gLog.MessageTypes, lmt_NetConnection)

@@ -442,11 +442,11 @@ begin
 
   if aTerrainKind in [tkStone..tkIronMount, tkCoal..tkIron] then
     //Equal chance
-    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0]) + 1]
+    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0], 'TKMTerrainPainter.GetRandomTile') + 1]
   else
-  if KaMRandom(6) = 1 then
+  if KaMRandom(6, 'TKMTerrainPainter.GetRandomTile 2') = 1 then
     //Chance reduced to 1/6
-    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0]) + 1];
+    Result := RandomTiling[aTerrainKind, KaMRandom(RandomTiling[aTerrainKind, 0], 'TKMTerrainPainter.GetRandomTile 3') + 1];
 end;
 
 
@@ -1916,7 +1916,7 @@ begin
                     if gGameCursor.MapEdDir in [0..3] then //Defined direction
                       EditTile(gGameCursor.Cell, gGameCursor.Tag1, gGameCursor.MapEdDir)
                     else //Random direction
-                      EditTile(gGameCursor.Cell, gGameCursor.Tag1, KaMRandom(4));
+                      EditTile(gGameCursor.Cell, gGameCursor.Tag1, KaMRandom(4, 'TKMTerrainPainter.UpdateStateIdle'));
     cmObjects:    if (ssLeft in gGameCursor.SState) then
                     gTerrain.SetObject(gGameCursor.Cell, gGameCursor.Tag1);
   end;

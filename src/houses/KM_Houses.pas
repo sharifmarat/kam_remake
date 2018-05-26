@@ -1782,11 +1782,11 @@ function TKMHouseSwineStable.FeedBeasts: Byte;
 var
   I: Integer;
 begin
-  Result:=0;
-  inc(BeastAge[KaMRandom(5)+1]); //Let's hope it never overflows MAX
-  for i:=1 to length(BeastAge) do
-    if BeastAge[i]>3 then
-      Result:=i;
+  Result := 0;
+  Inc(BeastAge[KaMRandom(5, 'TKMHouseSwineStable.FeedBeasts') + 1]); //Let's hope it never overflows MAX
+  for I := 1 to Length(BeastAge) do
+    if BeastAge[I] > 3 then
+      Result := I;
 end;
 
 

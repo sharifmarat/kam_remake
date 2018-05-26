@@ -481,7 +481,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkLogCommands: TCheckBox
-        Left = 90
+        Left = 101
         Top = 16
         Width = 73
         Height = 17
@@ -522,6 +522,15 @@ object FormMain: TFormMain
         Height = 17
         Caption = 'Show logs in MP chat'
         TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkLogRngChecks: TCheckBox
+        Left = 101
+        Top = 32
+        Width = 73
+        Height = 17
+        Caption = 'RngChecks'
+        TabOrder = 5
         OnClick = ControlsUpdate
       end
     end

@@ -41,7 +41,8 @@ procedure TKMGameInputProcess_Single.ReplayTimer(aTick: Cardinal);
 var
   MyRand: Cardinal;
 begin
-  KaMRandom(MaxInt); //This is to match up with multiplayer random check generation, so multiplayer replays can be replayed in singleplayer mode
+  //This is to match up with multiplayer random check generation, so multiplayer replays can be replayed in singleplayer mode
+  KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer');
   //There are still more commands left
   if fCursor <= Count then
   begin
@@ -50,7 +51,7 @@ begin
 
     while (fCursor <= Count) and (aTick = fQueue[fCursor].Tick) do //Could be several commands in one Tick
     begin
-      MyRand := Cardinal(KaMRandom(maxint)); //Just like in StoreCommand
+      MyRand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer 2')); //Just like in StoreCommand
       ExecCommand(fQueue[fCursor].Command);
       //CRC check after the command
       if CRASH_ON_REPLAY and (fQueue[fCursor].Rand <> MyRand) then //Should always be called to maintain randoms flow
@@ -70,7 +71,7 @@ procedure TKMGameInputProcess_Single.RunningTimer(aTick: Cardinal);
 begin
   inherited;
 
-  KaMRandom(MaxInt); //This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
+  KaMRandom(MaxInt, 'TKMGameInputProcess_Single.RunningTimer'); //This is to match up with multiplayer CRC generation, so multiplayer replays can be replayed in singleplayer mode
 end;
 
 

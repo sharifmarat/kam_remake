@@ -374,14 +374,14 @@ begin
       with Land[I, K] do
       begin
         //Apply some random tiles for artisticity
-        if KaMRandom(5) = 0 then
-          BaseLayer.Terrain := RandomTiling[tkGrass, KaMRandom(RandomTiling[tkGrass, 0]) + 1]
+        if KaMRandom(5, 'TKMTerrain.MakeNewMap') = 0 then
+          BaseLayer.Terrain := RandomTiling[tkGrass, KaMRandom(RandomTiling[tkGrass, 0], 'TKMTerrain.MakeNewMap 2') + 1]
         else
           BaseLayer.Terrain := 0;
         LayersCnt    := 0;
         BaseLayer.Corners := [0,1,2,3];
-        Height       := 30 + KaMRandom(7);  //variation in Height
-        BaseLayer.Rotation     := KaMRandom(4);  //Make it random
+        Height       := 30 + KaMRandom(7, 'TKMTerrain.MakeNewMap 3');  //variation in Height
+        BaseLayer.Rotation     := KaMRandom(4, 'TKMTerrain.MakeNewMap 4');  //Make it random
         Obj          := OBJ_NONE;             //none
         IsCustom     := False;
         //Uncomment to enable random trees, but we don't want that for the map editor by default
@@ -501,10 +501,10 @@ var
     if aNewGeneratedTile then
     begin
       TileBasic.BaseLayer.Terrain  := gGame.MapEditor.TerrainPainter.PickRandomTile(tkGrass);
-      TileBasic.BaseLayer.Rotation := KaMRandom(4);
+      TileBasic.BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.SaveToFile.SetNewLand');
       TileBasic.BaseLayer.Corners := [0,1,2,3];
       //Apply some random tiles for artisticity
-      TileBasic.Height    := EnsureRange(30 + KaMRandom(7), 0, 100);  //variation in Height
+      TileBasic.Height    := EnsureRange(30 + KaMRandom(7, 'TKMTerrain.SaveToFile.SetNewLand 2'), 0, 100);  //variation in Height
       TileBasic.Obj       := OBJ_NONE; // No object
       TileBasic.IsCustom  := False;
       TileBasic.LayersCnt := 0;
@@ -1636,10 +1636,10 @@ begin
   else
   begin
     if WCount > 0 then
-      Result := W[KaMRandom(WCount)]
+      Result := W[KaMRandom(WCount, 'TKMTerrain.UnitsHitTestWithinRad')]
     else
       if CCount > 0 then
-        Result := C[KaMRandom(CCount)]
+        Result := C[KaMRandom(CCount, 'TKMTerrain.UnitsHitTestWithinRad 2')]
       else
         Result := nil;
   end;
@@ -2382,10 +2382,10 @@ function TKMTerrain.ChooseTreeToPlant(const aLoc: TKMPoint):integer;
 begin
   //This function randomly chooses a tree object based on the terrain type. Values matched to KaM, using all soil tiles.
   case Land[aLoc.Y,aLoc.X].BaseLayer.Terrain of
-    0..3,5,6,8,9,11,13,14,18,19,56,57,66..69,72..74,84..86,93..98,180,188: Result := ChopableTrees[1+KaMRandom(7), caAge1]; //Grass (oaks, etc.)
-    26..28,75..80,182,190:                                                 Result := ChopableTrees[7+KaMRandom(2), caAge1]; //Yellow dirt
-    16,17,20,21,34..39,47,49,58,64,65,87..89,183,191,220,247:              Result := ChopableTrees[9+KaMRandom(5), caAge1]; //Brown dirt (pine trees)
-    else Result := ChopableTrees[1+KaMRandom(Length(ChopableTrees)), caAge1]; //If it isn't one of those soil types then choose a random tree
+    0..3,5,6,8,9,11,13,14,18,19,56,57,66..69,72..74,84..86,93..98,180,188: Result := ChopableTrees[1+KaMRandom(7, 'TKMTerrain.ChooseTreeToPlant'), caAge1]; //Grass (oaks, etc.)
+    26..28,75..80,182,190:                                                 Result := ChopableTrees[7+KaMRandom(2, 'TKMTerrain.ChooseTreeToPlant 2'), caAge1]; //Yellow dirt
+    16,17,20,21,34..39,47,49,58,64,65,87..89,183,191,220,247:              Result := ChopableTrees[9+KaMRandom(5, 'TKMTerrain.ChooseTreeToPlant 3'), caAge1]; //Brown dirt (pine trees)
+    else Result := ChopableTrees[1+KaMRandom(Length(ChopableTrees), 'TKMTerrain.ChooseTreeToPlant 4'), caAge1]; //If it isn't one of those soil types then choose a random tree
   end;
 end;
 
@@ -2681,22 +2681,22 @@ begin
       0:  SetLand(0, 62, GetObj); //empty field
 
       1:  begin //Sow corn
-            FieldAge := 1 + Ord(aRandomAge) * KaMRandom((CORN_AGE_1 - 1) div 2);
+            FieldAge := 1 + Ord(aRandomAge) * KaMRandom((CORN_AGE_1 - 1) div 2, 'TKMTerrain.SetField');
             SetLand(FieldAge, 61, GetObj);
           end;
 
       2:  begin //Young seedings
-            FieldAge := CORN_AGE_1 + Ord(aRandomAge) * KaMRandom((CORN_AGE_2 - CORN_AGE_1) div 2);
+            FieldAge := CORN_AGE_1 + Ord(aRandomAge) * KaMRandom((CORN_AGE_2 - CORN_AGE_1) div 2, 'TKMTerrain.SetField 2');
             SetLand(FieldAge, 59, OBJ_NONE);
           end;
 
       3:  begin //Seedings
-            FieldAge := CORN_AGE_2 + Ord(aRandomAge) * KaMRandom((CORN_AGE_3 - CORN_AGE_2) div 2);
+            FieldAge := CORN_AGE_2 + Ord(aRandomAge) * KaMRandom((CORN_AGE_3 - CORN_AGE_2) div 2, 'TKMTerrain.SetField 3');
             SetLand(FieldAge, 60, OBJ_NONE);
           end;
 
       4:  begin //Smaller greenish Corn
-            FieldAge := CORN_AGE_3 + Ord(aRandomAge) * KaMRandom((CORN_AGE_FULL - CORN_AGE_3) div 2);
+            FieldAge := CORN_AGE_3 + Ord(aRandomAge) * KaMRandom((CORN_AGE_FULL - CORN_AGE_3) div 2, 'TKMTerrain.SetField 4');
             SetLand(FieldAge, 60, 58);
           end;
 
@@ -2717,17 +2717,17 @@ begin
 
     case aStage of
       0:  begin //Set new fruits
-            FieldAge := 1 + Ord(aRandomAge) * KaMRandom((WINE_AGE_1 - 1) div 2);
+            FieldAge := 1 + Ord(aRandomAge) * KaMRandom((WINE_AGE_1 - 1) div 2, 'TKMTerrain.SetField 5');
             SetLand(FieldAge, 55, 54);
           end;
 
       1:  begin //Fruits start to grow
-            FieldAge := WINE_AGE_1 + Ord(aRandomAge) * KaMRandom((WINE_AGE_1 - WINE_AGE_1) div 2);
+            FieldAge := WINE_AGE_1 + Ord(aRandomAge) * KaMRandom((WINE_AGE_1 - WINE_AGE_1) div 2, 'TKMTerrain.SetField 6');
             SetLand(FieldAge, 55, 55);
           end;
 
       2:  begin //Fruits continue to grow
-            FieldAge := WINE_AGE_2 + Ord(aRandomAge) * KaMRandom((WINE_AGE_FULL - WINE_AGE_2) div 2);
+            FieldAge := WINE_AGE_2 + Ord(aRandomAge) * KaMRandom((WINE_AGE_FULL - WINE_AGE_2) div 2, 'TKMTerrain.SetField 7');
             SetLand(FieldAge, 55, 56);
           end;
 
@@ -2843,7 +2843,7 @@ var
       if BitsDiag = 0 then
       begin
         Land[Y,X].BaseLayer.Terrain  := TKMTerrainPainter.GetRandomTile(TransitionsTerKinds[aTransitionType]);
-        Land[Y,X].BaseLayer.Rotation := KaMRandom(4); //Randomise the direction of no-stone terrain tiles
+        Land[Y,X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecStoneDeposit.UpdateTransition'); //Randomise the direction of no-stone terrain tiles
       end else begin
         Land[Y,X].BaseLayer.Terrain := TranTiles[aTransitionType, TileIDDiagIndex[BitsDiag]];
         Land[Y,X].BaseLayer.Rotation := RotIdDiag[BitsDiag];
@@ -2878,16 +2878,16 @@ begin
 
   //Replace with smaller ore deposit tile (there are 2 sets of tiles, we can choose random)
    case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
-    132, 137: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 131 + KaMRandom(2)*5;
-    131, 136: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 130 + KaMRandom(2)*5;
-    130, 135: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 129 + KaMRandom(2)*5;
+    132, 137: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 131 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit')*5;
+    131, 136: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 130 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 2')*5;
+    130, 135: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 129 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 3')*5;
     129, 134: case Transition of
                 sttNone,
-                sttGrass:       Land[Loc.Y,Loc.X].BaseLayer.Terrain := 128 + KaMRandom(2)*5;
-                sttCoastSand:   Land[Loc.Y,Loc.X].BaseLayer.Terrain := 266 + KaMRandom(2);
-                sttDirt:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 275 + KaMRandom(2);
-                sttSnow:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 283 + KaMRandom(2);
-                sttShallowSnow: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 291 + KaMRandom(2);
+                sttGrass:       Land[Loc.Y,Loc.X].BaseLayer.Terrain := 128 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 4')*5;
+                sttCoastSand:   Land[Loc.Y,Loc.X].BaseLayer.Terrain := 266 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 5');
+                sttDirt:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 275 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 6');
+                sttSnow:        Land[Loc.Y,Loc.X].BaseLayer.Terrain := 283 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 7');
+                sttShallowSnow: Land[Loc.Y,Loc.X].BaseLayer.Terrain := 291 + KaMRandom(2, 'TKMTerrain.DecStoneDeposit 8');
               end;
     128, 133,
     266, 267,
@@ -2895,7 +2895,7 @@ begin
     283, 284,
     291, 292: begin
                 Land[Loc.Y,Loc.X].BaseLayer.Terrain  := TranTiles[Transition, 0]; //Remove stone tile (so tile will have no stone)
-                Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4);
+                Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecStoneDeposit 9');
 
                 InitVisited;
                 //Tile type has changed and we need to update these 5 tiles transitions:
@@ -2917,24 +2917,24 @@ begin
 
   Result := true;
   case Land[Loc.Y,Loc.X].BaseLayer.Terrain of
-    144: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=157+KaMRandom(3); //Gold
+    144: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=157+KaMRandom(3, 'TKMTerrain.DecOreDeposit'); //Gold
     145: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=144;
     146: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=145;
     147: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=146;
-    148: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=160+KaMRandom(4); //Iron
+    148: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=160+KaMRandom(4, 'TKMTerrain.DecOreDeposit 2'); //Iron
     149: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=148;
     150: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
     259: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=149;
-    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150+KaMRandom(2)*(259-150);
+    151: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=150+KaMRandom(2, 'TKMTerrain.DecOreDeposit 3')*(259-150);
     260: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=151;
-    152: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=35 +KaMRandom(2); //Coal
+    152: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=35 +KaMRandom(2, 'TKMTerrain.DecOreDeposit 4'); //Coal
     153: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=152;
     154: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=153;
     155: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=154;
     263: Land[Loc.Y,Loc.X].BaseLayer.Terrain:=155;
     else Result := false;
   end;
-  Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4);
+  Land[Loc.Y,Loc.X].BaseLayer.Rotation := KaMRandom(4, 'TKMTerrain.DecOreDeposit 5');
   UpdatePassability(Loc);
 end;
 
@@ -3892,7 +3892,7 @@ begin
       for K := 2 to 4 do
         if (HA[I - 1, K] <> 0) and (HA[I, K - 1] <> 0)
         and (HA[I - 1, K - 1] <> 0) and (HA[I, K] <> 0) then
-          Land[Loc.Y + I - 4, Loc.X + K - 3].Obj := 68 + KaMRandom(6);
+          Land[Loc.Y + I - 4, Loc.X + K - 3].Obj := 68 + KaMRandom(6, 'TKMTerrain.AddHouseRemainder');
 
     //Leave dug terrain
     for I := 1 to 4 do

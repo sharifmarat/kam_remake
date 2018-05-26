@@ -847,7 +847,7 @@ begin
   //and not thinking anything else (e.g. death)
   if fUnitTask = nil then
   begin
-    if WasIdle and (OldThought = th_None) and (KaMRandom(2) = 0) then
+    if WasIdle and (OldThought = th_None) and (KaMRandom(2, 'TKMUnitSerf.UpdateState') = 0) then
       fThought := th_Quest;
     SetActionStay(60,ua_Walk); //Stay idle
   end;
@@ -924,7 +924,7 @@ begin
 
   Result := (MyCount > 0);
   if Result then
-    Loc := aList[Spots[KaMRandom(MyCount)]];
+    Loc := aList[Spots[KaMRandom(MyCount, 'TKMUnitWorker.PickRandomSpot')]];
 end;
 
 
@@ -1109,7 +1109,7 @@ begin
   //Units start with a random amount of condition ranging from 0.5 to 0.7 (KaM uses 0.6 for all units)
   //By adding the random amount they won't all go eat at the same time and cause crowding, blockages, food shortages and other problems.
   if (gGame <> nil) and (gGame.GameMode <> gmMapEd) then
-    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM)))
+    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnit.Create')))
   else begin
     fCondition    := Round(UNIT_MAX_CONDITION * UNIT_CONDITION_BASE);
     fStartWDefaultCondition := True;

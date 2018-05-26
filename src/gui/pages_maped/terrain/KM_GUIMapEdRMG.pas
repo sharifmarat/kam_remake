@@ -342,7 +342,7 @@ end;
 
 procedure TKMMapEdRMG.RMG_Generate_New_Seed(Sender: TObject);
 begin
-  NumSeed.Value := Round(1000*KaMRandom);
+  NumSeed.Value := Round(1000*KaMRandom('TKMMapEdRMG.RMG_Generate_New_Seed'));
   RMG_Generate_Map(Sender);
 end;
 

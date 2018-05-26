@@ -550,7 +550,7 @@ function TKMPointList.GetRandom(out Point: TKMPoint): Boolean;
 begin
   Result := fCount <> 0;
   if Result then
-    Point := fItems[KaMRandom(fCount)];
+    Point := fItems[KaMRandom(fCount, 'TKMPointList.GetRandom')];
 end;
 
 
@@ -850,7 +850,7 @@ begin
   Result := False;
   if fCount > 0 then
   begin
-    Point := fItems[KaMRandom(fCount)];
+    Point := fItems[KaMRandom(fCount, 'TKMPointDirList.GetRandom')];
     Result := True;
   end;
 end;

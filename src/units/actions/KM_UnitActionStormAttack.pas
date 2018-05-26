@@ -50,7 +50,7 @@ begin
   inherited Create(aUnit, aActionType, True);
   fTileSteps      := -1; //-1 so the first initializing step makes it 0
   fDelay          := aRow * 5; //No delay for the first row
-  fStamina        := MIN_STAMINA + KaMRandom(MAX_STAMINA-MIN_STAMINA+1);
+  fStamina        := MIN_STAMINA + KaMRandom(MAX_STAMINA-MIN_STAMINA+1, 'TKMUnitActionStormAttack.Create');
   fNextPos        := KMPOINT_ZERO;
   fVertexOccupied := KMPOINT_ZERO;
 end;

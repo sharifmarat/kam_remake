@@ -46,10 +46,10 @@ uses
 
   procedure SetKaMSeed(aSeed: Integer);
   function GetKaMSeed: Integer;
-  function KaMRandom:extended; overload;
-  function KaMRandom(aMax:integer):integer; overload;
-  function KaMRandomS(Range_Both_Directions:integer):integer; overload;
-  function KaMRandomS(Range_Both_Directions:single):single; overload;
+  function KaMRandom(aCaller: String): Extended; overload;
+  function KaMRandom(aMax: Integer; aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single; overload;
 
   function TimeGet: Cardinal;
   function GetTimeSince(aTime: Cardinal): Cardinal;
@@ -127,7 +127,8 @@ const
 
 implementation
 uses
-  StrUtils, Types;
+  StrUtils, Types,
+  KM_Log;
 
 const
   //Pretend these are understandable in any language
@@ -894,9 +895,23 @@ begin
 end;
 
 
+procedure LogKamRandom(aValue: Integer; aCaller: String); overload;
+begin
+  if gLog <> nil then
+    gLog.LogRandomChecks(Format('KaMRandom: %11d Caller: %s', [aValue, aCaller]));
+end;
+
+
+procedure LogKamRandom(aValue: Extended; aCaller: String); overload;
+begin
+  if gLog <> nil then
+    gLog.LogRandomChecks(Format('KaMRandom: %11s Caller: %s', [FormatFloat('0.####', aValue), aCaller]));
+end;
+
+
 //Taken from "Random Number Generators" by Stephen K. Park and Keith W. Miller.
 (*  Integer  Version  2  *)
-function KaMRandom: Extended;
+function KaMRandom: Extended; overload;
 const
   A = 16807;
   M = 2147483647; //Prime number 2^31 - 1
@@ -925,24 +940,42 @@ begin
 end;
 
 
-function KaMRandom(aMax:integer):integer;
+function KaMRandom(aCaller: String): Extended;
+begin
+  Result := KaMRandom;
+
+  LogKamRandom(Result, aCaller);
+end;
+
+
+function KaMRandom(aMax: Integer): Integer; overload;
 begin
   if CUSTOM_RANDOM then
-    Result := trunc(KaMRandom*aMax)
+    Result := Trunc(KaMRandom*aMax)
   else
     Result := Random(aMax);
 end;
 
 
-function KaMRandomS(Range_Both_Directions:integer):integer; overload;
+function KaMRandom(aMax: Integer; aCaller: String): Integer;
 begin
-  Result := KaMRandom(Range_Both_Directions*2+1)-Range_Both_Directions;
+  Result := KaMRandom(aMax);
+
+  LogKamRandom(Result, aCaller);
 end;
 
 
-function KaMRandomS(Range_Both_Directions:single):single; overload;
+function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer;
 begin
-  Result := KaMRandom(round(Range_Both_Directions*20000)+1)/10000-Range_Both_Directions;
+  Result := KaMRandom(Range_Both_Directions*2+1) - Range_Both_Directions;
+  LogKamRandom(Result, aCaller);
+end;
+
+
+function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single;
+begin
+  Result := KaMRandom(Round(Range_Both_Directions*20000)+1)/10000-Range_Both_Directions;
+  LogKamRandom(Result, aCaller);
 end;
 
 

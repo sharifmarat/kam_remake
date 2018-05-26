@@ -1010,7 +1010,7 @@ begin
       if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
          AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
          AND (SparePointsCnt < GA_EYE_GetForests_RndCount)
-         AND (KaMRandom() > GA_EYE_GetForests_RndLimit) then
+         AND (KaMRandom('TKMEye.GetForests') > GA_EYE_GetForests_RndLimit) then
       begin
         Point := Polygons[I].CenterPoint;
         Cnt := 0;

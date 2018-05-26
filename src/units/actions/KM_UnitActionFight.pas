@@ -155,7 +155,7 @@ var
   MakeBattleCry: Boolean;
 begin
   //Randomly make a battle cry. KaMRandom must always happen regardless of tile revelation
-  MakeBattleCry := KaMRandom(20) = 0;
+  MakeBattleCry := KaMRandom(20, 'TKMUnitActionFight.MakeSound') = 0;
 
   //Do not play sounds if unit is invisible to gMySpectator
   //We should not use KaMRandom below this line because sound playback depends on FOW and is individual for each player
@@ -285,7 +285,7 @@ begin
     //Defence modifier
     Damage := Damage div Math.max(gRes.Units[fOpponent.UnitType].Defence, 1); //Not needed, but animals have 0 defence
 
-    IsHit := (Damage >= KaMRandom(101)); //Damage is a % chance to hit
+    IsHit := (Damage >= KaMRandom(101, 'TKMUnitActionFight.ExecuteProcessMelee')); //Damage is a % chance to hit
     if IsHit then
       fOpponent.HitPointsDecrease(1, fUnit);
 
@@ -297,7 +297,7 @@ begin
   if Step in [0,3,6] then
   begin
     if fFightDelay = -1 then //Initialize
-      fFightDelay := KaMRandom(2);
+      fFightDelay := KaMRandom(2, 'TKMUnitActionFight.ExecuteProcessMelee 2');
 
     if fFightDelay > 0 then
     begin
