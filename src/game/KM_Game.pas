@@ -86,6 +86,8 @@ type
     function GetControlledHandIndex: TKMHandIndex;
     procedure IncGameTick;
     procedure CheckPauseGameAtTick;
+
+    function PlayNextTick: Boolean;
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -208,7 +210,6 @@ type
     procedure SaveCampaignScriptData(SaveStream: TKMemoryStream);
 
     procedure Render(aRender: TRender);
-    function PlayNextTick: Boolean;
     procedure UpdateGame(Sender: TObject);
     procedure UpdateState(aGlobalTickCount: Cardinal);
     procedure UpdateStateIdle(aFrameTime: Cardinal);
