@@ -2062,7 +2062,7 @@ begin
       begin
         gLog.AddTime('Exception on tick ' + IntToStr(fGameTickCount) + ': ' + E.Message
                      {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
-        raise E;
+        raise;
       end;
   end;
 end;
