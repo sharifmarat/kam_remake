@@ -16,6 +16,7 @@ type
 
   TFormMain = class(TForm)
     chkAIEye: TCheckBox;
+    chkLogGameTick: TCheckBox;
     MenuItem1: TMenuItem;
     SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
@@ -112,6 +113,7 @@ type
     ExportGameStats: TMenuItem;
     ValidateGameStats: TMenuItem;
     chkLogRngChecks: TCheckBox;
+    chkShowGameTick: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -722,6 +724,7 @@ begin
     SHOW_TERRAIN_TILES_GRID := chkTilesGrid.Checked;
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
+    SHOW_GAME_TICK := chkShowGameTick.Checked;
   end;
 
   //AI
@@ -765,6 +768,7 @@ begin
 
   //Logs
   SHOW_LOGS_IN_CHAT := chkLogsShowInChat.Checked;
+  LOG_GAME_TICK := chkLogGameTick.Checked;
 
   if AllowDebugChange then
   begin
