@@ -873,8 +873,7 @@ begin
   if IsMultiplayer then
   begin
     fNetworking.PostLocalMessage(
-      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON],
-             [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
+      Format(gResTexts[TX_MULTIPLAYER_PLAYER_WON], [gHands[aPlayerIndex].GetOwnerNameColoredU]),
       csSystem);
 
     if Assigned(fNetworking.OnPlayersSetup) then
@@ -923,10 +922,10 @@ begin
                 RequestGameHold(gr_Defeat);
               end;
     gmMulti:  begin
-                if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
+                if aShowDefeatMessage then
                   fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
-                    [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]), csSystem);
-                
+                                                      [gHands[aPlayerIndex].GetOwnerNameColoredU]), csSystem);
+
                 if aPlayerIndex = gMySpectator.HandIndex then
                 begin
                   gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
@@ -940,11 +939,9 @@ begin
               end;
     gmMultiSpectate:
               begin
-                if aShowDefeatMessage and (fNetworking.GetNetPlayerByHandIndex(aPlayerIndex) <> nil) then
-                  fNetworking.PostLocalMessage(
-                    Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
-                           [fNetworking.GetNetPlayerByHandIndex(aPlayerIndex).NiknameColoredU]),
-                    csSystem);
+                if aShowDefeatMessage then
+                  fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
+                                                      [gHands[aPlayerIndex].GetOwnerNameColoredU]), csSystem);
 
                 if Assigned(fNetworking.OnPlayersSetup) then
                   fNetworking.OnPlayersSetup(nil); //Update players panel

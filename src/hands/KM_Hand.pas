@@ -102,6 +102,8 @@ type
     property OwnerNikname: AnsiString read fOwnerNikname;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function GetOwnerName: UnicodeString;
+    function GetOwnerNameColored: AnsiString;
+    function GetOwnerNameColoredU: UnicodeString;
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property HandAITypes: TKMAITypeSet read fHandAITypes;
@@ -188,7 +190,7 @@ uses
   KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
-  KM_GameTypes;
+  KM_GameTypes, KM_CommonUtils;
 
 
 const
@@ -1196,6 +1198,19 @@ function TKMHand.GetOwnerName: UnicodeString;
 begin
   Result := OwnerName(not (gGame.GameMode in [gmSingle, gmCampaign, gmReplaySingle]));
 end;
+
+
+function TKMHand.GetOwnerNameColored: AnsiString;
+begin
+  Result := WrapColorA(GetOwnerName, FlagColorToTextColor(FlagColor));
+end;
+
+
+function TKMHand.GetOwnerNameColoredU: UnicodeString;
+begin
+  Result := UnicodeString(GetOwnerNameColored);
+end;
+
 
 
 function TKMHand.GetAlliances(aIndex: Integer): TKMAllianceType;
