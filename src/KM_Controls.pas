@@ -2899,8 +2899,12 @@ begin
   PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
   TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness);
-  TKMRenderUI.ReleaseClipX;
-  TKMRenderUI.ReleaseClipY;
+
+  if ClipToBounds then
+  begin
+    TKMRenderUI.ReleaseClipX;
+    TKMRenderUI.ReleaseClipY;
+  end;
 end;
 
 
