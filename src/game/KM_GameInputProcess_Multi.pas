@@ -409,7 +409,7 @@ begin
 
   //If we miss a few random checks during reconnections no one cares, inconsistencies will be detected as soon as it is over
   //To reduce network load, send random checks once every 10 ticks
-  if fNetworking.Connected and (aTick mod 10 = 1) then
+  if fNetworking.Connected {and (aTick mod 10 = 1)} then //Todo: remove debug brackets: {} no need to check on every tick in release version
     SendRandomCheck(aTick);
 
   //It is possible that we have already recieved other player's random checks, if so check them now
