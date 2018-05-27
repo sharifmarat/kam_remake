@@ -206,7 +206,7 @@ type
     {$IFDEF USE_MAD_EXCEPT}
     procedure AttachCrashReport(const ExceptIntf: IMEException; const aZipFile: UnicodeString);
     {$ENDIF}
-    procedure ReplayInconsistancy(aCommand: TKMStoredGIPCommand);
+    procedure ReplayInconsistancy(aCommand: TKMStoredGIPCommand; aMyRand: Cardinal);
     procedure SaveCampaignScriptData(SaveStream: TKMemoryStream);
 
     procedure Render(aRender: TRender);
@@ -822,10 +822,30 @@ end;
 
 
 //Occasional replay inconsistencies are a known bug, we don't need reports of it
-procedure TKMGame.ReplayInconsistancy(aCommand: TKMStoredGIPCommand);
+procedure TKMGame.ReplayInconsistancy(aCommand: TKMStoredGIPCommand; aMyRand: Cardinal);
+const
+  TRY_KAM_RANDOM_CNT = 20;
+var
+  I: Integer;
+  TempSeedI, TempSeedF: Integer;
+  ValI: Integer;
+  ValF: Double;
 begin
   gLog.AddTime('Replay failed a consistency check at tick ' + IntToStr(fGameTickCount));
-  gLog.AddTime('Command: ' + TKMGameInputProcess.StoredGIPCommandToString(aCommand));
+  gLog.AddTime(Format('MyRand = %d, but command: %s', [aMyRand, TKMGameInputProcess.StoredGIPCommandToString(aCommand)]));
+  gLog.AddTime('Next KaMRandom values are: ');
+  TempSeedI := GetKaMSeed;
+  TempSeedF := GetKaMSeed;
+  for I := 0 to TRY_KAM_RANDOM_CNT - 1 do
+  begin
+    ValI := KaMRandomWSeed(TempSeedI, MaxInt);
+    ValF := KaMRandomWSeed(TempSeedF);
+    gLog.AddTime(Format('%d: KaMRandomI: %30d', [I+1, ValI]));
+    gLog.AddTime(Format('%d: KaMRandomF: %30s', [I+1, FormatFloat('0.##############################', ValF)]));
+    if ValI = aMyRand then
+      gLog.AddTime('Find match with MyRand !!!');
+  end;
+
   if not fIgnoreConsistencyCheckErrors then
   begin
     //Stop game from executing while the user views the message
