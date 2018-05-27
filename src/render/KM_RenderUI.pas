@@ -49,7 +49,7 @@ uses
 //X axis uses planes 0,1 and Y axis uses planes 2,3, so that they don't interfere when both axis are
 //clipped from both sides
 class procedure TKMRenderUI.SetupClipX(X1,X2: SmallInt);
-var cp: array[0..3]of Real; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
+var cp: array[0..3] of Double; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
 begin
   glEnable(GL_CLIP_PLANE0);
   glEnable(GL_CLIP_PLANE1);
@@ -62,7 +62,7 @@ end;
 
 
 class procedure TKMRenderUI.SetupClipY(Y1,Y2: SmallInt);
-var cp: array[0..3]of Real; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
+var cp: array[0..3] of Double; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
 begin
   glEnable(GL_CLIP_PLANE2);
   glEnable(GL_CLIP_PLANE3);
@@ -283,7 +283,8 @@ begin
 end;
 
 
-class procedure TKMRenderUI.WritePicture(aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word; aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
+class procedure TKMRenderUI.WritePicture(aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType;
+                                         aID: Word; aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
 var
   OffX, OffY: Integer;
   DrawWidth, DrawHeight: Integer;
@@ -659,7 +660,8 @@ begin
     glPopMatrix;
   end;
 
-  ReleaseClipX;
+  if aWidth <> 0 then
+    ReleaseClipX;
 end;
 
 
