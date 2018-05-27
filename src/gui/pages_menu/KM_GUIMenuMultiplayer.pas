@@ -48,6 +48,7 @@ type
     function ValidatePlayerName(const aName: UnicodeString): Boolean;
     procedure EscKeyDown(Sender: TObject);
     procedure KeyDown(Key: Word; Shift: TShiftState);
+
     procedure UpdateServerDetailsUI;
   protected
     Panel_MultiPlayer: TKMPanel;

@@ -993,7 +993,7 @@ type
     function LocToStr(aLoc: TLoc): String;
     function PlayerToStr(aPlayer: TPlayer): String;
     function GetLocsToSwap(aPlayerType: TPlayerType): TIntegerArray;
-    function ToString: UnicodeString;
+    function FillerToString: UnicodeString;
     procedure SwapLocsPlayers(aLocI1, aLocI2: Integer);
   end;
 
@@ -1004,6 +1004,7 @@ type
       nptClosed:            Result := ptHuman; //We do not care about Closed, as we dont use it here
       nptComputerClassic:   Result := ptAI;
       nptComputerAdvanced:  Result := ptAdvAI;
+      else                  Result := ptHuman; //Should never happen
     end;
   end;
 
@@ -1061,7 +1062,7 @@ begin
 end;
 
 
-function TLocFiller.ToString: UnicodeString;
+function TLocFiller.FillerToString: UnicodeString;
 var
   I: Integer;
   PlayerStr: String;
@@ -1336,8 +1337,6 @@ end;
 
 
 procedure TLocFiller.SwapLocsPlayers(aLocI1, aLocI2: Integer);
-var
-  tmpPlayerTypes: TPlayerTypeSet;
 begin
   if Locs[aLocI1].PlayerID <> -1 then
     Players[Locs[aLocI1].PlayerI].LocID := Locs[aLocI2].ID;
@@ -1482,7 +1481,7 @@ begin
     RemAllClosedPlayers; //Closed players are just a marker in the lobby, delete them when the game starts
 
     gLog.AddTime('Randomizing locs...');
-    gLog.AddTime(LocFiller.ToString);
+    gLog.AddTime(LocFiller.FillerToString);
 
     //Randomize all available lists (don't use KaMRandom - we want varied results and PlayerList is synced to clients before start)
     for PT := Low(TPlayerType) to High(TPlayerType) do
@@ -1496,7 +1495,7 @@ begin
     for I := 0 to High(LocFiller.Players) do
       fNetPlayers[LocFiller.Players[I].ID].StartLocation := LocFiller.Players[I].LocID;
 
-    gLog.AddTime('Randomized locs: ' + LocFiller.ToString);
+    gLog.AddTime('Randomized locs: ' + LocFiller.FillerToString);
   finally
     LocFiller.Free;
   end;

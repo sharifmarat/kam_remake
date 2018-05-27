@@ -52,10 +52,10 @@ type
     FValue: String;
     FAdditionalValue: String;
     FProgress: Single;
-    FTag: Integer;
+    FItemTag: Integer;
   public
     constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
-    property Tag: Integer read FTag;
+    property ItemTag: Integer read FItemTag;
     property Value: String read FValue write FValue;
     property AdditionalValue: String read FAdditionalValue write FAdditionalValue;
     property Progress: Single read FProgress write FProgress;
@@ -194,7 +194,7 @@ uses
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
 begin
   inherited Create(aParent, 0, 0, GUI_SPECTATOR_ITEM_WIDTH, GUI_SPECTATOR_ITEM_HEIGHT);
-  FTag := ATag;
+  FItemTag := ATag;
   Hint := AHint;
   FHandIndex := AHandIndex;
   FImageID := AImageID;
@@ -590,7 +590,6 @@ var
   I, J: Integer;
   Teams: TKMByteSetArray;
   Position: Integer;
-  NonTeamHands: set of Byte;
 begin
   for I := 0 to MAX_HANDS - 1 do
     if Assigned(FLines[FLastIndex, I]) then

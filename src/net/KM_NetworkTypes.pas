@@ -196,7 +196,7 @@ type
     constructor Create; overload;
     constructor Create(aDynamicFOW, aMapsFilterEnabled: Boolean; const aMapsCRCListStr: UnicodeString; const aPeacetimeRng: TKMRangeInt;
                        const aSpeedRng: TKMRangeSingle; const aSpeedRngAfterPT: TKMRangeSingle); overload;
-    destructor Destroy; overload;
+    destructor Destroy; override;
 
     function FilterMap(aCRC: Cardinal): Boolean;
 

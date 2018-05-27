@@ -422,7 +422,8 @@ begin
   FillChar(fRecievedData[Tick], SizeOf(fRecievedData[Tick]), #0); //Reset
   fSent[Tick] := False;
 
-  if aTick mod DELAY_ADJUST = 0 then AdjustDelay(gGame.GameSpeed); //Adjust fDelay every X ticks
+  if aTick mod DELAY_ADJUST = 0 then
+    AdjustDelay(gGame.GameSpeed); //Adjust fDelay every X ticks
 end;
 
 

@@ -1960,7 +1960,6 @@ const
 
   procedure LoadCustomMarketGoldPrice;
   var
-    I: Integer;
     ErrorStr: UnicodeString;
     DirectiveParamSL: TStringList;
     HasError: Boolean;
