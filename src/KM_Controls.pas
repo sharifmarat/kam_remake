@@ -896,6 +896,7 @@ type
   public
     BackAlpha: Single; //Alpha of background (usually 0.5, dropbox 1)
     EdgeAlpha: Single; //Alpha of background outline (usually 1)
+    WheelStep: Word;
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis;
                        aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame);
@@ -4833,6 +4834,7 @@ begin
   fMaxValue := 10;
   fPosition := 0;
   fStyle    := aStyle;
+  WheelStep := 1;
 
   if aScrollAxis = sa_Vertical then
   begin
@@ -4915,7 +4917,7 @@ end;
 
 procedure TKMScrollBar.IncPosition(Sender: TObject);
 begin
-  SetPosition(fPosition + 1);
+  SetPosition(fPosition + WheelStep);
 
   if Assigned(fOnChange) then
     fOnChange(Self);
@@ -4924,7 +4926,7 @@ end;
 
 procedure TKMScrollBar.DecPosition(Sender: TObject);
 begin
-  SetPosition(fPosition - 1);
+  SetPosition(fPosition - WheelStep);
 
   if Assigned(fOnChange) then
     fOnChange(Self);
@@ -5073,10 +5075,12 @@ begin
   fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, sa_Horizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
   fScrollBarH.OnChange := ScrollChanged;
+  fScrollBarH.WheelStep := 10;
 
   fScrollBarV := TKMScrollBar.Create(aParent, aLeft + aWidth - 20, aTop, 20, aHeight, sa_Vertical, aStyle, aScrollStyle);
   fScrollBarV.Hide;
   fScrollBarV.OnChange := ScrollChanged;
+  fScrollBarV.WheelStep := 10;
 
   fClipRect := KMRect(Left, Top, Left + Width, Top + Height);
 end;
@@ -5138,7 +5142,6 @@ begin
     begin
       fScrollBarH.MaxValue := KMRectWidth(ChildsRect) - KMRectWidth(fClipRect);
       NewPos := fClipRect.Left - Left;
-      fScrollBarH.Position := NewPos;
 
       if NewPos > fScrollBarH.MaxValue then
         fLeft := Left + NewPos - fScrollBarH.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
@@ -5156,7 +5159,6 @@ begin
     begin
       fScrollBarV.MaxValue := KMRectHeight(ChildsRect) - KMRectHeight(fClipRect);
       NewPos := fClipRect.Top - Top;
-      fScrollBarV.Position := NewPos;
 
       if NewPos > fScrollBarV.MaxValue then
         fTop := Top + NewPos - fScrollBarV.MaxValue; //Slightly move panel to the top, when resize near maxvalue position
