@@ -115,9 +115,9 @@ type
     fOnClickHold: TNotifyEvenClickHold;
     fOnDoubleClick: TNotifyEvent;
     fOnMouseWheel: TNotifyEventMW;
-    fOnFocus: TBooleanEvent;
-    fOnChangeVisibility: TBooleanEvent;
-    fOnChangeEnableStatus: TBooleanEvent;
+    fOnFocus: TBooleanObjEvent;
+    fOnChangeVisibility: TBooleanObjEvent;
+    fOnChangeEnableStatus: TBooleanObjEvent;
     fOnKeyDown: TNotifyEventKeyShiftFunc;
     fOnKeyUp: TNotifyEventKeyShiftFunc;
 
@@ -246,9 +246,9 @@ type
     property OnClickHold: TNotifyEvenClickHold read fOnClickHold write fOnClickHold;
     property OnDoubleClick: TNotifyEvent read fOnDoubleClick write fOnDoubleClick;
     property OnMouseWheel: TNotifyEventMW read fOnMouseWheel write fOnMouseWheel;
-    property OnFocus: TBooleanEvent read fOnFocus write fOnFocus;
-    property OnChangeVisibility: TBooleanEvent read fOnChangeVisibility write fOnChangeVisibility;
-    property OnChangeEnableStatus: TBooleanEvent read fOnChangeEnableStatus write fOnChangeEnableStatus;
+    property OnFocus: TBooleanObjEvent read fOnFocus write fOnFocus;
+    property OnChangeVisibility: TBooleanObjEvent read fOnChangeVisibility write fOnChangeVisibility;
+    property OnChangeEnableStatus: TBooleanObjEvent read fOnChangeEnableStatus write fOnChangeEnableStatus;
     property OnKeyDown: TNotifyEventKeyShiftFunc read fOnKeyDown write fOnKeyDown;
     property OnKeyUp: TNotifyEventKeyShiftFunc read fOnKeyUp write fOnKeyUp;
 
@@ -2190,7 +2190,7 @@ end;
 procedure TKMControl.UpdateVisibility;
 begin
   if Assigned(fOnChangeVisibility) then
-    fOnChangeVisibility(fVisible);
+    fOnChangeVisibility(Self, fVisible);
   //Let descendants override this method
 end;
 
@@ -2198,7 +2198,7 @@ end;
 procedure TKMControl.UpdateEnableStatus;
 begin
   if Assigned(fOnChangeEnableStatus) then
-    fOnChangeEnableStatus(fEnabled);
+    fOnChangeEnableStatus(Self, fEnabled);
   //Let descendants override this method
 end;
 
@@ -8456,7 +8456,7 @@ begin
     begin
       fCtrlFocus.FocusChanged(False);
       if  Assigned(fCtrlFocus.fOnFocus) then
-        fCtrlFocus.fOnFocus(False);
+        fCtrlFocus.fOnFocus(fCtrlFocus, False);
       // Reset Parent Panel FocusedControlIndex only for different parents
       if (aCtrl = nil) or (aCtrl.Parent <> fCtrlFocus.Parent) then
         fCtrlFocus.Parent.ResetFocusedControlIndex;
@@ -8466,7 +8466,7 @@ begin
     begin
       aCtrl.FocusChanged(True);
       if Assigned(aCtrl.fOnFocus) then
-        aCtrl.fOnFocus(True);
+        aCtrl.fOnFocus(aCtrl, True);
       aCtrl.Parent.FocusedControlIndex := aCtrl.ControlIndex; //Set Parent Panel FocusedControlIndex to new focused control
     end;
   end;

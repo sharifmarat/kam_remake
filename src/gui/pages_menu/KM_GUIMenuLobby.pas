@@ -109,7 +109,7 @@ type
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
     procedure Lobby_OnSetPassword(const aPassword: AnsiString);
 
-    procedure StartBtnChangeEnabled(aEnable: Boolean);
+    procedure StartBtnChangeEnabled(Sender: TObject; aEnable: Boolean);
 
     function DetectMapType: Integer;
     procedure SettingsClick(Sender: TObject);
@@ -2400,7 +2400,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.StartBtnChangeEnabled(aEnable: Boolean);
+procedure TKMMenuLobby.StartBtnChangeEnabled(Sender: TObject; aEnable: Boolean);
 begin
   Button_SettingsAskReady.Enabled := (((fNetworking.MapInfo <> nil) and fNetworking.MapInfo.IsValid)
                                         or ((fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid))
@@ -2490,7 +2490,7 @@ begin
 
   if (fLastTimeAskReady <> 0) and (GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN) then
   begin
-    StartBtnChangeEnabled(Button_Start.Enabled);
+    StartBtnChangeEnabled(Button_Start, Button_Start.Enabled);
     fLastTimeAskReady := 0;
   end;
 end;

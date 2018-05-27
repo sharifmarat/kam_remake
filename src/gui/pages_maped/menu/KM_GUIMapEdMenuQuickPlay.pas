@@ -18,7 +18,7 @@ type
     procedure PlayerSelectFirst;
     procedure UpdatePanel;
     procedure SaveDone(Sender: TObject);
-    procedure SaveBtn_EnableStatusChanged(aValue: Boolean);
+    procedure SaveBtn_EnableStatusChanged(Sender: TObject; aValue: Boolean);
   protected
     PopUp_QuickPlay: TKMPopUpPanel;
       Panel_Save: TKMPanel;
@@ -164,7 +164,7 @@ begin
 end;
 
 
-procedure TKMMapEdMenuQuickPlay.SaveBtn_EnableStatusChanged(aValue: Boolean);
+procedure TKMMapEdMenuQuickPlay.SaveBtn_EnableStatusChanged(Sender: TObject; aValue: Boolean);
 begin
   if aValue and not DropList_SelectHand.List.Selected then
     fMenuSave.Button_SaveSave.Disable;
