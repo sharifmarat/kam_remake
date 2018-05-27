@@ -855,6 +855,7 @@ type
 
 
   TKMScrollAxis = (sa_Vertical, sa_Horizontal);
+  TKMScrollStyle = (ssGame, ssCommon);
 
   TKMScrollBar = class(TKMPanel)
   private
@@ -885,7 +886,8 @@ type
     BackAlpha: Single; //Alpha of background (usually 0.5, dropbox 1)
     EdgeAlpha: Single; //Alpha of background outline (usually 1)
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis; aStyle: TKMButtonStyle);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis;
+                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame);
     property MinValue: Integer read fMinValue write SetMinValue;
     property MaxValue: Integer read fMaxValue write SetMaxValue;
     property Position: Integer read fPosition write SetPosition;
@@ -4742,7 +4744,10 @@ end;
 
 
 { TKMScrollBar }
-constructor TKMScrollBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis; aStyle: TKMButtonStyle);
+constructor TKMScrollBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis;
+                                aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame);
+var
+  DecId, IncId: Integer;
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   BackAlpha := 0.5;
@@ -4762,8 +4767,16 @@ begin
   end;
   if aScrollAxis = sa_Horizontal then
   begin
-    fScrollDec := TKMButton.Create(Self, 0, 0, aHeight, aHeight, 2, rxGui, aStyle);
-    fScrollInc := TKMButton.Create(Self, aWidth-aHeight, 0, aHeight, aHeight, 3, rxGui, aStyle);
+    if aScrollStyle = ssGame then
+    begin
+      DecId := 2;
+      IncId := 3;
+    end else begin
+      DecId := 674;
+      IncId := 675;
+    end;
+    fScrollDec := TKMButton.Create(Self, 0, 0, aHeight, aHeight, DecId, rxGui, aStyle);
+    fScrollInc := TKMButton.Create(Self, aWidth-aHeight, 0, aHeight, aHeight, IncId, rxGui, aStyle);
     fScrollDec.Anchors := [anLeft, anTop, anBottom];
     fScrollInc.Anchors := [anTop, anRight, anBottom];
   end;
