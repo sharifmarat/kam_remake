@@ -276,7 +276,11 @@ end;
 
 function GetMultiplicator(aShift: TShiftState): Word;
 begin
-  Result := Byte(aShift = [ssLeft]) + Byte(aShift = [ssRight]) * 10 + Byte(aShift = [ssShift, ssLeft]) * 100 + Byte(aShift = [ssShift, ssRight]) * 1000;
+  Exclude(aShift, ssCtrl); //Ignore Ctrl
+  Result := Byte(aShift = [ssLeft])
+          + Byte(aShift = [ssRight]) * 10
+          + Byte(aShift = [ssShift,ssLeft]) * 100
+          + Byte(aShift = [ssShift,ssRight]) * 1000;
 end;
 
 
