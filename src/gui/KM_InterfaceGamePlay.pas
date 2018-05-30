@@ -2963,7 +2963,7 @@ var
 begin
   aHandled := True; // assume we handle all keys here
 
-  if gGame.IsPaused and (fUIMode = umSP) then
+  if gGame.IsPaused and ((fUIMode = umSP) or (PAUSE_GAME_AT_TICK <> -1)) then
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
