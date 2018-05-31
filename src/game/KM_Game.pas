@@ -833,17 +833,17 @@ var
 begin
   gLog.AddTime('Replay failed a consistency check at tick ' + IntToStr(fGameTickCount));
   gLog.AddTime(Format('MyRand = %d, but command: %s', [aMyRand, TKMGameInputProcess.StoredGIPCommandToString(aCommand)]));
-  gLog.AddTime('Next KaMRandom values are: ');
+  gLog.LogRandomChecks('Next KaMRandom values are: ');
   TempSeedI := GetKaMSeed;
   TempSeedF := GetKaMSeed;
   for I := 0 to TRY_KAM_RANDOM_CNT - 1 do
   begin
     ValI := KaMRandomWSeed(TempSeedI, MaxInt);
     ValF := KaMRandomWSeed(TempSeedF);
-    gLog.AddTime(Format('%d: KaMRandomI: %30d', [I+1, ValI]));
-    gLog.AddTime(Format('%d: KaMRandomF: %30s', [I+1, FormatFloat('0.##############################', ValF)]));
+    gLog.LogRandomChecks(Format('%d: KaMRandomI: %30d', [I+1, ValI]));
+    gLog.LogRandomChecks(Format('%d: KaMRandomF: %30s', [I+1, FormatFloat('0.##############################', ValF)]));
     if ValI = aMyRand then
-      gLog.AddTime('Find match with MyRand !!!');
+      gLog.LogRandomChecks('Find match with MyRand !!!');
   end;
 
   if not fIgnoreConsistencyCheckErrors then
