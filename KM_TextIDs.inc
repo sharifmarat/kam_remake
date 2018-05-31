@@ -1249,4 +1249,4 @@ TX_WORD_CONSTRUCTING = 1225; //Constructing
 TX_WORD_CITIZENS = 1226; //Citizens
 TX_WORD_ARMY = 1227; //Army
 
-
+TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry units
