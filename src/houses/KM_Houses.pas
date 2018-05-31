@@ -433,8 +433,7 @@ end;
 {Returns self and adds on to the pointer counter}
 function TKMHouse.GetHousePointer: TKMHouse;
 begin
-  Assert((gGame.GameTickCount = 0) or gGame.GameIsUpdating,
-         'GetHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Assert(not gGame.BlockGetPointer, 'GetHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
   Inc(fPointerCount);
   Result := Self;
 end;

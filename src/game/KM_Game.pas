@@ -50,7 +50,7 @@ type
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
     fCampaignName: TKMCampaignId;  //Is this a game part of some campaign
     fDynamicFOW: Boolean;
-    fGameIsUpdating: Boolean;
+    fBlockGetPointer: Boolean;
 
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
@@ -141,7 +141,7 @@ type
     property IsPaused: Boolean read fIsPaused write SetIsPaused;
     property ReadyToStop: Boolean read fReadyToStop write fReadyToStop;
     property DynamicFOW: Boolean read fDynamicFOW write fDynamicFOW;
-    property GameIsUpdating: Boolean read fGameIsUpdating;
+    property BlockGetPointer: Boolean read fBlockGetPointer;
 
     function MissionTime: TDateTime;
     function GetPeacetimeRemaining: TDateTime;
@@ -260,7 +260,7 @@ begin
   fGameSpeedChangeTick := 0;
   fGameSpeedChangeTime := 0;
   fPausedTicksCnt := 0;
-  fGameIsUpdating := False;
+  fBlockGetPointer := False;
 
   //UserInterface is different between Gameplay and MapEd
   if fGameMode = gmMapEd then
@@ -1974,7 +1974,7 @@ begin
 
   if fIsPaused or ReadyToStop then Exit;
 
-  fGameIsUpdating := True;
+  fBlockGetPointer := False;
 
   try
     try
@@ -2091,7 +2091,7 @@ begin
         end;
     end;
   finally
-    fGameIsUpdating := False;
+    fBlockGetPointer := True;
   end;
 end;
 

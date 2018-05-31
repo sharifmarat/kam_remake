@@ -1247,8 +1247,7 @@ end;
 // Returns self and adds on to the pointer counter
 function TKMUnit.GetUnitPointer: TKMUnit;
 begin
-  Assert((gGame.GameTickCount = 0) or gGame.GameIsUpdating,
-         'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Assert(not gGame.BlockGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
   Inc(fPointerCount);
   Result := Self;
 end;
