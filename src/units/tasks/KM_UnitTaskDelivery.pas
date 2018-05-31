@@ -346,14 +346,15 @@ end;
 function TKMTaskDeliver.Execute: TKMTaskResult;
 
   function NeedGoToRoad: Boolean;
+  var
+    RoadConnectId: Byte;
   begin
-    Result := {(fPhase2 = 0)
-              and }(fDeliverKind in [dk_ToHouse, dk_ToConstruction])
-              and ((((fPhase - 1) = 5) and (fDeliverKind = dk_ToHouse))
+    RoadConnectId := gTerrain.GetRoadConnectID(fUnit.GetPosition);
+    Result := ((((fPhase - 1) = 5) and (fDeliverKind = dk_ToHouse))
                 or (((fPhase - 1) in [5,6]) and (fDeliverKind = dk_ToConstruction)))
-              and ((gTerrain.GetRoadConnectID(fUnit.GetPosition) = 0)
-                or ((gTerrain.GetRoadConnectID(fUnit.GetPosition) <> gTerrain.GetRoadConnectID(fPointBelowToHouse))
-                  and (gTerrain.GetRoadConnectID(fUnit.GetPosition) <> gTerrain.GetRoadConnectID(fPointBelowFromHouse))));
+              and ((RoadConnectId = 0)
+                or ((RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowToHouse))
+                  and (RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowFromHouse))));
   end;
 
 var
