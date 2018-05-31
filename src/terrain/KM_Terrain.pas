@@ -219,6 +219,7 @@ type
     function Route_CanBeMade(const LocA, LocB: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
     function Route_CanBeMadeToVertex(const LocA, LocB: TKMPoint; aPass: TKMTerrainPassability): Boolean;
     function GetClosestTile(const TargetLoc, OriginLoc: TKMPoint; aPass: TKMTerrainPassability; aAcceptTargetLoc: Boolean): TKMPoint;
+    function GetClosestRoad(const aFromLoc: TKMPoint; aWalkConnectIDSet: TKMByteSet; aPass: TKMTerrainPassability = tpWalkRoad): TKMPoint;
 
     procedure UnitAdd(const LocTo: TKMPoint; aUnit: Pointer);
     procedure UnitRem(const LocFrom: TKMPoint);
@@ -3350,11 +3351,42 @@ begin
     then
     begin
       Result := T; //Assign if all test are passed
-      exit;
+      Exit;
     end;
   end;
 
   Result := OriginLoc; //If we don't find one, return existing Loc
+end;
+
+
+function TKMTerrain.GetClosestRoad(const aFromLoc: TKMPoint; aWalkConnectIDSet: TKMByteSet; aPass: TKMTerrainPassability = tpWalkRoad): TKMPoint;
+const Depth = 255;
+var
+  I: Integer;
+  P: TKMPoint;
+  wcType: TKMWalkConnect;
+begin
+  Result := KMPOINT_INVALID_TILE;
+
+  case aPass of
+    tpWalkRoad: wcType := wcRoad;
+    tpFish:     wcType := wcFish;
+    else         wcType := wcWalk; //CanWalk is default
+  end;
+
+  for I := 0 to Depth do
+  begin
+    P := GetPositionFromIndex(aFromLoc, I);
+    if not TileInMapCoords(P.X,P.Y) then Continue;
+    if CheckPassability(P, aPass)
+      and (Land[P.Y,P.X].WalkConnect[wcType] in aWalkConnectIDSet)
+      and Route_CanBeMade(aFromLoc, P, tpWalk, 0)
+    then
+    begin
+      Result := P; //Assign if all test are passed
+      Exit;
+    end;
+  end;
 end;
 
 

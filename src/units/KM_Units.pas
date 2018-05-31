@@ -3,7 +3,7 @@ unit KM_Units;
 interface
 uses
   Classes, Math, SysUtils, KromUtils, Types,
-  KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points, KM_CommonUtils,
   KM_Terrain, KM_ResHouses, KM_ResWares, KM_Houses, KM_HouseSchool, KM_HouseBarracks, KM_HouseInn;
 
 //Memo on directives:
@@ -159,6 +159,8 @@ type
     procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0);
+    procedure SetActionWalkToRoad(aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0;
+                                         aTargetPassability: TKMTerrainPassability = tpWalkRoad; aTargetWalkConnectSet: TKMByteSet = []);
     procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
@@ -308,7 +310,7 @@ type
 
 implementation
 uses
-  KM_CommonTypes, KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
+  KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
 
@@ -1697,6 +1699,16 @@ begin
     raise Exception.Create('Interrupting unabandonable Walk action');
 
   SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, False, nil, nil));
+end;
+
+
+procedure TKMUnit.SetActionWalkToRoad(aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0;
+                                             aTargetPassability: TKMTerrainPassability = tpWalkRoad; aTargetWalkConnectSet: TKMByteSet = []);
+begin
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+    raise Exception.Create('Interrupting unabandonable Walk action');
+
+  SetAction(TKMUnitActionWalkTo.Create(Self, KMPOINT_INVALID_TILE, aActionType, aDistance, False, nil, nil, aTargetPassability, aTargetWalkConnectSet));
 end;
 
 

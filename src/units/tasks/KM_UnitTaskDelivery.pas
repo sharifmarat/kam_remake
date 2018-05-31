@@ -26,12 +26,18 @@ type
     //Force delivery, even if fToHouse blocked ware from delivery.
     //Used in exceptional situation, when ware was carried by serf and delivery demand was destroyed and no one new was found
     fForceDelivery: Boolean;
+    fPointBelowToHouse: TKMPoint; //Have to save that point separately, in case ToHouse will be destroyed
+    fPointBelowFromHouse: TKMPoint; //Have to save that point separately, in case FromHouse will be destroyed
     procedure CheckForBetterDestination;
     function FindBestDestination: Boolean;
     function GetDeliverStage: TKMDeliverStage;
+    procedure SetToHouse(aToHouse: TKMHouse);
+    procedure SetFromHouse(aFromHouse: TKMHouse);
+    property FromHouse: TKMHouse read fFrom write SetFromHouse;
+    property ToHouse: TKMHouse read fToHouse write SetToHouse;
   public
-    constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
-    constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
+    constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
+    constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
@@ -49,25 +55,25 @@ implementation
 uses
   Math,
   KM_HandsCollection, KM_Hand, KM_ResHouses,
-  KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
+  KM_Terrain, KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
   KM_UnitTaskBuild, KM_Log;
 
 
 { TTaskDeliver }
-constructor TKMTaskDeliver.Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: Integer);
+constructor TKMTaskDeliver.Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToHouse: TKMHouse; Res: TKMWareType; aID: Integer);
 begin
   inherited Create(aSerf);
   fTaskName := utn_Deliver;
 
-  Assert((aFrom <> nil) and (toHouse <> nil) and (Res <> wt_None), 'Serf ' + IntToStr(fUnit.UID) + ': invalid delivery task');
+  Assert((aFrom <> nil) and (aToHouse <> nil) and (Res <> wt_None), 'Serf ' + IntToStr(fUnit.UID) + ': invalid delivery task');
 
   gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
-  fFrom    := aFrom.GetHousePointer;
-  fToHouse := toHouse.GetHousePointer;
+  FromHouse := aFrom.GetHousePointer; //Also will set fPointBelowFromHouse
+  ToHouse := aToHouse.GetHousePointer; //Also will set fPointBelowToHouse
   //Check it once to begin with as the house could become complete before the task exits (in rare circumstances when the task
   // does not exit until long after the ware has been delivered due to walk interactions)
-  if toHouse.IsComplete then
+  if aToHouse.IsComplete then
     fDeliverKind := dk_ToHouse
   else
     fDeliverKind := dk_ToConstruction;
@@ -77,19 +83,21 @@ begin
 end;
 
 
-constructor TKMTaskDeliver.Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: Integer);
+constructor TKMTaskDeliver.Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToUnit: TKMUnit; Res: TKMWareType; aID: Integer);
 begin
   inherited Create(aSerf);
   fTaskName := utn_Deliver;
 
-  Assert((aFrom <> nil) and (toUnit <> nil) and ((toUnit is TKMUnitWarrior) or (toUnit is TKMUnitWorker)) and (Res <> wt_None), 'Serf '+inttostr(fUnit.UID)+': invalid delivery task');
+  Assert((aFrom <> nil) and (aToUnit <> nil) and ((aToUnit is TKMUnitWarrior) or (aToUnit is TKMUnitWorker)) and (Res <> wt_None), 'Serf '+inttostr(fUnit.UID)+': invalid delivery task');
   gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
   fFrom    := aFrom.GetHousePointer;
-  fToUnit  := toUnit.GetUnitPointer;
+  fToUnit  := aToUnit.GetUnitPointer;
   fDeliverKind := dk_ToUnit;
   fWareType := Res;
   fDeliverID := aID;
+  fPointBelowToHouse := KMPOINT_INVALID_TILE;
+  fPointBelowFromHouse := KMPOINT_INVALID_TILE;
 end;
 
 
@@ -100,6 +108,8 @@ begin
   LoadStream.Read(fToHouse, 4);
   LoadStream.Read(fToUnit, 4);
   LoadStream.Read(fForceDelivery);
+  LoadStream.Read(fPointBelowToHouse);
+  LoadStream.Read(fPointBelowFromHouse);
   LoadStream.Read(fWareType, SizeOf(fWareType));
   LoadStream.Read(fDeliverID);
   LoadStream.Read(fDeliverKind, SizeOf(fDeliverKind));
@@ -123,6 +133,8 @@ begin
   else
     SaveStream.Write(Integer(0));
   SaveStream.Write(fForceDelivery);
+  SaveStream.Write(fPointBelowToHouse);
+  SaveStream.Write(fPointBelowFromHouse);
   SaveStream.Write(fWareType, SizeOf(fWareType));
   SaveStream.Write(fDeliverID);
   SaveStream.Write(fDeliverKind, SizeOf(fDeliverKind));
@@ -162,6 +174,9 @@ end;
 function TKMTaskDeliver.WalkShouldAbandon: Boolean;
 begin
   Result := False;
+
+  if fPhase2 <> 0 then //we are at 'go to road' stage, no need to cancel that action
+    Exit;
 
   //After step 2 we don't care if From is destroyed or doesn't have the ware
   if fPhase <= 2 then
@@ -271,6 +286,20 @@ begin
 end;
 
 
+procedure TKMTaskDeliver.SetToHouse(aToHouse: TKMHouse);
+begin
+  fToHouse := aToHouse;
+  fPointBelowToHouse := fToHouse.PointBelowEntrance;
+end;
+
+
+procedure TKMTaskDeliver.SetFromHouse(aFromHouse: TKMHouse);
+begin
+  fFrom := aFromHouse;
+  fPointBelowFromHouse := aFromHouse.PointBelowEntrance;
+end;
+
+
 //Get Delivery stage
 function TKMTaskDeliver.GetDeliverStage: TKMDeliverStage;
 var
@@ -315,14 +344,51 @@ end;
 
 
 function TKMTaskDeliver.Execute: TKMTaskResult;
+
+  function NeedGoToRoad: Boolean;
+  begin
+    Result := {(fPhase2 = 0)
+              and }(fDeliverKind in [dk_ToHouse, dk_ToConstruction])
+              and ((((fPhase - 1) = 5) and (fDeliverKind = dk_ToHouse))
+                or (((fPhase - 1) in [5,6]) and (fDeliverKind = dk_ToConstruction)))
+              and ((gTerrain.GetRoadConnectID(fUnit.GetPosition) = 0)
+                or ((gTerrain.GetRoadConnectID(fUnit.GetPosition) <> gTerrain.GetRoadConnectID(fPointBelowToHouse))
+                  and (gTerrain.GetRoadConnectID(fUnit.GetPosition) <> gTerrain.GetRoadConnectID(fPointBelowFromHouse))));
+  end;
+
 var
   Worker: TKMUnit;
+  NeedWalkToRoad: Boolean;
 begin
   Result := tr_TaskContinues;
+  NeedWalkToRoad := False;
 
-  if WalkShouldAbandon and fUnit.Visible and not FindBestDestination then
+  NeedWalkToRoad := NeedGoToRoad();
+
+  if not NeedWalkToRoad then
+    fPhase2 := 0;
+
+  if WalkShouldAbandon and fUnit.Visible and not (NeedWalkToRoad or FindBestDestination) then
   begin
     Result := tr_TaskDone;
+    Exit;
+  end;
+
+  if NeedWalkToRoad then
+  begin
+    case fPhase2 of
+      0:  begin
+            fUnit.SetActionStay(4, ua_Walk);
+            fUnit.Thought := th_Quest;
+          end;
+      1:  begin
+            fUnit.SetActionWalkToRoad(ua_Walk, 0, tpWalkRoad,
+                              [gTerrain.GetRoadConnectID(fPointBelowToHouse), gTerrain.GetRoadConnectID(fPointBelowFromHouse)]);
+            fUnit.Thought := th_None;
+            fPhase := 5;
+          end;
+    end;
+    Inc(fPhase2);
     Exit;
   end;
 
