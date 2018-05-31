@@ -57,7 +57,7 @@ begin
       if CRASH_ON_REPLAY and (fQueue[fCursor].Rand <> MyRand) then //Should always be called to maintain randoms flow
       begin
         Inc(fCursor); //Must be done before exiting in case user decides to continue the replay
-        gGame.ReplayInconsistancy(fQueue[fCursor], MyRand);
+        gGame.ReplayInconsistancy(fQueue[fCursor-1], MyRand);
         Exit; //ReplayInconsistancy sometimes calls GIP.Free, so exit immidiately
       end;
       Inc(fCursor);
