@@ -333,7 +333,8 @@ uses
   KM_UnitTaskMining,
   KM_UnitTaskSelfTrain,
   KM_UnitTaskThrowRock,
-  KM_GameTypes;
+  KM_GameTypes,
+  KM_Log;
 
 
 { TKMCivilUnit }
@@ -1246,7 +1247,9 @@ end;
 // Returns self and adds on to the pointer counter
 function TKMUnit.GetUnitPointer: TKMUnit;
 begin
-  inc(fPointerCount);
+  Assert((gGame.GameTickCount = 0) or gGame.GameIsUpdating,
+         'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Inc(fPointerCount);
   Result := Self;
 end;
 
@@ -1257,7 +1260,7 @@ procedure TKMUnit.ReleaseUnitPointer;
 begin
   if fPointerCount < 1 then
     raise ELocError.Create('Unit remove pointer', PrevPosition);
-  dec(fPointerCount);
+  Dec(fPointerCount);
 end;
 
 
