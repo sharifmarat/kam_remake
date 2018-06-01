@@ -8,7 +8,7 @@ uses
   StdCtrls, ExtCtrls, KromUtils,
   {$IFDEF FPC} GL, LResources, {$ENDIF}
   dglOpenGL, Menus, ComCtrls, Buttons, KM_Defaults, KM_Render,
-  KM_Form_Loading, Math, Grids, Spin, ImgList;
+  KM_Form_Loading, Math, Grids, Spin, ImgList, System.ImageList;
 
 {$IFDEF Unix}
 type HGLRC = integer;
@@ -347,7 +347,8 @@ implementation
 {$R *.dfm}
 
 
-uses KM_Form_NewMap, KM_LoadDAT, KM_TPlayer, KM_TGATexture;
+uses
+  KromShellUtils, KM_Form_NewMap, KM_LoadDAT, KM_TPlayer, KM_TGATexture;
 
 procedure TForm1.OnIdle(Sender: TObject; var Done: Boolean);
 var FrameTime:cardinal;
