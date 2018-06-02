@@ -1748,6 +1748,7 @@ end;
 
 constructor TKMScriptingPreProcessor.Create(aOnScriptError: TUnicodeStringEvent; aErrorHandler: TKMScriptErrorHandler);
 begin
+  inherited Create;
   fScriptFilesInfo := TKMScriptFilesCollection.Create;
 
   fErrorHandler := aErrorHandler;
