@@ -58,6 +58,14 @@ type
     procedure LogNetPacketOther(const aText: UnicodeString);
     procedure LogNetPacketCommand(const aText: UnicodeString);
     procedure LogNetPacketPingFps(const aText: UnicodeString);
+    function CanLogDelivery: Boolean;
+    function CanLogCommands: Boolean;
+    function CanLogRandomChecks: Boolean;
+    function CanLogNetConnection: Boolean;
+    function CanLogNetPacketOther: Boolean;
+    function CanLogNetPacketCommand: Boolean;
+    function CanLogNetPacketPingFps: Boolean;
+
     // Add line if TestValue=false
     procedure AddAssert(const aMessageText: UnicodeString);
     // AddToLog simply adds the text
@@ -327,6 +335,42 @@ begin
   if Self = nil then Exit;
 
   AddLineTime(aText, lmt_NetPacketPingFps);
+end;
+
+
+function TKMLog.CanLogDelivery: Boolean;
+begin
+  Result := lmt_Delivery in MessageTypes;
+end;
+
+function TKMLog.CanLogCommands: Boolean;
+begin
+  Result := lmt_Commands in MessageTypes;
+end;
+
+function TKMLog.CanLogRandomChecks: Boolean;
+begin
+  Result := lmt_RandomChecks in MessageTypes;
+end;
+
+function TKMLog.CanLogNetConnection: Boolean;
+begin
+  Result := lmt_NetConnection in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketOther: Boolean;
+begin
+  Result := lmt_NetPacketOther in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketCommand: Boolean;
+begin
+  Result := lmt_NetPacketCommand in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketPingFps: Boolean;
+begin
+  Result := lmt_NetPacketPingFps in MessageTypes;
 end;
 
 

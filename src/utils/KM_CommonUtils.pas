@@ -899,17 +899,15 @@ end;
 
 procedure LogKamRandom(aValue: Integer; aCaller: String); overload;
 begin
-  if gLog <> nil then
+  if (gLog <> nil) and gLog.CanLogRandomChecks() then
     gLog.LogRandomChecks(Format('KaMRandom: %15d Caller: %s', [aValue, aCaller]));
 end;
 
 
 procedure LogKamRandom(aValue: Extended; aCaller: String; aKaMRandomFunc: String); overload;
 begin
-  if gLog <> nil then
-  begin
+  if (gLog <> nil) and gLog.CanLogRandomChecks() then
     gLog.LogRandomChecks(Format('%12s: %30s Caller: %s', [aKaMRandomFunc, FormatFloat('0.##############################', aValue), aCaller]));
-  end;
 end;
 
 

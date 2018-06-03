@@ -415,10 +415,17 @@ end;
 
 
 class function TKMGameInputProcess.GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
+var
+  NetPlayerStr: String;
 begin
   with aGIC do
   begin
-    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's player: %2d, params: ',
+    NetPlayerStr := '';
+    if (gGame <> nil)
+      and (gGame.Networking <> nil) then
+      NetPlayerStr := Format(' [NetPlayer %d]', [gGame.Networking.GetNetPlayerIndex(HandIndex)]);
+
+    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's hand: %2d' + NetPlayerStr + ', params: ',
                      [GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(CommandType)), HandIndex]);
     case CommandPackType[CommandType] of
       gicpt_NoParams: Result := Result + ' []';
@@ -427,7 +434,7 @@ begin
       gicpt_Int3:     Result := Result + Format('[%10d,%10d,%10d]', [Params[1], Params[2], Params[3]]);
       gicpt_Int4:     Result := Result + Format('[%10d,%10d,%10d,%10d]', [Params[1], Params[2], Params[3], Params[4]]);
       gicpt_Text:     Result := Result + Format('[%s]', [TextParam]);
-      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
+      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]);
     end;
   end;
 end;
@@ -623,7 +630,8 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
+    if gLog.CanLogCommands() then
+      gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
 
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
