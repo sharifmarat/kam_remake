@@ -1247,7 +1247,8 @@ end;
 // Returns self and adds on to the pointer counter
 function TKMUnit.GetUnitPointer: TKMUnit;
 begin
-  Assert(not gGame.BlockGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+  Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+
   Inc(fPointerCount);
   Result := Self;
 end;
@@ -1257,6 +1258,8 @@ end;
 //Should be used only by gHands for clarity sake
 procedure TKMUnit.ReleaseUnitPointer;
 begin
+  Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+
   if fPointerCount < 1 then
     raise ELocError.Create('Unit remove pointer', PrevPosition);
   Dec(fPointerCount);

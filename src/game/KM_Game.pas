@@ -142,6 +142,7 @@ type
     property ReadyToStop: Boolean read fReadyToStop write fReadyToStop;
     property DynamicFOW: Boolean read fDynamicFOW write fDynamicFOW;
     property BlockGetPointer: Boolean read fBlockGetPointer;
+    function AllowGetPointer: Boolean;
 
     function MissionTime: TDateTime;
     function GetPeacetimeRemaining: TDateTime;
@@ -1441,6 +1442,12 @@ procedure TKMGame.SetIsPaused(aValue: Boolean);
 begin
   fIsPaused := aValue;
   UpdateTickCounters;
+end;
+
+
+function TKMGame.AllowGetPointer: Boolean;
+begin
+  Result := IsSinglePlayer or IsMapEditor or not BlockGetPointer;
 end;
 
 
