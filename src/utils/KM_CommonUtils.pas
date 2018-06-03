@@ -1042,17 +1042,17 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; 
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
     try
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
           if AnsiEndsStr(aExt, SR.Name) then
-            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+            aSL.Add(IncludeTrailingPathDelimiter(aDir) + SR.Name);
         end
         else
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
-          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
+          GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
     finally
       SysUtils.FindClose(SR);
@@ -1064,17 +1064,17 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: T
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
     try
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
           if not Assigned(aValidateFn) or aValidateFn(SR.Name) then
-            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+            aSL.Add(IncludeTrailingPathDelimiter(aDir) + SR.Name);
         end
         else
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
-          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
+          GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
     finally
       SysUtils.FindClose(SR);

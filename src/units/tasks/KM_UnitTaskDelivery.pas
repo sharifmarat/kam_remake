@@ -362,7 +362,6 @@ var
   NeedWalkToRoad: Boolean;
 begin
   Result := tr_TaskContinues;
-  NeedWalkToRoad := False;
 
   NeedWalkToRoad := NeedGoToRoad();
 

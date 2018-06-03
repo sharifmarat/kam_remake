@@ -303,6 +303,8 @@ var
   FrameTime: Cardinal;
   FPSLag: Integer;
 begin
+  FrameTime := 0;
+
   if CHECK_8087CW then
     //$1F3F is used to mask out reserved/undefined bits
     Assert((Get8087CW and $1F3F = $133F), '8087CW is wrong');

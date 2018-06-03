@@ -188,7 +188,7 @@ type
 implementation
 
 uses
-  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts;
+  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits;
 
 { TKMGUIGameSpectatorItem }
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
@@ -267,7 +267,7 @@ begin
       Inc(Count);
   end;
 
-  Str := IfThen(gHands[FHandIndex].OwnerNikname <> '', gHands[FHandIndex].OwnerNikname, gHands[FHandIndex].OwnerName);
+  Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
   Width := Max(Count * (GUI_SPECTATOR_ITEM_WIDTH + GUI_SPECTATOR_ITEM_SPLITE_H) + GUI_SPECTATOR_ITEM_SPLITE_H, gRes.Fonts[fnt_Grey].GetTextSize(Str).X + 32 + 4);
   Left := Parent.Width - Width;
 
@@ -298,7 +298,7 @@ var
 begin
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
   inherited;
-  Str := IfThen(gHands[FHandIndex].OwnerNikname <> '', gHands[FHandIndex].OwnerNikname, gHands[FHandIndex].OwnerName);
+  Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
   TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fnt_Grey, taRight, $FFFFFFFF);
 
   ID := GUI_SPECTATOR_HEADER_FLAG + FAnimStep mod GUI_SPECTATOR_HEADER_FLAG_FRAME;

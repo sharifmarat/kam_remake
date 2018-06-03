@@ -5088,7 +5088,7 @@ end;
 
 function TKMScrollPanel.AddChild(aChild: TKMControl): Integer;
 begin
-  inherited AddChild(aChild);
+  Result := inherited AddChild(aChild);
 
   aChild.fOnSizeSet := UpdateScrolls;
   aChild.fOnPositionSet := UpdateScrolls;

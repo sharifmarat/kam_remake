@@ -958,7 +958,7 @@ begin
   SL := TStringList.Create;
 
   try
-    SL.Append('Game revision: ' + GAME_REVISION);
+    SL.Append('Game revision: ' + UnicodeString(GAME_REVISION));
     SL.Append(aHeader);
     SL.Append('');
 
@@ -1023,7 +1023,7 @@ begin
 
     MS := TKMemoryStream.Create;
     try
-      MS.WriteHugeString(SL.Text);
+      MS.WriteHugeString(AnsiString(SL.Text));
       CRC := Adler32CRC(MS);
     finally
       MS.Free;

@@ -18,9 +18,12 @@ type
     procedure ReadAssert(const Value: AnsiString);
 
     //Ansistrings saved by PascalScript into savegame
-    procedure ReadHugeString(out Value: AnsiString);
-    procedure WriteHugeString(const Value: AnsiString);
+    procedure ReadHugeString(out Value: AnsiString); overload;
+    procedure WriteHugeString(const Value: AnsiString); overload;
     {$ENDIF}
+
+    procedure ReadHugeString(out Value: UnicodeString); overload;
+    procedure WriteHugeString(const Value: UnicodeString); overload;
 
     //Replacement of ReadAnsi for legacy use (campaign Ids (short names) in CMP)
     procedure ReadBytes(out Value: TBytes);
@@ -271,6 +274,24 @@ begin
   inherited Write(I, SizeOf(I));
   if I = 0 then Exit;
   inherited Write(Pointer(Value)^, I);
+end;
+
+procedure TKMemoryStream.ReadHugeString(out Value: UnicodeString);
+var I: Cardinal;
+begin
+  Read(I, SizeOf(I));
+  SetLength(Value, I);
+  if I > 0 then
+    Read(Pointer(Value)^, I * SizeOf(WideChar));
+end;
+
+procedure TKMemoryStream.WriteHugeString(const Value: UnicodeString);
+var I: Cardinal;
+begin
+  I := Length(Value);
+  inherited Write(I, SizeOf(I));
+  if I = 0 then Exit;
+  inherited Write(Pointer(Value)^, I * SizeOf(WideChar));
 end;
 
 procedure TKMemoryStream.ReadAssert(const Value: AnsiString);

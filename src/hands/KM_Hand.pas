@@ -77,6 +77,7 @@ type
     procedure WarriorWalkedOut(aUnit: TKMUnitWarrior);
     function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
+    function GetOwnerNiknameU: UnicodeString;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -100,6 +101,7 @@ type
     procedure SetHandIndex(aNewIndex: TKMHandIndex);
     procedure SetOwnerNikname(const aName: AnsiString); //MP owner nikname (empty in SP)
     property OwnerNikname: AnsiString read fOwnerNikname;
+    property OwnerNiknameU: UnicodeString read GetOwnerNiknameU;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function GetOwnerName: UnicodeString;
     function GetOwnerNameColored: AnsiString;
@@ -634,6 +636,12 @@ begin
         Result := gGameApp.GameSettings.PlayerColorEnemy;
     end;
   end;
+end;
+
+
+function TKMHand.GetOwnerNiknameU: UnicodeString;
+begin
+  Result := UnicodeString(fOwnerNikname);
 end;
 
 
@@ -1202,13 +1210,13 @@ end;
 
 function TKMHand.GetOwnerNameColored: AnsiString;
 begin
-  Result := WrapColorA(GetOwnerName, FlagColorToTextColor(FlagColor));
+  Result := WrapColorA(AnsiString(GetOwnerName), FlagColorToTextColor(FlagColor));
 end;
 
 
 function TKMHand.GetOwnerNameColoredU: UnicodeString;
 begin
-  Result := UnicodeString(GetOwnerNameColored);
+  Result := WrapColor(GetOwnerName, FlagColorToTextColor(FlagColor));
 end;
 
 
