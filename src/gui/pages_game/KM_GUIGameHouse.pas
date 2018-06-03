@@ -7,7 +7,6 @@ uses
   KM_InterfaceGame, KM_Houses, KM_HouseMarket, KM_ResWares;
 
 const LINE_HEIGHT = 25; //Each new Line is placed ## pixels after previous
-const WORKSHOP_WARE: array [1..2] of TKMWareType = (wt_Wood, wt_Leather);
 
 type
   TKMGUIGameHouse = class
@@ -1305,9 +1304,9 @@ begin
   for I := 1 to 2 do
   begin
     if Sender = ResRow_Common_Resource_WS[I] then
-      gGame.GameInputProcess.CmdHouse(gic_HouseArmorWSDeliveryToggle, ArmorWS, WORKSHOP_WARE[I]);
+      gGame.GameInputProcess.CmdHouse(gic_HouseArmorWSDeliveryToggle, ArmorWS, gRes.Houses[htArmorWorkshop].ResInput[I]);
 
-    Image_ArmorWS_Accept[I].Visible := not ArmorWS.AcceptWareForDelivery(WORKSHOP_WARE[I]);
+    Image_ArmorWS_Accept[I].Visible := not ArmorWS.AcceptWareForDelivery(gRes.Houses[htArmorWorkshop].ResInput[I]);
   end;
 end;
 
