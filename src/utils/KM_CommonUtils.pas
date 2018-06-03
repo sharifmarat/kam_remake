@@ -1033,8 +1033,11 @@ end;
 
 
 procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True);
+var
+  ValidateFn: TBooleanStringFunc;
 begin
-  GetAllPathsInDir(aDir, aSL, nil, aIncludeSubdirs);
+  ValidateFn := nil;
+  GetAllPathsInDir(aDir, aSL, ValidateFn, aIncludeSubdirs);
 end;
 
 
@@ -1254,7 +1257,7 @@ end;
 {$ENDIF}
 
 
-{$IFDEF FPC}
+{$IF Defined(FPC) or Defined(VER230)}
 procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer);
 var
   ALength: Integer;
@@ -1281,21 +1284,19 @@ begin
     Arr[I - 1] := Arr[I];
   SetLength(Arr, ALength - 1);
 end;
-{$ENDIF}
+{$ELSE}
 
-
-{$IFDEF WDC}
 procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer);
 begin
   Delete(Arr, Index, 1);
 end;
 
+
 procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer);
 begin
   Delete(Arr, Index, 1);
 end;
-{$ENDIF}
-
+{$IFEND}
 
 function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;

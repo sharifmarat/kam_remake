@@ -1393,7 +1393,6 @@ var
   I, K, J: Integer;
   UsedLoc: array[1..MAX_HANDS] of Boolean;
   AvailableLocHuman, AvailableLocBoth: array [1..MAX_HANDS] of Byte;
-  LocHumanCount, LocBothCount: Byte;
   TmpLocHumanCount, TmpLocBothCount: Byte;
   TeamLocs: array of Integer;
   LocFiller: TLocFiller;
@@ -1447,9 +1446,6 @@ begin
       end;
 
     //Collect available locations in a list
-    LocHumanCount := 0;
-    LocBothCount := 0;
-
     for I := 1 to MAX_HANDS do
       if not UsedLoc[I] then
       begin

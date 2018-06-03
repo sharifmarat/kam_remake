@@ -1734,8 +1734,11 @@ end;
 
 {TKMScriptingPreProcessor}
 constructor TKMScriptingPreProcessor.Create;
+var
+  OnScriptError: TUnicodeStringEvent;
 begin
-  Create(nil);
+  OnScriptError := nil;
+  Create(OnScriptError);
 end;
 
 

@@ -182,7 +182,7 @@ type
     property HostIndex: Integer read fHostIndex;
     property NetGameState: TKMNetGameState read fNetGameState;
     property NetGameFilter: TKMPGameFilter read fNetGameFilter;
-    function MyIPString:string;
+    function MyIPString: string;
     property ServerName: AnsiString read fServerName;
     property ServerAddress: string read fServerAddress;
     property ServerPort: Word read fServerPort;
@@ -205,7 +205,7 @@ type
     procedure Disconnect;
     procedure DropPlayers(aPlayers: TKMByteArray);
     function  Connected: boolean;
-    procedure MatchPlayersToSave(aPlayerID:integer=-1);
+    procedure MatchPlayersToSave(aPlayerID: Integer = -1);
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
     procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
     procedure SelectSave(const aName: UnicodeString);
@@ -220,8 +220,8 @@ type
     procedure SetPassword(const aPassword: AnsiString);
     property Password: AnsiString read fPassword;
     property Description: UnicodeString read fDescription write SetDescription;
-    function ReadyToStart:boolean;
-    function CanStart:boolean;
+    function ReadyToStart: Boolean;
+    function CanStart: Boolean;
     function CanTakeLocation(aPlayer, aLoc: Integer; AllowSwapping: Boolean): Boolean;
     procedure StartClick; //All required arguments are in our class
     procedure SendPlayerListAndRefreshPlayersSetup(aPlayerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
@@ -234,7 +234,7 @@ type
 
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
-    procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
+    procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = ''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
     procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
     procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);

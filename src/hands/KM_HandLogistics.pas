@@ -3,7 +3,12 @@ unit KM_HandLogistics;
 interface
 uses
   ComCtrls,
-  {$IFDEF WDC}
+  {$IF Defined(FPC) or Defined(VER230)}
+  {$ELSE}
+    {$DEFINE USE_HASH}
+  {$IFEND}
+
+  {$IFDEF USE_HASH}
   Generics.Collections, Generics.Defaults, System.Hash,
   {$ENDIF}
   KM_Units, KM_Houses, KM_ResHouses,
@@ -53,7 +58,7 @@ type
     Item: TListItem;
   end;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   //Bids cache key
   TKMDeliveryBidKey = record
     FromUID: Integer; //House or Unit UID From where delivery path goes
@@ -97,7 +102,7 @@ type
       Item: TListItem;
     end;
 
-    {$IFDEF WDC}
+    {$IFDEF USE_HASH}
     // Cache of bid costs between offer object (house, serf) and demand object (house, unit - worker or warrior)
     fOfferToDemandCache: TDictionary<TKMDeliveryBidKey, Single>;
     // Cache of bid costs between serf and offer house
@@ -399,13 +404,13 @@ end;
 
 { TKMDeliveries }
 constructor TKMDeliveries.Create(aHandIndex: TKMHandIndex);
-{$IFDEF WDC}
+{$IFDEF USE_HASH}
 var
   CacheKeyComparer: TKMDeliveryBidKeyComparer;
 {$ENDIF}
 begin
   fOwner := aHandIndex;
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     CacheKeyComparer := TKMDeliveryBidKeyComparer.Create;
@@ -421,7 +426,7 @@ end;
 
 destructor TKMDeliveries.Destroy;
 begin
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     FreeAndNil(fSerfToOfferCache);
@@ -942,7 +947,7 @@ end;
 //Try to Calc bid cost between serf and offer house
 //Return False and aSerfBidValue = NOT_REACHABLE_DEST_VALUE, if house is not reachable by serf
 function TKMDeliveries.TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
 var
   BidKey: TKMDeliveryBidKey;
   CachedBid: Single;
@@ -952,7 +957,7 @@ begin
   Result := True;
   if aSerf = nil then Exit;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     BidKey.FromUID := aSerf.UID;
@@ -972,7 +977,7 @@ begin
     //Serf gets to first house with tpWalkRoad, if not possible, then with tpWalk
     Result := TryCalcRouteCost(GetSerfActualPos(aSerf), aOfferPos, tpWalkRoad, aSerfBidValue, tpWalk);
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
     fSerfToOfferCache.Add(BidKey, aSerfBidValue);
   {$ENDIF}
@@ -1039,7 +1044,7 @@ end;
 function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
                                             aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   procedure TryAddToCache(aBidKey: TKMDeliveryBidKey; aBidBasicV: Single);
   begin
     if CACHE_DELIVERY_BIDS then
@@ -1049,7 +1054,7 @@ function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPo
 
 var
   SerfBidValue: Single;
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   BidKey: TKMDeliveryBidKey;
   OfferToDemandCache: Single;
   {$ENDIF}
@@ -1059,7 +1064,7 @@ begin
   if not Result then
     Exit;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     BidKey.FromUID := aOfferUID;
@@ -1110,7 +1115,7 @@ begin
     if not Result then
     begin
       aBidBasicValue := NOT_REACHABLE_DEST_VALUE;
-      {$IFDEF WDC}
+      {$IFDEF USE_HASH}
       TryAddToCache(BidKey, aBidBasicValue);
       {$ENDIF}
       Exit; //Add to cache NOT_REACHABLE_DEST_VALUE value
@@ -1138,7 +1143,7 @@ begin
     and (fDemand[iD].Ware <> wt_Warfare)) then //...except weapons Store>Barracks, that is also prefered
     aBidBasicValue := aBidBasicValue + 1000;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   TryAddToCache(BidKey, aBidBasicValue);
   {$ENDIF}
 
@@ -1449,7 +1454,8 @@ begin
   Assert(iQ <= fQueueCount, 'iQ < fQueueCount');
   Assert(fQueue[iQ].JobStatus = js_Taken);
 
-  gLog.LogDelivery(Format('Hand [%d] - Reassign delivery ID %d from serf ID: %d to serf ID: %d', [fOwner, iQ, fQueue[iQ].Serf.UID, aSerf.UID]));
+  if gLog.CanLogDelivery() then
+    gLog.LogDelivery(Format('Hand [%d] - Reassign delivery ID %d from serf ID: %d to serf ID: %d', [fOwner, iQ, fQueue[iQ].Serf.UID, aSerf.UID]));
 
   fQueue[iQ].Serf.DelegateDelivery(aSerf);
 
@@ -1620,7 +1626,7 @@ end;
 procedure TKMDeliveries.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   Item: TPair<TKMDeliveryBidKey, Single>;
   {$ENDIF}
 begin
@@ -1661,7 +1667,7 @@ begin
     if fQueue[I].Serf  <> nil then SaveStream.Write(fQueue[I].Serf.UID ) else SaveStream.Write(Integer(0));
   end;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     SaveStream.Write(fOfferToDemandCache.Count);
@@ -1687,7 +1693,7 @@ end;
 procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   Count: Integer;
   Key: TKMDeliveryBidKey;
   Value: Single;
@@ -1730,7 +1736,7 @@ begin
     LoadStream.Read(fQueue[I].Serf, 4);
   end;
 
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
     fOfferToDemandCache.Clear;
@@ -1778,7 +1784,7 @@ end;
 
 procedure TKMDeliveries.UpdateState(aTick: Cardinal);
 begin
-  {$IFDEF WDC}
+  {$IFDEF USE_HASH}
   //Clear cache every 10 ticks, spread cache clearing a by handIndex, to make route's calc's spread too
   if CACHE_DELIVERY_BIDS and (((aTick + fOwner) mod CACHE_CLEAN_FREQ) = 0) then
   begin
@@ -1851,7 +1857,7 @@ begin
 end;
 
 
-{$IFDEF WDC}
+{$IFDEF USE_HASH}
 { TKMDeliveryBidKeyComparer }
 function TKMDeliveryBidKeyComparer.Equals(const Left, Right: TKMDeliveryBidKey): Boolean;
 begin
