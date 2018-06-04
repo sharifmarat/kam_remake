@@ -3603,6 +3603,7 @@ begin
                 if H <> nil then
                 begin
                   gMySpectator.Selected := H; // Select the house irregardless of unit below/above
+                  gMySpectator.UpdateSelect; //Update select, to set up fIsSelectedMyObj
                   HidePages;
                   SwitchPage(nil); // Hide main back button if we were in e.g. stats
                   fGuiGameHouse.Show(H, True);
