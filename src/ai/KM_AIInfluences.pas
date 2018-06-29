@@ -107,6 +107,8 @@ type
     function GetBestAllianceOwnership(const aPL: TKMHandIndex; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
     function GetOtherOwnerships(const aPL: TKMHandIndex; const aX, aY: Word): Word; overload;
     function GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word; overload;
+    function CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aX,aY: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
+    function CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aIdx: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -578,8 +580,11 @@ end;
 
 
 function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word;
+const
+  ENEMY_COEF = 8;
 var
   PL: TKMHandIndex;
+  Ownership: Byte;
 begin
   Result := 0;
   if not AI_GEN_INFLUENCE_MAPS then
@@ -588,7 +593,25 @@ begin
   Result := 0;
   for PL := 0 to gHands.Count - 1 do
     if (PL <> aPL) then
-      Result := Result + OwnPoly[PL,aIdx];
+    begin
+      Ownership := OwnPoly[PL,aIdx];
+      Inc(Result, ifthen(gHands[aPL].Alliances[PL] = at_Ally, Ownership, Ownership*ENEMY_COEF));
+    end;
+end;
+
+
+function TKMInfluences.CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aX,aY: Word; const aIgnoreAllies: Boolean = False): Boolean;
+begin
+  Result := CanPlaceHouseByInfluence(aPL, fNavMesh.Point2Polygon[aY,aX], aIgnoreAllies);
+end;
+
+
+function TKMInfluences.CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aIdx: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
+var
+  BestOwner: TKMhandIndex;
+begin
+  BestOwner := GetBestOwner(aIdx);
+  Result := (BestOwner >= 0) AND ((BestOwner = aPL) OR (not aIgnoreAllies AND (gHands[aPL].Alliances[BestOwner] = at_Ally)));
 end;
 
 
