@@ -174,8 +174,8 @@ type
     function CanAddHousePlan(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreAvoidBuilding: Boolean = False; aIgnoreTrees: Boolean = False; aIgnoreLocks: Boolean = True): Boolean;
 
     function GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
-    function GetStoneLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
-    function GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
+    function GetStoneLocs(): TKMPointTagList;
+    function GetCoalMineLocs(): TKMPointTagList;
     procedure GetForests(var aForests: TKMPointTagList);
     function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
@@ -449,7 +449,7 @@ begin
   end;
   //}
   // Scan Resources - coal
-  TagList := GetCoalMineLocs(True);
+  TagList := GetCoalMineLocs();
   try
     I := 0;
     Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
@@ -764,7 +764,8 @@ end;
 
 function TKMEye.GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
 var
-  I: Integer;
+  Ownership: Byte;
+  I,X,Y: Integer;
   Mines: TKMPointList;
   Output: TKMPointTagList;
 begin
@@ -777,16 +778,22 @@ begin
 
   if (Mines <> nil) then
     for I := Mines.Count - 1 downto 0 do
-      if (gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X] > 0) then
+    begin
+      X := Mines.Items[I].X;
+      Y := Mines.Items[I].Y;
+      Ownership := gAIFields.Influences.Ownership[fOwner, Y, X];
+      if ([tpMakeRoads, tpWalkRoad] * gTerrain.Land[Y+1,X].Passability <> [])
+        AND (Ownership > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, X,Y) then
         if CanAddHousePlan(Mines.Items[I], aHT, True, False) AND CheckResourcesNearMine(Mines.Items[I], aHT) then
-          Output.Add(Mines.Items[I], gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X])
+          Output.Add(Mines.Items[I], Ownership)
         else
           Mines.Delete(I);
+    end;
   Result := Output;
 end;
 
 
-function TKMEye.GetStoneLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
+function TKMEye.GetStoneLocs(): TKMPointTagList;
 const
   SCAN_LIMIT = 10;
 var
@@ -809,22 +816,20 @@ begin
     begin
       // Save tile as a potential point for quarry
       Ownership := gAIFields.Influences.Ownership[fOwner, Y+1, X];
-      if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(X, Y+1) = fOwner))
-         OR (not aOnlyMainOwnership AND (Ownership > 0)) then
+      if (Ownership > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, X,Y+1) then
       begin
         fStoneMiningTiles.Items[I] := KMPoint(X,Y);
         Output.Add(fStoneMiningTiles.Items[I], Ownership);
       end;
     end
-    else
-      // Else remove point
+    else // Else remove point
       fStoneMiningTiles.Delete(I);
   end;
   Result := Output;
 end;
 
 
-function TKMEye.GetCoalMineLocs(aOnlyMainOwnership: Boolean = False): TKMPointTagList;
+function TKMEye.GetCoalMineLocs(): TKMPointTagList;
 var
   Count: Word;
   CoalPolygons, PolygonEvaluation: TKMWordArray;
@@ -870,12 +875,8 @@ begin
   fBuildFF.UpdateState(); // Mark walkable area in owner's city
   Count := 0;
   for Idx := 0 to Length(fCoalPolygons) - 1 do
-    if (fCoalPolygons[Idx] > 0) then
+    if (fCoalPolygons[Idx] > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, Idx) then
     begin
-      if (aOnlyMainOwnership AND (gAIFields.Influences.GetBestOwner(Idx) <> fOwner)) then
-        continue;
-      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Idx, at_Enemy) > MAX_ENEMY_OWNERSHIP) then
-        continue;
       Loc := gAIFields.NavMesh.Polygons[Idx].CenterPoint;
       if (fBuildFF.VisitIdx <> fBuildFF.Visited[ Loc.Y, Loc.X ]) then
         continue;
@@ -1010,7 +1011,7 @@ begin
       if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
          AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
          AND (SparePointsCnt < GA_EYE_GetForests_RndCount)
-         AND (KaMRandom() > GA_EYE_GetForests_RndLimit) then
+         AND (KaMRandom('TKMEye.GetForests') > GA_EYE_GetForests_RndLimit) then
       begin
         Point := Polygons[I].CenterPoint;
         Cnt := 0;
