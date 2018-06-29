@@ -1289,7 +1289,7 @@ begin
       if not (HT in [htWatchTower, htWoodcutters, htCoalMine, htIronMine, htGoldMine])
         AND not (HT in HOUSE_DEPENDENCE[aHT]) then
         for I := fPlannedHouses[HT].Count - 1 downto 0 do
-          if (HouseCnt = 0) OR (KaMRandom() < PROBABILITY) then
+          if (HouseCnt = 0) OR (KaMRandom('TKMCityPlanner.FindPlaceForHouse') < PROBABILITY) then
           begin
             if (HouseCnt >= MAX_RND_HOUSES) then
               break;
@@ -1341,8 +1341,8 @@ const
       begin
         BuildFF.UpdateState(); // Mark walkable area in owner's city
         for I := 0 to Locs.Count - 1 do
-          if (BuildFF.VisitIdx = BuildFF.Visited[ Locs.Items[I].Y, Locs.Items[I].X ]) then // Prefer mines in walkable area
-            Locs.Tag[I] := 10000 + Locs.Tag[I] - BuildFF.Distance[ Locs.Items[I] ]*10;
+          if (BuildFF.VisitIdx = BuildFF.Visited[ Locs.Items[I].Y+1, Locs.Items[I].X ]) then // Prefer mines in walkable area
+            Locs.Tag[I] := 10000 + Locs.Tag[I] - BuildFF.Distance[ Locs.Items[I] ]*10 - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y);
         Locs.SortByTag();
         BestGain := BEST_GAIN;
         BestIdx := 0; // For compiler
@@ -1393,7 +1393,7 @@ const
   begin
     Output := False;
 
-    Locs := gAIFields.Eye.GetCoalMineLocs(False); // BuildFF is checked inside of GetCoalMineLocs
+    Locs := gAIFields.Eye.GetCoalMineLocs(); // BuildFF is checked inside of GetCoalMineLocs
     try
       if (Locs.Count > 0) then
       begin
