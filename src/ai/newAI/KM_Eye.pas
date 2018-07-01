@@ -269,10 +269,6 @@ end;
 
 
 procedure TKMEye.AfterMissionInit();
-const
-  COAL_NUM = 1;
-  STONE_NUM = 2;
-  TREE_NUM = 3;
 var
   X,Y: Integer;
   Loc: TKMPoint;
