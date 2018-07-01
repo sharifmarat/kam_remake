@@ -20,7 +20,7 @@ const
   AVOID_BUILDING_MINE_TILE = 40;
   AVOID_BUILDING_INACCESSIBLE_TILES = 45;
   AVOID_BUILDING_FOREST_RANGE = 200; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
-  AVOID_BUILDING_FOREST_MINIMUM = 255 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
+  AVOID_BUILDING_FOREST_MINIMUM = 254 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
 
 
 type
@@ -43,6 +43,7 @@ type
   private
     fMapX, fMapY, fPolygons: Word; // Limits of arrays
 
+    fAvoidBuilding: TKMByteArray; //Common map of areas where building is undesired (around Store, Mines, Woodcutters)
     fUpdateCityIdx, fUpdateArmyIdx: TKMHandIndex; // Update index
     fPresence: TKMWordArray; // Military presence
     fOwnership: TKMByteArray; // City mark the space around itself
@@ -54,6 +55,8 @@ type
 
     // Avoid building
     procedure InitAvoidBuilding();
+    function GetAvoidBuilding(const aX,aY: Word): Byte;
+    procedure SetAvoidBuilding(const aX,aY: Word; const aValue: Byte);
     // Army presence
     function GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word; inline;
     procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
@@ -73,14 +76,13 @@ type
     procedure InitArrays();
     function GetAreaEval(const aY,aX: Word): Byte;
   public
-    AvoidBuilding: TKMByte2Array; //Common map of areas where building is undesired (around Store, Mines, Woodcutters)
-
     constructor Create(aNavMesh: TKMNavMesh);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
     // Avoid building
+    property AvoidBuilding[const aY,aX: Word]: Byte read GetAvoidBuilding write SetAvoidBuilding;
     // Army presence
     property Presence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word read GetPresence write SetPresence;
     property IncPresence[const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType]: Word write SetIncPresence;
@@ -125,11 +127,6 @@ uses
   KM_AIFields;
 
 
-const
-  GROUPS = 4;
-  INIT_HOUSE_INFLUENCE = 255;
-  MAX_INFLUENCE_DISTANCE = 150;
-
 { TKMInfluenceMaps }
 constructor TKMInfluences.Create(aNavMesh: TKMNavMesh);
 begin
@@ -167,8 +164,7 @@ begin
   SaveStream.Write(fUpdateArmyIdx);
 
   SaveStream.WriteA('AvoidBuilding');
-  for Y := 0 to fMapY - 1 do
-    SaveStream.Write(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
+  SaveStream.Write(fAvoidBuilding[0], SizeOf(fAvoidBuilding[0]) * Length(fAvoidBuilding));
 
   SaveStream.WriteA('Ownership');
   Len := Length(fOwnership);
@@ -203,9 +199,8 @@ begin
   LoadStream.Read(fUpdateArmyIdx);
 
   LoadStream.ReadAssert('AvoidBuilding');
-  SetLength(AvoidBuilding, fMapY, fMapX);
-  for Y := 0 to fMapY - 1 do
-    LoadStream.Read(AvoidBuilding[Y,0], fMapX * SizeOf(AvoidBuilding[0,0]));
+  SetLength(fAvoidBuilding, fMapY * fMapX);
+  LoadStream.Read(fAvoidBuilding[0], SizeOf(fAvoidBuilding[0]) * Length(fAvoidBuilding));
 
   LoadStream.ReadAssert('Ownership');
   LoadStream.Read(Len);
@@ -277,43 +272,11 @@ procedure TKMInfluences.InitAvoidBuilding();
         Exit;
       end;
   end;
-  // New AI does not use flood fill -> unreachable areas must be detected and building of houses must be avoided here
-  //procedure InitReachableArea();
-  //var
-  //  PL: TKMHandIndex;
-  //  I: Integer;
-  //  MinP, MaxP: TKMPoint;
-  //  CenterPoints: TKMPointArray;
-  //  RoadableFF: TKKRoadableFF;
-  //begin
-  //  if (Length(AvoidBuilding) = 0) then
-  //    Exit;
-  //  MinP := KMPoint(1,1);
-  //  MaxP := KMPoint(High(AvoidBuilding[0]), High(AvoidBuilding));
-  //  RoadableFF := TKKRoadableFF.Create(MinP, MaxP, AvoidBuilding, False);
-  //  try
-  //    for PL := 0 to gHands.Count - 1 do
-  //    begin
-  //      gAIFields.Eye.OwnerUpdate(PL);
-  //      CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-  //      for I := 0 to Length(CenterPoints) - 1 do
-  //        RoadableFF.QuickFlood(CenterPoints[I].X, CenterPoints[I].Y);
-  //    end;
-  //  finally
-  //    RoadableFF.Free;
-  //  end;
-  //end;
 var
   H: TKMHouse;
   I,X,Y: Integer;
 begin
-  for Y := 1 to fMapY - 1 do
-  for X := 1 to fMapX - 1 do
-    //if gRes.Tileset.TileIsRoadable( gTerrain.Land[Y,X].Terrain ) then
-    //  AvoidBuilding[Y,X] := AVOID_BUILDING_INACCESSIBLE_TILES
-    //else
-      AvoidBuilding[Y,X] := 0;
-  //InitReachableArea();
+  FillChar(fAvoidBuilding[0], SizeOf(fAvoidBuilding[0]) * Length(fAvoidBuilding), #0);
 
   //Avoid Coal fields (must be BEFORE Gold/Iron mines)
   for Y := 1 to fMapY - 1 do
@@ -329,15 +292,27 @@ begin
     else if gTerrain.CanPlaceHouse(KMPoint(X,Y), htGoldMine) then
       CheckAndMarkMine(X,Y, htGoldMine);
 
-  //Leave free space BELOW all players Stores
+  //Leave free space BELOW all Stores
   for I := 0 to gHands.Count - 1 do
   begin
     H := gHands[I].FindHouse(htStore);
     if (H <> nil) then
     for Y := Max(H.Entrance.Y + 1, 1) to Min(H.Entrance.Y + 2, fMapY - 1) do
     for X := Max(H.Entrance.X - 1, 1) to Min(H.Entrance.X + 1, fMapX - 1) do
-      AvoidBuilding[Y,X] := AvoidBuilding[Y,X] or $FF;
+      AvoidBuilding[Y,X] := $FF;
   end;
+end;
+
+
+function TKMInfluences.GetAvoidBuilding(const aX,aY: Word): Byte;
+begin
+  Result := fAvoidBuilding[aY*fMapX + aX];
+end;
+
+
+procedure TKMInfluences.SetAvoidBuilding(const aX,aY: Word; const aValue: Byte);
+begin
+  fAvoidBuilding[aY*fMapX + aX] := aValue;
 end;
 
 
@@ -377,22 +352,19 @@ end;
 
 function TKMInfluences.GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word;
 begin
-  Result := fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)];
+  Result := fPresence[((aPL*fPolygons + aIdx)*4) + Byte(aGT)];
 end;
 
 
 procedure TKMInfluences.SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word);
 begin
-  fPresence[((aPL*fPolygons + aIdx) shl 2) + Byte(aGT)] := aPresence;
+  fPresence[((aPL*fPolygons + aIdx)*4) + Byte(aGT)] := aPresence;
 end;
 
 
 procedure TKMInfluences.SetIncPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word);
-var
-  Idx: Integer;
 begin
-  Idx := ((aPL*fPolygons + aIdx) shl 2) + Byte(aGT);
-  fPresence[Idx] := fPresence[Idx] + aPresence;
+  Inc(  fPresence[ ((aPL*fPolygons + aIdx)*4) + Byte(aGT) ], aPresence  );
 end;
 
 
@@ -413,18 +385,13 @@ const
   MAX_DISTANCE = 20;
 var
   I, K, Cnt: Integer;
-  GT: TKMGroupType;
   G: TKMUnitGroup;
   U: TKMUnit;
   PointArr: TKMWordArray;
 begin
-  InitArrays();
+  FillChar(fPresence[aPL*fPolygons*4], SizeOf(fPresence[0]) * fPolygons * 4, #0);
 
   SetLength(PointArr,16);
-  for I := 0 to fPolygons-1 do
-    for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      Presence[aPL,I,GT] := 0;
-
   for I := 0 to gHands[aPL].UnitGroups.Count-1 do
   begin
     G := gHands[aPL].UnitGroups.Groups[I];
@@ -581,7 +548,7 @@ end;
 
 function TKMInfluences.GetOtherOwnerships(const aPL: TKMHandIndex; const aIdx: Word): Word;
 const
-  ENEMY_COEF = 8;
+  ENEMY_COEF = 2;
 var
   PL: TKMHandIndex;
   Ownership: Byte;
@@ -617,16 +584,16 @@ end;
 
 // Here is the main reason for reworking influences: only 1 flood fill for city per a update + ~25x less elements in array
 procedure TKMInfluences.UpdateOwnership(const aPL: TKMHandIndex);
+const
+  INIT_HOUSE_INFLUENCE = 255;
+  MAX_INFLUENCE_DISTANCE = 150;
 var
-  I, Idx, Cnt: Integer;
+  I, Cnt: Integer;
   H: TKMHouse;
   IdxArray: TKMWordArray;
 begin
-  InitArrays();
-
-  //Clear array (again is better to clear less than 2000 polygons instead of 255*255 tiles)
-  for Idx := 0 to fPolygons - 1 do
-    OwnPoly[aPL, Idx] := 0;
+  //Clear array (is better to clear ~3000 polygons instead of 255*255 tiles)
+  FillChar(fOwnership[aPL*fPolygons], SizeOf(fOwnership[0]) * fPolygons, #0);
 
   // Create array of polygon indexes
   SetLength(IdxArray, gHands[aPL].Houses.Count);
@@ -634,7 +601,7 @@ begin
   for I := 0 to gHands[aPL].Houses.Count - 1 do
   begin
     H := gHands[aPL].Houses[I];
-    if not H.IsDestroyed AND (H.HouseType <> htWatchTower) AND (H.HouseType <> htWoodcutters) then
+    if not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
     begin
         IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.GetPosition ];
         Cnt := Cnt + 1;
@@ -664,18 +631,22 @@ end;
 
 procedure TKMInfluences.InitArrays();
 var
-  I: Integer;
+  PL: TKMHandIndex;
 begin
-  if (fPolygons <> Length(gAIFields.NavMesh.Polygons)) then
+  if (fPolygons < Length(gAIFields.NavMesh.Polygons)) then
   begin
     fPolygons := Length(gAIFields.NavMesh.Polygons);
-    SetLength(fPresence, gHands.Count * fPolygons * GROUPS);
+    SetLength(fPresence, gHands.Count * fPolygons * 4);
     SetLength(fOwnership, gHands.Count * fPolygons);
-    for I := 0 to Length(fPresence) - 1 do
-      fPresence[I] := 0;
-    for I := 0 to Length(fOwnership) - 1 do
-      fOwnership[I] := 0;
   end;
+  FillChar(fPresence[0], SizeOf(fPresence[0]) * Length(fPresence), #0);
+  FillChar(fOwnership[0], SizeOf(fOwnership[0]) * Length(fOwnership), #0);
+  if AI_GEN_INFLUENCE_MAPS then
+    for PL := 0 to gHands.Count - 1 do
+    begin
+      UpdateMilitaryPresence(PL);
+      UpdateOwnership(PL);
+    end;
 end;
 
 
@@ -754,19 +725,14 @@ procedure TKMInfluences.AfterMissionInit();
   //    end;
   //  end;
   //end;
-var
-  PL: TKMHandIndex;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
-  SetLength(AvoidBuilding, fMapY, fMapX);
-  InitAvoidBuilding();
-  InitArrays();
-  if AI_GEN_INFLUENCE_MAPS then
-    for PL := 0 to gHands.Count - 1 do
-      UpdateOwnership(PL);
+  SetLength(fAvoidBuilding, fMapY * fMapX);
   SetLength(fAreas, fMapY, fMapX);
   InitAreas();
+  InitAvoidBuilding();
+  InitArrays();
   //InitNavMeshAreas();
 end;
 
