@@ -874,7 +874,7 @@ var
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
   const
-    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall, ht_SiegeWorkshop];
+    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall, htSiegeWorkshop];
   var
     HT: TKMHouseType;
   begin
@@ -1149,8 +1149,12 @@ begin
   WareBalance := fPredictor.WareBalance;
 
   // Analyze basic force stats (max possible plans, construction ware, gold)
-  MaxPlans := Ceil(gHands[fOwner].Stats.GetUnitQty(ut_Worker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses;
-  MaxPlans := Max(MaxPlans, Ceil(aFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef));
+  MaxPlans := Ceil(aFreeWorkersCnt / GA_BUILDER_ChHTB_FreeWorkerCoef);
+  // Use "rapid construction" in case that we have resources
+  if   (fPredictor.WareBalance[wt_Stone].Exhaustion > 60) then // Some stone mines are too far so AI must slow down with expansion
+    //AND (fPredictor.WareBalance[wt_Wood].Exhaustion > 60)
+    //AND (fPredictor.WareBalance[wt_Gold].Exhaustion > 60) then
+    MaxPlans := Max(MaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(ut_Worker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wt_Stone is OK
   if (WareBalance[wt_Stone].Exhaustion < GA_BUILDER_STONE_SHORTAGE) then
