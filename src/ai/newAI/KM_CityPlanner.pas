@@ -164,7 +164,8 @@ const
     {htIronMine}       [ htStore                                                                ],
     {htIronSmithy}     [ htCoalMine,       htIronMine,       htWeaponSmithy,   htIronSmithy     ],
     {htMarketplace}    [ htStore,          htMetallurgists,  htBarracks,       htMarketplace    ],
-    {htMetallurgists}  [ htGoldMine,       htCoalMine,       htSchool,         htStore          ],
+    // Metallurgist must be only close to coal / gold because serfs are not able to support this extremely critical resources
+    {htMetallurgists}  [ htGoldMine,       htCoalMine                                           ],// htSchool, htStore
     {htMill}           [ htBakery,         htInn,            htMill                             ],
     {htQuary}          [ htStore                                                                ],
     {htSawmill}        [ htArmorWorkshop,  htSawmill,        htWeaponWorkshop                   ],
@@ -180,7 +181,7 @@ const
     {htWeaponWorkshop} [ htSawmill,        htBarracks,       htWeaponWorkshop                   ],
     {htWineyard}       [ htInn,            htQuary                                              ],
     {htWoodcutters}    [ htStore                                                                ]
-  );
+  ); 
 
 implementation
 uses
@@ -1530,7 +1531,7 @@ begin
     else         Output := False;
   end;
   Result := Output;
-end;
+end;      
 
 
 // Find place for woodcutter
