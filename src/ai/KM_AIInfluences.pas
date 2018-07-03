@@ -55,8 +55,8 @@ type
 
     // Avoid building
     procedure InitAvoidBuilding();
-    function GetAvoidBuilding(const aX,aY: Word): Byte;
-    procedure SetAvoidBuilding(const aX,aY: Word; const aValue: Byte);
+    function GetAvoidBuilding(const aY,aX: Word): Byte;
+    procedure SetAvoidBuilding(const aY,aX: Word; const aValue: Byte);
     // Army presence
     function GetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType): Word; inline;
     procedure SetPresence(const aPL: TKMHandIndex; const aIdx: Word; const aGT: TKMGroupType; const aPresence: Word); inline;
@@ -304,13 +304,13 @@ begin
 end;
 
 
-function TKMInfluences.GetAvoidBuilding(const aX,aY: Word): Byte;
+function TKMInfluences.GetAvoidBuilding(const aY,aX: Word): Byte;
 begin
   Result := fAvoidBuilding[aY*fMapX + aX];
 end;
 
 
-procedure TKMInfluences.SetAvoidBuilding(const aX,aY: Word; const aValue: Byte);
+procedure TKMInfluences.SetAvoidBuilding(const aY,aX: Word; const aValue: Byte);
 begin
   fAvoidBuilding[aY*fMapX + aX] := aValue;
 end;
@@ -728,7 +728,7 @@ procedure TKMInfluences.AfterMissionInit();
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
-  SetLength(fAvoidBuilding, fMapY * fMapX);
+  SetLength(fAvoidBuilding, (fMapY+1) * (fMapX+1));
   SetLength(fAreas, fMapY, fMapX);
   InitAreas();
   InitAvoidBuilding();
