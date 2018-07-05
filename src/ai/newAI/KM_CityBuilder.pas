@@ -65,6 +65,10 @@ type
 
     property Planner: TKMCityPlanner read fPlanner;
     property WorkersPos: TKMPointArray read fWorkersPos;
+    property StoneShortage: Boolean read fStoneShortage;
+    property WoodShortage: Boolean read fWoodShortage;
+    property TrunkShortage: Boolean read fTrunkShortage;
+    property GoldShortage: Boolean read fGoldShortage;
 
     procedure AfterMissionInit(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
@@ -1058,7 +1062,7 @@ var
     );
     STONE_SHORTAGE_IDX = 2;
     TRUNK_SHORTAGE_IDX = 3;
-    WOOD_SHORTAGE_IDX = 4;
+    WOOD_SHORTAGE_IDX = 7;
     GOLD_SHORTAGE_IDX = 7;
     FULL_SET = 28;
   var
@@ -1253,7 +1257,7 @@ end;
 procedure TKMCityBuilder.CreateShortcuts();
 const
   MAX_SHORTCUTS_PER_HOUSE_TYPE = 2;
-  MAX_DISTANCE_TO_ALL_HOUSES = 8;
+  MAX_DISTANCE_TO_ALL_HOUSES = 10;
   MAX_WORKERS_FOR_NODE = 4;
   HOUSE_CONNECTION: array[HOUSE_MIN..HOUSE_MAX] of set of TKMHouseType = (
     {ht_ArmorSmithy}    [ htIronSmithy,    htCoalMine,     htBarracks     ],
