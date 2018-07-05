@@ -412,7 +412,7 @@ begin
     for HT := Low(Houses) to High(Houses) do
     begin
       //Houses[HT] := gHands[fOwner].Stats.GetHouseTotal(HT); // Does not consider planned houses
-      Houses[HT] := Planner.PlannedHouses[HT].Calculated; // Consider only placed or planned houses (not destroyed houses - plans will remain in CityPlanner)
+      Houses[HT] := Planner.PlannedHouses[HT].Completed + Planner.PlannedHouses[HT].UnderConstruction; // Consider only placed or planned houses (not destroyed houses - plans will remain in CityPlanner)
       HousesCnt := HousesCnt + Houses[HT];
     end;
   end;
