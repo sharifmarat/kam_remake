@@ -368,7 +368,7 @@ begin
       wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
       wt_Stone:
         begin
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+15, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
           fWareBalance[wt_Stone].FinalConsumption := fWorkerCount * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
         end;
       wt_Wood:
@@ -426,8 +426,8 @@ const
   SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
   FIRST_MARKETPLACE = 10 * 60 * 50;
   SECOND_MARKETPLACE = 10 * 60 * 180;
-  BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min before
-  BARRACKS_BEFORE_PEACE_END = 20; // Allow to build barracks before peace time
+  BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min
+  BARRACKS_BEFORE_PEACE_END = 20; // Allow to build barracks before peace time end
 begin
   // 1 Storehouse
   RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
@@ -463,7 +463,7 @@ begin
   UpdatedPeaceFactor := Min(1,
                              fPeaceFactor + Max(0,
                                                 (Integer(gGame.GameTickCount) //Cast to Integer to avoid Integer overflow error for possible negative Cardinal during calc
-                                                  - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
+                                                 - gGame.GameOptions.Peacetime * 10 * 60) * AFTER_PEACE_SCALING
                                                )
                             );
 
