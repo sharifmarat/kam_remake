@@ -35,6 +35,7 @@ type
     procedure CheckStoreWares(aTick: Cardinal);
     procedure CheckExhaustedHouses();
     procedure CheckAutoRepair();
+    procedure CheckWareDistribution();
 
     procedure WeaponsBalance();
     procedure OrderWeapons();
@@ -131,20 +132,6 @@ end;
 
 
 procedure TKMCityManagement.AfterMissionInit();
-  procedure SetWareDistribution();
-  begin
-    // Top priority for gold mines
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 3;
-    gHands[fOwner].Stats.WareDistribution[wt_Wood, htArmorWorkshop] := 2;
-    gHands[fOwner].Stats.WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
-    gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 5;
-
-    gHands[fOwner].Houses.UpdateResRequest;
-  end;
 var
   GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
@@ -154,9 +141,6 @@ begin
     gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
     fSetup.ApplyAgressiveBuilderSetup(True);
   end;
-
-  // Change distribution
-  SetWareDistribution();
   fPredictor.AfterMissionInit();
 
   // Find resources around Loc and change building policy
@@ -200,6 +184,7 @@ begin
     CheckMarketplaces();
     CheckStoreWares(aTick);
     CheckAutoRepair();
+    CheckWareDistribution();
     WeaponsBalance();
     OrderWeapons();
     CheckExhaustedHouses();
@@ -457,7 +442,7 @@ begin
       AddWare(wt_Coal);
     // Stone
     if (GetWareBalance(wt_Stone)-GetHouseQty(htWatchTower)*5 < LACK_OF_STONE)
-      AND (GetHouseQty(htQuary) = 0) then
+      AND (Builder.Planner.PlannedHouses[htQuary].Completed = 0) then
       AddWare(wt_Stone);
   end;
 
@@ -587,6 +572,58 @@ begin
 end;
 
 
+procedure TKMCityManagement.CheckWareDistribution();
+begin
+  with gHands[fOwner].Stats do
+  begin
+    // Wood
+    if Builder.WoodShortage OR Builder.TrunkShortage then
+    begin
+      WareDistribution[wt_Wood, htArmorWorkshop] := 0;
+      WareDistribution[wt_Wood, htWeaponWorkshop] := 2;
+    end
+    else
+    begin
+      WareDistribution[wt_Wood, htArmorWorkshop] := 2;
+      WareDistribution[wt_Wood, htWeaponWorkshop] := 5;
+    end;
+    // Coal
+    if Builder.GoldShortage then
+    begin
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 1;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 0;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 0;
+    end
+    else
+    begin
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 4;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 4;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 4;
+    end;
+    // Corn
+    if (gHands[fOwner].Stats.GetWareBalance(wt_Bread) > 20) then
+    begin
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htMill] := 2;
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htSwine] := 5;
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htStables] := 4;
+    end
+    else
+    begin
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htMill] := 4;
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htSwine] := 5;
+      gHands[fOwner].Stats.WareDistribution[wt_Corn, htStables] := 3;
+    end;
+    // Steel is updated in WeaponsBalance
+    //gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := 5;
+    //gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := 5;
+
+    gHands[fOwner].Houses.UpdateResRequest;
+  end;
+end;
+
+
 // Calculate weapons demand from combat AI requirements
 procedure TKMCityManagement.WeaponsBalance();
 var
@@ -681,9 +718,9 @@ var
       WoodReq := Round((DEFAULT_COEFICIENT - WoodReq) / 5.0); // 5 is equal to sum of all requirements in leather category
       for UT in WOOD_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-            if (TROOP_COST[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
     end;
 
@@ -697,9 +734,9 @@ var
       IronReq := Round((DEFAULT_COEFICIENT - IronReq) / 5.0); // 5 is equal to sum of all requirements in iron category
       for UT in IRON_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-            if (TROOP_COST[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
     end;
   end;
@@ -778,10 +815,10 @@ begin
 
   // Get count of needed weapons
   for UT := ut_AxeFighter to WARRIOR_EQUIPABLE_MAX do // Skip militia
-    for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-      if (TROOP_COST[UT,I] <> wt_None) then
+    for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+      if (TroopCost[UT,I] <> wt_None) then
       begin
-        WT := TROOP_COST[UT,I];
+        WT := TroopCost[UT,I];
         fRequiredWeapons[WT].Required := fRequiredWeapons[WT].Required + fWarriorsDemands[UT];
       end
       else
@@ -814,6 +851,7 @@ begin
   // Ware distribution = fraction / sum of fractions * 5
   gHands[fOwner].Stats.WareDistribution[wt_Steel, htWeaponSmithy] := Max(  1, Min(5, Round( ArmorFraction / (WeaponFraction + ArmorFraction) * IronShare) )  );
   gHands[fOwner].Stats.WareDistribution[wt_Steel, htArmorSmithy] := Max(  1, Min(5, Round( WeaponFraction / (WeaponFraction + ArmorFraction) * IronShare) )  );
+  gHands[fOwner].Houses.UpdateResRequest;
 end;
 
 
