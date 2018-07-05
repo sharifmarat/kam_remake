@@ -3,7 +3,7 @@ unit KM_AIInfluences;
 interface
 uses
   Math,
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
+  KM_CommonClasses, KM_CommonTypes, KM_CommonUtils, KM_Defaults, KM_Points,
   KM_Units, KM_UnitGroups,
   KM_NavMesh, KM_NavMeshInfluences,
   KM_NavMeshFloodFill, KM_FloodFill;
@@ -25,19 +25,6 @@ const
 
 type
 
-  TKKRoadableFF = class(TKMQuickFlood)
-  private
-    fVisitIdx: Byte;
-    fVisitArr, fSearchArr: TKMByte2Array;
-  protected
-    procedure MakeNewQueue(); override;
-    function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
-    function IsVisited(const aX,aY: SmallInt): Boolean; override;
-    procedure MarkAsVisited(const aX,aY: SmallInt); override;
-  public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
-  end;
-
   //Collection of influence maps
   TKMInfluences = class
   private
@@ -47,7 +34,6 @@ type
     fUpdateCityIdx, fUpdateArmyIdx: TKMHandIndex; // Update index
     fPresence: TKMWordArray; // Military presence
     fOwnership: TKMByteArray; // City mark the space around itself
-    fAreas: TKMByte2Array;
 
     fFloodFill: TKMInfluenceFloodFill;
     fInfluenceSearch: TNavMeshInfluenceSearch;
@@ -74,7 +60,6 @@ type
     procedure UpdateOwnership(const aPL: TKMHandIndex);
     // Common
     procedure InitArrays();
-    function GetAreaEval(const aY,aX: Word): Byte;
   public
     constructor Create(aNavMesh: TKMNavMesh);
     destructor Destroy(); override;
@@ -95,7 +80,6 @@ type
     property OwnPoly[const aPL: TKMHandIndex; const aIdx: Word]: Byte read GetOwnership write SetOwnership;
     // Common
     property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
-    property EvalArea[const aY,aX: Word]: Byte read GetAreaEval;
 
     // Avoid building
     procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
@@ -151,7 +135,7 @@ end;
 procedure TKMInfluences.Save(SaveStream: TKMemoryStream);
 var
   PCount: Word;
-  Y, Len: Integer;
+  Len: Integer;
 begin
   PCount := gHands.Count;
 
@@ -175,20 +159,13 @@ begin
   Len := Length(fPresence);
   SaveStream.Write(Len);
   SaveStream.Write(fPresence[0], SizeOf(fPresence[0]) * Len);
-
-  SaveStream.WriteA('AreasEvaluation');
-  for Y := 0 to fMapY - 1 do
-    SaveStream.Write(fAreas[Y,0], fMapX * SizeOf(fAreas[0,0]));
-  //Len := Length(fAreas);
-  //SaveStream.Write(Len);
-  //SaveStream.Write(fAreas[0], SizeOf(fAreas[0]) * Len);
 end;
 
 
 procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
 var
   PCount: Word;
-  Y, Len: Integer;
+  Len: Integer;
 begin
   LoadStream.ReadAssert('Influences');
   LoadStream.Read(PCount);
@@ -211,14 +188,6 @@ begin
   LoadStream.Read(Len);
   SetLength(fPresence, Len);
   LoadStream.Read(fPresence[0], SizeOf(fPresence[0]) * Len);
-
-  LoadStream.ReadAssert('AreasEvaluation');
-  SetLength(fAreas, fMapY, fMapX);
-  for Y := 0 to fMapY - 1 do
-    LoadStream.Read(fAreas[Y,0], fMapX * SizeOf(fAreas[0,0]));
-  //LoadStream.Read(Len);
-  //SetLength(fAreas, Len);
-  //LoadStream.Read(fAreas[0], SizeOf(fAreas[0]) * Len);
 end;
 
 
@@ -613,21 +582,6 @@ begin
 end;
 
 
-function TKMInfluences.GetAreaEval(const aY,aX: Word): Byte;
-begin
-  Result := fAreas[aY,aX];
-end;
-
-
-//function TKMInfluences.GetAreaEval(const aY,aX: Word): Byte;
-//var
-//  Idx: Integer;
-//begin
-//  Idx := fNavMesh.Point2Polygon[aY,aX];
-//  Result := fAreas[Idx];
-//end;
-
-
 
 procedure TKMInfluences.InitArrays();
 var
@@ -651,89 +605,17 @@ end;
 
 
 procedure TKMInfluences.AfterMissionInit();
-  //procedure InitAreas();
-  //const
-  //  RAD = 6;
-  //var
-  //  cnt: Word;
-  //  X,Y, X0,Y0: Integer;
-  //begin
-  //  for Y := 1 to fMapY - 1 do
-  //  for X := 1 to fMapX - 1 do
-  //  begin
-  //    cnt := 0;
-  //    for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
-  //    for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
-  //      cnt := cnt + Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
-  //    fAreas[Y,X] := Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  );
-  //    fAreas[Y,X] := Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  );
-  //  end;
-  //end;
-  procedure InitAreas();
-  const
-    RAD = 6;
-    MAX_ELEMENTS = (RAD+1) * (RAD+1) * 4;
-    //MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
-    COEF = Round(255 / MAX_ELEMENTS - 0.5);
-  var
-    X,Y, X0,Y0, cnt: Integer;
-  begin
-    for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-    begin
-      //cnt := 0;
-      cnt := MAX_ELEMENTS;
-      for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
-      for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
-        //cnt := cnt + Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
-        cnt := cnt - Byte(  not gTerrain.TileIsWalkable(KMPoint(X0, Y0))  );
-      //fAreas[Y,X] := $FF - cnt * COEF;
-      fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gTerrain.TileIsWalkable(KMPoint(X, Y))  ));
-      //fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
-    end;
-  end;
-  //procedure InitAreas();
-  //const
-  //  RAD = 4;
-  //  MAX_ELEMENTS = (RAD*2+1) * (RAD*2+1);
-  //  COEF = Round(255 / MAX_ELEMENTS - 0.5);
-  //var
-  //  X,Y, X0,Y0, cnt: Integer;
-  //begin
-  //  for Y := 1 to fMapY - 1 do
-  //  for X := 1 to fMapX - 1 do
-  //  begin
-  //    cnt := MAX_ELEMENTS;
-  //    for Y0 := Max(1, Y - RAD) to Min(Y + RAD, fMapY - 1) do
-  //    for X0 := Max(1, X - RAD) to Min(X + RAD, fMapX - 1) do
-  //      cnt := cnt - Byte(  not gRes.Tileset.TileIsWalkable( gTerrain.Land[Y0, X0].Terrain )  );
-  //    fAreas[Y,X] := Max(0, Min(255,cnt) * Byte(  gRes.Tileset.TileIsWalkable( gTerrain.Land[Y, X].Terrain )  ));
-  //  end;
-  //end;
-  //procedure InitNavMeshAreas();
-  //var
-  //  WAD: TKMWalkableAreasDetector;
-  //begin
-  //  if AI_GEN_INFLUENCE_MAPS then
-  //  begin
-  //    WAD := TKMWalkableAreasDetector.Create(True);
-  //    try
-  //      WAD.MarkPolygons();
-  //      fAreas := WAD.WalkableAreas;
-  //    finally
-  //      WAD.Free;
-  //    end;
-  //  end;
-  //end;
+var
+  Time: Cardinal;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
-  SetLength(fAvoidBuilding, (fMapY+1) * (fMapX+1));
-  SetLength(fAreas, fMapY, fMapX);
-  InitAreas();
+  SetLength(fAvoidBuilding, fMapY * fMapX);
+
+  Time := TimeGet();
   InitAvoidBuilding();
   InitArrays();
-  //InitNavMeshAreas();
+  Time := TimeGet() - Time;
 end;
 
 
@@ -770,44 +652,7 @@ var
   PolyArr: TPolygonArray;
   NodeArr: TNodeArray;
   Col: Cardinal;
-
-  //MaxW,MinW: Word;
-  //B: Byte;
 begin
-  {
-  for Y := 1 to fMapY - 1 do
-  for X := 1 to fMapX - 1 do
-  begin
-    //Col := fAreas[Y,X] * $010101 OR $80000000;
-    Col := (fAreas[Y,X] shl 24) OR COLOR_BLACK;
-    gRenderAux.Quad(X, Y, Col);
-  end;
-  //PolyArr := fNavMesh.Polygons;
-  //NodeArr := fNavMesh.Nodes;
-  //  MaxW := 0;
-  //  MinW := High(Word);
-  //  for I := Low(fAreas) to High(fAreas) do
-  //    if (fAreas[I] > MaxW) then
-  //      MaxW := fAreas[I]
-  //    else if (fAreas[I] < MinW) then
-  //      MinW := fAreas[I];
-  //  for I := Low(fAreas) to High(fAreas) do
-  //  begin
-  //    B := Round((fAreas[I] - MinW)/(MaxW - MinW)*255);
-  //    Col := $FFFFFF OR (B shl 24);
-  //
-  //    //NavMesh polys coverage
-  //    gRenderAux.TriangleOnTerrain(
-  //      NodeArr[PolyArr[I].Indices[0]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-  //      NodeArr[PolyArr[I].Indices[1]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-  //      NodeArr[PolyArr[I].Indices[2]].Loc.X,
-  //      NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
-  //  end;
-  //}
-
-
 
   if not AI_GEN_NAVMESH OR not AI_GEN_INFLUENCE_MAPS then
     Exit;
@@ -911,55 +756,6 @@ begin
     end;
     //}
   end;
-end;
-
-
-
-
-{ TKKRoadableFF }
-constructor TKKRoadableFF.Create(aMinLimit, aMaxLimit: TKMPoint; var aSearchArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
-begin
-  inherited Create(aScanEightTiles);
-  fVisitIdx := High(Byte);
-  fSearchArr := aSearchArr;
-  fMinLimit := aMinLimit;
-  fMaxLimit := aMaxLimit;
-  SetLength(fVisitArr, Length(fSearchArr), Length(fSearchArr[0]));
-end;
-
-
-procedure TKKRoadableFF.MakeNewQueue();
-var
-  X,Y: Integer;
-begin
-  if (fVisitIdx >= High(Byte) - 1) then
-  begin
-    fVisitIdx := 0;
-    for Y := Low(fVisitArr) to High(fVisitArr) do
-      for X := Low(fVisitArr[Y]) to High(fVisitArr[Y]) do
-        fVisitArr[Y,X] := 0;
-  end;
-  fVisitIdx := fVisitIdx + 1;
-  inherited MakeNewQueue();
-end;
-
-
-function TKKRoadableFF.CanBeVisited(const aX,aY: SmallInt): Boolean;
-begin
-  Result := gTerrain.TileIsRoadable( KMPoint(aX, aY) );
-end;
-
-
-function TKKRoadableFF.IsVisited(const aX,aY: SmallInt): Boolean;
-begin
-  Result := fVisitArr[aY,aX] = fVisitIdx;
-end;
-
-
-procedure TKKRoadableFF.MarkAsVisited(const aX,aY: SmallInt);
-begin
-  fVisitArr[aY,aX] := fVisitIdx;
-  fSearchArr[aY,aX] := 0;
 end;
 
 
