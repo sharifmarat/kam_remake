@@ -1233,9 +1233,6 @@ var
   PL: TKMHandIndex;
   I,X,Y: Integer;
 begin
-  for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-      gRenderAux.Quad(X, Y, ((Routes[Y,X] shr 2) shl 24) OR COLOR_RED); //}
   if not OVERLAY_AI_EYE then
     Exit;
   //{ Build flood fill
