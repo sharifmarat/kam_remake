@@ -900,11 +900,15 @@ end;
 
 
 function TKMEye.GetStoneLocs(): TKMPointTagList;
+  function AddStoneCount(var aX,aY, aCount: Integer): Byte;
+  begin
+    Result := gTerrain.TileIsStone(aX, aY);
+    aCount := aCount + Result;
+  end;
 const
   SCAN_LIMIT = 10;
 var
-  Ownership: Byte;
-  X,Y,I, MaxDist: Integer;
+  X,Y,I, MaxDist, Sum: Integer;
   Output: TKMPointTagList;
 begin
   Output := TKMPointTagList.Create();
@@ -920,12 +924,14 @@ begin
     if gTerrain.TileHasStone(X, Y)
        AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
     begin
+      fStoneMiningTiles.Items[I] := KMPoint(X,Y);
       // Save tile as a potential point for quarry
-      Ownership := gAIFields.Influences.Ownership[fOwner, Y+1, X];
-      if (Ownership > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, X,Y+1) then
+      if gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, X,Y+1) then
       begin
-        fStoneMiningTiles.Items[I] := KMPoint(X,Y);
-        Output.Add(fStoneMiningTiles.Items[I], Ownership);
+        Sum := 0;
+        while (Y > 1) AND (AddStoneCount(X,Y,Sum) > 0) do
+          Y := Y - 1;
+        Output.Add(fStoneMiningTiles.Items[I], Sum);
       end;
     end
     else // Else remove point
@@ -1277,7 +1283,7 @@ begin
   { Coal
   for I := 0 to Length(fCoalPolygons) - 1 do
     DrawTriangle(I, $FF00FF OR (Min($FF,Round(fCoalPolygons[I]*5)) shl 24)); //}
-  { Stone mining tiles
+  //{ Stone mining tiles
   for I := 0 to fStoneMiningTiles.Count - 1 do
     gRenderAux.Quad(fStoneMiningTiles.Items[I].X, fStoneMiningTiles.Items[I].Y, COLOR_RED); //}
 end;
