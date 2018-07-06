@@ -348,7 +348,7 @@ begin
 end;
 
 
-//Check if specific woodcutters are in Fell only mode
+// Try trade  
 procedure TKMCityManagement.CheckMarketplaces();
 var
   RequiedCnt, AvailableCnt: Word;
@@ -401,15 +401,15 @@ var
     end;
   end;
 const
-  SOLD_ORDER: array[0..27] of TKMWareType = (
+  SOLD_ORDER: array[0..26] of TKMWareType = (
     wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
     wt_Skin,         wt_Leather,  wt_Pig,
     wt_Trunk,        wt_Wood,
     wt_Shield,       wt_Axe,      wt_Pike,       wt_Bow,      wt_Armor,
     wt_MetalShield,  wt_Sword,    wt_Hallebard,  wt_Arbalet,  wt_MetalArmor,
     wt_Horse,        wt_Corn,     wt_Flour,
-    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre,
-    wt_Stone
+    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre
+    //wt_Stone
   );
   MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
   LACK_OF_STONE = 50;
@@ -431,6 +431,10 @@ begin
     if (GetHouseQty(htMetallurgists) = 0)
        AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
        AddWare(wt_Gold);
+    // Stone
+    if (GetWareBalance(wt_Stone)-GetHouseQty(htWatchTower)*5 < LACK_OF_STONE)
+      AND (Builder.Planner.PlannedHouses[htQuary].Completed = 0) then
+      AddWare(wt_Stone);
     // Gold ore
     if ( fPredictor.WareBalance[wt_GoldOre].Exhaustion < 20 )
       AND ( GetWareBalance(wt_Gold) < MIN_GOLD_AMOUNT )
@@ -440,10 +444,6 @@ begin
     if ( fPredictor.WareBalance[wt_Coal].Exhaustion < 20 )
       AND ( GetWareBalance(wt_Coal) < MIN_GOLD_AMOUNT ) then
       AddWare(wt_Coal);
-    // Stone
-    if (GetWareBalance(wt_Stone)-GetHouseQty(htWatchTower)*5 < LACK_OF_STONE)
-      AND (Builder.Planner.PlannedHouses[htQuary].Completed = 0) then
-      AddWare(wt_Stone);
   end;
 
   if RequiedCnt = 0 then
@@ -465,7 +465,7 @@ begin
       TryBuyItem(AvailableWares[I], RequiredWares[I])
   else
     break;
-end;
+end;               
 
 
 procedure TKMCityManagement.CheckStoreWares(aTick: Cardinal);
