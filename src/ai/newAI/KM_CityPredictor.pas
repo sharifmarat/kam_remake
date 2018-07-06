@@ -634,18 +634,17 @@ begin
 
   // Coal mines are used by top priority houses (Metallurgists) and low priority houses (smithy)
   // To get reasonable production there should be something like following logic, good luck with understanding ;)
-  if (aTick < 60 * 10 * 40) then
-    RequiredHouses[htCoalMine] := Min( RequiredHouses[htCoalMine],
-                                       Max( Max( Planner.PlannedHouses[htMetallurgists].Count, // Gold production requirements
-                                                 Planner.PlannedHouses[htGoldMine].Count
-                                               ),
-                                            RequiredHouses[htGoldMine] // Build coal mine in parallel to gold mine
-                                          )
-                                       - Planner.PlannedHouses[htCoalMine].Count
-                                       + Stats.GetHouseTotal(htIronSmithy) // Iron production requirements
-                                       + Stats.GetHouseTotal(htArmorSmithy)
-                                       + Stats.GetHouseTotal(htWeaponSmithy)
-                                     );
+  RequiredHouses[htCoalMine] := Min( RequiredHouses[htCoalMine],
+                                     Max( Max( Planner.PlannedHouses[htMetallurgists].Count, // Gold production requirements
+                                               Planner.PlannedHouses[htGoldMine].Count
+                                             ),
+                                          RequiredHouses[htGoldMine] // Build coal mine in parallel to gold mine
+                                        )
+                                     - Planner.PlannedHouses[htCoalMine].Count
+                                     + Stats.GetHouseTotal(htIronSmithy) // Iron production requirements
+                                     + Stats.GetHouseTotal(htArmorSmithy)
+                                     + Stats.GetHouseTotal(htWeaponSmithy)
+                                   );
 
 
   if (gGame.GameTickCount < WINEYARD_DELAY) then
