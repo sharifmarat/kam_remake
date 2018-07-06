@@ -1199,7 +1199,7 @@ begin
                      + Min(Trunk * 2 , gHands[fOwner].Stats.GetHouseQty(htSawmill) * 4) // Trunk which can be turned into wood while the house is digged
                      - RequiredWood) / 3 // Consideration of required wood per a plan (approx 3)
                    );
-  RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(fTrunkShortage OR (MaxPlace < 3)); // Dont try to place wine we are out of wood
+  RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(not(fTrunkShortage OR (MaxPlace < 3))); // Dont try to place wine we are out of wood
 
   // Find place for chop-only woodcutters when we start to be out of wood
   if ((GA_BUILDER_ChHTB_TrunkBalance - TrunkBalance) / GA_BUILDER_ChHTB_TrunkFactor - GetChopOnlyCnt() > 0) then
