@@ -9,7 +9,7 @@ uses
 var
   GA_PREDICTOR_CityInitialization_Space         : Single = 0.001962816; // factor for iron weapons
   GA_PREDICTOR_CityInitialization_Fertility     : Single = 0.001023545; // factor for wood weapons
-  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.046542886;
+  GA_PREDICTOR_CityInitialization_Worker        : Single = 0.0085;
   GA_PREDICTOR_STONE_NEED_PER_A_WORKER          : Single = 0.648239613;
   GA_PREDICTOR_WOOD_NEED_PER_A_WORKER           : Single = 0.280672461;
 
@@ -260,7 +260,7 @@ end;
 // Update ware production
 procedure TKMCityPredictor.UpdateWareProduction(aWT: TKMWareType);
 begin
-  fWareBalance[aWT].Production := fCityStats.Houses[ PRODUCTION[aWT] ] * (ProductionRate[aWT] - Byte(aWT = wt_Coal) * 0.2);
+  fWareBalance[aWT].Production := fCityStats.Houses[ PRODUCTION[aWT] ] * ProductionRate[aWT];
 end;
 
 
@@ -402,7 +402,8 @@ begin
       Citizens[UT] := gHands[fOwner].Stats.GetUnitQty(UT);
       CitizensCnt := CitizensCnt + Citizens[UT];
     end;
-    WarriorsCnt := 0;
+    CitizensCnt := CitizensCnt - Citizens[ut_Recruit]; // Count recruits as soldiers
+    WarriorsCnt := Citizens[ut_Recruit];
     for UT := Low(Warriors) to High(Warriors) do
     begin
       Warriors[UT] := gHands[fOwner].Stats.GetUnitQty(UT);
