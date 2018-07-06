@@ -1369,7 +1369,8 @@ begin
   if   (fPredictor.WareBalance[wt_Stone].Exhaustion < 60)
     //OR (fPredictor.WareBalance[wt_Wood].Exhaustion < 60)
     OR (fPredictor.WareBalance[wt_Gold].Exhaustion < 60)
-    OR (gHands[fOwner].Stats.GetHouseQty(htSchool) = 0) then
+    OR (gHands[fOwner].Stats.GetHouseQty(htSchool) = 0)
+    OR (gHands[fOwner].Stats.GetUnitQty(ut_Worker) = 0) then
     Exit;
 
   // Check if there is free build node
