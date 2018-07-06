@@ -541,8 +541,6 @@ begin
   Result := CanPlaceHouseByInfluence(aPL, fNavMesh.Point2Polygon[aY,aX], aIgnoreAllies);
 end;
 
-Ownership[const aPL: TKMHandIndex; const aY,aX: Word]
-
 
 function TKMInfluences.CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aIdx: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
 var
