@@ -541,13 +541,15 @@ begin
   Result := CanPlaceHouseByInfluence(aPL, fNavMesh.Point2Polygon[aY,aX], aIgnoreAllies);
 end;
 
+Ownership[const aPL: TKMHandIndex; const aY,aX: Word]
+
 
 function TKMInfluences.CanPlaceHouseByInfluence(const aPL: TKMHandIndex; const aIdx: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
 var
   BestOwner: TKMhandIndex;
 begin
   BestOwner := GetBestOwner(aIdx);
-  Result := (BestOwner >= 0) AND ((BestOwner = aPL) OR (not aIgnoreAllies AND (gHands[aPL].Alliances[BestOwner] = at_Ally)));
+  Result := (BestOwner >= 0) AND (OwnPoly[aPL, aIdx] > 0) AND ((BestOwner = aPL) OR (not aIgnoreAllies AND (gHands[aPL].Alliances[BestOwner] = at_Ally)));
 end;
 
 
@@ -711,7 +713,7 @@ begin
         Cnt := PresenceAllGroups[PL,I];
         if (Cnt > 0) then
         begin
-          Cnt := Min(Cnt,$5F);
+          Cnt := Min(Max(Cnt,$3F),$FF);
           //NavMesh polys coverage
           gRenderAux.TriangleOnTerrain(
             NodeArr[PolyArr[I].Indices[0]].Loc.X,
