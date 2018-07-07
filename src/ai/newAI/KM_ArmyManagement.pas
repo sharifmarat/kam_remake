@@ -548,8 +548,9 @@ begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     CheckThreats();
-    if ((gGame.MissionMode = mm_Tactic) AND (aTick mod PERF_TIME_LIMIT_Tactic = fOwner))
-      OR (aTick mod PERF_TIME_LIMIT = fOwner) then
+    if (aTick > 2*MAX_HANDS) AND // Make sure that influences and defences are actualized
+      ( ((gGame.MissionMode = mm_Tactic) AND (aTick mod PERF_TIME_LIMIT_Tactic = fOwner))
+      OR (aTick mod PERF_TIME_LIMIT = fOwner) ) then
       CheckAttack();
     RecruitSoldiers();
     CheckGroupsState();
