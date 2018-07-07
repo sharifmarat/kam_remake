@@ -1478,49 +1478,56 @@ begin
     Exit;
   StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
   try
-    // Calculate usage of each mine and each stone tile
-    SetLength(CanMineCnt, fPlannedHouses[HT].Count);
-    FillChar(CanMineCnt[0], SizeOf(CanMineCnt[0]) * Length(CanMineCnt), #0);
-    FillChar(StoneLocs.Tag2[0], SizeOf(StoneLocs.Tag2[0]) * Length(StoneLocs.Tag2), #0);
-    for I := Low(CanMineCnt) to High(CanMineCnt) do
-      with fPlannedHouses[HT].Plans[I] do
-        for K := 0 to StoneLocs.Count - 1 do
-          if (KMDistanceAbs(Loc,StoneLocs.Items[K]) < MAX_DIST) then
-          begin
-            Inc(CanMineCnt[I],StoneLocs.Tag[K]);
-            Inc(StoneLocs.Tag2[K]);
-          end;
-    // Find the most depleted house
-    LowestIdx := 0;
-    for I := Low(CanMineCnt) to High(CanMineCnt) do
-      if (CanMineCnt[LowestIdx] > CanMineCnt[I])
-        AND (fPlannedHouses[HT].Plans[I].House <> nil)
-        AND not fPlannedHouses[HT].Plans[I].House.IsDestroyed then
-        LowestIdx := I;
-    // Try to remove 1 quary
-    if (CanMineCnt[LowestIdx] < MIN_CNT) then
+    if (StoneLocs.Count > 0) then
     begin
-      // Find again all possible places where quary can mine and check if every tile can be mined by another 2 mines
-      CanBeReplaced := True;
-      with fPlannedHouses[HT].Plans[LowestIdx] do
-        for I := StoneLocs.Count - 1 downto 0 do
-          if (StoneLocs.Tag2[I] < 3) AND (KMDistanceAbs(Loc,StoneLocs.Items[I]) < MAX_DIST) then
-          begin
-            CanBeReplaced := False;
-            break;
-          end
-          else if (StoneLocs.Tag2[I] > 1) then
-            StoneLocs.Delete(I);
-      if CanBeReplaced then
+      // Calculate usage of each mine and each stone tile
+      SetLength(CanMineCnt, fPlannedHouses[HT].Count);
+      FillChar(CanMineCnt[0], SizeOf(CanMineCnt[0]) * Length(CanMineCnt), #0);
+      FillChar(StoneLocs.Tag2[0], SizeOf(StoneLocs.Tag2[0]) * Length(StoneLocs.Tag2), #0);
+      for I := Low(CanMineCnt) to High(CanMineCnt) do
+        with fPlannedHouses[HT].Plans[I] do
+          for K := 0 to StoneLocs.Count - 1 do
+            if (KMDistanceAbs(Loc,StoneLocs.Items[K]) < MAX_DIST) then
+            begin
+              Inc(CanMineCnt[I],StoneLocs.Tag[K]);
+              Inc(StoneLocs.Tag2[K]);
+            end;
+      // Find the most depleted house
+      LowestIdx := 0;
+      for I := Low(CanMineCnt) to High(CanMineCnt) do
+        if (CanMineCnt[LowestIdx] > CanMineCnt[I])
+          AND (fPlannedHouses[HT].Plans[I].House <> nil)
+          AND not fPlannedHouses[HT].Plans[I].House.IsDestroyed then
+          LowestIdx := I;
+      // Try to remove 1 quary
+      if (CanMineCnt[LowestIdx] < MIN_CNT) then
       begin
-        fPlannedHouses[HT].Plans[LowestIdx].House.DemolishHouse(fOwner);
-        RemovePlan(HT, LowestIdx);
-        CopySL := TKMPointTagList.Create();
-        for I := 0 to StoneLocs.Count - 1 do
-          CopySL.Add(StoneLocs.Items[I], StoneLocs.Tag[I]);
-        FindPlaceForQuary(CopySL);
-        with fPlannedHouses[HT] do // Reserve houses so it builder will init road
-          Plans[ Count-1 ].HouseReservation := True;
+        // Find again all possible places where quary can mine and check if every tile can be mined by another 2 mines
+        CanBeReplaced := True;
+        with fPlannedHouses[HT].Plans[LowestIdx] do
+          for I := StoneLocs.Count - 1 downto 0 do
+            if (StoneLocs.Tag2[I] < 3) AND (KMDistanceAbs(Loc,StoneLocs.Items[I]) < MAX_DIST) then
+            begin
+              CanBeReplaced := False;
+              break;
+            end
+            else if (StoneLocs.Tag2[I] > 1) then
+              StoneLocs.Delete(I);
+        if CanBeReplaced then
+        begin
+          CopySL := TKMPointTagList.Create();
+          for I := 0 to StoneLocs.Count - 1 do
+            CopySL.Add(StoneLocs.Items[I], StoneLocs.Tag[I]);
+          K := fPlannedHouses[HT].Count;
+          FindPlaceForQuary(CopySL);
+          if (K < fPlannedHouses[HT].Count) then
+          begin
+            with fPlannedHouses[HT] do // Reserve houses so it builder will init road
+              Plans[ Count-1 ].HouseReservation := True;
+            fPlannedHouses[HT].Plans[LowestIdx].House.DemolishHouse(fOwner);
+            RemovePlan(HT, LowestIdx);
+          end;
+        end;
       end;
     end;
   finally
