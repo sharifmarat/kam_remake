@@ -1215,17 +1215,17 @@ procedure TKMEye.Paint(aRect: TKMRect);
   procedure DrawTriangle(aIdx: Integer; aColor: Cardinal);
   var
     PolyArr: TPolygonArray;
-    NodeArr: TNodeArray;
+    NodeArr: TKMPointArray;
   begin
     PolyArr := gAIFields.NavMesh.Polygons;
     NodeArr := gAIFields.NavMesh.Nodes;
     gRenderAux.TriangleOnTerrain(
-      NodeArr[ PolyArr[aIdx].Indices[0] ].Loc.X,
-      NodeArr[ PolyArr[aIdx].Indices[0] ].Loc.Y,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].Loc.X,
-      NodeArr[ PolyArr[aIdx].Indices[1] ].Loc.Y,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].Loc.X,
-      NodeArr[ PolyArr[aIdx].Indices[2] ].Loc.Y, aColor);
+      NodeArr[ PolyArr[aIdx].Indices[0] ].X,
+      NodeArr[ PolyArr[aIdx].Indices[0] ].Y,
+      NodeArr[ PolyArr[aIdx].Indices[1] ].X,
+      NodeArr[ PolyArr[aIdx].Indices[1] ].Y,
+      NodeArr[ PolyArr[aIdx].Indices[2] ].X,
+      NodeArr[ PolyArr[aIdx].Indices[2] ].Y, aColor);
   end;
 
 const
