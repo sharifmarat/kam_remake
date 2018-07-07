@@ -613,7 +613,7 @@ var
   Loc, Pos: TKMPoint;
   GT: TKMGroupType;
   PolyArr: TPolygonArray;
-  NodeArr: TNodeArray;
+  NodeArr: TKMPointArray;
   UGA: TKMUnitGroupArray;
 begin
   if not OVERLAY_DEFENCES then
@@ -645,12 +645,12 @@ begin
     // Draw defensive lines as a triangles
     Col := Max( $22, Min($FF, Threat) );
     gRenderAux.TriangleOnTerrain(
-      NodeArr[PolyArr[Idx].Indices[0]].Loc.X,
-      NodeArr[PolyArr[Idx].Indices[0]].Loc.Y,
-      NodeArr[PolyArr[Idx].Indices[1]].Loc.X,
-      NodeArr[PolyArr[Idx].Indices[1]].Loc.Y,
-      NodeArr[PolyArr[Idx].Indices[2]].Loc.X,
-      NodeArr[PolyArr[Idx].Indices[2]].Loc.Y, (Col shl 24) OR COLOR_RED);
+      NodeArr[PolyArr[Idx].Indices[0]].X,
+      NodeArr[PolyArr[Idx].Indices[0]].Y,
+      NodeArr[PolyArr[Idx].Indices[1]].X,
+      NodeArr[PolyArr[Idx].Indices[1]].Y,
+      NodeArr[PolyArr[Idx].Indices[2]].X,
+      NodeArr[PolyArr[Idx].Indices[2]].Y, (Col shl 24) OR COLOR_RED);
 
     // Draw hostile units around defensive lines
     if (Threat > 0) then
