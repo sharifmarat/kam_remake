@@ -650,7 +650,7 @@ var
   I, Cnt: Word;
   X,Y: Integer;
   PolyArr: TPolygonArray;
-  NodeArr: TNodeArray;
+  NodeArr: TKMPointArray;
   Col: Cardinal;
 begin
 
@@ -679,12 +679,12 @@ begin
 
       //NavMesh polys coverage
       gRenderAux.TriangleOnTerrain(
-        NodeArr[PolyArr[I].Indices[0]].Loc.X,
-        NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-        NodeArr[PolyArr[I].Indices[1]].Loc.X,
-        NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-        NodeArr[PolyArr[I].Indices[2]].Loc.X,
-        NodeArr[PolyArr[I].Indices[2]].Loc.Y, Col);
+        NodeArr[PolyArr[I].Indices[0]].X,
+        NodeArr[PolyArr[I].Indices[0]].Y,
+        NodeArr[PolyArr[I].Indices[1]].X,
+        NodeArr[PolyArr[I].Indices[1]].Y,
+        NodeArr[PolyArr[I].Indices[2]].X,
+        NodeArr[PolyArr[I].Indices[2]].Y, Col);
     end;
   end;
 
@@ -714,12 +714,12 @@ begin
           Cnt := Min(Max(Cnt,$3F),$FF);
           //NavMesh polys coverage
           gRenderAux.TriangleOnTerrain(
-            NodeArr[PolyArr[I].Indices[0]].Loc.X,
-            NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-            NodeArr[PolyArr[I].Indices[1]].Loc.X,
-            NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-            NodeArr[PolyArr[I].Indices[2]].Loc.X,
-            NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
+            NodeArr[PolyArr[I].Indices[0]].X,
+            NodeArr[PolyArr[I].Indices[0]].Y,
+            NodeArr[PolyArr[I].Indices[1]].X,
+            NodeArr[PolyArr[I].Indices[1]].Y,
+            NodeArr[PolyArr[I].Indices[2]].X,
+            NodeArr[PolyArr[I].Indices[2]].Y, (Col OR (Cnt shl 24)) ); // (Col OR $50000000)
         end;
       end;
     end;
@@ -746,12 +746,12 @@ begin
         BestCnt := Min(BestCnt,$9F);
         //NavMesh polys coverage
         gRenderAux.TriangleOnTerrain(
-          NodeArr[PolyArr[I].Indices[0]].Loc.X,
-          NodeArr[PolyArr[I].Indices[0]].Loc.Y,
-          NodeArr[PolyArr[I].Indices[1]].Loc.X,
-          NodeArr[PolyArr[I].Indices[1]].Loc.Y,
-          NodeArr[PolyArr[I].Indices[2]].Loc.X,
-          NodeArr[PolyArr[I].Indices[2]].Loc.Y, (Col OR (BestCnt shl 24)) );
+          NodeArr[PolyArr[I].Indices[0]].X,
+          NodeArr[PolyArr[I].Indices[0]].Y,
+          NodeArr[PolyArr[I].Indices[1]].X,
+          NodeArr[PolyArr[I].Indices[1]].Y,
+          NodeArr[PolyArr[I].Indices[2]].X,
+          NodeArr[PolyArr[I].Indices[2]].Y, (Col OR (BestCnt shl 24)) );
       end;
     end;
     //}
