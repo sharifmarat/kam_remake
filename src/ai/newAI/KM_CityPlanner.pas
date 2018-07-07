@@ -1931,8 +1931,8 @@ begin
   //Make list of defence positions
   for I := 0 to DefLines.Count-1 do
   begin
-    P1 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[0] ].Loc;
-    P2 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[1] ].Loc;
+    P1 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[0] ];
+    P2 := gAIFields.NavMesh.Nodes[ DefLines.Lines[I].Nodes[1] ];
     if not (BuildFF.VisitIdx = BuildFF.Visited[ P1.Y, P1.X ])
       AND not (BuildFF.VisitIdx = BuildFF.Visited[ P2.Y, P2.X ]) then
       continue;
