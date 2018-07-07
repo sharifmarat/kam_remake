@@ -467,7 +467,7 @@ procedure TKMArmyDefence.FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray);
 
   function IsCompanyAround(aLoc: TKMPoint): Boolean;
   const
-    SQR_MAX_DISTANCE = 10*10;
+    SQR_MAX_DISTANCE = 20*20;
   var
     I: Integer;
     Company: TAICompany;
