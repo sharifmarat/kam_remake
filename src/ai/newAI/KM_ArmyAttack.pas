@@ -253,6 +253,8 @@ begin
 end;
 procedure TAISquad.SetTargetHouse(aHouse: TKMHouse);
 begin
+  if (aHouse <> nil) then
+    SetTargetUnit(nil); // House have lower priority so if there is request for attacking house unit must be nil
   if (fTargetHouse = aHouse) then
     Exit;
   fTargetChanged := True;
@@ -278,8 +280,7 @@ end;
 // Update state of squad (group orders)
 procedure TAISquad.UpdateState(aTick: Cardinal);
 const
-  RANGE_AIM_DELAY = 80;
-  HOUSE_AIM_DELAY = 100;
+  AIM_DELAY = 100;
 var
   ActPos, FinPos: TKMPoint;
 begin
@@ -301,9 +302,10 @@ begin
     FinPos := fTargetUnit.GetPosition;
     if PlanPath(ActPos, FinPos, True, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else if (fGroup.GroupType <> gt_Ranged) OR (fTargetChanged AND (fAttackTimeLimit < aTick)) then
+    else if (fGroup.GroupType <> gt_Ranged) OR fTargetChanged OR (fAttackTimeLimit < aTick) then
+    //else if (fGroup.GroupType <> gt_Ranged) OR (fTargetChanged AND (fAttackTimeLimit < aTick)) then
     begin
-      fAttackTimeLimit := aTick + RANGE_AIM_DELAY;
+      fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
       Group.OrderAttackUnit(fTargetUnit, True);
     end;
@@ -316,7 +318,7 @@ begin
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
-      fAttackTimeLimit := aTick + HOUSE_AIM_DELAY;
+      fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
       Group.OrderAttackHouse(fTargetHouse, True);
     end;
@@ -630,8 +632,13 @@ end;
 
 
 function TAICompany.OrderToAttack(aActualPosition: TKMPoint; UA: TKMUnitArray; UGA: TKMUnitGroupArray; HA: TKMHouseArray): Boolean;
+type
+  TCompanyInfo = record
+    GTCnt: array[TKMGroupType] of Word; // Count of soldiers sorted by GroupType
+  end;
 var
   AvailableSquads: TKMSquadsArray;
+  CompanyInfo: TCompanyInfo;
   //fTargetU: TKMTargetSelection;
 
   procedure FindAvailableSquads();
@@ -640,6 +647,7 @@ var
     GT: TKMGroupType;
     Squad: TAISquad;
   begin
+    FillChar(CompanyInfo, SizeOf(CompanyInfo), #0);
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
       AvailableSquads[GT].Count := 0;
@@ -649,8 +657,8 @@ var
       for I := 0 to fSquads[GT].Count - 1 do
       begin
         Squad := fSquads[GT].Items[I];
-        if not Squad.InFight
-          AND ((fCompanyMode <> cm_Destruction) OR (Squad.TargetHouse = nil)) then
+        Inc(CompanyInfo.GTCnt[GT], Squad.Group.Count);
+        if not Squad.InFight then
         begin
           // Make sure that unit will not hunt target over the whole map and better stay inside company
           if (GT <> gt_Ranged) then // ranged units are fixed in Squad class (set / reset target cause that they dont shoot)
@@ -659,7 +667,7 @@ var
             //Squad.TargetHouse := nil; // This cause same problem like with archers
           end;
           AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ] := Squad;
-          AvailableSquads[GT].Count := AvailableSquads[GT].Count + 1;
+          Inc(AvailableSquads[GT].Count);
         end;
       end;
   end;
@@ -869,10 +877,12 @@ var
   function OrderAttackHouse(): Boolean;
   const
     INIT_THREAT = 1000000;
-    SQR_CLOSE_COMBAT_DISTANCE_LIMIT = 12*12;
+    LIMIT_RANGED_DESTROY_ALL_HOUSES = 6; // Archers will start to shoot at other houses if there is not enought close combat units in company
+    SQR_CLOSE_COMBAT_DISTANCE_LIMIT = 12*12; // Order to attack house starts at this distance (close combat groups; watchtowers have exception)
     MAX_SOLDIERS_VS_HOUSE = 12;
-    SQR_ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5*5;
-    SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST = 3*3;
+    MAX_ARCHERS_VS_TOWER = 9;
+    SQR_ATTACK_WATCHTOWER_WITH_CLOSE_COMBAT_DIST = 5*5; // Attack watchtower with close combat units
+    SQR_MAX_CLOSE_COMBAT_VS_UNIT_DIST = 3*3; // Kill citizens in this radius around house (workers tries to repair house)
   var
     Output: Boolean;
     TargetIdx: Word;
@@ -884,8 +894,7 @@ var
   begin
     Output := False;
     SetLength(GroupAttackCnt, Length(HA));
-    for I := 0 to Length(HA) - 1 do
-      GroupAttackCnt[I] := 0;
+    FillChar(GroupAttackCnt[0], SizeOf(GroupAttackCnt[0]) * Length(GroupAttackCnt), #0);
 
     // Target watchtowers with archers
     GT := gt_Ranged;
@@ -895,7 +904,7 @@ var
       BestDist := INIT_THREAT;
       for K := 0 to Length(HA) - 1 do
         if (HA[K].HouseType = htWatchTower)
-          AND (GroupAttackCnt[K] < MAX_SOLDIERS_VS_HOUSE)
+          AND (GroupAttackCnt[K] < MAX_ARCHERS_VS_TOWER)
           AND (HA[K].CheckResIn(wt_Stone) > 1)
           AND HA[K].HasOwner then // Ignore towers without stone and without recruit inside
         begin
@@ -908,7 +917,7 @@ var
         end;
       if (BestDist <> INIT_THREAT) then
       begin
-        GroupAttackCnt[TargetIdx] := GroupAttackCnt[TargetIdx] + AvailableSquads[GT].Squads[I].Group.Count;
+        Inc(GroupAttackCnt[TargetIdx], AvailableSquads[GT].Squads[I].Group.Count);
         // Find and kill workers who want to repair house
         U := gAIFields.Eye.GetClosestUnitAroundHouse(HA[TargetIdx].HouseType, HA[TargetIdx].GetPosition, AvailableSquads[GT].Squads[I].Position);
         if (U <> nil) then
@@ -924,8 +933,10 @@ var
     // Target everything else with close combat units
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
-      if (GT = gt_Ranged) then
-        continue;
+      if (GT = gt_Ranged) then // Ignore ranged units if we have enought close combat support (avoid friendly fire)
+        with CompanyInfo do
+          if (GTCnt[gt_Melee] + GTCnt[gt_AntiHorse] + GTCnt[gt_Mounted] > LIMIT_RANGED_DESTROY_ALL_HOUSES) then
+            continue;
       for I := AvailableSquads[GT].Count - 1 downto 0 do
       begin
         BestDist := INIT_THREAT;
