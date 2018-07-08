@@ -161,7 +161,7 @@ const
     {htBakery}         [ htInn,            htMill,           htStore,          htBakery         ],
     {htBarracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
     {htButchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
-    {htCoalMine}       [ htStore                                                                ],
+    {htCoalMine}       [ htGoldMine,       htIronMine,       htStore,          htMetallurgists  ],
     {htFarm}           [ htFarm,           htSwine,          htMill,           htStables        ],
     {htFisherHut}      [ htStore                                                                ],
     {htGoldMine}       [ htMetallurgists,  htStore                                              ],
@@ -1413,41 +1413,58 @@ const
   const
     INIT_GAIN = -10000;
   var
-    Output: Boolean;
-    I, BestIdx: Integer;
+    I, BestIdx, HouseCnt: Integer;
     Gain, BestGain: Single;
-    Locs: TKMPointTagList;
+    HT: TKMHouseType;
+    InitPointsArr: TKMPointArray;
+    HouseReq: TKMHouseRequirements;
+    BuildFF: TKMBuildFF;
   begin
-    Output := False;
+    BuildFF := gAIFields.Eye.BuildFF;
 
-    Locs := gAIFields.Eye.GetCoalMineLocs(); // BuildFF is checked inside of GetCoalMineLocs
-    try
-      if (Locs.Count > 0) then
+    HouseCnt := 0;
+    for HT in HOUSE_DEPENDENCE[aHT] do
+      HouseCnt := HouseCnt + fPlannedHouses[HT].Count;
+
+    SetLength(InitPointsArr, HouseCnt);
+    HouseCnt := 0;
+    for HT in HOUSE_DEPENDENCE[aHT] do
+      for I := 0 to fPlannedHouses[HT].Count - 1 do
       begin
-        BestGain := INIT_GAIN;
-        BestIdx := 0; // For compiler
-        for I := 0 to Locs.Count - 1 do
+        InitPointsArr[HouseCnt] := KMPointBelow(fPlannedHouses[HT].Plans[I].Loc); // Place for mines can be problematic
+        HouseCnt := HouseCnt + 1;
+      end;
+
+    with HouseReq do
+    begin
+      HouseType := aHT;
+      IgnoreTrees := False;
+      IgnoreAvoidBuilding := True;
+      MaxCnt := 20; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
+      MaxDist := 30;
+    end;
+    BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+
+    BestGain := INIT_GAIN;
+    BestIdx := -1;
+    with BuildFF.Locs do
+    begin
+      for I := 0 to Count - 1 do
+      begin
+        Gain := - BuildFF.Distance[ Items[I] ] * 10
+                + SnapCrit(htCoalMine, Items[I])
+                - ObstaclesInHousePlan(htCoalMine, Items[I])
+                - gAIFields.Influences.GetOtherOwnerships(fOwner, Items[I].X, Items[I].Y);
+        if (Gain > BestGain) then
         begin
-          Gain := - Locs.Tag[I] * 10
-                 + SnapCrit(htCoalMine, Locs.Items[I])
-                 - ObstaclesInHousePlan(htCoalMine, Locs.Items[I])
-                 - gAIFields.Influences.GetOtherOwnerships(fOwner, Locs.Items[I].X, Locs.Items[I].Y);
-          if (Gain > BestGain) then
-          begin
-            BestIdx := I;
-            BestGain := Gain;
-          end;
-        end;
-        if (BestGain <> INIT_GAIN) then
-        begin
-          AddPlan(aHT, Locs.Items[BestIdx]);
-          Output := True;
+          BestIdx := I;
+          BestGain := Gain;
         end;
       end;
-    finally
-      Locs.Free;
+      if (BestIdx <> -1) then
+        AddPlan(aHT, Items[BestIdx]);
     end;
-    Result := Output;
+    Result := (BestIdx <> -1);
   end;
 var
   Output: Boolean;
