@@ -60,7 +60,7 @@ type
   TKMBuildFF = class
   private
     fOwner: TKMHandIndex;
-    fOwnerUpdateInfo: TKMByteArray;
+    fOwnerUpdateInfo: array[0..MAX_HANDS-1] of Byte;
     fVisitIdx, fVisitIdxHouse: Byte;
     fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
     fUpdateTick: Cardinal;
@@ -119,20 +119,6 @@ type
     procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
   end;
 
-  TKMSearchResource = class(TKMQuickFlood)
-  private
-    fSearch: SmallInt;
-    fVisitArr: TKMByte2Array;
-    fListOfPoints: TKMPointList;
-  protected
-    function CanBeVisited(const aX,aY: SmallInt): Boolean; override;
-    function IsVisited(const aX,aY: SmallInt): Boolean; override;
-    procedure MarkAsVisited(const aX,aY: SmallInt); override;
-  public
-    constructor Create(aMinLimit, aMaxLimit: TKMPoint; var aVisitArr: TKMByte2Array; const aScanEightTiles: Boolean = False); reintroduce;
-    procedure QuickFlood(aX,aY,aSearch: SmallInt; var aListOfPoints: TKMPointList);  reintroduce;
-  end;
-
 
   TKMFFInitPlace = class
   private
@@ -159,8 +145,8 @@ type
     fOwner: TKMHandIndex;
     fMapX, fMapY: Word;
     fHousesMapping: THouseMappingArray;
-    fGoldMines, fIronMines, fStoneMiningTiles: TKMPointList;
-    fCoalPolygons, fSoil, fRoutes, fFlatArea: TKMByteArray; // Soil = detection of soil tiles; fRoutes = expected city area; fFlatArea = terrain evaluation
+    fGoldLocs, fIronLocs, fStoneMiningTiles: TKMPointList; // Store coal tiles is not effective
+    fSoil, fRoutes, fFlatArea: TKMByteArray; // Soil = detection of soil tiles; fRoutes = expected city area; fFlatArea = terrain evaluation
 
     fBuildFF: TKMBuildFF;
     fArmyEvaluation: TKMArmyEvaluation;
@@ -198,7 +184,6 @@ type
 
     function GetMineLocs(aHT: TKMHouseType): TKMPointTagList;
     function GetStoneLocs(): TKMPointTagList;
-    function GetCoalMineLocs(): TKMPointTagList;
     procedure GetForests(var aForests: TKMPointTagList);
     function GetCityCenterPoints(aMultiplePoints: Boolean = False): TKMPointArray;
 
@@ -218,8 +203,8 @@ uses
 { TKMEye }
 constructor TKMEye.Create();
 begin
-  fGoldMines := TKMPointList.Create();
-  fIronMines := TKMPointList.Create();
+  fGoldLocs := TKMPointList.Create();
+  fIronLocs := TKMPointList.Create();
   fStoneMiningTiles := TKMPointList.Create();
 
   fBuildFF := TKMBuildFF.Create();
@@ -230,8 +215,8 @@ end;
 
 destructor TKMEye.Destroy();
 begin
-  fGoldMines.Free;
-  fIronMines.Free;
+  fGoldLocs.Free;
+  fIronLocs.Free;
   fStoneMiningTiles.Free;
 
   fBuildFF.Free;
@@ -256,14 +241,13 @@ begin
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
 
-  fGoldMines.SaveToStream(SaveStream);
-  fIronMines.SaveToStream(SaveStream);
+  fGoldLocs.SaveToStream(SaveStream);
+  fIronLocs.SaveToStream(SaveStream);
   fStoneMiningTiles.SaveToStream(SaveStream);
 
   SaveByteArr(fSoil);
   SaveByteArr(fRoutes);
   SaveByteArr(fFlatArea);
-  SaveByteArr(fCoalPolygons);
 
   fArmyEvaluation.Save(SaveStream);
 
@@ -286,14 +270,13 @@ begin
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
 
-  fGoldMines.LoadFromStream(LoadStream);
-  fIronMines.LoadFromStream(LoadStream);
+  fGoldLocs.LoadFromStream(LoadStream);
+  fIronLocs.LoadFromStream(LoadStream);
   fStoneMiningTiles.LoadFromStream(LoadStream);
 
   LoadByteArr(fSoil);
   LoadByteArr(fRoutes);
   LoadByteArr(fFlatArea);
-  LoadByteArr(fCoalPolygons);
 
   fArmyEvaluation.Load(LoadStream);
 end;
@@ -382,8 +365,6 @@ begin
   Time := TimeGet();
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
-  SetLength(fCoalPolygons, Length(gAIFields.NavMesh.Polygons));
-  FillChar(fCoalPolygons[0], SizeOf(fCoalPolygons[0]) * Length(fCoalPolygons), #0);
 
   SetLength(fSoil, fMapX * fMapY);
   SetLength(fRoutes, fMapX * fMapY);
@@ -399,24 +380,21 @@ begin
     FlatArea[Y,X] := Byte(gTerrain.TileIsWalkable(Loc));
     if gTerrain.TileIsSoil(X,Y) then
       Soil[Y,X] := 1
-    else if (gTerrain.TileIsCoal(X,Y) > 1) then
-    begin
-      Inc(fCoalPolygons[  gAIFields.NavMesh.KMPoint2Polygon[ Loc ]  ]);
-    end
+    //else if (gTerrain.TileIsCoal(X,Y) > 1) then
     else if gTerrain.TileHasStone(X,Y) then
     begin
       if (Y < fMapY - 1) AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
-        fStoneMiningTiles.Add(KMPoint(X,Y));
+        fStoneMiningTiles.Add(Loc);
     end
     else if CanAddHousePlan(Loc, htGoldMine, True, False) then
     begin
       if CheckResourcesNearMine(Loc, htGoldMine) then
-        fGoldMines.Add(Loc);
+        fGoldLocs.Add(Loc);
     end
     else if CanAddHousePlan(Loc, htIronMine, True, False) then
     begin
       if CheckResourcesNearMine(Loc, htIronMine) then
-        fIronMines.Add(Loc);
+        fIronLocs.Add(Loc);
     end;
   end;
   GeneralizeArray(fSoil);
@@ -509,9 +487,8 @@ var
     Result := Output;
   end;
 var
-  I,K, Increment: Integer;
+  I, X,Y, Increment: Integer;
   Time: Cardinal;
-  Loc: TKMPoint;
   CenterPointArr: TKMPointArray;
   TagList: TKMPointTagList;
   FFInitPlace: TKMFFInitPlace;
@@ -539,7 +516,8 @@ begin
       TagList.Free;
     end;
     // Scan Resources - coal
-    TagList := GetCoalMineLocs();
+    //TagList := GetCoalMineLocs();
+    TagList := TKMPointTagList.Create();
     try
       I := 0;
       Increment := Ceil(TagList.Count / 10.0); // Max 10 paths
@@ -582,19 +560,13 @@ begin
 
   aFieldCnt := 0;
   aBuildCnt := 0;
-  for I := 0 to Length(gAIFields.NavMesh.Polygons) - 1 do
-    if (gAIFields.Influences.GetBestOwner(I) = fOwner) then
-      for K := gAIFields.NavMesh.Polygons[I].Poly2PointStart to gAIFields.NavMesh.Polygons[I].Poly2PointCnt - 1 do
-      begin
-        Loc := gAIFields.NavMesh.Polygon2Point[K];
-        if gTerrain.CheckHeightPass(Loc, hpBuilding) then // The strictest condition first
-        begin
-            aBuildCnt := aBuildCnt + Byte(gTerrain.TileIsRoadable( Loc )); // Roadable tile + height pass + other conditions = tpbuild
-            aFieldCnt := aFieldCnt + Byte(gTerrain.TileIsSoil( Loc )); // Scan just tile + height (ignore object and everything else)
-        end
-        else // Scan just tile + height (ignore object and everything else)
-          aFieldCnt := aFieldCnt + Byte(gTerrain.TileIsSoil( Loc ) AND gTerrain.CheckHeightPass(Loc, hpWalking));
-      end;
+  for Y := 1 to fMapY - 1 do
+  for X := 1 to fMapX - 1 do
+    if (gAIFields.Influences.GetBestOwner(X,Y) = fOwner) then
+    begin
+      Inc(aFieldCnt, Soil[Y,X]);
+      Inc(aBuildCnt, Byte(gTerrain.TileIsRoadable( KMPoint(X,Y) )));
+    end;
   Time := TimeGet() - Time;
 end;
 
@@ -878,8 +850,8 @@ begin
   Output := TKMPointTagList.Create();
   Mines := nil;
   case aHT of
-    htGoldMine: Mines := fGoldMines;
-    htIronMine: Mines := fIronMines;
+    htGoldMine: Mines := fGoldLocs;
+    htIronMine: Mines := fIronLocs;
   end;
 
   if (Mines <> nil) then
@@ -939,95 +911,6 @@ begin
   end;
   Result := Output;
 end;
-
-
-function TKMEye.GetCoalMineLocs(): TKMPointTagList;
-var
-  Count: Word;
-  CoalPolygons, PolygonEvaluation: TKMWordArray;
-
-  procedure InsertionSort(aIdx,aBid: Word);
-  var
-    I: Integer;
-  begin
-    if (Length(CoalPolygons) >= Count) then
-    begin
-      SetLength(CoalPolygons, Count + 64);
-      SetLength(PolygonEvaluation, Count + 64);
-      for I := Count to High(PolygonEvaluation) do
-        PolygonEvaluation[I] := High(Word);
-    end;
-    Count := Count + 1;
-    I := Count - 2;
-    while (I >= 0) do
-    begin
-      if (PolygonEvaluation[I] > aBid) then
-      begin
-        PolygonEvaluation[I+1] := PolygonEvaluation[I];
-        CoalPolygons[I+1] := CoalPolygons[I];
-      end
-      else
-        break;
-      I := I - 1;
-    end;
-    PolygonEvaluation[I+1] := aBid;
-    CoalPolygons[I+1] := aIdx;
-  end;
-const
-  MAX_LOCS = 30;
-  MAX_ENEMY_OWNERSHIP = 150;
-var
-  Dist: Word;
-  I, K, Cnt, Idx: Integer;
-  Loc: TKMPoint;
-  HouseReq: TKMHouseRequirements;
-  Output: TKMPointTagList;
-begin
-  Output := TKMPointTagList.Create();
-  fBuildFF.UpdateState(); // Mark walkable area in owner's city
-  Count := 0;
-  for Idx := 0 to Length(fCoalPolygons) - 1 do
-    if (fCoalPolygons[Idx] > 0) AND gAIFields.Influences.CanPlaceHouseByInfluence(fOwner, Idx) then
-    begin
-      Loc := gAIFields.NavMesh.Polygons[Idx].CenterPoint;
-      if (fBuildFF.VisitIdx <> fBuildFF.Visited[ Loc.Y, Loc.X ]) then
-        continue;
-      Dist := BuildFF.Distance[Loc];
-      InsertionSort(Idx,Dist);
-    end;
-
-  with HouseReq do
-  begin
-    HouseType := htCoalMine;
-    IgnoreTrees := False;
-    IgnoreAvoidBuilding := True;
-    MaxCnt := 0;
-    MaxDist := 0;
-  end;
-  BuildFF.HouseRequirements := HouseReq;
-
-  for I := 0 to Count - 1 do
-  begin
-    Idx := CoalPolygons[I];
-    Cnt := 0;
-    for K := gAIFields.NavMesh.Polygons[Idx].Poly2PointStart to gAIFields.NavMesh.Polygons[Idx].Poly2PointCnt - 1 do
-    begin
-      Loc := gAIFields.NavMesh.Polygon2Point[K];
-      if gTerrain.TileHasCoal(Loc.X, Loc.Y) then // There are stored only coal tiles > 1 so here > 0 is ok because we can expect that surrouding tiles are also coal
-      begin
-        Cnt := Cnt + 1;
-        if fBuildFF.CanBePlacedHouse(Loc) then // BuildFF can see more than CanAddHousePlan
-          Output.Add(Loc, BuildFF.Distance[Loc]);
-      end;
-    end;
-    fCoalPolygons[Idx] := Cnt;
-    if (Output.Count > MAX_LOCS) then
-      break;
-  end;
-
-  Result := Output;
-end;
-
 
 
 // Cluster algorithm (inspired by DBSCAN but clusters may overlap)
@@ -1382,7 +1265,6 @@ begin
     fMapX := gTerrain.MapX;
     fMapY := gTerrain.MapY;
     SetLength(fInfoArr, fMapX * fMapY);
-    SetLength(fOwnerUpdateInfo, MAX_HANDS);
     fVisitIdx := 255; // Fill char will be required
     fVisitIdxHouse := 255;
   end;
@@ -1471,12 +1353,13 @@ function TKMBuildFF.CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
 const
   DIST = 1;
 var
-  LeftSideFree, RightSideFree: Boolean;
+  LeftSideFree, RightSideFree, CoalUnderPlan: Boolean;
   I: Integer;
   Point: TKMPoint;
   Dir: TDirection;
 begin
   Result := False;
+  CoalUnderPlan := False;
   with fHMA[fHouseReq.HouseType] do
   begin
     for I := Low(Tiles) to High(Tiles) do
@@ -1494,7 +1377,13 @@ begin
           if not fHouseReq.IgnoreTrees then
             Exit;
         end;
-        bsCoal, bsForest:
+        bsCoal:
+        begin
+          CoalUnderPlan := True;
+          if not fHouseReq.IgnoreAvoidBuilding then
+            Exit;
+        end;
+        bsForest:
         begin
           if not fHouseReq.IgnoreAvoidBuilding then
             Exit;
@@ -1503,7 +1392,8 @@ begin
           Exit;
       end;
     end;
-
+    if (fHouseReq.HouseType = htCoalMine) AND not CoalUnderPlan then
+      Exit;
     // Scan tiles in distance 1 from house plan
     LeftSideFree := True;
     RightSideFree := True;
@@ -1752,49 +1642,6 @@ begin
   HouseFF();
 end;
 
-
-
-
-{ TKMSearchResource }
-constructor TKMSearchResource.Create(aMinLimit, aMaxLimit: TKMPoint; var aVisitArr: TKMByte2Array; const aScanEightTiles: Boolean = False);
-begin
-  inherited Create(aScanEightTiles);
-  fVisitArr := aVisitArr;
-  fMinLimit := aMinLimit;
-  fMaxLimit := aMaxLimit;
-end;
-
-function TKMSearchResource.CanBeVisited(const aX,aY: SmallInt): Boolean;
-begin
-  Result := (fVisitArr[aY,aX] = 0);
-  case fSearch of
-    1: Result := Result AND gTerrain.TileHasCoal(aX, aY); // Coal
-    2: Result := Result AND gTerrain.TileHasStone(aX, aY); // Stone
-    else
-      begin
-      end;
-  end;
-end;
-
-function TKMSearchResource.IsVisited(const aX,aY: SmallInt): Boolean;
-begin
-  Result := (fVisitArr[aY,aX] > 0);
-end;
-
-procedure TKMSearchResource.MarkAsVisited(const aX,aY: SmallInt);
-begin
-  fVisitArr[aY,aX] := fSearch;
-  if ((fSearch = 1) AND gAIFields.Eye.CanAddHousePlan(KMPoint(aX,aY), htCoalMine, True, True))
-    OR (  (fSearch = 2) AND (aY < fMaxLimit.Y) AND (tpWalk in gTerrain.Land[aY+1,aX].Passability)  ) then
-    fListOfPoints.Add(KMPoint(aX,aY));
-end;
-
-procedure TKMSearchResource.QuickFlood(aX,aY,aSearch: SmallInt; var aListOfPoints: TKMPointList);
-begin
-  fSearch := aSearch;
-  fListOfPoints := aListOfPoints;
-  inherited QuickFlood(aX,aY);
-end;
 
 
 
