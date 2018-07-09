@@ -79,13 +79,10 @@ end;
 
 // Queue is realised inside of array (constant length) instead of interconnected elements
 procedure TNavMeshFloodFill.ClearVisitIdx();
-var
-  I: Word;
 begin
   fVisitedIdx := 1;
-  for I := Low(fQueueArray) to High(fQueueArray) do
-    fQueueArray[I].Visited := 0;
-end;
+  FillChar(fQueueArray[0], SizeOf(fQueueArray[0]) * Length(fQueueArray), #0);
+end;    
 
 
 function TNavMeshFloodFill.IsQueueEmpty(): Boolean;
