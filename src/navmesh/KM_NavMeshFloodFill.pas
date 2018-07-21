@@ -66,6 +66,7 @@ end;
 
 procedure TNavMeshFloodFill.MakeNewQueue();
 begin
+  fQueueCnt := 0;
   fVisitedIdx := fVisitedIdx + 1;
   if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
   begin
@@ -82,7 +83,7 @@ procedure TNavMeshFloodFill.ClearVisitIdx();
 begin
   fVisitedIdx := 1;
   FillChar(fQueueArray[0], SizeOf(fQueueArray[0]) * Length(fQueueArray), #0);
-end;    
+end;
 
 
 function TNavMeshFloodFill.IsQueueEmpty(): Boolean;
