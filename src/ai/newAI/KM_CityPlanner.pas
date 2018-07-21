@@ -9,10 +9,7 @@ uses
   KM_AIInfluences, KM_NavMeshDefences;
 
 
-
-
 var
-
   GA_PLANNER_FindPlaceForHouse_Influence            : Single = 200; // 0..XXX
   GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
 
@@ -33,14 +30,14 @@ var
   GA_PLANNER_FindPlaceForHouse_FlatArea               : Single = 59.41017;
   GA_PLANNER_PlaceWoodcutter_DistFromForest           : Single = 66.28614068;
 
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 183.9277;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 144.6684;
-  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute         : Single = 4.279931;
-  GA_PLANNER_FindPlaceForWoodcutter_FlatArea          : Single = 12.20183;
-  GA_PLANNER_FindPlaceForWoodcutter_Soil              : Single = 5.20183;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 108.2938;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 4.436775;
-  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 177.5612;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 1.3898; // 0-~20
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 282.76; // 0-1
+  GA_PLANNER_FindPlaceForWoodcutter_Routes            : Single = 0.329; // 0-255
+  GA_PLANNER_FindPlaceForWoodcutter_FlatArea          : Single = 4.045; // 0-81
+  GA_PLANNER_FindPlaceForWoodcutter_Soil              : Single = 17.324; // 0-81
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single = 12.757; // 0-40
+  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single = 3.793;
+  GA_PLANNER_FindPlaceForWoodcutter_AddAB             : Single = 232.65;
 
 
   GA_PATHFINDING_BasePrice    : Word = 6;
@@ -161,7 +158,7 @@ const
     {htBakery}         [ htInn,            htMill,           htStore,          htBakery         ],
     {htBarracks}       [ htArmorWorkshop,  htArmorSmithy,    htWeaponSmithy,   htWeaponWorkshop ],
     {htButchers}       [ htInn,            htSwine,          htStore,          htButchers       ],
-    {htCoalMine}       [ htGoldMine,       htIronMine,       htStore,          htMetallurgists  ],
+    {htCoalMine}       [ htCoalMine,       htGoldMine,       htIronMine,       htStore          ],
     {htFarm}           [ htFarm,           htSwine,          htMill,           htStables        ],
     {htFisherHut}      [ htStore                                                                ],
     {htGoldMine}       [ htMetallurgists,  htStore                                              ],
@@ -1789,7 +1786,7 @@ begin
                                   + 1000000 // Base price
                                   + fForestsNearby.Tag2[I] * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt
                                   + Byte(PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest
-                                  - gAIFields.Eye.Routes[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_PolyRoute
+                                  - gAIFields.Eye.Routes[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_Routes
                                   - gAIFields.Eye.FlatArea[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_FlatArea
                                   + gAIFields.Eye.Soil[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_Soil
                                   - gAIFields.Eye.BuildFF.Distance[Point] * GA_PLANNER_FindPlaceForWoodcutter_DistCrit
