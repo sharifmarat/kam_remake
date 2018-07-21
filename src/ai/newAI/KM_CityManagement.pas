@@ -132,27 +132,18 @@ end;
 
 
 procedure TKMCityManagement.AfterMissionInit();
-var
-  GoldCnt, IronCnt, FieldCnt, BuildCnt: Integer;
 begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(666);
-    gGame.GameOptions.Peacetime := 60;//SP_DEFAULT_PEACETIME;
+    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
     fSetup.ApplyAgressiveBuilderSetup(True);
   end;
-  fPredictor.AfterMissionInit();
 
   // Find resources around Loc and change building policy
-  GoldCnt := 0;
-  IronCnt := 0;
-  FieldCnt := 0;
-  BuildCnt := 0;
-  gAIFields.Eye.ScanLocResources(GoldCnt, IronCnt, FieldCnt, BuildCnt);
-
-  fBuilder.AfterMissionInit(GoldCnt, IronCnt, FieldCnt, BuildCnt);
-
-  fPredictor.CityInitialization(GoldCnt, IronCnt, FieldCnt, BuildCnt);
+  gAIFields.Eye.ScanLoc();
+  fBuilder.AfterMissionInit();
+  fPredictor.AfterMissionInit();
 end;
 
 
@@ -301,7 +292,7 @@ begin
     UnitReq[ut_Worker] := 0;
     if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
-      UnitReq[ut_Worker] :=  fPredictor.WorkerCount;
+      UnitReq[ut_Worker] :=  fPredictor.WorkerCount;// * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack);
       UnitReq[ut_Recruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
     if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
@@ -348,7 +339,7 @@ begin
 end;
 
 
-// Try trade  
+// Try trade
 procedure TKMCityManagement.CheckMarketplaces();
 var
   RequiedCnt, AvailableCnt: Word;
@@ -401,14 +392,14 @@ var
     end;
   end;
 const
-  SOLD_ORDER: array[0..26] of TKMWareType = (
+  SOLD_ORDER: array[0..21] of TKMWareType = (
     wt_Sausages,     wt_Wine,     wt_Fish,       wt_Bread,
     wt_Skin,         wt_Leather,  wt_Pig,
     wt_Trunk,        wt_Wood,
     wt_Shield,       wt_Axe,      wt_Pike,       wt_Bow,      wt_Armor,
     wt_MetalShield,  wt_Sword,    wt_Hallebard,  wt_Arbalet,  wt_MetalArmor,
-    wt_Horse,        wt_Corn,     wt_Flour,
-    wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre
+    wt_Horse,        wt_Corn,     wt_Flour
+    //wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre,
     //wt_Stone
   );
   MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
@@ -465,7 +456,7 @@ begin
       TryBuyItem(AvailableWares[I], RequiredWares[I])
   else
     break;
-end;               
+end;
 
 
 procedure TKMCityManagement.CheckStoreWares(aTick: Cardinal);
@@ -718,9 +709,9 @@ var
       WoodReq := Round((DEFAULT_COEFICIENT - WoodReq) / 5.0); // 5 is equal to sum of all requirements in leather category
       for UT in WOOD_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-            if (TROOP_COST[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
     end;
 
@@ -734,9 +725,9 @@ var
       IronReq := Round((DEFAULT_COEFICIENT - IronReq) / 5.0); // 5 is equal to sum of all requirements in iron category
       for UT in IRON_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-            if (TROOP_COST[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
+          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+            if (TroopCost[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TroopCost[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
     end;
   end;
@@ -758,7 +749,7 @@ var
 //  gt_Melee,            //ut_MetalBarbarian
 //  gt_Mounted           //ut_Horseman
 //);
-//TROOP_COST: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
+//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
 //  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
 //  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
 //  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -815,10 +806,10 @@ begin
 
   // Get count of needed weapons
   for UT := ut_AxeFighter to WARRIOR_EQUIPABLE_MAX do // Skip militia
-    for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
-      if (TROOP_COST[UT,I] <> wt_None) then
+    for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
+      if (TroopCost[UT,I] <> wt_None) then
       begin
-        WT := TROOP_COST[UT,I];
+        WT := TroopCost[UT,I];
         fRequiredWeapons[WT].Required := fRequiredWeapons[WT].Required + fWarriorsDemands[UT];
       end
       else
