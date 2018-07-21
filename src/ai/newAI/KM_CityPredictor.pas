@@ -42,7 +42,7 @@ type
     fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor: Single;
     fCityStats: TCityStats;
     fWareBalance: TWareBalanceArray;
-    fFarmBuildHistory: THouseBuildHistory;
+    fFarmBuildHistory: THouseBuildHistory; // Farms are another exception in production (production is delayed and depends on position of each farm)
     fSetup: TKMHandAISetup;
 
     procedure UpdateWareProduction(aWT: TKMWareType);
@@ -54,6 +54,7 @@ type
     procedure UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
     procedure ActualizeWeaponProduction();
     procedure UpdateCityStats();
+    procedure CityInitialization();
   public
     RequiredHouses: TRequiredHousesArray;
 
@@ -65,9 +66,12 @@ type
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
     property WorkerCount: Word read fWorkerCount;
+    property GoldMineCnt: Integer read fGoldMineCnt write fGoldMineCnt;
+    property IronMineCnt: Integer read fIronMineCnt write fIronMineCnt;
+    property FieldCnt: Integer read fFieldCnt write fFieldCnt;
+    property BuildCnt: Integer read fBuildCnt write fBuildCnt;
 
     procedure AfterMissionInit();
-    procedure CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
@@ -156,6 +160,15 @@ begin
   inherited Create;
   fOwner := aPlayer;
   fSetup := aSetup;
+  fWorkerCount := 0;
+  fGoldMineCnt := 0;
+  fIronMineCnt := 0;
+  fFieldCnt := 0;
+  fBuildCnt := 0;
+  fMaxIronWeapProd := 0;
+  fMaxWoodWeapProd := 0;
+  fMaxSoldiersInMin := 0;
+  fPeaceFactor := 0;
   with fFarmBuildHistory do
   begin
     Count := 1;
@@ -248,12 +261,6 @@ procedure TKMCityPredictor.MarkExhaustedIronMine();
 begin
   fIronMineCnt := fIronMineCnt - 1;
   ActualizeWeaponProduction();
-end;
-
-
-procedure TKMCityPredictor.AfterMissionInit;
-begin
-
 end;
 
 
@@ -447,6 +454,7 @@ procedure TKMCityPredictor.ActualizeWeaponProduction();
 const
   IRON_WARFARE: set of TKMWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
   STANDARD_WARFARE: array[0..3] of TKMWareType = (wt_Axe, wt_Pike, wt_Bow, wt_Shield);
+  MAX_IRON_PRODUCTION = 6;
   MIN_WOOD_PRODUCTION = 1;
   MAX_WOOD_PRODUCTION = 4;
   AFTER_PEACE_SCALING = 1 / (40*10*60); // Peace factor will be completely removed after {40} ticks since end of peace
@@ -469,7 +477,7 @@ begin
                             );
 
   // Iron weapons
-  MaxIronWeapProd := Min(Round(fBuildCnt * GA_PREDICTOR_CityInitialization_Space), fIronMineCnt);
+  MaxIronWeapProd := Min(MAX_IRON_PRODUCTION, Min(Round(fBuildCnt * GA_PREDICTOR_CityInitialization_Space), fIronMineCnt));
   // Wood weapons (depends on available space) - here is maximal possible production in this loc
   MaxWoodWeapProd := Round(Min(fFieldCnt,fBuildCnt) * GA_PREDICTOR_CityInitialization_Fertility);
 
@@ -505,17 +513,12 @@ end;
 
 
 // City initialization, estimation of maximal possible production and restriction by peace time and loc properties
-procedure TKMCityPredictor.CityInitialization(aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+procedure TKMCityPredictor.CityInitialization();
 const
   SCALE_MIN_PEACE_TIME = 60;
   SCALE_MAX_PEACE_TIME = 90;
   SCALE_PEACE_FACTOR = 1.0 / ((SCALE_MAX_PEACE_TIME - SCALE_MIN_PEACE_TIME)*1.0);
 begin
-  fGoldMineCnt := aGoldMineCnt;
-  fIronMineCnt := aIronMineCnt;
-  fFieldCnt := aFieldCnt;
-  fBuildCnt := aBuildCnt;
-
   fPeaceFactor := Max(0,
                       (Min(SCALE_MAX_PEACE_TIME, gGame.GameOptions.Peacetime) - SCALE_MIN_PEACE_TIME)
                      ) * SCALE_PEACE_FACTOR;
@@ -524,7 +527,13 @@ begin
 
   // Decide count of workers + build nodes
   // gHands[fOwner].AI.Setup.WorkerCount -> better use local variable
-  fWorkerCount := Min(20 + Round(15 * fPeaceFactor), Round((Min(aFieldCnt,aBuildCnt)+500) * GA_PREDICTOR_CityInitialization_Worker));
+  fWorkerCount := Min(20 + Round(10 * fPeaceFactor), Round((Min(fFieldCnt,fBuildCnt)+500) * GA_PREDICTOR_CityInitialization_Worker));
+end;
+
+
+procedure TKMCityPredictor.AfterMissionInit;
+begin
+  CityInitialization();
 end;
 
 
@@ -596,8 +605,8 @@ begin
   // Compute basic house requirements
   UpdateBasicHouses(aTick, False);
   // Dont build anything if there is not completed school
-  if (Stats.GetHouseQty(htSchool) = 0)
-    OR ( (Stats.GetHouseQty(htSchool) = 1)
+  if (fCityStats.Houses[htSchool] = 0)
+    OR ( (fCityStats.Houses[htSchool] = 1)
          AND (not (Planner.PlannedHouses[htSchool].Plans[0].Placed)
               OR not ( (Planner.PlannedHouses[htSchool].Plans[0].House <> nil)
                        AND Planner.PlannedHouses[htSchool].Plans[0].House.IsComplete
