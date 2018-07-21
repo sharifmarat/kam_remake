@@ -709,9 +709,9 @@ var
       WoodReq := Round((DEFAULT_COEFICIENT - WoodReq) / 5.0); // 5 is equal to sum of all requirements in leather category
       for UT in WOOD_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-            if (TroopCost[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TroopCost[UT,I] ] do
+          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
+            if (TROOP_COST[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * WoodReq);
     end;
 
@@ -725,9 +725,9 @@ var
       IronReq := Round((DEFAULT_COEFICIENT - IronReq) / 5.0); // 5 is equal to sum of all requirements in iron category
       for UT in IRON_ARMY do
         if not gHands[fOwner].Locks.GetUnitBlocked(UT) then
-          for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-            if (TroopCost[UT,I] <> wt_None) then
-              with fRequiredWeapons[ TroopCost[UT,I] ] do
+          for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
+            if (TROOP_COST[UT,I] <> wt_None) then
+              with fRequiredWeapons[ TROOP_COST[UT,I] ] do
                 Required := Required + Round(DEFAULT_ARMY_REQUIREMENTS[UT] * IronReq);
     end;
   end;
@@ -749,7 +749,7 @@ var
 //  gt_Melee,            //ut_MetalBarbarian
 //  gt_Mounted           //ut_Horseman
 //);
-//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
+//TROOP_COST: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
 //  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
 //  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
 //  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -806,10 +806,10 @@ begin
 
   // Get count of needed weapons
   for UT := ut_AxeFighter to WARRIOR_EQUIPABLE_MAX do // Skip militia
-    for I := Low(TroopCost[UT]) to High(TroopCost[UT]) do
-      if (TroopCost[UT,I] <> wt_None) then
+    for I := Low(TROOP_COST[UT]) to High(TROOP_COST[UT]) do
+      if (TROOP_COST[UT,I] <> wt_None) then
       begin
-        WT := TroopCost[UT,I];
+        WT := TROOP_COST[UT,I];
         fRequiredWeapons[WT].Required := fRequiredWeapons[WT].Required + fWarriorsDemands[UT];
       end
       else
