@@ -1206,6 +1206,7 @@ end;
 procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TKMAllianceType);
 begin
   fAlliances[aIndex] := aValue;
+  gAIFields.Supervisor.UpdateAlliances();
 end;
 
 
