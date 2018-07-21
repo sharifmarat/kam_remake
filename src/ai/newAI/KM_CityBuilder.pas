@@ -14,13 +14,13 @@ var
   GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
   GA_BUILDER_CreateShortcuts_MaxWork    : Single = 9.321095646;
   GA_BUILDER_ChHTB_FractionCoef         : Single = 9.673275352;
-  GA_BUILDER_ChHTB_TrunkFactor          : Single = 5.370502472;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single = 9.370810389;
+  GA_BUILDER_ChHTB_TrunkFactor          : Single = 17.256;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single = 1;
   GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
   GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
   GA_BUILDER_STONE_SHORTAGE             : Single = 6.846969;
-  GA_BUILDER_WOOD_SHORTAGE              : Single = 10.05567646;
+  GA_BUILDER_WOOD_SHORTAGE              : Single = 4.757;
   GA_BUILDER_GOLD_SHORTAGE              : Single = 35.64543295;
 
 
@@ -71,7 +71,7 @@ type
     property TrunkShortage: Boolean read fTrunkShortage;
     property GoldShortage: Boolean read fGoldShortage;
 
-    procedure AfterMissionInit(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+    procedure AfterMissionInit();
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
 
     procedure UpdateState(aTick: Cardinal; out aFreeWorkersCnt: Integer);
@@ -194,7 +194,7 @@ begin
 end;
 
 
-procedure TKMCityBuilder.AfterMissionInit(out aGoldMineCnt, aIronMineCnt, aFieldCnt, aBuildCnt: Integer);
+procedure TKMCityBuilder.AfterMissionInit();
 var
   I: Integer;
 begin
