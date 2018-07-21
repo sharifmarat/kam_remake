@@ -307,7 +307,7 @@ var
 begin
   Result := 0;
   for PL := 0 to gHands.Count - 1 do
-    if (PL <> aOwner) then
+    //if (PL <> aOwner) then
     begin
       Result := Result + GetAllPresences(PL, aIdx);
       if (Result > MAX_SOLDIERS_IN_POLYGON) then // Influences may overlap but in 1 polygon can be max [MAX_SOLDIERS_IN_POLYGON] soldiers
