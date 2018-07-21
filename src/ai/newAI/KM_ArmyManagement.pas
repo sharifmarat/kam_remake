@@ -7,14 +7,29 @@ uses
   KM_Houses, KM_Units, KM_Units_Warrior,
   KM_UnitGroups, KM_AISetup,
   KM_HandStats, KM_ArmyAttack, KM_ArmyDefence,
-  KM_NavMeshFloodPositioning;
+  KM_NavMeshFloodPositioning, KM_NavMeshInfluences;
 
 type
+  // Agent interface (for Supervisor)
+  TKMAttackRequest = record
+    Active: Boolean;
+    BestAllianceCmp,WorstAllianceCmp: Single;
+    BestEnemy: TKMHandIndex; // or index of Enemies array
+    BestPoint: TKMPoint;
+    Enemies: array of TKMHandIndex;
+  end;
+  TKMDefenceRequest = record
+    Point: TKMPointArray;
+    Ally: TKMHandIndex;
+  end;
+
   TKMArmyManagement = class
   private
     fOwner: TKMHandIndex;
     fSetup: TKMHandAISetup;
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
+    fAttackRequest: TKMAttackRequest;
+    fDefenceRequest: TKMDefenceRequest;
 
     fHostileGroups: TList;
     fAttack: TKMArmyAttack;
@@ -38,6 +53,7 @@ type
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
     property Defence: TKMArmyDefence read fDefence write fDefence;
+    property AttackRequest: TKMAttackRequest read fAttackRequest write fAttackRequest;
     property BalanceText: UnicodeString read CombineBalanceStrings;
 
     procedure AfterMissionInit();
@@ -103,6 +119,18 @@ begin
   SaveStream.Write(fLastEquippedTimeIron);
   SaveStream.Write(fLastEquippedTimeLeather);
 
+  with fAttackRequest do
+  begin
+    SaveStream.Write(Active);
+    SaveStream.Write(BestAllianceCmp);
+    SaveStream.Write(WorstAllianceCmp);
+    SaveStream.Write(BestEnemy);
+    SaveStream.Write(BestPoint);
+    SaveStream.Write( Integer(Length(Enemies)) );
+    for I := 0 to Length(Enemies) - 1 do
+      SaveStream.Write(Enemies[I]);
+  end;
+
   SaveStream.Write( Integer(fHostileGroups.Count) );
   for I := 0 to fHostileGroups.Count - 1 do
   begin
@@ -127,6 +155,19 @@ begin
   LoadStream.Read(fOwner);
   LoadStream.Read(fLastEquippedTimeIron);
   LoadStream.Read(fLastEquippedTimeLeather);
+
+  with fAttackRequest do
+  begin
+    LoadStream.Read(Active);
+    LoadStream.Read(BestAllianceCmp);
+    LoadStream.Read(WorstAllianceCmp);
+    LoadStream.Read(BestEnemy);
+    LoadStream.Read(BestPoint);
+    LoadStream.Read(Count);
+    SetLength(Enemies,Count);
+    for I := 0 to Count - 1 do
+      LoadStream.Read(Enemies[I]);
+  end;
 
   LoadStream.Read(Count);
   for I := 0 to Count - 1 do
@@ -211,27 +252,13 @@ begin
     OR (fDefence.Count = 0) then
     Exit;
 
-  //Create a list of troops that need to be trained based on defence position requirements
   FillChar(GroupReq, SizeOf(GroupReq), #0); //Clear up
-  //for I := 0 to fDefence.Count - 1 do
-  //  with fDefence[I] do
-  //    if (CurrentGroup = nil) then
-  //      Inc(GroupReq[GroupType], fDefence.TroopFormations[GroupType].NumUnits)
-  //    else
-  //      Inc(GroupReq[GroupType], Max(fDefence.TroopFormations[GroupType].NumUnits - CurrentGroup.Count, 0));
 
   // Take required warriors from CityManagement (-> implemented consideration of required units + save time)
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
       if (AITroopTrainOrder[GT,I] <> ut_None) then
         Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ] + 1); // Always recruit something
-
-  //If we don't need anyone - Exit
-  //I := 0;
-  //for GT := Low(GroupReq) to High(GroupReq) do
-  //  Inc(I, GroupReq[GT]);
-  //if (I = 0) then
-  //  Exit;
 
   //Find barracks
   SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));
@@ -323,15 +350,110 @@ end;
 
 
 procedure TKMArmyManagement.CheckAttack();
-type TAvailableGroups = record
-  Count: Word;
-  GroupArr: TKMUnitGroupArray;
-  Price: TKMWordArray;
-end;
-  // Order multiple companies with equally distributed group types
-  procedure OrderAttack(aTargetPoint: TKMPoint; aAGCnt: Word; aAvailableGroups: TKMUnitGroupArray);
+type
+  TKMAvailableGroups = record
+    Count: Word;
+    GroupArr: TKMUnitGroupArray;
+  end;
+  // Find all available groups
+  function GetGroups(aTakeAllIn: Boolean): TKMAvailableGroups;
   const
-    MAX_GROUPS_IN_COMPANY = 9;
+    MIN_TROOPS_IN_GROUP = 4;
+  var
+    I: Integer;
+    Group: TKMUnitGroup;
+    AG: TKMAvailableGroups;
+    DP: TKMDefencePosition;
+  begin
+    AG.Count := 0;
+    SetLength(AG.GroupArr, gHands[fOwner].UnitGroups.Count);
+    for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
+    begin
+      Group := gHands[fOwner].UnitGroups[I];
+      if (Group = nil)
+        OR Group.IsDead
+        OR not Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
+        OR (not aTakeAllIn AND (Group.Count < MIN_TROOPS_IN_GROUP)) then
+        Continue;
+      // Add grop pointer to array (but dont increase count now so it will be ignored)
+      AG.GroupArr[AG.Count] := Group;
+      // Check if group can be in array
+      if aTakeAllIn then
+      begin
+        // Take all groups out of attack class
+        if not fAttack.IsGroupInAction(Group) then
+          Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
+      end
+      else
+      begin
+        // Take group in defence position
+        DP := fDefence.FindPositionOf(Group,True); // True = First line will not be considered
+        if (DP <> nil) then
+          Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
+      end;
+    end;
+    Result := AG;
+  end;
+  // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
+  //function FindBestTarget(var aBestTargetPlayer, aTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean = False): Boolean;
+  function FindBestTarget(var aBestTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
+  const
+    ALLIANCE_TARGET_COEF = 0.15;
+    BEST_ALLIANCE_TARGET_COEF = 0.2;
+    DISTANCE_COEF = 0.75; // If second enemy is twice as far away decrease chance by 3/8
+    MIN_COMPARSION = 0.2; // 20% advantage for attacker
+  var
+    I, K, MinDist: Integer;
+    Comparison, BestComparison: Single;
+    OwnerArr: array of TKMHandIndex;
+    EnemyStats: TKMEnemyStatisticsArray;
+  begin
+    Result := False;
+    aTargetPoint := KMPOINT_ZERO;
+
+    // Try to find enemies from owners position
+    SetLength(OwnerArr,1);
+    OwnerArr[0] := fOwner;
+    if not gAIFields.Supervisor.FindClosestEnemies(OwnerArr, EnemyStats) then
+      Exit;
+
+    // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
+    BestComparison := -1;
+    if (Length(EnemyStats) > 0) then
+    begin
+      // Find closest enemy
+      MinDist := High(Integer);
+      for I := 0 to Length(EnemyStats) - 1 do
+        if (MinDist > EnemyStats[I].Distance) then
+          MinDist := EnemyStats[I].Distance;
+
+      for I := 0 to Length(EnemyStats) - 1 do
+      begin
+        // Compute comparison
+        Comparison := + Byte(EnemyStats[I].Player = aBestTargetPlayer) * BEST_ALLIANCE_TARGET_COEF
+                      + gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player)
+                      - (EnemyStats[I].Distance / Max(1,MinDist) - 1) * DISTANCE_COEF;
+        // Consider teammates of best target which is selected by Supervisor
+        for K := 0 to Length(fAttackRequest.Enemies) - 1 do
+          if (fAttackRequest.Enemies[K] = EnemyStats[I].Player) then
+            Comparison := Comparison + ALLIANCE_TARGET_COEF;
+        // Find the best
+        if (Comparison > BestComparison) then
+        begin
+          BestComparison := Comparison;
+          //aTargetOwner := EnemyStats[I].Player;
+          aTargetPoint := EnemyStats[I].ClosestPoint;
+        end;
+      end;
+    end;
+
+    Result := (Length(EnemyStats) > 0) AND (aForceToAttack OR (BestComparison > MIN_COMPARSION));
+  end;
+
+  // Order multiple companies with equally distributed group types
+  procedure OrderAttack(aTargetPoint: TKMPoint; var aAG: TKMAvailableGroups);
+  const
+    MAX_GROUPS_IN_COMPANY = 6;
   var
     I, K, CompaniesCnt, GTMaxCnt, GCnt, HighAG: Integer;
     GT: TKMGroupType;
@@ -340,14 +462,12 @@ end;
   begin
     // Get count of available group types
     FillChar(GTArr, SizeOf(GTArr), #0);
-    //for GT in TKMGroupType do
-    //  GTArr[GT] := 0;
 
-    for I := 0 to aAGCnt - 1 do
-      Inc(  GTArr[ aAvailableGroups[I].GroupType ]  );
+    for I := 0 to aAG.Count - 1 do
+      Inc(  GTArr[ aAG.GroupArr[I].GroupType ]  );
 
-    CompaniesCnt := Max(1, Ceil(aAGCnt / MAX_GROUPS_IN_COMPANY));
-    HighAG := aAGCnt - 1;
+    CompaniesCnt := Max(1, Ceil(aAG.Count / MAX_GROUPS_IN_COMPANY));
+    HighAG := aAG.Count - 1;
     for I := 0 to CompaniesCnt - 1 do
     begin
       GCnt := 0;
@@ -358,13 +478,13 @@ end;
         for K := HighAG downto 0 do
           if (GTMaxCnt <= 0) then
             break
-          else if (aAvailableGroups[K].GroupType = GT) then
+          else if (aAG.GroupArr[K].GroupType = GT) then
           begin
             if (Length(Groups) <= GCnt) then
               SetLength(Groups, GCnt + MAX_GROUPS_IN_COMPANY);
-            Groups[GCnt] := aAvailableGroups[K];
+            Groups[GCnt] := aAG.GroupArr[K];
             GCnt := GCnt + 1;
-            aAvailableGroups[K] := aAvailableGroups[HighAG];
+            aAG.GroupArr[K] := aAG.GroupArr[HighAG];
             HighAG := HighAG - 1;
             GTMaxCnt := GTMaxCnt - 1;
           end;
@@ -375,105 +495,39 @@ end;
     end;
   end;
 const
-  COMPANY_MIN_ATTACK_CHANCE = 0.5;
-  MIN_TROOPS_IN_GROUP = 6;
+  MIN_DEF_RATIO = 1.2;
+  MIN_BEST_ALLI_CMP = 0.8;
+  MIN_WORST_ALLI_CMP = 0.5;
   MIN_GROUPS_IN_ATTACK = 4;
 var
-  ForceToAttack, TakeAllIn: Boolean;
-  BestPrice,BestIdx: Word;
-  I,K: Integer;
-  TargetOwner: TKMHandIndex;
+  TakeAllIn: Boolean;
+  I: Integer;
+  DefRatio: Single;
   TargetPoint: TKMPoint;
-  Group: TKMUnitGroup;
-  DP: TKMDefencePosition;
-  AG: TAvailableGroups;
+  AG: TKMAvailableGroups;
 begin
-  //Do not process attack or defence during peacetime
-  if gGame.IsPeaceTime then Exit;
-
-  // 1. There must be enought soldiers for defences
-  // In case that there are not defeces maps is in combat mode so we should launch everything
-  TakeAllIn := False;
-  ForceToAttack := False;
-  case fDefence.DefenceStatus() of
-    ds_Empty: Exit;
-    ds_Half: ForceToAttack := False;
-    ds_Full: ForceToAttack := True;
-    ds_None: begin
-      TakeAllIn := True;
-      ForceToAttack := True;
-    end;
-  end;
-  // ForceToAttack := ForceToAttack OR (gGame.MissionMode = mm_Tactic); // Maybe force attack in mm_Tactic map? But some of mm_Tactic map are also defensive...
-
-  // Get array of pointers to available groups
-  AG.Count := 0;
-  SetLength(AG.GroupArr, 4);
-  SetLength(AG.Price, 4);
-  for I := 0 to gHands[fOwner].UnitGroups.Count - 1 do
+  fAttackRequest.Active := False;
+  // Check defences and comparison of strength
+  DefRatio := fDefence.DefenceStatus();
+  with fAttackRequest do
   begin
-    Group := gHands[fOwner].UnitGroups[I];
-    if (Group = nil)
-      OR Group.IsDead
-      OR not Group.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
-      OR (not TakeAllIn AND (Group.Count < MIN_TROOPS_IN_GROUP)) then
-      Continue;
-    // Add grop pointer to array (but dont increase count now so it will be ignored)
-    if (Length(AG.GroupArr) <= AG.Count) then
-    begin
-      SetLength(AG.GroupArr, AG.Count + 16);
-      SetLength(AG.Price, AG.Count + 16);
-    end;
-    AG.GroupArr[AG.Count] := Group;
-    AG.Price[AG.Count] := 0;
-    // Check if group can be in array
-    if ForceToAttack then
-    begin
-      // Take all groups out of attack class
-      if not fAttack.IsGroupInAction(Group) then
-        Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
-    end
-    else
-    begin
-      // Take group in defence position
-      DP := fDefence.FindPositionOf(Group);
-      if (DP <> nil) then
-      begin
-        AG.Price[AG.Count] := DP.Weight; // Change weight
-        Inc(AG.Count,1); // Confirm that the group should be in array GroupArr
-      end;
-    end;
+    TakeAllIn := (BestAllianceCmp > MIN_BEST_ALLI_CMP) // The weakest opponent have not enought soldiers
+                 OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP); // The strongest opponent have not enought soldiers
+    if (DefRatio < MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
+      Exit;
   end;
-  // If we dont have enought groups then exit
-  if (AG.Count = 0) OR (not ForceToAttack AND (AG.Count < MIN_GROUPS_IN_ATTACK + fDefence.FirstLineCnt)) then
-    Exit
-  // Else remove first line from available groups
-  else if not ForceToAttack then
-    for I := 0 to Min(fDefence.FirstLineCnt,AG.Count) - 1 do
-    begin
-      BestPrice := 0;
-      BestIdx := 0;
-      for K := 1 to AG.Count - 1 do
-        if (BestPrice < AG.Price[K]) then
-        begin
-          BestPrice := AG.Price[K];
-          BestIdx := K;
-        end;
-      Dec(AG.Count,1);
-      AG.GroupArr[BestIdx] := AG.GroupArr[AG.Count];
-      AG.Price[BestIdx] := AG.Price[AG.Count];
-    end;
-
-  if fAttack.FindBestTarget(TargetOwner, TargetPoint, ForceToAttack) then
+  // Get array of pointers to available groups
+  AG := GetGroups(TakeAllIn);
+  // If we dont have enought groups then exit (if we should take all check if there are already some combat groups)
+  if (not TakeAllIn OR (fAttack.Count > 2)) AND (AG.Count < MIN_GROUPS_IN_ATTACK) then
+    Exit;
+  // Find best target of owner and order attack
+  if FindBestTarget(fAttackRequest.BestEnemy, TargetPoint, TakeAllIn) then
   begin
     for I := 0 to AG.Count - 1 do
       fDefence.ReleaseGroup(AG.GroupArr[I]);
-    OrderAttack(TargetPoint, AG.Count, AG.GroupArr);
-    //if ForceToAttack OR (gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(TargetOwner, AvailableGroups) > COMPANY_MIN_ATTACK_CHANCE) then
+    OrderAttack(TargetPoint, AG);
   end;
-
-  //Comparison := gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player) - (EnemyStats[I].Distance / MinDist - 1) * DISTANCE_COEF;
-  //fAttack.AttackChance(AvailableGroups);
 end;
 
 
@@ -541,16 +595,11 @@ end;
 
 
 procedure TKMArmyManagement.UpdateState(aTick: Cardinal);
-const
-  PERF_TIME_LIMIT = MAX_HANDS * 10 * 10;
-  PERF_TIME_LIMIT_Tactic = MAX_HANDS * 5;
 begin
   if (aTick mod MAX_HANDS = fOwner) then
   begin
     CheckThreats();
-    if (aTick > 2*MAX_HANDS) AND // Make sure that influences and defences are actualized
-      ( ((gGame.MissionMode = mm_Tactic) AND (aTick mod PERF_TIME_LIMIT_Tactic = fOwner))
-      OR (aTick mod PERF_TIME_LIMIT = fOwner) ) then
+    if fAttackRequest.Active AND not gGame.IsPeaceTime then
       CheckAttack();
     RecruitSoldiers();
     CheckGroupsState();
