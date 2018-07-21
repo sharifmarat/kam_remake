@@ -474,6 +474,7 @@ var
   Idx: Word;
 begin
   PolyArr := gAIFields.NavMesh.Polygons;
+  fBestDefLines.Count := 0;
   CreateBorders();
   while RemoveFromQueue(Idx) do
     if CanBeExpanded(Idx) then
