@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, SysUtils, KromUtils, Types,
   KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils,
-  KM_Terrain, KM_ResHouses, KM_ResWares, KM_Houses, KM_HouseSchool, KM_HouseBarracks, KM_HouseInn;
+  KM_Terrain, KM_ResHouses, KM_ResWares, KM_Houses, KM_HouseSchool, KM_HouseBarracks;
 
 //Memo on directives:
 //Dynamic - declared and used (overriden) occasionally
@@ -162,7 +162,6 @@ type
     procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
-    function IsHungry: Boolean;
     procedure AbandonWalk;
     property  DesiredPassability: TKMTerrainPassability read GetDesiredPassability;
     property  Owner: TKMHandIndex read fOwner;
@@ -179,7 +178,7 @@ type
     procedure HitPointsChangeFromScript(aAmount: Integer);
     procedure HitPointsDecrease(aAmount: Byte; aAttacker: TKMUnit);
     property  HitPointsMax: Byte read GetHitPointsMax;
-    procedure CancelUnitTask(aFreeTaskObject: Boolean = True);
+    procedure CancelUnitTask;
     property  Visible: Boolean read fVisible write fVisible;
     property  InHouse: TKMHouse read fInHouse write SetInHouse;
     property  IsDead: Boolean read fIsDead;
@@ -215,15 +214,8 @@ type
     procedure Paint; virtual;
   end;
 
-  //Common class for all civil units
-  TKMCivilUnit = class(TKMUnit)
-  public
-    function GoEat(aInn: TKMHouseInn): Boolean;
-    function CheckCondition: Boolean;
-  end;
-
   //This is common class for all units, who can be an owner for house (recruits and all citizen workers)
-  TKMSettledUnit = class(TKMCivilUnit)
+  TKMSettledUnit = class(TKMUnit)
   private
     procedure CleanHousePointer(aFreeAndNilTask: Boolean = False);
   protected
@@ -256,7 +248,7 @@ type
   end;
 
   //Serf - transports all wares between houses
-  TKMUnitSerf = class(TKMCivilUnit)
+  TKMUnitSerf = class(TKMUnit)
   private
     fCarry: TKMWareType;
   public
@@ -267,7 +259,6 @@ type
     procedure Deliver(aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: integer); overload;
     procedure Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: integer); overload;
     function TryDeliverFrom(aFrom: TKMHouse): Boolean;
-    procedure DelegateDelivery(aToSerf: TKMUnitSerf);
 
     property Carry: TKMWareType read fCarry;
     procedure CarryGive(Res: TKMWareType);
@@ -278,7 +269,7 @@ type
   end;
 
   //Worker class - builds everything in game
-  TKMUnitWorker = class(TKMCivilUnit)
+  TKMUnitWorker = class(TKMUnit)
   public
     procedure BuildHouse(aHouse: TKMHouse; aIndex: Integer);
     procedure BuildHouseRepair(aHouse: TKMHouse; aIndex: Integer);
@@ -309,7 +300,7 @@ type
 implementation
 uses
   KM_CommonTypes, KM_Game, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
-  KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits,
+  KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits, KM_HouseInn,
   KM_Hand, KM_HouseWoodcutters,
 
   KM_UnitActionAbandonWalk,
@@ -332,30 +323,6 @@ uses
   KM_UnitTaskSelfTrain,
   KM_UnitTaskThrowRock,
   KM_GameTypes;
-
-
-{ TKMCivilUnit }
-function TKMCivilUnit.CheckCondition: Boolean;
-var
-  H: TKMHouseInn;
-begin
-  Result := False;
-  if IsHungry then
-  begin
-    H := gHands[fOwner].FindInn(fCurrPosition, Self);
-    GoEat(H);
-  end;
-end;
-
-function TKMCivilUnit.GoEat(aInn: TKMHouseInn): Boolean;
-begin
-  Result := False;
-  if aInn <> nil then
-  begin
-    fUnitTask := TKMTaskGoEat.Create(aInn, Self);
-    Result := True;
-  end;
-end;
 
 
 { TKMSettledUnit }
@@ -476,9 +443,7 @@ begin
 
   fThought := th_None;
 
-  CheckCondition;
-
-  if IsHungry then
+  if fCondition < UNIT_MIN_CONDITION then
   begin
     HInn := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
     if HInn <> nil then
@@ -771,19 +736,6 @@ begin
 end;
 
 
-//Delegate delivery to other serf
-procedure TKMUnitSerf.DelegateDelivery(aToSerf: TKMUnitSerf);
-begin
-  Assert(UnitTask is TKMTaskDeliver, 'UnitTask is not TKMTaskDeliver');
-
-  TKMTaskDeliver(UnitTask).DelegateToOtherSerf(aToSerf); //Update task to be used with new serf
-  aToSerf.fUnitTask := UnitTask; //Set delivery task to new serf
-
-  //AbandonWalk if needed and cleanup task pointer, but do not free task object, as it was delegated to other serf already
-  CancelUnitTask(False);
-end;
-
-
 constructor TKMUnitSerf.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
@@ -830,6 +782,7 @@ end;
 
 function TKMUnitSerf.UpdateState: Boolean;
 var
+  H: TKMHouseInn;
   OldThought: TKMUnitThought;
   WasIdle: Boolean;
 begin
@@ -841,7 +794,12 @@ begin
   OldThought := fThought;
   fThought := th_None;
 
-  CheckCondition;
+  if fCondition < UNIT_MIN_CONDITION then
+  begin
+    H := gHands[fOwner].FindInn(fCurrPosition, Self);
+    if H <> nil then
+      fUnitTask := TKMTaskGoEat.Create(H, Self);
+  end;
 
   //Only show quest thought if we have been idle since the last update (not HadTask)
   //and not thinking anything else (e.g. death)
@@ -950,15 +908,22 @@ end;
 
 
 function TKMUnitWorker.UpdateState: Boolean;
+var
+  H: TKMHouseInn;
 begin
   Result := True; //Required for override compatibility
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnitWorker.UpdateState', fCurrPosition);
   if inherited UpdateState then Exit;
 
-  CheckCondition;
+  if fCondition < UNIT_MIN_CONDITION then
+  begin
+    H := gHands[fOwner].FindInn(fCurrPosition, Self);
+    if H <> nil then
+      fUnitTask := TKMTaskGoEat.Create(H, Self);
+  end;
 
-  if (fThought = th_Build) and (fUnitTask = nil) then
+  if (fThought = th_Build)and(fUnitTask = nil) then
     fThought := th_None; //Remove build thought if we are no longer doing anything
 
   //If we are still stuck on a house for some reason, get off it ASAP
@@ -1485,16 +1450,13 @@ begin
 end;
 
 
-procedure TKMUnit.CancelUnitTask(aFreeTaskObject: Boolean = True);
+procedure TKMUnit.CancelUnitTask;
 begin
   if (fUnitTask <> nil)
     and (fCurrentAction is TKMUnitActionWalkTo)
     and not TKMUnitActionWalkTo(GetUnitAction).DoingExchange then
     AbandonWalk;
-  if aFreeTaskObject then
-    FreeAndNil(fUnitTask)
-  else
-    fUnitTask := nil;
+  FreeAndNil(fUnitTask);
 end;
 
 
@@ -1776,12 +1738,6 @@ end;
 procedure TKMUnit.Feed(Amount: Single);
 begin
   fCondition := Math.min(fCondition + Round(Amount), UNIT_MAX_CONDITION);
-end;
-
-
-function TKMUnit.IsHungry: Boolean;
-begin
-  Result := fCondition < UNIT_MIN_CONDITION;
 end;
 
 
