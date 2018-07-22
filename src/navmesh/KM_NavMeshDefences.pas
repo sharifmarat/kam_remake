@@ -6,8 +6,6 @@ uses
   KM_NavMeshFloodFill;
 
 type
-  TKMHndIdxArray = array of TKMHandIndex;
-
   TDefenceInfo = record
     Influence, EnemyInfluence, AllyInfluence: Byte;
     Distance: Word;
@@ -38,7 +36,7 @@ type
 
   TKMTeamDefPos = array of record
     Polygons: Word;
-    Owners: TKMHndIdxArray;
+    Owners: TKMHandIndexArray;
     DefPosArr: TKMDefencePosArr;
   end;
 
@@ -71,7 +69,7 @@ type
 
     function FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
     function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
-    function FindTeamDefences(var aOwners: TKMHndIdxArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
+    function FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
     //procedure DEBUG();
   end;
 
@@ -102,7 +100,7 @@ type
     procedure AddPolygon(aIdx: Word);
     function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
     function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
-    procedure FindTeamDefences(var aOwners: TKMHndIdxArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+    procedure FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
     //procedure DEBUG();
   end;
 
@@ -270,7 +268,7 @@ begin
 end;
 
 
-function TForwardFF.FindTeamDefences(var aOwners: TKMHndIdxArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
+function TForwardFF.FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
 begin
   fOwner := aOwners[0];
   fFirstLine := 0;
@@ -621,7 +619,7 @@ begin
 end;
 
 
-procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHndIdxArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
 var
   SeparatedDefLines: TKMDefLinesArray;
   DefLinesReq: TKMWordArray;
@@ -644,7 +642,7 @@ var
     for I := 0 to Length(aPLsDefAreas) - 1 do
       Inc(  DefLinesReq[ aPLsDefAreas[I] ], Round( SeparatedDefLines[ aPLsDefAreas[I] ].PolyCnt / PolySum * aDefPosReq[aIdx] )  );
   end;
-  function GetOwners(DefLineIdx: Integer; var aPLsDefAreas: TKMByte2Array): TKMHndIdxArray;
+  function GetOwners(DefLineIdx: Integer; var aPLsDefAreas: TKMByte2Array): TKMHandIndexArray;
   var
     IdxPL,K,Cnt: Integer;
   begin
