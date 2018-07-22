@@ -16,11 +16,7 @@ type
     BestAllianceCmp,WorstAllianceCmp: Single;
     BestEnemy: TKMHandIndex; // or index of Enemies array
     BestPoint: TKMPoint;
-    Enemies: array of TKMHandIndex;
-  end;
-  TKMDefenceRequest = record
-    Point: TKMPointArray;
-    Ally: TKMHandIndex;
+    Enemies: TKMHandIndexArray;
   end;
 
   TKMArmyManagement = class
@@ -29,7 +25,7 @@ type
     fSetup: TKMHandAISetup;
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fAttackRequest: TKMAttackRequest;
-    fDefenceRequest: TKMDefenceRequest;
+    fDefendRequest: TKMDefendRequest;
 
     fHostileGroups: TList;
     fAttack: TKMArmyAttack;
@@ -54,13 +50,13 @@ type
     property Attack: TKMArmyAttack read fAttack write fAttack;
     property Defence: TKMArmyDefence read fDefence write fDefence;
     property AttackRequest: TKMAttackRequest read fAttackRequest write fAttackRequest;
+    property DefendRequest: TKMDefendRequest read fDefendRequest write fDefendRequest;
     property BalanceText: UnicodeString read CombineBalanceStrings;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
-    //function GetArmyDemand(): ...;
     procedure CheckNewThreat(aHouse: TKMHouse; aAttacker: TKMUnitWarrior); overload;
     procedure CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit); overload;
 
@@ -127,8 +123,15 @@ begin
     SaveStream.Write(BestEnemy);
     SaveStream.Write(BestPoint);
     SaveStream.Write( Integer(Length(Enemies)) );
-    for I := 0 to Length(Enemies) - 1 do
-      SaveStream.Write(Enemies[I]);
+    if (Length(Enemies) > 0) then
+      SaveStream.Write(Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
+  end;
+
+  with fDefendRequest do
+  begin
+    SaveStream.Write(PointsCnt);
+    if (Length(Points) > 0) then
+      SaveStream.Write(Points[0], SizeOf(Points[0])*PointsCnt);
   end;
 
   SaveStream.Write( Integer(fHostileGroups.Count) );
@@ -165,8 +168,16 @@ begin
     LoadStream.Read(BestPoint);
     LoadStream.Read(Count);
     SetLength(Enemies,Count);
-    for I := 0 to Count - 1 do
-      LoadStream.Read(Enemies[I]);
+    if (Length(Enemies) > 0) then
+      LoadStream.Read(Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
+  end;
+
+  with fDefendRequest do
+  begin
+    LoadStream.Read(PointsCnt);
+    SetLength(Points,PointsCnt);
+    if (Length(Points) > 0) then
+      LoadStream.Read(Points[0], SizeOf(Points[0])*PointsCnt);
   end;
 
   LoadStream.Read(Count);
@@ -217,25 +228,15 @@ begin
 end;
 
 
-// It is not army management who will decide which unit should be recruited but rather consideration of enemy's units (Eye function)
-//function TKMArmyManagement.GetArmyDemand(): ...;
-//begin
-//
-//end;
-
-
 procedure TKMArmyManagement.RecruitSoldiers();
-
   function CanEquipIron: Boolean;
   begin
     Result := fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeIron + fSetup.EquipRateIron);
   end;
-
   function CanEquipLeather: Boolean;
   begin
     Result := fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather);
   end;
-
 var
   Barracks: array of TKMHouseBarracks;
   H: TKMHouse;
@@ -398,14 +399,14 @@ type
   //function FindBestTarget(var aBestTargetPlayer, aTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean = False): Boolean;
   function FindBestTarget(var aBestTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
   const
-    ALLIANCE_TARGET_COEF = 0.15;
+    ALLIANCE_TARGET_COEF = 0.1;
     BEST_ALLIANCE_TARGET_COEF = 0.2;
-    DISTANCE_COEF = 0.75; // If second enemy is twice as far away decrease chance by 3/8
-    MIN_COMPARSION = 0.2; // 20% advantage for attacker
+    DISTANCE_COEF = 0.3; // If second enemy is twice as far away decrease chance by 3/8
+    MIN_COMPARSION = -0.2; // advantage for defender (but we are attacking as a team and team have advantage)
   var
-    I, K, MinDist: Integer;
-    Comparison, BestComparison: Single;
-    OwnerArr: array of TKMHandIndex;
+    I, K, MinDist, MaxDist: Integer;
+    Comparison, BestComparison, invDistInterval: Single;
+    OwnerArr: TKMHandIndexArray;
     EnemyStats: TKMEnemyStatisticsArray;
   begin
     Result := False;
@@ -423,20 +424,24 @@ type
     begin
       // Find closest enemy
       MinDist := High(Integer);
+      MaxDist := 0;
       for I := 0 to Length(EnemyStats) - 1 do
-        if (MinDist > EnemyStats[I].Distance) then
-          MinDist := EnemyStats[I].Distance;
+      begin
+          MinDist := Min(MinDist, EnemyStats[I].Distance);
+          MaxDist := Max(MaxDist, EnemyStats[I].Distance);
+      end;
+      invDistInterval := 1 / Max(1,MaxDist - MinDist);
 
       for I := 0 to Length(EnemyStats) - 1 do
       begin
         // Compute comparison
-        Comparison := + Byte(EnemyStats[I].Player = aBestTargetPlayer) * BEST_ALLIANCE_TARGET_COEF
-                      + gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(fOwner, EnemyStats[I].Player)
-                      - (EnemyStats[I].Distance / Max(1,MinDist) - 1) * DISTANCE_COEF;
+        Comparison := + gAIFields.Eye.ArmyEvaluation.CompareStrength(fOwner, EnemyStats[I].Player) // <-1,1>
+                      + Byte(EnemyStats[I].Player = aBestTargetPlayer) * BEST_ALLIANCE_TARGET_COEF // (+0.1)
+                      - (EnemyStats[I].Distance - MinDist) * invDistInterval * DISTANCE_COEF; // -<0,0.3>
         // Consider teammates of best target which is selected by Supervisor
         for K := 0 to Length(fAttackRequest.Enemies) - 1 do
           if (fAttackRequest.Enemies[K] = EnemyStats[I].Player) then
-            Comparison := Comparison + ALLIANCE_TARGET_COEF;
+            Comparison := Comparison + ALLIANCE_TARGET_COEF; // (+0.1)
         // Find the best
         if (Comparison > BestComparison) then
         begin
@@ -589,7 +594,7 @@ begin
       gHands.CleanUpGroupPointer(Group);
     end;
   end;
-  fDefence.FindEnemyInDefLine(UGA);
+  fDefence.FindEnemyInDefLine(UGA, fDefendRequest);
 end;
 
 
