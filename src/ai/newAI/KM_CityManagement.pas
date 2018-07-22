@@ -564,6 +564,26 @@ end;
 
 
 procedure TKMCityManagement.CheckWareDistribution();
+  // Serfs are too ill to bring coal to metallurgists if AI place it 1 tile farther than iron production so there has to be created this function
+  function GetGoldBalance(): Boolean;
+  const
+    MAX_DEFICIT = 2;
+  var
+    I, Deficit, HouseCnt: Integer;
+    H: TKMHouse;
+  begin
+    HouseCnt := 0;
+    Deficit := 0;
+    with Builder.Planner.PlannedHouses[htMetallurgists] do
+      for I := 0 to Count - 1 do
+        if (Plans[I].House <> nil) AND not (Plans[I].House.IsDestroyed) then
+        begin
+          Inc(HouseCnt);
+          H := Plans[I].House;
+          Inc(Deficit, H.CheckResIn(wt_GoldOre) + H.CheckResOut(wt_GoldOre) - H.CheckResIn(wt_Coal) - H.CheckResOut(wt_Coal));
+        end;
+    Result := (Deficit / HouseCnt) > MAX_DEFICIT;
+  end;
 begin
   with gHands[fOwner].Stats do
   begin
@@ -585,6 +605,13 @@ begin
       gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 1;
       gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 0;
       gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 0;
+    end
+    else if GetGoldBalance() then
+    begin
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htMetallurgists] := 5;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htIronSmithy] := 2;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htWeaponSmithy] := 1;
+      gHands[fOwner].Stats.WareDistribution[wt_Coal, htArmorSmithy] := 1;
     end
     else
     begin
@@ -612,7 +639,7 @@ begin
 
     gHands[fOwner].Houses.UpdateResRequest;
   end;
-end;
+end; 
 
 
 // Calculate weapons demand from combat AI requirements
