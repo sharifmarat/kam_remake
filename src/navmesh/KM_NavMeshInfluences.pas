@@ -16,7 +16,7 @@ type
   // 1 universal class for city and army influence search
   TNavMeshInfluenceSearch = class(TNavMeshFloodFill)
   private
-    fEnemies: array of TKMHandIndex;
+    fEnemies: TKMHandIndexArray;
   protected
     fOwner: TKMHandIndex;
     fHouseInfluence: Boolean;
