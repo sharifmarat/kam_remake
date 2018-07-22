@@ -591,7 +591,8 @@ begin
   end;
 
   // Determine first line (divided by count of allies - it is rought because allies can have different size of defensive line but better than nothing)
-  aFirstLine := Round(aFirstLine / AllianceCnt);
+  if not aMinDefeces then
+    aFirstLine := Round(aFirstLine / AllianceCnt);
 
   SetLength(fDefPosArr, Cnt);
   Result := True;
@@ -625,17 +626,17 @@ var
   DefLinesReq: TKMWordArray;
   procedure AddDefRequirements(aIdx: Integer; var aPLsDefAreas: TKMByteArray);
   var
-    I, PolySum: Integer;
+    I, Cnt, PolySum: Integer;
   begin
     // Check length
-    I := Length(DefLinesReq);
-    if (Length(SeparatedDefLines) <> I) then
+    Cnt := Length(DefLinesReq);
+    if (Length(SeparatedDefLines) <> Cnt) then
     begin
       SetLength(DefLinesReq, Length(SeparatedDefLines));
-      FillChar(DefLinesReq[I], SizeOf(DefLinesReq[I]) * (Length(DefLinesReq) - I), #0);
+      FillChar(DefLinesReq[Cnt], SizeOf(DefLinesReq[Cnt]) * (Length(DefLinesReq) - Cnt), #0);
     end;
     // Compute sum of polygons
-    PolySum := 0;
+    PolySum := 1;
     for I := 0 to Length(aPLsDefAreas) - 1 do
       Inc(PolySum, SeparatedDefLines[ aPLsDefAreas[I] ].PolyCnt);
     // Distribute requirements
@@ -789,12 +790,12 @@ begin
   for I := 0 to Length(StartPolygons) - 1 do
   begin
     StartPolygon[0] := StartPolygons[I];
-    if aClean AND (I = 0) then // First case of first player
+    if aClean AND (I = 0) then // First start polygon of first player
       InitQueue(0, StartPolygon)
     else
     begin
       VisitMark := fQueueArray[ StartPolygon[0] ].Visited;
-      if (VisitMark > 0) then // Defence area is known
+      if (VisitMark > 0) AND (VisitMark < $FF) then // Defence area is known
       begin
         for K := Low(aPLDefAreas) to High(aPLDefAreas) do
           if (aPLDefAreas[K]+1 = VisitMark) then
