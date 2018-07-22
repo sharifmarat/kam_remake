@@ -89,9 +89,7 @@ type
     function OrderToAttack(aActualPosition: TKMPoint; UA: TKMUnitArray; UGA: TKMUnitGroupArray; HA: TKMHouseArray): Boolean;
     function OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boolean;
   public
-
     DEBUG_UA_POINTS, DEBUG_UGA_POINTS: TKMPointArray;
-
 
     constructor Create(aOwner: TKMHandIndex; aCompanyMode: TKMCompanyMode);
     constructor Load(LoadStream: TKMemoryStream);
@@ -1355,8 +1353,8 @@ begin
   begin
     Company := fCompanies.Items[I];
     Company.UpdateState(aTick);
-    if (  (Company.SquadCnt = 0) OR (Company.State = cs_Idle)  )
-      AND (  (Company.CompanyMode in [cm_Attack, cm_Destruction]) OR not DetectEnemyPresence(Company.TargetPoint)  )  then
+    if (  (Company.SquadCnt = 0) OR (Company.State = cs_Idle)  ) then
+      //AND (  (Company.CompanyMode in [cm_Attack, cm_Destruction]) OR not DetectEnemyPresence(Company.TargetPoint)  )  then
       fCompanies.Remove( Company );
   end;
 end;
