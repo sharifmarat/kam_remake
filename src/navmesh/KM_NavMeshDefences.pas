@@ -715,9 +715,9 @@ begin
         fBestDefLines.Count := fBestDefLines.Count + 1;
         break;
       end;
-    fQueueArray[aIdx].Visited := fVisitedIdx;
+    fQueueArray[aIdx].Visited := fVisitedIdx; // Border can be visited multiple times so mark it as visited
   end;
-  Result := (fQueueArray[aIdx].Visited = fVisitedIdx);
+  Result := (fQueueArray[aIdx].Visited > 0); // Visited Array is always filled with zeros
 end;
 
 procedure TFilterFF.MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint);
