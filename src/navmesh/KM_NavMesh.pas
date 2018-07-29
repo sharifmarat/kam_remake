@@ -960,7 +960,7 @@ AddLine2(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPActLine^.Node ] );
     PPrevLine := nil;
     PActLine := LineArray[aLineIdx]^.FirstLine;
     repeat
-      if (fNodes[ PActLine^.Node ].X > Point.X ) then
+      if (fNodes[ PActLine^.Node ].X >= Point.X ) then
         break;
       PPrevLine := PActLine;
       PActLine := PActLine^.Next;
