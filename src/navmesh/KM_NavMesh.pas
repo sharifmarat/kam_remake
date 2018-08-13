@@ -800,8 +800,7 @@ var
 
   procedure TryConnect(aRemovedNode, aLineIdx: Word; aLeftDirection: Boolean; aBorderPoly: Boolean = False);
   const
-    //SQR_MAX_RADIUS = 11.9*11.9;
-    SQR_MAX_RADIUS = 15*15;
+    SQR_MAX_RADIUS = 16*16;
   var
     PPoly1, PPoly2, PPoly3: PPolyLine;
   begin
@@ -1518,6 +1517,7 @@ var
 begin
   if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
     Exit;
+  //AfterMissionInit();
 
   // EXTRACT POLYGONS
   //{ Border Lines
