@@ -176,7 +176,8 @@ const
   CAMPAIGN_DATA_TYPE = 'TCampaignData'; //Type of the global variable
   CAMPAIGN_DATA_VAR = 'CampaignData'; //Name of the global variable
   VALID_GLOBAL_VAR_TYPES: set of TPSBaseType = [
-    btU8, //Byte, Boolean, Enums
+    btU8,  //Byte, Boolean, Enums
+    btU16, //Word
     btS32, //Integer
     btSingle, //Single
     btString, //Means AnsiString in PascalScript. No need for scripts to use Unicode since LIBX files take care of that.
@@ -1318,6 +1319,7 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            LoadStream.Read(tbtu8(Src^)); //Byte, Boolean
+    btU16:           LoadStream.Read(tbtu16(Src^)); //Word
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
@@ -1424,6 +1426,7 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            SaveStream.Write(tbtu8(Src^)); //Byte, Boolean
+    btU16:           SaveStream.Write(tbtu16(Src^)); //Word
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
