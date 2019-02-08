@@ -66,7 +66,6 @@ end;
 
 procedure TNavMeshFloodFill.MakeNewQueue();
 begin
-  fQueueCnt := 0;
   fVisitedIdx := fVisitedIdx + 1;
   if (Length(fQueueArray) < Length(gAIFields.NavMesh.Polygons)) then
   begin
@@ -80,9 +79,12 @@ end;
 
 // Queue is realised inside of array (constant length) instead of interconnected elements
 procedure TNavMeshFloodFill.ClearVisitIdx();
+var
+  I: Word;
 begin
   fVisitedIdx := 1;
-  FillChar(fQueueArray[0], SizeOf(fQueueArray[0]) * Length(fQueueArray), #0);
+  for I := Low(fQueueArray) to High(fQueueArray) do
+    fQueueArray[I].Visited := 0;
 end;
 
 

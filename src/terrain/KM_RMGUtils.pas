@@ -840,11 +840,12 @@ end;
 
 procedure TKMFloodWithQueue.ClearCountVisitedArr();
 var
-  Y: SmallInt;
+  X,Y: SmallInt;
 begin
   fActualIdx := 0;
   for Y := Low(fCountVisitedArr) to High(fCountVisitedArr) do
-    FillChar(fCountVisitedArr[Y,0], SizeOf(fCountVisitedArr[Y,0]) * Length(fCountVisitedArr[Y]), #0);
+    for X := Low(fCountVisitedArr[Y]) to High(fCountVisitedArr[Y]) do
+      fCountVisitedArr[Y,X] := 0;
 end;
 
 procedure TKMFloodWithQueue.InsertInQueue(aX,aY: Integer; aProbability: Single);
@@ -1006,13 +1007,14 @@ end;
 
 procedure TKMHeightFillWalkableAreas.ClearVisitedArr();
 var
-  Y: SmallInt;
+  X,Y: SmallInt;
 begin
   if (fVisited >= 255) then
   begin
     fVisited := 0;
     for Y := Low(fVisitedArr) to High(fVisitedArr) do
-      FillChar(fVisitedArr[Y,0], SizeOf(fVisitedArr[Y,0]) * Length(fVisitedArr[Y]), #0);
+      for X := Low(fVisitedArr[Y]) to High(fVisitedArr[Y]) do
+        fVisitedArr[Y,X] := 0;
   end;
   fVisited := fVisited + 1;
 end;

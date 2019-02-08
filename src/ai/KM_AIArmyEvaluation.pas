@@ -8,21 +8,20 @@ type
   TKMGroupEval = record
     HitPoints, Attack, AttackHorse, Defence, DefenceProjectiles: Single;
   end;
+
   TKMArmyEval = array[TKMGroupType] of TKMGroupEval;
   TKMGameEval = array[0 .. MAX_HANDS - 1] of TKMArmyEval;
 
-  TKMGroupStrengthArray = array[TKMGroupType] of Single;
 
   //This class evaluate self army relatively enemy armies
   TKMArmyEvaluation = class
   private
     fEvals: TKMGameEval; //Results of evaluation
 
-    function CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
+    procedure EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
     function GetUnitEvaluation(aUT: TKMUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
     function GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
     function GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TKMAllianceType): TKMArmyEval;
-    procedure EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
   public
     constructor Create();
     destructor Destroy; override;
@@ -33,7 +32,7 @@ type
     property Evaluation[aPlayer: TKMHandIndex]: TKMArmyEval read GetEvaluation;
     property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TKMAllianceType]: TKMArmyEval read GetAllianceStrength;
 
-    function CompareStrength(aPlayer, aOponent: TKMHandIndex): Single;
+    //function AttackForceChance(aOponent: TKMHandIndex; aGroups: TKMUnitGroupArray): Single;
     function CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -52,12 +51,12 @@ uses
 constructor TKMArmyEvaluation.Create();
 begin
   inherited Create;
-  FillChar(fEvals, SizeOf(fEvals), #0);
 end;
 
 
 destructor TKMArmyEvaluation.Destroy;
 begin
+
   inherited;
 end;
 
@@ -65,14 +64,14 @@ end;
 procedure TKMArmyEvaluation.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.WriteA('ArmyEvaluation');
-  SaveStream.Write(fEvals, SizeOf(fEvals));
+  SaveStream.Write(fEvals, SizeOf(TKMGameEval));
 end;
 
 
 procedure TKMArmyEvaluation.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.ReadAssert('ArmyEvaluation');
-  LoadStream.Read(fEvals, SizeOf(fEvals));
+  LoadStream.Read(fEvals, SizeOf(TKMGameEval));
 end;
 
 
@@ -97,37 +96,7 @@ end;
 
 function TKMArmyEvaluation.GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
 begin
-  Move(fEvals[aPlayer], Result, SizeOf(fEvals[aPlayer]));
-end;
-
-
-function TKMArmyEvaluation.CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
-  var
-    GT: TKMGroupType;
-  begin
-    for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      with aEval[GT] do
-        Result[GT] := Attack * Hitpoints * Defence;
-        //Result[GT] := Attack * Max(1, AttackHorse) * Hitpoints * Defence;
-  end;
-
-
-function TKMArmyEvaluation.CompareStrength(aPlayer, aOponent: TKMHandIndex): Single;
-var
-  Sum, Diff: Single;
-  GT: TKMGroupType;
-  PlayerArmy, EnemyArmy: TKMGroupStrengthArray;
-begin
-  PlayerArmy := CalculateStrength( Evaluation[aPlayer] );
-  EnemyArmy := CalculateStrength( Evaluation[aOponent] );
-  Sum := 0;
-  Diff := 0;
-  for GT := Low(TKMGroupType) to High(TKMGroupType) do
-  begin
-    Sum := Sum + PlayerArmy[GT] + EnemyArmy[GT];
-    Diff := Diff + PlayerArmy[GT] - EnemyArmy[GT];
-  end;
-  Result := Diff / Max(1,Sum); // => number in <-1,1> ... positive = we have advantage and vice versa
+  Result := fEvals[aPlayer];
 end;
 
 
@@ -136,23 +105,55 @@ var
   PL: Integer;
   GT: TKMGroupType;
 begin
-  FillChar(Result, SizeOf(Result), #0);
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
+    with Result[GT] do
+    begin
+      Hitpoints := 0;
+      Attack := 0;
+      AttackHorse := 0;
+      Defence := 0;
+      DefenceProjectiles := 0;
+    end;
   for PL := 0 to gHands.Count - 1 do
     if gHands[PL].Enabled AND (gHands[aPlayer].Alliances[PL] = aAlliance) then
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         with Result[GT] do
         begin
-          Hitpoints          := Hitpoints          + fEvals[PL,GT].Hitpoints;
-          Attack             := Attack             + fEvals[PL,GT].Attack;
-          AttackHorse        := AttackHorse        + fEvals[PL,GT].AttackHorse;
-          Defence            := Defence            + fEvals[PL,GT].Defence;
+          Hitpoints := Hitpoints                   + fEvals[PL,GT].Hitpoints;
+          Attack := Attack                         + fEvals[PL,GT].Attack;
+          AttackHorse := AttackHorse               + fEvals[PL,GT].AttackHorse;
+          Defence := Defence                       + fEvals[PL,GT].Defence;
           DefenceProjectiles := DefenceProjectiles + fEvals[PL,GT].DefenceProjectiles;
         end;
 end;
 
 
+//function TKMArmyEvaluation.AttackForceChance(aOponent: TKMHandIndex; aGroups: TKMUnitGroupArray): Single;
+//var
+//
+//begin
+//  EnemyEval := Evaluation[aOponent];
+//end;
+
+
 // Approximate way how to compute strength of 2 alliances
 function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
+type
+  TKMGroupStrengthArray = array[TKMGroupType] of Single;
+  function CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
+  const
+    DEF_COEFICIENT = 100; // Increase weight of defence
+  var
+    GT: TKMGroupType;
+  begin
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
+      with aEval[GT] do
+      begin
+        Result[GT] := Attack * Hitpoints * Defence;
+        //if (GT = gt_AntiHorse) then
+        //  Resutl[GT] := Result[GT] * AttackHorse;
+      end;
+  end;
 var
   Sum, Diff: Single;
   GT: TKMGroupType;
@@ -201,8 +202,15 @@ begin
   Stats := gHands[aPlayer].Stats;
 
   // Clear array
-  FillChar(fEvals[aPlayer], SizeOf(fEvals[aPlayer]), #0);
-
+  for GT := Low(TKMGroupType) to High(TKMGroupType)  do
+    with fEvals[aPlayer,GT] do
+    begin
+      Hitpoints := 0;
+      Attack := 0;
+      AttackHorse := 0;
+      Defence := 0;
+      DefenceProjectiles := 0;
+    end;
   // Fill array with reference values
   for UT := WARRIOR_MIN to WARRIOR_MAX do
   begin
@@ -225,13 +233,11 @@ end;
 
 
 procedure TKMArmyEvaluation.UpdateState(aTick: Cardinal);
-const
-  PERF_SUM = MAX_HANDS * 10;
 var
   PL: TKMHandIndex;
 begin
-  PL := aTick mod PERF_SUM;
-  if (PL < gHands.Count) AND gHands[PL].Enabled then
+  PL := aTick mod gHands.Count;
+  if gHands[PL].Enabled then
     EvaluatePower(PL, True);
 end;
 
