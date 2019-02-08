@@ -2,11 +2,10 @@ unit KM_AI;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_CommonTypes, KM_Defaults,
+  KM_CommonClasses, KM_CommonTypes, KM_CommonUtils, KM_Defaults,
   KM_Houses, KM_Units, KM_Units_Warrior,
   KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral,
   KM_CityManagement, KM_ArmyManagement;
-
 
 type
   //Things that player does automatically
@@ -48,7 +47,6 @@ type
     property HasWon: Boolean read GetHasWon;
     property HasLost: Boolean read GetHasLost;
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
-    function GetWonOrLostString: UnicodeString; //Get string represantation of Hand WonOrLost
     procedure OwnerUpdate(aPlayer: TKMHandIndex);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
     procedure UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
@@ -262,17 +260,6 @@ begin
 end;
 
 
-function TKMHandAI.GetWonOrLostString: UnicodeString;
-begin
-  Result := '';
-  case fWonOrLost of
-    wol_None: Result := 'Undefined';
-    wol_Won:  Result := 'Won';
-    wol_Lost: Result := 'Lost';
-  end;
-end;
-
-
 procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandIndex);
 begin
   fOwner := aPlayer;
@@ -438,12 +425,16 @@ end;
 
 
 procedure TKMHandAI.AfterMissionInit();
+var
+  Time: Cardinal;
 begin
   fMayor.AfterMissionInit();
 
+  Time := TimeGet();
   gAIFields.Eye.OwnerUpdate(fOwner);
   fCityManagement.AfterMissionInit();
   fArmyManagement.AfterMissionInit();
+  Time := TimeGet() - Time;
 end;
 
 
