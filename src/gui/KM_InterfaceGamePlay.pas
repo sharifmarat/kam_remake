@@ -3758,17 +3758,22 @@ end;
 
 
 procedure TKMGamePlayInterface.UpdateSelectedObject;
+var
+  UpdateNewSelected: Boolean;
 begin
+  UpdateNewSelected := False;
   // Update unit/house information
   if gMySpectator.Selected is TKMUnitGroup then
   begin
     HidePages;
-    fGuiGameUnit.ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), fGuiGameUnit.AskDismiss)
+    fGuiGameUnit.ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), fGuiGameUnit.AskDismiss);
+    UpdateNewSelected := True;
   end else
   if gMySpectator.Selected is TKMUnit then
   begin
     HidePages;
-    fGuiGameUnit.ShowUnitInfo(TKMUnit(gMySpectator.Selected), fGuiGameUnit.AskDismiss)
+    fGuiGameUnit.ShowUnitInfo(TKMUnit(gMySpectator.Selected), fGuiGameUnit.AskDismiss);
+    UpdateNewSelected := True;
   end else
   begin
     fGuiGameUnit.JoiningGroups := False;
@@ -3777,6 +3782,7 @@ begin
       HidePages;
       SwitchPage(nil); // Hide main back button if we were in e.g. stats
       fGuiGameHouse.Show(TKMHouse(gMySpectator.Selected));
+      UpdateNewSelected := True;
     end
     else
       if fGuiGameHouse.Visible then
@@ -3784,6 +3790,9 @@ begin
       if fGuiGameUnit.Visible then
         fGuiGameUnit.Hide;
   end;
+
+  if UpdateNewSelected then
+    gMySpectator.UpdateNewSelected;
 end;
 
 

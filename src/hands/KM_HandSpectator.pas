@@ -27,6 +27,7 @@ type
     procedure UpdateFogOfWarIndex;
     function GetLastSpecSelectedObj: TObject;
     function IsLastSelectObjectValid(aObject: TObject): Boolean;
+    procedure UpdateNewSelected(var aNewSelected: TObject; aAllowSelectAllies: Boolean = False); overload;
   public
     constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
@@ -40,6 +41,7 @@ type
     property LastSpecSelectedObj: TObject read GetLastSpecSelectedObj;
     function HitTestCursor(aIncludeAnimals: Boolean = False): TObject;
     function HitTestCursorWGroup(aIncludeAnimals: Boolean = False): TObject;
+    procedure UpdateNewSelected; overload;
     procedure UpdateSelect;
     procedure Load(LoadStream: TKMemoryStream);
     procedure Save(SaveStream: TKMemoryStream);
@@ -186,40 +188,49 @@ begin
 end;
 
 
+procedure TKMSpectator.UpdateNewSelected;
+var
+  TmpSelected: TObject;
+begin
+  TmpSelected := Selected; //We do not want to change Selected object actually, just update fIsSelectedMyObj field is good enought
+  UpdateNewSelected(TmpSelected);
+end;
+
+
+procedure TKMSpectator.UpdateNewSelected(var aNewSelected: TObject; aAllowSelectAllies: Boolean = False);
+var
+  OwnerIndex: TKMHandIndex;
+begin
+  OwnerIndex := GetGameObjectOwnerIndex(aNewSelected);
+  if OwnerIndex <> -1 then
+  begin
+    if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
+    begin
+      if (ALLOW_SELECT_ALLY_UNITS or
+          ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
+            and aAllowSelectAllies)
+        and (Hand.Alliances[OwnerIndex] = at_Ally))
+          or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
+        fIsSelectedMyObj := False
+      else
+        aNewSelected := nil;
+    end else
+      fIsSelectedMyObj := True;
+  end;
+end;
+
+
 //Select anything player CAN select below cursor
 procedure TKMSpectator.UpdateSelect;
 var
   NewSelected: TObject;
-
-  procedure CheckNewSelected(aAllowSelectAllies: Boolean = False);
-  var
-    OwnerIndex: TKMHandIndex;
-  begin
-    OwnerIndex := GetGameObjectOwnerIndex(NewSelected);
-    if OwnerIndex <> -1 then
-    begin
-      if OwnerIndex <> fHandIndex then  // check if we selected our unit/ally's or enemy's
-      begin
-        if (ALLOW_SELECT_ALLY_UNITS or
-            ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
-              and aAllowSelectAllies)
-          and (Hand.Alliances[OwnerIndex] = at_Ally))
-            or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
-          fIsSelectedMyObj := False
-        else
-          NewSelected := nil;
-      end else
-        fIsSelectedMyObj := True;
-    end;
-  end;
-
-var
   UID: Integer;
 begin
   NewSelected := gHands.GetUnitByUID(gGameCursor.ObjectUID);
+
   //In-game player can select only own and ally Units
   if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-    CheckNewSelected;
+    UpdateNewSelected(NewSelected);
 
   //Don't allow the player to select dead units
   if ((NewSelected is TKMUnit) and TKMUnit(NewSelected).IsDeadOrDying)
@@ -232,7 +243,7 @@ begin
     NewSelected := gHands.GetGroupByMember(TKMUnitWarrior(NewSelected));
 
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected;
+      UpdateNewSelected(NewSelected);
   end;
 
   //Update selected groups selected unit
@@ -246,7 +257,7 @@ begin
 
     //In-game player can select only own and ally Units
     if not (gGame.GameMode in [gmMultiSpectate, gmMapEd, gmReplaySingle, gmReplayMulti]) then
-      CheckNewSelected(True);
+      UpdateNewSelected(NewSelected, True);
 
     //Don't allow the player to select destroyed houses
     if (NewSelected is TKMHouse) and TKMHouse(NewSelected).IsDestroyed then
