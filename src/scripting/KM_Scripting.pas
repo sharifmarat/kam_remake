@@ -182,7 +182,8 @@ const
     btU16, //Word
     btS32, //Integer
     btSingle, //Single
-    btString, //Means AnsiString in PascalScript. No need for scripts to use Unicode since LIBX files take care of that.
+    btString, //Means AnsiString in PascalScript.
+    btUnicodeString, //string and UnicodeString
     btStaticArray, btArray, //Static and Dynamic Arrays
     btRecord, btSet];
 
@@ -1350,6 +1351,7 @@ begin
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
+    btUnicodeString: LoadStream.ReadW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     LoadStream.Read(ElemCount);
                     Assert(ElemCount = TPSTypeRec_StaticArray(aType).Size, 'Script array element count mismatches saved count');
@@ -1457,6 +1459,7 @@ begin
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
+    btUnicodeString: SaveStream.WriteW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     ElemCount := TPSTypeRec_StaticArray(aType).Size;
                     SaveStream.Write(ElemCount);
