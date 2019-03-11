@@ -877,17 +877,17 @@ begin
   Inc(Line);
 
   for I := 1 to 2 do
-  if gRes.Wares[gRes.Houses[aHouse.HouseType].ResInput[I]].IsValid then
-  begin
-    ResRow_Common_Resource_WS[RowRes].TexID     := gRes.Wares[HSpec.ResInput[I]].GUIIcon;
-    ResRow_Common_Resource_WS[RowRes].Caption   := gRes.Wares[HSpec.ResInput[I]].Title;
-    ResRow_Common_Resource_WS[RowRes].Hint      := gRes.Wares[HSpec.ResInput[I]].Title;
-    ResRow_Common_Resource_WS[RowRes].WareCount := aHouse.CheckResIn(HSpec.ResInput[I]);
-    ResRow_Common_Resource_WS[RowRes].Top       := Base + Line * LINE_HEIGHT;
-    ResRow_Common_Resource_WS[RowRes].Show;
-    Inc(Line);
-    Inc(RowRes);
-  end;
+    if gRes.Wares[gRes.Houses[aHouse.HouseType].ResInput[I]].IsValid then
+    begin
+      ResRow_Common_Resource_WS[RowRes].TexID     := gRes.Wares[HSpec.ResInput[I]].GUIIcon;
+      ResRow_Common_Resource_WS[RowRes].Caption   := gRes.Wares[HSpec.ResInput[I]].Title;
+      ResRow_Common_Resource_WS[RowRes].Hint      := gRes.Wares[HSpec.ResInput[I]].Title;
+      ResRow_Common_Resource_WS[RowRes].WareCount := aHouse.CheckResIn(HSpec.ResInput[I]);
+      ResRow_Common_Resource_WS[RowRes].Top       := Base + Line * LINE_HEIGHT;
+      ResRow_Common_Resource_WS[RowRes].Show;
+      Inc(Line);
+      Inc(RowRes);
+    end;
 
   //Show Output
   ShowCommonOutput(aHouse, Base, Line, RowRes);
