@@ -779,6 +779,11 @@ begin
     if (aHouse = htArmorSmithy) and (I in [1,2]) then
       I2 := 3-I;
 
+    // Need to swap Timber and Leather for the ArmorWorkshop
+    // For some reason KaM stores these wares in swapped order, here we fix it (1 <-> 2)
+    if (aHouse = htArmorWorkshop) and (I in [1,2]) then
+      I2 := 3-I;
+
     Id := gRes.Houses[aHouse].SupplyIn[I2, Count] + 1;
     AddHouseSupplySprite(Id);
   end;
