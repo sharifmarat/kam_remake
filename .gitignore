@@ -33,6 +33,7 @@ bugreport.txt
 /data/defines/houses.dat
 /data/defines/pattern.dat
 /data/defines/unit.dat
+/data/gfx/video 
 /data/gfx/*.bbm
 /data/gfx/*.lbm
 /data/sfx
