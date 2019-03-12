@@ -243,7 +243,7 @@ const
     NeedsPlayerOrder: True;
     BuildIcon:        321;
     TabletSpriteId:   271;
-    Input:            (wt_Wood,       wt_Leather,    wt_None,       wt_None);
+    Input:            (wt_Leather,    wt_Wood,       wt_None,       wt_None);
     Output:           (wt_Armor,      wt_Shield,     wt_None,       wt_None);
     UnlockedByHouse:  htTannery;
     SnowSpriteId:     2067;

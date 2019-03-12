@@ -43,6 +43,7 @@ type
     procedure GameStart(aGameMode: TKMGameMode);
     procedure GameEnd(aGameMode: TKMGameMode);
     procedure GameDestroy;
+    procedure GamePlayed;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -99,6 +100,8 @@ type
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
     procedure FPSMeasurement(aFPS: Cardinal);
 
+    function DynamicFOWEnabled: Boolean;
+
     property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
@@ -117,7 +120,7 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  SysUtils, Math, TypInfo, KromUtils,
+  SysUtils, DateUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
@@ -398,6 +401,12 @@ begin
 end;
 
 
+function TKMGameApp.DynamicFOWEnabled: Boolean;
+begin
+  Result := DYNAMIC_FOG_OF_WAR or ((gGame <> nil) and gGame.DynamicFOW)
+end;
+
+
 function TKMGameApp.Game: TKMGame;
 begin
   Result := gGame;
@@ -468,6 +477,16 @@ begin
   end;
 
   gGame.ReadyToStop := True;
+
+  if (gGame.GamePlayInterface <> nil) and (gGame.GamePlayInterface.GuiGameSpectator <> nil) then
+    gGame.GamePlayInterface.GuiGameSpectator.CloseDropBox;
+
+  if (gGame.GameResult in [gr_Win, gr_Defeat]) then
+  begin
+    GamePlayed;
+    if fGameSettings.AutosaveAtGameEnd then
+      gGame.Save(Format('%s %s #%d', [gGame.GameName, FormatDateTime('yyyy-mm-dd', Now), fGameSettings.DayGamesCount]), Now);
+  end;
 
   if Assigned(fOnGameEnd) then
     fOnGameEnd(gGame.GameMode);
@@ -831,6 +850,16 @@ begin
 end;
 
 
+procedure TKMGameApp.GamePlayed;
+begin
+  if CompareDate(fGameSettings.LastDayGamePlayed, Today) < 0 then
+    fGameSettings.DayGamesCount := 0;
+
+  fGameSettings.LastDayGamePlayed := Today;
+  fGameSettings.DayGamesCount := fGameSettings.DayGamesCount + 1;
+end;
+
+
 function TKMGameApp.SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 begin
   Result := TKMSavesCollection.FullPath(aName, aExt, aIsMultiplayer);
@@ -844,6 +873,7 @@ begin
                                         fGameSettings.AutoKickTimeout,
                                         fGameSettings.PingInterval,
                                         fGameSettings.MasterAnnounceInterval,
+                                        fGameSettings.ServerDynamicFOW,
                                         fGameSettings.ServerMapsRosterEnabled,
                                         fGameSettings.ServerMapsRosterStr,
                                         KMRange(fGameSettings.ServerLimitPTFrom, fGameSettings.ServerLimitPTTo),

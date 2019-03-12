@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Top = 419
   HelpType = htKeyword
   BorderStyle = bsNone
-  ClientHeight = 718
+  ClientHeight = 785
   ClientWidth = 521
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -26,12 +26,12 @@ object FormMain: TFormMain
   OnShow = FormShow
   DesignSize = (
     521
-    718)
+    785)
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 698
+    Top = 765
     Width = 521
     Height = 20
     Panels = <
@@ -72,13 +72,13 @@ object FormMain: TFormMain
     Left = 320
     Top = 8
     Width = 193
-    Height = 688
+    Height = 736
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
-      Top = 442
+      Top = 474
       Width = 177
       Height = 89
       Caption = ' Graphics tweaks '
@@ -171,7 +171,7 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Top = 384
+      Top = 416
       Width = 177
       Height = 57
       Caption = ' User Interface '
@@ -249,7 +249,7 @@ object FormMain: TFormMain
     end
     object GroupBox2: TGroupBox
       Left = 8
-      Top = 200
+      Top = 232
       Width = 177
       Height = 185
       Caption = ' AI '
@@ -386,7 +386,7 @@ object FormMain: TFormMain
       Left = 8
       Top = 104
       Width = 177
-      Height = 97
+      Height = 128
       Caption = ' Debug render '
       TabOrder = 5
       object Label2: TLabel
@@ -432,12 +432,12 @@ object FormMain: TFormMain
         Top = 72
         Width = 97
         Height = 17
-        Caption = 'Selection buffer'
+        Caption = 'Select. buffer'
         TabOrder = 3
         OnClick = ControlsUpdate
       end
       object chkShowTerrainIds: TCheckBox
-        Left = 105
+        Left = 100
         Top = 40
         Width = 79
         Height = 17
@@ -446,7 +446,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkShowTerrainKinds: TCheckBox
-        Left = 105
+        Left = 100
         Top = 56
         Width = 79
         Height = 17
@@ -455,7 +455,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkTilesGrid: TCheckBox
-        Left = 105
+        Left = 100
         Top = 72
         Width = 79
         Height = 17
@@ -463,12 +463,39 @@ object FormMain: TFormMain
         TabOrder = 6
         OnClick = ControlsUpdate
       end
+      object chkShowGameTick: TCheckBox
+        Left = 8
+        Top = 88
+        Width = 97
+        Height = 17
+        Caption = 'Show game tick'
+        TabOrder = 7
+        OnClick = ControlsUpdate
+      end
+      object chkSkipRender: TCheckBox
+        Left = 8
+        Top = 104
+        Width = 89
+        Height = 17
+        Caption = 'Skip Render'
+        TabOrder = 8
+        OnClick = ControlsUpdate
+      end
+      object chkSkipSound: TCheckBox
+        Left = 100
+        Top = 104
+        Width = 89
+        Height = 17
+        Caption = 'Skip Sound'
+        TabOrder = 9
+        OnClick = ControlsUpdate
+      end
     end
     object GroupBoxLogs: TGroupBox
       Left = 8
-      Top = 529
+      Top = 562
       Width = 177
-      Height = 150
+      Height = 170
       Caption = 'Logs'
       TabOrder = 6
       object chkLogDelivery: TCheckBox
@@ -481,7 +508,7 @@ object FormMain: TFormMain
         OnClick = ControlsUpdate
       end
       object chkLogCommands: TCheckBox
-        Left = 90
+        Left = 101
         Top = 16
         Width = 73
         Height = 17
@@ -502,7 +529,7 @@ object FormMain: TFormMain
       end
       object RGLogNetPackets: TRadioGroup
         Left = 8
-        Top = 48
+        Top = 66
         Width = 161
         Height = 78
         Caption = 'Net packets log level'
@@ -517,11 +544,29 @@ object FormMain: TFormMain
       end
       object chkLogsShowInChat: TCheckBox
         Left = 8
-        Top = 129
+        Top = 146
         Width = 137
         Height = 17
         Caption = 'Show logs in MP chat'
         TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkLogRngChecks: TCheckBox
+        Left = 101
+        Top = 32
+        Width = 73
+        Height = 17
+        Caption = 'RngChecks'
+        TabOrder = 5
+        OnClick = ControlsUpdate
+      end
+      object chkLogGameTick: TCheckBox
+        Left = 8
+        Top = 48
+        Width = 87
+        Height = 17
+        Caption = 'Game tick'
+        TabOrder = 6
         OnClick = ControlsUpdate
       end
     end

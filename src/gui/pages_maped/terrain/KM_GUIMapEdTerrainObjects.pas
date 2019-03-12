@@ -33,7 +33,7 @@ type
 
     procedure ObjectsPalette_Refresh(Sender: TObject);
     procedure ObjPalette_UpdateControlsPosition;
-    procedure ObjectsPalette_OnShow(aVisible: Boolean);
+    procedure ObjectsPalette_OnShow(Sender: TObject; aVisible: Boolean);
     procedure ObjPalette_ClickShift(Sender: TObject; Shift: TShiftState);
 
     procedure ObjectsPaletteButton_Click(Sender: TObject);
@@ -191,7 +191,7 @@ begin
 end;
 
 
-procedure TKMMapEdTerrainObjects.ObjectsPalette_OnShow(aVisible: Boolean);
+procedure TKMMapEdTerrainObjects.ObjectsPalette_OnShow(Sender: TObject; aVisible: Boolean);
 begin
   if aVisible then
     ObjPalette_UpdateControlsPosition;

@@ -286,7 +286,7 @@ type
 implementation
 uses
   SysUtils, Math, KromUtils,
-  KM_Game, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
+  KM_Game, KM_GameApp, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResUnits, KM_ResMapElements,
@@ -433,7 +433,9 @@ end;
 {Returns self and adds on to the pointer counter}
 function TKMHouse.GetHousePointer: TKMHouse;
 begin
-  inc(fPointerCount);
+  Assert(gGame.AllowGetPointer, 'GetHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
+
+  Inc(fPointerCount);
   Result := Self;
 end;
 
@@ -441,6 +443,8 @@ end;
 {Decreases the pointer counter}
 procedure TKMHouse.ReleaseHousePointer;
 begin
+  Assert(gGame.AllowGetPointer, 'GetHousePointer is not allowed outside of game tick update procedure, it could cause game desync');
+
   if fPointerCount < 1 then
     raise ELocError.Create('House remove pointer for '+gRes.Houses[fHouseType].HouseName, fPosition);
   Dec(fPointerCount);
@@ -488,12 +492,15 @@ begin
   gHands[fOwner].Locks.HouseCreated(fHouseType);
   gHands[fOwner].Stats.HouseCreated(fHouseType, aWasBuilt);
 
-  HA := gRes.Houses[fHouseType].BuildArea;
-  //Reveal house from all points it covers
-  for I := 1 to 4 do
-    for K := 1 to 4 do
-      if HA[I,K] <> 0 then
-        gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+//  if not gGameApp.DynamicFOWEnabled then
+//  begin
+    HA := gRes.Houses[fHouseType].BuildArea;
+    //Reveal house from all points it covers
+    for I := 1 to 4 do
+      for K := 1 to 4 do
+        if HA[I,K] <> 0 then
+          gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_MAX);
+//  end;
 
   CurrentAction := TKMHouseAction.Create(Self, hst_Empty);
   CurrentAction.SubActionAdd([ha_Flagpole, ha_Flag1..ha_Flag3]);
@@ -1602,7 +1609,9 @@ const
   //How much ticks it takes for a house to become completely covered in snow
   SNOW_TIME = 300;
 var
+  I, K: Integer;
   WasOnSnow: Boolean;
+  HA: THouseArea;
 begin
   Inc(FlagAnimStep);
   Inc(WorkAnimStep);
@@ -1619,9 +1628,15 @@ begin
     fSnowStep := Min(fSnowStep + (1 + Byte(gGame.IsMapEditor) * 10) / SNOW_TIME, 1);
 
   //FlagAnimStep is a sort of counter to reveal terrain once a sec
-  if DYNAMIC_FOG_OF_WAR then
-  if FlagAnimStep mod 10 = 0 then
-    gHands.RevealForTeam(fOwner, fPosition, gRes.Houses[fHouseType].Sight, FOG_OF_WAR_INC);
+  if gGameApp.DynamicFOWEnabled and (FlagAnimStep mod FOW_PACE = 0) then
+  begin
+    HA := gRes.Houses[fHouseType].BuildArea;
+    //Reveal house from all points it covers
+    for I := 1 to 4 do
+      for K := 1 to 4 do
+        if HA[I,K] <> 0 then
+          gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), gRes.Houses[fHouseType].Sight, FOG_OF_WAR_INC);
+  end;
 end;
 
 
@@ -1663,9 +1678,26 @@ end;
 
 
 procedure TKMHouse.UpdateState(aTick: Cardinal);
-var HouseUnoccupiedMsgId: Integer;
+const
+  HOUSE_PLAN_SIGHT = 2;
+var
+  I, K: Integer;
+  HouseUnoccupiedMsgId: Integer;
+  HA: THouseArea;
 begin
-  if not IsComplete then Exit; //Don't update unbuilt houses
+  if not IsComplete then
+  begin
+    if gGameApp.DynamicFOWEnabled and ((aTick + fOwner) mod FOW_PACE = 0) then
+    begin
+      HA := gRes.Houses[fHouseType].BuildArea;
+      //Reveal house from all points it covers
+      for I := 1 to 4 do
+        for K := 1 to 4 do
+          if HA[I,K] <> 0 then
+            gHands.RevealForTeam(fOwner, KMPoint(fPosition.X + K - 4, fPosition.Y + I - 4), HOUSE_PLAN_SIGHT, FOG_OF_WAR_INC);
+    end;
+    Exit; //Don't update unbuilt houses
+  end;
 
   fTick := aTick;
 
@@ -1754,11 +1786,11 @@ function TKMHouseSwineStable.FeedBeasts: Byte;
 var
   I: Integer;
 begin
-  Result:=0;
-  inc(BeastAge[KaMRandom(5)+1]); //Let's hope it never overflows MAX
-  for i:=1 to length(BeastAge) do
-    if BeastAge[i]>3 then
-      Result:=i;
+  Result := 0;
+  Inc(BeastAge[KaMRandom(5, 'TKMHouseSwineStable.FeedBeasts') + 1]); //Let's hope it never overflows MAX
+  for I := 1 to Length(BeastAge) do
+    if BeastAge[I] > 3 then
+      Result := I;
 end;
 
 

@@ -7,7 +7,6 @@ uses
   KM_InterfaceGame, KM_Houses, KM_HouseMarket, KM_ResWares;
 
 const LINE_HEIGHT = 25; //Each new Line is placed ## pixels after previous
-const WORKSHOP_WARE: array [1..2] of TKMWareType = (wt_Wood, wt_Leather);
 
 type
   TKMGUIGameHouse = class
@@ -530,6 +529,8 @@ end;
 
 
 procedure TKMGUIGameHouse.Show(aHouse: TKMHouse; aAskDemolish: Boolean);
+const
+  DoNotDisableControls: array[0..1] of TKMControlClass = (TKMLabel, TKMImage);
 var
   I, RowRes, Base, Line, HLabelWidth: Integer;
 begin
@@ -539,6 +540,10 @@ begin
   for I := 0 to Panel_House.ChildCount - 1 do
     if Panel_House.Childs[I] is TKMPanel then
       Panel_House.Childs[I].Hide;
+
+
+
+  Panel_House.SetCanChangeEnable(gMySpectator.IsSelectedMyObj, DoNotDisableControls);
 
   if aHouse = nil then
   begin
@@ -872,17 +877,17 @@ begin
   Inc(Line);
 
   for I := 1 to 2 do
-  if gRes.Wares[gRes.Houses[aHouse.HouseType].ResInput[I]].IsValid then
-  begin
-    ResRow_Common_Resource_WS[RowRes].TexID     := gRes.Wares[HSpec.ResInput[I]].GUIIcon;
-    ResRow_Common_Resource_WS[RowRes].Caption   := gRes.Wares[HSpec.ResInput[I]].Title;
-    ResRow_Common_Resource_WS[RowRes].Hint      := gRes.Wares[HSpec.ResInput[I]].Title;
-    ResRow_Common_Resource_WS[RowRes].WareCount := aHouse.CheckResIn(HSpec.ResInput[I]);
-    ResRow_Common_Resource_WS[RowRes].Top       := Base + Line * LINE_HEIGHT;
-    ResRow_Common_Resource_WS[RowRes].Show;
-    Inc(Line);
-    Inc(RowRes);
-  end;
+    if gRes.Wares[gRes.Houses[aHouse.HouseType].ResInput[I]].IsValid then
+    begin
+      ResRow_Common_Resource_WS[RowRes].TexID     := gRes.Wares[HSpec.ResInput[I]].GUIIcon;
+      ResRow_Common_Resource_WS[RowRes].Caption   := gRes.Wares[HSpec.ResInput[I]].Title;
+      ResRow_Common_Resource_WS[RowRes].Hint      := gRes.Wares[HSpec.ResInput[I]].Title;
+      ResRow_Common_Resource_WS[RowRes].WareCount := aHouse.CheckResIn(HSpec.ResInput[I]);
+      ResRow_Common_Resource_WS[RowRes].Top       := Base + Line * LINE_HEIGHT;
+      ResRow_Common_Resource_WS[RowRes].Show;
+      Inc(Line);
+      Inc(RowRes);
+    end;
 
   //Show Output
   ShowCommonOutput(aHouse, Base, Line, RowRes);
@@ -1299,9 +1304,9 @@ begin
   for I := 1 to 2 do
   begin
     if Sender = ResRow_Common_Resource_WS[I] then
-      gGame.GameInputProcess.CmdHouse(gic_HouseArmorWSDeliveryToggle, ArmorWS, WORKSHOP_WARE[I]);
+      gGame.GameInputProcess.CmdHouse(gic_HouseArmorWSDeliveryToggle, ArmorWS, gRes.Houses[htArmorWorkshop].ResInput[I]);
 
-    Image_ArmorWS_Accept[I].Visible := not ArmorWS.AcceptWareForDelivery(WORKSHOP_WARE[I]);
+    Image_ArmorWS_Accept[I].Visible := not ArmorWS.AcceptWareForDelivery(gRes.Houses[htArmorWorkshop].ResInput[I]);
   end;
 end;
 

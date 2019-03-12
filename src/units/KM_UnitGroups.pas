@@ -282,7 +282,7 @@ begin
   fOrderLoc := KMPointDir(PosX, PosY, aDir);
 
   //Whole group should have the same condition
-  NewCondition := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM)));
+  NewCondition := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnitGroup.Create')));
 
   if gGame.IsMapEditor then
   begin
@@ -815,7 +815,7 @@ begin
     //Idle members should help their comrades
     for I := 0 to Count - 1 do
     if not Members[I].InFight then
-      Members[I].OrderWalk(TKMUnitWarrior(fOffenders[KaMRandom(fOffenders.Count)]).NextPosition, False);
+      Members[I].OrderWalk(TKMUnitWarrior(fOffenders[KaMRandom(fOffenders.Count, 'TKMUnitGroup.CheckForFight')]).NextPosition, False);
   end;
 end;
 

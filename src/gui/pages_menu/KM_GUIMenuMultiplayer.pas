@@ -48,6 +48,7 @@ type
     function ValidatePlayerName(const aName: UnicodeString): Boolean;
     procedure EscKeyDown(Sender: TObject);
     procedure KeyDown(Key: Word; Shift: TShiftState);
+
     procedure UpdateServerDetailsUI;
   protected
     Panel_MultiPlayer: TKMPanel;
@@ -66,7 +67,7 @@ type
       Button_MP_CreateServer: TKMButton;
       Button_MP_FindServer: TKMButton;
 
-      Panel_MPServerDetails: TKMPanel;
+      Panel_MPServerDetails: TKMScrollPanel;
         Label_MP_ServerDetails_Header, Label_MP_GameInfo_Header, Label_MP_Map_Header,
         Label_MP_PlayerList_Header, Label_MP_Team_Header,
         Label_MP_Desc, Label_MP_PT_Times, Label_MP_GameTime, Label_MP_MapName: TKMLabel;
@@ -227,9 +228,9 @@ begin
     Label_Servers_Status.Hide;
 
     //Server details area
-    Panel_MPServerDetails := TKMPanel.Create(Panel_MultiPlayer, 675, 240, 320, 465);
-    Panel_MPServerDetails.Anchors := [anLeft, anTop, anBottom];
-      with TKMBevel.Create(Panel_MPServerDetails, 0, 0, 320, 465) do AnchorsStretch;
+    Panel_MPServerDetails := TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, 320, 465, [sa_Vertical], bsMenu, ssCommon);
+    Panel_MPServerDetails.AnchorsStretch;
+      TKMBevel.Create(Panel_MPServerDetails, 0, 0, 320, 465);
       Label_MP_ServerDetails_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 6, 304, 20, gResTexts[TX_MP_MENU_HEADER_SERVER_DETAILS], fnt_Outline, taCenter);
       Label_MP_GameInfo_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 30, 304, 20, gResTexts[TX_MP_MENU_GAME_INFORMATION], fnt_Outline, taLeft);
       Label_MP_Desc := TKMLabel.Create(Panel_MPServerDetails, 8, 50, 304, 40, '', fnt_Metal, taLeft);
@@ -250,7 +251,7 @@ begin
       Image_MP_Host.Visible := False;
       for I := 1 to MAX_LOBBY_SLOTS do
       begin
-        Label_MP_PlayersNames[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 156*((I-1) div 8), 170 + 20*((I-1) mod 8), 130, 20, '', fnt_Metal, taLeft);
+        Label_MP_PlayersNames[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22, 170 + 20*(I-1), 130, 20, '', fnt_Metal, taLeft);
         Label_MP_PlayersNames[I].Anchors := [anLeft, anTop, anBottom];
         Label_MP_PlayersTeams[I] := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 166, 170 + 20*(I-1), 20, 20, '', fnt_Metal, taLeft);
         Image_MP_PlayerIcons[I] := TKMImage.Create(Panel_MPServerDetails, 8, 170 + 20*(I-1), 16, 11, 0, rxGuiMain);
@@ -295,32 +296,21 @@ end;
 
 procedure TKMMenuMultiplayer.UpdateServerDetailsUI;
 var
-  Rows, I, PlayersCnt: Integer;
-  ShowExtraInfo: Boolean;
+  I: Integer;
 begin
-  //How many rows could fit
-  Rows := (Panel_MPServerDetails.Height - Label_MP_PlayersNames[1].Top) div 20;
-  if fServerSelected and (fSelectedRoomInfo.GameInfo <> nil) then
-    PlayersCnt := fSelectedRoomInfo.GameInfo.PlayerCount
-  else
-    PlayersCnt := MAX_LOBBY_SLOTS;
+  if not fServerSelected or (fSelectedRoomInfo.GameInfo.PlayerCount = 0) then Exit;
 
-  ShowExtraInfo := Rows >= PlayersCnt;
+  //Set all visible
   for I := 1 to MAX_LOBBY_SLOTS do
   begin
-    Label_MP_PlayersNames[I].Left := 8 + 22*Byte(Rows >= PlayersCnt) + 156*((I-1) div Rows);
-    Label_MP_PlayersNames[I].Top := 170 + 20*((I-1) mod Rows);
-    Label_MP_PlayersNames[I].Width := IfThen(ShowExtraInfo, 304 - 22, 150);
+    Image_MP_PlayerIcons[I].Visible := True;
+    Label_MP_PlayersTeams[I].Visible := True;
 
-    // Show team section and icons only when player list has 1 column
-    Image_MP_PlayerIcons[I].Visible := ShowExtraInfo;
-    Label_MP_PlayersTeams[I].Visible := ShowExtraInfo;
-
-    Image_MP_PlayerSpecIcons[I].Visible := ShowExtraInfo;
-    Image_MP_PlayerWolIcons[I].Visible := ShowExtraInfo;
+    Image_MP_PlayerSpecIcons[I].Visible := True;
+    Image_MP_PlayerWolIcons[I].Visible := True;
   end;
-  Label_MP_Team_Header.Visible := ShowExtraInfo;
-  Image_MP_Host.Visible := ShowExtraInfo;
+  Label_MP_Team_Header.Visible := True;
+  Image_MP_Host.Visible := True;
 end;
 
 

@@ -11,7 +11,7 @@ type
   TBooleanArray = array of Boolean;
   TBoolean2Array = array of array of Boolean;
   TKMByteArray = array of Byte;
-  TKMByte2Array = array of array of Byte;
+  TKMByte2Array = array of TKMByteArray;
   TKMByteSetArray = array of TKMByteSet;
   PKMByte2Array = ^TKMByte2Array;
   TKMWordArray = array of Word;
@@ -37,6 +37,7 @@ type
   TPointEventFunc = function (Sender: TObject; const X,Y: Integer): Boolean of object;
   TPointFEvent = procedure (const aPoint: TKMPointF) of object;
   TBooleanEvent = procedure (aValue: Boolean) of object;
+  TBooleanObjEvent = procedure (Sender: TObject; aValue: Boolean) of object;
   TIntegerEvent = procedure (aValue: Integer) of object;
   TObjectIntegerEvent = procedure (Sender: TObject; X: Integer) of object;
   TSingleEvent = procedure (aValue: Single) of object;

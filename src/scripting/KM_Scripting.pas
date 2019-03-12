@@ -7,7 +7,7 @@ uses
   uPSCompiler, uPSRuntime, uPSUtils, uPSDisassembly, uPSDebugger, uPSPreProcessor,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_FileIO,
   KM_ScriptingActions, KM_ScriptingEvents, KM_ScriptingIdCache, KM_ScriptingStates, KM_ScriptingTypes, KM_ScriptingUtils,
-  KM_Houses, KM_Units, KM_UnitGroups, KM_ResHouses;
+  KM_Houses, KM_Units, KM_UnitGroups, KM_ResHouses, ScriptValidatorResult;
 
   //Dynamic scripts allow mapmakers to control the mission flow
 
@@ -117,6 +117,7 @@ type
     fDebugByteCode: AnsiString;
     fExec: TPSDebugExec;
 
+    fValidationIssues: TScriptValidatorResult;
     fErrorHandler: TKMScriptErrorHandler;
     fPreProcessor: TKMScriptingPreProcessor;
 
@@ -151,6 +152,7 @@ type
     function GetErrorMessage(aErrorMsg: TPSPascalCompilerMessage): TKMScriptErrorMessage; overload;
     function GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
 
+    property ValidationIssues: TScriptValidatorResult read fValidationIssues;
     procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
     procedure ExportDataToText;
 
@@ -176,10 +178,12 @@ const
   CAMPAIGN_DATA_TYPE = 'TCampaignData'; //Type of the global variable
   CAMPAIGN_DATA_VAR = 'CampaignData'; //Name of the global variable
   VALID_GLOBAL_VAR_TYPES: set of TPSBaseType = [
-    btU8, //Byte, Boolean, Enums
+    btU8,  //Byte, Boolean, Enums
+    btU16, //Word
     btS32, //Integer
     btSingle, //Single
-    btString, //Means AnsiString in PascalScript. No need for scripts to use Unicode since LIBX files take care of that.
+    btString, //Means AnsiString in PascalScript.
+    btUnicodeString, //string and UnicodeString
     btStaticArray, btArray, //Static and Dynamic Arrays
     btRecord, btSet];
 
@@ -266,6 +270,7 @@ begin
   FreeAndNil(fExec);
   FreeAndNil(fUtils);
   FreeAndNil(fErrorHandler);
+  FreeAndNil(fValidationIssues);
   FreeAndNil(fPreProcessor);
   gScripting := nil;
   inherited;
@@ -274,6 +279,10 @@ end;
 
 procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
 begin
+  if fValidationIssues <> nil then
+    FreeAndNil(fValidationIssues);
+
+  fValidationIssues := TScriptValidatorResult.Create;
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
 
@@ -316,7 +325,10 @@ begin
         Sender.AddUsedVariable(CAMPAIGN_DATA_VAR, CampaignDataType);
       except
         on E: Exception do
+        begin
           fErrorHandler.AppendErrorStr('Error in declaration of global campaign data type|');
+          fValidationIssues.AddError(0, 0, '', 'Error in declaration of global campaign data type');
+        end;
       end;
 
     // Common
@@ -811,6 +823,8 @@ procedure TKMScripting.CompileScript;
 var
   I: Integer;
   Compiler: TPSPascalCompiler;
+  Msg: TPSPascalCompilerMessage;
+  Success: Boolean;
 begin
   Compiler := TPSPascalCompiler.Create; // create an instance of the compiler
   try
@@ -821,15 +835,28 @@ begin
     Compiler.AllowNoEnd := True; //Scripts only use event handlers now, main section is unused
     Compiler.BooleanShortCircuit := True; //Like unchecking "Complete booolean evaluation" in Delphi compiler options
 
-    if not Compiler.Compile(fScriptCode) then  // Compile the Pascal script into bytecode
+    Success := Compiler.Compile(fScriptCode); // Compile the Pascal script into bytecode
+
+    for I := 0 to Compiler.MsgCount - 1 do
     begin
-      for I := 0 to Compiler.MsgCount - 1 do
+      Msg := Compiler.Msg[I];
+
+      if Msg.ErrorType = 'Hint' then
+      begin
+        fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
+      end else if Msg.ErrorType = 'Warning' then
+      begin
+        fErrorHandler.AppendWarning(GetErrorMessage(Compiler.Msg[I]));
+        fValidationIssues.AddWarning(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
+      end else
+      begin
         fErrorHandler.AppendError(GetErrorMessage(Compiler.Msg[I]));
+        fValidationIssues.AddError(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
+      end;
+    end;
+
+    if not Success then
       Exit;
-    end
-      else
-        for I := 0 to Compiler.MsgCount - 1 do
-          fErrorHandler.AppendWarning(GetErrorMessage(Compiler.Msg[I]));
 
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
     Compiler.GetDebugOutput(fDebugByteCode);  // Save the debug output of the compiler
@@ -1254,6 +1281,7 @@ begin
       { For some reason the script could not be loaded. This is usually the case when a
         library that has been used at compile time isn't registered at runtime. }
       fErrorHandler.AppendErrorStr('Unknown error in loading bytecode to Exec|');
+      fValidationIssues.AddError(0, 0, '', 'Unknown error in loading bytecode to Exec');
       Exit;
     end;
 
@@ -1271,6 +1299,7 @@ begin
         Continue;
 
       fErrorHandler.AppendErrorStr(ValidateVarType(V.FType));
+      fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
       if fErrorHandler.HasErrors then
       begin
         //Don't allow the script to run
@@ -1318,9 +1347,11 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            LoadStream.Read(tbtu8(Src^)); //Byte, Boolean
+    btU16:           LoadStream.Read(tbtu16(Src^)); //Word
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
+    btUnicodeString: LoadStream.ReadW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     LoadStream.Read(ElemCount);
                     Assert(ElemCount = TPSTypeRec_StaticArray(aType).Size, 'Script array element count mismatches saved count');
@@ -1424,9 +1455,11 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            SaveStream.Write(tbtu8(Src^)); //Byte, Boolean
+    btU16:           SaveStream.Write(tbtu16(Src^)); //Word
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
+    btUnicodeString: SaveStream.WriteW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     ElemCount := TPSTypeRec_StaticArray(aType).Size;
                     SaveStream.Write(ElemCount);
@@ -1734,8 +1767,11 @@ end;
 
 {TKMScriptingPreProcessor}
 constructor TKMScriptingPreProcessor.Create;
+var
+  OnScriptError: TUnicodeStringEvent;
 begin
-  Create(nil);
+  OnScriptError := nil;
+  Create(OnScriptError);
 end;
 
 
@@ -1748,6 +1784,7 @@ end;
 
 constructor TKMScriptingPreProcessor.Create(aOnScriptError: TUnicodeStringEvent; aErrorHandler: TKMScriptErrorHandler);
 begin
+  inherited Create;
   fScriptFilesInfo := TKMScriptFilesCollection.Create;
 
   fErrorHandler := aErrorHandler;
@@ -1960,7 +1997,6 @@ const
 
   procedure LoadCustomMarketGoldPrice;
   var
-    I: Integer;
     ErrorStr: UnicodeString;
     DirectiveParamSL: TStringList;
     HasError: Boolean;

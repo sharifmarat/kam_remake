@@ -10,7 +10,8 @@ uses
   KM_UnitGroups, KM_Units_Warrior, KM_Saves, KM_MessageStack, KM_ResHouses, KM_Alerts, KM_Networking,
   KM_GUIGameResultsSP,
   KM_GUIGameResultsMP,
-  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings;
+  KM_GUIGameBuild, KM_GUIGameChat, KM_GUIGameHouse, KM_GUIGameUnit, KM_GUIGameRatios, KM_GUIGameStats,KM_GUIGameMenuSettings,
+  KM_GUIGameSpectator;
 
 
 const
@@ -38,6 +39,7 @@ type
     fGuiGameRatios: TKMGUIGameRatios;
     fGuiGameStats: TKMGUIGameStats;
     fGuiMenuSettings: TKMGameMenuSettings;
+    fGuiGameSpectator: TKMGUIGameSpectator;
     fGuiGameResultsSP: TKMGameResultsSP;
     fGuiGameResultsMP: TKMGameResultsMP;
 
@@ -144,7 +146,8 @@ type
     procedure UpdateSelectedObject;
     procedure HidePages;
     procedure HideOverlay(Sender: TObject);
-    procedure Replay_JumpToPlayer(aPlayerIndex: Integer);
+    procedure Replay_DropBox_JumpToPlayer(aDropBoxIndex: Integer);
+    procedure Replay_JumpToPlayer(aHandIndex: Integer);
     procedure Replay_ViewPlayer(aPlayerIndex: Integer);
     procedure Replay_ListDoubleClick(Sender: TObject);
     procedure Replay_UpdatePlayerInterface(aFromPlayer, aToPlayer: Integer);
@@ -300,6 +303,7 @@ type
     procedure SetPause(aValue: Boolean);
 
     property GuiGameResultsMP: TKMGameResultsMP read fGuiGameResultsMP;
+    property GuiGameSpectator: TKMGUIGameSpectator read fGuiGameSpectator;
 
     property Alerts: TKMAlerts read fAlerts;
 
@@ -821,6 +825,8 @@ begin
   fGuiMenuSettings.Free;
   fGuiGameResultsSP.Free;
   fGuiGameResultsMP.Free;
+  if Assigned(fGuiGameSpectator) then
+    fGuiGameSpectator.Free;
 
   fMessageStack.Free;
   fSaves.Free;
@@ -1694,14 +1700,21 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.Replay_JumpToPlayer(aPlayerIndex: Integer);
+procedure TKMGamePlayInterface.Replay_DropBox_JumpToPlayer(aDropBoxIndex: Integer);
+begin
+  Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aDropBoxIndex, Dropbox_ReplayFOW.Count - 1);
+
+  Replay_JumpToPlayer(Dropbox_ReplayFOW.GetTag(aDropBoxIndex));
+end;
+
+
+procedure TKMGamePlayInterface.Replay_JumpToPlayer(aHandIndex: Integer);
 var
   LastSelectedObj: TObject;
   OldHandIndex: Integer;
 begin
-  Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aPlayerIndex, Dropbox_ReplayFOW.Count - 1);
   OldHandIndex := gMySpectator.HandIndex;
-  gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(aPlayerIndex);
+  gMySpectator.HandIndex := aHandIndex;
 
   LastSelectedObj := gMySpectator.LastSpecSelectedObj;
   if LastSelectedObj <> nil then
@@ -1755,6 +1768,9 @@ begin
     gMySpectator.FOWIndex := -1;
   fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
   gGame.OverlayUpdate; // Display the overlay seen by the selected player
+
+  Dropbox_ReplayFOW.SelectByTag(aToPlayer);
+
   // When switch to other team player clear all beacons, except Spectators beacons
   if (gHands.CheckAlliance(aFromPlayer, aToPlayer) <> at_Ally)
     or not gHands[aFromPlayer].ShareBeacons[aToPlayer] then
@@ -1765,7 +1781,7 @@ end;
 procedure TKMGamePlayInterface.Replay_ListDoubleClick(Sender: TObject);
 begin
   //Double clicking on an item in the list jumps to the previously selected object of that player
-  Replay_JumpToPlayer(Dropbox_ReplayFOW.ItemIndex);
+  Replay_DropBox_JumpToPlayer(Dropbox_ReplayFOW.ItemIndex);
 end;
 
 
@@ -2216,7 +2232,10 @@ begin
       // Use team info from ally states:
       // consider team as a group of hands where all members are allied to each other and not allied to any other hands.
       gmReplayMulti,
-      gmMultiSpectate:  Replay_Multi_SetPlayersDropbox;
+      gmMultiSpectate:  begin
+                          Replay_Multi_SetPlayersDropbox;
+                          fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer);
+                        end;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));
     end;
@@ -2944,7 +2963,7 @@ var
 begin
   aHandled := True; // assume we handle all keys here
 
-  if gGame.IsPaused and (fUIMode = umSP) then
+  if gGame.IsPaused and ((fUIMode = umSP) or (PAUSE_GAME_AT_TICK <> -1)) then
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
@@ -2997,7 +3016,7 @@ begin
     if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
     begin
       if ssCtrl in Shift then
-        Replay_JumpToPlayer(SpecPlayerIndex - 1)
+        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1)
       else
         Replay_ViewPlayer(SpecPlayerIndex - 1);
       Exit;
@@ -3584,6 +3603,7 @@ begin
                 if H <> nil then
                 begin
                   gMySpectator.Selected := H; // Select the house irregardless of unit below/above
+                  gMySpectator.UpdateSelect; //Update select, to set up fIsSelectedMyObj
                   HidePages;
                   SwitchPage(nil); // Hide main back button if we were in e.g. stats
                   fGuiGameHouse.Show(H, True);
@@ -3738,17 +3758,22 @@ end;
 
 
 procedure TKMGamePlayInterface.UpdateSelectedObject;
+var
+  UpdateNewSelected: Boolean;
 begin
+  UpdateNewSelected := False;
   // Update unit/house information
   if gMySpectator.Selected is TKMUnitGroup then
   begin
     HidePages;
-    fGuiGameUnit.ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), fGuiGameUnit.AskDismiss)
+    fGuiGameUnit.ShowGroupInfo(TKMUnitGroup(gMySpectator.Selected), fGuiGameUnit.AskDismiss);
+    UpdateNewSelected := True;
   end else
   if gMySpectator.Selected is TKMUnit then
   begin
     HidePages;
-    fGuiGameUnit.ShowUnitInfo(TKMUnit(gMySpectator.Selected), fGuiGameUnit.AskDismiss)
+    fGuiGameUnit.ShowUnitInfo(TKMUnit(gMySpectator.Selected), fGuiGameUnit.AskDismiss);
+    UpdateNewSelected := True;
   end else
   begin
     fGuiGameUnit.JoiningGroups := False;
@@ -3757,6 +3782,7 @@ begin
       HidePages;
       SwitchPage(nil); // Hide main back button if we were in e.g. stats
       fGuiGameHouse.Show(TKMHouse(gMySpectator.Selected));
+      UpdateNewSelected := True;
     end
     else
       if fGuiGameHouse.Visible then
@@ -3764,6 +3790,9 @@ begin
       if fGuiGameUnit.Visible then
         fGuiGameUnit.Hide;
   end;
+
+  if UpdateNewSelected then
+    gMySpectator.UpdateNewSelected;
 end;
 
 
@@ -3877,7 +3906,7 @@ end;
 procedure TKMGamePlayInterface.UpdateStateIdle(aFrameTime: Cardinal);
 begin
   // Check to see if we need to scroll
-  fViewport.UpdateStateIdle(aFrameTime, gMySpectator.Hand.InCinematic);
+  fViewport.UpdateStateIdle(aFrameTime, not fDragScrolling, gMySpectator.Hand.InCinematic);
 end;
 
 

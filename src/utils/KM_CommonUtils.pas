@@ -46,10 +46,12 @@ uses
 
   procedure SetKaMSeed(aSeed: Integer);
   function GetKaMSeed: Integer;
-  function KaMRandom:extended; overload;
-  function KaMRandom(aMax:integer):integer; overload;
-  function KaMRandomS(Range_Both_Directions:integer):integer; overload;
-  function KaMRandomS(Range_Both_Directions:single):single; overload;
+  function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
+  function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
+  function KaMRandom(aCaller: String): Extended; overload;
+  function KaMRandom(aMax: Integer; aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single; overload;
 
   function TimeGet: Cardinal;
   function GetTimeSince(aTime: Cardinal): Cardinal;
@@ -127,7 +129,8 @@ const
 
 implementation
 uses
-  StrUtils, Types;
+  StrUtils, Types,
+  KM_Log;
 
 const
   //Pretend these are understandable in any language
@@ -894,9 +897,23 @@ begin
 end;
 
 
+procedure LogKamRandom(aValue: Integer; aCaller: String); overload;
+begin
+  if (gLog <> nil) and gLog.CanLogRandomChecks() then
+    gLog.LogRandomChecks(Format('KaMRandom: %15d Caller: %s', [aValue, aCaller]));
+end;
+
+
+procedure LogKamRandom(aValue: Extended; aCaller: String; aKaMRandomFunc: String); overload;
+begin
+  if (gLog <> nil) and gLog.CanLogRandomChecks() then
+    gLog.LogRandomChecks(Format('%12s: %30s Caller: %s', [aKaMRandomFunc, FormatFloat('0.##############################', aValue), aCaller]));
+end;
+
+
 //Taken from "Random Number Generators" by Stephen K. Park and Keith W. Miller.
 (*  Integer  Version  2  *)
-function KaMRandom: Extended;
+function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
 const
   A = 16807;
   M = 2147483647; //Prime number 2^31 - 1
@@ -911,38 +928,61 @@ begin
     Exit;
   end;
 
-  Assert(InRange(fKaMSeed,1,M-1), 'KaMSeed initialised incorrectly: '+IntToStr(fKaMSeed));
-  C2 := fKaMSeed div Q;
-  C1 := fKaMSeed mod Q;
+  Assert(InRange(aSeed,1,M-1), 'KaMSeed is not correct: '+IntToStr(aSeed));
+  C2 := aSeed div Q;
+  C1 := aSeed mod Q;
   NextSeed := A*C1 - R*C2;
 
   if NextSeed > 0 then
-    fKaMSeed := NextSeed
+    aSeed := NextSeed
   else
-    fKaMSeed := NextSeed + M;
+    aSeed := NextSeed + M;
 
-  Result := fKaMSeed / M;
+  Result := aSeed / M;
 end;
 
 
-function KaMRandom(aMax:integer):integer;
+function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer;
 begin
   if CUSTOM_RANDOM then
-    Result := trunc(KaMRandom*aMax)
+    Result := Trunc(KaMRandomWSeed(aSeed)*aMax)
   else
     Result := Random(aMax);
 end;
 
 
-function KaMRandomS(Range_Both_Directions:integer):integer; overload;
+function KaMRandom(aCaller: String): Extended;
 begin
-  Result := KaMRandom(Range_Both_Directions*2+1)-Range_Both_Directions;
+  Result := KaMRandomWSeed(fKamSeed);
+
+  LogKamRandom(Result, aCaller, 'KaMRandom');
 end;
 
 
-function KaMRandomS(Range_Both_Directions:single):single; overload;
+function KaMRandom(aMax: Integer; aCaller: String): Integer;
 begin
-  Result := KaMRandom(round(Range_Both_Directions*20000)+1)/10000-Range_Both_Directions;
+  if CUSTOM_RANDOM then
+    Result := Trunc(KaMRandom('*' + aCaller)*aMax)
+  else
+    Result := Random(aMax);
+
+  LogKamRandom(Result, aCaller, 'KaMRandomI');
+end;
+
+
+function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer;
+begin
+  Result := KaMRandom(Range_Both_Directions*2+1, '*' + aCaller) - Range_Both_Directions;
+
+  LogKamRandom(Result, aCaller, 'KaMRandomS_I');
+end;
+
+
+function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single;
+begin
+  Result := KaMRandom(Round(Range_Both_Directions*20000)+1, '*' + aCaller)/10000-Range_Both_Directions;
+
+  LogKamRandom(Result, aCaller, 'KaMRandomS_S');
 end;
 
 
@@ -991,8 +1031,11 @@ end;
 
 
 procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True);
+var
+  ValidateFn: TBooleanStringFunc;
 begin
-  GetAllPathsInDir(aDir, aSL, nil, aIncludeSubdirs);
+  ValidateFn := nil;
+  GetAllPathsInDir(aDir, aSL, ValidateFn, aIncludeSubdirs);
 end;
 
 
@@ -1000,17 +1043,17 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; 
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
     try
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
           if AnsiEndsStr(aExt, SR.Name) then
-            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+            aSL.Add(IncludeTrailingPathDelimiter(aDir) + SR.Name);
         end
         else
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
-          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
+          GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
     finally
       SysUtils.FindClose(SR);
@@ -1022,17 +1065,17 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: T
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingBackslash(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
+  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
     try
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
           if not Assigned(aValidateFn) or aValidateFn(SR.Name) then
-            aSL.Add(IncludeTrailingBackslash(aDir) + SR.Name);
+            aSL.Add(IncludeTrailingPathDelimiter(aDir) + SR.Name);
         end
         else
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
-          GetAllPathsInDir(IncludeTrailingBackslash(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
+          GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
     finally
       SysUtils.FindClose(SR);
@@ -1212,7 +1255,7 @@ end;
 {$ENDIF}
 
 
-{$IFDEF FPC}
+{$IF Defined(FPC) or Defined(VER230)}
 procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer);
 var
   ALength: Integer;
@@ -1239,21 +1282,19 @@ begin
     Arr[I - 1] := Arr[I];
   SetLength(Arr, ALength - 1);
 end;
-{$ENDIF}
+{$ELSE}
 
-
-{$IFDEF WDC}
 procedure DeleteFromArray(var Arr: TAnsiStringArray; const Index: Integer);
 begin
   Delete(Arr, Index, 1);
 end;
 
+
 procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer);
 begin
   Delete(Arr, Index, 1);
 end;
-{$ENDIF}
-
+{$IFEND}
 
 function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;

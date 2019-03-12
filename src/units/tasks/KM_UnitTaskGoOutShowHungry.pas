@@ -25,7 +25,7 @@ begin
 end;
 
 
-function TKMTaskGoOutShowHungry.Execute:TKMTaskResult;
+function TKMTaskGoOutShowHungry.Execute: TKMTaskResult;
 begin
   Result := tr_TaskContinues;
   if fUnit.GetHome.IsDestroyed then
@@ -48,7 +48,7 @@ begin
     3: SetActionWalkToSpot(fUnit.GetHome.PointBelowEntrance);
     4: SetActionGoIn(ua_Walk,gd_GoInside,fUnit.GetHome);
     5: begin
-         SetActionStay(20+KaMRandom(10),ua_Walk);
+         SetActionStay(20+KaMRandom(10, 'TKMTaskGoOutShowHungry.Execute'), ua_Walk);
          GetHome.SetState(hst_Idle);
        end;
     else begin

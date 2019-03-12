@@ -222,7 +222,7 @@ begin
    // Restrict the cursor to the window, for now.
    //TODO: Allow one to drag out of the window, and still capture.
    {$IFDEF MSWindows}
-     WindowRect := gMain.ClientRect;
+     WindowRect := gMain.ClientRect(1); //Reduce ClientRect by 1 pixel, to fix 'jump viewport' bug when dragscrolling over the window border
      ClipCursor(@WindowRect);
    {$ENDIF}
    fDragScrollingCursorPos.X := gGameCursor.Pixel.X;

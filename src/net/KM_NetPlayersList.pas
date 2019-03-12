@@ -992,8 +992,8 @@ type
     function FFOToStr(aFO: TFullFillOrder): String;
     function LocToStr(aLoc: TLoc): String;
     function PlayerToStr(aPlayer: TPlayer): String;
-    function GetLocsIByPlayerType(aPlayerType: TPlayerType): TIntegerArray;
-    function ToString: UnicodeString;
+    function GetLocsToSwap(aPlayerType: TPlayerType): TIntegerArray;
+    function FillerToString: UnicodeString;
     procedure SwapLocsPlayers(aLocI1, aLocI2: Integer);
   end;
 
@@ -1004,6 +1004,7 @@ type
       nptClosed:            Result := ptHuman; //We do not care about Closed, as we dont use it here
       nptComputerClassic:   Result := ptAI;
       nptComputerAdvanced:  Result := ptAdvAI;
+      else                  Result := ptHuman; //Should never happen
     end;
   end;
 
@@ -1061,7 +1062,7 @@ begin
 end;
 
 
-function TLocFiller.ToString: UnicodeString;
+function TLocFiller.FillerToString: UnicodeString;
 var
   I: Integer;
   PlayerStr: String;
@@ -1221,9 +1222,16 @@ var
   PlayersC: TPlayersArr;
   LocsC: TLocsArr;
 begin
+  //No players means there is nothing to randomize
+  if Length(Players) = 0 then
+  begin
+    fFilled := True;
+    Exit(True);
+  end;
+
   Result := False;
   fFilled := False;
-  if (Length(Players) > Length(Locs)) or (Length(Locs) = 0) or (Length(Players) = 0) then
+  if (Length(Players) > Length(Locs)) or (Length(Locs) = 0) then
     Exit;
 
   //Generate all possible fill orders
@@ -1277,33 +1285,58 @@ begin
 end;
 
 
-function TLocFiller.GetLocsIByPlayerType(aPlayerType: TPlayerType): TIntegerArray;
+function TLocFiller.GetLocsToSwap(aPlayerType: TPlayerType): TIntegerArray;
 var
-  I, Cnt: Integer;
+  Cnt: Integer;
+
+  procedure AddLoc(aI: Integer);
+  begin
+    if not ArrayContains(aI, Result) then
+    begin
+      Result[Cnt] := aI;
+      Inc(Cnt);
+    end;
+  end;
+
+var
+  I, J: Integer;
 begin
   SetLength(Result, 0);
 
   if not fFilled then
     Exit;
+
   Cnt := 0;
 
   SetLength(Result, Length(Locs));
+  for I := Low(Result) to High(Result) do
+    Result[I] := -100; //Init with some impossible value for loc number (but 0 loc exists)
 
+  //Get locs to swap randomly
   for I := 0 to High(Locs) do
-    if ((Locs[I].PlayerID <> -1) and (Players[Locs[I].PlayerI].PlayerType = aPlayerType))
-      or ((Locs[I].PlayerID = -1) and (aPlayerType in Locs[I].AllowedPlayerTypes)) then
-    begin
-      Result[Cnt] := I;
-      Inc(Cnt);
-    end;
+    if ((Locs[I].PlayerID <> -1) and (Players[Locs[I].PlayerI].PlayerType = aPlayerType)) // Taken locs with same type
+      or ((Locs[I].PlayerID = -1) and (aPlayerType in Locs[I].AllowedPlayerTypes)) then   // Empty locs which is allowed to take
+      AddLoc(I);
+  //Find all locs, where both player types could be. Add them both then
+  for I := 0 to High(Locs) do
+    for J := I + 1 to High(Locs) do
+      if (Locs[I].PlayerID <> -1)
+        and (Locs[J].PlayerID <> -1)
+        and (Players[Locs[I].PlayerI].PlayerType = aPlayerType)
+        and (Players[Locs[I].PlayerI].PlayerType in Locs[I].AllowedPlayerTypes)
+        and (Players[Locs[J].PlayerI].PlayerType in Locs[I].AllowedPlayerTypes)
+        and (Players[Locs[I].PlayerI].PlayerType in Locs[J].AllowedPlayerTypes)
+        and (Players[Locs[J].PlayerI].PlayerType in Locs[J].AllowedPlayerTypes) then
+      begin
+        AddLoc(I);
+        AddLoc(J);
+      end;
 
   SetLength(Result, Cnt);
 end;
 
 
 procedure TLocFiller.SwapLocsPlayers(aLocI1, aLocI2: Integer);
-var
-  tmpPlayerTypes: TPlayerTypeSet;
 begin
   if Locs[aLocI1].PlayerID <> -1 then
     Players[Locs[aLocI1].PlayerI].LocID := Locs[aLocI2].ID;
@@ -1360,7 +1393,6 @@ var
   I, K, J: Integer;
   UsedLoc: array[1..MAX_HANDS] of Boolean;
   AvailableLocHuman, AvailableLocBoth: array [1..MAX_HANDS] of Byte;
-  LocHumanCount, LocBothCount: Byte;
   TmpLocHumanCount, TmpLocBothCount: Byte;
   TeamLocs: array of Integer;
   LocFiller: TLocFiller;
@@ -1414,9 +1446,6 @@ begin
       end;
 
     //Collect available locations in a list
-    LocHumanCount := 0;
-    LocBothCount := 0;
-
     for I := 1 to MAX_HANDS do
       if not UsedLoc[I] then
       begin
@@ -1447,14 +1476,13 @@ begin
 
     RemAllClosedPlayers; //Closed players are just a marker in the lobby, delete them when the game starts
 
-    gLog.AddTime(LocFiller.ToString);
-
     gLog.AddTime('Randomizing locs...');
+    gLog.AddTime(LocFiller.FillerToString);
 
     //Randomize all available lists (don't use KaMRandom - we want varied results and PlayerList is synced to clients before start)
     for PT := Low(TPlayerType) to High(TPlayerType) do
     begin
-      LocsArr := LocFiller.GetLocsIByPlayerType(PT);
+      LocsArr := LocFiller.GetLocsToSwap(PT);
       for I := 0 to High(LocsArr) do
         LocFiller.SwapLocsPlayers(LocsArr[I], LocsArr[Random(Length(LocsArr))]);
     end;
@@ -1463,7 +1491,7 @@ begin
     for I := 0 to High(LocFiller.Players) do
       fNetPlayers[LocFiller.Players[I].ID].StartLocation := LocFiller.Players[I].LocID;
 
-    gLog.AddTime(LocFiller.ToString);
+    gLog.AddTime('Randomized locs: ' + LocFiller.FillerToString);
   finally
     LocFiller.Free;
   end;

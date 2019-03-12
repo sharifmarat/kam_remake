@@ -87,13 +87,16 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure InitDefaults;
+    procedure ResetToDefaults;
 
     property Items[aType: TKMUnitType]: TKMUnitSpec read GetItem; default;
     property SerfCarry[aType: TKMWareType; aDir: TKMDirection]: TKMAnimLoop read GetSerfCarry;
     property CRC: Cardinal read fCRC; //Return hash of all values
 
     procedure ExportCSV(const aPath: UnicodeString);
+
+    procedure SaveCustomData(aSaveStream: TKMemoryStream);
+    procedure LoadCustomData(aLoadStream: TKMemoryStream);
   end;
 
 const
@@ -443,6 +446,18 @@ begin
 end;
 
 
+procedure TKMResUnits.SaveCustomData(aSaveStream: TKMemoryStream);
+begin
+  aSaveStream.Write(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
+end;
+
+
+procedure TKMResUnits.LoadCustomData(aLoadStream: TKMemoryStream);
+begin
+  aLoadStream.Read(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
+end;
+
+
 procedure TKMResUnits.ExportCSV(const aPath: UnicodeString);
 var ft:textfile; ii:TKMUnitType;
 begin
@@ -495,7 +510,7 @@ begin
 end;
 
 
-procedure TKMResUnits.InitDefaults;
+procedure TKMResUnits.ResetToDefaults;
 var
   I: Integer;
 begin

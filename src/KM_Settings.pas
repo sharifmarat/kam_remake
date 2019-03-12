@@ -84,6 +84,7 @@ type
 
     //Game
     fAutosave: Boolean;
+    fAutosaveAtGameEnd: Boolean;
     fAutosaveFrequency: Integer;
     fAutosaveCount: Integer;
     fReplayAutopause: Boolean;
@@ -103,6 +104,9 @@ type
     fSpeedFast: Single;
     fSpeedVeryFast: Single;
     fWareDistribution: TKMWareDistribution;
+
+    fDayGamesCount: Integer;
+    fLastDayGamePlayed: TDateTime;
 
     //SFX
     fMusicOff: Boolean;
@@ -131,6 +135,7 @@ type
     fHTMLStatusFile: UnicodeString;
     fServerWelcomeMessage: UnicodeString;
 
+    fServerDynamicFOW: Boolean;
     fServerMapsRosterEnabled: Boolean;
     fServerMapsRosterStr: UnicodeString;
     fServerLimitPTFrom, fServerLimitPTTo: Integer;
@@ -167,6 +172,7 @@ type
 
     //Game
     procedure SetAutosave(aValue: Boolean);
+    procedure SetAutosaveAtGameEnd(aValue: Boolean);
     procedure SetAutosaveFrequency(aValue: Integer);
     procedure SetAutosaveCount(aValue: Integer);
     procedure SetLocale(const aLocale: AnsiString);
@@ -179,6 +185,9 @@ type
     procedure SetPlayerColorSelf(aValue: Cardinal);
     procedure SetPlayerColorAlly(aValue: Cardinal);
     procedure SetPlayerColorEnemy(aValue: Cardinal);
+
+    procedure SetDayGamesCount(aValue: Integer);
+    procedure SetLastDayGamePlayed(aValue: TDateTime);
 
     //SFX
     procedure SetMusicOff(aValue: Boolean);
@@ -244,6 +253,8 @@ type
 
     //Game
     property Autosave: Boolean read fAutosave write SetAutosave;
+    property AutosaveAtGameEnd: Boolean read fAutosaveAtGameEnd write SetAutosaveAtGameEnd;
+
     property AutosaveFrequency: Integer read fAutosaveFrequency write SetAutosaveFrequency;
     property AutosaveCount: Integer read fAutosaveCount write SetAutosaveCount;
     property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
@@ -263,6 +274,9 @@ type
     property SpeedFast: Single read fSpeedFast;
     property SpeedVeryFast: Single read fSpeedVeryFast;
     property WareDistribution: TKMWareDistribution read fWareDistribution;
+
+    property DayGamesCount: Integer read fDayGamesCount write SetDayGamesCount;
+    property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
 
     //SFX
     property MusicOff: Boolean read fMusicOff write SetMusicOff;
@@ -291,6 +305,7 @@ type
     property HTMLStatusFile: UnicodeString read fHTMLStatusFile write SetHTMLStatusFile;
     property ServerWelcomeMessage: UnicodeString read fServerWelcomeMessage write SetServerWelcomeMessage;
 
+    property ServerDynamicFOW: Boolean read fServerDynamicFOW;
     property ServerMapsRosterEnabled: Boolean read fServerMapsRosterEnabled;
     property ServerMapsRosterStr: UnicodeString read fServerMapsRosterStr;
     property ServerLimitPTFrom: Integer read fServerLimitPTFrom;
@@ -512,6 +527,7 @@ begin
     fLoadFullFonts      := F.ReadBool     ('GFX', 'LoadFullFonts',      False);
 
     fAutosave           := F.ReadBool     ('Game', 'Autosave',          True); //Should be ON by default
+    fAutosaveAtGameEnd  := F.ReadBool     ('Game', 'AutosaveOnGameEnd', False); //Should be OFF by default
     SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY));
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
     fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
@@ -543,6 +559,9 @@ begin
     fSpeedVeryFast      := F.ReadFloat    ('Game', 'SpeedVeryFast',     10);
 
     fLocale             := AnsiString(F.ReadString ('Game', 'Locale', UnicodeString(DEFAULT_LOCALE)));
+
+    fDayGamesCount      := F.ReadInteger  ('Game', 'DayGamesCount',     0);
+    fLastDayGamePlayed  := F.ReadDate     ('Game', 'LastDayGamePlayed', 0);
 
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
 
@@ -580,6 +599,7 @@ begin
     fHTMLStatusFile         := F.ReadString ('Server','HTMLStatusFile','KaM_Remake_Server_Status.html');
     fServerWelcomeMessage   := {$IFDEF FPC} UTF8Decode {$ENDIF} (F.ReadString ('Server','WelcomeMessage',''));
 
+    fServerDynamicFOW       := F.ReadBool  ('Server', 'DynamicFOW', False);
     fServerMapsRosterEnabled:= F.ReadBool  ('Server', 'MapsRosterEnabled', False);
     fServerMapsRosterStr    := F.ReadString('Server', 'MapsRoster', '');
     fServerLimitPTFrom      := F.ReadInteger('Server', 'LimitPTFrom',     0);
@@ -632,6 +652,7 @@ begin
     F.WriteBool   ('GFX','LoadFullFonts', fLoadFullFonts);
 
     F.WriteBool   ('Game','Autosave',           fAutosave);
+    F.WriteBool   ('Game','AutosaveOnGameEnd',  fAutosaveAtGameEnd);
     F.WriteInteger('Game','AutosaveFrequency',  fAutosaveFrequency);
     F.WriteInteger('Game','AutosaveCount',      fAutosaveCount);
     F.WriteBool   ('Game','ReplayAutopause',    fReplayAutopause);
@@ -652,6 +673,9 @@ begin
     F.WriteFloat  ('Game','SpeedVeryFast',      fSpeedVeryFast);
 
     F.WriteString ('Game','Locale',          UnicodeString(fLocale));
+
+    F.WriteInteger('Game','DayGamesCount',        fDayGamesCount);
+    F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
 
@@ -682,6 +706,7 @@ begin
     F.WriteInteger('Server','AutoKickTimeout',              fAutoKickTimeout);
     F.WriteInteger('Server','PingMeasurementInterval',      fPingInterval);
 
+    F.WriteBool   ('Server','DynamicFOW',             fServerDynamicFOW);
     F.WriteBool   ('Server','MapsRosterEnabled',      fServerMapsRosterEnabled);
     F.WriteString ('Server','MapsRoster',             fServerMapsRosterStr);
     F.WriteInteger('Server','LimitPTFrom',            fServerLimitPTFrom);
@@ -883,6 +908,13 @@ begin
 end;
 
 
+procedure TKMGameSettings.SetAutosaveAtGameEnd(aValue: Boolean);
+begin
+  fAutosaveAtGameEnd := aValue;
+  Changed;
+end;
+
+
 procedure TKMGameSettings.SetAutosaveCount(aValue: Integer);
 begin
   fAutosaveCount := EnsureRange(aValue, AUTOSAVE_COUNT_MIN, AUTOSAVE_COUNT_MAX);
@@ -949,6 +981,20 @@ end;
 procedure TKMGameSettings.SetPlayerColorEnemy(aValue: Cardinal);
 begin
   fPlayerColorEnemy := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetDayGamesCount(aValue: Integer);
+begin
+  fDayGamesCount := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetLastDayGamePlayed(aValue: TDateTime);
+begin
+  fLastDayGamePlayed := aValue;
   Changed;
 end;
 

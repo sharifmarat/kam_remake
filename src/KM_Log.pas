@@ -12,6 +12,7 @@ type
     lmt_Default,            //default type
     lmt_Delivery,           //delivery messages
     lmt_Commands,           //all GIC commands
+    lmt_RandomChecks,       //Random Checks
     lmt_NetConnection,      //messages about net connection/disconnection/reconnection
     lmt_NetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
     lmt_NetPacketCommand,   //log messages about GIP commands net packets
@@ -52,10 +53,19 @@ type
     procedure AddTime(a, b: integer); overload;
     procedure LogDelivery(const aText: UnicodeString);
     procedure LogCommands(const aText: UnicodeString);
+    procedure LogRandomChecks(const aText: UnicodeString);
     procedure LogNetConnection(const aText: UnicodeString);
     procedure LogNetPacketOther(const aText: UnicodeString);
     procedure LogNetPacketCommand(const aText: UnicodeString);
     procedure LogNetPacketPingFps(const aText: UnicodeString);
+    function CanLogDelivery: Boolean;
+    function CanLogCommands: Boolean;
+    function CanLogRandomChecks: Boolean;
+    function CanLogNetConnection: Boolean;
+    function CanLogNetPacketOther: Boolean;
+    function CanLogNetPacketCommand: Boolean;
+    function CanLogNetPacketPingFps: Boolean;
+
     // Add line if TestValue=false
     procedure AddAssert(const aMessageText: UnicodeString);
     // AddToLog simply adds the text
@@ -289,6 +299,13 @@ begin
 end;
 
 
+procedure TKMLog.LogRandomChecks(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, lmt_RandomChecks);
+end;
+
+
 procedure TKMLog.LogNetConnection(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
@@ -318,6 +335,42 @@ begin
   if Self = nil then Exit;
 
   AddLineTime(aText, lmt_NetPacketPingFps);
+end;
+
+
+function TKMLog.CanLogDelivery: Boolean;
+begin
+  Result := lmt_Delivery in MessageTypes;
+end;
+
+function TKMLog.CanLogCommands: Boolean;
+begin
+  Result := lmt_Commands in MessageTypes;
+end;
+
+function TKMLog.CanLogRandomChecks: Boolean;
+begin
+  Result := lmt_RandomChecks in MessageTypes;
+end;
+
+function TKMLog.CanLogNetConnection: Boolean;
+begin
+  Result := lmt_NetConnection in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketOther: Boolean;
+begin
+  Result := lmt_NetPacketOther in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketCommand: Boolean;
+begin
+  Result := lmt_NetPacketCommand in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketPingFps: Boolean;
+begin
+  Result := lmt_NetPacketPingFps in MessageTypes;
 end;
 
 

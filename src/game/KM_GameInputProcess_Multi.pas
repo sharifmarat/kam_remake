@@ -297,8 +297,11 @@ procedure TKMGameInputProcess_Multi.DoRandomCheck(aTick: Cardinal; aPlayerIndex:
 begin
   with fRandomCheck[aTick mod MAX_SCHEDULE] do
   begin
-    Assert(OurCheck = PlayerCheck[aPlayerIndex],Format('Random check mismatch for tick %d from player %d processed at tick %d',
-                                                       [aTick, aPlayerIndex, gGame.GameTickCount]));
+    Assert(OurCheck = PlayerCheck[aPlayerIndex],Format('Random check mismatch for tick %d from net player %d [Hand %d] processed at tick %d',
+                                                       [aTick,
+                                                        aPlayerIndex,
+                                                        fNetworking.NetPlayers[aPlayerIndex].HandIndex,
+                                                        gGame.GameTickCount]));
     PlayerCheckPending[aPlayerIndex] := False;
   end;
 end;
@@ -389,7 +392,7 @@ begin
 
   fNumberConsecutiveWaits := 0; //We are not waiting if the game is running
   Tick := aTick mod MAX_SCHEDULE; //Place in a ring buffer
-  fRandomCheck[Tick].OurCheck := Cardinal(KaMRandom(MaxInt)); //thats our CRC (must go before commands for replay compatibility)
+  fRandomCheck[Tick].OurCheck := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess_Multi.RunningTimer')); //thats our CRC (must go before commands for replay compatibility)
 
   //Execute commands, in order players go (1,2,3..)
   for I := 1 to fNetworking.NetPlayers.Count do
@@ -409,7 +412,7 @@ begin
 
   //If we miss a few random checks during reconnections no one cares, inconsistencies will be detected as soon as it is over
   //To reduce network load, send random checks once every 10 ticks
-  if fNetworking.Connected and (aTick mod 10 = 1) then
+  if fNetworking.Connected {and (aTick mod 10 = 1)} then //Todo: remove debug brackets: {} no need to check on every tick in release version
     SendRandomCheck(aTick);
 
   //It is possible that we have already recieved other player's random checks, if so check them now
@@ -422,7 +425,8 @@ begin
   FillChar(fRecievedData[Tick], SizeOf(fRecievedData[Tick]), #0); //Reset
   fSent[Tick] := False;
 
-  if aTick mod DELAY_ADJUST = 0 then AdjustDelay(gGame.GameSpeed); //Adjust fDelay every X ticks
+  if aTick mod DELAY_ADJUST = 0 then
+    AdjustDelay(gGame.GameSpeed); //Adjust fDelay every X ticks
 end;
 
 

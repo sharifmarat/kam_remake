@@ -200,7 +200,7 @@ begin
   if (aPlantAct in [taCut, taAny])
   and ((TreeList.Count > 8) //Always chop the tree if there are many
        or (BestToPlant.Count + SecondBestToPlant.Count = 0)
-       or ((TreeList.Count > 0) and (KaMRandom < TreeList.Count / (TreeList.Count + (BestToPlant.Count + SecondBestToPlant.Count)/15)))
+       or ((TreeList.Count > 0) and (KaMRandom('TKMUnitWorkPlan.ChooseTree') < TreeList.Count / (TreeList.Count + (BestToPlant.Count + SecondBestToPlant.Count)/15)))
       ) then
   begin
     PlantAct := taCut;

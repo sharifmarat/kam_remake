@@ -243,17 +243,20 @@ type
   procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
 
 type
+
+  TKMStoredGIPCommand = packed record
+    Tick: Cardinal;
+    Command: TKMGameInputCommand;
+    Rand: Cardinal; //acts as CRC check
+  end;
+
   TKMGameInputProcess = class
   private
     fCount: Integer;
     fReplayState: TKMGIPReplayState;
   protected
     fCursor: Integer; //Used only in gipReplaying
-    fQueue: array of packed record
-      Tick: Cardinal;
-      Command: TKMGameInputCommand;
-      Rand: Cardinal; //acts as CRC check
-    end;
+    fQueue: array of TKMStoredGIPCommand;
 
     function MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand;
     function MakeCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand; overload;
@@ -322,6 +325,9 @@ type
     property ReplayState: TKMGIPReplayState read fReplayState;
     function GetLastTick: Cardinal; virtual;
     function ReplayEnded: Boolean; virtual;
+
+    class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
+    class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
   end;
 
 
@@ -408,11 +414,18 @@ begin
 end;
 
 
-function GetCommandLogString(aGIC: TKMGameInputCommand): UnicodeString;
+class function TKMGameInputProcess.GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
+var
+  NetPlayerStr: String;
 begin
   with aGIC do
   begin
-    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's player: %2d, params: ',
+    NetPlayerStr := '';
+    if (gGame <> nil)
+      and (gGame.Networking <> nil) then
+      NetPlayerStr := Format(' [NetPlayer %d]', [gGame.Networking.GetNetPlayerIndex(HandIndex)]);
+
+    Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's hand: %2d' + NetPlayerStr + ', params: ',
                      [GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(CommandType)), HandIndex]);
     case CommandPackType[CommandType] of
       gicpt_NoParams: Result := Result + ' []';
@@ -421,7 +434,7 @@ begin
       gicpt_Int3:     Result := Result + Format('[%10d,%10d,%10d]', [Params[1], Params[2], Params[3]]);
       gicpt_Int4:     Result := Result + Format('[%10d,%10d,%10d,%10d]', [Params[1], Params[2], Params[3], Params[4]]);
       gicpt_Text:     Result := Result + Format('[%s]', [TextParam]);
-      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]); //aMemoryStream.Read(DateTimeParam);
+      gicpt_Date:     Result := Result + Format('[%s]', [FormatDateTime('dd.mm.yy hh:nn:ss.zzz', DateTimeParam)]);
     end;
   end;
 end;
@@ -617,7 +630,8 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    gLog.LogCommands('Exec command: ' + GetCommandLogString(aCommand));
+    if gLog.CanLogCommands() then
+      gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
 
     case CommandType of
       gic_ArmyFeed:         SrcGroup.OrderFood(True);
@@ -1053,7 +1067,7 @@ begin
 
   fQueue[fCount].Tick    := gGame.GameTickCount;
   fQueue[fCount].Command := aCommand;
-  fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt)); //This will be our check to ensure everything is consistent
+  fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess.StoreCommand')); //This will be our check to ensure everything is consistent
 end;
 
 
@@ -1102,6 +1116,12 @@ var
 begin
   aStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
+end;
+
+
+class function TKMGameInputProcess.StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
+begin
+  Result := Format('Tick: %d; Rand: %d; Command: %s', [aCommand.Tick, aCommand.Rand, GIPCommandToString(aCommand.Command)]);
 end;
 
 

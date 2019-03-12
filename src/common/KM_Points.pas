@@ -71,6 +71,8 @@ type
   function KMRectF(aLeft, aTop, aRight, aBottom: SmallInt): TKMRectF; overload;
   function KMRectRound(const aRect: TKMRectF): TKMRect;
   function KMSameRect(const aRect1, aRect2: TKMRect): Boolean;
+  function KMRectWidth(const aRect: TKMRect): Integer;
+  function KMRectHeight(const aRect: TKMRect): Integer;
   function KMRectGrow(const aRect: TKMRect; aInset: Integer): TKMRect; overload;
   function KMRectGrow(const aRect: TKMRect; const aDir: TKMDirection; aInset: Integer = 1): TKMRect; overload;
   function KMRectGrowTopLeft(const aRect: TKMRect; aInset: Integer = 1): TKMRect;
@@ -83,6 +85,7 @@ type
   function KMInRect(const aPoint: TKMPoint; const aRect: TKMRect): Boolean; overload;
   function KMInRect(const aPoint: TKMPointF; const aRect: TKMRect): Boolean; overload;
   function KMInRect(const aPoint: TKMPointF; const aRect: TKMRectF): Boolean; overload;
+  function KMRectFitInRect(const aInnerRect, aOuterRect: TKMRect): Boolean;
   function KMRectArea(const aRect: TKMRect): Integer;
   function KMRectMove(const aRect: TKMRect; X,Y: Integer): TKMRect;
   procedure KMRectIncludePoint(var aRect: TKMRect; X,Y: Integer); overload;
@@ -362,6 +365,18 @@ begin
 end;
 
 
+function KMRectWidth(const aRect: TKMRect): Integer;
+begin
+  Result := aRect.Right - aRect.Left;
+end;
+
+
+function KMRectHeight(const aRect: TKMRect): Integer;
+begin
+  Result := aRect.Bottom - aRect.Top;
+end;
+
+
 function KMRectGrow(const aRect: TKMRect; aInset: Integer): TKMRect;
 begin
   Result.Left   := Math.Max(aRect.Left   - aInset, 0);
@@ -463,6 +478,13 @@ end;
 function KMInRect(const aPoint: TKMPointF; const aRect: TKMRectF): Boolean;
 begin
   Result := InRange(aPoint.X, aRect.Left, aRect.Right) and InRange(aPoint.Y, aRect.Top, aRect.Bottom);
+end;
+
+
+function KMRectFitInRect(const aInnerRect, aOuterRect: TKMRect): Boolean;
+begin
+  Result := (KMRectHeight(aInnerRect) <= KMRectHeight(aOuterRect))
+        and (KMRectWidth(aInnerRect) <= KMRectWidth(aOuterRect))
 end;
 
 
@@ -765,7 +787,9 @@ begin
   S := (-ABy * (A.x - C.x) + ABx * (A.y - C.y)) / D2;
   T := ( CDx * (A.y - C.y) - CDy * (A.x - C.x)) / D2;
 
-  Result := (S > 0) and (S < 1) and (T > 0) and (T < 1);
+  Result := (S > 0) and (S < 1) and (T > 0) and (T < 1)
+            and not IsNaN(S) and not IsNaN(T)
+            and not IsInfinite(S) and not IsInfinite(T);
 end;
 
 
@@ -782,7 +806,9 @@ begin
   S := (-ABy * (A.x - C.x) + ABx * (A.y - C.y)) / D2;
   T := ( CDx * (A.y - C.y) - CDy * (A.x - C.x)) / D2;
 
-  Result := (S >= 0) and (S <= 1) and (T >= 0) and (T <= 1);
+  Result := (S >= 0) and (S <= 1) and (T >= 0) and (T <= 1)
+            and not IsNaN(S) and not IsNaN(T)
+            and not IsInfinite(S) and not IsInfinite(T);
 end;
 
 

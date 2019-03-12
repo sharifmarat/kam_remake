@@ -77,6 +77,7 @@ type
     procedure WarriorWalkedOut(aUnit: TKMUnitWarrior);
     function LocHasNoAllyPlans(const aLoc: TKMPoint): Boolean;
     function GetGameFlagColor: Cardinal;
+    function GetOwnerNiknameU: UnicodeString;
   public
     Enabled: Boolean;
     InCinematic: Boolean;
@@ -100,8 +101,11 @@ type
     procedure SetHandIndex(aNewIndex: TKMHandIndex);
     procedure SetOwnerNikname(const aName: AnsiString); //MP owner nikname (empty in SP)
     property OwnerNikname: AnsiString read fOwnerNikname;
+    property OwnerNiknameU: UnicodeString read GetOwnerNiknameU;
     function OwnerName(aNumberedAIs: Boolean = True): UnicodeString; //Universal owner name
     function GetOwnerName: UnicodeString;
+    function GetOwnerNameColored: AnsiString;
+    function GetOwnerNameColoredU: UnicodeString;
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
     property HandAITypes: TKMAITypeSet read fHandAITypes;
@@ -188,7 +192,7 @@ uses
   KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
-  KM_GameTypes;
+  KM_GameTypes, KM_CommonUtils;
 
 
 const
@@ -528,27 +532,28 @@ begin
   for I := 0 to fHouses.Count - 1 do
   begin
     House := fHouses[I];
-    if (House.HouseType = aHouseType) // we are interested in houses with the same type
-      and not House.IsDestroyed then        // not destroyed
-    begin
-      //Just find any first house
-      if (aStartFromUID = 0) then
-      begin
-        Result := House;
-        Break;
-      end;
+    if House.IsDestroyed // not destroyed
+      or (House.HouseType <> aHouseType) then // we are interested in houses with the same type
+      Continue;
 
-      //Find first house from specified UID
-      if (House.UID = aStartFromUID) then
-        Found := True               // Mark that we found our house
-      else if Found then
-      begin
-        Result := House;            // Save the next house after Found to Result and Break
-        Break;
-      end else if FirstH = nil then
-        FirstH := House;            // Save 1st house in list in case our house is the last one
+    //Just find any first house
+    if (aStartFromUID = 0) then
+    begin
+      Result := House;
+      Break;
     end;
+
+    //Find first house from specified UID
+    if (House.UID = aStartFromUID) then
+      Found := True               // Mark that we found our house
+    else if Found then
+    begin
+      Result := House;            // Save the next house after Found to Result and Break
+      Break;
+    end else if FirstH = nil then
+      FirstH := House;            // Save 1st house in list in case our house is the last one
   end;
+
   if (Result = nil) and Found then // Found should be always True here
     Result := FirstH;
 end;
@@ -632,6 +637,12 @@ begin
         Result := gGameApp.GameSettings.PlayerColorEnemy;
     end;
   end;
+end;
+
+
+function TKMHand.GetOwnerNiknameU: UnicodeString;
+begin
+  Result := UnicodeString(fOwnerNikname);
 end;
 
 
@@ -1195,6 +1206,19 @@ function TKMHand.GetOwnerName: UnicodeString;
 begin
   Result := OwnerName(not (gGame.GameMode in [gmSingle, gmCampaign, gmReplaySingle]));
 end;
+
+
+function TKMHand.GetOwnerNameColored: AnsiString;
+begin
+  Result := WrapColorA(AnsiString(GetOwnerName), FlagColorToTextColor(FlagColor));
+end;
+
+
+function TKMHand.GetOwnerNameColoredU: UnicodeString;
+begin
+  Result := WrapColor(GetOwnerName, FlagColorToTextColor(FlagColor));
+end;
+
 
 
 function TKMHand.GetAlliances(aIndex: Integer): TKMAllianceType;

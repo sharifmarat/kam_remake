@@ -2,7 +2,7 @@ unit KM_ResWares;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, KM_CommonClasses;
 
   //Collection of types and arrays for Wares usage
 
@@ -50,6 +50,11 @@ type
     destructor Destroy; override;
     property Wares[aIndex: TKMWareType]: TKMWare read GetWare; default;
     procedure ExportCostsTable(const aFilename: string);
+
+    procedure ResetToDefaults;
+
+    procedure SaveCustomData(aSaveStream: TKMemoryStream);
+    procedure LoadCustomData(aLoadStream: TKMemoryStream);
   end;
 
 
@@ -240,6 +245,33 @@ end;
 function TKMResWares.GetWare(aIndex: TKMWareType): TKMWare;
 begin
   Result := fList[aIndex];
+end;
+
+
+procedure TKMResWares.ResetToDefaults;
+var
+  I: TKMWareType;
+begin
+  for I := Low(TKMWareType) to High(TKMWareType) do
+    fList[I].fMarketPriceMultiplier := 1;
+end;
+
+
+procedure TKMResWares.SaveCustomData(aSaveStream: TKMemoryStream);
+var
+  I: TKMWareType;
+begin
+  for I := Low(TKMWareType) to High(TKMWareType) do
+    aSaveStream.Write(fList[I].fMarketPriceMultiplier);
+end;
+
+
+procedure TKMResWares.LoadCustomData(aLoadStream: TKMemoryStream);
+var
+  I: TKMWareType;
+begin
+  for I := Low(TKMWareType) to High(TKMWareType) do
+    aLoadStream.Read(fList[I].fMarketPriceMultiplier);
 end;
 
 

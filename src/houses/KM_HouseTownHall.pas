@@ -34,8 +34,6 @@ type
     property GoldCnt: Word read fGoldCnt write SetGoldCnt;
     property GoldMaxCnt: Word read fGoldMaxCnt write SetGoldMaxCnt;
 
-    procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
-
     function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
 
     function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
@@ -216,14 +214,6 @@ procedure TKMHouseTownHall.AddDemandsOnActivate(aWasBuilt: Boolean);
 begin
   if aWasBuilt then
     AddInitialDemands;
-end;
-
-
-procedure TKMHouseTownHall.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
-begin
-  gHands[fOwner].Stats.WareConsumed(wt_Gold, fGoldCnt);
-
-  inherited;
 end;
 
 

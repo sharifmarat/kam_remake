@@ -50,7 +50,7 @@ type
     procedure ApplyCursorRestriction;
     function GetScreenBounds(out Bounds: TRect): Boolean;
     function IsFormActive: Boolean;
-    function ClientRect: TRect;
+    function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
     procedure ReinitRender(aReturnToOptions: Boolean);
     procedure FlashingStart;
@@ -235,27 +235,35 @@ end;
 
 procedure TKMMain.Stop(Sender: TObject);
 begin
-  //Reset the resolution
-  FreeThenNil(fResolutions);
-  FreeThenNil(fMainSettings);
-  if fMapCacheUpdater <> nil then
-    fMapCacheUpdater.Stop;
-  FreeThenNil(gGameApp);
-  FreeThenNil(gLog);
+  try
+    //Reset the resolution
+    FreeThenNil(fResolutions);
+    FreeThenNil(fMainSettings);
+    if fMapCacheUpdater <> nil then
+      fMapCacheUpdater.Stop;
+    FreeThenNil(gGameApp);
+    FreeThenNil(gLog);
 
-  {$IFDEF MSWindows}
-  TimeEndPeriod(1);
-  ClipCursor(nil); //Release the cursor restriction
-  {$ENDIF}
+    {$IFDEF MSWindows}
+    TimeEndPeriod(1);
+    ClipCursor(nil); //Release the cursor restriction
+    {$ENDIF}
 
-  // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
-  // In first case Form will take care about closing itself
+    // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
+    // In first case Form will take care about closing itself
 
-  // Do not call gMain.Stop from FormClose handler again
-  fFormMain.OnClose := nil;
+    // Do not call gMain.Stop from FormClose handler again
+    fFormMain.OnClose := nil;
 
-  if Sender <> fFormMain then
-    fFormMain.Close;
+    if Sender <> fFormMain then
+      fFormMain.Close;
+  except
+    on E: Exception do
+      begin
+        gLog.AddTime('Exception while closing game app: ' + E.Message
+                     {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+      end;
+  end;
 end;
 
 
@@ -295,6 +303,8 @@ var
   FrameTime: Cardinal;
   FPSLag: Integer;
 begin
+  FrameTime := 0;
+
   if CHECK_8087CW then
     //$1F3F is used to mask out reserved/undefined bits
     Assert((Get8087CW and $1F3F = $133F), '8087CW is wrong');
@@ -302,6 +312,7 @@ begin
   //if not Form1.Active then exit;
 
   //Counting FPS
+  if fMainSettings <> nil then //fMainSettings could be nil on Game Exit ?? Just check if its not nil
   begin
     FrameTime  := GetTimeSince(fOldTimeFPS);
     fOldTimeFPS := TimeGet;
@@ -471,11 +482,15 @@ begin
 end;
 
 
-function TKMMain.ClientRect: TRect;
+function TKMMain.ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
 begin
   Result := fFormMain.RenderArea.ClientRect;
   Result.TopLeft := ClientToScreen(Result.TopLeft);
+  Result.TopLeft.X := Result.TopLeft.X + aPixelsCntToReduce;
+  Result.TopLeft.Y := Result.TopLeft.Y + aPixelsCntToReduce;
   Result.BottomRight := ClientToScreen(Result.BottomRight);
+  Result.BottomRight.X := Result.BottomRight.X - aPixelsCntToReduce;
+  Result.BottomRight.Y := Result.BottomRight.Y - aPixelsCntToReduce;
 end;
 
 

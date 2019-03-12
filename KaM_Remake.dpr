@@ -19,6 +19,7 @@ uses
   KromOGLUtils in 'src\ext\KromOGLUtils.pas',
   KromUtils in 'src\ext\KromUtils.pas',
 	KromShellUtils in 'src\ext\KromShellUtils.pas',
+  ScriptValidatorResult in 'src\ext\ScriptValidatorResult.pas',
 
   KM_AI in 'src\ai\KM_AI.pas',
   KM_AIArmyEvaluation in 'src\ai\KM_AIArmyEvaluation.pas',
@@ -75,6 +76,7 @@ uses
   KM_GUIGameMenuSettings in 'src\gui\pages_game\KM_GUIGameMenuSettings.pas',
   KM_GUIGameResultsMP in 'src\gui\pages_game\KM_GUIGameResultsMP.pas',
   KM_GUIGameResultsSP in 'src\gui\pages_game\KM_GUIGameResultsSP.pas',
+  KM_GUIGameSpectator in 'src\gui\pages_game\KM_GUIGameSpectator.pas',
 
   KM_GUIMapEdExtras in 'src\gui\pages_maped\KM_GUIMapEdExtras.pas',
   KM_GUIMapEdHouse in 'src\gui\pages_maped\KM_GUIMapEdHouse.pas',

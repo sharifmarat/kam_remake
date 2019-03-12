@@ -3,7 +3,7 @@ unit KM_UnitActionWalkTo;
 interface
 uses
   Classes, KromUtils, Math, SysUtils,
-  KM_Defaults, KM_CommonClasses, KM_Points,
+  KM_Defaults, KM_CommonClasses, KM_CommonTypes, KM_Points,
   KM_Houses, KM_Units;
 
 type
@@ -74,7 +74,8 @@ type
   public
     fVertexOccupied: TKMPoint; //Public because it needs to be used by AbandonWalk
     constructor Create(aUnit: TKMUnit; const aLocB: TKMPoint; aActionType: TKMUnitActionType; aDistance: Single; aSetPushed:
-                       Boolean; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aUseExactTarget: Boolean = True);
+                       Boolean; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aTargetPassability: TKMTerrainPassability = tpUnused;
+                       aTargetWalkConnectSet: TKMByteSet = []; aUseExactTarget: Boolean = True);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure  SyncLoad; override;
     destructor Destroy; override;
@@ -128,13 +129,15 @@ constructor TKMUnitActionWalkTo.Create( aUnit: TKMUnit;
                                         aSetPushed: Boolean;
                                         aTargetUnit: TKMUnit;
                                         aTargetHouse: TKMHouse;
-                                        aUseExactTarget: Boolean = true);
+                                        aTargetPassability: TKMTerrainPassability = tpUnused;
+                                        aTargetWalkConnectSet: TKMByteSet = [];
+                                        aUseExactTarget: Boolean = True);
 var
   RouteBuilt: Boolean; //Check if route was built, otherwise return nil
 begin
   inherited Create(aUnit, aActionType, False);
 
-  if not gTerrain.TileInMapCoords(aLocB.X, aLocB.Y) then
+  if not gTerrain.TileInMapCoords(aLocB.X, aLocB.Y) and (aLocB <> KMPOINT_INVALID_TILE) then
     raise ELocError.Create('Invalid Walk To for '+gRes.Units[aUnit.UnitType].GUIName,aLocB);
 
   Assert(not (fUnit.UnitType in [ANIMAL_MIN..ANIMAL_MAX])); //Animals should using TUnitActionSteer instead
@@ -142,17 +145,25 @@ begin
   fDistance := aDistance;
   // aSetPushed Doesn't need to be rememberred (it is used only in Create here)
 
-  if aTargetUnit  <> nil then fTargetUnit  := aTargetUnit.GetUnitPointer;
-  if aTargetHouse <> nil then fTargetHouse := aTargetHouse.GetHousePointer;
+  if aTargetUnit  <> nil then
+    fTargetUnit  := aTargetUnit.GetUnitPointer;
+  if aTargetHouse <> nil then
+    fTargetHouse := aTargetHouse.GetHousePointer;
 
   fWalkFrom     := fUnit.GetPosition;
   fNewWalkTo    := KMPOINT_ZERO;
   fPass         := fUnit.DesiredPassability;
 
-  if aUseExactTarget then
-    fWalkTo := aLocB
-  else
-    fWalkTo := gTerrain.GetClosestTile(aLocB, aUnit.GetPosition, fPass, False);
+  if (aTargetPassability <> tpUnused) and (aTargetWalkConnectSet <> []) then
+  begin
+    fWalkTo := gTerrain.GetClosestRoad(fWalkFrom, aTargetWalkConnectSet);
+  end else
+  begin
+    if aUseExactTarget then
+      fWalkTo := aLocB
+    else
+      fWalkTo := gTerrain.GetClosestTile(aLocB, aUnit.GetPosition, fPass, False);
+  end;
 
   //Walking on roads is preferable, but not esential. Some cases (e.g. citizens going
   //to home with no road below doorway) it will crash if we strictly enforce it

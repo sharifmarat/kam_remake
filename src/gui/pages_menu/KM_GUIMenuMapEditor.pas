@@ -271,9 +271,7 @@ begin
     Panel_MapInfo := TKMPanel.Create(Panel_MapEd, 320+448, 50, 199, 688);
     Panel_MapInfo.Anchors := [anLeft, anTop, anBottom];
 
-      with TKMBevel.Create(Panel_MapInfo, 0, 0, 199, 199) do
-        Anchors := [anLeft, anTop];
-      MinimapView_MapEd := TKMMinimapView.Create(Panel_MapInfo, 4, 4, 191, 191);
+      MinimapView_MapEd := TKMMinimapView.Create(Panel_MapInfo, 4, 4, 191, 191, True);
       MinimapView_MapEd.Anchors := [anLeft, anTop];
 
       Label_MapType := TKMLabel.Create(Panel_MapInfo, 0, 199+10, '', fnt_Metal, taLeft);

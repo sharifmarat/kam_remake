@@ -109,7 +109,7 @@ type
     procedure Lobby_OnPlayerFileTransferProgress(aNetPlayerIndex: Integer; aTotal, aProgress: Cardinal);
     procedure Lobby_OnSetPassword(const aPassword: AnsiString);
 
-    procedure StartBtnChangeEnabled(aEnable: Boolean);
+    procedure StartBtnChangeEnabled(Sender: TObject; aEnable: Boolean);
 
     function DetectMapType: Integer;
     procedure SettingsClick(Sender: TObject);
@@ -541,8 +541,7 @@ begin
       Label_MapName := TKMLabel.Create(Panel_Setup, 10, 95, 250, 20, '', fnt_Metal, taLeft);
 
       Panel_SetupMinimap := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
-        TKMBevel.Create(Panel_SetupMinimap, 35, 0, 199, 199);
-        MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191);
+        MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191, True);
         MinimapView.ShowLocs := True; //In the minimap we want player locations to be shown
         MinimapView.OnLocClick := MinimapLocClick;
 
@@ -2401,7 +2400,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.StartBtnChangeEnabled(aEnable: Boolean);
+procedure TKMMenuLobby.StartBtnChangeEnabled(Sender: TObject; aEnable: Boolean);
 begin
   Button_SettingsAskReady.Enabled := (((fNetworking.MapInfo <> nil) and fNetworking.MapInfo.IsValid)
                                         or ((fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid))
@@ -2491,7 +2490,7 @@ begin
 
   if (fLastTimeAskReady <> 0) and (GetTimeSince(fLastTimeAskReady) > ASK_READY_COOLDOWN) then
   begin
-    StartBtnChangeEnabled(Button_Start.Enabled);
+    StartBtnChangeEnabled(Button_Start, Button_Start.Enabled);
     fLastTimeAskReady := 0;
   end;
 end;

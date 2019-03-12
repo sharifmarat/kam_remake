@@ -3,7 +3,7 @@ unit KM_Units;
 interface
 uses
   Classes, Math, SysUtils, KromUtils, Types,
-  KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils,
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points, KM_CommonUtils,
   KM_Terrain, KM_ResHouses, KM_ResWares, KM_Houses, KM_HouseSchool, KM_HouseBarracks, KM_HouseInn;
 
 //Memo on directives:
@@ -159,6 +159,8 @@ type
     procedure SetActionWalkToUnit(aUnit: TKMUnit; aDistance:single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkFromUnit(aUnit: TKMUnit; aDistance: Single; aActionType: TKMUnitActionType = ua_Walk);
     procedure SetActionWalkToSpot(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0);
+    procedure SetActionWalkToRoad(aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0;
+                                         aTargetPassability: TKMTerrainPassability = tpWalkRoad; aTargetWalkConnectSet: TKMByteSet = []);
     procedure SetActionWalkPushed(const aLocB: TKMPoint; aActionType: TKMUnitActionType = ua_Walk);
 
     procedure Feed(Amount: Single);
@@ -308,7 +310,7 @@ type
 
 implementation
 uses
-  KM_CommonTypes, KM_Game, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
+  KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
 
@@ -331,7 +333,8 @@ uses
   KM_UnitTaskMining,
   KM_UnitTaskSelfTrain,
   KM_UnitTaskThrowRock,
-  KM_GameTypes;
+  KM_GameTypes,
+  KM_Log;
 
 
 { TKMCivilUnit }
@@ -847,7 +850,7 @@ begin
   //and not thinking anything else (e.g. death)
   if fUnitTask = nil then
   begin
-    if WasIdle and (OldThought = th_None) and (KaMRandom(2) = 0) then
+    if WasIdle and (OldThought = th_None) and (KaMRandom(2, 'TKMUnitSerf.UpdateState') = 0) then
       fThought := th_Quest;
     SetActionStay(60,ua_Walk); //Stay idle
   end;
@@ -924,7 +927,7 @@ begin
 
   Result := (MyCount > 0);
   if Result then
-    Loc := aList[Spots[KaMRandom(MyCount)]];
+    Loc := aList[Spots[KaMRandom(MyCount, 'TKMUnitWorker.PickRandomSpot')]];
 end;
 
 
@@ -1109,7 +1112,7 @@ begin
   //Units start with a random amount of condition ranging from 0.5 to 0.7 (KaM uses 0.6 for all units)
   //By adding the random amount they won't all go eat at the same time and cause crowding, blockages, food shortages and other problems.
   if (gGame <> nil) and (gGame.GameMode <> gmMapEd) then
-    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM)))
+    fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnit.Create')))
   else begin
     fCondition    := Round(UNIT_MAX_CONDITION * UNIT_CONDITION_BASE);
     fStartWDefaultCondition := True;
@@ -1244,7 +1247,9 @@ end;
 // Returns self and adds on to the pointer counter
 function TKMUnit.GetUnitPointer: TKMUnit;
 begin
-  inc(fPointerCount);
+  Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+
+  Inc(fPointerCount);
   Result := Self;
 end;
 
@@ -1253,9 +1258,11 @@ end;
 //Should be used only by gHands for clarity sake
 procedure TKMUnit.ReleaseUnitPointer;
 begin
+  Assert(gGame.AllowGetPointer, 'GetUnitPointer is not allowed outside of game tick update procedure, it could cause game desync');
+
   if fPointerCount < 1 then
     raise ELocError.Create('Unit remove pointer', PrevPosition);
-  dec(fPointerCount);
+  Dec(fPointerCount);
 end;
 
 
@@ -1533,8 +1540,8 @@ end;
 
 procedure TKMUnit.SetCurrPosition(const aLoc: TKMPoint);
 begin
-  if not DYNAMIC_FOG_OF_WAR
-    and (fOwner <> PLAYER_ANIMAL)
+  if {not gGameApp.DynamicFOWEnabled
+    and }(fOwner <> PLAYER_ANIMAL)
     and (fCurrPosition <> aLoc) then  //Update FOW only for new loc
     gHands.RevealForTeam(fOwner, aLoc, gRes.Units[fUnitType].Sight, FOG_OF_WAR_MAX);
 
@@ -1697,6 +1704,16 @@ begin
     raise Exception.Create('Interrupting unabandonable Walk action');
 
   SetAction(TKMUnitActionWalkTo.Create(Self, aLocB, aActionType, aDistance, False, nil, nil));
+end;
+
+
+procedure TKMUnit.SetActionWalkToRoad(aActionType: TKMUnitActionType = ua_Walk; aDistance: Single = 0;
+                                             aTargetPassability: TKMTerrainPassability = tpWalkRoad; aTargetWalkConnectSet: TKMByteSet = []);
+begin
+  if (GetUnitAction is TKMUnitActionWalkTo) and not TKMUnitActionWalkTo(GetUnitAction).CanAbandonExternal then
+    raise Exception.Create('Interrupting unabandonable Walk action');
+
+  SetAction(TKMUnitActionWalkTo.Create(Self, KMPOINT_INVALID_TILE, aActionType, aDistance, False, nil, nil, aTargetPassability, aTargetWalkConnectSet));
 end;
 
 
@@ -2201,7 +2218,7 @@ begin
     Kill(PLAYER_NONE, True, False);
 
   //We only need to update fog of war regularly if we're using dynamic fog of war, otherwise only update it when the unit moves
-  if DYNAMIC_FOG_OF_WAR and (fTicker mod 10 = 0) then
+  if gGameApp.DynamicFOWEnabled and (fTicker mod FOW_PACE = 0) then
     gHands.RevealForTeam(fOwner, fCurrPosition, gRes.Units[fUnitType].Sight, FOG_OF_WAR_INC);
 
   UpdateThoughts;

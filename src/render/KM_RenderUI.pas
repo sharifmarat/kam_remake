@@ -2,7 +2,11 @@
 {$I KaM_Remake.inc}
 interface
 uses
-  dglOpenGL, Controls, Math, KromOGLUtils, StrUtils, SysUtils,
+  dglOpenGL,
+  {$IFDEF WDC}
+  System.Generics.Collections,
+  {$ENDIF}
+  Controls, Math, KromOGLUtils, StrUtils, SysUtils,
   KM_Defaults, KM_CommonTypes, KM_Points, KM_Pics,
   KM_ResFonts, KM_ResSprites;
 
@@ -14,7 +18,19 @@ type
   TKMTextAlign = (taLeft, taCenter, taRight);
   TKMTextVAlign = (tvaNone, tvaTop, tvaMiddle, tvaBottom);
 
+  TKMPointDesc = record
+    P: TKMPoint;
+    Desc: String;
+  end;
+
   TKMRenderUI = class
+  private
+    {$IFDEF WDC}
+    class var ClipXStack: TStack<TKMRangeInt>;
+    class var ClipYStack: TStack<TKMRangeInt>;
+    {$ENDIF}
+    class procedure ApplyClipX        (X1,X2: SmallInt);
+    class procedure ApplyClipY        (Y1,Y2: SmallInt);
   public
     class procedure SetupClipX        (X1,X2: SmallInt);
     class procedure SetupClipY        (Y1,Y2: SmallInt);
@@ -48,8 +64,9 @@ uses
 
 //X axis uses planes 0,1 and Y axis uses planes 2,3, so that they don't interfere when both axis are
 //clipped from both sides
-class procedure TKMRenderUI.SetupClipX(X1,X2: SmallInt);
-var cp: array[0..3]of Real; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
+class procedure TKMRenderUI.ApplyClipX(X1,X2: SmallInt);
+var
+  cp: array[0..3] of Double; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
 begin
   glEnable(GL_CLIP_PLANE0);
   glEnable(GL_CLIP_PLANE1);
@@ -61,8 +78,9 @@ begin
 end;
 
 
-class procedure TKMRenderUI.SetupClipY(Y1,Y2: SmallInt);
-var cp: array[0..3]of Real; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
+class procedure TKMRenderUI.ApplyClipY(Y1,Y2: SmallInt);
+var
+  cp: array[0..3] of Double; //Function uses 8byte floats //ClipPlane X+Y+Z=-D
 begin
   glEnable(GL_CLIP_PLANE2);
   glEnable(GL_CLIP_PLANE3);
@@ -74,19 +92,95 @@ begin
 end;
 
 
+class procedure TKMRenderUI.SetupClipX(X1,X2: SmallInt);
+var
+  P: TKMRangeInt;
+begin
+  {$IFDEF WDC}
+  if ClipXStack.Count > 0 then
+  begin
+    P := ClipXStack.Peek;
+    ApplyClipX(Max(P.Min, X1), Min(P.Max, X2)); //Make clip areas intersection
+  end else
+    ApplyClipX(X1,X2);
+  ClipXStack.Push(KMRange(X1, X2));
+  {$ELSE}
+  ApplyClipX(X1,X2);
+  {$ENDIF}
+end;
+
+
+class procedure TKMRenderUI.SetupClipY(Y1,Y2: SmallInt);
+var
+  P: TKMRangeInt;
+begin
+  {$IFDEF WDC}
+  if ClipYStack.Count > 0 then
+  begin
+    P := ClipYStack.Peek;
+    ApplyClipY(Max(P.Min, Y1), Min(P.Max, Y2)); //Make clip areas intersection
+  end else
+    ApplyClipY(Y1,Y2);
+  ClipYStack.Push(KMRange(Y1, Y2));
+  {$ELSE}
+  ApplyClipY(Y1,Y2);
+  {$ENDIF}
+end;
+
+
 //Separate release of clipping planes
 class procedure TKMRenderUI.ReleaseClipX;
+
+  procedure ReleaseX;
+  begin
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+  end;
+
+var
+  P: TKMRangeInt;
 begin
-  glDisable(GL_CLIP_PLANE0);
-  glDisable(GL_CLIP_PLANE1);
+  {$IFDEF WDC}
+  if ClipXStack.Count <> 0 then
+  begin
+    ReleaseX;
+    ClipXStack.Pop;
+    if ClipXStack.Count <> 0 then
+    begin
+      P := ClipXStack.Peek;
+      ApplyClipX(P.Min, P.Max);
+    end;
+  end else
+  {$ENDIF}
+    ReleaseX;
 end;
 
 
 //Separate release of clipping planes
 class procedure TKMRenderUI.ReleaseClipY;
+
+  procedure ReleaseY;
+  begin
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+  end;
+
+var
+  P: TKMRangeInt;
 begin
-  glDisable(GL_CLIP_PLANE2);
-  glDisable(GL_CLIP_PLANE3);
+  {$IFDEF WDC}
+  if ClipYStack.Count <> 0 then
+  begin
+    ReleaseY;
+    ClipYStack.Pop;
+    if ClipYStack.Count <> 0 then
+    begin
+      P := ClipYStack.Peek;
+      ApplyClipY(P.Min, P.Max);
+    end;
+  end else
+  {$ENDIF}
+    ReleaseY;
 end;
 
 
@@ -283,7 +377,8 @@ begin
 end;
 
 
-class procedure TKMRenderUI.WritePicture(aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word; aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
+class procedure TKMRenderUI.WritePicture(aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType;
+                                         aID: Word; aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
 var
   OffX, OffY: Integer;
   DrawWidth, DrawHeight: Integer;
@@ -504,6 +599,8 @@ var
     Inc(dx, Let.Width + FontData.CharSpacing);
   end;
 
+var
+  SetupClipXApplied: Boolean;
 begin
   if (aText = '') or (aColor = $00000000) then Exit;
 
@@ -511,7 +608,8 @@ begin
 
   SetLength(Colors, 0);
 
-  if aWidth <> 0 then
+  SetupClipXApplied := aWidth <> 0;
+  if SetupClipXApplied then
     SetupClipX(aLeft, aLeft + aWidth);
 
   //Look for [$FFFFFF][] patterns that markup text color
@@ -659,7 +757,8 @@ begin
     glPopMatrix;
   end;
 
-  ReleaseClipX;
+  if SetupClipXApplied then
+    ReleaseClipX;
 end;
 
 
@@ -756,5 +855,24 @@ begin
     glEnd;
   glPopMatrix;
 end;
+
+
+initialization
+begin
+  {$IFDEF WDC}
+  TKMRenderUI.ClipXStack := TStack<TKMRangeInt>.Create;
+  TKMRenderUI.ClipYStack := TStack<TKMRangeInt>.Create;
+  {$ENDIF}
+end;
+
+
+finalization
+begin
+  {$IFDEF WDC}
+  TKMRenderUI.ClipXStack.Free;
+  TKMRenderUI.ClipYStack.Free;
+  {$ENDIF}
+end;
+
 
 end.

@@ -517,20 +517,22 @@ begin
   for I := 0 to Units.Count - 1 do
   begin
     U := Units[I];
-    if (U.UnitType = aUnit.UnitType) // we are interested in units with the same type only
-      and not U.IsDeadOrDying        // not dead or dying
-      and U.Visible then             // visible
+    if (U = nil)
+      or U.IsDeadOrDying
+      or (U.UnitType <> aUnit.UnitType)
+      or not U.Visible then
+      Continue;
+
+    if U = aUnit then
+      Found := True                // Mark that we found our unit
+    else if Found then
     begin
-      if U = aUnit then
-        Found := True                // Mark that we found our unit
-      else if Found then
-      begin
-        Result := U;                 // Save the next unit after Found to Result and Break
-        Break;
-      end else if FirstU = nil then
-        FirstU := U;                 // Save 1st unit in list in case our unit is the last one
-    end;
+      Result := U;                 // Save the next unit after Found to Result and Break
+      Break;
+    end else if FirstU = nil then
+      FirstU := U;                 // Save 1st unit in list in case our unit is the last one
   end;
+
   if (Result = nil) and Found then   // Found should be always True here
     Result := FirstU;
 end;
@@ -559,18 +561,20 @@ begin
   for I := 0 to UnitGroups.Count - 1 do
   begin
     Group := UnitGroups[I];
-    if (Group.UnitType = aUnitGroup.UnitType) // we are interested in groups with the same type only
-      and not Group.IsDead then               // not dead
+
+    if (Group = nil)
+      or Group.IsDead //check if group is dead
+      or (Group.UnitType <> aUnitGroup.UnitType) then // we are interested in groups with the same type only
+      Continue;
+
+    if Group = aUnitGroup then
+      Found := True               // Mark that we found our group
+    else if Found then
     begin
-      if Group = aUnitGroup then
-        Found := True               // Mark that we found our group
-      else if Found then
-      begin
-        Result := Group;            // Save the next group after Found to Result and Break
-        Break;
-      end else if FirstG = nil then
-        FirstG := Group;            // Save 1st group in list in case our group is the last one
-    end;
+      Result := Group;            // Save the next group after Found to Result and Break
+      Break;
+    end else if FirstG = nil then
+      FirstG := Group;            // Save 1st group in list in case our group is the last one
   end;
   if (Result = nil) and Found then // Found should be always True here
     Result := FirstG;
@@ -958,7 +962,7 @@ begin
   SL := TStringList.Create;
 
   try
-    SL.Append('Game revision: ' + GAME_REVISION);
+    SL.Append('Game revision: ' + UnicodeString(GAME_REVISION));
     SL.Append(aHeader);
     SL.Append('');
 
@@ -1023,7 +1027,7 @@ begin
 
     MS := TKMemoryStream.Create;
     try
-      MS.WriteHugeString(SL.Text);
+      MS.WriteHugeString(AnsiString(SL.Text));
       CRC := Adler32CRC(MS);
     finally
       MS.Free;

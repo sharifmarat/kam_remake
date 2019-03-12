@@ -243,11 +243,13 @@ begin
     if fAskDismiss and not aUnit.IsDismissAvailable then
       fAskDismiss := False; //Hide dismiss panel if dismiss is not available anymore
 
-    Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools and aUnit.IsDismissAvailable;
+    Button_Unit_Dismiss.Enabled := not fAskDismiss and HasSchools and not aUnit.IsHungry and aUnit.IsDismissAvailable;
     Button_Unit_Dismiss.TexID := 667;
 
     if not HasSchools then
       Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOSCHOOLS_HINT]
+    else if aUnit.IsHungry then
+      Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_HUNGRY_HINT]   
     else if not aUnit.IsDismissAvailable then
       Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT]
     else

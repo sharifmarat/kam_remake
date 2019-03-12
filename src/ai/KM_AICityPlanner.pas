@@ -154,7 +154,7 @@ begin
     //ht_Any picks three random houses for greater variety
     for K := 0 to 1 + Byte(H = htAny) * 2 do
     begin
-      House := gHands[fOwner].Houses.FindHouse(H, 0, 0, KaMRandom(HQty) + 1);
+      House := gHands[fOwner].Houses.FindHouse(H, 0, 0, KaMRandom(HQty, 'TKMCityPlanner.GetSeeds') + 1);
       if House <> nil then
       begin
         SetLength(Result, Count + 1);
@@ -228,7 +228,7 @@ begin
     begin
       Bid := KMLength(KMPoint(K,I), S)
              - gAIFields.Influences.Ownership[fOwner, I, K] / 5
-             + KaMRandom * 4;
+             + KaMRandom('TKMCityPlanner.NextToGrass') * 4;
       if Bid < BestBid then
       begin
         aLoc := KMPoint(K,I);
@@ -300,7 +300,7 @@ begin
     BestBid := MaxSingle;
     for J := 0 to 2 do
     begin
-      M := KaMRandom(Locs.Count);
+      M := KaMRandom(Locs.Count, 'TKMCityPlanner.NextToStone');
       StoneLoc := Locs[M];
       for I := Max(StoneLoc.Y - SEARCH_RAD, 1) to Min(StoneLoc.Y + SEARCH_RAD, gTerrain.MapY - 1) do
       for K := Max(StoneLoc.X - SEARCH_RAD, 1) to Min(StoneLoc.X + SEARCH_RAD, gTerrain.MapX - 1) do
@@ -308,7 +308,7 @@ begin
       begin
         Bid := Locs.Tag[M]
                - gAIFields.Influences.Ownership[fOwner,I,K] / 10
-               + KaMRandom * 3
+               + KaMRandom('TKMCityPlanner.NextToStone_2') * 3
                + KMLengthDiag(K, I, StoneLoc); //Distance to stone is important
         if (Bid < BestBid) then
         begin
@@ -372,7 +372,7 @@ begin
                     else
                       SeedLocs := GetSeeds([htStore]);
                   if Length(SeedLocs) = 0 then Exit;
-                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnCoal, P) then
+                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs), 'TKMCityPlanner.NextToOre')], 45, fnCoal, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
@@ -385,7 +385,7 @@ begin
                     else
                       SeedLocs := GetSeeds([htCoalMine, htStore]);
                   if Length(SeedLocs) = 0 then Exit;
-                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnIron, P) then
+                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs), 'TKMCityPlanner.NextToOre_2')], 45, fnIron, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
@@ -398,7 +398,7 @@ begin
                     else
                       SeedLocs := GetSeeds([htCoalMine, htStore]);
                   if Length(SeedLocs) = 0 then Exit;
-                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs))], 45, fnGold, P) then
+                  if not FindNearest(SeedLocs[KaMRandom(Length(SeedLocs), 'TKMCityPlanner.NextToOre_3')], 45, fnGold, P) then
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
@@ -432,7 +432,7 @@ begin
   if Length(SeedLocs) = 0 then Exit;
 
   // Pick one random seed loc from given
-  seedLoc := SeedLocs[KaMRandom(Length(SeedLocs))];
+  seedLoc := SeedLocs[KaMRandom(Length(SeedLocs), 'TKMCityPlanner.NextToTrees')];
 
     //todo: Rework through FindNearest to avoid roundabouts
   //Fill in MyForest map
@@ -458,7 +458,7 @@ begin
     if InRange(Mx, 1, gTerrain.MapX - 1) and InRange(My, 1, gTerrain.MapY - 1)
     and (gAIFields.Influences.AvoidBuilding[My, Mx] = 0) then
     begin
-      Bid := MyForest[I, K] + KaMRandom * 2; //Add some noise for varied results
+      Bid := MyForest[I, K] + KaMRandom('TKMCityPlanner.NextToTrees_2') * 2; //Add some noise for varied results
       if Bid > BestBid then
       begin
         TreeLoc := KMPoint(Mx, My);
@@ -472,7 +472,7 @@ begin
   for K := Max(TreeLoc.X - HUT_RAD, 1) to Min(TreeLoc.X + HUT_RAD, gTerrain.MapX - 1) do
     if gHands[fOwner].CanAddHousePlanAI(K, I, aHouse, True) then
     begin
-      Bid := KMLength(KMPoint(K,I), seedLoc) + KaMRandom * 5;
+      Bid := KMLength(KMPoint(K,I), seedLoc) + KaMRandom('TKMCityPlanner.NextToTrees_3') * 5;
       if (Bid < BestBid) then
       begin
         aLoc := KMPoint(K,I);
