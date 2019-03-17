@@ -136,9 +136,9 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(666);
-    gGame.GameOptions.Peacetime := 70;//SP_DEFAULT_PEACETIME;
+    //gGame.GameOptions.Peacetime := 70;//SP_DEFAULT_PEACETIME;
     //fSetup.ApplyAgressiveBuilderSetup(True);
-    fSetup.ApplyAgressiveBuilderSetup(fOwner <= 3);
+    //fSetup.ApplyAgressiveBuilderSetup(fOwner <= 3);
   end;
 
   // Find resources around Loc and change building policy
