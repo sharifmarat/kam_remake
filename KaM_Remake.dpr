@@ -178,6 +178,7 @@ uses
 	
   KM_Outline in 'src\navmesh\KM_Outline.pas',
   KM_NavMesh in 'src\navmesh\KM_NavMesh.pas',
+  KM_NavMeshGenerator in 'src\navmesh\KM_NavMeshGenerator.pas',
   KM_PolySimplify in 'src\navmesh\KM_PolySimplify.pas',
   KM_NavMeshPathFinding in 'src\navmesh\KM_NavMeshPathFinding.pas',
   KM_NavMeshFloodFill in 'src\navmesh\KM_NavMeshFloodFill.pas',
