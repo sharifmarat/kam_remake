@@ -12,13 +12,14 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 1;
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 115.11;
-  GA_EYE_GetForests_RndCount       : Single = 10;
-  GA_EYE_GetForests_RndLimit       : Single = 0.041;
-  GA_EYE_GetForests_MinTrees       : Single = 3;
-  GA_EYE_GetForests_Radius         : Single = 5.203;
-  GA_EYE_GetForests_MinRndSoil     : Single = 43.421; // 0-81
+  GA_EYE_GetForests_MaxAB          : Single = 149;
+  GA_EYE_GetForests_SPRndOwnLimMin : Single =  10; // EDIT IT!!!!!!!!!!!!!!
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 135;
+  GA_EYE_GetForests_RndCount       : Single =  16;
+  GA_EYE_GetForests_RndLimit       : Single =   0.9;
+  GA_EYE_GetForests_MinTrees       : Single =   3;
+  GA_EYE_GetForests_Radius         : Single =   6.3;
+  GA_EYE_GetForests_MinRndSoil     : Single = 113; // 0-81
 
 
 type
@@ -197,7 +198,7 @@ type
 implementation
 uses
   KM_Game, KM_Terrain, KM_Hand, KM_Resource, KM_AIFields, KM_HandsCollection, KM_RenderAux, KM_ResMapElements,
-  KM_NavMesh, KM_CityPlanner;
+  KM_NavMesh, KM_NavMeshGenerator, KM_CityPlanner;
 
 
 { TKMEye }
@@ -580,10 +581,10 @@ begin
   BuildCnt := 0;
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
-    if (gAIFields.Influences.GetBestOwner(X,Y) = fOwner) then
+    if (gAIFields.Influences.GetBestOwner(X,Y) = fOwner) AND gTerrain.TileIsRoadable( KMPoint(X,Y) ) then
     begin
-      Inc(FieldCnt, Soil[Y,X]);
-      Inc(BuildCnt, Byte(gTerrain.TileIsRoadable( KMPoint(X,Y) )));
+      Inc(FieldCnt, Byte(Soil[Y,X] > 0));
+      Inc(BuildCnt, 1);
     end;
   gHands[fOwner].AI.CityManagement.Predictor.FieldCnt := FieldCnt;
   gHands[fOwner].AI.CityManagement.Predictor.BuildCnt := BuildCnt;
@@ -784,7 +785,6 @@ begin
 
   // The loc is out of map or in inaccessible area
   if not gTerrain.TileInMapCoords(aLoc.X, aLoc.Y, 1) then
-    //OR (gAIFields.Influences.AvoidBuilding[aLoc.Y,aLoc.X] = AVOID_BUILDING_INACCESSIBLE_TILES) then // Use only with old placing algorithm without flood fill
     Exit;
 
   // Check if we can place house on terrain, this also makes sure the house is
@@ -973,9 +973,9 @@ begin
          AND (BuildFF.State[Y,X] = bsTree) then
       begin
         AvoidBulding := gAIFields.Influences.AvoidBuilding[Y,X];
-        if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
+        if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then // Tree is not part of existing forest
           VisitArr[Y,X] := UNVISITED_TREE
-        else if (AvoidBulding < AVOID_BUILDING_FOREST_MINIMUM) then
+        else if (AvoidBulding < GA_EYE_GetForests_MaxAB) then // Ignore trees which are too cloose to exist cutting point
           VisitArr[Y,X] := UNVISITED_TREE_IN_FOREST;
       end;
     end;
@@ -1001,7 +1001,11 @@ begin
               sumPoint := KMPointAdd(sumPoint, KMPoint(X2,Y2));
               if (VisitArr[Y2,X2] = UNVISITED_TREE) then
                 VisitArr[Y2,X2] := VISITED_TREE
-              else if (VisitArr[Y2,X2] >= UNVISITED_TREE_IN_FOREST) then
+              else if (VisitArr[Y2,X2] >= UNVISITED_TREE_IN_FOREST) // Forest may be around this point so consider tolerance
+                 OR (VisitArr[Max(1,Y2-2),X2] >= UNVISITED_TREE_IN_FOREST)
+                 OR (VisitArr[Y2,Max(1,X2-2)] >= UNVISITED_TREE_IN_FOREST)
+                 OR (VisitArr[Min(Y2+2,fMapY-1),X2] >= UNVISITED_TREE_IN_FOREST)
+                 OR (VisitArr[Y2,Min(X2+2,fMapX-1)] >= UNVISITED_TREE_IN_FOREST) then
               begin
                 PartOfForest := True;
                 VisitArr[Y2,X2] := VISITED_TREE_IN_FOREST;
@@ -1746,3 +1750,4 @@ begin
 end;
 
 end.
+

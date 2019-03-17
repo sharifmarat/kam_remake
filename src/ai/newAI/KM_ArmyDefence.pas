@@ -10,6 +10,7 @@ type
   TKMDefendRequest = record
     PointsCnt: Word;
     Points: TKMPointArray;
+    AssistByInfluence: TBooleanArray;
   end;
 
   TKMFormation = record NumUnits, UnitsPerRow: Integer; end;
@@ -52,7 +53,7 @@ type
 
     function GetCount: Integer; inline;
     function GetPosition(aIndex: Integer): TKMDefencePosition; inline;
-    function FindGroupsAroundLoc(aMaxCnt: Byte; aLoc: TKMPoint): TKMUnitGroupArray;
+    function FindGroupsAroundLoc(aMaxCnt, aMinSoldiers: Byte; aLoc: TKMPoint; aIgnoreFirstLine: Boolean): TKMUnitGroupArray;
   public
     TroopFormations: array [TKMGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
 
@@ -74,7 +75,7 @@ type
     function FindPlaceForGroup(aGroup: TKMUnitGroup): Boolean;
     procedure ReleaseGroup(aGroup: TKMUnitGroup); overload;
     procedure ReleaseGroup(aDefPosIdx: Integer); overload;
-    function DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False): Boolean;
+    function DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False; aIgnoreFirstLine: Boolean = False): Boolean;
     procedure FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray; var aDefRequest: TKMDefendRequest);
 
     procedure UpdateState(aTick: Cardinal);
@@ -93,7 +94,7 @@ implementation
 uses
   Math,
   KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
-  KM_AIFields, KM_NavMesh, KM_CommonUtils;
+  KM_AIFields, KM_NavMesh, KM_NavMeshGenerator, KM_CommonUtils;
 
 
 { TKMDefencePosition }
@@ -449,12 +450,11 @@ end;
 
 
 // Find defensive groups around specific loc
-function TKMArmyDefence.FindGroupsAroundLoc(aMaxCnt: Byte; aLoc: TKMPoint): TKMUnitGroupArray;
+function TKMArmyDefence.FindGroupsAroundLoc(aMaxCnt, aMinSoldiers: Byte; aLoc: TKMPoint; aIgnoreFirstLine: Boolean): TKMUnitGroupArray;
 const
   INIT_PRICE = 10000000;
-  SQR_MAX_DISTANCE = 15*15;
 var
-  I, K, Idx, Cnt: Integer;
+  I, K, Idx, Cnt, Soldiers: Integer;
   Price: Single;
   Group: TKMUnitGroup;
   UGA: TKMUnitGroupArray;
@@ -467,25 +467,30 @@ begin
     PriceArr[I] := INIT_PRICE;
   // Find closest groups
   Cnt := 0;
+  Soldiers := 0;
   for I := 0 to fPositions.Count - 1 do
-  begin
-    Group := Positions[I].Group;
-    if (Group <> nil) AND not Group.IsDead then
+    if not aIgnoreFirstLine OR (Positions[I].Line > FIRST_LINE_MAX_IDX) then
     begin
-      Cnt := Cnt + 1;
-      Idx := I;
-      Price := KMDistanceSqr(aLoc, Positions[I].Position.Loc) - Group.Count * 10;
-      for K := 0 to Length(PriceArr) - 1 do
-        if (Price < PriceArr[K]) then
-        begin
-          KMSwapFloat(Price, PriceArr[K]);
-          KMSwapInt(Idx, IdxArr[K]);
-        end
-        else if (Price = INIT_PRICE) then
-          break;
+      Group := Positions[I].Group;
+      if (Group <> nil) AND not Group.IsDead then
+      begin
+        Cnt := Cnt + 1;
+        Soldiers := Soldiers + Group.Count;
+        Idx := I;
+        Price := KMDistanceSqr(aLoc, Positions[I].Position.Loc) - Group.Count * 10;
+        for K := 0 to Length(PriceArr) - 1 do
+          if (Price < PriceArr[K]) then
+          begin
+            KMSwapFloat(Price, PriceArr[K]);
+            KMSwapInt(Idx, IdxArr[K]);
+          end
+          else if (Price = INIT_PRICE) then
+            break;
+      end;
     end;
-  end;
-  // Release groups
+  // Release groups if we have enought soldiers
+  if (Soldiers < aMinSoldiers) then
+    Cnt := 0;
   Cnt := Min( aMaxCnt, Cnt );
   SetLength(UGA, Cnt);
   for I := 0 to Cnt - 1 do
@@ -498,7 +503,7 @@ end;
 
 
 // Check if exists company with order to go at target point or create new defensive company
-function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False): Boolean;
+function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boolean = False; aIgnoreFirstLine: Boolean = False): Boolean;
   // Add more soldiers into company
   function RestockCompany(aCompany: TAICompany): Boolean;
   const
@@ -513,7 +518,7 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
     if (SquadCnt < MIN_GROUPS) then
     begin
       SquadCnt := MIN_GROUPS - SquadCnt + RESERVE;
-      Groups := FindGroupsAroundLoc(SquadCnt, aCompany.ScanPosition);
+      Groups := FindGroupsAroundLoc(SquadCnt, 0, aCompany.ScanPosition, False);
       for I := 0 to Length(Groups) - 1 do
         aCompany.AddSquad( Groups[I] );
       Result := (Length(Groups) >= SquadCnt);
@@ -522,7 +527,7 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
   // Check if there is company around
   function IsCompanyAround(aLoc: TKMPoint): Boolean;
   const
-    SQR_MAX_DISTANCE = 10*10;
+    SQR_MAX_DISTANCE = 15*15;
   var
     I: Integer;
     Company: TAICompany;
@@ -549,13 +554,14 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
   end;
 const
   MAX_GROUPS_PER_COMPANY = 8;
+  MIN_SOLDIERS = 12;
 var
   UGA: TKMUnitGroupArray;
 begin
   Result := IsCompanyAround(aTargetPoint);
   if not Result then
   begin
-    UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, aTargetPoint);
+    UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, MIN_SOLDIERS * Byte(not aIgnoreFirstLine), aTargetPoint, aIgnoreFirstLine);
     if (Length(UGA) > 0) then
     begin
       fAttack.CreateCompany(aTargetPoint, UGA, cm_Defence);
@@ -581,13 +587,17 @@ procedure TKMArmyDefence.FindEnemyInDefLine(aEnemyGroups: TKMUnitGroupArray; var
     Inc(aCnt);
   end;
   // Add request for help
-  procedure AddDefRequest(aLoc: TKMPoint);
+  procedure AddDefRequest(aLoc: TKMPoint; aOnlyByInfluence: Boolean);
   begin
     with aDefRequest do
     begin
       if (PointsCnt >= Length(Points)) then
+      begin
         SetLength(Points, PointsCnt + 10);
+        SetLength(AssistByInfluence, PointsCnt + 10);
+      end;
       Points[PointsCnt] := aLoc;
+      AssistByInfluence[PointsCnt] := aOnlyByInfluence;
       Inc(PointsCnt);
     end;
   end;
@@ -626,8 +636,10 @@ begin
   end;
   // Try find existing defensive platoons or create new
   for I := 0 to Cnt - 1 do
-    if not DefendPoint(TargetPoints[I], True) then
-      AddDefRequest(TargetPoints[I]);
+    if not DefendPoint(TargetPoints[I], True, False) then
+      AddDefRequest(TargetPoints[I],False)
+    else
+      AddDefRequest(TargetPoints[I],True);
   fCityUnderAttack := (Cnt > 0);
 end;
 
@@ -719,3 +731,4 @@ end;
 
 
 end.
+
