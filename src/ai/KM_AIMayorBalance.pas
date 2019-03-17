@@ -340,7 +340,7 @@ begin
     begin
       Weapons[J] := I;
       //Calculate weapon production satisfaction rate (0..1)
-      WeaponSatisfactions[J] := fWarfare.Warfare[I].Production / fWarfare.Warfare[I].Demand;
+      WeaponSatisfactions[J] := fWarfare.Warfare[I].Production / Max(0.01,fWarfare.Warfare[I].Demand);
       Inc(J);
     end;
   WeaponsCount := J;
@@ -443,7 +443,7 @@ begin
     //Current coal consumption
     CoalConsumptionRate := GoldPerMin/2 + SteelPerMin + WeaponsPerMin + ArmorPerMin;
   end;
-  CoalReserve := gHands[fOwner].Stats.GetWareBalance(wt_Coal) / CoalConsumptionRate;
+  CoalReserve := gHands[fOwner].Stats.GetWareBalance(wt_Coal) / Max(1,CoalConsumptionRate);
   CoalProductionRate := HouseCount(htCoalMine) * ProductionRate[wt_Coal] + Max(CoalReserve - 30, 0);
 
   if CoalProductionRate >= CoalConsumptionRate then
@@ -513,7 +513,7 @@ begin
   end;
 
   IronConsumption := SteelConsumptionRate; //Any not being used for steel is excess
-  IronReserve := gHands[fOwner].Stats.GetWareBalance(wt_IronOre) / IronConsumption;
+  IronReserve := gHands[fOwner].Stats.GetWareBalance(wt_IronOre) / Max(1,IronConsumption);
   IronProduction := IronPerMin + Max(IronReserve - 30, 0);
 
   if IronProduction >= IronConsumption then
@@ -526,7 +526,7 @@ begin
   else
   begin
     //Share proportionaly
-    RateIron := IronProduction / IronConsumption;
+    RateIron := IronProduction / Max(1,IronConsumption);
     fWarfare.SteelWeapon.IronTheory := RateIron * IronPerMin;
     fWarfare.SteelArmor.IronTheory := RateIron * IronPerMin;
   end;
@@ -563,7 +563,7 @@ begin
 
     //Current wood consumption
     WoodConsumption := WoodNeed + ShieldsPerMin + WeaponsPerMin * WEAP_COST;
-    WoodReserve := gHands[fOwner].Stats.GetWareBalance(wt_Wood) / WoodConsumption;
+    WoodReserve := gHands[fOwner].Stats.GetWareBalance(wt_Wood) / Max(1,WoodConsumption);
     WoodProduction := WoodPerMin + Max(WoodReserve - 30, 0);
 
     //Wood shares
@@ -571,7 +571,7 @@ begin
     begin
       //Let every industry think the extra belongs to it
       ExtraWood := WoodProduction - WoodConsumption;
-      WoodWeapon.WoodTheory := WeaponsPerMin + ExtraWood / WEAP_COST;
+      WoodWeapon.WoodTheory := WeaponsPerMin + ExtraWood / Max(1,WEAP_COST);
       LeatherArmor.WoodTheory := ShieldsPerMin + ExtraWood;
     end
     else
@@ -581,7 +581,7 @@ begin
       if (WoodConsumption > 0) and (WoodProduction > WoodNeed) then
       begin
         DeficitWood := WoodConsumption - WoodProduction;
-        WoodWeapon.WoodTheory := Max(0, WeaponsPerMin - DeficitWood / WEAP_COST);
+        WoodWeapon.WoodTheory := Max(0, WeaponsPerMin - DeficitWood / Max(1,WEAP_COST));
         LeatherArmor.WoodTheory := Max(0, ShieldsPerMin - DeficitWood);
       end
       else
@@ -591,8 +591,8 @@ begin
       end;
     end;
 
-    TrunkConsumption := WoodPerMin / WT;
-    TrunkReserve := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) / TrunkConsumption;
+    TrunkConsumption := WoodPerMin / Max(1,WT);
+    TrunkReserve := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) / Max(1,TrunkConsumption);
     TrunkProduction := TrunkPerMin + Max(TrunkReserve - 30, 0);
 
     //Trunk shares
@@ -600,7 +600,7 @@ begin
     begin
       //Let every industry think the extra belongs to it
       ExtraTrunk := TrunkProduction - TrunkConsumption;
-      WoodWeapon.TrunkTheory := WeaponsPerMin + ExtraTrunk * WT / WEAP_COST;
+      WoodWeapon.TrunkTheory := WeaponsPerMin + ExtraTrunk * WT / Max(1,WEAP_COST);
       LeatherArmor.TrunkTheory := ShieldsPerMin + ExtraTrunk * WT;
     end
     else
@@ -610,7 +610,7 @@ begin
       if TrunkConsumption <> 0 then
       begin
         DeficitTrunk := TrunkConsumption - TrunkProduction;
-        WoodWeapon.TrunkTheory := Max(0, WeaponsPerMin - DeficitTrunk * WT / WEAP_COST);
+        WoodWeapon.TrunkTheory := Max(0, WeaponsPerMin - DeficitTrunk * WT / Max(1,WEAP_COST));
         LeatherArmor.TrunkTheory := Max(0, ShieldsPerMin - DeficitTrunk * WT);
       end
       else
@@ -631,7 +631,7 @@ begin
     //How much Gold do we need
     Consumption := GoldNeed + Byte(HouseCount(htBarracks) > 0) * gHands[fOwner].AI.Setup.WarriorsPerMinute;
 
-    GoldOreReserve := gHands[fOwner].Stats.GetWareBalance(wt_GoldOre) / (2 * Consumption);
+    GoldOreReserve := gHands[fOwner].Stats.GetWareBalance(wt_GoldOre) / Max(1,(2 * Consumption));
 
     //How much gold in theory we could get
     //CoalTheory - coal calculated separately
@@ -643,7 +643,7 @@ begin
     Production := Min(CoalTheory, GoldOreTheory, GoldTheory);
 
     //How much reserve do we have
-    Reserve := gHands[fOwner].Stats.GetWareBalance(wt_Gold) / Consumption;
+    Reserve := gHands[fOwner].Stats.GetWareBalance(wt_Gold) / Max(1,Consumption);
 
     Balance := Production - Consumption + Max(Reserve - 30, 0);
 
@@ -798,14 +798,14 @@ begin
       StoneProduction := 99999
     else
     begin
-      StoneReserve := gHands[fOwner].Stats.GetWareBalance(wt_Stone) / StoneNeed;
+      StoneReserve := gHands[fOwner].Stats.GetWareBalance(wt_Stone) / Max(0.001,StoneNeed);
       StoneProduction := HouseCount(htQuary) * ProductionRate[wt_Stone] + Max(StoneReserve - 30, 0);
     end;
 
-    WoodcutReserve := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) * 2 / WoodNeed;
+    WoodcutReserve := gHands[fOwner].Stats.GetWareBalance(wt_Trunk) * 2 / Max(0.001,WoodNeed);
     WoodcutTheory := HouseCount(htWoodcutters) * ProductionRate[wt_Trunk] * 2 + Max(WoodcutReserve - 30, 0);
 
-    SawmillReserve := gHands[fOwner].Stats.GetWareBalance(wt_Wood) / WoodNeed;
+    SawmillReserve := gHands[fOwner].Stats.GetWareBalance(wt_Wood) / Max(0.001,WoodNeed);
     SawmillTheory := HouseCount(htSawmill) * ProductionRate[wt_Wood] + Max(SawmillReserve - 30, 0);
     WoodProduction := Min(WoodcutTheory, SawmillTheory);
 
@@ -833,7 +833,7 @@ begin
   PigPerMin   := HouseCount(htSwine) * ProductionRate[wt_Pig] * BEAST_COST;
   HorsePerMin := HouseCount(htStables) * ProductionRate[wt_Horse] * BEAST_COST;
   CornConsumption := FlourPerMin + PigPerMin + HorsePerMin;
-  CornReserve := gHands[fOwner].Stats.GetWareBalance(wt_Corn) / CornConsumption;
+  CornReserve := gHands[fOwner].Stats.GetWareBalance(wt_Corn) / Max(CornConsumption,0.001);
   CornProduction := HouseCount(htFarm) * ProductionRate[wt_Corn] + Max(CornReserve - 30, 0);
 
   if CornProduction >= CornConsumption then
@@ -906,7 +906,7 @@ begin
                gHands[fOwner].Stats.GetWareBalance(wt_Sausages) * SAUSAGE_RESTORE +
                gHands[fOwner].Stats.GetWareBalance(wt_Wine) * WINE_RESTORE +
                gHands[fOwner].Stats.GetWareBalance(wt_Fish) * FISH_RESTORE;
-    Reserve := Reserve / Consumption;
+    Reserve := Reserve / Max(1,Consumption);
 
     Balance := Production - Consumption + Max(Reserve - 30, 0);
     fFoodText := Format('%.2f Food: %.2f - %.2f + %.2f|', [Balance, Production, Consumption, Reserve])
@@ -931,17 +931,17 @@ begin
       Warfare[WT].Demand := aNeeds[WT];
 
     //Calculate ratios at which warfare should be produced in workshops
-    OrderRatio[wt_Shield] := aNeeds[wt_Shield] / (aNeeds[wt_Shield] + aNeeds[wt_Armor]);
-    OrderRatio[wt_Armor]  := aNeeds[wt_Armor]  / (aNeeds[wt_Shield] + aNeeds[wt_Armor]);
-    OrderRatio[wt_Axe]  := aNeeds[wt_Axe]  / (aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]);
-    OrderRatio[wt_Pike] := aNeeds[wt_Pike] / (aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]);
-    OrderRatio[wt_Bow]  := aNeeds[wt_Bow]  / (aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]);
+    OrderRatio[wt_Shield] := aNeeds[wt_Shield] / Max(0.001,(aNeeds[wt_Shield] + aNeeds[wt_Armor]));
+    OrderRatio[wt_Armor]  := aNeeds[wt_Armor]  / Max(0.001,(aNeeds[wt_Shield] + aNeeds[wt_Armor]));
+    OrderRatio[wt_Axe]  := aNeeds[wt_Axe]  / Max(0.001,(aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]));
+    OrderRatio[wt_Pike] := aNeeds[wt_Pike] / Max(0.001,(aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]));
+    OrderRatio[wt_Bow]  := aNeeds[wt_Bow]  / Max(0.001,(aNeeds[wt_Axe] + aNeeds[wt_Pike] + aNeeds[wt_Bow]));
 
-    OrderRatio[wt_MetalShield] := aNeeds[wt_MetalShield] / (aNeeds[wt_MetalShield] + aNeeds[wt_MetalArmor]);
-    OrderRatio[wt_MetalArmor]  := aNeeds[wt_MetalArmor]  / (aNeeds[wt_MetalShield] + aNeeds[wt_MetalArmor]);
-    OrderRatio[wt_Sword]     := aNeeds[wt_Sword]     / (aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]);
-    OrderRatio[wt_Hallebard] := aNeeds[wt_Hallebard] / (aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]);
-    OrderRatio[wt_Arbalet]   := aNeeds[wt_Arbalet]   / (aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]);
+    OrderRatio[wt_MetalShield] := aNeeds[wt_MetalShield] / Max(0.001,(aNeeds[wt_MetalShield] + aNeeds[wt_MetalArmor]));
+    OrderRatio[wt_MetalArmor]  := aNeeds[wt_MetalArmor]  / Max(0.001,(aNeeds[wt_MetalShield] + aNeeds[wt_MetalArmor]));
+    OrderRatio[wt_Sword]     := aNeeds[wt_Sword]     / Max(0.001,(aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]));
+    OrderRatio[wt_Hallebard] := aNeeds[wt_Hallebard] / Max(0.001,(aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]));
+    OrderRatio[wt_Arbalet]   := aNeeds[wt_Arbalet]   / Max(0.001,(aNeeds[wt_Sword] + aNeeds[wt_Hallebard] + aNeeds[wt_Arbalet]));
   end;
 end;
 
