@@ -419,60 +419,79 @@ end;
 
 procedure TKMGeneral.CheckAutoDefend;
 
-  function EnsureWalkable(var Loc: TKMPoint): Boolean;
-  var
-    IX, IY, BestDistSqr: Integer;
-    Best: TKMPoint;
-  begin
-    if gTerrain.CheckPassability(Loc, tpWalk) then
-    begin
-      Result := True;
-      Exit;
-    end;
-    Result := False;
-    BestDistSqr := High(Integer);
-    for IY := Max(1, Loc.Y-2) to Min(gTerrain.MapY, Loc.Y+2) do
-      for IX := Max(1, Loc.X-2) to Min(gTerrain.MapX, Loc.X+2) do
-        if gTerrain.CheckPassability(KMPoint(IX, IY), tpWalk)
-        and (KMLengthSqr(Loc, KMPoint(IX, IY)) < BestDistSqr) then
-        begin
-          BestDistSqr := KMLengthSqr(Loc, KMPoint(IX, IY));
-          Best := KMPoint(IX, IY);
-          Result := True;
-        end;
-    if Result then
-      Loc := Best;
-  end;
+  //function EnsureWalkable(var Loc: TKMPoint): Boolean;
+  //var
+  //  IX, IY, BestDistSqr: Integer;
+  //  Best: TKMPoint;
+  //begin
+  //  if gTerrain.CheckPassability(Loc, tpWalk) then
+  //  begin
+  //    Result := True;
+  //    Exit;
+  //  end;
+  //  Result := False;
+  //  BestDistSqr := High(Integer);
+  //  for IY := Max(1, Loc.Y-2) to Min(gTerrain.MapY, Loc.Y+2) do
+  //    for IX := Max(1, Loc.X-2) to Min(gTerrain.MapX, Loc.X+2) do
+  //      if gTerrain.CheckPassability(KMPoint(IX, IY), tpWalk)
+  //      and (KMLengthSqr(Loc, KMPoint(IX, IY)) < BestDistSqr) then
+  //      begin
+  //        BestDistSqr := KMLengthSqr(Loc, KMPoint(IX, IY));
+  //        Best := KMPoint(IX, IY);
+  //        Result := True;
+  //      end;
+  //  if Result then
+  //    Loc := Best;
+  //end;
 
+const
+  MIN_DEF_POS = 6;
 var
-  //Outline1, Outline2: TKMWeightSegments;
   DefPosArr: TKMDefencePosArr;
-  MinCnt: Word;
   I: Integer;
-  Locs: TKMPointDirTagList;
+  BestOwner: TKMHandIndex;
   Loc: TKMPoint;
-  LocI: TKMPoint;
+  GT: TKMGroupType;
+  DPT: TAIDefencePosType;
+  //Outline1, Outline2: TKMWeightSegments;
+  //Locs: TKMPointDirTagList;
+  //LocI: TKMPoint;
   //FaceDir: TKMDirection;
   //SegLength, Ratio: Single;
   //DefCount: Byte;
-  GT: TKMGroupType;
-  DPT: TAIDefencePosType;
   //Weight: Cardinal;
-  BacklineCount: Integer;
+  //FirstLineCount,BacklineCount: Integer;
 begin
   //Get defence Outline with weights representing how important each segment is
-  MinCnt := Min(15,Max(5,gHands[fOwner].UnitGroups.Count));
-  if not gAIFields.NavMesh.Defences.FindDefensivePolygons(fOwner, MinCnt, DefPosArr, True) then
+  if not gAIFields.NavMesh.Defences.FindDefensivePolygons(fOwner, DefPosArr) then
     Exit;
 
   fDefencePositions.Clear;
-  BacklineCount := 0;
+  for I := Low(DefPosArr) to High(DefPosArr) do
+  begin
+    BestOwner := gAIFields.Influences.GetBestOwner(DefPosArr[I].Polygon);
+    if (BestOwner = fOwner) OR (BestOwner = PLAYER_NONE) OR (fDefencePositions.Count + Length(DefPosArr) <= MIN_DEF_POS) then
+    begin
+      if (DefPosArr[I].Line = 0) then
+        DPT := adt_FrontLine
+      else
+        DPT := adt_BackLine;
+      Loc := DefPosArr[I].DirPoint.Loc;
+      case (Loc.X*2 + Loc.Y*2) mod 3 of
+        0:   GT := gt_AntiHorse;
+        1:   GT := gt_Ranged;
+        else GT := gt_Melee;
+      end;
+      fDefencePositions.Add(DefPosArr[I].DirPoint, GT, 25, DPT);
+    end;
+  end;
 
-  Locs := TKMPointDirTagList.Create;
-  try
+  //BacklineCount := 0;
+  //FirstLineCount := 0;
+
+  //Locs := TKMPointDirTagList.Create;
+  //try
     //Make list of defence positions
-    for I := 0 to High(DefPosArr) do
-      Locs.Add(DefPosArr[I].DirPoint, DefPosArr[I].Weight);
 
     //for I := 0 to High(Outline2) do
     //begin
@@ -496,64 +515,63 @@ begin
     //end;
 
     //Sort according to positions weight
-    Locs.SortByTag;
-
+    //Locs.SortByTag;
 
     //Add defence positions
-    for I := Locs.Count - 1 downto 0 do
-    begin
-      LocI := KMGetPointInDir(Locs.Items[I].Loc, Locs.Items[I].Dir, 1);
-      Loc := gTerrain.EnsureTileInMapCoords(LocI.X, LocI.Y, 3);
-      if not EnsureWalkable(Loc) then
-        Continue;
-
-      //Mix group types deterministicly based on Loc, so they don't change for a given position
-      case (Loc.X*2 + Loc.Y*2) mod 3 of
-        0:   GT := gt_AntiHorse;
-        else GT := gt_Melee;
-      end;
-      //Low weight positions are set to backline (when one segment has more than one position)
-      if Locs.Tag[I] < 10000 then
-        DPT := adt_BackLine
-      else
-        DPT := adt_FrontLine;
-
-      fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), GT, 25, DPT);
-      if DPT = adt_BackLine then Inc(BacklineCount);
-
-      LocI := KMGetPointInDir(Locs[I].Loc, KMAddDirection(Locs[I].Dir, 4), 4);
-      Loc := gTerrain.EnsureTileInMapCoords(LocI.X, LocI.Y, 3);
-      if not EnsureWalkable(Loc) then
-        Continue;
-
-      fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), gt_Ranged, 25, DPT);
-      if DPT = adt_BackLine then Inc(BacklineCount);
-    end;
+    //for I := Locs.Count - 1 downto 0 do
+    //begin
+    //  LocI := KMGetPointInDir(Locs.Items[I].Loc, Locs.Items[I].Dir, 1);
+    //  Loc := gTerrain.EnsureTileInMapCoords(LocI.X, LocI.Y, 3);
+    //  if not EnsureWalkable(Loc) then
+    //    Continue;
+    //
+    //  //Mix group types deterministicly based on Loc, so they don't change for a given position
+    //  case (Loc.X*2 + Loc.Y*2) mod 3 of
+    //    0:   GT := gt_AntiHorse;
+    //    else GT := gt_Melee;
+    //  end;
+    //  //Low weight positions are set to backline (when one segment has more than one position)
+    //  if Locs.Tag[I] < 10000 then
+    //    DPT := adt_BackLine
+    //  else
+    //    DPT := adt_FrontLine;
+    //
+    //  fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), GT, 25, DPT);
+    //  if DPT = adt_BackLine then Inc(BacklineCount);
+    //
+    //  LocI := KMGetPointInDir(Locs[I].Loc, KMAddDirection(Locs[I].Dir, 4), 4);
+    //  Loc := gTerrain.EnsureTileInMapCoords(LocI.X, LocI.Y, 3);
+    //  if not EnsureWalkable(Loc) then
+    //    Continue;
+    //
+    //  fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), gt_Ranged, 25, DPT);
+    //  if DPT = adt_BackLine then Inc(BacklineCount);
+    //end;
 
     //Add extra backline defence positions after adding all the front line ones so they are lower priority
-    for I := Locs.Count - 1 downto 0 do
-    if BacklineCount < 12 then
-    begin
-      //Try to add backline defence positions behind front line, if there's space
-      Loc := KMGetPointInDir(Locs[I].Loc, KMAddDirection(Locs[I].Dir, 4), 7);
-      if gTerrain.TileInMapCoords(Loc.X, Loc.Y, 3) then
-      begin
-        if not EnsureWalkable(Loc) then
-          Continue;
-
-        //Mix group types deterministicly based on Loc, so they don't change for a given position
-        case (Loc.X*2 + Loc.Y*2) mod 3 of
-          0:   GT := gt_AntiHorse;
-          1:   GT := gt_Ranged;
-          else GT := gt_Melee;
-        end;
-        fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), GT, 35, adt_BackLine);
-        Inc(BacklineCount);
-      end;
-    end;
-  finally
-    Locs.Free;
-  end;
+    //for I := Locs.Count - 1 downto 0 do
+    //if BacklineCount < 12 then
+    //begin
+    //  //Try to add backline defence positions behind front line, if there's space
+    //  Loc := KMGetPointInDir(Locs[I].Loc, KMAddDirection(Locs[I].Dir, 4), 7);
+    //  if gTerrain.TileInMapCoords(Loc.X, Loc.Y, 3) then
+    //  begin
+    //    if not EnsureWalkable(Loc) then
+    //      Continue;
+    //
+    //    //Mix group types deterministicly based on Loc, so they don't change for a given position
+    //    case (Loc.X*2 + Loc.Y*2) mod 3 of
+    //      0:   GT := gt_AntiHorse;
+    //      1:   GT := gt_Ranged;
+    //      else GT := gt_Melee;
+    //    end;
+    //    fDefencePositions.Add(KMPointDir(Loc, Locs[I].Dir), GT, 35, adt_BackLine);
+    //    Inc(BacklineCount);
+    //  end;
+    //end;
+  //finally
+  //  Locs.Free;
+  //end;
 
   //Compare existing defence positions with the sample
     //Get the ratio between sample and existing troops

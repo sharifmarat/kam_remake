@@ -5,7 +5,7 @@ uses
   Math,
   KM_CommonClasses, KM_CommonTypes, KM_CommonUtils, KM_Defaults, KM_Points,
   KM_Units, KM_UnitGroups,
-  KM_NavMesh, KM_NavMeshInfluences,
+  KM_NavMesh, KM_NavMeshGenerator, KM_NavMeshInfluences,
   KM_NavMeshFloodFill, KM_FloodFill;
 
 
@@ -18,7 +18,6 @@ const
   AVOID_BUILDING_NODE_LOCK_FIELD = 25;
   AVOID_BUILDING_NODE_LOCK_ROAD = 30;
   AVOID_BUILDING_MINE_TILE = 40;
-  AVOID_BUILDING_INACCESSIBLE_TILES = 45;
   AVOID_BUILDING_FOREST_RANGE = 200; // Value: 255 <-> AVOID_BUILDING_FOREST_VARIANCE which may forest tiles have
   AVOID_BUILDING_FOREST_MINIMUM = 254 - AVOID_BUILDING_FOREST_RANGE; // Minimum value of forest reservation tiles
 
@@ -82,8 +81,9 @@ type
     property InfluenceSearch: TNavMeshInfluenceSearch read fInfluenceSearch write fInfluenceSearch;
 
     // Avoid building
-    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
+    procedure AddAvoidBuilding(aX,aY: Word; aRad: Single);
     procedure RemAvoidBuilding(aArea: TKMRect);
+    procedure MarkForest(aPoint: TKMPoint; aRad, aDecreaseCoef: Single);
     // Army presence
     // City influence
     function GetBestOwner(const aX,aY: Word): TKMHandIndex; overload;
@@ -194,24 +194,19 @@ end;
 
 
 //Make the area around to be avoided by common houses
-procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single; aValue: Byte = 255; aDecreaseCoef: Single = 0);
+procedure TKMInfluences.AddAvoidBuilding(aX,aY: Word; aRad: Single);
 var
-  X,Y: Integer;
-  SqrDist, SqrMaxDist: Single;
+  X,Y,Rad: Integer;
 begin
   if (aRad = 0) then
     Exit;
-  SqrMaxDist := Sqr(aRad);
-  for Y := Max(aY - Ceil(aRad), 1) to Min(aY + Ceil(aRad), fMapY - 1) do
-  for X := Max(aX - Ceil(aRad), 1) to Min(aX + Ceil(aRad), fMapX - 1) do
-    if (AvoidBuilding[Y,X] = 0) OR (AvoidBuilding[Y,X] >= AVOID_BUILDING_FOREST_MINIMUM) then // Protect reservation tiles
-    begin
-      SqrDist := Sqr(aX-X) + Sqr(aY-Y);
-      if (SqrDist <= SqrMaxDist) then
-        AvoidBuilding[Y,X] := Min(AvoidBuilding[Y,X] + Max(0, Round(aValue - SqrDist * aDecreaseCoef)), 255);
-    end;
+  Rad := Ceil(aRad);
+  for Y := Max(aY - Rad, 1) to Min(aY + Rad, fMapY - 1) do
+  for X := Max(aX - Rad, 1) to Min(aX + Rad, fMapX - 1) do
+    if (AvoidBuilding[Y,X] = 0) OR (AvoidBuilding[Y,X] >= AVOID_BUILDING_FOREST_MINIMUM)  // Protect reservation tiles
+      AND (Sqr(aX-X) + Sqr(aY-Y) <= Sqr(aRad)) then
+      AvoidBuilding[Y,X] := 255;
 end;
-
 
 procedure TKMInfluences.RemAvoidBuilding(aArea: TKMRect);
 var
@@ -221,6 +216,30 @@ begin
   for X := Max(aArea.Left, 1) to Min(aArea.Right , fMapX - 1) do
     if (AvoidBuilding[Y,X] = AVOID_BUILDING_COAL_TILE) then // It is not used otherwise anyway
       AvoidBuilding[Y,X] := 0;
+end;
+
+
+procedure TKMInfluences.MarkForest(aPoint: TKMPoint; aRad, aDecreaseCoef: Single);
+var
+  X,Y, Rad: Integer;
+  SqrDist, SqrMaxDist: Single;
+begin
+  if (aRad = 0) then
+    Exit;
+  SqrMaxDist := Sqr(aRad);
+  Rad := Ceil(aRad);
+  for Y := Max(aPoint.Y - Rad, 1) to Min(aPoint.Y + Rad, fMapY - 1) do
+  for X := Max(aPoint.X - Rad, 1) to Min(aPoint.X + Rad, fMapX - 1) do
+    if (AvoidBuilding[Y,X] = 0) OR (AvoidBuilding[Y,X] >= AVOID_BUILDING_FOREST_MINIMUM) then // Protect reservation tiles
+    begin
+      SqrDist := Sqr(aPoint.X-X) + Sqr(aPoint.Y-Y);
+      if (SqrDist <= SqrMaxDist) then
+        AvoidBuilding[Y,X] := Min( 254, // Forest does not reach full 255
+                                   Max( AVOID_BUILDING_FOREST_MINIMUM, // Forest start at this value
+                                        AvoidBuilding[Y,X] + 254 - Round(SqrDist * aDecreaseCoef)
+                                      )
+                                 );
+    end;
 end;
 
 
@@ -760,3 +779,4 @@ end;
 
 
 end.
+

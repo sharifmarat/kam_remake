@@ -108,7 +108,8 @@ end;
 //Used from MapEd to give multiplayer building maps an AI builder config
 procedure TKMHandAISetup.ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
 begin
-  NewAI := aNewAI;
+  //NewAI := aNewAI;
+  NewAI := true;
   SerfsPerHouse := 1;
   WorkerCount := 20;
   ArmyType := atIronAndLeather; //Mixed army
