@@ -68,7 +68,7 @@ type
     property BestDefLines: TKMDefenceLines read fBestDefLines;
 
     function FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
+    function FindDefensivePolygons(aOwner: TKMHandIndex; var aDefPosArr: TKMDefencePosArr): Boolean;
     function FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
     //procedure DEBUG();
   end;
@@ -88,7 +88,7 @@ type
     function CanBeExpanded(const aIdx: Word): Boolean; override;
     procedure BackwardFlood();
     procedure EvaluateDefence(const aIdx: Word);
-    function FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
+    function FindDefencePos(aBaseCnt: Word): Boolean;
   public
     //D_INIT_ARR, D_INIT_FLOOD: TKMWordArray;
 
@@ -99,7 +99,7 @@ type
     procedure NewQueue(aVisitedIdx: Byte);
     procedure AddPolygon(aIdx: Word);
     function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
+    function FindDefensivePolygons(aOwner: TKMHandIndex; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
     procedure FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
     //procedure DEBUG();
   end;
@@ -113,6 +113,7 @@ type
     procedure InitQueue(aMaxIdx: Word; aInitIdxArray: TKMWordArray); reintroduce;
     function IsVisited(const aIdx: Word): Boolean; override;
     procedure MarkAsVisited(const aIdx, aDistance: Word; const aPoint: TKMPoint); override;
+    function CheckStartPolygons(var aStartPolygons: TKMWordArray): boolean;
   public
     property BestDefLines: TKMDefenceLines read fBestDefLines;
 
@@ -125,21 +126,21 @@ type
 const
   OWNER_INFLUENCE_LIMIT = 220; // From this influence limit will be counted distance, it is also the closest line of possible defence
   MAX_ENEMY_INFLUENCE = 200; // Maximal enemy influence in FordwardFF (forward flood fill will not scan futher)
-  ALLY_INFLUENCE_LIMIT = 220; // When ally influence will be greater than this constant there will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
-  ENEMY_INFLUENCE_LIMIT = 10; // When enemy influence will be greter than this constant there will be applied penalization ENEMY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ALLY_INFLUENCE_LIMIT = 220; // If ally influence will be greater than this constant, then will be applied penalization ALLY_INFLUENCE_PENALIZATION in weight function of actual defensive line
+  ENEMY_INFLUENCE_LIMIT = 1; // If enemy influence will be greater than this constant, then will be applied penalization ENEMY_INFLUENCE_PENALIZATION in weight function of actual defensive line
 
   // Weights of defensive line calculation
-  MIN_OPTIMAL_INFLUENCE = 150; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
+  MIN_OPTIMAL_INFLUENCE = 50; // Minimal optimal influence (maximal is given by ALLY_INFLUENCE_LIMIT)
   POLYGON_CNT_PENALIZATION = 2; // Polygon count penalization (more polygons = worse defensive line)
   OPTIMAL_INFLUENCE_ADD = 1; // Improve criterium of actual defence line in case that influence is in <MIN_OPTIMAL_INFLUENCE, ALLY_INFLUENCE_LIMIT>
   ALLY_INFLUENCE_PENALIZATION = 4; // Ally penalization (dont place defences inside of ally city)
-  ENEMY_INFLUENCE_PENALIZATION = 6; // Enemy penalization (dont place defences inside of enemy city)
+  ENEMY_INFLUENCE_PENALIZATION = 10; // Enemy penalization (dont place defences inside of enemy city)
   MINIMAL_DEFENCE_DISTANCE = 1; // Minimal distance of defensive lines (minimal distance is also affected by OWNER_INFLUENCE_LIMIT)
   MAXIMAL_DEFENCE_DISTANCE = 75; // Maximal defence distance (maximal distance is also affected by MAX_ENEMY_INFLUENCE)
 
 implementation
 uses
-  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh;
+  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
 
 
 { TForwardFF }
@@ -255,7 +256,7 @@ end;
 
 
 // Find best defensive polygons (for defensive positions)
-function TForwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt: Word; var aDefPosArr: TKMDefencePosArr; aMinDefeces: Boolean = True): Boolean;
+function TForwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aDefPosArr: TKMDefencePosArr): Boolean;
 begin
   fOwner := aOwner;
   fFirstLine := 0;
@@ -264,7 +265,7 @@ begin
 
   Result := ForwardFF();
   if Result then
-    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, aBaseCnt, fFirstLine, fBestDefLines, aMinDefeces, False);
+    aDefPosArr := fBackwardFF.FindDefensivePolygons(aOwner, fFirstLine, fBestDefLines, False);
 end;
 
 
@@ -481,33 +482,23 @@ end;
 
 
 // Flood fill for detection of defensive positions
-function TBackwardFF.FindDefencePos(var aBaseCnt, aFirstLine: Word; aMinDefeces: Boolean): Boolean;
+function TBackwardFF.FindDefencePos(aBaseCnt: Word): Boolean;
 const
   INIT_WEIGHT = 10000;
   SQR_MIN_DEF_POINT_DISTANCE = 3*3;
 var
   Check: Boolean;
-  PL: TKMHandIndex;
-  Idx, NearbyIdx, Cnt, ScannedCnt, AllianceCnt, NextLine, ActLineIdx: Word;
+  Idx, NearbyIdx, Cnt, ScannedCnt, NextLine, ActLineIdx: Word;
   I, K: Integer;
   Direction: TKMDirection;
   PolyArr: TPolygonArray;
 begin
   Result := False;
 
-  AllianceCnt := 1;
-  for PL := 0 to gHands.Count - 1 do
-    if gHands[PL].Enabled AND (fOwner <> PL) AND (gHands[fOwner].Alliances[PL] = at_Ally) then
-      AllianceCnt := AllianceCnt + 1;
-
   // Check and determine counts
-  aFirstLine := fBestDefLines.Count;
   if (fBestDefLines.Count = 0) then
-    Exit
-  else if aMinDefeces then
-    aBaseCnt := Max(aBaseCnt,fBestDefLines.Count)
-  else
-    aBaseCnt := Max(aBaseCnt * AllianceCnt,fBestDefLines.Count * 2); // We need much more defeces because most of them will be used by allies
+    Exit;
+  aBaseCnt := Max(aBaseCnt,fBestDefLines.Count);
 
   PolyArr := gAIFields.NavMesh.Polygons;
   // Prepare defensive FF - add all polygon is BestDefLines to queue
@@ -590,10 +581,6 @@ begin
     end;
   end;
 
-  // Determine first line (divided by count of allies - it is rought because allies can have different size of defensive line but better than nothing)
-  if not aMinDefeces then
-    aFirstLine := Round(aFirstLine / AllianceCnt);
-
   SetLength(fDefPosArr, Cnt);
   Result := True;
 end;
@@ -608,25 +595,35 @@ begin
 end;
 
 
-function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aBaseCnt, aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aMinDefeces: Boolean; aDefLinesRequired: Boolean): TKMDefencePosArr;
+// Defense detection for Krom's AI
+function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
+const
+  MIN_DEF_POINTS_CNT = 9;
+  MULTIPLICATION = 3;
 begin
+  // Initialization
   fOwner := aOwner;
   fDefLinesRequired := aDefLinesRequired;
-  BackwardFlood(); // Find best defence line
+  // Find best defence line
+  BackwardFlood();
+  // Filter defence line in walkable area around players city
   fFilterFF.FilterDefenceLine(fBestDefLines, aBestDefLines);
   fBestDefLines := aBestDefLines;
-  FindDefencePos(aBaseCnt, aFirstLine, aMinDefeces);
+  aFirstLine := fBestDefLines.Count;
+  // Get more defensive points around defensive line
+  FindDefencePos( Max(MIN_DEF_POINTS_CNT, aFirstLine * MULTIPLICATION) );
   Result := fDefPosArr;
 end;
 
 
+// Defense detection for new AI (once per a team)
 procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
 var
   SeparatedDefLines: TKMDefLinesArray;
   DefLinesReq: TKMWordArray;
   procedure AddDefRequirements(aIdx: Integer; var aPLsDefAreas: TKMByteArray);
   var
-    I, Cnt, PolySum: Integer;
+    K, Cnt, PolySum: Integer;
   begin
     // Check length
     Cnt := Length(DefLinesReq);
@@ -637,11 +634,11 @@ var
     end;
     // Compute sum of polygons
     PolySum := 1;
-    for I := 0 to Length(aPLsDefAreas) - 1 do
-      Inc(PolySum, SeparatedDefLines[ aPLsDefAreas[I] ].PolyCnt);
+    for K := 0 to Length(aPLsDefAreas) - 1 do
+      Inc(PolySum, SeparatedDefLines[ aPLsDefAreas[K] ].PolyCnt);
     // Distribute requirements
-    for I := 0 to Length(aPLsDefAreas) - 1 do
-      Inc(  DefLinesReq[ aPLsDefAreas[I] ], Round( SeparatedDefLines[ aPLsDefAreas[I] ].PolyCnt / PolySum * aDefPosReq[aIdx] )  );
+    for K := 0 to Length(aPLsDefAreas) - 1 do
+      Inc(  DefLinesReq[ aPLsDefAreas[K] ], Round( SeparatedDefLines[ aPLsDefAreas[K] ].PolyCnt / PolySum * aDefPosReq[aIdx] )  );
   end;
   function GetOwners(DefLineIdx: Integer; var aPLsDefAreas: TKMByte2Array): TKMHandIndexArray;
   var
@@ -660,7 +657,6 @@ var
     SetLength(Result, Cnt);
   end;
 var
-  FirstLine: Word;
   I: Integer;
   PLsDefAreas: TKMByte2Array;
 begin
@@ -683,7 +679,7 @@ begin
   for I := 0 to Length(SeparatedDefLines)-1 do
   begin
     fBestDefLines := SeparatedDefLines[I];
-    FindDefencePos(DefLinesReq[I], FirstLine, True);
+    FindDefencePos(DefLinesReq[I]);
     with aTeamDefPos[I] do
     begin
       Polygons := SeparatedDefLines[I].PolyCnt;
@@ -741,6 +737,23 @@ begin
 end;
 
 
+// Check if start polygon is on the defence line
+function TFilterFF.CheckStartPolygons(var aStartPolygons: TKMWordArray): boolean;
+var
+  K,L: Integer;
+begin
+  Result := Length(aStartPolygons) > 0;
+  for K := Length(aStartPolygons)-1 downto 0 do
+    for L := 0 to fAllDefLines.count-1 do
+      if (aStartPolygons[K] = fAllDefLines.Lines[L].Polygon) then
+      begin
+        aStartPolygons[K] := aStartPolygons[ Length(aStartPolygons)-1 ];
+        SetLength(aStartPolygons, Length(aStartPolygons)-1);
+        break;
+      end;
+end;
+
+
 procedure TFilterFF.FilterDefenceLine(var aAllDefLines, aBestDefLines: TKMDefenceLines);
 var
   StartPolygons: TKMWordArray;
@@ -751,7 +764,7 @@ begin
     SetLength(fBestDefLines.Lines, fAllDefLines.Count);
 
   StartPolygons := gAIFields.Eye.GetCityCenterPolygons(True);
-  if (Length(StartPolygons) < 1) then
+  if not CheckStartPolygons(StartPolygons) then
     Exit;
 
   InitQueue(Length(StartPolygons)-1, StartPolygons);
@@ -765,14 +778,13 @@ end;
 
 procedure TFilterFF.FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandIndex; var aAllDefLines: TKMDefenceLines;
                                       var aSeparatedDefLines: TKMDefLinesArray; var aPLDefAreas: TKMByteArray);
-  procedure AddPLDefArea(aVisitMark: Byte);
+  procedure AddPLDefArea(aVisitMark: Integer);
   begin
     SetLength(aPLDefAreas, Length(aPLDefAreas) + 1);
     aPLDefAreas[ High(aPLDefAreas) ] := aVisitMark-1; // Visit mark is +1 in comparison with visit indexes
   end;
 var
-  VisitMark: Byte;
-  I,K: Integer;
+  I,K, VisitMark: Integer;
   StartPolygons,StartPolygon: TKMWordArray;
 begin
   fAllDefLines := aAllDefLines;
@@ -782,11 +794,12 @@ begin
   // Get city center polygons
   gAIFields.Eye.OwnerUpdate(aOwner);
   StartPolygons := gAIFields.Eye.GetCityCenterPolygons(True);
-  if (Length(StartPolygons) < 1) then
+  if not CheckStartPolygons(StartPolygons) then
     Exit;
   // Check if city is already in known defence area
   SetLength(StartPolygon,1);
   SetLength(aPLDefAreas,0);
+  // Scan area around all StartPolygons of 1 player; visited polygons will have value fVisitedIdx
   for I := 0 to Length(StartPolygons) - 1 do
   begin
     StartPolygon[0] := StartPolygons[I];
@@ -798,7 +811,7 @@ begin
       if (VisitMark > 0) AND (VisitMark < $FF) then // Defence area is known
       begin
         for K := Low(aPLDefAreas) to High(aPLDefAreas) do
-          if (aPLDefAreas[K]+1 = VisitMark) then
+          if (aPLDefAreas[K] = VisitMark-1) then // fVisitedIdx starts with number 1, first player in array have 0 => decrease it
             continue;
         AddPLDefArea(VisitMark);
         continue;
