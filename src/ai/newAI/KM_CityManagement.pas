@@ -382,6 +382,7 @@ var
 
   procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
   const
+    TRADE_RESERVE = 5;
     TRADE_QUANTITY = 20;
   var
     I: Integer;
@@ -397,17 +398,22 @@ var
         AND Houses[I].IsComplete then
       begin
         HM := TKMHouseMarket(Houses[I]);
-        if (TKMHouseMarket(HM).ResOrder[0] <> 0)
-          AND (HM.ResTo = aResTo) then
-          Exit
-        else if HM.AllowedToTrade(aResFrom)
-          AND HM.AllowedToTrade(aResTo)
-          AND (TKMHouseMarket(HM).ResOrder[0] = 0) then
+        if (TKMHouseMarket(HM).ResOrder[0] <> 0) then
+        begin
+          if (HM.ResTo = aResTo) then
+            Exit;
+          if (gHands[fOwner].Stats.GetWareBalance(aResFrom) > TKMHouseMarket(HM).ResOrder[0]) then
+            continue;
+        end;
+        if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
+        begin
           IdleHM := HM;
+          break;
+        end;
       end;
     if (IdleHM <> nil) then  // AND (IdleHM.ResFrom <> aResFrom) or (IdleHM.ResTo <> aResTo) then
     begin
-      //IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
+      IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
       IdleHM.ResFrom := aResFrom;
       IdleHM.ResTo := aResTo;
       IdleHM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade

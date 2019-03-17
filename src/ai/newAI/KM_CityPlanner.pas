@@ -806,7 +806,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
       Path.Free;
     end;
   end;
-  function FindClosestHouseEntrance(aOnlyPlaced: Boolean; var aNewLoc, aExistLoc: TKMPoint): Boolean;
+  function FindClosestHouseEntrance(var aNewLoc, aExistLoc: TKMPoint): Boolean;
   const
     INIT_DIST = 1000000;
     MAX_WATCHTOWER_DIST = 10;
@@ -819,7 +819,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
     BestDist := INIT_DIST;
     for HT := HOUSE_MIN to HOUSE_MAX do
       for I := 0 to fPlannedHouses[HT].Count - 1 do
-        if (not aOnlyPlaced OR (fPlannedHouses[HT].Plans[I].Placed))     // Only placed houses?
+        if ((HT <> htWatchTower) OR (fPlannedHouses[HT].Plans[I].Placed))// Only placed houses in case of WatchTower
            AND not fPlannedHouses[HT].Plans[I].RemoveTreeInPlanProcedure // Ignore Remove tree in plan procedure because there is not builded road
            AND not KMSamePoint(fPlannedHouses[HT].Plans[I].Loc, aNewLoc) // Ignore itself
            AND (not (HT = htWoodcutters) OR not fPlannedHouses[HT].Plans[I].ChopOnly) then // Chop only woodcutters are planned without road connection so skip it
@@ -866,7 +866,7 @@ begin
   aFieldType := ftRoad;
   ExistLoc := KMPOINT_ZERO;
   NewLoc := fPlannedHouses[aHT].Plans[aIdx].Loc;
-  Output := FindClosestHouseEntrance((aHT = htWatchTower), NewLoc, ExistLoc); // Only placed in case of ht_WatchTower (ht_WatchTower are planned at once)
+  Output := FindClosestHouseEntrance(NewLoc, ExistLoc); // Only placed in case of ht_WatchTower (ht_WatchTower are planned at once)
   //H := gHands[fOwner].Houses.FindHouse(ht_Any, NewLoc.X, NewLoc.Y, 1, False); // True = complete house, False = house plan
   //if (H <> nil) then
   //begin
