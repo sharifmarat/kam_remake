@@ -471,6 +471,7 @@ var
   BestCmpIdx, IdxPL, EnemyTeamIdx: Integer;
   DefRatio, BestCmp, WorstCmp: Single;
   EnemyStats: TKMEnemyStatisticsArray;
+  AR: TKMAttackRequest;
 begin
   if not NewAIInTeam(aTeamIdx) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
     Exit;
@@ -495,7 +496,8 @@ begin
     begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
-        with gHands[ fAlli2PL[aTeamIdx, IdxPL] ].AI.ArmyManagement.AttackRequest do
+      begin
+        with AR do
         begin
           Active := True;
           BestAllianceCmp := BestCmp;
@@ -505,6 +507,8 @@ begin
           SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
           Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
         end;
+        gHands[ fAlli2PL[aTeamIdx, IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
+      end;
     end;
   end;
 end;

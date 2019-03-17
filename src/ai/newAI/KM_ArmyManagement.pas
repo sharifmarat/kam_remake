@@ -38,6 +38,7 @@ type
     procedure CheckAttack();
     procedure AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
     procedure CheckThreats();
+    procedure SetAttackRequest(aAttackRequest: TKMAttackRequest);
 
     function CombineBalanceStrings(): UnicodeString;
   public
@@ -49,7 +50,7 @@ type
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
     property Defence: TKMArmyDefence read fDefence write fDefence;
-    property AttackRequest: TKMAttackRequest read fAttackRequest write fAttackRequest;
+    property AttackRequest: TKMAttackRequest read fAttackRequest write SetAttackRequest;
     property DefendRequest: TKMDefendRequest read fDefendRequest;
     property BalanceText: UnicodeString read CombineBalanceStrings;
 
@@ -596,6 +597,18 @@ begin
     end;
   end;
   fDefence.FindEnemyInDefLine(UGA, fDefendRequest);
+end;
+
+
+procedure TKMArmyManagement.SetAttackRequest(aAttackRequest: TKMAttackRequest);
+begin
+  fAttackRequest.Active := aAttackRequest.Active;
+  fAttackRequest.BestAllianceCmp := aAttackRequest.BestAllianceCmp;
+  fAttackRequest.WorstAllianceCmp := aAttackRequest.WorstAllianceCmp;
+  fAttackRequest.BestEnemy := aAttackRequest.BestEnemy;
+  fAttackRequest.BestPoint := aAttackRequest.BestPoint;
+  SetLength(fAttackRequest.Enemies, Length(aAttackRequest.Enemies) );
+  Move(aAttackRequest.Enemies[0], fAttackRequest.Enemies[0], SizeOf(fAttackRequest.Enemies[0])*Length(fAttackRequest.Enemies));
 end;
 
 
