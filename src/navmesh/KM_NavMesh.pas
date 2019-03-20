@@ -89,7 +89,7 @@ end;
 
 procedure TKMNavMesh.Save(SaveStream: TKMemoryStream);
 var
-  I: Integer;
+  K: Integer;
 begin
   fNavMeshGenerator.Save(SaveStream);
   SaveStream.WriteA('NavMesh');
@@ -102,24 +102,24 @@ begin
   SaveStream.Write(fPolyCount);
   SaveStream.Write(fPolygons[0], SizeOf(fPolygons[0]) * fPolyCount);
   // Maybe this code will save work in future
-  //for I := 0 to fPolyCount - 1 do
+  //for K := 0 to fPolyCount - 1 do
   //begin
-  //  SaveStream.Write(fPolygons[I].CenterPoint);
-  //  SaveStream.Write(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
-  //  SaveStream.Write(fPolygons[I].NearbyCount);
-  //  SaveStream.Write(fPolygons[I].Poly2PointStart);
-  //  SaveStream.Write(fPolygons[I].Poly2PointCnt);
-  //  SaveStream.Write(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
-  //  SaveStream.Write(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  //  SaveStream.Write(fPolygons[K].CenterPoint);
+  //  SaveStream.Write(fPolygons[K].Indices, SizeOf(fPolygons[I].Indices));
+  //  SaveStream.Write(fPolygons[K].NearbyCount);
+  //  SaveStream.Write(fPolygons[K].Poly2PointStart);
+  //  SaveStream.Write(fPolygons[K].Poly2PointCnt);
+  //  SaveStream.Write(fPolygons[K].Nearby, SizeOf(fPolygons[I].Nearby));
+  //  SaveStream.Write(fPolygons[K].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   //end;
 
-  I := Length(fPoint2PolygonArr);
-  SaveStream.Write( I );
-  SaveStream.Write(fPoint2PolygonArr[0], SizeOf(fPoint2PolygonArr[0]) * I );
+  K := Length(fPoint2PolygonArr);
+  SaveStream.Write( K );
+  SaveStream.Write(fPoint2PolygonArr[0], SizeOf(fPoint2PolygonArr[0]) * K );
 
-  //I := Length(fPolygon2PointArr);
-  //SaveStream.Write( I );
-  //SaveStream.Write(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
+  //K := Length(fPolygon2PointArr);
+  //SaveStream.Write( K );
+  //SaveStream.Write(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * K );
 
   // The following does not requires save
   // fDefences
@@ -130,7 +130,7 @@ end;
 
 procedure TKMNavMesh.Load(LoadStream: TKMemoryStream);
 var
-  I: Integer;
+  K: Integer;
 begin
   fNavMeshGenerator.Load(LoadStream);
   LoadStream.ReadAssert('NavMesh');
@@ -144,24 +144,24 @@ begin
   LoadStream.Read(fPolyCount);
   SetLength(fPolygons, fPolyCount);
   LoadStream.Read(fPolygons[0], SizeOf(fPolygons[0]) * fPolyCount);
-  //for I := 0 to fPolyCount - 1 do
+  //for K := 0 to fPolyCount - 1 do
   //begin
-  //  LoadStream.Read(fPolygons[I].CenterPoint);
-  //  LoadStream.Read(fPolygons[I].Indices, SizeOf(fPolygons[I].Indices));
-  //  LoadStream.Read(fPolygons[I].NearbyCount);
-  //  LoadStream.Read(fPolygons[I].Poly2PointStart);
-  //  LoadStream.Read(fPolygons[I].Poly2PointCnt);
-  //  LoadStream.Read(fPolygons[I].Nearby, SizeOf(fPolygons[I].Nearby));
-  //  LoadStream.Read(fPolygons[I].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
+  //  LoadStream.Read(fPolygons[K].CenterPoint);
+  //  LoadStream.Read(fPolygons[K].Indices, SizeOf(fPolygons[I].Indices));
+  //  LoadStream.Read(fPolygons[K].NearbyCount);
+  //  LoadStream.Read(fPolygons[K].Poly2PointStart);
+  //  LoadStream.Read(fPolygons[K].Poly2PointCnt);
+  //  LoadStream.Read(fPolygons[K].Nearby, SizeOf(fPolygons[I].Nearby));
+  //  LoadStream.Read(fPolygons[K].NearbyPoints, SizeOf(fPolygons[I].NearbyPoints));
   //end;
 
-  LoadStream.Read(I);
-  SetLength(fPoint2PolygonArr,I);
-  LoadStream.Read(fPoint2PolygonArr[0], SizeOf(fPoint2PolygonArr[0]) * I );
+  LoadStream.Read(K);
+  SetLength(fPoint2PolygonArr,K);
+  LoadStream.Read(fPoint2PolygonArr[0], SizeOf(fPoint2PolygonArr[0]) * K );
 
-  //LoadStream.Read(I);
-  //SetLength(fPolygon2PointArr,I);
-  //LoadStream.Read(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * I );
+  //LoadStream.Read(K);
+  //SetLength(fPolygon2PointArr,K);
+  //LoadStream.Read(fPolygon2PointArr[0], SizeOf(fPolygon2PointArr[0]) * K );
 end;
 
 
@@ -227,7 +227,7 @@ var
     fPoint2PolygonArr[aIdx] := aPolygon;
   end;
 var
-  I,Y,ActIdx: Integer;
+  K,Y,ActIdx: Integer;
 begin
   FillChar(Queue, SizeOf(Queue), #0);
   // Mark borders so they do not have to be checked (fPoint2PolygonArr have length fMapX+1 in X and fMapY+1 in Y)
@@ -242,10 +242,10 @@ begin
   end;
   // Get all used points
   Len := 0;
-  for I := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
-    if (fPoint2PolygonArr[I] <> 0) AND (fPoint2PolygonArr[I] <> High(Word)) then
+  for K := Low(fPoint2PolygonArr) to High(fPoint2PolygonArr) do
+    if (fPoint2PolygonArr[K] <> 0) AND (fPoint2PolygonArr[K] <> High(Word)) then
     begin
-      Queue[Len] := I;
+      Queue[Len] := K;
       Inc(Len);
     end;
   // Expand used points into empty surrounding area
@@ -253,15 +253,15 @@ begin
   MaxIdx := Len;
   while (Len > 0) do
   begin
-    I := Queue[ActIdx];
+    K := Queue[ActIdx];
     Dec(Len);
     Inc(ActIdx);
     if (ActIdx > High(Queue)) then
       ActIdx := 0;
-    if (fPoint2PolygonArr[I - 1        ] = 0) then AddToQueue(I - 1        , fPoint2PolygonArr[I]);
-    if (fPoint2PolygonArr[I + 1        ] = 0) then AddToQueue(I + 1        , fPoint2PolygonArr[I]);
-    if (fPoint2PolygonArr[I - fMapX - 1] = 0) then AddToQueue(I - fMapX - 1, fPoint2PolygonArr[I]);
-    if (fPoint2PolygonArr[I + fMapX + 1] = 0) then AddToQueue(I + fMapX + 1, fPoint2PolygonArr[I]);
+    if (fPoint2PolygonArr[K - 1        ] = 0) then AddToQueue(K - 1        , fPoint2PolygonArr[K]);
+    if (fPoint2PolygonArr[K + 1        ] = 0) then AddToQueue(K + 1        , fPoint2PolygonArr[K]);
+    if (fPoint2PolygonArr[K - fMapX - 1] = 0) then AddToQueue(K - fMapX - 1, fPoint2PolygonArr[K]);
+    if (fPoint2PolygonArr[K + fMapX + 1] = 0) then AddToQueue(K + fMapX + 1, fPoint2PolygonArr[K]);
   end;
 end;
 
@@ -307,51 +307,51 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
   procedure ComputeNearbyPoints(aIdx: Word);
   var
     SecondPoint: Boolean;
-    I,K,L, ToIdx: Integer;
+    K,L,M, ToIdx: Integer;
     P: TKMPoint;
     Indices: array[0..1] of Word;
   begin
-    for I := 0 to fPolygons[aIdx].NearbyCount - 1 do
+    for K := 0 to fPolygons[aIdx].NearbyCount - 1 do
     begin
       SecondPoint := False;
-      ToIdx := fPolygons[aIdx].Nearby[I];
-      for K := 0 to 2 do
+      ToIdx := fPolygons[aIdx].Nearby[K];
       for L := 0 to 2 do
-        if (fPolygons[aIdx].Indices[K] = fPolygons[ToIdx].Indices[L]) then
+      for M := 0 to 2 do
+        if (fPolygons[aIdx].Indices[L] = fPolygons[ToIdx].Indices[M]) then
         begin
-          Indices[ Byte(SecondPoint) ] := fPolygons[aIdx].Indices[K];
+          Indices[ Byte(SecondPoint) ] := fPolygons[aIdx].Indices[L];
           SecondPoint := True;
           break;
         end;
-       P := KMPointAverage(fNodes[ Indices[0] ], fNodes[ Indices[1] ]);
-       fPolygons[aIdx].NearbyPoints[I] := KMPoint(  Min( fMapX-1, Max(1,P.X) ), Min( fMapY-1, Max(1,P.Y) )  );
+      P := KMPointAverage(fNodes[ Indices[0] ], fNodes[ Indices[1] ]);
+      fPolygons[aIdx].NearbyPoints[K] := KMPoint(  Min( fMapX-1, Max(1,P.X) ), Min( fMapY-1, Max(1,P.Y) )  );
     end;
   end;
 var
   RightSide: Boolean;
-  I: Integer;
+  K: Integer;
   a1,b1,c1, a2,b2,c2, a3,b3,c3: Single;
   N1,N2,N3: TKMPoint;
 begin
   SetLength(fPoint2PolygonArr, (fMapY+1) * (fMapX+1));
   FillChar(fPoint2PolygonArr[0], SizeOf(fPoint2PolygonArr[0]) * Length(fPoint2PolygonArr), #0); // 0 Is unused polygon
-  for I := 1 to fPolyCount - 1 do
+  for K := 1 to fPolyCount - 1 do
   begin
     // Fill fPoint2PolygonArr
-    GetNodesSortedByY(I, N1,N2,N3);
+    GetNodesSortedByY(K, N1,N2,N3);
     RightSide := IsRightSide(N1,N3,N2);
     NormalLineEquation(N1,N3, a1,b1,c1);
     NormalLineEquation(N1,N2, a2,b2,c2);
     NormalLineEquation(N2,N3, a3,b3,c3);
-    FillTriangle(RightSide, I, N1.Y,N2.Y,   a1,b1,c1, a2,b2,c2); // Skip last line if second part is active
-    FillTriangle(RightSide, I, N2.Y+1,N3.Y, a1,b1,c1, a3,b3,c3);
+    FillTriangle(RightSide, K, N1.Y,N2.Y,   a1,b1,c1, a2,b2,c2); // Skip last line if second part is active
+    FillTriangle(RightSide, K, N2.Y+1,N3.Y, a1,b1,c1, a3,b3,c3);
     // Fill another polygon informations
     // Center point must be inside of map coords
-    fPolygons[I].CenterPoint := KMPoint(
+    fPolygons[K].CenterPoint := KMPoint(
                                          Min(  fMapX-1, Max( 1, Round((N1.X+N2.X+N3.X)/3) )  ),
                                          Min(  fMapY-1, Max( 1, Round((N1.Y+N2.Y+N3.Y)/3) )  )
                                        );
-    ComputeNearbyPoints(I);
+    ComputeNearbyPoints(K);
   end;
   FindClosestPolygon();
 end;
@@ -396,19 +396,19 @@ const
   function GetCommonPoints(aIdx1, aIdx2: Word; var aPoint1, aPoint2: TKMPoint): Boolean;
   var
     FirstPoint: Boolean;
-    I,K: Integer;
+    K,L: Integer;
   begin
     Result := False;
     FirstPoint := True;
-    for I := 0 to 2 do
     for K := 0 to 2 do
-      if (fPolygons[aIdx1].Indices[I] = fPolygons[aIdx2].Indices[K]) then
+    for L := 0 to 2 do
+      if (fPolygons[aIdx1].Indices[K] = fPolygons[aIdx2].Indices[L]) then
       begin
         if FirstPoint then
-          aPoint1 := fNodes[ fPolygons[aIdx2].Indices[K] ]
+          aPoint1 := fNodes[ fPolygons[aIdx2].Indices[L] ]
         else
         begin
-          aPoint2 := fNodes[ fPolygons[aIdx2].Indices[K] ];
+          aPoint2 := fNodes[ fPolygons[aIdx2].Indices[L] ];
           Result := True;
           Exit;
         end;
@@ -416,92 +416,22 @@ const
       end;
   end;
 
-  procedure Pokus(A,B: TKMPoint);
-  var
-    X,Y,K: single;
-    dx,dy,step: single;
-  begin
-    dx := B.X - A.X;
-    dy := B.Y - A.Y;
-    if (abs(dx) >= abs(dy)) then
-      step := abs(dx)
-    else
-      step := abs(dy);
-    dx := dx / step;
-    dy := dy / step;
-    X := A.X;
-    Y := A.Y;
-    K := 1;
-    while (K <= step) do
-    begin
-      gRenderAux.Quad(ceil(X), ceil(Y), $AA000000);
-      X := X + dx;
-      Y := Y + dy;
-      K := K + 1;
-    end;
-    gRenderAux.Quad(ceil(X), ceil(Y), $AA000000);
-    gRenderAux.LineOnTerrain(A, B, $50000000 OR COLOR_RED);
-  end;
-
-  procedure Pokus2(A,B: TKMPoint);
-  var
-    X,Y,K: single;
-    dx,dy,step: single;
-  begin
-    dx := B.X - A.X;
-    dy := B.Y - A.Y;
-    if (abs(dx) >= abs(dy)) then
-      step := abs(dx)
-    else
-      step := abs(dy);
-    dx := dx / step;
-    dy := dy / step;
-    X := A.X;
-    Y := A.Y;
-    K := 1;
-    while (K <= step) do
-    begin
-      gRenderAux.Quad(floor(X), floor(Y), $AA000000);
-      X := X + dx;
-      Y := Y + dy;
-      K := K + 1;
-    end;
-    gRenderAux.Quad(floor(X), floor(Y), $AA000000);
-    gRenderAux.LineOnTerrain(A, B, $50000000 OR COLOR_RED);
-  end;
-
 var
-  I, K: Integer;
-  p1,p2,p3: TKMPoint;
+  K, L: Integer;
+  p1,p2: TKMPoint;
 
   Owner: TKMHandIndex;
   DefLines: TKMDefenceLines;
   DefencePosArr: TKMDefencePosArr;
   FFF: TForwardFF;
 begin
-  //Pokus(KMPoint(9,4), KMPoint(2,3));
-  //Pokus2(KMPoint(19,4), KMPoint(12,3));
-  {
-  Pokus(KMPoint(12,13), KMPoint(19,17));
-  Pokus(KMPoint(21,3), KMPoint(29,17));
-  Pokus(KMPoint(32,3), KMPoint(33,17));
-  Pokus(KMPoint(35,11), KMPoint(47,13));
-  Pokus(KMPoint(50,11), KMPoint(55,13));
-
-  Pokus(KMPoint(9,14), KMPoint(2,13));
-  Pokus(KMPoint(12,23), KMPoint(19,27));
-  }
-
-  //fNavMeshGenerator.Paint(aRect);
-
   if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
     Exit;
 
   // EXTRACT POLYGONS
-
   //{ Triangles and connection of NavMesh
-  for I := 1 to fPolyCount - 1 do
-    with fPolygons[I] do
+  for K := 1 to fPolyCount - 1 do
+    with fPolygons[K] do
     begin
       gRenderAux.TriangleOnTerrain(
         fNodes[ Indices[0] ].X,
@@ -510,8 +440,8 @@ begin
         fNodes[ Indices[1] ].Y,
         fNodes[ Indices[2] ].X,
         fNodes[ Indices[2] ].Y, $50000000 OR COLOR_BLACK);
-      for K := 0 to NearbyCount - 1 do
-        if GetCommonPoints(I, Nearby[K], p1, p2) then
+      for L := 0 to NearbyCount - 1 do
+        if GetCommonPoints(K, Nearby[L], p1, p2) then
           gRenderAux.LineOnTerrain(p1, p2, $80000000 OR COLOR_BLUE)
         else
         begin
@@ -525,15 +455,15 @@ begin
         end;
       p1.X := Round( (fNodes[ Indices[0] ].X + fNodes[ Indices[1] ].X + fNodes[ Indices[2] ].X) / 3 );
       p1.Y := Round( (fNodes[ Indices[0] ].Y + fNodes[ Indices[1] ].Y + fNodes[ Indices[2] ].Y) / 3 );
-      gRenderAux.Text(p1.X, p1.Y + 1, IntToStr(I), $FFFFFFFF);
+      gRenderAux.Text(p1.X, p1.Y + 1, IntToStr(K), $FFFFFFFF);
     end;//}
   { Center points and transitions of polygons
-  for I := 0 to fPolyCount - 1 do
-    with fPolygons[I] do
+  for K := 0 to fPolyCount - 1 do
+    with fPolygons[K] do
     begin
       gRenderAux.Quad(CenterPoint.X, CenterPoint.Y, $AAFFFFFF);
-      for K := 0 to NearbyCount - 1 do
-        gRenderAux.Quad(NearbyPoints[K].X, NearbyPoints[K].Y, $AA000000);
+      for L := 0 to NearbyCount - 1 do
+        gRenderAux.Quad(NearbyPoints[L].X, NearbyPoints[L].Y, $AA000000);
     end;//}
 
   //{ DEFENCE SYSTEM
@@ -547,14 +477,14 @@ begin
       if FFF.FindDefenceLines(Owner, DefLines) then
         for K := 0 to DefLines.Count - 1 do
         begin
-          I := DefLines.Lines[K].Polygon;
+          L := DefLines.Lines[K].Polygon;
           gRenderAux.TriangleOnTerrain(
-            fNodes[fPolygons[I].Indices[0]].X,
-            fNodes[fPolygons[I].Indices[0]].Y,
-            fNodes[fPolygons[I].Indices[1]].X,
-            fNodes[fPolygons[I].Indices[1]].Y,
-            fNodes[fPolygons[I].Indices[2]].X,
-            fNodes[fPolygons[I].Indices[2]].Y, $300000FF);
+            fNodes[fPolygons[L].Indices[0]].X,
+            fNodes[fPolygons[L].Indices[0]].Y,
+            fNodes[fPolygons[L].Indices[1]].X,
+            fNodes[fPolygons[L].Indices[1]].Y,
+            fNodes[fPolygons[L].Indices[2]].X,
+            fNodes[fPolygons[L].Indices[2]].Y, $300000FF);
         end;
       if FFF.FindDefensivePolygons(Owner, DefencePosArr) then
         for K := 0 to Length(DefencePosArr) - 1 do

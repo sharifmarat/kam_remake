@@ -2,6 +2,9 @@ unit KM_NavMeshGenerator;
 {$I KaM_Remake.inc}
 interface
 uses
+  {$IFDEF MSWINDOWS}
+    Windows,
+  {$ENDIF}
   System.Diagnostics, System.TimeSpan,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
   KromUtils, KM_CommonUtils;
@@ -9,7 +12,6 @@ uses
 type
 
   TKMNavMeshByteArray = array[-1..257,-1..257] of Byte;
-  TKMNavMeshWordArray = array[-1..257,-1..257] of Word;
 
   // Borders
   TKMBord = record
@@ -64,10 +66,6 @@ type
     fNodes,fBorderNodes: TKMPointArray;            // Nodes
     fPolygons: TPolygonArray;         // Polygons
 
-    // Debug tools
-    fStopwatch: TStopwatch;
-    fElapsed: TTimeSpan;
-
     //Building the navmesh from terrain
     function Intersect(aX1, aY1, aX2, aY2: Word): Boolean; overload;
     function Intersect(aX1, aY1, aX2, aY2: TKMPoint): Boolean; overload;
@@ -76,6 +74,10 @@ type
     procedure PolygonTriangulation();
     procedure PrettyPoly();
 
+    // Measure performance
+    {$IFDEF MSWINDOWS}
+    function TimeGetUsec(): Int64;
+    {$ENDIF}
   public
     // Use properties to access new NavMesh so the generation may be independent on the existing NavMesh
     property NodeCount: Integer read fNodeCount;
@@ -127,7 +129,7 @@ end;
 
 procedure TKMNavMeshGenerator.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('NavMesh');
+  SaveStream.WriteA('KMNavMeshGenerator');
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
 end;
@@ -135,7 +137,7 @@ end;
 
 procedure TKMNavMeshGenerator.Load(LoadStream: TKMemoryStream);
 begin
-  LoadStream.ReadAssert('NavMesh');
+  LoadStream.ReadAssert('KMNavMeshGenerator');
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
 end;
@@ -143,18 +145,53 @@ end;
 
 procedure TKMNavMeshGenerator.GenerateNewNavMesh();
 var
-  Seconds: Double;
   W: TKMNavMeshByteArray;
+{$IFDEF MSWINDOWS}
+  TimeStart,TimeDiff: UInt64;
+  a,b,c,d: UInt64;
+{$ENDIF}
 begin
+  {$IFDEF MSWINDOWS}
+  TimeStart := TimeGetUsec();
+  {$ENDIF}
 
-  fStopwatch := TStopwatch.StartNew;
   W := ExtractNodes();
+  a := TimeGetUsec() - TimeStart;
+
   AddInnerNodes(W);
+  b := TimeGetUsec() - TimeStart - a;
+
   PolygonTriangulation();
+  c := TimeGetUsec() - TimeStart - b;
+
   PrettyPoly();
-  fElapsed := fStopwatch.Elapsed;
-  Seconds := fElapsed.TotalSeconds;
+  d := TimeGetUsec() - TimeStart - c;
+  if (a > 0) then a := a * 1;
+  if (b > 0) then b := b * 1;
+  if (c > 0) then c := c * 1;
+  if (d > 0) then d := d * 1;
+
+  {$IFDEF MSWINDOWS}
+  TimeDiff := TimeGetUsec() - TimeStart;
+  if (TimeDiff > 0) then TimeDiff := TimeDiff * 1; // Make sure that compiler does not f--ck up the variable TimeDiff
+  {$ENDIF}
 end;
+
+
+
+{$IFDEF MSWINDOWS}
+function TKMNavMeshGenerator.TimeGetUsec(): Int64;
+var
+  freq: Int64;
+  newTime: Int64;
+  factor: Double;
+begin
+  QueryPerformanceFrequency(freq);
+  QueryPerformanceCounter(newTime);
+  factor := 1000000 / freq; // Separate calculation to avoid "big Int64 * 1 000 000" overflow
+  Result := Round(newTime * factor);
+end;
+{$ENDIF}
 
 
 function TKMNavMeshGenerator.Intersect(aX1, aY1, aX2, aY2: Word): Boolean;
@@ -959,74 +996,67 @@ end;
 
 // Polygon optimalization
 procedure TKMNavMeshGenerator.PrettyPoly();
-  function GetCommonPoints(aNode1, aNode2: Word; var CP1,CP2: Word): Boolean;
-  var
-    I,K: Integer;
-  begin
-    Result := False;
-    CP1 := 0;
-    for I := 0 to 2 do
-      for K := 0 to 2 do
-        if (fPolygons[aNode1].Indices[I] = fPolygons[aNode2].Indices[K]) then
-        begin
-          if (CP1 = 0) then
-            CP1 := fPolygons[aNode2].Indices[K]
-          else
-          begin
-            Result := True;
-            CP2 := fPolygons[aNode2].Indices[K];
-            Exit;
-          end;
-        end;
-  end;
+var
+  chck: array of boolean;
+  cnt: Integer;
 
   function AnalyzePoints(aNode1, aNode2: Word; var CP1,CP2,DP1,DP2: Word): Boolean;
   var
-    I: Word;
+    K,L: Integer;
   begin
-    Result := GetCommonPoints(aNode1,aNode2, CP1,CP2);
-    if Result then
-    begin
-      with fPolygons[aNode1] do
-        for I := 0 to 2 do
-          if (CP1 <> Indices[I]) AND (CP2 <> Indices[I]) then
-            DP1 := Indices[I];
+    CP1 := 0; // 0. index is reserved and it is not used in triangulation
+    CP2 := 0;
+    DP1 := 0;
+    DP2 := 0;
+    for K := 0 to 2 do
+    for L := 0 to 2 do
       with fPolygons[aNode2] do
-        for I := 0 to 2 do
-          if (CP1 <> Indices[I]) AND (CP2 <> Indices[I]) then
-            DP2 := Indices[I];
-    end;
+        if (fPolygons[aNode1].Indices[K] = Indices[L]) then
+        begin
+          if (CP1 = 0) then
+            CP1 := Indices[L]
+          else
+          begin
+            CP2 := Indices[L];
+            break;
+          end;
+        end;
+    with fPolygons[aNode1] do
+      if      (CP1 <> Indices[0]) AND (CP2 <> Indices[0]) then DP1 := Indices[0]
+      else if (CP1 <> Indices[1]) AND (CP2 <> Indices[1]) then DP1 := Indices[1]
+      else if (CP1 <> Indices[2]) AND (CP2 <> Indices[2]) then DP1 := Indices[2];
+    with fPolygons[aNode2] do
+      if      (CP1 <> Indices[0]) AND (CP2 <> Indices[0]) then DP2 := Indices[0]
+      else if (CP1 <> Indices[1]) AND (CP2 <> Indices[1]) then DP2 := Indices[1]
+      else if (CP1 <> Indices[2]) AND (CP2 <> Indices[2]) then DP2 := Indices[2];
+    Result := (CP2 > 0) AND (DP2 > 0);
   end;
 
   function HaveIndices(aPolyIdx,aIndice1,aIndice2: Word): Boolean;
-  var
-    I, Cnt: Word;
   begin
-    Cnt := 0;
     with fPolygons[aPolyIdx] do
-      for I := 0 to 2 do
-        Cnt := Cnt + Byte( (Indices[I] = aIndice1) OR (Indices[I] = aIndice2) );
-    Result := Cnt = 2;
+      Result := (+ Byte( (Indices[0] = aIndice1) OR (Indices[0] = aIndice2) )
+                 + Byte( (Indices[1] = aIndice1) OR (Indices[1] = aIndice2) )
+                 + Byte( (Indices[2] = aIndice1) OR (Indices[2] = aIndice2) )) = 2;
   end;
 
-var
-  CP1,CP2,DP1,DP2, BestCP1,BestCP2,BestDP1,BestDP2, SwapPoly1, SwapPoly2: Word;
-  I,K,L,M, BestIdx, Neat: Integer;
-  SqrBestDist, SqrDist: Single;
-begin
-  BestIdx := 0;
-  BestCP1 := 0;
-  BestCP2 := 0;
-  BestDP1 := 0;
-  BestDP2 := 0;
-  for Neat := 0 to 2 do
-  for I := 1 to fPolyCount - 1 do
+  function BeautifyPoly(ActIdx: Integer): Boolean;
+  var
+    CP1,CP2,DP1,DP2, BestCP1,BestCP2,BestDP1,BestDP2, SwapPoly1, SwapPoly2: Word;
+    K, BestIdx, Idx1, Idx2, Neat: Integer;
+    SqrBestDist, SqrDist: Single;
   begin
+    Result := False;
+    BestCP1 := 0;
+    BestCP2 := 0;
+    BestDP1 := 0;
+    BestDP2 := 0;
+    BestIdx := 0;
+// Pick up the longest line of triangle which have nearby polygon
     SqrBestDist := 0;
-    with fPolygons[I] do
-      for K := 0 to NearbyCount - 1 do
+    for K := 0 to fPolygons[ActIdx].NearbyCount - 1 do
+      if AnalyzePoints(ActIdx,fPolygons[ActIdx].Nearby[K],CP1,CP2,DP1,DP2) then
       begin
-        AnalyzePoints(I,Nearby[K],CP1,CP2,DP1,DP2);
         SqrDist := KMDistanceSqr(fNodes[ CP1 ],fNodes[ CP2 ]) - KMDistanceSqr(fNodes[ DP1 ],fNodes[ DP2 ]);
         if (SqrDist > SqrBestDist) AND Intersect(CP1,CP2,DP1,DP2) then
         begin
@@ -1035,73 +1065,90 @@ begin
           BestCP2 := CP2;
           BestDP1 := DP1;
           BestDP2 := DP2;
-          BestIdx := Nearby[K];
+          BestIdx := fPolygons[ActIdx].Nearby[K];
         end;
       end;
-    if (SqrBestDist > 0) then
+    Result := (SqrBestDist > 0);
+    if Result then
     begin
       // Find indexes of nearby polygons which must be swaped to secure connection
-      with fPolygons[I] do
-      begin
-        for L := 0 to 2 do
-          if (Nearby[L] = 0) OR ((Nearby[L] <> BestIdx) AND HaveIndices(Nearby[L], BestCP1, BestDP1)) then
-            break;
-        SwapPoly1 := Nearby[L];
-      end;
-      with fPolygons[BestIdx] do
-      begin
-        for M := 0 to 2 do
-          if (Nearby[M] = 0) OR ((Nearby[M] <> I) AND HaveIndices(Nearby[M], BestCP2, BestDP2)) then
-            break;
-        SwapPoly2 := Nearby[M];
-      end;
+      with fPolygons[ ActIdx ] do
+        if      (Nearby[0] = 0) OR ((Nearby[0] <> BestIdx) AND HaveIndices(Nearby[0], BestCP1, BestDP1)) then Idx1 := 0
+        else if (Nearby[1] = 0) OR ((Nearby[1] <> BestIdx) AND HaveIndices(Nearby[1], BestCP1, BestDP1)) then Idx1 := 1
+        else{if (Nearby[2] = 0) OR ((Nearby[2] <> BestIdx) AND HaveIndices(Nearby[2], BestCP1, BestDP1)) then}Idx1 := 2;
+      with fPolygons[ BestIdx ] do
+        if      (Nearby[0] = 0) OR ((Nearby[0] <> BestIdx) AND HaveIndices(Nearby[0], BestCP2, BestDP2)) then Idx2 := 0
+        else if (Nearby[1] = 0) OR ((Nearby[1] <> BestIdx) AND HaveIndices(Nearby[1], BestCP2, BestDP2)) then Idx2 := 1
+        else{if (Nearby[2] = 0) OR ((Nearby[2] <> BestIdx) AND HaveIndices(Nearby[2], BestCP2, BestDP2)) then}Idx2 := 2;
+      SwapPoly1 := fPolygons[ActIdx].Nearby[Idx1];
+      SwapPoly2 := fPolygons[BestIdx].Nearby[Idx2];
+
       // Actualize connection of nearby polygons
-      if (SwapPoly1 <> 0) then
+      if (SwapPoly1 > 0) then
         with fPolygons[ SwapPoly1 ] do
-          for K := 0 to NearbyCount - 1 do
-            if (Nearby[K] = I) then
-              Nearby[K] := BestIdx;
-      if (SwapPoly2 <> 0) then
+          if      (Nearby[0] = ActIdx) then Nearby[0] := BestIdx
+          else if (Nearby[1] = ActIdx) then Nearby[1] := BestIdx
+          else if (Nearby[2] = ActIdx) then Nearby[2] := BestIdx;
+      if (SwapPoly2 > 0) then
         with fPolygons[ SwapPoly2 ] do
-          for K := 0 to NearbyCount - 1 do
-            if (Nearby[K] = BestIdx) then
-              Nearby[K] := I;
+          if      (Nearby[0] = BestIdx) then Nearby[0] := ActIdx
+          else if (Nearby[1] = BestIdx) then Nearby[1] := ActIdx
+          else if (Nearby[2] = BestIdx) then Nearby[2] := ActIdx;
+
       // Actualize connection of changed polygons
       with fPolygons[BestIdx] do
-        if (SwapPoly1 <> 0) then
+        if (SwapPoly1 > 0) then
         begin
-          Nearby[M] := SwapPoly1;
+          Nearby[Idx2] := SwapPoly1;
           NearbyCount := NearbyCount + Byte(SwapPoly2 = 0);
         end
         else
         begin
           NearbyCount := NearbyCount - Byte(SwapPoly2 > 0);
-          Nearby[M] := Nearby[NearbyCount];
+          Nearby[Idx2] := Nearby[NearbyCount];
           Nearby[NearbyCount] := 0; // Zero must be here
         end;
-      with fPolygons[I] do
-        if (SwapPoly2 <> 0) then
+      with fPolygons[ActIdx] do
+        if (SwapPoly2 > 0) then
         begin
-          Nearby[L] := SwapPoly2;
+          Nearby[Idx1] := SwapPoly2;
           NearbyCount := NearbyCount + Byte(SwapPoly1 = 0);
         end
         else
         begin
           NearbyCount := NearbyCount - Byte(SwapPoly1 > 0);
-          Nearby[L] := Nearby[NearbyCount];
-          Nearby[NearbyCount] := 0;
+          Nearby[Idx1] := Nearby[NearbyCount];
+          Nearby[NearbyCount] := 0; // Zero must be here
         end;
+
       // Change indices
-      with fPolygons[I] do
-        for K := 0 to 2 do
-          if (BestCP1 = Indices[K]) then
-            Indices[K] := BestDP2;
+      with fPolygons[ActIdx] do
+        if      (BestCP1 = Indices[0]) then Indices[0] := BestDP2
+        else if (BestCP1 = Indices[1]) then Indices[1] := BestDP2
+        else{if (BestCP1 = Indices[2]) then}Indices[2] := BestDP2;
       with fPolygons[BestIdx] do
-        for K := 0 to 2 do
-          if (BestCP2 = Indices[K]) then
-            Indices[K] := BestDP1;
+        if      (BestCP2 = Indices[0]) then Indices[0] := BestDP1
+        else if (BestCP2 = Indices[1]) then Indices[1] := BestDP1
+        else{if (BestCP2 = Indices[2]) then}Indices[2] := BestDP1;
+
+      Inc(Cnt);
+      BeautifyPoly(ActIdx);
+      BeautifyPoly(BestIdx);
     end;
   end;
+
+var
+  ActIdx, Neat: Integer;
+begin
+  SetLength(chck,fPolyCount);
+  FillChar(fPolygons[0], SizeOf(fPolygons[0]) * Length(fPolygons), #0);
+  FillChar(chck[0], SizeOf(chck[0])*Length(chck),#0);
+  cnt := 0;
+  //for Neat := 0 to 3 do
+  for ActIdx := 1 to fPolyCount - 1 do
+    if not chck[ActIdx] then
+        BeautifyPoly(ActIdx);
+  if (Cnt > 0) then Cnt := Cnt*1;
 
 end;
 
