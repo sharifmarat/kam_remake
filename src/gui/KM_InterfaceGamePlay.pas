@@ -1632,6 +1632,9 @@ begin
   if (Sender is TKMImage) then
   begin
     Image := TKMImage(Sender);
+    if gLog.IsDegubLogEnabled then
+      gLog.LogDegub(Format('TKMGamePlayInterface.Allies_mute: Image.tag = %d NetPlayerIndex = %d',
+                           [Image.Tag, fLineIdToNetPlayerId[Image.Tag]]));
     gGame.Networking.ToggleMuted(fLineIdToNetPlayerId[Image.Tag]);
     Update_Image_AlliesMute(Image);
   end;
@@ -1679,7 +1682,7 @@ begin
       begin
         fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
         Inc(K);
-    end;
+      end;
 
   // Spectators
   for I := 1 to gGame.Networking.NetPlayers.Count do
