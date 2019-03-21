@@ -1675,9 +1675,10 @@ begin
   K := 0;
   for J := Low(Teams) to High(Teams) do
     for I in Teams[J] do
-    begin
-      fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
-      Inc(K);
+      if HandIdToNetPlayersId[I] <> -1 then //HandIdToNetPlayersId could -1, if we play in the save, where 1 player left
+      begin
+        fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
+        Inc(K);
     end;
 
   // Spectators
