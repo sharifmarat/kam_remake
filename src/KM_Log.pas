@@ -52,6 +52,7 @@ type
     procedure AddTime(num: Integer; const aText: UnicodeString); overload;
     procedure AddTime(const aText: UnicodeString; Res: boolean); overload;
     procedure AddTime(a, b: integer); overload;
+    function IsDegubLogEnabled: Boolean;
     procedure LogDegub(const aText: UnicodeString);
     procedure LogDelivery(const aText: UnicodeString);
     procedure LogCommands(const aText: UnicodeString);
@@ -285,6 +286,12 @@ procedure TKMLog.AddTimeNoFlush(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
   AddLineTime(aText, False);
+end;
+
+
+function TKMLog.IsDegubLogEnabled: Boolean;
+begin
+  Result := lmt_Debug in MessageTypes;
 end;
 
 
