@@ -16,7 +16,8 @@ type
     lmt_NetConnection,      //messages about net connection/disconnection/reconnection
     lmt_NetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
     lmt_NetPacketCommand,   //log messages about GIP commands net packets
-    lmt_NetPacketPingFps);  //log messages about ping/fps net packets
+    lmt_NetPacketPingFps,   //log messages about ping/fps net packets
+    lmt_Debug);             //debug
 
   TKMLogMessageTypeSet = set of TKMLogMessageType;
 
@@ -51,6 +52,7 @@ type
     procedure AddTime(num: Integer; const aText: UnicodeString); overload;
     procedure AddTime(const aText: UnicodeString; Res: boolean); overload;
     procedure AddTime(a, b: integer); overload;
+    procedure LogDegub(const aText: UnicodeString);
     procedure LogDelivery(const aText: UnicodeString);
     procedure LogCommands(const aText: UnicodeString);
     procedure LogRandomChecks(const aText: UnicodeString);
@@ -140,6 +142,9 @@ begin
   fFirstTick := TimeGet;
   fPreviousTick := TimeGet;
   MessageTypes := DEFAULT_LOG_TYPES_TO_WRITE;
+  if DEBUG_LOGS then
+    Include(MessageTypes, lmt_Debug);
+
   CS := TCriticalSection.Create;
   InitLog;
 end;
@@ -279,15 +284,20 @@ end;
 procedure TKMLog.AddTimeNoFlush(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, False);
+end;
+
+
+procedure TKMLog.LogDegub(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, lmt_Debug);
 end;
 
 
 procedure TKMLog.LogDelivery(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, lmt_Delivery);
 end;
 
@@ -309,7 +319,6 @@ end;
 procedure TKMLog.LogNetConnection(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, lmt_NetConnection);
 end;
 
@@ -317,7 +326,6 @@ end;
 procedure TKMLog.LogNetPacketOther(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, lmt_NetPacketOther);
 end;
 
@@ -325,7 +333,6 @@ end;
 procedure TKMLog.LogNetPacketCommand(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, lmt_NetPacketCommand);
 end;
 
@@ -333,7 +340,6 @@ end;
 procedure TKMLog.LogNetPacketPingFps(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
   AddLineTime(aText, lmt_NetPacketPingFps);
 end;
 
