@@ -137,21 +137,25 @@ end;
 
 procedure TKMSupervisor.UpdateState(aTick: Cardinal);
 const
-  DEFENSIVE_SUPPORT = 10 * MAX_HANDS;
-  DEFENCES = 10 * 30; // Every 30 sec recalculate defences of 1 team
-  ATTACKS = 10 * 30;
+  DEFSUPPORT_DIVISION = 10 * MAX_HANDS * 2; // 24 sec
+  DEF_OR_ATT_DIVISION = 10 * MAX_HANDS * 10; // 2 min
+  DEFENCES = 500;
+  ATTACKS = 1000;
 var
   Modulo: Word;
 begin
-  Modulo := aTick mod DEFENSIVE_SUPPORT;
+  // Defensive support should be updated often
+  Modulo := aTick mod DEFSUPPORT_DIVISION;
   if (Modulo < Length(fAlli2PL)) then
     UpdateDefSupport(Modulo);
-  Modulo := aTick mod DEFENCES;
-  if (Modulo < Length(fAlli2PL)) then
-    UpdateDefPos(Modulo);
-  Modulo := aTick mod ATTACKS;
-  if (Modulo < Length(fAlli2PL)) then
-    UpdateAttack(Modulo);
+  // Attack / defence can be updated slower
+  Modulo := aTick mod DEF_OR_ATT_DIVISION;
+  if (Modulo >= DEFENCES) AND (Modulo - DEFENCES < Length(fAlli2PL)) then
+    UpdateDefPos(Modulo - DEFENCES);
+  if not gGame.IsPeaceTime
+    AND (Modulo >= ATTACKS) AND (Modulo - ATTACKS < Length(fAlli2PL))
+    AND (  (gGame.MissionMode = mm_Tactic) OR (aTick > (gGame.GameOptions.Peacetime+3) * 10 * 60)  ) then // In normal mode wait 3 minutes after peace
+    UpdateAttack(Modulo - ATTACKS);
 end;
 
 
@@ -200,28 +204,63 @@ procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
     Result := Cnt > 1; // We dont just need 1 new AI but also ally which will help him
   end;
   // Try find support
-  procedure FindAssistance(aPoint: TKMPoint; aOwner: TKMHandIndex; var aNewAIPLs: TKMHandIndexArray);
+  procedure FindAssistance(aAssistByInfluence: Boolean; aPoint: TKMPoint; aOwner: TKMHandIndex; var aNewAIPLs: TKMHandIndexArray);
+  type
+    TKMAssistInfo = record
+      Assistance: Boolean;
+      Influence: Byte;
+      Player: TKMHandIndex;
+    end;
+    TKMAssistInfoArr = array of TKMAssistInfo;
+    procedure SortByInfluence(var aAssistArr: TKMAssistInfoArr);
+    var
+      I,K: Integer;
+      POM: TKMAssistInfo;
+    begin
+      for I := 0 to Length(aAssistArr) - 1 do
+        for K := 0 to Length(aAssistArr) - 2 - I do
+          if (aAssistArr[K].Influence > aAssistArr[K+1].Influence) then
+          begin
+            POM := aAssistArr[K];
+            aAssistArr[K] := aAssistArr[K + 1];
+            aAssistArr[K + 1] := POM;
+          end;
+    end;
+  const
+    ASSIST_BY_INFLUENCE_LIMIT = 50;
   var
-    Assistance: Boolean;
+    AllyAssist: Boolean;
     I: Integer;
-    AssistArr: TBooleanArray;
+    AssistArr: TKMAssistInfoArr;
   begin
     SetLength(AssistArr, Length(aNewAIPLs));
     FillChar(AssistArr[0], SizeOf(AssistArr[0]) * Length(AssistArr), #0);
-    // Prefer to defend allies in range of influence
-    Assistance := False;
     for I := 0 to Length(aNewAIPLs) - 1 do
-      if (aOwner <> aNewAIPLs[I]) AND (gAIFields.Influences.Ownership[ aNewAIPLs[I], aPoint.Y, aPoint.X] > 0) then
+      with AssistArr[I] do
       begin
-        AssistArr[I] := True;
-        Assistance := Assistance
-                      OR gHands[ aNewAIPLs[I] ].AI.ArmyManagement.Defence.DefendPoint(aPoint, True);
+        Assistance := False;
+        Player := aNewAIPLs[I];
+        Influence := gAIFields.Influences.Ownership[ Player, aPoint.Y, aPoint.X];
       end;
-    // If there is not ally then try another allies
-    if not Assistance then
+    SortByInfluence(AssistArr);
+    // Prefer to defend allies in range of influence
+    AllyAssist := False;
+    for I := 0 to Length(aNewAIPLs) - 1 do
+      with AssistArr[I] do
+        if (aOwner <> Player) AND (
+          (not aAssistByInfluence AND (Influence > 0)) OR (aAssistByInfluence AND (Influence > ASSIST_BY_INFLUENCE_LIMIT))
+        ) then
+        begin
+          Assistance := True;
+          AllyAssist := AllyAssist
+                        OR gHands[ Player ].AI.ArmyManagement.Defence.DefendPoint(aPoint, True, False);
+        end;
+    // If there is not ally nearby then try another allies
+    if not AllyAssist AND not aAssistByInfluence then
       for I := 0 to Length(aNewAIPLs) - 1 do
-        if (aOwner <> aNewAIPLs[I]) AND not AssistArr[I] then
-          gHands[ aNewAIPLs[I] ].AI.ArmyManagement.Defence.DefendPoint(aPoint, False);
+        with AssistArr[I] do
+          if (aOwner <> Player) AND not Assistance then
+            gHands[ Player ].AI.ArmyManagement.Defence.DefendPoint(aPoint, False, True);
   end;
 var
   I,K: Integer;
@@ -231,7 +270,7 @@ begin
     for I := 0 to Length(NewAIPLs) - 1 do
       with gHands[ NewAIPLs[I] ].AI.ArmyManagement.DefendRequest do
         for K := 0 to PointsCnt - 1 do
-          FindAssistance(Points[K], NewAIPLs[I], NewAIPLs);
+          FindAssistance(AssistByInfluence[K], Points[K], NewAIPLs[I], NewAIPLs);
 end;
 
 
@@ -244,13 +283,24 @@ type
 
   procedure DivideDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
   const
+    DISTANCE_PRICE = 1;
     FRONT_LINE_PRICE = 40;
   var
     Line: Byte;
     I, K, PolyIdx, IdxPL, Cnt: Integer;
+    Point: TKMPoint;
     DistributedPos: TKMDistDefPos;
     DefEval: TKMDefEvalArr;
+    CenterPoints, Points: TKMPointArray;
   begin
+    // Find center points
+    SetLength(CenterPoints, Length(aOwners));
+    for IdxPL := 0 to Length(aOwners) - 1 do
+    begin
+      gAIFields.Eye.OwnerUpdate( aOwners[IdxPL] );
+      Points := gAIFields.Eye.GetCityCenterPoints(False);
+      CenterPoints[IdxPL] := Points[0];
+    end;
     // Set Length
     Cnt := 0;
     for I := 0 to Length(aTeamDefPos) - 1 do
@@ -264,12 +314,14 @@ type
         begin
           PolyIdx := DefPosArr[K].Polygon;
           Line := DefPosArr[K].Line;
+          Point := DefPosArr[K].DirPoint.Loc;
           DefPosArr[K].Weight := 0; // Mark defence as available
           for IdxPL := 0 to Length(Owners) - 1 do
           begin
             DefEval[Cnt].Owner := Owners[IdxPL];
             DefEval[Cnt].Val := + 64000 // Base price
                                 + gAIFields.Influences.OwnPoly[Owners[IdxPL], PolyIdx] // Max + 255
+                                - KMDistanceAbs(CenterPoints[IdxPL], Point) * DISTANCE_PRICE
                                 - Line * FRONT_LINE_PRICE;
             DefEval[Cnt].DefPos := @DefPosArr[K];
             Inc(Cnt);
@@ -445,14 +497,16 @@ begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
       begin
-        AR := gHands[ fAlli2PL[aTeamIdx, IdxPL] ].AI.ArmyManagement.AttackRequest;
-        AR.Active := True;
-        AR.BestAllianceCmp := BestCmp;
-        AR.WorstAllianceCmp := WorstCmp;
-        AR.BestEnemy := EnemyStats[BestCmpIdx].Player;
-        AR.BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
-        SetLength(AR.Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
-        Move(fAlli2PL[EnemyTeamIdx,0], AR.Enemies[0], SizeOf(AR.Enemies[0])*Length(AR.Enemies));
+        with AR do
+        begin
+          Active := True;
+          BestAllianceCmp := BestCmp;
+          WorstAllianceCmp := WorstCmp;
+          BestEnemy := EnemyStats[BestCmpIdx].Player;
+          BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
+          SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
+          Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
+        end;
         gHands[ fAlli2PL[aTeamIdx, IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
       end;
     end;

@@ -7,8 +7,8 @@ uses
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 0.226425767; //0.193077
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.582493335; //2.178943
+  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 1.42; //0.193077
+  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.432; //2.178943
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -136,8 +136,9 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(666);
-    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
-    fSetup.ApplyAgressiveBuilderSetup(True);
+    //gGame.GameOptions.Peacetime := 70;//SP_DEFAULT_PEACETIME;
+    //fSetup.ApplyAgressiveBuilderSetup(True);
+    //fSetup.ApplyAgressiveBuilderSetup(fOwner <= 3);
   end;
 
   // Find resources around Loc and change building policy
@@ -184,6 +185,10 @@ end;
 
 
 procedure TKMCityManagement.CheckUnitCount(aTick: Cardinal);
+type
+  TKMTrainPriorityArr = array[0..13] of TKMUnitType;
+  TKMSchoolHouseArray = array of TKMHouseSchool;
+  TKMUnitReqArr = array[CITIZEN_MIN..CITIZEN_MAX] of Integer;
 var
   P: TKMHand;
   Stats: TKMHandStats;
@@ -212,6 +217,7 @@ var
         Output := Output + 10;
     end;
     Result := Output;
+    //Result := 0; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
   end;
 
   function RequiredServCount(): Integer;
@@ -232,21 +238,41 @@ var
       Result := Max( 1 + Byte(Serfs < 40) + Byte(Serfs < 60), Result);
   end;
 
+  procedure TrainByPriority(const aPrior: TKMTrainPriorityArr; var aUnitReq: TKMUnitReqArr; var aSchools: TKMSchoolHouseArray; aSchoolCnt: Integer);
+  var
+    K,L: Integer;
+    UT: TKMUnitType;
+  begin
+    for K := Low(aPrior) to High(aPrior) do
+    begin
+      UT := aPrior[K];
+      for L := 0 to aSchoolCnt - 1 do
+        if (aUnitReq[UT] <= 0) then // Check unit requirements
+          break
+        else if (aSchools[L].QueueCount <= 2) then // Order citizen, decrease unit requirement
+          Dec(  aUnitReq[UT], aSchools[L].AddUnitToQueue( UT, Min(aUnitReq[UT], 3-aSchools[L].QueueCount) )  )
+    end;
+  end;
+
 const
-  TRAINING_PRIORITY: array[0..13] of TKMUnitType = (
+  TRAINING_PRIORITY: TKMTrainPriorityArr = (
     ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
     ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Serf, ut_Worker, ut_Recruit
   );
+  TRAINING_PRIORITY_Serf: TKMTrainPriorityArr = (
+    ut_Miner, ut_Metallurgist, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack, ut_Serf,
+    ut_Farmer, ut_AnimalBreeder, ut_Baker, ut_Butcher, ut_Fisher, ut_Smith, ut_Worker, ut_Recruit
+  );
 var
   GoldShortage: Boolean;
-  I,K,cnt: Integer;
+  K,L,cnt: Integer;
   GoldProduced: Cardinal;
   H: TKMHouse;
   HT: TKMHouseType;
   UT: TKMUnitType;
-  Schools: array of TKMHouseSchool;
+  Schools: TKMSchoolHouseArray;
   Houses: array[HOUSE_MIN..HOUSE_MAX] of Integer;
-  UnitReq: array[CITIZEN_MIN..CITIZEN_MAX] of Integer;
+  UnitReq: TKMUnitReqArr;
 begin
   P := gHands[fOwner];
   Stats := P.Stats;
@@ -271,9 +297,9 @@ begin
   else
   begin
     // We need completed houses, houses in specific stage of construction and only completed watchtowers -> we have to scan houses
-    for I := 0 to gHands[fOwner].Houses.Count - 1 do
+    for K := 0 to gHands[fOwner].Houses.Count - 1 do
     begin
-      H := gHands[fOwner].Houses[I];
+      H := gHands[fOwner].Houses[K];
       if (H <> nil) AND not H.IsDestroyed then
       begin
         if H.IsComplete then
@@ -306,36 +332,32 @@ begin
   // Find completed schools, decrease UnitReq by already trained citizens
   cnt := 0;
   SetLength(Schools, Stats.GetHouseQty(htSchool));
-  for I := 0 to P.Houses.Count - 1 do
-    if (P.Houses[I] <> nil)
-       AND not (P.Houses[I].IsDestroyed)
-       AND (P.Houses[I].IsComplete)
-       AND (P.Houses[I].HouseType = htSchool) then
+  for K := 0 to P.Houses.Count - 1 do
+    if (P.Houses[K] <> nil)
+       AND not (P.Houses[K].IsDestroyed)
+       AND (P.Houses[K].IsComplete)
+       AND (P.Houses[K].HouseType = htSchool) then
     begin
-      Schools[cnt] := TKMHouseSchool(P.Houses[I]);
+      Schools[cnt] := TKMHouseSchool(P.Houses[K]);
       if GoldShortage AND (Schools[cnt].CheckResIn(wt_Gold) = 0) then // Ignore empty schools when we are out of gold
         continue;
-      for K := Schools[cnt].QueueLength - 1 downto 0 do
-        if (Schools[cnt].Queue[K] <> ut_None) then
+      for L := Schools[cnt].QueueLength - 1 downto 0 do
+        if (Schools[cnt].Queue[L] <> ut_None) then
         begin
-          if K = 0 then // Queue is already active
-            Dec(UnitReq[ Schools[Cnt].Queue[K] ],1)
+          if L = 0 then // Queue is already active
+            Dec(UnitReq[ Schools[Cnt].Queue[L] ],1)
           else // Remove from Queue (it doesn't have to be actual ... when is city under attack we have to save gold)
-            Schools[Cnt].RemUnitFromQueue(K);
+            Schools[Cnt].RemUnitFromQueue(L);
         end;
       cnt := cnt + 1;
     end;
 
   //Order citizen training
-  for K := Low(TRAINING_PRIORITY) to High(TRAINING_PRIORITY) do
-  begin
-    UT := TRAINING_PRIORITY[K];
-    for I := 0 to cnt - 1 do
-      if (UnitReq[UT] <= 0) then // Check unit requirements
-        break
-      else if (Schools[I].QueueCount <= 2) then // Order citizen, decrease unit requirement
-        Dec(  UnitReq[UT], Schools[I].AddUnitToQueue( UT, Min(UnitReq[UT], 3-Schools[I].QueueCount) )  )
-  end;
+  if (gHands[fOwner].Stats.GetUnitQty(ut_Serf) < gHands[fOwner].Stats.GetHouseQty(htAny)) then // Keep minimal amount of serfs
+    TrainByPriority(TRAINING_PRIORITY_Serf, UnitReq, Schools, cnt)
+  else
+    TrainByPriority(TRAINING_PRIORITY, UnitReq, Schools, cnt);
+
 end;
 
 
@@ -360,6 +382,7 @@ var
 
   procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
   const
+    TRADE_RESERVE = 5;
     TRADE_QUANTITY = 20;
   var
     I: Integer;
@@ -375,17 +398,22 @@ var
         AND Houses[I].IsComplete then
       begin
         HM := TKMHouseMarket(Houses[I]);
-        if (TKMHouseMarket(HM).ResOrder[0] <> 0)
-          AND (HM.ResTo = aResTo) then
-          Exit
-        else if HM.AllowedToTrade(aResFrom)
-          AND HM.AllowedToTrade(aResTo)
-          AND (TKMHouseMarket(HM).ResOrder[0] = 0) then
+        if (TKMHouseMarket(HM).ResOrder[0] <> 0) then
+        begin
+          if (HM.ResTo = aResTo) then
+            Exit;
+          if (gHands[fOwner].Stats.GetWareBalance(aResFrom) > TKMHouseMarket(HM).ResOrder[0]) then
+            continue;
+        end;
+        if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
+        begin
           IdleHM := HM;
+          break;
+        end;
       end;
     if (IdleHM <> nil) then  // AND (IdleHM.ResFrom <> aResFrom) or (IdleHM.ResTo <> aResTo) then
     begin
-      //IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
+      IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
       IdleHM.ResFrom := aResFrom;
       IdleHM.ResTo := aResTo;
       IdleHM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
@@ -405,7 +433,7 @@ const
   MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
   LACK_OF_STONE = 50;
   WARFARE_SELL_LIMIT = 20;
-  SELL_LIMIT = 100;
+  SELL_LIMIT = 30;
 var
   MarketCnt, I, WareCnt: Word;
 begin
@@ -432,8 +460,9 @@ begin
       AND ( GetWareBalance(wt_GoldOre) < MIN_GOLD_AMOUNT ) then
       AddWare(wt_GoldOre);
     // Coal
-    if ( fPredictor.WareBalance[wt_Coal].Exhaustion < 20 )
-      AND ( GetWareBalance(wt_Coal) < MIN_GOLD_AMOUNT ) then
+    if ( fPredictor.WareBalance[wt_Coal].Exhaustion < 50 )
+      AND ( GetWareBalance(wt_Coal) < MIN_GOLD_AMOUNT )
+      AND (Builder.Planner.PlannedHouses[htCoalMine].UnderConstruction = 0) then
       AddWare(wt_Coal);
   end;
 
@@ -639,7 +668,7 @@ begin
 
     gHands[fOwner].Houses.UpdateResRequest;
   end;
-end; 
+end;
 
 
 // Calculate weapons demand from combat AI requirements
@@ -776,7 +805,7 @@ var
 //  gt_Melee,            //ut_MetalBarbarian
 //  gt_Mounted           //ut_Horseman
 //);
-//TROOP_COST: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
+//TroopCost: array [ut_Militia..ut_Cavalry, 1..4] of TKMWareType = (
 //  (wt_Axe,          wt_None,        wt_None,  wt_None ), //Militia
 //  (wt_Shield,       wt_Armor,       wt_Axe,   wt_None ), //Axefighter
 //  (wt_MetalShield,  wt_MetalArmor,  wt_Sword, wt_None ), //Swordfighter
@@ -957,3 +986,4 @@ begin
 end;
 
 end.
+

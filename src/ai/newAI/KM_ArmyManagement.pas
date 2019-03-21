@@ -38,6 +38,7 @@ type
     procedure CheckAttack();
     procedure AddNewThreat(aAttacker: TKMUnitWarrior; aUnit: TKMUnit = nil);
     procedure CheckThreats();
+    procedure SetAttackRequest(aAttackRequest: TKMAttackRequest);
 
     function CombineBalanceStrings(): UnicodeString;
   public
@@ -49,8 +50,8 @@ type
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
     property Defence: TKMArmyDefence read fDefence write fDefence;
-    property AttackRequest: TKMAttackRequest read fAttackRequest write fAttackRequest;
-    property DefendRequest: TKMDefendRequest read fDefendRequest write fDefendRequest;
+    property AttackRequest: TKMAttackRequest read fAttackRequest write SetAttackRequest;
+    property DefendRequest: TKMDefendRequest read fDefendRequest;
     property BalanceText: UnicodeString read CombineBalanceStrings;
 
     procedure AfterMissionInit();
@@ -132,6 +133,8 @@ begin
     SaveStream.Write(PointsCnt);
     if (Length(Points) > 0) then
       SaveStream.Write(Points[0], SizeOf(Points[0])*PointsCnt);
+    if (Length(AssistByInfluence) > 0) then
+      SaveStream.Write(AssistByInfluence[0], SizeOf(AssistByInfluence[0])*PointsCnt);
   end;
 
   SaveStream.Write( Integer(fHostileGroups.Count) );
@@ -178,6 +181,9 @@ begin
     SetLength(Points,PointsCnt);
     if (Length(Points) > 0) then
       LoadStream.Read(Points[0], SizeOf(Points[0])*PointsCnt);
+    SetLength(AssistByInfluence,PointsCnt);
+    if (Length(AssistByInfluence) > 0) then
+      LoadStream.Write(AssistByInfluence[0], SizeOf(AssistByInfluence[0])*PointsCnt);
   end;
 
   LoadStream.Read(Count);
@@ -401,11 +407,12 @@ type
   const
     ALLIANCE_TARGET_COEF = 0.1;
     BEST_ALLIANCE_TARGET_COEF = 0.2;
-    DISTANCE_COEF = 0.3; // If second enemy is twice as far away decrease chance by 3/8
+    DISTANCE_TILE_PENALIZATION = 1/50;
+    DISTANCE_COEF = DISTANCE_TILE_PENALIZATION * 0.1; // Every 50 tiles from closest enemy increase comparison by 0.1
     MIN_COMPARSION = -0.2; // advantage for defender (but we are attacking as a team and team have advantage)
   var
-    I, K, MinDist, MaxDist: Integer;
-    Comparison, BestComparison, invDistInterval: Single;
+    I, K, MinDist: Integer;
+    Comparison, BestComparison: Single;
     OwnerArr: TKMHandIndexArray;
     EnemyStats: TKMEnemyStatisticsArray;
   begin
@@ -424,20 +431,15 @@ type
     begin
       // Find closest enemy
       MinDist := High(Integer);
-      MaxDist := 0;
       for I := 0 to Length(EnemyStats) - 1 do
-      begin
-          MinDist := Min(MinDist, EnemyStats[I].Distance);
-          MaxDist := Max(MaxDist, EnemyStats[I].Distance);
-      end;
-      invDistInterval := 1 / Max(1,MaxDist - MinDist);
+        MinDist := Min(MinDist, EnemyStats[I].Distance);
 
       for I := 0 to Length(EnemyStats) - 1 do
       begin
         // Compute comparison
         Comparison := + gAIFields.Eye.ArmyEvaluation.CompareStrength(fOwner, EnemyStats[I].Player) // <-1,1>
                       + Byte(EnemyStats[I].Player = aBestTargetPlayer) * BEST_ALLIANCE_TARGET_COEF // (+0.1)
-                      - (EnemyStats[I].Distance - MinDist) * invDistInterval * DISTANCE_COEF; // -<0,0.3>
+                      - abs(EnemyStats[I].Distance - MinDist) * DISTANCE_COEF; // -0.1 per 50 tiles
         // Consider teammates of best target which is selected by Supervisor
         for K := 0 to Length(fAttackRequest.Enemies) - 1 do
           if (fAttackRequest.Enemies[K] = EnemyStats[I].Player) then
@@ -493,7 +495,7 @@ type
             HighAG := HighAG - 1;
             GTMaxCnt := GTMaxCnt - 1;
           end;
-       end;
+      end;
 
       SetLength(Groups, GCnt);
       fattack.CreateCompany(aTargetPoint, Groups);
@@ -595,6 +597,18 @@ begin
     end;
   end;
   fDefence.FindEnemyInDefLine(UGA, fDefendRequest);
+end;
+
+
+procedure TKMArmyManagement.SetAttackRequest(aAttackRequest: TKMAttackRequest);
+begin
+  fAttackRequest.Active := aAttackRequest.Active;
+  fAttackRequest.BestAllianceCmp := aAttackRequest.BestAllianceCmp;
+  fAttackRequest.WorstAllianceCmp := aAttackRequest.WorstAllianceCmp;
+  fAttackRequest.BestEnemy := aAttackRequest.BestEnemy;
+  fAttackRequest.BestPoint := aAttackRequest.BestPoint;
+  SetLength(fAttackRequest.Enemies, Length(aAttackRequest.Enemies) );
+  Move(aAttackRequest.Enemies[0], fAttackRequest.Enemies[0], SizeOf(fAttackRequest.Enemies[0])*Length(fAttackRequest.Enemies));
 end;
 
 

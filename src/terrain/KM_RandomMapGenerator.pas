@@ -1,4 +1,4 @@
-{
+﻿{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -343,7 +343,7 @@ begin
   //}
   diff := GetTimeSince(diff);
 
-  Str(diff,Sdiff);
+  //Str(diff,Sdiff);
   //ShowMessage(Sdiff);
 
   SetLength(aTiles, fMapY * fMapX);
@@ -896,8 +896,6 @@ const
   Tr_Sand: array[0..2] of TBiomeType = (btGrassSand1,btGrassSand2,btGrassSand3);
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
-  RandBiom := 0;
-
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
   Shape2Arr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 2),1000);

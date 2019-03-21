@@ -43,7 +43,7 @@ type
 
 implementation
 uses
-  KM_AIFields, KM_NavMesh;
+  KM_AIFields, KM_NavMesh, KM_NavMeshGenerator;
 
 
 { TNavMeshPathFinding }

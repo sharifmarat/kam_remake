@@ -9,19 +9,19 @@ uses
 
 
 var
-  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 15;
-  GA_BUILDER_BuildHouse_FieldMaxWork    : Single = 1;
-  GA_BUILDER_BuildHouse_RTPMaxWork      : Single = 10;
-  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 9.321095646;
-  GA_BUILDER_ChHTB_FractionCoef         : Single = 9.673275352;
-  GA_BUILDER_ChHTB_TrunkFactor          : Single = 17.256;
-  GA_BUILDER_ChHTB_TrunkBalance         : Single = 1;
-  GA_BUILDER_ChHTB_AllWorkerCoef        : Single = 9.645618439;
-  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = 1;
-  GA_BUILDER_TRUNK_SHORTAGE             : Single = 1;
-  GA_BUILDER_STONE_SHORTAGE             : Single = 6.846969;
-  GA_BUILDER_WOOD_SHORTAGE              : Single = 4.757;
-  GA_BUILDER_GOLD_SHORTAGE              : Single = 35.64543295;
+  GA_BUILDER_BuildHouse_RoadMaxWork     : Single = 16;
+  GA_BUILDER_BuildHouse_FieldMaxWork    : Single =  1;
+  GA_BUILDER_BuildHouse_RTPMaxWork      : Single =  5;
+  GA_BUILDER_CreateShortcuts_MaxWork    : Single = 10;
+  GA_BUILDER_ChHTB_FractionCoef         : Single =  9.352;
+  GA_BUILDER_ChHTB_TrunkFactor          : Single = 16.045;
+  GA_BUILDER_ChHTB_TrunkBalance         : Single =  2.511;
+  GA_BUILDER_ChHTB_AllWorkerCoef        : Single =  7.154;
+  GA_BUILDER_ChHTB_FreeWorkerCoef       : Single =  4.251;//13.550
+  GA_BUILDER_TRUNK_SHORTAGE             : Single =  1.426;
+  GA_BUILDER_STONE_SHORTAGE             : Single = 13.772;
+  GA_BUILDER_WOOD_SHORTAGE              : Single =  5.840;
+  GA_BUILDER_GOLD_SHORTAGE              : Single = 27.638;
 
 
 type
@@ -945,7 +945,7 @@ var
 
   function TryUnlockByRnd(var aHT: TKMHouseType): Boolean;
   const
-    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall, htSiegeWorkshop];
+    FORBIDDEN_HOUSES = [htIronMine, htGoldMine, htCoalMine, htWineyard, htStables, htFisherHut, htTownHall, htSiegeWorkshop, htIronSmithy, htArmorSmithy, htWeaponSmithy];
   var
     HT: TKMHouseType;
   begin
@@ -1041,10 +1041,10 @@ var
     for Ware in aSetOfWare do
     begin
       WT := Ware;
-      if (RequiredHouses[ PRODUCTION[WT] ] > 0) then
+      if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) then
       begin
         Priority := WareBalance[WT].Exhaustion - WareBalance[WT].Fraction * GA_BUILDER_ChHTB_FractionCoef
-                    - Byte(PRODUCTION[WT] = htBakery) * 1000;
+                    - Byte(PRODUCTION_WARE2HOUSE[WT] = htBakery) * 1000;
         for I := Low(WareOrder) to High(WareOrder) do
           if (WT = wt_None) then
             break
@@ -1062,7 +1062,7 @@ var
     begin
       if (WareOrder[I] = wt_None) then
         break;
-      HT := PRODUCTION[ WareOrder[I] ];
+      HT := PRODUCTION_WARE2HOUSE[ WareOrder[I] ];
       if (RequiredHouses[HT] <= 0) then // wt_Leather and wt_Pig require the same building so avoid to place 2 houses at once
         continue;
       // Farms and wineyards should be placed ASAP because fields may change evaluation of terrain and change tpBuild status of surrouding tiles!
@@ -1102,12 +1102,12 @@ var
     for I := Low(BUILD_ORDER_WARE) to High(BUILD_ORDER_WARE) do
     begin
       WT := BUILD_ORDER_WARE[I];
-      if (RequiredHouses[ PRODUCTION[WT] ] > 0) AND (WareBalance[WT].Exhaustion < 30) then
+      if (RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] > 0) AND (WareBalance[WT].Exhaustion < 30) then
       begin
         // Make sure that next cycle will not scan this house in this tick
-        RequiredHouses[ PRODUCTION[WT] ] := 0;
+        RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] := 0;
         // Try build required houses
-        if (AddToConstruction(PRODUCTION[WT], False, False) = cs_HousePlaced) then
+        if (AddToConstruction(PRODUCTION_WARE2HOUSE[WT], False, False) = cs_HousePlaced) then
         begin
           MaxPlans := 0; // This house is critical so dont plan anything else
           Exit;
@@ -1145,7 +1145,7 @@ var
     else if fWoodShortage then
     begin
       MaxIdx := WOOD_SHORTAGE_IDX;
-      MinIdx := TRUNK_SHORTAGE_IDX;
+      //MinIdx := TRUNK_SHORTAGE_IDX;
       if (fPlanner.PlannedHouses[htSawmill].Completed > 0) then
         MinIdx := WOOD_SHORTAGE_IDX;
     end
@@ -2186,3 +2186,4 @@ end;
 
 
 end.
+
