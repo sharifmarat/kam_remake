@@ -53,7 +53,7 @@ type
     procedure AddTime(const aText: UnicodeString; Res: boolean); overload;
     procedure AddTime(a, b: integer); overload;
     function IsDegubLogEnabled: Boolean;
-    procedure LogDegub(const aText: UnicodeString);
+    procedure LogDebug(const aText: UnicodeString);
     procedure LogDelivery(const aText: UnicodeString);
     procedure LogCommands(const aText: UnicodeString);
     procedure LogRandomChecks(const aText: UnicodeString);
@@ -295,7 +295,7 @@ begin
 end;
 
 
-procedure TKMLog.LogDegub(const aText: UnicodeString);
+procedure TKMLog.LogDebug(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
   AddLineTime(aText, lmt_Debug);

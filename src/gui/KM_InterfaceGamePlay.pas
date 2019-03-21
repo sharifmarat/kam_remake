@@ -1633,7 +1633,7 @@ begin
   begin
     Image := TKMImage(Sender);
     if gLog.IsDegubLogEnabled then
-      gLog.LogDegub(Format('TKMGamePlayInterface.Allies_mute: Image.tag = %d NetPlayerIndex = %d',
+      gLog.LogDebug(Format('TKMGamePlayInterface.Allies_mute: Image.tag = %d NetPlayerIndex = %d',
                            [Image.Tag, fLineIdToNetPlayerId[Image.Tag]]));
     gGame.Networking.ToggleMuted(fLineIdToNetPlayerId[Image.Tag]);
     Update_Image_AlliesMute(Image);
