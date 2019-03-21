@@ -97,6 +97,7 @@ var
   SP_DEFAULT_PEACETIME    :Integer = 70;    //Default peacetime for SP games when SP_DEFAULT_ADVANCED_AI set to True
   {User interface options}
   DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
+  DEBUG_LOGS              :Boolean = True;  //Log debug info
   ALLOW_SELECT_ALLY_UNITS :Boolean = False; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = False; //Do we allow to select enemies houses/units/groups
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
