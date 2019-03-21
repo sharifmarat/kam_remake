@@ -591,7 +591,8 @@ end;
 
 procedure TKMMain.UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
 begin
-  if gGameApp <> nil then
+  if (gGameApp <> nil)
+    and (fMainSettings <> nil) and (fMainSettings.WindowParams <> nil) then //just in case...
     fMainSettings.WindowParams.ApplyWindowParams(aWindowParams);
 end;
 
