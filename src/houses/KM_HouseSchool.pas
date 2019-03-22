@@ -21,6 +21,8 @@ type
     procedure CancelTrainingUnit;
     procedure SetQueue(aIndex: Integer; aValue: TKMUnitType);
     property PrivateQueue[aIndex: Integer]: TKMUnitType read GetQueue write SetQueue;
+  protected
+    function GetResInLocked(aI: Byte): Word; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -129,9 +131,20 @@ begin
   begin //Make sure unit started training
     TKMUnit(fUnitWip).CloseUnit(False); //Don't remove tile usage, we are inside the school
     fHideOneGold := False;
+    //Add 1 gold to offer to take it out
+    if DeliveryMode = dm_TakeOut then
+      gHands[fOwner].Deliveries.Queue.AddOffer(Self, wt_Gold, 1);
   end;
   fUnitWip := nil;
   PrivateQueue[0] := ut_None; //Removed the in training unit
+end;
+
+
+function TKMHouseSchool.GetResInLocked(aI: Byte): Word;
+begin
+  Result := inherited GetResInLocked(aI);
+  if aI = 1 then //for gold only (1 - based)
+    Inc(Result, Byte(HideOneGold)); //We Lock 1 gold if its hidden (while unit training)
 end;
 
 
@@ -209,7 +222,10 @@ end;
 
 procedure TKMHouseSchool.CreateUnit;
 begin
-  fHideOneGold := true;
+  fHideOneGold := True;
+  //Remove 1 gold from offer to take it out
+  if DeliveryMode = dm_TakeOut then
+    gHands[fOwner].Deliveries.Queue.RemOffer(Self, wt_Gold, 1);
 
   //Create the Unit
   fUnitWip := gHands[fOwner].TrainUnit(fQueue[0], Entrance);
