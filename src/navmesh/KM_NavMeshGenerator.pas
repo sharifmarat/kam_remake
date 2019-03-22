@@ -1,8 +1,9 @@
 unit KM_NavMeshGenerator;
 {$I KaM_Remake.inc}
+//{$DEFINE DEBUG_NavMesh}
 interface
 uses
-  {$IFDEF MSWINDOWS}
+  {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
     Windows,
   {$ENDIF}
   System.Diagnostics, System.TimeSpan,
@@ -21,25 +22,15 @@ type
     Count: Word;
     Borders: array[0..6000] of TKMBord;
   end;
-
-  // PolyLines
-  PPolyLine = ^TKMPolyLine;
-  TKMPolyLine = record
-    Node,Polygon: Word;
-    Next: PPolyLine;
-  end;
-  PPolyLines = ^TKMPolyLines;
-  TKMPolyLines = record
-  	LeftEdge, RightEdge, FutureLeftEdge, FutureRightEdge: Word;
-    FirstLine, LastLine: PPolyLine;
-  end;
-
+  {$IFDEF DEBUG_NavMesh}
   TDebugLines = record // Only for debug
     Count: Word;
     Lines: array[0..15000] of record
       P1,P2: TKMPoint;
+      Color: Cardinal;
     end;
   end;
+  {$ENDIF}
 
   TPolygon = record
       CenterPoint: TKMPoint;
@@ -59,11 +50,15 @@ type
     fInnerPointStartIdx, fInnerPointEndIdx: Word;
     fBordByY, fIdxArr: array[0..256] of Word;
     fBord: TKMBordInfo;
-    fDL, fDL2: TDebugLines;
+    {$IFDEF DEBUG_NavMesh}
+    fBorderNodeCount: Integer;
+    fDL: TDebugLines;
+    fBorderNodes: TKMPointArray;
+    {$ENDIF}
 
     //Working data
-    fNodeCount, fBorderNodeCount, fPolyCount: Integer;
-    fNodes,fBorderNodes: TKMPointArray;            // Nodes
+    fNodeCount, fPolyCount: Integer;
+    fNodes: TKMPointArray;            // Nodes
     fPolygons: TPolygonArray;         // Polygons
 
     //Building the navmesh from terrain
@@ -75,7 +70,7 @@ type
     procedure PrettyPoly();
 
     // Measure performance
-    {$IFDEF MSWINDOWS}
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
     function TimeGetUsec(): Int64;
     {$ENDIF}
   public
@@ -91,7 +86,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     procedure GenerateNewNavMesh();
-    procedure Paint(const aRect: TKMRect);
+    function Paint(const aRect: TKMRect): Boolean;
   end;
 
 
@@ -104,6 +99,8 @@ uses
 
 
 const
+  MAX_NODES = 5000; // Max nodes in NavMesh array
+  MAX_POLYGONS = 4000;
   UNVISITED_OBSTACLE = 255;
   VISITED_OBSTACLE = UNVISITED_OBSTACLE - 1;
   NODE_IN_WALKABLE_AREA = 1;
@@ -112,6 +109,7 @@ const
   FILTER_EDGES_MAX_TOLERANCE = 0.5;
   INNER_EDGE_BORDER_STEP = 4;
   INNER_EDGE_STEP = 5;
+  SQR_MAX_RADIUS_TryConnect = 20*20;
 
 
 { TKMNavMeshGenerator }
@@ -146,40 +144,40 @@ end;
 procedure TKMNavMeshGenerator.GenerateNewNavMesh();
 var
   W: TKMNavMeshByteArray;
-{$IFDEF MSWINDOWS}
-  TimeStart,TimeDiff: UInt64;
-  a,b,c,d: UInt64;
+{$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+  tStart,tExtrNodes,tAddInNodes,tPolyTrian,tPrettyPoly, tSum: UInt64;
 {$ENDIF}
 begin
-  {$IFDEF MSWINDOWS}
-  TimeStart := TimeGetUsec();
-  {$ENDIF}
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    tStart := TimeGetUsec();
+    {$ENDIF}
 
   W := ExtractNodes();
-  a := TimeGetUsec() - TimeStart;
-
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    tExtrNodes := TimeGetUsec() - tStart;
+    {$ENDIF}
   AddInnerNodes(W);
-  b := TimeGetUsec() - TimeStart - a;
-
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    tAddInNodes := TimeGetUsec() - tStart - tExtrNodes;
+    {$ENDIF}
   PolygonTriangulation();
-  c := TimeGetUsec() - TimeStart - b;
-
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    tPolyTrian := TimeGetUsec() - tStart - tAddInNodes;
+    {$ENDIF}
   PrettyPoly();
-  d := TimeGetUsec() - TimeStart - c;
-  if (a > 0) then a := a * 1;
-  if (b > 0) then b := b * 1;
-  if (c > 0) then c := c * 1;
-  if (d > 0) then d := d * 1;
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    //tPrettyPoly := TimeGetUsec() - tStart - tPolyTrian;
+    {$ENDIF}
 
-  {$IFDEF MSWINDOWS}
-  TimeDiff := TimeGetUsec() - TimeStart;
-  if (TimeDiff > 0) then TimeDiff := TimeDiff * 1; // Make sure that compiler does not f--ck up the variable TimeDiff
-  {$ENDIF}
+    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    tSum := tExtrNodes + tAddInNodes + tPolyTrian + tPrettyPoly;
+    if (tSum > 0) then tSum := tSum * 1; // Make sure that compiler does not f--ck up the variable TimeDiff
+    {$ENDIF}
 end;
 
 
 
-{$IFDEF MSWINDOWS}
+{$IFDEF MSWINDOWS AND DEBUG_NavMesh}
 function TKMNavMeshGenerator.TimeGetUsec(): Int64;
 var
   freq: Int64;
@@ -255,11 +253,11 @@ function TKMNavMeshGenerator.ExtractNodes(): TKMNavMeshByteArray;
       EIdx: Word;
     end;
 var
-  ShapeCnt: Integer;
+  ShapeCnt,BordNodeCnt: Integer;
   ShapeIdxArr: array[0..256*64] of TStartEndIdxs;
   NodeMap: array[0..256,0..256] of Word;
-  EndfBordByY: array[0..256] of Word;
   W: TKMNavMeshByteArray;
+  BordNodes: TKMPointArray;
 
   // Use relative coordinate system: visit surounding tiles and rotate coordinate system around walkable area
   procedure ScanObstacle(aStartPoint, aEndPoint, aInitDir: TKMPoint);
@@ -306,7 +304,7 @@ var
       end
       else
         break;
-      // Add point in case that distance is greater than threshold
+      // Add corrected point (correction secure that point have unique coords)
       if InnerTile then
         CorrP := KMPointAdd( KMPoint(X,Y), DirCorrInnerTileArr[v.X+v.Y*2] )
       else
@@ -317,9 +315,9 @@ var
           W[CorrP.Y,CorrP.X] := NODE_IN_WALKABLE_AREA
         else
           W[CorrP.Y,CorrP.X] := NODE_IN_OBSTACLE;
-        fBorderNodes[fBorderNodeCount] := CorrP;
-        NodeMap[CorrP.Y,CorrP.X] := fBorderNodeCount;
-        Inc(fBorderNodeCount);
+        BordNodes[BordNodeCnt] := CorrP;
+        NodeMap[CorrP.Y,CorrP.X] := BordNodeCnt;
+        Inc(BordNodeCnt);
       end;
       // Mark visited obstacle and move into next point
       if (W[Y,X] = UNVISITED_OBSTACLE) then
@@ -368,7 +366,7 @@ var
     InvDenominator, a,b,c: Single;
     StrP,EndP: TKMPoint;
   begin
-    //FillChar(EndfBordByY, SizeOf(EndfBordByY), #0);
+    FillChar(fBordByY, SizeOf(fBordByY), #0);
     fNodeCount := 1;
     fBord.Count := 1;
     // For all shapes
@@ -376,7 +374,7 @@ var
     begin
       StartIdx := ShapeIdxArr[K].SIdx;
       StartBorderIdx := fBord.Count;
-      AddBorderPoint( fBorderNodes[StartIdx] );
+      AddBorderPoint( BordNodes[StartIdx] );
       // Check all nodes in every shape
       Overflow1 := 0;
       while (StartIdx < ShapeIdxArr[K].EIdx) AND (Overflow1 < 65536) do
@@ -388,12 +386,12 @@ var
           Overflow2 := Overflow2 + 1;
           ShapeCheck := True;
           // Check if removed points are not too far from the new line
-          a := - fBorderNodes[StartIdx].Y     + fBorderNodes[EndIdx-1].Y;
-          b := + fBorderNodes[StartIdx].X     - fBorderNodes[EndIdx-1].X;
-          c := - fBorderNodes[StartIdx].X * a - fBorderNodes[StartIdx].Y * b;
+          a := - BordNodes[StartIdx].Y     + BordNodes[EndIdx-1].Y;
+          b := + BordNodes[StartIdx].X     - BordNodes[EndIdx-1].X;
+          c := - BordNodes[StartIdx].X * a - BordNodes[StartIdx].Y * b;
           InvDenominator := 1 / (a*a + b*b);
           for L := EndIdx-1 downto StartIdx+1 do
-            if (  ( sqr(a*fBorderNodes[L].X + b*fBorderNodes[L].Y + c) * InvDenominator ) > FILTER_EDGES_MAX_TOLERANCE  ) then
+            if (  ( sqr(a*BordNodes[L].X + b*BordNodes[L].Y + c) * InvDenominator ) > FILTER_EDGES_MAX_TOLERANCE  ) then
             begin
               ShapeCheck := False;
               Dec(EndIdx);
@@ -402,8 +400,8 @@ var
           // Check if new line does not intersect with existing line
           if ShapeCheck then
           begin
-            StrP := fBorderNodes[StartIdx];
-            EndP := fBorderNodes[EndIdx];
+            StrP := BordNodes[StartIdx];
+            EndP := BordNodes[EndIdx];
             for X := Min(StrP.X,EndP.X) to Max(StrP.X,EndP.X) do
             begin
               for Y := Min(StrP.Y,EndP.Y) to Max(StrP.Y,EndP.Y) do
@@ -411,8 +409,8 @@ var
                 //if (NodeMap[Y,X] > 0) then
                 begin
                   // Make sure that the selection does not colide with starting point
-                  if   (not KMSamePoint(fBorderNodes[ NodeMap[Y,X]+1 ], StrP) AND Intersect(StrP, EndP, KMPoint(X,Y), fBorderNodes[ NodeMap[Y,X]+1 ]))
-                    OR (not KMSamePoint(fBorderNodes[ NodeMap[Y,X]-1 ], EndP) AND Intersect(StrP, EndP, KMPoint(X,Y), fBorderNodes[ NodeMap[Y,X]-1 ])) then
+                  if   (not KMSamePoint(BordNodes[ NodeMap[Y,X]+1 ], StrP) AND Intersect(StrP, EndP, KMPoint(X,Y), BordNodes[ NodeMap[Y,X]+1 ]))
+                    OR (not KMSamePoint(BordNodes[ NodeMap[Y,X]-1 ], EndP) AND Intersect(StrP, EndP, KMPoint(X,Y), BordNodes[ NodeMap[Y,X]-1 ])) then
                   begin
                     ShapeCheck := False;
                     Dec(EndIdx);
@@ -432,7 +430,7 @@ var
         end;
 
         // Create clean borders
-        AddBorderPoint( fBorderNodes[EndIdx] );
+        AddBorderPoint( BordNodes[EndIdx] );
         StartIdx := EndIdx;
       end;
       // Mark end of shape
@@ -458,7 +456,7 @@ var
     // Mark edges in the map
     FillChar(ShapeIdxArr, SizeOf(ShapeIdxArr), #0);
     FillChar(NodeMap, SizeOf(NodeMap), #0);
-    fBorderNodeCount := 2; // Start at index 2 -> 0. is reserved and 1. will be the end point so circle is complete
+    BordNodeCnt := 2; // Start at index 2 -> 0. is reserved and 1. will be the end point so circle is complete
     ShapeCnt := 0;
     Walkable := False;
     for Y := 1 to fMapY - 1 do
@@ -466,26 +464,25 @@ var
     begin
       if Walkable AND (W[Y,X] = UNVISITED_OBSTACLE) then
       begin
-        Cnt := fBorderNodeCount;
+        Cnt := BordNodeCnt;
         ScanObstacle(KMPoint(X,Y), KMPoint(X,Y), KMPoint(0,-1));
         // Check the number of borders in the new obstacle
-        if (fBorderNodeCount - Cnt < MIN_BORDERS_IN_NEW_OBSTACLE) then
-          fBorderNodeCount := Cnt // Remove borders / ignore them
+        if (BordNodeCnt - Cnt < MIN_BORDERS_IN_NEW_OBSTACLE) then
+          BordNodeCnt := Cnt // Remove borders / ignore them
         else
         begin
           // Mark start and end index of new obstacle
           ShapeIdxArr[ShapeCnt].SIdx := Cnt;
-          ShapeIdxArr[ShapeCnt].EIdx := fBorderNodeCount-1;
+          ShapeIdxArr[ShapeCnt].EIdx := BordNodeCnt-1;
           Inc(ShapeCnt);
           // Add end point before the start point and vice versa so points in ShapeIdxArr are interconnected by indexes
-          fBorderNodes[Cnt-1] := fBorderNodes[fBorderNodeCount-1];
-          fBorderNodes[fBorderNodeCount] := fBorderNodes[Cnt];
-          Inc(fBorderNodeCount);
-          Inc(fBorderNodeCount); // Reserve next node
+          BordNodes[Cnt-1] := BordNodes[BordNodeCnt-1];
+          BordNodes[BordNodeCnt] := BordNodes[Cnt];
+          Inc(BordNodeCnt);
+          Inc(BordNodeCnt); // Reserve first index of next node for end point of the node
         end;
       end;
       Walkable := (W[Y,X] = 0);
-
     end;
     // Filter edges
     FilterEdges();
@@ -496,53 +493,42 @@ var
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
-  // Clear array
-  fNodeCount := 1;
-  fBorderNodeCount := 1;
-  SetLength(fNodes, 5000);
-  SetLength(fBorderNodes, 255*255);
+  // Init node array
+  fNodeCount := 1; // First index is reserved
+  SetLength(fNodes, MAX_NODES);
   FillChar(fNodes[0], SizeOf(fNodes[0]) * Length(fNodes), #0);
-  FillChar(fBorderNodes[0], SizeOf(fBorderNodes[0]) * Length(fBorderNodes), #0);
-  // Fill borders
+  // Init array of borders
+  BordNodeCnt := 1;
+  SetLength(BordNodes, 255*255);
+  FillChar(BordNodes[0], SizeOf(BordNodes[0]) * Length(BordNodes), #0);
+  // Get obstacles in the map
   FillChar(W, SizeOf(W), #0);
-  X := fMapX;
-  for Y := 0 to fMapY do
-  begin
-    W[Y,0] := UNVISITED_OBSTACLE;
-    W[Y,X] := UNVISITED_OBSTACLE;
-  end;
-  Y := fMapY;
-  for X := 0 to fMapX do
-  begin
-    W[0,X] := UNVISITED_OBSTACLE;
-    W[Y,X] := UNVISITED_OBSTACLE;
-  end;
-  // Fill map
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
     if not (tpOwn in gTerrain.Land[Y,X].Passability) then
       W[Y,X] := UNVISITED_OBSTACLE;
-  // Find edges of polygons
-  FillChar(fBordByY, SizeOf(fBordByY), #0);
-  FillChar(EndfBordByY, SizeOf(EndfBordByY), #0);
-  FillChar(fIdxArr, SizeOf(fIdxArr), #0);
-  MarkEdges();
-
-  {
-  for X := 1 to fBorderNodeCount-1 do
+  // Fill borders
+  for Y := 0 to fMapY do
   begin
-    gRenderAux.Text(fBorderNodes[X].X+0.25, fBorderNodes[X].Y+0.4, IntToStr(X), $FF00FF00);
+    W[Y,0] := UNVISITED_OBSTACLE;
+    W[Y,fMapX] := UNVISITED_OBSTACLE;
   end;
-
-  for X := 0 to ShapeCnt-1 do
-    for Y := ShapeIdxArr[X].SIdx to ShapeIdxArr[X].EIdx do
-    begin
-        gRenderAux.LineOnTerrain(fBorderNodes[Y-1], fBorderNodes[Y], $FF00FF00);
-    end;
-  //}
-
+  for X := 0 to fMapX do
+  begin
+    W[0,X] := UNVISITED_OBSTACLE;
+    W[fMapY,X] := UNVISITED_OBSTACLE;
+  end;
+  // Detect edges
+  MarkEdges();
+  // Return array of obstacles
   Result := W;
+  {$IFDEF DEBUG_NavMesh}
+  fBorderNodeCount := BordNodeCnt;
+  fBorderNodes := BordNodes;
+  {$ENDIF}
 end;
+
+
 
 
 procedure TKMNavMeshGenerator.AddInnerNodes(aW: TKMNavMeshByteArray);
@@ -559,11 +545,12 @@ var
 var
   K,X,Y: Integer;
 begin
+  // Mark radius around border points
   FillChar(E, SizeOf(E), #0);
   fInnerPointStartIdx := fNodeCount;
   for K := 1 to fBord.Count - 1 do
     FillArea( INNER_EDGE_BORDER_STEP+1, fNodes[ fBord.Borders[K].Node ] );
-
+  // Find untouched tiles and add inner points there
   for Y := 1 to fMapY - 1 do
   for X := 1 to fMapX - 1 do
     if (E[Y,X] = 0) AND (aW[Y,X] < VISITED_OBSTACLE) then
@@ -573,7 +560,7 @@ begin
       FillArea( INNER_EDGE_STEP+1, KMPoint(X,Y) );
     end;
   fInnerPointEndIdx := fNodeCount;
-
+  // Sort inner points according to Y
   FillChar(fIdxArr, SizeOf(fIdxArr), #0);
   Y := 0;
   K := fInnerPointStartIdx;
@@ -585,54 +572,55 @@ begin
     end
     else
       K := K + 1;
+  // Fill the end of array with maximum index
   for Y := Y to High(fIdxArr) do
     fIdxArr[Y] := fInnerPointEndIdx;
 end;
 
 
 
+
 procedure TKMNavMeshGenerator.PolygonTriangulation();
+type
+  // PolyLines
+  PPolyLine = ^TKMPolyLine;
+  TKMPolyLine = record
+    Node,Polygon: Word;
+    Next: PPolyLine;
+  end;
+  PPolyLines = ^TKMPolyLines;
+  TKMPolyLines = record
+  	LeftEdge, RightEdge, FutureLeftEdge, FutureRightEdge: Word;
+    FirstLine, LastLine: PPolyLine;
+  end;
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $7700FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
 var
   LineArrayCnt: Word;
   LineArray: array of PPolyLines;
 
-  procedure ConfirmLine(aIdx1, aIdx2: Word);
+  {$IFDEF DEBUG_NavMesh}
+  procedure AddLine(aP1,aP2: TKMPoint; aColor: Cardinal = COLOR_BLACK);
   begin
     with fDL.Lines[fDL.Count] do
     begin
-      p1 := fNodes[  fBord.Borders[ aIdx1 ].Node  ];
-      p2 := fNodes[  fBord.Borders[ aIdx2 ].Node  ];
+      P1 := aP1;
+      P2 := aP2;
+      Color := aColor;
     end;
     Inc(fDL.Count);
   end;
-  procedure AddLine(aP1,aP2: TKMPoint);
+  procedure ConfirmLine(aIdx1, aIdx2: Word; aColor: Cardinal = COLOR_BLACK);
   begin
-    with fDL.Lines[fDL.Count] do
-    begin
-      p1 := aP1;
-      p2 := aP2;
-    end;
-    Inc(fDL.Count);
+    AddLine(fNodes[ fBord.Borders[aIdx1].Node ], fNodes[ fBord.Borders[aIdx2].Node ], aColor);
   end;
-  procedure ConfirmLine2(aIdx1, aIdx2: Word);
-  begin
-    with fDL2.Lines[fDL2.Count] do
-    begin
-      p1 := fNodes[  fBord.Borders[ aIdx1 ].Node  ];
-      p2 := fNodes[  fBord.Borders[ aIdx2 ].Node  ];
-    end;
-    Inc(fDL2.Count);
-  end;
-  procedure AddLine2(aP1,aP2: TKMPoint);
-  begin
-    with fDL2.Lines[fDL2.Count] do
-    begin
-      p1 := aP1;
-      p2 := aP2;
-    end;
-    Inc(fDL2.Count);
-  end;
-
+  {$ENDIF}
+  // Mark connection between 2 polygons
   procedure ConnectPolygons(aNewPoly1, aPossiblePoly2: Word);
   begin
     if (aPossiblePoly2 = 0) then
@@ -650,10 +638,10 @@ var
         Inc(NearbyCount);
       end;
   end;
-
+  // Add new polygon from pointers to PolyLine
   procedure AddPolygon(var aPPL1, aPPL2: PPolyLine); overload;
   begin
-    with fPolygons[fPolyCount] do // Array was filled with 0 bytes in FillChar
+    with fPolygons[fPolyCount] do
     begin
       Indices[0] := aPPL1^.Node;
       Indices[1] := aPPL2^.Node;
@@ -665,10 +653,10 @@ var
     aPPL2^.Polygon := fPolyCount; // Maybe unused (by: NewLine)
     Inc(fPolyCount);
   end;
-
+  // Add new polygon from index of Node and pointer to PolyLine
   function AddPolygon(aIdx: Word; var aPPL: PPolyLine): Word; overload;
   begin
-    with fPolygons[fPolyCount] do // Array was filled with 0 bytes in FillChar
+    with fPolygons[fPolyCount] do
     begin
       Indices[0] := aPPL^.Node;
       Indices[1] := aPPL^.Next^.Node;
@@ -679,8 +667,7 @@ var
     Result := fPolyCount;
     Inc(fPolyCount);
   end;
-
-
+  // Create new line which is related to one node and points to another line on right side
   function NewLine(aNode: Word; aNext: PPolyLine; aPolygon: Word = 0): PPolyLine;
   begin
     New(Result);
@@ -688,25 +675,22 @@ var
     Result^.Polygon := aPolygon;
     Result^.Next := aNext;
   end;
-
-
+  // Check Point is on the right side of line made by P1 and P2
   function IsRightSide(P1,P2,Point: TKMPoint): Boolean;
   begin
     Result := ((P2.X - P1.X) * (Point.Y - P1.Y) > (P2.Y - P1.Y) * (Point.X - P1.X));
   end;
-
+  // Try to find triangles in existing area
   procedure TryConnect(aRemovedNode, aLineIdx: Word; aLeftDirection: Boolean; aBorderPoly: Boolean = False; aCloseArea: Boolean = False);
-  const
-    SQR_MAX_RADIUS = 20*20;
   var
     PPoly1, PPoly2, PPoly3: PPolyLine;
   begin
     with LineArray[aLineIdx]^ do
     begin
-      if (FirstLine = LastLine) OR (FirstLine^.Next = LastLine) // Only 2 verticles
-        OR (FirstLine^.Node = aRemovedNode) OR (LastLine^.Node = aRemovedNode) then // Border node
+      if (FirstLine = LastLine) OR (FirstLine^.Next = LastLine) // Only 2 vertices
+        OR (FirstLine^.Node = aRemovedNode) OR (LastLine^.Node = aRemovedNode) then // Border node connot be removed
         Exit;
-
+      // Find all 3 vertices which will be used for triangulation
       PPoly3 := FirstLine;
       PPoly2 := PPoly3^.Next;
       PPoly1 := PPoly2^.Next;
@@ -716,17 +700,17 @@ var
         PPoly2 := PPoly1;
         PPoly1 := PPoly1^.Next;
       end;
-
-      if not aCloseArea AND (KMDistanceSqr(fNodes[ PPoly1^.Node ],fNodes[ PPoly3^.Node ]) > SQR_MAX_RADIUS) then
+      // Check max distance (it is possible to ignore this condition, but then PrettyPoly increase its computation time)
+      if not aCloseArea AND (KMDistanceSqr(fNodes[ PPoly1^.Node ],fNodes[ PPoly3^.Node ]) > SQR_MAX_RADIUS_TryConnect) then
         Exit;
-
+      // Check rules for creation of new polygon
       if (aBorderPoly AND ( // Force to create polygon in case that it is border point
            (aLeftDirection     AND (fNodes[ PPoly3^.Node ].X > fNodes[ PPoly1^.Node ].X)) OR
            (not aLeftDirection AND (fNodes[ PPoly1^.Node ].X < fNodes[ PPoly3^.Node ].X))
          )) OR IsRightSide(fNodes[ PPoly3^.Node ],fNodes[ PPoly2^.Node ],fNodes[ PPoly1^.Node ])
          OR aCloseArea then // Force to create polygon in case that area will be closed
       begin
-AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ]);
+        {$IFDEF DEBUG_NavMesh} AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ],COLOR_GREEN); {$ENDIF}
         AddPolygon(PPoly3, PPoly2);
         PPoly3^.Next := PPoly1;
         Dispose(PPoly2); // Remove verticle from memory
@@ -734,10 +718,10 @@ AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ]);
       end;
     end;
   end;
-
+  // Add new border point
   procedure AddNewBorder(aIdx, aFutureIdx, aLineIdx: Word; aLeftDirection: Boolean; aTryConnect: Boolean = True; aCloseArea: Boolean = False);
   begin
-    ConfirmLine(aIdx, aFutureIdx);
+    {$IFDEF DEBUG_NavMesh} ConfirmLine(aIdx, aFutureIdx,COLOR_BLACK); {$ENDIF}
     with LineArray[aLineIdx]^ do
     begin
       if aLeftDirection then
@@ -759,7 +743,7 @@ AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ]);
       end;
     end;
   end;
-
+  // Remove area from memory
   procedure DisposeArea(aIdx: Word; aSkipPolyLine: Boolean = False);
   var
     PolyLine, OldPL: PPolyLine;
@@ -775,12 +759,12 @@ AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ]);
       end;
       Dispose(PolyLine);
     end;
-    // Free memory of second lines and update LineArray
+    // Free memory of second line and update LineArray
     Dispose(LineArray[aIdx]);
     Dec(LineArrayCnt);
     LineArray[aIdx] := LineArray[LineArrayCnt];
   end;
-
+  // Init new walkable area
   procedure AddNewWalkableArea(aIdx: Word);
   begin
     // Add new area
@@ -795,16 +779,49 @@ AddLine(fNodes[ PPoly3^.Node ],fNodes[ PPoly1^.Node ]);
       RightEdge := aIdx;
       FutureLeftEdge := fBord.Borders[aIdx].Next;
       FutureRightEdge := fBord.Borders[aIdx].Prev;
-ConfirmLine(aIdx, FutureLeftEdge);
-ConfirmLine(aIdx, FutureRightEdge);
+      {$IFDEF DEBUG_NavMesh}
+        ConfirmLine(aIdx, FutureLeftEdge, COLOR_YELLOW);
+        ConfirmLine(aIdx, FutureRightEdge, COLOR_YELLOW);
+      {$ENDIF}
     end;
     Inc(LineArrayCnt);
   end;
-
+  // Remove walkable area
+  procedure RemoveWalkableArea(aIdx, ConIdx: Word);
+  begin
+    {$IFDEF DEBUG_NavMesh}
+      ConfirmLine(aIdx, LineArray[ConIdx]^.LeftEdge, COLOR_RED);
+      ConfirmLine(aIdx, LineArray[ConIdx]^.RightEdge, COLOR_RED);
+    {$ENDIF}
+    AddNewBorder(aIdx, fBord.Borders[aIdx].Prev, ConIdx, False, True, True); // Add new border which leads to add new polygon
+    DisposeArea(ConIdx);
+  end;
+  // Merge 2 walkable areas
+  procedure MergeWalkableAreas(aIdx, aLeftEdgeLineIdx, aRightEdgeLineIdx: Word);
+  begin
+    {$IFDEF DEBUG_NavMesh}
+      ConfirmLine(aIdx, LineArray[aLeftEdgeLineIdx]^.LeftEdge, COLOR_RED);
+      ConfirmLine(aIdx, LineArray[aRightEdgeLineIdx]^.RightEdge, COLOR_RED);
+    {$ENDIF}
+    // Add border points and everything around it
+    AddNewBorder(aIdx, aIdx, aLeftEdgeLineIdx, True); // aIdx in second parameter is OK
+    AddNewBorder(aIdx, aIdx, aRightEdgeLineIdx, False);
+    // Copy border properties
+    LineArray[aRightEdgeLineIdx]^.LastLine^.Polygon := LineArray[aLeftEdgeLineIdx]^.FirstLine^.Polygon;
+    LineArray[aRightEdgeLineIdx]^.LastLine^.Next :=    LineArray[aLeftEdgeLineIdx]^.FirstLine^.Next; // Next because first point is new border
+    LineArray[aRightEdgeLineIdx]^.LastLine :=          LineArray[aLeftEdgeLineIdx]^.LastLine;
+    LineArray[aRightEdgeLineIdx]^.RightEdge :=         LineArray[aLeftEdgeLineIdx]^.RightEdge;
+    LineArray[aRightEdgeLineIdx]^.FutureRightEdge :=   LineArray[aLeftEdgeLineIdx]^.FutureRightEdge;
+    // Free memory of second lines and update LineArray
+    Dispose(LineArray[aLeftEdgeLineIdx]^.FirstLine); // Other elements will be copied
+    DisposeArea(aLeftEdgeLineIdx, True);
+  end;
+  // Divide walkable area because of obstacle
   procedure DivideWalkableArea(aIdx, aLineIdx: Word; aPPrevLine, aPActLine: PPolyLine);
   var
     NewPolyIdx: Word;
   begin
+    // Reserve space in memory (point is not known yet so AddNewWalkableArea cannot be used)
     if (Length(LineArray) <= LineArrayCnt) then
       SetLength(LineArray, LineArrayCnt + 20);
     New(LineArray[LineArrayCnt]);
@@ -812,12 +829,12 @@ ConfirmLine(aIdx, FutureRightEdge);
     LineArray[LineArrayCnt]^.FirstLine := LineArray[aLineIdx]^.FirstLine;
     LineArray[LineArrayCnt]^.LeftEdge := LineArray[aLineIdx]^.LeftEdge;
     LineArray[LineArrayCnt]^.FutureLeftEdge := LineArray[aLineIdx]^.FutureLeftEdge;
-    if (aPPrevLine = nil) then // Create right border of NEW line if does not exist
+    if (aPPrevLine = nil) then // Create left border of NEW line if does not exist
     begin
       aPPrevLine := NewLine( aPActLine^.Node, nil );
       LineArray[LineArrayCnt]^.FirstLine := aPPrevLine;
     end
-    else if (aPActLine = nil) then // Create left border of OLD line if does not exist
+    else if (aPActLine = nil) then // Create right border of OLD line if does not exist
     begin
       aPActLine := NewLine( aPPrevLine^.Node, nil );
       LineArray[aLineIdx]^.LastLine := aPActLine;
@@ -827,27 +844,30 @@ ConfirmLine(aIdx, FutureRightEdge);
       aPPrevLine^.Next := NewLine( aPActLine^.Node, nil );
       aPPrevLine := aPPrevLine^.Next;
     end;
-
-AddLine2(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPPrevLine^.Node ] );
+    // Mark left side
+    {$IFDEF DEBUG_NavMesh} AddLine(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPPrevLine^.Node ], COLOR_RED ); {$ENDIF}
     LineArray[LineArrayCnt]^.LastLine := aPPrevLine;
     AddNewBorder(aIdx, fBord.Borders[aIdx].Prev, LineArrayCnt, False, False);
     NewPolyIdx := fPolyCount; // Polygon with this index does not exist yet
-    TryConnect(aPPrevLine.Node, LineArrayCnt, False); // Now multiple new polygons may be created (first one will be connected with second side)
-
-AddLine2(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPActLine^.Node ] );
+    TryConnect(aPPrevLine.Node, LineArrayCnt, False); // Now new polygons may be created (first one will be connected with second side)
+    // Mark right side
+    {$IFDEF DEBUG_NavMesh} AddLine(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPActLine^.Node ], COLOR_RED ); {$ENDIF}
     LineArray[aLineIdx]^.FirstLine := aPActLine;
     AddNewBorder(aIdx, fBord.Borders[aIdx].Next, aLineIdx, True, False);
-    // New polygon was created -> copy information to the second area and it will be connected automatically
+    // New polygon was created -> copy information to the second area so it will be connected automatically
     if (NewPolyIdx < fPolyCount) then
       LineArray[aLineIdx]^.FirstLine^.Polygon := NewPolyIdx
-    else // The polygon was not created -> it must be created from this side -> secure transition
+    else // The polygon was not created -> it should be created from this side -> secure transition
       //LineArray[LineArrayCnt]^.LastLine^.Polygon := NewPolyIdx;
       LineArray[LineArrayCnt]^.FirstLine^.Polygon := NewPolyIdx;
     TryConnect(aPActLine.Node, aLineIdx, True);
-
+    if (NewPolyIdx >= fPolyCount) then // The polygon was not created - special case when divide area is second point in a shape
+    begin
+      LineArray[LineArrayCnt]^.FirstLine^.Polygon := 0;
+    end;
     Inc(LineArrayCnt);
   end;
-
+  // Try to insert point into existing area
   function InsertPoint(aIdx, aLineIdx: Word; aBorder: Boolean): Boolean;
   var
     Point: TKMPoint;
@@ -868,16 +888,18 @@ AddLine2(fNodes[  fBord.Borders[ aIdx ].Node  ], fNodes[ aPActLine^.Node ] );
       DivideWalkableArea(aIdx, aLIneIdx, PPrevLine, PActLine)
     else if (PPrevLine <> nil) AND (PActLine <> nil) then // In case of ordinary point just add new element + ignore border points
     begin
-AddLine2(fNodes[ aIdx ], fNodes[ PPrevLine^.Node ] );
-AddLine2(fNodes[ aIdx ], fNodes[ PActLine^.Node ] );
+      {$IFDEF DEBUG_NavMesh}
+        AddLine(fNodes[ aIdx ], fNodes[ PPrevLine^.Node ], COLOR_WHITE );
+        AddLine(fNodes[ aIdx ], fNodes[ PActLine^.Node ], COLOR_WHITE );
+      {$ENDIF}
       PPrevLine^.Next := NewLine(aIdx, PActLine, AddPolygon(aIdx, PPrevLine)); // Add line
-      // Try to connect new triangles
+      // Try to connect point into new triangles
       TryConnect(PActLine.Node, aLineIdx, False);
       TryConnect(PPrevLine.Node, aLineIdx, True);
     end;
     Result := True;
   end;
-
+  // Check area and try to insert point
   procedure CheckArea(aIdx: Word; aBorder: Boolean);
   var
     Inserted: Boolean;
@@ -886,13 +908,14 @@ AddLine2(fNodes[ aIdx ], fNodes[ PActLine^.Node ] );
   begin
     Inserted := False;
     Point := fNodes[ ifthen(aBorder, fBord.Borders[aIdx].Node, aIdx) ];
-    // Check point position in area
+    // Check position of point in area
     for I := 0 to LineArrayCnt - 1 do
     begin
       LeftP :=  fNodes[  fBord.Borders[ LineArray[I]^.LeftEdge ].Node  ];
       RightP := fNodes[  fBord.Borders[ LineArray[I]^.RightEdge ].Node  ];
       FutureLeftP :=  fNodes[  fBord.Borders[ LineArray[I]^.FutureLeftEdge ].Node  ];
       FutureRightP := fNodes[  fBord.Borders[ LineArray[I]^.FutureRightEdge ].Node  ];
+      // Make sure that point is inside the shape
       if (  ( Min(RightP.X, FutureRightP.X) >= Point.X ) AND ( Max(LeftP.X, FutureLeftP.X) <= Point.X )  )
         OR (  IsRightSide(FutureLeftP,LeftP,Point) AND IsRightSide(RightP,FutureRightP,Point)  ) then
       begin
@@ -903,65 +926,37 @@ AddLine2(fNodes[ aIdx ], fNodes[ PActLine^.Node ] );
     if not Inserted AND aBorder then // This must be border point or the point will be ignored
       AddNewWalkableArea(aIdx);
   end;
-
-  procedure RemoveWalkableArea(aIdx, ConIdx: Word);
-  begin
-ConfirmLine2(aIdx, LineArray[ConIdx]^.LeftEdge);
-ConfirmLine2(aIdx, LineArray[ConIdx]^.RightEdge);
-    //AddPolygon(fBord.Borders[aIdx].Node, LineArray[ConIdx]^.FirstLine);
-    AddNewBorder(aIdx, fBord.Borders[aIdx].Prev, ConIdx, False, True, True);
-    DisposeArea(ConIdx);
-  end;
-
-  procedure MergeWalkableAreas(aIdx, aLeftEdgeLineIdx, aRightEdgeLineIdx: Word);
-  begin
-ConfirmLine(aIdx, LineArray[aLeftEdgeLineIdx]^.LeftEdge);
-ConfirmLine(aIdx, LineArray[aRightEdgeLineIdx]^.RightEdge);
-    // Add border points and everything around it
-    AddNewBorder(aIdx, aIdx, aLeftEdgeLineIdx, True); // aIdx in second parameter is OK
-    AddNewBorder(aIdx, aIdx, aRightEdgeLineIdx, False);
-    // Copy border properties
-    LineArray[aRightEdgeLineIdx]^.LastLine^.Polygon := LineArray[aLeftEdgeLineIdx]^.FirstLine^.Polygon;
-    LineArray[aRightEdgeLineIdx]^.LastLine^.Next :=    LineArray[aLeftEdgeLineIdx]^.FirstLine^.Next; // Next because first point is new border
-    LineArray[aRightEdgeLineIdx]^.LastLine :=          LineArray[aLeftEdgeLineIdx]^.LastLine;
-    LineArray[aRightEdgeLineIdx]^.RightEdge :=         LineArray[aLeftEdgeLineIdx]^.RightEdge;
-    LineArray[aRightEdgeLineIdx]^.FutureRightEdge :=   LineArray[aLeftEdgeLineIdx]^.FutureRightEdge;
-    // Free memory of second lines and update LineArray
-    Dispose(LineArray[aLeftEdgeLineIdx]^.FirstLine); // Other elements will be copied
-    DisposeArea(aLeftEdgeLineIdx, True);
-  end;
-
 var
-  Y,Idx,K, LeftEdgeLineIdx, RightEdgeLineIdx: Integer;
-  PrevY: Integer;
+  Y,Idx,K, PrevY, LeftEdgeLineIdx, RightEdgeLineIdx: Integer;
   BorderPoint: TKMPoint;
 begin
-  fPolyCount := 1;
-  SetLength(fPolygons, 5000);
+  fPolyCount := 1; // First index is reserved
+  SetLength(fPolygons, MAX_POLYGONS);
   FillChar(fPolygons[0], SizeOf(fPolygons[0]) * Length(fPolygons), #0);
-  //{
-  fDL.Count := 0;
-  fDL2.Count := 0;
+  {$IFDEF DEBUG_NavMesh}
+    fDL.Count := 0;
+  {$ENDIF}
   LineArrayCnt := 0;
   PrevY := 0;
+  // For Y coord in map
   for Y := Low(fBordByY) to High(fBordByY) do
   begin
+    // Get index of first border node in Y row
     Idx := fBordByY[Y];
-    while (Idx <> 0) do
+    while (Idx > 0) do
       with fBord.Borders[Idx] do
       begin
         BorderPoint := fNodes[Node];
-
-        if (PrevY < BorderPoint.Y-1) then // Add all middle points which are between new and old Y coord
+        // Add all middle points which are between new and old Y coord
+        if (PrevY < BorderPoint.Y-1) then
         begin
           for K := fIdxArr[PrevY] to fIdxArr[BorderPoint.Y - 1] - 1 do
             CheckArea(K, False);
           PrevY := BorderPoint.Y-1;
         end;
-
+        // Check connection with existing lines
         LeftEdgeLineIdx := -1;
         RightEdgeLineIdx := -1;
-        // Check connection with existing lines
         for K := 0 to LineArrayCnt - 1 do
         begin
           if (LineArray[K]^.FutureLeftEdge = Idx) then
@@ -970,7 +965,7 @@ begin
             RightEdgeLineIdx := K;
         end;
         // Select the right action and add the point
-        if (LeftEdgeLineIdx > -1) AND (RightEdgeLineIdx > -1) then // Border point can merge 2 areas
+        if (LeftEdgeLineIdx > -1) AND (RightEdgeLineIdx > -1) then // Left and right side border
         begin
           if (LeftEdgeLineIdx = RightEdgeLineIdx) then
             RemoveWalkableArea(Idx, LeftEdgeLineIdx)
@@ -981,24 +976,23 @@ begin
           AddNewBorder(Idx, Next, LeftEdgeLineIdx, True)
         else if (RightEdgeLineIdx > -1) then // Right border is expanded
           AddNewBorder(Idx, Prev, RightEdgeLineIdx, False)
-        else
+        else // Create new area
           CheckArea(Idx, True);
-        Idx := NextY; // Move to next Idx
+        Idx := NextY; // Move to next Idx in row Y
       end;
   end;
-
   // Clean mess (only for debug, in normal case it should not be required)
   while (LineArrayCnt > 0) do
     DisposeArea(LineArrayCnt - 1);
-  //}
 end;
+
+
 
 
 // Polygon optimalization
 procedure TKMNavMeshGenerator.PrettyPoly();
 var
-  chck: array of boolean;
-  cnt: Integer;
+  Chck: array of boolean;
 
   function AnalyzePoints(aNode1, aNode2: Word; var CP1,CP2,DP1,DP2: Word): Boolean;
   var
@@ -1131,29 +1125,26 @@ var
         else if (BestCP2 = Indices[1]) then Indices[1] := BestDP1
         else{if (BestCP2 = Indices[2]) then}Indices[2] := BestDP1;
 
-      Inc(Cnt);
       BeautifyPoly(ActIdx);
       BeautifyPoly(BestIdx);
     end;
+    Chck[ActIdx] := True;
   end;
 
 var
   ActIdx, Neat: Integer;
 begin
-  SetLength(chck,fPolyCount);
-  FillChar(fPolygons[0], SizeOf(fPolygons[0]) * Length(fPolygons), #0);
-  FillChar(chck[0], SizeOf(chck[0])*Length(chck),#0);
-  cnt := 0;
-  //for Neat := 0 to 3 do
+  SetLength(Chck,fPolyCount);
+  FillChar(Chck[0], SizeOf(Chck[0])*Length(Chck),False);
   for ActIdx := 1 to fPolyCount - 1 do
-    if not chck[ActIdx] then
+    if not Chck[ActIdx] then
         BeautifyPoly(ActIdx);
-  if (Cnt > 0) then Cnt := Cnt*1;
-
 end;
 
 
-procedure TKMNavMeshGenerator.Paint(const aRect: TKMRect);
+
+
+function TKMNavMeshGenerator.Paint(const aRect: TKMRect): Boolean;
 const
   COLOR_WHITE = $FFFFFF;
   COLOR_BLACK = $000000;
@@ -1161,50 +1152,52 @@ const
   COLOR_RED = $7700FF;
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
+{$IFDEF DEBUG_NavMesh}
 var
-  K: Integer;
+  X,Y,K: Integer;
   p1,p2,p3: TKMPoint;
+{$ENDIF}
 begin
+  Result := False;
   if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
     Exit;
 
+  {$IFDEF DEBUG_NavMesh}
+  Result := True; // Block standard NavMesh Paint procedure
+
   //GenerateNewNavMesh();
 
+  { Border Nodes
+  for X := 1 to fBorderNodeCount-1 do
+    gRenderAux.Text(fBorderNodes[X].X+0.25, fBorderNodes[X].Y+0.4, IntToStr(X), $FF000000 OR COLOR_GREEN);
+  //}
   { Nodes
   for K := 1 to fNodeCount - 1 do
-      gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_BLUE);
+      gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_RED);
   for K := fInnerPointStartIdx to fInnerPointEndIdx do
-      gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_GREEN);//}
-  //{ Border Lines
+      gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_GREEN);
+  //}
+  { Border Lines
   for K := 0 to fBord.Count - 1 do
     with fBord.Borders[K] do
     begin
       p1 := fNodes[ Node ];
-      p2 := fNodes[  fBord.Borders[ Next ].Node  ];
-      p3 := fNodes[  fBord.Borders[ Prev ].Node  ];
-      gRenderAux.LineOnTerrain(p1, p2, $50000000 OR COLOR_RED);
-      gRenderAux.LineOnTerrain(p1, p3, $50000000 OR COLOR_RED);
-    end;//}
-
-  // TRIANGULATION
-  { Debug lines of triangulation
-  for I := 0 to fDL.Count - 1 do
+      p2 := fNodes[ fBord.Borders[Next].Node ];
+      p3 := fNodes[ fBord.Borders[Prev].Node ];
+      gRenderAux.LineOnTerrain(p1, p2, $70000000 OR COLOR_RED);
+      gRenderAux.LineOnTerrain(p1, p3, $70000000 OR COLOR_RED);
+    end;
+  //}
+  //{ Debug lines of triangulation
+  for K := 0 to fDL.Count - 1 do
   begin
-      p1 := fDL.Lines[I].p1;
-      p2 := fDL.Lines[I].p2;
-      gRenderAux.LineOnTerrain(p1, p2, $40000000 OR COLOR_RED);
-      gRenderAux.Text((p1.X+p2.X)/2, (p1.Y+p2.Y)/2, IntToStr(I), $FF000000 OR COLOR_RED);
+      p1 := fDL.Lines[K].p1;
+      p2 := fDL.Lines[K].p2;
+      gRenderAux.LineOnTerrain(p1, p2, $99000000 OR fDL.Lines[K].Color);
+      gRenderAux.Text((p1.X+p2.X)/2, (p1.Y+p2.Y)/2, IntToStr(K), $FF000000 OR fDL.Lines[K].Color);
   end;
-  for I := 0 to fDL2.Count - 1 do
-  begin
-      p1 := fDL2.Lines[I].p1;
-      p2 := fDL2.Lines[I].p2;
-      gRenderAux.LineOnTerrain(p1, p2, $40000000 OR COLOR_BLACK);
-      gRenderAux.Text((p1.X+p2.X)/2, (p1.Y+p2.Y)/2, IntToStr(I), $FF000000 OR COLOR_RED);
-  end;//}
-  { Debug lines of triangulation
-  for I := 0 to fDL2.Count - 1 do
-      gRenderAux.Text(p1.X, p1.Y + 1, IntToStr(I), $FFFFFFFF);//}
+  //}
+  {$ENDIF}
 end;
 
 end.
