@@ -166,13 +166,10 @@ end;
 
 
 procedure TKMNavMesh.AfterMissionInit();
-var
-  Time: Cardinal;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
 
-  Time := TimeGet();
   fNavMeshGenerator.GenerateNewNavMesh();
 
   fNodeCount := fNavMeshGenerator.NodeCount;
@@ -183,8 +180,6 @@ begin
   //Mapp all map tiles to its polygons and vice versa
   TieUpTilesWithPolygons();
   TieUpPolygonsWithTiles();
-
-  Time := TimeGet() - Time;
 end;
 
 
@@ -425,9 +420,14 @@ var
   DefencePosArr: TKMDefencePosArr;
   FFF: TForwardFF;
 begin
+  //AfterMissionInit();
   if not AI_GEN_NAVMESH OR not OVERLAY_NAVMESH then
     Exit;
-
+  //{
+  if fNavMeshGenerator.Paint(aRect) then
+    Exit;
+  //}
+  //fNavMeshGenerator.Paint(aRect);
   // EXTRACT POLYGONS
   //{ Triangles and connection of NavMesh
   for K := 1 to fPolyCount - 1 do
@@ -442,7 +442,7 @@ begin
         fNodes[ Indices[2] ].Y, $50000000 OR COLOR_BLACK);
       for L := 0 to NearbyCount - 1 do
         if GetCommonPoints(K, Nearby[L], p1, p2) then
-          gRenderAux.LineOnTerrain(p1, p2, $80000000 OR COLOR_BLUE)
+          gRenderAux.LineOnTerrain(p1, p2, $50000000 OR COLOR_BLUE)
         else
         begin
           gRenderAux.TriangleOnTerrain(
@@ -456,7 +456,8 @@ begin
       p1.X := Round( (fNodes[ Indices[0] ].X + fNodes[ Indices[1] ].X + fNodes[ Indices[2] ].X) / 3 );
       p1.Y := Round( (fNodes[ Indices[0] ].Y + fNodes[ Indices[1] ].Y + fNodes[ Indices[2] ].Y) / 3 );
       gRenderAux.Text(p1.X, p1.Y + 1, IntToStr(K), $FFFFFFFF);
-    end;//}
+    end;
+  //}
   { Center points and transitions of polygons
   for K := 0 to fPolyCount - 1 do
     with fPolygons[K] do
@@ -464,7 +465,8 @@ begin
       gRenderAux.Quad(CenterPoint.X, CenterPoint.Y, $AAFFFFFF);
       for L := 0 to NearbyCount - 1 do
         gRenderAux.Quad(NearbyPoints[L].X, NearbyPoints[L].Y, $AA000000);
-    end;//}
+    end;
+  //}
 
   //{ DEFENCE SYSTEM
   // Show this defences only in case that show combat AI is not enabled;
@@ -495,7 +497,8 @@ begin
     finally
       FFF.Free;
     end;
-  end;//}
+  end;
+  //}
 end;
 
 
