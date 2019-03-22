@@ -1,4 +1,4 @@
-﻿unit KM_GameApp;
+unit KM_GameApp;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -106,7 +106,7 @@ type
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
 
-    procedure Render(aForPrintScreen: Boolean);
+    procedure Render(aForPrintScreen: Boolean = False);
     procedure UpdateState(Sender: TObject);
     procedure UpdateStateIdle(aFrameTime: Cardinal);
   end;
@@ -236,7 +236,7 @@ begin
 
   gLog.AddTime('Toggle to locale ' + UnicodeString(aLocale));
   fMainMenuInterface.PageChange(gpLoading, gResTexts[TX_MENU_NEW_LOCALE]);
-  Render(False); //Force to repaint information screen
+  Render; //Force to repaint information screen
 
   fTimerUI.Enabled := False; //Disable it while switching, if an OpenAL error appears the timer should be disabled
   fGameSettings.Locale := aLocale; //Wrong Locale will be ignored
@@ -416,7 +416,7 @@ end;
 procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
-  Render(False);
+  Render;
 end;
 
 
@@ -424,7 +424,7 @@ procedure TKMGameApp.LoadGameAssets;
 begin
   //Load the resources if necessary
   fMainMenuInterface.PageChange(gpLoading);
-  Render(False);
+  Render;
 
   GameLoadingStep(gResTexts[TX_MENU_LOADING_DEFINITIONS]);
   gRes.OnLoadingText := GameLoadingStep;
@@ -898,7 +898,7 @@ begin
 end;
 
 
-procedure TKMGameApp.Render(aForPrintScreen: Boolean);
+procedure TKMGameApp.Render(aForPrintScreen: Boolean = False);
 begin
   if SKIP_RENDER then Exit;
   if fIsExiting then Exit;
