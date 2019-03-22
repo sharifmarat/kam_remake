@@ -1,4 +1,4 @@
-unit KM_GameApp;
+﻿unit KM_GameApp;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -24,6 +24,7 @@ type
     fRender: TRender;
     fTimerUI: TTimer;
     fMainMenuInterface: TKMMainMenuInterface;
+    fLastTimeRender: Cardinal;
 
     fOnCursorUpdate: TIntegerStringEvent;
     fOnGameSpeedChange: TSingleEvent;
@@ -136,6 +137,8 @@ begin
   fOnCursorUpdate := aOnCursorUpdate;
 
   fGameSettings := TKMGameSettings.Create;
+
+  fLastTimeRender := 0;
 
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
 
@@ -916,6 +919,8 @@ begin
 
   fRender.EndFrame;
 
+  fLastTimeRender := TimeGet;
+
   if not aForPrintScreen and (gGame <> nil) then
     if Assigned(fOnCursorUpdate) then
       fOnCursorUpdate(SB_ID_OBJECT, 'Obj: ' + IntToStr(gGameCursor.ObjectUID));
@@ -989,6 +994,10 @@ begin
     if (gGame <> nil) and not gGame.IsPaused and Assigned(fOnCursorUpdate) then
         fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
+
+  if gMain.Settings.IsNoRenerMaxTimeSet
+    and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
+    Render;
 end;
 
 
@@ -1004,5 +1013,6 @@ end;
 
 
 end.
+
 
 
