@@ -41,10 +41,10 @@ type
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
-    procedure GameStart(aGameMode: TKMGameMode);
-    procedure GameEnd(aGameMode: TKMGameMode);
-    procedure GameDestroy;
-    procedure GamePlayed;
+    procedure GameStarted(aGameMode: TKMGameMode);
+    procedure GameEnded(aGameMode: TKMGameMode);
+    procedure GameDestroyed;
+    procedure GameFinished;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -178,8 +178,8 @@ begin
 
   fMusicLib.ToggleShuffle(fGameSettings.ShuffleOn); //Determine track order
 
-  fOnGameStart := GameStart;
-  fOnGameEnd := GameEnd;
+  fOnGameStart := GameStarted;
+  fOnGameEnd := GameEnded;
 end;
 
 
@@ -486,7 +486,7 @@ begin
 
   if (gGame.GameResult in [gr_Win, gr_Defeat]) then
   begin
-    GamePlayed;
+    GameFinished;
     if fGameSettings.AutosaveAtGameEnd then
       gGame.Save(Format('%s %s #%d', [gGame.GameName, FormatDateTime('yyyy-mm-dd', Now), fGameSettings.DayGamesCount]), Now);
   end;
@@ -589,7 +589,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
     gGame.Load(aFilePath);
   except
@@ -629,7 +629,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
     gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
   except
@@ -665,7 +665,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroyed);
   gGame.SetSeed(4); //Every time the game will be the same as previous. Good for debug.
   try
     gGame.MapEdStartEmptyMap(aSizeX, aSizeY);
@@ -822,7 +822,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameStart(aGameMode: TKMGameMode);
+procedure TKMGameApp.GameStarted(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
   begin
@@ -832,7 +832,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
+procedure TKMGameApp.GameEnded(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
   begin
@@ -846,14 +846,15 @@ begin
 end;
 
 
-procedure TKMGameApp.GameDestroy;
+procedure TKMGameApp.GameDestroyed;
 begin
   if gMain <> nil then
     gMain.FormMain.SetExportGameStats(False);
 end;
 
 
-procedure TKMGameApp.GamePlayed;
+//Happens when game was won or lost
+procedure TKMGameApp.GameFinished;
 begin
   if CompareDate(fGameSettings.LastDayGamePlayed, Today) < 0 then
     fGameSettings.DayGamesCount := 0;
