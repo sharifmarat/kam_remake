@@ -1,4 +1,4 @@
-﻿{
+{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -260,8 +260,6 @@ var
   S: TInteger2Array;
   TilesPartsArr: TTileParts;
   Locs: TKMPointArray;
-  diff: Cardinal;
-  Sdiff: String;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
@@ -286,14 +284,11 @@ begin
       TilesPartsArr.Obj[Y,X] := 255;
   	end;
 
-  diff := TimeGet;
-
   SetLength(S, fMapY+1, fMapX+1);
   for Y := Low(S) to High(S) do
   	for X := Low(S[Y]) to High(S[Y]) do
       S[Y,X] := 0;
 
-  //{
   SetLength(Locs, 0);
   fRNG.Seed := RMGSettings.Seed;
   if RMGSettings.Locs.Active then
@@ -340,11 +335,6 @@ begin
 
   if RMGSettings.Locs.Resource.MineFix then
     MineFinalFixer(TilesPartsArr, A);
-  //}
-  diff := GetTimeSince(diff);
-
-  //Str(diff,Sdiff);
-  //ShowMessage(Sdiff);
 
   SetLength(aTiles, fMapY * fMapX);
   K := 0;

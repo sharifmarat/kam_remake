@@ -360,10 +360,8 @@ procedure TKMEye.AfterMissionInit();
   end;
 var
   X,Y: Integer;
-  Time: Cardinal;
   Loc: TKMPoint;
 begin
-  Time := TimeGet();
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
 
@@ -400,7 +398,6 @@ begin
   end;
   GeneralizeArray(fSoil);
   GeneralizeArray(fFlatArea);
-  Time := TimeGet() - Time;
 end;
 
 
@@ -516,12 +513,10 @@ var
   end;
 var
   I, X,Y, FieldCnt, BuildCnt: Integer;
-  Time: Cardinal;
   CenterPointArr, MineLocs: TKMPointArray;
   //TagList: TKMPointTagList;
   FFInitPlace: TKMFFInitPlace;
 begin
-  Time := TimeGet();
   // Init city center point (storehouse / school etc.)
   CenterPointArr := GetCityCenterPoints(False);
   PointsCnt := 0;
@@ -588,7 +583,6 @@ begin
     end;
   gHands[fOwner].AI.CityManagement.Predictor.FieldCnt := FieldCnt;
   gHands[fOwner].AI.CityManagement.Predictor.BuildCnt := BuildCnt;
-  Time := TimeGet() - Time;
 end;
 
 

@@ -66,24 +66,14 @@ end;
 
 
 procedure TKMAIFields.AfterMissionInit();
-var
-  Time: Cardinal;
 begin
   if not AI_GEN_NAVMESH then
     Exit;
 
-  Time := TimeGet();
   fNavMesh.AfterMissionInit();
-  Time := TimeGet() - Time;
-  Time := TimeGet();
   fInfluences.AfterMissionInit();
-  Time := TimeGet() - Time;
-  Time := TimeGet();
   fEye.AfterMissionInit();
-  Time := TimeGet() - Time;
-  Time := TimeGet();
   fSupervisor.AfterMissionInit();
-  Time := TimeGet() - Time;
 end;
 
 

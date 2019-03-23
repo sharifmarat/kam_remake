@@ -414,7 +414,7 @@ type
   // Filter groups
   procedure FilterGroups(aTotalMen: Integer; aGroupAmounts: TKMGroupTypeArray; var aAG: TKMAvailableGroups);
   var
-    K, GCnt, MenCnt, StartIdx, ActIdx: Integer;
+    GCnt, MenCnt, StartIdx, ActIdx: Integer;
     G: TKMUnitGroup;
     GT: TKMGroupType;
   begin

@@ -624,17 +624,13 @@ end;
 
 
 procedure TKMInfluences.AfterMissionInit();
-var
-  Time: Cardinal;
 begin
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
   SetLength(fAvoidBuilding, fMapY * fMapX);
 
-  Time := TimeGet();
   InitAvoidBuilding();
   InitArrays();
-  Time := TimeGet() - Time;
 end;
 
 
