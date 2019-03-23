@@ -7085,7 +7085,10 @@ begin
   Result := inherited GetHint;
   if Result = '' then
   begin
-    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
+    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE)
+      //Got crashed sometimes when mouse over empty disabled ComboBox with Header (fMouseOverCell = [0;0])
+      and (Length(Rows) > fMouseOverCell.Y)
+      and (Length(Rows[fMouseOverCell.Y].Cells) > fMouseOverCell.X) then
       Result := Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].CellHint;
   end;
 end;
