@@ -8,7 +8,10 @@ type
   TKMGroupEval = record
     HitPoints, Attack, AttackHorse, Defence, DefenceProjectiles: Single;
   end;
-  TKMArmyEval = array[TKMGroupType] of TKMGroupEval;
+  TKMArmyEval = record
+    FoodState: Integer;
+    Groups: array[TKMGroupType] of TKMGroupEval;
+  end;
   TKMGameEval = array[0 .. MAX_HANDS - 1] of TKMArmyEval;
 
   TKMGroupStrengthArray = array[TKMGroupType] of Single;
@@ -106,7 +109,7 @@ function TKMArmyEvaluation.CalculateStrength(aEval: TKMArmyEval): TKMGroupStreng
     GT: TKMGroupType;
   begin
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      with aEval[GT] do
+      with aEval.Groups[GT] do
         Result[GT] := Attack * Hitpoints * Defence;
         //Result[GT] := Attack * Max(1, AttackHorse) * Hitpoints * Defence;
   end;
@@ -140,13 +143,13 @@ begin
   for PL := 0 to gHands.Count - 1 do
     if gHands[PL].Enabled AND (gHands[aPlayer].Alliances[PL] = aAlliance) then
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
-        with Result[GT] do
+        with Result.Groups[GT] do
         begin
-          Hitpoints          := Hitpoints          + fEvals[PL,GT].Hitpoints;
-          Attack             := Attack             + fEvals[PL,GT].Attack;
-          AttackHorse        := AttackHorse        + fEvals[PL,GT].AttackHorse;
-          Defence            := Defence            + fEvals[PL,GT].Defence;
-          DefenceProjectiles := DefenceProjectiles + fEvals[PL,GT].DefenceProjectiles;
+          Hitpoints          := Hitpoints          + fEvals[PL].Groups[GT].Hitpoints;
+          Attack             := Attack             + fEvals[PL].Groups[GT].Attack;
+          AttackHorse        := AttackHorse        + fEvals[PL].Groups[GT].AttackHorse;
+          Defence            := Defence            + fEvals[PL].Groups[GT].Defence;
+          DefenceProjectiles := DefenceProjectiles + fEvals[PL].Groups[GT].DefenceProjectiles;
         end;
 end;
 
@@ -209,7 +212,7 @@ begin
     Qty := Stats.GetUnitQty(UT);
     US := gRes.Units[UT];
     GT := UnitGroups[UT];
-    with fEvals[aPlayer,GT] do
+    with fEvals[aPlayer].Groups[GT] do
     begin
       Hitpoints := Hitpoints + Qty * US.HitPoints;
       Attack := Attack + Qty * US.Attack;
@@ -219,7 +222,7 @@ begin
     end;
   end;
   if aConsiderHitChance then
-    with fEvals[aPlayer,gt_Ranged] do
+    with fEvals[aPlayer].Groups[gt_Ranged] do
       Attack := Attack * HIT_CHANCE_MODIFIER;
 end;
 
