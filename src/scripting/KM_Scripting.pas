@@ -335,9 +335,9 @@ begin
     Sender.AddTypeS('TIntegerArray', 'array of Integer'); //Needed for PlayerGetAllUnits
     Sender.AddTypeS('TAnsiStringArray', 'array of AnsiString'); //Needed for some array Utils
     Sender.AddTypeS('TByteSet', 'set of Byte'); //Needed for Closest*MultipleTypes
-    Sender.AddTypeS('TKMPoint', 'record X,Y: Integer; end;'); //Could be very useful
+    Sender.AddTypeS('TKMPoint', 'record X,Y:Integer; end;'); //Could be very useful
 
-    Sender.AddTypeS('TKMFieldType', '(ftNone, ftRoad, ftCorn, ftWine)'); //No need to add InitWine for scripts
+    Sender.AddTypeS('TKMFieldType', '(ftNone,ftRoad,ftCorn,ftWine)'); //No need to add InitWine for scripts
     Sender.AddTypeS('TKMHouseType', '(htNone, htAny, '
       + 'htArmorSmithy,     htArmorWorkshop,   htBakery,        htBarracks,      htButchers,'
       + 'htCoalMine,        htFarm,            htFisherHut,     htGoldMine,      htInn,'
@@ -346,16 +346,14 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
-    Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMAudioFormat', '(af_Wav,af_Ogg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
-    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctRotation, tctHeight, tctObject)');
-    Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
-    Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain: Word; Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
+    Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
 
-    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit, attClosestBuildingFromArmy, attClosestBuildingFromStartPos, attCustomPosition)');
+    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit,attClosestBuildingFromArmy,attClosestBuildingFromStartPos,attCustomPosition)');
 
-    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone,mdEasy,mdNormal,mdHard)');
     Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
 
     // Register classes and methods to the script engine.

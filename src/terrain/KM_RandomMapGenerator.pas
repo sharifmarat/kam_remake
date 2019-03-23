@@ -358,10 +358,10 @@ begin
       aTiles[K].Rotation := TilesPartsArr.Rotation[Y,X];
       aTiles[K].Height := TilesPartsArr.Height[Y,X];
       aTiles[K].Obj := TilesPartsArr.Obj[Y,X];
-      Include(aTiles[K].ChangeSet, tctTerrain);
-      Include(aTiles[K].ChangeSet, tctRotation);
-      Include(aTiles[K].ChangeSet, tctHeight);
-      Include(aTiles[K].ChangeSet, tctObject);
+      aTiles[K].UpdateTerrain := True;
+      aTiles[K].UpdateRotation := True;
+      aTiles[K].UpdateHeight := True;
+      aTiles[K].UpdateObject := True;
       K := K + 1;
     end;
 end;

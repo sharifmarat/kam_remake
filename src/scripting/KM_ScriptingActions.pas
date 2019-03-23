@@ -2554,7 +2554,7 @@ begin
             begin
               //if value is not skipped we proceed with terrain
               aTiles[I].Terrain := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctTerrain);
+              aTiles[I].UpdateTerrain := True;
             end;
           end
           else
@@ -2566,7 +2566,7 @@ begin
             begin
               //if value is not skipped we proceed with rotation
               aTiles[I].Rotation := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctRotation);
+              aTiles[I].UpdateRotation := True;
             end;
           end
           else
@@ -2578,7 +2578,7 @@ begin
             begin
               //if value is not skipped we proceed with height
               aTiles[I].Height := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctHeight);
+              aTiles[I].UpdateHeight := True;
             end;
           end
           else
@@ -2590,7 +2590,7 @@ begin
             begin
               //if value is not skipped we proceed with obj
               aTiles[I].Obj := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctObject);
+              aTiles[I].UpdateObject := True;
             end;
           end
           else
