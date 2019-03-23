@@ -3,7 +3,7 @@ unit KM_ArmyDefence;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack;
+  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack, KM_AIDefensePos;
 
 
 type
@@ -70,6 +70,7 @@ type
 
     procedure OwnerUpdate(aOwner: TKMHandIndex);
     procedure UpdateDefences(aDefCnt: Word; aPNewDef: array of PDefencePosition);
+    procedure UpdateFixedDefences();
     function DefenceStatus(): Single;
     function FindPositionOf(aGroup: TKMUnitGroup; aIgnoreFirstLine: Boolean = False): TKMDefencePosition;
     function FindPlaceForGroup(aGroup: TKMUnitGroup): Boolean;
@@ -414,7 +415,7 @@ begin
   for I := 0 to aDefCnt - 1 do
     // Try find existing defence position
     for K := 0 to fPositions.Count - 1 do
-      //if (Positions[K].Polygon = aPNewDef[I]^.Polygon) then // This cannot be used because 1 polygon can have 3 point
+      //if (Positions[K].Polygon = aPNewDef[I]^.Polygon) then // This cannot be used because 1 polygon can have 3 points
       if KMSamePoint(Positions[K].Position.Loc, aPNewDef[I]^.DirPoint.Loc) then
       begin
         VisitedNewPos[I] := True;
@@ -445,6 +446,31 @@ begin
       ReleaseGroup(I);
       FindPlaceForGroup(G);
     end;
+  end;
+end;
+
+
+procedure TKMArmyDefence.UpdateFixedDefences();
+var
+  K: Integer;
+  DefPos: TAIDefencePosition;
+  DP: TKMDefencePosArr;
+  aPNewDef: array of PDefencePosition;
+begin
+  with gHands[fOwner].AI.General.DefencePositions do
+  begin
+    SetLength(DP,Count);
+    SetLength(aPNewDef,Count);
+    for K := 0 to Count - 1 do
+    begin
+      DefPos := Positions[K];
+      DP[K].Line := 1;
+      DP[K].Polygon := 0;
+      DP[K].Weight := 1;
+      DP[K].DirPoint := DefPos.Position;
+      aPNewDef[K] := @DP[K];
+    end;
+    UpdateDefences(Count, aPNewDef);
   end;
 end;
 
@@ -646,11 +672,15 @@ end;
 
 
 procedure TKMArmyDefence.UpdateState(aTick: Cardinal);
+const
+  LONG_UPDATE = MAX_HANDS * 20;
 var
   I: Integer;
 begin
   for I := 0 to Count - 1 do
     Positions[I].UpdateState(aTick);
+  if (aTick mod LONG_UPDATE = fOwner) AND not gHands[fOwner].AI.Setup.AutoDefend then
+    UpdateFixedDefences();
 end;
 
 

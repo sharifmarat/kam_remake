@@ -68,7 +68,7 @@ uses
 
 
 const
-  LACK_OF_GOLD = 10;
+  GOLD_SHORTAGE = 10;
 
 
 { TKMCityManagement }
@@ -136,7 +136,7 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(666);
-    //gGame.GameOptions.Peacetime := 70;//SP_DEFAULT_PEACETIME;
+    //gGame.GameOptions.Peacetime := 90;//SP_DEFAULT_PEACETIME;
     //fSetup.ApplyAgressiveBuilderSetup(True);
     //fSetup.ApplyAgressiveBuilderSetup(fOwner <= 3);
   end;
@@ -150,11 +150,11 @@ end;
 
 procedure TKMCityManagement.UpdateState(aTick: Cardinal);
 const
-  LONG_UPDATE = MAX_HANDS * 25; // 30 sec
+  LONG_UPDATE = MAX_HANDS * 2; // 30 sec
 var
   FreeWorkersCnt: Integer;
 begin
-  if (aTick mod MAX_HANDS = fOwner) AND fSetup.AutoBuild then
+  if fSetup.AutoBuild AND (aTick mod MAX_HANDS = fOwner) then
   begin
     FreeWorkersCnt := 0;
     fBuilder.UpdateState(aTick, FreeWorkersCnt);
@@ -175,7 +175,8 @@ begin
     CheckUnitCount(aTick);
     CheckMarketplaces();
     CheckStoreWares(aTick);
-    CheckAutoRepair();
+    if fSetup.AutoRepair then
+      CheckAutoRepair();
     CheckWareDistribution();
     WeaponsBalance();
     OrderWeapons();
@@ -196,13 +197,15 @@ var
   function RecruitsNeeded(aCompletedWatchtowers: Word): Integer;
   const
     RECRUIT_PEACE_DELAY = 17 * 60 * 10;
+    MIN_2_TICK = 600;
   var
     Output: Integer;
   begin
     Output := aCompletedWatchtowers;
 
-    if (aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * 600)
-      AND (Stats.GetHouseQty(htBarracks) > 0) then
+    if (aTick + RECRUIT_PEACE_DELAY > gGame.GameOptions.Peacetime * MIN_2_TICK)
+      AND (Stats.GetHouseQty(htBarracks) > 0)
+      AND (aTick > fSetup.RecruitDelay * MIN_2_TICK) then
     begin
       if fSetup.UnlimitedEquip then
       begin
@@ -217,7 +220,6 @@ var
         Output := Output + 10;
     end;
     Result := Output;
-    //Result := 0; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
   end;
 
   function RequiredServCount(): Integer;
@@ -282,7 +284,7 @@ begin
   //Citizens
   // Make sure we have enough gold left for self-sufficient city
   GoldProduced := Stats.GetWaresProduced(wt_Gold);
-  GoldShortage := (Stats.GetWareBalance(wt_Gold) < LACK_OF_GOLD) AND (GoldProduced = 0);
+  GoldShortage := (Stats.GetWareBalance(wt_Gold) < GOLD_SHORTAGE) AND (GoldProduced = 0);
   if GoldShortage then
   begin
     UnitReq[ut_Serf] := 3; // 3x Serf
@@ -316,12 +318,12 @@ begin
     UnitReq[ut_Recruit] := 0;
     UnitReq[ut_Serf] := 0;
     UnitReq[ut_Worker] := 0;
-    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+    if (Stats.GetWareBalance(wt_Gold) > GOLD_SHORTAGE * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
-      UnitReq[ut_Worker] :=  fPredictor.WorkerCount;// * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack);
+      UnitReq[ut_Worker] :=  fPredictor.WorkerCount * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack) + Byte(not fSetup.AutoBuild) * Byte(fSetup.AutoRepair) * 5;
       UnitReq[ut_Recruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
-    if (Stats.GetWareBalance(wt_Gold) > LACK_OF_GOLD * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
+    if (Stats.GetWareBalance(wt_Gold) > GOLD_SHORTAGE * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
       UnitReq[ut_Serf] := Stats.GetUnitQty(ut_Serf) + RequiredServCount();
   end;
 
@@ -430,7 +432,7 @@ const
     //wt_Steel,        wt_Gold,     wt_IronOre,    wt_Coal,     wt_GoldOre,
     //wt_Stone
   );
-  MIN_GOLD_AMOUNT = LACK_OF_GOLD * 3;
+  MIN_GOLD_AMOUNT = GOLD_SHORTAGE * 3;
   LACK_OF_STONE = 50;
   WARFARE_SELL_LIMIT = 20;
   SELL_LIMIT = 30;
@@ -448,7 +450,7 @@ begin
   begin
     // Gold
     if (GetHouseQty(htMetallurgists) = 0)
-       AND (GetWareBalance(wt_Gold) <= LACK_OF_GOLD) then
+       AND (GetWareBalance(wt_Gold) <= GOLD_SHORTAGE) then
        AddWare(wt_Gold);
     // Stone
     if (GetWareBalance(wt_Stone)-GetHouseQty(htWatchTower)*5 < LACK_OF_STONE)
@@ -709,13 +711,13 @@ var
       Exit;
 
     // Compute strength of specific enemy group
-    with EnemyEval[aGT] do
+    with EnemyEval.Groups[aGT] do
       EnemyStrength := (Attack + AttackHorse * Byte(antiGT = gt_Mounted))
                         * ifthen( (antiGT = gt_Ranged), DefenceProjectiles, Defence )
                         * HitPoints;
 
     // Decrease strength by owner's existing units
-    with AllyEval[antiGT] do
+    with AllyEval.Groups[antiGT] do
       EnemyStrength := Max(0, EnemyStrength - (Attack + AttackHorse * Byte(aGT = gt_Mounted))
                                                * ifthen( (aGT = gt_Ranged), DefenceProjectiles, Defence )
                                                * HitPoints);

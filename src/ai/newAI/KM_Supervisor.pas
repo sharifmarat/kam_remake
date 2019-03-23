@@ -34,7 +34,7 @@ type
     procedure UpdateDefPos(aTeamIdx: Byte);
     procedure UpdateAttack(aTeamIdx: Byte);
     procedure DivideResources();
-    function NewAIInTeam(aIdxTeam: Byte): Boolean;
+    function NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -132,6 +132,7 @@ procedure TKMSupervisor.AfterMissionInit();
 begin
   UpdateAlliances();
   DivideResources();
+
 end;
 
 
@@ -259,7 +260,7 @@ procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
     if not AllyAssist AND not aAssistByInfluence then
       for I := 0 to Length(aNewAIPLs) - 1 do
         with AssistArr[I] do
-          if (aOwner <> Player) AND not Assistance then
+          if (aOwner <> Player) AND not Assistance AND gHands[ Player ].AI.Setup.DefendAllies then
             gHands[ Player ].AI.ArmyManagement.Defence.DefendPoint(aPoint, False, True);
   end;
 var
@@ -351,7 +352,7 @@ type
       // Send defences to owner
       for I := 0 to Length(aOwners) - 1 do
         with gHands[ aOwners[I] ] do
-          if (HandType = hndComputer) AND AI.Setup.NewAI then
+          if (HandType = hndComputer) AND AI.Setup.NewAI AND AI.Setup.AutoDefend then
             AI.ArmyManagement.Defence.UpdateDefences(DistributedPos[ aOwners[I] ].Count, DistributedPos[ aOwners[I] ].DefPos);
     end;
   end;
@@ -363,7 +364,7 @@ var
   DefPosReq: TKMWordArray;
   TeamDefPos: TKMTeamDefPos;
 begin
-  if NewAIInTeam(aTeamIdx) AND (Length(fAlli2PL) > 1) then
+  if NewAIInTeam(aTeamIdx, False, True) AND (Length(fAlli2PL) > 1) then
   begin
     SetLength(DefPosReq, Length( fAlli2PL[aTeamIdx] ) );
     for IdxPL := 0 to Length(DefPosReq) - 1 do
@@ -394,7 +395,7 @@ function TKMSupervisor.FindClosestEnemies(var aPlayers: TKMHandIndexArray; var a
       Player := aPlayers[IdxPL];
       gAIFields.Eye.OwnerUpdate(Player);
       CenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
-      if (Length(CenterPoints) = 0) then // No important houses were found -> try find soldier
+      if (Length(CenterPoints) = 0) then // Important houses were not found -> try find soldier
       begin
         if (gHands[Player].UnitGroups.Count = 0) then
           continue;
@@ -473,13 +474,13 @@ var
   EnemyStats: TKMEnemyStatisticsArray;
   AR: TKMAttackRequest;
 begin
-  if not NewAIInTeam(aTeamIdx) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
+  if not NewAIInTeam(aTeamIdx, False, True) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
     Exit;
   // Check if alliance can attack (have available soldiers)
   DefRatio := 0;
   for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
     with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
-      if (HandType = hndComputer) AND AI.Setup.NewAI then
+      if (HandType = hndComputer) AND AI.Setup.NewAI AND AI.Setup.AutoAttack then
       begin
         DefRatio := Max(DefRatio, AI.ArmyManagement.Defence.DefenceStatus);
         KMSwapInt(fAlli2PL[aTeamIdx, 0], fAlli2PL[aTeamIdx, IdxPL]); // Make sure that player in first index is new AI
@@ -496,19 +497,20 @@ begin
     begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
-      begin
-        with AR do
+        if gHands[ fAlli2PL[aTeamIdx,IdxPL] ].AI.Setup.AutoAttack then
         begin
-          Active := True;
-          BestAllianceCmp := BestCmp;
-          WorstAllianceCmp := WorstCmp;
-          BestEnemy := EnemyStats[BestCmpIdx].Player;
-          BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
-          SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
-          Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
+          with AR do
+          begin
+            Active := True;
+            BestAllianceCmp := BestCmp;
+            WorstAllianceCmp := WorstCmp;
+            BestEnemy := EnemyStats[BestCmpIdx].Player;
+            BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
+            SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
+            Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
+          end;
+          gHands[ fAlli2PL[aTeamIdx,IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
         end;
-        gHands[ fAlli2PL[aTeamIdx, IdxPL] ].AI.ArmyManagement.AttackRequest := AR;
-      end;
     end;
   end;
 end;
@@ -602,16 +604,18 @@ begin
 end;
 
 
-function TKMSupervisor.NewAIInTeam(aIdxTeam: Byte): Boolean;
+function TKMSupervisor.NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
 var
   IdxPL: Integer;
 begin
   Result := False;
   for IdxPL := 0 to Length( fAlli2PL[aIdxTeam] ) - 1 do
     with gHands[ fAlli2PL[aIdxTeam, IdxPL] ] do
-      if (HandType = hndComputer) AND AI.Setup.NewAI then
+      if (HandType = hndComputer)
+        AND AI.Setup.NewAI
+        AND (not aAttack OR AI.Setup.AutoAttack)
+        AND (not aDefence OR AI.Setup.AutoDefend) then
       begin
-        //Result := fAlli2PL[aIdxTeam, IdxPL];
         Result := True;
         Exit;
       end;

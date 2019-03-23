@@ -35,6 +35,7 @@ type
     function WarriorsPerMinute: Single; overload;
 
     procedure ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
+    procedure EnableAdvancedAI(aStatus: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -108,7 +109,6 @@ end;
 //Used from MapEd to give multiplayer building maps an AI builder config
 procedure TKMHandAISetup.ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
 begin
-  NewAI := aNewAI;
   SerfsPerHouse := 1;
   WorkerCount := 20;
   ArmyType := atIronAndLeather; //Mixed army
@@ -125,6 +125,13 @@ begin
   RecruitDelay := 0;
   RecruitCount := 10;
   AutoAttackRange := 6;
+  EnableAdvancedAI(aNewAI);
+end;
+
+
+procedure TKMHandAISetup.EnableAdvancedAI(aStatus: Boolean = True);
+begin
+  NewAI := aStatus;
   if NewAI then
     AutoAttackRange := 0; // It force units to attack the closest enemy (it should decide AI not command)
 end;
