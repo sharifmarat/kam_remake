@@ -147,6 +147,14 @@ end;
 
 procedure TKMMapEdTownDefence.Town_DefenceRefresh;
 begin
+  Button_DefencePosAdd.Enabled := not CheckBox_AutoDefence.Checked;
+
+  if CheckBox_AutoDefence.Checked then
+  begin
+    Button_DefencePosAdd.Down := False;
+    gGameCursor.Mode := cmNone;
+  end;
+
   CheckBox_AutoDefence.Checked := gMySpectator.Hand.AI.Setup.AutoDefend;
   CheckBox_DefendAllies.Checked := gMySpectator.Hand.AI.Setup.DefendAllies;
   TrackBar_AutoAttackRange.Position := gMySpectator.Hand.AI.Setup.AutoAttackRange;
@@ -181,7 +189,9 @@ end;
 
 procedure TKMMapEdTownDefence.UpdateState;
 begin
-  Button_DefencePosAdd.Down := (gGameCursor.Mode = cmMarkers) and (gGameCursor.Tag1 = MARKER_DEFENCE);
+  Button_DefencePosAdd.Down := (gGameCursor.Mode = cmMarkers)
+                                and (gGameCursor.Tag1 = MARKER_DEFENCE)
+                                and not CheckBox_AutoDefence.Checked;
 end;
 
 
