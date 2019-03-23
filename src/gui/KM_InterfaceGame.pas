@@ -23,8 +23,9 @@ type
     fViewport: TKMViewport;
     fDragScrolling: Boolean;
 
-    Label_Hint: TKMLabel;
-    Bevel_HintBG: TKMBevel;
+    Panel_Hint: TKMPanel;
+      Label_Hint: TKMLabel;
+      Bevel_HintBG: TKMBevel;
 
     function IsDragScrollingAllowed: Boolean; virtual;
     procedure DisplayHint(Sender: TObject);
@@ -271,6 +272,8 @@ end;
 
 
 procedure TKMUserInterfaceGame.DisplayHint(Sender: TObject);
+var
+  TxtSize: TKMPoint;
 begin
   if (fPrevHint = nil) and (Sender = nil) then Exit; //in this case there is nothing to do
 
@@ -288,8 +291,12 @@ begin
   else
   begin
     Label_Hint.Caption := TKMControl(Sender).Hint;
+    TxtSize := gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption);
+    Bevel_HintBG.Width := 10 + TxtSize.X;
+    Bevel_HintBG.Height := 2 + TxtSize.Y;
+    Bevel_HintBG.Top := Panel_Main.Height - Bevel_HintBG.Height - 2;
     Bevel_HintBG.Show;
-    Bevel_HintBG.Width := 10 + gRes.Fonts[Label_Hint.Font].GetTextSize(Label_Hint.Caption).X;
+    Label_Hint.Top := Bevel_HintBG.Top + 2;
     fPrevHintMessage := TKMControl(Sender).Hint;
   end;
   fPrevHint := Sender;

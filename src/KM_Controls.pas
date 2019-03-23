@@ -1862,7 +1862,8 @@ end;
 
 procedure TKMControl.SetHint(aHint: UnicodeString);
 begin
-  fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]);
+  //fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]); //Not sure why we were need to replace | here...
+  fHint := aHint;
 end;
 
 
