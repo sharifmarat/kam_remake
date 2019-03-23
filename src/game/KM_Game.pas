@@ -478,8 +478,8 @@ begin
           and ((gHands[I].HandAITypes = [aitAdvanced])
             or (gHands[I].HandAITypes = [aitClassic, aitAdvanced])
               and (aAIType = aitAdvanced)) then
-            gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True)
-          
+            gHands[I].AI.Setup.EnableAdvancedAI(True)
+
     end;
 
     if Parser.MinorErrors <> '' then
