@@ -13,13 +13,13 @@ const
 
 var
   GA_EYE_GetForests_MaxAB          : Single = 149;
-  GA_EYE_GetForests_SPRndOwnLimMin : Single =  10; // EDIT IT!!!!!!!!!!!!!!
+  GA_EYE_GetForests_SPRndOwnLimMin : Single = 100;
   GA_EYE_GetForests_SPRndOwnLimMax : Single = 135;
-  GA_EYE_GetForests_RndCount       : Single =  16;
+  GA_EYE_GetForests_RndCount       : Single =  10;
   GA_EYE_GetForests_RndLimit       : Single =   0.9;
   GA_EYE_GetForests_MinTrees       : Single =   3;
   GA_EYE_GetForests_Radius         : Single =   6.3;
-  GA_EYE_GetForests_MinRndSoil     : Single = 113; // 0-81
+  GA_EYE_GetForests_MinRndSoil     : Single = 60; // 0-81
 
 
 type
@@ -1027,7 +1027,7 @@ begin
     Ownership := gAIFields.Influences.OwnPoly[fOwner, I];
     if (Ownership > GA_EYE_GetForests_SPRndOwnLimMin)
        AND (Ownership < GA_EYE_GetForests_SPRndOwnLimMax)
-       AND (SparePointsCnt < GA_EYE_GetForests_RndCount)
+       AND (SparePointsCnt + aForests.Count < GA_EYE_GetForests_RndCount)
        AND (KaMRandom('TKMEye.GetForests') > GA_EYE_GetForests_RndLimit) then
     begin
       Point := Polygons[I].CenterPoint;
