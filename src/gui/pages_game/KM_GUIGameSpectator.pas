@@ -1,19 +1,6 @@
 unit KM_GUIGameSpectator;
 {$I KaM_Remake.inc}
 interface
-{
-������
-�������
-������
-�������
-������ �������
-��������
-������
-������������
-���������
-�����
-������./���.
-}
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
@@ -35,16 +22,6 @@ const
 
 
 type
-//  TKMGUIGameSpectatorPageTypes = (
-//    gsptNothing = 0,
-//    gsptResources = 1,
-//    gsptBuildings = 2,
-//    gsptProduction = 3,
-//    gsptArmy = 4,
-//    gsptPopulation = 5,
-//    gsptLosses = 6
-//  );
-
   TKMGUIGameSpectatorItem = class(TKMControl)
   private
     FHandIndex: Integer;
