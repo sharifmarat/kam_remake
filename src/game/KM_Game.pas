@@ -494,7 +494,7 @@ begin
       begin
         CampaignData := aCampaign.ScriptData;
         CampaignData.Seek(0, soBeginning); //Seek to the beginning before we read it
-        CampaignDataTypeFile := aCampaign.ScriptDataTypeFile;
+        CampaignDataTypeFile := aCampaign.GetScriptDataTypeFile;
       end
       else
       begin
