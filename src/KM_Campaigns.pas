@@ -80,8 +80,6 @@ type
     procedure SortCampaigns;
     procedure LoadProgress(const aFileName: UnicodeString);
     procedure SaveProgress(const aFileName: UnicodeString);
-    procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
 
     //Usage
     property ActiveCampaign: TKMCampaign read fActiveCampaign;// write fActiveCampaign;
@@ -295,32 +293,6 @@ procedure TKMCampaignsCollection.UnlockNextMap;
 begin
   if ActiveCampaign <> nil then
     ActiveCampaign.UnlockedMap := fActiveCampaignMap + 1;
-end;
-
-
-procedure TKMCampaignsCollection.Load(LoadStream: TKMemoryStream);
-var
-  cmp: TKMCampaignId;
-begin
-  LoadStream.ReadAssert('CampaignInfo');
-  LoadStream.Read(cmp, SizeOf(TKMCampaignId));
-  fActiveCampaign := CampaignById(cmp);
-  LoadStream.Read(fActiveCampaignMap);
-  //If loaded savegame references to missing campaign it will be treated as single-map (fActiveCampaign = nil)
-end;
-
-
-procedure TKMCampaignsCollection.Save(SaveStream: TKMemoryStream);
-var
-  cmp: TKMCampaignId;
-begin
-  SaveStream.WriteA('CampaignInfo');
-
-  if fActiveCampaign <> nil then
-    cmp := fActiveCampaign.CampaignId;
-
-  SaveStream.Write(cmp, SizeOf(TKMCampaignId));
-  SaveStream.Write(fActiveCampaignMap);
 end;
 
 
