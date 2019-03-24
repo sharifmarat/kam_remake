@@ -137,7 +137,7 @@ begin
   begin
     //SetKaMSeed(666);
     //gGame.GameOptions.Peacetime := 65;//SP_DEFAULT_PEACETIME;
-    fSetup.ApplyAgressiveBuilderSetup(True);
+    //fSetup.ApplyAgressiveBuilderSetup(True);
     //fSetup.ApplyAgressiveBuilderSetup(fOwner <= 3);
   end;
 
