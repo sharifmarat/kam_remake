@@ -35,7 +35,7 @@ type
     fFinalPosition: TKMPointDir;
     fTargetHouse: TKMHouse;
     fTargetUnit: TKMUnit;
-    fTimeLimit, fAttackTimeLimit: Cardinal;
+    fWalkTimeLimit, fAttackTimeLimit: Cardinal;
 
     fDEBUGPointPath: TKMPointArray;
 
@@ -57,7 +57,8 @@ type
     property InFight: Boolean read SquadInFight;
     property FinalPosition: TKMPointDir read fFinalPosition write fFinalPosition;
     property Position: TKMPoint read GetGroupPosition;
-    property TimeLimit: Cardinal read fTimeLimit write fTimeLimit;
+    property WalkTimeLimit: Cardinal read fWalkTimeLimit write fWalkTimeLimit;
+    property AttackTimeLimit: Cardinal read fAttackTimeLimit write fAttackTimeLimit;
     property TargetHouse: TKMHouse read fTargetHouse write SetTargetHouse;
     property TargetUnit: TKMUnit read fTargetUnit write SetTargetUnit;
 
@@ -175,7 +176,7 @@ begin
   fGroup := aGroup.GetGroupPointer();
   fOnPlace := True;
   fTargetChanged := True;
-  fTimeLimit := 0;
+  fWalkTimeLimit := 0;
   fAttackTimeLimit := 0;
   fTargetHouse := nil;
   fTargetUnit := nil;
@@ -199,7 +200,7 @@ begin
   LoadStream.Read(fOnPlace);
   LoadStream.Read(fTargetChanged);
   LoadStream.Read(fFinalPosition);
-  LoadStream.Read(fTimeLimit, SizeOf(fTimeLimit));
+  LoadStream.Read(fWalkTimeLimit, SizeOf(fWalkTimeLimit));
   LoadStream.Read(fAttackTimeLimit, SizeOf(fAttackTimeLimit));
   //Subst on syncload
   LoadStream.Read(fGroup, 4);
@@ -214,7 +215,7 @@ begin
   SaveStream.Write(fOnPlace);
   SaveStream.Write(fTargetChanged);
   SaveStream.Write(fFinalPosition);
-  SaveStream.Write(fTimeLimit, SizeOf(fTimeLimit));
+  SaveStream.Write(fWalkTimeLimit, SizeOf(fWalkTimeLimit));
   SaveStream.Write(fAttackTimeLimit, SizeOf(fAttackTimeLimit));
   if (fGroup <> nil) then
     SaveStream.Write(fGroup.UID) //Store ID
@@ -289,7 +290,7 @@ end;
 // Update state of squad (group orders)
 procedure TAISquad.UpdateState(aTick: Cardinal);
 const
-  AIM_DELAY = 300;
+  AIM_DELAY = 200; // Archers cannot change target too often otherwise they don't shoot
 var
   ActPos, FinPos: TKMPoint;
 begin
@@ -312,7 +313,6 @@ begin
     if PlanPath(aTick, ActPos, FinPos, True, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
     else if (fGroup.GroupType <> gt_Ranged) OR fTargetChanged OR (fAttackTimeLimit < aTick) then
-    //else if (fGroup.GroupType <> gt_Ranged) OR (fTargetChanged AND (fAttackTimeLimit < aTick)) then
     begin
       fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
@@ -361,7 +361,7 @@ begin
   fOnPlace := False;
   SQRDist := KMDistanceSqr(aActualPosition, aTargetPosition);
   // Time limit (time limit MUST be always set by higher rank (platoon))
-  if (not (aOrderAttack OR aOrderDestroy) AND (fTimeLimit < aTick)) // Time limit is set to 0 in case that unit attack something
+  if (not (aOrderAttack OR aOrderDestroy) AND (fWalkTimeLimit < aTick)) // Time limit is set to 0 in case that unit attack something
     // Target position is reached
     OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_POSITION_REACHED_TOLERANCE)
     // Target unit is close
@@ -1054,10 +1054,12 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
 
   procedure SetOrders(aCnt: Integer; var aPositions: TKMPointArray);
   const
-    TIME_PER_A_TILE = 7; // Max ticks per a tile
+    TIME_PER_A_TILE_SLOW = 7; // Max ticks per a tile (slow mode)
+    TIME_PER_A_TILE_FAST = 4; // Max ticks per a tile (fast mode)
+    INFLUENCE_DANGER = 20;
     INIT_DIST = 1000;
   var
-    I, K, Dist, ClosestDist, ClosestIdx: Integer;
+    I, K, Dist, ClosestDist, ClosestIdx, SelectedTime: Integer;
     Dir: TKMDirection;
     Position: TKMPoint;
     GT: TKMGroupType;
@@ -1065,6 +1067,11 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     AvailableSquads: TBooleanArray;
     TagPositions: TKMPointTagList;
   begin
+    // Get influence and set speed of move
+    SelectedTime := TIME_PER_A_TILE_SLOW;
+    if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.KMPoint2Polygon[aActualPosition], at_Enemy) < INFLUENCE_DANGER) then
+      SelectedTime := TIME_PER_A_TILE_FAST;
+    // Get formations and set orders
     TagPositions := TKMPointTagList.Create;
     try
       for I := 0 to Min(aCnt, High(aPositions)) do
@@ -1102,7 +1109,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
         if (ClosestDist = INIT_DIST) then
           break;
         Squads[ClosestIdx].FinalPosition := KMPointDir(Position, Dir);
-        Squads[ClosestIdx].TimeLimit := aTick + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * TIME_PER_A_TILE;
+        Squads[ClosestIdx].WalkTimeLimit := aTick + KMDistanceAbs(Position, Squads[ClosestIdx].Position) * SelectedTime;
         AvailableSquads[ClosestIdx] := False;
       end;
     finally

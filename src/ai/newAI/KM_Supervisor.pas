@@ -132,7 +132,6 @@ procedure TKMSupervisor.AfterMissionInit();
 begin
   UpdateAlliances();
   DivideResources();
-
 end;
 
 
@@ -141,7 +140,7 @@ const
   DEFSUPPORT_DIVISION = 10 * MAX_HANDS * 2; // 24 sec
   DEF_OR_ATT_DIVISION = 10 * MAX_HANDS * 10; // 2 min
   DEFENCES = 500;
-  ATTACKS = 1000;
+  ATTACKS = 10;
 var
   Modulo: Word;
 begin
@@ -463,7 +462,7 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           aWorstCmp := Comparison;
       end;
     end;
-    if (aBestCmp < MIN_ADVANTAGE) then
+    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mm_Tactic) then
       Result := -1;
   end;
 const
