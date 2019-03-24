@@ -1492,7 +1492,7 @@ var
   CanMineCnt: TKMWordArray;
 begin
   // Exit if there is not completed quarry or quarry is already builded
-  if (fPlannedHouses[HT].Completed = 0) OR (fPlannedHouses[HT].UnderConstruction > 0) then
+  if (fPlannedHouses[HT].Completed = 0) OR (fPlannedHouses[HT].Count > fPlannedHouses[HT].Completed) then
     Exit;
   StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
   try
@@ -1539,13 +1539,14 @@ begin
           K := fPlannedHouses[HT].Count;
           FindPlaceForQuary(CopySL);
           // Demolish quarry only in case that new can be placed
-          if (K < fPlannedHouses[HT].Count) then
-          begin
-            with fPlannedHouses[HT] do // Reserve houses so it builder will init road
-              Plans[ Count-1 ].HouseReservation := True;
-            fPlannedHouses[HT].Plans[LowestIdx].House.DemolishHouse(fOwner);
-            RemovePlan(HT, LowestIdx);
-          end;
+          with fPlannedHouses[HT] do
+            if (K < Count) then
+            begin
+              Plans[ Count-1 ].HouseReservation := True; // Reserve houses so it builder will init road
+              if (Plans[LowestIdx].House <> nil) then
+                Plans[LowestIdx].House.DemolishHouse(fOwner);
+              RemovePlan(HT, LowestIdx);
+            end;
         end;
       end;
     end;
