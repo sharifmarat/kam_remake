@@ -63,6 +63,9 @@ type
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
+
+    function OnlyAdvancedAIHand(aHandId: TKMHandIndex): Boolean;
+
     procedure DetectAttachedFiles(const aMissionFile: UnicodeString);
     procedure SaveAttachements(const aMissionFile: UnicodeString);
     function HitTest(X,Y: Integer): TKMMapEdMarker;
@@ -238,6 +241,14 @@ begin
   //Update attached files to be in the new path
   SetLength(fAttachedFiles, 0);
   DetectAttachedFiles(aMissionFile);
+end;
+
+
+function TKMMapEditor.OnlyAdvancedAIHand(aHandId: TKMHandIndex): Boolean;
+begin
+  Result := PlayerAdvancedAI[aHandId]
+    and not PlayerClassicAI[aHandId]
+    and not PlayerHuman[aHandId];
 end;
 
 

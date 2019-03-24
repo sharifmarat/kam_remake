@@ -39,7 +39,7 @@ type
 
 implementation
 uses
-  KM_HandsCollection, KM_ResTexts, KM_GameCursor, KM_RenderUI, KM_ResFonts, KM_InterfaceGame,
+  KM_Game, KM_HandsCollection, KM_ResTexts, KM_GameCursor, KM_RenderUI, KM_ResFonts, KM_InterfaceGame,
   KM_Hand, KM_Utils;
 
 
@@ -146,6 +146,8 @@ end;
 
 
 procedure TKMMapEdTownDefence.Town_DefenceRefresh;
+var
+  OnlyAdvancedAIHand: Boolean;
 begin
   Button_DefencePosAdd.Enabled := not CheckBox_AutoDefence.Checked;
 
@@ -155,11 +157,16 @@ begin
     gGameCursor.Mode := cmNone;
   end;
 
+  OnlyAdvancedAIHand := gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex);
+
   CheckBox_AutoDefence.Checked := gMySpectator.Hand.AI.Setup.AutoDefend;
   CheckBox_DefendAllies.Checked := gMySpectator.Hand.AI.Setup.DefendAllies;
   TrackBar_AutoAttackRange.Position := gMySpectator.Hand.AI.Setup.AutoAttackRange;
+  TrackBar_AutoAttackRange.Enabled := not OnlyAdvancedAIHand;
   TrackBar_RecruitCount.Position := gMySpectator.Hand.AI.Setup.RecruitCount;
+  TrackBar_RecruitCount.Enabled := not OnlyAdvancedAIHand;
   TrackBar_RecruitDelay.Position := Round(gMySpectator.Hand.AI.Setup.RecruitDelay / 600);
+  Button_EditFormations.Enabled := not OnlyAdvancedAIHand;
 
   CheckBox_MaxSoldiers.Checked := (gMySpectator.Hand.AI.Setup.MaxSoldiers >= 0);
   TrackBar_MaxSoldiers.Enabled := CheckBox_MaxSoldiers.Checked;

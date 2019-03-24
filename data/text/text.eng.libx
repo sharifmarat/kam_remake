@@ -1,4 +1,4 @@
-﻿0:Sawmill
+0:Sawmill
 1:Iron smithy
 2:Weapon smithy
 3:Coal mine
@@ -449,7 +449,7 @@
 454:Set a limit on how many soldiers the AI can have
 455:How many soldiers AI can have at once
 456:Set max. soldiers
-457:How many recruits AI should have in barracks
+457:Classic AI: How many recruits AI should have in barracks|Advanced AI: Parameter not used
 458:Recruits per Barracks
 460:Custom position
 463:Closest unit
@@ -761,8 +761,8 @@
 808:Show scripted overlay
 809:You cannot change host when the server is running in your client
 810:AI creates and manages attacks automatically
-811:Fast equip
-812:Soldiers are equipped as fast as possible. Equip rates still affect village planning
+811:Unlimited equip
+812:Classic AI: Soldiers are equipped as fast as possible. Equip rates still affect village planning|Advanced AI: No equip limit
 813:Apply AI defaults
 814:Multiplayer builder
 815:Applies aggressive AI builder settings to all players (for multiplayer building maps)
@@ -1175,3 +1175,6 @@
 1226:Citizens
 1227:Army
 1228:Dismiss is not available for hungry units
+1229:Classic AI|Parameters
+1230:Setup AI Parameters used only by Classic AI
+1231:Classic AI Parameters

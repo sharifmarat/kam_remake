@@ -234,7 +234,8 @@ begin
       gGame.MapEditor.PlayerAdvancedAI[I] := True;
       gHands[I].AI.General.DefencePositions.Clear;
       gHands[I].AI.General.Attacks.Clear;
-      gHands[I].AI.Setup.ApplyAgressiveBuilderSetup;
+      //Setup Multiplayer setup, for ClassicAI. Anyway we will consider Old/New AI on the game start
+      gHands[I].AI.Setup.ApplyMultiplayerSetup(False);
     end;
 
   if (Sender = Button_AIBuilderOK) or (Sender = Button_AIBuilderCancel) then

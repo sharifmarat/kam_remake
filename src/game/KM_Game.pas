@@ -476,9 +476,9 @@ begin
       for I := 0 to gHands.Count - 1 do
         if (gHands[I].HandType = hndComputer) 
           and ((gHands[I].HandAITypes = [aitAdvanced])
-            or (gHands[I].HandAITypes = [aitClassic, aitAdvanced])
-              and (aAIType = aitAdvanced)) then
-            gHands[I].AI.Setup.EnableAdvancedAI(True)
+            or ((gHands[I].HandAITypes = [aitClassic, aitAdvanced])
+              and (aAIType = aitAdvanced))) then
+            gHands[I].AI.Setup.EnableAdvancedAI
 
     end;
 
@@ -618,7 +618,7 @@ begin
       if fNetworking.MapInfo.CanBeAdvancedAI[I]
         and not fNetworking.MapInfo.CanBeAI[I]
         and not fNetworking.MapInfo.CanBeHuman[I] then
-        gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True);
+        gHands[I].AI.Setup.EnableAdvancedAI; //Just enable Advanced AI, do not override MapEd AI params
 
   //Assign existing NetPlayers(1..N) to map players(0..N-1)
   for I := 1 to fNetworking.NetPlayers.Count do
@@ -628,8 +628,16 @@ begin
       gHands[HIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
       gHands[HIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
 
-      if fNetworking.NetPlayers[I].IsAdvancedComputer then
-        gHands[HIndex].AI.Setup.ApplyAgressiveBuilderSetup(True);
+      if fNetworking.NetPlayers[I].IsComputer then
+      begin
+        //For MP locs we will set AI MP setup only when loc is allowed for humans too.
+        //For only AI locs there we should use AI params set from MapEd
+        if gHands[HIndex].CanBeHuman then
+          gHands[HIndex].AI.Setup.ApplyMultiplayerSetup(fNetworking.NetPlayers[I].IsAdvancedComputer)
+        else
+          //Just enable Advanced AI, do not override MapEd AI params
+          gHands[HIndex].AI.Setup.EnableAdvancedAI(fNetworking.NetPlayers[I].IsAdvancedComputer);
+      end;
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
       if fNetworking.SelectGameKind = ngk_Save then

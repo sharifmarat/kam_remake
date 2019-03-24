@@ -41,6 +41,7 @@ type
     procedure Show(aPage: TKMTownTab);
     function IsVisible(aPage: TKMTownTab): Boolean;
     function Visible: Boolean; override;
+    procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
     procedure ChangePlayer;
     procedure UpdatePlayerColor;
     procedure UpdateState;
@@ -176,6 +177,12 @@ end;
 function TKMMapEdTown.Visible: Boolean;
 begin
   Result := Panel_Town.Visible;
+end;
+
+
+procedure TKMMapEdTown.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+begin
+  fGuiScript.KeyDown(Key, Shift, aHandled);
 end;
 
 
