@@ -223,11 +223,16 @@ begin
                           //We use this command in a sense "Default human player"
                           //MP and SP set human players themselves
                           //Remains usefull for map preview and MapEd
+                          //Also saved in Hand to check for advanced AI setup
                           fDefaultLocation := P[0];
-                          if (fParsingMode = mpm_Editor) and (gHands <> nil) then
+                          if gHands <> nil then
                           begin
-                            gGame.MapEditor.DefaultHuman := P[0];
-                            gGame.MapEditor.PlayerHuman[P[0]] := True;
+                            if fParsingMode = mpm_Editor then
+                            begin
+                              gGame.MapEditor.DefaultHuman := P[0];
+                              gGame.MapEditor.PlayerHuman[P[0]] := True;
+                            end else
+                              gHands[P[0]].CanBeHuman := True;
                           end;
                         end;
 
@@ -239,10 +244,13 @@ begin
                         begin
                           HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
 
-                          if (fParsingMode = mpm_Editor) then
-                            gGame.MapEditor.PlayerHuman[HandI] := True
-                          else
-                            gHands[HandI].CanBeHuman := True;
+                          if HandI <> -1 then
+                          begin
+                            if (fParsingMode = mpm_Editor) then
+                              gGame.MapEditor.PlayerHuman[HandI] := True
+                            else
+                              gHands[HandI].CanBeHuman := True;
+                          end;
                         end;
 
     ct_AIPlayer:        if (gHands <> nil) then
