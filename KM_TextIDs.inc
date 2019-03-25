@@ -1255,3 +1255,5 @@ TX_WORD_CITIZENS = 1226; //Citizens
 TX_WORD_ARMY = 1227; //Army
 
 TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry units
+
+TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s minutes

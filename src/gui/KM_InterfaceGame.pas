@@ -5,7 +5,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   SysUtils, Controls, Classes, Math, KM_Defaults, KM_Controls, KM_Points,
-  KM_InterfaceDefaults,
+  KM_InterfaceDefaults, KM_CommonUtils, KM_CommonTypes,
   KM_GameCursor, KM_Render, KM_Minimap, KM_Viewport, KM_ResHouses, KM_ResWares;
 
 
@@ -17,6 +17,7 @@ type
     fDragScrollingViewportPos: TKMPointF;
     fPrevHint: TObject;
     fPrevHintMessage: UnicodeString;
+    fOnUserAction: TKMUserActionEvent;
     procedure ResetDragScrolling;
   protected
     fMinimap: TKMMinimap;
@@ -36,13 +37,17 @@ type
 
     property Minimap: TKMMinimap read fMinimap;
     property Viewport: TKMViewport read fViewport;
+    property OnUserAction: TKMUserActionEvent read fOnUserAction write fOnUserAction;
 
     function CursorToMapCoord(X, Y: Integer): TKMPointF;
 
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
+    procedure KeyPress(Key: Char); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer; var aHandled: Boolean); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer); override;
 
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
     procedure SyncUI(aMoveViewport: Boolean = True); virtual;
@@ -201,12 +206,23 @@ begin
 end;
 
 
+procedure TKMUserInterfaceGame.KeyPress(Key: Char);
+begin
+  inherited;
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatKeyPress);
+end;
+
+
 procedure TKMUserInterfaceGame.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
   {$IFDEF MSWindows}
 var
   WindowRect: TRect;
   {$ENDIF}
 begin
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatKeyDown);
+
   aHandled := True;
   //Scrolling
   if Key = gResKeys[SC_SCROLL_LEFT].Key       then fViewport.ScrollKeyLeft  := True
@@ -239,6 +255,9 @@ end;
 
 procedure TKMUserInterfaceGame.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatKeyUp);
+
   aHandled := True;
   //Scrolling
   if Key = gResKeys[SC_SCROLL_LEFT].Key       then fViewport.ScrollKeyLeft  := False
@@ -303,11 +322,31 @@ begin
 end;
 
 
+procedure TKMUserInterfaceGame.MouseUp(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+begin
+  inherited;
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatMouseUp);
+end;
+
+
+procedure TKMUserInterfaceGame.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
+begin
+  inherited;
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatMouseDown);
+end;
+
+
 procedure TKMUserInterfaceGame.MouseMove(Shift: TShiftState; X,Y: Integer; var aHandled: Boolean);
 var
   VP: TKMPointF;
 begin
   inherited;
+
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatMouseMove);
+
   aHandled := False;
   if fDragScrolling then
   begin
@@ -329,6 +368,9 @@ var
   PrevCursor: TKMPointF;
 begin
   inherited;
+
+  if Assigned(fOnUserAction) then
+    fOnUserAction(uatMouseWheel);
 
   if (X < 0) or (Y < 0) then Exit; // This happens when you use the mouse wheel on the window frame
 

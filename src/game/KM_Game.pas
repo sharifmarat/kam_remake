@@ -69,6 +69,9 @@ type
 
     fLastAutosaveTime: Cardinal;
 
+    fLastTimeUserAction: Cardinal;
+    fLastAfkMessageSent: Cardinal;
+
     fReadyToStop: Boolean;
 
     procedure GameMPDisconnect(const aData: UnicodeString);
@@ -90,6 +93,7 @@ type
     procedure CheckPauseGameAtTick;
 
     function PlayNextTick: Boolean;
+    procedure UserAction(aActionType: TKMUserActionType);
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -264,6 +268,8 @@ begin
   fGameSpeedChangeTime := 0;
   fPausedTicksCnt := 0;
   fBlockGetPointer := False;
+  fLastTimeUserAction := TimeGet;
+  fLastAfkMessageSent := 0;
 
   fMapTxtInfo := TKMMapTxtInfo.Create;
 
@@ -276,6 +282,7 @@ begin
   else
   begin
     fGamePlayInterface := TKMGamePlayInterface.Create(aRender, UIMode[fGameMode]);
+    fGamePlayInterface.OnUserAction := UserAction;
     fActiveInterface := fGamePlayInterface;
   end;
 
@@ -2120,13 +2127,32 @@ begin
 end;
 
 
+procedure TKMGame.UserAction(aActionType: TKMUserActionType);
+begin
+  fLastTimeUserAction := Max(fLastTimeUserAction, TimeGet);
+end;
+
+
 procedure TKMGame.UpdateState(aGlobalTickCount: Cardinal);
+const
+  PLAYER_AFK_TIME = 3; //in minutes. Notify other players, when this player is AFK
+  PLAYER_AFK_MESS_DELAY = 5*60*1000; //in ms, wait till next AFK message. do not spam players with messages
 begin
   if gScriptSounds <> nil then
     gScriptSounds.UpdateState;
 
   if not fIsPaused then
+  begin
     fActiveInterface.UpdateState(aGlobalTickCount);
+    if (gGame.GameMode = gmMulti) //Only for MP game players, not specs
+      and (GetTimeSince(fLastTimeUserAction) > PLAYER_AFK_TIME*60*1000)
+      and (GetTimeSince(fLastAfkMessageSent) > PLAYER_AFK_MESS_DELAY) then
+    begin
+      fNetworking.PostMessage(TX_PLAYER_AFK_MESSAGE, csSystem, fNetworking.MyNetPlayer.NiknameColoredU,
+                              WrapColor(IntToStr(PLAYER_AFK_TIME), icGoldenYellow));
+      fLastAfkMessageSent := TimeGet;
+    end;
+  end;
 
   if (aGlobalTickCount mod 10 = 0) and (fMapEditor <> nil) then
     fMapEditor.UpdateState;
