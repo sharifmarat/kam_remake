@@ -44,7 +44,7 @@ uses
   KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_AI, KM_AIDefensePos,
   KM_Resource, KM_ResHouses, KM_ResUnits, KM_ResWares,
-  KM_CommonClasses, KM_Terrain;
+  KM_CommonClasses, KM_CommonTypes, KM_Terrain;
 
 
 type

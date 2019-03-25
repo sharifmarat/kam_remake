@@ -7,7 +7,7 @@ uses
   KM_Houses, KM_HouseCollection, KM_HouseInn,
   KM_HandLogistics, KM_HandLocks, KM_HandStats,
   KM_FogOfWar, KM_BuildList, KM_MessageLog, KM_ResHouses,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
 type

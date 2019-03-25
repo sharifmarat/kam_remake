@@ -82,6 +82,11 @@ type
     Data: UnicodeString;
   end;
 
+
+  TKMAIType = (aitNone, aitClassic, aitAdvanced);
+  TKMAITypeSet = set of TKMAIType;
+
+
   TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
 
   const
