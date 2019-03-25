@@ -778,6 +778,7 @@ const
   icGray = $FF808080;
   icGray2 = $FF888888;
   icLightGray = $FFA0A0A0;
+  icLightGray2 = $FFD0D0D0;
   icLightGrayTrans = $80A0A0A0;
   icWhite = $FFFFFFFF;
   icBlack = $FF000000;

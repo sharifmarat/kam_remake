@@ -87,7 +87,7 @@ begin
       Image_CampaignFlags[I].Tag := I;
 
       Label_CampaignFlags[I] := TKMLabel.Create(Panel_Campaign_Flags, aParent.Width, aParent.Height, IntToStr(I+1), fnt_Mini, taCenter);
-      Label_CampaignFlags[I].FontColor := $FFD0D0D0;
+      Label_CampaignFlags[I].FontColor := icLightGray2;
       Label_CampaignFlags[I].Hitable := False;
     end;
     for I := 0 to High(Image_CampaignSubNode) do
@@ -227,7 +227,7 @@ end;
 procedure TKMMenuCampaign.Campaign_SelectMap(Sender: TObject);
 var
   I: Integer;
-  COLOR: Cardinal;
+  Color: Cardinal;
 begin
   if TKMControl(Sender).Tag > fCampaign.UnlockedMap then exit; //Skip closed maps
 
@@ -240,15 +240,15 @@ begin
   begin
     Image_CampaignFlags[I].Highlight := (fMapIndex = I);
     if I >= fCampaign.MapCount then
-      COLOR := $FFD0D0D0
+      Color := icLightGray2
     else
       case fCampaign.MapsData[I].BestCompleteDifficulty of
-        mdNone: COLOR := $FFD0D0D0;
-        mdEasy: COLOR := icGreen;
-        mdNormal: COLOR := icYellow;
-        mdHard: COLOR := icRed;
+        mdNone: Color := icLightGray2;
+        mdEasy: Color := icGreen;
+        mdNormal: Color := icYellow;
+        mdHard: Color := icRed;
       end;
-    Label_CampaignFlags[I].FontColor := COLOR;
+    Label_CampaignFlags[I].FontColor := Color;
   end;
 
   //Connect by sub-nodes
