@@ -88,6 +88,15 @@ type
     function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
     function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
 
+    function IsMissionBuildType: Boolean;
+    function IsMissionFightType: Boolean;
+    function IsMissionCoopType: Boolean;
+    function IsMissionSpecialType: Boolean;
+    function IsMissionPlayableAsSP: Boolean;
+    function IsMissionBlockTeamSelection: Boolean;
+    function IsMissionBlockPeacetime: Boolean;
+    function IsMissionBlockFullMapPreview: Boolean;
+
     function KaMRandom: Single;
     function KaMRandomI(aMax: Integer): Integer;
     function LocationCount: Integer;
@@ -100,7 +109,14 @@ type
     function MapWidth: Integer;
     function MapHeight: Integer;
 
+    function MissionAuthor: UnicodeString;
+    function MissionBigDesc: UnicodeString;
+    function MissionBigDescLibx: Integer;
+    function MissionSmallDesc: UnicodeString;
+    function MissionSmallDescLibx: Integer;
+
     function MissionDifficulty: TKMMissionDifficulty;
+    function MissionDifficultyLevels: TKMMissionDifficultySet;
 
     function MarketFromWare(aMarketID: Integer): Integer;
     function MarketLossFactor: Single;
@@ -2441,6 +2457,110 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns if mission is build type
+function TKMScriptStates.IsMissionBuildType: Boolean;
+begin
+  try
+    Result := gGame.MissionMode = mm_Normal;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is fight type
+function TKMScriptStates.IsMissionFightType: Boolean;
+begin
+  try
+    Result := gGame.MissionMode = mm_Tactic;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is cooperative type
+function TKMScriptStates.IsMissionCoopType: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsCoop;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is special type
+function TKMScriptStates.IsMissionSpecialType: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsSpecial;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is playable as Singleplayer map
+function TKMScriptStates.IsMissionPlayableAsSP: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsPlayableAsSP;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if team selection is locked for current mission
+function TKMScriptStates.IsMissionBlockTeamSelection: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockTeamSelection;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if peacetime is locked for current mission
+function TKMScriptStates.IsMissionBlockPeacetime: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockPeacetime;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if full map preview is blocked for current mission
+function TKMScriptStates.IsMissionBlockFullMapPreview: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockFullMapPreview;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6216
 //* Returns a random single (float) such that: 0 <= Number < 1.0
 //* Result: Decimal number 0.0 to 1.0
@@ -2486,11 +2606,89 @@ end;
 
 
 //* Version: 7000+
+//* Returns mission author
+function TKMScriptStates.MissionAuthor: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.Author;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission big description
+function TKMScriptStates.MissionBigDesc: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.BigDesc;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission big description Libx ID
+function TKMScriptStates.MissionBigDescLibx: Integer;
+begin
+  try
+    Result := gGame.MapTxtInfo.BigDescLibx;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission small description
+function TKMScriptStates.MissionSmallDesc: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.SmallDesc;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission small description Libx ID
+function TKMScriptStates.MissionSmallDescLibx: Integer;
+begin
+  try
+    Result := gGame.MapTxtInfo.SmallDescLibx;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
 //* Returns mission difficulty for current game
 function TKMScriptStates.MissionDifficulty: TKMMissionDifficulty;
 begin
   try
     Result := gGame.MissionDifficulty;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns allowed mission difficulty levels
+function TKMScriptStates.MissionDifficultyLevels: TKMMissionDifficultySet;
+begin
+  try
+    Result := gGame.MapTxtInfo.DifficultyLevels;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

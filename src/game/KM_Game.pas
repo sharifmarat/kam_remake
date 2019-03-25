@@ -45,6 +45,7 @@ type
 
     fMissionDifficulty: TKMMissionDifficulty;
     fAIType: TKMAIType;
+    fMapTxtInfo: TKMMapTxtInfo;
 
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
@@ -156,6 +157,7 @@ type
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
+    property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
     procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
     procedure OverlayUpdate;
@@ -263,6 +265,8 @@ begin
   fPausedTicksCnt := 0;
   fBlockGetPointer := False;
 
+  fMapTxtInfo := TKMMapTxtInfo.Create;
+
   //UserInterface is different between Gameplay and MapEd
   if fGameMode = gmMapEd then
   begin
@@ -334,6 +338,7 @@ begin
   FreeAndNil(fPathfinding);
   FreeAndNil(fScripting);
   FreeAndNil(gScriptSounds);
+  FreeAndNil(fMapTxtInfo);
 
   FreeThenNil(fGamePlayInterface);
   FreeThenNil(fMapEditorInterface);
@@ -435,7 +440,6 @@ begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
     fMapEditor := TKMMapEditor.Create;
     fMapEditor.DetectAttachedFiles(aMissionFile);
-    fMapEditor.MapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
   end;
 
   Parser := TKMMissionParserStandard.Create(ParseMode, PlayerEnabled);
@@ -533,6 +537,8 @@ begin
   finally
     Parser.Free;
   end;
+
+  fMapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
 
   gLog.AddTime('Gameplay initialized', True);
 end;
@@ -1111,7 +1117,7 @@ begin
 
   fMapEditor.MissionDefSavePath := aPathName;
   fMapEditor.SaveAttachements(aPathName);
-  fMapEditor.MapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
+  fMapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMissionParser := TKMMissionParserStandard.Create(mpm_Editor);
