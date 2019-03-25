@@ -292,7 +292,7 @@ end;
 
 procedure TKMMapEdMissionMode.UpdateMapTxtInfo(Sender: TObject);
 begin
-  if (Sender = CheckBox_Coop) and CheckBox_Coop.Checked then
+  if CheckBox_Coop.Checked then
   begin
     CheckBox_BlockTeamSelection.Check;
     CheckBox_BlockPeacetime.Check;
