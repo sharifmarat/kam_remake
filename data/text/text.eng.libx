@@ -1119,7 +1119,7 @@
 1170:By players number
 1171:Back to game
 1172:Show detailed game statistics
-1173:Difficulty
+1173:Difficulty level
 1174:Easy
 1175:Normal
 1176:Hard
@@ -1179,3 +1179,4 @@
 1230:Setup AI Parameters used only by Classic AI
 1231:Classic AI Parameters
 1232:Take every group type
+1233:Difficulty

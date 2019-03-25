@@ -33,7 +33,6 @@ type
   private
     fBigDesc: UnicodeString;
     function IsEmpty: Boolean;
-    procedure ResetInfo;
     procedure Load(aStream: TKMemoryStream);
     procedure Save(aStream: TKMemoryStream);
   public
@@ -56,10 +55,15 @@ type
     function IsSmallDescLibxSet: Boolean;
     function IsBigDescLibxSet: Boolean;
 
+    procedure ResetInfo;
+
     procedure SaveTXTInfo(aFilePath: UnicodeString);
     procedure LoadTXTInfo(aFilePath: UnicodeString);
     function HasDifficultyLevels: Boolean;
   end;
+
+
+  TKMMapTxtInfoArray = array of TKMMapTxtInfo;
 
 
   TKMapInfo = class
