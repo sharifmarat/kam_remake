@@ -972,7 +972,9 @@ begin
 
   Inc(fGlobalTickCount);
   //Always update networking for auto reconnection and query timeouts
-  if fNetworking <> nil then fNetworking.UpdateState(fGlobalTickCount);
+  if fNetworking <> nil then
+    fNetworking.UpdateState(fGlobalTickCount);
+
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);
