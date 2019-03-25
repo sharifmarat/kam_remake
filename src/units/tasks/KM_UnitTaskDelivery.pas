@@ -461,7 +461,9 @@ begin
             end;
           end else
           //Now look for another delivery from inside this house
-          if TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
+          //But only if we are not hungry!
+          //Otherwise there is a possiblity when he will go between houses until death
+          if not fUnit.IsHungry and TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
           begin
             //After setting new unit task we should free self.
             //Note do not set tr_TaskDone := true as this will affect the new task
