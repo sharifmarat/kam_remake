@@ -604,8 +604,9 @@ begin
     with fAttackRequest do
     begin
       TakeAllIn := (BestAllianceCmp > MIN_BEST_ALLI_CMP) // The weakest opponent have not enought soldiers
-                   OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP); // The strongest opponent have not enought soldiers
-      if (DefRatio < MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
+                   OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP) // The strongest opponent have not enought soldiers
+                   OR (gGame.MissionMode = mm_Tactic);
+      if (DefRatio > MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
         Exit;
     end;
     // Get array of pointers to available groups
