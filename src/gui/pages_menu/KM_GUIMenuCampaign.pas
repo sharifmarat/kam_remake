@@ -114,7 +114,7 @@ begin
     Label_CampaignText := TKMLabel.Create(Panel_CampScroll, 20, 70, 323, 290, NO_TEXT, fnt_Antiqua, taLeft);
     Label_CampaignText.AutoWrap := True;
 
-  Image_ScrollRestore := TKMImage.Create(Panel_Campaign, aParent.Width-20-30, aParent.Height-50-48, 30, 48, 491);
+  Image_ScrollRestore := TKMImage.Create(Panel_Campaign, aParent.Width-20-30, Panel_Campaign.Height-50-53, 30, 48, 491);
   Image_ScrollRestore.Anchors := [anBottom, anRight];
   Image_ScrollRestore.OnClick := Scroll_Toggle;
   Image_ScrollRestore.HighlightOnMouseOver := True;
@@ -217,6 +217,7 @@ begin
     Label_Difficulty.DoSetVisible;
   end else begin
     Label_Difficulty.Hide;
+    DropBox_Difficulty.Clear;
     DropBox_Difficulty.Hide;
   end;
 
@@ -268,6 +269,8 @@ begin
   //Add offset from top and space on bottom to fit buttons
   Panel_CampScroll.Height := Label_CampaignText.Top + Label_CampaignText.TextSize.Y + 70 + 25*Byte(DropBox_Difficulty.Count > 0);
   Panel_CampScroll.Top := Panel_Campaign.Height - Panel_CampScroll.Height;
+
+  Image_ScrollRestore.Top := Panel_Campaign.Height - 50 - 53 - 32*Byte(DropBox_Difficulty.Count > 0);
 
   Image_ScrollRestore.Hide;
   Panel_CampScroll.Show;
