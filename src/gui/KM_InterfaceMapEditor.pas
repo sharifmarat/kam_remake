@@ -345,7 +345,7 @@ begin
   inherited;
   //Update minimap every 500ms
   if aTickCount mod 5 = 0 then
-    fMinimap.Update(False);
+    fMinimap.Update;
 
   //Show players without assets in grey
   if aTickCount mod 5 = 0 then
@@ -370,7 +370,7 @@ end;
   
 procedure TKMapEdInterface.UpdateStateImmidiately;
 begin
-  fMinimap.Update(False);
+  fMinimap.Update;
   UpdatePlayerSelectButtons;
   UpdateStateInternal;
 end;

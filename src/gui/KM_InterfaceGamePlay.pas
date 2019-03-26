@@ -697,7 +697,7 @@ end;
 procedure TKMGamePlayInterface.GameSettingsUpdated;
 begin
   //Update minimap
-  fMinimap.Update(False);
+  fMinimap.Update;
 end;
 
 
@@ -1775,7 +1775,7 @@ begin
     gMySpectator.FOWIndex := aToPlayer
   else
     gMySpectator.FOWIndex := -1;
-  fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
+  fMinimap.Update; // Force update right now so FOW doesn't appear to lag
   gGame.OverlayUpdate; // Display the overlay seen by the selected player
 
   Dropbox_ReplayFOW.SelectByTag(aToPlayer);
@@ -1810,6 +1810,8 @@ end;
 procedure TKMGamePlayInterface.Replay_AllyEnemyModeClick(Sender: TObject);
 begin
   gGameApp.GameSettings.ShowPlayersColors := not CheckBox_AllyEnemy_ColorMode.Checked;
+  //Update minimap
+  fMinimap.Update;
 end;
 
 
@@ -1866,7 +1868,7 @@ begin
       gMySpectator.FOWIndex := gMySpectator.HandIndex
     else
       gMySpectator.FOWIndex := -1;
-    fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
+    fMinimap.Update; // Force update right now so FOW doesn't appear to lag
   end;
 end;
 
@@ -2665,7 +2667,7 @@ begin
       gMySpectator.FOWIndex := gMySpectator.HandIndex
     else
       gMySpectator.FOWIndex := -1;
-    fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
+    fMinimap.Update; // Force update right now so FOW doesn't appear to lag
   end;
 
   UpdateSelectedObject;
@@ -3130,7 +3132,7 @@ begin
   begin
     gGameApp.GameSettings.ShowPlayersColors := not gGameApp.GameSettings.ShowPlayersColors;
     //Update minimap immidiately
-    fMinimap.Update(False);
+    fMinimap.Update;
   end;
 
   if (fUIMode in [umSP, umReplay])
@@ -3569,7 +3571,7 @@ begin
                     gMySpectator.FOWIndex := gMySpectator.HandIndex
                   else
                     gMySpectator.FOWIndex := -1;
-                  fMinimap.Update(False); // Force update right now so FOW doesn't appear to lag
+                  fMinimap.Update; // Force update right now so FOW doesn't appear to lag
                 end;
 
                 if (gMySpectator.Selected is TKMHouse) then
@@ -3823,7 +3825,7 @@ begin
   inherited;
   // Update minimap every 1000ms
   if aTickCount mod 10 = 0 then
-    fMinimap.Update(False);
+    fMinimap.Update;
 
   UpdateSelectedObject;
 

@@ -50,7 +50,7 @@ type
     procedure LoadFromStream(LoadStream: TKMemoryStream);
     procedure SaveToStream(SaveStream: TKMemoryStream);
 
-    procedure Update(aRevealAll: Boolean);
+    procedure Update(aRevealAll: Boolean = False);
   end;
 
 
@@ -315,7 +315,7 @@ begin
 end;
 
 
-procedure TKMMinimap.Update(aRevealAll: Boolean);
+procedure TKMMinimap.Update(aRevealAll: Boolean = False);
 begin
   if SKIP_RENDER then Exit;
 

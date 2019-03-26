@@ -398,7 +398,7 @@ end;
 procedure TKMUserInterfaceGame.SyncUI(aMoveViewport: Boolean = True);
 begin
   fMinimap.LoadFromTerrain;
-  fMinimap.Update(False);
+  fMinimap.Update;
 
   if aMoveViewport then
   begin

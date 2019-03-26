@@ -607,7 +607,7 @@ begin
         //Refresh minimap with selected location and player color
         fMinimap.LoadFromMission(M.FullPath('.dat'), [TKMHandIndex(fSingleLoc)]);
         fMinimap.HandColors[fSingleLoc] := fSingleColor;
-        fMinimap.Update(False);
+        fMinimap.Update;
         MinimapView.SetMinimap(fMinimap);
 
         //Populate goals section
