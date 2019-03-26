@@ -20,7 +20,7 @@ type
   end;
   TKMBordInfo = record
     Count: Word;
-    Borders: array[0..6000] of TKMBord;
+    Borders: array[0..10000] of TKMBord;
   end;
   {$IFDEF DEBUG_NavMesh}
   TDebugLines = record // Only for debug
@@ -100,15 +100,15 @@ uses
 
 const
   MAX_NODES = 5000; // Max nodes in NavMesh array
-  MAX_POLYGONS = 4000;
+  MAX_POLYGONS = 6000;
   UNVISITED_OBSTACLE = 255;
   VISITED_OBSTACLE = UNVISITED_OBSTACLE - 1;
   NODE_IN_WALKABLE_AREA = 1;
   NODE_IN_OBSTACLE = VISITED_OBSTACLE - 1;
-  FILTER_EDGES_MAX_EDGE_DISTANCE = 6;
+  FILTER_EDGES_MAX_EDGE_DISTANCE = 5;
   FILTER_EDGES_MAX_TOLERANCE = 0.5;
-  INNER_EDGE_BORDER_STEP = 4;
-  INNER_EDGE_STEP = 5;
+  INNER_EDGE_BORDER_STEP = 3;
+  INNER_EDGE_STEP = 4;
   SQR_MAX_RADIUS_TryConnect = 20*20;
 
 
