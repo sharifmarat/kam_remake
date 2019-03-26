@@ -2135,8 +2135,8 @@ end;
 
 procedure TKMGame.UpdateState(aGlobalTickCount: Cardinal);
 const
-  PLAYER_AFK_TIME = 3; //in minutes. Notify other players, when this player is AFK
-  PLAYER_AFK_MESS_DELAY = 5*60*1000; //in ms, wait till next AFK message. do not spam players with messages
+  PLAYER_AFK_TIME = 5; //in minutes. Notify other players, when this player is AFK
+  PLAYER_AFK_MESSAGE_DELAY = 5*60*1000; //in ms, wait till next AFK message. do not spam players with messages
 begin
   if gScriptSounds <> nil then
     gScriptSounds.UpdateState;
@@ -2146,10 +2146,10 @@ begin
     fActiveInterface.UpdateState(aGlobalTickCount);
     if (gGame.GameMode = gmMulti) //Only for MP game players, not specs
       and (GetTimeSince(fLastTimeUserAction) > PLAYER_AFK_TIME*60*1000)
-      and (GetTimeSince(fLastAfkMessageSent) > PLAYER_AFK_MESS_DELAY) then
+      and (GetTimeSince(fLastAfkMessageSent) > PLAYER_AFK_MESSAGE_DELAY) then
     begin
       fNetworking.PostMessage(TX_PLAYER_AFK_MESSAGE, csSystem, fNetworking.MyNetPlayer.NiknameColoredU,
-                              WrapColor(IntToStr(PLAYER_AFK_TIME), icGoldenYellow));
+                              WrapColor(IntToStr(GetTimeSince(fLastTimeUserAction) div 60000), icGoldenYellow));
       fLastAfkMessageSent := TimeGet;
     end;
   end;
