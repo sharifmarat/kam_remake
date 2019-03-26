@@ -742,7 +742,6 @@ function TFilterFF.CheckStartPolygons(var aStartPolygons: TKMWordArray): boolean
 var
   K,L: Integer;
 begin
-  Result := Length(aStartPolygons) > 0;
   for K := Length(aStartPolygons)-1 downto 0 do
     for L := 0 to fAllDefLines.count-1 do
       if (aStartPolygons[K] = fAllDefLines.Lines[L].Polygon) then
@@ -751,6 +750,7 @@ begin
         SetLength(aStartPolygons, Length(aStartPolygons)-1);
         break;
       end;
+  Result := Length(aStartPolygons) > 0;
 end;
 
 
@@ -803,7 +803,7 @@ begin
   for I := 0 to Length(StartPolygons) - 1 do
   begin
     StartPolygon[0] := StartPolygons[I];
-    if aClean AND (I = 0) then // First start polygon of first player
+    if (aClean OR (Length(fQueueArray) <= 0)) AND (I = 0) then // First start polygon of first player
       InitQueue(0, StartPolygon)
     else
     begin
