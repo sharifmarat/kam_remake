@@ -262,7 +262,7 @@ begin
     for I := 0 to Cnt - 1 do //Start from 1, as we do not need to save default (0) handler
     begin
       LoadStream.ReadA(HandlerName);
-      AddEventHandlerName(ET, HandlerName)
+      AddEventHandlerName(ET, HandlerName);
     end;
   end;
 end;
