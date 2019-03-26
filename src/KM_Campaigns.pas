@@ -466,6 +466,17 @@ begin
     else
       fMapsInfo[I].TxtInfo.ResetInfo;
     fMapsInfo[I].TxtInfo.LoadTXTInfo(GetMissionFile(I, '.txt'));
+
+    fMapsInfo[I].MissionName := '';
+    //Load mission name from mission Libx library
+    TextMission := TKMTextLibraryMulti.Create;
+    try
+      TextMission.LoadLocale(GetMissionFile(I, '.%s.libx'));
+      if TextMission.HasText(MISSION_NAME_LIBX_ID) then
+        fMapsInfo[I].MissionName := TextMission[MISSION_NAME_LIBX_ID];
+    finally
+      FreeAndNil(TextMission);
+    end;
   end;
 end;
 
@@ -538,15 +549,36 @@ begin
 end;
 
 
-function TKMCampaign.CampaignMissionTitle(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
 begin
+  //We have template for mission name in 3:
   if fTextLib[3] <> '' then
   begin
     Assert(CountMatches(fTextLib[3], '%d') = 1, 'Custom campaign mission template must have a single "%d" in it.');
-    Result := Format(fTextLib[3], [aIndex+1]);
+
+    //We have also %s for custom mission name
+    if CountMatches(fTextLib[3], '%s') = 1 then
+    begin
+      //We can use different order for %d and %s, then choose Format 2 ways
+      //First - %d %s
+      if Pos('%d', fTextLib[3]) < Pos('%s', fTextLib[3]) then
+        Result := Format(fTextLib[3], [aIndex+1, fMapsInfo[aIndex].MissionName])  
+      else
+        Result := Format(fTextLib[3], [fMapsInfo[aIndex].MissionName, aIndex+1]); //Then order: %s %d
+    end else
+      //Otherwise just Append (by default MissionName is empty anyway)
+      Result := Format(fTextLib[3], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
   end
+  //We have %d in custom mission name
+  else if CountMatches(fMapsInfo[aIndex].MissionName, '%d') = 1 then       
+    Result := Format(fMapsInfo[aIndex].MissionName, [aIndex+1])
+  //We have custom mission name (without %d)
+  else if fMapsInfo[aIndex].MissionName <> '' then
+    Result := fMapsInfo[aIndex].MissionName
   else
-    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]);
+    //Have nothing - use default mission name
+    //Otherwise just Append (by default MissionName is empty anyway)
+    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
 end;
 
 
