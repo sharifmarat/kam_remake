@@ -1207,6 +1207,7 @@ TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
 TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit
 
 TX_GAME_SETTINGS_COLOR_MODE = 1187; //Ally / enemy color mode
+TX_GAME_SETTINGS_COLOR_MODE_SHORT = 1235; //Ally / enemy
 TX_GAME_SETTINGS_COLOR_MODE_HINT = 1188; //Use self/ally/enemy colors for players instead of initial player colors
 
 TX_LOBBY_ALERT_NOT_READY = 1189; //Host is ready to start. Please press '%s'
