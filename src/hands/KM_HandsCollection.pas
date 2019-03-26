@@ -501,40 +501,11 @@ Result
     nil: if NO other unit found
 }
 function TKMHandsCollection.GetNextUnitWSameType(aUnit: TKMUnit): TKMUnit;
-var Units: TKMUnitsCollection;
-    U, FirstU: TKMUnit;
-    Found: Boolean;
-    I: Integer;
 begin
   Result := nil;
   if (aUnit = nil) or aUnit.IsDeadOrDying then Exit;
 
-  Found := False;
-  FirstU := nil;
-
-  Units := fHandsList[aUnit.Owner].Units;
-
-  for I := 0 to Units.Count - 1 do
-  begin
-    U := Units[I];
-    if (U = nil)
-      or U.IsDeadOrDying
-      or (U.UnitType <> aUnit.UnitType)
-      or not U.Visible then
-      Continue;
-
-    if U = aUnit then
-      Found := True                // Mark that we found our unit
-    else if Found then
-    begin
-      Result := U;                 // Save the next unit after Found to Result and Break
-      Break;
-    end else if FirstU = nil then
-      FirstU := U;                 // Save 1st unit in list in case our unit is the last one
-  end;
-
-  if (Result = nil) and Found then   // Found should be always True here
-    Result := FirstU;
+  Result := fHandsList[aUnit.Owner].GetNextUnitWSameType(aUnit.UnitType, aUnit.UID);
 end;
 
 
@@ -553,31 +524,7 @@ begin
   Result := nil;
   if (aUnitGroup = nil) or aUnitGroup.IsDead then Exit;
 
-  Found := False;
-  FirstG := nil;
-
-  UnitGroups := fHandsList[aUnitGroup.Owner].UnitGroups;
-
-  for I := 0 to UnitGroups.Count - 1 do
-  begin
-    Group := UnitGroups[I];
-
-    if (Group = nil)
-      or Group.IsDead //check if group is dead
-      or (Group.UnitType <> aUnitGroup.UnitType) then // we are interested in groups with the same type only
-      Continue;
-
-    if Group = aUnitGroup then
-      Found := True               // Mark that we found our group
-    else if Found then
-    begin
-      Result := Group;            // Save the next group after Found to Result and Break
-      Break;
-    end else if FirstG = nil then
-      FirstG := Group;            // Save 1st group in list in case our group is the last one
-  end;
-  if (Result = nil) and Found then // Found should be always True here
-    Result := FirstG;
+  Result := fHandsList[aUnitGroup.Owner].GetNextGroupWSameType(aUnitGroup.UnitType, aUnitGroup.UID);
 end;
 
 

@@ -134,6 +134,8 @@ type
     function TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
+    function GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
+    function GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 
     function CanAddFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
     function CanAddFakeFieldPlan(const aLoc: TKMPoint; aFieldType: TKMFieldType): Boolean;
@@ -519,9 +521,10 @@ end;
 
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
-var House, FirstH: TKMHouse;
-    Found: Boolean;
-    I: Integer;
+var
+  House, FirstH: TKMHouse;
+  Found: Boolean;
+  I: Integer;
 begin
   Result := nil;
 
@@ -555,6 +558,89 @@ begin
 
   if (Result = nil) and Found then // Found should be always True here
     Result := FirstH;
+end;
+
+
+function TKMHand.GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
+var
+  U, FirstU: TKMUnit;
+  Found: Boolean;
+  I: Integer;
+begin
+  Result := nil;
+
+  Found := False;
+  FirstU := nil;
+
+  for I := 0 to fUnits.Count - 1 do
+  begin
+    U := fUnits[I];
+    if (U = nil)
+      or U.IsDeadOrDying
+      or (U.UnitType <> aUnitType)
+      or not U.Visible then
+      Continue;
+
+    //Just find any first house
+    if (aStartFromUID = 0) then
+    begin
+      Result := U;
+      Break;
+    end;
+
+    if U.UID = aStartFromUID then
+      Found := True                // Mark that we found our unit
+    else if Found then
+    begin
+      Result := U;                 // Save the next unit after Found to Result and Break
+      Break;
+    end else if FirstU = nil then
+      FirstU := U;                 // Save 1st unit in list in case our unit is the last one
+  end;
+
+  if (Result = nil) and Found then   // Found should be always True here
+    Result := FirstU;
+end;
+
+
+function TKMHand.GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
+var
+  Group, FirstG: TKMUnitGroup;
+  Found: Boolean;
+  I: Integer;
+begin
+  Result := nil;
+
+  Found := False;
+  FirstG := nil;
+
+  for I := 0 to UnitGroups.Count - 1 do
+  begin
+    Group := UnitGroups[I];
+
+    if (Group = nil)
+      or Group.IsDead //check if group is dead
+      or (Group.UnitType <> aUnitType) then // we are interested in groups with the same type only
+      Continue;
+
+    //Just find any first house
+    if (aStartFromUID = 0) then
+    begin
+      Result := Group;
+      Break;
+    end;
+
+    if Group.UID = aStartFromUID then
+      Found := True               // Mark that we found our group
+    else if Found then
+    begin
+      Result := Group;            // Save the next group after Found to Result and Break
+      Break;
+    end else if FirstG = nil then
+      FirstG := Group;            // Save 1st group in list in case our group is the last one
+  end;
+  if (Result = nil) and Found then // Found should be always True here
+    Result := FirstG;
 end;
 
 
