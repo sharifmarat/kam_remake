@@ -20,6 +20,7 @@ type
     procedure Attacks_Refresh;
     procedure AutoAttackClick(Sender: TObject);
     procedure SetAttackPopUp(aValue: TKMMapEdTownAttack);
+    procedure UpdateControls;
   protected
     Panel_Offence: TKMPanel;
       CheckBox_AutoAttack: TKMCheckBox;
@@ -192,6 +193,14 @@ begin
 
   ColumnBox_Attacks.JumpToSelected;
 
+  UpdateControls;
+end;
+
+
+procedure TKMMapEdTownOffence.UpdateControls;
+begin
+  ColumnBox_Attacks.Enabled := not CheckBox_AutoAttack.Checked;
+  Button_AttacksAdd.Enabled := not CheckBox_AutoAttack.Checked;
   Button_AttacksDel.Enabled := ColumnBox_Attacks.IsSelected;
 end;
 
@@ -199,6 +208,7 @@ end;
 procedure TKMMapEdTownOffence.AutoAttackClick(Sender: TObject);
 begin
   gMySpectator.Hand.AI.Setup.AutoAttack := CheckBox_AutoAttack.Checked;
+  UpdateControls;
 end;
 
 

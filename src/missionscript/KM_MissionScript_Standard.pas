@@ -44,7 +44,7 @@ uses
   KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_AI, KM_AIDefensePos,
   KM_Resource, KM_ResHouses, KM_ResUnits, KM_ResWares,
-  KM_CommonClasses, KM_Terrain;
+  KM_CommonClasses, KM_CommonTypes, KM_Terrain;
 
 
 type
@@ -223,27 +223,37 @@ begin
                           //We use this command in a sense "Default human player"
                           //MP and SP set human players themselves
                           //Remains usefull for map preview and MapEd
+                          //Also saved in Hand to check for advanced AI setup
                           fDefaultLocation := P[0];
-                          if (fParsingMode = mpm_Editor) and (gHands <> nil) then
+                          if gHands <> nil then
                           begin
-                            gGame.MapEditor.DefaultHuman := P[0];
-                            gGame.MapEditor.PlayerHuman[P[0]] := True;
+                            if fParsingMode = mpm_Editor then
+                            begin
+                              gGame.MapEditor.DefaultHuman := P[0];
+                              gGame.MapEditor.PlayerHuman[P[0]] := True;
+                            end else
+                              gHands[P[0]].CanBeHuman := True;
                           end;
                         end;
 
     ct_UserPlayer:      //New command added by KMR - mark player as allowed to be human
                         //MP and SP set human players themselves
                         //Remains usefull for map preview and MapEd
-                        if (fParsingMode = mpm_Editor) and (gHands <> nil) then
-                          if InRange(P[0], 0, gHands.Count - 1) then
-                            gGame.MapEditor.PlayerHuman[P[0]] := True
-                          else
-                            gGame.MapEditor.PlayerHuman[fLastHand] := True;
-
-    ct_AIPlayer:        //New command added by KMR - mark player as allowed to be human
-                        //MP and SP set human players themselves
-                        //Remains usefull for map preview and MapEd
+                        //Also saved in Hand to check for advanced AI setup
                         if (gHands <> nil) then
+                        begin
+                          HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
+
+                          if HandI <> -1 then
+                          begin
+                            if (fParsingMode = mpm_Editor) then
+                              gGame.MapEditor.PlayerHuman[HandI] := True
+                            else
+                              gHands[HandI].CanBeHuman := True;
+                          end;
+                        end;
+
+    ct_AIPlayer:        if (gHands <> nil) then
                         begin
                           HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);
 
@@ -256,9 +266,7 @@ begin
                           end;
                         end;
 
-    ct_AdvancedAIPlayer://New command added by KMR - mark player as allowed to be human
-                        //MP and SP set human players themselves
-                        //Remains usefull for map preview and MapEd
+    ct_AdvancedAIPlayer:
                         if (gHands <> nil) then
                         begin
                           HandI := IfThen(InRange(P[0], 0, gHands.Count - 1), P[0], fLastHand);

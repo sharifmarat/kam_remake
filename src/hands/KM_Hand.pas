@@ -7,7 +7,7 @@ uses
   KM_Houses, KM_HouseCollection, KM_HouseInn,
   KM_HandLogistics, KM_HandLocks, KM_HandStats,
   KM_FogOfWar, KM_BuildList, KM_MessageLog, KM_ResHouses,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
 type
@@ -55,6 +55,7 @@ type
 
     fOwnerNikname: AnsiString; //Multiplayer owner nikname
     fHandType: TKMHandType;
+    fCanBeHuman: Boolean;
     fHandAITypes: TKMAITypeSet;
     fFlagColor: Cardinal;
     fCenterScreen: TKMPoint;
@@ -108,6 +109,7 @@ type
     function GetOwnerNameColoredU: UnicodeString;
     function HasAssets: Boolean;
     property HandType: TKMHandType read fHandType write fHandType; //Is it Human or AI
+    property CanBeHuman: Boolean read fCanBeHuman write fCanBeHuman;
     property HandAITypes: TKMAITypeSet read fHandAITypes;
     property FlagColor: Cardinal read fFlagColor write fFlagColor;
     property GameFlagColor: Cardinal read GetGameFlagColor;
@@ -193,10 +195,6 @@ uses
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
   KM_GameTypes, KM_CommonUtils;
-
-
-const
-  HANDS_NAMES_OFFSET = 100;
 
 
 { TKMHandCommon }
@@ -299,8 +297,9 @@ begin
   fMessageLog   := TKMMessageLog.Create;
 
   fOwnerNikname := '';
-  fHandType   := hndComputer;
-  fHandAITypes := [];
+  fHandType     := hndComputer;
+  fCanBeHuman   := False;
+  fHandAITypes  := [];
   for I := 0 to MAX_HANDS - 1 do
   begin
     fShareFOW[I] := True; //Share FOW between allies by default (it only affects allied players)
@@ -1396,6 +1395,7 @@ begin
   SaveStream.Write(fHandIndex);
   SaveStream.WriteA(fOwnerNikname);
   SaveStream.Write(fHandType, SizeOf(fHandType));
+  SaveStream.Write(fCanBeHuman, SizeOf(fCanBeHuman));
   SaveStream.Write(fHandAITypes, SizeOf(fHandAITypes));
   SaveStream.Write(fAlliances, SizeOf(fAlliances));
   SaveStream.Write(fShareFOW, SizeOf(fShareFOW));
@@ -1426,6 +1426,7 @@ begin
   LoadStream.Read(fHandIndex);
   LoadStream.ReadA(fOwnerNikname);
   LoadStream.Read(fHandType, SizeOf(fHandType));
+  LoadStream.Read(fCanBeHuman, SizeOf(fCanBeHuman));
   LoadStream.Read(fHandAITypes, SizeOf(fHandAITypes));
   LoadStream.Read(fAlliances, SizeOf(fAlliances));
   LoadStream.Read(fShareFOW, SizeOf(fShareFOW));

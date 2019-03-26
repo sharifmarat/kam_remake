@@ -132,6 +132,7 @@ type
     procedure MPPlayMoreClick(Sender: TObject);
     procedure NetWaitClick(Sender: TObject);
     procedure ReplayClick(Sender: TObject);
+    procedure Replay_AllyEnemyModeClick(Sender: TObject);
     function Replay_ListKeyUp(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     procedure ReturnToLobbyClick(Sender: TObject);
     procedure Allies_Close(Sender: TObject);
@@ -206,6 +207,7 @@ type
       Button_ShowStatsSpec: TKMButton;
       Dropbox_ReplayFOW: TKMDropList;
       Checkbox_ReplayFOW: TKMCheckBox;
+      CheckBox_AllyEnemy_ColorMode: TKMCheckBox;
     Panel_Allies: TKMPanel;
       Label_PeacetimeRemaining: TKMLabel;
       Image_AlliesHostStar: TKMImage;
@@ -1027,14 +1029,17 @@ begin
     Button_ReplayResume.Disable; // Initial state
 
   Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
-    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 0, 22, 22, 669, rxGui, bsGame);
+    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 11, 22, 22, 669, rxGui, bsGame);
     Button_ShowStatsSpec.OnClick := ShowStats;
     Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
 
     Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 27, 5, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fnt_Metal);
     Checkbox_ReplayFOW.OnClick := ReplayClick;
+    CheckBox_AllyEnemy_ColorMode := TKMCheckBox.Create(Panel_ReplayFOW,27,25,220,20,gResTexts[TX_GAME_SETTINGS_COLOR_MODE_SHORT],fnt_Metal);
+    CheckBox_AllyEnemy_ColorMode.Hint := gResTexts[TX_GAME_SETTINGS_COLOR_MODE_HINT];
+    CheckBox_AllyEnemy_ColorMode.OnClick := Replay_AllyEnemyModeClick;
 
-    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 27, 180, 20, fnt_Metal, '', bsGame, False, 0.5);
+    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 47, 180, 20, fnt_Metal, '', bsGame, False, 0.5);
     Dropbox_ReplayFOW.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
     Dropbox_ReplayFOW.OnChange := ReplayClick;
     Dropbox_ReplayFOW.DropCount := MAX_LOBBY_PLAYERS;
@@ -1632,6 +1637,9 @@ begin
   if (Sender is TKMImage) then
   begin
     Image := TKMImage(Sender);
+    if gLog.IsDegubLogEnabled then
+      gLog.LogDebug(Format('TKMGamePlayInterface.Allies_mute: Image.tag = %d NetPlayerIndex = %d',
+                           [Image.Tag, fLineIdToNetPlayerId[Image.Tag]]));
     gGame.Networking.ToggleMuted(fLineIdToNetPlayerId[Image.Tag]);
     Update_Image_AlliesMute(Image);
   end;
@@ -1675,10 +1683,11 @@ begin
   K := 0;
   for J := Low(Teams) to High(Teams) do
     for I in Teams[J] do
-    begin
-      fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
-      Inc(K);
-    end;
+      if HandIdToNetPlayersId[I] <> -1 then //HandIdToNetPlayersId could -1, if we play in the save, where 1 player left
+      begin
+        fLineIdToNetPlayerId[K] := HandIdToNetPlayersId[I];
+        Inc(K);
+      end;
 
   // Spectators
   for I := 1 to gGame.Networking.NetPlayers.Count do
@@ -1795,6 +1804,12 @@ begin
                   Result := True;
                 end;
   end;
+end;
+
+
+procedure TKMGamePlayInterface.Replay_AllyEnemyModeClick(Sender: TObject);
+begin
+  gGameApp.GameSettings.ShowPlayersColors := not CheckBox_AllyEnemy_ColorMode.Checked;
 end;
 
 
@@ -2220,6 +2235,8 @@ begin
   Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
+  CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
+  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
 
   if fUIMode in [umSpectate, umReplay] then
   begin

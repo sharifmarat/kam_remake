@@ -4,7 +4,7 @@ interface
 uses
   Controls, Math, SysUtils,
   KM_Defaults,
-  KM_Controls, KM_Maps, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_CommonClasses;
+  KM_Controls, KM_Maps, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_CommonTypes;
 
 
 const
@@ -383,6 +383,8 @@ begin
 
       Label_AIPlayerType.Hide;
       DropBox_AIPlayerType.Hide;
+
+      Button_Start.Enabled := False;
     end
     else
     begin
@@ -468,6 +470,7 @@ begin
     DropBox_Loc.Enabled := DropBox_Loc.Count > 1;
     MinimapView.ShowLocs := DropBox_Loc.Count > 1;
     DropBox_Color.Enabled := DropBox_Color.Count > 1;
+    Button_Start.Enabled := fMaps[MapId].IsValid;
 
     DoOptionsChange;
   finally

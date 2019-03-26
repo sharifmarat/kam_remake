@@ -1,19 +1,6 @@
 unit KM_GUIGameSpectator;
 {$I KaM_Remake.inc}
 interface
-{
-Ничего
-Ресурсы
-Доходы
-Расходы
-Боевые единицы
-Строения
-Потери
-Производство
-Улучшения
-Армия
-Действ./мин.
-}
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
@@ -35,16 +22,6 @@ const
 
 
 type
-//  TKMGUIGameSpectatorPageTypes = (
-//    gsptNothing = 0,
-//    gsptResources = 1,
-//    gsptBuildings = 2,
-//    gsptProduction = 3,
-//    gsptArmy = 4,
-//    gsptPopulation = 5,
-//    gsptLosses = 6
-//  );
-
   TKMGUIGameSpectatorItem = class(TKMControl)
   private
     FHandIndex: Integer;
@@ -66,13 +43,14 @@ type
   TKMGUIGameSpectatorItemLineClass = class of TKMGUIGameSpectatorItemLine;
 
   TKMGUIGameSpectatorItemLine = class(TKMPanel)
-  protected
+  private
     FShowEmptyItems: Boolean;
     FOnJumpToPlayer: TIntegerEvent;
     FHandIndex: Integer;
     FAnimStep: Cardinal;
     FItems: array of TKMGUIGameSpectatorItem;
     procedure DoubleClicked(Sender: TObject);
+    procedure Update;
   protected
     function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; virtual; abstract;
     function GetTagCount: Integer; virtual; abstract;
@@ -243,6 +221,11 @@ procedure TKMGUIGameSpectatorItemLine.DoubleClicked(Sender: TObject);
 begin
   if Assigned(fOnJumpToPlayer) then
     fOnJumpToPlayer(FHandIndex);
+end;
+
+procedure TKMGUIGameSpectatorItemLine.Update;
+begin
+  UpdateState(0); //We do not use tick count actually here
 end;
 
 procedure TKMGUIGameSpectatorItemLine.UpdateState(aTickCount: Cardinal);
@@ -608,6 +591,7 @@ begin
       begin
         FLines[FLastIndex, J].Top := Position;
         FLines[FLastIndex, J].Visible := True;
+        FLines[FLastIndex, J].Update;
       end;
       Position := Position + GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V * 2 + GUI_SPECTATOR_HEADER_HEIGHT;
     end;

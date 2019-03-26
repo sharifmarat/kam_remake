@@ -96,9 +96,9 @@ begin
   for I := 0 to Camps.Count - 1 do
   begin
     ColumnBox_Camps.AddItem(MakeListRow(
-                        [Camps[I].CampaignTitle, IntToStr(Camps[I].MapCount), IntToStr(Camps[I].UnlockedMap + 1)],
+                        [Camps[I].GetCampaignTitle, IntToStr(Camps[I].MapCount), IntToStr(Camps[I].UnlockedMap + 1)],
                         [$FFFFFFFF, $FFFFFFFF, $FFFFFFFF], I));
-    if Camps[I].CampName = gGameApp.GameSettings.MenuCampaignName then
+    if Camps[I].ShortName = gGameApp.GameSettings.MenuCampaignName then
     begin
       ColumnBox_Camps.ItemIndex := I;
       ListChange(nil);
@@ -134,8 +134,8 @@ begin
     Image_CampsPreview.RX := Camp.BackGroundPic.RX;
     Image_CampsPreview.TexID := Camp.BackGroundPic.ID;
 
-    Memo_CampDesc.Text := Camp.CampaignDescription;
-    gGameApp.GameSettings.MenuCampaignName := Camp.CampName;
+    Memo_CampDesc.Text := Camp.GetCampaignDescription;
+    gGameApp.GameSettings.MenuCampaignName := Camp.ShortName;
   end;
 end;
 
@@ -146,7 +146,7 @@ var
 begin
   //Get the caption and pass it to Campaign selection menu (it will be casted to TKMCampaignName there)
   //so that we avoid cast/uncast/cast along the event chain
-  cmp := gGameApp.Campaigns[ColumnBox_Camps.Rows[ColumnBox_Camps.ItemIndex].Tag].CampName;
+  cmp := gGameApp.Campaigns[ColumnBox_Camps.Rows[ColumnBox_Camps.ItemIndex].Tag].ShortName;
   fOnPageChange(gpCampaign, cmp);
 end;
 

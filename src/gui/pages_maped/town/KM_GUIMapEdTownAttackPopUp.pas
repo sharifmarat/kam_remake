@@ -104,7 +104,8 @@ begin
       NumEdit_AttackAmount[GT].OnChange := Attack_Change;
     end;
 
-    CheckBox_AttackTakeAll := TKMCheckBox.Create(Panel_Attack, 340, 265, 210, 20, gResTexts[TX_MAPED_AI_ATTACK_TAKE_RANDOMLY], fnt_Metal);
+    CheckBox_AttackTakeAll := TKMCheckBox.Create(Panel_Attack, 340, 265, 210, 20, gResTexts[TX_MAPED_AI_ATTACK_TAKE_ALL], fnt_Metal);
+    CheckBox_AttackTakeAll.Hint := gResTexts[TX_MAPED_AI_ATTACK_TAKE_ALL_HINT];
     CheckBox_AttackTakeAll.OnClick := Attack_Change;
 
     //Second row

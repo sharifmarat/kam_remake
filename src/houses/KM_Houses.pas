@@ -99,6 +99,7 @@ type
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
     function GetResOrder(aId: Byte): Integer; virtual;
     function GetResIn(aI: Byte): Word; virtual;
+    function GetResInLocked(aI: Byte): Word; virtual;
     procedure SetResIn(aI: Byte; aValue: Word); virtual;
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
@@ -191,6 +192,7 @@ type
     function ResOutputAvailable(aWare: TKMWareType; const aCount: Word): Boolean; virtual;
     property ResOrder[aId: Byte]: Integer read GetResOrder write SetResOrder;
     property ResIn[aId: Byte]: Word read GetResIn write SetResIn;
+    property ResInLocked[aId: Byte]: Word read GetResInLocked;
 
     procedure PostLoadMission; virtual;
 
@@ -638,7 +640,7 @@ begin
     for I := 1 to 4 do
     begin
       Res := gRes.Houses[fHouseType].ResInput[I];
-      ResCnt := ResIn[I];
+      ResCnt := ResIn[I] - ResInLocked[I];
       if (Res <> wt_None) and (ResCnt > 0) then
         gHands[fOwner].Deliveries.Queue.RemOffer(Self, Res, ResCnt);
     end;
@@ -647,7 +649,8 @@ begin
     for I := 1 to 4 do
     begin
       Res := gRes.Houses[fHouseType].ResInput[I];
-      ResCnt := ResIn[I];
+      ResCnt := ResIn[I] - ResInLocked[I];
+
       if (Res <> wt_None) and (ResCnt > 0) then
         gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
     end;
@@ -1355,6 +1358,13 @@ begin
 end;
 
 
+function TKMHouse.GetResInLocked(aI: Byte): Word;
+begin
+  Result := 0; //By default e do not lock any In res
+end;
+
+
+
 procedure TKMHouse.SetResIn(aI: Byte; aValue: Word);
 begin
   fResourceIn[aI] := aValue;
@@ -1372,7 +1382,7 @@ begin
   if not Result and (fNewDeliveryMode = dm_TakeOut) then
     for I := 1 to 4 do
       if aWare = gRes.Houses[fHouseType].ResInput[I] then
-        Result := ResIn[I] >= aCount;
+        Result := ResIn[I] - ResInLocked[I] >= aCount;
 end;
 
 

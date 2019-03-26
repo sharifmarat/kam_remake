@@ -1477,7 +1477,8 @@ begin
     RemAllClosedPlayers; //Closed players are just a marker in the lobby, delete them when the game starts
 
     gLog.AddTime('Randomizing locs...');
-    gLog.AddTime(LocFiller.FillerToString);
+    if gLog.IsDegubLogEnabled then
+      gLog.LogDebug(LocFiller.FillerToString);
 
     //Randomize all available lists (don't use KaMRandom - we want varied results and PlayerList is synced to clients before start)
     for PT := Low(TPlayerType) to High(TPlayerType) do
@@ -1491,7 +1492,8 @@ begin
     for I := 0 to High(LocFiller.Players) do
       fNetPlayers[LocFiller.Players[I].ID].StartLocation := LocFiller.Players[I].LocID;
 
-    gLog.AddTime('Randomized locs: ' + LocFiller.FillerToString);
+    if gLog.IsDegubLogEnabled then
+      gLog.LogDebug('Randomized locs: ' + LocFiller.FillerToString);
   finally
     LocFiller.Free;
   end;

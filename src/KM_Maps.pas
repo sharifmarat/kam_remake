@@ -31,13 +31,11 @@ type
 
   TKMMapTxtInfo = class
   private
-    fBigDesc: UnicodeString;
     function IsEmpty: Boolean;
-    procedure ResetInfo;
     procedure Load(aStream: TKMemoryStream);
     procedure Save(aStream: TKMemoryStream);
   public
-    Author, SmallDesc: UnicodeString;
+    Author, BigDesc, SmallDesc: UnicodeString;
     SmallDescLibx, BigDescLibx: Integer;
     IsCoop: Boolean; //Some multiplayer missions are defined as coop
     IsSpecial: Boolean; //Some missions are defined as special (e.g. tower defence, quest, etc.)
@@ -56,10 +54,15 @@ type
     function IsSmallDescLibxSet: Boolean;
     function IsBigDescLibxSet: Boolean;
 
+    procedure ResetInfo;
+
     procedure SaveTXTInfo(aFilePath: UnicodeString);
     procedure LoadTXTInfo(aFilePath: UnicodeString);
     function HasDifficultyLevels: Boolean;
   end;
+
+
+  TKMMapTxtInfoArray = array of TKMMapTxtInfo;
 
 
   TKMapInfo = class
@@ -825,13 +828,13 @@ begin
       Result := Result + WrapColor(gResTexts[CUSTOM_MAP_PARAM_DESCR_TX[CSP]] + ':', icRed) + '|'
                        + WrapColor('[' + fCustomScriptParams[CSP].Data + ']', icOrange) + '||';
 
-  Result := Result + TxtInfo.fBigDesc;
+  Result := Result + TxtInfo.BigDesc;
 end;
 
 
 procedure TKMapInfo.SetBigDesc(aBigDesc: UnicodeString);
 begin
-  TxtInfo.fBigDesc := aBigDesc;
+  TxtInfo.BigDesc := aBigDesc;
 end;
 
 
@@ -899,8 +902,8 @@ begin
 
   if BigDescLibx <> -1 then
     WriteLine('BigDescLIBX', IntToStr(BigDescLibx))
-  else if fBigDesc <> '' then
-    WriteLine('BigDesc', fBigDesc);
+  else if BigDesc <> '' then
+    WriteLine('BigDesc', BigDesc);
 
   if IsCoop then
     WriteLine('SetCoop');
@@ -974,13 +977,13 @@ begin
       if SameText(St, 'Author') then
         Readln(ft, Author);
       if SameText(St, 'BigDesc') then
-        Readln(ft, fBigDesc);
+        Readln(ft, BigDesc);
 
       if SameText(St, 'BigDescLIBX') then
       begin
         Readln(ft, S);
         BigDescLibx := StrToIntDef(S, -1);
-        fBigDesc := LoadDescriptionFromLIBX(BigDescLibx);
+        BigDesc := LoadDescriptionFromLIBX(BigDescLibx);
       end;
 
       if SameText(St, 'SmallDesc') then
@@ -1036,13 +1039,13 @@ end;
 
 procedure TKMMapTxtInfo.SetBigDesc(aBigDesc: UnicodeString);
 begin
-  fBigDesc := aBigDesc;
+  BigDesc := aBigDesc;
 end;
 
 
 function TKMMapTxtInfo.GetBigDesc: UnicodeString;
 begin
-  Result := fBigDesc;
+  Result := BigDesc;
 end;
 
 
@@ -1065,7 +1068,7 @@ begin
             or BlockTeamSelection or BlockPeacetime or BlockFullMapPreview
             or (Author <> '')
             or (SmallDesc <> '') or IsSmallDescLibxSet
-            or (fBigDesc <> '') or IsBigDescLibxSet
+            or (BigDesc <> '') or IsBigDescLibxSet
             or HasDifficultyLevels);
 end;
 
@@ -1092,7 +1095,7 @@ begin
   Author := '';
   SmallDesc := '';
   SmallDescLibx := -1;
-  fBigDesc := '';
+  BigDesc := '';
   BigDescLibx := -1;
 end;
 

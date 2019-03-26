@@ -234,7 +234,8 @@ begin
       gGame.MapEditor.PlayerAdvancedAI[I] := True;
       gHands[I].AI.General.DefencePositions.Clear;
       gHands[I].AI.General.Attacks.Clear;
-      gHands[I].AI.Setup.ApplyAgressiveBuilderSetup;
+      //Setup Multiplayer setup, for ClassicAI. Anyway we will consider Old/New AI on the game start
+      gHands[I].AI.Setup.ApplyMultiplayerSetup(False);
     end;
 
   if (Sender = Button_AIBuilderOK) or (Sender = Button_AIBuilderCancel) then
@@ -291,7 +292,7 @@ end;
 
 procedure TKMMapEdMissionMode.UpdateMapTxtInfo(Sender: TObject);
 begin
-  if (Sender = CheckBox_Coop) and CheckBox_Coop.Checked then
+  if CheckBox_Coop.Checked then
   begin
     CheckBox_BlockTeamSelection.Check;
     CheckBox_BlockPeacetime.Check;
@@ -306,79 +307,79 @@ begin
   end;
 
   Memo_BigDesc.Text := Edit_BigDesc.Text;
-  gGame.MapEditor.MapTxtInfo.Author        := Edit_Author.Text;
+  gGame.MapTxtInfo.Author        := Edit_Author.Text;
 
   case Radio_SmallDescType.ItemIndex of
     0:  begin
-          gGame.MapEditor.MapTxtInfo.SmallDesc     := Edit_SmallDesc.Text;
-          gGame.MapEditor.MapTxtInfo.SmallDescLIBX := -1;
+          gGame.MapTxtInfo.SmallDesc     := Edit_SmallDesc.Text;
+          gGame.MapTxtInfo.SmallDescLIBX := -1;
         end;
     1:  begin
-          gGame.MapEditor.MapTxtInfo.SmallDesc     := '';
-          gGame.MapEditor.MapTxtInfo.SmallDescLIBX := NumEdit_SmallDesc.Value;
+          gGame.MapTxtInfo.SmallDesc     := '';
+          gGame.MapTxtInfo.SmallDescLIBX := NumEdit_SmallDesc.Value;
         end;
   end;
 
   case Radio_BigDescType.ItemIndex of
     0:  begin
-          gGame.MapEditor.MapTxtInfo.SetBigDesc(Edit_BigDesc.Text);
-          gGame.MapEditor.MapTxtInfo.BigDescLIBX := -1
+          gGame.MapTxtInfo.SetBigDesc(Edit_BigDesc.Text);
+          gGame.MapTxtInfo.BigDescLIBX := -1
         end;
     1:  begin
-          gGame.MapEditor.MapTxtInfo.SetBigDesc('');
-          gGame.MapEditor.MapTxtInfo.BigDescLIBX := NumEdit_BigDesc.Value;
+          gGame.MapTxtInfo.SetBigDesc('');
+          gGame.MapTxtInfo.BigDescLIBX := NumEdit_BigDesc.Value;
         end;
   end;
 
-  gGame.MapEditor.MapTxtInfo.IsCoop         := CheckBox_Coop.Checked;
-  gGame.MapEditor.MapTxtInfo.IsSpecial      := CheckBox_Special.Checked;
-  gGame.MapEditor.MapTxtInfo.IsPlayableAsSP := CheckBox_PlayableAsSP.Checked;
+  gGame.MapTxtInfo.IsCoop         := CheckBox_Coop.Checked;
+  gGame.MapTxtInfo.IsSpecial      := CheckBox_Special.Checked;
+  gGame.MapTxtInfo.IsPlayableAsSP := CheckBox_PlayableAsSP.Checked;
 
-  gGame.MapEditor.MapTxtInfo.BlockTeamSelection  := CheckBox_BlockTeamSelection.Checked;
-  gGame.MapEditor.MapTxtInfo.BlockPeacetime      := CheckBox_BlockPeacetime.Checked;
-  gGame.MapEditor.MapTxtInfo.BlockFullMapPreview := CheckBox_BlockFullMapPreview.Checked;
+  gGame.MapTxtInfo.BlockTeamSelection  := CheckBox_BlockTeamSelection.Checked;
+  gGame.MapTxtInfo.BlockPeacetime      := CheckBox_BlockPeacetime.Checked;
+  gGame.MapTxtInfo.BlockFullMapPreview := CheckBox_BlockFullMapPreview.Checked;
 
-  gGame.MapEditor.MapTxtInfo.DifficultyLevels := [];
+  gGame.MapTxtInfo.DifficultyLevels := [];
   if CheckBox_DifficultyEasy.Checked then
-    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdEasy);
+    Include(gGame.MapTxtInfo.DifficultyLevels, mdEasy);
   if CheckBox_DifficultyNormal.Checked then
-    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdNormal);
+    Include(gGame.MapTxtInfo.DifficultyLevels, mdNormal);
   if CheckBox_DifficultyHard.Checked then
-    Include(gGame.MapEditor.MapTxtInfo.DifficultyLevels, mdHard);
+    Include(gGame.MapTxtInfo.DifficultyLevels, mdHard);
 end;
 
 
 procedure TKMMapEdMissionMode.UpdateMapParams;
 begin
-  Edit_Author.Text := gGame.MapEditor.MapTxtInfo.Author;
+  Edit_Author.Text := gGame.MapTxtInfo.Author;
 
-  if gGame.MapEditor.MapTxtInfo.IsSmallDescLibxSet then
+  if gGame.MapTxtInfo.IsSmallDescLibxSet then
     Radio_SmallDescType.ItemIndex := 1
   else
     Radio_SmallDescType.ItemIndex := 0;
 
-  if gGame.MapEditor.MapTxtInfo.IsBigDescLibxSet then
+  if gGame.MapTxtInfo.IsBigDescLibxSet then
     Radio_BigDescType.ItemIndex := 1
   else
     Radio_BigDescType.ItemIndex := 0;
 
-  Edit_SmallDesc.Text     := gGame.MapEditor.MapTxtInfo.SmallDesc;
-  NumEdit_SmallDesc.Value := gGame.MapEditor.MapTxtInfo.SmallDescLibx;
-  Edit_BigDesc.Text       := gGame.MapEditor.MapTxtInfo.GetBigDesc;
-  NumEdit_BigDesc.Value   := gGame.MapEditor.MapTxtInfo.BigDescLibx;
+  Edit_SmallDesc.Text     := gGame.MapTxtInfo.SmallDesc;
+  NumEdit_SmallDesc.Value := gGame.MapTxtInfo.SmallDescLibx;
+  Edit_BigDesc.Text       := gGame.MapTxtInfo.GetBigDesc;
+  NumEdit_BigDesc.Value   := gGame.MapTxtInfo.BigDescLibx;
   Memo_BigDesc.Text       := Edit_BigDesc.Text;
 
-  CheckBox_Coop.Checked         := gGame.MapEditor.MapTxtInfo.IsCoop;
-  CheckBox_Special.Checked      := gGame.MapEditor.MapTxtInfo.IsSpecial;
-  CheckBox_PlayableAsSP.Checked := gGame.MapEditor.MapTxtInfo.IsPlayableAsSP;
+  CheckBox_Coop.Checked         := gGame.MapTxtInfo.IsCoop;
+  CheckBox_Special.Checked      := gGame.MapTxtInfo.IsSpecial;
+  CheckBox_PlayableAsSP.Checked := gGame.MapTxtInfo.IsPlayableAsSP;
 
-  CheckBox_BlockTeamSelection.Checked   := gGame.MapEditor.MapTxtInfo.BlockTeamSelection;
-  CheckBox_BlockPeacetime.Checked       := gGame.MapEditor.MapTxtInfo.BlockPeacetime;
-  CheckBox_BlockFullMapPreview.Checked  := gGame.MapEditor.MapTxtInfo.BlockFullMapPreview;
+  CheckBox_BlockTeamSelection.Checked   := gGame.MapTxtInfo.BlockTeamSelection;
+  CheckBox_BlockPeacetime.Checked       := gGame.MapTxtInfo.BlockPeacetime;
+  CheckBox_BlockFullMapPreview.Checked  := gGame.MapTxtInfo.BlockFullMapPreview;
 
-  CheckBox_DifficultyEasy.Checked    := mdEasy   in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
-  CheckBox_DifficultyNormal.Checked  := mdNormal in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
-  CheckBox_DifficultyHard.Checked    := mdHard   in gGame.MapEditor.MapTxtInfo.DifficultyLevels;
+  CheckBox_DifficultyEasy.Checked    := mdEasy   in gGame.MapTxtInfo.DifficultyLevels;
+  CheckBox_DifficultyNormal.Checked  := mdNormal in gGame.MapTxtInfo.DifficultyLevels;
+  CheckBox_DifficultyHard.Checked    := mdHard   in gGame.MapTxtInfo.DifficultyLevels;
 
   RadioMissionDesc_Changed(nil);
 end;

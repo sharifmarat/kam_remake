@@ -2432,6 +2432,9 @@ end;
 procedure TKMNetworking.ToggleMuted(aNetPlayerIndex: Integer);
 var ListIndex: Integer;
 begin
+  if gLog.IsDegubLogEnabled then
+    gLog.LogDebug(Format('TKMNetworking.ToggleMuted: IndexOnServer for NetPlayer %d [%s] = %d',
+                         [aNetPlayerIndex, fNetPlayers[aNetPlayerIndex].Nikname, fNetPlayers[aNetPlayerIndex].IndexOnServer]));
   //Use cast to Pointer to be able to store Integer value in TList
   ListIndex := fMutedPlayersList.IndexOf(Pointer(fNetPlayers[aNetPlayerIndex].IndexOnServer));
   if ListIndex <> -1 then

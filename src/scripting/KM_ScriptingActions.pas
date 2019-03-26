@@ -119,6 +119,7 @@ type
     function PlanRemove(aPlayer, X, Y: Word): Boolean;
 
     procedure PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean);
+    procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean);
     procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean);
     procedure PlayerDefeat(aPlayer: Word);
     procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aBothWays, aShare: Boolean);
@@ -413,10 +414,10 @@ begin
   try
     //Verify all input parameters
     if InRange(aPlayer1, 0, gHands.Count - 1)
-    and InRange(aPlayer2, 0, gHands.Count - 1)
-    and (aPlayer1 <> aPlayer2)
-    and (gHands[aPlayer1].Enabled)
-    and (gHands[aPlayer2].Enabled) then
+      and InRange(aPlayer2, 0, gHands.Count - 1)
+      and (aPlayer1 <> aPlayer2)
+      and (gHands[aPlayer1].Enabled)
+      and (gHands[aPlayer2].Enabled) then
     begin
       gHands[aPlayer1].Alliances[aPlayer2] := ALLIED[aAllied];
       if aAllied then
@@ -430,6 +431,42 @@ begin
     end
     else
       LogParamWarning('Actions.PlayerAllianceChange', [aPlayer1, aPlayer2, Byte(aCompliment), Byte(aAllied)]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Change whether player1 is allied to player2.
+//* If Compliment is true, then it is set both ways (so also whether player2 is allied to player1)
+//* aCompliment: Both ways
+//* aSyncAllyFog: Synchronize allies fogs of war
+procedure TKMScriptActions.PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean);
+const
+  ALLIED: array [Boolean] of TKMAllianceType = (at_Enemy, at_Ally);
+begin
+  try
+    //Verify all input parameters
+    if InRange(aPlayer1, 0, gHands.Count - 1)
+      and InRange(aPlayer2, 0, gHands.Count - 1)
+      and (aPlayer1 <> aPlayer2)
+      and (gHands[aPlayer1].Enabled)
+      and (gHands[aPlayer2].Enabled) then
+    begin
+      gHands[aPlayer1].Alliances[aPlayer2] := ALLIED[aAllied];
+      if aAllied and aSyncAllyFog then
+        gHands[aPlayer2].FogOfWar.SyncFOW(gHands[aPlayer1].FogOfWar);
+      if aCompliment then
+      begin
+        gHands[aPlayer2].Alliances[aPlayer1] := ALLIED[aAllied];
+        if aAllied and aSyncAllyFog then
+          gHands[aPlayer1].FogOfWar.SyncFOW(gHands[aPlayer2].FogOfWar);
+      end;
+    end
+    else
+      LogParamWarning('Actions.PlayerAllianceNFogChange', [aPlayer1, aPlayer2, Byte(aCompliment), Byte(aAllied), Byte(aSyncAllyFog)]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2554,7 +2591,7 @@ begin
             begin
               //if value is not skipped we proceed with terrain
               aTiles[I].Terrain := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctTerrain);
+              aTiles[I].UpdateTerrain := True;
             end;
           end
           else
@@ -2566,7 +2603,7 @@ begin
             begin
               //if value is not skipped we proceed with rotation
               aTiles[I].Rotation := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctRotation);
+              aTiles[I].UpdateRotation := True;
             end;
           end
           else
@@ -2578,7 +2615,7 @@ begin
             begin
               //if value is not skipped we proceed with height
               aTiles[I].Height := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctHeight);
+              aTiles[I].UpdateHeight := True;
             end;
           end
           else
@@ -2590,7 +2627,7 @@ begin
             begin
               //if value is not skipped we proceed with obj
               aTiles[I].Obj := aParsedValue;
-              Include(aTiles[I].ChangeSet, tctObject);
+              aTiles[I].UpdateObject := True;
             end;
           end
           else

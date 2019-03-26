@@ -344,7 +344,7 @@ begin
   if gGameApp <> nil then
   begin
     gGameApp.UpdateStateIdle(FrameTime);
-    gGameApp.Render(False);
+    gGameApp.Render;
   end;
 
   Done := False; //Repeats OnIdle asap without performing Form-specific idle code
@@ -561,7 +561,7 @@ end;
 procedure TKMMain.Render;
 begin
   if gGameApp <> nil then
-    gGameApp.Render(False);
+    gGameApp.Render;
 end;
 
 
@@ -591,7 +591,8 @@ end;
 
 procedure TKMMain.UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
 begin
-  if gGameApp <> nil then
+  if (gGameApp <> nil)
+    and (fMainSettings <> nil) and (fMainSettings.WindowParams <> nil) then //just in case...
     fMainSettings.WindowParams.ApplyWindowParams(aWindowParams);
 end;
 

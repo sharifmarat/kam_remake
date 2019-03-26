@@ -50,6 +50,7 @@ type
     fResolution: TKMScreenRes;
     fWindowParams: TKMWindowParams;
     fVSync: Boolean;
+    fNoRenderMaxTime: Integer;     //Longest period of time, when there was no Render (usually on hiiiigh game speed like x300)
     procedure SetFullScreen(aValue: Boolean);
     procedure SetResolution(const Value: TKMScreenRes);
     procedure SetVSync(aValue: Boolean);
@@ -69,6 +70,9 @@ type
     property Resolution: TKMScreenRes read fResolution write SetResolution;
     property WindowParams: TKMWindowParams read fWindowParams;
     property VSync: Boolean read fVSync write SetVSync;
+    property NoRenderMaxTime: Integer read fNoRenderMaxTime;
+
+    function IsNoRenerMaxTimeSet: Boolean;
   end;
 
   //Gameplay settings, those that affect the game
@@ -105,8 +109,8 @@ type
     fSpeedVeryFast: Single;
     fWareDistribution: TKMWareDistribution;
 
-    fDayGamesCount: Integer;
-    fLastDayGamePlayed: TDateTime;
+    fDayGamesCount: Integer;       //Number of games played today (used for saves namings)
+    fLastDayGamePlayed: TDateTime; //Last day game played
 
     //SFX
     fMusicOff: Boolean;
@@ -344,6 +348,11 @@ uses
   SysUtils, INIfiles, Math,
   KM_Log, KM_CommonUtils;
 
+const
+  NO_RENDER_MAX_TIME_MIN = 10; //in ms
+  NO_RENDER_MAX_TIME_DEFAULT = 1000; //in ms
+  NO_RENDER_MAX_TIME_UNDEF = -1; //undefined
+
 
 { TMainSettings }
 constructor TKMainSettings.Create;
@@ -397,6 +406,10 @@ begin
   end else
     fWindowParams.fNeedResetToDefaults := True;
 
+  fNoRenderMaxTime        := F.ReadInteger('Misc', 'NoRenderMaxTime', NO_RENDER_MAX_TIME_DEFAULT);
+  if fNoRenderMaxTime < NO_RENDER_MAX_TIME_MIN then
+    fNoRenderMaxTime := NO_RENDER_MAX_TIME_UNDEF;
+
   // Reset wsMinimized state to wsNormal
   if (fWindowParams.fState = TWindowState.wsMinimized) then
     fWindowParams.fState := TWindowState.wsNormal;
@@ -428,10 +441,19 @@ begin
   F.WriteInteger('Window','WindowTop',      fWindowParams.Top);
   F.WriteInteger('Window','WindowState',    Ord(fWindowParams.State));
 
+  F.WriteInteger('Misc', 'NoRenderMaxTime', fNoRenderMaxTime);
+
   F.UpdateFile; //Write changes to file
   FreeAndNil(F);
   fNeedsSave := False;
 end;
+
+
+function TKMainSettings.IsNoRenerMaxTimeSet: Boolean;
+begin
+  Result := fNoRenderMaxTime <> NO_RENDER_MAX_TIME_UNDEF;
+end;
+
 
 procedure TKMainSettings.SetFullScreen(aValue: boolean);
 begin

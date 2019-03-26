@@ -437,16 +437,12 @@ end;
 
 
 procedure TKMHandAI.AfterMissionInit();
-var
-  Time: Cardinal;
 begin
   fMayor.AfterMissionInit();
 
-  Time := TimeGet();
   gAIFields.Eye.OwnerUpdate(fOwner);
   fCityManagement.AfterMissionInit();
   fArmyManagement.AfterMissionInit();
-  Time := TimeGet() - Time;
 end;
 
 

@@ -538,12 +538,12 @@ TX_MAPED_AI_FORMATIONS = 453; //Edit formations
 TX_MAPED_AI_MAX_SOLDIERS_ENABLE_HINT = 454; //Set a limit on how many soldiers the AI can have
 TX_MAPED_AI_MAX_SOLDIERS_HINT = 455; //How many soldiers AI can have at once
 TX_MAPED_AI_MAX_SOLDIERS = 456; //Set max. soldiers
-TX_MAPED_AI_RECRUITS_HINT = 457; //How many recruits AI should have in barracks
+TX_MAPED_AI_RECRUITS_HINT = 457; //Classic AI: How many recruits AI should have in barracks|Advanced AI: Parameter not used
 TX_MAPED_AI_RECRUITS = 458; //Recruits per Barracks
 TX_MAPED_AI_RECRUIT_DELAY = 670; //Recruit delay (mins)
 TX_MAPED_AI_RECRUIT_DELAY_HINT = 669; //Delay in minutes before the AI starts training recruits
 TX_MAPED_AI_AUTO_ATTACK = 774; //Auto attack range
-TX_MAPED_AI_AUTO_ATTACK_HINT = 775; //AI groups will automatically attack if you are closer than this many tiles
+TX_MAPED_AI_AUTO_ATTACK_HINT = 775; //Classic AI: AI groups will automatically attack if you are closer than this many tiles|Advanced AI: Parameter not used
 TX_MAPED_AI_DEFEND_ALLIES = 776; //Defend allies
 TX_MAPED_AI_DEFEND_ALLIES_HINT = 777; //If enabled the AI will defend units and houses of allies as if they were its own
 TX_MAPED_AI_ARMY_TYPE = 817; //Army type
@@ -555,7 +555,8 @@ TX_MAPED_AI_TARGET_CUSTOM = 460; //Custom position
 TX_MAPED_AI_TARGET_HOUSE_START = 791; //Closest house from start position
 TX_MAPED_AI_TARGET_HOUSE_ARMY = 790; //Closest house from army
 TX_MAPED_AI_TARGET_CLOSEST = 463; //Closest unit
-TX_MAPED_AI_ATTACK_TAKE_RANDOMLY = 802; //Take randomly
+TX_MAPED_AI_ATTACK_TAKE_ALL = 802; //Take all
+TX_MAPED_AI_ATTACK_TAKE_ALL_HINT = 1232; //Take every group type
 TX_MAPED_AI_ATTACK_COUNT = 465; //Group count
 TX_MAPED_AI_ATTACK_INFO = 466; //Attack info
 TX_MAPED_AI_ATTACK_DELAY = 788; //Initial delay (seconds)
@@ -600,6 +601,9 @@ TX_MAPED_AI_FASTEQUIP_HINT = 812; //Soldiers are equipped as fast as possible. E
 TX_MAPED_AI_START = 785; //AI start position
 TX_MAPED_AI_START_HINT = 784; //Sets the AI start position which is used for targeting AI attacks
 TX_MAPED_AI_TITLE = 491; //AI settings
+TX_MAPED_AI_CLASSIC_AI_PARAMS = 1229; //Classic AI Params
+TX_MAPED_AI_CLASSIC_AI_PARAMS_HINT = 1230; //Setup AI Parameters used only by Classic AI
+TX_MAPED_AI_CLASSIC_AI_PARAMS_TITLE = 1231; //Classic AI Parameters
 TX_MAPED_HOUSES_TITLE = 492; //Houses
 TX_MAPED_ROAD_TITLE = 493; //Roadworks
 TX_MAPED_COPY_SELECT_HINT = 679; //Drag to select an area on the map
@@ -1185,6 +1189,7 @@ TX_RESULTS_BACK_TO_GAME = 1171; //Back to game
 TX_GAME_MENU_SHOW_STATS_HINT = 1172; //Show detailed game statistics
 
 TX_MISSION_DIFFICULTY = 1173; //Difficulty
+TX_MISSION_DIFFICULTY_CAMPAIGN = 1233; //Difficulty|level
 TX_MISSION_DIFFICULTY_EASY = 1174; //Easy
 TX_MISSION_DIFFICULTY_NORMAL = 1175; //Normal
 TX_MISSION_DIFFICULTY_HARD = 1176; //Hard
@@ -1202,6 +1207,7 @@ TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
 TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit
 
 TX_GAME_SETTINGS_COLOR_MODE = 1187; //Ally / enemy color mode
+TX_GAME_SETTINGS_COLOR_MODE_SHORT = 1235; //Ally / enemy
 TX_GAME_SETTINGS_COLOR_MODE_HINT = 1188; //Use self/ally/enemy colors for players instead of initial player colors
 
 TX_LOBBY_ALERT_NOT_READY = 1189; //Host is ready to start. Please press '%s'
@@ -1250,3 +1256,5 @@ TX_WORD_CITIZENS = 1226; //Citizens
 TX_WORD_ARMY = 1227; //Army
 
 TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry units
+
+TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s minutes

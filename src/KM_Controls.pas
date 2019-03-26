@@ -1266,7 +1266,8 @@ type
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
   public
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aDefaultCaption: UnicodeString; aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aDefaultCaption: UnicodeString;
+                       aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
     procedure Clear; override;
     function Count: Integer; override;
     procedure Add(const aItem: UnicodeString; aTag: Integer = 0);
@@ -1862,7 +1863,8 @@ end;
 
 procedure TKMControl.SetHint(aHint: UnicodeString);
 begin
-  fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]);
+  //fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]); //Not sure why we were need to replace | here...
+  fHint := aHint;
 end;
 
 
@@ -7084,7 +7086,10 @@ begin
   Result := inherited GetHint;
   if Result = '' then
   begin
-    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE) then
+    if not KMSamePoint(fMouseOverCell, KMPOINT_INVALID_TILE)
+      //Got crashed sometimes when mouse over empty disabled ComboBox with Header (fMouseOverCell = [0;0])
+      and (Length(Rows) > fMouseOverCell.Y)
+      and (Length(Rows[fMouseOverCell.Y].Cells) > fMouseOverCell.X) then
       Result := Rows[fMouseOverCell.Y].Cells[fMouseOverCell.X].CellHint;
   end;
 end;

@@ -935,10 +935,22 @@ begin
 
   case Radio_ChartWareType.ItemIndex of
     0:  begin // Quantity chart
-          if (Sender = Radio_ChartWareType)
-            and not Columnbox_Wares.IsSelected
-            and Columnbox_WaresGDP.IsSelected then
-            Columnbox_Wares.ItemIndex := Columnbox_WaresGDP.ItemIndex;
+          if (Sender = Radio_ChartWareType) then
+          begin
+            if Columnbox_WaresGDP.IsSelected then
+            begin
+              if Columnbox_Wares.IsSelected then
+              begin
+                W := TKMWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
+                WareInGdpI := GetWareIdInGDPArr(W);
+                //Update to AllWares/Food/Warfare only if we didn't choose some special ware
+                if InRange(WareInGdpI, 0, 2) then
+                  Columnbox_Wares.ItemIndex := Columnbox_WaresGDP.ItemIndex;
+              end
+              else
+                Columnbox_Wares.ItemIndex := Columnbox_WaresGDP.ItemIndex
+            end;
+          end;
 
           W := TKMWareType(Columnbox_Wares.Rows[Columnbox_Wares.ItemIndex].Tag);
           ChangeWareChart(Charts_Wares[fStatType, W], False);

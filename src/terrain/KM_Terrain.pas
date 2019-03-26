@@ -27,7 +27,7 @@ type
     Rotation: Byte;
     Height: Byte;
     Obj: Word;
-    ChangeSet: TKMTileChangeTypeSet;
+    UpdateTerrain, UpdateRotation, UpdateHeight, UpdateObject: Boolean;
   end;
 
   TKMTerrainTileBriefArray = array of TKMTerrainTileBrief;
@@ -850,14 +850,14 @@ begin
     if TileInMapCoords(T.X, T.Y) then
     begin
       Terr := -1;
-      if tctTerrain in T.ChangeSet then
+      if T.UpdateTerrain then
         Terr := T.Terrain;
         
       Rot := -1;
-      if (tctRotation in T.ChangeSet) and InRange(T.Rotation, 0, 3) then
+      if T.UpdateRotation and InRange(T.Rotation, 0, 3) then
         Rot := T.Rotation;
 
-      if (tctTerrain in T.ChangeSet) or (tctRotation in T.ChangeSet) then
+      if T.UpdateTerrain or T.UpdateRotation then
       begin
         if (Terr <> -1) or (Rot <> -1) then
         begin
@@ -877,7 +877,7 @@ begin
       end;
 
       // Update height if needed
-      if tctHeight in T.ChangeSet then
+      if T.UpdateHeight then
       begin
         if InRange(T.Height, 0, 100) then
         begin
@@ -890,7 +890,7 @@ begin
       end;
 
       //Update object if needed
-      if tctObject in T.ChangeSet then
+      if T.UpdateObject then
       begin
         if TrySetTileObject(T.X, T.Y, T.Obj, DiagChanged, False) then
         begin
@@ -903,11 +903,11 @@ begin
     begin
       HasErrorOnTile := True;
       //When tile is out of map coordinates we treat it as all operations failure
-      if tctTerrain in T.ChangeSet then
+      if T.UpdateTerrain then
         Include(ErrorTypesOnTile, tctTerrain);
-      if tctHeight in T.ChangeSet then
+      if T.UpdateHeight then
         Include(ErrorTypesOnTile, tctHeight);
-      if tctObject in T.ChangeSet then
+      if T.UpdateObject then
         Include(ErrorTypesOnTile, tctObject);
     end;
 

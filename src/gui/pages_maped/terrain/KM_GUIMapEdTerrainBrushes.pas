@@ -256,6 +256,7 @@ end;
 procedure TKMMapEdTerrainBrushes.BrushFixTerrain_Click(Sender: TObject);
 begin
   PopUp_FixTerrainConfirm.Visible := not PopUp_FixTerrainConfirm.Visible;
+  PopUp_BrushOptions.Visible := not PopUp_BrushOptions.Visible;
 end;
 
 
@@ -307,10 +308,19 @@ end;
 
 procedure TKMMapEdTerrainBrushes.KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean);
 begin
-  if (Key = VK_ESCAPE) and PopUp_BrushOptions.Visible then
+  if (Key = VK_ESCAPE) then
   begin
-    PopUp_BrushOptions.Hide;
-    aHandled := True;
+    if PopUp_BrushOptions.Visible then
+    begin
+      PopUp_BrushOptions.Hide;
+      aHandled := True;
+    end
+    else
+    if PopUp_FixTerrainConfirm.Visible then
+    begin
+      PopUp_FixTerrainConfirm.Hide;
+      aHandled := True;
+    end
   end;
 end;
 

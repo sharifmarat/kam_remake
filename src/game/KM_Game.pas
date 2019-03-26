@@ -45,6 +45,7 @@ type
 
     fMissionDifficulty: TKMMissionDifficulty;
     fAIType: TKMAIType;
+    fMapTxtInfo: TKMMapTxtInfo;
 
     //Should be saved
     fCampaignMap: Byte;         //Which campaign map it is, so we can unlock next one on victory
@@ -68,6 +69,9 @@ type
 
     fLastAutosaveTime: Cardinal;
 
+    fLastTimeUserAction: Cardinal;
+    fLastAfkMessageSent: Cardinal;
+
     fReadyToStop: Boolean;
 
     procedure GameMPDisconnect(const aData: UnicodeString);
@@ -89,6 +93,7 @@ type
     procedure CheckPauseGameAtTick;
 
     function PlayNextTick: Boolean;
+    procedure UserAction(aActionType: TKMUserActionType);
   public
     GameResult: TKMGameResultMsg;
     DoGameHold: Boolean; //Request to run GameHold after UpdateState has finished
@@ -156,6 +161,7 @@ type
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
+    property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
     procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
     procedure OverlayUpdate;
@@ -262,6 +268,10 @@ begin
   fGameSpeedChangeTime := 0;
   fPausedTicksCnt := 0;
   fBlockGetPointer := False;
+  fLastTimeUserAction := TimeGet;
+  fLastAfkMessageSent := 0;
+
+  fMapTxtInfo := TKMMapTxtInfo.Create;
 
   //UserInterface is different between Gameplay and MapEd
   if fGameMode = gmMapEd then
@@ -272,6 +282,7 @@ begin
   else
   begin
     fGamePlayInterface := TKMGamePlayInterface.Create(aRender, UIMode[fGameMode]);
+    fGamePlayInterface.OnUserAction := UserAction;
     fActiveInterface := fGamePlayInterface;
   end;
 
@@ -334,6 +345,7 @@ begin
   FreeAndNil(fPathfinding);
   FreeAndNil(fScripting);
   FreeAndNil(gScriptSounds);
+  FreeAndNil(fMapTxtInfo);
 
   FreeThenNil(fGamePlayInterface);
   FreeThenNil(fMapEditorInterface);
@@ -435,7 +447,6 @@ begin
     //Mission loader needs to read the data into MapEd (e.g. FOW revealers)
     fMapEditor := TKMMapEditor.Create;
     fMapEditor.DetectAttachedFiles(aMissionFile);
-    fMapEditor.MapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
   end;
 
   Parser := TKMMissionParserStandard.Create(ParseMode, PlayerEnabled);
@@ -476,9 +487,9 @@ begin
       for I := 0 to gHands.Count - 1 do
         if (gHands[I].HandType = hndComputer) 
           and ((gHands[I].HandAITypes = [aitAdvanced])
-            or (gHands[I].HandAITypes = [aitClassic, aitAdvanced])
-              and (aAIType = aitAdvanced)) then
-            gHands[I].AI.Setup.EnableAdvancedAI(True)
+            or ((gHands[I].HandAITypes = [aitClassic, aitAdvanced])
+              and (aAIType = aitAdvanced))) then
+            gHands[I].AI.Setup.EnableAdvancedAI
 
     end;
 
@@ -494,7 +505,7 @@ begin
       begin
         CampaignData := aCampaign.ScriptData;
         CampaignData.Seek(0, soBeginning); //Seek to the beginning before we read it
-        CampaignDataTypeFile := aCampaign.ScriptDataTypeFile;
+        CampaignDataTypeFile := aCampaign.GetScriptDataTypeFile;
       end
       else
       begin
@@ -533,6 +544,8 @@ begin
   finally
     Parser.Free;
   end;
+
+  fMapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
 
   gLog.AddTime('Gameplay initialized', True);
 end;
@@ -618,7 +631,7 @@ begin
       if fNetworking.MapInfo.CanBeAdvancedAI[I]
         and not fNetworking.MapInfo.CanBeAI[I]
         and not fNetworking.MapInfo.CanBeHuman[I] then
-        gHands[I].AI.Setup.ApplyAgressiveBuilderSetup(True);
+        gHands[I].AI.Setup.EnableAdvancedAI; //Just enable Advanced AI, do not override MapEd AI params
 
   //Assign existing NetPlayers(1..N) to map players(0..N-1)
   for I := 1 to fNetworking.NetPlayers.Count do
@@ -628,8 +641,16 @@ begin
       gHands[HIndex].HandType := fNetworking.NetPlayers[I].GetPlayerType;
       gHands[HIndex].FlagColor := fNetworking.NetPlayers[I].FlagColor;
 
-      if fNetworking.NetPlayers[I].IsAdvancedComputer then
-        gHands[HIndex].AI.Setup.ApplyAgressiveBuilderSetup(True);
+      if fNetworking.NetPlayers[I].IsComputer then
+      begin
+        //For MP locs we will set AI MP setup only when loc is allowed for humans too.
+        //For only AI locs there we should use AI params set from MapEd
+        if gHands[HIndex].CanBeHuman then
+          gHands[HIndex].AI.Setup.ApplyMultiplayerSetup(fNetworking.NetPlayers[I].IsAdvancedComputer)
+        else
+          //Just enable Advanced AI, do not override MapEd AI params
+          gHands[HIndex].AI.Setup.EnableAdvancedAI(fNetworking.NetPlayers[I].IsAdvancedComputer);
+      end;
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
       if fNetworking.SelectGameKind = ngk_Save then
@@ -1103,7 +1124,7 @@ begin
 
   fMapEditor.MissionDefSavePath := aPathName;
   fMapEditor.SaveAttachements(aPathName);
-  fMapEditor.MapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
+  fMapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMissionParser := TKMMissionParserStandard.Create(mpm_Editor);
@@ -2106,13 +2127,32 @@ begin
 end;
 
 
+procedure TKMGame.UserAction(aActionType: TKMUserActionType);
+begin
+  fLastTimeUserAction := Max(fLastTimeUserAction, TimeGet);
+end;
+
+
 procedure TKMGame.UpdateState(aGlobalTickCount: Cardinal);
+const
+  PLAYER_AFK_TIME = 5; //in minutes. Notify other players, when this player is AFK
+  PLAYER_AFK_MESSAGE_DELAY = 5*60*1000; //in ms, wait till next AFK message. do not spam players with messages
 begin
   if gScriptSounds <> nil then
     gScriptSounds.UpdateState;
 
   if not fIsPaused then
+  begin
     fActiveInterface.UpdateState(aGlobalTickCount);
+    if (gGame.GameMode = gmMulti) //Only for MP game players, not specs
+      and (GetTimeSince(fLastTimeUserAction) > PLAYER_AFK_TIME*60*1000)
+      and (GetTimeSince(fLastAfkMessageSent) > PLAYER_AFK_MESSAGE_DELAY) then
+    begin
+      fNetworking.PostMessage(TX_PLAYER_AFK_MESSAGE, csSystem, fNetworking.MyNetPlayer.NiknameColoredU,
+                              WrapColor(IntToStr(GetTimeSince(fLastTimeUserAction) div 60000), icGoldenYellow));
+      fLastAfkMessageSent := TimeGet;
+    end;
+  end;
 
   if (aGlobalTickCount mod 10 = 0) and (fMapEditor <> nil) then
     fMapEditor.UpdateState;

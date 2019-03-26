@@ -335,9 +335,9 @@ begin
     Sender.AddTypeS('TIntegerArray', 'array of Integer'); //Needed for PlayerGetAllUnits
     Sender.AddTypeS('TAnsiStringArray', 'array of AnsiString'); //Needed for some array Utils
     Sender.AddTypeS('TByteSet', 'set of Byte'); //Needed for Closest*MultipleTypes
-    Sender.AddTypeS('TKMPoint', 'record X,Y: Integer; end;'); //Could be very useful
+    Sender.AddTypeS('TKMPoint', 'record X,Y:Integer; end;'); //Could be very useful
 
-    Sender.AddTypeS('TKMFieldType', '(ftNone, ftRoad, ftCorn, ftWine)'); //No need to add InitWine for scripts
+    Sender.AddTypeS('TKMFieldType', '(ftNone,ftRoad,ftCorn,ftWine)'); //No need to add InitWine for scripts
     Sender.AddTypeS('TKMHouseType', '(htNone, htAny, '
       + 'htArmorSmithy,     htArmorWorkshop,   htBakery,        htBarracks,      htButchers,'
       + 'htCoalMine,        htFarm,            htFisherHut,     htGoldMine,      htInn,'
@@ -346,16 +346,14 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
-    Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMAudioFormat', '(af_Wav,af_Ogg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
-    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctRotation, tctHeight, tctObject)');
-    Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
-    Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain: Word; Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
+    Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
 
-    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit, attClosestBuildingFromArmy, attClosestBuildingFromStartPos, attCustomPosition)');
+    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit,attClosestBuildingFromArmy,attClosestBuildingFromStartPos,attCustomPosition)');
 
-    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone, mdEasy, mdNormal, mdHard)');
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone,mdEasy,mdNormal,mdHard)');
     Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
 
     // Register classes and methods to the script engine.
@@ -439,6 +437,15 @@ begin
     RegisterMethodCheck(c, 'function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
 
+    RegisterMethodCheck(c, 'function IsMissionBuildType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionFightType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionCoopType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionSpecialType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionPlayableAsSP: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockTeamSelection: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockPeacetime: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockFullMapPreview: Boolean');
+
     RegisterMethodCheck(c, 'function KaMRandom: Single');
     RegisterMethodCheck(c, 'function KaMRandomI(aMax:Integer): Integer');
 
@@ -451,7 +458,15 @@ begin
     RegisterMethodCheck(c, 'function MapTileRotation(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapTileType(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapWidth: Integer');
+
+    RegisterMethodCheck(c, 'function MissionAuthor: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionBigDesc: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionBigDescLibx: Integer');
+    RegisterMethodCheck(c, 'function MissionSmallDesc: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionSmallDescLibx: Integer');
+
     RegisterMethodCheck(c, 'function MissionDifficulty: TKMMissionDifficulty');
+    RegisterMethodCheck(c, 'function MissionDifficultyLevels: TKMMissionDifficultySet');
 
     RegisterMethodCheck(c, 'function MarketFromWare(aMarketID: Integer): Integer');
     RegisterMethodCheck(c, 'function MarketLossFactor: Single');
@@ -620,6 +635,7 @@ begin
 
     RegisterMethodCheck(c, 'procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean)');
+    RegisterMethodCheck(c, 'procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerDefeat(aPlayer: Word)');
     RegisterMethodCheck(c, 'procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aCompliment, aShare: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerShareFog(aPlayer1, aPlayer2: Word; aShare: Boolean)');
@@ -986,6 +1002,15 @@ begin
       RegisterMethod(@TKMScriptStates.IsRoadPlanAt,                             'IsRoadPlanAt');
       RegisterMethod(@TKMScriptStates.IsWinefieldPlanAt,                        'IsWinefieldPlanAt');
 
+      RegisterMethod(@TKMScriptStates.IsMissionBuildType,                       'IsMissionBuildType');
+      RegisterMethod(@TKMScriptStates.IsMissionFightType,                       'IsMissionFightType');
+      RegisterMethod(@TKMScriptStates.IsMissionCoopType,                        'IsMissionCoopType');
+      RegisterMethod(@TKMScriptStates.IsMissionSpecialType,                     'IsMissionSpecialType');
+      RegisterMethod(@TKMScriptStates.IsMissionPlayableAsSP,                    'IsMissionPlayableAsSP');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockTeamSelection,              'IsMissionBlockTeamSelection');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockPeacetime,                  'IsMissionBlockPeacetime');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockFullMapPreview,             'IsMissionBlockFullMapPreview');
+
       RegisterMethod(@TKMScriptStates.KaMRandom,                                'KaMRandom');
       RegisterMethod(@TKMScriptStates.KaMRandomI,                               'KaMRandomI');
 
@@ -999,7 +1024,14 @@ begin
       RegisterMethod(@TKMScriptStates.MapTileType,                              'MapTileType');
       RegisterMethod(@TKMScriptStates.MapWidth,                                 'MapWidth');
 
+      RegisterMethod(@TKMScriptStates.MissionAuthor,                            'MissionAuthor');
+      RegisterMethod(@TKMScriptStates.MissionBigDesc,                           'MissionBigDesc');
+      RegisterMethod(@TKMScriptStates.MissionBigDescLibx,                       'MissionBigDescLibx');
+      RegisterMethod(@TKMScriptStates.MissionSmallDesc,                         'MissionSmallDesc');
+      RegisterMethod(@TKMScriptStates.MissionSmallDescLibx,                     'MissionSmallDescLibx');
+
       RegisterMethod(@TKMScriptStates.MissionDifficulty,                        'MissionDifficulty');
+      RegisterMethod(@TKMScriptStates.MissionDifficultyLevels,                  'MissionDifficultyLevels');
 
       RegisterMethod(@TKMScriptStates.MarketFromWare,                           'MarketFromWare');
       RegisterMethod(@TKMScriptStates.MarketLossFactor,                         'MarketLossFactor');
@@ -1167,6 +1199,7 @@ begin
       RegisterMethod(@TKMScriptActions.PlanRemove,                              'PlanRemove');
 
       RegisterMethod(@TKMScriptActions.PlayerAllianceChange,                    'PlayerAllianceChange');
+      RegisterMethod(@TKMScriptActions.PlayerAllianceNFogChange,                'PlayerAllianceNFogChange');
       RegisterMethod(@TKMScriptActions.PlayerAddDefaultGoals,                   'PlayerAddDefaultGoals');
       RegisterMethod(@TKMScriptActions.PlayerDefeat,                            'PlayerDefeat');
       RegisterMethod(@TKMScriptActions.PlayerShareBeacons,                      'PlayerShareBeacons');

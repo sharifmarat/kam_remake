@@ -1,4 +1,4 @@
-﻿unit KM_GameApp;
+unit KM_GameApp;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -24,6 +24,7 @@ type
     fRender: TRender;
     fTimerUI: TTimer;
     fMainMenuInterface: TKMMainMenuInterface;
+    fLastTimeRender: Cardinal;
 
     fOnCursorUpdate: TIntegerStringEvent;
     fOnGameSpeedChange: TSingleEvent;
@@ -40,10 +41,10 @@ type
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
-    procedure GameStart(aGameMode: TKMGameMode);
-    procedure GameEnd(aGameMode: TKMGameMode);
-    procedure GameDestroy;
-    procedure GamePlayed;
+    procedure GameStarted(aGameMode: TKMGameMode);
+    procedure GameEnded(aGameMode: TKMGameMode);
+    procedure GameDestroyed;
+    procedure GameFinished;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
@@ -67,7 +68,7 @@ type
     procedure PreloadGameResources;
 
     //These are all different game kinds we can start
-    procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
+    procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte; aDifficulty: TKMMissionDifficulty = mdNone);
     procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1;
                            aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone;
                            aAIType: TKMAIType = aitNone);
@@ -106,7 +107,7 @@ type
     property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
     property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
 
-    procedure Render(aForPrintScreen: Boolean);
+    procedure Render(aForPrintScreen: Boolean = False);
     procedure UpdateState(Sender: TObject);
     procedure UpdateStateIdle(aFrameTime: Cardinal);
   end;
@@ -137,6 +138,8 @@ begin
 
   fGameSettings := TKMGameSettings.Create;
 
+  fLastTimeRender := 0;
+
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
 
   gGameCursor := TKMGameCursor.Create;
@@ -158,8 +161,7 @@ begin
   gSoundPlayer.OnRequestUnfade := fMusicLib.UnfadeMusic;
 
   fCampaigns    := TKMCampaignsCollection.Create;
-  fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.Load;
 
   //If game was reinitialized from options menu then we should return there
   fMainMenuInterface := TKMMainMenuInterface.Create(aScreenX, aScreenY);
@@ -175,8 +177,8 @@ begin
 
   fMusicLib.ToggleShuffle(fGameSettings.ShuffleOn); //Determine track order
 
-  fOnGameStart := GameStart;
-  fOnGameEnd := GameEnd;
+  fOnGameStart := GameStarted;
+  fOnGameEnd := GameEnded;
 end;
 
 
@@ -236,7 +238,7 @@ begin
 
   gLog.AddTime('Toggle to locale ' + UnicodeString(aLocale));
   fMainMenuInterface.PageChange(gpLoading, gResTexts[TX_MENU_NEW_LOCALE]);
-  Render(False); //Force to repaint information screen
+  Render; //Force to repaint information screen
 
   fTimerUI.Enabled := False; //Disable it while switching, if an OpenAL error appears the timer should be disabled
   fGameSettings.Locale := aLocale; //Wrong Locale will be ignored
@@ -261,8 +263,7 @@ begin
 
   //Campaigns use single locale
   fCampaigns := TKMCampaignsCollection.Create;
-  fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.Load;
   fMainMenuInterface := TKMMainMenuInterface.Create(fRender.ScreenX, fRender.ScreenY);
   fMainMenuInterface.PageChange(gpOptions);
   Resize(fRender.ScreenX, fRender.ScreenY); //Force the recreated main menu to resize to the user's screen
@@ -416,7 +417,7 @@ end;
 procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
-  Render(False);
+  Render;
 end;
 
 
@@ -424,7 +425,7 @@ procedure TKMGameApp.LoadGameAssets;
 begin
   //Load the resources if necessary
   fMainMenuInterface.PageChange(gpLoading);
-  Render(False);
+  Render;
 
   GameLoadingStep(gResTexts[TX_MENU_LOADING_DEFINITIONS]);
   gRes.OnLoadingText := GameLoadingStep;
@@ -439,7 +440,7 @@ end;
 procedure TKMGameApp.SaveCampaignsProgress;
 begin
   if fCampaigns <> nil then
-    fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+    fCampaigns.SaveProgress;
 end;
 
 
@@ -483,7 +484,7 @@ begin
 
   if (gGame.GameResult in [gr_Win, gr_Defeat]) then
   begin
-    GamePlayed;
+    GameFinished;
     if fGameSettings.AutosaveAtGameEnd then
       gGame.Save(Format('%s %s #%d', [gGame.GameName, FormatDateTime('yyyy-mm-dd', Now), fGameSettings.DayGamesCount]), Now);
   end;
@@ -586,7 +587,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
     gGame.Load(aFilePath);
   except
@@ -626,7 +627,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
     gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
   except
@@ -662,7 +663,7 @@ begin
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroy);
+  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroyed);
   gGame.SetSeed(4); //Every time the game will be the same as previous. Good for debug.
   try
     gGame.MapEdStartEmptyMap(aSizeX, aSizeY);
@@ -687,9 +688,9 @@ begin
 end;
 
 
-procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
+procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
-  LoadGameFromScript(aCampaign.MissionFile(aMap), aCampaign.MissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0);
+  LoadGameFromScript(aCampaign.GetMissionFile(aMap), aCampaign.GetMissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0, aDifficulty);
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
@@ -819,7 +820,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameStart(aGameMode: TKMGameMode);
+procedure TKMGameApp.GameStarted(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
   begin
@@ -829,7 +830,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameEnd(aGameMode: TKMGameMode);
+procedure TKMGameApp.GameEnded(aGameMode: TKMGameMode);
 begin
   if gMain <> nil then
   begin
@@ -843,14 +844,15 @@ begin
 end;
 
 
-procedure TKMGameApp.GameDestroy;
+procedure TKMGameApp.GameDestroyed;
 begin
   if gMain <> nil then
     gMain.FormMain.SetExportGameStats(False);
 end;
 
 
-procedure TKMGameApp.GamePlayed;
+//Happens when game was won or lost
+procedure TKMGameApp.GameFinished;
 begin
   if CompareDate(fGameSettings.LastDayGamePlayed, Today) < 0 then
     fGameSettings.DayGamesCount := 0;
@@ -898,7 +900,7 @@ begin
 end;
 
 
-procedure TKMGameApp.Render(aForPrintScreen: Boolean);
+procedure TKMGameApp.Render(aForPrintScreen: Boolean = False);
 begin
   if SKIP_RENDER then Exit;
   if fIsExiting then Exit;
@@ -915,6 +917,8 @@ begin
   fRender.RenderBrightness(GameSettings.Brightness);
 
   fRender.EndFrame;
+
+  fLastTimeRender := TimeGet;
 
   if not aForPrintScreen and (gGame <> nil) then
     if Assigned(fOnCursorUpdate) then
@@ -968,7 +972,9 @@ begin
 
   Inc(fGlobalTickCount);
   //Always update networking for auto reconnection and query timeouts
-  if fNetworking <> nil then fNetworking.UpdateState(fGlobalTickCount);
+  if fNetworking <> nil then
+    fNetworking.UpdateState(fGlobalTickCount);
+
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);
@@ -989,6 +995,10 @@ begin
     if (gGame <> nil) and not gGame.IsPaused and Assigned(fOnCursorUpdate) then
         fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
+
+  if gMain.Settings.IsNoRenerMaxTimeSet
+    and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
+    Render;
 end;
 
 
@@ -1004,5 +1014,6 @@ end;
 
 
 end.
+
 
 

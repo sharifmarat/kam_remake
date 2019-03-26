@@ -70,7 +70,7 @@ type
     procedure PrettyPoly();
 
     // Measure performance
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     function TimeGetUsec(): Int64;
     {$ENDIF}
   public
@@ -144,32 +144,32 @@ end;
 procedure TKMNavMeshGenerator.GenerateNewNavMesh();
 var
   W: TKMNavMeshByteArray;
-{$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+{$IFDEF DEBUG_NavMesh}
   tStart,tExtrNodes,tAddInNodes,tPolyTrian,tPrettyPoly, tSum: UInt64;
 {$ENDIF}
 begin
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     tStart := TimeGetUsec();
     {$ENDIF}
 
   W := ExtractNodes();
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     tExtrNodes := TimeGetUsec() - tStart;
     {$ENDIF}
   AddInnerNodes(W);
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     tAddInNodes := TimeGetUsec() - tStart - tExtrNodes;
     {$ENDIF}
   PolygonTriangulation();
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     tPolyTrian := TimeGetUsec() - tStart - tAddInNodes;
     {$ENDIF}
   PrettyPoly();
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     //tPrettyPoly := TimeGetUsec() - tStart - tPolyTrian;
     {$ENDIF}
 
-    {$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+    {$IFDEF DEBUG_NavMesh}
     tSum := tExtrNodes + tAddInNodes + tPolyTrian + tPrettyPoly;
     if (tSum > 0) then tSum := tSum * 1; // Make sure that compiler does not f--ck up the variable TimeDiff
     {$ENDIF}
@@ -177,7 +177,7 @@ end;
 
 
 
-{$IFDEF MSWINDOWS AND DEBUG_NavMesh}
+{$IFDEF DEBUG_NavMesh}
 function TKMNavMeshGenerator.TimeGetUsec(): Int64;
 var
   freq: Int64;
@@ -1040,7 +1040,6 @@ var
     K, BestIdx, Idx1, Idx2, Neat: Integer;
     SqrBestDist, SqrDist: Single;
   begin
-    Result := False;
     BestCP1 := 0;
     BestCP2 := 0;
     BestDP1 := 0;
@@ -1132,7 +1131,7 @@ var
   end;
 
 var
-  ActIdx, Neat: Integer;
+  ActIdx: Integer;
 begin
   SetLength(Chck,fPolyCount);
   FillChar(Chck[0], SizeOf(Chck[0])*Length(Chck),False);

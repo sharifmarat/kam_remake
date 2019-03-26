@@ -82,6 +82,14 @@ type
     Data: UnicodeString;
   end;
 
+
+  TKMAIType = (aitNone, aitClassic, aitAdvanced);
+  TKMAITypeSet = set of TKMAIType;
+
+  TKMUserActionType = (uatNone, uatKeyDown, uatKeyUp, uatKeyPress, uatMouseDown, uatMouseUp, uatMouseMove, uatMouseWheel);
+  TKMUserActionEvent = procedure (aActionType: TKMUserActionType) of object;
+
+
   TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
 
   const
