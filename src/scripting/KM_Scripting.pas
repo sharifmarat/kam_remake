@@ -635,6 +635,7 @@ begin
 
     RegisterMethodCheck(c, 'procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean)');
+    RegisterMethodCheck(c, 'procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerDefeat(aPlayer: Word)');
     RegisterMethodCheck(c, 'procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aCompliment, aShare: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerShareFog(aPlayer1, aPlayer2: Word; aShare: Boolean)');
@@ -1198,6 +1199,7 @@ begin
       RegisterMethod(@TKMScriptActions.PlanRemove,                              'PlanRemove');
 
       RegisterMethod(@TKMScriptActions.PlayerAllianceChange,                    'PlayerAllianceChange');
+      RegisterMethod(@TKMScriptActions.PlayerAllianceNFogChange,                'PlayerAllianceNFogChange');
       RegisterMethod(@TKMScriptActions.PlayerAddDefaultGoals,                   'PlayerAddDefaultGoals');
       RegisterMethod(@TKMScriptActions.PlayerDefeat,                            'PlayerDefeat');
       RegisterMethod(@TKMScriptActions.PlayerShareBeacons,                      'PlayerShareBeacons');
