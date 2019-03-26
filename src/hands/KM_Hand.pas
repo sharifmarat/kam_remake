@@ -197,10 +197,6 @@ uses
   KM_GameTypes, KM_CommonUtils;
 
 
-const
-  HANDS_NAMES_OFFSET = 100;
-
-
 { TKMHandCommon }
 constructor TKMHandCommon.Create(aHandIndex: TKMHandIndex);
 begin

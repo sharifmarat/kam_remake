@@ -182,9 +182,9 @@ var
 begin
   //Difficulty levels
   OldMD := mdNone;
-  if fCampaign.MapsTxtInfos[fMapIndex].HasDifficultyLevels then
+  if fCampaign.MapsInfo[fMapIndex].TxtInfo.HasDifficultyLevels then
   begin
-    DiffLevels := fCampaign.MapsTxtInfos[fMapIndex].DifficultyLevels;
+    DiffLevels := fCampaign.MapsInfo[fMapIndex].TxtInfo.DifficultyLevels;
     //Update difficuly levels only if we can't set diff level from previous map
     if DropBox_Difficulty.Visible
       and DropBox_Difficulty.IsSelected
@@ -198,8 +198,8 @@ begin
       DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
 
       //Set BestCompleteDifficulty as default
-      if fCampaign.MapsData[fMapIndex].Completed then
-        DefMD := fCampaign.MapsData[fMapIndex].BestCompleteDifficulty
+      if fCampaign.MapsProgressData[fMapIndex].Completed then
+        DefMD := fCampaign.MapsProgressData[fMapIndex].BestCompleteDifficulty
       else if OldMD <> mdNone then
         DefMD := OldMD
       else 
@@ -242,7 +242,7 @@ begin
     if I >= fCampaign.MapCount then
       Color := icLightGray2
     else
-      case fCampaign.MapsData[I].BestCompleteDifficulty of
+      case fCampaign.MapsProgressData[I].BestCompleteDifficulty of
         mdNone: Color := icLightGray2;
         mdEasy: Color := icGreen;
         mdNormal: Color := icYellow;
@@ -261,8 +261,8 @@ begin
     Image_CampaignSubNode[I].Top  := fCampaign.Maps[fMapIndex].Nodes[I].Y;
   end;
 
-  Label_CampaignTitle.Caption := fCampaign.CampaignMissionTitle(fMapIndex);
-  Label_CampaignText.Caption := fCampaign.MissionBriefing(fMapIndex);
+  Label_CampaignTitle.Caption := fCampaign.GetCampaignMissionTitle(fMapIndex);
+  Label_CampaignText.Caption := fCampaign.GetMissionBriefing(fMapIndex);
 
   Panel_CampScroll.Left := IfThen(fCampaign.Maps[fMapIndex].TextPos = bcBottomRight, Panel_Campaign.Width - Panel_CampScroll.Width, 0);
   //Add offset from top and space on bottom to fit buttons
@@ -273,7 +273,7 @@ begin
   Panel_CampScroll.Show;
 
   gGameApp.MusicLib.StopPlayingOtherFile; //Stop playing the previous breifing even if this one doesn't exist
-  gGameApp.PauseMusicToPlayFile(fCampaign.BreifingAudioFile(fMapIndex));
+  gGameApp.PauseMusicToPlayFile(fCampaign.GetBreifingAudioFile(fMapIndex));
 end;
 
 

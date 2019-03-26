@@ -96,7 +96,7 @@ begin
   for I := 0 to Camps.Count - 1 do
   begin
     ColumnBox_Camps.AddItem(MakeListRow(
-                        [Camps[I].CampaignTitle, IntToStr(Camps[I].MapCount), IntToStr(Camps[I].UnlockedMap + 1)],
+                        [Camps[I].GetCampaignTitle, IntToStr(Camps[I].MapCount), IntToStr(Camps[I].UnlockedMap + 1)],
                         [$FFFFFFFF, $FFFFFFFF, $FFFFFFFF], I));
     if Camps[I].ShortName = gGameApp.GameSettings.MenuCampaignName then
     begin
@@ -134,7 +134,7 @@ begin
     Image_CampsPreview.RX := Camp.BackGroundPic.RX;
     Image_CampsPreview.TexID := Camp.BackGroundPic.ID;
 
-    Memo_CampDesc.Text := Camp.CampaignDescription;
+    Memo_CampDesc.Text := Camp.GetCampaignDescription;
     gGameApp.GameSettings.MenuCampaignName := Camp.ShortName;
   end;
 end;

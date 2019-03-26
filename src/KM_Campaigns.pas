@@ -17,9 +17,17 @@ type
   //3 bytes are used to avoid string types issues
   TKMCampaignId = array [0..2] of Byte;
 
-  TKMCampaignMapData = record
+  TKMCampaignMapProgressData = record
     Completed: Boolean;
     BestCompleteDifficulty: TKMMissionDifficulty;
+  end;
+
+  TKMCampaignMapProgressDataArray = array of TKMCampaignMapProgressData;
+
+
+  TKMCampaignMapData = record
+    TxtInfo: TKMMapTxtInfo;
+    MissionName: UnicodeString;
   end;
 
   TKMCampaignMapDataArray = array of TKMCampaignMapData;
@@ -37,14 +45,16 @@ type
     fBackGroundPic: TKMPic;
     fMapCount: Byte;
     fShortName: UnicodeString;
-    fMapsTxtInfos: TKMMapTxtInfoArray;
-    fMapsData: TKMCampaignMapDataArray;
+
+    fMapsInfo: TKMCampaignMapDataArray;
+
+    fMapsProgressData: TKMCampaignMapProgressDataArray; //Map data, saved in campaign progress
     procedure SetUnlockedMap(aValue: Byte);
     procedure SetMapCount(aValue: Byte);
 
     procedure LoadFromFile(const aFileName: UnicodeString);
     procedure LoadFromPath(const aPath: UnicodeString);
-    procedure LoadMapsTxtInfos;
+    procedure LoadMapsInfo;
     procedure LoadSprites;
   public
     Maps: array of record
@@ -64,17 +74,17 @@ type
     property ShortName: UnicodeString read fShortName;
     property UnlockedMap: Byte read fUnlockedMap write SetUnlockedMap;
     property ScriptData: TKMemoryStream read fScriptData;
-    property MapsTxtInfos: TKMMapTxtInfoArray read fMapsTxtInfos;
-    property MapsData: TKMCampaignMapDataArray read fMapsData;
+    property MapsInfo: TKMCampaignMapDataArray read fMapsInfo;
+    property MapsProgressData: TKMCampaignMapProgressDataArray read fMapsProgressData;
 
-    function CampaignTitle: UnicodeString;
-    function CampaignDescription: UnicodeString;
-    function CampaignMissionTitle(aIndex: Byte): UnicodeString;
+    function GetCampaignTitle: UnicodeString;
+    function GetCampaignDescription: UnicodeString;
+    function GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
     function GetMissionFile(aIndex: Byte; aExt: UnicodeString = '.dat'): UnicodeString;
     function GetMissionName(aIndex: Byte): UnicodeString;
     function GetMissionTitle(aIndex: Byte): UnicodeString;
-    function MissionBriefing(aIndex: Byte): UnicodeString;
-    function BreifingAudioFile(aIndex: Byte): UnicodeString;
+    function GetMissionBriefing(aIndex: Byte): UnicodeString;
+    function GetBreifingAudioFile(aIndex: Byte): UnicodeString;
     function GetScriptDataTypeFile: UnicodeString;
   end;
 
@@ -244,9 +254,8 @@ begin
       if C <> nil then
       begin
         C.UnlockedMap := unlocked;
-        gLog.AddTime('C.MapCount = ' + IntToStr(C.MapCount) + ' SizeOf(C.MapsData) = ' + IntToStr(SizeOf(C.MapsData)));
         for J := 0 to C.MapCount - 1 do
-          M.Read(C.fMapsData[J], SizeOf(C.fMapsData[J]));
+          M.Read(C.fMapsProgressData[J], SizeOf(C.fMapsProgressData[J]));
 
         C.ScriptData.Clear;
         if HasScriptData then
@@ -282,7 +291,7 @@ begin
       M.Write(Campaigns[I].CampaignId, SizeOf(TKMCampaignId));
       M.Write(Campaigns[I].UnlockedMap);
       for J := 0 to Campaigns[I].MapCount - 1 do
-        M.Write(Campaigns[I].fMapsData[J], SizeOf(Campaigns[I].fMapsData[J]));
+        M.Write(Campaigns[I].fMapsProgressData[J], SizeOf(Campaigns[I].fMapsProgressData[J]));
       M.Write(Cardinal(Campaigns[I].ScriptData.Size));
       M.Write(Campaigns[I].ScriptData.Memory^, Campaigns[I].ScriptData.Size);
     end;
@@ -327,10 +336,10 @@ begin
   if ActiveCampaign <> nil then
   begin
     ActiveCampaign.UnlockedMap := fActiveCampaignMap + 1;
-    ActiveCampaign.MapsData[fActiveCampaignMap].Completed := True;
+    ActiveCampaign.MapsProgressData[fActiveCampaignMap].Completed := True;
     //Update BestDifficulty if we won harder game
-    if Byte(ActiveCampaign.MapsData[fActiveCampaignMap].BestCompleteDifficulty) < Byte(gGame.MissionDifficulty)  then
-      ActiveCampaign.MapsData[fActiveCampaignMap].BestCompleteDifficulty := gGame.MissionDifficulty;
+    if Byte(ActiveCampaign.MapsProgressData[fActiveCampaignMap].BestCompleteDifficulty) < Byte(gGame.MissionDifficulty)  then
+      ActiveCampaign.MapsProgressData[fActiveCampaignMap].BestCompleteDifficulty := gGame.MissionDifficulty;
   end;
 end;
 
@@ -353,9 +362,9 @@ begin
   FreeAndNil(fTextLib);
   fScriptData.Free;
 
-  for I := 0 to Length(fMapsTxtInfos) - 1 do
-    if fMapsTxtInfos[I] <> nil then
-      fMapsTxtInfos[I].Free;
+  for I := 0 to Length(fMapsInfo) - 1 do
+    if fMapsInfo[I].TxtInfo <> nil then
+      fMapsInfo[I].TxtInfo.Free;
 
   //Free background texture
   if fBackGroundPic.ID <> 0 then
@@ -444,17 +453,19 @@ begin
 end;
 
 
-procedure TKMCampaign.LoadMapsTxtInfos;
+procedure TKMCampaign.LoadMapsInfo;
 var
   I: Integer;
+  TextMission: TKMTextLibraryMulti;
 begin
   for I := 0 to fMapCount - 1 do
   begin
-    if fMapsTxtInfos[I] = nil then
-      fMapsTxtInfos[I] := TKMMapTxtInfo.Create
+    //Load TxtInfo
+    if fMapsInfo[I].TxtInfo = nil then
+      fMapsInfo[I].TxtInfo := TKMMapTxtInfo.Create
     else
-      fMapsTxtInfos[I].ResetInfo;
-    fMapsTxtInfos[I].LoadTXTInfo(GetMissionFile(I, '.txt'));
+      fMapsInfo[I].TxtInfo.ResetInfo;
+    fMapsInfo[I].TxtInfo.LoadTXTInfo(GetMissionFile(I, '.txt'));
   end;
 end;
 
@@ -493,7 +504,7 @@ begin
   fPath := aPath;
 
   LoadFromFile(fPath + 'info.cmp');
-  LoadMapsTxtInfos;
+  LoadMapsInfo;
 
   FreeAndNil(fTextLib);
   fTextLib := TKMTextLibrarySingle.Create;
@@ -510,18 +521,18 @@ procedure TKMCampaign.SetMapCount(aValue: Byte);
 begin
   fMapCount := aValue;
   SetLength(Maps, fMapCount);
-  SetLength(fMapsData, fMapCount);
-  SetLength(fMapsTxtInfos, fMapCount);
+  SetLength(fMapsProgressData, fMapCount);
+  SetLength(fMapsInfo, fMapCount);
 end;
 
 
-function TKMCampaign.CampaignTitle: UnicodeString;
+function TKMCampaign.GetCampaignTitle: UnicodeString;
 begin
   Result := fTextLib[0];
 end;
 
 
-function TKMCampaign.CampaignDescription: UnicodeString;
+function TKMCampaign.GetCampaignDescription: UnicodeString;
 begin
   Result := fTextLib[2];
 end;
@@ -559,13 +570,13 @@ end;
 
 //Mission texts of original campaigns are available in all languages,
 //custom campaigns are unlikely to have more texts in more than 1-2 languages
-function TKMCampaign.MissionBriefing(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetMissionBriefing(aIndex: Byte): UnicodeString;
 begin
   Result := fTextLib[10 + aIndex];
 end;
 
 
-function TKMCampaign.BreifingAudioFile(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetBreifingAudioFile(aIndex: Byte): UnicodeString;
 begin
   Result := fPath + ShortName + Format('%.2d', [aIndex+1]) + PathDelim +
             ShortName + Format('%.2d', [aIndex + 1]) + '.' + UnicodeString(gResLocales.UserLocale) + '.mp3';
