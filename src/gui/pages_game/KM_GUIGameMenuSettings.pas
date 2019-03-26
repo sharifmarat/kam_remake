@@ -103,6 +103,7 @@ end;
 procedure TKMGameMenuSettings.UpdateView;
 begin
   CheckBox_ReplayAutopauseAtPTEnd.Enabled := (gGame.GameMode = gmReplayMulti) and gGame.IsPeaceTime;
+  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
 end;
 
 

@@ -110,7 +110,7 @@ type
     procedure Minimap_Update(Sender: TObject; const X,Y:integer);
     procedure Minimap_RightClick(Sender: TObject; const X,Y:integer);
     procedure Minimap_Click(Sender: TObject; const X,Y:integer);
-    procedure GameSettingsUpdated;
+    procedure GameSettingsChanged;
 
     procedure Menu_Save_RefreshList(Sender: TObject);
     procedure Menu_Save_ListChange(Sender: TObject);
@@ -694,8 +694,19 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.GameSettingsUpdated;
+procedure TKMGamePlayInterface.GameSettingsChanged;
 begin
+  //Update Ally/Enemy checkbox
+  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
+  //Update minimap
+  fMinimap.Update;
+end;
+
+
+procedure TKMGamePlayInterface.Replay_AllyEnemyModeClick(Sender: TObject);
+begin
+  gGameApp.GameSettings.ShowPlayersColors := not CheckBox_AllyEnemy_ColorMode.Checked;
+  fGuiMenuSettings.UpdateView; //Update settings
   //Update minimap
   fMinimap.Update;
 end;
@@ -1174,7 +1185,7 @@ begin
   Create_Menu;
     Create_Save;
     Create_Load;
-    fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls, GameSettingsUpdated);
+    fGuiMenuSettings := TKMGameMenuSettings.Create(Panel_Controls, GameSettingsChanged);
     Create_Quit;
 
   fGuiGameUnit := TKMGUIGameUnit.Create(Panel_Controls, SetViewportPos);
@@ -1804,14 +1815,6 @@ begin
                   Result := True;
                 end;
   end;
-end;
-
-
-procedure TKMGamePlayInterface.Replay_AllyEnemyModeClick(Sender: TObject);
-begin
-  gGameApp.GameSettings.ShowPlayersColors := not CheckBox_AllyEnemy_ColorMode.Checked;
-  //Update minimap
-  fMinimap.Update;
 end;
 
 
