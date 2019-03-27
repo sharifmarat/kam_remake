@@ -49,6 +49,9 @@ type
     fMapsInfo: TKMCampaignMapDataArray;
 
     fMapsProgressData: TKMCampaignMapProgressDataArray; //Map data, saved in campaign progress
+
+    function GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
+
     procedure SetUnlockedMap(aValue: Byte);
     procedure SetMapCount(aValue: Byte);
 
@@ -473,7 +476,7 @@ begin
     try
       TextMission.LoadLocale(GetMissionFile(I, '.%s.libx'));
       if TextMission.HasText(MISSION_NAME_LIBX_ID) then
-        fMapsInfo[I].MissionName := TextMission[MISSION_NAME_LIBX_ID];
+        fMapsInfo[I].MissionName := StringReplace(TextMission[MISSION_NAME_LIBX_ID], '|', ' ', [rfReplaceAll]); //Replace | with space
     finally
       FreeAndNil(TextMission);
     end;
@@ -549,6 +552,17 @@ begin
 end;
 
 
+function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
+begin
+  if fMapsInfo[aIndex].MissionName <> '' then
+    Result := fMapsInfo[aIndex].MissionName
+  else
+    //Have nothing - use default mission name
+    //Otherwise just Append (by default MissionName is empty anyway)
+    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
+end;
+
+
 function TKMCampaign.GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
 begin
   //We have template for mission name in 3:
@@ -569,16 +583,8 @@ begin
       //Otherwise just Append (by default MissionName is empty anyway)
       Result := Format(fTextLib[3], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
   end
-  //We have %d in custom mission name
-  else if CountMatches(fMapsInfo[aIndex].MissionName, '%d') = 1 then       
-    Result := Format(fMapsInfo[aIndex].MissionName, [aIndex+1])
-  //We have custom mission name (without %d)
-  else if fMapsInfo[aIndex].MissionName <> '' then
-    Result := fMapsInfo[aIndex].MissionName
   else
-    //Have nothing - use default mission name
-    //Otherwise just Append (by default MissionName is empty anyway)
-    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
+    Result := GetDefaultMissionTitle(aIndex);
 end;
 
 
@@ -596,7 +602,10 @@ end;
 
 function TKMCampaign.GetMissionTitle(aIndex: Byte): UnicodeString;
 begin
-  Result := Format(fTextLib[1], [aIndex+1]);
+  if fTextLib[1] <> '' then
+    Result := Format(fTextLib[1], [aIndex+1]) //Save it for Legacy support
+  else
+    Result := GetDefaultMissionTitle(aIndex);
 end;
 
 
