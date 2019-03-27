@@ -1275,7 +1275,8 @@ begin
     gHands.CleanUpHousePointer(fHome);
   end;
 
-  if aRemoveTileUsage then gTerrain.UnitRem(fNextPosition); //Must happen before we nil NextPosition
+  if aRemoveTileUsage then
+    gTerrain.UnitRem(fNextPosition); //Must happen before we nil NextPosition
 
   fIsDead       := True;
   fThought      := th_None;

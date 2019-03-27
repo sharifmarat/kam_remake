@@ -297,9 +297,10 @@ procedure TKMGameInputProcess_Multi.DoRandomCheck(aTick: Cardinal; aPlayerIndex:
 begin
   with fRandomCheck[aTick mod MAX_SCHEDULE] do
   begin
-    Assert(OurCheck = PlayerCheck[aPlayerIndex],Format('Random check mismatch for tick %d from net player %d [Hand %d] processed at tick %d',
+    Assert(OurCheck = PlayerCheck[aPlayerIndex],Format('Random check mismatch for tick %d from net player %d [%s] [Hand %d] processed at tick %d',
                                                        [aTick,
                                                         aPlayerIndex,
+                                                        fNetworking.NetPlayers[aPlayerIndex].Nikname,
                                                         fNetworking.NetPlayers[aPlayerIndex].HandIndex,
                                                         gGame.GameTickCount]));
     PlayerCheckPending[aPlayerIndex] := False;
