@@ -52,7 +52,6 @@ type
     procedure SetUnlockedMap(aValue: Byte);
     procedure SetMapCount(aValue: Byte);
 
-    procedure LoadFromFile(const aFileName: UnicodeString);
     procedure LoadFromPath(const aPath: UnicodeString);
     procedure LoadMapsInfo;
     procedure LoadSprites;
@@ -66,6 +65,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString);
 
     property BackGroundPic: TKMPic read fBackGroundPic write fBackGroundPic;
