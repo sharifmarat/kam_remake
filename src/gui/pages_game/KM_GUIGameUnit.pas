@@ -324,7 +324,7 @@ begin
     // DISMISS UNIT
     fAskDismiss := False;
     if IsGroup then
-      TKMUnitGroup(gMySpectator.Selected).KillGroup
+      TKMUnitGroup(gMySpectator.Selected).SelectedUnit.Kill(PLAYER_NONE, True, False)
     else
       gGame.GameInputProcess.CmdUnit(gic_UnitDismiss, TKMUnit(gMySpectator.Selected));
   end
