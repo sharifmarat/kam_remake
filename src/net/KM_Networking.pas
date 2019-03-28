@@ -1,4 +1,4 @@
-﻿unit KM_Networking;
+unit KM_Networking;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -2480,7 +2480,6 @@ begin
     MPGameInfo.PasswordLocked := (fPassword <> '');
     MPGameInfo.PlayerCount := NetPlayers.Count;
 
-    MPGameInfo.GameOptions := TKMGameOptions.Create;
     MPGameInfo.GameOptions.Peacetime := fNetGameOptions.Peacetime;
     MPGameInfo.GameOptions.SpeedPT := fNetGameOptions.SpeedPT;
     MPGameInfo.GameOptions.SpeedAfterPT := fNetGameOptions.SpeedAfterPT;

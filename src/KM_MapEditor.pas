@@ -130,6 +130,7 @@ begin
   FreeAndNil(fTerrainPainter);
   FreeAndNil(fDeposits);
   FreeAndNil(fSelection);
+  FreeAndNil(fMapTxtInfo);
 
   for I := Low(fRevealers) to High(fRevealers) do
     fRevealers[I].Free;
