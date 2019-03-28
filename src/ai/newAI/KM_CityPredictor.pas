@@ -504,8 +504,11 @@ begin
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
   // Maybe there is no need to keep variable fMaxSoldiersInMin but I am afraid what scripters may do with fSetup
-  fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
-  fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
+  if (fSetup.NewAI AND fSetup.UnlimitedEquip) then
+  begin
+    fSetup.EquipRateIron := Round(600 / Max(0.01, MaxIronWeapProd));
+    fSetup.EquipRateLeather := Round(600 / Max(0.01, MaxWoodWeapProd));
+  end;
 
   // Predict final city stats (by potential size of city)
   fCityStats.CitizensCnt := Round(  Max( 0, Min(fBuildCnt,4000)-1500 )*0.052+70  ); // Min cnt of citizens is 70 and max 200
