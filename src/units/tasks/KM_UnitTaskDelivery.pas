@@ -451,25 +451,19 @@ begin
           if fUnit.IsHungry
             and (fToHouse.HouseType = htInn)
             and TKMHouseInn(fToHouse).HasFood
-            and TKMHouseInn(fToHouse).HasSpace then
-          begin
-            if TKMUnitSerf(fUnit).GoEat(TKMHouseInn(fToHouse)) then
-            begin
-              TKMUnitSerf(fUnit).Task.Phase := 3; //We are inside Inn already
-              FreeAndNil(Self);
-              Exit;
-            end;
-          end else
+            and TKMHouseInn(fToHouse).HasSpace
+            and TKMUnitSerf(fUnit).GoEat(TKMHouseInn(fToHouse), True) then
+            Exit //Exit immidiately, since we created new task here and old task is destroyed!
+                 //Changing any task fields here (f.e. Phase) could affect new task!
+          else
           //Now look for another delivery from inside this house
           //But only if we are not hungry!
           //Otherwise there is a possiblity when he will go between houses until death
-          if not fUnit.IsHungry and TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
-          begin
-            //After setting new unit task we should free self.
-            //Note do not set trTaskDone := true as this will affect the new task
-            FreeAndNil(Self);
-            Exit;
-          end else
+          if not fUnit.IsHungry
+            and TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
+            Exit //Exit immidiately, since we created new task here and old task is destroyed!
+                 //Changing any task fields here (f.e. Phase) could affect new task!
+          else
             //No delivery found then just step outside
             SetActionGoIn(uaWalk, gdGoOutside, fToHouse);
         end;
@@ -555,12 +549,9 @@ begin
           if (fToUnit is TKMUnitWarrior) then
           begin
             if TKMUnitSerf(fUnit).TryDeliverFrom(nil) then
-            begin
-              //After setting new unit task we should free self.
-              //Note do not set trTaskDone := true as this will affect the new task
-              FreeAndNil(Self);
-              Exit;
-            end else
+              Exit //Exit immidiately, since we created new task here and old task is destroyed!
+                   //Changing any task fields (f.e. Phase) here could affect new task!
+            else
               //No delivery found then just walk back to our From house
               //even if it's destroyed, its location is still valid
               //Don't walk to spot as it doesn't really matter

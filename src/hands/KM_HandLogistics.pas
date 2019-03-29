@@ -148,7 +148,7 @@ type
     function GetAvailableDeliveriesCount: Integer;
     procedure ReAssignDelivery(iQ: Integer; aSerf: TKMUnitSerf);
     procedure AssignDelivery(iO, iD: Integer; aSerf: TKMUnitSerf);
-    procedure AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
+    function AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil): Boolean;
     procedure CheckForBetterDemand(aDeliveryID: Integer; out aToHouse: TKMHouse; out aToUnit: TKMUnit; aSerf: TKMUnitSerf);
     procedure DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
     procedure TakenOffer(aID: Integer);
@@ -1392,7 +1392,7 @@ end;
 
 //Should issue a job based on requesters location and job importance
 //Serf may ask for a job from within a house after completing previous delivery
-procedure TKMDeliveries.AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil);
+function TKMDeliveries.AskForDelivery(aSerf: TKMUnitSerf; aHouse: TKMHouse = nil): Boolean;
 var
   iQ, iD, iO, BestD, BestO, BestQ: Integer;
   Bid, BestBid: Single;
@@ -1404,6 +1404,7 @@ begin
   BestO := -1;
   BestD := -1;
   BestImportance := Low(TKMDemandImportance);
+  Result := False;
 
   for iD := 1 to fDemandCount do
     if (fDemand[iD].Ware <> wtNone)
@@ -1422,8 +1423,10 @@ begin
         end;
 
   if (BestO <> -1) and (BestD <> -1) then
-    AssignDelivery(BestO, BestD, aSerf)
-  else
+  begin
+    AssignDelivery(BestO, BestD, aSerf);
+    Result := True;
+  end else
     //Try to find ongoing delivery task from specified house and took it from serf, which is on the way to that house
     if aHouse <> nil then
     begin
@@ -1444,7 +1447,10 @@ begin
           BestImportance := fDemand[fQueue[iQ].DemandID].Importance;
         end;
       if (BestQ <> -1) then
+      begin
         ReAssignDelivery(BestQ, aSerf);
+        Result := True;
+      end;
     end;
 end;
 

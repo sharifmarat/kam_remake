@@ -224,7 +224,7 @@ type
   //Common class for all civil units
   TKMCivilUnit = class(TKMUnit)
   public
-    function GoEat(aInn: TKMHouseInn): Boolean;
+    function GoEat(aInn: TKMHouseInn; aUnitAlreadyInsideInn: Boolean = False): Boolean;
     function CheckCondition: Boolean;
   end;
 
@@ -354,12 +354,15 @@ begin
   end;
 end;
 
-function TKMCivilUnit.GoEat(aInn: TKMHouseInn): Boolean;
+function TKMCivilUnit.GoEat(aInn: TKMHouseInn; aUnitAlreadyInsideInn: Boolean = False): Boolean;
 begin
   Result := False;
   if aInn <> nil then
   begin
+    FreeAndNil(fTask);
     fTask := TKMTaskGoEat.Create(aInn, Self);
+    if aUnitAlreadyInsideInn then
+      fTask.Phase := 3; //We are inside Inn already
     Result := True;
   end;
 end;
@@ -483,16 +486,14 @@ begin
 
   fThought := thNone;
 
-  CheckCondition;
-
-  if IsHungry then
+  if IsHungry
+    and not CheckCondition
+    and (fHome <> nil)
+    and not fVisible then
   begin
-    HInn := gHands[fOwner].FindInn(fCurrPosition,Self,not fVisible);
-    if HInn <> nil then
-      fTask := TKMTaskGoEat.Create(HInn,Self)
-    else
-      if (fHome <> nil) and not fVisible then
-        fTask := TKMTaskGoOutShowHungry.Create(Self);
+    if fTask <> nil then
+      FreeAndNil(fTask);
+    fTask := TKMTaskGoOutShowHungry.Create(Self);
   end;
 
   if fTask = nil then //If Unit still got nothing to do, nevermind hunger
@@ -764,13 +765,15 @@ function TKMUnitSerf.TryDeliverFrom(aFrom: TKMHouse): Boolean;
 var
   T: TKMUnitTask;
 begin
-  //Remember current task
+  Result := False;
+  //Save current task
   T := fTask;
   //Try to get a new one
-  gHands[Owner].Deliveries.Queue.AskForDelivery(Self, aFrom);
-
-  //Return True if we've got a new deliery
-  Result := fTask <> T;
+  if gHands[Owner].Deliveries.Queue.AskForDelivery(Self, aFrom) then
+  begin
+    Result := True;
+    FreeAndNil(T); //Destroy old task, we created a new one
+  end;
 
   //If we got ourselves a new task then skip to resource-taking part, as we are already in this house
   if Result and (aFrom <> nil) then
