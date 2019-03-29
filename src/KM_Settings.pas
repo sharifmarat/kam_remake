@@ -387,34 +387,37 @@ begin
 
   F := TMemIniFile.Create(aFileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
 
-  fFullScreen         := F.ReadBool   ('GFX', 'FullScreen',       False);
-  fVSync              := F.ReadBool   ('GFX', 'VSync',            True);
-  fResolution.Width   := F.ReadInteger('GFX', 'ResolutionWidth',  MENU_DESIGN_X);
-  fResolution.Height  := F.ReadInteger('GFX', 'ResolutionHeight', MENU_DESIGN_Y);
-  fResolution.RefRate := F.ReadInteger('GFX', 'RefreshRate',      60);
-  fFPSCap := EnsureRange(F.ReadInteger('GFX', 'FPSCap', DEF_FPS_CAP), MIN_FPS_CAP, MAX_FPS_CAP);
+  try
+    fFullScreen         := F.ReadBool   ('GFX', 'FullScreen',       False);
+    fVSync              := F.ReadBool   ('GFX', 'VSync',            True);
+    fResolution.Width   := F.ReadInteger('GFX', 'ResolutionWidth',  MENU_DESIGN_X);
+    fResolution.Height  := F.ReadInteger('GFX', 'ResolutionHeight', MENU_DESIGN_Y);
+    fResolution.RefRate := F.ReadInteger('GFX', 'RefreshRate',      60);
+    fFPSCap := EnsureRange(F.ReadInteger('GFX', 'FPSCap', DEF_FPS_CAP), MIN_FPS_CAP, MAX_FPS_CAP);
 
-  // For proper window positioning we need Left and Top records
-  // Otherwise reset all window params to defaults
-  if F.ValueExists('Window', 'WindowLeft') and F.ValueExists('Window', 'WindowTop') then
-  begin
-    fWindowParams.fWidth  := F.ReadInteger('Window', 'WindowWidth',  MENU_DESIGN_X);
-    fWindowParams.fHeight := F.ReadInteger('Window', 'WindowHeight', MENU_DESIGN_Y);
-    fWindowParams.fLeft   := F.ReadInteger('Window', 'WindowLeft',   -1);
-    fWindowParams.fTop    := F.ReadInteger('Window', 'WindowTop',    -1);
-    fWindowParams.fState  := TWindowState(EnsureRange(F.ReadInteger('Window', 'WindowState', 0), 0, 2));
-  end else
-    fWindowParams.fNeedResetToDefaults := True;
+    // For proper window positioning we need Left and Top records
+    // Otherwise reset all window params to defaults
+    if F.ValueExists('Window', 'WindowLeft') and F.ValueExists('Window', 'WindowTop') then
+    begin
+      fWindowParams.fWidth  := F.ReadInteger('Window', 'WindowWidth',  MENU_DESIGN_X);
+      fWindowParams.fHeight := F.ReadInteger('Window', 'WindowHeight', MENU_DESIGN_Y);
+      fWindowParams.fLeft   := F.ReadInteger('Window', 'WindowLeft',   -1);
+      fWindowParams.fTop    := F.ReadInteger('Window', 'WindowTop',    -1);
+      fWindowParams.fState  := TWindowState(EnsureRange(F.ReadInteger('Window', 'WindowState', 0), 0, 2));
+    end else
+      fWindowParams.fNeedResetToDefaults := True;
 
-  fNoRenderMaxTime        := F.ReadInteger('Misc', 'NoRenderMaxTime', NO_RENDER_MAX_TIME_DEFAULT);
-  if fNoRenderMaxTime < NO_RENDER_MAX_TIME_MIN then
-    fNoRenderMaxTime := NO_RENDER_MAX_TIME_UNDEF;
+    fNoRenderMaxTime        := F.ReadInteger('Misc', 'NoRenderMaxTime', NO_RENDER_MAX_TIME_DEFAULT);
+    if fNoRenderMaxTime < NO_RENDER_MAX_TIME_MIN then
+      fNoRenderMaxTime := NO_RENDER_MAX_TIME_UNDEF;
 
-  // Reset wsMinimized state to wsNormal
-  if (fWindowParams.fState = TWindowState.wsMinimized) then
-    fWindowParams.fState := TWindowState.wsNormal;
+    // Reset wsMinimized state to wsNormal
+    if (fWindowParams.fState = TWindowState.wsMinimized) then
+      fWindowParams.fState := TWindowState.wsNormal;
+  finally
+    FreeAndNil(F);
+  end;
 
-  FreeAndNil(F);
   fNeedsSave := False;
 end;
 
@@ -428,23 +431,27 @@ begin
     Exit;
   F := TMemIniFile.Create(aFileName {$IFDEF WDC}, TEncoding.UTF8 {$ENDIF} );
 
-  F.WriteBool   ('GFX','FullScreen',      fFullScreen);
-  F.WriteBool   ('GFX','VSync',           fVSync);
-  F.WriteInteger('GFX','ResolutionWidth', fResolution.Width);
-  F.WriteInteger('GFX','ResolutionHeight',fResolution.Height);
-  F.WriteInteger('GFX','RefreshRate',     fResolution.RefRate);
-  F.WriteInteger('GFX','FPSCap',          fFPSCap);
+  try
+    F.WriteBool   ('GFX','FullScreen',      fFullScreen);
+    F.WriteBool   ('GFX','VSync',           fVSync);
+    F.WriteInteger('GFX','ResolutionWidth', fResolution.Width);
+    F.WriteInteger('GFX','ResolutionHeight',fResolution.Height);
+    F.WriteInteger('GFX','RefreshRate',     fResolution.RefRate);
+    F.WriteInteger('GFX','FPSCap',          fFPSCap);
 
-  F.WriteInteger('Window','WindowWidth',    fWindowParams.Width);
-  F.WriteInteger('Window','WindowHeight',   fWindowParams.Height);
-  F.WriteInteger('Window','WindowLeft',     fWindowParams.Left);
-  F.WriteInteger('Window','WindowTop',      fWindowParams.Top);
-  F.WriteInteger('Window','WindowState',    Ord(fWindowParams.State));
+    F.WriteInteger('Window','WindowWidth',    fWindowParams.Width);
+    F.WriteInteger('Window','WindowHeight',   fWindowParams.Height);
+    F.WriteInteger('Window','WindowLeft',     fWindowParams.Left);
+    F.WriteInteger('Window','WindowTop',      fWindowParams.Top);
+    F.WriteInteger('Window','WindowState',    Ord(fWindowParams.State));
 
-  F.WriteInteger('Misc', 'NoRenderMaxTime', fNoRenderMaxTime);
+    F.WriteInteger('Misc', 'NoRenderMaxTime', fNoRenderMaxTime);
 
-  F.UpdateFile; //Write changes to file
-  FreeAndNil(F);
+    F.UpdateFile; //Write changes to file
+  finally
+    FreeAndNil(F);
+  end;
+
   fNeedsSave := False;
 end;
 
