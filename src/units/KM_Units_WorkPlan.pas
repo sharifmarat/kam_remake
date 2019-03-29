@@ -77,13 +77,13 @@ begin
   fIssued := False;
   HasToWalk := False;
   Loc := KMPOINT_ZERO;
-  ActionWalkTo := ua_Walk;
-  ActionWorkType := ua_Work;
+  ActionWalkTo := uaWalk;
+  ActionWorkType := uaWork;
   WorkCyc := 0;
   WorkDir := dir_NA;
   GatheringScript := gs_None;
   AfterWorkDelay := 0;
-  ActionWalkFrom := ua_Walk;
+  ActionWalkFrom := uaWalk;
   Resource1 := wt_None;
   Count1 := 0;
   Resource2 := wt_None;
@@ -139,7 +139,7 @@ var
 begin
   if (GatheringScript = gs_WoodCutterCut) OR (GatheringScript = gs_WoodCutterPlant) then
   begin
-    HW := TKMHouseWoodcutters(aUnit.GetHome);
+    HW := TKMHouseWoodcutters(aUnit.Home);
     HW.ValidateFlagPoint; //Validate Cutting point. It will be set to a valid one if needed.
 
     if HW.IsFlagPointSet then
@@ -155,8 +155,8 @@ begin
                           if PlantAct = taPlant then
                           begin
                             GatheringScript := gs_FarmerSow; //Switch to sowing corn rather than cutting
-                            ActionWalkFrom  := ua_WalkTool; //Carry our scythe back (without the corn) as the player saw us take it out
-                            ActionWorkType  := ua_Work1;
+                            ActionWalkFrom  := uaWalkTool; //Carry our scythe back (without the corn) as the player saw us take it out
+                            ActionWorkType  := uaWork1;
                             WorkCyc    := 10;
                             Product1   := wt_None; //Don't produce corn
                             ProdCount1 := 0;
@@ -253,7 +253,7 @@ begin
   case aUnit.UnitType of
     ut_Woodcutter:    if aHome = htWoodcutters then
                       begin
-                        HW := TKMHouseWoodcutters(aUnit.GetHome);
+                        HW := TKMHouseWoodcutters(aUnit.Home);
                         HW.ValidateFlagPoint; //Validate Cutting point. It will be set to a valid one if needed.
 
                         if HW.IsFlagPointSet then
@@ -263,12 +263,12 @@ begin
                         if fIssued then
                         begin
                           case PlantAct of
-                            taCut:    begin //Cutting uses DirNW,DirSW,DirSE,DirNE (1,3,5,7) of ua_Work
+                            taCut:    begin //Cutting uses DirNW,DirSW,DirSE,DirNE (1,3,5,7) of uaWork
                                         ResourcePlan(wt_None,0,wt_None,0,wt_Trunk);
-                                        WalkStyle(Tmp, ua_WalkBooty,ua_Work,15,20,ua_WalkTool2,gs_WoodCutterCut);
+                                        WalkStyle(Tmp, uaWalkBooty,uaWork,15,20,uaWalkTool2,gs_WoodCutterCut);
                                       end;
-                            taPlant:  begin //Planting uses DirN (0) of ua_Work
-                                        WalkStyle(Tmp, ua_WalkTool,ua_Work,12,0,ua_Walk,gs_WoodCutterPlant);
+                            taPlant:  begin //Planting uses DirN (0) of uaWork
+                                        WalkStyle(Tmp, uaWalkTool,uaWork,12,0,uaWalk,gs_WoodCutterPlant);
                                       end;
                             else      fIssued := False;
                           end;
@@ -354,9 +354,9 @@ begin
                           case PlantAct of
                             taCut:    begin
                                         ResourcePlan(wt_None,0,wt_None,0,wt_Corn);
-                                        WalkStyle(Tmp, ua_WalkTool,ua_Work,6,0,ua_WalkBooty,gs_FarmerCorn);
+                                        WalkStyle(Tmp, uaWalkTool,uaWork,6,0,uaWalkBooty,gs_FarmerCorn);
                                       end;
-                            taPlant:  WalkStyle(Tmp, ua_Walk,ua_Work1,10,0,ua_Walk,gs_FarmerSow);
+                            taPlant:  WalkStyle(Tmp, uaWalk,uaWork1,10,0,uaWalk,gs_FarmerSow);
                             else      fIssued := False;
                           end;
                       end else
@@ -367,7 +367,7 @@ begin
                         if fIssued then
                         begin
                           ResourcePlan(wt_None,0,wt_None,0,wt_Wine);
-                          WalkStyle(KMPointDir(Tmp.Loc,dir_N), ua_WalkTool2,ua_Work2,5,0,ua_WalkBooty2,gs_FarmerWine); //The animation for picking grapes is only defined for facing north
+                          WalkStyle(KMPointDir(Tmp.Loc,dir_N), uaWalkTool2,uaWork2,5,0,uaWalkBooty2,gs_FarmerWine); //The animation for picking grapes is only defined for facing north
                           SubActAdd(ha_Work1,1);
                           SubActAdd(ha_Work2,11);
                           SubActAdd(ha_Work5,1);
@@ -492,7 +492,7 @@ begin
                         if fIssued then
                         begin
                           ResourcePlan(wt_None,0,wt_None,0,wt_Fish);
-                          WalkStyle(Tmp,ua_Walk,ua_Work2,12,0,ua_WalkTool,gs_FisherCatch);
+                          WalkStyle(Tmp,uaWalk,uaWork2,12,0,uaWalkTool,gs_FisherCatch);
                         end else
                           //We must check again this time ignoring working units since they don't indicate the resource is depleted
                           ResourceDepleted := not gTerrain.FindFishWater(aLoc, gRes.Units[aUnit.UnitType].MiningRange, KMPOINT_ZERO, True, Tmp);
@@ -503,7 +503,7 @@ begin
                         if fIssued then
                         begin
                           ResourcePlan(wt_None,0,wt_None,0,wt_Stone);
-                          WalkStyle(Tmp, ua_Walk,ua_Work,8,0,ua_WalkTool,gs_StoneCutter);
+                          WalkStyle(Tmp, uaWalk,uaWork,8,0,uaWalkTool,gs_StoneCutter);
                           SubActAdd(ha_Work1,1);
                           SubActAdd(ha_Work2,9);
                           SubActAdd(ha_Work5,1);

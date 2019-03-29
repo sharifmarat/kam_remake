@@ -1434,8 +1434,8 @@ begin
         if (fQueue[iQ].JobStatus = js_Taken)
           and (fOffer[fQueue[iQ].OfferID].Loc_House = aHouse)
           and (fQueue[iQ].Serf <> nil)                                                //Should be always true
-          and (fQueue[iQ].Serf.UnitTask is TKMTaskDeliver)                            //Should be always true
-          and (TKMTaskDeliver(fQueue[iQ].Serf.UnitTask).DeliverStage = dsToFromHouse) //Should be always true
+          and (fQueue[iQ].Serf.Task is TKMTaskDeliver)                            //Should be always true
+          and (TKMTaskDeliver(fQueue[iQ].Serf.Task).DeliverStage = dsToFromHouse) //Should be always true
           and TryCalculateBid(fQueue[iQ].OfferID, fQueue[iQ].DemandID, Bid, aSerf)
           and ((Bid < BestBid) or (fDemand[fQueue[iQ].DemandID].Importance > BestImportance)) then
         begin

@@ -213,8 +213,8 @@ begin
 
     //Check that the unit is idling and not an enemy, so that we can push it away
     if (U <> nil)
-    and (U.GetUnitAction is TKMUnitActionStay)
-    and not TKMUnitActionStay(U.GetUnitAction).Locked
+    and (U.Action is TKMUnitActionStay)
+    and not TKMUnitActionStay(U.Action).Locked
     and (gHands.CheckAlliance(U.Owner, fUnit.Owner) = at_Ally) then
       Result := U;
   end;
@@ -240,9 +240,9 @@ begin
   fUnit.NextPosition := fStreet;
   gTerrain.UnitAdd(fUnit.NextPosition, fUnit); //Unit was not occupying tile while inside
 
-  if (fUnit.GetHome <> nil)
-  and (fUnit.GetHome.HouseType = htBarracks) //Unit home is barracks
-  and (fUnit.GetHome = fHouse) then //And is the house we are walking from
+  if (fUnit.Home <> nil)
+  and (fUnit.Home.HouseType = htBarracks) //Unit home is barracks
+  and (fUnit.Home = fHouse) then //And is the house we are walking from
     TKMHouseBarracks(fHouse).RecruitsRemove(fUnit);
 
   //We are walking straight
@@ -267,9 +267,11 @@ end;
 
 
 function TKMUnitActionGoInOut.Execute: TKMActionResult;
-var Distance:single; U:TKMUnit;
+var
+  Distance: Single;
+  U: TKMUnit;
 begin
-  Result := ar_ActContinues;
+  Result := arActContinues;
 
   if not fHasStarted then
   begin
@@ -316,8 +318,8 @@ begin
     else
     begin //There's still some unit - we can't go outside
       if (U <> fPushedUnit) //The unit has switched places with another one, so we must start again
-        or not (U.GetUnitAction is TKMUnitActionWalkTo) //Unit was interupted (no longer pushed), so start again
-        or not TKMUnitActionWalkTo(U.GetUnitAction).WasPushed then
+        or not (U.Action is TKMUnitActionWalkTo) //Unit was interupted (no longer pushed), so start again
+        or not TKMUnitActionWalkTo(U.Action).WasPushed then
       begin
         fHasStarted := False;
         fWaitingForPush := False;
@@ -351,25 +353,25 @@ begin
 
   if (fStep <= 0) or (fStep >= 1) then
   begin
-    Result := ar_ActDone;
+    Result := arActDone;
     fUnit.IsExchanging := False;
     if fUsedDoorway then DecDoorway;
     if fDirection = gd_GoInside then
     begin
       fUnit.PositionF := KMPointF(fDoor);
-      if (fUnit.GetHome <> nil)
-      and (fUnit.GetHome = fHouse)
-      and (fUnit.GetHome.HouseType = htBarracks) //Unit home is barracks
-      and not fUnit.GetHome.IsDestroyed then //And is the house we are walking into and it's not destroyed
-        TKMHouseBarracks(fUnit.GetHome).RecruitsAdd(fUnit); //Add the recruit once it is inside, otherwise it can be equipped while still walking in!
+      if (fUnit.Home <> nil)
+      and (fUnit.Home = fHouse)
+      and (fUnit.Home.HouseType = htBarracks) //Unit home is barracks
+      and not fUnit.Home.IsDestroyed then //And is the house we are walking into and it's not destroyed
+        TKMHouseBarracks(fUnit.Home).RecruitsAdd(fUnit); //Add the recruit once it is inside, otherwise it can be equipped while still walking in!
       //Set us as inside even if the house is destroyed. In that case UpdateVisibility will sort things out.
 
       //When any woodcutter returns home - add an Axe
       //(this might happen when he walks home or when mining is done)
       if (fUnit.UnitType = ut_Woodcutter)
-      and (fUnit.GetHome <> nil)
-      and (fUnit.GetHome.HouseType = htWoodcutters)
-      and (fUnit.GetHome = fHouse) then //And is the house we are walking from
+      and (fUnit.Home <> nil)
+      and (fUnit.Home.HouseType = htWoodcutters)
+      and (fUnit.Home = fHouse) then //And is the house we are walking from
         fHouse.CurrentAction.SubActionAdd([ha_Flagpole]);
 
       if Assigned(OnWalkedIn) then

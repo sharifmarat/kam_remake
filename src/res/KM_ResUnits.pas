@@ -156,7 +156,7 @@ const
 
 
 
-  //The frame shown when a unit is standing still in ua_Walk. Same for all units!
+  //The frame shown when a unit is standing still in uaWalk. Same for all units!
   UnitStillFrames: array [TKMDirection] of Byte = (0,3,2,2,1,6,7,6,6);
 
 var
@@ -237,35 +237,35 @@ end;
 function TKMUnitSpec.SupportsAction(aAct: TKMUnitActionType): Boolean;
 const UnitSupportedActions: array [TKMUnitType] of TKMUnitActionTypeSet = (
     [], [], //None, Any
-    [ua_Walk, ua_Die, ua_Eat, ua_WalkArm], //Serf
-    [ua_Walk, ua_Work, ua_Die, ua_Work1, ua_Eat..ua_WalkTool2],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Work, ua_Die..ua_WalkBooty2],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Work, ua_Die, ua_Work1..ua_WalkBooty],
-    [ua_Walk, ua_Work, ua_Die, ua_Eat, ua_Work1, ua_Work2],
-    [ua_Walk, ua_Work, ua_Die, ua_Work1, ua_Eat..ua_WalkBooty],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Die, ua_Eat],
-    [ua_Walk, ua_Spec, ua_Die, ua_Eat], //Recruit
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Militia
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Axeman
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Swordsman
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Bowman
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Crossbowman
-    [ua_Walk, ua_Work, ua_Die, ua_Eat],
-    [ua_Walk, ua_Work, ua_Die, ua_Eat],
-    [ua_Walk, ua_Work, ua_Die, ua_Eat],
-    [ua_Walk, ua_Work, ua_Die, ua_Eat], //Cavalry
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Barbarian
-    [ua_Walk, ua_Work, ua_Die, ua_Eat], //Rebel
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Slingshot
-    [ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Eat], //Warrior
-    [ua_Walk, ua_Work, ua_Die, ua_Eat],
-    [ua_Walk], [ua_Walk], [ua_Walk], [ua_Walk], [ua_Walk], [ua_Walk], [ua_Walk], [ua_Walk]); //Animals
+    [uaWalk, uaDie, uaEat, uaWalkArm], //Serf
+    [uaWalk, uaWork, uaDie, uaWork1, uaEat..uaWalkTool2],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaWork, uaDie..uaWalkBooty2],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaWork, uaDie, uaWork1..uaWalkBooty],
+    [uaWalk, uaWork, uaDie, uaEat, uaWork1, uaWork2],
+    [uaWalk, uaWork, uaDie, uaWork1, uaEat..uaWalkBooty],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaDie, uaEat],
+    [uaWalk, uaSpec, uaDie, uaEat], //Recruit
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Militia
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Axeman
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Swordsman
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Bowman
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Crossbowman
+    [uaWalk, uaWork, uaDie, uaEat],
+    [uaWalk, uaWork, uaDie, uaEat],
+    [uaWalk, uaWork, uaDie, uaEat],
+    [uaWalk, uaWork, uaDie, uaEat], //Cavalry
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Barbarian
+    [uaWalk, uaWork, uaDie, uaEat], //Rebel
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Slingshot
+    [uaWalk, uaWork, uaSpec, uaDie, uaEat], //Warrior
+    [uaWalk, uaWork, uaDie, uaEat],
+    [uaWalk], [uaWalk], [uaWalk], [uaWalk], [uaWalk], [uaWalk], [uaWalk], [uaWalk]); //Animals
 begin
   Result := aAct in UnitSupportedActions[fUnitType];
 end;

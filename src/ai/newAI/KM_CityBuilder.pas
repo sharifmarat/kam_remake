@@ -367,11 +367,11 @@ begin
        AND (gHands[fOwner].Units[I] is TKMUnitWorker) then
       with gHands[fOwner].Units[I] do
       begin
-        if ( (UnitTask = nil)
-            //OR ( (UnitTask.TaskName = utn_BuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
-            //OR ( (UnitTask.TaskName = utn_BuildField) AND (UnitTask.Phase > 3) ) // GA set fields max 1 worker so it have no sense to check it
-            //OR ( (UnitTask.TaskName = utn_BuildWine)  AND (UnitTask.Phase > 6) ) // GA set fields max 1 worker so it have no sense to check it
-            //OR (UnitTask.TaskName = utn_BuildHouse)
+        if ( (Task = nil)
+            //OR ( (UnitTask.TaskName = uttBuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
+            //OR ( (UnitTask.TaskName = uttBuildField) AND (UnitTask.Phase > 3) ) // GA set fields max 1 worker so it have no sense to check it
+            //OR ( (UnitTask.TaskName = uttBuildWine)  AND (UnitTask.Phase > 6) ) // GA set fields max 1 worker so it have no sense to check it
+            //OR (UnitTask.TaskName = uttBuildHouse)
            ) then
         //if (gHands[fOwner].Units[I].IsIdle) then
         begin

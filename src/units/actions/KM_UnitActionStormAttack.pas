@@ -130,7 +130,7 @@ begin
   begin
     Dec(fDelay);
     fUnit.AnimStep := UnitStillFrames[fUnit.Direction];
-    Result := ar_ActContinues;
+    Result := arActContinues;
     Exit;
   end;
 
@@ -139,10 +139,10 @@ begin
   if (fTileSteps >= fStamina - 1) then
   begin
     Distance := gRes.Units[fUnit.UnitType].Speed;
-    fActionType := ua_Walk;
+    fType := uaWalk;
   end else begin
     Distance := gRes.Units[fUnit.UnitType].Speed * STORM_SPEEDUP;
-    fActionType := ua_Spec;
+    fType := uaSpec;
   end;
 
   if KMSamePointF(fUnit.PositionF, KMPointF(fNextPos), Distance/2) then
@@ -162,7 +162,7 @@ begin
       begin
         //If we've picked a fight it means this action no longer exists,
         //so we must exit out (don't set ActDone as that will now apply to fight action)
-        Result := ar_ActContinues;
+        Result := arActContinues;
         Exit;
       end;
     Locked := True; //Finished CheckForEnemy, so lock again
@@ -173,7 +173,7 @@ begin
     //Action ends if: 1: Used up stamina. 2: There is an enemy to fight. 3: NextPos is an obsticle
     if (fTileSteps >= fStamina) or not fUnit.CanStepTo(fNextPos.X, fNextPos.Y, fUnit.DesiredPassability) then
     begin
-      Result := ar_ActDone; //Finished run
+      Result := arActDone; //Finished run
       Exit; //Must exit right away as we might have changed this action to fight
     end;
 
@@ -197,7 +197,7 @@ begin
 
   inc(fUnit.AnimStep);
   StepDone := false; //We are not actually done because now we have just taken another step
-  Result := ar_ActContinues;
+  Result := arActContinues;
 end;
 
 

@@ -923,7 +923,7 @@ begin
       U.Direction := TKMDirection(aDir + 1);
       //Make sure the unit is not locked so the script can use commands like UnitOrderWalk.
       //By default newly created units are given SetActionLockedStay
-      U.SetActionStay(10, ua_Walk);
+      U.SetActionStay(10, uaWalk);
     end
     else
       LogParamWarning('Actions.GiveUnit', [aPlayer, aType, X, Y, aDir]);
@@ -3231,7 +3231,7 @@ begin
         if U.IsIdle and U.Visible then
         begin
           Result := True;
-          U.SetActionWalkToSpot(KMPoint(X,Y), ua_Walk);
+          U.SetActionWalkToSpot(KMPoint(X,Y), uaWalk);
         end;
     end
     else

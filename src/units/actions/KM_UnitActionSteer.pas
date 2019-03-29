@@ -156,9 +156,9 @@ begin
     begin
       inc(fStuckFor);
       if fStuckFor > 200 then
-        Result := ar_ActAborted //We have been stuck for a while so abort and TKMUnitAnimal.UpdateState will kill us
+        Result := arActAborted //We have been stuck for a while so abort and TKMUnitAnimal.UpdateState will kill us
       else
-        Result := ar_ActContinues;
+        Result := arActContinues;
       Exit;
     end;
     fStuckFor := 0;
@@ -184,7 +184,7 @@ begin
                               fUnit.PositionF.Y + DY*Math.min(Distance,abs(WalkY)));
 
   inc(fUnit.AnimStep);
-  Result := ar_ActContinues;
+  Result := arActContinues;
 end;
 
 

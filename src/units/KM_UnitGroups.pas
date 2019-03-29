@@ -847,13 +847,13 @@ begin
                           and (fOrderLoc.Dir <> dir_NA) and (Members[I].Direction <> fOrderLoc.Dir) then
                           begin
                             Members[I].Direction := fOrderLoc.Dir;
-                            Members[I].SetActionStay(50, ua_Walk); //Make sure the animation still frame is updated
+                            Members[I].SetActionStay(50, uaWalk); //Make sure the animation still frame is updated
                           end;
                         end
                         else
                           //Guide Idle and pushed units back to their places
                           if Members[I].IsIdle
-                          or ((Members[I].GetUnitAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].GetUnitAction).WasPushed) then
+                          or ((Members[I].Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].Action).WasPushed) then
                           begin
                             P := GetMemberLoc(I);
                             Members[I].OrderWalk(P.Loc, P.Exact);
@@ -889,7 +889,7 @@ begin
                                 Members[I].FaceDir := Members[I].Direction;
                                 if not Members[I].CheckForEnemy then
                                   //If we are too close to shoot, make sure the animation still frame is still updated
-                                  Members[I].SetActionStay(10, ua_Walk);
+                                  Members[I].SetActionStay(10, uaWalk);
                               end
                               else
                               begin
@@ -1010,8 +1010,8 @@ begin
   Result := False;
 
   for I := 0 to Count - 1 do
-    if (Members[I].UnitTask <> nil)
-    and (Members[I].UnitTask.TaskName = utn_AttackHouse) then
+    if (Members[I].Task <> nil)
+    and (Members[I].Task.TaskType = uttAttackHouse) then
     begin
       Result := True;
       Exit;
@@ -1097,7 +1097,7 @@ var I: Integer;
 begin
   fOwner := aOwner;
   for I := 0 to fMembers.Count - 1 do
-    TKMUnitWarrior(fMembers[I]).SetOwner(aOwner);
+    TKMUnitWarrior(fMembers[I]).Owner := aOwner;
 end;
 
 
@@ -1215,7 +1215,7 @@ begin
           Members[I].FaceDir := Members[I].Direction;
           if not Members[I].CheckForEnemy then
             //If we are too close to shoot, make sure the animation still frame is still updated
-            Members[I].SetActionStay(10, ua_Walk);
+            Members[I].SetActionStay(10, uaWalk);
         end;
     end;
   end
@@ -1398,7 +1398,7 @@ begin
   if IsDead then Exit;
   if Count < 2 then Exit;
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
-  if Members[0].GetUnitAction is TKMUnitActionStormAttack then Exit;
+  if Members[0].Action is TKMUnitActionStormAttack then Exit;
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If there are different unit types in the group, split should just split them first
@@ -1878,11 +1878,11 @@ begin
     if not DoesFit then Continue; //Don't render units that are off the map in the map editor
     UnitPos.X := NewPos.X + UNIT_OFF_X; //MapEd units don't have sliding
     UnitPos.Y := NewPos.Y + UNIT_OFF_Y;
-    gRenderPool.AddUnit(FlagBearer.UnitType, 0, ua_Walk, fOrderLoc.Dir, UnitStillFrames[fOrderLoc.Dir], UnitPos.X, UnitPos.Y, aHandColor, True, aDoImmediateRender, aDoHighlight, aHighlightColor);
+    gRenderPool.AddUnit(FlagBearer.UnitType, 0, uaWalk, fOrderLoc.Dir, UnitStillFrames[fOrderLoc.Dir], UnitPos.X, UnitPos.Y, aHandColor, True, aDoImmediateRender, aDoHighlight, aHighlightColor);
   end;
 
   // We need to render Flag after MapEd virtual members
-  gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.GetUnitAction.ActionType,
+  gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.Action.ActionType,
     FlagBearer.Direction, FlagStep, FlagPositionF.X, FlagPositionF.Y, aFlagColor, aDoImmediateRender);
 
 end;

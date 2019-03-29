@@ -25,7 +25,7 @@ constructor TKMTaskGoHome.Create(aUnit: TKMUnit);
 begin
   inherited;
 
-  fTaskName := utn_GoHome;
+  fType := uttGoHome;
 end;
 
 
@@ -44,11 +44,11 @@ end;
 
 function TKMTaskGoHome.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
-  if fUnit.GetHome.IsDestroyed then
+  if fUnit.Home.IsDestroyed then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -56,15 +56,15 @@ begin
   case fPhase of
     0:  begin
           Thought := th_Home;
-          SetActionWalkToSpot(GetHome.PointBelowEntrance);
+          SetActionWalkToSpot(Home.PointBelowEntrance);
         end;
-    1:  SetActionGoIn(ua_Walk, gd_GoInside, GetHome);
+    1:  SetActionGoIn(uaWalk, gd_GoInside, Home);
     2:  begin
           Thought := th_None; //Only stop thinking once we are right inside
-          GetHome.SetState(hst_Idle);
-          SetActionStay(5, ua_Walk);
+          Home.SetState(hst_Idle);
+          SetActionStay(5, uaWalk);
         end;
-    else Result := tr_TaskDone;
+    else Result := trTaskDone;
   end;
 
   Inc(fPhase);

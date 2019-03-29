@@ -38,7 +38,7 @@ constructor TKMTaskDismiss.Create(aUnit: TKMUnit);
 begin
   inherited;
 
-  fTaskName := utn_Dismiss;
+  fType := uttDismiss;
   FindNewSchool;
 end;
 
@@ -110,20 +110,20 @@ end;
 
 function TKMTaskDismiss.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if (fSchool = nil) or fSchool.IsDestroyed then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
   with fUnit do
     case fPhase of
       0:  SetActionWalkToSpot(fSchool.PointBelowEntrance);
-      1:  SetActionGoIn(ua_Walk, gd_GoInside, fSchool);
+      1:  SetActionGoIn(uaWalk, gd_GoInside, fSchool);
       2:  fUnit.Kill(PLAYER_NONE, False, False); //Silently kill unit
-      else Result := tr_TaskDone;
+      else Result := trTaskDone;
     end;
 
   Inc(fPhase);

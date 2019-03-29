@@ -255,7 +255,7 @@ begin
                   for Dir := dir_N to dir_NW do
                     for Step := 1 to 30 do
                     begin
-                      SpriteID := gRes.Units[UT].UnitAnim[ua_Die,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
+                      SpriteID := gRes.Units[UT].UnitAnim[uaDie,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
                       if (aID = SpriteID) and (SpriteID > 0) then
                       begin
                         Result := sstBoth;

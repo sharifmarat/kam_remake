@@ -71,18 +71,18 @@ begin
   //Various UnitTypes and ActionTypes produce all the sounds
   case fUnit.UnitType of
     ut_Worker:      case ActionType of
-                      ua_Work:  if Step = 3 then gSoundPlayer.Play(sfx_housebuild,fUnit.PositionF);
-                      ua_Work1: if Step = 0 then gSoundPlayer.Play(sfx_Dig,fUnit.PositionF);
-                      ua_Work2: if Step = 8 then gSoundPlayer.Play(sfx_Pave,fUnit.PositionF);
+                      uaWork:  if Step = 3 then gSoundPlayer.Play(sfx_housebuild,fUnit.PositionF);
+                      uaWork1: if Step = 0 then gSoundPlayer.Play(sfx_Dig,fUnit.PositionF);
+                      uaWork2: if Step = 8 then gSoundPlayer.Play(sfx_Pave,fUnit.PositionF);
                     end;
     ut_Farmer:      case ActionType of
-                      ua_Work:  if Step = 8 then gSoundPlayer.Play(sfx_CornCut,fUnit.PositionF);
-                      ua_Work1: if Step = 0 then gSoundPlayer.Play(sfx_CornSow,fUnit.PositionF,true,0.6);
+                      uaWork:  if Step = 8 then gSoundPlayer.Play(sfx_CornCut,fUnit.PositionF);
+                      uaWork1: if Step = 0 then gSoundPlayer.Play(sfx_CornSow,fUnit.PositionF,true,0.6);
                     end;
-    ut_StoneCutter: if ActionType = ua_Work then
+    ut_StoneCutter: if ActionType = uaWork then
                       if Step = 3 then gSoundPlayer.Play(sfx_minestone,fUnit.PositionF,true,1.4);
     ut_WoodCutter:  case ActionType of
-                      ua_Work: if (fUnit.AnimStep mod Cycle = 3) and (fUnit.Direction <> dir_N) then gSoundPlayer.Play(sfx_ChopTree, fUnit.PositionF,true)
+                      uaWork: if (fUnit.AnimStep mod Cycle = 3) and (fUnit.Direction <> dir_N) then gSoundPlayer.Play(sfx_ChopTree, fUnit.PositionF,true)
                       else     if (fUnit.AnimStep mod Cycle = 0) and (fUnit.Direction =  dir_N) then gSoundPlayer.Play(sfx_WoodcutterDig, fUnit.PositionF,true);
                     end;
   end;
@@ -112,9 +112,9 @@ begin
 
   Dec(TimeToStay);
   if TimeToStay <= 0 then
-    Result := ar_ActDone
+    Result := arActDone
   else
-    Result := ar_ActContinues;
+    Result := arActContinues;
 end;
 
 

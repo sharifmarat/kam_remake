@@ -162,7 +162,7 @@ var
   I: Integer;
 begin
   for I := 0 to Count - 1 do
-    Units[I].SetOwner(aOwner);
+    Units[I].Owner := aOwner;
 end;
 
 

@@ -788,13 +788,13 @@ begin
       if KaMRandom(gHands[fOwner].Stats.GetUnitQty(ut_Serf), 'TKMayor.CheckRoadsCount') >= SHORTCUT_CHECKS_PER_UPDATE then
         Continue;
       if not gHands[fOwner].Units[I].IsDeadOrDying
-      and (gHands[fOwner].Units[I].GetUnitAction is TKMUnitActionWalkTo) then
-        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].UnitTask is TKMTaskDeliver)
-                                                     and (TKMTaskDeliver(gHands[fOwner].Units[I].UnitTask).DeliverKind <> dk_ToUnit))
-        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].UnitTask is TKMTaskGoEat)) then
+      and (gHands[fOwner].Units[I].Action is TKMUnitActionWalkTo) then
+        if ((gHands[fOwner].Units[I] is TKMUnitSerf) and (gHands[fOwner].Units[I].Task is TKMTaskDeliver)
+                                                     and (TKMTaskDeliver(gHands[fOwner].Units[I].Task).DeliverKind <> dk_ToUnit))
+        or ((gHands[fOwner].Units[I] is TKMUnitCitizen) and (gHands[fOwner].Units[I].Task is TKMTaskGoEat)) then
         begin
-          FromLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkFrom;
-          ToLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].GetUnitAction).WalkTo;
+          FromLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].Action).WalkFrom;
+          ToLoc := TKMUnitActionWalkTo(gHands[fOwner].Units[I].Action).WalkTo;
           //Unit's route must be using road network, not f.e. delivering to soldiers
           if gTerrain.Route_CanBeMade(FromLoc, ToLoc, tpWalkRoad, 0) then
           begin

@@ -140,7 +140,7 @@ end;
 constructor TKMTaskBuildRoad.Create(aWorker:TKMUnitWorker; const aLoc:TKMPoint; aID:integer);
 begin
   inherited Create(aWorker);
-  fTaskName := utn_BuildRoad;
+  fType := uttBuildRoad;
   fLoc      := aLoc;
   BuildID   := aID;
   DemandSet := False;
@@ -202,11 +202,11 @@ end;
 
 function TKMTaskBuildRoad.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -226,20 +226,20 @@ begin
          gHands[Owner].Deliveries.Queue.AddDemand(nil, fUnit, wt_Stone, 1, dtOnce, diHigh4);
          DemandSet := true;
 
-         SetActionLockedStay(11,ua_Work1,false);
+         SetActionLockedStay(11,uaWork1,false);
        end;
     2: begin
          gTerrain.ResetDigState(fLoc); //Remove any dig over that might have been there (e.g. destroyed house) after first dig
          gTerrain.IncDigState(fLoc);
-         SetActionLockedStay(11,ua_Work1,false);
+         SetActionLockedStay(11,uaWork1,false);
        end;
     3: begin
          gTerrain.IncDigState(fLoc);
-         SetActionLockedStay(11,ua_Work1,false);
+         SetActionLockedStay(11,uaWork1,false);
        end;
     //Warning! This step value is harcoded in KM_UnitTaskDelivery
     4: begin //This step is repeated until Serf brings us some stone
-         SetActionLockedStay(30,ua_Work1);
+         SetActionLockedStay(30,uaWork1);
          Thought := th_Stone;
          if not fIsDigged then
          begin
@@ -248,29 +248,29 @@ begin
          end;
        end;
     5: begin
-         SetActionLockedStay(11,ua_Work2,false);
+         SetActionLockedStay(11,uaWork2,false);
          DemandSet := false;
          Thought := th_None;
        end;
     6: begin
          gTerrain.IncDigState(fLoc);
-         SetActionLockedStay(11,ua_Work2,false);
+         SetActionLockedStay(11,uaWork2,false);
        end;
     7: begin
          gTerrain.IncDigState(fLoc);
          gTerrain.FlattenTerrain(fLoc); //Flatten the terrain slightly on and around the road
          if gMapElements[gTerrain.Land[fLoc.Y,fLoc.X].Obj].WineOrCorn then
            gTerrain.RemoveObject(fLoc); //Remove corn/wine/grass as they won't fit with road
-         SetActionLockedStay(11,ua_Work2,false);
+         SetActionLockedStay(11,uaWork2,false);
        end;
     8: begin
          gTerrain.SetRoad(fLoc, Owner);
          gTerrain.RemoveObjectsKilledByRoad(fLoc);
-         SetActionStay(5, ua_Walk);
+         SetActionStay(5, uaWalk);
          gTerrain.UnlockTile(fLoc);
          TileLockSet := False;
        end;
-    else Result := tr_TaskDone;
+    else Result := trTaskDone;
   end;
   if fPhase<>4 then inc(fPhase); //Phase=4 is when worker waits for rt_Stone
 end;
@@ -290,7 +290,7 @@ end;
 constructor TKMTaskBuildWine.Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
-  fTaskName := utn_BuildWine;
+  fType := uttBuildWine;
   fLoc      := aLoc;
   BuildID   := aID;
   DemandSet := False;
@@ -344,11 +344,11 @@ end;
 
 function TKMTaskBuildWine.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -370,20 +370,20 @@ begin
         gHands[Owner].Deliveries.Queue.AddDemand(nil,fUnit,wt_Wood, 1, dtOnce, diHigh4);
         DemandSet := true;
 
-        SetActionLockedStay(12*4,ua_Work1,false);
+        SetActionLockedStay(12*4,uaWork1,false);
       end;
    2: begin
         gTerrain.IncDigState(fLoc);
-        SetActionLockedStay(24,ua_Work1,false);
+        SetActionLockedStay(24,uaWork1,false);
       end;
    3: begin
         gTerrain.IncDigState(fLoc);
-        SetActionLockedStay(24,ua_Work1,false);
+        SetActionLockedStay(24,uaWork1,false);
       end;
    4: begin
         gTerrain.ResetDigState(fLoc);
         gTerrain.SetInitWine(fLoc, Owner); //Replace the terrain, but don't seed grapes yet
-        SetActionLockedStay(30, ua_Work1);
+        SetActionLockedStay(30, uaWork1);
         Thought := th_Wood;
         if not fIsDigged then
         begin
@@ -393,21 +393,21 @@ begin
       end;
    //Warning! This step value is harcoded in KM_UnitTaskDelivery
    5: begin //This step is repeated until Serf brings us some wood
-        SetActionLockedStay(30, ua_Work1);
+        SetActionLockedStay(30, uaWork1);
         Thought := th_Wood;
       end;
    6: begin
         DemandSet := false;
-        SetActionLockedStay(11*8, ua_Work2, False);
+        SetActionLockedStay(11*8, uaWork2, False);
         Thought := th_None;
       end;
    7: begin
         gTerrain.SetField(fLoc, Owner, ftWine);
-        SetActionStay(5, ua_Walk);
+        SetActionStay(5, uaWalk);
         gTerrain.UnlockTile(fLoc);
         TileLockSet := False;
       end;
-   else Result := tr_TaskDone;
+   else Result := trTaskDone;
   end;
   if fPhase<>5 then inc(fPhase); //Phase=5 is when worker waits for rt_Wood
 end;
@@ -427,7 +427,7 @@ end;
 constructor TKMTaskBuildField.Create(aWorker:TKMUnitWorker; const aLoc:TKMPoint; aID: Integer);
 begin
   inherited Create(aWorker);
-  fTaskName := utn_BuildField;
+  fType := uttBuildField;
   fLoc      := aLoc;
   BuildID   := aID;
   TileLockSet := False;
@@ -475,11 +475,11 @@ end;
 
 function TKMTaskBuildField.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -493,10 +493,10 @@ begin
         gTerrain.SetTileLock(fLoc, tlFieldWork);
         TileLockSet := True;
         CancelThePlan;
-        SetActionLockedStay(0,ua_Walk);
+        SetActionLockedStay(0,uaWalk);
        end;
     2: begin
-        SetActionLockedStay(11,ua_Work1,false);
+        SetActionLockedStay(11,uaWork1,false);
         inc(fPhase2);
         if fPhase2 = 2 then gTerrain.ResetDigState(fLoc); //Remove any dig over that might have been there (e.g. destroyed house)
         if (fPhase2 = 6) and gMapElements[gTerrain.Land[fLoc.Y,fLoc.X].Obj].WineOrCorn then
@@ -506,11 +506,11 @@ begin
     3: begin
         Thought := th_None; //Keep thinking build until it's done
         gTerrain.SetField(fLoc, Owner, ftCorn);
-        SetActionStay(5,ua_Walk);
+        SetActionStay(5,uaWalk);
         gTerrain.UnlockTile(fLoc);
         TileLockSet := False;
        end;
-    else Result := tr_TaskDone;
+    else Result := trTaskDone;
   end;
   if fPhase2 in [0,10] then inc(fPhase);
 end;
@@ -532,7 +532,7 @@ var
   HA: THouseArea;
 begin
   inherited Create(aWorker);
-  fTaskName  := utn_BuildHouseArea;
+  fType  := uttBuildHouseArea;
   fHouseType := aHouseType;
   fHouseLoc  := aLoc;
   BuildID    := aID;
@@ -649,17 +649,17 @@ end;
 function TKMTaskBuildHouseArea.Execute: TKMTaskResult;
 var OutOfWay: TKMPoint;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
   if (fHouse <> nil) and fHouse.IsDestroyed then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     fUnit.Thought := th_None;
     Exit;
   end;
@@ -679,7 +679,7 @@ begin
           fHouse := fHouse.GetHousePointer; //We need to register a pointer to the house
 
           HouseNeedsWorker := True; //The house placed on the map, if something happens with Worker the house will be removed
-          SetActionLockedStay(2, ua_Walk);
+          SetActionLockedStay(2, uaWalk);
           Thought := th_None;
         end;
     2:  //The house can become too steep after we flatten one part of it
@@ -687,23 +687,23 @@ begin
           SetActionWalkToSpot(CellsToDig[LastToDig])
         else
         begin
-          Result := tr_TaskDone;
+          Result := trTaskDone;
           fUnit.Thought := th_None;
           Exit;
         end;
     3:  begin
-          SetActionLockedStay(11,ua_Work1,false); //Don't flatten terrain here as we haven't started digging yet
+          SetActionLockedStay(11,uaWork1,false); //Don't flatten terrain here as we haven't started digging yet
         end;
     4:  begin
-          SetActionLockedStay(11,ua_Work1,false);
+          SetActionLockedStay(11,uaWork1,false);
           gTerrain.FlattenTerrain(CellsToDig[LastToDig]);
         end;
     5:  begin
-          SetActionLockedStay(11,ua_Work1,false);
+          SetActionLockedStay(11,uaWork1,false);
           gTerrain.FlattenTerrain(CellsToDig[LastToDig]);
         end;
     6:  begin
-          SetActionLockedStay(11,ua_Work1,false);
+          SetActionLockedStay(11,uaWork1,false);
           gTerrain.FlattenTerrain(CellsToDig[LastToDig]);
           gTerrain.FlattenTerrain(CellsToDig[LastToDig]); //Flatten the terrain twice now to ensure it really is flat
           gTerrain.SetTileLock(CellsToDig[LastToDig], tlDigged); //Block passability on tile
@@ -724,7 +724,7 @@ begin
           gScriptEvents.ProcHousePlanDigged(fHouse.UID);
         end;
     else
-        Result := tr_TaskDone;
+        Result := trTaskDone;
   end;
 
   Inc(fPhase);
@@ -756,7 +756,7 @@ end;
 constructor TKMTaskBuildHouse.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aID: Integer);
 begin
   inherited Create(aWorker);
-  fTaskName := utn_BuildHouse;
+  fType := uttBuildHouse;
   fHouse    := aHouse.GetHousePointer;
   BuildID   := aID;
 
@@ -814,12 +814,12 @@ end;
 {Build the house}
 function TKMTaskBuildHouse.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
     fUnit.Thought := th_None;
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -831,16 +831,16 @@ begin
           SetActionWalkToSpot(BuildFrom.Loc);
         end
         else
-          Result := tr_TaskDone;
+          Result := trTaskDone;
     //WARNING!!! THIS PHASE VALUE IS USED IN TKMTaskDelivery to construction !!!
     1:  begin
           //Face the building
           Direction := BuildFrom.Dir;
-          SetActionLockedStay(0, ua_Walk);
+          SetActionLockedStay(0, uaWalk);
         end;
     2:  begin
           //Start animation
-          SetActionLockedStay(5, ua_Work, False);
+          SetActionLockedStay(5, uaWork, False);
           Direction := BuildFrom.Dir;
           //Remove house plan when we start the stone phase (it is still required for wood)
           //But don't do it every time we hit if it's already done!
@@ -850,14 +850,14 @@ begin
     3:  begin
           //Update house on hummer hit
           fHouse.IncBuildingProgress;
-          SetActionLockedStay(6, ua_Work, False, 0, 5); //Do building and end animation
+          SetActionLockedStay(6, uaWork, False, 0, 5); //Do building and end animation
           Inc(fPhase2);
         end;
     4:  begin
-          SetActionStay(1, ua_Walk);
+          SetActionStay(1, uaWalk);
           Thought := th_None;
         end;
-    else Result := tr_TaskDone;
+    else Result := trTaskDone;
   end;
   Inc(fPhase);
 
@@ -888,7 +888,7 @@ end;
 constructor TKMTaskBuildHouseRepair.Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aRepairID: Integer);
 begin
   inherited Create(aWorker);
-  fTaskName := utn_BuildHouseRepair;
+  fType := uttBuildHouseRepair;
   fHouse    := aHouse.GetHousePointer;
   fRepairID := aRepairID;
 
@@ -942,11 +942,11 @@ end;
 {Repair the house}
 function TKMTaskBuildHouseRepair.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if WalkShouldAbandon then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -958,26 +958,26 @@ begin
             SetActionWalkToSpot(BuildFrom.Loc);
           end
           else
-            Result := tr_TaskDone;
+            Result := trTaskDone;
       1:  begin
             Direction := BuildFrom.Dir;
-            SetActionLockedStay(0, ua_Walk);
+            SetActionLockedStay(0, uaWalk);
           end;
       2:  begin
-            SetActionLockedStay(5, ua_Work, false, 0, 0); //Start animation
+            SetActionLockedStay(5, uaWork, false, 0, 0); //Start animation
             Direction := BuildFrom.Dir;
           end;
       3:  begin
             fHouse.AddRepair;
-            SetActionLockedStay(6, ua_Work,false, 0, 5); //Do building and end animation
+            SetActionLockedStay(6, uaWork,false, 0, 5); //Do building and end animation
             inc(fPhase2);
           end;
       4:  begin
             Thought := th_None;
-            SetActionStay(1, ua_Walk);
+            SetActionStay(1, uaWalk);
           end;
       else
-          Result := tr_TaskDone;
+          Result := trTaskDone;
     end;
   inc(fPhase);
 

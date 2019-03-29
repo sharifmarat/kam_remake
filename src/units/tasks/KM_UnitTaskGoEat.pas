@@ -35,7 +35,7 @@ constructor TKMTaskGoEat.Create(aInn: TKMHouseInn; aUnit: TKMUnit);
 begin
   inherited Create(aUnit);
 
-  fTaskName := utn_GoEat;
+  fType := uttGoEat;
   fInn      := TKMHouseInn(aInn.GetHousePointer);
   fPlace    := -1;
 end;
@@ -85,11 +85,11 @@ end;
 
 function TKMTaskGoEat.Execute: TKMTaskResult;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   if fInn.IsDestroyed then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -97,16 +97,16 @@ begin
   case fPhase of
    0: begin
         Thought := th_Eat;
-        if (GetHome <> nil) and not GetHome.IsDestroyed then GetHome.SetState(hst_Empty);
+        if (Home <> nil) and not Home.IsDestroyed then Home.SetState(hst_Empty);
         if not Visible and (InHouse <> nil) and not InHouse.IsDestroyed then
-          SetActionGoIn(ua_Walk, gd_GoOutside, InHouse) //Walk outside the house
+          SetActionGoIn(uaWalk, gd_GoOutside, InHouse) //Walk outside the house
         else
-          SetActionLockedStay(0, ua_Walk); //Skip this step
+          SetActionLockedStay(0, uaWalk); //Skip this step
       end;
    1: SetActionWalkToSpot(fInn.PointBelowEntrance);
-   2: SetActionGoIn(ua_Walk, gd_GoInside, fInn); //Enter Inn
+   2: SetActionGoIn(uaWalk, gd_GoInside, fInn); //Enter Inn
    3: begin
-        SetActionLockedStay(0, ua_Walk);
+        SetActionLockedStay(0, uaWalk);
         fPlace := fInn.EaterGetsInside(UnitType);
         //If there's no free place in the Inn skip to the step where we go out hungry
         if fPlace = -1 then
@@ -123,41 +123,41 @@ begin
       begin
         fInn.ResTakeFromIn(wt_Bread);
         gHands[fUnit.Owner].Stats.WareConsumed(wt_Bread);
-        SetActionLockedStay(29*4, ua_Eat);
+        SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * BREAD_RESTORE);
         fInn.UpdateEater(fPlace, wt_Bread);
       end else
-        SetActionLockedStay(0, ua_Walk);
+        SetActionLockedStay(0, uaWalk);
    5: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Sausages) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Sausages);
         gHands[fUnit.Owner].Stats.WareConsumed(wt_Sausages);
-        SetActionLockedStay(29*4, ua_Eat);
+        SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * SAUSAGE_RESTORE);
         fInn.UpdateEater(fPlace, wt_Sausages);
       end else
-        SetActionLockedStay(0, ua_Walk);
+        SetActionLockedStay(0, uaWalk);
    6: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Wine) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Wine);
         gHands[fUnit.Owner].Stats.WareConsumed(wt_Wine);
-        SetActionLockedStay(29*4, ua_Eat);
+        SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * WINE_RESTORE);
         fInn.UpdateEater(fPlace, wt_Wine);
       end else
-        SetActionLockedStay(0, ua_Walk);
+        SetActionLockedStay(0, uaWalk);
    7: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
         and (fInn.CheckResIn(wt_Fish) > 0) then
       begin
         fInn.ResTakeFromIn(wt_Fish);
         gHands[fUnit.Owner].Stats.WareConsumed(wt_Fish);
-        SetActionLockedStay(29*4, ua_Eat);
+        SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * FISH_RESTORE);
         fInn.UpdateEater(fPlace, wt_Fish);
       end else
-        SetActionLockedStay(0, ua_Walk);
+        SetActionLockedStay(0, uaWalk);
    8: begin
         //Stop showing hungry if we no longer are,
         //but if we are then walk out of the inn thinking hungry
@@ -166,12 +166,12 @@ begin
           Thought := th_Eat
         else
           Thought := th_None;
-        SetActionGoIn(ua_Walk, gd_GoOutside, fInn); //Exit Inn
+        SetActionGoIn(uaWalk, gd_GoOutside, fInn); //Exit Inn
         fInn.EatersGoesOut(fPlace);
         fPlace := -1;
       end;
    else
-      Result := tr_TaskDone;
+      Result := trTaskDone;
   end;
 
   Inc(fPhase);

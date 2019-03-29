@@ -1009,7 +1009,7 @@ begin
       begin
         U := gHands[aPlayer].Units[I];
         //Skip units in training, they can't be disturbed until they are finished training
-        if U.IsDeadOrDying or (U.UnitTask is TKMTaskSelfTrain) then Continue;
+        if U.IsDeadOrDying or (U.Task is TKMTaskSelfTrain) then Continue;
         Result[UnitCount] := U.UID;
         Inc(UnitCount);
       end;
@@ -3362,7 +3362,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if (U <> nil) then
       begin
-        H := U.GetHome;
+        H := U.Home;
         if (H <> nil) and not H.IsDestroyed then
         begin
           Result := H.UID;

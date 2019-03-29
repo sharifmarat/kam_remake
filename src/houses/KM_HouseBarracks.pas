@@ -274,7 +274,7 @@ begin
     Soldier.Visible := False; //Make him invisible as he is inside the barracks
     Soldier.Condition := Round(TROOPS_TRAINED_CONDITION * UNIT_MAX_CONDITION); //All soldiers start with 3/4, so groups get hungry at the same time
     //Soldier.OrderLoc := KMPointBelow(Entrance); //Position in front of the barracks facing north
-    Soldier.SetActionGoIn(ua_Walk, gd_GoOutside, Self);
+    Soldier.SetActionGoIn(uaWalk, gd_GoOutside, Self);
     if Assigned(Soldier.OnUnitTrained) then
       Soldier.OnUnitTrained(Soldier);
     Inc(Result);
@@ -292,7 +292,7 @@ begin
     U := gHands[fOwner].TrainUnit(ut_Recruit, Entrance);
     U.Visible := False;
     U.InHouse := Self;
-    U.SetHome(Self); //When walking out Home is used to remove recruit from barracks
+    U.Home := Self; //When walking out Home is used to remove recruit from barracks
     RecruitsAdd(U);
     gHands[fOwner].Stats.UnitCreated(ut_Recruit, False);
   end;

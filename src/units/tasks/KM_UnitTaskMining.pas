@@ -43,14 +43,14 @@ constructor TKMTaskMining.Create(aUnit: TKMUnit; aWare: TKMWareType);
 begin
   inherited Create(aUnit);
 
-  fTaskName := utn_Mining;
+  fType := uttMining;
   fWorkPlan := TKMUnitWorkPlan.Create;
   fBeastID  := 0;
 
   fWorkPlan.FindPlan( fUnit,
-                      fUnit.GetHome.HouseType,
+                      fUnit.Home.HouseType,
                       aWare,
-                      aUnit.GetHome.PointBelowEntrance,
+                      aUnit.Home.PointBelowEntrance,
                       ChooseToCutOrPlant
                       );
 end;
@@ -59,9 +59,9 @@ end;
 destructor TKMTaskMining.Destroy;
 begin
   // Make sure we don't abandon and leave our house with "working" animations
-  if (not fUnit.GetHome.IsDestroyed)
-  and (fUnit.GetHome.GetState = hst_Work) then
-    fUnit.GetHome.SetState(hst_Idle);
+  if (not fUnit.Home.IsDestroyed)
+  and (fUnit.Home.GetState = hst_Work) then
+    fUnit.Home.SetState(hst_Idle);
 
   FreeAndNil(fWorkPlan);
 
@@ -87,16 +87,16 @@ function TKMTaskMining.ChooseToCutOrPlant: TKMPlantAct;
 begin
   Result := taAny;
 
-  case fUnit.GetHome.HouseType of
-    htWoodcutters: case TKMHouseWoodcutters(fUnit.GetHome).WoodcutterMode of
+  case fUnit.Home.HouseType of
+    htWoodcutters: case TKMHouseWoodcutters(fUnit.Home).WoodcutterMode of
                       wcm_Chop:         Result := taCut;
                       wcm_Plant:        Result := taPlant;
-                      wcm_ChopAndPlant: if fUnit.GetHome.CheckResOut(wt_Trunk) >= MAX_WARES_IN_HOUSE then
+                      wcm_ChopAndPlant: if fUnit.Home.CheckResOut(wt_Trunk) >= MAX_WARES_IN_HOUSE then
                                           Result := taPlant
                                         else
                                           Result := taAny;
                     end;
-    htFarm:        if fUnit.GetHome.CheckResOut(wt_Corn) >= MAX_WARES_IN_HOUSE then
+    htFarm:        if fUnit.Home.CheckResOut(wt_Corn) >= MAX_WARES_IN_HOUSE then
                       Result := taPlant
                     else
                       Result := taAny;
@@ -139,7 +139,7 @@ begin
   OldDir := WorkPlan.WorkDir;
 
   //Tell the work plan to find a new resource of the same gathering script
-  if WorkPlan.FindDifferentResource(fUnit, fUnit.GetHome.PointBelowEntrance, OldLoc) then
+  if WorkPlan.FindDifferentResource(fUnit, fUnit.Home.PointBelowEntrance, OldLoc) then
   begin
     //Must always give us a new location (or same location but different direction)
     Assert((OldDir <> WorkPlan.WorkDir) or not KMSamePoint(OldLoc, WorkPlan.Loc));
@@ -186,8 +186,8 @@ begin
                             with WorkPlan do
                             begin
                               GatheringScript := gs_FarmerSow; //Switch to sowing corn rather than cutting
-                              ActionWalkFrom  := ua_WalkTool; //Carry our scythe back (without the corn) as the player saw us take it out
-                              ActionWorkType  := ua_Work1;
+                              ActionWalkFrom  := uaWalkTool; //Carry our scythe back (without the corn) as the player saw us take it out
+                              ActionWorkType  := uaWork1;
                               WorkCyc    := 10;
                               Product1   := wt_None; //Don't produce corn
                               ProdCount1 := 0;
@@ -223,12 +223,12 @@ var
   TimeToWork, StillFrame: Integer;
   ResAcquired: Boolean;
 begin
-  Result := tr_TaskContinues;
+  Result := trTaskContinues;
 
   //there's no point in doing a task if we can't return home
-  if (fUnit.GetHome <> nil) and fUnit.GetHome.IsDestroyed then
+  if (fUnit.Home <> nil) and fUnit.Home.IsDestroyed then
   begin
-    Result := tr_TaskDone;
+    Result := trTaskDone;
     Exit;
   end;
 
@@ -236,17 +236,17 @@ begin
   case fPhase of
     0:  if WorkPlan.HasToWalk then
         begin
-          GetHome.SetState(hst_Empty);
-          SetActionGoIn(WorkPlan.ActionWalkTo, gd_GoOutside, GetHome); //Walk outside the house
+          Home.SetState(hst_Empty);
+          SetActionGoIn(WorkPlan.ActionWalkTo, gd_GoOutside, Home); //Walk outside the house
 
           //Woodcutter takes his axe with him when going to chop trees
           if (WorkPlan.GatheringScript = gs_WoodCutterCut) then
-            GetHome.CurrentAction.SubActionRem([ha_Flagpole]);
+            Home.CurrentAction.SubActionRem([ha_Flagpole]);
         end
         else
         begin
           fPhase := SkipWalk; //Skip walking part if there's no need in it, e.g. CoalMiner or Baker
-          SetActionLockedStay(0, ua_Walk);
+          SetActionLockedStay(0, uaWalk);
           Exit;
         end;
 
@@ -264,7 +264,7 @@ begin
        if WorkPlan.GatheringScript = gs_FisherCatch then
        begin
          Direction := WorkPlan.WorkDir;
-         SetActionLockedStay(13, ua_Work1, false); //Throw the line out
+         SetActionLockedStay(13, uaWork1, false); //Throw the line out
        end else
          SetActionLockedStay(0, WorkPlan.ActionWalkTo);
 
@@ -287,7 +287,7 @@ begin
     5: //After work tasks for specific mining jobs
        case WorkPlan.GatheringScript of
          gs_WoodCutterCut:  SetActionLockedStay(10, WorkPlan.ActionWorkType, true, 5, 5); //Wait for the tree to start falling down
-         gs_FisherCatch:    SetActionLockedStay(15, ua_Work, false); //Pull the line in
+         gs_FisherCatch:    SetActionLockedStay(15, uaWork, false); //Pull the line in
          else               SetActionLockedStay(0, WorkPlan.ActionWorkType);
        end;
     6: begin
@@ -299,7 +299,7 @@ begin
            gs_FarmerWine:       gTerrain.CutGrapes(WorkPlan.Loc);
            gs_FisherCatch:      begin
                                   gTerrain.CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir));
-                                  WorkPlan.ActionWorkType := ua_WalkTool;
+                                  WorkPlan.ActionWorkType := uaWalkTool;
                                 end;
            gs_WoodCutterPlant:  //If the player placed a house plan here while we were digging don't place the
                                 //tree so the house plan isn't canceled. This is actually the same as TSK/TPR IIRC
@@ -314,40 +314,40 @@ begin
        end;
     7: begin
          //Removing the tree and putting a stump is handled in gTerrain.UpdateState from FallingTrees list
-         SetActionWalkToSpot(GetHome.PointBelowEntrance, WorkPlan.ActionWalkFrom); //Go home
+         SetActionWalkToSpot(Home.PointBelowEntrance, WorkPlan.ActionWalkFrom); //Go home
          Thought := th_Home;
        end;
-    8: SetActionGoIn(WorkPlan.ActionWalkFrom, gd_GoInside, GetHome); //Go inside
+    8: SetActionGoIn(WorkPlan.ActionWalkFrom, gd_GoInside, Home); //Go inside
 
     {Unit back at home and can process its booty now}
     9:    begin
             Thought := th_None;
             fPhase2 := 0;
-            GetHome.SetState(hst_Work);
+            Home.SetState(hst_Work);
 
             //Take required resources
-            if WorkPlan.Resource1 <> wt_None then GetHome.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
-            if WorkPlan.Resource2 <> wt_None then GetHome.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
+            if WorkPlan.Resource1 <> wt_None then Home.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
+            if WorkPlan.Resource2 <> wt_None then Home.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource1, WorkPlan.Count1);
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource2, WorkPlan.Count2);
 
-            GetHome.CurrentAction.SubActionAdd([ha_Smoke]);
+            Home.CurrentAction.SubActionAdd([ha_Smoke]);
             if WorkPlan.GatheringScript = gs_SwineBreeder then
             begin //Swines get feed and taken immediately
-              fBeastID := TKMHouseSwineStable(GetHome).FeedBeasts;
-              TKMHouseSwineStable(GetHome).TakeBeast(fBeastID);
+              fBeastID := TKMHouseSwineStable(Home).FeedBeasts;
+              TKMHouseSwineStable(Home).TakeBeast(fBeastID);
             end;
 
             if WorkPlan.ActCount >= fPhase2 then
             begin
-              GetHome.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
+              Home.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
               //Keep unit idling till next Phase, Idle time is -1 to compensate TaskExecution Phase
-              SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-1, ua_Walk);
+              SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-1, uaWalk);
             end
             else
             begin
               fPhase := SKIP_WORK; //Skip to work complete
-              SetActionLockedStay(0, ua_Walk);
+              SetActionLockedStay(0, uaWalk);
               Exit;
             end;
           end;
@@ -357,28 +357,28 @@ begin
 
             //Feed a horse/pig
             if (WorkPlan.GatheringScript = gs_HorseBreeder) and (fPhase2 = 1) then
-              fBeastID := TKMHouseSwineStable(GetHome).FeedBeasts;
+              fBeastID := TKMHouseSwineStable(Home).FeedBeasts;
 
             //Keep on working
             if fPhase2 <= WorkPlan.ActCount then
             begin
-              GetHome.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
+              Home.CurrentAction.SubActionWork(WorkPlan.HouseAct[fPhase2].Act);
               if fPhase < WorkPlan.ActCount then
-                SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-1, ua_Walk) //-1 to compensate units UpdateState run
+                SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-1, uaWalk) //-1 to compensate units UpdateState run
               else
-                SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-2, ua_Walk) //-2 to compensate 2 UpdateStates of a unit in last Act
+                SetActionLockedStay(WorkPlan.HouseAct[fPhase2].TimeToWork-2, uaWalk) //-2 to compensate 2 UpdateStates of a unit in last Act
             end
             else
             begin
               fPhase := SKIP_WORK; //Skip to step 31
-              SetActionLockedStay(0, ua_Walk);
+              SetActionLockedStay(0, uaWalk);
               Exit;
             end;
           end;
     11 + MAX_WORKPLAN:
           begin
             if WorkPlan.GatheringScript = gs_HorseBreeder then
-              TKMHouseSwineStable(GetHome).TakeBeast(fBeastID); //Take the horse after feeding
+              TKMHouseSwineStable(Home).TakeBeast(fBeastID); //Take the horse after feeding
 
             case WorkPlan.GatheringScript of
               gs_CoalMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wt_Coal);
@@ -391,18 +391,18 @@ begin
 
             if ResAcquired then
             begin
-              GetHome.ResAddToOut(WorkPlan.Product1, WorkPlan.ProdCount1);
-              GetHome.ResAddToOut(WorkPlan.Product2, WorkPlan.ProdCount2);
+              Home.ResAddToOut(WorkPlan.Product1, WorkPlan.ProdCount1);
+              Home.ResAddToOut(WorkPlan.Product2, WorkPlan.ProdCount2);
               gHands[fUnit.Owner].Stats.WareProduced(WorkPlan.Product1, WorkPlan.ProdCount1);
               gHands[fUnit.Owner].Stats.WareProduced(WorkPlan.Product2, WorkPlan.ProdCount2);
-              gScriptEvents.ProcWareProduced(fUnit.GetHome, WorkPlan.Product1, WorkPlan.ProdCount1);
-              gScriptEvents.ProcWareProduced(fUnit.GetHome, WorkPlan.Product2, WorkPlan.ProdCount2);
+              gScriptEvents.ProcWareProduced(fUnit.Home, WorkPlan.Product1, WorkPlan.ProdCount1);
+              gScriptEvents.ProcWareProduced(fUnit.Home, WorkPlan.Product2, WorkPlan.ProdCount2);
             end;
 
-            GetHome.SetState(hst_Idle);
-            SetActionLockedStay(WorkPlan.AfterWorkIdle-1, ua_Walk);
+            Home.SetState(hst_Idle);
+            SetActionLockedStay(WorkPlan.AfterWorkIdle-1, uaWalk);
           end;
-    else  Result := tr_TaskDone;
+    else  Result := trTaskDone;
   end;
   Inc(fPhase);
 end;

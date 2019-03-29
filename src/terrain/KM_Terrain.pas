@@ -1387,10 +1387,10 @@ begin
   U := Land[aLoc.Y,aLoc.X].IsUnit;
   //Action=nil can happen due to calling TileIsLocked during Unit.UpdateState.
   //Checks for Action=nil happen elsewhere, this is not the right place.
-  if (U <> nil) and (U.GetUnitAction = nil) then
+  if (U <> nil) and (U.Action = nil) then
     Result := False
   else
-    Result := (U <> nil) and (U.GetUnitAction.Locked);
+    Result := (U <> nil) and (U.Action.Locked);
 end;
 
 
@@ -3193,8 +3193,8 @@ begin
       TempUnit := UnitsHitTest(L1[I].X, L1[I].Y);
       //Always include the pushers loc in the possibilities, otherwise we can get two units swapping places forever
       if KMSamePoint(L1[I],PusherLoc)
-      or ((TempUnit <> nil) and (TempUnit.GetUnitAction is TKMUnitActionStay)
-          and (not TKMUnitActionStay(TempUnit.GetUnitAction).Locked)) then
+      or ((TempUnit <> nil) and (TempUnit.Action is TKMUnitActionStay)
+          and (not TKMUnitActionStay(TempUnit.Action).Locked)) then
         L3.Add(L1[I]);
     end;
 

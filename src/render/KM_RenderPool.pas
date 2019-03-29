@@ -879,11 +879,11 @@ begin
   end;
 
   case aProj of
-    pt_Arrow:     with gRes.Units[ut_Bowman].UnitAnim[ua_Spec, aDir] do
+    pt_Arrow:     with gRes.Units[ut_Bowman].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
-    pt_Bolt:      with gRes.Units[ut_Arbaletman].UnitAnim[ua_Spec, aDir] do
+    pt_Bolt:      with gRes.Units[ut_Arbaletman].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
-    pt_SlingRock: with gRes.Units[ut_Slingshot].UnitAnim[ua_Spec, aDir] do
+    pt_SlingRock: with gRes.Units[ut_Slingshot].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
     pt_TowerRock: Id := ProjectileBounds[aProj, 1] + 1;
     else          Id := 1; // Nothing?
@@ -1040,7 +1040,7 @@ begin
   Ground := pY + (R.Pivot[Id0].Y + R.Size[Id0].Y) / CELL_SIZE_PX;
 
   // Flag position
-  A := gRes.Units[aUnit].UnitAnim[ua_WalkArm, aDir];
+  A := gRes.Units[aUnit].UnitAnim[uaWalkArm, aDir];
   IdFlag := A.Step[FlagAnim mod Byte(A.Count) + 1] + 1;
   if IdFlag <= 0 then Exit;
 
@@ -1058,8 +1058,8 @@ procedure TRenderPool.AddUnitWithDefaultArm(aUnit: TKMUnitType; aUID: Integer; a
 begin
   if aUnit = ut_Fish then aAct := FishCountAct[5]; // In map editor always render 5 fish
   AddUnit(aUnit, aUID, aAct, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
-  if gRes.Units[aUnit].SupportsAction(ua_WalkArm) then
-    AddUnit(aUnit, aUID, ua_WalkArm, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
+  if gRes.Units[aUnit].SupportsAction(uaWalkArm) then
+    AddUnit(aUnit, aUID, uaWalkArm, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
 end;
 
 
@@ -1586,7 +1586,7 @@ end;
 
 procedure TRenderPool.RenderUnit(U: TKMUnit; const P: TKMPoint; FlagColor: Cardinal; DoHighlight: Boolean; HighlightColor: Cardinal);
 begin
-  AddUnitWithDefaultArm(U.UnitType, 0, ua_Walk, U.Direction, U.AnimStep, P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, FlagColor, True, DoHighlight, HighlightColor);
+  AddUnitWithDefaultArm(U.UnitType, 0, uaWalk, U.Direction, U.AnimStep, P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, FlagColor, True, DoHighlight, HighlightColor);
 end;
 
 
@@ -1647,7 +1647,7 @@ begin
   else begin
     P := gGameCursor.Cell;
     if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
-      AddUnitWithDefaultArm(TKMUnitType(gGameCursor.Tag1), 0, ua_Walk, dir_S, UnitStillFrames[dir_S], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
+      AddUnitWithDefaultArm(TKMUnitType(gGameCursor.Tag1), 0, uaWalk, dir_S, UnitStillFrames[dir_S], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
     else
       RenderSpriteOnTile(P, TC_BLOCK); // Red X
   end;

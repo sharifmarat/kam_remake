@@ -535,27 +535,27 @@ const //Corresponding indices in units.rx
   TC_BLOCK_ENTRANCE = 482;
 
 type
-  TKMUnitTaskName = ( utn_Unknown, //Uninitialized task to detect bugs
-        utn_SelfTrain, utn_Deliver,        utn_BuildRoad,  utn_BuildWine,        utn_BuildField,
-        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,    utn_Dismiss,
-        utn_GoEat,     utn_Mining,         utn_Die,        utn_GoOutShowHungry,  utn_AttackHouse,
-        utn_ThrowRock);
+  TKMUnitTaskType = ( uttUnknown, //Uninitialized task to detect bugs
+        uttSelfTrain, uttDeliver,         uttBuildRoad,  uttBuildWine,        uttBuildField,
+        uttBuildHouseArea, uttBuildHouse, uttBuildHouseRepair, uttGoHome,    uttDismiss,
+        uttGoEat,     uttMining,          uttDie,        uttGoOutShowHungry,  uttAttackHouse,
+        uttThrowRock);
 
   TKMUnitActionName = (uan_Stay, uan_WalkTo, uan_GoInOut, uan_AbandonWalk, uan_Fight, uan_StormAttack, uan_Steer);
 
-  TKMUnitActionType = (ua_Walk=120, ua_Work, ua_Spec, ua_Die, ua_Work1,
-                     ua_Work2, ua_WorkEnd, ua_Eat, ua_WalkArm, ua_WalkTool,
-                     ua_WalkBooty, ua_WalkTool2, ua_WalkBooty2, ua_Unknown);
+  TKMUnitActionType = (uaWalk=120, uaWork, uaSpec, uaDie, uaWork1,
+                     uaWork2, uaWorkEnd, uaEat, uaWalkArm, uaWalkTool,
+                     uaWalkBooty, uaWalkTool2, uaWalkBooty2, uaUnknown);
   TKMUnitActionTypeSet = set of TKMUnitActionType;
 
 const
-  UnitAct: array [TKMUnitActionType] of string = ('ua_Walk', 'ua_Work', 'ua_Spec', 'ua_Die', 'ua_Work1',
-             'ua_Work2', 'ua_WorkEnd', 'ua_Eat', 'ua_WalkArm', 'ua_WalkTool',
-             'ua_WalkBooty', 'ua_WalkTool2', 'ua_WalkBooty2', 'ua_Unknown');
+  UnitAct: array [TKMUnitActionType] of string = ('uaWalk', 'uaWork', 'uaSpec', 'uaDie', 'uaWork1',
+             'uaWork2', 'uaWorkEnd', 'uaEat', 'uaWalkArm', 'uaWalkTool',
+             'uaWalkBooty', 'uaWalkTool2', 'uaWalkBooty2', 'uaUnknown');
 
 
 const
-  FishCountAct: array [1..5] of TKMUnitActionType = (ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Work1);
+  FishCountAct: array [1..5] of TKMUnitActionType = (uaWalk, uaWork, uaSpec, uaDie, uaWork1);
 
 
 type
