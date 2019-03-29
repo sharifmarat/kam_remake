@@ -76,6 +76,7 @@ var
   //Not fully implemented yet
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
+  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
   CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   SNOW_HOUSES           :Boolean = False; //Draw snow on houses

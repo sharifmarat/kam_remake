@@ -186,6 +186,8 @@ type
     procedure UpdateState;
     procedure PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
     procedure Paint;
+
+    class function GetDefaultCondition: Integer;
   end;
 
 
@@ -293,7 +295,7 @@ begin
       Warrior.Direction := aDir;
       Warrior.AnimStep  := UnitStillFrames[aDir];
       AddMember(Warrior);
-      Warrior.Condition := UNIT_MAX_CONDITION div 2; //Half-fed
+      Warrior.Condition := GetDefaultCondition;
       fMapEdCount := aCount;
     end;
   end
@@ -1885,6 +1887,12 @@ begin
   gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.Action.ActionType,
     FlagBearer.Direction, FlagStep, FlagPositionF.X, FlagPositionF.Y, aFlagColor, aDoImmediateRender);
 
+end;
+
+
+class function TKMUnitGroup.GetDefaultCondition: Integer;
+begin
+  Result := UNIT_MAX_CONDITION div 2; //Half-fed
 end;
 
 

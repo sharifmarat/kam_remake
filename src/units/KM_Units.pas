@@ -217,6 +217,8 @@ type
     procedure Save(SaveStream: TKMemoryStream); virtual;
     function UpdateState: Boolean; virtual;
     procedure Paint; virtual;
+
+    class function GetDefaultCondition: Integer;
   end;
 
   //Common class for all civil units
@@ -1116,7 +1118,7 @@ begin
   if (gGame <> nil) and (gGame.GameMode <> gmMapEd) then
     fCondition    := Round(UNIT_MAX_CONDITION * (UNIT_CONDITION_BASE + KaMRandomS(UNIT_CONDITION_RANDOM, 'TKMUnit.Create')))
   else begin
-    fCondition    := Round(UNIT_MAX_CONDITION * UNIT_CONDITION_BASE);
+    fCondition    := GetDefaultCondition;
     fStartWDefaultCondition := True;
   end;
 
@@ -2286,6 +2288,12 @@ begin
 
   if SHOW_POINTER_DOTS then
     gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(axX), fPositionF.Y + 1   + GetSlide(axY), fPointerCount);
+end;
+
+
+class function TKMUnit.GetDefaultCondition: Integer;
+begin
+  Result := Round(UNIT_MAX_CONDITION * UNIT_CONDITION_BASE);
 end;
 
 

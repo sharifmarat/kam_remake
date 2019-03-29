@@ -26,7 +26,7 @@ type
     Label_UnitName: TKMLabel;
     Label_UnitCondition: TKMLabel;
     Label_UnitDescription: TKMLabel;
-    KMConditionBar_Unit: TKMPercentBar;
+    ConditionBar_Unit: TKMPercentBar;
     Button_ConditionInc, Button_ConditionDefault, Button_ConditionDec: TKMButton;
     Image_UnitPic: TKMImage;
 
@@ -65,7 +65,7 @@ begin
   Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
   Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,0,gResTexts[TX_UNIT_CONDITION],fntGrey,taCenter);
 
-  KMConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
+  ConditionBar_Unit       := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
   Button_ConditionDec     := TKMButton.Create(Panel_Unit,65,78,20,20,'-', bsGame);
   Button_ConditionInc     := TKMButton.Create(Panel_Unit,161,78,20,20,'+', bsGame);
   Button_ConditionDefault := TKMButton.Create(Panel_Unit,86,78,74,20,'default', bsGame);
@@ -133,9 +133,11 @@ begin
 
   Label_UnitDescription.Show;
   Panel_Unit.Show;
-  Button_ConditionInc.Hide;
-  Button_ConditionDec.Hide;
-  Button_ConditionDefault.Hide;
+
+  Button_ConditionInc.Visible := MAPED_SHOW_CONDITION_UNIT_BTNS;
+  Button_ConditionDec.Visible := MAPED_SHOW_CONDITION_UNIT_BTNS;
+  Button_ConditionDefault.Visible := MAPED_SHOW_CONDITION_UNIT_BTNS;
+  Button_ConditionDefault.Enabled := not fUnit.StartWDefaultCondition;
   Panel_Army.Hide;
 
   if fUnit = nil then Exit;
@@ -143,7 +145,7 @@ begin
   Label_UnitName.Caption := gRes.Units[fUnit.UnitType].GUIName;
   Image_UnitPic.TexID := gRes.Units[fUnit.UnitType].GUIScroll;
   Image_UnitPic.FlagColor := gHands[fUnit.Owner].FlagColor;
-  KMConditionBar_Unit.Position := fUnit.Condition / UNIT_MAX_CONDITION;
+  ConditionBar_Unit.Position := fUnit.Condition / UNIT_MAX_CONDITION;
 
   Label_UnitDescription.Caption := gRes.Units[fUnit.UnitType].Description;
 end;
@@ -167,7 +169,7 @@ begin
   Label_UnitName.Caption := gRes.Units[fGroup.UnitType].GUIName;
   Image_UnitPic.TexID := gRes.Units[fGroup.UnitType].GUIScroll;
   Image_UnitPic.FlagColor := gHands[fGroup.Owner].FlagColor;
-  KMConditionBar_Unit.Position := fGroup.Condition / UNIT_MAX_CONDITION;
+  ConditionBar_Unit.Position := fGroup.Condition / UNIT_MAX_CONDITION;
 
   //Warrior specific
   ImageStack_Army.SetCount(fGroup.MapEdCount, fGroup.UnitsPerRow, fGroup.UnitsPerRow div 2);
@@ -181,28 +183,45 @@ end;
 
 
 procedure TKMMapEdUnit.UnitConditionsChange(Sender: TObject; Shift: TShiftState);
+var
+  U: TKMUnit;
+  NewCondition: Integer;
 begin
+  if fUnit = nil then
+    U := fGroup.FlagBearer
+  else
+    U := fUnit;
+
+  NewCondition := U.Condition;
+
   if Sender = Button_ConditionDefault then
-    fGroup.FlagBearer.StartWDefaultCondition := not fGroup.FlagBearer.StartWDefaultCondition
+    U.StartWDefaultCondition := not U.StartWDefaultCondition
   else if Sender = Button_ConditionInc then
   begin
-    fGroup.Condition := fGroup.Condition + GetMultiplicator(Shift);
-    fGroup.FlagBearer.StartWDefaultCondition := False;
+    NewCondition := U.Condition + GetMultiplicator(Shift);
+    U.StartWDefaultCondition := False;
     Button_ConditionDefault.Enable;
   end else if Sender = Button_ConditionDec then
   begin
-    fGroup.Condition := fGroup.Condition - GetMultiplicator(Shift);
-    fGroup.FlagBearer.StartWDefaultCondition := False;
+    NewCondition := U.Condition - GetMultiplicator(Shift);
+    U.StartWDefaultCondition := False;
     Button_ConditionDefault.Enable;
   end;
 
-  if fGroup.FlagBearer.StartWDefaultCondition then
+  if fGroup <> nil then
+    fGroup.Condition := NewCondition
+  else
+    fUnit.Condition := NewCondition;
+
+  if U.StartWDefaultCondition then
   begin
-    KMConditionBar_Unit.Position := 0.5;
-    fGroup.Condition := UNIT_MAX_CONDITION div 2;
+    if fGroup <> nil then
+      fGroup.Condition := TKMUnitGroup.GetDefaultCondition
+    else
+      fUnit.Condition := TKMUnit.GetDefaultCondition;
     Button_ConditionDefault.Disable;
-  end else
-    KMConditionBar_Unit.Position := fGroup.Condition / UNIT_MAX_CONDITION;
+  end;
+  ConditionBar_Unit.Position := U.Condition / UNIT_MAX_CONDITION;
 end;
 
 
@@ -246,10 +265,10 @@ begin
   if Sender = Button_ArmyFood then
   begin
     if fGroup.Condition = UNIT_MAX_CONDITION then
-      fGroup.Condition := UNIT_MAX_CONDITION div 2
+      fGroup.Condition := TKMUnitGroup.GetDefaultCondition
     else
       fGroup.Condition := UNIT_MAX_CONDITION;
-    KMConditionBar_Unit.Position := fGroup.Condition / UNIT_MAX_CONDITION;
+    ConditionBar_Unit.Position := fGroup.Condition / UNIT_MAX_CONDITION;
   end;
 
   fGroup.MapEdOrder.Order := TKMInitialOrder(DropBox_ArmyOrder.ItemIndex);

@@ -2,7 +2,7 @@ unit KM_MissionScript_Standard;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_MissionScript, KM_UnitGroup, KM_Houses,
+  KM_MissionScript, KM_UnitGroup, KM_Units, KM_Houses,
   KM_AIAttacks, KM_Points, KM_Defaults;
 
 
@@ -17,6 +17,7 @@ type
     fParsingMode: TKMMissionParsingMode; //Data gets sent to Game differently depending on Game/Editor mode
     fPlayerEnabled: TKMHandEnabledArray;
     fLastHouse: TKMHouse;
+    fLastUnit: TKMUnit;
     fLastTroop: TKMUnitGroup;
     fAIAttack: TKMAIAttack;
     fAttackPositions: array of TKMAttackPosition;
@@ -40,7 +41,7 @@ implementation
 uses
   Classes, SysUtils, Math, KromUtils,
   KM_Hand, KM_Game, KM_HandsCollection,
-  KM_Units, KM_UnitsCollection, KM_UnitWarrior,
+  KM_UnitsCollection, KM_UnitWarrior,
   KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_AI, KM_AIDefensePos,
   KM_Resource, KM_ResHouses, KM_ResUnits, KM_ResWares,
@@ -217,6 +218,7 @@ begin
                             fLastHand := PLAYER_NONE; //Lets us skip this player
                           fLastHouse := nil;
                           fLastTroop := nil;
+                          fLastUnit := nil;
                         end;
 
     ctHumanPlayer:     begin
@@ -354,7 +356,7 @@ begin
                             gHands.PlayerAnimals.AddUnit(UnitOldIndexToType[P[0]], KMPoint(P[1]+1, P[2]+1))
                           else
                           if (fLastHand <> PLAYER_NONE) and (UnitOldIndexToType[P[0]] in [HUMANS_MIN..HUMANS_MAX]) then
-                            gHands[fLastHand].AddUnit(UnitOldIndexToType[P[0]], KMPoint(P[1]+1, P[2]+1));
+                            fLastUnit := gHands[fLastHand].AddUnit(UnitOldIndexToType[P[0]], KMPoint(P[1]+1, P[2]+1));
                         end;
 
     ctSetUnitByStock:  if fLastHand <> PLAYER_NONE then
@@ -378,6 +380,17 @@ begin
                           end
                           else
                             AddError('ct_UnitAddToLast without prior declaration of House');
+
+    ctSetUnitFood:      if fLastHand <> PLAYER_NONE then
+                        begin
+                          if fLastUnit <> nil then
+                          begin
+                            fLastUnit.StartWDefaultCondition := False;
+                            if P[0] <> -1 then
+                              fLastUnit.Condition := P[0];
+                          end else
+                            AddError('ct_SetUnitFood without prior declaration of Unit');
+                        end;
 
     ctSetRoad:         if (fLastHand <> PLAYER_NONE) and PointInMap(P[0]+1, P[1]+1) then
                           gHands[fLastHand].AddRoadToList(KMPoint(P[0]+1,P[1]+1));
@@ -1074,7 +1087,11 @@ begin
     begin
       U := gHands[I].Units[K];
       if not (U is TKMUnitWarrior) then //Groups get saved separately
+      begin
         AddCommand(ctSetUnit, [UnitTypeToOldIndex[U.UnitType], U.CurrPosition.X-1 + aLeftInset, U.CurrPosition.Y-1 + aTopInset]);
+        if not U.StartWDefaultCondition then
+          AddCommand(ctSetUnitFood, [U.Condition]);
+      end;
     end;
 
     //Unit groups
