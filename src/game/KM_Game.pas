@@ -88,7 +88,7 @@ type
 
     function GetGameTickDuration: Single;
     procedure GameSpeedChanged(aFromSpeed, aToSpeed: Single);
-    function GetControlledHandIndex: TKMHandIndex;
+    function GetControlledHandIndex: TKMHandID;
     procedure IncGameTick;
     procedure CheckPauseGameAtTick;
 
@@ -127,8 +127,8 @@ type
     procedure GameMPReadyToPlay(Sender: TObject);
     procedure GameHold(DoHold: Boolean; Msg: TKMGameResultMsg); //Hold the game to ask if player wants to play after Victory/Defeat/ReplayEnd
     procedure RequestGameHold(Msg: TKMGameResultMsg);
-    procedure PlayerVictory(aPlayerIndex: TKMHandIndex);
-    procedure PlayerDefeat(aPlayerIndex: TKMHandIndex; aShowDefeatMessage: Boolean = True);
+    procedure PlayerVictory(aPlayerIndex: TKMHandID);
+    procedure PlayerDefeat(aPlayerIndex: TKMHandID; aShowDefeatMessage: Boolean = True);
     procedure WaitingPlayersDisplay(aWaiting: Boolean);
     procedure WaitingPlayersDrop;
     procedure ShowScriptError(const aMsg: UnicodeString);
@@ -162,7 +162,7 @@ type
     function IsSpeedUpAllowed: Boolean;
     function IsMPGameSpeedUpAllowed: Boolean;
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
-    procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
+    procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandID);
     procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
     procedure OverlayUpdate;
     procedure OverlaySet(const aText: UnicodeString; aPlayer: Shortint);
@@ -177,7 +177,7 @@ type
     function PlayerLoc: Byte; //Can used in SP game/replay only
     function PlayerColor: Cardinal; //Can used in SP game/replay only
 
-    property ControlledHandIndex: TKMHandIndex read GetControlledHandIndex;
+    property ControlledHandIndex: TKMHandID read GetControlledHandIndex;
 
     property Scripting: TKMScripting read fScripting;
     property GameMode: TKMGameMode read fGameMode;
@@ -587,7 +587,7 @@ end;
 
 function TKMGame.FindHandToSpec: Integer;
 var I: Integer;
-    handIndex, humanPlayerHandIndex: TKMHandIndex;
+    handIndex, humanPlayerHandIndex: TKMHandID;
 begin
   //Find the 1st enabled human hand to be spectating initially.
   //If there is no enabled human hands, then find the 1st enabled hand
@@ -616,7 +616,7 @@ end;
 procedure TKMGame.MultiplayerRig;
 var
   I: Integer;
-  HIndex: TKMHandIndex;
+  HIndex: TKMHandID;
 begin
   //Copy game options from lobby to this game
   fGameOptions.Peacetime := fNetworking.NetGameOptions.Peacetime;
@@ -916,7 +916,7 @@ begin
 end;
 
 
-procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandIndex);
+procedure TKMGame.PlayerVictory(aPlayerIndex: TKMHandID);
 begin
   if IsMultiplayer then
   begin
@@ -931,12 +931,12 @@ begin
   if fGameMode = gmMultiSpectate then
     Exit;
 
-  if aPlayerIndex = gMySpectator.HandIndex then
+  if aPlayerIndex = gMySpectator.HandID then
     gSoundPlayer.Play(sfxn_Victory, 1, True); //Fade music
 
   if fGameMode = gmMulti then
   begin
-    if aPlayerIndex = gMySpectator.HandIndex then
+    if aPlayerIndex = gMySpectator.HandID then
     begin
       GameResult := gr_Win;
       fGamePlayInterface.ShowMPPlayMore(gr_Win);
@@ -949,7 +949,7 @@ end;
 
 function TKMGame.PlayerLoc: Byte;
 begin
-  Result := gMySpectator.HandIndex;
+  Result := gMySpectator.HandID;
 end;
 
 
@@ -960,11 +960,11 @@ begin
 end;
 
 
-procedure TKMGame.PlayerDefeat(aPlayerIndex: TKMHandIndex; aShowDefeatMessage: Boolean = True);
+procedure TKMGame.PlayerDefeat(aPlayerIndex: TKMHandID; aShowDefeatMessage: Boolean = True);
 begin
   case GameMode of
     gmSingle, gmCampaign:
-              if aPlayerIndex = gMySpectator.HandIndex then
+              if aPlayerIndex = gMySpectator.HandID then
               begin
                 gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
                 RequestGameHold(gr_Defeat);
@@ -974,7 +974,7 @@ begin
                   fNetworking.PostLocalMessage(Format(gResTexts[TX_MULTIPLAYER_PLAYER_DEFEATED],
                                                       [gHands[aPlayerIndex].GetOwnerNameColoredU]), csSystem);
 
-                if aPlayerIndex = gMySpectator.HandIndex then
+                if aPlayerIndex = gMySpectator.HandID then
                 begin
                   gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
                   GameResult := gr_Defeat;
@@ -1277,7 +1277,7 @@ begin
 end;
 
 
-procedure TKMGame.ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandIndex);
+procedure TKMGame.ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandID);
 begin
   //Once you have lost no messages can be received
   if gHands[aHandIndex].AI.HasLost then Exit;
@@ -1286,7 +1286,7 @@ begin
   gHands[aHandIndex].MessageLog.Add(aKind, aTextID, aLoc);
 
   //Don't play sound in replays or spectator
-  if (aHandIndex = gMySpectator.HandIndex) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
+  if (aHandIndex = gMySpectator.HandID) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
     gSoundPlayer.Play(sfx_MessageNotice, 2);
 end;
 
@@ -1305,7 +1305,7 @@ end;
 
 procedure TKMGame.OverlayUpdate;
 begin
-  fGamePlayInterface.SetScriptedOverlay(fOverlayText[gMySpectator.HandIndex]);
+  fGamePlayInterface.SetScriptedOverlay(fOverlayText[gMySpectator.HandID]);
   fGamePlayInterface.UpdateOverlayControls;
 end;
 
@@ -1451,11 +1451,11 @@ end;
 
 
 //Return Controlled hand index in game or -1, if there is no one (spectator/replay/maped)
-function TKMGame.GetControlledHandIndex: TKMHandIndex;
+function TKMGame.GetControlledHandIndex: TKMHandID;
 begin
   Result := -1;
   if fGameMode in [gmSingle, gmCampaign, gmMulti] then
-    Result := gMySpectator.HandIndex;
+    Result := gMySpectator.HandID;
 end;
 
 
@@ -1776,7 +1776,7 @@ begin
     begin
       gMySpectator.FOWIndex := PLAYER_NONE; //Show all by default in replays
       //HandIndex is the first enabled player
-      gMySpectator.HandIndex := FindHandToSpec;
+      gMySpectator.HandID := FindHandToSpec;
     end;
 
     //Multiplayer saves don't have this piece of information. Its valid only for MyPlayer

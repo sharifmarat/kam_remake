@@ -55,7 +55,7 @@ end;
 function TKMTaskDie.Execute: TKMTaskResult;
 var
   SequenceLength: SmallInt;
-  TempOwner: TKMHandIndex;
+  TempOwner: TKMHandID;
   TempUnitType: TKMUnitType;
   TempX, TempY: Word;
 begin

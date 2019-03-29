@@ -141,7 +141,7 @@ end;
 
 procedure TKMMapEdTownDefence.Town_DefenceFormations(Sender: TObject);
 begin
-  FormationsPopUp.Show(gMySpectator.HandIndex);
+  FormationsPopUp.Show(gMySpectator.HandID);
 end;
 
 
@@ -157,7 +157,7 @@ begin
     gGameCursor.Mode := cmNone;
   end;
 
-  OnlyAdvancedAIHand := gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex);
+  OnlyAdvancedAIHand := gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID);
 
   CheckBox_AutoDefence.Checked := gMySpectator.Hand.AI.Setup.AutoDefend;
   CheckBox_DefendAllies.Checked := gMySpectator.Hand.AI.Setup.DefendAllies;

@@ -12,7 +12,7 @@ type
   //Player AI exists both for AI and Human players, but for AI it does significantly more
   TKMHandAI = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
 
     fGeneral: TKMGeneral;
     fGoals: TKMGoals;
@@ -29,7 +29,7 @@ type
     function GetHasLost: Boolean;
     function GetIsNotWinnerNotLoser: Boolean;
   public
-    constructor Create(aHandIndex: TKMHandIndex);
+    constructor Create(aHandIndex: TKMHandID);
     destructor Destroy; override;
 
     property General: TKMGeneral read fGeneral;
@@ -48,7 +48,7 @@ type
     property HasLost: Boolean read GetHasLost;
     property IsNotWinnerNotLoser: Boolean read GetIsNotWinnerNotLoser;
     function GetWonOrLostString: UnicodeString; //Get string represantation of Hand WonOrLost
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure HouseAttackNotification(aHouse: TKMHouse; aAttacker: TKMUnitWarrior);
     procedure UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
     procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
@@ -70,7 +70,7 @@ uses
 
 
 { TKMHandAI }
-constructor TKMHandAI.Create(aHandIndex: TKMHandIndex);
+constructor TKMHandAI.Create(aHandIndex: TKMHandID);
 begin
   inherited Create;
 
@@ -128,7 +128,7 @@ begin
 
     //Replays/spectators don't see victory screen
     if not (gGame.GameMode in [gmReplaySingle, gmReplayMulti])
-    and (gGame.IsMultiplayer or (gMySpectator.HandIndex = fOwner)) then  //Let everyone know in MP mode
+    and (gGame.IsMultiplayer or (gMySpectator.HandID = fOwner)) then  //Let everyone know in MP mode
       gGame.PlayerVictory(fOwner);
 
     //Script may have additional event processors
@@ -140,7 +140,7 @@ end;
 procedure TKMHandAI.AddDefaultGoals(aBuildings: Boolean);
 var
   I: Integer;
-  Enemies: array of TKMHandIndex;
+  Enemies: array of TKMHandID;
 begin
   SetLength(Enemies, 0);
   for I := 0 to gHands.Count - 1 do
@@ -272,7 +272,7 @@ begin
 end;
 
 
-procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fMayor.OwnerUpdate(fOwner);
@@ -293,7 +293,7 @@ begin
       begin
         //No fight alerts in replays/spectating, and only show alerts for ourselves
         if not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-        and (fOwner = gMySpectator.HandIndex)
+        and (fOwner = gMySpectator.HandID)
         and (aAttacker <> nil) then //Don't show alerts for annonymous attacks (e.g. script)
           gGame.GamePlayInterface.Alerts.AddFight(KMPointF(aHouse.Position), fOwner, an_Town, gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
       end;
@@ -348,7 +348,7 @@ begin
     hndHuman:
       //No fight alerts in replays, and only show alerts for ourselves
       if not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-      and (fOwner = gMySpectator.HandIndex) then
+      and (fOwner = gMySpectator.HandID) then
         gGame.GamePlayInterface.Alerts.AddFight(aUnit.PositionF, fOwner, NotifyKind[aUnit is TKMUnitWarrior], gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
     hndComputer:
       begin

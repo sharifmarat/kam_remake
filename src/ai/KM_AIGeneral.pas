@@ -12,7 +12,7 @@ type
   TKMGeneral = class
   private
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fSetup: TKMHandAISetup;
     fAttacks: TKMAIAttacks;
     fDefencePositions: TAIDefencePositions;
@@ -24,11 +24,11 @@ type
     procedure CheckAutoDefend;
     procedure OrderAttack(aGroup: TKMUnitGroup; aTarget: TKMAIAttackTarget; const aCustomPos: TKMPoint);
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
 
     procedure AfterMissionInit;
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     property Attacks: TKMAIAttacks read fAttacks;
     property DefencePositions: TAIDefencePositions read fDefencePositions;
     procedure RetaliateAgainstThreat(aAttacker: TKMUnit);
@@ -57,7 +57,7 @@ const
 
 
 { TKMGeneral }
-constructor TKMGeneral.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMGeneral.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
 
@@ -84,7 +84,7 @@ begin
 end;
 
 
-procedure TKMGeneral.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMGeneral.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;
@@ -449,7 +449,7 @@ const
 var
   DefPosArr: TKMDefencePosArr;
   I: Integer;
-  BestOwner: TKMHandIndex;
+  BestOwner: TKMHandID;
   Loc: TKMPoint;
   GT: TKMGroupType;
   DPT: TAIDefencePosType;

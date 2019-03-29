@@ -563,7 +563,7 @@ begin
     Exit;
 
   if (gHands <> nil) and (RGPlayer.ItemIndex < gHands.Count) then
-    gMySpectator.HandIndex := RGPlayer.ItemIndex;
+    gMySpectator.HandID := RGPlayer.ItemIndex;
 end;
 
 

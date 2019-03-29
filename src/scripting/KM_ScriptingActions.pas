@@ -242,7 +242,7 @@ begin
     and gTerrain.TileInMapCoords(X, Y)
     and gHands[aPlayer].InCinematic then
     begin
-      if aPlayer = gMySpectator.HandIndex then
+      if aPlayer = gMySpectator.HandID then
         gGame.GamePlayInterface.Viewport.PanTo(KMPointF(X, Y), Duration);
     end
     else
@@ -507,7 +507,7 @@ function TKMScriptActions.PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPOINT_ZERO, False, aVolume, 0, False, False)
@@ -529,7 +529,7 @@ function TKMScriptActions.PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPOINT_ZERO, False, aVolume, 0, True, False)
@@ -557,7 +557,7 @@ function TKMScriptActions.PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
@@ -645,7 +645,7 @@ function TKMScriptActions.PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPOINT_ZERO, False, aVolume, 0, False, False)
@@ -667,7 +667,7 @@ function TKMScriptActions.PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPOINT_ZERO, False, aVolume, 0, True, False)
@@ -695,7 +695,7 @@ function TKMScriptActions.PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
       Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
@@ -1742,7 +1742,7 @@ end;
 procedure TKMScriptActions.ShowMsg(aPlayer: Shortint; aText: AnsiString);
 begin
   try
-    if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+    if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
       gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText)), KMPOINT_ZERO);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1760,7 +1760,7 @@ procedure TKMScriptActions.ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString
 begin
   try
     try
-      if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+      if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
         gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText), Params), KMPOINT_ZERO);
     except
       //Format may throw an exception
@@ -1782,7 +1782,7 @@ begin
   try
     if gTerrain.TileInMapCoords(aX, aY) then
     begin
-      if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+      if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
         gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText)), KMPoint(aX,aY));
     end
     else
@@ -1806,7 +1806,7 @@ begin
     try
       if gTerrain.TileInMapCoords(aX, aY) then
       begin
-        if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+        if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
           gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText), Params), KMPoint(aX,aY));
       end
       else

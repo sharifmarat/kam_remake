@@ -24,10 +24,10 @@ type
   protected
     function GetResInLocked(aI: Byte): Word; override;
   public
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
-    procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
+    procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function AddUnitToQueue(aUnit: TKMUnitType; aCount: Byte): Byte; //Should add unit to queue if there's a place
     procedure ChangeUnitTrainOrder(aNewPosition: Integer); overload; //Change last unit in queue training order
@@ -52,7 +52,7 @@ uses
 
 
 { TKMHouseSchool }
-constructor TKMHouseSchool.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouseSchool.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 var
   I: Integer;
 begin
@@ -81,7 +81,7 @@ end;
 
 
 //Remove all queued units first, to avoid unnecessary shifts in queue
-procedure TKMHouseSchool.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
+procedure TKMHouseSchool.DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False);
 var
   I: Integer;
 begin

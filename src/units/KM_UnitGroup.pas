@@ -41,7 +41,7 @@ type
     fPointerCount: Cardinal;
     fTicker: Cardinal;
     fTargetFollowTicker: Cardinal;
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fMembers: TList;
     fOffenders: TList;
     fSelected: TKMUnitWarrior; //Unit selected by player in GUI. Should not be saved or affect game logic for MP consistency.
@@ -109,7 +109,7 @@ type
     OnGroupDied: TKMUnitGroupEvent;
 
     constructor Create(aID: Cardinal; aCreator: TKMUnitWarrior); overload;
-    constructor Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
+    constructor Create(aID: Cardinal; aOwner: TKMHandID; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
     constructor Create(LoadStream: TKMemoryStream); overload;
     procedure SyncLoad;
     procedure Save(SaveStream: TKMemoryStream);
@@ -143,7 +143,7 @@ type
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
     function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
-    property Owner: TKMHandIndex read fOwner;
+    property Owner: TKMHandID read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
     property Direction: TKMDirection read GetDirection write SetDirection;
     property UnitsPerRow: Word read fUnitsPerRow write SetUnitsPerRow;
@@ -162,8 +162,8 @@ type
     property OrderTargetGroup: TKMUnitGroup read GetOrderTargetGroup;
     property OrderTargetHouse: TKMHouse read GetOrderTargetHouse write SetOrderTargetHouse;
 
-    procedure SetOwner(aOwner: TKMHandIndex);
-    procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+    procedure SetOwner(aOwner: TKMHandID);
+    procedure OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
 
     procedure OrderAttackHouse(aHouse: TKMHouse; aClearOffenders: Boolean);
     procedure OrderAttackUnit(aUnit: TKMUnit; aClearOffenders: Boolean);
@@ -201,7 +201,7 @@ type
     destructor Destroy; override;
 
     function AddGroup(aWarrior: TKMUnitWarrior): TKMUnitGroup; overload;
-    function AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
+    function AddGroup(aOwner: TKMHandID; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
     procedure AddGroupToList(aGroup: TKMUnitGroup);
     procedure DeleteGroupFromList(aGroup: TKMUnitGroup);
     procedure RemGroup(aGroup: TKMUnitGroup);
@@ -260,7 +260,7 @@ end;
 
 
 //Create a Group from script (creates all the warriors as well)
-constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType;
+constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandID; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word);
 var
   Warrior: TKMUnitWarrior;
@@ -1092,7 +1092,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.SetOwner(aOwner: TKMHandIndex);
+procedure TKMUnitGroup.SetOwner(aOwner: TKMHandID);
 var I: Integer;
 begin
   fOwner := aOwner;
@@ -1101,7 +1101,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+procedure TKMUnitGroup.OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
 var I: Integer;
 begin
   if aMoveToNewOwner and (fOwner <> aOwner) then
@@ -1924,7 +1924,7 @@ begin
 end;
 
 
-function TKMUnitGroups.AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType;
+function TKMUnitGroups.AddGroup(aOwner: TKMHandID; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 begin
   Result := nil;

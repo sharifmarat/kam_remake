@@ -98,7 +98,7 @@ type
     function ServerToLocal(aIndexOnServer: TKMNetHandleIndex): Integer;
     function NiknameToLocal(const aNikname: AnsiString): Integer;
     function StartingLocToLocal(aLoc: Integer): Integer;
-    function PlayerIndexToLocal(aIndex: TKMHandIndex): Integer;
+    function PlayerIndexToLocal(aIndex: TKMHandID): Integer;
 
     function CheckCanJoin(const aNik: AnsiString; aIndexOnServer: TKMNetHandleIndex): Integer;
     function CheckCanReconnect(aLocalIndex: Integer): Integer;
@@ -127,7 +127,7 @@ type
     procedure SetAIReady;
     procedure RemAllAIs;
     procedure RemDisconnectedPlayers;
-    function ValidateSetup(aHumanUsableLocs, aAIUsableLocs, aAdvancedAIUsableLocs: TKMHandIndexArray; out ErrorMsg: UnicodeString): Boolean;
+    function ValidateSetup(aHumanUsableLocs, aAIUsableLocs, aAdvancedAIUsableLocs: TKMHandIDArray; out ErrorMsg: UnicodeString): Boolean;
 
     //Import/Export
     procedure SaveToStream(aStream: TKMemoryStream); //Gets all relevant information as text string
@@ -602,7 +602,7 @@ begin
 end;
 
 
-function TKMNetPlayersList.PlayerIndexToLocal(aIndex: TKMHandIndex): Integer;
+function TKMNetPlayersList.PlayerIndexToLocal(aIndex: TKMHandID): Integer;
 var I: Integer;
 begin
   Result := -1;
@@ -1351,7 +1351,7 @@ end;
 
 //Convert undefined/random start locations to fixed and assign random colors
 //Remove odd players
-function TKMNetPlayersList.ValidateSetup(aHumanUsableLocs, aAIUsableLocs, aAdvancedAIUsableLocs: TKMHandIndexArray;
+function TKMNetPlayersList.ValidateSetup(aHumanUsableLocs, aAIUsableLocs, aAdvancedAIUsableLocs: TKMHandIDArray;
                                          out ErrorMsg: UnicodeString): Boolean;
   function IsHumanLoc(aLoc: Byte): Boolean;
   var I: Integer;

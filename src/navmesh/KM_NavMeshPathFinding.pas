@@ -26,7 +26,7 @@ type
     fMinN: TNavMeshNode;
     fUsedNodes: array of TNavMeshNode;
 
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fGroupType: TKMGroupType;
     fMode: TPathfindingMode;
 
@@ -50,8 +50,8 @@ type
     //function WalkableDistance(aStart, aEnd: TKMPoint; out aDistance: Word): Boolean;
     function ShortestPolygonRoute(aStart, aEnd: Word; out aDistance: Word; out aRoutePolygonArray: TKMWordArray): Boolean;
     function ShortestRoute(aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
-    function AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
-    function AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+    function AvoidTrafficRoute(aOwner: TKMHandID; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+    function AvoidEnemyRoute(aOwner: TKMHandID; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
   end;
 
 
@@ -365,7 +365,7 @@ begin
 end;
 
 
-function TNavMeshPathFinding.AvoidTrafficRoute(aOwner: TKMHandIndex; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+function TNavMeshPathFinding.AvoidTrafficRoute(aOwner: TKMHandID; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
 begin
   fOwner := aOwner;
   fMode := pm_AvoidTraffic;
@@ -373,7 +373,7 @@ begin
 end;
 
 
-function TNavMeshPathFinding.AvoidEnemyRoute(aOwner: TKMHandIndex; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
+function TNavMeshPathFinding.AvoidEnemyRoute(aOwner: TKMHandID; aGroup: TKMGroupType; aStart, aEnd: TKMPoint; out aDistance: Word; out aRoutePointArray: TKMPointArray): Boolean;
 begin
   fOwner := aOwner;
   fMode := pm_AvoidSpecEnemy;

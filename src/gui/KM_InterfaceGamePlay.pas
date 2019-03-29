@@ -660,7 +660,7 @@ begin
     and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
   begin
     Group := TKMUnitGroup(gMySpectator.Selected);
-    if Group.CanTakeOrders and (Group.Owner = gMySpectator.HandIndex)
+    if Group.CanTakeOrders and (Group.Owner = gMySpectator.HandID)
       and Group.CanWalkTo(Loc, 0) then
     begin
       gGame.GameInputProcess.CmdArmy(gic_ArmyWalk, Group, Loc, dir_NA);
@@ -1733,8 +1733,8 @@ var
   LastSelectedObj: TObject;
   OldHandIndex: Integer;
 begin
-  OldHandIndex := gMySpectator.HandIndex;
-  gMySpectator.HandIndex := aHandIndex;
+  OldHandIndex := gMySpectator.HandID;
+  gMySpectator.HandID := aHandIndex;
 
   LastSelectedObj := gMySpectator.LastSpecSelectedObj;
   if LastSelectedObj <> nil then
@@ -1750,13 +1750,13 @@ begin
       raise Exception.Create('Could not determine last selected object type');
   end
   else
-    if not KMSamePoint(gHands[gMySpectator.HandIndex].CenterScreen, KMPOINT_ZERO) then
-      fViewport.Position := KMPointF(gHands[gMySpectator.HandIndex].CenterScreen); //By default set viewport position to hand CenterScreen
+    if not KMSamePoint(gHands[gMySpectator.HandID].CenterScreen, KMPOINT_ZERO) then
+      fViewport.Position := KMPointF(gHands[gMySpectator.HandID].CenterScreen); //By default set viewport position to hand CenterScreen
 
   gMySpectator.Selected := LastSelectedObj;  // Change selected object to last one for this hand or Reset it to nil
 
   UpdateSelectedObject;
-  Replay_UpdatePlayerInterface(OldHandIndex, gMySpectator.HandIndex);
+  Replay_UpdatePlayerInterface(OldHandIndex, gMySpectator.HandID);
 end;
 
 
@@ -1766,17 +1766,17 @@ var
 begin
   Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aPlayerIndex, Dropbox_ReplayFOW.Count - 1);
 
-  OldHandIndex := gMySpectator.HandIndex;
-  gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(aPlayerIndex);
+  OldHandIndex := gMySpectator.HandID;
+  gMySpectator.HandID := Dropbox_ReplayFOW.GetTag(aPlayerIndex);
 
   if (gMySpectator.Selected <> nil)
-    and (OldHandIndex <> gMySpectator.HandIndex) then
+    and (OldHandIndex <> gMySpectator.HandID) then
   begin
     gMySpectator.Selected := nil;   // Reset selection when start viewing another player
     UpdateSelectedObject;
   end;
 
-  Replay_UpdatePlayerInterface(OldHandIndex, gMySpectator.HandIndex);
+  Replay_UpdatePlayerInterface(OldHandIndex, gMySpectator.HandID);
 end;
 
 
@@ -1868,7 +1868,7 @@ begin
   if (Sender = Checkbox_ReplayFOW) then
   begin
     if Checkbox_ReplayFOW.Checked then
-      gMySpectator.FOWIndex := gMySpectator.HandIndex
+      gMySpectator.FOWIndex := gMySpectator.HandID
     else
       gMySpectator.FOWIndex := -1;
     fMinimap.Update; // Force update right now so FOW doesn't appear to lag
@@ -2095,9 +2095,9 @@ begin
     fLastBeaconTime := TimeGet;
     // In replays we show the beacon directly without GIP. In spectator we use -1 for hand index
     case fUIMode of
-      umReplay:   Alerts.AddBeacon(aLoc, gMySpectator.HandIndex, gMySpectator.Hand.FlagColor, gGameApp.GlobalTickCount + ALERT_DURATION[atBeacon]);
+      umReplay:   Alerts.AddBeacon(aLoc, gMySpectator.HandID, gMySpectator.Hand.FlagColor, gGameApp.GlobalTickCount + ALERT_DURATION[atBeacon]);
       umSpectate: gGame.GameInputProcess.CmdGame(gic_GameAlertBeacon, aLoc, PLAYER_NONE, gGame.Networking.MyNetPlayer.FlagColor);
-      else        gGame.GameInputProcess.CmdGame(gic_GameAlertBeacon, aLoc, gMySpectator.HandIndex, gMySpectator.Hand.FlagColor);
+      else        gGame.GameInputProcess.CmdGame(gic_GameAlertBeacon, aLoc, gMySpectator.HandID, gMySpectator.Hand.FlagColor);
     end;
     Beacon_Cancel;
   end else
@@ -2261,7 +2261,7 @@ begin
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));
     end;
-    gMySpectator.HandIndex := Dropbox_ReplayFOW.GetTag(Dropbox_ReplayFOW.ItemIndex); //Update HandIndex
+    gMySpectator.HandID := Dropbox_ReplayFOW.GetTag(Dropbox_ReplayFOW.ItemIndex); //Update HandIndex
   end;
 end;
 
@@ -2662,12 +2662,12 @@ begin
   // In a replay we want in-game statistics (and other things) to be shown for the owner of the last select object
   if fUIMode in [umReplay, umSpectate] then
   begin
-    if gMySpectator.Selected is TKMHouse      then gMySpectator.HandIndex := TKMHouse    (gMySpectator.Selected).Owner;
-    if gMySpectator.Selected is TKMUnit       then gMySpectator.HandIndex := TKMUnit     (gMySpectator.Selected).Owner;
-    if gMySpectator.Selected is TKMUnitGroup  then gMySpectator.HandIndex := TKMUnitGroup(gMySpectator.Selected).Owner;
-    Dropbox_ReplayFOW.SelectByTag(gMySpectator.HandIndex);
+    if gMySpectator.Selected is TKMHouse      then gMySpectator.HandID := TKMHouse    (gMySpectator.Selected).Owner;
+    if gMySpectator.Selected is TKMUnit       then gMySpectator.HandID := TKMUnit     (gMySpectator.Selected).Owner;
+    if gMySpectator.Selected is TKMUnitGroup  then gMySpectator.HandID := TKMUnitGroup(gMySpectator.Selected).Owner;
+    Dropbox_ReplayFOW.SelectByTag(gMySpectator.HandID);
     if Checkbox_ReplayFOW.Checked then
-      gMySpectator.FOWIndex := gMySpectator.HandIndex
+      gMySpectator.FOWIndex := gMySpectator.HandID
     else
       gMySpectator.FOWIndex := -1;
     fMinimap.Update; // Force update right now so FOW doesn't appear to lag
@@ -3327,7 +3327,7 @@ var
   Obj: TObject;
   P: TKMPoint;
   Group: TKMUnitGroup;
-  Owner: TKMHandIndex;
+  Owner: TKMHandID;
 begin
   inherited MouseMove(Shift, X, Y, aHandled);
   if aHandled then Exit;
@@ -3427,7 +3427,7 @@ begin
     Group := TKMUnitGroup(gMySpectator.Selected);
     if (Obj <> nil)
     and (Obj is TKMUnitWarrior)
-    and (TKMUnitWarrior(Obj).Owner = gMySpectator.HandIndex)
+    and (TKMUnitWarrior(Obj).Owner = gMySpectator.HandID)
     and not Group.HasMember(TKMUnitWarrior(Obj))
     and (UnitGroups[TKMUnitWarrior(Obj).UnitType] = Group.GroupType) then
       gRes.Cursors.Cursor := kmc_JoinYes
@@ -3441,7 +3441,7 @@ begin
     // Only own and ally units/houses can be selected
     Owner := GetGameObjectOwnerIndex(Obj);
     if (Owner <> -1) and
-      ((Owner = gMySpectator.HandIndex)
+      ((Owner = gMySpectator.HandID)
       or ((ALLOW_SELECT_ALLY_UNITS
           or ((Obj is TKMHouse) and (gHands[Owner].IsHuman or not gGame.IsCampaign))) //Do not allow to select allied AI in campaigns
         and (gMySpectator.Hand.Alliances[Owner] = at_Ally))
@@ -3517,7 +3517,7 @@ begin
 
           if (Obj <> nil)
             and (Obj is TKMUnitWarrior)
-            and (TKMUnitWarrior(Obj).Owner = gMySpectator.HandIndex)
+            and (TKMUnitWarrior(Obj).Owner = gMySpectator.HandID)
             and not Group.HasMember(TKMUnitWarrior(Obj))
             and (UnitGroups[TKMUnitWarrior(Obj).UnitType] = Group.GroupType) then
           begin
@@ -3569,9 +3569,9 @@ begin
                 // In a replay we want in-game statistics (and other things) to be shown for the owner of the last select object
                 if fUIMode in [umReplay, umSpectate] then
                 begin
-                  Dropbox_ReplayFOW.SelectByTag(gMySpectator.HandIndex);
+                  Dropbox_ReplayFOW.SelectByTag(gMySpectator.HandID);
                   if Checkbox_ReplayFOW.Checked then
-                    gMySpectator.FOWIndex := gMySpectator.HandIndex
+                    gMySpectator.FOWIndex := gMySpectator.HandID
                   else
                     gMySpectator.FOWIndex := -1;
                   fMinimap.Update; // Force update right now so FOW doesn't appear to lag
@@ -3691,7 +3691,7 @@ begin
           Group := TKMUnitGroup(gMySpectator.Selected);
 
           // Attack or Walk
-          if Group.CanTakeOrders and (Group.Owner = gMySpectator.HandIndex) then
+          if Group.CanTakeOrders and (Group.Owner = gMySpectator.HandID) then
           begin
             // Try to Attack unit
             Obj := gMySpectator.HitTestCursor;

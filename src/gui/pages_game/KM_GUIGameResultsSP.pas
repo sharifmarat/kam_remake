@@ -127,7 +127,7 @@ var
   I: Integer;
   R: TKMWareType;
   G: TKMCardinalArray;
-  HumanId: TKMHandIndex;
+  HumanId: TKMHandID;
   ShowAIResults: Boolean;
   Cap: UnicodeString;
 begin

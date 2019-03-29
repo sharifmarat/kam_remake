@@ -36,7 +36,7 @@ type
     function IsValid(aCheckDATCRC: Boolean): Boolean;
     function AICount: Byte;
     function HumanCount: Byte;
-    function HumanUsableLocs: TKMHandIndexArray;
+    function HumanUsableLocs: TKMHandIDArray;
     function GetTimeText: UnicodeString;
     function GetTitleWithTime: UnicodeString;
     function GetSaveTimestamp: UnicodeString;
@@ -151,7 +151,7 @@ begin
 end;
 
 
-function TKMGameInfo.HumanUsableLocs: TKMHandIndexArray;
+function TKMGameInfo.HumanUsableLocs: TKMHandIDArray;
 var
   I: Integer;
 begin

@@ -19,7 +19,7 @@ type
 
   TKMCityManagement = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fSetup: TKMHandAISetup;
 
     fBuilder: TKMCityBuilder;
@@ -41,14 +41,14 @@ type
     procedure OrderWeapons();
 
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
 
     property Builder: TKMCityBuilder read fBuilder write fBuilder;
     property Predictor: TKMCityPredictor read fPredictor;
@@ -72,7 +72,7 @@ const
 
 
 { TKMCityManagement }
-constructor TKMCityManagement.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMCityManagement.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
 
@@ -123,7 +123,7 @@ begin
 end;
 
 
-procedure TKMCityManagement.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityManagement.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fPredictor.OwnerUpdate(aPlayer);

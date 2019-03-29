@@ -108,7 +108,7 @@ type
                         Radius: Single;
                         Attenuate: Boolean;
                         Loc: TKMPoint;
-                        HandIndex: TKMHandIndex;
+                        HandIndex: TKMHandID;
                       end;
     function CanPlay(aIndex: Integer): Boolean;
     procedure StartSound(aIndex: Integer);
@@ -121,7 +121,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState;
 
-    function AddSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint;
+    function AddSound(aHandIndex: TKMHandID; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint;
                           aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
     procedure RemoveLoopSound(aScriptIndex: Integer);
     procedure RemoveSound(aScriptIndex: Integer; aLoopedOnly: Boolean = False);
@@ -796,7 +796,7 @@ function TKMScriptSoundsManager.CanPlay(aIndex: Integer): Boolean;
 var
   DistanceSqr: Single;
 begin
-  Result := ((fSounds[aIndex].HandIndex = gMySpectator.HandIndex) or (fSounds[aIndex].HandIndex = PLAYER_NONE))
+  Result := ((fSounds[aIndex].HandIndex = gMySpectator.HandID) or (fSounds[aIndex].HandIndex = PLAYER_NONE))
              and (not fSounds[aIndex].Attenuate or (gMySpectator.FogOfWar.CheckTileRevelation(fSounds[aIndex].Loc.X, fSounds[aIndex].Loc.Y) > 0));
   if not Result then Exit;
 
@@ -832,7 +832,7 @@ begin
 end;
 
 
-function TKMScriptSoundsManager.AddSound(aHandIndex: TKMHandIndex; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat;
+function TKMScriptSoundsManager.AddSound(aHandIndex: TKMHandID; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat;
                                            aLoc: TKMPoint; aAttenuate: Boolean; aVolume: Single; aRadius: Single; aFadeMusic, aLooped: Boolean): Integer;
 var
   NewIndex: Integer;

@@ -16,7 +16,7 @@ type
       EatStep: Cardinal;
     end;
   public
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     function EaterGetsInside(aUnitType: TKMUnitType): ShortInt;
     procedure UpdateEater(aIndex: ShortInt; aFoodKind: TKMWareType);
@@ -36,7 +36,7 @@ uses
 
 
 { TKMHouseInn }
-constructor TKMHouseInn.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouseInn.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 var
   I: Integer;
 begin

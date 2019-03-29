@@ -22,7 +22,7 @@ type
 
   TKMMapGoalInfo = packed record
     Cond: TKMGoalCondition;
-    Play: TKMHandIndex;
+    Play: TKMHandID;
     Stat: TKMGoalStatus;
   end;
 
@@ -101,7 +101,7 @@ type
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     CanBeAI: array [0..MAX_HANDS-1] of Boolean;
     CanBeAdvancedAI: array [0..MAX_HANDS-1] of Boolean;
-    DefaultHuman: TKMHandIndex;
+    DefaultHuman: TKMHandID;
     GoalsVictoryCount, GoalsSurviveCount: array [0..MAX_HANDS-1] of Byte;
     GoalsVictory: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
     GoalsSurvive: array [0..MAX_HANDS-1] of array of TKMMapGoalInfo;
@@ -112,7 +112,7 @@ type
     constructor Create(const aFolder: string; aStrictParsing: Boolean; aMapFolder: TKMapFolder); overload;
     destructor Destroy; override;
 
-    procedure AddGoal(aType: TKMGoalType; aPlayer: TKMHandIndex; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandIndex);
+    procedure AddGoal(aType: TKMGoalType; aPlayer: TKMHandID; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandID);
     procedure LoadExtra;
 
     property TxtInfo: TKMMapTxtInfo read fTxtInfo;
@@ -122,11 +122,11 @@ type
     property MapFolder: TKMapFolder read fMapFolder;
     property FileName: UnicodeString read fFileName;
     function FullPath(const aExt: string): string;
-    function HumanUsableLocs: TKMHandIndexArray;
-    function AIUsableLocs: TKMHandIndexArray;
-    function AdvancedAIUsableLocs: TKMHandIndexArray;
+    function HumanUsableLocs: TKMHandIDArray;
+    function AIUsableLocs: TKMHandIDArray;
+    function AdvancedAIUsableLocs: TKMHandIDArray;
     property CRC: Cardinal read fCRC;
-    function LocationName(aIndex: TKMHandIndex): string;
+    function LocationName(aIndex: TKMHandID): string;
     property Size: TKMMapSize read GetSize;
     property SizeText: string read GetSizeText;
     function IsValid: Boolean;
@@ -391,7 +391,7 @@ begin
 end;
 
 
-procedure TKMapInfo.AddGoal(aType: TKMGoalType; aPlayer: TKMHandIndex; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandIndex);
+procedure TKMapInfo.AddGoal(aType: TKMGoalType; aPlayer: TKMHandID; aCondition: TKMGoalCondition; aStatus: TKMGoalStatus; aPlayerIndex: TKMHandID);
 var G: TKMMapGoalInfo;
 begin
   G.Cond := aCondition;
@@ -420,7 +420,7 @@ begin
 end;
 
 
-function TKMapInfo.HumanUsableLocs: TKMHandIndexArray;
+function TKMapInfo.HumanUsableLocs: TKMHandIDArray;
 var
   I: Integer;
 begin
@@ -434,7 +434,7 @@ begin
 end;
 
 
-function TKMapInfo.AIUsableLocs: TKMHandIndexArray;
+function TKMapInfo.AIUsableLocs: TKMHandIDArray;
 var
   I: Integer;
 begin
@@ -448,7 +448,7 @@ begin
 end;
 
 
-function TKMapInfo.AdvancedAIUsableLocs: TKMHandIndexArray;
+function TKMapInfo.AdvancedAIUsableLocs: TKMHandIDArray;
 var
   I: Integer;
 begin
@@ -462,7 +462,7 @@ begin
 end;
 
 
-function TKMapInfo.LocationName(aIndex: TKMHandIndex): string;
+function TKMapInfo.LocationName(aIndex: TKMHandID): string;
 begin
   Result := Format(gResTexts[TX_LOBBY_LOCATION_X], [aIndex + 1]);
 end;

@@ -234,7 +234,7 @@ type
     Params: array[1..MAX_PARAMS] of Integer;
     TextParam: UnicodeString;
     DateTimeParam: TDateTime;
-    HandIndex: TKMHandIndex; //Player for which the command is to be issued. (Needed for multiplayer and other reasons)
+    HandIndex: TKMHandID; //Player for which the command is to be issued. (Needed for multiplayer and other reasons)
   end;
 
   function IsSelectedObjectCommand(aGIC: TKMGameInputCommandType): Boolean;
@@ -306,7 +306,7 @@ type
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue:boolean); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer); overload;
-    procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal); overload;
+    procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue: Integer); overload;
 
     procedure CmdTemp(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint); overload;
@@ -460,7 +460,7 @@ end;
 function TKMGameInputProcess.MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand;
 begin
   Result.CommandType := aGIC;
-  Result.HandIndex := gMySpectator.HandIndex;
+  Result.HandIndex := gMySpectator.HandID;
 end;
 
 
@@ -558,7 +558,7 @@ var
   SrcHouse, TgtHouse: TKMHouse;
 begin
   //NOTE: gMySpectator.PlayerIndex should not be used for important stuff here, use P instead (commands must be executed the same for all players)
-  IsSilent := (aCommand.HandIndex <> gMySpectator.HandIndex);
+  IsSilent := (aCommand.HandIndex <> gMySpectator.HandID);
   P := gHands[aCommand.HandIndex];
   SrcUnit := nil;
   SrcGroup := nil;
@@ -742,8 +742,8 @@ procedure TKMGameInputProcess.ExecGameAlertBeaconCmd(const aCommand: TKMGameInpu
     // Check if player, who send beacon, is muted
     IsPlayerMuted := (gGame.Networking <> nil) and gGame.Networking.IsMuted(gGame.Networking.GetNetPlayerIndex(aCommand.Params[3]));
 
-    Result := (gHands.CheckAlliance(aCommand.Params[3], gMySpectator.HandIndex) = at_Ally)
-      and (gHands[aCommand.Params[3]].ShareBeacons[gMySpectator.HandIndex])
+    Result := (gHands.CheckAlliance(aCommand.Params[3], gMySpectator.HandID) = at_Ally)
+      and (gHands[aCommand.Params[3]].ShareBeacons[gMySpectator.HandID])
       and not IsPlayerMuted; // do not show beacons sended by muted players
   end;
 
@@ -966,7 +966,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal);
+procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal);
 begin
   Assert(aCommandType = gic_GameAlertBeacon);
   TakeCommand(MakeCommand(aCommandType, Round(aLoc.X * 10), Round(aLoc.Y * 10), aOwner, (aColor and $FFFFFF)));

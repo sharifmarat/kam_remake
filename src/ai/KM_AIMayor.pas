@@ -13,7 +13,7 @@ type
   //Mayor is the one who manages the town
   TKMayor = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fSetup: TKMHandAISetup;
     fBalance: TKMayorBalance;
     fCityPlanner: TKMCityPlanner;
@@ -44,13 +44,13 @@ type
     procedure PlanDefenceTowers;
     procedure TryBuildDefenceTower;
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
 
     property CityPlanner: TKMCityPlanner read fCityPlanner;
 
     procedure AfterMissionInit;
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     function BalanceText: UnicodeString;
 
     procedure UpdateState(aTick: Cardinal);
@@ -100,7 +100,7 @@ const //Sample list made by AntonP
 
 
 { TKMayor }
-constructor TKMayor.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMayor.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
 
@@ -332,7 +332,7 @@ const
   DISTANCE_BETWEEN_TOWERS = 7;
 var
   P: TKMHand;
-  PL1, PL2: TKMHandIndex;
+  PL1, PL2: TKMHandID;
   pom: boolean;
   //Outline1, Outline2: TKMWeightSegments;
   I, K, DefCount: Integer;
@@ -818,7 +818,7 @@ begin
 end;
 
 
-procedure TKMayor.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMayor.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fBalance.OwnerUpdate(aPlayer);

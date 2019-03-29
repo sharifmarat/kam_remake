@@ -56,7 +56,7 @@ type
   TKMMissionParserCommon = class
   protected
     fMissionFileName: string;
-    fLastHand: TKMHandIndex; //Current Player
+    fLastHand: TKMHandID; //Current Player
     fFatalErrors: string; //Fatal errors descriptions accumulate here
     fMinorErrors: string; //Minor error descriptions accumulate here
     function TextToCommandType(const ACommandText: AnsiString): TKMCommandType;

@@ -123,7 +123,7 @@ procedure TKMMapEdMissionPlayers.PlayerDeleteConfirm(aVisible: Boolean);
 begin
   if aVisible then
   begin
-    Label_PlayerDeleteConfirmTitle.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE_TITLE], [gMySpectator.HandIndex + 1]);
+    Label_PlayerDeleteConfirmTitle.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE_TITLE], [gMySpectator.HandID + 1]);
     PopUp_Confirm_PlayerDelete.Show;
   end else
     PopUp_Confirm_PlayerDelete.Hide;
@@ -141,7 +141,7 @@ begin
 
   if Sender = Button_PlayerDeleteConfirm then
   begin
-    gGame.MapEditor.DeletePlayer(gMySpectator.HandIndex);
+    gGame.MapEditor.DeletePlayer(gMySpectator.HandID);
     PlayerDeleteConfirm(False);
 
     Mission_PlayerIdUpdate;
@@ -215,8 +215,8 @@ end;
 
 procedure TKMMapEdMissionPlayers.UpdatePlayer;
 begin
-  Button_PlayerDelete.Enabled := gHands[gMySpectator.HandIndex].HasAssets;
-  Button_PlayerDelete.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE], [gMySpectator.HandIndex + 1]);
+  Button_PlayerDelete.Enabled := gHands[gMySpectator.HandID].HasAssets;
+  Button_PlayerDelete.Caption := Format(gResTexts[TX_MAPED_PLAYER_DELETE], [gMySpectator.HandID + 1]);
 end;
 
 

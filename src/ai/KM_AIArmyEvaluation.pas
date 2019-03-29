@@ -23,9 +23,9 @@ type
 
     function CalculateStrength(aEval: TKMArmyEval): TKMGroupStrengthArray;
     function GetUnitEvaluation(aUT: TKMUnitType; aConsiderHitChance: Boolean = False): TKMGroupEval;
-    function GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
-    function GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TKMAllianceType): TKMArmyEval;
-    procedure EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
+    function GetEvaluation(aPlayer: TKMHandID): TKMArmyEval;
+    function GetAllianceStrength(aPlayer: TKMHandID; aAlliance: TKMAllianceType): TKMArmyEval;
+    procedure EvaluatePower(aPlayer: TKMHandID; aConsiderHitChance: Boolean = False);
   public
     constructor Create();
     destructor Destroy; override;
@@ -33,11 +33,11 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property UnitEvaluation[aUT: TKMUnitType; aConsiderHitChance: Boolean]: TKMGroupEval read GetUnitEvaluation;
-    property Evaluation[aPlayer: TKMHandIndex]: TKMArmyEval read GetEvaluation;
-    property AllianceEvaluation[aPlayer: TKMHandIndex; aAlliance: TKMAllianceType]: TKMArmyEval read GetAllianceStrength;
+    property Evaluation[aPlayer: TKMHandID]: TKMArmyEval read GetEvaluation;
+    property AllianceEvaluation[aPlayer: TKMHandID; aAlliance: TKMAllianceType]: TKMArmyEval read GetAllianceStrength;
 
-    function CompareStrength(aPlayer, aOponent: TKMHandIndex): Single;
-    function CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
+    function CompareStrength(aPlayer, aOponent: TKMHandID): Single;
+    function CompareAllianceStrength(aPlayer, aOponent: TKMHandID): Single;
     procedure UpdateState(aTick: Cardinal);
   end;
 
@@ -98,7 +98,7 @@ begin
 end;
 
 
-function TKMArmyEvaluation.GetEvaluation(aPlayer: TKMHandIndex): TKMArmyEval;
+function TKMArmyEvaluation.GetEvaluation(aPlayer: TKMHandID): TKMArmyEval;
 begin
   Move(fEvals[aPlayer], Result, SizeOf(fEvals[aPlayer]));
 end;
@@ -115,7 +115,7 @@ function TKMArmyEvaluation.CalculateStrength(aEval: TKMArmyEval): TKMGroupStreng
   end;
 
 
-function TKMArmyEvaluation.CompareStrength(aPlayer, aOponent: TKMHandIndex): Single;
+function TKMArmyEvaluation.CompareStrength(aPlayer, aOponent: TKMHandID): Single;
 var
   Sum, Diff: Single;
   GT: TKMGroupType;
@@ -134,7 +134,7 @@ begin
 end;
 
 
-function TKMArmyEvaluation.GetAllianceStrength(aPlayer: TKMHandIndex; aAlliance: TKMAllianceType): TKMArmyEval;
+function TKMArmyEvaluation.GetAllianceStrength(aPlayer: TKMHandID; aAlliance: TKMAllianceType): TKMArmyEval;
 var
   PL: Integer;
   GT: TKMGroupType;
@@ -155,7 +155,7 @@ end;
 
 
 // Approximate way how to compute strength of 2 alliances
-function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandIndex): Single;
+function TKMArmyEvaluation.CompareAllianceStrength(aPlayer, aOponent: TKMHandID): Single;
 var
   Sum, Diff: Single;
   GT: TKMGroupType;
@@ -193,7 +193,7 @@ end;
 //                    DefenceProjectiles
 //
 // Probability > random number => decrease hitpoint; 0 hitpoints = unit is dead
-procedure TKMArmyEvaluation.EvaluatePower(aPlayer: TKMHandIndex; aConsiderHitChance: Boolean = False);
+procedure TKMArmyEvaluation.EvaluatePower(aPlayer: TKMHandID; aConsiderHitChance: Boolean = False);
 var
   Stats: TKMHandStats;
   Qty: Integer;
@@ -231,7 +231,7 @@ procedure TKMArmyEvaluation.UpdateState(aTick: Cardinal);
 const
   PERF_SUM = MAX_HANDS * 10;
 var
-  PL: TKMHandIndex;
+  PL: TKMHandID;
 begin
   PL := aTick mod PERF_SUM;
   if (PL < gHands.Count) AND gHands[PL].Enabled then

@@ -10,7 +10,7 @@ uses
 type
   TKMMapEdPlayerGoal = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fIndex: Integer;
 
     procedure Goal_Change(Sender: TObject);
@@ -31,7 +31,7 @@ type
 
     property Visible: Boolean read GetVisible;
     function KeyDown(Key: Word; Shift: TShiftState): Boolean;
-    procedure Show(aPlayer: TKMHandIndex; aIndex: Integer);
+    procedure Show(aPlayer: TKMHandID; aIndex: Integer);
   end;
 
 
@@ -162,7 +162,7 @@ begin
 end;
 
 
-procedure TKMMapEdPlayerGoal.Show(aPlayer: TKMHandIndex; aIndex: Integer);
+procedure TKMMapEdPlayerGoal.Show(aPlayer: TKMHandID; aIndex: Integer);
 begin
   fOwner := aPlayer;
   fIndex := aIndex;

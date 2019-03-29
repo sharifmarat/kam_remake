@@ -40,12 +40,12 @@ type
     fType: TKMChartWarrior;
     fKind: TKMChartArmyKind;
     fChart: TKMChart;
-    function GetArmyPowerChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
+    function GetArmyPowerChartData(aPlayer: TKMHandID): TKMCardinalArray;
   public
     constructor Create(aType: TKMChartWarriorType; aKind: TKMChartArmyKind; aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
     destructor Destroy; override;
-    function IsEmpty(aPlayer: TKMHandIndex): Boolean;
-    function GetChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
+    function IsEmpty(aPlayer: TKMHandID): Boolean;
+    function GetChartData(aPlayer: TKMHandID): TKMCardinalArray;
     property Chart: TKMChart read fChart;
     property ChartType: TKMChartWarrior read fType;
   end;
@@ -84,7 +84,7 @@ type
     procedure BackClick(Sender: TObject);
     function DoAdjoinSameColorHand(aHandId: Integer): Boolean;
     function GetSelectedChartArmyKind: TKMChartArmyKind;
-    function GetChartWares(aPlayer: TKMHandIndex; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
+    function GetChartWares(aPlayer: TKMHandID; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
     function DoShowHandStats(aHandId: Integer): Boolean;
 
     procedure Create_ResultsMP(aParent: TKMPanel);
@@ -287,7 +287,7 @@ begin
 end;
 
 
-function TKMChartArmyMP.GetChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
+function TKMChartArmyMP.GetChartData(aPlayer: TKMHandID): TKMCardinalArray;
 begin
   if (fType.HasUnitType) then
     Result := gHands[aPlayer].Stats.ChartArmy[fKind,fType.UnitType]
@@ -296,7 +296,7 @@ begin
 end;
 
 
-function TKMChartArmyMP.GetArmyPowerChartData(aPlayer: TKMHandIndex): TKMCardinalArray;
+function TKMChartArmyMP.GetArmyPowerChartData(aPlayer: TKMHandID): TKMCardinalArray;
 var
   WT: TKMUnitType;
   I, ChartCnt: Integer;
@@ -318,7 +318,7 @@ begin
 end;
 
 
-function TKMChartArmyMP.IsEmpty(aPlayer: TKMHandIndex): Boolean;
+function TKMChartArmyMP.IsEmpty(aPlayer: TKMHandID): Boolean;
 begin
   if (fType.HasUnitType) then
     Result := gHands[aPlayer].Stats.ChartArmyEmpty(fKind, fType.UnitType)
@@ -1066,7 +1066,7 @@ begin
       (fGameResultMsg <> gr_GameContinues)
       or SHOW_ENEMIES_STATS
       or (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-      or (gHands[aHandId].Alliances[gMySpectator.HandIndex] = at_Ally));
+      or (gHands[aHandId].Alliances[gMySpectator.HandID] = at_Ally));
 end;
 
 
@@ -1111,7 +1111,7 @@ var
     Inc(HandsUniqueColorsCnt);
   end;
 
-  procedure TryAddHand(aHandId: TKMHandIndex);
+  procedure TryAddHand(aHandId: TKMHandID);
     procedure AddNewHand;
     var PlayersIdList: TStringList;
     begin
@@ -1779,7 +1779,7 @@ begin
 end;
 
 
-function TKMGameResultsMP.GetChartWares(aPlayer: TKMHandIndex; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
+function TKMGameResultsMP.GetChartWares(aPlayer: TKMHandID; aWare: TKMWareType; aUseGDP: Boolean): TKMCardinalArray;
 const
   FoodWares: array[0..3] of TKMWareType = (wt_Bread, wt_Sausages, wt_Wine, wt_Fish);
   FoodWaresRestore: array[0..3] of Single = (BREAD_RESTORE,SAUSAGE_RESTORE,WINE_RESTORE,FISH_RESTORE);

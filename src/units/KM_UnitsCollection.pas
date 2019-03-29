@@ -20,14 +20,14 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddUnit(aOwner: TKMHandIndex; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+    function AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
     procedure AddUnitToList(aUnit: TKMUnit);
     property Count: Integer read GetCount;
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
     procedure RemoveUnit(aUnit: TKMUnit);
     procedure RemoveAllUnits;
     procedure DeleteUnitFromList(aUnit: TKMUnit);
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
+    procedure OwnerUpdate(aOwner: TKMHandID);
     function HitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
     function GetUnitByUID(aUID: Integer): TKMUnit;
     function GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
@@ -77,7 +77,7 @@ end;
 
 
 //AutoPlace means we should try to find a spot for this unit instead of just placing it where we were told to
-function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+function TKMUnitsCollection.AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
 var
   ID: Cardinal;
   PlaceTo: TKMPoint;
@@ -157,7 +157,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMUnitsCollection.OwnerUpdate(aOwner: TKMHandID);
 var
   I: Integer;
 begin

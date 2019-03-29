@@ -5,7 +5,7 @@ uses
   Forms, Unit_Runner, Windows, SysUtils, Classes, KromUtils, Math,
   KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils,
   KM_GameApp, KM_ResLocales, KM_Log, KM_HandsCollection, KM_ResTexts, KM_Resource,
-  KM_Terrain, KM_Units, KM_Units_Warrior, KM_Campaigns, KM_AIFields, KM_Houses,
+  KM_Terrain, KM_Units, KM_UnitWarrior, KM_Campaigns, KM_AIFields, KM_Houses,
   GeneticAlgorithm, KM_AICityPlanner,
   KM_CityManagement, KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_Eye,
   KM_HandLogistics,

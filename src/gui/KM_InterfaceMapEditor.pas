@@ -70,7 +70,7 @@ type
     procedure HidePages;
     procedure RightClick_Cancel;
     procedure ShowMarkerInfo(aMarker: TKMMapEdMarker);
-    procedure Player_SetActive(aIndex: TKMHandIndex);
+    procedure Player_SetActive(aIndex: TKMHandID);
     procedure Player_UpdatePages;
     procedure UpdateStateInternal;
     procedure UpdatePlayerSelectButtons;
@@ -521,15 +521,15 @@ end;
 
 
 //Active player can be set either from buttons clicked or by selecting a unit or a house
-procedure TKMapEdInterface.Player_SetActive(aIndex: TKMHandIndex);
+procedure TKMapEdInterface.Player_SetActive(aIndex: TKMHandID);
 var
   I: Integer;
 begin
-  gMySpectator.HandIndex := aIndex;
+  gMySpectator.HandID := aIndex;
   fGuiMission.GuiMissionPlayers.UpdatePlayer;
 
   for I := 0 to MAX_HANDS - 1 do
-    Button_PlayerSelect[I].Down := (I = gMySpectator.HandIndex);
+    Button_PlayerSelect[I].Down := (I = gMySpectator.HandID);
 
   Player_UpdatePages;
 end;

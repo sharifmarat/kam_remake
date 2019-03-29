@@ -28,7 +28,7 @@ uses
   procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean); overload;
   procedure LoadMapHeader(aStream: TKMemoryStream; var aMapX: Integer; var aMapY: Integer; var aIsKaMFormat: Boolean; var aMapDataSize: Cardinal); overload;
 
-  function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
+  function GetGameObjectOwnerIndex(aObject: TObject): TKMHandID;
 
   function GetTerrainTileBasic(aTile: TKMTerrainTile): TKMTerrainTileBasic;
 
@@ -234,7 +234,7 @@ begin
 end;
 
 
-function GetGameObjectOwnerIndex(aObject: TObject): TKMHandIndex;
+function GetGameObjectOwnerIndex(aObject: TObject): TKMHandID;
 begin
   Result := -1;
   if aObject is TKMHouse then

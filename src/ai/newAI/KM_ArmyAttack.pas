@@ -69,7 +69,7 @@ type
 
   TAICompany = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fPathPosition: TKMPoint;
     fScanPosition: TKMPoint;
     fCompanyMode: TKMCompanyMode;
@@ -92,13 +92,13 @@ type
   public
     DEBUG_UA_POINTS, DEBUG_UGA_POINTS: TKMPointArray;
 
-    constructor Create(aOwner: TKMHandIndex; aCompanyMode: TKMCompanyMode);
+    constructor Create(aOwner: TKMHandID; aCompanyMode: TKMCompanyMode);
     constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
 
-    property Owner: TKMHandIndex read fOwner write fOwner;
+    property Owner: TKMHandID read fOwner write fOwner;
     property PathPosition: TKMPoint read fPathPosition;
     property ScanPosition: TKMPoint read fScanPosition;
     property CompanyMode: TKMCompanyMode read fCompanyMode write fCompanyMode;
@@ -122,13 +122,13 @@ type
 
   TKMArmyAttack = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fCompanies: TKMList;
 
     function GetCount(): Integer;
     function GetCompany(aIdx: Integer): TAICompany;
   public
-    constructor Create(aOwner: TKMHandIndex);
+    constructor Create(aOwner: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -139,7 +139,7 @@ type
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure CreateCompany(aTargetPoint: TKMPoint; aGroups: TKMUnitGroupArray; aCompanyMode: TKMCompanyMode = cm_Attack);
     function IsGroupInAction(aGroup: TKMUnitGroup): Boolean;
 
@@ -403,7 +403,7 @@ end;
 
 
 { TAICompany }
-constructor TAICompany.Create(aOwner: TKMHandIndex; aCompanyMode: TKMCompanyMode);
+constructor TAICompany.Create(aOwner: TKMHandID; aCompanyMode: TKMCompanyMode);
 var
   GT: TKMGroupType;
 begin
@@ -1296,7 +1296,7 @@ end;
 
 
 { TKMArmyAttack }
-constructor TKMArmyAttack.Create(aOwner: TKMHandIndex);
+constructor TKMArmyAttack.Create(aOwner: TKMHandID);
 begin
   inherited Create;
   fCompanies := TKMList.Create();
@@ -1380,7 +1380,7 @@ begin
 end;
 
 
-procedure TKMArmyAttack.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMArmyAttack.OwnerUpdate(aPlayer: TKMHandID);
 var
   I: Integer;
 begin
@@ -1470,7 +1470,7 @@ var
   Company: TAICompany;
   Squad: TAISquad;
 begin
-  if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
+  if (fOwner <> gMySpectator.HandID) then // Show just 1 player (it prevents notification to be mess)
     Exit;
   //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
   //  Exit;

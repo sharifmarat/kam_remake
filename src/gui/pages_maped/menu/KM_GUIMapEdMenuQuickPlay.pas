@@ -128,7 +128,7 @@ begin
   if not DropList_SelectHand.List.Selected then
   begin
     if gMySpectator.Hand.HasAssets then
-      DropList_SelectHand.SelectByTag(gMySpectator.HandIndex)
+      DropList_SelectHand.SelectByTag(gMySpectator.HandID)
     else
       PlayerSelectFirst;
   end;

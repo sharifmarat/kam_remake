@@ -14,14 +14,14 @@ type
   TKMAttackRequest = record
     Active: Boolean;
     BestAllianceCmp,WorstAllianceCmp: Single;
-    BestEnemy: TKMHandIndex; // or index of Enemies array
+    BestEnemy: TKMHandID; // or index of Enemies array
     BestPoint: TKMPoint;
-    Enemies: TKMHandIndexArray;
+    Enemies: TKMHandIDArray;
   end;
 
   TKMArmyManagement = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fSetup: TKMHandAISetup;
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fAttackRequest: TKMAttackRequest;
@@ -42,7 +42,7 @@ type
 
     function CombineBalanceStrings(): UnicodeString;
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -56,7 +56,7 @@ type
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
     procedure CheckNewThreat(aHouse: TKMHouse; aAttacker: TKMUnitWarrior); overload;
     procedure CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit); overload;
@@ -73,7 +73,7 @@ uses
 
 
 { TKMArmyManagement }
-constructor TKMArmyManagement.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMArmyManagement.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
 
@@ -220,7 +220,7 @@ begin
 end;
 
 
-procedure TKMArmyManagement.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMArmyManagement.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fAttack.OwnerUpdate(aPlayer);
@@ -450,7 +450,7 @@ type
   end;
   // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
   //function FindBestTarget(var aBestTargetPlayer, aTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean = False): Boolean;
-  function FindBestTarget(var aBestTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
+  function FindBestTarget(var aBestTargetPlayer: TKMHandID; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
   const
     ALLIANCE_TARGET_COEF = 0.1;
     BEST_ALLIANCE_TARGET_COEF = 0.2;
@@ -460,7 +460,7 @@ type
   var
     I, K, MinDist: Integer;
     Comparison, BestComparison: Single;
-    OwnerArr: TKMHandIndexArray;
+    OwnerArr: TKMHandIDArray;
     EnemyStats: TKMEnemyStatisticsArray;
   begin
     Result := False;

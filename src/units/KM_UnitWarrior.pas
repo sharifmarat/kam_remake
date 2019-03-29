@@ -61,7 +61,7 @@ type
     OnWarriorWalkOut: TKMWarriorEvent;
     FaceDir: TKMDirection; //Direction we should face after walking. Only check for enemies in this direction.
 
-    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
+    constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); override;
@@ -71,7 +71,7 @@ type
     procedure SetGroup(aGroup: Pointer); // This procedure should not be called by anyone except UnitGroups class (it is out of property)
 
     function GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
-    procedure Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean); override;
+    procedure Kill(aFrom: TKMHandID; aShowAnimation, aForceDelay: Boolean); override;
     procedure Dismiss; override;
     procedure DismissCancel; override;
 
@@ -127,7 +127,7 @@ uses
 
 
 { TKMUnitWarrior }
-constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandIndex);
+constructor TKMUnitWarrior.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
 begin
   inherited;
   fGroup             := nil;
@@ -234,7 +234,7 @@ end;
 
 
 
-procedure TKMUnitWarrior.Kill(aFrom: TKMHandIndex; aShowAnimation, aForceDelay: Boolean);
+procedure TKMUnitWarrior.Kill(aFrom: TKMHandID; aShowAnimation, aForceDelay: Boolean);
 var AlreadyDeadOrDying: Boolean;
 begin
   AlreadyDeadOrDying := IsDeadOrDying; //Inherrited will kill the unit

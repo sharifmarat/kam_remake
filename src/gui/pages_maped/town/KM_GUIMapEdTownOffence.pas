@@ -112,7 +112,7 @@ end;
 procedure TKMMapEdTownOffence.Attacks_Edit(aIndex: Integer);
 begin
   Assert(InRange(aIndex, 0, gMySpectator.Hand.AI.General.Attacks.Count - 1));
-  AttackPopUp.Show(gMySpectator.HandIndex, aIndex);
+  AttackPopUp.Show(gMySpectator.HandID, aIndex);
 end;
 
 

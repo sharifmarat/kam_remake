@@ -1687,14 +1687,14 @@ end;
 
 function TRenderPool.PaintBucket_GroupToRender(aGroup: TObject): Boolean;
 begin
-   Result := (aGroup is TKMUnitGroup) and (TKMUnitGroup(aGroup).Owner <> gMySpectator.HandIndex);
+   Result := (aGroup is TKMUnitGroup) and (TKMUnitGroup(aGroup).Owner <> gMySpectator.HandID);
 end;
 
 
 function TRenderPool.PaintBucket_UnitToRender(aUnit: TObject): Boolean;
 begin
    Result := (aUnit is TKMUnit) and not (aUnit is TKMUnitAnimal) and
-    (TKMUnit(aUnit).Owner <> gMySpectator.HandIndex);
+    (TKMUnit(aUnit).Owner <> gMySpectator.HandID);
 end;
 
 
@@ -1712,7 +1712,7 @@ begin
                                      False, True,
                                      gMySpectator.Hand.FlagColor, gMySpectator.Hand.FlagColor, HighlightColor);
 
-  if (Obj is TKMHouse) and (TKMHouse(Obj).Owner <> gMySpectator.HandIndex) then
+  if (Obj is TKMHouse) and (TKMHouse(Obj).Owner <> gMySpectator.HandID) then
   begin
     AddWholeHouse(TKMHouse(Obj), gMySpectator.Hand.FlagColor, True, True, HighlightColor);
     IsRendered := True;
@@ -1722,7 +1722,7 @@ begin
     (((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road)
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
-    and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandIndex) then //Only if tile has other owner
+    and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then //Only if tile has other owner
     RenderWireTile(P, $FFFFFF00); // Cyan quad
 end;
 

@@ -44,7 +44,7 @@ type
 
   TKMArmyDefence = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fCityUnderAttack: Boolean;
     fFirstLineCnt: Word;
     fPositions: TKMList;
@@ -57,7 +57,7 @@ type
   public
     TroopFormations: array [TKMGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
 
-    constructor Create(aOwner: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
+    constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -68,7 +68,7 @@ type
     property FirstLineCnt: Word read fFirstLineCnt;
     property CityUnderAttack: Boolean read fCityUnderAttack;
 
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
+    procedure OwnerUpdate(aOwner: TKMHandID);
     procedure UpdateDefences(aDefCnt: Word; aPNewDef: array of PDefencePosition);
     procedure UpdateFixedDefences();
     function DefenceStatus(): Single;
@@ -198,7 +198,7 @@ end;
 
 
 { TKMArmyDefence }
-constructor TKMArmyDefence.Create(aOwner: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
+constructor TKMArmyDefence.Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
 var
   GT: TKMGroupType;
 begin
@@ -263,7 +263,7 @@ begin
 end;
 
 
-procedure TKMArmyDefence.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMArmyDefence.OwnerUpdate(aOwner: TKMHandID);
 begin
   fOwner := aOwner;
 end;
@@ -710,7 +710,7 @@ begin
   if not OVERLAY_DEFENCES then
     Exit;
 
-  if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
+  if (fOwner <> gMySpectator.HandID) then // Show just 1 player (it prevents notification to be mess)
     Exit;
 
   // Draw defensive positions as a circles

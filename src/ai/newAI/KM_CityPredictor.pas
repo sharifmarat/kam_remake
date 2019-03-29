@@ -33,7 +33,7 @@ type
   // City predictor (calculation of required houses based on prediction of resource flow)
   TKMCityPredictor = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fWorkerCount: Word;
     fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
     fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor, fUpdatedPeaceFactor: Single;
@@ -54,7 +54,7 @@ type
   public
     RequiredHouses: TRequiredHousesArray;
 
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -70,7 +70,7 @@ type
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure MarkExhaustedIronMine();
 
   end;
@@ -151,7 +151,7 @@ uses
 
 
 { TKMCityPredictor }
-constructor TKMCityPredictor.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMCityPredictor.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
   fOwner := aPlayer;
@@ -250,7 +250,7 @@ begin
 end;
 
 
-procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;

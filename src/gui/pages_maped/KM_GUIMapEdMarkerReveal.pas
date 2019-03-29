@@ -9,7 +9,7 @@ uses
 type
   TKMMapEdMarkerReveal = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fIndex: Integer;
     fOnDone: TNotifyEvent;
     procedure Marker_Change(Sender: TObject);
@@ -24,9 +24,9 @@ type
     constructor Create(aParent: TKMPanel; aOnDone: TNotifyEvent);
 
     property Index: Integer read fIndex;
-    property Owner: TKMHandIndex read fOwner;
+    property Owner: TKMHandID read fOwner;
 
-    procedure Show(aPlayer: TKMHandIndex; aIndex: Integer);
+    procedure Show(aPlayer: TKMHandID; aIndex: Integer);
     procedure Hide;
     function Visible: Boolean;
   end;
@@ -89,7 +89,7 @@ begin
 end;
 
 
-procedure TKMMapEdMarkerReveal.Show(aPlayer: TKMHandIndex; aIndex: Integer);
+procedure TKMMapEdMarkerReveal.Show(aPlayer: TKMHandID; aIndex: Integer);
 begin
   fOwner := aPlayer;
   fIndex := aIndex;

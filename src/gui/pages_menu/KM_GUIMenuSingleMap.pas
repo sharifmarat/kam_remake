@@ -605,7 +605,7 @@ begin
           fSingleColor := fMaps[MapId].FlagColors[fSingleLoc];
 
         //Refresh minimap with selected location and player color
-        fMinimap.LoadFromMission(M.FullPath('.dat'), [TKMHandIndex(fSingleLoc)]);
+        fMinimap.LoadFromMission(M.FullPath('.dat'), [TKMHandID(fSingleLoc)]);
         fMinimap.HandColors[fSingleLoc] := fSingleColor;
         fMinimap.Update;
         MinimapView.SetMinimap(fMinimap);

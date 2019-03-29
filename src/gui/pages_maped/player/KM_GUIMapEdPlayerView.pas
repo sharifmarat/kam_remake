@@ -95,9 +95,9 @@ begin
     gGameCursor.Mode := cmNone;
 
   if Sender = CheckBox_RevealAll then
-    gGame.MapEditor.RevealAll[gMySpectator.HandIndex] := CheckBox_RevealAll.Checked
+    gGame.MapEditor.RevealAll[gMySpectator.HandID] := CheckBox_RevealAll.Checked
   else
-    CheckBox_RevealAll.Checked := gGame.MapEditor.RevealAll[gMySpectator.HandIndex];
+    CheckBox_RevealAll.Checked := gGame.MapEditor.RevealAll[gMySpectator.HandID];
 
   if Sender = Button_PlayerCenterScreen then
     gGame.ActiveInterface.Viewport.Position := KMPointF(gMySpectator.Hand.CenterScreen); //Jump to location
@@ -123,7 +123,7 @@ procedure TKMMapEdPlayerView.Show;
 begin
   Panel_PlayerView.Show;
   Button_PlayerCenterScreen.Caption := TypeToString(gMySpectator.Hand.CenterScreen);
-  CheckBox_RevealAll.Checked := gGame.MapEditor.RevealAll[gMySpectator.HandIndex];
+  CheckBox_RevealAll.Checked := gGame.MapEditor.RevealAll[gMySpectator.HandID];
 end;
 
 

@@ -19,7 +19,7 @@ type
     function GetMaxDistanceToPoint: Integer; override;
   public
     property WoodcutterMode: TKMWoodcutterMode read fWoodcutterMode write SetWoodcutterMode;
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
@@ -30,7 +30,7 @@ uses
   KM_Terrain;
 
 { TKMHouseWoodcutters }
-constructor TKMHouseWoodcutters.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouseWoodcutters.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 begin
   inherited;
   WoodcutterMode := wcm_ChopAndPlant;

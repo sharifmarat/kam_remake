@@ -95,7 +95,7 @@ procedure TKMMapEdPlayerGoals.Goals_Edit(aIndex: Integer);
 begin
   Assert(InRange(aIndex, 0, gMySpectator.Hand.AI.Goals.Count - 1));
 
-  GoalPopUp.Show(gMySpectator.HandIndex, aIndex);
+  GoalPopUp.Show(gMySpectator.HandID, aIndex);
   GoalPopUp.fOnDone := Goals_OnDone;
 end;
 

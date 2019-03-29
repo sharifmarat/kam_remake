@@ -11,7 +11,7 @@ uses
 type
   TKMMapEdTownAttack = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fIndex: Integer;
     procedure Attack_Change(Sender: TObject);
     procedure Attack_Close(Sender: TObject);
@@ -41,7 +41,7 @@ type
 
     property Visible: Boolean read GetVisible;
     function KeyDown(Key: Word; Shift: TShiftState): Boolean;
-    procedure Show(aPlayer: TKMHandIndex; aIndex: Integer);
+    procedure Show(aPlayer: TKMHandID; aIndex: Integer);
   end;
 
 
@@ -248,7 +248,7 @@ begin
 end;
 
 
-procedure TKMMapEdTownAttack.Show(aPlayer: TKMHandIndex; aIndex: Integer);
+procedure TKMMapEdTownAttack.Show(aPlayer: TKMHandID; aIndex: Integer);
 begin
   fOwner := aPlayer;
   fIndex := aIndex;

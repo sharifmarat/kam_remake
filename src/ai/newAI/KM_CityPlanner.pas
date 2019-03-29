@@ -92,7 +92,7 @@ type
   private
     fTimeMeasure: Cardinal;
 
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fConstructedHouses: Word;
     fDefenceTowersPlanned: Boolean;
     fPlannedHouses: TPlannedHousesArray;
@@ -120,14 +120,14 @@ type
     function PlanDefenceTowers(): Boolean;
 
   public
-    constructor Create(aPlayer: TKMHandIndex);
+    constructor Create(aPlayer: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure UpdateState(aTick: Cardinal);
 
     // Properties for GA (in Runner)
@@ -200,7 +200,7 @@ uses
 
 
 { TKMCityPlanner }
-constructor TKMCityPlanner.Create(aPlayer: TKMHandIndex);
+constructor TKMCityPlanner.Create(aPlayer: TKMHandID);
 var
   HT: TKMHouseType;
 begin
@@ -334,7 +334,7 @@ begin
   UpdateState(0);
 end;
 
-procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;
@@ -1888,7 +1888,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
     MAX_BID = 100000;
     MAX_ENEMY_INFLUENCE = 100;
   var
-    PL: TKMHandIndex;
+    PL: TKMHandID;
     X,Y: Integer;
     Bid, BestBid: Single;
     Loc, BestLoc: TKMPoint;

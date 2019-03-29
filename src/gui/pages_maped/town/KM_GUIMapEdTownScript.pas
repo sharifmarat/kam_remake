@@ -126,7 +126,7 @@ begin
   CheckBox_AutoBuild.Checked := gMySpectator.Hand.AI.Setup.AutoBuild;
   CheckBox_AutoRepair.Checked := gMySpectator.Hand.AI.Setup.AutoRepair;
   TrackBar_SerfsPer10Houses.Position := Round(10*gMySpectator.Hand.AI.Setup.SerfsPerHouse);
-  if gMySpectator.HandIndex <> -1 then
+  if gMySpectator.HandID <> -1 then
     TrackBar_SerfsPer10Houses.Hint := Format(gResTexts[TX_MAPED_AI_SERFS_PER_10_HOUSES_HINT], [gMySpectator.Hand.Stats.GetHouseQty(htAny)]);
   TrackBar_WorkerCount.Position := gMySpectator.Hand.AI.Setup.WorkerCount;
   CheckBox_UnlimitedEquip.Checked := gMySpectator.Hand.AI.Setup.UnlimitedEquip;
@@ -141,7 +141,7 @@ begin
     atIron:    TrackBar_EquipRateLeather.Disable;
   end;
 
-  Button_ClassicAIParams.Enabled := not gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex);
+  Button_ClassicAIParams.Enabled := not gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID);
 end;
 
 
@@ -162,7 +162,7 @@ begin
   gMySpectator.Hand.AI.Setup.EquipRateIron := TrackBar_EquipRateIron.Position * 10;
   gMySpectator.Hand.AI.Setup.ArmyType := TKMArmyType(DropBox_ArmyType.GetSelectedTag);
 
-  if CheckBox_UnlimitedEquip.Checked and gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex) then
+  if CheckBox_UnlimitedEquip.Checked and gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID) then
   begin
     //Only for Advanced AI locks
     //No equip rates when equip is unlimited

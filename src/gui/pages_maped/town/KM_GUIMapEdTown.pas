@@ -203,7 +203,7 @@ procedure TKMMapEdTown.ChangePlayer;
 var
   isAI: Boolean;
 begin
-  isAI := gGame.MapEditor.PlayerClassicAI[gMySpectator.HandIndex] or gGame.MapEditor.PlayerAdvancedAI[gMySpectator.HandIndex];
+  isAI := gGame.MapEditor.PlayerClassicAI[gMySpectator.HandID] or gGame.MapEditor.PlayerAdvancedAI[gMySpectator.HandID];
 
   Button_Town[ttScript].Enabled := isAI;
   Button_Town[ttDefences].Enabled := isAI;

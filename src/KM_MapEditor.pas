@@ -12,7 +12,7 @@ type
 
   TKMMapEdMarker = record
     MarkerType: TKMMarkerType;
-    Owner: TKMHandIndex;
+    Owner: TKMHandID;
     Index: SmallInt;
   end;
 
@@ -33,7 +33,7 @@ type
     procedure ProceedUnitsCursorMode;
     procedure UpdateField(aStageIncrement: Integer; aCheckPrevCell: Boolean);
     procedure EraseObject(aEraseAll: Boolean);
-    function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
+    function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandID): Boolean;
     procedure ChangeOwner(aChangeOwnerForAll: Boolean);
     procedure PaintDefences(aLayer: TKMPaintLayer);
     procedure PaintRevealFOW(aLayer: TKMPaintLayer);
@@ -47,7 +47,7 @@ type
 
     ResizeMapRect: TKMRect;
     RevealAll: array [0..MAX_HANDS-1] of Boolean;
-    DefaultHuman: TKMHandIndex;
+    DefaultHuman: TKMHandID;
     PlayerHuman: array [0..MAX_HANDS - 1] of Boolean;
     PlayerClassicAI: array [0..MAX_HANDS - 1] of Boolean;
     PlayerAdvancedAI: array [0..MAX_HANDS - 1] of Boolean;
@@ -64,7 +64,7 @@ type
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
 
-    function OnlyAdvancedAIHand(aHandId: TKMHandIndex): Boolean;
+    function OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
 
     procedure DetectAttachedFiles(const aMissionFile: UnicodeString);
     procedure SaveAttachements(const aMissionFile: UnicodeString);
@@ -78,7 +78,7 @@ type
     procedure UpdateStateIdle;
     procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
 
-    procedure DeletePlayer(aIndex: TKMHandIndex);
+    procedure DeletePlayer(aIndex: TKMHandID);
   end;
 
 
@@ -245,7 +245,7 @@ begin
 end;
 
 
-function TKMMapEditor.OnlyAdvancedAIHand(aHandId: TKMHandIndex): Boolean;
+function TKMMapEditor.OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
 begin
   Result := PlayerAdvancedAI[aHandId]
     and not PlayerClassicAI[aHandId]
@@ -380,7 +380,7 @@ begin
 end;
 
 
-procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandIndex);
+procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandID);
 begin
   if gHands = nil then Exit;
 
@@ -410,17 +410,17 @@ var P: TKMPoint;
 begin
   P := gGameCursor.Cell;
   //Fisrt try to change owner of object on tile
-  if not ChangeObjectOwner(gMySpectator.HitTestCursorWGroup, gMySpectator.HandIndex) or aChangeOwnerForAll then
+  if not ChangeObjectOwner(gMySpectator.HitTestCursorWGroup, gMySpectator.HandID) or aChangeOwnerForAll then
     //then try to change owner tile (road/field/wine)
     if ((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road) or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
-      and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandIndex) then
-      gTerrain.Land[P.Y, P.X].TileOwner := gMySpectator.HandIndex;
+      and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then
+      gTerrain.Land[P.Y, P.X].TileOwner := gMySpectator.HandID;
 end;
 
 
 //Change owner for specified object
 //returns True if owner was changed successfully
-function TKMMapEditor.ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
+function TKMMapEditor.ChangeObjectOwner(aObject: TObject; aOwner: TKMHandID): Boolean;
 var House: TKMHouse;
 begin
   Result := False;
@@ -576,7 +576,7 @@ begin
                 cmRotateTile: fTerrainPainter.RotateTile(P);
                 cmUnits:      ProceedUnitsCursorMode;
                 cmMarkers:    case gGameCursor.Tag1 of
-                                MARKER_REVEAL:        fRevealers[gMySpectator.HandIndex].Add(P, gGameCursor.MapEdSize);
+                                MARKER_REVEAL:        fRevealers[gMySpectator.HandID].Add(P, gGameCursor.MapEdSize);
                                 MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dir_N), gt_Melee, 10, adt_FrontLine);
                                 MARKER_CENTERSCREEN:  begin
                                                         gMySpectator.Hand.CenterScreen := P;

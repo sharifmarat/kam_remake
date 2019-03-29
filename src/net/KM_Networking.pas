@@ -937,7 +937,7 @@ end;
 //Tell other players we want to start
 procedure TKMNetworking.StartClick;
 var
-  HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs: TKMHandIndexArray;
+  HumanUsableLocs, AIUsableLocs, AdvancedAIUsableLocs: TKMHandIDArray;
   ErrorMessage: UnicodeString;
   M: TKMemoryStream;
   CheckMapInfo: TKMapInfo;

@@ -13,7 +13,7 @@ type
 
   TKMHouse = class;
   TKMHouseEvent = procedure(aHouse: TKMHouse) of object;
-  TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandIndex) of object;
+  TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandID) of object;
   TKMHouseArray = array of TKMHouse;
 
   TKMHouseAction = class
@@ -93,7 +93,7 @@ type
     fBuildState: TKMHouseBuildState; // = (hbs_Glyph, hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
     FlagAnimStep: Cardinal; //Used for Flags and Burning animation
     //WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
-    fOwner: TKMHandIndex; //House owner player, determines flag color as well
+    fOwner: TKMHandID; //House owner player, determines flag color as well
     fPosition: TKMPoint; //House position on map, kinda virtual thing cos it doesn't match with entrance
     procedure Activate(aWasBuilt: Boolean); virtual;
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
@@ -111,7 +111,7 @@ type
     DoorwayUse: Byte; //number of units using our door way. Used for sliding.
     OnDestroyed: TKMHouseFromEvent;
 
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
@@ -119,13 +119,13 @@ type
     procedure ReleaseHousePointer; //Decreases the pointer counter
     property PointerCount: Cardinal read fPointerCount;
 
-    procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); virtual;
+    procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); virtual;
     property UID: Integer read fUID;
     property BuildingProgress: Word read fBuildingProgress;
 
     property Position: TKMPoint read fPosition;
     procedure SetPosition(const aPos: TKMPoint); //Used only by map editor
-    procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+    procedure OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
@@ -148,7 +148,7 @@ type
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
-    property Owner: TKMHandIndex read fOwner;
+    property Owner: TKMHandID read fOwner;
     property DisableUnoccupiedMessage: Boolean read fDisableUnoccupiedMessage write fDisableUnoccupiedMessage;
     function GetHealth: Word;
     function GetBuildWoodDelivered: Byte;
@@ -213,7 +213,7 @@ type
     function GetFlagPointTexId: Word; virtual; abstract;
     function GetMaxDistanceToPoint: Integer; virtual;
   public
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
@@ -248,7 +248,7 @@ type
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
-    procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
+    procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
     procedure ToggleAcceptFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
@@ -274,7 +274,7 @@ type
   public
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
-    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
@@ -303,7 +303,7 @@ const
 
 
 { TKMHouse }
-constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 var
   I: Byte;
 begin
@@ -528,7 +528,7 @@ end;
 
 
 //IsSilent parameter is used by Editor and scripts
-procedure TKMHouse.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
+procedure TKMHouse.DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False);
 var
   I: Integer;
   R: TKMWareType;
@@ -906,7 +906,7 @@ begin
 end;
 
 
-procedure TKMHouse.OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+procedure TKMHouse.OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
 begin
   if aMoveToNewOwner and (fOwner <> aOwner) then
   begin
@@ -921,7 +921,7 @@ end;
 //Add damage to the house, positive number
 procedure TKMHouse.AddDamage(aAmount: Word; aAttacker: TObject; aIsEditor: Boolean = False);
 var
-  attackerHand: TKMHandIndex;
+  attackerHand: TKMHandID;
 begin
   if IsDestroyed then
     Exit;
@@ -1921,7 +1921,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
+procedure TKMHouseStore.DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False);
 var
   R: TKMWareType;
 begin
@@ -2017,7 +2017,7 @@ end;
 
 
 { TKMHouseArmorWorkshop }
-constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouseArmorWorkshop.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 begin
   inherited;
   fAcceptWood := True;
@@ -2150,7 +2150,7 @@ end;
 
 
 { TKMHouseWPoint }
-constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: TKMHouseBuildState);
+constructor TKMHouseWFlagPoint.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 

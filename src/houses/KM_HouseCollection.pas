@@ -10,17 +10,17 @@ type
   TKMHousesCollection = class
   private
     fHouses: TKMList; //Private to hide methods we don't want to expose
-    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState):TKMHouse;
+    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; aHBS: TKMHouseBuildState):TKMHouse;
     function GetHouse(aIndex: Integer): TKMHouse; inline;
     function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
-    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
+    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID): TKMHouse;
     procedure AddHouseToList(aHouse: TKMHouse);
     property Count: Integer read GetCount;
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
+    procedure OwnerUpdate(aOwner: TKMHandID);
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -67,7 +67,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState): TKMHouse;
+function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; aHBS: TKMHouseBuildState): TKMHouse;
 var ID: Cardinal;
 begin
   ID := gGame.GetNewUID;
@@ -104,7 +104,7 @@ begin
 end;
 
 
-function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
 begin
   if RelativeEntrance then
     Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbs_Done)
@@ -114,7 +114,7 @@ end;
 
 
 {Add a plan for house}
-function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID): TKMHouse;
 begin
   Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_NoGlyph);
 end;
@@ -150,7 +150,7 @@ begin
 end;
 
 
-procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandID);
 var I: Integer;
 begin
   for I := 0 to Count - 1 do

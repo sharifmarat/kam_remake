@@ -40,7 +40,7 @@ type
   TKMCityBuilder = class
   private
     fStoneShortage, fWoodShortage, fTrunkShortage, fGoldShortage: Boolean;
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fBuildNodes: array of TBuildNode;
     fWorkersPos: TKMPointArray;
 
@@ -58,7 +58,7 @@ type
     procedure CheckBasicMaterials(var aFreeWorkersCnt, aMaxPlans, aMaxPlace: Integer; var aTrunkBalance: Single; aTick: Cardinal);
     procedure CreateShortcuts();
   public
-    constructor Create(aPlayer: TKMHandIndex; aPredictor: TKMCityPredictor);
+    constructor Create(aPlayer: TKMHandID; aPredictor: TKMCityPredictor);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -72,7 +72,7 @@ type
     property GoldShortage: Boolean read fGoldShortage;
 
     procedure AfterMissionInit();
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
 
     procedure UpdateState(aTick: Cardinal; out aFreeWorkersCnt: Integer);
     procedure ChooseHousesToBuild(aFreeWorkersCnt: Integer; aTick: Cardinal);
@@ -94,7 +94,7 @@ uses
 
 
 { TKMCityBuilder }
-constructor TKMCityBuilder.Create(aPlayer: TKMHandIndex; aPredictor: TKMCityPredictor);
+constructor TKMCityBuilder.Create(aPlayer: TKMHandID; aPredictor: TKMCityPredictor);
 begin
   inherited Create;
 
@@ -208,7 +208,7 @@ begin
 end;
 
 
-procedure TKMCityBuilder.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityBuilder.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fPlanner.OwnerUpdate(aPlayer);

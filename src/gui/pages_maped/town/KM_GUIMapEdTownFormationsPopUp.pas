@@ -11,7 +11,7 @@ uses
 type
   TKMMapEdTownFormations = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     procedure Formations_Close(Sender: TObject);
     function GetVisible: Boolean;
   protected
@@ -25,7 +25,7 @@ type
     constructor Create(aParent: TKMPanel);
 
     property Visible: Boolean read GetVisible;
-    procedure Show(aPlayer: TKMHandIndex);
+    procedure Show(aPlayer: TKMHandID);
     function KeyDown(Key: Word; Shift: TShiftState): Boolean;
   end;
 
@@ -93,7 +93,7 @@ begin
 end;
 
 
-procedure TKMMapEdTownFormations.Show(aPlayer: TKMHandIndex);
+procedure TKMMapEdTownFormations.Show(aPlayer: TKMHandID);
 var
   GT: TKMGroupType;
 begin

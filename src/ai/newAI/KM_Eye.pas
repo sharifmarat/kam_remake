@@ -58,7 +58,7 @@ type
   // Placing new house is then question of internal house tiles
   TKMBuildFF = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fOwnerUpdateInfo: array[0..MAX_HANDS-1] of Byte;
     fVisitIdx, fVisitIdxHouse: Byte;
     fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
@@ -72,7 +72,7 @@ type
 //    procedure SetInfo(const aY,aX,aNext,aDistance: Word; const aVisited: Byte; const aState: TKMBuildState);
     function GetVisited(const aY,aX: Word): Byte;
     procedure SetVisited(const aY,aX: Word; const aVisited: Byte);
-    function GetOwnersIndex(const aOwner: TKMHandIndex): Byte;
+    function GetOwnersIndex(const aOwner: TKMHandID): Byte;
     function GetState(const aY,aX: Word): TKMBuildState;
     procedure SetState(const aY,aX: Word; const aState: TKMBuildState);
     function GetStateFromIdx(const aIdx: Word): TKMBuildState;
@@ -102,7 +102,7 @@ type
     property VisitIdx: Byte read fVisitIdx;
     property VisitIdxHouse: Byte read fVisitIdxHouse;
     property Visited[const aY,aX: Word]: Byte read GetVisited write SetVisited;
-    property VisitIdxOwner[const aOwner: TKMHandIndex]: Byte read GetOwnersIndex;
+    property VisitIdxOwner[const aOwner: TKMHandID]: Byte read GetOwnersIndex;
     property State[const aY,aX: Word]: TKMBuildState read GetState write SetState;
     property StateIdx[const aIdx: Word]: TKMBuildState read GetStateFromIdx;
     property Distance[const aPoint: TKMPoint]: Word read GetDistance;
@@ -112,7 +112,7 @@ type
     property HouseRequirements: TKMHouseRequirements read fHouseReq write fHouseReq;
 
     procedure UpdateState();
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure ActualizeTile(aX, aY: Word);
     function CanBePlacedHouse(const aLoc: TKMPoint): Boolean;
     procedure FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
@@ -141,7 +141,7 @@ type
   // Transform game data into "AI view" ... this is how AI see the map (influences have its own class)
   TKMEye = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fMapX, fMapY: Word;
     fHousesMapping: THouseMappingArray;
     fGoldLocs, fIronLocs, fStoneMiningTiles: TKMPointList; // Store coal tiles is not effective
@@ -175,7 +175,7 @@ type
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure ScanLoc();
 
     function CanPlaceHouse(aLoc: TKMPoint; aHT: TKMHouseType; aIgnoreTrees: Boolean = False): Boolean;
@@ -721,7 +721,7 @@ begin
 end;
 
 
-procedure TKMEye.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMEye.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fBuildFF.OwnerUpdate(aPlayer);
@@ -1143,7 +1143,7 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 var
-  PL: TKMHandIndex;
+  PL: TKMHandID;
   I,X,Y: Integer;
 begin
   //{ Build flood fill
@@ -1234,7 +1234,7 @@ begin
   fInfoArr[aY*fMapX + aX].Visited := aVisited;
 end;
 
-function TKMBuildFF.GetOwnersIndex(const aOwner: TKMHandIndex): Byte;
+function TKMBuildFF.GetOwnersIndex(const aOwner: TKMHandID): Byte;
 begin
   Result := fOwnerUpdateInfo[aOwner];
 end;
@@ -1496,7 +1496,7 @@ procedure TKMBuildFF.MarkPlans();
 const
   DIST = 1;
 var
-  PL: TKMHandIndex;
+  PL: TKMHandID;
   I,K: Integer;
   Dir: TDirection;
   P1,P2: TKMPoint;
@@ -1626,7 +1626,7 @@ begin
 end;
 
 
-procedure TKMBuildFF.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMBuildFF.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fUpdateTick := 0; // Make sure that area will be scanned in next update

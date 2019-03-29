@@ -88,7 +88,7 @@ type
 
   TKMDeliveries = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fOfferCount: Integer;
     fOffer: array of TKMDeliveryOffer;
     fDemandCount: Integer;
@@ -126,12 +126,12 @@ type
     function TryCalculateBid(iO, iD: Integer; var aBidValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
     function TryCalculateBidBasic(iO, iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
-                                  aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
+                                  aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean; overload;
     function TryCalcSerfBidValue(aSerf: TKMUnitSerf; aOfferPos: TKMPoint; aToUID: Integer; var aSerfBidValue: Single): Boolean;
     function TryCalcRouteCost(aFromPos, aToPos: TKMPoint; aMainPass: TKMTerrainPassability; var aRoutCost: Single; aSecondPass: TKMTerrainPassability = tpUnused): Boolean;
     function GetUnitsCntOnPath(aNodeList: TKMPointList): Integer;
   public
-    constructor Create(aHandIndex: TKMHandIndex);
+    constructor Create(aHandIndex: TKMHandID);
     destructor Destroy; override;
     procedure AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: Integer);
     procedure RemAllOffers(aHouse: TKMHouse);
@@ -177,7 +177,7 @@ type
     procedure RemoveExtraSerfs;
     function GetIdleSerfCount: Integer;
   public
-    constructor Create(aHandIndex: TKMHandIndex);
+    constructor Create(aHandIndex: TKMHandID);
     destructor Destroy; override;
 
     procedure AddSerf(aSerf: TKMUnitSerf);
@@ -211,7 +211,7 @@ const
 
 
 { TKMHandLogistics }
-constructor TKMHandLogistics.Create(aHandIndex: TKMHandIndex);
+constructor TKMHandLogistics.Create(aHandIndex: TKMHandID);
 begin
   fQueue := TKMDeliveries.Create(aHandIndex);
 end;
@@ -403,7 +403,7 @@ end;
 
 
 { TKMDeliveries }
-constructor TKMDeliveries.Create(aHandIndex: TKMHandIndex);
+constructor TKMDeliveries.Create(aHandIndex: TKMHandID);
 {$IFDEF USE_HASH}
 var
   CacheKeyComparer: TKMDeliveryBidKeyComparer;
@@ -1042,7 +1042,7 @@ end;
 
 //Calc bid cost between offer object (house, serf) and demand object (house, unit - worker or warrior)
 function TKMDeliveries.TryCalculateBidBasic(aOfferUID: Integer; aOfferPos: TKMPoint; aOfferCnt: Cardinal; aOfferHouseType: TKMHouseType;
-                                            aOwner: TKMHandIndex; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
+                                            aOwner: TKMHandID; iD: Integer; var aBidBasicValue: Single; aSerf: TKMUnitSerf = nil): Boolean;
 
   {$IFDEF USE_HASH}
   procedure TryAddToCache(aBidKey: TKMDeliveryBidKey; aBidBasicV: Single);

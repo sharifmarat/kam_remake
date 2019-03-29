@@ -1051,7 +1051,7 @@ begin
     CommandLayerCount := 0; //Enable command layering
     for iY := 1 to gTerrain.MapY do
       for iX := 1 to gTerrain.MapX do
-        if gTerrain.Land[iY,iX].TileOwner = gHands[I].HandIndex then
+        if gTerrain.Land[iY,iX].TileOwner = gHands[I].ID then
         begin
           if gTerrain.Land[iY,iX].TileOverlay = to_Road then
           begin

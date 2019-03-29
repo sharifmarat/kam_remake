@@ -14,16 +14,16 @@ type
   private
     fRoadConnectID: Byte;
   protected
-    fOwner: TKMHandIndex; // fOwner MUST BE VISIBLE for child-classes
+    fOwner: TKMHandID; // fOwner MUST BE VISIBLE for child-classes
     function CanWalkTo(const aFrom: TKMPoint; aToX, aToY: SmallInt): Boolean; override;
     function DestinationReached(aX, aY: Word): Boolean; override;
     function IsWalkableTile(aX, aY: Word): Boolean; override;
     function MovementCost(aFromX, aFromY, aToX, aToY: Word): Word; override;
     function EstimateToFinish(aX, aY: Word): Word; override;
   public
-    constructor Create(aOwner: TKMHandIndex);
+    constructor Create(aOwner: TKMHandID);
 
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     function Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean; reintroduce;
     function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean; reintroduce;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -46,14 +46,14 @@ uses
 
 
 { TPathFindingRoad }
-constructor TPathFindingRoad.Create(aOwner: TKMHandIndex);
+constructor TPathFindingRoad.Create(aOwner: TKMHandID);
 begin
   inherited Create;
   fOwner := aOwner;
 end;
 
 
-procedure TPathFindingRoad.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TPathFindingRoad.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;

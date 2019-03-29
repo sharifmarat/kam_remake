@@ -281,8 +281,8 @@ const
   EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
 
 type
-  TKMHandIndex = {type} ShortInt;
-  TKMHandIndexArray = array of TKMHandIndex;
+  TKMHandID = {type} ShortInt;
+  TKMHandIDArray = array of TKMHandID;
   TKMHandEnabledArray = array [0..MAX_HANDS-1] of Boolean;
 
 const

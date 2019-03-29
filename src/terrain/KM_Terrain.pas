@@ -75,7 +75,7 @@ type
     //Used to display half-dug road
     TileOverlay: TKMTileOverlay; //to_None to_Dig1, to_Dig2, to_Dig3, to_Dig4 + to_Road
 
-    TileOwner: TKMHandIndex; //Who owns the tile by having a house/road/field on it
+    TileOwner: TKMHandID; //Who owns the tile by having a house/road/field on it
     IsUnit: Pointer; //Whenever there's a unit on that tile mark the tile as occupied and count the number
     IsVertexUnit: TKMVertexUsage; //Whether there are units blocking the vertex. (walking diagonally or fighting)
 
@@ -118,7 +118,7 @@ type
     procedure UpdateFences(const Loc: TKMPoint; CheckSurrounding: Boolean = True);
     procedure UpdateWalkConnect(const aSet: array of TKMWalkConnect; aRect: TKMRect; aDiagObjectsEffected: Boolean);
 
-    procedure SetField_Init(const Loc: TKMPoint; aOwner: TKMHandIndex);
+    procedure SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID);
     procedure SetField_Complete(const Loc: TKMPoint; aFieldType: TKMFieldType);
 
     function TrySetTile(X, Y: Integer; aType, aRot: Integer; aUpdatePassability: Boolean = True): Boolean; overload;
@@ -146,19 +146,19 @@ type
 
     procedure SetTileLock(const aLoc: TKMPoint; aTileLock: TKMTileLock);
     procedure UnlockTile(const aLoc: TKMPoint);
-    procedure SetRoads(aList: TKMPointList; aOwner: TKMHandIndex; aUpdateWalkConnects: Boolean = True);
-    procedure SetRoad(const Loc: TKMPoint; aOwner: TKMHandIndex);
-    procedure SetInitWine(const Loc: TKMPoint; aOwner: TKMHandIndex);
-    procedure SetField(const Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
-    procedure SetHouse(const Loc: TKMPoint; aHouseType: TKMHouseType; aHouseStage: TKMHouseStage; aOwner: TKMHandIndex; const aFlattenTerrain: Boolean = False);
-    procedure SetHouseAreaOwner(const Loc: TKMPoint; aHouseType: TKMHouseType; aOwner: TKMHandIndex);
+    procedure SetRoads(aList: TKMPointList; aOwner: TKMHandID; aUpdateWalkConnects: Boolean = True);
+    procedure SetRoad(const Loc: TKMPoint; aOwner: TKMHandID);
+    procedure SetInitWine(const Loc: TKMPoint; aOwner: TKMHandID);
+    procedure SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
+    procedure SetHouse(const Loc: TKMPoint; aHouseType: TKMHouseType; aHouseStage: TKMHouseStage; aOwner: TKMHandID; const aFlattenTerrain: Boolean = False);
+    procedure SetHouseAreaOwner(const Loc: TKMPoint; aHouseType: TKMHouseType; aOwner: TKMHandID);
 
-    procedure RemovePlayer(aPlayer: TKMHandIndex);
+    procedure RemovePlayer(aPlayer: TKMHandID);
     procedure RemRoad(const Loc: TKMPoint);
     procedure RemField(const Loc: TKMPoint); overload;
     procedure RemField(const Loc: TKMPoint; aDoUpdatePassNWalk: Boolean; out aUpdatePassRect: TKMRect; 
                        out aDiagObjectChanged: Boolean; aDoUpdateFences: Boolean); overload;
-    procedure ClearPlayerLand(aPlayer: TKMHandIndex);
+    procedure ClearPlayerLand(aPlayer: TKMHandID);
 
     procedure IncDigState(const Loc: TKMPoint);
     procedure ResetDigState(const Loc: TKMPoint);
@@ -276,7 +276,7 @@ type
 
     function UnitsHitTest(X, Y: Word): Pointer;
     function UnitsHitTestF(const aLoc: TKMPointF): Pointer;
-    function UnitsHitTestWithinRad(const aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandIndex; aAlliance: TKMAllianceType;
+    function UnitsHitTestWithinRad(const aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandID; aAlliance: TKMAllianceType;
                                    Dir: TKMDirection; const aClosest: Boolean): Pointer;
 
     function ScriptTrySetTile(X, Y: Integer; aType, aRot: Byte): Boolean;
@@ -1499,7 +1499,7 @@ end;
 { Should scan withing given radius and return closest unit with given Alliance status
   Should be optimized versus usual UnitsHitTest
   Prefer Warriors over Citizens}
-function TKMTerrain.UnitsHitTestWithinRad(const aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandIndex; aAlliance: TKMAllianceType;
+function TKMTerrain.UnitsHitTestWithinRad(const aLoc: TKMPoint; MinRad, MaxRad: Single; aPlayer: TKMHandID; aAlliance: TKMAllianceType;
                                           Dir: TKMDirection; const aClosest: Boolean): Pointer;
 type
   TKMUnitArray = array of TKMUnit;
@@ -1750,7 +1750,7 @@ begin
 end;
 
 
-procedure TKMTerrain.SetRoads(aList: TKMPointList; aOwner: TKMHandIndex; aUpdateWalkConnects: Boolean = True);
+procedure TKMTerrain.SetRoads(aList: TKMPointList; aOwner: TKMHandID; aUpdateWalkConnects: Boolean = True);
 var
   I: Integer;
   Y2, X2: Integer;
@@ -1866,7 +1866,7 @@ begin
 end;
 
 
-procedure TKMTerrain.ClearPlayerLand(aPlayer: TKMHandIndex);
+procedure TKMTerrain.ClearPlayerLand(aPlayer: TKMHandID);
 var
   I, K: Integer;
   KMPoint: TKMPoint;
@@ -1897,7 +1897,7 @@ begin
 end;
 
 
-procedure TKMTerrain.RemovePlayer(aPlayer: TKMHandIndex);
+procedure TKMTerrain.RemovePlayer(aPlayer: TKMHandID);
 var
   I, K: Word;
 begin
@@ -1910,7 +1910,7 @@ begin
 end;
 
 
-procedure TKMTerrain.SetField_Init(const Loc: TKMPoint; aOwner: TKMHandIndex);
+procedure TKMTerrain.SetField_Init(const Loc: TKMPoint; aOwner: TKMHandID);
 begin
   Land[Loc.Y,Loc.X].TileOwner   := aOwner;
   Land[Loc.Y,Loc.X].TileOverlay := to_None;
@@ -1927,7 +1927,7 @@ begin
 end;
 
 
-procedure TKMTerrain.SetRoad(const Loc: TKMPoint; aOwner: TKMHandIndex);
+procedure TKMTerrain.SetRoad(const Loc: TKMPoint; aOwner: TKMHandID);
 begin
   SetField_Init(Loc, aOwner);
 
@@ -1938,7 +1938,7 @@ begin
 end;
 
 
-procedure TKMTerrain.SetInitWine(const Loc: TKMPoint; aOwner: TKMHandIndex);
+procedure TKMTerrain.SetInitWine(const Loc: TKMPoint; aOwner: TKMHandID);
 begin
   SetField_Init(Loc, aOwner);
 
@@ -2639,7 +2639,7 @@ begin
 end;
 
 
-procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandIndex; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
+procedure TKMTerrain.SetField(const Loc: TKMPoint; aOwner: TKMHandID; aFieldType: TKMFieldType; aStage: Byte = 0; aRandomAge: Boolean = False; aKeepOldObject: Boolean = False);
   procedure SetLand(aFieldAge: Byte; aTerrain: Byte; aObj: Integer = -1);
   begin
     Land[Loc.Y, Loc.X].FieldAge := aFieldAge;
@@ -3654,7 +3654,7 @@ end;
 
 
 {Place house plan on terrain and change terrain properties accordingly}
-procedure TKMTerrain.SetHouse(const Loc: TKMPoint; aHouseType: TKMHouseType; aHouseStage: TKMHouseStage; aOwner: TKMHandIndex; const aFlattenTerrain: Boolean = False);
+procedure TKMTerrain.SetHouse(const Loc: TKMPoint; aHouseType: TKMHouseType; aHouseStage: TKMHouseStage; aOwner: TKMHandID; const aFlattenTerrain: Boolean = False);
 var
   I, K, X, Y: Word;
   ToFlatten: TKMPointList;
@@ -3723,7 +3723,7 @@ end;
 
 
 {That is mainly used for minimap now}
-procedure TKMTerrain.SetHouseAreaOwner(const Loc: TKMPoint; aHouseType: TKMHouseType; aOwner: TKMHandIndex);
+procedure TKMTerrain.SetHouseAreaOwner(const Loc: TKMPoint; aHouseType: TKMHouseType; aOwner: TKMHandID);
 var i,k:integer; HA: THouseArea;
 begin
   HA := gRes.Houses[aHouseType].BuildArea;

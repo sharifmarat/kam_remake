@@ -71,7 +71,7 @@ type
     destructor Destroy; override;
     procedure WaitingForConfirmation(aTick: Cardinal); override;
     procedure AdjustDelay(aGameSpeed: Single);
-    procedure PlayerTypeChange(aPlayer: TKMHandIndex; aType: TKMHandType);
+    procedure PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
     function GetNetworkDelay: Word;
     property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
@@ -253,7 +253,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess_Multi.PlayerTypeChange(aPlayer: TKMHandIndex; aType: TKMHandType);
+procedure TKMGameInputProcess_Multi.PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
 begin
   Assert(ReplayState = gipRecording);
   StoreCommand(MakeCommand(gic_GamePlayerTypeChange, aPlayer, Byte(aType)));
