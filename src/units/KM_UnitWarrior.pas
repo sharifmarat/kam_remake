@@ -959,8 +959,8 @@ begin
   if not fVisible then Exit;
 
   Act := fAction.ActionType;
-  UnitPos.X := fCurrPosition.X + UNIT_OFF_X + GetSlide(axX);
-  UnitPos.Y := fCurrPosition.Y + UNIT_OFF_Y + GetSlide(axY);
+  UnitPos.X := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  UnitPos.Y := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   gRenderPool.AddUnit(fType, fUID, Act, Direction, AnimStep, UnitPos.X, UnitPos.Y, gHands[fOwner].GameFlagColor, True);
 
