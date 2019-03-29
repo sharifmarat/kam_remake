@@ -226,6 +226,7 @@ type
   public
     function GoEat(aInn: TKMHouseInn; aUnitAlreadyInsideInn: Boolean = False): Boolean;
     function CheckCondition: Boolean;
+    procedure KillInHouse;
   end;
 
   //This is common class for all units, who can be an owner for house (recruits and all citizen workers)
@@ -258,7 +259,6 @@ type
     function InitiateActivity: TKMUnitTask; override;
   public
     procedure Paint; override;
-    procedure DestroyInBarracks;
   end;
 
   //Serf - transports all wares between houses
@@ -353,6 +353,19 @@ begin
     GoEat(H);
   end;
 end;
+
+
+procedure TKMCivilUnit.KillInHouse;
+begin
+  Assert(fInHouse <> nil, 'Unit could be silently killed only inside some House');
+  //Dispose of current action/task BEFORE we close the unit (action might need to check fPosition if recruit was about to walk out to eat)
+  //Normally this isn't required because TTaskDie takes care of it all, but recruits in barracks don't use TaskDie.
+  SetAction(nil);
+  FreeAndNil(fTask);
+
+  CloseUnit(False); //Don't remove tile usage, we are inside the barracks
+end;
+
 
 function TKMCivilUnit.GoEat(aInn: TKMHouseInn; aUnitAlreadyInsideInn: Boolean = False): Boolean;
 begin
@@ -707,17 +720,6 @@ begin
 end;
 
 
-procedure TKMUnitRecruit.DestroyInBarracks;
-begin
-  //Dispose of current action/task BEFORE we close the unit (action might need to check fPosition if recruit was about to walk out to eat)
-  //Normally this isn't required because TTaskDie takes care of it all, but recruits in barracks don't use TaskDie.
-  SetAction(nil);
-  FreeAndNil(fTask);
-
-  CloseUnit(False); //Don't remove tile usage, we are inside the barracks
-end;
-
-
 function TKMUnitRecruit.InitiateActivity: TKMUnitTask;
 var
   Enemy: TKMUnit;
@@ -846,7 +848,8 @@ begin
   Result := True; //Required for override compatibility
   WasIdle := IsIdle;
   if fAction = nil then raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at start of TKMUnitSerf.UpdateState',fCurrPosition);
-  if inherited UpdateState then exit;
+  if inherited UpdateState then
+    Exit;
 
   OldThought := fThought;
   fThought := thNone;
@@ -1302,7 +1305,7 @@ begin
   FreeAndNil(fTask);
 
   Assert(gMySpectator.Selected <> Self,
-    'Removed units should be flushed from UI earlier inTaskDie or never appear there when training cancelled or alike');
+    'Removed units should be flushed from UI earlier in TaskDie or never appear there when training cancelled or alike');
 end;
 
 

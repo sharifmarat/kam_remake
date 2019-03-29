@@ -36,6 +36,7 @@ uses
 { TTaskDismiss }
 constructor TKMTaskDismiss.Create(aUnit: TKMUnit);
 begin
+  Assert(aUnit is TKMCivilUnit, 'Only civil units are allowed to be dismissed');
   inherited;
 
   fType := uttDismiss;
@@ -122,7 +123,16 @@ begin
     case fPhase of
       0:  SetActionWalkToSpot(fSchool.PointBelowEntrance);
       1:  SetActionGoIn(uaWalk, gdGoInside, fSchool);
-      2:  fUnit.Kill(PLAYER_NONE, False, False); //Silently kill unit
+      2:  begin
+            //Note: we do not set trTaskDone here, as we are going to destroy this task and Close (delete) unit
+            //Setting to trTaskDone will force Unit.UpadateState to find new task/action for this unit
+            if gMySpectator.Selected = fUnit then
+              gMySpectator.Selected := nil; //Reset view, in case we were watching dismissed unit
+
+            TKMCivilUnit(fUnit).KillInHouse; //Kill unit silently inside house
+            Exit; //Exit immidiately, since we destroyed current task!
+                  //Changing any task fields here (f.e. Phase) will try to change freed memory!
+          end;
       else Result := trTaskDone;
     end;
 

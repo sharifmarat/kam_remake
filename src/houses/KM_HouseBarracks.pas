@@ -265,7 +265,7 @@ begin
     end;
 
     //Special way to kill the Recruit because it is in a house
-    TKMUnitRecruit(fRecruitsList.Items[0]).DestroyInBarracks;
+    TKMUnitRecruit(fRecruitsList.Items[0]).KillInHouse;
     fRecruitsList.Delete(0); //Delete first recruit in the list
 
     //Make new unit
