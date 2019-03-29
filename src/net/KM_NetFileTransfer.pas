@@ -145,12 +145,15 @@ begin
             for I := Low(VALID_MAP_EXTENSIONS_POSTFIX) to High(VALID_MAP_EXTENSIONS_POSTFIX) do
             begin
               FileName := GetFullSourceFileName(aType, aName, aMapFolder, '.*', VALID_MAP_EXTENSIONS_POSTFIX[I]);
-              if FindFirst(FileName, faAnyFile, F) = 0 then
-              begin
-                repeat
-                  if (F.Attr and faDirectory = 0) then
-                    AddFileToStream(ExtractFilePath(FileName) + F.Name, ExtractFileExt(ChangeFileExt(F.Name,'')), VALID_MAP_EXTENSIONS_POSTFIX[I]);
-                until FindNext(F) <> 0;
+              try
+                if FindFirst(FileName, faAnyFile, F) = 0 then
+                begin
+                  repeat
+                    if (F.Attr and faDirectory = 0) then
+                      AddFileToStream(ExtractFilePath(FileName) + F.Name, ExtractFileExt(ChangeFileExt(F.Name,'')), VALID_MAP_EXTENSIONS_POSTFIX[I]);
+                  until FindNext(F) <> 0;
+                end;
+              finally
                 FindClose(F);
               end;
             end;
@@ -262,31 +265,34 @@ var
 begin
   //Prepare destination
   case fType of
-    kttMap:  begin
-               //Create downloads folder if it's missing
-               FileName := ExeDir + MAPS_DL_FOLDER_NAME;
-               if not DirectoryExists(FileName) then
-                 CreateDir(FileName);
-               //Create map folder if it is missing
-               FileName := FileName + PathDelim + fName;
-               if not DirectoryExists(FileName) then
-                 CreateDir(FileName)
-               else
-                 //If any files already exist in the folder, delete them
-                 if FindFirst(FileName + PathDelim + fName + '*.*', faAnyFile, F) = 0 then
-                 begin
-                   repeat
-                     if (F.Attr and faDirectory = 0) then
-                       DeleteFile(FileName + PathDelim + F.Name);
-                   until FindNext(F) <> 0;
-                   FindClose(F);
-                 end;
-             end;
-    kttSave: begin
-               SaveFolder := TKMSavesCollection.Path(DOWNLOADED_LOBBY_SAVE, True);
-               KMDeleteFolder(SaveFolder);   // Delete old folder
-               ForceDirectories(SaveFolder); // Create new
-             end;
+    kttMap:   begin
+                //Create downloads folder if it's missing
+                FileName := ExeDir + MAPS_DL_FOLDER_NAME;
+                if not DirectoryExists(FileName) then
+                  CreateDir(FileName);
+                //Create map folder if it is missing
+                FileName := FileName + PathDelim + fName;
+                if not DirectoryExists(FileName) then
+                  CreateDir(FileName)
+                else
+                  try
+                    //If any files already exist in the folder, delete them
+                    if FindFirst(FileName + PathDelim + fName + '*.*', faAnyFile, F) = 0 then
+                    begin
+                      repeat
+                        if (F.Attr and faDirectory = 0) then
+                          DeleteFile(FileName + PathDelim + F.Name);
+                      until FindNext(F) <> 0;
+                    end;
+                  finally
+                    FindClose(F);
+                  end;
+              end;
+    kttSave:  begin
+                SaveFolder := TKMSavesCollection.Path(DOWNLOADED_LOBBY_SAVE, True);
+                KMDeleteFolder(SaveFolder);   // Delete old folder
+                ForceDirectories(SaveFolder); // Create new
+              end;
   end;
 end;
 

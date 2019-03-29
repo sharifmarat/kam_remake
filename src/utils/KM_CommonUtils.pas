@@ -1043,8 +1043,8 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; 
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
-    try
+  try
+    if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
@@ -1055,9 +1055,9 @@ begin
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
           GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aExt, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
-    finally
-      SysUtils.FindClose(SR);
-    end;
+  finally
+    SysUtils.FindClose(SR);
+  end;
 end;
 
 
@@ -1065,8 +1065,8 @@ procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: T
 var
   SR: TSearchRec;
 begin
-  if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
-    try
+  try
+    if FindFirst(IncludeTrailingPathDelimiter(aDir) + '*', faAnyFile or faDirectory, SR) = 0 then
       repeat
         if (SR.Attr and faDirectory) = 0 then
         begin
@@ -1077,9 +1077,9 @@ begin
         if aIncludeSubdirs and (SR.Name <> '.') and (SR.Name <> '..') then
           GetAllPathsInDir(IncludeTrailingPathDelimiter(aDir) + SR.Name, aSL, aValidateFn, aIncludeSubdirs);  // recursive call!
       until FindNext(Sr) <> 0;
-    finally
-      SysUtils.FindClose(SR);
-    end;
+  finally
+    SysUtils.FindClose(SR);
+  end;
 end;
 
 

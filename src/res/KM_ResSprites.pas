@@ -523,38 +523,47 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
   begin
     if not DirectoryExists(aFolder) then Exit;
     FileList := TStringList.Create;
-    IDList := TStringList.Create;
     try
-      //PNGs
-      if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????.png', faAnyFile - faDirectory, SearchRec) = 0 then
-      repeat
-        FileList.Add(SearchRec.Name);
-      until (FindNext(SearchRec) <> 0);
-      FindClose(SearchRec);
-
-      //PNG may be accompanied by some more files
-      //#_####.png - Base texture
-      //#_####a.png - Flag color mask
-      //#_####.txt - Pivot info (optional)
-      for I := 0 to FileList.Count - 1 do
-        if TryStrToInt(Copy(FileList.Strings[I], 3, 4), ID) then
-        begin
-          AddImage(aProcFolder, FileList.Strings[I], ID);
-          IDList.Add(IntToStr(ID));
+      IDList := TStringList.Create;
+      try
+        try
+          //PNGs
+          if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????.png', faAnyFile - faDirectory, SearchRec) = 0 then
+          repeat
+            FileList.Add(SearchRec.Name);
+          until (FindNext(SearchRec) <> 0);
+        finally
+          FindClose(SearchRec);
         end;
 
-      SoftenShadows(IDList); // Soften shadows for overloaded sprites
+        //PNG may be accompanied by some more files
+        //#_####.png - Base texture
+        //#_####a.png - Flag color mask
+        //#_####.txt - Pivot info (optional)
+        for I := 0 to FileList.Count - 1 do
+          if TryStrToInt(Copy(FileList.Strings[I], 3, 4), ID) then
+          begin
+            AddImage(aProcFolder, FileList.Strings[I], ID);
+            IDList.Add(IntToStr(ID));
+          end;
 
-      //Delete following sprites
-      if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????', faAnyFile - faDirectory, SearchRec) = 0 then
-      repeat
-        if TryStrToInt(Copy(SearchRec.Name, 3, 4), ID) then
-          fRXData.Flag[ID] := 0;
-      until (FindNext(SearchRec) <> 0);
-      FindClose(SearchRec);
+        SoftenShadows(IDList); // Soften shadows for overloaded sprites
+
+        try
+          //Delete following sprites
+          if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????', faAnyFile - faDirectory, SearchRec) = 0 then
+          repeat
+            if TryStrToInt(Copy(SearchRec.Name, 3, 4), ID) then
+              fRXData.Flag[ID] := 0;
+          until (FindNext(SearchRec) <> 0);
+        finally
+          FindClose(SearchRec);
+        end;
+      finally
+        IDList.Free;
+      end;
     finally
       FileList.Free;
-      IDList.Free;
     end;
   end;
 begin

@@ -265,11 +265,14 @@ constructor TKMapInfo.Create(const aFolder: string; aStrictParsing: Boolean; aMa
   begin
     Result := 0;
     FindFirst(aSearchFile, faAnyFile - faDirectory, SearchRec);
-    repeat
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
-        Result := Result xor Adler32CRC(ExtractFilePath(aSearchFile) + SearchRec.Name);
-    until (FindNext(SearchRec) <> 0);
-    FindClose(SearchRec);
+    try
+      repeat
+        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+          Result := Result xor Adler32CRC(ExtractFilePath(aSearchFile) + SearchRec.Name);
+      until (FindNext(SearchRec) <> 0);
+    finally
+      FindClose(SearchRec);
+    end;
   end;
 
 var
@@ -1528,23 +1531,29 @@ begin
 
     //Include all campaigns maps
     FindFirst(aExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim + '*', faDirectory, SearchRec);
-    repeat
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
-        PathToMaps.Add(aExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim + SearchRec.Name + PathDelim);
-    until (FindNext(SearchRec) <> 0);
-    FindClose(SearchRec);
+    try
+      repeat
+        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+          PathToMaps.Add(aExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim + SearchRec.Name + PathDelim);
+      until (FindNext(SearchRec) <> 0);
+    finally
+      FindClose(SearchRec);
+    end;
 
     for I := 0 to PathToMaps.Count - 1 do
     if DirectoryExists(PathToMaps[I]) then
     begin
       FindFirst(PathToMaps[I] + '*', faDirectory, SearchRec);
-      repeat
-        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-        and FileExists(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.dat')
-        and FileExists(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.map') then
-          aList.Add(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.dat');
-      until (FindNext(SearchRec) <> 0);
-      FindClose(SearchRec);
+      try
+        repeat
+          if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+          and FileExists(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.dat')
+          and FileExists(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.map') then
+            aList.Add(PathToMaps[I] + SearchRec.Name + PathDelim + SearchRec.Name + '.dat');
+        until (FindNext(SearchRec) <> 0);
+      finally
+        FindClose(SearchRec);
+      end;
     end;
   finally
     PathToMaps.Free;
@@ -1579,15 +1588,18 @@ begin
       if not DirectoryExists(PathToMaps) then Exit;
 
       FindFirst(PathToMaps + '*', faDirectory, SearchRec);
-      repeat
-        if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-          and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.dat', MF))
-          and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.map', MF)) then
-        begin
-          ProcessMap(SearchRec.Name, MF);
-        end;
-      until (FindNext(SearchRec) <> 0) or Terminated;
-      FindClose(SearchRec);
+      try
+        repeat
+          if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+            and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.dat', MF))
+            and FileExists(TKMapsCollection.FullPath(SearchRec.Name, '.map', MF)) then
+          begin
+            ProcessMap(SearchRec.Name, MF);
+          end;
+        until (FindNext(SearchRec) <> 0) or Terminated;
+      finally
+        FindClose(SearchRec);
+      end;
     end;
   finally
     if not Terminated and Assigned(fOnComplete) then

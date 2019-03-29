@@ -176,13 +176,16 @@ begin
   if not DirectoryExists(aPath) then Exit;
 
   FindFirst(aPath + '*', faDirectory, SearchRec);
-  repeat
-    if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-    and (SearchRec.Attr and faDirectory = faDirectory)
-    and FileExists(aPath + SearchRec.Name + PathDelim+'info.cmp') then
-      AddCampaign(aPath + SearchRec.Name + PathDelim);
-  until (FindNext(SearchRec) <> 0);
-  FindClose(SearchRec);
+  try
+    repeat
+      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+      and (SearchRec.Attr and faDirectory = faDirectory)
+      and FileExists(aPath + SearchRec.Name + PathDelim+'info.cmp') then
+        AddCampaign(aPath + SearchRec.Name + PathDelim);
+    until (FindNext(SearchRec) <> 0);
+  finally
+    FindClose(SearchRec);
+  end;
 
   SortCampaigns;
 end;

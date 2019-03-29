@@ -122,15 +122,18 @@ var
   fileDateTime: TDateTime;
 begin
   if not DirectoryExists(fPathToLogs) then Exit;
+  try
+    if FindFirst(fPathToLogs + 'KaM*.log', faAnyFile - faDirectory, SearchRec) = 0 then
+    repeat
+      Assert(FileAge(fPathToLogs + SearchRec.Name, fileDateTime), 'How is that it does not exists any more?');
 
-  if FindFirst(fPathToLogs + 'KaM*.log', faAnyFile - faDirectory, SearchRec) = 0 then
-  repeat
-    Assert(FileAge(fPathToLogs + SearchRec.Name, fileDateTime), 'How is that it does not exists any more?');
+      if (Abs(Now - fileDateTime) > DEL_LOGS_OLDER_THAN) then
+        DeleteFile(fPathToLogs + SearchRec.Name);
+    until (FindNext(SearchRec) <> 0);
+  finally
+    FindClose(SearchRec);
+  end;
 
-    if (Abs(Now - fileDateTime) > DEL_LOGS_OLDER_THAN) then
-      DeleteFile(fPathToLogs + SearchRec.Name);
-  until (FindNext(SearchRec) <> 0);
-  FindClose(SearchRec);
 end;
 
 
