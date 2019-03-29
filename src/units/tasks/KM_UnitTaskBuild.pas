@@ -716,7 +716,7 @@ begin
           //Walk away from building site, before we get trapped when house becomes stoned
           OutOfWay := gTerrain.GetOutOfTheWay(fUnit, KMPOINT_ZERO, tpWalk);
           //GetOutOfTheWay can return the input position (GetPosition in this case) if no others are possible
-          if KMSamePoint(OutOfWay, KMPOINT_ZERO) or KMSamePoint(OutOfWay, GetPosition) then
+          if KMSamePoint(OutOfWay, KMPOINT_ZERO) or KMSamePoint(OutOfWay, CurrPosition) then
             OutOfWay := fHouse.PointBelowEntrance; //Don't get stuck in corners
           SetActionWalkToSpot(OutOfWay);
           HouseNeedsWorker := False; //House construction no longer needs the worker to continue
@@ -844,8 +844,8 @@ begin
           Direction := BuildFrom.Dir;
           //Remove house plan when we start the stone phase (it is still required for wood)
           //But don't do it every time we hit if it's already done!
-          if fHouse.IsStone and (gTerrain.Land[fHouse.GetPosition.Y, fHouse.GetPosition.X].TileLock <> tlHouse) then
-            gTerrain.SetHouse(fHouse.GetPosition, fHouse.HouseType, hsBuilt, Owner);
+          if fHouse.IsStone and (gTerrain.Land[fHouse.Position.Y, fHouse.Position.X].TileLock <> tlHouse) then
+            gTerrain.SetHouse(fHouse.Position, fHouse.HouseType, hsBuilt, Owner);
         end;
     3:  begin
           //Update house on hummer hit

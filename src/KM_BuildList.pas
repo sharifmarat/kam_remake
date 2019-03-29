@@ -278,7 +278,7 @@ begin
   and aWorker.CanWalkTo(fHouses[i].House.PointBelowEntrance, 0)
   then
   begin
-    NewBid := KMLengthDiag(aWorker.GetPosition, fHouses[I].House.GetPosition);
+    NewBid := KMLengthDiag(aWorker.CurrPosition, fHouses[I].House.Position);
     NewBid := NewBid + fHouses[I].Assigned * BID_MODIF;
 
     if NewBid < aBid then
@@ -384,7 +384,7 @@ begin
   if (fFields[I].JobStatus = js_Open)
   and aWorker.CanWalkTo(fFields[I].Loc, 0) then
   begin
-    NewBid := KMLengthDiag(aWorker.GetPosition, fFields[I].Loc);
+    NewBid := KMLengthDiag(aWorker.CurrPosition, fFields[I].Loc);
     if NewBid < aBid then
     begin
       Result := I;
@@ -699,7 +699,7 @@ begin
     and aWorker.CanWalkTo(fPlans[I].Loc, 0)
     then
     begin
-      NewBid := KMLengthDiag(aWorker.GetPosition, fPlans[I].Loc);
+      NewBid := KMLengthDiag(aWorker.CurrPosition, fPlans[I].Loc);
       if NewBid < aBid then
       begin
         Result := I;
@@ -1016,7 +1016,7 @@ begin
   if (fHouses[I].House <> nil)
   and (fHouses[I].Assigned < MAX_WORKERS[fHouses[i].House.HouseType]) then
   begin
-    NewBid := KMLengthDiag(aWorker.GetPosition, fHouses[I].House.GetPosition);
+    NewBid := KMLengthDiag(aWorker.CurrPosition, fHouses[I].House.Position);
     NewBid := NewBid + fHouses[I].Assigned * BID_MODIF;
 
     if NewBid < aBid then
@@ -1249,7 +1249,7 @@ begin
   for I := 0 to fWorkersCount - 1 do
     if fWorkers[I].Worker.IsIdle and fWorkers[I].Worker.CanWalkTo(aPoint, 0) then
     begin
-      NewBid := KMLengthDiag(fWorkers[I].Worker.GetPosition, aPoint);
+      NewBid := KMLengthDiag(fWorkers[I].Worker.CurrPosition, aPoint);
       if NewBid < BestBid then
       begin
         Result := fWorkers[I].Worker;

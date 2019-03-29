@@ -388,7 +388,7 @@ begin
           if fSerfs[K].Serf.IsIdle then
             if fQueue.SerfCanDoDelivery(FoundO,FoundD,fSerfs[K].Serf) then
             begin
-              Bid := KMLength(fSerfs[K].Serf.GetPosition, fQueue.fOffer[FoundO].Loc_House.Entrance);
+              Bid := KMLength(fSerfs[K].Serf.CurrPosition, fQueue.fOffer[FoundO].Loc_House.Entrance);
               if (Bid < BestBid) then
               begin
                 BestBid := Bid;
@@ -874,7 +874,7 @@ begin
             or
             ( //House-Unit delivery can be performed without connecting road
             (fDemand[iD].Loc_Unit <> nil) and
-            (gTerrain.Route_CanBeMade(fOffer[iO].Loc_House.PointBelowEntrance, fDemand[iD].Loc_Unit.GetPosition, tpWalk, 1))
+            (gTerrain.Route_CanBeMade(fOffer[iO].Loc_House.PointBelowEntrance, fDemand[iD].Loc_Unit.CurrPosition, tpWalk, 1))
             ));
 end;
 
@@ -899,7 +899,7 @@ end;
 
 function TKMDeliveries.GetSerfActualPos(aSerf: TKMUnit): TKMPoint;
 begin
-  Result := aSerf.GetPosition;
+  Result := aSerf.CurrPosition;
 
   //If the serf is inside the house (invisible) test from point below
   if not aSerf.Visible then
@@ -1110,7 +1110,7 @@ begin
     end
     else
       //Calc bid cost between offer house and demand Unit (digged worker or hungry warrior)
-      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_Unit.GetPosition, tpWalk, aBidBasicValue);
+      Result := TryCalcRouteCost(aOfferPos, fDemand[iD].Loc_Unit.CurrPosition, tpWalk, aBidBasicValue);
 
     if not Result then
     begin
@@ -1305,7 +1305,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
         and (iD <> fQueue[aDeliveryId].DemandID)
         and (fDemand[iD].Importance >= BestImportance)
         and ValidBestDemand(iD)
-        and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid)
+        and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid)
         and ((Bid < BestBid) or (fDemand[iD].Importance > BestImportance)) then //Calc bid to find the best demand
       begin
         Result := iD;
@@ -1321,7 +1321,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
           and (fDemand[iD].Loc_House.DeliveryMode = dm_Delivery)
           and (fDemand[iD].Loc_House is TKMHouseStore)
           and not TKMHouseStore(fDemand[iD].Loc_House).NotAcceptFlag[aResource]
-          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;
@@ -1333,7 +1333,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
       for iD := 1 to fDemandCount do
         if (fDemand[iD].Ware = wt_All)
           and not fDemand[iD].Loc_House.IsDestroyed //choose between all storages, including current delivery. But not destroyed
-          and TryCalculateBidBasic(aSerf.UID, aSerf.GetPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
+          and TryCalculateBidBasic(aSerf.UID, aSerf.CurrPosition, 1, htNone, aSerf.Owner, iD, Bid) //Choose the closest storage
           and (Bid < BestBid) then
         begin
           Result := iD;

@@ -38,7 +38,7 @@ type
 
 implementation
 uses
-  KM_HandsCollection, KM_ResSound, KM_Sound, KM_Units_Warrior, KM_Resource, KM_Projectiles,
+  KM_HandsCollection, KM_ResSound, KM_Sound, KM_UnitWarrior, KM_Resource, KM_Projectiles,
   KM_ResUnits, KM_Hand;
 
 
@@ -67,8 +67,8 @@ begin
   fOpponent       := aOpponent.GetUnitPointer;
   aUnit.Direction := KMGetDirection(fUnit.PositionF, fOpponent.PositionF); //Face the opponent from the beginning
   fVertexOccupied := KMPOINT_ZERO;
-  if KMStepIsDiag(fUnit.GetPosition, fOpponent.GetPosition) and not TKMUnitWarrior(fUnit).IsRanged then
-    IncVertex(fUnit.GetPosition, fOpponent.GetPosition);
+  if KMStepIsDiag(fUnit.CurrPosition, fOpponent.CurrPosition) and not TKMUnitWarrior(fUnit).IsRanged then
+    IncVertex(fUnit.CurrPosition, fOpponent.CurrPosition);
 end;
 
 
@@ -159,7 +159,7 @@ begin
 
   //Do not play sounds if unit is invisible to gMySpectator
   //We should not use KaMRandom below this line because sound playback depends on FOW and is individual for each player
-  if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.GetPosition.X, fUnit.GetPosition.Y) < 255 then Exit;
+  if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.CurrPosition.X, fUnit.CurrPosition.Y) < 255 then Exit;
 
   if MakeBattleCry then
     gSoundPlayer.PlayWarrior(fUnit.UnitType, sp_BattleCry, fUnit.PositionF);
@@ -184,8 +184,8 @@ begin
   //See if Opponent has walked away (i.e. Serf) or died
   if fOpponent.IsDeadOrDying //Don't continue to fight dead units
   or not fOpponent.Visible //Don't continue to fight units that have went into a house
-  or not TKMUnitWarrior(fUnit).WithinFightRange(fOpponent.GetPosition)
-  or not fUnit.CanWalkDiagonaly(fUnit.GetPosition, fOpponent.GetPosition) then //Might be a tree between us now
+  or not TKMUnitWarrior(fUnit).WithinFightRange(fOpponent.CurrPosition)
+  or not fUnit.CanWalkDiagonaly(fUnit.CurrPosition, fOpponent.CurrPosition) then //Might be a tree between us now
   begin
     //After killing an opponent there is a very high chance that there is another enemy to be fought immediately
     //Try to start fighting that enemy by reusing this FightAction, rather than destroying it and making a new one
@@ -328,7 +328,7 @@ begin
 
   //If the vertex usage has changed we should update it
   if not TKMUnitWarrior(fUnit).IsRanged then //Ranged units do not use verticies
-    if not UpdateVertexUsage(fUnit.GetPosition, fOpponent.GetPosition) then
+    if not UpdateVertexUsage(fUnit.CurrPosition, fOpponent.CurrPosition) then
     begin
       //The vertex is being used so we can't fight
       Result := arActDone;

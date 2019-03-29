@@ -3,7 +3,7 @@ unit KM_GUIMapEdUnit;
 interface
 uses
    Classes, Controls, KromUtils, Math, StrUtils, SysUtils,
-   KM_Controls, KM_Defaults, KM_Pics, KM_Units, KM_UnitGroups,
+   KM_Controls, KM_Defaults, KM_Pics, KM_Units, KM_UnitGroup,
    KM_Points, KM_InterfaceGame;
 
 type

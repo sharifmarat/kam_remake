@@ -87,7 +87,7 @@ uses
   SysUtils, StrUtils, Math,
   KM_Terrain, KM_FileIO,
   KM_AIDefensePos, 
-  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
+  KM_Units, KM_UnitGroup, KM_Houses, KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses, KM_ResWares,
   KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils, KM_Utils;
 
@@ -349,7 +349,7 @@ begin
   //Delete unit/house
   if Obj is TKMUnit then
   begin
-    gHands.RemAnyUnit(TKMUnit(Obj).GetPosition);
+    gHands.RemAnyUnit(TKMUnit(Obj).CurrPosition);
     if not aEraseAll then Exit;
   end
   else
@@ -432,7 +432,7 @@ begin
     if House.Owner <> aOwner then
     begin
       House.OwnerUpdate(aOwner, True);
-      gTerrain.SetHouseAreaOwner(House.GetPosition, House.HouseType, aOwner); // Update minimap colors
+      gTerrain.SetHouseAreaOwner(House.Position, House.HouseType, aOwner); // Update minimap colors
       Result := True;
     end;
   end
@@ -513,7 +513,7 @@ begin
   begin
     Obj := gMySpectator.HitTestCursor(True);
     if Obj is TKMUnit then
-      gHands.RemAnyUnit(TKMUnit(Obj).GetPosition);
+      gHands.RemAnyUnit(TKMUnit(Obj).CurrPosition);
   end else
   if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
   begin

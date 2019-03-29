@@ -52,7 +52,7 @@ type
 implementation
 uses
   SysUtils, KM_Game, KM_GameCursor, KM_HandsCollection,
-  KM_Units, KM_UnitGroups, KM_Units_Warrior, KM_Houses,
+  KM_Units, KM_UnitGroup, KM_UnitWarrior, KM_Houses,
   KM_Utils, KM_CommonUtils,
   KM_GameTypes;
 

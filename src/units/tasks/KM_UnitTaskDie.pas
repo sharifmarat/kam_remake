@@ -19,7 +19,7 @@ type
 
 implementation
 uses
-  KM_ResSound, KM_Sound, KM_HandsCollection, KM_Resource, KM_Units_Warrior, KM_ScriptingEvents,
+  KM_ResSound, KM_Sound, KM_HandsCollection, KM_Resource, KM_UnitWarrior, KM_ScriptingEvents,
   KM_ResUnits;
 
 
@@ -82,7 +82,7 @@ begin
               SetActionLockedStay(SequenceLength, uaDie, False);
               //Do not play sounds if unit is invisible to gMySpectator
               //We should not use KaMRandom below this line because sound playback depends on FOW and is individual for each player
-              if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.GetPosition.X, fUnit.GetPosition.Y) >= 255 then
+              if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.CurrPosition.X, fUnit.CurrPosition.Y) >= 255 then
               begin
                 if fUnit is TKMUnitWarrior then
                   gSoundPlayer.PlayWarrior(fUnit.UnitType, sp_Death, fUnit.PositionF)
@@ -95,8 +95,8 @@ begin
             //Store them before they get lost forever
             TempOwner := fUnit.Owner;
             TempUnitType := fUnit.UnitType;
-            TempX := fUnit.GetPosition.X;
-            TempY := fUnit.GetPosition.Y;
+            TempX := fUnit.CurrPosition.X;
+            TempY := fUnit.CurrPosition.Y;
 
             fUnit.CloseUnit;          //This will FreeAndNil the Task and mark unit as "closed"
 

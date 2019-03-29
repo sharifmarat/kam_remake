@@ -205,7 +205,7 @@ begin
         and ((Houses[I].DeliveryMode <> dm_Delivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
       if not gTerrain.Route_CanBeMade(Loc, Houses[I].PointBelowEntrance, tpWalk, 0) then Continue;
 
-      Dist := KMLengthSqr(Loc, Houses[I].GetPosition);
+      Dist := KMLengthSqr(Loc, Houses[I].Position);
 
       //Always prefer Towers to Barracks by making Barracks Bid much less attractive
       //In case of multiple barracks, prefer the closer one (players should make multiple schools or use WareDelivery to control it)
@@ -257,7 +257,7 @@ begin
     Inc(ID);
     if UsePosition then
     begin
-      Dist := KMLengthSqr(Houses[I].GetPosition,KMPoint(X,Y));
+      Dist := KMLengthSqr(Houses[I].Position,KMPoint(X,Y));
       if BestMatch = -1 then BestMatch := Dist; //Initialize for first use
       if Dist < BestMatch then
       begin
@@ -287,7 +287,7 @@ begin
       AND (not aOnlyCompleted OR Houses[I].IsComplete)
       AND not Houses[I].IsDestroyed then
     begin
-      if (KMLengthSqr(Houses[I].GetPosition, aLoc) <= aSqrRadius) then
+      if (KMLengthSqr(Houses[I].Position, aLoc) <= aSqrRadius) then
       begin
         if (Idx >= Length(Result)) then
           SetLength(Result, Idx + 12);
@@ -406,7 +406,7 @@ begin
   growRect := KMRectGrow(aRect, Margin);
 
   for I := 0 to Count - 1 do
-  if not Houses[I].IsDestroyed and KMInRect(Houses[I].GetPosition, growRect) then
+  if not Houses[I].IsDestroyed and KMInRect(Houses[I].Position, growRect) then
     Houses[I].Paint;
 end;
 

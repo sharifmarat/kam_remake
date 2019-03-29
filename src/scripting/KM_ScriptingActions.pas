@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
 
 type
@@ -171,7 +171,7 @@ type
 
 implementation
 uses
-  TypInfo, KM_AI, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior, KM_HandLogistics,
+  TypInfo, KM_AI, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior, KM_HandLogistics,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
@@ -1926,8 +1926,8 @@ begin
         begin
           H.IncBuildingProgress;
           if H.IsStone
-          and (gTerrain.Land[H.GetPosition.Y, H.GetPosition.X].TileLock <> tlHouse) then
-            gTerrain.SetHouse(H.GetPosition, H.HouseType, hsBuilt, H.Owner);
+          and (gTerrain.Land[H.Position.Y, H.Position.X].TileLock <> tlHouse) then
+            gTerrain.SetHouse(H.Position, H.HouseType, hsBuilt, H.Owner);
         end;
     end
     else

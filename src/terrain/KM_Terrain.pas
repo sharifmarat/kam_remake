@@ -339,7 +339,7 @@ var
 implementation
 uses
   KM_Log, KM_HandsCollection, KM_TerrainWalkConnect, KM_Resource, KM_Units,
-  KM_ResSound, KM_Sound, KM_UnitActionStay, KM_Units_Warrior, KM_TerrainPainter, KM_Houses,
+  KM_ResSound, KM_Sound, KM_UnitActionStay, KM_UnitWarrior, KM_TerrainPainter, KM_Houses,
   KM_ResUnits, KM_ResSprites, KM_Hand, KM_Game, KM_GameTypes, KM_ScriptingEvents, KM_Utils;
 
 
@@ -1586,7 +1586,7 @@ begin
 
     //Don't check tiles farther than closest Warrior
     if aClosest and (W[0] <> nil)
-    and (KMLengthSqr(aLoc, KMPoint(K,I)) >= KMLengthSqr(aLoc, W[0].GetPosition)) then
+    and (KMLengthSqr(aLoc, KMPoint(K,I)) >= KMLengthSqr(aLoc, W[0].CurrPosition)) then
       Continue; //Since we check left-to-right we can't exit just yet (there are possible better enemies below)
 
     //In KaM archers can shoot further than sight radius (shoot further into explored areas)
@@ -1595,10 +1595,10 @@ begin
     if (gHands[aPlayer].FogOfWar.CheckTileRevelation(K,I) <> 255) then Continue;
 
     //This unit could be on a different tile next to KMPoint(k,i), so we cannot use that anymore.
-    //There was a crash caused by VertexUsageCompatible checking (k,i) instead of U.GetPosition.
-    //In that case aLoc = (37,54) and k,i = (39;52) but U.GetPosition = (38;53).
+    //There was a crash caused by VertexUsageCompatible checking (k,i) instead of U.CurrPosition.
+    //In that case aLoc = (37,54) and k,i = (39;52) but U.CurrPosition = (38;53).
     //This shows why you can't use (k,i) in checks because it is distance >2 from aLoc! (in melee fight)
-    P := U.GetPosition;
+    P := U.CurrPosition;
 
     RequiredMaxRad := MaxRad;
     if (MaxRad = 1) and KMStepIsDiag(aLoc, P) then
@@ -3166,7 +3166,7 @@ var
   TempUnit: TKMUnit;
 begin
   U := TKMUnit(aUnit);
-  Loc := U.GetPosition;
+  Loc := U.CurrPosition;
 
   //List 1 holds all available walkable positions except self
   L1 := TKMPointList.Create;

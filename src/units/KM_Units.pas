@@ -81,7 +81,7 @@ type
     fTicker: Cardinal; //ticks of life for the unit (allows to spread updates)
     fOwner: TKMHandIndex;
     fHome: TKMHouse;
-    fPosition: TKMPointF;
+    fPositionF: TKMPointF;
     fVisible: Boolean;
     fIsDead: Boolean;
     fKillASAP: Boolean;
@@ -112,8 +112,6 @@ type
     procedure UpdateHitPoints;
     procedure DoKill(aShowAnimation: Boolean);
     procedure DoDismiss;
-
-    property CurrPosition: TKMPoint read fCurrPosition write SetCurrPosition;
   public
     AnimStep: Integer;
     IsExchanging: Boolean; //Current walk is an exchange, used for sliding
@@ -191,9 +189,10 @@ type
     function  IsDismissing: Boolean;
     function  IsDismissAvailable: Boolean;
     function  IsDismissCancelAvailable: Boolean;
-    property  GetPosition: TKMPoint read fCurrPosition;
+    property  CurrPosition: TKMPoint read fCurrPosition;
     procedure SetPosition(aPos: TKMPoint);
-    property  PositionF: TKMPointF read fPosition write fPosition;
+
+    property  PositionF: TKMPointF read fPositionF write fPositionF;
     property  Thought: TKMUnitThought read fThought write SetThought;
     function  GetMovementVector: TKMPointF;
     function  IsIdle: Boolean;
@@ -313,7 +312,7 @@ type
 implementation
 uses
   KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
-  KM_HandsCollection, KM_FogOfWar, KM_Units_Warrior, KM_Resource, KM_ResUnits,
+  KM_HandsCollection, KM_FogOfWar, KM_UnitWarrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
 
   KM_UnitActionAbandonWalk,
@@ -537,8 +536,8 @@ begin
   if fCurrentAction = nil then exit;
   Act := fCurrentAction.fType;
 
-  XPaintPos := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   ID := fUID * Byte(not (fCurrentAction.fType in [uaDie, uaEat]));
 
@@ -678,8 +677,8 @@ begin
   if fCurrentAction = nil then exit;
   Act := fCurrentAction.fType;
 
-  XPaintPos := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   ID := fUID * Byte(not (fCurrentAction.fType in [uaDie, uaEat]));
 
@@ -807,8 +806,8 @@ begin
   if fCurrentAction = nil then exit;
   Act := fCurrentAction.fType;
 
-  XPaintPos := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   ID := fUID * Byte(not (fCurrentAction.fType in [uaDie, uaEat]));
 
@@ -920,7 +919,7 @@ begin
   //Scan the list and pick suitable locations
   MyCount := 0;
   for I := 0 to aList.Count - 1 do
-  if not KMSamePoint(aList[I].Loc, GetPosition)
+  if not KMSamePoint(aList[I].Loc, CurrPosition)
   and CanWalkTo(aList[I].Loc, 0) then
   begin
     Spots[MyCount] := I;
@@ -942,8 +941,8 @@ begin
   if not fVisible then exit;
   if fCurrentAction = nil then exit;
 
-  XPaintPos := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   ID := fUID * Byte(not (fCurrentAction.fType in [uaDie, uaEat]));
 
@@ -1016,7 +1015,7 @@ function TKMUnitAnimal.UpdateState: Boolean;
 begin
   Result := True; //Required for override compatibility
 
-  CurrPosition := KMPointRound(fPosition);
+  SetCurrPosition(KMPointRound(fPositionF));
 
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName + ' has no action at start of TKMUnitAnimal.UpdateState', fCurrPosition);
@@ -1033,7 +1032,7 @@ begin
     arActDone:      FreeAndNil(fCurrentAction);
     arActAborted:   FreeAndNil(fCurrentAction);
   end;
-  CurrPosition := KMPointRound(fPosition);
+  SetCurrPosition(KMPointRound(fPositionF));
 
 
   Assert((fTask = nil) or (fTask is TKMTaskDie));
@@ -1071,13 +1070,13 @@ begin
   else
     Act := fCurrentAction.fType;
 
-  XPaintPos := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   //Make fish/watersnakes more visible in the MapEd
   if (gGame.GameMode = gmMapEd) and (fType in [ut_Fish, ut_Watersnake, ut_Seastar]) then
-    gRenderAux.Circle(fPosition.X - 0.5,
-                      gTerrain.FlatToHeight(fPosition.X - 0.5, fPosition.Y - 0.5),
+    gRenderAux.Circle(fPositionF.X - 0.5,
+                      gTerrain.FlatToHeight(fPositionF.X - 0.5, fPositionF.Y - 0.5),
                       0.5, $30FF8000, $60FF8000);
 
   //Animals share the same WalkTo logic as other units and they exchange places if necessary
@@ -1099,7 +1098,7 @@ begin
   fThought      := th_None;
   fHome         := nil;
   fInHouse      := nil;
-  fPosition     := KMPointF(aLoc);
+  fPositionF     := KMPointF(aLoc);
   fCurrPosition := aLoc;
   fPrevPosition := aLoc; //Init values
   fNextPosition := aLoc; //Init values
@@ -1209,7 +1208,7 @@ begin
   LoadStream.Read(fInHouse, 4);
   LoadStream.Read(fOwner, SizeOf(fOwner));
   LoadStream.Read(fHome, 4); //Substitute it with reference on SyncLoad
-  LoadStream.Read(fPosition);
+  LoadStream.Read(fPositionF);
   LoadStream.Read(fVisible);
   LoadStream.Read(fIsDead);
   LoadStream.Read(fKillASAP);
@@ -1282,7 +1281,7 @@ begin
 
   fIsDead       := True;
   fThought      := th_None;
-  fPosition     := KMPOINTF_ZERO;
+  fPositionF     := KMPOINTF_ZERO;
   fCurrPosition := KMPOINT_ZERO;
   fPrevPosition := fCurrPosition;
   fNextPosition := fCurrPosition;
@@ -1442,7 +1441,7 @@ begin
   fCurrPosition := aPos;
   fNextPosition := aPos;
   fPrevPosition := aPos;
-  fPosition := KMPointF(aPos);
+  fPositionF := KMPointF(aPos);
   gTerrain.UnitAdd(fCurrPosition, Self);
 end;
 
@@ -1646,7 +1645,7 @@ begin
 
   SetAction(TKMUnitActionWalkTo.Create( Self,               //Who's walking
                                       //Target position is the closest cell to our current position (only used for estimating in path finding)
-                                      aHouse.GetClosestCell(Self.GetPosition),
+                                      aHouse.GetClosestCell(Self.CurrPosition),
                                       aActionType,        //
                                       aDistance,          //Proximity
                                       false,              //If we were pushed
@@ -1840,13 +1839,13 @@ end;
 
 function TKMUnit.CanWalkTo(const aTo: TKMPoint; aDistance: Single): Boolean;
 begin
-  Result := gTerrain.Route_CanBeMade(GetPosition, aTo, DesiredPassability, aDistance);
+  Result := gTerrain.Route_CanBeMade(CurrPosition, aTo, DesiredPassability, aDistance);
 end;
 
 
 function TKMUnit.CanWalkTo(const aTo: TKMPoint; aPass: TKMTerrainPassability; aDistance: Single): Boolean;
 begin
-  Result := gTerrain.Route_CanBeMade(GetPosition, aTo, aPass, aDistance);
+  Result := gTerrain.Route_CanBeMade(CurrPosition, aTo, aPass, aDistance);
 end;
 
 
@@ -1885,9 +1884,9 @@ begin
   Result := gTerrain.TileInMapCoords(X,Y)
         and (gTerrain.Land[Y,X].IsUnit = nil)
         and (gTerrain.CheckPassability(KMPoint(X,Y), aPass))
-        and (not KMStepIsDiag(GetPosition, KMPoint(X,Y)) //Only check vertex usage if the step is diagonal
-             or (not gTerrain.HasVertexUnit(KMGetDiagVertex(GetPosition, KMPoint(X,Y)))))
-        and (gTerrain.CanWalkDiagonaly(GetPosition, X, Y));
+        and (not KMStepIsDiag(CurrPosition, KMPoint(X,Y)) //Only check vertex usage if the step is diagonal
+             or (not gTerrain.HasVertexUnit(KMGetDiagVertex(CurrPosition, KMPoint(X,Y)))))
+        and (gTerrain.CanWalkDiagonaly(CurrPosition, X, Y));
 end;
 
 
@@ -1940,12 +1939,12 @@ begin
         Result := true;
         exit;
       end;
-      CurrPosition := NewCurrPosition; //will update FOW
+      SetCurrPosition(NewCurrPosition); //will update FOW
 
       //Make sure these are reset properly
       Assert(not gTerrain.HasUnit(fCurrPosition));
       IsExchanging := false;
-      fPosition := KMPointF(fCurrPosition);
+      fPositionF := KMPointF(fCurrPosition);
       fPrevPosition := fCurrPosition;
       fNextPosition := fCurrPosition;
       gTerrain.UnitAdd(fCurrPosition, Self); //Unit was not occupying tile while inside the house, hence just add do not remove
@@ -2056,8 +2055,8 @@ begin
   if (not IsExchanging) or not (Action.ActName in [uan_WalkTo, uan_GoInOut]) then exit;
 
   //Uses Y because a walk in the Y means a slide in the X
-  DX := sign(NextPosition.X - fPosition.X);
-  DY := sign(NextPosition.Y - fPosition.Y);
+  DX := sign(NextPosition.X - fPositionF.X);
+  DY := sign(NextPosition.Y - fPositionF.Y);
   if (aCheck = ax_X) and (DY = 0) then exit; //Unit is not shifted
   if (aCheck = ax_Y) and (DX = 0) then exit;
 
@@ -2065,12 +2064,12 @@ begin
 
   if aCheck = ax_X then
   begin
-    PixelPos := Round(abs(fPosition.Y-PrevPosition.Y)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
+    PixelPos := Round(abs(fPositionF.Y-PrevPosition.Y)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
     Result := Result+(DY*SlideLookup[LookupDiagonal,PixelPos])/CELL_SIZE_PX;
   end;
   if aCheck = ax_Y then
   begin
-    PixelPos := Round(abs(fPosition.X-PrevPosition.X)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
+    PixelPos := Round(abs(fPositionF.X-PrevPosition.X)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
     Result := Result-(DX*SlideLookup[LookupDiagonal,PixelPos])/CELL_SIZE_PX;
   end;
 end;
@@ -2151,7 +2150,7 @@ begin
   else
     SaveStream.Write(Integer(0));
 
-  SaveStream.Write(fPosition);
+  SaveStream.Write(fPositionF);
   SaveStream.Write(fVisible);
   SaveStream.Write(fIsDead);
   SaveStream.Write(fKillASAP);
@@ -2254,14 +2253,14 @@ begin
   if fCurrentAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action in TKMUnit.UpdateState',fCurrPosition);
 
-  CurrPosition := KMPointRound(fPosition); //will update FOW
+  SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   case fCurrentAction.Execute of
-    arActContinues: begin CurrPosition := KMPointRound(fPosition); Exit; end; //will update FOW
+    arActContinues: begin SetCurrPosition(KMPointRound(fPositionF)); Exit; end; //will update FOW
     arActAborted:   begin FreeAndNil(fCurrentAction); FreeAndNil(fTask); end;
     arActDone:      FreeAndNil(fCurrentAction);
   end;
-  CurrPosition := KMPointRound(fPosition); //will update FOW
+  SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   if fTask <> nil then
   case fTask.Execute of
@@ -2285,7 +2284,7 @@ begin
     fCurrentAction.Paint;
 
   if SHOW_POINTER_DOTS then
-    gRenderAux.UnitPointers(fPosition.X + 0.5 + GetSlide(ax_X), fPosition.Y + 1   + GetSlide(ax_Y), fPointerCount);
+    gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(ax_X), fPositionF.Y + 1   + GetSlide(ax_Y), fPointerCount);
 end;
 
 

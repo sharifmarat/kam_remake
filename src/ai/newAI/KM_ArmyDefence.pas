@@ -3,7 +3,7 @@ unit KM_ArmyDefence;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack, KM_AIDefensePos;
+  KM_Points, KM_UnitGroup, KM_NavMeshDefences, KM_ArmyAttack, KM_AIDefensePos;
 
 
 type

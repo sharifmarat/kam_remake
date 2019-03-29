@@ -58,7 +58,7 @@ implementation
 uses
   SysUtils, KromUtils, Math,
   KM_GameApp, KM_Game, KM_Render, KM_AIFields, KM_AIInfluences,
-  KM_Units, KM_UnitGroups, KM_Hand, KM_HandsCollection,
+  KM_Units, KM_UnitGroup, KM_Hand, KM_HandsCollection,
   KM_Resource, KM_ResUnits, KM_CommonUtils, KM_Utils,
   KM_GameTypes;
 

@@ -147,7 +147,7 @@ uses
   KM_RenderAux, KM_HandsCollection, KM_Game, KM_GameApp, KM_Sound, KM_Resource, KM_ResUnits,
   KM_ResMapElements, KM_AIFields, KM_TerrainPainter, KM_GameCursor,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
-  KM_FogOfWar, KM_Hand, KM_UnitGroups, KM_Units_Warrior, KM_CommonUtils,
+  KM_FogOfWar, KM_Hand, KM_UnitGroup, KM_UnitWarrior, KM_CommonUtils,
   KM_GameTypes, KM_Utils, KM_ResTileset;
 
 
@@ -634,10 +634,10 @@ procedure TRenderPool.AddWholeHouse(H: TKMHouse; FlagColor: Cardinal; DoImmediat
 begin
   if H <> nil then
   begin
-    AddHouse(H.HouseType, H.GetPosition, 1, 1, 0, DoImmediateRender, DoHighlight, HighlightColor);
-    AddHouseSupply(H.HouseType, H.GetPosition, H.ResourceInArray, H.ResourceOutArray, H.ResourceOutPoolArray, DoImmediateRender, DoHighlight, HighlightColor);
+    AddHouse(H.HouseType, H.Position, 1, 1, 0, DoImmediateRender, DoHighlight, HighlightColor);
+    AddHouseSupply(H.HouseType, H.Position, H.ResourceInArray, H.ResourceOutArray, H.ResourceOutPoolArray, DoImmediateRender, DoHighlight, HighlightColor);
     if H.CurrentAction <> nil then
-      gRenderPool.AddHouseWork(H.HouseType, H.GetPosition, H.CurrentAction.SubAction, H.WorkAnimStep, FlagColor, DoImmediateRender, DoHighlight, HighlightColor);
+      gRenderPool.AddHouseWork(H.HouseType, H.Position, H.CurrentAction.SubAction, H.WorkAnimStep, FlagColor, DoImmediateRender, DoHighlight, HighlightColor);
   end;
 end;
 
@@ -1313,7 +1313,7 @@ begin
   // Get an outline of build area
   fHouseOutline.Clear;
 
-  Loc := aHouse.GetPosition;
+  Loc := aHouse.Position;
   gRes.Houses[aHouse.HouseType].Outline(fHouseOutline);
 
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
@@ -1605,7 +1605,7 @@ begin
     U := TKMUnit(aObject);
     if not Assigned(aUnitFilterFunc) or aUnitFilterFunc(aObject) then
     begin
-      RenderUnit(U, U.GetPosition, aHandColor, aDoHighlight, aHighlightColor);
+      RenderUnit(U, U.CurrPosition, aHandColor, aDoHighlight, aHighlightColor);
       Result := True;
     end;
   end else 
@@ -1623,9 +1623,9 @@ begin
       if G.IsFlagRenderBeforeUnit then
       begin
         G.PaintHighlighted(aHandColor, GroupFlagColor, True, aDoHighlight, aHighlightColor);
-        RenderUnit(U, U.GetPosition, aHandColor, aDoHighlight, aHighlightColor);
+        RenderUnit(U, U.CurrPosition, aHandColor, aDoHighlight, aHighlightColor);
       end else begin
-        RenderUnit(U, U.GetPosition, aHandColor, aDoHighlight, aHighlightColor);
+        RenderUnit(U, U.CurrPosition, aHandColor, aDoHighlight, aHighlightColor);
         G.PaintHighlighted(aHandColor, GroupFlagColor, True, aDoHighlight, aHighlightColor);
       end;
       Result := True;

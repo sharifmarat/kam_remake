@@ -2,7 +2,7 @@ unit KM_AIDefensePos;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_UnitGroups,
+  KM_UnitGroup,
   KM_CommonClasses, KM_Defaults, KM_Points;
 
 

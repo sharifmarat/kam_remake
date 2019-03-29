@@ -55,7 +55,7 @@ implementation
 uses
   Math,
   KM_HandsCollection, KM_Hand, KM_ResHouses,
-  KM_Terrain, KM_Units_Warrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
+  KM_Terrain, KM_UnitWarrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
   KM_UnitTaskBuild, KM_Log;
 
 
@@ -349,7 +349,7 @@ function TKMTaskDeliver.Execute: TKMTaskResult;
   var
     RoadConnectId: Byte;
   begin
-    RoadConnectId := gTerrain.GetRoadConnectID(fUnit.GetPosition);
+    RoadConnectId := gTerrain.GetRoadConnectID(fUnit.CurrPosition);
     Result := ((((fPhase - 1) = 5) and (fDeliverKind = dk_ToHouse))
                 or (((fPhase - 1) in [5,6]) and (fDeliverKind = dk_ToConstruction)))
               and ((RoadConnectId = 0)
@@ -496,7 +496,7 @@ begin
             SetActionWalkToSpot(fToHouse.PointBelowEntrance);
         end;
     7:  begin
-          Direction := KMGetDirection(GetPosition, fToHouse.Entrance);
+          Direction := KMGetDirection(CurrPosition, fToHouse.Entrance);
           fToHouse.ResAddToBuild(Carry);
           gHands[Owner].Stats.WareConsumed(Carry);
           CarryTake;
@@ -516,7 +516,7 @@ begin
     5:  SetActionWalkToUnit(fToUnit, 1.42, uaWalk); //When approaching from diagonal
     6:  begin
           //See if the unit has moved. If so we must try again
-          if KMLengthDiag(fUnit.GetPosition, fToUnit.GetPosition) > 1.5 then
+          if KMLengthDiag(fUnit.CurrPosition, fToUnit.CurrPosition) > 1.5 then
           begin
             SetActionWalkToUnit(fToUnit, 1.42, uaWalk); //Walk to unit again
             fPhase := 6;

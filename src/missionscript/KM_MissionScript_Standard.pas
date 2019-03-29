@@ -2,7 +2,7 @@ unit KM_MissionScript_Standard;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_MissionScript, KM_UnitGroups, KM_Houses,
+  KM_MissionScript, KM_UnitGroup, KM_Houses,
   KM_AIAttacks, KM_Points, KM_Defaults;
 
 
@@ -40,7 +40,7 @@ implementation
 uses
   Classes, SysUtils, Math, KromUtils,
   KM_Hand, KM_Game, KM_HandsCollection,
-  KM_Units, KM_UnitsCollection, KM_Units_Warrior,
+  KM_Units, KM_UnitsCollection, KM_UnitWarrior,
   KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
   KM_AI, KM_AIDefensePos,
   KM_Resource, KM_ResHouses, KM_ResUnits, KM_ResWares,
@@ -990,7 +990,7 @@ begin
       H := gHands[I].Houses[K];
       if not H.IsDestroyed then
       begin
-        AddCommand(ct_SetHouse, [HouseTypeToIndex[H.HouseType]-1, H.GetPosition.X-1 + aLeftInset, H.GetPosition.Y-1 + aTopInset]);
+        AddCommand(ct_SetHouse, [HouseTypeToIndex[H.HouseType]-1, H.Position.X-1 + aLeftInset, H.Position.Y-1 + aTopInset]);
         if H.IsDamaged then
           AddCommand(ct_SetHouseDamage, [H.GetDamage]);
 
@@ -1074,7 +1074,7 @@ begin
     begin
       U := gHands[I].Units[K];
       if not (U is TKMUnitWarrior) then //Groups get saved separately
-        AddCommand(ct_SetUnit, [UnitTypeToOldIndex[U.UnitType], U.GetPosition.X-1 + aLeftInset, U.GetPosition.Y-1 + aTopInset]);
+        AddCommand(ct_SetUnit, [UnitTypeToOldIndex[U.UnitType], U.CurrPosition.X-1 + aLeftInset, U.CurrPosition.Y-1 + aTopInset]);
     end;
 
     //Unit groups
@@ -1107,7 +1107,7 @@ begin
   for I := 0 to gHands.PlayerAnimals.Units.Count - 1 do
   begin
     U := gHands.PlayerAnimals.Units[I];
-    AddCommand(ct_SetUnit, [UnitTypeToOldIndex[U.UnitType], U.GetPosition.X-1 + aLeftInset, U.GetPosition.Y-1 + aTopInset]);
+    AddCommand(ct_SetUnit, [UnitTypeToOldIndex[U.UnitType], U.CurrPosition.X-1 + aLeftInset, U.CurrPosition.Y-1 + aTopInset]);
   end;
   AddData(''); //NL
 

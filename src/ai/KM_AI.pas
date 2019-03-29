@@ -3,7 +3,7 @@ unit KM_AI;
 interface
 uses
   KM_CommonClasses, KM_CommonTypes, KM_CommonUtils, KM_Defaults,
-  KM_Houses, KM_Units, KM_Units_Warrior,
+  KM_Houses, KM_Units, KM_UnitWarrior,
   KM_AISetup, KM_AIMayor, KM_AIGoals, KM_AIGeneral,
   KM_CityManagement, KM_ArmyManagement;
 
@@ -64,7 +64,7 @@ type
 implementation
 uses
   SysUtils,
-  KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroups,
+  KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroup,
   KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
   KM_AIFields;
 
@@ -295,7 +295,7 @@ begin
         if not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
         and (fOwner = gMySpectator.HandIndex)
         and (aAttacker <> nil) then //Don't show alerts for annonymous attacks (e.g. script)
-          gGame.GamePlayInterface.Alerts.AddFight(KMPointF(aHouse.GetPosition), fOwner, an_Town, gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
+          gGame.GamePlayInterface.Alerts.AddFight(KMPointF(aHouse.Position), fOwner, an_Town, gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
       end;
     hndComputer:
       begin
@@ -382,7 +382,7 @@ begin
                   //otherwise you can make a unit walk backwards and forwards forever between two groups of archers
                   if not Group.InFight then
                     //Make sure the group could possibly reach the offenders
-                    if Group.CanWalkTo(aAttacker.GetPosition, Group.FightMaxRange) then
+                    if Group.CanWalkTo(aAttacker.CurrPosition, Group.FightMaxRange) then
                       Group.OrderAttackUnit(aAttacker, True);
               end;
             end;

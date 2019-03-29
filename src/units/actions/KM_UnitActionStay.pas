@@ -66,7 +66,7 @@ begin
   if SKIP_SOUND then Exit;
 
   //Do not play sounds if unit is invisible to gMySpectator
-  if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.GetPosition.X, fUnit.GetPosition.Y) < 255 then exit;
+  if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.CurrPosition.X, fUnit.CurrPosition.Y) < 255 then exit;
 
   //Various UnitTypes and ActionTypes produce all the sounds
   case fUnit.UnitType of

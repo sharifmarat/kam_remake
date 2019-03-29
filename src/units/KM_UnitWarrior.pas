@@ -1,4 +1,4 @@
-unit KM_Units_Warrior;
+unit KM_UnitWarrior;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -122,7 +122,7 @@ implementation
 uses
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
-  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroups,
+  KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroup,
   KM_ResWares, KM_Game, KM_ResHouses, KM_CommonUtils;
 
 
@@ -451,7 +451,7 @@ begin
     and (UnitGroups[U.UnitType] = UnitGroups[fType]) //They must be the same group type
     and TKMUnitWarrior(U).InAGroup then //Check if warrior belongs to some Group
     begin
-      L := KMLength(aLoc, U.GetPosition);
+      L := KMLength(aLoc, U.CurrPosition);
       if (L < Best) then
       begin
         Best := L;
@@ -522,7 +522,7 @@ begin
   case fOrder of
     woNone:         Result := True;
     woWalk:         begin
-                      if not fUseExactTarget or KMSamePoint(GetPosition, fOrderLoc) then
+                      if not fUseExactTarget or KMSamePoint(CurrPosition, fOrderLoc) then
                         Result := True
                       else
                       begin
@@ -577,7 +577,7 @@ begin
     OnPickedFight(Self, NewEnemy);
     //If the target is close enough attack it now, otherwise OnPickedFight will handle it through Group.OffendersList
     //Remember that AI's AutoAttackRange feature means a melee warrior can pick a fight with someone out of range
-    if WithinFightRange(NewEnemy.GetPosition) then
+    if WithinFightRange(NewEnemy.CurrPosition) then
       FightEnemy(NewEnemy);
     Result := True; //Found someone
   end;
@@ -602,7 +602,7 @@ begin
 
     //Archers should only look for opponents when they are idle or when they are finishing another fight (function is called by TUnitActionFight)
     if (Action is TKMUnitActionWalkTo)
-    and ((GetOrderTarget = nil) or GetOrderTarget.IsDeadOrDying or not WithinFightRange(GetOrderTarget.GetPosition))
+    and ((GetOrderTarget = nil) or GetOrderTarget.IsDeadOrDying or not WithinFightRange(GetOrderTarget.CurrPosition))
     then
       Exit;
   end;
@@ -618,7 +618,7 @@ begin
     Range := Max(Range, gHands[fOwner].AI.Setup.AutoAttackRange);
 
   //This function should not be run too often, as it will take some time to execute (e.g. with lots of warriors in the range area to check)
-  Result := gTerrain.UnitsHitTestWithinRad(GetPosition, GetFightMinRange, Range, Owner, at_Enemy, TestDir, not RANDOM_TARGETS);
+  Result := gTerrain.UnitsHitTestWithinRad(CurrPosition, GetFightMinRange, Range, Owner, at_Enemy, TestDir, not RANDOM_TARGETS);
 
   //Only stop attacking a house if it's a warrior
   if (fTask <> nil) and (fTask is TKMTaskAttackHouse) and (Action is TKMUnitActionStay) and not (Result is TKMUnitWarrior) then
@@ -790,7 +790,7 @@ begin
                         if fUseExactTarget then
                           loc := fOrderLoc
                         else
-                          loc := gTerrain.GetClosestTile(fOrderLoc, GetPosition, GetDesiredPassability, False);
+                          loc := gTerrain.GetClosestTile(fOrderLoc, CurrPosition, GetDesiredPassability, False);
 
                         TKMUnitActionWalkTo(Action).ChangeWalkTo(loc, 0);
                         fNextOrder := woNone;
@@ -805,7 +805,7 @@ begin
                         if fUseExactTarget then
                           loc := fOrderLoc
                         else
-                          loc := gTerrain.GetClosestTile(fOrderLoc, GetPosition, GetDesiredPassability, False);
+                          loc := gTerrain.GetClosestTile(fOrderLoc, CurrPosition, GetDesiredPassability, False);
 
                         SetActionWalkToSpot(loc, uaWalk);
                         fNextOrder := woNone;
@@ -819,7 +819,7 @@ begin
                         FreeAndNil(fTask); //e.g. TaskAttackHouse
                         fNextOrder := woNone;
                         fOrder := woAttackUnit;
-                        fOrderLoc := GetOrderTarget.GetPosition;
+                        fOrderLoc := GetOrderTarget.CurrPosition;
                         FightEnemy(GetOrderTarget);
                       end;
                     end;
@@ -834,7 +834,7 @@ begin
                       begin
                         FreeAndNil(fTask); //e.g. TaskAttackHouse
                         fTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
-                        fOrderLoc := GetPosition; //Once the house is destroyed we will position where we are standing
+                        fOrderLoc := CurrPosition; //Once the house is destroyed we will position where we are standing
                         fNextOrder := woNone;
                         fOrder := woAttackHouse;
                       end;
@@ -959,8 +959,8 @@ begin
   if not fVisible then Exit;
 
   Act := fCurrentAction.ActionType;
-  UnitPos.X := fPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  UnitPos.Y := fPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  UnitPos.X := fCurrPosition.X + UNIT_OFF_X + GetSlide(ax_X);
+  UnitPos.Y := fCurrPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 
   gRenderPool.AddUnit(fType, fUID, Act, Direction, AnimStep, UnitPos.X, UnitPos.Y, gHands[fOwner].GameFlagColor, True);
 
@@ -978,8 +978,8 @@ begin
       for I := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
         for K := -Round(GetFightMaxRange) - 1 to Round(GetFightMaxRange) do
           if InRange(GetLength(I, K), GetFightMinRange, GetFightMaxRange)
-            and gTerrain.TileInMapCoords(GetPosition.X + K, GetPosition.Y + I) then
-              gRenderAux.Quad(GetPosition.X + K, GetPosition.Y + I, Color);
+            and gTerrain.TileInMapCoords(CurrPosition.X + K, CurrPosition.Y + I) then
+              gRenderAux.Quad(CurrPosition.X + K, CurrPosition.Y + I, Color);
   end;
 end;
 

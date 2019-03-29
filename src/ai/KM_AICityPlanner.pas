@@ -159,7 +159,7 @@ begin
       begin
         SetLength(Result, Count + 1);
         //Position is as good as Entrance for city planning
-        Result[Count] := KMPointBelow(House.GetPosition);
+        Result[Count] := KMPointBelow(House.Position);
         Inc(Count);
       end;
     end;

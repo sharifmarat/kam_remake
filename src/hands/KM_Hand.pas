@@ -3,7 +3,7 @@ unit KM_Hand;
 interface
 uses
   KM_AI, KM_AIArmyEvaluation,
-  KM_Units, KM_UnitsCollection, KM_UnitGroups, KM_Units_Warrior,
+  KM_Units, KM_UnitsCollection, KM_UnitGroup, KM_UnitWarrior,
   KM_Houses, KM_HouseCollection, KM_HouseInn,
   KM_HandLogistics, KM_HandLocks, KM_HandStats,
   KM_FogOfWar, KM_BuildList, KM_MessageLog, KM_ResHouses,
@@ -443,7 +443,7 @@ begin
     if G.Count = 1 then
     begin
       //If player is human and this is the first warrior in the group, send it to the rally point
-      H := HousesHitTest(aUnit.GetPosition.X, aUnit.GetPosition.Y-1);
+      H := HousesHitTest(aUnit.CurrPosition.X, aUnit.CurrPosition.Y-1);
       if (H is TKMHouseWFlagPoint) then
       begin
         HWFP := TKMHouseWFlagPoint(H);
@@ -1104,7 +1104,7 @@ begin
     and aUnit.CanWalkTo(Loc, H.PointBelowEntrance, tpWalk, 0) then
     begin
       //Take the closest inn out of the ones that are suitable
-      Dist := KMLengthSqr(H.GetPosition, Loc);
+      Dist := KMLengthSqr(H.Position, Loc);
       if Dist < BestMatch then
       begin
         Result := H;
@@ -1680,7 +1680,7 @@ begin
     if (U <> nil)
     and (U.UnitType = ut_Fish)
     and (not U.IsDeadOrDying) //Fish are killed when they are caught or become stuck
-    and (gTerrain.Land[U.GetPosition.Y, U.GetPosition.X].WalkConnect[wcFish] = aWaterID)
+    and (gTerrain.Land[U.CurrPosition.Y, U.CurrPosition.X].WalkConnect[wcFish] = aWaterID)
     and (TKMUnitAnimal(U).FishCount > HighestGroupCount) then
     begin
       Result := TKMUnitAnimal(U);

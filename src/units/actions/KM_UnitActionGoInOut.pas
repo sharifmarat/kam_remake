@@ -206,7 +206,7 @@ begin
 
   if gTerrain.TileInMapCoords(X,Y)
   and (gTerrain.CheckPassability(KMPoint(X,Y), fUnit.DesiredPassability))
-  and (gTerrain.CanWalkDiagonaly(fUnit.GetPosition, X, Y))
+  and (gTerrain.CanWalkDiagonaly(fUnit.CurrPosition, X, Y))
   and (gTerrain.Land[Y,X].IsUnit <> nil) then //If there's some unit we need to do a better check on him
   begin
     U := gTerrain.UnitsHitTest(X,Y); //Let's see who is standing there
@@ -224,8 +224,8 @@ end;
 procedure TKMUnitActionGoInOut.WalkIn;
 begin
   fUnit.Direction := dir_N;  //one cell up
-  fUnit.NextPosition := KMPointAbove(fUnit.GetPosition);
-  gTerrain.UnitRem(fUnit.GetPosition); //Unit does not occupy a tile while inside
+  fUnit.NextPosition := KMPointAbove(fUnit.CurrPosition);
+  gTerrain.UnitRem(fUnit.CurrPosition); //Unit does not occupy a tile while inside
 
   //We are walking straight
   if fStreet.X = fDoor.X then
@@ -276,8 +276,8 @@ begin
   if not fHasStarted then
   begin
     //Set Door and Street locations
-    fDoor := KMPoint(fUnit.GetPosition.X, fUnit.GetPosition.Y - Round(fStep));
-    fStreet := KMPoint(fUnit.GetPosition.X, fUnit.GetPosition.Y + 1 - Round(fStep));
+    fDoor := KMPoint(fUnit.CurrPosition.X, fUnit.CurrPosition.Y - Round(fStep));
+    fStreet := KMPoint(fUnit.CurrPosition.X, fUnit.CurrPosition.Y + 1 - Round(fStep));
 
     case fDirection of
       gd_GoInside:  WalkIn;

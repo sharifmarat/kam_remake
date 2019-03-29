@@ -3,7 +3,7 @@ unit KM_AIGeneral;
 interface
 uses
   KM_AISetup, KM_AIAttacks, KM_AIDefensePos,
-  KM_Units, KM_UnitGroups,
+  KM_Units, KM_UnitGroup,
   KM_CommonClasses, KM_Defaults, KM_Points,
   KM_NavMeshDefences;
 
@@ -647,7 +647,7 @@ begin
     //@Krom: Yes it's right the way it is now. It should be the attacker not the victim.
     //Otherwise the AI sends much more groups when you shoot them with 1 bowmen in the campaigns.
     //Right now it seems to be working almost the same as in the original game.
-    and (KMLengthDiag(Group.Position, aAttacker.GetPosition) <= fDefencePositions[I].Radius) then
+    and (KMLengthDiag(Group.Position, aAttacker.CurrPosition) <= fDefencePositions[I].Radius) then
       Group.OrderAttackUnit(aAttacker, True);
   end;
 end;

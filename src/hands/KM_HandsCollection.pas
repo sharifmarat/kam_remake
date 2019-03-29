@@ -4,7 +4,7 @@ interface
 uses
   Classes,
   KM_Hand, KM_HandSpectator, KM_HouseCollection,
-  KM_Houses, KM_ResHouses, KM_Units, KM_UnitGroups, KM_Units_Warrior,
+  KM_Houses, KM_ResHouses, KM_Units, KM_UnitGroup, KM_UnitWarrior,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points;
 
 
@@ -402,7 +402,7 @@ begin
       and not H.IsDestroyed and H.HasOwner
       and (H.CurrentAction.State <> hst_Empty) then
         //Don't use H.GetDistance (dist to any tile within house) as that's not how tower range works
-        Result := Min(Result, KMLength(H.GetPosition, aLoc));
+        Result := Min(Result, KMLength(H.Position, aLoc));
     end;
   end;
 end;

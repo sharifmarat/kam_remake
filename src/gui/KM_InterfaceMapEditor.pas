@@ -6,7 +6,7 @@ uses
    {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
    Classes, Controls, Math, StrUtils, SysUtils,
    KM_Controls, KM_Defaults, KM_Pics, KM_Points,
-   KM_Houses, KM_Units, KM_UnitGroups, KM_MapEditor,
+   KM_Houses, KM_Units, KM_UnitGroup, KM_MapEditor,
    KM_InterfaceDefaults, KM_InterfaceGame, KM_Terrain, KM_Minimap, KM_Viewport, KM_Render,
    KM_GUIMapEdHouse,
    KM_GUIMapEdPlayerGoalPopUp,
@@ -132,7 +132,7 @@ implementation
 uses
   KM_HandsCollection, KM_ResTexts, KM_Game, KM_Main, KM_GameCursor, KM_RenderPool,
   KM_Resource, KM_TerrainDeposits, KM_ResCursors, KM_ResKeys, KM_GameApp, KM_CommonUtils,
-  KM_Hand, KM_AIDefensePos, KM_RenderUI, KM_ResFonts, KM_CommonClasses, KM_Units_Warrior,
+  KM_Hand, KM_AIDefensePos, KM_RenderUI, KM_ResFonts, KM_CommonClasses, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters, KM_ResHouses, KM_Utils;
 
 const
@@ -955,7 +955,7 @@ begin
   begin
     H := TKMHouse(fDragObject);
     //Temporarily remove house from terrain to render house markups as there is no current house (we want to move it)
-    gTerrain.SetHouse(H.GetPosition, H.HouseType, hsNone, H.Owner);
+    gTerrain.SetHouse(H.Position, H.HouseType, hsNone, H.Owner);
     SetCursorModeHouse(H.HouseType); //Update cursor mode to cmHouse
   end;
 end;
@@ -991,7 +991,7 @@ begin
   begin
     H := TKMHouse(aObjectToMove);
 
-    HouseOldPos := H.GetPosition;
+    HouseOldPos := H.Position;
 
     HouseNewPos := KMPointAdd(gGameCursor.Cell, fDragHouseOffset);
 

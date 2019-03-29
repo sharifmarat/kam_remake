@@ -4,8 +4,8 @@ interface
 uses
   Classes, KromUtils, Math, SysUtils,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
-  KM_Houses, KM_Units, KM_Units_Warrior,
-  KM_UnitGroups, KM_AISetup,
+  KM_Houses, KM_Units, KM_UnitWarrior,
+  KM_UnitGroup, KM_AISetup,
   KM_HandStats, KM_ArmyAttack, KM_ArmyDefence, KM_AIAttacks,
   KM_NavMeshFloodPositioning, KM_NavMeshInfluences;
 
@@ -529,11 +529,11 @@ type
     end;
     //Choose best option
     if (TargetHouse <> nil) then
-      aTargetP := TargetHouse.GetPosition
+      aTargetP := TargetHouse.Position
     else if (TargetUnit <> nil) then
-      aTargetP := TargetUnit.GetPosition
+      aTargetP := TargetUnit.CurrPosition
     else if (aTarget = attCustomPosition) then
-      aTargetP := TargetHouse.GetPosition;
+      aTargetP := TargetHouse.Position;
     Result := not KMSamePoint(aTargetP, KMPOINT_ZERO);
   end;
 
@@ -665,7 +665,7 @@ begin
   if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
   begin
     if (aUnit = nil) // Does attacker attack house
-      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.GetPosition.Y,aUnit.GetPosition.X] > 50)) then // Or citizen which is inside of city?
+      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.CurrPosition.Y,aUnit.CurrPosition.X] > 50)) then // Or citizen which is inside of city?
       fHostileGroups.Add( Group.GetGroupPointer() )
     else // Does attacker attack at soldier in defence position?
     begin

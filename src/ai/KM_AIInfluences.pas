@@ -4,7 +4,7 @@ interface
 uses
   Math,
   KM_CommonClasses, KM_CommonTypes, KM_CommonUtils, KM_Defaults, KM_Points,
-  KM_Units, KM_UnitGroups,
+  KM_Units, KM_UnitGroup,
   KM_NavMesh, KM_NavMeshGenerator, KM_NavMeshInfluences,
   KM_NavMeshFloodFill, KM_FloodFill;
 
@@ -394,7 +394,7 @@ begin
       begin
         if (Length(PointArr) <= Cnt) then
           SetLength(PointArr, Cnt + 16);
-        PointArr[Cnt] := gAIFields.NavMesh.KMPoint2Polygon[ U.GetPosition ];
+        PointArr[Cnt] := gAIFields.NavMesh.KMPoint2Polygon[ U.CurrPosition ];
         Cnt := Cnt + 1;
       end;
       K := K + EACH_X_MEMBER_COEF; // Pick each X member (Huge groups cover large areas so be sure that influence will be accurate)
@@ -591,7 +591,7 @@ begin
     H := gHands[aPL].Houses[I];
     if not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
     begin
-        IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.GetPosition ];
+        IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.Position ];
         Cnt := Cnt + 1;
     end;
   end;

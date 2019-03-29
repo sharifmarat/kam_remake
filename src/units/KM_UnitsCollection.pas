@@ -43,7 +43,7 @@ type
 
 implementation
 uses
-  SysUtils, KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior,
+  SysUtils, KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_UnitWarrior,
   KM_GameTypes;
 
 
@@ -214,7 +214,7 @@ begin
   for I := 0 to Count - 1 do
     if not Units[I].IsDeadOrDying and Units[I].Visible and (Units[I].UnitType in aTypes) then
     begin
-      Dist := KMLengthSqr(Units[I].GetPosition, aPoint);
+      Dist := KMLengthSqr(Units[I].CurrPosition, aPoint);
       if Dist < BestDist then
       begin
         BestDist := Dist;

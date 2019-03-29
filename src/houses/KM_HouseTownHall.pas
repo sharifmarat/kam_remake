@@ -53,7 +53,7 @@ implementation
 uses
   Math,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_Terrain,
-  KM_Units_Warrior, KM_ResUnits,
+  KM_UnitWarrior, KM_ResUnits,
   KM_InterfaceGame;
 
 

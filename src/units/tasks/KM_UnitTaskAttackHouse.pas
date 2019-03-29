@@ -3,7 +3,7 @@ unit KM_UnitTaskAttackHouse;
 interface
 uses
   Classes, SysUtils, Math,
-  KM_CommonClasses, KM_Defaults, KM_CommonUtils, KM_Houses, KM_Units, KM_Units_Warrior, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_CommonUtils, KM_Houses, KM_Units, KM_UnitWarrior, KM_Points;
 
 
 type
@@ -88,11 +88,11 @@ begin
   with TKMUnitWarrior(fUnit) do
     case fPhase of
       0:  if IsRanged then
-            if fHouse.GetDistance(GetPosition) < GetFightMinRange then
+            if fHouse.GetDistance(CurrPosition) < GetFightMinRange then
               //Archer is too close, try to step back to the minimum range
               SetActionWalkFromHouse(fHouse, GetFightMinRange)
             else
-            if fHouse.GetDistance(GetPosition) > GetFightMaxRange then
+            if fHouse.GetDistance(CurrPosition) > GetFightMaxRange then
               SetActionWalkToHouse(fHouse, GetFightMaxRange)
             else
               SetActionStay(0, uaWalk)
@@ -102,7 +102,7 @@ begin
             if IsRanged then
             begin
               //Check if the walk failed
-              if (fHouse.GetDistance(GetPosition) < GetFightMinRange) or (fHouse.GetDistance(GetPosition) > GetFightMaxRange) then
+              if (fHouse.GetDistance(CurrPosition) < GetFightMinRange) or (fHouse.GetDistance(CurrPosition) > GetFightMaxRange) then
               begin
                 SetActionStay(0, uaWalk);
                 Result := trTaskDone;
@@ -119,8 +119,8 @@ begin
 
               SetActionLockedStay(Delay,uaWork); //Pretend to aim
 
-              if not KMSamePoint(GetPosition, fHouse.GetClosestCell(GetPosition)) then //Unbuilt houses can be attacked from within
-                Direction := KMGetDirection(GetPosition, fHouse.Entrance); //Look at house
+              if not KMSamePoint(CurrPosition, fHouse.GetClosestCell(CurrPosition)) then //Unbuilt houses can be attacked from within
+                Direction := KMGetDirection(CurrPosition, fHouse.Entrance); //Look at house
 
               if gMySpectator.FogOfWar.CheckTileRevelation(Round(PositionF.X), Round(PositionF.Y)) >= 255 then
               case UnitType of
@@ -133,15 +133,15 @@ begin
             else
             begin
               //Check if the walk failed
-              if fHouse.GetDistance(GetPosition) > GetFightMaxRange then
+              if fHouse.GetDistance(CurrPosition) > GetFightMaxRange then
               begin
                 SetActionStay(0, uaWalk);
                 Result := trTaskDone;
                 Exit;
               end;
               SetActionLockedStay(0,uaWork,False); //Melee units pause after the hit
-              if not KMSamePoint(GetPosition, fHouse.GetClosestCell(GetPosition)) then //Unbuilt houses can be attacked from within
-                Direction := KMGetDirection(GetPosition, fHouse.GetClosestCell(GetPosition)); //Look at house
+              if not KMSamePoint(CurrPosition, fHouse.GetClosestCell(CurrPosition)) then //Unbuilt houses can be attacked from within
+                Direction := KMGetDirection(CurrPosition, fHouse.GetClosestCell(CurrPosition)); //Look at house
 
             end;
           end;
@@ -183,7 +183,7 @@ begin
               fHouse.AddDamage(2, fUnit);
 
               //Play a sound. We should not use KaMRandom here because sound playback depends on FOW and is individual for each player
-              if gMySpectator.FogOfWar.CheckTileRevelation(GetPosition.X, GetPosition.Y) >= 255 then
+              if gMySpectator.FogOfWar.CheckTileRevelation(CurrPosition.X, CurrPosition.Y) >= 255 then
                 gSoundPlayer.Play(MeleeSoundsHouse[Random(Length(MeleeSoundsHouse))], PositionF);
 
               fPhase := 1; //Go for another hit (will be 2 after inc below)

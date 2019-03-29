@@ -278,11 +278,11 @@ uses
   KM_UnitActionStormAttack in 'src\units\actions\KM_UnitActionStormAttack.pas',
   KM_UnitActionWalkTo in 'src\units\actions\KM_UnitActionWalkTo.pas',
   
-  KM_UnitGroups in 'src\units\KM_UnitGroups.pas',
+  KM_UnitGroup in 'src\units\KM_UnitGroup.pas',
   KM_Units in 'src\units\KM_Units.pas',
   KM_UnitsCollection in 'src\units\KM_UnitsCollection.pas',
-  KM_Units_Warrior in 'src\units\KM_Units_Warrior.pas',
-  KM_Units_WorkPlan in 'src\units\KM_Units_WorkPlan.pas',
+  KM_UnitWarrior in 'src\units\KM_UnitWarrior.pas',
+  KM_UnitWorkPlan in 'src\units\KM_UnitWorkPlan.pas',
   
   KM_UnitTaskAttackHouse in 'src\units\tasks\KM_UnitTaskAttackHouse.pas',
   KM_UnitTaskBuild in 'src\units\tasks\KM_UnitTaskBuild.pas',

@@ -2,7 +2,7 @@ unit KM_GameInputProcess;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Units, KM_UnitGroups,
+  KM_Units, KM_UnitGroup,
   KM_Houses, KM_HouseWoodcutters,
   KM_ResHouses, KM_ResWares,
   KM_CommonClasses, KM_Defaults, KM_Points;

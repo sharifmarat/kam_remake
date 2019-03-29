@@ -5,7 +5,7 @@ unit KM_Supervisor;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack, KM_ArmyManagement, KM_NavMeshInfluences,
+  KM_Points, KM_UnitGroup, KM_NavMeshDefences, KM_ArmyAttack, KM_ArmyManagement, KM_NavMeshInfluences,
   KM_ResHouses, KM_Sort;
 
 type

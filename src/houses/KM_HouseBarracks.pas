@@ -51,7 +51,7 @@ implementation
 uses
   SysUtils, Math, Types,
   KM_Hand, KM_HandsCollection, KM_Terrain,
-  KM_Units, KM_Units_Warrior,
+  KM_Units, KM_UnitWarrior,
   KM_ResUnits;
 
 
