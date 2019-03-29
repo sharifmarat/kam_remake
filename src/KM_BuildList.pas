@@ -547,7 +547,7 @@ begin
   if KMSamePoint(fFields[I].Loc, aLoc) then
   begin
     if fFields[I].Worker <> nil then
-      fFields[I].Worker.CancelUnitTask;
+      fFields[I].Worker.CancelTask;
     CloseField(I);
     Exit;
   end;
@@ -820,7 +820,7 @@ begin
   then
   begin
     if fPlans[I].Worker <> nil then
-      fPlans[I].Worker.CancelUnitTask;
+      fPlans[I].Worker.CancelTask;
     ClosePlan(I);
     Exit;
   end;

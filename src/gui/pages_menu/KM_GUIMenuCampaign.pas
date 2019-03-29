@@ -240,9 +240,8 @@ begin
   for I := 0 to High(Image_CampaignFlags) do
   begin
     Image_CampaignFlags[I].Highlight := (fMapIndex = I);
-    if I >= fCampaign.MapCount then
-      Color := icLightGray2
-    else
+    Color := icLightGray2;
+    if I < fCampaign.MapCount then
       case fCampaign.MapsProgressData[I].BestCompleteDifficulty of
         mdNone: Color := icLightGray2;
         mdEasy: Color := icGreen;

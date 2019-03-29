@@ -468,22 +468,22 @@ end;
 function TKMUnitWarrior.GetWarriorActivityText(aIsAttackingUnit: Boolean): UnicodeString;
 begin
   //We can't rely on fOrder because it does not get reset, so look at actions/tasks
-  if fCurrentAction is TKMUnitActionFight then
+  if fAction is TKMUnitActionFight then
     if IsRanged then
       Result := gResTexts[TX_UNIT_TASK_FIRING]
     else
       Result := gResTexts[TX_UNIT_TASK_FIGHTING]
   else
-  if fCurrentAction is TKMUnitActionStormAttack then
+  if fAction is TKMUnitActionStormAttack then
     Result := gResTexts[TX_UNIT_TASK_STORM_ATTACK]
   else
   if fTask is TKMTaskAttackHouse then
     Result := gResTexts[TX_UNIT_TASK_ATTACKING_HOUSE]
   else
-  if fCurrentAction is TKMUnitActionGoInOut then
+  if fAction is TKMUnitActionGoInOut then
     Result := gResTexts[TX_UNIT_TASK_MOVING]
   else
-  if fCurrentAction is TKMUnitActionWalkTo then
+  if fAction is TKMUnitActionWalkTo then
     if aIsAttackingUnit then
       Result := gResTexts[TX_UNIT_TASK_ATTACKING]
     else
@@ -912,7 +912,7 @@ end;}
 
 function TKMUnitWarrior.UpdateState: Boolean;
 begin
-  if fCurrentAction = nil then
+  if fAction = nil then
     raise ELocError.Create(gRes.Units[UnitType].GUIName+' has no action at start of TKMUnitWarrior.UpdateState',fCurrPosition);
 
   if IsDeadOrDying then
@@ -958,7 +958,7 @@ begin
   inherited;
   if not fVisible then Exit;
 
-  Act := fCurrentAction.ActionType;
+  Act := fAction.ActionType;
   UnitPos.X := fCurrPosition.X + UNIT_OFF_X + GetSlide(ax_X);
   UnitPos.Y := fCurrPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
 

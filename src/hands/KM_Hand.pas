@@ -1,4 +1,4 @@
-unit KM_Hand;
+﻿unit KM_Hand;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -18,12 +18,12 @@ type
   //Player manages its assets
   TKMHandCommon = class
   private
-    fHandIndex: TKMHandIndex; //Index of this hand in gHands
+    fIndex: TKMHandIndex; //Index of this hand in gHands
     fUnits: TKMUnitsCollection;
   public
     constructor Create(aHandIndex: TKMHandIndex);
     destructor Destroy; override;
-    property HandIndex: TKMHandIndex read fHandIndex;
+    property Index: TKMHandIndex read fIndex;
     property Units: TKMUnitsCollection read fUnits;
 
     function AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint): TKMUnit;
@@ -203,7 +203,7 @@ uses
 constructor TKMHandCommon.Create(aHandIndex: TKMHandIndex);
 begin
   inherited Create;
-  fHandIndex  := aHandIndex;
+  fIndex  := aHandIndex;
   fUnits        := TKMUnitsCollection.Create;
 end;
 
@@ -218,7 +218,7 @@ end;
 function TKMHandCommon.AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint): TKMUnit;
 begin
   //Animals are autoplaced by default
-  Result := fUnits.AddUnit(fHandIndex, aUnitType, aLoc, True);
+  Result := fUnits.AddUnit(fIndex, aUnitType, aLoc, True);
 end;
 
 
@@ -287,13 +287,13 @@ begin
 
   Enabled := True;
 
-  fAI           := TKMHandAI.Create(fHandIndex);
+  fAI           := TKMHandAI.Create(fIndex);
   fFogOfWar     := TKMFogOfWar.Create(gTerrain.MapX, gTerrain.MapY);
   fLocks        := TKMHandLocks.Create;
   fStats        := TKMHandStats.Create;
   fRoadsList    := TKMPointList.Create;
   fHouses       := TKMHousesCollection.Create;
-  fDeliveries   := TKMHandLogistics.Create(fHandIndex);
+  fDeliveries   := TKMHandLogistics.Create(fIndex);
   fBuildList    := TKMBuildList.Create;
   fUnitGroups   := TKMUnitGroups.Create;
   fMessageLog   := TKMMessageLog.Create;
@@ -310,8 +310,8 @@ begin
   for I := 0 to 9 do
     SelectionHotkeys[I] := -1; //Not set
 
-  fAlliances[fHandIndex] := at_Ally; //Others are set to enemy by default
-  fFlagColor := DefaultTeamColors[fHandIndex]; //Init with default color, later replaced by Script
+  fAlliances[fIndex] := at_Ally; //Others are set to enemy by default
+  fFlagColor := DefaultTeamColors[fIndex]; //Init with default color, later replaced by Script
 end;
 
 
@@ -345,7 +345,7 @@ function TKMHand.AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint; AutoPlace
 var
   G: TKMUnitGroup;
 begin
-  Result := fUnits.AddUnit(fHandIndex, aUnitType, aLoc, AutoPlace, aRequiredWalkConnect);
+  Result := fUnits.AddUnit(fIndex, aUnitType, aLoc, AutoPlace, aRequiredWalkConnect);
 
   //Unit failed to add, that happens
   if Result = nil then Exit;
@@ -388,7 +388,7 @@ end;
 //User can cancel the training, so we don't add unit to stats just yet
 function TKMHand.TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 begin
-  Result := fUnits.AddUnit(fHandIndex, aUnitType, Position, False);
+  Result := fUnits.AddUnit(fIndex, aUnitType, Position, False);
   Result.OnUnitDied := UnitDied;
   Result.OnUnitTrained := UnitTrained;
 
@@ -469,7 +469,7 @@ begin
       AddUnit(aUnitType, Position, True)
   else
   if aUnitType in [WARRIOR_MIN..WARRIOR_MAX] then
-    Result := fUnitGroups.AddGroup(fHandIndex, aUnitType, Position.X, Position.Y, aDir, aUnitPerRow, aCount);
+    Result := fUnitGroups.AddGroup(fIndex, aUnitType, Position.X, Position.Y, aDir, aUnitPerRow, aCount);
 
   //Group can be nil if it fails to be placed on terrain (e.g. because of terrain height passability)
   if Result <> nil then
@@ -509,7 +509,7 @@ procedure TKMHand.AfterMissionInit(aFlattenRoads: Boolean);
 begin
   Assert(fRoadsList <> nil);
 
-  gTerrain.SetRoads(fRoadsList, fHandIndex, not aFlattenRoads); //If we are flattening roads that will update WalkConnect anyway
+  gTerrain.SetRoads(fRoadsList, fIndex, not aFlattenRoads); //If we are flattening roads that will update WalkConnect anyway
   if aFlattenRoads then
     gTerrain.FlattenTerrain(fRoadsList);
 
@@ -646,7 +646,7 @@ end;
 
 procedure TKMHand.SetHandIndex(aNewIndex: TKMHandIndex);
 begin
-  fHandIndex := aNewIndex;
+  fIndex := aNewIndex;
   fUnits.OwnerUpdate(aNewIndex);
   fHouses.OwnerUpdate(aNewIndex);
   fAI.OwnerUpdate(aNewIndex);
@@ -661,7 +661,7 @@ end;
 
 procedure TKMHand.AddRoad(const aLoc: TKMPoint);
 begin
-  gTerrain.SetRoad(aLoc, fHandIndex);
+  gTerrain.SetRoad(aLoc, fIndex);
 end;
 
 
@@ -677,20 +677,20 @@ begin
   begin
     if ObjectIsCorn(Obj) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fIndex, aFieldType, Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end else if (aFieldType = ftWine) and not gTerrain.TileIsWineField(aLoc) then
   begin
     if ObjectIsWine(Obj) then
     begin
-      gTerrain.SetField(aLoc, fHandIndex, aFieldType, Obj - 54, True, aKeepOldObject);
+      gTerrain.SetField(aLoc, fIndex, aFieldType, Obj - 54, True, aKeepOldObject);
       IsFieldSet := True;
     end;
   end;
 
   if not IsFieldSet then
-    gTerrain.SetField(aLoc, fHandIndex, aFieldType, aStage, True, aKeepOldObject);
+    gTerrain.SetField(aLoc, fIndex, aFieldType, aStage, True, aKeepOldObject);
 end;
 
 
@@ -701,7 +701,7 @@ begin
   Result := True;
   //Don't allow placing on allies plans either
   for I := 0 to gHands.Count - 1 do
-    if (I <> fHandIndex) and (fAlliances[I] = at_Ally) then
+    if (I <> fIndex) and (fAlliances[I] = at_Ally) then
       Result := Result and (gHands[i].fBuildList.FieldworksList.HasField(aLoc) = ftNone)
                        and not gHands[i].fBuildList.HousePlanList.HasPlan(aLoc);
 end;
@@ -714,7 +714,7 @@ begin
   begin
     if not gGame.IsMapEditor and not gGameApp.GameSettings.ShowPlayersColors then
     begin
-      if HandIndex = gMySpectator.HandIndex then
+      if Index = gMySpectator.HandIndex then
         Result := gGameApp.GameSettings.PlayerColorSelf
       else if (Alliances[gMySpectator.HandIndex] = at_Ally) then
         Result := gGameApp.GameSettings.PlayerColorAlly
@@ -833,7 +833,7 @@ begin
       if (HA[I,K] = 2) then
       begin
         TerOwner := gAIFields.Influences.GetBestOwner(Tx,Ty);
-        if ((TerOwner <> fHandIndex) and (TerOwner <> PLAYER_NONE)) then
+        if ((TerOwner <> fIndex) and (TerOwner <> PLAYER_NONE)) then
           Exit;
       end;
     end;
@@ -888,13 +888,13 @@ begin
     if CanAddFieldPlan(aLoc, aFieldType) then
     begin
       if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-        and (HandIndex = gMySpectator.HandIndex) then
+        and (Index = gMySpectator.HandIndex) then
         gSoundPlayer.Play(sfx_placemarker);
       fBuildList.FieldworksList.AddField(aLoc, aFieldType);
       case aFieldType of
-         ftRoad: gScriptEvents.ProcPlanRoadPlaced(fHandIndex, aLoc.X, aLoc.Y);
-         ftCorn: gScriptEvents.ProcPlanFieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
-         ftWine: gScriptEvents.ProcPlanWinefieldPlaced(fHandIndex, aLoc.X, aLoc.Y);
+         ftRoad: gScriptEvents.ProcPlanRoadPlaced(fIndex, aLoc.X, aLoc.Y);
+         ftCorn: gScriptEvents.ProcPlanFieldPlaced(fIndex, aLoc.X, aLoc.Y);
+         ftWine: gScriptEvents.ProcPlanWinefieldPlaced(fIndex, aLoc.X, aLoc.Y);
       else
         raise Exception.Create('Unknown aFieldType');
       end;
@@ -902,7 +902,7 @@ begin
     else
     begin
       if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-        and (HandIndex = gMySpectator.HandIndex) then
+        and (Index = gMySpectator.HandIndex) then
         gSoundPlayer.Play(sfx_CantPlace, 4);
       if Plan = ftNone then //If we can't build because there's some other plan, that's ok
       begin
@@ -926,17 +926,17 @@ begin
   begin
     fBuildList.FieldworksList.RemFakeField(aLoc); //Remove our fake marker which is shown to the user
     fBuildList.FieldworksList.AddFakeDeletedField(aLoc); //This will hide the real field until it is deleted from game
-    if HandIndex = gMySpectator.HandIndex then gSoundPlayer.Play(sfx_Click);
+    if Index = gMySpectator.HandIndex then gSoundPlayer.Play(sfx_Click);
   end
   else
     if CanAddFakeFieldPlan(aLoc, aFieldType) then
     begin
       fBuildList.FieldworksList.AddFakeField(aLoc, aFieldType);
-      if HandIndex = gMySpectator.HandIndex then
+      if Index = gMySpectator.HandIndex then
         gSoundPlayer.Play(sfx_placemarker);
     end
     else
-      if HandIndex = gMySpectator.HandIndex then
+      if Index = gMySpectator.HandIndex then
         gSoundPlayer.Play(sfx_CantPlace, 4);
 end;
 
@@ -962,7 +962,7 @@ end;}
 
 function TKMHand.AddHouse(aHouseType: TKMHouseType; PosX, PosY:word; RelativeEntrace: Boolean): TKMHouse;
 begin
-  Result := fHouses.AddHouse(aHouseType, PosX, PosY, fHandIndex, RelativeEntrace);
+  Result := fHouses.AddHouse(aHouseType, PosX, PosY, fIndex, RelativeEntrace);
   Result.OnDestroyed := HouseDestroyed;
 end;
 
@@ -977,16 +977,16 @@ begin
 
   fBuildList.HousePlanList.AddPlan(aHouseType, Loc);
   fStats.HousePlanned(aHouseType);
-  gScriptEvents.ProcHousePlanPlaced(fHandIndex, Loc.X, Loc.Y, aHouseType);
+  gScriptEvents.ProcHousePlanPlaced(fIndex, Loc.X, Loc.Y, aHouseType);
 
-  if (HandIndex = gMySpectator.HandIndex) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
+  if (Index = gMySpectator.HandIndex) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
     gSoundPlayer.Play(sfx_placemarker);
 end;
 
 
 function TKMHand.AddHouseWIP(aHouseType: TKMHouseType; const aLoc: TKMPoint): TKMHouse;
 begin
-  Result := fHouses.AddHouseWIP(aHouseType, aLoc.X, aLoc.Y, fHandIndex);
+  Result := fHouses.AddHouseWIP(aHouseType, aLoc.X, aLoc.Y, fIndex);
   Result.OnDestroyed := HouseDestroyed;
 
   fStats.HouseStarted(aHouseType);
@@ -1001,7 +1001,7 @@ begin
   H := fHouses.HitTest(Position.X, Position.Y);
   if H = nil then Exit; //Due to network delays the house might have already been destroyed by now
 
-  H.DemolishHouse(fHandIndex, IsEditor);
+  H.DemolishHouse(fIndex, IsEditor);
 end;
 
 
@@ -1014,8 +1014,8 @@ begin
 
   fBuildList.HousePlanList.RemPlan(Position);
   fStats.HousePlanRemoved(HPlan.HouseType);
-  gScriptEvents.ProcHousePlanRemoved(fHandIndex, HPlan.Loc.X, HPlan.Loc.Y, HPlan.HouseType);
-  if (HandIndex = gMySpectator.HandIndex) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
+  gScriptEvents.ProcHousePlanRemoved(fIndex, HPlan.Loc.X, HPlan.Loc.Y, HPlan.HouseType);
+  if (Index = gMySpectator.HandIndex) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
     gSoundPlayer.Play(sfx_Click);
 end;
 
@@ -1030,15 +1030,15 @@ begin
   fBuildList.FieldworksList.RemFieldPlan(Position);
 
   case fieldType of
-    ftRoad: gScriptEvents.ProcPlanRoadRemoved(fHandIndex, Position.X, Position.Y);
-    ftCorn: gScriptEvents.ProcPlanFieldRemoved(fHandIndex, Position.X, Position.Y);
-    ftWine: gScriptEvents.ProcPlanWinefieldRemoved(fHandIndex, Position.X, Position.Y);
+    ftRoad: gScriptEvents.ProcPlanRoadRemoved(fIndex, Position.X, Position.Y);
+    ftCorn: gScriptEvents.ProcPlanFieldRemoved(fIndex, Position.X, Position.Y);
+    ftWine: gScriptEvents.ProcPlanWinefieldRemoved(fIndex, Position.X, Position.Y);
   else
     raise Exception.Create('Unknown fieldType');
   end;
 
   if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
-  and (HandIndex = gMySpectator.HandIndex) then
+  and (Index = gMySpectator.HandIndex) then
     gSoundPlayer.Play(sfx_Click);
 end;
 
@@ -1062,7 +1062,7 @@ procedure TKMHand.RemFakeFieldPlan(const Position: TKMPoint);
 begin
   fBuildList.FieldworksList.RemFakeField(Position); //Remove our fake marker which is shown to the user
   fBuildList.FieldworksList.AddFakeDeletedField(Position); //This will hide the real field until it is deleted from game
-  if HandIndex = gMySpectator.HandIndex then gSoundPlayer.Play(sfx_Click);
+  if Index = gMySpectator.HandIndex then gSoundPlayer.Play(sfx_Click);
 end;
 
 
@@ -1191,7 +1191,7 @@ begin
       fStats.HouseClosed(False, aHouse.HouseType);
 
     //Distribute honors
-    if aFrom = fHandIndex then
+    if aFrom = fIndex then
       fStats.HouseSelfDestruct(aHouse.HouseType)
     else
     begin
@@ -1262,12 +1262,12 @@ begin
     if AI.Setup.NewAI then
     begin
       if aNumberedAIs then
-        Result := Format(gResTexts[TX_ADVANCED_AI_PLAYER_SHORT_X], [fHandIndex + 1])
+        Result := Format(gResTexts[TX_ADVANCED_AI_PLAYER_SHORT_X], [fIndex + 1])
       else
         Result := gResTexts[TX_AI_PLAYER_ADVANCED_SHORT];
     end else begin
       if aNumberedAIs then
-        Result := Format(gResTexts[TX_CLASSIC_AI_PLAYER_SHORT_X], [fHandIndex + 1])
+        Result := Format(gResTexts[TX_CLASSIC_AI_PLAYER_SHORT_X], [fIndex + 1])
       else
         Result := gResTexts[TX_AI_PLAYER_CLASSIC_SHORT];
     end;
@@ -1275,11 +1275,11 @@ begin
   //Try to take player name from mission text if we are in SP
   //Do not use names in MP ot avoid confusion of AI players with real player niknames
   if gGame.GameMode in [gmSingle, gmCampaign, gmMapEd, gmReplaySingle] then
-    if gGame.TextMission.HasText(HANDS_NAMES_OFFSET + fHandIndex) then
+    if gGame.TextMission.HasText(HANDS_NAMES_OFFSET + fIndex) then
       if HandType = hndHuman then
-        Result := gResTexts[TX_PLAYER_YOU] + ' (' + gGame.TextMission[HANDS_NAMES_OFFSET + fHandIndex] + ')'
+        Result := gResTexts[TX_PLAYER_YOU] + ' (' + gGame.TextMission[HANDS_NAMES_OFFSET + fIndex] + ')'
       else
-        Result := gGame.TextMission[HANDS_NAMES_OFFSET + fHandIndex];
+        Result := gGame.TextMission[HANDS_NAMES_OFFSET + fIndex];
 
   //If this location is controlled by an MP player - show his nik
   if fOwnerNikname <> '' then
@@ -1354,7 +1354,7 @@ begin
   Result := 0;
   for I := 1 to gTerrain.MapY do
   for K := 1 to gTerrain.MapX do
-    if gTerrain.Land[I,K].TileOwner = fHandIndex then
+    if gTerrain.Land[I,K].TileOwner = fIndex then
       Inc(Result);
 end;
 
@@ -1365,7 +1365,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fHandIndex].Alliances[I] = at_Ally then
+    if gHands[fIndex].Alliances[I] = at_Ally then
       gHands[I].BuildList.FieldworksList.GetFields(aList, aRect, aIncludeFake);
 end;
 
@@ -1376,7 +1376,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fHandIndex].Alliances[I] = at_Ally then
+    if gHands[fIndex].Alliances[I] = at_Ally then
       gHands[I].BuildList.HousePlanList.GetOutlines(aList, aRect);
 end;
 
@@ -1387,7 +1387,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fHandIndex].Alliances[I] = at_Ally then
+    if gHands[fIndex].Alliances[I] = at_Ally then
       gHands[I].BuildList.HousePlanList.GetTablets(aList, aRect);
 end;
 
@@ -1431,7 +1431,7 @@ begin
         //This tile must not contain fields/houses of allied players or self
         if AllowBuild then
           for J := 0 to gHands.Count - 1 do
-            if (gHands[fHandIndex].Alliances[J] = at_Ally)
+            if (gHands[fIndex].Alliances[J] = at_Ally)
               and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
                 or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
               AllowBuild := False;
@@ -1441,7 +1441,7 @@ begin
           for T := -1 to 1 do
             if (S <> 0) or (T <> 0) then //This is a surrounding tile, not the actual tile
               for J := 0 to gHands.Count - 1 do
-                if (gHands[fHandIndex].Alliances[J] = at_Ally)
+                if (gHands[fIndex].Alliances[J] = at_Ally)
                   and gHands[J].fBuildList.HousePlanList.HasPlan(KMPoint(P2.X+S,P2.Y+T)) then
                 begin
                   BlockPoint(KMPoint(P2.X+S,P2.Y+T), TC_BLOCK); //Block surrounding points
@@ -1478,7 +1478,7 @@ begin
   fUnitGroups.Save(SaveStream);
   fMessageLog.Save(SaveStream);
 
-  SaveStream.Write(fHandIndex);
+  SaveStream.Write(fIndex);
   SaveStream.WriteA(fOwnerNikname);
   SaveStream.Write(fHandType, SizeOf(fHandType));
   SaveStream.Write(fCanBeHuman, SizeOf(fCanBeHuman));
@@ -1509,7 +1509,7 @@ begin
   fUnitGroups.Load(LoadStream);
   fMessageLog.Load(LoadStream);
 
-  LoadStream.Read(fHandIndex);
+  LoadStream.Read(fIndex);
   LoadStream.ReadA(fOwnerNikname);
   LoadStream.Read(fHandType, SizeOf(fHandType));
   LoadStream.Read(fCanBeHuman, SizeOf(fCanBeHuman));
@@ -1608,7 +1608,7 @@ begin
   fFogOfWar.UpdateState; //We might optimize it for AI somehow, to make it work coarse and faster
 
   //Distribute AI updates among different Ticks to avoid slowdowns
-  if (aTick + Byte(fHandIndex)) mod 10 = 0 then
+  if (aTick + Byte(fIndex)) mod 10 = 0 then
   begin
     fBuildList.UpdateState;
     fDeliveries.UpdateState(aTick);

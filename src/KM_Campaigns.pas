@@ -233,7 +233,6 @@ procedure TKMCampaignsCollection.LoadProgress(const aFileName: UnicodeString);
 var
   M: TKMemoryStream;
   C: TKMCampaign;
-  MapData: TKMCampaignMapData;
   I, J, campCount: Integer;
   campName: TKMCampaignId;
   unlocked: Byte;

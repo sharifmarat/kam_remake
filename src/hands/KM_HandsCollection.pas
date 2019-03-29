@@ -89,6 +89,7 @@ implementation
 uses
   SysUtils,
   Math, KromUtils,
+  KM_Supervisor,
   KM_Game, KM_Terrain, KM_AIFields,
   KM_UnitsCollection,
   KM_Resource, KM_ResUnits,
@@ -516,10 +517,6 @@ Result
     nil: if NO other group found
 }
 function TKMHandsCollection.GetNextGroupWSameType(aUnitGroup: TKMUnitGroup): TKMUnitGroup;
-var UnitGroups: TKMUnitGroups;
-    Group, FirstG: TKMUnitGroup;
-    Found: Boolean;
-    I: Integer;
 begin
   Result := nil;
   if (aUnitGroup = nil) or aUnitGroup.IsDead then Exit;
@@ -529,18 +526,11 @@ end;
 
 
 function TKMHandsCollection.GetGroupByMember(aWarrior: TKMUnitWarrior): TKMUnitGroup;
-//var
-//  I: Integer;
 begin
   Result := nil;
 
   if (aWarrior <> nil) then
     Result := TKMUnitGroup(aWarrior.Group);
-  //for I := 0 to fCount - 1 do
-  //begin
-  //  Result := fHandsList[I].UnitGroups.GetGroupByMember(aWarrior);
-  //  if Result <> nil then Exit; //else keep on testing
-  //end;
 end;
 
 
