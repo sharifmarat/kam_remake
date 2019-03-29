@@ -101,7 +101,7 @@ end;
 
 destructor TKMMain.Destroy;
 begin
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}FreeAndNil(fExceptions);{$ENDIF}
   inherited;
 end;
 

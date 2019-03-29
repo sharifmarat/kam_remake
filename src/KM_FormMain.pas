@@ -891,7 +891,7 @@ begin
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally
-            MS.Free;
+            FreeAndNil(MS);
           end;
         end;
 
@@ -906,7 +906,7 @@ begin
                      + E.Message, mtError, [mbClose], 0);
       end;
     finally
-      SL.Free;
+      FreeAndNil(SL);
     end;
   end;
 end;

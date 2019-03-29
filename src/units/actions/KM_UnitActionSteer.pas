@@ -117,7 +117,7 @@ begin
             List.Add(KMPoint(Loc.X+I, Loc.Y+K));
         end;
     Result := List.GetRandom(Point);
-    List.Free;
+    FreeAndNil(List);
   end
   else
   begin

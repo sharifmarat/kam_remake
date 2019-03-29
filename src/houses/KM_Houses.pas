@@ -710,7 +710,7 @@ begin
     if not C.GetClosest(aPos, Result) then
       raise Exception.Create('Could not find closest house cell');
   finally
-    C.Free;
+    FreeAndNil(C);
   end;
 end;
 
@@ -805,7 +805,7 @@ begin
   GetListOfCellsWithin(Cells);
   Success := Cells.GetRandom(Result);
   Assert(Success);
-  Cells.Free;
+  FreeAndNil(Cells);
 end;
 
 
@@ -1086,7 +1086,7 @@ begin
 
   fIsOnSnow := SnowTiles > (Cells.Count div 2);
 
-  Cells.Free;
+  FreeAndNil(Cells);
 end;
 
 

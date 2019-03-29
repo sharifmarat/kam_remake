@@ -524,7 +524,7 @@ begin
             FreeMem(OggBuffer, WAVsize);
           end;
         finally
-          OggFileStream.Free;
+          FreeAndNil(OggFileStream);
         end;
       end
       else

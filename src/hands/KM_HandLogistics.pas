@@ -1853,7 +1853,7 @@ begin
   end;
 
   SL.SaveToFile(aFileName);
-  SL.Free;
+  FreeAndNil(SL);
 end;
 
 

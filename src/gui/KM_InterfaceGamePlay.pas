@@ -829,22 +829,22 @@ destructor TKMGamePlayInterface.Destroy;
 begin
   ReleaseDirectionSelector; // Make sure we don't exit leaving the cursor restrained
 
-  fGuiGameBuild.Free;
-  fGuiGameChat.Free;
-  fGuiGameHouse.Free;
-  fGuiGameUnit.Free;
-  fGuiGameRatios.Free;
-  fGuiGameStats.Free;
-  fGuiMenuSettings.Free;
-  fGuiGameResultsSP.Free;
-  fGuiGameResultsMP.Free;
+  FreeAndNil(fGuiGameBuild);
+  FreeAndNil(fGuiGameChat);
+  FreeAndNil(fGuiGameHouse);
+  FreeAndNil(fGuiGameUnit);
+  FreeAndNil(fGuiGameRatios);
+  FreeAndNil(fGuiGameStats);
+  FreeAndNil(fGuiMenuSettings);
+  FreeAndNil(fGuiGameResultsSP);
+  FreeAndNil(fGuiGameResultsMP);
   if Assigned(fGuiGameSpectator) then
-    fGuiGameSpectator.Free;
+    FreeAndNil(fGuiGameSpectator);
 
-  fMessageStack.Free;
-  fSaves.Free;
-  fTeamNames.Free;
-  fAlerts.Free;
+  FreeAndNil(fMessageStack);
+  FreeAndNil(fSaves);
+  FreeAndNil(fTeamNames);
+  FreeAndNil(fAlerts);
   inherited;
 end;
 

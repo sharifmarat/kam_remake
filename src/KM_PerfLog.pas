@@ -86,7 +86,7 @@ begin
   end;
 
   S.SaveToFile(aFilename);
-  S.Free;
+  FreeAndNil(S);
 end;
 
 

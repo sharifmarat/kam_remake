@@ -166,7 +166,7 @@ end;
 
 destructor TKMAchievements.Destroy;
 begin
-  fList.Free;
+  FreeAndNil(fList);
 
   inherited;
 end;

@@ -460,7 +460,7 @@ begin
     end;
   end;
 
-  FoundUnits.Free;
+  FreeAndNil(FoundUnits);
 end;
 
 

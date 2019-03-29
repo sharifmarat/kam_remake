@@ -133,7 +133,7 @@ begin
   FreeAndNil(fMapTxtInfo);
 
   for I := Low(fRevealers) to High(fRevealers) do
-    fRevealers[I].Free;
+    FreeAndNil(fRevealers[I]);
 
   inherited;
 end;
@@ -824,11 +824,11 @@ begin
 
     for I := 0 to Length(OreP) - 1 do
     begin
-      OreP[I].Free;
-      IronOreP[I].Free;
-      GoldOreP[I].Free;
-      CoalOreP[I].Free;
-      SelectedOreP[I].Free;
+      FreeAndNil(OreP[I]);
+      FreeAndNil(IronOreP[I]);
+      FreeAndNil(GoldOreP[I]);
+      FreeAndNil(CoalOreP[I]);
+      FreeAndNil(SelectedOreP[I]);
     end;
   end;
 end;

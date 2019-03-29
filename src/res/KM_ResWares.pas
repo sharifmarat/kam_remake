@@ -236,7 +236,7 @@ var
   I: TKMWareType;
 begin
   for I := Low(TKMWareType) to High(TKMWareType) do
-    fList[I].Free;
+    FreeAndNil(fList[I]);
 
   inherited;
 end;
@@ -288,7 +288,7 @@ begin
 
     SL.SaveToFile(aFilename);
   finally
-    SL.Free;
+    FreeAndNil(SL);
   end;
 end;
 

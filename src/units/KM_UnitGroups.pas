@@ -390,11 +390,11 @@ destructor TKMUnitGroup.Destroy;
 begin
   //We don't release unit pointers from fMembers, because the group is only destroyed when fMembers.Count = 0
   //or when the game is canceled (then it doesn't matter)
-  fMembers.Free;
+  FreeAndNil(fMembers);
 
   //We need to release offenders pointers
   ClearOffenders;
-  fOffenders.Free;
+  FreeAndNil(fOffenders);
 
   ClearOrderTarget; //Free pointers
 
@@ -1177,10 +1177,10 @@ begin
       begin
         OrderTargetUnit := nil; //Target cannot be reached, so abort completely
         fOrder := goNone;
-        NodeList.Free;
+        FreeAndNil(NodeList);
         Exit;
       end;
-      NodeList.Free;
+      FreeAndNil(NodeList);
     end
     else
     begin
@@ -1744,11 +1744,11 @@ begin
   for I := 1 to fMembers.Count - 1 do
     NewMembers.Add(fMembers[NewOrder[I - 1] + 1]);
 
-  fMembers.Free;
+  FreeAndNil(fMembers);
   fMembers := NewMembers;
 
-  Agents.Free;
-  Tasks.Free;
+  FreeAndNil(Agents);
+  FreeAndNil(Tasks);
   if DO_PERF_LOGGING then gGame.PerfLog.LeaveSection(psHungarian);
 end;
 
@@ -1899,7 +1899,7 @@ end;
 
 destructor TKMUnitGroups.Destroy;
 begin
-  fGroups.Free;
+  FreeAndNil(fGroups);
 
   inherited;
 end;

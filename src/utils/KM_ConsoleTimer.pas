@@ -54,8 +54,8 @@ begin
   FTimerEnabledFlag.ResetEvent; // Stop timer event
   FCancelFlag.SetEvent; // Set cancel flag
   Waitfor; // Synchronize
-  FCancelFlag.Free;
-  FTimerEnabledFlag.Free;
+  FreeAndNil(FCancelFlag);
+  FreeAndNil(FTimerEnabledFlag);
   inherited;
 end;
 

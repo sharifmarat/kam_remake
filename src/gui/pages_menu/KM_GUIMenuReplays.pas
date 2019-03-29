@@ -196,8 +196,8 @@ end;
 
 destructor TKMMenuReplays.Destroy;
 begin
-  fSaves.Free;
-  fMinimap.Free;
+  FreeAndNil(fSaves);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;

@@ -144,7 +144,7 @@ begin
   end;
   fCount := S.Size div ELEMENT_SIZE; //254 by default
   fCRC := Adler32CRC(S);
-  S.Free;
+  FreeAndNil(S);
 
   gMapElements[63].Anim.Count := 1;
   gMapElements[63].Anim.Step[1] := 16;
@@ -169,7 +169,7 @@ begin
   S := TMemoryStream.Create;
   S.Write(gMapElements[0], fCount * SizeOf(TKMMapElement));
   S.SaveToFile(FileName);
-  S.Free;
+  FreeAndNil(S);
 end;
 
 

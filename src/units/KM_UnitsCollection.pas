@@ -43,7 +43,7 @@ type
 
 implementation
 uses
-  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior,
+  SysUtils, KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior,
   KM_GameTypes;
 
 
@@ -59,7 +59,7 @@ end;
 destructor TKMUnitsCollection.Destroy;
 begin
   //No need to free units individually since they are Freed by TKMList.Clear command in destructor
-  fUnits.Free;
+  FreeAndNil(fUnits);
   inherited;
 end;
 

@@ -149,8 +149,8 @@ begin
     {$ENDIF}
   end;
 
-  bm.Free;
-  bm2.Free;
+  FreeAndNil(bm);
+  FreeAndNil(bm2);
 end;
 
 

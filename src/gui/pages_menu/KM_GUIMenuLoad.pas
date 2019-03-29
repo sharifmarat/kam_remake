@@ -134,8 +134,8 @@ end;
 
 destructor TKMMenuLoad.Destroy;
 begin
-  fSaves.Free;
-  fMinimap.Free;
+  FreeAndNil(fSaves);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;

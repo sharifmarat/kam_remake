@@ -98,9 +98,9 @@ begin
     gHands.CleanUpGroupPointer( UG );
     //fHostileGroups.Delete(I);
   end;
-  fHostileGroups.Free;
-  fAttack.Free;
-  fDefence.Free;
+  FreeAndNil(fHostileGroups);
+  FreeAndNil(fAttack);
+  FreeAndNil(fDefence);
 
   inherited;
 end;

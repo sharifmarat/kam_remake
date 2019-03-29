@@ -89,12 +89,12 @@ end;
 
 destructor TKMMapEdPlayer.Destroy;
 begin
-  GuiPlayerGoals.Free;
-  fGuiPlayerColors.Free;
-  fGuiPlayerBlockHouse.Free;
-  fGuiPlayerBlockTrade.Free;
-  fGuiPlayerBlockUnit.Free;
-  fGuiPlayerView.Free;
+  FreeAndNil(GuiPlayerGoals);
+  FreeAndNil(fGuiPlayerColors);
+  FreeAndNil(fGuiPlayerBlockHouse);
+  FreeAndNil(fGuiPlayerBlockTrade);
+  FreeAndNil(fGuiPlayerBlockUnit);
+  FreeAndNil(fGuiPlayerView);
 
   inherited;
 end;

@@ -108,9 +108,9 @@ destructor TKMCityBuilder.Destroy;
 var
   I: Integer;
 begin
-  fPlanner.Free;
+  FreeAndNil(fPlanner);
   for I := Low(fBuildNodes) to High(fBuildNodes) do
-    fBuildNodes[I].FieldList.Free;
+    FreeAndNil(fBuildNodes[I].FieldList);
   inherited;
 end;
 
@@ -1361,7 +1361,7 @@ const
           end;
         end;
       finally
-        Road.Free;
+        FreeAndNil(Road);
       end;
       with aNode do
         if (FieldList.Count > 0) then
@@ -1449,7 +1449,7 @@ begin
       end;
     PlanRoad(fBuildNodes[NodeIdx], BaseLoc, Locs, True);
   finally
-    Locs.Free;
+    FreeAndNil(Locs);
   end;
 end;
 
@@ -1631,7 +1631,7 @@ begin
       gHands[fOwner].AddHouse(aHT, Loc.X, Loc.Y, True); // Place house
     end;
   finally
-    FieldList.Free;
+    FreeAndNil(FieldList);
   end;
   if Output then
     Result := cs_HousePlaced;

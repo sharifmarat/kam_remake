@@ -456,7 +456,7 @@ begin
             if TKMUnitSerf(fUnit).GoEat(TKMHouseInn(fToHouse)) then
             begin
               TKMUnitSerf(fUnit).UnitTask.Phase := 3; //We are inside Inn already
-              Self.Free;
+              FreeAndNil(Self);
               Exit;
             end;
           end else
@@ -467,7 +467,7 @@ begin
           begin
             //After setting new unit task we should free self.
             //Note do not set tr_TaskDone := true as this will affect the new task
-            Self.Free;
+            FreeAndNil(Self);
             Exit;
           end else
             //No delivery found then just step outside
@@ -558,7 +558,7 @@ begin
             begin
               //After setting new unit task we should free self.
               //Note do not set tr_TaskDone := true as this will affect the new task
-              Self.Free;
+              FreeAndNil(Self);
               Exit;
             end else
               //No delivery found then just walk back to our From house

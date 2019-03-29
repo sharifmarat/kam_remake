@@ -2953,8 +2953,8 @@ begin
             end;
         Result := True;
       finally
-        Points.Free;
-        Path.Free;
+        FreeAndNil(Points);
+        FreeAndNil(Path);
       end;
     end
     else

@@ -214,7 +214,7 @@ begin
         aOnCell(P.X, P.Y);
       end;
     finally
-      AroundArea.Free;
+      FreeAndNil(AroundArea);
     end;
   end;
 end;

@@ -658,7 +658,7 @@ begin
   end
   else
   begin
-    TM.Free;
+    FreeAndNil(TM);
     Result := nil;
   end;
 end;
@@ -1577,7 +1577,7 @@ begin
   end;
   if fCurrentAction <> aAction then
   begin
-    fCurrentAction.Free;
+    FreeAndNil(fCurrentAction);
     fCurrentAction := aAction;
   end;
 end;
@@ -1873,7 +1873,7 @@ begin
     for I := 0 to Cells.Count - 1 do
       Result := Result or gTerrain.Route_CanBeMade(aFrom, Cells[I], aPass, aDistance);
   finally
-    Cells.Free;
+    FreeAndNil(Cells);
   end;
 end;
 

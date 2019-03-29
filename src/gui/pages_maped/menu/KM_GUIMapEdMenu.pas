@@ -90,11 +90,11 @@ end;
 
 destructor TKMMapEdMenu.Destroy;
 begin
-  fGuiMenuResize.Free;
-  fGuiMenuLoad.Free;
-  fGuiMenuSave.Free;
-  fGuiMenuQuit.Free;
-  fGuiMenuSettings.Free;
+  FreeAndNil(fGuiMenuResize);
+  FreeAndNil(fGuiMenuLoad);
+  FreeAndNil(fGuiMenuSave);
+  FreeAndNil(fGuiMenuQuit);
+  FreeAndNil(fGuiMenuSettings);
 
   inherited;
 end;

@@ -216,12 +216,12 @@ end;
 
 destructor TKMEye.Destroy();
 begin
-  fGoldLocs.Free;
-  fIronLocs.Free;
-  fStoneMiningTiles.Free;
+  FreeAndNil(fGoldLocs);
+  FreeAndNil(fIronLocs);
+  FreeAndNil(fStoneMiningTiles);
 
-  fBuildFF.Free;
-  fArmyEvaluation.Free;
+  FreeAndNil(fBuildFF);
+  FreeAndNil(fArmyEvaluation);
 
   inherited;
 end;
@@ -482,7 +482,7 @@ begin
     end;
   end;
   if (not aAllMines) then
-    Mines.Free;
+    FreeAndNil(Mines);
   SetLength(Output, Cnt);
   Result := Output;
 end;
@@ -541,7 +541,7 @@ begin
     //    I := I + Increment;
     //  end;
     //finally
-    //  TagList.Free;
+    //  FreeAndNil(TagList);
     //end;
     // Scan Resources - stones
     {
@@ -555,11 +555,11 @@ begin
         I := I + Increment;
       end;
     finally
-      TagList.Free;
+      FreeAndNil(TagList);
     end
     //}
   finally
-    Road.Free;
+    FreeAndNil(Road);
   end;
 
   if (PointsCnt > 0) then
@@ -568,7 +568,7 @@ begin
     try
       FFInitPlace.FillArea(PointsCnt, InitPoints);
     finally
-      FFInitPlace.Free;
+      FreeAndNil(FFInitPlace);
     end;
   end;
 

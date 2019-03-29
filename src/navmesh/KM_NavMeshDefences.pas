@@ -140,7 +140,7 @@ const
 
 implementation
 uses
-  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
+  SysUtils, KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
 
 
 { TForwardFF }
@@ -153,7 +153,7 @@ end;
 
 destructor TForwardFF.Destroy();
 begin
-  fBackwardFF.Free;
+  FreeAndNil(fBackwardFF);
   inherited Destroy;
 end;
 
@@ -292,7 +292,7 @@ end;
 
 destructor TBackwardFF.Destroy();
 begin
-  fFilterFF.Free;
+  FreeAndNil(fFilterFF);
   inherited Destroy;
 end;
 

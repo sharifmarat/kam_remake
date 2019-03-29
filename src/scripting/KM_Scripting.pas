@@ -877,7 +877,7 @@ begin
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
     Compiler.GetDebugOutput(fDebugByteCode);  // Save the debug output of the compiler
   finally
-    Compiler.Free;
+    FreeAndNil(Compiler);
   end;
 
   LinkRuntime;
@@ -1346,7 +1346,7 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('ACTIONS')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('UTILS')), fUtils);
   finally
-    ClassImp.Free;
+    FreeAndNil(ClassImp);
   end;
 
   //Link events into the script
@@ -1366,7 +1366,7 @@ begin
     ForceDirectories(ExeDir  + 'Export' + PathDelim);
     SL.SaveToFile(ExeDir + 'Export' + PathDelim + 'script_DataText.txt');
   finally
-    SL.Free;
+    FreeAndNil(SL);
   end;
 end;
 
@@ -1584,7 +1584,7 @@ begin
   Strings := TStringList.Create;
   Strings.Text := fScriptCode;
   Result := AnsiString(Strings[aRowNum - 1]);
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 
@@ -1910,7 +1910,7 @@ begin
         fErrorHandler.HandleScriptErrorString(se_PreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
     end;
   finally
-    PreProcessor.Free;
+    FreeAndNil(PreProcessor);
   end;
 end;
 
@@ -1954,7 +1954,7 @@ const
 
           gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2015,7 +2015,7 @@ const
             TH_TROOP_COST[I] := THTroopCost[I];
 
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2079,7 +2079,7 @@ const
           gRes.Wares[wt_Gold].MarketPriceMultiplier := GoldPriceX;
 
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2212,7 +2212,7 @@ begin
     FindLine(aFoundCnt, fIncluded[I], Strings);
 
   Result := aFoundCnt;
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 

@@ -338,7 +338,7 @@ begin
             OthersCRC := OthersCRC xor Adler32CRC(ScriptFiles[I].FullFilePath);
         end;
       finally
-        ScriptPreProcessor.Free;
+        FreeAndNil(ScriptPreProcessor);
       end;
     end;
   end;
@@ -365,7 +365,7 @@ begin
       //Fill Self properties with MissionParser
       fMissionParser.LoadMission(DatFile, Self, pmBase);
     finally
-      fMissionParser.Free;
+      FreeAndNil(fMissionParser);
     end;
 
     //Load additional text info
@@ -503,7 +503,7 @@ begin
     //Fill Self properties with MissionParser
     fMissionParser.LoadMission(DatFile, Self, pmExtra);
   finally
-    fMissionParser.Free;
+    FreeAndNil(fMissionParser);
   end;
 
   if MissionMode = mm_Tactic then
@@ -583,7 +583,7 @@ begin
       gLog.AddTime(ErrorStr);
   finally
     //Other properties are not saved, they are fast to reload
-    S.Free;
+    FreeAndNil(S);
   end;
 end;
 
@@ -627,7 +627,7 @@ begin
       gLog.AddTime(ErrorStr);
   finally
     //Other properties from text file are not saved, they are fast to reload
-    S.Free;
+    FreeAndNil(S);
   end;
 end;
 
@@ -960,7 +960,7 @@ procedure TKMMapTxtInfo.LoadTXTInfo(aFilePath: UnicodeString);
     MissionTexts := TKMTextLibrarySingle.Create;
     MissionTexts.LoadLocale(ChangeFileExt(aFilePath, '.%s.libx'));
     Result := MissionTexts.Texts[aIndex];
-    MissionTexts.Free;
+    FreeAndNil(MissionTexts);
   end;
 
 var
@@ -1032,7 +1032,7 @@ begin
           if SameText(StList[I], 'Hard') then
             Include(DifficultyLevels, mdHard);
         end;
-        StList.Free;
+        FreeAndNil(StList);
       end;
     until(eof(ft));
     CloseFile(ft);
@@ -1179,7 +1179,7 @@ begin
   //Release TKMapInfo objects
   Clear;
 
-  CS.Free;
+  FreeAndNil(CS);
   inherited;
 end;
 
@@ -1246,7 +1246,7 @@ begin
    try
      Assert(InRange(aIndex, 0, fCount - 1));
      KMDeleteFolder(fMaps[aIndex].Path);
-     fMaps[aIndex].Free;
+     FreeAndNil(fMaps[aIndex]);
      for I  := aIndex to fCount - 2 do
        fMaps[I] := fMaps[I + 1];
      Dec(fCount);
@@ -1279,7 +1279,7 @@ begin
     KMMoveFolder(fMaps[aIndex].Path, Dest);
 
     //Remove the map from our list
-    fMaps[aIndex].Free;
+    FreeAndNil(fMaps[aIndex]);
     for I  := aIndex to fCount - 2 do
       fMaps[I] := fMaps[I + 1];
     Dec(fCount);
@@ -1393,7 +1393,7 @@ begin
   begin
     fScanner.Terminate;
     fScanner.WaitFor;
-    fScanner.Free;
+    FreeAndNil(fScanner);
     fScanner := nil;
     fScanning := False;
   end;
@@ -1556,7 +1556,7 @@ begin
       end;
     end;
   finally
-    PathToMaps.Free;
+    FreeAndNil(PathToMaps);
   end;
 end;
 
@@ -1656,7 +1656,7 @@ begin
   if not fIsStopped then
   begin
     Map := TKMapInfo.Create(aPath, False, aFolder);
-    Map.Free;
+    FreeAndNil(Map);
   end;
 end;
 

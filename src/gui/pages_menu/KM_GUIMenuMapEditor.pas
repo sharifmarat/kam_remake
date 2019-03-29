@@ -390,8 +390,8 @@ end;
 
 destructor TKMMenuMapEditor.Destroy;
 begin
-  fMaps.Free;
-  fMinimap.Free;
+  FreeAndNil(fMaps);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;

@@ -233,9 +233,9 @@ end;
 
 destructor TKMMenuLobby.Destroy;
 begin
-  fMapsMP.Free;
-  fSavesMP.Free;
-  fMinimap.Free;
+  FreeAndNil(fMapsMP);
+  FreeAndNil(fSavesMP);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;

@@ -44,7 +44,7 @@ type
 
 implementation
 uses
-  Classes, Types, Math,
+  SysUtils, Classes, Types, Math,
   KM_Game, KM_Terrain,
   KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, 
   KM_HouseTownHall, KM_HouseWoodcutters,
@@ -62,7 +62,7 @@ end;
 
 destructor TKMHousesCollection.Destroy;
 begin
-  fHouses.Free;
+  FreeAndNil(fHouses);
   inherited;
 end;
 

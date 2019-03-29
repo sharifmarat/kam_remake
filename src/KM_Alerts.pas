@@ -69,7 +69,7 @@ type
 
 implementation
 uses
-  KM_Hand, KM_RenderPool, KM_HandsCollection, KM_Sound, KM_FogOfWar;
+  SysUtils, KM_Hand, KM_RenderPool, KM_HandsCollection, KM_Sound, KM_FogOfWar;
 
 
 type
@@ -271,7 +271,7 @@ begin
   for I := 0 to fList.Count - 1 do
     Items[I].Free;
 
-  fList.Free;
+  FreeAndNil(fList);
   inherited;
 end;
 

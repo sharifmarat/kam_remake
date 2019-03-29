@@ -125,20 +125,20 @@ end;
 
 destructor TKMMainMenuInterface.Destroy;
 begin
-  fMenuCampaign.Free;
-  fMenuCampaigns.Free;
-  fMenuCredits.Free;
-  fMenuError.Free;
-  fMenuLoad.Free;
-  fMenuLoading.Free;
-  fMenuLobby.Free;
-  fMenuMain.Free;
-  fMenuMapEditor.Free;
-  fMenuMultiplayer.Free;
-  fMenuOptions.Free;
-  fMenuReplays.Free;
-  fMenuSingleMap.Free;
-  fMenuSinglePlayer.Free;
+  FreeAndNil(fMenuCampaign);
+  FreeAndNil(fMenuCampaigns);
+  FreeAndNil(fMenuCredits);
+  FreeAndNil(fMenuError);
+  FreeAndNil(fMenuLoad);
+  FreeAndNil(fMenuLoading);
+  FreeAndNil(fMenuLobby);
+  FreeAndNil(fMenuMain);
+  FreeAndNil(fMenuMapEditor);
+  FreeAndNil(fMenuMultiplayer);
+  FreeAndNil(fMenuOptions);
+  FreeAndNil(fMenuReplays);
+  FreeAndNil(fMenuSingleMap);
+  FreeAndNil(fMenuSinglePlayer);
 
   inherited;
 end;

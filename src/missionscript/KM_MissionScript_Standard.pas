@@ -1120,7 +1120,7 @@ begin
     //Write uncoded file for debug
     SaveStream := TFileStream.Create(aFileName+'.txt', fmCreate);
     SaveStream.WriteBuffer(SaveString[1], Length(SaveString));
-    SaveStream.Free;
+    FreeAndNil(SaveStream);
 
     //Encode file
     for I := 1 to Length(SaveString) do
@@ -1129,7 +1129,7 @@ begin
 
   SaveStream := TFileStream.Create(aFileName, fmCreate);
   SaveStream.WriteBuffer(SaveString[1], Length(SaveString));
-  SaveStream.Free;
+  FreeAndNil(SaveStream);
 end;
 
 

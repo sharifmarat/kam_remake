@@ -351,7 +351,7 @@ destructor TKMNetPlayersList.Destroy;
 var I: Integer;
 begin
   for I := 1 to MAX_LOBBY_SLOTS do
-    fNetPlayers[I].Free;
+    FreeAndNil(fNetPlayers[I]);
 
   inherited;
 end;
@@ -546,7 +546,7 @@ procedure TKMNetPlayersList.RemPlayer(aIndex: Integer);
 var
   I: Integer;
 begin
-  fNetPlayers[aIndex].Free;
+  FreeAndNil(fNetPlayers[aIndex]);
   for I := aIndex to fCount - 1 do
     fNetPlayers[I] := fNetPlayers[I + 1]; // Shift only pointers
 
@@ -1495,7 +1495,7 @@ begin
     if gLog.IsDegubLogEnabled then
       gLog.LogDebug('Randomized locs: ' + LocFiller.FillerToString);
   finally
-    LocFiller.Free;
+    FreeAndNil(LocFiller);
   end;
 
   //Check for odd players

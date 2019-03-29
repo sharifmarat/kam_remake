@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  Classes, Math,
+  SysUtils, Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_Terrain,
   KM_Houses, KM_HouseSchool,
@@ -117,11 +117,11 @@ end;
 
 destructor TKMayor.Destroy;
 begin
-  fBalance.Free;
-  fCityPlanner.Free;
-  fPathFindingRoad.Free;
-  fPathFindingRoadShortcuts.Free;
-  fDefenceTowers.Free;
+  FreeAndNil(fBalance);
+  FreeAndNil(fCityPlanner);
+  FreeAndNil(fPathFindingRoad);
+  FreeAndNil(fPathFindingRoadShortcuts);
+  FreeAndNil(fDefenceTowers);
 
   inherited;
 end;
@@ -445,7 +445,7 @@ begin
       gHands[fOwner].AddHousePlan(htWatchTower, BestLoc);
       TryConnectToRoad(KMPointBelow(BestLoc));
     end;
-    NodeList.Free;
+    FreeAndNil(NodeList);
   end;
 end;
 
@@ -493,7 +493,7 @@ begin
         P.BuildList.FieldworksList.AddField(NodeList[I], ftRoad);
     Result := True;
   finally
-    NodeList.Free;
+    FreeAndNil(NodeList);
   end;
 end;
 
@@ -560,7 +560,7 @@ begin
       for I := 0 to Min(NodeTagList.Count, 16) - 1 do
         P.BuildList.FieldworksList.AddField(NodeTagList[I], ftCorn);
     finally
-      NodeTagList.Free;
+      FreeAndNil(NodeTagList);
     end;
   end;
 
@@ -588,7 +588,7 @@ begin
       for I := 0 to Min(NodeTagList.Count, 10) - 1 do
         P.BuildList.FieldworksList.AddField(NodeTagList[I], ftWine);
     finally
-      NodeTagList.Free;
+      FreeAndNil(NodeTagList);
     end;
   end;
 
@@ -813,7 +813,7 @@ begin
         end;
     end;
   finally
-    NodeList.Free;
+    FreeAndNil(NodeList);
   end;
 end;
 

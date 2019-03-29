@@ -427,7 +427,7 @@ begin
   gHands.CleanUpUnitPointer(fTargetUnit);
   gHands.CleanUpHousePointer(fTargetHouse);
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
-    fSquads[GT].Free;
+    FreeAndNil(fSquads[GT]);
   inherited;
 end;
 
@@ -1113,7 +1113,7 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
         AvailableSquads[ClosestIdx] := False;
       end;
     finally
-      TagPositions.Free;
+      FreeAndNil(TagPositions);
     end;
   end;
 
@@ -1178,7 +1178,7 @@ var
   Squad: TAISquad;
 begin
   Squad := fSquads[aGT].Items[aIdx];
-  Squad.Free;
+  FreeAndNil(Squad);
   fSquads[aGT].Delete(aIdx);
 end;
 
@@ -1306,7 +1306,7 @@ end;
 
 destructor TKMArmyAttack.Destroy;
 begin
-  fCompanies.Free;
+  FreeAndNil(fCompanies);
   inherited;
 end;
 
