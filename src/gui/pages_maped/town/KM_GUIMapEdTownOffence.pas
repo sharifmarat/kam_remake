@@ -49,14 +49,14 @@ begin
   inherited Create;
 
   Panel_Offence := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_Offence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ATTACK], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_Offence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ATTACK], fntOutline, taCenter);
 
-  CheckBox_AutoAttack := TKMCheckBox.Create(Panel_Offence, 0, 24, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_ATTACK_AUTO], fnt_Metal);
+  CheckBox_AutoAttack := TKMCheckBox.Create(Panel_Offence, 0, 24, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_ATTACK_AUTO], fntMetal);
   CheckBox_AutoAttack.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_AUTO_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
   CheckBox_AutoAttack.OnClick := AutoAttackClick;
 
-  ColumnBox_Attacks := TKMColumnBox.Create(Panel_Offence, 0, 50, TB_WIDTH, 210, fnt_Game, bsGame);
-  ColumnBox_Attacks.SetColumns(fnt_Outline,
+  ColumnBox_Attacks := TKMColumnBox.Create(Panel_Offence, 0, 50, TB_WIDTH, 210, fntGame, bsGame);
+  ColumnBox_Attacks.SetColumns(fntOutline,
     [gResTexts[TX_MAPED_AI_ATTACK_COL_TYPE],
      gResTexts[TX_MAPED_AI_ATTACK_COL_DELAY],
      gResTexts[TX_MAPED_AI_ATTACK_COL_MEN],

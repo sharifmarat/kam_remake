@@ -46,14 +46,14 @@ const
   STRIKE_STEP = 5; //Melee units place hit on step 5
 
   MeleeSoundsHit: array [0..14] of TSoundFX = (
-    sfx_Melee34, sfx_Melee35, sfx_Melee36, sfx_Melee41, sfx_Melee42,
-    sfx_Melee44, sfx_Melee45, sfx_Melee46, sfx_Melee47, sfx_Melee48,
-    sfx_Melee49, sfx_Melee50, sfx_Melee55, sfx_Melee56, sfx_Melee57);
+    sfxMelee34, sfxMelee35, sfxMelee36, sfxMelee41, sfxMelee42,
+    sfxMelee44, sfxMelee45, sfxMelee46, sfxMelee47, sfxMelee48,
+    sfxMelee49, sfxMelee50, sfxMelee55, sfxMelee56, sfxMelee57);
 
   MeleeSoundsMiss: array [0..8] of TSoundFX = (
-    sfx_Melee37, sfx_Melee38, sfx_Melee39,
-    sfx_Melee40, sfx_Melee43, sfx_Melee51,
-    sfx_Melee52, sfx_Melee53, sfx_Melee54);
+    sfxMelee37, sfxMelee38, sfxMelee39,
+    sfxMelee40, sfxMelee43, sfxMelee51,
+    sfxMelee52, sfxMelee53, sfxMelee54);
 
 
 { TUnitActionFight }
@@ -99,7 +99,7 @@ end;
 
 function TKMUnitActionFight.ActName: TKMUnitActionName;
 begin
-  Result := uan_Fight;
+  Result := uanFight;
 end;
 
 
@@ -162,12 +162,12 @@ begin
   if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.CurrPosition.X, fUnit.CurrPosition.Y) < 255 then Exit;
 
   if MakeBattleCry then
-    gSoundPlayer.PlayWarrior(fUnit.UnitType, sp_BattleCry, fUnit.PositionF);
+    gSoundPlayer.PlayWarrior(fUnit.UnitType, spBattleCry, fUnit.PositionF);
 
   case fUnit.UnitType of
-    ut_Arbaletman: gSoundPlayer.Play(sfx_CrossbowDraw, fUnit.PositionF); // Aiming
-    ut_Bowman:     gSoundPlayer.Play(sfx_BowDraw,      fUnit.PositionF); // Aiming
-    ut_Slingshot:  gSoundPlayer.Play(sfx_SlingerShoot, fUnit.PositionF);
+    utArbaletman: gSoundPlayer.Play(sfxCrossbowDraw, fUnit.PositionF); // Aiming
+    utBowman:     gSoundPlayer.Play(sfxBowDraw,      fUnit.PositionF); // Aiming
+    utSlingshot:  gSoundPlayer.Play(sfxSlingerShoot, fUnit.PositionF);
     else           begin
                      if IsHit then
                        gSoundPlayer.Play(MeleeSoundsHit[Random(Length(MeleeSoundsHit))], fUnit.PositionF)
@@ -278,7 +278,7 @@ begin
   begin
     //Base damage is the unit attack strength + AttackHorse if the enemy is mounted
     Damage := gRes.Units[fUnit.UnitType].Attack;
-    if (fOpponent.UnitType in [low(UnitGroups) .. high(UnitGroups)]) and (UnitGroups[fOpponent.UnitType] = gt_Mounted) then
+    if (fOpponent.UnitType in [low(UnitGroups) .. high(UnitGroups)]) and (UnitGroups[fOpponent.UnitType] = gtMounted) then
       Damage := Damage + gRes.Units[fUnit.UnitType].AttackHorse;
 
     Damage := Damage * (GetDirModifier(fUnit.Direction,fOpponent.Direction)+1); //Direction modifier

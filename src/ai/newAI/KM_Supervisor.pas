@@ -154,7 +154,7 @@ begin
     UpdateDefPos(Modulo - DEFENCES);
   if not gGame.IsPeaceTime
     AND (Modulo >= ATTACKS) AND (Modulo - ATTACKS < Length(fAlli2PL))
-    AND (  (gGame.MissionMode = mm_Tactic) OR (aTick > (gGame.GameOptions.Peacetime+3) * 10 * 60)  ) then // In normal mode wait 3 minutes after peace
+    AND (  (gGame.MissionMode = mmTactic) OR (aTick > (gGame.GameOptions.Peacetime+3) * 10 * 60)  ) then // In normal mode wait 3 minutes after peace
     UpdateAttack(Modulo - ATTACKS);
 end;
 
@@ -172,7 +172,7 @@ begin
     begin
       PLCnt := 0;
       for PL2 := 0 to gHands.Count - 1 do
-        if gHands[PL2].Enabled AND ((PL1 = PL2) OR (gHands[PL1].Alliances[PL2] = at_Ally)) then
+        if gHands[PL2].Enabled AND ((PL1 = PL2) OR (gHands[PL1].Alliances[PL2] = atAlly)) then
         begin
           fPL2Alli[PL2] := AlliCnt;
           fAlli2PL[AlliCnt,PLCnt] := PL2;
@@ -369,7 +369,7 @@ begin
     for IdxPL := 0 to Length(DefPosReq) - 1 do
       with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
       begin
-        Troops := Byte(HandType = hndComputer) * (Stats.GetUnitQty(ut_Recruit) + Stats.GetArmyCount); // Consider also recruits so after peace time the AI already have prepared defences
+        Troops := Byte(HandType = hndComputer) * (Stats.GetUnitQty(utRecruit) + Stats.GetArmyCount); // Consider also recruits so after peace time the AI already have prepared defences
         DefPosReq[IdxPL] := Round(Troops / 9) + RESERVE_DEF_POS; // Each group have 9 troops so we need max (Troops / 9) positions + reserves
       end;
     SetLength(TeamDefPos,0);
@@ -462,7 +462,7 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           aWorstCmp := Comparison;
       end;
     end;
-    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mm_Tactic) then
+    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mmTactic) then
       Result := -1;
   end;
 const

@@ -73,7 +73,7 @@ type
     mkQuill //Utility message (warnings in script loading)
     );
 
-  TWonOrLost = (wol_None, wol_Won, wol_Lost);
+  TWonOrLost = (wolNone, wolWon, wolLost);
 
   TKMCustomScriptParam = (cspTHTroopCosts, cspMarketGoldPrice);
 

@@ -8,11 +8,11 @@ uses
 
 type
   TInteractionStatus = (
-    kis_None,       //We have not yet encountered an interaction (we are just walking)
-    kis_Pushing,    //We are pushing an idle unit out of the way
-    kis_Pushed,     //We were pushed (idle then asked to move)
-    kis_Trying,     //We are or have been stuck (difference between this and kis_None is only for debug)
-    kis_Waiting     //We have been stuck for a while so allow other units to swap with us
+    kisNone,       //We have not yet encountered an interaction (we are just walking)
+    kisPushing,    //We are pushing an idle unit out of the way
+    kisPushed,     //We were pushed (idle then asked to move)
+    kisTrying,     //We are or have been stuck (difference between this and kisNone is only for debug)
+    kisWaiting     //We have been stuck for a while so allow other units to swap with us
   );
 
 const
@@ -22,8 +22,8 @@ const
 
 
 type
-  TKMDestinationCheck = (dc_NoChanges, dc_RouteChanged, dc_NoRoute);
-  TKMObstacleCheck = (oc_NoObstacle, oc_ReRouteMade, oc_NoRoute);
+  TKMDestinationCheck = (dcNoChanges, dcRouteChanged, dcNoRoute);
+  TKMObstacleCheck = (ocNoObstacle, ocReRouteMade, ocNoRoute);
 
   TKMUnitActionWalkTo = class(TKMUnitAction)
   private
@@ -185,7 +185,7 @@ begin
 
   if aSetPushed then
   begin
-    fInteractionStatus := kis_Pushed; //So that unit knows it was pushed not just walking somewhere
+    fInteractionStatus := kisPushed; //So that unit knows it was pushed not just walking somewhere
     Explanation := 'We were asked to get out of the way';
     ExplanationLogAdd;
     fPass := GetEffectivePassability; //Units are allowed to step off roads when they are pushed
@@ -240,7 +240,7 @@ begin
   fLastSideStepNodePos := -3; //Start negitive so it is at least 2 less than NodePos at the start
   fVertexOccupied      := KMPOINT_ZERO;
   fInteractionCount    := 0;
-  fInteractionStatus   := kis_None;
+  fInteractionStatus   := kisNone;
 end;
 
 
@@ -305,7 +305,7 @@ end;
 
 function TKMUnitActionWalkTo.CanAbandonInternal: boolean;
 begin
-  Result := (fInteractionStatus <> kis_Pushed) //Can be removed, but decreases effectiveness
+  Result := (fInteractionStatus <> kisPushed) //Can be removed, but decreases effectiveness
             and not fDoExchange; //Other unit could have set this
 end;
 
@@ -320,7 +320,7 @@ end;
 
 function TKMUnitActionWalkTo.ActName: TKMUnitActionName;
 begin
-  Result := uan_WalkTo;
+  Result := uanWalkTo;
 end;
 
 
@@ -332,7 +332,7 @@ end;
 
 function TKMUnitActionWalkTo.WasPushed: Boolean;
 begin
-  Result := fInteractionStatus = kis_Pushed;
+  Result := fInteractionStatus = kisPushed;
 end;
 
 
@@ -421,17 +421,17 @@ end;
 function TKMUnitActionWalkTo.CheckForNewDestination: TKMDestinationCheck;
 begin
   if KMSamePoint(fNewWalkTo, KMPOINT_ZERO) then
-    Result := dc_NoChanges
+    Result := dcNoChanges
   else
   begin
-    Result := dc_RouteChanged;
+    Result := dcRouteChanged;
     fWalkTo := fNewWalkTo;
     fWalkFrom := NodeList[NodePos];
     fNewWalkTo := KMPOINT_ZERO;
     NodeList.Clear;
     NodePos := 0;
     if not AssembleTheRoute then
-      Result := dc_NoRoute;
+      Result := dcNoRoute;
   end;
 end;
 
@@ -450,7 +450,7 @@ var
   T: TKMPoint;
   DistNext: Single;
 begin
-  Result := oc_NoObstacle;
+  Result := ocNoObstacle;
 
   T := NodeList[NodePos+1];
 
@@ -463,7 +463,7 @@ begin
       //Cancel the plan if we cant approach it
       if TKMUnitWorker(fUnit).Task is TKMTaskBuild then
         TKMTaskBuild(TKMUnitWorker(fUnit).Task).CancelThePlan;
-      Result := oc_NoRoute;
+      Result := ocNoRoute;
       Exit;
     end;
   end;
@@ -474,15 +474,15 @@ begin
     //Try side stepping the obstacle.
     //By making HighestInteractionCount be the required timeout, we assure the solution is always checked
     if IntSolutionSideStep(T, SIDESTEP_TIMEOUT) then
-      Result := oc_NoObstacle
+      Result := ocNoObstacle
     else
     //Completely re-route if no simple side step solution is available
     if CanWalkToTarget(fUnit.CurrPosition, GetEffectivePassability) then
     begin
       fUnit.SetActionWalk(fWalkTo, fType, fDistance, fTargetUnit, fTargetHouse);
-      Result := oc_ReRouteMade;
+      Result := ocReRouteMade;
     end else
-      Result := oc_NoRoute;
+      Result := ocNoRoute;
 end;
 
 
@@ -529,12 +529,12 @@ begin
   Result := False;
 
   //If we are asking someone to move away then just wait until they are gone
-  if (fInteractionStatus <> kis_Pushing) then
+  if (fInteractionStatus <> kisPushing) then
     Exit;
 
   //Make sure they are still moving out of the way
   if (fOpponent.Action is TKMUnitActionWalkTo)
-  and (TKMUnitActionWalkTo(fOpponent.Action).fInteractionStatus = kis_Pushed) then
+  and (TKMUnitActionWalkTo(fOpponent.Action).fInteractionStatus = kisPushed) then
   begin
     Explanation := 'Unit is blocking the way and has been asked to move';
     ExplanationLogAdd;
@@ -543,7 +543,7 @@ begin
   else
   begin //We pushed a unit out of the way but someone else took it's place! Now we must start over to solve problem with this new opponent
     fInteractionCount := 0;
-    fInteractionStatus := kis_Trying;
+    fInteractionStatus := kisTrying;
     Explanation := 'Someone took the pushed unit''s place';
     ExplanationLogAdd;
   end;
@@ -567,11 +567,11 @@ begin
     //by the enemy instead of fighting them.
     //CheckAlliance is for optimisation since pushing allies doesn't matter
     if (fOpponent is TKMUnitWarrior)
-    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = at_Enemy)
+    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
     and TKMUnitWarrior(fOpponent).CheckForEnemy then
       Exit;
 
-    fInteractionStatus := kis_Pushing;
+    fInteractionStatus := kisPushing;
     OpponenTKMTerrainPassability := fOpponent.DesiredPassability;
     if OpponenTKMTerrainPassability = tpWalkRoad then
       OpponenTKMTerrainPassability := tpWalk;
@@ -596,15 +596,15 @@ begin
 
   //Do not initiate exchanges if we are in DestBlocked mode, as we are zero priority and other units will
   if not fDestBlocked
-  and (((HighestInteractionCount >= EXCHANGE_TIMEOUT) and (fInteractionStatus <> kis_Pushed)) or //When pushed this timeout/counter is different
-     (fInteractionStatus = kis_Pushed)) then //If we get pushed then always try exchanging (if we are here then there is no free tile)
+  and (((HighestInteractionCount >= EXCHANGE_TIMEOUT) and (fInteractionStatus <> kisPushed)) or //When pushed this timeout/counter is different
+     (fInteractionStatus = kisPushed)) then //If we get pushed then always try exchanging (if we are here then there is no free tile)
   begin //Try to exchange with the other unit if they are willing
 
     //We must alert the opponent to our presence because it looks bad when you exchange places
     //with the enemy instead of fighting them.
     //CheckAlliance is for optimisation since pushing allies doesn't matter
     if (fOpponent is TKMUnitWarrior)
-    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = at_Enemy)
+    and (gHands.CheckAlliance(fOpponent.Owner, fUnit.Owner) = atEnemy)
     and TKMUnitWarrior(fOpponent).CheckForEnemy then
       Exit;
 
@@ -633,7 +633,7 @@ begin
             Result := true; //Means exit DoUnitInteraction
           end
           else //Otherwise try to force the unit to exchange IF they are in the waiting phase
-            if TKMUnitActionWalkTo(fOpponent.Action).fInteractionStatus = kis_Waiting then
+            if TKMUnitActionWalkTo(fOpponent.Action).fInteractionStatus = kisWaiting then
             begin
               //Because we are forcing this exchange we must inject into the other unit's nodelist by passing our current position
               TKMUnitActionWalkTo(fOpponent.Action).PerformExchange(fUnit.CurrPosition);
@@ -656,14 +656,14 @@ function TKMUnitActionWalkTo.IntCheckIfPushed(HighestInteractionCount:integer):b
 begin
   Result := false;
 
-  if fInteractionStatus = kis_Pushed then
+  if fInteractionStatus = kisPushed then
   begin
     //If we've been trying to get out of the way for a while but we haven't found a solution,
     //(i.e. other unit is stuck) try a different direction
     if HighestInteractionCount >= PUSHED_TIMEOUT then
     begin
 
-      fInteractionStatus := kis_None;
+      fInteractionStatus := kisNone;
       if not CanAbandonInternal then //in fact tests only for fDoExchange
         raise ELocError.Create('Unit walk IntCheckIfPushed',fUnit.CurrPosition);
 
@@ -755,7 +755,7 @@ begin
     if KMSamePoint(fOpponent.CurrPosition, fWalkTo) and (fTargetHouse = nil) and fOpponent.Action.Locked then
     begin
       fDestBlocked := True; //When in this mode we are zero priority as we cannot reach our destination. This allows serfs with stone to get through and clear our path.
-      fInteractionStatus := kis_Waiting; //If route cannot be made it means our destination is currently not available (workers in the way) So allow us to be pushed.
+      fInteractionStatus := kisWaiting; //If route cannot be made it means our destination is currently not available (workers in the way) So allow us to be pushed.
       Explanation := 'Our destination is blocked by busy units';
       ExplanationLogAdd;
       Exit;
@@ -770,7 +770,7 @@ begin
         if (NewNodeList.Count > 1) and gTerrain.TileIsLocked(NewNodeList[1]) then
         begin
           fDestBlocked := True; //When in this mode we are zero priority as we cannot reach our destination. This allows serfs with stone to get through and clear our path.
-          fInteractionStatus := kis_Waiting; //If route cannot be made it means our destination is currently not available (workers in the way) So allow us to be pushed.
+          fInteractionStatus := kisWaiting; //If route cannot be made it means our destination is currently not available (workers in the way) So allow us to be pushed.
           Explanation := 'Our destination is blocked by busy units';
           ExplanationLogAdd;
         end
@@ -888,7 +888,7 @@ begin
     Exit;
   end;
 
-  if fDestBlocked then fInteractionStatus := kis_Waiting;
+  if fDestBlocked then fInteractionStatus := kisWaiting;
 
   //INTERACTION SOLUTIONS: Split into different sections or "solutions". If true returned it means exit.
 
@@ -897,13 +897,13 @@ begin
   if IntSolutionPush(fOpponent,HighestInteractionCount) then exit;
   if IntSolutionExchange(fOpponent,HighestInteractionCount) then exit;
   if IntCheckIfPushed(fInteractionCount) then exit;
-  if not fDestBlocked then fInteractionStatus := kis_Trying; //If we reach this point then we don't have a solution...
+  if not fDestBlocked then fInteractionStatus := kisTrying; //If we reach this point then we don't have a solution...
   if IntSolutionDodge(fOpponent,HighestInteractionCount) then exit;
   if IntSolutionAvoid(fOpponent) then Exit;
   if IntSolutionSideStep(fOpponent.CurrPosition,fInteractionCount) then exit;
 
   //We will allow other units to force an exchange with us as we haven't found a solution or our destination is blocked
-  if (fInteractionCount >= WAITING_TIMEOUT) or fDestBlocked then fInteractionStatus := kis_Waiting;
+  if (fInteractionCount >= WAITING_TIMEOUT) or fDestBlocked then fInteractionStatus := kisWaiting;
 
   //If we haven't exited yet we must increment the counters so we know how long we've been here
   inc(fInteractionCount);
@@ -932,8 +932,8 @@ begin
     raise ELocError.Create('Invalid Change Walk To for '+gRes.Units[fUnit.UnitType].GUIName, aLoc);
 
   //We are no longer being pushed
-  if fInteractionStatus = kis_Pushed then
-    fInteractionStatus := kis_None;
+  if fInteractionStatus = kisPushed then
+    fInteractionStatus := kisNone;
 
   fNewWalkTo := aLoc;
   fDistance  := aDistance;
@@ -947,8 +947,8 @@ end;
 procedure TKMUnitActionWalkTo.ChangeWalkTo(aNewTargetUnit: TKMUnit; aDistance: Single);
 begin
   //We are no longer being pushed
-  if fInteractionStatus = kis_Pushed then
-    fInteractionStatus := kis_None;
+  if fInteractionStatus = kisPushed then
+    fInteractionStatus := kisNone;
 
   fNewWalkTo := aNewTargetUnit.CurrPosition;
   fDistance  := aDistance;
@@ -1040,7 +1040,7 @@ begin
     end;
 
     //Check if we need to walk to a new destination
-    if CanAbandonInternal and (CheckForNewDestination = dc_NoRoute) then
+    if CanAbandonInternal and (CheckForNewDestination = dcNoRoute) then
     begin
       Result := arActAborted;
       Exit;
@@ -1090,9 +1090,9 @@ begin
     //Don't use CanAbandonInternal because skipping this check can cause crashes
     if not fDoExchange then
       case CheckForObstacle of
-        oc_NoObstacle:  ;
-        oc_ReRouteMade: Exit; //New route will pick-up
-        oc_NoRoute:     begin Result := arActAborted; Exit; end; //
+        ocNoObstacle:  ;
+        ocReRouteMade: Exit; //New route will pick-up
+        ocNoRoute:     begin Result := arActAborted; Exit; end; //
       end;
 
     //Perform exchange
@@ -1113,7 +1113,7 @@ begin
       if fUnit = gTerrain.Land[fUnit.PrevPosition.Y,fUnit.PrevPosition.X].IsUnit then
         gTerrain.UnitSwap(fUnit.PrevPosition,fUnit.NextPosition,fUnit);
 
-      fInteractionStatus := kis_None;
+      fInteractionStatus := kisNone;
       fDoExchange := false;
       fUnit.IsExchanging := true; //So unit knows that it must slide
       fInteractionCount := 0;

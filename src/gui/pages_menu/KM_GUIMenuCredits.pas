@@ -49,7 +49,7 @@ begin
   Panel_Credits := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_Credits.AnchorsStretch;
 
-    TKMLabel.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 70, gResTexts[TX_CREDITS],fnt_Outline,taCenter);
+    TKMLabel.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 70, gResTexts[TX_CREDITS],fntOutline,taCenter);
     Label_Credits_Remake := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 110, 0, aParent.Height - 130,
       gResTexts[TX_CREDITS_PROGRAMMING] + '|Krom|Lewin||' +
       gResTexts[TX_CREDITS_ADDITIONAL_PROGRAMMING] + '|Alex|andreus|Rey|Danjb||' +
@@ -58,12 +58,12 @@ begin
       gResTexts[TX_CREDITS_ADDITIONAL_SOUNDS] + '|trb1914||' +
       gResTexts[TX_CREDITS_ADDITIONAL_TRANSLATIONS] + '|' + gResLocales.TranslatorCredits + '|' +
       gResTexts[TX_CREDITS_SPECIAL] + '|KaM Community members',
-      fnt_Grey,
+      fntGrey,
       taCenter);
     Label_Credits_Remake.Anchors := [anLeft, anTop, anBottom];
 
-    TKMLabel.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 70, gResTexts[TX_CREDITS_ORIGINAL], fnt_Outline, taCenter);
-    Label_Credits_KaM := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 110, 0, aParent.Height - 130, gResTexts[TX_CREDITS_TEXT], fnt_Grey, taCenter);
+    TKMLabel.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 70, gResTexts[TX_CREDITS_ORIGINAL], fntOutline, taCenter);
+    Label_Credits_KaM := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 110, 0, aParent.Height - 130, gResTexts[TX_CREDITS_TEXT], fntGrey, taCenter);
     Label_Credits_KaM.Anchors := [anLeft,anTop,anBottom];
 
     Button_CreditsHomepage := TKMButton.Create(Panel_Credits,400,610,224,30, '[$F8A070]www.kamremake.com[]', bsMenu);

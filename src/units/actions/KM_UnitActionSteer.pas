@@ -60,7 +60,7 @@ end;
 
 function TKMUnitActionSteer.ActName: TKMUnitActionName;
 begin
-  Result := uan_Steer;
+  Result := uanSteer;
 end;
 
 

@@ -29,9 +29,9 @@ uses
 
 const
   MeleeSoundsHouse: array [0..12] of TSoundFX = (
-    sfx_Melee37, sfx_Melee38, sfx_Melee39, sfx_Melee40, sfx_Melee41,
-    sfx_Melee42, sfx_Melee43, sfx_Melee47, sfx_Melee51, sfx_Melee52,
-    sfx_Melee53, sfx_Melee54, sfx_Melee57
+    sfxMelee37, sfxMelee38, sfxMelee39, sfxMelee40, sfxMelee41,
+    sfxMelee42, sfxMelee43, sfxMelee47, sfxMelee51, sfxMelee52,
+    sfxMelee53, sfxMelee54, sfxMelee57
   );
 
 
@@ -124,9 +124,9 @@ begin
 
               if gMySpectator.FogOfWar.CheckTileRevelation(Round(PositionF.X), Round(PositionF.Y)) >= 255 then
               case UnitType of
-                ut_Arbaletman: gSoundPlayer.Play(sfx_CrossbowDraw, PositionF); //Aiming
-                ut_Bowman:     gSoundPlayer.Play(sfx_BowDraw,      PositionF); //Aiming
-                ut_Slingshot:  ;
+                utArbaletman: gSoundPlayer.Play(sfxCrossbowDraw, PositionF); //Aiming
+                utBowman:     gSoundPlayer.Play(sfxBowDraw,      PositionF); //Aiming
+                utSlingshot:  ;
                 else           raise Exception.Create('Unknown shooter');
               end;
             end
@@ -147,7 +147,7 @@ begin
           end;
       2:  begin
             //Special case - slingshot, he has AimSoundDelay
-            if UnitType = ut_Slingshot then
+            if UnitType = utSlingshot then
               SetActionLockedStay(AimSoundDelay, uaWork, False) //Start shooting before sound
             else
             begin
@@ -159,7 +159,7 @@ begin
             end;
           end;
       3:  begin
-            gSoundPlayer.Play(sfx_SlingerShoot, PositionF);
+            gSoundPlayer.Play(sfxSlingerShoot, PositionF);
             SetActionLockedStay(FiringDelay - AimSoundDelay, uaWork, False, 0, AimSoundDelay) //Start shooting before sound
           end;
       4:  begin

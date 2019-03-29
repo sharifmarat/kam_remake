@@ -362,7 +362,7 @@ var
 begin
   Result := 0;
   for PL := 0 to gHands.Count - 1 do
-    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = at_Enemy) then
+    if gHands[PL].Enabled AND (gHands[aPL].Alliances[PL] = atEnemy) then
       Result := Result + Presence[PL, aIdx, aGT];
 end;
 
@@ -550,7 +550,7 @@ begin
     if (PL <> aPL) then
     begin
       Ownership := OwnPoly[PL,aIdx];
-      Inc(Result, ifthen(gHands[aPL].Alliances[PL] = at_Ally, Ownership, Ownership*ENEMY_COEF));
+      Inc(Result, ifthen(gHands[aPL].Alliances[PL] = atAlly, Ownership, Ownership*ENEMY_COEF));
     end;
 end;
 
@@ -566,7 +566,7 @@ var
   BestOwner: TKMHandID;
 begin
   BestOwner := GetBestOwner(aIdx);
-  Result := (BestOwner >= 0) AND (OwnPoly[aPL, aIdx] > 0) AND ((BestOwner = aPL) OR (not aIgnoreAllies AND (gHands[aPL].Alliances[BestOwner] = at_Ally)));
+  Result := (BestOwner >= 0) AND (OwnPoly[aPL, aIdx] > 0) AND ((BestOwner = aPL) OR (not aIgnoreAllies AND (gHands[aPL].Alliances[BestOwner] = atAlly)));
 end;
 
 
@@ -716,7 +716,7 @@ begin
     begin
       if (WatchedPL = PL) then
         Col := COLOR_GREEN
-      else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+      else if (gHands[WatchedPL].Alliances[PL] = atAlly) then
         Col := COLOR_BLUE
       else
         Col := COLOR_RED;
@@ -750,7 +750,7 @@ begin
           BestCnt := Cnt;
           if (WatchedPL = PL) then
             Col := COLOR_GREEN
-          else if (gHands[WatchedPL].Alliances[PL] = at_Ally) then
+          else if (gHands[WatchedPL].Alliances[PL] = atAlly) then
             Col := COLOR_BLUE
           else
             Col := COLOR_RED;

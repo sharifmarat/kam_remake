@@ -107,16 +107,16 @@ end;
 function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
 begin
   if RelativeEntrance then
-    Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbs_Done)
+    Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbsDone)
   else
-    Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_Done);
+    Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbsDone);
 end;
 
 
 {Add a plan for house}
 function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID): TKMHouse;
 begin
-  Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_NoGlyph);
+  Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbsNoGlyph);
 end;
 
 
@@ -202,7 +202,7 @@ begin
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
       if (Houses[I].HouseType = htBarracks)
-        and ((Houses[I].DeliveryMode <> dm_Delivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
+        and ((Houses[I].DeliveryMode <> dmDelivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
       if not gTerrain.Route_CanBeMade(Loc, Houses[I].PointBelowEntrance, tpWalk, 0) then Continue;
 
       Dist := KMLengthSqr(Loc, Houses[I].Position);

@@ -373,7 +373,7 @@ begin
   end;
 
   //Delete tile overlay (road/corn/wine)
-  if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+  if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
     gTerrain.RemRoad(P);
   if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
     gTerrain.RemField(P);
@@ -412,7 +412,7 @@ begin
   //Fisrt try to change owner of object on tile
   if not ChangeObjectOwner(gMySpectator.HitTestCursorWGroup, gMySpectator.HandID) or aChangeOwnerForAll then
     //then try to change owner tile (road/field/wine)
-    if ((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road) or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
+    if ((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad) or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
       and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then
       gTerrain.Land[P.Y, P.X].TileOwner := gMySpectator.HandID;
 end;
@@ -490,7 +490,7 @@ begin
     cmUnits:      ProceedUnitsCursorMode;
     cmErase:      begin
                     gHands.RemAnyHouse(P);
-                    if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+                    if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
                       gTerrain.RemRoad(P);
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                       gTerrain.RemField(P);
@@ -522,7 +522,7 @@ begin
       gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
     else
     if TKMUnitType(gGameCursor.Tag1) in [WARRIOR_MIN..WARRIOR_MAX] then
-      gMySpectator.Hand.AddUnitGroup(TKMUnitType(gGameCursor.Tag1), P, dir_S, 1, 1)
+      gMySpectator.Hand.AddUnitGroup(TKMUnitType(gGameCursor.Tag1), P, dirS, 1, 1)
     else
       gHands.PlayerAnimals.AddUnit(TKMUnitType(gGameCursor.Tag1), P);
   end;
@@ -577,7 +577,7 @@ begin
                 cmUnits:      ProceedUnitsCursorMode;
                 cmMarkers:    case gGameCursor.Tag1 of
                                 MARKER_REVEAL:        fRevealers[gMySpectator.HandID].Add(P, gGameCursor.MapEdSize);
-                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dir_N), gt_Melee, 10, adt_FrontLine);
+                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dirN), gtMelee, 10, adtFrontLine);
                                 MARKER_CENTERSCREEN:  begin
                                                         gMySpectator.Hand.CenterScreen := P;
                                                         //Updating XY display is done in InterfaceMapEd
@@ -588,7 +588,7 @@ begin
                               end;
                 cmErase:      begin
                                 gHands.RemAnyHouse(P);
-                                if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+                                if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
                                   gTerrain.RemRoad(P);
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                                   gTerrain.RemField(P);
@@ -794,15 +794,15 @@ begin
         H := gHands[I].Houses[J];
         case H.HouseType of
           htIronMine:  begin
-                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_IronOre, OreP);
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtIronOre, OreP);
                           AddOrePoints(OreP, IronOreP);
                         end;
           htGoldMine:  begin
-                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_GoldOre, OreP);
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtGoldOre, OreP);
                           AddOrePoints(OreP, GoldOreP);
                         end;
           htCoalMine:  begin
-                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wt_Coal, OreP);
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtCoal, OreP);
                           AddOrePoints(OreP, CoalOreP);
                         end;
           else Continue;
@@ -847,7 +847,7 @@ begin
     if gGameCursor.Mode = cmErase then
       if gTerrain.TileIsCornField(P)
         or gTerrain.TileIsWineField(P)
-        or (gTerrain.Land[P.Y,P.X].TileOverlay=to_Road)
+        or (gTerrain.Land[P.Y,P.X].TileOverlay=toRoad)
         or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
         gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
       else

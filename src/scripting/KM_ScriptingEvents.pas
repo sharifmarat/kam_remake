@@ -120,7 +120,7 @@ type
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (htNone)
 end;
 
 
@@ -188,7 +188,7 @@ begin
       fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].Name);
       if (I > 0) //It's okay to not have default event handler
         and not MethodAssigned(fEventHandlers[ET][I].Handler) then
-        fOnScriptError(se_PreprocessorError,
+        fOnScriptError(sePreprocessorError,
                        Format('Declared custom handler ''%s'' for event ''%s'' not found',
                               [fEventHandlers[ET][I].Name, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
     end;
@@ -225,7 +225,7 @@ begin
          GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType)));
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
     if UpperCase(fEventHandlers[aEventType][I].Name) = UpperCase(aEventHandlerName) then
-      fOnScriptError(se_PreprocessorError,
+      fOnScriptError(sePreprocessorError,
                      Format('Duplicate event handler declaration ''%s'' for event ''%s''',
                      [aEventHandlerName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType))]));
 
@@ -323,7 +323,7 @@ begin
             DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
           end;
         end;
-        fOnScriptError(se_Exception, ErrorStr, DetailedErrorStr);
+        fOnScriptError(seException, ErrorStr, DetailedErrorStr);
       end;
   end;
 end;
@@ -746,7 +746,7 @@ procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TKMWareType;
 begin
   if MethodAssigned(evtWareProduced) then
   begin
-    if (aType <> wt_None) then
+    if (aType <> wtNone) then
       CallEventHandlers(evtWareProduced, [aHouse.UID, WareTypeToIndex[aType], aCount]);
   end;
 end;
@@ -771,7 +771,7 @@ end;
 
 procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
 begin
-  fOnScriptError(se_Log, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
+  fOnScriptError(seLog, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
 end;
 
 
@@ -783,7 +783,7 @@ begin
   Values := '';
   for I := Low(aValues) to High(aValues) do
     Values := Values + String(IntToStr(aValues[I])) + IfThen(I <> High(aValues), ', ');
-  fOnScriptError(se_InvalidParameter, 'Invalid parameter(s) passed to ' + aFuncName + ': ' + Values);
+  fOnScriptError(seInvalidParameter, 'Invalid parameter(s) passed to ' + aFuncName + ': ' + Values);
 end;
 
 

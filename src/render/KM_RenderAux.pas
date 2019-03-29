@@ -432,7 +432,7 @@ begin
   for I := aRect.Top to aRect.Bottom do
   for K := aRect.Left to aRect.Right do
   begin
-    if gTerrain.Land[I,K].IsVertexUnit <> vu_None then
+    if gTerrain.Land[I,K].IsVertexUnit <> vuNone then
     begin
       VertexUsage := byte(gTerrain.Land[I,K].IsVertexUnit);
       glColor4f(1-VertexUsage/3, VertexUsage/3, 0.6, 0.8);

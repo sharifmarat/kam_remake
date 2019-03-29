@@ -28,7 +28,7 @@ type
     procedure RemoveAllUnits;
     procedure DeleteUnitFromList(aUnit: TKMUnit);
     procedure OwnerUpdate(aOwner: TKMHandID);
-    function HitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
+    function HitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
     function GetUnitByUID(aUID: Integer): TKMUnit;
     function GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
@@ -108,12 +108,12 @@ begin
 
   ID := gGame.GetNewUID;
   case aUnitType of
-    ut_Serf:                          Result := TKMUnitSerf.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_Worker:                        Result := TKMUnitWorker.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_WoodCutter..ut_Fisher,
-    {ut_Worker,}
-    ut_StoneCutter..ut_Metallurgist:  Result := TKMUnitCitizen.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_Recruit:                       Result := TKMUnitRecruit.Create(ID, aUnitType, PlaceTo, aOwner);
+    utSerf:                          Result := TKMUnitSerf.Create(ID, aUnitType, PlaceTo, aOwner);
+    utWorker:                        Result := TKMUnitWorker.Create(ID, aUnitType, PlaceTo, aOwner);
+    utWoodCutter..utFisher,
+    {utWorker,}
+    utStoneCutter..utMetallurgist:  Result := TKMUnitCitizen.Create(ID, aUnitType, PlaceTo, aOwner);
+    utRecruit:                       Result := TKMUnitRecruit.Create(ID, aUnitType, PlaceTo, aOwner);
     WARRIOR_MIN..WARRIOR_MAX:         Result := TKMUnitWarrior.Create(ID, aUnitType, PlaceTo, aOwner);
     ANIMAL_MIN..ANIMAL_MAX:           Result := TKMUnitAnimal.Create(ID, aUnitType, PlaceTo, aOwner);
     else                              raise ELocError.Create('Add ' + gRes.Units[aUnitType].GUIName, PlaceTo);
@@ -166,7 +166,7 @@ begin
 end;
 
 
-function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
+function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
 var
   I: Integer;
 begin
@@ -261,11 +261,11 @@ begin
   begin
     LoadStream.Read(UnitType, SizeOf(UnitType));
     case UnitType of
-      ut_Serf:                  U := TKMUnitSerf.Load(LoadStream);
-      ut_Worker:                U := TKMUnitWorker.Load(LoadStream);
-      ut_WoodCutter..ut_Fisher,{ut_Worker,}ut_StoneCutter..ut_Metallurgist:
+      utSerf:                  U := TKMUnitSerf.Load(LoadStream);
+      utWorker:                U := TKMUnitWorker.Load(LoadStream);
+      utWoodCutter..utFisher,{utWorker,}utStoneCutter..utMetallurgist:
                                 U := TKMUnitCitizen.Load(LoadStream);
-      ut_Recruit:               U := TKMUnitRecruit.Load(LoadStream);
+      utRecruit:               U := TKMUnitRecruit.Load(LoadStream);
       WARRIOR_MIN..WARRIOR_MAX: U := TKMUnitWarrior.Load(LoadStream);
       ANIMAL_MIN..ANIMAL_MAX:   U := TKMUnitAnimal.Load(LoadStream);
       else                      U := nil;

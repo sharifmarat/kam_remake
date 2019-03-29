@@ -209,8 +209,8 @@ begin
       if (ALLOW_SELECT_ALLY_UNITS or
           ((gHands[OwnerIndex].IsHuman or not gGame.IsCampaign) //Do not allow to select allied AI in campaigns
             and aAllowSelectAllies)
-        and (Hand.Alliances[OwnerIndex] = at_Ally))
-          or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = at_Enemy)) then // Enemies can be selected for debug
+        and (Hand.Alliances[OwnerIndex] = atAlly))
+          or (ALLOW_SELECT_ENEMIES and (Hand.Alliances[OwnerIndex] = atEnemy)) then // Enemies can be selected for debug
         fIsSelectedMyObj := False
       else
         aNewSelected := nil;

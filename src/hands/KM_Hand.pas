@@ -28,8 +28,8 @@ type
 
     function AddUnit(aUnitType: TKMUnitType; const aLoc: TKMPoint): TKMUnit;
     procedure RemUnit(const Position: TKMPoint);
-    function UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
-    function UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit; overload;
+    function UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = utAny): TKMUnit; overload;
+    function UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit; overload;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     procedure Load(LoadStream: TKMemoryStream); virtual;
@@ -260,13 +260,13 @@ begin
 end;
 
 
-function TKMHandCommon.UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = ut_Any): TKMUnit;
+function TKMHandCommon.UnitsHitTest(const aLoc: TKMPoint; const UT: TKMUnitType = utAny): TKMUnit;
 begin
   Result := UnitsHitTest(aLoc.X, aLoc.Y, UT);
 end;
 
 
-function TKMHandCommon.UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = ut_Any): TKMUnit;
+function TKMHandCommon.UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
 begin
   Result := fUnits.HitTest(X, Y, UT);
 end;
@@ -310,7 +310,7 @@ begin
   for I := 0 to 9 do
     SelectionHotkeys[I] := -1; //Not set
 
-  fAlliances[fID] := at_Ally; //Others are set to enemy by default
+  fAlliances[fID] := atAlly; //Others are set to enemy by default
   fFlagColor := DefaultTeamColors[fID]; //Init with default color, later replaced by Script
 end;
 
@@ -405,9 +405,9 @@ end;
 
 procedure TKMHand.UnitTrained(aUnit: TKMUnit);
 begin
-  if aUnit.UnitType = ut_Worker then
+  if aUnit.UnitType = utWorker then
     fBuildList.AddWorker(TKMUnitWorker(aUnit));
-  if aUnit.UnitType = ut_Serf then
+  if aUnit.UnitType = utSerf then
     fDeliveries.AddSerf(TKMUnitSerf(aUnit));
 
   //Warriors don't trigger "OnTrained" event, they trigger "WarriorEquipped" in WarriorWalkedOut below
@@ -461,7 +461,7 @@ function TKMHand.AddUnitGroup(aUnitType: TKMUnitType; const Position: TKMPoint; 
 var
   I: Integer;
 begin
-  Assert(aDir <> dir_NA);
+  Assert(aDir <> dirNA);
   Result := nil;
 
   if aUnitType in [CITIZEN_MIN..CITIZEN_MAX] then
@@ -701,7 +701,7 @@ begin
   Result := True;
   //Don't allow placing on allies plans either
   for I := 0 to gHands.Count - 1 do
-    if (I <> fID) and (fAlliances[I] = at_Ally) then
+    if (I <> fID) and (fAlliances[I] = atAlly) then
       Result := Result and (gHands[i].fBuildList.FieldworksList.HasField(aLoc) = ftNone)
                        and not gHands[i].fBuildList.HousePlanList.HasPlan(aLoc);
 end;
@@ -716,7 +716,7 @@ begin
     begin
       if ID = gMySpectator.HandID then
         Result := gGameApp.GameSettings.PlayerColorSelf
-      else if (Alliances[gMySpectator.HandID] = at_Ally) then
+      else if (Alliances[gMySpectator.HandID] = atAlly) then
         Result := gGameApp.GameSettings.PlayerColorAlly
       else
         Result := gGameApp.GameSettings.PlayerColorEnemy;
@@ -782,7 +782,7 @@ begin
 
     //This tile must not contain fields/houses of allied players or self
     for J := 0 to gHands.Count - 1 do
-      if fAlliances[J] = at_Ally then
+      if fAlliances[J] = atAlly then
       begin
         Result := Result and (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) = ftNone);
         //Surrounding tiles must not be a house
@@ -856,7 +856,7 @@ begin
 
     //This tile must not contain fields/houseplans of allied players or self
     for J := 0 to gHands.Count - 1 do
-      if fAlliances[J] = at_Ally then
+      if fAlliances[J] = atAlly then
       begin
         if (gHands[J].fBuildList.FieldworksList.HasField(KMPoint(Tx,Ty)) <> ftNone) then
           Exit;
@@ -889,7 +889,7 @@ begin
     begin
       if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
         and (ID = gMySpectator.HandID) then
-        gSoundPlayer.Play(sfx_placemarker);
+        gSoundPlayer.Play(sfxPlacemarker);
       fBuildList.FieldworksList.AddField(aLoc, aFieldType);
       case aFieldType of
          ftRoad: gScriptEvents.ProcPlanRoadPlaced(fID, aLoc.X, aLoc.Y);
@@ -903,7 +903,7 @@ begin
     begin
       if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
         and (ID = gMySpectator.HandID) then
-        gSoundPlayer.Play(sfx_CantPlace, 4);
+        gSoundPlayer.Play(sfxCantPlace, 4);
       if Plan = ftNone then //If we can't build because there's some other plan, that's ok
       begin
         //Can't build here anymore because something changed between click and command processing, so remove any fake plans
@@ -926,18 +926,18 @@ begin
   begin
     fBuildList.FieldworksList.RemFakeField(aLoc); //Remove our fake marker which is shown to the user
     fBuildList.FieldworksList.AddFakeDeletedField(aLoc); //This will hide the real field until it is deleted from game
-    if ID = gMySpectator.HandID then gSoundPlayer.Play(sfx_Click);
+    if ID = gMySpectator.HandID then gSoundPlayer.Play(sfxClick);
   end
   else
     if CanAddFakeFieldPlan(aLoc, aFieldType) then
     begin
       fBuildList.FieldworksList.AddFakeField(aLoc, aFieldType);
       if ID = gMySpectator.HandID then
-        gSoundPlayer.Play(sfx_placemarker);
+        gSoundPlayer.Play(sfxPlacemarker);
     end
     else
       if ID = gMySpectator.HandID then
-        gSoundPlayer.Play(sfx_CantPlace, 4);
+        gSoundPlayer.Play(sfxCantPlace, 4);
 end;
 
 
@@ -953,7 +953,7 @@ begin
     RoadExists := fTerrain.PathFinding.Route_Make(LocA, LocB, CanMakeRoads, 0, nil, NodeList);
     if RoadExists then
       for I := 1 to NodeList.Count do
-        AddField(NodeList.List[i], ft_Road);
+        AddField(NodeList.List[i], ftRoad);
   finally
     FreeAndNil(NodeList);
   end;
@@ -980,7 +980,7 @@ begin
   gScriptEvents.ProcHousePlanPlaced(fID, Loc.X, Loc.Y, aHouseType);
 
   if (ID = gMySpectator.HandID) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
-    gSoundPlayer.Play(sfx_placemarker);
+    gSoundPlayer.Play(sfxPlacemarker);
 end;
 
 
@@ -1016,7 +1016,7 @@ begin
   fStats.HousePlanRemoved(HPlan.HouseType);
   gScriptEvents.ProcHousePlanRemoved(fID, HPlan.Loc.X, HPlan.Loc.Y, HPlan.HouseType);
   if (ID = gMySpectator.HandID) and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]) then
-    gSoundPlayer.Play(sfx_Click);
+    gSoundPlayer.Play(sfxClick);
 end;
 
 
@@ -1039,7 +1039,7 @@ begin
 
   if aMakeSound and not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
   and (ID = gMySpectator.HandID) then
-    gSoundPlayer.Play(sfx_Click);
+    gSoundPlayer.Play(sfxClick);
 end;
 
 
@@ -1062,7 +1062,7 @@ procedure TKMHand.RemFakeFieldPlan(const Position: TKMPoint);
 begin
   fBuildList.FieldworksList.RemFakeField(Position); //Remove our fake marker which is shown to the user
   fBuildList.FieldworksList.AddFakeDeletedField(Position); //This will hide the real field until it is deleted from game
-  if ID = gMySpectator.HandID then gSoundPlayer.Play(sfx_Click);
+  if ID = gMySpectator.HandID then gSoundPlayer.Play(sfxClick);
 end;
 
 
@@ -1152,7 +1152,7 @@ begin
   //BuiltHouses > UnitGroups > Units > IncompleteHouses
 
   H := HousesHitTest(X,Y);
-  if (H <> nil) and (H.BuildingState in [hbs_Stone, hbs_Done]) then
+  if (H <> nil) and (H.BuildingState in [hbsStone, hbsDone]) then
     Result := H
   else
   begin
@@ -1175,14 +1175,14 @@ end;
 procedure TKMHand.HouseDestroyed(aHouse: TKMHouse; aFrom: TKMHandID);
 begin
   //Dispose of delivery tasks performed in DeliverQueue unit
-  if aHouse.BuildingState in [hbs_Wood .. hbs_Done] then
+  if aHouse.BuildingState in [hbsWood .. hbsDone] then
   begin
     Deliveries.Queue.RemAllOffers(aHouse);
     Deliveries.Queue.RemDemand(aHouse);
   end;
 
   //Only Done houses are treated as Self-Destruct, Lost, Destroyed
-  if aHouse.BuildingState in [hbs_NoGlyph .. hbs_Stone] then
+  if aHouse.BuildingState in [hbsNoGlyph .. hbsStone] then
     fStats.HouseEnded(aHouse.HouseType)
   else
   begin
@@ -1365,7 +1365,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fID].Alliances[I] = at_Ally then
+    if gHands[fID].Alliances[I] = atAlly then
       gHands[I].BuildList.FieldworksList.GetFields(aList, aRect, aIncludeFake);
 end;
 
@@ -1376,7 +1376,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fID].Alliances[I] = at_Ally then
+    if gHands[fID].Alliances[I] = atAlly then
       gHands[I].BuildList.HousePlanList.GetOutlines(aList, aRect);
 end;
 
@@ -1387,7 +1387,7 @@ var
 begin
   //Include self and allies
   for I := 0 to gHands.Count - 1 do
-    if gHands[fID].Alliances[I] = at_Ally then
+    if gHands[fID].Alliances[I] = atAlly then
       gHands[I].BuildList.HousePlanList.GetTablets(aList, aRect);
 end;
 
@@ -1431,7 +1431,7 @@ begin
         //This tile must not contain fields/houses of allied players or self
         if AllowBuild then
           for J := 0 to gHands.Count - 1 do
-            if (gHands[fID].Alliances[J] = at_Ally)
+            if (gHands[fID].Alliances[J] = atAlly)
               and ((gHands[J].fBuildList.FieldworksList.HasField(P2) <> ftNone)
                 or gHands[J].fBuildList.HousePlanList.HasPlan(P2)) then
               AllowBuild := False;
@@ -1441,7 +1441,7 @@ begin
           for T := -1 to 1 do
             if (S <> 0) or (T <> 0) then //This is a surrounding tile, not the actual tile
               for J := 0 to gHands.Count - 1 do
-                if (gHands[fID].Alliances[J] = at_Ally)
+                if (gHands[fID].Alliances[J] = atAlly)
                   and gHands[J].fBuildList.HousePlanList.HasPlan(KMPoint(P2.X+S,P2.Y+T)) then
                 begin
                   BlockPoint(KMPoint(P2.X+S,P2.Y+T), TC_BLOCK); //Block surrounding points
@@ -1678,7 +1678,7 @@ begin
     U := fUnits[I]; //Store locally
 
     if (U <> nil)
-    and (U.UnitType = ut_Fish)
+    and (U.UnitType = utFish)
     and (not U.IsDeadOrDying) //Fish are killed when they are caught or become stuck
     and (gTerrain.Land[U.CurrPosition.Y, U.CurrPosition.X].WalkConnect[wcFish] = aWaterID)
     and (TKMUnitAnimal(U).FishCount > HighestGroupCount) then
@@ -1697,8 +1697,8 @@ function GetStatsUpdatePeriod: Integer;
 begin
   Result := 1000;
   case gGame.MissionMode of
-    mm_Normal:  Result := CHARTS_SAMPLING_FOR_ECONOMY;
-    mm_Tactic:  Result := CHARTS_SAMPLING_FOR_TACTICS;
+    mmNormal:  Result := CHARTS_SAMPLING_FOR_ECONOMY;
+    mmTactic:  Result := CHARTS_SAMPLING_FOR_TACTICS;
   end;
 end;
 

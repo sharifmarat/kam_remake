@@ -215,7 +215,7 @@ begin
   fAttack.AfterMissionInit();
   //fDefence.AfterMissionInit();
 
-  //if (gGame.MissionMode = mm_Tactic) then
+  //if (gGame.MissionMode = mmTactic) then
   //  fAttack.OrderToAttack;
 end;
 
@@ -264,7 +264,7 @@ begin
   // Take required warriors from CityManagement (-> implemented consideration of required units + save time)
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
-      if (AITroopTrainOrder[GT,I] <> ut_None) then
+      if (AITroopTrainOrder[GT,I] <> utNone) then
         Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ] + 1); // Always recruit something
 
   //Find barracks
@@ -300,7 +300,7 @@ begin
       begin
         UT := AITroopTrainOrder[GT, K];
 
-        if (UT <> ut_None) then
+        if (UT <> utNone) then
           while (  ( CanEquipIron AND (UT in WARRIORS_IRON) ) OR ( CanEquipLeather AND not (UT in WARRIORS_IRON) )  )
             AND Barracks[I].CanEquip(UT)
             AND (GroupReq[GT] > 0)
@@ -514,16 +514,16 @@ type
     TargetUnit := nil;
     //Find target
     case aTarget of
-      attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-      attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
-      attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
+      attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, atEnemy);
+      attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, atEnemy, TARGET_HOUSES, false);
+      attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, atEnemy, TARGET_HOUSES, false);
       attCustomPosition:
       begin
         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
-        if (TargetHouse <> nil) AND (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = at_Ally) then
+        if (TargetHouse <> nil) AND (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = atAlly) then
           TargetHouse := nil;
         TargetUnit := gTerrain.UnitsHitTest(aCustomPos.X, aCustomPos.Y);
-        if (TargetUnit <> nil) AND ((gHands.CheckAlliance(fOwner, TargetUnit.Owner) = at_Ally) OR TargetUnit.IsDeadOrDying) then
+        if (TargetUnit <> nil) AND ((gHands.CheckAlliance(fOwner, TargetUnit.Owner) = atAlly) OR TargetUnit.IsDeadOrDying) then
           TargetUnit := nil;
       end;
     end;
@@ -605,7 +605,7 @@ begin
     begin
       TakeAllIn := (BestAllianceCmp > MIN_BEST_ALLI_CMP) // The weakest opponent have not enought soldiers
                    OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP) // The strongest opponent have not enought soldiers
-                   OR (gGame.MissionMode = mm_Tactic);
+                   OR (gGame.MissionMode = mmTactic);
       if (DefRatio > MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
         Exit;
     end;

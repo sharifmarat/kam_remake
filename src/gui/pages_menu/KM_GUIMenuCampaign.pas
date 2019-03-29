@@ -86,7 +86,7 @@ begin
       Image_CampaignFlags[I].OnClick := Campaign_SelectMap;
       Image_CampaignFlags[I].Tag := I;
 
-      Label_CampaignFlags[I] := TKMLabel.Create(Panel_Campaign_Flags, aParent.Width, aParent.Height, IntToStr(I+1), fnt_Mini, taCenter);
+      Label_CampaignFlags[I] := TKMLabel.Create(Panel_Campaign_Flags, aParent.Width, aParent.Height, IntToStr(I+1), fntMini, taCenter);
       Label_CampaignFlags[I].FontColor := icLightGray2;
       Label_CampaignFlags[I].Hitable := False;
     end;
@@ -109,9 +109,9 @@ begin
     Image_ScrollClose.OnClick := Scroll_Toggle;
     Image_ScrollClose.HighlightOnMouseOver := True;
 
-    Label_CampaignTitle := TKMLabel.Create(Panel_CampScroll, 20, 46, 325, 20, NO_TEXT, fnt_Outline, taCenter);
+    Label_CampaignTitle := TKMLabel.Create(Panel_CampScroll, 20, 46, 325, 20, NO_TEXT, fntOutline, taCenter);
 
-    Label_CampaignText := TKMLabel.Create(Panel_CampScroll, 20, 70, 323, 290, NO_TEXT, fnt_Antiqua, taLeft);
+    Label_CampaignText := TKMLabel.Create(Panel_CampScroll, 20, 70, 323, 290, NO_TEXT, fntAntiqua, taLeft);
     Label_CampaignText.AutoWrap := True;
 
   Image_ScrollRestore := TKMImage.Create(Panel_Campaign, aParent.Width-20-30, Panel_Campaign.Height-50-53, 30, 48, 491);
@@ -119,10 +119,10 @@ begin
   Image_ScrollRestore.OnClick := Scroll_Toggle;
   Image_ScrollRestore.HighlightOnMouseOver := True;
 
-  Label_Difficulty := TKMLabel.Create(Panel_Campaign, aParent.Width-220-30, aParent.Height-78, gResTexts[TX_MISSION_DIFFICULTY_CAMPAIGN], fnt_Outline, taRight);
+  Label_Difficulty := TKMLabel.Create(Panel_Campaign, aParent.Width-220-30, aParent.Height-78, gResTexts[TX_MISSION_DIFFICULTY_CAMPAIGN], fntOutline, taRight);
   Label_Difficulty.Anchors := [anLeft, anBottom];
   Label_Difficulty.Hide;
-  DropBox_Difficulty := TKMDropList.Create(Panel_Campaign, aParent.Width-220-20, aParent.Height-80, 220, 20, fnt_Metal, gResTexts[TX_MISSION_DIFFICULTY], bsMenu);
+  DropBox_Difficulty := TKMDropList.Create(Panel_Campaign, aParent.Width-220-20, aParent.Height-80, 220, 20, fntMetal, gResTexts[TX_MISSION_DIFFICULTY], bsMenu);
   DropBox_Difficulty.Anchors := [anLeft, anBottom];
   DropBox_Difficulty.OnChange := Difficulty_Change;
   DropBox_Difficulty.Hide;
@@ -366,9 +366,9 @@ begin
   Panel_CampScroll.Visible := not Panel_CampScroll.Visible;
   Image_ScrollRestore.Visible := not Panel_CampScroll.Visible;
   if Panel_CampScroll.Visible then
-    gSoundPlayer.Play(sfx_MessageOpen)
+    gSoundPlayer.Play(sfxMessageOpen)
   else
-    gSoundPlayer.Play(sfx_MessageClose);
+    gSoundPlayer.Play(sfxMessageClose);
 end;
 
 

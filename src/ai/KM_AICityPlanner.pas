@@ -113,9 +113,9 @@ begin
     htWeaponSmithy:    Result := NextToHouse(aHouse, [htIronSmithy, htCoalMine, htBarracks], [], aLoc);
     htWeaponWorkshop:  Result := NextToHouse(aHouse, [htSawmill, htBarracks], [], aLoc);
 
-    htCoalMine:      Result := NextToOre(aHouse, wt_Coal, aLoc);
-    htGoldMine:      Result := NextToOre(aHouse, wt_GoldOre, aLoc);
-    htIronMine:      Result := NextToOre(aHouse, wt_IronOre, aLoc);
+    htCoalMine:      Result := NextToOre(aHouse, wtCoal, aLoc);
+    htGoldMine:      Result := NextToOre(aHouse, wtGoldOre, aLoc);
+    htIronMine:      Result := NextToOre(aHouse, wtIronOre, aLoc);
 
     htQuary:         Result := NextToStone(aHouse, aLoc);
     htWoodcutters:   Result := NextToTrees(aHouse, [htStore, htWoodcutters, htSawmill], aLoc);
@@ -123,10 +123,10 @@ begin
     htWineyard:      Result := NextToGrass(aHouse, [htAny], aLoc);
     htFisherHut:     {Result := NextToWater(aHouse, aLoc)};
 
-    //ht_Marketplace:;
-    //ht_SiegeWorkshop:;
-    //ht_TownHall:;
-    //ht_WatchTower:;
+    //htMarketplace:;
+    //htSiegeWorkshop:;
+    //htTownHall:;
+    //htWatchTower:;
   end;
 
   //If we failed to find something, try to place the house anywhere (better than ignoring it)
@@ -151,7 +151,7 @@ begin
   begin
     H := aHouseType[I];
     HQty := gHands[fOwner].Stats.GetHouseQty(H);
-    //ht_Any picks three random houses for greater variety
+    //htAny picks three random houses for greater variety
     for K := 0 to 1 + Byte(H = htAny) * 2 do
     begin
       House := gHands[fOwner].Houses.FindHouse(H, 0, 0, KaMRandom(HQty, 'TKMCityPlanner.GetSeeds') + 1);
@@ -324,7 +324,7 @@ begin
 
   //Make sure stonemason actually can reach some stone (avoid build-destroy loop)
   if Result then
-    if not gTerrain.FindStone(aLoc, gRes.Units[ut_StoneCutter].MiningRange, KMPOINT_ZERO, True, tmp) then
+    if not gTerrain.FindStone(aLoc, gRes.Units[utStoneCutter].MiningRange, KMPOINT_ZERO, True, tmp) then
       Result := False;
 end;
 
@@ -363,7 +363,7 @@ begin
 
   //Look for nearest Ore
   case aOreType of
-    wt_Coal:    begin
+    wtCoal:    begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else
@@ -376,7 +376,7 @@ begin
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
-    wt_IronOre: begin
+    wtIronOre: begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else
@@ -389,7 +389,7 @@ begin
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
-    wt_GoldOre: begin
+    wtGoldOre: begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else

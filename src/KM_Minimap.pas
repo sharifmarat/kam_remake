@@ -204,7 +204,7 @@ procedure TKMMinimap.UpdateMinimapFromGame;
       else begin
         if aHandId = gMySpectator.HandID then
           Result := gGameApp.GameSettings.PlayerColorSelf
-        else if (gHands[aHandId].Alliances[gMySpectator.HandID] = at_Ally) then
+        else if (gHands[aHandId].Alliances[gMySpectator.HandID] = atAlly) then
           Result := gGameApp.GameSettings.PlayerColorAlly
         else
           Result := gGameApp.GameSettings.PlayerColorEnemy;
@@ -342,7 +342,7 @@ begin
     Move(Pointer(NativeUint(fBase) + I * fMapX * 4)^,
          Pointer(NativeUint(wData) + I * fWidthPOT * 4)^, fMapX * 4);
 
-  TRender.UpdateTexture(fMapTex.Tex, fWidthPOT, fHeightPOT, tf_RGBA8, wData);
+  TRender.UpdateTexture(fMapTex.Tex, fWidthPOT, fHeightPOT, tfRGBA8, wData);
   FreeMem(wData);
 end;
 

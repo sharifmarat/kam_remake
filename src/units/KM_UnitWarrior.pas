@@ -257,7 +257,7 @@ procedure TKMUnitWarrior.OrderFood;
 begin
   if (fCondition < (UNIT_MAX_CONDITION * TROOPS_FEED_MAX)) and not fRequestedFood then
   begin
-    gHands[fOwner].Deliveries.Queue.AddDemand(nil, Self, wt_Food, 1, dtOnce, diHigh2);
+    gHands[fOwner].Deliveries.Queue.AddDemand(nil, Self, wtFood, 1, dtOnce, diHigh2);
     fRequestedFood := True;
   end;
 end;
@@ -349,9 +349,9 @@ end;
 function TKMUnitWarrior.GetFightMaxRange(aTileBased: Boolean = False): Single;
 begin
   case fType of
-    ut_Bowman,
-    ut_Arbaletman,
-    ut_Slingshot:   Result := RangeMax / (Byte(REDUCE_SHOOTING_RANGE) + 1);
+    utBowman,
+    utArbaletman,
+    utSlingshot:   Result := RangeMax / (Byte(REDUCE_SHOOTING_RANGE) + 1);
     //During storm attack we look for enemies 1.42 tiles away so we engage enemies easier and don't accidentially walk past them diagonally
     else            if aTileBased and not (Action is TKMUnitActionStormAttack) then
                       Result := 1 //Enemy must maximum be 1 tile away
@@ -365,9 +365,9 @@ end;
 function TKMUnitWarrior.GetFightMinRange: Single;
 begin
   case fType of
-    ut_Bowman,
-    ut_Arbaletman,
-    ut_Slingshot:   Result := RangeMin;
+    utBowman,
+    utArbaletman,
+    utSlingshot:   Result := RangeMin;
     else            Result := 0.5;
   end;
 end;
@@ -422,7 +422,7 @@ end;
 
 function TKMUnitWarrior.IsRanged: Boolean;
 begin
-  Result := gRes.Units[fType].FightType = ft_Ranged;
+  Result := gRes.Units[fType].FightType = ftRanged;
 end;
 
 
@@ -495,7 +495,7 @@ end;
 
 procedure TKMUnitWarrior.SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse);
 begin
-  Assert(aGoDir = gd_GoOutside, 'Walking inside is not implemented yet');
+  Assert(aGoDir = gdGoOutside, 'Walking inside is not implemented yet');
   Assert((aHouse.HouseType = htBarracks) or (aHouse.HouseType = htTownHall), 'Only Barracks and TownHall so far');
   inherited;
 
@@ -569,7 +569,7 @@ begin
   Result := False; //Didn't find anyone to fight
 
   //Ranged units should not check for enemy while walking or when facing the wrong way
-  if IsRanged and ((not IsIdle) or ((FaceDir <> Direction) and (FaceDir <> dir_NA))) then Exit;
+  if IsRanged and ((not IsIdle) or ((FaceDir <> Direction) and (FaceDir <> dirNA))) then Exit;
 
   NewEnemy := FindEnemy;
   if NewEnemy <> nil then
@@ -610,7 +610,7 @@ begin
   if IsRanged then
     TestDir := Direction //Use direction for ranged attacks, if it was not already specified
   else
-    TestDir := dir_NA;
+    TestDir := dirNA;
 
   Range := GetFightMaxRange(true);
   //AI has an "auto attack range" for melee like in TSK/TPR so you can't sneak past them (when idle)
@@ -618,7 +618,7 @@ begin
     Range := Max(Range, gHands[fOwner].AI.Setup.AutoAttackRange);
 
   //This function should not be run too often, as it will take some time to execute (e.g. with lots of warriors in the range area to check)
-  Result := gTerrain.UnitsHitTestWithinRad(CurrPosition, GetFightMinRange, Range, Owner, at_Enemy, TestDir, not RANDOM_TARGETS);
+  Result := gTerrain.UnitsHitTestWithinRad(CurrPosition, GetFightMinRange, Range, Owner, atEnemy, TestDir, not RANDOM_TARGETS);
 
   //Only stop attacking a house if it's a warrior
   if (fTask <> nil) and (fTask is TKMTaskAttackHouse) and (Action is TKMUnitActionStay) and not (Result is TKMUnitWarrior) then
@@ -681,9 +681,9 @@ begin
   Result := 0;
   if IsRanged then
     case UnitType of
-      ut_Bowman,
-      ut_Arbaletman: Result := FIRING_DELAY;
-      ut_SlingShot:  Result := SLINGSHOT_FIRING_DELAY;
+      utBowman,
+      utArbaletman: Result := FIRING_DELAY;
+      utSlingShot:  Result := SLINGSHOT_FIRING_DELAY;
       else raise Exception.Create('Unknown shooter');
     end;
 end;
@@ -701,9 +701,9 @@ begin
   Result := 0;
   if IsRanged then
     case UnitType of
-      ut_Bowman:     Result := BOWMEN_AIMING_DELAY_MIN + KaMRandom(BOWMEN_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay');
-      ut_Arbaletman: Result := CROSSBOWMEN_AIMING_DELAY_MIN + KaMRandom(CROSSBOWMEN_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay 2');
-      ut_SlingShot:  Result := SLINGSHOT_AIMING_DELAY_MIN + KaMRandom(SLINGSHOT_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay 3');
+      utBowman:     Result := BOWMEN_AIMING_DELAY_MIN + KaMRandom(BOWMEN_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay');
+      utArbaletman: Result := CROSSBOWMEN_AIMING_DELAY_MIN + KaMRandom(CROSSBOWMEN_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay 2');
+      utSlingShot:  Result := SLINGSHOT_AIMING_DELAY_MIN + KaMRandom(SLINGSHOT_AIMING_DELAY_ADD, 'TKMUnitWarrior.GetAimingDelay 3');
       else raise Exception.Create('Unknown shooter');
     end;
 end;
@@ -714,7 +714,7 @@ const
   SLINGSHOT_AIMING_SOUND_DELAY = 2;
 begin
   Result := 0;
-  if UnitType = ut_SlingShot then
+  if UnitType = utSlingShot then
     Result := SLINGSHOT_AIMING_SOUND_DELAY;
 end;
 
@@ -728,9 +728,9 @@ begin
   Result := 0;
   if IsRanged then
     case UnitType of
-      ut_Bowman:     Result := RANGE_BOWMAN_MIN;
-      ut_Arbaletman: Result := RANGE_ARBALETMAN_MIN;
-      ut_SlingShot:  Result := RANGE_SLINGSHOT_MIN;
+      utBowman:     Result := RANGE_BOWMAN_MIN;
+      utArbaletman: Result := RANGE_ARBALETMAN_MIN;
+      utSlingShot:  Result := RANGE_SLINGSHOT_MIN;
       else raise Exception.Create('Unknown shooter');
     end;
 end;
@@ -745,9 +745,9 @@ begin
   Result := 0;
   if IsRanged then
     case UnitType of
-      ut_Bowman:     Result := RANGE_BOWMAN_MAX;
-      ut_Arbaletman: Result := RANGE_ARBALETMAN_MAX;
-      ut_SlingShot:  Result := RANGE_SLINGSHOT_MAX;
+      utBowman:     Result := RANGE_BOWMAN_MAX;
+      utArbaletman: Result := RANGE_ARBALETMAN_MAX;
+      utSlingShot:  Result := RANGE_SLINGSHOT_MAX;
       else raise Exception.Create('Unknown shooter');
     end;
 end;
@@ -757,9 +757,9 @@ function TKMUnitWarrior.GetProjectileType: TKMProjectileType;
 begin
   Assert(IsRanged, 'Can''t get projectile type for not ranged warriors');
   case UnitType of
-    ut_Bowman:     Result := pt_Arrow;
-    ut_Arbaletman: Result := pt_Bolt;
-    ut_SlingShot:  Result := pt_SlingRock;
+    utBowman:     Result := ptArrow;
+    utArbaletman: Result := ptBolt;
+    utSlingShot:  Result := ptSlingRock;
     else raise Exception.Create('Unknown shooter');
   end;
 end;
@@ -925,7 +925,7 @@ begin
   UpdateOrderTargets;
 
   if fCondition < UNIT_MIN_CONDITION then
-    fThought := th_Eat; //th_Death checked in parent UpdateState
+    fThought := thEat; //thDeath checked in parent UpdateState
 
   //Part 1 - Take orders into execution if there are any
   //Part 2 - UpdateState
@@ -959,12 +959,12 @@ begin
   if not fVisible then Exit;
 
   Act := fAction.ActionType;
-  UnitPos.X := fCurrPosition.X + UNIT_OFF_X + GetSlide(ax_X);
-  UnitPos.Y := fCurrPosition.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  UnitPos.X := fCurrPosition.X + UNIT_OFF_X + GetSlide(axX);
+  UnitPos.Y := fCurrPosition.Y + UNIT_OFF_Y + GetSlide(axY);
 
   gRenderPool.AddUnit(fType, fUID, Act, Direction, AnimStep, UnitPos.X, UnitPos.Y, gHands[fOwner].GameFlagColor, True);
 
-  if fThought <> th_None then
+  if fThought <> thNone then
     gRenderPool.AddUnitThought(fType, Act, Direction, fThought, UnitPos.X, UnitPos.Y);
 
   if SHOW_ATTACK_RADIUS or (gGame.IsMapEditor and (mlUnitsAttackRadius in gGame.MapEditor.VisibleLayers)) then

@@ -55,13 +55,13 @@ begin
   with fUnit do
   case fPhase of
     0:  begin
-          Thought := th_Home;
+          Thought := thHome;
           SetActionWalkToSpot(Home.PointBelowEntrance);
         end;
-    1:  SetActionGoIn(uaWalk, gd_GoInside, Home);
+    1:  SetActionGoIn(uaWalk, gdGoInside, Home);
     2:  begin
-          Thought := th_None; //Only stop thinking once we are right inside
-          Home.SetState(hst_Idle);
+          Thought := thNone; //Only stop thinking once we are right inside
+          Home.SetState(hstIdle);
           SetActionStay(5, uaWalk);
         end;
     else Result := trTaskDone;

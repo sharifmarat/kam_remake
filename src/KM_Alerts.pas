@@ -320,7 +320,7 @@ begin
   //If this player has too many beacons remove his oldest one
   RemoveExcessBeacons;
   fList.Add(TKMAlertBeacon.Create(aLoc, aOwner, aColor, aShowUntil));
-  gSoundPlayer.Play(sfxn_Beacon);
+  gSoundPlayer.Play(sfxnBeacon);
 end;
 
 

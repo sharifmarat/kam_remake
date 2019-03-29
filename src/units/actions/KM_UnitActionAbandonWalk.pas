@@ -61,7 +61,7 @@ end;
 
 function TKMUnitActionAbandonWalk.ActName: TKMUnitActionName;
 begin
-  Result := uan_AbandonWalk;
+  Result := uanAbandonWalk;
 end;
 
 

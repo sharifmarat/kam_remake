@@ -346,7 +346,7 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
-    Sender.AddTypeS('TKMAudioFormat', '(af_Wav,af_Ogg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
@@ -1715,8 +1715,8 @@ end;
 
 procedure TKMScriptErrorHandler.HandleErrors;
 begin
-  HandleScriptError(se_CompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
-  HandleScriptError(se_CompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
+  HandleScriptError(seCompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
+  HandleScriptError(seCompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
 end;
 
 
@@ -1783,11 +1783,11 @@ begin
   aErrorString := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
 
   //Display compile errors in-game
-  if (aType in [se_CompileError, se_PreprocessorError]) and Assigned(fOnScriptError) then
+  if (aType in [seCompileError, sePreprocessorError]) and Assigned(fOnScriptError) then
     fOnScriptError(aErrorString);
 
   //Serious runtime errors should be shown to the player
-  if aType in [se_Exception] then
+  if aType in [seException] then
   begin
     //Only show the first message in-game to avoid spamming the player
     if not fHasErrorOccured and Assigned(fOnScriptError) then
@@ -1907,7 +1907,7 @@ begin
       Result := True; // If PreProcess has been done succesfully
     except
       on E: Exception do
-        fErrorHandler.HandleScriptErrorString(se_PreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+        fErrorHandler.HandleScriptErrorString(sePreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
     end;
   finally
     FreeAndNil(PreProcessor);
@@ -2064,8 +2064,8 @@ const
           begin
             fCustomScriptParams[cspMarketGoldPrice].Added := True;
             fCustomScriptParams[cspMarketGoldPrice].Data :=
-              Format('%s: x%s %s: x%s', [gRes.Wares[wt_GoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
-                                         gRes.Wares[wt_Gold].Title,    FormatFloat('#0.#', GoldPriceX)]);
+              Format('%s: x%s %s: x%s', [gRes.Wares[wtGoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
+                                         gRes.Wares[wtGold].Title,    FormatFloat('#0.#', GoldPriceX)]);
           end else
             Exit;
 
@@ -2075,8 +2075,8 @@ const
           if not AllowGameUpdate then Exit;
 
           //Update actual troop cost
-          gRes.Wares[wt_GoldOre].MarketPriceMultiplier := GoldOrePriceX;
-          gRes.Wares[wt_Gold].MarketPriceMultiplier := GoldPriceX;
+          gRes.Wares[wtGoldOre].MarketPriceMultiplier := GoldOrePriceX;
+          gRes.Wares[wtGold].MarketPriceMultiplier := GoldPriceX;
 
         finally
           FreeAndNil(DirectiveParamSL);

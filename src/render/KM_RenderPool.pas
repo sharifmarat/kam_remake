@@ -823,7 +823,7 @@ var
   CornerX, CornerY: Single;
   R: TRXData;
 begin
-  if ResType = wt_Horse then // Horses are a beast, BeastId is the count, age is 1
+  if ResType = wtHorse then // Horses are a beast, BeastId is the count, age is 1
     for i:=1 to Min(ResCount, MarketWares[ResType].Count) do // Render each beast
       AddHouseStableBeasts(htMarketplace, Loc, i, 1, AnimStep, rxHouses)
   else
@@ -879,13 +879,13 @@ begin
   end;
 
   case aProj of
-    pt_Arrow:     with gRes.Units[ut_Bowman].UnitAnim[uaSpec, aDir] do
+    ptArrow:     with gRes.Units[utBowman].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
-    pt_Bolt:      with gRes.Units[ut_Arbaletman].UnitAnim[uaSpec, aDir] do
+    ptBolt:      with gRes.Units[utArbaletman].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
-    pt_SlingRock: with gRes.Units[ut_Slingshot].UnitAnim[uaSpec, aDir] do
+    ptSlingRock: with gRes.Units[utSlingshot].UnitAnim[uaSpec, aDir] do
                     Id := Step[Round(Min(aFlight, 1) * (Count-1)) + 1] + 1;
-    pt_TowerRock: Id := ProjectileBounds[aProj, 1] + 1;
+    ptTowerRock: Id := ProjectileBounds[aProj, 1] + 1;
     else          Id := 1; // Nothing?
   end;
 
@@ -895,8 +895,8 @@ begin
   CornerY := (R.Pivot[Id].Y + R.Size[Id].Y) / CELL_SIZE_PX - 1;
 
   case aProj of
-    pt_Arrow, pt_Bolt, pt_SlingRock:  Ground := aTilePos.Y + (0.5 - Abs(Min(aFlight, 1) - 0.5)) - 0.5;
-    pt_TowerRock:                     Ground := aTilePos.Y + Min(aFlight, 1)/5 - 0.4;
+    ptArrow, ptBolt, ptSlingRock:  Ground := aTilePos.Y + (0.5 - Abs(Min(aFlight, 1) - 0.5)) - 0.5;
+    ptTowerRock:                     Ground := aTilePos.Y + Min(aFlight, 1)/5 - 0.4;
     else                              Ground := aTilePos.Y - 1; // Nothing?
   end;
 
@@ -987,7 +987,7 @@ var
   A: TKMAnimLoop;
   Id0: Integer;
 begin
-  if Thought = th_None then Exit;
+  if Thought = thNone then Exit;
   R := fRXData[rxUnits];
 
   // Unit position
@@ -1014,16 +1014,16 @@ procedure TRenderPool.AddUnitFlag(aUnit: TKMUnitType; aAct: TKMUnitActionType; a
 const
   // Offsets for flags rendering in pixels
   FlagXOffset: array [TKMGroupType, TKMDirection] of shortint = (
-    ( 0, 10, -1,  2,  1, -6,-10,  4, 13),  // gt_Melee
-    ( 0,  6,  5,  7, -3,-10, -4, 10,  9),  // gt_AntiHorse
-    ( 0,  8,  6,  6, -6, -8, -3,  8,  6),  // gt_Ranged
-    ( 0,  6,  2,  3, -5,-10, -8,  5,  6)); // gt_Mounted
+    ( 0, 10, -1,  2,  1, -6,-10,  4, 13),  // gtMelee
+    ( 0,  6,  5,  7, -3,-10, -4, 10,  9),  // gtAntiHorse
+    ( 0,  8,  6,  6, -6, -8, -3,  8,  6),  // gtRanged
+    ( 0,  6,  2,  3, -5,-10, -8,  5,  6)); // gtMounted
 
   FlagYOffset: array [TKMGroupType, TKMDirection] of shortint = (
-    ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gt_Melee
-    ( 0, 23, 25, 25, 21, 20, 19, 20, 22),  // gt_AntiHorse
-    ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gt_Ranged
-    ( 0,  4, 16, 16,  4,  5,  2,  3,  4)); // gt_Mounted
+    ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gtMelee
+    ( 0, 23, 25, 25, 21, 20, 19, 20, 22),  // gtAntiHorse
+    ( 0, 28, 30, 30, 26, 25, 24, 25, 27),  // gtRanged
+    ( 0,  4, 16, 16,  4,  5,  2,  3,  4)); // gtMounted
 var
   R: TRXData;
   A: TKMAnimLoop;
@@ -1056,7 +1056,7 @@ end;
 
 procedure TRenderPool.AddUnitWithDefaultArm(aUnit: TKMUnitType; aUID: Integer; aAct: TKMUnitActionType; aDir: TKMDirection; StepId: Integer; pX,pY: Single; FlagColor: TColor4; DoImmediateRender: Boolean = False; DoHignlight: Boolean = False; HighlightColor: TColor4 = 0);
 begin
-  if aUnit = ut_Fish then aAct := FishCountAct[5]; // In map editor always render 5 fish
+  if aUnit = utFish then aAct := FishCountAct[5]; // In map editor always render 5 fish
   AddUnit(aUnit, aUID, aAct, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
   if gRes.Units[aUnit].SupportsAction(uaWalkArm) then
     AddUnit(aUnit, aUID, uaWalkArm, aDir, StepId, pX, pY, FlagColor, True, DoImmediateRender, DoHignlight, HighlightColor);
@@ -1481,7 +1481,7 @@ begin
         and (gTerrain.Land[I, K].TileOwner <> PLAYER_NONE) //owner is set for tile
         and (gTerrain.TileIsCornField(P)                   // show only for corn + wine + roads
           or gTerrain.TileIsWineField(P)
-          or (gTerrain.Land[I, K].TileOverlay = to_Road)) then
+          or (gTerrain.Land[I, K].TileOverlay = toRoad)) then
         RenderWireTile(P, gHands[gTerrain.Land[I, K].TileOwner].FlagColor, 0.05);
     end;
 end;
@@ -1647,7 +1647,7 @@ begin
   else begin
     P := gGameCursor.Cell;
     if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
-      AddUnitWithDefaultArm(TKMUnitType(gGameCursor.Tag1), 0, uaWalk, dir_S, UnitStillFrames[dir_S], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
+      AddUnitWithDefaultArm(TKMUnitType(gGameCursor.Tag1), 0, uaWalk, dirS, UnitStillFrames[dirS], P.X+UNIT_OFF_X, P.Y+UNIT_OFF_Y, gMySpectator.Hand.FlagColor, True)
     else
       RenderSpriteOnTile(P, TC_BLOCK); // Red X
   end;
@@ -1678,7 +1678,7 @@ begin
   end;
 
   if (aHighlightAll or not IsRendered) and
-    (((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road)
+    (((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad)
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0)) then
     RenderWireTile(P, $FFFFFF00); // Cyan quad
@@ -1719,7 +1719,7 @@ begin
   end;
 
   if (aHighlightAll or not IsRendered) and
-    (((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road)
+    (((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad)
         and (gTerrain.Land[P.Y, P.X].TileLock = tlNone)) //Sometimes we can point road tile under the house, do not show Cyan quad then
       or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
     and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then //Only if tile has other owner

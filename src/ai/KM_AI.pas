@@ -79,7 +79,7 @@ begin
   fMayor := TKMayor.Create(fOwner, fSetup);
   fGeneral := TKMGeneral.Create(fOwner, fSetup);
   fGoals := TKMGoals.Create;
-  fWonOrLost := wol_None;
+  fWonOrLost := wolNone;
 
   fCityManagement := TKMCityManagement.Create(fOwner, fSetup);
   fArmyManagement := TKMArmyManagement.Create(fOwner, fSetup);
@@ -104,9 +104,9 @@ end;
 //Defeated player remains in place, but does no actions
 procedure TKMHandAI.Defeat(aShowDefeatMessage: Boolean = True);
 begin
-  if fWonOrLost = wol_None then
+  if fWonOrLost = wolNone then
   begin
-    fWonOrLost := wol_Lost;
+    fWonOrLost := wolLost;
 
     //Let the game know
     gGame.PlayerDefeat(fOwner, aShowDefeatMessage);
@@ -122,9 +122,9 @@ end;
 //otherwise it will look odd.
 procedure TKMHandAI.Victory;
 begin
-  if fWonOrLost = wol_None then
+  if fWonOrLost = wolNone then
   begin
-    fWonOrLost := wol_Won;
+    fWonOrLost := wolWon;
 
     //Replays/spectators don't see victory screen
     if not (gGame.GameMode in [gmReplaySingle, gmReplayMulti])
@@ -144,7 +144,7 @@ var
 begin
   SetLength(Enemies, 0);
   for I := 0 to gHands.Count - 1 do
-    if gHands[I].Enabled and (gHands[fOwner].Alliances[I] = at_Enemy) then
+    if gHands[I].Enabled and (gHands[fOwner].Alliances[I] = atEnemy) then
     begin
       SetLength(Enemies, Length(Enemies)+1);
       Enemies[High(Enemies)] := I;
@@ -159,7 +159,7 @@ procedure TKMHandAI.CheckGoals;
   var
     Stat: TKMHandStats;
   begin
-    Assert((aGoal.GoalCondition = gc_Time) or (aGoal.HandIndex <> PLAYER_NONE), 'Only gc_Time can have nil Player');
+    Assert((aGoal.GoalCondition = gcTime) or (aGoal.HandIndex <> PLAYER_NONE), 'Only gcTime can have nil Player');
 
     if aGoal.Disabled then
     begin
@@ -173,21 +173,21 @@ procedure TKMHandAI.CheckGoals;
       Stat := nil;
 
     case aGoal.GoalCondition of
-      gc_BuildTutorial:     Result := True; //Deprecated
-      //gc_Time is disabled as we process messages in Event system now. Return true so players
+      gcBuildTutorial:     Result := True; //Deprecated
+      //gcTime is disabled as we process messages in Event system now. Return true so players
       //do not have to wait for all messages to show before they are allowed to win (same in TPR)
-      gc_Time:              Result := True; //Deprecated
-      gc_Buildings:         Result := (Stat.GetHouseQty([htStore, htSchool, htBarracks, htTownHall]) > 0);
-      gc_Troops:            Result := (Stat.GetArmyCount > 0);
-      gc_MilitaryAssets:    Result := (Stat.GetArmyCount > 0) or
+      gcTime:              Result := True; //Deprecated
+      gcBuildings:         Result := (Stat.GetHouseQty([htStore, htSchool, htBarracks, htTownHall]) > 0);
+      gcTroops:            Result := (Stat.GetArmyCount > 0);
+      gcMilitaryAssets:    Result := (Stat.GetArmyCount > 0) or
                                       (Stat.GetHouseQty([htBarracks, htCoalMine, htWeaponWorkshop, htArmorWorkshop, htStables,
                                                          htIronMine, htIronSmithy ,htWeaponSmithy, htArmorSmithy, htTownHall,
                                                          htSiegeWorkshop]) > 0);
-      gc_SerfsAndSchools:   Result := (Stat.GetHouseQty([htSchool]) > 0) or (Stat.GetUnitQty(ut_Serf) > 0);
-      gc_EconomyBuildings:  Result := (Stat.GetHouseQty([htStore, htSchool, htInn]) > 0);
+      gcSerfsAndSchools:   Result := (Stat.GetHouseQty([htSchool]) > 0) or (Stat.GetUnitQty(utSerf) > 0);
+      gcEconomyBuildings:  Result := (Stat.GetHouseQty([htStore, htSchool, htInn]) > 0);
       else                  raise Exception.Create('Unknown goal');
     end;
-    if aGoal.GoalStatus = gs_False then
+    if aGoal.GoalStatus = gsFalse then
       Result := not Result; //Reverse condition
   end;
 
@@ -198,7 +198,7 @@ var
 begin
   //If player has elected to play on past victory or defeat
   //then do not check for any further goals
-  if fWonOrLost <> wol_None then Exit;
+  if fWonOrLost <> wolNone then Exit;
 
   //Assume they will win/survive, then prove it with goals
   HasVictoryGoal := False;
@@ -208,13 +208,13 @@ begin
   with gHands[fOwner] do
   for I := 0 to Goals.Count - 1 do
   case Goals[I].GoalType of
-    glt_Victory:  begin
+    gltVictory:  begin
                     //In a sandbox or script-ruled mission there may be no victory conditions in Goals
                     //so we make sure player wins by Goals only if he has such goals
                     HasVictoryGoal := True;
                     VictorySatisfied := VictorySatisfied and GoalConditionSatisfied(Goals[I]);
                   end;
-    glt_Survive:  SurvivalSatisfied := SurvivalSatisfied and GoalConditionSatisfied(Goals[I]);
+    gltSurvive:  SurvivalSatisfied := SurvivalSatisfied and GoalConditionSatisfied(Goals[I]);
   end;
       //Messages in goals have been replaced by SCRIPT files, so this code is disabled now,
       //but kept in case we need it for something later. (conversion process?)
@@ -245,19 +245,19 @@ end;
 
 function TKMHandAI.GetHasWon: Boolean;
 begin
-  Result := fWonOrLost = wol_Won;
+  Result := fWonOrLost = wolWon;
 end;
 
 
 function TKMHandAI.GetHasLost: Boolean;
 begin
-  Result := fWonOrLost = wol_Lost;
+  Result := fWonOrLost = wolLost;
 end;
 
 
 function TKMHandAI.GetIsNotWinnerNotLoser: Boolean;
 begin
-  Result := fWonOrLost = wol_None;
+  Result := fWonOrLost = wolNone;
 end;
 
 
@@ -265,9 +265,9 @@ function TKMHandAI.GetWonOrLostString: UnicodeString;
 begin
   Result := '';
   case fWonOrLost of
-    wol_None: Result := 'Undefined';
-    wol_Won:  Result := 'Won';
-    wol_Lost: Result := 'Lost';
+    wolNone: Result := 'Undefined';
+    wolWon:  Result := 'Won';
+    wolLost: Result := 'Lost';
   end;
 end;
 
@@ -295,11 +295,11 @@ begin
         if not (gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
         and (fOwner = gMySpectator.HandID)
         and (aAttacker <> nil) then //Don't show alerts for annonymous attacks (e.g. script)
-          gGame.GamePlayInterface.Alerts.AddFight(KMPointF(aHouse.Position), fOwner, an_Town, gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
+          gGame.GamePlayInterface.Alerts.AddFight(KMPointF(aHouse.Position), fOwner, anTown, gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
       end;
     hndComputer:
       begin
-        if not (WonOrLost <> wol_None) then
+        if not (WonOrLost <> wolNone) then
         begin
           if fSetup.NewAI then
           begin
@@ -311,7 +311,7 @@ begin
             //Our allies might like to help us too
             for I := 0 to gHands.Count-1 do
               if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-              and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+              and (gHands.CheckAlliance(I, fOwner) = atAlly) and gHands[I].AI.Setup.DefendAllies then
                 gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
           end;
         end;
@@ -324,7 +324,7 @@ end;
 
 procedure TKMHandAI.UnitHPDecreaseNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 begin
-  if not (WonOrLost <> wol_None) then
+  if not (WonOrLost <> wolNone) then
   begin
     if fSetup.NewAI AND (gHands[fOwner].HandType <> hndHuman) then // Make sure that it is not player
     begin
@@ -339,7 +339,7 @@ end;
 // aUnit is our unit that was attacked
 procedure TKMHandAI.UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 const
-  NotifyKind: array [Boolean] of TAttackNotification = (an_Citizens, an_Troops);
+  NotifyKind: array [Boolean] of TAttackNotification = (anCitizens, anTroops);
 var
   Group: TKMUnitGroup;
   I: Integer;
@@ -352,7 +352,7 @@ begin
         gGame.GamePlayInterface.Alerts.AddFight(aUnit.PositionF, fOwner, NotifyKind[aUnit is TKMUnitWarrior], gGameApp.GlobalTickCount + ALERT_DURATION[atFight]);
     hndComputer:
       begin
-        if not (WonOrLost <> wol_None) then
+        if not (WonOrLost <> wolNone) then
         begin
           if fSetup.NewAI then
           begin
@@ -369,7 +369,7 @@ begin
               //Our allies might like to help us too
               for I := 0 to gHands.Count-1 do
                 if gHands[I].Enabled and (gHands[I].HandType = hndComputer)
-                and (gHands.CheckAlliance(I, fOwner) = at_Ally) and gHands[I].AI.Setup.DefendAllies then
+                and (gHands.CheckAlliance(I, fOwner) = atAlly) and gHands[I].AI.Setup.DefendAllies then
                   gHands[I].AI.General.RetaliateAgainstThreat(aAttacker);
 
               //If we are a warrior we can also attack that unit ourselves
@@ -448,7 +448,7 @@ end;
 
 procedure TKMHandAI.UpdateState(aTick: Cardinal);
 begin
-  if (WonOrLost <> wol_None) then
+  if (WonOrLost <> wolNone) then
     Exit;
   //Check goals for all players to maintain multiplayer consistency
   //AI victory/defeat is used in scripts (e.g. OnPlayerDefeated in battle tutorial)

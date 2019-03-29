@@ -442,7 +442,7 @@ begin
     Result := TKMDirection((Round(Ang + 270 + 22.5) mod 360) div 45 + 1);
   end
   else
-    Result := dir_NA;
+    Result := dirNA;
 end;
 
 

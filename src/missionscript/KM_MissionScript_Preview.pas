@@ -150,9 +150,9 @@ var
   Loc: TKMPoint;
 begin
   case CommandType of
-    ct_SetCurrPlayer:   fLastHand := P[0];
+    ctSetCurrPlayer:   fLastHand := P[0];
 
-    ct_SetHouse:        if InRange(P[0], Low(HouseIndexToType), High(HouseIndexToType))
+    ctSetHouse:        if InRange(P[0], Low(HouseIndexToType), High(HouseIndexToType))
                           and PointInMap(P[1]+1, P[2]+1) then
                         begin
                           RevealCircle(P[1]+1, P[2]+1, gRes.Houses[HouseIndexToType[P[0]]].Sight);
@@ -163,53 +163,53 @@ begin
                                 SetOwner(P[1]+1+k-3, P[2]+1+i-4);
                         end;
 
-    ct_SetMapColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
+    ctSetMapColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := gRes.Palettes.DefaultPalette.Color32(P[0]);
 
-    ct_SetRGBColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
+    ctSetRGBColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := P[0] or $FF000000;
 
-    ct_CenterScreen:    if PointInMap(P[0]+1, P[1]+1) then
+    ctCenterScreen:    if PointInMap(P[0]+1, P[1]+1) then
                           fHandPreview[fLastHand].StartingLoc := KMPoint(P[0]+1,P[1]+1);
 
-    ct_HumanPlayer:     //Default human player can be human, obviously
+    ctHumanPlayer:     //Default human player can be human, obviously
                         fHandPreview[P[0]].CanHuman := True;
 
-    ct_UserPlayer:      if P[0] = -1 then
+    ctUserPlayer:      if P[0] = -1 then
                           fHandPreview[fLastHand].CanHuman := True
                         else
                           fHandPreview[P[0]].CanHuman := True;
 
-    ct_AIPlayer,
-    ct_AdvancedAIPlayer:if P[0] = -1 then
+    ctAIPlayer,
+    ctAdvancedAIPlayer:if P[0] = -1 then
                           fHandPreview[fLastHand].CanAI := True
                         else
                           fHandPreview[P[0]].CanAI := True;
-    ct_SetRoad,
-    ct_SetField,
-    ct_SetWinefield,
-    ct_SetFieldStaged,
-    ct_SetWinefieldStaged:
+    ctSetRoad,
+    ctSetField,
+    ctSetWinefield,
+    ctSetFieldStaged,
+    ctSetWinefieldStaged:
                         if PointInMap(P[0]+1, P[1]+1) then
                           SetOwner(P[0]+1, P[1]+1);
 
-    ct_SetUnit:         if PointInMap(P[1]+1, P[2]+1) and
+    ctSetUnit:         if PointInMap(P[1]+1, P[2]+1) and
                           not (UnitOldIndexToType[P[0]] in [ANIMAL_MIN..ANIMAL_MAX]) then //Skip animals
                         begin
                           SetOwner(P[1]+1, P[2]+1);
                           RevealCircle(P[1]+1, P[2]+1, gRes.Units[UnitOldIndexToType[P[0]]].Sight);
                         end;
 
-    ct_SetStock:        if PointInMap(P[1]+1, P[2]+1) then
+    ctSetStock:        if PointInMap(P[1]+1, P[2]+1) then
                         begin
                           //Set Store and roads below
-                          ProcessCommand(ct_SetHouse,[11,P[0]+1,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]-2,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]-1,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]  ,P[1]+1]);
+                          ProcessCommand(ctSetHouse,[11,P[0]+1,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]-2,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]-1,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]  ,P[1]+1]);
                         end;
 
-    ct_SetGroup:        if InRange(P[0], Low(UnitIndexToType), High(UnitIndexToType)) and (UnitIndexToType[P[0]] <> ut_None)
+    ctSetGroup:        if InRange(P[0], Low(UnitIndexToType), High(UnitIndexToType)) and (UnitIndexToType[P[0]] <> utNone)
                           and PointInMap(P[1]+1, P[2]+1) then
                           for I := 0 to P[5] - 1 do
                           begin
@@ -221,7 +221,7 @@ begin
                             end;
                           end;
 
-    ct_ClearUp:         begin
+    ctClearUp:         begin
                           if (P[0] = 255) then
                           begin
                             if RevealForPlayer(fLastHand) then

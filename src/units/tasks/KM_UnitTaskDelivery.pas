@@ -8,7 +8,7 @@ uses
 
 
 type
-  TKMDeliverKind = (dk_ToHouse, dk_ToConstruction, dk_ToUnit);
+  TKMDeliverKind = (dkToHouse, dkToConstruction, dkToUnit);
   TKMDeliverStage = (dsUnknown,
                      dsToFromHouse,     //Serf is walking to the offer house
                      dsAtFromHouse,     //Serf is getting in / out from offer house
@@ -65,7 +65,7 @@ begin
   inherited Create(aSerf);
   fType := uttDeliver;
 
-  Assert((aFrom <> nil) and (aToHouse <> nil) and (Res <> wt_None), 'Serf ' + IntToStr(fUnit.UID) + ': invalid delivery task');
+  Assert((aFrom <> nil) and (aToHouse <> nil) and (Res <> wtNone), 'Serf ' + IntToStr(fUnit.UID) + ': invalid delivery task');
 
   gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
@@ -74,9 +74,9 @@ begin
   //Check it once to begin with as the house could become complete before the task exits (in rare circumstances when the task
   // does not exit until long after the ware has been delivered due to walk interactions)
   if aToHouse.IsComplete then
-    fDeliverKind := dk_ToHouse
+    fDeliverKind := dkToHouse
   else
-    fDeliverKind := dk_ToConstruction;
+    fDeliverKind := dkToConstruction;
 
   fWareType   := Res;
   fDeliverID  := aID;
@@ -88,12 +88,12 @@ begin
   inherited Create(aSerf);
   fType := uttDeliver;
 
-  Assert((aFrom <> nil) and (aToUnit <> nil) and ((aToUnit is TKMUnitWarrior) or (aToUnit is TKMUnitWorker)) and (Res <> wt_None), 'Serf '+inttostr(fUnit.UID)+': invalid delivery task');
+  Assert((aFrom <> nil) and (aToUnit <> nil) and ((aToUnit is TKMUnitWarrior) or (aToUnit is TKMUnitWorker)) and (Res <> wtNone), 'Serf '+inttostr(fUnit.UID)+': invalid delivery task');
   gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
   fFrom    := aFrom.GetHousePointer;
   fToUnit  := aToUnit.GetUnitPointer;
-  fDeliverKind := dk_ToUnit;
+  fDeliverKind := dkToUnit;
   fWareType := Res;
   fDeliverID := aID;
   fPointBelowToHouse := KMPOINT_INVALID_TILE;
@@ -157,7 +157,7 @@ begin
   if fDeliverID <> 0 then
     gHands[fUnit.Owner].Deliveries.Queue.AbandonDelivery(fDeliverID);
 
-  if TKMUnitSerf(fUnit).Carry <> wt_None then
+  if TKMUnitSerf(fUnit).Carry <> wtNone then
   begin
     gHands[fUnit.Owner].Stats.WareConsumed(TKMUnitSerf(fUnit).Carry);
     TKMUnitSerf(fUnit).CarryTake; //empty hands
@@ -184,14 +184,14 @@ begin
 
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
-    dk_ToHouse:         if fPhase <= 8 then
+    dkToHouse:         if fPhase <= 8 then
                         begin
                           Result := Result or fToHouse.IsDestroyed
                                    or (not fForceDelivery and fToHouse.ShouldAbandonDelivery(fWareType));
                         end;
-    dk_ToConstruction:  if fPhase <= 7 then
+    dkToConstruction:  if fPhase <= 7 then
                           Result := Result or fToHouse.IsDestroyed;
-    dk_ToUnit:          if fPhase <= 6 then
+    dkToUnit:          if fPhase <= 6 then
                           Result := Result or (fToUnit = nil) or fToUnit.IsDeadOrDying;
   end;
 end;
@@ -210,14 +210,14 @@ begin
   begin
     fToHouse := NewToHouse.GetHousePointer;
     if fToHouse.IsComplete then
-      fDeliverKind := dk_ToHouse
+      fDeliverKind := dkToHouse
     else
-      fDeliverKind := dk_ToConstruction;
+      fDeliverKind := dkToConstruction;
   end
   else
   begin
     fToUnit := NewToUnit.GetUnitPointer;
-    fDeliverKind := dk_ToUnit;
+    fDeliverKind := dkToUnit;
   end;
 end;
 
@@ -250,9 +250,9 @@ begin
   begin
     fToHouse := NewToHouse.GetHousePointer;
     if fToHouse.IsComplete then
-      fDeliverKind := dk_ToHouse
+      fDeliverKind := dkToHouse
     else
-      fDeliverKind := dk_ToConstruction;
+      fDeliverKind := dkToConstruction;
     Result := True;
     if fPhase > 4 then
       fPhase := 4;
@@ -262,7 +262,7 @@ begin
   if (NewToHouse = nil) and (NewToUnit <> nil) then
   begin
     fToUnit := NewToUnit.GetUnitPointer;
-    fDeliverKind := dk_ToUnit;
+    fDeliverKind := dkToUnit;
     Result := True;
     if fPhase > 4 then
       fPhase := 4;
@@ -312,14 +312,14 @@ begin
     1..3:     Result := dsAtFromHouse;
     else
       case fDeliverKind of
-        dk_ToHouse:         begin
+        dkToHouse:         begin
                               case Phase of
                                 5:    Result := dsToDestination;
                                 else  Result := dsAtDestination;
                               end;
                             end;
-        dk_ToConstruction,
-        dk_ToUnit:          begin
+        dkToConstruction,
+        dkToUnit:          begin
                               case Phase of
                                 5,6:  Result := dsToDestination;
                                 else  Result := dsAtDestination;
@@ -350,8 +350,8 @@ function TKMTaskDeliver.Execute: TKMTaskResult;
     RoadConnectId: Byte;
   begin
     RoadConnectId := gTerrain.GetRoadConnectID(fUnit.CurrPosition);
-    Result := ((((fPhase - 1) = 5) and (fDeliverKind = dk_ToHouse))
-                or (((fPhase - 1) in [5,6]) and (fDeliverKind = dk_ToConstruction)))
+    Result := ((((fPhase - 1) = 5) and (fDeliverKind = dkToHouse))
+                or (((fPhase - 1) in [5,6]) and (fDeliverKind = dkToConstruction)))
               and ((RoadConnectId = 0)
                 or ((RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowToHouse))
                   and (RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowFromHouse))));
@@ -379,12 +379,12 @@ begin
     case fPhase2 of
       0:  begin
             fUnit.SetActionStay(4, uaWalk);
-            fUnit.Thought := th_Quest;
+            fUnit.Thought := thQuest;
           end;
       1:  begin
             fUnit.SetActionWalkToRoad(uaWalk, 0, tpWalkRoad,
                               [gTerrain.GetRoadConnectID(fPointBelowToHouse), gTerrain.GetRoadConnectID(fPointBelowFromHouse)]);
-            fUnit.Thought := th_None;
+            fUnit.Thought := thNone;
             fPhase := 5;
           end;
     end;
@@ -398,14 +398,14 @@ begin
           SetActionWalkToSpot(fFrom.PointBelowEntrance);
         end;
     1:  begin
-          SetActionGoIn(uaWalk, gd_GoInside, fFrom);
+          SetActionGoIn(uaWalk, gdGoInside, fFrom);
         end;
     2:  begin
           //Barracks can consume the resource (by equipping) before we arrive
           //All houses can have resources taken away by script at any moment
           if not fFrom.ResOutputAvailable(fWareType, 1) then
           begin
-            SetActionGoIn(uaWalk, gd_GoOutside, fFrom); //Step back out
+            SetActionGoIn(uaWalk, gdGoOutside, fFrom); //Step back out
             fPhase := 99; //Exit next run
             Exit;
           end;
@@ -419,25 +419,25 @@ begin
           if fFrom.IsDestroyed then //We have the resource, so we don't care if house is destroyed
             SetActionLockedStay(0, uaWalk)
           else
-            SetActionGoIn(uaWalk, gd_GoOutside, fFrom);
+            SetActionGoIn(uaWalk, gdGoOutside, fFrom);
           Inc(fPhase); // jump to phase 5 immidiately
         end;
     4:  begin
           SetActionStay(5, uaWalk); //used only from FindBestDestination
-          Thought := th_Quest;
+          Thought := thQuest;
         end;
   end;
 
   if fPhase = 5 then
-    TKMUnitSerf(fUnit).Thought := th_None; // Clear possible '?' thought after 4th phase
+    TKMUnitSerf(fUnit).Thought := thNone; // Clear possible '?' thought after 4th phase
 
   //Deliver into complete house
-  if (fDeliverKind = dk_ToHouse) then
+  if (fDeliverKind = dkToHouse) then
   with TKMUnitSerf(fUnit) do
   case fPhase of
     0..4:;
     5:  SetActionWalkToSpot(fToHouse.PointBelowEntrance);
-    6:  SetActionGoIn(uaWalk, gd_GoInside, fToHouse);
+    6:  SetActionGoIn(uaWalk, gdGoInside, fToHouse);
     7:  SetActionLockedStay(5, uaWalk); //wait a bit inside
     8:  begin
           fToHouse.ResAddToIn(Carry);
@@ -466,18 +466,18 @@ begin
           if not fUnit.IsHungry and TKMUnitSerf(fUnit).TryDeliverFrom(fToHouse) then
           begin
             //After setting new unit task we should free self.
-            //Note do not set tr_TaskDone := true as this will affect the new task
+            //Note do not set trTaskDone := true as this will affect the new task
             FreeAndNil(Self);
             Exit;
           end else
             //No delivery found then just step outside
-            SetActionGoIn(uaWalk, gd_GoOutside, fToHouse);
+            SetActionGoIn(uaWalk, gdGoOutside, fToHouse);
         end;
     else Result := trTaskDone;
   end;
 
   //Deliver into wip house
-  if (fDeliverKind = dk_ToConstruction) then
+  if (fDeliverKind = dkToConstruction) then
   with TKMUnitSerf(fUnit) do
   case fPhase of
     0..4:;
@@ -485,7 +485,7 @@ begin
     5:  SetActionWalkToSpot(fToHouse.PointBelowEntrance, uaWalk, 1.42);
     6:  begin
           // Then check if there is a worker hitting house just from the entrance
-          Worker := gHands[fUnit.Owner].UnitsHitTest(fToHouse.PointBelowEntrance, ut_Worker);
+          Worker := gHands[fUnit.Owner].UnitsHitTest(fToHouse.PointBelowEntrance, utWorker);
           if (Worker <> nil) and (Worker.Task <> nil)
             and (Worker.Task is TKMTaskBuildHouse)
             and (Worker.Task.Phase >= 1) then
@@ -509,7 +509,7 @@ begin
   end;
 
   //Deliver to builder or soldier
-  if fDeliverKind = dk_ToUnit then
+  if fDeliverKind = dkToUnit then
   with TKMUnitSerf(fUnit) do
   case fPhase of
     0..4:;
@@ -523,7 +523,7 @@ begin
             Exit;
           end;
           //Worker
-          if (fToUnit.UnitType = ut_Worker) and (fToUnit.Task <> nil) then
+          if (fToUnit.UnitType = utWorker) and (fToUnit.Task <> nil) then
           begin
             //ToDo: Replace phase numbers with enums to avoid hardcoded magic numbers
             // Check if worker is still digging
@@ -557,7 +557,7 @@ begin
             if TKMUnitSerf(fUnit).TryDeliverFrom(nil) then
             begin
               //After setting new unit task we should free self.
-              //Note do not set tr_TaskDone := true as this will affect the new task
+              //Note do not set trTaskDone := true as this will affect the new task
               FreeAndNil(Self);
               Exit;
             end else

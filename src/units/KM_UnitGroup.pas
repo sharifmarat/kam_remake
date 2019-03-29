@@ -176,7 +176,7 @@ type
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
-    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dirNA);
 
     procedure OrderRepeat;
     procedure CopyOrderFrom(aGroup: TKMUnitGroup);
@@ -689,7 +689,7 @@ end;
 
 function TKMUnitGroup.IsRanged: Boolean;
 begin
-  Result := (fGroupType = gt_Ranged);
+  Result := (fGroupType = gtRanged);
 end;
 
 
@@ -844,7 +844,7 @@ begin
                         begin
                           //If the unit is idle make them face the right direction
                           if Members[I].IsIdle
-                          and (fOrderLoc.Dir <> dir_NA) and (Members[I].Direction <> fOrderLoc.Dir) then
+                          and (fOrderLoc.Dir <> dirNA) and (Members[I].Direction <> fOrderLoc.Dir) then
                           begin
                             Members[I].Direction := fOrderLoc.Dir;
                             Members[I].SetActionStay(50, uaWalk); //Make sure the animation still frame is updated
@@ -943,7 +943,7 @@ begin
   if OrderExecuted then
   begin
     for I := 0 to Count - 1 do
-    if (fOrderLoc.Dir <> dir_NA) and Members[I].IsIdle then //Don't change direction whilst f.e. walking
+    if (fOrderLoc.Dir <> dirNA) and Members[I].IsIdle then //Don't change direction whilst f.e. walking
       Members[I].Direction := fOrderLoc.Dir;
     OrderNone;
   end;
@@ -1124,12 +1124,12 @@ begin
   Assert(aHouse <> nil);
 
   //Can attack only enemy houses
-  if gHands[Owner].Alliances[aHouse.Owner] <> at_Enemy then Exit;
+  if gHands[Owner].Alliances[aHouse.Owner] <> atEnemy then Exit;
 
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   fOrder := goAttackHouse;
-  fOrderLoc := KMPointDir(0, 0, dir_NA);
+  fOrderLoc := KMPointDir(0, 0, dirNA);
   OrderTargetHouse := aHouse;
 
   for I := 0 to Count - 1 do
@@ -1152,7 +1152,7 @@ begin
   if aUnit.IsDeadOrDying then Exit;
 
   //Can attack only enemy units
-  if gHands[Owner].Alliances[aUnit.Owner] <> at_Enemy then Exit;
+  if gHands[Owner].Alliances[aUnit.Owner] <> atEnemy then Exit;
 
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;
@@ -1227,7 +1227,7 @@ begin
 
     //Revert Order to proper one (we disguise Walk)
     fOrder := goAttackUnit;
-    fOrderLoc := KMPointDir(aUnit.NextPosition, dir_NA); //Remember where unit stand
+    fOrderLoc := KMPointDir(aUnit.NextPosition, dirNA); //Remember where unit stand
     OrderTargetUnit := aUnit;
   end;
 
@@ -1254,7 +1254,7 @@ begin
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If it is yet unset - use first members direction
-  if fOrderLoc.Dir = dir_NA then
+  if fOrderLoc.Dir = dirNA then
     fOrderLoc.Dir := Members[0].Direction;
 
   case aTurnAmount of
@@ -1559,7 +1559,7 @@ begin
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   fOrder := goStorm;
-  fOrderLoc := KMPointDir(0, 0, dir_NA);
+  fOrderLoc := KMPointDir(0, 0, dirNA);
   ClearOrderTarget;
 
   //Each next row delayed by few ticks to avoid crowding
@@ -1568,7 +1568,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dirNA);
 var
   I: Integer;
   NewDir: TKMDirection;
@@ -1581,8 +1581,8 @@ begin
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;
 
-  if aDir = dir_NA then
-    if fOrderLoc.Dir = dir_NA then
+  if aDir = dirNA then
+    if fOrderLoc.Dir = dirNA then
       NewDir := Members[0].Direction
     else
       NewDir := fOrderLoc.Dir
@@ -1684,14 +1684,14 @@ end;
 
 function TKMUnitGroup.IsFlagRenderBeforeUnit: Boolean;
 begin
-  Result := FlagBearer.Direction in [dir_SE, dir_S, dir_SW, dir_W];
+  Result := FlagBearer.Direction in [dirSE, dirS, dirSW, dirW];
 end;
 
 
 function TKMUnitGroup.GetFlagPositionF: TKMPointF;
 begin
-  Result.X := FlagBearer.PositionF.X + UNIT_OFF_X + FlagBearer.GetSlide(ax_X);
-  Result.Y := FlagBearer.PositionF.Y + UNIT_OFF_Y + FlagBearer.GetSlide(ax_Y);
+  Result.X := FlagBearer.PositionF.X + UNIT_OFF_X + FlagBearer.GetSlide(axX);
+  Result.Y := FlagBearer.PositionF.Y + UNIT_OFF_Y + FlagBearer.GetSlide(axY);
   //Flag needs to be rendered above or below unit depending on direction (see AddUnitFlag)
   if IsFlagRenderBeforeUnit then
     Result.Y := Result.Y - FLAG_X_OFFSET
@@ -1736,8 +1736,8 @@ begin
     Tasks.Add(GetMemberLoc(I).Loc);
   end;
 
-  //hu_Individual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
-  NewOrder := HungarianMatchPoints(Tasks, Agents, hu_Individual);
+  //huIndividual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
+  NewOrder := HungarianMatchPoints(Tasks, Agents, huIndividual);
   NewMembers := TList.Create;
   NewMembers.Add(Members[0]);
 

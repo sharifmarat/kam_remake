@@ -252,7 +252,7 @@ begin
                 end;
                 //Smooth all death animations for all units
                 for UT := HUMANS_MIN to HUMANS_MAX do
-                  for Dir := dir_N to dir_NW do
+                  for Dir := dirN to dirNW do
                     for Step := 1 to 30 do
                     begin
                       SpriteID := gRes.Units[UT].UnitAnim[uaDie,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
@@ -744,9 +744,9 @@ begin
   if fRXData.Count = 0 then Exit;
 
   if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) then
-    TexType := tf_RGBA8
+    TexType := tfRGBA8
   else
-    TexType := tf_RGB5A1;
+    TexType := tfRGB5A1;
 
   MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount, aFillGFXData, aOnStopExecution);
 
@@ -965,7 +965,7 @@ begin
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
   if StopExec then Exit;
   SetLength(gGFXPrepData[saMask], Length(SpriteInfo));
-  PrepareAtlases(SpriteInfo, saMask, tf_Alpha8);
+  PrepareAtlases(SpriteInfo, saMask, tfAlpha8);
 end;
 
 
@@ -1119,7 +1119,7 @@ begin
         //for all Mask Types
         for MT := Low(TKMTileMaskType) to High(TKMTileMaskType) do
         begin
-          if MT = mt_None then Continue;
+          if MT = mtNone then Continue;
 
           // for all Mask subtypes
           for MST := Low(TKMTileMaskSubType) to High(TKMTileMaskSubType) do //Mask subtypes (actual masks for layers)

@@ -257,7 +257,7 @@ begin
 
   fAdvanceFrame := False;
   fUIDTracker   := 0;
-  GameResult   := gr_Cancel;
+  GameResult   := grCancel;
   DoGameHold    := False;
   SkipReplayEndCheck := False;
   fWaitingForNetwork := False;
@@ -357,7 +357,7 @@ begin
   if DO_PERF_LOGGING then FreeAndNil(fPerfLog);
 
   //When leaving the game we should always reset the cursor in case the user had beacon or linking selected
-  gRes.Cursors.Cursor := kmc_Default;
+  gRes.Cursors.Cursor := kmcDefault;
 
   FreeAndNil(gMySpectator);
 
@@ -380,7 +380,7 @@ procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: 
                             aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 const
   GAME_PARSE: array [TKMGameMode] of TKMMissionParsingMode = (
-    mpm_Single, mpm_Single, mpm_Multi, mpm_Multi, mpm_Editor, mpm_Single, mpm_Single);
+    mpmSingle, mpmSingle, mpmMulti, mpmMulti, mpmEditor, mpmSingle, mpmSingle);
 var
   I: Integer;
   ParseMode: TKMMissionParsingMode;
@@ -653,7 +653,7 @@ begin
       end;
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
-      if fNetworking.SelectGameKind = ngk_Save then
+      if fNetworking.SelectGameKind = ngkSave then
         TKMGameInputProcess_Multi(GameInputProcess).PlayerTypeChange(HIndex, gHands[HIndex].HandType);
 
       //Set owners name so we can write it into savegame/replay
@@ -662,7 +662,7 @@ begin
 
   //Setup alliances
   //We mirror Lobby team setup on to alliances. Savegame and coop has the setup already
-  if (fNetworking.SelectGameKind = ngk_Map) and not fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
+  if (fNetworking.SelectGameKind = ngkMap) and not fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
     UpdateMultiplayerTeams;
 
   FreeAndNil(gMySpectator); //May have been created earlier
@@ -678,11 +678,11 @@ begin
 
   //FOW should never be synced for saves, it should be left like it was when the save was
   //created otherwise it can cause issues in special maps using PlayerShareFog
-  if fNetworking.SelectGameKind <> ngk_Save then
+  if fNetworking.SelectGameKind <> ngkSave then
     gHands.SyncFogOfWar; //Syncs fog of war revelation between players AFTER alliances
 
   //Multiplayer missions don't have goals yet, so add the defaults (except for special/coop missions)
-  if (fNetworking.SelectGameKind = ngk_Map)
+  if (fNetworking.SelectGameKind = ngkMap)
   and not fNetworking.MapInfo.TxtInfo.IsSpecial and not fNetworking.MapInfo.TxtInfo.IsCoop then
     gHands.AddDefaultGoalsToAll(fMissionMode);
 
@@ -699,7 +699,7 @@ begin
   fNetworking.OnReassignedJoiner := nil; //So it is no longer assigned to a lobby event
   fNetworking.GameCreated;
 
-  if fNetworking.Connected and (fNetworking.NetGameState = lgs_Loading) then
+  if fNetworking.Connected and (fNetworking.NetGameState = lgsLoading) then
     WaitingPlayersDisplay(True); //Waiting for players
 end;
 
@@ -723,9 +723,9 @@ begin
           if (I = K)
           or ((fNetworking.NetPlayers[I].Team <> 0)
           and (fNetworking.NetPlayers[I].Team = fNetworking.NetPlayers[K].Team)) then
-            PlayerI.Alliances[PlayerK] := at_Ally
+            PlayerI.Alliances[PlayerK] := atAlly
           else
-            PlayerI.Alliances[PlayerK] := at_Enemy;
+            PlayerI.Alliances[PlayerK] := atEnemy;
         end;
     end;
 end;
@@ -750,13 +750,13 @@ end;
 
 procedure TKMGame.OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
 begin
-  gGame.GameInputProcess.CmdGame(gic_GamePlayerDefeat, aDefeatedPlayerHandId);
+  gGame.GameInputProcess.CmdGame(gicGamePlayerDefeat, aDefeatedPlayerHandId);
 end;
 
 
 procedure TKMGame.GameMPDisconnect(const aData: UnicodeString);
 begin
-  if fNetworking.NetGameState in [lgs_Game, lgs_Reconnecting] then
+  if fNetworking.NetGameState in [lgsGame, lgsReconnecting] then
   begin
     gLog.LogNetConnection('GameMPDisconnect: ' + aData);
     fNetworking.OnJoinFail := GameMPDisconnect; //If the connection fails (e.g. timeout) then try again
@@ -767,7 +767,7 @@ begin
   else
   begin
     fNetworking.Disconnect;
-    gGameApp.StopGame(gr_Disconnect, gResTexts[TX_GAME_ERROR_NETWORK] + ' ' + aData)
+    gGameApp.StopGame(grDisconnect, gResTexts[TX_GAME_ERROR_NETWORK] + ' ' + aData)
   end;
 end;
 
@@ -884,7 +884,7 @@ begin
                     fIgnoreConsistencyCheckErrors := True;  // Ignore these errors in future while watching this replay
                     fIsPaused := False;
                   end
-      else        gGameApp.StopGame(gr_Error);
+      else        gGameApp.StopGame(grError);
     end;
   end;
 end;
@@ -895,7 +895,7 @@ procedure TKMGame.GameHold(DoHold: Boolean; Msg: TKMGameResultMsg);
 begin
   DoGameHold := false;
   fGamePlayInterface.ReleaseDirectionSelector; //In case of victory/defeat while moving troops
-  gRes.Cursors.Cursor := kmc_Default;
+  gRes.Cursors.Cursor := kmcDefault;
 
   fGamePlayInterface.Viewport.ReleaseScrollKeys;
   GameResult := Msg;
@@ -932,18 +932,18 @@ begin
     Exit;
 
   if aPlayerIndex = gMySpectator.HandID then
-    gSoundPlayer.Play(sfxn_Victory, 1, True); //Fade music
+    gSoundPlayer.Play(sfxnVictory, 1, True); //Fade music
 
   if fGameMode = gmMulti then
   begin
     if aPlayerIndex = gMySpectator.HandID then
     begin
-      GameResult := gr_Win;
-      fGamePlayInterface.ShowMPPlayMore(gr_Win);
+      GameResult := grWin;
+      fGamePlayInterface.ShowMPPlayMore(grWin);
     end;
   end
   else
-    RequestGameHold(gr_Win);
+    RequestGameHold(grWin);
 end;
 
 
@@ -966,8 +966,8 @@ begin
     gmSingle, gmCampaign:
               if aPlayerIndex = gMySpectator.HandID then
               begin
-                gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
-                RequestGameHold(gr_Defeat);
+                gSoundPlayer.Play(sfxnDefeat, 1, True); //Fade music
+                RequestGameHold(grDefeat);
               end;
     gmMulti:  begin
                 if aShowDefeatMessage then
@@ -976,9 +976,9 @@ begin
 
                 if aPlayerIndex = gMySpectator.HandID then
                 begin
-                  gSoundPlayer.Play(sfxn_Defeat, 1, True); //Fade music
-                  GameResult := gr_Defeat;
-                  fGamePlayInterface.ShowMPPlayMore(gr_Defeat);
+                  gSoundPlayer.Play(sfxnDefeat, 1, True); //Fade music
+                  GameResult := grDefeat;
+                  fGamePlayInterface.ShowMPPlayMore(grDefeat);
                 end;
 
                 if Assigned(fNetworking.OnPlayersSetup) then
@@ -1005,10 +1005,10 @@ var
   ErrorMsg: UnicodeString;
 begin
   case fNetworking.NetGameState of
-    lgs_Game, lgs_Reconnecting:
+    lgsGame, lgsReconnecting:
         //GIP is waiting for next tick
         Result := TKMGameInputProcess_Multi(fGameInputProcess).GetWaitingPlayers(fGameTickCount + 1);
-    lgs_Loading:
+    lgsLoading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
     else  begin
@@ -1127,7 +1127,7 @@ begin
   fMapTxtInfo.SaveTXTInfo(ChangeFileExt(aPathName, '.txt'));
   gTerrain.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
   fMapEditor.TerrainPainter.SaveToFile(ChangeFileExt(aPathName, '.map'), aInsetRect);
-  fMissionParser := TKMMissionParserStandard.Create(mpm_Editor);
+  fMissionParser := TKMMissionParserStandard.Create(mpmEditor);
   fMissionParser.SaveDATFile(ChangeFileExt(aPathName, '.dat'), aInsetRect.Left, aInsetRect.Top);
   FreeAndNil(fMissionParser);
 
@@ -1198,8 +1198,8 @@ function TKMGame.GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMA
 var Ext: UnicodeString;
 begin
   case aAudioFormat of
-    af_Wav: Ext := WAV_FILE_EXT;
-    af_Ogg: Ext := OGG_FILE_EXT;
+    afWav: Ext := WAV_FILE_EXT;
+    afOgg: Ext := OGG_FILE_EXT;
   end;
   Result := ChangeFileExt(GetMissionFile, '.' + UnicodeString(aSound) + Ext)
 end;
@@ -1287,7 +1287,7 @@ begin
 
   //Don't play sound in replays or spectator
   if (aHandIndex = gMySpectator.HandID) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
-    gSoundPlayer.Play(sfx_MessageNotice, 2);
+    gSoundPlayer.Play(sfxMessageNotice, 2);
 end;
 
 
@@ -1351,7 +1351,7 @@ begin
   PeaceTicksRemaining := Max(0, Int64((fGameOptions.Peacetime * 600)) - fGameTickCount);
   if (PeaceTicksRemaining = 1) and (fGameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) then
   begin
-    gSoundPlayer.Play(sfxn_Peacetime, 1, True); //Fades music
+    gSoundPlayer.Play(sfxnPeacetime, 1, True); //Fades music
     if fGameMode in [gmMulti, gmMultiSpectate] then
     begin
       SetGameSpeed(fGameOptions.SpeedAfterPT, False);
@@ -1924,9 +1924,9 @@ begin
     Exit; //Do not do autosave too often, because it can produce IO errors. Can happen on very fast speedups
 
   if aAfterPT then
-    GICType := gic_GameAutoSaveAfterPT
+    GICType := gicGameAutoSaveAfterPT
   else
-    GICType := gic_GameAutoSave;
+    GICType := gicGameAutoSave;
 
   if IsMultiplayer then
   begin
@@ -2011,7 +2011,7 @@ begin
     try
       case fGameMode of
         gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
-                      if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgs_Loading) then
+                      if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgsLoading) then
                       begin
                         if fGameInputProcess.CommandsConfirmed(fGameTickCount+1) then
                         begin
@@ -2028,8 +2028,8 @@ begin
 
                           //Tell the master server about our game on the specific tick (host only)
                           if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
-                            and (((fMissionMode = mm_Normal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
-                            or ((fMissionMode = mm_Tactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
+                            and (((fMissionMode = mmNormal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
+                            or ((fMissionMode = mmTactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
                             fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                           fScripting.UpdateState;
@@ -2051,11 +2051,11 @@ begin
 
                           //In aggressive mode store a command every tick so we can find exactly when a replay mismatch occurs
                           if AGGRESSIVE_REPLAYS then
-                            fGameInputProcess.CmdTemp(gic_TempDoNothing);
+                            fGameInputProcess.CmdTemp(gicTempDoNothing);
 
                           // Update our ware distributions from settings at the start of the game
                           if (fGameTickCount = 1) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
-                            fGameInputProcess.CmdWareDistribution(gic_WareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
+                            fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
 
 
                           if (fGameTickCount mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
@@ -2093,7 +2093,7 @@ begin
                         fGameInputProcess.ReplayTimer(fGameTickCount);
                         if gGame = nil then Exit; //Quit if the game was stopped by a replay mismatch
                         if not SkipReplayEndCheck and fGameInputProcess.ReplayEnded then
-                          RequestGameHold(gr_ReplayEnd);
+                          RequestGameHold(grReplayEnd);
 
                         if fAdvanceFrame then
                         begin

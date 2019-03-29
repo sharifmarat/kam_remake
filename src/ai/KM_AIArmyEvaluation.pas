@@ -92,7 +92,7 @@ begin
     AttackHorse :=        US.AttackHorse;
     Defence :=            US.Defence;
     DefenceProjectiles := US.GetDefenceVsProjectiles(False);
-    if aConsiderHitChance AND (UnitGroups[aUT] = gt_Ranged) then
+    if aConsiderHitChance AND (UnitGroups[aUT] = gtRanged) then
       Attack := Attack * HIT_CHANCE_MODIFIER;
   end;
 end;
@@ -162,8 +162,8 @@ var
   AllyEval, EnemyEval: TKMArmyEval;
   AllyArmy, EnemyArmy: TKMGroupStrengthArray;
 begin
-  AllyEval := GetAllianceStrength(aPlayer, at_Ally);
-  EnemyEval := GetAllianceStrength(aOponent, at_Ally);
+  AllyEval := GetAllianceStrength(aPlayer, atAlly);
+  EnemyEval := GetAllianceStrength(aOponent, atAlly);
   AllyArmy := CalculateStrength(AllyEval);
   EnemyArmy := CalculateStrength(EnemyEval);
   Sum := 0;
@@ -222,7 +222,7 @@ begin
     end;
   end;
   if aConsiderHitChance then
-    with fEvals[aPlayer].Groups[gt_Ranged] do
+    with fEvals[aPlayer].Groups[gtRanged] do
       Attack := Attack * HIT_CHANCE_MODIFIER;
 end;
 

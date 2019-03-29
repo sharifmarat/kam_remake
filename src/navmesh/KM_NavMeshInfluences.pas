@@ -122,7 +122,7 @@ begin
   SetLength(fEnemies, gHands.Count - 1);
   Cnt := 0;
   for PL := 0 to gHands.Count - 1 do
-    if gHands[PL].Enabled AND (gHands[aOwner].Alliances[PL] = at_Enemy) then
+    if gHands[PL].Enabled AND (gHands[aOwner].Alliances[PL] = atEnemy) then
     begin
       fEnemies[Cnt] := PL;
       Cnt := Cnt + 1;

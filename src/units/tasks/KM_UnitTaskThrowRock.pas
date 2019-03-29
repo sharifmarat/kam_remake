@@ -38,8 +38,8 @@ end;
 
 destructor TKMTaskThrowRock.Destroy;
 begin
-  if not fUnit.Home.IsDestroyed and (fUnit.Home.GetState = hst_Work) then
-    fUnit.Home.SetState(hst_Idle); //Make sure we don't abandon and leave our tower with "working" animations
+  if not fUnit.Home.IsDestroyed and (fUnit.Home.GetState = hstWork) then
+    fUnit.Home.SetState(hstIdle); //Make sure we don't abandon and leave our tower with "working" animations
   gHands.CleanUpUnitPointer(fTarget);
   inherited;
 end;
@@ -74,20 +74,20 @@ begin
   with fUnit do
   case fPhase of
     0:  begin
-          Home.SetState(hst_Work); //Set house to Work state
-          Home.CurrentAction.SubActionWork(ha_Work2); //show Recruits back
+          Home.SetState(hstWork); //Set house to Work state
+          Home.CurrentAction.SubActionWork(haWork2); //show Recruits back
           SetActionStay(2, uaWalk); //pretend to be taking the stone
         end;
     1:  begin
-          Home.ResTakeFromIn(wt_Stone, 1);
-          gHands[Owner].Stats.WareConsumed(wt_Stone);
-          fFlightTime := gProjectiles.AimTarget(PositionF, fTarget, pt_TowerRock, fUnit, RANGE_WATCHTOWER_MAX, RANGE_WATCHTOWER_MIN);
+          Home.ResTakeFromIn(wtStone, 1);
+          gHands[Owner].Stats.WareConsumed(wtStone);
+          fFlightTime := gProjectiles.AimTarget(PositionF, fTarget, ptTowerRock, fUnit, RANGE_WATCHTOWER_MAX, RANGE_WATCHTOWER_MIN);
           gHands.CleanUpUnitPointer(fTarget); //We don't need it anymore
           SetActionLockedStay(1, uaWalk);
         end;
     2:  SetActionLockedStay(fFlightTime, uaWalk); //Pretend to look how it goes
     3:  begin
-          Home.SetState(hst_Idle);
+          Home.SetState(hstIdle);
           SetActionStay(20, uaWalk); //Idle before throwing another rock
         end;
     else Result := trTaskDone;

@@ -399,12 +399,12 @@ begin
   G.Stat := aStatus;
 
   case aType of
-    glt_Victory:  begin
+    gltVictory:  begin
                     SetLength(GoalsVictory[aPlayer], GoalsVictoryCount[aPlayer] + 1);
                     GoalsVictory[aPlayer, GoalsVictoryCount[aPlayer]] := G;
                     Inc(GoalsVictoryCount[aPlayer]);
                   end;
-    glt_Survive:  begin
+    gltSurvive:  begin
                     SetLength(GoalsSurvive[aPlayer], GoalsSurviveCount[aPlayer] + 1);
                     GoalsSurvive[aPlayer, GoalsSurviveCount[aPlayer]] := G;
                     Inc(GoalsSurviveCount[aPlayer]);
@@ -506,7 +506,7 @@ begin
     FreeAndNil(fMissionParser);
   end;
 
-  if MissionMode = mm_Tactic then
+  if MissionMode = mmTactic then
     fTxtInfo.BlockPeacetime := True;
 
   fTxtInfo.LoadTXTInfo(fPath + fFileName + '.txt');
@@ -518,7 +518,7 @@ end;
 procedure TKMapInfo.ResetInfo;
 var I, K: Integer;
 begin
-  MissionMode := mm_Normal;
+  MissionMode := mmNormal;
   DefaultHuman := 0;
   fTxtInfo.ResetInfo;
   for I:=0 to MAX_HANDS-1 do
@@ -533,9 +533,9 @@ begin
     SetLength(GoalsSurvive[I], 0);
     for K:=0 to MAX_HANDS-1 do
       if I = K then
-        Alliances[I,K] := at_Ally
+        Alliances[I,K] := atAlly
       else
-        Alliances[I,K] := at_Enemy;
+        Alliances[I,K] := atEnemy;
   end;
 end;
 
@@ -706,13 +706,13 @@ end;
 
 function TKMapInfo.IsNormalMission: Boolean;
 begin
-  Result := MissionMode = mm_Normal;
+  Result := MissionMode = mmNormal;
 end;
 
 
 function TKMapInfo.IsTacticMission: Boolean;
 begin
-  Result := MissionMode = mm_Tactic;
+  Result := MissionMode = mmTactic;
 end;
 
 

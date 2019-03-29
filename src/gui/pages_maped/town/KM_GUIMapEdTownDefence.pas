@@ -49,17 +49,17 @@ begin
   inherited Create;
 
   Panel_Defence := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_Defence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_DEFENSE], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_Defence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_DEFENSE], fntOutline, taCenter);
   Button_DefencePosAdd := TKMButtonFlat.Create(Panel_Defence, 0, 30, 33, 33, 338);
   Button_DefencePosAdd.OnClick := Town_DefenceAddClick;
   Button_DefencePosAdd.Hint := GetHintWHotKey(TX_MAPED_AI_DEFENSE_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
 
-  TKMLabel.Create(Panel_Defence, 0, 65, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_DEFENSE_OPTIONS], fnt_Outline, taCenter);
-  CheckBox_AutoDefence := TKMCheckBox.Create(Panel_Defence, 0, 90, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_DEFENSE_AUTO], fnt_Metal);
+  TKMLabel.Create(Panel_Defence, 0, 65, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_DEFENSE_OPTIONS], fntOutline, taCenter);
+  CheckBox_AutoDefence := TKMCheckBox.Create(Panel_Defence, 0, 90, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_DEFENSE_AUTO], fntMetal);
   CheckBox_AutoDefence.Hint := GetHintWHotKey(TX_MAPED_AI_DEFENSE_AUTO_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[1]);
   CheckBox_AutoDefence.OnClick := Town_DefenceChange;
 
-  CheckBox_DefendAllies := TKMCheckBox.Create(Panel_Defence, 0, 110, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_DEFEND_ALLIES], fnt_Metal);
+  CheckBox_DefendAllies := TKMCheckBox.Create(Panel_Defence, 0, 110, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_DEFEND_ALLIES], fntMetal);
   CheckBox_DefendAllies.Hint := GetHintWHotKey(TX_MAPED_AI_DEFEND_ALLIES_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[2]);
   CheckBox_DefendAllies.OnClick := Town_DefenceChange;
 
@@ -79,7 +79,7 @@ begin
   TrackBar_RecruitDelay.Step := 5;
   TrackBar_RecruitDelay.OnChange := Town_DefenceChange;
 
-  CheckBox_MaxSoldiers := TKMCheckBox.Create(Panel_Defence, 0, 274, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_MAX_SOLDIERS], fnt_Metal);
+  CheckBox_MaxSoldiers := TKMCheckBox.Create(Panel_Defence, 0, 274, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_MAX_SOLDIERS], fntMetal);
   CheckBox_MaxSoldiers.Hint := GetHintWHotKey(TX_MAPED_AI_MAX_SOLDIERS_ENABLE_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[3]);
   CheckBox_MaxSoldiers.OnClick := Town_DefenceChange;
 

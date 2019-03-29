@@ -80,30 +80,30 @@ const
   // Template for how resources are shown in Barracks
   BARRACKS_RES_COUNT = 11;
   BarracksResType: array [1..BARRACKS_RES_COUNT] of TKMWareType =
-    (wt_Shield, wt_MetalShield, wt_Armor, wt_MetalArmor, wt_Axe, wt_Sword,
-     wt_Pike, wt_Hallebard, wt_Bow, wt_Arbalet, wt_Horse);
+    (wtShield, wtMetalShield, wtArmor, wtMetalArmor, wtAxe, wtSword,
+     wtPike, wtHallebard, wtBow, wtArbalet, wtHorse);
 
   // Layout of resources in Store
   STORE_RES_COUNT = 28;
   StoreResType: array [1..STORE_RES_COUNT] of TKMWareType =
-    (wt_Trunk,    wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
-     wt_Coal,     wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
-     wt_Bread,    wt_Flour,   wt_Leather,     wt_Sausages,  wt_Pig,
-     wt_Skin,     wt_Shield,  wt_MetalShield, wt_Armor,     wt_MetalArmor,
-     wt_Axe,      wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
-     wt_Arbalet,  wt_Horse,   wt_Fish);
+    (wtTrunk,    wtStone,   wtWood,        wtIronOre,   wtGoldOre,
+     wtCoal,     wtSteel,   wtGold,        wtWine,      wtCorn,
+     wtBread,    wtFlour,   wtLeather,     wtSausages,  wtPig,
+     wtSkin,     wtShield,  wtMetalShield, wtArmor,     wtMetalArmor,
+     wtAxe,      wtSword,   wtPike,        wtHallebard, wtBow,
+     wtArbalet,  wtHorse,   wtFish);
 
   School_Order: array [0..13] of TKMUnitType = (
-    ut_Serf, ut_Worker, ut_StoneCutter, ut_Woodcutter, ut_Lamberjack,
-    ut_Fisher, ut_Farmer, ut_Baker, ut_AnimalBreeder, ut_Butcher,
-    ut_Miner, ut_Metallurgist, ut_Smith, ut_Recruit);
+    utSerf, utWorker, utStoneCutter, utWoodcutter, utLamberjack,
+    utFisher, utFarmer, utBaker, utAnimalBreeder, utButcher,
+    utMiner, utMetallurgist, utSmith, utRecruit);
 
   Barracks_Order: array [0..8] of TKMUnitType = (
-    ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
-    ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry);
+    utMilitia, utAxeFighter, utSwordsman, utBowman, utArbaletman,
+    utPikeman, utHallebardman, utHorseScout, utCavalry);
 
   TownHall_Order: array [0..5] of TKMUnitType = (
-    ut_Peasant, ut_Militia, ut_Slingshot, ut_Horseman, ut_Barbarian, ut_MetalBarbarian);
+    utPeasant, utMilitia, utSlingshot, utHorseman, utBarbarian, utMetalBarbarian);
 
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
@@ -111,25 +111,25 @@ const
     HouseType: array [0..3] of TKMHouseType;
     UnitType: array [0..1] of TKMUnitType;
   end = (
-    (HouseType: (htQuary, htNone, htNone, htNone);                      UnitType: (ut_StoneCutter, ut_None)),
-    (HouseType: (htWoodcutters, htNone, htNone, htNone);                UnitType: (ut_Woodcutter, ut_None)),
-    (HouseType: (htFisherHut, htNone, htNone, htNone);                  UnitType: (ut_Fisher, ut_None)),
-    (HouseType: (htFarm, htWineyard, htNone, htNone);                   UnitType: (ut_Farmer, ut_None)),
-    (HouseType: (htMill, htBakery, htNone, htNone);                     UnitType: (ut_Baker, ut_None)),
-    (HouseType: (htSwine, htStables, htNone, htNone);                   UnitType: (ut_AnimalBreeder, ut_None)),
-    (HouseType: (htButchers, htTannery, htNone, htNone);                UnitType: (ut_Butcher, ut_None)),
-    (HouseType: (htMetallurgists, htIronSmithy, htNone, htNone);        UnitType: (ut_Metallurgist, ut_None)),
-    (HouseType: (htArmorSmithy, htWeaponSmithy, htNone, htNone);        UnitType: (ut_Smith, ut_None)),
-    (HouseType: (htCoalMine, htIronMine, htGoldMine, htNone);           UnitType: (ut_Miner, ut_None)),
-    (HouseType: (htSawmill, htWeaponWorkshop, htArmorWorkshop, htNone); UnitType: (ut_Lamberjack, ut_None)),
-    (HouseType: (htBarracks, htTownHall, htWatchTower, htNone);         UnitType: (ut_Recruit, ut_None)),
-    (HouseType: (htStore, htSchool, htInn, htMarketplace);              UnitType: (ut_Serf, ut_Worker))
+    (HouseType: (htQuary, htNone, htNone, htNone);                      UnitType: (utStoneCutter, utNone)),
+    (HouseType: (htWoodcutters, htNone, htNone, htNone);                UnitType: (utWoodcutter, utNone)),
+    (HouseType: (htFisherHut, htNone, htNone, htNone);                  UnitType: (utFisher, utNone)),
+    (HouseType: (htFarm, htWineyard, htNone, htNone);                   UnitType: (utFarmer, utNone)),
+    (HouseType: (htMill, htBakery, htNone, htNone);                     UnitType: (utBaker, utNone)),
+    (HouseType: (htSwine, htStables, htNone, htNone);                   UnitType: (utAnimalBreeder, utNone)),
+    (HouseType: (htButchers, htTannery, htNone, htNone);                UnitType: (utButcher, utNone)),
+    (HouseType: (htMetallurgists, htIronSmithy, htNone, htNone);        UnitType: (utMetallurgist, utNone)),
+    (HouseType: (htArmorSmithy, htWeaponSmithy, htNone, htNone);        UnitType: (utSmith, utNone)),
+    (HouseType: (htCoalMine, htIronMine, htGoldMine, htNone);           UnitType: (utMiner, utNone)),
+    (HouseType: (htSawmill, htWeaponWorkshop, htArmorWorkshop, htNone); UnitType: (utLamberjack, utNone)),
+    (HouseType: (htBarracks, htTownHall, htWatchTower, htNone);         UnitType: (utRecruit, utNone)),
+    (HouseType: (htStore, htSchool, htInn, htMarketplace);              UnitType: (utSerf, utWorker))
     );
 
   MapEd_Order: array [0..13] of TKMUnitType = (
-    ut_Militia, ut_AxeFighter, ut_Swordsman, ut_Bowman, ut_Arbaletman,
-    ut_Pikeman, ut_Hallebardman, ut_HorseScout, ut_Cavalry, ut_Barbarian,
-    ut_Peasant, ut_Slingshot, ut_MetalBarbarian, ut_Horseman);
+    utMilitia, utAxeFighter, utSwordsman, utBowman, utArbaletman,
+    utPikeman, utHallebardman, utHorseScout, utCavalry, utBarbarian,
+    utPeasant, utSlingshot, utMetalBarbarian, utHorseman);
 
   MapEd_Icon: array [0..13] of Word = (
     61, 62, 63, 64, 65,
@@ -137,8 +137,8 @@ const
     79, 80, 81, 82);
 
   Animal_Order: array [0..7] of TKMUnitType = (
-    ut_Wolf, ut_Fish,        ut_Watersnake, ut_Seastar,
-    ut_Crab, ut_Waterflower, ut_Waterleaf,  ut_Duck);
+    utWolf, utFish,        utWatersnake, utSeastar,
+    utCrab, utWaterflower, utWaterleaf,  utDuck);
 
   Animal_Icon: array [0..7] of word = (
     71, 72, 73, 74,
@@ -189,7 +189,7 @@ begin
   Bevel_HintBG.EdgeAlpha := 0.5;
   Bevel_HintBG.Hide;
   Bevel_HintBG.Anchors := [anLeft, anBottom];
-  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fnt_Outline,taLeft);
+  Label_Hint := TKMLabel.Create(Panel_Main,224+40,Panel_Main.Height-21,0,0,'',fntOutline,taLeft);
   Label_Hint.Anchors := [anLeft, anBottom];
 
   // Controls without a hint will reset the Hint to ''
@@ -246,7 +246,7 @@ begin
    fDragScrollingCursorPos.Y := gGameCursor.Pixel.Y;
    fDragScrollingViewportPos.X := fViewport.Position.X;
    fDragScrollingViewportPos.Y := fViewport.Position.Y;
-   gRes.Cursors.Cursor := kmc_Drag;
+   gRes.Cursors.Cursor := kmcDrag;
   end
   else
     aHandled := False;
@@ -279,7 +279,7 @@ end;
 procedure TKMUserInterfaceGame.ResetDragScrolling;
 begin
   fDragScrolling := False;
-  gRes.Cursors.Cursor := kmc_Default; //Reset cursor
+  gRes.Cursors.Cursor := kmcDefault; //Reset cursor
   gMain.ApplyCursorRestriction;
 end;
 

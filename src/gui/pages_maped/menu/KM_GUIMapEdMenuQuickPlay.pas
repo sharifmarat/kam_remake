@@ -57,9 +57,9 @@ begin
 
   PopUp_QuickPlay.Width := Math.Max(240, gRes.Fonts[PopUp_QuickPlay.Font].GetTextSize(PopUp_QuickPlay.Caption).X + 40);
   Left := (PopUp_QuickPlay.Width - ControlsWidth) div 2;
-    TKMLabel.Create(PopUp_QuickPlay, PopUp_QuickPlay.Width div 2, 50, gResTexts[TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER], fnt_Metal, taCenter);
+    TKMLabel.Create(PopUp_QuickPlay, PopUp_QuickPlay.Width div 2, 50, gResTexts[TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER], fntMetal, taCenter);
 
-    DropList_SelectHand := TKMDropList.Create(PopUp_QuickPlay, Left, 75, ControlsWidth, 20, fnt_Game, '', bsGame);
+    DropList_SelectHand := TKMDropList.Create(PopUp_QuickPlay, Left, 75, ControlsWidth, 20, fntGame, '', bsGame);
     DropList_SelectHand.Hint := gResTexts[TX_MAPED_MAP_QUICK_PLAY_SEL_PLAYER_TO_START];
 
     Panel_Save := TKMPanel.Create(PopUp_QuickPlay, Left, 95, ControlsWidth, 230);
@@ -107,7 +107,7 @@ begin
   gGameApp.NewSingleMap(MapName, GameName, HandId, Color);
   gGame.StartedFromMapEditor := True;
   gGame.StartedFromMapEdAsMPMap := IsMultiplayer;
-  TKMGamePlayInterface(gGame.ActiveInterface).SetMenuState(gGame.MissionMode = mm_Tactic);
+  TKMGamePlayInterface(gGame.ActiveInterface).SetMenuState(gGame.MissionMode = mmTactic);
 end;
 
 

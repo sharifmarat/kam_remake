@@ -73,14 +73,14 @@ begin
     Dragger_Chat.SetBounds(0, -MESSAGE_AREA_RESIZE_Y, 0, 0);
     Dragger_Chat.OnMove := Chat_Resize;
 
-    Memo_ChatText := TKMMemo.Create(Panel_Chat,45,50,600-85,101, fnt_Arial, bsGame);
+    Memo_ChatText := TKMMemo.Create(Panel_Chat,45,50,600-85,101, fntArial, bsGame);
     Memo_ChatText.AnchorsStretch;
     Memo_ChatText.AutoWrap := True;
     Memo_ChatText.IndentAfterNL := True; // Don't let players fake system messages
     Memo_ChatText.ScrollDown := True;
     Memo_ChatText.Selectable := False;
 
-    Edit_ChatMsg := TKMEdit.Create(Panel_Chat, 75, 154, 380, 20, fnt_Arial);
+    Edit_ChatMsg := TKMEdit.Create(Panel_Chat, 75, 154, 380, 20, fntArial);
     Edit_ChatMsg.Anchors := [anLeft, anRight, anBottom];
     Edit_ChatMsg.OnKeyDown := Chat_Post;
     Edit_ChatMsg.OnIsKeyEventHandled := IsKeyEvent_Return_Handled;
@@ -92,7 +92,7 @@ begin
     Button_MemoCopyAllowed.OnClick := ChatMemo_CopyAllowed_Click;
 
     Button_ChatRecipient := TKMButtonFlat.Create(Panel_Chat,45,154,132,20,0);
-    Button_ChatRecipient.Font := fnt_Grey;
+    Button_ChatRecipient.Font := fntGrey;
     Button_ChatRecipient.CapOffsetY := -11;
     Button_ChatRecipient.OnClick := Chat_MenuShow;
     Button_ChatRecipient.Anchors := [anRight, anBottom];
@@ -335,7 +335,7 @@ end;
 procedure TKMGUIGameChat.Show;
 begin
   if not Panel_Chat.Visible then
-    gSoundPlayer.Play(sfxn_MPChatOpen);
+    gSoundPlayer.Play(sfxnMPChatOpen);
 
   Focus;
   Panel_Chat.Show;
@@ -345,7 +345,7 @@ end;
 procedure TKMGUIGameChat.Hide;
 begin
   if Panel_Chat.Visible then
-    gSoundPlayer.Play(sfxn_MPChatClose);
+    gSoundPlayer.Play(sfxnMPChatClose);
   Panel_Chat.Hide;
   Menu_Chat.HideMenu;
 end;

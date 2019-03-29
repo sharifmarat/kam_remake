@@ -77,7 +77,7 @@ end;
 
 function TKMUnitActionStormAttack.ActName: TKMUnitActionName;
 begin
-  Result := uan_StormAttack;
+  Result := uanStormAttack;
 end;
 
 

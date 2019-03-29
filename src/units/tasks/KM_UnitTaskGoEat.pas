@@ -96,15 +96,15 @@ begin
   with fUnit do
   case fPhase of
    0: begin
-        Thought := th_Eat;
-        if (Home <> nil) and not Home.IsDestroyed then Home.SetState(hst_Empty);
+        Thought := thEat;
+        if (Home <> nil) and not Home.IsDestroyed then Home.SetState(hstEmpty);
         if not Visible and (InHouse <> nil) and not InHouse.IsDestroyed then
-          SetActionGoIn(uaWalk, gd_GoOutside, InHouse) //Walk outside the house
+          SetActionGoIn(uaWalk, gdGoOutside, InHouse) //Walk outside the house
         else
           SetActionLockedStay(0, uaWalk); //Skip this step
       end;
    1: SetActionWalkToSpot(fInn.PointBelowEntrance);
-   2: SetActionGoIn(uaWalk, gd_GoInside, fInn); //Enter Inn
+   2: SetActionGoIn(uaWalk, gdGoInside, fInn); //Enter Inn
    3: begin
         SetActionLockedStay(0, uaWalk);
         fPlace := fInn.EaterGetsInside(UnitType);
@@ -119,43 +119,43 @@ begin
       //Order is Bread-Sausages-Wine-Fish
       //We allow unit to eat foods until he is over 90% condition
       if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
-        and (fInn.CheckResIn(wt_Bread) > 0) then
+        and (fInn.CheckResIn(wtBread) > 0) then
       begin
-        fInn.ResTakeFromIn(wt_Bread);
-        gHands[fUnit.Owner].Stats.WareConsumed(wt_Bread);
+        fInn.ResTakeFromIn(wtBread);
+        gHands[fUnit.Owner].Stats.WareConsumed(wtBread);
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * BREAD_RESTORE);
-        fInn.UpdateEater(fPlace, wt_Bread);
+        fInn.UpdateEater(fPlace, wtBread);
       end else
         SetActionLockedStay(0, uaWalk);
    5: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
-        and (fInn.CheckResIn(wt_Sausages) > 0) then
+        and (fInn.CheckResIn(wtSausages) > 0) then
       begin
-        fInn.ResTakeFromIn(wt_Sausages);
-        gHands[fUnit.Owner].Stats.WareConsumed(wt_Sausages);
+        fInn.ResTakeFromIn(wtSausages);
+        gHands[fUnit.Owner].Stats.WareConsumed(wtSausages);
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * SAUSAGE_RESTORE);
-        fInn.UpdateEater(fPlace, wt_Sausages);
+        fInn.UpdateEater(fPlace, wtSausages);
       end else
         SetActionLockedStay(0, uaWalk);
    6: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
-        and (fInn.CheckResIn(wt_Wine) > 0) then
+        and (fInn.CheckResIn(wtWine) > 0) then
       begin
-        fInn.ResTakeFromIn(wt_Wine);
-        gHands[fUnit.Owner].Stats.WareConsumed(wt_Wine);
+        fInn.ResTakeFromIn(wtWine);
+        gHands[fUnit.Owner].Stats.WareConsumed(wtWine);
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * WINE_RESTORE);
-        fInn.UpdateEater(fPlace, wt_Wine);
+        fInn.UpdateEater(fPlace, wtWine);
       end else
         SetActionLockedStay(0, uaWalk);
    7: if (Condition < UNIT_MAX_CONDITION * UNIT_STUFFED_CONDITION_LVL)
-        and (fInn.CheckResIn(wt_Fish) > 0) then
+        and (fInn.CheckResIn(wtFish) > 0) then
       begin
-        fInn.ResTakeFromIn(wt_Fish);
-        gHands[fUnit.Owner].Stats.WareConsumed(wt_Fish);
+        fInn.ResTakeFromIn(wtFish);
+        gHands[fUnit.Owner].Stats.WareConsumed(wtFish);
         SetActionLockedStay(29*4, uaEat);
         Feed(UNIT_MAX_CONDITION * FISH_RESTORE);
-        fInn.UpdateEater(fPlace, wt_Fish);
+        fInn.UpdateEater(fPlace, wtFish);
       end else
         SetActionLockedStay(0, uaWalk);
    8: begin
@@ -163,10 +163,10 @@ begin
         //but if we are then walk out of the inn thinking hungry
         //so that the player will know that we haven't been fed
         if Condition < UNIT_MIN_CONDITION then
-          Thought := th_Eat
+          Thought := thEat
         else
-          Thought := th_None;
-        SetActionGoIn(uaWalk, gd_GoOutside, fInn); //Exit Inn
+          Thought := thNone;
+        SetActionGoIn(uaWalk, gdGoOutside, fInn); //Exit Inn
         fInn.EatersGoesOut(fPlace);
         fPlace := -1;
       end;

@@ -345,9 +345,9 @@ end;
 procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
   procedure ScanChopOnly(aW: TKMHouseWoodcutters);
   begin
-    if (aW.CheckResOut(wt_All) <> 0) then // There is still trunk
+    if (aW.CheckResOut(wtAll) <> 0) then // There is still trunk
       Exit;
-    if not gTerrain.CanFindTree(aW.FlagPoint, gRes.Units[ut_Woodcutter].MiningRange, True) then
+    if not gTerrain.CanFindTree(aW.FlagPoint, gRes.Units[utWoodcutter].MiningRange, True) then
     begin
       RemovePlan(htWoodcutters, aW.Entrance);
       aW.DemolishHouse(fOwner);
@@ -373,11 +373,11 @@ procedure TKMCityPlanner.UpdateState(aTick: Cardinal);
     begin
       if aCheckChopOnly then
         ScanChopOnly(W);
-      if (W.WoodcutterMode <> wcm_Chop) then // Center of forest is not in protected area => chop only mode
-        W.WoodcutterMode := wcm_Chop
+      if (W.WoodcutterMode <> wcmChop) then // Center of forest is not in protected area => chop only mode
+        W.WoodcutterMode := wcmChop
     end
-    else if (W.WoodcutterMode <> wcm_ChopAndPlant) then
-      W.WoodcutterMode := wcm_ChopAndPlant;
+    else if (W.WoodcutterMode <> wcmChopAndPlant) then
+      W.WoodcutterMode := wcmChopAndPlant;
   end;
 
 const
@@ -416,7 +416,7 @@ begin
       if not CheckExistHouse then // House was added by script / spectator in debug mode
       begin
         if (HT = htWoodcutters) then
-          AddPlan(HT, H.Entrance, TKMHouseWoodcutters(H).FlagPoint, TKMHouseWoodcutters(H).WoodcutterMode = wcm_Chop)
+          AddPlan(HT, H.Entrance, TKMHouseWoodcutters(H).FlagPoint, TKMHouseWoodcutters(H).WoodcutterMode = wcmChop)
         else
           AddPlan(HT, H.Entrance);
       end;
@@ -663,7 +663,7 @@ begin
         else // There is house
         begin
           H := fPlannedHouses[aHT].Plans[Idx].House;
-          Bid := H.CheckResIn(wt_All) * RESOURCE_PRICE + H.CheckResOut(wt_All) * PRODUCT_PRICE;
+          Bid := H.CheckResIn(wtAll) * RESOURCE_PRICE + H.CheckResOut(wtAll) * PRODUCT_PRICE;
           if (Bid < BestBid) then // Select house with lowest amount of resources
           begin
             BestBid := Bid;
@@ -851,7 +851,7 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
     while (I < aField.Count) do
     begin
       PolygonIdx := gAIFields.NavMesh.KMPoint2Polygon[ aField[I] ];
-      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, at_Enemy) > MAX_ENEMY_INFLUENCE) then
+      if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, PolygonIdx, atEnemy) > MAX_ENEMY_INFLUENCE) then
         Exit;
       I := I + 5;
     end;
@@ -866,8 +866,8 @@ begin
   aFieldType := ftRoad;
   ExistLoc := KMPOINT_ZERO;
   NewLoc := fPlannedHouses[aHT].Plans[aIdx].Loc;
-  Output := FindClosestHouseEntrance(NewLoc, ExistLoc); // Only placed in case of ht_WatchTower (ht_WatchTower are planned at once)
-  //H := gHands[fOwner].Houses.FindHouse(ht_Any, NewLoc.X, NewLoc.Y, 1, False); // True = complete house, False = house plan
+  Output := FindClosestHouseEntrance(NewLoc, ExistLoc); // Only placed in case of htWatchTower (htWatchTower are planned at once)
+  //H := gHands[fOwner].Houses.FindHouse(htAny, NewLoc.X, NewLoc.Y, 1, False); // True = complete house, False = house plan
   //if (H <> nil) then
   //begin
   //  Output := true;
@@ -1894,10 +1894,10 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
     Loc, BestLoc: TKMPoint;
   begin
     // Filter defence positions, build towers only at the closest
-    PL := gAIFields.Influences.GetBestAllianceOwner(fOwner, aCenter, at_Ally);
+    PL := gAIFields.Influences.GetBestAllianceOwner(fOwner, aCenter, atAlly);
     if (PL <> fOwner) AND (PL <> PLAYER_NONE) then
       Exit;
-    if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.Point2Polygon[aCenter.Y,aCenter.X], at_Enemy) > MAX_ENEMY_INFLUENCE) then
+    if (gAIFields.Influences.GetBestAllianceOwnership(fOwner, gAIFields.NavMesh.Point2Polygon[aCenter.Y,aCenter.X], atEnemy) > MAX_ENEMY_INFLUENCE) then
       Exit;
 
     BestBid := MAX_BID;
@@ -2191,39 +2191,39 @@ var
   Output: Single;
 begin
   case aHT of
-    ht_Store:          Output := + GA_PLANNER_DistCrit_Store * DistFromHouse([ht_Store]);
-    ht_School:         Output := - GA_PLANNER_DistCrit_School * DistFromHouse([ht_Store,ht_Metallurgists]);
-    ht_Inn:            Output := - GA_PLANNER_DistCrit_Inn_Store * DistFromHouse([ht_Store]) + GA_PLANNER_DistCrit_Inn_Inn * DistFromHouse([ht_Inn]);
-    ht_Marketplace:    Output := - GA_PLANNER_DistCrit_Marketplace * DistFromHouse([ht_Store]);
+    htStore:          Output := + GA_PLANNER_DistCrit_Store * DistFromHouse([htStore]);
+    htSchool:         Output := - GA_PLANNER_DistCrit_School * DistFromHouse([htStore,htMetallurgists]);
+    htInn:            Output := - GA_PLANNER_DistCrit_Inn_Store * DistFromHouse([htStore]) + GA_PLANNER_DistCrit_Inn_Inn * DistFromHouse([htInn]);
+    htMarketplace:    Output := - GA_PLANNER_DistCrit_Marketplace * DistFromHouse([htStore]);
 
-    ht_IronSmithy:     Output := - GA_PLANNER_DistCrit_IronSmithy_Self * DistFromHouse([ht_IronSmithy]) - GA_PLANNER_DistCrit_IronSmithy_Res * DistFromHouse([ht_CoalMine, ht_IronMine]);
-    ht_ArmorSmithy:    Output := - GA_PLANNER_DistCrit_ArmorSmithy_Set * DistFromHouse([ht_IronSmithy]) - GA_PLANNER_DistCrit_ArmorSmithy_Res * DistFromHouse([ht_CoalMine, ht_IronMine]);
-    ht_WeaponSmithy:   Output := - GA_PLANNER_DistCrit_WeaponSmithy_Set * DistFromHouse([ht_IronSmithy]) - GA_PLANNER_DistCrit_WeaponSmithy_Res * DistFromHouse([ht_CoalMine, ht_IronMine]);
-    ht_Tannery:        Output := - GA_PLANNER_DistCrit_Tannery_Set * DistFromHouse([ht_Swine, ht_WeaponWorkshop]);
-    ht_ArmorWorkshop:  Output := - GA_PLANNER_DistCrit_ArmorWorkshop_Set * DistFromHouse([ht_Sawmill, ht_Barracks]);
-    ht_WeaponWorkshop: Output := - GA_PLANNER_DistCrit_WeaponWorkshop_Set * DistFromHouse([ht_Tannery, ht_Barracks]);
-    ht_Barracks:       Output := - GA_PLANNER_DistCrit_Barracks_Set * DistFromHouses([ht_ArmorSmithy, ht_ArmorWorkshop, ht_WeaponSmithy, ht_WeaponWorkshop]);
+    htIronSmithy:     Output := - GA_PLANNER_DistCrit_IronSmithy_Self * DistFromHouse([htIronSmithy]) - GA_PLANNER_DistCrit_IronSmithy_Res * DistFromHouse([htCoalMine, htIronMine]);
+    htArmorSmithy:    Output := - GA_PLANNER_DistCrit_ArmorSmithy_Set * DistFromHouse([htIronSmithy]) - GA_PLANNER_DistCrit_ArmorSmithy_Res * DistFromHouse([htCoalMine, htIronMine]);
+    htWeaponSmithy:   Output := - GA_PLANNER_DistCrit_WeaponSmithy_Set * DistFromHouse([htIronSmithy]) - GA_PLANNER_DistCrit_WeaponSmithy_Res * DistFromHouse([htCoalMine, htIronMine]);
+    htTannery:        Output := - GA_PLANNER_DistCrit_Tannery_Set * DistFromHouse([htSwine, htWeaponWorkshop]);
+    htArmorWorkshop:  Output := - GA_PLANNER_DistCrit_ArmorWorkshop_Set * DistFromHouse([htSawmill, htBarracks]);
+    htWeaponWorkshop: Output := - GA_PLANNER_DistCrit_WeaponWorkshop_Set * DistFromHouse([htTannery, htBarracks]);
+    htBarracks:       Output := - GA_PLANNER_DistCrit_Barracks_Set * DistFromHouses([htArmorSmithy, htArmorWorkshop, htWeaponSmithy, htWeaponWorkshop]);
 
-    ht_Bakery:         Output := - GA_PLANNER_DistCrit_Bakery_Set * DistFromHouses([ht_Store, ht_Inn, ht_Mill]) + GA_PLANNER_DistCrit_Bakery_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Butchers:       Output := - GA_PLANNER_DistCrit_Butchers_Set * DistFromHouses([ht_Store, ht_Inn, ht_Swine]) + GA_PLANNER_DistCrit_Butchers_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Mill:           Output := - GA_PLANNER_DistCrit_Mill_Set * DistFromHouses([ht_Farm, ht_Bakery]) + GA_PLANNER_DistCrit_Mill_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Swine:          Output := - GA_PLANNER_DistCrit_Swine_Set * DistFromHouses([ht_Farm]) + GA_PLANNER_DistCrit_Swine_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Stables:        Output := - GA_PLANNER_DistCrit_Stables_Set * DistFromHouses([ht_Farm]) + GA_PLANNER_DistCrit_Stables_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Farm:           Output := - GA_PLANNER_DistCrit_Farm_Set * DistFromHouse([ht_Farm]) + GA_PLANNER_DistCrit_Farm_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
-    ht_Wineyard:       Output := - GA_PLANNER_DistCrit_Wineyard_Set * DistFromHouse([ht_Inn]) + GA_PLANNER_DistCrit_Wineyard_Res * DistFromHouse([ht_IronMine, ht_GoldMine]);
+    htBakery:         Output := - GA_PLANNER_DistCrit_Bakery_Set * DistFromHouses([htStore, htInn, htMill]) + GA_PLANNER_DistCrit_Bakery_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htButchers:       Output := - GA_PLANNER_DistCrit_Butchers_Set * DistFromHouses([htStore, htInn, htSwine]) + GA_PLANNER_DistCrit_Butchers_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htMill:           Output := - GA_PLANNER_DistCrit_Mill_Set * DistFromHouses([htFarm, htBakery]) + GA_PLANNER_DistCrit_Mill_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htSwine:          Output := - GA_PLANNER_DistCrit_Swine_Set * DistFromHouses([htFarm]) + GA_PLANNER_DistCrit_Swine_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htStables:        Output := - GA_PLANNER_DistCrit_Stables_Set * DistFromHouses([htFarm]) + GA_PLANNER_DistCrit_Stables_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htFarm:           Output := - GA_PLANNER_DistCrit_Farm_Set * DistFromHouse([htFarm]) + GA_PLANNER_DistCrit_Farm_Res * DistFromHouse([htIronMine, htGoldMine]);
+    htWineyard:       Output := - GA_PLANNER_DistCrit_Wineyard_Set * DistFromHouse([htInn]) + GA_PLANNER_DistCrit_Wineyard_Res * DistFromHouse([htIronMine, htGoldMine]);
 
-    ht_Metallurgists:  Output := - GA_PLANNER_DistCrit_Metallurgists_Set * DistFromHouse([ht_School, ht_Store, ht_Metallurgists]) - GA_PLANNER_DistCrit_Metallurgists_Res * DistFromHouse([ht_GoldMine]);
-    ht_GoldMine:       Output := - GA_PLANNER_DistCrit_GoldMine_Set * DistFromHouse([ht_Metallurgists]);
-    ht_CoalMine:       Output := - GA_PLANNER_DistCrit_CoalMine_Set * DistFromHouse([ht_Metallurgists, ht_IronSmithy, ht_ArmorSmithy, ht_ArmorWorkshop]);
-    ht_IronMine:       Output := - GA_PLANNER_DistCrit_IronMine_Set * DistFromHouse([ht_IronSmithy]);
+    htMetallurgists:  Output := - GA_PLANNER_DistCrit_Metallurgists_Set * DistFromHouse([htSchool, htStore, htMetallurgists]) - GA_PLANNER_DistCrit_Metallurgists_Res * DistFromHouse([htGoldMine]);
+    htGoldMine:       Output := - GA_PLANNER_DistCrit_GoldMine_Set * DistFromHouse([htMetallurgists]);
+    htCoalMine:       Output := - GA_PLANNER_DistCrit_CoalMine_Set * DistFromHouse([htMetallurgists, htIronSmithy, htArmorSmithy, htArmorWorkshop]);
+    htIronMine:       Output := - GA_PLANNER_DistCrit_IronMine_Set * DistFromHouse([htIronSmithy]);
 
-    ht_Quary:          Output := - GA_PLANNER_DistCrit_Quary_Set * DistFromHouse([ht_Store]);
-    ht_Woodcutters:    Output := - GA_PLANNER_DistCrit_Woodcutters_Set * DistFromHouse([ht_Store]); // maybe ownership for first woodcutters? gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X]
-    ht_Sawmill:        Output := - GA_PLANNER_DistCrit_Sawmill_Set * DistFromHouse([ht_Woodcutters, ht_WeaponWorkshop]);
+    htQuary:          Output := - GA_PLANNER_DistCrit_Quary_Set * DistFromHouse([htStore]);
+    htWoodcutters:    Output := - GA_PLANNER_DistCrit_Woodcutters_Set * DistFromHouse([htStore]); // maybe ownership for first woodcutters? gAIFields.Influences.Ownership[fOwner, Mines.Items[I].Y, Mines.Items[I].X]
+    htSawmill:        Output := - GA_PLANNER_DistCrit_Sawmill_Set * DistFromHouse([htWoodcutters, htWeaponWorkshop]);
     else
       Output := 0;
   end;
-  Result := Output - GA_PLANNER_DistCrit_CenterStore * DistFromHouse([ht_Store]);
+  Result := Output - GA_PLANNER_DistCrit_CenterStore * DistFromHouse([htStore]);
 end;
 //}
 
@@ -2420,7 +2420,7 @@ begin
                  //+ Abs(fPlannedHouses[HType,I].Loc.Y - Loc.Y) * 3 // Prefer to build houses on left / right side
                  //+ Abs(fPlannedHouses[HType,I].Loc.X - Loc.X) * 2
                  - gAIFields.Influences.GetOtherOwnerships(fOwner,Loc.X,Loc.Y) * ManTune_PLANNER_FindPlaceForHouse_Influence;
-          if (aHT = ht_Farm) OR (aHT = ht_Wineyard) then
+          if (aHT = htFarm) OR (aHT = htWineyard) then
             Bid := Bid + FieldCrit(aHT, Loc) * GA_PLANNER_FindPlaceForHouse_FarmCrit;
           for L := Low(BestBidArr) to High(BestBidArr) do
             if KMSamePoint(Loc, aBestLocs[L]) then
@@ -2456,7 +2456,7 @@ var
   HMA: THouseMappingArray;
 begin
   Result := True;
-  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+  if (aHT in [htIronMine, htGoldMine, htCoalMine]) then
     Exit;
 
   HMA := gAIFields.Eye.HousesMapping;
@@ -2489,7 +2489,7 @@ var
   HMA: THouseMappingArray;
 begin
   Result := True;
-  if (aHT in [ht_IronMine, ht_GoldMine, ht_CoalMine]) then
+  if (aHT in [htIronMine, htGoldMine, htCoalMine]) then
     Exit;
 
   HMA := gAIFields.Eye.HousesMapping;
@@ -2503,8 +2503,8 @@ begin
     X := aLoc.X + HMA[aHT].Tiles[I].X;
     Y := aLoc.Y + HMA[aHT].Tiles[I].Y;
     aFields[FieldCnt] := KMPoint(X,Y);
-    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Wine)
-        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ft_Corn) then
+    if     (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ftWine)
+        OR (gHands[fOwner].BuildList.FieldworksList.HasField(aFields[FieldCnt]) = ftCorn) then
       FieldCnt := FieldCnt + 1;
   end;
   Result := (FieldCnt > 0);
@@ -2529,7 +2529,7 @@ var
   HMA: THouseMappingArray;
   PriceArr: array of array of Word;
 begin
-  HT := ht_Farm;
+  HT := htFarm;
   HMA := gAIFields.Eye.HousesMapping;
 
   MaxP := KMPoint(Min(aLoc.X + 2 + 4, gTerrain.MapX - 1), Min(aLoc.Y + 0 + 5, gTerrain.MapY - 1));
@@ -2542,7 +2542,7 @@ begin
     begin
       X := MinP.X + K;
       Point := KMPoint(X,Y);
-      if (gAIFields.Influences.AvoidBuilding[Y,X] > 0) OR not gHands[fOwner].CanAddFieldPlan(Point, ft_Corn) then
+      if (gAIFields.Influences.AvoidBuilding[Y,X] > 0) OR not gHands[fOwner].CanAddFieldPlan(Point, ftCorn) then
         PriceArr[I,K] := 0
       else
         PriceArr[I,K] := + KMDistanceAbs(Point, aLoc)
@@ -2588,7 +2588,7 @@ var
   //PriceArr: array of array of Word;
   PriceArr: array[TDirection] of Integer;
 begin
-  HT := ht_Farm;
+  HT := htFarm;
   HMA := gAIFields.Eye.HousesMapping;
   // Try find something to snap
 
@@ -2599,7 +2599,7 @@ begin
     for I := Low(HMA[HT].Surroundings[Dist,Dir]) to High(HMA[HT].Surroundings[Dist,Dir]) do
     begin
       FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
-      if not (gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y) AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ft_Corn)) then
+      if not (gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y) AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn)) then
         PriceArr[Dir] := PriceArr[Dir] - 5;
     end;
   end;
@@ -2614,7 +2614,7 @@ begin
       for I := Low(HMA[HT].Surroundings[Dist,Dir]) to High(HMA[HT].Surroundings[Dist,Dir]) do
       begin
         FieldLoc := KMPointAdd(aLoc, HMA[HT].Surroundings[Dist,Dir,I]);
-        if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y) AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ft_Corn) then
+        if gTerrain.TileInMapCoords(FieldLoc.X, FieldLoc.Y) AND gHands[fOwner].CanAddFieldPlan(FieldLoc, ftCorn) then
         begin
           Weight := KMDistanceAbs(FieldLoc, aLoc) + PriceArr[Dir];
           aNodeTagList.Add(FieldLoc, Weight);

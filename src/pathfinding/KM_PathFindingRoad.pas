@@ -127,7 +127,7 @@ end;
 function TPathFindingRoad.DestinationReached(aX, aY: Word): Boolean;
 begin
   Result := ((aX = fLocB.X) and (aY = fLocB.Y)) //We reached destination point
-            or ((gTerrain.Land[aY, aX].TileOverlay = to_Road) //We reached destination road network
+            or ((gTerrain.Land[aY, aX].TileOverlay = toRoad) //We reached destination road network
                and (fRoadConnectID <> 0) //No network
                and (gTerrain.GetRoadConnectID(KMPoint(aX, aY)) = fRoadConnectID));
 end;

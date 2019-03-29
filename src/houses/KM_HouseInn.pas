@@ -43,7 +43,7 @@ begin
   inherited;
 
   for I := Low(Eater) to High(Eater) do
-    Eater[I].UnitType := ut_None;
+    Eater[I].UnitType := utNone;
 end;
 
 
@@ -61,10 +61,10 @@ var
 begin
   Result := -1;
   for I := Low(Eater) to High(Eater) do
-  if Eater[I].UnitType = ut_None then
+  if Eater[I].UnitType = utNone then
   begin
     Eater[I].UnitType := aUnitType;
-    Eater[I].FoodKind := wt_None;
+    Eater[I].FoodKind := wtNone;
     Eater[I].EatStep  := FlagAnimStep;
     Result := I;
     Exit;
@@ -75,7 +75,7 @@ end;
 procedure TKMHouseInn.UpdateEater(aIndex: ShortInt; aFoodKind: TKMWareType);
 begin
   if aIndex = -1 then Exit;
-  Assert(aFoodKind in [wt_Wine, wt_Bread, wt_Sausages, wt_Fish], 'Wrong kind of food in Inn');
+  Assert(aFoodKind in [wtWine, wtBread, wtSausages, wtFish], 'Wrong kind of food in Inn');
 
   Eater[aIndex].FoodKind := aFoodKind; //Order is Wine-Bread-Sausages-Fish
   Eater[aIndex].EatStep  := FlagAnimStep; //Eat animation step will be difference between FlagAnim and EatStep
@@ -85,13 +85,13 @@ end;
 procedure TKMHouseInn.EatersGoesOut(aIndex: ShortInt);
 begin
   if aIndex <> -1 then
-    Eater[aIndex].UnitType := ut_None;
+    Eater[aIndex].UnitType := utNone;
 end;
 
 
 function TKMHouseInn.HasFood: Boolean;
 begin
-  Result := CheckResIn(wt_Sausages) + CheckResIn(wt_Bread) + CheckResIn(wt_Wine) + CheckResIn(wt_Fish) > 0;
+  Result := CheckResIn(wtSausages) + CheckResIn(wtBread) + CheckResIn(wtWine) + CheckResIn(wtFish) > 0;
 end;
 
 
@@ -101,7 +101,7 @@ var
 begin
   Result := False;
   for I := Low(Eater) to High(Eater) do
-    Result := Result or (Eater[I].UnitType = ut_None);
+    Result := Result or (Eater[I].UnitType = utNone);
 end;
 
 
@@ -117,11 +117,11 @@ procedure TKMHouseInn.Paint;
   function AnimDir(aIndex: Integer): TKMDirection;
   begin
     case Eater[aIndex].FoodKind of
-      wt_Wine:      Result  := TKMDirection(1 * 2 - 1 + (aIndex div 3));
-      wt_Bread:     Result  := TKMDirection(2 * 2 - 1 + (aIndex div 3));
-      wt_Sausages:  Result  := TKMDirection(3 * 2 - 1 + (aIndex div 3));
-      wt_Fish:      Result  := TKMDirection(4 * 2 - 1 + (aIndex div 3));
-      else          Result  := dir_NA;
+      wtWine:      Result  := TKMDirection(1 * 2 - 1 + (aIndex div 3));
+      wtBread:     Result  := TKMDirection(2 * 2 - 1 + (aIndex div 3));
+      wtSausages:  Result  := TKMDirection(3 * 2 - 1 + (aIndex div 3));
+      wtFish:      Result  := TKMDirection(4 * 2 - 1 + (aIndex div 3));
+      else          Result  := dirNA;
     end;
   end;
 const
@@ -132,11 +132,11 @@ var
   AnimStep: Cardinal;
 begin
   inherited;
-  if fBuildState <> hbs_Done then exit;
+  if fBuildState <> hbsDone then exit;
 
   for I := Low(Eater) to High(Eater) do
   begin
-    if (Eater[I].UnitType = ut_None) or (Eater[I].FoodKind = wt_None) then Continue;
+    if (Eater[I].UnitType = utNone) or (Eater[I].FoodKind = wtNone) then Continue;
 
     AnimStep := FlagAnimStep - Eater[I].EatStep; //Delta is our AnimStep
 

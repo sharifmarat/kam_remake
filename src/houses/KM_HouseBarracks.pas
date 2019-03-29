@@ -235,7 +235,7 @@ begin
   Result := Result and not gHands[fOwner].Locks.GetUnitBlocked(aUnitType);
 
   for I := 1 to 4 do
-  if TROOP_COST[aUnitType, I] <> wt_None then //Can't equip if we don't have a required resource
+  if TROOP_COST[aUnitType, I] <> wtNone then //Can't equip if we don't have a required resource
     Result := Result and (fResourceCount[TROOP_COST[aUnitType, I]] > 0);
 end;
 
@@ -257,7 +257,7 @@ begin
 
     //Take resources
     for I := 1 to 4 do
-    if TROOP_COST[aUnitType, I] <> wt_None then
+    if TROOP_COST[aUnitType, I] <> wtNone then
     begin
       Dec(fResourceCount[TROOP_COST[aUnitType, I]]);
       gHands[fOwner].Stats.WareConsumed(TROOP_COST[aUnitType, I]);
@@ -274,7 +274,7 @@ begin
     Soldier.Visible := False; //Make him invisible as he is inside the barracks
     Soldier.Condition := Round(TROOPS_TRAINED_CONDITION * UNIT_MAX_CONDITION); //All soldiers start with 3/4, so groups get hungry at the same time
     //Soldier.OrderLoc := KMPointBelow(Entrance); //Position in front of the barracks facing north
-    Soldier.SetActionGoIn(uaWalk, gd_GoOutside, Self);
+    Soldier.SetActionGoIn(uaWalk, gdGoOutside, Self);
     if Assigned(Soldier.OnUnitTrained) then
       Soldier.OnUnitTrained(Soldier);
     Inc(Result);
@@ -289,12 +289,12 @@ begin
     Inc(MapEdRecruitCount)
   else
   begin
-    U := gHands[fOwner].TrainUnit(ut_Recruit, Entrance);
+    U := gHands[fOwner].TrainUnit(utRecruit, Entrance);
     U.Visible := False;
     U.InHouse := Self;
     U.Home := Self; //When walking out Home is used to remove recruit from barracks
     RecruitsAdd(U);
-    gHands[fOwner].Stats.UnitCreated(ut_Recruit, False);
+    gHands[fOwner].Stats.UnitCreated(utRecruit, False);
   end;
 end;
 

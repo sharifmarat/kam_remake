@@ -298,17 +298,17 @@ begin
     Output := + GetHouseQty(htAny) * HOUSE_WEIGHT
               + GetWeaponsProduced * WEAPONS_WEIGHT
               - GetCitizensLost * CITIZENS_LOST;
-    IronArmy := Min( GetWaresProduced(wt_MetalArmor),
-                       GetWaresProduced(wt_Hallebard)
-                     + GetWaresProduced(wt_Arbalet)
-                     + Min(GetWaresProduced(wt_Sword), GetWaresProduced(wt_MetalShield))
+    IronArmy := Min( GetWaresProduced(wtMetalArmor),
+                       GetWaresProduced(wtHallebard)
+                     + GetWaresProduced(wtArbalet)
+                     + Min(GetWaresProduced(wtSword), GetWaresProduced(wtMetalShield))
                    );
-    WoodArmy := Min( GetWaresProduced(wt_Armor),
-                       GetWaresProduced(wt_Bow)
-                     + GetWaresProduced(wt_Pike)
-                     + Min(GetWaresProduced(wt_Shield), GetWaresProduced(wt_Axe))
+    WoodArmy := Min( GetWaresProduced(wtArmor),
+                       GetWaresProduced(wtBow)
+                     + GetWaresProduced(wtPike)
+                     + Min(GetWaresProduced(wtShield), GetWaresProduced(wtAxe))
                    );
-    Militia := Min( Max(0,WoodArmy - GetWaresProduced(wt_Armor)), GetWaresProduced(wt_Axe));
+    Militia := Min( Max(0,WoodArmy - GetWaresProduced(wtArmor)), GetWaresProduced(wtAxe));
     Output := Output
               + IronArmy * IRON_SOLDIER
               + WoodArmy * WOOD_SOLDIER
@@ -374,7 +374,7 @@ begin
     SetParameters(Idv, not PARALLEL_RUN);
 
   // Stop simulation
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -398,7 +398,7 @@ begin
   //Sleep(1000); // Debug sleep
 
   // Stop simulation
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -990,17 +990,17 @@ begin
   //fPlayers[0].AddUnitGroup(ut_Hallebardman, KMPoint(63, 64), dir_E, 8, 24);
   //fPlayers[1].AddUnitGroup(ut_Cavalry, KMPoint(65, 64), dir_W, 8, 24);
 
-  gHands[0].AddUnitGroup(ut_Swordsman, KMPoint(63, 64), dir_E, 8, 24);
-  gHands[1].AddUnitGroup(ut_Swordsman, KMPoint(65, 64), dir_W, 8, 24);
+  gHands[0].AddUnitGroup(utSwordsman, KMPoint(63, 64), TKMDirection(dirE), 8, 24);
+  gHands[1].AddUnitGroup(utSwordsman, KMPoint(65, 64), TKMDirection(dirW), 8, 24);
 
   gHands[1].UnitGroups[0].OrderAttackUnit(gHands[0].Units[0], True);
 
   SimulateGame;
 
-  fResults.Value[aRun, 0] := gHands[0].Stats.GetUnitQty(ut_Any);
-  fResults.Value[aRun, 1] := gHands[1].Stats.GetUnitQty(ut_Any);
+  fResults.Value[aRun, 0] := gHands[0].Stats.GetUnitQty(utAny);
+  fResults.Value[aRun, 1] := gHands[1].Stats.GetUnitQty(utAny);
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -1098,10 +1098,10 @@ begin
     WRun := gHands[I].Stats.GetWarriorsTrained;
     WTotal := WTotal + WRun;
     WRunT := WRunT + WRun;
-    WFRun := gHands[I].Stats.GetWaresProduced(wt_Warfare);
+    WFRun := gHands[I].Stats.GetWaresProduced(wtWarfare);
     WFTotal := WFTotal + WFRun;
     WFRunT := WFRunT + WFRun;
-    GRun := gHands[I].Stats.GetWaresProduced(wt_All);
+    GRun := gHands[I].Stats.GetWaresProduced(wtAll);
     GTotal := GTotal + GRun;
     GRunT := GRunT + GRun;
     Str := Str + Format('Hand%d: H: %d  W: %d  WF: %d  G: %d', [I, HRun, WRun, WFRun, GRun]);
@@ -1111,7 +1111,7 @@ begin
                [HRunT/HandsCnt, WRunT/HandsCnt, WFRunT/HandsCnt,  GRunT/HandsCnt]));
   gLog.AddTime('Time: ' + IntToStr(GetTimeSince(StartT)));
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -1147,7 +1147,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -1179,7 +1179,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -1219,7 +1219,7 @@ begin
   SimulateGame;
   fResults.Value[aRun, 0] := TimeGet - T;
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 
@@ -1268,7 +1268,7 @@ begin
 	  //gGameApp.Game.Save('Stability Test #' + IntToStr(aRun) + '; map number: ' + IntToStr(aIdx), Now);
   end;
 
-  gGameApp.StopGame(gr_Silent);
+  gGameApp.StopGame(grSilent);
 end;
 
 

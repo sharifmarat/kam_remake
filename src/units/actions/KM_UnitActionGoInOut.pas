@@ -8,7 +8,7 @@ uses
 
 
 type
-  TKMBestExit = (be_None, be_Left, be_Center, be_Right);
+  TKMBestExit = (beNone, beLeft, beCenter, beRight);
 
   {This is a [fairly :P] simple action making unit go inside/outside of house}
   TKMUnitActionGoInOut = class(TKMUnitAction)
@@ -65,7 +65,7 @@ begin
   fHasStarted     := False;
   fWaitingForPush := False;
 
-  if fDirection = gd_GoInside then
+  if fDirection = gdGoInside then
     fStep := 1  //go Inside (one cell up)
   else
     fStep := 0; //go Outside (one cell down)
@@ -106,7 +106,7 @@ begin
   //A bug can occur because this action is destroyed early when a unit is told to die.
   //If we are still invisible then TTaskDie assumes we are inside and creates a new
   //GoOut action. Therefore if we are invisible we do not occupy a tile.
-  if (fDirection = gd_GoOutside)
+  if (fDirection = gdGoOutside)
   and fHasStarted
   and not fUnit.Visible
   and (gTerrain.Land[fUnit.NextPosition.Y,fUnit.NextPosition.X].IsUnit = fUnit) then
@@ -116,7 +116,7 @@ begin
       fUnit.PositionF := KMPointF(fDoor); //Put us back inside the house
   end;
 
-  if (fDirection = gd_GoOutside) and fUnit.Visible then
+  if (fDirection = gdGoOutside) and fUnit.Visible then
     fUnit.InHouse := nil; //We are not in any house now
 
   inherited;
@@ -125,7 +125,7 @@ end;
 
 function TKMUnitActionGoInOut.ActName: TKMUnitActionName;
 begin
-  Result := uan_GoInOut;
+  Result := uanGoInOut;
 end;
 
 
@@ -160,31 +160,31 @@ var
   U: TKMUnit;
 begin
   if fUnit.CanStepTo(aLoc.X, aLoc.Y, tpWalk) then
-    Result := be_Center
+    Result := beCenter
   else
   if fUnit.CanStepTo(aLoc.X-1, aLoc.Y, tpWalk) then
-    Result := be_Left
+    Result := beLeft
   else
   if fUnit.CanStepTo(aLoc.X+1, aLoc.Y, tpWalk) then
-    Result := be_Right
+    Result := beRight
   else
   begin
     //U could be nil if tile is unwalkable for some reason
     U := TileHasIdleUnit(aLoc.X, aLoc.Y);
     if U <> nil then
-      Result := be_Center
+      Result := beCenter
     else
     begin
       U := TileHasIdleUnit(aLoc.X-1, aLoc.Y);
       if U <> nil then
-        Result := be_Left
+        Result := beLeft
       else
       begin
         U := TileHasIdleUnit(aLoc.X+1, aLoc.Y);
         if U <> nil then
-          Result := be_Right
+          Result := beRight
         else
-          Result := be_None;
+          Result := beNone;
       end;
     end;
 
@@ -215,7 +215,7 @@ begin
     if (U <> nil)
     and (U.Action is TKMUnitActionStay)
     and not TKMUnitActionStay(U.Action).Locked
-    and (gHands.CheckAlliance(U.Owner, fUnit.Owner) = at_Ally) then
+    and (gHands.CheckAlliance(U.Owner, fUnit.Owner) = atAlly) then
       Result := U;
   end;
 end;
@@ -223,7 +223,7 @@ end;
 
 procedure TKMUnitActionGoInOut.WalkIn;
 begin
-  fUnit.Direction := dir_N;  //one cell up
+  fUnit.Direction := dirN;  //one cell up
   fUnit.NextPosition := KMPointAbove(fUnit.CurrPosition);
   gTerrain.UnitRem(fUnit.CurrPosition); //Unit does not occupy a tile while inside
 
@@ -254,7 +254,7 @@ end;
 function TKMUnitActionGoInOut.GetDoorwaySlide(aCheck: TKMCheckAxis): Single;
 var Offset: Integer;
 begin
-  if aCheck = ax_X then
+  if aCheck = axX then
     Offset := gRes.Houses[fHouse.HouseType].EntranceOffsetXpx - CELL_SIZE_PX div 2
   else
     Offset := gRes.Houses[fHouse.HouseType].EntranceOffsetYpx;
@@ -280,13 +280,13 @@ begin
     fStreet := KMPoint(fUnit.CurrPosition.X, fUnit.CurrPosition.Y + 1 - Round(fStep));
 
     case fDirection of
-      gd_GoInside:  WalkIn;
-      gd_GoOutside: begin
+      gdGoInside:  WalkIn;
+      gdGoOutside: begin
                       case FindBestExit(fStreet) of
-                        be_Left:    fStreet.X := fStreet.X - 1;
-                        be_Center:  ;
-                        be_Right:   fStreet.X := fStreet.X + 1;
-                        be_None:    Exit; //All street tiles are blocked by busy units. Do not exit the house, just wait
+                        beLeft:    fStreet.X := fStreet.X - 1;
+                        beCenter:  ;
+                        beRight:   fStreet.X := fStreet.X + 1;
+                        beNone:    Exit; //All street tiles are blocked by busy units. Do not exit the house, just wait
                       end;
 
                       //If we have pushed an idling unit, wait till it goes away
@@ -333,8 +333,8 @@ begin
   //the unit makes a noticable "jump". This needs to be updated after starting because we don't know about an
   //exchanging unit until they have also started walking (otherwise only 1 of the units will have IsExchanging = true)
   if (
-      ((fDirection = gd_GoOutside) and (fStep < 0.2)) or
-      ((fDirection = gd_GoInside) and (fStep > 0.8))
+      ((fDirection = gdGoOutside) and (fStep < 0.2)) or
+      ((fDirection = gdGoInside) and (fStep > 0.8))
       )
     and (fStreet.X = fDoor.X) //We are walking straight
     and (fHouse <> nil) then
@@ -356,7 +356,7 @@ begin
     Result := arActDone;
     fUnit.IsExchanging := False;
     if fUsedDoorway then DecDoorway;
-    if fDirection = gd_GoInside then
+    if fDirection = gdGoInside then
     begin
       fUnit.PositionF := KMPointF(fDoor);
       if (fUnit.Home <> nil)
@@ -368,11 +368,11 @@ begin
 
       //When any woodcutter returns home - add an Axe
       //(this might happen when he walks home or when mining is done)
-      if (fUnit.UnitType = ut_Woodcutter)
+      if (fUnit.UnitType = utWoodcutter)
       and (fUnit.Home <> nil)
       and (fUnit.Home.HouseType = htWoodcutters)
       and (fUnit.Home = fHouse) then //And is the house we are walking from
-        fHouse.CurrentAction.SubActionAdd([ha_Flagpole]);
+        fHouse.CurrentAction.SubActionAdd([haFlagpole]);
 
       if Assigned(OnWalkedIn) then
         OnWalkedIn;

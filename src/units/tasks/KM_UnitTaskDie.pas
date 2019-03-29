@@ -68,10 +68,10 @@ begin
           begin
             if (Home <> nil) and not Home.IsDestroyed then
             begin
-              Home.SetState(hst_Idle);
-              Home.SetState(hst_Empty);
+              Home.SetState(hstIdle);
+              Home.SetState(hstEmpty);
             end;
-            SetActionGoIn(uaWalk, gd_GoOutside, gHands.HousesHitTest(fUnit.NextPosition.X, fUnit.NextPosition.Y));
+            SetActionGoIn(uaWalk, gdGoOutside, gHands.HousesHitTest(fUnit.NextPosition.X, fUnit.NextPosition.Y));
           end;
     1:    begin
             if not fShowAnimation or (fUnit is TKMUnitAnimal) then //Animals don't have a dying sequence. Can be changed later.
@@ -85,9 +85,9 @@ begin
               if gMySpectator.FogOfWar.CheckTileRevelation(fUnit.CurrPosition.X, fUnit.CurrPosition.Y) >= 255 then
               begin
                 if fUnit is TKMUnitWarrior then
-                  gSoundPlayer.PlayWarrior(fUnit.UnitType, sp_Death, fUnit.PositionF)
+                  gSoundPlayer.PlayWarrior(fUnit.UnitType, spDeath, fUnit.PositionF)
                 else
-                  gSoundPlayer.PlayCitizen(fUnit.UnitType, sp_Death, fUnit.PositionF);
+                  gSoundPlayer.PlayCitizen(fUnit.UnitType, spDeath, fUnit.PositionF);
               end;
             end;
           end;

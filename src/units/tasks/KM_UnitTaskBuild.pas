@@ -214,16 +214,16 @@ begin
   case fPhase of
     0: begin
          SetActionWalkToSpot(fLoc);
-         Thought := th_Build;
+         Thought := thBuild;
        end;
     1: begin
-         Thought := th_None;
+         Thought := thNone;
          gTerrain.SetTileLock(fLoc, tlRoadWork);
          TileLockSet := True;
 
          CancelThePlan;
 
-         gHands[Owner].Deliveries.Queue.AddDemand(nil, fUnit, wt_Stone, 1, dtOnce, diHigh4);
+         gHands[Owner].Deliveries.Queue.AddDemand(nil, fUnit, wtStone, 1, dtOnce, diHigh4);
          DemandSet := true;
 
          SetActionLockedStay(11,uaWork1,false);
@@ -240,7 +240,7 @@ begin
     //Warning! This step value is harcoded in KM_UnitTaskDelivery
     4: begin //This step is repeated until Serf brings us some stone
          SetActionLockedStay(30,uaWork1);
-         Thought := th_Stone;
+         Thought := thStone;
          if not fIsDigged then
          begin
            gScriptEvents.ProcPlanRoadDigged(Owner, fLoc.X, fLoc.Y);
@@ -250,7 +250,7 @@ begin
     5: begin
          SetActionLockedStay(11,uaWork2,false);
          DemandSet := false;
-         Thought := th_None;
+         Thought := thNone;
        end;
     6: begin
          gTerrain.IncDigState(fLoc);
@@ -272,7 +272,7 @@ begin
        end;
     else Result := trTaskDone;
   end;
-  if fPhase<>4 then inc(fPhase); //Phase=4 is when worker waits for rt_Stone
+  if fPhase<>4 then inc(fPhase); //Phase=4 is when worker waits for rtStone
 end;
 
 
@@ -356,10 +356,10 @@ begin
   case fPhase of
    0: begin
         SetActionWalkToSpot(fLoc);
-        Thought := th_Build;
+        Thought := thBuild;
       end;
    1: begin
-        Thought := th_None;
+        Thought := thNone;
         gTerrain.SetTileLock(fLoc, tlFieldWork);
         TileLockSet := True;
 
@@ -367,7 +367,7 @@ begin
 
         gTerrain.ResetDigState(fLoc); //Remove any dig over that might have been there (e.g. destroyed house)
 
-        gHands[Owner].Deliveries.Queue.AddDemand(nil,fUnit,wt_Wood, 1, dtOnce, diHigh4);
+        gHands[Owner].Deliveries.Queue.AddDemand(nil,fUnit,wtWood, 1, dtOnce, diHigh4);
         DemandSet := true;
 
         SetActionLockedStay(12*4,uaWork1,false);
@@ -384,7 +384,7 @@ begin
         gTerrain.ResetDigState(fLoc);
         gTerrain.SetInitWine(fLoc, Owner); //Replace the terrain, but don't seed grapes yet
         SetActionLockedStay(30, uaWork1);
-        Thought := th_Wood;
+        Thought := thWood;
         if not fIsDigged then
         begin
           gScriptEvents.ProcPlanWinefieldDigged(Owner, fLoc.X, fLoc.Y);
@@ -394,12 +394,12 @@ begin
    //Warning! This step value is harcoded in KM_UnitTaskDelivery
    5: begin //This step is repeated until Serf brings us some wood
         SetActionLockedStay(30, uaWork1);
-        Thought := th_Wood;
+        Thought := thWood;
       end;
    6: begin
         DemandSet := false;
         SetActionLockedStay(11*8, uaWork2, False);
-        Thought := th_None;
+        Thought := thNone;
       end;
    7: begin
         gTerrain.SetField(fLoc, Owner, ftWine);
@@ -409,7 +409,7 @@ begin
       end;
    else Result := trTaskDone;
   end;
-  if fPhase<>5 then inc(fPhase); //Phase=5 is when worker waits for rt_Wood
+  if fPhase<>5 then inc(fPhase); //Phase=5 is when worker waits for rtWood
 end;
 
 
@@ -487,7 +487,7 @@ begin
   case fPhase of
     0: begin
          SetActionWalkToSpot(fLoc);
-         Thought := th_Build;
+         Thought := thBuild;
        end;
     1: begin
         gTerrain.SetTileLock(fLoc, tlFieldWork);
@@ -504,7 +504,7 @@ begin
         if fPhase2 in [6,8] then gTerrain.IncDigState(fLoc);
        end;
     3: begin
-        Thought := th_None; //Keep thinking build until it's done
+        Thought := thNone; //Keep thinking build until it's done
         gTerrain.SetField(fLoc, Owner, ftCorn);
         SetActionStay(5,uaWalk);
         gTerrain.UnlockTile(fLoc);
@@ -601,10 +601,10 @@ begin
   //Complete the task in the end (Worker could have died while trying to exit building area)
   if HouseReadyToBuild and not HouseNeedsWorker and (fHouse <> nil) and not fHouse.IsDestroyed then
   begin
-    fHouse.BuildingState := hbs_Wood;
+    fHouse.BuildingState := hbsWood;
     gHands[fUnit.Owner].BuildList.HouseList.AddHouse(fHouse); //Add the house to JobList, so then all workers could take it
-    gHands[fUnit.Owner].Deliveries.Queue.AddDemand(fHouse, nil, wt_Wood, gRes.Houses[fHouse.HouseType].WoodCost, dtOnce, diHigh4);
-    gHands[fUnit.Owner].Deliveries.Queue.AddDemand(fHouse, nil, wt_Stone, gRes.Houses[fHouse.HouseType].StoneCost, dtOnce, diHigh4);
+    gHands[fUnit.Owner].Deliveries.Queue.AddDemand(fHouse, nil, wtWood, gRes.Houses[fHouse.HouseType].WoodCost, dtOnce, diHigh4);
+    gHands[fUnit.Owner].Deliveries.Queue.AddDemand(fHouse, nil, wtStone, gRes.Houses[fHouse.HouseType].StoneCost, dtOnce, diHigh4);
   end;
 
   gHands.CleanUpHousePointer(fHouse);
@@ -660,7 +660,7 @@ begin
   if (fHouse <> nil) and fHouse.IsDestroyed then
   begin
     Result := trTaskDone;
-    fUnit.Thought := th_None;
+    fUnit.Thought := thNone;
     Exit;
   end;
 
@@ -668,7 +668,7 @@ begin
   case fPhase of
     0:  begin
           SetActionWalkToSpot(GetHouseEntranceLoc);
-          Thought := th_Build;
+          Thought := thBuild;
         end;
     1:  begin
           CancelThePlan;
@@ -680,7 +680,7 @@ begin
 
           HouseNeedsWorker := True; //The house placed on the map, if something happens with Worker the house will be removed
           SetActionLockedStay(2, uaWalk);
-          Thought := th_None;
+          Thought := thNone;
         end;
     2:  //The house can become too steep after we flatten one part of it
         if CanWalkTo(CellsToDig[LastToDig], 0) then
@@ -688,7 +688,7 @@ begin
         else
         begin
           Result := trTaskDone;
-          fUnit.Thought := th_None;
+          fUnit.Thought := thNone;
           Exit;
         end;
     3:  begin
@@ -818,7 +818,7 @@ begin
 
   if WalkShouldAbandon then
   begin
-    fUnit.Thought := th_None;
+    fUnit.Thought := thNone;
     Result := trTaskDone;
     Exit;
   end;
@@ -827,7 +827,7 @@ begin
   case fPhase of
     0:  if PickRandomSpot(Cells, BuildFrom) then
         begin
-          Thought := th_Build;
+          Thought := thBuild;
           SetActionWalkToSpot(BuildFrom.Loc);
         end
         else
@@ -855,7 +855,7 @@ begin
         end;
     4:  begin
           SetActionStay(1, uaWalk);
-          Thought := th_None;
+          Thought := thNone;
         end;
     else Result := trTaskDone;
   end;
@@ -954,7 +954,7 @@ begin
     case fPhase of
       0:  if PickRandomSpot(Cells, BuildFrom) then
           begin
-            Thought := th_Build;
+            Thought := thBuild;
             SetActionWalkToSpot(BuildFrom.Loc);
           end
           else
@@ -973,7 +973,7 @@ begin
             inc(fPhase2);
           end;
       4:  begin
-            Thought := th_None;
+            Thought := thNone;
             SetActionStay(1, uaWalk);
           end;
       else

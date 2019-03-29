@@ -43,7 +43,7 @@ begin
   Panel_MainMenu := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_MainMenu.AnchorsCenter;
     TKMImage.Create(Panel_MainMenu, 300, 120, 423, 164, 4, rxGuiMain);
-    TKMLabel.Create(Panel_MainMenu, 512, 300, 'Remake', fnt_Metal, taCenter);
+    TKMLabel.Create(Panel_MainMenu, 512, 300, 'Remake', fntMetal, taCenter);
 
     with TKMImage.Create(Panel_MainMenu,  50, 220, round(218*1.3), round(291*1.3), 5, rxGuiMain) do
       ImageStretch;

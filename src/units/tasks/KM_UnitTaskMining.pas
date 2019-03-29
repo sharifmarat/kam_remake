@@ -60,8 +60,8 @@ destructor TKMTaskMining.Destroy;
 begin
   // Make sure we don't abandon and leave our house with "working" animations
   if (not fUnit.Home.IsDestroyed)
-  and (fUnit.Home.GetState = hst_Work) then
-    fUnit.Home.SetState(hst_Idle);
+  and (fUnit.Home.GetState = hstWork) then
+    fUnit.Home.SetState(hstIdle);
 
   FreeAndNil(fWorkPlan);
 
@@ -89,14 +89,14 @@ begin
 
   case fUnit.Home.HouseType of
     htWoodcutters: case TKMHouseWoodcutters(fUnit.Home).WoodcutterMode of
-                      wcm_Chop:         Result := taCut;
-                      wcm_Plant:        Result := taPlant;
-                      wcm_ChopAndPlant: if fUnit.Home.CheckResOut(wt_Trunk) >= MAX_WARES_IN_HOUSE then
+                      wcmChop:         Result := taCut;
+                      wcmPlant:        Result := taPlant;
+                      wcmChopAndPlant: if fUnit.Home.CheckResOut(wtTrunk) >= MAX_WARES_IN_HOUSE then
                                           Result := taPlant
                                         else
                                           Result := taAny;
                     end;
-    htFarm:        if fUnit.Home.CheckResOut(wt_Corn) >= MAX_WARES_IN_HOUSE then
+    htFarm:        if fUnit.Home.CheckResOut(wtCorn) >= MAX_WARES_IN_HOUSE then
                       Result := taPlant
                     else
                       Result := taAny;
@@ -117,13 +117,13 @@ end;
 function TKMTaskMining.GetActivityText: UnicodeString;
 begin
   case WorkPlan.GatheringScript of
-    gs_StoneCutter:     Result := gResTexts[TX_UNIT_TASK_STONE];
-    gs_FarmerSow:       Result := gResTexts[TX_UNIT_TASK_SOW_CORN];
-    gs_FarmerCorn:      Result := gResTexts[TX_UNIT_TASK_CUTTING_CORN];
-    gs_FarmerWine:      Result := gResTexts[TX_UNIT_TASK_GRAPES];
-    gs_FisherCatch:     Result := gResTexts[TX_UNIT_TASK_FISHING];
-    gs_WoodCutterCut:   Result := gResTexts[TX_UNIT_TASK_CUT_TREE];
-    gs_WoodCutterPlant: Result := gResTexts[TX_UNIT_TASK_PLANT_TREE];
+    gsStoneCutter:     Result := gResTexts[TX_UNIT_TASK_STONE];
+    gsFarmerSow:       Result := gResTexts[TX_UNIT_TASK_SOW_CORN];
+    gsFarmerCorn:      Result := gResTexts[TX_UNIT_TASK_CUTTING_CORN];
+    gsFarmerWine:      Result := gResTexts[TX_UNIT_TASK_GRAPES];
+    gsFisherCatch:     Result := gResTexts[TX_UNIT_TASK_FISHING];
+    gsWoodCutterCut:   Result := gResTexts[TX_UNIT_TASK_CUT_TREE];
+    gsWoodCutterPlant: Result := gResTexts[TX_UNIT_TASK_PLANT_TREE];
     else                Result := 'Unknown';
   end;
 end;
@@ -156,7 +156,7 @@ end;
 function TKMTaskMining.ResourceTileIsLocked: Boolean;
 var P: TKMPoint;
 begin
-  if WorkPlan.GatheringScript = gs_WoodCutterCut then
+  if WorkPlan.GatheringScript = gsWoodCutterCut then
   begin
     P := KMGetVertexTile(WorkPlan.Loc, WorkPlan.WorkDir);
     //Check all tiles around the tree, like we do in TKMTerrain.FindTree
@@ -175,9 +175,9 @@ var P: TKMPoint;
 begin
   with gTerrain do
   case WorkPlan.GatheringScript of
-    gs_StoneCutter:     Result := TileHasStone(WorkPlan.Loc.X, WorkPlan.Loc.Y-1); //Check stone deposit above Loc, which is walkable tile
-    gs_FarmerSow:       Result := TileIsCornField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = 0);
-    gs_FarmerCorn:      begin
+    gsStoneCutter:     Result := TileHasStone(WorkPlan.Loc.X, WorkPlan.Loc.Y-1); //Check stone deposit above Loc, which is walkable tile
+    gsFarmerSow:       Result := TileIsCornField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = 0);
+    gsFarmerCorn:      begin
                           Result := TileIsCornField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = CORN_AGE_MAX);
                           if Result then exit; //Resource still exists so exit
                           //If corn has been cut we can possibly plant new corn here to save time
@@ -185,18 +185,18 @@ begin
                           if Result then
                             with WorkPlan do
                             begin
-                              GatheringScript := gs_FarmerSow; //Switch to sowing corn rather than cutting
+                              GatheringScript := gsFarmerSow; //Switch to sowing corn rather than cutting
                               ActionWalkFrom  := uaWalkTool; //Carry our scythe back (without the corn) as the player saw us take it out
                               ActionWorkType  := uaWork1;
                               WorkCyc    := 10;
-                              Product1   := wt_None; //Don't produce corn
+                              Product1   := wtNone; //Don't produce corn
                               ProdCount1 := 0;
                             end;
                         end;
-    gs_FarmerWine:      Result := TileIsWineField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = CORN_AGE_MAX);
-    gs_FisherCatch:     Result := CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir),true);
-    gs_WoodCutterPlant: Result := TileGoodForTree(WorkPlan.Loc.X, WorkPlan.Loc.Y);
-    gs_WoodCutterCut:   begin
+    gsFarmerWine:      Result := TileIsWineField(WorkPlan.Loc) and (Land[WorkPlan.Loc.Y, WorkPlan.Loc.X].FieldAge = CORN_AGE_MAX);
+    gsFisherCatch:     Result := CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir),true);
+    gsWoodCutterPlant: Result := TileGoodForTree(WorkPlan.Loc.X, WorkPlan.Loc.Y);
+    gsWoodCutterCut:   begin
                           P := KMGetVertexTile(WorkPlan.Loc, WorkPlan.WorkDir);
                           Result := ObjectIsChopableTree(P, caAgeFull) and (Land[P.Y, P.X].TreeAge >= TREE_AGE_FULL);
                         end;
@@ -236,12 +236,12 @@ begin
   case fPhase of
     0:  if WorkPlan.HasToWalk then
         begin
-          Home.SetState(hst_Empty);
-          SetActionGoIn(WorkPlan.ActionWalkTo, gd_GoOutside, Home); //Walk outside the house
+          Home.SetState(hstEmpty);
+          SetActionGoIn(WorkPlan.ActionWalkTo, gdGoOutside, Home); //Walk outside the house
 
           //Woodcutter takes his axe with him when going to chop trees
-          if (WorkPlan.GatheringScript = gs_WoodCutterCut) then
-            Home.CurrentAction.SubActionRem([ha_Flagpole]);
+          if (WorkPlan.GatheringScript = gsWoodCutterCut) then
+            Home.CurrentAction.SubActionRem([haFlagpole]);
         end
         else
         begin
@@ -261,7 +261,7 @@ begin
          SetActionLockedStay(0, WorkPlan.ActionWalkTo);
 
     3: //Before work tasks for specific mining jobs
-       if WorkPlan.GatheringScript = gs_FisherCatch then
+       if WorkPlan.GatheringScript = gsFisherCatch then
        begin
          Direction := WorkPlan.WorkDir;
          SetActionLockedStay(13, uaWork1, false); //Throw the line out
@@ -270,11 +270,11 @@ begin
 
     4: //Choose direction and time to work
        begin
-         if WorkPlan.WorkDir <> dir_NA then
+         if WorkPlan.WorkDir <> dirNA then
            Direction := WorkPlan.WorkDir;
 
          if gRes.Units[UnitType].UnitAnim[WorkPlan.ActionWorkType, Direction].Count < 1 then
-           for D := dir_N to dir_NW do
+           for D := dirN to dirNW do
              if gRes.Units[UnitType].UnitAnim[WorkPlan.ActionWorkType, D].Count > 1 then
              begin
                Direction := D;
@@ -286,26 +286,26 @@ begin
        end;
     5: //After work tasks for specific mining jobs
        case WorkPlan.GatheringScript of
-         gs_WoodCutterCut:  SetActionLockedStay(10, WorkPlan.ActionWorkType, true, 5, 5); //Wait for the tree to start falling down
-         gs_FisherCatch:    SetActionLockedStay(15, uaWork, false); //Pull the line in
+         gsWoodCutterCut:  SetActionLockedStay(10, WorkPlan.ActionWorkType, true, 5, 5); //Wait for the tree to start falling down
+         gsFisherCatch:    SetActionLockedStay(15, uaWork, false); //Pull the line in
          else               SetActionLockedStay(0, WorkPlan.ActionWorkType);
        end;
     6: begin
          StillFrame := 0;
          case WorkPlan.GatheringScript of //Perform special tasks if required
-           gs_StoneCutter:      gTerrain.DecStoneDeposit(KMPoint(WorkPlan.Loc.X,WorkPlan.Loc.Y-1));
-           gs_FarmerSow:        gTerrain.SowCorn(WorkPlan.Loc);
-           gs_FarmerCorn:       gTerrain.CutCorn(WorkPlan.Loc);
-           gs_FarmerWine:       gTerrain.CutGrapes(WorkPlan.Loc);
-           gs_FisherCatch:      begin
+           gsStoneCutter:      gTerrain.DecStoneDeposit(KMPoint(WorkPlan.Loc.X,WorkPlan.Loc.Y-1));
+           gsFarmerSow:        gTerrain.SowCorn(WorkPlan.Loc);
+           gsFarmerCorn:       gTerrain.CutCorn(WorkPlan.Loc);
+           gsFarmerWine:       gTerrain.CutGrapes(WorkPlan.Loc);
+           gsFisherCatch:      begin
                                   gTerrain.CatchFish(KMPointDir(WorkPlan.Loc,WorkPlan.WorkDir));
                                   WorkPlan.ActionWorkType := uaWalkTool;
                                 end;
-           gs_WoodCutterPlant:  //If the player placed a house plan here while we were digging don't place the
+           gsWoodCutterPlant:  //If the player placed a house plan here while we were digging don't place the
                                 //tree so the house plan isn't canceled. This is actually the same as TSK/TPR IIRC
-                                if TKMUnitCitizen(fUnit).CanWorkAt(WorkPlan.Loc, gs_WoodCutterPlant) then
+                                if TKMUnitCitizen(fUnit).CanWorkAt(WorkPlan.Loc, gsWoodCutterPlant) then
                                   gTerrain.SetObject(WorkPlan.Loc, gTerrain.ChooseTreeToPlant(WorkPlan.Loc));
-           gs_WoodCutterCut:    begin
+           gsWoodCutterCut:    begin
                                   gTerrain.FallTree(KMGetVertexTile(WorkPlan.Loc, WorkPlan.WorkDir));
                                   StillFrame := 5;
                                 end;
@@ -315,24 +315,24 @@ begin
     7: begin
          //Removing the tree and putting a stump is handled in gTerrain.UpdateState from FallingTrees list
          SetActionWalkToSpot(Home.PointBelowEntrance, WorkPlan.ActionWalkFrom); //Go home
-         Thought := th_Home;
+         Thought := thHome;
        end;
-    8: SetActionGoIn(WorkPlan.ActionWalkFrom, gd_GoInside, Home); //Go inside
+    8: SetActionGoIn(WorkPlan.ActionWalkFrom, gdGoInside, Home); //Go inside
 
     {Unit back at home and can process its booty now}
     9:    begin
-            Thought := th_None;
+            Thought := thNone;
             fPhase2 := 0;
-            Home.SetState(hst_Work);
+            Home.SetState(hstWork);
 
             //Take required resources
-            if WorkPlan.Resource1 <> wt_None then Home.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
-            if WorkPlan.Resource2 <> wt_None then Home.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
+            if WorkPlan.Resource1 <> wtNone then Home.ResTakeFromIn(WorkPlan.Resource1, WorkPlan.Count1);
+            if WorkPlan.Resource2 <> wtNone then Home.ResTakeFromIn(WorkPlan.Resource2, WorkPlan.Count2);
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource1, WorkPlan.Count1);
             gHands[fUnit.Owner].Stats.WareConsumed(WorkPlan.Resource2, WorkPlan.Count2);
 
-            Home.CurrentAction.SubActionAdd([ha_Smoke]);
-            if WorkPlan.GatheringScript = gs_SwineBreeder then
+            Home.CurrentAction.SubActionAdd([haSmoke]);
+            if WorkPlan.GatheringScript = gsSwineBreeder then
             begin //Swines get feed and taken immediately
               fBeastID := TKMHouseSwineStable(Home).FeedBeasts;
               TKMHouseSwineStable(Home).TakeBeast(fBeastID);
@@ -356,7 +356,7 @@ begin
             Inc(fPhase2);
 
             //Feed a horse/pig
-            if (WorkPlan.GatheringScript = gs_HorseBreeder) and (fPhase2 = 1) then
+            if (WorkPlan.GatheringScript = gsHorseBreeder) and (fPhase2 = 1) then
               fBeastID := TKMHouseSwineStable(Home).FeedBeasts;
 
             //Keep on working
@@ -377,15 +377,15 @@ begin
           end;
     11 + MAX_WORKPLAN:
           begin
-            if WorkPlan.GatheringScript = gs_HorseBreeder then
+            if WorkPlan.GatheringScript = gsHorseBreeder then
               TKMHouseSwineStable(Home).TakeBeast(fBeastID); //Take the horse after feeding
 
             case WorkPlan.GatheringScript of
-              gs_CoalMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wt_Coal);
-              gs_GoldMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wt_GoldOre);
-              gs_IronMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wt_IronOre);
-              gs_SwineBreeder: ResAcquired := fBeastID <> 0;
-              gs_HorseBreeder: ResAcquired := fBeastID <> 0;
+              gsCoalMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtCoal);
+              gsGoldMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtGoldOre);
+              gsIronMiner:    ResAcquired := gTerrain.DecOreDeposit(WorkPlan.Loc, wtIronOre);
+              gsSwineBreeder: ResAcquired := fBeastID <> 0;
+              gsHorseBreeder: ResAcquired := fBeastID <> 0;
               else             ResAcquired := true;
             end;
 
@@ -399,7 +399,7 @@ begin
               gScriptEvents.ProcWareProduced(fUnit.Home, WorkPlan.Product2, WorkPlan.ProdCount2);
             end;
 
-            Home.SetState(hst_Idle);
+            Home.SetState(hstIdle);
             SetActionLockedStay(WorkPlan.AfterWorkIdle-1, uaWalk);
           end;
     else  Result := trTaskDone;

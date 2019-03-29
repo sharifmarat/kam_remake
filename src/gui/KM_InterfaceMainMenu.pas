@@ -105,7 +105,7 @@ begin
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
 
   //Show version info on every page
-  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fnt_Antiqua, taLeft);
+  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fntAntiqua, taLeft);
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -220,10 +220,10 @@ begin
                     end;
     gpLobby:        begin
                       if aText = 'HOST' then
-                        fMenuLobby.Show(lpk_Host, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkHost, gGameApp.Networking, Panel_Menu.Height)
                       else
                       if aText = 'JOIN' then
-                        fMenuLobby.Show(lpk_Joiner, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkJoiner, gGameApp.Networking, Panel_Menu.Height)
                       else
                         raise Exception.Create('');
                       fMenuPage := fMenuLobby;

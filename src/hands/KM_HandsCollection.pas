@@ -141,14 +141,14 @@ begin
   //Existing players treat any new players as enemies
   for I := 0 to fCount - 1 do
     for K := fCount to fCount + aCount - 1 do
-      fHandsList[I].Alliances[K] := at_Enemy;
+      fHandsList[I].Alliances[K] := atEnemy;
 
   //New players treat all players as enemies except self
   for I := fCount to fCount + aCount - 1 do
   begin
     for K := 0 to MAX_HANDS - 1 do
-      fHandsList[I].Alliances[K] := at_Enemy;
-    fHandsList[I].Alliances[I] := at_Ally;
+      fHandsList[I].Alliances[K] := atEnemy;
+    fHandsList[I].Alliances[I] := atAlly;
   end;
 
   fCount := fCount + aCount;
@@ -394,14 +394,14 @@ var
 begin
   Result := MaxSingle;
   for I := 0 to fCount - 1 do
-  if Hands[aIndex].Alliances[I] = at_Enemy then
+  if Hands[aIndex].Alliances[I] = atEnemy then
   begin
     for K := fHandsList[I].Houses.Count - 1 downto 0 do
     begin
       H := fHandsList[I].Houses[K];
       if (H is TKMHouseTower) and H.IsComplete
       and not H.IsDestroyed and H.HasOwner
-      and (H.CurrentAction.State <> hst_Empty) then
+      and (H.CurrentAction.State <> hstEmpty) then
         //Don't use H.GetDistance (dist to any tile within house) as that's not how tower range works
         Result := Min(Result, KMLength(H.Position, aLoc));
     end;
@@ -545,7 +545,7 @@ begin
   //BuiltHouses > UnitGroups > Units > IncompleteHouses
 
   H := HousesHitTest(X,Y);
-  if (H <> nil) and (H.BuildingState in [hbs_Stone, hbs_Done]) then
+  if (H <> nil) and (H.BuildingState in [hbsStone, hbsDone]) then
     Result := H
   else begin
     G := GroupsHitTest(X,Y);
@@ -617,7 +617,7 @@ e.g. Play1 may be allied with Play2, but Play2 may be enemy to Play1}
 function TKMHandsCollection.CheckAlliance(aPlay1,aPlay2: TKMHandID): TKMAllianceType;
 begin
   if (aPlay1 = PLAYER_ANIMAL) or (aPlay2 = PLAYER_ANIMAL) then
-    Result := at_Ally //In KaM animals are always friendly
+    Result := atAlly //In KaM animals are always friendly
   else
     Result := fHandsList[aPlay1].Alliances[aPlay2];
 end;
@@ -646,7 +646,7 @@ begin
 
     Allies[I] := [I]; // every hand is Ally to himself by default
     for J := 0 to Count - 1 do
-      if (I <> J) and (CheckAlliance(I,J) = at_Ally) then
+      if (I <> J) and (CheckAlliance(I,J) = atAlly) then
         Include(Allies[I], J);
   end;
 
@@ -783,7 +783,7 @@ begin
   fHandsList[aPlayer].FogOfWar.RevealCircle(Pos,Radius,Amount);
 
   for I := 0 to fCount - 1 do
-    if (I <> aPlayer) and (fHandsList[aPlayer].Alliances[I] = at_Ally) and fHandsList[aPlayer].ShareFOW[I] then
+    if (I <> aPlayer) and (fHandsList[aPlayer].Alliances[I] = atAlly) and fHandsList[aPlayer].ShareFOW[I] then
       fHandsList[I].FogOfWar.RevealCircle(Pos, Radius, Amount);
 end;
 
@@ -795,7 +795,7 @@ var
 begin
   for I := 0 to fCount - 1 do
   for K := 0 to fCount - 1 do
-  if (I <> K) and (fHandsList[I].Alliances[K] = at_Ally) and fHandsList[I].ShareFOW[K] then
+  if (I <> K) and (fHandsList[I].Alliances[K] = atAlly) and fHandsList[I].ShareFOW[K] then
     fHandsList[K].FogOfWar.SyncFOW(fHandsList[I].FogOfWar);
 end;
 
@@ -805,7 +805,7 @@ var
   I: Integer;
 begin
   for I := 0 to fCount - 1 do
-    fHandsList[I].AI.AddDefaultGoals(aMissionMode <> mm_Tactic);
+    fHandsList[I].AI.AddDefaultGoals(aMissionMode <> mmTactic);
 end;
 
 

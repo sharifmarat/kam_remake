@@ -161,14 +161,14 @@ begin
   MinimapView := TKMMinimapView.Create(Panel_Main, 10, 10, 176, 176);
   MinimapView.OnChange := Minimap_OnUpdate;
 
-  Label_MissionName := TKMLabel.Create(Panel_Main, 230, 10, 500, 10, NO_TEXT, fnt_Grey, taLeft);
-  Label_Coordinates := TKMLabel.Create(Panel_Main, 230, 30, 'X: Y:', fnt_Grey, taLeft);
-  Label_Stat := TKMLabel.Create(Panel_Main, 230, 50, 0, 0, '', fnt_Outline, taLeft);
+  Label_MissionName := TKMLabel.Create(Panel_Main, 230, 10, 500, 10, NO_TEXT, fntGrey, taLeft);
+  Label_Coordinates := TKMLabel.Create(Panel_Main, 230, 30, 'X: Y:', fntGrey, taLeft);
+  Label_Stat := TKMLabel.Create(Panel_Main, 230, 50, 0, 0, '', fntOutline, taLeft);
 
-  TKMLabel.Create(Panel_Main, TB_PAD, 190, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS], fnt_Outline, taLeft);
+  TKMLabel.Create(Panel_Main, TB_PAD, 190, TB_WIDTH, 0, gResTexts[TX_MAPED_PLAYERS], fntOutline, taLeft);
   for I := 0 to MAX_HANDS - 1 do
   begin
-    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, TB_PAD + (I mod 6)*24, 208 + 24*(I div 6), 21, 21, IntToStr(I+1), fnt_Grey, $FF0000FF);
+    Button_PlayerSelect[I]         := TKMFlatButtonShape.Create(Panel_Main, TB_PAD + (I mod 6)*24, 208 + 24*(I div 6), 21, 21, IntToStr(I+1), fntGrey, $FF0000FF);
     Button_PlayerSelect[I].Tag     := I;
     Button_PlayerSelect[I].OnClick := Player_ActiveClick;
   end;
@@ -872,7 +872,7 @@ begin
       ResetDragObject;
       Exit;
     end else begin
-      gRes.Cursors.Cursor := kmc_Drag;
+      gRes.Cursors.Cursor := kmcDrag;
       fDragingObject := True;
     end;
   end;
@@ -881,9 +881,9 @@ begin
 
   if fMyControls.CtrlOver <> nil then
   begin
-    //kmc_Edit and kmc_DragUp are handled by Controls.MouseMove (it will reset them when required)
-    if not fViewport.Scrolling and not (gRes.Cursors.Cursor in [kmc_Edit,kmc_DragUp]) then
-      gRes.Cursors.Cursor := kmc_Default;
+    //kmcEdit and kmcDragUp are handled by Controls.MouseMove (it will reset them when required)
+    if not fViewport.Scrolling and not (gRes.Cursors.Cursor in [kmcEdit,kmcDragUp]) then
+      gRes.Cursors.Cursor := kmcDefault;
     gGameCursor.SState := []; //Don't do real-time elevate when the mouse is over controls, only terrain
     Exit;
   end
@@ -907,27 +907,27 @@ begin
 
   if gGameCursor.Mode = cmPaintBucket then
   begin
-    gRes.Cursors.Cursor := kmc_PaintBucket;
+    gRes.Cursors.Cursor := kmcPaintBucket;
     Exit;
   end;
 
   if fDragingObject and (ssLeft in Shift) then
   begin
     //Cursor can be reset to default, when moved to menu panel while dragging, so set it to drag cursor again
-    gRes.Cursors.Cursor := kmc_Drag;
+    gRes.Cursors.Cursor := kmcDrag;
     MoveObjectToCursorCell(fDragObject);
   end else
   if gGameCursor.Mode = cmNone then
   begin
     Marker := gGame.MapEditor.HitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
     if Marker.MarkerType <> mtNone then
-      gRes.Cursors.Cursor := kmc_Info
+      gRes.Cursors.Cursor := kmcInfo
     else
     if gMySpectator.HitTestCursor <> nil then
-      gRes.Cursors.Cursor := kmc_Info
+      gRes.Cursors.Cursor := kmcInfo
     else
     if not fViewport.Scrolling then
-      gRes.Cursors.Cursor := kmc_Default;
+      gRes.Cursors.Cursor := kmcDefault;
   end;
 
   Update_Label_Coordinates;
@@ -1051,8 +1051,8 @@ begin
   fDragObjMousePosStart := KMPOINT_ZERO;
   fDragObject := nil;
 
-  if gRes.Cursors.Cursor = kmc_Drag then
-    gRes.Cursors.Cursor := kmc_Default;
+  if gRes.Cursors.Cursor = kmcDrag then
+    gRes.Cursors.Cursor := kmcDefault;
 
   if gGameCursor.Mode = cmHouses then
     ResetCursorMode;
@@ -1141,8 +1141,8 @@ begin
                     U := gTerrain.UnitsHitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
                     H := gHands.HousesHitTest(gGameCursor.Cell.X, gGameCursor.Cell.Y);
                     //If there's any enemy unit or house on specified tile - set attack target
-                    if ((U <> nil) and (gHands[U.Owner].Alliances[G.Owner] = at_Enemy))
-                    or ((H <> nil) and (gHands[H.Owner].Alliances[G.Owner] = at_Enemy)) then
+                    if ((U <> nil) and (gHands[U.Owner].Alliances[G.Owner] = atEnemy))
+                    or ((H <> nil) and (gHands[H.Owner].Alliances[G.Owner] = atEnemy)) then
                       G.MapEdOrder.Order := ioAttackPosition
                     //Else order group walk to specified location
                     else
@@ -1229,7 +1229,7 @@ procedure TKMapEdInterface.Paint;
     TKMRenderUI.WriteOutline(X - W div 2, Y - 10, W, 20, 2, aLineColor);
 
     //Paint the label on top of the background
-    TKMRenderUI.WriteText(X, Y - 7, 0, aText, fnt_Metal, taCenter, aTextColor);
+    TKMRenderUI.WriteText(X, Y - 7, 0, aText, fntMetal, taCenter, aTextColor);
   end;
 const
   DefenceLine: array [TAIDefencePosType] of Cardinal = ($FF80FF00, $FFFF8000);

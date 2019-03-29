@@ -9,15 +9,15 @@ type
 
   // Log message type
   TKMLogMessageType = (
-    lmt_Default,            //default type
-    lmt_Delivery,           //delivery messages
-    lmt_Commands,           //all GIC commands
-    lmt_RandomChecks,       //Random Checks
-    lmt_NetConnection,      //messages about net connection/disconnection/reconnection
-    lmt_NetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
-    lmt_NetPacketCommand,   //log messages about GIP commands net packets
-    lmt_NetPacketPingFps,   //log messages about ping/fps net packets
-    lmt_Debug);             //debug
+    lmtDefault,            //default type
+    lmtDelivery,           //delivery messages
+    lmtCommands,           //all GIC commands
+    lmtRandomChecks,       //Random Checks
+    lmtNetConnection,      //messages about net connection/disconnection/reconnection
+    lmtNetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
+    lmtNetPacketCommand,   //log messages about GIP commands net packets
+    lmtNetPacketPingFps,   //log messages about ping/fps net packets
+    lmtDebug);             //debug
 
   TKMLogMessageTypeSet = set of TKMLogMessageType;
 
@@ -89,7 +89,7 @@ uses
   KM_Defaults, KM_CommonUtils;
 
 const
-  DEFAULT_LOG_TYPES_TO_WRITE: TKMLogMessageTypeSet = [lmt_Default, lmt_NetConnection];
+  DEFAULT_LOG_TYPES_TO_WRITE: TKMLogMessageTypeSet = [lmtDefault, lmtNetConnection];
 
 
 //New thread, in which old logs are deleted (used internally)
@@ -147,7 +147,7 @@ begin
   fPreviousTick := TimeGet;
   MessageTypes := DEFAULT_LOG_TYPES_TO_WRITE;
   if DEBUG_LOGS then
-    Include(MessageTypes, lmt_Debug);
+    Include(MessageTypes, lmtDebug);
 
   CS := TCriticalSection.Create;
   InitLog;
@@ -249,7 +249,7 @@ end;
 //Add line with timestamp
 procedure TKMLog.AddLineTime(const aText: UnicodeString; aFlushImmidiately: Boolean = True);
 begin
-  AddLineTime(aText, lmt_Default, aFlushImmidiately);
+  AddLineTime(aText, lmtDefault, aFlushImmidiately);
 end;
 
 
@@ -294,99 +294,99 @@ end;
 
 function TKMLog.IsDegubLogEnabled: Boolean;
 begin
-  Result := lmt_Debug in MessageTypes;
+  Result := lmtDebug in MessageTypes;
 end;
 
 
 procedure TKMLog.LogDebug(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_Debug);
+  AddLineTime(aText, lmtDebug);
 end;
 
 
 procedure TKMLog.LogDelivery(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_Delivery);
+  AddLineTime(aText, lmtDelivery);
 end;
 
 
 procedure TKMLog.LogCommands(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_Commands);
+  AddLineTime(aText, lmtCommands);
 end;
 
 
 procedure TKMLog.LogRandomChecks(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_RandomChecks);
+  AddLineTime(aText, lmtRandomChecks);
 end;
 
 
 procedure TKMLog.LogNetConnection(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_NetConnection);
+  AddLineTime(aText, lmtNetConnection);
 end;
 
 
 procedure TKMLog.LogNetPacketOther(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_NetPacketOther);
+  AddLineTime(aText, lmtNetPacketOther);
 end;
 
 
 procedure TKMLog.LogNetPacketCommand(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_NetPacketCommand);
+  AddLineTime(aText, lmtNetPacketCommand);
 end;
 
 
 procedure TKMLog.LogNetPacketPingFps(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-  AddLineTime(aText, lmt_NetPacketPingFps);
+  AddLineTime(aText, lmtNetPacketPingFps);
 end;
 
 
 function TKMLog.CanLogDelivery: Boolean;
 begin
-  Result := lmt_Delivery in MessageTypes;
+  Result := lmtDelivery in MessageTypes;
 end;
 
 function TKMLog.CanLogCommands: Boolean;
 begin
-  Result := lmt_Commands in MessageTypes;
+  Result := lmtCommands in MessageTypes;
 end;
 
 function TKMLog.CanLogRandomChecks: Boolean;
 begin
-  Result := lmt_RandomChecks in MessageTypes;
+  Result := lmtRandomChecks in MessageTypes;
 end;
 
 function TKMLog.CanLogNetConnection: Boolean;
 begin
-  Result := lmt_NetConnection in MessageTypes;
+  Result := lmtNetConnection in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketOther: Boolean;
 begin
-  Result := lmt_NetPacketOther in MessageTypes;
+  Result := lmtNetPacketOther in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketCommand: Boolean;
 begin
-  Result := lmt_NetPacketCommand in MessageTypes;
+  Result := lmtNetPacketCommand in MessageTypes;
 end;
 
 function TKMLog.CanLogNetPacketPingFps: Boolean;
 begin
-  Result := lmt_NetPacketPingFps in MessageTypes;
+  Result := lmtNetPacketPingFps in MessageTypes;
 end;
 
 

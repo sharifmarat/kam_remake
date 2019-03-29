@@ -224,9 +224,9 @@ begin
   if FProgress >= 0 then
     TKMRenderUI.WritePercentBar(AbsLeft, AbsTop + Height - 6, Width, 6, FProgress, 0);
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop + Height - 16, Width, FValue, fnt_Grey, taCenter, $FFFFFFFF);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop + Height - 16, Width, FValue, fntGrey, taCenter, $FFFFFFFF);
   if FAdditionalValue <> '' then
-    TKMRenderUI.WriteText(AbsLeft - 2, AbsTop - 2, Width, FAdditionalValue, fnt_Grey, taRight, $FFFFFFFF);
+    TKMRenderUI.WriteText(AbsLeft - 2, AbsTop - 2, Width, FAdditionalValue, fntGrey, taRight, $FFFFFFFF);
 end;
 
 { TKMGUIGameSpectatorItemLine }
@@ -295,7 +295,7 @@ begin
   end;
 
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
-  Width := Max(Count * (GUI_SPECTATOR_ITEM_WIDTH + GUI_SPECTATOR_ITEM_SPLITE_H) + GUI_SPECTATOR_ITEM_SPLITE_H, gRes.Fonts[fnt_Grey].GetTextSize(Str).X + 32 + 4);
+  Width := Max(Count * (GUI_SPECTATOR_ITEM_WIDTH + GUI_SPECTATOR_ITEM_SPLITE_H) + GUI_SPECTATOR_ITEM_SPLITE_H, gRes.Fonts[fntGrey].GetTextSize(Str).X + 32 + 4);
   Left := Parent.Width - Width;
 
   Position := Width - GUI_SPECTATOR_ITEM_SPLITE_H - GUI_SPECTATOR_ITEM_WIDTH;
@@ -333,7 +333,7 @@ begin
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
   inherited;
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
-  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fnt_Grey, taRight, $FFFFFFFF);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fntGrey, taRight, $FFFFFFFF);
 
   ID := GUI_SPECTATOR_HEADER_FLAG + FAnimStep mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
   TKMRenderUI.WritePicture(AbsLeft + Width - 32, AbsTop, 32, GUI_SPECTATOR_HEADER_HEIGHT, [], rxHouses, ID, True, gHands[FHandIndex].FlagColor);
@@ -384,7 +384,7 @@ end;
 class function TKMGUIGameSpectatorItemLineWareFare.GetIcon(aTag: Integer): Word;
 begin
   if aTag = -1 then
-    Result := gRes.Units[ut_Recruit].GUIIcon
+    Result := gRes.Units[utRecruit].GUIIcon
   else
     Result := gRes.Wares[TKMWareType(ATag)].GUIIcon;
 end;
@@ -392,7 +392,7 @@ end;
 class function TKMGUIGameSpectatorItemLineWareFare.GetTitle(aTag: Integer): UnicodeString;
 begin
   if aTag = -1 then
-    Result := gRes.Units[ut_Recruit].GUIName
+    Result := gRes.Units[utRecruit].GUIName
   else
     Result := gRes.Wares[TKMWareType(ATag)].Title;
 end;
@@ -412,7 +412,7 @@ var
   Value: Integer;
 begin
   if aTag = -1 then
-    Value := gHands[AHandIndex].Stats.GetUnitQty(ut_Recruit)
+    Value := gHands[AHandIndex].Stats.GetUnitQty(utRecruit)
   else
     Value := gHands[AHandIndex].Stats.GetWareBalance(TKMWareType(ATag));
 
@@ -488,7 +488,7 @@ begin
   for i := 0 to gHands[AHandIndex].Houses.Count - 1 do
   begin
     House := gHands[AHandIndex].Houses[i];
-    if (House.HouseType = HouseType) and (House.BuildingState in [hbs_Wood, hbs_Stone]) and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
+    if (House.HouseType = HouseType) and (House.BuildingState in [hbsWood, hbsStone]) and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
       HouseProgress := House;
   end;
 
@@ -677,7 +677,7 @@ begin
   AddLineType(8, TKMGUIGameSpectatorItemLineArmyKilling);
   AddLineType(9, TKMGUIGameSpectatorItemLineArmyLost);
 
-  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fnt_Metal, '', bsGame);
+  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fntMetal, '', bsGame);
   FDropBox.OnChange := ChangePage;
 
   FDropBox.Add(gResTexts[TX_WORD_NONE]);

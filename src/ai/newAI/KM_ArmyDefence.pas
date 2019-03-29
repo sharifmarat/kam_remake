@@ -163,7 +163,7 @@ end;
 
 function TKMDefencePosition.GetGroupType(): TKMGroupType;
 begin
-  Result := gt_Melee;
+  Result := gtMelee;
   if (Group <> nil) then
     Result := Group.GroupType;
 end;
@@ -563,10 +563,10 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
     begin
       Company := fAttack.Company[I];
       if (KMDistanceSqr(aLoc, Company.ScanPosition) < SQR_MAX_DISTANCE)
-        OR ((Company.CompanyMode = cm_Defence) AND (KMDistanceSqr(aLoc, Company.TargetPoint) < SQR_MAX_DISTANCE)) then
+        OR ((Company.CompanyMode = cmDefence) AND (KMDistanceSqr(aLoc, Company.TargetPoint) < SQR_MAX_DISTANCE)) then
       begin
         // Actualize target point
-        if (Company.CompanyMode = cm_Defence) then
+        if (Company.CompanyMode = cmDefence) then
           Company.TargetPoint := aLoc;
         if aRestockCompany AND not RestockCompany(Company) then
         begin
@@ -590,7 +590,7 @@ begin
     UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, MIN_SOLDIERS * Byte(not aIgnoreFirstLine), aTargetPoint, aIgnoreFirstLine);
     if (Length(UGA) > 0) then
     begin
-      fAttack.CreateCompany(aTargetPoint, UGA, cm_Defence);
+      fAttack.CreateCompany(aTargetPoint, UGA, cmDefence);
       Result := True;
     end;
   end;
@@ -647,7 +647,7 @@ begin
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         if (gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ] > 0) then
         begin
-          UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, at_Enemy);
+          UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, atEnemy);
           if (Length(UGA) > 0) then
             AddTargetPoint(Loc, Cnt, TargetPoints);
           break;
@@ -748,7 +748,7 @@ begin
       // Draw hostile units around defensive lines
       if (Threat > 0) then
       begin
-        UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, at_Enemy);
+        UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, atEnemy);
         for K := 0 to Length(UGA) - 1 do
         begin
           Pos := UGA[K].Position;

@@ -76,23 +76,23 @@ begin
           Stat_HousePic[HT].Hint := gRes.Houses[HT].HouseName;
           Stat_HousePic[HT].ImageCenter;
           Stat_HousePic[HT].Tag := Byte(HT);
-          Stat_HouseWip[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W  ,  0,  '', fnt_Grey, taRight);
+          Stat_HouseWip[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W  ,  0,  '', fntGrey, taRight);
           Stat_HouseWip[HT].Hitable := False;
-          Stat_HouseQty[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W-2, 16, '-', fnt_Grey, taRight);
+          Stat_HouseQty[HT] := TKMLabel.Create(Panel_StatBlock[I], OffX + HOUSE_W-2, 16, '-', fntGrey, taRight);
           Stat_HouseQty[HT].Hitable := False;
           Inc(OffX, HOUSE_W);
         end;
 
       for K := Low(StatPlan[I].UnitType) to High(StatPlan[I].UnitType) do
-        if StatPlan[I].UnitType[K] <> ut_None then
+        if StatPlan[I].UnitType[K] <> utNone then
         begin
           UT := StatPlan[I].UnitType[K];
           Stat_UnitPic[UT] := TKMImage.Create(Panel_StatBlock[I], OffX, 0, UNIT_W, 30, gRes.Units[UT].GUIIcon);
           Stat_UnitPic[UT].Hint := gRes.Units[UT].GUIName;
           Stat_UnitPic[UT].ImageCenter;
-          Stat_UnitWip[UT] := TKMLabel.Create(Panel_StatBlock[I], OffX + UNIT_W  ,  0,  '', fnt_Grey, taRight);
+          Stat_UnitWip[UT] := TKMLabel.Create(Panel_StatBlock[I], OffX + UNIT_W  ,  0,  '', fntGrey, taRight);
           Stat_UnitWip[UT].Hitable := False;
-          Stat_UnitQty[UT] := TKMLabel.Create(Panel_StatBlock[I], OffX + UNIT_W-2, 16, '-', fnt_Grey, taRight);
+          Stat_UnitQty[UT] := TKMLabel.Create(Panel_StatBlock[I], OffX + UNIT_W-2, 16, '-', fntGrey, taRight);
           Stat_UnitQty[UT].Hitable := False;
           Inc(OffX, UNIT_W);
         end;
@@ -195,7 +195,7 @@ begin
     end;
 
     for K := Low(StatPlan[I].UnitType) to High(StatPlan[I].UnitType) do
-    if StatPlan[I].UnitType[K] <> ut_None then
+    if StatPlan[I].UnitType[K] <> utNone then
     begin
       UT := StatPlan[I].UnitType[K];
       Qty := gMySpectator.Hand.Stats.GetUnitQty(UT);

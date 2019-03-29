@@ -809,7 +809,7 @@ begin
 
     //This tile must not contain fields/houseplans of allied players
     for PL := 0 to gHands.Count - 1 do
-      if (gHands[fOwner].Alliances[PL] = at_Ally) then// AND (PL <> fOwner) then
+      if (gHands[fOwner].Alliances[PL] = atAlly) then// AND (PL <> fOwner) then
         if (gHands[PL].BuildList.FieldworksList.HasField(Point) <> ftNone) then
           Exit;
   end;
@@ -826,7 +826,7 @@ begin
     Point := KMPoint(X,Y);
     // Surrounding tiles must not be a house
     for PL := 0 to gHands.Count - 1 do
-      if (gHands[fOwner].Alliances[PL] = at_Ally) then
+      if (gHands[fOwner].Alliances[PL] = atAlly) then
         if gHands[PL].BuildList.HousePlanList.HasPlan(Point) then
           Exit;
     if (aHT in [htGoldMine, htIronMine]) then
@@ -1104,7 +1104,7 @@ begin
        AND not U.IsDeadOrDying
        AND (U.Owner >= 0) // Dont select animals!
        AND (U.Owner <> fOwner)
-       AND (gHands[fOwner].Alliances[U.Owner] <> at_Ally) then
+       AND (gHands[fOwner].Alliances[U.Owner] <> atAlly) then
       begin
         Distance := KMDistanceAbs(KMPoint(X,Y), aInitPoint);
         if (Closest > Distance) then
@@ -1504,7 +1504,7 @@ var
 begin
 // Mark plans (only allied houses)
   for PL := 0 to gHands.Count - 1 do
-    if (gHands[fOwner].Alliances[PL] = at_Ally) then
+    if (gHands[fOwner].Alliances[PL] = atAlly) then
     begin
       // House plans
       for I := 0 to gHands[PL].BuildList.HousePlanList.Count - 1 do

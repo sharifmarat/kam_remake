@@ -61,9 +61,9 @@ begin
   inherited Create;
 
   Panel_Unit := TKMPanel.Create(aParent, 0, 45, TB_WIDTH, 400);
-  Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,0,'',fnt_Outline,taCenter);
+  Label_UnitName        := TKMLabel.Create(Panel_Unit,0,16,TB_WIDTH,0,'',fntOutline,taCenter);
   Image_UnitPic         := TKMImage.Create(Panel_Unit,0,38,54,100,521);
-  Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,0,gResTexts[TX_UNIT_CONDITION],fnt_Grey,taCenter);
+  Label_UnitCondition   := TKMLabel.Create(Panel_Unit,65,40,116,0,gResTexts[TX_UNIT_CONDITION],fntGrey,taCenter);
 
   KMConditionBar_Unit     := TKMPercentBar.Create(Panel_Unit,65,55,116,15);
   Button_ConditionDec     := TKMButton.Create(Panel_Unit,65,78,20,20,'-', bsGame);
@@ -76,7 +76,7 @@ begin
   Button_ConditionInc.OnClickHold  := UnitConditionsClickHold;
   Button_ConditionDefault.OnClickShift  := UnitConditionsChange;
 
-  Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,152,TB_WIDTH,200,'',fnt_Grey,taLeft); //Taken from LIB resource
+  Label_UnitDescription := TKMLabel.Create(Panel_Unit,0,152,TB_WIDTH,200,'',fntGrey,taLeft); //Taken from LIB resource
   Label_UnitDescription.AutoWrap := True;
 
   Panel_Army := TKMPanel.Create(Panel_Unit, 0, 160, TB_WIDTH, 400);
@@ -84,7 +84,7 @@ begin
   Button_Army_RotCW   := TKMButton.Create(Panel_Army,     124,  0, 56, 40, 24, rxGui, bsGame);
   Button_Army_ForUp   := TKMButton.Create(Panel_Army,       0, 46, 56, 40, 33, rxGui, bsGame);
   ImageStack_Army     := TKMImageStack.Create(Panel_Army,  62, 46, 56, 40, 43, 50);
-  Label_ArmyCount     := TKMLabel.Create(Panel_Army,       62, 60, 56, 20, '-', fnt_Outline, taCenter);
+  Label_ArmyCount     := TKMLabel.Create(Panel_Army,       62, 60, 56, 20, '-', fntOutline, taCenter);
   Button_Army_ForDown := TKMButton.Create(Panel_Army,     124, 46, 56, 40, 32, rxGui, bsGame);
   Button_Army_RotCW.OnClick   := Unit_ArmyChange1;
   Button_Army_RotCCW.OnClick  := Unit_ArmyChange1;
@@ -107,20 +107,20 @@ begin
 
   //Group order
   //todo: Orders should be placed with a cursor (but keep numeric input as well?)
-  TKMLabel.Create(Panel_Army, 0, 140, TB_WIDTH, 0, gResTexts[TX_MAPED_GROUP_ORDER], fnt_Outline, taLeft);
-  DropBox_ArmyOrder := TKMDropList.Create(Panel_Army, 0, 160, TB_WIDTH, 20, fnt_Metal, '', bsGame);
+  TKMLabel.Create(Panel_Army, 0, 140, TB_WIDTH, 0, gResTexts[TX_MAPED_GROUP_ORDER], fntOutline, taLeft);
+  DropBox_ArmyOrder := TKMDropList.Create(Panel_Army, 0, 160, TB_WIDTH, 20, fntMetal, '', bsGame);
   DropBox_ArmyOrder.Add(gResTexts[TX_MAPED_GROUP_ORDER_NONE]);
   DropBox_ArmyOrder.Add(gResTexts[TX_MAPED_GROUP_ORDER_WALK]);
   DropBox_ArmyOrder.Add(gResTexts[TX_MAPED_GROUP_ORDER_ATTACK]);
   DropBox_ArmyOrder.OnChange := Unit_ArmyChange1;
 
-  TKMLabel.Create(Panel_Army, 0, 185, 'X:', fnt_Grey, taLeft);
+  TKMLabel.Create(Panel_Army, 0, 185, 'X:', fntGrey, taLeft);
   Edit_ArmyOrderX := TKMNumericEdit.Create(Panel_Army, 20, 185, 0, 255);
   Edit_ArmyOrderX.OnChange := Unit_ArmyChange1;
-  TKMLabel.Create(Panel_Army, 0, 205, 'Y:', fnt_Grey, taLeft);
+  TKMLabel.Create(Panel_Army, 0, 205, 'Y:', fntGrey, taLeft);
   Edit_ArmyOrderY := TKMNumericEdit.Create(Panel_Army, 20, 205, 0, 255);
   Edit_ArmyOrderY.OnChange := Unit_ArmyChange1;
-  TKMLabel.Create(Panel_Army, 110, 185, gResTexts[TX_MAPED_GROUP_ORDER_DIRECTION], fnt_Grey, taLeft);
+  TKMLabel.Create(Panel_Army, 110, 185, gResTexts[TX_MAPED_GROUP_ORDER_DIRECTION], fntGrey, taLeft);
   Edit_ArmyOrderDir := TKMNumericEdit.Create(Panel_Army, 110, 205, 0, 7);
   Edit_ArmyOrderDir.OnChange := Unit_ArmyChange1;
 end;

@@ -121,7 +121,7 @@ begin
   with fUnit do
     case fPhase of
       0:  SetActionWalkToSpot(fSchool.PointBelowEntrance);
-      1:  SetActionGoIn(uaWalk, gd_GoInside, fSchool);
+      1:  SetActionGoIn(uaWalk, gdGoInside, fSchool);
       2:  fUnit.Kill(PLAYER_NONE, False, False); //Silently kill unit
       else Result := trTaskDone;
     end;

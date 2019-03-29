@@ -10,7 +10,7 @@ type
     GoalType: TKMGoalType; //Victory, survive, neither
     GoalCondition: TKMGoalCondition; //Buildings, troops, time passing
     GoalStatus: TKMGoalStatus; //Must this condition be true or false (same as alive or dead) for victory/surival to occur?
-    GoalTime: Cardinal; //Only used with ga_Time. Amount of time (in game ticks) that must pass before this goal is complete
+    GoalTime: Cardinal; //Only used with gaTime. Amount of time (in game ticks) that must pass before this goal is complete
     MessageToShow: Integer; //Message to be shown when the goal is completed
     MessageHasShown: Boolean; //Whether we have shown this message yet
     HandIndex: TKMHandID; //Player whose buildings or troops must be destroyed
@@ -19,34 +19,34 @@ type
   //Because the goal system is hard to understand, here are some examples:
   {Destroy troops of player 2 in order to win
   Script command: !ADD_GOAL 4 1 0 2
-  GoalType=glt_Victory
-  GoalCondition=gc_Troops
-  GoalStatus=gs_False         //Troops must be dead, non-existant. i.e. the condition that player 2 has troops must be FALSE.
+  GoalType=gltVictory
+  GoalCondition=gcTroops
+  GoalStatus=gsFalse         //Troops must be dead, non-existant. i.e. the condition that player 2 has troops must be FALSE.
   Player=play_2
   }
 
   {Save (protect) troops of player 1 or else you will lose the game
   Script command: !ADD_LOST_GOAL 4 0 0 1
-  GoalType=glt_Survive
-  GoalCondition=gc_Troops
-  GoalStatus=gs_True         //Troops must be alive. i.e. the condition that player 1 has troops must be TRUE otherwise you lose.
+  GoalType=gltSurvive
+  GoalCondition=gcTroops
+  GoalStatus=gsTrue         //Troops must be alive. i.e. the condition that player 1 has troops must be TRUE otherwise you lose.
   Player=play_1
   }
 
   {Display message 500 after 10 minutes (no goal, just message)
   Script command: !ADD_GOAL 2 0 500 600
-  GoalType=glt_None
-  GoalCondition=gc_Time
-  GoalStatus=gs_True      //Time must have passed
+  GoalType=gltNone
+  GoalCondition=gcTime
+  GoalStatus=gsTrue      //Time must have passed
   GoalTime=600
   MessageToShow=500
   }
 
   {Display message 510 upon buildings of player 4 being destroyed
   Script command: !ADD_GOAL 3 1 510 4 (in this case the script command would also require the buildings to be destroyed for a victory condition, as mentioned bellow)
-  GoalType=glt_None            //If this was set to victory or survive not only would the message be displayed, but it would also be a condition for winning/losing
-  GoalCondition=gc_Buildings
-  GoalStatus=gs_False         //Buildings must be destroyed
+  GoalType=gltNone            //If this was set to victory or survive not only would the message be displayed, but it would also be a condition for winning/losing
+  GoalCondition=gcBuildings
+  GoalStatus=gsFalse         //Buildings must be destroyed
   MessageToShow=500
   }
 
@@ -172,16 +172,16 @@ var
   gc: TKMGoalCondition;
 begin
   if aBuildings then
-    gc := gc_Buildings
+    gc := gcBuildings
   else
-    gc := gc_Troops;
+    gc := gcTroops;
 
   // Default Defeat condition is to lose army/town
-  AddGoal(glt_Survive, gc, gs_True, 0, 0, aOurPlayerIndex);
+  AddGoal(gltSurvive, gc, gsTrue, 0, 0, aOurPlayerIndex);
 
   // Default Victory conditions is to kill armies / destroy towns of all other players
   for I := 0 to Length(aEnemyIndexes) - 1 do
-    AddGoal(glt_Victory, gc, gs_False, 0, 0, aEnemyIndexes[I]);
+    AddGoal(gltVictory, gc, gsFalse, 0, 0, aEnemyIndexes[I]);
 end;
 
 

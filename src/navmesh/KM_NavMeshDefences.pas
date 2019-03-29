@@ -196,8 +196,8 @@ var
 begin
   // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
-  fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
-  fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
+  fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, atAlly);
+  fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, atEnemy);
   Distance := aDistance + fDefInfo[aIdx].EnemyInfluence shr 2;
   if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) OR (fDefInfo[aIdx].AllyInfluence > OWNER_INFLUENCE_LIMIT) then
     Distance := 0;
@@ -220,7 +220,7 @@ begin
   // Get center points of all allied cities
   Cnt := 0;
   for PL := 0 to gHands.Count - 1 do
-    if (gHands[fOwner].Alliances[PL] = at_Ally) then
+    if (gHands[fOwner].Alliances[PL] = atAlly) then
     begin
       gAIFields.Eye.OwnerUpdate(PL);
       CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
@@ -565,7 +565,7 @@ begin
                            + fDefInfo[Idx].EnemyInfluence // Add more soldiers closer to enemy influence
                      );
       end;
-      if (Direction <> dir_NA) then
+      if (Direction <> dirNA) then
         Cnt := Cnt + 1;
     end;
     // Expand polygon

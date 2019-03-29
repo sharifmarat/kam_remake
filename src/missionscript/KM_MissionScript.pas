@@ -7,20 +7,20 @@ uses
 
 type
   TKMMissionParsingMode = (
-                          mpm_Single,
-                          mpm_Multi,  //Skip players
-                          mpm_Editor  //Ignore errors, load armies differently
+                          mpmSingle,
+                          mpmMulti,  //Skip players
+                          mpmEditor  //Ignore errors, load armies differently
                         );
 
-  TKMCommandType = (ct_Unknown=0,ct_SetMap,ct_SetMaxPlayer,ct_SetCurrPlayer,ct_HumanPlayer,ct_UserPlayer,ct_SetHouse,
-                    ct_SetTactic,ct_AIPlayer,ct_AdvancedAIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
-                    ct_ClearUp,ct_BlockTrade, ct_BlockUnit, ct_BlockHouse,ct_ReleaseHouse,ct_ReleaseAllHouses,ct_AddGoal,ct_AddLostGoal,
-                    ct_SetUnit,ct_SetRoad,ct_SetField,ct_SetWinefield,ct_SetFieldStaged,ct_SetWinefieldStaged, ct_SetStock,ct_AddWare,ct_SetAlliance,
-                    ct_SetHouseDamage,ct_SetHouseDeliveryMode,ct_SetHouseRepairMode,ct_SetHouseClosedForWorker,
-                    ct_SetUnitByStock,ct_UnitAddToLast,ct_SetGroup,ct_SetGroupFood,ct_SendGroup,
-                    ct_AttackPosition,ct_AddWareToSecond,ct_AddWareTo,ct_AddWareToLast,ct_AddWareToAll,ct_AddWeapon,ct_AICharacter,
-                    ct_AINoBuild,ct_AIAutoRepair,ct_AIAutoAttack,ct_AIAutoDefend,ct_AIDefendAllies,ct_AIUnlimitedEquip,ct_AIArmyType,
-                    ct_AIStartPosition,ct_AIDefence,ct_AIAttack,ct_CopyAIAttack,ct_ClearAIAttack, ct_SetRallyPoint);
+  TKMCommandType = (ctUnknown=0,ctSetMap,ctSetMaxPlayer,ctSetCurrPlayer,ctHumanPlayer,ctUserPlayer,ctSetHouse,
+                    ctSetTactic,ctAIPlayer,ctAdvancedAIPlayer,ctEnablePlayer,ctSetNewRemap,ctSetMapColor,ctSetRGBColor,ctCenterScreen,
+                    ctClearUp,ctBlockTrade, ctBlockUnit, ctBlockHouse,ctReleaseHouse,ctReleaseAllHouses,ctAddGoal,ctAddLostGoal,
+                    ctSetUnit,ctSetRoad,ctSetField,ctSetWinefield,ctSetFieldStaged,ctSetWinefieldStaged, ctSetStock,ctAddWare,ctSetAlliance,
+                    ctSetHouseDamage,ctSetHouseDeliveryMode,ctSetHouseRepairMode,ctSetHouseClosedForWorker,
+                    ctSetUnitByStock,ctUnitAddToLast,ctSetGroup,ctSetGroupFood,ctSendGroup,
+                    ctAttackPosition,ctAddWareToSecond,ctAddWareTo,ctAddWareToLast,ctAddWareToAll,ctAddWeapon,ctAICharacter,
+                    ctAINoBuild,ctAIAutoRepair,ctAIAutoAttack,ctAIAutoDefend,ctAIDefendAllies,ctAIUnlimitedEquip,ctAIArmyType,
+                    ctAIStartPosition,ctAIDefence,ctAIAttack,ctCopyAIAttack,ctClearAIAttack, ctSetRallyPoint);
 
 const
   COMMANDVALUES: array [TKMCommandType] of AnsiString = (
@@ -90,7 +90,7 @@ function TKMMissionParserCommon.TextToCommandType(const ACommandText: AnsiString
 var
   I: TKMCommandType;
 begin
-  Result := ct_Unknown;
+  Result := ctUnknown;
 
   for I := Low(TKMCommandType) to High(TKMCommandType) do
   begin
@@ -102,7 +102,7 @@ begin
   end;
 
   //Commented out because it slows down mission scanning
-  //if Result = ct_Unknown then gLog.AddToLog(String(ACommandText));
+  //if Result = ctUnknown then gLog.AddToLog(String(ACommandText));
 end;
 
 

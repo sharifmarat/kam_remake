@@ -148,7 +148,7 @@ type
     property Direction: TKMDirection read fDirection write SetDirection;
     property CurrentHitPoints: Byte read fHitPoints;
 
-    function HitTest(X,Y: Integer; const UT: TKMUnitType = ut_Any): Boolean;
+    function HitTest(X,Y: Integer; const UT: TKMUnitType = utAny): Boolean;
 
     procedure SetActionAbandonWalk(const aLocB: TKMPoint; aActionType: TKMUnitActionType = uaWalk);
     procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); virtual;
@@ -406,9 +406,9 @@ begin
     and not (fTask is TKMTaskDie)
     and not (fTask is TKMTaskDismiss) then
     begin
-      wGoingInsideHouse := (fAction is TKMUnitActionGoInOut) and ((TKMUnitActionGoInOut(fAction)).Direction = gd_GoInside);
+      wGoingInsideHouse := (fAction is TKMUnitActionGoInOut) and ((TKMUnitActionGoInOut(fAction)).Direction = gdGoInside);
       // let recruits finish throwing animation
-      wThrowingRock := (fTask is TKMTaskThrowRock) and (fHome.GetState in [hst_Work]);
+      wThrowingRock := (fTask is TKMTaskThrowRock) and (fHome.GetState in [hstWork]);
       // do not cancel eating task
       wGoingForEating := (fTask is TKMTaskGoEat);
       // Assume worker is inside the house if not Visible.
@@ -442,10 +442,10 @@ begin
           if (wIsInsideHouse or wWantToGoOutShowHungry)
             and not (fHome.HouseType = htBarracks) then // Recruits should not go out of Barracks
           begin
-            SetActionGoIn(uaWalk, gd_GoOutside, fHome); //Walk outside the house
+            SetActionGoIn(uaWalk, gdGoOutside, fHome); //Walk outside the house
             // If working inside - first we need to set house state to Idle, then to Empty
-            fHome.SetState(hst_Idle);
-            fHome.SetState(hst_Empty);
+            fHome.SetState(hstIdle);
+            fHome.SetState(hstEmpty);
             CleanHousePointer(True)     // Clean house pointer and free task
           end;
         end;
@@ -479,7 +479,7 @@ begin
   if inherited UpdateState then Exit;
   if IsDead then Exit; //Caused by SelfTrain.Abandoned
 
-  fThought := th_None;
+  fThought := thNone;
 
   CheckCondition;
 
@@ -498,7 +498,7 @@ begin
       if FindHome then
         fTask := TKMTaskGoHome.Create(Self) //Home found - go there
       else begin
-        fThought := th_Quest; //Always show quest when idle, unlike serfs who randomly show it
+        fThought := thQuest; //Always show quest when idle, unlike serfs who randomly show it
         SetActionStay(20, uaWalk) //There's no home, but there will hopefully be one soon so don't sleep too long
       end
     else
@@ -511,7 +511,7 @@ begin
       end else begin
 
         if not (fHome.HouseType in HOUSE_WORKSHOP)
-          or (fHome.CheckResOut(wt_All) < MAX_WARES_OUT_WORKSHOP) then //Do not do anything if we have too many ready resources
+          or (fHome.CheckResOut(wtAll) < MAX_WARES_OUT_WORKSHOP) then //Do not do anything if we have too many ready resources
           fTask := InitiateActivity; //Unit is at home, so go get a job
 
         if fTask = nil then //We didn't find any job to do - rest at home
@@ -537,8 +537,8 @@ begin
   if fAction = nil then exit;
   Act := fAction.fType;
 
-  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   ID := fUID * Byte(not (fAction.fType in [uaDie, uaEat]));
 
@@ -558,7 +558,7 @@ begin
       end;
   end;
 
-  if fThought <> th_None then
+  if fThought <> thNone then
     gRenderPool.AddUnitThought(fType, Act, Direction, fThought, XPaintPos, YPaintPos);
 end;
 
@@ -568,12 +568,12 @@ var
   I: Integer;
 begin
   case aGatheringScript of
-    gs_WoodCutterPlant: begin
+    gsWoodCutterPlant: begin
                           //Woodcutters should not plant trees on our own or our ally's house plans
                           //(it's very annoying if they do)
                           Result := True;
                           for I := 0 to gHands.Count - 1 do
-                            if gHands[fOwner].Alliances[I] = at_Ally then
+                            if gHands[fOwner].Alliances[I] = atAlly then
                               Result := Result and not gHands[I].BuildList.HousePlanList.HasPlan(aLoc);
                         end;
     else Result := True;
@@ -598,7 +598,7 @@ begin
     htCoalMine:    Msg := TX_MSG_COAL_DEPLETED;
     htIronMine:    Msg := TX_MSG_IRON_DEPLETED;
     htGoldMine:    Msg := TX_MSG_GOLD_DEPLETED;
-    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcm_Plant then
+    htWoodcutters: if TKMHouseWoodcutters(fHome).WoodcutterMode = wcmPlant then
                       Msg := TX_MSG_WOODCUTTER_PLANT_DEPLETED
                     else
                       Msg := TX_MSG_WOODCUTTER_DEPLETED;
@@ -648,8 +648,8 @@ begin
     IssueResourceDepletedMessage;
 
   if TM.WorkPlan.IsIssued
-    and ((TM.WorkPlan.Resource1 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource1) >= TM.WorkPlan.Count1))
-    and ((TM.WorkPlan.Resource2 = wt_None) or (fHome.CheckResIn(TM.WorkPlan.Resource2) >= TM.WorkPlan.Count2))
+    and ((TM.WorkPlan.Resource1 = wtNone) or (fHome.CheckResIn(TM.WorkPlan.Resource1) >= TM.WorkPlan.Count1))
+    and ((TM.WorkPlan.Resource2 = wtNone) or (fHome.CheckResIn(TM.WorkPlan.Resource2) >= TM.WorkPlan.Count2))
     and (fHome.CheckResOut(TM.WorkPlan.Product1) < MAX_WARES_IN_HOUSE)
     and (fHome.CheckResOut(TM.WorkPlan.Product2) < MAX_WARES_IN_HOUSE) then
   begin
@@ -678,8 +678,8 @@ begin
   if fAction = nil then exit;
   Act := fAction.fType;
 
-  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   ID := fUID * Byte(not (fAction.fType in [uaDie, uaEat]));
 
@@ -699,7 +699,7 @@ begin
       end;
   end;
 
-  if fThought <> th_None then
+  if fThought <> thNone then
     gRenderPool.AddUnitThought(fType, Act, Direction, fThought, XPaintPos, YPaintPos);
 end;
 
@@ -722,10 +722,10 @@ begin
   Result := nil;
 
   //See if we are in a tower and have something to throw
-  if not (fHome is TKMHouseTower) or (fHome.CheckResIn(wt_Stone) <= 0) then
+  if not (fHome is TKMHouseTower) or (fHome.CheckResIn(wtStone) <= 0) then
     Exit;
 
-  Enemy := gTerrain.UnitsHitTestWithinRad(fCurrPosition, RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX, fOwner, at_Enemy, dir_NA, not RANDOM_TARGETS);
+  Enemy := gTerrain.UnitsHitTestWithinRad(fCurrPosition, RANGE_WATCHTOWER_MIN, RANGE_WATCHTOWER_MAX, fOwner, atEnemy, dirNA, not RANDOM_TARGETS);
 
   //Note: In actual game there might be two Towers nearby,
   //both throwing a stone into the same enemy. We should not
@@ -740,20 +740,20 @@ end;
 constructor TKMUnitSerf.Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
 begin
   inherited;
-  fCarry := wt_None;
+  fCarry := wtNone;
 end;
 
 
 procedure TKMUnitSerf.Deliver(aFrom, toHouse: TKMHouse; Res: TKMWareType; aID: integer);
 begin
-  fThought := th_None; //Clear ? thought
+  fThought := thNone; //Clear ? thought
   fTask := TKMTaskDeliver.Create(Self, aFrom, toHouse, Res, aID);
 end;
 
 
 procedure TKMUnitSerf.Deliver(aFrom: TKMHouse; toUnit: TKMUnit; Res: TKMWareType; aID: integer);
 begin
-  fThought := th_None; //Clear ? thought
+  fThought := thNone; //Clear ? thought
   fTask := TKMTaskDeliver.Create(Self, aFrom, toUnit, Res, aID);
 end;
 
@@ -807,8 +807,8 @@ begin
   if fAction = nil then exit;
   Act := fAction.fType;
 
-  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   ID := fUID * Byte(not (fAction.fType in [uaDie, uaEat]));
 
@@ -816,12 +816,12 @@ begin
 
   if fTask is TKMTaskDie then Exit; //Do not show unnecessary arms
 
-  if Carry <> wt_None then
+  if Carry <> wtNone then
     gRenderPool.AddUnitCarry(Carry, ID, Direction, AnimStep, XPaintPos, YPaintPos)
   else
     gRenderPool.AddUnit(UnitType, ID, uaWalkArm, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, false);
 
-  if fThought <> th_None then
+  if fThought <> thNone then
     gRenderPool.AddUnitThought(fType, Act, Direction, fThought, XPaintPos, YPaintPos);
 end;
 
@@ -844,7 +844,7 @@ begin
   if inherited UpdateState then exit;
 
   OldThought := fThought;
-  fThought := th_None;
+  fThought := thNone;
 
   CheckCondition;
 
@@ -852,8 +852,8 @@ begin
   //and not thinking anything else (e.g. death)
   if fTask = nil then
   begin
-    if WasIdle and (OldThought = th_None) and (KaMRandom(2, 'TKMUnitSerf.UpdateState') = 0) then
-      fThought := th_Quest;
+    if WasIdle and (OldThought = thNone) and (KaMRandom(2, 'TKMUnitSerf.UpdateState') = 0) then
+      fThought := thQuest;
     SetActionStay(60,uaWalk); //Stay idle
   end;
 
@@ -864,15 +864,15 @@ end;
 
 procedure TKMUnitSerf.CarryGive(Res:TKMWareType);
 begin
-  Assert(fCarry = wt_None, 'Giving Serf another Carry');
+  Assert(fCarry = wtNone, 'Giving Serf another Carry');
   fCarry := Res;
 end;
 
 
 procedure TKMUnitSerf.CarryTake;
 begin
-  Assert(Carry <> wt_None, 'Taking wrong ware from Serf');
-  fCarry := wt_None;
+  Assert(Carry <> wtNone, 'Taking wrong ware from Serf');
+  fCarry := wtNone;
 end;
 
 
@@ -942,14 +942,14 @@ begin
   if not fVisible then exit;
   if fAction = nil then exit;
 
-  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   ID := fUID * Byte(not (fAction.fType in [uaDie, uaEat]));
 
   gRenderPool.AddUnit(UnitType, ID, fAction.fType, Direction, AnimStep, XPaintPos, YPaintPos, gHands[fOwner].GameFlagColor, true);
 
-  if fThought <> th_None then
+  if fThought <> thNone then
     gRenderPool.AddUnitThought(fType, fAction.ActionType, Direction, fThought, XPaintPos, YPaintPos);
 end;
 
@@ -963,8 +963,8 @@ begin
 
   CheckCondition;
 
-  if (fThought = th_Build) and (fTask = nil) then
-    fThought := th_None; //Remove build thought if we are no longer doing anything
+  if (fThought = thBuild) and (fTask = nil) then
+    fThought := thNone; //Remove build thought if we are no longer doing anything
 
   //If we are still stuck on a house for some reason, get off it ASAP
   Assert(gTerrain.Land[fCurrPosition.Y, fCurrPosition.X].TileLock <> tlHouse);
@@ -981,7 +981,7 @@ begin
   inherited;
 
   //Always start with 5 fish in the group
-  if aUnitType = ut_Fish then
+  if aUnitType = utFish then
     fFishCount := 5;
 end;
 
@@ -995,7 +995,7 @@ end;
 
 function TKMUnitAnimal.ReduceFish: Boolean;
 begin
-  Result := fType = ut_Fish;
+  Result := fType = utFish;
   if not Result then Exit;
 
   if fFishCount > 1 then
@@ -1040,7 +1040,7 @@ begin
   if fTask is TKMTaskDie then
   case fTask.Execute of
     trTaskContinues:  exit;
-    trTaskDone:       raise Exception.Create('Unexpected fUnitTask.Execute value = tr_TaskDone'); //TTaskDie never returns tr_TaskDone yet
+    trTaskDone:       raise Exception.Create('Unexpected fUnitTask.Execute value = trTaskDone'); //TTaskDie never returns trTaskDone yet
   end;
 
   //First make sure the animal isn't stuck (check passibility of our position)
@@ -1066,16 +1066,16 @@ var
 begin
   inherited;
   if fAction = nil then exit;
-  if fType = ut_Fish then
+  if fType = utFish then
     Act := FishCountAct[fFishCount]
   else
     Act := fAction.fType;
 
-  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(ax_X);
-  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(ax_Y);
+  XPaintPos := fPositionF.X + UNIT_OFF_X + GetSlide(axX);
+  YPaintPos := fPositionF.Y + UNIT_OFF_Y + GetSlide(axY);
 
   //Make fish/watersnakes more visible in the MapEd
-  if (gGame.GameMode = gmMapEd) and (fType in [ut_Fish, ut_Watersnake, ut_Seastar]) then
+  if (gGame.GameMode = gmMapEd) and (fType in [utFish, utWatersnake, utSeastar]) then
     gRenderAux.Circle(fPositionF.X - 0.5,
                       gTerrain.FlatToHeight(fPositionF.X - 0.5, fPositionF.Y - 0.5),
                       0.5, $30FF8000, $60FF8000);
@@ -1096,7 +1096,7 @@ begin
   fPointerCount := 0;
   fIsDead       := false;
   fKillASAP     := false;
-  fThought      := th_None;
+  fThought      := thNone;
   fHome         := nil;
   fInHouse      := nil;
   fPositionF     := KMPointF(aLoc);
@@ -1105,7 +1105,7 @@ begin
   fNextPosition := aLoc; //Init values
   fOwner        := aOwner;
   fType     := aUnitType;
-  fDirection    := dir_S;
+  fDirection    := dirS;
   fVisible      := True;
   IsExchanging  := False;
   AnimStep      := UnitStillFrames[fDirection]; //Use still frame at begining, so units don't all change frame on first tick
@@ -1185,13 +1185,13 @@ begin
   begin
     LoadStream.Read(ActName, SizeOf(ActName));
     case ActName of
-      uan_Stay:        fAction := TKMUnitActionStay.Load(LoadStream);
-      uan_WalkTo:      fAction := TKMUnitActionWalkTo.Load(LoadStream);
-      uan_AbandonWalk: fAction := TKMUnitActionAbandonWalk.Load(LoadStream);
-      uan_GoInOut:     fAction := TKMUnitActionGoInOut.Load(LoadStream);
-      uan_Fight:       fAction := TKMUnitActionFight.Load(LoadStream);
-      uan_StormAttack: fAction := TKMUnitActionStormAttack.Load(LoadStream);
-      uan_Steer:       fAction := TKMUnitActionSteer.Load(LoadStream);
+      uanStay:        fAction := TKMUnitActionStay.Load(LoadStream);
+      uanWalkTo:      fAction := TKMUnitActionWalkTo.Load(LoadStream);
+      uanAbandonWalk: fAction := TKMUnitActionAbandonWalk.Load(LoadStream);
+      uanGoInOut:     fAction := TKMUnitActionGoInOut.Load(LoadStream);
+      uanFight:       fAction := TKMUnitActionFight.Load(LoadStream);
+      uanStormAttack: fAction := TKMUnitActionStormAttack.Load(LoadStream);
+      uanSteer:       fAction := TKMUnitActionSteer.Load(LoadStream);
     else
       raise Exception.Create('ActName can''t be handled');
     end;
@@ -1281,15 +1281,15 @@ begin
     gTerrain.UnitRem(fNextPosition); //Must happen before we nil NextPosition
 
   fIsDead       := True;
-  fThought      := th_None;
+  fThought      := thNone;
   fPositionF     := KMPOINTF_ZERO;
   fCurrPosition := KMPOINT_ZERO;
   fPrevPosition := fCurrPosition;
   fNextPosition := fCurrPosition;
   fOwner        := PLAYER_NONE;
   //Do not reset the unit type when they die as we still need to know during Load
-  //fUnitType     := ut_None;
-  fDirection    := dir_NA;
+  //fUnitType     := utNone;
+  fDirection    := dirNA;
   fVisible      := False;
   fCondition    := 0;
   AnimStep      := 0;
@@ -1320,7 +1320,7 @@ procedure TKMUnit.DismissCancel;
 begin
   if not IsDismissing then Exit;
 
-  fThought := th_None; //Reset thought
+  fThought := thNone; //Reset thought
   fDismissASAP := False;
 
   if (fAction is TKMUnitActionWalkTo)
@@ -1407,7 +1407,7 @@ end;
 
 procedure TKMUnit.DoKill(aShowAnimation: Boolean);
 begin
-  fThought := th_None; //Reset thought
+  fThought := thNone; //Reset thought
   SetAction(nil); //Dispose of current action (TTaskDie will set it to LockedStay)
   FreeAndNil(fTask); //Should be overriden to dispose of Task-specific items
   fTask := TKMTaskDie.Create(Self, aShowAnimation);
@@ -1522,11 +1522,11 @@ begin
 end;
 
 
-function TKMUnit.HitTest(X,Y: Integer; const UT:TKMUnitType = ut_Any): Boolean;
+function TKMUnit.HitTest(X,Y: Integer; const UT:TKMUnitType = utAny): Boolean;
 begin
   Result := (X = fCurrPosition.X) and //Comparing X,Y to CurrentPosition separately, cos they can be negative numbers
             (Y = fCurrPosition.Y) and
-            ((fType = UT) or (UT = ut_Any));
+            ((fType = UT) or (UT = utAny));
 end;
 
 
@@ -1555,7 +1555,7 @@ end;
 //Only ClearUnit can set fDirection to NA, no other circumstances it is allowed
 procedure TKMUnit.SetDirection(aValue: TKMDirection);
 begin
-  Assert(aValue <> dir_NA);
+  Assert(aValue <> dirNA);
   fDirection := aValue;
 
   //if fCurrentAction is TUnitActionStay then
@@ -1773,20 +1773,20 @@ begin
   Result := gRes.Units[fType].DesiredPassability;
 
   //Delivery to unit
-  if (fType = ut_Serf)
+  if (fType = utSerf)
   and (fTask is TKMTaskDeliver)
-  and (TKMTaskDeliver(fTask).DeliverKind = dk_ToUnit)
+  and (TKMTaskDeliver(fTask).DeliverKind = dkToUnit)
   then
     Result := tpWalk;
 
   //Preparing house area
-  if (fType = ut_Worker) and (fTask is TKMTaskBuildHouseArea)
+  if (fType = utWorker) and (fTask is TKMTaskBuildHouseArea)
   and TKMTaskBuildHouseArea(fTask).Digging
   then
     Result := tpWorker; //Special mode that allows us to walk on building sites
 
   //Miners at work need to go off roads
-  if (fType in [ut_Woodcutter, ut_Farmer, ut_Fisher, ut_StoneCutter])
+  if (fType in [utWoodcutter, utFarmer, utFisher, utStoneCutter])
   and (fTask is TKMTaskMining)
   then
     Result := tpWalk;
@@ -1893,17 +1893,17 @@ end;
 
 procedure TKMUnit.UpdateThoughts;
 begin
-  if (fThought <> th_Death) and (fCondition <= UNIT_MIN_CONDITION div 3) then
-    fThought := th_Death;
+  if (fThought <> thDeath) and (fCondition <= UNIT_MIN_CONDITION div 3) then
+    fThought := thDeath;
 
-  if (fThought in [th_Death, th_Eat]) and (fCondition > UNIT_MIN_CONDITION) then
-    fThought := th_None;
+  if (fThought in [thDeath, thEat]) and (fCondition > UNIT_MIN_CONDITION) then
+    fThought := thNone;
 
   if (fTask is TKMTaskDismiss) then
-    fThought := th_Dismiss;
+    fThought := thDismiss;
 
   if (fTask is TKMTaskDie) then //Clear thought if we are in the process of dying
-    fThought := th_None;
+    fThought := thNone;
 end;
 
 
@@ -2053,22 +2053,22 @@ begin
   if Action is TKMUnitActionGoInOut then
     Result := Result+TKMUnitActionGoInOut(Action).GetDoorwaySlide(aCheck);
 
-  if (not IsExchanging) or not (Action.ActName in [uan_WalkTo, uan_GoInOut]) then exit;
+  if (not IsExchanging) or not (Action.ActName in [uanWalkTo, uanGoInOut]) then exit;
 
   //Uses Y because a walk in the Y means a slide in the X
   DX := sign(NextPosition.X - fPositionF.X);
   DY := sign(NextPosition.Y - fPositionF.Y);
-  if (aCheck = ax_X) and (DY = 0) then exit; //Unit is not shifted
-  if (aCheck = ax_Y) and (DX = 0) then exit;
+  if (aCheck = axX) and (DY = 0) then exit; //Unit is not shifted
+  if (aCheck = axY) and (DX = 0) then exit;
 
   LookupDiagonal := abs(DX) + abs(DY); //which gives us swith: 1-straight, 2-diagonal.
 
-  if aCheck = ax_X then
+  if aCheck = axX then
   begin
     PixelPos := Round(abs(fPositionF.Y-PrevPosition.Y)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
     Result := Result+(DY*SlideLookup[LookupDiagonal,PixelPos])/CELL_SIZE_PX;
   end;
-  if aCheck = ax_Y then
+  if aCheck = axY then
   begin
     PixelPos := Round(abs(fPositionF.X-PrevPosition.X)*CELL_SIZE_PX*sqrt(LookupDiagonal)); //Diagonal movement *sqrt(2)
     Result := Result-(DX*SlideLookup[LookupDiagonal,PixelPos])/CELL_SIZE_PX;
@@ -2285,7 +2285,7 @@ begin
     fAction.Paint;
 
   if SHOW_POINTER_DOTS then
-    gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(ax_X), fPositionF.Y + 1   + GetSlide(ax_Y), fPointerCount);
+    gRenderAux.UnitPointers(fPositionF.X + 0.5 + GetSlide(axX), fPositionF.Y + 1   + GetSlide(axY), fPointerCount);
 end;
 
 
@@ -2323,7 +2323,7 @@ end;
 
 destructor TKMUnitTask.Destroy;
 begin
-  fUnit.Thought := th_None; //Stop any thoughts
+  fUnit.Thought := thNone; //Stop any thoughts
   gHands.CleanUpUnitPointer(fUnit);
   fPhase        := High(Byte) - 1; //-1 so that if it is increased on the next run it won't overrun before exiting
   fPhase2       := High(Byte) - 1;

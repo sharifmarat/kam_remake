@@ -57,7 +57,7 @@ begin
 
   // If we abandon for some reason, clear the school animation
   if (fPhase <= 5) and not fSchool.IsDestroyed then
-    fSchool.SetState(hst_Idle);
+    fSchool.SetState(hstIdle);
 
   gHands.CleanUpHousePointer(TKMHouse(fSchool));
 
@@ -78,34 +78,34 @@ begin
   with fUnit do
     case fPhase of
       0: begin
-          fSchool.SetState(hst_Work);
-          fSchool.CurrentAction.SubActionWork(ha_Work1);
+          fSchool.SetState(hstWork);
+          fSchool.CurrentAction.SubActionWork(haWork1);
           SetActionLockedStay(29, uaWalk);
         end;
       1: begin
-          fSchool.CurrentAction.SubActionWork(ha_Work2);
+          fSchool.CurrentAction.SubActionWork(haWork2);
           SetActionLockedStay(29, uaWalk);
         end;
       2: begin
-          fSchool.CurrentAction.SubActionWork(ha_Work3);
+          fSchool.CurrentAction.SubActionWork(haWork3);
           SetActionLockedStay(29, uaWalk);
         end;
       3: begin
-          fSchool.CurrentAction.SubActionWork(ha_Work4);
+          fSchool.CurrentAction.SubActionWork(haWork4);
           SetActionLockedStay(29, uaWalk);
         end;
       4: begin
-          fSchool.CurrentAction.SubActionWork(ha_Work5);
+          fSchool.CurrentAction.SubActionWork(haWork5);
           SetActionLockedStay(29, uaWalk);
         end;
       5: begin
-          fSchool.SetState(hst_Idle);
+          fSchool.SetState(hstIdle);
           SetActionLockedStay(9, uaWalk);
          end;
       6: begin
           // Put him in the school, so if it is destroyed while he is looking for place to exit he is placed somewhere
           fUnit.InHouse := fSchool;
-          SetActionGoIn(uaWalk, gd_GoOutside, fSchool);
+          SetActionGoIn(uaWalk, gdGoOutside, fSchool);
           fSchool.UnitTrainingComplete(fUnit);
           if Assigned(fUnit.OnUnitTrained) then
             fUnit.OnUnitTrained(fUnit);

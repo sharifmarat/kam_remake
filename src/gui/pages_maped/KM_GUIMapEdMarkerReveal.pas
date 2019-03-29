@@ -47,7 +47,7 @@ begin
 
   Panel_MarkerReveal := TKMPanel.Create(aParent, 0, 50, TB_WIDTH, 400);
 
-  Label_MarkerType := TKMLabel.Create(Panel_MarkerReveal, 0, 10, TB_WIDTH, 0, '', fnt_Outline, taCenter);
+  Label_MarkerType := TKMLabel.Create(Panel_MarkerReveal, 0, 10, TB_WIDTH, 0, '', fntOutline, taCenter);
   Image_MarkerPic := TKMImage.Create(Panel_MarkerReveal, 0, 10, 32, 32, 338);
 
   TrackBar_RevealSize := TKMTrackBar.Create(Panel_MarkerReveal, 0, 45, TB_WIDTH, 1, 64);
