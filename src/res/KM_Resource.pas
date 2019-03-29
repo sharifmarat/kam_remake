@@ -378,46 +378,48 @@ var
 begin
   fSprites.LoadSprites(rxHouses, False); //BMP can't show alpha shadows anyways
   SpritePack := fSprites[rxHouses];
-  SList := TStringList.Create;
 
   Folder := ExeDir + 'Export' + PathDelim + 'HouseAnim' + PathDelim;
   ForceDirectories(Folder);
 
+  SList := TStringList.Create;
   HD := TKMResHouses.Create;
-
-  for ID := HOUSE_MIN to HOUSE_MAX do
-    for Ac := ha_Work1 to ha_Flag3 do
-      for K := 1 to HD[ID].Anim[Ac].Count do
-      begin
-        FullFolder := Folder + HD[ID].HouseName + PathDelim + HouseAction[Ac] + PathDelim;
-        ForceDirectories(FullFolder);
-        ci := HD[ID].Anim[Ac].Step[K] + 1;
-        if ci <> 0 then
-          SpritePack.ExportFullImageData(FullFolder, ci, SList);
-      end;
-
-  for Q := 1 to 2 do
-  begin
-    if Q = 1 then
-      ID := htSwine
-    else
-      ID := htStables;
-    ForceDirectories(Folder + '_' + HD[ID].HouseName+PathDelim);
-    for Beast := 1 to 5 do
-      for I := 1 to 3 do
-        for K := 1 to HD.BeastAnim[ID,Beast,I].Count do
+  try
+    for ID := HOUSE_MIN to HOUSE_MAX do
+      for Ac := ha_Work1 to ha_Flag3 do
+        for K := 1 to HD[ID].Anim[Ac].Count do
         begin
-          FullFolder := Folder + HD[ID].HouseName + PathDelim + 'Beast' + PathDelim + int2fix(Beast,2) + PathDelim;
+          FullFolder := Folder + HD[ID].HouseName + PathDelim + HouseAction[Ac] + PathDelim;
           ForceDirectories(FullFolder);
-          ci := HD.BeastAnim[ID,Beast,I].Step[K]+1;
+          ci := HD[ID].Anim[Ac].Step[K] + 1;
           if ci <> 0 then
             SpritePack.ExportFullImageData(FullFolder, ci, SList);
         end;
+
+    for Q := 1 to 2 do
+    begin
+      if Q = 1 then
+        ID := htSwine
+      else
+        ID := htStables;
+      ForceDirectories(Folder + '_' + HD[ID].HouseName+PathDelim);
+      for Beast := 1 to 5 do
+        for I := 1 to 3 do
+          for K := 1 to HD.BeastAnim[ID,Beast,I].Count do
+          begin
+            FullFolder := Folder + HD[ID].HouseName + PathDelim + 'Beast' + PathDelim + int2fix(Beast,2) + PathDelim;
+            ForceDirectories(FullFolder);
+            ci := HD.BeastAnim[ID,Beast,I].Step[K]+1;
+            if ci <> 0 then
+              SpritePack.ExportFullImageData(FullFolder, ci, SList);
+          end;
+    end;
+  finally
+    FreeAndNil(HD);
+    FreeAndNil(SList);
   end;
 
-  HD.Free;
   fSprites.ClearTemp;
-  SList.Free;
 end;
 
 
