@@ -472,8 +472,6 @@ end;
 
 
 function TKMSettledUnit.UpdateState: Boolean;
-var
-  HInn: TKMHouseInn;
 begin
   Result := True;
   if fAction = nil then

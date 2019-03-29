@@ -231,7 +231,7 @@ constructor TKMChartWarrior.Create(aType: TKMChartWarriorType);
 begin
   fType := aType;
   case aType of
-    cwtAll:                    fUnitType := utAny;
+    cwtAll:                   fUnitType := utAny;
     cwtMilitia..cwtHorseman:  fUnitType := TKMUnitType(Ord(utMilitia) + Ord(aType) - Ord(cwtMilitia));
   end;
 end;
@@ -361,8 +361,7 @@ begin
       for WType := High(TKMChartWarriorType) downto Low(TKMChartWarriorType) do
         FreeAndNil(Charts_Army[ST,CKind,WType]);
 
-    if fListToShow[ST] <> nil then
-      FreeAndNil(fListToShow[ST]);
+    FreeAndNil(fListToShow[ST]);
     FreeAndNil(fChartSeparatorsPos[ST]);
   end;
 end;
@@ -1072,8 +1071,7 @@ end;
 
 procedure TKMGameResultsMP.RecreateListToShow(aStatType: TKMStatType);
 begin
-  if fListToShow[aStatType] <> nil then
-    FreeAndNil(fListToShow[aStatType]);
+  FreeAndNil(fListToShow[aStatType]);
 
   fListToShow[aStatType] := TStringList.Create;
   fListToShow[aStatType].Sorted := False;     //Need to append players to show at the end of list

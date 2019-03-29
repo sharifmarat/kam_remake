@@ -426,6 +426,7 @@ begin
                                            gRes.Houses[TKMHouseType(ATag)].GUIIcon,
                                            gRes.Houses[TKMHouseType(ATag)].HouseName, FHandIndex, aOnItemDblClick);
   Result.Visible := False;
+  ResetUIDs;
 end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTagCount: Integer;
@@ -520,6 +521,7 @@ begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Units[TKMUnitType(ATag)].GUIIcon,
                                            gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex, aOnItemDblClick);
+  ResetUIDs;
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
@@ -571,6 +573,7 @@ begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Units[TKMUnitType(ATag)].GUIIcon,
                                            gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex, aOnItemDblClick);
+  ResetUIDs;
 end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTagCount: Integer;
