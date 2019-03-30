@@ -38,6 +38,7 @@ type
 
     function CompareStrength(aPlayer, aOponent: TKMHandID): Single;
     function CompareAllianceStrength(aPlayer, aOponent: TKMHandID): Single;
+    procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
   end;
 
@@ -224,6 +225,17 @@ begin
   if aConsiderHitChance then
     with fEvals[aPlayer].Groups[gtRanged] do
       Attack := Attack * HIT_CHANCE_MODIFIER;
+end;
+
+
+
+procedure TKMArmyEvaluation.AfterMissionInit();
+var
+  PL: TKMHandID;
+begin
+  for PL := 0 to gHands.Count - 1 do
+    if gHands[PL].Enabled then
+      EvaluatePower(PL, True);
 end;
 
 

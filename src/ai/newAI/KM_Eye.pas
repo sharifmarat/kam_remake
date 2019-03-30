@@ -362,6 +362,8 @@ var
   X,Y: Integer;
   Loc: TKMPoint;
 begin
+  fArmyEvaluation.AfterMissionInit();
+
   fMapX := gTerrain.MapX;
   fMapY := gTerrain.MapY;
 
