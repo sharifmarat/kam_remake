@@ -2250,7 +2250,10 @@ begin
 
     // Set dropbox in different ways
     case gGame.GameMode of
-      gmReplaySingle:   Replay_Single_SetPlayersDropbox; // Do not show team, as its meaningless
+      gmReplaySingle:   begin
+                          Replay_Single_SetPlayersDropbox; // Do not show team, as its meaningless
+                          fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer, SetViewportPos);
+                        end;
       // Use team info from ally states:
       // consider team as a group of hands where all members are allied to each other and not allied to any other hands.
       gmReplayMulti,
@@ -2696,16 +2699,16 @@ end;
 
 // Select next building/unit/unit group with the same type for same owner
 procedure TKMGamePlayInterface.SelectNextGameObjWSameType;
-var NextHouse: TKMHouse;
-    NextUnit: TKMUnit;
-    NextUnitGroup: TKMUnitGroup;
+var
+  NextHouse: TKMHouse;
+  NextUnit: TKMUnit;
+  NextUnitGroup: TKMUnitGroup;
 begin
   if gMySpectator.Hand.InCinematic then
     Exit;
 
   if gMySpectator.Selected is TKMUnit then
   begin
-
     NextUnit := gHands.GetNextUnitWSameType(TKMUnit(gMySpectator.Selected));
     if NextUnit <> nil then
     begin
@@ -2715,7 +2718,6 @@ begin
 
   end else if gMySpectator.Selected is TKMHouse then
   begin
-
     NextHouse := gHands.GetNextHouseWSameType(TKMHouse(gMySpectator.Selected));
     if NextHouse <> nil then
     begin
@@ -2725,7 +2727,6 @@ begin
 
   end else if gMySpectator.Selected is TKMUnitGroup then
   begin
-
     NextUnitGroup := gHands.GetNextGroupWSameType(TKMUnitGroup(gMySpectator.Selected));
     if NextUnitGroup <> nil then
     begin

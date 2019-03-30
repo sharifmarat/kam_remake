@@ -41,10 +41,12 @@ type
 
 
   TKMHousePlan = record
+    UID: Integer;
     HouseType: TKMHouseType;
     Loc: TKMPoint;
     JobStatus: TKMJobStatus;
     Worker: TKMUnit; //So we can tell Worker if plan is cancelled
+    function IsEmpty: Boolean;
   end;
   TKMHousePlanArray = array of TKMHousePlan;
 
@@ -211,7 +213,7 @@ type
 implementation
 uses
   SysUtils, Math,
-  KM_Hand, KM_HandsCollection, KM_Resource;
+  KM_Game, KM_Hand, KM_HandsCollection, KM_Resource;
 
 
 const
@@ -228,6 +230,13 @@ const
     10,{htStore}        8,{htSwine}          8, {htTannery}     10,{htTownHall}      6, {htWatchTower}
     8, {htWeaponSmithy} 8,{htWeaponWorkshop} 8, {htWineyard}    6  {htWoodcutters}
   );
+
+
+{ TKMHousePlan }
+function TKMHousePlan.IsEmpty: Boolean;
+begin
+  Result := JobStatus = jsEmpty;
+end;
 
 
 {TKMHouseList}
@@ -679,6 +688,7 @@ begin
   if I >= Length(fPlans) then
     SetLength(fPlans, Length(fPlans) + LENGTH_INC);
 
+  fPlans[I].UID := gGame.GetNewUID;
   fPlans[I].HouseType := aHouseType;
   fPlans[I].Loc := aLoc;
   fPlans[I].JobStatus := jsOpen;

@@ -87,7 +87,7 @@ type
     procedure RenderSpriteAlphaTest(aRX: TRXType; aId: Word; aWoodProgress: Single; pX, pY: Single; aId2: Word = 0; aStoneProgress: Single = 0; X2: Single = 0; Y2: Single = 0);
     procedure RenderMapElement1(aIndex: Word; AnimStep: Cardinal; LocX,LocY: Integer; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
     procedure RenderMapElement4(aIndex: Word; AnimStep: Cardinal; pX,pY: Integer; IsDouble: Boolean; DoImmediateRender: Boolean = False; Deleting: Boolean = False);
-    procedure RenderHouseOutline(aHouse: TKMHouse);
+    procedure RenderHouseOutline(aHouseSketch: TKMHouseSketch);
 
     // Terrain rendering sub-class
     procedure CollectPlans(const aRect: TKMRect);
@@ -317,8 +317,8 @@ begin
   //Reset Texture, just in case we forgot to do it inside some method
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
 
-  if gMySpectator.Highlight is TKMHouse then
-    RenderHouseOutline(TKMHouse(gMySpectator.Highlight));
+  if gMySpectator.Highlight is TKMHouseSketch then
+    RenderHouseOutline(TKMHouseSketch(gMySpectator.Highlight));
 
   if gGame.IsMapEditor then
     gGame.MapEditor.Paint(plTerrain, aRect);
@@ -1301,20 +1301,20 @@ end;
 
 // Until profiling we use straightforward approach of recreating outline each frame
 // Optimize later if needed
-procedure TRenderPool.RenderHouseOutline(aHouse: TKMHouse);
+procedure TRenderPool.RenderHouseOutline(aHouseSketch: TKMHouseSketch);
 var
   Loc: TKMPoint;
   I: Integer;
   X, Y: Word;
 begin
-  if aHouse = nil then
+  if (aHouseSketch = nil) or aHouseSketch.IsEmpty then
     Exit;
 
   // Get an outline of build area
   fHouseOutline.Clear;
 
-  Loc := aHouse.Position;
-  gRes.Houses[aHouse.HouseType].Outline(fHouseOutline);
+  Loc := aHouseSketch.Position;
+  gRes.Houses[aHouseSketch.HouseType].Outline(fHouseOutline);
 
   TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
   glColor3f(0, 1, 1);

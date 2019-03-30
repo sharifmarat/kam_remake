@@ -34,11 +34,49 @@ type
   end;
 
 
-  TKMHouse = class
+  TKMHouseSketch = class
   private
     fUID: Integer; //unique ID, used for save/load to sync to
     fType: TKMHouseType; //House type
+    function GetEntrance: TKMPoint;
+    function GetPointBelowEntrance: TKMPoint;
+  protected
+    fPosition: TKMPoint; //House position on map, kinda virtual thing cos it doesn't match with entrance
+    constructor Create; overload;
+  public
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer); overload;
 
+    property UID: Integer read fUID;
+    property HouseType: TKMHouseType read fType;
+    property Position: TKMPoint read fPosition;
+
+    property Entrance: TKMPoint read GetEntrance;
+    property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
+
+    function IsEmpty: Boolean;
+  end;
+
+  //Editable Version of TKMHouseSketch
+  //We do not want to allow edit TKMHouse fields, but need to do that for some sketches
+  TKMHouseSketchEdit = class(TKMHouseSketch)
+  private
+    fEditable: Boolean;
+  public
+    constructor Create;
+
+    procedure Clear;
+    procedure CopyTo(var aHouseSketch: TKMHouseSketchEdit);
+
+    procedure SetUID(aUID: Integer);
+    procedure SetHouseType(aHouseType: TKMHouseType);
+    procedure SetPosition(aPosition: TKMPoint);
+
+    class var DummyHouseSketch: TKMHouseSketchEdit;
+  end;
+
+
+  TKMHouse = class(TKMHouseSketch)
+  private
     fBuildSupplyWood: Byte; //How much Wood was delivered to house building site
     fBuildSupplyStone: Byte; //How much Stone was delivered to house building site
     fBuildReserve: Byte; //Take one build supply resource into reserve and "build from it"
@@ -85,16 +123,13 @@ type
 
     procedure MakeSound; dynamic; //Swine/stables make extra sounds
     function GetResDistribution(aID: Byte): Byte; //Will use GetRatio from mission settings to find distribution amount
-    function GetPointBelowEntrance: TKMPoint;
-    function GetEntrance: TKMPoint;
     procedure SetIsClosedForWorker(aIsClosed: Boolean);
     procedure UpdateDeliveryMode;
   protected
+    fOwner: TKMHandID; //House owner player, determines flag color as well
     fBuildState: TKMHouseBuildState; // = (hbsGlyph, hbsNoGlyph, hbsWood, hbsStone, hbsDone);
     FlagAnimStep: Cardinal; //Used for Flags and Burning animation
     //WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
-    fOwner: TKMHandID; //House owner player, determines flag color as well
-    fPosition: TKMPoint; //House position on map, kinda virtual thing cos it doesn't match with entrance
     procedure Activate(aWasBuilt: Boolean); virtual;
     procedure AddDemandsOnActivate(aWasBuilt: Boolean); virtual;
     function GetResOrder(aId: Byte): Integer; virtual;
@@ -120,14 +155,11 @@ type
     property PointerCount: Cardinal read fPointerCount;
 
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); virtual;
-    property UID: Integer read fUID;
     property BuildingProgress: Word read fBuildingProgress;
 
-    property Position: TKMPoint read fPosition;
     procedure SetPosition(const aPos: TKMPoint); //Used only by map editor
+    property Owner: TKMHandID read fOwner;
     procedure OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
-    property Entrance: TKMPoint read GetEntrance;
-    property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
     function GetClosestCell(const aPos: TKMPoint): TKMPoint;
     function GetDistance(const aPos: TKMPoint): Single;
@@ -136,7 +168,6 @@ type
     procedure GetListOfCellsWithin(Cells: TKMPointList);
     function GetRandomCellWithin: TKMPoint;
     function HitTest(X, Y: Integer): Boolean;
-    property HouseType: TKMHouseType read fType;
     property BuildingRepair: Boolean read fBuildingRepair write SetBuildingRepair;
 
     property DeliveryMode: TKMDeliveryMode read fDeliveryMode;
@@ -148,7 +179,6 @@ type
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
-    property Owner: TKMHandID read fOwner;
     property DisableUnoccupiedMessage: Boolean read fDisableUnoccupiedMessage write fDisableUnoccupiedMessage;
     function GetHealth: Word;
     function GetBuildWoodDelivered: Byte;
@@ -302,19 +332,105 @@ const
   UPDATE_DELIVERY_MODE_DELAY = 10;
 
 
-{ TKMHouse }
-constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-var
-  I: Byte;
+{ TKMHouseSketch }
+constructor TKMHouseSketch.Create;
+begin
+  inherited; //Just do nothing; (For house loading)
+end;
+
+
+constructor TKMHouseSketch.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer);
 begin
   Assert((PosX <> 0) and (PosY <> 0)); // Can create only on map
 
   inherited Create;
 
+  fUID := aUID;
   fPosition   := KMPoint (PosX, PosY);
-  fType  := aHouseType;
+  fType       := aHouseType;
+end;
+
+
+{Return Entrance of the house, which is different than house position sometimes}
+function TKMHouseSketch.GetEntrance: TKMPoint;
+begin
+  Result.X := Position.X + gRes.Houses[fType].EntranceOffsetX;
+  Result.Y := Position.Y;
+  Assert((Result.X > 0) and (Result.Y > 0));
+end;
+
+
+function TKMHouseSketch.GetPointBelowEntrance: TKMPoint;
+begin
+  Result := KMPointBelow(Entrance);
+end;
+
+
+function TKMHouseSketch.IsEmpty: Boolean;
+begin
+  Result :=    (UID = -1)
+            or (HouseType = htNone)
+            or (Position.X = -1)
+            or (Position.Y = -1);
+end;
+
+
+{ TKMHouseSketchEdit}
+constructor TKMHouseSketchEdit.Create;
+begin
+  inherited Create(-1, htNone, -1, -1);
+
+  fEditable := True;
+end;
+
+
+procedure TKMHouseSketchEdit.Clear;
+begin
+  SetUID(-1);
+  SetHouseType(htNone);
+  SetPosition(KMPoint(0,0));
+end;
+
+
+procedure TKMHouseSketchEdit.CopyTo(var aHouseSketch: TKMHouseSketchEdit);
+begin
+  aHouseSketch.SetUID(UID);
+  aHouseSketch.SetHouseType(HouseType);
+  aHouseSketch.SetPosition(Position);
+end;
+
+
+procedure TKMHouseSketchEdit.SetUID(aUID: Integer);
+begin
+  if fEditable then
+    fUID := aUID;
+end;
+
+
+procedure TKMHouseSketchEdit.SetHouseType(aHouseType: TKMHouseType);
+begin
+  if fEditable then
+    fType := aHouseType;
+end;
+
+
+procedure TKMHouseSketchEdit.SetPosition(aPosition: TKMPoint);
+begin
+  if fEditable then
+    fPosition := aPosition;
+end;
+
+
+{ TKMHouse }
+constructor TKMHouse.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
+var
+  I: Byte;
+begin
+  inherited Create(aUID, aHouseType, PosX, PosY);
+
+  fOwner := aOwner;
+
   fBuildState := aBuildState;
-  fOwner      := aOwner;
 
   fBuildSupplyWood  := 0;
   fBuildSupplyStone := 0;
@@ -346,7 +462,6 @@ begin
   fPointerCount := 0;
   fTimeSinceUnoccupiedReminder := TIME_BETWEEN_MESSAGES;
 
-  fUID := aUID;
   ResourceDepletedMsgIssued := False;
   fIssueOrderCompletedMsg := False;
 
@@ -686,15 +801,6 @@ end;
 function TKMHouse.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
 begin
   Result := DeliveryMode <> dmDelivery;
-end;
-
-
-{Return Entrance of the house, which is different than house position sometimes}
-function TKMHouse.GetEntrance: TKMPoint;
-begin
-  Result.X := Position.X + gRes.Houses[fType].EntranceOffsetX;
-  Result.Y := Position.Y;
-  Assert((Result.X > 0) and (Result.Y > 0));
 end;
 
 
@@ -1234,12 +1340,6 @@ begin
     Result := High(Word)
   else
     Result := MAX_WARES_IN_HOUSE; //All other houses can only stock 5 for now
-end;
-
-
-function TKMHouse.GetPointBelowEntrance: TKMPoint;
-begin
-  Result := KMPointBelow(Entrance);
 end;
 
 
@@ -2200,6 +2300,18 @@ end;
 function TKMHouseWFlagPoint.GetValidPoint(aPoint: TKMPoint): TKMPoint;
 begin
   Result := gTerrain.GetPassablePointWithinSegment(PointBelowEntrance, aPoint, tpWalk, MaxDistanceToPoint);
+end;
+
+
+initialization
+begin
+  TKMHouseSketchEdit.DummyHouseSketch := TKMHouseSketchEdit.Create;
+  TKMHouseSketchEdit.DummyHouseSketch.fEditable := False;
+end;
+
+finalization
+begin
+  FreeAndNil(TKMHouseSketchEdit.DummyHouseSketch);
 end;
 
 

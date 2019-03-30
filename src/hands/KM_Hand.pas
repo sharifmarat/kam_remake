@@ -63,6 +63,11 @@ type
     fShareFOW: array [0 .. MAX_HANDS - 1] of Boolean;
     fShareBeacons: array [0 .. MAX_HANDS - 1] of Boolean;
 
+    //House sketch fields, used to GetNextHouseWSameType
+    fHSketch: TKMHouseSketchEdit;
+    fFirstHSketch: TKMHouseSketchEdit;
+    fFoundHSketch: TKMHouseSketchEdit;
+
     function GetColorIndex: Byte;
 
     function  GetAlliances(aIndex: Integer): TKMAllianceType; inline;
@@ -133,7 +138,9 @@ type
 
     function TrainUnit(aUnitType: TKMUnitType; const Position: TKMPoint): TKMUnit;
 
-    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
+    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse; overload;
+    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                   out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse; overload;
     function GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
     function GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 
@@ -312,6 +319,10 @@ begin
 
   fAlliances[fID] := atAlly; //Others are set to enemy by default
   fFlagColor := DefaultTeamColors[fID]; //Init with default color, later replaced by Script
+
+  fHSketch := TKMHouseSketchEdit.Create;
+  fFirstHSketch := TKMHouseSketchEdit.Create;
+  fFoundHSketch := TKMHouseSketchEdit.Create;
 end;
 
 
@@ -319,6 +330,9 @@ end;
 //Stats/Deliveries and other collection in their Destroy/Abandon/Demolish methods
 destructor TKMHand.Destroy;
 begin
+  FreeAndNil(fHSketch);
+  FreeAndNil(fFirstHSketch);
+  FreeAndNil(fFoundHSketch);
   //Groups freed before units since we need to release pointers they have to units
   FreeThenNil(fUnitGroups);
   FreeThenNil(fMessageLog);
@@ -521,50 +535,125 @@ end;
 
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
-var
-  House, FirstH, LastH: TKMHouse;
-  Found: Boolean;
-  I: Integer;
 begin
-  Result := nil;
+  Result := GetNextHouseWSameType(aHouseType, aStartFromUID, TKMHouseSketchEdit.DummyHouseSketch);
+end;
 
-  Found := False;
-  FirstH := nil;
-  LastH := nil;
 
-  for I := 0 to fHouses.Count - 1 do
+function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                       out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse;
+
+var
+  ResultSet: Boolean;
+
+  procedure FillHSketchByHouse(out aHouseSketchTmp: TKMHouseSketchEdit; aHouse: TKMHouse);
   begin
-    House := fHouses[I];
-    if House.IsDestroyed // not destroyed
-      or (House.HouseType <> aHouseType) then // we are interested in houses with the same type
-      Continue;
-
-    //Just find any first house
-    if (aStartFromUID = 0) then
+    if not aHouse.IsDestroyed // not destroyed
+      and (aHouse.HouseType = aHouseType)
+      {and (not aConsiderHousePlan or aHouse.IsComplete)} then
     begin
-      Result := House;
-      Break;
+      aHouseSketchTmp.SetUID(aHouse.UID);
+      aHouseSketchTmp.SetHouseType(aHouse.HouseType);
+      aHouseSketchTmp.SetPosition(aHouse.Position);
     end;
-
-    LastH := House;
-
-    //Find first house from specified UID
-    if (House.UID = aStartFromUID) then
-      Found := True               // Mark that we found our house
-    else if Found then
-    begin
-      Result := House;            // Save the next house after Found to Result and Break
-      Break;
-    end else if FirstH = nil then
-      FirstH := House;            // Save 1st house in list in case our house is the last one
   end;
 
-  if (Result = nil) and Found then // Found should be always True here
+  procedure FillHSketchByHPlan(out aHouseSketchTmp: TKMHouseSketchEdit; aHousePlan: TKMHousePlan);
   begin
-    if FirstH = nil then
-      Result := LastH   //Could happen, when we have only 1 house with that type...
+    if not aHousePlan.IsEmpty
+      and (aHousePlan.HouseType = aHouseType) then
+    begin
+      aHouseSketchTmp.SetUID(aHousePlan.UID);
+      aHouseSketchTmp.SetHouseType(aHousePlan.HouseType);
+      aHouseSketchTmp.SetPosition(aHousePlan.Loc);
+    end;
+  end;
+
+  function GetNextHSketch(aIndex: Integer; out aHouseSketchTmp: TKMHouseSketchEdit): Boolean;
+  begin
+    aHouseSketchTmp.Clear;
+
+    if aIndex < fHouses.Count then
+      FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex])
     else
-      Result := FirstH;
+      FillHSketchByHPlan(aHouseSketchTmp, fBuildList.HousePlanList.Plans[aIndex - fHouses.Count]);
+
+    Result := not aHouseSketchTmp.IsEmpty;
+  end;
+
+  procedure FillResult(aIndex: Integer; aHSketch: TKMHouseSketchEdit);
+  begin
+    ResultSet := True;
+    if aHouseSketch <> nil then
+      aHSketch.CopyTo(aHouseSketch);
+    if aIndex < fHouses.Count then
+      Result := fHouses[aIndex];
+  end;
+
+var
+  Found: Boolean; //Flag when we find house sketch (House or HousePlan) with specified Starting UID
+  I, FirstHSketchI, FoundSketchI, Cnt: Integer;
+begin
+  Result := nil;
+  aHouseSketch.Clear;
+
+  Found := False;
+  ResultSet := False;
+
+  Cnt := fHouses.Count + Byte(aConsiderHousePlan)*fBuildList.HousePlanList.Count;
+
+  I := 0;
+  FirstHSketchI := 0;
+  FoundSketchI := 0;
+
+  fHSketch.Clear;
+  fFirstHSketch.Clear;
+  fFoundHSketch.Clear;
+
+  while I < Cnt do
+  begin
+    try
+      if not GetNextHSketch(I, fHSketch) then
+        Continue;
+
+      //Just find any first house
+      if (aStartFromUID = 0) then
+      begin
+        FillResult(I, fHSketch);
+        Break;
+      end;
+
+      //Find first house from specified UID
+      if (fHSketch.UID = aStartFromUID) then
+      begin
+        Found := True;               // Mark that we found our house
+        fHSketch.CopyTo(fFoundHSketch);
+        FoundSketchI := I;
+      end
+      else if Found then
+      begin
+        FillResult(I, fHSketch);           // Save the next house after Found to Result and Break
+        Break;
+      end else if fFirstHSketch.IsEmpty then
+      begin
+        fHSketch.CopyTo(fFirstHSketch);            // Save 1st house in list in case our house is the last one
+        FirstHSketchI := I;
+      end;
+    finally
+      Inc(I);
+    end;
+  end;
+
+  if not ResultSet then // Found should be always True here
+  begin
+    if Found then
+    begin
+      if fFirstHSketch.IsEmpty then
+        FillResult(FoundSketchI, fFoundHSketch)   //Could happen, when we have only 1 house with that type...
+      else
+        FillResult(FirstHSketchI, fFirstHSketch);
+    end else if not fFirstHSketch.IsEmpty then
+      FillResult(FirstHSketchI, fFirstHSketch);
   end;
 end;
 
