@@ -43,7 +43,7 @@ type
     function CanWalkToTarget(const aFrom: TKMPoint; aPass: TKMTerrainPassability): Boolean;
     function CheckForNewDestination: TKMDestinationCheck;
     function CheckTargetHasDied: Boolean;
-    function CheckForObstacle: TKMObstacleCheck;
+    function CheckForObstacle(aDir: TKMDirection): TKMObstacleCheck;
     function CheckWalkComplete: Boolean;
     function CheckInteractionFreq(aIntCount,aTimeout,aFreq: Integer): Boolean;
     function DoUnitInteraction: Boolean;
@@ -66,6 +66,7 @@ type
     function GetEffectivePassability: TKMTerrainPassability; //Returns passability that unit is allowed to walk on
     procedure ExplanationLogCreate;
     procedure ExplanationLogAdd;
+    function CheckAllTilesAroundHouseLocked: Boolean;
   private //Debug items
     NodePos: Integer;
     NodeList: TKMPointList;
@@ -103,7 +104,7 @@ type
 implementation
 uses
   KM_RenderAux, KM_Game, KM_HandsCollection, KM_Terrain, KM_ResUnits,
-  KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild,
+  KM_UnitActionGoInOut, KM_UnitActionStay, KM_UnitTaskBuild, KM_UnitTaskDismiss,
   KM_UnitWarrior, KM_Log, KM_Resource;
 
 //INTERACTION CONSTANTS: (may need to be tweaked for optimal performance)
@@ -379,6 +380,7 @@ function TKMUnitActionWalkTo.AssembleTheRoute: Boolean;
 var
   I: Integer;
   NodeList2: TKMPointList;
+  AvoidLocked: Boolean;
 begin
   //Build a piece of route to return to nearest road piece connected to destination road network
   if (fPass = tpWalkRoad)
@@ -388,11 +390,15 @@ begin
     if CanWalkToTarget(fWalkFrom, tpWalk) then
       gGame.Pathfinding.Route_ReturnToWalkable(fWalkFrom, fWalkTo, wcRoad, gTerrain.GetRoadConnectID(fWalkTo), [tpWalk], NodeList);
 
+  AvoidLocked := (fUnit is TKMUnitWarrior)
+                  and (TKMUnitWarrior(fUnit).Task <> nil)
+                  and (TKMUnitWarrior(fUnit).Task.TaskType = uttAttackHouse);
+
   //Build a route A*
   if NodeList.Count = 0 then //Build a route from scratch
   begin
     if CanWalkToTarget(fWalkFrom, fPass) then
-      gGame.Pathfinding.Route_Make(fWalkFrom, fWalkTo, [fPass], fDistance, fTargetHouse, NodeList) //Try to make the route with fPass
+      gGame.Pathfinding.Route_Make(fWalkFrom, fWalkTo, [fPass], fDistance, fTargetHouse, NodeList, AvoidLocked) //Try to make the route with fPass
   end
   else //Append route to existing part
   begin
@@ -400,7 +406,7 @@ begin
     try
       //Make a route
       if CanWalkToTarget(NodeList[NodeList.Count-1], fPass) then
-        gGame.Pathfinding.Route_Make(NodeList[NodeList.Count-1], fWalkTo, [fPass], fDistance, fTargetHouse, NodeList2); //Try to make the route with fPass
+        gGame.Pathfinding.Route_Make(NodeList.Last, fWalkTo, [fPass], fDistance, fTargetHouse, NodeList2, AvoidLocked); //Try to make the route with fPass
 
       //If this part of the route fails, the whole route has failed
       //At minimum Route_Make returns Count = 1 (fWalkTo)
@@ -442,13 +448,35 @@ begin
 end;
 
 
+function TKMUnitActionWalkTo.CheckAllTilesAroundHouseLocked: Boolean;
+var
+  I: Integer;
+  CellsAround: TKMPointDirList;
+begin
+  Result := True;
+
+  CellsAround := TKMPointDirList.Create;
+  try
+    fTargetHouse.GetListOfCellsAround(CellsAround, fPass);
+
+    for I := 0 to CellsAround.Count - 1 do
+      if not gTerrain.TileIsLocked(CellsAround[I].Loc) then
+        Exit(False);
+  finally
+    CellsAround.Free;
+  end;
+end;
+
+
 { There's unexpected immovable obstacle on our way (suddenly grown up tree, wall, house)
 1. go around the obstacle and keep on walking
-2. rebuild the route from current position from scratch}
-function TKMUnitActionWalkTo.CheckForObstacle: TKMObstacleCheck;
+2. rebuild the route from current position from scratch
+  aDir - previous Unit Direction, need it to restore Direction for Warrior attacking House}
+function TKMUnitActionWalkTo.CheckForObstacle(aDir: TKMDirection): TKMObstacleCheck;
 var
   T: TKMPoint;
   DistNext: Single;
+  AllTilesAroundLocked: Boolean;
 begin
   Result := ocNoObstacle;
 
@@ -458,7 +486,7 @@ begin
   begin
     DistNext := gHands.DistanceToEnemyTowers(T, fUnit.Owner);
     if (DistNext <= RANGE_WATCHTOWER_MAX)
-    and (DistNext < gHands.DistanceToEnemyTowers(fUnit.CurrPosition, fUnit.Owner)) then
+      and (DistNext < gHands.DistanceToEnemyTowers(fUnit.CurrPosition, fUnit.Owner)) then
     begin
       //Cancel the plan if we cant approach it
       if TKMUnitWorker(fUnit).Task is TKMTaskBuild then
@@ -466,6 +494,34 @@ begin
       Result := ocNoRoute;
       Exit;
     end;
+  end;
+
+  // Warriors should replan when attacking houses if the chosen target tile is locked (by fellow attacking unit)
+  if (fUnit is TKMUnitWarrior)
+    and (TKMUnitWarrior(fUnit).Task <> nil)
+    and (TKMUnitWarrior(fUnit).Task.TaskType = uttAttackHouse)
+    and (gTerrain.TileIsLocked(NodeList.Last)) then
+  begin
+    if CanWalkToTarget(fUnit.CurrPosition, GetEffectivePassability) then
+    begin
+
+      AllTilesAroundLocked := CheckAllTilesAroundHouseLocked;
+
+      if AllTilesAroundLocked then
+        // Keep on walking. Some spot may free up.
+        // Also, "greedy" warriors look and feel better.
+        Exit(ocNoObstacle)
+      else
+      begin
+        //Restore direction, cause it usually looks unpleasant,
+        //when warrior turns to locked Loc and then immidiately (in 1 tick) turns away when on new route
+        fUnit.Direction := aDir;
+        fUnit.SetActionWalk(fWalkTo, fType, fDistance, fTargetUnit, fTargetHouse);
+        Result := ocReRouteMade;
+      end;
+    end else
+      Result := ocNoRoute;
+    Exit;
   end;
 
   if (not gTerrain.CheckPassability(T, GetEffectivePassability)) or
@@ -975,6 +1031,7 @@ function TKMUnitActionWalkTo.Execute: TKMActionResult;
 var
   DX,DY: Shortint;
   WalkX,WalkY,Distance: Single;
+  OldDir: TKMDirection;
 begin
   Result := arActContinues;
   StepDone := False;
@@ -1083,16 +1140,19 @@ begin
       (fTerrain.GetWalkConnectID(fWalkTo) = fTerrain.GetWalkConnectID(NodeList[NodePos])) then
       fPass := CanWalk;}
 
+    //Save unit dir in case we will need to restore it
+    OldDir := fUnit.Direction;
+
     //Update unit direction according to next Node
     fUnit.Direction := KMGetDirection(NodeList[NodePos], NodeList[NodePos+1]);
 
     //Check if we can walk to next tile in the route
     //Don't use CanAbandonInternal because skipping this check can cause crashes
     if not fDoExchange then
-      case CheckForObstacle of
-        ocNoObstacle:  ;
-        ocReRouteMade: Exit; //New route will pick-up
-        ocNoRoute:     begin Result := arActAborted; Exit; end; //
+      case CheckForObstacle(OldDir) of
+        ocNoObstacle:   ;
+        ocReRouteMade:  Exit; //New route will pick-up
+        ocNoRoute:      begin Result := arActAborted; Exit; end; //
       end;
 
     //Perform exchange

@@ -52,9 +52,11 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
+    function Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
+                        aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
     function Route_MakeAvoid(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
-    function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
+    function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte;
+                                    aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     procedure Load(LoadStream: TKMemoryStream); virtual;
@@ -94,7 +96,8 @@ end;
 
 //Find a route from A to B which meets aPass Passability
 //Results should be written as NodeCount of waypoint nodes to Nodes
-function TPathFinding.Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
+function TPathFinding.Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
+                                 aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
 begin
   Result := False;
 
@@ -104,7 +107,7 @@ begin
   fTargetNetwork := 0;
   fTargetWalkConnect := wcWalk;
   fDistance := aDistance;
-  fIsInteractionAvoid := False;
+  fIsInteractionAvoid := aAvoidLocked;
   fTargetHouse := aTargetHouse;
   if fTargetHouse = nil then
     fDestination := pdLocation
