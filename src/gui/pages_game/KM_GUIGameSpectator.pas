@@ -130,15 +130,11 @@ type
 
   // Units
   TKMGUIGameSpectatorItemLinePopulation = class(TKMGUIGameSpectatorItemLine)
-  private
-    fLastCitizenUIDs: array [CITIZEN_MIN..CITIZEN_MAX] of Cardinal;
-    procedure ResetUIDs;
   protected
     function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
-    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; override;
   end;
 
   TKMGUIGameSpectatorItemLineArmy = class(TKMGUIGameSpectatorItemLine)
@@ -569,8 +565,7 @@ begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Units[TKMUnitType(ATag)].GUIIcon,
                                            gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex,
-                                           DoHighlight, aOnItemClick);
-  ResetUIDs;
+                                           DontHighlight, aOnItemClick);
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
@@ -591,30 +586,6 @@ begin
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
-procedure TKMGUIGameSpectatorItemLinePopulation.ResetUIDs;
-var
-  UT: TKMUnitType;
-begin
-  for UT := Low(fLastCitizenUIDs) to High(fLastCitizenUIDs) do
-    fLastCitizenUIDs[UT] := 0;
-end;
-
-function TKMGUIGameSpectatorItemLinePopulation.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
-var
-  NextUnit: TKMUnit;
-  UT: TKMUnitType;
-begin
-  Result := KMPOINTF_INVALID_TILE;
-
-  UT := TKMUnitType(ATag);
-
-  NextUnit := gHands[AHandIndex].GetNextUnitWSameType(UT, fLastCitizenUIDs[UT]);
-  if NextUnit <> nil then
-  begin
-    Result := NextUnit.PositionF; //get position on that citizen
-    fLastCitizenUIDs[UT] := NextUnit.UID;
-  end;
-end;
 
 { TKMGUIGameSpectatorItemLineArmy }
 function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
