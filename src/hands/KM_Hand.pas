@@ -522,7 +522,7 @@ end;
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse;
 var
-  House, FirstH: TKMHouse;
+  House, FirstH, LastH: TKMHouse;
   Found: Boolean;
   I: Integer;
 begin
@@ -545,6 +545,8 @@ begin
       Break;
     end;
 
+    LastH := House;
+
     //Find first house from specified UID
     if (House.UID = aStartFromUID) then
       Found := True               // Mark that we found our house
@@ -557,13 +559,18 @@ begin
   end;
 
   if (Result = nil) and Found then // Found should be always True here
-    Result := FirstH;
+  begin
+    if FirstH = nil then
+      Result := LastH   //Could happen, when we have only 1 house with that type...
+    else
+      Result := FirstH;
+  end;
 end;
 
 
 function TKMHand.GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
 var
-  U, FirstU: TKMUnit;
+  U, FirstU, LastU: TKMUnit;
   Found: Boolean;
   I: Integer;
 begin
@@ -588,6 +595,8 @@ begin
       Break;
     end;
 
+    LastU := U;
+
     if U.UID = aStartFromUID then
       Found := True                // Mark that we found our unit
     else if Found then
@@ -599,13 +608,18 @@ begin
   end;
 
   if (Result = nil) and Found then   // Found should be always True here
-    Result := FirstU;
+  begin
+    if FirstU = nil then //Could happen, when we have only 1 unit with that type...
+      Result := LastU
+    else
+      Result := FirstU;
+  end;
 end;
 
 
 function TKMHand.GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 var
-  Group, FirstG: TKMUnitGroup;
+  Group, FirstG, LastG: TKMUnitGroup;
   Found: Boolean;
   I: Integer;
 begin
@@ -630,6 +644,8 @@ begin
       Break;
     end;
 
+    LastG := Group;
+
     if Group.UID = aStartFromUID then
       Found := True               // Mark that we found our group
     else if Found then
@@ -640,7 +656,12 @@ begin
       FirstG := Group;            // Save 1st group in list in case our group is the last one
   end;
   if (Result = nil) and Found then // Found should be always True here
-    Result := FirstG;
+  begin
+    if FirstG = nil then  //Could happen, when we have only 1 group with that type...
+      Result := LastG
+    else
+      Result := FirstG;
+  end;
 end;
 
 
