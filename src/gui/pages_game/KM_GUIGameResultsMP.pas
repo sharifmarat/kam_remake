@@ -96,7 +96,9 @@ type
     procedure UpdateVisibleTab;
     procedure TabChange(Sender: TObject);
     procedure StatTypeChange(Sender: TObject);
+    procedure SwitchBars_Click(Sender: TObject);
     procedure BarsUpdate(aStatType: TKMStatType);
+    procedure BarsUpdatePos;
     procedure EconomyUpdate(Sender: TObject);
     procedure WareUpdate(Sender: TObject);
     procedure ArmyUpdate(Sender: TObject);
@@ -117,12 +119,15 @@ type
     procedure ReinitChartEconomy;
     procedure ReinitChartWares;
     procedure ReinitChartArmy;
+
+    procedure Resize(Sender: TObject; aValue: Integer);
   protected
     Panel_ResultsMP: TKMPanel;
       Button_Bars,
       Button_Army,
       Button_Economy,
       Button_Wares,
+      Button_SwitchBars,
       Button_Players,Button_Teams: TKMButtonFlat;
       Label_ResultsMP: TKMLabel;
       Panel_Bars: TKMPanel;
@@ -170,7 +175,7 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_Game, KM_HandsCollection, KM_CommonUtils, KM_Resource, KM_ResFonts,
+  KM_Main, KM_ResTexts, KM_Game, KM_HandsCollection, KM_CommonUtils, KM_Resource, KM_ResFonts,
   KM_RenderUI, KM_Hand, KM_ResUnits,
   KM_GameTypes;
 
@@ -382,13 +387,13 @@ var
   I,K, Middle: Integer;
 begin
   Panel_Bars := TKMPanel.Create(aParent, RESULTS_X_PADDING, PANES_TOP, aParent.Width - 2*RESULTS_X_PADDING, aParent.Height - PANES_TOP - BACK_BTN_Y_TO_BOTTOM);
-  Panel_Bars.AnchorsCenter;
+  Panel_Bars.AnchorsStretch;
   Middle := Panel_Bars.Height div 2;
 
     //Composed of two sections each on own Panel to position them vertically according to player count
 
     Panel_BarsUpper := TKMPanel.Create(Panel_Bars, 0, 0, Panel_Bars.Width, Middle - 3);
-    Panel_BarsUpper.AnchorsCenter;
+    Panel_BarsUpper.Anchors := [anTop];
 
       for I := 0 to MAX_LOBBY_PLAYERS - 1 do
         Label_ResultsPlayerName1[I] := TKMLabel.Create(Panel_BarsUpper, 0, 38+I*BAR_ROW_HEIGHT, 150, 20, '', fntMetal, taLeft);
@@ -397,7 +402,7 @@ begin
       begin
         with TKMLabel.Create(Panel_BarsUpper, 160 + BarStep*K, 0, BarWidth+6, 40, gResTexts[Columns1[K]], fntMetal, taCenter) do
           AutoWrap := True;
-        for I:=0 to MAX_LOBBY_PLAYERS - 1 do
+        for I := 0 to MAX_LOBBY_PLAYERS - 1 do
         begin
           Bar_Results[I,K] := TKMPercentBar.Create(Panel_BarsUpper, 160 + K*BarStep, 35+I*BAR_ROW_HEIGHT, BarWidth, 20, fntGrey);
           Bar_Results[I,K].TextYOffset := -3;
@@ -406,7 +411,7 @@ begin
       end;
 
     Panel_BarsLower := TKMPanel.Create(Panel_Bars, 0, Middle+3, Panel_Bars.Width, Middle - 10);
-    Panel_BarsLower.AnchorsCenter;
+    Panel_BarsLower.Anchors := [anBottom];
 
       for I := 0 to MAX_LOBBY_PLAYERS - 1 do
         Label_ResultsPlayerName2[I] := TKMLabel.Create(Panel_BarsLower, 0, 38+I*BAR_ROW_HEIGHT, 150, 20, '', fntMetal, taLeft);
@@ -422,6 +427,14 @@ begin
           Image_ResultsRosette[I,K+5] := TKMImage.Create(Panel_BarsLower, 164 + K*BarStep, 38+I*BAR_ROW_HEIGHT, 16, 16, 8, rxGuiMain);
         end;
       end;
+
+    Button_SwitchBars := TKMButtonFlat.Create(Panel_Bars, 0, 0, 140, 20, 0, rxGui);
+    Button_SwitchBars.TexOffsetX := -72;
+    Button_SwitchBars.TexOffsetY := 6;
+    Button_SwitchBars.Anchors := [anLeft, anTop];
+    Button_SwitchBars.Caption := '>>';
+    Button_SwitchBars.CapOffsetY := -11;
+    Button_SwitchBars.OnClick := SwitchBars_Click;
 end;
 
 
@@ -430,26 +443,26 @@ const
   RADIO_ECO_HEIGHT = 80;
 begin
   Panel_ChartsEconomy := TKMPanel.Create(Panel_ResultsMP, RESULTS_X_PADDING, PANES_TOP, Panel_ResultsMP.Width - 2*RESULTS_X_PADDING, CHART_HEIGHT);
-  Panel_ChartsEconomy.Anchors := [anLeft];
+  Panel_ChartsEconomy.AnchorsStretch;
     Chart_Players_Citizens := TKMChart.Create(Panel_ChartsEconomy, 0, 0, Panel_ChartsEconomy.Width, CHART_HEIGHT);
     Chart_Players_Citizens.Caption := gResTexts[TX_GRAPH_CITIZENS];
     Chart_Players_Citizens.LegendCaption := gResTexts[TX_WORD_PLAYERS];
     Chart_Players_Citizens.LegendWidth := SUBMENU_RIGHT_WIDTH;
-    Chart_Players_Citizens.Anchors := [anLeft];
+    Chart_Players_Citizens.AnchorsStretch;
     Chart_Players_Citizens.OnLegendClick := Chart_LegendClick;
 
     Chart_Teams_Citizens := TKMChart.Create(Panel_ChartsEconomy, 0, 0, Panel_ChartsEconomy.Width, CHART_HEIGHT);
     Chart_Teams_Citizens.Caption := gResTexts[TX_GRAPH_CITIZENS];
     Chart_Teams_Citizens.LegendCaption := gResTexts[TX_WORD_TEAMS];
     Chart_Teams_Citizens.LegendWidth := SUBMENU_RIGHT_WIDTH;
-    Chart_Teams_Citizens.Anchors := [anLeft];
+    Chart_Teams_Citizens.AnchorsStretch;
     Chart_Teams_Citizens.OnLegendClick := Chart_LegendClick;
 
     Chart_Players_Houses := TKMChart.Create(Panel_ChartsEconomy, 0, 0, Panel_ChartsEconomy.Width, CHART_HEIGHT);
     Chart_Players_Houses.Caption := gResTexts[TX_GRAPH_HOUSES];
     Chart_Players_Houses.LegendCaption := gResTexts[TX_WORD_PLAYERS];
     Chart_Players_Houses.LegendWidth := SUBMENU_RIGHT_WIDTH;
-    Chart_Players_Houses.Anchors := [anLeft];
+    Chart_Players_Houses.AnchorsStretch;
     Chart_Players_Houses.Hide;
     Chart_Players_Houses.OnLegendClick := Chart_LegendClick;
 
@@ -457,24 +470,29 @@ begin
     Chart_Teams_Houses.Caption := gResTexts[TX_GRAPH_HOUSES];
     Chart_Teams_Houses.LegendCaption := gResTexts[TX_WORD_TEAMS];
     Chart_Teams_Houses.LegendWidth := SUBMENU_RIGHT_WIDTH;
-    Chart_Teams_Houses.Anchors := [anLeft];
+    Chart_Teams_Houses.AnchorsStretch;
     Chart_Teams_Houses.Hide;
     Chart_Teams_Houses.OnLegendClick := Chart_LegendClick;
 
     Label_NoEconomyData := TKMLabel.Create(Panel_ChartsEconomy, Panel_ResultsMP.Width div 2, CHART_HEIGHT div 2, gResTexts[TX_GRAPH_NO_DATA], fntMetal, taCenter);
+    Label_NoEconomyData.AnchorsCenter;
 
     Panel_ChartEconomy_Type := TKMPanel.Create(Panel_ChartsEconomy, Panel_ChartsEconomy.Width - SUBMENU_RIGHT_WIDTH + 5,
                                                CHART_HEIGHT - RADIO_ECO_HEIGHT - 20, SUBMENU_RIGHT_WIDTH, RADIO_ECO_HEIGHT);
+    Panel_ChartEconomy_Type.Anchors := [anLeft, anBottom];
       with TKMShape.Create(Panel_ChartEconomy_Type, 0, 0, SUBMENU_RIGHT_WIDTH, RADIO_ECO_HEIGHT) do
       begin
+        Anchors := [anLeft, anBottom];
         FillColor := icDarkestGrayTrans;
         LineColor := icGray;
         LineWidth := 1;
       end;
 
-      TKMLabel.Create(Panel_ChartEconomy_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter);
+      with TKMLabel.Create(Panel_ChartEconomy_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter) do
+        Anchors := [anLeft, anBottom];
 
       Radio_ChartEconomyType := TKMRadioGroup.Create(Panel_ChartEconomy_Type,5,35,SUBMENU_RIGHT_WIDTH - 10,RADIO_ECO_HEIGHT - 40,fntGrey);
+      Radio_ChartEconomyType.Anchors := [anLeft, anBottom];
       Radio_ChartEconomyType.DrawChkboxOutline := True;
       Radio_ChartEconomyType.ItemIndex := 0;
       Radio_ChartEconomyType.Add(gResTexts[TX_GRAPH_CITIZENS]);
@@ -493,6 +511,7 @@ procedure TKMGameResultsMP.CreateChartWares(aParent: TKMPanel);
 
   procedure SetupWareColumnBox(aColumnBox: TKMColumnBox);
   begin
+    aColumnBox.Anchors := [anLeft, anTop, anBottom];
     aColumnBox.SetColumns(fntGame, ['', ''], [0, 20]);
     aColumnBox.ShowHeader := False;
     aColumnBox.ShowLines := False;
@@ -501,6 +520,7 @@ procedure TKMGameResultsMP.CreateChartWares(aParent: TKMPanel);
 
   procedure SetupWareChart(aChart: TKMChart; aStatType: TKMStatType);
   begin
+    aChart.AnchorsStretch;
     aChart.Caption := gResTexts[TX_GRAPH_TITLE_RESOURCES];
     aChart.LegendCaption := GetChartLegendCaption(aStatType);
     aChart.LegendWidth := SUBMENU_RIGHT_WIDTH;
@@ -517,7 +537,7 @@ var
   ST: TKMStatType;
 begin
   Panel_ChartsWares := TKMPanel.Create(aParent, RESULTS_X_PADDING, PANES_TOP, aParent.Width - 2*RESULTS_X_PADDING, CHART_HEIGHT);
-  Panel_ChartsWares.AnchorsCenter;
+  Panel_ChartsWares.AnchorsStretch;
 
     Columnbox_Wares := TKMColumnBox.Create(Panel_ChartsWares, 0, 0, 145, CHART_HEIGHT, fntGame, bsMenu);
     Columnbox_WaresGDP := TKMColumnBox.Create(Panel_ChartsWares, 0, 0, 145, CHART_HEIGHT, fntGame, bsMenu);
@@ -540,19 +560,24 @@ begin
     end;
 
     Label_NoWareData := TKMLabel.Create(Panel_ChartsWares, Panel_ChartsWares.Width div 2, CHART_HEIGHT div 2, gResTexts[TX_GRAPH_NO_DATA], fntMetal, taCenter);
+    Label_NoWareData.AnchorsCenter;
 
     Panel_ChartWare_Type := TKMPanel.Create(Panel_ChartsWares, Panel_ChartsWares.Width - SUBMENU_RIGHT_WIDTH + 5,
                                             CHART_HEIGHT - WARES_TYPE_HEIGHT - 20, SUBMENU_RIGHT_WIDTH, WARES_TYPE_HEIGHT);
+    Panel_ChartWare_Type.Anchors := [anLeft, anBottom];
       with TKMShape.Create(Panel_ChartWare_Type, 0, 0, SUBMENU_RIGHT_WIDTH, WARES_TYPE_HEIGHT) do
       begin
+        Anchors := [anLeft, anBottom];
         FillColor := icDarkestGrayTrans;
         LineColor := icGray;
         LineWidth := 1;
       end;
 
-      TKMLabel.Create(Panel_ChartWare_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter);
+      with TKMLabel.Create(Panel_ChartWare_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter) do
+        Anchors := [anLeft, anBottom];
 
       Radio_ChartWareType := TKMRadioGroup.Create(Panel_ChartWare_Type,5,35,SUBMENU_RIGHT_WIDTH - 10,WARES_TYPE_HEIGHT - 40,fntGrey);
+      Radio_ChartWareType.Anchors := [anLeft, anBottom];
       Radio_ChartWareType.DrawChkboxOutline := True;
       Radio_ChartWareType.ItemIndex := 0;
       Radio_ChartWareType.Add(gResTexts[TX_RESULTS_WARES_QUANTITY]);
@@ -576,9 +601,10 @@ var
   ST: TKMStatType;
 begin
   Panel_ChartsArmy := TKMPanel.Create(aParent, RESULTS_X_PADDING, PANES_TOP, aParent.Width - 2*RESULTS_X_PADDING, CHART_HEIGHT);
-  Panel_ChartsArmy.AnchorsCenter;
+  Panel_ChartsArmy.AnchorsStretch;
 
     Columnbox_Army := TKMColumnBox.Create(Panel_ChartsArmy, 0, 0, 145, CHART_HEIGHT, fntGame, bsMenu);
+    Columnbox_Army.Anchors := [anLeft, anTop, anBottom];
     Columnbox_Army.SetColumns(fntGame, ['', ''], [0, 33]);
     Columnbox_Army.ShowHeader := False;
     Columnbox_Army.ShowLines := False;
@@ -591,6 +617,7 @@ begin
         for WType := Low(TKMChartWarriorType) to High(TKMChartWarriorType) do
         begin
           Charts_Army[ST,CKind,WType] := TKMChartArmyMP.Create(WType, CKind, Panel_ChartsArmy, 140, 0, Panel_ChartsArmy.Width - 140, CHART_HEIGHT);
+          Charts_Army[ST,CKind,WType].Chart.AnchorsStretch;
           Charts_Army[ST,CKind,WType].Chart.Caption := gResTexts[TX_GRAPH_ARMY];
           Charts_Army[ST,CKind,WType].Chart.LegendCaption := GetChartLegendCaption(ST);
           Charts_Army[ST,CKind,WType].Chart.LegendWidth := SUBMENU_RIGHT_WIDTH;
@@ -600,19 +627,24 @@ begin
         end;
 
     Label_NoArmyData := TKMLabel.Create(Panel_ChartsArmy, Panel_ChartsArmy.Width div 2, CHART_HEIGHT div 2, gResTexts[TX_GRAPH_NO_DATA], fntMetal, taCenter);
+    Label_NoArmyData.AnchorsCenter;
 
     Panel_ChartArmy_Type := TKMPanel.Create(Panel_ChartsArmy, Panel_ChartsArmy.Width - SUBMENU_RIGHT_WIDTH + 5,
                                             CHART_HEIGHT - ARMY_TYPE_HEIGHT - 20, SUBMENU_RIGHT_WIDTH, ARMY_TYPE_HEIGHT);
+    Panel_ChartArmy_Type.Anchors := [anLeft, anBottom];
       with TKMShape.Create(Panel_ChartArmy_Type, 0, 0, SUBMENU_RIGHT_WIDTH, ARMY_TYPE_HEIGHT) do
       begin
+        Anchors := [anLeft, anBottom];
         FillColor := icDarkestGrayTrans;
         LineColor := icGray;
         LineWidth := 1;
       end;
 
-      TKMLabel.Create(Panel_ChartArmy_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter);
+      with TKMLabel.Create(Panel_ChartArmy_Type, 5, 8, SUBMENU_RIGHT_WIDTH - 10, 20, gResTexts[TX_RESULTS_CHART_TYPE], fntMetal, taCenter) do
+        Anchors := [anLeft, anBottom];
 
       Radio_ChartArmyType := TKMRadioGroup.Create(Panel_ChartArmy_Type,5,35,SUBMENU_RIGHT_WIDTH - 10,ARMY_TYPE_HEIGHT - 40,fntGrey);
+      Radio_ChartArmyType.Anchors := [anLeft, anBottom];
       Radio_ChartArmyType.DrawChkboxOutline := True;
       Radio_ChartArmyType.ItemIndex := 0;
       Radio_ChartArmyType.Add(gResTexts[TX_RESULTS_ARMY_INSTANTANEOUS]);
@@ -641,6 +673,18 @@ begin
   Button_Teams.Down   := fStatType = stByTeams;
 
   UpdateVisibleTab;
+end;
+
+
+procedure TKMGameResultsMP.SwitchBars_Click(Sender: TObject);
+begin
+  if Button_SwitchBars.Caption = '>>' then
+    Button_SwitchBars.Caption := '<<'
+  else
+    Button_SwitchBars.Caption := '>>';
+
+  Panel_BarsUpper.Visible := not Panel_BarsUpper.Visible;
+  Panel_BarsLower.Visible := not Panel_BarsLower.Visible;
 end;
 
 
@@ -687,6 +731,12 @@ begin
 end;
 
 
+procedure TKMGameResultsMP.Resize(Sender: TObject; aValue: Integer);
+begin
+  BarsUpdatePos;
+end;
+
+
 procedure TKMGameResultsMP.TabChange(Sender: TObject);
 begin
   Button_Bars.Down := Sender = Button_Bars;
@@ -703,12 +753,47 @@ begin
 end;
 
 
+procedure TKMGameResultsMP.BarsUpdatePos;
+begin
+  if fListToShow[stByPlayers] <> nil then
+  begin
+    //Update positioning
+    Panel_BarsUpper.Height := 40 + fListToShow[stByPlayers].Count * BAR_ROW_HEIGHT;
+    Panel_BarsLower.Height := 40 + fListToShow[stByPlayers].Count * BAR_ROW_HEIGHT;
+    Panel_Bars.Height := Panel_Bars.Parent.Height - PANES_TOP - BACK_BTN_Y_TO_BOTTOM;
+
+    if Panel_Bars.Height < Panel_BarsUpper.Height + Panel_BarsLower.Height + 10 then
+    begin
+      if Panel_BarsUpper.Visible and Panel_BarsLower.Visible then
+      begin
+        Panel_BarsLower.Hide;
+        Button_SwitchBars.DoSetVisible;
+        Button_SwitchBars.Caption := '>>';
+        Panel_BarsUpper.Top := 0;
+        Panel_BarsLower.Top := 0;
+        Panel_BarsLower.Anchors := [anTop];
+      end;
+    end else begin
+      Panel_BarsUpper.DoSetVisible;
+      Panel_BarsLower.DoSetVisible;
+      Panel_BarsLower.Anchors := [anBottom];
+      Button_SwitchBars.Hide;
+
+      //Second panel does not move from the middle of the screen: results always go above and below the middle
+      Panel_BarsUpper.Top := Panel_Bars.Height div 2 - Panel_BarsUpper.Height - 5;
+      Panel_BarsLower.Top := Panel_Bars.Height div 2 + 5;
+    end;
+  end;
+end;
+
+
 procedure TKMGameResultsMP.BarsUpdate(aStatType: TKMStatType);
 const
   STATS_LOWER_IS_BETTER: set of Byte = [1,3,6];
 
   procedure SetPlayerControls(aPlayer: Integer; aEnabled: Boolean);
-  var I: Integer;
+  var
+    I: Integer;
   begin
     Label_ResultsPlayerName1[aPlayer].Visible := aEnabled;
     Label_ResultsPlayerName2[aPlayer].Visible := aEnabled;
@@ -746,13 +831,7 @@ begin
     Label_ResultsPlayerName2[I].FontColor := Label_ResultsPlayerName1[I].FontColor;
   end;
 
-  //Update positioning
-  Panel_BarsUpper.Height := 40 + fListToShow[stByPlayers].Count * BAR_ROW_HEIGHT;
-  Panel_BarsLower.Height := 40 + fListToShow[stByPlayers].Count * BAR_ROW_HEIGHT;
-
-  //Second panel does not move from the middle of the screen: results always go above and below the middle
-  Panel_BarsUpper.Top := Panel_Bars.Height div 2 - Panel_BarsUpper.Height - 5;
-  Panel_BarsLower.Top := Panel_Bars.Height div 2 + 5;
+  BarsUpdatePos;
 
   //Calculate best scores
   FillChar(Bests, SizeOf(Bests), #0);
@@ -1690,9 +1769,22 @@ end;
 procedure TKMGameResultsMP.Create_ResultsMP(aParent: TKMPanel);
 const
   TABS_TOP = 75;
+
+  procedure SetupButton(var aBtn: TKMButtonFlat; aCaption: UnicodeString; aTexOffX: ShortInt; aOnClick: TNotifyEvent;
+                        aAnchors: TKMAnchorsSet = [anLeft, anTop]);
+  begin
+    aBtn.TexOffsetX := aTexOffX;
+    aBtn.TexOffsetY := 6;
+    aBtn.Anchors := aAnchors;
+    aBtn.Caption := aCaption;
+    aBtn.CapOffsetY := -11;
+    aBtn.OnClick := aOnClick;
+  end;
+
 begin
   Panel_ResultsMP := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_ResultsMP.AnchorsStretch;
+
     with TKMImage.Create(Panel_ResultsMP,0,0,aParent.Width, aParent.Height,7,rxGuiMain) do
     begin
       ImageStretch;
@@ -1705,57 +1797,27 @@ begin
     end;
 
     Label_ResultsMP := TKMLabel.Create(Panel_ResultsMP,RESULTS_X_PADDING,TABS_TOP-30,Panel_ResultsMP.Width - 2*RESULTS_X_PADDING,20,NO_TEXT,fntMetal,taCenter);
-    Label_ResultsMP.Anchors := [anLeft];
+    Label_ResultsMP.Anchors := [anLeft, anTop];
 
     Button_Bars := TKMButtonFlat.Create(Panel_ResultsMP, 160, TABS_TOP, 176, 20, 8, rxGuiMain);
-    Button_Bars.TexOffsetX := -78;
-    Button_Bars.TexOffsetY := 6;
-    Button_Bars.Anchors := [anLeft];
-    Button_Bars.Caption := gResTexts[TX_RESULTS_STATISTICS];
-    Button_Bars.CapOffsetY := -11;
-    Button_Bars.OnClick := TabChange;
+    SetupButton(Button_Bars, gResTexts[TX_RESULTS_STATISTICS], -78, TabChange);
 
     Button_Army := TKMButtonFlat.Create(Panel_ResultsMP, 340, TABS_TOP, 176, 20, 53, rxGui);
-    Button_Army.TexOffsetX := -76;
-    Button_Army.TexOffsetY := 6;
-    Button_Army.Anchors := [anLeft];
-    Button_Army.Caption := gResTexts[TX_GRAPH_ARMY];
-    Button_Army.CapOffsetY := -11;
-    Button_Army.OnClick := TabChange;
+    SetupButton(Button_Army, gResTexts[TX_GRAPH_ARMY], -76, TabChange);
 
     Button_Economy := TKMButtonFlat.Create(Panel_ResultsMP, 520, TABS_TOP, 176, 20, 589, rxGui);
-    Button_Economy.TexOffsetX := -72;
-    Button_Economy.TexOffsetY := 6;
-    Button_Economy.Anchors := [anLeft];
-    Button_Economy.Caption := gResTexts[TX_RESULTS_ECONOMY];
-    Button_Economy.CapOffsetY := -11;
-    Button_Economy.OnClick := TabChange;
+    SetupButton(Button_Economy, gResTexts[TX_RESULTS_ECONOMY], -72, TabChange);
 
     Button_Wares := TKMButtonFlat.Create(Panel_ResultsMP, 700, TABS_TOP, 176, 20, 360, rxGui);
-    Button_Wares.TexOffsetX := -77;
-    Button_Wares.TexOffsetY := 6;
-    Button_Wares.Anchors := [anLeft];
-    Button_Wares.Caption := gResTexts[TX_GRAPH_RESOURCES];
-    Button_Wares.CapOffsetY := -11;
-    Button_Wares.OnClick := TabChange;
+    SetupButton(Button_Wares, gResTexts[TX_GRAPH_RESOURCES], -77, TabChange);
 
     Button_Players := TKMButtonFlat.Create(Panel_ResultsMP, 605+RESULTS_X_PADDING+5, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM, 140, 30, 141, rxGui);
-    Button_Players.TexOffsetX := -Button_Players.Width div 2 + 12;
-    Button_Players.TexOffsetY := 6;
-    Button_Players.Anchors := [anLeft];
-    Button_Players.Caption := gResTexts[TX_RESULTS_BY_PLAYERS];
-    Button_Players.CapOffsetY := -11;
+    SetupButton(Button_Players, gResTexts[TX_RESULTS_BY_PLAYERS], -Button_Players.Width div 2 + 12, StatTypeChange, [anLeft, anBottom]);
     Button_Players.CapOffsetX := 12;
-    Button_Players.OnClick := StatTypeChange;
 
     Button_Teams := TKMButtonFlat.Create(Panel_ResultsMP, 755+RESULTS_X_PADDING+5, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM, 140, 30, 392, rxGui);
-    Button_Teams.TexOffsetX := -Button_Teams.Width div 2 + 20;
-    Button_Teams.TexOffsetY := 6;
-    Button_Teams.Anchors := [anLeft];
-    Button_Teams.Caption := gResTexts[TX_RESULTS_BY_TEAMS];
-    Button_Teams.CapOffsetY := -11;
+    SetupButton(Button_Teams, gResTexts[TX_RESULTS_BY_TEAMS], -Button_Teams.Width div 2 + 20, StatTypeChange, [anLeft, anBottom]);
     Button_Teams.CapOffsetX := 20;
-    Button_Teams.OnClick := StatTypeChange;
 
     fStatType := stByPlayers;
 
@@ -1767,13 +1829,15 @@ begin
 
     Button_Back := TKMButton.Create(Panel_ResultsMP, 50 + RESULTS_X_PADDING, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
                                     270, 30, NO_TEXT, bsMenu);
-    Button_Back.Anchors := [anLeft];
+    Button_Back.Anchors := [anLeft, anBottom];
     Button_Back.OnClick := BackClick;
 
     Button_BackToGame := TKMButton.Create(Panel_ResultsMP, BTN_BACK_TO_GAME_LEFT, Panel_ResultsMP.Height - BACK_BTN_Y_TO_BOTTOM,
                                           250, 30, gResTexts[TX_RESULTS_BACK_TO_GAME], bsMenu);
-    Button_BackToGame.Anchors := [anLeft];
+    Button_BackToGame.Anchors := [anLeft, anBottom];
     Button_BackToGame.OnClick := BackClick;
+
+  Panel_ResultsMP.OnHeightChange := Resize;
 end;
 
 
@@ -1872,6 +1936,9 @@ begin
   fReinitedLastTime := aReinitLastTime;
 
   Panel_ResultsMP.Show;
+  //ALERT !!!! Refactor
+  gMain.ForcedResize; //For some reason we could have wrong Panel_ResultsMP Panel position on screen, ForcedResize fix the Issue
+  Resize(nil, 0);
 end;
 
 
