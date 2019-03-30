@@ -1,4 +1,4 @@
-﻿unit KM_Hand;
+unit KM_Hand;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -530,6 +530,7 @@ begin
 
   Found := False;
   FirstH := nil;
+  LastH := nil;
 
   for I := 0 to fHouses.Count - 1 do
   begin
@@ -578,6 +579,7 @@ begin
 
   Found := False;
   FirstU := nil;
+  LastU := nil;
 
   for I := 0 to fUnits.Count - 1 do
   begin
@@ -627,6 +629,7 @@ begin
 
   Found := False;
   FirstG := nil;
+  LastG := nil;
 
   for I := 0 to UnitGroups.Count - 1 do
   begin

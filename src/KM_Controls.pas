@@ -528,6 +528,9 @@ type
   // Check if specified aChar is allowed for specified aAllowedChars type
   function IsCharAllowed(aChar: WideChar; aAllowedChars: TKMAllowedChars): Boolean;
 
+const
+  DEFAULT_HIGHLIGHT_COEF = 0.4;
+
 
 type
 
@@ -2916,7 +2919,7 @@ begin
   ImageAnchors := [anLeft, anTop];
   Highlight := False;
   HighlightOnMouseOver := False;
-  HighlightCoef := 0.4;
+  HighlightCoef := DEFAULT_HIGHLIGHT_COEF;
 end;
 
 
