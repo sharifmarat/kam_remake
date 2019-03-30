@@ -46,7 +46,7 @@ begin
   //There are still more commands left
   if fCursor <= Count then
   begin
-    while (aTick > fQueue[fCursor].Tick) and (fQueue[fCursor].Command.CommandType <> gic_None) do
+    while (aTick > fQueue[fCursor].Tick) and (fQueue[fCursor].Command.CommandType <> gicNone) do
       Inc(fCursor);
 
     while (fCursor <= Count) and (aTick = fQueue[fCursor].Tick) do //Could be several commands in one Tick

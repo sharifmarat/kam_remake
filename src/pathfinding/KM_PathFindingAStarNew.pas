@@ -52,7 +52,7 @@ end;
 destructor TPathFindingAStarNew.Destroy;
 begin
   Flush;
-  fHeap.Free;
+  FreeAndNil(fHeap);
 
   inherited;
 end;
@@ -95,7 +95,7 @@ begin
   for I := fUsedNodeCount - 1 downto 0 do
   begin
     fOpenRef[fUsedNodes[I].Y, fUsedNodes[I].X] := nil;
-    fUsedNodes[I].Free;
+    FreeAndNil(fUsedNodes[I]);
   end;
 
   fUsedNodeCount := 0;

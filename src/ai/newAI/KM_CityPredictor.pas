@@ -33,7 +33,7 @@ type
   // City predictor (calculation of required houses based on prediction of resource flow)
   TKMCityPredictor = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fWorkerCount: Word;
     fGoldMineCnt, fIronMineCnt, fFieldCnt, fBuildCnt: Integer;
     fMaxIronWeapProd, fMaxWoodWeapProd, fMaxSoldiersInMin, fPeaceFactor, fUpdatedPeaceFactor: Single;
@@ -54,7 +54,7 @@ type
   public
     RequiredHouses: TRequiredHousesArray;
 
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -70,7 +70,7 @@ type
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
     procedure LogStatus(var aBalanceText: UnicodeString);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure MarkExhaustedIronMine();
 
   end;
@@ -79,14 +79,14 @@ const
 
   {
   TKMWareType:
-  wt_None,
-  wt_Trunk,   wt_Stone,   wt_Wood,        wt_IronOre,   wt_GoldOre,
-  wt_Coal,    wt_Steel,   wt_Gold,        wt_Wine,      wt_Corn,
-  wt_Bread,   wt_Flour,   wt_Leather,     wt_Sausages,  wt_Pig,
-  wt_Skin,    wt_Shield,  wt_MetalShield, wt_Armor,     wt_MetalArmor,
-  wt_Axe,     wt_Sword,   wt_Pike,        wt_Hallebard, wt_Bow,
-  wt_Arbalet, wt_Horse,   wt_Fish,
-  wt_All,     wt_Warfare, wt_Food
+  wtNone,
+  wtTrunk,   wtStone,   wtWood,        wtIronOre,   wtGoldOre,
+  wtCoal,    wtSteel,   wtGold,        wtWine,      wtCorn,
+  wtBread,   wtFlour,   wtLeather,     wtSausages,  wtPig,
+  wtSkin,    wtShield,  wtMetalShield, wtArmor,     wtMetalArmor,
+  wtAxe,     wtSword,   wtPike,        wtHallebard, wtBow,
+  wtArbalet, wtHorse,   wtFish,
+  wtAll,     wtWarfare, wtFood
   }
   // Array of wares which are produced by specific houses
   PRODUCTION_WARE2HOUSE: array[WARE_MIN..WARE_MAX] of TKMHouseType = (
@@ -98,16 +98,16 @@ const
     htWeaponSmithy,   htStables,       htFisherHut
   );
   // Possible transformation of wares: resource -> product
-  CONSUMPTION_WARE: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMWareType = (         // wt_Shield are ignored
-    (wt_Wood, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Axe, wt_None, wt_None, wt_None), (wt_Steel, wt_None, wt_None, wt_None), (wt_Gold, wt_None, wt_None, wt_None),
-    (wt_Steel, wt_Gold, wt_MetalArmor, wt_Sword), (wt_MetalArmor, wt_Sword, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Flour, wt_Pig, wt_Horse, wt_None),
-    (wt_None, wt_None, wt_None, wt_None), (wt_Bread, wt_None, wt_None, wt_None), (wt_Armor, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_Sausages, wt_None, wt_None, wt_None),
-    (wt_Leather, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None),
-    (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None),
-    (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None), (wt_None, wt_None, wt_None, wt_None)
+  CONSUMPTION_WARE: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMWareType = (         // wtShield are ignored
+    (wtWood, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtAxe, wtNone, wtNone, wtNone), (wtSteel, wtNone, wtNone, wtNone), (wtGold, wtNone, wtNone, wtNone),
+    (wtSteel, wtGold, wtMetalArmor, wtSword), (wtMetalArmor, wtSword, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtFlour, wtPig, wtHorse, wtNone),
+    (wtNone, wtNone, wtNone, wtNone), (wtBread, wtNone, wtNone, wtNone), (wtArmor, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtSausages, wtNone, wtNone, wtNone),
+    (wtLeather, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone),
+    (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone),
+    (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone), (wtNone, wtNone, wtNone, wtNone)
   );
-  // Array of wares which are consumed in specific amount to achieve specific production (because of exceptions in ht_WeaponWorkshop / ht_Swine / ht_Stables etc.)
-  CONSUMPTION_RATIO: array[wt_Trunk..wt_Skin] of array[0..3] of Single = (
+  // Array of wares which are consumed in specific amount to achieve specific production (because of exceptions in htWeaponWorkshop / htSwine / htStables etc.)
+  CONSUMPTION_RATIO: array[wtTrunk..wtSkin] of array[0..3] of Single = (
     // 1 trunk = 2 Wood                2 wood = 1 axe/bow/spear        1 GoldOre = 2 Gold (+ 1 Coal)
     (0.5, 1, 1, 1),   (1, 1, 1, 1),   (2, 1, 1, 1),   (1, 1, 1, 1),   (0.5, 1, 1, 1),
     // 1 coal = 2 gold (+ 1 gold ore)                                    BEAST_COST = 4 (per a pig / horse)
@@ -118,12 +118,12 @@ const
     (0.5, 1, 1, 1)
   );
   CONSUMPTION_ORDER: array[0..27] of TKMWareType = ( // Basicaly TKMWareType but sorted by order: resource -> product
-    wt_Stone,   wt_Trunk,    wt_Wood,
-    wt_Corn,    wt_Flour,    wt_Bread,     wt_Wine,        wt_Fish,
-    wt_Pig,     wt_Sausages, wt_Skin,      wt_Leather,     wt_Horse,
-    wt_GoldOre, wt_IronOre,  wt_Coal,      wt_Gold,        wt_Steel,
-    wt_Axe,     wt_Bow,      wt_Pike,      wt_Armor,       wt_Shield,
-    wt_Sword,   wt_Arbalet,  wt_Hallebard, wt_MetalShield, wt_MetalArmor
+    wtStone,   wtTrunk,    wtWood,
+    wtCorn,    wtFlour,    wtBread,     wtWine,        wtFish,
+    wtPig,     wtSausages, wtSkin,      wtLeather,     wtHorse,
+    wtGoldOre, wtIronOre,  wtCoal,      wtGold,        wtSteel,
+    wtAxe,     wtBow,      wtPike,      wtArmor,       wtShield,
+    wtSword,   wtArbalet,  wtHallebard, wtMetalShield, wtMetalArmor
   );
   CO_WEAPONS_MIN = 18;
   CO_WEAPONS_MAX = 27;
@@ -136,12 +136,12 @@ const
   {
   // Array of wares which are consumed by specific houses
   CONSUMPTION_WARE: array[WARE_MIN..WARE_MAX] of array[0..3] of TKMHouseType = (
-    (ht_Sawmill, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_WeaponWorkshop, ht_ArmorWorkshop, ht_None, ht_None),   (ht_IronSmithy, ht_None, ht_None, ht_None),   (ht_Metallurgists, ht_None, ht_None, ht_None),
-    (ht_Metallurgists, ht_IronSmithy, ht_ArmorSmithy, ht_WeaponSmithy),   (ht_ArmorSmithy, ht_WeaponSmithy, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_Mill, ht_Swine, ht_Stables, ht_None),
-    (ht_None, ht_None, ht_None, ht_None),   (ht_Bakery, ht_None, ht_None, ht_None),   (ht_ArmorWorkshop, ht_None, ht_None, ht_None),   (ht_None, ht_None, ht_None, ht_None),   (ht_Butchers, ht_None, ht_None, ht_None),
-    (ht_Tannery, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None),
-    (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None),
-    (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None), (ht_None, ht_None, ht_None, ht_None)
+    (htSawmill, htNone, htNone, htNone),   (htNone, htNone, htNone, htNone),   (htWeaponWorkshop, htArmorWorkshop, htNone, htNone),   (htIronSmithy, htNone, htNone, htNone),   (htMetallurgists, htNone, htNone, htNone),
+    (htMetallurgists, htIronSmithy, htArmorSmithy, htWeaponSmithy),   (htArmorSmithy, htWeaponSmithy, htNone, htNone),   (htNone, htNone, htNone, htNone),   (htNone, htNone, htNone, htNone),   (htMill, htSwine, htStables, htNone),
+    (htNone, htNone, htNone, htNone),   (htBakery, htNone, htNone, htNone),   (htArmorWorkshop, htNone, htNone, htNone),   (htNone, htNone, htNone, htNone),   (htButchers, htNone, htNone, htNone),
+    (htTannery, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone),
+    (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone),
+    (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone), (htNone, htNone, htNone, htNone)
   );
   }
 
@@ -151,7 +151,7 @@ uses
 
 
 { TKMCityPredictor }
-constructor TKMCityPredictor.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMCityPredictor.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
   fOwner := aPlayer;
@@ -250,7 +250,7 @@ begin
 end;
 
 
-procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityPredictor.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;
@@ -279,7 +279,7 @@ begin
   if aInitialization then
     fWareBalance[aWT].FinalConsumption := 0;
   for I := Low(CONSUMPTION_WARE[aWT]) to High(CONSUMPTION_WARE[aWT]) do
-    if (CONSUMPTION_WARE[aWT,I] <> wt_None) then
+    if (CONSUMPTION_WARE[aWT,I] <> wtNone) then
     begin
       fWareBalance[aWT].ActualConsumption := fWareBalance[aWT].ActualConsumption + fWareBalance[ CONSUMPTION_WARE[aWT,I] ].ActualConsumption * CONSUMPTION_RATIO[aWT,I];
       if aInitialization then
@@ -302,19 +302,19 @@ begin
   Consumption := (fCityStats.CitizensCnt * CITIZEN_FOOD_COEF) + (fCityStats.WarriorsCnt * SOLDIER_FOOD_COEF);
   // Calculate consumption of leather armor / minute and pigs which are produced with this cycle
   // 2x armor = 2x leather = 1x skin = 1x pig = 3x sausages ... sausages = 3 / 2 * armor = 1.5 * armor
-  fWareBalance[wt_Sausages].ActualConsumption := Min(Consumption, fWareBalance[wt_Armor].FinalConsumption * 1.5);
+  fWareBalance[wtSausages].ActualConsumption := Min(Consumption, fWareBalance[wtArmor].FinalConsumption * 1.5);
   // Split rest of consumtion into other houses
-  Consumption := Max(0, Consumption - fWareBalance[wt_Sausages].ActualConsumption);
-  fWareBalance[wt_Bread].ActualConsumption := Consumption * 0.7;
-  fWareBalance[wt_Wine].ActualConsumption := Consumption * 0.3;
-  fWareBalance[wt_Fish].ActualConsumption := 0;
+  Consumption := Max(0, Consumption - fWareBalance[wtSausages].ActualConsumption);
+  fWareBalance[wtBread].ActualConsumption := Consumption * 0.7;
+  fWareBalance[wtWine].ActualConsumption := Consumption * 0.3;
+  fWareBalance[wtFish].ActualConsumption := 0;
   // Expected food consumption of the final city size (it helps with build order to secure food and weapons production ASAP)
   if aInitialization then
   begin
-    fWareBalance[wt_Sausages].FinalConsumption := fWareBalance[wt_Sausages].ActualConsumption;
-    fWareBalance[wt_Bread].FinalConsumption := fWareBalance[wt_Bread].ActualConsumption;
-    fWareBalance[wt_Wine].FinalConsumption := fWareBalance[wt_Wine].ActualConsumption;
-    fWareBalance[wt_Fish].FinalConsumption := fWareBalance[wt_Fish].ActualConsumption;
+    fWareBalance[wtSausages].FinalConsumption := fWareBalance[wtSausages].ActualConsumption;
+    fWareBalance[wtBread].FinalConsumption := fWareBalance[wtBread].ActualConsumption;
+    fWareBalance[wtWine].FinalConsumption := fWareBalance[wtWine].ActualConsumption;
+    fWareBalance[wtFish].FinalConsumption := fWareBalance[wtFish].ActualConsumption;
   end;
 end;
 
@@ -367,22 +367,22 @@ begin
     // Exeptions
     case CONSUMPTION_ORDER[I] of
       // Food was updated at once
-      wt_Wine, wt_Bread, wt_Sausages, wt_Fish:
+      wtWine, wtBread, wtSausages, wtFish:
         begin
         end;
       // Update Materials / Gold
-      wt_Gold: fWareBalance[wt_Gold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
-      wt_Stone:
+      wtGold: fWareBalance[wtGold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
+      wtStone:
         begin
           // Worker count is decreased after peace time -> compute with maximal count
-          fWareBalance[wt_Stone].ActualConsumption := Min(fCityStats.Citizens[ut_Worker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
-          fWareBalance[wt_Stone].FinalConsumption := Max(fCityStats.Citizens[ut_Worker], fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+          fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+          fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
         end;
-      wt_Wood:
+      wtWood:
         begin
           UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
-          fWareBalance[wt_Wood].ActualConsumption := Max(fWareBalance[wt_Wood].ActualConsumption, fCityStats.Citizens[ut_Worker] * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
-          fWareBalance[wt_Wood].FinalConsumption := Max(fWareBalance[wt_Wood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
+          fWareBalance[wtWood].ActualConsumption := Max(fWareBalance[wtWood].ActualConsumption, fCityStats.Citizens[utWorker] * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
+          fWareBalance[wtWood].FinalConsumption := Max(fWareBalance[wtWood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
         end;
       // Other cases
       else
@@ -409,8 +409,8 @@ begin
       Citizens[UT] := gHands[fOwner].Stats.GetUnitQty(UT);
       CitizensCnt := CitizensCnt + Citizens[UT];
     end;
-    CitizensCnt := CitizensCnt - Citizens[ut_Recruit]; // Count recruits as soldiers
-    WarriorsCnt := Citizens[ut_Recruit];
+    CitizensCnt := CitizensCnt - Citizens[utRecruit]; // Count recruits as soldiers
+    WarriorsCnt := Citizens[utRecruit];
     for UT := Low(Warriors) to High(Warriors) do
     begin
       Warriors[UT] := gHands[fOwner].Stats.GetUnitQty(UT);
@@ -440,7 +440,7 @@ begin
   // 1 Storehouse
   RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
   // 1 Barracks (build only when we have weapons and (from X tick or Y ticks before peace end -> avoid to build barracks in 1 minute when is still peace and we have predefined weapons in storehouse))
-  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wt_Warfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
+  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wtWarfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
   // Schools (at least 1 + WarriorsPerMinute criterium)
   RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
   // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
@@ -452,8 +452,8 @@ end;
 
 procedure TKMCityPredictor.UpdateFinalProduction(aIncPeaceFactor: Single = 0);
 const
-  IRON_WARFARE: set of TKMWareType = [wt_MetalShield, wt_MetalArmor, wt_Sword, wt_Hallebard, wt_Arbalet];
-  WOOD_WARFARE: set of TKMWareType = [wt_Axe, wt_Pike, wt_Bow];
+  IRON_WARFARE: set of TKMWareType = [wtMetalShield, wtMetalArmor, wtSword, wtHallebard, wtArbalet];
+  WOOD_WARFARE: set of TKMWareType = [wtAxe, wtPike, wtBow];
   INV_AFTER_PEACE_SCALING = 1 / (30*10*60); // Peace factor will be completely removed after {30} mins since end of peace
   MIN_IRON_PRODUCTION = 2;
   MAX_IRON_PRODUCTION = 6;
@@ -489,17 +489,17 @@ begin
                         );
 
   // Iron weapons
-  MaxIronWeapProd := MaxIronWeapProd * ProductionRate[wt_IronOre] * 0.5; // Division into half because of iron weapon and armor
+  MaxIronWeapProd := MaxIronWeapProd * ProductionRate[wtIronOre] * 0.5; // Division into half because of iron weapon and armor
   for WT in IRON_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxIronWeapProd;
 
   // Wooden weapons
-  MaxWoodWeapProd := MaxWoodWeapProd * ProductionRate[wt_Axe]; // Production of weapons / armors is ~identical
+  MaxWoodWeapProd := MaxWoodWeapProd * ProductionRate[wtAxe]; // Production of weapons / armors is ~identical
   for WT in WOOD_WARFARE do
     fWareBalance[WT].FinalConsumption := MaxWoodWeapProd;
   // Exceptions
-  fWareBalance[wt_Armor].FinalConsumption := MaxWoodWeapProd;
-  fWareBalance[wt_Shield].FinalConsumption := MaxWoodWeapProd / 5; // This only affect wood requirements, shields will be ordered by count of axes
+  fWareBalance[wtArmor].FinalConsumption := MaxWoodWeapProd;
+  fWareBalance[wtShield].FinalConsumption := MaxWoodWeapProd / 5; // This only affect wood requirements, shields will be ordered by count of axes
 
   // Soldiers / min (only expected not final value)
   fMaxSoldiersInMin := MaxWoodWeapProd + MaxIronWeapProd;
@@ -584,12 +584,12 @@ procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
         Count := Count + 1;
       end;
     end;
-    Result := + fWareBalance[wt_Flour].Production
-              + fWareBalance[wt_Pig].Production * 4
-              + fWareBalance[wt_Horse].Production * 4
+    Result := + fWareBalance[wtFlour].Production
+              + fWareBalance[wtPig].Production * 4
+              + fWareBalance[wtHorse].Production * 4
               >=
-              + fFarmBuildHistory.Quantity[0] * ProductionRate[wt_Corn]
-              + gHands[fOwner].Stats.GetWareBalance(wt_Corn) * 0.25;
+              + fFarmBuildHistory.Quantity[0] * ProductionRate[wtCorn]
+              + gHands[fOwner].Stats.GetWareBalance(wtCorn) * 0.25;
   end;
 
   procedure CheckPeaceFactor();
@@ -650,7 +650,7 @@ begin
   CheckPeaceFactor();
 
   // Remove unused houses (iron production)
-  if (RequiredHouses[htIronSmithy] < 0) AND (Stats.GetWareBalance(wt_IronOre) < 20) then // Dont destroy iron production when there is still iron ore
+  if (RequiredHouses[htIronSmithy] < 0) AND (Stats.GetWareBalance(wtIronOre) < 20) then // Dont destroy iron production when there is still iron ore
     Planner.RemoveHouseType(htIronSmithy);
   if (RequiredHouses[htArmorSmithy] < 0) AND (RequiredHouses[htIronSmithy] = 0) then // And dont destroy following production if you dont want to destroy IronSmithy
     Planner.RemoveHouseType(htArmorSmithy);
@@ -690,18 +690,18 @@ begin
 
   // Loghical house requirements (delay takes too long so it is not used)
   {
-  RequiredHouses[ht_Swine] := RequiredHouses[ht_Swine] * Byte(Stats.GetWareBalance(wt_Corn) > 0);
-  RequiredHouses[ht_Butchers] := RequiredHouses[ht_Butchers] * Byte(Stats.GetWareBalance(wt_Pig) > 0);
-  RequiredHouses[ht_Tannery] := RequiredHouses[ht_Tannery] * Byte(Stats.GetWareBalance(wt_Leather) > 0);
-  RequiredHouses[ht_ArmorWorkshop] := RequiredHouses[ht_ArmorWorkshop] * Byte(Stats.GetWareBalance(wt_Skin) > 0);
-  RequiredHouses[ht_Mill] := RequiredHouses[ht_Mill] * Byte(Stats.GetWareBalance(wt_Flour) > 0);
-  RequiredHouses[ht_Bakery] := RequiredHouses[ht_Bakery] * Byte(Stats.GetWareBalance(wt_Corn) > 0);
+  RequiredHouses[htSwine] := RequiredHouses[htSwine] * Byte(Stats.GetWareBalance(wtCorn) > 0);
+  RequiredHouses[htButchers] := RequiredHouses[htButchers] * Byte(Stats.GetWareBalance(wtPig) > 0);
+  RequiredHouses[htTannery] := RequiredHouses[htTannery] * Byte(Stats.GetWareBalance(wtLeather) > 0);
+  RequiredHouses[htArmorWorkshop] := RequiredHouses[htArmorWorkshop] * Byte(Stats.GetWareBalance(wtSkin) > 0);
+  RequiredHouses[htMill] := RequiredHouses[htMill] * Byte(Stats.GetWareBalance(wtFlour) > 0);
+  RequiredHouses[htBakery] := RequiredHouses[htBakery] * Byte(Stats.GetWareBalance(wtCorn) > 0);
   //}
   // Iron production (it will give time to build more mines)
   {
-  RequiredHouses[ht_IronSmithy] := RequiredHouses[ht_IronSmithy] * Byte(Stats.GetWareBalance(wt_IronOre) > 0);
-  RequiredHouses[ht_WeaponSmithy] := RequiredHouses[ht_WeaponSmithy] * Byte(Stats.GetWareBalance(wt_Steel) > 0);
-  RequiredHouses[ht_ArmorSmithy] := RequiredHouses[ht_ArmorSmithy] * Byte(Stats.GetWareBalance(wt_Steel) > 0);
+  RequiredHouses[htIronSmithy] := RequiredHouses[htIronSmithy] * Byte(Stats.GetWareBalance(wtIronOre) > 0);
+  RequiredHouses[htWeaponSmithy] := RequiredHouses[htWeaponSmithy] * Byte(Stats.GetWareBalance(wtSteel) > 0);
+  RequiredHouses[htArmorSmithy] := RequiredHouses[htArmorSmithy] * Byte(Stats.GetWareBalance(wtSteel) > 0);
   //}
 end;
 
@@ -768,10 +768,10 @@ begin
   aBalanceText := aBalanceText + 'Ware balance|Required houses (ware type ->   production;   actual consumption;   final consumption;   fraction;   exhaustion):|';
   for I := CO_WARE_MIN to CO_WARE_MAX do
     AddWare(CONSUMPTION_ORDER[I], WARE_TO_STRING[ CONSUMPTION_ORDER[I] ]);
-  AddWare(wt_Armor, 'Armor           ');
-  AddWare(wt_Axe, 'Weapon       ');
-  AddWare(wt_MetalArmor, 'Iron Armor   ');
-  AddWare(wt_Sword, 'Iron Weapon');
+  AddWare(wtArmor, 'Armor           ');
+  AddWare(wtAxe, 'Weapon       ');
+  AddWare(wtMetalArmor, 'Iron Armor   ');
+  AddWare(wtSword, 'Iron Weapon');
   aBalanceText := aBalanceText + 'Max Workers: ' + IntToStr(fWorkerCount) + '|';
 end;
 

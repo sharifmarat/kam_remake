@@ -102,11 +102,11 @@ end;
 
 destructor TKMMapEdTerrain.Destroy;
 begin
-  fGuiBrushes.Free;
-  fGuiHeights.Free;
-  fGuiTiles.Free;
-  fGuiObjects.Free;
-  fGuiSelection.Free;
+  FreeAndNil(fGuiBrushes);
+  FreeAndNil(fGuiHeights);
+  FreeAndNil(fGuiTiles);
+  FreeAndNil(fGuiObjects);
+  FreeAndNil(fGuiSelection);
 
   inherited;
 end;

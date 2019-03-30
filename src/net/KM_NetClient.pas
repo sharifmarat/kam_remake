@@ -91,7 +91,7 @@ end;
 
 destructor TKMNetClient.Destroy;
 begin
-  fClient.Free;
+  FreeAndNil(fClient);
   inherited;
 end;
 

@@ -138,19 +138,22 @@ begin
                       AddFileToStream(ScriptFiles[J].FullFilePath, '', VALID_MAP_EXTENSIONS[I]);
                   end;
                 finally
-                  ScriptPreProcessor.Free;
+                  FreeAndNil(ScriptPreProcessor);
                 end;
               end;
             end;
             for I := Low(VALID_MAP_EXTENSIONS_POSTFIX) to High(VALID_MAP_EXTENSIONS_POSTFIX) do
             begin
               FileName := GetFullSourceFileName(aType, aName, aMapFolder, '.*', VALID_MAP_EXTENSIONS_POSTFIX[I]);
-              if FindFirst(FileName, faAnyFile, F) = 0 then
-              begin
-                repeat
-                  if (F.Attr and faDirectory = 0) then
-                    AddFileToStream(ExtractFilePath(FileName) + F.Name, ExtractFileExt(ChangeFileExt(F.Name,'')), VALID_MAP_EXTENSIONS_POSTFIX[I]);
-                until FindNext(F) <> 0;
+              try
+                if FindFirst(FileName, faAnyFile, F) = 0 then
+                begin
+                  repeat
+                    if (F.Attr and faDirectory = 0) then
+                      AddFileToStream(ExtractFilePath(FileName) + F.Name, ExtractFileExt(ChangeFileExt(F.Name,'')), VALID_MAP_EXTENSIONS_POSTFIX[I]);
+                  until FindNext(F) <> 0;
+                end;
+              finally
                 FindClose(F);
               end;
             end;
@@ -169,15 +172,15 @@ begin
   CompressionStream := TCompressionStream.Create(cldefault, fSendStream);
   CompressionStream.CopyFrom(SourceStream, 0);
   //fSendStream now contains the compressed data from SourceStream
-  CompressionStream.Free;
-  SourceStream.Free;
+  FreeAndNil(CompressionStream);
+  FreeAndNil(SourceStream);
   fSendStream.Position := 0;
 end;
 
 
 destructor TKMFileSender.Destroy;
 begin
-  fSendStream.Free;
+  FreeAndNil(fSendStream);
   inherited;
 end;
 
@@ -202,7 +205,7 @@ begin
   if FileStream.Size > 0 then
     fSendStream.CopyFrom(FileStream, FileStream.Size);
 
-  FileStream.Free;
+  FreeAndNil(FileStream);
 end;
 
 
@@ -238,7 +241,7 @@ end;
 
 destructor TKMFileReceiver.Destroy;
 begin
-  fReceiveStream.Free;
+  FreeAndNil(fReceiveStream);
   inherited;
 end;
 
@@ -262,31 +265,34 @@ var
 begin
   //Prepare destination
   case fType of
-    kttMap:  begin
-               //Create downloads folder if it's missing
-               FileName := ExeDir + MAPS_DL_FOLDER_NAME;
-               if not DirectoryExists(FileName) then
-                 CreateDir(FileName);
-               //Create map folder if it is missing
-               FileName := FileName + PathDelim + fName;
-               if not DirectoryExists(FileName) then
-                 CreateDir(FileName)
-               else
-                 //If any files already exist in the folder, delete them
-                 if FindFirst(FileName + PathDelim + fName + '*.*', faAnyFile, F) = 0 then
-                 begin
-                   repeat
-                     if (F.Attr and faDirectory = 0) then
-                       DeleteFile(FileName + PathDelim + F.Name);
-                   until FindNext(F) <> 0;
-                   FindClose(F);
-                 end;
-             end;
-    kttSave: begin
-               SaveFolder := TKMSavesCollection.Path(DOWNLOADED_LOBBY_SAVE, True);
-               KMDeleteFolder(SaveFolder);   // Delete old folder
-               ForceDirectories(SaveFolder); // Create new
-             end;
+    kttMap:   begin
+                //Create downloads folder if it's missing
+                FileName := ExeDir + MAPS_DL_FOLDER_NAME;
+                if not DirectoryExists(FileName) then
+                  CreateDir(FileName);
+                //Create map folder if it is missing
+                FileName := FileName + PathDelim + fName;
+                if not DirectoryExists(FileName) then
+                  CreateDir(FileName)
+                else
+                  try
+                    //If any files already exist in the folder, delete them
+                    if FindFirst(FileName + PathDelim + fName + '*.*', faAnyFile, F) = 0 then
+                    begin
+                      repeat
+                        if (F.Attr and faDirectory = 0) then
+                          DeleteFile(FileName + PathDelim + F.Name);
+                      until FindNext(F) <> 0;
+                    end;
+                  finally
+                    FindClose(F);
+                  end;
+              end;
+    kttSave:  begin
+                SaveFolder := TKMSavesCollection.Path(DOWNLOADED_LOBBY_SAVE, True);
+                KMDeleteFolder(SaveFolder);   // Delete old folder
+                ForceDirectories(SaveFolder); // Create new
+              end;
   end;
 end;
 
@@ -339,7 +345,7 @@ begin
   //We need custom methods like ReadAssert, ReadW, etc. so we need to read from a TKMemoryStream
   ReadStream := TKMemoryStream.Create;
   ReadStream.CopyFromDecompression(DecompressionStream);
-  DecompressionStream.Free;
+  FreeAndNil(DecompressionStream);
   ReadStream.Position := 0;
 
   //Read from the stream
@@ -374,9 +380,9 @@ begin
 
     Assert(not FileExists(FileName), 'Transfer file already exists');
     FileStream.SaveToFile(FileName);
-    FileStream.Free;
+    FreeAndNil(FileStream);
   end;
-  ReadStream.Free;
+  FreeAndNil(ReadStream);
   Result := True;
 end;
 
@@ -420,7 +426,7 @@ begin
     begin
       if fSenders[I] <> nil then
         //There is an existing transfer to this client, so free it
-        fSenders[I].Free;
+        FreeAndNil(fSenders[I]);
       try
         fSenders[I] := TKMFileSender.Create(aType, aName, aMapFolder, aReceiverIndex);
       except
@@ -461,7 +467,7 @@ begin
       Stream := TKMemoryStream.Create;
       fSenders[I].WriteChunk(Stream, FILE_CHUNK_SIZE);
       fOnTransferPacket(fSenders[I].ReceiverIndex, Stream, SendBufferEmpty); //Updates SendBufferEmpty
-      Stream.Free;
+      FreeAndNil(Stream);
       if fSenders[I].StreamEnd then
       begin
         ClientIndex := fSenders[I].ReceiverIndex;

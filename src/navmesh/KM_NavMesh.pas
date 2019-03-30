@@ -79,10 +79,10 @@ end;
 
 destructor TKMNavMesh.Destroy();
 begin
-  fDefences.Free;
-  fPathfinding.Free;
-  fPositioning.Free;
-  fNavMeshGenerator.Free;
+  FreeAndNil(fDefences);
+  FreeAndNil(fPathfinding);
+  FreeAndNil(fPositioning);
+  FreeAndNil(fNavMeshGenerator);
   inherited;
 end;
 
@@ -415,7 +415,7 @@ var
   K, L: Integer;
   p1,p2: TKMPoint;
 
-  Owner: TKMHandIndex;
+  Owner: TKMHandID;
   DefLines: TKMDefenceLines;
   DefencePosArr: TKMDefencePosArr;
   FFF: TForwardFF;
@@ -473,7 +473,7 @@ begin
   // when it is we need existing results not the actual (defences are updated each 1 min so it may be different)
   if OVERLAY_NAVMESH AND OVERLAY_DEFENCES AND not OVERLAY_AI_COMBAT then
   begin
-    Owner := gMySpectator.HandIndex;
+    Owner := gMySpectator.HandID;
     FFF := TForwardFF.Create(true);
     try
       if FFF.FindDefenceLines(Owner, DefLines) then
@@ -495,7 +495,7 @@ begin
           gRenderAux.CircleOnTerrain(p1.X, p1.Y, 2, $0900FFFF, $FFFFFFFF);
         end;
     finally
-      FFF.Free;
+      FreeAndNil(FFF);
     end;
   end;
   //}

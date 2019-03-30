@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Maps,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
 
 
 type
@@ -179,7 +179,7 @@ type
 
 implementation
 uses
-  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_Units_Warrior,
+  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall;
@@ -194,7 +194,7 @@ uses
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (htNone)
 end;
 
 
@@ -825,7 +825,7 @@ begin
     and InRange(aPlayer2, 0, gHands.Count - 1)
     and (gHands[aPlayer1].Enabled)
     and (gHands[aPlayer2].Enabled) then
-      Result := gHands[aPlayer1].Alliances[aPlayer2] = at_Ally
+      Result := gHands[aPlayer1].Alliances[aPlayer2] = atAlly
     else
     begin
       Result := False;
@@ -1009,7 +1009,7 @@ begin
       begin
         U := gHands[aPlayer].Units[I];
         //Skip units in training, they can't be disturbed until they are finished training
-        if U.IsDeadOrDying or (U.UnitTask is TKMTaskSelfTrain) then Continue;
+        if U.IsDeadOrDying or (U.Task is TKMTaskSelfTrain) then Continue;
         Result[UnitCount] := U.UID;
         Inc(UnitCount);
       end;
@@ -1133,7 +1133,7 @@ function TKMScriptStates.StatUnitCount(aPlayer: Byte): Integer;
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
-      Result := gHands[aPlayer].Stats.GetUnitQty(ut_Any)
+      Result := gHands[aPlayer].Stats.GetUnitQty(utAny)
     else
     begin
       Result := 0;
@@ -1600,7 +1600,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := (H.DeliveryMode <> dm_Delivery);
+        Result := (H.DeliveryMode <> dmDelivery);
     end
     else
       LogParamWarning('States.HouseDeliveryBlocked', [aHouseID]);
@@ -1623,7 +1623,7 @@ var
   H: TKMHouse;
 begin
   try
-    Result := Integer(dm_Delivery);
+    Result := Integer(dmDelivery);
     if aHouseID > 0 then
     begin
       H := fIDCache.GetHouse(aHouseID);
@@ -1873,7 +1873,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.BuildingState <> hbs_NoGlyph;
+        Result := H.BuildingState <> hbsNoGlyph;
     end
     else
       LogParamWarning('States.HouseSiteIsDigged', [aHouseID]);
@@ -2089,7 +2089,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H is TKMHouseWoodcutters then
-        Result := TKMHouseWoodcutters(H).WoodcutterMode = wcm_Chop;
+        Result := TKMHouseWoodcutters(H).WoodcutterMode = wcmChop;
     end
     else
       LogParamWarning('States.HouseWoodcutterChopOnly', [aHouseID]);
@@ -2112,7 +2112,7 @@ var
   H: TKMHouse;
 begin
   try
-    Result := Integer(wcm_ChopAndPlant);
+    Result := Integer(wcmChopAndPlant);
     if aHouseID > 0 then
     begin
       H := fIDCache.GetHouse(aHouseID);
@@ -2159,7 +2159,7 @@ begin
     Result := False;
     //-1 stands for any player
     if InRange(aPlayer, -1, gHands.Count - 1) and gTerrain.TileInMapCoords(X, Y) then
-      Result := (gTerrain.Land[Y,X].TileOverlay = to_Road)
+      Result := (gTerrain.Land[Y,X].TileOverlay = toRoad)
                 and ((aPlayer = -1) or (gTerrain.Land[Y, X].TileOwner = aPlayer))
     else
       LogParamWarning('States.IsRoadAt', [aPlayer, X, Y]);
@@ -2462,7 +2462,7 @@ end;
 function TKMScriptStates.IsMissionBuildType: Boolean;
 begin
   try
-    Result := gGame.MissionMode = mm_Normal;
+    Result := gGame.MissionMode = mmNormal;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2475,7 +2475,7 @@ end;
 function TKMScriptStates.IsMissionFightType: Boolean;
 begin
   try
-    Result := gGame.MissionMode = mm_Tactic;
+    Result := gGame.MissionMode = mmTactic;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -3026,7 +3026,7 @@ begin
     begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
-        Result := U.GetPosition.X;
+        Result := U.CurrPosition.X;
     end
     else
       LogParamWarning('States.UnitPositionX', [aUnitID]);
@@ -3050,7 +3050,7 @@ begin
     begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
-        Result := U.GetPosition.Y;
+        Result := U.CurrPosition.Y;
     end
     else
       LogParamWarning('States.UnitPositionY', [aUnitID]);
@@ -3362,7 +3362,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if (U <> nil) then
       begin
-        H := U.GetHome;
+        H := U.Home;
         if (H <> nil) and not H.IsDestroyed then
         begin
           Result := H.UID;

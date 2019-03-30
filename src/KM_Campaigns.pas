@@ -49,10 +49,12 @@ type
     fMapsInfo: TKMCampaignMapDataArray;
 
     fMapsProgressData: TKMCampaignMapProgressDataArray; //Map data, saved in campaign progress
+
+    function GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
+
     procedure SetUnlockedMap(aValue: Byte);
     procedure SetMapCount(aValue: Byte);
 
-    procedure LoadFromFile(const aFileName: UnicodeString);
     procedure LoadFromPath(const aPath: UnicodeString);
     procedure LoadMapsInfo;
     procedure LoadSprites;
@@ -66,6 +68,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure LoadFromFile(const aFileName: UnicodeString);
     procedure SaveToFile(const aFileName: UnicodeString);
 
     property BackGroundPic: TKMPic read fBackGroundPic write fBackGroundPic;
@@ -150,7 +153,7 @@ begin
   for I := 0 to Count - 1 do
     Campaigns[I].Free;
 
-  fList.Free;
+  FreeAndNil(fList);
   inherited;
 end;
 
@@ -173,13 +176,16 @@ begin
   if not DirectoryExists(aPath) then Exit;
 
   FindFirst(aPath + '*', faDirectory, SearchRec);
-  repeat
-    if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
-    and (SearchRec.Attr and faDirectory = faDirectory)
-    and FileExists(aPath + SearchRec.Name + PathDelim+'info.cmp') then
-      AddCampaign(aPath + SearchRec.Name + PathDelim);
-  until (FindNext(SearchRec) <> 0);
-  FindClose(SearchRec);
+  try
+    repeat
+      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
+      and (SearchRec.Attr and faDirectory = faDirectory)
+      and FileExists(aPath + SearchRec.Name + PathDelim+'info.cmp') then
+        AddCampaign(aPath + SearchRec.Name + PathDelim);
+    until (FindNext(SearchRec) <> 0);
+  finally
+    FindClose(SearchRec);
+  end;
 
   SortCampaigns;
 end;
@@ -227,7 +233,6 @@ procedure TKMCampaignsCollection.LoadProgress(const aFileName: UnicodeString);
 var
   M: TKMemoryStream;
   C: TKMCampaign;
-  MapData: TKMCampaignMapData;
   I, J, campCount: Integer;
   campName: TKMCampaignId;
   unlocked: Byte;
@@ -267,7 +272,7 @@ begin
       end;
     end;
   finally
-    M.Free;
+    FreeAndNil(M);
   end;
 end;
 
@@ -298,7 +303,7 @@ begin
 
     M.SaveToFile(FilePath);
   finally
-    M.Free;
+    FreeAndNil(M);
   end;
 
   gLog.AddTime('Campaigns.dat saved');
@@ -360,11 +365,11 @@ var
   I: Integer;
 begin
   FreeAndNil(fTextLib);
-  fScriptData.Free;
+  FreeAndNil(fScriptData);
 
   for I := 0 to Length(fMapsInfo) - 1 do
     if fMapsInfo[I].TxtInfo <> nil then
-      fMapsInfo[I].TxtInfo.Free;
+      FreeAndNil(fMapsInfo[I].TxtInfo);
 
   //Free background texture
   if fBackGroundPic.ID <> 0 then
@@ -408,7 +413,7 @@ begin
     M.Read(Maps[I].TextPos, SizeOf(TKMBriefingCorner));
   end;
 
-  M.Free;
+  FreeAndNil(M);
 end;
 
 
@@ -443,7 +448,7 @@ begin
   end;
 
   M.SaveToFile(aFileName);
-  M.Free;
+  FreeAndNil(M);
 end;
 
 
@@ -473,7 +478,7 @@ begin
     try
       TextMission.LoadLocale(GetMissionFile(I, '.%s.libx'));
       if TextMission.HasText(MISSION_NAME_LIBX_ID) then
-        fMapsInfo[I].MissionName := TextMission[MISSION_NAME_LIBX_ID];
+        fMapsInfo[I].MissionName := StringReplace(TextMission[MISSION_NAME_LIBX_ID], '|', ' ', [rfReplaceAll]); //Replace | with space
     finally
       FreeAndNil(TextMission);
     end;
@@ -549,6 +554,17 @@ begin
 end;
 
 
+function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
+begin
+  if fMapsInfo[aIndex].MissionName <> '' then
+    Result := fMapsInfo[aIndex].MissionName
+  else
+    //Have nothing - use default mission name
+    //Otherwise just Append (by default MissionName is empty anyway)
+    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
+end;
+
+
 function TKMCampaign.GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
 begin
   //We have template for mission name in 3:
@@ -569,16 +585,8 @@ begin
       //Otherwise just Append (by default MissionName is empty anyway)
       Result := Format(fTextLib[3], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
   end
-  //We have %d in custom mission name
-  else if CountMatches(fMapsInfo[aIndex].MissionName, '%d') = 1 then       
-    Result := Format(fMapsInfo[aIndex].MissionName, [aIndex+1])
-  //We have custom mission name (without %d)
-  else if fMapsInfo[aIndex].MissionName <> '' then
-    Result := fMapsInfo[aIndex].MissionName
   else
-    //Have nothing - use default mission name
-    //Otherwise just Append (by default MissionName is empty anyway)
-    Result := Format(gResTexts[TX_GAME_MISSION], [aIndex+1]) + fMapsInfo[aIndex].MissionName;
+    Result := GetDefaultMissionTitle(aIndex);
 end;
 
 
@@ -596,7 +604,10 @@ end;
 
 function TKMCampaign.GetMissionTitle(aIndex: Byte): UnicodeString;
 begin
-  Result := Format(fTextLib[1], [aIndex+1]);
+  if fTextLib[1] <> '' then
+    Result := Format(fTextLib[1], [aIndex+1]) //Save it for Legacy support
+  else
+    Result := GetDefaultMissionTitle(aIndex);
 end;
 
 

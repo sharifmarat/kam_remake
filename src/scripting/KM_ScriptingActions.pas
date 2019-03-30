@@ -4,7 +4,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime, KM_AIAttacks,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Terrain, KM_Sound,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents, KM_ScriptingTypes;
 
 
 type
@@ -171,7 +171,7 @@ type
 
 implementation
 uses
-  TypInfo, KM_AI, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior, KM_HandLogistics,
+  TypInfo, KM_AI, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior, KM_HandLogistics,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
   KM_UnitsCollection, KM_PathFindingRoad, KM_ResMapElements, KM_BuildList,
@@ -189,7 +189,7 @@ const
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (htNone)
 end;
 
 
@@ -242,7 +242,7 @@ begin
     and gTerrain.TileInMapCoords(X, Y)
     and gHands[aPlayer].InCinematic then
     begin
-      if aPlayer = gMySpectator.HandIndex then
+      if aPlayer = gMySpectator.HandID then
         gGame.GamePlayInterface.Viewport.PanTo(KMPointF(X, Y), Duration);
     end
     else
@@ -364,13 +364,13 @@ begin
         gHands[aVictors[I]].AI.Victory;
         if aTeamVictory then
           for K := 0 to gHands.Count - 1 do
-            if gHands[K].Enabled and (I <> K) and (gHands[aVictors[I]].Alliances[K] = at_Ally) then
+            if gHands[K].Enabled and (I <> K) and (gHands[aVictors[I]].Alliances[K] = atAlly) then
               gHands[K].AI.Victory;
       end;
 
     //All other players get defeated
     for I := 0 to gHands.Count - 1 do
-      if gHands[I].Enabled and (gHands[I].AI.WonOrLost = wol_None) then
+      if gHands[I].Enabled and (gHands[I].AI.WonOrLost = wolNone) then
         gHands[I].AI.Defeat;
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -386,7 +386,7 @@ procedure TKMScriptActions.PlayerWareDistribution(aPlayer, aWareType, aHouseType
 begin
   try
     if (aWareType in [Low(WareIndexToType) .. High(WareIndexToType)])
-    and (WareIndexToType[aWareType] in [wt_Steel, wt_Coal, wt_Wood, wt_Corn])
+    and (WareIndexToType[aWareType] in [wtSteel, wtCoal, wtWood, wtCorn])
     and HouseTypeValid(aHouseType)
     and InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and InRange(aAmount, 0, 5) then
@@ -409,7 +409,7 @@ end;
 //* aCompliment: Both ways
 procedure TKMScriptActions.PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean);
 const
-  ALLIED: array [Boolean] of TKMAllianceType = (at_Enemy, at_Ally);
+  ALLIED: array [Boolean] of TKMAllianceType = (atEnemy, atAlly);
 begin
   try
     //Verify all input parameters
@@ -445,7 +445,7 @@ end;
 //* aSyncAllyFog: Synchronize allies fogs of war
 procedure TKMScriptActions.PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean);
 const
-  ALLIED: array [Boolean] of TKMAllianceType = (at_Enemy, at_Ally);
+  ALLIED: array [Boolean] of TKMAllianceType = (atEnemy, atAlly);
 begin
   try
     //Verify all input parameters
@@ -507,10 +507,10 @@ function TKMScriptActions.PlayWAV(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPOINT_ZERO, False, aVolume, 0, False, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
       LogParamWarning('Actions.PlayWAV: ' + UnicodeString(aFileName), []);
   except
@@ -529,10 +529,10 @@ function TKMScriptActions.PlayWAVFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPOINT_ZERO, False, aVolume, 0, True, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
       LogParamWarning('Actions.PlayWAVFadeMusic: ' + UnicodeString(aFileName), []);
   except
@@ -557,10 +557,10 @@ function TKMScriptActions.PlayWAVAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
       LogParamWarning('Actions.PlayWAVAtLocation: ' + UnicodeString(aFileName), [aX, aY]);
   except
@@ -583,7 +583,7 @@ begin
   try
     Result := -1;
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPOINT_ZERO, False, aVolume, 0, False, True)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPOINT_ZERO, False, aVolume, 0, False, True)
     else
       LogParamWarning('Actions.PlayWAVLooped: ' + UnicodeString(aFileName), []);
   except
@@ -610,7 +610,7 @@ begin
   try
     Result := -1;
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Wav, KMPoint(aX,aY), True, aVolume, aRadius, False, True)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afWav, KMPoint(aX,aY), True, aVolume, aRadius, False, True)
     else
       LogParamWarning('Actions.PlayWAVAtLocationLooped: ' + UnicodeString(aFileName), [aX, aY]);
   except
@@ -645,10 +645,10 @@ function TKMScriptActions.PlayOGG(aPlayer: ShortInt; const aFileName: AnsiString
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPOINT_ZERO, False, aVolume, 0, False, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, False)
     else
       LogParamWarning('Actions.PlayWAV: ' + UnicodeString(aFileName), []);
   except
@@ -667,10 +667,10 @@ function TKMScriptActions.PlayOGGFadeMusic(aPlayer: ShortInt; const aFileName: A
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPOINT_ZERO, False, aVolume, 0, True, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, True, False)
     else
       LogParamWarning('Actions.PlayWAVFadeMusic: ' + UnicodeString(aFileName), []);
   except
@@ -695,10 +695,10 @@ function TKMScriptActions.PlayOGGAtLocation(aPlayer: ShortInt; const aFileName: 
 begin
   Result := -1;
   try
-    if (aPlayer <> gMySpectator.HandIndex) and (aPlayer <> PLAYER_NONE) then Exit;
+    if (aPlayer <> gMySpectator.HandID) and (aPlayer <> PLAYER_NONE) then Exit;
 
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, False)
     else
       LogParamWarning('Actions.PlayWAVAtLocation: ' + UnicodeString(aFileName), [aX, aY]);
   except
@@ -721,7 +721,7 @@ begin
   try
     Result := -1;
     if InRange(aVolume, 0, 1) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPOINT_ZERO, False, aVolume, 0, False, True)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPOINT_ZERO, False, aVolume, 0, False, True)
     else
       LogParamWarning('Actions.PlayWAVLooped: ' + UnicodeString(aFileName), []);
   except
@@ -748,7 +748,7 @@ begin
   try
     Result := -1;
     if InRange(aVolume, 0, 4) and (aRadius >= MIN_SOUND_AT_LOC_RADIUS) and gTerrain.TileInMapCoords(aX,aY) then
-      Result := gScriptSounds.AddSound(aPlayer, aFileName, af_Ogg, KMPoint(aX,aY), True, aVolume, aRadius, False, True)
+      Result := gScriptSounds.AddSound(aPlayer, aFileName, afOgg, KMPoint(aX,aY), True, aVolume, aRadius, False, True)
     else
       LogParamWarning('Actions.PlayWAVAtLocationLooped: ' + UnicodeString(aFileName), [aX, aY]);
   except
@@ -777,12 +777,12 @@ end;
 //* If the player index is -1 the sound will be played to all players.
 //* Possible to specify Looped or FadeMusic parameter
 //* Mono and stereo WAV and OGG files are supported.
-//* To specify audio format use af_Wav or af_Ogg
+//* To specify audio format use afWav or afOgg
 //* WAV file goes in mission folder named: Mission Name.filename.wav.
 //* OGG file goes in mission folder named: Mission Name.filename.ogg
 //* If MusicFaded then sound will fade then mute while the file is playing, then fade back in afterwards.
 //* If looped, the sound will continue to loop if the game is paused and will restart automatically when the game is loaded.
-//* aAudioFormat: af_Wav or af_Ogg
+//* aAudioFormat: afWav or afOgg
 //* aVolume: Audio level (0.0 to 1.0)
 //* Result: SoundIndex of the sound
 function TKMScriptActions.PlaySound(aPlayer: ShortInt; const aFileName: AnsiString; aAudioFormat: TKMAudioFormat; aVolume: Single; aFadeMusic, aLooped: Boolean): Integer;
@@ -806,13 +806,13 @@ end;
 //* Possible to specify Looped or FadeMusic parameter
 //* aRadius specifies approximately the distance at which the sound can no longer be heard (normal game sounds use aRadius 32).
 //* Only mono WAV or OGG files are supported.
-//* To specify audio format use af_Wav or af_Ogg
+//* To specify audio format use afWav or afOgg
 //* WAV file goes in mission folder named: Mission Name.filename.wav.
 //* OGG file goes in mission folder named: Mission Name.filename.ogg.
 //* Will not play if the location is not revealed to the player (will start playing automatically when it is revealed).
 //* Higher aVolume range is allowed than PlaySound as positional sounds are quieter.
 //* If looped, the sound will continue to loop if the game is paused and will restart automatically when the game is loaded.
-//* aAudioFormat: af_Wav or af_Ogg
+//* aAudioFormat: afWav or afOgg
 //* aVolume: Audio level (0.0 to 4.0)
 //* aRadius: aRadius (minimum 28)
 //* Result: SoundIndex of the sound
@@ -856,7 +856,7 @@ begin
     if gTerrain.TileInMapCoords(X, Y) then
     begin
       //Can't remove if tile is locked (house or roadwork)
-      if (gTerrain.Land[Y, X].TileOverlay = to_Road) and (gTerrain.Land[Y, X].TileLock = tlNone) then
+      if (gTerrain.Land[Y, X].TileOverlay = toRoad) and (gTerrain.Land[Y, X].TileLock = tlNone) then
         gTerrain.RemRoad(Pos);
     end
     else
@@ -881,7 +881,7 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and (aType in [UnitTypeToIndex[WARRIOR_MIN]..UnitTypeToIndex[WARRIOR_MAX]])
     and gTerrain.TileInMapCoords(X,Y)
-    and (TKMDirection(aDir+1) in [dir_N..dir_NW])
+    and (TKMDirection(aDir+1) in [dirN..dirNW])
     and (aCount > 0)
     and (aColumns > 0) then
     begin
@@ -915,7 +915,7 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and (aType in [UnitTypeToIndex[CITIZEN_MIN] .. UnitTypeToIndex[CITIZEN_MAX]])
     and gTerrain.TileInMapCoords(X, Y)
-    and (TKMDirection(aDir + 1) in [dir_N .. dir_NW]) then
+    and (TKMDirection(aDir + 1) in [dirN .. dirNW]) then
     begin
       U := gHands[aPlayer].AddUnit(UnitIndexToType[aType], KMPoint(X,Y));
       if U = nil then Exit;
@@ -923,7 +923,7 @@ begin
       U.Direction := TKMDirection(aDir + 1);
       //Make sure the unit is not locked so the script can use commands like UnitOrderWalk.
       //By default newly created units are given SetActionLockedStay
-      U.SetActionStay(10, ua_Walk);
+      U.SetActionStay(10, uaWalk);
     end
     else
       LogParamWarning('Actions.GiveUnit', [aPlayer, aType, X, Y, aDir]);
@@ -1000,18 +1000,18 @@ begin
           end;
 
         gTerrain.SetRoad(H.Entrance, aPlayer);
-        H.BuildingState := hbs_Wood;
+        H.BuildingState := hbsWood;
         if aAddMaterials then
         begin
           for I := 0 to gRes.Houses[H.HouseType].WoodCost - 1 do
-            H.ResAddToBuild(wt_Wood);
+            H.ResAddToBuild(wtWood);
           for K := 0 to gRes.Houses[H.HouseType].StoneCost - 1 do
-            H.ResAddToBuild(wt_Stone);
+            H.ResAddToBuild(wtStone);
         end
         else
         begin
-          gHands[aPlayer].Deliveries.Queue.AddDemand(H, nil, wt_Wood, gRes.Houses[H.HouseType].WoodCost, dtOnce, diHigh4);
-          gHands[aPlayer].Deliveries.Queue.AddDemand(H, nil, wt_Stone, gRes.Houses[H.HouseType].StoneCost, dtOnce, diHigh4);
+          gHands[aPlayer].Deliveries.Queue.AddDemand(H, nil, wtWood, gRes.Houses[H.HouseType].WoodCost, dtOnce, diHigh4);
+          gHands[aPlayer].Deliveries.Queue.AddDemand(H, nil, wtStone, gRes.Houses[H.HouseType].StoneCost, dtOnce, diHigh4);
         end;
         gHands[aPlayer].BuildList.HouseList.AddHouse(H);
       end;
@@ -1043,7 +1043,7 @@ end;
 //**  attCustomPosition
 //**    //Custom point defined with aCustomPosition
 //** );</pre>
-//** <b>aCustomPosition</b> - TKMPoint for custom position of attack. Used if att_CustomPosition was set up as attack target
+//** <b>aCustomPosition</b> - TKMPoint for custom position of attack. Used if attCustomPosition was set up as attack target
 //** <b>Result</b>: Attack Id, that could be used to remove this attack later on
 function TKMScriptActions.AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer; aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer;
 var
@@ -1054,9 +1054,9 @@ begin
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
     begin
       if aRepeating then
-        AttackType := aat_Repeating
+        AttackType := aatRepeating
       else
-        AttackType := aat_Once;
+        AttackType := aatOnce;
         
       Result := gHands[aPlayer].AI.General.Attacks.AddAttack(AttackType, aDelay, aTotalMen, aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount, aRandomGroups, aTarget, 0, aCustomPosition);
     end else
@@ -1176,9 +1176,9 @@ procedure TKMScriptActions.AIDefencePositionAdd(aPlayer: Byte; X, Y: Integer; aD
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
-    and (TAIDefencePosType(aDefType) in [adt_FrontLine..adt_BackLine])
-    and (TKMGroupType(aGroupType) in [gt_Melee..gt_Mounted])
-    and (TKMDirection(aDir+1) in [dir_N..dir_NW])
+    and (TAIDefencePosType(aDefType) in [adtFrontLine..adtBackLine])
+    and (TKMGroupType(aGroupType) in [gtMelee..gtMounted])
+    and (TKMDirection(aDir+1) in [dirN..dirNW])
     and (gTerrain.TileInMapCoords(X, Y)) then
       gHands[aPlayer].AI.General.DefencePositions.Add(KMPointDir(X, Y, TKMDirection(aDir + 1)), TKMGroupType(aGroupType), aRadius, TAIDefencePosType(aDefType))
   else
@@ -1742,7 +1742,7 @@ end;
 procedure TKMScriptActions.ShowMsg(aPlayer: Shortint; aText: AnsiString);
 begin
   try
-    if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+    if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
       gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText)), KMPOINT_ZERO);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
@@ -1760,7 +1760,7 @@ procedure TKMScriptActions.ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString
 begin
   try
     try
-      if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+      if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
         gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText), Params), KMPOINT_ZERO);
     except
       //Format may throw an exception
@@ -1782,7 +1782,7 @@ begin
   try
     if gTerrain.TileInMapCoords(aX, aY) then
     begin
-      if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+      if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
         gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText)), KMPoint(aX,aY));
     end
     else
@@ -1806,7 +1806,7 @@ begin
     try
       if gTerrain.TileInMapCoords(aX, aY) then
       begin
-        if (aPlayer = gMySpectator.HandIndex) or (aPlayer = PLAYER_NONE) then
+        if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
           gGame.ShowMessageLocal(mkText, gGame.TextMission.ParseTextMarkup(UnicodeString(aText), Params), KMPoint(aX,aY));
       end
       else
@@ -1893,12 +1893,12 @@ begin
       if H <> nil then
         if not H.IsComplete then
         begin
-          StoneNeeded := gHands[H.Owner].Deliveries.Queue.TryRemoveDemand(H, wt_Stone, gRes.Houses[H.HouseType].StoneCost - H.GetBuildStoneDelivered);
-          WoodNeeded := gHands[H.Owner].Deliveries.Queue.TryRemoveDemand(H, wt_Wood, gRes.Houses[H.HouseType].WoodCost - H.GetBuildWoodDelivered);
+          StoneNeeded := gHands[H.Owner].Deliveries.Queue.TryRemoveDemand(H, wtStone, gRes.Houses[H.HouseType].StoneCost - H.GetBuildStoneDelivered);
+          WoodNeeded := gHands[H.Owner].Deliveries.Queue.TryRemoveDemand(H, wtWood, gRes.Houses[H.HouseType].WoodCost - H.GetBuildWoodDelivered);
           for I := 0 to WoodNeeded - 1 do
-            H.ResAddToBuild(wt_Wood);
+            H.ResAddToBuild(wtWood);
           for I := 0 to StoneNeeded - 1 do
-            H.ResAddToBuild(wt_Stone);
+            H.ResAddToBuild(wtStone);
         end;
     end
     else
@@ -1926,8 +1926,8 @@ begin
         begin
           H.IncBuildingProgress;
           if H.IsStone
-          and (gTerrain.Land[H.GetPosition.Y, H.GetPosition.X].TileLock <> tlHouse) then
-            gTerrain.SetHouse(H.GetPosition, H.HouseType, hsBuilt, H.Owner);
+          and (gTerrain.Land[H.Position.Y, H.Position.X].TileLock <> tlHouse) then
+            gTerrain.SetHouse(H.Position, H.HouseType, hsBuilt, H.Owner);
         end;
     end
     else
@@ -2134,9 +2134,9 @@ begin
       if (H <> nil) and gRes.Houses[H.HouseType].AcceptsWares then
       begin
         if aDeliveryBlocked then
-          H.SetDeliveryModeInstantly(dm_Closed)
+          H.SetDeliveryModeInstantly(dmClosed)
         else
-          H.SetDeliveryModeInstantly(dm_Delivery);
+          H.SetDeliveryModeInstantly(dmDelivery);
       end;
     end
     else
@@ -2200,7 +2200,7 @@ end;
 //* Sets whether a woodcutter's hut is on chop-only mode
 procedure TKMScriptActions.HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean);
 const
-  CHOP_ONLY: array [Boolean] of TKMWoodcutterMode = (wcm_ChopAndPlant, wcm_Chop);
+  CHOP_ONLY: array [Boolean] of TKMWoodcutterMode = (wcmChopAndPlant, wcmChop);
 var
   H: TKMHouse;
 begin
@@ -2406,7 +2406,7 @@ end;
 procedure TKMScriptActions.Log(aText: AnsiString);
 begin
   try
-    fOnScriptError(se_Log, UnicodeString(aText));
+    fOnScriptError(seLog, UnicodeString(aText));
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2953,8 +2953,8 @@ begin
             end;
         Result := True;
       finally
-        Points.Free;
-        Path.Free;
+        FreeAndNil(Points);
+        FreeAndNil(Path);
       end;
     end
     else
@@ -3122,7 +3122,7 @@ var
 begin
   try
     Result := False;
-    if (aUnitID > 0) and (TKMDirection(aDirection+1) in [dir_N..dir_NW]) then
+    if (aUnitID > 0) and (TKMDirection(aDirection+1) in [dirN..dirNW]) then
     begin
       U := fIDCache.GetUnit(aUnitID);
       //Can only make idle units outside houses change direction so we don't mess up tasks and cause crashes
@@ -3231,7 +3231,7 @@ begin
         if U.IsIdle and U.Visible then
         begin
           Result := True;
-          U.SetActionWalkToSpot(KMPoint(X,Y), ua_Walk);
+          U.SetActionWalkToSpot(KMPoint(X,Y), uaWalk);
         end;
     end
     else
@@ -3372,7 +3372,7 @@ begin
   try
     if (aGroupID > 0)
     and gTerrain.TileInMapCoords(X, Y)
-    and (TKMDirection(aDirection + 1) in [dir_N..dir_NW]) then
+    and (TKMDirection(aDirection + 1) in [dirN..dirNW]) then
     begin
       G := fIDCache.GetGroup(aGroupID);
       if (G <> nil) and G.CanWalkTo(KMPoint(X,Y), 0) then
@@ -3469,7 +3469,7 @@ begin
     if (aGroupID > 0) then
     begin
       G := fIDCache.GetGroup(aGroupID);
-      if (G <> nil) and (G.GroupType = gt_Melee) then
+      if (G <> nil) and (G.GroupType = gtMelee) then
         G.OrderStorm(True);
     end
     else

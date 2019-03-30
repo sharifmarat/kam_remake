@@ -10,17 +10,17 @@ type
   TKMHousesCollection = class
   private
     fHouses: TKMList; //Private to hide methods we don't want to expose
-    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState):TKMHouse;
+    function AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; aHBS: TKMHouseBuildState):TKMHouse;
     function GetHouse(aIndex: Integer): TKMHouse; inline;
     function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
-    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+    function AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
+    function AddHouseWIP(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID): TKMHouse;
     procedure AddHouseToList(aHouse: TKMHouse);
     property Count: Integer read GetCount;
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
+    procedure OwnerUpdate(aOwner: TKMHandID);
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
@@ -44,7 +44,7 @@ type
 
 implementation
 uses
-  Classes, Types, Math,
+  SysUtils, Classes, Types, Math,
   KM_Game, KM_Terrain,
   KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, 
   KM_HouseTownHall, KM_HouseWoodcutters,
@@ -62,12 +62,12 @@ end;
 
 destructor TKMHousesCollection.Destroy;
 begin
-  fHouses.Free;
+  FreeAndNil(fHouses);
   inherited;
 end;
 
 
-function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; aHBS: TKMHouseBuildState): TKMHouse;
+function TKMHousesCollection.AddToCollection(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; aHBS: TKMHouseBuildState): TKMHouse;
 var ID: Cardinal;
 begin
   ID := gGame.GetNewUID;
@@ -104,19 +104,19 @@ begin
 end;
 
 
-function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandIndex; RelativeEntrance: Boolean):TKMHouse;
+function TKMHousesCollection.AddHouse(aHouseType: TKMHouseType; PosX,PosY: Integer; aOwner: TKMHandID; RelativeEntrance: Boolean):TKMHouse;
 begin
   if RelativeEntrance then
-    Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbs_Done)
+    Result := AddToCollection(aHouseType, PosX - gRes.Houses[aHouseType].EntranceOffsetX, PosY, aOwner, hbsDone)
   else
-    Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_Done);
+    Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbsDone);
 end;
 
 
 {Add a plan for house}
-function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandIndex): TKMHouse;
+function TKMHousesCollection.AddHouseWIP(aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID): TKMHouse;
 begin
-  Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbs_NoGlyph);
+  Result := AddToCollection(aHouseType, PosX, PosY, aOwner, hbsNoGlyph);
 end;
 
 
@@ -150,7 +150,7 @@ begin
 end;
 
 
-procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMHousesCollection.OwnerUpdate(aOwner: TKMHandID);
 var I: Integer;
 begin
   for I := 0 to Count - 1 do
@@ -202,10 +202,10 @@ begin
     begin
       //Recruits should not go to a barracks with ware delivery switched off or with not accept flag for recruits
       if (Houses[I].HouseType = htBarracks)
-        and ((Houses[I].DeliveryMode <> dm_Delivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
+        and ((Houses[I].DeliveryMode <> dmDelivery) or (TKMHouseBarracks(Houses[I]).NotAcceptRecruitFlag)) then Continue;
       if not gTerrain.Route_CanBeMade(Loc, Houses[I].PointBelowEntrance, tpWalk, 0) then Continue;
 
-      Dist := KMLengthSqr(Loc, Houses[I].GetPosition);
+      Dist := KMLengthSqr(Loc, Houses[I].Position);
 
       //Always prefer Towers to Barracks by making Barracks Bid much less attractive
       //In case of multiple barracks, prefer the closer one (players should make multiple schools or use WareDelivery to control it)
@@ -257,7 +257,7 @@ begin
     Inc(ID);
     if UsePosition then
     begin
-      Dist := KMLengthSqr(Houses[I].GetPosition,KMPoint(X,Y));
+      Dist := KMLengthSqr(Houses[I].Position,KMPoint(X,Y));
       if BestMatch = -1 then BestMatch := Dist; //Initialize for first use
       if Dist < BestMatch then
       begin
@@ -287,7 +287,7 @@ begin
       AND (not aOnlyCompleted OR Houses[I].IsComplete)
       AND not Houses[I].IsDestroyed then
     begin
-      if (KMLengthSqr(Houses[I].GetPosition, aLoc) <= aSqrRadius) then
+      if (KMLengthSqr(Houses[I].Position, aLoc) <= aSqrRadius) then
       begin
         if (Idx >= Length(Result)) then
           SetLength(Result, Idx + 12);
@@ -406,7 +406,7 @@ begin
   growRect := KMRectGrow(aRect, Margin);
 
   for I := 0 to Count - 1 do
-  if not Houses[I].IsDestroyed and KMInRect(Houses[I].GetPosition, growRect) then
+  if not Houses[I].IsDestroyed and KMInRect(Houses[I].Position, growRect) then
     Houses[I].Paint;
 end;
 

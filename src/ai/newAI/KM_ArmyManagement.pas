@@ -4,8 +4,8 @@ interface
 uses
   Classes, KromUtils, Math, SysUtils,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_Points,
-  KM_Houses, KM_Units, KM_Units_Warrior,
-  KM_UnitGroups, KM_AISetup,
+  KM_Houses, KM_Units, KM_UnitWarrior,
+  KM_UnitGroup, KM_AISetup,
   KM_HandStats, KM_ArmyAttack, KM_ArmyDefence, KM_AIAttacks,
   KM_NavMeshFloodPositioning, KM_NavMeshInfluences;
 
@@ -14,14 +14,14 @@ type
   TKMAttackRequest = record
     Active: Boolean;
     BestAllianceCmp,WorstAllianceCmp: Single;
-    BestEnemy: TKMHandIndex; // or index of Enemies array
+    BestEnemy: TKMHandID; // or index of Enemies array
     BestPoint: TKMPoint;
-    Enemies: TKMHandIndexArray;
+    Enemies: TKMHandIDArray;
   end;
 
   TKMArmyManagement = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fSetup: TKMHandAISetup;
     fLastEquippedTimeIron, fLastEquippedTimeLeather: Cardinal;
     fAttackRequest: TKMAttackRequest;
@@ -42,7 +42,7 @@ type
 
     function CombineBalanceStrings(): UnicodeString;
   public
-    constructor Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+    constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -56,7 +56,7 @@ type
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure WarriorEquipped(aGroup: TKMUnitGroup);
     procedure CheckNewThreat(aHouse: TKMHouse; aAttacker: TKMUnitWarrior); overload;
     procedure CheckNewThreat(aUnit: TKMUnit; aAttacker: TKMUnit); overload;
@@ -73,7 +73,7 @@ uses
 
 
 { TKMArmyManagement }
-constructor TKMArmyManagement.Create(aPlayer: TKMHandIndex; aSetup: TKMHandAISetup);
+constructor TKMArmyManagement.Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
 begin
   inherited Create;
 
@@ -98,9 +98,9 @@ begin
     gHands.CleanUpGroupPointer( UG );
     //fHostileGroups.Delete(I);
   end;
-  fHostileGroups.Free;
-  fAttack.Free;
-  fDefence.Free;
+  FreeAndNil(fHostileGroups);
+  FreeAndNil(fAttack);
+  FreeAndNil(fDefence);
 
   inherited;
 end;
@@ -215,12 +215,12 @@ begin
   fAttack.AfterMissionInit();
   //fDefence.AfterMissionInit();
 
-  //if (gGame.MissionMode = mm_Tactic) then
+  //if (gGame.MissionMode = mmTactic) then
   //  fAttack.OrderToAttack;
 end;
 
 
-procedure TKMArmyManagement.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMArmyManagement.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fAttack.OwnerUpdate(aPlayer);
@@ -264,7 +264,7 @@ begin
   // Take required warriors from CityManagement (-> implemented consideration of required units + save time)
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
     for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
-      if (AITroopTrainOrder[GT,I] <> ut_None) then
+      if (AITroopTrainOrder[GT,I] <> utNone) then
         Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ] + 1); // Always recruit something
 
   //Find barracks
@@ -300,7 +300,7 @@ begin
       begin
         UT := AITroopTrainOrder[GT, K];
 
-        if (UT <> ut_None) then
+        if (UT <> utNone) then
           while (  ( CanEquipIron AND (UT in WARRIORS_IRON) ) OR ( CanEquipLeather AND not (UT in WARRIORS_IRON) )  )
             AND Barracks[I].CanEquip(UT)
             AND (GroupReq[GT] > 0)
@@ -450,7 +450,7 @@ type
   end;
   // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
   //function FindBestTarget(var aBestTargetPlayer, aTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean = False): Boolean;
-  function FindBestTarget(var aBestTargetPlayer: TKMHandIndex; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
+  function FindBestTarget(var aBestTargetPlayer: TKMHandID; var aTargetPoint: TKMPoint; aForceToAttack: Boolean): Boolean;
   const
     ALLIANCE_TARGET_COEF = 0.1;
     BEST_ALLIANCE_TARGET_COEF = 0.2;
@@ -460,7 +460,7 @@ type
   var
     I, K, MinDist: Integer;
     Comparison, BestComparison: Single;
-    OwnerArr: TKMHandIndexArray;
+    OwnerArr: TKMHandIDArray;
     EnemyStats: TKMEnemyStatisticsArray;
   begin
     Result := False;
@@ -514,26 +514,26 @@ type
     TargetUnit := nil;
     //Find target
     case aTarget of
-      attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, at_Enemy);
-      attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, at_Enemy, TARGET_HOUSES, false);
-      attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, at_Enemy, TARGET_HOUSES, false);
+      attClosestUnit:                  TargetUnit := gHands.GetClosestUnit(aGroup.Position, fOwner, atEnemy);
+      attClosestBuildingFromArmy:      TargetHouse := gHands.GetClosestHouse(aGroup.Position, fOwner, atEnemy, TARGET_HOUSES, false);
+      attClosestBuildingFromStartPos:  TargetHouse := gHands.GetClosestHouse(fSetup.StartPosition, fOwner, atEnemy, TARGET_HOUSES, false);
       attCustomPosition:
       begin
         TargetHouse := gHands.HousesHitTest(aCustomPos.X, aCustomPos.Y);
-        if (TargetHouse <> nil) AND (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = at_Ally) then
+        if (TargetHouse <> nil) AND (gHands.CheckAlliance(fOwner, TargetHouse.Owner) = atAlly) then
           TargetHouse := nil;
         TargetUnit := gTerrain.UnitsHitTest(aCustomPos.X, aCustomPos.Y);
-        if (TargetUnit <> nil) AND ((gHands.CheckAlliance(fOwner, TargetUnit.Owner) = at_Ally) OR TargetUnit.IsDeadOrDying) then
+        if (TargetUnit <> nil) AND ((gHands.CheckAlliance(fOwner, TargetUnit.Owner) = atAlly) OR TargetUnit.IsDeadOrDying) then
           TargetUnit := nil;
       end;
     end;
     //Choose best option
     if (TargetHouse <> nil) then
-      aTargetP := TargetHouse.GetPosition
+      aTargetP := TargetHouse.Position
     else if (TargetUnit <> nil) then
-      aTargetP := TargetUnit.GetPosition
+      aTargetP := TargetUnit.CurrPosition
     else if (aTarget = attCustomPosition) then
-      aTargetP := TargetHouse.GetPosition;
+      aTargetP := TargetHouse.Position;
     Result := not KMSamePoint(aTargetP, KMPOINT_ZERO);
   end;
 
@@ -605,7 +605,7 @@ begin
     begin
       TakeAllIn := (BestAllianceCmp > MIN_BEST_ALLI_CMP) // The weakest opponent have not enought soldiers
                    OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP) // The strongest opponent have not enought soldiers
-                   OR (gGame.MissionMode = mm_Tactic);
+                   OR (gGame.MissionMode = mmTactic);
       if (DefRatio > MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
         Exit;
     end;
@@ -665,7 +665,7 @@ begin
   if (fHostileGroups.IndexOf(Group) = -1) then // Is this attacking group already in list?
   begin
     if (aUnit = nil) // Does attacker attack house
-      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.GetPosition.Y,aUnit.GetPosition.X] > 50)) then // Or citizen which is inside of city?
+      OR (not (aUnit is TKMUnitWarrior) AND (gAIFields.Influences.Ownership[fOwner,aUnit.CurrPosition.Y,aUnit.CurrPosition.X] > 50)) then // Or citizen which is inside of city?
       fHostileGroups.Add( Group.GetGroupPointer() )
     else // Does attacker attack at soldier in defence position?
     begin

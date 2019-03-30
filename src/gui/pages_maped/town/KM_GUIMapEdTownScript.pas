@@ -53,11 +53,11 @@ begin
   inherited Create;
 
   Panel_Script := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_Script, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_TITLE], fnt_Outline, taCenter);
-  CheckBox_AutoBuild := TKMCheckBox.Create(Panel_Script, 0, 30, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOBUILD], fnt_Metal);
+  TKMLabel.Create(Panel_Script, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_TITLE], fntOutline, taCenter);
+  CheckBox_AutoBuild := TKMCheckBox.Create(Panel_Script, 0, 30, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOBUILD], fntMetal);
   CheckBox_AutoBuild.OnClick := Town_ScriptChange;
   CheckBox_AutoBuild.Hint := GetHintWHotKey(TX_MAPED_AI_AUTOBUILD, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
-  CheckBox_AutoRepair := TKMCheckBox.Create(Panel_Script, 0, 50, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOREPAIR], fnt_Metal);
+  CheckBox_AutoRepair := TKMCheckBox.Create(Panel_Script, 0, 50, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_AUTOREPAIR], fntMetal);
   CheckBox_AutoRepair.OnClick := Town_ScriptChange;
   CheckBox_AutoRepair.Hint := GetHintWHotKey(TX_MAPED_AI_AUTOREPAIR, MAPED_SUBMENU_ACTIONS_HOTKEYS[1]);
 
@@ -74,8 +74,8 @@ begin
     TrackBar_WorkerCount.Caption := gResTexts[TX_MAPED_AI_WORKERS];
     TrackBar_WorkerCount.OnChange := Town_ScriptChange;
 
-    TKMLabel.Create(PopUp_ClassicAIParams, 10, 110, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ARMY_TYPE], fnt_Metal, taLeft);
-    DropBox_ArmyType := TKMDropList.Create(PopUp_ClassicAIParams, 10, 130, 280, 20, fnt_Metal, '', bsGame);
+    TKMLabel.Create(PopUp_ClassicAIParams, 10, 110, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ARMY_TYPE], fntMetal, taLeft);
+    DropBox_ArmyType := TKMDropList.Create(PopUp_ClassicAIParams, 10, 130, 280, 20, fntMetal, '', bsGame);
     DropBox_ArmyType.OnChange := Town_ScriptChange;
     DropBox_ArmyType.Add(gResTexts[TX_MAPED_AI_ARMY_TYPE_IRON_THEN_LEATHER], Byte(atIronThenLeather));
     DropBox_ArmyType.Add(gResTexts[TX_MAPED_AI_ARMY_TYPE_IRON],              Byte(atIron));
@@ -88,7 +88,7 @@ begin
                                                     120, 30, gResTexts[TX_WORD_CLOSE], bsGame);
     Button_CloseClassicAIParams.OnClick := ClassicAIParams_Click;
 
-  CheckBox_UnlimitedEquip := TKMCheckBox.Create(Panel_Script, 0, 130, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_FASTEQUIP], fnt_Metal);
+  CheckBox_UnlimitedEquip := TKMCheckBox.Create(Panel_Script, 0, 130, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_FASTEQUIP], fntMetal);
   CheckBox_UnlimitedEquip.OnClick := Town_ScriptChange;
   CheckBox_UnlimitedEquip.Hint := GetHintWHotKey(TX_MAPED_AI_FASTEQUIP_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[3]);
 
@@ -102,7 +102,7 @@ begin
   TrackBar_EquipRateIron.Step := 5;
   TrackBar_EquipRateIron.OnChange := Town_ScriptChange;
 
-  TKMLabel.Create(Panel_Script, 0, 255, gResTexts[TX_MAPED_AI_START], fnt_Metal, taLeft);
+  TKMLabel.Create(Panel_Script, 0, 255, gResTexts[TX_MAPED_AI_START], fntMetal, taLeft);
   Button_AIStart         := TKMButtonFlat.Create(Panel_Script, 0, 275, 33, 33, 62, rxGuiMain);
   Button_AIStart.Hint    := GetHintWHotKey(TX_MAPED_AI_START_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[4]);
   Button_AIStart.OnClick := Town_ScriptChange;
@@ -126,7 +126,7 @@ begin
   CheckBox_AutoBuild.Checked := gMySpectator.Hand.AI.Setup.AutoBuild;
   CheckBox_AutoRepair.Checked := gMySpectator.Hand.AI.Setup.AutoRepair;
   TrackBar_SerfsPer10Houses.Position := Round(10*gMySpectator.Hand.AI.Setup.SerfsPerHouse);
-  if gMySpectator.HandIndex <> -1 then
+  if gMySpectator.HandID <> -1 then
     TrackBar_SerfsPer10Houses.Hint := Format(gResTexts[TX_MAPED_AI_SERFS_PER_10_HOUSES_HINT], [gMySpectator.Hand.Stats.GetHouseQty(htAny)]);
   TrackBar_WorkerCount.Position := gMySpectator.Hand.AI.Setup.WorkerCount;
   CheckBox_UnlimitedEquip.Checked := gMySpectator.Hand.AI.Setup.UnlimitedEquip;
@@ -141,7 +141,7 @@ begin
     atIron:    TrackBar_EquipRateLeather.Disable;
   end;
 
-  Button_ClassicAIParams.Enabled := not gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex);
+  Button_ClassicAIParams.Enabled := not gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID);
 end;
 
 
@@ -162,7 +162,7 @@ begin
   gMySpectator.Hand.AI.Setup.EquipRateIron := TrackBar_EquipRateIron.Position * 10;
   gMySpectator.Hand.AI.Setup.ArmyType := TKMArmyType(DropBox_ArmyType.GetSelectedTag);
 
-  if CheckBox_UnlimitedEquip.Checked and gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandIndex) then
+  if CheckBox_UnlimitedEquip.Checked and gGame.MapEditor.OnlyAdvancedAIHand(gMySpectator.HandID) then
   begin
     //Only for Advanced AI locks
     //No equip rates when equip is unlimited

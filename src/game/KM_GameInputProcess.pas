@@ -2,7 +2,7 @@ unit KM_GameInputProcess;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Units, KM_UnitGroups,
+  KM_Units, KM_UnitGroup,
   KM_Houses, KM_HouseWoodcutters,
   KM_ResHouses, KM_ResWares,
   KM_CommonClasses, KM_Defaults, KM_Points;
@@ -34,75 +34,75 @@ type
   TKMGIPReplayState = (gipRecording, gipReplaying);
 
   TKMGameInputCommandType = (
-    gic_None,
+    gicNone,
     //I.      Army commands, only warriors (TKMUnitWarrior, OrderInfo)
-    gic_ArmyFeed,
-    gic_ArmySplit,
-    gic_ArmySplitSingle,
-    gic_ArmyLink,
-    gic_ArmyAttackUnit,
-    gic_ArmyAttackHouse,
-    gic_ArmyHalt,
-    gic_ArmyFormation,    //Formation commands
-    gic_ArmyWalk,         //Walking
-    gic_ArmyStorm,        //StormAttack
+    gicArmyFeed,
+    gicArmySplit,
+    gicArmySplitSingle,
+    gicArmyLink,
+    gicArmyAttackUnit,
+    gicArmyAttackHouse,
+    gicArmyHalt,
+    gicArmyFormation,    //Formation commands
+    gicArmyWalk,         //Walking
+    gicArmyStorm,        //StormAttack
 
     //II. Unit commands
-    gic_UnitDismiss,
-    gic_UnitDismissCancel,
+    gicUnitDismiss,
+    gicUnitDismissCancel,
 
     //III.     Building/road plans (what to build and where)
-    gic_BuildAddFieldPlan,
-    gic_BuildRemoveFieldPlan, //Removal of a plan
-    gic_BuildRemoveHouse,     //Removal of house
-    gic_BuildRemoveHousePlan, //Removal of house plan
-    gic_BuildHousePlan,       //Build HouseType
+    gicBuildAddFieldPlan,
+    gicBuildRemoveFieldPlan, //Removal of a plan
+    gicBuildRemoveHouse,     //Removal of house
+    gicBuildRemoveHousePlan, //Removal of house plan
+    gicBuildHousePlan,       //Build HouseType
 
     //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
-    gic_HouseRepairToggle,
-    gic_HouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
-    gic_HouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
-    gic_HouseOrderProduct,            //Place an order to manufacture warfare
-    gic_HouseMarketFrom,              //Select wares to trade in marketplace
-    gic_HouseMarketTo,                //Select wares to trade in marketplace
-    gic_HouseWoodcutterMode,          //Switch the woodcutter mode
-    gic_HouseArmorWSDeliveryToggle,   //Toggle resourse delivery to armor workshop
-    gic_HouseStoreAcceptFlag,         //Control wares delivery to store
-    gic_HouseSchoolTrain,             //Place an order to train citizen
-    gic_HouseSchoolTrainChOrder,      //Change school training order
-    gic_HouseSchoolTrainChLastUOrder, //Change school training order for last unit in queue
-    gic_HouseBarracksAcceptFlag,      //Control wares delivery to barracks
-    gic_HBarracksAcceptRecruitsTgl,   //Toggle are recruits allowed to enter barracks or not
-    gic_HouseBarracksEquip,           //Place an order to train warrior in the Barracks
-    gic_HouseBarracksRally,           //Set the rally point for the Barracks
-    gic_HouseTownHallEquip,           //Place an order to train warrior in the TownHall
-    gic_HouseTownHallRally,           //Set the rally point for the TownHall
-    gic_HouseTownHallMaxGold,         //Set TownHall MaxGold value
-    gic_HouseRemoveTrain,             //Remove unit being trained from School
-    gic_HouseWoodcuttersCutting,      //Set the cutting point for the Woodcutters
+    gicHouseRepairToggle,
+    gicHouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
+    gicHouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
+    gicHouseOrderProduct,            //Place an order to manufacture warfare
+    gicHouseMarketFrom,              //Select wares to trade in marketplace
+    gicHouseMarketTo,                //Select wares to trade in marketplace
+    gicHouseWoodcutterMode,          //Switch the woodcutter mode
+    gicHouseArmorWSDeliveryToggle,   //Toggle resourse delivery to armor workshop
+    gicHouseStoreAcceptFlag,         //Control wares delivery to store
+    gicHouseSchoolTrain,             //Place an order to train citizen
+    gicHouseSchoolTrainChOrder,      //Change school training order
+    gicHouseSchoolTrainChLastUOrder, //Change school training order for last unit in queue
+    gicHouseBarracksAcceptFlag,      //Control wares delivery to barracks
+    gicHBarracksAcceptRecruitsTgl,   //Toggle are recruits allowed to enter barracks or not
+    gicHouseBarracksEquip,           //Place an order to train warrior in the Barracks
+    gicHouseBarracksRally,           //Set the rally point for the Barracks
+    gicHouseTownHallEquip,           //Place an order to train warrior in the TownHall
+    gicHouseTownHallRally,           //Set the rally point for the TownHall
+    gicHouseTownHallMaxGold,         //Set TownHall MaxGold value
+    gicHouseRemoveTrain,             //Remove unit being trained from School
+    gicHouseWoodcuttersCutting,      //Set the cutting point for the Woodcutters
 
     //V.     Delivery ratios changes (and other game-global settings)
-    gic_WareDistributionChange,   //Change of distribution for 1 ware
-    gic_WareDistributions,        //Update distributions for all wares at ones
+    gicWareDistributionChange,   //Change of distribution for 1 ware
+    gicWareDistributions,        //Update distributions for all wares at ones
 
     //VI.      Game changes
-    gic_GameAlertBeacon,          //Signal alert (beacon)
-    gic_GamePause,
-    gic_GameAutoSave,
-    gic_GameAutoSaveAfterPT,
-    gic_GameSaveReturnLobby,
-    gic_GameTeamChange,
-    gic_GameHotkeySet,        //Hotkeys are synced for MP saves (UI keeps local copy to avoid GIP delays)
-    gic_GameMessageLogRead,   //Player marks a message in their log as read
-    gic_GamePlayerTypeChange, //Players can be changed to AI when loading a save
-    gic_GamePlayerDefeat,     //Player can be defeated after intentional quit from the game
+    gicGameAlertBeacon,          //Signal alert (beacon)
+    gicGamePause,
+    gicGameAutoSave,
+    gicGameAutoSaveAfterPT,
+    gicGameSaveReturnLobby,
+    gicGameTeamChange,
+    gicGameHotkeySet,        //Hotkeys are synced for MP saves (UI keeps local copy to avoid GIP delays)
+    gicGameMessageLogRead,   //Player marks a message in their log as read
+    gicGamePlayerTypeChange, //Players can be changed to AI when loading a save
+    gicGamePlayerDefeat,     //Player can be defeated after intentional quit from the game
 
     //VII.     Temporary and debug commands
-    gic_TempAddScout,
-    gic_TempRevealMap, //Revealing the map can have an impact on the game. Events happen based on tiles being revealed
-    gic_TempVictory,
-    gic_TempDefeat,
-    gic_TempDoNothing  //Used for "aggressive" replays that store a command every tick
+    gicTempAddScout,
+    gicTempRevealMap, //Revealing the map can have an impact on the game. Events happen based on tiles being revealed
+    gicTempVictory,
+    gicTempDefeat,
+    gicTempDoNothing  //Used for "aggressive" replays that store a command every tick
 
     { Optional input }
     //VI.     Viewport settings for replay (location, zoom)
@@ -120,112 +120,112 @@ type
     gicpt_Date);
 
 const
-  BlockedByPeaceTime: set of TKMGameInputCommandType = [gic_ArmySplit, gic_ArmySplitSingle,
-    gic_ArmyLink, gic_ArmyAttackUnit, gic_ArmyAttackHouse, gic_ArmyHalt,
-    gic_ArmyFormation,  gic_ArmyWalk, gic_ArmyStorm, gic_HouseBarracksEquip, gic_HouseTownHallEquip];
-  AllowedAfterDefeat: set of TKMGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GameMessageLogRead, gic_TempDoNothing];
-  AllowedInCinematic: set of TKMGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GameMessageLogRead, gic_TempDoNothing];
-  AllowedBySpectators: set of TKMGameInputCommandType = [gic_GameAlertBeacon, gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby, gic_GamePlayerDefeat, gic_TempDoNothing];
+  BlockedByPeaceTime: set of TKMGameInputCommandType = [gicArmySplit, gicArmySplitSingle,
+    gicArmyLink, gicArmyAttackUnit, gicArmyAttackHouse, gicArmyHalt,
+    gicArmyFormation,  gicArmyWalk, gicArmyStorm, gicHouseBarracksEquip, gicHouseTownHallEquip];
+  AllowedAfterDefeat: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+  AllowedInCinematic: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+  AllowedBySpectators: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
 
   ArmyOrderCommands: set of TKMGameInputCommandType = [
-    gic_ArmyFeed,
-    gic_ArmySplit,
-    gic_ArmySplitSingle,
-    gic_ArmyLink,
-    gic_ArmyAttackUnit,
-    gic_ArmyAttackHouse,
-    gic_ArmyHalt,
-    gic_ArmyFormation,
-    gic_ArmyWalk,
-    gic_ArmyStorm];
+    gicArmyFeed,
+    gicArmySplit,
+    gicArmySplitSingle,
+    gicArmyLink,
+    gicArmyAttackUnit,
+    gicArmyAttackHouse,
+    gicArmyHalt,
+    gicArmyFormation,
+    gicArmyWalk,
+    gicArmyStorm];
 
   HouseOrderCommands: set of TKMGameInputCommandType = [
-    gic_HouseRepairToggle,
-    gic_HouseDeliveryToggle,
-    gic_HouseClosedForWorkerTgl,
-    gic_HouseOrderProduct,
-    gic_HouseMarketFrom,
-    gic_HouseMarketTo,
-    gic_HouseWoodcutterMode,
-    gic_HouseStoreAcceptFlag,
-    gic_HouseSchoolTrain,
-    gic_HouseSchoolTrainChOrder,
-    gic_HouseSchoolTrainChLastUOrder,
-    gic_HouseBarracksAcceptFlag,
-    gic_HBarracksAcceptRecruitsTgl,
-    gic_HouseBarracksEquip,
-    gic_HouseBarracksRally,
-    gic_HouseTownHallEquip,
-    gic_HouseTownHallRally,
-    gic_HouseTownHallMaxGold,
-    gic_HouseRemoveTrain,
-    gic_HouseWoodcuttersCutting];
+    gicHouseRepairToggle,
+    gicHouseDeliveryToggle,
+    gicHouseClosedForWorkerTgl,
+    gicHouseOrderProduct,
+    gicHouseMarketFrom,
+    gicHouseMarketTo,
+    gicHouseWoodcutterMode,
+    gicHouseStoreAcceptFlag,
+    gicHouseSchoolTrain,
+    gicHouseSchoolTrainChOrder,
+    gicHouseSchoolTrainChLastUOrder,
+    gicHouseBarracksAcceptFlag,
+    gicHBarracksAcceptRecruitsTgl,
+    gicHouseBarracksEquip,
+    gicHouseBarracksRally,
+    gicHouseTownHallEquip,
+    gicHouseTownHallRally,
+    gicHouseTownHallMaxGold,
+    gicHouseRemoveTrain,
+    gicHouseWoodcuttersCutting];
 
 
   CommandPackType: array[TKMGameInputCommandType] of TKMGameInputCommandPackType = (
-    gicpt_NoParams, // gic_None
+    gicpt_NoParams, // gicNone
     //I.      Army commands, only warriors (TKMUnitWarrior, OrderInfo)
-    gicpt_Int1,     // gic_ArmyFeed
-    gicpt_Int1,     // gic_ArmySplit
-    gicpt_Int1,     // gic_ArmySplitSingle
-    gicpt_Int2,     // gic_ArmyLink
-    gicpt_Int2,     // gic_ArmyAttackUnit
-    gicpt_Int2,     // gic_ArmyAttackHouse
-    gicpt_Int1,     // gic_ArmyHalt
-    gicpt_Int3,     // gic_ArmyFormation
-    gicpt_Int4,     // gic_ArmyWalk
-    gicpt_Int1,     // gic_ArmyStorm
+    gicpt_Int1,     // gicArmyFeed
+    gicpt_Int1,     // gicArmySplit
+    gicpt_Int1,     // gicArmySplitSingle
+    gicpt_Int2,     // gicArmyLink
+    gicpt_Int2,     // gicArmyAttackUnit
+    gicpt_Int2,     // gicArmyAttackHouse
+    gicpt_Int1,     // gicArmyHalt
+    gicpt_Int3,     // gicArmyFormation
+    gicpt_Int4,     // gicArmyWalk
+    gicpt_Int1,     // gicArmyStorm
     //II.      Unit commands
-    gicpt_Int1,     // gic_UnitDismiss
-    gicpt_Int1,     // gic_UnitDismissCancel
+    gicpt_Int1,     // gicUnitDismiss
+    gicpt_Int1,     // gicUnitDismissCancel
     //III.     Building/road plans (what to build and where)
-    gicpt_Int3,     // gic_BuildAddFieldPlan
-    gicpt_Int2,     // gic_BuildRemoveFieldPlan
-    gicpt_Int2,     // gic_BuildRemoveHouse
-    gicpt_Int2,     // gic_BuildRemoveHousePlan
-    gicpt_Int3,     // gic_BuildHousePlan
+    gicpt_Int3,     // gicBuildAddFieldPlan
+    gicpt_Int2,     // gicBuildRemoveFieldPlan
+    gicpt_Int2,     // gicBuildRemoveHouse
+    gicpt_Int2,     // gicBuildRemoveHousePlan
+    gicpt_Int3,     // gicBuildHousePlan
     //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
-    gicpt_Int1,     // gic_HouseRepairToggle
-    gicpt_Int2,     // gic_HouseDeliveryToggle
-    gicpt_Int1,     // gic_HouseClosedForWorkerTgl
-    gicpt_Int3,     // gic_HouseOrderProduct
-    gicpt_Int2,     // gic_HouseMarketFrom
-    gicpt_Int2,     // gic_HouseMarketTo
-    gicpt_Int2,     // gic_HouseWoodcutterMode
-    gicpt_Int2,     // gic_HouseArmorWSDeliveryToggle
-    gicpt_Int2,     // gic_HouseStoreAcceptFlag
-    gicpt_Int3,     // gic_HouseSchoolTrain
-    gicpt_Int3,     // gic_HouseSchoolTrainChOrder
-    gicpt_Int2,     // gic_HouseSchoolTrainChLastUOrder
-    gicpt_Int2,     // gic_HouseBarracksAcceptFlag
-    gicpt_Int1,     // gic_HBarracksAcceptRecruitsTgl
-    gicpt_Int3,     // gic_HouseBarracksEquip
-    gicpt_Int3,     // gic_HouseBarracksRally
-    gicpt_Int3,     // gic_HouseTownHallEquip
-    gicpt_Int3,     // gic_HouseTownHallRally
-    gicpt_Int2,     // gic_HouseTownHallMaxGold
-    gicpt_Int2,     // gic_HouseRemoveTrain
-    gicpt_Int3,     // gic_HouseWoodcuttersCutting
+    gicpt_Int1,     // gicHouseRepairToggle
+    gicpt_Int2,     // gicHouseDeliveryToggle
+    gicpt_Int1,     // gicHouseClosedForWorkerTgl
+    gicpt_Int3,     // gicHouseOrderProduct
+    gicpt_Int2,     // gicHouseMarketFrom
+    gicpt_Int2,     // gicHouseMarketTo
+    gicpt_Int2,     // gicHouseWoodcutterMode
+    gicpt_Int2,     // gicHouseArmorWSDeliveryToggle
+    gicpt_Int2,     // gicHouseStoreAcceptFlag
+    gicpt_Int3,     // gicHouseSchoolTrain
+    gicpt_Int3,     // gicHouseSchoolTrainChOrder
+    gicpt_Int2,     // gicHouseSchoolTrainChLastUOrder
+    gicpt_Int2,     // gicHouseBarracksAcceptFlag
+    gicpt_Int1,     // gicHBarracksAcceptRecruitsTgl
+    gicpt_Int3,     // gicHouseBarracksEquip
+    gicpt_Int3,     // gicHouseBarracksRally
+    gicpt_Int3,     // gicHouseTownHallEquip
+    gicpt_Int3,     // gicHouseTownHallRally
+    gicpt_Int2,     // gicHouseTownHallMaxGold
+    gicpt_Int2,     // gicHouseRemoveTrain
+    gicpt_Int3,     // gicHouseWoodcuttersCutting
     //V.     Delivery ratios changes (and other game-global settings)
-    gicpt_Int3,     // gic_WareDistributionChange
-    gicpt_Text,     // gic_WareDistributions
+    gicpt_Int3,     // gicWareDistributionChange
+    gicpt_Text,     // gicWareDistributions
     //VI.      Game changes
-    gicpt_Int4,     // gic_GameAlertBeacon
-    gicpt_NoParams, // gic_GamePause
-    gicpt_Date,     // gic_GameAutoSave
-    gicpt_Date,     // gic_GameAutoSaveAfterPT
-    gicpt_Date,     // gic_GameSaveReturnLobby
-    gicpt_Int2,     // gic_GameTeamChange
-    gicpt_Int2,     // gic_GameHotkeySet
-    gicpt_Int1,     // gic_GameMessageLogRead
-    gicpt_Int2,     // gic_GamePlayerTypeChange
-    gicpt_Int1,     // gic_GamePlayerDefeat
+    gicpt_Int4,     // gicGameAlertBeacon
+    gicpt_NoParams, // gicGamePause
+    gicpt_Date,     // gicGameAutoSave
+    gicpt_Date,     // gicGameAutoSaveAfterPT
+    gicpt_Date,     // gicGameSaveReturnLobby
+    gicpt_Int2,     // gicGameTeamChange
+    gicpt_Int2,     // gicGameHotkeySet
+    gicpt_Int1,     // gicGameMessageLogRead
+    gicpt_Int2,     // gicGamePlayerTypeChange
+    gicpt_Int1,     // gicGamePlayerDefeat
     //VII.     Temporary and debug commands
-    gicpt_Int2,     // gic_TempAddScout
-    gicpt_NoParams, // gic_TempRevealMap
-    gicpt_NoParams, // gic_TempVictory
-    gicpt_NoParams, // gic_TempDefeat
-    gicpt_NoParams  // gic_TempDoNothing
+    gicpt_Int2,     // gicTempAddScout
+    gicpt_NoParams, // gicTempRevealMap
+    gicpt_NoParams, // gicTempVictory
+    gicpt_NoParams, // gicTempDefeat
+    gicpt_NoParams  // gicTempDoNothing
   );
 
 type
@@ -234,7 +234,7 @@ type
     Params: array[1..MAX_PARAMS] of Integer;
     TextParam: UnicodeString;
     DateTimeParam: TDateTime;
-    HandIndex: TKMHandIndex; //Player for which the command is to be issued. (Needed for multiplayer and other reasons)
+    HandIndex: TKMHandID; //Player for which the command is to be issued. (Needed for multiplayer and other reasons)
   end;
 
   function IsSelectedObjectCommand(aGIC: TKMGameInputCommandType): Boolean;
@@ -306,7 +306,7 @@ type
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue:boolean); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer); overload;
-    procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal); overload;
+    procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue: Integer); overload;
 
     procedure CmdTemp(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint); overload;
@@ -460,7 +460,7 @@ end;
 function TKMGameInputProcess.MakeEmptyCommand(aGIC: TKMGameInputCommandType): TKMGameInputCommand;
 begin
   Result.CommandType := aGIC;
-  Result.HandIndex := gMySpectator.HandIndex;
+  Result.HandIndex := gMySpectator.HandID;
 end;
 
 
@@ -558,7 +558,7 @@ var
   SrcHouse, TgtHouse: TKMHouse;
 begin
   //NOTE: gMySpectator.PlayerIndex should not be used for important stuff here, use P instead (commands must be executed the same for all players)
-  IsSilent := (aCommand.HandIndex <> gMySpectator.HandIndex);
+  IsSilent := (aCommand.HandIndex <> gMySpectator.HandID);
   P := gHands[aCommand.HandIndex];
   SrcUnit := nil;
   SrcGroup := nil;
@@ -570,9 +570,9 @@ begin
   with aCommand do
   begin
     //It is possible that units/houses have died by now
-    if CommandType in [gic_ArmyFeed, gic_ArmySplit, gic_ArmySplitSingle, gic_ArmyLink,
-                       gic_ArmyAttackUnit, gic_ArmyAttackHouse, gic_ArmyHalt,
-                       gic_ArmyFormation, gic_ArmyWalk, gic_ArmyStorm]
+    if CommandType in [gicArmyFeed, gicArmySplit, gicArmySplitSingle, gicArmyLink,
+                       gicArmyAttackUnit, gicArmyAttackHouse, gicArmyHalt,
+                       gicArmyFormation, gicArmyWalk, gicArmyStorm]
     then
     begin
       SrcGroup := gHands.GetGroupByUID(Params[1]);
@@ -580,37 +580,37 @@ begin
       or (SrcGroup.Owner <> aCommand.HandIndex) then //Potential exploit
         Exit;
     end;
-    if CommandType in [gic_ArmyLink] then
+    if CommandType in [gicArmyLink] then
     begin
       TgtGroup := gHands.GetGroupByUID(Params[2]);
       if (TgtGroup = nil) or TgtGroup.IsDead //Unit has died before command could be executed
       or (TgtGroup.Owner <> aCommand.HandIndex) then //Potential exploit
         Exit;
     end;
-    if CommandType in [gic_ArmyAttackUnit] then
+    if CommandType in [gicArmyAttackUnit] then
     begin
       TgtUnit := gHands.GetUnitByUID(Params[2]);
       if (TgtUnit = nil) or TgtUnit.IsDeadOrDying then //Unit has died before command could be executed
         Exit;
     end;
-    if CommandType in [gic_HouseRepairToggle, gic_HouseDeliveryToggle, gic_HouseWoodcuttersCutting, gic_HouseTownHallMaxGold,
-      gic_HouseOrderProduct, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseBarracksRally, gic_HouseTownHallRally,
-      gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseBarracksEquip, gic_HouseTownHallEquip, gic_HouseClosedForWorkerTgl,
-      gic_HouseSchoolTrain, gic_HouseSchoolTrainChOrder, gic_HouseSchoolTrainChLastUOrder, gic_HouseRemoveTrain,
-      gic_HouseWoodcutterMode, gic_HBarracksAcceptRecruitsTgl, gic_HouseArmorWSDeliveryToggle] then
+    if CommandType in [gicHouseRepairToggle, gicHouseDeliveryToggle, gicHouseWoodcuttersCutting, gicHouseTownHallMaxGold,
+      gicHouseOrderProduct, gicHouseMarketFrom, gicHouseMarketTo, gicHouseBarracksRally, gicHouseTownHallRally,
+      gicHouseStoreAcceptFlag, gicHouseBarracksAcceptFlag, gicHouseBarracksEquip, gicHouseTownHallEquip, gicHouseClosedForWorkerTgl,
+      gicHouseSchoolTrain, gicHouseSchoolTrainChOrder, gicHouseSchoolTrainChLastUOrder, gicHouseRemoveTrain,
+      gicHouseWoodcutterMode, gicHBarracksAcceptRecruitsTgl, gicHouseArmorWSDeliveryToggle] then
     begin
       SrcHouse := gHands.GetHouseByUID(Params[1]);
       if (SrcHouse = nil) or SrcHouse.IsDestroyed //House has been destroyed before command could be executed
       or (SrcHouse.Owner <> aCommand.HandIndex) then //Potential exploit
         Exit;
     end;
-    if CommandType in [gic_ArmyAttackHouse] then
+    if CommandType in [gicArmyAttackHouse] then
     begin
       TgtHouse := gHands.GetHouseByUID(Params[2]);
       if (TgtHouse = nil) or TgtHouse.IsDestroyed then Exit; //House has been destroyed before command could be executed
     end;
 
-    if CommandType in [gic_UnitDismiss, gic_UnitDismissCancel] then
+    if CommandType in [gicUnitDismiss, gicUnitDismissCancel] then
     begin
       SrcUnit := gHands.GetUnitByUID(Params[1]);
       if (SrcUnit = nil) or SrcUnit.IsDeadOrDying //Unit has died before command could be executed
@@ -634,83 +634,83 @@ begin
       gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
 
     case CommandType of
-      gic_ArmyFeed:         SrcGroup.OrderFood(True);
-      gic_ArmySplit:        SrcGroup.OrderSplit(True);
-      gic_ArmySplitSingle:  SrcGroup.OrderSplit(True, True);
-      gic_ArmyStorm:        SrcGroup.OrderStorm(True);
-      gic_ArmyLink:         SrcGroup.OrderLinkTo(TgtGroup, True);
-      gic_ArmyAttackUnit:   SrcGroup.OrderAttackUnit(TgtUnit, True);
-      gic_ArmyAttackHouse:  SrcGroup.OrderAttackHouse(TgtHouse, True);
-      gic_ArmyHalt:         SrcGroup.OrderHalt(True);
-      gic_ArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
-      gic_ArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, wtokPlayerOrder, TKMDirection(Params[4]));
+      gicArmyFeed:         SrcGroup.OrderFood(True);
+      gicArmySplit:        SrcGroup.OrderSplit(True);
+      gicArmySplitSingle:  SrcGroup.OrderSplit(True, True);
+      gicArmyStorm:        SrcGroup.OrderStorm(True);
+      gicArmyLink:         SrcGroup.OrderLinkTo(TgtGroup, True);
+      gicArmyAttackUnit:   SrcGroup.OrderAttackUnit(TgtUnit, True);
+      gicArmyAttackHouse:  SrcGroup.OrderAttackHouse(TgtHouse, True);
+      gicArmyHalt:         SrcGroup.OrderHalt(True);
+      gicArmyFormation:    SrcGroup.OrderFormation(TKMTurnDirection(Params[2]),Params[3], True);
+      gicArmyWalk:         SrcGroup.OrderWalk(KMPoint(Params[2],Params[3]), True, wtokPlayerOrder, TKMDirection(Params[4]));
 
-      gic_UnitDismiss:        SrcUnit.Dismiss;
-      gic_UnitDismissCancel:  SrcUnit.DismissCancel;
+      gicUnitDismiss:        SrcUnit.Dismiss;
+      gicUnitDismissCancel:  SrcUnit.DismissCancel;
 
-      gic_BuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TKMFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
-      gic_BuildRemoveFieldPlan:   P.RemFieldPlan(KMPoint(Params[1],Params[2]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
-      gic_BuildRemoveHouse:       P.RemHouse(KMPoint(Params[1],Params[2]), IsSilent);
-      gic_BuildRemoveHousePlan:   P.RemHousePlan(KMPoint(Params[1],Params[2]));
-      gic_BuildHousePlan:         if P.CanAddHousePlan(KMPoint(Params[2],Params[3]), TKMHouseType(Params[1])) then
+      gicBuildAddFieldPlan:      P.ToggleFieldPlan(KMPoint(Params[1],Params[2]), TKMFieldType(Params[3]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
+      gicBuildRemoveFieldPlan:   P.RemFieldPlan(KMPoint(Params[1],Params[2]), not gGame.IsMultiplayer); //Make sound in singleplayer mode only
+      gicBuildRemoveHouse:       P.RemHouse(KMPoint(Params[1],Params[2]), IsSilent);
+      gicBuildRemoveHousePlan:   P.RemHousePlan(KMPoint(Params[1],Params[2]));
+      gicBuildHousePlan:         if P.CanAddHousePlan(KMPoint(Params[2],Params[3]), TKMHouseType(Params[1])) then
                                     P.AddHousePlan(TKMHouseType(Params[1]), KMPoint(Params[2],Params[3]));
 
-      gic_HouseRepairToggle:      SrcHouse.BuildingRepair := not SrcHouse.BuildingRepair;
-      gic_HouseDeliveryToggle:    //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
+      gicHouseRepairToggle:      SrcHouse.BuildingRepair := not SrcHouse.BuildingRepair;
+      gicHouseDeliveryToggle:    //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
                                   SrcHouse.NewDeliveryMode := TKMDeliveryMode(Params[2]);
-      gic_HouseClosedForWorkerTgl: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;
-      gic_HouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
-      gic_HouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
-      gic_HouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TKMWareType(Params[2]);
-      gic_HouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
-      gic_HouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
-      gic_HouseBarracksAcceptFlag:
+      gicHouseClosedForWorkerTgl: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;
+      gicHouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
+      gicHouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
+      gicHouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TKMWareType(Params[2]);
+      gicHouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
+      gicHouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
+      gicHouseBarracksAcceptFlag:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
-      gic_HBarracksAcceptRecruitsTgl:
+      gicHBarracksAcceptRecruitsTgl:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptRecruits;
-      gic_HouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
-      gic_HouseBarracksRally:     TKMHouseBarracks(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
-      gic_HouseTownHallEquip:     TKMHouseTownHall(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
-      gic_HouseTownHallRally:     TKMHouseTownHall(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
-      gic_HouseTownHallMaxGold:   TKMHouseTownHall(SrcHouse).GoldMaxCnt := EnsureRange(Params[2], 0, High(Word));
-      gic_HouseSchoolTrain:       TKMHouseSchool(SrcHouse).AddUnitToQueue(TKMUnitType(Params[2]), Params[3]);
-      gic_HouseSchoolTrainChOrder:TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2], Params[3]);
-      gic_HouseSchoolTrainChLastUOrder: TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2]);
-      gic_HouseRemoveTrain:       TKMHouseSchool(SrcHouse).RemUnitFromQueue(Params[2]);
-      gic_HouseWoodcuttersCutting: TKMHouseWoodcutters(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
-      gic_HouseArmorWSDeliveryToggle:   TKMHouseArmorWorkshop(SrcHouse).ToggleResDelivery(TKMWareType(Params[2]));
+      gicHouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
+      gicHouseBarracksRally:     TKMHouseBarracks(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gicHouseTownHallEquip:     TKMHouseTownHall(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
+      gicHouseTownHallRally:     TKMHouseTownHall(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gicHouseTownHallMaxGold:   TKMHouseTownHall(SrcHouse).GoldMaxCnt := EnsureRange(Params[2], 0, High(Word));
+      gicHouseSchoolTrain:       TKMHouseSchool(SrcHouse).AddUnitToQueue(TKMUnitType(Params[2]), Params[3]);
+      gicHouseSchoolTrainChOrder:TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2], Params[3]);
+      gicHouseSchoolTrainChLastUOrder: TKMHouseSchool(SrcHouse).ChangeUnitTrainOrder(Params[2]);
+      gicHouseRemoveTrain:       TKMHouseSchool(SrcHouse).RemUnitFromQueue(Params[2]);
+      gicHouseWoodcuttersCutting: TKMHouseWoodcutters(SrcHouse).FlagPoint := KMPoint(Params[2], Params[3]);
+      gicHouseArmorWSDeliveryToggle:   TKMHouseArmorWorkshop(SrcHouse).ToggleResDelivery(TKMWareType(Params[2]));
 
-      gic_WareDistributionChange: begin
+      gicWareDistributionChange: begin
                                     P.Stats.WareDistribution[TKMWareType(Params[1]), TKMHouseType(Params[2])] := Params[3];
                                     P.Houses.UpdateResRequest
                                   end;
-      gic_WareDistributions:      begin
+      gicWareDistributions:      begin
                                     P.Stats.WareDistribution.LoadFromStr(TextParam);
                                     P.Houses.UpdateResRequest
                                   end;
 
-      gic_TempAddScout:           if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
+      gicTempAddScout:           if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
                                     //Place a warrior
-                                    P.AddUnit(ut_HorseScout, KMPoint(Params[1], Params[2]), True, 0, True);
-      gic_TempRevealMap:          if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
+                                    P.AddUnit(utHorseScout, KMPoint(Params[1], Params[2]), True, 0, True);
+      gicTempRevealMap:          if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
                                     P.FogOfWar.RevealEverything;
-      gic_TempVictory:            if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
+      gicTempVictory:            if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
                                     P.AI.Victory;
-      gic_TempDefeat:             if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
+      gicTempDefeat:             if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or not gGame.IsMultiplayer) then
                                     P.AI.Defeat;
-      gic_TempDoNothing:          ;
+      gicTempDoNothing:          ;
 
-      gic_GamePause:              ;//if fReplayState = gipRecording then fGame.fGamePlayInterface.SetPause(boolean(Params[1]));
-      gic_GameAutoSave:           if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
+      gicGamePause:              ;//if fReplayState = gipRecording then fGame.fGamePlayInterface.SetPause(boolean(Params[1]));
+      gicGameAutoSave:           if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
                                     gGame.AutoSave(DateTimeParam); //Timestamp is synchronised
-      gic_GameAutoSaveAfterPT:    if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
+      gicGameAutoSaveAfterPT:    if (fReplayState = gipRecording) and gGameApp.GameSettings.Autosave then
                                     gGame.AutoSaveAfterPT(DateTimeParam); //Timestamp is synchronised
-      gic_GameSaveReturnLobby:    if fReplayState = gipRecording then
+      gicGameSaveReturnLobby:    if fReplayState = gipRecording then
                                   begin
                                     gGameApp.PrepareReturnToLobby(DateTimeParam); //Timestamp is synchronised
                                     Exit;
                                   end;
-      gic_GameTeamChange:         begin
+      gicGameTeamChange:         begin
                                     //Currently unused, disabled to prevent potential exploitation
                                     {fGame.Networking.NetPlayers[Params[1]].Team := Params[2];
                                     fGame.UpdateMultiplayerTeams;
@@ -718,14 +718,14 @@ begin
                                     if fGame.Networking.IsHost then
                                       fGame.Networking.SendPlayerListAndRefreshPlayersSetup;}
                                   end;
-      gic_GameAlertBeacon:        ExecGameAlertBeaconCmd(aCommand);
-      gic_GameHotkeySet:          P.SelectionHotkeys[Params[1]] := Params[2];
-      gic_GameMessageLogRead:     P.MessageLog[Params[1]].IsReadGIP := True;
-      gic_GamePlayerTypeChange:   begin
+      gicGameAlertBeacon:        ExecGameAlertBeaconCmd(aCommand);
+      gicGameHotkeySet:          P.SelectionHotkeys[Params[1]] := Params[2];
+      gicGameMessageLogRead:     P.MessageLog[Params[1]].IsReadGIP := True;
+      gicGamePlayerTypeChange:   begin
                                     Assert(fReplayState <> gipRecording); //Should only occur in replays
                                     gHands[Params[1]].HandType := TKMHandType(Params[2]);
                                   end;
-      gic_GamePlayerDefeat:       begin
+      gicGamePlayerDefeat:       begin
                                     gHands.DisableGoalsForDefeatedHand(Params[1]);
                                     gHands[Params[1]].AI.Defeat(False);
                                   end
@@ -742,8 +742,8 @@ procedure TKMGameInputProcess.ExecGameAlertBeaconCmd(const aCommand: TKMGameInpu
     // Check if player, who send beacon, is muted
     IsPlayerMuted := (gGame.Networking <> nil) and gGame.Networking.IsMuted(gGame.Networking.GetNetPlayerIndex(aCommand.Params[3]));
 
-    Result := (gHands.CheckAlliance(aCommand.Params[3], gMySpectator.HandIndex) = at_Ally)
-      and (gHands[aCommand.Params[3]].ShareBeacons[gMySpectator.HandIndex])
+    Result := (gHands.CheckAlliance(aCommand.Params[3], gMySpectator.HandID) = atAlly)
+      and (gHands[aCommand.Params[3]].ShareBeacons[gMySpectator.HandID])
       and not IsPlayerMuted; // do not show beacons sended by muted players
   end;
 
@@ -777,63 +777,63 @@ end;
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup: TKMUnitGroup);
 begin
-  Assert(aCommandType in [gic_ArmyFeed, gic_ArmySplit, gic_ArmySplitSingle, gic_ArmyStorm, gic_ArmyHalt]);
+  Assert(aCommandType in [gicArmyFeed, gicArmySplit, gicArmySplitSingle, gicArmyStorm, gicArmyHalt]);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup: TKMUnitGroup; aUnit: TKMUnit);
 begin
-  Assert(aCommandType in [gic_ArmyAttackUnit]);
+  Assert(aCommandType in [gicArmyAttackUnit]);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, aUnit.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup1, aGroup2: TKMUnitGroup);
 begin
-  Assert(aCommandType in [gic_ArmyLink]);
+  Assert(aCommandType in [gicArmyLink]);
   TakeCommand(MakeCommand(aCommandType, aGroup1.UID, aGroup2.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup: TKMUnitGroup; aHouse: TKMHouse);
 begin
-  Assert(aCommandType = gic_ArmyAttackHouse);
+  Assert(aCommandType = gicArmyAttackHouse);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, aHouse.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup: TKMUnitGroup; aTurnAmount: TKMTurnDirection; aLineAmount:shortint);
 begin
-  Assert(aCommandType = gic_ArmyFormation);
+  Assert(aCommandType = gicArmyFormation);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, Byte(aTurnAmount), aLineAmount));
 end;
 
 
 procedure TKMGameInputProcess.CmdArmy(aCommandType: TKMGameInputCommandType; aGroup: TKMUnitGroup; const aLoc: TKMPoint; aDirection: TKMDirection);
 begin
-  Assert(aCommandType = gic_ArmyWalk);
+  Assert(aCommandType = gicArmyWalk);
   TakeCommand(MakeCommand(aCommandType, aGroup.UID, aLoc.X, aLoc.Y, Byte(aDirection)));
 end;
 
 
 procedure TKMGameInputProcess.CmdUnit(aCommandType: TKMGameInputCommandType; aUnit: TKMUnit);
 begin
-  Assert(aCommandType in [gic_UnitDismiss, gic_UnitDismissCancel]);
+  Assert(aCommandType in [gicUnitDismiss, gicUnitDismissCancel]);
   TakeCommand(MakeCommand(aCommandType, aUnit.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint);
 begin
-  Assert(aCommandType in [gic_BuildRemoveFieldPlan, gic_BuildRemoveHouse, gic_BuildRemoveHousePlan]);
+  Assert(aCommandType in [gicBuildRemoveFieldPlan, gicBuildRemoveHouse, gicBuildRemoveHousePlan]);
 
   if gGame.IsReplayOrSpectate then Exit;
 
   //Remove fake markup that will be visible only to gMySpectator until Server verifies it.
   //Must go before TakeCommand as it could execute command immediately (in singleplayer)
   //and the fake markup must be added first otherwise our logic in FieldsList fails
-  if (gGame.GameMode = gmMulti) and (aCommandType = gic_BuildRemoveFieldPlan) then
+  if (gGame.GameMode = gmMulti) and (aCommandType = gicBuildRemoveFieldPlan) then
     gMySpectator.Hand.RemFakeFieldPlan(aLoc);
 
   TakeCommand(MakeCommand(aCommandType, aLoc.X, aLoc.Y));
@@ -842,7 +842,7 @@ end;
 
 procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint; aFieldType: TKMFieldType);
 begin
-  Assert(aCommandType in [gic_BuildAddFieldPlan]);
+  Assert(aCommandType in [gicBuildAddFieldPlan]);
 
   if gGame.IsReplayOrSpectate then Exit;
 
@@ -858,7 +858,7 @@ end;
 
 procedure TKMGameInputProcess.CmdBuild(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint; aHouseType: TKMHouseType);
 begin
-  Assert(aCommandType = gic_BuildHousePlan);
+  Assert(aCommandType = gicBuildHousePlan);
 
   if gGame.IsReplayOrSpectate then Exit;
 
@@ -868,42 +868,42 @@ end;
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse);
 begin
-  Assert(aCommandType in [gic_HouseRepairToggle, gic_HouseClosedForWorkerTgl, gic_HBarracksAcceptRecruitsTgl]);
+  Assert(aCommandType in [gicHouseRepairToggle, gicHouseClosedForWorkerTgl, gicHBarracksAcceptRecruitsTgl]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID));
 end;
 
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aItem, aAmountChange: Integer);
 begin
-  Assert(aCommandType in [gic_HouseOrderProduct, gic_HouseSchoolTrainChOrder]);
+  Assert(aCommandType in [gicHouseOrderProduct, gicHouseSchoolTrainChOrder]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, aItem, aAmountChange));
 end;
 
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aWareType: TKMWareType);
 begin
-  Assert(aCommandType in [gic_HouseStoreAcceptFlag, gic_HouseBarracksAcceptFlag, gic_HouseMarketFrom, gic_HouseMarketTo, gic_HouseArmorWSDeliveryToggle]);
+  Assert(aCommandType in [gicHouseStoreAcceptFlag, gicHouseBarracksAcceptFlag, gicHouseMarketFrom, gicHouseMarketTo, gicHouseArmorWSDeliveryToggle]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aWareType)));
 end;
 
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aWoodcutterMode: TKMWoodcutterMode);
 begin
-  Assert(aCommandType = gic_HouseWoodcutterMode);
+  Assert(aCommandType = gicHouseWoodcutterMode);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aWoodcutterMode)));
 end;
 
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aUnitType: TKMUnitType; aCount: Integer);
 begin
-  Assert(aCommandType in [gic_HouseSchoolTrain, gic_HouseBarracksEquip, gic_HouseTownHallEquip]);
+  Assert(aCommandType in [gicHouseSchoolTrain, gicHouseBarracksEquip, gicHouseTownHallEquip]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aUnitType), aCount));
 end;
 
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aValue: Integer);
 begin
-  Assert(aCommandType in [gic_HouseRemoveTrain, gic_HouseSchoolTrainChLastUOrder, gic_HouseTownHallMaxGold]);
+  Assert(aCommandType in [gicHouseRemoveTrain, gicHouseSchoolTrainChLastUOrder, gicHouseTownHallMaxGold]);
   Assert((aHouse is TKMHouseSchool) or (aHouse is TKMHouseTownHall));
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, aValue));
 end;
@@ -911,7 +911,7 @@ end;
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint);
 begin
-  Assert((aCommandType = gic_HouseBarracksRally) or (aCommandType = gic_HouseTownHallRally) or (aCommandType = gic_HouseWoodcuttersCutting));
+  Assert((aCommandType = gicHouseBarracksRally) or (aCommandType = gicHouseTownHallRally) or (aCommandType = gicHouseWoodcuttersCutting));
   Assert((aHouse is TKMHouseBarracks) or (aHouse is TKMHouseTownHall) or (aHouse is TKMHouseWoodcutters));
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, aLoc.X, aLoc.Y));
 end;
@@ -919,70 +919,70 @@ end;
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TKMDeliveryMode);
 begin
-  Assert(aCommandType = gic_HouseDeliveryToggle);
+  Assert(aCommandType = gicHouseDeliveryToggle);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Integer(aDeliveryMode)));
 end;
 
 
 procedure TKMGameInputProcess.CmdWareDistribution(aCommandType: TKMGameInputCommandType; aWare: TKMWareType; aHouseType: TKMHouseType; aValue:integer);
 begin
-  Assert(aCommandType = gic_WareDistributionChange);
+  Assert(aCommandType = gicWareDistributionChange);
   TakeCommand(MakeCommand(aCommandType, Byte(aWare), Byte(aHouseType), aValue));
 end;
 
 
 procedure TKMGameInputProcess.CmdWareDistribution(aCommandType: TKMGameInputCommandType; const aTextParam: UnicodeString);
 begin
-  Assert(aCommandType = gic_WareDistributions);
+  Assert(aCommandType = gicWareDistributions);
   TakeCommand(MakeCommand(aCommandType, aTextParam));
 end;
 
 
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Boolean);
 begin
-  Assert(aCommandType = gic_GamePause);
+  Assert(aCommandType = gicGamePause);
   TakeCommand(MakeCommand(aCommandType, Integer(aValue)));
 end;
 
 
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime);
 begin
-  Assert(aCommandType in [gic_GameAutoSave, gic_GameAutoSaveAfterPT, gic_GameSaveReturnLobby]);
+  Assert(aCommandType in [gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby]);
   TakeCommand(MakeCommand(aCommandType, aDateTime));
 end;
 
 
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer);
 begin
-  Assert(aCommandType in [gic_GameTeamChange, gic_GameHotkeySet]);
+  Assert(aCommandType in [gicGameTeamChange, gicGameHotkeySet]);
   TakeCommand(MakeCommand(aCommandType, aParam1, aParam2));
 end;
 
 
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Integer);
 begin
-  Assert(aCommandType in [gic_GameMessageLogRead, gic_GamePlayerDefeat]);
+  Assert(aCommandType in [gicGameMessageLogRead, gicGamePlayerDefeat]);
   TakeCommand(MakeCommand(aCommandType, aValue));
 end;
 
 
-procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandIndex; aColor: Cardinal);
+procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal);
 begin
-  Assert(aCommandType = gic_GameAlertBeacon);
+  Assert(aCommandType = gicGameAlertBeacon);
   TakeCommand(MakeCommand(aCommandType, Round(aLoc.X * 10), Round(aLoc.Y * 10), aOwner, (aColor and $FFFFFF)));
 end;
 
 
 procedure TKMGameInputProcess.CmdTemp(aCommandType: TKMGameInputCommandType; const aLoc: TKMPoint);
 begin
-  Assert(aCommandType = gic_TempAddScout);
+  Assert(aCommandType = gicTempAddScout);
   TakeCommand(MakeCommand(aCommandType, aLoc.X, aLoc.Y));
 end;
 
 
 procedure TKMGameInputProcess.CmdTemp(aCommandType: TKMGameInputCommandType);
 begin
-  Assert(aCommandType in [gic_TempRevealMap, gic_TempVictory, gic_TempDefeat, gic_TempDoNothing]);
+  Assert(aCommandType in [gicTempRevealMap, gicTempVictory, gicTempDefeat, gicTempDoNothing]);
   TakeCommand(MakeCommand(aCommandType));
 end;
 
@@ -1006,7 +1006,7 @@ begin
   end;
 
   S.SaveToFile(aFileName);
-  S.Free;
+  FreeAndNil(S);
 end;
 
 
@@ -1033,7 +1033,7 @@ begin
     S.Read(fQueue[I].Rand);
   end;
 
-  S.Free;
+  FreeAndNil(S);
 end;
 
 

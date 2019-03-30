@@ -203,8 +203,8 @@ end;
 
 destructor TKMRandomMapGenerator.Destroy();
 begin
-  fRNG.Free;
-  fRes.Free;
+  FreeAndNil(fRNG);
+  FreeAndNil(fRes);
 end;
 
 
@@ -973,8 +973,8 @@ begin
           ShapeNum := ShapeNum - 1;
 			  end;
   finally
-    SearchSimilarBiome.Free;
-    FillBiome.Free;
+    FreeAndNil(SearchSimilarBiome);
+    FreeAndNil(FillBiome);
   end;
 end;
 
@@ -1134,7 +1134,7 @@ const
   end;
 
 var
-  X,Y,Loc,I,K,overflow, ALL_RES_RADIUS, cnt_FINAL, cnt_ACTUAL, cnt_PREVIOUS, cnt_REQUESTED, RESOURCE, size_Mountain, new_Size: Integer;
+  X,Y,Loc,I,K,overflow, ALL_RES_RADIUS, cntFINAL, cntACTUAL, cntPREVIOUS, cntREQUESTED, RESOURCE, sizeMountain, newSize: Integer;
   PROB_REDUCER, Fraction: Single;
   TP_S,TP_E, ResLoc: TKMPoint;
   Voronoi,CountArr: TInteger2Array;
@@ -1163,7 +1163,7 @@ begin
         CountArr[I,K] := SearchResource.Count;
       end;
   finally
-    SearchResource.Free;
+    FreeAndNil(SearchResource);
   end;
 
   with RMGSettings.Locs.Resource do
@@ -1204,45 +1204,45 @@ begin
           RESOURCE := Byte(RESOURCES[I]);
           PROB_REDUCER := RES_PROB[I];
           if (RESOURCES[I] = btIron) OR (RESOURCES[I] = btGold) then
-            //size_Mountain := Ceil((MinesCnt[I]*(3+Byte(RESOURCES[I] = btIron))+1) / (VORONOI_STEP*1.0))
-            size_Mountain := Ceil(MinesCnt[I]*(3+Byte(RESOURCES[I] = btIron))+1)
+            //sizeMountain := Ceil((MinesCnt[I]*(3+Byte(RESOURCES[I] = btIron))+1) / (VORONOI_STEP*1.0))
+            sizeMountain := Ceil(MinesCnt[I]*(3+Byte(RESOURCES[I] = btIron))+1)
           else
-            size_Mountain := 1;
-          cnt_FINAL := ResTilesAmount[I];
-          cnt_ACTUAL := 0;
-          cnt_REQUESTED := 0;
-          cnt_PREVIOUS := 0;
+            sizeMountain := 1;
+          cntFINAL := ResTilesAmount[I];
+          cntACTUAL := 0;
+          cntREQUESTED := 0;
+          cntPREVIOUS := 0;
           overflow := 0;
           // Create new "mountain" of resources
-          while (cnt_ACTUAL < cnt_FINAL) AND (overflow < 10) do
+          while (cntACTUAL < cntFINAL) AND (overflow < 10) do
           begin
             overflow := overflow + 1;
             // Try find unused shape
             if not FindBestResLoc((RESOURCE <> Byte(btCoal)), 8.0, TP_S,TP_E,Locs[Loc], CountArr, ResLoc) then
               break;
             // Check if there is enought points to create mountains with specific size
-            SetSizeOfMountain(ResLoc, size_Mountain, new_Size, CountArr, PointsArr, PointArr);
+            SetSizeOfMountain(ResLoc, sizeMountain, newSize, CountArr, PointsArr, PointArr);
             // Merge shapes from Voronoi until we reach desired size
             if (RESOURCES[I] = btIron) OR (RESOURCES[I] = btGold) then
-              cnt_REQUESTED := Round(   (cnt_FINAL - cnt_ACTUAL) * Max(  1.0, new_Size / ( Max(1.0,size_Mountain*1.0) )  )   )
+              cntREQUESTED := Round(   (cntFINAL - cntACTUAL) * Max(  1.0, newSize / ( Max(1.0,sizeMountain*1.0) )  )   )
             else
-              cnt_REQUESTED := cnt_FINAL;
+              cntREQUESTED := cntFINAL;
             ResPoints := nil;
             //SetLength(ResPoints, 0);
-            FillResource.FloodFillWithQueue(PointArr, cnt_REQUESTED, cnt_ACTUAL, RESOURCE, 1, PROB_REDUCER, ResPoints);
+            FillResource.FloodFillWithQueue(PointArr, cntREQUESTED, cntACTUAL, RESOURCE, 1, PROB_REDUCER, ResPoints);
             // Actualize shape
-            Fraction := (Min(cnt_FINAL, cnt_ACTUAL) - cnt_PREVIOUS) / Max(1,cnt_FINAL);
+            Fraction := (Min(cntFINAL, cntACTUAL) - cntPREVIOUS) / Max(1,cntFINAL);
             fRes.AddResource( Loc, RESOURCE, Round( Fraction * MinesCnt[I] ), // Owner, Resource, MinesCnt
                               Round( Fraction * ResAmount[I] ), // Quantity
                               ResPoints // Centers of Voronoi shapes
                             );
-            cnt_PREVIOUS := cnt_ACTUAL;
-            size_Mountain := new_Size + 1; // Size of requested mines + edge (= 1)
+            cntPREVIOUS := cntACTUAL;
+            sizeMountain := newSize + 1; // Size of requested mines + edge (= 1)
           end;
         end;
       end;
     finally
-      FillResource.Free;
+      FreeAndNil(FillResource);
     end;
 
     ProtectResourceArea(CountArr);
@@ -1537,7 +1537,7 @@ begin
       end;
     end;
   finally
-    FillObstacle.Free;
+    FreeAndNil(FillObstacle);
   end;
 
   // Fix ugly mountains edges (edges with 1 or 2 tiles - 1 tiles will be fixed by CA but still 2xN tiles are ugly)
@@ -1552,7 +1552,7 @@ begin
         if (VisitedArr[Y,X] = 0) AND (A[Y,X] >= Byte(btStone)) then
           ShapeFixer.QuickFlood( X,Y, A[Y,X], 1 );
   finally
-    ShapeFixer.Free;
+    FreeAndNil(ShapeFixer);
   end;
 end;
 
@@ -1622,7 +1622,7 @@ var
       try
         MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
       finally
-        MineSearch.Free;
+        FreeAndNil(MineSearch);
       end;
       for X := Low(Shape) to High(Shape) do
         if (Shape[X].Min <> MinLimit[X]) then
@@ -2229,8 +2229,8 @@ begin
           end;
       end;
   finally
-    FloodWalkSearch.Free;
-    FloodFill.Free;
+    FreeAndNil(FloodWalkSearch);
+    FreeAndNil(FloodFill);
   end;
 end;
 
@@ -2304,7 +2304,7 @@ begin
         if (PathArr[Y1,X1] = 0) AND WT[ TilesPartsArr.Terrain[Y1,X1] ] then
           FillObject.QuickFlood(X1, Y1, 0, 1, OBJ_BLOCK);
   finally
-    FillObject.Free;
+    FreeAndNil(FillObject);
   end;
 end;
 
@@ -2659,7 +2659,7 @@ begin
         end;
       end;
   finally
-    TileFloodSearch.Free;
+    FreeAndNil(TileFloodSearch);
   end;
 end;
 
@@ -2697,7 +2697,7 @@ procedure TKMRandomMapGenerator.MineFinalFixer(var TilesPartsArr: TTileParts; va
 //    try
 //      MineSearch.QuickFlood(aPosition.X,aPosition.Y,Resource);
 //    finally
-//      MineSearch.Free;
+//      FreeAndNil(MineSearch);
 //    end;
 //    for X := Low(Shape) to High(Shape) do
 //      if (Shape[X].Min <> MinLimit[X]) then
@@ -3034,7 +3034,7 @@ begin
             end;
           end;
     finally
-      SPE.Free;
+      FreeAndNil(SPE);
     end;
 
   finally
@@ -4014,7 +4014,7 @@ begin
     try
       MineSearch.QuickFlood(Position.X,Position.Y,Resource);
     finally
-      MineSearch.Free;
+      FreeAndNil(MineSearch);
     end;
     for X := Low(Shape) to High(Shape) do
       if (Shape[X].Min <> MinLimit[X]) then
@@ -4100,7 +4100,7 @@ end;
 //          Cellular automaton can change shapes so it is important to keep more points to secure that every shape will have its resources in GenerateTiles
 function TKMRandomMapGenerator.CreateResources(aLocs: TKMPointArray; var A: TKMByte2Array): TBalancedResource1Array;
 var
-  X,Y,Loc,I,K,overflow,cnt_ADD, ALL_RES_RADIUS, CENTER_RES, cnt_FINAL, cnt_ACTUAL, RESOURCE: Integer;
+  X,Y,Loc,I,K,overflow,cntADD, ALL_RES_RADIUS, CENTER_RES, cntFINAL, cntACTUAL, RESOURCE: Integer;
   PROB_REDUCER: Single;
   Voronoi,Count: TInteger2Array;
   TP_S,TP_E, Pom: TKMPoint;
@@ -4136,7 +4136,7 @@ begin
         Count[I,K] := SearchResource.Count;
       end;
   finally
-    SearchResource.Free;
+    FreeAndNil(SearchResource);
   end;
   with RMGSettings.Locs.Resource do
   begin
@@ -4180,14 +4180,14 @@ begin
           // Initialization of parameters for shape generator
             RESOURCE := Byte(Resources[I]);
             PROB_REDUCER := RES_PROB[I];
-            cnt_FINAL := ResTilesAmount[I];
-            cnt_ACTUAL := 0;
-            cnt_ADD := 0;
+            cntFINAL := ResTilesAmount[I];
+            cntACTUAL := 0;
+            cntADD := 0;
             TP_S := KMPoint(  Max(Points[I].X - SPEC_RES_RADIUS[I], 1), Max(Points[I].Y - SPEC_RES_RADIUS[I], 1)  );
             TP_E := KMPoint(  Min(Points[I].X + SPEC_RES_RADIUS[I], High(PointsArr[0]) - 1), Min(Points[I].Y + SPEC_RES_RADIUS[I], High(PointsArr) - 1)  );
           // Create new "mountain" of resources
             overflow := 0;
-            while (cnt_ACTUAL < cnt_FINAL) AND (overflow < 10) do
+            while (cntACTUAL < cntFINAL) AND (overflow < 10) do
             begin
               overflow := overflow + 1;
             // Find unused shape
@@ -4196,16 +4196,16 @@ begin
               begin
                 SetLength(Output, Length(Output)+1); // Just a few interation so SetLength is fine
               // Merge shapes from Voronoi until we reach desired size
-                FillResource.FloodFillWithQueue(Points[I].X, Points[I].Y, cnt_FINAL, cnt_ACTUAL, RESOURCE, 1, PROB_REDUCER, Output[ High(Output) ].Points);
-                Output[ High(Output) ].Quantity := Round( (Min(cnt_FINAL, cnt_ACTUAL) - cnt_ADD) / Max(1,cnt_FINAL) * ResAmount[I]);
+                FillResource.FloodFillWithQueue(Points[I].X, Points[I].Y, cntFINAL, cntACTUAL, RESOURCE, 1, PROB_REDUCER, Output[ High(Output) ].Points);
+                Output[ High(Output) ].Quantity := Round( (Min(cntFINAL, cntACTUAL) - cntADD) / Max(1,cntFINAL) * ResAmount[I]);
                 Output[ High(Output) ].Resource := RESOURCE;
-                cnt_ADD := cnt_ACTUAL;
+                cntADD := cntACTUAL;
               end;
             end;
           end;
       end;
     finally
-      FillResource.Free;
+      FreeAndNil(FillResource);
     end;
   end;
   if RMGSettings.Obstacle.Active then
@@ -4630,7 +4630,7 @@ function TKMRandomMapGenerator.CreateResources(RMGSettings: TKMRMGSettings; var 
        NextElement: PtrConnection;
      end;
 var
-  cnt_FINAL, cnt_ACTUAL, RESOURCE: Integer;
+  cntFINAL, cntACTUAL, RESOURCE: Integer;
   PROB_REDUCER: Single;
   StartQueue, EndQueue: PtrConnection;
   S,Count: TInteger2Array;
@@ -4679,10 +4679,10 @@ var
   begin
     MakeNewQueue();
     InsertInQueue(X, Y, Probability);
-    while not IsQueueEmpty AND (cnt_actual < cnt_FINAL) do
+    while not IsQueueEmpty AND (cnt_actual < cntFINAL) do
     begin
       RemoveFromQueue(X, Y, Probability);
-      if (Count[Y,X] <> 0) AND (cnt_actual < cnt_FINAL) AND (fRNG.Random() < (probability * P[Y,X])) then
+      if (Count[Y,X] <> 0) AND (cnt_actual < cntFINAL) AND (fRNG.Random() < (probability * P[Y,X])) then
       begin
         cnt_actual := cnt_actual + Count[Y,X];
         Count[Y,X] := 0;
@@ -4700,15 +4700,15 @@ var
     while not IsQueueEmpty do
       RemoveFromQueue(X, Y, Probability);
   end;
-  procedure InacessibleTextures(const RES, COUNT, base_POINTS, variance_POINTS, cnt_FIN: Integer; const prob_REDUC, BASE_PROBABILITY: Single);
+  procedure InacessibleTextures(const RES, COUNT, basePOINTS, variance_POINTS, cntFIN: Integer; const probREDUC, BASE_PROBABILITY: Single);
   var
     i,j,len: Integer;
     TP_S,TP_E: TKMPoint;
     CenterPoints, Point: TKMPointArray;
   begin
     RESOURCE := RES;
-    PROB_REDUCER := prob_REDUC;
-    cnt_FINAL := cnt_FIN;
+    PROB_REDUCER := probREDUC;
+    cntFINAL := cntFIN;
     TP_S.X := 1;
     TP_S.Y := 1;
     TP_E.X := High(PointsArr[0])-1;
@@ -4722,10 +4722,10 @@ var
       len := 9 - fRNG.RandomI(9);
       TP_E.X := Min(High(PointsArr[0]), CenterPoints[I].X + len);
       TP_E.Y := Min(High(PointsArr), CenterPoints[I].Y + 10 - len);
-      Point := RNDPointsInGrid(base_POINTS+fRNG.RandomI(variance_POINTS), 0, TP_S, TP_E);
+      Point := RNDPointsInGrid(basePOINTS+fRNG.RandomI(variance_POINTS), 0, TP_S, TP_E);
       for j := Low(Point) to High(Point) do
       begin
-        cnt_ACTUAL := 0;
+        cntACTUAL := 0;
         FloodFillWithQueue(Point[j].X, Point[j].Y, 1);
       end;
     end;
@@ -4808,8 +4808,8 @@ begin
         begin
           Quantity := ResAmount[I];// << (3*Byte(Resources[I]=btStone));    //BALANCE IT !!!!!!!!!!!!!!
           Tiles := Quantity >> 1;
-          cnt_FINAL := Tiles;
-          cnt_ACTUAL := 0;
+          cntFINAL := Tiles;
+          cntACTUAL := 0;
           RESOURCE := Byte(Resources[I]);
           PROB_REDUCER := RES_PROB[I];
           TP_Start.X := Max(Points[I].X - SPEC_RES_RADIUS[I], 1);
@@ -4817,7 +4817,7 @@ begin
           TP_End.X := Min(Points[I].X + SPEC_RES_RADIUS[I], High(PointsArr[0]) - 1);
           TP_End.Y := Min(Points[I].Y + SPEC_RES_RADIUS[I], High(PointsArr) - 1);
           overflow := 0;
-          while (cnt_ACTUAL < cnt_FINAL) AND (overflow < 10) do
+          while (cntACTUAL < cntFINAL) AND (overflow < 10) do
           begin
             overflow := overflow + 1;
             if Count[Points[I].Y,Points[I].X] <> 0 then
@@ -4826,7 +4826,7 @@ begin
               SetLength(Result, Length(Result)+1); // Just a few interation so SetLength is fine
               idx := High(Result);
               Result[idx].Point := PointsArr[Points[I].Y,Points[I].X];
-              Result[idx].Quantity := Round(cnt_FINAL / Max(1,Min(cnt_FINAL, cnt_ACTUAL)) * Quantity);
+              Result[idx].Quantity := Round(cntFINAL / Max(1,Min(cntFINAL, cntACTUAL)) * Quantity);
               val := Result[idx].Quantity;
               Result[idx].Resource := RESOURCE;
             end;

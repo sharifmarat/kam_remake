@@ -5,14 +5,14 @@ unit KM_Supervisor;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack, KM_ArmyManagement, KM_NavMeshInfluences,
+  KM_Points, KM_UnitGroup, KM_NavMeshDefences, KM_ArmyAttack, KM_ArmyManagement, KM_NavMeshInfluences,
   KM_ResHouses, KM_Sort;
 
 type
   TKMCompFunc = function (const aElem1, aElem2): Integer;
   TKMDefEval = record
     Val: Word;
-    Owner: TKMHandIndex;
+    Owner: TKMHandID;
     DefPos: PDefencePosition;
   end;
   TKMDefEvalArr = array of TKMDefEval;
@@ -23,7 +23,7 @@ type
   TKMMineEvalArr = array of TKMMineEval;
 
   TKMHandByteArr = array[0..MAX_HANDS-1] of Byte;
-  TKMHandIdx2Arr = array of TKMHandIndexArray;
+  TKMHandIdx2Arr = array of TKMHandIDArray;
 
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
   TKMSupervisor = class
@@ -44,7 +44,7 @@ type
     property PL2Alli: TKMHandByteArr read fPL2Alli;
     property Alli2PL: TKMHandIdx2Arr read fAlli2PL;
 
-    function FindClosestEnemies(var aPlayers: TKMHandIndexArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
+    function FindClosestEnemies(var aPlayers: TKMHandIDArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
 
     procedure AfterMissionInit();
     procedure UpdateState(aTick: Cardinal);
@@ -154,14 +154,14 @@ begin
     UpdateDefPos(Modulo - DEFENCES);
   if not gGame.IsPeaceTime
     AND (Modulo >= ATTACKS) AND (Modulo - ATTACKS < Length(fAlli2PL))
-    AND (  (gGame.MissionMode = mm_Tactic) OR (aTick > (gGame.GameOptions.Peacetime+3) * 10 * 60)  ) then // In normal mode wait 3 minutes after peace
+    AND (  (gGame.MissionMode = mmTactic) OR (aTick > (gGame.GameOptions.Peacetime+3) * 10 * 60)  ) then // In normal mode wait 3 minutes after peace
     UpdateAttack(Modulo - ATTACKS);
 end;
 
 
 procedure TKMSupervisor.UpdateAlliances();
 var
-  PL1,PL2: TKMHandIndex;
+  PL1,PL2: TKMHandID;
   AlliCnt, PLCnt: Byte;
 begin
   FillChar(fPL2Alli, SizeOf(fPL2Alli), #255); // TKMHandIndex = SmallInt => Byte(255) = -1 = PLAYER_NONE
@@ -172,7 +172,7 @@ begin
     begin
       PLCnt := 0;
       for PL2 := 0 to gHands.Count - 1 do
-        if gHands[PL2].Enabled AND ((PL1 = PL2) OR (gHands[PL1].Alliances[PL2] = at_Ally)) then
+        if gHands[PL2].Enabled AND ((PL1 = PL2) OR (gHands[PL1].Alliances[PL2] = atAlly)) then
         begin
           fPL2Alli[PL2] := AlliCnt;
           fAlli2PL[AlliCnt,PLCnt] := PL2;
@@ -187,7 +187,7 @@ end;
 
 procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
   // Get new AI players
-  function GetNewAIPlayers(var aNewAIPLs: TKMHandIndexArray): Boolean;
+  function GetNewAIPlayers(var aNewAIPLs: TKMHandIDArray): Boolean;
   var
     I, Cnt: Integer;
   begin
@@ -204,12 +204,12 @@ procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
     Result := Cnt > 1; // We dont just need 1 new AI but also ally which will help him
   end;
   // Try find support
-  procedure FindAssistance(aAssistByInfluence: Boolean; aPoint: TKMPoint; aOwner: TKMHandIndex; var aNewAIPLs: TKMHandIndexArray);
+  procedure FindAssistance(aAssistByInfluence: Boolean; aPoint: TKMPoint; aOwner: TKMHandID; var aNewAIPLs: TKMHandIDArray);
   type
     TKMAssistInfo = record
       Assistance: Boolean;
       Influence: Byte;
-      Player: TKMHandIndex;
+      Player: TKMHandID;
     end;
     TKMAssistInfoArr = array of TKMAssistInfo;
     procedure SortByInfluence(var aAssistArr: TKMAssistInfoArr);
@@ -264,7 +264,7 @@ procedure TKMSupervisor.UpdateDefSupport(aTeamIdx: Byte);
   end;
 var
   I,K: Integer;
-  NewAIPLs: TKMHandIndexArray;
+  NewAIPLs: TKMHandIDArray;
 begin
   if (Length(fAlli2PL) > 1) AND GetNewAIPlayers(NewAIPLs) then
     for I := 0 to Length(NewAIPLs) - 1 do
@@ -281,7 +281,7 @@ type
     DefPos: array of PDefencePosition;
   end;
 
-  procedure DivideDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+  procedure DivideDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
   const
     DISTANCE_PRICE = 1;
     FRONT_LINE_PRICE = 40;
@@ -369,7 +369,7 @@ begin
     for IdxPL := 0 to Length(DefPosReq) - 1 do
       with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
       begin
-        Troops := Byte(HandType = hndComputer) * (Stats.GetUnitQty(ut_Recruit) + Stats.GetArmyCount); // Consider also recruits so after peace time the AI already have prepared defences
+        Troops := Byte(HandType = hndComputer) * (Stats.GetUnitQty(utRecruit) + Stats.GetArmyCount); // Consider also recruits so after peace time the AI already have prepared defences
         DefPosReq[IdxPL] := Round(Troops / 9) + RESERVE_DEF_POS; // Each group have 9 troops so we need max (Troops / 9) positions + reserves
       end;
     SetLength(TeamDefPos,0);
@@ -379,11 +379,11 @@ begin
 end;
 
 
-function TKMSupervisor.FindClosestEnemies(var aPlayers: TKMHandIndexArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
+function TKMSupervisor.FindClosestEnemies(var aPlayers: TKMHandIDArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
   function GetInitPoints(): TKMPointArray;
   var
     IdxPL: Integer;
-    Player: TKMHandIndex;
+    Player: TKMHandID;
     Group: TKMUnitGroup;
     CenterPoints: TKMPointArray;
   begin
@@ -426,7 +426,7 @@ end;
 // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
 procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
 
-  function GetBestComparison(aPlayer: TKMHandIndex; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray): Integer;
+  function GetBestComparison(aPlayer: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray): Integer;
   const
     DISTANCE_COEF = 0.4; // Decrease chance to attack enemy in distance
     MIN_ADVANTAGE = 0.15; // 15% advantage for attacker
@@ -462,7 +462,7 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           aWorstCmp := Comparison;
       end;
     end;
-    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mm_Tactic) then
+    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mmTactic) then
       Result := -1;
   end;
 const
@@ -517,12 +517,12 @@ end;
 
 
 procedure TKMSupervisor.DivideResources();
-  function FindAndDivideMines(var aPlayers: TKMHandIndexArray; var aMines: TKMPointArray): TKMWordArray;
+  function FindAndDivideMines(var aPlayers: TKMHandIDArray; var aMines: TKMPointArray): TKMWordArray;
   const
     MAX_INFLUENCE = 256;
   var
     I, IdxPL, IdxPL2, Cnt, PLCnt, BestPrice: Integer;
-    PL: TKMHandIndex;
+    PL: TKMHandID;
     PLMines,PLPossibleMines: TKMWordArray;
     Mines: TKMMineEvalArr;
   begin

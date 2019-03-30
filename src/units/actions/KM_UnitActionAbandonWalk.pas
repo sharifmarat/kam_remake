@@ -61,7 +61,7 @@ end;
 
 function TKMUnitActionAbandonWalk.ActName: TKMUnitActionName;
 begin
-  Result := uan_AbandonWalk;
+  Result := uanAbandonWalk;
 end;
 
 
@@ -76,7 +76,7 @@ var
   DX, DY: ShortInt;
   WalkX, WalkY, Distance: Single;
 begin
-  Result := ar_ActContinues;
+  Result := arActContinues;
 
   //Execute the route in series of moves
   Distance := gRes.Units[fUnit.UnitType].Speed;
@@ -92,7 +92,7 @@ begin
       fVertexOccupied := KMPOINT_ZERO;
     end;
     StepDone := True;
-    Result := ar_ActDone;
+    Result := arActDone;
     exit;
   end;
 

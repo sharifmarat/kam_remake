@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  KromUtils;
+  SysUtils, KromUtils;
 
 
 function BinRect(aX, aY, aWidth, aHeight: Word): TBinRect;
@@ -99,7 +99,7 @@ begin
 
     BinManager.GetAllItems(aOut);
   finally
-    BinManager.Free;
+    FreeAndNil(BinManager);
   end;
 end;
 
@@ -118,8 +118,8 @@ end;
 
 destructor TBin.Destroy;
 begin
-  if fChild1 <> nil then fChild1.Free;
-  if fChild2 <> nil then fChild2.Free;
+  if fChild1 <> nil then FreeAndNil(fChild1);
+  if fChild2 <> nil then FreeAndNil(fChild2);
 
   inherited;
 end;
@@ -235,7 +235,7 @@ begin
   for I := 0 to fBins.Count - 1 do
     TBin(fBins[I]).Free;
 
-  fBins.Free;
+  FreeAndNil(fBins);
   inherited;
 end;
 

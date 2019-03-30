@@ -13,21 +13,21 @@ type
   //Terrain finder optimized for CityPlanner demands of finding resources and houses
   TKMTerrainFinderCity = class(TKMTerrainFinderCommon)
   protected
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     function CanWalkHere(const X,Y: Word): Boolean; override;
     function CanUse(const X,Y: Word): Boolean; override;
   public
     FindType: TFindNearest;
     HouseType: TKMHouseType;
-    constructor Create(aOwner: TKMHandIndex);
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    constructor Create(aOwner: TKMHandID);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Load(LoadStream: TKMemoryStream); override;
   end;
 
   TKMCityPlanner = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fListGold: TKMPointList; //List of possible goldmine locations
     fFinder: TKMTerrainFinderCity;
 
@@ -39,7 +39,7 @@ type
     function NextToTrees(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
     function NextToGrass(aHouse: TKMHouseType; aSeed: array of TKMHouseType; out aLoc: TKMPoint): Boolean;
   public
-    constructor Create(aPlayer: TKMHandIndex);
+    constructor Create(aPlayer: TKMHandID);
     destructor Destroy; override;
 
     procedure AfterMissionInit;
@@ -48,7 +48,7 @@ type
     procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aType: TFindNearest; aPass: TKMTerrainPassabilitySet; aMaxCount: Word; aLocs: TKMPointTagList); overload;
     procedure FindNearest(const aStart: TKMPointArray; aRadius: Byte; aHouse: TKMHouseType; aMaxCount: Word; aLocs: TKMPointTagList); overload;
     function FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
-    procedure OwnerUpdate(aPlayer: TKMHandIndex);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
   end;
@@ -62,7 +62,7 @@ const
 
 implementation
 uses
-  Math,
+  SysUtils, Math,
   KM_Hand, KM_AIFields, KM_AIInfluences,
   KM_Terrain, KM_HandsCollection,
   KM_Resource, KM_ResUnits, KM_NavMesh,
@@ -70,7 +70,7 @@ uses
 
 
 { TKMCityPlanner }
-constructor TKMCityPlanner.Create(aPlayer: TKMHandIndex);
+constructor TKMCityPlanner.Create(aPlayer: TKMHandID);
 begin
   inherited Create;
   fOwner := aPlayer;
@@ -82,8 +82,8 @@ end;
 
 destructor TKMCityPlanner.Destroy;
 begin
-  fListGold.Free;
-  fFinder.Free;
+  FreeAndNil(fListGold);
+  FreeAndNil(fFinder);
 
   inherited;
 end;
@@ -113,9 +113,9 @@ begin
     htWeaponSmithy:    Result := NextToHouse(aHouse, [htIronSmithy, htCoalMine, htBarracks], [], aLoc);
     htWeaponWorkshop:  Result := NextToHouse(aHouse, [htSawmill, htBarracks], [], aLoc);
 
-    htCoalMine:      Result := NextToOre(aHouse, wt_Coal, aLoc);
-    htGoldMine:      Result := NextToOre(aHouse, wt_GoldOre, aLoc);
-    htIronMine:      Result := NextToOre(aHouse, wt_IronOre, aLoc);
+    htCoalMine:      Result := NextToOre(aHouse, wtCoal, aLoc);
+    htGoldMine:      Result := NextToOre(aHouse, wtGoldOre, aLoc);
+    htIronMine:      Result := NextToOre(aHouse, wtIronOre, aLoc);
 
     htQuary:         Result := NextToStone(aHouse, aLoc);
     htWoodcutters:   Result := NextToTrees(aHouse, [htStore, htWoodcutters, htSawmill], aLoc);
@@ -123,10 +123,10 @@ begin
     htWineyard:      Result := NextToGrass(aHouse, [htAny], aLoc);
     htFisherHut:     {Result := NextToWater(aHouse, aLoc)};
 
-    //ht_Marketplace:;
-    //ht_SiegeWorkshop:;
-    //ht_TownHall:;
-    //ht_WatchTower:;
+    //htMarketplace:;
+    //htSiegeWorkshop:;
+    //htTownHall:;
+    //htWatchTower:;
   end;
 
   //If we failed to find something, try to place the house anywhere (better than ignoring it)
@@ -151,7 +151,7 @@ begin
   begin
     H := aHouseType[I];
     HQty := gHands[fOwner].Stats.GetHouseQty(H);
-    //ht_Any picks three random houses for greater variety
+    //htAny picks three random houses for greater variety
     for K := 0 to 1 + Byte(H = htAny) * 2 do
     begin
       House := gHands[fOwner].Houses.FindHouse(H, 0, 0, KaMRandom(HQty, 'TKMCityPlanner.GetSeeds') + 1);
@@ -159,7 +159,7 @@ begin
       begin
         SetLength(Result, Count + 1);
         //Position is as good as Entrance for city planning
-        Result[Count] := KMPointBelow(House.GetPosition);
+        Result[Count] := KMPointBelow(House.Position);
         Inc(Count);
       end;
     end;
@@ -268,7 +268,7 @@ begin
       end;
     end;
   finally
-    Locs.Free;
+    FreeAndNil(Locs);
   end;
 end;
 
@@ -319,12 +319,12 @@ begin
       end;
     end;
   finally
-    Locs.Free;
+    FreeAndNil(Locs);
   end;
 
   //Make sure stonemason actually can reach some stone (avoid build-destroy loop)
   if Result then
-    if not gTerrain.FindStone(aLoc, gRes.Units[ut_StoneCutter].MiningRange, KMPOINT_ZERO, True, tmp) then
+    if not gTerrain.FindStone(aLoc, gRes.Units[utStoneCutter].MiningRange, KMPOINT_ZERO, True, tmp) then
       Result := False;
 end;
 
@@ -363,7 +363,7 @@ begin
 
   //Look for nearest Ore
   case aOreType of
-    wt_Coal:    begin
+    wtCoal:    begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else
@@ -376,7 +376,7 @@ begin
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
-    wt_IronOre: begin
+    wtIronOre: begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else
@@ -389,7 +389,7 @@ begin
                     if aNearAnyHouse or not NextToOre(aHouse, aOreType, P, True) then
                       Exit;
                 end;
-    wt_GoldOre: begin
+    wtGoldOre: begin
                   if aNearAnyHouse then
                     SeedLocs := GetSeeds([htAny])
                   else
@@ -483,7 +483,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
   fFinder.OwnerUpdate(fOwner);
@@ -507,7 +507,7 @@ end;
 
 
 { TKMTerrainFinderCity }
-constructor TKMTerrainFinderCity.Create(aOwner: TKMHandIndex);
+constructor TKMTerrainFinderCity.Create(aOwner: TKMHandID);
 begin
   inherited Create;
 
@@ -515,7 +515,7 @@ begin
 end;
 
 
-procedure TKMTerrainFinderCity.OwnerUpdate(aPlayer: TKMHandIndex);
+procedure TKMTerrainFinderCity.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
 end;
@@ -562,7 +562,7 @@ end;
 
 function TKMTerrainFinderCity.CanWalkHere(const X,Y: Word): Boolean;
 var
-  TerOwner: TKMHandIndex;
+  TerOwner: TKMHandID;
 begin
   //Check for specific passabilities
   case FindType of

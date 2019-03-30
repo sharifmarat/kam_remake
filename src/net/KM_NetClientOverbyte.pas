@@ -51,7 +51,7 @@ end;
 
 destructor TKMNetClientOverbyte.Destroy;
 begin
-  if fSocket <> nil then fSocket.Free;
+  if fSocket <> nil then FreeAndNil(fSocket);
   Inherited;
 end;
 

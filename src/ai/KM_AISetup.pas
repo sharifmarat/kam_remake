@@ -27,7 +27,7 @@ type
     StartPosition: TKMPoint; //Defines roughly where to defend and build around
     TownDefence: Integer; //-1 means not used or default
     WorkerCount: Byte;
-    AutoAttackRange: Byte; // Auto attack range for close combat warriors (used in KM_Units_Warrior)
+    AutoAttackRange: Byte; // Auto attack range for close combat warriors (used in KM_UnitWarrior)
 
     constructor Create;
     function GetEquipRate(aUnit: TKMUnitType): Word;

@@ -563,7 +563,7 @@ begin
     Exit;
 
   if (gHands <> nil) and (RGPlayer.ItemIndex < gHands.Count) then
-    gMySpectator.HandIndex := RGPlayer.ItemIndex;
+    gMySpectator.HandID := RGPlayer.ItemIndex;
 end;
 
 
@@ -605,9 +605,9 @@ procedure TFormMain.Button_StopClick(Sender: TObject);
 begin
   if gGameApp.Game <> nil then
     if gGameApp.Game.IsMapEditor then
-      gGameApp.StopGame(gr_MapEdEnd)
+      gGameApp.StopGame(grMapEdEnd)
     else
-      gGameApp.StopGame(gr_Cancel);
+      gGameApp.StopGame(grCancel);
 end;
 
 
@@ -778,45 +778,45 @@ begin
   if AllowDebugChange then
   begin
     if chkLogDelivery.Checked then
-      Include(gLog.MessageTypes, lmt_Delivery)
+      Include(gLog.MessageTypes, lmtDelivery)
     else
-      Exclude(gLog.MessageTypes, lmt_Delivery);
+      Exclude(gLog.MessageTypes, lmtDelivery);
 
     if chkLogCommands.Checked then
-      Include(gLog.MessageTypes, lmt_Commands)
+      Include(gLog.MessageTypes, lmtCommands)
     else
-      Exclude(gLog.MessageTypes, lmt_Commands);
+      Exclude(gLog.MessageTypes, lmtCommands);
 
     if chkLogRngChecks.Checked then
-      Include(gLog.MessageTypes, lmt_RandomChecks)
+      Include(gLog.MessageTypes, lmtRandomChecks)
     else
-      Exclude(gLog.MessageTypes, lmt_RandomChecks);
+      Exclude(gLog.MessageTypes, lmtRandomChecks);
 
     if chkLogNetConnection.Checked then
-      Include(gLog.MessageTypes, lmt_NetConnection)
+      Include(gLog.MessageTypes, lmtNetConnection)
     else
-      Exclude(gLog.MessageTypes, lmt_NetConnection);
+      Exclude(gLog.MessageTypes, lmtNetConnection);
 
     case RGLogNetPackets.ItemIndex of
       0:    begin
-              Exclude(gLog.MessageTypes, lmt_NetPacketOther);
-              Exclude(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Exclude(gLog.MessageTypes, lmtNetPacketOther);
+              Exclude(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       1:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Exclude(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Exclude(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       2:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Include(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Include(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       3:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Include(gLog.MessageTypes, lmt_NetPacketCommand);
-              Include(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Include(gLog.MessageTypes, lmtNetPacketCommand);
+              Include(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       else  raise Exception.Create('Unexpected RGLogNetPackets.ItemIndex = ' + IntToStr(RGLogNetPackets.ItemIndex));
     end;
@@ -891,7 +891,7 @@ begin
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally
-            MS.Free;
+            FreeAndNil(MS);
           end;
         end;
 
@@ -906,7 +906,7 @@ begin
                      + E.Message, mtError, [mbClose], 0);
       end;
     finally
-      SL.Free;
+      FreeAndNil(SL);
     end;
   end;
 end;

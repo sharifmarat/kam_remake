@@ -1,10 +1,10 @@
-unit KM_UnitGroups;
+unit KM_UnitGroup;
 {$I KaM_Remake.inc}
 interface
 uses
   Classes, Math, SysUtils, Types,
   KM_Defaults, KM_CommonClasses, KM_CommonTypes, KM_Points, KM_Houses, KM_Units,
-  KM_Units_Warrior;
+  KM_UnitWarrior;
 
 type
   TKMUnitGroup = class;
@@ -41,7 +41,7 @@ type
     fPointerCount: Cardinal;
     fTicker: Cardinal;
     fTargetFollowTicker: Cardinal;
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fMembers: TList;
     fOffenders: TList;
     fSelected: TKMUnitWarrior; //Unit selected by player in GUI. Should not be saved or affect game logic for MP consistency.
@@ -109,7 +109,7 @@ type
     OnGroupDied: TKMUnitGroupEvent;
 
     constructor Create(aID: Cardinal; aCreator: TKMUnitWarrior); overload;
-    constructor Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
+    constructor Create(aID: Cardinal; aOwner: TKMHandID; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
     constructor Create(LoadStream: TKMemoryStream); overload;
     procedure SyncLoad;
     procedure Save(SaveStream: TKMemoryStream);
@@ -143,7 +143,7 @@ type
     property Members[aIndex: Integer]: TKMUnitWarrior read GetMember;
     function GetAliveMember: TKMUnitWarrior;
     property FlagBearer: TKMUnitWarrior read GetFlagBearer;
-    property Owner: TKMHandIndex read fOwner;
+    property Owner: TKMHandID read fOwner;
     property Position: TKMPoint read GetPosition write SetPosition;
     property Direction: TKMDirection read GetDirection write SetDirection;
     property UnitsPerRow: Word read fUnitsPerRow write SetUnitsPerRow;
@@ -162,8 +162,8 @@ type
     property OrderTargetGroup: TKMUnitGroup read GetOrderTargetGroup;
     property OrderTargetHouse: TKMHouse read GetOrderTargetHouse write SetOrderTargetHouse;
 
-    procedure SetOwner(aOwner: TKMHandIndex);
-    procedure OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+    procedure SetOwner(aOwner: TKMHandID);
+    procedure OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
 
     procedure OrderAttackHouse(aHouse: TKMHouse; aClearOffenders: Boolean);
     procedure OrderAttackUnit(aUnit: TKMUnit; aClearOffenders: Boolean);
@@ -176,7 +176,7 @@ type
     function OrderSplitUnit(aUnit: TKMUnit; aClearOffenders: Boolean): TKMUnitGroup;
     procedure OrderSplitLinkTo(aGroup: TKMUnitGroup; aCount: Word; aClearOffenders: Boolean);
     procedure OrderStorm(aClearOffenders: Boolean);
-    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+    procedure OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dirNA);
 
     procedure OrderRepeat;
     procedure CopyOrderFrom(aGroup: TKMUnitGroup);
@@ -186,6 +186,8 @@ type
     procedure UpdateState;
     procedure PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
     procedure Paint;
+
+    class function GetDefaultCondition: Integer;
   end;
 
 
@@ -201,7 +203,7 @@ type
     destructor Destroy; override;
 
     function AddGroup(aWarrior: TKMUnitWarrior): TKMUnitGroup; overload;
-    function AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
+    function AddGroup(aOwner: TKMHandID; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup; overload;
     procedure AddGroupToList(aGroup: TKMUnitGroup);
     procedure DeleteGroupFromList(aGroup: TKMUnitGroup);
     procedure RemGroup(aGroup: TKMUnitGroup);
@@ -252,7 +254,7 @@ begin
   fOffenders := TList.Create;
 
   //So when they click Halt for the first time it knows where to place them
-  fOrderLoc := KMPointDir(aCreator.GetPosition.X, aCreator.GetPosition.Y, aCreator.Direction);
+  fOrderLoc := KMPointDir(aCreator.CurrPosition.X, aCreator.CurrPosition.Y, aCreator.Direction);
 
   AddMember(aCreator);
   UnitsPerRow := 1;
@@ -260,7 +262,7 @@ end;
 
 
 //Create a Group from script (creates all the warriors as well)
-constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandIndex; aUnitType: TKMUnitType;
+constructor TKMUnitGroup.Create(aID: Cardinal; aOwner: TKMHandID; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word);
 var
   Warrior: TKMUnitWarrior;
@@ -293,7 +295,7 @@ begin
       Warrior.Direction := aDir;
       Warrior.AnimStep  := UnitStillFrames[aDir];
       AddMember(Warrior);
-      Warrior.Condition := UNIT_MAX_CONDITION div 2; //Half-fed
+      Warrior.Condition := GetDefaultCondition;
       fMapEdCount := aCount;
     end;
   end
@@ -390,11 +392,11 @@ destructor TKMUnitGroup.Destroy;
 begin
   //We don't release unit pointers from fMembers, because the group is only destroyed when fMembers.Count = 0
   //or when the game is canceled (then it doesn't matter)
-  fMembers.Free;
+  FreeAndNil(fMembers);
 
   //We need to release offenders pointers
   ClearOffenders;
-  fOffenders.Free;
+  FreeAndNil(fOffenders);
 
   ClearOrderTarget; //Free pointers
 
@@ -523,7 +525,7 @@ begin
   for I := 0 to Count - 1 do
   if (Members[I] <> aUnit) and not Members[I].IsDeadOrDying then
   begin
-    Dist := KMLengthSqr(aUnit.GetPosition, Members[I].GetPosition);
+    Dist := KMLengthSqr(aUnit.CurrPosition, Members[I].CurrPosition);
     if Dist < Best then
     begin
       Best := Dist;
@@ -543,7 +545,7 @@ begin
   for I := 0 to Count - 1 do
   if not Members[I].IsDeadOrDying then
   begin
-    Dist := KMLengthSqr(aLoc, Members[I].GetPosition);
+    Dist := KMLengthSqr(aLoc, Members[I].CurrPosition);
     if Dist < Best then
     begin
       Best := Dist;
@@ -575,7 +577,7 @@ end;
 function TKMUnitGroup.GetPosition: TKMPoint;
 begin
   if not IsDead then
-    Result := Members[0].GetPosition
+    Result := Members[0].CurrPosition
   else
     Result := KMPOINT_ZERO;
 end;
@@ -585,7 +587,7 @@ procedure TKMUnitGroup.SetPosition(const aValue: TKMPoint);
 begin
   Assert(gGame.IsMapEditor);
   Members[0].SetPosition(aValue);
-  fOrderLoc.Loc := Members[0].GetPosition; //Don't assume we can move to aValue
+  fOrderLoc.Loc := Members[0].CurrPosition; //Don't assume we can move to aValue
 end;
 
 
@@ -689,7 +691,7 @@ end;
 
 function TKMUnitGroup.IsRanged: Boolean;
 begin
-  Result := (fGroupType = gt_Ranged);
+  Result := (fGroupType = gtRanged);
 end;
 
 
@@ -796,7 +798,7 @@ begin
         //If there are no offenders in range then CheckForEnemy will pick a new target
         //Archers stay still and attack enemies only within their range without walking to/from them
         for K := 0 to fOffenders.Count - 1 do
-          if Members[I].WithinFightRange(TKMUnitWarrior(fOffenders[K]).GetPosition) then
+          if Members[I].WithinFightRange(TKMUnitWarrior(fOffenders[K]).CurrPosition) then
           begin
             Members[I].OrderFight(TKMUnitWarrior(fOffenders[K]));
             FightWasOrdered := True;
@@ -844,16 +846,16 @@ begin
                         begin
                           //If the unit is idle make them face the right direction
                           if Members[I].IsIdle
-                          and (fOrderLoc.Dir <> dir_NA) and (Members[I].Direction <> fOrderLoc.Dir) then
+                          and (fOrderLoc.Dir <> dirNA) and (Members[I].Direction <> fOrderLoc.Dir) then
                           begin
                             Members[I].Direction := fOrderLoc.Dir;
-                            Members[I].SetActionStay(50, ua_Walk); //Make sure the animation still frame is updated
+                            Members[I].SetActionStay(50, uaWalk); //Make sure the animation still frame is updated
                           end;
                         end
                         else
                           //Guide Idle and pushed units back to their places
                           if Members[I].IsIdle
-                          or ((Members[I].GetUnitAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].GetUnitAction).WasPushed) then
+                          or ((Members[I].Action is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(Members[I].Action).WasPushed) then
                           begin
                             P := GetMemberLoc(I);
                             Members[I].OrderWalk(P.Loc, P.Exact);
@@ -873,7 +875,7 @@ begin
 
                         if not OrderExecuted then
                           //If our leader is out of range (enemy has walked away) we need to walk closer
-                          if (KMLength(fOrderLoc.Loc, OrderTargetUnit.GetPosition) > Members[0].GetFightMaxRange) then
+                          if (KMLength(fOrderLoc.Loc, OrderTargetUnit.CurrPosition) > Members[0].GetFightMaxRange) then
                             OrderAttackUnit(OrderTargetUnit, False)
                           else
                             //Our leader is in range so each member should get into position
@@ -881,15 +883,15 @@ begin
                             if Members[I].IsIdle then
                             begin
                               P := GetMemberLoc(I);
-                              if KMSamePoint(Members[I].GetPosition, P.Loc)
-                              or (KMLength(Members[I].GetPosition, OrderTargetUnit.GetPosition) <= Members[I].GetFightMaxRange) then
+                              if KMSamePoint(Members[I].CurrPosition, P.Loc)
+                              or (KMLength(Members[I].CurrPosition, OrderTargetUnit.CurrPosition) <= Members[I].GetFightMaxRange) then
                               begin
                                 //We are at the right spot, so face towards enemy
-                                Members[I].Direction := KMGetDirection(Members[I].GetPosition, OrderTargetUnit.GetPosition);
+                                Members[I].Direction := KMGetDirection(Members[I].CurrPosition, OrderTargetUnit.CurrPosition);
                                 Members[I].FaceDir := Members[I].Direction;
                                 if not Members[I].CheckForEnemy then
                                   //If we are too close to shoot, make sure the animation still frame is still updated
-                                  Members[I].SetActionStay(10, ua_Walk);
+                                  Members[I].SetActionStay(10, uaWalk);
                               end
                               else
                               begin
@@ -912,7 +914,7 @@ begin
                             Inc(fTargetFollowTicker);
                             //It's wasteful to run pathfinding to correct route every step of the way, so if the target unit
                             //is within 4 tiles, update every step. Within 8, every 2 steps, 12, every 3 steps, etc.
-                            if fTargetFollowTicker mod Max((Round(KMLengthDiag(GetPosition, OrderTargetUnit.GetPosition)) div 4), 1) = 0 then
+                            if fTargetFollowTicker mod Max((Round(KMLengthDiag(GetPosition, OrderTargetUnit.CurrPosition)) div 4), 1) = 0 then
                               OrderAttackUnit(OrderTargetUnit, False);
                           end;
 
@@ -929,7 +931,7 @@ begin
                         if (OrderTargetUnit = nil) and (OrderTargetGroup <> nil) then
                         begin
                           //Old enemy has died, change target to his comrades
-                          U := OrderTargetGroup.GetNearestMember(Members[0].GetPosition);
+                          U := OrderTargetGroup.GetNearestMember(Members[0].CurrPosition);
                           if U <> nil then // U could be nil in some rare cases (probably some rare bug with unit kills from scripts), just ignore that situation for now
                             OrderAttackUnit(U, False)
                           else
@@ -943,7 +945,7 @@ begin
   if OrderExecuted then
   begin
     for I := 0 to Count - 1 do
-    if (fOrderLoc.Dir <> dir_NA) and Members[I].IsIdle then //Don't change direction whilst f.e. walking
+    if (fOrderLoc.Dir <> dirNA) and Members[I].IsIdle then //Don't change direction whilst f.e. walking
       Members[I].Direction := fOrderLoc.Dir;
     OrderNone;
   end;
@@ -1010,8 +1012,8 @@ begin
   Result := False;
 
   for I := 0 to Count - 1 do
-    if (Members[I].UnitTask <> nil)
-    and (Members[I].UnitTask.TaskName = utn_AttackHouse) then
+    if (Members[I].Task <> nil)
+    and (Members[I].Task.TaskType = uttAttackHouse) then
     begin
       Result := True;
       Exit;
@@ -1050,7 +1052,7 @@ begin
                                  gTerrain.MapX, gTerrain.MapY,
                                  P.Exact);
     U := Members[I];
-    Result := U.IsIdle and KMSamePoint(U.GetPosition, P.Loc) and (U.Direction = Dir);
+    Result := U.IsIdle and KMSamePoint(U.CurrPosition, P.Loc) and (U.Direction = Dir);
     if not Result then Exit;
   end;
 end;
@@ -1092,16 +1094,16 @@ begin
 end;
 
 
-procedure TKMUnitGroup.SetOwner(aOwner: TKMHandIndex);
+procedure TKMUnitGroup.SetOwner(aOwner: TKMHandID);
 var I: Integer;
 begin
   fOwner := aOwner;
   for I := 0 to fMembers.Count - 1 do
-    TKMUnitWarrior(fMembers[I]).SetOwner(aOwner);
+    TKMUnitWarrior(fMembers[I]).Owner := aOwner;
 end;
 
 
-procedure TKMUnitGroup.OwnerUpdate(aOwner: TKMHandIndex; aMoveToNewOwner: Boolean = False);
+procedure TKMUnitGroup.OwnerUpdate(aOwner: TKMHandID; aMoveToNewOwner: Boolean = False);
 var I: Integer;
 begin
   if aMoveToNewOwner and (fOwner <> aOwner) then
@@ -1124,12 +1126,12 @@ begin
   Assert(aHouse <> nil);
 
   //Can attack only enemy houses
-  if gHands[Owner].Alliances[aHouse.Owner] <> at_Enemy then Exit;
+  if gHands[Owner].Alliances[aHouse.Owner] <> atEnemy then Exit;
 
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   fOrder := goAttackHouse;
-  fOrderLoc := KMPointDir(0, 0, dir_NA);
+  fOrderLoc := KMPointDir(0, 0, dirNA);
   OrderTargetHouse := aHouse;
 
   for I := 0 to Count - 1 do
@@ -1152,7 +1154,7 @@ begin
   if aUnit.IsDeadOrDying then Exit;
 
   //Can attack only enemy units
-  if gHands[Owner].Alliances[aUnit.Owner] <> at_Enemy then Exit;
+  if gHands[Owner].Alliances[aUnit.Owner] <> atEnemy then Exit;
 
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;
@@ -1164,10 +1166,10 @@ begin
     OrderTargetUnit := aUnit;
 
     //First choose fOrderLoc, which is where the leader will stand to shoot
-    if (KMLength(Members[0].GetPosition, OrderTargetUnit.GetPosition) > Members[0].GetFightMaxRange) then
+    if (KMLength(Members[0].CurrPosition, OrderTargetUnit.CurrPosition) > Members[0].GetFightMaxRange) then
     begin
       NodeList := TKMPointList.Create;
-      if gGame.Pathfinding.Route_Make(Members[0].GetPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
+      if gGame.Pathfinding.Route_Make(Members[0].CurrPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
       begin
         fOrderLoc.Loc := NodeList[NodeList.Count-1];
         fOrderLoc.Dir := KMGetDirection(NodeList[NodeList.Count-1], OrderTargetUnit.NextPosition);
@@ -1177,15 +1179,15 @@ begin
       begin
         OrderTargetUnit := nil; //Target cannot be reached, so abort completely
         fOrder := goNone;
-        NodeList.Free;
+        FreeAndNil(NodeList);
         Exit;
       end;
-      NodeList.Free;
+      FreeAndNil(NodeList);
     end
     else
     begin
-      fOrderLoc.Loc := Members[0].GetPosition; //Leader is already within range
-      fOrderLoc.Dir := KMGetDirection(Members[0].GetPosition, OrderTargetUnit.NextPosition);
+      fOrderLoc.Loc := Members[0].CurrPosition; //Leader is already within range
+      fOrderLoc.Dir := KMGetDirection(Members[0].CurrPosition, OrderTargetUnit.NextPosition);
     end;
 
     //Next assign positions for each member (including leader)
@@ -1193,9 +1195,9 @@ begin
     begin
       //Check target in range, and if not - chase it / back up from it
       P := GetMemberLoc(I);
-      if not KMSamePoint(Members[I].GetPosition, P.Loc)
-      and((KMLength(Members[I].NextPosition, OrderTargetUnit.GetPosition) > Members[I].GetFightMaxRange)
-       or (KMLength(Members[I].NextPosition, OrderTargetUnit.GetPosition) < Members[I].GetFightMinRange)) then
+      if not KMSamePoint(Members[I].CurrPosition, P.Loc)
+      and((KMLength(Members[I].NextPosition, OrderTargetUnit.CurrPosition) > Members[I].GetFightMaxRange)
+       or (KMLength(Members[I].NextPosition, OrderTargetUnit.CurrPosition) < Members[I].GetFightMinRange)) then
       begin
         //Too far/close. Walk to the enemy in formation
         Members[I].OrderWalk(P.Loc, P.Exact);
@@ -1211,11 +1213,11 @@ begin
         begin
           //We are within range, so face towards the enemy
           //Don't fight this specific enemy, giving archers exact targets is too abusable in MP. Choose random target in that direction.
-          Members[I].Direction := KMGetDirection(Members[I].GetPosition, aUnit.GetPosition);
+          Members[I].Direction := KMGetDirection(Members[I].CurrPosition, aUnit.CurrPosition);
           Members[I].FaceDir := Members[I].Direction;
           if not Members[I].CheckForEnemy then
             //If we are too close to shoot, make sure the animation still frame is still updated
-            Members[I].SetActionStay(10, ua_Walk);
+            Members[I].SetActionStay(10, uaWalk);
         end;
     end;
   end
@@ -1227,7 +1229,7 @@ begin
 
     //Revert Order to proper one (we disguise Walk)
     fOrder := goAttackUnit;
-    fOrderLoc := KMPointDir(aUnit.NextPosition, dir_NA); //Remember where unit stand
+    fOrderLoc := KMPointDir(aUnit.NextPosition, dirNA); //Remember where unit stand
     OrderTargetUnit := aUnit;
   end;
 
@@ -1254,7 +1256,7 @@ begin
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If it is yet unset - use first members direction
-  if fOrderLoc.Dir = dir_NA then
+  if fOrderLoc.Dir = dirNA then
     fOrderLoc.Dir := Members[0].Direction;
 
   case aTurnAmount of
@@ -1398,7 +1400,7 @@ begin
   if IsDead then Exit;
   if Count < 2 then Exit;
   //If leader is storming don't allow splitting the group (makes it too easy to withdraw)
-  if Members[0].GetUnitAction is TKMUnitActionStormAttack then Exit;
+  if Members[0].Action is TKMUnitActionStormAttack then Exit;
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   //If there are different unit types in the group, split should just split them first
@@ -1461,7 +1463,7 @@ begin
   NewGroup.fTimeSinceHungryReminder := fTimeSinceHungryReminder;
 
   //Commander OrderLoc must always be valid, but because this guy wasn't a commander it might not be
-  NewGroup.fOrderLoc := KMPointDir(NewLeader.GetPosition, fOrderLoc.Dir);
+  NewGroup.fOrderLoc := KMPointDir(NewLeader.CurrPosition, fOrderLoc.Dir);
 
   //Tell both groups to reposition
   OrderRepeat;
@@ -1498,7 +1500,7 @@ begin
   NewGroup.OnGroupDied := OnGroupDied;
   NewGroup.fSelected := NewLeader;
   NewGroup.fTimeSinceHungryReminder := fTimeSinceHungryReminder;
-  NewGroup.fOrderLoc := KMPointDir(NewLeader.GetPosition, fOrderLoc.Dir);
+  NewGroup.fOrderLoc := KMPointDir(NewLeader.CurrPosition, fOrderLoc.Dir);
 
   //Set units per row
   UnitsPerRow := fUnitsPerRow;
@@ -1559,7 +1561,7 @@ begin
   if aClearOffenders and CanTakeOrders then ClearOffenders;
 
   fOrder := goStorm;
-  fOrderLoc := KMPointDir(0, 0, dir_NA);
+  fOrderLoc := KMPointDir(0, 0, dirNA);
   ClearOrderTarget;
 
   //Each next row delayed by few ticks to avoid crowding
@@ -1568,7 +1570,7 @@ begin
 end;
 
 
-procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dir_NA);
+procedure TKMUnitGroup.OrderWalk(const aLoc: TKMPoint; aClearOffenders: Boolean; aOrderWalkKind: TKMOrderWalkKind; aDir: TKMDirection = dirNA);
 var
   I: Integer;
   NewDir: TKMDirection;
@@ -1581,8 +1583,8 @@ begin
   if aClearOffenders and CanTakeOrders then
     ClearOffenders;
 
-  if aDir = dir_NA then
-    if fOrderLoc.Dir = dir_NA then
+  if aDir = dirNA then
+    if fOrderLoc.Dir = dirNA then
       NewDir := Members[0].Direction
     else
       NewDir := fOrderLoc.Dir
@@ -1684,14 +1686,14 @@ end;
 
 function TKMUnitGroup.IsFlagRenderBeforeUnit: Boolean;
 begin
-  Result := FlagBearer.Direction in [dir_SE, dir_S, dir_SW, dir_W];
+  Result := FlagBearer.Direction in [dirSE, dirS, dirSW, dirW];
 end;
 
 
 function TKMUnitGroup.GetFlagPositionF: TKMPointF;
 begin
-  Result.X := FlagBearer.PositionF.X + UNIT_OFF_X + FlagBearer.GetSlide(ax_X);
-  Result.Y := FlagBearer.PositionF.Y + UNIT_OFF_Y + FlagBearer.GetSlide(ax_Y);
+  Result.X := FlagBearer.PositionF.X + UNIT_OFF_X + FlagBearer.GetSlide(axX);
+  Result.Y := FlagBearer.PositionF.Y + UNIT_OFF_Y + FlagBearer.GetSlide(axY);
   //Flag needs to be rendered above or below unit depending on direction (see AddUnitFlag)
   if IsFlagRenderBeforeUnit then
     Result.Y := Result.Y - FLAG_X_OFFSET
@@ -1732,23 +1734,23 @@ begin
   //(tossing flag around is quite complicated and looks unnatural in KaM)
   for I := 1 to fMembers.Count - 1 do
   begin
-    Agents.Add(Members[I].GetPosition);
+    Agents.Add(Members[I].CurrPosition);
     Tasks.Add(GetMemberLoc(I).Loc);
   end;
 
-  //hu_Individual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
-  NewOrder := HungarianMatchPoints(Tasks, Agents, hu_Individual);
+  //huIndividual as we'd prefer 20 members to take 1 step than 1 member to take 10 steps (minimize individual work rather than total work)
+  NewOrder := HungarianMatchPoints(Tasks, Agents, huIndividual);
   NewMembers := TList.Create;
   NewMembers.Add(Members[0]);
 
   for I := 1 to fMembers.Count - 1 do
     NewMembers.Add(fMembers[NewOrder[I - 1] + 1]);
 
-  fMembers.Free;
+  FreeAndNil(fMembers);
   fMembers := NewMembers;
 
-  Agents.Free;
-  Tasks.Free;
+  FreeAndNil(Agents);
+  FreeAndNil(Tasks);
   if DO_PERF_LOGGING then gGame.PerfLog.LeaveSection(psHungarian);
 end;
 
@@ -1878,13 +1880,19 @@ begin
     if not DoesFit then Continue; //Don't render units that are off the map in the map editor
     UnitPos.X := NewPos.X + UNIT_OFF_X; //MapEd units don't have sliding
     UnitPos.Y := NewPos.Y + UNIT_OFF_Y;
-    gRenderPool.AddUnit(FlagBearer.UnitType, 0, ua_Walk, fOrderLoc.Dir, UnitStillFrames[fOrderLoc.Dir], UnitPos.X, UnitPos.Y, aHandColor, True, aDoImmediateRender, aDoHighlight, aHighlightColor);
+    gRenderPool.AddUnit(FlagBearer.UnitType, 0, uaWalk, fOrderLoc.Dir, UnitStillFrames[fOrderLoc.Dir], UnitPos.X, UnitPos.Y, aHandColor, True, aDoImmediateRender, aDoHighlight, aHighlightColor);
   end;
 
   // We need to render Flag after MapEd virtual members
-  gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.GetUnitAction.ActionType,
+  gRenderPool.AddUnitFlag(FlagBearer.UnitType, FlagBearer.Action.ActionType,
     FlagBearer.Direction, FlagStep, FlagPositionF.X, FlagPositionF.Y, aFlagColor, aDoImmediateRender);
 
+end;
+
+
+class function TKMUnitGroup.GetDefaultCondition: Integer;
+begin
+  Result := UNIT_MAX_CONDITION div 2; //Half-fed
 end;
 
 
@@ -1899,7 +1907,7 @@ end;
 
 destructor TKMUnitGroups.Destroy;
 begin
-  fGroups.Free;
+  FreeAndNil(fGroups);
 
   inherited;
 end;
@@ -1924,7 +1932,7 @@ begin
 end;
 
 
-function TKMUnitGroups.AddGroup(aOwner: TKMHandIndex; aUnitType: TKMUnitType;
+function TKMUnitGroups.AddGroup(aOwner: TKMHandID; aUnitType: TKMUnitType;
   PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word): TKMUnitGroup;
 begin
   Result := nil;
@@ -1995,7 +2003,7 @@ begin
 
   case gHands[aUnit.Owner].HandType of
     hndHuman:    begin
-                   LinkUnit := aUnit.FindLinkUnit(aUnit.GetPosition);
+                   LinkUnit := aUnit.FindLinkUnit(aUnit.CurrPosition);
                    if LinkUnit <> nil then
                    begin
                      //Link to other group
@@ -2075,7 +2083,7 @@ begin
         else
         begin
           UW := Groups[I].Members[K];
-          if (KMLengthSqr(UW.GetPosition, aPoint) <= aSqrRadius) then
+          if (KMLengthSqr(UW.CurrPosition, aPoint) <= aSqrRadius) then
           begin
             if (Idx >= Length(Result)) then
               SetLength(Result, Idx + 12);
@@ -2109,7 +2117,7 @@ begin
         else
         begin
           U := Groups[I].Members[K];
-          Dist := KMLengthSqr(U.GetPosition, aPoint);
+          Dist := KMLengthSqr(U.CurrPosition, aPoint);
           if (Dist <= MinDist) then
           begin
             MinDist := Dist;

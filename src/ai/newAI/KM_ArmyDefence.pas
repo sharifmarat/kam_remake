@@ -3,7 +3,7 @@ unit KM_ArmyDefence;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroups, KM_NavMeshDefences, KM_ArmyAttack, KM_AIDefensePos;
+  KM_Points, KM_UnitGroup, KM_NavMeshDefences, KM_ArmyAttack, KM_AIDefensePos;
 
 
 type
@@ -44,7 +44,7 @@ type
 
   TKMArmyDefence = class
   private
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fCityUnderAttack: Boolean;
     fFirstLineCnt: Word;
     fPositions: TKMList;
@@ -57,7 +57,7 @@ type
   public
     TroopFormations: array [TKMGroupType] of TKMFormation; //Defines how defending troops will be formatted. 0 means leave unchanged.
 
-    constructor Create(aOwner: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
+    constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -68,7 +68,7 @@ type
     property FirstLineCnt: Word read fFirstLineCnt;
     property CityUnderAttack: Boolean read fCityUnderAttack;
 
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
+    procedure OwnerUpdate(aOwner: TKMHandID);
     procedure UpdateDefences(aDefCnt: Word; aPNewDef: array of PDefencePosition);
     procedure UpdateFixedDefences();
     function DefenceStatus(): Single;
@@ -93,7 +93,7 @@ const
 
 implementation
 uses
-  Math,
+  SysUtils, Math,
   KM_Game, KM_HandsCollection, KM_Hand, KM_RenderAux,
   KM_AIFields, KM_NavMesh, KM_NavMeshGenerator, KM_CommonUtils;
 
@@ -163,7 +163,7 @@ end;
 
 function TKMDefencePosition.GetGroupType(): TKMGroupType;
 begin
-  Result := gt_Melee;
+  Result := gtMelee;
   if (Group <> nil) then
     Result := Group.GroupType;
 end;
@@ -198,7 +198,7 @@ end;
 
 
 { TKMArmyDefence }
-constructor TKMArmyDefence.Create(aOwner: TKMHandIndex; aAttack: TKMArmyAttack; aHostileGroups: TList);
+constructor TKMArmyDefence.Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
 var
   GT: TKMGroupType;
 begin
@@ -219,7 +219,7 @@ end;
 
 destructor TKMArmyDefence.Destroy;
 begin
-  fPositions.Free;
+  FreeAndNil(fPositions);
 
   inherited;
 end;
@@ -263,7 +263,7 @@ begin
 end;
 
 
-procedure TKMArmyDefence.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMArmyDefence.OwnerUpdate(aOwner: TKMHandID);
 begin
   fOwner := aOwner;
 end;
@@ -563,10 +563,10 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
     begin
       Company := fAttack.Company[I];
       if (KMDistanceSqr(aLoc, Company.ScanPosition) < SQR_MAX_DISTANCE)
-        OR ((Company.CompanyMode = cm_Defence) AND (KMDistanceSqr(aLoc, Company.TargetPoint) < SQR_MAX_DISTANCE)) then
+        OR ((Company.CompanyMode = cmDefence) AND (KMDistanceSqr(aLoc, Company.TargetPoint) < SQR_MAX_DISTANCE)) then
       begin
         // Actualize target point
-        if (Company.CompanyMode = cm_Defence) then
+        if (Company.CompanyMode = cmDefence) then
           Company.TargetPoint := aLoc;
         if aRestockCompany AND not RestockCompany(Company) then
         begin
@@ -590,7 +590,7 @@ begin
     UGA := FindGroupsAroundLoc(MAX_GROUPS_PER_COMPANY, MIN_SOLDIERS * Byte(not aIgnoreFirstLine), aTargetPoint, aIgnoreFirstLine);
     if (Length(UGA) > 0) then
     begin
-      fAttack.CreateCompany(aTargetPoint, UGA, cm_Defence);
+      fAttack.CreateCompany(aTargetPoint, UGA, cmDefence);
       Result := True;
     end;
   end;
@@ -647,7 +647,7 @@ begin
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         if (gAIFields.Influences.EnemyGroupPresence[ fOwner, Idx, GT ] > 0) then
         begin
-          UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, at_Enemy);
+          UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, atEnemy);
           if (Length(UGA) > 0) then
             AddTargetPoint(Loc, Cnt, TargetPoints);
           break;
@@ -710,7 +710,7 @@ begin
   if not OVERLAY_DEFENCES then
     Exit;
 
-  if (fOwner <> gMySpectator.HandIndex) then // Show just 1 player (it prevents notification to be mess)
+  if (fOwner <> gMySpectator.HandID) then // Show just 1 player (it prevents notification to be mess)
     Exit;
 
   // Draw defensive positions as a circles
@@ -748,7 +748,7 @@ begin
       // Draw hostile units around defensive lines
       if (Threat > 0) then
       begin
-        UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, at_Enemy);
+        UGA := gHands.GetGroupsInRadius(Loc, SQR_FIRST_LINE_RADIUS, fOwner, atEnemy);
         for K := 0 to Length(UGA) - 1 do
         begin
           Pos := UGA[K].Position;

@@ -114,7 +114,7 @@ const
 
 implementation
 uses
-  KM_ResKeys;
+  SysUtils, KM_ResKeys;
 
 
 { TKMUserInterface }
@@ -131,7 +131,7 @@ end;
 
 destructor TKMUserInterfaceCommon.Destroy;
 begin
-  fMyControls.Free;
+  FreeAndNil(fMyControls);
   inherited;
 end;
 

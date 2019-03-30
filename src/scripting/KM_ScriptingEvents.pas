@@ -5,7 +5,7 @@ interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime, uPSDebugger,
   KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
 
 
 type
@@ -47,15 +47,15 @@ type
     procedure AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: AnsiString);
     procedure LinkEvents;
 
-    procedure ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcFieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandIndex; aX, aY: Word);
+    procedure ProcBeacon(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcFieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandID; aX, aY: Word);
     procedure ProcHouseBuilt(aHouse: TKMHouse);
     procedure ProcHousePlanDigged(aHouse: Integer);
-    procedure ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
-    procedure ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
+    procedure ProcHousePlanPlaced(aPlayer: TKMHandID; aX, aY: Word; aType: TKMHouseType);
+    procedure ProcHousePlanRemoved(aPlayer: TKMHandID; aX, aY: Word; aType: TKMHouseType);
     procedure ProcHouseDamaged(aHouse: TKMHouse; aAttacker: TKMUnit);
-    procedure ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandIndex);
+    procedure ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandID);
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
@@ -63,27 +63,27 @@ type
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
     procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
     procedure ProcMissionStart;
-    procedure ProcPlanRoadDigged(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanRoadPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanRoadRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanFieldPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanFieldRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanWinefieldDigged(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanWinefieldPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlanWinefieldRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
-    procedure ProcPlayerDefeated(aPlayer: TKMHandIndex);
-    procedure ProcPlayerVictory(aPlayer: TKMHandIndex);
-    procedure ProcRoadBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+    procedure ProcPlanRoadDigged(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanRoadPlaced(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanRoadRemoved(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanFieldPlaced(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanFieldRemoved(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanWinefieldDigged(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanWinefieldPlaced(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlanWinefieldRemoved(aPlayer: TKMHandID; aX, aY: Word);
+    procedure ProcPlayerDefeated(aPlayer: TKMHandID);
+    procedure ProcPlayerVictory(aPlayer: TKMHandID);
+    procedure ProcRoadBuilt(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcTick;
-    procedure ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandIndex; aX, aY: Word);
+    procedure ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandID; aX, aY: Word);
     procedure ProcUnitAttacked(aUnit, aAttacker: TKMUnit);
-    procedure ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandIndex);
+    procedure ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandID);
     procedure ProcUnitTrained(aUnit: TKMUnit);
     procedure ProcUnitWounded(aUnit, aAttacker: TKMUnit);
     procedure ProcWareProduced(aHouse: TKMHouse; aType: TKMWareType; aCount: Word);
     procedure ProcWarriorEquipped(aUnit: TKMUnit; aGroup: TKMUnitGroup);
     procedure ProcWarriorWalked(aUnit: TKMUnit; aToX, aToY: Integer);
-    procedure ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+    procedure ProcWinefieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -97,7 +97,7 @@ var
 implementation
 uses
   uPSUtils,
-  TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
+  TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos,
   KM_UnitsCollection, KM_PathFindingRoad;
@@ -120,7 +120,7 @@ type
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (htNone)
 end;
 
 
@@ -188,7 +188,7 @@ begin
       fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].Name);
       if (I > 0) //It's okay to not have default event handler
         and not MethodAssigned(fEventHandlers[ET][I].Handler) then
-        fOnScriptError(se_PreprocessorError,
+        fOnScriptError(sePreprocessorError,
                        Format('Declared custom handler ''%s'' for event ''%s'' not found',
                               [fEventHandlers[ET][I].Name, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
     end;
@@ -225,7 +225,7 @@ begin
          GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType)));
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
     if UpperCase(fEventHandlers[aEventType][I].Name) = UpperCase(aEventHandlerName) then
-      fOnScriptError(se_PreprocessorError,
+      fOnScriptError(sePreprocessorError,
                      Format('Duplicate event handler declaration ''%s'' for event ''%s''',
                      [aEventHandlerName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType))]));
 
@@ -323,7 +323,7 @@ begin
             DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
           end;
         end;
-        fOnScriptError(se_Exception, ErrorStr, DetailedErrorStr);
+        fOnScriptError(seException, ErrorStr, DetailedErrorStr);
       end;
   end;
 end;
@@ -331,7 +331,7 @@ end;
 
 //* Version: 6570
 //* Occurs when a player places a beacon on the map.
-procedure TKMScriptEvents.ProcBeacon(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcBeacon(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtBeacon) then
     CallEventHandlers(evtBeacon, [aPlayer, aX, aY]);
@@ -340,7 +340,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when player built a field.
-procedure TKMScriptEvents.ProcFieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcFieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtFieldBuilt) then
     CallEventHandlers(evtFieldBuilt, [aPlayer, aX, aY]);
@@ -416,7 +416,7 @@ end;
 //* Otherwise it was destroyed by an enemy.
 //* Called just before the house is destroyed so HouseID is usable only during this event, and the area occupied by the house is still unusable.
 //* aDestroyerIndex: Index of player who destroyed it
-procedure TKMScriptEvents.ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandIndex);
+procedure TKMScriptEvents.ProcHouseDestroyed(aHouse: TKMHouse; aDestroyerIndex: TKMHandID);
 begin
   if MethodAssigned(evtHouseDestroyed) then
   begin
@@ -430,7 +430,7 @@ end;
 //* Occurs after a house is destroyed and has been completely removed from the game,
 //* meaning the area it previously occupied can be used.
 //* If you need more information about the house use the OnHouseDestroyed event.
-procedure TKMScriptEvents.ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcHouseAfterDestroyed(aHouseType: TKMHouseType; aOwner: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtHouseAfterDestroyed) then
     CallEventHandlers(evtHouseAfterDestroyed, [HouseTypeToIndex[aHouseType] - 1, aOwner, aX, aY]);
@@ -448,7 +448,7 @@ end;
 
 //* Version: 5871
 //* Occurs when player has placed a house plan.
-procedure TKMScriptEvents.ProcHousePlanPlaced(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
+procedure TKMScriptEvents.ProcHousePlanPlaced(aPlayer: TKMHandID; aX, aY: Word; aType: TKMHouseType);
 begin
   if MethodAssigned(evtHousePlanPlaced) then
     CallEventHandlers(evtHousePlanPlaced, [aPlayer, aX + gRes.Houses[aType].EntranceOffsetX, aY, HouseTypeToIndex[aType] - 1]);
@@ -457,7 +457,7 @@ end;
 
 //* Version: 6298
 //* Occurs when player has removed a house plan.
-procedure TKMScriptEvents.ProcHousePlanRemoved(aPlayer: TKMHandIndex; aX, aY: Word; aType: TKMHouseType);
+procedure TKMScriptEvents.ProcHousePlanRemoved(aPlayer: TKMHandID; aX, aY: Word; aType: TKMHouseType);
 begin
   if MethodAssigned(evtHousePlanRemoved) then
     CallEventHandlers(evtHousePlanRemoved, [aPlayer, aX + gRes.Houses[aType].EntranceOffsetX, aY, HouseTypeToIndex[aType] - 1]);
@@ -543,7 +543,7 @@ end;
 //* Called just before the unit is killed so UnitID is usable only during this event,
 //* and the tile occupied by the unit is still taken.
 //* aKillerOwner: Index of player who killed it
-procedure TKMScriptEvents.ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandIndex);
+procedure TKMScriptEvents.ProcUnitDied(aUnit: TKMUnit; aKillerOwner: TKMHandID);
 begin
   if MethodAssigned(evtUnitDied) then
   begin
@@ -557,7 +557,7 @@ end;
 //* Occurs after a unit has died and has been completely removed from the game, meaning the tile it previously occupied can be used.
 //* If you need more information about the unit use the OnUnitDied event.
 //* Note: Because units have a death animation there is a delay of several ticks between OnUnitDied and OnUnitAfterDied.
-procedure TKMScriptEvents.ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcUnitAfterDied(aUnitType: TKMUnitType; aOwner: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtUnitAfterDied) then
     CallEventHandlers(evtUnitAfterDied, [UnitTypeToIndex[aUnitType], aOwner, aX, aY]);
@@ -632,7 +632,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when road plan is digged.
-procedure TKMScriptEvents.ProcPlanRoadDigged(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanRoadDigged(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanRoadDigged) then
     CallEventHandlers(evtPlanRoadDigged, [aPlayer, aX, aY]);
@@ -641,7 +641,7 @@ end;
 
 //* Version: 5964
 //* Occurs when player has placed a road plan.
-procedure TKMScriptEvents.ProcPlanRoadPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanRoadPlaced(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanRoadPlaced) then
     CallEventHandlers(evtPlanRoadPlaced, [aPlayer, aX, aY]);
@@ -650,7 +650,7 @@ end;
 
 //* Version: 6301
 //* Occurs when player has removed a road plan.
-procedure TKMScriptEvents.ProcPlanRoadRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanRoadRemoved(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanRoadRemoved) then
     CallEventHandlers(evtPlanRoadRemoved, [aPlayer, aX, aY]);
@@ -659,7 +659,7 @@ end;
 
 //* Version: 5964
 //* Occurs when player has placed a field plan.
-procedure TKMScriptEvents.ProcPlanFieldPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanFieldPlaced(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanFieldPlaced) then
     CallEventHandlers(evtPlanFieldPlaced, [aPlayer, aX, aY]);
@@ -668,7 +668,7 @@ end;
 
 //* Version: 6301
 //* Occurs when player has removed a field plan.
-procedure TKMScriptEvents.ProcPlanFieldRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanFieldRemoved(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanFieldRemoved) then
     CallEventHandlers(evtPlanFieldRemoved, [aPlayer, aX, aY]);
@@ -677,7 +677,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when winefield is digged
-procedure TKMScriptEvents.ProcPlanWinefieldDigged(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanWinefieldDigged(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanWinefieldDigged) then
     CallEventHandlers(evtPlanWinefieldDigged, [aPlayer, aX, aY]);
@@ -686,7 +686,7 @@ end;
 
 //* Version: 5964
 //* Occurs when player has placed a wine field plan.
-procedure TKMScriptEvents.ProcPlanWinefieldPlaced(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanWinefieldPlaced(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanWinefieldPlaced) then
     CallEventHandlers(evtPlanWinefieldPlaced, [aPlayer, aX, aY]);
@@ -695,7 +695,7 @@ end;
 
 //* Version: 6301
 //* Occurs when player has removed a wine field plan.
-procedure TKMScriptEvents.ProcPlanWinefieldRemoved(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcPlanWinefieldRemoved(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtPlanWinefieldRemoved) then
     CallEventHandlers(evtPlanWinefieldRemoved, [aPlayer, aX, aY]);
@@ -705,7 +705,7 @@ end;
 //* Version: 5057
 //* Occurs when certain player has been defeated.
 //* Defeat conditions are checked separately by Player AI.
-procedure TKMScriptEvents.ProcPlayerDefeated(aPlayer: TKMHandIndex);
+procedure TKMScriptEvents.ProcPlayerDefeated(aPlayer: TKMHandID);
 begin
   if MethodAssigned(evtPlayerDefeated) then
     CallEventHandlers(evtPlayerDefeated, [aPlayer]);
@@ -715,7 +715,7 @@ end;
 //* Version: 5057
 //* Occurs when certain player is declared victorious.
 //* Victory conditions are checked separately by Player AI.
-procedure TKMScriptEvents.ProcPlayerVictory(aPlayer: TKMHandIndex);
+procedure TKMScriptEvents.ProcPlayerVictory(aPlayer: TKMHandID);
 begin
   if MethodAssigned(evtPlayerVictory) then
     CallEventHandlers(evtPlayerVictory, [aPlayer]);
@@ -724,7 +724,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when player built a road.
-procedure TKMScriptEvents.ProcRoadBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcRoadBuilt(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtRoadBuilt) then
     CallEventHandlers(evtRoadBuilt, [aPlayer, aX, aY]);
@@ -733,7 +733,7 @@ end;
 
 //* Version: 7000+
 //* Occurs when player built a winefield.
-procedure TKMScriptEvents.ProcWinefieldBuilt(aPlayer: TKMHandIndex; aX, aY: Word);
+procedure TKMScriptEvents.ProcWinefieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
 begin
   if MethodAssigned(evtWinefieldBuilt) then
     CallEventHandlers(evtWinefieldBuilt, [aPlayer, aX, aY]);
@@ -746,7 +746,7 @@ procedure TKMScriptEvents.ProcWareProduced(aHouse: TKMHouse; aType: TKMWareType;
 begin
   if MethodAssigned(evtWareProduced) then
   begin
-    if (aType <> wt_None) then
+    if (aType <> wtNone) then
       CallEventHandlers(evtWareProduced, [aHouse.UID, WareTypeToIndex[aType], aCount]);
   end;
 end;
@@ -771,7 +771,7 @@ end;
 
 procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
 begin
-  fOnScriptError(se_Log, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
+  fOnScriptError(seLog, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
 end;
 
 
@@ -783,7 +783,7 @@ begin
   Values := '';
   for I := Low(aValues) to High(aValues) do
     Values := Values + String(IntToStr(aValues[I])) + IfThen(I <> High(aValues), ', ');
-  fOnScriptError(se_InvalidParameter, 'Invalid parameter(s) passed to ' + aFuncName + ': ' + Values);
+  fOnScriptError(seInvalidParameter, 'Invalid parameter(s) passed to ' + aFuncName + ': ' + Values);
 end;
 
 

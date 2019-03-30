@@ -76,6 +76,7 @@ var
   //Not fully implemented yet
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
+  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
   CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   SNOW_HOUSES           :Boolean = False; //Draw snow on houses
@@ -116,7 +117,7 @@ var
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
-  AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gic_TempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gicTempDoNothing every tick in order to find exactly when a replay mismatch occurs
   SHOW_GAME_TICK          :Boolean = False; //Show game tick next to game time
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
@@ -281,8 +282,8 @@ const
   EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
 
 type
-  TKMHandIndex = {type} ShortInt;
-  TKMHandIndexArray = array of TKMHandIndex;
+  TKMHandID = {type} ShortInt;
+  TKMHandIDArray = array of TKMHandID;
   TKMHandEnabledArray = array [0..MAX_HANDS-1] of Boolean;
 
 const
@@ -353,21 +354,21 @@ const
 
 type
   TKMGameResultMsg = (//Game result
-        gr_Win,           //Player has won the game
-        gr_Defeat,        //Player was defeated
-        gr_Cancel,        //Game was cancelled (unfinished)
-        gr_Error,         //Some known error occured
-        gr_Disconnect,    //Disconnected from multiplayer game
-        gr_Silent,        //Used when loading savegame from running game (show no screens)
-        gr_ReplayEnd,     //Replay was cancelled - return to menu without screens
-        gr_MapEdEnd,      //Map Editor was closed - return to menu without screens
-        gr_GameContinues);//Game is not finished yet, it is continious
+        grWin,           //Player has won the game
+        grDefeat,        //Player was defeated
+        grCancel,        //Game was cancelled (unfinished)
+        grError,         //Some known error occured
+        grDisconnect,    //Disconnected from multiplayer game
+        grSilent,        //Used when loading savegame from running game (show no screens)
+        grReplayEnd,     //Replay was cancelled - return to menu without screens
+        grMapEdEnd,      //Map Editor was closed - return to menu without screens
+        grGameContinues);//Game is not finished yet, it is continious
 
 
 type
-  TKMissionMode = (mm_Normal, mm_Tactic);
+  TKMissionMode = (mmNormal, mmTactic);
 
-  TKMAllianceType = (at_Enemy, at_Ally);
+  TKMAllianceType = (atEnemy, atAlly);
 
   TKMapFolder = (mfSP, mfMP, mfDL);
   TKMapFolderSet = set of TKMapFolder;
@@ -439,46 +440,46 @@ const
 
 {Units}
 type
-  TKMUnitType = (ut_None, ut_Any,
-    ut_Serf,          ut_Woodcutter,    ut_Miner,         ut_AnimalBreeder,
-    ut_Farmer,        ut_Lamberjack,    ut_Baker,         ut_Butcher,
-    ut_Fisher,        ut_Worker,        ut_StoneCutter,   ut_Smith,
-    ut_Metallurgist,  ut_Recruit,
+  TKMUnitType = (utNone, utAny,
+    utSerf,          utWoodcutter,    utMiner,         utAnimalBreeder,
+    utFarmer,        utLamberjack,    utBaker,         utButcher,
+    utFisher,        utWorker,        utStoneCutter,   utSmith,
+    utMetallurgist,  utRecruit,
 
-    ut_Militia,      ut_AxeFighter,   ut_Swordsman,     ut_Bowman,
-    ut_Arbaletman,   ut_Pikeman,      ut_Hallebardman,  ut_HorseScout,
-    ut_Cavalry,      ut_Barbarian,
+    utMilitia,      utAxeFighter,   utSwordsman,     utBowman,
+    utArbaletman,   utPikeman,      utHallebardman,  utHorseScout,
+    utCavalry,      utBarbarian,
 
-    ut_Peasant,      ut_Slingshot,    ut_MetalBarbarian,ut_Horseman,
-    //ut_Catapult,   ut_Ballista,
+    utPeasant,      utSlingshot,    utMetalBarbarian,utHorseman,
+    //utCatapult,   utBallista,
 
-    ut_Wolf,         ut_Fish,         ut_Watersnake,   ut_Seastar,
-    ut_Crab,         ut_Waterflower,  ut_Waterleaf,    ut_Duck);
+    utWolf,         utFish,         utWatersnake,   utSeastar,
+    utCrab,         utWaterflower,  utWaterleaf,    utDuck);
 
   TKMUnitTypeSet = set of TKMUnitType;
 
 const
-  UNIT_MIN = ut_Serf;
-  UNIT_MAX = ut_Duck;
-  CITIZEN_MIN = ut_Serf;
-  CITIZEN_MAX = ut_Recruit;
-  WARRIOR_MIN = ut_Militia;
-  WARRIOR_MAX = ut_Horseman;
-  WARRIOR_EQUIPABLE_MIN = ut_Militia; //Available from barracks
-  WARRIOR_EQUIPABLE_MAX = ut_Cavalry;
-  HUMANS_MIN = ut_Serf;
-  HUMANS_MAX = ut_Horseman;
-  ANIMAL_MIN = ut_Wolf;
-  ANIMAL_MAX = ut_Duck;
+  UNIT_MIN = utSerf;
+  UNIT_MAX = utDuck;
+  CITIZEN_MIN = utSerf;
+  CITIZEN_MAX = utRecruit;
+  WARRIOR_MIN = utMilitia;
+  WARRIOR_MAX = utHorseman;
+  WARRIOR_EQUIPABLE_MIN = utMilitia; //Available from barracks
+  WARRIOR_EQUIPABLE_MAX = utCavalry;
+  HUMANS_MIN = utSerf;
+  HUMANS_MAX = utHorseman;
+  ANIMAL_MIN = utWolf;
+  ANIMAL_MAX = utDuck;
 
-  WARRIORS_IRON = [ut_Swordsman, ut_Arbaletman, ut_Hallebardman, ut_Cavalry];
+  WARRIORS_IRON = [utSwordsman, utArbaletman, utHallebardman, utCavalry];
 
 type
-  TKMCheckAxis = (ax_X, ax_Y);
+  TKMCheckAxis = (axX, axY);
 
 //Used for AI defence and linking troops
 type
-  TKMGroupType = (gt_Melee, gt_AntiHorse, gt_Ranged, gt_Mounted);
+  TKMGroupType = (gtMelee, gtAntiHorse, gtRanged, gtMounted);
   TKMGroupTypeArray = array [TKMGroupType] of Word;
   TKMGroupTypeSet = set of TKMGroupType;
 
@@ -488,31 +489,31 @@ const
   KaMGroupType: array [TKMGroupType] of Byte = (0, 1, 2, 3);
 
   UnitGroups: array [WARRIOR_MIN..WARRIOR_MAX] of TKMGroupType = (
-    gt_Melee,gt_Melee,gt_Melee, //ut_Militia, ut_AxeFighter, ut_Swordsman
-    gt_Ranged,gt_Ranged,        //ut_Bowman, ut_Arbaletman
-    gt_AntiHorse,gt_AntiHorse,  //ut_Pikeman, ut_Hallebardman,
-    gt_Mounted,gt_Mounted,      //ut_HorseScout, ut_Cavalry,
-    gt_Melee,                   //ut_Barbarian
+    gtMelee,gtMelee,gtMelee, //utMilitia, utAxeFighter, utSwordsman
+    gtRanged,gtRanged,        //utBowman, utArbaletman
+    gtAntiHorse,gtAntiHorse,  //utPikeman, utHallebardman,
+    gtMounted,gtMounted,      //utHorseScout, utCavalry,
+    gtMelee,                   //utBarbarian
     //TPR Army
-    gt_AntiHorse,        //ut_Peasant
-    gt_Ranged,           //ut_Slingshot
-    gt_Melee,            //ut_MetalBarbarian
-    gt_Mounted           //ut_Horseman
-    {gt_Ranged,gt_Ranged, //ut_Catapult, ut_Ballista,}
+    gtAntiHorse,        //utPeasant
+    gtRanged,           //utSlingshot
+    gtMelee,            //utMetalBarbarian
+    gtMounted           //utHorseman
+    {gtRanged,gtRanged, //utCatapult, utBallista,}
     );
 
   //AI's prefences for training troops
   AITroopTrainOrder: array [TKMGroupType, 1..3] of TKMUnitType = (
-    (ut_Swordsman,    ut_AxeFighter, ut_Militia),
-    (ut_Hallebardman, ut_Pikeman,    ut_None),
-    (ut_Arbaletman,   ut_Bowman,     ut_None),
-    (ut_Cavalry,      ut_HorseScout, ut_None));
+    (utSwordsman,    utAxeFighter, utMilitia),
+    (utHallebardman, utPikeman,    utNone),
+    (utArbaletman,   utBowman,     utNone),
+    (utCavalry,      utHorseScout, utNone));
 
 type
-  TKMGoInDirection = (gd_GoOutside=-1, gd_GoInside=1); //Switch to set if unit goes into house or out of it
+  TKMGoInDirection = (gdGoOutside=-1, gdGoInside=1); //Switch to set if unit goes into house or out of it
 
 type
-  TKMUnitThought = (th_None, th_Eat, th_Home, th_Build, th_Stone, th_Wood, th_Death, th_Quest, th_Dismiss);
+  TKMUnitThought = (thNone, thEat, thHome, thBuild, thStone, thWood, thDeath, thQuest, thDismiss);
 
 const //Corresponding indices in units.rx
   ThoughtBounds: array [TKMUnitThought, 1..2] of Word = (
@@ -535,51 +536,51 @@ const //Corresponding indices in units.rx
   TC_BLOCK_ENTRANCE = 482;
 
 type
-  TKMUnitTaskName = ( utn_Unknown, //Uninitialized task to detect bugs
-        utn_SelfTrain, utn_Deliver,        utn_BuildRoad,  utn_BuildWine,        utn_BuildField,
-        utn_BuildHouseArea, utn_BuildHouse, utn_BuildHouseRepair, utn_GoHome,    utn_Dismiss,
-        utn_GoEat,     utn_Mining,         utn_Die,        utn_GoOutShowHungry,  utn_AttackHouse,
-        utn_ThrowRock);
+  TKMUnitTaskType = ( uttUnknown, //Uninitialized task to detect bugs
+        uttSelfTrain, uttDeliver,         uttBuildRoad,  uttBuildWine,        uttBuildField,
+        uttBuildHouseArea, uttBuildHouse, uttBuildHouseRepair, uttGoHome,    uttDismiss,
+        uttGoEat,     uttMining,          uttDie,        uttGoOutShowHungry,  uttAttackHouse,
+        uttThrowRock);
 
-  TKMUnitActionName = (uan_Stay, uan_WalkTo, uan_GoInOut, uan_AbandonWalk, uan_Fight, uan_StormAttack, uan_Steer);
+  TKMUnitActionName = (uanStay, uanWalkTo, uanGoInOut, uanAbandonWalk, uanFight, uanStormAttack, uanSteer);
 
-  TKMUnitActionType = (ua_Walk=120, ua_Work, ua_Spec, ua_Die, ua_Work1,
-                     ua_Work2, ua_WorkEnd, ua_Eat, ua_WalkArm, ua_WalkTool,
-                     ua_WalkBooty, ua_WalkTool2, ua_WalkBooty2, ua_Unknown);
+  TKMUnitActionType = (uaWalk=120, uaWork, uaSpec, uaDie, uaWork1,
+                     uaWork2, uaWorkEnd, uaEat, uaWalkArm, uaWalkTool,
+                     uaWalkBooty, uaWalkTool2, uaWalkBooty2, uaUnknown);
   TKMUnitActionTypeSet = set of TKMUnitActionType;
 
 const
-  UnitAct: array [TKMUnitActionType] of string = ('ua_Walk', 'ua_Work', 'ua_Spec', 'ua_Die', 'ua_Work1',
-             'ua_Work2', 'ua_WorkEnd', 'ua_Eat', 'ua_WalkArm', 'ua_WalkTool',
-             'ua_WalkBooty', 'ua_WalkTool2', 'ua_WalkBooty2', 'ua_Unknown');
+  UnitAct: array [TKMUnitActionType] of string = ('uaWalk', 'uaWork', 'uaSpec', 'uaDie', 'uaWork1',
+             'uaWork2', 'uaWorkEnd', 'uaEat', 'uaWalkArm', 'uaWalkTool',
+             'uaWalkBooty', 'uaWalkTool2', 'uaWalkBooty2', 'uaUnknown');
 
 
 const
-  FishCountAct: array [1..5] of TKMUnitActionType = (ua_Walk, ua_Work, ua_Spec, ua_Die, ua_Work1);
+  FishCountAct: array [1..5] of TKMUnitActionType = (uaWalk, uaWork, uaSpec, uaDie, uaWork1);
 
 
 type
   TKMGatheringScript = (
-    gs_None,
-    gs_WoodCutterCut, gs_WoodCutterPlant,
-    gs_FarmerSow, gs_FarmerCorn, gs_FarmerWine,
-    gs_FisherCatch,
-    gs_StoneCutter,
-    gs_CoalMiner, gs_GoldMiner, gs_IronMiner,
-    gs_HorseBreeder, gs_SwineBreeder);
+    gsNone,
+    gsWoodCutterCut, gsWoodCutterPlant,
+    gsFarmerSow, gsFarmerCorn, gsFarmerWine,
+    gsFisherCatch,
+    gsStoneCutter,
+    gsCoalMiner, gsGoldMiner, gsIronMiner,
+    gsHorseBreeder, gsSwineBreeder);
 
 {Houses in game}
 type
   //House has 3 basic states: no owner inside, owner inside, owner working inside
-  TKMHouseState = (hst_Empty, hst_Idle, hst_Work);
+  TKMHouseState = (hstEmpty, hstIdle, hstWork);
   //These are house building states
-  TKMHouseBuildState = (hbs_NoGlyph, hbs_Wood, hbs_Stone, hbs_Done);
+  TKMHouseBuildState = (hbsNoGlyph, hbsWood, hbsStone, hbsDone);
 
   TKMHouseActionType = (
-    ha_Work1, ha_Work2, ha_Work3, ha_Work4, ha_Work5, //Start, InProgress, .., .., Finish
-    ha_Smoke, ha_Flagpole, ha_Idle,
-    ha_Flag1, ha_Flag2, ha_Flag3,
-    ha_Fire1, ha_Fire2, ha_Fire3, ha_Fire4, ha_Fire5, ha_Fire6, ha_Fire7, ha_Fire8);
+    haWork1, haWork2, haWork3, haWork4, haWork5, //Start, InProgress, .., .., Finish
+    haSmoke, haFlagpole, haIdle,
+    haFlag1, haFlag2, haFlag3,
+    haFire1, haFire2, haFire3, haFire4, haFire5, haFire6, haFire7, haFire8);
   TKMHouseActionSet = set of TKMHouseActionType;
 
 const
@@ -630,34 +631,34 @@ type
   //This is very similar to that used in KaM and is quite flexable/expandable.
   //(we can add more parameters/conditions as well as existing KaM ones, possibly using a new script command)
   //Some things are probably named unclearly, please give me suggestions or change them. Goals are the one part
-  //of scripting that seems to confuse everyone at first, mainly because of the TGoalStatus. In 99% of cases gs_True and gt_Defeat
+  //of scripting that seems to confuse everyone at first, mainly because of the TGoalStatus. In 99% of cases gsTrue and gtDefeat
   //go together, because the if the defeat conditions is NOT true you lose, not the other way around. I guess it should be called a
   //"survival" conditions rather than defeat.
   //I put some examples below to give you an idea of how it works. Remember this is basically a copy of the goal scripting system in KaM,
   //not something I designed. It can change, this is just easiest to implement from script compatability point of view.
 
-  TKMGoalType = (glt_None = 0,  //Means: It is not required for victory or defeat (e.g. simply display a message)
-               glt_Victory, //Means: "The following condition must be true for you to win"
-               glt_Survive);//Means: "The following condition must be true or else you lose"
+  TKMGoalType = (gltNone = 0,  //Means: It is not required for victory or defeat (e.g. simply display a message)
+               gltVictory, //Means: "The following condition must be true for you to win"
+               gltSurvive);//Means: "The following condition must be true or else you lose"
   //Conditions are the same numbers as in KaM script
-  TKMGoalCondition = (gc_Unknown0,      //Not used/unknown
-                    gc_BuildTutorial,   //Must build a tannery (and other buildings from tutorial?) for it to be true. In KaM tutorial messages will be dispalyed if this is a goal
-                    gc_Time,            //A certain time must pass
-                    gc_Buildings,       //Storehouse, school, barracks, TownHall
-                    gc_Troops,          //All troops
-                    gc_Unknown5,        //Not used/unknown
-                    gc_MilitaryAssets,  //All Troops, Coal mine, Weapons Workshop, Tannery, Armory workshop, Stables, Iron mine, Iron smithy, Weapons smithy, Armory smithy, Barracks, Town hall and Vehicles Workshop
-                    gc_SerfsAndSchools, //Serfs (possibly all citizens?) and schoolhouses
-                    gc_EconomyBuildings //School, Inn and Storehouse
+  TKMGoalCondition = (gcUnknown0,      //Not used/unknown
+                    gcBuildTutorial,   //Must build a tannery (and other buildings from tutorial?) for it to be true. In KaM tutorial messages will be dispalyed if this is a goal
+                    gcTime,            //A certain time must pass
+                    gcBuildings,       //Storehouse, school, barracks, TownHall
+                    gcTroops,          //All troops
+                    gcUnknown5,        //Not used/unknown
+                    gcMilitaryAssets,  //All Troops, Coal mine, Weapons Workshop, Tannery, Armory workshop, Stables, Iron mine, Iron smithy, Weapons smithy, Armory smithy, Barracks, Town hall and Vehicles Workshop
+                    gcSerfsAndSchools, //Serfs (possibly all citizens?) and schoolhouses
+                    gcEconomyBuildings //School, Inn and Storehouse
                     //We can come up with our own
                     );
 
-  TKMGoalStatus = (gs_True = 0, gs_False = 1); //Weird that it's inverted, but KaM uses it that way
+  TKMGoalStatus = (gsTrue = 0, gsFalse = 1); //Weird that it's inverted, but KaM uses it that way
 
 const
   //We discontinue support of other goals in favor of PascalScript scripts
   GoalsSupported: set of TKMGoalCondition =
-    [gc_Buildings, gc_Troops, gc_MilitaryAssets, gc_SerfsAndSchools, gc_EconomyBuildings];
+    [gcBuildings, gcTroops, gcMilitaryAssets, gcSerfsAndSchools, gcEconomyBuildings];
 
   GoalConditionStr: array [TKMGoalCondition] of string = (
     'Unknown 0',

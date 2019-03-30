@@ -7,7 +7,7 @@ uses
   uPSCompiler, uPSRuntime, uPSUtils, uPSDisassembly, uPSDebugger, uPSPreProcessor,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_FileIO,
   KM_ScriptingActions, KM_ScriptingEvents, KM_ScriptingIdCache, KM_ScriptingStates, KM_ScriptingTypes, KM_ScriptingUtils,
-  KM_Houses, KM_Units, KM_UnitGroups, KM_ResHouses, ScriptValidatorResult;
+  KM_Houses, KM_Units, KM_UnitGroup, KM_ResHouses, ScriptValidatorResult;
 
   //Dynamic scripts allow mapmakers to control the mission flow
 
@@ -346,7 +346,7 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
-    Sender.AddTypeS('TKMAudioFormat', '(af_Wav,af_Ogg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
     Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
@@ -877,7 +877,7 @@ begin
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
     Compiler.GetDebugOutput(fDebugByteCode);  // Save the debug output of the compiler
   finally
-    Compiler.Free;
+    FreeAndNil(Compiler);
   end;
 
   LinkRuntime;
@@ -1346,7 +1346,7 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('ACTIONS')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('UTILS')), fUtils);
   finally
-    ClassImp.Free;
+    FreeAndNil(ClassImp);
   end;
 
   //Link events into the script
@@ -1366,7 +1366,7 @@ begin
     ForceDirectories(ExeDir  + 'Export' + PathDelim);
     SL.SaveToFile(ExeDir + 'Export' + PathDelim + 'script_DataText.txt');
   finally
-    SL.Free;
+    FreeAndNil(SL);
   end;
 end;
 
@@ -1584,7 +1584,7 @@ begin
   Strings := TStringList.Create;
   Strings.Text := fScriptCode;
   Result := AnsiString(Strings[aRowNum - 1]);
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 
@@ -1715,8 +1715,8 @@ end;
 
 procedure TKMScriptErrorHandler.HandleErrors;
 begin
-  HandleScriptError(se_CompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
-  HandleScriptError(se_CompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
+  HandleScriptError(seCompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
+  HandleScriptError(seCompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
 end;
 
 
@@ -1783,11 +1783,11 @@ begin
   aErrorString := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
 
   //Display compile errors in-game
-  if (aType in [se_CompileError, se_PreprocessorError]) and Assigned(fOnScriptError) then
+  if (aType in [seCompileError, sePreprocessorError]) and Assigned(fOnScriptError) then
     fOnScriptError(aErrorString);
 
   //Serious runtime errors should be shown to the player
-  if aType in [se_Exception] then
+  if aType in [seException] then
   begin
     //Only show the first message in-game to avoid spamming the player
     if not fHasErrorOccured and Assigned(fOnScriptError) then
@@ -1907,10 +1907,10 @@ begin
       Result := True; // If PreProcess has been done succesfully
     except
       on E: Exception do
-        fErrorHandler.HandleScriptErrorString(se_PreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+        fErrorHandler.HandleScriptErrorString(sePreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
     end;
   finally
-    PreProcessor.Free;
+    FreeAndNil(PreProcessor);
   end;
 end;
 
@@ -1954,7 +1954,7 @@ const
 
           gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2015,7 +2015,7 @@ const
             TH_TROOP_COST[I] := THTroopCost[I];
 
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2064,8 +2064,8 @@ const
           begin
             fCustomScriptParams[cspMarketGoldPrice].Added := True;
             fCustomScriptParams[cspMarketGoldPrice].Data :=
-              Format('%s: x%s %s: x%s', [gRes.Wares[wt_GoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
-                                         gRes.Wares[wt_Gold].Title,    FormatFloat('#0.#', GoldPriceX)]);
+              Format('%s: x%s %s: x%s', [gRes.Wares[wtGoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
+                                         gRes.Wares[wtGold].Title,    FormatFloat('#0.#', GoldPriceX)]);
           end else
             Exit;
 
@@ -2075,11 +2075,11 @@ const
           if not AllowGameUpdate then Exit;
 
           //Update actual troop cost
-          gRes.Wares[wt_GoldOre].MarketPriceMultiplier := GoldOrePriceX;
-          gRes.Wares[wt_Gold].MarketPriceMultiplier := GoldPriceX;
+          gRes.Wares[wtGoldOre].MarketPriceMultiplier := GoldOrePriceX;
+          gRes.Wares[wtGold].MarketPriceMultiplier := GoldPriceX;
 
         finally
-          DirectiveParamSL.Free;
+          FreeAndNil(DirectiveParamSL);
         end;
       except
         on E: Exception do
@@ -2212,7 +2212,7 @@ begin
     FindLine(aFoundCnt, fIncluded[I], Strings);
 
   Result := aFoundCnt;
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 

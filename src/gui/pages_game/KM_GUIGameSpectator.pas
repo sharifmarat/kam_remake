@@ -24,14 +24,18 @@ const
 type
   TKMGUIGameSpectatorItem = class(TKMControl)
   private
-    FHandIndex: Integer;
-    FImageID: Word;
-    FValue: String;
-    FAdditionalValue: String;
-    FProgress: Single;
-    FItemTag: Integer;
+    fHandIndex: Integer;
+    fImageID: Word;
+    fValue: String;
+    fAdditionalValue: String;
+    fProgress: Single;
+    fItemTag: Integer;
+    FOnItemClick: TIntegerEvent;
+    FDoHighlight: TBoolIntFuncSimple;
+    procedure ItemClicked(Sender: TObject);
   public
-    constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
+    constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer;
+                       aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
     property ItemTag: Integer read FItemTag;
     property Value: String read FValue write FValue;
     property AdditionalValue: String read FAdditionalValue write FAdditionalValue;
@@ -46,56 +50,70 @@ type
   private
     FShowEmptyItems: Boolean;
     FOnJumpToPlayer: TIntegerEvent;
+    FSetViewportPos: TPointFEvent;
     FHandIndex: Integer;
     FAnimStep: Cardinal;
     FItems: array of TKMGUIGameSpectatorItem;
     procedure DoubleClicked(Sender: TObject);
+    procedure ItemClicked(aItemTag: Integer);
     procedure Update;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; virtual; abstract;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; virtual; abstract;
     function GetTagCount: Integer; virtual; abstract;
     function GetTag(AIndex: Integer): Integer; virtual; abstract;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; virtual; abstract;
     function GetAdditionalValue(AHandIndex: Integer; ATag: Integer): String; virtual;
     function GetProgress(AHandIndex: Integer; ATag: Integer): Single; virtual;
+    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; virtual;
+    property SetViewportPos: TPointFEvent read FSetViewportPos;
+    function DontHighlight(aIndex: Integer): Boolean;
+    function DoHighlight(aIndex: Integer): Boolean;
   public
-    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent); virtual;
+    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent); virtual;
     procedure UpdateState(aTickCount: Cardinal); override;
     procedure Paint; override;
     property HandIndex: Integer read FHandIndex;
   end;
 
-  ///
 
   TKMGUIGameSpectatorItemLineResources = class(TKMGUIGameSpectatorItemLine)
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   end;
 
 
-  TKMGUIGameSpectatorItemLineWareFare = class(TKMGUIGameSpectatorItemLine)
+  TKMGUIGameSpectatorItemLineWarFare = class(TKMGUIGameSpectatorItemLine)
   private
     class function GetIcon(aTag: Integer): Word;
     class function GetTitle(aTag: Integer): UnicodeString;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   public
-    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent); override;
+    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent); override;
   end;
 
   // Buildings
 
   TKMGUIGameSpectatorItemLineCustomBuildings = class(TKMGUIGameSpectatorItemLine)
+  private
+    fHouseSketch: TKMHouseSketchEdit;
+    fLastHouseUIDs: array [HOUSE_MIN..HOUSE_MAX] of Cardinal;
+    procedure ResetUIDs;
+    function CheckHighlight(aIndex: Integer): Boolean;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
+    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; override;
+  public
+    constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent); override;
+    destructor Destroy; override;
   end;
 
   TKMGUIGameSpectatorItemLineBuild = class(TKMGUIGameSpectatorItemLineCustomBuildings)
@@ -111,21 +129,30 @@ type
   end;
 
   // Units
-
   TKMGUIGameSpectatorItemLinePopulation = class(TKMGUIGameSpectatorItemLine)
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
   end;
 
   TKMGUIGameSpectatorItemLineArmy = class(TKMGUIGameSpectatorItemLine)
+  private
+    fLastWarriorUIDs: array [WARRIOR_MIN..WARRIOR_MAX] of Cardinal;
+    procedure ResetUIDs;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
+    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; override;
+    function CheckHighlight(aIndex: Integer): Boolean; virtual;
+  end;
+
+  TKMGUIGameSpectatorItemLineArmyInstantenious = class(TKMGUIGameSpectatorItemLineArmy)
+  protected
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+    function CheckHighlight(aIndex: Integer): Boolean; override;
   end;
 
   TKMGUIGameSpectatorItemLineArmyTotal = class(TKMGUIGameSpectatorItemLineArmy)
@@ -152,13 +179,14 @@ type
     FLastIndex: Integer;
 
     FOnJumpToPlayer: TIntegerEvent;
+    FSetViewportPos: TPointFEvent;
 
     FLines: array of array[0..MAX_HANDS - 1] of TKMGUIGameSpectatorItemLine;
 
     procedure AddLineType(AIndex: Integer; ALineClass: TKMGUIGameSpectatorItemLineClass);
     procedure ChangePage(Sender: TObject);
   public
-    constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent);
+    constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
 
     procedure CloseDropBox;
   end;
@@ -166,12 +194,14 @@ type
 implementation
 
 uses
-  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits;
+  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
 
 { TKMGUIGameSpectatorItem }
-constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer);
+constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer;
+                                           aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
 begin
   inherited Create(aParent, 0, 0, GUI_SPECTATOR_ITEM_WIDTH, GUI_SPECTATOR_ITEM_HEIGHT);
+
   FItemTag := ATag;
   Hint := AHint;
   FHandIndex := AHandIndex;
@@ -179,42 +209,55 @@ begin
   FValue := '';
   FAdditionalValue := '';
   FProgress := -1;
+  FDoHighlight := aDoHighlight;
+  FOnItemClick := aOnItemClick;
+  OnClick := ItemClicked;
+end;
+
+procedure TKMGUIGameSpectatorItem.ItemClicked(Sender: TObject);
+begin
+  if Assigned(FOnItemClick) then
+    FOnItemClick(FItemTag);
 end;
 
 procedure TKMGUIGameSpectatorItem.Paint;
+var
+  PaintLightness: Single;
 begin
   inherited;
 
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
-  TKMRenderUI.WritePicture(AbsLeft + 2, AbsTop, Width - 4, Height - 4, [], rxGui, FImageID, True, gHands[FHandIndex].FlagColor);
+
+  PaintLightness := DEFAULT_HIGHLIGHT_COEF * (Byte((csOver in State) and FDoHighlight(FItemTag)));
+  TKMRenderUI.WritePicture(AbsLeft + 2, AbsTop, Width - 4, Height - 4, [], rxGui, FImageID, True,
+                           gHands[FHandIndex].FlagColor, PaintLightness);
 
   if FProgress >= 0 then
     TKMRenderUI.WritePercentBar(AbsLeft, AbsTop + Height - 6, Width, 6, FProgress, 0);
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop + Height - 16, Width, FValue, fnt_Grey, taCenter, $FFFFFFFF);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop + Height - 16, Width, FValue, fntGrey, taCenter, $FFFFFFFF);
   if FAdditionalValue <> '' then
-    TKMRenderUI.WriteText(AbsLeft - 2, AbsTop - 2, Width, FAdditionalValue, fnt_Grey, taRight, $FFFFFFFF);
+    TKMRenderUI.WriteText(AbsLeft - 2, AbsTop - 2, Width, FAdditionalValue, fntGrey, taRight, $FFFFFFFF);
 end;
 
 { TKMGUIGameSpectatorItemLine }
-constructor TKMGUIGameSpectatorItemLine.Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent);
+constructor TKMGUIGameSpectatorItemLine.Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent;
+                                               aSetViewportPos: TPointFEvent);
 var
-  i: Integer;
+  I: Integer;
 begin
   inherited Create(aParent, aParent.Width, 32 + AHandIndex * (GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V), 0, GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_HEADER_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V);
   fOnJumpToPlayer := aOnJumpToPlayer;
-  OnDoubleClick := DoubleClicked;
+  fSetViewportPos := aSetViewportPos;
+  OnClick := DoubleClicked;
   Anchors := [anTop, anRight];
   FAnimStep := 0;
   Focusable := False;
   FShowEmptyItems := False;
   FHandIndex := AHandIndex;
   SetLength(fItems, GetTagCount);
-  for i := 0 to GetTagCount - 1 do
-  begin
-    fItems[i] := CreateItem(AHandIndex, GetTag(i));
-    fItems[i].OnDoubleClick := DoubleClicked;
-  end;
+  for I := 0 to GetTagCount - 1 do
+    fItems[I] := CreateItem(AHandIndex, GetTag(I), ItemClicked);
 end;
 
 procedure TKMGUIGameSpectatorItemLine.DoubleClicked(Sender: TObject);
@@ -223,9 +266,31 @@ begin
     fOnJumpToPlayer(FHandIndex);
 end;
 
+procedure TKMGUIGameSpectatorItemLine.ItemClicked(aItemTag: Integer);
+var
+  Loc: TKMPointF;
+begin
+  if Assigned(FSetViewportPos) then
+  begin
+    Loc := GetLoc(FHandIndex, aItemTag);
+    if Loc <> KMPOINTF_INVALID_TILE then
+      FSetViewportPos(Loc);
+  end;
+end;
+
 procedure TKMGUIGameSpectatorItemLine.Update;
 begin
   UpdateState(0); //We do not use tick count actually here
+end;
+
+function TKMGUIGameSpectatorItemLine.DontHighlight(aIndex: Integer): Boolean;
+begin
+  Result := False;
+end;
+
+function TKMGUIGameSpectatorItemLine.DoHighlight(aIndex: Integer): Boolean;
+begin
+  Result := True;
 end;
 
 procedure TKMGUIGameSpectatorItemLine.UpdateState(aTickCount: Cardinal);
@@ -251,7 +316,7 @@ begin
   end;
 
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
-  Width := Max(Count * (GUI_SPECTATOR_ITEM_WIDTH + GUI_SPECTATOR_ITEM_SPLITE_H) + GUI_SPECTATOR_ITEM_SPLITE_H, gRes.Fonts[fnt_Grey].GetTextSize(Str).X + 32 + 4);
+  Width := Max(Count * (GUI_SPECTATOR_ITEM_WIDTH + GUI_SPECTATOR_ITEM_SPLITE_H) + GUI_SPECTATOR_ITEM_SPLITE_H, gRes.Fonts[fntGrey].GetTextSize(Str).X + 32 + 4);
   Left := Parent.Width - Width;
 
   Position := Width - GUI_SPECTATOR_ITEM_SPLITE_H - GUI_SPECTATOR_ITEM_WIDTH;
@@ -269,6 +334,13 @@ begin
   Result := '';
 end;
 
+
+function TKMGUIGameSpectatorItemLine.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+begin
+  Result := KMPOINTF_INVALID_TILE;
+end;
+
+
 function TKMGUIGameSpectatorItemLine.GetProgress(AHandIndex: Integer; ATag: Integer): Single;
 begin
   Result := -1;
@@ -282,16 +354,17 @@ begin
   TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height);
   inherited;
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
-  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fnt_Grey, taRight, $FFFFFFFF);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fntGrey, taRight, $FFFFFFFF);
 
   ID := GUI_SPECTATOR_HEADER_FLAG + FAnimStep mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
   TKMRenderUI.WritePicture(AbsLeft + Width - 32, AbsTop, 32, GUI_SPECTATOR_HEADER_HEIGHT, [], rxHouses, ID, True, gHands[FHandIndex].FlagColor);
 end;
 
 { TKMGUIGameSpectatorItemLineResources }
-function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TKMWareType(ATag)].GUIIcon, gRes.Wares[TKmWareType(ATag)].Title, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TKMWareType(ATag)].GUIIcon, gRes.Wares[TKmWareType(ATag)].Title,
+                                           FHandIndex, DontHighlight, aOnItemClick);
   Result.Visible := False;
 end;
 
@@ -315,52 +388,54 @@ end;
 
 
 { TKMGUIGameSpectatorItemLineWareFare }
-constructor TKMGUIGameSpectatorItemLineWareFare.Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent);
+constructor TKMGUIGameSpectatorItemLineWarFare.Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent;
+                                                       aSetViewportPos: TPointFEvent);
 begin
-  inherited Create(aParent, AHandIndex, aOnJumpToPlayer);
+  inherited Create(aParent, AHandIndex, aOnJumpToPlayer, aSetViewportPos);
   FShowEmptyItems := True;
 end;
 
-function TKMGUIGameSpectatorItemLineWareFare.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineWarFare.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
-                                           TKMGUIGameSpectatorItemLineWareFare.GetIcon(ATag),
-                                           TKMGUIGameSpectatorItemLineWareFare.GetTitle(ATag), FHandIndex);
+                                           TKMGUIGameSpectatorItemLineWarFare.GetIcon(ATag),
+                                           TKMGUIGameSpectatorItemLineWarFare.GetTitle(ATag), FHandIndex,
+                                           DontHighlight, aOnItemClick);
   Result.Visible := False;
 end;
 
-class function TKMGUIGameSpectatorItemLineWareFare.GetIcon(aTag: Integer): Word;
+class function TKMGUIGameSpectatorItemLineWarFare.GetIcon(aTag: Integer): Word;
 begin
   if aTag = -1 then
-    Result := gRes.Units[ut_Recruit].GUIIcon
+    Result := gRes.Units[utRecruit].GUIIcon
   else
     Result := gRes.Wares[TKMWareType(ATag)].GUIIcon;
 end;
 
-class function TKMGUIGameSpectatorItemLineWareFare.GetTitle(aTag: Integer): UnicodeString;
+class function TKMGUIGameSpectatorItemLineWarFare.GetTitle(aTag: Integer): UnicodeString;
 begin
   if aTag = -1 then
-    Result := gRes.Units[ut_Recruit].GUIName
+    Result := gRes.Units[utRecruit].GUIName
   else
     Result := gRes.Wares[TKMWareType(ATag)].Title;
 end;
 
-function TKMGUIGameSpectatorItemLineWareFare.GetTagCount: Integer;
+function TKMGUIGameSpectatorItemLineWarFare.GetTagCount: Integer;
 begin
   Result := Integer(WARFARE_MAX) - Integer(WARFARE_MIN) + 1 + 1; //+1 for recruit
 end;
 
-function TKMGUIGameSpectatorItemLineWareFare.GetTag(AIndex: Integer): Integer;
+function TKMGUIGameSpectatorItemLineWarFare.GetTag(AIndex: Integer): Integer;
 begin
   Result := IfThen(AIndex = 0, -1, Integer(WARFARE_MAX) - AIndex + 1); //Recruit is the last
 end;
 
-function TKMGUIGameSpectatorItemLineWareFare.GetValue(AHandIndex: Integer; ATag: Integer): String;
+function TKMGUIGameSpectatorItemLineWarFare.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
 begin
   if aTag = -1 then
-    Value := gHands[AHandIndex].Stats.GetUnitQty(ut_Recruit)
+    Value := gHands[AHandIndex].Stats.GetUnitQty(utRecruit)
   else
     Value := gHands[AHandIndex].Stats.GetWareBalance(TKMWareType(ATag));
 
@@ -368,10 +443,35 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineCustomBuildings }
-function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
+constructor TKMGUIGameSpectatorItemLineCustomBuildings.Create(aParent: TKMPanel; AHandIndex: Integer;
+                                                              aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Houses[TKMHouseType(ATag)].GUIIcon, gRes.Houses[TKMHouseType(ATag)].HouseName, FHandIndex);
+  inherited Create(aParent, AHandIndex, aOnJumpToPlayer, aSetViewportPos);
+
+  fHouseSketch := TKMHouseSketchEdit.Create;
+end;
+
+destructor TKMGUIGameSpectatorItemLineCustomBuildings.Destroy;
+begin
+  FreeAndNil(fHouseSketch);
+
+  inherited;
+end;
+
+function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+begin
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
+                                           gRes.Houses[TKMHouseType(ATag)].GUIIcon,
+                                           gRes.Houses[TKMHouseType(ATag)].HouseName, FHandIndex,
+                                           CheckHighlight, aOnItemClick);
   Result.Visible := False;
+  ResetUIDs;
+end;
+
+function TKMGUIGameSpectatorItemLineCustomBuildings.CheckHighlight(aIndex: Integer): Boolean;
+begin
+  Result := gHands[FHandIndex].Stats.GetHouseTotal(TKMHouseType(aIndex))
+          - gHands[FHandIndex].Stats.GetHousePlans(TKMHouseType(aIndex)) > 0;
 end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTagCount: Integer;
@@ -382,6 +482,31 @@ end;
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTag(AIndex: Integer): Integer;
 begin
   Result := Integer(HOUSE_MIN) + AIndex;
+end;
+
+procedure TKMGUIGameSpectatorItemLineCustomBuildings.ResetUIDs;
+var
+  HT: TKMHouseType;
+begin
+  for HT := Low(fLastHouseUIDs) to High(fLastHouseUIDs) do
+    fLastHouseUIDs[HT] := 0;
+end;
+
+function TKMGUIGameSpectatorItemLineCustomBuildings.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+var
+  HT: TKMHouseType;
+begin
+  Result := KMPOINTF_INVALID_TILE;
+
+  HT := TKMHouseType(ATag);
+
+  gHands[AHandIndex].GetNextHouseWSameType(HT, fLastHouseUIDs[HT], fHouseSketch, True);
+  if not fHouseSketch.IsEmpty  then
+  begin
+    gMySpectator.Highlight := fHouseSketch;
+    Result := KMPointF(fHouseSketch.Entrance); //get position on that house
+    fLastHouseUIDs[HT] := fHouseSketch.UID;
+  end;
 end;
 
 { TKMGUIGameSpectatorItemLineBuild }
@@ -408,7 +533,7 @@ begin
   for i := 0 to gHands[AHandIndex].Houses.Count - 1 do
   begin
     House := gHands[AHandIndex].Houses[i];
-    if (House.HouseType = HouseType) and (House.BuildingState in [hbs_Wood, hbs_Stone]) and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
+    if (House.HouseType = HouseType) and (House.BuildingState in [hbsWood, hbsStone]) and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
       HouseProgress := House;
   end;
 
@@ -433,10 +558,14 @@ begin
   Result := IfThen(Value > 0, '+' + IntToStr(Value), '');
 end;
 
+
 { TKMGUIGameSpectatorItemLinePopulation }
-function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
+                                           gRes.Units[TKMUnitType(ATag)].GUIIcon,
+                                           gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex,
+                                           DontHighlight, aOnItemClick);
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
@@ -457,10 +586,20 @@ begin
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
+
 { TKMGUIGameSpectatorItemLineArmy }
-function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
 begin
-  Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Units[TKMUnitType(ATag)].GUIIcon, gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex);
+  Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
+                                           gRes.Units[TKMUnitType(ATag)].GUIIcon,
+                                           gRes.Units[TKMUnitType(ATag)].GUIName, FHandIndex,
+                                           CheckHighlight, aOnItemClick);
+  ResetUIDs;
+end;
+
+function TKMGUIGameSpectatorItemLineArmy.CheckHighlight(aIndex: Integer): Boolean;
+begin
+  Result := gHands[FHandIndex].Stats.GetUnitQty(TKMUnitType(aIndex)) > 0;
 end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTagCount: Integer;
@@ -473,12 +612,44 @@ begin
   Result := Integer(WARRIOR_MIN) + AIndex;
 end;
 
-function TKMGUIGameSpectatorItemLineArmy.GetValue(AHandIndex: Integer; ATag: Integer): String;
+procedure TKMGUIGameSpectatorItemLineArmy.ResetUIDs;
+var
+  UT: TKMUnitType;
+begin
+  for UT := Low(fLastWarriorUIDs) to High(fLastWarriorUIDs) do
+    fLastWarriorUIDs[UT] := 0;
+end;
+
+function TKMGUIGameSpectatorItemLineArmy.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+var
+  NextGroup: TKMUnitGroup;
+  UT: TKMUnitType;
+begin
+  Result := KMPOINTF_INVALID_TILE;
+
+  UT := TKMUnitType(ATag);
+
+  NextGroup := gHands[AHandIndex].GetNextGroupWSameType(UT, fLastWarriorUIDs[UT]);
+  if NextGroup <> nil then
+  begin
+    Result := NextGroup.FlagBearer.PositionF; //get position on that warrior
+    fLastWarriorUIDs[UT] := NextGroup.UID;
+  end;
+end;
+
+
+{ TKMGUIGameSpectatorItemLineArmyInstantenious }
+function TKMGUIGameSpectatorItemLineArmyInstantenious.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
 begin
   Value := gHands[AHandIndex].Stats.GetUnitQty(TKMUnitType(ATag));
   Result := IfThen(Value > 0, IntToStr(Value), '');
+end;
+
+function TKMGUIGameSpectatorItemLineArmyInstantenious.CheckHighlight(aIndex: Integer): Boolean;
+begin
+  Result := True; //We always have soldiers to set viewport on
 end;
 
 
@@ -511,13 +682,14 @@ begin
 end;
 
 { TKMGUIGameSpectator }
-constructor TKMGUIGameSpectator.Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent);
+constructor TKMGUIGameSpectator.Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
 const
   DROPBOX_W = 270;
 begin
   inherited Create;
 
   fOnJumpToPlayer := aOnJumpToPlayer;
+  fSetViewportPos := aSetViewportPos;
 
   FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - DROPBOX_W - 10, 0, DROPBOX_W + 10, 30);
   FDropBoxPanel.Anchors := [anTop, anRight];
@@ -530,16 +702,16 @@ begin
 
   AddLineType(0, nil);
   AddLineType(1, TKMGUIGameSpectatorItemLineResources);
-  AddLineType(2, TKMGUIGameSpectatorItemLineWareFare);
+  AddLineType(2, TKMGUIGameSpectatorItemLineWarFare);
   AddLineType(3, TKMGUIGameSpectatorItemLineBuildings);
   AddLineType(4, TKMGUIGameSpectatorItemLineBuild);
   AddLineType(5, TKMGUIGameSpectatorItemLinePopulation);
-  AddLineType(6, TKMGUIGameSpectatorItemLineArmy);
+  AddLineType(6, TKMGUIGameSpectatorItemLineArmyInstantenious);
   AddLineType(7, TKMGUIGameSpectatorItemLineArmyTotal);
   AddLineType(8, TKMGUIGameSpectatorItemLineArmyKilling);
   AddLineType(9, TKMGUIGameSpectatorItemLineArmyLost);
 
-  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fnt_Metal, '', bsGame);
+  FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fntMetal, '', bsGame);
   FDropBox.OnChange := ChangePage;
 
   FDropBox.Add(gResTexts[TX_WORD_NONE]);
@@ -563,7 +735,7 @@ begin
   if ALineClass <> nil then
     for i := 0 to MAX_HANDS - 1 do
     begin
-      FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i, fOnJumpToPlayer);
+      FLines[AIndex, i] := ALineClass.Create(FDropBoxPanel.Parent, i, fOnJumpToPlayer, fSetViewportPos);
       FLines[AIndex, i].Visible := False;
     end;
 end;

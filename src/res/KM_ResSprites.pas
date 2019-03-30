@@ -252,10 +252,10 @@ begin
                 end;
                 //Smooth all death animations for all units
                 for UT := HUMANS_MIN to HUMANS_MAX do
-                  for Dir := dir_N to dir_NW do
+                  for Dir := dirN to dirNW do
                     for Step := 1 to 30 do
                     begin
-                      SpriteID := gRes.Units[UT].UnitAnim[ua_Die,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
+                      SpriteID := gRes.Units[UT].UnitAnim[uaDie,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
                       if (aID = SpriteID) and (SpriteID > 0) then
                       begin
                         Result := sstBoth;
@@ -300,7 +300,7 @@ begin
       end;
     end;
   finally
-    ShadowConverter.Free;
+    FreeAndNil(ShadowConverter);
   end;
 end;
 
@@ -318,7 +318,7 @@ begin
       if (fRXData.Flag[I] <> 0) then
         ShadowConverter.ConvertShadows(I, aOnlyShadows);
   finally
-    ShadowConverter.Free;
+    FreeAndNil(ShadowConverter);
   end;
 end;
 
@@ -332,7 +332,7 @@ begin
     if (fRXData.Flag[aID] <> 0) then
       ShadowConverter.ConvertShadows(aID, aOnlyShadows);
   finally
-    ShadowConverter.Free;
+    FreeAndNil(ShadowConverter);
   end;
 end;
 
@@ -507,8 +507,8 @@ begin
           DecompressionStream.Read(fRXData.Mask[I, 0], fRXData.Size[I].X * fRXData.Size[I].Y);
       end;
   finally
-    DecompressionStream.Free;
-    InputStream.Free;
+    FreeAndNil(DecompressionStream);
+    FreeAndNil(InputStream);
   end;
 end;
 
@@ -523,38 +523,47 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
   begin
     if not DirectoryExists(aFolder) then Exit;
     FileList := TStringList.Create;
-    IDList := TStringList.Create;
     try
-      //PNGs
-      if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????.png', faAnyFile - faDirectory, SearchRec) = 0 then
-      repeat
-        FileList.Add(SearchRec.Name);
-      until (FindNext(SearchRec) <> 0);
-      FindClose(SearchRec);
-
-      //PNG may be accompanied by some more files
-      //#_####.png - Base texture
-      //#_####a.png - Flag color mask
-      //#_####.txt - Pivot info (optional)
-      for I := 0 to FileList.Count - 1 do
-        if TryStrToInt(Copy(FileList.Strings[I], 3, 4), ID) then
-        begin
-          AddImage(aProcFolder, FileList.Strings[I], ID);
-          IDList.Add(IntToStr(ID));
+      IDList := TStringList.Create;
+      try
+        try
+          //PNGs
+          if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????.png', faAnyFile - faDirectory, SearchRec) = 0 then
+          repeat
+            FileList.Add(SearchRec.Name);
+          until (FindNext(SearchRec) <> 0);
+        finally
+          FindClose(SearchRec);
         end;
 
-      SoftenShadows(IDList); // Soften shadows for overloaded sprites
+        //PNG may be accompanied by some more files
+        //#_####.png - Base texture
+        //#_####a.png - Flag color mask
+        //#_####.txt - Pivot info (optional)
+        for I := 0 to FileList.Count - 1 do
+          if TryStrToInt(Copy(FileList.Strings[I], 3, 4), ID) then
+          begin
+            AddImage(aProcFolder, FileList.Strings[I], ID);
+            IDList.Add(IntToStr(ID));
+          end;
 
-      //Delete following sprites
-      if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????', faAnyFile - faDirectory, SearchRec) = 0 then
-      repeat
-        if TryStrToInt(Copy(SearchRec.Name, 3, 4), ID) then
-          fRXData.Flag[ID] := 0;
-      until (FindNext(SearchRec) <> 0);
-      FindClose(SearchRec);
+        SoftenShadows(IDList); // Soften shadows for overloaded sprites
+
+        try
+          //Delete following sprites
+          if FindFirst(aProcFolder + IntToStr(Byte(fRT) + 1) + '_????', faAnyFile - faDirectory, SearchRec) = 0 then
+          repeat
+            if TryStrToInt(Copy(SearchRec.Name, 3, 4), ID) then
+              fRXData.Flag[ID] := 0;
+          until (FindNext(SearchRec) <> 0);
+        finally
+          FindClose(SearchRec);
+        end;
+      finally
+        FreeAndNil(IDList);
+      end;
     finally
-      FileList.Free;
-      IDList.Free;
+      FreeAndNil(FileList);
     end;
   end;
 begin
@@ -578,7 +587,7 @@ begin
   for I := 1 to fRXData.Count do
     ExportFullImageData(aFolder, I, SL);
 
-  SL.Free;
+  FreeAndNil(SL);
 end;
 
 
@@ -608,7 +617,7 @@ begin
   end;
 
   if ListCreated then
-    aTempList.Free;
+    FreeAndNil(aTempList);
 end;
 
 
@@ -735,9 +744,9 @@ begin
   if fRXData.Count = 0 then Exit;
 
   if aAlphaShadows and (fRT in [rxTrees,rxHouses,rxUnits,rxGui]) then
-    TexType := tf_RGBA8
+    TexType := tfRGBA8
   else
-    TexType := tf_RGB5A1;
+    TexType := tfRGB5A1;
 
   MakeGFX_BinPacking(TexType, aStartingIndex, BaseRAM, ColorRAM, TexCount, aFillGFXData, aOnStopExecution);
 
@@ -956,7 +965,7 @@ begin
   BinPack(SpriteSizes, AtlasSize, fPad, SpriteInfo);
   if StopExec then Exit;
   SetLength(gGFXPrepData[saMask], Length(SpriteInfo));
-  PrepareAtlases(SpriteInfo, saMask, tf_Alpha8);
+  PrepareAtlases(SpriteInfo, saMask, tfAlpha8);
 end;
 
 
@@ -1008,13 +1017,13 @@ destructor TKMResSprites.Destroy;
 var
   RT: TRXType;
 begin
-  fGameRXTypes.Free;
+  FreeAndNil(fGameRXTypes);
   // Stop resource loader before Freeing SpritePack, as loader use fRXData and could get an exception there on game exit
   if fGameResLoader <> nil then
     StopResourceLoader;
 
   for RT := Low(TRXType) to High(TRXType) do
-    fSprites[RT].Free;
+    FreeAndNil(fSprites[RT]);
 
   inherited;
 end;
@@ -1110,7 +1119,7 @@ begin
         //for all Mask Types
         for MT := Low(TKMTileMaskType) to High(TKMTileMaskType) do
         begin
-          if MT = mt_None then Continue;
+          if MT = mtNone then Continue;
 
           // for all Mask subtypes
           for MST := Low(TKMTileMaskSubType) to High(TKMTileMaskSubType) do //Mask subtypes (actual masks for layers)

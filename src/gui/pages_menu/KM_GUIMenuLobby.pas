@@ -233,9 +233,9 @@ end;
 
 destructor TKMMenuLobby.Destroy;
 begin
-  fMapsMP.Free;
-  fSavesMP.Free;
-  fMinimap.Free;
+  FreeAndNil(fMapsMP);
+  FreeAndNil(fSavesMP);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;
@@ -389,19 +389,19 @@ begin
     //Server Name
     Panel_ServerName := TKMPanel.Create(Panel_Lobby, 30, 30, CW, 26);
       TKMBevel.Create(Panel_ServerName,   0,  0, CW, 26);
-      Label_ServerName := TKMLabel.Create(Panel_ServerName, 10, 7, CW-20, 20, '', fnt_Metal, taLeft);
+      Label_ServerName := TKMLabel.Create(Panel_ServerName, 10, 7, CW-20, 20, '', fntMetal, taLeft);
 
     //Players
     Panel_Players := TKMPanel.Create(Panel_Lobby, 30, 61, CW, 340);
       Bevel_Players := TKMBevel.Create(Panel_Players,  0,  0, CW, 340);
 
-      CheckBox_HostControl := TKMCheckBox.Create(Panel_Players, 10, 10, (CW div 2) + TC2_ADD - 10, 20, gResTexts[TX_LOBBY_HOST_DOES_SETUP], fnt_Metal);
+      CheckBox_HostControl := TKMCheckBox.Create(Panel_Players, 10, 10, (CW div 2) + TC2_ADD - 10, 20, gResTexts[TX_LOBBY_HOST_DOES_SETUP], fntMetal);
       CheckBox_HostControl.OnClick := PlayersSetupChange;
 
-      CheckBox_Spectators := TKMCheckbox.Create(Panel_Players, (CW div 2) + TC2_ADD, 10, (CW div 2) - TC2_ADD - 10, 20, gResTexts[TX_LOBBY_ALLOW_SPECTATORS], fnt_Metal);
+      CheckBox_Spectators := TKMCheckbox.Create(Panel_Players, (CW div 2) + TC2_ADD, 10, (CW div 2) - TC2_ADD - 10, 20, gResTexts[TX_LOBBY_ALLOW_SPECTATORS], fntMetal);
       CheckBox_Spectators.OnClick := PlayersSetupChange;
 
-      CheckBox_RandomizeTeamLocations := TKMCheckBox.Create(Panel_Players, 10, 28, CW-20, 20, gResTexts[TX_LOBBY_RANDOMIZE_LOCATIONS], fnt_Metal);
+      CheckBox_RandomizeTeamLocations := TKMCheckBox.Create(Panel_Players, 10, 28, CW-20, 20, gResTexts[TX_LOBBY_RANDOMIZE_LOCATIONS], fntMetal);
       CheckBox_RandomizeTeamLocations.OnClick := PlayersSetupChange;
 
     OffY := 49;
@@ -410,12 +410,12 @@ begin
       Image_PasswordLock.Hide;
 
       //Column titles
-      TKMLabel.Create(Panel_Players, C1, OffY, C1W,  20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C2, OffY, C2W,  20, gResTexts[TX_LOBBY_HEADER_STARTLOCATION], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C3, OffY, C3W,  20, gResTexts[TX_LOBBY_HEADER_TEAM], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C4, OffY, C4W,  20, gResTexts[TX_LOBBY_HEADER_FLAGCOLOR], fnt_Outline, taLeft);
-      TKMLabel.Create(Panel_Players, C5, OffY, gResTexts[TX_LOBBY_HEADER_READY], fnt_Outline, taCenter);
-      TKMLabel.Create(Panel_Players, C6, OffY, gResTexts[TX_LOBBY_HEADER_PING], fnt_Outline, taCenter);
+      TKMLabel.Create(Panel_Players, C1, OffY, C1W,  20, gResTexts[TX_LOBBY_HEADER_PLAYERS], fntOutline, taLeft);
+      TKMLabel.Create(Panel_Players, C2, OffY, C2W,  20, gResTexts[TX_LOBBY_HEADER_STARTLOCATION], fntOutline, taLeft);
+      TKMLabel.Create(Panel_Players, C3, OffY, C3W,  20, gResTexts[TX_LOBBY_HEADER_TEAM], fntOutline, taLeft);
+      TKMLabel.Create(Panel_Players, C4, OffY, C4W,  20, gResTexts[TX_LOBBY_HEADER_FLAGCOLOR], fntOutline, taLeft);
+      TKMLabel.Create(Panel_Players, C5, OffY, gResTexts[TX_LOBBY_HEADER_READY], fntOutline, taCenter);
+      TKMLabel.Create(Panel_Players, C6, OffY, gResTexts[TX_LOBBY_HEADER_PING], fntOutline, taCenter);
 
       Bevel_SpecsDivide := TKMBevel.Create(Panel_Players, 10, 50, CW-20, 3);
 
@@ -423,12 +423,12 @@ begin
       Image_HostStar.Hide;
 
       SlotTxtWidth := Max(C1W - 45,
-                          gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
+                          gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN],
                                                                           gResTexts[TX_LOBBY_SLOT_CLOSED],
                                                                           gResTexts[TX_AI_PLAYER_CLASSIC],
                                                                           gResTexts[TX_AI_PLAYER_ADVANCED]]));
 
-      AllTxtWidth := Max(40, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
+      AllTxtWidth := Max(40, gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings([gResTexts[TX_LOBBY_SLOT_OPEN_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_CLOSED_ALL],
                                                                              gResTexts[TX_LOBBY_SLOT_AI_ALL]]));
 
@@ -441,13 +441,13 @@ begin
         Image_Flag[I].OnClick := PlayerMenuShow;
         Image_Flag[I].HighlightOnMouseOver := True;
 
-        Label_Player[I] := TKMLabel.Create(Panel_Players, C1, OffY+2, C1W, 20, '', fnt_Grey, taLeft);
+        Label_Player[I] := TKMLabel.Create(Panel_Players, C1, OffY+2, C1W, 20, '', fntGrey, taLeft);
         Label_Player[I].Hide;
 
 
-        DropBox_PlayerSlot[I] := TKMDropColumns.Create(Panel_Players, C1, OffY, C1W, 20, fnt_Grey, '', bsMenu, False);
+        DropBox_PlayerSlot[I] := TKMDropColumns.Create(Panel_Players, C1, OffY, C1W, 20, fntGrey, '', bsMenu, False);
         DropBox_PlayerSlot[I].DropWidth := SlotTxtWidth + 5 + AllTxtWidth;
-        DropBox_PlayerSlot[I].SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, SlotTxtWidth + 5], [True, False]);
+        DropBox_PlayerSlot[I].SetColumns(fntOutline, ['', gResTexts[TX_MENU_MAP_TITLE]], [0, SlotTxtWidth + 5], [True, False]);
         //1st column is used to set 'All' (All Open/All AI/All Closed),
         //Its external button analogue, so we do not want to invoke f.e. OnChange (AI) when 'AI All' clicked
         DropBox_PlayerSlot[I].List.Columns[1].TriggerOnChange := False;
@@ -468,23 +468,23 @@ begin
         DropBox_PlayerSlot[I].List.OnCellClick := DropBoxPlayers_CellClick;
         DropBox_PlayerSlot[I].OnShowList := DropBoxPlayers_Show;
 
-        DropBox_Loc[I] := TKMDropList.Create(Panel_Players, C2, OffY, C2W, 20, fnt_Grey, '', bsMenu);
+        DropBox_Loc[I] := TKMDropList.Create(Panel_Players, C2, OffY, C2W, 20, fntGrey, '', bsMenu);
         DropBox_Loc[I].Add(gResTexts[TX_LOBBY_RANDOM], LOC_RANDOM);
         DropBox_Loc[I].OnChange := PlayersSetupChange;
         DropBox_Loc[I].DropCount := MAX_LOBBY_PLAYERS + 2; //also 'Random' and possible 'Spectator'
 
-        PercentBar_DownloadProgress[I] := TKMPercentBar.Create(Panel_Players, C2, OffY, 150, 20, fnt_Grey);
+        PercentBar_DownloadProgress[I] := TKMPercentBar.Create(Panel_Players, C2, OffY, 150, 20, fntGrey);
         PercentBar_DownloadProgress[I].Caption := gResTexts[TX_LOBBY_DOWNLOADING];
         PercentBar_DownloadProgress[I].Hide;
         PercentBar_DownloadProgress[I].TextYOffset := -3;
 
-        DropBox_Team[I] := TKMDropList.Create(Panel_Players, C3, OffY, C3W, 20, fnt_Grey, '', bsMenu);
+        DropBox_Team[I] := TKMDropList.Create(Panel_Players, C3, OffY, C3W, 20, fntGrey, '', bsMenu);
         DropBox_Team[I].Add('-');
         for K := 1 to MAX_TEAMS do DropBox_Team[I].Add(IntToStr(K));
         DropBox_Team[I].OnChange := PlayersSetupChange;
 
-        DropBox_Colors[I] := TKMDropColumns.Create(Panel_Players, C4, OffY, C4W, 20, fnt_Grey, '', bsMenu);
-        DropBox_Colors[I].SetColumns(fnt_Outline, [''], [0]);
+        DropBox_Colors[I] := TKMDropColumns.Create(Panel_Players, C4, OffY, C4W, 20, fntGrey, '', bsMenu);
+        DropBox_Colors[I].SetColumns(fntOutline, [''], [0]);
         DropBox_Colors[I].List.ShowHeader := False;
         DropBox_Colors[I].DropCount := 13;
         DropBox_Colors[I].FadeImageWhenDisabled := False;
@@ -494,11 +494,11 @@ begin
         DropBox_Colors[I].OnChange := PlayersSetupChange;
 
         Image_Ready[I] := TKMImage.Create(Panel_Players, C5-8, OffY, 16, 16, 32, rxGuiMain);
-        Label_Ping[I] := TKMLabel.Create(Panel_Players, C6, OffY, '', fnt_Metal, taCenter);
+        Label_Ping[I] := TKMLabel.Create(Panel_Players, C6, OffY, '', fntMetal, taCenter);
       end;
 
     //Chat area
-    Memo_Posts := TKMMemo.Create(Panel_Lobby, 30, 406, CW, 282, fnt_Arial, bsMenu);
+    Memo_Posts := TKMMemo.Create(Panel_Lobby, 30, 406, CW, 282, fntArial, bsMenu);
     Memo_Posts.Anchors := [anLeft, anTop, anBottom];
     Memo_Posts.AutoWrap := True;
     Memo_Posts.IndentAfterNL := True; //Don't let players fake system messages
@@ -506,11 +506,11 @@ begin
 
     Button_Post := TKMButtonFlat.Create(Panel_Lobby, 30, 696, 30, 22, 0);
     Button_Post.CapOffsetY := -11;
-    Button_Post.Font := fnt_Grey;
+    Button_Post.Font := fntGrey;
     Button_Post.OnClick := ChatMenuShow;
     Button_Post.Anchors := [anLeft, anBottom];
 
-    Edit_Post := TKMEdit.Create(Panel_Lobby, 60, 696, CW, 22, fnt_Arial);
+    Edit_Post := TKMEdit.Create(Panel_Lobby, 60, 696, CW, 22, fntArial);
     Edit_Post.OnKeyDown := PostKeyDown;
     Edit_Post.OnIsKeyEventHandled := IsKeyEvent_Return_Handled;
     Edit_Post.Anchors := [anLeft, anBottom];
@@ -520,7 +520,7 @@ begin
     Panel_Setup := TKMPanel.Create(Panel_Lobby, 725, 30, 270, 723);
     Panel_Setup.Anchors := [anLeft, anTop, anBottom];
       with TKMBevel.Create(Panel_Setup,  0,  0, 270, 723) do AnchorsStretch;
-      Radio_MapType := TKMRadioGroup.Create(Panel_Setup, 10, 10, 250, 80, fnt_Metal);
+      Radio_MapType := TKMRadioGroup.Create(Panel_Setup, 10, 10, 250, 80, fntMetal);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_BUILD]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_FIGHT]);
       Radio_MapType.Add(gResTexts[TX_LOBBY_MAP_COOP]);
@@ -529,7 +529,7 @@ begin
       Radio_MapType.ItemIndex := 0;
       Radio_MapType.OnChange := MapTypeChanged;
 
-      DropCol_Maps := TKMDropColumns.Create(Panel_Setup, 10, 95, 250, 20, fnt_Metal, gResTexts[TX_LOBBY_MAP_SELECT], bsMenu);
+      DropCol_Maps := TKMDropColumns.Create(Panel_Setup, 10, 95, 250, 20, fntMetal, gResTexts[TX_LOBBY_MAP_SELECT], bsMenu);
       DropCol_Maps.DropCount := 19;
       InitDropColMapsList;
       DropCol_Maps.OnShowList := MapList_OnShow;
@@ -538,7 +538,7 @@ begin
       DropCol_Maps.OnChange := MapChange;
       DropCol_Maps.List.OnCellClick := DropBoxMaps_CellClick;
 
-      Label_MapName := TKMLabel.Create(Panel_Setup, 10, 95, 250, 20, '', fnt_Metal, taLeft);
+      Label_MapName := TKMLabel.Create(Panel_Setup, 10, 95, 250, 20, '', fntMetal, taLeft);
 
       Panel_SetupMinimap := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
         MinimapView := TKMMinimapView.Create(Panel_SetupMinimap, 39, 4, 191, 191, True);
@@ -548,7 +548,7 @@ begin
       Panel_SetupTransfer := TKMPanel.Create(Panel_Setup, 0, 120, 270, 200);
         Button_SetupDownload := TKMButton.Create(Panel_SetupTransfer, 10, 0, 250, 30, gResTexts[TX_LOBBY_DOWNLOAD], bsMenu);
         Button_SetupDownload.OnClick := FileDownloadClick;
-        PercentBar_SetupProgress := TKMPercentBar.Create(Panel_SetupTransfer, 10, 0, 250, 24, fnt_Game);
+        PercentBar_SetupProgress := TKMPercentBar.Create(Panel_SetupTransfer, 10, 0, 250, 24, fntGame);
       Panel_SetupTransfer.Hide;
 
       Button_TabDesc := TKMButton.Create(Panel_Setup, 10, 324, 125, 20, gResTexts[TX_LOBBY_MAP_DESCRIPTION], bsMenu);
@@ -560,7 +560,7 @@ begin
 
       Panel_SetupDesc := TKMPanel.Create(Panel_Setup, 0, 324, 270, 218);
       Panel_SetupDesc.Anchors := [anLeft, anTop, anBottom];
-        Memo_MapDesc := TKMMemo.Create(Panel_SetupDesc, 10, 0, 250, 218, fnt_Game, bsMenu);
+        Memo_MapDesc := TKMMemo.Create(Panel_SetupDesc, 10, 0, 250, 218, fntGame, bsMenu);
         Memo_MapDesc.Anchors := [anLeft,anTop,anBottom];
         Memo_MapDesc.AutoWrap := True;
         Memo_MapDesc.ItemHeight := 16;
@@ -572,7 +572,7 @@ begin
 
       Panel_SetupOptions := TKMPanel.Create(Panel_Setup, 0, 548, 270, 170);
       Panel_SetupOptions.Anchors := [anLeft,anBottom];
-        with TKMLabel.Create(Panel_SetupOptions, 10, 4, 250, 20, gResTexts[TX_LOBBY_GAME_OPTIONS], fnt_Outline, taLeft) do Anchors := [anLeft,anBottom];
+        with TKMLabel.Create(Panel_SetupOptions, 10, 4, 250, 20, gResTexts[TX_LOBBY_GAME_OPTIONS], fntOutline, taLeft) do Anchors := [anLeft,anBottom];
         TrackBar_LobbyPeacetime := TKMTrackBar.Create(Panel_SetupOptions, 10, 26, 250, 0, 120);
         TrackBar_LobbyPeacetime.Anchors := [anLeft,anBottom];
         TrackBar_LobbyPeacetime.Caption := gResTexts[TX_LOBBY_PEACETIME];
@@ -622,7 +622,7 @@ end;
 
 procedure TKMMenuLobby.CreatePlayerMenus(aParent: TKMPanel);
 begin
-  Menu_Host := TKMPopUpMenu.Create(aParent, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings( // Calc max width for popup which depends of texts translation
+  Menu_Host := TKMPopUpMenu.Create(aParent, gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings( // Calc max width for popup which depends of texts translation
     [gResTexts[TX_LOBBY_PLAYER_KICK], 
     gResTexts[TX_LOBBY_PLAYER_BAN], 
     gResTexts[TX_LOBBY_PLAYER_SET_HOST], 
@@ -636,7 +636,7 @@ begin
   Menu_Host.OnClick := HostMenuClick;
 
   // Calc max width for popup which depends of texts translation
-  Menu_Joiner := TKMPopUpMenu.Create(aParent, gRes.Fonts[fnt_Grey].GetMaxPrintWidthOfStrings(
+  Menu_Joiner := TKMPopUpMenu.Create(aParent, gRes.Fonts[fntGrey].GetMaxPrintWidthOfStrings(
     [gResTexts[TX_MUTE_PLAYER],
      gResTexts[TX_UNMUTE_PLAYER]])
     + 10);
@@ -654,17 +654,17 @@ begin
     TKMBevel.Create(Panel_Settings, -1000,  -1000, 4000, 4000);
     with TKMImage.Create(Panel_Settings, -20, -75, SET_W + 40, 440, 15, rxGuiMain) do ImageStretch;
     TKMBevel.Create(Panel_Settings,   0,  0, SET_W, 343);
-    TKMLabel.Create(Panel_Settings,  20, 10, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOMSETTINGS], fnt_Outline, taCenter);
+    TKMLabel.Create(Panel_Settings,  20, 10, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOMSETTINGS], fntOutline, taCenter);
 
-    TKMLabel.Create(Panel_Settings, 20, 50, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_DESCRIPTION], fnt_Outline, taCenter);
-    Edit_Description := TKMEdit.Create(Panel_Settings, 20, 70, SET_W - 40, 20, fnt_Grey);
+    TKMLabel.Create(Panel_Settings, 20, 50, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_DESCRIPTION], fntOutline, taCenter);
+    Edit_Description := TKMEdit.Create(Panel_Settings, 20, 70, SET_W - 40, 20, fntGrey);
     Edit_Description.AllowedChars := acText;
     Edit_Description.MaxLen := 60;
 
-    TKMLabel.Create(Panel_Settings, 20, 100, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_PASSWORD], fnt_Outline, taCenter);
-    Edit_Password := TKMEdit.Create(Panel_Settings, 20, 120, SET_W - 40, 20, fnt_Grey);
+    TKMLabel.Create(Panel_Settings, 20, 100, SET_W - 40, 20, gResTexts[TX_LOBBY_ROOM_PASSWORD], fntOutline, taCenter);
+    Edit_Password := TKMEdit.Create(Panel_Settings, 20, 120, SET_W - 40, 20, fntGrey);
     Edit_Password.AllowedChars := acANSI7; //Passwords are basic ANSI so everyone can type them
-    Checkbox_RememberPassword := TKMCheckbox.Create(Panel_Settings, 20, 153, SET_W - 20, 30, gResTexts[TX_LOBBY_REMEMBER_PASSWORD], fnt_Grey);
+    Checkbox_RememberPassword := TKMCheckbox.Create(Panel_Settings, 20, 153, SET_W - 20, 30, gResTexts[TX_LOBBY_REMEMBER_PASSWORD], fntGrey);
 
     Button_SettingsResetBans := TKMButton.Create(Panel_Settings, 20, 180, SET_W - 40, 30, gResTexts[TX_LOBBY_RESET_BANS], bsMenu);
     Button_SettingsUseLastPassword := TKMButton.Create(Panel_Settings, 20, 220, SET_W - 40, 30, gResTexts[TX_LOBBY_USE_LAST_PASSWORD], bsMenu);
@@ -793,15 +793,15 @@ begin
   Result := 0;
 
   case fNetworking.SelectGameKind of
-    ngk_Map:  if fNetworking.MapInfo.TxtInfo.IsCoop then
+    ngkMap:  if fNetworking.MapInfo.TxtInfo.IsCoop then
                 Result := 2
               else
               if fNetworking.MapInfo.TxtInfo.IsSpecial then
                 Result := 3
               else
-              if fNetworking.MapInfo.MissionMode = mm_Tactic then
+              if fNetworking.MapInfo.MissionMode = mmTactic then
                 Result := 1;
-    ngk_Save: Result := 4;
+    ngkSave: Result := 4;
   end;
 end;
 
@@ -1002,7 +1002,7 @@ begin
   Lobby_OnMapName('');
 
   //Setup for Host
-  if aKind = lpk_Host then
+  if aKind = lpkHost then
   begin
     Radio_MapType.Enable;
     Radio_MapType.ItemIndex := 0;
@@ -1374,7 +1374,7 @@ begin
       fNetworking.SelectLoc(DropBox_Loc[I].GetSelectedTag, NetI);
       //Host with HostDoesSetup could have given us some location we don't know about
       //from a map/save we don't have, so make sure SelectGameKind is valid
-      if (fNetworking.SelectGameKind <> ngk_None)
+      if (fNetworking.SelectGameKind <> ngkNone)
         and not fNetworking.IsHost then //Changes are applied instantly for host
         //Set loc back to NetPlayers value until host processes our request
         DropBox_Loc[I].SelectByTag(fNetworking.NetPlayers[NetI].StartLocation);
@@ -1475,7 +1475,7 @@ var
 begin
   UpdateMappings;
 
-  IsSave := fNetworking.SelectGameKind = ngk_Save;
+  IsSave := fNetworking.SelectGameKind = ngkSave;
 
 
   if Radio_MapType.ItemIndex < 4 then //Limit PT for new game
@@ -1527,7 +1527,7 @@ begin
         FirstUnused := False;
 
         DropBox_Loc[I].Clear;
-        if fNetworking.SelectGameKind = ngk_Save then
+        if fNetworking.SelectGameKind = ngkSave then
           DropBox_Loc[I].Add(gResTexts[TX_LOBBY_SELECT], LOC_RANDOM)
         else
           DropBox_Loc[I].Add(gResTexts[TX_LOBBY_RANDOM], LOC_RANDOM);
@@ -1595,8 +1595,8 @@ begin
       IsValid := False;
       DropBox_Loc[I].Clear;
       case fNetworking.SelectGameKind of
-        ngk_None: AddLocation(gResTexts[TX_LOBBY_RANDOM], I, LOC_RANDOM);
-        ngk_Save: begin
+        ngkNone: AddLocation(gResTexts[TX_LOBBY_RANDOM], I, LOC_RANDOM);
+        ngkSave: begin
                     IsValid := fNetworking.SaveInfo.IsValid;
                     AddLocation(gResTexts[TX_LOBBY_SELECT], I, LOC_RANDOM);
 
@@ -1605,7 +1605,7 @@ begin
                       and (fNetworking.SaveInfo.Info.CanBeHuman[K] or ALLOW_TAKE_AI_PLAYERS) then
                         AddLocation(UnicodeString(fNetworking.SaveInfo.Info.OwnerNikname[K]), I, K+1);
                   end;
-        ngk_Map:  begin
+        ngkMap:  begin
                     IsValid := fNetworking.MapInfo.IsValid;
                     AddLocation(gResTexts[TX_LOBBY_RANDOM], I, LOC_RANDOM);
 
@@ -1631,7 +1631,7 @@ begin
         DropBox_Loc[I].ItemIndex := 0;
 
       //Always show the selected teams, except when the map denies it
-      if (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
+      if (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.TxtInfo.BlockTeamSelection then
         DropBox_Team[I].ItemIndex := 0 //Hide selected teams since they will be overridden
       else
         DropBox_Team[I].ItemIndex := CurPlayer.Team;
@@ -1642,7 +1642,7 @@ begin
       for K := 0 to DropBox_Colors[I].List.RowCount-1 do
         if (K <> CurPlayer.FlagColorID) and (K <> 0)
         and (not fNetworking.NetPlayers.ColorAvailable(K)
-             or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.Info.ColorUsed(K))) then
+             or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.Info.ColorUsed(K))) then
           DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := False
         else
           DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := True;
@@ -1664,7 +1664,7 @@ begin
       //Can't change color or teams in a loaded save (spectators can set color)
       //Can only edit teams for maps (not saves), but the map may deny this
       DropBox_Team[I].Enabled := (CanEdit or HostCanEdit) and not CurPlayer.IsSpectator
-                                      and (fNetworking.SelectGameKind = ngk_Map)
+                                      and (fNetworking.SelectGameKind = ngkMap)
                                       and not fNetworking.MapInfo.TxtInfo.BlockTeamSelection;
       DropBox_Colors[I].Enabled := (CanEdit or (MyNik and not CurPlayer.ReadyToStart))
                                         and (not IsSave or CurPlayer.IsSpectator);
@@ -1703,7 +1703,7 @@ begin
   end;
 
   //If we have a map selected update the preview
-  if (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid then
+  if (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid then
   begin
     fMinimap.Update(not fNetworking.MapInfo.TxtInfo.BlockFullMapPreview);
     MinimapView.SetMinimap(fMinimap);
@@ -1762,7 +1762,7 @@ end;
 procedure TKMMenuLobby.InitDropColMapsList;
 begin
   DropCol_Maps.DropWidth := 460;
-  DropCol_Maps.SetColumns(fnt_Outline,
+  DropCol_Maps.SetColumns(fntOutline,
                           ['', gResTexts[TX_MENU_MAP_TITLE], '#', gResTexts[TX_MENU_MAP_SIZE]],
                           [0, 20, 320, 350],
                           [False, True, True, True]);
@@ -1790,7 +1790,7 @@ begin
           fSavesMP.Refresh(MapList_ScanUpdate, True);
           DropCol_Maps.DropWidth := 600;
           DropCol_Maps.DefaultCaption := gResTexts[TX_LOBBY_MAP_SELECT_SAVED];
-          DropCol_Maps.SetColumns(fnt_Outline, [gResTexts[TX_MENU_LOAD_FILE], '#', gResTexts[TX_MENU_SAVE_TIME], gResTexts[TX_MENU_LOAD_DATE]], [0, 290, 320, 430]);
+          DropCol_Maps.SetColumns(fntOutline, [gResTexts[TX_MENU_LOAD_FILE], '#', gResTexts[TX_MENU_SAVE_TIME], gResTexts[TX_MENU_LOAD_DATE]], [0, 290, 320, 430]);
         end;
     else
         begin
@@ -1824,7 +1824,7 @@ begin
   begin
     fNetworking.SelectLoc(aValue+1, I);
     //Host with HostDoesSetup could have given us some location we don't know about from a map/save we don't have
-    if fNetworking.SelectGameKind <> ngk_None then
+    if fNetworking.SelectGameKind <> ngkNone then
       DropBox_Loc[fNetPlayersToLocal[I]].SelectByTag(fNetworking.NetPlayers[I].StartLocation);
   end;
 end;
@@ -1909,8 +1909,8 @@ begin
     begin
       //Different modes allow different maps
       case Radio_MapType.ItemIndex of
-        0:    AddMap := (fMapsMP[I].MissionMode = mm_Normal) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //BuildMap
-        1:    AddMap := (fMapsMP[I].MissionMode = mm_Tactic) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //FightMap
+        0:    AddMap := (fMapsMP[I].MissionMode = mmNormal) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //BuildMap
+        1:    AddMap := (fMapsMP[I].MissionMode = mmTactic) and not fMapsMP[I].TxtInfo.IsCoop and not fMapsMP[I].TxtInfo.IsSpecial; //FightMap
         2:    AddMap := fMapsMP[I].TxtInfo.IsCoop; //CoopMap
         3:    AddMap := fMapsMP[I].TxtInfo.IsSpecial; //Special map
         else  AddMap := False; //Other cases are already handled in Lobby_MapTypeSelect
@@ -1949,7 +1949,7 @@ begin
   end;
 
   //After being reassigned to host we may need to reselect the map
-  if (DropCol_Maps.ItemIndex = -1) and (fNetworking.SelectGameKind = ngk_Map) then
+  if (DropCol_Maps.ItemIndex = -1) and (fNetworking.SelectGameKind = ngkMap) then
     SelectByName(fNetworking.MapInfo.FileName);
 end;
 
@@ -2012,7 +2012,7 @@ begin
   end;
 
   //After being reassigned to host we may need to reselect the save
-  if (DropCol_Maps.ItemIndex = -1) and (fNetworking.SelectGameKind = ngk_Save) then
+  if (DropCol_Maps.ItemIndex = -1) and (fNetworking.SelectGameKind = ngkSave) then
     SelectByName(fNetworking.SaveInfo.FileName);
 end;
 
@@ -2168,32 +2168,32 @@ var
   S: TKMSaveInfo;
 begin
   //Common settings
-  MinimapView.Visible := (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
+  MinimapView.Visible := (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
   TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost
-                                     and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid
+                                     and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid
                                      and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
   TrackBar_SpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost
-                                    and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
-                                      or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
+                                    and (((fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid)
+                                      or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid));
   TrackBar_SpeedAfterPT.Enabled := fNetworking.IsHost
-                                        and (((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
-                                          or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid));
-  CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngk_Save);
+                                        and (((fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid)
+                                          or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid));
+  CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngkSave);
 
   //In case it was hidden during file transfer
   Panel_SetupTransfer.Hide;
   Panel_SetupMinimap.Show;
 
   //Don't reset the selection if no map is selected
-  if ((fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid)
-  or ((fNetworking.SelectGameKind = ngk_Save) and fNetworking.SaveInfo.IsValid) then
+  if ((fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid)
+  or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid) then
     Radio_MapType.ItemIndex := DetectMapType;
 
   Memo_MapDesc.Height := Panel_SetupDesc.Height;
   Button_SetupReadme.Hide;
 
   case fNetworking.SelectGameKind of
-    ngk_None: begin
+    ngkNone: begin
                 Memo_MapDesc.Clear;
                 if aData = '' then
                   Label_MapName.Caption := gResTexts[TX_LOBBY_MAP_NONE]
@@ -2203,13 +2203,13 @@ begin
                   Label_MapName.Caption := aData; //Some error message
                 end;
               end;
-    ngk_Save: begin
+    ngkSave: begin
                 S := fNetworking.SaveInfo;
                 Label_MapName.Caption := aData; //Show save name on host (local is always "downloaded")
                 Memo_MapDesc.Text := S.Info.GetTitleWithTime + '|' + S.Info.GetSaveTimestamp;
                 Lobby_OnUpdateMinimap(nil);
               end;
-    ngk_Map:  begin
+    ngkMap:  begin
                 M := fNetworking.MapInfo;
 
                 //Only load the minimap preview if the map is valid
@@ -2241,15 +2241,15 @@ end;
 procedure TKMMenuLobby.Lobby_OnMapMissing(const aData: UnicodeString; aStartTransfer: Boolean);
 begin
   //Common settings
-  MinimapView.Visible := (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
-  TrackBar_SpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  TrackBar_SpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngk_Map) and fNetworking.MapInfo.IsValid;
-  CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngk_Save);
+  MinimapView.Visible := (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
+  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
+  TrackBar_SpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
+  TrackBar_SpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
+  CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngkSave);
 
   Label_MapName.Caption := fNetworking.MissingFileName;
   Memo_MapDesc.Text := aData; //aData is some error message
-  if fNetworking.MissingFileType = ngk_Save then
+  if fNetworking.MissingFileType = ngkSave then
     Radio_MapType.ItemIndex := 4
   else
     Radio_MapType.ItemIndex := 0;
@@ -2265,7 +2265,7 @@ end;
 //We have been assigned to be the host of the game because the host disconnected. Reopen lobby page in correct mode.
 procedure TKMMenuLobby.Lobby_OnReassignedToHost(Sender: TObject);
 begin
-  Reset(lpk_Host, True, True); //Will reset the lobby page into host mode, preserving messages/maps
+  Reset(lpkHost, True, True); //Will reset the lobby page into host mode, preserving messages/maps
 
   //Pick correct position of map type selector
   Radio_MapType.ItemIndex := DetectMapType;
@@ -2274,15 +2274,15 @@ begin
   Lobby_OnGameOptions(nil);
 
   case fNetworking.SelectGameKind of
-    ngk_Map:  Lobby_OnMapName(fNetworking.MapInfo.FileName);
-    ngk_Save: Lobby_OnMapName(fNetworking.SaveInfo.FileName);
+    ngkMap:  Lobby_OnMapName(fNetworking.MapInfo.FileName);
+    ngkSave: Lobby_OnMapName(fNetworking.SaveInfo.FileName);
   end;
 end;
 
 
 procedure TKMMenuLobby.Lobby_OnReassignedToJoiner(Sender: TObject);
 begin
-  Reset(lpk_Joiner, True, True); //Will reset the lobby page into host mode, preserving messages/maps
+  Reset(lpkJoiner, True, True); //Will reset the lobby page into host mode, preserving messages/maps
 
   //Pick correct position of map type selector
   Radio_MapType.ItemIndex := DetectMapType;
@@ -2356,7 +2356,7 @@ end;
 procedure TKMMenuLobby.Lobby_OnDisconnect(const aData: UnicodeString);
 begin
   fNetworking.Disconnect;
-  gSoundPlayer.Play(sfxn_Error);
+  gSoundPlayer.Play(sfxnError);
 
   fOnPageChange(gpMultiplayer, aData);
 end;
@@ -2470,7 +2470,7 @@ begin
     fNetworking.SelectSave(aSaveName);
     //Make sure the save was successfully selected
     Radio_MapType.ItemIndex := DetectMapType;
-    if fNetworking.SelectGameKind = ngk_Save then
+    if fNetworking.SelectGameKind = ngkSave then
       Lobby_OnMapName(aSaveName);
   end;
 end;

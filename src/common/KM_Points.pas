@@ -4,7 +4,7 @@ interface
 
 
 type
-  TKMDirection = (dir_NA, dir_N, dir_NE, dir_E, dir_SE, dir_S, dir_SW, dir_W, dir_NW);
+  TKMDirection = (dirNA, dirN, dirNE, dirE, dirSE, dirS, dirSW, dirW, dirNW);
 
 type
   //Records must be packed so they are stored identically in MP saves (padding bytes are unknown values)
@@ -164,6 +164,7 @@ const
   KMPOINT_ZERO: TKMPoint = (X: 0; Y: 0);
   KMPOINTF_ZERO: TKMPointF = (X: 0.0; Y: 0.0);
   KMPOINT_INVALID_TILE: TKMPoint = (X: -1; Y: -1);
+  KMPOINTF_INVALID_TILE: TKMPointF = (X: -1; Y: -1);
 
   KMRECT_ZERO: TKMRect = (Left: 0; Top: 0; Right: 0; Bottom: 0);
   KMRECT_INVALID_TILES: TKMRect = (Left: -1; Top: -1; Right: -1; Bottom: -1);
@@ -389,12 +390,12 @@ end;
 function KMRectGrow(const aRect: TKMRect; const aDir: TKMDirection; aInset: Integer = 1): TKMRect; overload;
 begin
   case aDir of
-    dir_NA: Result := KMRectGrow(aRect, aInset);
-    dir_NE: Result := KMRectGrowTopRight(aRect, aInset);
-    dir_SE: Result := KMRectGrowBottomRight(aRect, aInset);
-    dir_SW: Result := KMRectGrowBottomLeft(aRect, aInset);
-    dir_NW: Result := KMRectGrowTopLeft(aRect, aInset);
-    dir_N, dir_E, dir_S, dir_W: Result := aRect; //not implemented yet
+    dirNA: Result := KMRectGrow(aRect, aInset);
+    dirNE: Result := KMRectGrowTopRight(aRect, aInset);
+    dirSE: Result := KMRectGrowBottomRight(aRect, aInset);
+    dirSW: Result := KMRectGrowBottomLeft(aRect, aInset);
+    dirNW: Result := KMRectGrowTopLeft(aRect, aInset);
+    dirN, dirE, dirS, dirW: Result := aRect; //not implemented yet
   end;
 end;
 
@@ -531,9 +532,9 @@ end;
 function KMGetDirection(X,Y: Integer): TKMDirection;
 const
   DirectionsBitfield: array [-1..1, -1..1] of TKMDirection =
-    ((dir_NW, dir_W,  dir_SW),
-     (dir_N,  dir_NA, dir_S),
-     (dir_NE, dir_E,  dir_SE));
+    ((dirNW, dirW,  dirSW),
+     (dirN,  dirNA, dirS),
+     (dirNE, dirE,  dirSE));
 var
   Scale: Integer;
   A, B: ShortInt;
@@ -548,9 +549,9 @@ end;
 function KMGetDirection(X,Y: Single): TKMDirection;
 const
   DirectionsBitfield: array [-1..1, -1..1] of TKMDirection =
-    ((dir_NW, dir_W,  dir_SW),
-     (dir_N,  dir_NA, dir_S),
-     (dir_NE, dir_E,  dir_SE));
+    ((dirNW, dirW,  dirSW),
+     (dirN,  dirNA, dirS),
+     (dirNE, dirE,  dirSE));
 var
   Scale: Single;
   A, B: ShortInt;
@@ -595,7 +596,7 @@ end;
 
 function KMGetVertexDir(X,Y: Integer): TKMDirection;
 const DirectionsBitfield: array [-1..0, -1..0] of TKMDirection =
-        ((dir_SE, dir_NE), (dir_SW, dir_NW));
+        ((dirSE, dirNE), (dirSW, dirNW));
 begin
   Result := DirectionsBitfield[X,Y];
 end;
@@ -631,26 +632,26 @@ end;
 
 function KMAddDirection(const aDir: TKMDirection; aAdd: Byte): TKMDirection;
 begin
-  Assert(aDir <> dir_NA);
+  Assert(aDir <> dirNA);
   Result := TKMDirection((Byte(aDir) + aAdd - 1) mod 8 + 1);
 end;
 
 
 function KMNextDirection(const aDir: TKMDirection): TKMDirection;
 begin
-  if aDir < dir_NW then
+  if aDir < dirNW then
     Result := Succ(aDir)
   else
-    Result := dir_N; //Rewind to start
+    Result := dirN; //Rewind to start
 end;
 
 
 function KMPrevDirection(const aDir: TKMDirection): TKMDirection;
 begin
-  if aDir > dir_N then
+  if aDir > dirN then
     Result := Pred(aDir)
   else
-    Result := dir_NW; //Rewind to end
+    Result := dirNW; //Rewind to end
 end;
 
 

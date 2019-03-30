@@ -11,11 +11,11 @@ rmdir /S /Q logs dcu
 
 erase /F /Q /S *.~* *.ddp *.drc *.dcp *.dcu
 erase /F /Q /S *.o *.or *.ppu *.compiled *.local
-erase /F /Q /S *.tmp *.log thumbs.db KaM_Remake.map descript.ion *.skincfg *.identcache *.tvsconfig *.mi *.LOG.txt *.stat bugreport.txt
+erase /F /Q /S *.tmp *.log thumbs.db KaM_Remake.map descript.ion *.skincfg *.identcache *.tvsconfig *.mi *.LOG.txt *.stat bugreport.txt *.bak
 
 erase /F /Q /S /A:H *.~* *.ddp *.drc *.dcp *.dcu
 erase /F /Q /S /A:H *.o *.or *.ppu *.compiled *.local
-erase /F /Q /S /A:H *.tmp *.log thumbs.db KaM_Remake.map descript.ion *.skincfg *.identcache *.tvsconfig *.mi *.LOG.txt *.stat bugreport.txt
+erase /F /Q /S /A:H *.tmp *.log thumbs.db KaM_Remake.map descript.ion *.skincfg *.identcache *.tvsconfig *.mi *.LOG.txt *.stat bugreport.txt *.bak
 
 erase /F /Q /S Maps\*.rar Maps\*.zip Maps\*.7z MapsMP\*.rar MapsMP\*.zip MapsMP\*.7z
 

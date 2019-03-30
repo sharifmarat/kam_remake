@@ -528,6 +528,9 @@ type
   // Check if specified aChar is allowed for specified aAllowedChars type
   function IsCharAllowed(aChar: WideChar; aAllowedChars: TKMAllowedChars): Boolean;
 
+const
+  DEFAULT_HIGHLIGHT_COEF = 0.4;
+
 
 type
 
@@ -719,7 +722,7 @@ type
     Caption, CaptionLeft, CaptionRight: UnicodeString; //CaptionLeft and CaptionRight are shown to the left and right from main Caption. Use them only with taCenter
     FontColor: TColor4;
     TextYOffset: Integer;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fnt_Mini);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini);
     procedure SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
     property Seam: Single read fSeam write SetSeam;
     property Position: Single read fPosition write SetPosition;
@@ -767,7 +770,7 @@ type
   public
     ValueMin: Integer;
     ValueMax: Integer;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fntGrey; aSelectable: Boolean = True);
     property Value: Integer read fValue write SetValue;
 
     function KeyDown(Key: Word; Shift: TShiftState): Boolean; override;
@@ -864,7 +867,7 @@ type
   end;
 
 
-  TKMScrollAxis = (sa_Vertical, sa_Horizontal);
+  TKMScrollAxis = (saVertical, saHorizontal);
   TKMScrollStyle = (ssGame, ssCommon);
   TKMScrollAxisSet = set of TKMScrollAxis;
 
@@ -1906,7 +1909,7 @@ begin
   end;
 
   if SHOW_CONTROLS_ID then
-    TKMRenderUI.WriteText(AbsLeft+1, AbsTop, fWidth, IntToStr(fID), fnt_Mini, taLeft);
+    TKMRenderUI.WriteText(AbsLeft+1, AbsTop, fWidth, IntToStr(fID), fntMini, taLeft);
 
   if not SHOW_CONTROLS_OVERLAY then exit;
 
@@ -2410,7 +2413,7 @@ var
   I: Integer;
 begin
   for I := 0 to ChildCount - 1 do
-    Childs[I].Free;
+    FreeAndNil(Childs[I]);
 
   inherited;
 end;
@@ -2655,7 +2658,7 @@ begin
 
   fButtonClose := TKMButtonFlat.Create(Self, aWidth - fHeaderHeight + 2, 2, fHeaderHeight-4, fHeaderHeight-4, 340, rxGui);
   fButtonClose.OnClick := FormCloseClick;
-  fLabelCaption := TKMLabel.Create(Self, 0, 5, aWidth, fHeaderHeight, 'Form1', fnt_Outline, taCenter);
+  fLabelCaption := TKMLabel.Create(Self, 0, 5, aWidth, fHeaderHeight, 'Form1', fntOutline, taCenter);
   fLabelCaption.Hitable := False;
 end;
 
@@ -2916,7 +2919,7 @@ begin
   ImageAnchors := [anLeft, anTop];
   Highlight := False;
   HighlightOnMouseOver := False;
-  HighlightCoef := 0.4;
+  HighlightCoef := DEFAULT_HIGHLIGHT_COEF;
 end;
 
 
@@ -3123,7 +3126,7 @@ begin
     //Render miniature copy of all available colors with '?' on top
     for i:=0 to Length(Colors)-1 do
       TKMRenderUI.WriteShape(AbsLeft+(i mod fColumnCount)*(fCellSize div fColumnCount)+2, AbsTop+(i div fColumnCount)*(fCellSize div fColumnCount)+2, (fCellSize div fColumnCount), (fCellSize div fColumnCount), Colors[i]);
-    TKMRenderUI.WriteText(AbsLeft + fCellSize div 2, AbsTop + fCellSize div 4, 0, '?', fnt_Metal, taCenter);
+    TKMRenderUI.WriteText(AbsLeft + fCellSize div 2, AbsTop + fCellSize div 4, 0, '?', fntMetal, taCenter);
     Start := 1;
   end;
 
@@ -3160,7 +3163,7 @@ begin
   TexID             := 0;
   Caption           := '';
   FlagColor         := $FFFF00FF;
-  Font              := fnt_Metal;
+  Font              := fntMetal;
   fTextAlign        := taCenter; //Thats default everywhere in KaM
   TextVAlign        := tvaMiddle;//tvaNone;
   fStyle            := aStyle;
@@ -3192,7 +3195,7 @@ end;
 procedure TKMButton.MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton);
 begin
   if fEnabled and MakesSound and (csDown in State) then
-    gSoundPlayer.Play(sfxn_ButtonClick);
+    gSoundPlayer.Play(sfxnButtonClick);
 
   inherited;
 end;
@@ -3242,7 +3245,7 @@ begin
   TexID     := aTexID;
   FlagColor := $FFFF00FF;
   CapColor  := $FFFFFFFF;
-  Font      := fnt_Game;
+  Font      := fntGame;
   Clickable := True;
 end;
 
@@ -3251,7 +3254,7 @@ procedure TKMButtonFlatCommon.MouseUp(X,Y: Integer; Shift: TShiftState; Button: 
 begin
   if not Clickable then Exit;
   if fEnabled and (csDown in State) then
-    gSoundPlayer.Play(sfx_Click);
+    gSoundPlayer.Play(sfxClick);
 
   inherited;
 end;
@@ -4058,7 +4061,7 @@ end;
 
 
 { TKMPercentBar }
-constructor TKMPercentBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont=fnt_Mini);
+constructor TKMPercentBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont=fntMini);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont := aFont;
@@ -4152,11 +4155,11 @@ var
   I: Integer;
 begin
   inherited;
-  TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 3, Width-8, Caption, fnt_Game, taLeft, $FFE0E0E0);
+  TKMRenderUI.WriteText(AbsLeft + 4, AbsTop + 3, Width-8, Caption, fntGame, taLeft, $FFE0E0E0);
   //Render in reverse order so the rightmost resource is on top (otherwise lighting looks wrong)
   if WareCntAsNumber then
   begin
-    TKMRenderUI.WriteText(AbsLeft + Width - 18 - 70 + 24, AbsTop + 3, 22, IntToStr(WareCount), fnt_Game, taRight, $FFE0E0E0);
+    TKMRenderUI.WriteText(AbsLeft + Width - 18 - 70 + 24, AbsTop + 3, 22, IntToStr(WareCount), fntGame, taRight, $FFE0E0E0);
     TKMRenderUI.WritePicture(AbsLeft + Width - 18, AbsTop + 3, 14, 14, [], RX, TexID);
   end else
     for I := WareCount - 1 downto 0 do
@@ -4165,12 +4168,12 @@ end;
 
 
 { TKMNumericEdit }
-constructor TKMNumericEdit.Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fnt_Grey; aSelectable: Boolean = True);
+constructor TKMNumericEdit.Create(aParent: TKMPanel; aLeft, aTop, aValueMin, aValueMax: Integer; aFont: TKMFont = fntGrey; aSelectable: Boolean = True);
 var
   W: Word;
 begin
   // Text width + padding + buttons
-  W := Max(gRes.Fonts[fnt_Grey].GetTextSize(IntToStr(aValueMax)).X, gRes.Fonts[fnt_Grey].GetTextSize(IntToStr(aValueMin)).X) + 10 + 20 + 20;
+  W := Max(gRes.Fonts[fntGrey].GetTextSize(IntToStr(aValueMax)).X, gRes.Fonts[fntGrey].GetTextSize(IntToStr(aValueMin)).X) + 10 + 20 + 20;
 
   inherited Create(aParent, aLeft, aTop, W, 20, aFont, aSelectable);
 
@@ -4487,7 +4490,7 @@ begin
   fOrderRem := TKMButton.Create(aParent, aLeft,   0, 20, fHeight - 2, '-', bsGame);
   fOrderAdd := TKMButton.Create(aParent, aLeft + 46,  0, 20, fHeight - 2, '+', bsGame);
   //Label after buttons, to be sure it will be on top of them, to let player read value from it, if too long (more then 3 symbols)
-  fOrderLab := TKMLabel.Create (aParent, aLeft + 33,  0, '', fnt_Grey, taCenter);
+  fOrderLab := TKMLabel.Create (aParent, aLeft + 33,  0, '', fntGrey, taCenter);
 
   fOrderAdd.CapOffsetY := 1;
 
@@ -4648,7 +4651,7 @@ var
   I, Gap: Integer;
 begin
   inherited;
-  TKMRenderUI.WriteText(AbsLeft, AbsTop + 4, Width-20, Caption, fnt_Grey, taLeft, $FFFFFFFF);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop + 4, Width-20, Caption, fntGrey, taLeft, $FFFFFFFF);
 
   if Count > 0 then
   begin
@@ -4683,8 +4686,8 @@ begin
   ThumbWidth := gRes.Fonts[fFont].GetTextSize(IntToStr(MaxValue)).X + 24;
   CaptionWidth := -1;
 
-  Font := fnt_Metal;
-  SliderFont := fnt_Metal;
+  Font := fntMetal;
+  SliderFont := fntMetal;
   Step := 1;
 end;
 
@@ -4838,14 +4841,14 @@ begin
   fStyle    := aStyle;
   WheelStep := 1;
 
-  if aScrollAxis = sa_Vertical then
+  if aScrollAxis = saVertical then
   begin
     fScrollDec := TKMButton.Create(Self, 0, 0, aWidth, aWidth, 591, rxGui, aStyle);
     fScrollInc := TKMButton.Create(Self, 0, aHeight-aWidth, aWidth, aWidth, 590, rxGui, aStyle);
     fScrollDec.Anchors := [anLeft, anTop, anRight];
     fScrollInc.Anchors := [anLeft, anRight, anBottom];
   end;
-  if aScrollAxis = sa_Horizontal then
+  if aScrollAxis = saHorizontal then
   begin
     if aScrollStyle = ssGame then
     begin
@@ -4941,13 +4944,13 @@ begin
 
   if fMaxValue > fMinValue then
     case fScrollAxis of
-      sa_Vertical:   fThumbPos := (fPosition-fMinValue)*(Height-Width*2-fThumbSize) div (fMaxValue-fMinValue);
-      sa_Horizontal: fThumbPos := (fPosition-fMinValue)*(Width-Height*2-fThumbSize) div (fMaxValue-fMinValue);
+      saVertical:   fThumbPos := (fPosition-fMinValue)*(Height-Width*2-fThumbSize) div (fMaxValue-fMinValue);
+      saHorizontal: fThumbPos := (fPosition-fMinValue)*(Width-Height*2-fThumbSize) div (fMaxValue-fMinValue);
     end
   else
     case fScrollAxis of
-      sa_Vertical:   fThumbPos := Math.max((Height-Width*2-fThumbSize),0) div 2;
-      sa_Horizontal: fThumbPos := Math.max((Width-Height*2-fThumbSize),0) div 2;
+      saVertical:   fThumbPos := Math.max((Height-Width*2-fThumbSize),0) div 2;
+      saHorizontal: fThumbPos := Math.max((Width-Height*2-fThumbSize),0) div 2;
     end;
 end;
 
@@ -4955,8 +4958,8 @@ end;
 procedure TKMScrollBar.UpdateThumbSize;
 begin
   case fScrollAxis of
-    sa_Vertical:   fThumbSize := Math.max(0, (Height-2*Width)) div 4;
-    sa_Horizontal: fThumbSize := Math.max(0, (Width-2*Height)) div 4;
+    saVertical:   fThumbSize := Math.max(0, (Height-2*Width)) div 4;
+    saHorizontal: fThumbSize := Math.max(0, (Width-2*Height)) div 4;
   end;
 
   //If size has changed, then Pos needs to be updated as well (depends on it)
@@ -4972,12 +4975,12 @@ begin
 
   fOffset := 0;
   case fScrollAxis of
-    sa_Vertical:    begin
+    saVertical:    begin
                       T := Y - AbsTop - Width - fThumbPos;
                       if InRange(T, 0, fThumbSize) then
                         fOffset := T - fThumbSize div 2;
                     end;
-    sa_Horizontal:  begin
+    saHorizontal:  begin
                       T := X - AbsLeft - Height - fThumbPos;
                       if InRange(T, 0, fThumbSize) then
                         fOffset := T - fThumbSize div 2;
@@ -4999,14 +5002,14 @@ begin
   NewPos := fPosition;
 
   case fScrollAxis of
-    sa_Vertical:
+    saVertical:
       begin
         T := Y - fOffset - AbsTop - Width;
         if InRange(T, 0, Height - Width * 2) then
           NewPos := Round(fMinValue+((T - fThumbSize / 2) / (Height-Width*2-fThumbSize)) * (fMaxValue - fMinValue) );
       end;
 
-    sa_Horizontal:
+    saHorizontal:
       begin
         T := X - fOffset - AbsLeft - Height;
         if InRange(T, 0, Width - Height * 2) then
@@ -5049,8 +5052,8 @@ begin
   inherited;
 
   case fScrollAxis of
-    sa_Vertical:   TKMRenderUI.WriteBevel(AbsLeft, AbsTop+Width, Width, Height - Width*2, EdgeAlpha, BackAlpha);
-    sa_Horizontal: TKMRenderUI.WriteBevel(AbsLeft+Height, AbsTop, Width - Height*2, Height, EdgeAlpha, BackAlpha);
+    saVertical:   TKMRenderUI.WriteBevel(AbsLeft, AbsTop+Width, Width, Height - Width*2, EdgeAlpha, BackAlpha);
+    saHorizontal: TKMRenderUI.WriteBevel(AbsLeft+Height, AbsTop, Width - Height*2, Height, EdgeAlpha, BackAlpha);
   end;
 
   if fMaxValue > fMinValue then
@@ -5060,8 +5063,8 @@ begin
 
   if not (bsDisabled in ButtonState) then //Only show thumb when usable
     case fScrollAxis of
-      sa_Vertical:   TKMRenderUI.Write3DButton(AbsLeft,AbsTop+Width+fThumbPos,Width,fThumbSize,rxGui,0,$FFFF00FF,ButtonState,fStyle);
-      sa_Horizontal: TKMRenderUI.Write3DButton(AbsLeft+Height+fThumbPos,AbsTop,fThumbSize,Height,rxGui,0,$FFFF00FF,ButtonState,fStyle);
+      saVertical:   TKMRenderUI.Write3DButton(AbsLeft,AbsTop+Width+fThumbPos,Width,fThumbSize,rxGui,0,$FFFF00FF,ButtonState,fStyle);
+      saHorizontal: TKMRenderUI.Write3DButton(AbsLeft+Height+fThumbPos,AbsTop,fThumbSize,Height,rxGui,0,$FFFF00FF,ButtonState,fStyle);
     end;
 end;
 
@@ -5070,16 +5073,16 @@ end;
 constructor TKMScrollPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                                   aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(sa_Vertical in aScrollAxisSet), aHeight - 20*Byte(sa_Horizontal in aScrollAxisSet));
+  inherited Create(aParent, aLeft, aTop, aWidth - 20*Byte(saVertical in aScrollAxisSet), aHeight - 20*Byte(saHorizontal in aScrollAxisSet));
 
   fScrollAxisSet := aScrollAxisSet;
 
-  fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, sa_Horizontal, aStyle, aScrollStyle);
+  fScrollBarH := TKMScrollBar.Create(aParent, aLeft, aTop + aHeight - 20, aWidth, 20, saHorizontal, aStyle, aScrollStyle);
   fScrollBarH.Hide;
   fScrollBarH.OnChange := ScrollChanged;
   fScrollBarH.WheelStep := 10;
 
-  fScrollBarV := TKMScrollBar.Create(aParent, aLeft + aWidth - 20, aTop, 20, aHeight, sa_Vertical, aStyle, aScrollStyle);
+  fScrollBarV := TKMScrollBar.Create(aParent, aLeft + aWidth - 20, aTop, 20, aHeight, saVertical, aStyle, aScrollStyle);
   fScrollBarV.Hide;
   fScrollBarV.OnChange := ScrollChanged;
   fScrollBarV.WheelStep := 10;
@@ -5138,7 +5141,7 @@ begin
   fScrollBarH.Hide;
   fScrollBarV.Hide;
 
-  if (sa_Horizontal in fScrollAxisSet) then
+  if (saHorizontal in fScrollAxisSet) then
   begin
     if KMRectWidth(ChildsRect) > KMRectWidth(fClipRect) then
     begin
@@ -5155,7 +5158,7 @@ begin
     end;
   end;
 
-  if (sa_Vertical in fScrollAxisSet) then
+  if (saVertical in fScrollAxisSet) then
   begin
     if KMRectHeight(ChildsRect) > KMRectHeight(fClipRect) then
     begin
@@ -5265,13 +5268,13 @@ end;
 
 function TKMScrollPanel.AllowScrollV: Boolean;
 begin
-  Result := sa_Vertical in fScrollAxisSet;
+  Result := saVertical in fScrollAxisSet;
 end;
 
 
 function TKMScrollPanel.AllowScrollH: Boolean;
 begin
-  Result := sa_Horizontal in fScrollAxisSet;
+  Result := saHorizontal in fScrollAxisSet;
 end;
 
 
@@ -5295,7 +5298,7 @@ begin
   fItems := TStringList.Create;
   fFont := aFont;
 
-  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-20, aTop, 20, aHeight, sa_Vertical, aStyle);
+  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-20, aTop, 20, aHeight, saVertical, aStyle);
   UpdateScrollBar; //Initialise the scrollbar
   fSelectable := aSelectable;
 end;
@@ -5303,7 +5306,7 @@ end;
 
 destructor TKMMemo.Destroy;
 begin
-  fItems.Free;
+  FreeAndNil(fItems);
   inherited;
 end;
 
@@ -5941,18 +5944,18 @@ begin
   Focusable := True; //For up/down keys
   fSeparatorHeight := 0;
   fSeparatorTexts := TStringList.Create;
-  fSeparatorFont := fnt_Antiqua; //Looks good on dark solid background
+  fSeparatorFont := fntAntiqua; //Looks good on dark solid background
   fSeparatorColor := clListSeparatorShape;
 
-  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-20, aTop, 20, aHeight, sa_Vertical, aStyle);
+  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-20, aTop, 20, aHeight, saVertical, aStyle);
   UpdateScrollBar; //Initialise the scrollbar
 end;
 
 
 destructor TKMListBox.Destroy;
 begin
-  fItems.Free;
-  fSeparatorTexts.Free;
+  FreeAndNil(fItems);
+  FreeAndNil(fSeparatorTexts);
   inherited;
 end;
 
@@ -6517,7 +6520,7 @@ begin
 
   fHeader := TKMListHeader.Create(aParent, aLeft, aTop, aWidth - fItemHeight, DEF_HEADER_HEIGHT);
 
-  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-fItemHeight, aTop, fItemHeight, aHeight, sa_Vertical, aStyle);
+  fScrollBar := TKMScrollBar.Create(aParent, aLeft+aWidth-fItemHeight, aTop, fItemHeight, aHeight, saVertical, aStyle);
   UpdateScrollBar; //Initialise the scrollbar
 
   SetEdgeAlpha(1);
@@ -7251,11 +7254,11 @@ begin
   fShapeBG.OnClick := MenuHide;
   fShapeBG.Hide;
 
-  fList := TKMColumnBox.Create(Self, 0, 0, aWidth, 0, fnt_Grey, bsMenu);
+  fList := TKMColumnBox.Create(Self, 0, 0, aWidth, 0, fntGrey, bsMenu);
   fList.AnchorsStretch;
   fList.BackAlpha := 0.8;
   fList.Focusable := False;
-  fList.SetColumns(fnt_Grey, [''], [0]);
+  fList.SetColumns(fntGrey, [''], [0]);
   fList.ShowHeader := False;
   fList.OnClick := MenuClick;
   fList.Hide;
@@ -7347,7 +7350,7 @@ begin
 
   fBGImageType := aImageType;
 
-  Font := fnt_Outline;
+  Font := fntOutline;
   FontColor := icWhite;
   Caption := aCaption;
 
@@ -8037,7 +8040,7 @@ begin
   if (fRandomCaption <> '') and (fSwatch.ColorIndex = 0) then
   begin
     if fEnabled then Col:=$FFFFFFFF else Col:=$FF888888;
-    TKMRenderUI.WriteText(AbsLeft+4, AbsTop+3, 0, fRandomCaption, fnt_Metal, taLeft, Col);
+    TKMRenderUI.WriteText(AbsLeft+4, AbsTop+3, 0, fRandomCaption, fntMetal, taLeft, Col);
   end;
 end;
 
@@ -8229,7 +8232,7 @@ begin
     if fMinimap.HandShow[I] and not KMSamePoint(fMinimap.HandLocs[I], KMPOINT_ZERO) then
     begin
       T := MapCoordsToLocal(fMinimap.HandLocs[I].X, fMinimap.HandLocs[I].Y, fLocRad);
-      TKMRenderUI.WriteText(T.X, T.Y - 6, 0, IntToStr(I+1), fnt_Outline, taCenter);
+      TKMRenderUI.WriteText(T.X, T.Y - 6, 0, IntToStr(I+1), fntOutline, taCenter);
     end;
   end;
 
@@ -8315,7 +8318,7 @@ begin
   fSeparatorPositions := TXStringList.Create;
   fSeparatorPositions.Sorted := True; // Better we have separators sorted
 
-  fFont := fnt_Outline;
+  fFont := fntOutline;
   fItemHeight := 20;
   fLineOver := -1;
   fLegendWidth := 150;
@@ -8566,10 +8569,10 @@ var
   begin
     XPos := G.Left + Round((aTime - fMinTime) / (fMaxTime-fMinTime) * (G.Right - G.Left));
     TKMRenderUI.WriteShape(XPos, G.Bottom - 2, 2, 5, IfThen(aIsPT, clChartPeacetimeLn, icWhite));
-    TKMRenderUI.WriteText (XPos, G.Bottom + 4, 0, TimeToString(aTime / 24 / 60 / 60), fnt_Game, taLeft, IfThen(aIsPT, clChartPeacetimeLbl, icWhite));
+    TKMRenderUI.WriteText (XPos, G.Bottom + 4, 0, TimeToString(aTime / 24 / 60 / 60), fntGame, taLeft, IfThen(aIsPT, clChartPeacetimeLbl, icWhite));
     TKMRenderUI.WriteLine(XPos, G.Top, XPos, G.Bottom, IfThen(aIsPT, clChartPeacetimeLn, clChartDashedVLn), $CCCC);
     if aIsPT then
-      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, gResTexts[TX_CHART_PT_END], fnt_Game, taRight, clChartPeacetimeLbl);
+      TKMRenderUI.WriteText(XPos - 3, G.Bottom + 4, 0, gResTexts[TX_CHART_PT_END], fntGame, taRight, clChartPeacetimeLbl);
   end;
 
   procedure RenderHorizontalAxisTicks;
@@ -8613,7 +8616,7 @@ var
 
   procedure RenderChartAndLegend;
   const
-    MARKS_FONT: TKMFont = fnt_Grey;
+    MARKS_FONT: TKMFont = fntGrey;
   var
     I, J, S, CheckSize, XPos, YPos, Height: Integer;
     TitleDetailedH: Integer;
@@ -8654,13 +8657,13 @@ var
         TKMRenderUI.WriteText(XPos + (CheckSize-4) div 2, YPos - 1, 0, 'v', MARKS_FONT, taCenter, NewColor);
 
       //Legend
-      TKMRenderUI.WriteText(XPos + CheckSize, YPos, 0, fLines[I].Title, fnt_Game, taLeft, NewColor);
+      TKMRenderUI.WriteText(XPos + CheckSize, YPos, 0, fLines[I].Title, fntGame, taLeft, NewColor);
       Inc(YPos, fItemHeight);
 
       //Detailed legend
       for J := Low(fLines[I].TitleDetailed) to High(fLines[I].TitleDetailed) do
       begin
-        TKMRenderUI.WriteText(XPos + CheckSize + 5, YPos, 0, fLines[I].TitleDetailed[J], fnt_Grey, taLeft, GetLineColor(fLines[I].TitleDetailedColor[J]));
+        TKMRenderUI.WriteText(XPos + CheckSize + 5, YPos, 0, fLines[I].TitleDetailed[J], fntGrey, taLeft, GetLineColor(fLines[I].TitleDetailedColor[J]));
         Inc(YPos, fItemHeight);
         Inc(TitleDetailedH, fItemHeight);
       end;
@@ -8671,7 +8674,7 @@ var
     TKMRenderUI.WriteShape(G.Right + 5, G.Top, fLegendWidth, Height, icDarkestGrayTrans);
     TKMRenderUI.WriteOutline(G.Right + 5, G.Top, fLegendWidth, Height, 1, icGray);
     if fLegendCaption <> '' then
-      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fnt_Metal, taCenter, icWhite);
+      TKMRenderUI.WriteText(G.Right + 5, G.Top + 4, fLegendWidth, fLegendCaption, fntMetal, taCenter, icWhite);
   end;
 
 var
@@ -8699,7 +8702,7 @@ begin
     for I := 1 to (TopValue div Best) do
     begin
       Tmp := G.Top + Round((1 - I * Best / TopValue) * (G.Bottom - G.Top));
-      TKMRenderUI.WriteText(G.Left - 5, Tmp - 6, 0, IntToStr(I * Best), fnt_Game, taRight);
+      TKMRenderUI.WriteText(G.Left - 5, Tmp - 6, 0, IntToStr(I * Best), fntGame, taRight);
       TKMRenderUI.WriteLine(G.Left, Tmp, G.Right, Tmp, clChartDashedHLn, $CCCC);
     end;
 
@@ -8719,8 +8722,8 @@ begin
   TKMRenderUI.WriteText(G.Left + 5, G.Top + 5, 0, fCaption, fFont, taLeft);
 
   //Render vertical axis captions
-  TKMRenderUI.WriteText(G.Left - 5, G.Bottom - 6, 0, IntToStr(0), fnt_Game, taRight);
-  //TKMRenderUI.WriteText(Left+20, Top + 20, 0, 0, IntToStr(fMaxValue), fnt_Game, taRight);
+  TKMRenderUI.WriteText(G.Left - 5, G.Bottom - 6, 0, IntToStr(0), fntGame, taRight);
+  //TKMRenderUI.WriteText(Left+20, Top + 20, 0, 0, IntToStr(fMaxValue), fntGame, taRight);
 
 end;
 
@@ -8728,7 +8731,7 @@ end;
 { TKMMasterControl }
 destructor TKMMasterControl.Destroy;
 begin
-  fMasterPanel.Free; //Will destroy all its childs as well
+  FreeAndNil(fMasterPanel); //Will destroy all its childs as well
 
   inherited;
 end;
@@ -8990,15 +8993,15 @@ begin
     CtrlOver.MouseMove(X, Y, Shift);
 
   //The Game hides cursor when using DirectionSelector, don't spoil it
-  if gRes.Cursors.Cursor <> kmc_Invisible then
+  if gRes.Cursors.Cursor <> kmcInvisible then
     if CtrlOver is TKMEdit then
-      gRes.Cursors.Cursor := kmc_Edit
+      gRes.Cursors.Cursor := kmcEdit
     else
     if CtrlOver is TKMDragger then
-      gRes.Cursors.Cursor := kmc_DragUp
+      gRes.Cursors.Cursor := kmcDragUp
     else
-      if gRes.Cursors.Cursor in [kmc_Edit, kmc_DragUp] then
-        gRes.Cursors.Cursor := kmc_Default; //Reset the cursor from these two special cursors
+      if gRes.Cursors.Cursor in [kmcEdit, kmcDragUp] then
+        gRes.Cursors.Cursor := kmcDefault; //Reset the cursor from these two special cursors
 
   HintControl := HitControl(X, Y, True); //Include disabled controls
   if (CtrlDown = nil) and (HintControl <> nil) and Assigned(fOnHint) then
@@ -9045,7 +9048,7 @@ begin
   fMasterPanel.Paint;
 
   if MODE_DESIGN_CONTORLS and (CtrlFocus <> nil) then
-    TKMRenderUI.WriteText(CtrlFocus.AbsLeft, CtrlFocus.AbsTop-14, 0, inttostr(CtrlFocus.AbsLeft)+':'+inttostr(CtrlFocus.AbsTop), fnt_Grey, taLeft);
+    TKMRenderUI.WriteText(CtrlFocus.AbsLeft, CtrlFocus.AbsTop-14, 0, inttostr(CtrlFocus.AbsLeft)+':'+inttostr(CtrlFocus.AbsTop), fntGrey, taLeft);
 end;
 
 

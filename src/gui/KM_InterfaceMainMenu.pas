@@ -105,7 +105,7 @@ begin
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
 
   //Show version info on every page
-  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fnt_Antiqua, taLeft);
+  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fntAntiqua, taLeft);
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -125,20 +125,20 @@ end;
 
 destructor TKMMainMenuInterface.Destroy;
 begin
-  fMenuCampaign.Free;
-  fMenuCampaigns.Free;
-  fMenuCredits.Free;
-  fMenuError.Free;
-  fMenuLoad.Free;
-  fMenuLoading.Free;
-  fMenuLobby.Free;
-  fMenuMain.Free;
-  fMenuMapEditor.Free;
-  fMenuMultiplayer.Free;
-  fMenuOptions.Free;
-  fMenuReplays.Free;
-  fMenuSingleMap.Free;
-  fMenuSinglePlayer.Free;
+  FreeAndNil(fMenuCampaign);
+  FreeAndNil(fMenuCampaigns);
+  FreeAndNil(fMenuCredits);
+  FreeAndNil(fMenuError);
+  FreeAndNil(fMenuLoad);
+  FreeAndNil(fMenuLoading);
+  FreeAndNil(fMenuLobby);
+  FreeAndNil(fMenuMain);
+  FreeAndNil(fMenuMapEditor);
+  FreeAndNil(fMenuMultiplayer);
+  FreeAndNil(fMenuOptions);
+  FreeAndNil(fMenuReplays);
+  FreeAndNil(fMenuSingleMap);
+  FreeAndNil(fMenuSinglePlayer);
 
   inherited;
 end;
@@ -220,10 +220,10 @@ begin
                     end;
     gpLobby:        begin
                       if aText = 'HOST' then
-                        fMenuLobby.Show(lpk_Host, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkHost, gGameApp.Networking, Panel_Menu.Height)
                       else
                       if aText = 'JOIN' then
-                        fMenuLobby.Show(lpk_Joiner, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkJoiner, gGameApp.Networking, Panel_Menu.Height)
                       else
                         raise Exception.Create('');
                       fMenuPage := fMenuLobby;

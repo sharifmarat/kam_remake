@@ -97,11 +97,14 @@ type
     fItems: array of TKMPoint; //0..Count-1
     function GetPoint(aIndex: Integer): TKMPoint; inline;
     procedure SetPoint(aIndex: Integer; const aValue: TKMPoint); inline; //1..Count
+    function GetLast: TKMPoint;
   public
     constructor Create;
 
     property Count: Integer read fCount write fCount;
     property Items[aIndex: Integer]: TKMPoint read GetPoint write SetPoint; default;
+    property Last: TKMPoint read GetLast;
+    function IsEmpty: Boolean;
 
     procedure Clear; virtual;
     procedure Copy(aSrc: TKMPointList);
@@ -230,7 +233,7 @@ procedure TKMList.Notify(Ptr: Pointer; Action: TListNotification);
 begin
   inherited;
   if (Action = lnDeleted) then
-    TObject(Ptr).Free;
+    FreeAndNil(TObject(Ptr));
 end;
 
 
@@ -606,6 +609,20 @@ begin
 end;
 
 
+function TKMPointList.GetLast: TKMPoint;
+begin
+  if IsEmpty then
+    raise Exception.Create('No points in list');
+  Result := fItems[fCount - 1];
+end;
+
+
+function TKMPointList.IsEmpty: Boolean;
+begin
+  Result := fCount = 0;
+end;
+
+
 procedure TKMPointList.Copy(aSrc: TKMPointList);
 begin
   fCount := aSrc.Count;
@@ -974,7 +991,7 @@ begin
       fMapsList.Add(Trim(StringList[I]));
   end;
 
-  StringList.Free;
+  FreeAndNil(StringList);
 end;
 
 

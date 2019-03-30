@@ -36,7 +36,7 @@ type
 
   TKMTeamDefPos = array of record
     Polygons: Word;
-    Owners: TKMHandIndexArray;
+    Owners: TKMHandIDArray;
     DefPosArr: TKMDefencePosArr;
   end;
 
@@ -47,7 +47,7 @@ type
   TForwardFF = class(TNavMeshFloodFill)
   private
   protected
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fFirstLine: Word;
     fDefInfo: TDefInfoArray;
     fBackwardFF: TBackwardFF;
@@ -67,9 +67,9 @@ type
     property FirstLine: Word read fFirstLine;
     property BestDefLines: TKMDefenceLines read fBestDefLines;
 
-    function FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aDefPosArr: TKMDefencePosArr): Boolean;
-    function FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
+    function FindDefenceLines(aOwner: TKMHandID; var aDefLines: TKMDefenceLines): Boolean;
+    function FindDefensivePolygons(aOwner: TKMHandID; var aDefPosArr: TKMDefencePosArr): Boolean;
+    function FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
     //procedure DEBUG();
   end;
 
@@ -78,7 +78,7 @@ type
   private
   protected
     fDefLinesRequired: Boolean;
-    fOwner: TKMHandIndex;
+    fOwner: TKMHandID;
     fBestEvaluation: Single;
     fDefInfo: TDefInfoArray;
     fBestDefLines: TKMDefenceLines;
@@ -98,9 +98,9 @@ type
     procedure UpdatePointers(var aDefInfo: TDefInfoArray; var aQueueArray: TPolygonsQueueArr);
     procedure NewQueue(aVisitedIdx: Byte);
     procedure AddPolygon(aIdx: Word);
-    function FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
-    function FindDefensivePolygons(aOwner: TKMHandIndex; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
-    procedure FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+    function FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
+    function FindDefensivePolygons(aOwner: TKMHandID; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
+    procedure FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
     //procedure DEBUG();
   end;
 
@@ -119,7 +119,7 @@ type
 
     function IsPolyInsideDef(aIdx: Word): Boolean;
     procedure FilterDefenceLine(var aAllDefLines, aBestDefLines: TKMDefenceLines);
-    procedure FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandIndex; var aAllDefLines: TKMDefenceLines; var aSeparatedDefLines: TKMDefLinesArray; var aPLDefAreas: TKMByteArray);
+    procedure FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandID; var aAllDefLines: TKMDefenceLines; var aSeparatedDefLines: TKMDefLinesArray; var aPLDefAreas: TKMByteArray);
   end;
 
 
@@ -140,7 +140,7 @@ const
 
 implementation
 uses
-  KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
+  SysUtils, KM_Hand, KM_HandsCollection, KM_AIFields, KM_AIInfluences, KM_NavMesh, KM_NavMeshGenerator;
 
 
 { TForwardFF }
@@ -153,7 +153,7 @@ end;
 
 destructor TForwardFF.Destroy();
 begin
-  fBackwardFF.Free;
+  FreeAndNil(fBackwardFF);
   inherited Destroy;
 end;
 
@@ -196,8 +196,8 @@ var
 begin
   // Get owner influence and distance from influence
   fDefInfo[aIdx].Influence := gAIFields.Influences.OwnPoly[fOwner, aIdx];
-  fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Ally);
-  fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, at_Enemy);
+  fDefInfo[aIdx].AllyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, atAlly);
+  fDefInfo[aIdx].EnemyInfluence := gAIFields.Influences.GetBestAllianceOwnership(fOwner, aIdx, atEnemy);
   Distance := aDistance + fDefInfo[aIdx].EnemyInfluence shr 2;
   if (fDefInfo[aIdx].Influence > OWNER_INFLUENCE_LIMIT) OR (fDefInfo[aIdx].AllyInfluence > OWNER_INFLUENCE_LIMIT) then
     Distance := 0;
@@ -211,7 +211,7 @@ end;
 // ForwardFF will find enemies, compute distance and detect empty areas which does not requires defences
 function TForwardFF.ForwardFF(): Boolean;
 var
-  PL: TKMHandIndex;
+  PL: TKMHandID;
   I, Cnt: Integer;
   CityCenterPoints: TKMPointArray;
   StartPolygons: TKMWordArray;
@@ -220,7 +220,7 @@ begin
   // Get center points of all allied cities
   Cnt := 0;
   for PL := 0 to gHands.Count - 1 do
-    if (gHands[fOwner].Alliances[PL] = at_Ally) then
+    if (gHands[fOwner].Alliances[PL] = atAlly) then
     begin
       gAIFields.Eye.OwnerUpdate(PL);
       CityCenterPoints := gAIFields.Eye.GetCityCenterPoints(True);
@@ -243,7 +243,7 @@ end;
 
 
 // Find best defensive lines (for watchtowers)
-function TForwardFF.FindDefenceLines(aOwner: TKMHandIndex; var aDefLines: TKMDefenceLines): Boolean;
+function TForwardFF.FindDefenceLines(aOwner: TKMHandID; var aDefLines: TKMDefenceLines): Boolean;
 begin
   fOwner := aOwner;
 
@@ -256,7 +256,7 @@ end;
 
 
 // Find best defensive polygons (for defensive positions)
-function TForwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aDefPosArr: TKMDefencePosArr): Boolean;
+function TForwardFF.FindDefensivePolygons(aOwner: TKMHandID; var aDefPosArr: TKMDefencePosArr): Boolean;
 begin
   fOwner := aOwner;
   fFirstLine := 0;
@@ -269,7 +269,7 @@ begin
 end;
 
 
-function TForwardFF.FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
+function TForwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos): Boolean;
 begin
   fOwner := aOwners[0];
   fFirstLine := 0;
@@ -292,7 +292,7 @@ end;
 
 destructor TBackwardFF.Destroy();
 begin
-  fFilterFF.Free;
+  FreeAndNil(fFilterFF);
   inherited Destroy;
 end;
 
@@ -565,7 +565,7 @@ begin
                            + fDefInfo[Idx].EnemyInfluence // Add more soldiers closer to enemy influence
                      );
       end;
-      if (Direction <> dir_NA) then
+      if (Direction <> dirNA) then
         Cnt := Cnt + 1;
     end;
     // Expand polygon
@@ -586,7 +586,7 @@ begin
 end;
 
 
-function TBackwardFF.FindDefenceLines(aOwner: TKMHandIndex): TKMDefenceLines;
+function TBackwardFF.FindDefenceLines(aOwner: TKMHandID): TKMDefenceLines;
 begin
   fOwner := aOwner;
   fDefLinesRequired := True;
@@ -596,7 +596,7 @@ end;
 
 
 // Defense detection for Krom's AI
-function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandIndex; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
+function TBackwardFF.FindDefensivePolygons(aOwner: TKMHandID; var aFirstLine: Word; var aBestDefLines: TKMDefenceLines; aDefLinesRequired: Boolean): TKMDefencePosArr;
 const
   MIN_DEF_POINTS_CNT = 9;
   MULTIPLICATION = 3;
@@ -617,7 +617,7 @@ end;
 
 
 // Defense detection for new AI (once per a team)
-procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIndexArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
+procedure TBackwardFF.FindTeamDefences(var aOwners: TKMHandIDArray; var aDefPosReq: TKMWordArray; var aTeamDefPos: TKMTeamDefPos);
 var
   SeparatedDefLines: TKMDefLinesArray;
   DefLinesReq: TKMWordArray;
@@ -640,7 +640,7 @@ var
     for K := 0 to Length(aPLsDefAreas) - 1 do
       Inc(  DefLinesReq[ aPLsDefAreas[K] ], Round( SeparatedDefLines[ aPLsDefAreas[K] ].PolyCnt / PolySum * aDefPosReq[aIdx] )  );
   end;
-  function GetOwners(DefLineIdx: Integer; var aPLsDefAreas: TKMByte2Array): TKMHandIndexArray;
+  function GetOwners(DefLineIdx: Integer; var aPLsDefAreas: TKMByte2Array): TKMHandIDArray;
   var
     IdxPL,K,Cnt: Integer;
   begin
@@ -776,7 +776,7 @@ begin
 end;
 
 
-procedure TFilterFF.FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandIndex; var aAllDefLines: TKMDefenceLines;
+procedure TFilterFF.FilterTeamDefLine(aClean: Boolean; aOwner: TKMHandID; var aAllDefLines: TKMDefenceLines;
                                       var aSeparatedDefLines: TKMDefLinesArray; var aPLDefAreas: TKMByteArray);
   procedure AddPLDefArea(aVisitMark: Integer);
   begin

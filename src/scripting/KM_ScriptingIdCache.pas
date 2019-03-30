@@ -2,7 +2,7 @@ unit KM_ScriptingIdCache;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Houses, KM_Units, KM_UnitGroups;
+  KM_Houses, KM_Units, KM_UnitGroup;
 
 
 //For caching unit/house/group IDs. Shared between States and Actions.

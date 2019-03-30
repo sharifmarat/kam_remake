@@ -57,6 +57,7 @@ type
   TBooleanWordFunc = function (aValue: Word): Boolean of object;
   TBooleanStringFunc = function (aValue: String): Boolean of object;
   TBooleanFuncSimple = function: Boolean of object;
+  TBoolIntFuncSimple = function (aValue: Integer): Boolean of object;
   TObjectIntBoolEvent = procedure (Sender: TObject; aIntValue: Integer; aBoolValue: Boolean) of object;
 
   TKMAnimLoop = packed record
@@ -73,7 +74,7 @@ type
     mkQuill //Utility message (warnings in script loading)
     );
 
-  TWonOrLost = (wol_None, wol_Won, wol_Lost);
+  TWonOrLost = (wolNone, wolWon, wolLost);
 
   TKMCustomScriptParam = (cspTHTroopCosts, cspMarketGoldPrice);
 
