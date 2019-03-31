@@ -1937,7 +1937,7 @@ begin
 
   Panel_ResultsMP.Show;
   //ALERT !!!! Refactor
-  gMain.ForcedResize; //For some reason we could have wrong Panel_ResultsMP Panel position on screen, ForcedResize fix the Issue
+  gMain.ForceResize; //For some reason we could have wrong Panel_ResultsMP Panel position on screen, ForcedResize fix the Issue
   Resize(nil, 0);
 end;
 
