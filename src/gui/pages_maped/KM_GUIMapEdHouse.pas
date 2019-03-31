@@ -30,6 +30,7 @@ type
     procedure House_ClosedForWorkerToggle(Sender: TObject);
     procedure HandleHouseClosedForWorker(aHouse: TKMHouse);
 
+    procedure House_RefreshRepair;
     procedure House_RefreshCommon;
     procedure BarracksRefresh;
     procedure TownHallRefresh;
@@ -443,6 +444,13 @@ begin
 end;
 
 
+procedure TKMMapEdHouse.House_RefreshRepair;
+begin
+  Button_HouseRepair.TexID := IfThen(fHouse.BuildingRepair, 39, 40);
+  Button_HouseRepair.Show;
+end;
+
+
 procedure TKMMapEdHouse.House_RefreshCommon;
 var
   HouseDat: TKMHouseSpec;
@@ -453,8 +461,7 @@ begin
   Button_HouseDeliveryMode.Enabled := fHouse.AllowDeliveryModeChange;
   Button_HouseDeliveryMode.Show;
 
-  Button_HouseRepair.TexID := IfThen(fHouse.BuildingRepair, 39, 40);
-  Button_HouseRepair.Show;
+  House_RefreshRepair;
 
   Button_House_Worker.TexID  := gRes.Units[gRes.Houses[fHouse.HouseType].OwnerType].GUIIcon;
   HandleHouseClosedForWorker(fHouse);
@@ -676,7 +683,7 @@ end;
 procedure TKMMapEdHouse.House_RepairToggle(Sender: TObject);
 begin
   fHouse.BuildingRepair := not fHouse.BuildingRepair;
-  House_RefreshCommon;
+  House_RefreshRepair;
 end;
 
 
