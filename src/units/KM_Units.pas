@@ -349,8 +349,8 @@ begin
   Result := False;
   if IsHungry then
   begin
-    H := gHands[fOwner].FindInn(fCurrPosition, Self);
-    GoEat(H);
+    H := gHands[fOwner].FindInn(fCurrPosition, Self, InHouse <> nil);
+    Result := GoEat(H);
   end;
 end;
 
