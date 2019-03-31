@@ -49,6 +49,7 @@ xcopy ..\ogg.dll "%kam_folder%"\ogg.dll* /y /r /i
 xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
 @REM copy utility applications exe files
+xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\KaM_Remake_Settings_ini_readme.txt* /y /r /i
 xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\CampaignBuilder.exe* /y /r /i
 xcopy "..\Utils\DedicatedServer\KaM_DedicatedServer.exe" "%kam_folder%"\KaM_Remake_Server_win32.exe* /y /r /i
 xcopy "..\Utils\DedicatedServerGUI\KaM_DedicatedServerGUI.exe" "%kam_folder%"\KaM_Remake_ServerGUI_win32.exe* /y /r /i
