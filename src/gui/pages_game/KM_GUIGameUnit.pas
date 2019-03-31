@@ -20,6 +20,7 @@ type
     procedure ShowDismissBtn;
     procedure Unit_Scroll_Click(Sender: TObject);
     procedure Show_Common(aUnit: TKMUnit);
+    procedure SendUnitDismissCommand;
   protected
     Panel_Unit: TKMPanel;
       Image_PlayerFlag: TKMImage;
@@ -231,7 +232,8 @@ begin
                                  and aUnit.Dismissable   // Its possible to block dismiss from scripts
                                  and gMySpectator.IsSelectedMyObj; // Allow to dismiss only our units
 
-  if aUnit.IsDismissing then
+  if aUnit.IsDismissing
+    or aUnit.DismissInProgress then //Check if we started dismiss process
   begin
     Button_Unit_Dismiss.TexID := 668;
     Button_Unit_Dismiss.Hint := gResTexts[TX_UNIT_TASK_DISMISS_CANCEL_HINT];
@@ -309,6 +311,13 @@ begin
 end;
 
 
+procedure TKMGUIGameUnit.SendUnitDismissCommand;
+begin
+  gGame.GameInputProcess.CmdUnit(gicUnitDismiss, TKMUnit(gMySpectator.Selected));
+  TKMUnit(gMySpectator.Selected).DismissStarted; //Mark this unit as waiting for dismiss GIC command (so player see proper UI)
+end;
+
+
 procedure TKMGUIGameUnit.Unit_Dismiss(Sender: TObject);
 var
   IsGroup: Boolean;
@@ -324,9 +333,9 @@ begin
     // DISMISS UNIT
     fAskDismiss := False;
     if IsGroup then
-      TKMUnitGroup(gMySpectator.Selected).SelectedUnit.Kill(PLAYER_NONE, True, False)
+      TKMUnitGroup(gMySpectator.Selected).SelectedUnit.Kill(PLAYER_NONE, True, False) //Debug option
     else
-      gGame.GameInputProcess.CmdUnit(gicUnitDismiss, TKMUnit(gMySpectator.Selected));
+      SendUnitDismissCommand;
   end
   else
   begin

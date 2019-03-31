@@ -94,6 +94,9 @@ type
     fNextPosition: TKMPoint; //Where we will be. Next tile in route or same tile if stay on place
     fDirection: TKMDirection; //
 
+    //No saved fields, used only in players UI
+    fDismissInProgress: Boolean; //Mark unit as waiting for Dismiss GIC cmd, to show proper UI
+
     function GetDesiredPassability: TKMTerrainPassability;
     function GetHitPointsMax: Byte;
     procedure SetDirection(aValue: TKMDirection);
@@ -132,9 +135,13 @@ type
 
     //Creates TTaskDie which then will Close the unit from further access
     procedure Kill(aFrom: TKMHandID; aShowAnimation, aForceDelay: Boolean); virtual;
+
     //Creates TTaskDismiss
     procedure Dismiss; virtual;
     procedure DismissCancel; virtual;
+    //Could be used only in UI
+    procedure DismissStarted;
+    property DismissInProgress: Boolean read fDismissInProgress;
 
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); dynamic;
 
@@ -1307,10 +1314,18 @@ begin
 end;
 
 
+procedure TKMUnit.DismissStarted;
+begin
+  fDismissInProgress := True;
+end;
+
+
 procedure TKMUnit.Dismiss;
 begin
   if not Dismissable or IsDeadOrDying then
     Exit;
+
+  fDismissInProgress := False;
 
   if (fAction is TKMUnitActionWalkTo) and TKMUnitActionWalkTo(fAction).DoingExchange then
   begin
@@ -1324,6 +1339,8 @@ end;
 
 procedure TKMUnit.DismissCancel;
 begin
+  fDismissInProgress := False; //remove fDismissInProgress mark, which is used only in UI
+
   if not IsDismissing then Exit;
 
   fThought := thNone; //Reset thought
