@@ -235,8 +235,17 @@ end;
 
 
 procedure TKMArmyManagement.RecruitSoldiers();
+  function CanEquipIron: Boolean;
+  begin
+    Result := not (fSetup.ArmyType = atLeather)
+              AND (fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeIron + fSetup.EquipRateIron));
+  end;
+  function CanEquipLeather: Boolean;
+  begin
+    Result := not (fSetup.ArmyType = atIron)
+              AND (fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather));
+  end;
 var
-  CanEquipIron, CanEquipLeather: Boolean;
   H: TKMHouse;
   GT: TKMGroupType;
   K,L: Integer;
@@ -245,8 +254,6 @@ var
   GroupReq: TKMGroupTypeArray;
   Barracks: array of TKMHouseBarracks;
 begin
-  CanEquipIron :=    not (fSetup.ArmyType = atLeather) AND (fSetup.UnlimitedEquip OR gGame.CheckTime(fLastEquippedTimeIron + fSetup.EquipRateIron));
-  CanEquipLeather := not (fSetup.ArmyType = atIron)    AND (fSetup.UnlimitedEquip OR gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather));
   // Peace time; Max soldiers limit reached; cannot equip; no Barracks
   if gGame.IsPeaceTime
     OR ((fSetup.MaxSoldiers <> -1) AND (gHands[fOwner].Stats.GetArmyCount >= fSetup.MaxSoldiers))
