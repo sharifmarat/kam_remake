@@ -2248,7 +2248,7 @@ end;
 procedure TKMMenuLobby.UpdateDifficultyLevels(aMap: TKMapInfo);
 var
   I: Integer;
-  MD, OldMD: TKMMissionDifficulty;
+  MD, OldMD, DefMD: TKMMissionDifficulty;
 begin
   //Difficulty levels
   if aMap.TxtInfo.HasDifficultyLevels then
@@ -2261,13 +2261,17 @@ begin
     DropBox_Difficulty.Clear;
     I := 0;
 
+    if OldMD <> mdNone then
+      DefMD := OldMD     //Try to set value from previously selected map
+    else
+      DefMD := mdNormal; //Default diffiuculty is "Normal"
+
     for MD in aMap.TxtInfo.DifficultyLevels do
     begin
       DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
-      if MD = OldMD then            //Try to set value from previous map
-        DropBox_Difficulty.ItemIndex := I
-      else if (OldMD = mdNone) and (MD = mdNormal) then //Default diffiuculty is "Normal"
+      if MD = DefMD then
         DropBox_Difficulty.ItemIndex := I;
+
       Inc(I);
     end;
 
