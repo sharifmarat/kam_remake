@@ -125,7 +125,8 @@ procedure TKMGeneral.CheckArmyCount;
 
   function CanEquipLeather: Boolean;
   begin
-    Result := fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather);
+    Result := not (fSetup.ArmyType = atIron)
+              AND (fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather));
   end;
 
 var
