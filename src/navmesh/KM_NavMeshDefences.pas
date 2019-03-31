@@ -694,7 +694,7 @@ end;
 { TFilterFF }
 function TFilterFF.IsPolyInsideDef(aIdx: Word): Boolean;
 begin
-  Result := fQueueArray[aIdx].Visited > 0;
+  Result := (fQueueArray[aIdx].Visited > 0) AND (fQueueArray[aIdx].Visited < $FF);
 end;
 
 
