@@ -217,6 +217,7 @@ type
     property Anchors: TKMAnchorsSet read fAnchors write SetAnchors;
     property Enabled: Boolean read fEnabled write SetEnabled;
     property Visible: Boolean read GetVisible write SetVisible;
+    property IsSetVisible: Boolean read fVisible;
     property IsPainted: Boolean read GetIsPainted;
     property IsFocused: Boolean read GetIsFocused;
     property IsClickable: Boolean read GetIsClickable;  // Control considered 'Clickabale' if it is Visible and Enabled

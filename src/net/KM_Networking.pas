@@ -60,6 +60,9 @@ const
 
 
 type
+  TMapStartEvent = procedure (const aData: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean;
+                              aMissionDifficulty: TKMMissionDifficulty) of object;
+
   //Should handle message exchange and routing, interacting with UI
   TKMNetworking = class
   private
@@ -225,7 +228,7 @@ type
     function CanTakeLocation(aPlayer, aLoc: Integer; AllowSwapping: Boolean): Boolean;
     procedure StartClick; //All required arguments are in our class
     procedure SendPlayerListAndRefreshPlayersSetup(aPlayerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
-    procedure UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single);
+    procedure UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single; aDifficulty: TKMMissionDifficulty);
     procedure SendGameOptions;
     procedure RequestFileTransfer;
     procedure VoteReturnToLobby;
@@ -1043,11 +1046,12 @@ begin
 end;
 
 
-procedure TKMNetworking.UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single);
+procedure TKMNetworking.UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single; aDifficulty: TKMMissionDifficulty);
 begin
   fNetGameOptions.Peacetime := aPeacetime;
   fNetGameOptions.SpeedPT := aSpeedPT;
   fNetGameOptions.SpeedAfterPT := aSpeedAfterPT;
+  fNetGameOptions.MissionDifficulty := aDifficulty;
 
   fNetPlayers.ResetReady;
   MyNetPlayer.ReadyToStart := True;
@@ -2375,7 +2379,8 @@ begin
   fIgnorePings := -1; //Ignore all pings until we have finished loading
 
   case fSelectGameKind of
-    ngkMap:  fOnStartMap(fMapInfo.FileNameWithoutHash, fMapInfo.MapFolder, fMapInfo.CRC, MyNetPlayer.IsSpectator);
+    ngkMap:  fOnStartMap(fMapInfo.FileNameWithoutHash, fMapInfo.MapFolder, fMapInfo.CRC, MyNetPlayer.IsSpectator,
+                         fNetGameOptions.MissionDifficulty);
     ngkSave: fOnStartSave(fSaveInfo.FileName, MyNetPlayer.IsSpectator);
     else      raise Exception.Create('Unexpacted fSelectGameKind');
   end;
@@ -2484,6 +2489,7 @@ begin
     MPGameInfo.GameOptions.SpeedPT := fNetGameOptions.SpeedPT;
     MPGameInfo.GameOptions.SpeedAfterPT := fNetGameOptions.SpeedAfterPT;
     MPGameInfo.GameOptions.RandomSeed := fNetGameOptions.RandomSeed; //not needed, but we send it anyway
+    MPGameInfo.GameOptions.MissionDifficulty := fNetGameOptions.MissionDifficulty;
 
     for I := 1 to NetPlayers.Count do
     begin

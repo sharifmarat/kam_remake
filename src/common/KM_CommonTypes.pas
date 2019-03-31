@@ -50,7 +50,6 @@ type
   TUnicodeStringObjEventProc = procedure (Sender: TObject; const aData: UnicodeString);
   TUnicodeStringBoolEvent = procedure (const aData: UnicodeString; aBool: Boolean) of object;
   TGameStartEvent = procedure (const aData: UnicodeString; Spectating: Boolean) of object;
-  TMapStartEvent = procedure (const aData: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean) of object;
   TResyncEvent = procedure (aSender: ShortInt; aTick: cardinal) of object;
   TIntegerStringEvent = procedure (aValue: Integer; const aText: UnicodeString) of object;
   TBooleanFunc = function(Obj: TObject): Boolean of object;

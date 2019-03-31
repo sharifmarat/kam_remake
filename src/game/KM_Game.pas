@@ -43,7 +43,6 @@ type
     fOverlayText: array[0..MAX_HANDS] of UnicodeString; //Needed for replays. Not saved since it's translated
     fIgnoreConsistencyCheckErrors: Boolean; // User can ignore all consistency check errors while watching SP replay
 
-    fMissionDifficulty: TKMMissionDifficulty;
     fAIType: TKMAIType;
     fMapTxtInfo: TKMMapTxtInfo;
 
@@ -58,6 +57,7 @@ type
     fGameMapCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
     fGameTickCount: Cardinal;
     fMissionMode: TKMissionMode;
+    fMissionDifficulty: TKMMissionDifficulty;
 
     fUIDTracker: Cardinal;       //Units-Houses tracker, to issue unique IDs
     fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
@@ -139,7 +139,6 @@ type
     procedure SaveMapEditor(const aPathName: UnicodeString; const aInsetRect: TKMRect); overload;
     procedure RestartReplay; //Restart the replay but keep current viewport position/zoom
 
-    property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty;
     property AIType: TKMAIType read fAIType;
 
     property IsExiting: Boolean read fIsExiting;
@@ -186,6 +185,7 @@ type
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
 
     property MissionMode: TKMissionMode read fMissionMode write fMissionMode;
+    property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty write fMissionDifficulty;
     property GameLockedMutex: Boolean read fGameLockedMutex write fGameLockedMutex;
     function GetNewUID: Integer;
     function GetNormalGameSpeed: Single;
@@ -1485,7 +1485,7 @@ end;
 procedure TKMGame.SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
 var
   SaveStream, MnmSaveStream: TKMemoryStream;
-  gameInfo: TKMGameInfo;
+  GameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
   if BLOCK_SAVE then // This must be here because of paraller Runner
@@ -1497,54 +1497,55 @@ begin
 
   SaveStream := TKMemoryStream.Create;
   try
-    gameInfo := TKMGameInfo.Create;
+    GameInfo := TKMGameInfo.Create;
     try
-      gameInfo.Title := fGameName;
-      gameInfo.MapCRC := fGameMapCRC;
-      gameInfo.TickCount := fGameTickCount;
-      gameInfo.SaveTimestamp := aTimestamp;
-      gameInfo.MissionMode := fMissionMode;
-      gameInfo.MapSizeX := gTerrain.MapX;
-      gameInfo.MapSizeY := gTerrain.MapY;
+      GameInfo.Title := fGameName;
+      GameInfo.MapCRC := fGameMapCRC;
+      GameInfo.TickCount := fGameTickCount;
+      GameInfo.SaveTimestamp := aTimestamp;
+      GameInfo.MissionMode := fMissionMode;
+      GameInfo.MissionDifficulty := fMissionDifficulty;
+      GameInfo.MapSizeX := gTerrain.MapX;
+      GameInfo.MapSizeY := gTerrain.MapY;
 
-      gameInfo.PlayerCount := gHands.Count;
+      GameInfo.PlayerCount := gHands.Count;
       for I := 0 to gHands.Count - 1 do
       begin
         if fNetworking = nil then
         begin
-          gameInfo.Enabled[I] := False;
-          gameInfo.CanBeHuman[I] := False;
-          gameInfo.OwnerNikname[I] := '';
-          gameInfo.HandTypes[I] := hndHuman;
-          gameInfo.ColorID[I] := 0;
-          gameInfo.Team[I] := 0;
+          GameInfo.Enabled[I] := False;
+          GameInfo.CanBeHuman[I] := False;
+          GameInfo.OwnerNikname[I] := '';
+          GameInfo.HandTypes[I] := hndHuman;
+          GameInfo.ColorID[I] := 0;
+          GameInfo.Team[I] := 0;
         end else
         begin
           netIndex := fNetworking.NetPlayers.PlayerIndexToLocal(I);
           if netIndex <> -1 then
           begin
-            gameInfo.Enabled[I] := True;
-            gameInfo.CanBeHuman[I] := fNetworking.NetPlayers[netIndex].IsHuman;
-            gameInfo.OwnerNikname[I] := fNetworking.NetPlayers[netIndex].Nikname;
-            gameInfo.HandTypes[I] := fNetworking.NetPlayers[netIndex].GetPlayerType;
-            gameInfo.ColorID[I] := fNetworking.NetPlayers[netIndex].FlagColorID;
-            gameInfo.Team[I] := fNetworking.NetPlayers[netIndex].Team;
+            GameInfo.Enabled[I] := True;
+            GameInfo.CanBeHuman[I] := fNetworking.NetPlayers[netIndex].IsHuman;
+            GameInfo.OwnerNikname[I] := fNetworking.NetPlayers[netIndex].Nikname;
+            GameInfo.HandTypes[I] := fNetworking.NetPlayers[netIndex].GetPlayerType;
+            GameInfo.ColorID[I] := fNetworking.NetPlayers[netIndex].FlagColorID;
+            GameInfo.Team[I] := fNetworking.NetPlayers[netIndex].Team;
           end
           else
           begin
-            gameInfo.Enabled[I] := gHands[I].Enabled;
-            gameInfo.CanBeHuman[I] := gHands[I].HandType = hndHuman;
-            gameInfo.OwnerNikname[I] := gHands[I].OwnerNikname; //MP nikname, not translated OwnerName
-            gameInfo.HandTypes[I] := gHands[I].HandType;
-            gameInfo.ColorID[I] := FindMPColor(gHands[I].FlagColor);
-            gameInfo.Team[I] := 0;
+            GameInfo.Enabled[I] := gHands[I].Enabled;
+            GameInfo.CanBeHuman[I] := gHands[I].HandType = hndHuman;
+            GameInfo.OwnerNikname[I] := gHands[I].OwnerNikname; //MP nikname, not translated OwnerName
+            GameInfo.HandTypes[I] := gHands[I].HandType;
+            GameInfo.ColorID[I] := FindMPColor(gHands[I].FlagColor);
+            GameInfo.Team[I] := 0;
           end;
         end;
       end;
 
-      gameInfo.Save(SaveStream);
+      GameInfo.Save(SaveStream);
     finally
-      FreeAndNil(gameInfo);
+      FreeAndNil(GameInfo);
     end;
 
     fGameOptions.Save(SaveStream);
@@ -1608,7 +1609,6 @@ begin
     gProjectiles.Save(SaveStream);
     fScripting.Save(SaveStream);
     gScriptSounds.Save(SaveStream);
-    SaveStream.Write(fMissionDifficulty, SizeOf(fMissionDifficulty));
     SaveStream.Write(fAIType, SizeOf(fAIType));
 
     fTextMission.Save(SaveStream);
@@ -1699,6 +1699,7 @@ begin
       fGameMapCRC := GameInfo.MapCRC;
       fGameTickCount := GameInfo.TickCount;
       fMissionMode := GameInfo.MissionMode;
+      fMissionDifficulty := GameInfo.MissionDifficulty;
     finally
       FreeAndNil(GameInfo);
     end;
@@ -1763,7 +1764,6 @@ begin
     gProjectiles.Load(LoadStream);
     fScripting.Load(LoadStream);
     gScriptSounds.Load(LoadStream);
-    LoadStream.Read(fMissionDifficulty, SizeOf(fMissionDifficulty));
     LoadStream.Read(fAIType, SizeOf(fAIType));
 
     fTextMission := TKMTextLibraryMulti.Create;

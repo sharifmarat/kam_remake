@@ -35,6 +35,7 @@ type
     fDropBoxPlayers_LastItemIndex: Integer;
 
     fMapsSortUpdateNeeded: Boolean;
+    fMainHeight: Integer;
 
     procedure UpdateMappings;
     procedure UpdateSpectatorDivide;
@@ -94,6 +95,9 @@ type
     function TrackBarPos2Speed(aTrackPos: Integer): Single;
 
     procedure UpdateGameOptionsUI;
+    procedure UpdateDescNOptionsUI;
+    procedure UpdateDifficultyLevels(aSave: TKMSaveInfo); overload;
+    procedure UpdateDifficultyLevels(aMap: TKMapInfo); overload;
 
     procedure Lobby_OnDisconnect(const aData: UnicodeString);
     procedure Lobby_OnGameOptions(Sender: TObject);
@@ -168,8 +172,13 @@ type
           Memo_MapDesc: TKMMemo;
           Button_SetupReadme: TKMButton;
         Panel_SetupOptions: TKMPanel;
-          TrackBar_LobbyPeacetime: TKMTrackBar;
-          TrackBar_SpeedPT, TrackBar_SpeedAfterPT: TKMTrackBar;
+          Label_GameOptions: TKMLabel;
+          Panel_Difficulty: TKMPanel;
+            Label_Difficulty: TKMLabel;
+            DropBox_Difficulty: TKMDropList;
+          Panel_GameOptions: TKMPanel;
+            TrackBar_LobbyPeacetime: TKMTrackBar;
+            TrackBar_SpeedPT, TrackBar_SpeedAfterPT: TKMTrackBar;
 
       Memo_Posts: TKMMemo;
       Button_Post: TKMButtonFlat;
@@ -197,6 +206,8 @@ uses
   KM_Resource, KM_ResFonts, KM_NetPlayersList, KM_Main, KM_GameApp, KM_Points;
 
 const
+  PANEL_SETUP_OPTIONS_TOP = 548;
+  PANEL_SETUP_OPTIONS_HEIGHT = 170;
   RESET_BANS_COOLDOWN = 1000;
   ASK_READY_COOLDOWN = 1000;
   SPEED_MAX_VALUE = 2.5;
@@ -223,6 +234,7 @@ begin
   fSavesMP := TKMSavesCollection.Create;
 
   fDropBoxPlayers_LastItemIndex := -1;
+  fLobbyTab := ltDesc;
 
   CreateControls(aParent);
   CreateChatMenu(aParent);
@@ -570,28 +582,40 @@ begin
         Button_SetupReadme.OnClick := ReadmeClick;
         Button_SetupReadme.Hide;
 
-      Panel_SetupOptions := TKMPanel.Create(Panel_Setup, 0, 548, 270, 170);
+      Panel_SetupOptions := TKMPanel.Create(Panel_Setup, 0, PANEL_SETUP_OPTIONS_TOP, 270, PANEL_SETUP_OPTIONS_HEIGHT);
       Panel_SetupOptions.Anchors := [anLeft,anBottom];
-        with TKMLabel.Create(Panel_SetupOptions, 10, 4, 250, 20, gResTexts[TX_LOBBY_GAME_OPTIONS], fntOutline, taLeft) do Anchors := [anLeft,anBottom];
-        TrackBar_LobbyPeacetime := TKMTrackBar.Create(Panel_SetupOptions, 10, 26, 250, 0, 120);
-        TrackBar_LobbyPeacetime.Anchors := [anLeft,anBottom];
-        TrackBar_LobbyPeacetime.Caption := gResTexts[TX_LOBBY_PEACETIME];
-        TrackBar_LobbyPeacetime.Step := 5; //Round to 5min steps
-        TrackBar_LobbyPeacetime.OnChange := GameOptionsChange;
 
-        SpeedsCnt := Round((SPEED_MAX_VALUE - 1) / SPEED_STEP) + 1;
+        Label_GameOptions := TKMLabel.Create(Panel_SetupOptions, 10, 4, 250, 20, gResTexts[TX_LOBBY_GAME_OPTIONS], fntOutline, taLeft);
+        Label_GameOptions.Anchors := [anLeft,anTop];
 
-        TrackBar_SpeedPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 72, 250, 1, SpeedsCnt);
-        TrackBar_SpeedPT.Anchors := [anLeft,anBottom];
-        TrackBar_SpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
-        TrackBar_SpeedPT.ThumbWidth := 45; //Enough to fit 'x1.5' 'x1.25'
-        TrackBar_SpeedPT.OnChange := GameOptionsChange;
+        Panel_Difficulty := TKMPanel.Create(Panel_SetupOptions, 0, 26, 270, 25);
+          Label_Difficulty := TKMLabel.Create(Panel_Difficulty, 10, 2, gResTexts[TX_MISSION_DIFFICULTY_CAMPAIGN], fntMetal, taLeft);
+          Label_Difficulty.Anchors := [anLeft, anBottom];
+          DropBox_Difficulty := TKMDropList.Create(Panel_Difficulty, 130, 0, 130, 20, fntMetal, gResTexts[TX_MISSION_DIFFICULTY], bsMenu);
+          DropBox_Difficulty.Anchors := [anLeft, anBottom];
+          DropBox_Difficulty.OnChange := GameOptionsChange;
+        Panel_Difficulty.Hide;
 
-        TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_SetupOptions, 10, 116, 250, 1, SpeedsCnt);
-        TrackBar_SpeedAfterPT.Anchors := [anLeft,anBottom];
-        TrackBar_SpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
-        TrackBar_SpeedAfterPT.ThumbWidth := 45; //Enough to fit 'x1.25'
-        TrackBar_SpeedAfterPT.OnChange := GameOptionsChange;
+        Panel_GameOptions := TKMPanel.Create(Panel_SetupOptions, 0, 26, 270, 150);
+          TrackBar_LobbyPeacetime := TKMTrackBar.Create(Panel_GameOptions, 10, 0, 250, 0, 120);
+          TrackBar_LobbyPeacetime.Anchors := [anLeft,anBottom];
+          TrackBar_LobbyPeacetime.Caption := gResTexts[TX_LOBBY_PEACETIME];
+          TrackBar_LobbyPeacetime.Step := 5; //Round to 5min steps
+          TrackBar_LobbyPeacetime.OnChange := GameOptionsChange;
+
+          SpeedsCnt := Round((SPEED_MAX_VALUE - 1) / SPEED_STEP) + 1;
+
+          TrackBar_SpeedPT := TKMTrackBar.Create(Panel_GameOptions, 10, 46, 250, 1, SpeedsCnt);
+          TrackBar_SpeedPT.Anchors := [anLeft,anBottom];
+          TrackBar_SpeedPT.Caption := gResTexts[TX_LOBBY_GAMESPEED_PEACETIME];
+          TrackBar_SpeedPT.ThumbWidth := 45; //Enough to fit 'x1.5' 'x1.25'
+          TrackBar_SpeedPT.OnChange := GameOptionsChange;
+
+          TrackBar_SpeedAfterPT := TKMTrackBar.Create(Panel_GameOptions, 10, 90, 250, 1, SpeedsCnt);
+          TrackBar_SpeedAfterPT.Anchors := [anLeft,anBottom];
+          TrackBar_SpeedAfterPT.Caption := gResTexts[TX_LOBBY_GAMESPEED];
+          TrackBar_SpeedAfterPT.ThumbWidth := 45; //Enough to fit 'x1.25'
+          TrackBar_SpeedAfterPT.OnChange := GameOptionsChange;
 
     Button_Back := TKMButton.Create(Panel_Lobby, 30, 723, 220, 30, gResTexts[TX_LOBBY_QUIT], bsMenu);
     Button_Back.Anchors := [anLeft, anBottom];
@@ -874,29 +898,50 @@ begin
 end;
 
 
+procedure TKMMenuLobby.UpdateDescNOptionsUI;
+var
+  DiffHeight: Integer; //Difficulty panel height
+begin
+  DiffHeight := Panel_Difficulty.Height*Byte(Panel_Difficulty.IsSetVisible);
+  if Button_TabDesc.Visible then
+  begin
+    //Not enough space, so enabled tabbed view
+    Panel_SetupDesc.Top := 350;
+    Panel_SetupDesc.Height := fMainHeight - 406;
+    Panel_SetupOptions.Top := 350;
+  end
+  else
+  begin
+    //We have enough space, so stack Options below Desc
+    Panel_SetupDesc.Top := 324;
+    Panel_SetupDesc.Height := fMainHeight - 550 - DiffHeight;
+    Panel_SetupOptions.Top := 330 + Panel_SetupDesc.Height;
+  end;
+  Panel_SetupOptions.Height := PANEL_SETUP_OPTIONS_HEIGHT + DiffHeight;
+  Panel_GameOptions.Top := 26 + DiffHeight;
+end;
+
+
 procedure TKMMenuLobby.Lobby_Resize(aMainHeight: Word);
 begin
   if not Panel_Lobby.Visible then Exit;
+  fMainHeight := aMainHeight;
   //If the vertical screen height goes below a certain amount we need to switch to "compact" mode
   if aMainHeight >= 660 then
   begin
     //We have enough space, so stack Options below Desc
-    Panel_SetupDesc.Top := 324;
-    Panel_SetupDesc.Height := aMainHeight-550;
-    Panel_SetupOptions.Top := 330 + Panel_SetupDesc.Height;
     Button_TabDesc.Hide;
     Button_TabOptions.Hide;
     Panel_SetupDesc.Show;
     Panel_SetupOptions.Show;
+    UpdateDescNOptionsUI;
   end
   else
   begin
     //Not enough space, so enabled tabbed view
-    Panel_SetupDesc.Top := 350;
-    Panel_SetupDesc.Height := aMainHeight-406;
-    Panel_SetupOptions.Top := 350;
     Button_TabDesc.Show;
     Button_TabOptions.Show;
+    UpdateDescNOptionsUI;
     GameOptionsTabSwitch(nil);
   end;
 end;
@@ -1011,6 +1056,7 @@ begin
     Label_MapName.Hide;
     Button_Start.Caption := gResTexts[TX_LOBBY_START]; //Start
     Button_Start.Disable;
+    DropBox_Difficulty.Disable;
     TrackBar_LobbyPeacetime.Disable;
     TrackBar_SpeedPT.Disable;
     TrackBar_SpeedAfterPT.Disable;
@@ -1027,6 +1073,7 @@ begin
     Label_MapName.Show;
     Button_Start.Caption := gResTexts[TX_LOBBY_READY]; //Ready
     Button_Start.Enable;
+    DropBox_Difficulty.Disable;
     TrackBar_LobbyPeacetime.Disable;
     TrackBar_SpeedPT.Disable;
     TrackBar_SpeedAfterPT.Disable;
@@ -1040,11 +1087,19 @@ end;
 
 
 procedure TKMMenuLobby.GameOptionsChange(Sender: TObject);
+var
+  MD: TKMMissionDifficulty;
 begin
+  if (DropBox_Difficulty.Count > 0) and DropBox_Difficulty.IsSelected then
+    MD := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag)
+  else
+    MD := mdNone;
+
   //Update the game options
   fNetworking.UpdateGameOptions(EnsureRange(TrackBar_LobbyPeacetime.Position, 0, 300),
                                 TrackBarPos2Speed(TrackBar_SpeedPT.Position),
-                                TrackBarPos2Speed(TrackBar_SpeedAfterPT.Position));
+                                TrackBarPos2Speed(TrackBar_SpeedAfterPT.Position),
+                                MD);
 
   //Refresh the data to controls
   Lobby_OnGameOptions(nil);
@@ -1078,6 +1133,8 @@ end;
 
 
 procedure TKMMenuLobby.Lobby_OnGameOptions(Sender: TObject);
+var
+  MD: TKMMissionDifficulty;
 begin
   TrackBar_LobbyPeacetime.Position := fNetworking.NetGameOptions.Peacetime;
 
@@ -1086,12 +1143,18 @@ begin
 
   TrackBar_SpeedAfterPT.Position  := Speed2TrackBarPos(fNetworking.NetGameOptions.SpeedAfterPT);
 
+  MD := fNetworking.NetGameOptions.MissionDifficulty;
+
+  if MD <> mdNone then
+    DropBox_Difficulty.SelectByTag(Byte(MD));
+
   UpdateGameOptionsUI;
 end;
 
 
 procedure TKMMenuLobby.HostMenuClick(Sender: TObject);
-var id: Integer;
+var
+  Id: Integer;
 begin
   //We can't really do global bans because player's IP addresses change all the time (and we have no other way to identify someone).
   //My idea was for bans to be managed completely by the server, since player's don't actually know each other's IPs.
@@ -1476,7 +1539,6 @@ begin
   UpdateMappings;
 
   IsSave := fNetworking.SelectGameKind = ngkSave;
-
 
   if Radio_MapType.ItemIndex < 4 then //Limit PT for new game
     TrackBar_LobbyPeacetime.Range := fNetworking.NetGameFilter.PeacetimeRng
@@ -2128,6 +2190,7 @@ begin
     finally
       fMapsMP.Unlock;
     end;
+    GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
   end
   else
   begin
@@ -2160,6 +2223,67 @@ begin
 end;
 
 
+procedure TKMMenuLobby.UpdateDifficultyLevels(aSave: TKMSaveInfo);
+var
+  MD: TKMMissionDifficulty;
+begin
+  //Difficulty levels
+  DropBox_Difficulty.Clear;
+  DropBox_Difficulty.Disable;
+  MD := aSave.Info.MissionDifficulty;
+  if MD = mdNone then
+    Panel_Difficulty.Hide
+  else
+  begin
+    DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
+    DropBox_Difficulty.ItemIndex := 0; //Select level from save
+
+    Panel_Difficulty.DoSetVisible;
+  end;
+
+  UpdateDescNOptionsUI;
+end;
+
+
+procedure TKMMenuLobby.UpdateDifficultyLevels(aMap: TKMapInfo);
+var
+  I: Integer;
+  MD, OldMD: TKMMissionDifficulty;
+begin
+  //Difficulty levels
+  if aMap.TxtInfo.HasDifficultyLevels then
+  begin
+    OldMD := mdNone;
+    if DropBox_Difficulty.IsSelected
+      and (TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag) in aMap.TxtInfo.DifficultyLevels) then
+      OldMD := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag);
+
+    DropBox_Difficulty.Clear;
+    I := 0;
+
+    for MD in aMap.TxtInfo.DifficultyLevels do
+    begin
+      DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
+      if MD = OldMD then            //Try to set value from previous map
+        DropBox_Difficulty.ItemIndex := I
+      else if (OldMD = mdNone) and (MD = mdNormal) then //Default diffiuculty is "Normal"
+        DropBox_Difficulty.ItemIndex := I;
+      Inc(I);
+    end;
+
+    if not DropBox_Difficulty.IsSelected then
+      DropBox_Difficulty.ItemIndex := 0;
+
+    Panel_Difficulty.DoSetVisible;
+    DropBox_Difficulty.Enabled := fNetworking.IsHost; //Only Host can change map difficulty
+
+  end else
+    Panel_Difficulty.Hide;
+
+  UpdateDescNOptionsUI;
+end;
+
+
 //We have received MapName
 //Update UI to show it
 procedure TKMMenuLobby.Lobby_OnMapName(const aData: UnicodeString);
@@ -2179,6 +2303,8 @@ begin
                                         and (((fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid)
                                           or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.IsValid));
   CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngkSave);
+
+  DropBox_Difficulty.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
 
   //In case it was hidden during file transfer
   Panel_SetupTransfer.Hide;
@@ -2208,6 +2334,7 @@ begin
                 Label_MapName.Caption := aData; //Show save name on host (local is always "downloaded")
                 Memo_MapDesc.Text := S.Info.GetTitleWithTime + '|' + S.Info.GetSaveTimestamp;
                 Lobby_OnUpdateMinimap(nil);
+                UpdateDifficultyLevels(S);
               end;
     ngkMap:  begin
                 M := fNetworking.MapInfo;
@@ -2230,6 +2357,8 @@ begin
                     Memo_MapDesc.Height := Panel_SetupDesc.Height - 25;
                     Button_SetupReadme.Show;
                   end;
+
+                  UpdateDifficultyLevels(M);
                 end;
                 Label_MapName.Caption := WrapColor(M.FileName, M.GetLobbyColor);
                 Memo_MapDesc.Text := M.BigDesc;
@@ -2242,10 +2371,14 @@ procedure TKMMenuLobby.Lobby_OnMapMissing(const aData: UnicodeString; aStartTran
 begin
   //Common settings
   MinimapView.Visible := (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
-  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
-  TrackBar_SpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
+  TrackBar_LobbyPeacetime.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap)
+                                     and fNetworking.MapInfo.IsValid and not fNetworking.MapInfo.TxtInfo.BlockPeacetime;
+  TrackBar_SpeedPT.Enabled := (TrackBar_LobbyPeacetime.Position > 0) and fNetworking.IsHost
+                               and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
   TrackBar_SpeedAfterPT.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
   CheckBox_RandomizeTeamLocations.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind <> ngkSave);
+
+  DropBox_Difficulty.Enabled := fNetworking.IsHost and (fNetworking.SelectGameKind = ngkMap) and fNetworking.MapInfo.IsValid;
 
   Label_MapName.Caption := fNetworking.MissingFileName;
   Memo_MapDesc.Text := aData; //aData is some error message

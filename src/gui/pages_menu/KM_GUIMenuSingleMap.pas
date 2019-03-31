@@ -417,7 +417,7 @@ begin
         for MD in fMaps[MapId].TxtInfo.DifficultyLevels do
         begin
           DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
-          if MD = mdNormal then
+          if MD = mdNormal then //Default diffiuculty is "Normal"
             DropBox_Difficulty.ItemIndex := I;
           Inc(I);
         end;

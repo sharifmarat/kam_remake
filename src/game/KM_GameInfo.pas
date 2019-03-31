@@ -2,7 +2,7 @@ unit KM_GameInfo;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Hand, KM_CommonClasses, KM_Defaults;
+  KM_Hand, KM_CommonClasses, KM_Maps, KM_Defaults;
 
 
 type
@@ -18,6 +18,7 @@ type
     TickCount: Cardinal; //Current tick count of the game (unused for maps)
     SaveTimestamp: TDateTime; //UTC time when the save was created (unused for maps)
     MissionMode: TKMissionMode; //Fighting or Build-a-City map
+    MissionDifficulty: TKMMissionDifficulty;
     MapSizeX, MapSizeY: Integer;
 
     PlayerCount: Byte;
@@ -77,6 +78,7 @@ begin
   LoadStream.Read(TickCount);
   LoadStream.Read(SaveTimestamp);
   LoadStream.Read(MissionMode, SizeOf(MissionMode));
+  LoadStream.Read(MissionDifficulty, SizeOf(MissionDifficulty));
   LoadStream.Read(MapSizeX);
   LoadStream.Read(MapSizeY);
 
@@ -105,6 +107,7 @@ begin
   SaveStream.Write(TickCount);
   SaveStream.Write(SaveTimestamp);
   SaveStream.Write(MissionMode, SizeOf(MissionMode));
+  SaveStream.Write(MissionDifficulty, SizeOf(MissionDifficulty));
   SaveStream.Write(MapSizeX);
   SaveStream.Write(MapSizeY);
 
