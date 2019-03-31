@@ -453,7 +453,9 @@ var
   I: Integer;
   CellsAround: TKMPointDirList;
 begin
-  Result := True;
+  Result := (fTargetHouse <> nil) and not fTargetHouse.IsDestroyed;
+  if not Result then
+    Exit;
 
   CellsAround := TKMPointDirList.Create;
   try

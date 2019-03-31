@@ -935,48 +935,16 @@ end;
 
 
 procedure TKMGUIGameHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
-
-  procedure SetDeliveryMode(aMode: TKMDeliveryMode);
-  begin
-    case aMode of
-      dmDelivery:  begin
-                      gGame.GameInputProcess.CmdHouse(gicHouseDeliveryToggle, TKMHouse(gMySpectator.Selected), dmDelivery);
-                      Button_HouseDeliveryMode.TexID := 37;
-                    end;
-      dmClosed:    begin
-                      gGame.GameInputProcess.CmdHouse(gicHouseDeliveryToggle, TKMHouse(gMySpectator.Selected), dmClosed);
-                      Button_HouseDeliveryMode.TexID := 38;
-                    end;
-      dmTakeOut:   begin
-                      gGame.GameInputProcess.CmdHouse(gicHouseDeliveryToggle, TKMHouse(gMySpectator.Selected), dmTakeOut);
-                      Button_HouseDeliveryMode.TexID := 664;
-                    end;
-    end;
-  end;
-
 begin
   if (gMySpectator.Selected = nil)
     or not (gMySpectator.Selected is TKMHouse)
     or not gMySpectator.IsSelectedMyObj then
     Exit;
 
-  case Button_HouseDeliveryMode.TexID of
-    37: // dmDelivery
-          if ssLeft in Shift then
-            SetDeliveryMode(dmClosed)
-          else if ssRight in Shift then
-            SetDeliveryMode(dmTakeOut);
-    38: // dmClosed
-          if ssLeft in Shift then
-            SetDeliveryMode(dmTakeOut)
-          else if ssRight in Shift then
-            SetDeliveryMode(dmDelivery);
-    664: // dmTakeOut
-          if ssLeft in Shift then
-            SetDeliveryMode(dmDelivery)
-          else if ssRight in Shift then
-            SetDeliveryMode(dmClosed);
-  end;
+  if ssLeft in Shift then
+    gGame.GameInputProcess.CmdHouse(gicHouseDeliveryModeNext, TKMHouse(gMySpectator.Selected))
+  else if ssRight in Shift then
+    gGame.GameInputProcess.CmdHouse(gicHouseDeliveryModePrev, TKMHouse(gMySpectator.Selected));
 end;
 
 
