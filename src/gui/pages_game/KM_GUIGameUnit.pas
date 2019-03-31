@@ -58,7 +58,7 @@ type
     procedure Hide;
     procedure KeyUp(Key: Word; Shift: TShiftState);
 
-    procedure ShowUnitInfo(aUnit: TKMUnit; aAskDismiss:boolean=false);
+    procedure ShowUnitInfo(aUnit: TKMUnit; aAskDismiss: Boolean = False);
     procedure ShowGroupInfo(Sender: TKMUnitGroup; aAskDismiss: Boolean = False);
     procedure Army_HideJoinMenu(Sender: TObject);
   end;

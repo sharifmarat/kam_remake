@@ -60,7 +60,8 @@ type
 
     //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gicHouseRepairToggle,
-    gicHouseDeliveryToggle,          //Including storehouse. (On/Off, ResourceType)
+    gicHouseDeliveryModeNext,
+    gicHouseDeliveryModePrev,
     gicHouseClosedForWorkerTgl,      //Toggle house state for worker - vacate or occupy
     gicHouseOrderProduct,            //Place an order to manufacture warfare
     gicHouseMarketFrom,              //Select wares to trade in marketplace
@@ -141,7 +142,8 @@ const
 
   HouseOrderCommands: set of TKMGameInputCommandType = [
     gicHouseRepairToggle,
-    gicHouseDeliveryToggle,
+    gicHouseDeliveryModeNext,
+    gicHouseDeliveryModePrev,
     gicHouseClosedForWorkerTgl,
     gicHouseOrderProduct,
     gicHouseMarketFrom,
@@ -186,7 +188,8 @@ const
     gicpt_Int3,     // gicBuildHousePlan
     //IV.    House repair/delivery/orders (TKMHouse, Toggle(repair, delivery, orders))
     gicpt_Int1,     // gicHouseRepairToggle
-    gicpt_Int2,     // gicHouseDeliveryToggle
+    gicpt_Int1,     // gicHouseDeliveryModeNext
+    gicpt_Int1,     // gicHouseDeliveryModePrev
     gicpt_Int1,     // gicHouseClosedForWorkerTgl
     gicpt_Int3,     // gicHouseOrderProduct
     gicpt_Int2,     // gicHouseMarketFrom
@@ -298,7 +301,6 @@ type
     procedure CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aUnitType: TKMUnitType; aCount: Integer); overload;
     procedure CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aValue: Integer); overload;
     procedure CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; const aLoc: TKMPoint); overload;
-    procedure CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TKMDeliveryMode); overload;
 
     procedure CmdWareDistribution(aCommandType: TKMGameInputCommandType; aWare: TKMWareType; aHouseType: TKMHouseType; aValue:integer); overload;
     procedure CmdWareDistribution(aCommandType: TKMGameInputCommandType; const aTextParam: UnicodeString); overload;
@@ -593,7 +595,7 @@ begin
       if (TgtUnit = nil) or TgtUnit.IsDeadOrDying then //Unit has died before command could be executed
         Exit;
     end;
-    if CommandType in [gicHouseRepairToggle, gicHouseDeliveryToggle, gicHouseWoodcuttersCutting, gicHouseTownHallMaxGold,
+    if CommandType in [gicHouseRepairToggle, gicHouseDeliveryModeNext, gicHouseDeliveryModePrev, gicHouseWoodcuttersCutting, gicHouseTownHallMaxGold,
       gicHouseOrderProduct, gicHouseMarketFrom, gicHouseMarketTo, gicHouseBarracksRally, gicHouseTownHallRally,
       gicHouseStoreAcceptFlag, gicHouseBarracksAcceptFlag, gicHouseBarracksEquip, gicHouseTownHallEquip, gicHouseClosedForWorkerTgl,
       gicHouseSchoolTrain, gicHouseSchoolTrainChOrder, gicHouseSchoolTrainChLastUOrder, gicHouseRemoveTrain,
@@ -656,8 +658,10 @@ begin
                                     P.AddHousePlan(TKMHouseType(Params[1]), KMPoint(Params[2],Params[3]));
 
       gicHouseRepairToggle:      SrcHouse.BuildingRepair := not SrcHouse.BuildingRepair;
-      gicHouseDeliveryToggle:    //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
-                                  SrcHouse.NewDeliveryMode := TKMDeliveryMode(Params[2]);
+      gicHouseDeliveryModeNext:   //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
+                                  SrcHouse.SetNextDeliveryMode;
+      gicHouseDeliveryModePrev:   //Delivery mode has to be delayed, to avoid occasional delivery mode button clicks
+                                  SrcHouse.SetPrevDeliveryMode;
       gicHouseClosedForWorkerTgl: SrcHouse.IsClosedForWorker := not SrcHouse.IsClosedForWorker;
       gicHouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
       gicHouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
@@ -868,7 +872,7 @@ end;
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse);
 begin
-  Assert(aCommandType in [gicHouseRepairToggle, gicHouseClosedForWorkerTgl, gicHBarracksAcceptRecruitsTgl]);
+  Assert(aCommandType in [gicHouseRepairToggle, gicHouseClosedForWorkerTgl, gicHBarracksAcceptRecruitsTgl, gicHouseDeliveryModeNext, gicHouseDeliveryModePrev]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID));
 end;
 
@@ -914,13 +918,6 @@ begin
   Assert((aCommandType = gicHouseBarracksRally) or (aCommandType = gicHouseTownHallRally) or (aCommandType = gicHouseWoodcuttersCutting));
   Assert((aHouse is TKMHouseBarracks) or (aHouse is TKMHouseTownHall) or (aHouse is TKMHouseWoodcutters));
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, aLoc.X, aLoc.Y));
-end;
-
-
-procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aDeliveryMode: TKMDeliveryMode);
-begin
-  Assert(aCommandType = gicHouseDeliveryToggle);
-  TakeCommand(MakeCommand(aCommandType, aHouse.UID, Integer(aDeliveryMode)));
 end;
 
 
