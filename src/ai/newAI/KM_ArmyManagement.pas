@@ -237,19 +237,22 @@ end;
 procedure TKMArmyManagement.RecruitSoldiers();
   function CanEquipIron: Boolean;
   begin
-    Result := fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeIron + fSetup.EquipRateIron);
+    Result := not (fSetup.ArmyType = atLeather)
+              AND (fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeIron + fSetup.EquipRateIron));
   end;
   function CanEquipLeather: Boolean;
   begin
-    Result := fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather);
+    Result := not (fSetup.ArmyType = atIron)
+              AND (fSetup.UnlimitedEquip or gGame.CheckTime(fLastEquippedTimeLeather + fSetup.EquipRateLeather));
   end;
 var
-  Barracks: array of TKMHouseBarracks;
   H: TKMHouse;
   GT: TKMGroupType;
-  I,K: Integer;
+  K,L: Integer;
   UT: TKMUnitType;
+  pEquippedTime: ^Cardinal;
   GroupReq: TKMGroupTypeArray;
+  Barracks: array of TKMHouseBarracks;
 begin
   // Peace time; Max soldiers limit reached; cannot equip; no Barracks
   if gGame.IsPeaceTime
@@ -259,63 +262,64 @@ begin
     OR (fDefence.Count = 0) then
     Exit;
 
-  FillChar(GroupReq, SizeOf(GroupReq), #0); //Clear up
-
   // Take required warriors from CityManagement (-> implemented consideration of required units + save time)
+  FillChar(GroupReq, SizeOf(GroupReq), #0); //Clear up
   for GT := Low(TKMGroupType) to High(TKMGroupType) do
-    for I := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
-      if (AITroopTrainOrder[GT,I] <> utNone) then
-        Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,I] ] + 1); // Always recruit something
+    for K := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
+      if (AITroopTrainOrder[GT,K] <> utNone) then
+        Inc(GroupReq[GT], gHands[fOwner].AI.CityManagement.WarriorsDemands[ AITroopTrainOrder[GT,K] ] + 1); // Always recruit something
 
   //Find barracks
   SetLength(Barracks, gHands[fOwner].Stats.GetHouseQty(htBarracks));
-  for I := 0 to Length(Barracks) - 1 do
-    Barracks[I] := nil; // Just to be sure
-  K := 0;
-  for I := 0 to gHands[fOwner].Houses.Count - 1 do
+  for K := 0 to Length(Barracks) - 1 do
+    Barracks[K] := nil; // Just to be sure
+  L := 0;
+  for K := 0 to gHands[fOwner].Houses.Count - 1 do
   begin
-    H := gHands[fOwner].Houses[I];
+    H := gHands[fOwner].Houses[K];
     if (H <> nil) AND not H.IsDestroyed AND (H.HouseType = htBarracks) AND H.IsComplete then
     begin
-      Barracks[K] := TKMHouseBarracks(H);
-      Inc(K);
+      Barracks[L] := TKMHouseBarracks(H);
+      Inc(L);
     end;
   end;
 
   //Train troops where possible in each barracks
-  for I := 0 to High(Barracks) do
-    if (Barracks[I] <> nil) then
+  for K := Low(Barracks) to High(Barracks) do
+    if (Barracks[K] <> nil) then
     begin
       //Chose a random group type that we are going to attempt to train (so we don't always train certain group types first)
-      K := 0;
+      L := 0;
       repeat
         GT := TKMGroupType(KaMRandom(4, 'TKMArmyManagement.RecruitSoldiers')); //Pick random from overall count
-        Inc(K);
-      until (GroupReq[GT] > 0) or (K > 9); //Limit number of attempts to guarantee it doesn't loop forever
+        Inc(L);
+      until (GroupReq[GT] > 0) OR (L > 9); //Limit number of attempts to guarantee it doesn't loop forever
 
       if (GroupReq[GT] = 0) then
-        Break; // Don't train
+        continue; // Don't train
 
-      for K := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
+      for L := Low(AITroopTrainOrder[GT]) to High(AITroopTrainOrder[GT]) do
       begin
-        UT := AITroopTrainOrder[GT, K];
-
+        UT := AITroopTrainOrder[GT, L];
         if (UT <> utNone) then
-          while (  ( CanEquipIron AND (UT in WARRIORS_IRON) ) OR ( CanEquipLeather AND not (UT in WARRIORS_IRON) )  )
-            AND Barracks[I].CanEquip(UT)
+        begin
+          if CanEquipIron AND (UT in WARRIORS_IRON) then
+            pEquippedTime := @fLastEquippedTimeIron
+          else if CanEquipLeather AND not (UT in WARRIORS_IRON) then
+            pEquippedTime := @fLastEquippedTimeLeather
+          else
+            continue;
+          while Barracks[K].CanEquip(UT)
             AND (GroupReq[GT] > 0)
             AND (  ( fSetup.MaxSoldiers = -1 ) OR ( gHands[fOwner].Stats.GetArmyCount < fSetup.MaxSoldiers )  ) do
           begin
-            Barracks[I].Equip(UT, 1);
+            Barracks[K].Equip(UT, 1);
             Dec(GroupReq[GT]);
-            //Only reset it when we actually trained something (in IronThenLeather mode we don't count them separately)
-            if (UT in WARRIORS_IRON) OR (fSetup.ArmyType = atIronThenLeather) then
-              fLastEquippedTimeIron := gGame.GameTickCount;
-            if not (UT in WARRIORS_IRON) OR (fSetup.ArmyType = atIronThenLeather) then
-              fLastEquippedTimeLeather := gGame.GameTickCount;
+            pEquippedTime^ := gGame.GameTickCount; //Only reset it when we actually trained something (in IronThenLeather mode we don't count them separately)
           end;
+        end;
       end;
-  end;
+    end;
 end;
 
 
