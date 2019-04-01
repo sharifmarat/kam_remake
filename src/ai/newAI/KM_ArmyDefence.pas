@@ -383,7 +383,7 @@ function TKMArmyDefence.DefenceStatus(): Single;
 var
   I, Cnt: Integer;
 begin
-  Result := 1000; // No defences
+  Result := 0; // No defences
   if (Count > 0) then
   begin
     Cnt := 0;
@@ -444,7 +444,8 @@ begin
     if (G <> nil) AND (G.Count < TroopFormations[ G.GroupType ].NumUnits) then
     begin
       ReleaseGroup(I);
-      FindPlaceForGroup(G);
+      if not G.IsDead then
+        FindPlaceForGroup(G);
     end;
   end;
 end;

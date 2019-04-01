@@ -2,14 +2,18 @@ unit KM_AIArmyEvaluation;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Defaults, KM_CommonClasses;
+  KM_Defaults, KM_CommonClasses,
+  KM_Units, KM_UnitGroup;
 
 type
   TKMGroupEval = record
     HitPoints, Attack, AttackHorse, Defence, DefenceProjectiles: Single;
   end;
+  TKMFoodState = record
+    Full, Middle, Low: Cardinal;
+  end;
   TKMArmyEval = record
-    FoodState: Integer;
+    FoodState: TKMFoodState;
     Groups: array[TKMGroupType] of TKMGroupEval;
   end;
   TKMGameEval = array[0 .. MAX_HANDS - 1] of TKMArmyEval;
@@ -143,6 +147,7 @@ begin
   FillChar(Result, SizeOf(Result), #0);
   for PL := 0 to gHands.Count - 1 do
     if gHands[PL].Enabled AND (gHands[aPlayer].Alliances[PL] = aAlliance) then
+    begin
       for GT := Low(TKMGroupType) to High(TKMGroupType) do
         with Result.Groups[GT] do
         begin
@@ -152,6 +157,13 @@ begin
           Defence            := Defence            + fEvals[PL].Groups[GT].Defence;
           DefenceProjectiles := DefenceProjectiles + fEvals[PL].Groups[GT].DefenceProjectiles;
         end;
+      with Result.FoodState do
+      begin
+        Inc(Full,fEvals[PL].FoodState.Full);
+        Inc(Middle,fEvals[PL].FoodState.Middle);
+        Inc(Low,fEvals[PL].FoodState.Low);
+      end;
+    end;
 end;
 
 
@@ -195,6 +207,38 @@ end;
 //
 // Probability > random number => decrease hitpoint; 0 hitpoints = unit is dead
 procedure TKMArmyEvaluation.EvaluatePower(aPlayer: TKMHandID; aConsiderHitChance: Boolean = False);
+  procedure EvaluateFoodLevel();
+  const
+    FULL_LIMIT = Round(UNIT_MAX_CONDITION * 0.75);
+    LOW_LIMIT = Round(UNIT_MAX_CONDITION * 0.3);
+  var
+    K,L: Integer;
+    LowCnt, FullCnt, ArmyCnt: Cardinal;
+    U: TKMUnit;
+    G: TKMUnitGroup;
+  begin
+    LowCnt := 0;
+    FullCnt := 0;
+    ArmyCnt := 0;
+    for K := 0 to gHands[aPlayer].UnitGroups.Count - 1 do
+    begin
+      G := gHands[aPlayer].UnitGroups[K];
+      if not ((G = nil) OR (G.IsDead)) then
+        for L := 0 to G.Count - 1 do
+        begin
+          U := G.Members[L];
+          if not ((U = nil) OR (U.IsDeadOrDying)) then
+          begin
+            Inc(LowCnt,Byte(U.Condition < LOW_LIMIT));
+            Inc(FullCnt,Byte(U.Condition > FULL_LIMIT));
+            Inc(ArmyCnt);
+          end;
+        end;
+    end;
+    fEvals[aPlayer].FoodState.Low := LowCnt;
+    fEvals[aPlayer].FoodState.Middle := ArmyCnt - LowCnt - FullCnt;
+    fEvals[aPlayer].FoodState.Full := FullCnt;
+  end;
 var
   Stats: TKMHandStats;
   Qty: Integer;
@@ -225,6 +269,9 @@ begin
   if aConsiderHitChance then
     with fEvals[aPlayer].Groups[gtRanged] do
       Attack := Attack * HIT_CHANCE_MODIFIER;
+
+  // Check if army is hungry
+  EvaluateFoodLevel();
 end;
 
 

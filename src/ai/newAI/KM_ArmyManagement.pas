@@ -12,7 +12,7 @@ uses
 type
   // Agent interface (for Supervisor)
   TKMAttackRequest = record
-    Active: Boolean;
+    Active, FoodShortage: Boolean;
     BestAllianceCmp,WorstAllianceCmp: Single;
     BestEnemy: TKMHandID; // or index of Enemies array
     BestPoint: TKMPoint;
@@ -119,6 +119,7 @@ begin
   with fAttackRequest do
   begin
     SaveStream.Write(Active);
+    SaveStream.Write(FoodShortage);
     SaveStream.Write(BestAllianceCmp);
     SaveStream.Write(WorstAllianceCmp);
     SaveStream.Write(BestEnemy);
@@ -165,6 +166,7 @@ begin
   with fAttackRequest do
   begin
     LoadStream.Read(Active);
+    LoadStream.Read(FoodShortage);
     LoadStream.Read(BestAllianceCmp);
     LoadStream.Read(WorstAllianceCmp);
     LoadStream.Read(BestEnemy);
@@ -610,7 +612,7 @@ begin
       TakeAllIn := (BestAllianceCmp > MIN_BEST_ALLI_CMP) // The weakest opponent have not enought soldiers
                    OR (WorstAllianceCmp > MIN_WORST_ALLI_CMP) // The strongest opponent have not enought soldiers
                    OR (gGame.MissionMode = mmTactic);
-      if (DefRatio > MIN_DEF_RATIO) AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
+      if (DefRatio < MIN_DEF_RATIO) AND not FoodShortage AND not TakeAllIn then // AI has not enought soldiers in defence AND opponent is not weak
         Exit;
     end;
     // Get array of pointers to available groups
