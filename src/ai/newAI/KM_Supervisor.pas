@@ -5,7 +5,8 @@ unit KM_Supervisor;
 interface
 uses
   Classes, KM_CommonClasses, KM_CommonTypes, KM_Defaults,
-  KM_Points, KM_UnitGroup, KM_NavMeshDefences, KM_ArmyAttack, KM_ArmyManagement, KM_NavMeshInfluences,
+  KM_Points, KM_UnitGroup,
+  KM_NavMeshDefences, KM_NavMeshInfluences, KM_ArmyAttack, KM_ArmyManagement, KM_AIArmyEvaluation,
   KM_ResHouses, KM_Sort;
 
 type
@@ -429,7 +430,6 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
   function GetBestComparison(aPlayer: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray): Integer;
   const
     DISTANCE_COEF = 0.4; // Decrease chance to attack enemy in distance
-    MIN_ADVANTAGE = 0.15; // 15% advantage for attacker
   var
     I, MinDist, MaxDist: Integer;
     Comparison, invDistInterval: Single;
@@ -462,37 +462,44 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           aWorstCmp := Comparison;
       end;
     end;
-    if (aBestCmp < MIN_ADVANTAGE) AND not (gGame.MissionMode = mmTactic) then
-      Result := -1;
   end;
 const
   MIN_DEF_RATIO = 1.2;
+  FOOD_THRESHOLD = 0.4;
+  MIN_ADVANTAGE = 0.15; // 15% advantage for attacker
 var
   BestCmpIdx, IdxPL, EnemyTeamIdx: Integer;
-  DefRatio, BestCmp, WorstCmp: Single;
+  DefRatio, BestCmp, WorstCmp, FoodLevel: Single;
+  ArmyState: TKMArmyEval;
   EnemyStats: TKMEnemyStatisticsArray;
   AR: TKMAttackRequest;
 begin
   if not NewAIInTeam(aTeamIdx, False, True) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
     Exit;
-  // Check if alliance can attack (have available soldiers)
-  DefRatio := 0;
-  for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
-    with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
-      if (HandType = hndComputer) AND AI.Setup.NewAI AND AI.Setup.AutoAttack then
-      begin
-        DefRatio := Max(DefRatio, AI.ArmyManagement.Defence.DefenceStatus);
-        KMSwapInt(fAlli2PL[aTeamIdx, 0], fAlli2PL[aTeamIdx, IdxPL]); // Make sure that player in first index is new AI
-      end;
-  // AI does not have enought soldiers
-  if (DefRatio < MIN_DEF_RATIO) then
-    Exit;
+  // Check if alliance can attack (have available soldiers) in the FFA mode (if there are just 2 teams attack if we have advantage)
+  if (Length(fAlli2PL) > 2) then
+  begin
+    DefRatio := 0;
+    for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
+      with gHands[ fAlli2PL[aTeamIdx, IdxPL] ] do
+        if (HandType = hndComputer) AND AI.Setup.NewAI AND AI.Setup.AutoAttack then
+        begin
+          DefRatio := Max(DefRatio, AI.ArmyManagement.Defence.DefenceStatus);
+          KMSwapInt(fAlli2PL[aTeamIdx, 0], fAlli2PL[aTeamIdx, IdxPL]); // Make sure that player in first index is new AI
+        end;
+    // AI does not have enought soldiers
+    if (DefRatio < MIN_DEF_RATIO) then
+      Exit;
+  end;
   // Try find enemies by influence area
   if FindClosestEnemies(fAlli2PL[aTeamIdx], EnemyStats) then
   begin
     // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
     BestCmpIdx := GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmp, WorstCmp, EnemyStats);
-    if (BestCmpIdx >= 0) then
+    ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeamIdx,0], atAlly ];
+    with ArmyState.FoodState do
+      FoodLevel := (Full + Middle) / Max(1, (Full + Middle + Low));
+    if (BestCmpIdx <> -1) AND ((BestCmp > MIN_ADVANTAGE) OR (FoodLevel < FOOD_THRESHOLD)) then
     begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
@@ -501,6 +508,7 @@ begin
           with AR do
           begin
             Active := True;
+            FoodShortage := FoodLevel < FOOD_THRESHOLD;
             BestAllianceCmp := BestCmp;
             WorstAllianceCmp := WorstCmp;
             BestEnemy := EnemyStats[BestCmpIdx].Player;
