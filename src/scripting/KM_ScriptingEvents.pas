@@ -240,7 +240,7 @@ var
 begin
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin
-    SaveStream.Write(Byte(High(fEventHandlers[ET])));
+    SaveStream.Write(Byte(High(fEventHandlers[ET]))); //Save only (Count - 1) here (do not save default one)
     for I := 1 to High(fEventHandlers[ET]) do //Start from 1, as we do not need to save default (0) handler
       SaveStream.WriteA(fEventHandlers[ET][I].ProcName);
   end;
@@ -256,8 +256,8 @@ var
 begin
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin
-    LoadStream.Read(Cnt);
-    for I := 0 to Cnt - 1 do //Start from 1, as we do not need to save default (0) handler
+    LoadStream.Read(Cnt); //We saved only custom event handler names (no need to save/load default one), then load them all
+    for I := 0 to Cnt - 1 do
     begin
       LoadStream.ReadA(HandlerName);
       AddEventHandlerName(ET, HandlerName);
