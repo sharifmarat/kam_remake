@@ -743,6 +743,9 @@ begin
     AddImportedClassVariable(Sender, 'States', AnsiString(fStates.ClassName));
     AddImportedClassVariable(Sender, 'Actions', AnsiString(fActions.ClassName));
     AddImportedClassVariable(Sender, 'Utils', AnsiString(fUtils.ClassName));
+    AddImportedClassVariable(Sender, 'S', AnsiString(fStates.ClassName));
+    AddImportedClassVariable(Sender, 'A', AnsiString(fActions.ClassName));
+    AddImportedClassVariable(Sender, 'U', AnsiString(fUtils.ClassName));
 
     Result := True;
   end
@@ -1345,6 +1348,9 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('STATES')), fStates);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('ACTIONS')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('UTILS')), fUtils);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('S')), fStates);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('A')), fActions);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('U')), fUtils);
   finally
     FreeAndNil(ClassImp);
   end;
