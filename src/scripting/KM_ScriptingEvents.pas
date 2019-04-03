@@ -9,8 +9,6 @@ uses
 
 
 type
-  TByteSet = set of Byte;
-
   TKMScriptEntity = class
   protected
     fIDCache: TKMScriptingIdCache;
@@ -23,7 +21,7 @@ type
   end;
 
   TKMCustomEventHandler = record
-    Name: AnsiString;
+    ProcName: AnsiString;
     Handler: TMethod;
   end;
 
@@ -185,12 +183,12 @@ begin
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
     for I := Low(fEventHandlers[ET]) to High(fEventHandlers[ET]) do
     begin
-      fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].Name);
+      fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].ProcName);
       if (I > 0) //It's okay to not have default event handler
         and not MethodAssigned(fEventHandlers[ET][I].Handler) then
         fOnScriptError(sePreprocessorError,
                        Format('Declared custom handler ''%s'' for event ''%s'' not found',
-                              [fEventHandlers[ET][I].Name, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
+                              [fEventHandlers[ET][I].ProcName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
     end;
 end;
 
@@ -224,14 +222,14 @@ begin
   Assert(Trim(aEventHandlerName) <> '', 'Can''t add empty event handler for event type: ' +
          GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType)));
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    if UpperCase(fEventHandlers[aEventType][I].Name) = UpperCase(aEventHandlerName) then
+    if UpperCase(fEventHandlers[aEventType][I].ProcName) = UpperCase(aEventHandlerName) then
       fOnScriptError(sePreprocessorError,
                      Format('Duplicate event handler declaration ''%s'' for event ''%s''',
                      [aEventHandlerName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType))]));
 
   Len := Length(fEventHandlers[aEventType]);
   SetLength(fEventHandlers[aEventType], Len + 1);
-  fEventHandlers[aEventType][Len].Name := aEventHandlerName;
+  fEventHandlers[aEventType][Len].ProcName := aEventHandlerName;
 end;
 
 
@@ -244,7 +242,7 @@ begin
   begin
     SaveStream.Write(Byte(High(fEventHandlers[ET])));
     for I := 1 to High(fEventHandlers[ET]) do //Start from 1, as we do not need to save default (0) handler
-      SaveStream.WriteA(fEventHandlers[ET][I].Name);
+      SaveStream.WriteA(fEventHandlers[ET][I].ProcName);
   end;
 end;
 

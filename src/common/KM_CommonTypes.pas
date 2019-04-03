@@ -7,6 +7,7 @@ uses
 
 type
   TKMByteSet = set of Byte;
+  TByteSet = set of Byte; //Legasy support for old scripts
 
   TBooleanArray = array of Boolean;
   TBoolean2Array = array of array of Boolean;
