@@ -1,3 +1,5 @@
+call bat_rsvars.bat
+
 @echo off
 @REM Delete folders recursively
 @REM Its easier to delete folder recursively from project root folder
@@ -8,6 +10,7 @@ FOR /D /R %%X IN (__recovery) DO RD /S /Q "%%X"
 FOR /D /R %%X IN (backup) DO RD /S /Q "%%X"
 
 rmdir /S /Q logs dcu
+rmdir /S /Q "%ScriptingEditorDir%"\bin\SE_Data\Logs
 
 erase /F /Q /S *.~* *.ddp *.drc *.dcp *.dcu
 erase /F /Q /S *.o *.or *.ppu *.compiled *.local

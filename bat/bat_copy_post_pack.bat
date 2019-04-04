@@ -48,6 +48,14 @@ xcopy ..\libzplay.dll "%kam_folder%"\libzplay.dll* /y /r /i
 xcopy ..\ogg.dll "%kam_folder%"\ogg.dll* /y /r /i
 xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
+
+@REM copy ScriptingEditor
+xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\ScriptingEditor /y /r /i
+xcopy "%ScriptingEditorDir%"\bin\SE_Data "%kam_folder%"\ScriptingEditor\SE_Data\ /y /r /s
+xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptingEditor\SE_Data\KMR\ScriptValidator.exe* /y /r /i
+@REM no need for KP folder
+rmdir /S /Q "%kam_folder%"\bin\SE_Data\KP
+
 @REM copy utility applications exe files
 xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\KaM_Remake_Settings_ini_readme.txt* /y /r /i
 xcopy "..\Utils\Campaign builder\CampaignBuilder.exe" "%kam_folder%"\CampaignBuilder.exe* /y /r /i
