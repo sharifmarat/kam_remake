@@ -98,6 +98,18 @@ begin
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     Application.CreateForm(TForm1, Form1);
+
+    //we can send script file as parameter even in window mode (f.e. from Notepad++)
+    ProcessParams;
+
+    if fParamRecord.AllMaps then
+      Form1.btnValidateAll.Click
+    else
+    begin
+      Form1.Edit1.Text := fParamRecord.ScriptFile;
+      Form1.btnValidate.Click;
+    end;
+
     Application.Run;
   end else
   begin
