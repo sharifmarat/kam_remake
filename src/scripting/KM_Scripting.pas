@@ -179,7 +179,10 @@ const
   CAMPAIGN_DATA_VAR = 'CampaignData'; //Name of the global variable
   VALID_GLOBAL_VAR_TYPES: set of TPSBaseType = [
     btU8,  //Byte, Boolean, Enums
+    btS8,  //ShortInt
     btU16, //Word
+    btS16, //SmallInt
+    btU32, //Cardinal / LongInt
     btS32, //Integer
     btSingle, //Single
     btString, //Means AnsiString in PascalScript.
@@ -1386,7 +1389,10 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            LoadStream.Read(tbtu8(Src^)); //Byte, Boolean
+    btS8:            LoadStream.Read(tbts8(Src^)); //ShortInt
     btU16:           LoadStream.Read(tbtu16(Src^)); //Word
+    btS16:           LoadStream.Read(tbts16(Src^)); //SmallInt
+    btU32:           LoadStream.Read(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
@@ -1494,7 +1500,10 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            SaveStream.Write(tbtu8(Src^)); //Byte, Boolean
+    btS8:            SaveStream.Write(tbts8(Src^)); //ShortInt
     btU16:           SaveStream.Write(tbtu16(Src^)); //Word
+    btS16:           SaveStream.Write(tbts16(Src^)); //SmallInt
+    btU32:           SaveStream.Write(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
