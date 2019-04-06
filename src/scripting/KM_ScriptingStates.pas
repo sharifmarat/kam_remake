@@ -182,7 +182,8 @@ uses
   KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
-  KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall,
+  KM_ArmyDefence;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -327,8 +328,16 @@ begin
       and InRange(aType, 0, 3) then
     begin
       gt := TKMGroupType(aType);
-      aCount := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits;
-      aColumns := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow;
+      if gHands[aPlayer].AI.Setup.NewAI then
+      begin
+        aCount := gHands[aPlayer].AI.ArmyManagement.Defence.TroopFormations[gt].NumUnits;
+        aColumns := gHands[aPlayer].AI.ArmyManagement.Defence.TroopFormations[gt].UnitsPerRow;
+      end
+      else
+      begin;
+        aCount := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits;
+        aColumns := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow;
+      end
     end
     else
       LogParamWarning('Actions.AIGroupsFormationGet', [aPlayer, aType]);
@@ -733,7 +742,12 @@ begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1)
     and (gHands[aPlayer].Enabled) then
-      Result := gHands[aPlayer].AI.General.DefencePositions.Count
+    begin
+      if gHands[aPlayer].AI.Setup.NewAI then
+        Result := gHands[aPlayer].AI.General.DefencePositions.Count
+      else
+        Result := gHands[aPlayer].AI.General.DefencePositions.Count;
+    end
     else
     begin
       Result := 0;
@@ -3438,6 +3452,7 @@ function TKMScriptStates.GroupAssignedToDefencePosition(aGroupID, X, Y: Integer)
 var
   G: TKMUnitGroup;
   DefPos: TAIDefencePosition;
+  DefPosNewAI: TKMDefencePosition;
 begin
   try
     Result := False;
@@ -3446,9 +3461,18 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if G <> nil then
       begin
-        DefPos := gHands[G.Owner].AI.General.DefencePositions.FindPositionOf(G);
-        if DefPos <> nil then
-          Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y);
+        if not gHands[G.Owner].AI.Setup.NewAI then
+        begin
+          DefPosNewAI := gHands[G.Owner].AI.ArmyManagement.Defence.FindPositionOf(G);
+          if DefPosNewAI <> nil then
+            Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y);
+        end
+        else
+        begin
+          DefPos := gHands[G.Owner].AI.General.DefencePositions.FindPositionOf(G);
+          if DefPos <> nil then
+              Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y)
+        end;
       end;
     end
     else
