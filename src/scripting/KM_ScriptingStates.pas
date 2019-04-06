@@ -3465,7 +3465,7 @@ begin
         begin
           DefPosNewAI := gHands[G.Owner].AI.ArmyManagement.Defence.FindPositionOf(G);
           if DefPosNewAI <> nil then
-            Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y);
+            Result := (DefPosNewAI.Position.Loc.X = X) and (DefPosNewAI.Position.Loc.Y = Y);
         end
         else
         begin
