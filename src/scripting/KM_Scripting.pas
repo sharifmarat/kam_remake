@@ -2001,29 +2001,10 @@ const
   end;
 
   procedure LoadCustomConsoleCommands;
-//  const
-//    CMD_PROC_TYPES_STR: array[cpkBool..cpkUStr] of String = ('boolean','integer','single','string');
-
-//    function GetParamType(aStr: String): TKMCmdProcParamTypeKind;
-//    var
-//      CPK: TKMCmdProcParamTypeKind;
-//    begin
-//      Result := cpkNone;
-//      for CPK := cpkBool to cpkUStr do
-//        if LowerCase(aStr) = CMD_PROC_TYPES_STR[CPK] then
-//        begin
-//          Result := CPK;
-//          Exit;
-//        end;
-//    end;
-
   var
-//    I, ParamsStart,ParamsEnd, AddedParams: Integer;
     CmdName, ProcName: AnsiString;
-    {Params, }ErrorStr: UnicodeString;
+    ErrorStr: UnicodeString;
     SL: TStringList;
-//    PType: TKMCmdProcParamTypeKind;
-//    ParamTypes: array of TKMCmdProcParamTypeKind;
   begin
     //Load custom event handlers
     if (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE))
@@ -2043,46 +2024,6 @@ const
           CmdName := AnsiString(Trim(SL[0]));
           ProcName := AnsiString(Trim(SL[1]));
 
-//          SetLength(ParamTypes, MAX_SCRIPT_CONSOLE_COMMAND_PARAMS);
-//          for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
-//            ParamTypes[I] := cpkNone;
-//
-//          SL.Clear;
-//          ParamsStart := Pos('(', ProcName);
-//          ParamsEnd := Pos(')', ProcName);
-//          if (ParamsStart <> 0) and (ParamsEnd <> 0) then
-//          begin
-//            Params := Copy(ProcName, ParamsStart + 1, ParamsEnd - ParamsStart - 1);
-//            StringSplit(Params, ';', SL);
-//            ProcName := Copy(ProcName, 1, ParamsStart - 1);
-//
-//            if SL.Count > MAX_SCRIPT_CONSOLE_COMMAND_PARAMS then
-//            begin
-//              fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Too many params: %d] ''%s'' at [%d:%d]' + sLineBreak,
-//                                                  [SL.Count, ProcName, Parser.Row, Parser.Col]));
-//              Exit;
-//            end;
-//
-//            AddedParams := 0;
-//            for I := 0 to SL.Count - 1 do
-//            begin
-//              PType := GetParamType(Trim(SL[I]));
-//              if PType = cpkNone then
-//                Break;
-//
-//              ParamTypes[I] := PType;
-//              Inc(AddedParams);
-//            end;
-//
-//            if SL.Count <> AddedParams then
-//              fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Wrong params types] ''%s'' at [%d:%d]' + sLineBreak,
-//                                                  [ProcName, SL.Count, Parser.Row, Parser.Col]));
-//          end
-//          else if (ParamsStart <> 0) or (ParamsEnd <> 0) then
-//            fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Wrong params brackets]''%s'' at [%d:%d]' + sLineBreak,
-//                                                [ProcName, Parser.Row, Parser.Col]));
-
-//          if not fErrorHandler.HasErrors then
           gScriptEvents.AddConsoleCommand(CmdName, ProcName);
         finally
           FreeAndNil(SL);
