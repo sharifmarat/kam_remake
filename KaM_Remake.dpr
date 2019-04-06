@@ -305,6 +305,9 @@ uses
   KM_PNG in 'src\utils\KM_PNG.pas',
   KM_Sort in 'src\utils\KM_Sort.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
+  
+  KM_MethodParser in 'src\utils\method_parser\KM_MethodParser.pas',
+  KM_MethodParserParams in 'src\utils\method_parser\KM_MethodParserParams.pas',
 
 	
   KM_Viewport in 'src\KM_Viewport.pas',
