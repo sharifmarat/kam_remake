@@ -3461,7 +3461,7 @@ begin
       G := fIDCache.GetGroup(aGroupID);
       if G <> nil then
       begin
-        if not gHands[G.Owner].AI.Setup.NewAI then
+        if gHands[G.Owner].AI.Setup.NewAI then
         begin
           DefPosNewAI := gHands[G.Owner].AI.ArmyManagement.Defence.FindPositionOf(G);
           if DefPosNewAI <> nil then
