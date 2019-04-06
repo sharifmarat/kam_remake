@@ -239,7 +239,7 @@ type
     procedure ConsoleCommand(const aText: UnicodeString);
     procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = ''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
     procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
-    procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
+    procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound = csNone);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
     //Gameplay
@@ -1199,7 +1199,7 @@ begin
 end;
 
 
-procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
+procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound = csNone);
 const
   ChatSound: array[TKMChatSound] of TSoundFXNew = (sfxnMPChatSystem, //csNone
                                                  sfxnMPChatSystem, //csJoin
