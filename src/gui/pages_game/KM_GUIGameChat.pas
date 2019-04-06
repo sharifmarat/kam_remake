@@ -1,10 +1,10 @@
-unit KM_GUIGameChat;
+﻿unit KM_GUIGameChat;
 {$I KaM_Remake.inc}
 interface
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType, {$ENDIF}
-  Classes, Math, StrUtils, SysUtils,
+  Classes, Math, StrUtils, SysUtils, KM_ScriptingConsoleCommands,
   KM_Controls, KM_Defaults, KM_NetworkTypes, KM_InterfaceDefaults, KM_InterfaceGame, KM_Networking, KM_Points;
 
 
@@ -23,6 +23,8 @@ type
     procedure ChatMemo_CopyAllowed_Click(Sender: TObject);
     function GetPanelChatRect: TKMRect;
     function IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
+
+    procedure ConsoleCommand(const aText: UnicodeString);
   protected
     Panel_Chat: TKMPanel; //For multiplayer: Send, reply, text area for typing, etc.
       Dragger_Chat: TKMDragger;
@@ -51,8 +53,8 @@ type
 
 implementation
 uses
-  KM_Main, KM_RenderUI, KM_ResTexts, KM_Game, KM_GameApp, KM_CommonUtils,
-  KM_ResSound, KM_Resource, KM_ResFonts, KM_Sound, KM_NetPlayersList;
+  KM_Main, KM_RenderUI, KM_ResTexts, KM_Game, KM_GameApp, KM_CommonUtils, KM_GameInputProcess,
+  KM_ResSound, KM_Resource, KM_ResFonts, KM_Sound, KM_NetPlayersList, KM_ScriptingEvents;
 
 
 { TKMGUIGameChat }
@@ -113,6 +115,77 @@ begin
 end;
 
 
+procedure TKMGUIGameChat.ConsoleCommand(const aText: UnicodeString);
+var
+  I, ParamsI, SpacePos: Integer;
+  CmdName: AnsiString;
+  ParamsStr, Param: UnicodeString;
+  Params: TKMScriptCommandParamsArray;
+  QuoteStart: Boolean;
+
+  procedure AddParam(aParam: UnicodeString);
+  begin
+    if aParam <> '' then
+    begin
+      Params[ParamsI] := aParam;
+      Inc(ParamsI);
+    end;
+  end;
+
+begin
+  SpacePos := Pos(' ', aText);
+  if SpacePos = 0 then
+    SpacePos := Length(aText) + 1;
+
+  CmdName := AnsiString(Copy(aText, 2, SpacePos - 2));
+
+  if not gScriptEvents.HasConsoleCommand(CmdName) then
+  begin
+    gGame.Networking.PostLocalMessage(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_NOT_FOUND],
+                                             [WrapColorA(CmdName, clScriptCmdName)]),
+                                      csSystem);
+    Exit;
+  end;
+
+  ParamsStr := RightStr(aText, Length(aText) - (SpacePos - 1));
+
+  ParamsI := 0;
+  Param := '';
+  QuoteStart := False;
+  ParamsStr := StringReplace(ParamsStr, '\''', #1, [rfReplaceAll]);
+
+  for I := 1 to Length(ParamsStr) do
+  begin
+    if (ParamsStr[I] = ' ') and not QuoteStart then
+    begin
+      AddParam(Param);
+      Param := '';
+    end
+    else
+    if ParamsStr[I] = '''' then
+      QuoteStart := not QuoteStart
+    else
+      Param := Param + ParamsStr[I];
+  end;
+
+  AddParam(Param);
+
+  for I := 0 to ParamsI - 1 do
+    Params[I] := StringReplace(Params[I], #1, '''', [rfReplaceAll]);
+
+  for I := ParamsI to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
+    Params[I] := '';
+
+  if not gScriptEvents.ConsoleCommand[CmdName].ValidateParams(Params) then
+    gGame.Networking.PostLocalMessage(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID],
+                                             [WrapColorA(CmdName, clScriptCmdName),
+                                              gScriptEvents.ConsoleCommand[CmdName].ParamsTypes2String(True)]),
+                                      csSystem)
+  else
+    gGame.GameInputProcess.CmdConsoleCommand(gicScriptConsoleCommand, CmdName, Params);
+end;
+
+
 procedure TKMGUIGameChat.Chat_Close(Sender: TObject);
 begin
   Hide;
@@ -136,6 +209,8 @@ end;
 
 
 function TKMGUIGameChat.Chat_Post(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
+var
+  ChatMessage: UnicodeString;
 begin
   Result := False;
   if IsKeyEvent_Return_Handled(Self, Key)
@@ -143,6 +218,18 @@ begin
     and (GetTimeSince(fLastChatTime) >= CHAT_COOLDOWN) then
   begin
     fLastChatTime := TimeGet;
+    ChatMessage := Edit_ChatMsg.Text;
+    if gGame.IsMultiplayer then
+    begin
+      if (Length(ChatMessage) > 0) and (ChatMessage[1] = '/') and (ChatMessage[2] <> '/') then
+      begin
+        ConsoleCommand(ChatMessage);
+      end
+      else
+      if (Length(ChatMessage) > 1) and (ChatMessage[1] = '/') and (ChatMessage[2] = '/') then
+        Delete(ChatMessage, 1, 1); //Remove one of the /'s
+    end;
+    
     if fChatMode = cmWhisper then
     begin
       if not gGame.Networking.NetPlayers[fChatWhisperRecipient].Connected
@@ -153,9 +240,9 @@ begin
                                           csSystem);
         Chat_MenuSelect(CHAT_MENU_ALL);
       end else
-        gGame.Networking.PostChat(Edit_ChatMsg.Text, fChatMode, gGame.Networking.NetPlayers[fChatWhisperRecipient].IndexOnServer)
+        gGame.Networking.PostChat(ChatMessage, fChatMode, gGame.Networking.NetPlayers[fChatWhisperRecipient].IndexOnServer)
     end else
-      gGame.Networking.PostChat(Edit_ChatMsg.Text, fChatMode);
+      gGame.Networking.PostChat(ChatMessage, fChatMode);
     Result := True;
     Edit_ChatMsg.Text := '';
   end;

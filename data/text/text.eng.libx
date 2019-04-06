@@ -1182,3 +1182,8 @@
 1233:Difficulty
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
 1235:Ally / enemy
+1236:Script console command <%s> not found
+1237:Wrong parameter type for script command <%s>: [%s] 
+1238:Wrong first parameter type for script command <%s>. Expected: [%s], actual: [%s] 
+1239:Too many parameters for script command <%s>: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
+1240:Wrong parameters for script command <%s>. Expected parameters types are: [%s]  

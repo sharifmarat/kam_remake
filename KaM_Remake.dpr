@@ -250,6 +250,7 @@ uses
 
   KM_Scripting in 'src\scripting\KM_Scripting.pas',
   KM_ScriptingActions in 'src\scripting\KM_ScriptingActions.pas',
+  KM_ScriptingConsoleCommands in 'src\scripting\KM_ScriptingConsoleCommands.pas',
   KM_ScriptingEvents in 'src\scripting\KM_ScriptingEvents.pas',
   KM_ScriptingIdCache in 'src\scripting\KM_ScriptingIdCache.pas',
   KM_ScriptingStates in 'src\scripting\KM_ScriptingStates.pas',

@@ -847,6 +847,9 @@ const
   clPlayerAlly = icYellow;
   clPlayerEnemy = icCyan;
 
+  clScriptCmdName = icYellow;
+  clScriptCmdParam = icLightGray;
+
 //  clGameSelf = icRed;
 //  clGameAlly = icYellow;
 //  clGameEnemy = icCyan;

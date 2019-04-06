@@ -126,6 +126,7 @@ type
     fIDCache: TKMScriptingIdCache;
     fUtils: TKMScriptUtils;
 
+    procedure AddError(aMsg: TPSPascalCompilerMessage);
     procedure CompileScript;
     procedure LinkRuntime;
 
@@ -193,7 +194,7 @@ const
 
 implementation
 uses
-  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares;
+  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares, KM_ScriptingConsoleCommands;
 
 const
   SCRIPT_LOG_EXT = '.log.txt';
@@ -288,6 +289,16 @@ begin
   fValidationIssues := TScriptValidatorResult.Create;
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
+
+  //Parse console commands procedures
+  if gScriptEvents.HasConsoleCommands then
+    try
+      gScriptEvents.ParseConsoleCommandsProcedures(fScriptCode);
+
+    except
+      on E: EConsoleCommandParseError do
+        fErrorHandler.AppendErrorStr(E.Message);
+    end;
 
   if (aCampaignDataTypeFile <> '') and FileExists(aCampaignDataTypeFile) then
     fCampaignDataTypeCode := ReadTextA(aCampaignDataTypeFile)
@@ -841,6 +852,13 @@ begin
 end;
 
 
+procedure TKMScripting.AddError(aMsg: TPSPascalCompilerMessage);
+begin
+  fErrorHandler.AppendError(GetErrorMessage(aMsg));
+  fValidationIssues.AddError(aMsg.Row, aMsg.Col, aMsg.Param, aMsg.ShortMessageToString);
+end;
+
+
 procedure TKMScripting.CompileScript;
 var
   I: Integer;
@@ -868,13 +886,10 @@ begin
         fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
       end else if Msg.ErrorType = 'Warning' then
       begin
-        fErrorHandler.AppendWarning(GetErrorMessage(Compiler.Msg[I]));
+        fErrorHandler.AppendWarning(GetErrorMessage(Msg));
         fValidationIssues.AddWarning(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
       end else
-      begin
-        fErrorHandler.AppendError(GetErrorMessage(Compiler.Msg[I]));
-        fValidationIssues.AddError(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
-      end;
+        AddError(Msg);
     end;
 
     if not Success then
@@ -1359,7 +1374,7 @@ begin
   end;
 
   //Link events into the script
-  gScriptEvents.LinkEvents;
+  gScriptEvents.LinkEventsAndCommands;
 end;
 
 
@@ -1934,6 +1949,8 @@ procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProces
                                                             const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
 const
   CUSTOM_EVENT_DIRECTIVE = 'EVENT';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE = 'COMMAND';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT = 'CMD';
   CUSTOM_TH_TROOP_COST_DIRECTIVE = 'CUSTOM_TH_TROOP_COST';
   CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE = 'CUSTOM_MARKET_GOLD_PRICE_X';
 
@@ -1965,9 +1982,10 @@ const
           EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParamSL[0]));
 
           if EventType = -1 then
-            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
-
-          gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
+            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak,
+                                                [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]))
+          else
+            gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
           FreeAndNil(DirectiveParamSL);
         end;
@@ -1975,6 +1993,104 @@ const
         on E: Exception do
           begin
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomConsoleCommands;
+//  const
+//    CMD_PROC_TYPES_STR: array[cpkBool..cpkUStr] of String = ('boolean','integer','single','string');
+
+//    function GetParamType(aStr: String): TKMCmdProcParamTypeKind;
+//    var
+//      CPK: TKMCmdProcParamTypeKind;
+//    begin
+//      Result := cpkNone;
+//      for CPK := cpkBool to cpkUStr do
+//        if LowerCase(aStr) = CMD_PROC_TYPES_STR[CPK] then
+//        begin
+//          Result := CPK;
+//          Exit;
+//        end;
+//    end;
+
+  var
+//    I, ParamsStart,ParamsEnd, AddedParams: Integer;
+    CmdName, ProcName: AnsiString;
+    {Params, }ErrorStr: UnicodeString;
+    SL: TStringList;
+//    PType: TKMCmdProcParamTypeKind;
+//    ParamTypes: array of TKMCmdProcParamTypeKind;
+  begin
+    //Load custom event handlers
+    if (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE))
+      or (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT)) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      //Do not do anything for while in MapEd
+      //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+      //gGame could be nil here, but that does not change final CRC, so we can Exit
+      if not AllowGameUpdate then Exit;
+
+      try
+        SL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ':', SL);
+          CmdName := AnsiString(Trim(SL[0]));
+          ProcName := AnsiString(Trim(SL[1]));
+
+//          SetLength(ParamTypes, MAX_SCRIPT_CONSOLE_COMMAND_PARAMS);
+//          for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
+//            ParamTypes[I] := cpkNone;
+//
+//          SL.Clear;
+//          ParamsStart := Pos('(', ProcName);
+//          ParamsEnd := Pos(')', ProcName);
+//          if (ParamsStart <> 0) and (ParamsEnd <> 0) then
+//          begin
+//            Params := Copy(ProcName, ParamsStart + 1, ParamsEnd - ParamsStart - 1);
+//            StringSplit(Params, ';', SL);
+//            ProcName := Copy(ProcName, 1, ParamsStart - 1);
+//
+//            if SL.Count > MAX_SCRIPT_CONSOLE_COMMAND_PARAMS then
+//            begin
+//              fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Too many params: %d] ''%s'' at [%d:%d]' + sLineBreak,
+//                                                  [SL.Count, ProcName, Parser.Row, Parser.Col]));
+//              Exit;
+//            end;
+//
+//            AddedParams := 0;
+//            for I := 0 to SL.Count - 1 do
+//            begin
+//              PType := GetParamType(Trim(SL[I]));
+//              if PType = cpkNone then
+//                Break;
+//
+//              ParamTypes[I] := PType;
+//              Inc(AddedParams);
+//            end;
+//
+//            if SL.Count <> AddedParams then
+//              fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Wrong params types] ''%s'' at [%d:%d]' + sLineBreak,
+//                                                  [ProcName, SL.Count, Parser.Row, Parser.Col]));
+//          end
+//          else if (ParamsStart <> 0) or (ParamsEnd <> 0) then
+//            fErrorHandler.AppendErrorStr(Format('Wrong console command procedure declaration [Wrong params brackets]''%s'' at [%d:%d]' + sLineBreak,
+//                                                [ProcName, Parser.Row, Parser.Col]));
+
+//          if not fErrorHandler.HasErrors then
+          gScriptEvents.AddConsoleCommand(CmdName, ProcName);
+        finally
+          FreeAndNil(SL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading command ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
           end;
@@ -2116,6 +2232,7 @@ begin
     fScriptFilesInfo.fHasDefDirectives := True;
 
   LoadCustomEventDirectives;
+  LoadCustomConsoleCommands;
   LoadCustomTHTroopCost;
   LoadCustomMarketGoldPrice;
 end;
