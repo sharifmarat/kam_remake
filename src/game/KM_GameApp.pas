@@ -471,7 +471,7 @@ begin
     end;
   end;
 
-  if gGame.IsMultiplayer then
+  if gGame.IsMultiPlayerOrSpec then
   begin
     if fNetworking.Connected then
       fNetworking.AnnounceDisconnect;
@@ -523,7 +523,7 @@ begin
     grReplayEnd:   fMainMenuInterface.PageChange(gpReplays);
     grError,
     grDisconnect:  begin
-                      if gGame.IsMultiplayer then
+                      if gGame.IsMultiPlayerOrSpec then
                         //After Error page User will go to the main menu, but Mutex will be still locked.
                         //We will need to unlock it on gGame destroy, so mark it with GameLockedMutex
                         gGame.GameLockedMutex := True;
@@ -981,7 +981,7 @@ begin
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);
-    if gGame.IsMultiplayer and (fGlobalTickCount mod 100 = 0) then
+    if gGame.IsMultiPlayerOrSpec and (fGlobalTickCount mod 100 = 0) then
       SendMPGameInfo(Self); //Send status to the server every 10 seconds
   end
   else

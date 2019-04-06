@@ -2097,14 +2097,14 @@ begin
                       gHands[fOwner].Stats.WareProduced(wtAll, 10);
                       Exit;
                     end;
-        wtHorse:   if not gGame.IsMultiplayer then
+        wtHorse:   if not gGame.IsMultiPlayerOrSpec then
                     begin
                       // Game results cheats should not be used in MP even in debug
                       // MP does Win/Defeat differently (without Hold)
                       gGame.RequestGameHold(grWin);
                       Exit;
                     end;
-        wtFish:    if not gGame.IsMultiplayer then
+        wtFish:    if not gGame.IsMultiPlayerOrSpec then
                     begin
                       // Game results cheats should not be used in MP even in debug
                       // MP does Win/Defeat differently (without Hold)

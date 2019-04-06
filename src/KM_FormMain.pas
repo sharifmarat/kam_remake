@@ -549,7 +549,7 @@ var I: Integer;
 begin
   if gHands = nil then Exit;
   //You could possibly cheat in multiplayer by seeing what supplies your enemy has
-  if (gGameApp.Game <> nil) and (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS) then
+  if (gGameApp.Game <> nil) and (not gGameApp.Game.IsMultiPlayerOrSpec or MULTIPLAYER_CHEATS) then
   for I := 0 to gHands.Count - 1 do
     gHands[I].Deliveries.Queue.ExportToFile(ExeDir + 'Player_' + IntToStr(I) + '_Deliver_List.txt');
 end;
@@ -559,7 +559,7 @@ procedure TFormMain.RGPlayerClick(Sender: TObject);
 begin
   if (gGameApp.Game = nil)
     or gGameApp.Game.IsMapEditor
-    or gGameApp.Game.IsMultiplayer then
+    or gGameApp.Game.IsMultiPlayerOrSpec then
     Exit;
 
   if (gHands <> nil) and (RGPlayer.ItemIndex < gHands.Count) then
@@ -591,7 +591,7 @@ end;
 procedure TFormMain.chkSuperSpeedClick(Sender: TObject);
 begin
   if (gGameApp.Game = nil)
-    or (gGameApp.Game.IsMultiplayer
+    or (gGameApp.Game.IsMultiPlayerOrSpec
       and not gGameApp.Game.IsMPGameSpeedUpAllowed
       and not MULTIPLAYER_SPEEDUP
       and not gGameApp.Game.IsReplay) then

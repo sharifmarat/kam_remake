@@ -206,7 +206,7 @@ begin
   if not CanClose then
   begin
     //We want to pause the game for the time user verifies he really wants to close
-    WasRunning := not gGameApp.Game.IsMultiplayer
+    WasRunning := not gGameApp.Game.IsMultiPlayerOrSpec
                   and not gGameApp.Game.IsMapEditor
                   and not gGameApp.Game.IsPaused;
 
@@ -479,7 +479,7 @@ end;
 function TKMMain.IsDebugChangeAllowed: Boolean;
 begin
   Result := (gGameApp.Game = nil)
-            or (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS)
+            or (not gGameApp.Game.IsMultiPlayerOrSpec or MULTIPLAYER_CHEATS)
 end;
 
 
