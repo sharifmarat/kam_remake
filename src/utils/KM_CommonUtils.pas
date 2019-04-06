@@ -77,6 +77,8 @@ uses
   procedure KMSummArr(aArr1, aArr2: PKMCardinalArray);
   procedure KMSummAndEnlargeArr(aArr1, aArr2: PKMCardinalArray);
 
+  function RoundP(Value, Precision: Double): Double;
+
   function ArrayContains(aValue: Integer; const aArray: array of Integer): Boolean; overload;
   function ArrayContains(aValue: Word; const aArray: array of Word): Boolean; overload;
   function ArrayContains(aPoint: TKMPoint; const aArray: TKMPointArray): Boolean; overload;
@@ -239,6 +241,12 @@ begin
   begin
     Inc(aArr1^[I], aArr2^[I]);
   end;
+end;
+
+
+function RoundP(Value, Precision: Double): Double;
+begin
+ Result := Round(Value/Precision)*Precision;
 end;
 
 
