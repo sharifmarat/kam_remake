@@ -173,7 +173,7 @@ type
     Image_MPChat, Image_MPAllies: TKMImage; // Multiplayer buttons
     Image_MessageLog: TKMImage;
     Label_MPChatUnread: TKMLabel;
-    Image_Message: array[0..MAX_VISIBLE_MSGS]of TKMImage; // Queue of messages covers 32*48=1536px height
+    Image_Message: array[0..MAX_VISIBLE_MSGS] of TKMImage; // Queue of messages covers 32*48=1536px height
     Image_Clock: TKMImage; // Clock displayed when game speed is increased
     Label_Clock: TKMLabel;
     Label_ClockSpeedup: TKMLabel;

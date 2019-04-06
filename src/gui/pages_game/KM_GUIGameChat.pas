@@ -1,4 +1,4 @@
-﻿unit KM_GUIGameChat;
+unit KM_GUIGameChat;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -88,6 +88,7 @@ begin
     Edit_ChatMsg.ShowColors := True;
 
     Button_MemoCopyAllowed := TKMButtonFlat.Create(Panel_Chat, 45+600-85+3,154-1,24,22,663);
+    Button_MemoCopyAllowed.Anchors := [anBottom];
     Button_MemoCopyAllowed.Hint := 'Enable/Disable copy-paste from chat window';
     Button_MemoCopyAllowed.OnClick := ChatMemo_CopyAllowed_Click;
 
