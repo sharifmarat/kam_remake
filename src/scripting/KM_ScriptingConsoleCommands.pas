@@ -29,6 +29,8 @@ type
     fPT: array[0..MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1] of TKMCmdProcParamTypeKind; //We support up to 4 params
 
     function GetProcParamType(aIndex: Integer): TKMCmdProcParamTypeKind;
+    function GetProcParamsCnt: Integer;
+
     function P2B(aParam: String): Boolean; inline;
     function P2I(aParam: String): Integer; inline;
     function P2S(aParam: String): Single; inline;
@@ -37,18 +39,18 @@ type
     constructor Create; overload;
     constructor Create(const aName, aProcName: AnsiString); overload;
     constructor Create(const aName, aProcName: AnsiString; const aParamTypes: array of TKMCmdProcParamTypeKind); overload;
-    destructor Destroy; override;
 
     property Name: AnsiString read fName;
     property ProcName: AnsiString read fProcName;
-    property ProcParamsCnt: Integer read fProcParamsCnt;
+    property ProcParamsCnt: Integer read GetProcParamsCnt;
     property ProcParam[aIndex: Integer]: TKMCmdProcParamTypeKind read GetProcParamType;
     property Handler: TMethod read fHandler write fHandler;
 
     procedure TryCallProcedure(aHandID: TKMHandID; const P: TKMScriptCommandParamsArray);
     function ValidateParams(const aParams: TKMScriptCommandParamsArray): Boolean;
     function ParseParameters(aProcedureStr: String): Boolean;
-    function ParamsTypes2String(aColorfull: Boolean = False): String;
+    function Params2String(const aParams: TKMScriptCommandParamsArray; aColorfull: Boolean = True): String;
+    function ParamsTypes2String(aColorfull: Boolean = True): String;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -451,11 +453,16 @@ begin
 end;
 
 
-destructor TKMConsoleCommand.Destroy;
+function TKMConsoleCommand.GetProcParamsCnt: Integer;
+var
+  I: Integer;
 begin
-//  FreeAndNil(fSingleFormat);
-
-  inherited;
+  Result := 0;
+  for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
+    if fPT[I] <> cpkNone then
+      Inc(Result)
+    else
+      Break;
 end;
 
 
@@ -486,7 +493,31 @@ begin
 end;
 
 
-function TKMConsoleCommand.ParamsTypes2String(aColorfull: Boolean = False): String;
+function TKMConsoleCommand.Params2String(const aParams: TKMScriptCommandParamsArray; aColorfull: Boolean = True): String;
+var
+  I: Integer;
+  Str: String;
+begin
+  Result := '';
+  for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
+  begin
+    if aParams[I] = '' then
+      Continue;
+
+    if I > 0 then
+      Result := Result + ',';
+
+    if aColorfull then
+      Str := WrapColor(aParams[I], clScriptCmdParam)
+    else
+      Str := aParams[I];
+
+    Result := Result + Str;
+  end;
+end;
+
+
+function TKMConsoleCommand.ParamsTypes2String(aColorfull: Boolean = True): String;
 var
   I: Integer;
   Str: String;
@@ -528,7 +559,7 @@ begin
   Method := TKMMethod.ParseMethodStr(aProcedureStr);
 
   if Method.Params.Count > MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1 then //+1 for HandID parameter
-    raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS],
+    raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS],
                                                     [fName,
                                                      IntToStr(Method.Params.Count),
                                                      IntToStr(MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1)]));

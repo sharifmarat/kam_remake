@@ -86,6 +86,7 @@ type
     function PostKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     function IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
     procedure PostMsg(const aMsg: UnicodeString);
+    procedure PostLocalMsg(const aMsg: UnicodeString);
     procedure HandleError(const aMsg: UnicodeString);
 
     function AISlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
@@ -841,7 +842,8 @@ end;
 procedure TKMMenuLobby.UpdateChat;
 begin
   gGameApp.Chat.OnError := HandleError;
-  gGameApp.Chat.OnPostMsg := PostMsg;
+  gGameApp.Chat.OnPost := PostMsg;
+  gGameApp.Chat.OnPostLocal := PostLocalMsg;
 
   if gGameApp.Chat.Mode = cmWhisper then
     ChatMenuSelect(gGameApp.Chat.WhisperRecipient)
@@ -2423,6 +2425,12 @@ begin
 end;
 
 
+procedure TKMMenuLobby.PostLocalMsg(const aMsg: UnicodeString);
+begin
+  fNetworking.PostLocalMessage(aMsg, csChat);
+end;
+
+
 procedure TKMMenuLobby.PostMsg(const aMsg: UnicodeString);
 begin
   if gGameApp.Chat.Mode = cmWhisper then
@@ -2499,9 +2507,9 @@ begin
                                     csSystem);
       ChatMenuSelect(CHAT_MENU_ALL);
     end else
-      gGameApp.Chat.DoPost
+      gGameApp.Chat.Post
   end else
-    gGameApp.Chat.DoPost;
+    gGameApp.Chat.Post;
   Result := True;
   Edit_Post.Text := '';
 end;

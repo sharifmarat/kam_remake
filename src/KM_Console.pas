@@ -14,7 +14,8 @@ type
       fLastConsoleTime: Cardinal;
       fHistory: TList<String>;
       fCurrConsoleHistoryId: Integer;
-      fOnPostMsg: TUnicodeStringEvent;
+      fOnPost: TUnicodeStringEvent;
+      fOnPostLocal: TUnicodeStringEvent;
       fOnError: TUnicodeStringEvent;
       fMessages: String;
 
@@ -30,9 +31,10 @@ type
 
       property Messages: UnicodeString read fMessages write SetMessages;
 
-      property OnPostMsg: TUnicodeStringEvent read fOnPostMsg write fOnPostMsg;
+      property OnPost: TUnicodeStringEvent read fOnPost write fOnPost;
+      property OnPostLocal: TUnicodeStringEvent read fOnPostLocal write fOnPostLocal;
       property OnError: TUnicodeStringEvent read fOnError write fOnError;
-      function DoPost: Boolean;
+      procedure Post(aPropagate: Boolean = True);
       function IsPostAllowed: Boolean;
       function TryCallConsoleCommand: Boolean;
 
@@ -150,12 +152,17 @@ begin
   if gGame = nil then //Can't manage console commands while not in the game
     Exit;
 
+  //Only for MP game for now
   if not gGame.IsMultiplayer then
     Exit;
 
   if (Length(Text) > 0) and (Text[1] = '/') and (Text[2] <> '/') then
-    Result := TryDoCallConsoleCommand
-  else
+  begin
+    TryDoCallConsoleCommand;
+    //Add command to history, bu t do not propagate post to others
+    Post(False);
+    Result := True;
+  end else
   if (Length(Text) > 1) and (Text[1] = '/') and (Text[2] = '/') then
     Delete(Text, 1, 1); //Remove one of the /'s
 end;
@@ -163,17 +170,18 @@ end;
 
 function TKMConsole.TryDoCallConsoleCommand: Boolean;
 var
-  I, ParamsI, SpacePos: Integer;
+  I, ParamsI, ProcParamsCnt, SpacePos: Integer;
   CmdName: AnsiString;
-  ParamsStr, Param: UnicodeString;
+  ParamsStr, Param, ParsingErrorStr: UnicodeString;
   Params: TKMScriptCommandParamsArray;
-  QuoteStart: Boolean;
+  QuoteStart, ParsingError: Boolean;
 
   procedure AddParam(aParam: UnicodeString);
   begin
     if aParam <> '' then
     begin
-      Params[ParamsI] := aParam;
+      if ParamsI < Length(Params) then
+        Params[ParamsI] := aParam;
       Inc(ParamsI);
     end;
   end;
@@ -192,6 +200,8 @@ begin
     fOnError(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_NOT_FOUND], [WrapColorA(CmdName, clScriptCmdName)]));
     Exit;
   end;
+
+  ProcParamsCnt := gScriptEvents.ConsoleCommand[CmdName].ProcParamsCnt;
 
   ParamsStr := RightStr(Text, Length(Text) - (SpacePos - 1));
 
@@ -216,6 +226,22 @@ begin
 
   AddParam(Param);
 
+  ParsingError := False;
+  ParsingErrorStr := Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR] + '|',
+                            [WrapColorA(CmdName, clScriptCmdName),
+                            gScriptEvents.ConsoleCommand[CmdName].Params2String(Params)]);
+
+  if (ParamsI > ProcParamsCnt)
+    and Assigned(fOnError) then
+  begin
+    fOnError(ParsingErrorStr +
+             Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS],
+                    [WrapColorA(CmdName, clScriptCmdName),
+                     WrapColor(IntToStr(ProcParamsCnt), clScriptCmdParam),
+                     WrapColor(IntToStr(ParamsI), clScriptCmdParam)])); //We Inc ParamsI at the end
+    ParsingError := True;
+  end;
+
   for I := 0 to ParamsI - 1 do
     Params[I] := StringReplace(Params[I], #1, '''', [rfReplaceAll]);
 
@@ -224,26 +250,35 @@ begin
 
   if not gScriptEvents.ConsoleCommand[CmdName].ValidateParams(Params)
     and Assigned(fOnError) then
-    fOnError(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID],
+  begin
+    fOnError(ParsingErrorStr +
+             Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID],
                     [WrapColorA(CmdName, clScriptCmdName),
-                     gScriptEvents.ConsoleCommand[CmdName].ParamsTypes2String(True)]))
-  else
+                     gScriptEvents.ConsoleCommand[CmdName].ParamsTypes2String]));
+    ParsingError := True;
+  end;
+
+  if not ParsingError then
   begin
     gGame.GameInputProcess.CmdConsoleCommand(gicScriptConsoleCommand, CmdName, Params);
+    if Assigned(fOnPostLocal) then
+      fOnPostLocal(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_CALLED],
+                          [WrapColorA(CmdName, clScriptCmdName),
+                          gScriptEvents.ConsoleCommand[CmdName].Params2String(Params)]));
     Result := True;
   end;
 end;
 
 
-function TKMConsole.DoPost: Boolean;
+procedure TKMConsole.Post(aPropagate: Boolean = True);
 begin
   fLastConsoleTime := TimeGet;
 
   fHistory.Insert(0, Text);
   fCurrConsoleHistoryId := -1;
 
-  if Assigned(fOnPostMsg) then
-    fOnPostMsg(Text);
+  if aPropagate and Assigned(fOnPost) then
+    fOnPost(Text);
 end;
 
 

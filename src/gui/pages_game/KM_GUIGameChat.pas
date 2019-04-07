@@ -25,6 +25,7 @@ type
     function GetPanelChatRect: TKMRect;
     function IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
 
+    procedure PostLocalMsg(const aMsg: UnicodeString);
     procedure PostMsg(const aMsg: UnicodeString);
     procedure HandleError(const aMsg: UnicodeString);
 
@@ -153,6 +154,12 @@ begin
 end;
 
 
+procedure TKMGUIGameChat.PostLocalMsg(const aMsg: UnicodeString);
+begin
+  gGame.Networking.PostLocalMessage(aMsg, csChat);
+end;
+
+
 procedure TKMGUIGameChat.PostMsg(const aMsg: UnicodeString);
 begin
   if gGameApp.Chat.Mode = cmWhisper then
@@ -182,9 +189,7 @@ begin
   if not gGameApp.Chat.IsPostAllowed then
     Exit;
 
-  if gGameApp.Chat.TryCallConsoleCommand then
-    gGameApp.Chat.DoPost
-  else
+  if not gGameApp.Chat.TryCallConsoleCommand then
   begin
     if gGameApp.Chat.Mode = cmWhisper then
     begin
@@ -197,9 +202,9 @@ begin
                                           csSystem);
         Chat_MenuSelect(CHAT_MENU_ALL);
       end else
-        gGameApp.Chat.DoPost
+        gGameApp.Chat.Post
     end else
-      gGameApp.Chat.DoPost;
+      gGameApp.Chat.Post;
   end;
 
   Result := True;
@@ -380,7 +385,8 @@ end;
 
 procedure TKMGUIGameChat.UpdateChat;
 begin
-  gGameApp.Chat.OnPostMsg := PostMsg;
+  gGameApp.Chat.OnPost := PostMsg;
+  gGameApp.Chat.OnPostLocal := PostLocalMsg;
   gGameApp.Chat.OnError := HandleError;
 
   if gGameApp.Chat.Mode = cmWhisper then
