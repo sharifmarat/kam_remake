@@ -1187,3 +1187,4 @@
 1238:Wrong first parameter type for script command <%s>. Expected: [%s], actual: [%s] 
 1239:Too many parameters for script command <%s>: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
 1240:Wrong parameters for script command <%s>. Expected parameters types are: [%s]  
+1241:Enable/Disable copy-paste from chat window

@@ -48,10 +48,11 @@ uses
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
 	
+  KM_Console in 'src\KM_Console.pas',
   KM_CommonClasses in 'src\common\KM_CommonClasses.pas',
   KM_CommonTypes in 'src\common\KM_CommonTypes.pas',
 	KM_Defaults in 'src\common\KM_Defaults.pas',
-	KM_Points in 'src\common\KM_Points.pas',
+	KM_Points in 'src\common\KM_Points.pas', 
 	
   KM_Controls in 'src\KM_Controls.pas',
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}

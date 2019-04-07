@@ -4,6 +4,7 @@ interface
 uses
   {$IFDEF Unix} LCLIntf, {$ENDIF}
   Classes, SysUtils, TypInfo, Forms, KromUtils,
+  KM_Console,
   KM_CommonClasses, KM_CommonTypes, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_Points,
   KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_NetPlayersList,
   KM_DedicatedServer, KM_NetClient, KM_ServerQuery,
@@ -20,13 +21,6 @@ type
   TKMNetGameState = (lgsNone, lgsConnecting, lgsQuery, lgsLobby, lgsLoading, lgsGame, lgsReconnecting);
   TKMNetGameKind = (ngkNone, ngkMap, ngkSave);
   TKMChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
-  TKMChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
-  TKMChatState =  record
-                  Messages: UnicodeString;
-                  ChatText: UnicodeString;
-                  Mode: TKMChatMode;
-                  WhisperRecipient: TKMNetHandleIndex;
-                end;
 
 const
   NetMPGameState: array [TKMNetGameState] of TMPGameState = (mgsNone, mgsNone, mgsNone, mgsLobby, mgsLoading, mgsGame, mgsGame);

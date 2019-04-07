@@ -49,6 +49,8 @@ type
     procedure EscKeyDown(Sender: TObject);
     procedure KeyDown(Key: Word; Shift: TShiftState);
 
+    procedure StartLobby(aIsHost: Boolean);
+
     procedure UpdateServerDetailsUI;
   protected
     Panel_MultiPlayer: TKMPanel;
@@ -748,6 +750,16 @@ begin
 end;
 
 
+procedure TKMMenuMultiplayer.StartLobby(aIsHost: Boolean);
+begin
+  gGameApp.Chat.Clear;
+  if aIsHost then
+    fOnPageChange(gpLobby, 'HOST')
+  else
+    fOnPageChange(gpLobby, 'JOIN');
+end;
+
+
 procedure TKMMenuMultiplayer.MP_HostClick(Sender: TObject);
 var
   serverPortStr: string;
@@ -764,7 +776,7 @@ begin
   if not ValidatePlayerName(Edit_MP_PlayerName.Text) then
     Exit;
 
-  fOnPageChange(gpLobby, 'HOST');
+  StartLobby(True);
 
   gGameApp.Networking.OnHostFail := MP_HostFail;
   gGameApp.Networking.Host(AnsiString(Edit_MP_ServerName.Text), serverPort,
@@ -853,7 +865,8 @@ begin
   gGameApp.Networking.OnJoinFail := nil;
   gGameApp.Networking.OnJoinAssignedHost := nil;
 
-  fOnPageChange(gpLobby, 'JOIN');
+
+  StartLobby(False);
 end;
 
 
@@ -873,7 +886,7 @@ begin
   gGameApp.Networking.OnHostFail := MP_HostFail;
 
   //We were joining a game and the server assigned hosting rights to us
-  fOnPageChange(gpLobby, 'HOST'); //Open lobby page in host mode
+  StartLobby(True); //Open lobby page in host mode
 end;
 
 

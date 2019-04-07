@@ -1265,3 +1265,4 @@ TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type 
 TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS = 1239; //Too many parameters for script command <%s>: [ %s ]. Max number of parameters is [%s] (including mandatory HandID parameter)
 TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command <%s>. Expected parameters types are: [%s] 
 
+TX_CHAT_COPY_PASTE_SWITCH = 1241; //Enable/Disable chat history and copy-paste from chat window

@@ -8,7 +8,7 @@ uses
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
   KM_Music, KM_Maps, KM_Networking, KM_Settings, KM_Render,
-  KM_GameTypes, KM_Points, KM_CommonClasses;
+  KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
 
 type
   //Methods relevant to gameplay
@@ -25,6 +25,8 @@ type
     fTimerUI: TTimer;
     fMainMenuInterface: TKMMainMenuInterface;
     fLastTimeRender: Cardinal;
+
+    fChat: TKMChat;
 
     fOnCursorUpdate: TIntegerStringEvent;
     fOnGameSpeedChange: TSingleEvent;
@@ -92,6 +94,7 @@ type
     property MusicLib: TKMMusicLib read fMusicLib;
     property Networking: TKMNetworking read fNetworking;
     property GlobalTickCount: Cardinal read fGlobalTickCount;
+    property Chat: TKMChat read fChat;
 
     procedure KeyDown(Key: Word; Shift: TShiftState);
     procedure KeyPress(Key: Char);
@@ -142,6 +145,8 @@ begin
   fLastTimeRender := 0;
 
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
+
+  fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
 
@@ -208,6 +213,7 @@ begin
 
   StopGame(grSilent);
 
+  FreeAndNil(fChat);
   FreeAndNil(fTimerUI);
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
@@ -556,21 +562,14 @@ end;
 
 
 procedure TKMGameApp.StopGameReturnToLobby(Sender: TObject);
-var ChatState: TKMChatState;
 begin
   if gGame = nil then Exit;
-
-  //Copy text from in-game chat to lobby (save it before freeing gGame)
-  ChatState := gGame.GameplayInterface.GetChatState;
 
   FreeThenNil(gGame);
   fNetworking.ReturnToLobby; //Clears gGame event pointers from Networking
   fMainMenuInterface.ReturnToLobby(RETURN_TO_LOBBY_SAVE); //Assigns Lobby event pointers to Networking and selects map
   if fNetworking.IsHost then
     fNetworking.SendPlayerListAndRefreshPlayersSetup; //Call now that events are attached to lobby
-
-  //Copy text from in-game chat to lobby
-  fMainMenuInterface.SetChatState(ChatState);
 
   gLog.AddTime('Gameplay ended - Return to lobby');
 end;
@@ -734,8 +733,7 @@ begin
   //Starting the game might have failed (e.g. fatal script error)
   if gGame <> nil then
   begin
-    //Copy text from lobby to in-game chat
-    gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+    gGame.GamePlayInterface.GameStarted;
 
     if Assigned(fOnGameStart) and (gGame <> nil) then
       fOnGameStart(gGame.GameMode);
@@ -744,7 +742,8 @@ end;
 
 
 procedure TKMGameApp.NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-var GameMode: TKMGameMode;
+var
+  GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -755,7 +754,7 @@ begin
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, True), GameMode);
 
   //Copy the chat and typed lobby message to the in-game chat
-  gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+  gGame.GamePlayInterface.GameStarted;
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);

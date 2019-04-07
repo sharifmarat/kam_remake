@@ -5,7 +5,7 @@ uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
   Classes, Controls, Math, SysUtils,
-  KM_Defaults, KM_NetworkTypes,
+  KM_Defaults, KM_NetworkTypes, KM_Console,
   KM_Controls, KM_Maps, KM_Saves, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_Networking;
 
 
@@ -25,9 +25,6 @@ type
     fNetworking: TKMNetworking;
 
     fLobbyTab: TKMLobbyTab;
-    fChatMode: TKMChatMode;
-    fChatWhisperRecipient: TKMNetHandleIndex; //Server index of the player who will receive the whisper
-    fLastChatTime: Cardinal; //Last time a chat message was sent to enforce cooldown
 
     fLocalToNetPlayers: array [1..MAX_LOBBY_SLOTS] of Integer;
     fNetPlayersToLocal: array [1..MAX_LOBBY_SLOTS] of Integer;
@@ -45,13 +42,13 @@ type
     procedure CreatePlayerMenus(aParent: TKMPanel);
     procedure CreateSettingsPopUp(aParent: TKMPanel);
 
-    procedure Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+    procedure Reset(aKind: TKMNetPlayerKind; aPreserveMaps: Boolean = False);
     procedure GameOptionsTabSwitch(Sender: TObject);
     procedure GameOptionsChange(Sender: TObject);
     procedure FileDownloadClick(Sender: TObject);
     procedure ReadmeClick(Sender: TObject);
 
-    procedure ChatMenuSelect(aItem: TKMNetHandleIndex);
+    procedure ChatMenuSelect(aItemTag: TKMNetHandleIndex);
     procedure ChatMenuClick(Sender: TObject);
     procedure ChatMenuShow(Sender: TObject);
 
@@ -85,8 +82,11 @@ type
     procedure DropBoxPlayers_Show(Sender: TObject);
     procedure PercentBar_PlayerDl_ChVisibility(aPlayerIndex: Integer; aShow: Boolean);
 
+    function DoPost: Boolean;
     function PostKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     function IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
+    procedure PostMsg(const aMsg: UnicodeString);
+    procedure HandleError(const aMsg: UnicodeString);
 
     function AISlotsAvailable(aAIPlayerTypes: TKMNetPlayerTypeSet = [AI_PLAYER_TYPE_MIN..AI_PLAYER_TYPE_MAX]): Byte;
     procedure MinimapLocClick(aValue: Integer);
@@ -121,6 +121,10 @@ type
     procedure BackClick(Sender: TObject);
     procedure EscKeyDown(Sender: TObject);
     procedure KeyDown(Key: Word; Shift: TShiftState);
+
+    procedure ChatMessageChanged(Sender: TObject);
+    procedure ChatTextChanged(Sender: TObject);
+    procedure UpdateChat;
   protected
     Panel_Lobby: TKMPanel;
       Panel_Settings: TKMPanel;
@@ -191,8 +195,6 @@ type
     constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
-    function GetChatState: TKMChatState;
-    procedure SetChatState(const aChatState: TKMChatState);
     procedure Show(aKind: TKMNetPlayerKind; aNetworking: TKMNetworking; aMainHeight: Word);
     procedure Lobby_Resize(aMainHeight: Word);
     procedure ReturnToLobby(const aSaveName: UnicodeString);
@@ -512,6 +514,7 @@ begin
     //Chat area
     Memo_Posts := TKMMemo.Create(Panel_Lobby, 30, 406, CW, 282, fntArial, bsMenu);
     Memo_Posts.Anchors := [anLeft, anTop, anBottom];
+    Memo_Posts.OnChange := ChatMessageChanged;
     Memo_Posts.AutoWrap := True;
     Memo_Posts.IndentAfterNL := True; //Don't let players fake system messages
     Memo_Posts.ScrollDown := True;
@@ -523,6 +526,7 @@ begin
     Button_Post.Anchors := [anLeft, anBottom];
 
     Edit_Post := TKMEdit.Create(Panel_Lobby, 60, 696, CW, 22, fntArial);
+    Edit_Post.OnChange := ChatTextChanged;
     Edit_Post.OnKeyDown := PostKeyDown;
     Edit_Post.OnIsKeyEventHandled := IsKeyEvent_Return_Handled;
     Edit_Post.Anchors := [anLeft, anBottom];
@@ -705,7 +709,7 @@ begin
 end;
 
 
-procedure TKMMenuLobby.ChatMenuSelect(aItem: TKMNetHandleIndex);
+procedure TKMMenuLobby.ChatMenuSelect(aItemTag: TKMNetHandleIndex);
 
   procedure UpdateButtonCaption(aCaption: UnicodeString; aColor: Cardinal = 0);
   var CapWidth: Integer;
@@ -723,49 +727,41 @@ procedure TKMMenuLobby.ChatMenuSelect(aItem: TKMNetHandleIndex);
     Edit_Post.Width := Memo_Posts.Width - Button_Post.Width - 4;
   end;
 
-var I: Integer;
+var NetI: Integer;
 begin
-  //All
-  if aItem = CHAT_MENU_ALL then
-  begin
-    fChatMode := cmAll;
-    UpdateButtonCaption(gResTexts[TX_CHAT_ALL]);
-    Edit_Post.DrawOutline := False; //No outline for All
-  end
-  else
-    //Team
-    if aItem = CHAT_MENU_TEAM then
-    begin
-      fChatMode := cmTeam;
-      UpdateButtonCaption(gResTexts[TX_CHAT_TEAM], $FF66FF66);
-      Edit_Post.DrawOutline := True;
-      Edit_Post.OutlineColor := $FF66FF66;
-    end
-    else
-      //Spectators
-      if aItem = CHAT_MENU_SPECTATORS then
-      begin
-        fChatMode := cmSpectators;
-        UpdateButtonCaption(gResTexts[TX_CHAT_SPECTATORS], $FF66FF66);
-        Edit_Post.DrawOutline := True;
-        Edit_Post.OutlineColor := $FF66FF66;
-      end
-      else
-      //Whisper
-      begin
-        I := fNetworking.NetPlayers.ServerToLocal(aItem);
-        if I <> -1 then
-        begin
-          fChatMode := cmWhisper;
-          Edit_Post.DrawOutline := True;
-          Edit_Post.OutlineColor := $FF00B9FF;
-          with fNetworking.NetPlayers[I] do
-          begin
-            fChatWhisperRecipient := IndexOnServer;
-            UpdateButtonCaption(NiknameU, IfThen(FlagColorID <> 0, FlagColorToTextColor(FlagColor), 0));
+  case aItemTag of
+    CHAT_MENU_ALL:        begin //All
+                            gGameApp.Chat.Mode := cmAll;
+                            UpdateButtonCaption(gResTexts[TX_CHAT_ALL]);
+                            Edit_Post.DrawOutline := False; //No outline for All
+                          end;
+    CHAT_MENU_TEAM:       begin //Team
+                            gGameApp.Chat.Mode := cmTeam;
+                            UpdateButtonCaption(gResTexts[TX_CHAT_TEAM], $FF66FF66);
+                            Edit_Post.DrawOutline := True;
+                            Edit_Post.OutlineColor := $FF66FF66;
+                          end;
+    CHAT_MENU_SPECTATORS: begin //Spectators
+                            gGameApp.Chat.Mode := cmSpectators;
+                            UpdateButtonCaption(gResTexts[TX_CHAT_SPECTATORS], $FF66FF66);
+                            Edit_Post.DrawOutline := True;
+                            Edit_Post.OutlineColor := $FF66FF66;
+                          end;
+    else  begin //Whisper to player
+            NetI := fNetworking.NetPlayers.ServerToLocal(aItemTag);
+            if NetI <> -1 then
+            begin
+              gGameApp.Chat.Mode := cmWhisper;
+              Edit_Post.DrawOutline := True;
+              Edit_Post.OutlineColor := $FF00B9FF;
+              with fNetworking.NetPlayers[NetI] do
+              begin
+                gGameApp.Chat.WhisperRecipient := IndexOnServer;
+                UpdateButtonCaption(NiknameU, IfThen(FlagColorID <> 0, FlagColorToTextColor(FlagColor), 0));
+              end;
+            end;
           end;
-        end;
-      end;
+    end;
 end;
 
 
@@ -830,29 +826,30 @@ begin
 end;
 
 
-//Access text that user was typing to copy it over to gameplay chat
-function TKMMenuLobby.GetChatState: TKMChatState;
+procedure TKMMenuLobby.ChatMessageChanged(Sender: TObject);
 begin
-  Result.WhisperRecipient := fChatWhisperRecipient;
-  Result.Mode := fChatMode;
-  Result.ChatText := Edit_Post.Text;
-  Result.Messages := Memo_Posts.Text;
+  gGameApp.Chat.Messages := Memo_Posts.Text;
 end;
 
 
-procedure TKMMenuLobby.SetChatState(const aChatState: TKMChatState);
-const CHAT_TAG: array[TKMChatMode] of Integer = (
-  -1,  //cmAll
-  -2,  //cmTeam
-  -3,  //cmSpectators
-  -1); //cmWhisper
+procedure TKMMenuLobby.ChatTextChanged(Sender: TObject);
 begin
-  if aChatState.Mode = cmWhisper then
-    ChatMenuSelect(aChatState.WhisperRecipient)
+  gGameApp.Chat.Text := Edit_Post.Text;
+end;
+
+
+procedure TKMMenuLobby.UpdateChat;
+begin
+  gGameApp.Chat.OnError := HandleError;
+  gGameApp.Chat.OnPostMsg := PostMsg;
+
+  if gGameApp.Chat.Mode = cmWhisper then
+    ChatMenuSelect(gGameApp.Chat.WhisperRecipient)
   else
-    ChatMenuSelect(CHAT_TAG[aChatState.Mode]);
-  Edit_Post.Text := aChatState.ChatText;
-  Memo_Posts.Text := aChatState.Messages;
+    ChatMenuSelect(CHAT_TAG[gGameApp.Chat.Mode]);
+
+  Edit_Post.Text := gGameApp.Chat.Text;
+  Memo_Posts.Text := gGameApp.Chat.Messages;
   Memo_Posts.ScrollToBottom;
 end;
 
@@ -863,12 +860,6 @@ begin
   fNetworking := aNetworking;
 
   Reset(aKind);
-
-  for I := 1 to MAX_LOBBY_SLOTS do
-  begin
-    fLocalToNetPlayers[I] := -1;
-    fNetPlayersToLocal[I] := -1;
-  end;
 
   //Events binding is the same for Host and Joiner because of stand-alone Server
   //E.g. If Server fails, Host can be disconnected from it as well as a Joiner
@@ -888,10 +879,17 @@ begin
   fNetworking.OnPlayerFileTransferProgress := Lobby_OnPlayerFileTransferProgress;
   fNetworking.OnSetPassword := Lobby_OnSetPassword;
 
-  ChatMenuSelect(CHAT_MENU_ALL); //All
-
   Radio_MapType.ItemIndex := gGameApp.GameSettings.MenuLobbyMapType;
   UpdateMapList;
+
+  //Update chat
+  UpdateChat;
+
+  for I := 1 to MAX_LOBBY_SLOTS do
+  begin
+    fLocalToNetPlayers[I] := -1;
+    fNetPlayersToLocal[I] := -1;
+  end;
 
   Panel_Lobby.Show;
   Lobby_Resize(aMainHeight);
@@ -996,7 +994,7 @@ end;
 
 
 //Reset everything to it's defaults depending on users role (Host/Joiner/Reassigned)
-procedure TKMMenuLobby.Reset(aKind: TKMNetPlayerKind; aPreserveMessage: Boolean = False; aPreserveMaps: Boolean = False);
+procedure TKMMenuLobby.Reset(aKind: TKMNetPlayerKind; aPreserveMaps: Boolean = False);
 var I: Integer;
 begin
   Label_ServerName.Caption := '';
@@ -1023,13 +1021,6 @@ begin
     DropBox_Colors[I].Visible := I <= MAX_LOBBY_PLAYERS; //Spectators hidden initially
     Image_Ready[I].TexID := 0;
     Label_Ping[I].Caption := '';
-  end;
-
-  if not aPreserveMessage then
-  begin
-    Memo_Posts.Clear;
-    Edit_Post.Text := '';
-    ChatMenuSelect(CHAT_MENU_ALL); //All
   end;
 
   Label_MapName.Caption := '';
@@ -1431,7 +1422,7 @@ begin
     if (Sender = DropBox_Loc[I]) and DropBox_Loc[I].Enabled then
     begin
       // We can still have cmSpectate chat mode if we were in specs. Reset to cmAll in this case
-      if (DropBox_Loc[I].GetSelectedTag <> LOC_SPECTATE) and (fChatMode = cmSpectators) then
+      if (DropBox_Loc[I].GetSelectedTag <> LOC_SPECTATE) and (gGameApp.Chat.Mode = cmSpectators) then
         ChatMenuSelect(CHAT_MENU_ALL);
       
       fNetworking.SelectLoc(DropBox_Loc[I].GetSelectedTag, NetI);
@@ -1780,16 +1771,16 @@ begin
   end;
 
   //If we are in team chat mode and find ourselves not on a team (player went back to no team), switch back to all
-  if (fChatMode = cmTeam) and (fNetworking.MyNetPlayer.Team = 0) then
+  if (gGameApp.Chat.Mode = cmTeam) and (fNetworking.MyNetPlayer.Team = 0) then
     ChatMenuSelect(CHAT_MENU_ALL);
 
   //If we are in whisper chat mode and find the player has left, switch back to all
-  if fChatMode = cmWhisper then
+  if gGameApp.Chat.Mode = cmWhisper then
   begin
-    if fNetworking.NetPlayers.ServerToLocal(fChatWhisperRecipient) = -1 then
+    if fNetworking.NetPlayers.ServerToLocal(gGameApp.Chat.WhisperRecipient) = -1 then
       ChatMenuSelect(CHAT_MENU_ALL)
     else
-      ChatMenuSelect(fChatWhisperRecipient); //In case that player changed his color
+      ChatMenuSelect(gGameApp.Chat.WhisperRecipient); //In case that player changed his color
   end;
 
   CheckBox_HostControl.Checked := fNetworking.NetPlayers.HostDoesSetup;
@@ -2402,7 +2393,7 @@ end;
 //We have been assigned to be the host of the game because the host disconnected. Reopen lobby page in correct mode.
 procedure TKMMenuLobby.Lobby_OnReassignedToHost(Sender: TObject);
 begin
-  Reset(lpkHost, True, True); //Will reset the lobby page into host mode, preserving messages/maps
+  Reset(lpkHost, True); //Will reset the lobby page into host mode, preserving messages/maps
 
   //Pick correct position of map type selector
   Radio_MapType.ItemIndex := DetectMapType;
@@ -2419,33 +2410,72 @@ end;
 
 procedure TKMMenuLobby.Lobby_OnReassignedToJoiner(Sender: TObject);
 begin
-  Reset(lpkJoiner, True, True); //Will reset the lobby page into host mode, preserving messages/maps
+  Reset(lpkJoiner, True); //Will reset the lobby page into host mode, preserving messages/maps
 
   //Pick correct position of map type selector
   Radio_MapType.ItemIndex := DetectMapType;
 end;
 
 
+procedure TKMMenuLobby.HandleError(const aMsg: UnicodeString);
+begin
+  fNetworking.PostLocalMessage(aMsg, csSystem);
+end;
+
+
+procedure TKMMenuLobby.PostMsg(const aMsg: UnicodeString);
+begin
+  if gGameApp.Chat.Mode = cmWhisper then
+    fNetworking.PostChat(aMsg, gGameApp.Chat.Mode, gGameApp.Chat.WhisperRecipient)
+  else
+    fNetworking.PostChat(aMsg, gGameApp.Chat.Mode);
+end;
+
+
 function TKMMenuLobby.IsKeyEvent_Return_Handled(Sender: TObject; Key: Word): Boolean;
 begin
-  Result := Key = VK_RETURN;
+  Result := Key in [VK_RETURN, VK_UP, VK_DOWN];
+end;
+
+
+function TKMMenuLobby.PostKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
+var
+  Str: String;
+begin
+  Result := False;
+  if IsKeyEvent_Return_Handled(Self, Key) then
+  begin
+    case Key of
+      VK_RETURN:  Result := DoPost;
+      VK_UP:      begin
+                    Str := gGameApp.Chat.GetNextHistoryMsg;
+                    if Str <> '' then
+                    begin
+                      Edit_Post.Text := Str;
+                      Result := True;
+                    end;
+                  end;
+      VK_DOWN:    begin
+                    Str := gGameApp.Chat.GetPrevHistoryMsg;
+                    if Str <> '' then
+                    begin
+                      Edit_Post.Text := Str;
+                      Result := True;
+                    end;
+                  end;
+    end;
+  end;
 end;
 
 
 //Post what user has typed
-function TKMMenuLobby.PostKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
+function TKMMenuLobby.DoPost: Boolean;
 var
-  ChatMessage: UnicodeString;
   RecipientNetIndex: Integer;
 begin
   Result := False;
-  if not IsKeyEvent_Return_Handled(Self, Key)
-    or (Trim(Edit_Post.Text) = '')
-    or (GetTimeSince(fLastChatTime) < CHAT_COOLDOWN) then
+  if not gGameApp.Chat.IsPostAllowed then
     Exit;
-  
-  fLastChatTime := TimeGet;
-  ChatMessage := Edit_Post.Text;
 
   //Console commands are disabled for now, maybe we'll reuse them later
   //Check for console commands
@@ -2458,9 +2488,9 @@ begin
       Delete(ChatMessage, 1, 1); //Remove one of the /'s
   end;}
 
-  if fChatMode = cmWhisper then
+  if gGameApp.Chat.Mode = cmWhisper then
   begin
-    RecipientNetIndex := fNetworking.NetPlayers.ServerToLocal(fChatWhisperRecipient);
+    RecipientNetIndex := fNetworking.NetPlayers.ServerToLocal(gGameApp.Chat.WhisperRecipient);
     if not fNetworking.NetPlayers[RecipientNetIndex].Connected
       or fNetworking.NetPlayers[RecipientNetIndex].Dropped then
     begin
@@ -2469,9 +2499,9 @@ begin
                                     csSystem);
       ChatMenuSelect(CHAT_MENU_ALL);
     end else
-      fNetworking.PostChat(ChatMessage, fChatMode, fChatWhisperRecipient);
+      gGameApp.Chat.DoPost
   end else
-    fNetworking.PostChat(ChatMessage, fChatMode, fChatWhisperRecipient);
+    gGameApp.Chat.DoPost;
   Result := True;
   Edit_Post.Text := '';
 end;

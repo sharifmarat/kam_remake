@@ -291,8 +291,6 @@ type
     procedure SetScriptedOverlay(const aText: UnicodeString);
     procedure UpdateOverlayControls;
     procedure ReleaseDirectionSelector;
-    function GetChatState: TKMChatState;
-    procedure SetChatState(const aChatState: TKMChatState);
     procedure ChatMessage(const aData: UnicodeString);
     procedure AlliesOnPlayerSetup(Sender: TObject);
     procedure AlliesOnPingInfo(Sender: TObject);
@@ -303,6 +301,7 @@ type
     property UIMode: TUIMode read fUIMode;
 
     procedure SetPause(aValue: Boolean);
+    procedure GameStarted;
 
     property GuiGameResultsMP: TKMGameResultsMP read fGuiGameResultsMP;
     property GuiGameSpectator: TKMGUIGameSpectator read fGuiGameSpectator;
@@ -2552,22 +2551,6 @@ begin
 end;
 
 
-// Access chat messages history to copy it over to lobby chat
-function TKMGamePlayInterface.GetChatState: TKMChatState;
-begin
-  Result := fGuiGameChat.GetChatState;
-end;
-
-
-procedure TKMGamePlayInterface.SetChatState(const aChatState: TKMChatState);
-begin
-  fGuiGameChat.SetChatState(aChatState);
-
-  if aChatState.ChatText <> '' then
-    fGuiGameChat.Show;
-end;
-
-
 // Assign Object to a Key
 // we use ID to avoid use of pointer counter
 procedure TKMGamePlayInterface.Selection_Assign(aId: Word; aObject: TObject);
@@ -2924,6 +2907,13 @@ begin
       Rect := fViewport.GetMinimapClip;
       gHands.GetUnitsInRect(Rect, fTeamNames);
     end;
+end;
+
+
+procedure TKMGamePlayInterface.GameStarted;
+begin
+  if gGame.IsMultiPlayerOrSpec and (gGameApp.Chat.Text <> '') then
+    fGuiGameChat.Show;
 end;
 
 
