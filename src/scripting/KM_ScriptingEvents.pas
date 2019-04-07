@@ -109,7 +109,7 @@ var
 
 implementation
 uses
-  uPSUtils,
+  uPSUtils, System.RegularExpressions,
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResTexts, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_MethodParser,
@@ -373,21 +373,26 @@ var
   CmdFound: Boolean;
   SL: TStringList;
   CmdPair: TPair<AnsiString, TKMConsoleCommand>;
+  RegEx: TRegEx;
 begin
   Result := False;
   SL := TStringList.Create;
   try
-    SL.Add(aScriptCode);
+    SL.Text := aScriptCode;
     for CmdPair in fConsoleCommands do
     begin
       CmdFound := False;
+      //Check procedure name with regular expression
+      RegEx := TRegEx.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]));
       for I := 0 to SL.Count - 1 do
-        if Pos(CmdPair.Value.Name, SL[I]) <> 0 then
+      begin
+        if RegEx.Match(SL[I]).Success then
         begin
           CmdPair.Value.ParseParameters(SL[I]);
           CmdFound := True;
           Break;
         end;
+      end;
       if not CmdFound then
         raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_NOT_FOUND],
                                                      [CmdPair.Value.Name]));
