@@ -1,4 +1,4 @@
-{
+﻿{
 Random Map Generator
 @author: Martin Toupal
 @e-mail: poznamenany@gmail.com
@@ -2906,7 +2906,6 @@ procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPa
     DEC_COEF = 4;
   var
     PointsCnt, I,K,X,Y: Integer;
-    Price: Single;
     P1,P2: TKMPoint;
     VisitArr: TBoolean2Array;
     CopyA: TKMByte2Array;
