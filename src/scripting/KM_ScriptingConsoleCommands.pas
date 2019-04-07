@@ -25,7 +25,6 @@ type
     fName: AnsiString;
     fProcName: AnsiString;
     fHandler: TMethod;
-    fProcParamsCnt: Integer;
     fPT: array[0..MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1] of TKMCmdProcParamTypeKind; //We support up to 4 params
 
     function GetProcParamType(aIndex: Integer): TKMCmdProcParamTypeKind;
@@ -446,7 +445,6 @@ begin
   fName := aName;
   fProcName := aProcName;
 
-  fProcParamsCnt := 0;
   for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
     fPT[I] := aParamTypes[I];
 
@@ -557,28 +555,32 @@ var
 
 begin
   Method := TKMMethod.ParseMethodStr(aProcedureStr);
+  try
+    if Method.Params.Count > MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1 then //+1 for HandID parameter
+      raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS],
+                                                      [fName,
+                                                       IntToStr(Method.Params.Count),
+                                                       IntToStr(MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1)]));
 
-  if Method.Params.Count > MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1 then //+1 for HandID parameter
-    raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS],
-                                                    [fName,
-                                                     IntToStr(Method.Params.Count),
-                                                     IntToStr(MAX_SCRIPT_CONSOLE_COMMAND_PARAMS + 1)]));
+    for I := 0 to Method.Params.Count - 1 do
+    begin
+      ParamKind := GetCommandType(Method.Params[I].ParamType);
+      //Check if parameter type is valid
+      if ParamKind = cpkNone then
+        raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE],
+                                                      [fName, Method.Params[I].ParamType]));
+      //1st parameter should be always Integer
+      if (I = 0) and (ParamKind <> cpkIntg) then
+        raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE],
+                                                      [fName,
+                                                       CLASS_TYPE_STR[cpkIntg],
+                                                       Method.Params[I].ParamType]));
+      if I > 0 then
+        fPT[I - 1] := ParamKind;
+    end;
 
-  for I := 0 to Method.Params.Count - 1 do
-  begin
-    ParamKind := GetCommandType(Method.Params[I].ParamType);
-    //Check if parameter type is valid
-    if ParamKind = cpkNone then
-      raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE],
-                                                    [fName, Method.Params[I].ParamType]));
-    //1st parameter should be always Integer
-    if (I = 0) and (ParamKind <> cpkIntg) then
-      raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE],
-                                                    [fName,
-                                                     CLASS_TYPE_STR[cpkIntg],
-                                                     Method.Params[I].ParamType]));
-    if I > 0 then
-      fPT[I - 1] := ParamKind;
+  finally
+    FreeAndNil(Method);
   end;
 
   Result := True;
@@ -1139,7 +1141,7 @@ begin
   LoadStream.ReadA(fName);
   LoadStream.ReadA(fProcName);
   for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
-    LoadStream.Read(fPT[I], SIzeOf(fPT[I]));
+    LoadStream.Read(fPT[I], SizeOf(fPT[I]));
 end;
 
 

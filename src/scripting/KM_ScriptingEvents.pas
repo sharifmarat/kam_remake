@@ -150,9 +150,14 @@ end;
 
 
 destructor TKMScriptEvents.Destroy;
+var
+  Command: TKMConsoleCommand;
 begin
-  { Clear all entries in the dictionary. }
+  for Command in fConsoleCommands.Values do
+    Command.Free;
+
   fConsoleCommands.Clear;
+
   FreeAndNil(fConsoleCommands);
 
   inherited;
@@ -337,16 +342,14 @@ begin
   end;
 
   //Load console commands
-  Command := TKMConsoleCommand.Create;
-  try
-    LoadStream.Read(CmdCount);
-    for I := 0 to CmdCount - 1 do
-    begin
-      Command.Load(LoadStream);
-      fConsoleCommands.Add(Command.Name, Command);
-    end;
-  finally
-    FreeAndNil(Command);
+  LoadStream.Read(CmdCount);
+  for I := 0 to CmdCount - 1 do
+  begin
+    //Create new command instance
+    //Commands destruction will be handled by fConsoleCommands Tictionary in TKMScriptEvents.Destry
+    Command := TKMConsoleCommand.Create;
+    Command.Load(LoadStream);
+    fConsoleCommands.Add(Command.Name, Command);
   end;
 end;
 
