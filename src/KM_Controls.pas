@@ -5388,6 +5388,9 @@ procedure TKMMemo.SetText(const aText: UnicodeString);
 begin
   fText := aText;
   ReformatText;
+
+  if Assigned(fOnChange) then
+    fOnChange(Self);
 end;
 
 
@@ -5627,6 +5630,9 @@ begin
 
   SetText(fText); //Updates the text in fItems
   UpdateScrollBar; //Scroll down with each item that is added.
+
+  if Assigned(fOnChange) then
+    fOnChange(Self);
 end;
 
 
@@ -5636,6 +5642,9 @@ begin
   fItems.Clear;
   ResetSelection;
   UpdateScrollBar;
+
+  if Assigned(fOnChange) then
+    fOnChange(Self);
 end;
 
 
