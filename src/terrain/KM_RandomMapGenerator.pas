@@ -268,8 +268,6 @@ begin
   if RMGSettings.Seed = 0 then
     RMGSettings.Seed := Round(High(Integer)*Random);
 
-  //RMGSettings.Seed := 8; // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-
   fRNG.Seed := RMGSettings.Seed;
 
   SetLength(A, fMapY+1, fMapX+1);
@@ -886,6 +884,8 @@ const
   Tr_Sand: array[0..2] of TBiomeType = (btGrassSand1,btGrassSand2,btGrassSand3);
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
+  // Declare variable to have peace with compiler
+  RandBiom := 0;
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
   Shape2Arr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 2),1000);
