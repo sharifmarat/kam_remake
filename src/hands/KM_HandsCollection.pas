@@ -77,7 +77,7 @@ type
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
 
-    procedure ExportGameStatsToCSV(const aPath: UnicodeString; aHeader: UnicodeString = '');
+    procedure ExportGameStatsToCSV(const aPath: String; const aHeader: String = '');
   end;
 
 var
@@ -887,7 +887,7 @@ begin
 end;
 
 
-procedure TKMHandsCollection.ExportGameStatsToCSV(const aPath: UnicodeString; aHeader: UnicodeString = '');
+procedure TKMHandsCollection.ExportGameStatsToCSV(const aPath: String; const aHeader: String = '');
 var
   I,J,K: Integer;
   SL: TStringList;

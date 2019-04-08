@@ -19,7 +19,7 @@ type
       fOnError: TUnicodeStringEvent;
       fMessages: String;
 
-      procedure SetMessages(aMessages: String);
+      procedure SetMessages(const aMessages: String);
 
       function TryDoCallConsoleCommand: Boolean;
     public
@@ -108,7 +108,7 @@ begin
 end;
 
 
-procedure TKMConsole.SetMessages(aMessages: String);
+procedure TKMConsole.SetMessages(const aMessages: String);
 begin
   fMessages := aMessages;
 end;
@@ -168,11 +168,11 @@ function TKMConsole.TryDoCallConsoleCommand: Boolean;
 var
   I, ParamsI, ProcParamsCnt, SpacePos: Integer;
   CmdName: AnsiString;
-  ParamsStr, Param, ParsingErrorStr: UnicodeString;
+  ParamsStr, Param, ParsingErrorStr: String;
   Params: TKMScriptCommandParamsArray;
   QuoteStart, ParsingError: Boolean;
 
-  procedure AddParam(aParam: UnicodeString);
+  procedure AddParam(const aParam: String);
   begin
     if aParam <> '' then
     begin

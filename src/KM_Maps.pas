@@ -48,7 +48,7 @@ type
     BlockFullMapPreview: Boolean;
 
     constructor Create;
-    procedure SetBigDesc(aBigDesc: UnicodeString);
+    procedure SetBigDesc(const aBigDesc: UnicodeString);
     function GetBigDesc: UnicodeString;
 
     function IsSmallDescLibxSet: Boolean;
@@ -56,8 +56,8 @@ type
 
     procedure ResetInfo;
 
-    procedure SaveTXTInfo(aFilePath: UnicodeString);
-    procedure LoadTXTInfo(aFilePath: UnicodeString);
+    procedure SaveTXTInfo(const aFilePath: String);
+    procedure LoadTXTInfo(const aFilePath: String);
     function HasDifficultyLevels: Boolean;
   end;
 
@@ -93,7 +93,7 @@ type
     function GetCanBeOnlyAICount: Byte;
     function GetCanBeHumanAndAICount: Byte;
     function GetBigDesc: UnicodeString;
-    procedure SetBigDesc(aBigDesc: UnicodeString);
+    procedure SetBigDesc(const aBigDesc: UnicodeString);
   public
     MapSizeX, MapSizeY: Integer;
     MissionMode: TKMissionMode;
@@ -835,7 +835,7 @@ begin
 end;
 
 
-procedure TKMapInfo.SetBigDesc(aBigDesc: UnicodeString);
+procedure TKMapInfo.SetBigDesc(const aBigDesc: UnicodeString);
 begin
   TxtInfo.BigDesc := aBigDesc;
 end;
@@ -869,12 +869,12 @@ begin
 end;
 
 
-procedure TKMMapTxtInfo.SaveTXTInfo(aFilePath: UnicodeString);
+procedure TKMMapTxtInfo.SaveTXTInfo(const aFilePath: String);
 var
   St: String;
   ft: TextFile;
 
-  procedure WriteLine(aLineHeader: UnicodeString; aLineValue: UnicodeString = '');
+  procedure WriteLine(const aLineHeader: String; const aLineValue: String = '');
   begin
     Writeln(ft, aLineHeader);
     if aLineValue <> '' then
@@ -949,7 +949,7 @@ begin
   CloseFile(ft);
 end;
 
-procedure TKMMapTxtInfo.LoadTXTInfo(aFilePath: UnicodeString);
+procedure TKMMapTxtInfo.LoadTXTInfo(const aFilePath: String);
 
   function LoadDescriptionFromLIBX(aIndex: Integer): UnicodeString;
   var
@@ -1040,7 +1040,7 @@ begin
 end;
 
 
-procedure TKMMapTxtInfo.SetBigDesc(aBigDesc: UnicodeString);
+procedure TKMMapTxtInfo.SetBigDesc(const aBigDesc: UnicodeString);
 begin
   BigDesc := aBigDesc;
 end;

@@ -22,8 +22,8 @@ type
     MethodName,
     ResultType:     string;
     class function MethodTypeToStr(aType: TSEMethodType): string;
-    class function StrToMethodType(aValue: string): TSEMethodType;
-    class function ParseMethodStr(aValue: string): TKMMethod;
+    class function StrToMethodType(const aValue: string): TSEMethodType;
+    class function ParseMethodStr(const aValue: string): TKMMethod;
     constructor Create;
     destructor Destroy; override;
     procedure AppendToXML(const aParent: TXmlNode);
@@ -35,9 +35,9 @@ type
     IsEventList: Boolean;
     constructor Create(aOwnsObjects: Boolean = True); overload;
     function NewItem: TKMMethod;
-    function IndexByName(aMethodName: string): Integer; virtual;
-    procedure SaveToFile(aFileName: string);
-    procedure LoadFromFile(aFileName: string);
+    function IndexByName(const aMethodName: string): Integer; virtual;
+    procedure SaveToFile(const aFileName: string);
+    procedure LoadFromFile(const aFileName: string);
     function GenerateMethodInsertNames: TStringList;
     function GenerateMethodItemList: TStringList;
     function GenerateParameterInsertList: TStringList;
@@ -58,7 +58,7 @@ begin
   end;
 end;
 
-class function TKMMethod.StrToMethodType(aValue: string): TSEMethodType;
+class function TKMMethod.StrToMethodType(const aValue: string): TSEMethodType;
 var
   I: TSEMethodType;
 begin
@@ -69,7 +69,7 @@ begin
       Exit(I);
 end;
 
-class function TKMMethod.ParseMethodStr(aValue: string): TKMMethod;
+class function TKMMethod.ParseMethodStr(const aValue: string): TKMMethod;
 var
   param:        TKMParam;
   s,
@@ -290,7 +290,7 @@ begin
   Add(Result);
 end;
 
-function TKMMethodList.IndexByName(aMethodName: string): Integer;
+function TKMMethodList.IndexByName(const aMethodName: string): Integer;
 var
   I: Integer;
 begin
@@ -301,7 +301,7 @@ begin
       Exit(I);
 end;
 
-procedure TKMMethodList.SaveToFile(aFileName: string);
+procedure TKMMethodList.SaveToFile(const aFileName: string);
 var
   xml: TXmlVerySimple;
   I:   integer;
@@ -315,7 +315,7 @@ begin
   xml.SaveToFile(aFileName);
 end;
 
-procedure TKMMethodList.LoadFromFile(aFileName: string);
+procedure TKMMethodList.LoadFromFile(const aFileName: string);
 var
   xml:  TXmlVerySimple;
   item: TKMMethod;

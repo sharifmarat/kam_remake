@@ -66,13 +66,14 @@ type
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
     procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                      const aDetailedErrorString: String = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
     procedure AppendError(aError: TKMScriptErrorMessage);
-    procedure AppendWarning(aWarning: TKMScriptErrorMessage);
-    procedure AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
-    procedure AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+    procedure AppendWarning(const aWarning: TKMScriptErrorMessage);
+    procedure AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
+    procedure AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
     procedure HandleErrors;
     procedure Clear;
   end;
@@ -153,7 +154,7 @@ type
     property PreProcessor: TKMScriptingPreProcessor read fPreProcessor;
 
     function GetErrorMessage(aErrorMsg: TPSPascalCompilerMessage): TKMScriptErrorMessage; overload;
-    function GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
+    function GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
 
     property ValidationIssues: TScriptValidatorResult read fValidationIssues;
     procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
@@ -633,7 +634,7 @@ begin
     RegisterMethodCheck(c, 'procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean)');
     RegisterMethodCheck(c, 'procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer)');
 
-    RegisterMethodCheck(c, 'procedure Log(aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure Log(const aText: AnsiString)');
 
     RegisterMethodCheck(c, 'procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer)');
 
@@ -643,10 +644,10 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'function  PlanAddField(aPlayer, X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function  PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean');
@@ -688,10 +689,10 @@ begin
 
     RegisterMethodCheck(c, 'procedure SetTradeAllowed(aPlayer, aResType: Word; aAllowed: Boolean)');
 
-    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean)');
     RegisterMethodCheck(c, 'function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean');
@@ -708,12 +709,12 @@ begin
     RegisterMethodCheck(c, 'function AbsI(aValue: Integer): Integer');
     RegisterMethodCheck(c, 'function AbsS(aValue: Single): Single');
 
-    RegisterMethodCheck(c, 'function ArrayElementCount(aElement: AnsiString; aArray: array of AnsiString): Integer');
+    RegisterMethodCheck(c, 'function ArrayElementCount(const aElement: AnsiString; aArray: array of AnsiString): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountB(aElement: Boolean; aArray: array of Boolean): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountI(aElement: Integer; aArray: array of Integer): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountS(aElement: Single; aArray: array of Single): Integer');
 
-    RegisterMethodCheck(c, 'function ArrayHasElement(aElement: AnsiString; aArray: array of AnsiString): Boolean');
+    RegisterMethodCheck(c, 'function ArrayHasElement(const aElement: AnsiString; aArray: array of AnsiString): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementB(aElement: Boolean; aArray: array of Boolean): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementI(aElement: Integer; aArray: array of Integer): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementS(aElement: Single; aArray: array of Single): Boolean');
@@ -728,7 +729,7 @@ begin
 
     RegisterMethodCheck(c, 'function Format(aFormatting: string; aData: array of const): string;');
 
-    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; aTrue, aFalse: AnsiString): AnsiString');
+    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString');
     RegisterMethodCheck(c, 'function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer');
     RegisterMethodCheck(c, 'function IfThenS(aBool: Boolean; aTrue, aFalse: Single): Single');
 
@@ -1640,7 +1641,7 @@ begin
 end;
 
 
-function TKMScripting.GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage;
+function TKMScripting.GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage;
 var I, CodeLinesFound: Integer;
     FileNamesArr: TStringArray;
     RowsArr: TIntegerArray;
@@ -1707,21 +1708,21 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarning(aWarning: TKMScriptErrorMessage);
+procedure TKMScriptErrorHandler.AppendWarning(const aWarning: TKMScriptErrorMessage);
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarning.GameMessage;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aWarning.LogMessage;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
 begin
   fErrorString.GameMessage := fErrorString.GameMessage + aErrorString;
   fErrorString.LogMessage := fErrorString.LogMessage + aDetailedErrorString;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarningString;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aDetailedWarningString;
@@ -1783,7 +1784,8 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                                        const aDetailedErrorString: String = '');
 var
   fl: TextFile;
   LogErrorMsg: UnicodeString;
@@ -2285,9 +2287,10 @@ end;
 
 //Try to find line of code in all script files
 //Returns number of occurences
-function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray;
+                                               out aRowsArr: TIntegerArray): Integer;
 
-  procedure AddFoundLineInfo(var aFoundCnt: Integer; aFileNameFound: UnicodeString; aRowFound: Integer);
+  procedure AddFoundLineInfo(var aFoundCnt: Integer; const aFileNameFound: String; aRowFound: Integer);
   begin
     if (aFoundCnt >= Length(aFileNamesArr))
       or (aFoundCnt >= Length(aRowsArr)) then

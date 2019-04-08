@@ -987,7 +987,7 @@ end;
 
 procedure TKMMenuMapEditor.UpdateMapInfo(aID: Integer = -1);
 
-  function AddLabelDesc(aLabelDesc, aAddition: UnicodeString): UnicodeString;
+  function AddLabelDesc(aLabelDesc: UnicodeString; const aAddition: UnicodeString): UnicodeString;
   begin
     if aLabelDesc <> '' then
       aLabelDesc := aLabelDesc + '|';

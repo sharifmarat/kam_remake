@@ -1150,8 +1150,6 @@ end;
 
 
 procedure TKMGameResultsMP.FreeListToShow(aStatType: TKMStatType);
-var
-  I: Integer;
 begin
   //Free objects inside (there could be TStringList's)
   if fListToShow[aStatType] <> nil then
@@ -1783,7 +1781,7 @@ procedure TKMGameResultsMP.Create_ResultsMP(aParent: TKMPanel);
 const
   TABS_TOP = 75;
 
-  procedure SetupButton(var aBtn: TKMButtonFlat; aCaption: UnicodeString; aTexOffX: ShortInt; aOnClick: TNotifyEvent;
+  procedure SetupButton(var aBtn: TKMButtonFlat; const aCaption: String; aTexOffX: ShortInt; aOnClick: TNotifyEvent;
                         aAnchors: TKMAnchorsSet = [anLeft, anTop]);
   begin
     aBtn.TexOffsetX := aTexOffX;

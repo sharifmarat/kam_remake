@@ -171,8 +171,8 @@ type
     procedure FocusChanged(aFocused: Boolean); virtual;
     procedure DoClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean); virtual;
     function DoHandleMouseWheelByDefault: Boolean; virtual;
-    function GetHint: UnicodeString; virtual;
-    procedure SetHint(aHint: UnicodeString); virtual;
+    function GetHint: String; virtual;
+    procedure SetHint(const aHint: String); virtual;
   public
     Hitable: Boolean; //Can this control be hit with the cursor?
     Focusable: Boolean; //Can this control have focus (e.g. TKMEdit sets this true)
@@ -693,8 +693,8 @@ type
     LineWidth: Byte;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont);
 
-    procedure Add(aText: UnicodeString; aEnabled: Boolean = True); overload;
-    procedure Add(aText, aHint: UnicodeString; aEnabled: Boolean = True); overload;
+    procedure Add(const aText: String; aEnabled: Boolean = True); overload;
+    procedure Add(const aText, aHint: String; aEnabled: Boolean = True); overload;
     procedure Clear;
     property Count: Integer read fCount;
     property VisibleCount: Integer read GetVisibleCount;
@@ -758,7 +758,7 @@ type
     procedure SetTop(aValue: Integer); override;
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
-    procedure SetHint(aValue: UnicodeString); override;
+    procedure SetHint(const aValue: String); override;
     function GetSelfAbsLeft: Integer; override;
     function GetSelfWidth: Integer; override;
     function GetMaxLength: Word; override;
@@ -790,8 +790,8 @@ type
     fImmidiateOrder: Boolean; //Order count should be changed immidiately in control. Should be False usually
     procedure ButtonClick(Sender: TObject; Shift: TShiftState);
     procedure ClickHold(Sender: TObject; Button: TMouseButton; var aHandled: Boolean);
-    procedure SetOrderRemHint(aValue: UnicodeString);
-    procedure SetOrderAddHint(aValue: UnicodeString);
+    procedure SetOrderRemHint(const aValue: String);
+    procedure SetOrderAddHint(const aValue: String);
     procedure SetOrderCount(aValue: Integer);
   protected
     procedure SetTop(aValue: Integer); override;
@@ -984,7 +984,7 @@ type
     property BackAlpha: Single write SetBackAlpha;
 
     procedure Add(const aItem: UnicodeString; aTag: Integer = 0);
-    procedure AddSeparator(aPosition: Integer; aText: String = '');
+    procedure AddSeparator(aPosition: Integer; const aText: String = '');
     procedure ClearSeparators;
 
     procedure Clear;
@@ -1038,8 +1038,8 @@ type
     function GetColumnWidth(aIndex: Integer): Integer;
     function GetOffset(aIndex: Integer): Word;
     procedure SetOffset(aIndex: Integer; aValue: Word);
-    function GetHeaderHint(aIndex: Integer): UnicodeString;
-    procedure SetHeaderHint(aIndex: Integer; aValue: UnicodeString);
+    function GetHeaderHint(aIndex: Integer): String;
+    procedure SetHeaderHint(aIndex: Integer; const aValue: String);
   protected
     procedure DoClick(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     function GetHint: UnicodeString; override;
@@ -1270,7 +1270,7 @@ type
     procedure SetEnabled(aValue: Boolean); override;
     procedure SetVisible(aValue: Boolean); override;
   public
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aDefaultCaption: UnicodeString;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; const aDefaultCaption: UnicodeString;
                        aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
     procedure Clear; override;
     function Count: Integer; override;
@@ -1859,13 +1859,13 @@ begin
 end;
 
 
-function TKMControl.GetHint: UnicodeString;
+function TKMControl.GetHint: String;
 begin
   Result := fHint;
 end;
 
 
-procedure TKMControl.SetHint(aHint: UnicodeString);
+procedure TKMControl.SetHint(const aHint: String);
 begin
   //fHint := StringReplace(aHint, '|', ' ', [rfReplaceAll]); //Not sure why we were need to replace | here...
   fHint := aHint;
@@ -3872,13 +3872,13 @@ begin
 end;
 
 
-procedure TKMRadioGroup.Add(aText: UnicodeString; aEnabled: Boolean);
+procedure TKMRadioGroup.Add(const aText: String; aEnabled: Boolean);
 begin
   Add(aText, '', aEnabled);
 end;
 
 
-procedure TKMRadioGroup.Add(aText, aHint: UnicodeString; aEnabled: Boolean = True);
+procedure TKMRadioGroup.Add(const aText, aHint: String; aEnabled: Boolean = True);
 begin
   if fCount >= Length(fItems) then
     SetLength(fItems, fCount + 8);
@@ -4337,7 +4337,7 @@ begin
 end;
 
 
-procedure TKMNumericEdit.SetHint(aValue: UnicodeString);
+procedure TKMNumericEdit.SetHint(const aValue: String);
 begin
   inherited;
   fButtonDec.Hint := aValue;
@@ -4585,13 +4585,13 @@ begin
 end;
 
 
-procedure TKMWareOrderRow.SetOrderRemHint(aValue: UnicodeString);
+procedure TKMWareOrderRow.SetOrderRemHint(const aValue: String);
 begin
   fOrderRem.Hint := aValue;
 end;
 
 
-procedure TKMWareOrderRow.SetOrderAddHint(aValue: UnicodeString);
+procedure TKMWareOrderRow.SetOrderAddHint(const aValue: String);
 begin
   fOrderAdd.Hint := aValue;
 end;
@@ -6058,7 +6058,7 @@ end;
 
 
 //Add separator just before aPosition item in list with aText on it
-procedure TKMListBox.AddSeparator(aPosition: Integer; aText: String = '');
+procedure TKMListBox.AddSeparator(aPosition: Integer; const aText: String = '');
 begin
   fSeparatorTexts.Add(aText);
   SetLength(fSeparatorPositions, Length(fSeparatorPositions) + 1);
@@ -6454,13 +6454,13 @@ begin
 end;
 
 
-function TKMListHeader.GetHeaderHint(aIndex: Integer): UnicodeString;
+function TKMListHeader.GetHeaderHint(aIndex: Integer): String;
 begin
   Result := fColumns[aIndex].HeaderHint;
 end;
 
 
-procedure TKMListHeader.SetHeaderHint(aIndex: Integer; aValue: UnicodeString);
+procedure TKMListHeader.SetHeaderHint(aIndex: Integer; const aValue: String);
 begin
   fColumns[aIndex].HeaderHint := aValue;
 end;
@@ -7561,7 +7561,7 @@ end;
 
 
 { TKMDropList }
-constructor TKMDropList.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aDefaultCaption: UnicodeString;
+constructor TKMDropList.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; const aDefaultCaption: UnicodeString;
                                aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aFont, aStyle, aAutoClose);

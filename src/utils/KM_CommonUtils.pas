@@ -14,7 +14,7 @@ uses
   {$ENDIF}
   ;
 
-  function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+  function IfThenS(aCondition: Boolean; const aIfTrue, aIfFalse: String): String;
 
   function KMGetCursorDirection(X,Y: integer): TKMDirection;
 
@@ -48,10 +48,10 @@ uses
   function GetKaMSeed: Integer;
   function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
   function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
-  function KaMRandom(aCaller: String): Extended; overload;
-  function KaMRandom(aMax: Integer; aCaller: String): Integer; overload;
-  function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer; overload;
-  function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single; overload;
+  function KaMRandom(const aCaller: String): Extended; overload;
+  function KaMRandom(aMax: Integer; const aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Integer; const aCaller: String): Integer; overload;
+  function KaMRandomS(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
   function TimeGet: Cardinal;
   function GetTimeSince(aTime: Cardinal): Cardinal;
@@ -91,9 +91,9 @@ uses
 
   function GetNoColorMarkupText(const aText: UnicodeString): UnicodeString;
 
-  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True); overload;
-  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True); overload;
-  procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; const aExt: String; aIncludeSubdirs: Boolean = True); overload;
+  procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True); overload;
 
   function DeleteDoubleSpaces(const aString: string): string;
 
@@ -108,9 +108,9 @@ uses
   function StrContains(const aStr, aSubStr: String): Boolean;
   function StrTrimRight(const aStr: String; aCharsToTrim: TKMCharArray): String;
   function StrTrimChar(const Str: String; Ch: Char): String;
-  procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings);
+  procedure StringSplit(const Str: string; Delimiter: Char; ListOfStrings: TStrings);
   {$IFDEF WDC}
-  procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
+  procedure StrSplit(const aStr, aDelimiters: String; var aStrings: TStringList);
   {$ENDIF}
   function StrSplitA(const aStr, aDelimiters: String): TAnsiStringArray;
 
@@ -120,13 +120,13 @@ uses
 const
   DEFAULT_ATTEMPS_CNT_TO_TRY = 3;
 
-  function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+  function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: String; var aErrorStr: String;
                             aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 
-  function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+  function TryExecuteMethodProc(const aStrParam, aMethodName: String; var aErrorStr: String;
                                 aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
 
-  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+  function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: String; var aErrorStr: String;
                                 aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean; overload;
 
 implementation
@@ -142,7 +142,7 @@ var
   fKaMSeed: Integer;
 
 
-function IfThenS(aCondition: Boolean; aIfTrue, aIfFalse: UnicodeString): UnicodeString;
+function IfThenS(aCondition: Boolean; const aIfTrue, aIfFalse: String): String;
 begin
   if aCondition then
     Result := aIfTrue
@@ -905,7 +905,7 @@ begin
 end;
 
 
-procedure LogKamRandom(aValue: Integer; aCaller: String); overload;
+procedure LogKamRandom(aValue: Integer; const aCaller: String); overload;
 begin
   if (gLog <> nil) and gLog.CanLogRandomChecks() then
     gLog.LogRandomChecks(Format('KaMRandom: %15d Caller: %s', [aValue, aCaller]));
@@ -959,7 +959,7 @@ begin
 end;
 
 
-function KaMRandom(aCaller: String): Extended;
+function KaMRandom(const aCaller: String): Extended;
 begin
   Result := KaMRandomWSeed(fKamSeed);
 
@@ -967,7 +967,7 @@ begin
 end;
 
 
-function KaMRandom(aMax: Integer; aCaller: String): Integer;
+function KaMRandom(aMax: Integer; const aCaller: String): Integer;
 begin
   if CUSTOM_RANDOM then
     Result := Trunc(KaMRandom('*' + aCaller)*aMax)
@@ -978,7 +978,7 @@ begin
 end;
 
 
-function KaMRandomS(Range_Both_Directions: Integer; aCaller: String): Integer;
+function KaMRandomS(Range_Both_Directions: Integer; const aCaller: String): Integer;
 begin
   Result := KaMRandom(Range_Both_Directions*2+1, '*' + aCaller) - Range_Both_Directions;
 
@@ -986,7 +986,7 @@ begin
 end;
 
 
-function KaMRandomS(Range_Both_Directions: Single; aCaller: String): Single;
+function KaMRandomS(Range_Both_Directions: Single; const aCaller: String): Single;
 begin
   Result := KaMRandom(Round(Range_Both_Directions*20000)+1, '*' + aCaller)/10000-Range_Both_Directions;
 
@@ -1038,7 +1038,7 @@ begin
 end;
 
 
-procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aIncludeSubdirs: Boolean = True);
+procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; aIncludeSubdirs: Boolean = True);
 var
   ValidateFn: TBooleanStringFunc;
 begin
@@ -1047,7 +1047,7 @@ begin
 end;
 
 
-procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aExt: String; aIncludeSubdirs: Boolean = True);
+procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; const aExt: String; aIncludeSubdirs: Boolean = True);
 var
   SR: TSearchRec;
 begin
@@ -1069,7 +1069,7 @@ begin
 end;
 
 
-procedure GetAllPathsInDir(aDir: UnicodeString; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True);
+procedure GetAllPathsInDir(const aDir: String; aSL: TStringList; aValidateFn: TBooleanStringFunc; aIncludeSubdirs: Boolean = True);
 var
   SR: TSearchRec;
 begin
@@ -1212,7 +1212,7 @@ begin
 end;
 
 
-procedure StringSplit(Str: string; Delimiter: Char; ListOfStrings: TStrings) ;
+procedure StringSplit(const Str: string; Delimiter: Char; ListOfStrings: TStrings) ;
 begin
    ListOfStrings.Clear;
    ListOfStrings.Delimiter       := Delimiter;
@@ -1222,7 +1222,7 @@ end;
 
 
 {$IFDEF WDC}
-procedure StrSplit(aStr, aDelimiters: String; var aStrings: TStringList);
+procedure StrSplit(const aStr, aDelimiters: String; var aStrings: TStringList);
 var
   StrArray: TStringDynArray;
   I: Integer;
@@ -1304,7 +1304,7 @@ begin
 end;
 {$IFEND}
 
-function TryExecuteMethod(aObjParam: TObject; aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: String; var aErrorStr: String;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;
@@ -1335,7 +1335,7 @@ begin
 end;
 
 
-function TryExecuteMethodProc(const aStrParam, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+function TryExecuteMethodProc(const aStrParam, aMethodName: String; var aErrorStr: String;
                               aMethodProc: TUnicodeStringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;
@@ -1366,7 +1366,7 @@ begin
 end;
 
 
-function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: UnicodeString; var aErrorStr: UnicodeString;
+function TryExecuteMethodProc(const aStrParam1, aStrParam2, aMethodName: String; var aErrorStr: String;
                               aMethodProc: TUnicode2StringEventProc; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
 var
   Success: Boolean;

@@ -30,10 +30,10 @@ type
     function GetProcParamType(aIndex: Integer): TKMCmdProcParamTypeKind;
     function GetProcParamsCnt: Integer;
 
-    function P2B(aParam: String): Boolean; inline;
-    function P2I(aParam: String): Integer; inline;
-    function P2S(aParam: String): Single; inline;
-    function P2U(aParam: String): String; inline;
+    function P2B(const aParam: String): Boolean; inline;
+    function P2I(const aParam: String): Integer; inline;
+    function P2S(const aParam: String): Single; inline;
+    function P2U(const aParam: String): String; inline;
   public
     constructor Create; overload;
     constructor Create(const aName, aProcName: AnsiString); overload;
@@ -47,7 +47,7 @@ type
 
     procedure TryCallProcedure(aHandID: TKMHandID; const P: TKMScriptCommandParamsArray);
     function ValidateParams(const aParams: TKMScriptCommandParamsArray): Boolean;
-    function ParseParameters(aProcedureStr: String; aRow: Integer): Boolean;
+    function ParseParameters(const aProcedureStr: String; aRow: Integer): Boolean;
     function Params2String(const aParams: TKMScriptCommandParamsArray; aColorfull: Boolean = True): String;
     function ParamsTypes2String(aColorfull: Boolean = True): String;
 
@@ -494,22 +494,22 @@ begin
 end;
 
 
-function TKMConsoleCommand.P2B(aParam: String): Boolean;
+function TKMConsoleCommand.P2B(const aParam: String): Boolean;
 begin
   Result := StrToBool(aParam);
 end;
 
-function TKMConsoleCommand.P2I(aParam: String): Integer;
+function TKMConsoleCommand.P2I(const aParam: String): Integer;
 begin
   Result := StrToInt(aParam);
 end;
 
-function TKMConsoleCommand.P2S(aParam: String): Single;
+function TKMConsoleCommand.P2S(const aParam: String): Single;
 begin
   Result := StrToFloat(aParam, gSingleDotFormat);
 end;
 
-function TKMConsoleCommand.P2U(aParam: String): String;
+function TKMConsoleCommand.P2U(const aParam: String): String;
 begin
   Result := aParam;
 end;
@@ -561,7 +561,7 @@ begin
 end;
 
 
-function TKMConsoleCommand.ParseParameters(aProcedureStr: String; aRow: Integer): Boolean;
+function TKMConsoleCommand.ParseParameters(const aProcedureStr: String; aRow: Integer): Boolean;
 //Use const for ScriptValidator. We do not want to load txt libraries for it since it could be placed anywhere
 const
   TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS_STR =
@@ -586,7 +586,7 @@ var
       end;
   end;
 
-  function GetCommandType(aStr: String): TKMCmdProcParamTypeKind;
+  function GetCommandType(const aStr: String): TKMCmdProcParamTypeKind;
   var
     PTK: TKMCmdProcParamTypeKind;
   begin

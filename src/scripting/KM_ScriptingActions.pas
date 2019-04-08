@@ -10,7 +10,7 @@ uses
 type
   TKMScriptActions = class(TKMScriptEntity)
   private
-    procedure LogStr(aText: String);
+    procedure LogStr(const aText: String);
   public
     function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;
                          aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; aRandomGroups: Boolean;
@@ -96,7 +96,7 @@ type
     procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean);
     procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer);
 
-    procedure Log(aText: AnsiString);
+    procedure Log(const aText: AnsiString);
 
     function MapTileSet(X, Y, aType, aRotation: Integer): Boolean;
     function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean;
@@ -104,10 +104,10 @@ type
     function MapTileHeightSet(X, Y, Height: Integer): Boolean;
     function MapTileObjectSet(X, Y, Obj: Integer): Boolean;
 
-    procedure OverlayTextSet(aPlayer: Shortint; aText: AnsiString);
-    procedure OverlayTextSetFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
-    procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString);
-    procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
+    procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
+    procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
+    procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
+    procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 
     procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer);
 
@@ -151,10 +151,10 @@ type
     procedure RemoveRoad(X, Y: Word);
 
     procedure SetTradeAllowed(aPlayer, aResType: Word; aAllowed: Boolean);
-    procedure ShowMsg(aPlayer: Shortint; aText: AnsiString);
-    procedure ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
-    procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; aText: AnsiString);
-    procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; aText: AnsiString; Params: array of const);
+    procedure ShowMsg(aPlayer: Shortint; const aText: AnsiString);
+    procedure ShowMsgFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
+    procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString);
+    procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString; Params: array of const);
 
     procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean);
     function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean;
@@ -1739,7 +1739,7 @@ end;
 //* Displays a message to a player.
 //* If the player index is -1 the message will be shown to all players.
 //Input text is ANSI with libx codes to substitute
-procedure TKMScriptActions.ShowMsg(aPlayer: Shortint; aText: AnsiString);
+procedure TKMScriptActions.ShowMsg(aPlayer: Shortint; const aText: AnsiString);
 begin
   try
     if (aPlayer = gMySpectator.HandID) or (aPlayer = PLAYER_NONE) then
@@ -1756,7 +1756,7 @@ end;
 //* If the player index is -1 the message will be shown to all players.
 //* Params: Array of arguments
 //Input text is ANSI with libx codes to substitute
-procedure TKMScriptActions.ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
+procedure TKMScriptActions.ShowMsgFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 begin
   try
     try
@@ -1777,7 +1777,7 @@ end;
 //* Displays a message to a player with a goto button that takes the player to the specified location.
 //* If the player index is -1 the message will be shown to all players.
 //Input text is ANSI with libx codes to substitute
-procedure TKMScriptActions.ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; aText: AnsiString);
+procedure TKMScriptActions.ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString);
 begin
   try
     if gTerrain.TileInMapCoords(aX, aY) then
@@ -1800,7 +1800,7 @@ end;
 //* If the player index is -1 the message will be shown to all players.
 //* Params: Array of arguments
 //Input text is ANSI with libx codes to substitute
-procedure TKMScriptActions.ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; aText: AnsiString; Params: array of const);
+procedure TKMScriptActions.ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString; Params: array of const);
 begin
   try
     try
@@ -2403,7 +2403,7 @@ end;
 //* Writes a line of text to the game log file. Useful for debugging.
 //* Note that many calls to this procedure will have a noticeable performance impact,
 //* as well as creating a large log file, so it is recommended you don't use it outside of debugging
-procedure TKMScriptActions.Log(aText: AnsiString);
+procedure TKMScriptActions.Log(const aText: AnsiString);
 begin
   try
     fOnScriptError(seLog, UnicodeString(aText));
@@ -2415,7 +2415,7 @@ end;
 
 
 //private utility function
-procedure TKMScriptActions.LogStr(aText: String);
+procedure TKMScriptActions.LogStr(const aText: String);
 begin
   Log(AnsiString(aText));
 end;
@@ -2712,7 +2712,7 @@ end;
 //* Version: 5333
 //* Sets text overlaid on top left of screen.
 //* If the player index is -1 it will be set for all players.
-procedure TKMScriptActions.OverlayTextSet(aPlayer: Shortint; aText: AnsiString);
+procedure TKMScriptActions.OverlayTextSet(aPlayer: Shortint; const aText: AnsiString);
 begin
   try
     //Text from script should be only ANSI Latin, but UI is Unicode, so we switch it
@@ -2731,7 +2731,7 @@ end;
 //* Sets text overlaid on top left of screen with formatted arguments (same as Format function).
 //* If the player index is -1 it will be set for all players.
 //* Params: Array of arguments
-procedure TKMScriptActions.OverlayTextSetFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
+procedure TKMScriptActions.OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 begin
   try
     if InRange(aPlayer, -1, gHands.Count - 1) then //-1 means all players
@@ -2756,7 +2756,7 @@ end;
 //* Version: 5333
 //* Appends to text overlaid on top left of screen.
 //* If the player index is -1 it will be appended for all players.
-procedure TKMScriptActions.OverlayTextAppend(aPlayer: Shortint; aText: AnsiString);
+procedure TKMScriptActions.OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString);
 begin
   try
     //Text from script should be only ANSI Latin, but UI is Unicode, so we switch it
@@ -2775,7 +2775,7 @@ end;
 //* Appends to text overlaid on top left of screen with formatted arguments (same as Format function).
 //* If the player index is -1 it will be appended for all players.
 //* Params: Array of arguments
-procedure TKMScriptActions.OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const);
+procedure TKMScriptActions.OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const);
 begin
   try
     if InRange(aPlayer, -1, gHands.Count - 1) then //-1 means all players

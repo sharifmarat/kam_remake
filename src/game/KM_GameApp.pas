@@ -34,10 +34,10 @@ type
     fOnGameEnd: TKMGameModeChangeEvent;
 
     procedure SaveCampaignsProgress;
-    procedure GameLoadingStep(const aText: UnicodeString);
+    procedure GameLoadingStep(const aText: String);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
-    procedure LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
+    procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
@@ -421,7 +421,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
+procedure TKMGameApp.GameLoadingStep(const aText: String);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
   Render;
@@ -576,7 +576,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
+procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
 var
   LoadError: UnicodeString;
 begin
@@ -614,7 +614,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                         aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                         aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 var

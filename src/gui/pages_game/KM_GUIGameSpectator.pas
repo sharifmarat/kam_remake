@@ -24,7 +24,7 @@ const
 type
   TKMGUIGameSpectatorItem = class(TKMControl)
   private
-    fHandIndex: Integer;
+    fHandID: Integer;
     fImageID: Word;
     fValue: String;
     fAdditionalValue: String;
@@ -34,7 +34,7 @@ type
     FDoHighlight: TBoolIntFuncSimple;
     procedure ItemClicked(Sender: TObject);
   public
-    constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer;
+    constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String; AHandID: Integer;
                        aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
     property ItemTag: Integer read FItemTag;
     property Value: String read FValue write FValue;
@@ -197,14 +197,14 @@ uses
   KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
 
 { TKMGUIGameSpectatorItem }
-constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; AHint: String; AHandIndex: Integer;
-                                           aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
+constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String;
+                                           AHandID: Integer; aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
 begin
   inherited Create(aParent, 0, 0, GUI_SPECTATOR_ITEM_WIDTH, GUI_SPECTATOR_ITEM_HEIGHT);
 
   FItemTag := ATag;
   Hint := AHint;
-  FHandIndex := AHandIndex;
+  fHandID := AHandID;
   FImageID := AImageID;
   FValue := '';
   FAdditionalValue := '';
@@ -230,7 +230,7 @@ begin
 
   PaintLightness := DEFAULT_HIGHLIGHT_COEF * (Byte((csOver in State) and FDoHighlight(FItemTag)));
   TKMRenderUI.WritePicture(AbsLeft + 2, AbsTop, Width - 4, Height - 4, [], rxGui, FImageID, True,
-                           gHands[FHandIndex].FlagColor, PaintLightness);
+                           gHands[fHandID].FlagColor, PaintLightness);
 
   if FProgress >= 0 then
     TKMRenderUI.WritePercentBar(AbsLeft, AbsTop + Height - 6, Width, 6, FProgress, 0);

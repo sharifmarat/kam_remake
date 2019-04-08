@@ -20,14 +20,14 @@ type
     DefaultValue: string;
     Flag:        TKMParamFlag;
     class function ParamFlagToStr(aFlags: TKMParamFlag): string;
-    class function StrToParamFlag(aValue: string): TKMParamFlag;
+    class function StrToParamFlag(const aValue: string): TKMParamFlag;
     constructor Create;
   end;
 
   TKMParamList = class(TObjectList<TKMParam>)
   public
     function NewItem: TKMParam;
-    function IndexByName(aParamName: string): Integer; virtual;
+    function IndexByName(const aParamName: string): Integer; virtual;
   end;
 
 implementation
@@ -45,7 +45,7 @@ begin
   end;
 end;
 
-class function TKMParam.StrToParamFlag(aValue: string): TKMParamFlag;
+class function TKMParam.StrToParamFlag(const aValue: string): TKMParamFlag;
 var
   I: TKMParamFlag;
 begin
@@ -72,7 +72,7 @@ begin
   Add(Result);
 end;
 
-function TKMParamList.IndexByName(aParamName: string): Integer;
+function TKMParamList.IndexByName(const aParamName: string): Integer;
 var
   I: Integer;
 begin
