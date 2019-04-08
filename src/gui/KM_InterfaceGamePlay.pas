@@ -162,6 +162,7 @@ type
     procedure SetViewportPos(const aLoc: TKMPointF);
     procedure CheckMessageKeys(Key: Word);
     function CanShowChat: Boolean;
+    function CanShowAllies: Boolean;
     procedure UpdateMessageImages;
   protected
     Sidebar_Top: TKMImage;
@@ -2196,7 +2197,9 @@ var
   I: Integer;
 begin
   for I := 0 to MAX_VISIBLE_MSGS do
-    Image_Message[I].Top := Panel_Main.Height - 48 - I * 48 - IfThen(CanShowChat, 48 * 2) + IfThen(fUIMode = umSP, 48);
+    Image_Message[I].Top := Panel_Main.Height - 48 - I * 48
+                            - IfThen(CanShowChat, 48)
+                            - IfThen(CanShowAllies, 48);
 end;
 
 
@@ -2241,7 +2244,7 @@ begin
   // Chat and Allies setup should be accessible only in Multiplayer
   Image_Chat.Visible       := CanShowChat;
   Label_ChatUnread.Visible := CanShowChat;
-  Image_MPAllies.Visible   := fUIMode in [umMP, umSpectate];
+  Image_MPAllies.Visible   := CanShowAllies;
 
   // Message stack is visible in Replay as it shows which messages player got
   // and does not affect replay consistency
@@ -2933,7 +2936,13 @@ end;
 
 function TKMGamePlayInterface.CanShowChat: Boolean;
 begin
-  Result := (fUIMode in [umMP, umSpectate]) or gScriptEvents.HasConsoleCommands;
+  Result := (fUIMode in [umMP, umSpectate]) or ((fUIMode = umSP) and gScriptEvents.HasConsoleCommands);
+end;
+
+
+function TKMGamePlayInterface.CanShowAllies: Boolean;
+begin
+  Result := fUIMode in [umMP, umSpectate];
 end;
 
 
