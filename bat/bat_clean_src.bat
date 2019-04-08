@@ -10,7 +10,9 @@ FOR /D /R %%X IN (__recovery) DO RD /S /Q "%%X"
 FOR /D /R %%X IN (backup) DO RD /S /Q "%%X"
 
 rmdir /S /Q logs dcu
+if %IncludeScriptingEditor%==True (
 rmdir /S /Q "%ScriptingEditorDir%"\bin\SE_Data\Logs
+)
 
 erase /F /Q /S *.~* *.ddp *.drc *.dcp *.dcu
 erase /F /Q /S *.o *.or *.ppu *.compiled *.local

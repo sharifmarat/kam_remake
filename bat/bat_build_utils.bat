@@ -18,6 +18,8 @@ REM Build Translation Manager
 msbuild ..\Utils\TranslationManager\TranslationManager.dproj /p:Configuration=Release /t:Build /clp:ErrorsOnly /fl /flp:LogFile="bat_build_translation_manager.log"
 
 REM Build Scripting Editor
+if %IncludeScriptingEditor%==True (
 msbuild "%ScriptingEditorDir%"\ScriptingEditor.dproj /p:Configuration=Release /t:Build /clp:ErrorsOnly /fl /flp:LogFile="bat_build_script_editor.log"
+)
 
 call bat_build_linux_servers.bat

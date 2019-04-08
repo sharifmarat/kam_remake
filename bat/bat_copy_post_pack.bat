@@ -50,9 +50,11 @@ xcopy ..\vorbis.dll "%kam_folder%"\vorbis.dll* /y /r /i
 xcopy ..\vorbisfile.dll "%kam_folder%"\vorbisfile.dll* /y /r /i
 
 @REM copy ScriptingEditor
+if %IncludeScriptingEditor%==True (
 xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\ScriptingEditor /y /r /i
 xcopy "%ScriptingEditorDir%"\bin\SE_Data "%kam_folder%"\ScriptingEditor\SE_Data\ /y /r /s
 xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptingEditor\SE_Data\KMR\ScriptValidator.exe* /y /r /i
+)
 @REM no need for KP folder
 rmdir /S /Q "%kam_folder%"\bin\SE_Data\KP
 
