@@ -480,10 +480,10 @@ procedure TForm1.btnGenerateClick(Sender: TObject);
   end;
 
 begin
-//  ParseList('Action', fListActions, edtActionsFile.Text, edtHeaderFileActions.Text, edtOutputFileActions.Text);
-//  ParseList('Event', fListEvents, edtEventsFile.Text, edtHeaderFileEvents.Text, edtOutputFileEvents.Text, False);
+  ParseList('Action', fListActions, edtActionsFile.Text, edtHeaderFileActions.Text, edtOutputFileActions.Text);
+  ParseList('Event', fListEvents, edtEventsFile.Text, edtHeaderFileEvents.Text, edtOutputFileEvents.Text, False);
   ParseList('State', fListStates, edtStatesFile.Text, edtHeaderFileStates.Text, edtOutputFileStates.Text);
-//  ParseList('Utility function<br/>', fListUtils, edtUtilsFile.Text, edtHeaderFileUtils.Text, edtOutputFileUtils.Text);
+  ParseList('Utility function<br/>', fListUtils, edtUtilsFile.Text, edtHeaderFileUtils.Text, edtOutputFileUtils.Text);
 
   TabControl1Change(nil);
 end;
