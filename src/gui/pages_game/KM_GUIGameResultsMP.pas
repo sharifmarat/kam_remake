@@ -80,6 +80,7 @@ type
     fStatsValues: array[TKMStatType] of TKMStatsValues;
 
     fShowAIResults: Boolean;
+    procedure FreeListToShow(aStatType: TKMStatType);
     procedure RecreateListToShow(aStatType: TKMStatType);
     procedure BackClick(Sender: TObject);
     function DoAdjoinSameColorHand(aHandId: Integer): Boolean;
@@ -366,7 +367,7 @@ begin
       for WType := High(TKMChartWarriorType) downto Low(TKMChartWarriorType) do
         FreeAndNil(Charts_Army[ST,CKind,WType]);
 
-    FreeAndNil(fListToShow[ST]);
+    FreeListToShow(ST);
     FreeAndNil(fChartSeparatorsPos[ST]);
   end;
 end;
@@ -1148,9 +1149,21 @@ begin
 end;
 
 
+procedure TKMGameResultsMP.FreeListToShow(aStatType: TKMStatType);
+var
+  I: Integer;
+begin
+  //Free objects inside (there could be TStringList's)
+  if fListToShow[aStatType] <> nil then
+    fListToShow[aStatType].Clear;
+  //Free list itself
+  FreeAndNil(fListToShow[aStatType]);
+end;
+
+
 procedure TKMGameResultsMP.RecreateListToShow(aStatType: TKMStatType);
 begin
-  FreeAndNil(fListToShow[aStatType]);
+  FreeListToShow(aStatType);
 
   fListToShow[aStatType] := TStringList.Create;
   fListToShow[aStatType].Sorted := False;     //Need to append players to show at the end of list
