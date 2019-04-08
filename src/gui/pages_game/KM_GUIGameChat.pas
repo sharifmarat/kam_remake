@@ -7,13 +7,15 @@ uses
   Classes, Math, StrUtils, SysUtils, Generics.Collections,
   KM_ScriptingConsoleCommands,
   KM_Networking, KM_NetworkTypes,
-  KM_InterfaceGame, KM_InterfaceDefaults,
+  KM_InterfaceGame, KM_InterfaceDefaults, KM_CommonTypes,
   KM_Controls, KM_Defaults, KM_Points, KM_Console;
 
 
 type
   TKMGUIGameChat = class
   private
+    fUIMode: TUIMode;
+    fOnChatMessage: TUnicodeStringEvent;
     procedure Chat_Close(Sender: TObject);
     function DoPost: Boolean;
     function Chat_Post(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
@@ -43,7 +45,7 @@ type
       Image_ChatClose: TKMImage;
       Menu_Chat: TKMPopUpMenu;
   public
-    constructor Create(aParent: TKMPanel);
+    constructor Create(aParent: TKMPanel; aUIMode: TUIMode; aOnChatMessage: TUnicodeStringEvent);
 
     property PanelChatRect: TKMRect read GetPanelChatRect;
 
@@ -64,9 +66,12 @@ uses
 
 
 { TKMGUIGameChat }
-constructor TKMGUIGameChat.Create(aParent: TKMPanel);
+constructor TKMGUIGameChat.Create(aParent: TKMPanel; aUIMode: TUIMode; aOnChatMessage: TUnicodeStringEvent);
 begin
   inherited Create;
+
+  fUIMode := aUIMode;
+  fOnChatMessage := aOnChatMessage;
 
   Panel_Chat := TKMPanel.Create(aParent, TOOLBAR_WIDTH, aParent.Height - MESSAGE_AREA_HEIGHT, 600, MESSAGE_AREA_HEIGHT);
   Panel_Chat.Anchors := [anLeft, anBottom];
@@ -89,7 +94,15 @@ begin
     Memo_ChatText.ScrollDown := True;
     Memo_ChatText.Selectable := False;
 
-    Edit_ChatMsg := TKMEdit.Create(Panel_Chat, 75, 154, 380, 20, fntArial);
+    Button_ChatRecipient := TKMButtonFlat.Create(Panel_Chat,45,154,132,20,0);
+    Button_ChatRecipient.Font := fntGrey;
+    Button_ChatRecipient.CapOffsetY := -11;
+    Button_ChatRecipient.OnClick := Chat_MenuShow;
+    Button_ChatRecipient.Anchors := [anRight, anBottom];
+    Button_ChatRecipient.Visible := fUIMode in [umMP, umSpectate];
+
+    Edit_ChatMsg := TKMEdit.Create(Panel_Chat, 45 + 30*Byte(fUIMode in [umMP, umSpectate]), 154,
+                                              410 - 30*Byte(fUIMode in [umMP, umSpectate]), 20, fntArial);
     Edit_ChatMsg.Anchors := [anLeft, anRight, anBottom];
     Edit_ChatMsg.OnChange := ChatTextChanged;
     Edit_ChatMsg.OnKeyDown := Chat_Post;
@@ -101,12 +114,6 @@ begin
     Button_MemoCopyAllowed.Anchors := [anBottom];
     Button_MemoCopyAllowed.Hint := gResTexts[TX_CHAT_COPY_PASTE_SWITCH];
     Button_MemoCopyAllowed.OnClick := ChatMemo_CopyAllowed_Click;
-
-    Button_ChatRecipient := TKMButtonFlat.Create(Panel_Chat,45,154,132,20,0);
-    Button_ChatRecipient.Font := fntGrey;
-    Button_ChatRecipient.CapOffsetY := -11;
-    Button_ChatRecipient.OnClick := Chat_MenuShow;
-    Button_ChatRecipient.Anchors := [anRight, anBottom];
 
     Image_ChatClose := TKMImage.Create(Panel_Chat, 600-80, 18, 32, 32, 52);
     Image_ChatClose.Anchors := [anTop, anRight];
@@ -134,7 +141,8 @@ begin
   case Key of
     //Sending chat during reconnections at best causes messages to be lost and at worst causes
     //crashes due to intermediate connecting states. Therefore we block sending completely.
-    VK_RETURN:  Result := (gGame.Networking <> nil) and not gGame.Networking.IsReconnecting;
+    VK_RETURN:  Result := ((gGame.Networking <> nil) and not gGame.Networking.IsReconnecting)
+                           or gGame.IsSingleplayer;
     VK_UP,
     VK_DOWN:    Result := Button_MemoCopyAllowed.Down;
   end;
@@ -150,22 +158,33 @@ end;
 
 procedure TKMGUIGameChat.HandleError(const aMsg: UnicodeString);
 begin
-  gGame.Networking.PostLocalMessage(aMsg, csSystem);
+  if fUIMode in [umMP, umSpectate] then
+    gGame.Networking.PostLocalMessage(aMsg, csSystem)
+  else if Assigned(fOnChatMessage) then
+    fOnChatMessage(aMsg);
 end;
 
 
 procedure TKMGUIGameChat.PostLocalMsg(const aMsg: UnicodeString);
 begin
-  gGame.Networking.PostLocalMessage(aMsg, csChat);
+  if fUIMode in [umMP, umSpectate] then
+    gGame.Networking.PostLocalMessage(aMsg, csChat)
+  else if Assigned(fOnChatMessage) then
+    fOnChatMessage(aMsg)
 end;
 
 
 procedure TKMGUIGameChat.PostMsg(const aMsg: UnicodeString);
 begin
-  if gGameApp.Chat.Mode = cmWhisper then
-    gGame.Networking.PostChat(aMsg, gGameApp.Chat.Mode, gGameApp.Chat.WhisperRecipient)
-  else
-    gGame.Networking.PostChat(aMsg, gGameApp.Chat.Mode);
+  if fUIMode in [umMP, umSpectate] then
+  begin
+    if gGameApp.Chat.Mode = cmWhisper then
+      gGame.Networking.PostChat(aMsg, gGameApp.Chat.Mode, gGameApp.Chat.WhisperRecipient)
+    else
+      gGame.Networking.PostChat(aMsg, gGameApp.Chat.Mode);
+
+  end else if Assigned(fOnChatMessage) then
+    fOnChatMessage(aMsg);
 end;
 
 
@@ -269,8 +288,10 @@ procedure TKMGUIGameChat.Chat_MenuSelect(aItemTag: TKMNetHandleIndex);
     Button_ChatRecipient.Caption := aCaption;
     Button_ChatRecipient.Width := txtWidth;
 
-    Edit_ChatMsg.AbsLeft := Button_ChatRecipient.AbsLeft + Button_ChatRecipient.Width + 4;
-    Edit_ChatMsg.Width := Memo_ChatText.Width - Button_ChatRecipient.Width - 4;
+    Edit_ChatMsg.AbsLeft := Button_ChatRecipient.AbsLeft
+                            + Byte(Button_ChatRecipient.IsSetVisible) * (Button_ChatRecipient.Width + 4);
+    Edit_ChatMsg.Width := Memo_ChatText.Width
+                          - Byte(Button_ChatRecipient.IsSetVisible) * (Button_ChatRecipient.Width + 4);
   end;
 
 var

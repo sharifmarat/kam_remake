@@ -9,6 +9,8 @@ uses
 
 
 type
+  TUIMode = (umSP, umMP, umReplay, umSpectate);
+
   TKMMenuPageType =  (gpMainMenu,
                         gpSinglePlayer,
                           gpCampaign,

@@ -152,10 +152,6 @@ begin
   if gGame = nil then //Can't manage console commands while not in the game
     Exit;
 
-  //Only for MP game for now
-  if not gGame.IsMultiplayer then
-    Exit;
-
   if (Length(Text) > 0) and (Text[1] = '/') and (Text[2] <> '/') then
   begin
     TryDoCallConsoleCommand;

@@ -23,7 +23,6 @@ const
 
 type
   TKMTabButtons = (tbBuild, tbRatio, tbStats, tbMenu);
-  TUIMode = (umSP, umMP, umReplay, umSpectate);
 
   TKMGamePlayInterface = class (TKMUserInterfaceGame)
   private
@@ -162,6 +161,8 @@ type
 
     procedure SetViewportPos(const aLoc: TKMPointF);
     procedure CheckMessageKeys(Key: Word);
+    function CanShowChat: Boolean;
+    procedure UpdateMessageImages;
   protected
     Sidebar_Top: TKMImage;
     Sidebar_Middle: TKMImage;
@@ -170,9 +171,9 @@ type
     Bevel_DebugInfo: TKMBevel;
     Label_DebugInfo: TKMLabel;
 
-    Image_MPChat, Image_MPAllies: TKMImage; // Multiplayer buttons
+    Image_Chat, Image_MPAllies: TKMImage; // Multiplayer buttons
     Image_MessageLog: TKMImage;
-    Label_MPChatUnread: TKMLabel;
+    Label_ChatUnread: TKMLabel;
     Image_Message: array[0..MAX_VISIBLE_MSGS] of TKMImage; // Queue of messages covers 32*48=1536px height
     Image_Clock: TKMImage; // Clock displayed when game speed is increased
     Label_Clock: TKMLabel;
@@ -332,7 +333,7 @@ implementation
 uses
   KM_Main, KM_GameInputProcess, KM_GameInputProcess_Multi, KM_AI, KM_RenderUI, KM_GameCursor, KM_Maps,
   KM_HandsCollection, KM_Hand, KM_RenderPool, KM_ResTexts, KM_Game, KM_GameApp, KM_HouseBarracks, KM_HouseTownHall,
-  KM_Utils,
+  KM_Utils, KM_ScriptingEvents,
   KM_CommonUtils, KM_ResLocales, KM_ResSound, KM_Resource, KM_Log, KM_ResCursors, KM_ResFonts, KM_ResKeys,
   KM_ResSprites, KM_ResUnits, KM_ResWares, KM_FogOfWar, KM_Sound, KM_NetPlayersList, KM_MessageLog, KM_NetworkTypes,
   KM_InterfaceMapEditor, KM_HouseWoodcutters,
@@ -776,7 +777,7 @@ begin
   Create_Allies; // MessagePage sibling
 
   // On top of NetWait to allow players to chat while waiting for late opponents
-  fGuiGameChat := TKMGUIGameChat.Create(Panel_Main);
+  fGuiGameChat := TKMGUIGameChat.Create(Panel_Main, fUIMode, ChatMessage);
 
   Create_Message; // Must go bellow message stack
   Create_MessageLog; // Must go bellow message stack
@@ -971,16 +972,16 @@ procedure TKMGamePlayInterface.Create_MessageStack;
 var
   I: Integer;
 begin
-  Image_MPChat := TKMImage.Create(Panel_Main,TOOLBAR_WIDTH,Panel_Main.Height-48,30,48,494);
-  Image_MPChat.Anchors := [anLeft, anBottom];
-  Image_MPChat.HighlightOnMouseOver := true;
-  Image_MPChat.Hint := gResTexts[TX_GAMEPLAY_CHAT_HINT];
-  Image_MPChat.OnClick := Chat_Click;
-  Label_MPChatUnread := TKMLabel.Create(Panel_Main,TOOLBAR_WIDTH,Panel_Main.Height-30,30,36,'',fntOutline,taCenter);
-  Label_MPChatUnread.FontColor := $FF0000FF; // Red
-  Label_MPChatUnread.Anchors := [anLeft, anBottom];
-  Label_MPChatUnread.Hitable := false; // Clicks should only go to the image, not the flashing label
-  Label_MPChatUnread.AutoWrap := true;
+  Image_Chat := TKMImage.Create(Panel_Main,TOOLBAR_WIDTH,Panel_Main.Height-48,30,48,494);
+  Image_Chat.Anchors := [anLeft, anBottom];
+  Image_Chat.HighlightOnMouseOver := true;
+  Image_Chat.Hint := gResTexts[TX_GAMEPLAY_CHAT_HINT];
+  Image_Chat.OnClick := Chat_Click;
+  Label_ChatUnread := TKMLabel.Create(Panel_Main,TOOLBAR_WIDTH,Panel_Main.Height-30,30,36,'',fntOutline,taCenter);
+  Label_ChatUnread.FontColor := $FF0000FF; // Red
+  Label_ChatUnread.Anchors := [anLeft, anBottom];
+  Label_ChatUnread.Hitable := false; // Clicks should only go to the image, not the flashing label
+  Label_ChatUnread.AutoWrap := true;
 
   Image_MPAllies := TKMImage.Create(Panel_Main,TOOLBAR_WIDTH,Panel_Main.Height-48*2,30,48,496);
   Image_MPAllies.Anchors := [anLeft, anBottom];
@@ -1368,7 +1369,7 @@ begin
     Allies_Close(nil);
     Message_Close(nil);
     MessageLog_Close(nil);
-    Label_MPChatUnread.Caption := ''; // No unread messages
+    Label_ChatUnread.Caption := ''; // No unread messages
     fGuiGameChat.Show;
   end;
 end;
@@ -2190,8 +2191,19 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.UpdateMessageImages;
+var
+  I: Integer;
+begin
+  for I := 0 to MAX_VISIBLE_MSGS do
+    Image_Message[I].Top := Panel_Main.Height - 48 - I * 48 - IfThen(CanShowChat, 48 * 2) + IfThen(fUIMode = umSP, 48);
+end;
+
+
 procedure TKMGamePlayInterface.SetMenuState(aTactic: Boolean);
 begin
+  UpdateMessageImages;
+
   Button_Main[tbBuild].Enabled := not aTactic and not HasLostMPGame and not gMySpectator.Hand.InCinematic; //Allow to 'test build' if we are in replay / spectate mode
   Button_Main[tbRatio].Enabled := not aTactic and ((fUIMode in [umReplay, umSpectate]) or (not HasLostMPGame and not gMySpectator.Hand.InCinematic));
   Button_Main[tbStats].Enabled := not aTactic;
@@ -2227,9 +2239,9 @@ begin
   fGuiMenuSettings.SetAutosaveEnabled(fUIMode in [umSP, umMP, umSpectate]);
 
   // Chat and Allies setup should be accessible only in Multiplayer
-  Image_MPChat.Visible       := fUIMode in [umMP, umSpectate];
-  Label_MPChatUnread.Visible := fUIMode in [umMP, umSpectate];
-  Image_MPAllies.Visible     := fUIMode in [umMP, umSpectate];
+  Image_Chat.Visible       := CanShowChat;
+  Label_ChatUnread.Visible := CanShowChat;
+  Image_MPAllies.Visible   := fUIMode in [umMP, umSpectate];
 
   // Message stack is visible in Replay as it shows which messages player got
   // and does not affect replay consistency
@@ -2728,7 +2740,7 @@ begin
   fGuiGameChat.ChatMessage(aData);
 
   if not fGuiGameChat.Visible then
-    Label_MPChatUnread.Caption := IntToStr(StrToIntDef(Label_MPChatUnread.Caption, 0) + 1); // New message
+    Label_ChatUnread.Caption := IntToStr(StrToIntDef(Label_ChatUnread.Caption, 0) + 1); // New message
 end;
 
 
@@ -2907,6 +2919,8 @@ begin
       Rect := fViewport.GetMinimapClip;
       gHands.GetUnitsInRect(Rect, fTeamNames);
     end;
+
+  CheckMessageKeys(Key);
 end;
 
 
@@ -2914,6 +2928,12 @@ procedure TKMGamePlayInterface.GameStarted;
 begin
   if gGame.IsMultiPlayerOrSpec and (gGameApp.Chat.Text <> '') then
     fGuiGameChat.Show;
+end;
+
+
+function TKMGamePlayInterface.CanShowChat: Boolean;
+begin
+  Result := (fUIMode in [umMP, umSpectate]) or gScriptEvents.HasConsoleCommands;
 end;
 
 
@@ -2950,14 +2970,14 @@ begin
     Button_MessageDelete.Click;
 
   // Enter is the shortcut to bring up chat in multiplayer
-  if (Key = gResKeys[SC_CHAT_MP].Key) and (fUIMode in [umMP, umSpectate]) then
+  if (Key = gResKeys[SC_CHAT].Key) and CanShowChat then
   begin
     if not fGuiGameChat.Visible then
     begin
       Allies_Close(nil);
       Message_Close(nil);
       MessageLog_Close(nil);
-      Label_MPChatUnread.Caption := ''; // No unread messages
+      Label_ChatUnread.Caption := ''; // No unread messages
       fGuiGameChat.Show;
     end else
       fGuiGameChat.Focus;
@@ -3179,8 +3199,6 @@ begin
       gRes.Cursors.Cursor := kmcDefault; //Reset cursor, as it could be kmcInfo, f.e.
     end;
   end;
-
-  CheckMessageKeys(Key);
 
   // General function keys
   if Key = gResKeys[SC_PAUSE].Key then
@@ -3862,8 +3880,8 @@ begin
 
   // Update message stack
   // Flash unread message display
-  Label_MPChatUnread.Visible := (fUIMode in [umMP, umSpectate]) and (Label_MPChatUnread.Caption <> '') and not (aTickCount mod 10 < 5);
-  Image_MPChat.Highlight := fGuiGameChat.Visible or (Label_MPChatUnread.Visible and (Label_MPChatUnread.Caption <> ''));
+  Label_ChatUnread.Visible := (fUIMode in [umMP, umSpectate]) and (Label_ChatUnread.Caption <> '') and not (aTickCount mod 10 < 5);
+  Image_Chat.Highlight := fGuiGameChat.Visible or (Label_ChatUnread.Visible and (Label_ChatUnread.Caption <> ''));
   Image_MPAllies.Highlight := Panel_Allies.Visible;
   if (fUIMode in [umSP, umMP]) and not Image_MessageLog.Visible and (gMySpectator.Hand.MessageLog.CountLog > 0) then
   begin
