@@ -430,6 +430,7 @@ begin
     RegisterMethodCheck(c, 'function HouseFlagPoint(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HouseIsComplete(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseOwner(aHouseID: Integer): Integer');
+    RegisterMethodCheck(c, 'function HousePosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HousePositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HousePositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseRepair(aHouseID: Integer): Boolean');
@@ -539,6 +540,7 @@ begin
     RegisterMethodCheck(c, 'function UnitLowHunger: Integer');
     RegisterMethodCheck(c, 'function UnitMaxHunger: Integer');
     RegisterMethodCheck(c, 'function UnitOwner(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitPosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function UnitPositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitPositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitsGroup(aUnitID: Integer): Integer');
@@ -1002,6 +1004,7 @@ begin
       RegisterMethod(@TKMScriptStates.HouseFlagPoint,                           'HouseFlagPoint');
       RegisterMethod(@TKMScriptStates.HouseIsComplete,                          'HouseIsComplete');
       RegisterMethod(@TKMScriptStates.HouseOwner,                               'HouseOwner');
+      RegisterMethod(@TKMScriptStates.HousePosition,                            'HousePosition');
       RegisterMethod(@TKMScriptStates.HousePositionX,                           'HousePositionX');
       RegisterMethod(@TKMScriptStates.HousePositionY,                           'HousePositionY');
       RegisterMethod(@TKMScriptStates.HouseRepair,                              'HouseRepair');
@@ -1111,6 +1114,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitLowHunger,                            'UnitLowHunger');
       RegisterMethod(@TKMScriptStates.UnitMaxHunger,                            'UnitMaxHunger');
       RegisterMethod(@TKMScriptStates.UnitOwner,                                'UnitOwner');
+      RegisterMethod(@TKMScriptStates.UnitPosition,                             'UnitPosition');
       RegisterMethod(@TKMScriptStates.UnitPositionX,                            'UnitPositionX');
       RegisterMethod(@TKMScriptStates.UnitPositionY,                            'UnitPositionY');
       RegisterMethod(@TKMScriptStates.UnitsGroup,                               'UnitsGroup');

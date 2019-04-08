@@ -61,6 +61,7 @@ type
     function HouseFlagPoint(aHouseID: Integer): TKMPoint;
     function HouseIsComplete(aHouseID: Integer): Boolean;
     function HouseOwner(aHouseID: Integer): Integer;
+    function HousePosition(aHouseID: Integer): TKMPoint;
     function HousePositionX(aHouseID: Integer): Integer;
     function HousePositionY(aHouseID: Integer): Integer;
     function HouseRepair(aHouseID: Integer): Boolean;
@@ -168,6 +169,7 @@ type
     function UnitLowHunger: Integer;
     function UnitMaxHunger: Integer;
     function UnitOwner(aUnitID: Integer): Integer;
+    function UnitPosition(aUnitID: Integer): TKMPoint;
     function UnitPositionX(aUnitID: Integer): Integer;
     function UnitPositionY(aUnitID: Integer): Integer;
     function UnitsGroup(aUnitID: Integer): Integer;
@@ -1725,6 +1727,30 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns the Entrance Point of the specified house or (-1;-1) point if House ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.HousePosition(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H <> nil then
+        Result := H.Entrance;
+    end
+    else
+      LogParamWarning('States.HousePosition', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Returns the X coordinate of the specified house or -1 if House ID invalid
 //* Result: X coordinate
@@ -3020,6 +3046,30 @@ begin
     end
     else
       LogParamWarning('States.UnitAt', [aX, aY]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns the TKMPoint with coordinates of the specified unit or (-1;-1) point if Unit ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.UnitPosition(aUnitID: Integer): TKMPoint;
+var
+  U: TKMUnit;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE; //-1 if unit id is invalid
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        Result := U.CurrPosition;
+    end
+    else
+      LogParamWarning('States.UnitPosition', [aUnitID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
