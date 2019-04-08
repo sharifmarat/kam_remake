@@ -371,6 +371,18 @@ end;
 
 
 function TKMScriptEvents.ParseConsoleCommandsProcedures(aScriptCode: AnsiString): Boolean;
+//Use const for ScriptValidator. We do not want to load txt libraries for it since it could be placed anywhere
+const
+  TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND_STR = 'The procedure [ %s ] declared for the script console command /%s was not found';
+
+  function GetErrorStr: String;
+  begin
+    if gResTexts <> nil then
+      Result := gResTexts[TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND]
+    else
+      Result := TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND_STR;
+  end;
+
 var
   I: Integer;
   CmdFound: Boolean;
@@ -391,14 +403,15 @@ begin
       begin
         if RegEx.Match(SL[I]).Success then
         begin
-          CmdPair.Value.ParseParameters(SL[I]);
+          CmdPair.Value.ParseParameters(SL[I], I + 1);
           CmdFound := True;
           Break;
         end;
       end;
       if not CmdFound then
-        raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND],
-                                                     [CmdPair.Value.ProcName, CmdPair.Value.Name]));
+        raise EConsoleCommandParseError.Create(Format(GetErrorStr,
+                                                     [CmdPair.Value.ProcName, CmdPair.Value.Name]),
+                                               0, 0, CmdPair.Value.ProcName);
     end;
   finally
     FreeAndNil(SL);

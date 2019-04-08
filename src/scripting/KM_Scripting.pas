@@ -83,6 +83,7 @@ type
     fDestroyErrorHandler: Boolean;
     fScriptFilesInfo: TKMScriptFilesCollection;
     fErrorHandler: TKMScriptErrorHandler;
+    fValidationIssues: TScriptValidatorResult;
 
     fCustomScriptParams: TKMCustomScriptParamDataArray;
 
@@ -102,6 +103,7 @@ type
 
     property CustomScriptParams[aParam: TKMCustomScriptParam]: TKMCustomScriptParamData read GetCustomScriptParamData;
     property ScriptFilesInfo: TKMScriptFilesCollection read fScriptFilesInfo;
+    property ValidationIssues: TScriptValidatorResult read fValidationIssues write fValidationIssues;
 
     function ScriptMightChangeAfterPreProcessing: Boolean;
     function PreProcessFile(const aFileName: UnicodeString): Boolean; overload;
@@ -287,6 +289,7 @@ begin
     FreeAndNil(fValidationIssues);
 
   fValidationIssues := TScriptValidatorResult.Create;
+  fPreProcessor.ValidationIssues := fValidationIssues;
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
 
@@ -297,7 +300,10 @@ begin
 
     except
       on E: EConsoleCommandParseError do
+      begin
         fErrorHandler.AppendErrorStr(E.Message);
+        fValidationIssues.AddError(E.Row, E.Col, E.Token, E.Message);
+      end;
     end;
 
   if (aCampaignDataTypeFile <> '') and FileExists(aCampaignDataTypeFile) then
@@ -1937,7 +1943,11 @@ begin
       Result := True; // If PreProcess has been done succesfully
     except
       on E: Exception do
+      begin
         fErrorHandler.HandleScriptErrorString(sePreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+        if fValidationIssues <> nil then
+          fValidationIssues.AddError(0, 0, '', 'Script preprocessing errors:' + EolW + E.Message);
+      end;
     end;
   finally
     FreeAndNil(PreProcessor);
@@ -1956,7 +1966,8 @@ const
 
   function AllowGameUpdate: Boolean;
   begin
-    Result := (gGame <> nil) and not gGame.IsMapEditor;
+    Result := ((gGame <> nil) and not gGame.IsMapEditor)
+              or ((gGame = nil) and (gScripting <> nil));
   end;
 
   procedure LoadCustomEventDirectives;
@@ -1982,9 +1993,12 @@ const
           EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParamSL[0]));
 
           if EventType = -1 then
+          begin
             fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak,
-                                                [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]))
-          else
+                                                [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Trim(DirectiveParamSL[0]), 'Unknown directive');
+          end else
             gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
           FreeAndNil(DirectiveParamSL);
@@ -1995,6 +2009,8 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
           end;
       end;
     end;
@@ -2034,6 +2050,8 @@ const
             ErrorStr := Format('Error loading command ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading command');
           end;
       end;
     end;
@@ -2057,8 +2075,13 @@ const
           StringSplit(DirectiveParam, ',', DirectiveParamSL);
 
           if DirectiveParamSL.Count <> 6 then
+          begin
             fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 6, actual: %d. At [%d:%d]' + sLineBreak,
                                                 [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                         'Wrong number of parameters: expected 6, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
 
           HasError := False;
           for I := 0 to 5 do
@@ -2068,6 +2091,9 @@ const
               HasError := True;
               fErrorHandler.AppendErrorStr(Format('Directive ''%s'' wrong parameter: [%s] is not a number. At [%d:%d]' + sLineBreak,
                                                   [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL[I], Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                           Format('Wrong directive parameter: [%s] is not a number', [DirectiveParamSL[I]]));
             end;
 
           if not HasError then
@@ -2095,6 +2121,8 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
           end;
       end;
     end;
@@ -2117,8 +2145,13 @@ const
           StringSplit(DirectiveParam, ',', DirectiveParamSL);
 
           if DirectiveParamSL.Count <> 2 then
+          begin
             fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 2, actual: %d. At [%d:%d]' + sLineBreak,
                                                 [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                         'Wrong number of parameters: expected 2, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
 
           HasError := False;
             if TryStrToFloat(StringReplace(DirectiveParamSL[0], '.', ',', [rfReplaceAll]), GoldOrePriceX)
@@ -2130,6 +2163,9 @@ const
               HasError := True;
               fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has not a number parameter: [%s]. At [%d:%d]' + sLineBreak,
                                                   [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParam, Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                           'Wrong directive parameters type, Integer required');
             end;
 
           if not HasError then
@@ -2159,6 +2195,8 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
           end;
       end;
     end;

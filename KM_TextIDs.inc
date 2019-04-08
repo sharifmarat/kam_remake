@@ -1258,15 +1258,16 @@ TX_WORD_ARMY = 1227; //Army
 TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry units
 
 TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s minutes
-
-TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1236; //Script console command /%s not found
-TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND = 1237; //The procedure [ %s ] declared for the script console command /%s was not found
-TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1238; //Wrong parameter type for script command /%s: [ %s ] 
-TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1239; //Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ] 
-TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1240; //Too many parameters for script command /%s: [ %s ]. Max number of parameters is [%s] (including mandatory HandID parameter)
-TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1241; //Wrong parameters for script command /%s. Expected parameters types are: [%s] 
-TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS = 1242; //Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
-TX_SCRIPT_CONSOLE_CMD_CALLED = 1243; //Command called: /%s(%s)
-TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1244; //Error while calling script command /%s(%s)
+//console commands validation
+TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND = 1236; //The procedure [ %s ] declared for the script console command /%s was not found
+TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1237; //Wrong parameter type for script command /%s: [ %s ] 
+TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ] 
+TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1239; //Too many parameters for script command /%s: [ %s ]. Max number of parameters is [%s] (including mandatory HandID parameter)
+//runtime console errors or output
+TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command /%s. Expected parameters types are: [%s] 
+TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS = 1241; //Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
+TX_SCRIPT_CONSOLE_CMD_CALLED = 1242; //Command called: /%s(%s)
+TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1243; //Error while calling script command /%s(%s)
+TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
 TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable chat history and copy-paste from chat window
