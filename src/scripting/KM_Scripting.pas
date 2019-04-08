@@ -367,6 +367,8 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
+    Sender.AddTypeS('TKMGroupOrder', '(goNone, goWalkTo, goAttackHouse, goAttackUnit, goStorm)');
+
     Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
@@ -415,6 +417,7 @@ begin
     RegisterMethodCheck(c, 'function GroupIdle(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupMember(aGroupID, aMemberIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupMemberCount(aGroupID: Integer): Integer');
+    RegisterMethodCheck(c, 'function GroupOrder(aGroupID: Integer): TKMGroupOrder');
     RegisterMethodCheck(c, 'function GroupOwner(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupType(aGroupID: Integer): Integer');
 
@@ -989,6 +992,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupIdle,                                'GroupIdle');
       RegisterMethod(@TKMScriptStates.GroupMember,                              'GroupMember');
       RegisterMethod(@TKMScriptStates.GroupMemberCount,                         'GroupMemberCount');
+      RegisterMethod(@TKMScriptStates.GroupOrder,                               'GroupOrder');
       RegisterMethod(@TKMScriptStates.GroupOwner,                               'GroupOwner');
       RegisterMethod(@TKMScriptStates.GroupType,                                'GroupType');
 

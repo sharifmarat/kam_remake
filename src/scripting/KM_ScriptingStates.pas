@@ -45,6 +45,7 @@ type
     function GroupIdle(aGroupID: Integer): Boolean;
     function GroupMember(aGroupID, aMemberIndex: Integer): Integer;
     function GroupMemberCount(aGroupID: Integer): Integer;
+    function GroupOrder(aGroupID: Integer): TKMGroupOrder;
     function GroupOwner(aGroupID: Integer): Integer;
     function GroupType(aGroupID: Integer): Integer;
 
@@ -3702,6 +3703,30 @@ begin
     end
     else
       LogParamWarning('States.GroupMemberCount', [aGroupID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns current order of the specified group
+//* Result: TKMGroupOrder
+function TKMScriptStates.GroupOrder(aGroupID: Integer): TKMGroupOrder;
+var
+  G: TKMUnitGroup;
+begin
+  try
+    Result := goNone;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+        Result := G.Order;
+    end
+    else
+      LogParamWarning('States.GroupOrder', [aGroupID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
