@@ -253,7 +253,7 @@ end;
 function TKMScriptEvents.MethodAssigned(aCmdName: AnsiString): Boolean;
 begin
   Result := False;
-  if fConsoleCommands.ContainsKey(aCmdName) and (fConsoleCommands.Items[aCmdName].Handler.Code <> nil) then
+  if fConsoleCommands.ContainsKey(LowerCase(aCmdName)) and (fConsoleCommands.Items[LowerCase(aCmdName)].Handler.Code <> nil) then
   begin
     Result := True;
     Exit;
@@ -263,7 +263,7 @@ end;
 
 function TKMScriptEvents.GetConsoleCommand(aName: AnsiString): TKMConsoleCommand;
 begin
-  Result := fConsoleCommands[aName];
+  Result := fConsoleCommands[LowerCase(aName)];
 end;
 
 
@@ -292,12 +292,12 @@ begin
          Format('Console command name and procedure name should be specidied: [CmdName = %s] [ProcName = [', [aCmdName, aProcName]));
 
 
-  if fConsoleCommands.ContainsKey(aCmdName) then
+  if fConsoleCommands.ContainsKey(LowerCase(aCmdName)) then
     fOnScriptError(sePreprocessorError,
                    Format('Duplicate command declaration: [%s] , command procedure: [%s]',
                    [aCmdName, aProcName]));
 
-  fConsoleCommands.Add(aCmdName, TKMConsoleCommand.Create(aCmdName, aProcName));
+  fConsoleCommands.Add(LowerCase(aCmdName), TKMConsoleCommand.Create(aCmdName, aProcName));
 end;
 
 
@@ -386,7 +386,7 @@ begin
     begin
       CmdFound := False;
       //Check procedure name with regular expression
-      RegEx := TRegEx.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]));
+      RegEx := TRegEx.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]), [roIgnoreCase]);
       for I := 0 to SL.Count - 1 do
       begin
         if RegEx.Match(SL[I]).Success then
@@ -397,8 +397,8 @@ begin
         end;
       end;
       if not CmdFound then
-        raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_NOT_FOUND],
-                                                     [CmdPair.Value.Name]));
+        raise EConsoleCommandParseError.Create(Format(gResTexts[TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND],
+                                                     [CmdPair.Value.ProcName, CmdPair.Value.Name]));
     end;
   finally
     FreeAndNil(SL);
@@ -474,7 +474,7 @@ begin
   Result := False;
   if MethodAssigned(aCmdName) then
     try
-      fConsoleCommands[aCmdName].TryCallProcedure(aHandID, aParams);
+      fConsoleCommands[LowerCase(aCmdName)].TryCallProcedure(aHandID, aParams);
       Result := True;
     except
       on E: Exception do

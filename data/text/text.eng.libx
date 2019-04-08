@@ -1183,11 +1183,12 @@
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
 1235:Ally / enemy
 1236:Script console command /%s not found
-1237:Wrong parameter type for script command /%s: [%s] 
-1238:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s] 
-1239:Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
-1240:Wrong parameters for script command /%s. Expected parameters types are: [%s]  
-1241:Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
-1242:Command called: /%s(%s)
-1243:Error while calling script command /%s(%s)
-1244:Enable/Disable copy-paste from chat window
+1237:The procedure [ %s ] declared for the script console command /%s was not found
+1238:Wrong parameter type for script command /%s: [%s] 
+1239:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s] 
+1240:Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
+1241:Wrong parameters for script command /%s. Expected parameters types are: [%s]  
+1242:Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
+1243:Command called: /%s(%s)
+1244:Error while calling script command /%s(%s)
+1245:Enable/Disable copy-paste from chat window

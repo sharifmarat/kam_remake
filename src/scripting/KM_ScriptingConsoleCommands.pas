@@ -549,7 +549,7 @@ var
   begin
     Result := cpkNone;
     for PTK := cpkBool to High(TKMCmdProcParamTypeKind) do
-      if CLASS_TYPE_STR[PTK] = aStr then
+      if UpperCase(CLASS_TYPE_STR[PTK]) = UpperCase(aStr) then
         Result := PTK;
   end;
 
