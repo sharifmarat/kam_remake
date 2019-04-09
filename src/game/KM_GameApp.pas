@@ -7,7 +7,7 @@ uses
   Classes, Dialogs, ExtCtrls,
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
-  KM_Music, KM_Maps, KM_Networking, KM_Settings, KM_Render,
+  KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
   KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
 
 type

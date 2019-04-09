@@ -3,6 +3,7 @@ unit KM_Maps;
 interface
 uses
   Classes, SyncObjs,
+  KM_MapTypes,
   KM_CommonTypes, KM_CommonClasses, KM_Defaults, KM_Pics, KM_ResTexts;
 
 
@@ -25,9 +26,6 @@ type
     Play: TKMHandID;
     Stat: TKMGoalStatus;
   end;
-
-  TKMMissionDifficulty = (mdNone, mdEasy, mdNormal, mdHard);
-  TKMMissionDifficultySet = set of TKMMissionDifficulty;
 
   TKMMapTxtInfo = class
   private
@@ -238,9 +236,6 @@ type
   function GetMapFolderType(aIsMultiplayer: Boolean): TKMapFolder;
   function DetermineMapFolder(const aFolderName: UnicodeString; out aMapFolder: TKMapFolder): Boolean;
 
-const
-  DIFFICULTY_LEVELS_TX: array[mdEasy..mdHard] of Integer =
-    (TX_MISSION_DIFFICULTY_EASY, TX_MISSION_DIFFICULTY_NORMAL, TX_MISSION_DIFFICULTY_HARD);
 
 implementation
 uses

@@ -3,7 +3,7 @@ unit KM_Campaigns;
 interface
 uses
   Classes,
-  KM_ResTexts, KM_Pics, KM_Maps,
+  KM_ResTexts, KM_Pics, KM_Maps, KM_MapTypes,
   KM_CommonClasses, KM_Points;
 
 

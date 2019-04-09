@@ -2,7 +2,7 @@ unit KM_GameOptions;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, KM_Maps;
+  KM_CommonClasses, KM_MapTypes;
 
 
 type

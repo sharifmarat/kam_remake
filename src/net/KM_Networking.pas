@@ -6,7 +6,7 @@ uses
   Classes, SysUtils, TypInfo, Forms, KromUtils,
   KM_Console,
   KM_CommonClasses, KM_CommonTypes, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_Points,
-  KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_NetPlayersList,
+  KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_MapTypes, KM_NetPlayersList,
   KM_DedicatedServer, KM_NetClient, KM_ServerQuery,
   {$IFDEF USESECUREAUTH}
     // If you don't have this file - disable USESECUREAUTH in KaM_Remake.inc

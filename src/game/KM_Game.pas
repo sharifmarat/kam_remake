@@ -8,7 +8,7 @@ uses
   KM_PathFinding,
   KM_GameInputProcess, KM_GameOptions, KM_Scripting, KM_MapEditor, KM_Campaigns, KM_Render, KM_Sound,
   KM_InterfaceGame, KM_InterfaceGamePlay, KM_InterfaceMapEditor,
-  KM_ResTexts, KM_Maps,
+  KM_ResTexts, KM_Maps, KM_MapTypes,
   KM_PerfLog, KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses,
   KM_GameTypes;
 

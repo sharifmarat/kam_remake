@@ -165,6 +165,7 @@ uses
   KM_Log in 'src\KM_Log.pas',
   KM_Main in 'src\KM_Main.pas',
   KM_Maps in 'src\KM_Maps.pas',
+  KM_MapTypes in 'src\KM_MapTypes.pas',
   KM_MapEditor in 'src\KM_MapEditor.pas',
   KM_MessageLog in 'src\KM_MessageLog.pas',
   KM_MessageStack in 'src\KM_MessageStack.pas',
