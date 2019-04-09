@@ -139,6 +139,7 @@ type
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
     function FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+    procedure RecreateValidationIssues;
     constructor Create(aOnScriptError: TUnicodeStringEvent); // Scripting has to be created via special TKMScriptingCreator
   public
     destructor Destroy; override;
@@ -284,13 +285,20 @@ begin
 end;
 
 
-procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
+procedure TKMScripting.RecreateValidationIssues;
 begin
   if fValidationIssues <> nil then
     FreeAndNil(fValidationIssues);
 
   fValidationIssues := TScriptValidatorResult.Create;
   fPreProcessor.ValidationIssues := fValidationIssues;
+end;
+
+
+procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
+begin
+  RecreateValidationIssues;
+
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
 
@@ -1470,6 +1478,8 @@ var
   I: Integer;
   V: PIFVariant;
 begin
+  RecreateValidationIssues;
+
   LoadStream.ReadAssert('Script');
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
