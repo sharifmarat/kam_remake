@@ -54,9 +54,10 @@ if %IncludeScriptingEditor%==True (
 xcopy "%ScriptingEditorDir%"\bin\ScriptingEditor.exe* "%kam_folder%"\ScriptingEditor /y /r /i
 xcopy "%ScriptingEditorDir%"\bin\SE_Data "%kam_folder%"\ScriptingEditor\SE_Data\ /y /r /s
 xcopy "..\Utils\ScriptValidator\ScriptValidator.exe" "%kam_folder%"\ScriptingEditor\SE_Data\KMR\ScriptValidator.exe* /y /r /i
-)
 @REM no need for KP folder
-rmdir /S /Q "%kam_folder%"\bin\SE_Data\KP
+rmdir /S /Q "%ScriptingEditorDir%"\bin\SE_Data\KP
+)
+
 
 @REM copy utility applications exe files
 xcopy "..\Utils\Campaign builder\KaM_Remake_Settings_ini_readme.txt" "%kam_folder%"\KaM_Remake_Settings_ini_readme.txt* /y /r /i
