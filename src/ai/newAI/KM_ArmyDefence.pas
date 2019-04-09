@@ -554,7 +554,7 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
   // Check if there is company around
   function IsCompanyAround(aLoc: TKMPoint): Boolean;
   const
-    SQR_MAX_DISTANCE = 15*15;
+    SQR_MAX_DISTANCE = 20*20;
   var
     I: Integer;
     Company: TAICompany;
@@ -581,7 +581,7 @@ function TKMArmyDefence.DefendPoint(aTargetPoint: TKMPoint; aRestockCompany: Boo
   end;
 const
   MAX_GROUPS_PER_COMPANY = 8;
-  MIN_SOLDIERS = 12;
+  MIN_SOLDIERS = 3;
 var
   UGA: TKMUnitGroupArray;
 begin
