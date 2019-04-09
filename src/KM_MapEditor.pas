@@ -27,7 +27,6 @@ type
     //When you load a map script/libx/wav/etc. files are "attached" then copied when
     //saving if the path is different
     fAttachedFiles: array of UnicodeString;
-    fMapTxtInfo: TKMMapTxtInfo;
 
     function GetRevealer(aIndex: Byte): TKMPointTagList;
     procedure ProceedUnitsCursorMode;
@@ -61,7 +60,6 @@ type
     property Deposits: TKMDeposits read fDeposits;
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
-    property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
 
     function OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
@@ -112,7 +110,6 @@ begin
 
   fTerrainPainter := TKMTerrainPainter.Create;
   fSelection := TKMSelection.Create(fTerrainPainter);
-  fMapTxtInfo := TKMMapTxtInfo.Create;
 
   fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlOverlays, mlDeposits];
 
@@ -130,7 +127,6 @@ begin
   FreeAndNil(fTerrainPainter);
   FreeAndNil(fDeposits);
   FreeAndNil(fSelection);
-  FreeAndNil(fMapTxtInfo);
 
   for I := Low(fRevealers) to High(fRevealers) do
     FreeAndNil(fRevealers[I]);
