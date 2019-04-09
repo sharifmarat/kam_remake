@@ -1632,15 +1632,15 @@ begin
 
     //Skip terrain data
     if UseKaMFormat then
-      S.Seek(23 * NewX * NewY, soFromCurrent)
+      S.Position := S.Position + 23 * NewX * NewY
     else
-      S.Seek(MapDataSize, soFromCurrent);
+      S.Position := S.Position + MapDataSize;
 
     //For now we just throw away the resource footer because we don't understand it (and save a blank one)
     if UseKaMFormat then
     begin
       S.Read(ResHead, 22);
-      S.Seek(17 * ResHead.Allocated, soFromCurrent);
+      S.Position := S.Position + 17 * ResHead.Allocated;
     end;
 
     //ADDN
@@ -1716,15 +1716,15 @@ begin
 
     //Skip terrain data
     if UseKaMFormat then
-      S.Seek(23 * NewX * NewY, soFromCurrent)
+      S.Position := S.Position + 23 * NewX * NewY
     else
-      S.Seek(MapDataSize, soFromCurrent);
+      S.Position := S.Position + MapDataSize;
 
     //For now we just throw away the resource footer because we don't understand it (and save a blank one)
     if UseKaMFormat then
     begin
       S.Read(ResHead, 22);
-      S.Seek(17 * ResHead.Allocated, soFromCurrent);
+      S.Position := S.Position + 17 * ResHead.Allocated;
     end;
 
     S.Write(AnsiString('ADDN')[1], 4);

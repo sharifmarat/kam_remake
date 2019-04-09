@@ -48,10 +48,10 @@ type
   public
     constructor Create(X,Y: Word);
     destructor Destroy; override;
+
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    function GetChatState: TKMChatState;
-    procedure SetChatState(const aChatState: TKMChatState);
+
     procedure ExportPages(const aPath: string); override;
     procedure ReturnToLobby(const aSaveName: UnicodeString);
 
@@ -163,18 +163,6 @@ end;
 procedure TKMMainMenuInterface.AppendLoadingText(const aText: string);
 begin
   fMenuLoading.AppendText(aText);
-end;
-
-
-function TKMMainMenuInterface.GetChatState: TKMChatState;
-begin
-  Result := fMenuLobby.GetChatState;
-end;
-
-
-procedure TKMMainMenuInterface.SetChatState(const aChatState: TKMChatState);
-begin
-  fMenuLobby.SetChatState(aChatState);
 end;
 
 

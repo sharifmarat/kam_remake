@@ -3,27 +3,26 @@ unit KM_ScriptingEvents;
 {$WARN IMPLICIT_STRING_CAST OFF}
 interface
 uses
+  Generics.Collections,
   Classes, Math, SysUtils, StrUtils, uPSRuntime, uPSDebugger,
-  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units,
+  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_ScriptingConsoleCommands,
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingTypes, KM_CommonClasses;
 
 
 type
-  TByteSet = set of Byte;
-
   TKMScriptEntity = class
   protected
     fIDCache: TKMScriptingIdCache;
     fOnScriptError: TKMScriptErrorEvent;
-    procedure LogWarning(const aFuncName: string; aWarnMsg: String);
-    procedure LogParamWarning(const aFuncName: string; const aValues: array of Integer);
+    procedure LogWarning(const aFuncName, aWarnMsg: String);
+    procedure LogParamWarning(const aFuncName: String; const aValues: array of Integer);
   public
     constructor Create(aIDCache: TKMScriptingIdCache);
     property OnScriptError: TKMScriptErrorEvent write fOnScriptError;
   end;
 
   TKMCustomEventHandler = record
-    Name: AnsiString;
+    ProcName: AnsiString;
     Handler: TMethod;
   end;
 
@@ -33,19 +32,33 @@ type
 
     fEventHandlers: array[TKMScriptEventType] of array of TKMCustomEventHandler;
 
+    fConsoleCommands: TDictionary<AnsiString, TKMConsoleCommand>;
+
     procedure AddDefaultEventHandlersNames;
     procedure CallEventHandlers(aEventType: TKMScriptEventType; const aParams: array of Integer);
+    function GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
 
-    procedure DoProc(const aProc: TMethod; const aParams: array of Integer);
+    procedure HandleScriptProcCallError(aEx: Exception);
+    procedure CallEventProc(const aProc: TMethod; const aIntParams: array of Integer);
     function MethodAssigned(aProc: TMethod): Boolean; overload; inline;
     function MethodAssigned(aEventType: TKMScriptEventType): Boolean; overload; inline;
+    function MethodAssigned(const aCmdName: AnsiString): Boolean; overload; inline;
   public
     ExceptionOutsideScript: Boolean; //Flag that the exception occured in a State or Action call not script
 
     constructor Create(aExec: TPSDebugExec; aIDCache: TKMScriptingIdCache);
+    destructor Destroy; override;
 
-    procedure AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: AnsiString);
-    procedure LinkEvents;
+    procedure AddEventHandlerName(aEventType: TKMScriptEventType; const aEventHandlerName: AnsiString);
+    procedure AddConsoleCommand(const aCmdName, aProcName: AnsiString);
+    procedure LinkEventsAndCommands;
+
+    function ParseConsoleCommandsProcedures(const aScriptCode: AnsiString): Boolean;
+    function HasConsoleCommand(const aCmdName: AnsiString) : Boolean;
+    function HasConsoleCommands: Boolean;
+    function CallConsoleCommand(aHandID: TKMHandID; const aCmdName: AnsiString; const aParams: TKMScriptCommandParamsArray): Boolean;
+
+    property ConsoleCommand[const aName: AnsiString]: TKMConsoleCommand read GetConsoleCommand;
 
     procedure ProcBeacon(aPlayer: TKMHandID; aX, aY: Word);
     procedure ProcFieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
@@ -96,10 +109,10 @@ var
 
 implementation
 uses
-  uPSUtils,
+  uPSUtils, System.RegularExpressions,
   TypInfo, KromUtils, KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_UnitWarrior,
-  KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
-  KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos,
+  KM_HouseBarracks, KM_HouseSchool, KM_ResTexts, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
+  KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_MethodParser,
   KM_UnitsCollection, KM_PathFindingRoad;
 
 
@@ -130,8 +143,24 @@ begin
   inherited Create(aIDCache);
 
   fExec := aExec;
+  fConsoleCommands := TDictionary<AnsiString, TKMConsoleCommand>.Create;
 
   AddDefaultEventHandlersNames;
+end;
+
+
+destructor TKMScriptEvents.Destroy;
+var
+  Command: TKMConsoleCommand;
+begin
+  for Command in fConsoleCommands.Values do
+    Command.Free;
+
+  fConsoleCommands.Clear;
+
+  FreeAndNil(fConsoleCommands);
+
+  inherited;
 end;
 
 
@@ -177,21 +206,27 @@ begin
 end;
 
 
-procedure TKMScriptEvents.LinkEvents;
+procedure TKMScriptEvents.LinkEventsAndCommands;
 var
   I: Integer;
   ET: TKMScriptEventType;
+  CmdName: AnsiString;
 begin
+  //Link events
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
     for I := Low(fEventHandlers[ET]) to High(fEventHandlers[ET]) do
     begin
-      fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].Name);
+      fEventHandlers[ET][I].Handler := fExec.GetProcAsMethodN(fEventHandlers[ET][I].ProcName);
       if (I > 0) //It's okay to not have default event handler
         and not MethodAssigned(fEventHandlers[ET][I].Handler) then
         fOnScriptError(sePreprocessorError,
                        Format('Declared custom handler ''%s'' for event ''%s'' not found',
-                              [fEventHandlers[ET][I].Name, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
+                              [fEventHandlers[ET][I].ProcName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(ET))]));
     end;
+
+  //Link Console commands
+  for CmdName in fConsoleCommands.Keys do
+    fConsoleCommands.Items[CmdName].Handler := fExec.GetProcAsMethodN(fConsoleCommands.Items[CmdName].ProcName);
 end;
 
 
@@ -207,31 +242,63 @@ var
 begin
   Result := False;
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-  begin
     if fEventHandlers[aEventType][I].Handler.Code <> nil then
     begin
       Result := True;
       Exit;
     end;
+end;
+
+
+function TKMScriptEvents.MethodAssigned(const aCmdName: AnsiString): Boolean;
+begin
+  Result := False;
+  if fConsoleCommands.ContainsKey(AnsiString(LowerCase(aCmdName)))
+    and (fConsoleCommands.Items[AnsiString(LowerCase(aCmdName))].Handler.Code <> nil) then
+  begin
+    Result := True;
+    Exit;
   end;
 end;
 
 
-procedure TKMScriptEvents.AddEventHandlerName(aEventType: TKMScriptEventType; aEventHandlerName: AnsiString);
+function TKMScriptEvents.GetConsoleCommand(const aName: AnsiString): TKMConsoleCommand;
+begin
+  Result := fConsoleCommands[AnsiString(LowerCase(aName))];
+end;
+
+
+procedure TKMScriptEvents.AddEventHandlerName(aEventType: TKMScriptEventType; const aEventHandlerName: AnsiString);
 var
   I, Len: Integer;
 begin
   Assert(Trim(aEventHandlerName) <> '', 'Can''t add empty event handler for event type: ' +
          GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType)));
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    if UpperCase(fEventHandlers[aEventType][I].Name) = UpperCase(aEventHandlerName) then
+    if UpperCase(fEventHandlers[aEventType][I].ProcName) = UpperCase(aEventHandlerName) then
       fOnScriptError(sePreprocessorError,
                      Format('Duplicate event handler declaration ''%s'' for event ''%s''',
                      [aEventHandlerName, GetEnumName(TypeInfo(TKMScriptEventType), Integer(aEventType))]));
 
   Len := Length(fEventHandlers[aEventType]);
+  //TODO: rewrite it not to enlarge array by 1 element
   SetLength(fEventHandlers[aEventType], Len + 1);
-  fEventHandlers[aEventType][Len].Name := aEventHandlerName;
+  fEventHandlers[aEventType][Len].ProcName := aEventHandlerName;
+end;
+
+
+procedure TKMScriptEvents.AddConsoleCommand(const aCmdName, aProcName: AnsiString);
+begin
+  Assert((Trim(aCmdName) <> '') and (Trim(aProcName) <> ''),
+         Format('Console command name and procedure name should be specidied: [CmdName = %s] [ProcName = [', [aCmdName, aProcName]));
+
+
+  if fConsoleCommands.ContainsKey(AnsiString(LowerCase(aCmdName))) then
+    fOnScriptError(sePreprocessorError,
+                   Format('Duplicate command declaration: [%s] , command procedure: [%s]',
+                   [aCmdName, aProcName]));
+
+  fConsoleCommands.Add(AnsiString(LowerCase(aCmdName)), TKMConsoleCommand.Create(aCmdName, aProcName));
 end;
 
 
@@ -239,13 +306,20 @@ procedure TKMScriptEvents.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
   ET: TKMScriptEventType;
+  CmdPair: TPair<AnsiString, TKMConsoleCommand>;
 begin
+  //Save custom events
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin
-    SaveStream.Write(Byte(High(fEventHandlers[ET])));
+    SaveStream.Write(Byte(High(fEventHandlers[ET]))); //Save only (Count - 1) here (do not save default one)
     for I := 1 to High(fEventHandlers[ET]) do //Start from 1, as we do not need to save default (0) handler
-      SaveStream.WriteA(fEventHandlers[ET][I].Name);
+      SaveStream.WriteA(fEventHandlers[ET][I].ProcName);
   end;
+
+  //Save console commands
+  SaveStream.Write(fConsoleCommands.Count);
+  for CmdPair in fConsoleCommands do
+    CmdPair.Value.Save(SaveStream);
 end;
 
 
@@ -253,17 +327,30 @@ procedure TKMScriptEvents.Load(LoadStream: TKMemoryStream);
 var
   Cnt: Byte;
   HandlerName: AnsiString;
-  I: Integer;
+  I, CmdCount: Integer;
   ET: TKMScriptEventType;
+  Command: TKMConsoleCommand;
 begin
+  //Load custom events
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin
-    LoadStream.Read(Cnt);
-    for I := 0 to Cnt - 1 do //Start from 1, as we do not need to save default (0) handler
+    LoadStream.Read(Cnt); //We saved only custom event handler names (no need to save/load default one), then load them all
+    for I := 0 to Cnt - 1 do
     begin
       LoadStream.ReadA(HandlerName);
       AddEventHandlerName(ET, HandlerName);
     end;
+  end;
+
+  //Load console commands
+  LoadStream.Read(CmdCount);
+  for I := 0 to CmdCount - 1 do
+  begin
+    //Create new command instance
+    //Commands destruction will be handled by fConsoleCommands Tictionary in TKMScriptEvents.Destry
+    Command := TKMConsoleCommand.Create;
+    Command.Load(LoadStream);
+    fConsoleCommands.Add(Command.Name, Command);
   end;
 end;
 
@@ -274,12 +361,73 @@ var
   I: Integer;
 begin
   for I := Low(fEventHandlers[aEventType]) to High(fEventHandlers[aEventType]) do
-    DoProc(fEventHandlers[aEventType][I].Handler, aParams);
+    CallEventProc(fEventHandlers[aEventType][I].Handler, aParams);
+end;
+
+
+function TKMScriptEvents.HasConsoleCommands: Boolean;
+begin
+  Result := fConsoleCommands.Count > 0;
+end;
+
+
+function TKMScriptEvents.ParseConsoleCommandsProcedures(const aScriptCode: AnsiString): Boolean;
+//Use const for ScriptValidator. We do not want to load txt libraries for it since it could be placed anywhere
+const
+  TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND_STR = 'The procedure [ %s ] declared for the script console command /%s was not found';
+
+  function GetErrorStr: String;
+  begin
+    if gResTexts <> nil then
+      Result := gResTexts[TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND]
+    else
+      Result := TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND_STR;
+  end;
+
+var
+  I: Integer;
+  CmdFound: Boolean;
+  SL: TStringList;
+  CmdPair: TPair<AnsiString, TKMConsoleCommand>;
+  RegEx: TRegEx;
+begin
+  Result := False;
+  SL := TStringList.Create;
+  try
+    SL.Text := aScriptCode;
+    for CmdPair in fConsoleCommands do
+    begin
+      CmdFound := False;
+      //Check procedure name with regular expression
+      RegEx := TRegEx.Create(Format('^\s*procedure\s+%s\s*\(.+\).*$', [CmdPair.Value.ProcName]), [roIgnoreCase]);
+      for I := 0 to SL.Count - 1 do
+      begin
+        if RegEx.Match(SL[I]).Success then
+        begin
+          CmdPair.Value.ParseParameters(SL[I], I + 1);
+          CmdFound := True;
+          Break;
+        end;
+      end;
+      if not CmdFound then
+        raise EConsoleCommandParseError.Create(Format(GetErrorStr,
+                                                     [CmdPair.Value.ProcName, CmdPair.Value.Name]),
+                                               0, 0, CmdPair.Value.ProcName);
+    end;
+  finally
+    FreeAndNil(SL);
+  end;
+end;
+
+
+function TKMScriptEvents.HasConsoleCommand(const aCmdName: AnsiString) : Boolean;
+begin
+  Result := MethodAssigned(aCmdName);
 end;
 
 
 //This procedure allows us to keep the exception handling code in one place
-procedure TKMScriptEvents.DoProc(const aProc: TMethod; const aParams: array of Integer);
+procedure TKMScriptEvents.HandleScriptProcCallError(aEx: Exception);
 var
   ExceptionProc: TPSProcRec;
   InternalProc: TPSInternalProcRec;
@@ -288,44 +436,64 @@ var
   TBTFileName: tbtstring;
   ErrorMessage: TKMScriptErrorMessage;
 begin
+  if ExceptionOutsideScript then
+  begin
+    ExceptionOutsideScript := False; //Reset
+    raise aEx; //Exception was in game code not script, so pass up to madExcept
+  end
+  else
+  begin
+    DetailedErrorStr := '';
+    MainErrorStr := 'Exception in script: ''' + aEx.Message + '''';
+    ExceptionProc := fExec.GetProcNo(fExec.ExceptionProcNo);
+    if ExceptionProc is TPSInternalProcRec then
+    begin
+      InternalProc := TPSInternalProcRec(ExceptionProc);
+      MainErrorStr := MainErrorStr + EolW + 'in procedure ''' + UnicodeString(InternalProc.ExportName) + '''' + EolW;
+      // With the help of uPSDebugger get information about error position in script code
+      if fExec.TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, TBTFileName) then
+      begin
+        ErrorMessage := gGame.Scripting.GetErrorMessage('Error', '', Row, Col);
+        ErrorStr := MainErrorStr + ErrorMessage.GameMessage;
+        DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
+      end;
+    end;
+    fOnScriptError(seException, ErrorStr, DetailedErrorStr);
+  end;
+end;
+
+
+procedure TKMScriptEvents.CallEventProc(const aProc: TMethod; const aIntParams: array of Integer);
+begin
   if not MethodAssigned(aProc) then Exit;
 
   try
-    case Length(aParams) of
+    case Length(aIntParams) of
       0: TKMScriptEvent(aProc);
-      1: TKMScriptEvent1I(aProc)(aParams[0]);
-      2: TKMScriptEvent2I(aProc)(aParams[0], aParams[1]);
-      3: TKMScriptEvent3I(aProc)(aParams[0], aParams[1], aParams[2]);
-      4: TKMScriptEvent4I(aProc)(aParams[0], aParams[1], aParams[2], aParams[3]);
+      1: TKMScriptEvent1I(aProc)(aIntParams[0]);
+      2: TKMScriptEvent2I(aProc)(aIntParams[0], aIntParams[1]);
+      3: TKMScriptEvent3I(aProc)(aIntParams[0], aIntParams[1], aIntParams[2]);
+      4: TKMScriptEvent4I(aProc)(aIntParams[0], aIntParams[1], aIntParams[2], aIntParams[3]);
       else raise Exception.Create('Unexpected Length(aParams)');
     end;
   except
     on E: Exception do
-      if ExceptionOutsideScript then
-      begin
-        ExceptionOutsideScript := False; //Reset
-        raise; //Exception was in game code not script, so pass up to madExcept
-      end
-      else
-      begin
-        DetailedErrorStr := '';
-        MainErrorStr := 'Exception in script: ''' + E.Message + '''';
-        ExceptionProc := fExec.GetProcNo(fExec.ExceptionProcNo);
-        if ExceptionProc is TPSInternalProcRec then
-        begin
-          InternalProc := TPSInternalProcRec(ExceptionProc);
-          MainErrorStr := MainErrorStr + EolW + 'in procedure ''' + UnicodeString(InternalProc.ExportName) + '''' + EolW;
-          // With the help of uPSDebugger get information about error position in script code
-          if fExec.TranslatePositionEx(fExec.LastExProc, fExec.LastExPos, Pos, Row, Col, TBTFileName) then
-          begin
-            ErrorMessage := gGame.Scripting.GetErrorMessage('Error', '', Row, Col);
-            ErrorStr := MainErrorStr + ErrorMessage.GameMessage;
-            DetailedErrorStr := MainErrorStr + ErrorMessage.LogMessage;
-          end;
-        end;
-        fOnScriptError(seException, ErrorStr, DetailedErrorStr);
-      end;
+      HandleScriptProcCallError(E);
   end;
+end;
+
+
+function TKMScriptEvents.CallConsoleCommand(aHandID: TKMHandID; const aCmdName: AnsiString; const aParams: TKMScriptCommandParamsArray): Boolean;
+begin
+  Result := False;
+  if MethodAssigned(aCmdName) then
+    try
+      fConsoleCommands[AnsiString(LowerCase(aCmdName))].TryCallProcedure(aHandID, aParams);
+      Result := True;
+    except
+      on E: Exception do
+        HandleScriptProcCallError(E);
+    end;
 end;
 
 
@@ -769,7 +937,7 @@ begin
 end;
 
 
-procedure TKMScriptEntity.LogWarning(const aFuncName: string; aWarnMsg: String);
+procedure TKMScriptEntity.LogWarning(const aFuncName, aWarnMsg: String);
 begin
   fOnScriptError(seLog, 'Warning in ' + aFuncName + ': ' + aWarnMsg);
 end;

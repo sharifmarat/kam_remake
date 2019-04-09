@@ -4,7 +4,8 @@ interface
 uses
   Controls, Math, SysUtils,
   KM_Defaults,
-  KM_Controls, KM_Maps, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_CommonTypes;
+  KM_Maps, KM_MapTypes,
+  KM_Controls, KM_Pics, KM_InterfaceDefaults, KM_Minimap, KM_CommonTypes;
 
 
 const
@@ -417,7 +418,7 @@ begin
         for MD in fMaps[MapId].TxtInfo.DifficultyLevels do
         begin
           DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
-          if MD = mdNormal then
+          if MD = mdNormal then //Default difficulty is "Normal"
             DropBox_Difficulty.ItemIndex := I;
           Inc(I);
         end;

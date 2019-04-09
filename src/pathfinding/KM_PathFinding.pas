@@ -209,7 +209,7 @@ begin
     if DO_WEIGHT_ROUTES and (U <> nil) and ((tpWalkRoad in fPass) or U.PathfindingShouldAvoid) then
       Inc(Result, 15); //Unit = 1.5 extra tiles
     if fIsInteractionAvoid and gTerrain.TileIsLocked(KMPoint(aToX,aToY)) then
-      Inc(Result, 500); //In interaction avoid mode, working unit = 50 tiles
+      Inc(Result, 200); //In interaction avoid mode, working unit (or warrior attacking house) = 20 tiles
   end;
 end;
 

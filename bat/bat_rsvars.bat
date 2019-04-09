@@ -9,5 +9,8 @@ call bat_rsvars_local.bat
 @SET KaMOrigDir=%KaMOrigDir_LOCAL%
 @SET KMRPrevVersionDir=%KMRPrevVersionDir_LOCAL%
 @SET BuildFullDir=%BuildFullDir_LOCAL%
+@SET ScriptingEditorDir=%ScriptingEditorDir_LOCAL%
 @SET PATH=%FrameworkDir%;%FrameworkSDKDir%;%BDS%\bin;%BDS%\bin64;%PATH%
-@SET kam_version=Beta 9k+
+@SET kam_version=Beta 10k+
+
+@SET IncludeScriptingEditor=False

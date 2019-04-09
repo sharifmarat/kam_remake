@@ -57,7 +57,8 @@ type
     function ActiveTransferCount: Byte;
   public
     destructor Destroy; override;
-    function StartNewSend(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder; aReceiverIndex: TKMNetHandleIndex): Boolean;
+    function StartNewSend(aType: TKMTransferType; const aName: String; aMapFolder: TKMapFolder;
+                          aReceiverIndex: TKMNetHandleIndex): Boolean;
     procedure AbortAllTransfers;
     procedure AckReceived(aReceiverIndex: TKMNetHandleIndex);
     procedure ClientDisconnected(aReceiverIndex: TKMNetHandleIndex);
@@ -77,16 +78,18 @@ const
   VALID_SAVE_EXTENSIONS: array[1..3] of UnicodeString =         (EXT_SAVE_MAIN, EXT_SAVE_BASE, EXT_SAVE_REPLAY);
 
 
-function GetFullSourceFileName(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder; Postfix, aExt: UnicodeString): UnicodeString;
+function GetFullSourceFileName(aType: TKMTransferType; const aName: String; aMapFolder: TKMapFolder;
+                               const aPostfix, aExt: UnicodeString): String;
 begin
   case aType of
-    kttMap:  Result := TKMapsCollection.FullPath(aName, Postfix + '.' + aExt, aMapFolder);
+    kttMap:  Result := TKMapsCollection.FullPath(aName, aPostfix + '.' + aExt, aMapFolder);
     kttSave: Result := TKMSavesCollection.FullPath(aName, aExt, True);
   end;
 end;
 
 
-function GetFullDestFileName(aType: TKMTransferType; const aName, Postfix, aExt: UnicodeString; const aCustomFileName: UnicodeString = ''): UnicodeString;
+function GetFullDestFileName(aType: TKMTransferType; const aName, Postfix, aExt: String;
+                             const aCustomFileName: UnicodeString = ''): String;
 begin
   case aType of
     kttMap:   if aCustomFileName = '' then
@@ -99,7 +102,8 @@ end;
 
 
 { TKMFileSender }
-constructor TKMFileSender.Create(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder; aReceiverIndex: TKMNetHandleIndex);
+constructor TKMFileSender.Create(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder;
+                                 aReceiverIndex: TKMNetHandleIndex);
 var
   I, J: Integer;
   FileName: UnicodeString;
@@ -418,7 +422,8 @@ begin
   inherited;
 end;
 
-function TKMFileSenderManager.StartNewSend(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder; aReceiverIndex: TKMNetHandleIndex): Boolean;
+function TKMFileSenderManager.StartNewSend(aType: TKMTransferType; const aName: String; aMapFolder: TKMapFolder;
+                                           aReceiverIndex: TKMNetHandleIndex): Boolean;
 var I: Integer;
 begin
   for I := Low(fSenders) to High(fSenders) do

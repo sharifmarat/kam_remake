@@ -19,16 +19,16 @@ type
     fHints: TScriptValidatorIssueArray;
     fWarnings: TScriptValidatorIssueArray;
     fErrors: TScriptValidatorIssueArray;
-    procedure Add(aLine, aColumn: Integer; aParam, aMessage: string; var aDest: TScriptValidatorIssueArray); inline;
+    procedure Add(aLine, aColumn: Integer; const aParam, aMessage: string; var aDest: TScriptValidatorIssueArray); inline;
     procedure ArrayToXML(aSrc: TScriptValidatorIssueArray; var aDest: TXmlNode);
     procedure XMLToArray(aSrc: TXmlNode; var aDest: TScriptValidatorIssueArray);
-    function FixText(aTest: string): string;
+    function FixText(const aTest: string): string;
   public
-    procedure AddHint(aLine, aColumn: Integer; aParam, aMessage: string);
-    procedure AddWarning(aLine, aColumn: Integer; aParam, aMessage: string);
-    procedure AddError(aLine, aColumn: Integer; aParam, aMessage: string);
+    procedure AddHint(aLine, aColumn: Integer; const aParam, aMessage: string);
+    procedure AddWarning(aLine, aColumn: Integer; const aParam, aMessage: string);
+    procedure AddError(aLine, aColumn: Integer; const aParam, aMessage: string);
     function ToXML: string;
-    procedure FromXML(aXml: string);
+    procedure FromXML(const aXml: string);
     property Hints: TScriptValidatorIssueArray read fHints write fHints;
     property Warnings: TScriptValidatorIssueArray read fWarnings write fWarnings;
     property Errors: TScriptValidatorIssueArray read fErrors write fErrors;
@@ -39,7 +39,7 @@ uses
   Classes;
 
 { TScriptValidatorResult }
-procedure TScriptValidatorResult.Add(aLine, aColumn: Integer; aParam, aMessage: string; var aDest: TScriptValidatorIssueArray);
+procedure TScriptValidatorResult.Add(aLine, aColumn: Integer; const aParam, aMessage: string; var aDest: TScriptValidatorIssueArray);
 var
   I: Integer;
   Issue: TScriptValidatorIssue;
@@ -54,19 +54,19 @@ begin
 end;
 
 
-procedure TScriptValidatorResult.AddHint(aLine, aColumn: Integer; aParam, aMessage: string);
+procedure TScriptValidatorResult.AddHint(aLine, aColumn: Integer; const aParam, aMessage: string);
 begin
   Add(aLine, aColumn, aParam, aMessage, fHints);
 end;
 
 
-procedure TScriptValidatorResult.AddWarning(aLine, aColumn: Integer; aParam, aMessage: string);
+procedure TScriptValidatorResult.AddWarning(aLine, aColumn: Integer; const aParam, aMessage: string);
 begin
   Add(aLine, aColumn, aParam, aMessage, fWarnings);
 end;
 
 
-procedure TScriptValidatorResult.AddError(aLine, aColumn: Integer; aParam, aMessage: string);
+procedure TScriptValidatorResult.AddError(aLine, aColumn: Integer; const aParam, aMessage: string);
 begin
   Add(aLine, aColumn, aParam, aMessage, fErrors);
 end;
@@ -112,7 +112,7 @@ begin
 end;
 
 
-function TScriptValidatorResult.FixText(aTest: string): string;
+function TScriptValidatorResult.FixText(const aTest: string): string;
 begin
   Result := StringReplace(aTest, '&#39;', '"', [rfReplaceAll, rfIgnoreCase]);
 end;
@@ -142,7 +142,7 @@ begin
 end;
 
 
-procedure TScriptValidatorResult.FromXML(aXml: string);
+procedure TScriptValidatorResult.FromXML(const aXml: string);
 begin
   with TXmlVerySimple.Create do
     try

@@ -41,7 +41,7 @@ type
 
     procedure UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
     procedure Move(const aWindowParams: TKMWindowParamsRecord);
-    procedure ForcedResize;
+    procedure ForceResize;
     procedure Resize(aWidth, aHeight: Integer); overload;
     procedure Resize(aWidth, aHeight: Integer; const aWindowParams: TKMWindowParamsRecord); overload;
     procedure Render;
@@ -206,7 +206,7 @@ begin
   if not CanClose then
   begin
     //We want to pause the game for the time user verifies he really wants to close
-    WasRunning := not gGameApp.Game.IsMultiplayer
+    WasRunning := not gGameApp.Game.IsMultiPlayerOrSpec
                   and not gGameApp.Game.IsMapEditor
                   and not gGameApp.Game.IsPaused;
 
@@ -390,7 +390,7 @@ begin
   fFormMain.Hide;
   fFormMain.Show;
 
-  ForcedResize; //Force everything to resize
+  ForceResize; //Force everything to resize
   // Unlock window params if are no longer in FullScreen mode
   if (not fMainSettings.FullScreen) then
     fMainSettings.WindowParams.UnlockParams;
@@ -479,7 +479,7 @@ end;
 function TKMMain.IsDebugChangeAllowed: Boolean;
 begin
   Result := (gGameApp.Game = nil)
-            or (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS)
+            or (not gGameApp.Game.IsMultiPlayerOrSpec or MULTIPLAYER_CHEATS)
 end;
 
 
@@ -567,7 +567,7 @@ end;
 
 
 //Force everything to resize
-procedure TKMMain.ForcedResize;
+procedure TKMMain.ForceResize;
 begin
   Resize(fFormMain.RenderArea.Width, fFormMain.RenderArea.Height);
 end;

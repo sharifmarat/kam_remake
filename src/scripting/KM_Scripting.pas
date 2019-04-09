@@ -66,13 +66,14 @@ type
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
     procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                      const aDetailedErrorString: String = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
     procedure AppendError(aError: TKMScriptErrorMessage);
-    procedure AppendWarning(aWarning: TKMScriptErrorMessage);
-    procedure AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
-    procedure AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+    procedure AppendWarning(const aWarning: TKMScriptErrorMessage);
+    procedure AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
+    procedure AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
     procedure HandleErrors;
     procedure Clear;
   end;
@@ -83,6 +84,7 @@ type
     fDestroyErrorHandler: Boolean;
     fScriptFilesInfo: TKMScriptFilesCollection;
     fErrorHandler: TKMScriptErrorHandler;
+    fValidationIssues: TScriptValidatorResult;
 
     fCustomScriptParams: TKMCustomScriptParamDataArray;
 
@@ -102,6 +104,7 @@ type
 
     property CustomScriptParams[aParam: TKMCustomScriptParam]: TKMCustomScriptParamData read GetCustomScriptParamData;
     property ScriptFilesInfo: TKMScriptFilesCollection read fScriptFilesInfo;
+    property ValidationIssues: TScriptValidatorResult read fValidationIssues write fValidationIssues;
 
     function ScriptMightChangeAfterPreProcessing: Boolean;
     function PreProcessFile(const aFileName: UnicodeString): Boolean; overload;
@@ -126,6 +129,7 @@ type
     fIDCache: TKMScriptingIdCache;
     fUtils: TKMScriptUtils;
 
+    procedure AddError(aMsg: TPSPascalCompilerMessage);
     procedure CompileScript;
     procedure LinkRuntime;
 
@@ -150,7 +154,7 @@ type
     property PreProcessor: TKMScriptingPreProcessor read fPreProcessor;
 
     function GetErrorMessage(aErrorMsg: TPSPascalCompilerMessage): TKMScriptErrorMessage; overload;
-    function GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
+    function GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
 
     property ValidationIssues: TScriptValidatorResult read fValidationIssues;
     procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
@@ -179,7 +183,10 @@ const
   CAMPAIGN_DATA_VAR = 'CampaignData'; //Name of the global variable
   VALID_GLOBAL_VAR_TYPES: set of TPSBaseType = [
     btU8,  //Byte, Boolean, Enums
+    btS8,  //ShortInt
     btU16, //Word
+    btS16, //SmallInt
+    btU32, //Cardinal / LongInt
     btS32, //Integer
     btSingle, //Single
     btString, //Means AnsiString in PascalScript.
@@ -190,7 +197,7 @@ const
 
 implementation
 uses
-  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares;
+  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares, KM_ScriptingConsoleCommands;
 
 const
   SCRIPT_LOG_EXT = '.log.txt';
@@ -283,8 +290,22 @@ begin
     FreeAndNil(fValidationIssues);
 
   fValidationIssues := TScriptValidatorResult.Create;
+  fPreProcessor.ValidationIssues := fValidationIssues;
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
+
+  //Parse console commands procedures
+  if gScriptEvents.HasConsoleCommands then
+    try
+      gScriptEvents.ParseConsoleCommandsProcedures(fScriptCode);
+
+    except
+      on E: EConsoleCommandParseError do
+      begin
+        fErrorHandler.AppendErrorStr(E.Message);
+        fValidationIssues.AddError(E.Row, E.Col, E.Token, E.Message);
+      end;
+    end;
 
   if (aCampaignDataTypeFile <> '') and FileExists(aCampaignDataTypeFile) then
     fCampaignDataTypeCode := ReadTextA(aCampaignDataTypeFile)
@@ -346,6 +367,8 @@ begin
       + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
       + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
 
+    Sender.AddTypeS('TKMGroupOrder', '(goNone, goWalkTo, goAttackHouse, goAttackUnit, goStorm)');
+
     Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
@@ -394,6 +417,7 @@ begin
     RegisterMethodCheck(c, 'function GroupIdle(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupMember(aGroupID, aMemberIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupMemberCount(aGroupID: Integer): Integer');
+    RegisterMethodCheck(c, 'function GroupOrder(aGroupID: Integer): TKMGroupOrder');
     RegisterMethodCheck(c, 'function GroupOwner(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupType(aGroupID: Integer): Integer');
 
@@ -410,6 +434,7 @@ begin
     RegisterMethodCheck(c, 'function HouseFlagPoint(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HouseIsComplete(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseOwner(aHouseID: Integer): Integer');
+    RegisterMethodCheck(c, 'function HousePosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HousePositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HousePositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseRepair(aHouseID: Integer): Boolean');
@@ -519,6 +544,7 @@ begin
     RegisterMethodCheck(c, 'function UnitLowHunger: Integer');
     RegisterMethodCheck(c, 'function UnitMaxHunger: Integer');
     RegisterMethodCheck(c, 'function UnitOwner(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitPosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function UnitPositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitPositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitsGroup(aUnitID: Integer): Integer');
@@ -611,7 +637,7 @@ begin
     RegisterMethodCheck(c, 'procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean)');
     RegisterMethodCheck(c, 'procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer)');
 
-    RegisterMethodCheck(c, 'procedure Log(aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure Log(const aText: AnsiString)');
 
     RegisterMethodCheck(c, 'procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer)');
 
@@ -621,10 +647,10 @@ begin
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'function  PlanAddField(aPlayer, X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function  PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean');
@@ -666,10 +692,10 @@ begin
 
     RegisterMethodCheck(c, 'procedure SetTradeAllowed(aPlayer, aResType: Word; aAllowed: Boolean)');
 
-    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean)');
     RegisterMethodCheck(c, 'function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean');
@@ -686,12 +712,12 @@ begin
     RegisterMethodCheck(c, 'function AbsI(aValue: Integer): Integer');
     RegisterMethodCheck(c, 'function AbsS(aValue: Single): Single');
 
-    RegisterMethodCheck(c, 'function ArrayElementCount(aElement: AnsiString; aArray: array of AnsiString): Integer');
+    RegisterMethodCheck(c, 'function ArrayElementCount(const aElement: AnsiString; aArray: array of AnsiString): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountB(aElement: Boolean; aArray: array of Boolean): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountI(aElement: Integer; aArray: array of Integer): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountS(aElement: Single; aArray: array of Single): Integer');
 
-    RegisterMethodCheck(c, 'function ArrayHasElement(aElement: AnsiString; aArray: array of AnsiString): Boolean');
+    RegisterMethodCheck(c, 'function ArrayHasElement(const aElement: AnsiString; aArray: array of AnsiString): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementB(aElement: Boolean; aArray: array of Boolean): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementI(aElement: Integer; aArray: array of Integer): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementS(aElement: Single; aArray: array of Single): Boolean');
@@ -706,7 +732,7 @@ begin
 
     RegisterMethodCheck(c, 'function Format(aFormatting: string; aData: array of const): string;');
 
-    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; aTrue, aFalse: AnsiString): AnsiString');
+    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString');
     RegisterMethodCheck(c, 'function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer');
     RegisterMethodCheck(c, 'function IfThenS(aBool: Boolean; aTrue, aFalse: Single): Single');
 
@@ -743,6 +769,9 @@ begin
     AddImportedClassVariable(Sender, 'States', AnsiString(fStates.ClassName));
     AddImportedClassVariable(Sender, 'Actions', AnsiString(fActions.ClassName));
     AddImportedClassVariable(Sender, 'Utils', AnsiString(fUtils.ClassName));
+    AddImportedClassVariable(Sender, 'S', AnsiString(fStates.ClassName));
+    AddImportedClassVariable(Sender, 'A', AnsiString(fActions.ClassName));
+    AddImportedClassVariable(Sender, 'U', AnsiString(fUtils.ClassName));
 
     Result := True;
   end
@@ -835,6 +864,13 @@ begin
 end;
 
 
+procedure TKMScripting.AddError(aMsg: TPSPascalCompilerMessage);
+begin
+  fErrorHandler.AppendError(GetErrorMessage(aMsg));
+  fValidationIssues.AddError(aMsg.Row, aMsg.Col, aMsg.Param, aMsg.ShortMessageToString);
+end;
+
+
 procedure TKMScripting.CompileScript;
 var
   I: Integer;
@@ -862,13 +898,10 @@ begin
         fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
       end else if Msg.ErrorType = 'Warning' then
       begin
-        fErrorHandler.AppendWarning(GetErrorMessage(Compiler.Msg[I]));
+        fErrorHandler.AppendWarning(GetErrorMessage(Msg));
         fValidationIssues.AddWarning(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
       end else
-      begin
-        fErrorHandler.AppendError(GetErrorMessage(Compiler.Msg[I]));
-        fValidationIssues.AddError(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
-      end;
+        AddError(Msg);
     end;
 
     if not Success then
@@ -959,6 +992,7 @@ begin
       RegisterMethod(@TKMScriptStates.GroupIdle,                                'GroupIdle');
       RegisterMethod(@TKMScriptStates.GroupMember,                              'GroupMember');
       RegisterMethod(@TKMScriptStates.GroupMemberCount,                         'GroupMemberCount');
+      RegisterMethod(@TKMScriptStates.GroupOrder,                               'GroupOrder');
       RegisterMethod(@TKMScriptStates.GroupOwner,                               'GroupOwner');
       RegisterMethod(@TKMScriptStates.GroupType,                                'GroupType');
 
@@ -975,6 +1009,7 @@ begin
       RegisterMethod(@TKMScriptStates.HouseFlagPoint,                           'HouseFlagPoint');
       RegisterMethod(@TKMScriptStates.HouseIsComplete,                          'HouseIsComplete');
       RegisterMethod(@TKMScriptStates.HouseOwner,                               'HouseOwner');
+      RegisterMethod(@TKMScriptStates.HousePosition,                            'HousePosition');
       RegisterMethod(@TKMScriptStates.HousePositionX,                           'HousePositionX');
       RegisterMethod(@TKMScriptStates.HousePositionY,                           'HousePositionY');
       RegisterMethod(@TKMScriptStates.HouseRepair,                              'HouseRepair');
@@ -1084,6 +1119,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitLowHunger,                            'UnitLowHunger');
       RegisterMethod(@TKMScriptStates.UnitMaxHunger,                            'UnitMaxHunger');
       RegisterMethod(@TKMScriptStates.UnitOwner,                                'UnitOwner');
+      RegisterMethod(@TKMScriptStates.UnitPosition,                             'UnitPosition');
       RegisterMethod(@TKMScriptStates.UnitPositionX,                            'UnitPositionX');
       RegisterMethod(@TKMScriptStates.UnitPositionY,                            'UnitPositionY');
       RegisterMethod(@TKMScriptStates.UnitsGroup,                               'UnitsGroup');
@@ -1345,12 +1381,15 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('STATES')), fStates);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('ACTIONS')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('UTILS')), fUtils);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('S')), fStates);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('A')), fActions);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('U')), fUtils);
   finally
     FreeAndNil(ClassImp);
   end;
 
   //Link events into the script
-  gScriptEvents.LinkEvents;
+  gScriptEvents.LinkEventsAndCommands;
 end;
 
 
@@ -1380,7 +1419,10 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            LoadStream.Read(tbtu8(Src^)); //Byte, Boolean
+    btS8:            LoadStream.Read(tbts8(Src^)); //ShortInt
     btU16:           LoadStream.Read(tbtu16(Src^)); //Word
+    btS16:           LoadStream.Read(tbts16(Src^)); //SmallInt
+    btU32:           LoadStream.Read(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
@@ -1488,7 +1530,10 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            SaveStream.Write(tbtu8(Src^)); //Byte, Boolean
+    btS8:            SaveStream.Write(tbts8(Src^)); //ShortInt
     btU16:           SaveStream.Write(tbtu16(Src^)); //Word
+    btS16:           SaveStream.Write(tbts16(Src^)); //SmallInt
+    btU32:           SaveStream.Write(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
@@ -1600,7 +1645,7 @@ begin
 end;
 
 
-function TKMScripting.GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage;
+function TKMScripting.GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage;
 var I, CodeLinesFound: Integer;
     FileNamesArr: TStringArray;
     RowsArr: TIntegerArray;
@@ -1667,21 +1712,21 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarning(aWarning: TKMScriptErrorMessage);
+procedure TKMScriptErrorHandler.AppendWarning(const aWarning: TKMScriptErrorMessage);
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarning.GameMessage;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aWarning.LogMessage;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
 begin
   fErrorString.GameMessage := fErrorString.GameMessage + aErrorString;
   fErrorString.LogMessage := fErrorString.LogMessage + aDetailedErrorString;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarningString;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aDetailedWarningString;
@@ -1743,7 +1788,8 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                                        const aDetailedErrorString: String = '');
 var
   fl: TextFile;
   LogErrorMsg: UnicodeString;
@@ -1907,7 +1953,11 @@ begin
       Result := True; // If PreProcess has been done succesfully
     except
       on E: Exception do
+      begin
         fErrorHandler.HandleScriptErrorString(sePreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+        if fValidationIssues <> nil then
+          fValidationIssues.AddError(0, 0, '', 'Script preprocessing errors:' + EolW + E.Message);
+      end;
     end;
   finally
     FreeAndNil(PreProcessor);
@@ -1919,12 +1969,15 @@ procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProces
                                                             const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
 const
   CUSTOM_EVENT_DIRECTIVE = 'EVENT';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE = 'COMMAND';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT = 'CMD';
   CUSTOM_TH_TROOP_COST_DIRECTIVE = 'CUSTOM_TH_TROOP_COST';
   CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE = 'CUSTOM_MARKET_GOLD_PRICE_X';
 
   function AllowGameUpdate: Boolean;
   begin
-    Result := (gGame <> nil) and not gGame.IsMapEditor;
+    Result := ((gGame <> nil) and not gGame.IsMapEditor)
+              or ((gGame = nil) and (gScripting <> nil));
   end;
 
   procedure LoadCustomEventDirectives;
@@ -1950,9 +2003,13 @@ const
           EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParamSL[0]));
 
           if EventType = -1 then
-            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak, [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
-
-          gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
+          begin
+            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak,
+                                                [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Trim(DirectiveParamSL[0]), 'Unknown directive');
+          end else
+            gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
           FreeAndNil(DirectiveParamSL);
         end;
@@ -1962,6 +2019,49 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomConsoleCommands;
+  var
+    CmdName, ProcName: AnsiString;
+    ErrorStr: UnicodeString;
+    SL: TStringList;
+  begin
+    //Load custom event handlers
+    if (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE))
+      or (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT)) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      //Do not do anything for while in MapEd
+      //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+      //gGame could be nil here, but that does not change final CRC, so we can Exit
+      if not AllowGameUpdate then Exit;
+
+      try
+        SL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ':', SL);
+          CmdName := AnsiString(Trim(SL[0]));
+          ProcName := AnsiString(Trim(SL[1]));
+
+          gScriptEvents.AddConsoleCommand(CmdName, ProcName);
+        finally
+          FreeAndNil(SL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading command ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading command');
           end;
       end;
     end;
@@ -1985,8 +2085,13 @@ const
           StringSplit(DirectiveParam, ',', DirectiveParamSL);
 
           if DirectiveParamSL.Count <> 6 then
+          begin
             fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 6, actual: %d. At [%d:%d]' + sLineBreak,
                                                 [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                         'Wrong number of parameters: expected 6, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
 
           HasError := False;
           for I := 0 to 5 do
@@ -1996,6 +2101,9 @@ const
               HasError := True;
               fErrorHandler.AppendErrorStr(Format('Directive ''%s'' wrong parameter: [%s] is not a number. At [%d:%d]' + sLineBreak,
                                                   [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL[I], Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                           Format('Wrong directive parameter: [%s] is not a number', [DirectiveParamSL[I]]));
             end;
 
           if not HasError then
@@ -2023,6 +2131,8 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
           end;
       end;
     end;
@@ -2045,8 +2155,13 @@ const
           StringSplit(DirectiveParam, ',', DirectiveParamSL);
 
           if DirectiveParamSL.Count <> 2 then
+          begin
             fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 2, actual: %d. At [%d:%d]' + sLineBreak,
                                                 [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                         'Wrong number of parameters: expected 2, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
 
           HasError := False;
             if TryStrToFloat(StringReplace(DirectiveParamSL[0], '.', ',', [rfReplaceAll]), GoldOrePriceX)
@@ -2058,6 +2173,9 @@ const
               HasError := True;
               fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has not a number parameter: [%s]. At [%d:%d]' + sLineBreak,
                                                   [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParam, Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                           'Wrong directive parameters type, Integer required');
             end;
 
           if not HasError then
@@ -2087,6 +2205,8 @@ const
             ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
             fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
               {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
           end;
       end;
     end;
@@ -2101,6 +2221,7 @@ begin
     fScriptFilesInfo.fHasDefDirectives := True;
 
   LoadCustomEventDirectives;
+  LoadCustomConsoleCommands;
   LoadCustomTHTroopCost;
   LoadCustomMarketGoldPrice;
 end;
@@ -2170,9 +2291,10 @@ end;
 
 //Try to find line of code in all script files
 //Returns number of occurences
-function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray;
+                                               out aRowsArr: TIntegerArray): Integer;
 
-  procedure AddFoundLineInfo(var aFoundCnt: Integer; aFileNameFound: UnicodeString; aRowFound: Integer);
+  procedure AddFoundLineInfo(var aFoundCnt: Integer; const aFileNameFound: String; aRowFound: Integer);
   begin
     if (aFoundCnt >= Length(aFileNamesArr))
       or (aFoundCnt >= Length(aRowsArr)) then

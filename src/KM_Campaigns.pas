@@ -3,7 +3,7 @@ unit KM_Campaigns;
 interface
 uses
   Classes,
-  KM_ResTexts, KM_Pics, KM_Maps,
+  KM_ResTexts, KM_Pics, KM_Maps, KM_MapTypes,
   KM_CommonClasses, KM_Points;
 
 
@@ -80,15 +80,15 @@ type
     property MapsInfo: TKMCampaignMapDataArray read fMapsInfo;
     property MapsProgressData: TKMCampaignMapProgressDataArray read fMapsProgressData;
 
-    function GetCampaignTitle: UnicodeString;
-    function GetCampaignDescription: UnicodeString;
-    function GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
-    function GetMissionFile(aIndex: Byte; aExt: UnicodeString = '.dat'): UnicodeString;
-    function GetMissionName(aIndex: Byte): UnicodeString;
-    function GetMissionTitle(aIndex: Byte): UnicodeString;
-    function GetMissionBriefing(aIndex: Byte): UnicodeString;
-    function GetBreifingAudioFile(aIndex: Byte): UnicodeString;
-    function GetScriptDataTypeFile: UnicodeString;
+    function GetCampaignTitle: String;
+    function GetCampaignDescription: String;
+    function GetCampaignMissionTitle(aIndex: Byte): String;
+    function GetMissionFile(aIndex: Byte; const aExt: UnicodeString = '.dat'): String;
+    function GetMissionName(aIndex: Byte): String;
+    function GetMissionTitle(aIndex: Byte): String;
+    function GetMissionBriefing(aIndex: Byte): String;
+    function GetBreifingAudioFile(aIndex: Byte): String;
+    function GetScriptDataTypeFile: String;
   end;
 
 
@@ -554,7 +554,7 @@ begin
 end;
 
 
-function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetDefaultMissionTitle(aIndex: Byte): String;
 begin
   if fMapsInfo[aIndex].MissionName <> '' then
     Result := fMapsInfo[aIndex].MissionName
@@ -565,7 +565,7 @@ begin
 end;
 
 
-function TKMCampaign.GetCampaignMissionTitle(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetCampaignMissionTitle(aIndex: Byte): String;
 begin
   //We have template for mission name in 3:
   if fTextLib[3] <> '' then
@@ -590,19 +590,19 @@ begin
 end;
 
 
-function TKMCampaign.GetMissionFile(aIndex: Byte; aExt: UnicodeString = '.dat'): UnicodeString;
+function TKMCampaign.GetMissionFile(aIndex: Byte; const aExt: UnicodeString = '.dat'): String;
 begin
   Result := fPath + GetMissionName(aIndex) + PathDelim + GetMissionName(aIndex) + aExt;
 end;
 
 
-function TKMCampaign.GetMissionName(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetMissionName(aIndex: Byte): String;
 begin
   Result := ShortName + Format('%.2d', [aIndex + 1]);
 end;
 
 
-function TKMCampaign.GetMissionTitle(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetMissionTitle(aIndex: Byte): String;
 begin
   if fTextLib[1] <> '' then
     Result := Format(fTextLib[1], [aIndex+1]) //Save it for Legacy support
@@ -613,13 +613,13 @@ end;
 
 //Mission texts of original campaigns are available in all languages,
 //custom campaigns are unlikely to have more texts in more than 1-2 languages
-function TKMCampaign.GetMissionBriefing(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetMissionBriefing(aIndex: Byte): String;
 begin
   Result := fTextLib[10 + aIndex];
 end;
 
 
-function TKMCampaign.GetBreifingAudioFile(aIndex: Byte): UnicodeString;
+function TKMCampaign.GetBreifingAudioFile(aIndex: Byte): String;
 begin
   Result := fPath + ShortName + Format('%.2d', [aIndex+1]) + PathDelim +
             ShortName + Format('%.2d', [aIndex + 1]) + '.' + UnicodeString(gResLocales.UserLocale) + '.mp3';

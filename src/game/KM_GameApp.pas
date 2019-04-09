@@ -7,8 +7,8 @@ uses
   Classes, Dialogs, ExtCtrls,
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
-  KM_Music, KM_Maps, KM_Networking, KM_Settings, KM_Render,
-  KM_GameTypes, KM_Points, KM_CommonClasses;
+  KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
+  KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
 
 type
   //Methods relevant to gameplay
@@ -26,16 +26,18 @@ type
     fMainMenuInterface: TKMMainMenuInterface;
     fLastTimeRender: Cardinal;
 
+    fChat: TKMChat;
+
     fOnCursorUpdate: TIntegerStringEvent;
     fOnGameSpeedChange: TSingleEvent;
     fOnGameStart: TKMGameModeChangeEvent;
     fOnGameEnd: TKMGameModeChangeEvent;
 
     procedure SaveCampaignsProgress;
-    procedure GameLoadingStep(const aText: UnicodeString);
+    procedure GameLoadingStep(const aText: String);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
-    procedure LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
+    procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
@@ -73,7 +75,8 @@ type
                            aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone;
                            aAIType: TKMAIType = aitNone);
     procedure NewSingleSave(const aSaveName: UnicodeString);
-    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
+    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; aSpectating: Boolean;
+                                aDifficulty: TKMMissionDifficulty);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
     procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode; aCampName: TKMCampaignId;
                              aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone;
@@ -91,6 +94,7 @@ type
     property MusicLib: TKMMusicLib read fMusicLib;
     property Networking: TKMNetworking read fNetworking;
     property GlobalTickCount: Cardinal read fGlobalTickCount;
+    property Chat: TKMChat read fChat;
 
     procedure KeyDown(Key: Word; Shift: TShiftState);
     procedure KeyPress(Key: Char);
@@ -141,6 +145,8 @@ begin
   fLastTimeRender := 0;
 
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
+
+  fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
 
@@ -207,6 +213,7 @@ begin
 
   StopGame(grSilent);
 
+  FreeAndNil(fChat);
   FreeAndNil(fTimerUI);
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
@@ -414,7 +421,7 @@ begin
 end;
 
 
-procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
+procedure TKMGameApp.GameLoadingStep(const aText: String);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
   Render;
@@ -470,7 +477,7 @@ begin
     end;
   end;
 
-  if gGame.IsMultiplayer then
+  if gGame.IsMultiPlayerOrSpec then
   begin
     if fNetworking.Connected then
       fNetworking.AnnounceDisconnect;
@@ -522,7 +529,7 @@ begin
     grReplayEnd:   fMainMenuInterface.PageChange(gpReplays);
     grError,
     grDisconnect:  begin
-                      if gGame.IsMultiplayer then
+                      if gGame.IsMultiPlayerOrSpec then
                         //After Error page User will go to the main menu, but Mutex will be still locked.
                         //We will need to unlock it on gGame destroy, so mark it with GameLockedMutex
                         gGame.GameLockedMutex := True;
@@ -555,12 +562,8 @@ end;
 
 
 procedure TKMGameApp.StopGameReturnToLobby(Sender: TObject);
-var ChatState: TKMChatState;
 begin
   if gGame = nil then Exit;
-
-  //Copy text from in-game chat to lobby (save it before freeing gGame)
-  ChatState := gGame.GameplayInterface.GetChatState;
 
   FreeThenNil(gGame);
   fNetworking.ReturnToLobby; //Clears gGame event pointers from Networking
@@ -568,15 +571,12 @@ begin
   if fNetworking.IsHost then
     fNetworking.SendPlayerListAndRefreshPlayersSetup; //Call now that events are attached to lobby
 
-  //Copy text from in-game chat to lobby
-  fMainMenuInterface.SetChatState(ChatState);
-
   gLog.AddTime('Gameplay ended - Return to lobby');
 end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromSave(aFilePath: UnicodeString; aGameMode: TKMGameMode);
+procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
 var
   LoadError: UnicodeString;
 begin
@@ -614,7 +614,7 @@ end;
 
 
 //Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
-procedure TKMGameApp.LoadGameFromScript(aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
+procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                         aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                         aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 var
@@ -645,6 +645,11 @@ begin
       Exit;
     end;
   end;
+
+  //Clear chat for SP game, as it useddthere only for console commands
+  if gGame.IsSingleplayer then
+    fChat.Clear;
+
   gGame.AfterStart; //Call after start separately, so errors in it could be sended in crashreport
 
   if Assigned(fOnCursorUpdate) then
@@ -715,24 +720,24 @@ begin
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
-
 end;
 
 
-procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean);
-var GameMode: TKMGameMode;
+procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; aSpectating: Boolean;
+                                       aDifficulty: TKMMissionDifficulty);
+var
+  GameMode: TKMGameMode;
 begin
-  if Spectating then
+  if aSpectating then
     GameMode := gmMultiSpectate
   else
     GameMode := gmMulti;
-  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, nil, 0, GameMode, 0, 0);
+  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, nil, 0, GameMode, 0, 0, aDifficulty);
 
   //Starting the game might have failed (e.g. fatal script error)
   if gGame <> nil then
   begin
-    //Copy text from lobby to in-game chat
-    gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+    gGame.GamePlayInterface.GameStarted;
 
     if Assigned(fOnGameStart) and (gGame <> nil) then
       fOnGameStart(gGame.GameMode);
@@ -741,7 +746,8 @@ end;
 
 
 procedure TKMGameApp.NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-var GameMode: TKMGameMode;
+var
+  GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -752,7 +758,7 @@ begin
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, True), GameMode);
 
   //Copy the chat and typed lobby message to the in-game chat
-  gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+  gGame.GamePlayInterface.GameStarted;
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
@@ -978,7 +984,7 @@ begin
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);
-    if gGame.IsMultiplayer and (fGlobalTickCount mod 100 = 0) then
+    if gGame.IsMultiPlayerOrSpec and (fGlobalTickCount mod 100 = 0) then
       SendMPGameInfo(Self); //Send status to the server every 10 seconds
   end
   else

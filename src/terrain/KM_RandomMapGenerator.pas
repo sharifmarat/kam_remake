@@ -885,7 +885,7 @@ const
   Tr_GroundSnow: array[0..2] of TBiomeType = (btGround,btGroundSnow,btSnow1);
 begin
   // Declare variable to have peace with compiler
-  RandBiom := 0;
+//  RandBiom := 0;
   // Create Shapes (multiple layers)
   ShapeArr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 4),1000);
   Shape2Arr := LinearInterpolation((RMGSettings.Walkable.FirstLayerStep shl 2),1000);
@@ -2906,7 +2906,6 @@ procedure TKMRandomMapGenerator.GenerateHeight(aLocs: TKMPointArray; var TilesPa
     DEC_COEF = 4;
   var
     PointsCnt, I,K,X,Y: Integer;
-    Price: Single;
     P1,P2: TKMPoint;
     VisitArr: TBoolean2Array;
     CopyA: TKMByte2Array;

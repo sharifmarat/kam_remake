@@ -21,7 +21,7 @@ type
     function CanLoadSave: Boolean;
     procedure UpdateUI;
     procedure LoadMinimap;
-    procedure SetLastSaveFileName(aFileName: String = '');
+    procedure SetLastSaveFileName(const aFileName: String = '');
     procedure LoadClick(Sender: TObject);
     procedure Load_Delete_Click(Sender: TObject);
     procedure Load_ListClick(Sender: TObject);
@@ -197,7 +197,7 @@ begin
 end;
 
 
-procedure TKMMenuLoad.SetLastSaveFileName(aFileName: String = '');
+procedure TKMMenuLoad.SetLastSaveFileName(const aFileName: String = '');
 begin
   fLastSaveFileName := aFileName;
   gGameApp.GameSettings.MenuSPSaveFileName := aFileName;

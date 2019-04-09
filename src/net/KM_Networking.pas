@@ -4,8 +4,9 @@ interface
 uses
   {$IFDEF Unix} LCLIntf, {$ENDIF}
   Classes, SysUtils, TypInfo, Forms, KromUtils,
+  KM_Console,
   KM_CommonClasses, KM_CommonTypes, KM_NetworkClasses, KM_NetworkTypes, KM_Defaults, KM_Points,
-  KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_NetPlayersList,
+  KM_Saves, KM_GameOptions, KM_ResLocales, KM_NetFileTransfer, KM_Maps, KM_MapTypes, KM_NetPlayersList,
   KM_DedicatedServer, KM_NetClient, KM_ServerQuery,
   {$IFDEF USESECUREAUTH}
     // If you don't have this file - disable USESECUREAUTH in KaM_Remake.inc
@@ -20,13 +21,6 @@ type
   TKMNetGameState = (lgsNone, lgsConnecting, lgsQuery, lgsLobby, lgsLoading, lgsGame, lgsReconnecting);
   TKMNetGameKind = (ngkNone, ngkMap, ngkSave);
   TKMChatSound = (csNone, csJoin, csLeave, csSystem, csGameStart, csSaveGame, csChat, csChatWhisper, csChatTeam);
-  TKMChatMode = (cmAll, cmTeam, cmSpectators, cmWhisper);
-  TKMChatState =  record
-                  Messages: UnicodeString;
-                  ChatText: UnicodeString;
-                  Mode: TKMChatMode;
-                  WhisperRecipient: TKMNetHandleIndex;
-                end;
 
 const
   NetMPGameState: array [TKMNetGameState] of TMPGameState = (mgsNone, mgsNone, mgsNone, mgsLobby, mgsLoading, mgsGame, mgsGame);
@@ -60,6 +54,9 @@ const
 
 
 type
+  TMapStartEvent = procedure (const aData: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; Spectating: Boolean;
+                              aMissionDifficulty: TKMMissionDifficulty) of object;
+
   //Should handle message exchange and routing, interacting with UI
   TKMNetworking = class
   private
@@ -225,7 +222,7 @@ type
     function CanTakeLocation(aPlayer, aLoc: Integer; AllowSwapping: Boolean): Boolean;
     procedure StartClick; //All required arguments are in our class
     procedure SendPlayerListAndRefreshPlayersSetup(aPlayerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS);
-    procedure UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single);
+    procedure UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single; aDifficulty: TKMMissionDifficulty);
     procedure SendGameOptions;
     procedure RequestFileTransfer;
     procedure VoteReturnToLobby;
@@ -236,7 +233,7 @@ type
     procedure ConsoleCommand(const aText: UnicodeString);
     procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = ''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
     procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
-    procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
+    procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound = csNone);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
 
     //Gameplay
@@ -1043,11 +1040,12 @@ begin
 end;
 
 
-procedure TKMNetworking.UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single);
+procedure TKMNetworking.UpdateGameOptions(aPeacetime: Word; aSpeedPT, aSpeedAfterPT: Single; aDifficulty: TKMMissionDifficulty);
 begin
   fNetGameOptions.Peacetime := aPeacetime;
   fNetGameOptions.SpeedPT := aSpeedPT;
   fNetGameOptions.SpeedAfterPT := aSpeedAfterPT;
+  fNetGameOptions.MissionDifficulty := aDifficulty;
 
   fNetPlayers.ResetReady;
   MyNetPlayer.ReadyToStart := True;
@@ -1195,7 +1193,7 @@ begin
 end;
 
 
-procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound);
+procedure TKMNetworking.PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound = csNone);
 const
   ChatSound: array[TKMChatSound] of TSoundFXNew = (sfxnMPChatSystem, //csNone
                                                  sfxnMPChatSystem, //csJoin
@@ -2375,7 +2373,8 @@ begin
   fIgnorePings := -1; //Ignore all pings until we have finished loading
 
   case fSelectGameKind of
-    ngkMap:  fOnStartMap(fMapInfo.FileNameWithoutHash, fMapInfo.MapFolder, fMapInfo.CRC, MyNetPlayer.IsSpectator);
+    ngkMap:  fOnStartMap(fMapInfo.FileNameWithoutHash, fMapInfo.MapFolder, fMapInfo.CRC, MyNetPlayer.IsSpectator,
+                         fNetGameOptions.MissionDifficulty);
     ngkSave: fOnStartSave(fSaveInfo.FileName, MyNetPlayer.IsSpectator);
     else      raise Exception.Create('Unexpacted fSelectGameKind');
   end;
@@ -2484,6 +2483,7 @@ begin
     MPGameInfo.GameOptions.SpeedPT := fNetGameOptions.SpeedPT;
     MPGameInfo.GameOptions.SpeedAfterPT := fNetGameOptions.SpeedAfterPT;
     MPGameInfo.GameOptions.RandomSeed := fNetGameOptions.RandomSeed; //not needed, but we send it anyway
+    MPGameInfo.GameOptions.MissionDifficulty := fNetGameOptions.MissionDifficulty;
 
     for I := 1 to NetPlayers.Count do
     begin

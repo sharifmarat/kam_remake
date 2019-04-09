@@ -729,7 +729,7 @@ const
   //  'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'
   //);
 
-  procedure AddWare(aWT: TKMWareType; aSpecificText: UnicodeString);
+  procedure AddWare(aWT: TKMWareType; const aSpecificText: String);
   var
     HouseCntColor, ProductionColor, ActualConsumptionColor, FinalConsumptionColor, FractionColor, ExhaustionColor: UnicodeString;
     Cnt: Integer;

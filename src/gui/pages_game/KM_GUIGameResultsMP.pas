@@ -80,6 +80,7 @@ type
     fStatsValues: array[TKMStatType] of TKMStatsValues;
 
     fShowAIResults: Boolean;
+    procedure FreeListToShow(aStatType: TKMStatType);
     procedure RecreateListToShow(aStatType: TKMStatType);
     procedure BackClick(Sender: TObject);
     function DoAdjoinSameColorHand(aHandId: Integer): Boolean;
@@ -366,7 +367,7 @@ begin
       for WType := High(TKMChartWarriorType) downto Low(TKMChartWarriorType) do
         FreeAndNil(Charts_Army[ST,CKind,WType]);
 
-    FreeAndNil(fListToShow[ST]);
+    FreeListToShow(ST);
     FreeAndNil(fChartSeparatorsPos[ST]);
   end;
 end;
@@ -1148,9 +1149,19 @@ begin
 end;
 
 
+procedure TKMGameResultsMP.FreeListToShow(aStatType: TKMStatType);
+begin
+  //Free objects inside (there could be TStringList's)
+  if fListToShow[aStatType] <> nil then
+    fListToShow[aStatType].Clear;
+  //Free list itself
+  FreeAndNil(fListToShow[aStatType]);
+end;
+
+
 procedure TKMGameResultsMP.RecreateListToShow(aStatType: TKMStatType);
 begin
-  FreeAndNil(fListToShow[aStatType]);
+  FreeListToShow(aStatType);
 
   fListToShow[aStatType] := TStringList.Create;
   fListToShow[aStatType].Sorted := False;     //Need to append players to show at the end of list
@@ -1770,7 +1781,7 @@ procedure TKMGameResultsMP.Create_ResultsMP(aParent: TKMPanel);
 const
   TABS_TOP = 75;
 
-  procedure SetupButton(var aBtn: TKMButtonFlat; aCaption: UnicodeString; aTexOffX: ShortInt; aOnClick: TNotifyEvent;
+  procedure SetupButton(var aBtn: TKMButtonFlat; const aCaption: String; aTexOffX: ShortInt; aOnClick: TNotifyEvent;
                         aAnchors: TKMAnchorsSet = [anLeft, anTop]);
   begin
     aBtn.TexOffsetX := aTexOffX;
@@ -1937,7 +1948,7 @@ begin
 
   Panel_ResultsMP.Show;
   //ALERT !!!! Refactor
-  gMain.ForcedResize; //For some reason we could have wrong Panel_ResultsMP Panel position on screen, ForcedResize fix the Issue
+  gMain.ForceResize; //For some reason we could have wrong Panel_ResultsMP Panel position on screen, ForcedResize fix the Issue
   Resize(nil, 0);
 end;
 

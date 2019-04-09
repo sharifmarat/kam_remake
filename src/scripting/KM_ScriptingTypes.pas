@@ -58,7 +58,7 @@ type
 
   TKMScriptErrorType = (seInvalidParameter, seException, sePreprocessorError, seCompileError, seCompileWarning, seLog);
 
-  TKMScriptErrorEvent = procedure (aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '') of object;
+  TKMScriptErrorEvent = procedure (aType: TKMScriptErrorType; aErrorString: UnicodeString; const aDetailedErrorString: UnicodeString = '') of object;
 
 
 implementation

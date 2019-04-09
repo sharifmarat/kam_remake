@@ -48,10 +48,11 @@ uses
   KM_BuildList in 'src\KM_BuildList.pas',
   KM_Campaigns in 'src\KM_Campaigns.pas',
 	
+  KM_Console in 'src\KM_Console.pas',
   KM_CommonClasses in 'src\common\KM_CommonClasses.pas',
   KM_CommonTypes in 'src\common\KM_CommonTypes.pas',
 	KM_Defaults in 'src\common\KM_Defaults.pas',
-	KM_Points in 'src\common\KM_Points.pas',
+	KM_Points in 'src\common\KM_Points.pas', 
 	
   KM_Controls in 'src\KM_Controls.pas',
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
@@ -164,6 +165,7 @@ uses
   KM_Log in 'src\KM_Log.pas',
   KM_Main in 'src\KM_Main.pas',
   KM_Maps in 'src\KM_Maps.pas',
+  KM_MapTypes in 'src\KM_MapTypes.pas',
   KM_MapEditor in 'src\KM_MapEditor.pas',
   KM_MessageLog in 'src\KM_MessageLog.pas',
   KM_MessageStack in 'src\KM_MessageStack.pas',
@@ -250,6 +252,7 @@ uses
 
   KM_Scripting in 'src\scripting\KM_Scripting.pas',
   KM_ScriptingActions in 'src\scripting\KM_ScriptingActions.pas',
+  KM_ScriptingConsoleCommands in 'src\scripting\KM_ScriptingConsoleCommands.pas',
   KM_ScriptingEvents in 'src\scripting\KM_ScriptingEvents.pas',
   KM_ScriptingIdCache in 'src\scripting\KM_ScriptingIdCache.pas',
   KM_ScriptingStates in 'src\scripting\KM_ScriptingStates.pas',
@@ -305,6 +308,9 @@ uses
   KM_PNG in 'src\utils\KM_PNG.pas',
   KM_Sort in 'src\utils\KM_Sort.pas',
   KM_Utils in 'src\utils\KM_Utils.pas',
+  
+  KM_MethodParser in 'src\utils\method_parser\KM_MethodParser.pas',
+  KM_MethodParserParams in 'src\utils\method_parser\KM_MethodParserParams.pas',
 
 	
   KM_Viewport in 'src\KM_Viewport.pas',

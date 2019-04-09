@@ -3,7 +3,7 @@ unit KM_ScriptingStates;
 interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
-  KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_Maps,
+  KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_MapTypes,
   KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
 
 
@@ -45,6 +45,7 @@ type
     function GroupIdle(aGroupID: Integer): Boolean;
     function GroupMember(aGroupID, aMemberIndex: Integer): Integer;
     function GroupMemberCount(aGroupID: Integer): Integer;
+    function GroupOrder(aGroupID: Integer): TKMGroupOrder;
     function GroupOwner(aGroupID: Integer): Integer;
     function GroupType(aGroupID: Integer): Integer;
 
@@ -61,6 +62,7 @@ type
     function HouseFlagPoint(aHouseID: Integer): TKMPoint;
     function HouseIsComplete(aHouseID: Integer): Boolean;
     function HouseOwner(aHouseID: Integer): Integer;
+    function HousePosition(aHouseID: Integer): TKMPoint;
     function HousePositionX(aHouseID: Integer): Integer;
     function HousePositionY(aHouseID: Integer): Integer;
     function HouseRepair(aHouseID: Integer): Boolean;
@@ -168,6 +170,7 @@ type
     function UnitLowHunger: Integer;
     function UnitMaxHunger: Integer;
     function UnitOwner(aUnitID: Integer): Integer;
+    function UnitPosition(aUnitID: Integer): TKMPoint;
     function UnitPositionX(aUnitID: Integer): Integer;
     function UnitPositionY(aUnitID: Integer): Integer;
     function UnitsGroup(aUnitID: Integer): Integer;
@@ -1725,6 +1728,30 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns the Entrance Point of the specified house or (-1;-1) point if House ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.HousePosition(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H <> nil then
+        Result := H.Entrance;
+    end
+    else
+      LogParamWarning('States.HousePosition', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Returns the X coordinate of the specified house or -1 if House ID invalid
 //* Result: X coordinate
@@ -3027,6 +3054,30 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns the TKMPoint with coordinates of the specified unit or (-1;-1) point if Unit ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.UnitPosition(aUnitID: Integer): TKMPoint;
+var
+  U: TKMUnit;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE; //-1 if unit id is invalid
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        Result := U.CurrPosition;
+    end
+    else
+      LogParamWarning('States.UnitPosition', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Returns the X coordinate of the specified unit or -1 if Unit ID invalid
 //* Result: X coordinate
@@ -3465,7 +3516,7 @@ begin
         begin
           DefPosNewAI := gHands[G.Owner].AI.ArmyManagement.Defence.FindPositionOf(G);
           if DefPosNewAI <> nil then
-            Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y);
+            Result := (DefPosNewAI.Position.Loc.X = X) and (DefPosNewAI.Position.Loc.Y = Y);
         end
         else
         begin
@@ -3652,6 +3703,30 @@ begin
     end
     else
       LogParamWarning('States.GroupMemberCount', [aGroupID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns current order of the specified group
+//* Result: TKMGroupOrder
+function TKMScriptStates.GroupOrder(aGroupID: Integer): TKMGroupOrder;
+var
+  G: TKMUnitGroup;
+begin
+  try
+    Result := goNone;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+        Result := G.Order;
+    end
+    else
+      LogParamWarning('States.GroupOrder', [aGroupID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

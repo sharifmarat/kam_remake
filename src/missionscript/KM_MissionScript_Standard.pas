@@ -774,7 +774,7 @@ var
   SaveStream: TFileStream;
   UT: TKMUnitType;
 
-  procedure AddData(aText: AnsiString);
+  procedure AddData(const aText: AnsiString);
   begin
     if CommandLayerCount = -1 then //No layering
       SaveString := SaveString + aText + EolA //Add to the string normally

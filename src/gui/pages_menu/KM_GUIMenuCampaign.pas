@@ -3,7 +3,7 @@ unit KM_GUIMenuCampaign;
 interface
 uses
   Classes, Controls, SysUtils, Math,
-  KM_Controls, KM_Pics, KM_Maps,
+  KM_Controls, KM_Pics, KM_MapTypes,
   KM_Campaigns, KM_InterfaceDefaults;
 
 
@@ -193,18 +193,19 @@ begin
 
     DropBox_Difficulty.Clear;
     I := 0;
+
+    //Set BestCompleteDifficulty as default
+    if fCampaign.MapsProgressData[fMapIndex].Completed then
+      DefMD := fCampaign.MapsProgressData[fMapIndex].BestCompleteDifficulty
+    else if OldMD <> mdNone then
+      DefMD := OldMD
+    else
+      DefMD := mdNormal;
+
     for MD in DiffLevels do
     begin
       DropBox_Difficulty.Add(gResTexts[DIFFICULTY_LEVELS_TX[MD]], Byte(MD));
 
-      //Set BestCompleteDifficulty as default
-      if fCampaign.MapsProgressData[fMapIndex].Completed then
-        DefMD := fCampaign.MapsProgressData[fMapIndex].BestCompleteDifficulty
-      else if OldMD <> mdNone then
-        DefMD := OldMD
-      else 
-        DefMD := mdNormal;
-        
       if MD = DefMD then
         DropBox_Difficulty.ItemIndex := I;
       Inc(I);

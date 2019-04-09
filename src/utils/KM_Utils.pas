@@ -16,7 +16,7 @@ uses
 
   function KMPathLength(aNodeList: TKMPointList): Single;
 
-  function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
+  function GetHintWHotKey(const aText: String; aHotkeyId: Integer): String; overload;
   function GetHintWHotKey(aTextId: Integer; aHotkeyStr: String): String; overload;
   function GetHintWHotKey(aTextId, aHotkeyId: Integer): String; overload;
 
@@ -284,7 +284,7 @@ begin
 end;
 
 
-function GetHintWHotKey(aText: String; aHotkeyId: Integer): String; overload;
+function GetHintWHotKey(const aText: String; aHotkeyId: Integer): String; overload;
 var
   HotKeyStr: String;
 begin

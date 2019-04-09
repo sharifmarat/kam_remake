@@ -74,16 +74,17 @@ var
   AI_GEN_NAVMESH        :Boolean = True; //Generate navmesh for AI to plan attacks/defenses
   AI_GEN_INFLUENCE_MAPS :Boolean = True; //Generate influence maps for AI to plan attacks/defenses
   //Not fully implemented yet
+  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
-  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
-  CACHE_PATHFINDING     :Boolean = False; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   SNOW_HOUSES           :Boolean = False; //Draw snow on houses
   CHECK_8087CW          :Boolean = False; //Check that 8087CW (FPU flags) are set correctly each frame, in case some lib/API changed them
   SCROLL_ACCEL          :Boolean = False; //Acceleration for viewport scrolling
   PathFinderToUse       :Byte = 1;
 
+  //Cache / delivery / pathfinding
+  CACHE_PATHFINDING     :Boolean = True; //Cache routes incase they are needed soon (Vortamic PF runs x4 faster even with lame approach)
   DELIVERY_BID_CALC_USE_PATHFINDING :Boolean = True; //Do we use simple distance on map or pathfinding for calc delivery bids cost?
   {$IFDEF WDC} //Work only in Delphi
   CACHE_DELIVERY_BIDS   :Boolean = True; //Cache delivery bids cost. Must be turned ON if we want to use pathfinding for bid calc, huge impact on performance in that case
@@ -215,7 +216,6 @@ const
   AUTOSAVE_NOT_MORE_OFTEN_THEN = 10000; //= 10s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
 
 
-  CHAT_COOLDOWN           = 500;  //Minimum time in milliseconds between chat messages
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons
 
   DYNAMIC_HOTKEYS_NUM  = 20; // Number of dynamic hotkeys
@@ -846,6 +846,9 @@ const
   clPlayerSelf = icRed;
   clPlayerAlly = icYellow;
   clPlayerEnemy = icCyan;
+
+  clScriptCmdName = icYellow;
+  clScriptCmdParam = icLightGray;
 
 //  clGameSelf = icRed;
 //  clGameAlly = icYellow;

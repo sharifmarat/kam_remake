@@ -55,7 +55,7 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  KM_ResTexts, KM_Game, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_HandsCollection, KM_Hand, KM_Maps;
+  KM_ResTexts, KM_Game, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_HandsCollection, KM_Hand, KM_MapTypes;
 
 
 { TKMMapEdMissionMode }

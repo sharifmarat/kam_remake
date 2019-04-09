@@ -107,7 +107,7 @@ begin
    2: SetActionGoIn(uaWalk, gdGoInside, fInn); //Enter Inn
    3: begin
         SetActionLockedStay(0, uaWalk);
-        fPlace := fInn.EaterGetsInside(UnitType);
+        fPlace := fInn.EaterGetsRandomEmptySlot(UnitType);
         //If there's no free place in the Inn skip to the step where we go out hungry
         if fPlace = -1 then
         begin

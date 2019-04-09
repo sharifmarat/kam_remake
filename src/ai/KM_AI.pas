@@ -128,7 +128,7 @@ begin
 
     //Replays/spectators don't see victory screen
     if not (gGame.GameMode in [gmReplaySingle, gmReplayMulti])
-    and (gGame.IsMultiplayer or (gMySpectator.HandID = fOwner)) then  //Let everyone know in MP mode
+    and (gGame.IsMultiPlayerOrSpec or (gMySpectator.HandID = fOwner)) then  //Let everyone know in MP mode
       gGame.PlayerVictory(fOwner);
 
     //Script may have additional event processors
