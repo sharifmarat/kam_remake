@@ -9,12 +9,15 @@ type
 
   // Log message type
   TKMLogMessageType = (
-    lmt_Default,            //default type
-    lmt_Delivery,           //delivery messages
-    lmt_NetConnection,      //messages about net connection/disconnection/reconnection
-    lmt_NetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
-    lmt_NetPacketCommand,   //log messages about GIP commands net packets
-    lmt_NetPacketPingFps);  //log messages about ping/fps net packets
+    lmtDefault,            //default type
+    lmtDelivery,           //delivery messages
+    lmtCommands,           //all GIC commands
+    lmtRandomChecks,       //Random Checks
+    lmtNetConnection,      //messages about net connection/disconnection/reconnection
+    lmtNetPacketOther,     //log messages about net packets (all packets, except GIP commands/ping/fps)
+    lmtNetPacketCommand,   //log messages about GIP commands net packets
+    lmtNetPacketPingFps,   //log messages about ping/fps net packets
+    lmtDebug);             //debug
 
   TKMLogMessageTypeSet = set of TKMLogMessageType;
 
@@ -28,12 +31,13 @@ type
     fPreviousTick: cardinal;
     fPreviousDate: TDateTime;
     fOnLogMessage: TUnicodeStringEvent;
+
     procedure Lock;
     procedure Unlock;
 
-    procedure AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType); overload;
-    procedure AddLineTime(const aText: UnicodeString); overload;
-    procedure AddLineNoTime(const aText: UnicodeString);
+    procedure AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True); overload;
+    procedure AddLineTime(const aText: UnicodeString; aFlushImmidiately: Boolean = True); overload;
+    procedure AddLineNoTime(const aText: UnicodeString; aDoCloseFile: Boolean = True);
   public
     MultithreadLogging: Boolean; // Enable thread safe mode (resource protection) while logging with multi threads
     MessageTypes: TKMLogMessageTypeSet;
@@ -42,20 +46,34 @@ type
     procedure InitLog;
     // AppendLog adds the line to Log along with time passed since previous line added
     procedure AddTime(const aText: UnicodeString); overload;
+    procedure AddTimeNoFlush(const aText: UnicodeString); overload;
     procedure AddTime(const aText: UnicodeString; num: Integer); overload;
     procedure AddTime(const aText: UnicodeString; num: Single); overload;
     procedure AddTime(num: Integer; const aText: UnicodeString); overload;
     procedure AddTime(const aText: UnicodeString; Res: boolean); overload;
     procedure AddTime(a, b: integer); overload;
+    function IsDegubLogEnabled: Boolean;
+    procedure LogDebug(const aText: UnicodeString);
     procedure LogDelivery(const aText: UnicodeString);
+    procedure LogCommands(const aText: UnicodeString);
+    procedure LogRandomChecks(const aText: UnicodeString);
     procedure LogNetConnection(const aText: UnicodeString);
     procedure LogNetPacketOther(const aText: UnicodeString);
     procedure LogNetPacketCommand(const aText: UnicodeString);
     procedure LogNetPacketPingFps(const aText: UnicodeString);
+    function CanLogDelivery: Boolean;
+    function CanLogCommands: Boolean;
+    function CanLogRandomChecks: Boolean;
+    function CanLogNetConnection: Boolean;
+    function CanLogNetPacketOther: Boolean;
+    function CanLogNetPacketCommand: Boolean;
+    function CanLogNetPacketPingFps: Boolean;
+
     // Add line if TestValue=false
     procedure AddAssert(const aMessageText: UnicodeString);
     // AddToLog simply adds the text
     procedure AddNoTime(const aText: UnicodeString);
+    procedure AddNoTimeNoFlush(const aText: UnicodeString);
     procedure DeleteOldLogs;
     property LogPath: UnicodeString read fLogPath; //Used by dedicated server
     property OnLogMessage: TUnicodeStringEvent read fOnLogMessage write fOnLogMessage;
@@ -71,7 +89,7 @@ uses
   KM_Defaults, KM_CommonUtils;
 
 const
-  DEFAULT_LOG_TYPES_TO_WRITE: TKMLogMessageTypeSet = [lmt_Default, lmt_NetConnection];
+  DEFAULT_LOG_TYPES_TO_WRITE: TKMLogMessageTypeSet = [lmtDefault, lmtNetConnection];
 
 
 //New thread, in which old logs are deleted (used internally)
@@ -104,15 +122,18 @@ var
   fileDateTime: TDateTime;
 begin
   if not DirectoryExists(fPathToLogs) then Exit;
+  try
+    if FindFirst(fPathToLogs + 'KaM*.log', faAnyFile - faDirectory, SearchRec) = 0 then
+    repeat
+      Assert(FileAge(fPathToLogs + SearchRec.Name, fileDateTime), 'How is that it does not exists any more?');
 
-  if FindFirst(fPathToLogs + 'KaM*.log', faAnyFile - faDirectory, SearchRec) = 0 then
-  repeat
-    Assert(FileAge(fPathToLogs + SearchRec.Name, fileDateTime), 'How is that it does not exists any more?');
+      if (Abs(Now - fileDateTime) > DEL_LOGS_OLDER_THAN) then
+        DeleteFile(fPathToLogs + SearchRec.Name);
+    until (FindNext(SearchRec) <> 0);
+  finally
+    FindClose(SearchRec);
+  end;
 
-    if (Abs(Now - fileDateTime) > DEL_LOGS_OLDER_THAN) then
-      DeleteFile(fPathToLogs + SearchRec.Name);
-  until (FindNext(SearchRec) <> 0);
-  FindClose(SearchRec);
 end;
 
 
@@ -125,6 +146,9 @@ begin
   fFirstTick := TimeGet;
   fPreviousTick := TimeGet;
   MessageTypes := DEFAULT_LOG_TYPES_TO_WRITE;
+  if DEBUG_LOGS then
+    Include(MessageTypes, lmtDebug);
+
   CS := TCriticalSection.Create;
   InitLog;
 end;
@@ -132,7 +156,7 @@ end;
 
 destructor TKMLog.Destroy;
 begin
-  CS.Free;
+  FreeAndNil(CS);
   inherited;
 end;
 
@@ -151,7 +175,9 @@ end;
 
 procedure TKMLog.InitLog;
 begin
-  ForceDirectories(ExtractFilePath((fLogPath)));
+  if BLOCK_FILE_WRITE then Exit;
+
+  ForceDirectories(ExtractFilePath(fLogPath));
 
   AssignFile(fl, fLogPath);
   Rewrite(fl);
@@ -159,7 +185,7 @@ begin
   WriteLn(fl, '   Timestamp    Elapsed     Delta     Description');
   CloseFile(fl);
 
-  AddLineTime('Log is up and running. Game version: ' + GAME_VERSION);
+  AddLineTime('Log is up and running. Game version: ' + UnicodeString(GAME_VERSION));
 end;
 
 
@@ -175,8 +201,12 @@ end;
 
 //Lines are timestamped, each line invokes file open/close for writing,
 //meaning that no lines will be lost if Remake crashes
-procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType);
+procedure TKMLog.AddLineTime(const aText: UnicodeString; aLogType: TKMLogMessageType; aDoCloseFile: Boolean = True);
 begin
+  if Self = nil then Exit;
+
+  if BLOCK_FILE_WRITE then Exit;
+  
   if not (aLogType in MessageTypes) then // write into log only for allowed types
     Exit;
 
@@ -186,7 +216,7 @@ begin
   try
     if not FileExists(fLogPath) then
       InitLog;  // Recreate log file, if it was deleted
-    AssignFile(fl, fLogPath);
+
     Append(fl);
     //Write a line when the day changed since last time (useful for dedicated server logs that could be over months)
     if Abs(Trunc(fPreviousDate) - Trunc(Now)) >= 1 then
@@ -200,7 +230,10 @@ begin
                   GetTimeSince(fFirstTick) / 1000,
                   GetTimeSince(fPreviousTick),
                   aText]));
-    CloseFile(fl);
+
+    if aDoCloseFile then
+      CloseFile(fl);
+
     fPreviousTick := TimeGet;
     fPreviousDate := Now;
   finally
@@ -214,15 +247,17 @@ end;
 
 
 //Add line with timestamp
-procedure TKMLog.AddLineTime(const aText: UnicodeString);
+procedure TKMLog.AddLineTime(const aText: UnicodeString; aFlushImmidiately: Boolean = True);
 begin
-  AddLineTime(aText, lmt_Default);
+  AddLineTime(aText, lmtDefault, aFlushImmidiately);
 end;
 
 
 //Same line but without timestamp
-procedure TKMLog.AddLineNoTime(const aText: UnicodeString);
+procedure TKMLog.AddLineNoTime(const aText: UnicodeString; aDoCloseFile: Boolean = True);
 begin
+  if Self = nil then Exit;
+
   if not FileExists(fLogPath) then
     InitLog;  // Recreate log file, if it was deleted
 
@@ -230,10 +265,10 @@ begin
   if MultithreadLogging then
     Lock;
   try
-    AssignFile(fl, fLogPath);
     Append(fl);
     WriteLn(fl, '                                      ' + aText);
-    CloseFile(fl);
+    if aDoCloseFile then
+      CloseFile(fl);
   finally
     if MultithreadLogging then
       UnLock;
@@ -246,49 +281,112 @@ end;
 
 procedure TKMLog.AddTime(const aText: UnicodeString);
 begin
-  if Self = nil then Exit;
-
   AddLineTime(aText);
+end;
+
+
+procedure TKMLog.AddTimeNoFlush(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, False);
+end;
+
+
+function TKMLog.IsDegubLogEnabled: Boolean;
+begin
+  Result := lmtDebug in MessageTypes;
+end;
+
+
+procedure TKMLog.LogDebug(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, lmtDebug);
 end;
 
 
 procedure TKMLog.LogDelivery(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
+  AddLineTime(aText, lmtDelivery);
+end;
 
-  AddLineTime(aText, lmt_Delivery);
+
+procedure TKMLog.LogCommands(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, lmtCommands);
+end;
+
+
+procedure TKMLog.LogRandomChecks(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+  AddLineTime(aText, lmtRandomChecks);
 end;
 
 
 procedure TKMLog.LogNetConnection(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
-  AddLineTime(aText, lmt_NetConnection);
+  AddLineTime(aText, lmtNetConnection);
 end;
 
 
 procedure TKMLog.LogNetPacketOther(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
-  AddLineTime(aText, lmt_NetPacketOther);
+  AddLineTime(aText, lmtNetPacketOther);
 end;
 
 
 procedure TKMLog.LogNetPacketCommand(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
-
-  AddLineTime(aText, lmt_NetPacketCommand);
+  AddLineTime(aText, lmtNetPacketCommand);
 end;
 
 
 procedure TKMLog.LogNetPacketPingFps(const aText: UnicodeString);
 begin
   if Self = nil then Exit;
+  AddLineTime(aText, lmtNetPacketPingFps);
+end;
 
-  AddLineTime(aText, lmt_NetPacketPingFps);
+
+function TKMLog.CanLogDelivery: Boolean;
+begin
+  Result := lmtDelivery in MessageTypes;
+end;
+
+function TKMLog.CanLogCommands: Boolean;
+begin
+  Result := lmtCommands in MessageTypes;
+end;
+
+function TKMLog.CanLogRandomChecks: Boolean;
+begin
+  Result := lmtRandomChecks in MessageTypes;
+end;
+
+function TKMLog.CanLogNetConnection: Boolean;
+begin
+  Result := lmtNetConnection in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketOther: Boolean;
+begin
+  Result := lmtNetPacketOther in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketCommand: Boolean;
+begin
+  Result := lmtNetPacketCommand in MessageTypes;
+end;
+
+function TKMLog.CanLogNetPacketPingFps: Boolean;
+begin
+  Result := lmtNetPacketPingFps in MessageTypes;
 end;
 
 
@@ -352,6 +450,15 @@ begin
   if Self = nil then Exit;
 
   AddLineNoTime(aText);
+end;
+
+
+
+procedure TKMLog.AddNoTimeNoFlush(const aText: UnicodeString);
+begin
+  if Self = nil then Exit;
+
+  AddLineNoTime(aText, False);
 end;
 
 

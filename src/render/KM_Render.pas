@@ -9,9 +9,9 @@ uses
 
 type
   TTexFormat = (
-    tf_RGB5A1,
-    tf_RGBA8,
-    tf_Alpha8 //Mask used for team colors and house construction steps (GL_ALPHA)
+    tfRGB5A1,
+    tfRGBA8,
+    tfAlpha8 //Mask used for team colors and house construction steps (GL_ALPHA)
     );
   const
   TexFormatSize: array [TTexFormat] of Byte = (2, 4, 1);
@@ -59,7 +59,7 @@ type
 
 implementation
 uses
-  KM_Log, KM_ResSprites;
+  SysUtils, KM_Log, KM_ResSprites;
 
 
 { TRender }
@@ -77,6 +77,7 @@ begin
     fRenderControl.CreateRenderContext;
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, @MaxTextureSize); //Get max supported texture size by video adapter
+    gLog.AddTime('GL_MAX_TEXTURE_SIZE = ' + IntToStr(MaxTextureSize));
     TKMResSprites.SetMaxAtlasSize(MaxTextureSize);       //Save it for texture processing
 
     glClearColor(0, 0, 0, 0); 	   //Background
@@ -208,7 +209,8 @@ end;
 class procedure TRender.UpdateTexture(aTexture: GLuint; DestX, DestY: Word; Mode: TTexFormat; const Data: Pointer);
 begin
   if not Assigned(glTexImage2D) then Exit;
-  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)), 'Game designed to handle only POT textures');
+  Assert((DestX * DestY > 0) and (DestX = MakePOT(DestX)) and (DestY = MakePOT(DestY)),
+         Format('Game designed to handle only POT textures. Texture size: [%d:%d]', [DestX,DestY]));
 
   BindTexture(aTexture);
 
@@ -218,11 +220,11 @@ begin
   //Figures are before trimming - only ratio matters
   case Mode of
     //Base layer
-    tf_RGB5A1:  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
+    tfRGB5A1:  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
     //Base layer with alpha channel for shadows
-    tf_RGBA8:   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
+    tfRGBA8:   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
     //Team color layer (4 bit would be okay), but house construction steps need 8bit resolution
-    tf_Alpha8:  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,  DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
+    tfAlpha8:  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,  DestX, DestY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Data);
   end;
   BindTexture(0);
 end;
@@ -268,8 +270,8 @@ begin
   jpg.Compress;
   jpg.SaveToFile(aFileName);
 
-  jpg.Free;
-  mkbmp.Free;
+  FreeAndNil(jpg);
+  FreeAndNil(mkbmp);
 {$ENDIF}
 end;
 

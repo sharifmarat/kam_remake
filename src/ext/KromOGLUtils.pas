@@ -228,9 +228,9 @@ var
 begin
 //New parameter FontSize=16
   font:=CreateFont(-abs(FontSize),0,0,0,FontWeight,0,0,0,ANSI_CHARSET,
-  OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,
-  ANTIALIASED_QUALITY,FF_DONTCARE or DEFAULT_PITCH,
-  'Terminal');
+    OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,
+    ANTIALIASED_QUALITY,FF_DONTCARE or DEFAULT_PITCH,
+    'Terminal');
   SelectObject(h_dc,font);
   {$IFDEF MSWindows}
   wglUseFontBitmaps(h_dc,0,128,20000);

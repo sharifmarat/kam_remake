@@ -2,7 +2,7 @@ unit KM_GameInfo;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Hand, KM_CommonClasses, KM_Defaults;
+  KM_Hand, KM_CommonClasses, KM_MapTypes, KM_Defaults;
 
 
 type
@@ -18,13 +18,14 @@ type
     TickCount: Cardinal; //Current tick count of the game (unused for maps)
     SaveTimestamp: TDateTime; //UTC time when the save was created (unused for maps)
     MissionMode: TKMissionMode; //Fighting or Build-a-City map
+    MissionDifficulty: TKMMissionDifficulty;
     MapSizeX, MapSizeY: Integer;
 
     PlayerCount: Byte;
     Enabled: array [0..MAX_HANDS-1] of Boolean;
     CanBeHuman: array [0..MAX_HANDS-1] of Boolean;
     OwnerNikname: array [0..MAX_HANDS-1] of AnsiString; //Nikname of the player who plays this location
-    HandTypes: array [0..MAX_HANDS-1] of THandType;
+    HandTypes: array [0..MAX_HANDS-1] of TKMHandType;
     ColorID: array [0..MAX_HANDS-1] of Integer;
     Team: array [0..MAX_HANDS-1] of Integer;
 
@@ -36,7 +37,7 @@ type
     function IsValid(aCheckDATCRC: Boolean): Boolean;
     function AICount: Byte;
     function HumanCount: Byte;
-    function HumanUsableLocations: TKMHandIndexArray;
+    function HumanUsableLocs: TKMHandIDArray;
     function GetTimeText: UnicodeString;
     function GetTitleWithTime: UnicodeString;
     function GetSaveTimestamp: UnicodeString;
@@ -77,6 +78,7 @@ begin
   LoadStream.Read(TickCount);
   LoadStream.Read(SaveTimestamp);
   LoadStream.Read(MissionMode, SizeOf(MissionMode));
+  LoadStream.Read(MissionDifficulty, SizeOf(MissionDifficulty));
   LoadStream.Read(MapSizeX);
   LoadStream.Read(MapSizeY);
 
@@ -105,6 +107,7 @@ begin
   SaveStream.Write(TickCount);
   SaveStream.Write(SaveTimestamp);
   SaveStream.Write(MissionMode, SizeOf(MissionMode));
+  SaveStream.Write(MissionDifficulty, SizeOf(MissionDifficulty));
   SaveStream.Write(MapSizeX);
   SaveStream.Write(MapSizeY);
 
@@ -151,7 +154,7 @@ begin
 end;
 
 
-function TKMGameInfo.HumanUsableLocations: TKMHandIndexArray;
+function TKMGameInfo.HumanUsableLocs: TKMHandIDArray;
 var
   I: Integer;
 begin

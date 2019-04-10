@@ -7,7 +7,8 @@ uses
   Classes, Dialogs, ExtCtrls,
   KM_CommonTypes, KM_Defaults, KM_RenderControl,
   KM_Campaigns, KM_Game, KM_InterfaceMainMenu, KM_Resource,
-  KM_Music, KM_Networking, KM_Settings, KM_Render;
+  KM_Music, KM_Maps, KM_MapTypes, KM_Networking, KM_Settings, KM_Render,
+  KM_GameTypes, KM_Points, KM_CommonClasses, KM_Console;
 
 type
   //Methods relevant to gameplay
@@ -17,28 +18,42 @@ type
     fIsExiting: Boolean;
 
     fCampaigns: TKMCampaignsCollection;
-    fGameSettings: TGameSettings;
+    fGameSettings: TKMGameSettings;
     fMusicLib: TKMMusicLib;
     fNetworking: TKMNetworking;
     fRender: TRender;
     fTimerUI: TTimer;
     fMainMenuInterface: TKMMainMenuInterface;
+    fLastTimeRender: Cardinal;
+
+    fChat: TKMChat;
 
     fOnCursorUpdate: TIntegerStringEvent;
     fOnGameSpeedChange: TSingleEvent;
+    fOnGameStart: TKMGameModeChangeEvent;
+    fOnGameEnd: TKMGameModeChangeEvent;
 
-    procedure GameLoadingStep(const aText: UnicodeString);
+    procedure SaveCampaignsProgress;
+    procedure GameLoadingStep(const aText: String);
     procedure LoadGameAssets;
-    procedure LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
-    procedure LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign; aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
-    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+    procedure LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
+    procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
+                                 aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
+                                 aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
+    procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
+
+    procedure GameStarted(aGameMode: TKMGameMode);
+    procedure GameEnded(aGameMode: TKMGameMode);
+    procedure GameDestroyed;
+    procedure GameFinished;
   public
     constructor Create(aRenderControl: TKMRenderControl; aScreenX, aScreenY: Word; aVSync: Boolean; aOnLoadingStep: TEvent; aOnLoadingText: TUnicodeStringEvent; aOnCursorUpdate: TIntegerStringEvent; NoMusic: Boolean = False);
     destructor Destroy; override;
     procedure AfterConstruction(aReturnToOptions: Boolean); reintroduce;
 
-    procedure Stop(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+    procedure PrepageStopGame(aMsg: TKMGameResultMsg);
+    procedure StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
     procedure AnnounceReturnToLobby(Sender: TObject);
     procedure PrepareReturnToLobby(aTimestamp: TDateTime);
     procedure StopGameReturnToLobby(Sender: TObject);
@@ -55,23 +70,31 @@ type
     procedure PreloadGameResources;
 
     //These are all different game kinds we can start
-    procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
-    procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1; aDesiredColor: Cardinal = $00000000);
+    procedure NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte; aDifficulty: TKMMissionDifficulty = mdNone);
+    procedure NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1;
+                           aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone;
+                           aAIType: TKMAIType = aitNone);
     procedure NewSingleSave(const aSaveName: UnicodeString);
-    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TMapFolder; aCRC: Cardinal; Spectating: Boolean);
+    procedure NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; aSpectating: Boolean;
+                                aDifficulty: TKMMissionDifficulty);
     procedure NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal);
+    procedure NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode; aCampName: TKMCampaignId;
+                             aCampMap: Byte; aLocation: Byte; aColor: Cardinal; aDifficulty: TKMMissionDifficulty = mdNone;
+                             aAIType: TKMAIType = aitNone);
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
-    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
+    procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
+
+    procedure SaveMapEditor(const aPathName: UnicodeString);
 
     property Campaigns: TKMCampaignsCollection read fCampaigns;
     function Game: TKMGame;
-    property GameSettings: TGameSettings read fGameSettings;
+    property GameSettings: TKMGameSettings read fGameSettings;
     property MainMenuInterface: TKMMainMenuInterface read fMainMenuInterface;
     property MusicLib: TKMMusicLib read fMusicLib;
     property Networking: TKMNetworking read fNetworking;
     property GlobalTickCount: Cardinal read fGlobalTickCount;
+    property Chat: TKMChat read fChat;
 
     procedure KeyDown(Key: Word; Shift: TShiftState);
     procedure KeyPress(Key: Char);
@@ -82,9 +105,13 @@ type
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
     procedure FPSMeasurement(aFPS: Cardinal);
 
-    property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
+    function DynamicFOWEnabled: Boolean;
 
-    procedure Render(aForPrintScreen: Boolean);
+    property OnGameSpeedChange: TSingleEvent read fOnGameSpeedChange write fOnGameSpeedChange;
+    property OnGameStart: TKMGameModeChangeEvent read fOnGameStart write fOnGameStart;
+    property OnGameEnd: TKMGameModeChangeEvent read fOnGameEnd write fOnGameEnd;
+
+    procedure Render(aForPrintScreen: Boolean = False);
     procedure UpdateState(Sender: TObject);
     procedure UpdateStateIdle(aFrameTime: Cardinal);
   end;
@@ -98,11 +125,12 @@ implementation
 uses
   {$IFDEF MSWindows} Windows, {$ENDIF}
   {$IFDEF Unix} LCLType, {$ENDIF}
-  SysUtils, Math, TypInfo, KromUtils,
+  SysUtils, DateUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
+  KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
-  KM_Maps, KM_Saves, KM_CommonUtils;
+  KM_Saves, KM_CommonUtils;
 
 
 { Creating everything needed for MainMenu, game stuff is created on StartGame }
@@ -112,9 +140,13 @@ begin
 
   fOnCursorUpdate := aOnCursorUpdate;
 
-  fGameSettings := TGameSettings.Create;
+  fGameSettings := TKMGameSettings.Create;
+
+  fLastTimeRender := 0;
 
   fRender := TRender.Create(aRenderControl, aScreenX, aScreenY, aVSync);
+
+  fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
 
@@ -135,8 +167,7 @@ begin
   gSoundPlayer.OnRequestUnfade := fMusicLib.UnfadeMusic;
 
   fCampaigns    := TKMCampaignsCollection.Create;
-  fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.Load;
 
   //If game was reinitialized from options menu then we should return there
   fMainMenuInterface := TKMMainMenuInterface.Create(aScreenX, aScreenY);
@@ -151,6 +182,9 @@ begin
     fMusicLib.PlayMenuTrack;
 
   fMusicLib.ToggleShuffle(fGameSettings.ShuffleOn); //Determine track order
+
+  fOnGameStart := GameStarted;
+  fOnGameEnd := GameEnded;
 end;
 
 
@@ -177,10 +211,10 @@ begin
   //Stop music imediently, so it doesn't keep playing and jerk while things closes
   if fMusicLib <> nil then fMusicLib.StopMusic;
 
-  Stop(gr_Silent);
+  StopGame(grSilent);
 
+  FreeAndNil(fChat);
   FreeAndNil(fTimerUI);
-  if fCampaigns <> nil then fCampaigns.SaveProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
   FreeThenNil(fCampaigns);
   FreeThenNil(fGameSettings);
   FreeThenNil(fMainMenuInterface);
@@ -209,8 +243,9 @@ procedure TKMGameApp.ToggleLocale(const aLocale: AnsiString);
 begin
   Assert(gGame = nil, 'We don''t want to recreate whole fGame for that. Let''s limit it only to MainMenu');
 
+  gLog.AddTime('Toggle to locale ' + UnicodeString(aLocale));
   fMainMenuInterface.PageChange(gpLoading, gResTexts[TX_MENU_NEW_LOCALE]);
-  Render(False); //Force to repaint information screen
+  Render; //Force to repaint information screen
 
   fTimerUI.Enabled := False; //Disable it while switching, if an OpenAL error appears the timer should be disabled
   fGameSettings.Locale := aLocale; //Wrong Locale will be ignored
@@ -225,12 +260,17 @@ begin
   //Fonts might need reloading too
   gRes.LoadLocaleFonts(fGameSettings.Locale, fGameSettings.LoadFullFonts);
 
+  //Force reload game resources, if they during loading process,
+  //as that could cause an error in the loading thread
+  //(did not figure it out why. Its easier just to reload game resources in that rare case)
+  if not gRes.Sprites.GameResLoadCompleted then
+    gRes.LoadGameResources(fGameSettings.AlphaShadows, True);
+
   {$IFDEF USE_MAD_EXCEPT}fExceptions.LoadTranslation;{$ENDIF}
 
   //Campaigns use single locale
   fCampaigns := TKMCampaignsCollection.Create;
-  fCampaigns.ScanFolder(ExeDir + CAMPAIGNS_FOLDER_NAME + PathDelim);
-  fCampaigns.LoadProgress(ExeDir + SAVES_FOLDER_NAME + PathDelim + 'Campaigns.dat');
+  fCampaigns.Load;
   fMainMenuInterface := TKMMainMenuInterface.Create(fRender.ScreenX, fRender.ScreenY);
   fMainMenuInterface.PageChange(gpOptions);
   Resize(fRender.ScreenX, fRender.ScreenY); //Force the recreated main menu to resize to the user's screen
@@ -289,9 +329,6 @@ begin
   //  F9 is the default key in Fraps for video capture
   //  F4 and F9 are used in debug to control run-flow
   //  others.. unknown
-
-  //GLOBAL KEYS
-  if DEBUG_CHEATS and (Key = VK_F12) then SHOW_CONTROLS_OVERLAY := not SHOW_CONTROLS_OVERLAY;
 
   if gGame <> nil then
     gGame.ActiveInterface.KeyUp(Key, Shift, KeyHandled)
@@ -355,11 +392,14 @@ end;
 
 
 procedure TKMGameApp.MouseWheel(Shift: TShiftState; WheelDelta: Integer; X, Y: Integer);
+var
+  Handled: Boolean;
 begin
+  Handled := False; // False by Default
   if gGame <> nil then
-    gGame.ActiveInterface.MouseWheel(Shift, WheelDelta, X, Y)
+    gGame.ActiveInterface.MouseWheel(Shift, WheelDelta, X, Y, Handled)
   else
-    fMainMenuInterface.MouseWheel(Shift, WheelDelta, X, Y);
+    fMainMenuInterface.MouseWheel(Shift, WheelDelta, X, Y, Handled);
 end;
 
 
@@ -369,16 +409,22 @@ begin
 end;
 
 
+function TKMGameApp.DynamicFOWEnabled: Boolean;
+begin
+  Result := DYNAMIC_FOG_OF_WAR or ((gGame <> nil) and gGame.DynamicFOW)
+end;
+
+
 function TKMGameApp.Game: TKMGame;
 begin
   Result := gGame;
 end;
 
 
-procedure TKMGameApp.GameLoadingStep(const aText: UnicodeString);
+procedure TKMGameApp.GameLoadingStep(const aText: String);
 begin
   fMainMenuInterface.AppendLoadingText(aText);
-  Render(False);
+  Render;
 end;
 
 
@@ -386,7 +432,7 @@ procedure TKMGameApp.LoadGameAssets;
 begin
   //Load the resources if necessary
   fMainMenuInterface.PageChange(gpLoading);
-  Render(False);
+  Render;
 
   GameLoadingStep(gResTexts[TX_MENU_LOADING_DEFINITIONS]);
   gRes.OnLoadingText := GameLoadingStep;
@@ -398,27 +444,20 @@ begin
 end;
 
 
-//Game needs to be stopped
-//1. Disconnect from network
-//2. Save games replay
-//3. Fill in game results
-//4. Fill in menu message if needed
-//5. Free the game object
-//6. Switch to MainMenu
-procedure TKMGameApp.Stop(aMsg: TGameResultMsg; const aTextMsg: UnicodeString = '');
+procedure TKMGameApp.SaveCampaignsProgress;
 begin
-  if gGame = nil then Exit;
+  if fCampaigns <> nil then
+    fCampaigns.SaveProgress;
+end;
 
-  if gGame.IsMultiplayer then
-  begin
-    if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
-    fNetworking.Disconnect;
-  end;
+
+procedure TKMGameApp.PrepageStopGame(aMsg: TKMGameResultMsg);
+begin
+  if (gGame = nil) or gGame.ReadyToStop then Exit;
 
   gSoundPlayer.AbortAllLongSounds; //SFX with a long duration should be stopped when quitting
 
-  if aMsg in [gr_Win, gr_Defeat, gr_Cancel, gr_Silent] then
+  if aMsg in [grWin, grDefeat, grCancel, grSilent] then
   begin
     //If the game was a part of a campaign, select that campaign,
     //so we know which menu to show next and unlock next map
@@ -430,42 +469,85 @@ begin
       fCampaigns.ActiveCampaign.ScriptData.Clear;
       gGame.SaveCampaignScriptData(fCampaigns.ActiveCampaign.ScriptData);
 
-      if aMsg = gr_Win then
+      if aMsg = grWin then
+      begin
         fCampaigns.UnlockNextMap;
+        SaveCampaignsProgress; //Always save Campaigns progress after mission has been won. In case future game crash
+      end;
     end;
   end;
 
+  if gGame.IsMultiPlayerOrSpec then
+  begin
+    if fNetworking.Connected then
+      fNetworking.AnnounceDisconnect;
+    fNetworking.Disconnect;
+  end;
+
+  gGame.ReadyToStop := True;
+
+  if (gGame.GamePlayInterface <> nil) and (gGame.GamePlayInterface.GuiGameSpectator <> nil) then
+    gGame.GamePlayInterface.GuiGameSpectator.CloseDropBox;
+
+  if (gGame.GameResult in [grWin, grDefeat]) then
+  begin
+    GameFinished;
+    if fGameSettings.AutosaveAtGameEnd then
+      gGame.Save(Format('%s %s #%d', [gGame.GameName, FormatDateTime('yyyy-mm-dd', Now), fGameSettings.DayGamesCount]), Now);
+  end;
+
+  if Assigned(fOnGameEnd) then
+    fOnGameEnd(gGame.GameMode);
+end;
+
+
+//Game needs to be stopped
+//1. Disconnect from network
+//2. Save games replay
+//3. Fill in game results
+//4. Fill in menu message if needed
+//5. Free the game object
+//6. Switch to MainMenu
+procedure TKMGameApp.StopGame(aMsg: TKMGameResultMsg; const aTextMsg: UnicodeString = '');
+begin
+  if gGame = nil then Exit;
+
+  PrepageStopGame(aMsg);
+
   case aMsg of
-    gr_Win,
-    gr_Defeat,
-    gr_Cancel,
-    gr_ReplayEnd:   if (gGame.GameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) or MP_RESULTS_IN_SP then
-                      fMainMenuInterface.ShowResultsMP(aMsg)
-                    else begin
-                      fMainMenuInterface.ShowResultsMP(aMsg); // Show MP stats too, as we can show them from SP stats page
-                      fMainMenuInterface.ShowResultsSP(aMsg);
+    grWin,
+    grDefeat,
+    grCancel:      case gGame.GameMode of
+                      gmSingle:         fMainMenuInterface.PageChange(gpSinglePlayer);
+                      gmCampaign:       if aTextMsg = '' then //Rely on text message (for campaign it should contain CampaignID)
+                                          fMainMenuInterface.PageChange(gpMainMenu) //Goto main menu in case we fail campaing mission
+                                        else
+                                          fMainMenuInterface.PageChange(gpCampaign, aTextMsg); //Goto Campaign menu in case we win campaing mission
+                      gmMulti,
+                      gmMultiSpectate:  fMainMenuInterface.PageChange(gpMultiplayer);
                     end;
-    gr_Error,
-    gr_Disconnect:  begin
-                      if gGame.IsMultiplayer then
+    grReplayEnd:   fMainMenuInterface.PageChange(gpReplays);
+    grError,
+    grDisconnect:  begin
+                      if gGame.IsMultiPlayerOrSpec then
                         //After Error page User will go to the main menu, but Mutex will be still locked.
                         //We will need to unlock it on gGame destroy, so mark it with GameLockedMutex
                         gGame.GameLockedMutex := True;
                       fMainMenuInterface.PageChange(gpError, aTextMsg);
                     end;
-    gr_Silent:      ;//Used when loading new savegame from gameplay UI
-    gr_MapEdEnd:    fMainMenuInterface.PageChange(gpMapEditor);
+    grSilent:      ;//Used when loading new savegame from gameplay UI
+    grMapEdEnd:    fMainMenuInterface.PageChange(gpMapEditor);
   end;
 
   FreeThenNil(gGame);
-  gLog.AddTime('Gameplay ended - ' + GetEnumName(TypeInfo(TGameResultMsg), Integer(aMsg)) + ' /' + aTextMsg);
+  gLog.AddTime('Gameplay ended - ' + GetEnumName(TypeInfo(TKMGameResultMsg), Integer(aMsg)) + ' /' + aTextMsg);
 end;
 
 
 procedure TKMGameApp.AnnounceReturnToLobby(Sender: TObject);
 begin
   //When this GIC command is executed, it will run PrepareReturnToLobby
-  gGame.GameInputProcess.CmdGame(gic_GameSaveReturnLobby, UTCNow);
+  gGame.GameInputProcess.CmdGame(gicGameSaveReturnLobby, UTCNow);
 end;
 
 
@@ -480,12 +562,8 @@ end;
 
 
 procedure TKMGameApp.StopGameReturnToLobby(Sender: TObject);
-var ChatState: TChatState;
 begin
   if gGame = nil then Exit;
-
-  //Copy text from in-game chat to lobby (save it before freeing gGame)
-  ChatState := gGame.GameplayInterface.GetChatState;
 
   FreeThenNil(gGame);
   fNetworking.ReturnToLobby; //Clears gGame event pointers from Networking
@@ -493,25 +571,23 @@ begin
   if fNetworking.IsHost then
     fNetworking.SendPlayerListAndRefreshPlayersSetup; //Call now that events are attached to lobby
 
-  //Copy text from in-game chat to lobby
-  fMainMenuInterface.SetChatState(ChatState);
-
   gLog.AddTime('Gameplay ended - Return to lobby');
 end;
 
 
-procedure TKMGameApp.LoadGameFromSave(const aFilePath: UnicodeString; aGameMode: TGameMode);
+//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
+procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
     gGame.Load(aFilePath);
   except
@@ -521,8 +597,8 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath]) + '||' + E.ClassName + ': ' + E.Message;
+      StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -530,26 +606,30 @@ begin
     end;
   end;
 
+  gGame.AfterLoad; //Call after load separately, so errors in it could be sended in crashreport
+
   if Assigned(fOnCursorUpdate) then
     fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
 end;
 
 
-procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
-                                        aMap: Byte; aGameMode: TGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal);
+//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
+procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
+                                        aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
+                                        aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 var
   LoadError: UnicodeString;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, fNetworking);
+  gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor);
+    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
   except
     on E : Exception do
     begin
@@ -557,8 +637,8 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile]) + '||' + E.ClassName + ': ' + E.Message;
+      StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -566,25 +646,32 @@ begin
     end;
   end;
 
+  //Clear chat for SP game, as it useddthere only for console commands
+  if gGame.IsSingleplayer then
+    fChat.Clear;
+
+  gGame.AfterStart; //Call after start separately, so errors in it could be sended in crashreport
+
   if Assigned(fOnCursorUpdate) then
     fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
 end;
 
 
-procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TGameMode);
+procedure TKMGameApp.LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
 var
   LoadError: string;
 begin
-  Stop(gr_Silent); //Stop everything silently
+  StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
   //Reset controls if MainForm exists (KMR could be run without main form)
   if gMain <> nil then
     gMain.FormMain.ControlsReset;
 
-  gGame := TKMGame.Create(aGameMode, fRender, nil);
+  gGame := TKMGame.Create(aGameMode, fRender, nil, GameDestroyed);
+  gGame.SetSeed(4); //Every time the game will be the same as previous. Good for debug.
   try
-    gGame.GameStart(aSizeX, aSizeY);
+    gGame.MapEdStartEmptyMap(aSizeX, aSizeY);
   except
     on E : Exception do
     begin
@@ -592,8 +679,8 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], ['-'])+'||'+E.ClassName+': '+E.Message;
-      Stop(gr_Error, LoadError);
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], ['-']) + '||' + E.ClassName + ': ' + E.Message;
+      StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
         );
@@ -606,15 +693,23 @@ begin
 end;
 
 
-procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte);
+procedure TKMGameApp.NewCampaignMap(aCampaign: TKMCampaign; aMap: Byte; aDifficulty: TKMMissionDifficulty = mdNone);
 begin
-  LoadGameFromScript(aCampaign.MissionFile(aMap), aCampaign.MissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0);
+  LoadGameFromScript(aCampaign.GetMissionFile(aMap), aCampaign.GetMissionTitle(aMap), 0, aCampaign, aMap, gmCampaign, -1, 0, aDifficulty);
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
 end;
 
 
-procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1; aDesiredColor: Cardinal = $00000000);
+procedure TKMGameApp.NewSingleMap(const aMissionFile, aGameName: UnicodeString; aDesiredLoc: ShortInt = -1;
+                                  aDesiredColor: Cardinal = $00000000; aDifficulty: TKMMissionDifficulty = mdNone;
+                                  aAIType: TKMAIType = aitNone);
 begin
-  LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor);
+  LoadGameFromScript(aMissionFile, aGameName, 0, nil, 0, gmSingle, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
 end;
 
 
@@ -622,29 +717,37 @@ procedure TKMGameApp.NewSingleSave(const aSaveName: UnicodeString);
 begin
   //Convert SaveName to local FilePath
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, False), gmSingle);
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
 end;
 
 
-procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TMapFolder; aCRC: Cardinal; Spectating: Boolean);
-var GameMode: TGameMode;
+procedure TKMGameApp.NewMultiplayerMap(const aFileName: UnicodeString; aMapFolder: TKMapFolder; aCRC: Cardinal; aSpectating: Boolean;
+                                       aDifficulty: TKMMissionDifficulty);
+var
+  GameMode: TKMGameMode;
 begin
-  if Spectating then
+  if aSpectating then
     GameMode := gmMultiSpectate
   else
     GameMode := gmMulti;
-  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, nil, 0, GameMode, 0, 0);
+  LoadGameFromScript(TKMapsCollection.FullPath(aFileName, '.dat', aMapFolder, aCRC), aFileName, aCRC, nil, 0, GameMode, 0, 0, aDifficulty);
 
   //Starting the game might have failed (e.g. fatal script error)
   if gGame <> nil then
   begin
-    //Copy text from lobby to in-game chat
-    gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+    gGame.GamePlayInterface.GameStarted;
+
+    if Assigned(fOnGameStart) and (gGame <> nil) then
+      fOnGameStart(gGame.GameMode);
   end;
 end;
 
 
 procedure TKMGameApp.NewMultiplayerSave(const aSaveName: UnicodeString; Spectating: Boolean);
-var GameMode: TGameMode;
+var
+  GameMode: TKMGameMode;
 begin
   if Spectating then
     GameMode := gmMultiSpectate
@@ -655,41 +758,113 @@ begin
   LoadGameFromSave(SaveName(aSaveName, EXT_SAVE_MAIN, True), GameMode);
 
   //Copy the chat and typed lobby message to the in-game chat
-  gGame.GamePlayInterface.SetChatState(fMainMenuInterface.GetChatState);
+  gGame.GamePlayInterface.GameStarted;
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+
 end;
 
 
-procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TGameMode; aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal);
+procedure TKMGameApp.NewRestartLast(const aGameName, aMission, aSave: UnicodeString; aGameMode: TKMGameMode;
+                                    aCampName: TKMCampaignId; aCampMap: Byte; aLocation: Byte; aColor: Cardinal;
+                                    aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 begin
   if FileExists(ExeDir + aMission) then
-    LoadGameFromScript(ExeDir + aMission, aGameName, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor)
+    LoadGameFromScript(ExeDir + aMission, aGameName, 0, fCampaigns.CampaignById(aCampName), aCampMap, aGameMode, aLocation, aColor, aDifficulty, aAIType)
   else
-  if FileExists(ChangeFileExt(ExeDir + aSave, '.bas')) then
-    LoadGameFromSave(ChangeFileExt(ExeDir + aSave, '.bas'), aGameMode)
+  if FileExists(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT)) then
+    LoadGameFromSave(ChangeFileExt(ExeDir + aSave, EXT_SAVE_BASE_DOT), aGameMode)
   else
     fMainMenuInterface.PageChange(gpError, 'Can not repeat last mission');
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+
 end;
 
 
 procedure TKMGameApp.NewEmptyMap(aSizeX, aSizeY: Integer);
 begin
   LoadGameFromScratch(aSizeX, aSizeY, gmSingle);
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+
 end;
 
 
-procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX, aSizeY: Integer; aMapCRC: Cardinal = 0);
+procedure TKMGameApp.NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
 begin
   if aFileName <> '' then
     LoadGameFromScript(aFileName, TruncateExt(ExtractFileName(aFileName)), aMapCRC, nil, 0, gmMapEd, 0, 0)
-  else
+  else begin
+    aSizeX := EnsureRange(aSizeX, MIN_MAP_SIZE, MAX_MAP_SIZE);
+    aSizeY := EnsureRange(aSizeY, MIN_MAP_SIZE, MAX_MAP_SIZE);
     LoadGameFromScratch(aSizeX, aSizeY, gmMapEd);
+  end;
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+end;
+
+
+procedure TKMGameApp.SaveMapEditor(const aPathName: UnicodeString);
+begin
+  if aPathName <> '' then
+    gGame.SaveMapEditor(aPathName);
 end;
 
 
 procedure TKMGameApp.NewReplay(const aFilePath: UnicodeString);
 begin
-  Assert(ExtractFileExt(aFilePath) = '.bas');
+  Assert(ExtractFileExt(aFilePath) = EXT_SAVE_BASE_DOT);
   LoadGameFromSave(aFilePath, gmReplaySingle); //Will be changed to gmReplayMulti depending on save contents
+
+  if Assigned(fOnGameStart) and (gGame <> nil) then
+    fOnGameStart(gGame.GameMode);
+end;
+
+
+procedure TKMGameApp.GameStarted(aGameMode: TKMGameMode);
+begin
+  if gMain <> nil then
+  begin
+    gMain.FormMain.SetExportGameStats(aGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti]);
+    gMain.FormMain.SetSaveEditableMission(aGameMode = gmMapEd);
+  end;
+end;
+
+
+procedure TKMGameApp.GameEnded(aGameMode: TKMGameMode);
+begin
+  if gMain <> nil then
+  begin
+    gMain.FormMain.SetExportGameStats((aGameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti])
+                                       or (gGame.GameResult in [grWin, grDefeat]));
+    gMain.FormMain.SetSaveEditableMission(False);
+  end;
+
+  if Assigned(FormLogistics) then
+    FormLogistics.Clear;
+end;
+
+
+procedure TKMGameApp.GameDestroyed;
+begin
+  if gMain <> nil then
+    gMain.FormMain.SetExportGameStats(False);
+end;
+
+
+//Happens when game was won or lost
+procedure TKMGameApp.GameFinished;
+begin
+  if CompareDate(fGameSettings.LastDayGamePlayed, Today) < 0 then
+    fGameSettings.DayGamesCount := 0;
+
+  fGameSettings.LastDayGamePlayed := Today;
+  fGameSettings.DayGamesCount := fGameSettings.DayGamesCount + 1;
 end;
 
 
@@ -705,7 +880,13 @@ begin
     fNetworking := TKMNetworking.Create(fGameSettings.MasterServerAddress,
                                         fGameSettings.AutoKickTimeout,
                                         fGameSettings.PingInterval,
-                                        fGameSettings.MasterAnnounceInterval);
+                                        fGameSettings.MasterAnnounceInterval,
+                                        fGameSettings.ServerDynamicFOW,
+                                        fGameSettings.ServerMapsRosterEnabled,
+                                        fGameSettings.ServerMapsRosterStr,
+                                        KMRange(fGameSettings.ServerLimitPTFrom, fGameSettings.ServerLimitPTTo),
+                                        KMRange(fGameSettings.ServerLimitSpeedFrom, fGameSettings.ServerLimitSpeedTo),
+                                        KMRange(fGameSettings.ServerLimitSpeedAfterPTFrom, fGameSettings.ServerLimitSpeedAfterPTTo));
   fNetworking.OnMPGameInfoChanged := SendMPGameInfo;
   fNetworking.OnStartMap := NewMultiplayerMap;
   fNetworking.OnStartSave := NewMultiplayerSave;
@@ -725,7 +906,7 @@ begin
 end;
 
 
-procedure TKMGameApp.Render(aForPrintScreen: Boolean);
+procedure TKMGameApp.Render(aForPrintScreen: Boolean = False);
 begin
   if SKIP_RENDER then Exit;
   if fIsExiting then Exit;
@@ -742,6 +923,8 @@ begin
   fRender.RenderBrightness(GameSettings.Brightness);
 
   fRender.EndFrame;
+
+  fLastTimeRender := TimeGet;
 
   if not aForPrintScreen and (gGame <> nil) then
     if Assigned(fOnCursorUpdate) then
@@ -795,11 +978,13 @@ begin
 
   Inc(fGlobalTickCount);
   //Always update networking for auto reconnection and query timeouts
-  if fNetworking <> nil then fNetworking.UpdateState(fGlobalTickCount);
+  if fNetworking <> nil then
+    fNetworking.UpdateState(fGlobalTickCount);
+
   if gGame <> nil then
   begin
     gGame.UpdateState(fGlobalTickCount);
-    if gGame.IsMultiplayer and (fGlobalTickCount mod 100 = 0) then
+    if gGame.IsMultiPlayerOrSpec and (fGlobalTickCount mod 100 = 0) then
       SendMPGameInfo(Self); //Send status to the server every 10 seconds
   end
   else
@@ -816,6 +1001,10 @@ begin
     if (gGame <> nil) and not gGame.IsPaused and Assigned(fOnCursorUpdate) then
         fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
+
+  if gMain.Settings.IsNoRenerMaxTimeSet
+    and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
+    Render;
 end;
 
 
@@ -831,4 +1020,6 @@ end;
 
 
 end.
+
+
 

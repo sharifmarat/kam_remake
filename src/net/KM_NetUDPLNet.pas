@@ -42,7 +42,7 @@ end;
 
 destructor TKMNetUDPLNet.Destroy;
 begin
-  if fUDP<>nil then fUDP.Free;
+  if fUDP<>nil then FreeAndNil(fUDP);
   Inherited;
 end;
 
@@ -96,4 +96,4 @@ begin
   if fUDP <> nil then fUDP.CallAction; //Process network events
 end;
 
-end.
+end.

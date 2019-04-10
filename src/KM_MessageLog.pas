@@ -14,7 +14,7 @@ type
     fIsReadGIP: Boolean; //This is synced through GIP
     fIsReadLocal: Boolean; //This is used locally so it responds instantly
   public
-    constructor Create(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint);
+    constructor Create(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
     constructor CreateFromStream(LoadStream: TKMemoryStream);
 
     function IsGoto: Boolean;
@@ -40,7 +40,7 @@ type
     property CountLog: Integer read fCountLog;
     property MessagesLog[aIndex: Integer]: TKMLogMessage read GetMessageLog; default;
 
-    procedure Add(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint);
+    procedure Add(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -53,7 +53,7 @@ uses
 
 
 { TKMLogMessage }
-constructor TKMLogMessage.Create(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint);
+constructor TKMLogMessage.Create(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
 begin
   inherited Create;
   fKind := aKind;
@@ -119,7 +119,7 @@ begin
 end;
 
 
-procedure TKMMessageLog.Add(aKind: TKMMessageKind; aTextID: Integer; aLoc: TKMPoint);
+procedure TKMMessageLog.Add(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
 begin
   SetLength(fListLog, fCountLog + 1);
   fListLog[fCountLog] := TKMLogMessage.Create(aKind, aTextID, aLoc);

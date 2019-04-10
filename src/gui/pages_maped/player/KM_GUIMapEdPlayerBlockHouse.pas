@@ -37,9 +37,9 @@ begin
   inherited Create;
 
   Panel_BlockHouse := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_BlockHouse, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_BLOCK_HOUSES], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_BlockHouse, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_BLOCK_HOUSES], fntOutline, taCenter);
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
   begin
     Button_BlockHouse[I] := TKMButtonFlat.Create(Panel_BlockHouse, ((I-1) mod 5)*37, 30 + ((I-1) div 5)*37,33,33,gRes.Houses[GUIHouseOrder[I]].GUIIcon);
     Button_BlockHouse[I].Hint := gRes.Houses[GUIHouseOrder[I]].HouseName;
@@ -55,7 +55,7 @@ end;
 procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseClick(Sender: TObject);
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   locks: TKMHandLocks;
 begin
   I := TKMButtonFlat(Sender).Tag;
@@ -86,7 +86,7 @@ end;
 procedure TKMMapEdPlayerBlockHouse.Player_BlockHouseRefresh;
 var
   I: Integer;
-  H: THouseType;
+  H: TKMHouseType;
   locks: TKMHandLocks;
 begin
   locks := gMySpectator.Hand.Locks;

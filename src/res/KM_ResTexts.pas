@@ -18,6 +18,9 @@ const
   // That string was used in all Synetic games for missing texts
   NO_TEXT = '<<<LEER>>>';
 
+  HANDS_NAMES_OFFSET = 100;
+  MISSION_NAME_LIBX_ID = 200; //Reserved Libx ID for Mission name in Campaigns
+
 type
   TKMTextLibraryCommon = class
   private
@@ -116,7 +119,7 @@ begin
       Break;
   end;
 
-  Assert(topId <= 1024, 'Dont allow too many strings for no reason');
+  Assert(topId <= 2048, 'Dont allow too many strings for no reason');
 
   // Don't shrink the array, we might be overloading base locale with a partial translation
   if Length(aArray) < topId + 1 then
@@ -185,7 +188,7 @@ end;
 
 procedure TKMTextLibraryMulti.InitLocaleIds;
 begin
-  // Using indexes is fatsre than always looking them up for every string requested
+  // Using indexes is faster than always looking them up for every string requested
   fPref[0] := gResLocales.IndexByCode(gResLocales.UserLocale);
   fPref[1] := gResLocales.IndexByCode(gResLocales.FallbackLocale);
   fPref[2] := gResLocales.IndexByCode(gResLocales.DefaultLocale);

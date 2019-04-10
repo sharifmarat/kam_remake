@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 414
+  ClientHeight = 454
   ClientWidth = 872
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -13,7 +13,7 @@ object Form1: TForm1
   OldCreateOrder = False
   DesignSize = (
     872
-    414)
+    454)
   PixelsPerInch = 96
   TextHeight = 13
   object Button3: TButton
@@ -56,10 +56,10 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object Memo1: TMemo
-    Left = 288
-    Top = 24
+    Left = 360
+    Top = 25
     Width = 465
-    Height = 256
+    Height = 296
     Margins.Left = 2
     Margins.Top = 2
     Margins.Right = 2
@@ -154,7 +154,7 @@ object Form1: TForm1
   end
   object Button6: TButton
     Left = 24
-    Top = 224
+    Top = 264
     Width = 185
     Height = 25
     Margins.Left = 2
@@ -180,7 +180,7 @@ object Form1: TForm1
   end
   object btnCheckColor: TButton
     Left = 7
-    Top = 281
+    Top = 336
     Width = 258
     Height = 25
     Hint = 
@@ -196,7 +196,7 @@ object Form1: TForm1
   end
   object btnSetDefColor: TButton
     Left = 7
-    Top = 310
+    Top = 365
     Width = 258
     Height = 25
     Hint = 
@@ -212,7 +212,7 @@ object Form1: TForm1
   end
   object btnRemoveNewRemap: TButton
     Left = 7
-    Top = 339
+    Top = 394
     Width = 258
     Height = 25
     Margins.Left = 2
@@ -225,7 +225,7 @@ object Form1: TForm1
   end
   object btnDeleteUnusedSetMapColor: TButton
     Left = 7
-    Top = 368
+    Top = 423
     Width = 258
     Height = 25
     Hint = 
@@ -240,5 +240,71 @@ object Form1: TForm1
     Caption = 'Delete unused SET_MAP_COLOR for all maps'
     TabOrder = 15
     OnClick = btnDeleteUnusedSetMapColorClick
+  end
+  object Button10: TButton
+    Left = 24
+    Top = 227
+    Width = 321
+    Height = 25
+    Hint = 'Add Advanced AI players to MP maps'
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'Add AdvancedAI to MP maps, where Human+AI players'
+    TabOrder = 16
+    OnClick = Button10Click
+  end
+  object Button11: TButton
+    Left = 423
+    Top = 365
+    Width = 154
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'LF -> CRLF all maps'
+    TabOrder = 17
+    OnClick = Button11Click
+  end
+  object Button12: TButton
+    Left = 423
+    Top = 394
+    Width = 154
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'LF -> CRLF all Units *.pas'
+    TabOrder = 18
+    OnClick = Button12Click
+  end
+  object Button13: TButton
+    Left = 615
+    Top = 336
+    Width = 154
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'Resave all maps'
+    TabOrder = 19
+    OnClick = Button13Click
+  end
+  object Button14: TButton
+    Left = 213
+    Top = 200
+    Width = 132
+    Height = 25
+    Margins.Left = 2
+    Margins.Top = 2
+    Margins.Right = 2
+    Margins.Bottom = 2
+    Caption = 'Add missing AI players'
+    TabOrder = 20
+    OnClick = Button14Click
   end
 end

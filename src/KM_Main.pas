@@ -14,10 +14,12 @@ type
     fFormLoading: TFormLoading;
 
     fOldTimeFPS, fOldFrameTimes, fFrameCount: Cardinal;
+    {$IFNDEF FPC}
     fFlashing: Boolean;
+    {$ENDIF}
     fMutex: THandle;
 
-    fMainSettings: TMainSettings;
+    fMainSettings: TKMainSettings;
     fResolutions: TKMResolutions;
     fMapCacheUpdater: TTMapsCacheUpdater;
 
@@ -37,10 +39,11 @@ type
     procedure CloseQuery(var CanClose: Boolean);
     procedure Stop(Sender: TObject);
 
-    procedure UpdateWindowParams(aWindowParams: TKMWindowParamsRecord);
-    procedure Move(aWindowParams: TKMWindowParamsRecord);
+    procedure UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
+    procedure Move(const aWindowParams: TKMWindowParamsRecord);
+    procedure ForceResize;
     procedure Resize(aWidth, aHeight: Integer); overload;
-    procedure Resize(aWidth, aHeight: Integer; aWindowParams: TKMWindowParamsRecord); overload;
+    procedure Resize(aWidth, aHeight: Integer; const aWindowParams: TKMWindowParamsRecord); overload;
     procedure Render;
     procedure ShowAbout;
     property FormMain: TFormMain read fFormMain;
@@ -48,11 +51,13 @@ type
     procedure ApplyCursorRestriction;
     function GetScreenBounds(out Bounds: TRect): Boolean;
     function IsFormActive: Boolean;
-    function ClientRect: TRect;
+    function ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
     function ClientToScreen(aPoint: TPoint): TPoint;
     procedure ReinitRender(aReturnToOptions: Boolean);
     procedure FlashingStart;
     procedure FlashingStop;
+
+    function IsDebugChangeAllowed: Boolean;
 
     function LockMutex: Boolean;
     procedure UnlockMutex;
@@ -60,7 +65,7 @@ type
     procedure StatusBarText(aPanelIndex: Integer; const aText: UnicodeString);
 
     property Resolutions: TKMResolutions read fResolutions;
-    property Settings: TMainSettings read fMainSettings;
+    property Settings: TKMainSettings read fMainSettings;
   end;
 
 
@@ -97,7 +102,7 @@ end;
 
 destructor TKMMain.Destroy;
 begin
-  {$IFDEF USE_MAD_EXCEPT}fExceptions.Free;{$ENDIF}
+  {$IFDEF USE_MAD_EXCEPT}FreeAndNil(fExceptions);{$ENDIF}
   inherited;
 end;
 
@@ -118,7 +123,7 @@ begin
   //Random is only used for cases where order does not matter, e.g. shuffle tracks
   Randomize;
 
-  fFormLoading.Label5.Caption := GAME_VERSION;
+  fFormLoading.Label5.Caption := UnicodeString(GAME_VERSION);
   fFormLoading.Show; //This is our splash screen
   fFormLoading.Refresh;
 
@@ -128,16 +133,19 @@ begin
 
   ExeDir := ExtractFilePath(ParamStr(0));
 
-  CreateDir(ExeDir + 'Logs' + PathDelim);
-  gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
-  gLog.DeleteOldLogs;
+  if not BLOCK_FILE_WRITE then
+  begin
+    CreateDir(ExeDir + 'Logs' + PathDelim);
+    gLog := TKMLog.Create(ExeDir + 'Logs' + PathDelim + 'KaM_' + FormatDateTime('yyyy-mm-dd_hh-nn-ss-zzz', Now) + '.log'); //First thing - create a log
+    gLog.DeleteOldLogs;
+  end;
 
   //Resolutions are created first so that we could check Settings against them
   fResolutions := TKMResolutions.Create;
 
   //Only after we read settings (fullscreen property and resolutions)
   //we can decide whenever we want to create Game fullscreen or not (OpenGL init depends on that)
-  fMainSettings := TMainSettings.Create;
+  fMainSettings := TKMainSettings.Create;
   //We need to verify INI values, as they can be from another display
   if not fResolutions.IsValid(fMainSettings.Resolution) then
   begin
@@ -146,7 +154,7 @@ begin
       fMainSettings.FullScreen := False;
   end;
 
-  fFormMain.Caption := 'KaM Remake - ' + GAME_VERSION;
+  fFormMain.Caption := 'KaM Remake - ' + UnicodeString(GAME_VERSION);
   //Will make the form slightly higher, so do it before ReinitRender so it is reset
   fFormMain.ControlsSetVisibile(SHOW_DEBUG_CONTROLS);
 
@@ -198,7 +206,7 @@ begin
   if not CanClose then
   begin
     //We want to pause the game for the time user verifies he really wants to close
-    WasRunning := not gGameApp.Game.IsMultiplayer
+    WasRunning := not gGameApp.Game.IsMultiPlayerOrSpec
                   and not gGameApp.Game.IsMapEditor
                   and not gGameApp.Game.IsPaused;
 
@@ -228,27 +236,35 @@ end;
 
 procedure TKMMain.Stop(Sender: TObject);
 begin
-  //Reset the resolution
-  FreeThenNil(fResolutions);
-  FreeThenNil(fMainSettings);
-  if fMapCacheUpdater <> nil then
-    fMapCacheUpdater.Stop;
-  FreeThenNil(gGameApp);
-  FreeThenNil(gLog);
+  try
+    //Reset the resolution
+    FreeThenNil(fResolutions);
+    FreeThenNil(fMainSettings);
+    if fMapCacheUpdater <> nil then
+      fMapCacheUpdater.Stop;
+    FreeThenNil(gGameApp);
+    FreeThenNil(gLog);
 
-  {$IFDEF MSWindows}
-  TimeEndPeriod(1);
-  ClipCursor(nil); //Release the cursor restriction
-  {$ENDIF}
+    {$IFDEF MSWindows}
+    TimeEndPeriod(1);
+    ClipCursor(nil); //Release the cursor restriction
+    {$ENDIF}
 
-  // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
-  // In first case Form will take care about closing itself
+    // We could have been asked to close by MainForm or from other place (e.g. MainMenu Exit button)
+    // In first case Form will take care about closing itself
 
-  // Do not call gMain.Stop from FormClose handler again
-  fFormMain.OnClose := nil;
+    // Do not call gMain.Stop from FormClose handler again
+    fFormMain.OnClose := nil;
 
-  if Sender <> fFormMain then
-    fFormMain.Close;
+    if Sender <> fFormMain then
+      fFormMain.Close;
+  except
+    on E: Exception do
+      begin
+        gLog.AddTime('Exception while closing game app: ' + E.Message
+                     {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+      end;
+  end;
 end;
 
 
@@ -288,6 +304,8 @@ var
   FrameTime: Cardinal;
   FPSLag: Integer;
 begin
+  FrameTime := 0;
+
   if CHECK_8087CW then
     //$1F3F is used to mask out reserved/undefined bits
     Assert((Get8087CW and $1F3F = $133F), '8087CW is wrong');
@@ -295,6 +313,7 @@ begin
   //if not Form1.Active then exit;
 
   //Counting FPS
+  if fMainSettings <> nil then //fMainSettings could be nil on Game Exit ?? Just check if its not nil
   begin
     FrameTime  := GetTimeSince(fOldTimeFPS);
     fOldTimeFPS := TimeGet;
@@ -326,7 +345,7 @@ begin
   if gGameApp <> nil then
   begin
     gGameApp.UpdateStateIdle(FrameTime);
-    gGameApp.Render(False);
+    gGameApp.Render;
   end;
 
   Done := False; //Repeats OnIdle asap without performing Form-specific idle code
@@ -360,6 +379,8 @@ begin
                                 StatusBarText);
   gGameApp.OnGameSpeedChange := GameSpeedChange;
   gGameApp.AfterConstruction(aReturnToOptions);
+  //Preload game resources while in menu to make 1st game start faster
+  gGameApp.PreloadGameResources;
 
   gLog.AddTime('ToggleFullscreen');
   gLog.AddTime('Form Width/Height: '+inttostr(fFormMain.Width)+':'+inttostr(fFormMain.Height));
@@ -369,7 +390,7 @@ begin
   fFormMain.Hide;
   fFormMain.Show;
 
-  Resize(fFormMain.RenderArea.Width, fFormMain.RenderArea.Height); //Force everything to resize
+  ForceResize; //Force everything to resize
   // Unlock window params if are no longer in FullScreen mode
   if (not fMainSettings.FullScreen) then
     fMainSettings.WindowParams.UnlockParams;
@@ -455,11 +476,22 @@ begin
 end;
 
 
-function TKMMain.ClientRect: TRect;
+function TKMMain.IsDebugChangeAllowed: Boolean;
+begin
+  Result := (gGameApp.Game = nil)
+            or (not gGameApp.Game.IsMultiPlayerOrSpec or MULTIPLAYER_CHEATS)
+end;
+
+
+function TKMMain.ClientRect(aPixelsCntToReduce: Integer = 0): TRect;
 begin
   Result := fFormMain.RenderArea.ClientRect;
   Result.TopLeft := ClientToScreen(Result.TopLeft);
+  Result.TopLeft.X := Result.TopLeft.X + aPixelsCntToReduce;
+  Result.TopLeft.Y := Result.TopLeft.Y + aPixelsCntToReduce;
   Result.BottomRight := ClientToScreen(Result.BottomRight);
+  Result.BottomRight.X := Result.BottomRight.X - aPixelsCntToReduce;
+  Result.BottomRight.Y := Result.BottomRight.Y - aPixelsCntToReduce;
 end;
 
 
@@ -530,7 +562,14 @@ end;
 procedure TKMMain.Render;
 begin
   if gGameApp <> nil then
-    gGameApp.Render(False);
+    gGameApp.Render;
+end;
+
+
+//Force everything to resize
+procedure TKMMain.ForceResize;
+begin
+  Resize(fFormMain.RenderArea.Width, fFormMain.RenderArea.Height);
 end;
 
 
@@ -542,7 +581,7 @@ end;
 
 
 
-procedure TKMMain.Resize(aWidth, aHeight: Integer; aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.Resize(aWidth, aHeight: Integer; const aWindowParams: TKMWindowParamsRecord);
 begin
   if gGameApp <> nil then
   begin
@@ -552,15 +591,16 @@ begin
 end;
 
 
-procedure TKMMain.Move(aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.Move(const aWindowParams: TKMWindowParamsRecord);
 begin
   UpdateWindowParams(aWindowParams);
 end;
 
 
-procedure TKMMain.UpdateWindowParams(aWindowParams: TKMWindowParamsRecord);
+procedure TKMMain.UpdateWindowParams(const aWindowParams: TKMWindowParamsRecord);
 begin
-  if gGameApp <> nil then
+  if (gGameApp <> nil)
+    and (fMainSettings <> nil) and (fMainSettings.WindowParams <> nil) then //just in case...
     fMainSettings.WindowParams.ApplyWindowParams(aWindowParams);
 end;
 

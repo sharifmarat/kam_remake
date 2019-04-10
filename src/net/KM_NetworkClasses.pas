@@ -2,9 +2,11 @@
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, SysUtils, StrUtils, KM_CommonClasses, KM_NetworkTypes, KM_Defaults, KM_GameOptions;
+  Classes, SysUtils, StrUtils, KM_CommonTypes, KM_CommonClasses, KM_NetworkTypes, KM_Defaults, KM_GameOptions;
 
 type
+  TKMPlayerGameResult = (pgrNone, pgrWin, pgrDefeat);
+
   //Stores information about a multiplayer game to be sent: host -> server -> queriers
   TMPGameInfo = class
   public
@@ -20,7 +22,8 @@ type
                                             Team: Integer;
                                             IsSpectator: Boolean;
                                             IsHost: Boolean;
-                                            PlayerType: TNetPlayerType;
+                                            PlayerType: TKMNetPlayerType;
+                                            WonOrLost: TWonOrLost;
                                           end;
     Description: UnicodeString;
     Map: UnicodeString;
@@ -61,6 +64,7 @@ begin
     aStream.Read(Players[I].IsSpectator);
     aStream.Read(Players[I].IsHost);
     aStream.Read(Players[I].PlayerType, SizeOf(Players[I].PlayerType));
+    aStream.Read(Players[I].WonOrLost, SizeOf(Players[I].WonOrLost));
   end;
   aStream.ReadW(Description);
   aStream.ReadW(Map);
@@ -110,6 +114,7 @@ begin
     aStream.Write(Players[I].IsSpectator);
     aStream.Write(Players[I].IsHost);
     aStream.Write(Players[I].PlayerType, SizeOf(Players[I].PlayerType));
+    aStream.Write(Players[I].WonOrLost, SizeOf(Players[I].WonOrLost));
   end;
   aStream.WriteW(Description);
   aStream.WriteW(Map);

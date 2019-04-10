@@ -73,7 +73,7 @@ type
     destructor Destroy; override;
 
     //Just like Stats or GIP or Scripting we receive a handful of events from the game
-    procedure HouseBuilt(aHouseType: THouseType);
+    procedure HouseBuilt(aHouseType: TKMHouseType);
     procedure MissionEnd(aGameResult: TGameResultMsg; aMissionName: string);
   end;
 
@@ -106,7 +106,7 @@ end;
 { TKMAchievementVariety }
 procedure TKMAchievementVariety.Process(aEvent: TKMAchievementEvent; aParams: array of const);
 var
-  ut: TUnitType;
+  ut: TKMUnitType;
 begin
   if aEvent = aeMissionStart then
   begin
@@ -118,12 +118,12 @@ begin
   if aEvent = aeHouseBuilt then
   begin
     Assert((Length(aParams) = 1) and (aParams[0].VType = vtInteger));
-    fHousesBuilt[THouseType(aParams[0].VInteger)] := True;
+    fHousesBuilt[TKMHouseType(aParams[0].VInteger)] := True;
   end;
   if aEvent = aeUnitTrained then
   begin
     Assert((Length(aParams) = 1) and (aParams[0].VType = vtInteger));
-    ut := TUnitType(aParams[0].VInteger);
+    ut := TKMUnitType(aParams[0].VInteger);
     if ut in [CITIZEN_MIN..CITIZEN_MAX] then
       fCitizenTrained[ut] := True
     else
@@ -166,13 +166,13 @@ end;
 
 destructor TKMAchievements.Destroy;
 begin
-  fList.Free;
+  FreeAndNil(fList);
 
   inherited;
 end;
 
 
-procedure TKMAchievements.HouseBuilt(aHouseType: THouseType);
+procedure TKMAchievements.HouseBuilt(aHouseType: TKMHouseType);
 begin
   //Inform all interested achievements
 end;

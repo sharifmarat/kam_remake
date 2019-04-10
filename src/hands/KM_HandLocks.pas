@@ -10,18 +10,22 @@ type
   // Permissions
   TKMHandLocks = class
   private
-    fHouseUnlocked: array [THouseType] of Boolean; //If building requirements performed
-    procedure UpdateReqDone(aType: THouseType);
+    fHouseUnlocked: array [TKMHouseType] of Boolean; //If building requirements performed
+    fUnitBlocked: array [TKMUnitType] of Boolean;   //Allowance derived from mission script
+    fMilitiaBlockedInTH: Boolean; // special case for militia block to train in TownHall
+    procedure UpdateReqDone(aType: TKMHouseType);
   public
-    HouseBlocked: array [THouseType] of Boolean; //Allowance derived from mission script
-    HouseGranted: array [THouseType] of Boolean; //Allowance derived from mission script
-    UnitBlocked: array [TUnitType] of Boolean;   //Allowance derived from mission script
+    HouseBlocked: array [TKMHouseType] of Boolean; //Allowance derived from mission script
+    HouseGranted: array [TKMHouseType] of Boolean; //Allowance derived from mission script
 
     AllowToTrade: array [WARE_MIN..WARE_MAX] of Boolean; //Allowance derived from mission script
     constructor Create;
 
-    procedure HouseCreated(aType: THouseType);
-    function HouseCanBuild(aType: THouseType): Boolean;
+    procedure HouseCreated(aType: TKMHouseType);
+    function HouseCanBuild(aType: TKMHouseType): Boolean;
+
+    procedure SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TKMUnitType; aInTownHall: Boolean = False);
+    function GetUnitBlocked(aUnitType: TKMUnitType; aInTownHall: Boolean = False): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -36,7 +40,7 @@ uses
 { TKMHandLocks }
 constructor TKMHandLocks.Create;
 var
-  W: TWareType;
+  W: TKMWareType;
 begin
   inherited;
 
@@ -44,13 +48,13 @@ begin
     AllowToTrade[W] := True;
 
   //Release Store at the start of the game by default
-  fHouseUnlocked[ht_Store] := True;
+  fHouseUnlocked[htStore] := True;
 end;
 
 
-procedure TKMHandLocks.UpdateReqDone(aType: THouseType);
+procedure TKMHandLocks.UpdateReqDone(aType: TKMHouseType);
 var
-  H: THouseType;
+  H: TKMHouseType;
 begin
   for H := HOUSE_MIN to HOUSE_MAX do
     if gRes.Houses[H].ReleasedBy = aType then
@@ -59,16 +63,34 @@ end;
 
 
 // New house, either built by player or created by mission script
-procedure TKMHandLocks.HouseCreated(aType: THouseType);
+procedure TKMHandLocks.HouseCreated(aType: TKMHouseType);
 begin
   UpdateReqDone(aType);
 end;
 
 
 // Get effective permission
-function TKMHandLocks.HouseCanBuild(aType: THouseType): Boolean;
+function TKMHandLocks.HouseCanBuild(aType: TKMHouseType): Boolean;
 begin
   Result := (fHouseUnlocked[aType] or HouseGranted[aType]) and not HouseBlocked[aType];
+end;
+
+
+function TKMHandLocks.GetUnitBlocked(aUnitType: TKMUnitType; aInTownHall: Boolean = False): Boolean;
+begin
+  if aInTownHall and (aUnitType = utMilitia) then
+    Result := fMilitiaBlockedInTH
+  else
+    Result := fUnitBlocked[aUnitType];
+end;
+
+
+procedure TKMHandLocks.SetUnitBlocked(aIsBlocked: Boolean; aUnitType: TKMUnitType; aInTownHall: Boolean = False);
+begin
+  if aInTownHall and (aUnitType = utMilitia) then
+    fMilitiaBlockedInTH := aIsBlocked
+  else
+    fUnitBlocked[aUnitType] := aIsBlocked;
 end;
 
 
@@ -77,7 +99,7 @@ begin
   SaveStream.WriteA('HandLocks');
   SaveStream.Write(HouseBlocked, SizeOf(HouseBlocked));
   SaveStream.Write(HouseGranted, SizeOf(HouseGranted));
-  SaveStream.Write(UnitBlocked, SizeOf(UnitBlocked));
+  SaveStream.Write(fUnitBlocked, SizeOf(fUnitBlocked));
   SaveStream.Write(AllowToTrade, SizeOf(AllowToTrade));
   SaveStream.Write(fHouseUnlocked, SizeOf(fHouseUnlocked));
 end;
@@ -88,7 +110,7 @@ begin
   LoadStream.ReadAssert('HandLocks');
   LoadStream.Read(HouseBlocked, SizeOf(HouseBlocked));
   LoadStream.Read(HouseGranted, SizeOf(HouseGranted));
-  LoadStream.Read(UnitBlocked, SizeOf(UnitBlocked));
+  LoadStream.Read(fUnitBlocked, SizeOf(fUnitBlocked));
   LoadStream.Read(AllowToTrade, SizeOf(AllowToTrade));
   LoadStream.Read(fHouseUnlocked, SizeOf(fHouseUnlocked));
 end;

@@ -115,7 +115,7 @@ begin
   {$IFDEF MSWindows}
     SetRenderFrame(Handle, h_DC, h_RC);
     //Let us use glPrint to output OGL text
-    BuildFont(h_DC, 16, FW_BOLD);
+    BuildFont(h_DC, 14, FW_SEMIBOLD);
   {$ENDIF}
   {$IFDEF Unix}
     MakeCurrent;

@@ -9,7 +9,7 @@ uses
 type
   TKMMenuMain = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
     procedure ButtonClick(Sender: TObject);
   protected
     Panel_MainMenu: TKMPanel;
@@ -22,7 +22,7 @@ type
     Button_MM_Credits: TKMButton;
     Button_MM_Quit: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     procedure Show;
   end;
 
@@ -33,7 +33,7 @@ uses
 
 
 { TKMGUIMenuMain }
-constructor TKMMenuMain.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuMain.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 
@@ -43,7 +43,7 @@ begin
   Panel_MainMenu := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_MainMenu.AnchorsCenter;
     TKMImage.Create(Panel_MainMenu, 300, 120, 423, 164, 4, rxGuiMain);
-    TKMLabel.Create(Panel_MainMenu, 512, 300, 'Remake', fnt_Metal, taCenter);
+    TKMLabel.Create(Panel_MainMenu, 512, 300, 'Remake', fntMetal, taCenter);
 
     with TKMImage.Create(Panel_MainMenu,  50, 220, round(218*1.3), round(291*1.3), 5, rxGuiMain) do
       ImageStretch;

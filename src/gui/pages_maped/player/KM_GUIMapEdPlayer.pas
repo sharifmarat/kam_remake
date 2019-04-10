@@ -4,6 +4,7 @@ interface
 uses
    Classes, Controls, Math, SysUtils,
    KM_Controls, KM_Defaults, KM_Pics,
+   KM_InterfaceDefaults,
    KM_GUIMapEdPlayerBlockHouse,
    KM_GUIMapEdPlayerBlockTrade,
    KM_GUIMapEdPlayerBlockUnit,
@@ -14,7 +15,7 @@ uses
 type
   TKMPlayerTab = (ptGoals, ptColor, ptBlockHouse, ptBlockTrade, ptBlockUnit, ptView);
 
-  TKMMapEdPlayer = class
+  TKMMapEdPlayer = class (TKMMapEdMenuPage)
   private
     fOnPageChange: TNotifyEvent;
 
@@ -28,15 +29,15 @@ type
   protected
     Panel_Player: TKMPanel;
     Button_Player: array [TKMPlayerTab] of TKMButton;
+    procedure DoShowSubMenu(aIndex: Byte); override;
   public
     GuiPlayerGoals: TKMMapEdPlayerGoals;
     constructor Create(aParent: TKMPanel; aOnPageChange: TNotifyEvent);
     destructor Destroy; override;
 
     procedure Show(aPage: TKMPlayerTab);
-    procedure ShowIndex(aIndex: Byte);
-    function Visible(aPage: TKMPlayerTab): Boolean; overload;
-    function Visible: Boolean; overload;
+    function IsVisible(aPage: TKMPlayerTab): Boolean;
+    function Visible: Boolean; override;
     procedure ChangePlayer;
     procedure UpdatePlayerColor;
     procedure UpdateState;
@@ -46,7 +47,7 @@ type
 implementation
 uses
   KM_Hand, KM_HandsCollection, KM_ResTexts, KM_GameCursor,
-  KM_RenderUI, KM_InterfaceGame;
+  KM_RenderUI, KM_InterfaceGame, KM_Utils;
 
 
 { TKMMapEdPlayer }
@@ -73,7 +74,7 @@ begin
   for PT := Low(TKMPlayerTab) to High(TKMPlayerTab) do
   begin
     Button_Player[PT] := TKMButton.Create(Panel_Player, SMALL_PAD_W * Byte(PT), 0, SMALL_TAB_W, SMALL_TAB_H,  TabGlyph[PT], TabRXX[PT], bsGame);
-    Button_Player[PT].Hint := gResTexts[TabHint[PT]];
+    Button_Player[PT].Hint := GetHintWHotKey(TabHint[PT], MAPED_SUBMENU_HOTKEYS[Ord(PT)]);
     Button_Player[PT].OnClick := PageChange;
   end;
 
@@ -88,12 +89,12 @@ end;
 
 destructor TKMMapEdPlayer.Destroy;
 begin
-  GuiPlayerGoals.Free;
-  fGuiPlayerColors.Free;
-  fGuiPlayerBlockHouse.Free;
-  fGuiPlayerBlockTrade.Free;
-  fGuiPlayerBlockUnit.Free;
-  fGuiPlayerView.Free;
+  FreeAndNil(GuiPlayerGoals);
+  FreeAndNil(fGuiPlayerColors);
+  FreeAndNil(fGuiPlayerBlockHouse);
+  FreeAndNil(fGuiPlayerBlockTrade);
+  FreeAndNil(fGuiPlayerBlockUnit);
+  FreeAndNil(fGuiPlayerView);
 
   inherited;
 end;
@@ -151,9 +152,12 @@ begin
 end;
 
 
-procedure TKMMapEdPlayer.ShowIndex(aIndex: Byte);
+procedure TKMMapEdPlayer.DoShowSubMenu(aIndex: Byte);
 begin
-  if aIndex in [Byte(Low(TKMPlayerTab))..Byte(High(TKMPlayerTab))] then
+  inherited;
+
+  if (aIndex in [Byte(Low(TKMPlayerTab))..Byte(High(TKMPlayerTab))])
+    and Button_Player[TKMPlayerTab(aIndex)].Enabled then
   begin
     PageChange(nil); //Hide existing pages
     Show(TKMPlayerTab(aIndex));
@@ -167,7 +171,7 @@ begin
 end;
 
 
-function TKMMapEdPlayer.Visible(aPage: TKMPlayerTab): Boolean;
+function TKMMapEdPlayer.IsVisible(aPage: TKMPlayerTab): Boolean;
 begin
   case aPage of
     ptGoals:      Result := GuiPlayerGoals.Visible;
@@ -184,7 +188,7 @@ end;
 procedure TKMMapEdPlayer.ChangePlayer;
 begin
   if GuiPlayerGoals.Visible then GuiPlayerGoals.Show;
-  if fGuiPlayerColors.Visible then fGuiPlayerColors.Show;
+  if fGuiPlayerColors.Visible then fGuiPlayerColors.UpdatePlayer;
   if fGuiPlayerBlockHouse.Visible then fGuiPlayerBlockHouse.Show;
   if fGuiPlayerBlockTrade.Visible then fGuiPlayerBlockTrade.Show;
   if fGuiPlayerBlockUnit.Visible then fGuiPlayerBlockUnit.Show;

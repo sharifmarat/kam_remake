@@ -1,4 +1,4 @@
-﻿0:Sawmill
+0:Sawmill
 1:Iron smithy
 2:Weapon smithy
 3:Coal mine
@@ -449,7 +449,7 @@
 454:Set a limit on how many soldiers the AI can have
 455:How many soldiers AI can have at once
 456:Set max. soldiers
-457:How many recruits AI should have in barracks
+457:Classic AI: How many recruits AI should have in barracks|Advanced AI: Parameter not used
 458:Recruits per Barracks
 460:Custom position
 463:Closest unit
@@ -535,8 +535,8 @@
 545:Ready
 546:Not ready
 547:Start!
-548:Game speed (peacetime)
-549:Game speed
+548:Game speed (PT) [real]
+549:Game speed [real]
 550:OK
 551:Cancel
 552:Description
@@ -555,9 +555,9 @@
 566:Unable to assign random locations
 567:Server has assigned hosting rights to you
 568:Game started
-569:Building Map
-570:Fighting Map
-571:Co-operative Map
+569:Building map
+570:Fighting map
+571:Co-operative map
 572:Special map
 573:Game options:
 574:Peacetime (minutes)
@@ -657,8 +657,7 @@
 668:Save Map
 669:Delay in minutes before the AI starts training recruits
 670:Recruit delay (mins)
-671:Sets the direction for all tiles in a body of water
-672:Magic water
+671:Magic water - sets the direction for all tiles in a body of water
 673:Copy
 674:Paste
 675:Paste apply
@@ -753,7 +752,7 @@
 799:%s voted to return to the lobby (vote passed)
 800:The vote to return to the lobby failed
 801:Deleting a replay also deletes the associated save. Are you sure you want to delete this save?
-802:Take randomly
+802:Take all
 803:Number of soldiers to attack
 804:Delete Replay
 805:Delete Map
@@ -762,8 +761,8 @@
 808:Show scripted overlay
 809:You cannot change host when the server is running in your client
 810:AI creates and manages attacks automatically
-811:Fast equip
-812:Soldiers are equipped as fast as possible. Equip rates still affect village planning
+811:Unlimited equip
+812:Classic AI: Soldiers are equipped as fast as possible. Equip rates still affect village planning|Advanced AI: No equip limit
 813:Apply AI defaults
 814:Multiplayer builder
 815:Applies aggressive AI builder settings to all players (for multiplayer building maps)
@@ -802,7 +801,7 @@
 849:Build Menu
 850:Ratio Menu
 851:Statistics Menu
-852:Main Menu
+852:Options Menu
 853:Halt Command
 854:Splitup Command
 855:Linkup Command
@@ -812,10 +811,10 @@
 859:Decrease Formation
 860:Turn Clockwise
 861:Turn Counterclockwise
-862:Normal Game Speed
-863:Game Speed x3
-864:Game Speed x6
-865:Game Speed x10
+862:Normal Game Speed (x1)
+863:Game Speed x%s
+864:Game Speed x%s
+865:Game Speed x%s
 866:Beacon
 867:Pause
 868:Show Teams (MP)
@@ -913,8 +912,7 @@
 961:Common Keys
 962:Game Keys
 963:Map Editor Keys
-964:Eyedropper
-965:Use this tool to select the type of tile under the cursor
+965:Eyedropper - select the type of tile under the cursor
 966:This armor smithy is not occupied
 967:This armory workshop is not occupied
 968:This bakery is not occupied
@@ -956,7 +954,7 @@
 1004:Plough field
 1005:Lay out wine field
 1006:Remove building/highlights
-1007:Select next house/unit with same type 
+1007:Select next house/unit with same type
 1008:Debug window
 1009:Spectate player 1
 1010:Spectate player 2
@@ -968,7 +966,229 @@
 1016:Spectate player 8
 1017:Map drag scroll
 1018:Spectate/Replay view Keys
-1019:%s has muted you. You can no longer send messages or beacons to them
+1019:%s has muted you. You can no longer send messages or beacons to him
 1020:Objects palette
 1021:Universal erasor
-
+1022:Your woodcutter cannot find any free place to plant a tree
+1023:PT-
+1024:%s has won!
+1025:%s is not connected to game anymore
+1026:Max Gold
+1027:Maximum amount of gold to deliver into townhall
+1028:Plant only
+1029:Open / Close house for %s
+1030:All
+1031:All
+1032:All
+1033:Rename Map
+1034:Pause at peacetime end
+1035:Game time
+1036:Name
+1037:Army power
+1038:All soldiers
+1039:Chart type
+1040:Quantity
+1041:GDP
+1042:Instantaneous
+1043:Total equipped
+1044:Defeated
+1045:Lost
+1046:Back to game results
+1047:by Players
+1048:by Teams
+1049:More|statistics
+1050:Return to MapEd
+1051:Return to Map Editor
+1052:Are you sure you|want to quit|this replay?
+1053:Map is invalid
+1054:Selected map is invalid. Please select another map
+1055:Downloaded map files have changed
+1056:Selected DL map, which files have changed. Please move it out of downloads first
+1057:Map files have changed. Please reselect the map
+1058:Forward mouse button
+1059:Backward mouse button
+1060:All
+1061:Universal eraser
+1062:Show tile owners
+1063:Show tiles grid
+1064:Cutting point
+1065:Set woodcutters cutting point. Alternatively you can set it via Shift + Right mouse button
+1066:Rally point
+1067:Set %s rally point. Alternatively you can set it via Shift + Right mouse button
+1068:Resize Map
+1069:Move borders:
+1070:Resize and Save
+1071:Resize map and then save it
+1073:Are you sure want to resize the map?||It will automatically override current map
+1074:Resize is not available||You need to save new map first
+1075:Change owner for object
+1076:Quick Play
+1077:Start singleplayer game on current map
+1078:Select player:
+1079:Select player to start map with
+1080:Start without save
+1081:Discard changes and start game for selected player
+1082:Save and start
+1083:Save map and start game for selected player
+1084:In Barracks:
+1085:In TownHall:
+1086:Rotate tile
+1087:Objects palette
+1088:Close palette
+1089:Remove units/groups
+1090:Replay|autopause
+1091:Automatically pause replay when peacetime ends
+1092:Show beacons
+1093:Show players beacons
+1094:Mute player
+1095:Unmute player
+1096:Remember this password
+1097:Use last known password
+1098:Go previous menu
+1099:Yes
+1100:No
+1101:Cancel
+1102:Map
+1103:Replay
+1104:Players
+1105:Teams
+1106:Spectate player 9
+1107:Spectate player 10
+1108:Spectate player 11
+1109:Spectate player 12
+1110:Current map size:
+1111:New map size:
+1112:Resize Map
+1113:Owner: %s
+1114:Delete Player %d
+1115:Deleting Player %d
+1116:Are you sure you want to clear the player?|All his data will be erased!
+1117:Close
+1118:Multiplayer maps
+1119:Disable music
+1120:Shuffle tracks
+1121:Shuffle tracks on/off
+1122:Map type
+1123:Scenario map
+1124:Playable as SP
+1125:Choppable tree
+1126:Blocks diagonal walking
+1127:Blocks walking and building
+1128:Show roads/fields/winefields
+1129:Sub-menu action 1
+1130:Sub-menu action 2
+1131:Sub-menu action 3
+1132:Sub-menu action 4
+1133:Sub-menu action 5
+1134:Sub-menu action 6
+1135:Sub-menu action 7
+1136:Paint bucket (change owner)
+1137:Add AI attack
+1138:Remove AI attack
+1139:Retiring
+1140:Dismiss
+1141:Do you really want to dismiss this unit?|He will go to school and leave your town forever
+1142:Dismiss unit
+1143:Cancel unit dismiss
+1144:Dismiss is not available because of lack of schools in your town
+1145:Mission|parameters
+1146:Modify mission parameters
+1147:Mission parameters
+1148:Author
+1149:Small description
+1150:Big description
+1151:Libx text ID
+1152:This map will be always visible in singleplayer maps list
+1153:Block team selection
+1154:Blocks team selection in lobby
+1155:Block peacetime
+1156:Blocks peacetime change in lobby
+1157:Block full map preview
+1158:Blocks full map preview in lobby
+1159:Text
+1160:Show mining radius
+1161:Show towers attack radius
+1162:Show units attack radius
+1163:Color code:
+1164:Blue / Green / Red
+1165:Red / Green / Blue
+1166:Text color:
+1167:Desaturated color, that could be used for texts (f.e. in scripts overlay) [readonly]
+1168:Maps filter
+1169:Reset filter
+1170:By players number
+1171:Back to game
+1172:Show detailed game statistics
+1173:Difficulty level
+1174:Easy
+1175:Normal
+1176:Hard
+1177:Difficulty levels
+1178:Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty
+1179:Advanced AI Player
+1180:Advanced AI
+1181:Classic AI
+1182:Winner
+1183:Defeated
+1184:Host
+1185:Go to selected house
+1186:Go to selected unit
+1187:Ally / enemy |color mode
+1188:Use self / ally / enemy colors for players instead of initial player colors
+1189:[$404040]Host is ready to start. Please press '[][$0707FF]%s[][$404040]'[]
+1190:Ask to press Ready
+1191:Alert to get ready was sent to %s players
+1192:Switch players color mode
+1193:Dismiss is not available during current unit action
+1194:Ctrl + Mouse wheel
+1195:Alt + Mouse wheel
+1196:Shift + Mouse wheel
+1197:Force paint
+1198:Force to override manually set tiles from tiles table while painting with brushes (if possible)
+1199:Magic brush - automatically fix all generated or missing tile transitions with chosen mask
+1200:No mask - use exiting tiles for transitions
+1201:Softest mask - use automatically created transitions
+1202:Soft mask - use automatically created transitions
+1203:Hard mask - use automatically created transitions
+1204:Custom TownHall units cost
+1205:Custom gold market prices 
+1206:Additional options
+1207:Additional brush options
+1208:Additional brush options
+1209:Fix terrain brushes
+1210:Try to repair internal terrain information to make brushes work
+1211:Fix terrain brushes
+1212:Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
+1213:Def.
+1214:Human player
+1215:Classic AI Player %d
+1216:Advanced AI Player %d
+1217:Classic AI %d
+1218:Advanced AI %d
+1219:Classic AI Player
+1220:AI Player Type
+1221:Autosave at game end
+1222:None
+1223:Resources
+1224:Houses
+1225:Constructing
+1226:Citizens
+1227:Army
+1228:Dismiss is not available for hungry units
+1229:Classic AI|Parameters
+1230:Setup AI Parameters used only by Classic AI
+1231:Classic AI Parameters
+1232:Take every group type
+1233:Difficulty
+1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
+1235:Ally / enemy
+1236:The procedure [ %s ] declared for the script console command /%s was not found
+1237:Wrong parameter type for script command /%s: [%s] 
+1238:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s] 
+1239:Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
+1240:Wrong parameters for script command /%s. Expected parameters types are: [%s]  
+1241:Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
+1242:Command called: /%s(%s)
+1243:Error while calling script command /%s(%s)
+1244:Script console command /%s not found
+1245:Enable/Disable copy-paste from chat window

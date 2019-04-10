@@ -1375,7 +1375,7 @@
         <ShowHints Value="False"/>
       </Verbosity>
       <CompilerMessages>
-        <IgnoredMessages idx4056="True" idx4055="True"/>
+        <IgnoredMessages idx4105="True" idx4104="True" idx4056="True" idx4055="True"/>
       </CompilerMessages>
     </Other>
   </CompilerOptions>

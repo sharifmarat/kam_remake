@@ -10,15 +10,15 @@ type
   // Could be a record, but we want to have default values initialization in constructor
   TKMHandAISetup = class
   public
-    NewAI: Boolean; 
+    NewAI: Boolean; // Enable new AI
     Aggressiveness: Integer; //-1 means not used or default
     AutoAttack: Boolean;
     AutoRepair: Boolean;
-    AutoBuild: Boolean;
+    AutoBuild: Boolean; // Enable build
     AutoDefend: Boolean;
     DefendAllies: Boolean;
     UnlimitedEquip: Boolean;
-    ArmyType: TArmyType;
+    ArmyType: TKMArmyType;
     EquipRateLeather, EquipRateIron: Word; //Number of ticks between soldiers being equipped. Seperated into Leather/Iron to keep KaM compatibility.
     MaxSoldiers: Integer; //-1 means not used or default
     RecruitDelay: Cardinal; //Recruits (for barracks) can only be trained after this many ticks
@@ -27,14 +27,15 @@ type
     StartPosition: TKMPoint; //Defines roughly where to defend and build around
     TownDefence: Integer; //-1 means not used or default
     WorkerCount: Byte;
-    AutoAttackRange: Byte;
+    AutoAttackRange: Byte; // Auto attack range for close combat warriors (used in KM_UnitWarrior)
 
     constructor Create;
-    function GetEquipRate(aUnit: TUnitType): Word;
-    function WarriorsPerMinute(aArmy: TArmyType): Single; overload;
+    function GetEquipRate(aUnit: TKMUnitType): Word;
+    function WarriorsPerMinute(aArmy: TKMArmyType): Single; overload;
     function WarriorsPerMinute: Single; overload;
 
-    procedure ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
+    procedure ApplyMultiplayerSetup(aNewAI: Boolean);
+    procedure EnableAdvancedAI(aNewAI: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
@@ -72,7 +73,7 @@ begin
 end;
 
 
-function TKMHandAISetup.GetEquipRate(aUnit: TUnitType): Word;
+function TKMHandAISetup.GetEquipRate(aUnit: TKMUnitType): Word;
 begin
   if aUnit in WARRIORS_IRON then
     Result := EquipRateIron
@@ -81,7 +82,7 @@ begin
 end;
 
 
-function TKMHandAISetup.WarriorsPerMinute(aArmy: TArmyType): Single;
+function TKMHandAISetup.WarriorsPerMinute(aArmy: TKMArmyType): Single;
 
   function EquipRateToPerMin(EquipRate: Cardinal): Single;
   begin
@@ -106,9 +107,8 @@ end;
 
 
 //Used from MapEd to give multiplayer building maps an AI builder config
-procedure TKMHandAISetup.ApplyAgressiveBuilderSetup(aNewAI: Boolean = False);
+procedure TKMHandAISetup.ApplyMultiplayerSetup(aNewAI: Boolean);
 begin
-  NewAI := aNewAI;
   SerfsPerHouse := 1;
   WorkerCount := 20;
   ArmyType := atIronAndLeather; //Mixed army
@@ -125,12 +125,22 @@ begin
   RecruitDelay := 0;
   RecruitCount := 10;
   AutoAttackRange := 6;
+  EnableAdvancedAI(aNewAI);
+end;
+
+
+procedure TKMHandAISetup.EnableAdvancedAI(aNewAI: Boolean = True);
+begin
+  NewAI := aNewAI;
+  if NewAI then
+    AutoAttackRange := 0; // It force units to attack the closest enemy (it should decide AI not command)
 end;
 
 
 procedure TKMHandAISetup.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.WriteA('AISetup');
+  SaveStream.Write(NewAI);
   SaveStream.Write(Aggressiveness);
   SaveStream.Write(AutoAttack);
   SaveStream.Write(AutoBuild);
@@ -155,6 +165,7 @@ end;
 procedure TKMHandAISetup.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.ReadAssert('AISetup');
+  LoadStream.Read(NewAI);
   LoadStream.Read(Aggressiveness);
   LoadStream.Read(AutoAttack);
   LoadStream.Read(AutoBuild);

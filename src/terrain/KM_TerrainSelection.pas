@@ -4,19 +4,21 @@ interface
 uses
   Classes, Math, Clipbrd, KromUtils,
   {$IFDEF MSWindows} Windows, {$ENDIF}
-  KM_CommonClasses, KM_Points, KM_Terrain, KM_TerrainPainter, KM_RenderPool;
+  KM_CommonClasses, KM_Points, KM_Terrain, KM_TerrainPainter, KM_RenderPool, KM_ResTileset;
 
 
 type
   TKMSelectionEdit = (seNone, seNewRect, seResizeX1, seResizeY1, seResizeX2, seResizeY2, seMove);
   TKMSelectionMode = (smSelecting, smPasting);
-  TKMFlipAxis = (fa_Horizontal, fa_Vertical);
+  TKMFlipAxis = (faHorizontal, faVertical);
 
   TKMBufferData = record
-                    Terrain: Byte;
+                    BaseLayer: TKMTerrainLayer;
+                    LayersCnt: Byte;
+                    Layer: array [0..2] of TKMTerrainLayer;
                     Height: Byte;
-                    Rotation: Byte;
                     Obj: Byte;
+                    IsCustom: Boolean;
                     TerKind: TKMTerrainKind; //Used for brushes
                   end;
 
@@ -43,7 +45,7 @@ type
     procedure Selection_Flip(aAxis: TKMFlipAxis);
 
     function TileWithinPastePreview(aX, aY: Word): Boolean;
-    procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+    procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
   end;
 
 
@@ -53,7 +55,8 @@ var
 
 implementation
 uses
-  KM_GameCursor, KM_RenderAux;
+  SysUtils,
+  KM_GameCursor, KM_RenderAux, KM_Defaults;
 
 
 { TKMSelection }
@@ -192,7 +195,7 @@ end;
 //Copy terrain section into buffer
 procedure TKMSelection.Selection_Copy;
 var
-  I, K: Integer;
+  I, K, L: Integer;
   Sx, Sy: Word;
   Bx, By: Word;
   {$IFDEF WDC}
@@ -210,18 +213,26 @@ begin
   BufferStream.Write(Sy);
 
   for I := fSelectionRect.Top to fSelectionRect.Bottom - 1 do
-  for K := fSelectionRect.Left to fSelectionRect.Right - 1 do
-  if gTerrain.TileInMapCoords(K+1, I+1, 0) then
-  begin
-    Bx := K - fSelectionRect.Left;
-    By := I - fSelectionRect.Top;
-    fSelectionBuffer[By,Bx].Terrain   := gTerrain.Land[I+1, K+1].Terrain;
-    fSelectionBuffer[By,Bx].Height    := gTerrain.Land[I+1, K+1].Height;
-    fSelectionBuffer[By,Bx].Rotation  := gTerrain.Land[I+1, K+1].Rotation;
-    fSelectionBuffer[By,Bx].Obj       := gTerrain.Land[I+1, K+1].Obj;
-    fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.Land2[I+1, K+1].TerKind;
+    for K := fSelectionRect.Left to fSelectionRect.Right - 1 do
+      if gTerrain.TileInMapCoords(K+1, I+1, 0) then
+      begin
+        Bx := K - fSelectionRect.Left;
+        By := I - fSelectionRect.Top;
+        fSelectionBuffer[By,Bx].BaseLayer.Terrain  := gTerrain.Land[I+1, K+1].BaseLayer.Terrain;
+        fSelectionBuffer[By,Bx].BaseLayer.Rotation := gTerrain.Land[I+1, K+1].BaseLayer.Rotation;
+        fSelectionBuffer[By,Bx].BaseLayer.Corners  := gTerrain.Land[I+1, K+1].BaseLayer.Corners;
+        fSelectionBuffer[By,Bx].LayersCnt := gTerrain.Land[I+1, K+1].LayersCnt;
+        fSelectionBuffer[By,Bx].Height    := gTerrain.Land[I+1, K+1].Height;
+        fSelectionBuffer[By,Bx].Obj       := gTerrain.Land[I+1, K+1].Obj;
+        fSelectionBuffer[By,Bx].TerKind   := fTerrainPainter.LandTerKind[I+1, K+1].TerKind;
+        for L := 0 to 2 do
+        begin
+          fSelectionBuffer[By,Bx].Layer[L].Terrain  := gTerrain.Land[I+1, K+1].Layer[L].Terrain;
+          fSelectionBuffer[By,Bx].Layer[L].Rotation := gTerrain.Land[I+1, K+1].Layer[L].Rotation;
+          fSelectionBuffer[By,Bx].Layer[L].Corners  := gTerrain.Land[I+1, K+1].Layer[L].Corners;
+        end;
 
-    BufferStream.Write(fSelectionBuffer[By,Bx], SizeOf(fSelectionBuffer[By,Bx]));
+        BufferStream.Write(fSelectionBuffer[By,Bx], SizeOf(fSelectionBuffer[By,Bx]));
   end;
 
   if Sx*Sy <> 0 then
@@ -237,7 +248,7 @@ begin
     Clipboard.SetFormat(CF_MAPDATA, BufferStream);
     {$ENDIF}
   end;
-  BufferStream.Free;
+  FreeAndNil(BufferStream);
 end;
 
 
@@ -245,8 +256,10 @@ procedure TKMSelection.Selection_PasteBegin;
 var
   I, K: Integer;
   Sx, Sy: Word;
+  {$IFDEF WDC}
   hMem: THandle;
   BufPtr: Pointer;
+  {$ENDIF}
   BufferStream: TKMemoryStream;
 begin
   BufferStream := TKMemoryStream.Create;
@@ -268,7 +281,7 @@ begin
   for I:=0 to Sy-1 do
     for K:=0 to Sx-1 do
       BufferStream.Read(fSelectionBuffer[I,K], SizeOf(fSelectionBuffer[I,K]));
-  BufferStream.Free;
+  FreeAndNil(BufferStream);
 
   //Mapmaker could have changed selection rect, sync it with Buffer size
   fSelectionRect.Right := fSelectionRect.Left + Length(fSelectionBuffer[0]);
@@ -280,21 +293,29 @@ end;
 
 procedure TKMSelection.Selection_PasteApply;
 var
-  I, K: Integer;
+  I, K, L: Integer;
   Bx, By: Word;
 begin
   for I := fSelectionRect.Top to fSelectionRect.Bottom - 1 do
-  for K := fSelectionRect.Left to fSelectionRect.Right - 1 do
-  if gTerrain.TileInMapCoords(K+1, I+1, 0) then
-  begin
-    Bx := K - fSelectionRect.Left;
-    By := I - fSelectionRect.Top;
-    gTerrain.Land[I+1, K+1].Terrain     := fSelectionBuffer[By,Bx].Terrain;
-    gTerrain.Land[I+1, K+1].Height      := fSelectionBuffer[By,Bx].Height;
-    gTerrain.Land[I+1, K+1].Rotation    := fSelectionBuffer[By,Bx].Rotation;
-    gTerrain.Land[I+1, K+1].Obj         := fSelectionBuffer[By,Bx].Obj;
-    fTerrainPainter.Land2[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
-  end;
+    for K := fSelectionRect.Left to fSelectionRect.Right - 1 do
+      if gTerrain.TileInMapCoords(K+1, I+1, 0) then
+      begin
+        Bx := K - fSelectionRect.Left;
+        By := I - fSelectionRect.Top;
+        gTerrain.Land[I+1, K+1].BaseLayer.Terrain  := fSelectionBuffer[By,Bx].BaseLayer.Terrain;
+        gTerrain.Land[I+1, K+1].BaseLayer.Rotation := fSelectionBuffer[By,Bx].BaseLayer.Rotation;
+        gTerrain.Land[I+1, K+1].BaseLayer.Corners  := fSelectionBuffer[By,Bx].BaseLayer.Corners;
+        gTerrain.Land[I+1, K+1].LayersCnt   := fSelectionBuffer[By,Bx].LayersCnt;
+        gTerrain.Land[I+1, K+1].Height      := fSelectionBuffer[By,Bx].Height;
+        gTerrain.Land[I+1, K+1].Obj         := fSelectionBuffer[By,Bx].Obj;
+        fTerrainPainter.LandTerKind[I+1, K+1].TerKind := fSelectionBuffer[By,Bx].TerKind;
+        for L := 0 to 2 do
+        begin
+          gTerrain.Land[I+1, K+1].Layer[L].Terrain  := fSelectionBuffer[By,Bx].Layer[L].Terrain;
+          gTerrain.Land[I+1, K+1].Layer[L].Rotation := fSelectionBuffer[By,Bx].Layer[L].Rotation;
+          gTerrain.Land[I+1, K+1].Layer[L].Corners  := fSelectionBuffer[By,Bx].Layer[L].Corners;
+        end;
+      end;
 
   gTerrain.UpdateLighting(fSelectionRect);
   gTerrain.UpdatePassability(fSelectionRect);
@@ -311,23 +332,113 @@ end;
 
 procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
 
-  procedure SwapTiles(X1, Y1, X2, Y2: Word);
-  var Tmp: TKMTerrainKind;
+  procedure SwapLayers(var Layer1, Layer2: TKMTerrainLayer);
+  var
+    TmpCorners: set of Byte;
   begin
-    SwapInt(gTerrain.Land[Y1,X1].Terrain, gTerrain.Land[Y2,X2].Terrain);
+    SwapInt(Layer1.Terrain, Layer2.Terrain);
+    SwapInt(Layer1.Rotation, Layer2.Rotation);
+    TmpCorners := Layer1.Corners;
+    Layer1.Corners := Layer2.Corners;
+    Layer2.Corners := TmpCorners;
+  end;
+
+  procedure SwapTiles(X1, Y1, X2, Y2: Word);
+  var
+    L: Integer;
+    Tmp: TKMTerrainKind;
+  begin
+    SwapLayers(gTerrain.Land[Y1,X1].BaseLayer, gTerrain.Land[Y2,X2].BaseLayer);
+
+    for L := 0 to 2 do
+      SwapLayers(gTerrain.Land[Y1,X1].Layer[L], gTerrain.Land[Y2,X2].Layer[L]);
+
+    SwapInt(gTerrain.Land[Y1,X1].Obj, gTerrain.Land[Y2,X2].Obj);
+    SwapInt(gTerrain.Land[Y1,X1].LayersCnt, gTerrain.Land[Y2,X2].LayersCnt);
+
     //Heights are vertex based not tile based, so it gets flipped slightly differently
     case aAxis of
-      fa_Horizontal: SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2  ,X2+1].Height);
-      fa_Vertical:   SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2+1,X2  ].Height);
+      faHorizontal: SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2  ,X2+1].Height);
+      faVertical:   SwapInt(gTerrain.Land[Y1,X1].Height, gTerrain.Land[Y2+1,X2  ].Height);
     end;
-    SwapInt(gTerrain.Land[Y1,X1].Rotation, gTerrain.Land[Y2,X2].Rotation);
-    SwapInt(gTerrain.Land[Y1,X1].Obj, gTerrain.Land[Y2,X2].Obj);
-    Tmp := fTerrainPainter.Land2[Y1, X1].TerKind;
-    fTerrainPainter.Land2[Y1, X1].TerKind := fTerrainPainter.Land2[Y2, X2].TerKind;
-    fTerrainPainter.Land2[Y2, X2].TerKind := Tmp;
+    Tmp := fTerrainPainter.LandTerKind[Y1, X1].TerKind;
+    fTerrainPainter.LandTerKind[Y1, X1].TerKind := fTerrainPainter.LandTerKind[Y2, X2].TerKind;
+    fTerrainPainter.LandTerKind[Y2, X2].TerKind := Tmp;
   end;
 
   procedure FixTerrain(X, Y: Integer);
+    procedure FixLayer(var aLayer: TKMTerrainLayer; aFixRotation: Boolean);
+    var
+      I, J: Integer;
+      Rot: Byte;
+      Corners: array[0..3] of Integer;
+    begin
+      J := 0;
+
+      for I in aLayer.Corners do
+      begin
+        Corners[J] := I;
+        Inc(J);
+      end;
+
+      //Lets try to get initial Rot from Corners information, if possible
+      case J of
+        0,4:  Exit;  //nothing to fix here
+        1:    begin
+                // For 1 corner - corner is equal to rotation
+                Rot := Corners[0];
+                if (Rot in [0,2]) xor (aAxis = faVertical) then
+                  Rot := (Rot+1) mod 4
+                else
+                  Rot := (Rot+3) mod 4;
+                aLayer.Corners := [Rot];
+              end;
+        2:    begin
+                if Abs(Corners[0] - Corners[1]) = 2 then  //Opposite corners
+                begin
+                  if aFixRotation then
+                    Rot := aLayer.Rotation // for opposite corners its not possible to get rotation from corners, as 1 rot equal to 3 rot etc.
+                  else
+                    Rot := Corners[0];
+                  // Fixed Rot is same as for 1 corner
+                  if (Rot in [0,2]) xor (aAxis = faVertical) then
+                    Rot := (Rot+1) mod 4
+                  else
+                    Rot := (Rot+3) mod 4;
+                  aLayer.Corners := [(Corners[0] + 1) mod 4, (Corners[1] + 1) mod 4]; //no difference for +1 or +3, as they are same on (mod 4)
+                end else begin
+                  if (Corners[0] = 0) and (Corners[1] = 3) then // left vertical straight  = initial Rot = 3
+                    Rot := 3
+                  else
+                    Rot := Corners[0];
+                  // Fixed Rot calculation
+                  if (Rot in [1,3]) xor (aAxis = faVertical) then
+                  begin
+                    Rot := (Rot+2) mod 4;
+                    aLayer.Corners := [(Corners[0] + 2) mod 4, (Corners[1] + 2) mod 4];
+                  end;
+                end;
+              end;
+        3:    begin
+                // Initial Rot - just go through all 4 possibilities
+                if (Corners[0] = 0) and (Corners[2] = 3) then
+                  Rot := IfThen(Corners[1] = 1, 0, 3)
+                else
+                  Rot := Round((Corners[0] + Corners[2]) / 2);
+                // Fixed Rot calculation same as for corner
+                if (Rot in [0,2]) xor (aAxis = faVertical) then
+                  Rot := (Rot+1) mod 4
+                else
+                  Rot := (Rot+3) mod 4;
+                aLayer.Corners := [0,1,2,3];
+                Exclude(aLayer.Corners, (Rot + 2) mod 4); // all corners except opposite to rotation
+              end;
+        else  raise Exception.Create('Wrong number of corners');
+      end;
+      if aFixRotation then
+        aLayer.Rotation := Rot;
+    end;
+
   const
     CORNERS = [10,15,18,21..23,25,38,49,51..54,56,58,65,66,68..69,71,72,74,78,80,81,83,84,86..87,89,90,92,93,95,96,98,99,101,102,104,105,107..108,110..111,113,114,116,118,119,120,122,123,126..127,138,142,143,165,176..193,196,202,203,205,213,220,234..241,243,247];
     CORNERS_REVERSED = [15,21,142,234,235,238];
@@ -335,38 +446,45 @@ procedure TKMSelection.Selection_Flip(aAxis: TKMFlipAxis);
     OBJ_MIDDLE_X = [8,9,54..61,80,81,212,213,215];
     OBJ_MIDDLE_Y = [8,9,54..61,80,81,212,213,215,  1..5,10..12,17..19,21..24,63,126,210,211,249..253];
   var
-    Ter, Rot: Byte;
+    L: Integer;
+    Ter: Word;
+    Rot: Byte;
   begin
-    Ter := gTerrain.Land[Y,X].Terrain;
-    Rot := gTerrain.Land[Y,X].Rotation mod 4; //Some KaM maps contain rotations > 3 which must be fixed by modding
+    Ter := gTerrain.Land[Y,X].BaseLayer.Terrain;
+    Rot := gTerrain.Land[Y,X].BaseLayer.Rotation mod 4; //Some KaM maps contain rotations > 3 which must be fixed by modding
 
     //Edges
-    if (Ter in EDGES) and ((Rot in [1,3]) xor (aAxis = fa_Vertical)) then
-      gTerrain.Land[Y,X].Rotation := (Rot+2) mod 4;
+    if (Ter in EDGES) and ((Rot in [1,3]) xor (aAxis = faVertical)) then
+      gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+2) mod 4;
 
     //Corners
     if Ter in CORNERS then
     begin
-      if (Rot in [1,3]) xor (Ter in CORNERS_REVERSED) xor (aAxis = fa_Vertical) then
-        gTerrain.Land[Y,X].Rotation := (Rot+1) mod 4
+      if (Rot in [1,3]) xor (Ter in CORNERS_REVERSED) xor (aAxis = faVertical) then
+        gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+1) mod 4
       else
-        gTerrain.Land[Y,X].Rotation := (Rot+3) mod 4;
+        gTerrain.Land[Y,X].BaseLayer.Rotation := (Rot+3) mod 4;
     end;
 
+    FixLayer(gTerrain.Land[Y,X].BaseLayer, False);
+
+    for L := 0 to gTerrain.Land[Y,X].LayersCnt - 1 do
+      FixLayer(gTerrain.Land[Y,X].Layer[L], True);
+
     //Horizontal flip: Vertex (not middle) objects must be moved right by 1
-    if (aAxis = fa_Horizontal) and (X < fSelectionRect.Right)
-    and (gTerrain.Land[Y,X+1].Obj = 255) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_X) then
+    if (aAxis = faHorizontal) and (X < fSelectionRect.Right)
+    and (gTerrain.Land[Y,X+1].Obj = OBJ_NONE) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_X) then
     begin
       gTerrain.Land[Y,X+1].Obj := gTerrain.Land[Y,X].Obj;
-      gTerrain.Land[Y,X].Obj := 255;
+      gTerrain.Land[Y,X].Obj := OBJ_NONE;
     end;
 
     //Vertical flip: Vertex (not middle) objects must be moved down by 1
-    if (aAxis = fa_Vertical) and (Y < fSelectionRect.Bottom)
-    and (gTerrain.Land[Y+1,X].Obj = 255) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_Y) then
+    if (aAxis = faVertical) and (Y < fSelectionRect.Bottom)
+    and (gTerrain.Land[Y+1,X].Obj = OBJ_NONE) and not (gTerrain.Land[Y,X].Obj in OBJ_MIDDLE_Y) then
     begin
       gTerrain.Land[Y+1,X].Obj := gTerrain.Land[Y,X].Obj;
-      gTerrain.Land[Y,X].Obj := 255;
+      gTerrain.Land[Y,X].Obj := OBJ_NONE;
     end;
   end;
 
@@ -378,20 +496,20 @@ begin
   SY := (fSelectionRect.Bottom - fSelectionRect.Top);
 
   case aAxis of
-    fa_Horizontal:  for I := 1 to SY do
-                    for K := 1 to SX div 2 do
-                      SwapTiles(fSelectionRect.Left + K, fSelectionRect.Top + I,
-                                fSelectionRect.Right - K + 1, fSelectionRect.Top + I);
-    fa_Vertical:    for I := 1 to SY div 2 do
-                    for K := 1 to SX do
-                      SwapTiles(fSelectionRect.Left + K, fSelectionRect.Top + I,
-                                fSelectionRect.Left + K, fSelectionRect.Bottom - I + 1);
+    faHorizontal:  for I := 1 to SY do
+                      for K := 1 to SX div 2 do
+                        SwapTiles(fSelectionRect.Left + K, fSelectionRect.Top + I,
+                                  fSelectionRect.Right - K + 1, fSelectionRect.Top + I);
+    faVertical:    for I := 1 to SY div 2 do
+                      for K := 1 to SX do
+                        SwapTiles(fSelectionRect.Left + K, fSelectionRect.Top + I,
+                                  fSelectionRect.Left + K, fSelectionRect.Bottom - I + 1);
   end;
 
   //Must loop backwards for object fixing
   for I := SY downto 1 do
-  for K := SX downto 1 do
-    FixTerrain(fSelectionRect.Left + K, fSelectionRect.Top + I);
+    for K := SX downto 1 do
+      FixTerrain(fSelectionRect.Left + K, fSelectionRect.Top + I);
 
   gTerrain.UpdateLighting(fSelectionRect);
   gTerrain.UpdatePassability(fSelectionRect);
@@ -404,7 +522,21 @@ begin
 end;
 
 
-procedure TKMSelection.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMSelection.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
+
+  function GetTileBasic(const aBufferData: TKMBufferData): TKMTerrainTileBasic;
+  var
+    L: Integer;
+  begin
+    Result.BaseLayer := aBufferData.BaseLayer;
+    Result.LayersCnt := aBufferData.LayersCnt;
+    Result.Height    := aBufferData.Height;
+    Result.Obj       := aBufferData.Obj;
+    Result.IsCustom  := aBufferData.IsCustom;
+    for L := 0 to 2 do
+      Result.Layer[L] := aBufferData.Layer[L];
+  end;
+
 var
   Sx, Sy: Word;
   I, K: Integer;
@@ -420,11 +552,11 @@ begin
                     end;
       smPasting:    begin
                       for I := 0 to Sy - 1 do
-                      for K := 0 to Sx - 1 do
-                       //Check TileInMapCoords first since KMInRect can't handle negative coordinates
-                      if gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
-                      and KMInRect(KMPoint(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1), aClipRect) then
-                        gRenderPool.RenderTerrain.RenderTile(fSelectionBuffer[I,K].Terrain, fSelectionRect.Left+K+1, fSelectionRect.Top+I+1, fSelectionBuffer[I,K].Rotation);
+                        for K := 0 to Sx - 1 do
+                           //Check TileInMapCoords first since KMInRect can't handle negative coordinates
+                          if gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
+                            and KMInRect(KMPoint(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1), aClipRect) then
+                            gRenderPool.RenderTerrain.RenderTile(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1, GetTileBasic(fSelectionBuffer[I,K]));
 
                       gRenderAux.SquareOnTerrain(fSelectionRect.Left, fSelectionRect.Top, fSelectionRect.Right, fSelectionRect.Bottom, $FF0000FF);
                     end;
@@ -434,17 +566,23 @@ begin
     if fSelectionMode = smPasting then
     begin
       for I := 0 to Sy - 1 do
-      for K := 0 to Sx - 1 do
-        //Check TileInMapCoords first since KMInRect can't handle negative coordinates
-        if (fSelectionBuffer[I,K].Obj <> 255) and gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
-        and KMInRect(KMPoint(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1), aClipRect) then
-          gRenderPool.RenderMapElement(fSelectionBuffer[I,K].Obj, 0, fSelectionRect.Left+K+1, fSelectionRect.Top+I+1, True);
+        for K := 0 to Sx - 1 do
+          //Check TileInMapCoords first since KMInRect can't handle negative coordinates
+          if (fSelectionBuffer[I,K].Obj <> OBJ_NONE) and gTerrain.TileInMapCoords(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1)
+            and KMInRect(KMPoint(fSelectionRect.Left+K+1, fSelectionRect.Top+I+1), aClipRect) then
+            gRenderPool.RenderMapElement(fSelectionBuffer[I,K].Obj, 0, fSelectionRect.Left+K+1, fSelectionRect.Top+I+1, True);
     end;
 end;
 
 
 initialization
-  CF_MAPDATA := RegisterClipboardFormat('KaM Remake Map Data');
+begin
+  {$IFDEF WDC}
+  CF_MAPDATA := RegisterClipboardFormat(PWideChar('KaM Remake ' + GAME_REVISION + ' Map Data'));
+  {$ENDIF}
+end;
 
 
 end.
+
+

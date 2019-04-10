@@ -20,29 +20,31 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; aLoc: TKMPoint; aAutoPlace: boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+    function AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
     procedure AddUnitToList(aUnit: TKMUnit);
     property Count: Integer read GetCount;
     property Units[aIndex: Integer]: TKMUnit read GetUnit; default; //Use instead of Items[.]
     procedure RemoveUnit(aUnit: TKMUnit);
+    procedure RemoveAllUnits;
     procedure DeleteUnitFromList(aUnit: TKMUnit);
-    procedure OwnerUpdate(aOwner: TKMHandIndex);
-    function HitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
+    procedure OwnerUpdate(aOwner: TKMHandID);
+    function HitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
     function GetUnitByUID(aUID: Integer): TKMUnit;
-    function GetClosestUnit(aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
-    procedure GetUnitsInRect(aRect: TKMRect; List: TList);
+    function GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
+    procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetTotalPointers: Integer;
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
 implementation
 uses
-  KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_Units_Warrior;
+  SysUtils, KM_Game, KM_HandsCollection, KM_Log, KM_Resource, KM_ResUnits, KM_UnitWarrior,
+  KM_GameTypes;
 
 
 { TKMUnitsCollection }
@@ -57,7 +59,7 @@ end;
 destructor TKMUnitsCollection.Destroy;
 begin
   //No need to free units individually since they are Freed by TKMList.Clear command in destructor
-  fUnits.Free;
+  FreeAndNil(fUnits);
   inherited;
 end;
 
@@ -75,7 +77,7 @@ end;
 
 
 //AutoPlace means we should try to find a spot for this unit instead of just placing it where we were told to
-function TKMUnitsCollection.AddUnit(aOwner: TKMHandIndex; aUnitType: TUnitType; aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
+function TKMUnitsCollection.AddUnit(aOwner: TKMHandID; aUnitType: TKMUnitType; const aLoc: TKMPoint; aAutoPlace: Boolean = True; aRequiredWalkConnect: Byte = 0): TKMUnit;
 var
   ID: Cardinal;
   PlaceTo: TKMPoint;
@@ -106,12 +108,12 @@ begin
 
   ID := gGame.GetNewUID;
   case aUnitType of
-    ut_Serf:                          Result := TKMUnitSerf.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_Worker:                        Result := TKMUnitWorker.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_WoodCutter..ut_Fisher,
-    {ut_Worker,}
-    ut_StoneCutter..ut_Metallurgist:  Result := TKMUnitCitizen.Create(ID, aUnitType, PlaceTo, aOwner);
-    ut_Recruit:                       Result := TKMUnitRecruit.Create(ID, aUnitType, PlaceTo, aOwner);
+    utSerf:                          Result := TKMUnitSerf.Create(ID, aUnitType, PlaceTo, aOwner);
+    utWorker:                        Result := TKMUnitWorker.Create(ID, aUnitType, PlaceTo, aOwner);
+    utWoodCutter..utFisher,
+    {utWorker,}
+    utStoneCutter..utMetallurgist:  Result := TKMUnitCitizen.Create(ID, aUnitType, PlaceTo, aOwner);
+    utRecruit:                       Result := TKMUnitRecruit.Create(ID, aUnitType, PlaceTo, aOwner);
     WARRIOR_MIN..WARRIOR_MAX:         Result := TKMUnitWarrior.Create(ID, aUnitType, PlaceTo, aOwner);
     ANIMAL_MIN..ANIMAL_MAX:           Result := TKMUnitAnimal.Create(ID, aUnitType, PlaceTo, aOwner);
     else                              raise ELocError.Create('Add ' + gRes.Units[aUnitType].GUIName, PlaceTo);
@@ -136,6 +138,17 @@ begin
 end;
 
 
+procedure TKMUnitsCollection.RemoveAllUnits;
+var I: Integer;
+begin
+  Assert(gGame.GameMode = gmMapEd);
+  if Count <= 0 then Exit;
+  for I := 0 to Count - 1 do
+    Units[I].CloseUnit;
+  fUnits.Clear;
+end;
+
+
 procedure TKMUnitsCollection.DeleteUnitFromList(aUnit: TKMUnit);
 begin
   Assert(gGame.GameMode = gmMapEd); // Allow to delete existing Unit directly only in MapEd
@@ -144,16 +157,16 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.OwnerUpdate(aOwner: TKMHandIndex);
+procedure TKMUnitsCollection.OwnerUpdate(aOwner: TKMHandID);
 var
   I: Integer;
 begin
   for I := 0 to Count - 1 do
-    Units[I].SetOwner(aOwner);
+    Units[I].Owner := aOwner;
 end;
 
 
-function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TUnitType = ut_Any): TKMUnit;
+function TKMUnitsCollection.HitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit;
 var
   I: Integer;
 begin
@@ -181,7 +194,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.GetUnitsInRect(aRect: TKMRect; List: TList);
+procedure TKMUnitsCollection.GetUnitsInRect(const aRect: TKMRect; List: TList);
 var
   I: Integer;
 begin
@@ -191,7 +204,7 @@ begin
 end;
 
 
-function TKMUnitsCollection.GetClosestUnit(aPoint: TKMPoint; aTypes: TUnitTypeSet = [Low(TUnitType)..High(TUnitType)]): TKMUnit;
+function TKMUnitsCollection.GetClosestUnit(const aPoint: TKMPoint; aTypes: TKMUnitTypeSet = [Low(TKMUnitType)..High(TKMUnitType)]): TKMUnit;
 var
   I: Integer;
   BestDist, Dist: Single;
@@ -201,7 +214,7 @@ begin
   for I := 0 to Count - 1 do
     if not Units[I].IsDeadOrDying and Units[I].Visible and (Units[I].UnitType in aTypes) then
     begin
-      Dist := KMLengthSqr(Units[I].GetPosition, aPoint);
+      Dist := KMLengthSqr(Units[I].CurrPosition, aPoint);
       if Dist < BestDist then
       begin
         BestDist := Dist;
@@ -239,7 +252,7 @@ end;
 procedure TKMUnitsCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
-  UnitType: TUnitType;
+  UnitType: TKMUnitType;
   U: TKMUnit;
 begin
   LoadStream.ReadAssert('Units');
@@ -248,11 +261,11 @@ begin
   begin
     LoadStream.Read(UnitType, SizeOf(UnitType));
     case UnitType of
-      ut_Serf:                  U := TKMUnitSerf.Load(LoadStream);
-      ut_Worker:                U := TKMUnitWorker.Load(LoadStream);
-      ut_WoodCutter..ut_Fisher,{ut_Worker,}ut_StoneCutter..ut_Metallurgist:
+      utSerf:                  U := TKMUnitSerf.Load(LoadStream);
+      utWorker:                U := TKMUnitWorker.Load(LoadStream);
+      utWoodCutter..utFisher,{utWorker,}utStoneCutter..utMetallurgist:
                                 U := TKMUnitCitizen.Load(LoadStream);
-      ut_Recruit:               U := TKMUnitRecruit.Load(LoadStream);
+      utRecruit:               U := TKMUnitRecruit.Load(LoadStream);
       WARRIOR_MIN..WARRIOR_MAX: U := TKMUnitWarrior.Load(LoadStream);
       ANIMAL_MIN..ANIMAL_MAX:   U := TKMUnitAnimal.Load(LoadStream);
       else                      U := nil;
@@ -306,7 +319,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.Paint(aRect: TKMRect);
+procedure TKMUnitsCollection.Paint(const aRect: TKMRect);
 const
   Margin = 2;
 var

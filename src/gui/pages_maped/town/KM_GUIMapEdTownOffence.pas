@@ -4,10 +4,11 @@ interface
 uses
    Classes, Controls, Math, SysUtils,
    KM_Controls,
+   KM_InterfaceDefaults,
    KM_Points, KM_AIAttacks, KM_GUIMapEdTownAttackPopUp;
 
 type
-  TKMMapEdTownOffence = class
+  TKMMapEdTownOffence = class (TKMMapEdSubMenuPage)
   private
     fAttackPopUp: TKMMapEdTownAttack;
     procedure Attacks_Add(Sender: TObject);
@@ -19,12 +20,13 @@ type
     procedure Attacks_Refresh;
     procedure AutoAttackClick(Sender: TObject);
     procedure SetAttackPopUp(aValue: TKMMapEdTownAttack);
+    procedure UpdateControls;
   protected
     Panel_Offence: TKMPanel;
-    CheckBox_AutoAttack: TKMCheckBox;
-    ColumnBox_Attacks: TKMColumnBox;
-    Button_AttacksAdd: TKMButton;
-    Button_AttacksDel: TKMButton;
+      CheckBox_AutoAttack: TKMCheckBox;
+      ColumnBox_Attacks: TKMColumnBox;
+      Button_AttacksAdd: TKMButton;
+      Button_AttacksDel: TKMButton;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -32,13 +34,13 @@ type
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
   end;
 
 
 implementation
 uses
-  KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_Hand;
+  KM_HandsCollection, KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_InterfaceGame, KM_Hand, KM_Utils;
 
 
 { TKMMapEdTownOffence }
@@ -47,33 +49,43 @@ begin
   inherited Create;
 
   Panel_Offence := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_Offence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ATTACK], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_Offence, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_AI_ATTACK], fntOutline, taCenter);
 
-  CheckBox_AutoAttack := TKMCheckBox.Create(Panel_Offence, 0, 24, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_ATTACK_AUTO], fnt_Metal);
-  CheckBox_AutoAttack.Hint := gResTexts[TX_MAPED_AI_ATTACK_AUTO_HINT];
+  CheckBox_AutoAttack := TKMCheckBox.Create(Panel_Offence, 0, 24, TB_WIDTH, 20, gResTexts[TX_MAPED_AI_ATTACK_AUTO], fntMetal);
+  CheckBox_AutoAttack.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_AUTO_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
   CheckBox_AutoAttack.OnClick := AutoAttackClick;
 
-  ColumnBox_Attacks := TKMColumnBox.Create(Panel_Offence, 0, 50, TB_WIDTH, 210, fnt_Game, bsGame);
-  ColumnBox_Attacks.SetColumns(fnt_Outline,
+  ColumnBox_Attacks := TKMColumnBox.Create(Panel_Offence, 0, 50, TB_WIDTH, 210, fntGame, bsGame);
+  ColumnBox_Attacks.SetColumns(fntOutline,
     [gResTexts[TX_MAPED_AI_ATTACK_COL_TYPE],
      gResTexts[TX_MAPED_AI_ATTACK_COL_DELAY],
      gResTexts[TX_MAPED_AI_ATTACK_COL_MEN],
      gResTexts[TX_MAPED_AI_ATTACK_COL_TARGET],
-     gResTexts[TX_MAPED_AI_ATTACK_COL_LOC]], [0, 20, 60, 100, 130]);
+     gResTexts[TX_MAPED_AI_ATTACK_COL_LOC]], [0, 20, 60, 100, 130], True);
   ColumnBox_Attacks.OnClick := Attacks_ListClick;
   ColumnBox_Attacks.OnDoubleClick := Attacks_ListDoubleClick;
 
   Button_AttacksAdd := TKMButton.Create(Panel_Offence, 0, 270, 25, 25, '+', bsGame);
   Button_AttacksAdd.OnClick := Attacks_Add;
+  Button_AttacksAdd.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_ADD, MAPED_SUBMENU_ACTIONS_HOTKEYS[1]);
   Button_AttacksDel := TKMButton.Create(Panel_Offence, 30, 270, 25, 25, 'X', bsGame);
   Button_AttacksDel.OnClick := Attacks_Del;
+  Button_AttacksDel.Hint := GetHintWHotKey(TX_MAPED_AI_ATTACK_DEL, MAPED_SUBMENU_ACTIONS_HOTKEYS[2]);
+
+  fSubMenuActionsEvents[0] := AutoAttackClick;
+  fSubMenuActionsEvents[1] := Attacks_Add;
+  fSubMenuActionsEvents[2] := Attacks_Del;
+
+  fSubMenuActionsCtrls[0] := CheckBox_AutoAttack;
+  fSubMenuActionsCtrls[1] := Button_AttacksAdd;
+  fSubMenuActionsCtrls[2] := Button_AttacksDel;
 end;
 
 
 //Add a dummy attack and let mapmaker edit it
 procedure TKMMapEdTownOffence.Attacks_Add(Sender: TObject);
 var
-  AA: TAIAttack;
+  AA: TKMAIAttack;
 begin
   FillChar(AA, SizeOf(AA), #0);
   gMySpectator.Hand.AI.General.Attacks.AddAttack(AA);
@@ -100,7 +112,7 @@ end;
 procedure TKMMapEdTownOffence.Attacks_Edit(aIndex: Integer);
 begin
   Assert(InRange(aIndex, 0, gMySpectator.Hand.AI.General.Attacks.Count - 1));
-  AttackPopUp.Show(gMySpectator.HandIndex, aIndex);
+  AttackPopUp.Show(gMySpectator.HandID, aIndex);
 end;
 
 
@@ -133,29 +145,70 @@ end;
 
 procedure TKMMapEdTownOffence.Attacks_Refresh;
 const
-  Typ: array [TAIAttackType] of string = ('O', 'R');
-  Tgt: array [TAIAttackTarget] of string = ('U', 'HA', 'HS', 'Pos');
+  Typ: array [TKMAIAttackType] of String = ('O', 'R');
+  Tgt: array [TKMAIAttackTarget] of String = ('U', 'HA', 'HS', 'Pos');
+  TypeHint: array [TKMAIAttackType] of Integer = (TX_MAPED_AI_ATTACK_TYPE_ONCE, TX_MAPED_AI_ATTACK_TYPE_REP);
+  TargetHint: array [TKMAIAttackTarget] of Integer = (TX_MAPED_AI_TARGET_CLOSEST,
+                                                   TX_MAPED_AI_TARGET_HOUSE_ARMY,
+                                                   TX_MAPED_AI_TARGET_HOUSE_START,
+                                                   TX_MAPED_AI_TARGET_CUSTOM);
 var
-  I: Integer;
-  A: TAIAttack;
+  I, Index, TopIndex: Integer;
+  A: TKMAIAttack;
+  CustomPosS: String;
 begin
+  TopIndex := ColumnBox_Attacks.TopIndex; //Save index and TopIndex to restore after refresh
+  Index := ColumnBox_Attacks.ItemIndex;
   ColumnBox_Attacks.Clear;
 
   for I := 0 to gMySpectator.Hand.AI.General.Attacks.Count - 1 do
   begin
     A := gMySpectator.Hand.AI.General.Attacks[I];
-    ColumnBox_Attacks.AddItem(MakeListRow([Typ[A.AttackType], IntToStr(A.Delay div 10), IntToStr(A.TotalMen), Tgt[A.Target], TypeToString(A.CustomPosition)]));
+    CustomPosS := '';
+    if A.Target = attCustomPosition then
+      CustomPosS := TypeToString(A.CustomPosition);
+
+    ColumnBox_Attacks.AddItem(MakeListRow([Typ[A.AttackType],
+                                           IntToStr(A.Delay div 10),
+                                           IntToStr(A.TotalMen),
+                                           Tgt[A.Target],
+                                           CustomPosS],
+                                          [gResTexts[TypeHint[A.AttackType]],
+                                           gResTexts[TX_MAPED_AI_ATTACK_DELAY] + ': ' + IntToStr(A.Delay),
+                                           gResTexts[TX_MAPED_AI_ATTACK_SOLDIERS] + ': ' + IntToStr(A.TotalMen),
+                                           gResTexts[TargetHint[A.Target]],
+                                           CustomPosS]));
   end;
 
   Attacks_ListClick(nil);
 
   CheckBox_AutoAttack.Checked := gMySpectator.Hand.AI.Setup.AutoAttack;
+
+  //Try to restore previous selected element
+  if Index >= ColumnBox_Attacks.RowCount then
+    Index := ColumnBox_Attacks.RowCount - 1;
+
+  ColumnBox_Attacks.ItemIndex := Index;
+  ColumnBox_Attacks.TopIndex := TopIndex;
+
+  ColumnBox_Attacks.JumpToSelected;
+
+  UpdateControls;
+end;
+
+
+procedure TKMMapEdTownOffence.UpdateControls;
+begin
+  ColumnBox_Attacks.Enabled := not CheckBox_AutoAttack.Checked;
+  Button_AttacksAdd.Enabled := not CheckBox_AutoAttack.Checked;
+  Button_AttacksDel.Enabled := ColumnBox_Attacks.IsSelected;
 end;
 
 
 procedure TKMMapEdTownOffence.AutoAttackClick(Sender: TObject);
 begin
   gMySpectator.Hand.AI.Setup.AutoAttack := CheckBox_AutoAttack.Checked;
+  UpdateControls;
 end;
 
 

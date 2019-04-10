@@ -43,7 +43,7 @@ end;
 
 destructor TKMHTTPClient.Destroy;
 begin
-  fClient.Free;
+  FreeAndNil(fClient);
   inherited;
 end;
 

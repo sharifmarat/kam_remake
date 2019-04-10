@@ -7,9 +7,16 @@ States are queried in a form **States.STATE_NAME(STATE_PARAMETERS)** like so:
     if States.PlayerCount > 5 then
       A := States.UnitCount(1);
 ```
+Also there is a short name for Actions: just **S**, so you could use it as
+```pascal
+  A := S.UnitCount(1); //Defeat 1st player
+```
+
+***
 
 Other scripts functions:
-* [Mission Scripts Dynamic Events](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicEvents)<br>
-* [Mission Scripts Dynamic Actions](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicActions)<br>
-* [Mission Scripts Dynamic Utils](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicUtils)<br>
+* [Mission Scripts Dynamic Events](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicEvents)
+* [Mission Scripts Dynamic Actions](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicActions)
+* [Mission Scripts Dynamic Utils](https://github.com/reyandme/kam_remake/wiki/MissionScriptsDynamicUtils)
+<br />
 

@@ -2,8 +2,8 @@ unit KM_AIFields;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_NavMesh, KM_AIInfluences,
-  KM_CommonClasses, KM_Points;
+  KM_NavMesh, KM_AIInfluences, KM_Eye, KM_Supervisor,
+  KM_CommonClasses, KM_CommonUtils, KM_Points;
 
 
 type
@@ -13,19 +13,23 @@ type
   private
     fNavMesh: TKMNavMesh;
     fInfluences: TKMInfluences;
+    fEye: TKMEye;
+    fSupervisor: TKMSupervisor;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
 
     property NavMesh: TKMNavMesh read fNavMesh;
     property Influences: TKMInfluences read fInfluences;
+    property Eye: TKMEye read fEye write fEye;
+    property Supervisor: TKMSupervisor read fSupervisor write fSupervisor;
 
-    procedure AfterMissionInit;
+    procedure AfterMissionInit();
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState(aTick: Cardinal);
-    procedure Paint(aRect: TKMRect);
+    procedure Paint(const aRect: TKMRect);
   end;
 
 
@@ -40,29 +44,36 @@ uses
 
 
 { TKMAIFields }
-constructor TKMAIFields.Create;
+constructor TKMAIFields.Create();
 begin
   inherited;
 
-  fInfluences := TKMInfluences.Create;
-  fNavMesh := TKMNavMesh.Create(fInfluences);
+  fNavMesh := TKMNavMesh.Create();
+  fInfluences := TKMInfluences.Create(fNavMesh);
+  fEye := TKMEye.Create();
+  fSupervisor := TKMSupervisor.Create();
 end;
 
 
-destructor TKMAIFields.Destroy;
+destructor TKMAIFields.Destroy();
 begin
   FreeAndNil(fNavMesh);
   FreeAndNil(fInfluences);
+  FreeAndNil(fEye);
+  FreeAndNil(fSupervisor);
   inherited;
 end;
 
 
-procedure TKMAIFields.AfterMissionInit;
+procedure TKMAIFields.AfterMissionInit();
 begin
-  fInfluences.Init;
+  if not AI_GEN_NAVMESH then
+    Exit;
 
-  if AI_GEN_NAVMESH then
-    fNavMesh.Init;
+  fNavMesh.AfterMissionInit();
+  fInfluences.AfterMissionInit();
+  fEye.AfterMissionInit();
+  fSupervisor.AfterMissionInit();
 end;
 
 
@@ -70,6 +81,8 @@ procedure TKMAIFields.Save(SaveStream: TKMemoryStream);
 begin
   fNavMesh.Save(SaveStream);
   fInfluences.Save(SaveStream);
+  fEye.Save(SaveStream);
+  fSupervisor.Save(SaveStream);
 end;
 
 
@@ -77,24 +90,34 @@ procedure TKMAIFields.Load(LoadStream: TKMemoryStream);
 begin
   fNavMesh.Load(LoadStream);
   fInfluences.Load(LoadStream);
+  fEye.Load(LoadStream);
+  fSupervisor.Load(LoadStream);
 end;
 
 
 procedure TKMAIFields.UpdateState(aTick: Cardinal);
 begin
-  fInfluences.UpdateState(aTick);
   fNavMesh.UpdateState(aTick);
+  fInfluences.UpdateState(aTick);
+  fEye.UpdateState(aTick);
+  fSupervisor.UpdateState(aTick);
 end;
 
 
 //Render debug symbols
-procedure TKMAIFields.Paint(aRect: TKMRect);
+procedure TKMAIFields.Paint(const aRect: TKMRect);
 begin
   if AI_GEN_INFLUENCE_MAPS then
     fInfluences.Paint(aRect);
 
   if AI_GEN_NAVMESH then
     fNavMesh.Paint(aRect);
+
+  if OVERLAY_AI_EYE then
+    fEye.Paint(aRect);
+
+  if OVERLAY_AI_SUPERVISOR then
+    fSupervisor.Paint(aRect);
 end;
 
 

@@ -39,16 +39,16 @@ type
     procedure FixIntersectingShapes;
     procedure SimplifyShapes;
   public
-    constructor Create(aError: Single; aRect: TKMRect);
+    constructor Create(aError: Single; const aRect: TKMRect);
     procedure Execute(const aIn: TKMShapesArray; var aOut: TKMShapesArray);
   end;
 
 //Simplify shapes by removing unnecessary points from straight lines
-procedure SimplifyStraights(const aIn: TKMShapesArray; aRect: TKMRect; var aOut: TKMShapesArray);
+procedure SimplifyStraights(const aIn: TKMShapesArray; const aRect: TKMRect; var aOut: TKMShapesArray);
 
-procedure ForceOutlines(var aTriMesh: TKMTriMesh; aRect: TKMRect; fSimpleOutlines: TKMShapesArray);
+procedure ForceOutlines(var aTriMesh: TKMTriMesh; const aRect: TKMRect; const aSimpleOutlines: TKMShapesArray);
 
-procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; fSimpleOutlines: TKMShapesArray);
+procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; const aSimpleOutlines: TKMShapesArray);
 
 //Remove anything that is outside bounds
 procedure RemoveFrame(var aTriMesh: TKMTriMesh);
@@ -64,11 +64,11 @@ uses
 
 
 const
-  MAX_STRAIGHT_SPAN = 7; //Keep just every Nth point on nonedge  straightsin raw outlines
-  MAX_SIMPLIFIED_SPAN = 12; //Allow max N span on simplified outline
+  MAX_STRAIGHT_SPAN = 7; //Keep just every Nth point on nonedge  straightsin raw outlines (+- NAVMESH_SUPPORT_DENSITY)
+  MAX_SIMPLIFIED_SPAN = 7; //Allow max N span on simplified outline (+- NAVMESH_SUPPORT_DENSITY)
 
 
-constructor TKMSimplifyShapes.Create(aError: Single; aRect: TKMRect);
+constructor TKMSimplifyShapes.Create(aError: Single; const aRect: TKMRect);
 begin
   inherited Create;
 
@@ -500,7 +500,7 @@ begin
 end;
 
 
-procedure SimplifyStraights(const aIn: TKMShapesArray; aRect: TKMRect; var aOut: TKMShapesArray);
+procedure SimplifyStraights(const aIn: TKMShapesArray; const aRect: TKMRect; var aOut: TKMShapesArray);
   procedure SimplifyStraights2(const aIn: TKMNodesArray; var aOut: TKMNodesArray);
   var
     K: Integer;
@@ -546,7 +546,7 @@ begin
 end;
 
 
-procedure ForceEdge(var aTriMesh: TKMTriMesh; A,B: TKMPoint; aSkipMissing: Boolean);
+procedure ForceEdge(var aTriMesh: TKMTriMesh; const A,B: TKMPoint; aSkipMissing: Boolean);
 var
   Edges: array [0..1] of array of SmallInt;
   Loop: array of Word;
@@ -687,7 +687,7 @@ begin
 end;
 
 
-procedure ForceOutlines(var aTriMesh: TKMTriMesh; aRect: TKMRect; fSimpleOutlines: TKMShapesArray);
+procedure ForceOutlines(var aTriMesh: TKMTriMesh; const aRect: TKMRect; const aSimpleOutlines: TKMShapesArray);
   procedure CheckAllPolysFaceUp;
   var I: Integer;
   begin
@@ -717,8 +717,8 @@ var
 var
   I, K: Integer;
 begin
-  for I := 0 to fSimpleOutlines.Count - 1 do
-    with fSimpleOutlines.Shape[I] do
+  for I := 0 to aSimpleOutlines.Count - 1 do
+    with aSimpleOutlines.Shape[I] do
       for K := 0 to Count - 1 do
         ForceEdge(aTriMesh, Nodes[K], Nodes[(K + 1) mod Count], False);
 
@@ -770,13 +770,13 @@ begin
 end;
 
 
-procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; fSimpleOutlines: TKMShapesArray);
+procedure RemoveObstaclePolies(var aTriMesh: TKMTriMesh; const aSimpleOutlines: TKMShapesArray);
 type
   TPolyFill = (pfUnknown, pfKeep, pfRemove);
 var
   Mark: array of TPolyFill;
 
-  procedure MarkOutlines(var aTriMesh: TKMTriMesh; aNodes: TKMNodesArray);
+  procedure MarkOutlines(var aTriMesh: TKMTriMesh; const aNodes: TKMNodesArray);
   var
     I, K: Integer;
     Outline: array of Integer;
@@ -869,8 +869,8 @@ begin
   for I := 0 to High(aTriMesh.Polygons) do
     Mark[I] := pfUnknown;
 
-  for I := 0 to fSimpleOutlines.Count - 1 do
-    MarkOutlines(aTriMesh, fSimpleOutlines.Shape[I]);
+  for I := 0 to aSimpleOutlines.Count - 1 do
+    MarkOutlines(aTriMesh, aSimpleOutlines.Shape[I]);
 
   FloodFill;
 

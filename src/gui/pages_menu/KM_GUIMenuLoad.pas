@@ -11,7 +11,7 @@ uses
 type
   TKMMenuLoad = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     fSaves: TKMSavesCollection;
     fMinimap: TKMMinimap;
@@ -21,7 +21,7 @@ type
     function CanLoadSave: Boolean;
     procedure UpdateUI;
     procedure LoadMinimap;
-    procedure SetLastSaveFileName(aFileName: String = '');
+    procedure SetLastSaveFileName(const aFileName: String = '');
     procedure LoadClick(Sender: TObject);
     procedure Load_Delete_Click(Sender: TObject);
     procedure Load_ListClick(Sender: TObject);
@@ -49,7 +49,7 @@ type
       Button_DeleteYes, Button_DeleteNo: TKMButton;
 
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
     destructor Destroy; override;
 
     procedure Show;
@@ -63,7 +63,7 @@ uses
 
 
 { TKMGUIMenuLoad }
-constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuLoad.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 begin
   inherited Create;
 
@@ -77,11 +77,11 @@ begin
   Panel_Load := TKMPanel.Create(aParent,0,0,aParent.Width, aParent.Height);
   Panel_Load.AnchorsStretch;
 
-    TKMLabel.Create(Panel_Load, aParent.Width div 2, 50, gResTexts[TX_MENU_LOAD_LIST], fnt_Outline, taCenter);
+    TKMLabel.Create(Panel_Load, aParent.Width div 2, 50, gResTexts[TX_MENU_LOAD_LIST], fntOutline, taCenter);
 
-    ColumnBox_Load := TKMColumnBox.Create(Panel_Load, 22, 86, 770, 485, fnt_Metal, bsMenu);
+    ColumnBox_Load := TKMColumnBox.Create(Panel_Load, 22, 86, 770, 485, fntMetal, bsMenu);
     ColumnBox_Load.Anchors := [anLeft,anTop,anBottom];
-    ColumnBox_Load.SetColumns(fnt_Outline, ['', gResTexts[TX_MENU_LOAD_FILE], gResTexts[TX_MENU_LOAD_DATE], gResTexts[TX_MENU_LOAD_DESCRIPTION]], [0, 22, 250, 430]);
+    ColumnBox_Load.SetColumns(fntOutline, ['', gResTexts[TX_MENU_LOAD_FILE], gResTexts[TX_MENU_LOAD_DATE], gResTexts[TX_MENU_LOAD_DESCRIPTION]], [0, 22, 250, 430]);
     ColumnBox_Load.SearchColumn := 1;
     ColumnBox_Load.OnColumnClick := Load_Sort;
     ColumnBox_Load.OnChange := Load_ListClick;
@@ -99,8 +99,7 @@ begin
     Button_LoadBack.Anchors := [anLeft,anBottom];
     Button_LoadBack.OnClick := BackClick;
 
-    with TKMBevel.Create(Panel_Load, 805, 226, 199, 199) do Anchors := [anLeft];
-    MinimapView_Load := TKMMinimapView.Create(Panel_Load, 809, 230, 191, 191);
+    MinimapView_Load := TKMMinimapView.Create(Panel_Load, 809, 230, 191, 191, True);
     MinimapView_Load.Anchors := [anLeft];
 
     //Delete PopUp
@@ -116,10 +115,10 @@ begin
       Image_Delete := TKMImage.Create(PopUp_Delete, 0, 0, PopUp_Delete.Width, PopUp_Delete.Height, 15, rxGuiMain);
       Image_Delete.ImageStretch;
 
-      Label_DeleteConfirmTitle := TKMLabel.Create(PopUp_Delete, PopUp_Delete.Width div 2, 40, gResTexts[TX_MENU_LOAD_DELETE], fnt_Outline, taCenter);
+      Label_DeleteConfirmTitle := TKMLabel.Create(PopUp_Delete, PopUp_Delete.Width div 2, 40, gResTexts[TX_MENU_LOAD_DELETE], fntOutline, taCenter);
       Label_DeleteConfirmTitle.Anchors := [anLeft,anBottom];
 
-      Label_DeleteConfirm := TKMLabel.Create(PopUp_Delete, PopUp_Delete.Width div 2, 85, gResTexts[TX_MENU_LOAD_DELETE_CONFIRM], fnt_Metal, taCenter);
+      Label_DeleteConfirm := TKMLabel.Create(PopUp_Delete, PopUp_Delete.Width div 2, 85, gResTexts[TX_MENU_LOAD_DELETE_CONFIRM], fntMetal, taCenter);
       Label_DeleteConfirm.Anchors := [anLeft,anBottom];
 
       Button_DeleteYes := TKMButton.Create(PopUp_Delete, 20, 155, 195, 30, gResTexts[TX_MENU_LOAD_DELETE_DELETE], bsMenu);
@@ -135,8 +134,8 @@ end;
 
 destructor TKMMenuLoad.Destroy;
 begin
-  fSaves.Free;
-  fMinimap.Free;
+  FreeAndNil(fSaves);
+  FreeAndNil(fMinimap);
 
   inherited;
 end;
@@ -198,7 +197,7 @@ begin
 end;
 
 
-procedure TKMMenuLoad.SetLastSaveFileName(aFileName: String = '');
+procedure TKMMenuLoad.SetLastSaveFileName(const aFileName: String = '');
 begin
   fLastSaveFileName := aFileName;
   gGameApp.GameSettings.MenuSPSaveFileName := aFileName;
@@ -266,7 +265,7 @@ begin
     begin
       Row := MakeListRow(['', fSaves[i].FileName, fSaves[i].Info.GetSaveTimestamp, fSaves[I].Info.GetTitleWithTime],
                          [$FFFFFFFF, $FFFFFFFF, $FFFFFFFF, $FFFFFFFF]);
-      Row.Cells[0].Pic := MakePic(rxGui, 657 + Byte(fSaves[I].Info.MissionMode = mm_Tactic));
+      Row.Cells[0].Pic := MakePic(rxGui, 657 + Byte(fSaves[I].Info.MissionMode = mmTactic));
       ColumnBox_Load.AddItem(Row);
     end;
 

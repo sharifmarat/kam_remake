@@ -1,5 +1,6 @@
 unit KM_MasterServer;
 {$I KaM_Remake.inc}
+{$WARN IMPLICIT_STRING_CAST OFF}
 interface
 uses
   Classes, SysUtils,
@@ -67,9 +68,9 @@ end;
 
 destructor TKMMasterServer.Destroy;
 begin
-  fHTTPClient.Free;
-  fHTTPAnnouncementsClient.Free;
-  fHTTPMapsClient.Free;
+  FreeAndNil(fHTTPClient);
+  FreeAndNil(fHTTPAnnouncementsClient);
+  FreeAndNil(fHTTPMapsClient);
   inherited;
 end;
 

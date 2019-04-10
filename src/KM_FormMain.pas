@@ -2,16 +2,23 @@ unit KM_FormMain;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils, ShellAPI,
+  Classes, ComCtrls, Controls, Buttons, Dialogs, ExtCtrls, Forms, Graphics, Math, Menus, StdCtrls, SysUtils, StrUtils,
   KM_RenderControl, KM_Settings,
+  KM_GameTypes,
   {$IFDEF FPC} LResources, {$ENDIF}
-  {$IFDEF MSWindows} Windows, Messages; {$ENDIF}
+  {$IFDEF MSWindows} ShellAPI, Windows, Messages; {$ENDIF}
   {$IFDEF Unix} LCLIntf, LCLType; {$ENDIF}
 
 
 type
+
+  { TFormMain }
+
   TFormMain = class(TForm)
+    chkAIEye: TCheckBox;
+    chkLogGameTick: TCheckBox;
     MenuItem1: TMenuItem;
+    SaveEditableMission1: TMenuItem;
     N2: TMenuItem;
     OpenDialog1: TOpenDialog;
     StatusBar1: TStatusBar;
@@ -59,6 +66,8 @@ type
     Label5: TLabel;
     Label6: TLabel;
     chkShowDefences: TCheckBox;
+    chkBuildAI: TCheckBox;
+    chkCombatAI: TCheckBox;
     ResourceValues1: TMenuItem;
     GroupBox3: TGroupBox;
     chkUIControlsBounds: TCheckBox;
@@ -85,6 +94,8 @@ type
     chkLogsShowInChat: TCheckBox;
     chkUIControlsID: TCheckBox;
     ShowLogistics: TMenuItem;
+    chkShowTerrainIds: TCheckBox;
+    chkShowTerrainKinds: TCheckBox;
     UnitAnim_All: TMenuItem;
     N3: TMenuItem;
     Soldiers: TMenuItem;
@@ -92,6 +103,19 @@ type
     SaveSettings: TMenuItem;
     N4: TMenuItem;
     ReloadSettings: TMenuItem;
+    SaveDialog1: TSaveDialog;
+    chkLogCommands: TCheckBox;
+    ScriptData1: TMenuItem;
+    chkBevel: TCheckBox;
+    chkTilesGrid: TCheckBox;
+    N6: TMenuItem;
+    GameStats: TMenuItem;
+    ExportGameStats: TMenuItem;
+    ValidateGameStats: TMenuItem;
+    chkLogRngChecks: TCheckBox;
+    chkShowGameTick: TCheckBox;
+    chkSkipRender: TCheckBox;
+    chkSkipSound: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -108,6 +132,7 @@ type
     procedure Export_TreesRXClick(Sender: TObject);
     procedure Export_HousesRXClick(Sender: TObject);
     procedure Export_UnitsRXClick(Sender: TObject);
+    procedure Export_ScriptDataClick(Sender: TObject);
     procedure Export_GUIClick(Sender: TObject);
     procedure Export_GUIMainRXClick(Sender: TObject);
     procedure Export_CustomClick(Sender: TObject);
@@ -124,6 +149,7 @@ type
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure Debug_ExportUIPagesClick(Sender: TObject);
     procedure HousesDat1Click(Sender: TObject);
+    procedure ExportGameStatsClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ResourceValues1Click(Sender: TObject);
     procedure ControlsUpdate(Sender: TObject);
@@ -140,8 +166,11 @@ type
     procedure Civilians1Click(Sender: TObject);
     procedure ReloadSettingsClick(Sender: TObject);
     procedure SaveSettingsClick(Sender: TObject);
+    procedure SaveEditableMission1Click(Sender: TObject);
+    procedure ValidateGameStatsClick(Sender: TObject);
   private
     fUpdating: Boolean;
+    fMissionDefOpenPath: UnicodeString;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
     {$IFDEF MSWindows}
@@ -149,12 +178,19 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMExitSizeMove(var Msg: TMessage) ; message WM_EXITSIZEMOVE;
     procedure WMAppCommand(var Msg: TMessage); message WM_APPCOMMAND;
+  protected
+    procedure WndProc(var Message : TMessage); override;
     {$ENDIF}
   public
     RenderArea: TKMRenderControl;
-    procedure ControlsSetVisibile(aShowCtrls: Boolean);
+    SuppressAltForMenu: Boolean; //Suppress Alt key 'activate window menu' function
+    procedure ControlsSetVisibile(aShowCtrls, aShowGroupBox: Boolean); overload;
+    procedure ControlsSetVisibile(aShowCtrls: Boolean); overload;
     procedure ControlsReset;
+    procedure ControlsRefill;
     procedure ToggleFullscreen(aFullscreen, aWindowDefaultParams: Boolean);
+    procedure SetSaveEditableMission(aEnabled: Boolean);
+    procedure SetExportGameStats(aEnabled: Boolean);
   end;
 
 
@@ -164,7 +200,9 @@ implementation
 //{$ENDIF}
 
 uses
+  {$IFDEF WDC} UITypes, {$ENDIF}
   KromUtils,
+  KromShellUtils,
   KM_Defaults,
   KM_Main,
   //Use these units directly to avoid pass-through methods in fMain
@@ -176,8 +214,8 @@ uses
   KM_Pics,
   KM_RenderPool,
   KM_Hand,
-  KM_ResKeys, KM_FormLogistics,
-  KM_Log;
+  KM_ResKeys, KM_FormLogistics, KM_Game,
+  KM_Log, KM_CommonClasses;
 
 
 //Remove VCL panel and use flicker-free TMyPanel instead
@@ -192,6 +230,7 @@ begin
   RenderArea.OnMouseUp := RenderAreaMouseUp;
   RenderArea.OnResize := RenderAreaResize;
   RenderArea.OnRender := RenderAreaRender;
+  SuppressAltForMenu := False;
 
   chkSuperSpeed.Caption := 'Speed x' + IntToStr(DEBUG_SPEEDUP_SPEED);
 
@@ -227,6 +266,19 @@ begin
     Top := gMain.Settings.WindowParams.Top;
   end;
 
+  fMissionDefOpenPath := ExeDir;
+end;
+
+
+procedure TFormMain.SetSaveEditableMission(aEnabled: Boolean);
+begin
+  SaveEditableMission1.Enabled := aEnabled;
+end;
+
+
+procedure TFormMain.SetExportGameStats(aEnabled: Boolean);
+begin
+  ExportGameStats.Enabled := aEnabled;
 end;
 
 
@@ -238,9 +290,10 @@ end;
 
 procedure TFormMain.FormKeyUpProc(aKey: Word; aShift: TShiftState);
 begin
-  if aKey = gResKeys[SC_DEBUG_WINDOW].Key then begin
+  if aKey = gResKeys[SC_DEBUG_WINDOW].Key then
+  begin
     SHOW_DEBUG_CONTROLS := not SHOW_DEBUG_CONTROLS;
-    ControlsSetVisibile(SHOW_DEBUG_CONTROLS);
+    ControlsSetVisibile(SHOW_DEBUG_CONTROLS, not (ssCtrl in aShift)); //Hide groupbox when Ctrl is pressed
   end;
 
   if gGameApp <> nil then gGameApp.KeyUp(aKey, aShift);
@@ -314,11 +367,17 @@ end;
 
 
 procedure TFormMain.FormMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, RenderArea.ScreenToClient(MousePos).X, RenderArea.ScreenToClient(MousePos).Y);
+end;
 
 
 procedure TFormMain.RenderAreaMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-begin if gGameApp <> nil then gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y); end;
+begin
+  if gGameApp <> nil then
+    gGameApp.MouseWheel(Shift, WheelDelta, MousePos.X, MousePos.Y);
+end;
 
 
 procedure TFormMain.RenderAreaResize(aWidth, aHeight: Integer);
@@ -336,15 +395,32 @@ end;
 //Open
 procedure TFormMain.Open_MissionMenuClick(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
     gGameApp.NewSingleMap(OpenDialog1.FileName, TruncateExt(ExtractFileName(OpenDialog1.FileName)));
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
 end;
 
 
 procedure TFormMain.MenuItem1Click(Sender: TObject);
 begin
-  if RunOpenDialog(OpenDialog1, '', ExeDir, 'Knights & Merchants Mission (*.dat)|*.dat') then
-    gGameApp.NewMapEditor(OpenDialog1.FileName, 0, 0);
+  if RunOpenDialog(OpenDialog1, '', fMissionDefOpenPath, 'Knights & Merchants Mission (*.dat)|*.dat') then
+  begin
+    gGameApp.NewMapEditor(OpenDialog1.FileName);
+    fMissionDefOpenPath := ExtractFileDir(OpenDialog1.FileName);
+  end;
+end;
+
+
+procedure TFormMain.SaveEditableMission1Click(Sender: TObject);
+begin
+  if gGameApp.Game = nil then Exit;
+
+  if not gGameApp.Game.IsMapEditor then Exit;
+
+  if RunSaveDialog(SaveDialog1, gGameApp.Game.MapEditor.MissionDefSavePath, ExtractFileDir(gGameApp.Game.MapEditor.MissionDefSavePath), 'Knights & Merchants Mission (*.dat)|*.dat') then
+    gGameApp.SaveMapEditor(SaveDialog1.FileName);
 end;
 
 
@@ -399,6 +475,13 @@ begin
   gRes.Sprites.ExportToPNG(rxUnits);
 end;
 
+procedure TFormMain.Export_ScriptDataClick(Sender: TObject);
+begin
+  if (gGame <> nil)
+    and (gGame.Scripting <> nil) then
+    gGame.Scripting.ExportDataToText;
+end;
+
 procedure TFormMain.Export_GUIClick(Sender: TObject);
 begin
   gRes.Sprites.ExportToPNG(rxGUI);
@@ -441,6 +524,19 @@ begin
 end;
 
 
+procedure TFormMain.ExportGameStatsClick(Sender: TObject);
+var
+  DateS: UnicodeString;
+begin
+  if (gGame <> nil) and not gGame.IsMapEditor then
+  begin
+    DateS := FormatDateTime('yyyy-mm-dd_hh-nn', Now);
+    gHands.ExportGameStatsToCSV(ExeDir + 'Export' + PathDelim + gGame.GameName + '_' + DateS + '.csv',
+                            Format('Statistics for game at map ''%s'' on %s', [gGame.GameName, DateS]));
+  end;
+end;
+
+
 procedure TFormMain.Export_Fonts1Click(Sender: TObject);
 begin
   Assert(gRes <> nil, 'Can''t export Fonts cos they aren''t loaded yet');
@@ -453,7 +549,7 @@ var I: Integer;
 begin
   if gHands = nil then Exit;
   //You could possibly cheat in multiplayer by seeing what supplies your enemy has
-  if (gGameApp.Game <> nil) and (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS) then
+  if (gGameApp.Game <> nil) and (not gGameApp.Game.IsMultiPlayerOrSpec or MULTIPLAYER_CHEATS) then
   for I := 0 to gHands.Count - 1 do
     gHands[I].Deliveries.Queue.ExportToFile(ExeDir + 'Player_' + IntToStr(I) + '_Deliver_List.txt');
 end;
@@ -463,11 +559,11 @@ procedure TFormMain.RGPlayerClick(Sender: TObject);
 begin
   if (gGameApp.Game = nil)
     or gGameApp.Game.IsMapEditor
-    or gGameApp.Game.IsMultiplayer then
+    or gGameApp.Game.IsMultiPlayerOrSpec then
     Exit;
 
   if (gHands <> nil) and (RGPlayer.ItemIndex < gHands.Count) then
-    gMySpectator.HandIndex := RGPlayer.ItemIndex;
+    gMySpectator.HandID := RGPlayer.ItemIndex;
 end;
 
 
@@ -476,6 +572,7 @@ begin
   gMain.Settings.SaveSettings(True);
   gGameApp.GameSettings.SaveSettings(True);
 end;
+
 
 procedure TFormMain.ShowLogisticsClick(Sender: TObject);
 begin
@@ -494,7 +591,7 @@ end;
 procedure TFormMain.chkSuperSpeedClick(Sender: TObject);
 begin
   if (gGameApp.Game = nil)
-    or (gGameApp.Game.IsMultiplayer
+    or (gGameApp.Game.IsMultiPlayerOrSpec
       and not gGameApp.Game.IsMPGameSpeedUpAllowed
       and not MULTIPLAYER_SPEEDUP
       and not gGameApp.Game.IsReplay) then
@@ -508,9 +605,9 @@ procedure TFormMain.Button_StopClick(Sender: TObject);
 begin
   if gGameApp.Game <> nil then
     if gGameApp.Game.IsMapEditor then
-      gGameApp.Stop(gr_MapEdEnd)
+      gGameApp.StopGame(grMapEdEnd)
     else
-      gGameApp.Stop(gr_Cancel);
+      gGameApp.StopGame(grCancel);
 end;
 
 
@@ -547,16 +644,43 @@ begin
   tbOwnThresh.Position := OWN_THRESHOLD_DEF;
 
   fUpdating := False;
+
+  if Assigned(FormLogistics) then
+    FormLogistics.Clear;
+
   ControlsUpdate(nil);
 end;
 
 
+procedure TFormMain.ControlsRefill;
+begin
+  if (gGame = nil) or not gGame.IsMapEditor then Exit;
+
+  tbPassability.Max := Byte(High(TKMTerrainPassability));
+  tbPassability.Position := SHOW_TERRAIN_PASS;
+  Label2.Caption := IfThen(SHOW_TERRAIN_PASS <> 0, PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)], '');
+  chkShowWires.Checked := SHOW_TERRAIN_WIRES;
+  chkShowTerrainIds.Checked := SHOW_TERRAIN_IDS;
+  chkShowTerrainKinds.Checked := SHOW_TERRAIN_KINDS;
+  chkTilesGrid.Checked := SHOW_TERRAIN_TILES_GRID;
+  chkShowRoutes.Checked := SHOW_UNIT_ROUTES;
+  chkSelectionBuffer.Checked := SHOW_SEL_BUFFER;
+end;
+
+
 procedure TFormMain.ControlsSetVisibile(aShowCtrls: Boolean);
-var I: Integer;
+begin
+  ControlsSetVisibile(aShowCtrls, aShowCtrls);
+end;
+
+
+procedure TFormMain.ControlsSetVisibile(aShowCtrls, aShowGroupBox: Boolean);
+var
+  I: Integer;
 begin
   Refresh;
 
-  GroupBox1.Visible  := aShowCtrls;
+  GroupBox1.Visible  := aShowGroupBox and aShowCtrls;
   StatusBar1.Visible := aShowCtrls;
 
   //For some reason cycling Form.Menu fixes the black bar appearing under the menu upon making it visible.
@@ -564,7 +688,7 @@ begin
   Menu := nil;
   if aShowCtrls then Menu := MainMenu1;
 
-  GroupBox1.Enabled  := aShowCtrls;
+  GroupBox1.Enabled  := aShowGroupBox and aShowCtrls;
   StatusBar1.Enabled := aShowCtrls;
   for I := 0 to MainMenu1.Items.Count - 1 do
     MainMenu1.Items[I].Enabled := aShowCtrls;
@@ -586,9 +710,8 @@ begin
   if fUpdating then Exit;
 
   //You could possibly cheat in multiplayer by seeing debug render info
-  AllowDebugChange := (gGameApp.Game = nil)
-                   or (not gGameApp.Game.IsMultiplayer or MULTIPLAYER_CHEATS)
-                   or (Sender = nil); //Happens in ControlsReset only (using this anywhere else could allow MP cheating)
+  AllowDebugChange := gMain.IsDebugChangeAllowed
+                      or (Sender = nil); //Happens in ControlsReset only (using this anywhere else could allow MP cheating)
 
   //Debug render
   if AllowDebugChange then
@@ -598,15 +721,26 @@ begin
     Label2.Caption := IfThen(I <> 0, PassabilityGuiText[TKMTerrainPassability(I)], '');
     SHOW_TERRAIN_PASS := I;
     SHOW_TERRAIN_WIRES := chkShowWires.Checked;
+    SHOW_TERRAIN_IDS := chkShowTerrainIds.Checked;
+    SHOW_TERRAIN_KINDS := chkShowTerrainKinds.Checked;
+    SHOW_TERRAIN_TILES_GRID := chkTilesGrid.Checked;
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
+    SHOW_GAME_TICK := chkShowGameTick.Checked;
+
+    SKIP_RENDER := chkSkipRender.Checked;
+    SKIP_SOUND := chkSkipSound.Checked;
   end;
 
   //AI
   if AllowDebugChange then
   begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
+    SHOW_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
+    OVERLAY_AI_BUILD := chkBuildAI.Checked;
+    OVERLAY_AI_COMBAT := chkCombatAI.Checked;
+    OVERLAY_AI_EYE := chkAIEye.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;
@@ -639,39 +773,50 @@ begin
 
   //Logs
   SHOW_LOGS_IN_CHAT := chkLogsShowInChat.Checked;
+  LOG_GAME_TICK := chkLogGameTick.Checked;
 
   if AllowDebugChange then
   begin
     if chkLogDelivery.Checked then
-      Include(gLog.MessageTypes, lmt_Delivery)
+      Include(gLog.MessageTypes, lmtDelivery)
     else
-      Exclude(gLog.MessageTypes, lmt_Delivery);
+      Exclude(gLog.MessageTypes, lmtDelivery);
+
+    if chkLogCommands.Checked then
+      Include(gLog.MessageTypes, lmtCommands)
+    else
+      Exclude(gLog.MessageTypes, lmtCommands);
+
+    if chkLogRngChecks.Checked then
+      Include(gLog.MessageTypes, lmtRandomChecks)
+    else
+      Exclude(gLog.MessageTypes, lmtRandomChecks);
 
     if chkLogNetConnection.Checked then
-      Include(gLog.MessageTypes, lmt_NetConnection)
+      Include(gLog.MessageTypes, lmtNetConnection)
     else
-      Exclude(gLog.MessageTypes, lmt_NetConnection);
+      Exclude(gLog.MessageTypes, lmtNetConnection);
 
     case RGLogNetPackets.ItemIndex of
       0:    begin
-              Exclude(gLog.MessageTypes, lmt_NetPacketOther);
-              Exclude(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Exclude(gLog.MessageTypes, lmtNetPacketOther);
+              Exclude(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       1:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Exclude(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Exclude(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       2:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Include(gLog.MessageTypes, lmt_NetPacketCommand);
-              Exclude(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Include(gLog.MessageTypes, lmtNetPacketCommand);
+              Exclude(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       3:    begin
-              Include(gLog.MessageTypes, lmt_NetPacketOther);
-              Include(gLog.MessageTypes, lmt_NetPacketCommand);
-              Include(gLog.MessageTypes, lmt_NetPacketPingFps);
+              Include(gLog.MessageTypes, lmtNetPacketOther);
+              Include(gLog.MessageTypes, lmtNetPacketCommand);
+              Include(gLog.MessageTypes, lmtNetPacketPingFps);
             end;
       else  raise Exception.Create('Unexpected RGLogNetPackets.ItemIndex = ' + IntToStr(RGLogNetPackets.ItemIndex));
     end;
@@ -723,14 +868,61 @@ begin
 end;
 
 
+procedure TFormMain.ValidateGameStatsClick(Sender: TObject);
+var
+  MS: TKMemoryStream;
+  SL: TStringList;
+  CRC: Int64;
+  IsValid: Boolean;
+begin
+  if RunOpenDialog(OpenDialog1, '', ExeDir, 'KaM Remake statistics (*.csv)|*.csv') then
+  begin
+    IsValid := False;
+    SL := TStringList.Create;
+    try
+      try
+        SL.LoadFromFile(OpenDialog1.FileName);
+        if TryStrToInt64(SL[0], CRC) then
+        begin
+          SL.Delete(0); //Delete CRC from file
+          MS := TKMemoryStream.Create;
+          try
+            MS.WriteHugeString(SL.Text);
+            if CRC = Adler32CRC(MS) then
+              IsValid := True;
+          finally
+            FreeAndNil(MS);
+          end;
+        end;
+
+        if IsValid then
+          MessageDlg('Game statistics from file [ ' + OpenDialog1.FileName + ' ] is valid', mtInformation , [mbOK ], 0)
+        else
+          MessageDlg('Game statistics from file [ ' + OpenDialog1.FileName + ' ] is NOT valid !', mtError, [mbClose], 0);
+
+      except
+        on E: Exception do
+          MessageDlg('Error while validating game statistics from file [ ' + OpenDialog1.FileName + ' ] :' + EolW
+                     + E.Message, mtError, [mbClose], 0);
+      end;
+    finally
+      FreeAndNil(SL);
+    end;
+  end;
+end;
+
+
 // Return current window params
 function TFormMain.GetWindowParams: TKMWindowParamsRecord;
   // FindTaskBar returns the Task Bar's position, and fills in
   // ARect with the current bounding rectangle.
   function FindTaskBar(var aRect: TRect): Integer;
+  {$IFDEF MSWINDOWS}
   var	AppData: TAppBarData;
+  {$ENDIF}
   begin
     Result := -1;
+    {$IFDEF MSWINDOWS}
     // 'Shell_TrayWnd' is the name of the task bar's window
     AppData.Hwnd := FindWindow('Shell_TrayWnd', nil);
     if AppData.Hwnd <> 0 then
@@ -746,6 +938,7 @@ function TFormMain.GetWindowParams: TKMWindowParamsRecord;
         aRect := AppData.rc;
       end;
     end;
+    {$ENDIF}
   end;
 var
   Wp: TWindowPlacement;
@@ -842,6 +1035,17 @@ begin
      end;
   end;
   {$ENDIF}
+end;
+
+
+//Supress default activation of window menu when Alt pressed, as Alt used in some shortcuts
+procedure TFormMain.WndProc(var Message : TMessage);
+begin
+  if (Message.Msg = WM_SYSCOMMAND)
+    and (Message.WParam = SC_KEYMENU)
+    and SuppressAltForMenu then Exit;
+
+  inherited WndProc(Message);
 end;
 
 

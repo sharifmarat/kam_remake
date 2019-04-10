@@ -30,7 +30,7 @@ type
     end;
   protected
     fPass: TKMTerrainPassabilitySet;
-    fTargetWalkConnect: TWalkConnect;
+    fTargetWalkConnect: TKMWalkConnect;
     fTargetNetwork: Byte;
     fDistance: Single;
     fIsInteractionAvoid: Boolean;
@@ -52,9 +52,11 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Route_Make(aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
-    function Route_MakeAvoid(aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
-    function Route_ReturnToWalkable(aLocA, aLocB: TKMPoint; aTargetWalkConnect: TWalkConnect; aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
+    function Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
+                        aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
+    function Route_MakeAvoid(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
+    function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte;
+                                    aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     procedure Load(LoadStream: TKMemoryStream); virtual;
@@ -94,7 +96,8 @@ end;
 
 //Find a route from A to B which meets aPass Passability
 //Results should be written as NodeCount of waypoint nodes to Nodes
-function TPathFinding.Route_Make(aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
+function TPathFinding.Route_Make(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single;
+                                 aTargetHouse: TKMHouse; NodeList: TKMPointList; aAvoidLocked: Boolean = False): Boolean;
 begin
   Result := False;
 
@@ -104,7 +107,7 @@ begin
   fTargetNetwork := 0;
   fTargetWalkConnect := wcWalk;
   fDistance := aDistance;
-  fIsInteractionAvoid := False;
+  fIsInteractionAvoid := aAvoidLocked;
   fTargetHouse := aTargetHouse;
   if fTargetHouse = nil then
     fDestination := pdLocation
@@ -125,7 +128,7 @@ end;
 
 
 //We are using Interaction Avoid mode (go around busy units)
-function TPathFinding.Route_MakeAvoid(aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
+function TPathFinding.Route_MakeAvoid(const aLocA, aLocB: TKMPoint; aPass: TKMTerrainPassabilitySet; aDistance: Single; aTargetHouse: TKMHouse; NodeList: TKMPointList): Boolean;
 begin
   Result := False;
 
@@ -151,7 +154,7 @@ end;
 
 
 //Even though we are only going to a road network it is useful to know where our target is so we start off in the right direction (makes algorithm faster/work over long distances)
-function TPathFinding.Route_ReturnToWalkable(aLocA, aLocB: TKMPoint; aTargetWalkConnect: TWalkConnect; aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
+function TPathFinding.Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aTargetWalkConnect: TKMWalkConnect; aTargetNetwork: Byte; aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 begin
   Result := False;
 
@@ -206,7 +209,7 @@ begin
     if DO_WEIGHT_ROUTES and (U <> nil) and ((tpWalkRoad in fPass) or U.PathfindingShouldAvoid) then
       Inc(Result, 15); //Unit = 1.5 extra tiles
     if fIsInteractionAvoid and gTerrain.TileIsLocked(KMPoint(aToX,aToY)) then
-      Inc(Result, 500); //In interaction avoid mode, working unit = 50 tiles
+      Inc(Result, 200); //In interaction avoid mode, working unit (or warrior attacking house) = 20 tiles
   end;
 end;
 

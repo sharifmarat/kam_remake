@@ -21,7 +21,7 @@ type
     fPanImmidiately : Boolean;
     fPanDuration, fPanProgress: Cardinal;
     function GetPosition: TKMPointF;
-    procedure SetPosition(Value: TKMPointF);
+    procedure SetPosition(const Value: TKMPointF);
     procedure SetZoom(aZoom: Single);
   public
     ScrollKeyLeft, ScrollKeyRight, ScrollKeyUp, ScrollKeyDown, ZoomKeyIn, ZoomKeyOut: boolean;
@@ -46,7 +46,7 @@ type
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStream);
 
-    procedure UpdateStateIdle(aFrameTime: Cardinal; aInCinematic: Boolean);
+    procedure UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
   end;
 
 
@@ -121,7 +121,7 @@ begin
 end;
 
 
-procedure TKMViewport.SetPosition(Value: TKMPointF);
+procedure TKMViewport.SetPosition(const Value: TKMPointF);
 var PadTop, TilesX, TilesY: Single;
 begin
   PadTop := fTopHill + 0.75; //Leave place on top for highest hills + 1 unit
@@ -209,15 +209,15 @@ end;
 
 //Here we must test each edge to see if we need to scroll in that direction
 //We scroll at SCROLLSPEED per 100 ms. That constant is defined in KM_Defaults
-procedure TKMViewport.UpdateStateIdle(aFrameTime: Cardinal; aInCinematic: Boolean);
+procedure TKMViewport.UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
 const
   SCROLL_ACCEL_TIME = 400; // Time in ms that scrolling will be affected by acceleration
   SCROLL_FLEX = 4;         // Number of pixels either side of the edge of the screen which will count as scrolling
   DirectionsBitfield: array [0..15] of TKMCursor = (
-    kmc_Default, kmc_Scroll6, kmc_Scroll0, kmc_Scroll7,
-    kmc_Scroll2, kmc_Default, kmc_Scroll1, kmc_Default,
-    kmc_Scroll4, kmc_Scroll5, kmc_Default, kmc_Default,
-    kmc_Scroll3, kmc_Default, kmc_Default, kmc_Default);
+    kmcDefault, kmcScroll6, kmcScroll0, kmcScroll7,
+    kmcScroll2, kmcDefault, kmcScroll1, kmcDefault,
+    kmcScroll4, kmcScroll5, kmcDefault, kmcDefault,
+    kmcScroll3, kmcDefault, kmcDefault, kmcDefault);
 var
   TimeSinceStarted: Cardinal;
   ScrollAdv, ZoomAdv: Single;
@@ -261,7 +261,8 @@ begin
   CursorPoint.Y := EnsureRange(MousePos.Y, ScreenBounds.Top , ScreenBounds.Bottom);
 
   //Do not do scrolling when the form is not focused (player has switched to another application)
-  if not gMain.IsFormActive or
+  if not aAllowMouseScrolling or
+     not gMain.IsFormActive or
     (not ScrollKeyLeft  and
      not ScrollKeyUp    and
      not ScrollKeyRight and
@@ -277,8 +278,8 @@ begin
     ReleaseScrollKeys;
     fScrolling := False;
 
-    if (gRes.Cursors.Cursor in [kmc_Scroll0 .. kmc_Scroll7]) then
-      gRes.Cursors.Cursor := kmc_Default;
+    if (gRes.Cursors.Cursor in [kmcScroll0 .. kmcScroll7]) then
+      gRes.Cursors.Cursor := kmcDefault;
 
     fScrollStarted := 0;
     Exit;
@@ -320,8 +321,8 @@ begin
   if fScrolling then
     gRes.Cursors.Cursor := DirectionsBitfield[I] //Sample cursor type from bitfield value
   else
-    if (gRes.Cursors.Cursor in [kmc_Scroll0 .. kmc_Scroll7]) then
-      gRes.Cursors.Cursor := kmc_Default;
+    if (gRes.Cursors.Cursor in [kmcScroll0 .. kmcScroll7]) then
+      gRes.Cursors.Cursor := kmcDefault;
 
   SetZoom(fZoom); //EnsureRanges
   SetPosition(fPosition); //EnsureRanges

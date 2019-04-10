@@ -3,7 +3,8 @@ unit KM_ScriptingUtils;
 
 interface
 uses
-  Math, SysUtils, uPSRuntime, KM_ScriptingEvents;
+  Math, uPSRuntime,
+  KM_ScriptingEvents, KM_CommonTypes, KM_Points;
 
 type
   TKMScriptUtils = class(TKMScriptEntity)
@@ -11,22 +12,27 @@ type
     function AbsI(aValue: Integer): Integer;
     function AbsS(aValue: Single): Single;
 
-    function ArrayElementCount(aElement: AnsiString; aArray: array of String): Integer;
+    function ArrayElementCount(const aElement: AnsiString; aArray: array of String): Integer;
     function ArrayElementCountB(aElement: Boolean; aArray: array of Boolean): Integer;
     function ArrayElementCountI(aElement: Integer; aArray: array of Integer): Integer;
     function ArrayElementCountS(aElement: Single; aArray: array of Single): Integer;
 
-    function ArrayHasElement(aElement: AnsiString; aArray: array of String): Boolean;
+    function ArrayHasElement(const aElement: AnsiString; aArray: array of String): Boolean;
     function ArrayHasElementB(aElement: Boolean; aArray: array of Boolean): Boolean;
     function ArrayHasElementI(aElement: Integer; aArray: array of Integer): Boolean;
     function ArrayHasElementS(aElement: Single; aArray: array of Single): Boolean;
+
+    function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray;
+    function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray;
+
+    function BoolToStr(aBool: Boolean): AnsiString;
 
     function EnsureRangeI(aValue, aMin, aMax: Integer): Integer;
     function EnsureRangeS(aValue, aMin, aMax: Single): Single;
 
     function Format(const aFormatting: string; aData: array of const): string;
 
-    function IfThen(aBool: Boolean; aTrue, aFalse: AnsiString): AnsiString;
+    function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString;
     function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer;
     function IfThenS(aBool: Boolean; aTrue, aFalse: Single): Single;
 
@@ -35,6 +41,8 @@ type
 
     function InRangeI(aValue, aMin, aMax: Integer): Boolean;
     function InRangeS(aValue, aMin, aMax: Single): Boolean;
+
+    function KMPoint(X,Y: Integer): TKMPoint;
 
     function MaxI(A, B: Integer): Integer;
     function MaxS(A, B: Single): Single;
@@ -63,7 +71,7 @@ type
 implementation
 
 uses
-  KM_CommonUtils;
+  SysUtils, KM_CommonUtils;
 
 { TKMScriptingUtils }
 
@@ -96,7 +104,7 @@ end;
 
 //* Version: 7000+
 //* Checks how many times specified string comes in requested array
-function TKMScriptUtils.ArrayElementCount(aElement: AnsiString; aArray: array of String): Integer;
+function TKMScriptUtils.ArrayElementCount(const aElement: AnsiString; aArray: array of String): Integer;
 var
   I: Integer;
 begin
@@ -107,9 +115,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = String(aElement) then
           Inc(Result);
-    end
-    else
-      LogParamWarning('Utils.ArrayElementCount: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -130,9 +136,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Inc(Result);
-    end
-    else
-      LogParamWarning('Utils.ArrayElementCountB: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -153,9 +157,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Inc(Result);
-    end
-    else
-      LogParamWarning('Utils.ArrayElementCountI: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -176,9 +178,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Inc(Result);
-    end
-    else
-      LogParamWarning('Utils.ArrayElementCountS: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -188,7 +188,7 @@ end;
 
 //* Version: 7000+
 //* Checks whether requested array has specified string
-function TKMScriptUtils.ArrayHasElement(aElement: AnsiString; aArray: array of String): Boolean;
+function TKMScriptUtils.ArrayHasElement(const aElement: AnsiString; aArray: array of String): Boolean;
 var
   I: Integer;
 begin
@@ -199,9 +199,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = String(aElement) then
           Exit(True);
-    end
-    else
-      LogParamWarning('Utils.ArrayHasElement: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -222,9 +220,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Exit(True);
-    end
-    else
-      LogParamWarning('Utils.ArrayHasElementB: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -245,9 +241,7 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Exit(True);
-    end
-    else
-      LogParamWarning('Utils.ArrayHasElementI: Requested array is empty',[]);
+    end;
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -268,9 +262,58 @@ begin
       for I := 0 to High(aArray) do
         if aArray[I] = aElement then
           Exit(True);
-    end
-    else
-      LogParamWarning('Utils.ArrayHasElementS: Requested array is empty',[]);
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Removes element on specified index in specified array of integer.
+//* Integer array should be declared as TIntegerArray instead of array of integer.
+function TKMScriptUtils.ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray;
+begin
+  Result := aArray;
+  try
+    if (Length(aArray) > 0) and (aIndex in [Low(aArray)..High(aArray)]) then
+    begin
+      DeleteFromArray(aArray, aIndex);
+      Result := aArray;
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Removes element on specified index in specified array of string.
+//* String array should be declared as TAnsiStringArray instead of array of AnsiString.
+function TKMScriptUtils.ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray;
+begin
+  Result := aArray;
+  try
+    if (Length(aArray) > 0) and (aIndex in [Low(aArray)..High(aArray)]) then
+    begin
+      DeleteFromArray(aArray, aIndex);
+      Result := aArray;
+    end;
+  except
+    gScriptEvents.ExceptionOutsideScript := True;
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Return string representation of Boolean value: 'True' or 'False'
+function TKMScriptUtils.BoolToStr(aBool: Boolean): AnsiString;
+begin
+  try
+    Result := AnsiString(SysUtils.BoolToStr(aBool, True));
   except
     gScriptEvents.ExceptionOutsideScript := True;
     raise;
@@ -320,7 +363,7 @@ end;
 
 //* Version: 7000+
 //* Checks condition aBool and returns aTrue/aFalse string depending on check result
-function TKMScriptUtils.IfThen(aBool: Boolean; aTrue, aFalse: AnsiString): AnsiString;
+function TKMScriptUtils.IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString;
 begin
   try
     if aBool then
@@ -411,6 +454,13 @@ begin
   end;
 end;
 
+
+//* Version: 7000+
+//* Returns point record with specified coordinates
+function TKMScriptUtils.KMPoint(X,Y: Integer): TKMPoint;
+begin
+  Result := KM_Points.KMPoint(X,Y);
+end;
 
 
 //* Version: 7000+

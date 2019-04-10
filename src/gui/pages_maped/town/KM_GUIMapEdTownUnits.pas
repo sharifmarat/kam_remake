@@ -3,25 +3,26 @@ unit KM_GUIMapEdTownUnits;
 interface
 uses
    Classes, Controls, KromUtils, Math, StrUtils, SysUtils,
+   KM_InterfaceDefaults,
    KM_Controls, KM_Defaults, KM_Pics;
 
 type
-  TKMMapEdTownUnits = class
+  TKMMapEdTownUnits = class (TKMMapEdSubMenuPage)
   private
     procedure Town_UnitChange(Sender: TObject);
     procedure Town_UnitRefresh;
   protected
     Panel_Units: TKMPanel;
-    Button_UnitCancel: TKMButtonFlat;
-    Button_Citizen: array [0..13] of TKMButtonFlat;
-    Button_Warriors: array [0..13] of TKMButtonFlat;
-    Button_Animals: array [0..7] of TKMButtonFlat;
+      Button_UnitCancel: TKMButtonFlat;
+      Button_Citizen: array [0..13] of TKMButtonFlat;
+      Button_Warriors: array [0..13] of TKMButtonFlat;
+      Button_Animals: array [0..7] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure UpdatePlayerColor;
     procedure UpdateState;
   end;
@@ -30,7 +31,7 @@ type
 implementation
 uses
   KM_HandsCollection, KM_GameCursor, KM_RenderUI, KM_Resource, KM_ResFonts, KM_ResTexts,
-  KM_InterfaceGame, KM_ResUnits, KM_Hand;
+  KM_InterfaceGame, KM_ResUnits, KM_Hand, KM_Utils;
 
 
 { TKMMapEdTownUnits }
@@ -42,7 +43,7 @@ begin
   inherited Create;
 
   Panel_Units := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
-  TKMLabel.Create(Panel_Units, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_UNITS], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_Units, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_UNITS], fntOutline, taCenter);
 
   LineY := 30;
 
@@ -50,11 +51,14 @@ begin
   begin
     Button_Citizen[I] := TKMButtonFlat.Create(Panel_Units,(I mod 5)*37,LineY+(I div 5)*37,33,33,gRes.Units[School_Order[I]].GUIIcon); //List of tiles 5x5
     Button_Citizen[I].Hint := gRes.Units[School_Order[I]].GUIName;
+    if InRange(I, 0, High(fSubMenuActionsCtrls) - 1) then
+      Button_Citizen[I].Hint := GetHintWHotkey(Button_Citizen[I].Hint, MAPED_SUBMENU_ACTIONS_HOTKEYS[I+1]);
+
     Button_Citizen[I].Tag := Byte(School_Order[I]); //Returns unit ID
     Button_Citizen[I].OnClick := Town_UnitChange;
   end;
   Button_UnitCancel := TKMButtonFlat.Create(Panel_Units, 4 * 37, LineY+(Length(Button_Citizen) div 5)*37, 33, 33, 340);
-  Button_UnitCancel.Hint := 'Remove units/groups'; // Todo translate
+  Button_UnitCancel.Hint := GetHintWHotkey(TX_MAPED_UNITS_REMOVE_HINT, MAPED_SUBMENU_ACTIONS_HOTKEYS[0]);
   Button_UnitCancel.Tag := 255; //Erase
   Button_UnitCancel.OnClick := Town_UnitChange;
 
@@ -77,6 +81,13 @@ begin
     Button_Animals[I].Tag := Byte(Animal_Order[I]); //Returns animal ID
     Button_Animals[I].OnClick := Town_UnitChange;
   end;
+
+  for I := 0 to High(fSubMenuActionsEvents) do
+    fSubMenuActionsEvents[I] := Town_UnitChange;
+
+  fSubMenuActionsCtrls[0] := Button_UnitCancel;
+  for I := 1 to High(fSubMenuActionsCtrls) do
+    fSubMenuActionsCtrls[I] := Button_Citizen[I-1];
 end;
 
 

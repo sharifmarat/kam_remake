@@ -91,7 +91,7 @@ end;
 
 destructor TKMNetClient.Destroy;
 begin
-  fClient.Free;
+  FreeAndNil(fClient);
   inherited;
 end;
 
@@ -186,9 +186,9 @@ begin
   assert(aLength <= MAX_PACKET_SIZE,'Packet over size limit');
   GetMem(P, aLength+6);
   PKMNetHandleIndex(P)^ := aSender;
-  PKMNetHandleIndex(cardinal(P)+2)^ := aRecepient;
-  PWord(cardinal(P)+4)^ := aLength;
-  Move(aData^, Pointer(cardinal(P)+6)^, aLength);
+  PKMNetHandleIndex(NativeUInt(P)+2)^ := aRecepient;
+  PWord(NativeUInt(P)+4)^ := aLength;
+  Move(aData^, Pointer(NativeUInt(P)+6)^, aLength);
   fClient.SendData(P, aLength+6);
   FreeMem(P);
 end;
@@ -212,7 +212,7 @@ begin
   while fBufferSize >= 1 do
   begin
     //Try to read data packet from buffer
-//    PacksCnt := PCardinal(@fBuffer[0])^;
+//    PacksCnt := PNativeUInt(@fBuffer[0])^;
     //gLog.AddTime('%%%%% receive cumulative packet: packs Cnt = ' + IntToStr(PacksCnt));
     while (fBufferSize >= 7) and (PByte(@fBuffer[0])^ > 0) do
     begin
@@ -220,7 +220,7 @@ begin
       //We skip PacketRecipient because thats us
       PacketLength := PWord(@fBuffer[5])^;
 
-      //gLog.AddTime(Format('pack %d: sender = %s length = %d' , [PacksCnt - PCardinal(@fBuffer[0])^ + 1,
+      //gLog.AddTime(Format('pack %d: sender = %s length = %d' , [PacksCnt - PNativeUInt(@fBuffer[0])^ + 1,
 //                                                    GetNetAddressStr(PacketSender), PacketLength]));
       //Buffer is lengthy enough to contain full packet, process it
       if PacketLength <= fBufferSize-7 then
@@ -259,7 +259,7 @@ begin
 //  begin
 //    PacketSender := PInteger(@fBuffer[0])^;
 //    //We skip PacketRecipient because thats us
-//    PacketLength := PCardinal(@fBuffer[8])^;
+//    PacketLength := PNativeUInt(@fBuffer[8])^;
 //
 //    //Buffer is lengthy enough to contain full packet, process it
 //    if PacketLength <= fBufferSize-12 then

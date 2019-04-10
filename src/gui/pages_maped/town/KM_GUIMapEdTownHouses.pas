@@ -3,20 +3,21 @@ unit KM_GUIMapEdTownHouses;
 interface
 uses
    Classes, Controls, Math, SysUtils,
+   KM_InterfaceDefaults,
    KM_Controls, KM_Defaults, KM_InterfaceGame;
 
 type
-  TKMMapEdTownHouses = class
+  TKMMapEdTownHouses = class (TKMMapEdSubMenuPage)
   private
     procedure Town_BuildChange(Sender: TObject);
     procedure Town_BuildRefresh;
   protected
     Panel_Build: TKMPanel;
-    Button_BuildRoad: TKMButtonFlat;
-    Button_BuildField: TKMButtonFlat;
-    Button_BuildWine: TKMButtonFlat;
-    Button_BuildCancel: TKMButtonFlat;
-    Button_Build: array [1..GUI_HOUSE_COUNT] of TKMButtonFlat;
+      Button_BuildRoad: TKMButtonFlat;
+      Button_BuildField: TKMButtonFlat;
+      Button_BuildWine: TKMButtonFlat;
+      Button_BuildCancel: TKMButtonFlat;
+      Button_Build: array [1..GUI_HOUSE_COUNT] of TKMButtonFlat;
   public
     constructor Create(aParent: TKMPanel);
 
@@ -27,7 +28,7 @@ type
 
     procedure Show;
     procedure Hide;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure UpdateState;
     procedure UpdateStateIdle;
   end;
@@ -36,7 +37,7 @@ type
 implementation
 uses
   KM_ResTexts, KM_GameCursor, KM_Resource, KM_ResHouses, KM_ResFonts, KM_RenderUI,
-  KM_Terrain, KM_Points, KM_ResKeys;
+  KM_Terrain, KM_Points, KM_ResKeys, KM_Utils;
 
 
 { TKMMapEdTownHouses }
@@ -48,7 +49,7 @@ begin
 
   Panel_Build := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
-  TKMLabel.Create(Panel_Build,0,PAGE_TITLE_Y,TB_WIDTH,0,gResTexts[TX_MAPED_ROAD_TITLE],fnt_Outline,taCenter);
+  TKMLabel.Create(Panel_Build,0,PAGE_TITLE_Y,TB_WIDTH,0,gResTexts[TX_MAPED_ROAD_TITLE],fntOutline,taCenter);
   Button_BuildRoad   := TKMButtonFlat.Create(Panel_Build,  0,28,33,33,335);
   Button_BuildField  := TKMButtonFlat.Create(Panel_Build, 37,28,33,33,337);
   Button_BuildWine   := TKMButtonFlat.Create(Panel_Build, 74,28,33,33,336);
@@ -61,18 +62,32 @@ begin
   Button_BuildField.OnClick := Town_BuildChange;
   Button_BuildWine.OnClick  := Town_BuildChange;
   Button_BuildCancel.OnClick:= Town_BuildChange;
-  Button_BuildRoad.Hint     := Format(gResTexts[TX_BUILD_ROAD_HINT], [gResKeys.GetKeyNameById(SC_PLAN_ROAD)]);
-  Button_BuildField.Hint    := Format(gResTexts[TX_BUILD_FIELD_HINT], [gResKeys.GetKeyNameById(SC_PLAN_FIELD)]);
-  Button_BuildWine.Hint     := Format(gResTexts[TX_BUILD_WINE_HINT], [gResKeys.GetKeyNameById(SC_PLAN_WINE)]);
-  Button_BuildCancel.Hint   := Format(gResTexts[TX_BUILD_CANCEL_HINT], [gResKeys.GetKeyNameById(SC_ERASE_PLAN)]);
+  Button_BuildRoad.Hint     := GetHintWHotkey(TX_BUILD_ROAD_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
+  Button_BuildField.Hint    := GetHintWHotkey(TX_BUILD_FIELD_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
+  Button_BuildWine.Hint     := GetHintWHotkey(TX_BUILD_WINE_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
+  Button_BuildCancel.Hint   := GetHintWHotkey(TX_BUILD_CANCEL_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
 
-  TKMLabel.Create(Panel_Build,0,65,TB_WIDTH,0,gResTexts[TX_MAPED_HOUSES_TITLE],fnt_Outline,taCenter);
-  for I:=1 to GUI_HOUSE_COUNT do
-    if GUIHouseOrder[I] <> ht_None then begin
+  TKMLabel.Create(Panel_Build,0,65,TB_WIDTH,0,gResTexts[TX_MAPED_HOUSES_TITLE],fntOutline,taCenter);
+  for I := 1 to GUI_HOUSE_COUNT do
+    if GUIHouseOrder[I] <> htNone then begin
       Button_Build[I] := TKMButtonFlat.Create(Panel_Build, ((I-1) mod 5)*37,83+((I-1) div 5)*37,33,33,gRes.Houses[GUIHouseOrder[I]].GUIIcon);
       Button_Build[I].OnClick := Town_BuildChange;
-      Button_Build[I].Hint := gRes.Houses[GUIHouseOrder[I]].HouseName;
+      if InRange(I-1, 0, High(fSubMenuActionsCtrls) - 4) then
+        Button_Build[I].Hint := GetHintWHotkey(gRes.Houses[GUIHouseOrder[I]].HouseName, MAPED_SUBMENU_ACTIONS_HOTKEYS[I+3])
+      else
+        Button_Build[I].Hint := gRes.Houses[GUIHouseOrder[I]].HouseName;
     end;
+
+  for I := 0 to High(fSubMenuActionsEvents) do
+    fSubMenuActionsEvents[I] := Town_BuildChange;
+
+  fSubMenuActionsCtrls[0] := Button_BuildRoad;
+  fSubMenuActionsCtrls[1] := Button_BuildField;
+  fSubMenuActionsCtrls[2] := Button_BuildWine;
+  fSubMenuActionsCtrls[3] := Button_BuildCancel;
+
+  for I := 4 to High(fSubMenuActionsCtrls) do
+    fSubMenuActionsCtrls[I] := Button_Build[I-3];
 end;
 
 
@@ -124,7 +139,7 @@ begin
   else
 
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
   if Sender = Button_Build[I] then
   begin
     gGameCursor.Mode := cmHouses;
@@ -145,7 +160,7 @@ begin
   Button_BuildWine.Down   := (gGameCursor.Mode = cmWine);
 
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
     Button_Build[I].Down := (gGameCursor.Mode = cmHouses) and (gGameCursor.Tag1 = Byte(GUIHouseOrder[I]));
 end;
 

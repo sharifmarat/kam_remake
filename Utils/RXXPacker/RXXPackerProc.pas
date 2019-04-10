@@ -39,7 +39,7 @@ var
   RXName: string;
   resHouses: TKMResHouses;
   resUnits: TKMResUnits;
-  UT: TUnitType;
+  UT: TKMUnitType;
   Dir: TKMDirection;
 begin
   //ruCustom sprite packs do not have a main RXX file so don't need packing
@@ -63,7 +63,7 @@ begin
         SpritePack.LoadFromFolder(ExeDir + 'SpriteResource\');
 
       //Tiles must stay the same size as they can't use pivots
-      if RT <> rxTiles then
+      if (RT <> rxTiles) and (gLog <> nil) then
         gLog.AddTime('Trimmed ' + IntToStr(SpritePack.TrimSprites));
 
       //Houses need some special treatment to adapt to GL_ALPHA_TEST that we use for construction steps
@@ -92,16 +92,16 @@ begin
         end;
         if RT = rxUnits then
         begin
-          SpritePack.SoftenShadows(6251, 6314, False); //Smooth thought bubbles
+          SpritePack.SoftenShadows(6251, 6322, False); //Smooth thought bubbles
           //Smooth all death animations for all units
           resUnits := TKMResUnits.Create;
           DeathAnimCount := 0; //We need to remember which ones we've done because units reuse them
           SetLength(DeathAnimProcessed, 1000); //Hopefully more than enough
           for UT := HUMANS_MIN to HUMANS_MAX do
-            for Dir := dir_N to dir_NW do
+            for Dir := dirN to dirNW do
               for Step := 1 to 30 do
               begin
-                SpriteID := resUnits[UT].UnitAnim[ua_Die,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
+                SpriteID := resUnits[UT].UnitAnim[uaDie,Dir].Step[Step]+1; //Sprites in units.dat are 0 indexed
                 if (SpriteID > 0)
                 and not DeathAnimAlreadyDone(SpriteID) then
                 begin

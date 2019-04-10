@@ -51,15 +51,15 @@ begin
   inherited Create;
 
   Panel_Build := TKMPanel.Create(aParent, TB_PAD, 44, TB_WIDTH, 332);
-    Label_Build := TKMLabel.Create(Panel_Build, 0, 10, TB_WIDTH, 0, '', fnt_Outline, taCenter);
+    Label_Build := TKMLabel.Create(Panel_Build, 0, 10, TB_WIDTH, 0, '', fntOutline, taCenter);
     Image_Build_Selected := TKMImage.Create(Panel_Build, 0, 40, 32, 32, 335);
     Image_Build_Selected.ImageCenter;
     Image_BuildCost_WoodPic := TKMImage.Create(Panel_Build, 67, 40, 32, 32, 353);
     Image_BuildCost_WoodPic.ImageCenter;
     Image_BuildCost_StonePic := TKMImage.Create(Panel_Build, 122, 40, 32, 32, 352);
     Image_BuildCost_StonePic.ImageCenter;
-    Label_BuildCost_Wood  := TKMLabel.Create(Panel_Build,  97, 50, 20, 20, '', fnt_Outline, taLeft);
-    Label_BuildCost_Stone := TKMLabel.Create(Panel_Build, 152, 50, 20, 20, '', fnt_Outline, taLeft);
+    Label_BuildCost_Wood  := TKMLabel.Create(Panel_Build,  97, 50, 20, 20, '', fntOutline, taLeft);
+    Label_BuildCost_Stone := TKMLabel.Create(Panel_Build, 152, 50, 20, 20, '', fntOutline, taLeft);
 
     Button_BuildRoad    := TKMButtonFlat.Create(Panel_Build,   0, 80, 33, 33, 335);
     Button_BuildField   := TKMButtonFlat.Create(Panel_Build,  37, 80, 33, 33, 337);
@@ -75,7 +75,7 @@ begin
     Button_BuildCancel.Hint := GetHintWHotKey(TX_BUILD_CANCEL_HINT, SC_ERASE_PLAN);
 
     for I := 1 to GUI_HOUSE_COUNT do
-    if GUIHouseOrder[I] <> ht_None then
+    if GUIHouseOrder[I] <> htNone then
     begin
       Button_Build[I] := TKMButtonFlat.Create(Panel_Build, ((I-1) mod 5)*37, 120+((I-1) div 5)*37, 33, 33,
                                               gRes.Houses[GUIHouseOrder[I]].GUIIcon);
@@ -127,7 +127,7 @@ procedure TKMGUIGameBuild.Build_ButtonClick(Sender: TObject);
   end;
 var
   I: Integer;
-  house: THouseType;
+  house: TKMHouseType;
   houseDat: TKMHouseSpec;
 begin
   if Sender = nil then
@@ -160,7 +160,7 @@ begin
     SetCost(cmWine, 0, 336, 1, 0, gResTexts[TX_BUILD_WINE])
   else
   begin
-    house := THouseType(TKMButton(Sender).Tag);
+    house := TKMHouseType(TKMButton(Sender).Tag);
     houseDat := gRes.Houses[house];
     SetCost(cmHouses, Byte(house), houseDat.GUIIcon, houseDat.WoodCost, houseDat.StoneCost, houseDat.HouseName);
   end;
@@ -194,7 +194,7 @@ var
   I: Integer;
 begin
   for I := 1 to GUI_HOUSE_COUNT do
-  if GUIHouseOrder[I] <> ht_None then
+  if GUIHouseOrder[I] <> htNone then
   if gMySpectator.Hand.Locks.HouseCanBuild(GUIHouseOrder[I]) then
   begin
     Button_Build[I].Enable;

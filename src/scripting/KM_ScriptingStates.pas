@@ -3,13 +3,27 @@ unit KM_ScriptingStates;
 interface
 uses
   Classes, Math, SysUtils, StrUtils, uPSRuntime,
-  KM_CommonTypes, KM_Defaults, KM_Points, KM_Houses, KM_ScriptingIdCache, KM_Units,
-  KM_UnitGroups, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
+  KM_CommonTypes, KM_Defaults, KM_Points, KM_HandsCollection, KM_Houses, KM_ScriptingIdCache, KM_Units, KM_MapTypes,
+  KM_UnitGroup, KM_ResHouses, KM_HouseCollection, KM_ResWares, KM_ScriptingEvents;
 
 
 type
   TKMScriptStates = class(TKMScriptEntity)
   public
+    function AIAutoAttackRange(aPlayer: Byte): Integer;
+    function AIAutoBuild(aPlayer: Byte): Boolean;
+    function AIAutoDefence(aPlayer: Byte): Boolean;
+    function AIAutoRepair(aPlayer: Byte): Boolean;
+    function AIDefendAllies(aPlayer: Byte): Boolean;
+    function AIEquipRate(aPlayer: Byte; aType: Byte): Integer;
+    procedure AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer);
+    function AIRecruitDelay(aPlayer: Byte): Integer;
+    function AIRecruitLimit(aPlayer: Byte): Integer;
+    function AISerfsPerHouse(aPlayer: Byte): Single;
+    function AISoldiersLimit(aPlayer: Byte): Integer;
+    function AIStartPosition(aPlayer: Byte): TKMPoint;
+    function AIWorkerLimit(aPlayer: Byte): Integer;
+
     function ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer;
     function ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer;
     function ClosestHouse(aPlayer, X, Y, aHouseType: Integer): Integer;
@@ -24,12 +38,14 @@ type
 
     function GameTime: Cardinal;
 
+    function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean;
     function GroupAt(aX, aY: Word): Integer;
     function GroupColumnCount(aGroupID: Integer): Integer;
     function GroupDead(aGroupID: Integer): Boolean;
     function GroupIdle(aGroupID: Integer): Boolean;
     function GroupMember(aGroupID, aMemberIndex: Integer): Integer;
     function GroupMemberCount(aGroupID: Integer): Integer;
+    function GroupOrder(aGroupID: Integer): TKMGroupOrder;
     function GroupOwner(aGroupID: Integer): Integer;
     function GroupType(aGroupID: Integer): Integer;
 
@@ -43,26 +59,45 @@ type
     function HouseDeliveryMode(aHouseID: Integer): Integer;
     function HouseDestroyed(aHouseID: Integer): Boolean;
     function HouseHasOccupant(aHouseID: Integer): Boolean;
+    function HouseFlagPoint(aHouseID: Integer): TKMPoint;
     function HouseIsComplete(aHouseID: Integer): Boolean;
-    function HouseTypeMaxHealth(aHouseType: Integer): Word;
-    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseOwner(aHouseID: Integer): Integer;
+    function HousePosition(aHouseID: Integer): TKMPoint;
     function HousePositionX(aHouseID: Integer): Integer;
     function HousePositionY(aHouseID: Integer): Integer;
     function HouseRepair(aHouseID: Integer): Boolean;
     function HouseResourceAmount(aHouseID, aResource: Integer): Integer;
     function HouseSchoolQueue(aHouseID, QueueIndex: Integer): Integer;
     function HouseSiteIsDigged(aHouseID: Integer): Boolean;
+    function HouseTownHallMaxGold(aHouseID: Integer): Integer;
     function HouseType(aHouseID: Integer): Integer;
+    function HouseTypeMaxHealth(aHouseType: Integer): Word;
     function HouseTypeName(aHouseType: Byte): AnsiString;
+    function HouseTypeToOccupantType(aHouseType: Integer): Integer;
     function HouseUnlocked(aPlayer, aHouseType: Word): Boolean;
     function HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
     function HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
     function HouseWoodcutterChopOnly(aHouseID: Integer): Boolean;
+    function HouseWoodcutterMode(aHouseID: Integer): Integer;
 
     function IsFieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
     function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean;
     function IsRoadAt(aPlayer: ShortInt; X, Y: Word): Boolean;
+
+    function IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean;
+    function IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+    function IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean;
+    function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+    function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+    function IsMissionBuildType: Boolean;
+    function IsMissionFightType: Boolean;
+    function IsMissionCoopType: Boolean;
+    function IsMissionSpecialType: Boolean;
+    function IsMissionPlayableAsSP: Boolean;
+    function IsMissionBlockTeamSelection: Boolean;
+    function IsMissionBlockPeacetime: Boolean;
+    function IsMissionBlockFullMapPreview: Boolean;
 
     function KaMRandom: Single;
     function KaMRandomI(aMax: Integer): Integer;
@@ -75,6 +110,15 @@ type
     function MapTilePassability(X, Y: Integer; aPassability: Byte): Boolean;
     function MapWidth: Integer;
     function MapHeight: Integer;
+
+    function MissionAuthor: UnicodeString;
+    function MissionBigDesc: UnicodeString;
+    function MissionBigDescLibx: Integer;
+    function MissionSmallDesc: UnicodeString;
+    function MissionSmallDescLibx: Integer;
+
+    function MissionDifficulty: TKMMissionDifficulty;
+    function MissionDifficultyLevels: TKMMissionDifficultySet;
 
     function MarketFromWare(aMarketID: Integer): Integer;
     function MarketLossFactor: Single;
@@ -116,6 +160,7 @@ type
     function UnitCarrying(aUnitID: Integer): Integer;
     function UnitDead(aUnitID: Integer): Boolean;
     function UnitDirection(aUnitID: Integer): Integer;
+    function UnitDismissable(aUnitID: Integer): Boolean;
     function UnitHome(aUnitID: Integer): Integer;
     function UnitHPCurrent(aUnitID: Integer): Integer;
     function UnitHPMax(aUnitID: Integer): Integer;
@@ -125,6 +170,7 @@ type
     function UnitLowHunger: Integer;
     function UnitMaxHunger: Integer;
     function UnitOwner(aUnitID: Integer): Integer;
+    function UnitPosition(aUnitID: Integer): TKMPoint;
     function UnitPositionX(aUnitID: Integer): Integer;
     function UnitPositionY(aUnitID: Integer): Integer;
     function UnitsGroup(aUnitID: Integer): Integer;
@@ -136,10 +182,11 @@ type
 
 implementation
 uses
-  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_HandsCollection, KM_Units_Warrior,
+  KM_AI, KM_Terrain, KM_Game, KM_FogOfWar, KM_UnitWarrior,
   KM_HouseBarracks, KM_HouseSchool, KM_ResUnits, KM_Log, KM_CommonUtils, KM_HouseMarket,
   KM_Resource, KM_UnitTaskSelfTrain, KM_Sound, KM_Hand, KM_AIDefensePos, KM_CommonClasses,
-  KM_UnitsCollection, KM_PathFindingRoad;
+  KM_UnitsCollection, KM_PathFindingRoad, KM_HouseWoodcutters, KM_HouseTownHall,
+  KM_ArmyDefence;
 
 
   //We need to check all input parameters as could be wildly off range due to
@@ -151,11 +198,268 @@ uses
 function HouseTypeValid(aHouseType: Integer): Boolean; inline;
 begin
   Result := (aHouseType in [Low(HouseIndexToType)..High(HouseIndexToType)])
-            and (HouseIndexToType[aHouseType] <> ht_None); //KaM index 26 is unused (ht_None)
+            and (HouseIndexToType[aHouseType] <> htNone); //KaM index 26 is unused (htNone)
 end;
 
 
 { TKMScriptStates }
+
+//* Version: 7000+
+//* Gets AI auto attack range.
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIAutoAttackRange(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoAttackRange
+    else
+      LogParamWarning('States.AIAutoAttackRange', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should build and manage his own village
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoBuild(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoBuild
+    else
+      LogParamWarning('States.AIAutoBuild', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should position his soldiers automatically
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoDefence(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoDefend
+    else
+      LogParamWarning('States.AIAutoDefence', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether the AI should automatically repair damaged buildings
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIAutoRepair(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.AutoRepair
+    else
+      LogParamWarning('States.AIAutoRepair', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets whether AI should defend units and houses of allies as if they were its own
+//* Returns False if used with wrong parameters
+function TKMScriptStates.AIDefendAllies(aPlayer: Byte): Boolean;
+begin
+  Result := False;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.DefendAllies
+    else
+      LogParamWarning('States.AIDefendAllies', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the warriors equip rate for AI.
+//* aType: type: 0 - leather, 1 - iron
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIEquipRate(aPlayer: Byte; aType: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+    begin
+      case aType of
+        0:    Result := gHands[aPlayer].AI.Setup.EquipRateLeather;
+        1:    Result := gHands[aPlayer].AI.Setup.EquipRateIron;
+        else  LogParamWarning('States.AIEquipRate, unknown type', [aPlayer, aType]);
+      end;
+    end else
+      LogParamWarning('States.AIEquipRate', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the formation the AI uses for defence positions for specified player and group type
+//* GroupType: 0 = Melee, 1 = AntiHorse, 2 = Ranged, 3 = Mounted
+//* group count and columns are returned in aCount and aColumns variables
+procedure TKMScriptStates.AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer);
+var
+  gt: TKMGroupType;
+begin
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
+      and InRange(aType, 0, 3) then
+    begin
+      gt := TKMGroupType(aType);
+      if gHands[aPlayer].AI.Setup.NewAI then
+      begin
+        aCount := gHands[aPlayer].AI.ArmyManagement.Defence.TroopFormations[gt].NumUnits;
+        aColumns := gHands[aPlayer].AI.ArmyManagement.Defence.TroopFormations[gt].UnitsPerRow;
+      end
+      else
+      begin;
+        aCount := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].NumUnits;
+        aColumns := gHands[aPlayer].AI.General.DefencePositions.TroopFormations[gt].UnitsPerRow;
+      end
+    end
+    else
+      LogParamWarning('Actions.AIGroupsFormationGet', [aPlayer, aType]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of ticks before the specified AI will start training recruits
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIRecruitDelay(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.RecruitDelay
+    else
+      LogParamWarning('States.AIRecruitDelay', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of recruits the AI will keep in each barracks
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIRecruitLimit(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.RecruitCount
+    else
+      LogParamWarning('States.AIRecruitLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the number of serfs the AI will train per house.
+//* Can be a decimal (0.25 for 1 serf per 4 houses)
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AISerfsPerHouse(aPlayer: Byte): Single;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.SerfsPerHouse
+    else
+      LogParamWarning('States.AISerfsPerHouse', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the maximum number of soldiers the AI will train, or -1 for unlimited
+//* Returns -2 if used with wrong parameters
+function TKMScriptStates.AISoldiersLimit(aPlayer: Byte): Integer;
+begin
+  Result := -2; // use -2 here, as -1 is used for unlimited
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.MaxSoldiers
+    else
+      LogParamWarning('States.AISoldiersLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the AI start position which is used for targeting AI attacks
+//* Returns (-1;-1) if used with wrong parameters
+function TKMScriptStates.AIStartPosition(aPlayer: Byte): TKMPoint;
+begin
+  Result := KMPOINT_INVALID_TILE;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.StartPosition
+    else
+      LogParamWarning('States.AIStartPosition', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Gets the maximum number of laborers the AI will train
+//* Returns -1 if used with wrong parameters
+function TKMScriptStates.AIWorkerLimit(aPlayer: Byte): Integer;
+begin
+  Result := -1;
+  try
+    if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+      Result := gHands[aPlayer].AI.Setup.WorkerCount
+    else
+      LogParamWarning('States.AIWorkerLimit', [aPlayer]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6216
 //* Returns the group of the specified player and group type that is closest to the specified coordinates,
 //* or -1 if no such group was found.
@@ -163,19 +467,19 @@ end;
 //* Result: Group ID
 function TKMScriptStates.ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer;
 var
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y)
-    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TGroupType))..Byte(High(TGroupType))])) then
+    and ((aGroupType = -1) or (aGroupType in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))])) then
     begin
       if aGroupType = -1 then
-        GTS := [Low(TGroupType)..High(TGroupType)]
+        GTS := [Low(TKMGroupType)..High(TKMGroupType)]
       else
-        GTS := [TGroupType(aGroupType)];
+        GTS := [TKMGroupType(aGroupType)];
 
       G := gHands[aPlayer].UnitGroups.GetClosestGroup(KMPoint(X,Y), GTS);
       if (G <> nil) and not G.IsDead then
@@ -202,15 +506,15 @@ end;
 function TKMScriptStates.ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer;
 var
   B: Byte;
-  GTS: TGroupTypeSet;
+  GTS: TKMGroupTypeSet;
   G: TKMUnitGroup;
 begin
   try
     Result := -1;
     GTS := [];
-    for B in [Byte(Low(TGroupType))..Byte(High(TGroupType))] do
+    for B in [Byte(Low(TKMGroupType))..Byte(High(TKMGroupType))] do
       if B in aGroupTypes then
-        GTS := GTS + [TGroupType(B)];
+        GTS := GTS + [TKMGroupType(B)];
 
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
     and gTerrain.TileInMapCoords(X, Y) then
@@ -248,7 +552,7 @@ begin
     and ((aHouseType = -1) or HouseTypeValid(aHouseType)) then
     begin
       if aHouseType = -1 then
-        HTS := [Low(THouseType)..High(THouseType)]
+        HTS := [Low(TKMHouseType)..High(TKMHouseType)]
       else
         HTS := [HouseIndexToType[aHouseType]];
 
@@ -284,7 +588,7 @@ begin
     Result := -1;
     HTS := [];
     for B := Low(HouseIndexToType) to High(HouseIndexToType) do
-      if (B in aHouseTypes) and (HouseIndexToType[B] <> ht_None) then
+      if (B in aHouseTypes) and (HouseIndexToType[B] <> htNone) then
         HTS := HTS + [HouseIndexToType[B]];
 
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled)
@@ -313,7 +617,7 @@ end;
 //* Result: Unit ID
 function TKMScriptStates.ClosestUnit(aPlayer, X, Y, aUnitType: Integer): Integer;
 var
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -323,7 +627,7 @@ begin
     and ((aUnitType = -1) or (aUnitType in [Low(UnitIndexToType)..High(UnitIndexToType)]))  then
     begin
       if aUnitType = -1 then
-        UTS := [Low(TUnitType)..High(TUnitType)]
+        UTS := [Low(TKMUnitType)..High(TKMUnitType)]
       else
         UTS := [UnitIndexToType[aUnitType]];
 
@@ -352,7 +656,7 @@ end;
 function TKMScriptStates.ClosestUnitMultipleTypes(aPlayer, X, Y: Integer; aUnitTypes: TByteSet): Integer;
 var
   B: Byte;
-  UTS: TUnitTypeSet;
+  UTS: TKMUnitTypeSet;
   U: TKMUnit;
 begin
   try
@@ -441,7 +745,12 @@ begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1)
     and (gHands[aPlayer].Enabled) then
-      Result := gHands[aPlayer].AI.General.DefencePositions.Count
+    begin
+      if gHands[aPlayer].AI.Setup.NewAI then
+        Result := gHands[aPlayer].AI.General.DefencePositions.Count
+      else
+        Result := gHands[aPlayer].AI.General.DefencePositions.Count;
+    end
     else
     begin
       Result := 0;
@@ -533,7 +842,7 @@ begin
     and InRange(aPlayer2, 0, gHands.Count - 1)
     and (gHands[aPlayer1].Enabled)
     and (gHands[aPlayer2].Enabled) then
-      Result := gHands[aPlayer1].Alliances[aPlayer2] = at_Ally
+      Result := gHands[aPlayer1].Alliances[aPlayer2] = atAlly
     else
     begin
       Result := False;
@@ -560,7 +869,7 @@ begin
     and (gHands[aPlayer].Enabled) then
     begin
       for B := Low(HouseIndexToType) to High(HouseIndexToType) do
-        if (B in aTypes) and (HouseIndexToType[B] <> ht_None) then
+        if (B in aTypes) and (HouseIndexToType[B] <> htNone) then
           inc(Result, gHands[aPlayer].Stats.GetHouseQty(HouseIndexToType[B]));
     end
     else
@@ -717,7 +1026,7 @@ begin
       begin
         U := gHands[aPlayer].Units[I];
         //Skip units in training, they can't be disturbed until they are finished training
-        if U.IsDeadOrDying or (U.UnitTask is TTaskSelfTrain) then Continue;
+        if U.IsDeadOrDying or (U.Task is TKMTaskSelfTrain) then Continue;
         Result[UnitCount] := U.UID;
         Inc(UnitCount);
       end;
@@ -841,7 +1150,7 @@ function TKMScriptStates.StatUnitCount(aPlayer: Byte): Integer;
 begin
   try
     if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
-      Result := gHands[aPlayer].Stats.GetUnitQty(ut_Any)
+      Result := gHands[aPlayer].Stats.GetUnitQty(utAny)
     else
     begin
       Result := 0;
@@ -1149,10 +1458,12 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed  and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.X
+          Result := TKMHouseBarracks(H).FlagPoint.X
         else
           LogParamWarning('States.HouseBarracksRallyPointX: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointX', [aBarracks]);
@@ -1176,13 +1487,44 @@ begin
     begin
       H := fIDCache.GetHouse(aBarracks);
       if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
         if (H is TKMHouseBarracks) then
-          Result := TKMHouseBarracks(H).RallyPoint.Y
+          Result := TKMHouseBarracks(H).FlagPoint.Y
         else
           LogParamWarning('States.HouseBarracksRallyPointY: Specified house is not Barracks', [aBarracks]);
+      end;
     end
     else
       LogParamWarning('States.HouseBarracksRallyPointY', [aBarracks]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns House Flag Point of specified house or KMPoint(0,0) if aHouseId is invalid
+//* Result: Flag Point
+function TKMScriptStates.HouseFlagPoint(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_ZERO;
+    if aHouseId > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseId);
+      if (H <> nil) and not H.IsDestroyed and (H.IsComplete) then
+      begin
+        if (H is TKMHouseWFlagPoint) then
+          Result := TKMHouseWFlagPoint(H).FlagPoint
+        else
+          LogParamWarning('States.HouseFlagPoint: Specified house does not have Flag point', [aHouseId]);
+      end;
+    end
+    else
+      LogParamWarning('States.HouseFlagPoint', [aHouseId]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1275,7 +1617,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := (H.DeliveryMode <> dm_Delivery);
+        Result := (H.DeliveryMode <> dmDelivery);
     end
     else
       LogParamWarning('States.HouseDeliveryBlocked', [aHouseID]);
@@ -1298,7 +1640,7 @@ var
   H: TKMHouse;
 begin
   try
-    Result := Integer(dm_Delivery);
+    Result := Integer(dmDelivery);
     if aHouseID > 0 then
     begin
       H := fIDCache.GetHouse(aHouseID);
@@ -1351,7 +1693,7 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.GetHasOwner;
+        Result := H.HasOwner;
     end
     else
       LogParamWarning('States.HouseHasOccupant', [aHouseID]);
@@ -1379,6 +1721,30 @@ begin
     end
     else
       LogParamWarning('States.HouseIsComplete', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns the Entrance Point of the specified house or (-1;-1) point if House ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.HousePosition(aHouseID: Integer): TKMPoint;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H <> nil then
+        Result := H.Entrance;
+    end
+    else
+      LogParamWarning('States.HousePosition', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1488,7 +1854,7 @@ end;
 function TKMScriptStates.HouseResourceAmount(aHouseID, aResource: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if house id is invalid
@@ -1548,10 +1914,35 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H <> nil then
-        Result := H.BuildingState <> hbs_NoGlyph;
+        Result := H.BuildingState <> hbsNoGlyph;
     end
     else
       LogParamWarning('States.HouseSiteIsDigged', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns Max amount of gold which is possible to deliver into the TownHall
+//* Result: Max gold for specified TownHall
+//* or -1 if TownHall house was not found
+function TKMScriptStates.HouseTownHallMaxGold(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := -1;
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseTownHall then
+        Result := TKMHouseTownHall(H).GoldMaxCnt;
+    end
+    else
+      LogParamWarning('States.HouseTownHallMaxGold', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1672,7 +2063,7 @@ end;
 function TKMScriptStates.HouseWareBlocked(aHouseID, aWareType: Integer): Boolean;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := False;
@@ -1700,7 +2091,7 @@ end;
 function TKMScriptStates.HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer;
 var
   H: TKMHouse;
-  Res: TWareType;
+  Res: TKMWareType;
   I: Integer;
 begin
   try
@@ -1739,10 +2130,38 @@ begin
     begin
       H := fIDCache.GetHouse(aHouseID);
       if H is TKMHouseWoodcutters then
-        Result := TKMHouseWoodcutters(H).WoodcutterMode = wcm_Chop;
+        Result := TKMHouseWoodcutters(H).WoodcutterMode = wcmChop;
     end
     else
       LogParamWarning('States.HouseWoodcutterChopOnly', [aHouseID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns woodcutter mode value for the specified woodcutter's hut
+//* Possible values for woodcutter mode are:
+//* 0 - Chop And Plant
+//* 1 - Chop only
+//* 2 - Plant only
+//* Result: woodcutter mode as Integer value
+function TKMScriptStates.HouseWoodcutterMode(aHouseID: Integer): Integer;
+var
+  H: TKMHouse;
+begin
+  try
+    Result := Integer(wcmChopAndPlant);
+    if aHouseID > 0 then
+    begin
+      H := fIDCache.GetHouse(aHouseID);
+      if H is TKMHouseWoodcutters then
+        Result := Integer(TKMHouseWoodcutters(H).WoodcutterMode);
+    end
+    else
+      LogParamWarning('States.HouseWoodcutterMode', [aHouseID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1781,7 +2200,7 @@ begin
     Result := False;
     //-1 stands for any player
     if InRange(aPlayer, -1, gHands.Count - 1) and gTerrain.TileInMapCoords(X, Y) then
-      Result := (gTerrain.Land[Y,X].TileOverlay = to_Road)
+      Result := (gTerrain.Land[Y,X].TileOverlay = toRoad)
                 and ((aPlayer = -1) or (gTerrain.Land[Y, X].TileOwner = aPlayer))
     else
       LogParamWarning('States.IsRoadAt', [aPlayer, X, Y]);
@@ -1813,13 +2232,383 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns true if the specified player has a field plan of the specified type at the specified location.
+//* If aPlayer index is -1 it will return true if any player has plan of the specified type at the specified location.
+//* If aFieldType is ftNone it will return if the specified player has a field plan of the any type (ftCorn, ftRoad, ftWine) at the specified location.
+//* If aPlayer index is -1 and aFieldType is ftNone it will return if any player has a field plan of the any type (ftCorn, ftRoad, ftWine) at the specified location.
+//* If Plan found then aPlayer will contain its player id and aFieldType its type
+//* Result: Is plan found
+function TKMScriptStates.IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word; var aFieldType: TKMFieldType): Boolean; inline;
+  var
+    FT: TKMFieldType;
+  begin
+    FT := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY));
+    if aFieldType = ftNone then
+    begin
+      Result := FT in [ftCorn, ftRoad, ftWine];
+      if Result then
+        aFieldType := FT;
+    end else
+      Result := FT = aFieldType;
+  end;
+
+var
+  I: Integer;
+  HandFilter, FieldTypeFilter: Boolean;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      HandFilter := InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled);
+      FieldTypeFilter := aFieldType in [ftCorn, ftRoad, ftWine];
+
+      if HandFilter and FieldTypeFilter then
+        Result := FindPlan(aPlayer, X, Y, aFieldType)
+      else
+      if HandFilter then
+      begin
+        aFieldType := ftNone;
+        Result := FindPlan(aPlayer, X, Y, aFieldType);
+      end else
+      begin
+        if not FieldTypeFilter then
+          aFieldType := ftNone;
+
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y, aFieldType);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+      end
+    end
+    else
+      LogParamWarning('States.IsPlanAt', [aPlayer, Byte(aFieldType), X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftCorn) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has field plan at the specified location.
+//* If Corn (Field) Plan found then aPlayer will contain its player id
+//* Result: Is field plan found
+function TKMScriptStates.IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftCorn;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsFieldPlanAt', [aPlayer, X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a house plan of the specified type at the specified location.
+//* If aPlayer index is -1 it will return true if any player has house plan of the specified type at the specified location.
+//* If aHouseType is htNone it will return if the specified player has a house plan of the any type at the specified location.
+//* If aPlayer index is -1 and aHouseType is htNone it will return if any player has a house plan of the any type at the specified location.
+//* If house plan found then after execution aPlayer will contain its player id and aHouseType its type
+//* Result: Is house plan found
+function TKMScriptStates.IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word; var aHouseType: TKMHouseType): Boolean; inline;
+  var
+    HT: TKMHouseType;
+  begin
+    Result := gHands[aHandId].BuildList.HousePlanList.HasPlan(KMPoint(aX, aY), HT);
+    if Result then
+    begin
+      if aHouseType = htNone then
+        aHouseType := HT
+      else
+        Result := aHouseType = HT;
+    end;
+  end;
+
+var
+  I: Integer;
+  HandFilter, HTypeFilter: Boolean;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      HandFilter := InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled);
+      HTypeFilter := aHouseType in [HOUSE_MIN..HOUSE_MAX];
+
+      if HandFilter and HTypeFilter then
+        Result := FindPlan(aPlayer, X, Y, aHouseType)
+      else
+      if HandFilter then
+      begin
+        aHouseType := htNone;
+        Result := FindPlan(aPlayer, X, Y, aHouseType);
+      end else
+      begin
+        if not HTypeFilter then
+          aHouseType := htNone;
+
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y, aHouseType);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+      end;
+    end
+    else
+      LogParamWarning('States.IsHousePlanAt', [X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftRoad) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has road plan at the specified location.
+//* If Road plan found then aPlayer will contain its player id
+//* Result: Is road plan found
+function TKMScriptStates.IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftRoad;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsRoadPlanAt', [X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+
+//* Version: 7000+
+//* Returns true if the specified player has a field plan (ftWine) at the specified location.
+//* If aPlayer index is -1 it will return true if any player has winefield plan at the specified location.
+//* If Winefield Plan found then aPlayer will contain its player id
+//* Result: Is winefield plan found
+function TKMScriptStates.IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean;
+
+  function FindPlan(aHandId, aX, aY: Word): Boolean; inline;
+  begin
+    Result := gHands[aHandId].BuildList.FieldworksList.HasField(KMPoint(aX, aY)) = ftWine;
+  end;
+
+var
+  I: Integer;
+begin
+  try
+    Result := False;
+    //Verify all input parameters
+    if gTerrain.TileInMapCoords(X,Y) then
+    begin
+      if InRange(aPlayer, 0, gHands.Count - 1) and (gHands[aPlayer].Enabled) then
+        Result := FindPlan(aPlayer, X, Y)
+      else
+        for I := 0 to gHands.Count - 1 do
+          if gHands[I].Enabled then
+          begin
+            Result := FindPlan(I, X, Y);
+            if Result then
+            begin
+              aPlayer := I;
+              Exit;
+            end;
+          end;
+    end
+    else
+      LogParamWarning('States.IsWinefieldPlanAt', [X, Y]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is build type
+function TKMScriptStates.IsMissionBuildType: Boolean;
+begin
+  try
+    Result := gGame.MissionMode = mmNormal;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is fight type
+function TKMScriptStates.IsMissionFightType: Boolean;
+begin
+  try
+    Result := gGame.MissionMode = mmTactic;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is cooperative type
+function TKMScriptStates.IsMissionCoopType: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsCoop;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is special type
+function TKMScriptStates.IsMissionSpecialType: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsSpecial;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if mission is playable as Singleplayer map
+function TKMScriptStates.IsMissionPlayableAsSP: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.IsPlayableAsSP;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if team selection is locked for current mission
+function TKMScriptStates.IsMissionBlockTeamSelection: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockTeamSelection;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if peacetime is locked for current mission
+function TKMScriptStates.IsMissionBlockPeacetime: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockPeacetime;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns if full map preview is blocked for current mission
+function TKMScriptStates.IsMissionBlockFullMapPreview: Boolean;
+begin
+  try
+    Result := gGame.MapTxtInfo.BlockFullMapPreview;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6216
 //* Returns a random single (float) such that: 0 <= Number < 1.0
 //* Result: Decimal number 0.0 to 1.0
 function TKMScriptStates.KaMRandom: Single;
 begin
   try
-    Result := KM_CommonUtils.KaMRandom;
+    Result := KM_CommonUtils.KaMRandom('TKMScriptStates.KaMRandom');
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1834,7 +2623,7 @@ function TKMScriptStates.KaMRandomI(aMax:Integer): Integer;
 begin
   try
     //No parameters to check, any integer is fine (even negative)
-    Result := KM_CommonUtils.KaMRandom(aMax);
+    Result := KM_CommonUtils.KaMRandom(aMax, 'TKMScriptStates.KaMRandomI');
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -1857,6 +2646,97 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns mission author
+function TKMScriptStates.MissionAuthor: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.Author;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission big description
+function TKMScriptStates.MissionBigDesc: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.BigDesc;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission big description Libx ID
+function TKMScriptStates.MissionBigDescLibx: Integer;
+begin
+  try
+    Result := gGame.MapTxtInfo.BigDescLibx;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission small description
+function TKMScriptStates.MissionSmallDesc: UnicodeString;
+begin
+  try
+    Result := gGame.MapTxtInfo.SmallDesc;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission small description Libx ID
+function TKMScriptStates.MissionSmallDescLibx: Integer;
+begin
+  try
+    Result := gGame.MapTxtInfo.SmallDescLibx;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns mission difficulty for current game
+function TKMScriptStates.MissionDifficulty: TKMMissionDifficulty;
+begin
+  try
+    Result := gGame.MissionDifficulty;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns allowed mission difficulty levels
+function TKMScriptStates.MissionDifficultyLevels: TKMMissionDifficultySet;
+begin
+  try
+    Result := gGame.MapTxtInfo.DifficultyLevels;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 6587
 //* Returns the tile type ID of the tile at the specified XY coordinates.
 //* Tile IDs can be seen by hovering over the tiles on the terrain tiles tab in the map editor.
@@ -1865,7 +2745,7 @@ function TKMScriptStates.MapTileType(X, Y: Integer): Integer;
 begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
-      Result := gTerrain.Land[Y, X].Terrain
+      Result := gTerrain.Land[Y, X].BaseLayer.Terrain
     else
     begin
       Result := -1;
@@ -1886,7 +2766,7 @@ begin
   try
     if gTerrain.TileInMapCoords(X, Y) then
       //In KaM map format values can be >= 4. Convert again just in case it was missed by gTerrain
-      Result := gTerrain.Land[Y, X].Rotation mod 4
+      Result := gTerrain.Land[Y, X].BaseLayer.Rotation mod 4
     else
     begin
       Result := -1;
@@ -1998,7 +2878,7 @@ end;
 function TKMScriptStates.MarketFromWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResFrom: TWareType;
+  ResFrom: TKMWareType;
 begin
   try
     Result := -1;
@@ -2074,7 +2954,7 @@ end;
 function TKMScriptStates.MarketToWare(aMarketID: Integer): Integer;
 var
   H: TKMHouse;
-  ResTo: TWareType;
+  ResTo: TKMWareType;
 begin
   try
     Result := -1;
@@ -2110,7 +2990,7 @@ end;
 //* Result: Value
 function TKMScriptStates.MarketValue(aRes: Integer): Single;
 var
-  Res: TWareType;
+  Res: TKMWareType;
 begin
   try
     Result := -1; //-1 if ware is invalid
@@ -2174,6 +3054,30 @@ begin
 end;
 
 
+//* Version: 7000+
+//* Returns the TKMPoint with coordinates of the specified unit or (-1;-1) point if Unit ID invalid
+//* Result: TKMPoint
+function TKMScriptStates.UnitPosition(aUnitID: Integer): TKMPoint;
+var
+  U: TKMUnit;
+begin
+  try
+    Result := KMPOINT_INVALID_TILE; //-1 if unit id is invalid
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        Result := U.CurrPosition;
+    end
+    else
+      LogParamWarning('States.UnitPosition', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
 //* Version: 5057
 //* Returns the X coordinate of the specified unit or -1 if Unit ID invalid
 //* Result: X coordinate
@@ -2187,7 +3091,7 @@ begin
     begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
-        Result := U.GetPosition.X;
+        Result := U.CurrPosition.X;
     end
     else
       LogParamWarning('States.UnitPositionX', [aUnitID]);
@@ -2211,7 +3115,7 @@ begin
     begin
       U := fIDCache.GetUnit(aUnitID);
       if U <> nil then
-        Result := U.GetPosition.Y;
+        Result := U.CurrPosition.Y;
     end
     else
       LogParamWarning('States.UnitPositionY', [aUnitID]);
@@ -2287,6 +3191,30 @@ begin
     end
     else
       LogParamWarning('States.UnitDirection', [aUnitID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns the 'Dismissable' status of specified unit
+//* Result: is unit dismissable
+function TKMScriptStates.UnitDismissable(aUnitID: Integer): Boolean;
+var
+  U: TKMUnit;
+begin
+  try
+    Result := False;
+    if aUnitID > 0 then
+    begin
+      U := fIDCache.GetUnit(aUnitID);
+      if U <> nil then
+        Result := U.Dismissable;
+    end
+    else
+      LogParamWarning('States.UnitDismissable', [aUnitID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2499,7 +3427,7 @@ begin
       U := fIDCache.GetUnit(aUnitID);
       if (U <> nil) then
       begin
-        H := U.GetHome;
+        H := U.Home;
         if (H <> nil) and not H.IsDestroyed then
         begin
           Result := H.UID;
@@ -2561,6 +3489,45 @@ function TKMScriptStates.UnitLowHunger: Integer;
 begin
   try
     Result := UNIT_MIN_CONDITION*CONDITION_PACE;
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns true if target Group is assigned to the Defence Position at coordinates X, Y
+//* Result: Group assigned to Defence position
+function TKMScriptStates.GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean;
+var
+  G: TKMUnitGroup;
+  DefPos: TAIDefencePosition;
+  DefPosNewAI: TKMDefencePosition;
+begin
+  try
+    Result := False;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+      begin
+        if gHands[G.Owner].AI.Setup.NewAI then
+        begin
+          DefPosNewAI := gHands[G.Owner].AI.ArmyManagement.Defence.FindPositionOf(G);
+          if DefPosNewAI <> nil then
+            Result := (DefPosNewAI.Position.Loc.X = X) and (DefPosNewAI.Position.Loc.Y = Y);
+        end
+        else
+        begin
+          DefPos := gHands[G.Owner].AI.General.DefencePositions.FindPositionOf(G);
+          if DefPos <> nil then
+              Result := (DefPos.Position.Loc.X = X) and (DefPos.Position.Loc.Y = Y)
+        end;
+      end;
+    end
+    else
+      LogParamWarning('States.GroupAssignedToDefencePosition', [aGroupID, X, Y]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;
@@ -2736,6 +3703,30 @@ begin
     end
     else
       LogParamWarning('States.GroupMemberCount', [aGroupID]);
+  except
+    gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
+    raise;
+  end;
+end;
+
+
+//* Version: 7000+
+//* Returns current order of the specified group
+//* Result: TKMGroupOrder
+function TKMScriptStates.GroupOrder(aGroupID: Integer): TKMGroupOrder;
+var
+  G: TKMUnitGroup;
+begin
+  try
+    Result := goNone;
+    if aGroupID > 0 then
+    begin
+      G := fIDCache.GetGroup(aGroupID);
+      if G <> nil then
+        Result := G.Order;
+    end
+    else
+      LogParamWarning('States.GroupOrder', [aGroupID]);
   except
     gScriptEvents.ExceptionOutsideScript := True; //Don't blame script for this exception
     raise;

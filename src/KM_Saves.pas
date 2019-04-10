@@ -7,7 +7,7 @@ uses
 
 
 type
-  TSavesSortMethod = (
+  TKMSavesSortMethod = (
     smByFileNameAsc, smByFileNameDesc,
     smByDescriptionAsc, smByDescriptionDesc,
     smByTimeAsc, smByTimeDesc,
@@ -16,7 +16,7 @@ type
     smByModeAsc, smByModeDesc);
 
   TKMSaveInfo = class;
-  TSaveEvent = procedure (aSave: TKMSaveInfo) of object;
+  TKMSaveEvent = procedure (aSave: TKMSaveInfo) of object;
 
   //Savegame info, most of which is stored in TKMGameInfo structure
   TKMSaveInfo = class
@@ -44,17 +44,18 @@ type
     function IsValid: Boolean;
     function IsMultiplayer: Boolean;
     function IsReplayValid: Boolean;
-    function LoadMinimap(aMinimap: TKMMinimap): Boolean;
+    function LoadMinimap(aMinimap: TKMMinimap): Boolean; overload;
+    function LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean; overload;
   end;
 
-  TTSavesScanner = class(TThread)
+  TKMSavesScanner = class(TThread)
   private
     fMultiplayerPath: Boolean;
-    fOnSaveAdd: TSaveEvent;
+    fOnSaveAdd: TKMSaveEvent;
     fOnSaveAddDone: TNotifyEvent;
     fOnComplete: TNotifyEvent;
   public
-    constructor Create(aMultiplayerPath: Boolean; aOnSaveAdd: TSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
+    constructor Create(aMultiplayerPath: Boolean; aOnSaveAdd: TKMSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
     procedure Execute; override;
   end;
 
@@ -62,9 +63,9 @@ type
   private
     fCount: Word;
     fSaves: array of TKMSaveInfo;
-    fSortMethod: TSavesSortMethod;
+    fSortMethod: TKMSavesSortMethod;
     CS: TCriticalSection;
-    fScanner: TTSavesScanner;
+    fScanner: TKMSavesScanner;
     fScanning: Boolean;
     fScanFinished: Boolean;
     fUpdateNeeded: Boolean;
@@ -79,7 +80,7 @@ type
     procedure DoSort;
     function GetSave(aIndex: Integer): TKMSaveInfo;
   public
-    constructor Create(aSortMethod: TSavesSortMethod = smByFileNameDesc);
+    constructor Create(aSortMethod: TKMSavesSortMethod = smByFileNameDesc);
     destructor Destroy; override;
 
     property Count: Word read fCount;
@@ -94,8 +95,8 @@ type
 
     procedure Refresh(aOnRefresh: TNotifyEvent; aMultiplayerPath: Boolean; aOnTerminate: TNotifyEvent = nil; aOnComplete: TNotifyEvent = nil);
     procedure TerminateScan;
-    procedure Sort(aSortMethod: TSavesSortMethod; aOnSortComplete: TNotifyEvent);
-    property SortMethod: TSavesSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
+    procedure Sort(aSortMethod: TKMSavesSortMethod; aOnSortComplete: TNotifyEvent);
+    property SortMethod: TKMSavesSortMethod read fSortMethod; //Read-only because we should not change it while Refreshing
     property ScanFinished: Boolean read fScanFinished;
 
     function Contains(const aNewName: UnicodeString): Boolean;
@@ -111,8 +112,11 @@ type
 implementation
 uses
   SysUtils, Math, KromUtils,
-  KM_Resource, KM_ResTexts, KM_FileIO,
-  KM_CommonClasses, KM_Defaults, KM_CommonUtils;
+  KM_Resource, KM_ResTexts, KM_FileIO, KM_NetworkTypes,
+  KM_CommonClasses, KM_Defaults, KM_CommonUtils, KM_Log;
+
+const
+  ANY_LOC = -1000;
 
 
 { TKMSaveInfo }
@@ -132,8 +136,8 @@ end;
 
 destructor TKMSaveInfo.Destroy;
 begin
-  fInfo.Free;
-  fGameOptions.Free;
+  FreeAndNil(fInfo);
+  FreeAndNil(fGameOptions);
   inherited;
 end;
 
@@ -142,7 +146,7 @@ function TKMSaveInfo.GetCRC: Cardinal;
 begin
   if not fCrcCalculated then
   begin
-    fCRC := Adler32CRC(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+    fCRC := Adler32CRC(fPath + fFileName + EXT_SAVE_MAIN_DOT);
     fCrcCalculated := True;
   end;
   Result := fCRC;
@@ -153,7 +157,7 @@ procedure TKMSaveInfo.ScanSave;
 var
   LoadStream: TKMemoryStream;
 begin
-  if not FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) then
+  if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then
   begin
     fSaveError := 'File not exists';
     Exit;
@@ -162,7 +166,7 @@ begin
   fCrcCalculated := False; //make lazy load for CRC
 
   LoadStream := TKMemoryStream.Create; //Read data from file into stream
-  LoadStream.LoadFromFile(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+  LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
 
   fInfo.Load(LoadStream);
   fGameOptions.Load(LoadStream);
@@ -174,26 +178,33 @@ begin
   if fSaveError <> '' then
     fInfo.Title := fSaveError;
 
-  LoadStream.Free;
+  FreeAndNil(LoadStream);
 end;
 
 
 function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap): Boolean;
+begin
+  Result := LoadMinimap(aMinimap, ANY_LOC);
+end;
+
+
+function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean;
 var
   LoadStream, LoadMnmStream: TKMemoryStream;
   DummyInfo: TKMGameInfo;
   DummyOptions: TKMGameOptions;
   IsMultiplayer: Boolean;
   MinimapFilePath: String;
+  MnmStartLoc: Integer;
 begin
   Result := False;
-  if not FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) then Exit;
+  if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
 
   DummyInfo := TKMGameInfo.Create;
   DummyOptions := TKMGameOptions.Create;
   LoadStream := TKMemoryStream.Create; //Read data from file into stream
   try
-    LoadStream.LoadFromFile(fPath + fFileName + '.' + EXT_SAVE_MAIN);
+    LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
 
     DummyInfo.Load(LoadStream); //We don't care, we just need to skip past it correctly
     DummyOptions.Load(LoadStream); //We don't care, we just need to skip past it correctly
@@ -211,28 +222,40 @@ begin
           if FileExists(MinimapFilePath) then
           begin
             LoadMnmStream.LoadFromFile(MinimapFilePath); // try to load minimap from file
-            aMinimap.LoadFromStream(LoadMnmStream);
-            Result := True;
+            LoadMnmStream.Read(MnmStartLoc);
+            if (aStartLoc = ANY_LOC) // for not MP game, f.e.
+              or (aStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
+              or (aStartLoc = MnmStartLoc) then // allow, if we was on the same loc
+            begin
+              aMinimap.LoadFromStream(LoadMnmStream);
+              Result := True;
+            end;
           end;
         except
           // Ignore any errors, because MP minimap is optional
+          on E: Exception do
+            // Just log error to log, do not crash game in case of any error here
+            gLog.AddTime('Load MP save minimap from file '
+              + MinimapFilePath + ' exception: ' + E.ClassName + ': ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
+              );
         end;
       finally
-        LoadMnmStream.Free;
+        FreeAndNil(LoadMnmStream);
       end;
     end;
 
   finally
-    DummyInfo.Free;
-    DummyOptions.Free;
-    LoadStream.Free;
+    FreeAndNil(DummyInfo);
+    FreeAndNil(DummyOptions);
+    FreeAndNil(LoadStream);
   end;
 end;
 
 
 function TKMSaveInfo.IsValid: Boolean;
 begin
-  Result := FileExists(fPath + fFileName + '.' + EXT_SAVE_MAIN) and (fSaveError = '') and fInfo.IsValid(True);
+  Result := FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) and (fSaveError = '') and fInfo.IsValid(True);
 end;
 
 
@@ -245,13 +268,13 @@ end;
 //Check if replay files exist at location
 function TKMSaveInfo.IsReplayValid: Boolean;
 begin
-  Result := FileExists(fPath + fFileName + '.' + EXT_SAVE_BASE) and
-            FileExists(fPath + fFileName + '.' + EXT_SAVE_REPLAY);
+  Result := FileExists(fPath + fFileName + EXT_SAVE_BASE_DOT) and
+            FileExists(fPath + fFileName + EXT_SAVE_REPLAY_DOT);
 end;
 
 
 { TKMSavesCollection }
-constructor TKMSavesCollection.Create(aSortMethod: TSavesSortMethod = smByFileNameDesc);
+constructor TKMSavesCollection.Create(aSortMethod: TKMSavesSortMethod = smByFileNameDesc);
 begin
   inherited Create;
   fSortMethod := aSortMethod;
@@ -272,7 +295,7 @@ begin
   //Release TKMapInfo objects
   Clear;
 
-  CS.Free;
+  FreeAndNil(CS);
   inherited;
 end;
 
@@ -295,7 +318,7 @@ var
 begin
   Assert(not fScanning, 'Guarding from access to inconsistent data');
   for I := 0 to fCount - 1 do
-    fSaves[i].Free;
+    FreeAndNil(fSaves[i]);
   fCount := 0;
 end;
 
@@ -352,7 +375,7 @@ begin
   try
     Assert(InRange(aIndex, 0, fCount-1));
     KMDeleteFolder(fSaves[aIndex].Path);
-    fSaves[aIndex].Free;
+    FreeAndNil(fSaves[aIndex]);
     for I := aIndex to fCount - 2 do
       fSaves[I] := fSaves[I+1]; //Move them down
     Dec(fCount);
@@ -379,7 +402,7 @@ begin
     KMMoveFolder(fSaves[aIndex].Path, Dest);
 
     //Remove the map from our list
-    fSaves[aIndex].Free;
+    FreeAndNil(fSaves[aIndex]);
     for I  := aIndex to fCount - 2 do
       fSaves[I] := fSaves[I + 1];
     Dec(fCount);
@@ -495,7 +518,7 @@ end;
 //For public access
 //Apply new Sort within Critical Section, as we could be in the Refresh phase
 //note that we need to preserve fScanning flag
-procedure TKMSavesCollection.Sort(aSortMethod: TSavesSortMethod; aOnSortComplete: TNotifyEvent);
+procedure TKMSavesCollection.Sort(aSortMethod: TKMSavesSortMethod; aOnSortComplete: TNotifyEvent);
 begin
   Lock;
   try
@@ -527,7 +550,7 @@ begin
   begin
     fScanner.Terminate;
     fScanner.WaitFor;
-    fScanner.Free;
+    FreeAndNil(fScanner);
     fScanner := nil;
     fScanning := False;
   end;
@@ -549,7 +572,7 @@ begin
 
   //Scan will launch upon create automatcally
   fScanning := True;
-  fScanner := TTSavesScanner.Create(aMultiplayerPath, SaveAdd, SaveAddDone, ScanTerminate, ScanComplete);
+  fScanner := TKMSavesScanner.Create(aMultiplayerPath, SaveAdd, SaveAddDone, ScanTerminate, ScanComplete);
 end;
 
 
@@ -615,7 +638,7 @@ end;
 //aOnSaveAddDone - signal that save has been added
 //aOnTerminate - scan was terminated (but could be not complete yet)
 //aOnComplete - scan is complete
-constructor TTSavesScanner.Create(aMultiplayerPath: Boolean; aOnSaveAdd: TSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
+constructor TKMSavesScanner.Create(aMultiplayerPath: Boolean; aOnSaveAdd: TKMSaveEvent; aOnSaveAddDone, aOnTerminate, aOnComplete: TNotifyEvent);
 begin
   //Thread isn't started until all constructors have run to completion
   //so Create(False) may be put in front as well
@@ -632,7 +655,7 @@ begin
 end;
 
 
-procedure TTSavesScanner.Execute;
+procedure TKMSavesScanner.Execute;
 var
   PathToSaves: string;
   SearchRec: TSearchRec;

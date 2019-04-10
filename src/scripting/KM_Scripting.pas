@@ -7,7 +7,7 @@ uses
   uPSCompiler, uPSRuntime, uPSUtils, uPSDisassembly, uPSDebugger, uPSPreProcessor,
   KM_CommonClasses, KM_CommonTypes, KM_Defaults, KM_FileIO,
   KM_ScriptingActions, KM_ScriptingEvents, KM_ScriptingIdCache, KM_ScriptingStates, KM_ScriptingTypes, KM_ScriptingUtils,
-  KM_Houses, KM_Units, KM_UnitGroups, KM_ResHouses;
+  KM_Houses, KM_Units, KM_UnitGroup, KM_ResHouses, ScriptValidatorResult;
 
   //Dynamic scripts allow mapmakers to control the mission flow
 
@@ -43,7 +43,7 @@ type
 
     property Included[I: Integer]: TKMScriptFileInfo read GetIncluded; default;
     property IncludedCount: Integer read fIncludedCnt;
-    procedure AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+    procedure AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
     function FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
   end;
 
@@ -66,13 +66,14 @@ type
     property WarningsString: TKMScriptErrorMessage read fWarningsString;
 
     procedure HandleScriptError(aType: TKMScriptErrorType; aError: TKMScriptErrorMessage);
-    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+    procedure HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                      const aDetailedErrorString: String = '');
     function HasErrors: Boolean;
     function HasWarnings: Boolean;
     procedure AppendError(aError: TKMScriptErrorMessage);
-    procedure AppendWarning(aWarning: TKMScriptErrorMessage);
-    procedure AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
-    procedure AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+    procedure AppendWarning(const aWarning: TKMScriptErrorMessage);
+    procedure AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
+    procedure AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
     procedure HandleErrors;
     procedure Clear;
   end;
@@ -83,20 +84,27 @@ type
     fDestroyErrorHandler: Boolean;
     fScriptFilesInfo: TKMScriptFilesCollection;
     fErrorHandler: TKMScriptErrorHandler;
+    fValidationIssues: TScriptValidatorResult;
+
+    fCustomScriptParams: TKMCustomScriptParamDataArray;
+
+    function GetCustomScriptParamData(aParam: TKMCustomScriptParam): TKMCustomScriptParamData;
 
     procedure AfterPreProcess;
     procedure BeforePreProcess(const aMainFileName: UnicodeString; const aMainFileText: AnsiString);
 
     function ScriptOnNeedFile(Sender: TPSPreProcessor; const aCallingFileName: AnsiString; var aFileName, aOutput: AnsiString): Boolean;
     procedure ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                        const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                        const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
   public
     constructor Create; overload;
     constructor Create(aOnScriptError: TUnicodeStringEvent); overload;
     constructor Create(aOnScriptError: TUnicodeStringEvent; aErrorHandler: TKMScriptErrorHandler); overload;
     destructor Destroy; override;
 
+    property CustomScriptParams[aParam: TKMCustomScriptParam]: TKMCustomScriptParamData read GetCustomScriptParamData;
     property ScriptFilesInfo: TKMScriptFilesCollection read fScriptFilesInfo;
+    property ValidationIssues: TScriptValidatorResult read fValidationIssues write fValidationIssues;
 
     function ScriptMightChangeAfterPreProcessing: Boolean;
     function PreProcessFile(const aFileName: UnicodeString): Boolean; overload;
@@ -112,6 +120,7 @@ type
     fDebugByteCode: AnsiString;
     fExec: TPSDebugExec;
 
+    fValidationIssues: TScriptValidatorResult;
     fErrorHandler: TKMScriptErrorHandler;
     fPreProcessor: TKMScriptingPreProcessor;
 
@@ -120,6 +129,7 @@ type
     fIDCache: TKMScriptingIdCache;
     fUtils: TKMScriptUtils;
 
+    procedure AddError(aMsg: TPSPascalCompilerMessage);
     procedure CompileScript;
     procedure LinkRuntime;
 
@@ -129,6 +139,7 @@ type
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
     function FindCodeLine(aRowNumber: Integer; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+    procedure RecreateValidationIssues;
     constructor Create(aOnScriptError: TUnicodeStringEvent); // Scripting has to be created via special TKMScriptingCreator
   public
     destructor Destroy; override;
@@ -144,8 +155,9 @@ type
     property PreProcessor: TKMScriptingPreProcessor read fPreProcessor;
 
     function GetErrorMessage(aErrorMsg: TPSPascalCompilerMessage): TKMScriptErrorMessage; overload;
-    function GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
+    function GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
 
+    property ValidationIssues: TScriptValidatorResult read fValidationIssues;
     procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
     procedure ExportDataToText;
 
@@ -171,17 +183,22 @@ const
   CAMPAIGN_DATA_TYPE = 'TCampaignData'; //Type of the global variable
   CAMPAIGN_DATA_VAR = 'CampaignData'; //Name of the global variable
   VALID_GLOBAL_VAR_TYPES: set of TPSBaseType = [
-    btU8, //Byte, Boolean, Enums
+    btU8,  //Byte, Boolean, Enums
+    btS8,  //ShortInt
+    btU16, //Word
+    btS16, //SmallInt
+    btU32, //Cardinal / LongInt
     btS32, //Integer
     btSingle, //Single
-    btString, //Means AnsiString in PascalScript. No need for scripts to use Unicode since LIBX files take care of that.
+    btString, //Means AnsiString in PascalScript.
+    btUnicodeString, //string and UnicodeString
     btStaticArray, btArray, //Static and Dynamic Arrays
     btRecord, btSet];
 
 
 implementation
 uses
-  Math, KromUtils, KM_Game, KM_Log, KM_CommonUtils;
+  TypInfo, Math, KromUtils, KM_Game, KM_Resource, KM_ResUnits, KM_Log, KM_CommonUtils, KM_ResWares, KM_ScriptingConsoleCommands;
 
 const
   SCRIPT_LOG_EXT = '.log.txt';
@@ -261,16 +278,42 @@ begin
   FreeAndNil(fExec);
   FreeAndNil(fUtils);
   FreeAndNil(fErrorHandler);
+  FreeAndNil(fValidationIssues);
   FreeAndNil(fPreProcessor);
   gScripting := nil;
   inherited;
 end;
 
 
+procedure TKMScripting.RecreateValidationIssues;
+begin
+  if fValidationIssues <> nil then
+    FreeAndNil(fValidationIssues);
+
+  fValidationIssues := TScriptValidatorResult.Create;
+  fPreProcessor.ValidationIssues := fValidationIssues;
+end;
+
+
 procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
 begin
+  RecreateValidationIssues;
+
   if not fPreProcessor.PreProcessFile(aFileName, fScriptCode) then
     Exit; // Continue only if PreProcess was successful;
+
+  //Parse console commands procedures
+  if gScriptEvents.HasConsoleCommands then
+    try
+      gScriptEvents.ParseConsoleCommandsProcedures(fScriptCode);
+
+    except
+      on E: EConsoleCommandParseError do
+      begin
+        fErrorHandler.AppendErrorStr(E.Message);
+        fValidationIssues.AddError(E.Row, E.Col, E.Token, E.Message);
+      end;
+    end;
 
   if (aCampaignDataTypeFile <> '') and FileExists(aCampaignDataTypeFile) then
     fCampaignDataTypeCode := ReadTextA(aCampaignDataTypeFile)
@@ -291,6 +334,8 @@ end;
 //For example: uses ii1, ii2;
 //This will call this function 3 times. First with 'SYSTEM' then 'II1' and then 'II2'
 function TKMScripting.ScriptOnUses(Sender: TPSPascalCompiler; const Name: AnsiString): Boolean;
+  //Register classes and methods to the script engine.
+  //After that they can be used from within the script.
   procedure RegisterMethodCheck(aClass: TPSCompileTimeClass; const aDecl: String);
   begin
     // We are fine with Assert, cos it will trigger for devs during development
@@ -309,23 +354,56 @@ begin
         Sender.AddUsedVariable(CAMPAIGN_DATA_VAR, CampaignDataType);
       except
         on E: Exception do
+        begin
           fErrorHandler.AppendErrorStr('Error in declaration of global campaign data type|');
+          fValidationIssues.AddError(0, 0, '', 'Error in declaration of global campaign data type');
+        end;
       end;
 
     // Common
     Sender.AddTypeS('TIntegerArray', 'array of Integer'); //Needed for PlayerGetAllUnits
+    Sender.AddTypeS('TAnsiStringArray', 'array of AnsiString'); //Needed for some array Utils
     Sender.AddTypeS('TByteSet', 'set of Byte'); //Needed for Closest*MultipleTypes
+    Sender.AddTypeS('TKMPoint', 'record X,Y:Integer; end;'); //Could be very useful
 
-    Sender.AddTypeS('TKMAudioFormat', '(af_Wav, af_Ogg)'); //Needed for PlaySound
+    Sender.AddTypeS('TKMFieldType', '(ftNone,ftRoad,ftCorn,ftWine)'); //No need to add InitWine for scripts
+    Sender.AddTypeS('TKMHouseType', '(htNone, htAny, '
+      + 'htArmorSmithy,     htArmorWorkshop,   htBakery,        htBarracks,      htButchers,'
+      + 'htCoalMine,        htFarm,            htFisherHut,     htGoldMine,      htInn,'
+      + 'htIronMine,        htIronSmithy,      htMarketplace,   htMetallurgists, htMill,'
+      + 'htQuary,           htSawmill,         htSchool,        htSiegeWorkshop, htStables,'
+      + 'htStore,           htSwine,           htTannery,       htTownHall,      htWatchTower,'
+      + 'htWeaponSmithy,    htWeaponWorkshop,  htWineyard,      htWoodcutters    )');
+
+    Sender.AddTypeS('TKMGroupOrder', '(goNone, goWalkTo, goAttackHouse, goAttackUnit, goStorm)');
+
+    Sender.AddTypeS('TKMAudioFormat', '(afWav,afOgg)'); //Needed for PlaySound
 
     // Types needed for MapTilesArraySet function
-    Sender.AddTypeS('TKMTileChangeType', '(tctTerrain, tctHeight, tctObject)');
-    Sender.AddTypeS('TKMTileChangeTypeSet', 'set of TKMTileChangeType');
-    Sender.AddTypeS('TKMTerrainTileBrief', 'record X, Y, Terrain, Rotation, Height, Obj: Byte; ChangeSet: TKMTileChangeTypeSet; end');
+    Sender.AddTypeS('TKMTerrainTileBrief', 'record X,Y:Byte;Terrain:Word;Rotation:Byte;Height:Byte;Obj:Word;UpdateTerrain,UpdateRotation,UpdateHeight,UpdateObject:Boolean;end');
+
+    Sender.AddTypeS('TKMAIAttackTarget', '(attClosestUnit,attClosestBuildingFromArmy,attClosestBuildingFromStartPos,attCustomPosition)');
+
+    Sender.AddTypeS('TKMMissionDifficulty', '(mdNone,mdEasy,mdNormal,mdHard)');
+    Sender.AddTypeS('TKMMissionDifficultySet', 'set of TKMMissionDifficulty');
 
     // Register classes and methods to the script engine.
     // After that they can be used from within the script.
     c := Sender.AddClassN(nil, AnsiString(fStates.ClassName));
+    RegisterMethodCheck(c, 'function AIAutoAttackRange(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIAutoBuild(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoDefence(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIAutoRepair(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIDefendAllies(aPlayer: Byte): Boolean');
+    RegisterMethodCheck(c, 'function AIEquipRate(aPlayer: Byte; aType: Byte): Integer');
+    RegisterMethodCheck(c, 'procedure AIGroupsFormationGet(aPlayer, aType: Byte; out aCount, aColumns: Integer)');
+    RegisterMethodCheck(c, 'function AIRecruitDelay(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIRecruitLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AISerfsPerHouse(aPlayer: Byte): Single');
+    RegisterMethodCheck(c, 'function AISoldiersLimit(aPlayer: Byte): Integer');
+    RegisterMethodCheck(c, 'function AIStartPosition(aPlayer: Byte): TKMPoint');
+    RegisterMethodCheck(c, 'function AIWorkerLimit(aPlayer: Byte): Integer');
+
     RegisterMethodCheck(c, 'function ClosestGroup(aPlayer, X, Y, aGroupType: Integer): Integer');
     RegisterMethodCheck(c, 'function ClosestGroupMultipleTypes(aPlayer, X, Y: Integer; aGroupTypes: TByteSet): Integer');
     RegisterMethodCheck(c, 'function ClosestHouse(aPlayer, X, Y, aHouseType: Integer): Integer');
@@ -340,12 +418,14 @@ begin
 
     RegisterMethodCheck(c, 'function GameTime: Cardinal');
 
+    RegisterMethodCheck(c, 'function GroupAssignedToDefencePosition(aGroupID, X, Y: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupAt(aX, aY: Word): Integer');
     RegisterMethodCheck(c, 'function GroupColumnCount(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupDead(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupIdle(aGroupID: Integer): Boolean');
     RegisterMethodCheck(c, 'function GroupMember(aGroupID, aMemberIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupMemberCount(aGroupID: Integer): Integer');
+    RegisterMethodCheck(c, 'function GroupOrder(aGroupID: Integer): TKMGroupOrder');
     RegisterMethodCheck(c, 'function GroupOwner(aGroupID: Integer): Integer');
     RegisterMethodCheck(c, 'function GroupType(aGroupID: Integer): Integer');
 
@@ -359,26 +439,45 @@ begin
     RegisterMethodCheck(c, 'function HouseDeliveryMode(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseDestroyed(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseHasOccupant(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseFlagPoint(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HouseIsComplete(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseOwner(aHouseID: Integer): Integer');
+    RegisterMethodCheck(c, 'function HousePosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function HousePositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HousePositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseRepair(aHouseID: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseResourceAmount(aHouseID, aResource: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseSchoolQueue(aHouseID, QueueIndex: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseSiteIsDigged(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseTownHallMaxGold(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseType(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseTypeMaxHealth(aHouseType: Integer): Word');
     RegisterMethodCheck(c, 'function HouseTypeName(aHouseType: Byte): AnsiString');
     RegisterMethodCheck(c, 'function HouseTypeToOccupantType(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseUnlocked(aPlayer, aHouseType: Word): Boolean');
     RegisterMethodCheck(c, 'function HouseWoodcutterChopOnly(aHouseID: Integer): Boolean');
+    RegisterMethodCheck(c, 'function HouseWoodcutterMode(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function HouseWareBlocked(aHouseID, aWareType: Integer): Boolean');
     RegisterMethodCheck(c, 'function HouseWeaponsOrdered(aHouseID, aWareType: Integer): Integer');
 
     RegisterMethodCheck(c, 'function IsFieldAt(aPlayer: ShortInt; X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function IsRoadAt(aPlayer: ShortInt; X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function IsWinefieldAt(aPlayer: ShortInt; X, Y: Word): Boolean');
+
+    RegisterMethodCheck(c, 'function IsPlanAt(var aPlayer: Integer; var aFieldType: TKMFieldType; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsFieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsHousePlanAt(var aPlayer: Integer; var aHouseType: TKMHouseType; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsRoadPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
+    RegisterMethodCheck(c, 'function IsWinefieldPlanAt(var aPlayer: Integer; X, Y: Word): Boolean');
+
+    RegisterMethodCheck(c, 'function IsMissionBuildType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionFightType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionCoopType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionSpecialType: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionPlayableAsSP: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockTeamSelection: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockPeacetime: Boolean');
+    RegisterMethodCheck(c, 'function IsMissionBlockFullMapPreview: Boolean');
 
     RegisterMethodCheck(c, 'function KaMRandom: Single');
     RegisterMethodCheck(c, 'function KaMRandomI(aMax:Integer): Integer');
@@ -392,6 +491,15 @@ begin
     RegisterMethodCheck(c, 'function MapTileRotation(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapTileType(X, Y: Integer): Integer');
     RegisterMethodCheck(c, 'function MapWidth: Integer');
+
+    RegisterMethodCheck(c, 'function MissionAuthor: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionBigDesc: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionBigDescLibx: Integer');
+    RegisterMethodCheck(c, 'function MissionSmallDesc: UnicodeString');
+    RegisterMethodCheck(c, 'function MissionSmallDescLibx: Integer');
+
+    RegisterMethodCheck(c, 'function MissionDifficulty: TKMMissionDifficulty');
+    RegisterMethodCheck(c, 'function MissionDifficultyLevels: TKMMissionDifficultySet');
 
     RegisterMethodCheck(c, 'function MarketFromWare(aMarketID: Integer): Integer');
     RegisterMethodCheck(c, 'function MarketLossFactor: Single');
@@ -434,6 +542,7 @@ begin
     RegisterMethodCheck(c, 'function UnitCarrying(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitDead(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitDirection(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitDismissable(aUnitID: Integer): Boolean');
     RegisterMethodCheck(c, 'function UnitHome(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPCurrent(aUnitID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitHPMax(aUnitID: Integer): Integer');
@@ -443,6 +552,7 @@ begin
     RegisterMethodCheck(c, 'function UnitLowHunger: Integer');
     RegisterMethodCheck(c, 'function UnitMaxHunger: Integer');
     RegisterMethodCheck(c, 'function UnitOwner(aUnitID: Integer): Integer');
+    RegisterMethodCheck(c, 'function UnitPosition(aHouseID: Integer): TKMPoint');
     RegisterMethodCheck(c, 'function UnitPositionX(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitPositionY(aHouseID: Integer): Integer');
     RegisterMethodCheck(c, 'function UnitsGroup(aUnitID: Integer): Integer');
@@ -452,6 +562,11 @@ begin
     RegisterMethodCheck(c, 'function WareTypeName(aWareType: Byte): AnsiString');
 
     c := Sender.AddClassN(nil, AnsiString(fActions.ClassName));
+    RegisterMethodCheck(c, 'function AIAttackAdd(aPlayer: Byte; aRepeating: Boolean; aDelay: Cardinal; aTotalMen: Integer;' +
+                           'aMelleCount, aAntiHorseCount, aRangedCount, aMountedCount: Word; ' +
+                           'aRandomGroups: Boolean; aTarget: TKMAIAttackTarget; aCustomPosition: TKMPoint): Integer');
+    RegisterMethodCheck(c, 'function AIAttackRemove(aPlayer: Byte; aAIAttackId: Word): Boolean');
+    RegisterMethodCheck(c, 'procedure AIAttackRemoveAll(aPlayer: Byte)');
     RegisterMethodCheck(c, 'procedure AIAutoAttackRange(aPlayer: Byte; aRange: Word)');
     RegisterMethodCheck(c, 'procedure AIAutoBuild(aPlayer: Byte; aAuto: Boolean)');
     RegisterMethodCheck(c, 'procedure AIAutoDefence(aPlayer: Byte; aAuto: Boolean)');
@@ -464,7 +579,7 @@ begin
     RegisterMethodCheck(c, 'procedure AIGroupsFormationSet(aPlayer, aType: Byte; aCount, aColumns: Word)');
     RegisterMethodCheck(c, 'procedure AIRecruitDelay(aPlayer, aDelay: Cardinal)');
     RegisterMethodCheck(c, 'procedure AIRecruitLimit(aPlayer, aLimit: Byte)');
-    RegisterMethodCheck(c, 'procedure AISerfsFactor(aPlayer: Byte; aLimit: Single)');
+    RegisterMethodCheck(c, 'procedure AISerfsPerHouse(aPlayer: Byte; aSerfs: Single)');
     RegisterMethodCheck(c, 'procedure AISoldiersLimit(aPlayer: Byte; aLimit: Integer)');
     RegisterMethodCheck(c, 'procedure AIStartPosition(aPlayer: Byte; X, Y: Word)');
     RegisterMethodCheck(c, 'procedure AIWorkerLimit(aPlayer, aLimit: Byte)');
@@ -523,12 +638,14 @@ begin
     RegisterMethodCheck(c, 'function  HouseSchoolQueueAdd(aHouseID: Integer; aUnitType: Integer; aCount: Integer): Integer');
     RegisterMethodCheck(c, 'procedure HouseSchoolQueueRemove(aHouseID, QueueIndex: Integer)');
     RegisterMethodCheck(c, 'procedure HouseTakeWaresFrom(aHouseID: Integer; aType, aCount: Word)');
+    RegisterMethodCheck(c, 'procedure HouseTownHallMaxGold(aHouseID: Integer; aMaxGold: Integer)');
     RegisterMethodCheck(c, 'procedure HouseUnlock(aPlayer, aHouseType: Word)');
     RegisterMethodCheck(c, 'procedure HouseWoodcutterChopOnly(aHouseID: Integer; aChopOnly: Boolean)');
+    RegisterMethodCheck(c, 'procedure HouseWoodcutterMode(aHouseID: Integer; aWoodcutterMode: Byte)');
     RegisterMethodCheck(c, 'procedure HouseWareBlock(aHouseID, aWareType: Integer; aBlocked: Boolean)');
     RegisterMethodCheck(c, 'procedure HouseWeaponsOrderSet(aHouseID, aWareType, aAmount: Integer)');
 
-    RegisterMethodCheck(c, 'procedure Log(aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure Log(const aText: AnsiString)');
 
     RegisterMethodCheck(c, 'procedure MarketSetTrade(aMarketID, aFrom, aTo, aAmount: Integer)');
 
@@ -536,11 +653,12 @@ begin
     RegisterMethodCheck(c, 'function MapTileObjectSet(X, Y, Obj: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTileSet(X, Y, aType, aRotation: Integer): Boolean');
     RegisterMethodCheck(c, 'function MapTilesArraySet(aTiles: array of TKMTerrainTileBrief; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
+    RegisterMethodCheck(c, 'function MapTilesArraySetS(aTiles: TAnsiStringArray; aRevertOnFail, aShowDetailedErrors: Boolean): Boolean');
 
-    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppend(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextAppendFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSet(aPlayer: Shortint; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure OverlayTextSetFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'function  PlanAddField(aPlayer, X, Y: Word): Boolean');
     RegisterMethodCheck(c, 'function  PlanAddHouse(aPlayer, aHouseType, X, Y: Word): Boolean');
@@ -551,6 +669,7 @@ begin
 
     RegisterMethodCheck(c, 'procedure PlayerAddDefaultGoals(aPlayer: Byte; aBuildings: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerAllianceChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied: Boolean)');
+    RegisterMethodCheck(c, 'procedure PlayerAllianceNFogChange(aPlayer1, aPlayer2: Byte; aCompliment, aAllied, aSyncAllyFog: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerDefeat(aPlayer: Word)');
     RegisterMethodCheck(c, 'procedure PlayerShareBeacons(aPlayer1, aPlayer2: Word; aCompliment, aShare: Boolean)');
     RegisterMethodCheck(c, 'procedure PlayerShareFog(aPlayer1, aPlayer2: Word; aShare: Boolean)');
@@ -581,13 +700,16 @@ begin
 
     RegisterMethodCheck(c, 'procedure SetTradeAllowed(aPlayer, aResType: Word; aAllowed: Boolean)');
 
-    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; aText: AnsiString; Params: array of const)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; aText: AnsiString)');
-    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsg(aPlayer: ShortInt; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgFormatted(aPlayer: Shortint; const aText: AnsiString; Params: array of const)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGoto(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString)');
+    RegisterMethodCheck(c, 'procedure ShowMsgGotoFormatted(aPlayer: Shortint; aX, aY: Word; const aText: AnsiString; Params: array of const)');
 
     RegisterMethodCheck(c, 'procedure UnitBlock(aPlayer: Byte; aType: Word; aBlock: Boolean)');
     RegisterMethodCheck(c, 'function  UnitDirectionSet(aUnitID, aDirection: Integer): Boolean');
+    RegisterMethodCheck(c, 'procedure UnitDismiss(aUnitID: Integer)');
+    RegisterMethodCheck(c, 'procedure UnitDismissableSet(aUnitID: Integer; aDismissable: Boolean)');
+    RegisterMethodCheck(c, 'procedure UnitDismissCancel(aUnitID: Integer)');
     RegisterMethodCheck(c, 'procedure UnitHPChange(aUnitID, aHP: Integer)');
     RegisterMethodCheck(c, 'procedure UnitHPSetInvulnerable(aUnitID: Integer; aInvulnerable: Boolean)');
     RegisterMethodCheck(c, 'procedure UnitHungerSet(aUnitID, aHungerLevel: Integer)');
@@ -598,22 +720,27 @@ begin
     RegisterMethodCheck(c, 'function AbsI(aValue: Integer): Integer');
     RegisterMethodCheck(c, 'function AbsS(aValue: Single): Single');
 
-    RegisterMethodCheck(c, 'function ArrayElementCount(aElement: AnsiString; aArray: array of AnsiString): Integer');
+    RegisterMethodCheck(c, 'function ArrayElementCount(const aElement: AnsiString; aArray: array of AnsiString): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountB(aElement: Boolean; aArray: array of Boolean): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountI(aElement: Integer; aArray: array of Integer): Integer');
     RegisterMethodCheck(c, 'function ArrayElementCountS(aElement: Single; aArray: array of Single): Integer');
 
-    RegisterMethodCheck(c, 'function ArrayHasElement(aElement: AnsiString; aArray: array of AnsiString): Boolean');
+    RegisterMethodCheck(c, 'function ArrayHasElement(const aElement: AnsiString; aArray: array of AnsiString): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementB(aElement: Boolean; aArray: array of Boolean): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementI(aElement: Integer; aArray: array of Integer): Boolean');
     RegisterMethodCheck(c, 'function ArrayHasElementS(aElement: Single; aArray: array of Single): Boolean');
+
+    RegisterMethodCheck(c, 'function ArrayRemoveIndexI(aIndex: Integer; aArray: TIntegerArray): TIntegerArray');
+    RegisterMethodCheck(c, 'function ArrayRemoveIndexS(aIndex: Integer; aArray: TAnsiStringArray): TAnsiStringArray');
+
+    RegisterMethodCheck(c, 'function BoolToStr(aBool: Boolean): AnsiString');
 
     RegisterMethodCheck(c, 'function EnsureRangeS(aValue, aMin, aMax: Single): Single');
     RegisterMethodCheck(c, 'function EnsureRangeI(aValue, aMin, aMax: Integer): Integer');
 
     RegisterMethodCheck(c, 'function Format(aFormatting: string; aData: array of const): string;');
 
-    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; aTrue, aFalse: AnsiString): AnsiString');
+    RegisterMethodCheck(c, 'function IfThen(aBool: Boolean; const aTrue, aFalse: AnsiString): AnsiString');
     RegisterMethodCheck(c, 'function IfThenI(aBool: Boolean; aTrue, aFalse: Integer): Integer');
     RegisterMethodCheck(c, 'function IfThenS(aBool: Boolean; aTrue, aFalse: Single): Single');
 
@@ -622,6 +749,8 @@ begin
 
     RegisterMethodCheck(c, 'function InRangeI(aValue, aMin, aMax: Integer): Boolean');
     RegisterMethodCheck(c, 'function InRangeS(aValue, aMin, aMax: Single): Boolean');
+
+    RegisterMethodCheck(c, 'function KMPoint(X,Y: Integer): TKMPoint');
 
     RegisterMethodCheck(c, 'function MaxI(A, B: Integer): Integer');
     RegisterMethodCheck(c, 'function MaxS(A, B: Single): Single');
@@ -648,6 +777,9 @@ begin
     AddImportedClassVariable(Sender, 'States', AnsiString(fStates.ClassName));
     AddImportedClassVariable(Sender, 'Actions', AnsiString(fActions.ClassName));
     AddImportedClassVariable(Sender, 'Utils', AnsiString(fUtils.ClassName));
+    AddImportedClassVariable(Sender, 'S', AnsiString(fStates.ClassName));
+    AddImportedClassVariable(Sender, 'A', AnsiString(fActions.ClassName));
+    AddImportedClassVariable(Sender, 'U', AnsiString(fUtils.ClassName));
 
     Result := True;
   end
@@ -672,13 +804,14 @@ end;
   A result type of 0 means no result}
 function TKMScripting.ScriptOnExportCheck(Sender: TPSPascalCompiler; Proc: TPSInternalProcedure; const ProcDecl: AnsiString): Boolean;
 const
-  Procs: array [0..27] of record
+  Procs: array [0..32] of record
     Names: AnsiString;
     ParamCount: Byte;
     Typ: array [0..4] of Byte;
     Dir: array [0..3] of TPSParameterMode;
   end =
   (
+  (Names: 'OnFieldBuilt';           ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnGroupHungry';          ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
   (Names: 'OnGroupOrderAttackHouse';ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
@@ -707,6 +840,8 @@ const
   (Names: 'OnPlayerDefeated';       ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnPlayerVictory';        ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
+  (Names: 'OnRoadBuilt';            ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+
   (Names: 'OnTick';                 ParamCount: 0; Typ: (0, 0,     0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
   (Names: 'OnUnitAfterDied';        ParamCount: 4; Typ: (0, btS32, btS32, btS32, btS32); Dir: (pmIn, pmIn, pmIn, pmIn)),
@@ -715,7 +850,10 @@ const
   (Names: 'OnUnitTrained';          ParamCount: 1; Typ: (0, btS32, 0,     0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
   (Names: 'OnUnitWounded';          ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
 
-  (Names: 'OnWarriorEquipped';      ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn))
+  (Names: 'OnWarriorEquipped';      ParamCount: 2; Typ: (0, btS32, btS32, 0,     0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWarriorWalked';        ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWareProduced';         ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn)),
+  (Names: 'OnWinefieldBuilt';       ParamCount: 3; Typ: (0, btS32, btS32, btS32, 0    ); Dir: (pmIn, pmIn, pmIn, pmIn))
   );
 var
   I: Integer;
@@ -734,10 +872,19 @@ begin
 end;
 
 
+procedure TKMScripting.AddError(aMsg: TPSPascalCompilerMessage);
+begin
+  fErrorHandler.AppendError(GetErrorMessage(aMsg));
+  fValidationIssues.AddError(aMsg.Row, aMsg.Col, aMsg.Param, aMsg.ShortMessageToString);
+end;
+
+
 procedure TKMScripting.CompileScript;
 var
   I: Integer;
   Compiler: TPSPascalCompiler;
+  Msg: TPSPascalCompilerMessage;
+  Success: Boolean;
 begin
   Compiler := TPSPascalCompiler.Create; // create an instance of the compiler
   try
@@ -748,20 +895,30 @@ begin
     Compiler.AllowNoEnd := True; //Scripts only use event handlers now, main section is unused
     Compiler.BooleanShortCircuit := True; //Like unchecking "Complete booolean evaluation" in Delphi compiler options
 
-    if not Compiler.Compile(fScriptCode) then  // Compile the Pascal script into bytecode
+    Success := Compiler.Compile(fScriptCode); // Compile the Pascal script into bytecode
+
+    for I := 0 to Compiler.MsgCount - 1 do
     begin
-      for I := 0 to Compiler.MsgCount - 1 do
-        fErrorHandler.AppendError(GetErrorMessage(Compiler.Msg[I]));
+      Msg := Compiler.Msg[I];
+
+      if Msg.ErrorType = 'Hint' then
+      begin
+        fValidationIssues.AddHint(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
+      end else if Msg.ErrorType = 'Warning' then
+      begin
+        fErrorHandler.AppendWarning(GetErrorMessage(Msg));
+        fValidationIssues.AddWarning(Msg.Row, Msg.Col, Msg.Param, Msg.ShortMessageToString);
+      end else
+        AddError(Msg);
+    end;
+
+    if not Success then
       Exit;
-    end
-      else
-        for I := 0 to Compiler.MsgCount - 1 do
-          fErrorHandler.AppendWarning(GetErrorMessage(Compiler.Msg[I]));
 
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
     Compiler.GetDebugOutput(fDebugByteCode);  // Save the debug output of the compiler
   finally
-    Compiler.Free;
+    FreeAndNil(Compiler);
   end;
 
   LinkRuntime;
@@ -808,6 +965,19 @@ begin
     //(uppercase is not needed, FastUpperCase does this well. See uPSRuntime.pas, line 11387)
     with ClassImp.Add(TKMScriptStates) do
     begin
+      RegisterMethod(@TKMScriptStates.AIAutoAttackRange,                        'AIAutoAttackRange');
+      RegisterMethod(@TKMScriptStates.AIAutoBuild,                              'AIAutoBuild');
+      RegisterMethod(@TKMScriptStates.AIAutoDefence,                            'AIAutoDefence');
+      RegisterMethod(@TKMScriptStates.AIAutoRepair,                             'AIAutoRepair');
+      RegisterMethod(@TKMScriptStates.AIDefendAllies,                           'AIDefendAllies');
+      RegisterMethod(@TKMScriptStates.AIEquipRate,                              'AIEquipRate');
+      RegisterMethod(@TKMScriptStates.AIGroupsFormationGet,                     'AIGroupsFormationGet');
+      RegisterMethod(@TKMScriptStates.AIRecruitDelay,                           'AIRecruitDelay');
+      RegisterMethod(@TKMScriptStates.AIRecruitLimit,                           'AIRecruitLimit');
+      RegisterMethod(@TKMScriptStates.AISerfsPerHouse,                          'AISerfsPerHouse');
+      RegisterMethod(@TKMScriptStates.AISoldiersLimit,                          'AISoldiersLimit');
+      RegisterMethod(@TKMScriptStates.AIStartPosition,                          'AIStartPosition');
+      RegisterMethod(@TKMScriptStates.AIWorkerLimit,                            'AIWorkerLimit');
 
       RegisterMethod(@TKMScriptStates.ClosestGroup,                             'ClosestGroup');
       RegisterMethod(@TKMScriptStates.ClosestGroupMultipleTypes,                'ClosestGroupMultipleTypes');
@@ -823,12 +993,14 @@ begin
 
       RegisterMethod(@TKMScriptStates.GameTime,                                 'GameTime');
 
+      RegisterMethod(@TKMScriptStates.GroupAssignedToDefencePosition,           'GroupAssignedToDefencePosition');
       RegisterMethod(@TKMScriptStates.GroupAt,                                  'GroupAt');
       RegisterMethod(@TKMScriptStates.GroupColumnCount,                         'GroupColumnCount');
       RegisterMethod(@TKMScriptStates.GroupDead,                                'GroupDead');
       RegisterMethod(@TKMScriptStates.GroupIdle,                                'GroupIdle');
       RegisterMethod(@TKMScriptStates.GroupMember,                              'GroupMember');
       RegisterMethod(@TKMScriptStates.GroupMemberCount,                         'GroupMemberCount');
+      RegisterMethod(@TKMScriptStates.GroupOrder,                               'GroupOrder');
       RegisterMethod(@TKMScriptStates.GroupOwner,                               'GroupOwner');
       RegisterMethod(@TKMScriptStates.GroupType,                                'GroupType');
 
@@ -842,26 +1014,45 @@ begin
       RegisterMethod(@TKMScriptStates.HouseDeliveryMode,                        'HouseDeliveryMode');
       RegisterMethod(@TKMScriptStates.HouseDestroyed,                           'HouseDestroyed');
       RegisterMethod(@TKMScriptStates.HouseHasOccupant,                         'HouseHasOccupant');
+      RegisterMethod(@TKMScriptStates.HouseFlagPoint,                           'HouseFlagPoint');
       RegisterMethod(@TKMScriptStates.HouseIsComplete,                          'HouseIsComplete');
       RegisterMethod(@TKMScriptStates.HouseOwner,                               'HouseOwner');
+      RegisterMethod(@TKMScriptStates.HousePosition,                            'HousePosition');
       RegisterMethod(@TKMScriptStates.HousePositionX,                           'HousePositionX');
       RegisterMethod(@TKMScriptStates.HousePositionY,                           'HousePositionY');
       RegisterMethod(@TKMScriptStates.HouseRepair,                              'HouseRepair');
       RegisterMethod(@TKMScriptStates.HouseResourceAmount,                      'HouseResourceAmount');
       RegisterMethod(@TKMScriptStates.HouseSchoolQueue,                         'HouseSchoolQueue');
       RegisterMethod(@TKMScriptStates.HouseSiteIsDigged,                        'HouseSiteIsDigged');
+      RegisterMethod(@TKMScriptStates.HouseTownHallMaxGold,                     'HouseTownHallMaxGold');
       RegisterMethod(@TKMScriptStates.HouseType,                                'HouseType');
       RegisterMethod(@TKMScriptStates.HouseTypeMaxHealth,                       'HouseTypeMaxHealth');
       RegisterMethod(@TKMScriptStates.HouseTypeName,                            'HouseTypeName');
       RegisterMethod(@TKMScriptStates.HouseTypeToOccupantType,                  'HouseTypeToOccupantType');
       RegisterMethod(@TKMScriptStates.HouseUnlocked,                            'HouseUnlocked');
       RegisterMethod(@TKMScriptStates.HouseWoodcutterChopOnly,                  'HouseWoodcutterChopOnly');
+      RegisterMethod(@TKMScriptStates.HouseWoodcutterMode,                      'HouseWoodcutterMode');
       RegisterMethod(@TKMScriptStates.HouseWareBlocked,                         'HouseWareBlocked');
       RegisterMethod(@TKMScriptStates.HouseWeaponsOrdered,                      'HouseWeaponsOrdered');
 
       RegisterMethod(@TKMScriptStates.IsFieldAt,                                'IsFieldAt');
       RegisterMethod(@TKMScriptStates.IsRoadAt,                                 'IsRoadAt');
       RegisterMethod(@TKMScriptStates.IsWinefieldAt,                            'IsWinefieldAt');
+
+      RegisterMethod(@TKMScriptStates.IsPlanAt,                                 'IsPlanAt');
+      RegisterMethod(@TKMScriptStates.IsFieldPlanAt,                            'IsFieldPlanAt');
+      RegisterMethod(@TKMScriptStates.IsHousePlanAt,                            'IsHousePlanAt');
+      RegisterMethod(@TKMScriptStates.IsRoadPlanAt,                             'IsRoadPlanAt');
+      RegisterMethod(@TKMScriptStates.IsWinefieldPlanAt,                        'IsWinefieldPlanAt');
+
+      RegisterMethod(@TKMScriptStates.IsMissionBuildType,                       'IsMissionBuildType');
+      RegisterMethod(@TKMScriptStates.IsMissionFightType,                       'IsMissionFightType');
+      RegisterMethod(@TKMScriptStates.IsMissionCoopType,                        'IsMissionCoopType');
+      RegisterMethod(@TKMScriptStates.IsMissionSpecialType,                     'IsMissionSpecialType');
+      RegisterMethod(@TKMScriptStates.IsMissionPlayableAsSP,                    'IsMissionPlayableAsSP');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockTeamSelection,              'IsMissionBlockTeamSelection');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockPeacetime,                  'IsMissionBlockPeacetime');
+      RegisterMethod(@TKMScriptStates.IsMissionBlockFullMapPreview,             'IsMissionBlockFullMapPreview');
 
       RegisterMethod(@TKMScriptStates.KaMRandom,                                'KaMRandom');
       RegisterMethod(@TKMScriptStates.KaMRandomI,                               'KaMRandomI');
@@ -875,6 +1066,15 @@ begin
       RegisterMethod(@TKMScriptStates.MapTileRotation,                          'MapTileRotation');
       RegisterMethod(@TKMScriptStates.MapTileType,                              'MapTileType');
       RegisterMethod(@TKMScriptStates.MapWidth,                                 'MapWidth');
+
+      RegisterMethod(@TKMScriptStates.MissionAuthor,                            'MissionAuthor');
+      RegisterMethod(@TKMScriptStates.MissionBigDesc,                           'MissionBigDesc');
+      RegisterMethod(@TKMScriptStates.MissionBigDescLibx,                       'MissionBigDescLibx');
+      RegisterMethod(@TKMScriptStates.MissionSmallDesc,                         'MissionSmallDesc');
+      RegisterMethod(@TKMScriptStates.MissionSmallDescLibx,                     'MissionSmallDescLibx');
+
+      RegisterMethod(@TKMScriptStates.MissionDifficulty,                        'MissionDifficulty');
+      RegisterMethod(@TKMScriptStates.MissionDifficultyLevels,                  'MissionDifficultyLevels');
 
       RegisterMethod(@TKMScriptStates.MarketFromWare,                           'MarketFromWare');
       RegisterMethod(@TKMScriptStates.MarketLossFactor,                         'MarketLossFactor');
@@ -917,6 +1117,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitCarrying,                             'UnitCarrying');
       RegisterMethod(@TKMScriptStates.UnitDead,                                 'UnitDead');
       RegisterMethod(@TKMScriptStates.UnitDirection,                            'UnitDirection');
+      RegisterMethod(@TKMScriptStates.UnitDismissable,                          'UnitDismissable');
       RegisterMethod(@TKMScriptStates.UnitHome,                                 'UnitHome');
       RegisterMethod(@TKMScriptStates.UnitHPCurrent,                            'UnitHPCurrent');
       RegisterMethod(@TKMScriptStates.UnitHPMax,                                'UnitHPMax');
@@ -926,6 +1127,7 @@ begin
       RegisterMethod(@TKMScriptStates.UnitLowHunger,                            'UnitLowHunger');
       RegisterMethod(@TKMScriptStates.UnitMaxHunger,                            'UnitMaxHunger');
       RegisterMethod(@TKMScriptStates.UnitOwner,                                'UnitOwner');
+      RegisterMethod(@TKMScriptStates.UnitPosition,                             'UnitPosition');
       RegisterMethod(@TKMScriptStates.UnitPositionX,                            'UnitPositionX');
       RegisterMethod(@TKMScriptStates.UnitPositionY,                            'UnitPositionY');
       RegisterMethod(@TKMScriptStates.UnitsGroup,                               'UnitsGroup');
@@ -937,6 +1139,9 @@ begin
 
     with ClassImp.Add(TKMScriptActions) do
     begin
+      RegisterMethod(@TKMScriptActions.AIAttackAdd,                             'AIAttackAdd');
+      RegisterMethod(@TKMScriptActions.AIAttackRemove,                          'AIAttackRemove');
+      RegisterMethod(@TKMScriptActions.AIAttackRemoveAll,                       'AIAttackRemoveAll');
       RegisterMethod(@TKMScriptActions.AIAutoAttackRange,                       'AIAutoAttackRange');
       RegisterMethod(@TKMScriptActions.AIAutoBuild,                             'AIAutoBuild');
       RegisterMethod(@TKMScriptActions.AIAutoDefence,                           'AIAutoDefence');
@@ -1008,8 +1213,10 @@ begin
       RegisterMethod(@TKMScriptActions.HouseSchoolQueueAdd,                     'HouseSchoolQueueAdd');
       RegisterMethod(@TKMScriptActions.HouseSchoolQueueRemove,                  'HouseSchoolQueueRemove');
       RegisterMethod(@TKMScriptActions.HouseTakeWaresFrom,                      'HouseTakeWaresFrom');
+      RegisterMethod(@TKMScriptActions.HouseTownHallMaxGold,                    'HouseTownHallMaxGold');
       RegisterMethod(@TKMScriptActions.HouseUnlock,                             'HouseUnlock');
       RegisterMethod(@TKMScriptActions.HouseWoodcutterChopOnly,                 'HouseWoodcutterChopOnly');
+      RegisterMethod(@TKMScriptActions.HouseWoodcutterMode,                     'HouseWoodcutterMode');
       RegisterMethod(@TKMScriptActions.HouseWareBlock,                          'HouseWareBlock');
       RegisterMethod(@TKMScriptActions.HouseWeaponsOrderSet,                    'HouseWeaponsOrderSet');
 
@@ -1019,6 +1226,7 @@ begin
 
       RegisterMethod(@TKMScriptActions.MapTileSet,                              'MapTileSet');
       RegisterMethod(@TKMScriptActions.MapTilesArraySet,                        'MapTilesArraySet');
+      RegisterMethod(@TKMScriptActions.MapTilesArraySetS,                       'MapTilesArraySetS');
       RegisterMethod(@TKMScriptActions.MapTileHeightSet,                        'MapTileHeightSet');
       RegisterMethod(@TKMScriptActions.MapTileObjectSet,                        'MapTileObjectSet');
 
@@ -1035,6 +1243,7 @@ begin
       RegisterMethod(@TKMScriptActions.PlanRemove,                              'PlanRemove');
 
       RegisterMethod(@TKMScriptActions.PlayerAllianceChange,                    'PlayerAllianceChange');
+      RegisterMethod(@TKMScriptActions.PlayerAllianceNFogChange,                'PlayerAllianceNFogChange');
       RegisterMethod(@TKMScriptActions.PlayerAddDefaultGoals,                   'PlayerAddDefaultGoals');
       RegisterMethod(@TKMScriptActions.PlayerDefeat,                            'PlayerDefeat');
       RegisterMethod(@TKMScriptActions.PlayerShareBeacons,                      'PlayerShareBeacons');
@@ -1072,6 +1281,9 @@ begin
 
       RegisterMethod(@TKMScriptActions.UnitBlock,                               'UnitBlock');
       RegisterMethod(@TKMScriptActions.UnitDirectionSet,                        'UnitDirectionSet');
+      RegisterMethod(@TKMScriptActions.UnitDismiss,                             'UnitDismiss');
+      RegisterMethod(@TKMScriptActions.UnitDismissableSet,                      'UnitDismissableSet');
+      RegisterMethod(@TKMScriptActions.UnitDismissCancel,                       'UnitDismissCancel');
       RegisterMethod(@TKMScriptActions.UnitHPChange,                            'UnitHPChange');
       RegisterMethod(@TKMScriptActions.UnitHPSetInvulnerable,                   'UnitHPSetInvulnerable');
       RegisterMethod(@TKMScriptActions.UnitHungerSet,                           'UnitHungerSet');
@@ -1094,6 +1306,11 @@ begin
       RegisterMethod(@TKMScriptUtils.ArrayHasElementI,                          'ArrayHasElementI');
       RegisterMethod(@TKMScriptUtils.ArrayHasElementS,                          'ArrayHasElementS');
 
+      RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexI,                         'ArrayRemoveIndexI');
+      RegisterMethod(@TKMScriptUtils.ArrayRemoveIndexS,                         'ArrayRemoveIndexS');
+
+      RegisterMethod(@TKMScriptUtils.BoolToStr,                                 'BoolToStr');
+
       RegisterMethod(@TKMScriptUtils.EnsureRangeI,                              'EnsureRangeI');
       RegisterMethod(@TKMScriptUtils.EnsureRangeS,                              'EnsureRangeS');
 
@@ -1109,6 +1326,8 @@ begin
       RegisterMethod(@TKMScriptUtils.InRangeI,                                  'InRangeI');
       RegisterMethod(@TKMScriptUtils.InRangeS,                                  'InRangeS');
 
+      RegisterMethod(@TKMScriptUtils.KMPoint,                                   'KMPoint');
+
       RegisterMethod(@TKMScriptUtils.MaxI,                                      'MaxI');
       RegisterMethod(@TKMScriptUtils.MaxS,                                      'MaxS');
 
@@ -1121,7 +1340,7 @@ begin
       RegisterMethod(@TKMScriptUtils.MinInArrayI,                               'MinInArrayI');
       RegisterMethod(@TKMScriptUtils.MinInArrayS,                               'MinInArrayS');
 
-      RegisterMethod(@TKMScriptUtils.Power,                                     'POWER');
+      RegisterMethod(@TKMScriptUtils.Power,                                     'Power');
 
       RegisterMethod(@TKMScriptUtils.SumI,                                      'SumI');
       RegisterMethod(@TKMScriptUtils.SumS,                                      'SumS');
@@ -1139,6 +1358,7 @@ begin
       { For some reason the script could not be loaded. This is usually the case when a
         library that has been used at compile time isn't registered at runtime. }
       fErrorHandler.AppendErrorStr('Unknown error in loading bytecode to Exec|');
+      fValidationIssues.AddError(0, 0, '', 'Unknown error in loading bytecode to Exec');
       Exit;
     end;
 
@@ -1156,6 +1376,7 @@ begin
         Continue;
 
       fErrorHandler.AppendErrorStr(ValidateVarType(V.FType));
+      fValidationIssues.AddError(0, 0, '', ValidateVarType(V.FType));
       if fErrorHandler.HasErrors then
       begin
         //Don't allow the script to run
@@ -1168,12 +1389,15 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('STATES')), fStates);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('ACTIONS')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('UTILS')), fUtils);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('S')), fStates);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('A')), fActions);
+    SetVariantToClass(fExec.GetVarNo(fExec.GetVar('U')), fUtils);
   finally
-    ClassImp.Free;
+    FreeAndNil(ClassImp);
   end;
 
   //Link events into the script
-  gScriptEvents.LinkEvents;
+  gScriptEvents.LinkEventsAndCommands;
 end;
 
 
@@ -1189,7 +1413,7 @@ begin
     ForceDirectories(ExeDir  + 'Export' + PathDelim);
     SL.SaveToFile(ExeDir + 'Export' + PathDelim + 'script_DataText.txt');
   finally
-    SL.Free;
+    FreeAndNil(SL);
   end;
 end;
 
@@ -1203,9 +1427,14 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            LoadStream.Read(tbtu8(Src^)); //Byte, Boolean
+    btS8:            LoadStream.Read(tbts8(Src^)); //ShortInt
+    btU16:           LoadStream.Read(tbtu16(Src^)); //Word
+    btS16:           LoadStream.Read(tbts16(Src^)); //SmallInt
+    btU32:           LoadStream.Read(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           LoadStream.Read(tbts32(Src^)); //Integer
     btSingle:        LoadStream.Read(tbtsingle(Src^));
     btString:        LoadStream.ReadA(tbtString(Src^));
+    btUnicodeString: LoadStream.ReadW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     LoadStream.Read(ElemCount);
                     Assert(ElemCount = TPSTypeRec_StaticArray(aType).Size, 'Script array element count mismatches saved count');
@@ -1249,9 +1478,12 @@ var
   I: Integer;
   V: PIFVariant;
 begin
+  RecreateValidationIssues;
+
   LoadStream.ReadAssert('Script');
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
+  gScriptEvents.Load(LoadStream);
 
   if fScriptCode <> '' then
     CompileScript;
@@ -1308,9 +1540,14 @@ begin
   //See uPSRuntime line 1630 for algo idea
   case aType.BaseType of
     btU8:            SaveStream.Write(tbtu8(Src^)); //Byte, Boolean
+    btS8:            SaveStream.Write(tbts8(Src^)); //ShortInt
+    btU16:           SaveStream.Write(tbtu16(Src^)); //Word
+    btS16:           SaveStream.Write(tbts16(Src^)); //SmallInt
+    btU32:           SaveStream.Write(tbtu32(Src^)); //Cardinal / LongInt
     btS32:           SaveStream.Write(tbts32(Src^)); //Integer
     btSingle:        SaveStream.Write(tbtsingle(Src^));
     btString:        SaveStream.WriteA(tbtString(Src^));
+    btUnicodeString: SaveStream.WriteW(tbtUnicodeString(Src^));
     btStaticArray:begin
                     ElemCount := TPSTypeRec_StaticArray(aType).Size;
                     SaveStream.Write(ElemCount);
@@ -1359,6 +1596,7 @@ begin
   //Write script code
   SaveStream.WriteHugeString(fScriptCode);
   SaveStream.WriteA(fCampaignDataTypeCode);
+  gScriptEvents.Save(SaveStream);
 
   //Write script global variables
   SaveStream.Write(fExec.GetVarCount);
@@ -1401,7 +1639,7 @@ begin
   Strings := TStringList.Create;
   Strings.Text := fScriptCode;
   Result := AnsiString(Strings[aRowNum - 1]);
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 
@@ -1417,7 +1655,7 @@ begin
 end;
 
 
-function TKMScripting.GetErrorMessage(aErrorType, aShortErrorDescription: UnicodeString; aRow, aCol: Integer): TKMScriptErrorMessage;
+function TKMScripting.GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage;
 var I, CodeLinesFound: Integer;
     FileNamesArr: TStringArray;
     RowsArr: TIntegerArray;
@@ -1484,21 +1722,21 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarning(aWarning: TKMScriptErrorMessage);
+procedure TKMScriptErrorHandler.AppendWarning(const aWarning: TKMScriptErrorMessage);
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarning.GameMessage;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aWarning.LogMessage;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendErrorStr(const aErrorString: String; const aDetailedErrorString: String = '');
 begin
   fErrorString.GameMessage := fErrorString.GameMessage + aErrorString;
   fErrorString.LogMessage := fErrorString.LogMessage + aDetailedErrorString;
 end;
 
 
-procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: UnicodeString; aDetailedWarningString: UnicodeString = '');
+procedure TKMScriptErrorHandler.AppendWarningStr(const aWarningString: String; const aDetailedWarningString: String = '');
 begin
   fWarningsString.GameMessage := fWarningsString.GameMessage + aWarningString;
   fWarningsString.LogMessage := fWarningsString.LogMessage + aDetailedWarningString;
@@ -1532,8 +1770,8 @@ end;
 
 procedure TKMScriptErrorHandler.HandleErrors;
 begin
-  HandleScriptError(se_CompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
-  HandleScriptError(se_CompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
+  HandleScriptError(seCompileError, AppendErrorPrefix('Script compile errors:' + EolW, fErrorString));
+  HandleScriptError(seCompileWarning, AppendErrorPrefix('Script compile warnings:' + EolW, fWarningsString));
 end;
 
 
@@ -1560,11 +1798,14 @@ begin
 end;
 
 
-procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: UnicodeString; aDetailedErrorString: UnicodeString = '');
+procedure TKMScriptErrorHandler.HandleScriptErrorString(aType: TKMScriptErrorType; aErrorString: String;
+                                                        const aDetailedErrorString: String = '');
 var
   fl: TextFile;
   LogErrorMsg: UnicodeString;
 begin
+  if BLOCK_FILE_WRITE then Exit;
+
   if aDetailedErrorString <> '' then
     LogErrorMsg := aDetailedErrorString
   else
@@ -1598,11 +1839,11 @@ begin
   aErrorString := StringReplace(aErrorString, EolW, '|', [rfReplaceAll]);
 
   //Display compile errors in-game
-  if (aType in [se_CompileError, se_PreprocessorError]) and Assigned(fOnScriptError) then
+  if (aType in [seCompileError, sePreprocessorError]) and Assigned(fOnScriptError) then
     fOnScriptError(aErrorString);
 
   //Serious runtime errors should be shown to the player
-  if aType in [se_Exception] then
+  if aType in [seException] then
   begin
     //Only show the first message in-game to avoid spamming the player
     if not fHasErrorOccured and Assigned(fOnScriptError) then
@@ -1615,8 +1856,11 @@ end;
 
 {TKMScriptingPreProcessor}
 constructor TKMScriptingPreProcessor.Create;
+var
+  OnScriptError: TUnicodeStringEvent;
 begin
-  Create(nil);
+  OnScriptError := nil;
+  Create(OnScriptError);
 end;
 
 
@@ -1629,6 +1873,7 @@ end;
 
 constructor TKMScriptingPreProcessor.Create(aOnScriptError: TUnicodeStringEvent; aErrorHandler: TKMScriptErrorHandler);
 begin
+  inherited Create;
   fScriptFilesInfo := TKMScriptFilesCollection.Create;
 
   fErrorHandler := aErrorHandler;
@@ -1647,11 +1892,26 @@ end;
 
 
 procedure TKMScriptingPreProcessor.BeforePreProcess(const aMainFileName: UnicodeString; const aMainFileText: AnsiString);
+var
+  CSP: TKMCustomScriptParam;
 begin
   fScriptFilesInfo.fMainFilePath := ExtractFilePath(aMainFileName);
   fScriptFilesInfo.fMainFileInfo.FullFilePath := aMainFileName;
   fScriptFilesInfo.fMainFileInfo.FileName := ExtractFileName(aMainFileName);
   fScriptFilesInfo.fMainFileInfo.FileText := aMainFileText;
+
+  //Reset custom script parameters
+  for CSP := Low(TKMCustomScriptParam) to High(TKMCustomScriptParam) do
+  begin
+    fCustomScriptParams[CSP].Added := False;
+    fCustomScriptParams[CSP].Data := '';
+  end;
+end;
+
+
+function TKMScriptingPreProcessor.GetCustomScriptParamData(aParam: TKMCustomScriptParam): TKMCustomScriptParamData;
+begin
+  Result := fCustomScriptParams[aParam];
 end;
 
 
@@ -1668,7 +1928,8 @@ end;
 
 
 function TKMScriptingPreProcessor.PreProcessFile(const aFileName: UnicodeString): Boolean;
-var ScriptCode: AnsiString;
+var
+  ScriptCode: AnsiString;
 begin
   Result := PreProcessFile(aFileName, ScriptCode);
 end;
@@ -1702,16 +1963,265 @@ begin
       Result := True; // If PreProcess has been done succesfully
     except
       on E: Exception do
-        fErrorHandler.HandleScriptErrorString(se_PreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+      begin
+        fErrorHandler.HandleScriptErrorString(sePreprocessorError, 'Script preprocessing errors:' + EolW + E.Message);
+        if fValidationIssues <> nil then
+          fValidationIssues.AddError(0, 0, '', 'Script preprocessing errors:' + EolW + E.Message);
+      end;
     end;
   finally
-    PreProcessor.Free;
+    FreeAndNil(PreProcessor);
   end;
 end;
 
 
 procedure TKMScriptingPreProcessor.ScriptOnProcessDirective(Sender: TPSPreProcessor; Parser: TPSPascalPreProcessorParser; const Active: Boolean;
-                                                            const DirectiveName, DirectiveParam: tbtString; var Continue: Boolean);
+                                                            const DirectiveName, DirectiveParam: tbtString; var aContinue: Boolean);
+const
+  CUSTOM_EVENT_DIRECTIVE = 'EVENT';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE = 'COMMAND';
+  CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT = 'CMD';
+  CUSTOM_TH_TROOP_COST_DIRECTIVE = 'CUSTOM_TH_TROOP_COST';
+  CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE = 'CUSTOM_MARKET_GOLD_PRICE_X';
+
+  function AllowGameUpdate: Boolean;
+  begin
+    Result := ((gGame <> nil) and not gGame.IsMapEditor)
+              or ((gGame = nil) and (gScripting <> nil));
+  end;
+
+  procedure LoadCustomEventDirectives;
+  var
+    ErrorStr: UnicodeString;
+    EventType: Integer;
+    DirectiveParamSL: TStringList;
+  begin
+    //Load custom event handlers
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_EVENT_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      //Do not do anything for while in MapEd
+      //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+      //gGame could be nil here, but that does not change final CRC, so we can Exit
+      if not AllowGameUpdate then Exit;
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ':', DirectiveParamSL);
+          EventType := GetEnumValue(TypeInfo(TKMScriptEventType), Trim(DirectiveParamSL[0]));
+
+          if EventType = -1 then
+          begin
+            fErrorHandler.AppendErrorStr(Format('Unknown directive ''%s'' at [%d:%d]' + sLineBreak,
+                                                [Trim(DirectiveParamSL[0]), Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Trim(DirectiveParamSL[0]), 'Unknown directive');
+          end else
+            gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
+        finally
+          FreeAndNil(DirectiveParamSL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomConsoleCommands;
+  var
+    CmdName, ProcName: AnsiString;
+    ErrorStr: UnicodeString;
+    SL: TStringList;
+  begin
+    //Load custom event handlers
+    if (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE))
+      or (UpperCase(DirectiveName) = UpperCase(CUSTOM_CONSOLE_COMMAND_DIRECTIVE_SHORT)) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      //Do not do anything for while in MapEd
+      //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+      //gGame could be nil here, but that does not change final CRC, so we can Exit
+      if not AllowGameUpdate then Exit;
+
+      try
+        SL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ':', SL);
+          CmdName := AnsiString(Trim(SL[0]));
+          ProcName := AnsiString(Trim(SL[1]));
+
+          gScriptEvents.AddConsoleCommand(CmdName, ProcName);
+        finally
+          FreeAndNil(SL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading command ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading command');
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomTHTroopCost;
+  var
+    I, TroopCost: Integer;
+    ErrorStr: UnicodeString;
+    DirectiveParamSL: TStringList;
+    HasError: Boolean;
+    THTroopCost: array[0..5] of Integer;
+  begin
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_TH_TROOP_COST_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ',', DirectiveParamSL);
+
+          if DirectiveParamSL.Count <> 6 then
+          begin
+            fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 6, actual: %d. At [%d:%d]' + sLineBreak,
+                                                [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                         'Wrong number of parameters: expected 6, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
+
+          HasError := False;
+          for I := 0 to 5 do
+            if TryStrToInt(DirectiveParamSL[I], TroopCost) then
+              THTroopCost[I] := EnsureRange(TroopCost, 1, 255)
+            else begin
+              HasError := True;
+              fErrorHandler.AppendErrorStr(Format('Directive ''%s'' wrong parameter: [%s] is not a number. At [%d:%d]' + sLineBreak,
+                                                  [CUSTOM_TH_TROOP_COST_DIRECTIVE, DirectiveParamSL[I], Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_TH_TROOP_COST_DIRECTIVE,
+                                           Format('Wrong directive parameter: [%s] is not a number', [DirectiveParamSL[I]]));
+            end;
+
+          if not HasError then
+          begin
+            fCustomScriptParams[cspTHTroopCosts].Added := True;
+            fCustomScriptParams[cspTHTroopCosts].Data := DirectiveParam;
+          end else
+            Exit;
+
+          //Do not do anything for while in MapEd
+          //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+          //gGame could be nil here, but that does not change final CRC, so we can Exit
+          if not AllowGameUpdate then Exit;
+
+          //Update actual troop cost
+          for I := 0 to 5 do
+            TH_TROOP_COST[I] := THTroopCost[I];
+
+        finally
+          FreeAndNil(DirectiveParamSL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
+          end;
+      end;
+    end;
+  end;
+
+  procedure LoadCustomMarketGoldPrice;
+  var
+    ErrorStr: UnicodeString;
+    DirectiveParamSL: TStringList;
+    HasError: Boolean;
+    GoldOrePriceX, GoldPriceX: Single;
+  begin
+    if UpperCase(DirectiveName) = UpperCase(CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE) then
+    begin
+      aContinue := False; //Custom directive should not be proccesed any further by pascal script preprocessor, as it will cause an error
+
+      try
+        DirectiveParamSL := TStringList.Create;
+        try
+          StringSplit(DirectiveParam, ',', DirectiveParamSL);
+
+          if DirectiveParamSL.Count <> 2 then
+          begin
+            fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has wrong number of parameters: expected 2, actual: %d. At [%d:%d]' + sLineBreak,
+                                                [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParamSL.Count, Parser.Row, Parser.Col]));
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                         'Wrong number of parameters: expected 2, actual: ' + IntToStr(DirectiveParamSL.Count));
+          end;
+
+          HasError := False;
+            if TryStrToFloat(StringReplace(DirectiveParamSL[0], '.', ',', [rfReplaceAll]), GoldOrePriceX)
+              and TryStrToFloat(StringReplace(DirectiveParamSL[1], '.', ',', [rfReplaceAll]), GoldPriceX) then
+            begin
+              GoldOrePriceX := EnsureRange(GoldOrePriceX, 0.1, 10);
+              GoldPriceX := EnsureRange(GoldPriceX, 0.1, 10);
+            end else begin
+              HasError := True;
+              fErrorHandler.AppendErrorStr(Format('Directive ''%s'' has not a number parameter: [%s]. At [%d:%d]' + sLineBreak,
+                                                  [CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE, DirectiveParam, Parser.Row, Parser.Col]));
+              if fValidationIssues <> nil then
+                fValidationIssues.AddError(Parser.Row, Parser.Col, CUSTOM_MARKET_GOLD_PRICE_DIRECTIVE,
+                                           'Wrong directive parameters type, Integer required');
+            end;
+
+          if not HasError then
+          begin
+            fCustomScriptParams[cspMarketGoldPrice].Added := True;
+            fCustomScriptParams[cspMarketGoldPrice].Data :=
+              Format('%s: x%s %s: x%s', [gRes.Wares[wtGoldOre].Title, FormatFloat('#0.#', GoldOrePriceX),
+                                         gRes.Wares[wtGold].Title,    FormatFloat('#0.#', GoldPriceX)]);
+          end else
+            Exit;
+
+          //Do not do anything for while in MapEd
+          //But we have to allow to preprocess file, as preprocessed file used for CRC calc in MapEd aswell
+          //gGame could be nil here, but that does not change final CRC, so we can Exit
+          if not AllowGameUpdate then Exit;
+
+          //Update actual troop cost
+          gRes.Wares[wtGoldOre].MarketPriceMultiplier := GoldOrePriceX;
+          gRes.Wares[wtGold].MarketPriceMultiplier := GoldPriceX;
+
+        finally
+          FreeAndNil(DirectiveParamSL);
+        end;
+      except
+        on E: Exception do
+          begin
+            ErrorStr := Format('Error loading directive ''%s'' at [%d:%d]', [Parser.Token, Parser.Row, Parser.Col]);
+            fErrorHandler.AppendErrorStr(ErrorStr, ErrorStr + ' Exception: ' + E.Message
+              {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
+            if fValidationIssues <> nil then
+              fValidationIssues.AddError(Parser.Row, Parser.Col, Parser.Token, 'Error loading directive');
+          end;
+      end;
+    end;
+  end;
+
 begin
   // Most of the scripts do not have directives.
   // save in fHasDefDirectives, when script do have IFDEF or IFNDEF directive, which might change script code after pre-processing
@@ -1719,6 +2229,11 @@ begin
     and Active
     and ((DirectiveName = 'IFDEF') or (DirectiveName = 'IFNDEF')) then
     fScriptFilesInfo.fHasDefDirectives := True;
+
+  LoadCustomEventDirectives;
+  LoadCustomConsoleCommands;
+  LoadCustomTHTroopCost;
+  LoadCustomMarketGoldPrice;
 end;
 
 
@@ -1735,7 +2250,7 @@ begin
 
   FileExt := ExtractFileExt(aFileName);
   // Check included file extension
-  if FileExt <> '.script' then
+  if FileExt <> EXT_FILE_SCRIPT_DOT then
     raise Exception.Create(Format('Error including ''%s'' from ''%s'': |Wrong extension: ''%s''',
                                   [ExtractFileName(aFileName), ExtractFileName(aCallingFileName), FileExt]));
 
@@ -1768,7 +2283,7 @@ begin
 end;
 
 
-procedure TKMScriptFilesCollection.AddIncludeInfo(aIncludeInfo: TKMScriptFileInfo);
+procedure TKMScriptFilesCollection.AddIncludeInfo(const aIncludeInfo: TKMScriptFileInfo);
 begin
   if Length(fIncluded) >= fIncludedCnt then
     SetLength(fIncluded, fIncludedCnt + 8);
@@ -1786,9 +2301,10 @@ end;
 
 //Try to find line of code in all script files
 //Returns number of occurences
-function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray; out aRowsArr: TIntegerArray): Integer;
+function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFileNamesArr: TStringArray;
+                                               out aRowsArr: TIntegerArray): Integer;
 
-  procedure AddFoundLineInfo(var aFoundCnt: Integer; aFileNameFound: UnicodeString; aRowFound: Integer);
+  procedure AddFoundLineInfo(var aFoundCnt: Integer; const aFileNameFound: String; aRowFound: Integer);
   begin
     if (aFoundCnt >= Length(aFileNamesArr))
       or (aFoundCnt >= Length(aRowsArr)) then
@@ -1803,7 +2319,7 @@ function TKMScriptFilesCollection.FindCodeLine(const aLine: AnsiString; out aFil
     Inc(aFoundCnt);
   end;
 
-  procedure FindLine(var aFoundCnt: Integer; aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
+  procedure FindLine(var aFoundCnt: Integer; const aScriptFileInfo: TKMScriptFileInfo; var aStrings: TStringList);
   var I: Integer;
   begin
     aStrings.Clear;
@@ -1828,7 +2344,7 @@ begin
     FindLine(aFoundCnt, fIncluded[I], Strings);
 
   Result := aFoundCnt;
-  Strings.Free;
+  FreeAndNil(Strings);
 end;
 
 

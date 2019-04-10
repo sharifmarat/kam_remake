@@ -8,9 +8,9 @@ uses
 
 type
   TKMTilePreview = record
-                       TileID: Byte;
+                       TileID: Word;
                        TileHeight: Byte; //Used for calculating light
-                       TileOwner: TKMHandIndex;
+                       TileOwner: TKMHandID;
                        Revealed: Boolean;
                      end;
 
@@ -21,14 +21,14 @@ type
                      end;
 
   //Specially optimized mission parser for map previews
-  TMissionParserPreview = class(TMissionParserCommon)
+  TKMMissionParserPreview = class(TKMMissionParserCommon)
   private
     fMapX: Integer;
     fMapY: Integer;
     fHandPreview: array [0 .. MAX_HANDS-1] of TKMHandPreview;
     fMapPreview: array of TKMTilePreview;
 
-    fRevealFor: array of TKMHandIndex;
+    fRevealFor: array of TKMHandID;
 
     function GetTileInfo(X, Y: Integer): TKMTilePreview;
     function GetPlayerInfo(aIndex: Byte): TKMHandPreview;
@@ -40,36 +40,38 @@ type
     property PlayerPreview[aIndex: Byte]: TKMHandPreview read GetPlayerInfo;
     property MapX: Integer read fMapX;
     property MapY: Integer read fMapY;
-    function LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean; reintroduce;
+    function LoadMission(const aFileName: string; const aRevealFor: array of TKMHandID): Boolean; reintroduce;
   end;
 
 
 implementation
 uses
   Classes, SysUtils, Math,
+  KM_Terrain,
   KM_Resource, KM_ResHouses, KM_ResUnits,
-  KM_CommonClasses, KM_CommonUtils;
+  KM_CommonClasses, KM_CommonUtils, KM_Utils;
 
 
 { TMissionParserPreview }
-function TMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
+function TKMMissionParserPreview.GetTileInfo(X,Y: Integer): TKMTilePreview;
 begin
   Result := fMapPreview[(Y-1)*fMapX + X-1];
 end;
 
 
-function TMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
+function TKMMissionParserPreview.GetPlayerInfo(aIndex: Byte): TKMHandPreview;
 begin
   Result := fHandPreview[aIndex];
 end;
 
 
 //Load terrain data into liteweight structure, take only what we need for preview
-function TMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
+function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
   S: TKMemoryStream;
-  NewX, NewY: Integer;
+  UseKaMFormat: Boolean;
+  TileBasic: TKMTerrainTileBasic;
 begin
   Result := False;
 
@@ -78,34 +80,31 @@ begin
 
   S := TKMemoryStream.Create;
   try
+    UseKaMFormat := True;
     S.LoadFromFile(aFileName);
-    S.Read(NewX); //We read header to new variables to avoid damage to existing map if header is wrong
-    S.Read(NewY);
-    Assert((NewX <= MAX_MAP_SIZE) and (NewY <= MAX_MAP_SIZE), 'Can''t open the map cos it has too big dimensions');
-    fMapX := NewX;
-    fMapY := NewY;
+
+    LoadMapHeader(S, fMapX, fMapY, UseKaMFormat);
 
     SetLength(fMapPreview, fMapX * fMapY);
-    for I := 0 to fMapX * fMapY - 1 do
-    begin
-      S.Read(fMapPreview[I].TileID);
-      S.Seek(1, soFromCurrent);
-      S.Read(fMapPreview[I].TileHeight); //Height (for lighting)
-      S.Seek(20, soFromCurrent);
+     for I := 0 to fMapX * fMapY - 1 do
+      begin
+        TKMTerrain.ReadTileFromStream(S, TileBasic, UseKaMFormat);
+        fMapPreview[I].TileID := TileBasic.BaseLayer.Terrain;
+        fMapPreview[I].TileHeight := TileBasic.Height;
 
-      //Fill in blanks
-      fMapPreview[I].TileOwner := PLAYER_NONE;
-      fMapPreview[I].Revealed := False;
-    end;
+        //Fill in blanks
+        fMapPreview[I].TileOwner := PLAYER_NONE;
+        fMapPreview[I].Revealed := False;
+      end;
   finally
-    S.Free;
+    FreeAndNil(S);
   end;
 
   Result := True;
 end;
 
 
-function TMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
 
   function PointInMap(X, Y: Integer): Boolean;
   begin
@@ -118,7 +117,7 @@ function TMissionParserPreview.ProcessCommand(CommandType: TKMCommandType; P: ar
     fMapPreview[X-1 + (Y-1)*fMapX].TileOwner := fLastHand;
   end;
 
-  function RevealForPlayer(aPlayerIndex: TKMHandIndex): Boolean;
+  function RevealForPlayer(aPlayerIndex: TKMHandID): Boolean;
   var
     I: Integer;
   begin
@@ -151,8 +150,9 @@ var
   Loc: TKMPoint;
 begin
   case CommandType of
-    ct_SetCurrPlayer:   fLastHand := P[0];
-    ct_SetHouse:        if InRange(P[0], Low(HouseIndexToType), High(HouseIndexToType))
+    ctSetCurrPlayer:   fLastHand := P[0];
+
+    ctSetHouse:        if InRange(P[0], Low(HouseIndexToType), High(HouseIndexToType))
                           and PointInMap(P[1]+1, P[2]+1) then
                         begin
                           RevealCircle(P[1]+1, P[2]+1, gRes.Houses[HouseIndexToType[P[0]]].Sight);
@@ -162,44 +162,54 @@ begin
                               if InRange(P[1]+1+k-3, 1, fMapX) and InRange(P[2]+1+i-4, 1, fMapY) then
                                 SetOwner(P[1]+1+k-3, P[2]+1+i-4);
                         end;
-    ct_SetMapColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
+
+    ctSetMapColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := gRes.Palettes.DefaultPalette.Color32(P[0]);
-    ct_SetRGBColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
+
+    ctSetRGBColor:     if InRange(fLastHand, 0, MAX_HANDS-1) then
                           fHandPreview[fLastHand].Color := P[0] or $FF000000;
-    ct_CenterScreen:    if PointInMap(P[0]+1, P[1]+1) then
+
+    ctCenterScreen:    if PointInMap(P[0]+1, P[1]+1) then
                           fHandPreview[fLastHand].StartingLoc := KMPoint(P[0]+1,P[1]+1);
-    ct_HumanPlayer:     //Default human player can be human, obviously
+
+    ctHumanPlayer:     //Default human player can be human, obviously
                         fHandPreview[P[0]].CanHuman := True;
-    ct_UserPlayer:      if P[0] = -1 then
+
+    ctUserPlayer:      if P[0] = -1 then
                           fHandPreview[fLastHand].CanHuman := True
                         else
                           fHandPreview[P[0]].CanHuman := True;
-    ct_AIPlayer:        if P[0] = -1 then
+
+    ctAIPlayer,
+    ctAdvancedAIPlayer:if P[0] = -1 then
                           fHandPreview[fLastHand].CanAI := True
                         else
                           fHandPreview[P[0]].CanAI := True;
-    ct_SetRoad,
-    ct_SetField,
-    ct_SetWinefield,
-    ct_SetFieldStaged,
-    ct_SetWinefieldStaged:
+    ctSetRoad,
+    ctSetField,
+    ctSetWinefield,
+    ctSetFieldStaged,
+    ctSetWinefieldStaged:
                         if PointInMap(P[0]+1, P[1]+1) then
                           SetOwner(P[0]+1, P[1]+1);
-    ct_SetUnit:         if PointInMap(P[1]+1, P[2]+1) and
+
+    ctSetUnit:         if PointInMap(P[1]+1, P[2]+1) and
                           not (UnitOldIndexToType[P[0]] in [ANIMAL_MIN..ANIMAL_MAX]) then //Skip animals
                         begin
                           SetOwner(P[1]+1, P[2]+1);
                           RevealCircle(P[1]+1, P[2]+1, gRes.Units[UnitOldIndexToType[P[0]]].Sight);
                         end;
-    ct_SetStock:        if PointInMap(P[1]+1, P[2]+1) then
+
+    ctSetStock:        if PointInMap(P[1]+1, P[2]+1) then
                         begin
                           //Set Store and roads below
-                          ProcessCommand(ct_SetHouse,[11,P[0]+1,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]-2,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]-1,P[1]+1]);
-                          ProcessCommand(ct_SetRoad, [   P[0]  ,P[1]+1]);
+                          ProcessCommand(ctSetHouse,[11,P[0]+1,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]-2,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]-1,P[1]+1]);
+                          ProcessCommand(ctSetRoad, [   P[0]  ,P[1]+1]);
                         end;
-    ct_SetGroup:        if InRange(P[0], Low(UnitIndexToType), High(UnitIndexToType)) and (UnitIndexToType[P[0]] <> ut_None)
+
+    ctSetGroup:        if InRange(P[0], Low(UnitIndexToType), High(UnitIndexToType)) and (UnitIndexToType[P[0]] <> utNone)
                           and PointInMap(P[1]+1, P[2]+1) then
                           for I := 0 to P[5] - 1 do
                           begin
@@ -210,7 +220,8 @@ begin
                               RevealCircle(P[1]+1, P[2]+1, gRes.Units[UnitOldIndexToType[P[0]]].Sight);
                             end;
                           end;
-    ct_ClearUp:         begin
+
+    ctClearUp:         begin
                           if (P[0] = 255) then
                           begin
                             if RevealForPlayer(fLastHand) then
@@ -227,10 +238,10 @@ end;
 
 
 //We use custom mission loader for speed (compare only used commands)
-function TMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandIndex): Boolean;
+function TKMMissionParserPreview.LoadMission(const aFileName: string; const aRevealFor: array of TKMHandID): Boolean;
 const
-  Commands: array [0..15] of AnsiString = (
-    '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!CENTER_SCREEN',
+  Commands: array [0..16] of AnsiString = (
+    '!SET_MAP', '!SET_MAP_COLOR', '!SET_RGB_COLOR', '!SET_AI_PLAYER', '!SET_ADVANCED_AI_PLAYER', '!CENTER_SCREEN',
     '!SET_CURR_PLAYER', '!SET_HUMAN_PLAYER', '!SET_USER_PLAYER',
     '!SET_STREET', '!SET_FIELD', '!SET_WINEFIELD', '!SET_STOCK',
     '!SET_HOUSE', '!CLEAR_UP', '!SET_UNIT', '!SET_GROUP');

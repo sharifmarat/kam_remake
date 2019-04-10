@@ -8,12 +8,12 @@ uses
 
 type
   TKMPal = (
-    pal_map,
-    pal_0, //pal_1, pal_2, pal_3, pal_4, pal_5, unused since we change brightness with OpenGL overlay
-    pal_set,
-    pal_set2,
-    pal_bw,
-    pal_lin,
+    palmap,
+    pal0, //pal1, pal2, pal3, pal4, pal5, unused since we change brightness with OpenGL overlay
+    palset,
+    palset2,
+    palbw,
+    pallin,
     pal2_mapgold,
     pal2_setup);
 
@@ -49,7 +49,7 @@ implementation
 
 
 const
-  //Palette filenames, except pal_lin which is generated proceduraly
+  //Palette filenames, except pallin which is generated proceduraly
   PalFiles: array [TKMPal] of string = (
     'map.bbm',
     'pal0.bbm', //'pal1.bbm', 'pal2.bbm', 'pal3.bbm', 'pal4.bbm', 'pal5.bbm', unused
@@ -66,7 +66,7 @@ function TKMPaletteInfo.Color32(aIdx: Byte): Cardinal;
 begin
   //Index 0 means that pixel is transparent
   if aIdx = 0 then
-    Result := fData[aIdx,1] + fData[aIdx,2] shl 8 + fData[aIdx,3] shl 16 //$00000000
+    Result := fData[aIdx,1] + fData[aIdx,2] shl 8 + fData[aIdx,3] shl 16 { $00000000 }
   else
     Result := fData[aIdx,1] + fData[aIdx,2] shl 8 + fData[aIdx,3] shl 16 or $FF000000;
 end;
@@ -82,7 +82,7 @@ begin
 end;
 
 
-//Gradient palette for missing files (used by pal_lin)
+//Gradient palette for missing files (used by pallin)
 procedure TKMPaletteInfo.GenerateLinear;
 var
   I: Byte;
@@ -106,7 +106,7 @@ begin
     S.LoadFromFile(aFileName);
     S.Seek(48, soFromBeginning);
     S.Read(fData, SizeOf(fData)); //768bytes
-    S.Free;
+    FreeAndNil(S);
   end else
     GenerateLinear;
 end;
@@ -129,7 +129,7 @@ var
   I: TKMPal;
 begin
   for I := Low(TKMPal) to High(TKMPal) do
-    fPalettes[I].Free;
+    FreeAndNil(fPalettes[I]);
 
   inherited;
 end;
@@ -138,7 +138,7 @@ end;
 function TKMResPalettes.DefaultPalette: TKMPaletteInfo;
 begin
   // Default palette to use when generating full-color RGB textures
-  Result := fPalettes[pal_0];
+  Result := fPalettes[pal0];
 end;
 
 
@@ -154,8 +154,8 @@ var
 begin
   for I := Low(TKMPal) to High(TKMPal) do
   case I of
-    pal_bw:   fPalettes[I].GenerateBW;
-    pal_lin:  fPalettes[I].GenerateLinear;
+    palbw:   fPalettes[I].GenerateBW;
+    pallin:  fPalettes[I].GenerateLinear;
     else      fPalettes[I].LoadFromFile(aPath + PalFiles[I]);
   end;
 end;
@@ -164,7 +164,7 @@ end;
 //Load only Default Palette
 procedure TKMResPalettes.LoadDefaultPalette(const aPath: UnicodeString);
 begin
-  fPalettes[pal_0].LoadFromFile(aPath + PalFiles[pal_0]);
+  fPalettes[pal0].LoadFromFile(aPath + PalFiles[pal0]);
 end;
 
 

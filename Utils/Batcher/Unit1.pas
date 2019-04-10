@@ -37,6 +37,11 @@ type
     btnSetDefColor: TButton;
     btnRemoveNewRemap: TButton;
     btnDeleteUnusedSetMapColor: TButton;
+    Button10: TButton;
+    Button11: TButton;
+    Button12: TButton;
+    Button13: TButton;
+    Button14: TButton;
     procedure Button3Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -50,7 +55,16 @@ type
     procedure btnCheckColorClick(Sender: TObject);
     procedure btnRemoveNewRemapClick(Sender: TObject);
     procedure btnDeleteUnusedSetMapColorClick(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
+    procedure Button13Click(Sender: TObject);
+    procedure Button14Click(Sender: TObject);
   private
+    function ValidateUnitName(aValue: String): Boolean;
+    procedure AddAIPlayersToMPMaps(aAICommandTxt: String);
+    procedure AddMissingAIPlayers;
+    procedure AddAdvancedAIPlayersToMPMaps;
     procedure ResetCommands(var aCommands: TKMMissionColorInfoArray);
     procedure GetColorCommandsInfo(aTxt: AnsiString; var aColorInfoArray: TKMMissionColorInfoArray);
     function XorUnXor(UnXor: Boolean; F: TMemoryStream): Boolean;
@@ -86,7 +100,7 @@ const
   );
 
 type
-  TMissionParserPatcher = class(TMissionParserCommon)
+  TKMMissionParserPatcher = class(TKMMissionParserCommon)
   protected
     function ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
   public
@@ -94,7 +108,7 @@ type
     procedure SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
   end;
 
-  TMissionParserColorCheck = class(TMissionParserPatcher)
+  TKMMissionParserColorCheck = class(TKMMissionParserPatcher)
   public
     procedure SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
     function GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): String;
@@ -104,7 +118,7 @@ type
 
 
 { TMissionParserPatcher }
-function TMissionParserPatcher.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserPatcher.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; TextParam: AnsiString = ''): Boolean;
 begin
   // Do nothing here and make compiler happy
   Result := True;
@@ -112,7 +126,7 @@ end;
 
 // Read mission file as it is, without any changes
 // We don't use TMissionParserCommon.ReadMissionFile, becasue it cuts spaces and does other things
-function TMissionParserPatcher.ReadMissionFileWOChanges(const aFileName: string): AnsiString;
+function TKMMissionParserPatcher.ReadMissionFileWOChanges(const aFileName: string): AnsiString;
 var
   I, Num: Cardinal;
   F: TMemoryStream;
@@ -147,7 +161,7 @@ begin
 end;
 
 
-procedure TMissionParserPatcher.SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
+procedure TKMMissionParserPatcher.SaveToFile(aTxt: AnsiString; const aFileName: string; aDoXor: Boolean = True);
 var
   I: Integer;
   F: TMemoryStream;
@@ -237,7 +251,7 @@ begin
 
     gHands[0].AI.Goals.ExportMessages(ExtractFilePath(ParamStr(0)) + Format('TPR%.2d.evt', [I+1]));
 
-    gGameApp.Stop(gr_Silent);
+    gGameApp.StopGame(grSilent);
   end;
 
   TearDown;
@@ -249,9 +263,9 @@ var
   I,J,K: Integer;
   PathToMaps: TStringList;
   MapInfo: TKMapInfo;
-  WinCond, DefeatCond: array [TGoalCondition] of Word;
-  GC: TGoalCondition;
-  MapFolderType: TMapFolder;
+  WinCond, DefeatCond: array [TKMGoalCondition] of Word;
+  GC: TKMGoalCondition;
+  MapFolderType: TKMapFolder;
 begin
   SetUp(True);
 
@@ -283,7 +297,7 @@ begin
     //Report results
     Memo1.Lines.Append(IntToStr(PathToMaps.Count) + ' maps');
     Memo1.Lines.Append('Win / Def');
-    for GC := Low(TGoalCondition) to High(TGoalCondition) do
+    for GC := Low(TKMGoalCondition) to High(TKMGoalCondition) do
       Memo1.Lines.Append(Format('%3d / %3d ' + GoalConditionStr[GC], [WinCond[GC], DefeatCond[GC]]));
   finally
     PathToMaps.Free;
@@ -300,7 +314,7 @@ var
   GoalLoc, GoalEnd: Integer;
   Txt, GoalTxt: AnsiString;
   L,R: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   Args: TStringList;
   GoalLog: TStringList;
 begin
@@ -318,7 +332,7 @@ begin
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
 
     //Intent of this design is to rip the specified lines with least impact
-    MP := TMissionParserPatcher.Create;
+    MP := TKMMissionParserPatcher.Create;
 
     for I := 0 to PathToMaps.Count - 1 do
     begin
@@ -382,21 +396,51 @@ begin
 end;
 
 
-procedure TForm1.Button5Click(Sender: TObject);
+procedure GetCommandParams(CommandTxt, Txt: AnsiString; FromLoc: Integer; var aLoc, aEnd, aId: Integer);
+var
+  s: string;
+begin
+  aLoc := PosEx(CommandTxt, Txt, FromLoc+1);
+  aId := -1;
+  if aLoc <> 0 then
+  begin
+    //Many maps have letters aligned in columns, meaning that
+    //command length is varying cos of spaces between arguments
+    //Look for command end marker (!, eol, /)
+    aEnd := aLoc + Length(CommandTxt);
+    while (aEnd < Length(Txt)) and not (Txt[aEnd] in ['!', #13, '/']) do
+      Inc(aEnd);
+    s := Trim(Copy(Txt, aLoc + Length(CommandTxt), aEnd - (aLoc + Length(CommandTxt))));
+    aId := StrToIntDef(s, -1);
+  end;
+end;
+
+
+function HasNoParam(aLoc, NextCurrLoc: Integer): Boolean;
+begin
+  Result := (aLoc = 0) or ((aLoc > NextCurrLoc) and (NextCurrLoc <> 0));
+end;
+
+
+function HasParam(aLoc, NextCurrLoc: Integer): Boolean;
+begin
+  Result := (aLoc <> 0) and ((aLoc < NextCurrLoc) or (NextCurrLoc = 0));
+end;
+
+
+procedure TForm1.AddAIPlayersToMPMaps(aAICommandTxt: String);
 var
   I, K: Integer;
   PathToMaps: TStringList;
   CurrLoc, CurrEnd, NextCurrLoc, AILoc, AIEnd: Integer;
   Txt: AnsiString;
   PlayerId, AiId: Integer;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
   s: string;
 begin
-  SetUp(True);
-
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -425,26 +469,15 @@ begin
           PlayerId := StrToInt(s);
 
           NextCurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc+1);
-          AILoc := PosEx('!SET_AI_PLAYER', Txt, CurrLoc+1);
-          AiId := -1;
-          if AILoc <> 0 then
-          begin
-            //Many maps have letters aligned in columns, meaning that
-            //command length is varying cos of spaces between arguments
-            //Look for command end marker (!, eol, /)
-            AIEnd := AILoc + 14;
-            while (AIEnd < Length(Txt)) and not (Txt[AIEnd] in ['!', #13, '/']) do
-              Inc(AIEnd);
-            s := Trim(Copy(Txt, AILoc + 14, AIEnd - (AILoc + 14)));
-            AiId := StrToIntDef(s, -1);
-          end;
+
+          GetCommandParams('!SET_AI_PLAYER', Txt, CurrLoc, AILoc, AIEnd, AiId);
 
           //Many times MP maps change CURR player to adjoin similar stuff in sections
           if not PlayersSet[PlayerId] then
-            if (AILoc = 0) or ((AILoc > NextCurrLoc) and (NextCurrLoc <> 0)) then
+            if HasNoParam(AILoc, NextCurrLoc) then
             begin
               //Add from new line
-              Insert(EolA + '!SET_AI_PLAYER', Txt, CurrEnd);
+              Insert(EolW + aAICommandTxt, Txt, CurrEnd);
               if AiId <> -1 then
                 PlayersSet[AiId] := True
               else
@@ -466,12 +499,321 @@ begin
   finally
     PathToMaps.Free;
   end;
+end;
+
+
+procedure TForm1.AddMissingAIPlayers;
+var
+  I, K: Integer;
+  PathToMaps: TStringList;
+  CurrLoc, CurrEnd, NextCurrLoc,
+  EnableLoc, EnableEnd,
+  UserLoc, UserEnd,
+  HumanLoc, HumanEnd,
+  AILoc, AIEnd,
+  AdvAILoc, AdvAIEnd: Integer;
+   Txt: AnsiString;
+  PlayerId, AiId, AdvAiId, TmpId: Integer;
+  MP: TKMMissionParserPatcher;
+  PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
+  s: string;
+begin
+  //Intent of this design is to rip the specified lines with least impact
+  MP := TKMMissionParserPatcher.Create;
+
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    //Parse only MP maps
+    for I := 0 to PathToMaps.Count - 1 do
+    begin
+      Txt := MP.ReadMissionFileWOChanges(PathToMaps[I]);
+
+      CurrLoc := 1;
+      FillChar(PlayersSet, SizeOf(PlayersSet), #0);
+      repeat
+        //SET_CURR_PLAYER player_id
+        CurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc);
+        if CurrLoc <> 0 then
+        begin
+          //Many maps have letters aligned in columns, meaning that
+          //command length is varying cos of spaces between arguments
+          //Look for command end marker (!, eol, /)
+          CurrEnd := CurrLoc + 16;
+          while (CurrEnd < Length(Txt)) and not (Txt[CurrEnd] in ['!', #13, '/']) do
+            Inc(CurrEnd);
+          s := Trim(Copy(Txt, CurrLoc + 16, CurrEnd - (CurrLoc + 16)));
+          PlayerId := StrToInt(s);
+
+          NextCurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc+1);
+
+          GetCommandParams('!ENABLE_PLAYER', Txt, CurrLoc, EnableLoc, EnableEnd, TmpId);
+          GetCommandParams('!SET_AI_PLAYER', Txt, CurrLoc, AILoc, AIEnd, AiId);
+          GetCommandParams('!SET_ADVANCED_AI_PLAYER', Txt, CurrLoc, AdvAILoc, AdvAIEnd, AdvAiId);
+          GetCommandParams('!SET_USER_PLAYER', Txt, CurrLoc, UserLoc, UserEnd, TmpId);
+          GetCommandParams('!SET_HUMAN_PLAYER', Txt, CurrLoc, HumanLoc, HumanEnd, TmpId);
+
+          //Many times MP maps change CURR player to adjoin similar stuff in sections
+          if not PlayersSet[PlayerId] then
+            if HasNoParam(AdvAiLoc, NextCurrLoc) //Has no advanced AI player
+              and HasNoParam(UserLoc, NextCurrLoc) //Has no Human player
+              and HasNoParam(AiLoc, NextCurrLoc)
+              and HasNoParam(HumanLoc, NextCurrLoc) then //Has no AI Player
+            begin
+              //Add from new line
+              if HasParam(EnableLoc, NextCurrLoc) then
+                TmpId := EnableEnd
+              else
+                TmpId := CurrEnd;
+              Insert(EolW + '!SET_AI_PLAYER', Txt, TmpId);
+              if AiId <> -1 then
+                PlayersSet[AiId] := True
+              else
+                PlayersSet[PlayerId] := True;
+            end;
+
+          CurrLoc := CurrEnd;
+        end;
+      until (CurrLoc = 0);
+
+      MP.SaveToFile(Txt, PathToMaps[I]);
+
+      s := '';
+      for K := 0 to MAX_HANDS - 1 do
+        s := s + IfThen(PlayersSet[K], '1', '0');
+
+      Memo1.Lines.Append(s + ' ' + TruncateExt(ExtractFileName(PathToMaps[I])));
+    end;
+  finally
+    PathToMaps.Free;
+  end;
+end;
+
+
+procedure TForm1.AddAdvancedAIPlayersToMPMaps;
+var
+  I, K: Integer;
+  PathToMaps: TStringList;
+  CurrLoc, CurrEnd, NextCurrLoc,
+  HumanLoc, HumanEnd,
+  UserLoc, UserEnd,
+  AILoc, AIEnd,
+  AdvAILoc, AdvAIEnd: Integer;
+  Txt: AnsiString;
+  PlayerId, AiId, UserId, AdvAiId, TmpId: Integer;
+  MP: TKMMissionParserPatcher;
+  PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
+  s: string;
+begin
+  //Intent of this design is to rip the specified lines with least impact
+  MP := TKMMissionParserPatcher.Create;
+
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    //Parse only MP maps
+    for I := 0 to PathToMaps.Count - 1 do
+    if Pos('\MapsMP\', PathToMaps[I]) <> 0 then
+    begin
+      Txt := MP.ReadMissionFileWOChanges(PathToMaps[I]);
+
+      CurrLoc := 1;
+      FillChar(PlayersSet, SizeOf(PlayersSet), #0);
+      repeat
+        //SET_CURR_PLAYER player_id
+        CurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc);
+        if CurrLoc <> 0 then
+        begin
+          //Many maps have letters aligned in columns, meaning that
+          //command length is varying cos of spaces between arguments
+          //Look for command end marker (!, eol, /)
+          CurrEnd := CurrLoc + 16;
+          while (CurrEnd < Length(Txt)) and not (Txt[CurrEnd] in ['!', #13, '/']) do
+            Inc(CurrEnd);
+          s := Trim(Copy(Txt, CurrLoc + 16, CurrEnd - (CurrLoc + 16)));
+          PlayerId := StrToInt(s);
+
+          NextCurrLoc := PosEx('!SET_CURR_PLAYER ', Txt, CurrLoc+1);
+
+          GetCommandParams('!SET_AI_PLAYER', Txt, CurrLoc, AILoc, AIEnd, AiId);
+          GetCommandParams('!SET_ADVANCED_AI_PLAYER', Txt, CurrLoc, AdvAILoc, AdvAIEnd, AdvAiId);
+          GetCommandParams('!SET_USER_PLAYER', Txt, CurrLoc, UserLoc, UserEnd, TmpId);
+          GetCommandParams('!SET_HUMAN_PLAYER', Txt, CurrLoc, HumanLoc, HumanEnd, TmpId);
+
+          //Many times MP maps change CURR player to adjoin similar stuff in sections
+          if not PlayersSet[PlayerId] then
+            if HasNoParam(AdvAILoc, NextCurrLoc) //No advanced AI player
+              and (HasParam(UserLoc, NextCurrLoc) or HasParam(HumanLoc, NextCurrLoc)) //Has Human player
+              and HasParam(AiLoc, NextCurrLoc) then //Has AI Player
+            begin
+              //Add from new line
+              Insert(EolW + '!SET_ADVANCED_AI_PLAYER', Txt, AIEnd);
+              if AdvAiId <> -1 then
+                PlayersSet[AdvAiId] := True
+              else
+                PlayersSet[PlayerId] := True;
+            end;
+
+          CurrLoc := CurrEnd;
+        end;
+      until (CurrLoc = 0);
+
+      MP.SaveToFile(Txt, PathToMaps[I]);
+
+      s := '';
+      for K := 0 to MAX_HANDS - 1 do
+        s := s + IfThen(PlayersSet[K], '1', '0');
+
+      Memo1.Lines.Append(s + ' ' + TruncateExt(ExtractFileName(PathToMaps[I])));
+    end;
+  finally
+    PathToMaps.Free;
+  end;
+end;
+
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  SetUp(True);
+
+  AddAIPlayersToMPMaps('!SET_AI_PLAYER');
 
   Memo1.Lines.Append(IntToStr(Memo1.Lines.Count));
 
   TearDown;
 end;
 
+
+procedure TForm1.Button10Click(Sender: TObject);
+begin
+  SetUp(True);
+
+  AddAdvancedAIPlayersToMPMaps;
+
+  Memo1.Lines.Append(IntToStr(Memo1.Lines.Count));
+
+  TearDown;
+end;
+
+
+procedure TForm1.Button11Click(Sender: TObject);
+var
+  I, Cnt: Integer;
+  SL, PathToMaps: TStringList;
+begin
+  SetUp(True);
+
+  SL := TStringList.Create;
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    Cnt := PathToMaps.Count;
+    for I := 0 to PathToMaps.Count - 1 do
+    begin
+      SL.Clear;
+      //Load and save all .DAT files
+      SL.LoadFromFile(PathToMaps[I]);
+      SL.SaveToFile(PathToMaps[I]);
+    end;
+  finally
+    PathToMaps.Free;
+    SL.Free;
+  end;
+
+  Memo1.Lines.Append(IntToStr(Cnt));
+
+  TearDown;
+end;
+
+
+function TForm1.ValidateUnitName(aValue: String): Boolean;
+begin
+  Result := AnsiEndsText('.pas', aValue) and AnsiStartsText('KM_', aValue);
+end;
+
+
+procedure TForm1.Button12Click(Sender: TObject);
+var
+  I, Cnt: Integer;
+  SL, PathToUnits: TStringList;
+  PathToExt: UnicodeString;
+begin
+  SetUp(True);
+
+  SL := TStringList.Create;
+  PathToUnits := TStringList.Create;
+  try
+    GetAllPathsInDir(IncludeTrailingBackslash(ExeDir) + PathDelim + 'src', PathToUnits, ValidateUnitName);
+
+    PathToExt := IncludeTrailingBackslash(ExeDir) + PathDelim + 'src' + PathDelim + 'ext' + PathDelim;
+    PathToUnits.Add(PathToExt + 'KromUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromIOUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromOGLUtils.pas');
+    PathToUnits.Add(PathToExt + 'KromShellUtils.pas');
+
+    Cnt := PathToUnits.Count;
+    for I := 0 to PathToUnits.Count - 1 do
+    begin
+      Memo1.Lines.Append(PathToUnits[I]);
+      SL.Clear;
+      //Load and save all units
+      SL.LoadFromFile(PathToUnits[I]);
+      SL.SaveToFile(PathToUnits[I]);
+    end;
+  finally
+    PathToUnits.Free;
+    SL.Free;
+  end;
+
+  Memo1.Lines.Append(IntToStr(Cnt));
+
+  TearDown;
+end;
+
+procedure TForm1.Button13Click(Sender: TObject);
+var
+  I, Cnt: Integer;
+  PathToMaps: TStringList;
+begin
+  SetUp(True);
+
+  PathToMaps := TStringList.Create;
+  try
+    TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
+
+    Cnt := PathToMaps.Count;
+    for I := 0 to PathToMaps.Count - 1 do
+    begin
+      gLog.AddTime('Resave map: ' + PathToMaps[I]);
+      gGameApp.NewMapEditor(PathToMaps[I]);
+      gLog.AddTime('Opened map: ' + PathToMaps[I]);
+      gGameApp.SaveMapEditor(PathToMaps[I]);
+      gLog.AddTime('Saved map: ' + PathToMaps[I]);
+      Memo1.Lines.Append(Format('%d: %s', [I, ExtractFileName(PathToMaps[I])]));
+    end;
+  finally
+    PathToMaps.Free;
+  end;
+
+  Memo1.Lines.Append(IntToStr(Cnt));
+
+  TearDown;
+end;
+
+
+procedure TForm1.Button14Click(Sender: TObject);
+begin
+  SetUp(True);
+
+  AddMissingAIPlayers;
+
+  Memo1.Lines.Append(IntToStr(Memo1.Lines.Count));
+
+  TearDown;
+end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 
@@ -491,12 +833,12 @@ var
   PathToMaps: TStringList;
   CurrLoc, CurrEnd: Integer;
   Txt: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
 begin
   SetUp(True);
 
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -584,7 +926,7 @@ var
   PathToMaps: TStringList;
   GoalLoc, GoalEnd: Integer;
   Txt, GoalTxt: AnsiString;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   Args: TStringList;
 begin
   SetUp(True);
@@ -599,7 +941,7 @@ begin
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
 
     //Intent of this design is to rip the specified lines with least impact
-    MP := TMissionParserPatcher.Create;
+    MP := TKMMissionParserPatcher.Create;
 
     for I := 0 to PathToMaps.Count - 1 do
     begin
@@ -655,14 +997,14 @@ var
   CurrLoc, CurrEnd: Integer;
   Txt: AnsiString;
   PlayerId: Integer;
-  MP: TMissionParserPatcher;
+  MP: TKMMissionParserPatcher;
   PlayersSet: array [0 .. MAX_HANDS - 1] of Boolean;
   s: string;
 begin
   SetUp(True);
 
   //Intent of this design is to rip the specified lines with least impact
-  MP := TMissionParserPatcher.Create;
+  MP := TKMMissionParserPatcher.Create;
 
   PathToMaps := TStringList.Create;
   try
@@ -729,7 +1071,7 @@ end;
 //Delete command SET_NEW_REMAP from all maps (this command is unused) 
 procedure TForm1.btnRemoveNewRemapClick(Sender: TObject);
 var
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   PathToMaps: TStringList;
   I, Deleted: Integer;
   Txt: AnsiString;
@@ -738,7 +1080,7 @@ begin
 
   Deleted := 0;
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
   try
     TKMapsCollection.GetAllMapPaths(ExeDir, PathToMaps);
     for I := 0 to PathToMaps.Count - 1 do
@@ -782,7 +1124,7 @@ var
   I, J, K, TmpValue, ChangedCnt: Integer;
   Txt: AnsiString;
   PathToMaps: TStringList;
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   Commands: TKMMissionColorInfoArray;
   DeleteColorFromPlayerArr: TIntegerArray;
   IsMapColorFirst: Boolean;
@@ -792,7 +1134,7 @@ begin
   SetLength(DeleteColorFromPlayerArr, MAX_HANDS);
   
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
 
   IsMapColorFirst := Sender = btnDeleteUnusedSetMapColor;
 
@@ -922,12 +1264,12 @@ function TForm1.CheckNoColorCommandsForAllMaps(var NoColorsMaps: TStringList; aS
 var
   I: Integer;
   PathToMaps: TStringList;
-  Parser: TMissionParserColorCheck;
+  Parser: TKMMissionParserColorCheck;
   Txt: AnsiString;
   Commands: TKMMissionColorInfoArray;
 begin
   PathToMaps := TStringList.Create;
-  Parser := TMissionParserColorCheck.Create;
+  Parser := TKMMissionParserColorCheck.Create;
 
   NoColorsMaps.Clear;
   try
@@ -1129,7 +1471,7 @@ end;
 
 
 { TMissionParserColorCheck }
-procedure TMissionParserColorCheck.SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
+procedure TKMMissionParserColorCheck.SetDefaultColorsForMission(var aTxt: AnsiString; aCommands: TKMMissionColorInfoArray);
 var
   IntArr: TIntegerArray;
   I, J, TmpValue, TotalOffset: Integer;
@@ -1158,7 +1500,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): string;
+function TKMMissionParserColorCheck.GetPlayersWithoutColorStr(aCommands: TKMMissionColorInfoArray): string;
 var
   I: Integer;
   IntArr: TIntegerArray;
@@ -1174,7 +1516,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.GetPlayersWithoutColorArr(aCommands: TKMMissionColorInfoArray): TIntegerArray;
+function TKMMissionParserColorCheck.GetPlayersWithoutColorArr(aCommands: TKMMissionColorInfoArray): TIntegerArray;
 var
   I, J: Integer;
 begin
@@ -1193,7 +1535,7 @@ begin
 end;
 
 
-function TMissionParserColorCheck.IsValid(aCommands: TKMMissionColorInfoArray): Boolean;
+function TKMMissionParserColorCheck.IsValid(aCommands: TKMMissionColorInfoArray): Boolean;
 var
   I: Integer;
 begin

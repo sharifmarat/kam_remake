@@ -10,7 +10,7 @@ object FormMain: TFormMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poScreenCenter
-  LCLVersion = '0.9.30.4'
+  LCLVersion = '1.6.2.0'
   object StartStopButton: TButton
     Left = 624
     Height = 48
@@ -23,10 +23,10 @@ object FormMain: TFormMain
     TabOrder = 4
   end
   object Label1: TLabel
-    Left = 623
-    Height = 16
+    Left = 624
+    Height = 15
     Top = 16
-    Width = 70
+    Width = 69
     Anchors = [akTop, akRight]
     Caption = 'Server status:'
     ParentColor = False
@@ -140,9 +140,9 @@ object FormMain: TFormMain
       end
       object Label9: TLabel
         Left = 8
-        Height = 16
+        Height = 15
         Top = 64
-        Width = 133
+        Width = 132
         Caption = 'Server welcome message'
         ParentColor = False
       end
@@ -157,9 +157,9 @@ object FormMain: TFormMain
       end
       object Label2: TLabel
         Left = 8
-        Height = 16
+        Height = 15
         Top = 8
-        Width = 66
+        Width = 65
         Caption = 'Server name'
         ParentColor = False
       end
@@ -174,9 +174,9 @@ object FormMain: TFormMain
       end
       object Label10: TLabel
         Left = 348
-        Height = 16
+        Height = 15
         Top = 8
-        Width = 63
+        Width = 62
         Caption = 'Max Rooms'
         ParentColor = False
       end

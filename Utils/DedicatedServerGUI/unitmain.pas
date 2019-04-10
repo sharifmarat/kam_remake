@@ -64,8 +64,8 @@ type
     procedure LoadSettings;
 
     //those procs run KM_Log.AppendLog() and add same log line to Memo control
-    procedure ServerStatusMessage(const aData: string);
-    procedure ServerStatusMessageNoTime(const aData: string);
+    procedure ServerStatusMessage(const aData: UnicodeString);
+    procedure ServerStatusMessageNoTime(const aData: UnicodeString);
 
     //this proc can change state (enable/disable) of controls that CAN'T be modyfied when server is online
     procedure ChangeEnableStateOfControls(state: Boolean);
@@ -75,7 +75,7 @@ type
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure FillPlayersList;
   private
-    fSettings: TGameSettings;
+    fSettings: TKMGameSettings;
     fSettingsLastModified: integer;
     fServerStatus: TKMServerStatus;
     fDedicatedServer: TKMDedicatedServer;
@@ -88,6 +88,9 @@ var
 
 
 implementation
+uses
+  KM_NetworkTypes, KM_Points;
+
 {$IFDEF WDC}
   {$R *.dfm}
 {$ENDIF}
@@ -102,7 +105,8 @@ procedure TFormMain.FormCreate(Sender: TObject);
 begin
   fServerStatus := ssOffline;
   ChangeEnableStateOfApplyButton(False);
-  Application.Title := 'KaM Remake ' + GAME_VERSION + ' Dedicated Server';
+  Application.Title := 'KaM Remake Dedicated Server GUI (' + GAME_REVISION + ')';
+  Caption := 'KaM Remake Dedicated Server GUI (' + GAME_REVISION + ')';
 
   ExeDir := ExtractFilePath(ParamStr(0));
   CreateDir(ExeDir + 'Logs');
@@ -117,7 +121,7 @@ begin
   ServerStatusMessageNoTime('-.- .- -- / .-. . -- .- -.- . / .. ... / - .... . / -... . ... -');
   ServerStatusMessageNoTime('');
 
-  fSettings := TGameSettings.Create;
+  fSettings := TKMGameSettings.Create;
   fSettings.SaveSettings(true);
   fSettingsLastModified := FileAge(ExeDir+SETTINGS_FILE);
 
@@ -139,14 +143,14 @@ begin
 end;
 
 
-procedure TFormMain.ServerStatusMessage(const aData: string);
+procedure TFormMain.ServerStatusMessage(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(FormatDateTime('yyyy-mm-dd hh-nn-ss ', Now) + aData);
   gLog.AddNoTime(aData);
 end;
 
 
-procedure TFormMain.ServerStatusMessageNoTime(const aData: string);
+procedure TFormMain.ServerStatusMessageNoTime(const aData: UnicodeString);
 begin
   LogsMemo.Lines.Add(aData);
   gLog.AddNoTime(aData);
@@ -173,6 +177,8 @@ end;
 
 
 procedure TFormMain.ChangeServerStatus(aStatus: TKMServerStatus);
+var
+  GameFilter: TKMPGameFilter;
 begin
   case aStatus of
     ssOnline:
@@ -187,6 +193,13 @@ begin
                                                       fSettings.HTMLStatusFile,
                                                       fSettings.ServerWelcomeMessage,
                                                       True);
+        GameFilter := TKMPGameFilter.Create(fSettings.ServerDynamicFOW,
+                                            fSettings.ServerMapsRosterEnabled,
+                                            fSettings.ServerMapsRosterStr,
+                                            KMRange(fSettings.ServerLimitPTFrom, fSettings.ServerLimitPTTo),
+                                            KMRange(fSettings.ServerLimitSpeedFrom, fSettings.ServerLimitSpeedTo),
+                                            KMRange(fSettings.ServerLimitSpeedAfterPTFrom, fSettings.ServerLimitSpeedAfterPTTo));
+        fDedicatedServer.Server.GameFilter := GameFilter;
         fDedicatedServer.OnMessage := ServerStatusMessage;
         fDedicatedServer.Start(fSettings.ServerName, StrToInt(fSettings.ServerPort), fSettings.AnnounceServer);
 

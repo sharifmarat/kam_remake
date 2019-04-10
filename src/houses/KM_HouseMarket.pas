@@ -10,36 +10,40 @@ type
   //Marketplace
   TKMHouseMarket = class(TKMHouse)
   private
-    fResFrom, fResTo: TWareType;
+    fResFrom, fResTo: TKMWareType;
     fMarketResIn: array [WARE_MIN..WARE_MAX] of Word;
     fMarketResOut: array [WARE_MIN..WARE_MAX] of Word;
     fMarketDeliveryCount: array [WARE_MIN..WARE_MAX] of Word;
     fTradeAmount: Word;
     procedure AttemptExchange;
-    procedure SetResFrom(aRes: TWareType);
-    procedure SetResTo(aRes: TWareType);
+    procedure SetResFrom(aRes: TKMWareType);
+    procedure SetResTo(aRes: TKMWareType);
+
+    function GetMarkerResToTrade(aWare: TKMWareType): Word;
+    procedure SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+    property MarkerResToTrade[aWare: TKMWareType]: Word read GetMarkerResToTrade write SetMarkerResToTrade;
   protected
     function GetResOrder(aId: Byte): Integer; override;
     procedure SetResOrder(aId: Byte; aValue: Integer); override;
   public
-    constructor Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+    constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
 
-    procedure DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False); override;
-    property ResFrom: TWareType read fResFrom write SetResFrom;
-    property ResTo: TWareType read fResTo write SetResTo;
+    procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
+    property ResFrom: TKMWareType read fResFrom write SetResFrom;
+    property ResTo: TKMWareType read fResTo write SetResTo;
     function RatioFrom: Byte;
     function RatioTo: Byte;
 
-    function AllowedToTrade(aRes: TWareType): Boolean;
+    function AllowedToTrade(aRes: TKMWareType): Boolean;
     function TradeInProgress: Boolean;
-    function GetResTotal(aWare: TWareType): Word; overload;
-    function CheckResIn(aWare: TWareType): Word; override;
-    function CheckResOut(aWare: TWareType): Word; override;
-    procedure ResAddToIn(aResource: TWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
-    procedure ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
-    function ResCanAddToIn(aRes: TWareType): Boolean; override;
-    function ResOutputAvailable(aRes: TWareType; const aCount: Word): Boolean; override;
+    function GetResTotal(aWare: TKMWareType): Word; overload;
+    function CheckResIn(aWare: TKMWareType): Word; override;
+    function CheckResOut(aWare: TKMWareType): Word; override;
+    procedure ResAddToIn(aResource: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
+    procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
+    function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
+    function ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean; override;
 
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure Paint; override;
@@ -56,18 +60,18 @@ uses
 
 
 { TKMHouseMarket }
-constructor TKMHouseMarket.Create(aUID: Integer; aHouseType: THouseType; PosX, PosY: Integer; aOwner: TKMHandIndex; aBuildState: THouseBuildState);
+constructor TKMHouseMarket.Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
 begin
   inherited;
 
-  fResFrom := wt_None;
-  fResTo := wt_None;
+  fResFrom := wtNone;
+  fResTo := wtNone;
 end;
 
 
-procedure TKMHouseMarket.DemolishHouse(aFrom: TKMHandIndex; IsSilent: Boolean = False);
+procedure TKMHouseMarket.DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False);
 var
-  R: TWareType;
+  R: TKMWareType;
 begin
   //Count resources as lost
   for R := WARE_MIN to WARE_MAX do
@@ -77,19 +81,19 @@ begin
 end;
 
 
-function TKMHouseMarket.GetResTotal(aWare: TWareType): Word;
+function TKMHouseMarket.GetResTotal(aWare: TKMWareType): Word;
 begin
   Result := fMarketResIn[aWare] + fMarketResOut[aWare];
 end;
 
 
-function TKMHouseMarket.CheckResIn(aWare: TWareType): Word;
+function TKMHouseMarket.CheckResIn(aWare: TKMWareType): Word;
 begin
   Result := fMarketResIn[aWare];
 end;
 
 
-function TKMHouseMarket.CheckResOut(aWare: TWareType): Word;
+function TKMHouseMarket.CheckResOut(aWare: TKMWareType): Word;
 begin
   Result := fMarketResOut[aWare];
 end;
@@ -102,9 +106,10 @@ end;
 
 
 function TKMHouseMarket.RatioFrom: Byte;
-var CostFrom, CostTo: Single;
+var
+  CostFrom, CostTo: Single;
 begin
-  if (fResFrom <> wt_None) and (fResTo <> wt_None) then
+  if (fResFrom <> wtNone) and (fResTo <> wtNone) then
   begin
     //When trading target ware is priced higher
     CostFrom := gRes.Wares[fResFrom].MarketPrice;
@@ -118,7 +123,7 @@ end;
 function TKMHouseMarket.RatioTo: Byte;
 var CostFrom, CostTo: Single;
 begin
-  if (fResFrom <> wt_None) and (fResTo <> wt_None) then
+  if (fResFrom <> wtNone) and (fResTo <> wtNone) then
   begin
     //When trading target ware is priced higher
     CostFrom := gRes.Wares[fResFrom].MarketPrice;
@@ -129,7 +134,7 @@ begin
 end;
 
 
-procedure TKMHouseMarket.ResAddToIn(aResource: TWareType; aCount: Integer = 1; aFromScript: Boolean = False);
+procedure TKMHouseMarket.ResAddToIn(aResource: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False);
 var ResRequired: Integer;
 begin
   //If user cancelled the exchange (or began new one with different resources already)
@@ -157,13 +162,13 @@ begin
 end;
 
 
-function TKMHouseMarket.ResCanAddToIn(aRes: TWareType): Boolean;
+function TKMHouseMarket.ResCanAddToIn(aRes: TKMWareType): Boolean;
 begin
   Result := (aRes in [WARE_MIN..WARE_MAX]);
 end;
 
 
-function TKMHouseMarket.ResOutputAvailable(aRes: TWareType; const aCount: Word): Boolean;
+function TKMHouseMarket.ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aRes in [WARE_MIN..WARE_MAX]);
   Result := (fMarketResOut[aRes] >= aCount);
@@ -171,9 +176,10 @@ end;
 
 
 procedure TKMHouseMarket.AttemptExchange;
-var TradeCount: Word;
+var
+  TradeCount: Word;
 begin
-  Assert((fResFrom <> wt_None) and (fResTo <> wt_None) and (fResFrom <> fResTo));
+  Assert((fResFrom <> wtNone) and (fResTo <> wtNone) and (fResFrom <> fResTo));
 
   //Script might have blocked these resources from trading, if so reset trade order
   if TradeInProgress
@@ -183,12 +189,12 @@ begin
     Exit;
   end;
 
-  if TradeInProgress and (fMarketResIn[fResFrom] >= RatioFrom) then
+  if TradeInProgress and (MarkerResToTrade[fResFrom] >= RatioFrom) then
   begin
     //How much can we trade
-    TradeCount := Min((fMarketResIn[fResFrom] div RatioFrom), fTradeAmount);
+    TradeCount := Min((MarkerResToTrade[fResFrom] div RatioFrom), fTradeAmount);
 
-    Dec(fMarketResIn[fResFrom], TradeCount * RatioFrom);
+    MarkerResToTrade[fResFrom] := MarkerResToTrade[fResFrom] - TradeCount * RatioFrom;
     gHands[fOwner].Stats.WareConsumed(fResFrom, TradeCount * RatioFrom);
     Dec(fTradeAmount, TradeCount);
     Inc(fMarketResOut[fResTo], TradeCount * RatioTo);
@@ -196,12 +202,13 @@ begin
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResTo, TradeCount * RatioTo);
 
     gScriptEvents.ProcMarketTrade(Self, fResFrom, fResTo);
-    gSoundPlayer.Play(sfxn_Trade, fPosition);
+    gScriptEvents.ProcWareProduced(Self, fResTo, TradeCount * RatioTo);
+    gSoundPlayer.Play(sfxnTrade, fPosition);
   end;
 end;
 
 
-procedure TKMHouseMarket.ResTakeFromOut(aWare: TWareType; aCount: Word = 1; aFromScript: Boolean = False);
+procedure TKMHouseMarket.ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False);
 begin
   if aFromScript then
   begin
@@ -218,31 +225,59 @@ begin
 end;
 
 
-function TKMHouseMarket.AllowedToTrade(aRes: TWareType): Boolean;
+function TKMHouseMarket.AllowedToTrade(aRes: TKMWareType): Boolean;
 begin
   Result := gHands[fOwner].Locks.AllowToTrade[aRes];
 end;
 
 
-procedure TKMHouseMarket.SetResFrom(aRes: TWareType);
+procedure TKMHouseMarket.SetResFrom(aRes: TKMWareType);
 begin
   if TradeInProgress or not AllowedToTrade(aRes) then
     Exit;
 
   fResFrom := aRes;
   if fResTo = fResFrom then
-    fResTo := wt_None;
+    fResTo := wtNone;
 end;
 
 
-procedure TKMHouseMarket.SetResTo(aRes: TWareType);
+procedure TKMHouseMarket.SetResTo(aRes: TKMWareType);
 begin
   if TradeInProgress or not AllowedToTrade(aRes) then
     Exit;
 
   fResTo := aRes;
   if fResFrom = fResTo then
-    fResFrom := wt_None;
+    fResFrom := wtNone;
+end;
+
+
+function TKMHouseMarket.GetMarkerResToTrade(aWare: TKMWareType): Word;
+begin
+  Result := fMarketResIn[aWare] + fMarketResOut[aWare];
+end;
+
+
+procedure TKMHouseMarket.SetMarkerResToTrade(aWare: TKMWareType; aCnt: Word);
+var
+  CurCnt, DecFromIn, DecFromOut: Word;
+
+begin
+  CurCnt := GetMarkerResToTrade(aWare);
+  if aCnt > CurCnt then
+  begin
+    Inc(fMarketResIn[aWare], aCnt - CurCnt);
+
+  end else
+  if aCnt < CurCnt then
+  begin
+    DecFromIn := Min(fMarketResIn[aWare], CurCnt - aCnt);
+    Dec(fMarketResIn[aWare], DecFromIn);
+    DecFromOut := CurCnt - aCnt - DecFromIn;
+    Dec(fMarketResOut[aWare], DecFromOut);
+    gHands[fOwner].Deliveries.Queue.RemOffer(Self, aWare, DecFromOut);
+  end;
 end;
 
 
@@ -260,7 +295,7 @@ const
 var
   ResRequired, OrdersAllowed, OrdersRemoved: Integer;
 begin
-  if (fResFrom = wt_None) or (fResTo = wt_None) or (fResFrom = fResTo) then Exit;
+  if (fResFrom = wtNone) or (fResTo = wtNone) or (fResFrom = fResTo) then Exit;
 
   fTradeAmount := EnsureRange(aValue, 0, MAX_WARES_ORDER);
 
@@ -270,7 +305,7 @@ begin
   //If player cancelled exchange then move all remainders of From resource to Offers list
   if (fTradeAmount = 0) and (fMarketResIn[fResFrom] > 0) then
   begin
-    inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
+    Inc(fMarketResOut[fResFrom], fMarketResIn[fResFrom]);
     gHands[fOwner].Deliveries.Queue.AddOffer(Self, fResFrom, fMarketResIn[fResFrom]);
     fMarketResIn[fResFrom] := 0;
   end;
@@ -291,7 +326,7 @@ begin
   //Order as many as we can within our limit
   if (ResRequired > 0) and (OrdersAllowed > 0) then
   begin
-    inc(fMarketDeliveryCount[fResFrom], Min(ResRequired,OrdersAllowed));
+    Inc(fMarketDeliveryCount[fResFrom], Min(ResRequired,OrdersAllowed));
     gHands[fOwner].Deliveries.Queue.AddDemand(Self, nil, fResFrom, Min(ResRequired,OrdersAllowed), dtOnce, diNorm)
   end
   else
@@ -299,7 +334,7 @@ begin
     if (ResRequired < 0) then
     begin
       OrdersRemoved := gHands[fOwner].Deliveries.Queue.TryRemoveDemand(Self, fResFrom, -ResRequired);
-      dec(fMarketDeliveryCount[fResFrom], OrdersRemoved);
+      Dec(fMarketDeliveryCount[fResFrom], OrdersRemoved);
     end;
 end;
 
@@ -331,16 +366,16 @@ end;
 //Render special market wares display
 procedure TKMHouseMarket.Paint;
 var
-  R: TWareType;
+  R: TKMWareType;
   MaxCount: Word;
-  MaxRes: TWareType;
+  MaxRes: TKMWareType;
 begin
   inherited;
-  if fBuildState < hbs_Done then Exit;
+  if fBuildState < hbsDone then Exit;
 
   //Market can display only one ware at a time (lookup ware that has most count)
   MaxCount := 0;
-  MaxRes := wt_None;
+  MaxRes := wtNone;
   for R := WARE_MIN to WARE_MAX do
   if fMarketResIn[R] + fMarketResOut[R] > MaxCount then
   begin

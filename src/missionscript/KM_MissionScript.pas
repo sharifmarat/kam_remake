@@ -6,20 +6,21 @@ uses
 
 
 type
-  TMissionParsingMode = (
-                          mpm_Single,
-                          mpm_Multi,  //Skip players
-                          mpm_Editor  //Ignore errors, load armies differently
+  TKMMissionParsingMode = (
+                          mpmSingle,
+                          mpmMulti,  //Skip players
+                          mpmEditor  //Ignore errors, load armies differently
                         );
 
-  TKMCommandType = (ct_Unknown=0,ct_SetMap,ct_SetMaxPlayer,ct_SetCurrPlayer,ct_HumanPlayer,ct_UserPlayer,ct_SetHouse,
-                    ct_SetTactic,ct_AIPlayer,ct_EnablePlayer,ct_SetNewRemap,ct_SetMapColor,ct_SetRGBColor,ct_CenterScreen,
-                    ct_ClearUp,ct_BlockTrade, ct_BlockUnit, ct_BlockHouse,ct_ReleaseHouse,ct_ReleaseAllHouses,ct_AddGoal,ct_AddLostGoal,
-                    ct_SetUnit,ct_SetRoad,ct_SetField,ct_SetWinefield,ct_SetFieldStaged,ct_SetWinefieldStaged, ct_SetStock,ct_AddWare,ct_SetAlliance,
-                    ct_SetHouseDamage,ct_SetUnitByStock,ct_UnitAddToLast,ct_SetGroup,ct_SetGroupFood,ct_SendGroup,
-                    ct_AttackPosition,ct_AddWareToSecond,ct_AddWareTo,ct_AddWareToLast,ct_AddWareToAll,ct_AddWeapon,ct_AICharacter,
-                    ct_AINoBuild,ct_AIAutoRepair,ct_AIAutoAttack,ct_AIAutoDefend,ct_AIDefendAllies,ct_AIUnlimitedEquip,ct_AIArmyType,
-                    ct_AIStartPosition,ct_AIDefence,ct_AIAttack,ct_CopyAIAttack,ct_ClearAIAttack, ct_SetRallyPoint);
+  TKMCommandType = (ctUnknown=0,ctSetMap,ctSetMaxPlayer,ctSetCurrPlayer,ctHumanPlayer,ctUserPlayer,ctSetHouse,
+                    ctSetTactic,ctAIPlayer,ctAdvancedAIPlayer,ctEnablePlayer,ctSetNewRemap,ctSetMapColor,ctSetRGBColor,ctCenterScreen,
+                    ctClearUp,ctBlockTrade, ctBlockUnit, ctBlockHouse,ctReleaseHouse,ctReleaseAllHouses,ctAddGoal,ctAddLostGoal,
+                    ctSetUnit,ctSetRoad,ctSetField,ctSetWinefield,ctSetFieldStaged,ctSetWinefieldStaged, ctSetStock,ctAddWare,ctSetAlliance,
+                    ctSetHouseDamage,ctSetHouseDeliveryMode,ctSetHouseRepairMode,ctSetHouseClosedForWorker,
+                    ctSetUnitByStock,ctUnitAddToLast,ctSetUnitFood,ctSetGroup,ctSetGroupFood,ctSendGroup,
+                    ctAttackPosition,ctAddWareToSecond,ctAddWareTo,ctAddWareToLast,ctAddWareToAll,ctAddWeapon,ctAICharacter,
+                    ctAINoBuild,ctAIAutoRepair,ctAIAutoAttack,ctAIAutoDefend,ctAIDefendAllies,ctAIUnlimitedEquip,ctAIArmyType,
+                    ctAIStartPosition,ctAIDefence,ctAIAttack,ctCopyAIAttack,ctClearAIAttack, ctSetRallyPoint);
 
 const
   COMMANDVALUES: array [TKMCommandType] of AnsiString = (
@@ -32,6 +33,7 @@ const
     'SET_HOUSE',
     'SET_TACTIC',
     'SET_AI_PLAYER', //Player can be AI
+    'SET_ADVANCED_AI_PLAYER', //Player can be Advanced AI
     'ENABLE_PLAYER',
     'SET_NEW_REMAP',
     'SET_MAP_COLOR',
@@ -39,8 +41,10 @@ const
     'CENTER_SCREEN','CLEAR_UP','BLOCK_TRADE', 'BLOCK_UNIT','BLOCK_HOUSE','RELEASE_HOUSE',
     'RELEASE_ALL_HOUSES','ADD_GOAL','ADD_LOST_GOAL','SET_UNIT','SET_STREET',
     'SET_FIELD','SET_WINEFIELD','SET_FIELD_STAGED','SET_WINEFIELD_STAGED','SET_STOCK','ADD_WARE',
-    'SET_ALLIANCE','SET_HOUSE_DAMAGE','SET_UNIT_BY_STOCK',
-    'ADD_UNIT_TO_LAST','SET_GROUP','SET_GROUP_FOOD','SEND_GROUP','ATTACK_POSITION','ADD_WARE_TO_SECOND',
+    'SET_ALLIANCE',
+    'SET_HOUSE_DAMAGE','SET_HOUSE_DELIVERY_MODE','SET_HOUSE_REPAIR_MODE','SET_HOUSE_CLOSED_FOR_WORKER',
+    'SET_UNIT_BY_STOCK', 'ADD_UNIT_TO_LAST','SET_UNIT_FOOD',
+    'SET_GROUP','SET_GROUP_FOOD','SEND_GROUP','ATTACK_POSITION','ADD_WARE_TO_SECOND',
     'ADD_WARE_TO','ADD_WARE_TO_LAST','ADD_WARE_TO_ALL','ADD_WEAPON','SET_AI_CHARACTER',
     'SET_AI_NO_BUILD','SET_AI_AUTO_REPAIR','SET_AI_AUTO_ATTACK','SET_AI_AUTO_DEFEND',
     'SET_AI_DEFEND_ALLIES','SET_AI_UNLIMITED_EQUIP','SET_AI_ARMY_TYPE','SET_AI_START_POSITION',
@@ -49,10 +53,10 @@ const
     'SET_RALLY_POINT');
 
 type
-  TMissionParserCommon = class
+  TKMMissionParserCommon = class
   protected
     fMissionFileName: string;
-    fLastHand: TKMHandIndex; //Current Player
+    fLastHand: TKMHandID; //Current Player
     fFatalErrors: string; //Fatal errors descriptions accumulate here
     fMinorErrors: string; //Minor error descriptions accumulate here
     function TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
@@ -73,7 +77,7 @@ uses
 
 
 { TMissionParserCommon }
-function TMissionParserCommon.LoadMission(const aFileName: string):boolean;
+function TKMMissionParserCommon.LoadMission(const aFileName: string):boolean;
 begin
   fMissionFileName := aFileName;
   fLastHand := -1;
@@ -82,11 +86,11 @@ begin
 end;
 
 
-function TMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
+function TKMMissionParserCommon.TextToCommandType(const ACommandText: AnsiString): TKMCommandType;
 var
   I: TKMCommandType;
 begin
-  Result := ct_Unknown;
+  Result := ctUnknown;
 
   for I := Low(TKMCommandType) to High(TKMCommandType) do
   begin
@@ -98,12 +102,12 @@ begin
   end;
 
   //Commented out because it slows down mission scanning
-  //if Result = ct_Unknown then gLog.AddToLog(String(ACommandText));
+  //if Result = ctUnknown then gLog.AddToLog(String(ACommandText));
 end;
 
 
 //Read mission file to a string and if necessary - decode it
-function TMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
+function TKMMissionParserCommon.ReadMissionFile(const aFileName: string): AnsiString;
 var
   I,Num: Cardinal;
   F: TMemoryStream;
@@ -162,13 +166,13 @@ begin
     F.Position := 0;
     F.ReadBuffer(Result[1], Num);
   finally
-    F.Free;
+    FreeAndNil(F);
   end;
   //FileText should now be formatted nicely with 1 space between each parameter/command
 end;
 
 
-function TMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
+function TKMMissionParserCommon.TokenizeScript(const aText: AnsiString; aMaxCmd: Byte; aCommands: array of AnsiString): Boolean;
 var
   CommandText, strParam, TextParam: AnsiString;
   ParamList: array of Integer;
@@ -246,7 +250,7 @@ end;
 
 //A nice way of debugging script errors.
 //Shows the error to the user so they know exactly what they did wrong.
-procedure TMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
+procedure TKMMissionParserCommon.AddError(const ErrorMsg: string; aFatal: Boolean = False);
 begin
   if aFatal then
     fFatalErrors := fFatalErrors + ErrorMsg + '|'

@@ -8,8 +8,8 @@ type
   TKMGameCursor = class
   private
     fMode: TKMCursorMode; //Modes used in game (building, unit, road, etc..)
-    procedure Reset;
     procedure SetMode(aMode: TKMCursorMode);
+    procedure Reset;
   public
     Pixel: TKMPoint;      //Cursor position in screen-space
     Float: TKMPointF;     //Precise cursor position in map coords
@@ -17,15 +17,18 @@ type
     PrevCell: TKMPoint;   //Cursor previous position cell
     SState: TShiftState;  //Thats actually used to see if Left or Right mouse button is pressed
 
-    Tag1: Byte;           //Tag to know building type, unit type etc
+    Tag1: Word;           //Tag to know building type, unit type etc
+//    Tag2: Word;           //Extra Tag
     DragOffset: TKMPoint; //used to adjust actual Cursor Cell
     ObjectUID: Integer;   //Object found below cursor
 
     MapEdDir: Byte;
-    MapEdShape: (hsCircle, hsSquare);
+    MapEdShape: TKMMapEdShape;
     MapEdSlope: Byte;
     MapEdSize: Byte;
     MapEdSpeed: Byte;
+    MapEdBrushMask: Integer;
+    MapEdMagicBrush: Boolean;
 
     constructor Create;
     property Mode: TKMCursorMode read fMode write SetMode;
@@ -49,6 +52,13 @@ end;
 procedure TKMGameCursor.Reset;
 begin
   DragOffset := KMPOINT_ZERO;
+  MapEdMagicBrush := False;
+  SState := [];
+  if fMode = cmNone then  //Reset Tag1 also, when reset mode
+  begin
+    Tag1 := 0;
+//    Tag2 := 0;
+  end;
   // Actually we need reset all fields when changing mode,
   // but lets reset only DragOffset for now, need to do lots of tests for other fields
 end;
@@ -57,8 +67,6 @@ end;
 procedure TKMGameCursor.SetMode(aMode: TKMCursorMode);
 begin
   fMode := aMode;
-  if fMode = cmNone then  //Reset Tag1 also, when reset mode
-    Tag1 := 0;
 
   Reset;
 end;

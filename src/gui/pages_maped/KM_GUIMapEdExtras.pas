@@ -22,7 +22,11 @@ type
     CheckBox_ShowObjects: TKMCheckBox;
     CheckBox_ShowHouses: TKMCheckBox;
     CheckBox_ShowUnits: TKMCheckBox;
+    CheckBox_ShowOverlays: TKMCheckBox;
     CheckBox_ShowDeposits: TKMCheckBox;
+    CheckBox_ShowMiningRadius: TKMCheckBox;
+    CheckBox_ShowTowersAttackRadius: TKMCheckBox;
+    CheckBox_ShowUnitsAttackRadius: TKMCheckBox;
     CheckBox_ShowTileOwners: TKMCheckBox;
     CheckBox_ShowTilesGrid: TKMCheckBox;
     constructor Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
@@ -35,12 +39,15 @@ type
 
 implementation
 uses
+  KM_Main,
   KM_HandsCollection, KM_Sound, KM_ResSound,
   KM_RenderUI, KM_ResFonts, KM_ResTexts;
 
 
 { TKMMapEdExtras }
 constructor TKMMapEdExtras.Create(aParent: TKMPanel; aOnChange: TNotifyEvent);
+const
+  PANEL_HEIGHT = 240;
 var
   I: Integer;
 begin
@@ -48,11 +55,11 @@ begin
 
   fOnChange := aOnChange;
 
-  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - 190, 600, 190);
+  Panel_Extra := TKMPanel.Create(aParent, TOOLBAR_WIDTH+30, aParent.Height - PANEL_HEIGHT, 600, PANEL_HEIGHT);
   Panel_Extra.Anchors := [anLeft, anBottom];
   Panel_Extra.Hide;
 
-  with TKMImage.Create(Panel_Extra, 0, 0, 600, 190, 409) do
+  with TKMImage.Create(Panel_Extra, 0, 0, 600, PANEL_HEIGHT, 409) do
   begin
     Anchors := [anLeft, anTop, anBottom];
     ImageAnchors := [anLeft, anRight, anTop];
@@ -64,35 +71,47 @@ begin
   Image_ExtraClose.OnClick := Extra_Close;
   Image_ExtraClose.HighlightOnMouseOver := True;
 
-  TrackBar_Passability := TKMTrackBar.Create(Panel_Extra, 50, 70, 180, 0, Byte(High(TKMTerrainPassability)));
-  TrackBar_Passability.Font := fnt_Antiqua;
+  TrackBar_Passability := TKMTrackBar.Create(Panel_Extra, 50, 70, 220, 0, Byte(High(TKMTerrainPassability)));
+  TrackBar_Passability.Font := fntAntiqua;
   TrackBar_Passability.Caption := gResTexts[TX_MAPED_VIEW_PASSABILITY];
   TrackBar_Passability.Position := 0; //Disabled by default
   TrackBar_Passability.OnChange := Extra_Change;
-  Label_Passability := TKMLabel.Create(Panel_Extra, 50, 114, 180, 0, gResTexts[TX_MAPED_PASSABILITY_OFF], fnt_Antiqua, taLeft);
+  Label_Passability := TKMLabel.Create(Panel_Extra, 50, 114, 180, 0, gResTexts[TX_MAPED_PASSABILITY_OFF], fntAntiqua, taLeft);
 
-  CheckBox_ShowObjects := TKMCheckBox.Create(Panel_Extra, 250, 70, 180, 20, gResTexts[TX_MAPED_VIEW_OBJECTS], fnt_Antiqua);
+  CheckBox_ShowObjects := TKMCheckBox.Create(Panel_Extra, 300, 70, 280, 20, gResTexts[TX_MAPED_VIEW_OBJECTS], fntAntiqua);
   CheckBox_ShowObjects.Checked := True; //Enabled by default
   CheckBox_ShowObjects.OnClick := Extra_Change;
-  CheckBox_ShowHouses := TKMCheckBox.Create(Panel_Extra, 250, 90, 180, 20, gResTexts[TX_MAPED_VIEW_HOUSES], fnt_Antiqua);
+  CheckBox_ShowHouses := TKMCheckBox.Create(Panel_Extra, 300, 90, 280, 20, gResTexts[TX_MAPED_VIEW_HOUSES], fntAntiqua);
   CheckBox_ShowHouses.Checked := True; //Enabled by default
   CheckBox_ShowHouses.OnClick := Extra_Change;
-  CheckBox_ShowUnits := TKMCheckBox.Create(Panel_Extra, 250, 110, 180, 20, gResTexts[TX_MAPED_VIEW_UNITS], fnt_Antiqua);
+  CheckBox_ShowUnits := TKMCheckBox.Create(Panel_Extra, 300, 110, 280, 20, gResTexts[TX_MAPED_VIEW_UNITS], fntAntiqua);
   CheckBox_ShowUnits.Checked := True; //Enabled by default
   CheckBox_ShowUnits.OnClick := Extra_Change;
-  CheckBox_ShowDeposits := TKMCheckBox.Create(Panel_Extra, 250, 130, 180, 20, gResTexts[TX_MAPED_VIEW_DEPOSISTS], fnt_Antiqua);
+  CheckBox_ShowOverlays := TKMCheckBox.Create(Panel_Extra, 300, 130, 280, 20, gResTexts[TX_MAPED_VIEW_OVERLAYS], fntAntiqua);
+  CheckBox_ShowOverlays.Checked := True; //Enabled by default
+  CheckBox_ShowOverlays.OnClick := Extra_Change;
+  CheckBox_ShowDeposits := TKMCheckBox.Create(Panel_Extra, 300, 150, 280, 20, gResTexts[TX_MAPED_VIEW_DEPOSISTS], fntAntiqua);
   CheckBox_ShowDeposits.Checked := True; //Enabled by default
   CheckBox_ShowDeposits.OnClick := Extra_Change;
-  CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 250, 150, 180, 20, 'Show tile owners', fnt_Antiqua); //Todo translate
+  CheckBox_ShowMiningRadius := TKMCheckBox.Create(Panel_Extra, 300, 170, 280, 20, gResTexts[TX_MAPED_VIEW_MINING_RADIUS], fntAntiqua);
+  CheckBox_ShowMiningRadius.Checked := False; //Disabled by default
+  CheckBox_ShowMiningRadius.OnClick := Extra_Change;
+  CheckBox_ShowTowersAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 190, 280, 20, gResTexts[TX_MAPED_VIEW_TOWERS_ATTACK_RADIUS], fntAntiqua);
+  CheckBox_ShowTowersAttackRadius.Checked := False; //Disabled by default
+  CheckBox_ShowTowersAttackRadius.OnClick := Extra_Change;
+  CheckBox_ShowUnitsAttackRadius := TKMCheckBox.Create(Panel_Extra, 300, 210, 280, 20, gResTexts[TX_MAPED_VIEW_UNITS_ATTACK_RADIUS], fntAntiqua);
+  CheckBox_ShowUnitsAttackRadius.Checked := False; //Disabled by default
+  CheckBox_ShowUnitsAttackRadius.OnClick := Extra_Change;
+
+  CheckBox_ShowTileOwners := TKMCheckBox.Create(Panel_Extra, 50, 170, 220, 20, gResTexts[TX_MAPED_SHOW_TILE_OWNERS], fntAntiqua);
   CheckBox_ShowTileOwners.Checked := False; //Disabled by default
   CheckBox_ShowTileOwners.OnClick := Extra_Change;
-
-  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 150, 180, 20, 'Show tiles grid', fnt_Antiqua); //Todo translate
+  CheckBox_ShowTilesGrid := TKMCheckBox.Create(Panel_Extra, 50, 190, 220, 20, gResTexts[TX_MAPED_SHOW_TILES_GRID], fntAntiqua);
   CheckBox_ShowTilesGrid.Checked := False; //Disabled by default
   CheckBox_ShowTilesGrid.OnClick := Extra_Change;
 
   //dropdown list needs to be ontop other buttons created on Panel_Main
-  Dropbox_PlayerFOW := TKMDropList.Create(Panel_Extra, 460, 70, 160, 20, fnt_Metal, '', bsGame);
+  Dropbox_PlayerFOW := TKMDropList.Create(Panel_Extra, 460, 70, 160, 20, fntMetal, '', bsGame);
 
   Dropbox_PlayerFOW.Add('Show all', -1);
   for I := 0 to MAX_HANDS - 1 do
@@ -108,13 +127,15 @@ end;
 
 procedure TKMMapEdExtras.Extra_Change(Sender: TObject);
 begin
-  SHOW_TERRAIN_WIRES := TrackBar_Passability.Position <> 0;
   SHOW_TERRAIN_PASS := TrackBar_Passability.Position;
+  SHOW_TERRAIN_TILES_GRID := CheckBox_ShowTilesGrid.Checked;
 
   if TrackBar_Passability.Position <> 0 then
     Label_Passability.Caption := PassabilityGuiText[TKMTerrainPassability(SHOW_TERRAIN_PASS)]
   else
     Label_Passability.Caption := gResTexts[TX_MAPED_PASSABILITY_OFF];
+
+  gMain.FormMain.ControlsRefill;
 
   fOnChange(Self);
 end;
@@ -135,14 +156,14 @@ end;
 
 procedure TKMMapEdExtras.Hide;
 begin
-  gSoundPlayer.Play(sfxn_MPChatClose);
+  gSoundPlayer.Play(sfxnMPChatClose);
   Panel_Extra.Hide;
 end;
 
 
 procedure TKMMapEdExtras.Show;
 begin
-  gSoundPlayer.Play(sfxn_MPChatOpen);
+  gSoundPlayer.Play(sfxnMPChatOpen);
   Panel_Extra.Show;
 end;
 

@@ -36,7 +36,7 @@ begin
 
       Png.SaveToFile(aFile);
     finally
-      Png.Free;
+      FreeAndNil(Png);
     end;
   {$ENDIF}
   {$IFDEF FPC}
@@ -53,7 +53,7 @@ begin
 
       Png.SaveToFile(aFile);
     finally
-      Png.Free;
+      FreeAndNil(Png);
     end;
   {$ENDIF}
 end;
@@ -61,10 +61,14 @@ end;
 
 procedure LoadFromPng(const aFile: UnicodeString; var aWidth, aHeight: Word; var aPixelData: TKMCardinalArray);
 var
-  {$IFDEF WDC} Png: TPngImage; {$ENDIF}
-  {$IFDEF FPC} Png: TBGRABitmap; {$ENDIF}
-  I, K: Integer;
+  {$IFDEF WDC}
+  Png: TPngImage;
   T: Byte;
+  {$ENDIF}
+  {$IFDEF FPC}
+  Png: TBGRABitmap;
+  {$ENDIF}
+  I, K: Integer;
 begin
   {$IFDEF WDC}
     Png := TPngImage.Create;
@@ -100,7 +104,7 @@ begin
         raise Exception.Create('Unknown PNG transparency mode');
     end;
 
-    Png.Free;
+    FreeAndNil(Png);
   {$ENDIF}
   {$IFDEF FPC}
     Png := TBGRABitmap.Create(aFile);
@@ -113,7 +117,7 @@ begin
       aPixelData[K * Png.Width + I] := cardinal(Png.GetPixel(I,K).red) or (cardinal(Png.GetPixel(I,K).green) shl 8) or
                                       (cardinal(Png.GetPixel(I,K).blue) shl 16) or (cardinal(Png.GetPixel(I,K).alpha) shl 24);
 
-    Png.Free;
+    FreeAndNil(Png);
   {$ENDIF}
 end;
 

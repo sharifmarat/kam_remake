@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Top = 419
   HelpType = htKeyword
   BorderStyle = bsNone
-  ClientHeight = 656
+  ClientHeight = 785
   ClientWidth = 521
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -26,12 +26,12 @@ object FormMain: TFormMain
   OnShow = FormShow
   DesignSize = (
     521
-    656)
+    785)
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 636
+    Top = 765
     Width = 521
     Height = 20
     Panels = <
@@ -72,13 +72,13 @@ object FormMain: TFormMain
     Left = 320
     Top = 8
     Width = 193
-    Height = 624
+    Height = 736
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
-      Top = 392
+      Top = 474
       Width = 177
       Height = 89
       Caption = ' Graphics tweaks '
@@ -171,7 +171,7 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Top = 336
+      Top = 416
       Width = 177
       Height = 57
       Caption = ' User Interface '
@@ -249,14 +249,14 @@ object FormMain: TFormMain
     end
     object GroupBox2: TGroupBox
       Left = 8
-      Top = 200
+      Top = 232
       Width = 177
-      Height = 137
+      Height = 185
       Caption = ' AI '
       TabOrder = 2
       object Label5: TLabel
         Left = 108
-        Top = 100
+        Top = 148
         Width = 32
         Height = 13
         Caption = 'Margin'
@@ -264,7 +264,7 @@ object FormMain: TFormMain
       end
       object Label6: TLabel
         Left = 108
-        Top = 116
+        Top = 164
         Width = 47
         Height = 13
         Caption = 'Threshold'
@@ -306,15 +306,51 @@ object FormMain: TFormMain
         TabOrder = 3
         OnClick = ControlsUpdate
       end
+      object chkShowDefences: TCheckBox
+        Left = 8
+        Top = 80
+        Width = 97
+        Height = 17
+        Caption = 'Show defences'
+        TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkBuildAI: TCheckBox
+        Left = 8
+        Top = 96
+        Width = 97
+        Height = 17
+        Caption = 'Build AI'
+        TabOrder = 5
+        OnClick = ControlsUpdate
+      end
+      object chkCombatAI: TCheckBox
+        Left = 8
+        Top = 112
+        Width = 97
+        Height = 17
+        Caption = 'Combat AI'
+        TabOrder = 6
+        OnClick = ControlsUpdate
+      end
+      object chkAIEye: TCheckBox
+        Left = 8
+        Top = 128
+        Width = 97
+        Height = 17
+        Caption = 'AI Eye'
+        TabOrder = 7
+        OnClick = ControlsUpdate
+      end
       object tbOwnMargin: TTrackBar
         Left = 4
-        Top = 100
+        Top = 148
         Width = 101
         Height = 17
         Max = 255
         Min = 64
         Position = 64
-        TabOrder = 4
+        TabOrder = 8
         ThumbLength = 14
         TickMarks = tmBoth
         TickStyle = tsNone
@@ -323,26 +359,26 @@ object FormMain: TFormMain
       end
       object tbOwnThresh: TTrackBar
         Left = 4
-        Top = 116
+        Top = 164
         Width = 101
         Height = 17
         Max = 255
         Min = 64
         Position = 64
-        TabOrder = 5
+        TabOrder = 9
         ThumbLength = 14
         TickMarks = tmBoth
         TickStyle = tsNone
         Visible = False
         OnChange = ControlsUpdate
       end
-      object chkShowDefences: TCheckBox
-        Left = 8
-        Top = 80
-        Width = 97
+      object chkBevel: TCheckBox
+        Left = 119
+        Top = 16
+        Width = 73
         Height = 17
-        Caption = 'Show defences'
-        TabOrder = 6
+        Caption = 'Bevel'
+        TabOrder = 10
         OnClick = ControlsUpdate
       end
     end
@@ -350,7 +386,7 @@ object FormMain: TFormMain
       Left = 8
       Top = 104
       Width = 177
-      Height = 97
+      Height = 128
       Caption = ' Debug render '
       TabOrder = 5
       object Label2: TLabel
@@ -376,36 +412,90 @@ object FormMain: TFormMain
       object chkShowRoutes: TCheckBox
         Left = 8
         Top = 56
-        Width = 97
+        Width = 81
         Height = 17
-        Caption = 'Show unit routes'
+        Caption = 'Unit routes'
         TabOrder = 1
         OnClick = ControlsUpdate
       end
       object chkShowWires: TCheckBox
         Left = 8
         Top = 40
-        Width = 105
+        Width = 89
         Height = 17
-        Caption = 'Show terrain wires'
+        Caption = 'Terrain wires'
         TabOrder = 2
         OnClick = ControlsUpdate
       end
       object chkSelectionBuffer: TCheckBox
         Left = 8
         Top = 72
-        Width = 121
+        Width = 97
         Height = 17
-        Caption = 'Show selection buffer'
+        Caption = 'Select. buffer'
         TabOrder = 3
+        OnClick = ControlsUpdate
+      end
+      object chkShowTerrainIds: TCheckBox
+        Left = 100
+        Top = 40
+        Width = 79
+        Height = 17
+        Caption = 'Terrain IDs'
+        TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkShowTerrainKinds: TCheckBox
+        Left = 100
+        Top = 56
+        Width = 79
+        Height = 17
+        Caption = 'Ter. Kinds'
+        TabOrder = 5
+        OnClick = ControlsUpdate
+      end
+      object chkTilesGrid: TCheckBox
+        Left = 100
+        Top = 72
+        Width = 79
+        Height = 17
+        Caption = 'Tiles grid'
+        TabOrder = 6
+        OnClick = ControlsUpdate
+      end
+      object chkShowGameTick: TCheckBox
+        Left = 8
+        Top = 88
+        Width = 97
+        Height = 17
+        Caption = 'Show game tick'
+        TabOrder = 7
+        OnClick = ControlsUpdate
+      end
+      object chkSkipRender: TCheckBox
+        Left = 8
+        Top = 104
+        Width = 89
+        Height = 17
+        Caption = 'Skip Render'
+        TabOrder = 8
+        OnClick = ControlsUpdate
+      end
+      object chkSkipSound: TCheckBox
+        Left = 100
+        Top = 104
+        Width = 89
+        Height = 17
+        Caption = 'Skip Sound'
+        TabOrder = 9
         OnClick = ControlsUpdate
       end
     end
     object GroupBoxLogs: TGroupBox
       Left = 8
-      Top = 481
+      Top = 562
       Width = 177
-      Height = 138
+      Height = 170
       Caption = 'Logs'
       TabOrder = 6
       object chkLogDelivery: TCheckBox
@@ -417,20 +507,29 @@ object FormMain: TFormMain
         TabOrder = 0
         OnClick = ControlsUpdate
       end
-      object chkLogNetConnection: TCheckBox
-        Left = 79
+      object chkLogCommands: TCheckBox
+        Left = 101
         Top = 16
+        Width = 73
+        Height = 17
+        Caption = 'Commands'
+        TabOrder = 1
+        OnClick = ControlsUpdate
+      end
+      object chkLogNetConnection: TCheckBox
+        Left = 8
+        Top = 32
         Width = 95
         Height = 17
         Caption = 'Net connection'
         Checked = True
         State = cbChecked
-        TabOrder = 1
+        TabOrder = 2
         OnClick = ControlsUpdate
       end
       object RGLogNetPackets: TRadioGroup
         Left = 8
-        Top = 36
+        Top = 66
         Width = 161
         Height = 78
         Caption = 'Net packets log level'
@@ -440,16 +539,34 @@ object FormMain: TFormMain
           'All but commands/ping/fps'
           'All but ping/fps'
           'All packets')
-        TabOrder = 2
+        TabOrder = 3
         OnClick = ControlsUpdate
       end
       object chkLogsShowInChat: TCheckBox
         Left = 8
-        Top = 116
+        Top = 146
         Width = 137
         Height = 17
         Caption = 'Show logs in MP chat'
-        TabOrder = 3
+        TabOrder = 4
+        OnClick = ControlsUpdate
+      end
+      object chkLogRngChecks: TCheckBox
+        Left = 101
+        Top = 32
+        Width = 73
+        Height = 17
+        Caption = 'RngChecks'
+        TabOrder = 5
+        OnClick = ControlsUpdate
+      end
+      object chkLogGameTick: TCheckBox
+        Left = 8
+        Top = 48
+        Width = 87
+        Height = 17
+        Caption = 'Game tick'
+        TabOrder = 6
         OnClick = ControlsUpdate
       end
     end
@@ -466,12 +583,17 @@ object FormMain: TFormMain
     object File1: TMenuItem
       Caption = 'File'
       object OpenMissionMenu: TMenuItem
-        Caption = 'Open mission...'
+        Caption = 'Start mission...'
         OnClick = Open_MissionMenuClick
       end
       object MenuItem1: TMenuItem
         Caption = 'Edit mission...'
         OnClick = MenuItem1Click
+      end
+      object SaveEditableMission1: TMenuItem
+        Caption = 'Save editable mission...'
+        Enabled = False
+        OnClick = SaveEditableMission1Click
       end
       object N4: TMenuItem
         Caption = '-'
@@ -602,17 +724,40 @@ object FormMain: TFormMain
         OnClick = ResourceValues1Click
       end
       object Export_Deliverlists1: TMenuItem
-        Caption = 'Export Deliver lists'
+        Caption = 'Deliver lists'
         OnClick = Export_Deliverlists1Click
       end
       object HousesDat1: TMenuItem
         Caption = 'Houses Dat'
         OnClick = HousesDat1Click
       end
+      object ScriptData1: TMenuItem
+        Caption = 'Script Data'
+        OnClick = Export_ScriptDataClick
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object GameStats: TMenuItem
+        Caption = 'Game statistics'
+        object ExportGameStats: TMenuItem
+          Caption = 'Export'
+          Enabled = False
+          OnClick = ExportGameStatsClick
+        end
+        object ValidateGameStats: TMenuItem
+          Caption = 'Validate'
+          OnClick = ValidateGameStatsClick
+        end
+      end
     end
     object About1: TMenuItem
       Caption = 'About..'
       OnClick = AboutClick
     end
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 144
+    Top = 8
   end
 end

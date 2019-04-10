@@ -43,21 +43,21 @@ uses
 var
   RX5Pal: array [1 .. 40] of TKMPal = (
     pal2_setup,   pal2_setup,   pal2_setup,   pal2_setup,   pal2_setup,
-    pal2_setup,   pal_set2,     pal_set2,     pal_set2,     pal_map,
-    pal_map,      pal_map,      pal_map,      pal_map,      pal_map,
-    pal_map,      pal2_setup,   pal2_setup,   pal2_setup,   pal2_mapgold,
+    pal2_setup,   palset2,     palset2,     palset2,     palmap,
+    palmap,      palmap,      palmap,      palmap,      palmap,
+    palmap,      pal2_setup,   pal2_setup,   pal2_setup,   pal2_mapgold,
     pal2_mapgold, pal2_mapgold, pal2_mapgold, pal2_mapgold, pal2_setup,
-    pal_map,      pal_map,      pal_map,      pal_map,      pal_map,
+    palmap,      palmap,      palmap,      palmap,      palmap,
     pal2_setup,   pal2_setup,   pal2_setup,   pal2_setup,   pal2_setup,
-    pal2_setup,   pal2_setup,   pal_lin,      pal_lin,      pal_lin
+    pal2_setup,   pal2_setup,   pallin,      pallin,      pallin
   );
 
   // I couldn't find matching palettes for the 17th and 18th entries
   RX6Pal: array [1 .. 20] of TKMPal = (
-    pal_set,  pal_set,  pal_set,  pal_set,  pal_set,
-    pal_set,  pal_set2, pal_set2, pal_set2, pal_map,
-    pal_map,  pal_map,  pal_map,  pal_map,  pal_map,
-    pal_map,  pal_lin,  pal_lin,  pal_lin,  pal_lin
+    palset,  palset,  palset,  palset,  palset,
+    palset,  palset2, palset2, palset2, palmap,
+    palmap,  palmap,  palmap,  palmap,  palmap,
+    palmap,  pallin,  pallin,  pallin,  pallin
   );
 
 
@@ -101,7 +101,7 @@ procedure TKMSpritePackEdit.Expand;
     for I := 0 to High(WIP) do
     if aID = WIP[I] then
     begin
-      Result := fPalettes[pal_lin];
+      Result := fPalettes[pallin];
       Exit;
     end;
   end;
@@ -137,7 +137,7 @@ begin
         //We decode them according to visualization pipeline to greyscale
         //and make a color transparency mask
         if RXInfo[fRT].TeamColors and (L in [24..30])
-        and (Palette <> fPalettes[pal_lin])
+        and (Palette <> fPalettes[pallin])
         and ((fRT <> rxHouses) or (H > 400))  //Skip the Inn Weapon Smithy and the rest
         and ((fRT <> rxGui) or InRange(H, 141, 154) or InRange(H, 521, 550)) then //Unit icons and scrolls
         begin
@@ -172,7 +172,7 @@ end;
 //
 procedure TKMSpritePackEdit.AdjoinHouseMasks(aHouseDat: TKMResHouses);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   ID1, ID2: Integer; //RGB and A index
   I, K, Lay, StepCount: Integer;
   T1, T2, tx, ty: Integer;
@@ -214,7 +214,7 @@ end;
 //Grow house building masks to account for blurred shadows edges being visible
 procedure TKMSpritePackEdit.GrowHouseMasks(aHouseDat: TKMResHouses);
 var
-  HT: THouseType;
+  HT: TKMHouseType;
   ID: Integer; //RGB and A index
   I, K, Lay: Integer;
   T: Integer;
@@ -444,7 +444,7 @@ begin
       SetLength(fRXData.Data[I], fRXData.Size[I].X * fRXData.Size[I].Y);
       S.ReadBuffer(fRXData.Data[I,0], fRXData.Size[I].X * fRXData.Size[I].Y);
     end;
-  S.Free;
+  FreeAndNil(S);
 
   Expand; //Only KaM's rx needs expanding
 end;
@@ -496,9 +496,9 @@ begin
   CompressionStream := TCompressionStream.Create(clMax, OutputStream);
   InputStream.Position := 0;
   CompressionStream.CopyFrom(InputStream, InputStream.Size);
-  CompressionStream.Free;
-  OutputStream.Free;
-  InputStream.Free;
+  FreeAndNil(CompressionStream);
+  FreeAndNil(OutputStream);
+  FreeAndNil(InputStream);
 end;
 
 

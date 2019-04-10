@@ -31,15 +31,15 @@ type
     fPad: Byte;
     fNotFit: Cardinal; //Minimum size that does not fit
   public
-    constructor Create(aRect: TBinRect; aPad: Byte; aImageID: Word; aNotFit: Cardinal);
+    constructor Create(const aRect: TBinRect; aPad: Byte; aImageID: Word; aNotFit: Cardinal);
     destructor Destroy; override;
-    function Insert(aItem: TIndexItem): TBin; //Return bin that has accepted the sprite, or nil of Bin is full
+    function Insert(const aItem: TIndexItem): TBin; //Return bin that has accepted the sprite, or nil of Bin is full
     function Width: Word;
     function Height: Word;
     procedure GetAllItems(var aItems: TBinItem);
 
-    procedure DidNotFit(aItem: TIndexItem);
-    function CanFit(aItem: TIndexItem): Boolean;
+    procedure DidNotFit(const aItem: TIndexItem);
+    function CanFit(const aItem: TIndexItem): Boolean;
   end;
 
   TBinManager = class
@@ -52,7 +52,7 @@ type
   public
     constructor Create(aWidth, aHeight: Word; aPad: Byte);
     destructor Destroy; override;
-    procedure Insert(aItem: TIndexItem);
+    procedure Insert(const aItem: TIndexItem);
     procedure GetAllItems(var aOut: TBinArray);
   end;
 
@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  KromUtils;
+  SysUtils, KromUtils;
 
 
 function BinRect(aX, aY, aWidth, aHeight: Word): TBinRect;
@@ -99,13 +99,13 @@ begin
 
     BinManager.GetAllItems(aOut);
   finally
-    BinManager.Free;
+    FreeAndNil(BinManager);
   end;
 end;
 
 
 { TBin }
-constructor TBin.Create(aRect: TBinRect; aPad: Byte; aImageID: Word; aNotFit: Cardinal);
+constructor TBin.Create(const aRect: TBinRect; aPad: Byte; aImageID: Word; aNotFit: Cardinal);
 begin
   inherited Create;
 
@@ -118,26 +118,26 @@ end;
 
 destructor TBin.Destroy;
 begin
-  if fChild1 <> nil then fChild1.Free;
-  if fChild2 <> nil then fChild2.Free;
+  if fChild1 <> nil then FreeAndNil(fChild1);
+  if fChild2 <> nil then FreeAndNil(fChild2);
 
   inherited;
 end;
 
 
-function TBin.CanFit(aItem: TIndexItem): Boolean;
+function TBin.CanFit(const aItem: TIndexItem): Boolean;
 begin
   Result := (aItem.X * aItem.Y < fNotFit);
 end;
 
 
-procedure TBin.DidNotFit(aItem: TIndexItem);
+procedure TBin.DidNotFit(const aItem: TIndexItem);
 begin
   fNotFit := Min(fNotFit, aItem.X * aItem.Y);
 end;
 
 
-function TBin.Insert(aItem: TIndexItem): TBin;
+function TBin.Insert(const aItem: TIndexItem): TBin;
 begin
   //We can't possibly fit the Item (and our Childs can't either)
   if (aItem.X + fPad*2 > fRect.Width) or (aItem.Y + fPad*2 > fRect.Height) or (fImageID <> 0) then
@@ -235,7 +235,7 @@ begin
   for I := 0 to fBins.Count - 1 do
     TBin(fBins[I]).Free;
 
-  fBins.Free;
+  FreeAndNil(fBins);
   inherited;
 end;
 
@@ -247,7 +247,7 @@ begin
 end;
 
 
-procedure TBinManager.Insert(aItem: TIndexItem);
+procedure TBinManager.Insert(const aItem: TIndexItem);
 var
   I: Integer;
   B: TBin;

@@ -9,8 +9,8 @@ type
   TKMFuncArea = (faCommon, faGame, faSpecReplay, faMapEdit);
 
 const
-  // There are total of 84 different functions in the game that can have a shortcut
-  FUNC_COUNT = 84;
+  // Total number of different functions in the game that can have a shortcut
+  FUNC_COUNT = 97;
 
   // Load key IDs from inc file
   {$I KM_KeyIDs.inc}
@@ -28,7 +28,7 @@ type
     fFuncs: array [0..FUNC_COUNT-1] of TKMFuncInfo;
     fKeymapPath: string;
     function GetFunc(aIndex: Word): TKMFuncInfo;
-    procedure SetFunc(aIndex: Word; aFuncInfo: TKMFuncInfo);
+    procedure SetFunc(aIndex: Word; const aFuncInfo: TKMFuncInfo);
   public
     constructor Create;
     function GetKeyName(aKey: Word): string;
@@ -57,7 +57,6 @@ const
     4,                                      // Map drag scroll (Middle mouse btn)
     34, 33, 8,                              // Zoom In/Out/Reset (Page Down, Page Up, Backspace)
     27,                                     // Close opened menu (Esc)
-    82, 67, 87, 68,                         // Plan road/corn/wine/erase plan(building) (R, C, W, D)
     122,                                    // Debug Window hotkey (F11)
 
     // These keys are not changable by Player in Options menu
@@ -71,18 +70,22 @@ const
     66, 80, 84,                             // Beacon/Pause/Show team in MP (B, P, T)
     32, 46, 13,                             // Center to alert/Delete message/Show chat (Space, Delete, Return)
     9,                                      // Select next building/unit/group with same type (Tab)
+    0,                                      // Player color mode
+    82, 67, 87, 68,                         // Plan road/corn/wine/erase plan(building) (R, C, W, D)
     49, 50, 51, 52, 53, 54, 55, 56, 57, 48, // Dynamic selection groups 1-10 (1-9, 0)
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,           // Dynamic selection groups 11-20 (no defaults)
 
     // Spectate/Replay view Keys
-    49, 50, 51, 52, 53, 54, 55, 56,         // Switch between players while spectating/viewing replay (1-8)
+    49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 189, 61, // Switch between players while spectating/viewing replay (1-8)
 
     // Map Editor Keys
     13,                                     // Map Editor Extra's menu (Return)
     112, 113, 114, 115, 116,                // Map Editor menus (F1-F5)
     49, 50, 51, 52, 53, 54,                 // Map Editor sub-menus (1-6)
+    81, 87, 69, 82, 84, 89, 85,             // Map Editor sub-menu actions (Q, W, E, R, T, Y, U)
     32,                                     // Map Editor show objects palette (Space)
-    46                                      // Map Editor universal erasor (Delete)
+    46,                                     // Map Editor universal erasor (Delete)
+    45                                      // Map Editor paint bucket (Insert)
   );
 
   // Function text values
@@ -92,7 +95,6 @@ const
     TX_KEY_FUNC_MAP_DRAG_SCROLL,                                                                          // Map drag scroll
     TX_KEY_FUNC_ZOOM_IN, TX_KEY_FUNC_ZOOM_OUT, TX_KEY_FUNC_ZOOM_RESET,                                    // Zoom In/Out/Reset
     TX_KEY_FUNC_CLOSE_MENU,                                                                               // Close opened menu
-    TX_KEY_FUNC_PLAN_ROAD, TX_KEY_FUNC_PLAN_FIELD, TX_KEY_FUNC_PLAN_WINE, TX_KEY_FUNC_ERASE_PLAN,         // Plan road/corn/wine/erase plan(building)
     TX_KEY_FUNC_DBG_WINDOW,                                                                               // Debug window
 
     // These keys are not changable by Player in Options menu
@@ -106,14 +108,17 @@ const
     TX_KEY_FUNC_BEACON, TX_KEY_FUNC_PAUSE, TX_KEY_FUNC_SHOW_TEAMS,                                        // Beacon/Pause/Show team in MP
     TX_KEY_FUNC_CENTER_ALERT, TX_KEY_FUNC_DELETE_MSG, TX_KEY_FUNC_SHOW_GAME_CHAT,                         // Center to alert/Delete message/Show chat
     TX_KEY_FUNC_SEL_NXT_BLD_UNIT_SAME_TYPE,                                                               // Select next building/unit/group with same type
+    TX_KEY_FUNC_PLAYER_COLOR_MODE,                                                                        // Player color mode
+    TX_KEY_FUNC_PLAN_ROAD, TX_KEY_FUNC_PLAN_FIELD, TX_KEY_FUNC_PLAN_WINE, TX_KEY_FUNC_ERASE_PLAN,         // Plan road/corn/wine/erase plan(building)
     TX_KEY_FUNC_SELECT_1, TX_KEY_FUNC_SELECT_2, TX_KEY_FUNC_SELECT_3, TX_KEY_FUNC_SELECT_4, TX_KEY_FUNC_SELECT_5,   // Dynamic selection groups 1-5
     TX_KEY_FUNC_SELECT_6, TX_KEY_FUNC_SELECT_7, TX_KEY_FUNC_SELECT_8, TX_KEY_FUNC_SELECT_9, TX_KEY_FUNC_SELECT_10,  // Dynamic selection groups 6-10
     TX_KEY_FUNC_SELECT_11,TX_KEY_FUNC_SELECT_12,TX_KEY_FUNC_SELECT_13,TX_KEY_FUNC_SELECT_14,TX_KEY_FUNC_SELECT_15,  // Dynamic selection groups 11-15
     TX_KEY_FUNC_SELECT_16,TX_KEY_FUNC_SELECT_17,TX_KEY_FUNC_SELECT_18,TX_KEY_FUNC_SELECT_19,TX_KEY_FUNC_SELECT_20,  // Dynamic selection groups 16-20
 
     // Spectate MP game/Replay view Keys
-    TX_KEY_FUNC_SPECTATE_PLAYER_1, TX_KEY_FUNC_SPECTATE_PLAYER_2, TX_KEY_FUNC_SPECTATE_PLAYER_3, TX_KEY_FUNC_SPECTATE_PLAYER_4, // Spectator/Replay player switch
-    TX_KEY_FUNC_SPECTATE_PLAYER_5, TX_KEY_FUNC_SPECTATE_PLAYER_6, TX_KEY_FUNC_SPECTATE_PLAYER_7, TX_KEY_FUNC_SPECTATE_PLAYER_8, // Spectator/Replay player switch
+    TX_KEY_FUNC_SPECTATE_PLAYER_1, TX_KEY_FUNC_SPECTATE_PLAYER_2, TX_KEY_FUNC_SPECTATE_PLAYER_3, TX_KEY_FUNC_SPECTATE_PLAYER_4,    // Spectator/Replay player switch
+    TX_KEY_FUNC_SPECTATE_PLAYER_5, TX_KEY_FUNC_SPECTATE_PLAYER_6, TX_KEY_FUNC_SPECTATE_PLAYER_7, TX_KEY_FUNC_SPECTATE_PLAYER_8,    // Spectator/Replay player switch
+    TX_KEY_FUNC_SPECTATE_PLAYER_9, TX_KEY_FUNC_SPECTATE_PLAYER_10, TX_KEY_FUNC_SPECTATE_PLAYER_11, TX_KEY_FUNC_SPECTATE_PLAYER_12, // Spectator/Replay player switch
 
     // Map Editor Keys
     TX_KEY_FUNC_MAPEDIT_EXTRA,                                                                            // Map Editor Extra's menu
@@ -121,8 +126,13 @@ const
     TX_KEY_FUNC_MAPEDIT_VISUAL_SCRIPT, TX_KEY_FUNC_MAPEDIT_GLOBAL_SCRIPT, TX_KEY_FUNC_MAPEDIT_MENU_MAIN,  // Map Editor menus
     TX_KEY_FUNC_MAPEDIT_SUBMENU_1, TX_KEY_FUNC_MAPEDIT_SUBMENU_2, TX_KEY_FUNC_MAPEDIT_SUBMENU_3,          // Map Editor sub-menus
     TX_KEY_FUNC_MAPEDIT_SUBMENU_4, TX_KEY_FUNC_MAPEDIT_SUBMENU_5, TX_KEY_FUNC_MAPEDIT_SUBMENU_6,          // Map Editor sub-menus
-    TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE,                                                                      // Map Editor show objects palette
-    TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR                                                                       // Map Editor universal erasor
+    TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_1, TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_2,   // Map Editor sub-menu actions
+    TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_3, TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_4,   // Map Editor sub-menu actions
+    TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_5, TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_6,   // Map Editor sub-menu actions
+    TX_KEY_FUNC_MAPEDIT_SUBMENU_ACTION_7,                                         // Map Editor sub-menu actions
+    TX_KEY_FUNC_MAPEDIT_OBJ_PALETTE,                                              // Map Editor show objects palette
+    TX_KEY_FUNC_MAPEDIT_UNIV_ERASOR,                                              // Map Editor universal erasor
+    TX_KEY_FUNC_MAPEDIT_PAINT_BUCKET                                              // Map Editor paint bucket
   );
 
 { TKMKeyLibrary }
@@ -141,13 +151,13 @@ begin
     fFuncs[I].TextId := KEY_FUNC_TX[I];
 
     case I of
-      0..17:  fFuncs[I].Area := faCommon;
-      18..61: fFuncs[I].Area := faGame;
-      62..69: fFuncs[I].Area := faSpecReplay;
+      0..13:  fFuncs[I].Area := faCommon;
+      14..62: fFuncs[I].Area := faGame;
+      63..74: fFuncs[I].Area := faSpecReplay;
       else    fFuncs[I].Area := faMapEdit;
     end;
 
-    fFuncs[I].IsChangableByPlayer := (I in [14..17]);
+    fFuncs[I].IsChangableByPlayer := (I in [10..13]);
   end;
 end;
 
@@ -193,7 +203,7 @@ begin
     fFuncs[funcId].Key := keyVal;
   end;
 
-  SL.Free;
+  FreeAndNil(SL);
 end;
 
 
@@ -203,7 +213,7 @@ begin
 end;
 
 
-procedure TKMKeyLibrary.SetFunc(aIndex: Word; aFuncInfo :TKMFuncInfo);
+procedure TKMKeyLibrary.SetFunc(aIndex: Word; const aFuncInfo :TKMFuncInfo);
 begin
   fFuncs[aIndex] := aFuncInfo;
 end;
@@ -225,7 +235,7 @@ begin
   end;
 
   KeyStringList.SaveToFile(fKeymapPath{$IFDEF WDC}, TEncoding.UTF8{$ENDIF});
-  KeyStringList.Free;
+  FreeAndNil(KeyStringList);
 end;
 
 
@@ -256,8 +266,8 @@ begin
     2:  Result :=  gResTexts[TX_KEY_RMB];
     3:  Result :=  gResTexts[TX_KEY_BREAK];
     4:  Result :=  gResTexts[TX_KEY_MMB];
-    5:  Result :=  'Forward mouse button'; // Todo translate
-    6:  Result :=  'Backward mouse button'; // Todo translate
+    5:  Result :=  gResTexts[TX_KEY_MOUSE_FORWARD];
+    6:  Result :=  gResTexts[TX_KEY_MOUSE_BACKWARD];
     8:  Result :=  gResTexts[TX_KEY_BACKSPACE];
     9:  Result :=  gResTexts[TX_KEY_TAB];
     12: Result :=  gResTexts[TX_KEY_CLEAR];

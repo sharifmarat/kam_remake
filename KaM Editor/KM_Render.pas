@@ -314,52 +314,58 @@ if BrushMode=bmCopy then
 end;
 
 procedure RenderBuildings;
-var i,k:integer;
+var
+  I,K: Integer;
 begin
-if Mission<>nil then
-for i:=1 to 8 do
-  for k:=1 to Mission.Player[i].HouseCount do
-  RenderHouse(Mission.Player[i].House[k].Kind,
-              Mission.Player[i].House[k].PosX,
-              Mission.Player[i].House[k].PosY,i,1);
-glBindTexture(GL_TEXTURE_2D, 0);
+  if Mission <> nil then
+  for I := 1 to 8 do
+    for K := 1 to Mission.Player[I].HouseCount do
+      RenderHouse(Mission.Player[I].House[K].Kind,
+                  Mission.Player[I].House[K].PosX,
+                  Mission.Player[I].House[K].PosY,I,1);
+  glBindTexture(GL_TEXTURE_2D, 0);
 end;
+
 
 procedure RenderWires;
-var i,k:integer; //T:^Byte;
+var
+  I,K: Integer; //T:^Byte;
 begin
-glLineWidth(1);
-for i:=max(MapYc-10,1) to min(MapYc+10,Map.Y) do begin
-glBegin(GL_LINE_STRIP);
-for k:=max(MapXc-11,1) to min(MapXc+11,Map.X) do begin
-glColor4f(0.8,1,0.6,1.2-sqrt(sqr(i-MapYc)+sqr(k-MapXc))/10);
-glvertex2f(k-1,i-1-Land2[i,k].Height/xh);
-end;
-glEnd;
+  glLineWidth(1);
+  for I := Max(MapYc-10,1) to Min(MapYc + 10, Map.Y) do
+  begin
+    glBegin(GL_LINE_STRIP);
+    for K := Max(MapXc - 11,1) to Min(MapXc + 11,Map.X) do
+    begin
+      glColor4f(0.8,1,0.6,1.2 - Sqrt(Sqr(I - MapYc) + Sqr(K - MapXc)) / 10);
+      glvertex2f(K - 1, I - 1 - Land2[I,K].Height/xh);
+    end;
+    glEnd;
+  end;
+
+  glBegin(GL_POINTS);
+  for I := Max(MapYc - 10,1) to Min(MapYc + 10, Map.Y) do
+    for K := Max(MapXc - 10,1) to Min(MapXc + 10, Map.X) do begin
+      glColor4f(Land2[I,K].Height / 100, 0, 0, 1.2 - Sqrt(Sqr(I - MapYc) + Sqr(K - MapXc)) / 10);
+      glvertex2f(K-1, I - 1 - Land2[I,K].Height/xh);
+    end;
+  glEnd;
+  {
+  for i:=max(MapYc-10,1) to min(MapYc+10,Map.Y) do
+  for k:=max(MapXc-10,1) to min(MapXc+10,Map.X) do begin
+  glRasterPos2f(k-1+0.1,i-1-0.1-Land[i,k].Height1/xh);
+  glColor4f(0.6,1,0.45,0.75);
+
+  T:=Pointer(Integer(@Land[i,k].Terrain)+Form1.SpinEdit1.Value-1);
+  glPrint(IntToStr(T^));
+
+  //if Land[i,k].Rot and 4=4 then glPrint('X');
+  //if Land[i,k].Rot and 8=8 then glPrint('Y');
+  //glPrint(IntToStr(Land[i,k].Border));
+  end;  }
+  glLineWidth(Zoom/4);
 end;
 
-glBegin(GL_POINTS);
-for i:=max(MapYc-10,1) to min(MapYc+10,Map.Y) do
-for k:=max(MapXc-10,1) to min(MapXc+10,Map.X) do begin
-glColor4f(Land2[i,k].Height/100,0,0,1.2-sqrt(sqr(i-MapYc)+sqr(k-MapXc))/10);
-glvertex2f(k-1,i-1-Land2[i,k].Height/xh);
-end;
-glEnd;
-{
-for i:=max(MapYc-10,1) to min(MapYc+10,Map.Y) do
-for k:=max(MapXc-10,1) to min(MapXc+10,Map.X) do begin
-glRasterPos2f(k-1+0.1,i-1-0.1-Land[i,k].Height1/xh);
-glColor4f(0.6,1,0.45,0.75);
-
-T:=Pointer(Integer(@Land[i,k].Terrain)+Form1.SpinEdit1.Value-1);
-glPrint(IntToStr(T^));
-
-//if Land[i,k].Rot and 4=4 then glPrint('X');
-//if Land[i,k].Rot and 8=8 then glPrint('Y');
-//glPrint(IntToStr(Land[i,k].Border));
-end;  }
-glLineWidth(Zoom/4);
-end;
 
 procedure RenderArrows;
 begin
@@ -375,99 +381,113 @@ begin
   glEnd;
 end;
 
+
 procedure RenderPoint(pX,pY:integer);
 begin
-if pX<1 then
-s:='7';
-glColor4f(0.4,0.3,0,1);
-glBegin(GL_POINTS);
-glvertex2f(pX-1,pY-1-Land2[pY,pX].Height/xh);
-glEnd;
+  if pX < 1 then
+  s := '7';
+  glColor4f(0.4,0.3,0,1);
+  glBegin(GL_POINTS);
+  glvertex2f(pX-1,pY-1-Land2[pY,pX].Height/xh);
+  glEnd;
 end;
+
 
 procedure RenderQuad(pX,pY:integer);
 begin
-if (pX<=0)or(pX>=Map.X) then exit;
-if (pY<=0)or(pY>=Map.Y) then exit;
-glBegin(GL_QUADS);
-glNormal3f(0,1,0);
-glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
-glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
-glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
-glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
-glEnd;
+  if (pX <= 0) or (pX >= Map.X) then
+    Exit;
+  if (pY <= 0) or (pY >= Map.Y) then
+    Exit;
+  glBegin(GL_QUADS);
+  glNormal3f(0,1,0);
+  glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
+  glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
+  glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
+  glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
+  glEnd;
 end;
 
-procedure RenderWireQuad(pX,pY:integer);
+
+procedure RenderWireQuad(pX,pY: Integer);
 begin
-if (pX<=0)or(pX>=Map.X) then exit;
-if (pY<=0)or(pY>=Map.Y) then exit;
-glBegin(GL_LINE_LOOP);
-glNormal3f(0,1,0);
-glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
-glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
-glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
-glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
-glEnd;
+  if (pX<=0)or(pX>=Map.X) then
+    Exit;
+  if (pY<=0)or(pY>=Map.Y) then
+    Exit;
+  glBegin(GL_LINE_LOOP);
+  glNormal3f(0,1,0);
+  glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
+  glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
+  glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
+  glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
+  glEnd;
 end;
 
-procedure RenderTile(Index,pX,pY,Rot:integer);
-var xt,k,i,a:integer;
+
+procedure RenderTile(Index,pX,pY,Rot: Integer);
+var
+  xt,K,I,a: Integer;
 begin
   if (pX<1)or(pX>Map.X) then exit;
   if (pY<1)or(pY>Map.Y) then exit;
 
   glBindTexture(GL_TEXTURE_2D, Text1);
 
-  xt:=Index-1;
-  k:=pX; i:=pY;
-  TexC[1,1]:=(xt mod 16  )/16+Overlap; TexC[1,2]:=(xt div 16    )/16+Overlap;
-  TexC[2,1]:=(xt mod 16  )/16+Overlap; TexC[2,2]:=(xt div 16 + 1)/16-Overlap;
-  TexC[3,1]:=(xt mod 16+1)/16-Overlap; TexC[3,2]:=(xt div 16 + 1)/16-Overlap;
-  TexC[4,1]:=(xt mod 16+1)/16-Overlap; TexC[4,2]:=(xt div 16    )/16+Overlap;
-  TexO[1]:=1; TexO[2]:=2; TexO[3]:=3; TexO[4]:=4;
+  xt := Index - 1;
+  K := pX;
+  I := pY;
+  TexC[1,1] := (xt mod 16  )/16+Overlap; TexC[1,2]:=(xt div 16    )/16+Overlap;
+  TexC[2,1] := (xt mod 16  )/16+Overlap; TexC[2,2]:=(xt div 16 + 1)/16-Overlap;
+  TexC[3,1] := (xt mod 16+1)/16-Overlap; TexC[3,2]:=(xt div 16 + 1)/16-Overlap;
+  TexC[4,1] := (xt mod 16+1)/16-Overlap; TexC[4,2]:=(xt div 16    )/16+Overlap;
+  TexO[1] := 1;
+  TexO[2] := 2;
+  TexO[3] := 3;
+  TexO[4] := 4;
 
-  if Rot and 1 = 1 then begin a:=TexO[1]; TexO[1]:=TexO[2]; TexO[2]:=TexO[3]; TexO[3]:=TexO[4]; TexO[4]:=a; end; // 90 2-3-4-1
-  if Rot and 2 = 2 then begin a:=TexO[1]; TexO[1]:=TexO[3]; TexO[3]:=a; a:=TexO[2]; TexO[2]:=TexO[4]; TexO[4]:=a; end; // 180 3-4-1-2
+  if Rot and 1 = 1 then
+  begin
+    // 90 2-3-4-1
+    a := TexO[1];
+    TexO[1] := TexO[2];
+    TexO[2] := TexO[3];
+    TexO[3] := TexO[4];
+    TexO[4] := a;
+  end;
+  if Rot and 2 = 2 then
+  begin
+    // 180 3-4-1-2
+    a := TexO[1];
+    TexO[1] := TexO[3];
+    TexO[3] := a;
+    a := TexO[2];
+    TexO[2] := TexO[4];
+    TexO[4] := a;
+  end;
 
   glbegin(GL_QUADS);
-  glTexCoord2fv(@TexC[TexO[1]]); glvertex2f(k-1,i-1-Land2[i  ,k  ].Height/xh);
-  glTexCoord2fv(@TexC[TexO[2]]); glvertex2f(k-1,i  -Land2[i+1,k  ].Height/xh);
-  glTexCoord2fv(@TexC[TexO[3]]); glvertex2f(k  ,i  -Land2[i+1,k+1].Height/xh);
-  glTexCoord2fv(@TexC[TexO[4]]); glvertex2f(k  ,i-1-Land2[i  ,k+1].Height/xh);
+  glTexCoord2fv(@TexC[TexO[1]]); glvertex2f(K-1,I-1-Land2[I  ,K  ].Height/xh);
+  glTexCoord2fv(@TexC[TexO[2]]); glvertex2f(K-1,I  -Land2[I+1,K  ].Height/xh);
+  glTexCoord2fv(@TexC[TexO[3]]); glvertex2f(K  ,I  -Land2[I+1,K+1].Height/xh);
+  glTexCoord2fv(@TexC[TexO[4]]); glvertex2f(K  ,I-1-Land2[I  ,K+1].Height/xh);
   glEnd;
 end;
 
-procedure RenderObject(Index,pX,pY:integer; Func:string);
-var ShiftX,ShiftY:single; ID:integer;
+
+procedure RenderObject(Index,pX,pY: Integer; Func: String);
+var
+  ShiftX, ShiftY: Single;
+  ID: Integer;
 begin
-if ObjIndexInv[Index]=0 then
-exit;
-ID:=ObjIndexGFX[ObjIndexInv[Index]];
-if ID=0 then exit;
-if Index=61 then begin //Object 42 is an invisible wall
-  glLineWidth(Zoom/2);
-  glColor4f(1,0,0,0.5); glBindTexture(GL_TEXTURE_2D,0);
-  glBegin(GL_LINES);
-  glNormal3f(0,1,0);
-  glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
-  glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
-  glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
-  glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
-  glEnd;
-  glLineWidth(1);
-end else begin
-  if Func='Normal' then glColor4f(1,1,1,1);
-  if Func='ToDel' then glColor4f(1,0,0,1);
-  ShiftX:=TreePivot[ID].x/CellSize;
-  ShiftY:=(TreePivot[ID].y+TreeSize[ID,2])/CellSize-Land2[pY,pX].Height/xh;
-  RenderSprite(Tree[ID], pX+ShiftX, pY+ShiftY, 128/CellSize, 128/CellSize);
-  if Index=60 then begin
-    RenderSprite(Tree[ID], pX+ShiftX+0.65, pY+ShiftY, 128/CellSize, 128/CellSize);
-    RenderSprite(Tree[ID], pX+ShiftX, pY+ShiftY+0.65, 128/CellSize, 128/CellSize);
-    RenderSprite(Tree[ID], pX+ShiftX+0.65, pY+ShiftY+0.65, 128/CellSize, 128/CellSize);
-  end;
-  if (Index=249)or(Index=250) then begin
+  if ObjIndexInv[Index] = 0 then
+    Exit;
+  ID := ObjIndexGFX[ObjIndexInv[Index]];
+  if ID = 0 then
+    Exit;
+  if Index = 61 then //Object 42 is an invisible wall
+  begin
+    glLineWidth(Zoom/2);
     glColor4f(1,0,0,0.5); glBindTexture(GL_TEXTURE_2D,0);
     glBegin(GL_LINES);
     glNormal3f(0,1,0);
@@ -476,39 +496,73 @@ end else begin
     glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
     glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
     glEnd;
+    glLineWidth(1);
+  end
+  else
+  begin
+    if Func = 'Normal' then
+      glColor4f(1,1,1,1);
+    if Func = 'ToDel' then
+      glColor4f(1,0,0,1);
+    ShiftX := TreePivot[ID].x / CellSize;
+    ShiftY := (TreePivot[ID].y + TreeSize[ID,2]) / CellSize - Land2[pY,pX].Height / xh;
+    RenderSprite(Tree[ID], pX + ShiftX, pY + ShiftY, 128/CellSize, 128/CellSize);
+    if Index = 60 then
+    begin
+      RenderSprite(Tree[ID], pX+ShiftX+0.65, pY+ShiftY, 128/CellSize, 128/CellSize);
+      RenderSprite(Tree[ID], pX+ShiftX, pY+ShiftY+0.65, 128/CellSize, 128/CellSize);
+      RenderSprite(Tree[ID], pX+ShiftX+0.65, pY+ShiftY+0.65, 128/CellSize, 128/CellSize);
+    end;
+    if (Index = 249) or (Index = 250) then
+    begin
+      glColor4f(1,0,0,0.5); glBindTexture(GL_TEXTURE_2D,0);
+      glBegin(GL_LINES);
+      glNormal3f(0,1,0);
+      glvertex2f(pX-1,pY-1-Land2[pY  ,pX  ].Height/xh);
+      glvertex2f(pX  ,pY-  Land2[pY+1,pX+1].Height/xh);
+      glvertex2f(pX  ,pY-1-Land2[pY  ,pX+1].Height/xh);
+      glvertex2f(pX-1,pY-  Land2[pY+1,pX  ].Height/xh);
+      glEnd;
+    end;
   end;
 end;
-end;
 
-procedure RenderHouse(Index,pX,pY,Owner,Stage:integer);
-var ShiftX,ShiftY:single; ID:integer; i,k:integer;
+
+procedure RenderHouse(Index,pX,pY,Owner,Stage: Integer);
+var
+  ShiftX,ShiftY: Single;
+  ID, I, K: Integer;
 begin
-  ID:=HouseIndexGFX[Index];
-  if ID=0 then exit;
-  if Stage=1 then
+  ID := HouseIndexGFX[Index];
+  if ID = 0 then
+    Exit;
+  if Stage = 1 then
   begin
     glColor4f(1,1,1,1);
-    ShiftX:=HousePivot[ID].x/CellSize;
-    ShiftY:=(HousePivot[ID].y+HouseSize[ID,2])/CellSize-Land2[pY+1,pX].Height/xh;
+    ShiftX := HousePivot[ID].x/CellSize;
+    ShiftY := (HousePivot[ID].y + HouseSize[ID,2]) / CellSize-Land2[pY+1,pX].Height / xh;
     RenderSprite(House[Index], pX+ShiftX, pY+ShiftY, 256/CellSize, 256/CellSize);
     glColor4ubv(@PlayerColors[Owner]);
     if Form1.Pallete.ActivePage.Caption='Houses' then
     RenderSprite(0, pX+ShiftX, pY+ShiftY, 2, 0.1);
   end;
 
-  if Stage=0 then
+  if Stage = 0 then
   begin
     glColor4f(0,1,1,1);
-    for i:=1 to 4 do for k:=1 to 4 do
-    if HousePlanYX[Index,i,k]=1 then RenderWireQuad(pX+k-3,pY+i-4)
-    else if HousePlanYX[Index,i,k]=2 then RenderQuad(pX+k-3,pY+i-4);
-  //  glColor3ub(R[Owner],G[Owner],B[Owner]); //Owner color
-  //  RenderQuad(pX,pY);
+    for I := 1 to 4 do
+      for K := 1 to 4 do
+        if HousePlanYX[Index,I,K] = 1 then
+          RenderWireQuad(pX+K-3, pY+I-4)
+        else if HousePlanYX[Index,I,K] = 2 then
+          RenderQuad(pX+K-3, pY+I-4);
+      //  glColor3ub(R[Owner],G[Owner],B[Owner]); //Owner color
+      //  RenderQuad(pX,pY);
   end;
 end;
 
 
-procedure RenderSprite(TexID:integer; pX,pY,SizeX,SizeY:single);
+procedure RenderSprite(TexID: Integer; pX,pY,SizeX,SizeY: Single);
 begin
   glBindTexture(GL_TEXTURE_2D, TexID);
   glBegin(GL_QUADS);
@@ -521,20 +575,21 @@ begin
 end;
 
 
-procedure RenderArrow(pX,pY:integer);
-var A,cx:single;
+procedure RenderArrow(pX,pY: Integer);
+var
+  A,cx: Single;
 begin                                           //cos(0)=1
                                                 //sin(0)=0
-  A:=(-90+TileDirection[Land[pY,pX].Terrain+1]*45+Land[pY,pX].Rot*90)/180*pi;
-  cx:=(Land2[pY,pX].Height+Land2[pY+1,pX].Height+Land2[pY+1,pX+1].Height+Land2[pY,pX+1].Height)/xh/4;
+  A := (-90+TileDirection[Land[pY,pX].Terrain+1]*45+Land[pY,pX].Rot*90)/180*pi;
+  cx := (Land2[pY,pX].Height+Land2[pY+1,pX].Height+Land2[pY+1,pX+1].Height+Land2[pY,pX+1].Height)/xh/4;
 
   glBindTexture(GL_TEXTURE_2D, textA);
   glBegin(GL_QUADS);
     glNormal3f(0,1,0);
-    A:=A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX-1,pY-1-cx);
-    A:=A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX-1,pY  -cx);
-    A:=A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX  ,pY  -cx);
-    A:=A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX  ,pY-1-cx);
+    A := A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX-1,pY-1-cx);
+    A := A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX-1,pY  -cx);
+    A := A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX  ,pY  -cx);
+    A := A+pi/2; glTexCoord2f(sin(A)/2+0.5,1-cos(A)/2-0.5); glvertex2f(pX  ,pY-1-cx);
   glEnd;
 end;
 

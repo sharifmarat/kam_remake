@@ -4,15 +4,15 @@ interface
 uses
   Classes, Controls,
   KM_RenderPool, KM_TerrainPainter, KM_TerrainDeposits, KM_TerrainSelection,
-  KM_CommonClasses, KM_Defaults, KM_Points;
+  KM_CommonClasses, KM_Defaults, KM_Points, KM_Maps;
 
 
 type
-  TMarkerType = (mtNone, mtDefence, mtRevealFOW);
+  TKMMarkerType = (mtNone, mtDefence, mtRevealFOW);
 
   TKMMapEdMarker = record
-    MarkerType: TMarkerType;
-    Owner: TKMHandIndex;
+    MarkerType: TKMMarkerType;
+    Owner: TKMHandID;
     Index: SmallInt;
   end;
 
@@ -23,7 +23,7 @@ type
     fDeposits: TKMDeposits;
     fSelection: TKMSelection;
     fRevealers: array [0..MAX_HANDS-1] of TKMPointTagList;
-    fVisibleLayers: TMapEdLayerSet;
+    fVisibleLayers: TKMMapEdLayerSet;
     //When you load a map script/libx/wav/etc. files are "attached" then copied when
     //saving if the path is different
     fAttachedFiles: array of UnicodeString;
@@ -32,19 +32,27 @@ type
     procedure ProceedUnitsCursorMode;
     procedure UpdateField(aStageIncrement: Integer; aCheckPrevCell: Boolean);
     procedure EraseObject(aEraseAll: Boolean);
-    function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
+    function ChangeObjectOwner(aObject: TObject; aOwner: TKMHandID): Boolean;
     procedure ChangeOwner(aChangeOwnerForAll: Boolean);
+    procedure PaintDefences(aLayer: TKMPaintLayer);
+    procedure PaintRevealFOW(aLayer: TKMPaintLayer);
+    procedure PaintCenterScreen(aLayer: TKMPaintLayer);
+    procedure PaintAIStart(aLayer: TKMPaintLayer);
+    procedure PaintMiningRadius(aLayer: TKMPaintLayer);
   public
+    MissionDefSavePath: UnicodeString;
+
     ActiveMarker: TKMMapEdMarker;
 
     ResizeMapRect: TKMRect;
     RevealAll: array [0..MAX_HANDS-1] of Boolean;
-    DefaultHuman: TKMHandIndex;
+    DefaultHuman: TKMHandID;
     PlayerHuman: array [0..MAX_HANDS - 1] of Boolean;
-    PlayerAI: array [0..MAX_HANDS - 1] of Boolean;
+    PlayerClassicAI: array [0..MAX_HANDS - 1] of Boolean;
+    PlayerAdvancedAI: array [0..MAX_HANDS - 1] of Boolean;
 
     IsNewMap: Boolean;  // set True for new empty map
-    WereSaved: Boolean; // set True when at least 1 map save has been done
+    WasSaved: Boolean; // set True when at least 1 map save has been done
 
     constructor Create;
     destructor Destroy; override;
@@ -52,7 +60,10 @@ type
     property Deposits: TKMDeposits read fDeposits;
     property Selection: TKMSelection read fSelection;
     property Revealers[aIndex: Byte]: TKMPointTagList read GetRevealer;
-    property VisibleLayers: TMapEdLayerSet read fVisibleLayers write fVisibleLayers;
+    property VisibleLayers: TKMMapEdLayerSet read fVisibleLayers write fVisibleLayers;
+
+    function OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
+
     procedure DetectAttachedFiles(const aMissionFile: UnicodeString);
     procedure SaveAttachements(const aMissionFile: UnicodeString);
     function HitTest(X,Y: Integer): TKMMapEdMarker;
@@ -61,9 +72,11 @@ type
     procedure MouseMove;
     procedure MouseUp(Button: TMouseButton; aOverMap: Boolean);
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; X,Y: Integer);
-    procedure Update;
+    procedure UpdateState;
     procedure UpdateStateIdle;
-    procedure Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+    procedure Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
+
+    procedure DeletePlayer(aIndex: TKMHandID);
   end;
 
 
@@ -71,10 +84,10 @@ implementation
 uses
   SysUtils, StrUtils, Math,
   KM_Terrain, KM_FileIO,
-  KM_AIDefensePos,
-  KM_Units, KM_UnitGroups, KM_Houses, KM_HouseBarracks,
-  KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses,
-  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor;
+  KM_AIDefensePos, 
+  KM_Units, KM_UnitGroup, KM_Houses, KM_HouseCollection, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
+  KM_Game, KM_GameCursor, KM_ResMapElements, KM_ResHouses, KM_ResWares,
+  KM_RenderAux, KM_Hand, KM_HandsCollection, KM_InterfaceMapEditor, KM_CommonUtils, KM_Utils;
 
 
 { TKMMapEditor }
@@ -84,10 +97,13 @@ var
 begin
   inherited Create;
 
+  MissionDefSavePath := '';
+
   for I := 0 to MAX_HANDS - 1 do
   begin
-    PlayerHuman[I] := true;
-    PlayerAI[I] := true;
+    PlayerHuman[I] := True;
+    PlayerClassicAI[I] := True;
+    PlayerAdvancedAI[I] := True;
   end;
 
   fDeposits := TKMDeposits.Create;
@@ -95,7 +111,7 @@ begin
   fTerrainPainter := TKMTerrainPainter.Create;
   fSelection := TKMSelection.Create(fTerrainPainter);
 
-  fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlDeposits];
+  fVisibleLayers := [mlObjects, mlHouses, mlUnits, mlOverlays, mlDeposits];
 
   ResizeMapRect := KMRECT_ZERO;
 
@@ -113,7 +129,7 @@ begin
   FreeAndNil(fSelection);
 
   for I := Low(fRevealers) to High(fRevealers) do
-    fRevealers[I].Free;
+    FreeAndNil(fRevealers[I]);
 
   inherited;
 end;
@@ -145,11 +161,12 @@ begin
   HasScript := False;
   AttachCnt := 0;
   SetLength(fAttachedFiles, 8);
+  MissionDefSavePath := aMissionFile;
   MissionName := ChangeFileExt(ExtractFileName(aMissionFile), '');
   FindFirst(ChangeFileExt(aMissionFile, '.*'), faAnyFile - faDirectory, SearchRec);
   try
     repeat
-      if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+      if (SearchRec.Name <> '') and (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
       begin
         //Can't use ExtractFileExt because we want .eng.libx not .libx
         RecExt := RightStr(SearchRec.Name, Length(SearchRec.Name) - Length(MissionName));
@@ -158,7 +175,7 @@ begin
           or (LowerCase(RecExt) = '.mi' ) then
           Continue;
 
-        if LowerCase(RecExt) = '.script' then
+        if LowerCase(RecExt) = EXT_FILE_SCRIPT_DOT then
           HasScript := True;
 
         AddAttachment(AttachCnt, ExtractFilePath(aMissionFile) + SearchRec.Name);
@@ -171,8 +188,8 @@ begin
   //Add all scripts if we find main script
   if HasScript then
   begin
-    MissionScriptFileName := MissionName + '.script';
-    FindFirst(ExtractFilePath(aMissionFile) + '*.script', faAnyFile - faDirectory, SearchRec);
+    MissionScriptFileName := MissionName + EXT_FILE_SCRIPT_DOT;
+    FindFirst(ExtractFilePath(aMissionFile) + '*' + EXT_FILE_SCRIPT_DOT, faAnyFile - faDirectory, SearchRec);
     try
       repeat
         if (SearchRec.Name <> '.') and (SearchRec.Name <> '..')
@@ -191,24 +208,44 @@ end;
 procedure TKMMapEditor.SaveAttachements(const aMissionFile: UnicodeString);
 var
   I: Integer;
-  MissionPath, Dest: UnicodeString;
+  MissionPath, MissionNewName, MissionOldName, DestPath: UnicodeString;
 begin
   MissionPath := ExtractFilePath(aMissionFile);
+  MissionNewName := GetFileDirName(aMissionFile);
+  MissionOldName := '';
+
+  //Copy all attachments files into new folder
   for I := 0 to High(fAttachedFiles) do
     if FileExists(fAttachedFiles[I]) then
     begin
-      Dest := MissionPath + ExtractFileName(fAttachedFiles[I]);
-      if not SameFileName(Dest, fAttachedFiles[I]) then
+      DestPath := MissionPath + ExtractFileName(fAttachedFiles[I]);
+
+      //Get MissionOldName from first attachment file
+      if MissionOldName = '' then
+        MissionOldName := GetFileDirName(fAttachedFiles[I]);
+
+      if not SameFileName(DestPath, fAttachedFiles[I]) then
       begin
-        if FileExists(Dest) then
-          DeleteFile(Dest);
-        KMCopyFile(fAttachedFiles[I], Dest);
+        if FileExists(DestPath) then
+          DeleteFile(DestPath);
+        KMCopyFile(fAttachedFiles[I], DestPath);
       end;
     end;
+
+  // Rename all files inside new saved map folder
+  KMRenameFilesInFolder(MissionPath, MissionOldName, MissionNewName);
 
   //Update attached files to be in the new path
   SetLength(fAttachedFiles, 0);
   DetectAttachedFiles(aMissionFile);
+end;
+
+
+function TKMMapEditor.OnlyAdvancedAIHand(aHandId: TKMHandID): Boolean;
+begin
+  Result := PlayerAdvancedAI[aHandId]
+    and not PlayerClassicAI[aHandId]
+    and not PlayerHuman[aHandId];
 end;
 
 
@@ -278,20 +315,20 @@ begin
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
                     FieldStage := (gTerrain.GetCornStage(P) + aStageIncrement + CORN_STAGES_COUNT) mod CORN_STAGES_COUNT;
-                end else if gMySpectator.Hand.CanAddFieldPlan(P, ft_Corn) then
+                end else if gMySpectator.Hand.CanAddFieldPlan(P, ftCorn) then
                   FieldStage := 0;
                 if FieldStage >= 0 then
-                  gMySpectator.Hand.AddField(P, ft_Corn, FieldStage);
+                  gMySpectator.Hand.AddField(P, ftCorn, FieldStage);
               end;
     cmWine:   begin
                 if gTerrain.TileIsWineField(P) then
                 begin
                   if not KMSamePoint(P, gGameCursor.PrevCell) or not aCheckPrevCell then
                     FieldStage := (gTerrain.GetWineStage(P) + aStageIncrement + WINE_STAGES_COUNT) mod WINE_STAGES_COUNT;
-                end else if gMySpectator.Hand.CanAddFieldPlan(P, ft_Wine) then
+                end else if gMySpectator.Hand.CanAddFieldPlan(P, ftWine) then
                   FieldStage := 0;
                 if FieldStage >= 0 then
-                  gMySpectator.Hand.AddField(P, ft_Wine, FieldStage);
+                  gMySpectator.Hand.AddField(P, ftWine, FieldStage);
               end;
   end;
 end;
@@ -308,7 +345,7 @@ begin
   //Delete unit/house
   if Obj is TKMUnit then
   begin
-    gHands.RemAnyUnit(TKMUnit(Obj).GetPosition);
+    gHands.RemAnyUnit(TKMUnit(Obj).CurrPosition);
     if not aEraseAll then Exit;
   end
   else
@@ -319,23 +356,48 @@ begin
   end;
 
   //Delete tile object (including corn/wine objects as well)
-  if (gTerrain.Land[P.Y,P.X].Obj <> 255) then
+  if (gTerrain.Land[P.Y,P.X].Obj <> OBJ_NONE) then
   begin
     fTerrainPainter.MakeCheckpoint;
     if gTerrain.TileIsCornField(P) and (gTerrain.GetCornStage(P) in [4,5]) then
-      gTerrain.SetField(P, gTerrain.Land[P.Y,P.X].TileOwner, ft_Corn, 3)  // For corn, when delete corn object reduce field stage to 3
+      gTerrain.SetField(P, gTerrain.Land[P.Y,P.X].TileOwner, ftCorn, 3)  // For corn, when delete corn object reduce field stage to 3
     else if gTerrain.TileIsWineField(P) then
       gTerrain.RemField(P)
     else
-      gTerrain.SetObject(P, 255);
+      gTerrain.SetObject(P, OBJ_NONE);
     if not aEraseAll then Exit;
   end;
 
   //Delete tile overlay (road/corn/wine)
-  if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+  if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
     gTerrain.RemRoad(P);
   if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
     gTerrain.RemField(P);
+end;
+
+
+procedure TKMMapEditor.DeletePlayer(aIndex: TKMHandID);
+begin
+  if gHands = nil then Exit;
+
+  if gHands.Count = 0 then Exit;
+
+  Revealers[aIndex].Clear;
+
+  gHands.Hands[aIndex].Units.RemoveAllUnits;
+
+  gHands.Hands[aIndex].UnitGroups.RemAllGroups;
+
+  gHands.Hands[aIndex].Houses.RemoveAllHouses;
+
+  gTerrain.ClearPlayerLand(aIndex);
+
+  gHands.Hands[aIndex].AI.Goals.Clear;
+
+  gHands.Hands[aIndex].AI.General.Attacks.Clear;
+
+  gHands.Hands[aIndex].AI.General.DefencePositions.Clear;
+
 end;
 
 
@@ -344,17 +406,17 @@ var P: TKMPoint;
 begin
   P := gGameCursor.Cell;
   //Fisrt try to change owner of object on tile
-  if not ChangeObjectOwner(gMySpectator.HitTestCursorWGroup, gMySpectator.HandIndex) or aChangeOwnerForAll then
+  if not ChangeObjectOwner(gMySpectator.HitTestCursorWGroup, gMySpectator.HandID) or aChangeOwnerForAll then
     //then try to change owner tile (road/field/wine)
-    if ((gTerrain.Land[P.Y, P.X].TileOverlay = to_Road) or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
-      and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandIndex) then
-      gTerrain.Land[P.Y, P.X].TileOwner := gMySpectator.HandIndex;
+    if ((gTerrain.Land[P.Y, P.X].TileOverlay = toRoad) or (gTerrain.Land[P.Y, P.X].CornOrWine <> 0))
+      and (gTerrain.Land[P.Y, P.X].TileOwner <> gMySpectator.HandID) then
+      gTerrain.Land[P.Y, P.X].TileOwner := gMySpectator.HandID;
 end;
 
 
 //Change owner for specified object
 //returns True if owner was changed successfully
-function TKMMapEditor.ChangeObjectOwner(aObject: TObject; aOwner: TKMHandIndex): Boolean;
+function TKMMapEditor.ChangeObjectOwner(aObject: TObject; aOwner: TKMHandID): Boolean;
 var House: TKMHouse;
 begin
   Result := False;
@@ -366,7 +428,7 @@ begin
     if House.Owner <> aOwner then
     begin
       House.OwnerUpdate(aOwner, True);
-      gTerrain.SetHouseAreaOwner(House.GetPosition, House.HouseType, aOwner); // Update minimap colors
+      gTerrain.SetHouseAreaOwner(House.Position, House.HouseType, aOwner); // Update minimap colors
       Result := True;
     end;
   end
@@ -393,10 +455,7 @@ end;
 
 
 procedure TKMMapEditor.MouseDown(Button: TMouseButton);
-var
-  P: TKMPoint;
 begin
-  P := gGameCursor.Cell;
   if (Button = mbLeft) then
     case gGameCursor.Mode of
       cmSelection:  fSelection.Selection_Start;
@@ -415,7 +474,7 @@ begin
 
   P := gGameCursor.Cell;
   case gGameCursor.Mode of
-    cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ft_Road) then
+    cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ftRoad) then
                   begin
                     //If there's a field remove it first so we don't get road on top of the field tile (undesired in MapEd)
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
@@ -427,7 +486,7 @@ begin
     cmUnits:      ProceedUnitsCursorMode;
     cmErase:      begin
                     gHands.RemAnyHouse(P);
-                    if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+                    if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
                       gTerrain.RemRoad(P);
                     if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                       gTerrain.RemField(P);
@@ -450,18 +509,18 @@ begin
   begin
     Obj := gMySpectator.HitTestCursor(True);
     if Obj is TKMUnit then
-      gHands.RemAnyUnit(TKMUnit(Obj).GetPosition);
+      gHands.RemAnyUnit(TKMUnit(Obj).CurrPosition);
   end else
-  if gTerrain.CanPlaceUnit(P, TUnitType(gGameCursor.Tag1)) then
+  if gTerrain.CanPlaceUnit(P, TKMUnitType(gGameCursor.Tag1)) then
   begin
     //Check if we can really add a unit
-    if TUnitType(gGameCursor.Tag1) in [CITIZEN_MIN..CITIZEN_MAX] then
-      gMySpectator.Hand.AddUnit(TUnitType(gGameCursor.Tag1), P, False)
+    if TKMUnitType(gGameCursor.Tag1) in [CITIZEN_MIN..CITIZEN_MAX] then
+      gMySpectator.Hand.AddUnit(TKMUnitType(gGameCursor.Tag1), P, False)
     else
-    if TUnitType(gGameCursor.Tag1) in [WARRIOR_MIN..WARRIOR_MAX] then
-      gMySpectator.Hand.AddUnitGroup(TUnitType(gGameCursor.Tag1), P, dir_S, 1, 1)
+    if TKMUnitType(gGameCursor.Tag1) in [WARRIOR_MIN..WARRIOR_MAX] then
+      gMySpectator.Hand.AddUnitGroup(TKMUnitType(gGameCursor.Tag1), P, dirS, 1, 1)
     else
-      gHands.PlayerAnimals.AddUnit(TUnitType(gGameCursor.Tag1), P);
+      gHands.PlayerAnimals.AddUnit(TKMUnitType(gGameCursor.Tag1), P);
   end;
 end;
 
@@ -482,16 +541,16 @@ begin
   P := gGameCursor.Cell; //Get cursor position tile-wise
   case Button of
     mbLeft:   case gGameCursor.Mode of
-                cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ft_Road) then
+                cmRoad:       if gMySpectator.Hand.CanAddFieldPlan(P, ftRoad) then
                               begin
                                 //If there's a field remove it first so we don't get road on top of the field tile (undesired in MapEd)
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                                   gTerrain.RemField(P);
                                 gMySpectator.Hand.AddRoad(P);
                               end;
-                cmHouses:     if gMySpectator.Hand.CanAddHousePlan(P, THouseType(gGameCursor.Tag1)) then
+                cmHouses:     if gMySpectator.Hand.CanAddHousePlan(P, TKMHouseType(gGameCursor.Tag1)) then
                               begin
-                                gMySpectator.Hand.AddHouse(THouseType(gGameCursor.Tag1), P.X, P.Y, true);
+                                gMySpectator.Hand.AddHouse(TKMHouseType(gGameCursor.Tag1), P.X, P.Y, true);
                                 //Holding shift allows to place that house multiple times
                                 if not (ssShift in gGameCursor.SState) then
                                 begin
@@ -506,28 +565,26 @@ begin
                 cmEyedropper: begin
                                 fTerrainPainter.Eyedropper(P);
                                 if (gGame.ActiveInterface is TKMapEdInterface) then
-                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableScrollToTileTexId(gGameCursor.Tag1);
+                                  TKMapEdInterface(gGame.ActiveInterface).GuiTerrain.GuiTiles.TilesTableSetTileTexId(gGameCursor.Tag1);
                                 if not (ssShift in gGameCursor.SState) then  //Holding shift allows to choose another tile
                                   gGameCursor.Mode := cmTiles;
                               end;
                 cmRotateTile: fTerrainPainter.RotateTile(P);
                 cmUnits:      ProceedUnitsCursorMode;
                 cmMarkers:    case gGameCursor.Tag1 of
-                                MARKER_REVEAL:        fRevealers[gMySpectator.HandIndex].Add(P, gGameCursor.MapEdSize);
-                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dir_N), gt_Melee, 10, adt_FrontLine);
+                                MARKER_REVEAL:        fRevealers[gMySpectator.HandID].Add(P, gGameCursor.MapEdSize);
+                                MARKER_DEFENCE:       gMySpectator.Hand.AI.General.DefencePositions.Add(KMPointDir(P, dirN), gtMelee, 10, adtFrontLine);
                                 MARKER_CENTERSCREEN:  begin
                                                         gMySpectator.Hand.CenterScreen := P;
                                                         //Updating XY display is done in InterfaceMapEd
                                                       end;
                                 MARKER_AISTART:       gMySpectator.Hand.AI.Setup.StartPosition := P;
-                                MARKER_RALLY_POINT:   if gMySpectator.Selected is TKMHouseBarracks then
-                                                        TKMHouseBarracks(gMySpectator.Selected).RallyPoint := P;
-                                MARKER_CUTTING_POINT: if gMySpectator.Selected is TKMHouseWoodcutters then
-                                                        TKMHouseWoodcutters(gMySpectator.Selected).CuttingPoint := P;
+                                MARKER_RALLY_POINT:   if gMySpectator.Selected is TKMHouseWFlagPoint then
+                                                        TKMHouseWFlagPoint(gMySpectator.Selected).FlagPoint := P;
                               end;
                 cmErase:      begin
                                 gHands.RemAnyHouse(P);
-                                if gTerrain.Land[P.Y,P.X].TileOverlay = to_Road then
+                                if gTerrain.Land[P.Y,P.X].TileOverlay = toRoad then
                                   gTerrain.RemRoad(P);
                                 if gTerrain.TileIsCornField(P) or gTerrain.TileIsWineField(P) then
                                   gTerrain.RemField(P);
@@ -541,6 +598,7 @@ begin
                                 //Actual change was made in UpdateStateIdle, we just register it is done here
                                 fTerrainPainter.MakeCheckpoint;
                               end;
+                cmObjects,
                 cmEyedropper,
                 cmRotateTile: gGameCursor.Mode := cmNone;
               end;
@@ -548,46 +606,20 @@ begin
 end;
 
 
-procedure TKMMapEditor.Update;
-begin
-  if mlDeposits in VisibleLayers then
-    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
-
-  //todo: if mlNavMesh in VisibleLayers then
-    //gAIFields.NavMesh.Init;
-end;
-
-
-procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; aClipRect: TKMRect);
+procedure TKMMapEditor.PaintDefences(aLayer: TKMPaintLayer);
 var
   I, K: Integer;
-  Loc, P: TKMPoint;
-  G: TKMUnitGroup;
   DP: TAIDefencePosition;
 begin
-  P := gGameCursor.Cell;
-
-  if aLayer = plCursors then
-    //With Buildings tab see if we can remove Fields or Houses
-    if gGameCursor.Mode = cmErase then
-      if gTerrain.TileIsCornField(P)
-      or gTerrain.TileIsWineField(P)
-      or (gTerrain.Land[P.Y,P.X].TileOverlay=to_Road)
-      or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
-        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
-      else
-        gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
-
-
   if mlDefences in fVisibleLayers then
   begin
     case aLayer of
       plCursors:  for I := 0 to gHands.Count - 1 do
-                  for K := 0 to gHands[I].AI.General.DefencePositions.Count - 1 do
-                  begin
-                    DP := gHands[I].AI.General.DefencePositions[K];
-                    gRenderPool.RenderSpriteOnTile(DP.Position.Loc, 510 + Byte(DP.Position.Dir), gHands[I].FlagColor);
-                  end;
+                    for K := 0 to gHands[I].AI.General.DefencePositions.Count - 1 do
+                    begin
+                      DP := gHands[I].AI.General.DefencePositions[K];
+                      gRenderPool.RenderSpriteOnTile(DP.Position.Loc, 510 + Byte(DP.Position.Dir), gHands[I].FlagColor);
+                    end;
       plTerrain:  if ActiveMarker.MarkerType = mtDefence then
                     //Render the radius only for the selected defence position, otherwise it's too much overlap
                     if InRange(ActiveMarker.Index, 0, gHands[ActiveMarker.Owner].AI.General.DefencePositions.Count - 1) then
@@ -599,47 +631,229 @@ begin
                     end;
     end;
   end;
+end;
 
+
+procedure TKMMapEditor.PaintRevealFOW(aLayer: TKMPaintLayer);
+var
+  I, K: Integer;
+  Loc: TKMPoint;
+begin
   if mlRevealFOW in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  for K := 0 to fRevealers[I].Count - 1 do
-  begin
-    Loc := fRevealers[I][K];
-    case aLayer of
-      plTerrain:  gRenderAux.CircleOnTerrain(Loc.X-0.5, Loc.Y-0.5,
-                                           fRevealers[I].Tag[K],
-                                           gHands[I].FlagColor and $20FFFFFF,
-                                           gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc,
-                      394, gHands[I].FlagColor);
-    end;
-  end;
+    for I := 0 to gHands.Count - 1 do
+      for K := 0 to fRevealers[I].Count - 1 do
+      begin
+        Loc := fRevealers[I][K];
+        case aLayer of
+          plTerrain:  gRenderAux.CircleOnTerrain(Loc.X-0.5, Loc.Y-0.5,
+                                               fRevealers[I].Tag[K],
+                                               gHands[I].FlagColor and $20FFFFFF,
+                                               gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc,
+                          394, gHands[I].FlagColor);
+        end;
+      end;
+end;
 
+
+procedure TKMMapEditor.PaintCenterScreen(aLayer: TKMPaintLayer);
+var
+  I: Integer;
+  Loc: TKMPoint;
+begin
   if mlCenterScreen in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  if gHands[I].HasAssets then
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        Loc := gHands[I].CenterScreen;
+        case aLayer of
+          plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
+                                                 Loc.X + 2, Loc.Y + 1.5,
+                                                 gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 391, gHands[I].FlagColor);
+        end;
+      end;
+end;
+
+
+procedure TKMMapEditor.PaintAIStart(aLayer: TKMPaintLayer);
+var
+  I: Integer;
+  Loc: TKMPoint;
+begin
+  if mlAIStart in fVisibleLayers then
+    for I := 0 to gHands.Count - 1 do
+      if gHands[I].HasAssets then
+      begin
+        Loc := gHands[I].AI.Setup.StartPosition;
+        case aLayer of
+          plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
+                                                 Loc.X + 2, Loc.Y + 1.5,
+                                                 gHands[I].FlagColor);
+          plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 390, gHands[I].FlagColor);
+        end;
+      end;
+end;
+
+
+procedure TKMMapEditor.PaintMiningRadius(aLayer: TKMPaintLayer);
+const
+  GOLD_ORE_COLOR = icYellow;
+  IRON_ORE_COLOR = icSteelBlue;
+  COAL_ORE_COLOR = icGray;
+  SELECTED_ORE_COLOR = icLight2Red;
+
+  procedure AddOrePoints(aOreP, aAllOreP: TKMPointListArray);
+  var
+    I,J,K: Integer;
+    Skip: Boolean;
   begin
-    Loc := gHands[I].CenterScreen;
-    case aLayer of
-      plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
-                                             Loc.X + 2, Loc.Y + 1.5,
-                                             gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 391, gHands[I].FlagColor);
+    for I := 0 to Length(aOreP) - 1 do
+    begin
+      for J := 0 to aOreP[I].Count - 1 do
+      begin
+        Skip := False;
+        //Skip if we already have this point in upper layer
+        for K := 0 to I do
+          if aAllOreP[K].Contains(aOreP[I][J]) then
+          begin
+            Skip := True;
+            Break;
+          end;
+        if not Skip then
+        begin
+          aAllOreP[I].Add(aOreP[I][J]); //Couild be Add actually, as we checked Contains already
+          //Remove added points from lowered layers
+          for K := I + 1 to 2 do
+            aAllOreP[K].Remove(aOreP[I][J]);
+        end;
+      end;
     end;
   end;
 
-  if mlAIStart in fVisibleLayers then
-  for I := 0 to gHands.Count - 1 do
-  if gHands[I].HasAssets then
+  procedure PaintOrePoints(aOreP: TKMPointListArray; Color: Cardinal; aHighlight: Boolean = False);
+  var
+    I, K, L: Integer;
+    Color2: Cardinal;
+    Coef: Single;
   begin
-    Loc := gHands[I].AI.Setup.StartPosition;
-    case aLayer of
-      plTerrain:  gRenderAux.SquareOnTerrain(Loc.X - 3, Loc.Y - 2.5,
-                                             Loc.X + 2, Loc.Y + 1.5,
-                                             gHands[I].FlagColor);
-      plCursors:  gRenderPool.RenderSpriteOnTile(Loc, 390, gHands[I].FlagColor);
+    Coef := 0.15;
+    if aHighlight then
+    begin
+      Color := SELECTED_ORE_COLOR;
+      Coef := 0.3;
+    end;
+
+    for I := 1 to Length(aOreP) - 1 do
+    begin
+      Color := Color and $40FFFFFF;
+      Color := MultiplyBrightnessByFactor(Color, Coef);
+      for K := Length(aOreP) - 1 downto 0 do
+        for L := 0 to aOreP[K].Count - 1 do
+        begin
+          Color2 := Color;
+          if K = 1 then
+            Color2 := MultiplyBrightnessByFactor(Color, 4);
+          if K = 2 then
+            Color2 := MultiplyBrightnessByFactor(Color, 7);
+          gRenderAux.Quad(aOreP[K][L].X, aOreP[K][L].Y, Color2);
+        end;
     end;
   end;
+
+var
+  I, J, K: Integer;
+  H: TKMHouse;
+  IronOreP, GoldOreP, CoalOreP, OreP, SelectedOreP: TKMPointListArray;
+begin
+  if (mlMiningRadius in fVisibleLayers) and (aLayer = plTerrain) then
+  begin
+    SetLength(OreP, 3);
+    SetLength(IronOreP, 3);
+    SetLength(GoldOreP, 3);
+    SetLength(CoalOreP, 3);
+    SetLength(SelectedOreP, 3);
+
+    for I := 0 to Length(OreP) - 1 do
+    begin
+      OreP[I] := TKMPointList.Create;
+      IronOreP[I] := TKMPointList.Create;
+      GoldOreP[I] := TKMPointList.Create;
+      CoalOreP[I] := TKMPointList.Create;
+      SelectedOreP[I] := TKMPointList.Create;
+    end;
+
+    for I := 0 to gHands.Count - 1 do
+    begin
+      for J := 0 to gHands[I].Houses.Count - 1 do
+      begin
+        H := gHands[I].Houses[J];
+        case H.HouseType of
+          htIronMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtIronOre, OreP);
+                          AddOrePoints(OreP, IronOreP);
+                        end;
+          htGoldMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtGoldOre, OreP);
+                          AddOrePoints(OreP, GoldOreP);
+                        end;
+          htCoalMine:  begin
+                          gTerrain.FindOrePointsByDistance(H.PointBelowEntrance, wtCoal, OreP);
+                          AddOrePoints(OreP, CoalOreP);
+                        end;
+          else Continue;
+        end;
+
+        if gMySpectator.Selected = H then
+          for K := 0 to Length(OreP) - 1 do
+            SelectedOreP[K].AddList(OreP[K]);
+
+        for K := 0 to Length(OreP) - 1 do
+          OreP[K].Clear;
+      end;
+    end;
+
+    PaintOrePoints(IronOreP, IRON_ORE_COLOR);
+    PaintOrePoints(GoldOreP, GOLD_ORE_COLOR);
+    PaintOrePoints(CoalOreP, COAL_ORE_COLOR);
+    PaintOrePoints(SelectedOreP, 0, True);
+
+    for I := 0 to Length(OreP) - 1 do
+    begin
+      FreeAndNil(OreP[I]);
+      FreeAndNil(IronOreP[I]);
+      FreeAndNil(GoldOreP[I]);
+      FreeAndNil(CoalOreP[I]);
+      FreeAndNil(SelectedOreP[I]);
+    end;
+  end;
+end;
+
+
+procedure TKMMapEditor.Paint(aLayer: TKMPaintLayer; const aClipRect: TKMRect);
+var
+  I, K: Integer;
+  P: TKMPoint;
+  G: TKMUnitGroup;
+begin
+  P := gGameCursor.Cell;
+
+  if aLayer = plCursors then
+    //With Buildings tab see if we can remove Fields or Houses
+    if gGameCursor.Mode = cmErase then
+      if gTerrain.TileIsCornField(P)
+        or gTerrain.TileIsWineField(P)
+        or (gTerrain.Land[P.Y,P.X].TileOverlay=toRoad)
+        or (gHands.HousesHitTest(P.X, P.Y) <> nil) then
+        gRenderPool.RenderWireTile(P, $FFFFFF00) //Cyan quad
+      else
+        gRenderPool.RenderSpriteOnTile(P, TC_BLOCK); //Red X
+
+  PaintDefences(aLayer);
+  PaintRevealFOW(aLayer);
+  PaintCenterScreen(aLayer);
+  PaintAIStart(aLayer);
+  PaintMiningRadius(aLayer);
 
   if mlSelection in fVisibleLayers then
     fSelection.Paint(aLayer, aClipRect);
@@ -672,11 +886,23 @@ begin
 end;
 
 
+procedure TKMMapEditor.UpdateState;
+begin
+  if mlDeposits in VisibleLayers then
+    fDeposits.UpdateAreas([rdStone, rdCoal, rdIron, rdGold, rdFish]);
+
+  fTerrainPainter.UpdateState;
+
+  //todo: if mlNavMesh in VisibleLayers then
+    //gAIFields.NavMesh.Init;
+end;
+
+
 procedure TKMMapEditor.UpdateStateIdle;
 begin
-  if fTerrainPainter <> nil then
-    fTerrainPainter.UpdateStateIdle;
+  fTerrainPainter.UpdateStateIdle;
 end;
 
 
 end.
+

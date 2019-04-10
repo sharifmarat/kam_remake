@@ -2,36 +2,36 @@ unit KM_AIDefensePos;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_UnitGroups,
+  KM_UnitGroup,
   KM_CommonClasses, KM_Defaults, KM_Points;
 
 
 type
   //For now IDs must match with KaM
-  TAIDefencePosType = (adt_FrontLine=0, //Front line troops may not go on attacks, they are for defence
-                       adt_BackLine=1); //Back line troops may attack
+  TAIDefencePosType = (adtFrontLine=0, //Front line troops may not go on attacks, they are for defence
+                       adtBackLine=1); //Back line troops may attack
 
   TKMFormation = record NumUnits, UnitsPerRow: Integer; end;
 
   TAIDefencePosition = class
   private
     fDefenceType: TAIDefencePosType; //Whether this is a front or back line defence position. See comments on TAIDefencePosType above
-    fGroupType: TGroupType; //Type of group to defend this position (e.g. melee)
+    fGroupType: TKMGroupType; //Type of group to defend this position (e.g. melee)
     fPosition: TKMPointDir; //Position and direction the group defending will stand
     fRadius: Integer; //If fighting (or houses being attacked) occurs within this radius from this defence position, this group will get involved
 
     fCurrentGroup: TKMUnitGroup; //Commander of group currently occupying position
     procedure SetCurrentGroup(aGroup: TKMUnitGroup);
-    procedure SetGroupType(const Value: TGroupType);
+    procedure SetGroupType(const Value: TKMGroupType);
     procedure SetDefenceType(const Value: TAIDefencePosType);
     procedure SetPosition(const Value: TKMPointDir);
   public
-    constructor Create(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+    constructor Create(const aPos: TKMPointDir; aGroupType: TKMGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
     constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
 
     property DefenceType: TAIDefencePosType read fDefenceType write SetDefenceType;
-    property GroupType: TGroupType read fGroupType write SetGroupType; //Type of group to defend this position (e.g. melee)
+    property GroupType: TKMGroupType read fGroupType write SetGroupType; //Type of group to defend this position (e.g. melee)
     property Position: TKMPointDir read fPosition write SetPosition; //Position and direction the group defending will stand
     property Radius: Integer read fRadius write fRadius; //If fighting (or houses being attacked) occurs within this radius from this defence position, this group will get involved
 
@@ -50,12 +50,12 @@ type
     function GetCount: Integer; inline;
   public
     //Defines how defending troops will be formatted. 0 means leave unchanged.
-    TroopFormations: array [TGroupType] of TKMFormation;
+    TroopFormations: array [TKMGroupType] of TKMFormation;
 
     constructor Create;
     destructor Destroy; override;
 
-    procedure Add(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+    procedure Add(const aPos: TKMPointDir; aGroupType: TKMGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
     procedure Clear;
     property Count: Integer read GetCount;
     procedure Delete(aIndex: Integer);
@@ -81,12 +81,12 @@ type
 
 implementation
 uses
-  Math,
+  SysUtils, Math,
   KM_Game, KM_HandsCollection, KM_RenderAux;
 
 
 { TAIDefencePosition }
-constructor TAIDefencePosition.Create(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+constructor TAIDefencePosition.Create(const aPos: TKMPointDir; aGroupType: TKMGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
 begin
   inherited Create;
   fPosition := aPos;
@@ -122,7 +122,7 @@ begin
 end;
 
 
-procedure TAIDefencePosition.SetGroupType(const Value: TGroupType);
+procedure TAIDefencePosition.SetGroupType(const Value: TKMGroupType);
 begin
   Assert(gGame.IsMapEditor);
   fGroupType := Value;
@@ -195,22 +195,22 @@ begin
   //Tell group to walk to its position
   //It's easier to repeat the order than check that all members are in place
   if (CurrentGroup <> nil)
-  and CurrentGroup.IsIdleToAI
-  and CurrentGroup.CanWalkTo(Position.Loc, 0) then
-    CurrentGroup.OrderWalk(Position.Loc, True, Position.Dir);
+    and CurrentGroup.IsIdleToAI([wtokFlagPoint, wtokHaltOrder])
+    and CurrentGroup.CanWalkTo(Position.Loc, 0) then
+    CurrentGroup.OrderWalk(Position.Loc, True, wtokAIGotoDefencePos, Position.Dir);
 end;
 
 
 { TAIDefencePositions }
 constructor TAIDefencePositions.Create;
 var
-  GT: TGroupType;
+  GT: TKMGroupType;
 begin
   inherited Create;
 
   fPositions := TKMList.Create;
 
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     TroopFormations[GT].NumUnits := 9; //These are the defaults in KaM
     TroopFormations[GT].UnitsPerRow := 3;
@@ -220,7 +220,7 @@ end;
 
 destructor TAIDefencePositions.Destroy;
 begin
-  fPositions.Free;
+  FreeAndNil(fPositions);
 
   inherited;
 end;
@@ -238,7 +238,7 @@ begin
 end;
 
 
-procedure TAIDefencePositions.Add(aPos: TKMPointDir; aGroupType: TGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
+procedure TAIDefencePositions.Add(const aPos: TKMPointDir; aGroupType: TKMGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
 begin
   fPositions.Add(TAIDefencePosition.Create(aPos, aGroupType, aRadius, aDefenceType));
 end;
@@ -262,17 +262,17 @@ var I: Integer;
 begin
   Result := 0;
   for I := 0 to Count - 1 do
-    if Positions[I].fDefenceType = adt_BackLine then
+    if Positions[I].fDefenceType = adtBackLine then
       Inc(Result);
 end;
 
 
 function TAIDefencePositions.AverageUnitsPerGroup: Integer;
-var GT: TGroupType; TypeCount: Integer;
+var GT: TKMGroupType; TypeCount: Integer;
 begin
   Result := 0;
   TypeCount := 0;
-  for GT := Low(TGroupType) to High(TGroupType) do
+  for GT := Low(TKMGroupType) to High(TKMGroupType) do
   begin
     Result := Result + TroopFormations[GT].NumUnits;
     Inc(TypeCount);
@@ -315,7 +315,7 @@ begin
       Positions[Matched].CurrentGroup := aGroup;
       if aGroup.UnitsPerRow < TroopFormations[aGroup.GroupType].UnitsPerRow then
         aGroup.UnitsPerRow := TroopFormations[aGroup.GroupType].UnitsPerRow;
-      aGroup.OrderWalk(Positions[Matched].Position.Loc, True);
+      aGroup.OrderWalk(Positions[Matched].Position.Loc, True, wtokAIGotoDefencePos);
     end
     else
       //Append to existing position
@@ -368,10 +368,10 @@ begin
   begin
     Required := TroopFormations[Positions[I].GroupType].NumUnits;
     case Positions[I].GroupType of
-      gt_Melee:     Inc(aFootmen, Required);
-      gt_AntiHorse: Inc(aPikemen, Required);
-      gt_Ranged:    Inc(aArchers, Required);
-      gt_Mounted:   Inc(aHorsemen, Required);
+      gtMelee:     Inc(aFootmen, Required);
+      gtAntiHorse: Inc(aPikemen, Required);
+      gtRanged:    Inc(aArchers, Required);
+      gtMounted:   Inc(aHorsemen, Required);
     end;
   end;
 end;
@@ -447,7 +447,7 @@ procedure TAIDefencePositions.Paint;
 var I: Integer;
 begin
   for I := 0 to Count - 1 do
-    if Positions[I].fDefenceType = adt_FrontLine then
+    if Positions[I].fDefenceType = adtFrontLine then
       gRenderAux.Quad(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, $FFFF0000)
     else
       gRenderAux.Quad(Positions[I].fPosition.Loc.X, Positions[I].fPosition.Loc.Y, $FF00FF00)

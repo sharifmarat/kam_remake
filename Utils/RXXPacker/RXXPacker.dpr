@@ -54,6 +54,7 @@ uses
 
 var
   I, K: Integer;
+  ForcedConsoleMode: Boolean;
   RXType: TRXType;
   fRXXPacker: TRXXPacker;
   fPalettes: TKMResPalettes;
@@ -76,30 +77,25 @@ begin
   SI.cb := SizeOf(StartUpInfo);
   GetStartupInfo(SI);
   Result := (SI.dwFlags and STARTF_USESHOWWINDOW) = 0;
+  {$IFDEF FPC}
+  Result := False
+  {$ENDIF}
 end;
 
 
 begin
-  if not IsConsoleMode then
-  begin
-    FreeConsole; // Used to hide the console
-    Application.Initialize;
-    Application.MainFormOnTaskbar := True;
-    Application.CreateForm(TRXXForm1, RXXForm1);
-    Application.Run;
-  end else
+  ForcedConsoleMode :=
+  {$IFDEF FPC}
+    False //Set this to True to use as console app in lazarus
+  {$ELSE}
+    False
+  {$ENDIF}
+    ;
+  if ForcedConsoleMode or IsConsoleMode then
   begin
     if ParamCount >= 1 then
     begin
       writeln(sLineBreak + 'KaM Remake RXX Packer' + sLineBreak);
-
-      if ParamCount = 0 then
-      begin
-        writeln('No rx packages were set');
-        writeln('Usage example: RXXPacker.exe gui guimain houses trees units');
-        Exit;
-      end;
-
 
       ExeDir := ExpandFileName(ExtractFilePath(ParamStr(0)) + '..\..\');
       fRXXPacker := TRXXPacker.Create;
@@ -130,6 +126,19 @@ begin
         fRXXPacker.Free;
         fPalettes.Free;
       end;
-    end;
+    end else
+    if ParamCount = 0 then
+      begin
+        writeln('No rx packages were set');
+        writeln('Usage example: RXXPacker.exe gui guimain houses trees units');
+        Exit;
+      end;
+  end else
+  begin
+    FreeConsole; // Used to hide the console
+    Application.Initialize;
+    Application.MainFormOnTaskbar := True;
+    Application.CreateForm(TRXXForm1, RXXForm1);
+    Application.Run;
   end;
 end.

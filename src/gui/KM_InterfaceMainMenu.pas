@@ -19,8 +19,6 @@ uses
   KM_GUIMenuMultiplayer,
   KM_GUIMenuOptions,
   KM_GUIMenuReplays,
-  KM_GUIMenuResultsMP,
-  KM_GUIMenuResultsSP,
   KM_GUIMenuSingleMap,
   KM_GUIMenuSinglePlayer;
 
@@ -40,8 +38,6 @@ type
     fMenuMultiplayer: TKMMenuMultiplayer;
     fMenuOptions: TKMMenuOptions;
     fMenuReplays: TKMMenuReplays;
-    fMenuResultsMP: TKMMenuResultsMP;
-    fMenuResultsSP: TKMMenuResultsSP;
     fMenuSingleMap: TKMMenuSingleMap;
     fMenuSinglePlayer: TKMMenuSinglePlayer;
 
@@ -52,12 +48,10 @@ type
   public
     constructor Create(X,Y: Word);
     destructor Destroy; override;
+
     procedure PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
     procedure AppendLoadingText(const aText: string);
-    procedure ShowResultsMP(aMsg: TGameResultMsg);
-    procedure ShowResultsSP(aMsg: TGameResultMsg);
-    function GetChatState: TChatState;
-    procedure SetChatState(const aChatState: TChatState);
+
     procedure ExportPages(const aPath: string); override;
     procedure ReturnToLobby(const aSaveName: UnicodeString);
 
@@ -81,7 +75,6 @@ uses
 constructor TKMMainMenuInterface.Create(X,Y: Word);
 var
   S: TKMShape;
-  //F: TKMForm;
 begin
   inherited;
   Assert(gResTexts <> nil, 'fTextMain should be initialized before MainMenuInterface');
@@ -110,14 +103,9 @@ begin
   fMenuCredits       := TKMMenuCredits.Create(Panel_Menu, PageChange);
   fMenuError         := TKMMenuError.Create(Panel_Menu, PageChange);
   fMenuLoading       := TKMMenuLoading.Create(Panel_Menu, PageChange);
-  fMenuResultsMP     := TKMMenuResultsMP.Create(Panel_Menu, PageChange);
-  fMenuResultsSP     := TKMMenuResultsSP.Create(Panel_Menu, PageChange);
-
-    {for i:=1 to length(FontFiles) do L[i]:=TKMLabel.Create(Panel_Main1,550,280+i*20,160,30,'This is a test string for KaM Remake ('+FontFiles[i],TKMFont(i),taLeft);//}
-    //MyControls.AddTextEdit(Panel_Main, 32, 32, 200, 20, fnt_Grey);
 
   //Show version info on every page
-  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fnt_Antiqua, taLeft);
+  Label_Version := TKMLabel.Create(Panel_Main, 8, 8, 0, 0, '', fntAntiqua, taLeft);
 
   if OVERLAY_RESOLUTIONS then
   begin
@@ -131,32 +119,26 @@ begin
     S.Hitable := False;
   end;
 
-  //F := TKMForm.Create(Panel_Main, 100, 100, 200, 160);
-  //F.Caption := 'Some Form';
-  //F.Show;
-
   gLog.AddTime('Main menu init done');
 end;
 
 
 destructor TKMMainMenuInterface.Destroy;
 begin
-  fMenuCampaign.Free;
-  fMenuCampaigns.Free;
-  fMenuCredits.Free;
-  fMenuError.Free;
-  fMenuLoad.Free;
-  fMenuLoading.Free;
-  fMenuLobby.Free;
-  fMenuMain.Free;
-  fMenuMapEditor.Free;
-  fMenuMultiplayer.Free;
-  fMenuOptions.Free;
-  fMenuReplays.Free;
-  fMenuResultsMP.Free;
-  fMenuResultsSP.Free;
-  fMenuSingleMap.Free;
-  fMenuSinglePlayer.Free;
+  FreeAndNil(fMenuCampaign);
+  FreeAndNil(fMenuCampaigns);
+  FreeAndNil(fMenuCredits);
+  FreeAndNil(fMenuError);
+  FreeAndNil(fMenuLoad);
+  FreeAndNil(fMenuLoading);
+  FreeAndNil(fMenuLobby);
+  FreeAndNil(fMenuMain);
+  FreeAndNil(fMenuMapEditor);
+  FreeAndNil(fMenuMultiplayer);
+  FreeAndNil(fMenuOptions);
+  FreeAndNil(fMenuReplays);
+  FreeAndNil(fMenuSingleMap);
+  FreeAndNil(fMenuSinglePlayer);
 
   inherited;
 end;
@@ -184,37 +166,13 @@ begin
 end;
 
 
-function TKMMainMenuInterface.GetChatState: TChatState;
-begin
-  Result := fMenuLobby.GetChatState;
-end;
-
-
-procedure TKMMainMenuInterface.SetChatState(const aChatState: TChatState);
-begin
-  fMenuLobby.SetChatState(aChatState);
-end;
-
-
-procedure TKMMainMenuInterface.ShowResultsMP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsMP.Show(aMsg);
-end;
-
-
-procedure TKMMainMenuInterface.ShowResultsSP(aMsg: TGameResultMsg);
-begin
-  fMenuResultsSP.Show(aMsg);
-end;
-
-
 procedure TKMMainMenuInterface.PageChange(Dest: TKMMenuPageType; const aText: UnicodeString = '');
 var
   I: Integer;
   cmp: TKMCampaignId;
-  Version: String;
+  Version: UnicodeString;
 begin
-  Version := GAME_VERSION + ' / ' + gGameApp.RenderVersion;
+  Version := UnicodeString(GAME_VERSION) + ' / ' + gGameApp.RenderVersion;
 
   if gMain <> nil then // could be nil if used from utils
     gMain.StatusBarText(SB_ID_KMR_VER,'KMR ' +  Version);
@@ -228,7 +186,7 @@ begin
 
   case Dest of
     gpMainMenu:     begin
-                      Label_Version.Caption := 'KAM Remake - ' + Version;
+                      Label_Version.Caption := 'KaM Remake - ' + Version;
                       fMenuMain.Show;
                       fMenuPage := fMenuMain;
                     end;
@@ -250,10 +208,10 @@ begin
                     end;
     gpLobby:        begin
                       if aText = 'HOST' then
-                        fMenuLobby.Show(lpk_Host, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkHost, gGameApp.Networking, Panel_Menu.Height)
                       else
                       if aText = 'JOIN' then
-                        fMenuLobby.Show(lpk_Joiner, gGameApp.Networking, Panel_Menu.Height)
+                        fMenuLobby.Show(lpkJoiner, gGameApp.Networking, Panel_Menu.Height)
                       else
                         raise Exception.Create('');
                       fMenuPage := fMenuLobby;
@@ -284,14 +242,6 @@ begin
     gpReplays:      begin
                       fMenuReplays.Show;
                       fMenuPage := fMenuReplays;
-                    end;
-    gpResultsMP:    begin
-                      fMenuResultsMP.Show(gr_ShowStats);
-                      fMenuPage := fMenuResultsMP;
-                    end;
-    gpResultsSP:    begin
-                      fMenuResultsSP.Show(gr_ShowStats);
-                      fMenuPage := fMenuResultsSP;
                     end;
     gpError:        begin
                       fMenuError.Show(aText);

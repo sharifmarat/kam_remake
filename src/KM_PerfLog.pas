@@ -23,7 +23,7 @@ type
 
 implementation
 uses
-  Classes, SysUtils, KromUtils;
+  Classes, SysUtils, KM_CommonUtils;
 
 
 const
@@ -86,7 +86,7 @@ begin
   end;
 
   S.SaveToFile(aFilename);
-  S.Free;
+  FreeAndNil(S);
 end;
 
 

@@ -7,10 +7,10 @@ uses
 
 
 type
-  TRawDeposit = (rdStone, rdCoal, rdIron, rdGold, rdFish);
+  TKMRawDeposit = (rdStone, rdCoal, rdIron, rdGold, rdFish);
 
 const
-  DEPOSIT_COLORS: array[TRawDeposit] of Cardinal = (
+  DEPOSIT_COLORS: array[TKMRawDeposit] of Cardinal = (
     $FFBFBFBF, //rdStone - gray
     $FF606060, //rdCoal - black
     $FFBF4040, //rdIron - iron
@@ -22,22 +22,22 @@ type
   //Scans the map and reports raw resources deposits info
   TKMDeposits = class
   private
-    fArea: array [TRawDeposit] of array of array of Word;
-    fAreaCount: array [TRawDeposit] of Integer;
-    fAreaAmount: array [TRawDeposit] of array of Integer;
-    fAreaLoc: array [TRawDeposit] of array of TKMPointF;
-    function GetCount(aMat: TRawDeposit): Integer;
-    function GetAmount(aMat: TRawDeposit; aIndex: Integer): Integer;
-    function GetLocation(aMat: TRawDeposit; aIndex: Integer): TKMPointF;
-    function TileDepositExists(aMat: TRawDeposit; X,Y: Word): Boolean;
-    function TileDeposit(aMat: TRawDeposit; X,Y: Word): Byte;
-    procedure FloodFill(const aMat: array of TRawDeposit);
-    procedure RecalcAmounts(const aMat: array of TRawDeposit);
+    fArea: array [TKMRawDeposit] of array of array of Word;
+    fAreaCount: array [TKMRawDeposit] of Integer;
+    fAreaAmount: array [TKMRawDeposit] of array of Integer;
+    fAreaLoc: array [TKMRawDeposit] of array of TKMPointF;
+    function GetCount(aMat: TKMRawDeposit): Integer;
+    function GetAmount(aMat: TKMRawDeposit; aIndex: Integer): Integer;
+    function GetLocation(aMat: TKMRawDeposit; aIndex: Integer): TKMPointF;
+    function TileDepositExists(aMat: TKMRawDeposit; X,Y: Word): Boolean;
+    function TileDeposit(aMat: TKMRawDeposit; X,Y: Word): Byte;
+    procedure FloodFill(const aMat: array of TKMRawDeposit);
+    procedure RecalcAmounts(const aMat: array of TKMRawDeposit);
   public
-    property Count[aMat: TRawDeposit]: Integer read GetCount;
-    property Amount[aMat: TRawDeposit; aIndex: Integer]: Integer read GetAmount;
-    property Location[aMat: TRawDeposit; aIndex: Integer]: TKMPointF read GetLocation;
-    procedure UpdateAreas(const aMat: array of TRawDeposit);
+    property Count[aMat: TKMRawDeposit]: Integer read GetCount;
+    property Amount[aMat: TKMRawDeposit; aIndex: Integer]: Integer read GetAmount;
+    property Location[aMat: TKMRawDeposit; aIndex: Integer]: TKMPointF read GetLocation;
+    procedure UpdateAreas(const aMat: array of TKMRawDeposit);
   end;
 
 
@@ -45,19 +45,19 @@ implementation
 
 
 { TKMDeposits }
-function TKMDeposits.GetAmount(aMat: TRawDeposit; aIndex: Integer): Integer;
+function TKMDeposits.GetAmount(aMat: TKMRawDeposit; aIndex: Integer): Integer;
 begin
   Result := fAreaAmount[aMat, aIndex];
 end;
 
 
-function TKMDeposits.GetCount(aMat: TRawDeposit): Integer;
+function TKMDeposits.GetCount(aMat: TKMRawDeposit): Integer;
 begin
   Result := fAreaCount[aMat];
 end;
 
 
-function TKMDeposits.GetLocation(aMat: TRawDeposit; aIndex: Integer): TKMPointF;
+function TKMDeposits.GetLocation(aMat: TKMRawDeposit; aIndex: Integer): TKMPointF;
 begin
   Result := fAreaLoc[aMat, aIndex];
 end;
@@ -65,7 +65,7 @@ end;
 
 //Check whether deposit exist and do proper action
 //TileIsWater is used to make an area from whole water body - not only connected fish
-function TKMDeposits.TileDepositExists(aMat: TRawDeposit; X,Y: Word) : Boolean;
+function TKMDeposits.TileDepositExists(aMat: TKMRawDeposit; X,Y: Word) : Boolean;
 begin
   if aMat = rdFish then
     Result := gTerrain.TileIsWater(KMPoint(X,Y))
@@ -75,7 +75,7 @@ end;
 
 
 //Get tile resource deposit
-function TKMDeposits.TileDeposit(aMat: TRawDeposit; X,Y: Word): Byte;
+function TKMDeposits.TileDeposit(aMat: TKMRawDeposit; X,Y: Word): Byte;
 var
   curUnit: TKMUnit;
 begin
@@ -86,7 +86,7 @@ begin
     rdGold:  Result := gTerrain.TileIsGold(X, Y);
     rdFish:  begin
                curUnit := gTerrain.Land[Y, X].IsUnit;
-               if (curUnit <> nil) and (curUnit is TKMUnitAnimal) and (curUnit.UnitType = ut_Fish) then
+               if (curUnit <> nil) and (curUnit is TKMUnitAnimal) and (curUnit.UnitType = utFish) then
                  Result := 2 * TKMUnitAnimal(curUnit).FishCount //You get 2 fish from each trip
                else
                  Result := 0;
@@ -96,9 +96,9 @@ begin
 end;
 
 
-procedure TKMDeposits.FloodFill(const aMat: array of TRawDeposit);
+procedure TKMDeposits.FloodFill(const aMat: array of TKMRawDeposit);
 var
-  R: TRawDeposit;
+  R: TKMRawDeposit;
   AreaID: Word;
   AreaAmount: Integer;
   //Procedure uses recurence to check test area then it creates one deposit
@@ -162,10 +162,10 @@ begin
 end;
 
 
-procedure TKMDeposits.RecalcAmounts(const aMat: array of TRawDeposit);
+procedure TKMDeposits.RecalcAmounts(const aMat: array of TKMRawDeposit);
 var
   I, K, J: Integer;
-  R: TRawDeposit;
+  R: TKMRawDeposit;
   AreaID: Integer;
   AreaSize: array of Integer;
   AreaPos: TKMPointArray; //Used as accumulator
@@ -209,7 +209,7 @@ begin
 end;
 
 
-procedure TKMDeposits.UpdateAreas(const aMat: array of TRawDeposit);
+procedure TKMDeposits.UpdateAreas(const aMat: array of TKMRawDeposit);
 begin
   //Use connected areas flood fill to detect deposit areas
   FloodFill(aMat);

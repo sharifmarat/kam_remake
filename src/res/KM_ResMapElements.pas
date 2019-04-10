@@ -3,11 +3,15 @@ unit KM_ResMapElements;
 interface
 uses
   Classes, SysUtils, KromUtils,
-  KM_CommonTypes, KM_Defaults;
+  KM_CommonTypes, KM_Defaults, KM_Points;
 
 
 type
   TKMKillByRoad = (kbrNever, kbrNWCorner, kbrWest);
+
+  TKMChopableAge = (caAge1, caAge2, caAge3, caAgeFull, caAgeFall, caAgeStump);
+
+  TKMChopableAgeSet = set of TKMChopableAge;
 
   TKMMapElement = packed record
     Anim: TKMAnimLoop;          //Animation loop info
@@ -36,19 +40,28 @@ type
   end;
 
 
+  function ObjectIsChoppableTree(aObjId: Integer): Boolean; overload;
+  function ObjectIsChoppableTree(aObjId: Integer; aStage: TKMChopableAge): Boolean; overload;
+  function ObjectIsChoppableTree(aObjId: Integer; aStages: TKMChopableAgeSet): Boolean; overload;
+
+  function ObjectIsCorn(aObjId: Integer): Boolean;
+  function ObjectIsWine(aObjId: Integer): Boolean;
+
+
+const
+  OBJECTS_CNT = 255;
+
 var
   //MapElem is in global access because of the recursive FloodFill algorithm
   //when it uses TKMResMapElements.MapElem each call takes 8 times more memory
   //on the stack (View>Debug>CPU>Stack) for reasons unknown to me.
-  gMapElements: array [Byte] of TKMMapElement;
+  gMapElements: array [0..OBJECTS_CNT] of TKMMapElement;
 
-type
-  TKMChopableAge = (caAge1, caAge2, caAge3, caAgeFull, caAgeFall, caAgeStump);
 
 const
   //Chopable tree, Chopdown animation,
   //Age1, Age2, Age3, Age4, Falling, Stump
-  ChopableTrees: array [1..13, TKMChopableAge] of byte = (
+  ChopableTrees: array [1..13, TKMChopableAge] of Word = (
   //For grass
   (  88,  89,  90,  90,  91,  37), //These two are very look alike
   (  97,  98,  99, 100, 101,  41), //yet different in small detail and fall direction
@@ -131,7 +144,7 @@ begin
   end;
   fCount := S.Size div ELEMENT_SIZE; //254 by default
   fCRC := Adler32CRC(S);
-  S.Free;
+  FreeAndNil(S);
 
   gMapElements[63].Anim.Count := 1;
   gMapElements[63].Anim.Step[1] := 16;
@@ -156,7 +169,7 @@ begin
   S := TMemoryStream.Create;
   S.Write(gMapElements[0], fCount * SizeOf(TKMMapElement));
   S.SaveToFile(FileName);
-  S.Free;
+  FreeAndNil(S);
 end;
 
 
@@ -183,6 +196,61 @@ begin
     Writeln(ft);
   end;
   CloseFile(ft);
+end;
+
+
+function ObjectIsChoppableTree(aObjId: Integer): Boolean;
+var
+  I: Integer;
+  K: TKMChopableAge;
+begin
+  Result := True;
+
+  for I := 1 to Length(ChopableTrees) do
+    for K := Low(TKMChopableAge) to High(TKMChopableAge) do
+      if (aObjId = ChopableTrees[I,K]) then Exit;
+
+  Result := False;
+end;
+
+
+function ObjectIsChoppableTree(aObjId: Integer; aStage: TKMChopableAge): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+
+  for I := 1 to Length(ChopableTrees) do
+    if (aObjId = ChopableTrees[I, aStage]) then Exit;
+
+  Result := False;
+end;
+
+
+function ObjectIsChoppableTree(aObjId: Integer; aStages: TKMChopableAgeSet): Boolean;
+var
+  I: Integer;
+  Stage: TKMChopableAge;
+begin
+  Result := True;
+
+  for I := 1 to Length(ChopableTrees) do
+    for Stage in aStages do
+      if (aObjId = ChopableTrees[I, Stage]) then Exit;
+
+  Result := False;
+end;
+
+
+function ObjectIsCorn(aObjId: Integer): Boolean;
+begin
+  Result := aObjId in [58..59];
+end;
+
+
+function ObjectIsWine(aObjId: Integer): Boolean;
+begin
+  Result := aObjId in [54..57];
 end;
 
 

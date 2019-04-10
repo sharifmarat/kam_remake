@@ -4,12 +4,13 @@ interface
 uses
    Math, SysUtils, KM_Utils,
    KM_Controls, KM_Defaults,
+   KM_InterfaceDefaults,
    KM_GUIMapEdRMG;
 
 type
-  TKMMapEdTerrainSelection = class
+  TKMMapEdTerrainSelection = class (TKMMapEdSubMenuPage)
   private
-    RMGPopUp: TKMMapEdRMG;
+    fRMGPopUp: TKMMapEdRMG;
     procedure SelectionClick(Sender: TObject);
     procedure GenerateMapClick(Sender: TObject);
   protected
@@ -24,8 +25,9 @@ type
     constructor Create(aParent: TKMPanel);
     destructor Destroy; override;
 
+    property GuiRMGPopUp: TKMMapEdRMG read fRMGPopUp write fRMGPopUp;
     procedure Show;
-    function Visible: Boolean;
+    function Visible: Boolean; override;
     procedure Hide;
     procedure UpdateState;
   end;
@@ -34,11 +36,9 @@ type
 implementation
 uses
   KM_ResFonts, KM_ResTexts,
-  KM_Game, KM_GameCursor, KM_RenderUI,
+  KM_Game, KM_GameCursor, KM_RenderUI, KM_ResKeys,
   KM_TerrainSelection, KM_Terrain,
   KM_InterfaceGame;
-
-
 
 
 { TKMMapEdTerrainSelection }
@@ -46,55 +46,67 @@ constructor TKMMapEdTerrainSelection.Create(aParent: TKMPanel);
 begin
   inherited Create;
 
-  RMGPopUp := TKMMapEdRMG.Create(aParent);
-
   Panel_Selection := TKMPanel.Create(aParent, 0, 28, TB_WIDTH, 400);
 
-  TKMLabel.Create(Panel_Selection, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_COPY_TITLE], fnt_Outline, taCenter);
+  TKMLabel.Create(Panel_Selection, 0, PAGE_TITLE_Y, TB_WIDTH, 0, gResTexts[TX_MAPED_COPY_TITLE], fntOutline, taCenter);
   Button_SelectCopy := TKMButton.Create(Panel_Selection, 10, 30, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_COPY], bsGame);
-  Button_SelectCopy.Hint := gResTexts[TX_MAPED_COPY_COPY_HINT];
+  Button_SelectCopy.Hint := GetHintWHotKey(TX_MAPED_COPY_COPY_HINT, SC_MAPEDIT_SUB_MENU_ACTION_1);
   Button_SelectCopy.OnClick := SelectionClick;
 
   Button_SelectPaste := TKMButton.Create(Panel_Selection, 10, 60, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_PASTE], bsGame);
-  Button_SelectPaste.Hint := gResTexts[TX_MAPED_COPY_PASTE_HINT];
+  Button_SelectPaste.Hint := GetHintWHotKey(TX_MAPED_COPY_PASTE_HINT, SC_MAPEDIT_SUB_MENU_ACTION_2);
   Button_SelectPaste.OnClick := SelectionClick;
 
   Button_SelectPasteApply := TKMButton.Create(Panel_Selection, 10, 90, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_PASTE_APPLY], bsGame);
-  Button_SelectPasteApply.Hint := gResTexts[TX_MAPED_COPY_PASTE_HINT];
+  Button_SelectPasteApply.Hint := GetHintWHotKey(TX_MAPED_COPY_PASTE_HINT, SC_MAPEDIT_SUB_MENU_ACTION_3);
   Button_SelectPasteApply.OnClick := SelectionClick;
 
   Button_SelectPasteCancel := TKMButton.Create(Panel_Selection, 10, 120, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_PASTE_CANCEL], bsGame);
-  Button_SelectPasteCancel.Hint := gResTexts[TX_MAPED_COPY_PASTE_HINT];
+  Button_SelectPasteCancel.Hint := GetHintWHotKey(TX_MAPED_COPY_PASTE_HINT, SC_MAPEDIT_SUB_MENU_ACTION_4);
   Button_SelectPasteCancel.OnClick := SelectionClick;
 
   Button_SelectFlipH := TKMButton.Create(Panel_Selection, 10, 180, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_COPY_PASTE_HFLIP], bsGame);
-  Button_SelectFlipH.Hint := gResTexts[TX_MAPED_COPY_PASTE_HFLIP_HINT];
+  Button_SelectFlipH.Hint := GetHintWHotKey(TX_MAPED_COPY_PASTE_HFLIP_HINT, SC_MAPEDIT_SUB_MENU_ACTION_5);
   Button_SelectFlipH.OnClick := SelectionClick;
 
   Button_SelectFlipV := TKMButton.Create(Panel_Selection, 10, 210, TB_WIDTH - 20, 20, gResTexts[TX_MAPED_COPY_PASTE_VFLIP], bsGame);
-  Button_SelectFlipV.Hint := gResTexts[TX_MAPED_COPY_PASTE_VFLIP_HINT];
+  Button_SelectFlipV.Hint := GetHintWHotKey(TX_MAPED_COPY_PASTE_VFLIP_HINT, SC_MAPEDIT_SUB_MENU_ACTION_6);
   Button_SelectFlipV.OnClick := SelectionClick;
 
-  with TKMLabel.Create(Panel_Selection, 8, 250, TB_WIDTH-16, 80, gResTexts[TX_MAPED_COPY_SELECT_HINT], fnt_Grey, taLeft) do
+  with TKMLabel.Create(Panel_Selection, 8, 250, TB_WIDTH-16, 80, gResTexts[TX_MAPED_COPY_SELECT_HINT], fntGrey, taLeft) do
     AutoWrap := True;
 
-  Button_RMGRND := TKMButton.Create(Panel_Selection, 10, 300, TB_WIDTH - 20, 20, 'RMG Settings', bsGame);
-  Button_RMGRND.Hint := 'RMG Settings';
+  Button_RMGRND := TKMButton.Create(Panel_Selection, 10, 300, TB_WIDTH - 20, 20, 'RMG Settings', bsGame); //Todo translate
+  Button_RMGRND.Hint := GetHintWHotKey('RMG Settings', SC_MAPEDIT_SUB_MENU_ACTION_7); //Todo translate
   Button_RMGRND.OnClick := GenerateMapClick;
 
+  fSubMenuActionsEvents[0] := SelectionClick;
+  fSubMenuActionsEvents[1] := SelectionClick;
+  fSubMenuActionsEvents[2] := SelectionClick;
+  fSubMenuActionsEvents[3] := SelectionClick;
+  fSubMenuActionsEvents[4] := SelectionClick;
+  fSubMenuActionsEvents[5] := SelectionClick;
+  fSubMenuActionsEvents[6] := GenerateMapClick;
+
+  fSubMenuActionsCtrls[0] := Button_SelectCopy;
+  fSubMenuActionsCtrls[1] := Button_SelectPaste;
+  fSubMenuActionsCtrls[2] := Button_SelectPasteApply;
+  fSubMenuActionsCtrls[3] := Button_SelectPasteCancel;
+  fSubMenuActionsCtrls[4] := Button_SelectFlipH;
+  fSubMenuActionsCtrls[5] := Button_SelectFlipV;
+  fSubMenuActionsCtrls[6] := Button_RMGRND;
 end;
 
 
 destructor TKMMapEdTerrainSelection.Destroy;
 begin
-  RMGPopUp.Free();
+  fRMGPopUp.Free();
   inherited;
 end;
 
 procedure TKMMapEdTerrainSelection.GenerateMapClick(Sender: TObject);
-//var Tiles: TKMTerrainTileBriefArray;
 begin
-  RMGPopUp.Show();
+  fRMGPopUp.Show;
 end;
 
 
@@ -152,14 +164,14 @@ begin
   if Sender = Button_SelectFlipH then
   begin
     //Flip selected
-    gGame.MapEditor.Selection.Selection_Flip(fa_Horizontal);
+    gGame.MapEditor.Selection.Selection_Flip(faHorizontal);
     gGame.MapEditor.TerrainPainter.MakeCheckpoint;
   end
   else
   if Sender = Button_SelectFlipV then
   begin
     //Flip selected
-    gGame.MapEditor.Selection.Selection_Flip(fa_Vertical);
+    gGame.MapEditor.Selection.Selection_Flip(faVertical);
     gGame.MapEditor.TerrainPainter.MakeCheckpoint;
   end;
 end;

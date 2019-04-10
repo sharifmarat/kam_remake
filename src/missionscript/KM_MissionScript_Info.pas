@@ -12,7 +12,7 @@ type
     );
 
 
-  TMissionParserInfo = class(TMissionParserCommon)
+  TKMMissionParserInfo = class(TKMMissionParserCommon)
   private
     fMapInfo: TKMapInfo; //We are given this structure and asked to fill it
     function LoadMapInfo(const aFileName: string): Boolean;
@@ -25,20 +25,20 @@ type
 
 implementation
 uses
-  SysUtils,
+  SysUtils, Math,
   KM_Resource,
-  KM_CommonClasses, KM_Defaults;
+  KM_CommonClasses, KM_Defaults, KM_Utils;
 
 
 { TMissionParserInfo }
-function TMissionParserInfo.LoadMission(const aFileName: string; aMapInfo: TKMapInfo; aParsing: TKMMissionParsing): Boolean;
+function TKMMissionParserInfo.LoadMission(const aFileName: string; aMapInfo: TKMapInfo; aParsing: TKMMissionParsing): Boolean;
 const
   CommandsBase: array [0..3] of AnsiString = (
     '!SET_MAX_PLAYER', '!SET_TACTIC', '!SET_CURR_PLAYER', '!SET_USER_PLAYER');
-  CommandsExtra: array [0..10] of AnsiString = (
+  CommandsExtra: array [0..11] of AnsiString = (
     '!SET_MAX_PLAYER', '!SET_TACTIC',
     '!SET_CURR_PLAYER', '!SET_HUMAN_PLAYER', '!SET_USER_PLAYER',
-    '!SET_AI_PLAYER', '!ADD_GOAL', '!ADD_LOST_GOAL', '!SET_ALLIANCE', '!SET_MAP_COLOR', '!SET_RGB_COLOR');
+    '!SET_AI_PLAYER', '!SET_ADVANCED_AI_PLAYER', '!ADD_GOAL', '!ADD_LOST_GOAL', '!SET_ALLIANCE', '!SET_MAP_COLOR', '!SET_RGB_COLOR');
 var
   FileText: AnsiString;
 begin
@@ -66,46 +66,61 @@ begin
 end;
 
 
-function TMissionParserInfo.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
+function TKMMissionParserInfo.ProcessCommand(CommandType: TKMCommandType; P: array of Integer; const TextParam: AnsiString = ''): Boolean;
 begin
   case CommandType of
-    ct_SetMaxPlayer:    fMapInfo.LocCount := P[0];
-    ct_SetTactic:       fMapInfo.MissionMode := mm_Tactic;
-    ct_SetCurrPlayer:   fLastHand := P[0];
-    ct_HumanPlayer:     begin
+    ctSetMaxPlayer:    fMapInfo.LocCount := P[0];
+
+    ctSetTactic:       fMapInfo.MissionMode := mmTactic;
+
+    ctSetCurrPlayer:   fLastHand := P[0];
+
+    ctHumanPlayer:     begin
                           //Default human player can be human, obviously
                           fMapInfo.DefaultHuman     := P[0];
                           fMapInfo.CanBeHuman[P[0]] := True;
                         end;
-    ct_UserPlayer:      if P[0] = -1 then
+
+    ctUserPlayer:      if P[0] = -1 then
                           fMapInfo.CanBeHuman[fLastHand] := True
                         else
                           fMapInfo.CanBeHuman[P[0]] := True;
-    ct_AIPlayer:       if P[0] = -1 then
+
+    ctAIPlayer:       if P[0] = -1 then
                           fMapInfo.CanBeAI[fLastHand] := True
                         else
                           fMapInfo.CanBeAI[P[0]] := True;
-    ct_AddGoal:         if fLastHand >= 0 then
+
+    ctAdvancedAIPlayer:if P[0] = -1 then
+                          fMapInfo.CanBeAdvancedAI[fLastHand] := True
+                        else
+                          fMapInfo.CanBeAdvancedAI[P[0]] := True;
+
+    ctAddGoal:         if fLastHand >= 0 then
                           //If the condition is time then P[3] is the time, else it is player ID
-                          if TGoalCondition(P[0]) = gc_Time then
-                            fMapInfo.AddGoal(glt_Victory, fLastHand, TGoalCondition(P[0]), TGoalStatus(P[1]), -1)
+                          if TKMGoalCondition(P[0]) = gcTime then
+                            fMapInfo.AddGoal(gltVictory, fLastHand, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), -1)
                           else
-                            fMapInfo.AddGoal(glt_Victory, fLastHand, TGoalCondition(P[0]), TGoalStatus(P[1]), P[3]);
-    ct_AddLostGoal:     if fLastHand >= 0 then
+                            fMapInfo.AddGoal(gltVictory, fLastHand, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), P[3]);
+
+    ctAddLostGoal:     if fLastHand >= 0 then
                           //If the condition is time then P[3] is the time, else it is player ID
-                          if TGoalCondition(P[0]) = gc_Time then
-                            fMapInfo.AddGoal(glt_Survive, fLastHand, TGoalCondition(P[0]), TGoalStatus(P[1]), -1)
+                          if TKMGoalCondition(P[0]) = gcTime then
+                            fMapInfo.AddGoal(gltSurvive, fLastHand, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), -1)
                           else
-                            fMapInfo.AddGoal(glt_Survive, fLastHand, TGoalCondition(P[0]), TGoalStatus(P[1]), P[3]);
-    ct_SetAlliance:     if (fLastHand >= 0) and (P[0] <> fLastHand) then //Can't be enemies with yourself
+                            fMapInfo.AddGoal(gltSurvive, fLastHand, TKMGoalCondition(P[0]), TKMGoalStatus(P[1]), P[3]);
+
+    ctSetAlliance:     if (fLastHand >= 0) and (P[0] <> fLastHand) then //Can't be enemies with yourself
                           if P[1] = 1 then
-                            fMapInfo.Alliances[fLastHand, P[0]] := at_Ally
+                            fMapInfo.Alliances[fLastHand, P[0]] := atAlly
                           else
-                            fMapInfo.Alliances[fLastHand, P[0]] := at_Enemy;
-    ct_SetMapColor:     if fLastHand >= 0 then
-                          //For now simply use the minimap color for all color, it is too hard to load all 8 shades from ct_SetNewRemap
+                            fMapInfo.Alliances[fLastHand, P[0]] := atEnemy;
+
+    ctSetMapColor:     if fLastHand >= 0 then
+                          //For now simply use the minimap color for all color, it is too hard to load all 8 shades from ctSetNewRemap
                           fMapInfo.FlagColors[fLastHand] := gRes.Palettes.DefaultPalette.Color32(P[0]);
-    ct_SetRGBColor:     if fLastHand >= 0 then
+
+    ctSetRGBColor:     if fLastHand >= 0 then
                           fMapInfo.FlagColors[fLastHand] := P[0] or $FF000000;
   end;
 
@@ -114,26 +129,32 @@ end;
 
 
 //Acquire essential terrain details
-function TMissionParserInfo.LoadMapInfo(const aFileName: string): Boolean;
+function TKMMissionParserInfo.LoadMapInfo(const aFileName: string): Boolean;
 var
-  F: TKMemoryStream;
+  S: TKMemoryStream;
   newX, newY: Integer;
+  ErrorStr: UnicodeString;
 begin
   Result := False;
   if not FileExists(aFileName) then Exit;
 
-  F := TKMemoryStream.Create;
+  ErrorStr := '';
+  S := TKMemoryStream.Create;
   try
-    F.LoadFromFile(aFileName);
-    F.Read(newX);
-    F.Read(newY);
+    S.LoadFromFile(aFileName);
+    try
+      LoadMapHeader(S, newX, newY);
+    except
+      on E: Exception do
+        ErrorStr := E.Message;
+    end;
   finally
-    F.Free;
+    FreeAndNil(S);
   end;
 
-  if (newX > MAX_MAP_SIZE) or (newY > MAX_MAP_SIZE) then
+  if ErrorStr <> '' then
   begin
-    AddError('MissionParser can''t open the map because it''s too big.', True);
+    AddError(ErrorStr, True);
     Exit;
   end;
 

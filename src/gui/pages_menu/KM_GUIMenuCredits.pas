@@ -5,7 +5,7 @@ uses
   {$IFDEF Unix} LCLType, {$ENDIF}
   {$IFDEF WDC} ShellAPI, Windows, {$ENDIF} // Required for OpenURL in Delphi
   {$IFDEF FPC} LCLIntf, {$ENDIF} // Required for OpenURL in Lazarus
-  Classes, Forms, Controls, KromUtils,
+  Classes, Forms, Controls,
   KM_Controls, KM_Defaults,
   KM_InterfaceDefaults;
 
@@ -13,7 +13,7 @@ uses
 type
   TKMMenuCredits = class (TKMMenuPageCommon)
   private
-    fOnPageChange: TGUIEventText;
+    fOnPageChange: TKMMenuChangeEventText;
 
     procedure LinkClick(Sender: TObject);
     procedure BackClick(Sender: TObject);
@@ -25,7 +25,7 @@ type
     Button_CreditsFacebook: TKMButton;
     Button_CreditsBack: TKMButton;
   public
-    constructor Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+    constructor Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 
     procedure Show;
   end;
@@ -33,11 +33,11 @@ type
 
 implementation
 uses
-  KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_ResLocales;
+  KM_ResTexts, KM_RenderUI, KM_ResFonts, KM_ResLocales, KM_CommonUtils;
 
 
 { TKMGUIMainCredits }
-constructor TKMMenuCredits.Create(aParent: TKMPanel; aOnPageChange: TGUIEventText);
+constructor TKMMenuCredits.Create(aParent: TKMPanel; aOnPageChange: TKMMenuChangeEventText);
 const
   OFFSET = 312;
 begin
@@ -49,21 +49,21 @@ begin
   Panel_Credits := TKMPanel.Create(aParent, 0, 0, aParent.Width, aParent.Height);
   Panel_Credits.AnchorsStretch;
 
-    TKMLabel.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 70, gResTexts[TX_CREDITS],fnt_Outline,taCenter);
+    TKMLabel.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 70, gResTexts[TX_CREDITS],fntOutline,taCenter);
     Label_Credits_Remake := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 - OFFSET, 110, 0, aParent.Height - 130,
       gResTexts[TX_CREDITS_PROGRAMMING] + '|Krom|Lewin||' +
-      gResTexts[TX_CREDITS_ADDITIONAL_PROGRAMMING] + '|Alex|andreus|Rey|Danjb||' +
+      gResTexts[TX_CREDITS_ADDITIONAL_PROGRAMMING] + '|Alex|Rey|andreus|Danjb||' +
       gResTexts[TX_CREDITS_ADDITIONAL_GRAPHICS] + '|StarGazer|Malin|H.A.H.||' +
       gResTexts[TX_CREDITS_ADDITIONAL_MUSIC] + '|Andre Sklenar - www.juicelab.cz||' +
       gResTexts[TX_CREDITS_ADDITIONAL_SOUNDS] + '|trb1914||' +
       gResTexts[TX_CREDITS_ADDITIONAL_TRANSLATIONS] + '|' + gResLocales.TranslatorCredits + '|' +
       gResTexts[TX_CREDITS_SPECIAL] + '|KaM Community members',
-      fnt_Grey,
+      fntGrey,
       taCenter);
     Label_Credits_Remake.Anchors := [anLeft, anTop, anBottom];
 
-    TKMLabel.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 70, gResTexts[TX_CREDITS_ORIGINAL], fnt_Outline, taCenter);
-    Label_Credits_KaM := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 110, 0, aParent.Height - 130, gResTexts[TX_CREDITS_TEXT], fnt_Grey, taCenter);
+    TKMLabel.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 70, gResTexts[TX_CREDITS_ORIGINAL], fntOutline, taCenter);
+    Label_Credits_KaM := TKMLabelScroll.Create(Panel_Credits, aParent.Width div 2 + OFFSET, 110, 0, aParent.Height - 130, gResTexts[TX_CREDITS_TEXT], fntGrey, taCenter);
     Label_Credits_KaM.Anchors := [anLeft,anTop,anBottom];
 
     Button_CreditsHomepage := TKMButton.Create(Panel_Credits,400,610,224,30, '[$F8A070]www.kamremake.com[]', bsMenu);
@@ -94,8 +94,8 @@ procedure TKMMenuCredits.LinkClick(Sender: TObject);
   end;
 
 begin
-  if Sender = Button_CreditsHomepage then GoToURL('http://www.kamremake.com/redirect.php?page=homepage&rev=' + GAME_REVISION);
-  if Sender = Button_CreditsFacebook then GoToURL('http://www.kamremake.com/redirect.php?page=facebook&rev=' + GAME_REVISION);
+  if Sender = Button_CreditsHomepage then GoToURL('http://www.kamremake.com/redirect.php?page=homepage&rev=' + UnicodeString(GAME_REVISION));
+  if Sender = Button_CreditsFacebook then GoToURL('http://www.kamremake.com/redirect.php?page=facebook&rev=' + UnicodeString(GAME_REVISION));
 end;
 
 
