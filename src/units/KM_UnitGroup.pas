@@ -746,7 +746,7 @@ begin
 
   gHands.CleanUpUnitPointer(TKMUnit(aMember));
 
-  SetUnitsPerRow(fUnitsPerRow);
+//  SetUnitsPerRow(fUnitsPerRow);
 
   //If Group has died report to owner
   if IsDead and Assigned(OnGroupDied) then
@@ -1169,20 +1169,23 @@ begin
     if (KMLength(Members[0].CurrPosition, OrderTargetUnit.CurrPosition) > Members[0].GetFightMaxRange) then
     begin
       NodeList := TKMPointList.Create;
-      if gGame.Pathfinding.Route_Make(Members[0].CurrPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
-      begin
-        fOrderLoc.Loc := NodeList[NodeList.Count-1];
-        fOrderLoc.Dir := KMGetDirection(NodeList[NodeList.Count-1], OrderTargetUnit.NextPosition);
-        HungarianReorderMembers; //We are about to get them to walk to fOrderLoc
-      end
-      else
-      begin
-        OrderTargetUnit := nil; //Target cannot be reached, so abort completely
-        fOrder := goNone;
+      try
+        if gGame.Pathfinding.Route_Make(Members[0].CurrPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
+        begin
+          fOrderLoc.Loc := NodeList[NodeList.Count-1];
+          fOrderLoc.Dir := KMGetDirection(NodeList[NodeList.Count-1], OrderTargetUnit.NextPosition);
+          HungarianReorderMembers; //We are about to get them to walk to fOrderLoc
+        end
+        else
+        begin
+          OrderTargetUnit := nil; //Target cannot be reached, so abort completely
+          fOrder := goNone;
+          FreeAndNil(NodeList);
+          Exit;
+        end;
+      finally
         FreeAndNil(NodeList);
-        Exit;
       end;
-      FreeAndNil(NodeList);
     end
     else
     begin
