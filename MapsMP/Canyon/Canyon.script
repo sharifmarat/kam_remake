@@ -1,153 +1,56 @@
-function SoundToPlay: ANSIString;
+//-- Canyon --//
+//By Strangelove
+//v1.1
+//11.02.2018
+
+
+procedure PlaySoundWhenUnitAt(X1, Y1, X2, Y2, Radius: Byte; Filename: ANSIString);
+var X, Y: Byte;
 begin
-case States.KaMRandomI(4) of
-0: Result := 'Wood Creek 1';
-1: Result := 'Wood Creek 2';
-2: Result := 'Wood Creek 3';
-3: Result := 'Wood Creek 4';
-end;
-end;
-
-procedure OnTick;
-begin
-{Wooden Creeks}
-	{First bridge from top}
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(42, 17) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.1, 30, 42, 17);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(46, 18) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 46, 18);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(52, 20) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.1, 30, 52, 20);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(53, 17) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 53, 17);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(47, 16) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.1, 30, 47, 16);
-if  (States.GameTime mod (4*6) = 0 ) and (States.UnitAt(44, 15) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 44, 15);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(50, 18) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.1, 30, 50, 18);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(45, 20) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.1, 30, 45, 20);
-	
-	{Second bridge from top}
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(40, 58) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 40, 58);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(42, 60) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 42, 60);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(44, 62) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 44, 62);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(43, 57) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 43, 57);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(45, 59) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 45, 59);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(52, 58) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 52, 58);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(54, 60) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 54, 60);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(56, 62) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 56, 62);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(57, 59) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 57, 59);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(56, 57) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 56, 57);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(52, 62) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 52, 62);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(41, 62) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 41, 62);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(46, 61) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 46, 61);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(57, 61) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 57, 61);
-
-	{Third bridge from top}
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(40, 68) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 40, 68);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(41, 70) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 41, 70);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(42, 67) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 42, 67);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(47, 16) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 47, 16);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(43, 71) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 43, 71);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(44, 69) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 44, 69);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(45, 72) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 45, 72);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(40, 72) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 40, 72);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(46, 67) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 46, 67);
-
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(52, 67) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 52, 67);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(53, 69) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 53, 69);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(54, 71) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 54, 71);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(55, 68) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 55, 68);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(56, 70) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 56, 70);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(57, 72) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 57, 72);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(57, 67) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 57, 67);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(58, 69) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 58, 69);
-
-	{Last bridge from top}
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(42, 108) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 42, 108);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(43, 110) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 43, 110);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(44, 112) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 44, 112);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(45, 107) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 45, 107);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(46, 109) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 46, 109);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(47, 111) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 47, 111);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(48, 108) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 48, 108);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(49, 110) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 49, 110);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(50, 112) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 50, 112);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(51, 107) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 51, 107);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(52, 109) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 52, 109);
-if  (States.GameTime mod (4*4) = 0 ) and (States.UnitAt(53, 112) > 0) then
-    Actions.PlayWavAtLocation(-1, SoundToPlay, 3.3, 30, 53, 112);
-
-
- if States.GameTime mod (4*11*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 15, 3);
- if States.GameTime mod (2*13*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 35, 35);
- if States.GameTime mod (2*10*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 3, 44);
-if States.GameTime mod (3*10*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 38, 92);
-if States.GameTime mod (3*11*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 34, 114);
-if States.GameTime mod (3*12*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 86, 118);
-if States.GameTime mod (3*13*60) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 84, 93);
-
-if States.GameTime mod (2*11*61) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 65, 51);
-if States.GameTime mod (2*12*61) = 0 then Actions.PlayWAVAtLocation(-1, 'Group Howl', 3, 40, 57, 26);
-
+	if Radius < 28 then Radius := 28;
+	for X := X1 to X2 do
+		for Y := Y1 to Y2 do
+			if States.UnitAt(X, Y) > 0 then
+				if States.KaMRandomI(4) = 0 then
+				begin
+					Actions.PlayWAVAtLocation(-1, Filename, 2.0 +States.KaMRandomI(2), Radius, X, Y);
+					exit;
+				end;
 end;
 
-procedure OnMissionStart;
+function SoundToPlay(): ANSIString;
 begin
-{Wind}
-	{From Top}
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 30, 43, 17);
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 30, 52, 18);
+	case States.KaMRandomI(5) of
+		0: Result := 'WoodCreek1';
+		1: Result := 'WoodCreek2';
+		2: Result := 'WoodCreek3';
+		3: Result := 'WoodCreek4';
+		4: Result := 'WoodCreek5';
+	end;
+end;
 
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 28, 42, 59);
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 28, 55, 59);
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 28, 42, 69);
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 28, 55, 69);
+procedure OnMissionStart();
+begin
+	//Insert sound for waterfall here
+	//Actions.PlayWAVAtLocationLooped(-1, 'Waterfallsound', 3.0, 28, 25, 99);
+end;
 
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 30, 44, 109);
-Actions.PlayWAVAtLocationLooped(-1, 'Leap Wind', 3.4, 30, 51, 109);
+procedure OnHouseBuilt(aHouseID: Integer);
+begin
+	//Unlock Watchtower after Sawmill
+	if States.HouseType(aHouseID) = 0 then
+		Actions.HouseUnlock(States.HouseOwner(aHouseID), 17);
+end;
+
+procedure OnTick();
+begin
+	//Play sound on Bridges
+	if States.GameTime() mod 18 = 0 then
+		PlaySoundWhenUnitAt(73, 15, 86, 20, 28, SoundToPlay()); //North
+	if States.GameTime() mod 18 = 6 then
+		PlaySoundWhenUnitAt(70, 57, 91, 62, 28, SoundToPlay()); //Middle
+	if States.GameTime() mod 18 = 12 then
+		PlaySoundWhenUnitAt(70, 67, 91, 72, 28, SoundToPlay()); //Middle
+	if States.GameTime() mod 18 = 18 then
+		PlaySoundWhenUnitAt(73, 107, 86, 112, 28, SoundToPlay()); //South
 end;

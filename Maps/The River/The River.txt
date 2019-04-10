@@ -1,7 +1,3 @@
-Title
-The River
-
 SmallDesc
 A mission by Hellracer
 
-BigDesc

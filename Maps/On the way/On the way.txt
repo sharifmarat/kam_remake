@@ -1,7 +1,3 @@
-Title
-On the way
-
 SmallDesc
 A mission by Phiona
 
-BigDesc

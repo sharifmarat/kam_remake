@@ -1,4 +1,11 @@
-SetCoop
-
 BigDesc
 A coop mission by andreus & Rayzel.
+
+SetCoop
+
+BlockPeacetime
+
+BlockTeamSelection
+
+BlockFullMapPreview
+
