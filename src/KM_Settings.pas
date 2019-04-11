@@ -660,7 +660,7 @@ begin
     fMenu_SPSaveFileName    := F.ReadString('Menu', 'SPSaveFileName', '');
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
   finally
-    FreeAndNil(F);
+    F.Free;
   end;
 
   fNeedsSave := False;
@@ -767,7 +767,7 @@ begin
 
     F.UpdateFile; //Write changes to file
   finally
-    FreeAndNil(F);
+    F.Free;
   end;
 
   fNeedsSave := False;

@@ -247,7 +247,7 @@ begin
 
   Assert(ID <> -1, 'TKMClientsList. Can not remove player');
 
-  FreeAndNil(fItems[ID]);
+  fItems[ID].Free;
   for i:=ID to fCount-2 do
     fItems[i] := fItems[i+1]; //Shift only pointers
 
@@ -328,9 +328,9 @@ end;
 destructor TKMNetServer.Destroy;
 begin
   StopListening; //Frees room info
-  FreeAndNil(fServer);
-  FreeAndNil(fClientList);
-  FreeAndNil(fEmptyGameInfo);
+  fServer.Free;
+  fClientList.Free;
+  fEmptyGameInfo.Free;
   FreeAndNil(fTimer);
 
   if fGameFilter <> nil then
@@ -411,7 +411,7 @@ begin
     //gLog.AddTime(Format('Client %d measured ping = %d FPS = %d', [fClientList[I].Handle, fClientList[I].Ping, fClientList[I].FPS]));
   end;
   SendMessage(NET_ADDRESS_ALL, mkPingInfo, M);
-  FreeAndNil(M);
+  M.Free;
 
   //Measure pings. Iterate backwards so the indexes are maintained after kicking clients
   for I:=fClientList.Count-1 downto 0 do
@@ -544,7 +544,7 @@ begin
   M.Write(fRoomInfo[aRoom].HostHandle);
   fGameFilter.Save(M);
   SendMessage(aHandle, mkConnectedToRoom, M);
-  FreeAndNil(M);
+  M.Free;
 
   MeasurePings;
   SaveHTMLStatus;
@@ -588,7 +588,7 @@ begin
     begin
       fRoomInfo[Room].HostHandle := NET_ADDRESS_EMPTY; //Room is now empty so we don't need a new host
       fRoomInfo[Room].Password := '';
-      FreeAndNil(fRoomInfo[Room].GameInfo);
+      fRoomInfo[Room].GameInfo.Free;
       fRoomInfo[Room].GameInfo := TMPGameInfo.Create;
       SetLength(fRoomInfo[Room].BannedIPs, 0);
     end
@@ -602,7 +602,7 @@ begin
       M.WriteA(fRoomInfo[Room].Password);
       M.WriteW(fRoomInfo[Room].GameInfo.Description);
       SendMessageToRoom(mkReassignHost, Room, M);
-      FreeAndNil(M);
+      M.Free;
 
       Status('Reassigned hosting rights for room '+inttostr(Room)+' to '+inttostr(fRoomInfo[Room].HostHandle));
     end;
@@ -617,7 +617,7 @@ var
 begin
   M := TKMemoryStream.Create; //Send empty stream
   SendMessageAct(aRecipient, aKind, M);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -628,7 +628,7 @@ begin
   M := TKMemoryStream.Create;
   M.Write(aParam);
   SendMessageAct(aRecipient, aKind, M, aImmidiate);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -639,7 +639,7 @@ begin
   M := TKMemoryStream.Create;
   M.Write(aIndexOnServer);
   SendMessageAct(aRecipient, aKind, M, aImmidiate);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -652,7 +652,7 @@ begin
   M := TKMemoryStream.Create;
   M.WriteA(aText);
   SendMessageAct(aRecipient, aKind, M);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -665,7 +665,7 @@ begin
   M := TKMemoryStream.Create;
   M.WriteW(aText);
   SendMessageAct(aRecipient, aKind, M);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -707,7 +707,7 @@ begin
   if M.Size > MAX_PACKET_SIZE then
   begin
     Status('Error: Packet over size limit');
-    FreeAndNil(M);
+    M.Free;
     Exit;
   end;
 
@@ -718,7 +718,7 @@ begin
   else
     ScheduleSendData(aRecipient, M.Memory, M.Size, aImmidiate);
 
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -901,7 +901,7 @@ begin
                 M2.WriteA(fRoomInfo[SenderRoom].Password);
                 M2.WriteW(fRoomInfo[SenderRoom].GameInfo.Description);
                 SendMessageToRoom(mkReassignHost, SenderRoom, M2);
-                FreeAndNil(M2);
+                M2.Free;
               end;
             end;
     mkResetBans:
@@ -914,7 +914,7 @@ begin
               M2 := TKMemoryStream.Create;
               SaveToStream(M2);
               SendMessage(aSenderHandle, mkServerInfo, M2);
-              FreeAndNil(M2);
+              M2.Free;
             end;
     mkFPS: begin
               Client := fClientList.GetByHandle(aSenderHandle);
@@ -934,7 +934,7 @@ begin
             end;
   end;
 
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -1234,7 +1234,7 @@ begin
     //Write XML
     XML.SaveToFile(ChangeFileExt(fHTMLStatusFile,'.xml'));
   finally
-    FreeAndNil(XML);
+    XML.Free;
   end;
 end;
 

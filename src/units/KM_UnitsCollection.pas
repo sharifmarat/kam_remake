@@ -59,7 +59,7 @@ end;
 destructor TKMUnitsCollection.Destroy;
 begin
   //No need to free units individually since they are Freed by TKMList.Clear command in destructor
-  FreeAndNil(fUnits);
+  fUnits.Free;
   inherited;
 end;
 

@@ -444,7 +444,7 @@ begin
   SetLength(Result, aAgents.Count);
   Move(Solver.Solution[0], Result[0], aAgents.Count * SizeOf(Cardinal));
 
-  FreeAndNil(Solver);
+  Solver.Free;
 end;
 
 

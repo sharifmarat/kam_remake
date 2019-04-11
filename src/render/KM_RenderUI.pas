@@ -869,8 +869,8 @@ end;
 finalization
 begin
   {$IFDEF WDC}
-  FreeAndNil(TKMRenderUI.ClipXStack);
-  FreeAndNil(TKMRenderUI.ClipYStack);
+  TKMRenderUI.ClipXStack.Free;
+  TKMRenderUI.ClipYStack.Free;
   {$ENDIF}
 end;
 

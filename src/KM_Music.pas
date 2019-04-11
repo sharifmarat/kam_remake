@@ -119,8 +119,8 @@ end;
 destructor TKMMusicLib.Destroy;
 begin
   {$IFDEF USELIBZPLAY}
-  FreeAndNil(ZPlayer);
-  FreeAndNil(ZPlayerOther);
+  ZPlayer.Free;
+  ZPlayerOther.Free;
   {$ENDIF}
 
   {$IFDEF USEBASS}

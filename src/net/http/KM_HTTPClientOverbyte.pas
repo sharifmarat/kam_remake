@@ -39,7 +39,7 @@ end;
 destructor TKMHTTPClientOverbyte.Destroy;
 begin
   fHTTPClient.RcvdStream.Free; //RcvdStream is created and managed by us
-  FreeAndNil(fHTTPClient);
+  fHTTPClient.Free;
   inherited;
 end;
 

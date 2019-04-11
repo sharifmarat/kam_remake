@@ -173,7 +173,7 @@ var
 begin
   for I := 0 to MAX_SCHEDULE - 1 do
     for K := 1 to MAX_LOBBY_SLOTS do
-      FreeAndNil(fSchedule[I, K]);
+      fSchedule[I, K].Free;
   inherited;
 end;
 
@@ -272,7 +272,7 @@ begin
 
     fNetworking.SendCommands(Msg, aPlayerIndex); //Send to all players by default
   finally
-    FreeAndNil(Msg);
+    Msg.Free;
   end;
 end;
 
@@ -288,7 +288,7 @@ begin
     Msg.Write(fRandomCheck[aTick mod MAX_SCHEDULE].OurCheck); //Write our random check to the stream
     fNetworking.SendCommands(Msg); //Send to all opponents
   finally
-    FreeAndNil(Msg);
+    Msg.Free;
   end;
 end;
 

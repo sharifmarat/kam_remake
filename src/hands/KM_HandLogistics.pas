@@ -1859,7 +1859,7 @@ begin
   end;
 
   SL.SaveToFile(aFileName);
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 

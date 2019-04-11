@@ -36,7 +36,7 @@ begin
 
       Png.SaveToFile(aFile);
     finally
-      FreeAndNil(Png);
+      Png.Free;
     end;
   {$ENDIF}
   {$IFDEF FPC}
@@ -53,7 +53,7 @@ begin
 
       Png.SaveToFile(aFile);
     finally
-      FreeAndNil(Png);
+      Png.Free;
     end;
   {$ENDIF}
 end;
@@ -104,7 +104,7 @@ begin
         raise Exception.Create('Unknown PNG transparency mode');
     end;
 
-    FreeAndNil(Png);
+    Png.Free;
   {$ENDIF}
   {$IFDEF FPC}
     Png := TBGRABitmap.Create(aFile);
@@ -117,7 +117,7 @@ begin
       aPixelData[K * Png.Width + I] := cardinal(Png.GetPixel(I,K).red) or (cardinal(Png.GetPixel(I,K).green) shl 8) or
                                       (cardinal(Png.GetPixel(I,K).blue) shl 16) or (cardinal(Png.GetPixel(I,K).alpha) shl 24);
 
-    FreeAndNil(Png);
+    Png.Free;
   {$ENDIF}
 end;
 

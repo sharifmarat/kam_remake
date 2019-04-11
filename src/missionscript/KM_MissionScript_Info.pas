@@ -149,7 +149,7 @@ begin
         ErrorStr := E.Message;
     end;
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 
   if ErrorStr <> '' then

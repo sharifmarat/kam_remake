@@ -49,7 +49,7 @@ type
 
 implementation
 uses
-  SysUtils, Math, Types,
+  Math, Types,
   KM_Hand, KM_HandsCollection, KM_Terrain,
   KM_Units, KM_UnitWarrior,
   KM_ResUnits;
@@ -95,7 +95,7 @@ end;
 
 destructor TKMHouseBarracks.Destroy;
 begin
-  FreeAndNil(fRecruitsList);
+  fRecruitsList.Free;
   inherited;
 end;
 

@@ -142,7 +142,7 @@ begin
                       AddFileToStream(ScriptFiles[J].FullFilePath, '', VALID_MAP_EXTENSIONS[I]);
                   end;
                 finally
-                  FreeAndNil(ScriptPreProcessor);
+                  ScriptPreProcessor.Free;
                 end;
               end;
             end;
@@ -176,15 +176,15 @@ begin
   CompressionStream := TCompressionStream.Create(cldefault, fSendStream);
   CompressionStream.CopyFrom(SourceStream, 0);
   //fSendStream now contains the compressed data from SourceStream
-  FreeAndNil(CompressionStream);
-  FreeAndNil(SourceStream);
+  CompressionStream.Free;
+  SourceStream.Free;
   fSendStream.Position := 0;
 end;
 
 
 destructor TKMFileSender.Destroy;
 begin
-  FreeAndNil(fSendStream);
+  fSendStream.Free;
   inherited;
 end;
 
@@ -209,7 +209,7 @@ begin
   if FileStream.Size > 0 then
     fSendStream.CopyFrom(FileStream, FileStream.Size);
 
-  FreeAndNil(FileStream);
+  FileStream.Free;
 end;
 
 
@@ -245,7 +245,7 @@ end;
 
 destructor TKMFileReceiver.Destroy;
 begin
-  FreeAndNil(fReceiveStream);
+  fReceiveStream.Free;
   inherited;
 end;
 
@@ -349,7 +349,7 @@ begin
   //We need custom methods like ReadAssert, ReadW, etc. so we need to read from a TKMemoryStream
   ReadStream := TKMemoryStream.Create;
   ReadStream.CopyFromDecompression(DecompressionStream);
-  FreeAndNil(DecompressionStream);
+  DecompressionStream.Free;
   ReadStream.Position := 0;
 
   //Read from the stream
@@ -384,9 +384,9 @@ begin
 
     Assert(not FileExists(FileName), 'Transfer file already exists');
     FileStream.SaveToFile(FileName);
-    FreeAndNil(FileStream);
+    FileStream.Free;
   end;
-  FreeAndNil(ReadStream);
+  ReadStream.Free;
   Result := True;
 end;
 
@@ -431,7 +431,7 @@ begin
     begin
       if fSenders[I] <> nil then
         //There is an existing transfer to this client, so free it
-        FreeAndNil(fSenders[I]);
+        fSenders[I].Free;
       try
         fSenders[I] := TKMFileSender.Create(aType, aName, aMapFolder, aReceiverIndex);
       except
@@ -472,7 +472,7 @@ begin
       Stream := TKMemoryStream.Create;
       fSenders[I].WriteChunk(Stream, FILE_CHUNK_SIZE);
       fOnTransferPacket(fSenders[I].ReceiverIndex, Stream, SendBufferEmpty); //Updates SendBufferEmpty
-      FreeAndNil(Stream);
+      Stream.Free;
       if fSenders[I].StreamEnd then
       begin
         ClientIndex := fSenders[I].ReceiverIndex;

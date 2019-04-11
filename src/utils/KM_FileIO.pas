@@ -61,7 +61,7 @@ begin
     if MS.Size - MS.Position > 0 then
       MS.Read(Result[1], MS.Size - MS.Position);
   finally
-    FreeAndNil(MS);
+    MS.Free;
   end;
 end;
 
@@ -89,8 +89,8 @@ begin
       SL.LoadFromFile(aFilename);
       Result := SL.Text;
     finally
-      FreeAndNil(SL);
-      FreeAndNil(DefaultEncoding);
+      SL.Free;
+      DefaultEncoding.Free;
     end;
   {$ENDIF}
   {$IFDEF FPC}
@@ -116,7 +116,7 @@ begin
 
       Result := UTF8ToUTF16(TmpA);
     finally
-      FreeAndNil(MS);
+      MS.Free;
     end;
   {$ENDIF}
 end;
@@ -230,7 +230,7 @@ begin
          KMRenamePath(aPathToFolder + FilesToRename[I], RenamedFile);
     end;
   finally
-    FreeAndNil(FilesToRename);
+    FilesToRename.Free;
   end;
 end;
 

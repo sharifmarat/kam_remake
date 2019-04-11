@@ -114,7 +114,7 @@ begin
   for I := 0 to fCount - 1 do
     FreeThenNil(fHandsList[I]);
 
-  FreeAndNil(fPlayerAnimals);
+  PlayerAnimals.Free;
 
   inherited;
 end;
@@ -992,7 +992,7 @@ begin
       MS.WriteHugeString(AnsiString(SL.Text));
       CRC := Adler32CRC(MS);
     finally
-      FreeAndNil(MS);
+      MS.Free;
     end;
 
     //Put CRC at first row
@@ -1002,7 +1002,7 @@ begin
 
     SL.SaveToFile(aPath);
   finally
-    FreeAndNil(SL);
+    SL.Free;
   end;
 end;
 

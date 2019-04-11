@@ -233,7 +233,7 @@ procedure TKMList.Notify(Ptr: Pointer; Action: TListNotification);
 begin
   inherited;
   if (Action = lnDeleted) then
-    FreeAndNil(TObject(Ptr));
+    TObject(Ptr).Free;
 end;
 
 
@@ -991,7 +991,7 @@ begin
       fMapsList.Add(Trim(StringList[I]));
   end;
 
-  FreeAndNil(StringList);
+  StringList.Free;
 end;
 
 

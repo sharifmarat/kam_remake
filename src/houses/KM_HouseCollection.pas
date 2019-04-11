@@ -64,7 +64,7 @@ end;
 
 destructor TKMHousesCollection.Destroy;
 begin
-  FreeAndNil(fHouses);
+  fHouses.Free;
   inherited;
 end;
 

@@ -129,7 +129,7 @@ begin
   FreeAndNil(fSelection);
 
   for I := Low(fRevealers) to High(fRevealers) do
-    FreeAndNil(fRevealers[I]);
+    fRevealers[I].Free;
 
   inherited;
 end;
@@ -820,11 +820,11 @@ begin
 
     for I := 0 to Length(OreP) - 1 do
     begin
-      FreeAndNil(OreP[I]);
-      FreeAndNil(IronOreP[I]);
-      FreeAndNil(GoldOreP[I]);
-      FreeAndNil(CoalOreP[I]);
-      FreeAndNil(SelectedOreP[I]);
+      OreP[I].Free;
+      IronOreP[I].Free;
+      GoldOreP[I].Free;
+      CoalOreP[I].Free;
+      SelectedOreP[I].Free;
     end;
   end;
 end;

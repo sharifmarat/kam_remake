@@ -231,9 +231,9 @@ begin
       with fPlannedHouses[HT].Plans[I] do
         if (House <> nil) then
           gHands.CleanUpHousePointer(House);
-  FreeAndNil(fRoadPlanner);
-  FreeAndNil(fForestsNearby);
-  FreeAndNil(fRoadShortcutPlanner);
+  fRoadPlanner.Free;
+  fForestsNearby.Free;
+  fRoadShortcutPlanner.Free;
   inherited;
 end;
 
@@ -802,8 +802,8 @@ function TKMCityPlanner.GetRoadToHouse(aHT: TKMHouseType; aIdx: Integer; var aFi
         end;
       end;
     finally
-      FreeAndNil(Road);
-      FreeAndNil(Path);
+      Road.Free;
+      Path.Free;
     end;
   end;
   function FindClosestHouseEntrance(var aNewLoc, aExistLoc: TKMPoint): Boolean;
@@ -1404,7 +1404,7 @@ const
         end;
       end;
     finally
-      FreeAndNil(Locs);
+      Locs.Free;
     end;
     Result := Output;
   end;
@@ -1551,7 +1551,7 @@ begin
       end;
     end;
   finally
-    FreeAndNil(StoneLocs);
+    StoneLocs.Free;
   end;
 end;
 
@@ -1647,7 +1647,7 @@ begin
       end;
     end;
   finally
-    FreeAndNil(StoneLocs);
+    StoneLocs.Free;
   end;
   Result := Output;
 end;

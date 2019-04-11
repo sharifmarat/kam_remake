@@ -107,8 +107,8 @@ end;
 
 destructor TKMMenuSingleMap.Destroy;
 begin
-  FreeAndNil(fMaps);
-  FreeAndNil(fMinimap);
+  fMaps.Free;
+  fMinimap.Free;
 
   inherited;
 end;

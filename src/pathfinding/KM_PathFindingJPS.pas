@@ -55,7 +55,7 @@ end;
 
 destructor TPathFindingJPS.Destroy;
 begin
-  FreeAndNil(openList);
+  openList.Free;
 
   inherited;
 end;

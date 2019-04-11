@@ -126,8 +126,8 @@ end;
 
 destructor TKMInfluences.Destroy();
 begin
-  FreeAndNil(fFloodFill);
-  FreeAndNil(fInfluenceSearch);
+  fFloodFill.Free;
+  fInfluenceSearch.Free;
   inherited;
 end;
 
