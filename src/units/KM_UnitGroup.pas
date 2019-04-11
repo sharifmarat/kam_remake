@@ -747,7 +747,7 @@ begin
 
   gHands.CleanUpUnitPointer(TKMUnit(aMember));
 
-//  SetUnitsPerRow(fUnitsPerRow);
+  SetUnitsPerRow(fUnitsPerRow);
 
   //If Group has died report to owner
   if IsDead and Assigned(OnGroupDied) then
