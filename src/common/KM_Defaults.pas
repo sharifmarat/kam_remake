@@ -62,6 +62,7 @@ var
   CRASH_ON_REPLAY       :Boolean = True;  //Crash as soon as replay consistency fails (random numbers mismatch)
   BLOCK_DUPLICATE_APP   :Boolean = True;  //Do not allow to run multiple games at once (to prevent MP cheating)
   SHOW_DISMISS_UNITS_BTN:Boolean = True; //The button to order citizens go back to school
+  RESET_DEBUG_CONTROLS  :Boolean = True; //Reset Debug controls (F11) on game start
 
   //Implemented
   DO_UNIT_INTERACTION   :Boolean = True; //Debug for unit interaction
