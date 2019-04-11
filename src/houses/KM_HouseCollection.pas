@@ -2,6 +2,7 @@ unit KM_HouseCollection;
 {$I KaM_Remake.inc}
 interface
 uses
+  Classes,
   KM_Houses,
   KM_ResHouses,
   KM_CommonClasses, KM_Defaults, KM_Points;
@@ -24,6 +25,7 @@ type
     property Houses[aIndex: Integer]: TKMHouse read GetHouse; default;
     function HitTest(X, Y: Integer): TKMHouse;
     function GetHouseByUID(aUID: Integer): TKMHouse;
+    procedure GetHousesInRect(const aRect: TKMRect; List: TList);
     function FindEmptyHouse(aUnitType: TKMUnitType; const Loc: TKMPoint): TKMHouse;
     function FindHouse(aType: TKMHouseType; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
     function FindHouse(const aTypes: THouseTypeSet; X,Y: Word; const aIndex: Byte = 1; aOnlyCompleted: Boolean = True): TKMHouse; overload;
@@ -44,7 +46,7 @@ type
 
 implementation
 uses
-  SysUtils, Classes, Types, Math,
+  SysUtils, Types, Math,
   KM_Game, KM_Terrain,
   KM_HouseInn, KM_HouseMarket, KM_HouseBarracks, KM_HouseSchool, 
   KM_HouseTownHall, KM_HouseWoodcutters,
@@ -181,6 +183,16 @@ begin
       Result := Houses[I];
       Exit;
     end;
+end;
+
+
+procedure TKMHousesCollection.GetHousesInRect(const aRect: TKMRect; List: TList);
+var
+  I: Integer;
+begin
+  for I := 0 to Count - 1 do
+    if KMInRect(Houses[I].Entrance, aRect) and not Houses[I].IsDestroyed then
+      List.Add(Houses[I]);
 end;
 
 

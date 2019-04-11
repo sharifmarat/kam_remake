@@ -116,6 +116,7 @@ type
     chkShowGameTick: TCheckBox;
     chkSkipRender: TCheckBox;
     chkSkipSound: TCheckBox;
+    chkUIDs: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -727,6 +728,7 @@ begin
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
     SHOW_GAME_TICK := chkShowGameTick.Checked;
+    SHOW_UIDs := chkUIDs.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;

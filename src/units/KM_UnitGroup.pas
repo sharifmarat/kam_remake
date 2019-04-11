@@ -214,6 +214,7 @@ type
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
+    procedure GetGroupsInRect(const aRect: TKMRect; List: TList);
     function GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
     function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
@@ -2047,6 +2048,20 @@ begin
       Result := Groups[I];
       Break;
     end;
+end;
+
+
+procedure TKMUnitGroups.GetGroupsInRect(const aRect: TKMRect; List: TList);
+var
+  I, K: Integer;
+begin
+  for I := 0 to Count - 1 do
+    for K := 0 to Groups[I].Count - 1 do
+      if KMInRect(Groups[I].Members[K].PositionF, aRect) and not Groups[I].Members[K].IsDeadOrDying then
+      begin
+        List.Add(Groups[I]);
+        Break;
+      end;
 end;
 
 

@@ -40,6 +40,8 @@ type
     function GetHousesInRadius(const aLoc: TKMPoint; aSqrRadius: Single; aIndex: TKMHandID; aAlliance: TKMAllianceType; aTypes: THouseTypeSet = [HOUSE_MIN..HOUSE_MAX]; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function DistanceToEnemyTowers(const aLoc: TKMPoint; aIndex: TKMHandID): Single;
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
+    procedure GetGroupsInRect(const aRect: TKMRect; List: TList);
+    procedure GetHousesInRect(const aRect: TKMRect; List: TList);
     function GetHouseByUID(aUID: Integer): TKMHouse;
     function GetUnitByUID(aUID: Integer): TKMUnit;
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
@@ -575,12 +577,35 @@ end;
 
 
 procedure TKMHandsCollection.GetUnitsInRect(const aRect: TKMRect; List: TList);
-var I: Integer;
+var
+  I: Integer;
 begin
   Assert(List.Count = 0);
 
   for I := 0 to fCount - 1 do
     fHandsList[I].Units.GetUnitsInRect(aRect, List);
+end;
+
+
+procedure TKMHandsCollection.GetGroupsInRect(const aRect: TKMRect; List: TList);
+var
+  I: Integer;
+begin
+  Assert(List.Count = 0);
+
+  for I := 0 to fCount - 1 do
+    fHandsList[I].UnitGroups.GetGroupsInRect(aRect, List);
+end;
+
+
+procedure TKMHandsCollection.GetHousesInRect(const aRect: TKMRect; List: TList);
+var
+  I: Integer;
+begin
+  Assert(List.Count = 0);
+
+  for I := 0 to fCount - 1 do
+    fHandsList[I].Houses.GetHousesInRect(aRect, List);
 end;
 
 
