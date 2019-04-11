@@ -424,8 +424,12 @@ end;
 
 function TKMFileSenderManager.StartNewSend(aType: TKMTransferType; const aName: String; aMapFolder: TKMapFolder;
                                            aReceiverIndex: TKMNetHandleIndex): Boolean;
-var I: Integer;
+var
+  I: Integer;
+  Name: String;
 begin
+  Name := aName; //To save const String param locally
+
   for I := Low(fSenders) to High(fSenders) do
     if (fSenders[I] = nil) or (fSenders[I].ReceiverIndex = aReceiverIndex) then
     begin
@@ -433,7 +437,7 @@ begin
         //There is an existing transfer to this client, so free it
         fSenders[I].Free;
       try
-        fSenders[I] := TKMFileSender.Create(aType, aName, aMapFolder, aReceiverIndex);
+        fSenders[I] := TKMFileSender.Create(aType, Name, aMapFolder, aReceiverIndex);
       except
         on E: Exception do
         begin

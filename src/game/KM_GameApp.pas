@@ -575,11 +575,14 @@ begin
 end;
 
 
-//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
 procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
 var
-  LoadError: UnicodeString;
+  LoadError, FilePath: String;
 begin
+  //Save const aFilePath locally, since it could be destroyed as some Game Object instance in StopGame
+  //!!!!! DO NOT USE aMissionFile or aGameName further in this method
+  FilePath := aFilePath;
+  //----------------------------------------------------------------------
   StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
@@ -589,7 +592,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.Load(aFilePath);
+    gGame.Load(FilePath);
   except
     on E: Exception do
     begin
@@ -597,7 +600,7 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath]) + '||' + E.ClassName + ': ' + E.Message;
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [FilePath]) + '||' + E.ClassName + ': ' + E.Message;
       StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
@@ -618,8 +621,13 @@ procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; a
                                         aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                         aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 var
-  LoadError: UnicodeString;
+  LoadError, MissionFile, GameName: String;
 begin
+  //Save const parameters locally, since it could be destroyed as some Game Object instance in StopGame
+  //!!!!! DO NOT USE aMissionFile or aGameName further in this method
+  MissionFile := aMissionFile;
+  GameName := aGameName;
+  //!!!!! ------------------------------------------------------------
   StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
@@ -629,7 +637,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
+    gGame.GameStart(MissionFile, GameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
   except
     on E : Exception do
     begin
@@ -637,7 +645,7 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile]) + '||' + E.ClassName + ': ' + E.Message;
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [MissionFile]) + '||' + E.ClassName + ': ' + E.Message;
       StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
