@@ -166,7 +166,7 @@ begin
     {$ENDIF}
   PrettyPoly();
     {$IFDEF DEBUG_NavMesh}
-    //tPrettyPoly := TimeGetUsec() - tStart - tPolyTrian;
+    tPrettyPoly := TimeGetUsec() - tStart - tPolyTrian;
     {$ENDIF}
 
     {$IFDEF DEBUG_NavMesh}
@@ -819,7 +819,8 @@ var
   // Divide walkable area because of obstacle
   procedure DivideWalkableArea(aIdx, aLineIdx: Word; aPPrevLine, aPActLine: PPolyLine);
   var
-    NewPolyIdx: Word;
+    NewPolyIdx, Overflow: Word;
+    pPL: PPolyLine;
   begin
     // Reserve space in memory (point is not known yet so AddNewWalkableArea cannot be used)
     if (Length(LineArray) <= LineArrayCnt) then
@@ -855,16 +856,23 @@ var
     LineArray[aLineIdx]^.FirstLine := aPActLine;
     AddNewBorder(aIdx, fBord.Borders[aIdx].Next, aLineIdx, True, False);
     // New polygon was created -> copy information to the second area so it will be connected automatically
+    pPL := nil;
     if (NewPolyIdx < fPolyCount) then
       LineArray[aLineIdx]^.FirstLine^.Polygon := NewPolyIdx
     else // The polygon was not created -> it should be created from this side -> secure transition
-      //LineArray[LineArrayCnt]^.LastLine^.Polygon := NewPolyIdx;
-      LineArray[LineArrayCnt]^.FirstLine^.Polygon := NewPolyIdx;
-    TryConnect(aPActLine.Node, aLineIdx, True);
-    if (NewPolyIdx >= fPolyCount) then // The polygon was not created - special case when divide area is second point in a shape
     begin
-      LineArray[LineArrayCnt]^.FirstLine^.Polygon := 0;
+      Overflow := 0;
+      pPL := LineArray[LineArrayCnt]^.FirstLine;
+      while (Overflow < 255) AND (pPL^.Next^.Next <> nil) do
+      begin
+        pPL := pPL^.Next;
+        Inc(Overflow);
+      end;
+      pPL^.Polygon := NewPolyIdx;
     end;
+    TryConnect(aPActLine.Node, aLineIdx, True);
+    if (NewPolyIdx >= fPolyCount) AND (pPL <> nil) then // The polygon was not created - special case when divide area is second point in a shape
+      pPL^.Polygon := 0;
     Inc(LineArrayCnt);
   end;
   // Try to insert point into existing area
@@ -1166,17 +1174,17 @@ begin
 
   //GenerateNewNavMesh();
 
-  { Border Nodes
+  //{ Border Nodes
   for X := 1 to fBorderNodeCount-1 do
     gRenderAux.Text(fBorderNodes[X].X+0.25, fBorderNodes[X].Y+0.4, IntToStr(X), $FF000000 OR COLOR_GREEN);
   //}
-  { Nodes
+  //{ Nodes
   for K := 1 to fNodeCount - 1 do
       gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_RED);
   for K := fInnerPointStartIdx to fInnerPointEndIdx do
       gRenderAux.Text(fNodes[K].X+0.25, fNodes[K].Y+0.4, IntToStr(K), $FF000000 OR COLOR_GREEN);
   //}
-  { Border Lines
+  //{ Border Lines
   for K := 0 to fBord.Count - 1 do
     with fBord.Borders[K] do
     begin
