@@ -1392,15 +1392,12 @@ function TKMNetPlayersList.ValidateSetup(const aHumanUsableLocs, aAIUsableLocs, 
 var
   I, K, J: Integer;
   UsedLoc: array[1..MAX_HANDS] of Boolean;
-  AvailableLocHuman, AvailableLocBoth: array [1..MAX_HANDS] of Byte;
-  TmpLocHumanCount, TmpLocBothCount: Byte;
   TeamLocs: array of Integer;
   LocFiller: TLocFiller;
   Player: TPlayer;
   PT: TPlayerType;
   Loc: TLoc;
   LocsArr: TIntegerArray;
-  PlayerTypes: TPlayerTypeSet;
 begin
   if not AllReady then
   begin
