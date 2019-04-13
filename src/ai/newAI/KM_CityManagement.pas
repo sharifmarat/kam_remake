@@ -143,8 +143,8 @@ begin
 
   // Find resources around Loc and change building policy
   gAIFields.Eye.ScanLoc();
-  fBuilder.AfterMissionInit();
   fPredictor.AfterMissionInit();
+  fBuilder.AfterMissionInit();
 end;
 
 
