@@ -269,7 +269,8 @@ begin
     wolWon:  Result := 'Won';
     wolLost: Result := 'Lost';
   end;
-end;
+end;
+
 
 
 procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandID);
