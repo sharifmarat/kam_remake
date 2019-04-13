@@ -20,6 +20,7 @@ var
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single =  4.251;//13.550
   GA_BUILDER_TRUNK_SHORTAGE             : Single =  1.426;
   GA_BUILDER_STONE_SHORTAGE             : Single = 13.772;
+  GA_BUILDER_STONE_SHORTAGE_NO_QUARRY   : Single = 30.000;
   GA_BUILDER_WOOD_SHORTAGE              : Single =  5.840;
   GA_BUILDER_GOLD_SHORTAGE              : Single = 27.638;
 
@@ -199,7 +200,7 @@ var
   I: Integer;
 begin
   fPlanner.AfterMissionInit();
-  SetLength(fBuildNodes, gHands[fOwner].AI.Setup.WorkerCount);
+  SetLength(fBuildNodes, gHands[fOwner].AI.CityManagement.Predictor.WorkerCount);
   for I := Low(fBuildNodes) to High(fBuildNodes) do
   begin
     fBuildNodes[I].FieldList := TKMPointList.Create();
@@ -874,7 +875,8 @@ begin
     aMaxPlans := Max(aMaxPlans, Ceil(gHands[fOwner].Stats.GetUnitQty(utWorker) / GA_BUILDER_ChHTB_AllWorkerCoef) - fPlanner.ConstructedHouses);
 
   // Quarries have minimal delay + stones use only workers (towers after peace time) -> exhaustion for wtStone is OK
-  if (WareBalance[wtStone].Exhaustion < GA_BUILDER_STONE_SHORTAGE) then
+  if (WareBalance[wtStone].Exhaustion < GA_BUILDER_STONE_SHORTAGE)
+    OR ((fPlanner.PlannedHouses[htQuary].Completed < 3) AND (gHands[fOwner].Stats.GetWareBalance(wtStone) < GA_BUILDER_STONE_SHORTAGE_NO_QUARRY)) then
     fStoneShortage := True;
 
   // Secure wood production: only process trunk -> wood => minimal delay, exhaustion is OK
@@ -1216,7 +1218,9 @@ begin
   RequiredHouses := fPredictor.RequiredHouses;
   WareBalance := fPredictor.WareBalance;
 
-  // Dont try to place wine we are out of wood
+  //
+  RequiredHouses[htQuary] := RequiredHouses[htQuary] * Byte(not (fStoneShortage AND (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (fPlanner.PlannedHouses[htQuary].UnderConstruction > 2)));
+  // Dont try to place wine if we are out of wood
   RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(not(fTrunkShortage OR (MaxPlace < 3)));
 
   // Find place for chop-only woodcutters when we start to be out of wood
@@ -1511,7 +1515,10 @@ begin
     aBalanceText := aBalanceText + '|Wood shortage';
   if fGoldShortage then
     aBalanceText := aBalanceText + '|Gold shortage';
+
+  //fPlanner.LogStatus(aBalanceText);
 end;
+
 
 procedure TKMCityBuilder.Paint();
 const
@@ -2186,4 +2193,3 @@ end;
 
 
 end.
-
