@@ -90,7 +90,8 @@ type
     function GetBestOwner(const aIdx: Word): TKMHandID; overload;
     function GetBestAllianceOwner(const aPL: TKMHandID; const aPoint: TKMPoint; const aAllianceType: TKMAllianceType): TKMHandID;
     //function GetAllAllianceOwnership(const aPL: TKMHandIndex; const aX,aY: Word; const aAllianceType: TKMAllianceType): TKMHandIndexArray;
-    function GetBestAllianceOwnership(const aPL: TKMHandID; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;
+    function GetBestAllianceOwnership(const aPL: TKMHandID; const aX,aY: Word; const aAllianceType: TKMAllianceType): Byte; overload;
+    function GetBestAllianceOwnership(const aPL: TKMHandID; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte; overload;
     function GetOtherOwnerships(const aPL: TKMHandID; const aX, aY: Word): Word; overload;
     function GetOtherOwnerships(const aPL: TKMHandID; const aIdx: Word): Word; overload;
     function CanPlaceHouseByInfluence(const aPL: TKMHandID; const aX,aY: Word; const aIgnoreAllies: Boolean = False): Boolean; overload;
@@ -126,21 +127,18 @@ end;
 
 destructor TKMInfluences.Destroy();
 begin
-  FreeAndNil(fFloodFill);
-  FreeAndNil(fInfluenceSearch);
+  fFloodFill.Free;
+  fInfluenceSearch.Free;
   inherited;
 end;
 
 
 procedure TKMInfluences.Save(SaveStream: TKMemoryStream);
 var
-  PCount: Word;
   Len: Integer;
 begin
-  PCount := gHands.Count;
 
   SaveStream.WriteA('Influences');
-  SaveStream.Write(PCount);
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
   SaveStream.Write(fPolygons);
@@ -164,11 +162,9 @@ end;
 
 procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
 var
-  PCount: Word;
   Len: Integer;
 begin
   LoadStream.ReadAssert('Influences');
-  LoadStream.Read(PCount);
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
   LoadStream.Read(fPolygons);
@@ -512,6 +508,12 @@ end;
 //      end;
 //  Result := Output;
 //end;
+
+
+function TKMInfluences.GetBestAllianceOwnership(const aPL: TKMHandID; const aX,aY: Word; const aAllianceType: TKMAllianceType): Byte;
+begin
+  Result := GetBestAllianceOwnership(aPL, fNavMesh.Point2Polygon[aY,aX], aAllianceType);
+end;
 
 
 function TKMInfluences.GetBestAllianceOwnership(const aPL: TKMHandID; const aIdx: Word; const aAllianceType: TKMAllianceType): Byte;

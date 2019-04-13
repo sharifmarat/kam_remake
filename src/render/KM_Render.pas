@@ -270,8 +270,8 @@ begin
   jpg.Compress;
   jpg.SaveToFile(aFileName);
 
-  FreeAndNil(jpg);
-  FreeAndNil(mkbmp);
+  jpg.Free;
+  mkbmp.Free;
 {$ENDIF}
 end;
 

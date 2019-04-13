@@ -360,7 +360,7 @@ begin
         SpritePack.ExportFullImageData(FullFolder, ci, SList);
   finally
     fSprites.ClearTemp;
-    FreeAndNil(SList);
+    SList.Free;
   end;
 end;
 
@@ -461,7 +461,7 @@ begin
   end;
 
   fSprites.ClearTemp;
-  FreeAndNil(SList);
+  SList.Free;
 end;
 
 

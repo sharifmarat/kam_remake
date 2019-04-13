@@ -68,9 +68,9 @@ end;
 
 destructor TKMMasterServer.Destroy;
 begin
-  FreeAndNil(fHTTPClient);
-  FreeAndNil(fHTTPAnnouncementsClient);
-  FreeAndNil(fHTTPMapsClient);
+  fHTTPClient.Free;
+  fHTTPAnnouncementsClient.Free;
+  fHTTPMapsClient.Free;
   inherited;
 end;
 

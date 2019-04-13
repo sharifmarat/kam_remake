@@ -92,11 +92,11 @@ end;
 
 destructor TKMMapEdTown.Destroy;
 begin
-  FreeAndNil(fGuiHouses);
-  FreeAndNil(fGuiUnits);
-  FreeAndNil(fGuiScript);
-  FreeAndNil(fGuiDefence);
-  FreeAndNil(fGuiOffence);
+  fGuiHouses.Free;
+  fGuiUnits.Free;
+  fGuiScript.Free;
+  fGuiDefence.Free;
+  fGuiOffence.Free;
 
   inherited;
 end;

@@ -183,15 +183,15 @@ end;
 
 destructor TRenderPool.Destroy;
 begin
-  FreeAndNil(fFieldsList);
-  FreeAndNil(fHousePlansList);
-  FreeAndNil(fTabletsList);
-  FreeAndNil(fMarksList);
-  FreeAndNil(fHouseOutline);
-  // FreeAndNil(fSampleHouse);
-  FreeAndNil(fRenderList);
-  FreeAndNil(fRenderTerrain);
-  FreeAndNil(gRenderAux);
+  fFieldsList.Free;
+  fHousePlansList.Free;
+  fTabletsList.Free;
+  fMarksList.Free;
+  fHouseOutline.Free;
+  // fSampleHouse.Free;
+  fRenderList.Free;
+  fRenderTerrain.Free;
+  gRenderAux.Free;
 
   inherited;
 end;

@@ -249,7 +249,7 @@ object FormMain: TFormMain
     end
     object GroupBox2: TGroupBox
       Left = 8
-      Top = 232
+      Top = 231
       Width = 177
       Height = 185
       Caption = ' AI '
@@ -272,53 +272,53 @@ object FormMain: TFormMain
       end
       object chkShowOwnership: TCheckBox
         Left = 8
-        Top = 48
-        Width = 97
+        Top = 55
+        Width = 86
         Height = 17
-        Caption = 'Show ownership'
+        Caption = 'Ownership'
         TabOrder = 0
         OnClick = ControlsUpdate
       end
       object chkShowNavMesh: TCheckBox
         Left = 8
-        Top = 64
-        Width = 97
+        Top = 87
+        Width = 86
         Height = 17
-        Caption = 'Show navmesh'
+        Caption = 'Navmesh'
         TabOrder = 1
         OnClick = ControlsUpdate
       end
       object chkShowAvoid: TCheckBox
         Left = 8
-        Top = 32
-        Width = 113
+        Top = 71
+        Width = 86
         Height = 17
-        Caption = 'Show avoid building'
+        Caption = 'Avoid building'
         TabOrder = 2
         OnClick = ControlsUpdate
       end
       object chkShowBalance: TCheckBox
         Left = 8
         Top = 16
-        Width = 105
+        Width = 97
         Height = 17
-        Caption = 'Show AI balance'
+        Caption = 'AI balance text'
         TabOrder = 3
         OnClick = ControlsUpdate
       end
       object chkShowDefences: TCheckBox
-        Left = 8
-        Top = 80
+        Left = 100
+        Top = 110
         Width = 97
         Height = 17
-        Caption = 'Show defences'
+        Caption = 'Defences'
         TabOrder = 4
         OnClick = ControlsUpdate
       end
       object chkBuildAI: TCheckBox
         Left = 8
-        Top = 96
-        Width = 97
+        Top = 39
+        Width = 86
         Height = 17
         Caption = 'Build AI'
         TabOrder = 5
@@ -326,16 +326,16 @@ object FormMain: TFormMain
       end
       object chkCombatAI: TCheckBox
         Left = 8
-        Top = 112
-        Width = 97
+        Top = 110
+        Width = 86
         Height = 17
         Caption = 'Combat AI'
         TabOrder = 6
         OnClick = ControlsUpdate
       end
       object chkAIEye: TCheckBox
-        Left = 8
-        Top = 128
+        Left = 100
+        Top = 39
         Width = 97
         Height = 17
         Caption = 'AI Eye'
@@ -373,12 +373,39 @@ object FormMain: TFormMain
         OnChange = ControlsUpdate
       end
       object chkBevel: TCheckBox
-        Left = 119
+        Left = 100
         Top = 16
-        Width = 73
+        Width = 88
         Height = 17
         Caption = 'Bevel'
         TabOrder = 10
+        OnClick = ControlsUpdate
+      end
+      object chkShowSoil: TCheckBox
+        Left = 100
+        Top = 55
+        Width = 88
+        Height = 17
+        Caption = 'Soil'
+        TabOrder = 11
+        OnClick = ControlsUpdate
+      end
+      object chkShowFlatArea: TCheckBox
+        Left = 100
+        Top = 71
+        Width = 88
+        Height = 17
+        Caption = 'Flat area'
+        TabOrder = 12
+        OnClick = ControlsUpdate
+      end
+      object chkShowEyeRoutes: TCheckBox
+        Left = 100
+        Top = 87
+        Width = 88
+        Height = 17
+        Caption = 'Routes'
+        TabOrder = 13
         OnClick = ControlsUpdate
       end
     end

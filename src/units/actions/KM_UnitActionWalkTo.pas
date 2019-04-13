@@ -416,7 +416,7 @@ begin
       else
         NodeList.Clear; //Clear NodeList so we return false
     finally
-      FreeAndNil(NodeList2);
+      NodeList2.Free;
     end;
   end;
 
@@ -835,7 +835,7 @@ begin
         else
         begin
           //NodeList has now been re-routed, so we need to re-init everything else and start walk again
-          FreeAndNil(NodeList); //Free our current node list and swap in this new one
+          NodeList.Free; //Free our current node list and swap in this new one
           NodeList := NewNodeList;
           NewNodeList := nil; //So we don't FreeAndNil it at the end (it's now our main node list)
           SetInitValues;

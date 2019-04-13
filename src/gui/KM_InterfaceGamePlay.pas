@@ -54,7 +54,9 @@ type
     SelectingTroopDirection: Boolean;
     SelectingDirPosition: TPoint;
     fSaves: TKMSavesCollection;
-    fTeamNames: TList;
+    fUnitsTeamNames: TList;
+    fGroupsTeamNames: TList;
+    fHousesTeamNames: TList;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
 
     fLineIdToNetPlayerId: array [0..MAX_LOBBY_SLOTS - 1] of Integer;
@@ -738,7 +740,9 @@ begin
   fMessageStack := TKMMessageStack.Create;
   fSaves := TKMSavesCollection.Create;
 
-  fTeamNames := TList.Create;
+  fUnitsTeamNames := TList.Create;
+  fGroupsTeamNames := TList.Create;
+  fHousesTeamNames := TList.Create;
 
   Label_TeamName := TKMLabel.Create(Panel_Main, 0, 0, '', fntGrey, taCenter);
 
@@ -830,22 +834,24 @@ destructor TKMGamePlayInterface.Destroy;
 begin
   ReleaseDirectionSelector; // Make sure we don't exit leaving the cursor restrained
 
-  FreeAndNil(fGuiGameBuild);
-  FreeAndNil(fGuiGameChat);
-  FreeAndNil(fGuiGameHouse);
-  FreeAndNil(fGuiGameUnit);
-  FreeAndNil(fGuiGameRatios);
-  FreeAndNil(fGuiGameStats);
-  FreeAndNil(fGuiMenuSettings);
-  FreeAndNil(fGuiGameResultsSP);
-  FreeAndNil(fGuiGameResultsMP);
+  fGuiGameBuild.Free;
+  fGuiGameChat.Free;
+  fGuiGameHouse.Free;
+  fGuiGameUnit.Free;
+  fGuiGameRatios.Free;
+  fGuiGameStats.Free;
+  fGuiMenuSettings.Free;
+  fGuiGameResultsSP.Free;
+  fGuiGameResultsMP.Free;
   if Assigned(fGuiGameSpectator) then
-    FreeAndNil(fGuiGameSpectator);
+    fGuiGameSpectator.Free;
 
-  FreeAndNil(fMessageStack);
-  FreeAndNil(fSaves);
-  FreeAndNil(fTeamNames);
-  FreeAndNil(fAlerts);
+  fMessageStack.Free;
+  fSaves.Free;
+  FreeAndNil(fHousesTeamNames);
+  FreeAndNil(fGroupsTeamNames);
+  FreeAndNil(fUnitsTeamNames);
+  fAlerts.Free;
   inherited;
 end;
 
@@ -2914,13 +2920,21 @@ begin
 
     // As we don't have names for teams in SP we only allow showing team names in MP or MP replays
   if (Key = gResKeys[SC_SHOW_TEAMS].Key) then
-    if (fUIMode in [umMP, umSpectate]) or (gGame.GameMode = gmReplayMulti) then //Only MP replays
+    if SHOW_UIDs or (fUIMode in [umMP, umSpectate]) or (gGame.GameMode = gmReplayMulti) then //Only MP replays
     begin
       fShowTeamNames := True;
       // Update it immediately so there's no 300ms lag after pressing the key
-      fTeamNames.Clear;
+      fUnitsTeamNames.Clear;
       Rect := fViewport.GetMinimapClip;
-      gHands.GetUnitsInRect(Rect, fTeamNames);
+      gHands.GetUnitsInRect(Rect, fUnitsTeamNames);
+      if SHOW_UIDs then
+      begin
+        fGroupsTeamNames.Clear;
+        fHousesTeamNames.Clear;
+        gHands.GetGroupsInRect(Rect, fGroupsTeamNames);
+        gHands.GetHousesInRect(Rect, fHousesTeamNames);
+      end;
+
     end;
 
   CheckMessageKeys(Key);
@@ -3922,11 +3936,21 @@ begin
   // Display team names
   if aTickCount mod 3 = 0 then // Update once every 300ms, player won't notice
   begin
-    fTeamNames.Clear;
+    fUnitsTeamNames.Clear;
+    if SHOW_UIDs then
+    begin
+      fGroupsTeamNames.Clear;
+      fHousesTeamNames.Clear;
+    end;
     if fShowTeamNames then
     begin
       Rect := fViewport.GetMinimapClip;
-      gHands.GetUnitsInRect(Rect, fTeamNames);
+      gHands.GetUnitsInRect(Rect, fUnitsTeamNames);
+      if SHOW_UIDs then
+      begin
+        gHands.GetGroupsInRect(Rect, fGroupsTeamNames);
+        gHands.GetHousesInRect(Rect, fHousesTeamNames);
+      end;
     end;
   end;
 
@@ -4057,34 +4081,128 @@ end;
 
 procedure TKMGamePlayInterface.Paint;
 var
-  I: Integer;
+  I, K: Integer;
   U: TKMUnit;
-  UnitLoc: TKMPointF;
+  G: TKMUnitGroup;
+  H: TKMHouse;
+  Loc: TKMPointF;
   MapLoc: TKMPointF;
   ScreenLoc: TKMPoint;
 begin
   if fShowTeamNames then
   begin
     Label_TeamName.Visible := True; // Only visible while we're using it, otherwise it shows up in other places
-    for I := 0 to fTeamNames.Count - 1 do
+    for I := 0 to fUnitsTeamNames.Count - 1 do
     begin
-      U := TKMUnit(fTeamNames[I]);
-      if U.Visible and (gMySpectator.FogOfWar.CheckRevelation(U.PositionF) > FOG_OF_WAR_MIN) then
-      begin
-        Label_TeamName.Caption := gHands[U.Owner].OwnerName;
-        Label_TeamName.FontColor := FlagColorToTextColor(gHands[U.Owner].FlagColor);
+      try
+        if not (TObject(fUnitsTeamNames[I]) is TKMUnit)
+          or (TKMUnit(fUnitsTeamNames[I]) = nil)
+          or TKMUnit(fUnitsTeamNames[I]).IsDeadOrDying then
+          Continue;
 
-        UnitLoc := U.PositionF;
-        UnitLoc.X := UnitLoc.X - 0.5;
-        UnitLoc.Y := UnitLoc.Y - 1;
-        MapLoc := gTerrain.FlatToHeight(UnitLoc);
-        ScreenLoc := fViewport.MapToScreen(MapLoc);
+        U := TKMUnit(fUnitsTeamNames[I]);
+        if U.IsDeadOrDying then
+          Continue;
 
-        if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+        if SHOW_UIDs
+          or (U.Visible and (gMySpectator.FogOfWar.CheckRevelation(U.PositionF) > FOG_OF_WAR_MIN)) then
         begin
-          Label_TeamName.Left := ScreenLoc.X;
-          Label_TeamName.Top := ScreenLoc.Y;
-          Label_TeamName.Paint;
+          if SHOW_UIDs then
+            Label_TeamName.Caption := IntToStr(U.UID)
+          else
+            Label_TeamName.Caption := gHands[U.Owner].OwnerName;
+
+          Label_TeamName.FontColor := FlagColorToTextColor(gHands[U.Owner].FlagColor);
+
+          Loc := U.PositionF;
+          Loc.X := Loc.X - 0.5;
+          Loc.Y := Loc.Y - 1;
+          MapLoc := gTerrain.FlatToHeight(Loc);
+          ScreenLoc := fViewport.MapToScreen(MapLoc);
+
+          if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+          begin
+            Label_TeamName.Left := ScreenLoc.X;
+            Label_TeamName.Top := ScreenLoc.Y;
+            Label_TeamName.Paint;
+          end;
+        end;
+      except
+        on E: Exception do
+          ; //Just ignore exceptions here, since its UI function
+      end;
+    end;
+
+    if SHOW_UIDs then
+    begin
+      for I := 0 to fGroupsTeamNames.Count - 1 do
+      begin
+        try
+          if not (TObject(fGroupsTeamNames[I]) is TKMUnitGroup) then
+            Continue;
+
+          G := TKMUnitGroup(fGroupsTeamNames[I]);
+          if (G = nil) or G.IsDead then
+            Continue;
+
+          Label_TeamName.Caption := 'G ' + IntToStr(G.UID);
+
+          Label_TeamName.FontColor := FlagColorToTextColor(GetRandomColorWSeed(G.UID));
+
+          for K := 0 to G.Count - 1 do
+          begin
+            U := G.Members[K];
+            if U.IsDeadOrDying then
+              Continue;
+
+            Loc := U.PositionF;
+            Loc.X := Loc.X - 0.5;
+            Loc.Y := Loc.Y - 1.5;
+            MapLoc := gTerrain.FlatToHeight(Loc);
+            ScreenLoc := fViewport.MapToScreen(MapLoc);
+
+            if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+            begin
+              Label_TeamName.Left := ScreenLoc.X;
+              Label_TeamName.Top := ScreenLoc.Y;
+              Label_TeamName.Paint;
+            end;
+          end;
+        except
+          on E: Exception do
+            ; //Just ignore exceptions here, since its UI function
+        end;
+      end;
+
+      for I := 0 to fHousesTeamNames.Count - 1 do
+      begin
+        try
+          if not (TObject(fHousesTeamNames[I]) is TKMHouse) then
+            Continue;
+
+          H := TKMHouse(fHousesTeamNames[I]);
+          if H.IsDestroyed then
+            Continue;
+
+          Label_TeamName.Caption := 'H ' + IntToStr(H.UID);
+
+          Label_TeamName.FontColor := FlagColorToTextColor(gHands[H.Owner].FlagColor);
+
+          Loc := KMPointF(H.Entrance);
+          Loc.X := Loc.X - 0.5;
+          Loc.Y := Loc.Y - 2;
+          MapLoc := gTerrain.FlatToHeight(Loc);
+          ScreenLoc := fViewport.MapToScreen(MapLoc);
+
+          if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+          begin
+            Label_TeamName.Left := ScreenLoc.X;
+            Label_TeamName.Top := ScreenLoc.Y;
+            Label_TeamName.Paint;
+          end;
+        except
+          on E: Exception do
+            ; //Just ignore exceptions here, since its UI function
         end;
       end;
     end;

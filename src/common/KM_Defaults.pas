@@ -62,6 +62,7 @@ var
   CRASH_ON_REPLAY       :Boolean = True;  //Crash as soon as replay consistency fails (random numbers mismatch)
   BLOCK_DUPLICATE_APP   :Boolean = True;  //Do not allow to run multiple games at once (to prevent MP cheating)
   SHOW_DISMISS_UNITS_BTN:Boolean = True; //The button to order citizens go back to school
+  RESET_DEBUG_CONTROLS  :Boolean = True; //Reset Debug controls (F11) on game start
 
   //Implemented
   DO_UNIT_INTERACTION   :Boolean = True; //Debug for unit interaction
@@ -74,7 +75,6 @@ var
   AI_GEN_NAVMESH        :Boolean = True; //Generate navmesh for AI to plan attacks/defenses
   AI_GEN_INFLUENCE_MAPS :Boolean = True; //Generate influence maps for AI to plan attacks/defenses
   //Not fully implemented yet
-  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   USE_CCL_WALKCONNECT   :Boolean = False; //Use CCL instead of FloodFill for walk-connect (CCL is generaly worse. It's a bit slower, counts 1 tile areas and needs more AreaIDs to work / makes sparsed IDs)
   DYNAMIC_FOG_OF_WAR    :Boolean = False; //Whenever dynamic fog of war is enabled or not
   SHOW_DISMISS_GROUP_BTN:Boolean = False; //The button to kill group
@@ -114,6 +114,7 @@ var
   LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
   SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
   LOG_GAME_TICK           :Boolean = False; //Log game tick
+  MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = False; //Show condition Inc/Dec buttons for citizen units in MapEd
   {Gameplay display}
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
@@ -132,6 +133,7 @@ var
   SHOW_POINTER_DOTS       :Boolean = False; //Show pointer count as small dots below unit/houses
   SHOW_GROUND_LINES       :Boolean = False; //Show a line below all sprites to mark the ground height used in Z-Order
   SHOW_UNIT_MOVEMENT      :Boolean = False; //Draw unit movement overlay (occupied tile), Only if unit interaction enabled
+  SHOW_UIDs               :Boolean = False;  //Show units/groups/houses UIDs
   SHOW_WALK_CONNECT       :Boolean = False; //Show floodfill areas of interconnected areas
   SHOW_DEFENCE_POSITIONS  :Boolean = False;
   TEST_VIEW_CLIP_INSET    :Boolean = False; //Renders smaller area to see if everything gets clipped well
@@ -148,6 +150,9 @@ var
   OVERLAY_AI_BUILD        :Boolean = False; //Show build progress of new AI
   OVERLAY_AI_COMBAT       :Boolean = False; //Show combat marks of new AI
   OVERLAY_AI_EYE          :Boolean = False; //Show Eye vision of new AI
+  OVERLAY_AI_SOIL         :Boolean = False; //Show Soil vision of new AI
+  OVERLAY_AI_FLATAREA     :Boolean = False; //Show FlatArea vision of new AI
+  OVERLAY_AI_ROUTES       :Boolean = False; //Show Routes to resources vision of new AI
   OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI 
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count

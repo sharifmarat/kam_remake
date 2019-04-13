@@ -440,7 +440,7 @@ destructor TKMResUnits.Destroy;
 var U:TKMUnitType;
 begin
   for U := Low(TKMUnitType) to High(TKMUnitType) do
-    FreeAndNil(fItems[U]);
+    fItems[U].Free;
 
   inherited;
 end;
@@ -554,7 +554,7 @@ begin
 
     Result := Adler32CRC(S);
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 end;
 

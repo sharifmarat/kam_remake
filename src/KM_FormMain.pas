@@ -116,6 +116,9 @@ type
     chkShowGameTick: TCheckBox;
     chkSkipRender: TCheckBox;
     chkSkipSound: TCheckBox;
+    chkShowSoil: TCheckBox;
+    chkShowFlatArea: TCheckBox;
+    chkShowEyeRoutes: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -741,6 +744,9 @@ begin
     OVERLAY_AI_BUILD := chkBuildAI.Checked;
     OVERLAY_AI_COMBAT := chkCombatAI.Checked;
     OVERLAY_AI_EYE := chkAIEye.Checked;
+    OVERLAY_AI_SOIL := chkShowSoil.Checked;
+    OVERLAY_AI_FLATAREA := chkShowFlatArea.Checked;
+    OVERLAY_AI_ROUTES := chkShowEyeRoutes.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;

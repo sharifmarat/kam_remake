@@ -42,7 +42,7 @@ end;
 
 destructor TKMNetUDPLNet.Destroy;
 begin
-  if fUDP<>nil then FreeAndNil(fUDP);
+  if fUDP<>nil then fUDP.Free;
   Inherited;
 end;
 

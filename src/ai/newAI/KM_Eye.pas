@@ -97,6 +97,8 @@ type
   public
     constructor Create();
     destructor Destroy(); override;
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
 
     //property Info[const aY,aX: Word]: TKMBuildInfo read GetInfo write SetInfo;
     property VisitIdx: Byte read fVisitIdx;
@@ -216,12 +218,12 @@ end;
 
 destructor TKMEye.Destroy();
 begin
-  FreeAndNil(fGoldLocs);
-  FreeAndNil(fIronLocs);
-  FreeAndNil(fStoneMiningTiles);
+  fGoldLocs.Free;
+  fIronLocs.Free;
+  fStoneMiningTiles.Free;
 
-  FreeAndNil(fBuildFF);
-  FreeAndNil(fArmyEvaluation);
+  fBuildFF.Free;
+  fArmyEvaluation.Free;
 
   inherited;
 end;
@@ -251,6 +253,7 @@ begin
   SaveByteArr(fFlatArea);
 
   fArmyEvaluation.Save(SaveStream);
+  fBuildFF.Save(SaveStream);
 
   // The following does not requires save
   // fHousesMapping
@@ -280,6 +283,7 @@ begin
   LoadByteArr(fFlatArea);
 
   fArmyEvaluation.Load(LoadStream);
+  fBuildFF.Load(LoadStream);
 end;
 
 
@@ -484,7 +488,7 @@ begin
     end;
   end;
   if (not aAllMines) then
-    FreeAndNil(Mines);
+    Mines.Free;
   SetLength(Output, Cnt);
   Result := Output;
 end;
@@ -543,7 +547,7 @@ begin
     //    I := I + Increment;
     //  end;
     //finally
-    //  FreeAndNil(TagList);
+    //  TagList.Free;
     //end;
     // Scan Resources - stones
     {
@@ -557,11 +561,11 @@ begin
         I := I + Increment;
       end;
     finally
-      FreeAndNil(TagList);
+      TagList.Free;
     end
     //}
   finally
-    FreeAndNil(Road);
+    Road.Free;
   end;
 
   if (PointsCnt > 0) then
@@ -570,7 +574,7 @@ begin
     try
       FFInitPlace.FillArea(PointsCnt, InitPoints);
     finally
-      FreeAndNil(FFInitPlace);
+      FFInitPlace.Free;
     end;
   end;
 
@@ -1149,47 +1153,60 @@ var
   I,X,Y: Integer;
 begin
   //{ Build flood fill
-  for PL := 0 to gHands.Count - 1 do
+  if OVERLAY_AI_EYE then
   begin
-    OwnerUpdate(PL);
-    fBuildFF.UpdateState();
+    for PL := 0 to gHands.Count - 1 do
+    begin
+      OwnerUpdate(PL);
+      fBuildFF.UpdateState();
+    end;
+    for Y := 1 to fMapY - 1 do
+      for X := 1 to fMapX - 1 do
+        //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
+        //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
+          case fBuildFF.State[Y,X] of
+            bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
+            bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
+            bsFieldPlan: gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLACK);
+            bsRoadPlan:  gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
+            bsRoad:      gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
+            bsBuild:     gRenderAux.Quad(X, Y, $33000000 OR COLOR_YELLOW);
+            bsTree:      gRenderAux.Quad(X, Y, $99000000 OR COLOR_GREEN);
+            bsForest:    gRenderAux.Quad(X, Y, $66000000 OR COLOR_GREEN);
+            bsCoal:      gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
+            bsReserved:  gRenderAux.Quad(X, Y, $66000000 OR COLOR_RED);
+            bsDebug:     gRenderAux.Quad(X, Y, $FF000000 OR COLOR_BLACK);
+            else begin end;
+          end;
+    //{ Build places of the last plan
+    for I := 0 to fBuildFF.Locs.Count - 1 do
+      gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $99000000 OR COLOR_BLACK);
+    //}
+    //{ Stone mining tiles
+    for I := 0 to fStoneMiningTiles.Count - 1 do
+      gRenderAux.Quad(fStoneMiningTiles.Items[I].X, fStoneMiningTiles.Items[I].Y, $99000000 OR COLOR_RED); //}
+  end
+  else if OVERLAY_AI_SOIL then
+  begin
+    //{ Soil
+    for Y := 1 to fMapY - 1 do
+      for X := 1 to fMapX - 1 do
+        gRenderAux.Quad(X, Y, (Soil[Y,X] shl 24) OR COLOR_RED); //}
+  end
+  else if OVERLAY_AI_FLATAREA then
+  begin
+    //{ Flat Area
+    for Y := 1 to fMapY - 1 do
+      for X := 1 to fMapX - 1 do
+        gRenderAux.Quad(X, Y, (FlatArea[Y,X] shl 24) OR COLOR_RED); //}
+  end
+  else if OVERLAY_AI_ROUTES then
+  begin
+    //{ Routes
+    for Y := 1 to fMapY - 1 do
+      for X := 1 to fMapX - 1 do
+        gRenderAux.Quad(X, Y, (Routes[Y,X] shl 24) OR COLOR_RED); //}
   end;
-  for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-      //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
-      //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
-        case fBuildFF.State[Y,X] of
-          bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
-          bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
-          bsFieldPlan: gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLACK);
-          bsRoadPlan:  gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
-          bsRoad:      gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
-          bsBuild:     gRenderAux.Quad(X, Y, $33000000 OR COLOR_YELLOW);
-          bsTree:      gRenderAux.Quad(X, Y, $99000000 OR COLOR_GREEN);
-          bsForest:    gRenderAux.Quad(X, Y, $66000000 OR COLOR_GREEN);
-          bsCoal:      gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
-          bsReserved:  gRenderAux.Quad(X, Y, $66000000 OR COLOR_RED);
-          bsDebug:     gRenderAux.Quad(X, Y, $FF000000 OR COLOR_BLACK);
-          else begin end;
-        end;
-  for I := 0 to fBuildFF.Locs.Count - 1 do
-    gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $99000000 OR COLOR_BLACK);
-  //}
-  { Soil
-  for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-      gRenderAux.Quad(X, Y, (Soil[Y,X] shl 24) OR COLOR_RED); //}
-  { Flat Area
-  for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-      gRenderAux.Quad(X, Y, (FlatArea[Y,X] shl 24) OR COLOR_RED); //}
-  { Routes
-  for Y := 1 to fMapY - 1 do
-    for X := 1 to fMapX - 1 do
-      gRenderAux.Quad(X, Y, (Routes[Y,X] shl 24) OR COLOR_RED); //}
-  //{ Stone mining tiles
-  for I := 0 to fStoneMiningTiles.Count - 1 do
-    gRenderAux.Quad(fStoneMiningTiles.Items[I].X, fStoneMiningTiles.Items[I].Y, $99000000 OR COLOR_RED); //}
 end;
 
 
@@ -1208,6 +1225,62 @@ destructor TKMBuildFF.Destroy();
 begin
   inherited;
   fLocs.free;
+end;
+
+
+procedure TKMBuildFF.Save(SaveStream: TKMemoryStream);
+var
+  Len: Integer;
+begin
+  SaveStream.WriteA('BuildFF');
+
+  SaveStream.Write(fOwner);
+  SaveStream.Write(fVisitIdx);
+  SaveStream.Write(fVisitIdxHouse);
+  SaveStream.Write(fStartQueue);
+  SaveStream.Write(fEndQueue);
+  SaveStream.Write(fQueueCnt);
+  SaveStream.Write(fMapX);
+  SaveStream.Write(fMapY);
+  SaveStream.Write(fUpdateTick);
+
+  SaveStream.Write(fOwnerUpdateInfo, SizeOf(fOwnerUpdateInfo));
+  SaveStream.Write(fHouseReq, SizeOf(fHouseReq));
+
+  fLocs.SaveToStream(SaveStream);
+
+  Len := Length(fInfoArr);
+  SaveStream.Write(Len);
+  if (Len > 0) then
+    SaveStream.Write(fInfoArr[0], SizeOf(fInfoArr[0]) * Len);
+end;
+
+
+procedure TKMBuildFF.Load(LoadStream: TKMemoryStream);
+var
+  Len: Integer;
+begin
+  LoadStream.ReadAssert('BuildFF');
+
+  LoadStream.Read(fOwner);
+  LoadStream.Read(fVisitIdx);
+  LoadStream.Read(fVisitIdxHouse);
+  LoadStream.Read(fStartQueue);
+  LoadStream.Read(fEndQueue);
+  LoadStream.Read(fQueueCnt);
+  LoadStream.Read(fMapX);
+  LoadStream.Read(fMapY);
+  LoadStream.Read(fUpdateTick);
+
+  LoadStream.Read(fOwnerUpdateInfo, SizeOf(fOwnerUpdateInfo));
+  LoadStream.Read(fHouseReq, SizeOf(fHouseReq));
+
+  fLocs.LoadFromStream(LoadStream);
+
+  LoadStream.Read(Len);
+  SetLength(fInfoArr,Len);
+  if (Len > 0) then
+    LoadStream.Read(fInfoArr[0], SizeOf(fInfoArr[0]) * Len);
 end;
 
 
@@ -1337,10 +1410,11 @@ end;
 
 function TKMBuildFF.CanBeVisited(const aX,aY,aIdx: Word; const aHouseQueue: Boolean = False): Boolean;
 begin
+  // tpOwn - walkable tile + height evaluation
   if aHouseQueue then
-    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) )
+    Result := (fInfoArr[aIdx].Visited = fVisitIdx) AND (fInfoArr[aIdx].VisitedHouse < fVisitIdxHouse) AND (tpOwn in gTerrain.Land[aY,aX].Passability)
   else
-    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND gTerrain.TileIsRoadable( KMPoint(aX,aY) );
+    Result := (fInfoArr[aIdx].Visited < fVisitIdx) AND (tpOwn in gTerrain.Land[aY,aX].Passability);
 end;
 
 

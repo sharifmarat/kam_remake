@@ -1058,7 +1058,7 @@ begin
   end;
 
   S.SaveToFile(aFileName);
-  FreeAndNil(S);
+  S.Free;
 end;
 
 
@@ -1085,7 +1085,7 @@ begin
     S.Read(fQueue[I].Rand);
   end;
 
-  FreeAndNil(S);
+  S.Free;
 end;
 
 

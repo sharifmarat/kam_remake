@@ -75,9 +75,9 @@ end;
 
 destructor TKMMapEdMission.Destroy;
 begin
-  FreeAndNil(fGuiMissionMode);
-  FreeAndNil(fGuiMissionAlliances);
-  FreeAndNil(fGuiMissionPlayers);
+  fGuiMissionMode.Free;
+  fGuiMissionAlliances.Free;
+  fGuiMissionPlayers.Free;
 
   inherited;
 end;

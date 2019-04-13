@@ -2414,7 +2414,7 @@ var
   I: Integer;
 begin
   for I := 0 to ChildCount - 1 do
-    FreeAndNil(Childs[I]);
+    Childs[I].Free;
 
   inherited;
 end;
@@ -5307,7 +5307,7 @@ end;
 
 destructor TKMMemo.Destroy;
 begin
-  FreeAndNil(fItems);
+  fItems.Free;
   inherited;
 end;
 
@@ -5964,8 +5964,8 @@ end;
 
 destructor TKMListBox.Destroy;
 begin
-  FreeAndNil(fItems);
-  FreeAndNil(fSeparatorTexts);
+  fItems.Free;
+  fSeparatorTexts.Free;
   inherited;
 end;
 
@@ -8741,7 +8741,7 @@ end;
 { TKMMasterControl }
 destructor TKMMasterControl.Destroy;
 begin
-  FreeAndNil(fMasterPanel); //Will destroy all its childs as well
+  fMasterPanel.Free; //Will destroy all its childs as well
 
   inherited;
 end;

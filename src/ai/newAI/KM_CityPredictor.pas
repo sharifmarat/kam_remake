@@ -45,12 +45,16 @@ type
     procedure UpdateWareProduction(aWT: TKMWareType);
     procedure UpdateWareConsumption(aWT: TKMWareType; aInitialization: Boolean = False);
     procedure UpdateFoodConsumption(aInitialization: Boolean = False);
+    procedure UpdateGoldConsumption(aInitialization: Boolean = False);
+    procedure UpdateBuildMaterialConsumption(aInitialization: Boolean = False);
     procedure UpdateWareDerivation(aWT: TKMWareType; aInitialization: Boolean = False);
     procedure UpdateWareBalance(aInitialization: Boolean = False);
 
     procedure UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
     procedure UpdateFinalProduction(aIncPeaceFactor: Single = 0);
     procedure UpdateCityStats();
+
+    procedure FilterRequiredHouses(aTick: Cardinal);
   public
     RequiredHouses: TRequiredHousesArray;
 
@@ -319,6 +323,31 @@ begin
 end;
 
 
+// Update gold consumption
+procedure TKMCityPredictor.UpdateGoldConsumption(aInitialization: Boolean = False);
+const
+  GOLD_NEED_PER_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
+begin
+  fWareBalance[wtGold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
+end;
+
+
+// Update build material consumption
+procedure TKMCityPredictor.UpdateBuildMaterialConsumption(aInitialization: Boolean = False);
+const
+  STONE_NEED_PER_A_WORKER = 0.6;
+  WOOD_NEED_PER_A_WORKER = 0.35;
+begin
+  // Worker count is decreased after peace time -> compute with maximal count
+  fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+  fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+  // Raw wood expectations
+  UpdateWareConsumption(wtWood, aInitialization);
+  fWareBalance[wtWood].ActualConsumption := Max(fWareBalance[wtWood].ActualConsumption, fCityStats.Citizens[utWorker] * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
+  fWareBalance[wtWood].FinalConsumption := Max(fWareBalance[wtWood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
+end;
+
+
 // Update ware derivation - 2 views:
 // 1. Exhaustion = estimation of time when will be ware depleted (determine which house should be built at first)
 // 2. Fraction = fraction of required and available houses
@@ -343,10 +372,6 @@ end;
 
 // Update ware balance
 procedure TKMCityPredictor.UpdateWareBalance(aInitialization: Boolean = False);
-const
-  STONE_NEED_PER_A_WORKER = 0.6;
-  WOOD_NEED_PER_A_WORKER = 0.35;
-  GOLD_NEED_PER_A_SCHOOL = 3.5; // Amount of gold which requires school (in 1 minute)
 var
   I: Integer;
 begin
@@ -360,36 +385,50 @@ begin
   end;
 
   // Update "Normal" ware flow
-  UpdateFoodConsumption(aInitialization); // Update food at once
+  UpdateFoodConsumption(aInitialization);
+  UpdateGoldConsumption(aInitialization);
+  UpdateBuildMaterialConsumption(aInitialization);
   for I := CO_WARE_MAX downto CO_WARE_MIN do
   begin
     UpdateWareProduction(CONSUMPTION_ORDER[I]);
     // Exeptions
     case CONSUMPTION_ORDER[I] of
       // Food was updated at once
-      wtWine, wtBread, wtSausages, wtFish:
-        begin
-        end;
-      // Update Materials / Gold
-      wtGold: fWareBalance[wtGold].ActualConsumption := Min(fMaxSoldiersInMin, (fCityStats.Houses[htSchool] + RequiredHouses[htSchool]) * GOLD_NEED_PER_A_SCHOOL);
-      wtStone:
-        begin
-          // Worker count is decreased after peace time -> compute with maximal count
-          fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
-          fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
-        end;
-      wtWood:
-        begin
-          UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
-          fWareBalance[wtWood].ActualConsumption := Max(fWareBalance[wtWood].ActualConsumption, fCityStats.Citizens[utWorker] * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
-          fWareBalance[wtWood].FinalConsumption := Max(fWareBalance[wtWood].FinalConsumption, fWorkerCount * GA_PREDICTOR_WOOD_NEED_PER_A_WORKER);
-        end;
+      wtWine, wtBread, wtSausages, wtFish: begin end;
+      // Update Gold
+      wtGold: begin end;
+      // Update materials
+      wtStone: begin end;
+      wtWood: begin end;
       // Other cases
       else
         UpdateWareConsumption(CONSUMPTION_ORDER[I], aInitialization);
     end;
     UpdateWareDerivation(CONSUMPTION_ORDER[I],aInitialization);
   end;
+end;
+
+
+// Basic house requirements
+procedure TKMCityPredictor.UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
+const
+  INN_TIME_LIMIT = 60 * 10 * 14; // ~ 14 minutes from start
+  SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
+  FIRST_MARKETPLACE = 10 * 60 * 60;
+  SECOND_MARKETPLACE = 10 * 60 * 100;
+  BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min
+  BARRACKS_BEFORE_PEACE_END = 20; // Allow to build barracks before peace time end
+begin
+  // 1 Storehouse
+  RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
+  // 1 Barracks (build only when we have weapons and (from X tick or Y ticks before peace end -> avoid to build barracks in 1 minute when is still peace and we have predefined weapons in storehouse))
+  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wtWarfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
+  // Schools (at least 1 + WarriorsPerMinute criterium)
+  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
+  // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
+  RequiredHouses[htInn] := Max(0, Ceil(  Byte( (aTick > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]);
+  // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
+  RequiredHouses[htMarketplace] := Byte( aInitialization OR (aTick > FIRST_MARKETPLACE) ) + Byte( aInitialization OR (aTick > SECOND_MARKETPLACE) ) - fCityStats.Houses[htMarketplace];
 end;
 
 
@@ -424,29 +463,6 @@ begin
       HousesCnt := HousesCnt + Houses[HT];
     end;
   end;
-end;
-
-
-// Basic house requirements
-procedure TKMCityPredictor.UpdateBasicHouses(aTick: Cardinal; aInitialization: Boolean = False);
-const
-  INN_TIME_LIMIT = 60 * 10 * 14; // ~ 14 minutes from start
-  SCHOOL_PRODUCTION = 3; // Amount of gold which requires school (in 1 minute) - in ideal case it requires only 3.5 in real there is not sometimes gold so it must be lower
-  FIRST_MARKETPLACE = 10 * 60 * 60;
-  SECOND_MARKETPLACE = 10 * 60 * 100;
-  BARRACKS_PEACE_DELAY = 30; // Build barracks since 30 min
-  BARRACKS_BEFORE_PEACE_END = 20; // Allow to build barracks before peace time end
-begin
-  // 1 Storehouse
-  RequiredHouses[htStore] := 1 - fCityStats.Houses[htStore];
-  // 1 Barracks (build only when we have weapons and (from X tick or Y ticks before peace end -> avoid to build barracks in 1 minute when is still peace and we have predefined weapons in storehouse))
-  RequiredHouses[htBarracks] := Byte(aInitialization OR ((gHands[fOwner].Stats.GetWareBalance(wtWarfare) > 0) AND ((aTick > BARRACKS_PEACE_DELAY * 600) OR (aTick > (gGame.GameOptions.Peacetime - BARRACKS_BEFORE_PEACE_END) * 600)))) - fCityStats.Houses[htBarracks];
-  // Schools (at least 1 + WarriorsPerMinute criterium)
-  RequiredHouses[htSchool] := Max( 0,  Max(1, Byte(  (fCityStats.Houses[htBarracks] > 0) OR aInitialization ) * (Ceil(fMaxSoldiersInMin / SCHOOL_PRODUCTION))) - fCityStats.Houses[htSchool]  );
-  // Inn (at least 1 after INN_TIME_LIMIT + CitizensCnt criterium)
-  RequiredHouses[htInn] := Max(0, Ceil(  Byte( (aTick > INN_TIME_LIMIT) OR aInitialization ) * fCityStats.CitizensCnt / 80  ) - fCityStats.Houses[htInn]);
-  // Marketplace - 1. after FIRST_MARKETPLACE; 2. after SECOND_MARKETPLACE
-  RequiredHouses[htMarketplace] := Byte( aInitialization OR (aTick > FIRST_MARKETPLACE) ) + Byte( aInitialization OR (aTick > SECOND_MARKETPLACE) ) - fCityStats.Houses[htMarketplace];
 end;
 
 
@@ -540,7 +556,7 @@ begin
 end;
 
 
-procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
+procedure TKMCityPredictor.FilterRequiredHouses(aTick: Cardinal);
   function UpdateFarmHistory(): Boolean;
   const
     CORN_DELAY = 10 * 60 * 6; // Delay 6 minutes or use array ProductionLag from KM_ResWares
@@ -612,7 +628,6 @@ procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
 const
   WEAP_WORKSHOP_DELAY = 35 * 60 * 10;
   WINEYARD_DELAY = 50 * 60 * 10;
-  UPDATE_PRODUCTION = MAX_HANDS * 60 * 5;
 var
   Stats: TKMHandStats;
   Planner: TKMCityPlanner;
@@ -620,15 +635,6 @@ begin
   Planner := gHands[fOwner].AI.CityManagement.Builder.Planner;
   Stats := gHands[fOwner].Stats;
 
-  if (aTick mod UPDATE_PRODUCTION = fOwner) then
-    UpdateFinalProduction();
-
-  // Clear required houses
-  FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
-  // Compute city stats
-  UpdateCityStats();
-  // Compute basic house requirements
-  UpdateBasicHouses(aTick, False);
   // Dont build anything if there is not completed school
   if (fCityStats.Houses[htSchool] = 0)
     OR ( (fCityStats.Houses[htSchool] = 1)
@@ -638,13 +644,16 @@ begin
                      )
              )
        ) then
+  begin
+    FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
+    // Allow to reserve quarries
+    UpdateWareProduction(wtStone);
+    fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+    fWareBalance[wtStone].FinalConsumption := Max(fCityStats.Citizens[utWorker], fWorkerCount) * GA_PREDICTOR_STONE_NEED_PER_A_WORKER;
+    UpdateWareDerivation(wtStone);
+    RequiredHouses[htSchool] := Max(0, 1 - Planner.PlannedHouses[htSchool].Count);
     Exit;
-
-  // Update prediction
-  UpdateWareBalance();
-
-  if (gGame.GameTickCount < WINEYARD_DELAY) then
-    RequiredHouses[htWineyard] := 0;
+  end;
 
   // Check requirements
   CheckPeaceFactor();
@@ -659,6 +668,9 @@ begin
 
 
   // Change house requirements due to nonlinear delay, toons of exceptions and unlock order
+  // Dont build wineyard too early
+  if (gGame.GameTickCount < WINEYARD_DELAY) then
+    RequiredHouses[htWineyard] := 0;
   // Consideration of corn delay - only remove all required houses, builder will find the right one if they are not removed
   if UpdateFarmHistory() AND not gHands[fOwner].Locks.HouseBlocked[htFarm] then
   begin
@@ -703,6 +715,28 @@ begin
   RequiredHouses[htWeaponSmithy] := RequiredHouses[htWeaponSmithy] * Byte(Stats.GetWareBalance(wtSteel) > 0);
   RequiredHouses[htArmorSmithy] := RequiredHouses[htArmorSmithy] * Byte(Stats.GetWareBalance(wtSteel) > 0);
   //}
+end;
+
+
+procedure TKMCityPredictor.UpdateState(aTick: Cardinal);
+const
+  UPDATE_PRODUCTION = MAX_HANDS * 60 * 5;
+begin
+  // Update final production (based on size of city, mines etc.)
+  if (aTick mod UPDATE_PRODUCTION = fOwner) then
+    UpdateFinalProduction();
+  // Clear required houses
+  FillChar(RequiredHouses, SizeOf(RequiredHouses), #0);
+  // Update city stats
+  UpdateCityStats();
+  // Update required basic houses (main buildings)
+  UpdateBasicHouses(aTick, False);
+  // Update prediction and other houses (production of ware)
+  UpdateWareBalance();
+
+  // Filter required houses
+  FilterRequiredHouses(aTick);
+  //
 end;
 
 
@@ -754,11 +788,11 @@ const
       else if (Exhaustion > 1) then    ExhaustionColor := COLOR_YELLOW;
       aBalanceText := aBalanceText + Format(HouseCntColor+'%dx '+COLOR_WHITE, [Cnt]) //
                         + Format(#9 + '%s ' + #9 + '('
-                          + ProductionColor+'%.2f'+COLOR_WHITE+';' + #9
-                          + ActualConsumptionColor+'%.2f'+COLOR_WHITE+';' + #9
-                          + FinalConsumptionColor+'%.2f'+COLOR_WHITE+';'  + #9
-                          + FractionColor+'%.2f'+COLOR_WHITE+';' + #9
-                          + ExhaustionColor+'%.2f'+COLOR_WHITE+')|',
+                          + ProductionColor+'%3.2f'+COLOR_WHITE+';' + #9
+                          + ActualConsumptionColor+'%3.2f'+COLOR_WHITE+';' + #9
+                          + FinalConsumptionColor+'%3.2f'+COLOR_WHITE+';'  + #9
+                          + FractionColor+'%3.2f'+COLOR_WHITE+';' + #9
+                          + ExhaustionColor+'%3.2f'+COLOR_WHITE+')|',
                           [aSpecificText, Production, ActualConsumption, FinalConsumption, Fraction, Exhaustion]);
     end;
   end;

@@ -88,13 +88,13 @@ end;
 
 destructor TKMHandAI.Destroy;
 begin
-  FreeAndNil(fGoals);
-  FreeAndNil(fGeneral);
-  FreeAndNil(fMayor);
-  FreeAndNil(fSetup);
+  fGoals.Free;
+  fGeneral.Free;
+  fMayor.Free;
+  fSetup.Free;
 
-  FreeAndNil(fCityManagement);
-  FreeAndNil(fArmyManagement);
+  fCityManagement.Free;
+  fArmyManagement.Free;
 
   inherited;
 end;
@@ -270,6 +270,7 @@ begin
     wolLost: Result := 'Lost';
   end;
 end;
+
 
 
 procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandID);

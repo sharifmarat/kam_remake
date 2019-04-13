@@ -78,6 +78,7 @@ type
   public
     constructor Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; const aLoc: TKMPoint; aID: Integer);
     constructor Load(LoadStream: TKMemoryStream); override;
+    property DigState: ShortInt read LastToDig;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;

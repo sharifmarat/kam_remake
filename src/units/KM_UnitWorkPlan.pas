@@ -230,9 +230,9 @@ begin
     end;
   end;
 
-  FreeAndNil(TreeList);
-  FreeAndNil(BestToPlant);
-  FreeAndNil(SecondBestToPlant);
+  TreeList.Free;
+  BestToPlant.Free;
+  SecondBestToPlant.Free;
 end;
 
 

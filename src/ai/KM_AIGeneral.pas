@@ -43,7 +43,7 @@ type
 
 implementation
 uses
-  SysUtils, Classes, Math,
+  Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_AIFields,
   KM_Houses, KM_HouseBarracks,
   KM_ResHouses, KM_NavMesh, KM_CommonUtils;
@@ -71,8 +71,8 @@ end;
 
 destructor TKMGeneral.Destroy;
 begin
-  FreeAndNil(fDefencePositions);
-  FreeAndNil(fAttacks);
+  fDefencePositions.Free;
+  fAttacks.Free;
 
   inherited;
 end;
@@ -572,7 +572,7 @@ begin
     //  end;
     //end;
   //finally
-  //  FreeAndNil(Locs);
+  //  Locs.Free;
   //end;
 
   //Compare existing defence positions with the sample
