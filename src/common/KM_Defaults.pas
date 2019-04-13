@@ -150,6 +150,9 @@ var
   OVERLAY_AI_BUILD        :Boolean = False; //Show build progress of new AI
   OVERLAY_AI_COMBAT       :Boolean = False; //Show combat marks of new AI
   OVERLAY_AI_EYE          :Boolean = False; //Show Eye vision of new AI
+  OVERLAY_AI_SOIL         :Boolean = False; //Show Soil vision of new AI
+  OVERLAY_AI_FLATAREA     :Boolean = False; //Show FlatArea vision of new AI
+  OVERLAY_AI_ROUTES       :Boolean = False; //Show Routes to resources vision of new AI
   OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI 
   {Stats}
   SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
