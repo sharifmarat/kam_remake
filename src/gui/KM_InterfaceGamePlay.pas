@@ -767,11 +767,11 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
-  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 0);
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,133-10,Panel_Main.Width - 224 - 8, 0);
   Bevel_DebugInfo.BackAlpha := 0.5;
   Bevel_DebugInfo.Hitable := False;
   Bevel_DebugInfo.Hide;
-  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fntOutline,taLeft);
+  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,133,'',fntOutline,taLeft);
   Label_DebugInfo.Hide;
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
@@ -4064,6 +4064,19 @@ begin
     S := S + Format('|Average Received: %.1f  Sent: %.1f|', [1000*RTotal/Period, 1000*STotal/Period]) + SPackets;
     if (TimeGet mod 5000) < 50 then
       gLog.AddTime('Packets Stats:' + sLineBreak + S2);
+  end;
+
+  if SHOW_SELECTED_OBJ_DATA then
+  begin
+    if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
+    begin
+      if gMySpectator.Selected is TKMUnit then
+        S := S + TKMUnit(gMySpectator.Selected).ObjToString
+      else if gMySpectator.Selected is TKMUnitGroup then
+        S := S + TKMUnitGroup(gMySpectator.Selected).SelectedUnit.ObjToString
+      else if gMySpectator.Selected is TKMHouse then
+        S := S + TKMHouse(gMySpectator.Selected).ObjToString;
+    end;
   end;
 
   Label_DebugInfo.Font := fntArial;

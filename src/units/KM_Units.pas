@@ -221,6 +221,9 @@ type
     function GetSlide(aCheck: TKMCheckAxis): Single;
     function PathfindingShouldAvoid: Boolean; virtual;
 
+    function ObjToString: String; virtual;
+    function ObjToStringShort(aSeparator: String = '|'): String;
+
     procedure Save(SaveStream: TKMemoryStream); virtual;
     function UpdateState: Boolean; virtual;
     procedure Paint; virtual;
@@ -286,6 +289,8 @@ type
     procedure CarryGive(Res: TKMWareType);
     procedure CarryTake;
 
+    function ObjToString: String; override;
+
     function UpdateState: Boolean; override;
     procedure Paint; override;
   end;
@@ -321,6 +326,7 @@ type
 
 implementation
 uses
+  TypInfo,
   KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_UnitWarrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
@@ -842,6 +848,12 @@ procedure TKMUnitSerf.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fCarry, SizeOf(fCarry));
+end;
+
+
+function TKMUnitSerf.ObjToString: String;
+begin
+  Result := inherited + Format('|Carry = %s', [GetEnumName(TypeInfo(TKMWareType), Integer(fCarry))]);
 end;
 
 
@@ -2125,6 +2137,53 @@ end;
 function TKMUnit.IsIdle: Boolean;
 begin
   Result := (fTask = nil) and ((fAction is TKMUnitActionStay) and not TKMUnitActionStay(fAction).Locked);
+end;
+
+
+function TKMUnit.ObjToStringShort(aSeparator: String = '|'): String;
+var
+  ActStr, TaskStr: String;
+begin
+  ActStr := 'nil';
+  TaskStr := 'nil';
+  if fAction <> nil then
+    ActStr := fAction.ClassName;
+  if fTask <> nil then
+    TaskStr := fTask.ClassName;
+
+  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = %s%sCurrPosition = %s',
+                   [fUID, aSeparator,
+                    GetEnumName(TypeInfo(TKMUnitType), Integer(fType)), aSeparator,
+                    ActStr, aSeparator,
+                    TaskStr, aSeparator,
+                    TypeToString(fCurrPosition)]);
+end;
+
+
+function TKMUnit.ObjToString: String;
+var
+  HomeStr: String;
+begin
+  HomeStr := 'nil';
+
+  if fHome <> nil then
+    HomeStr := Format('[UID = %d, Type = %s]', [fHome.UID, GetEnumName(TypeInfo(TKMHouseType), Integer(fHome.HouseType))]);
+
+  Result := ObjToStringShort +
+            Format('|PositionF = %s|PrevPosition = %s|NextPosition = %s|' +
+                   'Thought = %s|HitPoints = %d|HitPointCounter = %d|Condition = %d|' +
+                   'Owner = %d|Home = %s|Visible = %s|IsDead = %s',
+                   [TypeToString(fPositionF),
+                    TypeToString(fPrevPosition),
+                    TypeToString(fNextPosition),
+                    GetEnumName(TypeInfo(TKMUnitThought), Integer(fThought)),
+                    fHitPoints,
+                    fHitPointCounter,
+                    fCondition,
+                    fOwner,
+                    HomeStr,
+                    BoolToStr(fVisible, True),
+                    BoolToStr(fIsDead, True)]);
 end;
 
 

@@ -53,6 +53,8 @@ type
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
 
+    function ObjToStringShort(aSeparator: String = '|'): String;
+
     function IsEmpty: Boolean;
   end;
 
@@ -230,6 +232,8 @@ type
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
 
+    function ObjToString: String;
+
     procedure IncAnimStep;
     procedure UpdateResRequest;
     procedure UpdateState(aTick: Cardinal);
@@ -319,7 +323,7 @@ type
 
 implementation
 uses
-  SysUtils, Math, KromUtils,
+  TypInfo, SysUtils, Math, KromUtils,
   KM_Game, KM_GameApp, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_UnitWarrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
@@ -374,6 +378,15 @@ begin
             or (HouseType = htNone)
             or (Position.X = -1)
             or (Position.Y = -1);
+end;
+
+
+function TKMHouseSketch.ObjToStringShort(aSeparator: String = '|'): String;
+begin
+  Result := Format('UID = %d%sType = %s%sEntrance = %s',
+                  [fUID, aSeparator,
+                   GetEnumName(TypeInfo(TKMHouseType), Integer(fType)), aSeparator,
+                   TypeToString(Entrance)]);
 end;
 
 
@@ -1800,6 +1813,33 @@ begin
       end;
 
     end;
+end;
+
+
+function TKMHouse.ObjToString: String;
+var
+  ActStr: String;
+begin
+  ActStr := 'nil';
+  if CurrentAction <> nil then
+    ActStr := CurrentAction.ClassName;
+
+  Result := ObjToStringShort +
+            Format('|HasOwner = %s|Owner = %d|Action = %s|Repair = %s|IsClosedForWorker = %s|DeliveryMode = %s|NewDeliveryMode = %s|Damage = %d|' +
+                   'BuildState = %s|BuildSupplyWood = %d|BuildSupplyStone = %d|BuildingProgress = %d|DoorwayUse = %d',
+                   [BoolToStr(fHasOwner, True),
+                    fOwner,
+                    ActStr,
+                    BoolToStr(fBuildingRepair, True),
+                    BoolToStr(fIsClosedForWorker, True),
+                    GetEnumName(TypeInfo(TKMDeliveryMode), Integer(fDeliveryMode)),
+                    GetEnumName(TypeInfo(TKMDeliveryMode), Integer(fNewDeliveryMode)),
+                    fDamage,
+                    GetEnumName(TypeInfo(TKMHouseBuildState), Integer(fBuildState)),
+                    fBuildSupplyWood,
+                    fBuildSupplyStone,
+                    fBuildingProgress,
+                    DoorwayUse]);
 end;
 
 

@@ -152,20 +152,21 @@ var
   OVERLAY_AI_EYE          :Boolean = False; //Show Eye vision of new AI
   OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI 
   {Stats}
-  SHOW_SPRITE_COUNT     :Boolean = False; //display rendered controls/sprites count
-  SHOW_POINTER_COUNT    :Boolean = False; //Show debug total count of unit/house pointers being tracked
-  SHOW_CMDQUEUE_COUNT   :Boolean = False; //Show how many commands were processed and stored by TGameInputProcess
-  SHOW_NETWORK_DELAY    :Boolean = False; //Show the current delay in multiplayer game
-  SHOW_ARMYEVALS        :Boolean = False; //Show result of enemy armies evaluation
-  SHOW_AI_WARE_BALANCE  :Boolean = False; //Show wares balance (Produced - Consumed)
-  SHOW_OVERLAY_BEVEL    :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
-  SHOW_NET_PACKETS_STATS:Boolean = False; //Show network packet statistics
-  SHOW_NET_PACKETS_LIMIT:Integer = 1;
-  INI_HITPOINT_RESTORE  :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM
-  SLOW_MAP_SCAN         :Boolean = False; //Scan maps with a pause to emulate uncached file access
-  SLOW_SAVE_SCAN        :Boolean = False; //Scan saves with a pause to emulate uncached file access
-  DO_PERF_LOGGING       :Boolean = False; //Write each ticks time to log
-  MP_RESULTS_IN_SP      :Boolean = False; //Display each players stats in SP
+  SHOW_SPRITE_COUNT       :Boolean = False; //display rendered controls/sprites count
+  SHOW_POINTER_COUNT      :Boolean = False; //Show debug total count of unit/house pointers being tracked
+  SHOW_CMDQUEUE_COUNT     :Boolean = False; //Show how many commands were processed and stored by TGameInputProcess
+  SHOW_NETWORK_DELAY      :Boolean = False; //Show the current delay in multiplayer game
+  SHOW_ARMYEVALS          :Boolean = False; //Show result of enemy armies evaluation
+  SHOW_AI_WARE_BALANCE    :Boolean = False; //Show wares balance (Produced - Consumed)
+  SHOW_OVERLAY_BEVEL      :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
+  SHOW_NET_PACKETS_STATS  :Boolean = False; //Show network packet statistics
+  SHOW_NET_PACKETS_LIMIT  :Integer = 1;
+  SHOW_SELECTED_OBJ_DATA  :Boolean = False; //Show selected object (Unit/Group + Unit/House) data (UID/order/action etc)
+  INI_HITPOINT_RESTORE    :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM
+  SLOW_MAP_SCAN           :Boolean = False; //Scan maps with a pause to emulate uncached file access
+  SLOW_SAVE_SCAN          :Boolean = False; //Scan saves with a pause to emulate uncached file access
+  DO_PERF_LOGGING         :Boolean = False; //Write each ticks time to log
+  MP_RESULTS_IN_SP        :Boolean = False; //Display each players stats in SP
   {Gameplay}
   USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
