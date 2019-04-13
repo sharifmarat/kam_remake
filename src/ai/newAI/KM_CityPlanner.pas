@@ -10,8 +10,9 @@ uses
 
 
 var
-  GA_PLANNER_FindPlaceForHouse_Influence            : Single = 20; // 0..XXX
-  GA_PLANNER_FindPlaceForWoodcutter_Influence       : Single = 20; // 0..255
+  GA_PLANNER_FindPlaceForHouse_AllyInfluence          : Single = 10; // 0..XXX
+  GA_PLANNER_FindPlaceForHouse_EnemyInfluence         : Single = 60; // 0..XXX
+  GA_PLANNER_FindPlaceForWoodcutter_Influence         : Single = 40; // 0..255
 
   GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = 124.624;
   GA_PLANNER_ObstaclesInHousePlan_Road                : Single = 137.4697;
@@ -90,7 +91,12 @@ type
   // Create plan of city AfterMissionInit and update it during game (if it is required)
   TKMCityPlanner = class
   private
-    fTimeMeasure: Cardinal;
+    fDebugText: UnicodeString;
+    {$IFDEF DEBUG_NewAI}
+      fTimeMeasure: Cardinal;
+      fBestHouseLocs: TKMPointArray;
+      fBestHouseVal: TKMByteArray;
+    {$ENDIF}
 
     fOwner: TKMHandID;
     fConstructedHouses: Word;
@@ -149,6 +155,7 @@ type
     function FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
     procedure CheckStoneReserves();
 
+    procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
   end;
 
@@ -211,7 +218,10 @@ begin
       Completed := 0;
       UnderConstruction := 0;
     end;
-  fTimeMeasure := 0;
+  fDebugText := '';
+  {$IFDEF DEBUG_NewAI}
+    fTimeMeasure := 0;
+  {$ENDIF}
   fConstructedHouses := 0;
   fOwner := aPlayer;
   fDefenceTowersPlanned := False;
@@ -1230,6 +1240,63 @@ var
       Result := Result + Byte(tpWalk in gTerrain.Land[aLoc.Y+2,aLoc.X+I].Passability) * OBSTACLE_COEF;
   end;
 
+  {$IFDEF DEBUG_NewAI}
+  procedure EvaluateLocWithComment();
+  const
+    Enum2House: array[TKMHouseType] of String = ('htNone', 'htAny',
+    'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
+    'CoalMine',        'Farm',            'FisherHut',     'GoldMine',      'Inn',
+    'IronMine',        'IronSmithy',      'Marketplace',   'Metallurgists', 'Mill',
+    'Quary',           'Sawmill',         'School',        'SiegeWorkshop', 'Stables',
+    'Store',           'Swine',           'Tannery',       'TownHall',      'WatchTower',
+    'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'    );
+  var
+    K: Integer;
+    Coef: Single;
+    Loc: TKMPoint;
+  begin
+    fDebugText := Format('New house:' + Enum2House[aHT] + '|Perc'
+      + #9 + '[X,Y]'
+      + #9#9 + 'Snap'
+      + #9#9 + 'Routes'
+      + #9#9 + 'FltAr'
+      + #9#9 + 'Center'
+      + #9#9 + 'DistCC'
+      + #9#9 + 'AllInfl'
+      + #9#9 + 'EnmInfl'
+      + #9#9 + 'Obstac'
+      + #9#9 + 'DistSeed'
+      + #9#9 + 'FarmCrit',[]);
+
+    SetLength(fBestHouseLocs,Min(BEST_PLANS_CNT-1,5)+1);
+    SetLength(fBestHouseVal,Length(fBestHouseLocs));
+    Coef := Max(0.0000001, 100 / BestGainArr[0]);
+    for K := 0 to Min(BEST_PLANS_CNT-1,5) do
+    begin
+      if (INIT_BEST_GAIN = BestGainArr[K]) then
+        break;
+      Loc := aBestLocs[K];
+      fBestHouseLocs[K] := Loc;
+      fBestHouseVal[K] := Max(0, Min(250, Round(BestGainArr[K] * Coef) + 100 ));
+      fDebugText := fDebugText + Format(
+        '|%3.1f' + #9 + '[%d,%d]' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f',
+        [BestGainArr[K] * Coef,Loc.X,Loc.Y,
+         + SnapCrit(aHT, Loc) * GA_PLANNER_FindPlaceForHouse_SnapCrit * Coef,
+         + gAIFields.Eye.Routes[Loc.Y, Loc.X] * GA_PLANNER_FindPlaceForHouse_Route * Coef,
+         + gAIFields.Eye.FlatArea[Loc.Y, Loc.X] * GA_PLANNER_FindPlaceForHouse_FlatArea * Coef,
+         - KMDistanceSqr(CityCenter, Loc) * GA_PLANNER_FindPlaceForHouse_CityCenter * Coef,
+         + DistCrit(aHT, Loc) * GA_PLANNER_FindPlaceForHouse_HouseDist * Coef,
+         - gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atAlly) * GA_PLANNER_FindPlaceForHouse_AllyInfluence,
+         - gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) * GA_PLANNER_FindPlaceForHouse_EnemyInfluence,
+         - ObstaclesInHousePlan(aHT, Loc) * Coef,
+         - gAIFields.Eye.BuildFF.Distance[Loc] * GA_PLANNER_FindPlaceForHouse_SeedDist * Coef
+        ]);
+      if (aHT = htFarm) OR (aHT = htWineyard) then
+        fDebugText := fDebugText + Format(#9#9 + ' %5.1f', [FieldCrit(aHT, Loc)]);
+    end;
+  end;
+  {$ENDIF}
+
   procedure EvaluateLoc(aLoc: TKMPoint);
   var
     L: Integer;
@@ -1239,7 +1306,8 @@ var
             + DistCrit(aHT, aLoc) * GA_PLANNER_FindPlaceForHouse_HouseDist
             - KMDistanceSqr(CityCenter, aLoc) * GA_PLANNER_FindPlaceForHouse_CityCenter
             - ObstaclesInHousePlan(aHT, aLoc)
-            - gAIFields.Influences.GetOtherOwnerships(fOwner, aLoc.X, aLoc.Y) * GA_PLANNER_FindPlaceForHouse_Influence
+            - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atAlly) * GA_PLANNER_FindPlaceForHouse_AllyInfluence
+            - gAIFields.Influences.GetBestAllianceOwnership(fOwner, aLoc.X, aLoc.Y, atEnemy) * GA_PLANNER_FindPlaceForHouse_EnemyInfluence
             - gAIFields.Eye.BuildFF.Distance[aLoc] * GA_PLANNER_FindPlaceForHouse_SeedDist
             + gAIFields.Eye.Routes[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_Route
             + gAIFields.Eye.FlatArea[aLoc.Y, aLoc.X] * GA_PLANNER_FindPlaceForHouse_FlatArea;
@@ -1261,7 +1329,9 @@ const
   PROBABILITY = 0.3;
   MAX_RND_HOUSES = 10;
 var
-  Time: Cardinal;
+  {$IFDEF DEBUG_NewAI}
+    Time: Cardinal;
+  {$ENDIF}
 
   I, HouseCnt: Integer;
   HT: TKMHouseType;
@@ -1272,7 +1342,9 @@ var
 begin
   Result := 0;
 
-  Time := TimeGet();
+  {$IFDEF DEBUG_NewAI}
+    Time := TimeGet();
+  {$ENDIF}
 
   CCPArr := gAIFields.Eye.GetCityCenterPoints(False);
   if (Length(CCPArr) <= 0) then
@@ -1339,8 +1411,11 @@ begin
   Result := Byte(INIT_BEST_GAIN <> BestGainArr[0] );
 
 
-  Time := TimeGet() - Time;
-  fTimeMeasure := fTimeMeasure + Time;
+  {$IFDEF DEBUG_NewAI}
+    Time := TimeGet() - Time;
+    fTimeMeasure := fTimeMeasure + Time;
+    EvaluateLocWithComment();
+  {$ENDIF}
 end;
 
 
@@ -1740,55 +1815,55 @@ function TKMCityPlanner.FindForestAndWoodcutter(): Boolean;
 const
   SQR_MIN_DIST_FROM_CHOP_ONLY = 12*12;
 var
-//  Time: Cardinal;
+  Time: Cardinal;
   Output, PartOfForest: Boolean;
-  I,K, Cnt: Integer;
+  K,L, Cnt: Integer;
   DecreaseSpeed: Single;
   Point: TKMPoint;
 begin
-//  Time := TimeGet();
+  Time := TimeGet();
 
   Output := False;
 
   gAIFields.Eye.GetForests(fForestsNearby);
   // Delete used forests (used by woodcutter - no matter if in chop only or chop and plant mode)
-  for I := 0 to fForestsNearby.Count - 1 do
-    if not (fForestsNearby.Tag2[I] > 0) AND ( // Skip detection of exist forest (map maker should be able to produce good forest)
-        (gAIFields.Influences.AvoidBuilding[  fForestsNearby.Items[I].Y, fForestsNearby.Items[I].X  ] >= 250) // Skip center point inside of exist forest
-         OR not EnoughTreeSeedTiles( fForestsNearby.Items[I] ) // Check count of good terrain
-      ) then
+  for K := fForestsNearby.Count - 1 downto 0 do
+    if not (fForestsNearby.Tag2[K] > 0) AND ( // Skip detection of exist forest (map maker should be able to produce good forest)
+        (gAIFields.Influences.AvoidBuilding[  fForestsNearby.Items[K].Y, fForestsNearby.Items[K].X  ] >= 250) // Skip center point inside of exist forest
+         OR not EnoughTreeSeedTiles( fForestsNearby.Items[K] ) // Check count of good terrain
+      ) OR (gAIFields.Influences.GetBestAllianceOwner(fOwner, fForestsNearby.Items[K], atEnemy) > 10) then
     begin
       // Delete will remove element and move all others to left -> this array is not sorted yet so just switch actual and last
       Cnt := fForestsNearby.Count - 1;
-      fForestsNearby.Items[I] := fForestsNearby.Items[Cnt];
-      fForestsNearby.Tag[I] := fForestsNearby.Tag[Cnt];
-      fForestsNearby.Tag2[I] := fForestsNearby.Tag2[Cnt];
+      fForestsNearby.Items[K] := fForestsNearby.Items[Cnt];
+      fForestsNearby.Tag[K] := fForestsNearby.Tag[Cnt];
+      fForestsNearby.Tag2[K] := fForestsNearby.Tag2[Cnt];
       fForestsNearby.Delete(Cnt);
     end
     else // Remove potential forests around chop only woodcutters
-      for K := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
+      for L := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
       begin
-        Point := fPlannedHouses[htWoodcutters].Plans[K].SpecPoint;
-        if (fPlannedHouses[htWoodcutters].Plans[K].ChopOnly) // Chop-only mode
-          AND (KMDistanceSqr(fForestsNearby.Items[I], Point) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
+        Point := fPlannedHouses[htWoodcutters].Plans[L].SpecPoint;
+        if (fPlannedHouses[htWoodcutters].Plans[L].ChopOnly) // Chop-only mode
+          AND (KMDistanceSqr(fForestsNearby.Items[K], Point) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
         begin
           Cnt := fForestsNearby.Count - 1;
-          fForestsNearby.Items[I] := fForestsNearby.Items[Cnt];
-          fForestsNearby.Tag[I] := fForestsNearby.Tag[Cnt];
-          fForestsNearby.Tag2[I] := fForestsNearby.Tag2[Cnt];
+          fForestsNearby.Items[K] := fForestsNearby.Items[Cnt];
+          fForestsNearby.Tag[K] := fForestsNearby.Tag[Cnt];
+          fForestsNearby.Tag2[K] := fForestsNearby.Tag2[Cnt];
           fForestsNearby.Delete(Cnt);
           break;
         end;
       end;
 
   // Evaluate clusters of trees (tree cnt + relative position [influence])
-  for I := fForestsNearby.Count-1 downto 0 do
+  for K := fForestsNearby.Count-1 downto 0 do
   begin
-    Point := fForestsNearby.Items[I];
-    PartOfForest := Boolean(fForestsNearby.Tag[I]);
-    fForestsNearby.Tag[I] := Max(0, Round(
+    Point := fForestsNearby.Items[K];
+    PartOfForest := Boolean(fForestsNearby.Tag[K]);
+    fForestsNearby.Tag[K] := Max(0, Round(
                                   + 1000000 // Base price
-                                  + fForestsNearby.Tag2[I] * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt
+                                  + fForestsNearby.Tag2[K] * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt
                                   + Byte(PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest
                                   - gAIFields.Eye.Routes[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_Routes
                                   - gAIFields.Eye.FlatArea[Point.Y, Point.X] * GA_PLANNER_FindPlaceForWoodcutter_FlatArea
@@ -1800,11 +1875,11 @@ begin
 
   fForestsNearby.SortByTag();
 
-  I := fForestsNearby.Count;
-  while not Output AND (I > 0) do
+  K := fForestsNearby.Count;
+  while not Output AND (K > 0) do
   begin
-    I := I - 1;
-    Point := fForestsNearby.Items[I]; // Get the best forest
+    K := K - 1;
+    Point := fForestsNearby.Items[K]; // Get the best forest
     Output := FindPlaceForWoodcutter(Point);
     // Mark forest by protected radius
     if Output then
@@ -1816,7 +1891,7 @@ begin
   end;
   Result := Output;
 
-//  Time := TimeGet() - Time;
+  Time := TimeGet() - Time;
 end;
 
 
@@ -1828,7 +1903,7 @@ const
   SQR_MIN_DIST_FROM_CHOP_ONLY = 12*12;
 var
   Output, Check: Boolean;
-  I,K: Integer;
+  K,L: Integer;
   Gain, BestGain: Byte;
   Loc, BestLoc: TKMPoint;
 begin
@@ -1838,18 +1913,19 @@ begin
   begin
     BestGain := 0;
     BestLoc := KMPOINT_ZERO;
-    for I := fForestsNearby.Count-1 downto 0 do
+    for K := fForestsNearby.Count-1 downto 0 do
     begin
-      Loc := fForestsNearby.Items[I];
+      Loc := fForestsNearby.Items[K];
       if (aCountByInfluence OR (KMDistanceSqr(aPoint, Loc) < SQR_MAX_DIST_FROM_HOUSE))
-        AND (fForestsNearby.Tag2[I] >= MIN_TREES) then
+        AND (fForestsNearby.Tag2[K] >= MIN_TREES)
+        AND (gAIFields.Influences.GetBestAllianceOwnership(fOwner, Loc.X, Loc.Y, atEnemy) < 50) then
       begin
         Gain := gAIFields.Influences.Ownership[ fOwner, Loc.Y, Loc.X ]; // This is equivalent of distance
         if (Gain > BestGain) then
         begin
           Check := True;
-          for K := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
-            if (KMDistanceSqr(Loc, fPlannedHouses[htWoodcutters].Plans[K].SpecPoint) < SQR_MIN_DIST_FROM_ACTIVE_FORESTS) then
+          for L := 0 to fPlannedHouses[htWoodcutters].Count - 1 do
+            if (KMDistanceSqr(Loc, fPlannedHouses[htWoodcutters].Plans[L].SpecPoint) < SQR_MIN_DIST_FROM_ACTIVE_FORESTS) then
             begin
               Check := False;
               break;
@@ -1857,7 +1933,7 @@ begin
           if Check then
           begin
             BestGain := Gain;
-            BestLoc := fForestsNearby.Items[I];
+            BestLoc := fForestsNearby.Items[K];
             Output := True;
           end;
         end;
@@ -1869,9 +1945,9 @@ begin
       // fForests is not updated so remove points around new chop only forest
       if Output then
       begin
-        for I := fForestsNearby.Count-1 downto 0 do
-          if (KMDistanceSqr(fForestsNearby.Items[I], BestLoc) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
-            fForestsNearby.Delete(I);
+        for K := fForestsNearby.Count-1 downto 0 do
+          if (KMDistanceSqr(fForestsNearby.Items[K], BestLoc) < SQR_MIN_DIST_FROM_CHOP_ONLY) then
+            fForestsNearby.Delete(K);
       end;
     end;
   end;
@@ -1924,7 +2000,7 @@ function TKMCityPlanner.PlanDefenceTowers(): Boolean;
   end;
 
 const
-  DISTANCE_BETWEEN_TOWERS = 5.5;
+  DISTANCE_BETWEEN_TOWERS = 10;
 var
   I, K, DefCount: Integer;
   P1,P2: TKMPoint;
@@ -1962,6 +2038,13 @@ begin
 end;
 
 
+procedure TKMCityPlanner.LogStatus(var aBalanceText: UnicodeString);
+begin
+  {$IFDEF DEBUG_NewAI}
+    aBalanceText := aBalanceText + '||CityPlanner: |' + fDebugText;
+  {$ENDIF}
+end;
+
 
 procedure TKMCityPlanner.Paint();
 const
@@ -1972,7 +2055,7 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 var
-  I,K: Integer;
+  K,L: Integer;
   Division: Single;
   HT: TKMHouseType;
   Loc: TKMPoint;
@@ -1980,6 +2063,12 @@ var
   HMA: THouseMappingArray;
 begin
   HMA := gAIFields.Eye.HousesMapping;
+
+  {$IFDEF DEBUG_NewAI}
+  // Paint best places for last house
+  for K := 0 to Length(fBestHouseLocs) - 1 do
+    gRenderAux.Quad(fBestHouseLocs[K].X, fBestHouseLocs[K].Y, (fBestHouseVal[K] shl 24) OR COLOR_BLACK);
+  {$ENDIF}
 
   // Paint houses
   for HT := HOUSE_MIN to HOUSE_MAX do
@@ -1993,11 +2082,11 @@ begin
       else Color := COLOR_WHITE;
     end;
     Color := $80000000 OR Color;
-    for I := 0 to fPlannedHouses[HT].Count - 1 do
+    for K := 0 to fPlannedHouses[HT].Count - 1 do
     begin
-      for K := 0 to Length(HMA[HT].Tiles) - 1 do
+      for L := 0 to Length(HMA[HT].Tiles) - 1 do
       begin
-        Loc := KMPointAdd(fPlannedHouses[HT].Plans[I].Loc, HMA[HT].Tiles[K]);
+        Loc := KMPointAdd(fPlannedHouses[HT].Plans[K].Loc, HMA[HT].Tiles[L]);
         gRenderAux.Quad(Loc.X, Loc.Y, Color);
       end;
     end;
@@ -2007,10 +2096,10 @@ begin
   if (fForestsNearby <> nil) AND (fForestsNearby.Count > 0) then
   begin
     Division := 1 / (fForestsNearby.Tag[fForestsNearby.Count - 1] - fForestsNearby.Tag[0]) * 255.0;
-    for I := 0 to fForestsNearby.Count - 1 do
+    for K := 0 to fForestsNearby.Count - 1 do
     begin
-      Loc := fForestsNearby.Items[I];
-      Color := (Max(50,Round((fForestsNearby.Tag[I] - fForestsNearby.Tag[0]) * Division)) shl 24) OR $000000FF;
+      Loc := fForestsNearby.Items[K];
+      Color := (Max(50,Round((fForestsNearby.Tag[K] - fForestsNearby.Tag[0]) * Division)) shl 24) OR $000000FF;
       gRenderAux.Quad(Loc.X, Loc.Y, Color);
     end;
   end;

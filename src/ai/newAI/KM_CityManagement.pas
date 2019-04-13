@@ -98,7 +98,7 @@ begin
   SaveStream.WriteA('CityManagement');
   SaveStream.Write(fOwner);
   SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Usend for Army management -> must be saved
-  //SaveStream.Write(TKMWarfareArr, SizeOf(TKMWarfareArr)); // TKMWarfareArr is just local variable which is computed in each loop
+  SaveStream.Write(fRequiredWeapons, SizeOf(fRequiredWeapons));
 
   fPredictor.Save(SaveStream);
   fBuilder.Save(SaveStream);
@@ -110,7 +110,7 @@ begin
   LoadStream.ReadAssert('CityManagement');
   LoadStream.Read(fOwner);
   LoadStream.Read(fWarriorsDemands, SizeOf(fWarriorsDemands));
-  //LoadStream.Read(TKMWarfareArr, SizeOf(TKMWarfareArr));
+  LoadStream.Read(fRequiredWeapons, SizeOf(fRequiredWeapons));
 
   fPredictor.Load(LoadStream);
   fBuilder.Load(LoadStream);
@@ -135,7 +135,7 @@ procedure TKMCityManagement.AfterMissionInit();
 begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
-    //SetKaMSeed(666);
+    //SetKaMSeed(1837217236);
     //gGame.GameOptions.Peacetime := 60;//SP_DEFAULT_PEACETIME;
     fSetup.EnableAdvancedAI(True);
     //fSetup.EnableAdvancedAI(fOwner <= 3);

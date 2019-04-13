@@ -89,7 +89,7 @@ type
 implementation
 uses
   Classes, KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_Resource,
-  KM_AIFields, KM_Units, KM_UnitsCollection, KM_UnitTaskDelivery, KM_UnitActionWalkTo,
+  KM_AIFields, KM_Units, KM_UnitsCollection, KM_UnitTaskDelivery, KM_UnitTaskBuild, KM_UnitActionWalkTo,
   KM_NavMesh, KM_RenderAux, KM_ResMapElements;
 
 
@@ -335,6 +335,38 @@ end;
 
 
 procedure TKMCityBuilder.UpdateBuildNodes(out aFreeWorkersCnt: Integer);
+  function BuildingFirstSchool(): Boolean;
+  var
+    K: Integer;
+    Worker: TKMUnitWorker;
+    pomP : TKMPoint;
+    UnitTask: TKMTaskBuildHouseArea;
+  begin
+    with fPlanner.PlannedHouses[htSchool] do
+    begin
+      Result := (UnderConstruction = 1) AND (Completed = 0) AND (Plans[0].Placed) AND (Plans[0].House <> nil);
+      if Result then
+      begin
+        for K := Low(fBuildNodes) to High(fBuildNodes) do
+          if fBuildNodes[K].Active then
+            if KMSamePoint(KMPointBelow(Plans[0].Loc), fBuildNodes[K].FieldList[0]) then
+              Exit(False);
+        for K := 0 to gHands[fOwner].Units.Count - 1 do
+          if not gHands[fOwner].Units[K].IsDeadOrDying
+             AND (gHands[fOwner].Units[K] is TKMUnitWorker) then
+          begin
+            pomP.X := pomP.X*1;
+            Worker := TKMUnitWorker(gHands[fOwner].Units[K]);
+            if (Worker.Task <> nil) AND (Worker.Task.TaskType = uttBuildHouseArea) then
+            begin
+              UnitTask := TKMTaskBuildHouseArea(Worker.Task);
+              if (UnitTask.DigState > 1) then
+                Exit(False);
+            end;
+          end;
+      end;
+    end;
+  end;
 //Worker tasks:
 //  Common phase of tasks
 //    0: None (Think about plans)
@@ -353,20 +385,24 @@ procedure TKMCityBuilder.UpdateBuildNodes(out aFreeWorkersCnt: Integer);
 //    6,7: receive wood, build wine
 //    8: End task
 var
-  I, ClosestIdx, ClosestDist, Dist, ReqWorkerCnt: Integer;
+  K, ClosestIdx, ClosestDist, Dist, ReqWorkerCnt: Integer;
   WorkersPos: TKMPointArray;
 begin
+  // Dont update nodes when first school needs to be build
+  if BuildingFirstSchool() then
+    Exit;
+
   // Reset count of free workers in each node
-  for I := Low(fBuildNodes) to High(fBuildNodes) do
-    fBuildNodes[I].FreeWorkers := 0;
+  for K := Low(fBuildNodes) to High(fBuildNodes) do
+    fBuildNodes[K].FreeWorkers := 0;
 
   // Get positions of workes with nil task (no task)
   aFreeWorkersCnt := 0;
   SetLength(WorkersPos, gHands[fOwner].Stats.GetUnitQty(utWorker));
-  for I := 0 to gHands[fOwner].Units.Count - 1 do
-    if not gHands[fOwner].Units[I].IsDeadOrDying
-       AND (gHands[fOwner].Units[I] is TKMUnitWorker) then
-      with gHands[fOwner].Units[I] do
+  for K := 0 to gHands[fOwner].Units.Count - 1 do
+    if not gHands[fOwner].Units[K].IsDeadOrDying
+       AND (gHands[fOwner].Units[K] is TKMUnitWorker) then
+      with gHands[fOwner].Units[K] do
       begin
         if ( (Task = nil)
             //OR ( (UnitTask.TaskName = uttBuildRoad)  AND (UnitTask.Phase > 8) ) // This actualy have big impact
@@ -387,14 +423,14 @@ begin
   while (aFreeWorkersCnt > 0) do
   begin
     ClosestDist := High(Integer);
-    for I := Low(fBuildNodes) to High(fBuildNodes) do
-      if (fBuildNodes[I].Active) AND (fBuildNodes[I].RequiredWorkers > 0) then
+    for K := Low(fBuildNodes) to High(fBuildNodes) do
+      if (fBuildNodes[K].Active) AND (fBuildNodes[K].RequiredWorkers > 0) then
       begin
-        Dist := KMDistanceAbs(WorkersPos[aFreeWorkersCnt - 1], fBuildNodes[I].CenterPoint);
+        Dist := KMDistanceAbs(WorkersPos[aFreeWorkersCnt - 1], fBuildNodes[K].CenterPoint);
         if (Dist < ClosestDist) then
         begin
           ClosestDist := Dist;
-          ClosestIdx := I;
+          ClosestIdx := K;
         end;
       end;
     if (ClosestDist <> High(Integer)) then
@@ -415,12 +451,12 @@ begin
 
   // Update nodes
   ReqWorkerCnt := 0;
-  for I := Low(fBuildNodes) to High(fBuildNodes) do
-    if fBuildNodes[I].Active then
+  for K := Low(fBuildNodes) to High(fBuildNodes) do
+    if fBuildNodes[K].Active then
     begin
-      UpdateBuildNode(fBuildNodes[I]);
-      if fBuildNodes[I].Active then
-        ReqWorkerCnt := ReqWorkerCnt + fBuildNodes[I].RequiredWorkers;
+      UpdateBuildNode(fBuildNodes[K]);
+      if fBuildNodes[K].Active then
+        ReqWorkerCnt := ReqWorkerCnt + fBuildNodes[K].RequiredWorkers;
     end;
   if (gHands[fOwner].Stats.GetHouseQty(htAny) > 15) then
     aFreeWorkersCnt := Max(aFreeWorkersCnt, Byte(ReqWorkerCnt < 5));
@@ -970,12 +1006,12 @@ var
     initHT: TKMHouseType;
   begin
     Output := True;
-    // Repeat until is available house finded (to unlock target house)
+    // Repeat until it finds an available house (to unlock target house)
     initHT := aHT;
     aFollowingHouse := htNone;
     while Output AND not gHands[fOwner].Locks.HouseCanBuild(aHT) do
     begin
-      aUnlockProcedure := True;
+      aUnlockProcedure := True; // House is blocked
       if gHands[fOwner].Locks.HouseBlocked[aHT] then // House is blocked -> unlock impossible
         Output := False
       else
@@ -989,14 +1025,15 @@ var
   end;
 
 
-  function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureRequired: Boolean = False; aIgnoreWareReserves: Boolean = False): TConstructionState;
+  function AddToConstruction(aHT: TKMHouseType; aUnlockProcedureAllowed: Boolean = False; aIgnoreWareReserves: Boolean = False): TConstructionState;
   var
     UnlockProcedure, HouseReservation, IgnoreExistingPlans, MaterialShortage: Boolean;
     FollowingHouse: TKMHouseType;
     Output: TConstructionState;
   begin
     Output := csCannotPlaceHouse;
-    UnlockProcedure := aUnlockProcedureRequired; // Unlock procedure = build house as soon as possible -> avoid to build house plan inside of tree (remove tree will take time)
+    FollowingHouse := htNone;
+    UnlockProcedure := False; // Unlock procedure = build house as soon as possible -> avoid to build house plan inside of tree (remove tree will take time)
     // Check if AI can build house (if is house blocked [by script] ignore it)
     if GetHouseToUnlock(UnlockProcedure, aHT, FollowingHouse) then
     begin
@@ -1008,13 +1045,12 @@ var
       //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
       Output := BuildHouse(UnlockProcedure, HouseReservation, IgnoreExistingPlans, aHT);
     end
-    else if (FollowingHouse <> htNone) AND (gHands[fOwner].Stats.GetHouseQty(htSchool) > 0) then // Activate house reservation (only when is first school completed)
+    else if aUnlockProcedureAllowed then
     begin
-      Output := BuildHouse(True, True, False, FollowingHouse);
-    end
-    else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
-    begin
-      Output := BuildHouse(True, False, False, aHT);
+      if (FollowingHouse <> htNone) then // Activate house reservation
+        Output := BuildHouse(True, True, False, FollowingHouse)
+      else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+        Output := BuildHouse(True, False, False, aHT);
     end;
     Result := Output;
   end;
@@ -1068,7 +1104,7 @@ var
       if (RequiredHouses[HT] <= 0) then // wtLeather and wtPig require the same building so avoid to place 2 houses at once
         continue;
       // Farms and wineyards should be placed ASAP because fields may change evaluation of terrain and change tpBuild status of surrouding tiles!
-      case AddToConstruction(HT, HT in [htFarm, htWineyard], False) of
+      case AddToConstruction(HT, False, False) of
         csNoNodeAvailable: break;
         csHouseReservation, csRemoveTreeProcedure: Output := True;
         csHousePlaced:
@@ -1097,6 +1133,7 @@ var
 
   procedure SelectHouseBySetOrder();
   var
+    AllowStoneReservation: Boolean;
     I: Integer;
     WT: TKMWareType;
   begin
@@ -1108,8 +1145,10 @@ var
       begin
         // Make sure that next cycle will not scan this house in this tick
         RequiredHouses[ PRODUCTION_WARE2HOUSE[WT] ] := 0;
+
+        AllowStoneReservation := not fStoneShortage OR ( (WT = wtStone) AND (fPlanner.PlannedHouses[htSchool].Completed = 0) );
         // Try build required houses
-        if (AddToConstruction(PRODUCTION_WARE2HOUSE[WT], False, False) = csHousePlaced) then
+        if (AddToConstruction(PRODUCTION_WARE2HOUSE[WT], AllowStoneReservation, AllowStoneReservation) = csHousePlaced) then
         begin
           MaxPlans := 0; // This house is critical so dont plan anything else
           Exit;
@@ -1189,7 +1228,7 @@ var
       if (csHousePlaced = AddToConstruction(BestHT,False,True)) then
       begin
         MaxPlace := MaxPlace - 1;
-        RequiredHouses[BestHT] := 0;
+        Dec(RequiredHouses[BestHT]);
       end;
       ReservationsCntArr[BestHT] := 0; // Dont place more than 1 reserved house type in 1 tick
     end;
@@ -1218,7 +1257,7 @@ begin
   RequiredHouses := fPredictor.RequiredHouses;
   WareBalance := fPredictor.WareBalance;
 
-  //
+  // Dont build more than 3 quarry at once if there is not quarry and stone shortage is possible
   RequiredHouses[htQuary] := RequiredHouses[htQuary] * Byte(not (fStoneShortage AND (fPlanner.PlannedHouses[htQuary].Completed < 3) AND (fPlanner.PlannedHouses[htQuary].UnderConstruction > 2)));
   // Dont try to place wine if we are out of wood
   RequiredHouses[htWineyard] := RequiredHouses[htWineyard] * Byte(not(fTrunkShortage OR (MaxPlace < 3)));
@@ -1516,7 +1555,7 @@ begin
   if fGoldShortage then
     aBalanceText := aBalanceText + '|Gold shortage';
 
-  //fPlanner.LogStatus(aBalanceText);
+  fPlanner.LogStatus(aBalanceText);
 end;
 
 
@@ -2193,3 +2232,4 @@ end;
 
 
 end.
+
