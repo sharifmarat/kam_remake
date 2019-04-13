@@ -1716,7 +1716,7 @@ begin
   gLog.AddTime('Saving replay start');
 
   DateTimeParam := 0; // Date is not important
-  if (fGameMode <> gmReplaySingle) then
+  if not gGame.IsReplay then
     raise Exception.Create('Saving replay impossible - game mode is not replay');
 
   SaveStream := SaveGameStream('', DateTimeParam, '', True);
