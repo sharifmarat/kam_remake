@@ -88,13 +88,13 @@ end;
 
 destructor TKMHandAI.Destroy;
 begin
-  fGoals.Free;
-  fGeneral.Free;
-  fMayor.Free;
-  fSetup.Free;
+  FreeAndNil(fGoals);
+  FreeAndNil(fGeneral);
+  FreeAndNil(fMayor);
+  FreeAndNil(fSetup);
 
-  fCityManagement.Free;
-  fArmyManagement.Free;
+  FreeAndNil(fCityManagement);
+  FreeAndNil(fArmyManagement);
 
   inherited;
 end;
@@ -264,12 +264,12 @@ end;
 function TKMHandAI.GetWonOrLostString: UnicodeString;
 begin
   Result := '';
-  case fWonOrLost of
-    wolNone: Result := 'Undefined';
-    wolWon:  Result := 'Won';
-    wolLost: Result := 'Lost';
-  end;
-end;
+  case fWonOrLost of
+    wolNone: Result := 'Undefined';
+    wolWon:  Result := 'Won';
+    wolLost: Result := 'Lost';
+  end;
+end;
 
 
 procedure TKMHandAI.OwnerUpdate(aPlayer: TKMHandID);
