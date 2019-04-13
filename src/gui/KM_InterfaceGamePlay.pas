@@ -4093,7 +4093,6 @@ begin
   begin
     Label_TeamName.Visible := True; // Only visible while we're using it, otherwise it shows up in other places
     for I := 0 to fUnitsTeamNames.Count - 1 do
-    begin
       try
         if not (TObject(fUnitsTeamNames[I]) is TKMUnit)
           or (TKMUnit(fUnitsTeamNames[I]) = nil)
@@ -4131,12 +4130,10 @@ begin
         on E: Exception do
           ; //Just ignore exceptions here, since its UI function
       end;
-    end;
 
     if SHOW_UIDs then
     begin
       for I := 0 to fGroupsTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fGroupsTeamNames[I]) is TKMUnitGroup) then
             Continue;
@@ -4172,10 +4169,8 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
 
       for I := 0 to fHousesTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fHousesTeamNames[I]) is TKMHouse) then
             Continue;
@@ -4204,7 +4199,6 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
     end;
   end;
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
