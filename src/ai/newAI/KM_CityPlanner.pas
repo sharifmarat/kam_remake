@@ -1244,12 +1244,12 @@ var
   procedure EvaluateLocWithComment();
   const
     Enum2House: array[TKMHouseType] of String = ('htNone', 'htAny',
-    'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
-    'CoalMine',        'Farm',            'FisherHut',     'GoldMine',      'Inn',
-    'IronMine',        'IronSmithy',      'Marketplace',   'Metallurgists', 'Mill',
-    'Quary',           'Sawmill',         'School',        'SiegeWorkshop', 'Stables',
-    'Store',           'Swine',           'Tannery',       'TownHall',      'WatchTower',
-    'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'    );
+    'ArmorSmithy',     'ArmorWorkshop',   'Bakery',        'Barracks',      'Butchers',
+    'CoalMine',        'Farm',            'FisherHut',     'GoldMine',      'Inn',
+    'IronMine',        'IronSmithy',      'Marketplace',   'Metallurgists', 'Mill',
+    'Quary',           'Sawmill',         'School',        'SiegeWorkshop', 'Stables',
+    'Store',           'Swine',           'Tannery',       'TownHall',      'WatchTower',
+	'WeaponSmithy',    'WeaponWorkshop',  'Wineyard',      'Woodcutters'    );
   var
     K: Integer;
     Coef: Single;

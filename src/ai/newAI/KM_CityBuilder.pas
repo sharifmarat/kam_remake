@@ -1104,7 +1104,7 @@ var
       if (RequiredHouses[HT] <= 0) then // wtLeather and wtPig require the same building so avoid to place 2 houses at once
         continue;
       // Farms and wineyards should be placed ASAP because fields may change evaluation of terrain and change tpBuild status of surrouding tiles!
-      case AddToConstruction(HT, False, False) of
+      case AddToConstruction(HT, HT in [htFarm, htWineyard], False) of
         csNoNodeAvailable: break;
         csHouseReservation, csRemoveTreeProcedure: Output := True;
         csHousePlaced:
