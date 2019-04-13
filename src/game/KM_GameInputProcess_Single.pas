@@ -99,13 +99,19 @@ end;
 procedure TKMGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
 begin
   //no inherited here. We override parent behaviour
+  //aStream.Write(fCurrTick);
+
   aStream.Write(fCurrTick);
+  aStream.Write(fLastTick);
 end;
 
 
 procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
 begin
   //no inherited here. We override parent behaviour
+  //aStream.Read(fLastTick);
+
+  aStream.Read(fCurrTick);
   aStream.Read(fLastTick);
 end;
 
