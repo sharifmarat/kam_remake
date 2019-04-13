@@ -116,7 +116,9 @@ type
     chkShowGameTick: TCheckBox;
     chkSkipRender: TCheckBox;
     chkSkipSound: TCheckBox;
-    chkUIDs: TCheckBox;
+    chkShowSoil: TCheckBox;
+    chkShowFlatArea: TCheckBox;
+    chkShowEyeRoutes: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -638,9 +640,6 @@ procedure TFormMain.ControlsReset;
         ResetGroupBox(TGroupBox(aBox.Controls[I]));
   end;
 begin
-  if not RESET_DEBUG_CONTROLS then
-    Exit;
-
   fUpdating := True;
   ResetGroupBox(GroupBox1);
 
@@ -731,7 +730,6 @@ begin
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
     SHOW_GAME_TICK := chkShowGameTick.Checked;
-    SHOW_UIDs := chkUIDs.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;
@@ -746,6 +744,9 @@ begin
     OVERLAY_AI_BUILD := chkBuildAI.Checked;
     OVERLAY_AI_COMBAT := chkCombatAI.Checked;
     OVERLAY_AI_EYE := chkAIEye.Checked;
+    OVERLAY_AI_SOIL := chkShowSoil.Checked;
+    OVERLAY_AI_FLATAREA := chkShowFlatArea.Checked;
+    OVERLAY_AI_ROUTES := chkShowEyeRoutes.Checked;
     OVERLAY_AVOID := chkShowAvoid.Checked;
     OVERLAY_OWNERSHIP := chkShowOwnership.Checked;
     OVERLAY_NAVMESH := chkShowNavMesh.Checked;
@@ -896,7 +897,7 @@ begin
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally
-            MS.Free;
+            FreeAndNil(MS);
           end;
         end;
 
@@ -911,7 +912,7 @@ begin
                      + E.Message, mtError, [mbClose], 0);
       end;
     finally
-      SL.Free;
+      FreeAndNil(SL);
     end;
   end;
 end;
