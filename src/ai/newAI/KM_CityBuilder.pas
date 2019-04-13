@@ -1516,7 +1516,7 @@ begin
   if fGoldShortage then
     aBalanceText := aBalanceText + '|Gold shortage';
 
-  fPlanner.LogStatus(aBalanceText);
+  //fPlanner.LogStatus(aBalanceText);
 end;
 
 
