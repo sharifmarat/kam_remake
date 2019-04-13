@@ -206,6 +206,10 @@ type
       Button_ReplayResume: TKMButton;
       Button_ReplayExit: TKMButton;
       Button_ShowStatsReplay: TKMButton;
+    Panel_LoadReplay: TKMPanel;
+      Button_ReplaySave: TKMButton;
+      Button_ReplayLoad: TKMButton;
+      Dropbox_ReplayLoad: TKMDropList;
 
     Panel_ReplayFOW: TKMPanel;
       Button_ShowStatsSpec: TKMButton;
@@ -1066,6 +1070,23 @@ begin
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
     Dropbox_ReplayFOW.List.SeparatorHeight := 4;
     Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
+
+  Panel_LoadReplay := TKMPanel.Create(Panel_Main, 550, 8, 160, 60);
+    Button_ReplaySave    := TKMButton.Create(Panel_LoadReplay,0, 24, 75, 24, 586, rxGui, bsGame);
+    Button_ReplayLoad    := TKMButton.Create(Panel_LoadReplay,85, 24, 75, 24, 586, rxGui, bsGame);
+    Button_ReplaySave.OnClick := ReplayClick;
+    Button_ReplayLoad.OnClick := ReplayClick;
+    //Button_ReplaySave.Hint := gResTexts[TX_REPLAY_QUIT];
+    //Button_ReplayLoad.Hint := gResTexts[TX_REPLAY_QUIT];
+
+    Dropbox_ReplayLoad := TKMDropList.Create(Panel_LoadReplay, 0, 50, 180, 20, fntMetal, '', bsGame, False, 0.5);
+    //Dropbox_ReplayLoad.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
+    //Dropbox_ReplayLoad.OnChange := ReplayClick;
+    //Dropbox_ReplayLoad.DropCount := 50;
+    Dropbox_ReplayLoad.List.AutoFocusable := False;
+    //Dropbox_ReplayLoad.List.OnKeyUp := Replay_ListKeyUp;
+    Dropbox_ReplayLoad.List.SeparatorHeight := 4;
+    Dropbox_ReplayLoad.List.SeparatorColor := $C0606060;
  end;
 
 
@@ -1829,6 +1850,7 @@ procedure TKMGamePlayInterface.ReplayClick(Sender: TObject);
 var
   oldCenter: TKMPointF;
   oldZoom: Single;
+  K: Integer;
 begin
   if Sender = Button_ReplayRestart then
   begin
@@ -1867,6 +1889,26 @@ begin
   begin
     gGame.GameHold(True, grReplayEnd);
     SetButtons(True);
+  end;
+
+  if Sender = Button_ReplaySave then
+  begin
+    gGame.SaveReplay();
+    if (gGame.SavedReplays <> nil) then
+    begin
+      K := gGame.SavedReplays.Count - 1;
+      Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
+    end;
+  end;
+
+  if Sender = Button_ReplayLoad then
+  begin
+    if (Dropbox_ReplayLoad.Count > 0) AND (Dropbox_ReplayLoad.ItemIndex >= 0) then
+    begin
+      gGameApp.LoadSavedReplay( Dropbox_ReplayLoad.ItemIndex );
+      for K := 0 to gGame.SavedReplays.Count - 1 do
+        Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
+    end;
   end;
 
   if Sender = Dropbox_ReplayFOW then
@@ -2258,6 +2300,7 @@ begin
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
   Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
+  Panel_LoadReplay.Visible := fUIMode = umReplay;
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
   CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
