@@ -4094,56 +4094,29 @@ begin
     Label_TeamName.Visible := True; // Only visible while we're using it, otherwise it shows up in other places
     for I := 0 to fUnitsTeamNames.Count - 1 do
     begin
-      U := TKMUnit(fUnitsTeamNames[I]);
-      if U.IsDeadOrDying then
-        Continue;
-
-      if SHOW_UIDs
-        or (U.Visible and (gMySpectator.FogOfWar.CheckRevelation(U.PositionF) > FOG_OF_WAR_MIN)) then
-      begin
-        if SHOW_UIDs then
-          Label_TeamName.Caption := IntToStr(U.UID)
-        else
-          Label_TeamName.Caption := gHands[U.Owner].OwnerName;
-
-        Label_TeamName.FontColor := FlagColorToTextColor(gHands[U.Owner].FlagColor);
-
-        Loc := U.PositionF;
-        Loc.X := Loc.X - 0.5;
-        Loc.Y := Loc.Y - 1;
-        MapLoc := gTerrain.FlatToHeight(Loc);
-        ScreenLoc := fViewport.MapToScreen(MapLoc);
-
-        if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
-        begin
-          Label_TeamName.Left := ScreenLoc.X;
-          Label_TeamName.Top := ScreenLoc.Y;
-          Label_TeamName.Paint;
-        end;
-      end;
-    end;
-
-    if SHOW_UIDs then
-    begin
-      for I := 0 to fGroupsTeamNames.Count - 1 do
-      begin
-        G := TKMUnitGroup(fGroupsTeamNames[I]);
-        if (G = nil) or G.IsDead then
+      try
+        if not (TObject(fUnitsTeamNames[I]) is TKMUnit)
+          or (TKMUnit(fUnitsTeamNames[I]) = nil)
+          or TKMUnit(fUnitsTeamNames[I]).IsDeadOrDying then
           Continue;
 
-        Label_TeamName.Caption := 'G ' + IntToStr(G.UID);
+        U := TKMUnit(fUnitsTeamNames[I]);
+        if U.IsDeadOrDying then
+          Continue;
 
-        Label_TeamName.FontColor := FlagColorToTextColor(GetRandomColorWSeed(G.UID));
-
-        for K := 0 to G.Count - 1 do
+        if SHOW_UIDs
+          or (U.Visible and (gMySpectator.FogOfWar.CheckRevelation(U.PositionF) > FOG_OF_WAR_MIN)) then
         begin
-          U := G.Members[K];
-          if U.IsDeadOrDying then
-            Continue;
+          if SHOW_UIDs then
+            Label_TeamName.Caption := IntToStr(U.UID)
+          else
+            Label_TeamName.Caption := gHands[U.Owner].OwnerName;
+
+          Label_TeamName.FontColor := FlagColorToTextColor(gHands[U.Owner].FlagColor);
 
           Loc := U.PositionF;
           Loc.X := Loc.X - 0.5;
-          Loc.Y := Loc.Y - 1.5;
+          Loc.Y := Loc.Y - 1;
           MapLoc := gTerrain.FlatToHeight(Loc);
           ScreenLoc := fViewport.MapToScreen(MapLoc);
 
@@ -4154,29 +4127,82 @@ begin
             Label_TeamName.Paint;
           end;
         end;
+      except
+        on E: Exception do
+          ; //Just ignore exceptions here, since its UI function
+      end;
+    end;
+
+    if SHOW_UIDs then
+    begin
+      for I := 0 to fGroupsTeamNames.Count - 1 do
+      begin
+        try
+          if not (TObject(fGroupsTeamNames[I]) is TKMUnitGroup) then
+            Continue;
+
+          G := TKMUnitGroup(fGroupsTeamNames[I]);
+          if (G = nil) or G.IsDead then
+            Continue;
+
+          Label_TeamName.Caption := 'G ' + IntToStr(G.UID);
+
+          Label_TeamName.FontColor := FlagColorToTextColor(GetRandomColorWSeed(G.UID));
+
+          for K := 0 to G.Count - 1 do
+          begin
+            U := G.Members[K];
+            if U.IsDeadOrDying then
+              Continue;
+
+            Loc := U.PositionF;
+            Loc.X := Loc.X - 0.5;
+            Loc.Y := Loc.Y - 1.5;
+            MapLoc := gTerrain.FlatToHeight(Loc);
+            ScreenLoc := fViewport.MapToScreen(MapLoc);
+
+            if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+            begin
+              Label_TeamName.Left := ScreenLoc.X;
+              Label_TeamName.Top := ScreenLoc.Y;
+              Label_TeamName.Paint;
+            end;
+          end;
+        except
+          on E: Exception do
+            ; //Just ignore exceptions here, since its UI function
+        end;
       end;
 
       for I := 0 to fHousesTeamNames.Count - 1 do
       begin
-        H := TKMHouse(fHousesTeamNames[I]);
-        if H.IsDestroyed then
-          Continue;
+        try
+          if not (TObject(fHousesTeamNames[I]) is TKMHouse) then
+            Continue;
 
-        Label_TeamName.Caption := 'H ' + IntToStr(H.UID);
+          H := TKMHouse(fHousesTeamNames[I]);
+          if H.IsDestroyed then
+            Continue;
 
-        Label_TeamName.FontColor := FlagColorToTextColor(gHands[H.Owner].FlagColor);
+          Label_TeamName.Caption := 'H ' + IntToStr(H.UID);
 
-        Loc := KMPointF(H.Entrance);
-        Loc.X := Loc.X - 0.5;
-        Loc.Y := Loc.Y - 2;
-        MapLoc := gTerrain.FlatToHeight(Loc);
-        ScreenLoc := fViewport.MapToScreen(MapLoc);
+          Label_TeamName.FontColor := FlagColorToTextColor(gHands[H.Owner].FlagColor);
 
-        if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
-        begin
-          Label_TeamName.Left := ScreenLoc.X;
-          Label_TeamName.Top := ScreenLoc.Y;
-          Label_TeamName.Paint;
+          Loc := KMPointF(H.Entrance);
+          Loc.X := Loc.X - 0.5;
+          Loc.Y := Loc.Y - 2;
+          MapLoc := gTerrain.FlatToHeight(Loc);
+          ScreenLoc := fViewport.MapToScreen(MapLoc);
+
+          if KMInRect(ScreenLoc, KMRect(0, 0, Panel_Main.Width, Panel_Main.Height)) then
+          begin
+            Label_TeamName.Left := ScreenLoc.X;
+            Label_TeamName.Top := ScreenLoc.Y;
+            Label_TeamName.Paint;
+          end;
+        except
+          on E: Exception do
+            ; //Just ignore exceptions here, since its UI function
         end;
       end;
     end;
