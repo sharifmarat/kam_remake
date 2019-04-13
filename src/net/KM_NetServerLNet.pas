@@ -119,7 +119,7 @@ end;
 destructor TKMNetServerLNet.Destroy;
 begin
   StopListening;
-  if fSocketServer<> nil then FreeAndNil(fSocketServer);
+  if fSocketServer<> nil then fSocketServer.Free;
   Inherited;
 end;
 
@@ -153,7 +153,7 @@ begin
     begin
       if fSocketServer.Iterator.UserData <> nil then
       begin
-        FreeAndNil(TClientInfo(fSocketServer.Iterator.UserData));
+        TClientInfo(fSocketServer.Iterator.UserData).Free;
         fSocketServer.Iterator.UserData := nil;
       end;
       fSocketServer.Iterator.Disconnect(True);
@@ -182,7 +182,7 @@ procedure TKMNetServerLNet.ClientDisconnect(aSocket: TLSocket);
 begin
   if aSocket.UserData = nil then Exit;
   fOnClientDisconnect(TClientInfo(aSocket.UserData).Tag);
-  FreeAndNil(TClientInfo(aSocket.UserData));
+  TClientInfo(aSocket.UserData).Free;
   aSocket.UserData := nil;
 end;
 

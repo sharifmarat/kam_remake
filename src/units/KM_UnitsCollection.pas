@@ -59,7 +59,7 @@ end;
 destructor TKMUnitsCollection.Destroy;
 begin
   //No need to free units individually since they are Freed by TKMList.Clear command in destructor
-  FreeAndNil(fUnits);
+  fUnits.Free;
   inherited;
 end;
 
@@ -199,8 +199,8 @@ var
   I: Integer;
 begin
   for I := 0 to Count - 1 do
-  if KMInRect(Units[I].PositionF, aRect) and not Units[I].IsDeadOrDying then
-    List.Add(Units[I]);
+    if KMInRect(Units[I].PositionF, aRect) and not Units[I].IsDeadOrDying then
+      List.Add(Units[I]);
 end;
 
 

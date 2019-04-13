@@ -29,6 +29,7 @@ uses
   function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
+  function GetRandomColorWSeed(aSeed: Integer): Cardinal;
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
   function MultiplyBrightnessByFactor(aColor: Cardinal; aBrightnessFactor: Single; aMinBrightness: Single = 0; aMaxBrightness: Single = 1): Cardinal;
   function ReduceBrightness(aColor: Cardinal; aBrightness: Byte): Cardinal;
@@ -760,6 +761,17 @@ begin
   A2 := (aColor2 shr 24 and $FF) / 255;
 
   Result := Sqrt(Sqr(R1 - R2) + Sqr(G1 - G2) + Sqr(B1 - B2) + Sqr(A1 - A2));
+end;
+
+
+function GetRandomColorWSeed(aSeed: Integer): Cardinal;
+var
+  R,G,B: Byte;
+begin
+  R := KaMRandomWSeed(aSeed, 255);
+  G := KaMRandomWSeed(aSeed, 255);
+  B := KaMRandomWSeed(aSeed, 255);
+  Result := (R + G shl 8 + B shl 16) or $FF000000;
 end;
 
 

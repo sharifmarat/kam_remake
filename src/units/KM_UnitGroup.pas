@@ -214,6 +214,7 @@ type
     function GetGroupByUID(aUID: Integer): TKMUnitGroup;
     function GetGroupByMember(aUnit: TKMUnitWarrior): TKMUnitGroup;
     function HitTest(X,Y: Integer): TKMUnitGroup;
+    procedure GetGroupsInRect(const aRect: TKMRect; List: TList);
     function GetClosestGroup(const aPoint: TKMPoint; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroup;
     function GetGroupsInRadius(aPoint: TKMPoint; aSqrRadius: Single; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitGroupArray;
     function GetGroupsMemberInRadius(aPoint: TKMPoint; aSqrRadius: Single; var aUGA: TKMUnitGroupArray; aTypes: TKMGroupTypeSet = [Low(TKMGroupType)..High(TKMGroupType)]): TKMUnitArray;
@@ -392,11 +393,11 @@ destructor TKMUnitGroup.Destroy;
 begin
   //We don't release unit pointers from fMembers, because the group is only destroyed when fMembers.Count = 0
   //or when the game is canceled (then it doesn't matter)
-  FreeAndNil(fMembers);
+  fMembers.Free;
 
   //We need to release offenders pointers
   ClearOffenders;
-  FreeAndNil(fOffenders);
+  fOffenders.Free;
 
   ClearOrderTarget; //Free pointers
 
@@ -1169,20 +1170,23 @@ begin
     if (KMLength(Members[0].CurrPosition, OrderTargetUnit.CurrPosition) > Members[0].GetFightMaxRange) then
     begin
       NodeList := TKMPointList.Create;
-      if gGame.Pathfinding.Route_Make(Members[0].CurrPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
-      begin
-        fOrderLoc.Loc := NodeList[NodeList.Count-1];
-        fOrderLoc.Dir := KMGetDirection(NodeList[NodeList.Count-1], OrderTargetUnit.NextPosition);
-        HungarianReorderMembers; //We are about to get them to walk to fOrderLoc
-      end
-      else
-      begin
-        OrderTargetUnit := nil; //Target cannot be reached, so abort completely
-        fOrder := goNone;
+      try
+        if gGame.Pathfinding.Route_Make(Members[0].CurrPosition, OrderTargetUnit.NextPosition, [tpWalk], Members[0].GetFightMaxRange, nil, NodeList) then
+        begin
+          fOrderLoc.Loc := NodeList[NodeList.Count-1];
+          fOrderLoc.Dir := KMGetDirection(NodeList[NodeList.Count-1], OrderTargetUnit.NextPosition);
+          HungarianReorderMembers; //We are about to get them to walk to fOrderLoc
+        end
+        else
+        begin
+          OrderTargetUnit := nil; //Target cannot be reached, so abort completely
+          fOrder := goNone;
+          FreeAndNil(NodeList);
+          Exit;
+        end;
+      finally
         FreeAndNil(NodeList);
-        Exit;
       end;
-      FreeAndNil(NodeList);
     end
     else
     begin
@@ -1746,11 +1750,11 @@ begin
   for I := 1 to fMembers.Count - 1 do
     NewMembers.Add(fMembers[NewOrder[I - 1] + 1]);
 
-  FreeAndNil(fMembers);
+  fMembers.Free;
   fMembers := NewMembers;
 
-  FreeAndNil(Agents);
-  FreeAndNil(Tasks);
+  Agents.Free;
+  Tasks.Free;
   if DO_PERF_LOGGING then gGame.PerfLog.LeaveSection(psHungarian);
 end;
 
@@ -1907,7 +1911,7 @@ end;
 
 destructor TKMUnitGroups.Destroy;
 begin
-  FreeAndNil(fGroups);
+  fGroups.Free;
 
   inherited;
 end;
@@ -2044,6 +2048,20 @@ begin
       Result := Groups[I];
       Break;
     end;
+end;
+
+
+procedure TKMUnitGroups.GetGroupsInRect(const aRect: TKMRect; List: TList);
+var
+  I, K: Integer;
+begin
+  for I := 0 to Count - 1 do
+    for K := 0 to Groups[I].Count - 1 do
+      if KMInRect(Groups[I].Members[K].PositionF, aRect) and not Groups[I].Members[K].IsDeadOrDying then
+      begin
+        List.Add(Groups[I]);
+        Break;
+      end;
 end;
 
 

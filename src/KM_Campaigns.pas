@@ -153,7 +153,7 @@ begin
   for I := 0 to Count - 1 do
     Campaigns[I].Free;
 
-  FreeAndNil(fList);
+  fList.Free;
   inherited;
 end;
 
@@ -272,7 +272,7 @@ begin
       end;
     end;
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 end;
 
@@ -303,7 +303,7 @@ begin
 
     M.SaveToFile(FilePath);
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 
   gLog.AddTime('Campaigns.dat saved');
@@ -365,11 +365,11 @@ var
   I: Integer;
 begin
   FreeAndNil(fTextLib);
-  FreeAndNil(fScriptData);
+  fScriptData.Free;
 
   for I := 0 to Length(fMapsInfo) - 1 do
     if fMapsInfo[I].TxtInfo <> nil then
-      FreeAndNil(fMapsInfo[I].TxtInfo);
+      fMapsInfo[I].TxtInfo.Free;
 
   //Free background texture
   if fBackGroundPic.ID <> 0 then
@@ -413,7 +413,7 @@ begin
     M.Read(Maps[I].TextPos, SizeOf(TKMBriefingCorner));
   end;
 
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -448,7 +448,7 @@ begin
   end;
 
   M.SaveToFile(aFileName);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 

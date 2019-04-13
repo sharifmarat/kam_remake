@@ -830,7 +830,7 @@ begin
 
     Result := Adler32CRC(S);
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 end;
 
@@ -874,7 +874,7 @@ begin
   ForceDirectories(ExtractFilePath(aPath));
 
   SL.SaveToFile(aPath);
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 

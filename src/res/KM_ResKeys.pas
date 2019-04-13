@@ -203,7 +203,7 @@ begin
     fFuncs[funcId].Key := keyVal;
   end;
 
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 
@@ -235,7 +235,7 @@ begin
   end;
 
   KeyStringList.SaveToFile(fKeymapPath{$IFDEF WDC}, TEncoding.UTF8{$ENDIF});
-  FreeAndNil(KeyStringList);
+  KeyStringList.Free;
 end;
 
 

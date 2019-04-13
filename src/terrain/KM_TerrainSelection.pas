@@ -248,7 +248,7 @@ begin
     Clipboard.SetFormat(CF_MAPDATA, BufferStream);
     {$ENDIF}
   end;
-  FreeAndNil(BufferStream);
+  BufferStream.Free;
 end;
 
 
@@ -281,7 +281,7 @@ begin
   for I:=0 to Sy-1 do
     for K:=0 to Sx-1 do
       BufferStream.Read(fSelectionBuffer[I,K], SizeOf(fSelectionBuffer[I,K]));
-  FreeAndNil(BufferStream);
+  BufferStream.Free;
 
   //Mapmaker could have changed selection rect, sync it with Buffer size
   fSelectionRect.Right := fSelectionRect.Left + Length(fSelectionBuffer[0]);

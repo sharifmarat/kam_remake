@@ -136,8 +136,8 @@ end;
 
 destructor TKMSaveInfo.Destroy;
 begin
-  FreeAndNil(fInfo);
-  FreeAndNil(fGameOptions);
+  fInfo.Free;
+  fGameOptions.Free;
   inherited;
 end;
 
@@ -178,7 +178,7 @@ begin
   if fSaveError <> '' then
     fInfo.Title := fSaveError;
 
-  FreeAndNil(LoadStream);
+  LoadStream.Free;
 end;
 
 
@@ -241,14 +241,14 @@ begin
               );
         end;
       finally
-        FreeAndNil(LoadMnmStream);
+        LoadMnmStream.Free;
       end;
     end;
 
   finally
-    FreeAndNil(DummyInfo);
-    FreeAndNil(DummyOptions);
-    FreeAndNil(LoadStream);
+    DummyInfo.Free;
+    DummyOptions.Free;
+    LoadStream.Free;
   end;
 end;
 
@@ -295,7 +295,7 @@ begin
   //Release TKMapInfo objects
   Clear;
 
-  FreeAndNil(CS);
+  CS.Free;
   inherited;
 end;
 
@@ -318,7 +318,7 @@ var
 begin
   Assert(not fScanning, 'Guarding from access to inconsistent data');
   for I := 0 to fCount - 1 do
-    FreeAndNil(fSaves[i]);
+    fSaves[i].Free;
   fCount := 0;
 end;
 
@@ -375,7 +375,7 @@ begin
   try
     Assert(InRange(aIndex, 0, fCount-1));
     KMDeleteFolder(fSaves[aIndex].Path);
-    FreeAndNil(fSaves[aIndex]);
+    fSaves[aIndex].Free;
     for I := aIndex to fCount - 2 do
       fSaves[I] := fSaves[I+1]; //Move them down
     Dec(fCount);
@@ -402,7 +402,7 @@ begin
     KMMoveFolder(fSaves[aIndex].Path, Dest);
 
     //Remove the map from our list
-    FreeAndNil(fSaves[aIndex]);
+    fSaves[aIndex].Free;
     for I  := aIndex to fCount - 2 do
       fSaves[I] := fSaves[I + 1];
     Dec(fCount);
@@ -550,7 +550,7 @@ begin
   begin
     fScanner.Terminate;
     fScanner.WaitFor;
-    FreeAndNil(fScanner);
+    fScanner.Free;
     fScanner := nil;
     fScanning := False;
   end;

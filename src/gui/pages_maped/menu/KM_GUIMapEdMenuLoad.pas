@@ -74,9 +74,9 @@ end;
 
 destructor TKMMapEdMenuLoad.Destroy;
 begin
-  FreeAndNil(fMaps);
-  FreeAndNil(fMapsMP);
-  FreeAndNil(fMapsDL);
+  fMaps.Free;
+  fMapsMP.Free;
+  fMapsDL.Free;
 
   inherited;
 end;

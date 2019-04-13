@@ -212,7 +212,7 @@ type
 
 implementation
 uses
-  SysUtils, Math,
+  Math,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Resource;
 
 
@@ -1138,10 +1138,10 @@ destructor TKMBuildList.Destroy;
 var
   I: Integer;
 begin
-  FreeAndNil(fFieldworksList);
-  FreeAndNil(fHouseList);
-  FreeAndNil(fHousePlanList);
-  FreeAndNil(fRepairList);
+  fFieldworksList.Free;
+  fHouseList.Free;
+  fHousePlanList.Free;
+  fRepairList.Free;
 
   for I := fWorkersCount - 1 downto 0 do
     gHands.CleanUpUnitPointer(TKMUnit(fWorkers[I].Worker));

@@ -79,10 +79,10 @@ end;
 
 destructor TKMNavMesh.Destroy();
 begin
-  FreeAndNil(fDefences);
-  FreeAndNil(fPathfinding);
-  FreeAndNil(fPositioning);
-  FreeAndNil(fNavMeshGenerator);
+  fDefences.Free;
+  fPathfinding.Free;
+  fPositioning.Free;
+  fNavMeshGenerator.Free;
   inherited;
 end;
 
@@ -504,7 +504,7 @@ begin
           gRenderAux.CircleOnTerrain(p1.X, p1.Y, 2, $0900FFFF, $FFFFFFFF);
         end;
     finally
-      FreeAndNil(FFF);
+      FFF.Free;
     end;
   end;
   //}

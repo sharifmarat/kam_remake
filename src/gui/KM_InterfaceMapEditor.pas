@@ -262,21 +262,21 @@ end;
 
 destructor TKMapEdInterface.Destroy;
 begin
-  FreeAndNil(fGuiHouse);
-  FreeAndNil(fGuiTerrain);
-  FreeAndNil(fGuiTown);
-  FreeAndNil(fGuiPlayer);
-  FreeAndNil(fGuiMission);
-  FreeAndNil(fGuiAttack);
-  FreeAndNil(fGuiExtras);
-  FreeAndNil(fGuiFormations);
-  FreeAndNil(fGuiMenuQuickPlay);
-  FreeAndNil(fGuiGoal);
-  FreeAndNil(fGuiMarkerDefence);
-  FreeAndNil(fGuiMarkerReveal);
-  FreeAndNil(fGuiMenu);
-  FreeAndNil(fGuiMessage);
-  FreeAndNil(fGuiUnit);
+  fGuiHouse.Free;
+  fGuiTerrain.Free;
+  fGuiTown.Free;
+  fGuiPlayer.Free;
+  fGuiMission.Free;
+  fGuiAttack.Free;
+  fGuiExtras.Free;
+  fGuiFormations.Free;
+  fGuiMenuQuickPlay.Free;
+  fGuiGoal.Free;
+  fGuiMarkerDefence.Free;
+  fGuiMarkerReveal.Free;
+  fGuiMenu.Free;
+  fGuiMessage.Free;
+  fGuiUnit.Free;
 
   SHOW_TERRAIN_WIRES := false; //Don't show it in-game if they left it on in MapEd
   SHOW_TERRAIN_PASS := 0; //Don't show it in-game if they left it on in MapEd

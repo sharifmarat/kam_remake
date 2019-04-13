@@ -63,7 +63,7 @@ end;
 
 destructor TKMNetUDP.Destroy;
 begin
-  if fUDP<>nil then FreeAndNil(fUDP);
+  if fUDP<>nil then fUDP.Free;
   Inherited;
 end;
 
@@ -129,7 +129,7 @@ begin
     if S <> 'scan' then Exit;
 
     //Send a response to this scanner
-    FreeAndNil(M);
+    M.Free;
     M := TKMemoryStream.Create;
     M.WriteA('KaM Remake');
     M.WriteA(NET_PROTOCOL_REVISON);
@@ -139,7 +139,7 @@ begin
 
     fUDP.SendPacket(aAddress, 56788, M.Memory, M.Size);
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 end;
 
@@ -179,7 +179,7 @@ begin
     end;
 
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 end;
 
@@ -214,7 +214,7 @@ begin
     M.ReadA(ServerName);
     fOnServerDetected(aAddress, ServerPort, UnicodeString(ServerName));
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 end;
 

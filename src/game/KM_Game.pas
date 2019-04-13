@@ -355,7 +355,7 @@ begin
   FreeAndNil(fGameOptions);
   FreeAndNil(fTextMission);
 
-  if DO_PERF_LOGGING then FreeAndNil(fPerfLog);
+  if DO_PERF_LOGGING then fPerfLog.Free;
 
   //When leaving the game we should always reset the cursor in case the user had beacon or linking selected
   gRes.Cursors.Cursor := kmcDefault;
@@ -543,7 +543,7 @@ begin
     //some late operations for parser (f.e. ProcessAttackPositions, which should be done after MultiplayerRig)
     Parser.PostLoadMission;
   finally
-    FreeAndNil(Parser);
+    Parser.Free;
   end;
 
   fMapTxtInfo.LoadTXTInfo(ChangeFileExt(aMissionFile, '.txt'));
@@ -1158,7 +1158,7 @@ begin
     // Update favorite map CRC if we resave favourite map with the same name
     if fGameName = MapInfo.FileName then
       gGameApp.GameSettings.FavouriteMaps.Replace(fGameMapCRC, MapInfo.CRC);
-    FreeAndNil(MapInfo);
+    MapInfo.Free;
   end;
 
   fGameName := TruncateExt(ExtractFileName(aPathName));
@@ -1587,7 +1587,7 @@ begin
                 );
           end;
         finally
-          FreeAndNil(MnmSaveStream);
+          MnmSaveStream.Free;
         end;
       end;
 
@@ -1636,7 +1636,7 @@ begin
 
     SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
   finally
-    FreeAndNil(SaveStream);
+    SaveStream.Free;
   end;
 
   gLog.AddTime('Saving game end: ' + aPathName);

@@ -156,7 +156,7 @@ end;
 
 destructor TKMLog.Destroy;
 begin
-  FreeAndNil(CS);
+  CS.Free;
   inherited;
 end;
 

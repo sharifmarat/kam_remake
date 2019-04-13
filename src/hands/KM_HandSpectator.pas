@@ -51,7 +51,7 @@ type
 
 implementation
 uses
-  SysUtils, KM_Game, KM_GameCursor, KM_HandsCollection,
+  KM_Game, KM_GameCursor, KM_HandsCollection,
   KM_Units, KM_UnitGroup, KM_UnitWarrior, KM_Houses,
   KM_Utils, KM_CommonUtils,
   KM_GameTypes;
@@ -79,7 +79,7 @@ destructor TKMSpectator.Destroy;
 begin
   Highlight := nil;
   Selected := nil;
-  FreeAndNil(fFogOfWarOpen);
+  fFogOfWarOpen.Free;
   inherited;
 end;
 

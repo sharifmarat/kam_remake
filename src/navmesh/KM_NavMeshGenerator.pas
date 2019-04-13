@@ -1045,7 +1045,7 @@ var
   function BeautifyPoly(ActIdx: Integer): Boolean;
   var
     CP1,CP2,DP1,DP2, BestCP1,BestCP2,BestDP1,BestDP2, SwapPoly1, SwapPoly2: Word;
-    K, BestIdx, Idx1, Idx2, Neat: Integer;
+    K, BestIdx, Idx1, Idx2: Integer;
     SqrBestDist, SqrDist: Single;
   begin
     BestCP1 := 0;

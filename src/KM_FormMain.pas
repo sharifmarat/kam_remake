@@ -116,6 +116,7 @@ type
     chkShowGameTick: TCheckBox;
     chkSkipRender: TCheckBox;
     chkSkipSound: TCheckBox;
+    chkUIDs: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -637,6 +638,9 @@ procedure TFormMain.ControlsReset;
         ResetGroupBox(TGroupBox(aBox.Controls[I]));
   end;
 begin
+  if not RESET_DEBUG_CONTROLS then
+    Exit;
+
   fUpdating := True;
   ResetGroupBox(GroupBox1);
 
@@ -727,6 +731,7 @@ begin
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
     SHOW_GAME_TICK := chkShowGameTick.Checked;
+    SHOW_UIDs := chkUIDs.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;
@@ -891,7 +896,7 @@ begin
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally
-            FreeAndNil(MS);
+            MS.Free;
           end;
         end;
 
@@ -906,7 +911,7 @@ begin
                      + E.Message, mtError, [mbClose], 0);
       end;
     finally
-      FreeAndNil(SL);
+      SL.Free;
     end;
   end;
 end;

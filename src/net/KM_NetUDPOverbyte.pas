@@ -40,8 +40,8 @@ end;
 
 destructor TKMNetUDPOverbyte.Destroy;
 begin
-  FreeAndNil(fSocketSend);
-  FreeAndNil(fSocketReceive);
+  fSocketSend.Free;
+  fSocketReceive.Free;
   Inherited;
 end;
 

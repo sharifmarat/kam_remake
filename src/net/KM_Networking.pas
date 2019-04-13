@@ -334,12 +334,12 @@ end;
 
 destructor TKMNetworking.Destroy;
 begin
-  FreeAndNil(fNetPlayers);
-  FreeAndNil(fNetServer);
-  FreeAndNil(fNetClient);
-  FreeAndNil(fServerQuery);
-  FreeAndNil(fFileSenderManager);
-  FreeAndNil(fMutedPlayersList);
+  fNetPlayers.Free;
+  fNetServer.Free;
+  fNetClient.Free;
+  fServerQuery.Free;
+  fFileSenderManager.Free;
+  fMutedPlayersList.Free;
   FreeAndNil(fMapInfo);
   FreeAndNil(fSaveInfo);
   FreeAndNil(fNetGameOptions);
@@ -570,7 +570,7 @@ begin
               end;
     else      PacketSend(Recipient, mkResetMap);
   end;
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -859,7 +859,7 @@ begin
   M.Write(fRoomToJoin);
   M.WriteA(aPassword);
   PacketSend(NET_ADDRESS_SERVER, mkPassword, M);
-  FreeAndNil(M);
+  M.Free;
 
   fEnteringPassword := False;
   fJoinTimeout := TimeGet; //Wait another X seconds for host to reply before timing out
@@ -959,7 +959,7 @@ begin
                     Exit;
                   end;
                 finally
-                  FreeAndNil(CheckMapInfo);
+                  CheckMapInfo.Free;
                 end;
               end;
     ngkSave: begin
@@ -995,7 +995,7 @@ begin
   M.Write(fHostIndex);
   fNetPlayers.SaveToStream(M);
   PacketSend(NET_ADDRESS_OTHERS, mkStart, M);
-  FreeAndNil(M);
+  M.Free;
 
   StartGame;
 end;
@@ -1034,7 +1034,7 @@ begin
   M.Write(fHostIndex);
   fNetPlayers.SaveToStream(M);
   PacketSend(aPlayerIndex, mkPlayersList, M);
-  FreeAndNil(M);
+  M.Free;
 
   if Assigned(fOnPlayersSetup) then fOnPlayersSetup(Self);
 end;
@@ -1064,7 +1064,7 @@ begin
   M := TKMemoryStream.Create;
   fNetGameOptions.Save(M);
   PacketSend(NET_ADDRESS_OTHERS, mkGameOptions, M);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -1176,7 +1176,7 @@ begin
     cmAll:
       PacketSend(NET_ADDRESS_ALL, mkTextChat, M); //Send to all;
   end;
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -1189,7 +1189,7 @@ begin
   M.WriteW(aText1);
   M.WriteW(aText2);
   PacketSend(aRecipient, mkTextTranslated, M);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -1676,7 +1676,7 @@ begin
                         M2 := TKMemoryStream.Create;
                         TKMNetSecurity.GenerateChallenge(M2, tmpHandleIndex);
                         PacketSend(NET_ADDRESS_HOST, mkAskForAuth, M2);
-                        FreeAndNil(M2);
+                        M2.Free;
                     end;
                   end;
               end;
@@ -1763,7 +1763,7 @@ begin
                 M2.Write(fFileReceiver.TotalSize);
                 M2.Write(fFileReceiver.ReceivedSize);
                 PacketSend(NET_ADDRESS_OTHERS, mkFileProgress, M2);
-                FreeAndNil(M2);
+                M2.Free;
                 if Assigned(fOnFileTransferProgress) then
                   fOnFileTransferProgress(fFileReceiver.TotalSize, fFileReceiver.ReceivedSize);
               end;
@@ -1834,7 +1834,7 @@ begin
                   //Send our own challenge
                   TKMNetSecurity.GenerateChallenge(M2, aSenderIndex);
                   PacketSend(aSenderIndex, mkAuthChallenge, M2);
-                  FreeAndNil(M2);
+                  M2.Free;
                 end;
               end;
 
@@ -1847,7 +1847,7 @@ begin
                   M2 := TKMNetSecurity.SolveChallenge(M, aSenderIndex);
                   M2.WriteA(fMyNikname);
                   PacketSend(NET_ADDRESS_HOST, mkAskToJoin, M2);
-                  FreeAndNil(M2);
+                  M2.Free;
                 end
                 else
                   fOnJoinFail(gResTexts[TX_NET_YOUR_DATA_FILES]);
@@ -2253,7 +2253,7 @@ begin
     end;
 
   finally
-    FreeAndNil(M);
+    M.Free;
   end;
 end;
 
@@ -2271,7 +2271,7 @@ begin
   M.Write(aKind, SizeOf(TKMessageKind));
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2290,7 +2290,7 @@ begin
   M.CopyFrom(aStream, aStream.Size);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2308,7 +2308,7 @@ begin
   M.Write(aParam);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2326,7 +2326,7 @@ begin
   M.Write(aIndexOnServer);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2344,7 +2344,7 @@ begin
   M.WriteA(aText);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2362,7 +2362,7 @@ begin
   M.WriteW(aText);
 
   fNetClient.SendData(fMyIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -2506,9 +2506,9 @@ begin
     M := TKMemoryStream.Create;
     MPGameInfo.SaveToStream(M);
     PacketSend(NET_ADDRESS_SERVER, mkSetGameInfo, M);
-    FreeAndNil(M);
+    M.Free;
   finally
-    FreeAndNil(MPGameInfo);
+    MPGameInfo.Free;
   end;
 end;
 
