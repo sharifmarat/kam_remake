@@ -183,6 +183,9 @@ type
 
     procedure KillGroup;
 
+    function ObjToStringShort(aSeparator: String = '|'): String;
+    function ObjToString: String;
+
     procedure UpdateState;
     procedure PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
     procedure Paint;
@@ -232,6 +235,7 @@ type
 
 implementation
 uses
+  TypInfo,
   KM_Game, KM_Hand, KM_HandsCollection, KM_Terrain, KM_CommonUtils, KM_ResTexts, KM_RenderPool,
   KM_Hungarian, KM_UnitActionWalkTo, KM_PerfLog, KM_AI, KM_ResUnits, KM_ScriptingEvents,
   KM_UnitActionStormAttack,
@@ -1834,6 +1838,45 @@ begin
 
   if (fOrderTargetGroup <> nil) and fOrderTargetGroup.IsDead then
     gHands.CleanUpGroupPointer(fOrderTargetGroup);
+end;
+
+
+function TKMUnitGroup.ObjToStringShort(aSeparator: String = '|'): String;
+begin
+  Result := Format('UID = %d%sType = %s%sMembersCount = %d',
+                   [fUID, aSeparator,
+                    GetEnumName(TypeInfo(TKMGroupType), Integer(fGroupType)), aSeparator,
+                    Count]);
+end;
+
+
+function TKMUnitGroup.ObjToString: String;
+var
+  TargetUnitStr, TargetHouseStr, TargetGroupStr: String;
+begin
+  TargetUnitStr := 'nil';
+  TargetHouseStr := 'nil';
+  TargetGroupStr := 'nil';
+
+  if fOrderTargetUnit <> nil then
+    TargetUnitStr := fOrderTargetUnit.ObjToStringShort(', ');
+
+  if fOrderTargetGroup <> nil then
+    TargetGroupStr := fOrderTargetGroup.ObjToStringShort(', ');
+
+  if fOrderTargetHouse <> nil then
+    TargetHouseStr := fOrderTargetHouse.ObjToStringShort(', ');
+
+  Result := ObjToStringShort +
+            Format('|Owner = %d|UnitsPerRow = %d|GroupOrder = %s|OrderLoc = %s|' +
+                   'OrderTargetUnit = [%s]|OrderTargetGroup = [%s]|OrderTargetHouse = [%s]',
+                   [fOwner,
+                    fUnitsPerRow,
+                    GetEnumName(TypeInfo(TKMGroupOrder), Integer(fOrder)),
+                    TypeToString(fOrderLoc),
+                    TargetUnitStr,
+                    TargetGroupStr,
+                    TargetHouseStr]);
 end;
 
 

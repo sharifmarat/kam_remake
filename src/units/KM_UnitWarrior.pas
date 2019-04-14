@@ -112,6 +112,8 @@ type
 
     procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); override;
 
+    function ObjToString: String; override;
+
     procedure Save(SaveStream: TKMemoryStream); override;
     function UpdateState: Boolean; override;
     procedure Paint; override;
@@ -120,6 +122,7 @@ type
 
 implementation
 uses
+  TypInfo,
   KM_ResTexts, KM_HandsCollection, KM_RenderPool, KM_RenderAux, KM_UnitTaskAttackHouse, KM_HandLogistics,
   KM_UnitActionAbandonWalk, KM_UnitActionFight, KM_UnitActionGoInOut, KM_UnitActionWalkTo, KM_UnitActionStay,
   KM_UnitActionStormAttack, KM_Resource, KM_ResUnits, KM_Hand, KM_UnitGroup,
@@ -908,6 +911,34 @@ begin
   fOrder := woAttackUnit;
   fOrderLoc := GetOrderTarget.GetPosition;
 end;}
+
+
+function TKMUnitWarrior.ObjToString: String;
+var
+  UnitStr,HouseStr,GroupStr: String;
+begin
+  GroupStr := 'nil';
+  UnitStr := 'nil';
+  HouseStr := 'nil';
+
+  if fGroup <> nil then
+    GroupStr := TKMUnitGroup(fGroup).ObjToString;
+
+  if fOrderTargetUnit <> nil then
+    UnitStr := fOrderTargetUnit.ObjToStringShort('; ');
+
+  if fOrderTargetHouse <> nil then
+    HouseStr := fOrderTargetHouse.ObjToStringShort('; ');
+
+  Result := inherited ObjToString +
+            Format('|WarriorOrder = %s|NextOrder = %s|OrderLoc = %s|OrderTargetUnit = [%s]|OrderTargetHouse = [%s]|Group = |%s',
+                   [GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fOrder)),
+                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fNextOrder)),
+                    TypeToString(fOrderLoc),
+                    UnitStr,
+                    HouseStr,
+                    GroupStr]);
+end;
 
 
 function TKMUnitWarrior.UpdateState: Boolean;

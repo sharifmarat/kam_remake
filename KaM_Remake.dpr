@@ -67,6 +67,7 @@ uses
   KM_GameInputProcess in 'src\game\KM_GameInputProcess.pas',
   KM_GameInputProcess_Multi in 'src\game\KM_GameInputProcess_Multi.pas',
   KM_GameInputProcess_Single in 'src\game\KM_GameInputProcess_Single.pas',
+  KM_GameSavedReplays in 'src\game\KM_GameSavedReplays.pas',
 
   KM_GUIGameBuild in 'src\gui\pages_game\KM_GUIGameBuild.pas',
   KM_GUIGameChat in 'src\gui\pages_game\KM_GUIGameChat.pas',

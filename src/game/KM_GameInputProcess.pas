@@ -334,7 +334,9 @@ type
     procedure UpdateState(aTick: Cardinal); virtual;
 
     //Replay methods
+    procedure Save(SaveStream: TKMemoryStream);
     procedure SaveToFile(const aFileName: UnicodeString);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
@@ -1039,52 +1041,64 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.SaveToFile(const aFileName: UnicodeString);
+procedure TKMGameInputProcess.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
-  S: TKMemoryStream;
 begin
-  S := TKMemoryStream.Create;
-  S.WriteA(GAME_REVISION);
-  S.Write(fCount);
+  SaveStream.WriteA(GAME_REVISION);
+  SaveStream.Write(fCount);
 
-  SaveExtra(S);
+  SaveExtra(SaveStream);
 
   for I := 1 to fCount do
   begin
-    S.Write(fQueue[I].Tick);
-    SaveCommandToMemoryStream(fQueue[I].Command, S);
-    S.Write(fQueue[I].Rand);
+    SaveStream.Write(fQueue[I].Tick);
+    SaveCommandToMemoryStream(fQueue[I].Command, SaveStream);
+    SaveStream.Write(fQueue[I].Rand);
   end;
+end;
 
+
+procedure TKMGameInputProcess.SaveToFile(const aFileName: UnicodeString);
+var
+  S: TKMemoryStream;
+begin
+  S := TKMemoryStream.Create;
+  Save(S);
   S.SaveToFile(aFileName);
   S.Free;
 end;
 
 
-procedure TKMGameInputProcess.LoadFromFile(const aFileName: UnicodeString);
+procedure TKMGameInputProcess.Load(LoadStream: TKMemoryStream);
 var
   FileVersion: AnsiString;
   I: Integer;
+begin
+  LoadStream.ReadA(FileVersion);
+  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
+  LoadStream.Read(fCount);
+  SetLength(fQueue, fCount + 1);
+
+  LoadExtra(LoadStream);
+
+  for I := 1 to fCount do
+  begin
+    LoadStream.Read(fQueue[I].Tick);
+    LoadCommandFromMemoryStream(fQueue[I].Command, LoadStream);
+    LoadStream.Read(fQueue[I].Rand);
+  end;
+end;
+
+
+procedure TKMGameInputProcess.LoadFromFile(const aFileName: UnicodeString);
+var
   S: TKMemoryStream;
 begin
   if not FileExists(aFileName) then Exit;
   S := TKMemoryStream.Create;
   S.LoadFromFile(aFileName);
-  S.ReadA(FileVersion);
-  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
-  S.Read(fCount);
-  SetLength(fQueue, fCount + 1);
-
-  LoadExtra(S);
-
-  for I := 1 to fCount do
-  begin
-    S.Read(fQueue[I].Tick);
-    LoadCommandFromMemoryStream(fQueue[I].Command, S);
-    S.Read(fQueue[I].Rand);
-  end;
-
+  Load(S);
   S.Free;
 end;
 
