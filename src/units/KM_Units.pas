@@ -62,6 +62,8 @@ type
 
     function CouldBeCancelled: Boolean; virtual;
 
+    function ObjToString(aSeparator: String = ', '): String; virtual;
+
     function Execute: TKMTaskResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
   end;
@@ -2149,9 +2151,9 @@ begin
   if fAction <> nil then
     ActStr := fAction.ClassName;
   if fTask <> nil then
-    TaskStr := fTask.ClassName;
+    TaskStr := fTask.ObjToString;
 
-  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = %s%sCurrPosition = %s',
+  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = [%s]%sCurrPosition = %s',
                    [fUID, aSeparator,
                     GetEnumName(TypeInfo(TKMUnitType), Integer(fType)), aSeparator,
                     ActStr, aSeparator,
@@ -2434,6 +2436,15 @@ end;
 function TKMUnitTask.CouldBeCancelled: Boolean;
 begin
   Result := False; //Only used in some child classes
+end;
+
+
+function TKMUnitTask.ObjToString(aSeparator: String = ', '): String;
+begin
+  Result := Format('Type %s%sPhase = %d%sPhase2 = %d',
+                   [GetEnumName(TypeInfo(TKMUnitTaskType), Integer(fType)), aSeparator,
+                    fPhase, aSeparator,
+                    fPhase2]);
 end;
 
 
