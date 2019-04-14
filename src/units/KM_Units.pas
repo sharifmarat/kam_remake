@@ -32,7 +32,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
-    function CanBeInterrupted: Boolean; virtual;
+    function CanBeInterrupted(aForced: Boolean = True): Boolean; virtual;
     function ActName: TKMUnitActionName; virtual; abstract;
     property ActionType: TKMUnitActionType read fType;
     function GetExplanation: UnicodeString; virtual; abstract;
@@ -2350,8 +2350,8 @@ begin
   if fTask <> nil then
   case fTask.Execute of
     trTaskContinues:  Exit;
-    trTaskDone:       FreeAndNil(fTask);
-  end;
+      trTaskDone:       FreeAndNil(fTask);
+    end;
 
   //If we get to this point then it means that common part is done and now
   //we can perform unit-specific activities (ask for job, etc..)
@@ -2508,7 +2508,7 @@ begin
 end;
 
 
-function TKMUnitAction.CanBeInterrupted: Boolean;
+function TKMUnitAction.CanBeInterrupted(aForced: Boolean = True): Boolean;
 begin
   Result := True;
 end;
