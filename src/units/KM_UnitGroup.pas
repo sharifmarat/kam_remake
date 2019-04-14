@@ -989,19 +989,22 @@ begin
       AND not U.IsDeadOrDying then
     begin
       G := gHands[ U.Owner ].UnitGroups.GetGroupByMember( TKMUnitWarrior(U) );
-      Check := True;
-      for K := 0 to Cnt - 1 do
-        if (aGroupArray[K] = G) then
-        begin
-          Check := False;
-          break;
-        end;
-      if Check then
+      if (G <> nil) then // Group can be nil if soldiers go out of Barracks
       begin
-        if (Length(aGroupArray) >= Cnt) then
-          SetLength(aGroupArray, Cnt + 12);
-        aGroupArray[Cnt] := G;
-        Cnt := Cnt + 1;
+        Check := True;
+        for K := 0 to Cnt - 1 do
+          if (aGroupArray[K] = G) then
+          begin
+            Check := False;
+            break;
+          end;
+        if Check then
+        begin
+          if (Length(aGroupArray) >= Cnt) then
+            SetLength(aGroupArray, Cnt + 12);
+          aGroupArray[Cnt] := G;
+          Cnt := Cnt + 1;
+        end;
       end;
     end;
   end;
