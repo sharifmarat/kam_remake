@@ -206,6 +206,10 @@ type
       Button_ReplayResume: TKMButton;
       Button_ReplayExit: TKMButton;
       Button_ShowStatsReplay: TKMButton;
+    Panel_LoadReplay: TKMPanel;
+      Button_ReplaySave: TKMButton;
+      Button_ReplayLoad: TKMButton;
+      Dropbox_ReplayLoad: TKMDropList;
 
     Panel_ReplayFOW: TKMPanel;
       Button_ShowStatsSpec: TKMButton;
@@ -767,11 +771,11 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
-  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 0);
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,133-10,Panel_Main.Width - 224 - 8, 0);
   Bevel_DebugInfo.BackAlpha := 0.5;
   Bevel_DebugInfo.Hitable := False;
   Bevel_DebugInfo.Hide;
-  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fntOutline,taLeft);
+  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,133,'',fntOutline,taLeft);
   Label_DebugInfo.Hide;
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
@@ -1066,6 +1070,23 @@ begin
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
     Dropbox_ReplayFOW.List.SeparatorHeight := 4;
     Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
+
+  Panel_LoadReplay := TKMPanel.Create(Panel_Main, 550, 8, 160, 60);
+    Button_ReplaySave    := TKMButton.Create(Panel_LoadReplay,0, 24, 75, 24, 586, rxGui, bsGame);
+    Button_ReplayLoad    := TKMButton.Create(Panel_LoadReplay,85, 24, 75, 24, 586, rxGui, bsGame);
+    Button_ReplaySave.OnClick := ReplayClick;
+    Button_ReplayLoad.OnClick := ReplayClick;
+    //Button_ReplaySave.Hint := gResTexts[TX_REPLAY_QUIT];
+    //Button_ReplayLoad.Hint := gResTexts[TX_REPLAY_QUIT];
+
+    Dropbox_ReplayLoad := TKMDropList.Create(Panel_LoadReplay, 0, 50, 180, 20, fntMetal, '', bsGame, False, 0.5);
+    //Dropbox_ReplayLoad.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
+    //Dropbox_ReplayLoad.OnChange := ReplayClick;
+    //Dropbox_ReplayLoad.DropCount := 50;
+    Dropbox_ReplayLoad.List.AutoFocusable := False;
+    //Dropbox_ReplayLoad.List.OnKeyUp := Replay_ListKeyUp;
+    Dropbox_ReplayLoad.List.SeparatorHeight := 4;
+    Dropbox_ReplayLoad.List.SeparatorColor := $C0606060;
  end;
 
 
@@ -1829,6 +1850,7 @@ procedure TKMGamePlayInterface.ReplayClick(Sender: TObject);
 var
   oldCenter: TKMPointF;
   oldZoom: Single;
+  K: Integer;
 begin
   if Sender = Button_ReplayRestart then
   begin
@@ -1867,6 +1889,26 @@ begin
   begin
     gGame.GameHold(True, grReplayEnd);
     SetButtons(True);
+  end;
+
+  if Sender = Button_ReplaySave then
+  begin
+    gGame.SaveReplay();
+    if (gGame.SavedReplays <> nil) then
+    begin
+      K := gGame.SavedReplays.Count - 1;
+      Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
+    end;
+  end;
+
+  if Sender = Button_ReplayLoad then
+  begin
+    if (Dropbox_ReplayLoad.Count > 0) AND (Dropbox_ReplayLoad.ItemIndex >= 0) then
+    begin
+      gGameApp.LoadSavedReplay( Dropbox_ReplayLoad.ItemIndex );
+      for K := 0 to gGame.SavedReplays.Count - 1 do
+        Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
+    end;
   end;
 
   if Sender = Dropbox_ReplayFOW then
@@ -2258,6 +2300,7 @@ begin
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
   Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
+  Panel_LoadReplay.Visible := fUIMode = umReplay;
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
   CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
@@ -4066,6 +4109,19 @@ begin
       gLog.AddTime('Packets Stats:' + sLineBreak + S2);
   end;
 
+  if SHOW_SELECTED_OBJ_DATA then
+  begin
+    if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
+    begin
+      if gMySpectator.Selected is TKMUnit then
+        S := S + TKMUnit(gMySpectator.Selected).ObjToString
+      else if gMySpectator.Selected is TKMUnitGroup then
+        S := S + TKMUnitGroup(gMySpectator.Selected).SelectedUnit.ObjToString
+      else if gMySpectator.Selected is TKMHouse then
+        S := S + TKMHouse(gMySpectator.Selected).ObjToString;
+    end;
+  end;
+
   Label_DebugInfo.Font := fntArial;
   Label_DebugInfo.Caption := S;
   Label_DebugInfo.Visible := (Trim(S) <> '');
@@ -4093,7 +4149,6 @@ begin
   begin
     Label_TeamName.Visible := True; // Only visible while we're using it, otherwise it shows up in other places
     for I := 0 to fUnitsTeamNames.Count - 1 do
-    begin
       try
         if not (TObject(fUnitsTeamNames[I]) is TKMUnit)
           or (TKMUnit(fUnitsTeamNames[I]) = nil)
@@ -4131,12 +4186,10 @@ begin
         on E: Exception do
           ; //Just ignore exceptions here, since its UI function
       end;
-    end;
 
     if SHOW_UIDs then
     begin
       for I := 0 to fGroupsTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fGroupsTeamNames[I]) is TKMUnitGroup) then
             Continue;
@@ -4172,10 +4225,8 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
 
       for I := 0 to fHousesTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fHousesTeamNames[I]) is TKMHouse) then
             Continue;
@@ -4204,7 +4255,6 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
     end;
   end;
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
