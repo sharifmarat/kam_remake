@@ -599,6 +599,8 @@ begin
     Exit;
 
   gGameApp.Game.SetGameSpeed(IfThen(chkSuperSpeed.Checked, DEBUG_SPEEDUP_SPEED, gGameApp.Game.GetNormalGameSpeed), False);
+
+  ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
 
 
@@ -609,6 +611,8 @@ begin
       gGameApp.StopGame(grMapEdEnd)
     else
       gGameApp.StopGame(grCancel);
+
+  ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
 
 
@@ -827,6 +831,7 @@ begin
     end;
   end;
 
+  ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
 
 
