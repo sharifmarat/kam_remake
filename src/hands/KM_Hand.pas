@@ -140,7 +140,12 @@ type
 
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse; overload;
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
-                                   out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse; overload;
+                                   out aHouseSketch: TKMHouseSketchEdit;
+                                   aSketchTypesSet: TKMHouseSketchTypeSet = [hstHouse]): TKMHouse; overload;
+    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                   out aHouseSketch: TKMHouseSketchEdit;
+                                   aSketchTypesSet: TKMHouseSketchTypeSet;
+                                   aVerifySketch: TAnonHouseSketchBoolFn): TKMHouse; overload;
     function GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
     function GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 
@@ -541,7 +546,17 @@ end;
 
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
-                                       out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse;
+                                       out aHouseSketch: TKMHouseSketchEdit;
+                                       aSketchTypesSet: TKMHouseSketchTypeSet = [hstHouse]): TKMHouse;
+begin
+  Result := GetNextHouseWSameType(aHouseType, aStartFromUID, aHouseSketch, aSketchTypesSet, nil);
+end;
+
+
+function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                       out aHouseSketch: TKMHouseSketchEdit;
+                                       aSketchTypesSet: TKMHouseSketchTypeSet;
+                                       aVerifySketch: TAnonHouseSketchBoolFn): TKMHouse;
 
 var
   ResultSet: Boolean;
@@ -570,15 +585,23 @@ var
   end;
 
   function GetNextHSketch(aIndex: Integer; out aHouseSketchTmp: TKMHouseSketchEdit): Boolean;
+  var
+    Sketch2Verify: TKMHouseSketch;
   begin
     aHouseSketchTmp.Clear;
 
-    if aIndex < fHouses.Count then
-      FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex])
-    else
-      FillHSketchByHPlan(aHouseSketchTmp, fBuildList.HousePlanList.Plans[aIndex - fHouses.Count]);
+    if (hstHouse in aSketchTypesSet) and (aIndex < fHouses.Count) then
+    begin
+      FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex]);
+      Sketch2Verify := fHouses[aIndex];
+    end else if (hstHousePlan in aSketchTypesSet) then
+    begin
+      FillHSketchByHPlan(aHouseSketchTmp, fBuildList.HousePlanList.Plans[aIndex - Byte(hstHouse in aSketchTypesSet)*fHouses.Count]);
+      Sketch2Verify := aHouseSketchTmp;
+    end;
 
-    Result := not aHouseSketchTmp.IsEmpty;
+    Result := not aHouseSketchTmp.IsEmpty
+              and (not Assigned(aVerifySketch) or aVerifySketch(Sketch2Verify));
   end;
 
   procedure FillResult(aIndex: Integer; aHSketch: TKMHouseSketchEdit);
@@ -600,7 +623,8 @@ begin
   Found := False;
   ResultSet := False;
 
-  Cnt := fHouses.Count + Byte(aConsiderHousePlan)*fBuildList.HousePlanList.Count;
+  Cnt :=   Byte(hstHouse in aSketchTypesSet)*fHouses.Count
+         + Byte(hstHousePlan in aSketchTypesSet)*fBuildList.HousePlanList.Count;
 
   I := 0;
   FirstHSketchI := 0;
