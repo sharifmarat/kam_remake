@@ -99,8 +99,8 @@ procedure TKMAIFields.UpdateState(aTick: Cardinal);
 begin
   fNavMesh.UpdateState(aTick);
   fInfluences.UpdateState(aTick);
-  //fEye.UpdateState(aTick);
-  //fSupervisor.UpdateState(aTick);
+  fEye.UpdateState(aTick);
+  fSupervisor.UpdateState(aTick);
 end;
 
 
