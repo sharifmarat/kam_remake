@@ -45,7 +45,6 @@ type
 
     procedure SetTargetHouse(aHouse: TKMHouse);
     procedure SetTargetUnit(aUnit: TKMUnit);
-    procedure SetTargetPosition(aLoc: TKMPointDir);
   public
     constructor Create(aGroup: TKMUnitGroup);
     constructor Load(LoadStream: TKMemoryStream);
@@ -56,7 +55,7 @@ type
     property Group: TKMUnitGroup read fGroup;
     property OnPlace: Boolean read fOnPlace;
     property InFight: Boolean read SquadInFight;
-    property FinalPosition: TKMPointDir read fFinalPosition write SetTargetPosition;
+    property FinalPosition: TKMPointDir read fFinalPosition write fFinalPosition;
     property Position: TKMPoint read GetGroupPosition;
     property WalkTimeLimit: Cardinal read fWalkTimeLimit write fWalkTimeLimit;
     property AttackTimeLimit: Cardinal read fAttackTimeLimit write fAttackTimeLimit;
@@ -263,19 +262,6 @@ begin
     gHands.CleanUpUnitPointer(fTargetUnit); // aUnit = nil case
 end;
 
-
-procedure TAISquad.SetTargetPosition(aLoc: TKMPointDir);
-var
-  pom: Integer;
-begin
-  pom := 0;
-  if kmSamePoint(aLoc.Loc,KMPOINT_ZERO) then
-  begin
-    pom := pom * 1;
-  end;
-  if (pom < 5) then
-  fFinalPosition := aLoc;
-end;
 
 procedure TAISquad.SetTargetHouse(aHouse: TKMHouse);
 begin
