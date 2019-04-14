@@ -171,7 +171,7 @@ type
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function ObjectByUID(aUID: Integer): TObject;
-    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList; aIgnoreFOW: Boolean = False);
 
     function GetFieldsCount: Integer;
     procedure GetFieldPlans(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
@@ -1505,7 +1505,7 @@ begin
 end;
 
 
-procedure TKMHand.GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+procedure TKMHand.GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList; aIgnoreFOW: Boolean = False);
   //Replace existing icon with a Block
   procedure BlockPoint(const aPoint: TKMPoint; aID: Integer);
   var I: Integer;
@@ -1539,7 +1539,7 @@ begin
         P2 := KMPoint(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4);
 
         //Forbid planning on unrevealed areas and fieldplans
-        AllowBuild := (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
+        AllowBuild := aIgnoreFOW or (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
 
         //This tile must not contain fields/houses of allied players or self
         if AllowBuild then
