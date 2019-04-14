@@ -771,11 +771,11 @@ begin
   Image_DirectionCursor.Hide;
 
   // Debugging displays
-  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,106-10,Panel_Main.Width - 224 - 8, 0);
+  Bevel_DebugInfo := TKMBevel.Create(Panel_Main,224+8-10,133-10,Panel_Main.Width - 224 - 8, 0);
   Bevel_DebugInfo.BackAlpha := 0.5;
   Bevel_DebugInfo.Hitable := False;
   Bevel_DebugInfo.Hide;
-  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,106,'',fntOutline,taLeft);
+  Label_DebugInfo := TKMLabel.Create(Panel_Main,224+8,133,'',fntOutline,taLeft);
   Label_DebugInfo.Hide;
 
 { I plan to store all possible layouts on different pages which gets displayed one at a time }
@@ -4109,6 +4109,19 @@ begin
       gLog.AddTime('Packets Stats:' + sLineBreak + S2);
   end;
 
+  if SHOW_SELECTED_OBJ_DATA then
+  begin
+    if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
+    begin
+      if gMySpectator.Selected is TKMUnit then
+        S := S + TKMUnit(gMySpectator.Selected).ObjToString
+      else if gMySpectator.Selected is TKMUnitGroup then
+        S := S + TKMUnitGroup(gMySpectator.Selected).SelectedUnit.ObjToString
+      else if gMySpectator.Selected is TKMHouse then
+        S := S + TKMHouse(gMySpectator.Selected).ObjToString;
+    end;
+  end;
+
   Label_DebugInfo.Font := fntArial;
   Label_DebugInfo.Caption := S;
   Label_DebugInfo.Visible := (Trim(S) <> '');
@@ -4136,7 +4149,6 @@ begin
   begin
     Label_TeamName.Visible := True; // Only visible while we're using it, otherwise it shows up in other places
     for I := 0 to fUnitsTeamNames.Count - 1 do
-    begin
       try
         if not (TObject(fUnitsTeamNames[I]) is TKMUnit)
           or (TKMUnit(fUnitsTeamNames[I]) = nil)
@@ -4174,12 +4186,10 @@ begin
         on E: Exception do
           ; //Just ignore exceptions here, since its UI function
       end;
-    end;
 
     if SHOW_UIDs then
     begin
       for I := 0 to fGroupsTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fGroupsTeamNames[I]) is TKMUnitGroup) then
             Continue;
@@ -4215,10 +4225,8 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
 
       for I := 0 to fHousesTeamNames.Count - 1 do
-      begin
         try
           if not (TObject(fHousesTeamNames[I]) is TKMHouse) then
             Continue;
@@ -4247,7 +4255,6 @@ begin
           on E: Exception do
             ; //Just ignore exceptions here, since its UI function
         end;
-      end;
     end;
   end;
   Label_TeamName.Visible := False; // Only visible while we're using it, otherwise it shows up in other places
