@@ -124,6 +124,7 @@ type
     function  HasMember(aWarrior: TKMUnit): Boolean;
     procedure ResetAnimStep;
     function InFight(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
+    function InFightAllMembers(aCountCitizens: Boolean = False): Boolean; //Fighting and can't take any orders from player
     function InFightAgaistGroups(var aGroupArray: TKMUnitGroupArray): Boolean; //Fighting agaist specific groups
     function IsAttackingHouse: Boolean; //Attacking house
     function IsAttackingUnit: Boolean;
@@ -958,6 +959,7 @@ begin
 end;
 
 
+//Check if at least 1 group member is fighting
 //Fighting with citizens does not count by default
 function TKMUnitGroup.InFight(aCountCitizens: Boolean = False): Boolean;
 var
@@ -968,6 +970,20 @@ begin
   for I := 0 to Count - 1 do
     if Members[I].InFight(aCountCitizens) then
       Exit(True);
+end;
+
+
+//Check if all group members are fighting
+//Fighting with citizens does not count by default
+function TKMUnitGroup.InFightAllMembers(aCountCitizens: Boolean = False): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+
+  for I := 0 to Count - 1 do
+    if not Members[I].InFight(aCountCitizens) then
+      Exit(False);
 end;
 
 
@@ -1898,6 +1914,8 @@ end;
 
 
 procedure TKMUnitGroup.UpdateState;
+var
+  NeedCheckOrderDone: Boolean;
 begin
   Inc(fTicker);
   if IsDead then Exit;
@@ -1910,7 +1928,18 @@ begin
   if fTicker mod 5 = 0 then
     CheckForFight;
 
-  if not InFight and (fTicker mod 7 = 0) then
+  NeedCheckOrderDone := (fTicker mod 7 = 0);
+  if NeedCheckOrderDone then
+  begin
+    if IsRanged then
+      //Ranged units could be partially in fight
+      //That could cause wrong unit direction, check it in further CheckOrderDone
+      NeedCheckOrderDone := not InFightAllMembers
+    else
+      NeedCheckOrderDone := not InFight;
+  end;
+
+  if NeedCheckOrderDone then
     CheckOrderDone;
 end;
 
