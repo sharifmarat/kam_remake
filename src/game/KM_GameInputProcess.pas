@@ -130,9 +130,17 @@ const
   BlockedByPeaceTime: set of TKMGameInputCommandType = [gicArmySplit, gicArmySplitSingle,
     gicArmyLink, gicArmyAttackUnit, gicArmyAttackHouse, gicArmyHalt,
     gicArmyFormation,  gicArmyWalk, gicArmyStorm, gicHouseBarracksEquip, gicHouseTownHallEquip];
-  AllowedAfterDefeat: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
-  AllowedInCinematic: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
-  AllowedBySpectators: set of TKMGameInputCommandType = [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
+  AllowedAfterDefeat: set of TKMGameInputCommandType =
+    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+  AllowedInCinematic: set of TKMGameInputCommandType =
+    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGameMessageLogRead, gicTempDoNothing];
+  AllowedBySpectators: set of TKMGameInputCommandType =
+    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby, gicGamePlayerDefeat, gicTempDoNothing];
+  //Those commands should not have random check, because they they are not strictly happen, depends of player config and actions
+  //We want to make it possible to reproduce AI city build knowing only seed + map config
+  //Autosave and other commands random checks could break it, since every command have its own random check (and KaMRandom call)
+  SkipRandomChecksFor: set of TKMGameInputCommandType =
+    [gicGameAlertBeacon, gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby];
 
   ArmyOrderCommands: set of TKMGameInputCommandType = [
     gicArmyFeed,
@@ -1133,10 +1141,12 @@ begin
 
   fQueue[fCount].Tick    := gGame.GameTickCount;
   fQueue[fCount].Command := aCommand;
-  if (aCommand.CommandType = gicGameAutoSave) then // Maybe also gicGameAutoSaveAfterPT and gicGameSaveReturnLobby
+  //Skip random check generation. We do not want KaMRandom to be called here
+  if SKIP_RNG_CHECKS_FOR_SOME_GIC and (aCommand.CommandType in SkipRandomChecksFor) then
     fQueue[fCount].Rand := 0
   else
-    fQueue[fCount].Rand    := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess.StoreCommand')); //This will be our check to ensure everything is consistent
+    //This will be our check to ensure everything is consistent
+    fQueue[fCount].Rand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess.StoreCommand'));
 end;
 
 

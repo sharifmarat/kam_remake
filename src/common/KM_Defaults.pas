@@ -101,7 +101,8 @@ var
   {User interface options}
   DEBUG_SPEEDUP_SPEED     :Integer = 300;   //Speed for speedup from debug menu
   DEBUG_LOGS              :Boolean = True;  //Log debug info
-  ALLOW_SELECT_ALLY_UNITS :Boolean = False; //Do we allow to select ally units or groups
+  SKIP_RNG_CHECKS_FOR_SOME_GIC: Boolean = True; //Skip rng checks for Autosave and few other commands to have same AI city with predefined seed + mapconfig
+  ALLOW_SELECT_ALLY_UNITS :Boolean = DEBUG_CFG; //Do we allow to select ally units or groups
   ALLOW_SELECT_ENEMIES    :Boolean = DEBUG_CFG; //Do we allow to select enemies houses/units/groups
   SHOW_ENEMIES_STATS      :Boolean = False; //Do we allow to show enemies stats during the game
   SHOW_DEBUG_CONTROLS     :Boolean = False; //Show debug panel / Form1 menu (F11)
