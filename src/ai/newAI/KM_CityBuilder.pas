@@ -1045,13 +1045,11 @@ var
       //MaterialShortage := False; // Enable / disable pre-building (building without placing house plans when we are out of materials)
       Output := BuildHouse(UnlockProcedure, HouseReservation, IgnoreExistingPlans, aHT);
     end
-    else if aUnlockProcedureAllowed then
-    begin
-      if (FollowingHouse <> htNone) then // Activate house reservation
-        Output := BuildHouse(True, True, False, FollowingHouse)
-      else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
-        Output := BuildHouse(True, False, False, aHT);
-    end;
+    else if aUnlockProcedureAllowed AND (FollowingHouse <> htNone) then
+      // Activate house reservation
+      Output := BuildHouse(True, True, False, FollowingHouse)
+    else if (FollowingHouse = htNone) AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
+      Output := BuildHouse(True, False, False, aHT);
     Result := Output;
   end;
 
@@ -1228,7 +1226,7 @@ var
       if (csHousePlaced = AddToConstruction(BestHT,False,True)) then
       begin
         MaxPlace := MaxPlace - 1;
-        Dec(RequiredHouses[BestHT]);
+        RequiredHouses[BestHT] := 0;
       end;
       ReservationsCntArr[BestHT] := 0; // Dont place more than 1 reserved house type in 1 tick
     end;
