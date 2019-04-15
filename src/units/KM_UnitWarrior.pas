@@ -845,13 +845,21 @@ begin
                       
                       attackHouseProc := function: Boolean
                       begin
-                        FreeAndNil(fTask); //e.g. TaskAttackHouse
-                        fTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
-                        fOrder := woAttackHouse;
-                        fOrderLoc := CurrPosition; //Once the house is destroyed we will position where we are standing
-                        fNextOrder := woNone;
                         Result := False; //need to Free old action
-                      end; 
+
+                        FreeAndNil(fTask); //e.g. TaskAttackHouse
+                        fNextOrder := woNone;
+
+                        //If house is destroyed or OrderHouseTarget was cleared by some other Order
+                        // then no need to start task (will get Access violation error)
+                        if GetOrderHouseTarget <> nil then
+                        begin
+                          fTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
+                          fOrder := woAttackHouse;
+                          fOrderLoc := CurrPosition; //Once the house is destroyed we will position where we are standing
+                        end else
+                          fOrder := woNone;
+                      end;
                         
                       //Abandon walk so we can take attack house
                       if (Action is TKMUnitActionWalkTo)
@@ -873,7 +881,7 @@ begin
                         SetActionStorm(fStormDelay);
                         fNextOrder := woNone;
                         fOrder := woStorm;
-                        Result := True; //No need to Free newly created action action
+                        Result := True; //No need to Free newly created action
                       end;
                       
                       //Abandon walk so we can take attack house or storm attack order
