@@ -645,6 +645,9 @@ procedure TFormMain.ControlsReset;
         ResetGroupBox(TGroupBox(aBox.Controls[I]));
   end;
 begin
+  if not RESET_DEBUG_CONTROLS then
+    Exit;
+
   fUpdating := True;
   ResetGroupBox(GroupBox1);
 
