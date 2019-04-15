@@ -1865,9 +1865,6 @@ end;
 procedure TKMGame.Load(const aPathName: UnicodeString);
 var
   LoadStream: TKMemoryStream;
-  GameInfo: TKMGameInfo;
-  LoadedSeed: LongInt;
-  SaveIsMultiplayer, IsCampaign: Boolean;
 begin
   fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
