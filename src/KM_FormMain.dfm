@@ -495,7 +495,7 @@ object FormMain: TFormMain
         Top = 88
         Width = 97
         Height = 17
-        Caption = 'Show game tick'
+        Caption = 'Game tick'
         TabOrder = 7
         OnClick = ControlsUpdate
       end
@@ -515,6 +515,15 @@ object FormMain: TFormMain
         Height = 17
         Caption = 'Skip Sound'
         TabOrder = 9
+        OnClick = ControlsUpdate
+      end
+      object chkUIDs: TCheckBox
+        Left = 100
+        Top = 88
+        Width = 79
+        Height = 17
+        Caption = 'UIDs'
+        TabOrder = 10
         OnClick = ControlsUpdate
       end
     end
