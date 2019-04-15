@@ -120,6 +120,7 @@ type
     chkShowSoil: TCheckBox;
     chkShowFlatArea: TCheckBox;
     chkShowEyeRoutes: TCheckBox;
+    chkSelectedObjInfo: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -739,6 +740,7 @@ begin
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
     SHOW_GAME_TICK := chkShowGameTick.Checked;
     SHOW_UIDs := chkUIDs.Checked;
+    SHOW_SELECTED_OBJ_INFO := chkSelectedObjInfo.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;

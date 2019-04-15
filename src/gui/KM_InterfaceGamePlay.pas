@@ -4109,7 +4109,7 @@ begin
       gLog.AddTime('Packets Stats:' + sLineBreak + S2);
   end;
 
-  if SHOW_SELECTED_OBJ_DATA then
+  if SHOW_SELECTED_OBJ_INFO then
   begin
     if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
     begin

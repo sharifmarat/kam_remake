@@ -165,7 +165,7 @@ var
   SHOW_OVERLAY_BEVEL      :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
   SHOW_NET_PACKETS_STATS  :Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT  :Integer = 1;
-  SHOW_SELECTED_OBJ_DATA  :Boolean = False; //Show selected object (Unit/Group + Unit/House) data (UID/order/action etc)
+  SHOW_SELECTED_OBJ_INFO  :Boolean = False; //Show selected object (Unit/Group + Unit/House) data (UID/order/action etc)
   INI_HITPOINT_RESTORE    :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM
   SLOW_MAP_SCAN           :Boolean = False; //Scan maps with a pause to emulate uncached file access
   SLOW_SAVE_SCAN          :Boolean = False; //Scan saves with a pause to emulate uncached file access
