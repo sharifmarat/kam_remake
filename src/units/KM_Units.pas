@@ -226,7 +226,7 @@ type
     function PathfindingShouldAvoid: Boolean; virtual;
 
     function ObjToString(aSeparator: String = '|'): String; virtual;
-    function ObjToStringShort(aSeparator: String = '|'): String;
+    function ObjToStringShort(aSeparator: String = '|'): String; virtual;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
     function UpdateState: Boolean; virtual;
