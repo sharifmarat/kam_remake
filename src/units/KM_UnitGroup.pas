@@ -186,7 +186,7 @@ type
     procedure KillGroup;
 
     function ObjToStringShort(aSeparator: String = '|'): String;
-    function ObjToString: String;
+    function ObjToString(aSeparator: String = '|'): String;
 
     procedure UpdateState;
     procedure PaintHighlighted(aHandColor: Cardinal; aFlagColor: Cardinal; aDoImmediateRender: Boolean = False; aDoHighlight: Boolean = False; aHighlightColor: Cardinal = 0);
@@ -1886,7 +1886,7 @@ begin
 end;
 
 
-function TKMUnitGroup.ObjToString: String;
+function TKMUnitGroup.ObjToString(aSeparator: String = '|'): String;
 var
   TargetUnitStr, TargetHouseStr, TargetGroupStr: String;
 begin
@@ -1904,14 +1904,15 @@ begin
     TargetHouseStr := fOrderTargetHouse.ObjToStringShort(', ');
 
   Result := ObjToStringShort +
-            Format('|Owner = %d|UnitsPerRow = %d|GroupOrder = %s|OrderLoc = %s|' +
-                   'OrderTargetUnit = [%s]|OrderTargetGroup = [%s]|OrderTargetHouse = [%s]',
-                   [fOwner,
-                    fUnitsPerRow,
-                    GetEnumName(TypeInfo(TKMGroupOrder), Integer(fOrder)),
-                    TypeToString(fOrderLoc),
-                    TargetUnitStr,
-                    TargetGroupStr,
+            Format('%sOwner = %d%sUnitsPerRow = %d%sGroupOrder = %s%sOrderLoc = %s%s' +
+                   'OrderTargetUnit = [%s]%sOrderTargetGroup = [%s]%sOrderTargetHouse = [%s]',
+                   [aSeparator,
+                    fOwner, aSeparator,
+                    fUnitsPerRow, aSeparator,
+                    GetEnumName(TypeInfo(TKMGroupOrder), Integer(fOrder)), aSeparator,
+                    TypeToString(fOrderLoc), aSeparator,
+                    TargetUnitStr, aSeparator,
+                    TargetGroupStr, aSeparator,
                     TargetHouseStr]);
 end;
 
