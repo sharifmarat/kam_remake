@@ -150,6 +150,7 @@ begin
 
   gGameApp := TKMGameApp.Create(fRenderTarget, tgtWidth, tgtHeight, False, nil, nil, nil, True);
   gGameApp.GameSettings.Autosave := False;
+  gGameApp.PreloadGameResources;
 end;
 
 
