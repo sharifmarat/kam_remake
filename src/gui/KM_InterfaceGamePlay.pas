@@ -22,7 +22,9 @@ const
   MAX_TRACKNAME_LENGTH = 18;
 
 type
-  TKMTabButtons = (tbBuild, tbRatio, tbStats, tbMenu);
+  //tbNone is the last, since we use Byte(Value) at some places
+  //TODO refactor
+  TKMTabButtons = (tbBuild, tbRatio, tbStats, tbMenu, tbNone);
 
   TKMGamePlayInterface = class (TKMUserInterfaceGame)
   private
@@ -43,6 +45,7 @@ type
     fGuiGameResultsMP: TKMGameResultsMP;
 
     // Not saved
+    fOpenedMenu: TKMTabButtons;
     fShowTeamNames: Boolean; // True while the SC_SHOW_TEAM key is pressed
     fLastDragPoint: TKMPoint; // Last mouse point that we drag placed/removed a road/field
     fLastBeaconTime: Cardinal; //Last time a beacon was sent to enforce cooldown
@@ -128,6 +131,7 @@ type
     procedure SelectUnitGroup(aGroup: TKMUnitGroup);
     procedure SelectNextGameObjWSameType;
     procedure SwitchPage(Sender: TObject);
+    procedure OpenMenuPage(aPage: TKMTabButtons);
     procedure ShowStats(Sender: TObject);
     procedure PlayMoreClick(Sender: TObject);
     procedure MPPlayMoreClick(Sender: TObject);
@@ -194,7 +198,7 @@ type
     Label_TeamName: TKMLabel;
 
     Panel_Controls: TKMPanel;
-      Button_Main: array [TKMTabButtons] of TKMButton; // 4 common buttons + Return
+      Button_Main: array [tbBuild..tbMenu] of TKMButton; // 4 common buttons + Return
       Button_Back: TKMButton;
 
     Panel_Stats: TKMPanel;
@@ -305,6 +309,8 @@ type
     procedure CinematicUpdate;
     procedure LoadHotkeysFromHand;
     procedure SetButtons(aPaused: Boolean);
+    procedure ReplaySaved;
+
     property UIMode: TUIMode read fUIMode;
 
     procedure SetPause(aValue: Boolean);
@@ -506,6 +512,15 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.OpenMenuPage(aPage: TKMTabButtons);
+begin
+  if aPage = tbNone then
+    SwitchPage(nil)
+  else
+    SwitchPage(Button_Main[aPage]);
+end;
+
+
 { Switch between pages }
 procedure TKMGamePlayInterface.SwitchPage(Sender: TObject);
 var
@@ -514,7 +529,8 @@ var
   procedure Flip4MainButtons(ShowEm: Boolean);
   var T: TKMTabButtons;
   begin
-    for T := Low(TKMTabButtons) to High(TKMTabButtons) do Button_Main[T].Visible := ShowEm;
+    for T := tbBuild to tbMenu do
+      Button_Main[T].Visible := ShowEm;
     Button_Back.Visible := not ShowEm;
     Label_MenuTitle.Visible := not ShowEm;
   end;
@@ -543,72 +559,81 @@ begin
 
   // If Sender is one of 4 main buttons, then open the page, hide the buttons and show Return button
   Flip4MainButtons(false);
+  fOpenedMenu := tbNone;
   if Sender = Button_Main[tbBuild] then
   begin
     Label_MenuTitle.Caption := gResTexts[TX_MENU_TAB_BUILD];
     fGuiGameBuild.Show;
+    fOpenedMenu := tbBuild;
   end else
 
   if Sender = Button_Main[tbRatio] then
   begin
     Label_MenuTitle.Caption := gResTexts[TX_MENU_TAB_DISTRIBUTE];
     fGuiGameRatios.Show;
+    fOpenedMenu := tbRatio;
   end else
 
   if Sender = Button_Main[tbStats] then
   begin
     Label_MenuTitle.Caption := gResTexts[TX_MENU_TAB_STATISTICS];
     fGuiGameStats.Show;
+    fOpenedMenu := tbStats;
   end else
-
-  if (Sender = Button_Main[tbMenu])
-  or (Sender = Button_Quit_No)
-  or ((Sender = Button_Back) and ((LastVisiblePage = fGuiMenuSettings)
-                               or (LastVisiblePage = Panel_Load)
-                               or (LastVisiblePage = Panel_Save))) then begin
-    Menu_Update; // Make sure updating happens before it is shown
-    Label_MenuTitle.Caption := gResTexts[TX_MENU_TAB_OPTIONS];
-    Panel_Menu.Show;
-  end else
-
-  if Sender = Button_Menu_Save then
   begin
-    fSave_Selected := -1;
-    // Stop current now scan so it can't add a save after we clear the list
-    fSaves.TerminateScan;
-    Menu_Save_RefreshList(nil); // Need to call it at last one time to setup GUI even if there are no saves
-    // Initiate refresh and process each new save added
-    fSaves.Refresh(Menu_Save_RefreshList, (fUIMode in [umMP, umSpectate]));
-    Panel_Save.Show;
-    Label_MenuTitle.Caption := gResTexts[TX_MENU_SAVE_GAME];
-    if fLastSaveName = '' then
-      Edit_Save.Text := gGame.GameName
-    else
-      Edit_Save.Text := fLastSaveName;
-    Menu_Save_EditChange(nil); // Displays "confirm overwrite" message if necessary
-  end else
+    fOpenedMenu := tbMenu;
+    if (Sender = Button_Main[tbMenu])
+    or (Sender = Button_Quit_No)
+    or ((Sender = Button_Back) and ((LastVisiblePage = fGuiMenuSettings)
+                                 or (LastVisiblePage = Panel_Load)
+                                 or (LastVisiblePage = Panel_Save))) then begin
+      Menu_Update; // Make sure updating happens before it is shown
+      Label_MenuTitle.Caption := gResTexts[TX_MENU_TAB_OPTIONS];
+      Panel_Menu.Show;
+    end else
 
-  if Sender = Button_Menu_Load then begin
-    fSave_Selected := -1;
-    // Stop current now scan so it can't add a save after we clear the list
-    fSaves.TerminateScan;
-    Menu_Load_RefreshList(nil); // Need to call it at least one time to setup GUI even if there are no saves
-    // Initiate refresh and process each new save added
-    fSaves.Refresh(Menu_Load_RefreshList, (fUIMode in [umMP, umSpectate]));
-    Panel_Load.Show;
-    Label_MenuTitle.Caption := gResTexts[TX_MENU_LOAD_GAME];
-  end else
+    if Sender = Button_Menu_Save then
+    begin
+      fSave_Selected := -1;
+      // Stop current now scan so it can't add a save after we clear the list
+      fSaves.TerminateScan;
+      Menu_Save_RefreshList(nil); // Need to call it at last one time to setup GUI even if there are no saves
+      // Initiate refresh and process each new save added
+      fSaves.Refresh(Menu_Save_RefreshList, (fUIMode in [umMP, umSpectate]));
+      Panel_Save.Show;
+      Label_MenuTitle.Caption := gResTexts[TX_MENU_SAVE_GAME];
+      if fLastSaveName = '' then
+        Edit_Save.Text := gGame.GameName
+      else
+        Edit_Save.Text := fLastSaveName;
+      Menu_Save_EditChange(nil); // Displays "confirm overwrite" message if necessary
+    end else
 
-  if Sender = Button_Menu_Settings then begin
-    fGuiMenuSettings.Menu_Settings_Fill;
-    fGuiMenuSettings.Show;
-    Label_MenuTitle.Caption := gResTexts[TX_MENU_SETTINGS];
-  end else
+    if Sender = Button_Menu_Load then begin
+      fSave_Selected := -1;
+      // Stop current now scan so it can't add a save after we clear the list
+      fSaves.TerminateScan;
+      Menu_Load_RefreshList(nil); // Need to call it at least one time to setup GUI even if there are no saves
+      // Initiate refresh and process each new save added
+      fSaves.Refresh(Menu_Load_RefreshList, (fUIMode in [umMP, umSpectate]));
+      Panel_Load.Show;
+      Label_MenuTitle.Caption := gResTexts[TX_MENU_LOAD_GAME];
+    end else
 
-  if Sender = Button_Menu_Quit then
-    Panel_Quit.Show
-  else // If Sender is anything else - then show all 4 buttons and hide Return button
-    Flip4MainButtons(True);
+    if Sender = Button_Menu_Settings then begin
+      fGuiMenuSettings.Menu_Settings_Fill;
+      fGuiMenuSettings.Show;
+      Label_MenuTitle.Caption := gResTexts[TX_MENU_SETTINGS];
+    end else
+
+    if Sender = Button_Menu_Quit then
+      Panel_Quit.Show
+    else // If Sender is anything else - then show all 4 buttons and hide Return button
+    begin
+      Flip4MainButtons(True);
+      fOpenedMenu := tbNone;
+    end;
+  end;
 end;
 
 
@@ -1024,14 +1049,15 @@ end;
 procedure TKMGamePlayInterface.Create_Replay;
 begin
   Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8, 160, 65);
-    ReplayBar_Replay       := TKMReplayBar.Create(Panel_ReplayCtrl, 0, 0, 400, 25);
-    Label_Replay            := TKMLabel.Create(Panel_ReplayCtrl,  80,  2, NO_TEXT, fntGrey, taCenter);
+    ReplayBar_Replay        := TKMReplayBar.Create(Panel_ReplayCtrl, 0, 0, 400, 25);
+    Label_Replay            := TKMLabel.Create(Panel_ReplayCtrl,  ReplayBar_Replay.Width div 2,
+                                                                  ReplayBar_Replay.Height div 2 - 7, NO_TEXT, fntGrey, taCenter);
     Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 29, 24, 24, 582, rxGui, bsGame);
     Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 29, 24, 24, 583, rxGui, bsGame);
     Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 29, 24, 24, 584, rxGui, bsGame);
     Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 29, 24, 24, 585, rxGui, bsGame);
     Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 29, 24, 24, 586, rxGui, bsGame);
-    Button_ReplaySaveAt       := TKMButton.Create(Panel_ReplayCtrl,150, 29, 24, 24, 592, rxGui, bsGame);
+    Button_ReplaySaveAt       := TKMButton.Create(Panel_ReplayCtrl,180-24, 29, 24, 24, 592, rxGui, bsGame);
 
     Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl,ReplayBar_Replay.Right - 24, 29, 24, 24, 669, rxGui, bsGame);
     //TODO: Button_ReplayFF       := TKMButton.Create(Panel_ReplayCtrl,125, 24, 24, 24, 393, rxGui, bsGame);
@@ -1058,7 +1084,7 @@ begin
     Button_ReplayResume.Disable; // Initial state
     Button_ReplayRestart.Hide;
 
-  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 61, 220, 39);
+  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
     Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 11, 22, 22, 669, rxGui, bsGame);
     Button_ShowStatsSpec.OnClick := ShowStats;
     Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
@@ -1168,7 +1194,7 @@ end;
 
 procedure TKMGamePlayInterface.Create_Controls;
 const
-  MAIN_BTN_HINT: array [TKMTabButtons] of Word = (
+  MAIN_BTN_HINT: array [tbBuild..tbMenu] of Word = (
     TX_MENU_TAB_HINT_BUILD,
     TX_MENU_TAB_HINT_DISTRIBUTE,
     TX_MENU_TAB_HINT_STATISTICS,
@@ -1186,7 +1212,7 @@ begin
       Sidebar_Bottom[I] := TKMImage.Create(Panel_Controls, 0, 400*I, 224, 400, 404);
 
     // Main 4 buttons
-    for T := Low(TKMTabButtons) to High(TKMTabButtons) do begin
+    for T := tbBuild to tbMenu do begin
       Button_Main[T] := TKMButton.Create(Panel_Controls,  TB_PAD + 46 * Byte(T), 4, 42, 36, 439 + Byte(T), rxGui, bsGame);
       Button_Main[T].Hint := gResTexts[MAIN_BTN_HINT[T]];
       Button_Main[T].OnClick := SwitchPage;
@@ -1739,6 +1765,13 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.ReplaySaved;
+begin
+  if (gGame.SavedReplays <> nil) then
+    ReplayBar_Replay.AddMark(gGame.GameTickCount);
+end;
+
+
 procedure TKMGamePlayInterface.Replay_DropBox_JumpToPlayer(aDropBoxIndex: Integer);
 begin
   Dropbox_ReplayFOW.ItemIndex := EnsureRange(0, aDropBoxIndex, Dropbox_ReplayFOW.Count - 1);
@@ -1883,9 +1916,8 @@ begin
 
   if Sender = Button_ReplaySaveAt then
   begin
-    gGame.SaveReplay();
-    if (gGame.SavedReplays <> nil) then
-      ReplayBar_Replay.AddMark(gGame.GameTickCount);
+    gGame.SaveReplayToMemory();
+    ReplaySaved;
   end;
 
   if Sender = Dropbox_ReplayFOW then
@@ -2157,25 +2189,68 @@ procedure TKMGamePlayInterface.ReplayMarkClick(aTick: Integer);
 var
   TicksList: TList<Cardinal>;
   Tick: Cardinal;
+  OldCenter: TKMPointF;
+  OldZoom: Single;
+  IsPaused: Boolean;
+  GuiSpecPage: Integer;
+  IsPlayerDropOpen: Boolean;
+  PlayerDropItem: Integer;
+  ShowPlayerFOW, AllyEnemy: Boolean;
+  MainMenuTab: TKMTabButtons;
 begin
-  Assert(aTick >= 0, 'Tick should be >= 0');
+  Assert(aTick >= 0, 'Tick should be >= 0'); //May be even > 0
 
-//  if aTick = 0 then
-//    ReplayClick(Button_ReplayRestart)
-//  else
+  //Save Replay GUI locally
+  MainMenuTab := fOpenedMenu;
+  OldCenter := fViewport.Position;
+  OldZoom := fViewport.Zoom;
+  IsPaused := gGame.IsPaused;
+  GuiSpecPage := fGuiGameSpectator.GetOpenedPage;
+  IsPlayerDropOpen := Dropbox_ReplayFOW.IsOpen;
+  PlayerDropItem := Dropbox_ReplayFOW.ItemIndex;
+  ShowPlayerFOW := Checkbox_ReplayFOW.Checked;
+  AllyEnemy := CheckBox_AllyEnemy_ColorMode.Checked;
+
   if not gGameApp.TryLoadSavedReplay( aTick ) then
     Exit;
 
-  if gGame.SavedReplays <> nil then
+  if gGame.SavedReplays = nil then
+    Exit;
+
+  //!!!!Carefull!!!!
+  //Self TKMGamePlayInterface is now destroyed and we can't access any fields here
+  //Use gGame.GamePlayInterface instead
+
+  //Restore Replay GUI
+  gGame.GamePlayInterface.OpenMenuPage(MainMenuTab);
+  gGame.GamePlayInterface.SyncUIView(OldCenter, OldZoom);
+
+  gGame.GamePlayInterface.GuiGameSpectator.OpenPage(GuiSpecPage);
+
+  if IsPlayerDropOpen then
+    gGame.GamePlayInterface.Dropbox_ReplayFOW.OpenList;
+  gGame.GamePlayInterface.Dropbox_ReplayFOW.ItemIndex := PlayerDropItem;
+
+  gGame.GamePlayInterface.Checkbox_ReplayFOW.Checked := ShowPlayerFOW;
+  ReplayClick(gGame.GamePlayInterface.Checkbox_ReplayFOW); //Apply FOW
+
+  gGame.GamePlayInterface.CheckBox_AllyEnemy_ColorMode.Checked := AllyEnemy;
+
+  if IsPaused then
   begin
-    TicksList := Tlist<Cardinal>.Create;
-    try
-      gGame.SavedReplays.FillTicks(TicksList);
-      for Tick in TicksList do
-        ReplayBar_Replay.AddMark(Tick);
-    finally
-      FreeAndNil(TicksList);
-    end;
+    gGame.IsPaused := True;
+    SetButtons(False); //Update buttons
+    gGame.GamePlayInterface.UpdateState(gGame.GameTickCount);
+  end;
+
+  TicksList := Tlist<Cardinal>.Create;
+  try
+    gGame.SavedReplays.FillTicks(TicksList);
+
+    for Tick in TicksList do
+      ReplayBar_Replay.AddMark(Tick);
+  finally
+    FreeAndNil(TicksList);
   end;
 end;
 
@@ -2303,8 +2378,7 @@ begin
 
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
-  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
-//  Panel_LoadReplay.Visible := fUIMode = umReplay;
+  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 61);
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
   CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
@@ -2317,20 +2391,15 @@ begin
 
     // Set dropbox in different ways
     case gGame.GameMode of
-      gmReplaySingle:   begin
-                          Replay_Single_SetPlayersDropbox; // Do not show team, as its meaningless
-                          fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer, SetViewportPos);
-                        end;
+      gmReplaySingle:   Replay_Single_SetPlayersDropbox; // Do not show team, as its meaningless
       // Use team info from ally states:
       // consider team as a group of hands where all members are allied to each other and not allied to any other hands.
       gmReplayMulti,
-      gmMultiSpectate:  begin
-                          Replay_Multi_SetPlayersDropbox;
-                          fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer, SetViewportPos);
-                        end;
+      gmMultiSpectate:  Replay_Multi_SetPlayersDropbox;
       else              raise Exception.Create(Format('Wrong game mode [%s], while spectating/watching replay',
                                                       [GetEnumName(TypeInfo(TKMGameMode), Integer(gGame.GameMode))]));
     end;
+    fGuiGameSpectator := TKMGUIGameSpectator.Create(Panel_Main, Replay_JumpToPlayer, SetViewportPos);
     gMySpectator.HandID := Dropbox_ReplayFOW.GetTag(Dropbox_ReplayFOW.ItemIndex); //Update HandIndex
   end;
 end;
@@ -3924,11 +3993,11 @@ begin
   if fUIMode = umReplay then
   begin
     // Replays can continue after end, keep the bar in 0..1 range
-//    PercentBar_Replay.Seam := Min(gGame.GameOptions.Peacetime * 600 / Max(gGame.GameInputProcess.GetLastTick,1), 1);
-
     ReplayBar_Replay.SetParameters(gGame.GameTickCount,
-                                    gGame.GameOptions.Peacetime,
-                                    Max(gGame.GameInputProcess.GetLastTick, gGame.GameTickCount));
+                                   gGame.GameOptions.Peacetime*60*10,
+                                   Max3(gGame.GameInputProcess.GetLastTick,
+                                        gGame.GameTickCount,
+                                        gGame.SavedReplays.LastTick));
 
     Label_Replay.Caption := TimeToString(gGame.MissionTime) + ' / ' +
                             TickToTimeStr(gGame.GameInputProcess.GetLastTick);
@@ -3945,12 +4014,15 @@ begin
       Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTickCount);
   end;
 
-
   // Keep on updating these menu pages as game data keeps on changing
-  if fGuiGameBuild.Visible then fGuiGameBuild.UpdateState;
-  if fGuiGameRatios.Visible and (fUIMode in [umReplay, umSpectate]) then fGuiGameRatios.UpdateState;
-  if fGuiGameStats.Visible then fGuiGameStats.UpdateState;
-  if Panel_Menu.Visible then Menu_Update;
+  if fGuiGameBuild.Visible then
+    fGuiGameBuild.UpdateState;
+  if fGuiGameRatios.Visible and (fUIMode in [umReplay, umSpectate]) then
+    fGuiGameRatios.UpdateState;
+  if fGuiGameStats.Visible then
+    fGuiGameStats.UpdateState;
+  if Panel_Menu.Visible then
+    Menu_Update;
 
   // Update message stack
   // Flash unread message display
@@ -4036,7 +4108,6 @@ end;
 
 procedure TKMGamePlayInterface.UpdateDebugInfo;
 var
-//  I: Integer;
   mKind: TKMessageKind;
   Received, Sent, RTotal, STotal, Period: Cardinal;
   S, SPackets, S2: String;
@@ -4062,12 +4133,6 @@ begin
 
   if DISPLAY_SOUNDS then
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
-
-  // Temporary inteface (by @Crow)
-  //if SHOW_ARMYEVALS then
-  //  for I := 0 to gHands.Count - 1 do
-  //  if I <> gMySpectator.HandIndex then
-  //    S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
 
   if SHOW_AI_WARE_BALANCE then
   begin

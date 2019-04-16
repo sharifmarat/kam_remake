@@ -190,6 +190,8 @@ type
   public
     constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
 
+    function GetOpenedPage: Integer;
+    procedure OpenPage(aIndex: Integer);
     procedure CloseDropBox;
   end;
 
@@ -765,6 +767,7 @@ var
   Teams: TKMByteSetArray;
   Position: Integer;
 begin
+  //Hide all lines
   for I := 0 to MAX_HANDS - 1 do
     if Assigned(FLines[FLastIndex, I]) then
       FLines[FLastIndex, I].Visible := False;
@@ -788,6 +791,17 @@ begin
     end;
     Position := Position + GUI_SPECTATOR_ITEM_TEAM;
   end;
+end;
+
+function TKMGUIGameSpectator.GetOpenedPage: Integer;
+begin
+  Result := FDropBox.ItemIndex;
+end;
+
+procedure TKMGUIGameSpectator.OpenPage(aIndex: Integer);
+begin
+  FDropBox.ItemIndex := aIndex;
+  ChangePage(nil);
 end;
 
 procedure TKMGUIGameSpectator.CloseDropBox;

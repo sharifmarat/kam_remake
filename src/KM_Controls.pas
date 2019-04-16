@@ -756,7 +756,6 @@ type
     fMarksPattern: Word;
     fOnMarkClick: TIntegerEvent;   
     fHintResText: Word;
-//    function GetMarks: TList<Integer>;
     procedure TrySortMarks;
     procedure SetPosition(aValue: Integer);
     procedure SetPeacetime(aValue: Integer);
@@ -1292,11 +1291,13 @@ type
 
     procedure Clear; virtual; abstract;
     function Count: Integer; virtual; abstract;
+    procedure OpenList;
     procedure CloseList;
 
     property DropCount: Byte read fDropCount write fDropCount;
     property DropUp: Boolean read fDropUp write fDropUp;
     property ItemIndex: SmallInt read GetItemIndex write SetItemIndex;
+    function IsOpen: Boolean; virtual;
 
     property OnShowList: TNotifyEvent read fOnShowList write fOnShowList;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
@@ -1339,6 +1340,7 @@ type
     property DefaultCaption: UnicodeString read fDefaultCaption write fDefaultCaption;
     property Item[aIndex: Integer]: UnicodeString read GetItem;
     property List: TKMListBox read fList;
+    function IsOpen: Boolean; override;
     property DropWidth: Integer read fDropWidth write SetDropWidth;
 
     procedure Paint; override;
@@ -4257,7 +4259,7 @@ end;
 procedure TKMReplayBar.AddMark(aMark: Integer);
 begin
   fMarks.Add(aMark);
-//  fIsDirty := True;
+  fIsDirty := True;
 end;
 
 
@@ -4270,7 +4272,7 @@ end;
 
 procedure TKMReplayBar.SetPeacetime(aValue: Integer);
 begin
-  fPeacetime := EnsureRange(aValue, 0, fMaxValue);
+  fPeacetime := EnsureRange(aValue, 0, MaxInt);
 end;
 
 
@@ -4340,17 +4342,6 @@ begin
     fMarks.Sort;
   end;
 end;
-
-
-//function TKMReplayBar.GetMarks: TList<Integer>;
-//begin
-//  if fIsDirty then
-//  begin
-//    fIsDirty := False;
-//    fMarks.Sort;
-//  end;
-//  Result := fMarks;
-//end;
 
 
 procedure TKMReplayBar.PaintBar;
@@ -7678,6 +7669,12 @@ begin
 end;
 
 
+function TKMDropCommon.IsOpen: Boolean;
+begin
+  Result := fShape.Visible;
+end;
+
+
 procedure TKMDropCommon.ButtonClick(Sender: TObject);
 begin
   //Call the DoDlick event to show the list AND generate DropBox.OnClick event
@@ -7757,6 +7754,12 @@ procedure TKMDropCommon.SetEnabled(aValue: Boolean);
 begin
   inherited;
   fButton.Enabled := fEnabled;
+end;
+
+
+procedure TKMDropCommon.OpenList;
+begin
+  ListShow(nil);
 end;
 
 
@@ -7878,6 +7881,12 @@ begin
     fCaption := fList.Item[fList.ItemIndex]
   else
     fCaption := fDefaultCaption;
+end;
+
+
+function TKMDropList.IsOpen: Boolean;
+begin
+  Result := fList.Visible;
 end;
 
 
