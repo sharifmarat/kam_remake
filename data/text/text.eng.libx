@@ -1193,3 +1193,5 @@
 1244:Script console command /%s not found
 1245:Enable/Disable copy-paste from chat window
 1246:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
+1247:Save replay state to be able to load while watching this replay
+1248:Load replay at %s

@@ -38,6 +38,11 @@ uses
   function GetFPSColor(aFPS: Word): Cardinal;
   function FlagColorToTextColor(aColor: Cardinal): Cardinal;
   function TimeToString(aTime: TDateTime): UnicodeString;
+  function TickToTimeStr(aTick: Cardinal): String;
+
+  function StrToHex(S: String): String;
+  function HexToStr(H: String): String;
+
   function WrapColor(const aText: UnicodeString; aColor: Cardinal): UnicodeString;
   function WrapColorA(const aText: AnsiString; aColor: Cardinal): AnsiString;
   function StripColor(const aText: UnicodeString): UnicodeString;
@@ -821,6 +826,30 @@ begin
   //e.g. 3599 equals to 59:58 and 3600 equals to 59:59
   //That is why we resort to DateUtils routines which are slower but much more correct
   Result :=  Format('%.2d', [HoursBetween(aTime, 0)]) + FormatDateTime(':nn:ss', aTime);
+end;
+
+
+function TickToTimeStr(aTick: Cardinal): String;
+begin
+  Result := TimeToString(aTick / 24 / 60 / 60 / 10);
+end;
+
+
+function StrToHex(S: String): string;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (S) do
+    Result:= Result+IntToHex(ord(S[i]),2);
+end;
+
+
+function HexToStr(H: String): String;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (H) div 2 do
+    Result:= Result+Char(StrToInt('$'+Copy(H,(I-1)*2+1,2)));
 end;
 
 

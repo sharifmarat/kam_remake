@@ -112,6 +112,10 @@ type
     fDayGamesCount: Integer;       //Number of games played today (used for saves namings)
     fLastDayGamePlayed: TDateTime; //Last day game played
 
+    //Replay
+    fReplayAutosave: Boolean;
+    fReplayAutosaveFrequency: Integer;
+
     //SFX
     fMusicOff: Boolean;
     fShuffleOn: Boolean;
@@ -192,6 +196,10 @@ type
 
     procedure SetDayGamesCount(aValue: Integer);
     procedure SetLastDayGamePlayed(aValue: TDateTime);
+
+    //Replay
+    procedure SetReplayAutosave(aValue: Boolean);
+    procedure SetReplayAutosaveFrequency(aValue: Integer);
 
     //SFX
     procedure SetMusicOff(aValue: Boolean);
@@ -281,6 +289,10 @@ type
 
     property DayGamesCount: Integer read fDayGamesCount write SetDayGamesCount;
     property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
+
+    //Replay
+    property ReplayAutosave: Boolean read fReplayAutosave write SetReplayAutosave;
+    property ReplayAutosaveFrequency: Integer read fReplayAutosaveFrequency write SetReplayAutosaveFrequency;
 
     //SFX
     property MusicOff: Boolean read fMusicOff write SetMusicOff;
@@ -557,7 +569,7 @@ begin
 
     fAutosave           := F.ReadBool     ('Game', 'Autosave',          True); //Should be ON by default
     fAutosaveAtGameEnd  := F.ReadBool     ('Game', 'AutosaveOnGameEnd', False); //Should be OFF by default
-    SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY));
+    SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY_DEFAULT));
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
     fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
@@ -593,6 +605,9 @@ begin
     fLastDayGamePlayed  := F.ReadDate     ('Game', 'LastDayGamePlayed', 0);
 
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
+
+    fReplayAutosave           := F.ReadBool     ('Replay', 'ReplayAutosave',          True); //Should be ON by default
+    SetReplayAutosaveFrequency(F.ReadInteger    ('Replay', 'ReplayAutosaveFrequency', REPLAY_AUTOSAVE_FREQUENCY_DEFAULT));
 
     fSoundFXVolume  := F.ReadFloat  ('SFX',  'SFXVolume',      0.5);
     fMusicVolume    := F.ReadFloat  ('SFX',  'MusicVolume',    0.5);
@@ -707,6 +722,9 @@ begin
     F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
+
+    F.WriteBool   ('Replay','ReplayAutosave',           fReplayAutosave);
+    F.WriteInteger('Replay','ReplayAutosaveFrequency',  fReplayAutosaveFrequency);
 
     F.WriteFloat  ('SFX','SFXVolume',     fSoundFXVolume);
     F.WriteFloat  ('SFX','MusicVolume',   fMusicVolume);
@@ -1024,6 +1042,20 @@ end;
 procedure TKMGameSettings.SetLastDayGamePlayed(aValue: TDateTime);
 begin
   fLastDayGamePlayed := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetReplayAutosave(aValue: Boolean);
+begin
+  fReplayAutosave := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetReplayAutosaveFrequency(aValue: Integer);
+begin
+  fReplayAutosaveFrequency := EnsureRange(aValue, REPLAY_AUTOSAVE_FREQUENCY_MIN, REPLAY_AUTOSAVE_FREQUENCY_MAX);
   Changed;
 end;
 

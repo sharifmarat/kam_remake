@@ -3,6 +3,7 @@
 interface
 uses
   Classes, Controls,
+  Generics.Collections,
   KromOGLUtils,
   KM_RenderUI, KM_Pics, KM_Minimap, KM_Viewport, KM_ResFonts,
   KM_CommonClasses, KM_CommonTypes, KM_Points, KM_Defaults;
@@ -166,6 +167,7 @@ type
     function GetSelfWidth: Integer; virtual;
     procedure UpdateVisibility; virtual;
     procedure UpdateEnableStatus; virtual;
+    procedure ControlMouseMove(Sender: TObject; X,Y: Integer; Shift: TShiftState); virtual;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); virtual;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); virtual;
     procedure FocusChanged(aFocused: Boolean); virtual;
@@ -280,6 +282,7 @@ type
     //e.g. scrollbar on a listbox
     procedure SetHeight(aValue: Integer); override;
     procedure SetWidth(aValue: Integer); override;
+    procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
     procedure ControlMouseDown(Sender: TObject; Shift: TShiftState); override;
     procedure ControlMouseUp(Sender: TObject; Shift: TShiftState); override;
     procedure UpdateVisibility; override;
@@ -709,25 +712,78 @@ type
     procedure Paint; override;
   end;
 
-
-  {Percent bar}
-  TKMPercentBar = class(TKMControl)
+  {Abstract Progress bar}
+  TKMProgressBarAbstract = class(TKMControl)
   private
     fFont: TKMFont;
-    fPosition: Single;
     fTextAlign: TKMTextAlign;
-    fSeam: Single;
-    procedure SetPosition(aValue: Single);
-    procedure SetSeam(aValue: Single);
+  protected
+    procedure PaintBar; virtual; abstract;
   public
-    Caption, CaptionLeft, CaptionRight: UnicodeString; //CaptionLeft and CaptionRight are shown to the left and right from main Caption. Use them only with taCenter
+    //CaptionLeft and CaptionRight are shown to the left and right from main Caption. Use them only with taCenter
+    Caption, CaptionLeft, CaptionRight: UnicodeString;
     FontColor: TColor4;
     TextYOffset: Integer;
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini);
     procedure SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
+    procedure Paint; override;
+  end;
+
+
+  {Percent bar}
+  TKMPercentBar = class(TKMProgressBarAbstract)
+  private
+    fPosition: Single;
+    fSeam: Single;
+    procedure SetPosition(aValue: Single);
+    procedure SetSeam(aValue: Single);
+  protected
+    procedure PaintBar; override;
+  public
     property Seam: Single read fSeam write SetSeam;
     property Position: Single read fPosition write SetPosition;
-    procedure Paint; override;
+  end;
+
+
+  TKMReplayBar = class (TKMPercentBar)
+  private
+    fIsDirty: Boolean; //True is Marks are not not sorted yet
+    fPosition: Integer;
+    fPeacetime: Integer;
+    fMaxValue: Integer;
+    fHighlightMark: Integer;
+    fMarks: TList<Integer>;
+    fMarksPattern: Word;
+    fOnMarkClick: TIntegerEvent;   
+    fHintResText: Word;
+//    function GetMarks: TList<Integer>;
+    procedure TrySortMarks;
+    procedure SetPosition(aValue: Integer);
+    procedure SetPeacetime(aValue: Integer);
+    procedure SetMaxValue(aValue: Integer);
+  protected
+    procedure ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState); override;
+    procedure PaintBar; override;
+  public
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight, aPosition, aPeacetime, aMaxValue: Integer; aFont: TKMFont = fntMini); overload;
+    destructor Destroy; override;
+
+    property Position: Integer read fPosition;
+    property Peacetime: Integer read fPeacetime;
+    property MaxValue: Integer read fMaxValue write SetMaxValue;
+
+    procedure SetParameters(aPosition, aPeacetime, aMaxValue: Integer);
+    property MarksPattern: Word read fMarksPattern write fMarksPattern;
+    property HintResText: Word read fHintResText write fHintResText;
+//    property Marks: TList<Integer> read GetMarks;
+
+    procedure AddMark(aMark: Integer);
+
+    property OnMarkClick: TIntegerEvent read fOnMarkClick write fOnMarkClick;
+
+    procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
+    procedure MouseUp  (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
   end;
 
 
@@ -2276,6 +2332,12 @@ begin
 end;
 
 
+procedure TKMControl.ControlMouseMove(Sender: TObject; X: Integer; Y: Integer; Shift: TShiftState);
+begin
+  //Let descendants override this method
+end;
+
+
 procedure TKMControl.ControlMouseDown(Sender: TObject; Shift: TShiftState);
 begin
   //Let descendants override this method
@@ -2569,8 +2631,19 @@ begin
 end;
 
 
+procedure TKMPanel.ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState);
+var
+  I: Integer;
+begin
+  inherited;
+  for I := 0 to ChildCount - 1 do
+    Childs[I].ControlMouseMove(Sender, X, Y, Shift);
+end;
+
+
 procedure TKMPanel.ControlMouseDown(Sender: TObject; Shift: TShiftState);
-var I: Integer;
+var
+  I: Integer;
 begin
   inherited;
   for I := 0 to ChildCount - 1 do
@@ -2579,7 +2652,8 @@ end;
 
 
 procedure TKMPanel.ControlMouseUp(Sender: TObject; Shift: TShiftState);
-var I: Integer;
+var
+  I: Integer;
 begin
   inherited;
   for I := 0 to ChildCount - 1 do
@@ -4061,8 +4135,8 @@ begin
 end;
 
 
-{ TKMPercentBar }
-constructor TKMPercentBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont=fntMini);
+{ TKMProgressBar }
+constructor TKMProgressBarAbstract.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont=fntMini);
 begin
   inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
   fFont := aFont;
@@ -4071,7 +4145,7 @@ begin
 end;
 
 
-procedure TKMPercentBar.SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
+procedure TKMProgressBarAbstract.SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
 begin
   CaptionLeft := aCaptionLeft;
   Caption := aCaption;
@@ -4079,25 +4153,13 @@ begin
 end;
 
 
-procedure TKMPercentBar.SetPosition(aValue: Single);
-begin
-  fPosition := EnsureRange(aValue, 0, 1);
-end;
-
-
-procedure TKMPercentBar.SetSeam(aValue: Single);
-begin
-  fSeam := EnsureRange(aValue, 0, 1);
-end;
-
-
-procedure TKMPercentBar.Paint;
+procedure TKMProgressBarAbstract.Paint;
 var
   CaptionSize: TKMPoint;
 begin
   inherited;
 
-  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam);
+  PaintBar;
 
   //Now draw text over the bar, if it is required
   if Caption <> '' then
@@ -4132,7 +4194,178 @@ begin
     TKMRenderUI.WriteText(AbsLeft + 1 + ((Width-4 + CaptionSize.X) div 2), (AbsTop + Height div 2)+TextYOffset-5,
                          (Width-4 - CaptionSize.X) div 2, CaptionRight, fFont, taLeft, FontColor);
   end;
+end;
 
+
+{ TKMPercentBar }
+procedure TKMPercentBar.SetPosition(aValue: Single);
+begin
+  fPosition := EnsureRange(aValue, 0, 1);
+end;
+
+
+procedure TKMPercentBar.SetSeam(aValue: Single);
+begin
+  fSeam := EnsureRange(aValue, 0, 1);
+end;
+
+
+procedure TKMPercentBar.PaintBar;
+begin
+  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam);
+end;
+
+
+{ TKMReplayBar }
+constructor TKMReplayBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini); 
+begin
+  Create(aParent, aLeft, aTop, aWidth, aHeight, 0, MaxInt, MaxInt, aFont);
+end;
+
+
+constructor TKMReplayBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight, aPosition, aPeacetime, aMaxValue: Integer;
+                                aFont: TKMFont = fntMini);
+begin
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aFont);
+
+  SetParameters(aPosition, aPeacetime, aMaxValue);
+  fMarksPattern := $CF3; //Looks good for 25px height bar
+
+//  aParent.
+
+  fHighlightMark := -1;
+
+  fMarks := TList<Integer>.Create;
+end;
+
+
+destructor TKMReplayBar.Destroy;
+begin
+  FreeAndNil(fMarks);
+end;
+
+
+procedure TKMReplayBar.SetParameters(aPosition, aPeacetime, aMaxValue: Integer);
+begin
+  //Apply setters
+  MaxValue := aMaxValue; //Should be first, since we restrict Position and PT with MaxValue
+  SetPosition(aPosition);
+  SetPeacetime(aPeacetime);
+end;
+
+
+procedure TKMReplayBar.AddMark(aMark: Integer);
+begin
+  fMarks.Add(aMark);
+//  fIsDirty := True;
+end;
+
+
+procedure TKMReplayBar.SetPosition(aValue: Integer);
+begin
+  fPosition := EnsureRange(aValue, 0, fMaxValue);
+//  Caption := IntToStr(fPosition);
+end;
+
+
+procedure TKMReplayBar.SetPeacetime(aValue: Integer);
+begin
+  fPeacetime := EnsureRange(aValue, 0, fMaxValue);
+end;
+
+
+procedure TKMReplayBar.SetMaxValue(aValue: Integer);
+begin
+  fMaxValue := EnsureRange(aValue, 1, MaxInt);
+end;
+
+
+procedure TKMReplayBar.MouseMove(X,Y: Integer; Shift: TShiftState);
+const
+  MAX_DIST_PERCENT = 0.02;
+var
+  Pos, BestDist, Dist: Integer;
+  Mark, BestMark: Integer;
+begin
+  inherited;
+  Pos := Round((X - AbsLeft) / Width * MaxValue);
+
+  BestDist := MaxInt;
+  BestMark := -1;
+
+  TrySortMarks;
+  for Mark in fMarks do
+  begin
+    Dist := Abs(Pos - Mark);
+    if Dist < MAX_DIST_PERCENT*fMaxValue then
+    begin
+      if Dist < BestDist then
+      begin
+        BestDist := Dist;
+        BestMark := Mark;
+      end else
+        Break; //List is sorted, we have found what we need
+    end;
+  end;
+
+  fHighlightMark := BestMark;
+
+  if fHighlightMark <> -1 then
+  begin
+    Hint := Format(gResTexts[fHintResText], [TickToTimeStr(fHighlightMark)]);
+//    Caption := IntToStr(fPosition) + ' (' + IntToStr(fHighlightMark) + ')';
+  end
+  else
+  begin
+    Hint := '';
+//    Caption := IntToStr(fPosition);
+  end;
+end;
+
+
+procedure TKMReplayBar.MouseUp(X: Integer; Y: Integer; Shift: TShiftState; Button: TMouseButton);
+begin
+  inherited;
+
+  if (fHighlightMark <> -1) and Assigned(fOnMarkClick) then
+    fOnMarkClick(fHighlightMark);  
+end;
+
+
+procedure TKMReplayBar.TrySortMarks;
+begin
+  if fIsDirty then
+  begin
+    fIsDirty := False;
+    fMarks.Sort;
+  end;
+end;
+
+
+//function TKMReplayBar.GetMarks: TList<Integer>;
+//begin
+//  if fIsDirty then
+//  begin
+//    fIsDirty := False;
+//    fMarks.Sort;
+//  end;
+//  Result := fMarks;
+//end;
+
+
+procedure TKMReplayBar.PaintBar;
+begin
+  inherited;
+  TKMRenderUI.WriteReplayBar(AbsLeft, AbsTop, Width, Height, fPosition, fPeacetime, fMaxValue, fMarks, MarksPattern, fHighlightMark);
+end;
+
+
+procedure TKMReplayBar.ControlMouseMove(Sender: TObject; X, Y: Integer; Shift: TShiftState);
+begin
+  inherited;
+  if not InRange(X, AbsLeft, AbsRight)
+    or not InRange(Y, AbsTop, AbsBottom) then
+    fHighlightMark := -1;
 end;
 
 
@@ -8994,6 +9227,7 @@ procedure TKMMasterControl.MouseMove(X,Y: Integer; Shift: TShiftState);
 var HintControl: TKMControl;
 begin
   CtrlOver := HitControl(X,Y);
+  fMasterPanel.ControlMouseMove(CtrlOver, X, Y, Shift);
 
   //User is dragging some Ctrl (e.g. scrollbar) and went away from Ctrl bounds
   if (CtrlDown <> nil) and CtrlDown.Visible then

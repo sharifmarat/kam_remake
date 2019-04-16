@@ -40,6 +40,7 @@ type
                                     aState: TKMButtonStateSet; aStyle: TKMButtonStyle; aImageEnabled: Boolean = True);
     class procedure WriteBevel     (aLeft, aTop, aWidth, aHeight: SmallInt; aEdgeAlpha: Single = 1; aBackAlpha: Single = 0.5);
     class procedure WritePercentBar(aLeft, aTop, aWidth, aHeight: SmallInt; aPos: Single; aSeam: Single);
+    class procedure WriteReplayBar (aLeft, aTop, aWidth, aHeight: SmallInt; aPos, aPeacetime, aMaxValue: Integer; aMarks: TList<Integer>; aPattern: Word; aHighlightedMark: Integer = -1);
     class procedure WritePicture   (aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word;
                                     aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0);
     class procedure WritePlot      (aLeft, aTop, aWidth, aHeight: SmallInt; aValues: TKMCardinalArray; aMaxValue: Cardinal;
@@ -372,6 +373,82 @@ begin
       glVertex2f(aWidth-1.5,2.5);
       glVertex2f(2.5,2.5);
       glVertex2f(2.5,aHeight-1.5);
+    glEnd;
+  glPopMatrix;
+end;
+
+
+class procedure TKMRenderUI.WriteReplayBar(aLeft, aTop, aWidth, aHeight: SmallInt; aPos, aPeacetime, aMaxValue: Integer;
+                                           aMarks: TList<Integer>; aPattern: Word; aHighlightedMark: Integer = -1);
+const
+  BAR_COLOR_GREEN: TColor4 = $FF00AA26;
+  BAR_COLOR_BLUE: TColor4 = $FFBBAA00;
+
+  function GetPos(aValue: Integer): Word;
+  begin
+    //At least 2px wide to show up from under the shadow
+    Result := Round((aWidth - 2) * (aValue / aMaxValue)) + 2;
+  end;
+
+  procedure WriteWideLine(aX: Word; aColor: Cardinal; aPattern: Word = $FFFF);
+  begin
+    //Just draw 2 lines...
+    WriteLine(aX,     1, aX    , aHeight - 1, aColor, aPattern);
+    WriteLine(aX + 1, 1, aX + 1, aHeight - 1, aColor, aPattern);
+  end;
+
+var
+  PTPos, Pos: Word;
+  Mark: Integer;
+begin
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+
+  glPushMatrix;
+    glTranslatef(aLeft, aTop, 0);
+
+    WriteBevel(0, 0, aWidth, aHeight);
+
+    PTPos := GetPos(aPeacetime);
+    Pos := GetPos(aPos);
+
+    if aPos < aPeacetime then
+    begin
+      glColor4ubv(@BAR_COLOR_GREEN);
+      glBegin(GL_QUADS);
+        glkRect(1, 1, Pos - 1, aHeight - 1);
+      glEnd;
+
+      //Just draw 2 lines...
+      WriteWideLine(PTPos, icCyan);
+    end
+    else
+    begin
+      glColor4ubv(@BAR_COLOR_GREEN);
+      glBegin(GL_QUADS);
+        glkRect(1, 1, PTPos, aHeight - 1);
+      glEnd;
+
+      glColor4ubv(@BAR_COLOR_BLUE);
+      glBegin(GL_QUADS);
+        glkRect(PTPos, 1, Pos - 1, aHeight - 1);
+      glEnd;
+    end;
+
+    for Mark in aMarks do
+      WriteWideLine(GetPos(Mark), icYellow, aPattern);
+
+    if aHighlightedMark <> -1 then
+      WriteWideLine(GetPos(aHighlightedMark), icOrange);
+
+    //Draw shadow on top and left of the bar, just like real one
+    glColor4f(0, 0, 0, 0.5); //Set semi-transparent black
+    glBegin(GL_LINE_STRIP); //List vertices, order is important
+      glVertex2f(1.5, aHeight - 1.5);
+      glVertex2f(1.5, 1.5);
+      glVertex2f(aWidth - 1.5, 1.5);
+      glVertex2f(aWidth - 1.5, 2.5);
+      glVertex2f(2.5, 2.5);
+      glVertex2f(2.5, aHeight - 1.5);
     glEnd;
   glPopMatrix;
 end;

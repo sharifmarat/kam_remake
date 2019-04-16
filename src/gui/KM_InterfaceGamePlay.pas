@@ -156,6 +156,8 @@ type
     procedure Replay_Single_SetPlayersDropbox;
     procedure Replay_Multi_SetPlayersDropbox;
 
+    procedure ReplayMarkClick(aTick: Integer);
+
     procedure StopPlay(aMsg: TKMGameResultMsg; aPrepareToStopGame: Boolean = True);
     procedure StopGame(const aText: UnicodeString = '');
     procedure ShowMPStats;
@@ -198,18 +200,15 @@ type
     Panel_Stats: TKMPanel;
 
     Panel_ReplayCtrl: TKMPanel; // Smaller Panel to contain replay controls
-      PercentBar_Replay: TKMPercentBar;
+      ReplayBar_Replay: TKMReplayBar;
       Label_Replay: TKMLabel;
       Button_ReplayRestart: TKMButton;
       Button_ReplayPause: TKMButton;
       Button_ReplayStep: TKMButton;
       Button_ReplayResume: TKMButton;
       Button_ReplayExit: TKMButton;
+      Button_ReplaySaveAt: TKMButton;
       Button_ShowStatsReplay: TKMButton;
-    Panel_LoadReplay: TKMPanel;
-      Button_ReplaySave: TKMButton;
-      Button_ReplayLoad: TKMButton;
-      Dropbox_ReplayLoad: TKMDropList;
 
     Panel_ReplayFOW: TKMPanel;
       Button_ShowStatsSpec: TKMButton;
@@ -338,6 +337,7 @@ type
 
 implementation
 uses
+  Generics.Collections,
   KM_Main, KM_GameInputProcess, KM_GameInputProcess_Multi, KM_AI, KM_RenderUI, KM_GameCursor, KM_Maps,
   KM_HandsCollection, KM_Hand, KM_RenderPool, KM_ResTexts, KM_Game, KM_GameApp, KM_HouseBarracks, KM_HouseTownHall,
   KM_Utils, KM_ScriptingEvents,
@@ -1023,34 +1023,42 @@ end;
 
 procedure TKMGamePlayInterface.Create_Replay;
 begin
-  Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8, 160, 60);
-    PercentBar_Replay       := TKMPercentBar.Create(Panel_ReplayCtrl, 0, 0, 180, 20);
+  Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8, 160, 65);
+    ReplayBar_Replay       := TKMReplayBar.Create(Panel_ReplayCtrl, 0, 0, 400, 25);
     Label_Replay            := TKMLabel.Create(Panel_ReplayCtrl,  80,  2, NO_TEXT, fntGrey, taCenter);
-    Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 24, 24, 24, 582, rxGui, bsGame);
-    Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 24, 24, 24, 583, rxGui, bsGame);
-    Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 24, 24, 24, 584, rxGui, bsGame);
-    Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 24, 24, 24, 585, rxGui, bsGame);
-    Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 24, 24, 24, 586, rxGui, bsGame);
-    Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl,PercentBar_Replay.Right - 24, 24, 24, 24, 669, rxGui, bsGame);
+    Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 29, 24, 24, 582, rxGui, bsGame);
+    Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 29, 24, 24, 583, rxGui, bsGame);
+    Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 29, 24, 24, 584, rxGui, bsGame);
+    Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 29, 24, 24, 585, rxGui, bsGame);
+    Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 29, 24, 24, 586, rxGui, bsGame);
+    Button_ReplaySaveAt       := TKMButton.Create(Panel_ReplayCtrl,150, 29, 24, 24, 592, rxGui, bsGame);
+
+    Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl,ReplayBar_Replay.Right - 24, 29, 24, 24, 669, rxGui, bsGame);
     //TODO: Button_ReplayFF       := TKMButton.Create(Panel_ReplayCtrl,125, 24, 24, 24, 393, rxGui, bsGame);
     Button_ReplayRestart.OnClick := ReplayClick;
     Button_ReplayPause.OnClick   := ReplayClick;
     Button_ReplayStep.OnClick    := ReplayClick;
     Button_ReplayResume.OnClick  := ReplayClick;
     Button_ReplayExit.OnClick    := ReplayClick;
+    Button_ReplaySaveAt.OnClick  := ReplayClick;
     Button_ReplayRestart.Hint := gResTexts[TX_REPLAY_RESTART];
     Button_ReplayPause.Hint   := gResTexts[TX_REPLAY_PAUSE];
     Button_ReplayStep.Hint    := gResTexts[TX_REPLAY_STEP];
     Button_ReplayResume.Hint  := gResTexts[TX_REPLAY_RESUME];
     Button_ReplayExit.Hint    := gResTexts[TX_REPLAY_QUIT];
+    Button_ReplaySaveAt.Hint  := gResTexts[TX_REPLAY_SAVE_AT];
+
+    ReplayBar_Replay.OnMarkClick := ReplayMarkClick;
+    ReplayBar_Replay.HintResText := TX_REPLAY_LOAD_AT_HINT;
 
     Button_ShowStatsReplay.OnClick := ShowStats;
     Button_ShowStatsReplay.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
 
     Button_ReplayStep.Disable; // Initial state
     Button_ReplayResume.Disable; // Initial state
+    Button_ReplayRestart.Hide;
 
-  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
+  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 61, 220, 39);
     Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 11, 22, 22, 669, rxGui, bsGame);
     Button_ShowStatsSpec.OnClick := ShowStats;
     Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
@@ -1070,23 +1078,6 @@ begin
     Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
     Dropbox_ReplayFOW.List.SeparatorHeight := 4;
     Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
-
-  Panel_LoadReplay := TKMPanel.Create(Panel_Main, 550, 8, 160, 60);
-    Button_ReplaySave    := TKMButton.Create(Panel_LoadReplay,0, 24, 75, 24, 586, rxGui, bsGame);
-    Button_ReplayLoad    := TKMButton.Create(Panel_LoadReplay,85, 24, 75, 24, 586, rxGui, bsGame);
-    Button_ReplaySave.OnClick := ReplayClick;
-    Button_ReplayLoad.OnClick := ReplayClick;
-    //Button_ReplaySave.Hint := gResTexts[TX_REPLAY_QUIT];
-    //Button_ReplayLoad.Hint := gResTexts[TX_REPLAY_QUIT];
-
-    Dropbox_ReplayLoad := TKMDropList.Create(Panel_LoadReplay, 0, 50, 180, 20, fntMetal, '', bsGame, False, 0.5);
-    //Dropbox_ReplayLoad.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
-    //Dropbox_ReplayLoad.OnChange := ReplayClick;
-    //Dropbox_ReplayLoad.DropCount := 50;
-    Dropbox_ReplayLoad.List.AutoFocusable := False;
-    //Dropbox_ReplayLoad.List.OnKeyUp := Replay_ListKeyUp;
-    Dropbox_ReplayLoad.List.SeparatorHeight := 4;
-    Dropbox_ReplayLoad.List.SeparatorColor := $C0606060;
  end;
 
 
@@ -1850,7 +1841,6 @@ procedure TKMGamePlayInterface.ReplayClick(Sender: TObject);
 var
   oldCenter: TKMPointF;
   oldZoom: Single;
-  K: Integer;
 begin
   if Sender = Button_ReplayRestart then
   begin
@@ -1891,24 +1881,11 @@ begin
     SetButtons(True);
   end;
 
-  if Sender = Button_ReplaySave then
+  if Sender = Button_ReplaySaveAt then
   begin
     gGame.SaveReplay();
     if (gGame.SavedReplays <> nil) then
-    begin
-      K := gGame.SavedReplays.Count - 1;
-      Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
-    end;
-  end;
-
-  if Sender = Button_ReplayLoad then
-  begin
-    if (Dropbox_ReplayLoad.Count > 0) AND (Dropbox_ReplayLoad.ItemIndex >= 0) then
-    begin
-      gGameApp.LoadSavedReplay( Dropbox_ReplayLoad.ItemIndex );
-      for K := 0 to gGame.SavedReplays.Count - 1 do
-        Dropbox_ReplayLoad.Add( 'Tick: ' + gGame.SavedReplays.Replay[K].Name, K+1 );
-    end;
+      ReplayBar_Replay.AddMark(gGame.GameTickCount);
   end;
 
   if Sender = Dropbox_ReplayFOW then
@@ -2176,6 +2153,33 @@ begin
 end;
 
 
+procedure TKMGamePlayInterface.ReplayMarkClick(aTick: Integer);
+var
+  TicksList: TList<Cardinal>;
+  Tick: Cardinal;
+begin
+  Assert(aTick >= 0, 'Tick should be >= 0');
+
+//  if aTick = 0 then
+//    ReplayClick(Button_ReplayRestart)
+//  else
+  if not gGameApp.TryLoadSavedReplay( aTick ) then
+    Exit;
+
+  if gGame.SavedReplays <> nil then
+  begin
+    TicksList := Tlist<Cardinal>.Create;
+    try
+      gGame.SavedReplays.FillTicks(TicksList);
+      for Tick in TicksList do
+        ReplayBar_Replay.AddMark(Tick);
+    finally
+      FreeAndNil(TicksList);
+    end;
+  end;
+end;
+
+
 procedure TKMGamePlayInterface.Replay_Multi_SetPlayersDropbox;
 var
   Teams: TKMByteSetArray;
@@ -2300,7 +2304,7 @@ begin
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
   Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 56);
-  Panel_LoadReplay.Visible := fUIMode = umReplay;
+//  Panel_LoadReplay.Visible := fUIMode = umReplay;
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
   CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
@@ -3920,10 +3924,14 @@ begin
   if fUIMode = umReplay then
   begin
     // Replays can continue after end, keep the bar in 0..1 range
-    PercentBar_Replay.Seam := Min(gGame.GameOptions.Peacetime * 600 / Max(gGame.GameInputProcess.GetLastTick,1), 1);
-    PercentBar_Replay.Position := Min(gGame.GameTickCount / Max(gGame.GameInputProcess.GetLastTick,1), 1);
+//    PercentBar_Replay.Seam := Min(gGame.GameOptions.Peacetime * 600 / Max(gGame.GameInputProcess.GetLastTick,1), 1);
+
+    ReplayBar_Replay.SetParameters(gGame.GameTickCount,
+                                    gGame.GameOptions.Peacetime,
+                                    Max(gGame.GameInputProcess.GetLastTick, gGame.GameTickCount));
+
     Label_Replay.Caption := TimeToString(gGame.MissionTime) + ' / ' +
-                            TimeToString(gGame.GameInputProcess.GetLastTick/24/60/60/10);
+                            TickToTimeStr(gGame.GameInputProcess.GetLastTick);
   end;
 
   // Update speedup clocks
