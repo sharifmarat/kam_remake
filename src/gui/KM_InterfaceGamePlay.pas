@@ -3924,8 +3924,6 @@ begin
   if fUIMode = umReplay then
   begin
     // Replays can continue after end, keep the bar in 0..1 range
-//    PercentBar_Replay.Seam := Min(gGame.GameOptions.Peacetime * 600 / Max(gGame.GameInputProcess.GetLastTick,1), 1);
-
     ReplayBar_Replay.SetParameters(gGame.GameTickCount,
                                     gGame.GameOptions.Peacetime,
                                     Max(gGame.GameInputProcess.GetLastTick, gGame.GameTickCount));
@@ -3945,12 +3943,15 @@ begin
       Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTickCount);
   end;
 
-
   // Keep on updating these menu pages as game data keeps on changing
-  if fGuiGameBuild.Visible then fGuiGameBuild.UpdateState;
-  if fGuiGameRatios.Visible and (fUIMode in [umReplay, umSpectate]) then fGuiGameRatios.UpdateState;
-  if fGuiGameStats.Visible then fGuiGameStats.UpdateState;
-  if Panel_Menu.Visible then Menu_Update;
+  if fGuiGameBuild.Visible then
+    fGuiGameBuild.UpdateState;
+  if fGuiGameRatios.Visible and (fUIMode in [umReplay, umSpectate]) then
+    fGuiGameRatios.UpdateState;
+  if fGuiGameStats.Visible then
+    fGuiGameStats.UpdateState;
+  if Panel_Menu.Visible then
+    Menu_Update;
 
   // Update message stack
   // Flash unread message display
@@ -4036,7 +4037,6 @@ end;
 
 procedure TKMGamePlayInterface.UpdateDebugInfo;
 var
-//  I: Integer;
   mKind: TKMessageKind;
   Received, Sent, RTotal, STotal, Period: Cardinal;
   S, SPackets, S2: String;
@@ -4062,12 +4062,6 @@ begin
 
   if DISPLAY_SOUNDS then
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
-
-  // Temporary inteface (by @Crow)
-  //if SHOW_ARMYEVALS then
-  //  for I := 0 to gHands.Count - 1 do
-  //  if I <> gMySpectator.HandIndex then
-  //    S := S + Format('Enemy %d: %f|', [I, RoundTo(gMySpectator.Hand.ArmyEval.Evaluations[I].Power, -3)]);
 
   if SHOW_AI_WARE_BALANCE then
   begin
