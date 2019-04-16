@@ -843,6 +843,7 @@ begin
 end;
 
 
+//Used by Runner util
 procedure TKMGameApp.NewEmptyMap(aSizeX, aSizeY: Integer);
 begin
   LoadGameFromScratch(aSizeX, aSizeY, gmSingle);
@@ -1073,7 +1074,8 @@ begin
         fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
 
-  if gMain.Settings.IsNoRenerMaxTimeSet
+  if (gMain <> nil) //Could be nil for Runner Util
+    and gMain.Settings.IsNoRenerMaxTimeSet
     and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
     Render;
 end;
