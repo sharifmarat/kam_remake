@@ -154,13 +154,16 @@ destructor TKMTaskDeliver.Destroy;
 begin
   gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' abandoned delivery task ' + IntToStr(fDeliverID) + ' at phase ' + IntToStr(fPhase));
 
-  if fDeliverID <> 0 then
-    gHands[fUnit.Owner].Deliveries.Queue.AbandonDelivery(fDeliverID);
-
-  if TKMUnitSerf(fUnit).Carry <> wtNone then
+  if fUnit <> nil then
   begin
-    gHands[fUnit.Owner].Stats.WareConsumed(TKMUnitSerf(fUnit).Carry);
-    TKMUnitSerf(fUnit).CarryTake; //empty hands
+    if fDeliverID <> 0 then
+      gHands[fUnit.Owner].Deliveries.Queue.AbandonDelivery(fDeliverID);
+
+    if TKMUnitSerf(fUnit).Carry <> wtNone then
+    begin
+      gHands[fUnit.Owner].Stats.WareConsumed(TKMUnitSerf(fUnit).Carry);
+      TKMUnitSerf(fUnit).CarryTake; //empty hands
+    end;
   end;
 
   gHands.CleanUpHousePointer(fFrom);

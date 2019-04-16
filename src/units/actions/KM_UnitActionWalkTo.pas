@@ -296,7 +296,8 @@ begin
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
     DecVertex;
 
-  fUnit.IsExchanging := false;
+  if fUnit <> nil then
+    fUnit.IsExchanging := false;
 
   gHands.CleanUpUnitPointer(fTargetUnit);
   gHands.CleanUpHousePointer(fTargetHouse);
