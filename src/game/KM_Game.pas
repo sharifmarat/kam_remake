@@ -122,7 +122,7 @@ type
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
     procedure LoadGameStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
     procedure Load(const aPathName: UnicodeString);
-    procedure LoadSavedReplay(aIdx: Integer; aSaveFile: UnicodeString);
+    procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
     procedure AfterLoad;
 
     function MapSizeInfo: UnicodeString;
@@ -1724,7 +1724,7 @@ begin
   if (fSavedReplays = nil) then
     fSavedReplays := TKMSavedReplays.Create();
 
-  fSavedReplays.NewSave(SaveStream,IntToStr(fGameTickCount));
+  fSavedReplays.NewSave(SaveStream, fGameTickCount);
 
   gLog.AddTime('Saving replay end');
 end;
@@ -1865,9 +1865,6 @@ end;
 procedure TKMGame.Load(const aPathName: UnicodeString);
 var
   LoadStream: TKMemoryStream;
-  GameInfo: TKMGameInfo;
-  LoadedSeed: LongInt;
-  SaveIsMultiplayer, IsCampaign: Boolean;
 begin
   fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
@@ -1893,16 +1890,16 @@ begin
 end;
 
 
-procedure TKMGame.LoadSavedReplay(aIdx: Integer; aSaveFile: UnicodeString);
+procedure TKMGame.LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
 var
   LoadStream: TKMemoryStream;
 begin
   gLog.AddTime('Loading replay from save');
   fSaveFile := aSaveFile;
 
-  if (fSavedReplays.Count > aIdx) then
+  if fSavedReplays.Contains(aTick) then
   begin
-    LoadStream := fSavedReplays[aIdx];
+    LoadStream := fSavedReplays[aTick];
     LoadStream.Position := 0;
     LoadGameStream(LoadStream, True);
     fGameInputProcess.Load(LoadStream);

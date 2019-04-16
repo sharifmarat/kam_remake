@@ -51,10 +51,12 @@ begin
 
     while (fCursor <= Count) and (aTick = fQueue[fCursor].Tick) do //Could be several commands in one Tick
     begin
-      if (fQueue[fCursor].Command.CommandType = gicGameAutoSave) then // Maybe also gicGameAutoSaveAfterPT and gicGameSaveReturnLobby
+      //Call to KaMRandom, just like in StoreCommand
+      //We did not generate random checks for those commands
+      if SKIP_RNG_CHECKS_FOR_SOME_GIC and (fQueue[fCursor].Command.CommandType in SkipRandomChecksFor) then
         MyRand := 0
       else
-        MyRand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer 2')); //Just like in StoreCommand
+        MyRand := Cardinal(KaMRandom(MaxInt, 'TKMGameInputProcess_Single.ReplayTimer 2'));
       ExecCommand(fQueue[fCursor].Command);
       //CRC check after the command
       if CRASH_ON_REPLAY and (fQueue[fCursor].Rand <> MyRand) then //Should always be called to maintain randoms flow

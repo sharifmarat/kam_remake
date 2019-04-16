@@ -116,9 +116,11 @@ type
     chkShowGameTick: TCheckBox;
     chkSkipRender: TCheckBox;
     chkSkipSound: TCheckBox;
+    chkUIDs: TCheckBox;
     chkShowSoil: TCheckBox;
     chkShowFlatArea: TCheckBox;
     chkShowEyeRoutes: TCheckBox;
+    chkSelectedObjInfo: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -176,6 +178,7 @@ type
     fMissionDefOpenPath: UnicodeString;
     procedure FormKeyDownProc(aKey: Word; aShift: TShiftState);
     procedure FormKeyUpProc(aKey: Word; aShift: TShiftState);
+    function ConfirmExport: Boolean;
     {$IFDEF MSWindows}
     function GetWindowParams: TKMWindowParamsRecord;
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -211,6 +214,7 @@ uses
   //Use these units directly to avoid pass-through methods in fMain
   KM_Resource,
   KM_ResSprites,
+  KM_ResTexts,
   KM_GameApp,
   KM_HandsCollection,
   KM_ResSound,
@@ -465,17 +469,20 @@ end;
 //Exports
 procedure TFormMain.Export_TreesRXClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxTrees);
+  if ConfirmExport then
+    gRes.Sprites.ExportToPNG(rxTrees);
 end;
 
 procedure TFormMain.Export_HousesRXClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxHouses);
+  if ConfirmExport then
+    gRes.Sprites.ExportToPNG(rxHouses);
 end;
 
 procedure TFormMain.Export_UnitsRXClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxUnits);
+  if ConfirmExport then
+    gRes.Sprites.ExportToPNG(rxUnits);
 end;
 
 procedure TFormMain.Export_ScriptDataClick(Sender: TObject);
@@ -487,12 +494,14 @@ end;
 
 procedure TFormMain.Export_GUIClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxGUI);
+  if ConfirmExport then
+    gRes.Sprites.ExportToPNG(rxGUI);
 end;
 
 procedure TFormMain.Export_GUIMainRXClick(Sender: TObject);
 begin
-  gRes.Sprites.ExportToPNG(rxGUIMain);
+  if ConfirmExport then
+    gRes.Sprites.ExportToPNG(rxGUIMain);
 end;
 
 procedure TFormMain.Export_CustomClick(Sender: TObject);
@@ -512,12 +521,14 @@ end;
 
 procedure TFormMain.Export_TreeAnim1Click(Sender: TObject);
 begin
-  gRes.ExportTreeAnim;
+  if ConfirmExport then
+    gRes.ExportTreeAnim;
 end;
 
 procedure TFormMain.Export_HouseAnim1Click(Sender: TObject);
 begin
-  gRes.ExportHouseAnim;
+  if ConfirmExport then
+    gRes.ExportHouseAnim;
 end;
 
 
@@ -587,7 +598,8 @@ end;
 
 procedure TFormMain.SoldiersClick(Sender: TObject);
 begin
-  gRes.ExportUnitAnim(WARRIOR_MIN, WARRIOR_MAX);
+  if ConfirmExport then
+    gRes.ExportUnitAnim(WARRIOR_MIN, WARRIOR_MAX);
 end;
 
 
@@ -620,7 +632,8 @@ end;
 
 procedure TFormMain.Civilians1Click(Sender: TObject);
 begin
-  gRes.ExportUnitAnim(CITIZEN_MIN, CITIZEN_MAX);
+  if ConfirmExport then
+    gRes.ExportUnitAnim(CITIZEN_MIN, CITIZEN_MAX);
 end;
 
 
@@ -644,6 +657,9 @@ procedure TFormMain.ControlsReset;
         ResetGroupBox(TGroupBox(aBox.Controls[I]));
   end;
 begin
+  if not RESET_DEBUG_CONTROLS then
+    Exit;
+
   fUpdating := True;
   ResetGroupBox(GroupBox1);
 
@@ -734,6 +750,8 @@ begin
     SHOW_UNIT_ROUTES := chkShowRoutes.Checked;
     SHOW_SEL_BUFFER := chkSelectionBuffer.Checked;
     SHOW_GAME_TICK := chkShowGameTick.Checked;
+    SHOW_UIDs := chkUIDs.Checked;
+    SHOW_SELECTED_OBJ_INFO := chkSelectedObjInfo.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;
@@ -875,7 +893,17 @@ end;
 
 procedure TFormMain.UnitAnim_AllClick(Sender: TObject);
 begin
-  gRes.ExportUnitAnim(UNIT_MIN, UNIT_MAX, True);
+  if ConfirmExport then
+    gRes.ExportUnitAnim(UNIT_MIN, UNIT_MAX, True);
+end;
+
+
+function TFormMain.ConfirmExport: Boolean;
+begin
+  case MessageDlg(Format(gResTexts[TX_FORM_EXPORT_CONFIRM_MSG], [ExeDir + 'Export']), mtWarning, [mbYes, mbNo], 0) of
+    mrYes:  Result := True;
+    else    Result := False;
+  end;
 end;
 
 

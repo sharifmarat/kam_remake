@@ -420,6 +420,8 @@ TX_REPLAY_RESUME = 360; //Resume paused replay
 TX_REPLAY_QUIT = 361; //Quit replay
 TX_REPLAY_PLAYER_PERSPECTIVE = 362; //Toggle individual player perspective
 TX_REPLAY_SHOW_FOG = 771; //Show fog
+TX_REPLAY_SAVE_AT = 1247; //Save game state to be able to load while watching this replay
+TX_REPLAY_LOAD_AT_HINT = 1248; //Load replay at %s
 
 TX_HOUSES_MARKET_SELECT_LEFT = 364; //Use the left mouse button to select the ware to trade
 TX_HOUSES_MARKET_SELECT_RIGHT = 365; //Use the right mouse button to select the ware to trade
@@ -1271,3 +1273,5 @@ TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1243; //Error while calling script command
 TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
 TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable chat history and copy-paste from chat window
+
+TX_FORM_EXPORT_CONFIRM_MSG = 1246; //Data export could take up to several minutes.\nExported data will be stored in %s folder.\nDo you confirm operation?

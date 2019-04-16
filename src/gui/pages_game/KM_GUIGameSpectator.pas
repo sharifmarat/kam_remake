@@ -547,7 +547,8 @@ function TKMGUIGameSpectatorItemLineConstructing.GetVerifyHouseSketchFn: TAnonHo
 begin
   Result := function(aSketch: TKMHouseSketch): Boolean
     begin
-      Result := not (aSketch is TKMHouse) or not TKMHouse(aSketch).IsComplete;
+      Result := (aSketch <> nil)
+                and (not (aSketch is TKMHouse) or not TKMHouse(aSketch).IsComplete);
     end;
 end;
 

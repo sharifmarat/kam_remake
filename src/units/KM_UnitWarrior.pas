@@ -113,7 +113,8 @@ type
 
     procedure SetActionGoIn(aAction: TKMUnitActionType; aGoDir: TKMGoInDirection; aHouse: TKMHouse); override;
 
-    function ObjToString: String; override;
+    function ObjToStringShort(aSeparator: String = '|'): String; override;
+    function ObjToString(aSeparator: String = '|'): String; override;
 
     procedure Save(SaveStream: TKMemoryStream); override;
     function UpdateState: Boolean; override;
@@ -844,13 +845,21 @@ begin
                       
                       attackHouseProc := function: Boolean
                       begin
-                        FreeAndNil(fTask); //e.g. TaskAttackHouse
-                        fTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
-                        fOrder := woAttackHouse;
-                        fOrderLoc := CurrPosition; //Once the house is destroyed we will position where we are standing
-                        fNextOrder := woNone;
                         Result := False; //need to Free old action
-                      end; 
+
+                        FreeAndNil(fTask); //e.g. TaskAttackHouse
+                        fNextOrder := woNone;
+
+                        //If house is destroyed or OrderHouseTarget was cleared by some other Order
+                        // then no need to start task (will get Access violation error)
+                        if GetOrderHouseTarget <> nil then
+                        begin
+                          fTask := TKMTaskAttackHouse.Create(Self, GetOrderHouseTarget);
+                          fOrder := woAttackHouse;
+                          fOrderLoc := CurrPosition; //Once the house is destroyed we will position where we are standing
+                        end else
+                          fOrder := woNone;
+                      end;
                         
                       //Abandon walk so we can take attack house
                       if (Action is TKMUnitActionWalkTo)
@@ -872,7 +881,7 @@ begin
                         SetActionStorm(fStormDelay);
                         fNextOrder := woNone;
                         fOrder := woStorm;
-                        Result := True; //No need to Free newly created action action
+                        Result := True; //No need to Free newly created action
                       end;
                       
                       //Abandon walk so we can take attack house or storm attack order
@@ -942,7 +951,21 @@ begin
 end;}
 
 
-function TKMUnitWarrior.ObjToString: String;
+function TKMUnitWarrior.ObjToStringShort(aSeparator: String = '|'): String;
+begin
+  Result := inherited ObjToStringShort(aSeparator) +
+            Format('%sWarriorOrder = %s%sNextOrder = %s%sNextOrderForced = %s%sOrderLoc = %s%sHasOrderTargetUnit = [%s]%sHasOrderTargetHouse = [%s]',
+                   [aSeparator,
+                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fOrder)), aSeparator,
+                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fNextOrder)), aSeparator,
+                    BoolToStr(fNextOrderForced, True), aSeparator,
+                    TypeToString(fOrderLoc), aSeparator,
+                    BoolToStr(fOrderTargetUnit <> nil, True), aSeparator,
+                    BoolToStr(fOrderTargetHouse <> nil, True)]);
+end;
+
+
+function TKMUnitWarrior.ObjToString(aSeparator: String = '|'): String;
 var
   UnitStr,HouseStr,GroupStr: String;
 begin
@@ -951,7 +974,7 @@ begin
   HouseStr := 'nil';
 
   if fGroup <> nil then
-    GroupStr := TKMUnitGroup(fGroup).ObjToString;
+    GroupStr := TKMUnitGroup(fGroup).ObjToString(aSeparator);
 
   if fOrderTargetUnit <> nil then
     UnitStr := fOrderTargetUnit.ObjToStringShort('; ');
@@ -959,15 +982,16 @@ begin
   if fOrderTargetHouse <> nil then
     HouseStr := fOrderTargetHouse.ObjToStringShort('; ');
 
-  Result := inherited ObjToString +
-            Format('|WarriorOrder = %s|NextOrder = %s|NextOrderForced = %s|OrderLoc = %s|OrderTargetUnit = [%s]|OrderTargetHouse = [%s]|Group = |%s',
-                   [GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fOrder)),
-                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fNextOrder)),
-                    BoolToStr(fNextOrderForced, True),
-                    TypeToString(fOrderLoc),
-                    UnitStr,
-                    HouseStr,
-                    GroupStr]);
+  Result := inherited ObjToString(aSeparator) +
+            Format('%sWarriorOrder = %s%sNextOrder = %s%sNextOrderForced = %s%sOrderLoc = %s%sOrderTargetUnit = [%s]%sOrderTargetHouse = [%s]%sGroup = %s%s',
+                   [aSeparator,
+                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fOrder)), aSeparator,
+                    GetEnumName(TypeInfo(TKMWarriorOrder), Integer(fNextOrder)), aSeparator,
+                    BoolToStr(fNextOrderForced, True), aSeparator,
+                    TypeToString(fOrderLoc), aSeparator,
+                    UnitStr, aSeparator,
+                    HouseStr, aSeparator,
+                    GroupStr, aSeparator]);
 end;
 
 

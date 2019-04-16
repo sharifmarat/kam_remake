@@ -590,6 +590,8 @@ var
   begin
     aHouseSketchTmp.Clear;
 
+    Sketch2Verify := nil;
+
     if (hstHouse in aSketchTypesSet) and (aIndex < fHouses.Count) then
     begin
       FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex]);
