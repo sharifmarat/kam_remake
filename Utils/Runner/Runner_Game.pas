@@ -920,7 +920,8 @@ var
 begin
   //Total amount of stone = 4140
   gTerrain := TKMTerrain.Create;
-  gTerrain.LoadFromFile(ExeDir + 'Maps\StoneMines\StoneMines.map', False);
+//  gTerrain.LoadFromFile(ExeDir + 'Maps\StoneMines\StoneMines.map', False);
+  gTerrain.LoadFromFile(ExeDir + 'Maps\StoneMinesTest\StoneMinesTest.map', False);
 
   SetKaMSeed(aRun+1);
 
