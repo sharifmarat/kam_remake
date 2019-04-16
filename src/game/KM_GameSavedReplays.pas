@@ -2,7 +2,8 @@ unit KM_GameSavedReplays;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_CommonClasses, Generics.Collections;
+  Generics.Collections,
+  KM_CommonClasses;
 
 type
   TKMSavedReplay = class
@@ -21,6 +22,8 @@ type
   TKMSavedReplays = class
   private
     fReplaySaves: TDictionary<Cardinal, TKMSavedReplay>;
+    //Properties to restore after load saved replay
+    fLastTick: Cardinal;
 
     function GetCount(): Integer;
     function GetSave(aTick: Cardinal): TKMSavedReplay;
@@ -28,6 +31,8 @@ type
   public
     constructor Create();
     destructor Destroy; override;
+
+    property LastTick: Cardinal read fLastTick write fLastTick;
 
     property Count: Integer read GetCount;
     property Replay[aTick: Cardinal]: TKMSavedReplay read GetSave;
@@ -47,6 +52,7 @@ uses
 constructor TKMSavedReplays.Create();
 begin
   fReplaySaves := TDictionary<Cardinal, TKMSavedReplay>.Create();
+  fLastTick := 0;
 end;
 
 

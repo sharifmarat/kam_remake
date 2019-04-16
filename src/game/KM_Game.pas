@@ -139,7 +139,7 @@ type
 
     procedure AutoSave(aTimestamp: TDateTime);
     procedure AutoSaveAfterPT(aTimestamp: TDateTime);
-    procedure SaveReplay();
+    procedure SaveReplayToMemory();
     procedure SaveMapEditor(const aPathName: UnicodeString); overload;
     procedure SaveMapEditor(const aPathName: UnicodeString; const aInsetRect: TKMRect); overload;
     procedure RestartReplay; //Restart the replay but keep current viewport position/zoom
@@ -277,7 +277,9 @@ begin
   fBlockGetPointer := False;
   fLastTimeUserAction := TimeGet;
   fLastAfkMessageSent := 0;
-  fSavedReplays := nil;
+
+  if fGameMode in [gmReplaySingle, gmReplayMulti] then
+    fSavedReplays := TKMSavedReplays.Create();
 
   fMapTxtInfo := TKMMapTxtInfo.Create;
 
@@ -354,7 +356,8 @@ begin
   FreeAndNil(fScripting);
   FreeAndNil(gScriptSounds);
   FreeAndNil(fMapTxtInfo);
-  fSavedReplays.Free;
+  if fSavedReplays <> nil then
+    FreeAndNil(fSavedReplays);
 
   FreeThenNil(fGamePlayInterface);
   FreeThenNil(fMapEditorInterface);
@@ -1708,11 +1711,14 @@ end;
 
 
 // Save replay
-procedure TKMGame.SaveReplay();
+procedure TKMGame.SaveReplayToMemory();
 var
   SaveStream: TKMemoryStream;
   DateTimeParam: TDateTime;
 begin
+  if fSavedReplays.Contains(fGameTickCount) then //No need to save twice on the same tick
+    Exit;
+
   gLog.AddTime('Saving replay start');
 
   DateTimeParam := 0; // Date is not important
@@ -1721,8 +1727,6 @@ begin
 
   SaveStream := SaveGameStream('', DateTimeParam, '', True);
   fGameInputProcess.Save(SaveStream);
-  if (fSavedReplays = nil) then
-    fSavedReplays := TKMSavedReplays.Create();
 
   fSavedReplays.NewSave(SaveStream, fGameTickCount);
 
@@ -2184,6 +2188,21 @@ begin
                       begin
                         IncGameTick;
 
+                        //Only increase LastTick, since we could load earlier game state
+                        fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTickCount);
+
+                        //Save replay to memory (to be able to load it later)
+                        if gGameApp.GameSettings.ReplayAutosave
+                          and (
+                            (fGameTickCount = 1)//First tick
+                            or (fGameTickCount = (fGameOptions.Peacetime*60*10)) //At PT end
+                            or ((fGameTickCount mod gGameApp.GameSettings.ReplayAutosaveFrequency) = 0)) then
+                        begin
+                          SaveReplayToMemory;
+                          if fGamePlayInterface <> nil then
+                            fGamePlayInterface.ReplaySaved;
+                        end;
+
                         fScripting.UpdateState;
                         UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                         gTerrain.UpdateState;
@@ -2249,6 +2268,8 @@ begin
   if not fIsPaused then
   begin
     fActiveInterface.UpdateState(aGlobalTickCount);
+
+    //Notify about player being AFK
     if (gGame.GameMode = gmMulti) //Only for MP game players, not specs
       and (GetTimeSince(fLastTimeUserAction) > PLAYER_AFK_TIME*60*1000)
       and (GetTimeSince(fLastAfkMessageSent) > PLAYER_AFK_MESSAGE_DELAY) then

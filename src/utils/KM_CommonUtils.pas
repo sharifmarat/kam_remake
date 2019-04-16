@@ -23,6 +23,9 @@ uses
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function Max3(const A,B,C: Integer): Integer;
+  function Min3(const A,B,C: Integer): Integer;
+
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
@@ -541,6 +544,18 @@ end;
 function FixDelim(const aString: UnicodeString): UnicodeString;
 begin
   Result := StringReplace(aString, '\', PathDelim, [rfReplaceAll, rfIgnoreCase]);
+end;
+
+
+function Max3(const A,B,C: Integer): Integer;
+begin
+  Result := Max(A, Max(B, C));
+end;
+
+
+function Min3(const A,B,C: Integer): Integer;
+begin
+  Result := Min(A, Min(B, C));
 end;
 
 
