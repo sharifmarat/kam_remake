@@ -1946,7 +1946,7 @@ begin
       fGamePlayInterface.LoadHotkeysFromHand;
   end;
 
-  if fGameMode = gmReplaySingle then
+  if IsReplay then
     //SP Replay need to set screen position
     fActiveInterface.SyncUIView(KMPointF(gMySpectator.Hand.CenterScreen));
 
