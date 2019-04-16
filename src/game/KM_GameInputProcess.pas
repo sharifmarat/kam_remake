@@ -688,7 +688,7 @@ begin
     if not (aCommand.CommandType in AllowedInCinematic) and (P.InCinematic) then
       Exit;
 
-    if gLog.CanLogCommands() then
+    if (gLog <> nil) and gLog.CanLogCommands() then
       gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
 
     case CommandType of
