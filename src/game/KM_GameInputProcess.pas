@@ -1186,6 +1186,7 @@ end;
 procedure TKMGameInputProcess.SaveExtra(aStream: TKMemoryStream);
 begin
   aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
+  aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
 end;
 
 
@@ -1193,6 +1194,7 @@ procedure TKMGameInputProcess.LoadExtra(aStream: TKMemoryStream);
 var
   Tmp: Cardinal;
 begin
+  aStream.Read(Tmp); //Just read some bytes from the stream
   aStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
 end;
