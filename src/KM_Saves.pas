@@ -34,7 +34,7 @@ type
     constructor Create(const aName: String; aIsMultiplayer: Boolean);
     destructor Destroy; override;
 
-    property Info: TKMGameInfo read fGameInfo;
+    property GameInfo: TKMGameInfo read fGameInfo;
     property GameOptions: TKMGameOptions read fGameOptions;
     property Path: string read fPath;
     property FileName: string read fFileName;
@@ -427,16 +427,16 @@ var TempSaves: array of TKMSaveInfo;
     case fSortMethod of
       smByFileNameAsc:     Result := CompareText(A.FileName, B.FileName) < 0;
       smByFileNameDesc:    Result := CompareText(A.FileName, B.FileName) > 0;
-      smByDescriptionAsc:  Result := CompareText(A.Info.GetTitleWithTime, B.Info.GetTitleWithTime) < 0;
-      smByDescriptionDesc: Result := CompareText(A.Info.GetTitleWithTime, B.Info.GetTitleWithTime) > 0;
-      smByTimeAsc:         Result := A.Info.TickCount < B.Info.TickCount;
-      smByTimeDesc:        Result := A.Info.TickCount > B.Info.TickCount;
-      smByDateAsc:         Result := A.Info.SaveTimestamp > B.Info.SaveTimestamp;
-      smByDateDesc:        Result := A.Info.SaveTimestamp < B.Info.SaveTimestamp;
-      smByPlayerCountAsc:  Result := A.Info.PlayerCount < B.Info.PlayerCount;
-      smByPlayerCountDesc: Result := A.Info.PlayerCount > B.Info.PlayerCount;
-      smByModeAsc:         Result := A.Info.MissionMode < B.Info.MissionMode;
-      smByModeDesc:        Result := A.Info.MissionMode > B.Info.MissionMode;
+      smByDescriptionAsc:  Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) < 0;
+      smByDescriptionDesc: Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) > 0;
+      smByTimeAsc:         Result := A.GameInfo.TickCount < B.GameInfo.TickCount;
+      smByTimeDesc:        Result := A.GameInfo.TickCount > B.GameInfo.TickCount;
+      smByDateAsc:         Result := A.GameInfo.SaveTimestamp > B.GameInfo.SaveTimestamp;
+      smByDateDesc:        Result := A.GameInfo.SaveTimestamp < B.GameInfo.SaveTimestamp;
+      smByPlayerCountAsc:  Result := A.GameInfo.PlayerCount < B.GameInfo.PlayerCount;
+      smByPlayerCountDesc: Result := A.GameInfo.PlayerCount > B.GameInfo.PlayerCount;
+      smByModeAsc:         Result := A.GameInfo.MissionMode < B.GameInfo.MissionMode;
+      smByModeDesc:        Result := A.GameInfo.MissionMode > B.GameInfo.MissionMode;
     end;
   end;
 

@@ -1298,7 +1298,7 @@ begin
                    - fNetworking.NetPlayers.GetAICount(aAIPlayerTypes));
   end else if (fNetworking.SaveInfo <> nil) and fNetworking.SaveInfo.IsValid then
   begin
-    Result := Max(0, fNetworking.SaveInfo.Info.HumanCount
+    Result := Max(0, fNetworking.SaveInfo.GameInfo.HumanCount
                    - fNetworking.NetPlayers.GetConnectedPlayersCount
                    - fNetworking.NetPlayers.GetAICount(aAIPlayerTypes));
   end;
@@ -1655,10 +1655,10 @@ begin
                     IsValid := fNetworking.SaveInfo.IsValid;
                     AddLocation(gResTexts[TX_LOBBY_SELECT], I, LOC_RANDOM);
 
-                    for K := 0 to fNetworking.SaveInfo.Info.PlayerCount - 1 do
-                      if fNetworking.SaveInfo.Info.Enabled[K]
-                      and (fNetworking.SaveInfo.Info.CanBeHuman[K] or ALLOW_TAKE_AI_PLAYERS) then
-                        AddLocation(UnicodeString(fNetworking.SaveInfo.Info.OwnerNikname[K]), I, K+1);
+                    for K := 0 to fNetworking.SaveInfo.GameInfo.PlayerCount - 1 do
+                      if fNetworking.SaveInfo.GameInfo.Enabled[K]
+                      and (fNetworking.SaveInfo.GameInfo.CanBeHuman[K] or ALLOW_TAKE_AI_PLAYERS) then
+                        AddLocation(UnicodeString(fNetworking.SaveInfo.GameInfo.OwnerNikname[K]), I, K+1);
                   end;
         ngkMap:  begin
                     IsValid := fNetworking.MapInfo.IsValid;
@@ -1697,7 +1697,7 @@ begin
       for K := 0 to DropBox_Colors[I].List.RowCount-1 do
         if (K <> CurPlayer.FlagColorID) and (K <> 0)
         and (not fNetworking.NetPlayers.ColorAvailable(K)
-             or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.Info.ColorUsed(K))) then
+             or ((fNetworking.SelectGameKind = ngkSave) and fNetworking.SaveInfo.GameInfo.ColorUsed(K))) then
           DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := False
         else
           DropBox_Colors[I].List.Rows[K].Cells[0].Enabled := True;
@@ -2039,9 +2039,9 @@ begin
     for I := 0 to fSavesMP.Count - 1 do
     if fSavesMP[I].IsValid then
       DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName,
-                                         IntToStr(fSavesMP[I].Info.PlayerCount),
-                                         fSavesMP[I].Info.GetTimeText,
-                                         fSavesMP[I].Info.GetSaveTimestamp], I))
+                                         IntToStr(fSavesMP[I].GameInfo.PlayerCount),
+                                         fSavesMP[I].GameInfo.GetTimeText,
+                                         fSavesMP[I].GameInfo.GetSaveTimestamp], I))
     else
       DropCol_Maps.Add(MakeListRow([fSavesMP[I].FileName, '', '', ''], I));
 
@@ -2223,7 +2223,7 @@ begin
   //Difficulty levels
   DropBox_Difficulty.Clear;
   DropBox_Difficulty.Disable;
-  MD := aSave.Info.MissionDifficulty;
+  MD := aSave.GameInfo.MissionDifficulty;
   if MD = mdNone then
     Panel_Difficulty.Hide
   else
@@ -2329,7 +2329,7 @@ begin
     ngkSave: begin
                 S := fNetworking.SaveInfo;
                 Label_MapName.Caption := aData; //Show save name on host (local is always "downloaded")
-                Memo_MapDesc.Text := S.Info.GetTitleWithTime + '|' + S.Info.GetSaveTimestamp;
+                Memo_MapDesc.Text := S.GameInfo.GetTitleWithTime + '|' + S.GameInfo.GetSaveTimestamp;
                 Lobby_OnUpdateMinimap(nil);
                 UpdateDifficultyLevels(S);
               end;

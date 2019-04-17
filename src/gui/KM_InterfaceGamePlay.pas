@@ -454,7 +454,7 @@ begin
                            and fSaves[ListBox_Load.ItemIndex].IsValid;
     if InRange(ListBox_Load.ItemIndex,0,fSaves.Count-1) then
     begin
-      Label_LoadDescription.Caption := fSaves[ListBox_Load.ItemIndex].Info.GetTitleWithTime;
+      Label_LoadDescription.Caption := fSaves[ListBox_Load.ItemIndex].GameInfo.GetTitleWithTime;
       fSave_Selected := ListBox_Load.ItemIndex;
     end;
   finally
