@@ -201,7 +201,7 @@ type
     procedure AnnounceDisconnect;
     procedure Disconnect;
     procedure DropPlayers(aPlayers: TKMByteArray);
-    function  Connected: boolean;
+    function  Connected: Boolean;
     procedure MatchPlayersToSave(aPlayerID: Integer = -1);
     procedure SelectNoMap(const aErrorMessage: UnicodeString);
     procedure SelectMap(const aName: UnicodeString; aMapFolder: TKMapFolder);
@@ -514,7 +514,7 @@ begin
 end;
 
 
-function TKMNetworking.Connected: boolean;
+function TKMNetworking.Connected: Boolean;
 begin
   Result := fNetClient.Connected;
 end;
