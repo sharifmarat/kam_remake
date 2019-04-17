@@ -1,5 +1,5 @@
 @REM
-call bat_get_kam_folder.bat
+call get_kam_folder.bat
 
 REM ============================================================
 REM Erase previous archive to make sure new one is made from scratch

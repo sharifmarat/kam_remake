@@ -1,4 +1,4 @@
-call bat_rsvars_local.bat
+call rsvars_local.bat
 
 @SET BDS=%BDS_LOCAL%
 @SET BDSCOMMONDIR=%BDSCOMMONDIR_LOCAL%

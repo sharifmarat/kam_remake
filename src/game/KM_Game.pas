@@ -56,12 +56,15 @@ type
     //Saved and loaded via GameInfo
     fGameName: UnicodeString;
     fGameMapCRC: Cardinal; //CRC of map for reporting stats to master server. Also used in MapEd
-    fGameTickCount: Cardinal;
+    fGameTick: Cardinal;
     fMissionMode: TKMissionMode;
     fMissionDifficulty: TKMMissionDifficulty;
 
     fUIDTracker: Cardinal;       //Units-Houses tracker, to issue unique IDs
     fMissionFileSP: UnicodeString; //Relative pathname to mission we are playing, so it gets saved to crashreport. SP only, see GetMissionFile.
+
+    //Saved to local data
+    fLastReplayTick: Cardinal;
 
     //DO not save
     fGameSpeedChangeTick: Single;
@@ -78,8 +81,8 @@ type
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
     procedure MultiplayerRig;
-    function SaveGameStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
-    procedure SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
+    function SaveGameToStream(aTimestamp: TDateTime; aReplayStream: Boolean = False): TKMemoryStream;
+    procedure SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
     procedure UpdatePeaceTime;
     function GetWaitingPlayersList: TKMByteArray;
     function FindHandToSpec: Integer;
@@ -93,6 +96,7 @@ type
     function GetControlledHandIndex: TKMHandID;
     procedure IncGameTick;
     procedure CheckPauseGameAtTick;
+    function IsReplayEnded: Boolean;
 
     function PlayNextTick: Boolean;
     procedure UserAction(aActionType: TKMUserActionType);
@@ -104,13 +108,6 @@ type
     StartedFromMapEditor: Boolean; //True if we start game from map editor ('Try Map')
     StartedFromMapEdAsMPMap: Boolean;     //True if we start game from map editor ('Try Map') with MP map
 
-    ///	<param name="aRender">
-    ///	  Pointer to Render class, that will execute our rendering requests
-    ///	  performed via RenderPool we create.
-    ///	</param>
-    ///	<param name="aNetworking">
-    ///	  Pointer to networking class, required if this is a multiplayer game.
-    ///	</param>
     constructor Create(aGameMode: TKMGameMode; aRender: TRender; aNetworking: TKMNetworking; aOnDestroy: TEvent);
     destructor Destroy; override;
 
@@ -120,8 +117,8 @@ type
 
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
-    procedure LoadGameStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
-    procedure Load(const aPathName: UnicodeString);
+    procedure LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+    procedure LoadFromFile(const aPathName: UnicodeString);
     procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
     procedure AfterLoad;
 
@@ -172,7 +169,7 @@ type
     procedure OverlayUpdate;
     procedure OverlaySet(const aText: UnicodeString; aPlayer: Shortint);
     procedure OverlayAppend(const aText: UnicodeString; aPlayer: Shortint);
-    property GameTickCount: Cardinal read fGameTickCount;
+    property GameTickCount: Cardinal read fGameTick;
     property GameName: UnicodeString read fGameName;
     property CampaignName: TKMCampaignId read fCampaignName;
     property CampaignMap: Byte read fCampaignMap;
@@ -190,6 +187,7 @@ type
     property SaveFile: UnicodeString read fSaveFile;
     function GetMissionFile: UnicodeString;
     function GetScriptSoundFile(const aSound: AnsiString; aAudioFormat: TKMAudioFormat): UnicodeString;
+    property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
 
     property MissionMode: TKMissionMode read fMissionMode write fMissionMode;
     property MissionDifficulty: TKMMissionDifficulty read fMissionDifficulty write fMissionDifficulty;
@@ -242,7 +240,7 @@ uses
   {$IFDEF WDC} UITypes, {$ENDIF}
   KM_PathFindingAStarOld, KM_PathFindingAStarNew, KM_PathFindingJPS,
   KM_Projectiles, KM_AIFields, KM_AIArmyEvaluation,
-  KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo,
+  KM_Main, KM_GameApp, KM_RenderPool, KM_GameInfo, KM_GameClasses,
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
@@ -325,7 +323,7 @@ begin
   end;
   gProjectiles := TKMProjectiles.Create;
 
-  fGameTickCount := 0; //Restart counter
+  fGameTick := 0; //Restart counter
 end;
 
 
@@ -578,7 +576,7 @@ begin
   //until after user saves it, but we need to attach replay base to it.
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
-    SaveGame(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+    SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
 
   //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
   gScriptEvents.ProcMissionStart;
@@ -593,7 +591,7 @@ begin
   if fGamePlayInterface <> nil then
     fGamePlayInterface.GuiGameResultsMP.ResetControls;
 
-  gLog.AddTime('After game start', True);
+  gLog.AddTime('After game ends', True);
 end;
 
 
@@ -808,7 +806,7 @@ begin
       AttachFile(SaveName('crashreport', EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
-      AttachFile(SaveName('crashreport', EXT_SAVE_MP_MINIMAP, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('crashreport', EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
     end;
   except
     on E : Exception do
@@ -842,7 +840,7 @@ begin
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_BASE_DOT));
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_REPLAY_DOT));
     AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MAIN_DOT));
-    AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MP_MINIMAP_DOT));
+    AttachFile(ChangeFileExt(ExeDir + fSaveFile, EXT_SAVE_MP_LOCAL_DOT));
   end else if (fGameMode <> gmMapEd) then // no need autosaves for MapEd error...
     //For other game modes attach last autosaves
     for I := 1 to Min(gGameApp.GameSettings.AutosaveCount, AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX) do //Add autosaves
@@ -850,7 +848,7 @@ begin
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
-      AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_MINIMAP, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
     end;
 
   gLog.AddTime('Crash report created');
@@ -868,7 +866,7 @@ var
   ValI: Integer;
   ValF: Double;
 begin
-  gLog.AddTime('Replay failed a consistency check at tick ' + IntToStr(fGameTickCount));
+  gLog.AddTime('Replay failed a consistency check at tick ' + IntToStr(fGameTick));
   gLog.AddTime(Format('MyRand = %d, but command: %s', [aMyRand, TKMGameInputProcess.StoredGIPCommandToString(aCommand)]));
   if gLog.CanLogRandomChecks() then
   begin
@@ -1019,7 +1017,7 @@ begin
   case fNetworking.NetGameState of
     lgsGame, lgsReconnecting:
         //GIP is waiting for next tick
-        Result := TKMGameInputProcess_Multi(fGameInputProcess).GetWaitingPlayers(fGameTickCount + 1);
+        Result := TKMGameInputProcess_Multi(fGameInputProcess).GetWaitingPlayers(fGameTick + 1);
     lgsLoading:
         //We are waiting during inital loading
         Result := fNetworking.NetPlayers.GetNotReadyToPlayPlayers;
@@ -1222,20 +1220,20 @@ end;
 function TKMGame.MissionTime: TDateTime;
 begin
   //Convert cardinal into TDateTime, where 1hour = 1/24 and so on..
-  Result := fGameTickCount / 24 / 60 / 60 / 10;
+  Result := fGameTick / 24 / 60 / 60 / 10;
 end;
 
 
 function TKMGame.GetPeacetimeRemaining: TDateTime;
 begin
-  Result := Max(0, Int64(fGameOptions.Peacetime * 600) - fGameTickCount) / 24 / 60 / 60 / 10;
+  Result := Max(0, Int64(fGameOptions.Peacetime * 600) - fGameTick) / 24 / 60 / 60 / 10;
 end;
 
 
 //Tests whether time has past
 function TKMGame.CheckTime(aTimeTicks: Cardinal): Boolean;
 begin
-  Result := (fGameTickCount >= aTimeTicks);
+  Result := (fGameTick >= aTimeTicks);
 end;
 
 
@@ -1366,7 +1364,7 @@ procedure TKMGame.UpdatePeaceTime;
 var
   PeaceTicksRemaining: Cardinal;
 begin
-  PeaceTicksRemaining := Max(0, Int64((fGameOptions.Peacetime * 600)) - fGameTickCount);
+  PeaceTicksRemaining := Max(0, Int64((fGameOptions.Peacetime * 600)) - fGameTick);
   if (PeaceTicksRemaining = 1) and (fGameMode in [gmMulti, gmMultiSpectate, gmReplayMulti]) then
   begin
     gSoundPlayer.Play(sfxnPeacetime, 1, True); //Fades music
@@ -1500,22 +1498,26 @@ end;
 
 
 //Saves the game in TKMemoryStream
-function TKMGame.SaveGameStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
+function TKMGame.SaveGameToStream(aTimestamp: TDateTime; aReplayStream: Boolean = False): TKMemoryStream;
 var
-  SaveStream, MnmSaveStream: TKMemoryStream;
+  SaveStream: TKMemoryStream;
   GameInfo: TKMGameInfo;
   I, netIndex: Integer;
 begin
   SaveStream := TKMemoryStream.Create;
 
   if aReplayStream then
+  begin
     SaveStream.WriteA('ConsistencyCheck1');
+    SaveStream.Write(fLastReplayTick);
+    SaveStream.Write(gGame.SkipReplayEndCheck); //To dont show 'Continue watching' again
+  end;
 
   GameInfo := TKMGameInfo.Create;
   try
     GameInfo.Title := fGameName;
     GameInfo.MapCRC := fGameMapCRC;
-    GameInfo.TickCount := fGameTickCount;
+    GameInfo.TickCount := fGameTick;
     GameInfo.SaveTimestamp := aTimestamp;
     GameInfo.MissionMode := fMissionMode;
     GameInfo.MissionDifficulty := fMissionDifficulty;
@@ -1568,36 +1570,10 @@ begin
   //so we can load multiplayer saves in single player and vice versa.
   SaveStream.Write(IsMultiPlayerOrSpec);
 
-  //Makes the folders incase they were deleted. Should do before save MiniMap file for MP game
-  if (aPathName <> '') then
-    ForceDirectories(ExtractFilePath(aPathName));
-
   //In SinglePlayer we want to show player a preview of what the game looked like when he saved
   //Save Minimap is near the start so it can be accessed quickly
-  //In MP each player has his own perspective, hence we dont save minimaps in the main save file to avoid cheating,
-  //but save minimap in separate file with smm extension
   if not IsMultiPlayerOrSpec then
-    fGamePlayInterface.SaveMinimap(SaveStream)
-  else
-    if aMinimapPathName <> '' then
-    begin
-      MnmSaveStream := TKMemoryStream.Create;
-      try
-        try
-          MnmSaveStream.Write(fNetworking.MyNetPlayer.StartLocation);
-          fGamePlayInterface.SaveMinimap(MnmSaveStream);
-          MnmSaveStream.SaveToFile(aMinimapPathName);
-        except
-          on E: Exception do
-            //Ignore any errors while saving minimap, because its optional for MP games
-            gLog.AddTime('Error while saving save minimap to ' + aMinimapPathName + ': ' + E.Message
-              {$IFDEF WDC}+ sLineBreak + E.StackTrace{$ENDIF}
-              );
-        end;
-      finally
-        MnmSaveStream.Free;
-      end;
-    end;
+    fGamePlayInterface.SaveMinimap(SaveStream);
 
   //We need to know which campaign to display after victory
   SaveStream.Write(fCampaignName, SizeOf(TKMCampaignId));
@@ -1658,9 +1634,10 @@ end;
 
 
 //Saves the game in all its glory
-procedure TKMGame.SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
+procedure TKMGame.SaveGameToFile(const aPathName: String; aTimestamp: TDateTime; const aMPLocalDataPathName: String = '');
 var
   SaveStream: TKMemoryStream;
+  GameMPLocalData: TKMGameMPLocalData;
 begin
   if BLOCK_SAVE then // This must be here because of paraller Runner
     Exit;
@@ -1669,7 +1646,33 @@ begin
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
     raise Exception.Create('Saving from wrong state');
 
-  SaveStream := SaveGameStream(aPathName, aTimestamp, aMinimapPathName);
+  SaveStream := SaveGameToStream(aTimestamp);
+
+  //Makes the folders in case they were deleted.
+  //Should do before save Minimap file for MP game
+  if (aPathName <> '') then
+    ForceDirectories(ExtractFilePath(aPathName));
+
+  //In MP each player has his own perspective, hence we dont save minimaps in the main save file to avoid cheating,
+  //but save minimap in separate file with local game data
+  if IsMultiPlayerOrSpec and (aMPLocalDataPathName <> '') then
+  begin
+    try
+      GameMPLocalData := TKMGameMPLocalData.Create(fLastReplayTick, fNetworking.MyNetPlayer.StartLocation, fGamePlayInterface.Minimap);
+      try
+        GameMPLocalData.SaveToFile(aMPLocalDataPathName);
+      finally
+        FreeAndNil(GameMPLocalData);
+      end;
+    except
+      on E: Exception do
+        //Ignore any errors while saving minimap, because its optional for MP games
+        gLog.AddTime('Error while saving save minimap to ' + aMPLocalDataPathName + ': ' + E.Message
+          {$IFDEF WDC}+ sLineBreak + E.StackTrace{$ENDIF}
+          );
+    end
+  end;
+
   try
     SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
   finally
@@ -1683,13 +1686,13 @@ end;
 //Saves game by provided name
 procedure TKMGame.Save(const aSaveName: UnicodeString; aTimestamp: TDateTime);
 var
-  fullPath, minimapPath, NewSaveName: UnicodeString;
+  fullPath, mpLocalDataPath, NewSaveName: UnicodeString;
 begin
   //Convert name to full path+name
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiPlayerOrSpec);
-  minimapPath := SaveName(aSaveName, EXT_SAVE_MP_MINIMAP, IsMultiPlayerOrSpec);
+  mpLocalDataPath := SaveName(aSaveName, EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec);
 
-  SaveGame(fullPath, aTimestamp, minimapPath);
+  SaveGameToFile(fullPath, aTimestamp, mpLocalDataPath);
 
   if not IsMultiPlayerOrSpec then
     // Update GameSettings for saved positions in lists of saves and replays
@@ -1710,46 +1713,25 @@ begin
 end;
 
 
-// Save replay
-procedure TKMGame.SaveReplayToMemory();
-var
-  SaveStream: TKMemoryStream;
-  DateTimeParam: TDateTime;
-begin
-  if fSavedReplays.Contains(fGameTickCount) then //No need to save twice on the same tick
-    Exit;
-
-  gLog.AddTime('Saving replay start');
-
-  DateTimeParam := 0; // Date is not important
-  if not gGame.IsReplay then
-    raise Exception.Create('Saving replay impossible - game mode is not replay');
-
-  SaveStream := SaveGameStream('', DateTimeParam, '', True);
-  fGameInputProcess.Save(SaveStream);
-
-  fSavedReplays.NewSave(SaveStream, fGameTickCount);
-
-  gLog.AddTime('Saving replay end');
-end;
-
-
 procedure TKMGame.SaveCampaignScriptData(SaveStream: TKMemoryStream);
 begin
   fScripting.SaveCampaignData(SaveStream);
 end;
 
 
-procedure TKMGame.LoadGameStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+procedure TKMGame.LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
 var
   GameInfo: TKMGameInfo;
   LoadedSeed: LongInt;
   SaveIsMultiplayer, IsCampaign: Boolean;
   I: Integer;
 begin
-
   if aReplayStream then
+  begin
     LoadStream.ReadAssert('ConsistencyCheck1');
+    LoadStream.Read(fLastReplayTick);
+    LoadStream.Read(gGame.SkipReplayEndCheck); //To dont show 'Continue watching' again
+  end;
 
   //We need only few essential parts from GameInfo, the rest is duplicate from gTerrain and fPlayers
   GameInfo := TKMGameInfo.Create;
@@ -1757,7 +1739,7 @@ begin
     GameInfo.Load(LoadStream);
     fGameName := GameInfo.Title;
     fGameMapCRC := GameInfo.MapCRC;
-    fGameTickCount := GameInfo.TickCount;
+    fGameTick := GameInfo.TickCount;
     fMissionMode := GameInfo.MissionMode;
     fMissionDifficulty := GameInfo.MissionDifficulty;
   finally
@@ -1790,7 +1772,6 @@ begin
   LoadStream.Read(fCampaignMap);
 
   LoadStream.Read(fDynamicFOW);
-
 
   if aReplayStream then
     LoadStream.ReadAssert('ConsistencyCheck2');
@@ -1866,9 +1847,10 @@ begin
 end;
 
 
-procedure TKMGame.Load(const aPathName: UnicodeString);
+procedure TKMGame.LoadFromFile(const aPathName: UnicodeString);
 var
   LoadStream: TKMemoryStream;
+  GameMPLocalData: TKMGameMPLocalData;
 begin
   fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
@@ -1881,9 +1863,21 @@ begin
 
     LoadStream.LoadFromFile(aPathName);
 
-    LoadGameStream(LoadStream, False);
+    LoadFromStream(LoadStream, False);
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
+
+    //Load MP game local data
+    if fGameMode = gmReplayMulti then
+    begin
+      GameMPLocalData := TKMGameMPLocalData.Create;
+      try
+        GameMPLocalData.LoadFromFile(ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MP_LOCAL_DOT));
+        fLastReplayTick := GameMPLocalData.LastReplayTick;
+      finally
+        FreeAndNil(GameMPLocalData);
+      end;
+    end;
 
     // SetSeed was there, I dont know the dependencies so please check if it is ok to include it in LoadGameStream
 
@@ -1905,10 +1899,34 @@ begin
   begin
     LoadStream := fSavedReplays[aTick];
     LoadStream.Position := 0;
-    LoadGameStream(LoadStream, True);
-    fGameInputProcess.Load(LoadStream);
+    LoadFromStream(LoadStream, True);
+    fGameInputProcess.LoadFromStream(LoadStream);
     gLog.AddTime('Loading replay from save done', True);
   end;
+end;
+
+
+// Save replay
+procedure TKMGame.SaveReplayToMemory();
+var
+  SaveStream: TKMemoryStream;
+  DateTimeParam: TDateTime;
+begin
+  if fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
+    Exit;
+
+  gLog.AddTime('Saving replay start');
+
+  DateTimeParam := 0; // Date is not important
+  if not gGame.IsReplay then
+    raise Exception.Create('Saving replay impossible - game mode is not replay');
+
+  SaveStream := SaveGameToStream(DateTimeParam, True);
+  fGameInputProcess.SaveToStream(SaveStream);
+
+  fSavedReplays.NewSave(SaveStream, fGameTick);
+
+  gLog.AddTime('Saving replay end');
 end;
 
 
@@ -1931,7 +1949,7 @@ begin
   end;
 
   //Repeat mission init if necessary
-  if fGameTickCount = 0 then
+  if fGameTick = 0 then
     gScriptEvents.ProcMissionStart;
 
   //When everything is ready we can update UI
@@ -1969,7 +1987,7 @@ begin
   TimeSince := GetTimeSince(fGameSpeedChangeTime);
   CalculatedTick := TimeSince*fGameSpeed/gGameApp.GameSettings.SpeedPace - fPausedTicksCnt;
   //Calc how far behind are we, in ticks
-  Result := CalculatedTick + fGameSpeedChangeTick - fGameTickCount;
+  Result := CalculatedTick + fGameSpeedChangeTick - fGameTick;
 end;
 
 
@@ -1977,7 +1995,7 @@ procedure TKMGame.UpdateTickCounters;
 var TicksBehind: Single;
 begin
   TicksBehind := GetTicksBehindCnt; // save number of ticks we are behind now
-  fGameSpeedChangeTick := fGameTickCount;
+  fGameSpeedChangeTick := fGameTick;
   if IsMultiPlayerOrSpec and not IsMPGameSpeedUpAllowed then
     // Remember if we were some ticks behind at that moment.
     // Important for MP game with many players, but can be omitted for SP and MP with only 1 player
@@ -2067,9 +2085,18 @@ end;
 
 procedure TKMGame.IncGameTick;
 begin
-  Inc(fGameTickCount); //Thats our tick counter for gameplay events
+  Inc(fGameTick); //Thats our tick counter for gameplay events
   if LOG_GAME_TICK then
-    gLog.AddTime('Tick: ' + IntToStr(fGameTickCount));
+    gLog.AddTime('Tick: ' + IntToStr(fGameTick));
+end;
+
+
+function TKMGame.IsReplayEnded: Boolean;
+begin
+  if fLastReplayTick > 0 then
+    Result := fGameTick >= fLastReplayTick
+  else
+    Result := fGameInputProcess.ReplayEnded;
 end;
 
 
@@ -2080,7 +2107,7 @@ procedure TKMGame.CheckPauseGameAtTick;
     IsPaused := True;
     //Set replay UI to paused state, sync replay timer and other UI elements
     fGamePlayInterface.SetButtons(False);
-    fGamePlayInterface.UpdateState(fGameTickCount);
+    fGamePlayInterface.UpdateState(fGameTick);
   end;
 
 var
@@ -2089,10 +2116,10 @@ begin
   PeaceTimeLeft := 0;
   PTTicks := fGameOptions.Peacetime * 600;
 
-  if (fGameMode = gmReplayMulti) and (PTTicks >= fGameTickCount) then
-    PeaceTimeLeft := PTTicks - fGameTickCount;
+  if (fGameMode = gmReplayMulti) and (PTTicks >= fGameTick) then
+    PeaceTimeLeft := PTTicks - fGameTick;
 
-  if fGameTickCount = PAUSE_GAME_AT_TICK then
+  if fGameTick = PAUSE_GAME_AT_TICK then
   begin
     if IsReplay then
       SetReplayPause
@@ -2122,7 +2149,7 @@ begin
         gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
                       if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgsLoading) then
                       begin
-                        if fGameInputProcess.CommandsConfirmed(fGameTickCount+1) then
+                        if fGameInputProcess.CommandsConfirmed(fGameTick+1) then
                         begin
                           if DO_PERF_LOGGING then fPerfLog.EnterSection(psTick);
 
@@ -2132,28 +2159,30 @@ begin
 
                           IncGameTick;
 
+                          fLastReplayTick := fGameTick;
+
                           if (fGameMode in [gmMulti, gmMultiSpectate]) then
-                            fNetworking.LastProcessedTick := fGameTickCount;
+                            fNetworking.LastProcessedTick := fGameTick;
 
                           //Tell the master server about our game on the specific tick (host only)
                           if (fGameMode in [gmMulti, gmMultiSpectate]) and fNetworking.IsHost
-                            and (((fMissionMode = mmNormal) and (fGameTickCount = ANNOUNCE_BUILD_MAP))
-                            or ((fMissionMode = mmTactic) and (fGameTickCount = ANNOUNCE_BATTLE_MAP))) then
+                            and (((fMissionMode = mmNormal) and (fGameTick = ANNOUNCE_BUILD_MAP))
+                            or ((fMissionMode = mmTactic) and (fGameTick = ANNOUNCE_BATTLE_MAP))) then
                             fNetworking.ServerQuery.SendMapInfo(fGameName, fGameMapCRC, fNetworking.NetPlayers.GetConnectedCount);
 
                           fScripting.UpdateState;
                           UpdatePeacetime; //Send warning messages about peacetime if required
                           gTerrain.UpdateState;
-                          gAIFields.UpdateState(fGameTickCount);
-                          gHands.UpdateState(fGameTickCount); //Quite slow
+                          gAIFields.UpdateState(fGameTick);
+                          gHands.UpdateState(fGameTick); //Quite slow
 
                           if gGame = nil then Exit; //Quit the update if game was stopped for some reason
 
-                          gMySpectator.UpdateState(fGameTickCount);
+                          gMySpectator.UpdateState(fGameTick);
                           fPathfinding.UpdateState;
                           gProjectiles.UpdateState; //If game has stopped it's NIL
 
-                          fGameInputProcess.RunningTimer(fGameTickCount); //GIP_Multi issues all commands for this tick
+                          fGameInputProcess.RunningTimer(fGameTick); //GIP_Multi issues all commands for this tick
 
                           //Returning to the lobby (through MP GIP) ends the game
                           if gGame = nil then Exit;
@@ -2163,14 +2192,14 @@ begin
                             fGameInputProcess.CmdTemp(gicTempDoNothing);
 
                           // Update our ware distributions from settings at the start of the game
-                          if (fGameTickCount = 1) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
+                          if (fGameTick = 1) and (fGameMode in [gmSingle, gmCampaign, gmMulti]) then
                             fGameInputProcess.CmdWareDistribution(gicWareDistributions, gGameApp.GameSettings.WareDistribution.PackToStr);
 
-
-                          if (fGameTickCount mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
+                          if (fGameTick mod gGameApp.GameSettings.AutosaveFrequency) = 0 then
                             IssueAutosaveCommand;
 
-                          if DO_PERF_LOGGING then fPerfLog.LeaveSection(psTick);
+                          if DO_PERF_LOGGING then
+                            fPerfLog.LeaveSection(psTick);
 
                           CheckPauseGameAtTick;
 
@@ -2178,25 +2207,25 @@ begin
                         end
                         else
                         begin
-                          fGameInputProcess.WaitingForConfirmation(fGameTickCount);
+                          fGameInputProcess.WaitingForConfirmation(fGameTick);
                           if TKMGameInputProcess_Multi(fGameInputProcess).GetNumberConsecutiveWaits > 10 then
                             WaitingPlayersDisplay(True);
                         end;
-                        fGameInputProcess.UpdateState(fGameTickCount); //Do maintenance
+                        fGameInputProcess.UpdateState(fGameTick); //Do maintenance
                       end;
         gmReplaySingle,gmReplayMulti:
                       begin
                         IncGameTick;
 
-                        //Only increase LastTick, since we could load earlier game state
-                        fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTickCount);
+                        //Only increase LastTick, since we could load replay earlier at earlier state
+                        fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
 
                         //Save replay to memory (to be able to load it later)
                         if gGameApp.GameSettings.ReplayAutosave
                           and (
-                            (fGameTickCount = 1)//First tick
-                            or (fGameTickCount = (fGameOptions.Peacetime*60*10)) //At PT end
-                            or ((fGameTickCount mod gGameApp.GameSettings.ReplayAutosaveFrequency) = 0)) then
+                            (fGameTick = 1)//First tick
+                            or (fGameTick = (fGameOptions.Peacetime*60*10)) //At PT end
+                            or ((fGameTick mod gGameApp.GameSettings.ReplayAutosaveFrequency) = 0)) then
                         begin
                           SaveReplayToMemory;
                           if fGamePlayInterface <> nil then
@@ -2206,17 +2235,20 @@ begin
                         fScripting.UpdateState;
                         UpdatePeacetime; //Send warning messages about peacetime if required (peacetime sound should still be played in replays)
                         gTerrain.UpdateState;
-                        gAIFields.UpdateState(fGameTickCount);
-                        gHands.UpdateState(fGameTickCount); //Quite slow
+                        gAIFields.UpdateState(fGameTick);
+                        gHands.UpdateState(fGameTick); //Quite slow
                         if gGame = nil then Exit; //Quit the update if game was stopped for some reason
-                        gMySpectator.UpdateState(fGameTickCount);
+                        gMySpectator.UpdateState(fGameTick);
                         fPathfinding.UpdateState;
                         gProjectiles.UpdateState; //If game has stopped it's NIL
 
                         //Issue stored commands
-                        fGameInputProcess.ReplayTimer(fGameTickCount);
-                        if gGame = nil then Exit; //Quit if the game was stopped by a replay mismatch
-                        if not SkipReplayEndCheck and fGameInputProcess.ReplayEnded then
+                        fGameInputProcess.ReplayTimer(fGameTick);
+
+                        if gGame = nil then
+                          Exit; //Quit if the game was stopped by a replay mismatch
+
+                        if not SkipReplayEndCheck and IsReplayEnded then
                           RequestGameHold(grReplayEnd);
 
                         if fAdvanceFrame then
@@ -2240,7 +2272,7 @@ begin
     except
         on E: Exception do
         begin
-          gLog.AddTime('Exception on tick ' + IntToStr(fGameTickCount) + ': ' + E.Message
+          gLog.AddTime('Exception on tick ' + IntToStr(fGameTick) + ': ' + E.Message
                        {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF});
           raise;
         end;

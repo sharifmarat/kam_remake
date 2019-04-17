@@ -326,7 +326,6 @@ type
     procedure CmdConsoleCommand(aCommandType: TKMGameInputCommandType; const aAnsiTxtParam: AnsiString;
                                 const aUniTxtArray: TKMScriptCommandParamsArray);
 
-    procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue:boolean); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal); overload;
@@ -342,14 +341,14 @@ type
     procedure UpdateState(aTick: Cardinal); virtual;
 
     //Replay methods
-    procedure Save(SaveStream: TKMemoryStream);
+    procedure SaveToStream(SaveStream: TKMemoryStream);
     procedure SaveToFile(const aFileName: UnicodeString);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure LoadFromStream(LoadStream: TKMemoryStream);
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
-    function GetLastTick: Cardinal; virtual;
-    function ReplayEnded: Boolean; virtual;
+    function GetLastTick: Cardinal;
+    function ReplayEnded: Boolean;
 
     class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
     class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
@@ -1000,13 +999,6 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Boolean);
-begin
-  Assert(aCommandType = gicGamePause);
-  TakeCommand(MakeCommand(aCommandType, Integer(aValue)));
-end;
-
-
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime);
 begin
   Assert(aCommandType in [gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby]);
@@ -1049,7 +1041,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.Save(SaveStream: TKMemoryStream);
+procedure TKMGameInputProcess.SaveToStream(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
@@ -1072,19 +1064,19 @@ var
   S: TKMemoryStream;
 begin
   S := TKMemoryStream.Create;
-  Save(S);
+  SaveToStream(S);
   S.SaveToFile(aFileName);
   S.Free;
 end;
 
 
-procedure TKMGameInputProcess.Load(LoadStream: TKMemoryStream);
+procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStream);
 var
   FileVersion: AnsiString;
   I: Integer;
 begin
   LoadStream.ReadA(FileVersion);
-  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
+  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. ' + GAME_REVISION + ' is required.');
   LoadStream.Read(fCount);
   SetLength(fQueue, fCount + 1);
 
@@ -1106,7 +1098,7 @@ begin
   if not FileExists(aFileName) then Exit;
   S := TKMemoryStream.Create;
   S.LoadFromFile(aFileName);
-  Load(S);
+  LoadFromStream(S);
   S.Free;
 end;
 
@@ -1121,10 +1113,7 @@ end;
 { See if replay has ended (no more commands in queue) }
 function TKMGameInputProcess.ReplayEnded: Boolean;
 begin
-  if ReplayState = gipReplaying then
-    Result := fCursor > fCount
-  else
-    Result := False;
+  Result := (ReplayState = gipReplaying) and (fCursor > fCount);
 end;
 
 
