@@ -342,9 +342,9 @@ type
     procedure UpdateState(aTick: Cardinal); virtual;
 
     //Replay methods
-    procedure Save(SaveStream: TKMemoryStream);
+    procedure SaveToStream(SaveStream: TKMemoryStream);
     procedure SaveToFile(const aFileName: UnicodeString);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure LoadFromStream(LoadStream: TKMemoryStream);
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
@@ -1049,7 +1049,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.Save(SaveStream: TKMemoryStream);
+procedure TKMGameInputProcess.SaveToStream(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
@@ -1072,19 +1072,19 @@ var
   S: TKMemoryStream;
 begin
   S := TKMemoryStream.Create;
-  Save(S);
+  SaveToStream(S);
   S.SaveToFile(aFileName);
   S.Free;
 end;
 
 
-procedure TKMGameInputProcess.Load(LoadStream: TKMemoryStream);
+procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStream);
 var
   FileVersion: AnsiString;
   I: Integer;
 begin
   LoadStream.ReadA(FileVersion);
-  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. '+GAME_REVISION+' is required.');
+  Assert(FileVersion = GAME_REVISION, 'Old or unexpected replay file. ' + GAME_REVISION + ' is required.');
   LoadStream.Read(fCount);
   SetLength(fQueue, fCount + 1);
 
@@ -1106,7 +1106,7 @@ begin
   if not FileExists(aFileName) then Exit;
   S := TKMemoryStream.Create;
   S.LoadFromFile(aFileName);
-  Load(S);
+  LoadFromStream(S);
   S.Free;
 end;
 

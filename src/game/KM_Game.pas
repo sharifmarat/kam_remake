@@ -78,8 +78,8 @@ type
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
     procedure MultiplayerRig;
-    function SaveGameStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
-    procedure SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
+    function SaveGameToStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
+    procedure SaveGameToFile(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
     procedure UpdatePeaceTime;
     function GetWaitingPlayersList: TKMByteArray;
     function FindHandToSpec: Integer;
@@ -120,8 +120,8 @@ type
 
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
-    procedure LoadGameStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
-    procedure Load(const aPathName: UnicodeString);
+    procedure LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+    procedure LoadFromFile(const aPathName: UnicodeString);
     procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
     procedure AfterLoad;
 
@@ -578,7 +578,7 @@ begin
   //until after user saves it, but we need to attach replay base to it.
   //Basesave is sort of temp we save to HDD instead of keeping in RAM
   if fGameMode in [gmSingle, gmCampaign, gmMulti, gmMultiSpectate] then
-    SaveGame(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
+    SaveGameToFile(SaveName('basesave', EXT_SAVE_BASE, IsMultiPlayerOrSpec), UTCNow);
 
   //MissionStart goes after basesave to keep it pure (repeats on Load of basesave)
   gScriptEvents.ProcMissionStart;
@@ -1500,7 +1500,7 @@ end;
 
 
 //Saves the game in TKMemoryStream
-function TKMGame.SaveGameStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
+function TKMGame.SaveGameToStream(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = ''; aReplayStream: Boolean = False): TKMemoryStream;
 var
   SaveStream, MnmSaveStream: TKMemoryStream;
   GameInfo: TKMGameInfo;
@@ -1658,7 +1658,7 @@ end;
 
 
 //Saves the game in all its glory
-procedure TKMGame.SaveGame(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
+procedure TKMGame.SaveGameToFile(const aPathName: UnicodeString; aTimestamp: TDateTime; const aMinimapPathName: UnicodeString = '');
 var
   SaveStream: TKMemoryStream;
 begin
@@ -1669,7 +1669,7 @@ begin
   if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
     raise Exception.Create('Saving from wrong state');
 
-  SaveStream := SaveGameStream(aPathName, aTimestamp, aMinimapPathName);
+  SaveStream := SaveGameToStream(aPathName, aTimestamp, aMinimapPathName);
   try
     SaveStream.SaveToFile(aPathName); //Some 70ms for TPR7 map
   finally
@@ -1689,7 +1689,7 @@ begin
   fullPath := SaveName(aSaveName, EXT_SAVE_MAIN, IsMultiPlayerOrSpec);
   minimapPath := SaveName(aSaveName, EXT_SAVE_MP_MINIMAP, IsMultiPlayerOrSpec);
 
-  SaveGame(fullPath, aTimestamp, minimapPath);
+  SaveGameToFile(fullPath, aTimestamp, minimapPath);
 
   if not IsMultiPlayerOrSpec then
     // Update GameSettings for saved positions in lists of saves and replays
@@ -1710,37 +1710,13 @@ begin
 end;
 
 
-// Save replay
-procedure TKMGame.SaveReplayToMemory();
-var
-  SaveStream: TKMemoryStream;
-  DateTimeParam: TDateTime;
-begin
-  if fSavedReplays.Contains(fGameTickCount) then //No need to save twice on the same tick
-    Exit;
-
-  gLog.AddTime('Saving replay start');
-
-  DateTimeParam := 0; // Date is not important
-  if not gGame.IsReplay then
-    raise Exception.Create('Saving replay impossible - game mode is not replay');
-
-  SaveStream := SaveGameStream('', DateTimeParam, '', True);
-  fGameInputProcess.Save(SaveStream);
-
-  fSavedReplays.NewSave(SaveStream, fGameTickCount);
-
-  gLog.AddTime('Saving replay end');
-end;
-
-
 procedure TKMGame.SaveCampaignScriptData(SaveStream: TKMemoryStream);
 begin
   fScripting.SaveCampaignData(SaveStream);
 end;
 
 
-procedure TKMGame.LoadGameStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+procedure TKMGame.LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
 var
   GameInfo: TKMGameInfo;
   LoadedSeed: LongInt;
@@ -1866,7 +1842,7 @@ begin
 end;
 
 
-procedure TKMGame.Load(const aPathName: UnicodeString);
+procedure TKMGame.LoadFromFile(const aPathName: UnicodeString);
 var
   LoadStream: TKMemoryStream;
 begin
@@ -1881,7 +1857,7 @@ begin
 
     LoadStream.LoadFromFile(aPathName);
 
-    LoadGameStream(LoadStream, False);
+    LoadFromStream(LoadStream, False);
 
     fGameInputProcess.LoadFromFile(ChangeFileExt(aPathName, EXT_SAVE_REPLAY_DOT));
 
@@ -1905,10 +1881,34 @@ begin
   begin
     LoadStream := fSavedReplays[aTick];
     LoadStream.Position := 0;
-    LoadGameStream(LoadStream, True);
-    fGameInputProcess.Load(LoadStream);
+    LoadFromStream(LoadStream, True);
+    fGameInputProcess.LoadFromStream(LoadStream);
     gLog.AddTime('Loading replay from save done', True);
   end;
+end;
+
+
+// Save replay
+procedure TKMGame.SaveReplayToMemory();
+var
+  SaveStream: TKMemoryStream;
+  DateTimeParam: TDateTime;
+begin
+  if fSavedReplays.Contains(fGameTickCount) then //No need to save twice on the same tick
+    Exit;
+
+  gLog.AddTime('Saving replay start');
+
+  DateTimeParam := 0; // Date is not important
+  if not gGame.IsReplay then
+    raise Exception.Create('Saving replay impossible - game mode is not replay');
+
+  SaveStream := SaveGameToStream('', DateTimeParam, '', True);
+  fGameInputProcess.SaveToStream(SaveStream);
+
+  fSavedReplays.NewSave(SaveStream, fGameTickCount);
+
+  gLog.AddTime('Saving replay end');
 end;
 
 
@@ -2188,7 +2188,7 @@ begin
                       begin
                         IncGameTick;
 
-                        //Only increase LastTick, since we could load earlier game state
+                        //Only increase LastTick, since we could load replay earlier at earlier state
                         fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTickCount);
 
                         //Save replay to memory (to be able to load it later)

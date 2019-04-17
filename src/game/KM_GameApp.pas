@@ -594,7 +594,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.Load(FilePath);
+    gGame.LoadFromFile(FilePath);
   except
     on E: Exception do
     begin
