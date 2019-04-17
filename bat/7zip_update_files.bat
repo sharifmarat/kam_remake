@@ -1,5 +1,5 @@
 
-call bat_get_kam_folder.bat
+call get_kam_folder.bat
 
 echo ***************
 echo "%build_full_kmr_dir%"

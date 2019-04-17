@@ -1,4 +1,4 @@
-call bat_rsvars.bat
+call rsvars.bat
 
 @echo off
 @REM Delete folders recursively

@@ -3,7 +3,7 @@
 @REM ============================================================
 
 @REM msbuild needs variables set by rsvars
-call bat_rsvars.bat
+call rsvars.bat
 
 @REM build everything
-msbuild KaMProjectGroup.groupproj /p:Configuration=Debug /t:Build /clp:ErrorsOnly /fl /flp:LogFile="bat_build_all.log"
+msbuild KaMProjectGroup.groupproj /p:Configuration=Debug /t:Build /clp:ErrorsOnly /fl /flp:LogFile="build_all.log"
