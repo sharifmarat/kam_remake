@@ -3970,7 +3970,7 @@ end;
 { If it ever gets a bottleneck then some static Controls may be excluded from update }
 procedure TKMGamePlayInterface.UpdateState(aTickCount: Cardinal);
 var
-  I: Integer;
+  I, LastTick: Integer;
   Rect: TKMRect;
 begin
   inherited;
@@ -3992,15 +3992,17 @@ begin
   // Update replay counters
   if fUIMode = umReplay then
   begin
+    LastTick := Max4(gGame.LastReplayTick,
+                     gGame.GameInputProcess.GetLastTick,
+                     gGame.GameTickCount,
+                     gGame.SavedReplays.LastTick);
     // Replays can continue after end, keep the bar in 0..1 range
     ReplayBar_Replay.SetParameters(gGame.GameTickCount,
                                    gGame.GameOptions.Peacetime*60*10,
-                                   Max3(gGame.GameInputProcess.GetLastTick,
-                                        gGame.GameTickCount,
-                                        gGame.SavedReplays.LastTick));
+                                   LastTick);
 
     Label_Replay.Caption := TimeToString(gGame.MissionTime) + ' / ' +
-                            TickToTimeStr(gGame.GameInputProcess.GetLastTick);
+                            TickToTimeStr(LastTick);
   end;
 
   // Update speedup clocks

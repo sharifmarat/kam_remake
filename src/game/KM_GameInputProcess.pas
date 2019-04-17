@@ -326,7 +326,6 @@ type
     procedure CmdConsoleCommand(aCommandType: TKMGameInputCommandType; const aAnsiTxtParam: AnsiString;
                                 const aUniTxtArray: TKMScriptCommandParamsArray);
 
-    procedure CmdGame(aCommandType: TKMGameInputCommandType; aValue:boolean); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; aParam1, aParam2: Integer); overload;
     procedure CmdGame(aCommandType: TKMGameInputCommandType; const aLoc: TKMPointF; aOwner: TKMHandID; aColor: Cardinal); overload;
@@ -348,8 +347,8 @@ type
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
-    function GetLastTick: Cardinal; virtual;
-    function ReplayEnded: Boolean; virtual;
+    function GetLastTick: Cardinal;
+    function ReplayEnded: Boolean;
 
     class function GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
     class function StoredGIPCommandToString(aCommand: TKMStoredGIPCommand): String;
@@ -1000,13 +999,6 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aValue: Boolean);
-begin
-  Assert(aCommandType = gicGamePause);
-  TakeCommand(MakeCommand(aCommandType, Integer(aValue)));
-end;
-
-
 procedure TKMGameInputProcess.CmdGame(aCommandType: TKMGameInputCommandType; aDateTime: TDateTime);
 begin
   Assert(aCommandType in [gicGameAutoSave, gicGameAutoSaveAfterPT, gicGameSaveReturnLobby]);
@@ -1121,10 +1113,7 @@ end;
 { See if replay has ended (no more commands in queue) }
 function TKMGameInputProcess.ReplayEnded: Boolean;
 begin
-  if ReplayState = gipReplaying then
-    Result := fCursor > fCount
-  else
-    Result := False;
+  Result := (ReplayState = gipReplaying) and (fCursor > fCount);
 end;
 
 
@@ -1186,7 +1175,6 @@ end;
 procedure TKMGameInputProcess.SaveExtra(aStream: TKMemoryStream);
 begin
   aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
-  aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
 end;
 
 
@@ -1194,7 +1182,6 @@ procedure TKMGameInputProcess.LoadExtra(aStream: TKMemoryStream);
 var
   Tmp: Cardinal;
 begin
-  aStream.Read(Tmp); //Just read some bytes from the stream
   aStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
 end;

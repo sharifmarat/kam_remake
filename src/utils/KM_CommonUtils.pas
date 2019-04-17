@@ -25,6 +25,8 @@ uses
 
   function Max3(const A,B,C: Integer): Integer;
   function Min3(const A,B,C: Integer): Integer;
+  function Max4(const A,B,C,D: Integer): Integer;
+  function Min4(const A,B,C,D: Integer): Integer;
 
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
@@ -546,17 +548,26 @@ begin
   Result := StringReplace(aString, '\', PathDelim, [rfReplaceAll, rfIgnoreCase]);
 end;
 
-
 function Max3(const A,B,C: Integer): Integer;
 begin
   Result := Max(A, Max(B, C));
 end;
 
-
 function Min3(const A,B,C: Integer): Integer;
 begin
   Result := Min(A, Min(B, C));
 end;
+
+function Max4(const A,B,C,D: Integer): Integer;
+begin
+  Result := Max(Max(A, B), Max(C, D));
+end;
+
+function Min4(const A,B,C,D: Integer): Integer;
+begin
+  Result := Min(Min(A, B), Min(C, D));
+end;
+
 
 
 function GetPingColor(aPing: Word): Cardinal;

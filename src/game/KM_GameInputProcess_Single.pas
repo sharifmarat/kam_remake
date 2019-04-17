@@ -7,9 +7,6 @@ uses
 
 type
   TKMGameInputProcess_Single = class(TKMGameInputProcess)
-  private
-    fCurrTick: Cardinal;
-    fLastTick: Cardinal;
   protected
     procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
     procedure SaveExtra(aStream: TKMemoryStream); override;
@@ -17,15 +14,12 @@ type
   public
     procedure ReplayTimer(aTick: Cardinal); override;
     procedure RunningTimer(aTick: Cardinal); override;
-    procedure UpdateState(aTick: Cardinal); override;
-    function GetLastTick: Cardinal; override;
-    function ReplayEnded: Boolean; override;
   end;
 
 
 implementation
 uses
-  KM_Game, KM_Defaults, KM_CommonUtils;
+  Math, KM_Game, KM_Defaults, KM_CommonUtils;
 
 
 procedure TKMGameInputProcess_Single.TakeCommand(const aCommand: TKMGameInputCommand);
@@ -68,7 +62,6 @@ begin
       Inc(fCursor);
     end;
   end;
-  fCurrTick := aTick;
 end;
 
 
@@ -80,44 +73,18 @@ begin
 end;
 
 
-function TKMGameInputProcess_Single.GetLastTick: Cardinal;
-begin
-  if IsLastTickValueCorrect(fLastTick) then
-    Result := fLastTick
-  else
-    Result := inherited;
-end;
-
-
-function TKMGameInputProcess_Single.ReplayEnded: Boolean;
-begin
-  Result := inherited and (not IsLastTickValueCorrect(fLastTick) or (fLastTick <= fCurrTick));
-end;
-
-
-procedure TKMGameInputProcess_Single.UpdateState(aTick: Cardinal);
-begin
-  fCurrTick := aTick;
-end;
-
-
 procedure TKMGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
 begin
-  //no inherited here. We override parent behaviour
-  //aStream.Write(fCurrTick);
-
-  aStream.Write(fCurrTick);
-  aStream.Write(fLastTick);
+  aStream.Write(gGame.LastReplayTick);
 end;
 
 
 procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
+var
+  LastReplayTick: Cardinal;
 begin
-  //no inherited here. We override parent behaviour
-  //aStream.Read(fLastTick);
-
-  aStream.Read(fCurrTick);
-  aStream.Read(fLastTick);
+  aStream.Read(LastReplayTick);
+  gGame.LastReplayTick := LastReplayTick;
 end;
 
 

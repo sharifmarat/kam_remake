@@ -58,9 +58,10 @@ uses
   {$IFDEF USE_MAD_EXCEPT}KM_Exceptions in 'src\KM_Exceptions.pas',{$ENDIF}
   KM_FogOfWar in 'src\KM_FogOfWar.pas',
 
-  KM_GameTypes in 'src\game\KM_GameTypes.pas',  
   KM_Game in 'src\game\KM_Game.pas',
   KM_GameApp in 'src\game\KM_GameApp.pas',
+  KM_GameClasses in 'src\game\KM_GameClasses.pas',
+  KM_GameTypes in 'src\game\KM_GameTypes.pas',  
   KM_GameCursor in 'src\game\KM_GameCursor.pas',
   KM_GameInfo in 'src\game\KM_GameInfo.pas',
   KM_GameOptions in 'src\game\KM_GameOptions.pas',
