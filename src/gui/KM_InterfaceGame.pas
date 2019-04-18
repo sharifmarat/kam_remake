@@ -105,6 +105,11 @@ const
   TownHall_Order: array [0..5] of TKMUnitType = (
     utPeasant, utMilitia, utSlingshot, utHorseman, utBarbarian, utMetalBarbarian);
 
+  Soldiers_Order: array[0..13] of TKMUnitType = (
+    utMilitia, utAxeFighter, utSwordsman, utBowman, utArbaletman,
+    utPikeman, utHallebardman, utHorseScout, utCavalry,
+    utPeasant, utSlingshot, utHorseman, utBarbarian, utMetalBarbarian);
+
   // Stats get stacked by UI logic (so that on taller screens they all were
   // in nice pairs, and would stack up only on short screens)
   StatPlan: array [0..STATS_LINES_CNT-1] of record

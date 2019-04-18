@@ -211,7 +211,7 @@ type
 implementation
 
 uses
-  KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
+  KM_InterfaceGame, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
 
 { TKMGUIGameSpectatorItem }
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String;
@@ -409,7 +409,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineResources.GetTag(AIndex: Integer): Integer;
 begin
-  Result := Integer(WARE_MIN) + AIndex;
+  Result := Integer(StoreResType[Length(StoreResType) - AIndex]); //opposite order, we draw items from the right
 end;
 
 function TKMGUIGameSpectatorItemLineResources.GetValue(AHandIndex: Integer; ATag: Integer): String;
@@ -454,7 +454,11 @@ end;
 
 function TKMGUIGameSpectatorItemLineWarFare.GetTag(AIndex: Integer): Integer;
 begin
-  Result := IfThen(AIndex = 0, -1, Integer(WARFARE_MAX) - AIndex + 1); //Recruit is the last
+  if AIndex = 0 then
+    Result := -1
+  else
+    //Recruit is the last
+    Result := Integer(BarracksResType[Length(BarracksResType) - AIndex + 1]); //opposite order, we draw items from the right
 end;
 
 function TKMGUIGameSpectatorItemLineWarFare.GetValue(AHandIndex: Integer; ATag: Integer): String;
@@ -504,12 +508,12 @@ end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTagCount: Integer;
 begin
-  Result := Integer(HOUSE_MAX) - Integer(HOUSE_MIN) + 1;
+  Result := Integer(HOUSE_MAX) - Integer(HOUSE_MIN) + 1 - 1; //-1 for htSiegeWorkshop
 end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTag(AIndex: Integer): Integer;
 begin
-  Result := Integer(HOUSE_MIN) + AIndex;
+  Result := Integer(GUIHouseOrder[Length(GUIHouseOrder) - AIndex]); //opposite order, we draw items from the right
 end;
 
 procedure TKMGUIGameSpectatorItemLineCustomBuildings.ResetUIDs;
@@ -620,7 +624,7 @@ end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetTag(AIndex: Integer): Integer;
 begin
-  Result := Integer(CITIZEN_MIN) + AIndex;
+  Result := Integer(School_Order[Length(School_Order) - AIndex - 1]); //opposite order, we draw items from the right
 end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetValue(AHandIndex: Integer; ATag: Integer): String;
@@ -654,7 +658,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineArmy.GetTag(AIndex: Integer): Integer;
 begin
-  Result := Integer(WARRIOR_MIN) + AIndex;
+  Result := Integer(Soldiers_Order[Length(Soldiers_Order) - AIndex - 1]); //opposite order, we draw items from the right
 end;
 
 procedure TKMGUIGameSpectatorItemLineArmy.ResetUIDs;
