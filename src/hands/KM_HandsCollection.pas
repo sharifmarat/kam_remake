@@ -777,6 +777,7 @@ var
   TeamColorInit: Boolean;
   TeamColor: Cardinal;
 begin
+  TeamColor := icBlack;
   for I := 0 to Length(fTeams) - 1 do
   begin
     TeamColorInit := False;
