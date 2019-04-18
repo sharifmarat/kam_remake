@@ -775,7 +775,7 @@ begin
   FLastIndex := FDropBox.ItemIndex;
 
   Position := 32;
-  Teams := gHands.GetFullTeams;
+  Teams := gHands.Teams;
 
   for I := Low(Teams) to High(Teams) do
   begin
