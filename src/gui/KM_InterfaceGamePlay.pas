@@ -4105,7 +4105,7 @@ begin
   end;
 
   if fGuiGameSpectator <> nil then
-    fGuiGameSpectator.UpdateState;
+    fGuiGameSpectator.UpdateState(aTickCount);
 end;
 
 

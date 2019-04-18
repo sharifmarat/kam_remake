@@ -67,7 +67,7 @@ type
     procedure DoubleClicked(Sender: TObject);
     procedure ItemClicked(aItemTag: Integer);
     procedure Update;
-    procedure UpdateVisibility;
+    procedure UpdateItemsVisibility;
   protected
     function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; virtual; abstract;
     function GetTagCount: Integer; virtual; abstract;
@@ -205,7 +205,7 @@ type
     procedure OpenPage(aIndex: Integer);
     procedure CloseDropBox;
 
-    procedure UpdateState;
+    procedure UpdateState(aTick: Cardinal);
   end;
 
 implementation
@@ -311,7 +311,7 @@ begin
   Result := True;
 end;
 
-procedure TKMGUIGameSpectatorItemLine.UpdateVisibility;
+procedure TKMGUIGameSpectatorItemLine.UpdateItemsVisibility;
 var
   i, Position, Count: Integer;
   Str: UnicodeString;
@@ -818,32 +818,36 @@ begin
       begin
         FLines[FLastIndex, J].Top := Position;
         FLines[FLastIndex, J].Visible := True;
-//        FLines[FLastIndex, J].Update;
       end;
       Position := Position + GUI_SPECTATOR_ITEM_HEIGHT + GUI_SPECTATOR_ITEM_SPLITE_V * 2 + GUI_SPECTATOR_HEADER_HEIGHT;
     end;
     Position := Position + GUI_SPECTATOR_ITEM_TEAM;
   end;
-  UpdateState;
+  UpdateState(0); //Will update all data
 end;
 
-procedure TKMGUIGameSpectator.UpdateState;
+procedure TKMGUIGameSpectator.UpdateState(aTick: Cardinal);
 var
   I, K: Integer;
 begin
+  if aTick mod 5 <> 0 then Exit;
+
+  //Reset all aggregators first
   for I := Low(FLinesAggregator) to High(FLinesAggregator) do
     if FLinesAggregator[I] <> nil then
       FLinesAggregator[I].ResetItems;
 
+  //Collect data from lines items - which to show and which not - into aggregator
   for I := Low(FLines) to High(FLines) do
     for K := 0 to MAX_HANDS - 1 do
       if FLines[I, K] <> nil then
         FLines[I, K].Update;
 
+  //Set visibility for items, by aggregated data
   for I := Low(FLines) to High(FLines) do
     for K := 0 to MAX_HANDS - 1 do
       if FLines[I, K] <> nil then
-        FLines[I, K].UpdateVisibility;
+        FLines[I, K].UpdateItemsVisibility;
 end;
 
 function TKMGUIGameSpectator.GetOpenedPage: Integer;
