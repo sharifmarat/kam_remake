@@ -759,7 +759,7 @@ begin
 
     if (Group = nil)
       or Group.IsDead //check if group is dead
-      or (Group.UnitType <> aUnitType) then // we are interested in groups with the same type only
+      or not Group.HasUnitType(aUnitType) then // we are interested in groups with the same type only
       Continue;
 
     //Just find any first house
