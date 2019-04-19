@@ -645,7 +645,8 @@ procedure TFormMain.ControlsReset;
   begin
     for I := 0 to aBox.ControlCount - 1 do
       if aBox.Controls[I] is TCheckBox then
-        TCheckBox(aBox.Controls[I]).Checked := aBox.Controls[I] = chkLogNetConnection
+        TCheckBox(aBox.Controls[I]).Checked :=    (aBox.Controls[I] = chkBevel)
+                                               or (aBox.Controls[I] = chkLogNetConnection)
       else
       if aBox.Controls[I] is TTrackBar then
         TTrackBar(aBox.Controls[I]).Position := 0
@@ -761,7 +762,7 @@ begin
   if AllowDebugChange then
   begin
     SHOW_AI_WARE_BALANCE := chkShowBalance.Checked;
-    SHOW_OVERLAY_BEVEL := chkBevel.Checked;
+    SHOW_DEBUG_OVERLAY_BEVEL := chkBevel.Checked;
     OVERLAY_DEFENCES := chkShowDefences.Checked;
     OVERLAY_AI_BUILD := chkBuildAI.Checked;
     OVERLAY_AI_COMBAT := chkCombatAI.Checked;
