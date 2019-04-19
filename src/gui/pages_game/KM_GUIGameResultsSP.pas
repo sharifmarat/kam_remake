@@ -213,10 +213,10 @@ begin
   Chart_Houses.MaxLength    := gHands[HumanId].Stats.ChartCount;
   Chart_Wares.MaxLength     := gHands[HumanId].Stats.ChartCount;
 
-  Chart_Army.MaxTime      := gGame.GameTickCount div 10;
-  Chart_Citizens.MaxTime  := gGame.GameTickCount div 10;
-  Chart_Houses.MaxTime    := gGame.GameTickCount div 10;
-  Chart_Wares.MaxTime     := gGame.GameTickCount div 10;
+  Chart_Army.MaxTime      := gGame.GameTick div 10;
+  Chart_Citizens.MaxTime  := gGame.GameTick div 10;
+  Chart_Houses.MaxTime    := gGame.GameTick div 10;
+  Chart_Wares.MaxTime     := gGame.GameTick div 10;
 
   //Citizens
   TempGraphCount := 0; //Reset

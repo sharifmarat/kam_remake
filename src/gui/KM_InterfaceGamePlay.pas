@@ -1779,7 +1779,7 @@ end;
 procedure TKMGamePlayInterface.ReplaySaved;
 begin
   if (gGame.SavedReplays <> nil) then
-    ReplayBar_Replay.AddMark(gGame.GameTickCount);
+    ReplayBar_Replay.AddMark(gGame.GameTick);
 end;
 
 
@@ -2242,7 +2242,7 @@ begin
   begin
     gGame.IsPaused := True;
     SetButtons(False); //Update buttons
-    gGame.GamePlayInterface.UpdateState(gGame.GameTickCount);
+    gGame.GamePlayInterface.UpdateState(gGame.GameTick);
   end;
 
   TicksList := Tlist<Cardinal>.Create;
@@ -4008,10 +4008,10 @@ begin
   begin
     LastTick := Max4(gGame.LastReplayTick,
                      gGame.GameInputProcess.GetLastTick,
-                     gGame.GameTickCount,
+                     gGame.GameTick,
                      gGame.SavedReplays.LastTick);
     // Replays can continue after end, keep the bar in 0..1 range
-    ReplayBar_Replay.SetParameters(gGame.GameTickCount,
+    ReplayBar_Replay.SetParameters(gGame.GameTick,
                                    gGame.GameOptions.Peacetime*60*10,
                                    LastTick);
 
@@ -4027,7 +4027,7 @@ begin
   begin
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
     if SHOW_GAME_TICK then
-      Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTickCount);
+      Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTick);
   end;
 
   // Keep on updating these menu pages as game data keeps on changing

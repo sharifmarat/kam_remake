@@ -386,7 +386,7 @@ begin
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
   TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fntGrey, taRight, $FFFFFFFF);
 
-  ID := GUI_SPECTATOR_HEADER_FLAG + gGame.GameTickCount mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
+  ID := GUI_SPECTATOR_HEADER_FLAG + gGame.GameTick mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
   TKMRenderUI.WritePicture(AbsLeft + Width - 32, AbsTop, 32, GUI_SPECTATOR_HEADER_HEIGHT, [], rxHouses, ID, True, gHands[FHandIndex].FlagColor);
 end;
 

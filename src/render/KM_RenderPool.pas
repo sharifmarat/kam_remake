@@ -1001,7 +1001,7 @@ begin
 
   // Thought bubbles are animated in reverse
   Id := ThoughtBounds[Thought, 2] + 1 -
-       (gGame.GameTickCount mod Word(ThoughtBounds[Thought, 2] - ThoughtBounds[Thought, 1]));
+       (gGame.GameTick mod Word(ThoughtBounds[Thought, 2] - ThoughtBounds[Thought, 1]));
 
   CornerX := pX + R.Pivot[Id].X / CELL_SIZE_PX;
   CornerY := gTerrain.FlatToHeight(pX, pY) + (R.Pivot[Id].Y + R.Size[Id].Y) / CELL_SIZE_PX - 1.5;
