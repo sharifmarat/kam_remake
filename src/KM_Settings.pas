@@ -96,7 +96,7 @@ type
     fSpecShowBeacons: Boolean;   //Spectator variable - show beacons while spectating
     fShowGameTime: Boolean;      //Show game time label (always)
 
-    fShowPlayersColors: Boolean; //Show player colors, if false then show self/enemy/ally colors
+    fPlayersColorMode: TKMPlayerColorMode;
     fPlayerColorSelf: Cardinal;
     fPlayerColorAlly: Cardinal;
     fPlayerColorEnemy: Cardinal;
@@ -189,7 +189,7 @@ type
     procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
-    procedure SetShowPlayersColors(aValue: Boolean);
+    procedure SetPlayersColorMode(aValue: TKMPlayerColorMode);
     procedure SetPlayerColorSelf(aValue: Cardinal);
     procedure SetPlayerColorAlly(aValue: Cardinal);
     procedure SetPlayerColorEnemy(aValue: Cardinal);
@@ -274,7 +274,7 @@ type
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
 
-    property ShowPlayersColors: Boolean read fShowPlayersColors write SetShowPlayersColors;
+    property PlayersColorMode: TKMPlayerColorMode read fPlayersColorMode write SetPlayersColorMode;
     property PlayerColorSelf: Cardinal read fPlayerColorSelf write SetPlayerColorSelf;
     property PlayerColorAlly: Cardinal read fPlayerColorAlly write SetPlayerColorAlly;
     property PlayerColorEnemy: Cardinal read fPlayerColorEnemy write SetPlayerColorEnemy;
@@ -575,7 +575,7 @@ begin
     fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
-    fShowPlayersColors := F.ReadBool('Game', 'ShowPlayersColors', True); //Enabled by default
+    fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode',   1)); //Show players colors by default
 
     //Load minimap colors as hex strings 6-hex digits width
     if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorSelf', IntToHex(Integer(clPlayerSelf and $FFFFFF), 6)), TempCard) then
@@ -704,7 +704,7 @@ begin
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
 
-    F.WriteBool   ('Game','ShowPlayersColors', fShowPlayersColors);
+    F.WriteInteger('Game','PlayersColorMode', Byte(fPlayersColorMode));
 
     F.WriteString ('Game','PlayerColorSelf',   IntToHex(fPlayerColorSelf and $FFFFFF, 6));
     F.WriteString ('Game','PlayerColorAlly',   IntToHex(fPlayerColorAlly and $FFFFFF, 6));
@@ -1004,9 +1004,9 @@ begin
 end;
 
 
-procedure TKMGameSettings.SetShowPlayersColors(aValue: Boolean);
+procedure TKMGameSettings.SetPlayersColorMode(aValue: TKMPlayerColorMode);
 begin
-  fShowPlayersColors := aValue;
+  fPlayersColorMode := aValue;
   Changed;
 end;
 

@@ -199,15 +199,18 @@ procedure TKMMinimap.UpdateMinimapFromGame;
   begin
     if (gGame <> nil) then
     begin
-      if (gGame.IsMapEditor or gGameApp.GameSettings.ShowPlayersColors) then
-        Result := gHands[aHandId].FlagColor
-      else begin
-        if aHandId = gMySpectator.HandID then
-          Result := gGameApp.GameSettings.PlayerColorSelf
-        else if (gHands[aHandId].Alliances[gMySpectator.HandID] = atAlly) then
-          Result := gGameApp.GameSettings.PlayerColorAlly
-        else
-          Result := gGameApp.GameSettings.PlayerColorEnemy;
+      Result := gHands[aHandId].FlagColor;
+      if not gGame.IsMapEditor then
+      begin
+        case gGameApp.GameSettings.PlayersColorMode of
+          pcmAllyEnemy: if aHandId = gMySpectator.HandID then
+                          Result := gGameApp.GameSettings.PlayerColorSelf
+                        else if (gHands[aHandId].Alliances[gMySpectator.HandID] = atAlly) then
+                          Result := gGameApp.GameSettings.PlayerColorAlly
+                        else
+                          Result := gGameApp.GameSettings.PlayerColorEnemy;
+          pcmTeams:     Result := gHands[aHandId].TeamColor;
+        end;
       end;
     end else
       Result := gHands[aHandId].FlagColor;

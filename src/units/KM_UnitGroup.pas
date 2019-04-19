@@ -136,6 +136,7 @@ type
     function IsRanged: Boolean;
     function IsDead: Boolean;
     function UnitType: TKMUnitType;
+    function HasUnitType(aUnitType: TKMUnitType): Boolean;
     function GetOrderText: UnicodeString;
     property GroupType: TKMGroupType read fGroupType;
     property UID: Integer read fUID;
@@ -1656,6 +1657,19 @@ end;
 function TKMUnitGroup.UnitType: TKMUnitType;
 begin
   Result := Members[0].UnitType;
+end;
+
+
+function TKMUnitGroup.HasUnitType(aUnitType: TKMUnitType): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to fMembers.Count - 1 do
+    if not Members[I].IsDeadOrDying
+      and (Members[I].UnitType = aUnitType) then
+      Exit(True);
+
 end;
 
 

@@ -1239,7 +1239,7 @@ var
   Teams: TKMByteSetArray;
   NonTeamHands: set of Byte;
 begin
-  Teams := gHands.GetTeams;
+  Teams := gHands.GetTeamsOfAllies;
   NonTeamHands := [0..gHands.Count - 1];
 
   //Get non team hands
@@ -1306,7 +1306,7 @@ var
 begin
   RecreateListToShow(stByTeams);
   fChartSeparatorsPos[stByTeams].Clear;
-  Teams := gHands.GetFullTeams;
+  Teams := gHands.Teams;
   TeamI := 0;
 
   for J := Low(Teams) to High(Teams) do

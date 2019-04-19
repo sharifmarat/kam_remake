@@ -137,7 +137,7 @@ type
     procedure MPPlayMoreClick(Sender: TObject);
     procedure NetWaitClick(Sender: TObject);
     procedure ReplayClick(Sender: TObject);
-    procedure Replay_AllyEnemyModeClick(Sender: TObject);
+    procedure Replay_PlayersColorModeClick(Sender: TObject);
     function Replay_ListKeyUp(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     procedure ReturnToLobbyClick(Sender: TObject);
     procedure Allies_Close(Sender: TObject);
@@ -203,9 +203,10 @@ type
 
     Panel_Stats: TKMPanel;
 
-    Panel_ReplayCtrl: TKMPanel; // Smaller Panel to contain replay controls
+    Panel_ReplayBar: TKMPanel;
       ReplayBar_Replay: TKMReplayBar;
-      Label_Replay: TKMLabel;
+      Label_ReplayBar: TKMLabel;
+    Panel_ReplayCtrl: TKMPanel; // Smaller Panel to contain replay controls
       Button_ReplayRestart: TKMButton;
       Button_ReplayPause: TKMButton;
       Button_ReplayStep: TKMButton;
@@ -218,7 +219,8 @@ type
       Button_ShowStatsSpec: TKMButton;
       Dropbox_ReplayFOW: TKMDropList;
       Checkbox_ReplayFOW: TKMCheckBox;
-      CheckBox_AllyEnemy_ColorMode: TKMCheckBox;
+      Label_PlayersColorMode: TKMLabel;
+      Radio_PlayersColorMode: TKMRadioGroup;
     Panel_Allies: TKMPanel;
       Label_PeacetimeRemaining: TKMLabel;
       Image_AlliesHostStar: TKMImage;
@@ -728,16 +730,16 @@ end;
 
 procedure TKMGamePlayInterface.GameSettingsChanged;
 begin
-  //Update Ally/Enemy checkbox
-  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
+  //Update player color mode radio
+  Radio_PlayersColorMode.ItemIndex := Byte(gGameApp.GameSettings.PlayersColorMode) - 1;
   //Update minimap
   fMinimap.Update;
 end;
 
 
-procedure TKMGamePlayInterface.Replay_AllyEnemyModeClick(Sender: TObject);
+procedure TKMGamePlayInterface.Replay_PlayersColorModeClick(Sender: TObject);
 begin
-  gGameApp.GameSettings.ShowPlayersColors := not CheckBox_AllyEnemy_ColorMode.Checked;
+  gGameApp.GameSettings.PlayersColorMode := TKMPlayerColorMode(Radio_PlayersColorMode.ItemIndex + 1);
   fGuiMenuSettings.UpdateView; //Update settings
   //Update minimap
   fMinimap.Update;
@@ -1048,18 +1050,52 @@ end;
 
 procedure TKMGamePlayInterface.Create_Replay;
 begin
-  Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8, 160, 65);
-    ReplayBar_Replay        := TKMReplayBar.Create(Panel_ReplayCtrl, 0, 0, 400, 25);
-    Label_Replay            := TKMLabel.Create(Panel_ReplayCtrl,  ReplayBar_Replay.Width div 2,
-                                                                  ReplayBar_Replay.Height div 2 - 7, NO_TEXT, fntGrey, taCenter);
-    Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 29, 24, 24, 582, rxGui, bsGame);
-    Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 29, 24, 24, 583, rxGui, bsGame);
-    Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 29, 24, 24, 584, rxGui, bsGame);
-    Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 29, 24, 24, 585, rxGui, bsGame);
-    Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 29, 24, 24, 586, rxGui, bsGame);
-    Button_ReplaySaveAt       := TKMButton.Create(Panel_ReplayCtrl,180-24, 29, 24, 24, 592, rxGui, bsGame);
+  Panel_ReplayBar := TKMPanel.Create(Panel_Main, 320, 8, 400, 45);
+    ReplayBar_Replay := TKMReplayBar.Create(Panel_ReplayBar, 0, 0, 400, 25);
+    Label_ReplayBar  := TKMLabel.Create(Panel_ReplayBar, ReplayBar_Replay.Width div 2,
+                                                         ReplayBar_Replay.Height div 2 - 7, NO_TEXT, fntGrey, taCenter);
 
-    Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl,ReplayBar_Replay.Right - 24, 29, 24, 24, 669, rxGui, bsGame);
+    ReplayBar_Replay.OnMarkClick := ReplayMarkClick;
+    ReplayBar_Replay.HintResText := TX_REPLAY_LOAD_AT_HINT;
+
+  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 8+29, 400, 80);
+    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 4, 22, 22, 669, rxGui, bsGame);
+    Button_ShowStatsSpec.OnClick := ShowStats;
+    Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
+
+    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 27, 7, 200-27, 20, gResTexts[TX_REPLAY_SHOW_FOG], fntMetal);
+    Checkbox_ReplayFOW.OnClick := ReplayClick;
+
+    Label_PlayersColorMode := TKMLabel.Create(Panel_ReplayFOW, 200, 5, 200, 20, gResTexts[TX_PLAYERS_COLOR_MODE_CAPTION], fntMetal, taLeft);
+
+    Radio_PlayersColorMode := TKMRadioGroup.Create(Panel_ReplayFOW,200,25,200,60,fntMetal);
+      Radio_PlayersColorMode.Anchors := [anLeft, anBottom];
+    Radio_PlayersColorMode.ItemIndex := 0;
+    Radio_PlayersColorMode.Add(gResTexts[TX_PLAYERS_COLOR_MODE_DEFAULT], gResTexts[TX_PLAYERS_COLOR_MODE_DEFAULT_HINT]);
+    Radio_PlayersColorMode.Add(gResTexts[TX_PLAYERS_COLOR_MODE_ALLY_ENEMY], gResTexts[TX_PLAYERS_COLOR_MODE_ALLY_ENEMY_HINT]);
+    Radio_PlayersColorMode.Add(gResTexts[TX_PLAYERS_COLOR_MODE_TEAMS], gResTexts[TX_PLAYERS_COLOR_MODE_TEAMS_HINT]);
+    Radio_PlayersColorMode.OnChange := Replay_PlayersColorModeClick;
+
+    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 30, 185, 20, fntMetal, '', bsGame, False, 0.5);
+    Dropbox_ReplayFOW.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
+    Dropbox_ReplayFOW.OnChange := ReplayClick;
+    Dropbox_ReplayFOW.DropCount := MAX_LOBBY_PLAYERS;
+    Dropbox_ReplayFOW.List.AutoFocusable := False;
+    Dropbox_ReplayFOW.List.OnKeyUp := Replay_ListKeyUp;
+    Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
+    Dropbox_ReplayFOW.List.SeparatorHeight := 4;
+    Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
+
+  Panel_ReplayCtrl := TKMPanel.Create(Panel_Main, 320, 8+29, 185, 24);
+
+    Button_ReplayRestart    := TKMButton.Create(Panel_ReplayCtrl,  0, 0, 24, 24, 582, rxGui, bsGame);
+    Button_ReplayPause      := TKMButton.Create(Panel_ReplayCtrl, 25, 0, 24, 24, 583, rxGui, bsGame);
+    Button_ReplayStep       := TKMButton.Create(Panel_ReplayCtrl, 50, 0, 24, 24, 584, rxGui, bsGame);
+    Button_ReplayResume     := TKMButton.Create(Panel_ReplayCtrl, 75, 0, 24, 24, 585, rxGui, bsGame);
+    Button_ReplayExit       := TKMButton.Create(Panel_ReplayCtrl,100, 0, 24, 24, 586, rxGui, bsGame);
+    Button_ReplaySaveAt     := TKMButton.Create(Panel_ReplayCtrl,125, 0, 24, 24, 592, rxGui, bsGame);
+
+    Button_ShowStatsReplay  := TKMButton.Create(Panel_ReplayCtrl, 185 - 24, 0, 24, 24, 669, rxGui, bsGame);
     //TODO: Button_ReplayFF       := TKMButton.Create(Panel_ReplayCtrl,125, 24, 24, 24, 393, rxGui, bsGame);
     Button_ReplayRestart.OnClick := ReplayClick;
     Button_ReplayPause.OnClick   := ReplayClick;
@@ -1074,36 +1110,11 @@ begin
     Button_ReplayExit.Hint    := gResTexts[TX_REPLAY_QUIT];
     Button_ReplaySaveAt.Hint  := gResTexts[TX_REPLAY_SAVE_AT];
 
-    ReplayBar_Replay.OnMarkClick := ReplayMarkClick;
-    ReplayBar_Replay.HintResText := TX_REPLAY_LOAD_AT_HINT;
-
     Button_ShowStatsReplay.OnClick := ShowStats;
     Button_ShowStatsReplay.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
 
     Button_ReplayStep.Disable; // Initial state
     Button_ReplayResume.Disable; // Initial state
-    Button_ReplayRestart.Hide;
-
-  Panel_ReplayFOW := TKMPanel.Create(Panel_Main, 320, 56, 220, 39);
-    Button_ShowStatsSpec  := TKMButton.Create(Panel_ReplayFOW, 0, 11, 22, 22, 669, rxGui, bsGame);
-    Button_ShowStatsSpec.OnClick := ShowStats;
-    Button_ShowStatsSpec.Hint := gResTexts[TX_GAME_MENU_SHOW_STATS_HINT];
-
-    Checkbox_ReplayFOW := TKMCheckBox.Create(Panel_ReplayFOW, 27, 5, 220, 20, gResTexts[TX_REPLAY_SHOW_FOG], fntMetal);
-    Checkbox_ReplayFOW.OnClick := ReplayClick;
-    CheckBox_AllyEnemy_ColorMode := TKMCheckBox.Create(Panel_ReplayFOW,27,25,220,20,gResTexts[TX_GAME_SETTINGS_COLOR_MODE_SHORT],fntMetal);
-    CheckBox_AllyEnemy_ColorMode.Hint := gResTexts[TX_GAME_SETTINGS_COLOR_MODE_HINT];
-    CheckBox_AllyEnemy_ColorMode.OnClick := Replay_AllyEnemyModeClick;
-
-    Dropbox_ReplayFOW := TKMDropList.Create(Panel_ReplayFOW, 0, 47, 180, 20, fntMetal, '', bsGame, False, 0.5);
-    Dropbox_ReplayFOW.Hint := gResTexts[TX_REPLAY_PLAYER_PERSPECTIVE];
-    Dropbox_ReplayFOW.OnChange := ReplayClick;
-    Dropbox_ReplayFOW.DropCount := MAX_LOBBY_PLAYERS;
-    Dropbox_ReplayFOW.List.AutoFocusable := False;
-    Dropbox_ReplayFOW.List.OnKeyUp := Replay_ListKeyUp;
-    Dropbox_ReplayFOW.List.OnDoubleClick := Replay_ListDoubleClick;
-    Dropbox_ReplayFOW.List.SeparatorHeight := 4;
-    Dropbox_ReplayFOW.List.SeparatorColor := $C0606060;
  end;
 
 
@@ -1734,7 +1745,7 @@ begin
     if not gGame.Networking.NetPlayers[I].IsSpectator then
       HandIdToNetPlayersId[gGame.Networking.NetPlayers[I].HandIndex] := I;
 
-  Teams := gHands.GetFullTeams();
+  Teams := gHands.Teams;
 
   K := 0;
   for J := Low(Teams) to High(Teams) do
@@ -1871,20 +1882,11 @@ end;
 
 
 procedure TKMGamePlayInterface.ReplayClick(Sender: TObject);
-var
-  oldCenter: TKMPointF;
-  oldZoom: Single;
 begin
   if Sender = Button_ReplayRestart then
   begin
-    // Restart the replay but keep the viewport position/zoom
-    oldCenter := fViewport.Position;
-    oldZoom := fViewport.Zoom;
-
-    gGame.RestartReplay; //reload it once again
-
-    // Self is now destroyed, so we must access the NEW fGame object
-    gGame.GamePlayInterface.SyncUIView(oldCenter, oldZoom);
+    // Restart the replay by loading from stream
+    ReplayMarkClick(1);
 
     Exit; // Restarting the replay will destroy Self, so exit immediately
   end;
@@ -2194,8 +2196,8 @@ var
   IsPaused: Boolean;
   GuiSpecPage: Integer;
   IsPlayerDropOpen: Boolean;
-  PlayerDropItem: Integer;
-  ShowPlayerFOW, AllyEnemy: Boolean;
+  PlayerDropItem, PlayersColorMode: Integer;
+  ShowPlayerFOW: Boolean;
   MainMenuTab: TKMTabButtons;
 begin
   Assert(aTick >= 0, 'Tick should be >= 0'); //May be even > 0
@@ -2209,7 +2211,7 @@ begin
   IsPlayerDropOpen := Dropbox_ReplayFOW.IsOpen;
   PlayerDropItem := Dropbox_ReplayFOW.ItemIndex;
   ShowPlayerFOW := Checkbox_ReplayFOW.Checked;
-  AllyEnemy := CheckBox_AllyEnemy_ColorMode.Checked;
+  PlayersColorMode := Radio_PlayersColorMode.ItemIndex;
 
   if not gGameApp.TryLoadSavedReplay( aTick ) then
     Exit;
@@ -2234,7 +2236,7 @@ begin
   gGame.GamePlayInterface.Checkbox_ReplayFOW.Checked := ShowPlayerFOW;
   ReplayClick(gGame.GamePlayInterface.Checkbox_ReplayFOW); //Apply FOW
 
-  gGame.GamePlayInterface.CheckBox_AllyEnemy_ColorMode.Checked := AllyEnemy;
+  gGame.GamePlayInterface.Radio_PlayersColorMode.ItemIndex := PlayersColorMode;
 
   if IsPaused then
   begin
@@ -2262,7 +2264,7 @@ var
   I, J, DropBoxIndex, HumanIndexInList: Integer;
   TeamSeparatorAdded: Boolean;
 begin
-  Teams := gHands.GetTeams;
+  Teams := gHands.GetTeamsOfAllies;
   NonTeamHands := [0..gHands.Count - 1];
 
   //Get non team hands
@@ -2377,12 +2379,15 @@ begin
   // and does not affect replay consistency
 
   Panel_ReplayCtrl.Visible := fUIMode = umReplay;
+  Panel_ReplayBar.Visible := fUIMode = umReplay;
   Panel_ReplayFOW.Visible := fUIMode in [umSpectate, umReplay];
-  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 61);
+  Panel_ReplayFOW.Top := IfThen(fUIMode = umSpectate, 3, 8+29);
   Button_ShowStatsSpec.Visible := not Panel_ReplayCtrl.Visible;
   Checkbox_ReplayFOW.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
-  CheckBox_AllyEnemy_ColorMode.Left := IfThen(Button_ShowStatsSpec.Visible, 27, 0);
-  CheckBox_AllyEnemy_ColorMode.Checked := not gGameApp.GameSettings.ShowPlayersColors;
+  Checkbox_ReplayFOW.Top := IfThen(Panel_ReplayCtrl.Visible, 24+8, 7);
+  Dropbox_ReplayFOW.Top := IfThen(Panel_ReplayCtrl.Visible, 24+31, 30);
+  Label_PlayersColorMode.Top := IfThen(Panel_ReplayCtrl.Visible, 0, 5);
+  Radio_PlayersColorMode.Top := IfThen(Panel_ReplayCtrl.Visible, 20, 25);
 
   if fUIMode in [umSpectate, umReplay] then
   begin
@@ -3283,9 +3288,18 @@ begin
 
   if (Key = gResKeys[SC_PLAYER_COLOR_MODE].Key) then
   begin
-    gGameApp.GameSettings.ShowPlayersColors := not gGameApp.GameSettings.ShowPlayersColors;
+    if fUIMode in [umReplay, umSpectate] then
+      gGameApp.GameSettings.PlayersColorMode := TKMPlayerColorMode((Byte(gGameApp.GameSettings.PlayersColorMode) mod 3) + 1)
+    else
+    begin
+      if gGameApp.GameSettings.PlayersColorMode = pcmColors then
+        gGameApp.GameSettings.PlayersColorMode := pcmAllyEnemy
+      else
+        gGameApp.GameSettings.PlayersColorMode := pcmColors;
+    end;
+    GameSettingsChanged;
     //Update minimap immidiately
-    fMinimap.Update;
+//    fMinimap.Update;
   end;
 
   if (fUIMode in [umSP, umReplay])
@@ -4001,7 +4015,7 @@ begin
                                    gGame.GameOptions.Peacetime*60*10,
                                    LastTick);
 
-    Label_Replay.Caption := TimeToString(gGame.MissionTime) + ' / ' +
+    Label_ReplayBar.Caption := TimeToString(gGame.MissionTime) + ' / ' +
                             TickToTimeStr(LastTick);
   end;
 
@@ -4089,6 +4103,9 @@ begin
     fGuiGameResultsSP.UpdateState(aTickCount);
     fGuiGameResultsMP.UpdateState(aTickCount);
   end;
+
+  if fGuiGameSpectator <> nil then
+    fGuiGameSpectator.UpdateState(aTickCount);
 end;
 
 
