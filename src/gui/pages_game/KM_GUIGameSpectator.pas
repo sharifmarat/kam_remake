@@ -62,7 +62,6 @@ type
     FOnJumpToPlayer: TIntegerEvent;
     FSetViewportPos: TPointFEvent;
     FHandIndex: Integer;
-    FAnimStep: Cardinal;
     FItems: array of TKMGUIGameSpectatorItem;
     procedure DoubleClicked(Sender: TObject);
     procedure ItemClicked(aItemTag: Integer);
@@ -211,7 +210,7 @@ type
 implementation
 
 uses
-  KM_InterfaceGame, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
+  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
 
 { TKMGUIGameSpectatorItem }
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String;
@@ -275,7 +274,6 @@ begin
   fLinesAggregator := aLinesAggregator;
   OnClick := DoubleClicked;
   Anchors := [anTop, anRight];
-  FAnimStep := 0;
   Focusable := False;
   FHandIndex := AHandIndex;
   SetLength(fItems, GetTagCount);
@@ -348,8 +346,6 @@ begin
   if not Visible then
     Exit;
 
-  Inc(FAnimStep);
-
   for I := 0 to GetTagCount - 1 do
   begin
     fItems[I].Value := GetValue(FHandIndex, GetTag(I));
@@ -390,7 +386,7 @@ begin
   Str := IfThen(gHands[FHandIndex].OwnerNiknameU <> '', gHands[FHandIndex].OwnerNiknameU, gHands[FHandIndex].OwnerName);
   TKMRenderUI.WriteText(AbsLeft, AbsTop, Width - 32, Str, fntGrey, taRight, $FFFFFFFF);
 
-  ID := GUI_SPECTATOR_HEADER_FLAG + FAnimStep mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
+  ID := GUI_SPECTATOR_HEADER_FLAG + gGame.GameTickCount mod GUI_SPECTATOR_HEADER_FLAG_FRAME;
   TKMRenderUI.WritePicture(AbsLeft + Width - 32, AbsTop, 32, GUI_SPECTATOR_HEADER_HEIGHT, [], rxHouses, ID, True, gHands[FHandIndex].FlagColor);
 end;
 
@@ -830,6 +826,7 @@ procedure TKMGUIGameSpectator.UpdateState(aTick: Cardinal);
 var
   I, K: Integer;
 begin
+  //Updates could be done every 5 ticks
   if aTick mod 5 <> 0 then Exit;
 
   //Reset all aggregators first
