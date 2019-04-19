@@ -195,7 +195,7 @@ var
   BackRX: TRXType;
   BackID: Word;
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   if aStyle = bsMenu then
   begin
@@ -293,7 +293,7 @@ class procedure TKMRenderUI.WriteBevel(aLeft, aTop, aWidth, aHeight: SmallInt; a
 begin
   if (aWidth < 0) or (aHeight < 0) then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushMatrix;
     glTranslatef(aLeft, aTop, 0);
@@ -336,7 +336,7 @@ const
 var
   BarWidth: Word;
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushMatrix;
     glTranslatef(aLeft, aTop, 0);
@@ -404,7 +404,7 @@ var
   PTPos, Pos: Word;
   Mark: Integer;
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushMatrix;
     glTranslatef(aLeft, aTop, 0);
@@ -464,7 +464,7 @@ var
 begin
   if aID = 0 then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   OffX  := 0;
   OffY  := 0;
@@ -556,7 +556,7 @@ class procedure TKMRenderUI.WritePlot(aLeft,aTop,aWidth,aHeight: SmallInt; aValu
 var
   I: Integer;
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushAttrib(GL_LINE_BIT);
   glPushMatrix;
@@ -577,7 +577,7 @@ class procedure TKMRenderUI.WriteOutline(aLeft, aTop, aWidth, aHeight, aLineWidt
 begin
   if aLineWidth = 0 then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushAttrib(GL_LINE_BIT);
     glLineWidth(aLineWidth);
@@ -592,7 +592,7 @@ end;
 //Renders plane with given color and optional 1px outline
 class procedure TKMRenderUI.WriteShape(aLeft, aTop, aWidth, aHeight: SmallInt; Col: TColor4; Outline: TColor4 = $00000000);
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushAttrib(GL_LINE_BIT);
     glColor4ubv(@Col);
@@ -612,7 +612,7 @@ end;
 class procedure TKMRenderUI.WritePolyShape(aPoints: array of TKMPoint; aColor: TColor4);
 var I: Integer;
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glColor4ubv(@aColor);
   glBegin(GL_POLYGON);
@@ -626,7 +626,7 @@ end;
 
 class procedure TKMRenderUI.WriteLine(aFromX, aFromY, aToX, aToY: Single; aCol: TColor4; aPattern: Word = $FFFF);
 begin
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glColor4ubv(@aCol);
 
@@ -683,7 +683,7 @@ var
 begin
   if (aText = '') or (aColor = $00000000) then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   SetLength(Colors, 0);
 
@@ -771,7 +771,7 @@ begin
 
   glColor4ubv(@aColor);
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
   K := 0;
   PrevAtlas := -1;
   for I := 1 to Length(aText) do
@@ -808,7 +808,7 @@ begin
     if (I = Length(aText)) and (PrevAtlas <> -1) then
       glEnd;
   end;
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   if SHOW_TEXT_OUTLINES then
   begin
@@ -864,7 +864,7 @@ var
 begin
   if aRadius = 0 then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glColor4ubv(@aFillColor);
   glBegin(GL_POLYGON);
@@ -889,7 +889,7 @@ begin
   //Same color, but fully transparent
   bCol := aCol and $FFFFFF;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   glPushMatrix;
     //Slightly shifted shadow looks nicer

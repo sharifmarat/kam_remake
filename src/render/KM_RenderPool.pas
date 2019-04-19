@@ -315,7 +315,7 @@ var
   I, K: Integer;
 begin
   //Reset Texture, just in case we forgot to do it inside some method
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   if gMySpectator.Highlight is TKMHouseSketch then
     RenderHouseOutline(TKMHouseSketch(gMySpectator.Highlight));
@@ -1279,7 +1279,7 @@ procedure TRenderPool.RenderWireTile(const P: TKMPoint; Col: TColor4; aInset: Si
 begin
   if not gTerrain.TileInMapCoords(P.X, P.Y) then Exit;
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   if aLineWidth > 0 then
     glLineWidth(aLineWidth);
@@ -1316,7 +1316,7 @@ begin
   Loc := aHouseSketch.Position;
   gRes.Houses[aHouseSketch.HouseType].Outline(fHouseOutline);
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
   glColor3f(0, 1, 1);
   glBegin(GL_LINE_LOOP);
     with gTerrain do
@@ -1521,7 +1521,7 @@ var
 begin
   if gGameCursor.Cell.Y * gGameCursor.Cell.X = 0 then Exit; // Caused a rare crash
 
-  TRender.BindTexture(0); // We have to reset texture to default (0), because it can be bind to any other texture (atlas)
+  TRender.BindTexture(0); // We have to reset texture to default (0), because it could be bind to any other texture (atlas)
 
   if gGame.IsMapEditor then
     gGame.MapEditor.Paint(plCursors, KMRect(0,0,0,0));
