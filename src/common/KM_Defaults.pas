@@ -157,7 +157,7 @@ var
   OVERLAY_AI_ROUTES       :Boolean = False; //Show Routes to resources vision of new AI
   OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI
   {Stats}
-  SHOW_SPRITE_COUNT       :Boolean = True; //display rendered controls/sprites count
+  SHOW_SPRITE_COUNT       :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT      :Boolean = False; //Show debug total count of unit/house pointers being tracked
   SHOW_CMDQUEUE_COUNT     :Boolean = False; //Show how many commands were processed and stored by TGameInputProcess
   SHOW_NETWORK_DELAY      :Boolean = False; //Show the current delay in multiplayer game
