@@ -811,6 +811,9 @@ const
   icAmberBrown = $FF006797;
   icDarkGoldenRod = $FF0080B0; // brown shade color
 
+  icBarColorGreen = $FF00AA26;
+  icBarColorBlue = $FFBBAA00;
+
   // Interface colors (by usage)
   clPingLow = icGreen;
   clPingNormal = icYellow;

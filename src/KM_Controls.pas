@@ -736,7 +736,8 @@ type
     Caption, CaptionLeft, CaptionRight: UnicodeString;
     FontColor: TColor4;
     TextYOffset: Integer;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini; aPaintLayer: Integer = 0);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                       aPaintLayer: Integer = 0);
     procedure SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
     procedure Paint; override;
   end;
@@ -747,13 +748,19 @@ type
   private
     fPosition: Single;
     fSeam: Single;
+    fMainColor: Cardinal;
+    fAddColor: Cardinal;
     procedure SetPosition(aValue: Single);
     procedure SetSeam(aValue: Single);
   protected
     procedure PaintBar; override;
   public
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                       aPaintLayer: Integer = 0);
     property Seam: Single read fSeam write SetSeam;
     property Position: Single read fPosition write SetPosition;
+    property MainColor: Cardinal read fMainColor write fMainColor;
+    property AddColor: Cardinal read fAddColor write fAddColor;
   end;
 
 
@@ -4241,6 +4248,15 @@ end;
 
 
 { TKMPercentBar }
+constructor TKMPercentBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                                 aPaintLayer: Integer = 0);
+begin
+  inherited;
+
+  fMainColor := icBarColorGreen;
+  fAddColor := icBarColorBlue;
+end;
+
 procedure TKMPercentBar.SetPosition(aValue: Single);
 begin
   fPosition := EnsureRange(aValue, 0, 1);
@@ -4255,7 +4271,7 @@ end;
 
 procedure TKMPercentBar.PaintBar;
 begin
-  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam);
+  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam, fMainColor, fAddColor);
 end;
 
 

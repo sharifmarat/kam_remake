@@ -39,7 +39,9 @@ type
     class procedure Write3DButton  (aLeft, aTop, aWidth, aHeight: SmallInt; aRX: TRXType; aID: Word; aFlagColor: TColor4;
                                     aState: TKMButtonStateSet; aStyle: TKMButtonStyle; aImageEnabled: Boolean = True);
     class procedure WriteBevel     (aLeft, aTop, aWidth, aHeight: SmallInt; aEdgeAlpha: Single = 1; aBackAlpha: Single = 0.5; aResetTexture: Boolean = True);
-    class procedure WritePercentBar(aLeft, aTop, aWidth, aHeight: SmallInt; aPos: Single; aSeam: Single; aResetTexture: Boolean = True);
+    class procedure WritePercentBar(aLeft, aTop, aWidth, aHeight: SmallInt; aPos: Single; aSeam: Single;
+                                    aMainColor: Cardinal = icBarColorGreen; aAddColor: Cardinal = icBarColorBlue;
+                                    aResetTexture: Boolean = True);
     class procedure WriteReplayBar (aLeft, aTop, aWidth, aHeight: SmallInt; aPos, aPeacetime, aMaxValue: Integer; aMarks: TList<Integer>; aPattern: Word; aHighlightedMark: Integer = -1);
     class procedure WritePicture   (aLeft, aTop, aWidth, aHeight: SmallInt; aAnchors: TKMAnchorsSet; aRX: TRXType; aID: Word;
                                     aEnabled: Boolean = True; aColor: TColor4 = $FFFF00FF; aLightness: Single = 0; aResetTexture: Boolean = True);
@@ -331,10 +333,9 @@ begin
 end;
 
 
-class procedure TKMRenderUI.WritePercentBar(aLeft,aTop,aWidth,aHeight: SmallInt; aPos: Single; aSeam: Single; aResetTexture: Boolean = True);
-const
-  BAR_COLOR_GREEN: TColor4 = $FF00AA26;
-  BAR_COLOR_BLUE: TColor4 = $FFBBAA00;
+class procedure TKMRenderUI.WritePercentBar(aLeft,aTop,aWidth,aHeight: SmallInt; aPos: Single; aSeam: Single;
+                                            aMainColor: Cardinal = icBarColorGreen; aAddColor: Cardinal = icBarColorBlue;
+                                            aResetTexture: Boolean = True);
 var
   BarWidth: Word;
 begin
@@ -348,7 +349,7 @@ begin
 
     //At least 2px wide to show up from under the shadow
     BarWidth := Round((aWidth - 2) * (aPos)) + 2;
-    glColor4ubv(@BAR_COLOR_GREEN);
+    glColor4ubv(@aMainColor);
     glBegin(GL_QUADS);
       glkRect(1, 1, BarWidth-1, aHeight-1);
     glEnd;
@@ -357,7 +358,7 @@ begin
     begin
       //At least 2px wide to show up from under the shadow
       BarWidth := Round((aWidth - 2) * Min(aPos, aSeam)) + 2;
-      glColor4ubv(@BAR_COLOR_BLUE);
+      glColor4ubv(@aAddColor);
       glBegin(GL_QUADS);
         glkRect(1, 1, BarWidth-1, aHeight-1);
       glEnd;
