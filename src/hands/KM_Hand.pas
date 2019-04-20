@@ -149,7 +149,8 @@ type
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
                                    out aHouseSketch: TKMHouseSketchEdit;
                                    aSketchTypesSet: TKMHouseSketchTypeSet;
-                                   aVerifySketch: TAnonHouseSketchBoolFn): TKMHouse; overload;
+                                   aVerifySketch: TAnonHouseSketchBoolFn;
+                                   aVerifySketchBoolParam: Boolean): TKMHouse; overload;
     function GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
     function GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 
@@ -556,14 +557,15 @@ function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: 
                                        out aHouseSketch: TKMHouseSketchEdit;
                                        aSketchTypesSet: TKMHouseSketchTypeSet = [hstHouse]): TKMHouse;
 begin
-  Result := GetNextHouseWSameType(aHouseType, aStartFromUID, aHouseSketch, aSketchTypesSet, nil);
+  Result := GetNextHouseWSameType(aHouseType, aStartFromUID, aHouseSketch, aSketchTypesSet, nil, False);
 end;
 
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
                                        out aHouseSketch: TKMHouseSketchEdit;
                                        aSketchTypesSet: TKMHouseSketchTypeSet;
-                                       aVerifySketch: TAnonHouseSketchBoolFn): TKMHouse;
+                                       aVerifySketch: TAnonHouseSketchBoolFn;
+                                       aVerifySketchBoolParam: Boolean): TKMHouse;
 
 var
   ResultSet: Boolean;
@@ -610,7 +612,7 @@ var
     end;
 
     Result := not aHouseSketchTmp.IsEmpty
-              and (not Assigned(aVerifySketch) or aVerifySketch(Sketch2Verify));
+              and (not Assigned(aVerifySketch) or aVerifySketch(Sketch2Verify, aVerifySketchBoolParam));
   end;
 
   procedure FillResult(aIndex: Integer; aHSketch: TKMHouseSketchEdit);

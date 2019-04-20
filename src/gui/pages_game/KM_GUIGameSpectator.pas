@@ -19,9 +19,9 @@ type
     fProgress: Single;
     fItemTag: Integer;
     fShowItem: Boolean;
-    FOnItemClick: TIntegerEvent;
+    FOnItemClick: TIntBoolEvent;
     FDoHighlight: TBoolIntFuncSimple;
-    procedure ItemClicked(Sender: TObject);
+    procedure ItemClicked(Sender: TObject; Shift: TShiftState);
   protected
     Bevel: TKMBevel;
     Image: TKMImage;
@@ -30,7 +30,7 @@ type
     Label_AddText: TKMLabel;
   public
     constructor Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String; AHandID: Integer;
-                       aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
+                       aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntBoolEvent);
     property ItemTag: Integer read FItemTag;
     property Value: String read FValue write FValue;
     property AdditionalValue: String read FAdditionalValue write FAdditionalValue;
@@ -59,7 +59,7 @@ type
     FHandIndex: Integer;
     FItems: array of TKMGUIGameSpectatorItem;
     procedure LineClicked(Sender: TObject);
-    procedure LineItemClicked(aItemTag: Integer);
+    procedure LineItemClicked(aItemTag: Integer; aMainFunction: Boolean);
     procedure Update;
     procedure UpdateItemsVisibility;
     procedure CreateChilds;
@@ -68,13 +68,13 @@ type
     Image: TKMImage;
     Label_Text: TKMLabel;
 
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; virtual; abstract;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; virtual; abstract;
     function GetTagCount: Integer; virtual; abstract;
     function GetTag(AIndex: Integer): Integer; virtual; abstract;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; virtual; abstract;
     function GetAdditionalValue(AHandIndex: Integer; ATag: Integer): String; virtual;
     function GetProgress(AHandIndex: Integer; ATag: Integer): Single; virtual;
-    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; virtual;
+    function GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF; virtual;
     property SetViewportPos: TPointFEvent read FSetViewportPos;
     function DontHighlight(aIndex: Integer): Boolean;
     function DoHighlight(aIndex: Integer): Boolean;
@@ -89,7 +89,7 @@ type
 
   TKMGUIGameSpectatorItemLineResources = class(TKMGUIGameSpectatorItemLine)
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
@@ -101,7 +101,7 @@ type
     class function GetIcon(aTag: Integer): Word;
     class function GetTitle(aTag: Integer): UnicodeString;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
@@ -115,10 +115,10 @@ type
     procedure ResetUIDs;
     function CheckHighlight(aIndex: Integer): Boolean;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
-    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; override;
+    function GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF; override;
     function GetVerifyHouseSketchFn: TAnonHouseSketchBoolFn; virtual; abstract;
   public
     constructor Create(aParent: TKMPanel; AHandIndex: Integer; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent;
@@ -135,15 +135,17 @@ type
 
   TKMGUIGameSpectatorItemLineHouses = class(TKMGUIGameSpectatorItemLineCustomBuildings)
   protected
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
     function GetAdditionalValue(AHandIndex: Integer; ATag: Integer): String; override;
+    function GetProgress(AHandIndex: Integer; ATag: Integer): Single; override;
     function GetVerifyHouseSketchFn: TAnonHouseSketchBoolFn; override;
   end;
 
   // Units
   TKMGUIGameSpectatorItemLinePopulation = class(TKMGUIGameSpectatorItemLine)
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
     function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
@@ -154,10 +156,10 @@ type
     fLastWarriorUIDs: array [WARRIOR_MIN..WARRIOR_MAX] of Cardinal;
     procedure ResetUIDs;
   protected
-    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem; override;
+    function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
-    function GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF; override;
+    function GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF; override;
     function CheckHighlight(aIndex: Integer): Boolean; virtual;
   end;
 
@@ -232,7 +234,7 @@ const
 
 { TKMGUIGameSpectatorItem }
 constructor TKMGUIGameSpectatorItem.Create(aParent: TKMPanel; ATag: Integer; AImageID: Word; const AHint: String;
-                                           AHandID: Integer; aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntegerEvent);
+                                           AHandID: Integer; aDoHighlight: TBoolIntFuncSimple; aOnItemClick: TIntBoolEvent);
 begin
   inherited Create(aParent, 0, 0, GUI_SPEC_ITEM_WIDTH, GUI_SPEC_ITEM_HEIGHT);
 
@@ -249,25 +251,24 @@ begin
   CreateChilds;
 end;
 
-procedure TKMGUIGameSpectatorItem.ItemClicked(Sender: TObject);
+procedure TKMGUIGameSpectatorItem.ItemClicked(Sender: TObject; Shift: TShiftState);
 begin
   if Assigned(FOnItemClick) then
-    FOnItemClick(FItemTag);
+    FOnItemClick(FItemTag, ssLeft in Shift);
 end;
 
 procedure TKMGUIGameSpectatorItem.CreateChilds;
 begin
   Bevel := TKMBevel.Create(Self, 0, 0, Width, Height, BEVEL_RENDER_LAYER);
   Bevel.AnchorsStretch;
-  Bevel.OnClick := ItemClicked;
+  Bevel.OnClickShift := ItemClicked;
   Image := TKMImage.Create(Self, 2, 0, Width - 4, Height - 4, FImageID, rxGui, IMAGE_RENDER_LAYER);
   if fHandID < gHands.Count then
     Image.FlagColor := gHands[fHandID].FlagColor;
   Image.ImageCenter;
   Image.Anchors := [anRight, anTop];
-  Image.OnClick := ItemClicked;
+  Image.OnClickShift := ItemClicked;
   PercentBar := TKMPercentBar.Create(Self, 0, Height - 6, Width, 6, fntMini, PERCENTBAR_RENDER_LAYER);
-  PercentBar.Position := FProgress;
   PercentBar.AnchorsStretch;
   Label_Text := TKMLabel.Create(Self, Width div 2, Height - 16, FValue, fntGrey, taCenter, TEXT_RENDER_LAYER);
   Label_Text.Anchors := [anRight, anTop];
@@ -321,13 +322,13 @@ begin
     fOnJumpToPlayer(FHandIndex);
 end;
 
-procedure TKMGUIGameSpectatorItemLine.LineItemClicked(aItemTag: Integer);
+procedure TKMGUIGameSpectatorItemLine.LineItemClicked(aItemTag: Integer; aMainFunction: Boolean);
 var
   Loc: TKMPointF;
 begin
   if Assigned(FSetViewportPos) then
   begin
-    Loc := GetLoc(FHandIndex, aItemTag);
+    Loc := GetNextLoc(FHandIndex, aItemTag, aMainFunction);
     if Loc <> KMPOINTF_INVALID_TILE then
       FSetViewportPos(Loc);
   end;
@@ -399,7 +400,7 @@ begin
 end;
 
 
-function TKMGUIGameSpectatorItemLine.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+function TKMGUIGameSpectatorItemLine.GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF;
 begin
   Result := KMPOINTF_INVALID_TILE;
 end;
@@ -434,7 +435,7 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineResources }
-function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineResources.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag, gRes.Wares[TKMWareType(ATag)].GUIIcon, gRes.Wares[TKmWareType(ATag)].Title,
                                            FHandIndex, DontHighlight, aOnItemClick);
@@ -461,7 +462,7 @@ end;
 
 
 { TKMGUIGameSpectatorItemLineWareFare }
-function TKMGUIGameSpectatorItemLineWarFare.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineWarFare.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            TKMGUIGameSpectatorItemLineWarFare.GetIcon(ATag),
@@ -529,7 +530,7 @@ begin
   inherited;
 end;
 
-function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineCustomBuildings.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Houses[TKMHouseType(ATag)].GUIIcon,
@@ -542,9 +543,7 @@ end;
 function TKMGUIGameSpectatorItemLineCustomBuildings.CheckHighlight(aIndex: Integer): Boolean;
 begin
   Result := (GetValue(FHandIndex, aIndex) <> '') or
-            (GetAdditionalValue(FHandIndex, aIndex) <> '') or
-            (gHands[FHandIndex].Stats.GetHouseTotal(TKMHouseType(aIndex))
-             - gHands[FHandIndex].Stats.GetHousePlans(TKMHouseType(aIndex)) > 0);
+            (GetAdditionalValue(FHandIndex, aIndex) <> '');
 end;
 
 function TKMGUIGameSpectatorItemLineCustomBuildings.GetTagCount: Integer;
@@ -565,16 +564,31 @@ begin
     fLastHouseUIDs[HT] := 0;
 end;
 
-function TKMGUIGameSpectatorItemLineCustomBuildings.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+
+function TKMGUIGameSpectatorItemLineCustomBuildings.GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF;
 var
+  I: Integer;
   HT: TKMHouseType;
+  HasDamagedHouses: Boolean;
 begin
   Result := KMPOINTF_INVALID_TILE;
 
   HT := TKMHouseType(ATag);
 
-  gHands[AHandIndex].GetNextHouseWSameType(HT, fLastHouseUIDs[HT], fHouseSketch, [hstHouse, hstHousePlan], GetVerifyHouseSketchFn());
-  if not fHouseSketch.IsEmpty  then
+  HasDamagedHouses := False;
+  for I := 0 to gHands[AHandIndex].Houses.Count - 1 do
+    if gHands[AHandIndex].Houses[I].GetDamage > 0 then
+    begin
+      HasDamagedHouses := True;
+      Break;
+    end;
+
+  //MainFunction - Left MB, Right MB
+  //LMB - show only damaged houses or all houses
+  //RMB - show all houses
+  gHands[AHandIndex].GetNextHouseWSameType(HT, fLastHouseUIDs[HT], fHouseSketch, [hstHouse, hstHousePlan],
+                                           GetVerifyHouseSketchFn(), HasDamagedHouses and aMainFunction);
+  if not fHouseSketch.IsEmpty then
   begin
     gMySpectator.Highlight := fHouseSketch;
     Result := KMPointF(fHouseSketch.Entrance); //get position on that house
@@ -606,7 +620,9 @@ begin
   for i := 0 to gHands[AHandIndex].Houses.Count - 1 do
   begin
     House := gHands[AHandIndex].Houses[i];
-    if (House.HouseType = HouseType) and (House.BuildingState in [hbsWood, hbsStone]) and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
+    if (House.HouseType = HouseType)
+      and (House.BuildingState in [hbsWood, hbsStone])
+      and (not Assigned(HouseProgress) or (House.BuildingProgress > HouseProgress.BuildingProgress)) then
       HouseProgress := House;
   end;
 
@@ -616,7 +632,7 @@ end;
 
 function TKMGUIGameSpectatorItemLineConstructing.GetVerifyHouseSketchFn: TAnonHouseSketchBoolFn;
 begin
-  Result := function(aSketch: TKMHouseSketch): Boolean
+  Result := function(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean
     begin
       Result := (aSketch <> nil)
                 and (not (aSketch is TKMHouse) or not TKMHouse(aSketch).IsComplete);
@@ -624,6 +640,12 @@ begin
 end;
 
 { TKMGUIGameSpectatorItemLineBuildings }
+function TKMGUIGameSpectatorItemLineHouses.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
+begin
+  Result := inherited;
+  Result.PercentBar.MainColor := icRed;
+end;
+
 function TKMGUIGameSpectatorItemLineHouses.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
   Value: Integer;
@@ -640,17 +662,47 @@ begin
   Result := IfThen(Value > 0, '+' + IntToStr(Value), '');
 end;
 
+function TKMGUIGameSpectatorItemLineHouses.GetProgress(AHandIndex: Integer; ATag: Integer): Single;
+var
+  i: Integer;
+  House, HouseHealth: TKMHouse;
+  HouseType: TKMHouseType;
+begin
+  Result := inherited;
+  if GetValue(AHandIndex, ATag) = '' then
+    Exit;
+
+  HouseType := TKMHouseType(ATag);
+  HouseHealth := nil;
+  for i := 0 to gHands[AHandIndex].Houses.Count - 1 do
+  begin
+    House := gHands[AHandIndex].Houses[i];
+    if (House.HouseType = HouseType)
+      and (House.GetDamage > 0)
+      and (not Assigned(HouseHealth) or (House.GetDamage > HouseHealth.GetDamage)) then
+      HouseHealth := House;
+  end;
+
+  if Assigned(HouseHealth) then
+    Result := HouseHealth.GetHealth / HouseHealth.MaxHealth;
+end;
+
 function TKMGUIGameSpectatorItemLineHouses.GetVerifyHouseSketchFn: TAnonHouseSketchBoolFn;
 begin
-  Result := function(aSketch: TKMHouseSketch): Boolean
+  Result := function(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean
     begin
-      Result := True;
+      //Show only damaged houses or all houses, depending on param
+      //param - do we have damaged houses (on LMB) or RMB (all houses)
+      Result := (aSketch <> nil)
+                and (not (aSketch is TKMHouse)
+                  or (TKMHouse(aSketch).GetDamage > 0)
+                  or not aBoolParam); //Show
     end;
 end;
 
 
 { TKMGUIGameSpectatorItemLinePopulation }
-function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLinePopulation.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Units[TKMUnitType(ATag)].GUIIcon,
@@ -678,7 +730,7 @@ end;
 
 
 { TKMGUIGameSpectatorItemLineArmy }
-function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntegerEvent): TKMGUIGameSpectatorItem;
+function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
                                            gRes.Units[TKMUnitType(ATag)].GUIIcon,
@@ -710,7 +762,7 @@ begin
     fLastWarriorUIDs[UT] := 0;
 end;
 
-function TKMGUIGameSpectatorItemLineArmy.GetLoc(AHandIndex: Integer; ATag: Integer): TKMPointF;
+function TKMGUIGameSpectatorItemLineArmy.GetNextLoc(AHandIndex: Integer; ATag: Integer; aMainFunction: Boolean): TKMPointF;
 var
   NextGroup: TKMUnitGroup;
   UT: TKMUnitType;

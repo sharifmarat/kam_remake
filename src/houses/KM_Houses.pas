@@ -21,7 +21,7 @@ type
   TKMHouseSketchType = (hstHousePlan, hstHouse);
   TKMHouseSketchTypeSet = set of TKMHouseSketchType;
 
-  TAnonHouseSketchBoolFn = reference to function(aSketch: TKMHouseSketch): Boolean;
+  TAnonHouseSketchBoolFn = reference to function(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean;
 
   TKMHouseAction = class
   private
