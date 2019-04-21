@@ -3134,6 +3134,14 @@ end;
 // thats why MyControls.KeyUp is only in gsRunning clause
 // Ignore all keys if game is on 'Pause'
 procedure TKMGamePlayInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+
+  function SpeedChangeAllowed(aUIModes: TUIModeSet): Boolean;
+  begin
+    Result := (fUIMode in aUIModes)
+              or gGame.IsMPGameSpeedChangeAllowed
+              or MULTIPLAYER_SPEEDUP;
+  end;
+
 var
   SelectId: Integer;
   SpecPlayerIndex: ShortInt;
@@ -3141,7 +3149,9 @@ var
 begin
   aHandled := True; // assume we handle all keys here
 
-  if gGame.IsPaused and ((fUIMode = umSP) or (PAUSE_GAME_AT_TICK <> -1)) then
+  if gGame.IsPaused
+    and (SpeedChangeAllowed([umSP])
+      or ((PAUSE_GAME_AT_TICK <> -1) and (fUIMode <> umReplay))) then
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
@@ -3303,9 +3313,7 @@ begin
 //    fMinimap.Update;
   end;
 
-  if (fUIMode in [umSP, umReplay])
-    or gGame.IsMPGameSpeedUpAllowed
-    or MULTIPLAYER_SPEEDUP then
+  if SpeedChangeAllowed([umSP, umReplay]) then
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
     if Key = gResKeys[SC_SPEEDUP_1].Key then gGame.SetGameSpeed(1, True);
@@ -3355,8 +3363,9 @@ begin
   end;
 
   // General function keys
-  if Key = gResKeys[SC_PAUSE].Key then
-    if (fUIMode = umSP) then SetPause(True); // Display pause overlay
+  if (Key = gResKeys[SC_PAUSE].Key)
+    and SpeedChangeAllowed([umSP]) then
+      SetPause(True); // Display pause overlay
 
   { Temporary cheat codes }
   if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or (fUIMode = umSP)) then

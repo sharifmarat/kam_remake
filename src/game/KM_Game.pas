@@ -162,7 +162,7 @@ type
     function IsReplayOrSpectate: Boolean;
     function IsSingleplayer: Boolean;
     function IsSpeedUpAllowed: Boolean;
-    function IsMPGameSpeedUpAllowed: Boolean;
+    function IsMPGameSpeedChangeAllowed: Boolean;
     property MapTxtInfo: TKMMapTxtInfo read fMapTxtInfo;
     procedure ShowMessage(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint; aHandIndex: TKMHandID);
     procedure ShowMessageLocal(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
@@ -1251,11 +1251,11 @@ end;
 
 function TKMGame.IsSpeedUpAllowed: Boolean;
 begin
-  Result := not IsMultiPlayerOrSpec or IsMPGameSpeedUpAllowed;
+  Result := not IsMultiPlayerOrSpec or IsMPGameSpeedChangeAllowed;
 end;
 
 
-function TKMGame.IsMPGameSpeedUpAllowed: Boolean;
+function TKMGame.IsMPGameSpeedChangeAllowed: Boolean;
 begin
   Result := (fGameMode in [gmMulti, gmMultiSpectate])
         and (fNetworking.NetPlayers.GetNotDroppedCount = 1);
@@ -1996,7 +1996,7 @@ var TicksBehind: Single;
 begin
   TicksBehind := GetTicksBehindCnt; // save number of ticks we are behind now
   fGameSpeedChangeTick := fGameTick;
-  if IsMultiPlayerOrSpec and not IsMPGameSpeedUpAllowed then
+  if IsMultiPlayerOrSpec and not IsMPGameSpeedChangeAllowed then
     // Remember if we were some ticks behind at that moment.
     // Important for MP game with many players, but can be omitted for SP and MP with only 1 player
     fGameSpeedChangeTick := fGameSpeedChangeTick + TicksBehind;
