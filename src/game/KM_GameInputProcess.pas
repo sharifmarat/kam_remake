@@ -688,7 +688,7 @@ begin
       Exit;
 
     if (gLog <> nil) and gLog.CanLogCommands() then
-      gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTickCount, GIPCommandToString(aCommand)]));
+      gLog.LogCommands(Format('Tick: %6d Exec command: %s', [gGame.GameTick, GIPCommandToString(aCommand)]));
 
     case CommandType of
       gicArmyFeed:         SrcGroup.OrderFood(True);
@@ -1128,7 +1128,7 @@ begin
   Inc(fCount);
   if Length(fQueue) <= fCount then SetLength(fQueue, fCount + 128);
 
-  fQueue[fCount].Tick    := gGame.GameTickCount;
+  fQueue[fCount].Tick    := gGame.GameTick;
   fQueue[fCount].Command := aCommand;
   //Skip random check generation. We do not want KaMRandom to be called here
   if SKIP_RNG_CHECKS_FOR_SOME_GIC and (aCommand.CommandType in SkipRandomChecksFor) then

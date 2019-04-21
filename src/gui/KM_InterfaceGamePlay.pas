@@ -1779,7 +1779,7 @@ end;
 procedure TKMGamePlayInterface.ReplaySaved;
 begin
   if (gGame.SavedReplays <> nil) then
-    ReplayBar_Replay.AddMark(gGame.GameTickCount);
+    ReplayBar_Replay.AddMark(gGame.GameTick);
 end;
 
 
@@ -2012,7 +2012,8 @@ begin
   begin
     if (gRes.IsMsgHouseUnnocupied(Msg.fTextID) and not H.HasOwner
         and (gRes.Houses[H.HouseType].OwnerType <> utNone) and (H.HouseType <> htBarracks))
-      or H.ResourceDepletedMsgIssued then
+      or H.ResourceDepletedMsgIssued
+      or H.OrderCompletedMsgIssued then
     begin
       gMySpectator.Highlight := H;
       gMySpectator.Selected := H;
@@ -2242,7 +2243,7 @@ begin
   begin
     gGame.IsPaused := True;
     SetButtons(False); //Update buttons
-    gGame.GamePlayInterface.UpdateState(gGame.GameTickCount);
+    gGame.GamePlayInterface.UpdateState(gGame.GameTick);
   end;
 
   TicksList := Tlist<Cardinal>.Create;
@@ -4008,10 +4009,10 @@ begin
   begin
     LastTick := Max4(gGame.LastReplayTick,
                      gGame.GameInputProcess.GetLastTick,
-                     gGame.GameTickCount,
+                     gGame.GameTick,
                      gGame.SavedReplays.LastTick);
     // Replays can continue after end, keep the bar in 0..1 range
-    ReplayBar_Replay.SetParameters(gGame.GameTickCount,
+    ReplayBar_Replay.SetParameters(gGame.GameTick,
                                    gGame.GameOptions.Peacetime*60*10,
                                    LastTick);
 
@@ -4027,7 +4028,7 @@ begin
   begin
     Label_Clock.Caption := TimeToString(gGame.MissionTime);
     if SHOW_GAME_TICK then
-      Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTickCount);
+      Label_Clock.Caption := Label_Clock.Caption + '|' + IntToStr(gGame.GameTick);
   end;
 
   // Keep on updating these menu pages as game data keeps on changing
@@ -4223,7 +4224,7 @@ begin
   Bevel_DebugInfo.Width := IfThen(TextSize.X <= 1, 0, TextSize.X + 20);
   Bevel_DebugInfo.Height := IfThen(TextSize.Y <= 1, 0, TextSize.Y + 20);
 
-  Bevel_DebugInfo.Visible := SHOW_OVERLAY_BEVEL and (Trim(S) <> '') ;
+  Bevel_DebugInfo.Visible := SHOW_DEBUG_OVERLAY_BEVEL and (Trim(S) <> '') ;
 end;
 
 

@@ -378,6 +378,8 @@ object FormMain: TFormMain
         Width = 88
         Height = 17
         Caption = 'Bevel'
+        Checked = True
+        State = cbChecked
         TabOrder = 10
         OnClick = ControlsUpdate
       end

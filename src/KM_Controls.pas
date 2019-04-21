@@ -36,6 +36,8 @@ type
     fCtrlUp: TKMControl; //Control above which cursor was released
 
     fControlIDCounter: Integer;
+    fMaxPaintLayer: Integer;
+    fCurrentPaintLayer: Integer;
 
     fOnHint: TNotifyEvent; //Comes along with OnMouseOver
 
@@ -102,6 +104,8 @@ type
     fID: Integer; //Control global ID
     fHint: UnicodeString; //Text that shows up when cursor is over that control, mainly for Buttons
 
+    fPaintLayer: Integer;
+
     fTimeOfLastClick: Cardinal; //Required to handle double-clicks
 
     fClickHoldMode: Boolean;
@@ -126,6 +130,8 @@ type
     fOnHeightChange: TObjectIntegerEvent;
     fOnSizeSet: TNotifyEvent;
     fOnPositionSet: TNotifyEvent;
+
+    function PaintingBaseLayer: Boolean;
 
     function GetAbsLeft: Integer;
     function GetAbsTop: Integer;
@@ -188,7 +194,7 @@ type
     Tag: Integer; //Some tag which can be used for various needs
     Tag2: Integer; //Some tag which can be used for various needs
 
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
     function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; virtual;
 
     property Parent: TKMPanel read fParent;
@@ -288,6 +294,7 @@ type
     procedure UpdateVisibility; override;
     procedure UpdateEnableStatus; override;
     function DoPanelHandleMouseWheelByDefault: Boolean; virtual;
+    procedure DoPaint(aPaintLayer: Integer); virtual;
   public
     PanelHandleMouseWheelByDefault: Boolean; //Do whole panel handle MW by default? Usually it is
     FocusedControlIndex: Integer; //Index of currently focused control on this Panel
@@ -303,7 +310,7 @@ type
     procedure FocusNext;
     procedure ResetFocusedControlIndex;
 
-    procedure Paint; override;
+    procedure PaintPanel(aPaintLayer: Integer); virtual;
 
     procedure UpdateState(aTickCount: Cardinal); override;
   end;
@@ -314,7 +321,7 @@ type
   public
     BackAlpha: Single;
     EdgeAlpha: Single;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
     procedure Paint; override;
   end;
 
@@ -326,7 +333,7 @@ type
     LineColor: TColor4; //color of outline
     LineWidth: Byte;
   public
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
     procedure Paint; override;
   end;
 
@@ -352,8 +359,10 @@ type
   protected
     function GetIsPainted: Boolean; override;
   public
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont; aTextAlign: TKMTextAlign); overload;
-    constructor Create(aParent: TKMPanel; aLeft,aTop: Integer; const aCaption: UnicodeString; aFont: TKMFont; aTextAlign: TKMTextAlign); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                       aFont: TKMFont; aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0); overload;
+    constructor Create(aParent: TKMPanel; aLeft,aTop: Integer; const aCaption: UnicodeString; aFont: TKMFont;
+                       aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0); overload;
     function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; override;
     procedure SetColor(aColor: Cardinal);
     property AutoWrap: Boolean read fAutoWrap write SetAutoWrap;  //Whether to automatically wrap text within given text area width
@@ -392,7 +401,8 @@ type
     HighlightCoef: Single;
     Lightness: Single;
     ClipToBounds: Boolean;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui;
+                       aPaintLayer: Integer = 0);
     property RX: TRXType read fRX write fRX;
     property TexID: Word read fTexID write fTexID;
     property FlagColor: TColor4 read fFlagColor write fFlagColor;
@@ -462,8 +472,10 @@ type
     ShowImageEnabled: Boolean; // show picture as enabled or not (normal or darkened)
     CenterText: Boolean;
     TextVAlign: TKMTextVAlign;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle); overload;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType;
+                       aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                       aStyle: TKMButtonStyle; aPaintLayer: Integer = 0); overload;
     function Click: Boolean; //Try to click a button and return TRUE if succeded
     procedure MouseUp(X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure Paint; override;
@@ -724,7 +736,8 @@ type
     Caption, CaptionLeft, CaptionRight: UnicodeString;
     FontColor: TColor4;
     TextYOffset: Integer;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                       aPaintLayer: Integer = 0);
     procedure SetCaptions(const aCaptionLeft, aCaption, aCaptionRight: UnicodeString);
     procedure Paint; override;
   end;
@@ -735,13 +748,19 @@ type
   private
     fPosition: Single;
     fSeam: Single;
+    fMainColor: Cardinal;
+    fAddColor: Cardinal;
     procedure SetPosition(aValue: Single);
     procedure SetSeam(aValue: Single);
   protected
     procedure PaintBar; override;
   public
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                       aPaintLayer: Integer = 0);
     property Seam: Single read fSeam write SetSeam;
     property Position: Single read fPosition write SetPosition;
+    property MainColor: Cardinal read fMainColor write fMainColor;
+    property AddColor: Cardinal read fAddColor write fAddColor;
   end;
 
 
@@ -1032,7 +1051,8 @@ type
     function DoHandleMouseWheelByDefault: Boolean; override;
   public
     ItemTags: array of Integer;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle;
+                       aPaintLayer: Integer = 0);
     destructor Destroy; override;
 
     property AutoHideScrollBar: boolean read fAutoHideScrollBar write SetAutoHideScrollBar;
@@ -1287,7 +1307,8 @@ type
     function ListKeyDown(Sender: TObject; Key: Word; Shift: TShiftState): Boolean;
     procedure UpdateVisibility; override;
   public
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle; aAutoClose: Boolean = True);
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle;
+                       aAutoClose: Boolean = True; aPaintLayer: Integer = 0);
 
     procedure Clear; virtual; abstract;
     function Count: Integer; virtual; abstract;
@@ -1328,7 +1349,7 @@ type
     procedure SetVisible(aValue: Boolean); override;
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; const aDefaultCaption: UnicodeString;
-                       aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
+                       aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85; aPaintLayer: Integer = 0);
     procedure Clear; override;
     function Count: Integer; override;
     procedure Add(const aItem: UnicodeString; aTag: Integer = 0);
@@ -1787,7 +1808,7 @@ end;
 
 
 { TKMControl }
-constructor TKMControl.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMControl.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
 begin
   inherited Create;
   Scale         := 1;
@@ -1803,14 +1824,17 @@ begin
   fVisible      := True;
   Tag           := 0;
   fHint         := '';
+  fPaintLayer   := aPaintLayer;
   fControlIndex := -1;
   AutoFocusable := True;
   HandleMouseWheelByDefault := True;
   fLastClickPos := KMPOINT_ZERO;
 
   if aParent <> nil then
-    fID := aParent.fMasterControl.GetNextCtrlID
-  else if Self is TKMPanel then
+  begin
+    fID := aParent.fMasterControl.GetNextCtrlID;
+    aParent.fMasterControl.fMaxPaintLayer := Max(aPaintLayer, aParent.fMasterControl.fMaxPaintLayer);
+  end else if Self is TKMPanel then
     fID := 0;
 
   //Parent will be Nil only for master Panel which contains all the controls in it
@@ -2005,6 +2029,12 @@ begin
 
   TKMRenderUI.WriteShape(AbsLeft, AbsTop, fWidth, fHeight, sColor, $FFFFFFFF);
   TKMRenderUI.WriteShape(AbsLeft-3, AbsTop-3, 6, 6, sColor or $FF000000, $FFFFFFFF);
+end;
+
+
+function TKMControl.PaintingBaseLayer: Boolean;
+begin
+  Result := (fParent = nil) or (fParent.fMasterControl.fCurrentPaintLayer = 0);
 end;
 
 
@@ -2697,14 +2727,25 @@ end;
 
 
 {Panel Paint means to Paint all its childs}
-procedure TKMPanel.Paint;
+procedure TKMPanel.PaintPanel(aPaintLayer: Integer);
+begin
+  Paint;
+  DoPaint(aPaintLayer);
+end;
+
+
+procedure TKMPanel.DoPaint(aPaintLayer: Integer);
 var
   I: Integer;
 begin
-  inherited;
   for I := 0 to ChildCount - 1 do
     if Childs[I].fVisible then
-      Childs[I].Paint;
+    begin
+      if Childs[I] is TKMPanel then
+        TKMPanel(Childs[I]).PaintPanel(aPaintLayer)
+      else if (Childs[I].fPaintLayer = aPaintLayer) then
+        Childs[I].Paint;
+    end;
 end;
 
 
@@ -2817,9 +2858,9 @@ end;
 
 
 { TKMBevel }
-constructor TKMBevel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMBevel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   BackAlpha := 0.4; //Default value
   EdgeAlpha := 0.75; //Default value
 end;
@@ -2828,14 +2869,14 @@ end;
 procedure TKMBevel.Paint;
 begin
   inherited;
-  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height, EdgeAlpha, BackAlpha);
+  TKMRenderUI.WriteBevel(AbsLeft, AbsTop, Width, Height, EdgeAlpha, BackAlpha, PaintingBaseLayer);
 end;
 
 
 { TKMShape }
-constructor TKMShape.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMShape.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
 
   LineWidth := 2;
 end;
@@ -2850,9 +2891,10 @@ end;
 
 
 { TKMLabel }
-constructor TKMLabel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aFont: TKMFont; aTextAlign: TKMTextAlign);
+constructor TKMLabel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                            aFont: TKMFont; aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   fFont := aFont;
   fFontColor := $FFFFFFFF;
   fTextAlign := aTextAlign;
@@ -2863,9 +2905,10 @@ end;
 
 
 //Same as above but with width/height ommitted, as in most cases we don't know/don't care
-constructor TKMLabel.Create(aParent: TKMPanel; aLeft, aTop: Integer; const aCaption: UnicodeString; aFont: TKMFont; aTextAlign: TKMTextAlign);
+constructor TKMLabel.Create(aParent: TKMPanel; aLeft, aTop: Integer; const aCaption: UnicodeString; aFont: TKMFont;
+                            aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0);
 begin
-  Create(aParent, aLeft, aTop, 0, 0, aCaption, aFont, aTextAlign);
+  Create(aParent, aLeft, aTop, 0, 0, aCaption, aFont, aTextAlign, aPaintLayer);
 end;
 
 
@@ -2957,7 +3000,7 @@ begin
   if fEnabled then Col := FontColor
               else Col := $FF888888;
 
-  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width, fText, fFont, fTextAlign, Col, False, False, False, fTabWidth);
+  TKMRenderUI.WriteText(AbsLeft, AbsTop, Width, fText, fFont, fTextAlign, Col, False, False, False, fTabWidth, PaintingBaseLayer);
 
   if fStrikethrough then
     TKMRenderUI.WriteShape(TextLeft, AbsTop + fTextSize.Y div 2 - 2, fTextSize.X, 3, Col, $FF000000);
@@ -2987,9 +3030,10 @@ end;
 
 
 { TKMImage }
-constructor TKMImage.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui);
+constructor TKMImage.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType = rxGui;
+                            aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   fRX := aRX;
   fTexID := aTexID;
   fFlagColor := $FFFF00FF;
@@ -3053,7 +3097,8 @@ begin
 
   PaintLightness := Lightness + HighlightCoef * (Byte(HighlightOnMouseOver and (csOver in State)) + Byte(Highlight));
 
-  TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness);
+  TKMRenderUI.WritePicture(AbsLeft, AbsTop, fWidth, fHeight, ImageAnchors, fRX, fTexID, fEnabled, fFlagColor, PaintLightness,
+                           PaintingBaseLayer);
 
   if ClipToBounds then
   begin
@@ -3217,9 +3262,10 @@ end;
 
 
 { TKMButton }
-constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType; aStyle: TKMButtonStyle);
+constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aTexID: Word; aRX: TRXType;
+                             aStyle: TKMButtonStyle; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   InitCommon(aStyle);
   fRX   := aRX;
   TexID := aTexID;
@@ -3227,9 +3273,10 @@ end;
 
 
 {Different version of button, with caption on it instead of image}
-constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString; aStyle: TKMButtonStyle);
+constructor TKMButton.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; const aCaption: UnicodeString;
+                             aStyle: TKMButtonStyle; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   InitCommon(aStyle);
   Caption := aCaption;
 end;
@@ -4138,9 +4185,10 @@ end;
 
 
 { TKMProgressBar }
-constructor TKMProgressBarAbstract.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont=fntMini);
+constructor TKMProgressBarAbstract.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                                          aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   fFont := aFont;
   FontColor := $FFFFFFFF;
   fTextAlign := taCenter;
@@ -4200,6 +4248,15 @@ end;
 
 
 { TKMPercentBar }
+constructor TKMPercentBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont = fntMini;
+                                 aPaintLayer: Integer = 0);
+begin
+  inherited;
+
+  fMainColor := icBarColorGreen;
+  fAddColor := icBarColorBlue;
+end;
+
 procedure TKMPercentBar.SetPosition(aValue: Single);
 begin
   fPosition := EnsureRange(aValue, 0, 1);
@@ -4214,7 +4271,7 @@ end;
 
 procedure TKMPercentBar.PaintBar;
 begin
-  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam);
+  TKMRenderUI.WritePercentBar(AbsLeft, AbsTop, Width, Height, fPosition, fSeam, fMainColor, fAddColor);
 end;
 
 
@@ -6166,9 +6223,10 @@ end;
 
 
 { TKMListBox }
-constructor TKMListBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle);
+constructor TKMListBox.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle;
+                              aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
   fBackAlpha := 0.5;
   fItemHeight := 20;
   fItemIndex := -1;
@@ -7638,22 +7696,23 @@ end;
 
 
 { TKMDropCommon }
-constructor TKMDropCommon.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; aStyle: TKMButtonStyle; aAutoClose: Boolean = True);
+constructor TKMDropCommon.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont;
+                                 aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aPaintLayer: Integer = 0);
 var
   P: TKMPanel;
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLayer);
 
   fDropCount := 10;
   fDropUp := False;
   fFont := aFont;
 
-  fButton := TKMButton.Create(aParent, aLeft+aWidth-aHeight, aTop, aHeight, aHeight, 590, rxGui, aStyle);
+  fButton := TKMButton.Create(aParent, aLeft+aWidth-aHeight, aTop, aHeight, aHeight, 590, rxGui, aStyle, aPaintLayer);
   fButton.OnClick := ButtonClick;
   fButton.MakesSound := False;
 
   P := MasterParent;
-  fShape := TKMShape.Create(P, 0, 0, P.Width, P.Height);
+  fShape := TKMShape.Create(P, 0, 0, P.Width, P.Height, aPaintLayer);
   fShape.AnchorsStretch;
   fShape.fOnClick := ListHide;
 
@@ -7798,15 +7857,15 @@ end;
 
 { TKMDropList }
 constructor TKMDropList.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aFont: TKMFont; const aDefaultCaption: UnicodeString;
-                               aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85);
+                               aStyle: TKMButtonStyle; aAutoClose: Boolean = True; aBackAlpha: Single = 0.85; aPaintLayer: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aFont, aStyle, aAutoClose);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aFont, aStyle, aAutoClose, aPaintLayer);
 
   fDefaultCaption := aDefaultCaption;
 
   fListTopIndex := 0;
 
-  fList := TKMListBox.Create(MasterParent, 0, 0, aWidth, 0, fFont, aStyle);
+  fList := TKMListBox.Create(MasterParent, 0, 0, aWidth, 0, fFont, aStyle, aPaintLayer);
   fList.Height := fList.ItemHeight * fDropCount;
   fList.AutoHideScrollBar := True; //A drop box should only have a scrollbar if required
   fList.BackAlpha := aBackAlpha;
@@ -9296,9 +9355,15 @@ end;
 {Paint controls}
 {Leave painting of childs to their parent control}
 procedure TKMMasterControl.Paint;
+var
+  I: Integer;
 begin
   CtrlPaintCount := 0;
-  fMasterPanel.Paint;
+  for I := 0 to fMaxPaintLayer do
+  begin
+    fCurrentPaintLayer := I;
+    fMasterPanel.PaintPanel(I);
+  end;
 
   if MODE_DESIGN_CONTROLS and (CtrlFocus <> nil) then
     TKMRenderUI.WriteText(CtrlFocus.AbsLeft, CtrlFocus.AbsTop-14, 0, inttostr(CtrlFocus.AbsLeft)+':'+inttostr(CtrlFocus.AbsTop), fntGrey, taLeft);

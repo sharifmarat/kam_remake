@@ -169,7 +169,7 @@ type
     procedure OverlayUpdate;
     procedure OverlaySet(const aText: UnicodeString; aPlayer: Shortint);
     procedure OverlayAppend(const aText: UnicodeString; aPlayer: Shortint);
-    property GameTickCount: Cardinal read fGameTick;
+    property GameTick: Cardinal read fGameTick;
     property GameName: UnicodeString read fGameName;
     property CampaignName: TKMCampaignId read fCampaignName;
     property CampaignMap: Byte read fCampaignMap;

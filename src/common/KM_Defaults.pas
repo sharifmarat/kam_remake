@@ -121,7 +121,7 @@ var
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
   SKIP_SOUND              :Boolean = False; //Skip all the sounds in favor of faster logic
   SKIP_LOADING_CURSOR     :Boolean = False; //Skip loading and setting cursor
-  AGGRESSIVE_REPLAYS      :Boolean = False; //Write a command gicTempDoNothing every tick in order to find exactly when a replay mismatch occurs
+  AGGRESSIVE_REPLAYS      :Boolean = True; //Write a command gicTempDoNothing every tick in order to find exactly when a replay mismatch occurs
   SHOW_GAME_TICK          :Boolean = DEBUG_CFG; //Show game tick next to game time
   SHOW_TERRAIN_IDS        :Boolean = False; //Show number of every tile terrain on it (also show layers terrain ids)
   SHOW_TERRAIN_KINDS      :Boolean = False; //Show terrain kind ids on every tile corner
@@ -155,7 +155,7 @@ var
   OVERLAY_AI_SOIL         :Boolean = False; //Show Soil vision of new AI
   OVERLAY_AI_FLATAREA     :Boolean = False; //Show FlatArea vision of new AI
   OVERLAY_AI_ROUTES       :Boolean = False; //Show Routes to resources vision of new AI
-  OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI 
+  OVERLAY_AI_SUPERVISOR   :Boolean = False; //Show Supervisor vision of new AI
   {Stats}
   SHOW_SPRITE_COUNT       :Boolean = False; //display rendered controls/sprites count
   SHOW_POINTER_COUNT      :Boolean = False; //Show debug total count of unit/house pointers being tracked
@@ -163,7 +163,6 @@ var
   SHOW_NETWORK_DELAY      :Boolean = False; //Show the current delay in multiplayer game
   SHOW_ARMYEVALS          :Boolean = False; //Show result of enemy armies evaluation
   SHOW_AI_WARE_BALANCE    :Boolean = False; //Show wares balance (Produced - Consumed)
-  SHOW_OVERLAY_BEVEL      :Boolean = False; //Show wares balance overlay Bevel (for better text readability)
   SHOW_NET_PACKETS_STATS  :Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT  :Integer = 1;
   SHOW_SELECTED_OBJ_INFO  :Boolean = False; //Show selected object (Unit/Group + Unit/House) data (UID/order/action etc)
@@ -172,6 +171,7 @@ var
   SLOW_SAVE_SCAN          :Boolean = False; //Scan saves with a pause to emulate uncached file access
   DO_PERF_LOGGING         :Boolean = False; //Write each ticks time to log
   MP_RESULTS_IN_SP        :Boolean = False; //Display each players stats in SP
+  SHOW_DEBUG_OVERLAY_BEVEL:Boolean = True; //Show debug text overlay Bevel (for better text readability)
   {Gameplay}
   USE_CUSTOM_SEED       :Boolean = False; //Use custom seed for every game
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
@@ -810,6 +810,9 @@ const
   icGoldenYellow = $FF00B0FF;
   icAmberBrown = $FF006797;
   icDarkGoldenRod = $FF0080B0; // brown shade color
+
+  icBarColorGreen = $FF00AA26;
+  icBarColorBlue = $FFBBAA00;
 
   // Interface colors (by usage)
   clPingLow = icGreen;
