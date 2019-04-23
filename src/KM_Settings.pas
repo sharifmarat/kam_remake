@@ -5,7 +5,7 @@ uses
   Classes,
   {$IFDEF FPC}Forms,{$ENDIF}   //Lazarus do not know UITypes
   {$IFDEF WDC}UITypes,{$ENDIF} //We use settings in console modules
-  KM_Resolutions, KM_WareDistribution,
+  KM_Resolutions, KM_WareDistribution, KM_MapTypes,
   KM_Defaults, KM_Points, KM_CommonTypes, KM_CommonClasses;
 
 
@@ -112,6 +112,9 @@ type
     fDayGamesCount: Integer;       //Number of games played today (used for saves namings)
     fLastDayGamePlayed: TDateTime; //Last day game played
 
+    //Campaign
+    fCampaignLastDifficulty: TKMMissionDifficulty;
+
     //Replay
     fReplayAutosave: Boolean;
     fReplayAutosaveFrequency: Integer;
@@ -194,6 +197,9 @@ type
 
     procedure SetDayGamesCount(aValue: Integer);
     procedure SetLastDayGamePlayed(aValue: TDateTime);
+
+    //Campaign
+    procedure SetCampaignLastDifficulty(aValue: TKMMissionDifficulty);
 
     //Replay
     procedure SetReplayAutopause(aValue: Boolean);
@@ -287,6 +293,9 @@ type
 
     property DayGamesCount: Integer read fDayGamesCount write SetDayGamesCount;
     property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
+
+    //Campaign
+    property CampaignLastDifficulty: TKMMissionDifficulty read fCampaignLastDifficulty write SetCampaignLastDifficulty;
 
     //Replay
     property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
@@ -573,7 +582,7 @@ begin
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
-    fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode',   1)); //Show players colors by default
+    fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode', Byte(pcmColors))); //Show players colors by default
 
     //Load minimap colors as hex strings 6-hex digits width
     if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorSelf', IntToHex(Integer(clPlayerSelf and $FFFFFF), 6)), TempCard) then
@@ -603,6 +612,8 @@ begin
     fLastDayGamePlayed  := F.ReadDate     ('Game', 'LastDayGamePlayed', 0);
 
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
+
+    fCampaignLastDifficulty := TKMMissionDifficulty(F.ReadInteger('Campaign', 'CampaignLastDifficulty', Byte(mdNormal))); //Normal as default
 
     fReplayAutopause    := F.ReadBool       ('Replay', 'ReplayAutopause',   False); //Disabled by default
     fReplayShowBeacons  := F.ReadBool       ('Replay', 'ReplayShowBeacons', False); //Disabled by default
@@ -721,6 +732,8 @@ begin
     F.WriteDate   ('Game','LastDayGamePlayed',  fLastDayGamePlayed);
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
+
+    F.WriteInteger('Campaign','CampaignLastDifficulty', Byte(fCampaignLastDifficulty));
 
     F.WriteBool   ('Replay','ReplayAutopause',         fReplayAutopause);
     F.WriteBool   ('Replay','ReplayShowBeacons',       fReplayShowBeacons);
@@ -1029,6 +1042,13 @@ end;
 procedure TKMGameSettings.SetLastDayGamePlayed(aValue: TDateTime);
 begin
   fLastDayGamePlayed := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetCampaignLastDifficulty(aValue: TKMMissionDifficulty);
+begin
+  fCampaignLastDifficulty := aValue;
   Changed;
 end;
 
