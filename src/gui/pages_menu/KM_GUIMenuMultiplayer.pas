@@ -48,6 +48,8 @@ type
     function ValidatePlayerName(const aName: UnicodeString): Boolean;
     procedure EscKeyDown(Sender: TObject);
     procedure KeyDown(Key: Word; Shift: TShiftState);
+    procedure UpdateGameTimeLabel;
+    procedure ServerDetailsScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
 
     procedure StartLobby(aIsHost: Boolean);
 
@@ -116,6 +118,8 @@ uses
 const
   MAX_NIKNAME_LENGTH = 16;
   IMG_COL2 = 8 + 22 + 156 + 35;
+  SERVER_DETAILS_W = 320;
+  S_DETAILS_W_INT = SERVER_DETAILS_W - 16;
 
 
 { TKMGUIMainMultiplayer }
@@ -230,21 +234,22 @@ begin
     Label_Servers_Status.Hide;
 
     //Server details area
-    Panel_MPServerDetails := TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, 320, 465, [saVertical], bsMenu, ssCommon);
+    Panel_MPServerDetails := TKMScrollPanel.Create(Panel_MultiPlayer, 675, 240, SERVER_DETAILS_W, 465, [saVertical], bsMenu, ssCommon);
     Panel_MPServerDetails.AnchorsStretch;
-      TKMBevel.Create(Panel_MPServerDetails, 0, 0, 320, 465);
-      Label_MP_ServerDetails_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 6, 304, 20, gResTexts[TX_MP_MENU_HEADER_SERVER_DETAILS], fntOutline, taCenter);
-      Label_MP_GameInfo_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 30, 304, 20, gResTexts[TX_MP_MENU_GAME_INFORMATION], fntOutline, taLeft);
-      Label_MP_Desc := TKMLabel.Create(Panel_MPServerDetails, 8, 50, 304, 40, '', fntMetal, taLeft);
+    Panel_MPServerDetails.ScrollV.OnChangeVisibility := ServerDetailsScrollChangedVisibility;
+      TKMBevel.Create(Panel_MPServerDetails, 0, 0, SERVER_DETAILS_W, 465);
+      Label_MP_ServerDetails_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 6, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_HEADER_SERVER_DETAILS], fntOutline, taCenter);
+      Label_MP_GameInfo_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 30, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_GAME_INFORMATION], fntOutline, taLeft);
+      Label_MP_Desc := TKMLabel.Create(Panel_MPServerDetails, 8, 50, S_DETAILS_W_INT, 40, '', fntMetal, taLeft);
       Label_MP_Desc.AutoWrap := True;
       Label_MP_Desc.AutoCut := True;  //Automatically cut text, if it's too long
-      Label_MP_PT_Times := TKMLabel.Create(Panel_MPServerDetails, 8, 90, 304, 20, '', fntMetal, taLeft);
+      Label_MP_PT_Times := TKMLabel.Create(Panel_MPServerDetails, 8, 90, S_DETAILS_W_INT, 20, '', fntMetal, taLeft);
       Label_MP_PT_Times.FontColor := clMPSrvDetailsGameInfoFont;
-      Label_MP_GameTime := TKMLabel.Create(Panel_MPServerDetails, 8, 90, 304, 20, '', fntMetal, taRight);
+      Label_MP_GameTime := TKMLabel.Create(Panel_MPServerDetails, 8, 90, S_DETAILS_W_INT, 20, '', fntMetal, taRight);
       Label_MP_GameTime.FontColor := clMPSrvDetailsGameInfoFont;
-      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, 304, 20, gResTexts[TX_WORD_MAP] + ':', fntOutline, taLeft);
-      Label_MP_MapName := TKMLabel.Create(Panel_MPServerDetails, 8, 130, 304, 20, '', fntMetal, taLeft);
-      Label_MP_PlayerList_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 150, 304, 20, gResTexts[TX_MP_MENU_PLAYER_LIST], fntOutline, taLeft);
+      Label_MP_Map_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 110, S_DETAILS_W_INT, 20, gResTexts[TX_WORD_MAP] + ':', fntOutline, taLeft);
+      Label_MP_MapName := TKMLabel.Create(Panel_MPServerDetails, 8, 130, S_DETAILS_W_INT, 20, '', fntMetal, taLeft);
+      Label_MP_PlayerList_Header := TKMLabel.Create(Panel_MPServerDetails, 8, 150, S_DETAILS_W_INT, 20, gResTexts[TX_MP_MENU_PLAYER_LIST], fntOutline, taLeft);
 
       Label_MP_Team_Header := TKMLabel.Create(Panel_MPServerDetails, 8 + 22 + 156, 150, 150, 20, 'Team', fntOutline, taLeft);
       Label_MP_Team_Header.Hide;
@@ -665,6 +670,8 @@ begin
   Label_MP_GameTime.Caption := fSelectedRoomInfo.GameInfo.GetFormattedTime;
   Label_MP_MapName.Caption := fSelectedRoomInfo.GameInfo.Map;
 
+  UpdateGameTimeLabel;
+
   SortPlayersByTeam;
 
   for I := 1 to MAX_LOBBY_SLOTS do
@@ -837,6 +844,19 @@ begin
 end;
 
 
+procedure TKMMenuMultiplayer.UpdateGameTimeLabel;
+begin
+  Label_MP_GameTime.Width := S_DETAILS_W_INT - 20*Byte(Panel_MPServerDetails.ScrollV.Visible);
+end;
+
+
+procedure TKMMenuMultiplayer.ServerDetailsScrollChangedVisibility(Sender: TObject; aVisible: Boolean);
+begin
+  //Don't use aVisible, since we call this method directly too
+  UpdateGameTimeLabel;
+end;
+
+
 //Join button is enabled if valid server is selected and the lobby is not busy
 function TKMMenuMultiplayer.MP_GetInEnabled: Boolean;
 var ID: Integer;
@@ -951,6 +971,8 @@ begin
   else
     //We are in event handler of Lobby.BackClick (show status warning)
     MP_Update(aText, icYellow, False);
+
+  UpdateGameTimeLabel;
 
   Panel_MultiPlayer.Show;
 end;

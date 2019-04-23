@@ -998,6 +998,10 @@ type
     fScrollAxisSet: TKMScrollAxisSet;
     procedure UpdateScrolls(Sender: TObject; aValue: Boolean); overload;
     procedure UpdateScrolls(Sender: TObject); overload;
+    procedure UpdateScrollV(Sender: TObject); overload;
+    procedure UpdateScrollV(Sender: TObject; aValue: Integer); overload;
+    procedure UpdateScrollH(Sender: TObject); overload;
+    procedure UpdateScrollH(Sender: TObject; aValue: Integer); overload;
     procedure ScrollChanged(Sender: TObject);
     function GetChildsRect: TKMRect;
 
@@ -1011,6 +1015,9 @@ type
   public
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxisSet: TKMScrollAxisSet;
                        aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle);
+
+    property ScrollH: TKMScrollBar read fScrollBarH;
+    property ScrollV: TKMScrollBar read fScrollBarV;
 
     function AddChild(aChild: TKMControl): Integer; override;
 
@@ -5384,7 +5391,8 @@ function TKMScrollPanel.AddChild(aChild: TKMControl): Integer;
 begin
   Result := inherited AddChild(aChild);
 
-  aChild.fOnSizeSet := UpdateScrolls;
+  aChild.fOnHeightChange := UpdateScrollV;
+  aChild.fOnWidthChange := UpdateScrollH;
   aChild.fOnPositionSet := UpdateScrolls;
   aChild.fOnChangeVisibility := UpdateScrolls;
   aChild.fOnChangeEnableStatus := UpdateScrolls;
@@ -5421,14 +5429,20 @@ begin
 end;
 
 
-procedure TKMScrollPanel.UpdateScrolls(Sender: TObject);
+procedure TKMScrollPanel.UpdateScrollH(Sender: TObject; aValue: Integer);
+begin
+  if (Sender <> fScrollBarH) then
+    UpdateScrollH(nil);
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollH(Sender: TObject);
 var
   ChildsRect: TKMRect;
   NewPos: Integer;
 begin
   ChildsRect := GetChildsRect;
   fScrollBarH.Hide;
-  fScrollBarV.Hide;
 
   if (saHorizontal in fScrollAxisSet) then
   begin
@@ -5447,6 +5461,26 @@ begin
     end;
   end;
 
+  fScrollBarH.Width := Width;
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollV(Sender: TObject; aValue: Integer);
+begin
+  if (Sender <> fScrollBarV) then
+    UpdateScrollV(nil)
+end;
+
+
+procedure TKMScrollPanel.UpdateScrollV(Sender: TObject);
+var
+  ChildsRect: TKMRect;
+  NewPos: Integer;
+begin
+  ChildsRect := GetChildsRect;
+  //Do not set Visible, avoid trigger OnChangeVisibility
+  fScrollBarV.Hide;
+
   if (saVertical in fScrollAxisSet) then
   begin
     if KMRectHeight(ChildsRect) > KMRectHeight(fClipRect) then
@@ -5464,8 +5498,14 @@ begin
     end;
   end;
 
-  fScrollBarH.Width := Width;
   fScrollBarV.Height := Height;
+end;
+
+
+procedure TKMScrollPanel.UpdateScrolls(Sender: TObject);
+begin
+  UpdateScrollV(Sender);
+  UpdateScrollH(Sender);
 end;
 
 
