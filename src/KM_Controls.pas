@@ -1013,7 +1013,7 @@ type
 
     function AddChild(aChild: TKMControl): Integer; override;
 
-    procedure Paint; override;
+    procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
 
@@ -1553,7 +1553,7 @@ type
     Font: TKMFont;
     FontColor: TColor4;
     constructor Create(aParent: TKMPanel; aWidth, aHeight: Integer; const aCaption: UnicodeString = ''; aImageType: TKMPopUpBGImageType = pubgit_Yellowish);
-    procedure Paint; override;
+    procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
 
@@ -5560,12 +5560,12 @@ begin
 end;
 
 
-procedure TKMScrollPanel.Paint;
+procedure TKMScrollPanel.PaintPanel(aPaintLayer: Integer);
 begin
   TKMRenderUI.SetupClipX(Parent.AbsLeft + fClipRect.Left, Parent.AbsLeft + fClipRect.Right + 20*Byte(AllowScrollV and not fScrollBarV.Visible));
   TKMRenderUI.SetupClipY(Parent.AbsTop + fClipRect.Top, Parent.AbsTop + fClipRect.Bottom + 20*Byte(AllowScrollH and not fScrollBarH.Visible));
 
-  inherited Paint;
+  inherited;
 
   TKMRenderUI.ReleaseClipY;
   TKMRenderUI.ReleaseClipX;
@@ -7664,9 +7664,9 @@ begin
 end;
 
 
-procedure TKMPopUpPanel.Paint;
+procedure TKMPopUpPanel.PaintPanel(aPaintLayer: Integer);
 begin
-  inherited Paint;
+  inherited;
 
   TKMRenderUI.WriteText(AbsLeft, AbsTop - 30, Width, Caption, Font, taCenter, FontColor);
 end;
