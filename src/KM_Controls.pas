@@ -283,6 +283,7 @@ type
   private
     fMasterControl: TKMMasterControl;
     procedure Init;
+    procedure Paint; reintroduce;
   protected
     //Do not propogate SetEnabled and SetVisible because that would show/enable ALL childs childs
     //e.g. scrollbar on a listbox
@@ -573,7 +574,7 @@ type
     procedure MouseDown (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
     procedure MouseMove (X,Y: Integer; Shift: TShiftState); override;
     procedure MouseUp   (X,Y: Integer; Shift: TShiftState; Button: TMouseButton); override;
-    procedure Paint; override;
+    procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
 
@@ -985,7 +986,7 @@ type
     procedure MouseMove(X,Y: Integer; Shift: TShiftState); override;
     procedure MouseWheel(Sender: TObject; WheelDelta: Integer; var aHandled: Boolean); override;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
-    procedure Paint; override;
+    procedure PaintPanel(aPaintLayer: Integer); override;
   end;
 
 
@@ -2726,6 +2727,12 @@ begin
 end;
 
 
+procedure TKMPanel.Paint;
+begin
+  inherited Paint;
+end;
+
+
 {Panel Paint means to Paint all its childs}
 procedure TKMPanel.PaintPanel(aPaintLayer: Integer);
 begin
@@ -2846,7 +2853,7 @@ begin
 end;
 
 
-procedure TKMForm.Paint;
+procedure TKMForm.PaintPanel(aPaintLayer: Integer);
 begin
   TKMRenderUI.WriteShadow(AbsLeft, AbsTop, Width, Height, 15, $40000000);
 
@@ -5327,7 +5334,7 @@ begin
 end;
 
 
-procedure TKMScrollBar.Paint;
+procedure TKMScrollBar.PaintPanel(aPaintLayer: Integer);
 var
   ButtonState: TKMButtonStateSet;
 begin
