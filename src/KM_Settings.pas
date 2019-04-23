@@ -185,8 +185,6 @@ type
     procedure SetAutosaveCount(aValue: Integer);
     procedure SetLocale(const aLocale: AnsiString);
     procedure SetScrollSpeed(aValue: Byte);
-    procedure SetReplayAutopause(aValue: Boolean);
-    procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetSpecShowBeacons(aValue: Boolean);
     procedure SetShowGameTime(aValue: Boolean);
     procedure SetPlayersColorMode(aValue: TKMPlayerColorMode);
@@ -198,6 +196,8 @@ type
     procedure SetLastDayGamePlayed(aValue: TDateTime);
 
     //Replay
+    procedure SetReplayAutopause(aValue: Boolean);
+    procedure SetReplayShowBeacons(aValue: Boolean);
     procedure SetReplayAutosave(aValue: Boolean);
     procedure SetReplayAutosaveFrequency(aValue: Integer);
 
@@ -269,8 +269,6 @@ type
 
     property AutosaveFrequency: Integer read fAutosaveFrequency write SetAutosaveFrequency;
     property AutosaveCount: Integer read fAutosaveCount write SetAutosaveCount;
-    property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
-    property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property SpecShowBeacons: Boolean read fSpecShowBeacons write SetSpecShowBeacons;
     property ShowGameTime: Boolean read fShowGameTime write SetShowGameTime;
 
@@ -291,6 +289,8 @@ type
     property LastDayGamePlayed: TDateTime read fLastDayGamePlayed write SetLastDayGamePlayed;
 
     //Replay
+    property ReplayAutopause: Boolean read fReplayAutopause write SetReplayAutopause;
+    property ReplayShowBeacons: Boolean read fReplayShowBeacons write SetReplayShowBeacons;
     property ReplayAutosave: Boolean read fReplayAutosave write SetReplayAutosave;
     property ReplayAutosaveFrequency: Integer read fReplayAutosaveFrequency write SetReplayAutosaveFrequency;
 
@@ -571,8 +571,6 @@ begin
     fAutosaveAtGameEnd  := F.ReadBool     ('Game', 'AutosaveOnGameEnd', False); //Should be OFF by default
     SetAutosaveFrequency(F.ReadInteger    ('Game', 'AutosaveFrequency', AUTOSAVE_FREQUENCY_DEFAULT));
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
-    fReplayAutopause    := F.ReadBool     ('Game', 'ReplayAutopause',   False); //Disabled by default
-    fReplayShowBeacons  := F.ReadBool     ('Game', 'ReplayShowBeacons', False); //Disabled by default
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
     fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode',   1)); //Show players colors by default
@@ -606,8 +604,10 @@ begin
 
     fWareDistribution.LoadFromStr(F.ReadString ('Game','WareDistribution',''));
 
-    fReplayAutosave           := F.ReadBool     ('Replay', 'ReplayAutosave',          True); //Should be ON by default
-    SetReplayAutosaveFrequency(F.ReadInteger    ('Replay', 'ReplayAutosaveFrequency', REPLAY_AUTOSAVE_FREQUENCY_DEFAULT));
+    fReplayAutopause    := F.ReadBool       ('Replay', 'ReplayAutopause',   False); //Disabled by default
+    fReplayShowBeacons  := F.ReadBool       ('Replay', 'ReplayShowBeacons', False); //Disabled by default
+    fReplayAutosave     := F.ReadBool       ('Replay', 'ReplayAutosave',          True); //Should be ON by default
+    SetReplayAutosaveFrequency(F.ReadInteger('Replay', 'ReplayAutosaveFrequency', REPLAY_AUTOSAVE_FREQUENCY_DEFAULT));
 
     fSoundFXVolume  := F.ReadFloat  ('SFX',  'SFXVolume',      0.5);
     fMusicVolume    := F.ReadFloat  ('SFX',  'MusicVolume',    0.5);
@@ -699,8 +699,7 @@ begin
     F.WriteBool   ('Game','AutosaveOnGameEnd',  fAutosaveAtGameEnd);
     F.WriteInteger('Game','AutosaveFrequency',  fAutosaveFrequency);
     F.WriteInteger('Game','AutosaveCount',      fAutosaveCount);
-    F.WriteBool   ('Game','ReplayAutopause',    fReplayAutopause);
-    F.WriteBool   ('Game','ReplayShowBeacons',  fReplayShowBeacons);
+
     F.WriteBool   ('Game','SpecShowBeacons',    fSpecShowBeacons);
     F.WriteBool   ('Game','ShowGameTime',       fShowGameTime);
 
@@ -723,8 +722,10 @@ begin
 
     F.WriteString('Game','WareDistribution', fWareDistribution.PackToStr);
 
-    F.WriteBool   ('Replay','ReplayAutosave',           fReplayAutosave);
-    F.WriteInteger('Replay','ReplayAutosaveFrequency',  fReplayAutosaveFrequency);
+    F.WriteBool   ('Replay','ReplayAutopause',         fReplayAutopause);
+    F.WriteBool   ('Replay','ReplayShowBeacons',       fReplayShowBeacons);
+    F.WriteBool   ('Replay','ReplayAutosave',          fReplayAutosave);
+    F.WriteInteger('Replay','ReplayAutosaveFrequency', fReplayAutosaveFrequency);
 
     F.WriteFloat  ('SFX','SFXVolume',     fSoundFXVolume);
     F.WriteFloat  ('SFX','MusicVolume',   fMusicVolume);
@@ -976,20 +977,6 @@ begin
 end;
 
 
-procedure TKMGameSettings.SetReplayAutopause(aValue: Boolean);
-begin
-  fReplayAutopause := aValue;
-  Changed;
-end;
-
-
-procedure TKMGameSettings.SetReplayShowBeacons(aValue: Boolean);
-begin
-  fReplayShowBeacons := aValue;
-  Changed;
-end;
-
-
 procedure TKMGameSettings.SetSpecShowBeacons(aValue: Boolean);
 begin
   fSpecShowBeacons := aValue;
@@ -1044,6 +1031,21 @@ begin
   fLastDayGamePlayed := aValue;
   Changed;
 end;
+
+
+procedure TKMGameSettings.SetReplayAutopause(aValue: Boolean);
+begin
+  fReplayAutopause := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetReplayShowBeacons(aValue: Boolean);
+begin
+  fReplayShowBeacons := aValue;
+  Changed;
+end;
+
 
 
 procedure TKMGameSettings.SetReplayAutosave(aValue: Boolean);
