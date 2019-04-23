@@ -109,7 +109,7 @@ type
 
 implementation
 uses
-  KM_Main, KM_NetworkTypes, KM_ResTexts, KM_GameApp, KM_ResLocales,
+  KM_Main, KM_NetworkTypes, KM_ResTexts, KM_GameApp, KM_ResLocales, KM_GUIMenuLobby,
   KM_CommonUtils, KM_CommonTypes, KM_Sound, KM_ResSound, KM_RenderUI, KM_ResFonts, KM_Resource;
 
 
@@ -792,6 +792,19 @@ end;
 
 //Make sure that the nikname as a whole is valid (checks that TKMEdit can not always perform)
 function TKMMenuMultiplayer.ValidatePlayerName(const aName: UnicodeString): Boolean;
+
+  function IsReserved(aName: String): Boolean; inline;
+  var
+    I: Integer;
+    Str: String;
+  begin
+    Result := False;
+    Str := Trim(aName);
+    for I := Low(LOBBY_PLAYER_NAMES_TEXT_ID_RESERVED) to High(LOBBY_PLAYER_NAMES_TEXT_ID_RESERVED) do
+      if Str = gResTexts[LOBBY_PLAYER_NAMES_TEXT_ID_RESERVED[I]] then
+        Exit(True);
+  end;
+
 var
   err: UnicodeString;
   I: Integer;
@@ -800,6 +813,9 @@ begin
 
   if (aName = '') or (aName <> Trim(aName)) then
     err := gResTexts[TX_GAME_ERROR_BLANK_PLAYERNAME]
+  else
+  if IsReserved(aName) then
+    err := Format(gResTexts[TX_GAME_ERROR_RESERVER_PLAYERNAME], [aName])
   else
   if Length(aName) > MAX_NIKNAME_LENGTH then
     err := Format(gResTexts[TX_GAME_ERROR_LONG_PLAYERNAME], [MAX_NIKNAME_LENGTH])
