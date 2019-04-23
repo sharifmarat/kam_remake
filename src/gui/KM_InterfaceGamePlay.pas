@@ -4104,6 +4104,7 @@ begin
   end;
 
   fGuiMenuSettings.UpdateView;
+  GameSettingsChanged;
 
   UpdateDebugInfo;
   if fSaves <> nil then fSaves.UpdateState;
