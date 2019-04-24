@@ -69,11 +69,11 @@ begin
 
   fOnPageChange := aOnPageChange;
 
-  Panel_Player := TKMPanel.Create(aParent, 0, 45, TB_WIDTH, 28);
+  Panel_Player := TKMPanel.Create(aParent, 0, 45, TB_MAP_ED_WIDTH, 28);
 
   for PT := Low(TKMPlayerTab) to High(TKMPlayerTab) do
   begin
-    Button_Player[PT] := TKMButton.Create(Panel_Player, SMALL_PAD_W * Byte(PT), 0, SMALL_TAB_W, SMALL_TAB_H,  TabGlyph[PT], TabRXX[PT], bsGame);
+    Button_Player[PT] := TKMButton.Create(Panel_Player, 9 + SMALL_PAD_W * Byte(PT), 0, SMALL_TAB_W, SMALL_TAB_H,  TabGlyph[PT], TabRXX[PT], bsGame);
     Button_Player[PT].Hint := GetHintWHotKey(TabHint[PT], MAPED_SUBMENU_HOTKEYS[Ord(PT)]);
     Button_Player[PT].OnClick := PageChange;
   end;
@@ -89,12 +89,12 @@ end;
 
 destructor TKMMapEdPlayer.Destroy;
 begin
-  FreeAndNil(GuiPlayerGoals);
-  FreeAndNil(fGuiPlayerColors);
-  FreeAndNil(fGuiPlayerBlockHouse);
-  FreeAndNil(fGuiPlayerBlockTrade);
-  FreeAndNil(fGuiPlayerBlockUnit);
-  FreeAndNil(fGuiPlayerView);
+  GuiPlayerGoals.Free;
+  fGuiPlayerColors.Free;
+  fGuiPlayerBlockHouse.Free;
+  fGuiPlayerBlockTrade.Free;
+  fGuiPlayerBlockUnit.Free;
+  fGuiPlayerView.Free;
 
   inherited;
 end;

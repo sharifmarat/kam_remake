@@ -23,12 +23,18 @@ uses
 
   function FixDelim(const aString: UnicodeString): UnicodeString;
 
+  function Max3(const A,B,C: Integer): Integer;
+  function Min3(const A,B,C: Integer): Integer;
+  function Max4(const A,B,C,D: Integer): Integer;
+  function Min4(const A,B,C,D: Integer): Integer;
+
   function RGB2BGR(aRGB: Cardinal): Cardinal;
   function BGR2RGB(aRGB: Cardinal): Cardinal;
   function ApplyColorCoef(aColor: Cardinal; aAlpha, aRed, aGreen, aBlue: Single): Cardinal;
   function GetGreyColor(aGreyLevel: Byte): Cardinal;
   procedure ConvertRGB2HSB(aR, aG, aB: Integer; out oH, oS, oB: Single);
   procedure ConvertHSB2RGB(aHue, aSat, aBri: Single; out R, G, B: Byte);
+  function GetRandomColorWSeed(aSeed: Integer): Cardinal;
   function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
   function MultiplyBrightnessByFactor(aColor: Cardinal; aBrightnessFactor: Single; aMinBrightness: Single = 0; aMaxBrightness: Single = 1): Cardinal;
   function ReduceBrightness(aColor: Cardinal; aBrightness: Byte): Cardinal;
@@ -37,6 +43,11 @@ uses
   function GetFPSColor(aFPS: Word): Cardinal;
   function FlagColorToTextColor(aColor: Cardinal): Cardinal;
   function TimeToString(aTime: TDateTime): UnicodeString;
+  function TickToTimeStr(aTick: Cardinal): String;
+
+  function StrToHex(S: String): String;
+  function HexToStr(H: String): String;
+
   function WrapColor(const aText: UnicodeString; aColor: Cardinal): UnicodeString;
   function WrapColorA(const aText: AnsiString; aColor: Cardinal): AnsiString;
   function StripColor(const aText: UnicodeString): UnicodeString;
@@ -537,6 +548,27 @@ begin
   Result := StringReplace(aString, '\', PathDelim, [rfReplaceAll, rfIgnoreCase]);
 end;
 
+function Max3(const A,B,C: Integer): Integer;
+begin
+  Result := Max(A, Max(B, C));
+end;
+
+function Min3(const A,B,C: Integer): Integer;
+begin
+  Result := Min(A, Min(B, C));
+end;
+
+function Max4(const A,B,C,D: Integer): Integer;
+begin
+  Result := Max(Max(A, B), Max(C, D));
+end;
+
+function Min4(const A,B,C,D: Integer): Integer;
+begin
+  Result := Min(Min(A, B), Min(C, D));
+end;
+
+
 
 function GetPingColor(aPing: Word): Cardinal;
 begin
@@ -763,6 +795,17 @@ begin
 end;
 
 
+function GetRandomColorWSeed(aSeed: Integer): Cardinal;
+var
+  R,G,B: Byte;
+begin
+  R := KaMRandomWSeed(aSeed, 255);
+  G := KaMRandomWSeed(aSeed, 255);
+  B := KaMRandomWSeed(aSeed, 255);
+  Result := (R + G shl 8 + B shl 16) or $FF000000;
+end;
+
+
 function EnsureBrightness(aColor: Cardinal; aMinBrightness: Single; aMaxBrightness: Single = 1): Cardinal;
 begin
   Result := MultiplyBrightnessByFactor(aColor, 1, aMinBrightness, aMaxBrightness);
@@ -809,6 +852,30 @@ begin
   //e.g. 3599 equals to 59:58 and 3600 equals to 59:59
   //That is why we resort to DateUtils routines which are slower but much more correct
   Result :=  Format('%.2d', [HoursBetween(aTime, 0)]) + FormatDateTime(':nn:ss', aTime);
+end;
+
+
+function TickToTimeStr(aTick: Cardinal): String;
+begin
+  Result := TimeToString(aTick / 24 / 60 / 60 / 10);
+end;
+
+
+function StrToHex(S: String): string;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (S) do
+    Result:= Result+IntToHex(ord(S[i]),2);
+end;
+
+
+function HexToStr(H: String): String;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (H) div 2 do
+    Result:= Result+Char(StrToInt('$'+Copy(H,(I-1)*2+1,2)));
 end;
 
 

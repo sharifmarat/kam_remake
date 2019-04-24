@@ -136,7 +136,7 @@ begin
       Inc(fCount);
     end;
 
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 

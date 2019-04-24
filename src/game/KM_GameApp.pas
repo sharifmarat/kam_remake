@@ -40,6 +40,7 @@ type
     procedure LoadGameFromScript(const aMissionFile, aGameName: String; aCRC: Cardinal; aCampaign: TKMCampaign;
                                  aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                  aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
+    procedure LoadGameFromMemory(aTick: Cardinal);
     procedure LoadGameFromScratch(aSizeX, aSizeY: Integer; aGameMode: TKMGameMode);
     function SaveName(const aName, aExt: UnicodeString; aIsMultiplayer: Boolean): UnicodeString;
 
@@ -84,6 +85,7 @@ type
     procedure NewEmptyMap(aSizeX, aSizeY: Integer);
     procedure NewMapEditor(const aFileName: UnicodeString; aSizeX: Integer = 0; aSizeY: Integer = 0; aMapCRC: Cardinal = 0);
     procedure NewReplay(const aFilePath: UnicodeString);
+    function TryLoadSavedReplay(aTick: Integer): Boolean;
 
     procedure SaveMapEditor(const aPathName: UnicodeString);
 
@@ -128,7 +130,7 @@ uses
   SysUtils, DateUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_FormLogistics,
-  KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess,
+  KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess, KM_GameSavedReplays,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
   KM_Saves, KM_CommonUtils;
 
@@ -575,11 +577,14 @@ begin
 end;
 
 
-//Do not use _const_ aMissionFile, aGameName: UnicodeString, as for some unknown reason sometimes aGameName is not accessed after StopGame(grSilent) (pointing to a wrong value)
 procedure TKMGameApp.LoadGameFromSave(const aFilePath: String; aGameMode: TKMGameMode);
 var
-  LoadError: UnicodeString;
+  LoadError, FilePath: String;
 begin
+  //Save const aFilePath locally, since it could be destroyed as some Game Object instance in StopGame
+  //!!!!! DO NOT USE aMissionFile or aGameName further in this method
+  FilePath := aFilePath;
+  //----------------------------------------------------------------------
   StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
@@ -589,7 +594,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.Load(aFilePath);
+    gGame.LoadFromFile(FilePath);
   except
     on E: Exception do
     begin
@@ -597,7 +602,7 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aFilePath]) + '||' + E.ClassName + ': ' + E.Message;
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [FilePath]) + '||' + E.ClassName + ': ' + E.Message;
       StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
@@ -618,8 +623,13 @@ procedure TKMGameApp.LoadGameFromScript(const aMissionFile, aGameName: String; a
                                         aMap: Byte; aGameMode: TKMGameMode; aDesiredLoc: ShortInt; aDesiredColor: Cardinal;
                                         aDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
 var
-  LoadError: UnicodeString;
+  LoadError, MissionFile, GameName: String;
 begin
+  //Save const parameters locally, since it could be destroyed as some Game Object instance in StopGame
+  //!!!!! DO NOT USE aMissionFile or aGameName further in this method
+  MissionFile := aMissionFile;
+  GameName := aGameName;
+  //!!!!! ------------------------------------------------------------
   StopGame(grSilent); //Stop everything silently
   LoadGameAssets;
 
@@ -629,7 +639,7 @@ begin
 
   gGame := TKMGame.Create(aGameMode, fRender, fNetworking, GameDestroyed);
   try
-    gGame.GameStart(aMissionFile, aGameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
+    gGame.GameStart(MissionFile, GameName, aCRC, aCampaign, aMap, aDesiredLoc, aDesiredColor, aDifficulty, aAIType);
   except
     on E : Exception do
     begin
@@ -637,7 +647,7 @@ begin
       //Note: While debugging, Delphi will still stop execution for the exception,
       //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
       //But to normal player the dialog won't show.
-      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [aMissionFile]) + '||' + E.ClassName + ': ' + E.Message;
+      LoadError := Format(gResTexts[TX_MENU_PARSE_ERROR], [MissionFile]) + '||' + E.ClassName + ': ' + E.Message;
       StopGame(grError, LoadError);
       gLog.AddTime('Game creation Exception: ' + LoadError
         {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
@@ -651,6 +661,55 @@ begin
     fChat.Clear;
 
   gGame.AfterStart; //Call after start separately, so errors in it could be sended in crashreport
+
+  if Assigned(fOnCursorUpdate) then
+    fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
+end;
+
+
+procedure TKMGameApp.LoadGameFromMemory(aTick: Cardinal);
+var
+  LoadError: string;
+  SavedReplays: TKMSavedReplays;
+  GameMode: TKMGameMode;
+  SaveFile: UnicodeString;
+begin
+  if (gGame = nil) then
+    Exit;
+  // Get existing configuration
+  SavedReplays := gGame.SavedReplays;
+  gGame.SavedReplays := nil;
+  GameMode := gGame.GameMode;
+  SaveFile := gGame.SaveFile;
+
+  StopGame(grSilent); //Stop everything silently
+  LoadGameAssets;
+
+  //Reset controls if MainForm exists (KMR could be run without main form)
+  if gMain <> nil then
+    gMain.FormMain.ControlsReset;
+
+  gGame := TKMGame.Create(GameMode, fRender, fNetworking, GameDestroyed);
+  try
+    gGame.SavedReplays := SavedReplays;
+    gGame.LoadSavedReplay(aTick, SaveFile);
+  except
+    on E: Exception do
+    begin
+      //Trap the exception and show it to the user in nicer form.
+      //Note: While debugging, Delphi will still stop execution for the exception,
+      //unless Tools > Debugger > Exception > "Stop on Delphi Exceptions" is unchecked.
+      //But to normal player the dialog won't show.
+      LoadError := '||' + E.ClassName + ': ' + E.Message;
+      StopGame(grError, LoadError);
+      gLog.AddTime('Game creation Exception: ' + LoadError
+        {$IFDEF WDC} + sLineBreak + E.StackTrace {$ENDIF}
+        );
+      Exit;
+    end;
+  end;
+
+  gGame.AfterLoad; //Call after load separately, so errors in it could be sended in crashreport
 
   if Assigned(fOnCursorUpdate) then
     fOnCursorUpdate(SB_ID_MAP_SIZE, gGame.MapSizeInfo);
@@ -784,6 +843,7 @@ begin
 end;
 
 
+//Used by Runner util
 procedure TKMGameApp.NewEmptyMap(aSizeX, aSizeY: Integer);
 begin
   LoadGameFromScratch(aSizeX, aSizeY, gmSingle);
@@ -823,6 +883,20 @@ begin
 
   if Assigned(fOnGameStart) and (gGame <> nil) then
     fOnGameStart(gGame.GameMode);
+end;
+
+
+function TKMGameApp.TryLoadSavedReplay(aTick: Integer): Boolean;
+begin
+  Result := False;
+  if (gGame <> nil) AND (gGame.SavedReplays <> nil) AND gGame.SavedReplays.Contains(aTick) then
+  begin
+    LoadGameFromMemory(aTick);
+    Result := True;
+
+    if Assigned(fOnGameStart) and (gGame <> nil) then
+      fOnGameStart(gGame.GameMode);
+  end;
 end;
 
 
@@ -1002,7 +1076,8 @@ begin
         fOnCursorUpdate(SB_ID_TIME, 'Time: ' + TimeToString(gGame.MissionTime));
   end;
 
-  if gMain.Settings.IsNoRenerMaxTimeSet
+  if (gMain <> nil) //Could be nil for Runner Util
+    and gMain.Settings.IsNoRenerMaxTimeSet
     and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
     Render;
 end;

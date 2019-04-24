@@ -143,6 +143,9 @@ const
 
 { TKMapEdInterface }
 constructor TKMapEdInterface.Create(aRender: TRender);
+const
+  TB_PAD_MAP_ED = 0;
+  TB_PAD_MBTN_LEFT = 9;
 var
   I: Integer;
   S: TKMShape;
@@ -200,14 +203,14 @@ begin
   fGuiExtras := TKMMapEdExtras.Create(Panel_Main, PageChanged);
   fGuiMessage := TKMMapEdMessage.Create(Panel_Main);
 
-  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD,262,TB_WIDTH,768);
+  Panel_Common := TKMPanel.Create(Panel_Main,TB_PAD_MAP_ED,262,TB_MAP_ED_WIDTH,768);
 
   {5 big tabs}
-  Button_Main[1] := TKMButton.Create(Panel_Common, BIG_PAD_W*0, 0, BIG_TAB_W, BIG_TAB_H, 381, rxGui, bsGame);
-  Button_Main[2] := TKMButton.Create(Panel_Common, BIG_PAD_W*1, 0, BIG_TAB_W, BIG_TAB_H, 589, rxGui, bsGame);
-  Button_Main[3] := TKMButton.Create(Panel_Common, BIG_PAD_W*2, 0, BIG_TAB_W, BIG_TAB_H, 392, rxGui, bsGame);
-  Button_Main[4] := TKMButton.Create(Panel_Common, BIG_PAD_W*3, 0, BIG_TAB_W, BIG_TAB_H, 441, rxGui, bsGame);
-  Button_Main[5] := TKMButton.Create(Panel_Common, BIG_PAD_W*4, 0, BIG_TAB_W, BIG_TAB_H, 389, rxGui, bsGame);
+  Button_Main[1] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*0, 0, BIG_TAB_W, BIG_TAB_H, 381, rxGui, bsGame);
+  Button_Main[2] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*1, 0, BIG_TAB_W, BIG_TAB_H, 589, rxGui, bsGame);
+  Button_Main[3] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*2, 0, BIG_TAB_W, BIG_TAB_H, 392, rxGui, bsGame);
+  Button_Main[4] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*3, 0, BIG_TAB_W, BIG_TAB_H, 441, rxGui, bsGame);
+  Button_Main[5] := TKMButton.Create(Panel_Common, TB_PAD_MBTN_LEFT + BIG_PAD_W*4, 0, BIG_TAB_W, BIG_TAB_H, 389, rxGui, bsGame);
   Button_Main[1].Hint := GetHintWHotKey(TX_MAPED_TERRAIN, SC_MAPEDIT_TERRAIN);
   Button_Main[2].Hint := GetHintWHotKey(TX_MAPED_VILLAGE, SC_MAPEDIT_VILLAGE);
   Button_Main[3].Hint := GetHintWHotKey(TX_MAPED_SCRIPTS_VISUAL, SC_MAPEDIT_VISUAL);
@@ -262,21 +265,21 @@ end;
 
 destructor TKMapEdInterface.Destroy;
 begin
-  FreeAndNil(fGuiHouse);
-  FreeAndNil(fGuiTerrain);
-  FreeAndNil(fGuiTown);
-  FreeAndNil(fGuiPlayer);
-  FreeAndNil(fGuiMission);
-  FreeAndNil(fGuiAttack);
-  FreeAndNil(fGuiExtras);
-  FreeAndNil(fGuiFormations);
-  FreeAndNil(fGuiMenuQuickPlay);
-  FreeAndNil(fGuiGoal);
-  FreeAndNil(fGuiMarkerDefence);
-  FreeAndNil(fGuiMarkerReveal);
-  FreeAndNil(fGuiMenu);
-  FreeAndNil(fGuiMessage);
-  FreeAndNil(fGuiUnit);
+  fGuiHouse.Free;
+  fGuiTerrain.Free;
+  fGuiTown.Free;
+  fGuiPlayer.Free;
+  fGuiMission.Free;
+  fGuiAttack.Free;
+  fGuiExtras.Free;
+  fGuiFormations.Free;
+  fGuiMenuQuickPlay.Free;
+  fGuiGoal.Free;
+  fGuiMarkerDefence.Free;
+  fGuiMarkerReveal.Free;
+  fGuiMenu.Free;
+  fGuiMessage.Free;
+  fGuiUnit.Free;
 
   SHOW_TERRAIN_WIRES := false; //Don't show it in-game if they left it on in MapEd
   SHOW_TERRAIN_PASS := 0; //Don't show it in-game if they left it on in MapEd

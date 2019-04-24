@@ -25,6 +25,7 @@ type
   protected
     fType: TKMUnitActionType;
     fUnit: TKMUnit;
+    fOnActionDone: TAnonBooleanFn;
   public
     Locked: Boolean; //Means that unit can't take part in interaction, must stay on its tile
     StepDone: Boolean; //True when single action element is done (unit walked to new tile, single attack loop done)
@@ -32,7 +33,8 @@ type
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
-    function CanBeInterrupted: Boolean; virtual;
+    property OnActionDone: TAnonBooleanFn read fOnActionDone write fOnActionDone;
+    function CanBeInterrupted(aForced: Boolean = True): Boolean; virtual;
     function ActName: TKMUnitActionName; virtual; abstract;
     property ActionType: TKMUnitActionType read fType;
     function GetExplanation: UnicodeString; virtual; abstract;
@@ -61,6 +63,8 @@ type
     function WalkShouldAbandon: Boolean; dynamic;
 
     function CouldBeCancelled: Boolean; virtual;
+
+    function ObjToString(aSeparator: String = ', '): String; virtual;
 
     function Execute: TKMTaskResult; virtual; abstract;
     procedure Save(SaveStream: TKMemoryStream); virtual;
@@ -221,6 +225,9 @@ type
     function GetSlide(aCheck: TKMCheckAxis): Single;
     function PathfindingShouldAvoid: Boolean; virtual;
 
+    function ObjToString(aSeparator: String = '|'): String; virtual;
+    function ObjToStringShort(aSeparator: String = '|'): String; virtual;
+
     procedure Save(SaveStream: TKMemoryStream); virtual;
     function UpdateState: Boolean; virtual;
     procedure Paint; virtual;
@@ -286,6 +293,8 @@ type
     procedure CarryGive(Res: TKMWareType);
     procedure CarryTake;
 
+    function ObjToString(aSeparator: String = '|'): String; override;
+
     function UpdateState: Boolean; override;
     procedure Paint; override;
   end;
@@ -321,6 +330,7 @@ type
 
 implementation
 uses
+  TypInfo,
   KM_Game, KM_GameApp, KM_RenderPool, KM_RenderAux, KM_ResTexts, KM_ScriptingEvents,
   KM_HandsCollection, KM_FogOfWar, KM_UnitWarrior, KM_Resource, KM_ResUnits,
   KM_Hand, KM_HouseWoodcutters,
@@ -681,7 +691,7 @@ begin
   end
   else
   begin
-    FreeAndNil(TM);
+    TM.Free;
     Result := nil;
   end;
 end;
@@ -842,6 +852,13 @@ procedure TKMUnitSerf.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(fCarry, SizeOf(fCarry));
+end;
+
+
+function TKMUnitSerf.ObjToString(aSeparator: String = '|'): String;
+begin
+  Result := inherited ObjToString(aSeparator)
+          + Format('%sCarry = %s', [aSeparator, GetEnumName(TypeInfo(TKMWareType), Integer(fCarry))]);
 end;
 
 
@@ -1602,7 +1619,7 @@ begin
   end;
   if fAction <> aAction then
   begin
-    FreeAndNil(fAction);
+    fAction.Free;
     fAction := aAction;
   end;
 end;
@@ -1898,7 +1915,7 @@ begin
     for I := 0 to Cells.Count - 1 do
       Result := Result or gTerrain.Route_CanBeMade(aFrom, Cells[I], aPass, aDistance);
   finally
-    FreeAndNil(Cells);
+    Cells.Free;
   end;
 end;
 
@@ -2128,6 +2145,54 @@ begin
 end;
 
 
+function TKMUnit.ObjToStringShort(aSeparator: String = '|'): String;
+var
+  ActStr, TaskStr: String;
+begin
+  ActStr := 'nil';
+  TaskStr := 'nil';
+  if fAction <> nil then
+    ActStr := fAction.ClassName;
+  if fTask <> nil then
+    TaskStr := fTask.ObjToString;
+
+  Result := Format('UID = %d%sType = %s%sAction = %s%sTask = [%s]%sCurrPosition = %s',
+                   [fUID, aSeparator,
+                    GetEnumName(TypeInfo(TKMUnitType), Integer(fType)), aSeparator,
+                    ActStr, aSeparator,
+                    TaskStr, aSeparator,
+                    TypeToString(fCurrPosition)]);
+end;
+
+
+function TKMUnit.ObjToString(aSeparator: String = '|'): String;
+var
+  HomeStr: String;
+begin
+  HomeStr := 'nil';
+
+  if fHome <> nil then
+    HomeStr := Format('[UID = %d, Type = %s]', [fHome.UID, GetEnumName(TypeInfo(TKMHouseType), Integer(fHome.HouseType))]);
+
+  Result := ObjToStringShort(aSeparator) +
+            Format('%sPositionF = %s%sPrevPosition = %s%sNextPosition = %s%s' +
+                   'Thought = %s%sHitPoints = %d%sHitPointCounter = %d%sCondition = %d%s' +
+                   'Owner = %d%sHome = %s%sVisible = %s%sIsDead = %s',
+                   [aSeparator,
+                    TypeToString(fPositionF), aSeparator,
+                    TypeToString(fPrevPosition), aSeparator,
+                    TypeToString(fNextPosition), aSeparator,
+                    GetEnumName(TypeInfo(TKMUnitThought), Integer(fThought)), aSeparator,
+                    fHitPoints, aSeparator,
+                    fHitPointCounter, aSeparator,
+                    fCondition, aSeparator,
+                    fOwner, aSeparator,
+                    HomeStr, aSeparator,
+                    BoolToStr(fVisible, True), aSeparator,
+                    BoolToStr(fIsDead, True)]);
+end;
+
+
 procedure TKMUnit.Save(SaveStream: TKMemoryStream);
 var
   HasTask, HasAct: Boolean;
@@ -2280,17 +2345,33 @@ begin
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   case fAction.Execute of
-    arActContinues: begin SetCurrPosition(KMPointRound(fPositionF)); Exit; end; //will update FOW
-    arActAborted:   begin FreeAndNil(fAction); FreeAndNil(fTask); end;
-    arActDone:      FreeAndNil(fAction);
+    arActContinues: begin
+                      SetCurrPosition(KMPointRound(fPositionF));
+                      Exit;
+                    end; //will update FOW
+    arActAborted:   begin
+                      FreeAndNil(fAction);
+                      FreeAndNil(fTask);
+                    end;
+    arActDone:      begin
+                      if Assigned(fAction.OnActionDone) then
+                      begin
+                        //Free action depends of fOnActionDone
+                        //If we created new action, then no need to free it
+                        //If we created new task then we must free it
+                        if not fAction.fOnActionDone() then
+                          FreeAndNil(fAction);
+                      end else
+                        FreeAndNil(fAction);
+                    end;
   end;
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   if fTask <> nil then
   case fTask.Execute of
     trTaskContinues:  Exit;
-    trTaskDone:       FreeAndNil(fTask);
-  end;
+      trTaskDone:       FreeAndNil(fTask);
+    end;
 
   //If we get to this point then it means that common part is done and now
   //we can perform unit-specific activities (ask for job, etc..)
@@ -2378,6 +2459,15 @@ begin
 end;
 
 
+function TKMUnitTask.ObjToString(aSeparator: String = ', '): String;
+begin
+  Result := Format('Type %s%sPhase = %d%sPhase2 = %d',
+                   [GetEnumName(TypeInfo(TKMUnitTaskType), Integer(fType)), aSeparator,
+                    fPhase, aSeparator,
+                    fPhase2]);
+end;
+
+
 procedure TKMUnitTask.Save(SaveStream: TKMemoryStream);
 begin
   SaveStream.Write(fType, SizeOf(fType)); //Save task type before anything else for it will be used on loading to create specific task type
@@ -2438,7 +2528,7 @@ begin
 end;
 
 
-function TKMUnitAction.CanBeInterrupted: Boolean;
+function TKMUnitAction.CanBeInterrupted(aForced: Boolean = True): Boolean;
 begin
   Result := True;
 end;

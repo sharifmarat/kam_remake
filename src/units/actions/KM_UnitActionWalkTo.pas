@@ -82,7 +82,7 @@ type
     destructor Destroy; override;
 
     function ActName: TKMUnitActionName; override;
-    function CanBeInterrupted: Boolean; override;
+    function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
     function CanAbandonExternal: Boolean;
     property DoesWalking: Boolean read fDoesWalking;
     property DoingExchange: Boolean read fDoExchange; //Critical piece, must not be abandoned
@@ -219,7 +219,7 @@ begin
     Exit;
   ExplanationLog.Add(Format(
   '%d'+#9+'%d:%d > %d:%d > %d:%d'+#9+Explanation+'',
-  [ gGame.GameTickCount,
+  [ gGame.GameTick,
     fUnit.PrevPosition.X,
     fUnit.PrevPosition.Y,
     fUnit.CurrPosition.X,
@@ -296,7 +296,8 @@ begin
   if not KMSamePoint(fVertexOccupied, KMPOINT_ZERO) then
     DecVertex;
 
-  fUnit.IsExchanging := false;
+  if fUnit <> nil then
+    fUnit.IsExchanging := false;
 
   gHands.CleanUpUnitPointer(fTargetUnit);
   gHands.CleanUpHousePointer(fTargetHouse);
@@ -416,7 +417,7 @@ begin
       else
         NodeList.Clear; //Clear NodeList so we return false
     finally
-      FreeAndNil(NodeList2);
+      NodeList2.Free;
     end;
   end;
 
@@ -835,7 +836,7 @@ begin
         else
         begin
           //NodeList has now been re-routed, so we need to re-init everything else and start walk again
-          FreeAndNil(NodeList); //Free our current node list and swap in this new one
+          NodeList.Free; //Free our current node list and swap in this new one
           NodeList := NewNodeList;
           NewNodeList := nil; //So we don't FreeAndNil it at the end (it's now our main node list)
           SetInitValues;
@@ -1262,7 +1263,7 @@ begin
 end;
 
 
-function TKMUnitActionWalkTo.CanBeInterrupted: Boolean;
+function TKMUnitActionWalkTo.CanBeInterrupted(aForced: Boolean = True): Boolean;
 begin
   Result := CanAbandonExternal and StepDone;//Only when unit is idling during Interaction pauses
 end;

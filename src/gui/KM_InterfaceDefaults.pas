@@ -10,6 +10,7 @@ uses
 
 type
   TUIMode = (umSP, umMP, umReplay, umSpectate);
+  TUIModeSet = set of TUIMode;
 
   TKMMenuPageType =  (gpMainMenu,
                         gpSinglePlayer,
@@ -116,7 +117,7 @@ const
 
 implementation
 uses
-  SysUtils, KM_ResKeys;
+  KM_ResKeys;
 
 
 { TKMUserInterface }
@@ -133,7 +134,7 @@ end;
 
 destructor TKMUserInterfaceCommon.Destroy;
 begin
-  FreeAndNil(fMyControls);
+  fMyControls.Free;
   inherited;
 end;
 

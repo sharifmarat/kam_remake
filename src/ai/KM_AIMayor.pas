@@ -61,7 +61,7 @@ type
 
 implementation
 uses
-  SysUtils, Classes, Math,
+  Classes, Math,
   KM_Game, KM_Hand, KM_HandsCollection,
   KM_AIFields, KM_Terrain,
   KM_Houses, KM_HouseSchool,
@@ -117,11 +117,11 @@ end;
 
 destructor TKMayor.Destroy;
 begin
-  FreeAndNil(fBalance);
-  FreeAndNil(fCityPlanner);
-  FreeAndNil(fPathFindingRoad);
-  FreeAndNil(fPathFindingRoadShortcuts);
-  FreeAndNil(fDefenceTowers);
+  fBalance.Free;
+  fCityPlanner.Free;
+  fPathFindingRoad.Free;
+  fPathFindingRoadShortcuts.Free;
+  fDefenceTowers.Free;
 
   inherited;
 end;
@@ -445,7 +445,7 @@ begin
       gHands[fOwner].AddHousePlan(htWatchTower, BestLoc);
       TryConnectToRoad(KMPointBelow(BestLoc));
     end;
-    FreeAndNil(NodeList);
+    NodeList.Free;
   end;
 end;
 
@@ -493,7 +493,7 @@ begin
         P.BuildList.FieldworksList.AddField(NodeList[I], ftRoad);
     Result := True;
   finally
-    FreeAndNil(NodeList);
+    NodeList.Free;
   end;
 end;
 
@@ -560,7 +560,7 @@ begin
       for I := 0 to Min(NodeTagList.Count, 16) - 1 do
         P.BuildList.FieldworksList.AddField(NodeTagList[I], ftCorn);
     finally
-      FreeAndNil(NodeTagList);
+      NodeTagList.Free;
     end;
   end;
 
@@ -588,7 +588,7 @@ begin
       for I := 0 to Min(NodeTagList.Count, 10) - 1 do
         P.BuildList.FieldworksList.AddField(NodeTagList[I], ftWine);
     finally
-      FreeAndNil(NodeTagList);
+      NodeTagList.Free;
     end;
   end;
 
@@ -698,7 +698,11 @@ var
     Result := Max(1, Result);
   end;
 
+const
+  MAX_TRIES = 10; //We could get into infinite loop on some scripted maps, f.e. Furrioir Warriors
+
 var
+  K: Integer;
   H: TKMHouseType;
 begin
   P := gHands[fOwner];
@@ -720,8 +724,10 @@ begin
     while (fDefenceTowers.Count > 0) and (P.Stats.GetHouseWip(htAny) < MaxPlansForTowers) do
       TryBuildDefenceTower;
 
-  while (P.Stats.GetHouseWip(htAny) < GetMaxPlans) do
+  K := 0;
+  while (P.Stats.GetHouseWip(htAny) < GetMaxPlans) and (K < Max(GetMaxPlans, MAX_TRIES)) do
   begin
+    Inc(K);
     H := fBalance.Peek;
 
     //There are no more suggestions
@@ -813,7 +819,7 @@ begin
         end;
     end;
   finally
-    FreeAndNil(NodeList);
+    NodeList.Free;
   end;
 end;
 

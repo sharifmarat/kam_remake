@@ -81,7 +81,7 @@ type
 
 implementation
 uses
-  SysUtils, Math,
+  Math,
   KM_Game, KM_HandsCollection, KM_RenderAux;
 
 
@@ -220,7 +220,7 @@ end;
 
 destructor TAIDefencePositions.Destroy;
 begin
-  FreeAndNil(fPositions);
+  fPositions.Free;
 
   inherited;
 end;

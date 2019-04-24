@@ -2,7 +2,7 @@
 
 
 REM build RXXPacker
-msbuild ..\Utils\RXXPacker\RXXPacker.dproj /p:Configuration=Release /t:Build /clp:ErrorsOnly /fl /flp:LogFile="bat_build_rxxpacker.log"
+msbuild ..\Utils\RXXPacker\RXXPacker.dproj /p:Configuration=Release /t:Build /clp:ErrorsOnly /fl /flp:LogFile="build_rxxpacker.log"
 
 @REM Backup local rxx files
 @REM xcopy ..\data\Sprites ..\data\_Sprites\ /y /r /s

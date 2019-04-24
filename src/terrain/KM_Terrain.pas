@@ -470,7 +470,7 @@ begin
         //Everything else is default
       end;
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 
   fFinder := TKMTerrainFinder.Create;
@@ -572,7 +572,7 @@ begin
 
     S.SaveToFile(aFile);
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 end;
 
@@ -2000,9 +2000,9 @@ begin
   if not Result then
     Result := FarTiles.GetRandom(FieldPoint);
 
-  FreeAndNil(NearTiles);
-  FreeAndNil(FarTiles);
-  FreeAndNil(ValidTiles);
+  NearTiles.Free;
+  FarTiles.Free;
+  ValidTiles.Free;
 end;
 
 
@@ -2042,9 +2042,9 @@ begin
     Result := FarTiles.GetRandom(P);
 
   FieldPoint := KMPointDir(P, dirNA);
-  FreeAndNil(NearTiles);
-  FreeAndNil(FarTiles);
-  FreeAndNil(ValidTiles);
+  NearTiles.Free;
+  FarTiles.Free;
+  ValidTiles.Free;
   if not Result then
     PlantAct := taAny
   else
@@ -2082,8 +2082,8 @@ begin
 
   Result := ChosenTiles.GetRandom(P);
   StonePoint := KMPointDir(P, dirN);
-  FreeAndNil(ChosenTiles);
-  FreeAndNil(ValidTiles);
+  ChosenTiles.Free;
+  ValidTiles.Free;
 end;
 
 
@@ -2108,7 +2108,7 @@ begin
       Break;
 
   for I := 0 to Length(L) - 1 do
-    FreeAndNil(L[I]);
+    L[I].Free;
 end;
 
 
@@ -2267,7 +2267,7 @@ begin
       Break;
     end;
   end;
-  FreeAndNil(ValidTiles);
+  ValidTiles.Free;
 end; 
 
 
@@ -2324,7 +2324,7 @@ begin
           SecondBestToPlant.Add(T); //Empty space and other objects that can be dug out (e.g. mushrooms) if no other options available
     end;
   end;
-  FreeAndNil(ValidTiles);
+  ValidTiles.Free;
 end;
 
 
@@ -2359,8 +2359,8 @@ begin
   end;
 
   Result := ChosenTiles.GetRandom(FishPoint);
-  FreeAndNil(ChosenTiles);
-  FreeAndNil(ValidTiles);
+  ChosenTiles.Free;
+  ValidTiles.Free;
 end;
 
 
@@ -3203,9 +3203,9 @@ begin
       if not(L1.GetRandom(Result)) then
         Result := Loc;
 
-  FreeAndNil(L1);
-  FreeAndNil(L2);
-  FreeAndNil(L3);
+  L1.Free;
+  L2.Free;
+  L3.Free;
 end;
 
 
@@ -3240,8 +3240,8 @@ begin
   if (OnlyTakeBest) or (not(L1.GetRandom(SidePoint))) then
     Result := False; //No side step positions available
 
-  FreeAndNil(L1);
-  FreeAndNil(L2);
+  L1.Free;
+  L2.Free;
 end;
 
 
@@ -3713,7 +3713,7 @@ begin
   if ToFlatten <> nil then
   begin
     FlattenTerrain(ToFlatten);
-    FreeAndNil(ToFlatten);
+    ToFlatten.Free;
   end;
 
   //Recalculate Passability for tiles around the house so that they can't be built on too

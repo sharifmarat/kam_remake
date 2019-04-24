@@ -16,6 +16,13 @@ type
   TKMHouseFromEvent = procedure(aHouse: TKMHouse; aFrom: TKMHandID) of object;
   TKMHouseArray = array of TKMHouse;
 
+  TKMHouseSketch = class;
+
+  TKMHouseSketchType = (hstHousePlan, hstHouse);
+  TKMHouseSketchTypeSet = set of TKMHouseSketchType;
+
+  TAnonHouseSketchBoolFn = reference to function(aSketch: TKMHouseSketch; aBoolParam: Boolean): Boolean;
+
   TKMHouseAction = class
   private
     fHouse: TKMHouse;
@@ -52,6 +59,8 @@ type
 
     property Entrance: TKMPoint read GetEntrance;
     property PointBelowEntrance: TKMPoint read GetPointBelowEntrance;
+
+    function ObjToStringShort(aSeparator: String = '|'): String;
 
     function IsEmpty: Boolean;
   end;
@@ -113,7 +122,9 @@ type
     fPointerCount: Cardinal;
     fTimeSinceUnoccupiedReminder: Integer;
     fDisableUnoccupiedMessage: Boolean;
-    fIssueOrderCompletedMsg: Boolean;
+    fResourceDepletedMsgIssued: Boolean;
+    fOrderCompletedMsgIssued: Boolean;
+    fNeedIssueOrderCompletedMsg: Boolean;
 
     procedure CheckOnSnow;
 
@@ -142,7 +153,6 @@ type
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
-    ResourceDepletedMsgIssued: Boolean;
     DoorwayUse: Byte; //number of units using our door way. Used for sliding.
     OnDestroyed: TKMHouseFromEvent;
 
@@ -176,6 +186,9 @@ type
     procedure SetPrevDeliveryMode;
     procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
+
+    property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
+    property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
     function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; virtual;
 
@@ -229,6 +242,8 @@ type
     procedure PostLoadMission; virtual;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
+
+    function ObjToString: String;
 
     procedure IncAnimStep;
     procedure UpdateResRequest;
@@ -319,7 +334,7 @@ type
 
 implementation
 uses
-  SysUtils, Math, KromUtils,
+  TypInfo, SysUtils, Math, KromUtils,
   KM_Game, KM_GameApp, KM_Terrain, KM_RenderPool, KM_RenderAux, KM_Sound, KM_FogOfWar,
   KM_Hand, KM_HandsCollection, KM_HandLogistics, KM_InterfaceGame,
   KM_UnitWarrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseWoodcutters,
@@ -374,6 +389,15 @@ begin
             or (HouseType = htNone)
             or (Position.X = -1)
             or (Position.Y = -1);
+end;
+
+
+function TKMHouseSketch.ObjToStringShort(aSeparator: String = '|'): String;
+begin
+  Result := Format('UID = %d%sType = %s%sEntrance = %s',
+                  [fUID, aSeparator,
+                   GetEnumName(TypeInfo(TKMHouseType), Integer(fType)), aSeparator,
+                   TypeToString(Entrance)]);
 end;
 
 
@@ -464,8 +488,9 @@ begin
   fPointerCount := 0;
   fTimeSinceUnoccupiedReminder := TIME_BETWEEN_MESSAGES;
 
-  ResourceDepletedMsgIssued := False;
-  fIssueOrderCompletedMsg := False;
+  fResourceDepletedMsgIssued := False;
+  fNeedIssueOrderCompletedMsg := False;
+  fOrderCompletedMsgIssued := False;
 
   if aBuildState = hbsDone then //House was placed on map already Built e.g. in mission maker
   begin
@@ -522,7 +547,8 @@ begin
   LoadStream.Read(fPointerCount);
   LoadStream.Read(fTimeSinceUnoccupiedReminder);
   LoadStream.Read(fDisableUnoccupiedMessage);
-  LoadStream.Read(fIssueOrderCompletedMsg);
+  LoadStream.Read(fNeedIssueOrderCompletedMsg);
+  LoadStream.Read(fOrderCompletedMsgIssued);
   LoadStream.Read(fUID);
   LoadStream.Read(HasAct);
   if HasAct then
@@ -530,7 +556,7 @@ begin
     CurrentAction := TKMHouseAction.Create(nil, hstEmpty); //Create action object
     CurrentAction.Load(LoadStream); //Load actual data into object
   end;
-  LoadStream.Read(ResourceDepletedMsgIssued);
+  LoadStream.Read(fResourceDepletedMsgIssued);
   LoadStream.Read(DoorwayUse);
 end;
 
@@ -832,7 +858,7 @@ begin
     if not C.GetClosest(aPos, Result) then
       raise Exception.Create('Could not find closest house cell');
   finally
-    FreeAndNil(C);
+    C.Free;
   end;
 end;
 
@@ -927,7 +953,7 @@ begin
   GetListOfCellsWithin(Cells);
   Success := Cells.GetRandom(Result);
   Assert(Success);
-  FreeAndNil(Cells);
+  Cells.Free;
 end;
 
 
@@ -1208,7 +1234,7 @@ begin
 
   fIsOnSnow := SnowTiles > (Cells.Count div 2);
 
-  FreeAndNil(Cells);
+  Cells.Free;
 end;
 
 
@@ -1255,7 +1281,8 @@ begin
   for I := 1 to 4 do
     fResOrderDesired[I] := fResourceOrder[I] / TotalDesired;
 
-  fIssueOrderCompletedMsg := false;
+  fNeedIssueOrderCompletedMsg := False;
+  fOrderCompletedMsgIssued := False;
 end;
 
 
@@ -1325,15 +1352,17 @@ begin
   if Result <> 0 then
   begin
     Dec(fResourceOrder[Result]);
-    fIssueOrderCompletedMsg := True;
+    fNeedIssueOrderCompletedMsg := True;
+    fOrderCompletedMsgIssued := False;
   end
   else
     //Check all orders are actually finished (input resources might be empty)
     if  (ResOrder[1] = 0) and (ResOrder[2] = 0)
     and (ResOrder[3] = 0) and (ResOrder[4] = 0) then
-      if fIssueOrderCompletedMsg then
+      if fNeedIssueOrderCompletedMsg then
       begin
-        fIssueOrderCompletedMsg := False;
+        fNeedIssueOrderCompletedMsg := False;
+        fOrderCompletedMsgIssued := True;
         gGame.ShowMessage(mkHouse, TX_MSG_ORDER_COMPLETED, Entrance, fOwner);
       end;
 end;
@@ -1714,12 +1743,13 @@ begin
   SaveStream.Write(fPointerCount);
   SaveStream.Write(fTimeSinceUnoccupiedReminder);
   SaveStream.Write(fDisableUnoccupiedMessage);
-  SaveStream.Write(fIssueOrderCompletedMsg);
+  SaveStream.Write(fNeedIssueOrderCompletedMsg);
+  SaveStream.Write(fOrderCompletedMsgIssued);
   SaveStream.Write(fUID);
   HasAct := CurrentAction <> nil;
   SaveStream.Write(HasAct);
   if HasAct then CurrentAction.Save(SaveStream);
-  SaveStream.Write(ResourceDepletedMsgIssued);
+  SaveStream.Write(fResourceDepletedMsgIssued);
   SaveStream.Write(DoorwayUse);
 end;
 
@@ -1800,6 +1830,33 @@ begin
       end;
 
     end;
+end;
+
+
+function TKMHouse.ObjToString: String;
+var
+  ActStr: String;
+begin
+  ActStr := 'nil';
+  if CurrentAction <> nil then
+    ActStr := CurrentAction.ClassName;
+
+  Result := ObjToStringShort +
+            Format('|HasOwner = %s|Owner = %d|Action = %s|Repair = %s|IsClosedForWorker = %s|DeliveryMode = %s|NewDeliveryMode = %s|Damage = %d|' +
+                   'BuildState = %s|BuildSupplyWood = %d|BuildSupplyStone = %d|BuildingProgress = %d|DoorwayUse = %d',
+                   [BoolToStr(fHasOwner, True),
+                    fOwner,
+                    ActStr,
+                    BoolToStr(fBuildingRepair, True),
+                    BoolToStr(fIsClosedForWorker, True),
+                    GetEnumName(TypeInfo(TKMDeliveryMode), Integer(fDeliveryMode)),
+                    GetEnumName(TypeInfo(TKMDeliveryMode), Integer(fNewDeliveryMode)),
+                    fDamage,
+                    GetEnumName(TypeInfo(TKMHouseBuildState), Integer(fBuildState)),
+                    fBuildSupplyWood,
+                    fBuildSupplyStone,
+                    fBuildingProgress,
+                    DoorwayUse]);
 end;
 
 

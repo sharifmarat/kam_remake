@@ -29,6 +29,7 @@ type
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
   TKMSupervisor = class
   private
+    fFFA: Boolean;
     fPL2Alli: TKMHandByteArr;
     fAlli2PL: TKMHandIdx2Arr;
     procedure UpdateDefSupport(aTeamIdx: Byte);
@@ -44,6 +45,7 @@ type
 
     property PL2Alli: TKMHandByteArr read fPL2Alli;
     property Alli2PL: TKMHandIdx2Arr read fAlli2PL;
+    property FFA: boolean read fFFA;
 
     function FindClosestEnemies(var aPlayers: TKMHandIDArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
 
@@ -103,6 +105,7 @@ var
   I: Integer;
 begin
   SaveStream.WriteA('Supervisor');
+  SaveStream.Write(fFFA);
   SaveStream.Write(fPL2Alli, SizeOf(fPL2Alli));
   SaveStream.Write( Integer(Length(fAlli2PL)) );
   for I := Low(fAlli2PL) to High(fAlli2PL) do
@@ -117,6 +120,7 @@ var
   I,K: Integer;
 begin
   LoadStream.ReadAssert('Supervisor');
+  LoadStream.Read(fFFA);
   LoadStream.Read(fPL2Alli, SizeOf(fPL2Alli));
   LoadStream.Read(K);
   SetLength(fAlli2PL, K);
@@ -183,6 +187,7 @@ begin
       Inc(AlliCnt);
     end;
   SetLength(fAlli2PL, AlliCnt);
+  fFFA := AlliCnt > 2;
 end;
 
 
@@ -477,7 +482,7 @@ begin
   if not NewAIInTeam(aTeamIdx, False, True) OR (Length(fAlli2PL) < 2) then // I sometimes use my loc as a spectator (alliance with everyone) so make sure that search for enemy will use AI loc
     Exit;
   // Check if alliance can attack (have available soldiers) in the FFA mode (if there are just 2 teams attack if we have advantage)
-  if (Length(fAlli2PL) > 2) then
+  if (Length(fAlli2PL) > 2) AND not (gGame.MissionMode = mmTactic) then
   begin
     DefRatio := 0;
     for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do
@@ -499,7 +504,7 @@ begin
     ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeamIdx,0], atAlly ];
     with ArmyState.FoodState do
       FoodLevel := (Full + Middle) / Max(1, (Full + Middle + Low));
-    if (BestCmpIdx <> -1) AND ((BestCmp > MIN_ADVANTAGE) OR (FoodLevel < FOOD_THRESHOLD)) then
+    if (BestCmpIdx <> -1) AND ((BestCmp > MIN_ADVANTAGE) OR (FoodLevel < FOOD_THRESHOLD) OR (gGame.MissionMode = mmTactic)) then
     begin
       EnemyTeamIdx := fPL2Alli[ EnemyStats[BestCmpIdx].Player ];
       for IdxPL := 0 to Length( fAlli2PL[aTeamIdx] ) - 1 do

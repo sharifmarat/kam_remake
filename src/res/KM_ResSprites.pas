@@ -300,7 +300,7 @@ begin
       end;
     end;
   finally
-    FreeAndNil(ShadowConverter);
+    ShadowConverter.Free;
   end;
 end;
 
@@ -318,7 +318,7 @@ begin
       if (fRXData.Flag[I] <> 0) then
         ShadowConverter.ConvertShadows(I, aOnlyShadows);
   finally
-    FreeAndNil(ShadowConverter);
+    ShadowConverter.Free;
   end;
 end;
 
@@ -332,7 +332,7 @@ begin
     if (fRXData.Flag[aID] <> 0) then
       ShadowConverter.ConvertShadows(aID, aOnlyShadows);
   finally
-    FreeAndNil(ShadowConverter);
+    ShadowConverter.Free;
   end;
 end;
 
@@ -507,8 +507,8 @@ begin
           DecompressionStream.Read(fRXData.Mask[I, 0], fRXData.Size[I].X * fRXData.Size[I].Y);
       end;
   finally
-    FreeAndNil(DecompressionStream);
-    FreeAndNil(InputStream);
+    DecompressionStream.Free;
+    InputStream.Free;
   end;
 end;
 
@@ -560,10 +560,10 @@ procedure TKMSpritePack.OverloadFromFolder(const aFolder: string);
           FindClose(SearchRec);
         end;
       finally
-        FreeAndNil(IDList);
+        IDList.Free;
       end;
     finally
-      FreeAndNil(FileList);
+      FileList.Free;
     end;
   end;
 begin
@@ -587,7 +587,7 @@ begin
   for I := 1 to fRXData.Count do
     ExportFullImageData(aFolder, I, SL);
 
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 
@@ -617,7 +617,7 @@ begin
   end;
 
   if ListCreated then
-    FreeAndNil(aTempList);
+    aTempList.Free;
 end;
 
 
@@ -1017,13 +1017,13 @@ destructor TKMResSprites.Destroy;
 var
   RT: TRXType;
 begin
-  FreeAndNil(fGameRXTypes);
+  fGameRXTypes.Free;
   // Stop resource loader before Freeing SpritePack, as loader use fRXData and could get an exception there on game exit
   if fGameResLoader <> nil then
     StopResourceLoader;
 
   for RT := Low(TRXType) to High(TRXType) do
-    FreeAndNil(fSprites[RT]);
+    fSprites[RT].Free;
 
   inherited;
 end;

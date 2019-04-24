@@ -2,7 +2,7 @@ REM ============================================================
 REM Create new build folder
 REM ============================================================
 
-call bat_rsvars.bat
+call rsvars.bat
 
 @echo off
 for /f "delims=" %%a in ('wmic OS Get localdatetime  ^| find "."') do set dt=%%a

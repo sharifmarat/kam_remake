@@ -142,7 +142,9 @@ type
   procedure KMSwapPoints(var A,B: TKMPoint);
   procedure KMSwapPointDir(var A,B: TKMPointDir);
 
-  function TypeToString(const T: TKMPoint): string; overload;
+  function TypeToString(const P: TKMPoint): string; overload;
+  function TypeToString(const P: TKMPointDir): string; overload;
+  function TypeToString(const P: TKMPointF): string; overload;
   function TypeToString(const T: TKMDirection): string; overload;
 
   function StringToType(const Str: String): TKMPoint; overload;
@@ -172,7 +174,7 @@ const
 
 implementation
 uses
-  SysUtils, Math, KM_CommonUtils;
+  SysUtils, TypInfo, Math, KM_CommonUtils;
 
 
 class operator TKMPoint.Equal(const A, B: TKMPoint): Boolean;
@@ -892,9 +894,21 @@ begin
 end;
 
 
-function TypeToString(const T: TKMPoint): string;
+function TypeToString(const P: TKMPoint): string;
 begin
-  Result := '(' + IntToStr(T.X) + ';' + IntToStr(T.Y) + ')';
+  Result := '(' + IntToStr(P.X) + ';' + IntToStr(P.Y) + ')';
+end;
+
+
+function TypeToString(const P: TKMPointDir): string;
+begin
+  Result := Format('%s Dir = %s', [TypeToString(P.Loc), GetEnumName(TypeInfo(TKMDirection), Integer(P.Dir))]);
+end;
+
+
+function TypeToString(const P: TKMPointF): string;
+begin
+  Result := Format('(%s;%s)', [FormatFloat('##0.##', P.X), FormatFloat('##0.##', P.Y)]);
 end;
 
 

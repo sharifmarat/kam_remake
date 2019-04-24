@@ -57,7 +57,7 @@ type
 
 implementation
 uses
-   SysUtils, KM_AIFields, KM_NavMesh, KM_NavMeshGenerator;
+   KM_AIFields, KM_NavMesh, KM_NavMeshGenerator;
 
 
 { TNavMeshPathFinding }
@@ -72,7 +72,7 @@ end;
 destructor TNavMeshPathFinding.Destroy;
 begin
   Flush(true);
-  FreeAndNil(fHeap);
+  fHeap.Free;
   inherited;
 end;
 
@@ -94,7 +94,7 @@ begin
     SetLength(fUsedNodes, Length(gAIFields.NavMesh.Polygons));
   for I := Length(fUsedNodes)-1 downto 0 do
   begin
-    FreeAndNil(fUsedNodes[I]);
+    fUsedNodes[I].Free;
     fUsedNodes[I] := nil;
   end;
 end;

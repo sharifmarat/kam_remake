@@ -113,8 +113,7 @@ begin
   if AI_GEN_NAVMESH then
     fNavMesh.Paint(aRect);
 
-  if OVERLAY_AI_EYE then
-    fEye.Paint(aRect);
+  fEye.Paint(aRect);
 
   if OVERLAY_AI_SUPERVISOR then
     fSupervisor.Paint(aRect);

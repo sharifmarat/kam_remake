@@ -223,7 +223,7 @@ begin
 
   if SL.Count > 0 then
     SL.SaveToFile(aPath);
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 

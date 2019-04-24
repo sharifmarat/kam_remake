@@ -58,6 +58,7 @@ type
     fCanBeHuman: Boolean;
     fHandAITypes: TKMAITypeSet;
     fFlagColor: Cardinal;
+    fTeamColor: Cardinal;
     fCenterScreen: TKMPoint;
     fAlliances: array [0 .. MAX_HANDS - 1] of TKMAllianceType;
     fShareFOW: array [0 .. MAX_HANDS - 1] of Boolean;
@@ -67,6 +68,8 @@ type
     fHSketch: TKMHouseSketchEdit;
     fFirstHSketch: TKMHouseSketchEdit;
     fFoundHSketch: TKMHouseSketchEdit;
+
+    fOnAllianceChange: TEvent;
 
     function GetColorIndex: Byte;
 
@@ -91,7 +94,7 @@ type
     //Used for syncing hotkeys in multiplayer saves only. UI keeps local value to avoid GIP delays
     SelectionHotkeys: array[0..DYNAMIC_HOTKEYS_NUM-1] of Integer;
 
-    constructor Create(aHandIndex: TKMHandID);
+    constructor Create(aHandIndex: TKMHandID; aOnAllianceChange: TEvent);
     destructor Destroy; override;
 
     property AI: TKMHandAI read fAI;
@@ -117,6 +120,7 @@ type
     property CanBeHuman: Boolean read fCanBeHuman write fCanBeHuman;
     property HandAITypes: TKMAITypeSet read fHandAITypes;
     property FlagColor: Cardinal read fFlagColor write fFlagColor;
+    property TeamColor: Cardinal read fTeamColor write fTeamColor;
     property GameFlagColor: Cardinal read GetGameFlagColor;
     property FlagColorIndex: Byte read GetColorIndex;
     property Alliances[aIndex: Integer]: TKMAllianceType read GetAlliances write SetAlliances;
@@ -140,7 +144,13 @@ type
 
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal): TKMHouse; overload;
     function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
-                                   out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse; overload;
+                                   out aHouseSketch: TKMHouseSketchEdit;
+                                   aSketchTypesSet: TKMHouseSketchTypeSet = [hstHouse]): TKMHouse; overload;
+    function GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                   out aHouseSketch: TKMHouseSketchEdit;
+                                   aSketchTypesSet: TKMHouseSketchTypeSet;
+                                   aVerifySketch: TAnonHouseSketchBoolFn;
+                                   aVerifySketchBoolParam: Boolean): TKMHouse; overload;
     function GetNextUnitWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnit;
     function GetNextGroupWSameType(aUnitType: TKMUnitType; aStartFromUID: Cardinal): TKMUnitGroup;
 
@@ -171,7 +181,7 @@ type
     function HousesHitTest(X, Y: Integer): TKMHouse;
     function GroupsHitTest(X, Y: Integer): TKMUnitGroup;
     function ObjectByUID(aUID: Integer): TObject;
-    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+    procedure GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList; aIgnoreFOW: Boolean = False);
 
     function GetFieldsCount: Integer;
     procedure GetFieldPlans(aList: TKMPointTagList; const aRect: TKMRect; aIncludeFake: Boolean);
@@ -286,13 +296,15 @@ end;
 
 
 { TKMHand }
-constructor TKMHand.Create(aHandIndex: TKMHandID);
+constructor TKMHand.Create(aHandIndex: TKMHandID; aOnAllianceChange: TEvent);
 var
   I: Integer;
 begin
   inherited Create(aHandIndex);
 
   Enabled := True;
+
+  fOnAllianceChange := aOnAllianceChange;
 
   fAI           := TKMHandAI.Create(fID);
   fFogOfWar     := TKMFogOfWar.Create(gTerrain.MapX, gTerrain.MapY);
@@ -319,6 +331,7 @@ begin
 
   fAlliances[fID] := atAlly; //Others are set to enemy by default
   fFlagColor := DefaultTeamColors[fID]; //Init with default color, later replaced by Script
+  fTeamColor := fFlagColor;
 
   fHSketch := TKMHouseSketchEdit.Create;
   fFirstHSketch := TKMHouseSketchEdit.Create;
@@ -541,7 +554,18 @@ end;
 
 
 function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
-                                       out aHouseSketch: TKMHouseSketchEdit; aConsiderHousePlan: Boolean = False): TKMHouse;
+                                       out aHouseSketch: TKMHouseSketchEdit;
+                                       aSketchTypesSet: TKMHouseSketchTypeSet = [hstHouse]): TKMHouse;
+begin
+  Result := GetNextHouseWSameType(aHouseType, aStartFromUID, aHouseSketch, aSketchTypesSet, nil, False);
+end;
+
+
+function TKMHand.GetNextHouseWSameType(aHouseType: TKMHouseType; aStartFromUID: Cardinal;
+                                       out aHouseSketch: TKMHouseSketchEdit;
+                                       aSketchTypesSet: TKMHouseSketchTypeSet;
+                                       aVerifySketch: TAnonHouseSketchBoolFn;
+                                       aVerifySketchBoolParam: Boolean): TKMHouse;
 
 var
   ResultSet: Boolean;
@@ -570,15 +594,25 @@ var
   end;
 
   function GetNextHSketch(aIndex: Integer; out aHouseSketchTmp: TKMHouseSketchEdit): Boolean;
+  var
+    Sketch2Verify: TKMHouseSketch;
   begin
     aHouseSketchTmp.Clear;
 
-    if aIndex < fHouses.Count then
-      FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex])
-    else
-      FillHSketchByHPlan(aHouseSketchTmp, fBuildList.HousePlanList.Plans[aIndex - fHouses.Count]);
+    Sketch2Verify := nil;
 
-    Result := not aHouseSketchTmp.IsEmpty;
+    if (hstHouse in aSketchTypesSet) and (aIndex < fHouses.Count) then
+    begin
+      FillHSketchByHouse(aHouseSketchTmp, fHouses[aIndex]);
+      Sketch2Verify := fHouses[aIndex];
+    end else if (hstHousePlan in aSketchTypesSet) then
+    begin
+      FillHSketchByHPlan(aHouseSketchTmp, fBuildList.HousePlanList.Plans[aIndex - Byte(hstHouse in aSketchTypesSet)*fHouses.Count]);
+      Sketch2Verify := aHouseSketchTmp;
+    end;
+
+    Result := not aHouseSketchTmp.IsEmpty
+              and (not Assigned(aVerifySketch) or aVerifySketch(Sketch2Verify, aVerifySketchBoolParam));
   end;
 
   procedure FillResult(aIndex: Integer; aHSketch: TKMHouseSketchEdit);
@@ -600,7 +634,8 @@ begin
   Found := False;
   ResultSet := False;
 
-  Cnt := fHouses.Count + Byte(aConsiderHousePlan)*fBuildList.HousePlanList.Count;
+  Cnt :=   Byte(hstHouse in aSketchTypesSet)*fHouses.Count
+         + Byte(hstHousePlan in aSketchTypesSet)*fBuildList.HousePlanList.Count;
 
   I := 0;
   FirstHSketchI := 0;
@@ -726,7 +761,7 @@ begin
 
     if (Group = nil)
       or Group.IsDead //check if group is dead
-      or (Group.UnitType <> aUnitType) then // we are interested in groups with the same type only
+      or not Group.HasUnitType(aUnitType) then // we are interested in groups with the same type only
       Continue;
 
     //Just find any first house
@@ -823,17 +858,20 @@ end;
 function TKMHand.GetGameFlagColor: Cardinal;
 begin
   Result := fFlagColor;
-  if (gGame <> nil) then
+  if (gGame <> nil) and not gGame.IsMapEditor then
   begin
-    if not gGame.IsMapEditor and not gGameApp.GameSettings.ShowPlayersColors then
-    begin
-      if ID = gMySpectator.HandID then
-        Result := gGameApp.GameSettings.PlayerColorSelf
-      else if (Alliances[gMySpectator.HandID] = atAlly) then
-        Result := gGameApp.GameSettings.PlayerColorAlly
-      else
-        Result := gGameApp.GameSettings.PlayerColorEnemy;
+    case gGameApp.GameSettings.PlayersColorMode of
+      pcmAllyEnemy: begin
+                      if ID = gMySpectator.HandID then
+                        Result := gGameApp.GameSettings.PlayerColorSelf
+                      else if (Alliances[gMySpectator.HandID] = atAlly) then
+                        Result := gGameApp.GameSettings.PlayerColorAlly
+                      else
+                        Result := gGameApp.GameSettings.PlayerColorEnemy;
+                    end;
+      pcmTeams:     Result := fTeamColor;
     end;
+
   end;
 end;
 
@@ -1429,6 +1467,9 @@ procedure TKMHand.SetAlliances(aIndex: Integer; aValue: TKMAllianceType);
 begin
   fAlliances[aIndex] := aValue;
   gAIFields.Supervisor.UpdateAlliances();
+
+  if Assigned(fOnAllianceChange) then
+    fOnAllianceChange;
 end;
 
 
@@ -1505,7 +1546,7 @@ begin
 end;
 
 
-procedure TKMHand.GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList);
+procedure TKMHand.GetHouseMarks(const aLoc: TKMPoint; aHouseType: TKMHouseType; aList: TKMPointTagList; aIgnoreFOW: Boolean = False);
   //Replace existing icon with a Block
   procedure BlockPoint(const aPoint: TKMPoint; aID: Integer);
   var I: Integer;
@@ -1539,7 +1580,7 @@ begin
         P2 := KMPoint(aLoc.X+K-3-gRes.Houses[aHouseType].EntranceOffsetX, aLoc.Y+I-4);
 
         //Forbid planning on unrevealed areas and fieldplans
-        AllowBuild := (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
+        AllowBuild := aIgnoreFOW or (fFogOfWar.CheckTileRevelation(P2.X, P2.Y) > 0);
 
         //This tile must not contain fields/houses of allied players or self
         if AllowBuild then

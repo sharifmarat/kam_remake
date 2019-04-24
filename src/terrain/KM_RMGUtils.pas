@@ -831,9 +831,9 @@ end;
 
 destructor TKMFloodWithQueue.Destroy();
 begin
-  FreeAndNil(fFillResource);
-  FreeAndNil(fTileCounter);
-  FreeAndNil(fShapeFixer);
+  fFillResource.Free;
+  fTileCounter.Free;
+  fShapeFixer.Free;
   fQueue.Free();
   inherited;
 end;

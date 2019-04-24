@@ -351,7 +351,7 @@ destructor TKMNetPlayersList.Destroy;
 var I: Integer;
 begin
   for I := 1 to MAX_LOBBY_SLOTS do
-    FreeAndNil(fNetPlayers[I]);
+    fNetPlayers[I].Free;
 
   inherited;
 end;
@@ -546,7 +546,7 @@ procedure TKMNetPlayersList.RemPlayer(aIndex: Integer);
 var
   I: Integer;
 begin
-  FreeAndNil(fNetPlayers[aIndex]);
+  fNetPlayers[aIndex].Free;
   for I := aIndex to fCount - 1 do
     fNetPlayers[I] := fNetPlayers[I + 1]; // Shift only pointers
 
@@ -622,9 +622,6 @@ begin
     Result := TX_NET_SAME_NAME
   else
   if NiknameToLocal(aNik) <> -1 then
-    Result := TX_NET_SAME_NAME
-  else
-  if (aNik = 'AI Player') or (aNik = 'Closed') then
     Result := TX_NET_SAME_NAME
   else
   //If this player must take a spectator spot, check that one is open
@@ -1392,15 +1389,12 @@ function TKMNetPlayersList.ValidateSetup(const aHumanUsableLocs, aAIUsableLocs, 
 var
   I, K, J: Integer;
   UsedLoc: array[1..MAX_HANDS] of Boolean;
-  AvailableLocHuman, AvailableLocBoth: array [1..MAX_HANDS] of Byte;
-  TmpLocHumanCount, TmpLocBothCount: Byte;
   TeamLocs: array of Integer;
   LocFiller: TLocFiller;
   Player: TPlayer;
   PT: TPlayerType;
   Loc: TLoc;
   LocsArr: TIntegerArray;
-  PlayerTypes: TPlayerTypeSet;
 begin
   if not AllReady then
   begin
@@ -1495,7 +1489,7 @@ begin
     if gLog.IsDegubLogEnabled then
       gLog.LogDebug('Randomized locs: ' + LocFiller.FillerToString);
   finally
-    FreeAndNil(LocFiller);
+    LocFiller.Free;
   end;
 
   //Check for odd players

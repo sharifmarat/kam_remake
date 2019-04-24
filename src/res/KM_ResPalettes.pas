@@ -106,7 +106,7 @@ begin
     S.LoadFromFile(aFileName);
     S.Seek(48, soFromBeginning);
     S.Read(fData, SizeOf(fData)); //768bytes
-    FreeAndNil(S);
+    S.Free;
   end else
     GenerateLinear;
 end;
@@ -129,7 +129,7 @@ var
   I: TKMPal;
 begin
   for I := Low(TKMPal) to High(TKMPal) do
-    FreeAndNil(fPalettes[I]);
+    fPalettes[I].Free;
 
   inherited;
 end;

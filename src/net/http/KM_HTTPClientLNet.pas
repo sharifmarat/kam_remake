@@ -42,7 +42,7 @@ end;
 
 destructor TKMHTTPClientLNet.Destroy;
 begin
-  FreeAndNil(fHTTPClient);
+  fHTTPClient.Free;
   inherited;
 end;
 

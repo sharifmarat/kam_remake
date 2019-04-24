@@ -23,6 +23,8 @@ const
   HOUSE_MAX = htWoodcutters;
   HOUSE_WORKSHOP = [htWeaponSmithy, htArmorSmithy, htWeaponWorkshop, htArmorWorkshop];
 
+  HOUSES_CNT = Integer(HOUSE_MAX) - Integer(HOUSE_MIN) + 1;
+
 type
   THouseAnim = array [TKMHouseActionType] of TKMAnimLoop;
 
@@ -830,7 +832,7 @@ begin
 
     Result := Adler32CRC(S);
   finally
-    FreeAndNil(S);
+    S.Free;
   end;
 end;
 
@@ -874,7 +876,7 @@ begin
   ForceDirectories(ExtractFilePath(aPath));
 
   SL.SaveToFile(aPath);
-  FreeAndNil(SL);
+  SL.Free;
 end;
 
 

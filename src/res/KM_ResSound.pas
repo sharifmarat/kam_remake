@@ -262,7 +262,7 @@ begin
   //i,j,k,l,Index:word;
   BlockRead(f,Props[1],26*Head.Count);}
 
-  FreeAndNil(S);
+  S.Free;
 end;
 
 
@@ -282,7 +282,7 @@ begin
     S.Write(fWaves[I].Foot[0], Length(fWaves[I].Foot));
     S.SaveToFile(ExeDir + 'Export'+PathDelim+'SoundsDat'+PathDelim+'sound_' + int2fix(I, 3) + '_' +
                  GetEnumName(TypeInfo(TSoundFX), I) + '.wav');
-    FreeAndNil(S);
+    S.Free;
   end;
 end;
 
@@ -439,7 +439,7 @@ begin
       Result := True;
     end;
   finally
-    FreeAndNil(MS);
+    MS.Free;
   end;
 end;
 
@@ -456,7 +456,7 @@ begin
     MS.Write(NotificationSoundCount, SizeOf(NotificationSoundCount));
     MS.SaveToFile(aFile);
   finally
-    FreeAndNil(MS);
+    MS.Free;
   end;
 end;
 

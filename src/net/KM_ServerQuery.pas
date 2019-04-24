@@ -182,7 +182,7 @@ var
   i: Integer;
 begin
   for i := 0 to fCount - 1 do
-    FreeAndNil(fRooms[i].GameInfo);
+    fRooms[i].GameInfo.Free;
   fCount := 0;
   SetLength(fRooms, 0);
 end;
@@ -262,8 +262,8 @@ begin
       AddServer(srvInfo[1], srvInfo[0], StrToInt(srvInfo[2]), GetServerType(srvInfo[3], srvInfo[4]), 0);
   end;
 
-  FreeAndNil(srvInfo);
-  FreeAndNil(srvList);
+  srvInfo.Free;
+  srvList.Free;
 end;
 
 
@@ -297,7 +297,7 @@ end;
 
 destructor TKMQuery.Destroy;
 begin
-  FreeAndNil(fNetClient);
+  fNetClient.Free;
   inherited;
 end;
 
@@ -373,7 +373,7 @@ begin
       end;
   end;
 
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -387,7 +387,7 @@ begin
   M.Write(aKind, SizeOf(TKMessageKind));
 
   fNetClient.SendData(fIndexOnServer, aRecipient, M.Memory, M.Size);
-  FreeAndNil(M);
+  M.Free;
 end;
 
 
@@ -420,12 +420,12 @@ destructor TKMServerQuery.Destroy;
 var
   I: Integer;
 begin
-  FreeAndNil(fMasterServer);
-  FreeAndNil(fUDPScanner);
-  FreeAndNil(fServerList);
-  FreeAndNil(fRoomList);
+  fMasterServer.Free;
+  fUDPScanner.Free;
+  fServerList.Free;
+  fRoomList.Free;
   for I := 0 to MAX_QUERIES - 1 do
-    FreeAndNil(fQuery[I]);
+    fQuery[I].Free;
 
   inherited;
 end;

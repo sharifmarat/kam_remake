@@ -918,7 +918,7 @@ begin
     Compiler.GetOutput(fByteCode);            // Save the output of the compiler in the string Data.
     Compiler.GetDebugOutput(fDebugByteCode);  // Save the debug output of the compiler
   finally
-    FreeAndNil(Compiler);
+    Compiler.Free;
   end;
 
   LinkRuntime;
@@ -1393,7 +1393,7 @@ begin
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('A')), fActions);
     SetVariantToClass(fExec.GetVarNo(fExec.GetVar('U')), fUtils);
   finally
-    FreeAndNil(ClassImp);
+    ClassImp.Free;
   end;
 
   //Link events into the script
@@ -1413,7 +1413,7 @@ begin
     ForceDirectories(ExeDir  + 'Export' + PathDelim);
     SL.SaveToFile(ExeDir + 'Export' + PathDelim + 'script_DataText.txt');
   finally
-    FreeAndNil(SL);
+    SL.Free;
   end;
 end;
 
@@ -1639,7 +1639,7 @@ begin
   Strings := TStringList.Create;
   Strings.Text := fScriptCode;
   Result := AnsiString(Strings[aRowNum - 1]);
-  FreeAndNil(Strings);
+  Strings.Free;
 end;
 
 
@@ -1970,7 +1970,7 @@ begin
       end;
     end;
   finally
-    FreeAndNil(PreProcessor);
+    PreProcessor.Free;
   end;
 end;
 
@@ -2021,7 +2021,7 @@ const
           end else
             gScriptEvents.AddEventHandlerName(TKMScriptEventType(EventType), AnsiString(Trim(DirectiveParamSL[1])));
         finally
-          FreeAndNil(DirectiveParamSL);
+          DirectiveParamSL.Free;
         end;
       except
         on E: Exception do
@@ -2133,7 +2133,7 @@ const
             TH_TROOP_COST[I] := THTroopCost[I];
 
         finally
-          FreeAndNil(DirectiveParamSL);
+          DirectiveParamSL.Free;
         end;
       except
         on E: Exception do
@@ -2207,7 +2207,7 @@ const
           gRes.Wares[wtGold].MarketPriceMultiplier := GoldPriceX;
 
         finally
-          FreeAndNil(DirectiveParamSL);
+          DirectiveParamSL.Free;
         end;
       except
         on E: Exception do
@@ -2344,7 +2344,7 @@ begin
     FindLine(aFoundCnt, fIncluded[I], Strings);
 
   Result := aFoundCnt;
-  FreeAndNil(Strings);
+  Strings.Free;
 end;
 
 

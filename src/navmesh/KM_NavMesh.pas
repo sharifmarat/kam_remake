@@ -79,10 +79,10 @@ end;
 
 destructor TKMNavMesh.Destroy();
 begin
-  FreeAndNil(fDefences);
-  FreeAndNil(fPathfinding);
-  FreeAndNil(fPositioning);
-  FreeAndNil(fNavMeshGenerator);
+  fDefences.Free;
+  fPathfinding.Free;
+  fPositioning.Free;
+  fNavMeshGenerator.Free;
   inherited;
 end;
 
@@ -306,7 +306,7 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
     P: TKMPoint;
     Indices: array[0..1] of Word;
   begin
-    for K := 0 to fPolygons[aIdx].NearbyCount - 1 do
+    for K := fPolygons[aIdx].NearbyCount - 1 downto 0 do
     begin
       SecondPoint := False;
       ToIdx := fPolygons[aIdx].Nearby[K];
@@ -318,8 +318,17 @@ procedure TKMNavMesh.TieUpTilesWithPolygons();
           SecondPoint := True;
           break;
         end;
-      P := KMPointAverage(fNodes[ Indices[0] ], fNodes[ Indices[1] ]);
-      fPolygons[aIdx].NearbyPoints[K] := KMPoint(  Min( fMapX-1, Max(1,P.X) ), Min( fMapY-1, Max(1,P.Y) )  );
+      if SecondPoint then
+      begin
+        P := KMPointAverage(fNodes[ Indices[0] ], fNodes[ Indices[1] ]);
+        fPolygons[aIdx].NearbyPoints[K] := KMPoint(  Min( fMapX-1, Max(1,P.X) ), Min( fMapY-1, Max(1,P.Y) )  );
+      end
+      else
+      begin
+        for L := K to fPolygons[aIdx].NearbyCount - 2 do
+          fPolygons[aIdx].NearbyPoints[L] := fPolygons[aIdx].NearbyPoints[L+1];
+        Dec(fPolygons[aIdx].NearbyCount);
+      end;
     end;
   end;
 var
@@ -495,7 +504,7 @@ begin
           gRenderAux.CircleOnTerrain(p1.X, p1.Y, 2, $0900FFFF, $FFFFFFFF);
         end;
     finally
-      FreeAndNil(FFF);
+      FFF.Free;
     end;
   end;
   //}
