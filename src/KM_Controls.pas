@@ -181,6 +181,7 @@ type
     function DoHandleMouseWheelByDefault: Boolean; virtual;
     function GetHint: String; virtual;
     procedure SetHint(const aHint: String); virtual;
+    procedure SetPaintLayer(aPaintLayer: Integer);
   public
     Hitable: Boolean; //Can this control be hit with the cursor?
     Focusable: Boolean; //Can this control have focus (e.g. TKMEdit sets this true)
@@ -301,8 +302,8 @@ type
     FocusedControlIndex: Integer; //Index of currently focused control on this Panel
     ChildCount: Word;
     Childs: array of TKMControl;
-    constructor Create(aParent: TKMMasterControl; aLeft, aTop, aWidth, aHeight: Integer); overload;
-    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer); overload;
+    constructor Create(aParent: TKMMasterControl; aLeft, aTop, aWidth, aHeight: Integer; aPaintLevel: Integer = 0); overload;
+    constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLevel: Integer = 0); overload;
     destructor Destroy; override;
     function AddChild(aChild: TKMControl): Integer; virtual;
     procedure SetCanChangeEnable(aEnable: Boolean; aExceptControls: array of TKMControlClass; aAlsoSetEnable: Boolean = True);
@@ -978,7 +979,7 @@ type
     WheelStep: Word;
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis;
-                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame);
+                       aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame; aPaintLevel: Integer = 0);
     property MinValue: Integer read fMinValue write SetMinValue;
     property MaxValue: Integer read fMaxValue write SetMaxValue;
     property Position: Integer read fPosition write SetPosition;
@@ -1962,6 +1963,12 @@ begin
 end;
 
 
+procedure TKMControl.SetPaintLayer(aPaintLayer: Integer);
+begin
+  fPaintLayer := aPaintLayer;
+end;
+
+
 function TKMControl.DoHandleMouseWheelByDefault: Boolean;
 begin
   Result := HandleMouseWheelByDefault            //Controls handle MouseWheel by default
@@ -2479,9 +2486,9 @@ end;
 
 
 { TKMPanel } //virtual panels that contain child items
-constructor TKMPanel.Create(aParent: TKMMasterControl; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMPanel.Create(aParent: TKMMasterControl; aLeft, aTop, aWidth, aHeight: Integer; aPaintLevel: Integer = 0);
 begin
-  inherited Create(nil, aLeft, aTop, aWidth, aHeight);
+  inherited Create(nil, aLeft, aTop, aWidth, aHeight, aPaintLevel);
 
   fMasterControl := aParent;
   aParent.fMasterPanel := Self;
@@ -2489,9 +2496,9 @@ begin
 end;
 
 
-constructor TKMPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer);
+constructor TKMPanel.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLevel: Integer = 0);
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLevel);
 
   fMasterControl := aParent.fMasterControl;
   Init;
@@ -5123,11 +5130,11 @@ end;
 
 { TKMScrollBar }
 constructor TKMScrollBar.Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aScrollAxis: TKMScrollAxis;
-                                aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame);
+                                aStyle: TKMButtonStyle; aScrollStyle: TKMScrollStyle = ssGame; aPaintLevel: Integer = 0);
 var
   DecId, IncId: Integer;
 begin
-  inherited Create(aParent, aLeft, aTop, aWidth, aHeight);
+  inherited Create(aParent, aLeft, aTop, aWidth, aHeight, aPaintLevel);
   BackAlpha := 0.5;
   EdgeAlpha := 0.75;
   fScrollAxis := aScrollAxis;
@@ -5347,17 +5354,18 @@ var
 begin
   inherited;
 
-  case fScrollAxis of
-    saVertical:   TKMRenderUI.WriteBevel(AbsLeft, AbsTop+Width, Width, Height - Width*2, EdgeAlpha, BackAlpha);
-    saHorizontal: TKMRenderUI.WriteBevel(AbsLeft+Height, AbsTop, Width - Height*2, Height, EdgeAlpha, BackAlpha);
-  end;
+  if fPaintLayer = aPaintLayer then
+    case fScrollAxis of
+      saVertical:   TKMRenderUI.WriteBevel(AbsLeft, AbsTop+Width, Width, Height - Width*2, EdgeAlpha, BackAlpha);
+      saHorizontal: TKMRenderUI.WriteBevel(AbsLeft+Height, AbsTop, Width - Height*2, Height, EdgeAlpha, BackAlpha);
+    end;
 
   if fMaxValue > fMinValue then
     ButtonState := []
   else
     ButtonState := [bsDisabled];
 
-  if not (bsDisabled in ButtonState) then //Only show thumb when usable
+  if (fPaintLayer = aPaintLayer) and not (bsDisabled in ButtonState) then //Only show thumb when usable
     case fScrollAxis of
       saVertical:   TKMRenderUI.Write3DButton(AbsLeft,AbsTop+Width+fThumbPos,Width,fThumbSize,rxGui,0,$FFFF00FF,ButtonState,fStyle);
       saHorizontal: TKMRenderUI.Write3DButton(AbsLeft+Height+fThumbPos,AbsTop,fThumbSize,Height,rxGui,0,$FFFF00FF,ButtonState,fStyle);
