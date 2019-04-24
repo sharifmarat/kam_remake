@@ -4164,6 +4164,9 @@ begin
   if DISPLAY_SOUNDS then
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
 
+  if SHOW_FPS then
+    S := S + gMain.FPSString;
+
   if SHOW_AI_WARE_BALANCE then
   begin
     if (gMySpectator.Selected <> nil) and not gMySpectator.IsSelectedMyObj then
