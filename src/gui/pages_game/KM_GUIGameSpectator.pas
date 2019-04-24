@@ -573,6 +573,7 @@ var
   I: Integer;
   HT: TKMHouseType;
   HasDamagedHouses: Boolean;
+  H: TKMHouse;
 begin
   Result := KMPOINTF_INVALID_TILE;
 
@@ -594,6 +595,9 @@ begin
   if not fHouseSketch.IsEmpty then
   begin
     gMySpectator.Highlight := fHouseSketch;
+    H := gHands[AHandIndex].Houses.GetHouseByUID(fHouseSketch.UID);
+    if H <> nil then
+      gMySpectator.Selected := H;
     Result := KMPointF(fHouseSketch.Entrance); //get position on that house
     fLastHouseUIDs[HT] := fHouseSketch.UID;
   end;
@@ -777,6 +781,7 @@ begin
   NextGroup := gHands[AHandIndex].GetNextGroupWSameType(UT, fLastWarriorUIDs[UT]);
   if NextGroup <> nil then
   begin
+    gMySpectator.Selected := NextGroup;
     Result := NextGroup.FlagBearer.PositionF; //get position on that warrior
     fLastWarriorUIDs[UT] := NextGroup.UID;
   end;
