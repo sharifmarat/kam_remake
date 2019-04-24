@@ -77,6 +77,7 @@ type
     fLastAfkMessageSent: Cardinal;
 
     fReadyToStop: Boolean;
+    fGameSeed: Integer;
 
     procedure GameMPDisconnect(const aData: UnicodeString);
     procedure OtherPlayerDisconnected(aDefeatedPlayerHandId: Integer);
@@ -2080,6 +2081,7 @@ begin
   gLog.AddTime('Set game seed: ' + IntToStr(aSeed));
 
   KM_CommonUtils.SetKaMSeed(aSeed);
+  fGameSeed := aSeed; //Save it for debug only
 end;
 
 
