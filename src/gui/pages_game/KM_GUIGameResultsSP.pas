@@ -114,13 +114,12 @@ var
       ID := TempGraphCount;
       Inc(TempGraphCount);
       TempGraphs[ID].G := aGraph; //Overwrite existing graph
+      TempGraphs[ID].Color := aColor;
+      TempGraphs[ID].OwnerName := aOwnerName;
     end
     else
       for I := 0 to Length(aGraph) - 1 do
         Inc(TempGraphs[ID].G[I], aGraph[I]); //Add each element to the existing elements
-
-    TempGraphs[ID].Color := aColor;
-    TempGraphs[ID].OwnerName := aOwnerName;
   end;
 
 var

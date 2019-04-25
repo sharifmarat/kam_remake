@@ -424,19 +424,24 @@ var TempSaves: array of TKMSaveInfo;
   function Compare(A, B: TKMSaveInfo): Boolean;
   begin
     Result := False; //By default everything remains in place
-    case fSortMethod of
-      smByFileNameAsc:     Result := CompareText(A.FileName, B.FileName) < 0;
-      smByFileNameDesc:    Result := CompareText(A.FileName, B.FileName) > 0;
-      smByDescriptionAsc:  Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) < 0;
-      smByDescriptionDesc: Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) > 0;
-      smByTimeAsc:         Result := A.GameInfo.TickCount < B.GameInfo.TickCount;
-      smByTimeDesc:        Result := A.GameInfo.TickCount > B.GameInfo.TickCount;
-      smByDateAsc:         Result := A.GameInfo.SaveTimestamp > B.GameInfo.SaveTimestamp;
-      smByDateDesc:        Result := A.GameInfo.SaveTimestamp < B.GameInfo.SaveTimestamp;
-      smByPlayerCountAsc:  Result := A.GameInfo.PlayerCount < B.GameInfo.PlayerCount;
-      smByPlayerCountDesc: Result := A.GameInfo.PlayerCount > B.GameInfo.PlayerCount;
-      smByModeAsc:         Result := A.GameInfo.MissionMode < B.GameInfo.MissionMode;
-      smByModeDesc:        Result := A.GameInfo.MissionMode > B.GameInfo.MissionMode;
+    try
+      case fSortMethod of
+        smByFileNameAsc:     Result := CompareText(A.FileName, B.FileName) < 0;
+        smByFileNameDesc:    Result := CompareText(A.FileName, B.FileName) > 0;
+        smByDescriptionAsc:  Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) < 0;
+        smByDescriptionDesc: Result := CompareText(A.GameInfo.GetTitleWithTime, B.GameInfo.GetTitleWithTime) > 0;
+        smByTimeAsc:         Result := A.GameInfo.TickCount < B.GameInfo.TickCount;
+        smByTimeDesc:        Result := A.GameInfo.TickCount > B.GameInfo.TickCount;
+        smByDateAsc:         Result := A.GameInfo.SaveTimestamp > B.GameInfo.SaveTimestamp;
+        smByDateDesc:        Result := A.GameInfo.SaveTimestamp < B.GameInfo.SaveTimestamp;
+        smByPlayerCountAsc:  Result := A.GameInfo.PlayerCount < B.GameInfo.PlayerCount;
+        smByPlayerCountDesc: Result := A.GameInfo.PlayerCount > B.GameInfo.PlayerCount;
+        smByModeAsc:         Result := A.GameInfo.MissionMode < B.GameInfo.MissionMode;
+        smByModeDesc:        Result := A.GameInfo.MissionMode > B.GameInfo.MissionMode;
+      end;
+    except
+      on E: Exception do
+        Exit(False); //Ignore sort errors...
     end;
   end;
 

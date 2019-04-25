@@ -3134,6 +3134,14 @@ end;
 // thats why MyControls.KeyUp is only in gsRunning clause
 // Ignore all keys if game is on 'Pause'
 procedure TKMGamePlayInterface.KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean);
+
+  function SpeedChangeAllowed(aUIModes: TUIModeSet): Boolean;
+  begin
+    Result := (fUIMode in aUIModes)
+              or gGame.IsMPGameSpeedChangeAllowed
+              or MULTIPLAYER_SPEEDUP;
+  end;
+
 var
   SelectId: Integer;
   SpecPlayerIndex: ShortInt;
@@ -3141,7 +3149,9 @@ var
 begin
   aHandled := True; // assume we handle all keys here
 
-  if gGame.IsPaused and ((fUIMode = umSP) or (PAUSE_GAME_AT_TICK <> -1)) then
+  if gGame.IsPaused
+    and (SpeedChangeAllowed([umSP])
+      or ((PAUSE_GAME_AT_TICK <> -1) and (fUIMode <> umReplay))) then
   begin
     if Key = gResKeys[SC_PAUSE].Key then
       SetPause(False);
@@ -3303,9 +3313,7 @@ begin
 //    fMinimap.Update;
   end;
 
-  if (fUIMode in [umSP, umReplay])
-    or gGame.IsMPGameSpeedUpAllowed
-    or MULTIPLAYER_SPEEDUP then
+  if SpeedChangeAllowed([umSP, umReplay]) then
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
     if Key = gResKeys[SC_SPEEDUP_1].Key then gGame.SetGameSpeed(1, True);
@@ -3355,8 +3363,9 @@ begin
   end;
 
   // General function keys
-  if Key = gResKeys[SC_PAUSE].Key then
-    if (fUIMode = umSP) then SetPause(True); // Display pause overlay
+  if (Key = gResKeys[SC_PAUSE].Key)
+    and SpeedChangeAllowed([umSP]) then
+      SetPause(True); // Display pause overlay
 
   { Temporary cheat codes }
   if DEBUG_CHEATS and (MULTIPLAYER_CHEATS or (fUIMode = umSP)) then
@@ -3374,18 +3383,20 @@ end;
 procedure TKMGamePlayInterface.MouseDown(Button: TMouseButton; Shift: TShiftState; X,Y: Integer);
   procedure HandleFieldLMBDown(const P: TKMPoint; aFieldType: TKMFieldType);
   begin
+    //Set cursor into 'Plan' mode by default,
+    //even if we click where plan could not be placed we could plan it with mouse move later
+    gGameCursor.Tag1 := Byte(cfmPlan);
     if gMySpectator.Hand.CanAddFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gicBuildAddFieldPlan, P, aFieldType);
       fLastDragPoint := gGameCursor.Cell;
-      gGameCursor.Tag1 := Byte(cfmPlan);
     end else if gMySpectator.Hand.CanRemFakeFieldPlan(P, aFieldType) then
     begin
       gGame.GameInputProcess.CmdBuild(gicBuildAddFieldPlan, P, aFieldType);
       fLastDragPoint := gGameCursor.Cell;
       // Set cursor into "Erase" mode, so dragging it will erase next tiles with the same field type
       gGameCursor.Tag1 := Byte(cfmErase);
-    end;
+    end
   end;
 var
   Group: TKMUnitGroup;
@@ -4095,6 +4106,7 @@ begin
   end;
 
   fGuiMenuSettings.UpdateView;
+  GameSettingsChanged;
 
   UpdateDebugInfo;
   if fSaves <> nil then fSaves.UpdateState;
@@ -4153,6 +4165,9 @@ begin
 
   if DISPLAY_SOUNDS then
     S := S + IntToStr(gSoundPlayer.ActiveCount) + ' sounds playing|';
+
+  if SHOW_FPS then
+    S := S + gMain.FPSString;
 
   if SHOW_AI_WARE_BALANCE then
   begin
