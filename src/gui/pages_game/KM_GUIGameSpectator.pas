@@ -201,6 +201,7 @@ type
     procedure ChangePage(Sender: TObject);
   public
     constructor Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
+    destructor Destroy; override;
 
     function GetOpenedPage: Integer;
     procedure OpenPage(aIndex: Integer);
@@ -879,6 +880,16 @@ begin
   FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_LOST]);
 
   FDropBox.ItemIndex := 0;
+end;
+
+destructor TKMGUIGameSpectator.Destroy;
+var
+  I: Integer;
+begin
+  for I := Low(FLinesAggregator) to High(FLinesAggregator) do
+    if FLinesAggregator[I] <> nil then
+      FreeAndNil(FLinesAggregator[I]);
+
 end;
 
 procedure TKMGUIGameSpectator.AddLineType(aParent: TKMPanel; AIndex: Integer; ALineClass: TKMGUIGameSpectatorItemLineClass);
