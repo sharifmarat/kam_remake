@@ -33,8 +33,10 @@ type
     function GetDeliverStage: TKMDeliverStage;
     procedure SetToHouse(aToHouse: TKMHouse);
     procedure SetFromHouse(aFromHouse: TKMHouse);
+    procedure SetToUnit(aToUnit: TKMUnit);
     property FromHouse: TKMHouse read fFrom write SetFromHouse;
     property ToHouse: TKMHouse read fToHouse write SetToHouse;
+    property ToUnit: TKMUnit read fToUnit write SetToUnit;
   public
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
@@ -48,15 +50,19 @@ type
     function Execute: TKMTaskResult; override;
     function CouldBeCancelled: Boolean; override;
     procedure Save(SaveStream: TKMemoryStream); override;
+
+    function ObjToString(aSeparator: String = ', '): String; override;
+
+    procedure Paint; override; //Used only for debug so far
   end;
 
 
 implementation
 uses
-  Math,
+  Math, TypInfo,
   KM_HandsCollection, KM_Hand, KM_ResHouses,
   KM_Terrain, KM_UnitWarrior, KM_HouseBarracks, KM_HouseTownHall, KM_HouseInn,
-  KM_UnitTaskBuild, KM_Log;
+  KM_UnitTaskBuild, KM_Log, KM_RenderAux;
 
 
 { TTaskDeliver }
@@ -67,7 +73,8 @@ begin
 
   Assert((aFrom <> nil) and (aToHouse <> nil) and (Res <> wtNone), 'Serf ' + IntToStr(fUnit.UID) + ': invalid delivery task');
 
-  gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
+  if gLog.CanLogDelivery then
+    gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
   FromHouse := aFrom.GetHousePointer; //Also will set fPointBelowFromHouse
   ToHouse := aToHouse.GetHousePointer; //Also will set fPointBelowToHouse
@@ -89,15 +96,15 @@ begin
   fType := uttDeliver;
 
   Assert((aFrom <> nil) and (aToUnit <> nil) and ((aToUnit is TKMUnitWarrior) or (aToUnit is TKMUnitWorker)) and (Res <> wtNone), 'Serf '+inttostr(fUnit.UID)+': invalid delivery task');
-  gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
 
-  fFrom    := aFrom.GetHousePointer;
-  fToUnit  := aToUnit.GetUnitPointer;
+  if gLog.CanLogDelivery then
+    gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' created delivery task ' + IntToStr(fDeliverID));
+
+  FromHouse := aFrom.GetHousePointer;
+  ToUnit    := aToUnit.GetUnitPointer;
   fDeliverKind := dkToUnit;
   fWareType := Res;
   fDeliverID := aID;
-  fPointBelowToHouse := KMPOINT_INVALID_TILE;
-  fPointBelowFromHouse := KMPOINT_INVALID_TILE;
 end;
 
 
@@ -152,7 +159,8 @@ end;
 
 destructor TKMTaskDeliver.Destroy;
 begin
-  gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' abandoned delivery task ' + IntToStr(fDeliverID) + ' at phase ' + IntToStr(fPhase));
+  if gLog.CanLogDelivery then
+    gLog.LogDelivery('Serf ' + IntToStr(fUnit.UID) + ' abandoned delivery task ' + IntToStr(fDeliverID) + ' at phase ' + IntToStr(fPhase));
 
   if fUnit <> nil then
   begin
@@ -211,7 +219,7 @@ begin
   gHands.CleanUpUnitPointer(fToUnit);
   if NewToHouse <> nil then
   begin
-    fToHouse := NewToHouse.GetHousePointer;
+    ToHouse := NewToHouse.GetHousePointer; //Use Setter here to set up fPointBelowToHouse
     if fToHouse.IsComplete then
       fDeliverKind := dkToHouse
     else
@@ -219,7 +227,7 @@ begin
   end
   else
   begin
-    fToUnit := NewToUnit.GetUnitPointer;
+    ToUnit := NewToUnit.GetUnitPointer; //Use Setter here to clean up fPointBelowToHouse
     fDeliverKind := dkToUnit;
   end;
 end;
@@ -251,7 +259,7 @@ begin
   // New House
   if (NewToHouse <> nil) and (NewToUnit = nil) then
   begin
-    fToHouse := NewToHouse.GetHousePointer;
+    ToHouse := NewToHouse.GetHousePointer; //Use Setter here to set up fPointBelowToHouse
     if fToHouse.IsComplete then
       fDeliverKind := dkToHouse
     else
@@ -264,7 +272,7 @@ begin
   // New Unit
   if (NewToHouse = nil) and (NewToUnit <> nil) then
   begin
-    fToUnit := NewToUnit.GetUnitPointer;
+    ToUnit := NewToUnit.GetUnitPointer; //Use Setter here to clean up fPointBelowToHouse
     fDeliverKind := dkToUnit;
     Result := True;
     if fPhase > 4 then
@@ -292,14 +300,21 @@ end;
 procedure TKMTaskDeliver.SetToHouse(aToHouse: TKMHouse);
 begin
   fToHouse := aToHouse;
-  fPointBelowToHouse := fToHouse.PointBelowEntrance;
+  fPointBelowToHouse := fToHouse.PointBelowEntrance; //save that point separately, in case fToHouse will be destroyed
 end;
 
 
 procedure TKMTaskDeliver.SetFromHouse(aFromHouse: TKMHouse);
 begin
   fFrom := aFromHouse;
-  fPointBelowFromHouse := aFromHouse.PointBelowEntrance;
+  fPointBelowFromHouse := aFromHouse.PointBelowEntrance; //save that point separately, in case fFrom will be destroyed
+end;
+
+
+procedure TKMTaskDeliver.SetToUnit(aToUnit: TKMUnit);
+begin
+  fToUnit := aToUnit;
+  fPointBelowToHouse := KMPOINT_INVALID_TILE; //clean fPointBelowToHouse since we are going to Unit now
 end;
 
 
@@ -350,39 +365,44 @@ function TKMTaskDeliver.Execute: TKMTaskResult;
 
   function NeedGoToRoad: Boolean;
   var
-    RoadConnectId: Byte;
+    RC, RCFrom, RCTo: Byte;
   begin
     //Check if we already reach destination, no need to check anymore.
     //Also there is possibility when connected path (not diagonal) to house was cut and we have only diagonal path
-    //then its possible, that fPointBelowToHouse COnnect Area will have only 1 tile, that means its WalkConnect will be 0
-    if fUnit.CurrPosition = fPointBelowToHouse then
+    //then its possible, that fPointBelowToHouse Connect Area will have only 1 tile, that means its WalkConnect will be 0
+    //then no need actually need to go to raod
+    if fUnit.CurrPosition = fToHouse.PointBelowEntrance then
       Exit(False);
-    RoadConnectId := gTerrain.GetRoadConnectID(fUnit.CurrPosition);
-    Result := ((((fPhase - 1) = 5) and (fDeliverKind = dkToHouse))
-                or (((fPhase - 1) in [5,6]) and (fDeliverKind = dkToConstruction)))
-              and ((RoadConnectId = 0)
-                or ((RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowToHouse))
-                  and (RoadConnectId <> gTerrain.GetRoadConnectID(fPointBelowFromHouse))));
+
+    RC := gTerrain.GetRoadConnectID(fUnit.CurrPosition);
+    RCFrom := gTerrain.GetRoadConnectID(fPointBelowFromHouse);
+    RCTo := gTerrain.GetRoadConnectID(fPointBelowToHouse);
+
+    Result := (RC = 0) or not (RC in [RCFrom, RCTo]);
   end;
 
 var
   Worker: TKMUnit;
-  NeedWalkToRoad: Boolean;
+  NeedWalkBackToRoad: Boolean;
 begin
   Result := trTaskContinues;
 
-  NeedWalkToRoad := NeedGoToRoad();
+  //Check if need walk back to road
+  //Used only if we walk from house to other house or construction site
+  NeedWalkBackToRoad := (((fDeliverKind = dkToHouse) and ((fPhase - 1) = 5))
+                          or (((fPhase - 1) in [5,6]) and (fDeliverKind = dkToConstruction)))
+                        and NeedGoToRoad();
 
-  if not NeedWalkToRoad then
+  if not NeedWalkBackToRoad then
     fPhase2 := 0;
 
-  if WalkShouldAbandon and fUnit.Visible and not (NeedWalkToRoad or FindBestDestination) then
+  if WalkShouldAbandon and fUnit.Visible and not (NeedWalkBackToRoad or FindBestDestination) then
   begin
     Result := trTaskDone;
     Exit;
   end;
 
-  if NeedWalkToRoad then
+  if NeedWalkBackToRoad then
   begin
     case fPhase2 of
       0:  begin
@@ -571,6 +591,56 @@ begin
   end;
 
   Inc(fPhase);
+end;
+
+
+function TKMTaskDeliver.ObjToString(aSeparator: String = ', '): String;
+var
+  FromStr, ToUStr, ToHStr: String;
+begin
+  FromStr := 'nil';
+  ToHStr := 'nil';
+  ToUStr := 'nil';
+
+  if fFrom <> nil then
+    FromStr := fFrom.ObjToStringShort(',');
+
+  if fToHouse <> nil then
+    ToHStr := fToHouse.ObjToStringShort(',');
+
+  if fToUnit <> nil then
+    ToUStr := fToUnit.ObjToStringShort(',');
+
+  Result := inherited +
+            Format('%s|FromH = [%s]%s|ToH = [%s]%sFromU = [%s]%s|WareT = %s%sPBelow FromH = %s%sPBelow ToH = %s',
+                   [aSeparator,
+                    FromStr, aSeparator,
+                    ToHStr, aSeparator,
+                    ToUStr, aSeparator,
+                    GetEnumName(TypeInfo(TKMWareType), Integer(fWareType)), aSeparator,
+                    TypeToString(fPointBelowFromHouse), aSeparator,
+                    TypeToString(fPointBelowToHouse)]);
+end;
+
+
+procedure TKMTaskDeliver.Paint;
+var
+  FromP, ToP: TKMPoint;
+begin
+  if SHOW_UNIT_ROUTES
+    and (gMySpectator.Selected = fUnit) then
+  begin
+    gRenderAux.RenderWireTile(fPointBelowToHouse, icBlue);
+    if fFrom <> nil then
+      gRenderAux.RenderWireTile(fFrom.PointBelowEntrance, icDarkBlue);
+
+    gRenderAux.RenderWireTile(fPointBelowToHouse, icOrange);
+    if fToHouse <> nil then
+      gRenderAux.RenderWireTile(fToHouse.PointBelowEntrance, icLightRed);
+    if fToUnit <> nil then
+      gRenderAux.RenderWireTile(fToUnit.CurrPosition, icRed);
+  end;
+
 end;
 
 
