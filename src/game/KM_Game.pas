@@ -1909,7 +1909,7 @@ var
   SaveStream: TKMemoryStream;
   DateTimeParam: TDateTime;
 begin
-  if fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
+  if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
     Exit;
 
   gLog.AddTime('Saving replay start');
@@ -2229,9 +2229,12 @@ begin
                         //Issue stored commands
                         fGameInputProcess.ReplayTimer(fGameTick);
 
+                        if gGame = nil then
+                          Exit; //Quit if the game was stopped by a replay mismatch
 
                         //Only increase LastTick, since we could load replay earlier at earlier state
-                        fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
+                        if fSavedReplays <> nil then
+                          fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
 
                         //Save replay to memory (to be able to load it later)
                         //Make replay save only after everything is updated (UpdateState)
@@ -2245,9 +2248,6 @@ begin
                           if fGamePlayInterface <> nil then
                             fGamePlayInterface.ReplaySaved;
                         end;
-
-                        if gGame = nil then
-                          Exit; //Quit if the game was stopped by a replay mismatch
 
                         if not SkipReplayEndCheck and IsReplayEnded then
                           RequestGameHold(grReplayEnd);
