@@ -1369,7 +1369,7 @@ procedure DeleteFromArray(var Arr: TIntegerArray; const Index: Integer);
 begin
   Delete(Arr, Index, 1);
 end;
-{$IFEND}
+{$ENDIF}
 
 function TryExecuteMethod(aObjParam: TObject; const aStrParam, aMethodName: String; var aErrorStr: String;
                           aMethod: TUnicodeStringObjEvent; aAttemps: Byte = DEFAULT_ATTEMPS_CNT_TO_TRY): Boolean;
