@@ -245,7 +245,7 @@ uses
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
-  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils;
+  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_Random;
 
 
 //Create template for the Game
@@ -323,6 +323,8 @@ begin
     else  fPathfinding := TPathfindingAStarOld.Create;
   end;
   gProjectiles := TKMProjectiles.Create;
+
+  gRandomCheckLogger.Clear;
 
   fGameTick := 0; //Restart counter
 end;
@@ -808,6 +810,7 @@ begin
       AttachFile(SaveName('crashreport', EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('crashreport', 'rng', IsMultiPlayerOrSpec));
     end;
   except
     on E : Exception do
@@ -850,6 +853,7 @@ begin
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('autosave' + Int2Fix(I, 2), 'rng', IsMultiPlayerOrSpec));
     end;
 
   gLog.AddTime('Crash report created');
@@ -1706,6 +1710,8 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
+  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, '.rng'));
+
   gLog.AddTime('Saving game', True);
 end;
 
@@ -2157,6 +2163,8 @@ begin
                             WaitingPlayersDisplay(False);
 
                           IncGameTick;
+
+                          gRandomCheckLogger.UpdateState(fGameTick);
 
                           fLastReplayTick := fGameTick;
 

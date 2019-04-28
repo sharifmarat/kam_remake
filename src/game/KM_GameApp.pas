@@ -132,7 +132,7 @@ uses
   KM_FormLogistics,
   KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess, KM_GameSavedReplays,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
-  KM_Saves, KM_CommonUtils;
+  KM_Saves, KM_CommonUtils, KM_Random;
 
 
 { Creating everything needed for MainMenu, game stuff is created on StartGame }
@@ -151,6 +151,7 @@ begin
   fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
+  gRandomCheckLogger := TKMRandomCheckLogger.Create;
 
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
@@ -224,6 +225,7 @@ begin
   FreeThenNil(gSoundPlayer);
   FreeThenNil(fMusicLib);
   FreeAndNil(fNetworking);
+  FreeAndNil(gRandomCheckLogger);
   FreeAndNil(gGameCursor);
 
   FreeThenNil(fRender);
