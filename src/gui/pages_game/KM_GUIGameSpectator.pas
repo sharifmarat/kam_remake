@@ -213,7 +213,7 @@ type
 implementation
 
 uses
-  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
+  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup, KM_CommonUtils;
 
 const
   GUI_SPEC_ITEM_WIDTH = 28;
@@ -282,16 +282,18 @@ var
   PaintLightness: Single;
 begin
   if fShowItem then
-    PaintLightness := DEFAULT_HIGHLIGHT_COEF * Byte(((csOver in Image.State) or (csOver in Bevel.State)) and FDoHighlight(FItemTag))
-  else
-    PaintLightness := -DEFAULT_HIGHLIGHT_COEF;
+    PaintLightness := DEFAULT_HIGHLIGHT_COEF * Byte(((csOver in Image.State) or (csOver in Bevel.State)) and FDoHighlight(FItemTag));
 
   Image.Lightness := PaintLightness;
 
-  PercentBar.Visible := FProgress >= 0;
+  Image.Visible := fShowItem;
+
+  Bevel.Visible := fShowItem;
+
+  PercentBar.Visible := fShowItem and (FProgress >= 0);
   PercentBar.Position := FProgress;
 
-  Label_Text.Caption := FValue;
+  Label_Text.Caption := IfThenS(fShowItem, FValue, '');
   Label_AddText.Caption := FAdditionalValue;
 
   inherited PaintPanel(aPaintLayer);
