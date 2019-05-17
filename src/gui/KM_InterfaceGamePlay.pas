@@ -2738,8 +2738,6 @@ var
   OldSelected: TObject;
 
   procedure CheckSelectTwice(aPos: TKMPointF);
-  var
-    T: Cardinal;
   begin
     // Selecting an object twice (during short period of time) is the shortcut to center on that unit
     if (OldSelected = gMySpectator.Selected)
