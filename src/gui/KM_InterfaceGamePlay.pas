@@ -3184,46 +3184,6 @@ begin
       ReplayClick(Button_ReplayResume);
   end;
 
-  // First check if this key was associated with some Spectate/Replay key
-  if (fUIMode in [umReplay, umSpectate]) then
-  begin
-    if Key = gResKeys[SC_SPECTATE_PLAYER_1].Key then
-      SpecPlayerIndex := 1
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_2].Key then
-      SpecPlayerIndex := 2
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_3].Key then
-      SpecPlayerIndex := 3
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_4].Key then
-      SpecPlayerIndex := 4
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_5].Key then
-      SpecPlayerIndex := 5
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_6].Key then
-      SpecPlayerIndex := 6
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_7].Key then
-      SpecPlayerIndex := 7
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_8].Key then
-      SpecPlayerIndex := 8
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_9].Key then
-      SpecPlayerIndex := 9
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_10].Key then
-      SpecPlayerIndex := 10
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_11].Key then
-      SpecPlayerIndex := 11
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_12].Key then
-      SpecPlayerIndex := 12
-    else
-      SpecPlayerIndex := -1;
-
-    if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
-    begin
-      if ssCtrl in Shift then
-        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1)
-      else
-        Replay_ViewPlayer(SpecPlayerIndex - 1);
-      Exit;
-    end;
-  end;
-
   // These keys are allowed during replays
   if Key = gResKeys[SC_SHOW_TEAMS].Key then fShowTeamNames := False;
   if Key = gResKeys[SC_BEACON].Key then
@@ -3329,10 +3289,58 @@ begin
   if SpeedChangeAllowed([umSP, umReplay]) then
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
-    if Key = gResKeys[SC_SPEEDUP_1].Key then gGame.SetGameSpeed(1, True);
-    if Key = gResKeys[SC_SPEEDUP_2].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
-    if Key = gResKeys[SC_SPEEDUP_3].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedFast, True);
-    if Key = gResKeys[SC_SPEEDUP_4].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedVeryFast, True);
+    if Key = gResKeys[SC_SPEEDUP_1].Key then
+      gGame.SetGameSpeed(1, True);
+    if Key = gResKeys[SC_SPEEDUP_2].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
+    if Key = gResKeys[SC_SPEEDUP_3].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedFast, True);
+    if Key = gResKeys[SC_SPEEDUP_4].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedVeryFast, True);
+  end;
+
+  // First check if this key was associated with some Spectate/Replay key
+  if (fUIMode in [umReplay, umSpectate]) then
+  begin
+    if Key = gResKeys[SC_SPECTATE_PLAYER_1].Key then
+      SpecPlayerIndex := 1
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_2].Key then
+      SpecPlayerIndex := 2
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_3].Key then
+      SpecPlayerIndex := 3
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_4].Key then
+      SpecPlayerIndex := 4
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_5].Key then
+      SpecPlayerIndex := 5
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_6].Key then
+      SpecPlayerIndex := 6
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_7].Key then
+      SpecPlayerIndex := 7
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_8].Key then
+      SpecPlayerIndex := 8
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_9].Key then
+      SpecPlayerIndex := 9
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_10].Key then
+      SpecPlayerIndex := 10
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_11].Key then
+      SpecPlayerIndex := 11
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_12].Key then
+      SpecPlayerIndex := 12
+    else
+      SpecPlayerIndex := -1;
+
+    if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
+    begin
+      if ssAlt in Shift then
+      begin
+        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1);
+        Exit;
+      end else if ssShift in Shift then
+      begin
+        Replay_ViewPlayer(SpecPlayerIndex - 1);
+        Exit;
+      end;
+    end;
   end;
 
   fGuiGameUnit.KeyUp(Key, Shift);
