@@ -1,9 +1,5 @@
-unit ManagerInterface;
-
-{$IFDEF FPC}
-{$mode delphi}
-{$ENDIF}
-
+unit ParallelRun;
+{$I KaM_Remake.inc}
 interface
 uses
   Classes, SysUtils, Unit_Runner, Runner_Game, ComInterface, GeneticAlgorithm, Unit1;
@@ -12,13 +8,14 @@ uses
 type
   TKMParallelRun = class
   private
-    fDebugForm: TForm2;
+    fForm: TForm2;
 
-    fSetup: TRunnerSetup;
+    fSimSetup: TSimSetup;
     fGASetup: TGASetup;
     fCommunication: TKMComInterface;
+    procedure Log(aLog: String);
   public
-    constructor Create(aDebugForm: TForm2);
+    constructor Create(aForm: TForm2);
     destructor Destroy();
 
     procedure InitSimulation();
@@ -28,17 +25,19 @@ type
 
 implementation
 
+const
+  LOG_ACTIVE = False;
 
-constructor TKMParallelRun.Create(aDebugForm: TForm2);
+
+constructor TKMParallelRun.Create(aForm: TForm2);
 begin
-  fDebugForm := aDebugForm;
+  fForm := aForm;
   fGASetup.Population := nil;
-  fSetup.RunningClass := '';
-  fSetup.SimNumber := 0;
-  fSetup.SimTimeInMin := 0;
-  fCommunication := TKMComInterface.Create;
-
-  //fDebugForm.Memo3.Lines.Append('TKMParallelRun was created');
+  fSimSetup.RunningClass := '';
+  fSimSetup.SimNumber := 0;
+  fSimSetup.SimTimeInMin := 0;
+  fCommunication := TKMComInterface.Create();
+  Log('TKMParallelRun was created');
 end;
 
 
@@ -48,10 +47,17 @@ begin
 end;
 
 
+procedure TKMParallelRun.Log(aLog: String);
+begin
+  if LOG_ACTIVE then
+    fForm.Memo1.Lines.Append(aLog);
+end;
+
+
 procedure TKMParallelRun.InitSimulation();
 begin
-  //fDebugForm.Memo3.Lines.Append('Initialization');
-  fCommunication.SetupSimulation(fSetup, fGASetup);
+  Log('Initialization');
+  fCommunication.SetupSimulation(fSimSetup, fGASetup);
 end;
 
 
@@ -66,15 +72,15 @@ var
 begin
   Check := False;
   for I := 0 to Length(RunnerList) - 1 do
-    if (CompareText(RunnerList[I].ClassName, fSetup.RunningClass) = 0) then
+    if (CompareText(RunnerList[I].ClassName, fSimSetup.RunningClass) = 0) then
     begin
       Check := True;
-      //fDebugForm.Memo3.Lines.Append('Name was found');
+      Log('Name was found');
       break;
     end;
   if not Check then
   begin
-    //fDebugForm.Memo3.Lines.Append('Name was NOT found : ' + RunnerList[3].ClassName + ' vs ' + fSetup.RunningClass);
+    Log('Name was NOT found : ' + RunnerList[3].ClassName + ' vs ' + fSimSetup.RunningClass);
     Exit;
   end;
 
@@ -82,13 +88,13 @@ begin
   RunnerClass := RunnerList[I]; // ID of running test - planner / builder / predictor etc.
   Runner := RunnerClass.Create(nil); // No render in parallel run
   try
-    //fDebugForm.Memo3.Lines.Append('Start simulation');
-    Runner.Duration := fSetup.SimTimeInMin; // Minutes of simulation
+    Log('Start simulation');
+    Runner.Duration := fSimSetup.SimTimeInMin; // Minutes of simulation
     if (Runner.ClassType.InheritsFrom(TKMRunnerGA_Common)) then
     begin
       GARunner := TKMRunnerGA_Common(Runner);
       GARunner.IOData := fGASetup;
-      GARunner.SimSetup := fSetup;
+      GARunner.SimSetup := fSimSetup;
       Output := Runner.Run(1); // Only 1 run
       fGASetup := GARunner.IOData;
     end
@@ -99,14 +105,14 @@ begin
     Runner.Free;
   end;
 
-  //fDebugForm.Memo3.Lines.Append('End simulation');
+  Log('End simulation');
 end;
 
 
 procedure TKMParallelRun.LogResults();
 begin
-  //fDebugForm.Memo3.Lines.Append('Log Results');
-  fCommunication.LogSimulationResults(fSetup, fGASetup);
+  Log('Log Results');
+  fCommunication.LogSimulationResults(fSimSetup, fGASetup);
 end;
 
 end.
