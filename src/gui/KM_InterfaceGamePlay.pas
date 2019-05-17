@@ -3329,11 +3329,12 @@ begin
 
     if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
     begin
+      //Jump to player when ALT is also pressed
       if ssAlt in Shift then
       begin
         Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1);
         Exit;
-      end else if ssShift in Shift then
+      end else if ssShift in Shift then //Select player when SHIFT is also pressed
       begin
         Replay_ViewPlayer(SpecPlayerIndex - 1);
         Exit;
