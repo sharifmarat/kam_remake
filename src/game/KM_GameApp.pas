@@ -1079,7 +1079,7 @@ begin
   end;
 
   if (gMain <> nil) //Could be nil for Runner Util
-    and gMain.Settings.IsNoRenerMaxTimeSet
+    and gMain.Settings.IsNoRenderMaxTimeSet
     and (GetTimeSince(fLastTimeRender) > gMain.Settings.NoRenderMaxTime) then
     Render;
 end;

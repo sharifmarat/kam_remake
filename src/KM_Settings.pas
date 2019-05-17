@@ -72,7 +72,7 @@ type
     property VSync: Boolean read fVSync write SetVSync;
     property NoRenderMaxTime: Integer read fNoRenderMaxTime;
 
-    function IsNoRenerMaxTimeSet: Boolean;
+    function IsNoRenderMaxTimeSet: Boolean;
   end;
 
   //Gameplay settings, those that affect the game
@@ -477,7 +477,7 @@ begin
 end;
 
 
-function TKMainSettings.IsNoRenerMaxTimeSet: Boolean;
+function TKMainSettings.IsNoRenderMaxTimeSet: Boolean;
 begin
   Result := fNoRenderMaxTime <> NO_RENDER_MAX_TIME_UNDEF;
 end;
