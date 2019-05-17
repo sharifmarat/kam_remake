@@ -1282,3 +1282,6 @@ TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable chat history and copy-paste from chat window
 
 TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in %s folder.\nDo you confirm operation?
+
+TX_SPECTATOR_PANEL_CITIZENS_SLR = 1256; //Citizens (Serfs/Labourers/Recruits)
+TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS = 1257; //Citizens (Other)
