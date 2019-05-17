@@ -293,6 +293,7 @@ procedure TKMGUIGameSpectatorItem.PaintPanel(aPaintLayer: Integer);
 var
   PaintLightness: Single;
 begin
+  PaintLightness := 0;
   if fShowItem then
     PaintLightness := DEFAULT_HIGHLIGHT_COEF * Byte(((csOver in Image.State) or (csOver in Bevel.State)) and FDoHighlight(FItemTag));
 
