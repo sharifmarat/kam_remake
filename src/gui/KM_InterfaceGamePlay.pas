@@ -61,6 +61,7 @@ type
     fGroupsTeamNames: TList;
     fHousesTeamNames: TList;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
+    fLastKbdSelectionTime: Cardinal; //Last we select object from keyboard
 
     fLineIdToNetPlayerId: array [0..MAX_LOBBY_SLOTS - 1] of Integer;
     fPlayerLinesCnt: Integer;
@@ -760,6 +761,7 @@ begin
 
   // Instruct to use global Terrain
   fLastSaveName := '';
+  fLastKbdSelectionTime := 0;
   fPlacingBeacon := False;
   SelectingTroopDirection := False;
   SelectingDirPosition.X := 0;
@@ -2730,8 +2732,22 @@ end;
 
 
 procedure TKMGamePlayInterface.Selection_Select(aId: Word);
+const
+  SELECT_TWICE_MAX_DELAY = 700; //0.7 second
 var
   OldSelected: TObject;
+
+  procedure CheckSelectTwice(aPos: TKMPointF);
+  var
+    T: Cardinal;
+  begin
+    // Selecting an object twice (during short period of time) is the shortcut to center on that unit
+    if (OldSelected = gMySpectator.Selected)
+      and (GetTimeSince(fLastKbdSelectionTime) < SELECT_TWICE_MAX_DELAY) then
+      fViewport.Position := aPos;
+    fLastKbdSelectionTime := TimeGet;
+  end;
+
 begin
   if gMySpectator.Hand.InCinematic then
     Exit;
@@ -2751,9 +2767,8 @@ begin
       end;
       if (OldSelected <> gMySpectator.Selected) and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
         gSoundPlayer.PlayCitizen(TKMUnit(gMySpectator.Selected).UnitType, spSelect);
-      // Selecting a unit twice is the shortcut to center on that unit
-      if OldSelected = gMySpectator.Selected then
-        fViewport.Position := TKMUnit(gMySpectator.Selected).PositionF;
+
+      CheckSelectTwice(TKMUnit(gMySpectator.Selected).PositionF);
     end
     else
     begin
@@ -2766,9 +2781,8 @@ begin
           gMySpectator.Selected := nil; // Don't select destroyed houses
           Exit;
         end;
-        // Selecting a house twice is the shortcut to center on that house
-        if OldSelected = gMySpectator.Selected then
-          fViewport.Position := KMPointF(TKMHouse(gMySpectator.Selected).Entrance);
+
+        CheckSelectTwice(KMPointF(TKMHouse(gMySpectator.Selected).Entrance));
       end
       else
       begin
@@ -2781,9 +2795,8 @@ begin
         TKMUnitGroup(gMySpectator.Selected).SelectFlagBearer;
         if (OldSelected <> gMySpectator.Selected) and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
           gSoundPlayer.PlayWarrior(TKMUnitGroup(gMySpectator.Selected).SelectedUnit.UnitType, spSelect);
-        // Selecting a group twice is the shortcut to center on that group
-        if OldSelected = gMySpectator.Selected then
-          fViewport.Position := TKMUnitGroup(gMySpectator.Selected).SelectedUnit.PositionF;
+
+        CheckSelectTwice(TKMUnitGroup(gMySpectator.Selected).SelectedUnit.PositionF);
       end;
     end;
   end;
