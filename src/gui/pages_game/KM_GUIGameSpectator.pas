@@ -431,6 +431,8 @@ begin
   Bevel := TKMBevel.Create(Self, 0, 0, Width, Height, BEVEL_RENDER_LAYER);
   Bevel.AnchorsStretch;
   Bevel.OnClick := LineClicked;
+  Bevel.BackAlpha := 0.2;
+  Bevel.EdgeAlpha := 0.5;
   Image := TKMImage.Create(Self, Width - 32, 0, 32, GUI_SPEC_HEADER_HEIGHT, 0, rxHouses, IMAGE_RENDER_LAYER);
   if FHandIndex < gHands.Count then
     Image.FlagColor := gHands[FHandIndex].FlagColor;
