@@ -911,6 +911,7 @@ TX_KEY_FUNC_PLAN_WINE = 1005; //Lay out wine field
 TX_KEY_FUNC_ERASE_PLAN = 1006; //Remove building/highlights
 TX_KEY_FUNC_SEL_NXT_BLD_UNIT_SAME_TYPE = 1007; //Select next house/unit with same type
 TX_KEY_FUNC_DBG_WINDOW = 1008; //Debug window
+TX_KEY_FUNC_SPECPANEL_DROPBOX_OPEN_CLOSE = 1258; //Open/Close spectator stats panel
 TX_KEY_FUNC_SPECTATE_PLAYER_1 = 1009; //Spectate player 1
 TX_KEY_FUNC_SPECTATE_PLAYER_2 = 1010; //Spectate player 2
 TX_KEY_FUNC_SPECTATE_PLAYER_3 = 1011; //Spectate player 3

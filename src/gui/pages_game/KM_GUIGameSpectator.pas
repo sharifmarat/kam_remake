@@ -219,6 +219,8 @@ type
     procedure OpenPage(aIndex: Integer);
     procedure CloseDropBox;
 
+    property DropBox: TKMDropList read FDropBox;
+
     procedure UpdateState(aTick: Cardinal);
   end;
 

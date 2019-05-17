@@ -1323,6 +1323,8 @@ type
     function Count: Integer; virtual; abstract;
     procedure OpenList;
     procedure CloseList;
+    procedure SetOpenList(aOpen: Boolean);
+    procedure SwitchOpen;
 
     property DropCount: Byte read fDropCount write fDropCount;
     property DropUp: Boolean read fDropUp write fDropUp;
@@ -7880,6 +7882,24 @@ end;
 procedure TKMDropCommon.CloseList;
 begin
   ListHide(nil);
+end;
+
+
+procedure TKMDropCommon.SetOpenList(aOpen: Boolean);
+begin
+  if aOpen then
+    OpenList
+  else
+    CloseList;
+end;
+
+
+procedure TKMDropCommon.SwitchOpen;
+begin
+  if IsOpen then
+    CloseList
+  else
+    OpenList;
 end;
 
 

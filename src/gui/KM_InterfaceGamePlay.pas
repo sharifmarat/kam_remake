@@ -3300,6 +3300,9 @@ begin
   // First check if this key was associated with some Spectate/Replay key
   if (fUIMode in [umReplay, umSpectate]) then
   begin
+    if Key = gResKeys[SC_SPECPANEL_SELECT_DROPBOX].Key then
+      fGuiGameSpectator.DropBox.SwitchOpen;
+
     if Key = gResKeys[SC_SPECTATE_PLAYER_1].Key then
       SpecPlayerIndex := 1
     else if Key = gResKeys[SC_SPECTATE_PLAYER_2].Key then
