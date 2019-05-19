@@ -59,8 +59,8 @@ uses
   function GetKaMSeed: Integer;
   function KaMRandomWSeed(var aSeed: Integer): Extended; overload;
   function KaMRandomWSeed(var aSeed: Integer; aMax: Integer): Integer; overload;
-  function KaMRandom(const aCaller: String): Extended; overload;
-  function KaMRandom(aMax: Integer; const aCaller: String): Integer; overload;
+  function KaMRandom(const aCaller: String; aLogRng: Boolean = True): Extended; overload;
+  function KaMRandom(aMax: Integer; const aCaller: String; aLogRng: Boolean = True): Integer; overload;
   function KaMRandomS(Range_Both_Directions: Integer; const aCaller: String): Integer; overload;
   function KaMRandomS(Range_Both_Directions: Single; const aCaller: String): Single; overload;
 
@@ -1053,38 +1053,40 @@ begin
 end;
 
 
-function KaMRandom(const aCaller: String): Extended;
+function KaMRandom(const aCaller: String; aLogRng: Boolean = True): Extended;
 begin
   Result := KaMRandomWSeed(fKamSeed);
 
-  LogKamRandom(Result, aCaller, 'KaMRandom');
+  if aLogRng then
+    LogKamRandom(Result, aCaller, 'KMRand');
 end;
 
 
-function KaMRandom(aMax: Integer; const aCaller: String): Integer;
+function KaMRandom(aMax: Integer; const aCaller: String; aLogRng: Boolean = True): Integer;
 begin
   if CUSTOM_RANDOM then
-    Result := Trunc(KaMRandom('*' + aCaller)*aMax)
+    Result := Trunc(KaMRandom('I*' + aCaller, False)*aMax)
   else
     Result := Random(aMax);
 
-  LogKamRandom(Result, aCaller, 'KaMRandomI');
+  if aLogRng then
+    LogKamRandom(Result, aCaller, 'I*');
 end;
 
 
 function KaMRandomS(Range_Both_Directions: Integer; const aCaller: String): Integer;
 begin
-  Result := KaMRandom(Range_Both_Directions*2+1, '*' + aCaller) - Range_Both_Directions;
+  Result := KaMRandom(Range_Both_Directions*2+1, 'SI*' + aCaller, False) - Range_Both_Directions;
 
-  LogKamRandom(Result, aCaller, 'KaMRandomS_I');
+  LogKamRandom(Result, aCaller, 'SI*');
 end;
 
 
 function KaMRandomS(Range_Both_Directions: Single; const aCaller: String): Single;
 begin
-  Result := KaMRandom(Round(Range_Both_Directions*20000)+1, '*' + aCaller)/10000-Range_Both_Directions;
+  Result := KaMRandom(Round(Range_Both_Directions*20000)+1, 'SS*' + aCaller, False)/10000-Range_Both_Directions;
 
-  LogKamRandom(Result, aCaller, 'KaMRandomS_S');
+  LogKamRandom(Result, aCaller, 'SS*');
 end;
 
 
