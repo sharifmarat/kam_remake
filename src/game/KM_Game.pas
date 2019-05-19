@@ -325,6 +325,7 @@ begin
   gProjectiles := TKMProjectiles.Create;
 
   gRandomCheckLogger.Clear;
+  gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
   fGameTick := 0; //Restart counter
 end;
