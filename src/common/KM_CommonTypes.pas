@@ -94,7 +94,7 @@ type
 
   TKMCustomScriptParamDataArray = array [TKMCustomScriptParam] of TKMCustomScriptParamData;
 
-  TKMPlayerColorMode = (pcmNone, pcmColors, pcmAllyEnemy, pcmTeams);
+  TKMPlayerColorMode = (pcmNone, pcmDefault, pcmAllyEnemy, pcmTeams);
 
   const
     WonOrLostText: array [TWonOrLost] of UnicodeString = ('None', 'Won', 'Lost');

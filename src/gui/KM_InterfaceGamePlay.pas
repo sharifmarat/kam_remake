@@ -3274,10 +3274,10 @@ begin
       gGameApp.GameSettings.PlayersColorMode := TKMPlayerColorMode((Byte(gGameApp.GameSettings.PlayersColorMode) mod 3) + 1)
     else
     begin
-      if gGameApp.GameSettings.PlayersColorMode = pcmColors then
+      if gGameApp.GameSettings.PlayersColorMode = pcmDefault then
         gGameApp.GameSettings.PlayersColorMode := pcmAllyEnemy
       else
-        gGameApp.GameSettings.PlayersColorMode := pcmColors;
+        gGameApp.GameSettings.PlayersColorMode := pcmDefault;
     end;
     GameSettingsChanged;
     //Update minimap immidiately

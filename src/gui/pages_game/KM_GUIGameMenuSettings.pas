@@ -198,7 +198,7 @@ begin
   if CheckBox_AllyEnemy_ColorMode.Checked then
     gGameApp.GameSettings.PlayersColorMode := pcmAllyEnemy
   else
-    gGameApp.GameSettings.PlayersColorMode := pcmColors;
+    gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
   if gGame.IsReplay then
     gGameApp.GameSettings.ReplayShowBeacons   := CheckBox_ReplaySpecShowBeacons.Checked
