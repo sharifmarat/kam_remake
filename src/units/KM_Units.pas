@@ -25,7 +25,6 @@ type
   protected
     fType: TKMUnitActionType;
     fUnit: TKMUnit;
-    fOnActionDone: TAnonBooleanFn;
   public
     Locked: Boolean; //Means that unit can't take part in interaction, must stay on its tile
     StepDone: Boolean; //True when single action element is done (unit walked to new tile, single attack loop done)
@@ -33,7 +32,6 @@ type
     constructor Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
-    property OnActionDone: TAnonBooleanFn read fOnActionDone write fOnActionDone;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; virtual;
     function ActName: TKMUnitActionName; virtual; abstract;
     property ActionType: TKMUnitActionType read fType;
@@ -2348,25 +2346,9 @@ begin
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
   case fAction.Execute of
-    arActContinues: begin
-                      SetCurrPosition(KMPointRound(fPositionF));
-                      Exit;
-                    end; //will update FOW
-    arActAborted:   begin
-                      FreeAndNil(fAction);
-                      FreeAndNil(fTask);
-                    end;
-    arActDone:      begin
-                      if Assigned(fAction.OnActionDone) then
-                      begin
-                        //Free action depends of fOnActionDone
-                        //If we created new action, then no need to free it
-                        //If we created new task then we must free it
-                        if not fAction.fOnActionDone() then
-                          FreeAndNil(fAction);
-                      end else
-                        FreeAndNil(fAction);
-                    end;
+    arActContinues: begin SetCurrPosition(KMPointRound(fPositionF)); Exit; end; //will update FOW
+    arActAborted:   begin FreeAndNil(fAction); FreeAndNil(fTask); end;
+    arActDone:      FreeAndNil(fAction);
   end;
   SetCurrPosition(KMPointRound(fPositionF)); //will update FOW
 
