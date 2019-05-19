@@ -285,6 +285,7 @@ const
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
   EXT_SAVE_MP_LOCAL = 'sloc';
+  EXT_SAVE_RNG_LOG = 'rng';
 
   EXT_FILE_SCRIPT = 'script';
 
@@ -292,6 +293,7 @@ const
   EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
   EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
   EXT_SAVE_MP_LOCAL_DOT = '.' + EXT_SAVE_MP_LOCAL;
+  EXT_SAVE_RNG_LOG_DOT = '.' + EXT_SAVE_RNG_LOG;
 
   EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
 

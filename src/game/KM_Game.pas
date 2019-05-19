@@ -811,7 +811,7 @@ begin
       AttachFile(SaveName('crashreport', EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
-      AttachFile(SaveName('crashreport', 'rng', IsMultiPlayerOrSpec));
+      AttachFile(SaveName('crashreport', EXT_SAVE_RNG_LOG, IsMultiPlayerOrSpec));
     end;
   except
     on E : Exception do
@@ -854,7 +854,7 @@ begin
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
-      AttachFile(SaveName('autosave' + Int2Fix(I, 2), 'rng', IsMultiPlayerOrSpec));
+      AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_RNG_LOG, IsMultiPlayerOrSpec));
     end;
 
   gLog.AddTime('Crash report created');
@@ -1711,7 +1711,7 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, '.rng'));
+  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
 
   gLog.AddTime('Saving game', True);
 end;
