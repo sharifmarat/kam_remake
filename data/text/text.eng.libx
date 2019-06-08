@@ -928,7 +928,7 @@
 978:This quarry is not occupied
 979:This sawmill is not occupied
 980:This siege workshop is not occupied
-981:This stables is not occupied
+981:These stables are not occupied
 982:This swine farm is not occupied
 983:This tannery is not occupied
 984:This watchtower is not occupied
@@ -1151,7 +1151,7 @@
 1202:Soft mask - use automatically created transitions
 1203:Hard mask - use automatically created transitions
 1204:Custom TownHall units cost
-1205:Custom gold market prices 
+1205:Custom gold market prices
 1206:Additional options
 1207:Additional brush options
 1208:Additional brush options
@@ -1183,10 +1183,10 @@
 1234:%s is away from keyboard for last %s [$00B0FF]minutes[]
 1235:Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
 1236:The procedure [ %s ] declared for the script console command /%s was not found
-1237:Wrong parameter type for script command /%s: [%s] 
-1238:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s] 
+1237:Wrong parameter type for script command /%s: [%s]
+1238:Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s]
 1239:Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
-1240:Wrong parameters for script command /%s. Expected parameters types are: [%s]  
+1240:Wrong parameters for script command /%s. Expected parameters types are: [%s]
 1241:Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
 1242:Command called: /%s(%s)
 1243:Error while calling script command /%s(%s)
@@ -1204,4 +1204,4 @@
 1255:Error: Player name '%s' is reserved
 1256:Citizens (S/L/R)
 1257:Citizens (Others)
-1258:Open/Close spectator stats panel 
+1258:Open/Close spectator stats panel

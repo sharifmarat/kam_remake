@@ -32,10 +32,10 @@
 31:Steine
 32:Nutzholz
 33:Eisenerz
-34:Goldgestein
+34:Golderz
 35:Kohle
 36:Eisen
-37:Gold
+37:Goldtruhe
 38:Weinfässer
 39:Korn
 40:Brote
@@ -141,7 +141,7 @@
 142:Zerstören
 143:Wollen Sie das Gebäude|wirklich abreißen?
 144:Zerstört ausgewähltes Gebäude
-145:Bestellmenge erniedrigen
+145:Bestellmenge verringern
 146:Bestellmenge erhöhen
 147:Vorheriger Einheitentyp
 148:Nächster Einheitentyp
@@ -767,6 +767,35 @@
 827:Setzt Anzahl Gehilfen für je 10 Gebäude für den KI-Spieler. Ausgewählte KI hat %d Häuser.
 829:Der Auftrag ist vollständig.
 830:Asiatische Fonts
+966:Diese rüstungsschmiede ist nicht bewohnt
+967:Diese rüstungswerkstatt ist nicht bewohnt
+968:Diese bäckerei ist nicht bewohnt
+969:Diese metzgerei ist nicht bewohnt
+970:Dieses kohlebergwerk ist nicht bewohnt
+971:Dieser bauernhof ist nicht bewohnt
+972:Diese fischerhütte ist nicht bewohnt
+973:Diese goldmine ist nicht bewohnt
+974:Diese eisenmine ist nicht bewohnt
+975:Diese eisenschmelze ist nicht bewohnt
+976:Diese goldschmelze ist nicht bewohnt
+977:Diese mühle ist nicht bewohnt
+978:Dieser steinbruch ist nicht bewohnt
+979:Dieses sägewerk ist nicht bewohnt
+980:Diese kriegswerkstatt ist nicht bewohnt
+981:Diese ställe sind nicht bewohnt
+982:Diese schweinezucht ist nicht bewohnt
+983:Diese gerberei ist nicht bewohnt
+984:Dieser wachturm ist nicht besetzt
+985:Diese waffenschmiede ist nicht bewohnt
+986:Diese waffenwerkstatt ist nicht bewohnt
+987:Dieses weingut ist nicht bewohnt
+988:Diese holzfällerhütte ist nicht bewohnt
+1028:Nur pflanzen
 1118:Mehrspieler Maps
 1119:Keine Musik
 1120:Lieder zufällig
+1140:Entlassen
+1141:Willst Du diese Einheit wirklich entlassen?
+1142:Einheit entlassen
+1143:Einheit entlassen abbrechen
+1144:Entlassen nicht möglich, da es in Deinem Dorf keine Schule gibt
