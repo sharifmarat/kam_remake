@@ -16,7 +16,7 @@ type
     procedure Log(aLog: String);
   public
     constructor Create(aForm: TForm2);
-    destructor Destroy();
+    destructor Destroy(); override;
 
     procedure InitSimulation();
     procedure RunSimulation();

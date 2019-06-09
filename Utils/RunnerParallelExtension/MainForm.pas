@@ -193,6 +193,7 @@ end;
 procedure TParaller_Runner.Log(const aText: String);
 begin
   mLog.Lines.Append(aText);
+  SendMessage(mLog.Handle, EM_LINESCROLL, 0,mLog.Lines.Count);
 end;
 
 

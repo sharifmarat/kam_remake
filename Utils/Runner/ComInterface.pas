@@ -83,7 +83,7 @@ var
   Str: String;
   Command: Byte;
   Int, GA_IdvCnt, GA_GenCnt, GA_IdvIdx, GA_GenIdx, GA_FitIdx: Integer;
-  Flt, GA_Fit: Single;
+  Flt: Single;
 
   procedure NewIdv();
   begin
@@ -286,7 +286,7 @@ end;
 
 function TKMComInterface.CaptureConsoleOutput(aWorkDir: String; aCommand: String): String;
 const
-  CReadBuffer = 540000;
+  CReadBuffer = 540000; // Maybe overkill but I have 16GB so who cares
 var
   saSecurity: TSecurityAttributes;
   hRead, hWrite: THandle;
@@ -338,6 +338,14 @@ begin
           repeat
             dRunning := WaitForSingleObject(piProcess.hProcess, 100);
             Application.ProcessMessages;
+            // Read from buffer during execution so it does not overflow
+            dRead := 0;
+            if ReadFile(hRead, pBuffer[0], CReadBuffer, dRead, nil) then
+            begin
+              pBuffer[dRead] := #0;
+              OemToAnsi(pBuffer, pBuffer);
+              Result := Result + String(pBuffer);
+            end;
           until (dRunning <> WAIT_TIMEOUT);
           repeat
             dRead := 0;

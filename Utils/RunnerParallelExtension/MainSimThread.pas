@@ -3,6 +3,7 @@ unit MainSimThread;
 interface
 
 uses
+  Windows,
   Classes, SysUtils, IOUtils, System.Math,
   ComInterface, SimThread, GeneticAlgorithm, PlotGraph;
 
@@ -71,22 +72,22 @@ begin
   fSimulationRequest := srNone;
   fSimulationInitialized := False;
 
-  SIM_Class           := 'TKMRunnerGA_TestParRun';//'TKMRunnerGA_TestParRun';//'TKMRunnerGA_CityRoadPlanner';//
-  SIM_TimeInMin       := 70; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
-  SIM_CountThreads    := 1;//3;
-  GA_Generations      := 3;//40; // Count of generations
-  GA_CountIndividuals := 25; // Count of individuals in population
-  GA_CountGenes       := 16; // Count of genes
-  GA_CountMaps        := 1;//10; // Count of simulated maps for each invididual
+  SIM_Class           := 'TKMRunnerGA_Forest';// TKMRunnerGA_TestParRun TKMRunnerGA_CityPlanner TKMRunnerGA_CityRoadPlanner TKMRunnerGA_Forest
+  SIM_TimeInMin       := 65; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+  SIM_CountThreads    := 3; //3;
+  GA_Generations      := 40; //40; // Count of generations
+  GA_CountIndividuals := 30; // Count of individuals in population
+  GA_CountGenes       := 19; // Count of genes
+  GA_CountMaps        := 26; //10; // Count of simulated maps for each invididual
   GA_START_TOURNAMENT_IndividualsCnt := 3; // Initial count of individuals in tournament
-  GA_FINAL_TOURNAMENT_IndividualsCnt := 10; // Final count of individuals in tournament
-  GA_START_MUTATION_ResetGene := 0.1; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_ResetGene := 0.0005; // Final mutation (last generation)
+  GA_FINAL_TOURNAMENT_IndividualsCnt := 3; // Final count of individuals in tournament
+  GA_START_MUTATION_ResetGene := 0.05; // Initial mutation (first generation)
+  GA_FINAL_MUTATION_ResetGene := 0.01; // Final mutation (last generation)
   GA_START_MUTATION_Gaussian := 0.1; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_Gaussian := 0.2; // Final mutation (last generation)
+  GA_FINAL_MUTATION_Gaussian := 0.5; // Final mutation (last generation)
   // Gaussian distribution generates mostly (-3,3) so variance > 0.1 is recommended
   GA_START_MUTATION_Variance := 0.1; // Initial variance coefficient (first generation)
-  GA_FINAL_MUTATION_Variance := 0.03; // Final variance coefficient (last generation)
+  GA_FINAL_MUTATION_Variance := 0.01; // Final variance coefficient (last generation)
 end;
 
 
@@ -266,12 +267,35 @@ end;
 
 
 procedure TMainSimThread.RunSimulation();
+  function TimeGetUsec(): Int64;
+  var
+    freq: Int64;
+    newTime: Int64;
+    factor: Double;
+  begin
+    QueryPerformanceFrequency(freq);
+    QueryPerformanceCounter(newTime);
+    factor := 1000000 / freq; // Separate calculation to avoid "big Int64 * 1 000 000" overflow
+    Result := Round(newTime * factor);
+  end;
+  procedure LogTime(aStartTime: Int64);
+  var
+    Time: Single;
+  begin
+    Time := Single(TimeGetUsec()-aStartTime)/1000000.0;
+    if (Time/60 < 1) then
+      gLog.Log(Format('Time: %.3f [s]',[Time]))
+    else if (Time/60/60 < 1) then
+      gLog.Log(Format('Time: %.3f [min]',[Time/60]))
+    else
+      gLog.Log(Format('Time: %.3f [h]',[Time/60/60]));
+  end;
 var
   K,L: Integer;
   GAMut, Ratio: Single;
   NewPopulation: TGAPopulation;
   fAlgorithm: TGAAlgorithm;
-  StartT: TDateTime;
+  StartT,StartGenT: int64;
 begin
   // Do not override loaded simulation
   if not fSimulationInitialized then
@@ -281,7 +305,7 @@ begin
   if (fPlotGraph <> nil) then
     fPlotGraph.InitSimulation(GA_Generations,GA_CountIndividuals,GA_CountGenes,GA_CountMaps);
   gLog.Log('Starting simulation');
-  StartT := Time;
+  StartT := TimeGetUsec();
 
   fAlgorithm := TGAAlgorithm.Create;
   NewPopulation := nil;
@@ -289,6 +313,7 @@ begin
     for K := 0 to GA_Generations - 1 do
     begin
       gLog.Log(IntToStr(K+1) + '. run');
+      StartGenT := TimeGetUsec();
       fSimSetup.SimNumber := K + 1;
       if not RunThreads(SIM_CountThreads) then
       begin
@@ -325,14 +350,14 @@ begin
       fGASetup.Population := NewPopulation;
       if (fSimulationRequest = srNone) then
         break;
+      LogTime(StartGenT);
     end;
   finally
     FreeAndNil(fAlgorithm);
     FreeAndNil(fGASetup.Population);
   end;
+  LogTime(StartT);
   gLog.Log('Simulation finished');
-
-  gLog.Log('Time: ' + FloatToStr(Time-StartT));
 
 end;
 

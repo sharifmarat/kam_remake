@@ -88,15 +88,11 @@ end;
 
 procedure TGAAlgorithm.EvolvePopulation(var aOldPopulation, aNewPopulation: TGAPopulation);
 var
-  K,L, Genes, Maps, PopulationCnt: Integer;
+  K,L: Integer;
   Idv1, Idv2: TGAIndividual;
 begin
-  PopulationCnt := aOldPopulation.Count;
-  Genes := aOldPopulation[0].GenesCount;
-  Maps := aOldPopulation[0].FitnessCount;
-
   // Evolve population
-  for K := 0 to PopulationCnt - 1 do
+  for K := 0 to aOldPopulation.Count - 1 do
   begin
     Idv1 := TournamentSelection(aOldPopulation);
     Idv2 := Idv1;
@@ -152,7 +148,7 @@ begin
   for K := 0 to aIdv.GenesCount - 1 do
     if (Random() <= fMutationGaussian) then
       aIdv.Gene[K] := Min(1, Max( 0,
-                        aIdv.Gene[K] + fMutationVariance * sqrt(  -2 * Ln( Random() )  ) * cos( 2 * 3.1415 * Random() )
+                        aIdv.Gene[K] + fMutationVariance * sqrt(  -2 * Ln( Max(1E-35,Random()) )  ) * cos( 2 * 3.1415 * Random() )
                       ));
 end;
 
@@ -225,15 +221,18 @@ begin
       for L in aOnlySomeIdx do
         if (BestFit < fIndividuals[L].Fitness[K]) then
           BestFit := fIndividuals[L].Fitness[K];
+      if (BestFit = 0) then
+        BestFit := 1;
       // Normalize fitness
       for L in aOnlySomeIdx do
-        FitnessArr[L] := FitnessArr[L] + 1.0 - abs((BestFit - fIndividuals[L].Fitness[K]) / BestFit);
+        FitnessArr[L] := FitnessArr[L] + fIndividuals[L].Fitness[K] / abs(BestFit);
     end;
   end
   else
     for K in aOnlySomeIdx do
       FitnessArr[K] := fIndividuals[K].FitnessSum;
   // Find best individual
+  L := 0; // For compiler
   for K in aOnlySomeIdx do
     if (Fittest = nil) OR (FitnessArr[L] < FitnessArr[K]) then
     begin
