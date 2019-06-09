@@ -37,7 +37,7 @@ type
     procedure UpdateAttack(aTeamIdx: Byte);
     procedure DivideResources();
     function NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
-    procedure EvaluateArmies();
+    //procedure EvaluateArmies();
   public
     constructor Create();
     destructor Destroy(); override;
@@ -676,6 +676,7 @@ begin
 end;
 
 
+{
 procedure TKMSupervisor.EvaluateArmies();
 type
   TKMPGroupEvalSup = ^TKMGroupEvalSup;
@@ -806,6 +807,7 @@ begin
       gRenderAux.Triangle(P.X+1.0, P.Y, P.X+1.25, P.Y-A[Alli,GIdx].Nearby.HitPoints         /10, P.X+1.5, P.Y, $55000000 OR COLOR_GREEN);
     end;
 end;
+//}
 
 
 procedure TKMSupervisor.Paint(aRect: TKMRect);

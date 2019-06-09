@@ -77,7 +77,7 @@ type
     fOwner: TKMHandID;
     fOwnerUpdateInfo: array[0..MAX_HANDS-1] of Byte;
     fVisitIdx, fVisitIdxHouse: Byte;
-    fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY, fTerrainFFMaxDist: Word;
+    fStartQueue, fEndQueue, fQueueCnt, fMapX, fMapY: Word;
     fUpdateTick: Cardinal;
     fHouseReq: TKMHouseRequirements;
     fHMA: THouseMappingArray;

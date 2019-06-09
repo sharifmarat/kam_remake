@@ -2079,7 +2079,7 @@ const
   SQR_MIN_DIST_FROM_CHOP_ONLY = 12*12;
 var
   Output: Boolean;
-  K,L, Cnt, Route: Integer;
+  K,L: Integer;
   DecreaseSpeed: Single;
   P: TKMPoint;
   FIRnd: TKMForestsInfo;

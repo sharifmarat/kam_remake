@@ -877,6 +877,7 @@ var
           end;
         end;
           }
+        BestGT := gtMelee;
         repeat
           BestDist := 10000000;
           for K := 0 to 3 do
