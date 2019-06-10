@@ -54,10 +54,6 @@ type
     procedure UpdateState(aTick: Cardinal);
     procedure UpdateAlliances();
     procedure Paint(aRect: TKMRect);
-
-
-
-    procedure RndTest();
   end;
 
 
@@ -155,32 +151,6 @@ begin
 end;
 
 
-procedure TKMSupervisor.RndTest();
-var
-  a: array of Integer;
-  b: array of Integer;
-  K,L, ln: Integer;
-begin
-  a := [0,5,6,3,1,2];
-   Sort(a[0], Low(a), High(a), sizeof(a[0]), CompareInt);
-
-  ln := Round(Random()*20)+1;
-  SetLength(a,ln);
-  SetLength(b,ln);
-  for K := 0 to 1000 do
-  begin
-    for L := Low(a) to High(A) do
-      a[L] := Round(Random()*ln);
-    for L := Low(a) to High(a) do
-      b[L] := a[L];
-    Sort(a[0], Low(a), High(a), sizeof(a[0]), CompareInt);
-    for L := Low(a)+1 to High(a) do
-      if (a[L-1] > a[L]) then
-        a[L-1] := a[L];
-  end;
-end;
-
-
 procedure TKMSupervisor.UpdateState(aTick: Cardinal);
 const
   DEFSUPPORT_DIVISION = 10 * MAX_HANDS * 2; // 24 sec
@@ -190,7 +160,6 @@ const
 var
   Modulo: Word;
 begin
-  //RndTest();
   // Defensive support should be updated often
   Modulo := aTick mod DEFSUPPORT_DIVISION;
   if (Modulo < Length(fAlli2PL)) then
