@@ -144,9 +144,6 @@ begin
 end;
 
 procedure TParaller_Runner.bRunSimulationClick(Sender: TObject);
-var
-  T: Cardinal;
-  ID, Count: Integer;
 begin
   if (fSim.SimulationRequest = srNone) then
   begin

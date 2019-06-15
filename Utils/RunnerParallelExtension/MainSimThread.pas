@@ -291,8 +291,8 @@ procedure TMainSimThread.RunSimulation();
       gLog.Log(Format('Time: %.3f [h]',[Time/60/60]));
   end;
 var
-  K,L: Integer;
-  GAMut, Ratio: Single;
+  K: Integer;
+  Ratio: Single;
   NewPopulation: TGAPopulation;
   fAlgorithm: TGAAlgorithm;
   StartT,StartGenT: int64;

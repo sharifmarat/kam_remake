@@ -49,7 +49,6 @@ function TSimThread.SimulateGeneration(): Boolean;
 var
   CI: TKMComInterface;
 begin
-  Result := False;
   fSimulationSuccessful := False;
   Log('Thread ' + IntToStr(fThreadNumber) + ': Start simulation');
   CI := TKMComInterface.Create();

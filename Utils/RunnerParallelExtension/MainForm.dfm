@@ -44,6 +44,10 @@ object Paraller_Runner: TParaller_Runner
     TabOrder = 2
     object tsFitness: TTabSheet
       Caption = 'Fitness'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         1194
         616)
@@ -84,6 +88,10 @@ object Paraller_Runner: TParaller_Runner
     object TabSheet3: TTabSheet
       Caption = 'Times'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         1194
         616)
@@ -98,6 +106,10 @@ object Paraller_Runner: TParaller_Runner
     object tsLog: TTabSheet
       Caption = 'Log'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object mLog: TMemo
         Left = 0
         Top = 0

@@ -34,8 +34,6 @@ uses
   Log;
 
 constructor TPlotGraph.Create(aImgGenes, aImgFitness: TImage; aGeneTrackBar: TTrackBar);
-var
-  ResultsFile,GAFile: TextFile;
 begin
   inherited Create();
   gLog.Log('TPlotGraph: Create');
@@ -127,7 +125,7 @@ end;
 procedure TPlotGraph.GetMinMaxFit(var aMinF, aMaxF: Single; aGeneration: Integer = -1);
   procedure CheckGeneration(K: Integer);
   var
-    L,M: Integer;
+    L: Integer;
     FitSum: Single;
   begin
     for L := Low(fFitnessHistory[K]) to High(fFitnessHistory[K]) do
