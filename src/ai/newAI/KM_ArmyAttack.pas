@@ -322,7 +322,7 @@ begin
     FinPos := fTargetUnit.CurrPosition;
     if PlanPath(aTick, ActPos, FinPos, True, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else if (fGroup.GroupType <> gtRanged) OR fTargetChanged OR (fAttackTimeLimit < aTick) OR (KMDistanceSqr(FinPos,ActPos) > 12*12) then
+    else if (fGroup.GroupType <> gtRanged) OR (fAttackTimeLimit < aTick) OR (KMDistanceSqr(FinPos,ActPos) > 12*12) then // fTargetChanged OR
     begin
       fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
