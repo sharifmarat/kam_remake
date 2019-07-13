@@ -408,7 +408,7 @@ var
   procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
   const
     TRADE_RESERVE = 5;
-    TRADE_QUANTITY = 20;
+    TRADE_QUANTITY = 10;
   var
     K: Integer;
     Houses: TKMHousesCollection;
