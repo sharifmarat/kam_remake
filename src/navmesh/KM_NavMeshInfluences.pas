@@ -102,7 +102,7 @@ end;
 
 function TNavMeshInfluenceSearch.FindClosestEnemies(const aOwner: TKMHandID; aCenterPoints: TKMPointArray; var aEnemiesStats: TKMEnemyStatisticsArray; aHouseInfluence: Boolean = True): Boolean;
 const
-  MAX_ENEMIES_AT_ONCE = 3;
+  MAX_ENEMIES_AT_ONCE = 11;
 var
   PL: TKMHandID;
   I, Cnt: Integer;
