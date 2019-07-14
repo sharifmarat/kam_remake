@@ -407,13 +407,13 @@ var
 
   procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
   const
-    TRADE_RESERVE = 5;
     TRADE_QUANTITY = 10;
   var
     K: Integer;
     Houses: TKMHousesCollection;
-    HM: TKMHouseMarket;
+    HM, Market: TKMHouseMarket;
   begin
+    Market := nil;
     Houses := gHands[fOwner].Houses;
     for K := 0 to Houses.Count - 1 do
       if (Houses[K] <> nil)
@@ -423,17 +423,20 @@ var
       begin
         HM := TKMHouseMarket(Houses[K]);
         // The market have an order
-        if (HM.ResOrder[0] > 0) AND (HM.ResTo = aResTo) then
-          Exit;
-        if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
-        begin
-          HM.ResOrder[0] := 0; //First we must cancel the current trade
-          HM.ResFrom := aResFrom;
-          HM.ResTo := aResTo;
-          HM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
-          Exit;
-        end;
+        if (HM.ResOrder[0] > 0) then
+          continue
+        else if (HM.ResTo = aResTo) then
+          Exit
+        else if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
+          Market := HM;
       end;
+    if (Market <> nil) then
+    begin
+      Market.ResOrder[0] := 0; //First we must cancel the current trade
+      Market.ResFrom := aResFrom;
+      Market.ResTo := aResTo;
+      Market.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
+    end;
   end;
 const
   SOLD_ORDER: array[0..20] of TKMWareType = (
