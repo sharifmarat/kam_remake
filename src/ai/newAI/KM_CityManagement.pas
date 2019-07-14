@@ -385,7 +385,7 @@ var
 
   procedure CheckMarketplaces();
   const
-    WARE_RESERVE = 1;
+    WARE_RESERVE = 3;
   var
     K: Integer;
     Houses: TKMHousesCollection;
@@ -422,11 +422,13 @@ var
         AND Houses[K].IsComplete then
       begin
         HM := TKMHouseMarket(Houses[K]);
-        // The market have an order
+        // Market have an order
         if (HM.ResOrder[0] > 0) then
-          continue
-        else if (HM.ResTo = aResTo) then
-          Exit
+        begin
+          if (HM.ResTo = aResTo) then
+            Exit;
+        end
+        // Market is free
         else if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
           Market := HM;
       end;
