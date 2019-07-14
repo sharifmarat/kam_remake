@@ -443,16 +443,19 @@ end;
 // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
 procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
 
-  function GetBestComparison(aPlayer: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray): Integer;
+  procedure GetBestComparison(aPlayer: TKMHandID; var aBestCmpIdx, aWorstCmpIdx: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray);
   const
-    DISTANCE_COEF = 0.4; // Decrease chance to attack enemy in distance
+    // Decrease chance to attack enemy in distance
+    DISTANCE_COEF_1v1 = 0.4;
+    DISTANCE_COEF_FFA = 2;
   var
     I, MinDist, MaxDist: Integer;
-    Comparison, invDistInterval: Single;
+    Comparison, invDistInterval, DistCoef: Single;
   begin
-    Result := -1;
     aBestCmp := -1;
     aWorstCmp := 1;
+    aBestCmpIdx := 0;
+    aWorstCmpIdx := 0;
     if (Length(aEnemyStats) > 0) then
     begin
       // Find closest enemy
@@ -464,28 +467,33 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           MaxDist := Max(MaxDist, aEnemyStats[I].Distance);
       end;
       invDistInterval := 1 / Max(1,MaxDist - MinDist);
+      DistCoef := ifthen(Length(fAlli2PL) > 2, DISTANCE_COEF_FFA, DISTANCE_COEF_1v1);
 
       for I := 0 to Length(aEnemyStats) - 1 do
       begin
         Comparison := + gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(aPlayer, aEnemyStats[I].Player)
-                      - (aEnemyStats[I].Distance - MinDist) * invDistInterval * DISTANCE_COEF;
+                      - (aEnemyStats[I].Distance - MinDist) * invDistInterval * DistCoef;
         if (Comparison > aBestCmp) then
         begin
           aBestCmp := Comparison;
-          Result := I;
+          aBestCmpIdx := I;
         end;
-        if (Comparison < aWorstCmp) then
+        if (Comparison <= aWorstCmp) then
+        begin
           aWorstCmp := Comparison;
+          aWorstCmpIdx := I;
+        end;
       end;
     end;
   end;
 const
   MIN_DEF_RATIO = 1.2;
-  FOOD_THRESHOLD = 0.5;
+  FOOD_THRESHOLD = 0.55;
   MIN_ADVANTAGE = 0.15; // 15% advantage for attacker
 var
-  BestCmpIdx, IdxPL, EnemyTeamIdx: Integer;
+  IdxPL, EnemyTeamIdx: Integer;
   DefRatio, BestCmp, WorstCmp, FoodLevel: Single;
+  BestCmpIdx, WorstCmpIdx: TKMHandID;
   ArmyState: TKMArmyEval;
   EnemyStats: TKMEnemyStatisticsArray;
   AR: TKMAttackRequest;
@@ -511,7 +519,7 @@ begin
   if FindClosestEnemies(fAlli2PL[aTeamIdx], EnemyStats) then
   begin
     // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
-    BestCmpIdx := GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmp, WorstCmp, EnemyStats);
+    GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmpIdx, WorstCmpIdx, BestCmp, WorstCmp, EnemyStats);
     ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeamIdx,0], atAlly ];
     with ArmyState.FoodState do
       FoodLevel := (Full + Middle) / Max(1, (Full + Middle + Low));
@@ -529,6 +537,8 @@ begin
             WorstAllianceCmp := WorstCmp;
             BestEnemy := EnemyStats[BestCmpIdx].Player;
             BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
+            WorstEnemy := EnemyStats[WorstCmpIdx].Player;
+            WorstPoint := EnemyStats[WorstCmpIdx].ClosestPoint;
             SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
             Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
           end;
