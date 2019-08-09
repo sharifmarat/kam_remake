@@ -72,7 +72,7 @@ type
     property VSync: Boolean read fVSync write SetVSync;
     property NoRenderMaxTime: Integer read fNoRenderMaxTime;
 
-    function IsNoRenerMaxTimeSet: Boolean;
+    function IsNoRenderMaxTimeSet: Boolean;
   end;
 
   //Gameplay settings, those that affect the game
@@ -477,7 +477,7 @@ begin
 end;
 
 
-function TKMainSettings.IsNoRenerMaxTimeSet: Boolean;
+function TKMainSettings.IsNoRenderMaxTimeSet: Boolean;
 begin
   Result := fNoRenderMaxTime <> NO_RENDER_MAX_TIME_UNDEF;
 end;
@@ -582,7 +582,7 @@ begin
     SetAutosaveCount    (F.ReadInteger    ('Game', 'AutosaveCount',     AUTOSAVE_COUNT));
     fSpecShowBeacons    := F.ReadBool     ('Game', 'SpecShowBeacons',   False); //Disabled by default
     fShowGameTime       := F.ReadBool     ('Game', 'ShowGameTime',      False); //Disabled by default
-    fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode', Byte(pcmColors))); //Show players colors by default
+    fPlayersColorMode   := TKMPlayerColorMode(F.ReadInteger  ('Game', 'PlayersColorMode', Byte(pcmDefault))); //Show players colors by default
 
     //Load minimap colors as hex strings 6-hex digits width
     if TryStrToInt64('$' + F.ReadString('Game', 'PlayerColorSelf', IntToHex(Integer(clPlayerSelf and $FFFFFF), 6)), TempCard) then

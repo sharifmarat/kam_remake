@@ -454,12 +454,12 @@ TX_MAPED_TERRAIN_TILES_RANDOM = 389; //Random Direction
 TX_MAPED_TERRAIN_TILES_RANDOM_HINT = 390; //Tick for randomized tile direction or use right click to rotate the selected tile
 TX_MAPED_TERRAIN_OBJECTS_BLOCK = 392; //Block walking
 TX_MAPED_TERRAIN_OBJECTS_REMOVE = 393; //Remove an object
-TX_MAPED_TERRAIN_MAGIC_WATER = 672; //Magic water
+TX_MAPED_TERRAIN_MAGIC_WATER = 672; //
 TX_MAPED_TERRAIN_MAGIC_WATER_HINT = 671; //Magic water - sets the direction for all tiles in a body of water
 TX_MAPED_TERRAIN_EYEDROPPER_HINT = 965; //Eyedropper - select the type of tile under the cursor
 TX_MAPED_TERRAIN_FORCE_PAINT = 1197; //Force paint
-TX_MAPED_TERRAIN_FORCE_PAINT_HINT = 1198; //Force to override manually set tiles from tiles table while painting with brushes
-TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT = 1199; //Magic brush - automatically fix all tile transitions with chosen mask
+TX_MAPED_TERRAIN_FORCE_PAINT_HINT = 1198; //Force to override manually set tiles from tiles table while painting with brushes (if possible)
+TX_MAPED_TERRAIN_MAGIC_BRUSH_HINT = 1199; //Magic brush - automatically fix all generated or missing tile transitions with chosen mask
 TX_MAPED_TERRAIN_NO_MASK_HINT = 1200; //No mask - use exiting tiles for transitions
 TX_MAPED_TERRAIN_MASK_1_HINT = 1201; //Softest mask - use automatically created transitions
 TX_MAPED_TERRAIN_MASK_2_HINT = 1202; //Soft mask - use automatically created transitions
@@ -546,7 +546,7 @@ TX_MAPED_AI_RECRUITS = 458; //Recruits per Barracks
 TX_MAPED_AI_RECRUIT_DELAY = 670; //Recruit delay (mins)
 TX_MAPED_AI_RECRUIT_DELAY_HINT = 669; //Delay in minutes before the AI starts training recruits
 TX_MAPED_AI_AUTO_ATTACK = 774; //Auto attack range
-TX_MAPED_AI_AUTO_ATTACK_HINT = 775; //Classic AI: AI groups will automatically attack if you are closer than this many tiles|Advanced AI: Parameter not used
+TX_MAPED_AI_AUTO_ATTACK_HINT = 775; //AI groups will automatically attack if you are closer than this many tiles
 TX_MAPED_AI_DEFEND_ALLIES = 776; //Defend allies
 TX_MAPED_AI_DEFEND_ALLIES_HINT = 777; //If enabled the AI will defend units and houses of allies as if they were its own
 TX_MAPED_AI_ARMY_TYPE = 817; //Army type
@@ -599,12 +599,12 @@ TX_MAPED_AI_SERFS_PER_10_HOUSES = 488; //Serfs per 10 houses
 TX_MAPED_AI_SERFS_PER_10_HOUSES_HINT = 827; //Sets serfs count per 10 houses for specified AI player. Selected AI has %d houses
 TX_MAPED_AI_AUTOREPAIR = 489; //Autorepair
 TX_MAPED_AI_AUTOBUILD = 490; //Autobuild
-TX_MAPED_AI_FASTEQUIP = 811; //Fast equip
-TX_MAPED_AI_FASTEQUIP_HINT = 812; //Soldiers are equipped as fast as possible. Equip rates still affect village planning
+TX_MAPED_AI_FASTEQUIP = 811; //Unlimited equip
+TX_MAPED_AI_FASTEQUIP_HINT = 812; //Classic AI: Soldiers are equipped as fast as possible. Equip rates still affect village planning|Advanced AI: No equip limit
 TX_MAPED_AI_START = 785; //AI start position
 TX_MAPED_AI_START_HINT = 784; //Sets the AI start position which is used for targeting AI attacks
 TX_MAPED_AI_TITLE = 491; //AI settings
-TX_MAPED_AI_CLASSIC_AI_PARAMS = 1229; //Classic AI Params
+TX_MAPED_AI_CLASSIC_AI_PARAMS = 1229; //Classic AI|Parameters
 TX_MAPED_AI_CLASSIC_AI_PARAMS_HINT = 1230; //Setup AI Parameters used only by Classic AI
 TX_MAPED_AI_CLASSIC_AI_PARAMS_TITLE = 1231; //Classic AI Parameters
 TX_MAPED_HOUSES_TITLE = 492; //Houses
@@ -911,6 +911,7 @@ TX_KEY_FUNC_PLAN_WINE = 1005; //Lay out wine field
 TX_KEY_FUNC_ERASE_PLAN = 1006; //Remove building/highlights
 TX_KEY_FUNC_SEL_NXT_BLD_UNIT_SAME_TYPE = 1007; //Select next house/unit with same type
 TX_KEY_FUNC_DBG_WINDOW = 1008; //Debug window
+TX_KEY_FUNC_SPECPANEL_DROPBOX_OPEN_CLOSE = 1258; //Open/Close spectator stats panel
 TX_KEY_FUNC_SPECTATE_PLAYER_1 = 1009; //Spectate player 1
 TX_KEY_FUNC_SPECTATE_PLAYER_2 = 1010; //Spectate player 2
 TX_KEY_FUNC_SPECTATE_PLAYER_3 = 1011; //Spectate player 3
@@ -1034,7 +1035,7 @@ TX_MSG_HOUSE_UNOCCUPIED_MILL = 977; //This mill is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_QUARRY = 978; //This quarry is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_SAWMILL = 979; //This sawmill is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_SIEGEWORKSHOP = 980; //This siege workshop is not occupied
-TX_MSG_HOUSE_UNOCCUPIED_STABLES = 981; //This stables is not occupied
+TX_MSG_HOUSE_UNOCCUPIED_STABLES = 981; //These stables are not occupied
 TX_MSG_HOUSE_UNOCCUPIED_SWINEFARM = 982; //This swine farm is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_TANNERY = 983; //This tannery is not occupied
 TX_MSG_HOUSE_UNOCCUPIED_WATCHTOWER = 984; //This watchtower is not occupied
@@ -1191,8 +1192,8 @@ TX_MENU_MAP_FILTER_BY_PLAYERS_NUMBER = 1170; //By players number
 TX_RESULTS_BACK_TO_GAME = 1171; //Back to game
 TX_GAME_MENU_SHOW_STATS_HINT = 1172; //Show detailed game statistics
 
-TX_MISSION_DIFFICULTY = 1173; //Difficulty
-TX_MISSION_DIFFICULTY_CAMPAIGN = 1233; //Difficulty|level
+TX_MISSION_DIFFICULTY = 1173; //Difficulty level
+TX_MISSION_DIFFICULTY_CAMPAIGN = 1233; //Difficulty
 TX_MISSION_DIFFICULTY_EASY = 1174; //Easy
 TX_MISSION_DIFFICULTY_NORMAL = 1175; //Normal
 TX_MISSION_DIFFICULTY_HARD = 1176; //Hard
@@ -1200,8 +1201,8 @@ TX_MISSION_DIFFICULTY_HARD = 1176; //Hard
 TX_MAPED_MISSION_DIFFICULTY_LEVELS = 1177; //Difficulty levels
 TX_MAPED_MISSION_DIFFICULTY_LEVELS_HINT = 1178; //Setup different difficulty levels, which could be used in the script to modify mission logic and difficulty
 
-TX_PLAYER_WON = 1182; //Player won the game
-TX_PLAYER_LOST = 1183; //Player lost the game
+TX_PLAYER_WON = 1182; //Winner
+TX_PLAYER_LOST = 1183; //Defeated
 
 TX_PLAYER_HOST = 1184; //Host
 
@@ -1209,9 +1210,9 @@ TX_HOUSE_LOGO_HINT = 1185; //Go to selected house
 
 TX_UNIT_SCROLL_HINT = 1186; //Go to selected unit
 
-TX_GAME_SETTINGS_COLOR_MODE = 1187; //Ally / enemy color mode
+TX_GAME_SETTINGS_COLOR_MODE = 1187; //Ally / enemy |color mode
 TX_GAME_SETTINGS_COLOR_MODE_HINT = 1188; //Self/ally/enemy colors for players instead of initial player colors
-TX_PLAYERS_COLOR_MODE_CAPTION = 1248; //Players color mode:
+TX_PLAYERS_COLOR_MODE_CAPTION = 1248; //Players colors:
 TX_PLAYERS_COLOR_MODE_DEFAULT = 1249; //Default
 TX_PLAYERS_COLOR_MODE_ALLY_ENEMY = 1250; //Ally / Enemy
 TX_PLAYERS_COLOR_MODE_TEAMS = 1251; //Teams
@@ -1219,7 +1220,7 @@ TX_PLAYERS_COLOR_MODE_DEFAULT_HINT = 1252; //Show initial players colors
 TX_PLAYERS_COLOR_MODE_ALLY_ENEMY_HINT = 1253; //Show self / ally / enemy players colors
 TX_PLAYERS_COLOR_MODE_TEAMS_HINT = 1254; //Show teams colors
 
-TX_LOBBY_ALERT_NOT_READY = 1189; //Host is ready to start. Please press '%s'
+TX_LOBBY_ALERT_NOT_READY = 1189; //[$404040]Host is ready to start. Please press '[][$0707FF]%s[][$404040]'[]
 TX_LOBBY_ALERT_READY_BTN = 1190; //Ask to press Ready
 TX_LOBBY_ALERT_GET_READY_SENT = 1191; //Alert to get ready was sent to %s players
 
@@ -1230,19 +1231,19 @@ TX_UNIT_TASK_DISMISS_NOT_AVAIL_HINT = 1193; //Dismiss is not available during cu
 TX_MAP_CUSTOM_PARAM_TH_TROOP_COST = 1204; //Custom TownHall units cost
 TX_MAP_CUSTOM_PARAM_MARKET_PRICE = 1205; //Custom gold market prices
 
-TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Options
-TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1207; //Change brush options
-TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Brush options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS = 1206; //Additional options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS_HINT = 1207; //Additional brush options
+TX_MAPED_TERRAIN_BRUSH_OPTIONS_TITLE = 1208; //Additional brush options
 
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN = 1209; //Fix terrain brushes
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_HINT = 1210; //Try to repair internal terrain information to make brushes work
 TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_TITLE = 1211; //Fix terrain brushes
-TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair all terrain brushes internal info? That will allow to use brushes over manually set tiles from tiles palette
+TX_MAPED_TERRAIN_BRUSH_FIX_TERRAIN_CONFIRM = 1212; //Are you sure want to repair|all terrain brushes internal info?|That will allow to use brushes|over manually set tiles from tiles table
 
 TX_MAPED_PLAYERS_DEFAULT_SHORT = 1213; //Def.
 
 TX_AI_PLAYER = 537; //AI Player
-TX_PLAYER_HUMAN = 1214; //Human
+TX_PLAYER_HUMAN = 1214; //Human player
 TX_AI_PLAYER_CLASSIC = 1219; //Classic AI Player
 TX_AI_PLAYER_ADVANCED = 1179; //Advanced AI Player
 TX_AI_PLAYER_ADVANCED_SHORT = 1180; //Advanced AI
@@ -1253,9 +1254,9 @@ TX_ADVANCED_AI_PLAYER_X = 1216; //Advanced AI Player %d
 TX_CLASSIC_AI_PLAYER_SHORT_X = 1217; //Classic AI %d
 TX_ADVANCED_AI_PLAYER_SHORT_X = 1218; //Advanced AI %d
 
-TX_AI_PLAYER_TYPE = 1220; //AI Player type
+TX_AI_PLAYER_TYPE = 1220; //AI Player Type
 
-TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END = 1221; //Autosave on game end
+TX_MENU_OPTIONS_AUTOSAVE_AT_GAME_END = 1221; //Autosave at game end
 
 TX_WORD_NONE = 1222; //None
 TX_WORD_RESOURCES = 1223; //Resources
@@ -1266,19 +1267,23 @@ TX_WORD_ARMY = 1227; //Army
 
 TX_UNIT_TASK_DISMISS_HUNGRY_HINT = 1228; //Dismiss is not available for hungry units
 
-TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s minutes
-//console commands validation
+TX_PLAYER_AFK_MESSAGE = 1234; //%s is away from keyboard for last %s [$00B0FF]minutes[]
+
 TX_SCRIPT_CONSOLE_CMD_PROC_NOT_FOUND = 1236; //The procedure [ %s ] declared for the script console command /%s was not found
-TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1237; //Wrong parameter type for script command /%s: [ %s ] 
-TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type for script command /%s. Expected: [ %s ], actual: [ %s ] 
-TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1239; //Too many parameters for script command /%s: [ %s ]. Max number of parameters is [%s] (including mandatory HandID parameter)
-//runtime console errors or output
-TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command /%s. Expected parameters types are: [%s] 
+TX_SCRIPT_CONSOLE_CMD_WRONG_PARAM_TYPE = 1237; //Wrong parameter type for script command /%s: [%s]
+TX_SCRIPT_CONSOLE_CMD_WRONG_1ST_PARAM_TYPE = 1238; //Wrong first parameter type for script command /%s. Expected: [%s], actual: [%s]
+TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PROC_PARAMS = 1239; //Too many parameters for script command /%s: [%s]. Max number of parameters is [%s] (including mandatory HandID parameter)
+
+TX_SCRIPT_CONSOLE_CMD_PARAMS_NOT_VALID = 1240; //Wrong parameters for script command /%s. Expected parameters types are: [%s]
 TX_SCRIPT_CONSOLE_CMD_TOO_MANY_PARAMS = 1241; //Too many parameters passed to script command /%s: Expected parameters count [ %s ], actual: [ %s ]
 TX_SCRIPT_CONSOLE_CMD_CALLED = 1242; //Command called: /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1243; //Error while calling script command /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
-TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable chat history and copy-paste from chat window
+TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable copy-paste from chat window
 
-TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in %s folder.\nDo you confirm operation?
+TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
+
+TX_SPECTATOR_PANEL_CITIZENS_SLR = 1256; //Citizens (S/L/R)
+TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS = 1257; //Citizens (Others)
+TX_UNUSED_964_ = 964; //

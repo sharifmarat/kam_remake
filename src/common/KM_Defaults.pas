@@ -49,7 +49,7 @@ const
   //Also there is a technical limit, of how many ticks we can calculate per update
   MAX_TICKS_PER_GAME_UPDATE = 100;
 
-  DEBUG_CFG = True; //Debug preset for most usable debug options
+  DEBUG_CFG = False; //Debug preset for most usable debug options
 var
   // These should be True (we can occasionally turn them Off to speed up the debug)
   CALC_EXPECTED_TICK    :Boolean = not DEBUG_CFG;  //Do we calculate expected tick and try to be in-time (send as many tick as needed to get to expected tick)
@@ -116,6 +116,7 @@ var
   LOCAL_SERVER_LIST       :Boolean = False; //Instead of loading server list from master server, add localhost:56789 (good for testing)
   SHOW_LOGS_IN_CHAT       :Boolean = False; //Show log messages in MP game chat
   LOG_GAME_TICK           :Boolean = False; //Log game tick
+  SAVE_RANDOM_CHECKS      :Boolean = True; //Save random checks data to separate file
   MAPED_SHOW_CONDITION_UNIT_BTNS: Boolean = DEBUG_CFG; //Show condition Inc/Dec buttons for citizen units in MapEd
   {Gameplay display}
   SKIP_RENDER             :Boolean = False; //Skip all the rendering in favor of faster logic
@@ -221,12 +222,12 @@ const
   AUTOSAVE_FREQUENCY_MIN  = 600;
   AUTOSAVE_FREQUENCY_MAX  = 3000;
   AUTOSAVE_FREQUENCY_DEFAULT      = 600; //How often to do autosave, every N ticks
-  AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX = 5; //Max number of autosaves to be included into crashreport
+  AUTOSAVE_ATTACH_TO_CRASHREPORT_MAX = 3; //Max number of autosaves to be included into crashreport
   AUTOSAVE_NOT_MORE_OFTEN_THEN = 10000; //= 10s - Time in ms, how often we can make autosaves. On high speedups we can get IO errors because of too often saves
 
   REPLAY_AUTOSAVE_FREQUENCY_MIN  = 300; //30 sec
   REPLAY_AUTOSAVE_FREQUENCY_MAX  = 10*60*60; // 1hour
-  REPLAY_AUTOSAVE_FREQUENCY_DEFAULT = 3000;
+  REPLAY_AUTOSAVE_FREQUENCY_DEFAULT = 3000; //5 min
 
 
   BEACON_COOLDOWN         = 400;  //Minimum time in milliseconds between beacons
@@ -284,6 +285,7 @@ const
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
   EXT_SAVE_MP_LOCAL = 'sloc';
+  EXT_SAVE_RNG_LOG = 'rng';
 
   EXT_FILE_SCRIPT = 'script';
 
@@ -291,6 +293,7 @@ const
   EXT_SAVE_MAIN_DOT = '.' + EXT_SAVE_MAIN;
   EXT_SAVE_BASE_DOT = '.' + EXT_SAVE_BASE;
   EXT_SAVE_MP_LOCAL_DOT = '.' + EXT_SAVE_MP_LOCAL;
+  EXT_SAVE_RNG_LOG_DOT = '.' + EXT_SAVE_RNG_LOG;
 
   EXT_FILE_SCRIPT_DOT = '.' + EXT_FILE_SCRIPT;
 

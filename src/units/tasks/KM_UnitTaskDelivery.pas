@@ -624,8 +624,6 @@ end;
 
 
 procedure TKMTaskDeliver.Paint;
-var
-  FromP, ToP: TKMPoint;
 begin
   if SHOW_UNIT_ROUTES
     and (gMySpectator.Selected = fUnit) then

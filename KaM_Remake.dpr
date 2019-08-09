@@ -226,6 +226,8 @@ uses
 	
   KM_PerfLog in 'src\KM_PerfLog.pas',
   KM_Projectiles in 'src\KM_Projectiles.pas',
+  
+  KM_Random in 'src\KM_Random.pas',
 
   KM_Render in 'src\render\KM_Render.pas',
   KM_RenderAux in 'src\render\KM_RenderAux.pas',

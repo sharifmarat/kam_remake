@@ -245,7 +245,7 @@ uses
   KM_Terrain, KM_Hand, KM_HandsCollection, KM_HandSpectator,
   KM_MissionScript, KM_MissionScript_Standard, KM_GameInputProcess_Multi, KM_GameInputProcess_Single,
   KM_Resource, KM_ResCursors, KM_ResSound, KM_InterfaceDefaults,
-  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils;
+  KM_Log, KM_ScriptingEvents, KM_Saves, KM_FileIO, KM_CommonUtils, KM_Random;
 
 
 //Create template for the Game
@@ -323,6 +323,9 @@ begin
     else  fPathfinding := TPathfindingAStarOld.Create;
   end;
   gProjectiles := TKMProjectiles.Create;
+
+  gRandomCheckLogger.Clear;
+  gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
   fGameTick := 0; //Restart counter
 end;
@@ -808,6 +811,7 @@ begin
       AttachFile(SaveName('crashreport', EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_REPLAY, IsMultiPlayerOrSpec));
       AttachFile(SaveName('crashreport', EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('crashreport', EXT_SAVE_RNG_LOG, IsMultiPlayerOrSpec));
     end;
   except
     on E : Exception do
@@ -850,6 +854,7 @@ begin
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_BASE, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MAIN, IsMultiPlayerOrSpec));
       AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_MP_LOCAL, IsMultiPlayerOrSpec));
+      AttachFile(SaveName('autosave' + Int2Fix(I, 2), EXT_SAVE_RNG_LOG, IsMultiPlayerOrSpec));
     end;
 
   gLog.AddTime('Crash report created');
@@ -1706,6 +1711,8 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
+  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
+
   gLog.AddTime('Saving game', True);
 end;
 
@@ -1909,7 +1916,7 @@ var
   SaveStream: TKMemoryStream;
   DateTimeParam: TDateTime;
 begin
-  if fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
+  if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
     Exit;
 
   gLog.AddTime('Saving replay start');
@@ -2158,6 +2165,8 @@ begin
 
                           IncGameTick;
 
+                          gRandomCheckLogger.UpdateState(fGameTick);
+
                           fLastReplayTick := fGameTick;
 
                           if (fGameMode in [gmMulti, gmMultiSpectate]) then
@@ -2229,9 +2238,12 @@ begin
                         //Issue stored commands
                         fGameInputProcess.ReplayTimer(fGameTick);
 
+                        if gGame = nil then
+                          Exit; //Quit if the game was stopped by a replay mismatch
 
                         //Only increase LastTick, since we could load replay earlier at earlier state
-                        fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
+                        if fSavedReplays <> nil then
+                          fSavedReplays.LastTick := Max(fSavedReplays.LastTick, fGameTick);
 
                         //Save replay to memory (to be able to load it later)
                         //Make replay save only after everything is updated (UpdateState)
@@ -2245,9 +2257,6 @@ begin
                           if fGamePlayInterface <> nil then
                             fGamePlayInterface.ReplaySaved;
                         end;
-
-                        if gGame = nil then
-                          Exit; //Quit if the game was stopped by a replay mismatch
 
                         if not SkipReplayEndCheck and IsReplayEnded then
                           RequestGameHold(grReplayEnd);

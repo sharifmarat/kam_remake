@@ -146,9 +146,21 @@ type
   TKMGUIGameSpectatorItemLinePopulation = class(TKMGUIGameSpectatorItemLine)
   protected
     function CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem; override;
+//    function GetTagCount: Integer; override;
+//    function GetTag(AIndex: Integer): Integer; override;
+    function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+  end;
+
+  TKMGUIGameSpectatorItemLinePopulationSLR = class(TKMGUIGameSpectatorItemLinePopulation)
+  protected
     function GetTagCount: Integer; override;
     function GetTag(AIndex: Integer): Integer; override;
-    function GetValue(AHandIndex: Integer; ATag: Integer): String; override;
+  end;
+
+  TKMGUIGameSpectatorItemLinePopulationHouseWorkers = class(TKMGUIGameSpectatorItemLinePopulation)
+  protected
+    function GetTagCount: Integer; override;
+    function GetTag(AIndex: Integer): Integer; override;
   end;
 
   TKMGUIGameSpectatorItemLineArmy = class(TKMGUIGameSpectatorItemLine)
@@ -207,13 +219,15 @@ type
     procedure OpenPage(aIndex: Integer);
     procedure CloseDropBox;
 
+    property DropBox: TKMDropList read FDropBox;
+
     procedure UpdateState(aTick: Cardinal);
   end;
 
 implementation
 
 uses
-  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup;
+  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup, KM_CommonUtils;
 
 const
   GUI_SPEC_ITEM_WIDTH = 28;
@@ -281,17 +295,20 @@ procedure TKMGUIGameSpectatorItem.PaintPanel(aPaintLayer: Integer);
 var
   PaintLightness: Single;
 begin
+  PaintLightness := 0;
   if fShowItem then
-    PaintLightness := DEFAULT_HIGHLIGHT_COEF * Byte(((csOver in Image.State) or (csOver in Bevel.State)) and FDoHighlight(FItemTag))
-  else
-    PaintLightness := -DEFAULT_HIGHLIGHT_COEF;
+    PaintLightness := DEFAULT_HIGHLIGHT_COEF * Byte(((csOver in Image.State) or (csOver in Bevel.State)) and FDoHighlight(FItemTag));
 
   Image.Lightness := PaintLightness;
 
-  PercentBar.Visible := FProgress >= 0;
+  Image.Visible := fShowItem;
+
+  Bevel.Visible := fShowItem;
+
+  PercentBar.Visible := fShowItem and (FProgress >= 0);
   PercentBar.Position := FProgress;
 
-  Label_Text.Caption := FValue;
+  Label_Text.Caption := IfThenS(fShowItem, FValue, '');
   Label_AddText.Caption := FAdditionalValue;
 
   inherited PaintPanel(aPaintLayer);
@@ -417,6 +434,8 @@ begin
   Bevel := TKMBevel.Create(Self, 0, 0, Width, Height, BEVEL_RENDER_LAYER);
   Bevel.AnchorsStretch;
   Bevel.OnClick := LineClicked;
+  Bevel.BackAlpha := 0.2;
+  Bevel.EdgeAlpha := 0.5;
   Image := TKMImage.Create(Self, Width - 32, 0, 32, GUI_SPEC_HEADER_HEIGHT, 0, rxHouses, IMAGE_RENDER_LAYER);
   if FHandIndex < gHands.Count then
     Image.FlagColor := gHands[FHandIndex].FlagColor;
@@ -718,15 +737,15 @@ begin
                                            DontHighlight, aOnItemClick);
 end;
 
-function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
-begin
-  Result := CITIZENS_CNT;
-end;
-
-function TKMGUIGameSpectatorItemLinePopulation.GetTag(AIndex: Integer): Integer;
-begin
-  Result := Integer(School_Order[Length(School_Order) - AIndex - 1]); //opposite order, we draw items from the right
-end;
+//function TKMGUIGameSpectatorItemLinePopulation.GetTagCount: Integer;
+//begin
+//  Result := CITIZENS_CNT;
+//end;
+//
+//function TKMGUIGameSpectatorItemLinePopulation.GetTag(AIndex: Integer): Integer;
+//begin
+//  Result := Integer(School_Order[Length(School_Order) - AIndex - 1]); //opposite order, we draw items from the right
+//end;
 
 function TKMGUIGameSpectatorItemLinePopulation.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
@@ -736,6 +755,37 @@ begin
   Result := IfThen(Value > 0, IntToStr(Value), '');
 end;
 
+
+{ TKMGUIGameSpectatorItemLinePopulationSLR }
+function TKMGUIGameSpectatorItemLinePopulationSLR.GetTagCount: Integer;
+begin
+  Result := 3; //Serfs / Labourers / Recruits
+end;
+
+function TKMGUIGameSpectatorItemLinePopulationSLR.GetTag(AIndex: Integer): Integer;
+begin
+  Result := -1;
+  case AIndex of
+    0: Result := Integer(utRecruit);
+    1: Result := Integer(utWorker);
+    2: Result := Integer(utSerf);
+  end;
+  Assert(Result <> -1);
+end;
+
+
+{ TKMGUIGameSpectatorItemLinePopulationHouseWorkers }
+function TKMGUIGameSpectatorItemLinePopulationHouseWorkers.GetTagCount: Integer;
+begin
+  Result := CITIZENS_CNT - 3; // All citizens except Serfs / Labourers / Recruits
+end;
+
+function TKMGUIGameSpectatorItemLinePopulationHouseWorkers.GetTag(AIndex: Integer): Integer;
+begin
+  Result := Integer(School_Order[Length(School_Order)
+                                 - 1             //for serf and worker
+                                 - AIndex - 1]); //opposite order, we draw items from the right;
+end;
 
 { TKMGUIGameSpectatorItemLineArmy }
 function TKMGUIGameSpectatorItemLineArmy.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
@@ -836,7 +886,7 @@ end;
 constructor TKMGUIGameSpectator.Create(aParent: TKMPanel; aOnJumpToPlayer: TIntegerEvent; aSetViewportPos: TPointFEvent);
 const
   DROPBOX_W = 270;
-  LINES_CNT = 10;
+  LINES_CNT = 11;
 begin
   inherited Create;
 
@@ -853,11 +903,12 @@ begin
   AddLineType(aParent, 2, TKMGUIGameSpectatorItemLineWarFare);
   AddLineType(aParent, 3, TKMGUIGameSpectatorItemLineHouses);
   AddLineType(aParent, 4, TKMGUIGameSpectatorItemLineConstructing);
-  AddLineType(aParent, 5, TKMGUIGameSpectatorItemLinePopulation);
-  AddLineType(aParent, 6, TKMGUIGameSpectatorItemLineArmyInstantenious);
-  AddLineType(aParent, 7, TKMGUIGameSpectatorItemLineArmyTotal);
-  AddLineType(aParent, 8, TKMGUIGameSpectatorItemLineArmyKilling);
-  AddLineType(aParent, 9, TKMGUIGameSpectatorItemLineArmyLost);
+  AddLineType(aParent, 5, TKMGUIGameSpectatorItemLinePopulationSLR);
+  AddLineType(aParent, 6, TKMGUIGameSpectatorItemLinePopulationHouseWorkers);
+  AddLineType(aParent, 7, TKMGUIGameSpectatorItemLineArmyInstantenious);
+  AddLineType(aParent, 8, TKMGUIGameSpectatorItemLineArmyTotal);
+  AddLineType(aParent, 9, TKMGUIGameSpectatorItemLineArmyKilling);
+  AddLineType(aParent, 10, TKMGUIGameSpectatorItemLineArmyLost);
 
   //Create DropBox after pages, to show it above them
   FDropBoxPanel := TKMPanel.Create(aParent, aParent.Width - DROPBOX_W - 10, 0, DROPBOX_W + 10, 30);
@@ -866,20 +917,23 @@ begin
   FDropBoxPanel.Show;
   FDropBox := TKMDropList.Create(FDropBoxPanel, 5, 5, DROPBOX_W, 20, fntMetal, '', bsGame, True, 0.85, TEXT_RENDER_LAYER);
   FDropBox.OnChange := ChangePage;
-
+  FDropBox.DropCount := LINES_CNT;
 
   FDropBox.Add(gResTexts[TX_WORD_NONE]);
   FDropBox.Add(gResTexts[TX_WORD_RESOURCES]);
   FDropBox.Add(gResTexts[TX_RESOURCES_WARFARE]);
   FDropBox.Add(gResTexts[TX_WORD_HOUSES]);
   FDropBox.Add(gResTexts[TX_WORD_CONSTRUCTING]);
-  FDropBox.Add(gResTexts[TX_WORD_CITIZENS]);
+  FDropBox.Add(gResTexts[TX_SPECTATOR_PANEL_CITIZENS_SLR]);
+  FDropBox.Add(gResTexts[TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS]);
   FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_INSTANTANEOUS]);
   FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_TOTAL_EQUIPPED]);
   FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_DEFEATED]);
   FDropBox.Add(gResTexts[TX_WORD_ARMY] + ' - ' + gResTexts[TX_RESULTS_ARMY_LOST]);
 
   FDropBox.ItemIndex := 0;
+
+  Assert(FDropBox.Count = LINES_CNT);
 end;
 
 destructor TKMGUIGameSpectator.Destroy;

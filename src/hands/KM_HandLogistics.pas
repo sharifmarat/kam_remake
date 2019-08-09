@@ -1185,10 +1185,14 @@ begin
     aBidValue := aBidValue + 10000;
 
   //When delivering food to warriors, add a random amount to bid to ensure that a variety of food is taken. Also prefer food which is more abundant.
-  if (fDemand[iD].Loc_Unit <> nil)
-    and (fDemand[iD].Ware = wtFood) then
+  if (fDemand[iD].Loc_Unit <> nil) and (fDemand[iD].Ware = wtFood) then
+  begin
     //The more resource there is, the smaller Random can be. >100 we no longer care, it's just random 5.
-    aBidValue := aBidValue + KaMRandom(5+(100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 4');
+    if fOffer[iO].Count = 0 then
+      aBidValue := aBidValue + KaMRandom(5 + 150, 'TKMDeliveries.TryCalculateBidBasic 4')
+    else
+      aBidValue := aBidValue + KaMRandom(5 + (100 div fOffer[iO].Count), 'TKMDeliveries.TryCalculateBidBasic 5');
+  end;
 end;
 
 

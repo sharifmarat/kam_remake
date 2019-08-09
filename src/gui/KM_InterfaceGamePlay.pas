@@ -61,6 +61,7 @@ type
     fGroupsTeamNames: TList;
     fHousesTeamNames: TList;
     fLastSyncedMessage: Word; // Last message that we synced with MessageLog
+    fLastKbdSelectionTime: Cardinal; //Last we select object from keyboard
 
     fLineIdToNetPlayerId: array [0..MAX_LOBBY_SLOTS - 1] of Integer;
     fPlayerLinesCnt: Integer;
@@ -760,6 +761,7 @@ begin
 
   // Instruct to use global Terrain
   fLastSaveName := '';
+  fLastKbdSelectionTime := 0;
   fPlacingBeacon := False;
   SelectingTroopDirection := False;
   SelectingDirPosition.X := 0;
@@ -2730,8 +2732,20 @@ end;
 
 
 procedure TKMGamePlayInterface.Selection_Select(aId: Word);
+const
+  SELECT_TWICE_MAX_DELAY = 700; //0.7 second
 var
   OldSelected: TObject;
+
+  procedure CheckSelectTwice(aPos: TKMPointF);
+  begin
+    // Selecting an object twice (during short period of time) is the shortcut to center on that unit
+    if (OldSelected = gMySpectator.Selected)
+      and (GetTimeSince(fLastKbdSelectionTime) < SELECT_TWICE_MAX_DELAY) then
+      fViewport.Position := aPos;
+    fLastKbdSelectionTime := TimeGet;
+  end;
+
 begin
   if gMySpectator.Hand.InCinematic then
     Exit;
@@ -2751,9 +2765,8 @@ begin
       end;
       if (OldSelected <> gMySpectator.Selected) and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
         gSoundPlayer.PlayCitizen(TKMUnit(gMySpectator.Selected).UnitType, spSelect);
-      // Selecting a unit twice is the shortcut to center on that unit
-      if OldSelected = gMySpectator.Selected then
-        fViewport.Position := TKMUnit(gMySpectator.Selected).PositionF;
+
+      CheckSelectTwice(TKMUnit(gMySpectator.Selected).PositionF);
     end
     else
     begin
@@ -2766,9 +2779,8 @@ begin
           gMySpectator.Selected := nil; // Don't select destroyed houses
           Exit;
         end;
-        // Selecting a house twice is the shortcut to center on that house
-        if OldSelected = gMySpectator.Selected then
-          fViewport.Position := KMPointF(TKMHouse(gMySpectator.Selected).Entrance);
+
+        CheckSelectTwice(KMPointF(TKMHouse(gMySpectator.Selected).Entrance));
       end
       else
       begin
@@ -2781,9 +2793,8 @@ begin
         TKMUnitGroup(gMySpectator.Selected).SelectFlagBearer;
         if (OldSelected <> gMySpectator.Selected) and (fUIMode in [umSP, umMP]) and not HasLostMPGame then
           gSoundPlayer.PlayWarrior(TKMUnitGroup(gMySpectator.Selected).SelectedUnit.UnitType, spSelect);
-        // Selecting a group twice is the shortcut to center on that group
-        if OldSelected = gMySpectator.Selected then
-          fViewport.Position := TKMUnitGroup(gMySpectator.Selected).SelectedUnit.PositionF;
+
+        CheckSelectTwice(TKMUnitGroup(gMySpectator.Selected).SelectedUnit.PositionF);
       end;
     end;
   end;
@@ -3171,46 +3182,6 @@ begin
       ReplayClick(Button_ReplayResume);
   end;
 
-  // First check if this key was associated with some Spectate/Replay key
-  if (fUIMode in [umReplay, umSpectate]) then
-  begin
-    if Key = gResKeys[SC_SPECTATE_PLAYER_1].Key then
-      SpecPlayerIndex := 1
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_2].Key then
-      SpecPlayerIndex := 2
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_3].Key then
-      SpecPlayerIndex := 3
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_4].Key then
-      SpecPlayerIndex := 4
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_5].Key then
-      SpecPlayerIndex := 5
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_6].Key then
-      SpecPlayerIndex := 6
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_7].Key then
-      SpecPlayerIndex := 7
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_8].Key then
-      SpecPlayerIndex := 8
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_9].Key then
-      SpecPlayerIndex := 9
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_10].Key then
-      SpecPlayerIndex := 10
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_11].Key then
-      SpecPlayerIndex := 11
-    else if Key = gResKeys[SC_SPECTATE_PLAYER_12].Key then
-      SpecPlayerIndex := 12
-    else
-      SpecPlayerIndex := -1;
-
-    if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
-    begin
-      if ssCtrl in Shift then
-        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1)
-      else
-        Replay_ViewPlayer(SpecPlayerIndex - 1);
-      Exit;
-    end;
-  end;
-
   // These keys are allowed during replays
   if Key = gResKeys[SC_SHOW_TEAMS].Key then fShowTeamNames := False;
   if Key = gResKeys[SC_BEACON].Key then
@@ -3303,10 +3274,10 @@ begin
       gGameApp.GameSettings.PlayersColorMode := TKMPlayerColorMode((Byte(gGameApp.GameSettings.PlayersColorMode) mod 3) + 1)
     else
     begin
-      if gGameApp.GameSettings.PlayersColorMode = pcmColors then
+      if gGameApp.GameSettings.PlayersColorMode = pcmDefault then
         gGameApp.GameSettings.PlayersColorMode := pcmAllyEnemy
       else
-        gGameApp.GameSettings.PlayersColorMode := pcmColors;
+        gGameApp.GameSettings.PlayersColorMode := pcmDefault;
     end;
     GameSettingsChanged;
     //Update minimap immidiately
@@ -3316,10 +3287,62 @@ begin
   if SpeedChangeAllowed([umSP, umReplay]) then
   begin
     // Game speed/pause: available in multiplayer mode if the only player left in the game
-    if Key = gResKeys[SC_SPEEDUP_1].Key then gGame.SetGameSpeed(1, True);
-    if Key = gResKeys[SC_SPEEDUP_2].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
-    if Key = gResKeys[SC_SPEEDUP_3].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedFast, True);
-    if Key = gResKeys[SC_SPEEDUP_4].Key then gGame.SetGameSpeed(gGameApp.GameSettings.SpeedVeryFast, True);
+    if Key = gResKeys[SC_SPEEDUP_1].Key then
+      gGame.SetGameSpeed(1, True);
+    if Key = gResKeys[SC_SPEEDUP_2].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedMedium, True);
+    if Key = gResKeys[SC_SPEEDUP_3].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedFast, True);
+    if Key = gResKeys[SC_SPEEDUP_4].Key then
+      gGame.SetGameSpeed(gGameApp.GameSettings.SpeedVeryFast, True);
+  end;
+
+  // First check if this key was associated with some Spectate/Replay key
+  if (fUIMode in [umReplay, umSpectate]) then
+  begin
+    if Key = gResKeys[SC_SPECPANEL_SELECT_DROPBOX].Key then
+      fGuiGameSpectator.DropBox.SwitchOpen;
+
+    if Key = gResKeys[SC_SPECTATE_PLAYER_1].Key then
+      SpecPlayerIndex := 1
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_2].Key then
+      SpecPlayerIndex := 2
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_3].Key then
+      SpecPlayerIndex := 3
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_4].Key then
+      SpecPlayerIndex := 4
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_5].Key then
+      SpecPlayerIndex := 5
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_6].Key then
+      SpecPlayerIndex := 6
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_7].Key then
+      SpecPlayerIndex := 7
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_8].Key then
+      SpecPlayerIndex := 8
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_9].Key then
+      SpecPlayerIndex := 9
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_10].Key then
+      SpecPlayerIndex := 10
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_11].Key then
+      SpecPlayerIndex := 11
+    else if Key = gResKeys[SC_SPECTATE_PLAYER_12].Key then
+      SpecPlayerIndex := 12
+    else
+      SpecPlayerIndex := -1;
+
+    if (SpecPlayerIndex <> -1) and (Dropbox_ReplayFOW.Count >= SpecPlayerIndex) then
+    begin
+      //Jump to player when ALT is also pressed
+      if ssAlt in Shift then
+      begin
+        Replay_DropBox_JumpToPlayer(SpecPlayerIndex - 1);
+        Exit;
+      end else if ssShift in Shift then //Select player when SHIFT is also pressed
+      begin
+        Replay_ViewPlayer(SpecPlayerIndex - 1);
+        Exit;
+      end;
+    end;
   end;
 
   fGuiGameUnit.KeyUp(Key, Shift);
