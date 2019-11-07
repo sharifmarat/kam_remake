@@ -4,7 +4,7 @@ interface
 uses
   Forms, Unit_Runner, Windows, SysUtils, Classes, KromUtils, Math,
   KM_CommonClasses, KM_Defaults, KM_Points, KM_CommonUtils,
-  KM_GameApp, KM_ResLocales, KM_Log, KM_HandsCollection, KM_ResTexts, KM_Resource,
+  KM_GameApp, KM_ResLocales, KM_Log, KM_HandsCollection, KM_HouseCollection, KM_ResTexts, KM_Resource,
   KM_Terrain, KM_Units, KM_UnitWarrior, KM_Campaigns, KM_AIFields, KM_Houses,
   GeneticAlgorithm, KM_AICityPlanner,
   KM_CityManagement, KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_Eye,
@@ -18,6 +18,7 @@ type
 
   TKMRunnerGA_Common = class(TKMRunnerCommon)
   private
+    fCrashDetectionMode: Boolean; // only for single thread
     fAlgorithm: TGAAlgorithm;
     fOldPopulation, fNewPopulation: TGAPopulation;
     //fFitnessCalc: TGAFitnessCalc;
@@ -187,6 +188,7 @@ begin
   // Prepare parallel simulation
   if PARALLEL_RUN then
   begin
+    fCrashDetectionMode := False;
     f_SIM_SimulationTimeInMin := SimSetup.SimTimeInMin;
     f_SIM_NumberOfMaps := IOData.MapCnt;
     Pop := IOData.Population;
@@ -203,6 +205,7 @@ begin
   end
   else
   begin
+    fCrashDetectionMode := True;
     // Init new population
     fNewPopulation := TGAPopulation.Create(f_GA_POPULATION_CNT, f_GA_GENE_CNT, f_SIM_NumberOfMaps, True);
     SetRndGenes();
@@ -258,9 +261,12 @@ procedure TKMRunnerGA_Common.SimulateMap(aRun, aIdx, Seed: Integer; aSinglePLMap
 begin
   gGameApp.NewSingleMap(ExtractFilePath(ParamStr(0)) + '..\..\Maps\' + aSinglePLMapName + '\' + aSinglePLMapName + '.dat', 'GA');
 
-  gMySpectator.Hand.FogOfWar.RevealEverything;
-  gGameApp.Game.GamePlayInterface.Viewport.PanTo(KMPointF(0, 60), 0);
-  gGameApp.Game.GamePlayInterface.Viewport.Zoom := 0.25;
+  //gMySpectator.Hand.FogOfWar.RevealEverything;
+  //gGameApp.Game.GamePlayInterface.Viewport.PanTo(KMPointF(0, 60), 0);
+  //gGameApp.Game.GamePlayInterface.Viewport.Zoom := 0.25;
+  if fCrashDetectionMode then
+    gGameApp.Game.Save('GA Test', Now);
+
   //SetKaMSeed(Max(1,Seed));
   try
     SimulateGame;
@@ -328,7 +334,8 @@ const
   MIN_SCORE = - 1000000;
 var
   K, MapNum: Integer;
-  BestScore, MUTATION, Ratio: Single;
+  BestScore, Ratio: Single;
+  MapName: String;
   Idv: TGAIndividual;
 begin
   // Set up parameters
@@ -347,12 +354,25 @@ begin
 
   fOldPopulation := fNewPopulation;
   fNewPopulation := nil;
-  for MapNum := 0 to f_SIM_NumberOfMaps - 1 do
+  for MapNum := 1 to f_SIM_NumberOfMaps do
     for K := 0 to f_GA_POPULATION_CNT - 1 do
     begin
       SetParameters(fOldPopulation[K], False);
-      SimulateMap(aRun, K, aRun, 'GA_S1_' + IntToStr(MapNum+1));// Name of maps are GA_1, GA_2 ...
-      fOldPopulation[K].Fitness[MapNum] := CostFunction();
+      MapName := 'GA_S1_';
+      if (MapNum < 10) then
+        MapName := MapName + '00' // GA_S1_00X
+      else if (MapNum < 100) then
+        MapName := MapName + '0'; // GA_S1_0XY
+      // Save GA parameters so the game will be identical
+      if fCrashDetectionMode then
+      begin
+        if (fLogPar <> nil) then
+          fLogPar.Free;
+        fLogPar := TKMLog.Create(ExeDir + '\Utils\Runner\LOG_GA_PAR.log');
+        SetParameters(fOldPopulation[K], True);
+      end;
+      SimulateMap(aRun, K, aRun, MapName + IntToStr(MapNum));// Name of maps are GA_1, GA_2 ...
+      fOldPopulation[K].Fitness[MapNum-1] := CostFunction();
     end;
 
   if not PARALLEL_RUN then
@@ -423,10 +443,10 @@ procedure TKMRunnerGA_HandLogistics.SetParameters(aIdv: TGAIndividual; aLogIt: B
 begin
   //I := 0;
 
-  //GA_TCBB_BasicInit   := Max(1, Round(aIdv.Gene[Incr(I)] * 20));
-  //GA_TCBB_BasicRnd    := Max(1, Round(aIdv.Gene[Incr(I)] * 60)+40);
-  //GA_TCBB_NormRnd     := Max(1, Round(aIdv.Gene[Incr(I)] * 32));
-  //GA_TCBB_Rnd         := Max(1, Round(aIdv.Gene[Incr(I)] * 50));
+  //GA_TCBB_BasicInit   := Max(1, Round(aIdv.Gene[Incr(K)] * 20));
+  //GA_TCBB_BasicRnd    := Max(1, Round(aIdv.Gene[Incr(K)] * 60)+40);
+  //GA_TCBB_NormRnd     := Max(1, Round(aIdv.Gene[Incr(K)] * 32));
+  //GA_TCBB_Rnd         := Max(1, Round(aIdv.Gene[Incr(K)] * 50));
   //GA_TCBB_BasicPwr    := Max(1, Round(GA_TCBB_BasicRnd / 5)); // GA has discovered that this is best strategy
   //GA_TCBB_NormPwr     := Max(1, Round(GA_TCBB_NormRnd / 5));
   //
@@ -454,45 +474,45 @@ end;
 
 procedure TKMRunnerGA_CityBuilder.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
 var
-  I: Integer;
+  K: Integer;
 begin
-  I := 0;
+  K := 0;
 
-  //GA_BUILDER_BuildHouse_FieldMaxWork    := Max(1, aIdv.Gene[Incr(I)] * 10);
-  //GA_BUILDER_BuildHouse_RTPMaxWork      := Max(1, aIdv.Gene[Incr(I)] * 20);
-  GA_BUILDER_BuildHouse_RoadMaxWork     := Max(1, aIdv.Gene[Incr(I)] * 30);
-  GA_BUILDER_CreateShortcuts_MaxWork    := Max(1, aIdv.Gene[Incr(I)] * 15);
-  GA_BUILDER_ChHTB_FractionCoef         := Max(1, aIdv.Gene[Incr(I)] * 30);
-  GA_BUILDER_ChHTB_TrunkFactor          := Max(1, aIdv.Gene[Incr(I)] * 10);
-  GA_BUILDER_ChHTB_TrunkBalance         := Max(1, aIdv.Gene[Incr(I)] * 15);
-  GA_BUILDER_ChHTB_AllWorkerCoef        := Max(1, aIdv.Gene[Incr(I)] * 15);
-  GA_BUILDER_ChHTB_FreeWorkerCoef       := Max(1, aIdv.Gene[Incr(I)] * 15);
-  GA_BUILDER_Shortage_Trunk             := Max(0.1, aIdv.Gene[Incr(I)] * 20);
-  GA_BUILDER_Shortage_Stone             := Max(1, aIdv.Gene[Incr(I)] * 20);
-  GA_BUILDER_Shortage_StoneNoQuarry     := Max(1, aIdv.Gene[Incr(I)] * 20 + 20);
-  GA_BUILDER_Shortage_Wood              := Max(1, aIdv.Gene[Incr(I)] * 20);
-  GA_BUILDER_Shortage_Gold              := Max(1, aIdv.Gene[Incr(I)] * 20 + 20);
-  GA_PREDICTOR_WareNeedPerAWorker_Stone := aIdv.Gene[Incr(I)] * 1;
-  GA_PREDICTOR_WareNeedPerAWorker_Wood  := aIdv.Gene[Incr(I)] * 1;
+  //GA_BUILDER_BuildHouse_FieldMaxWork    := Max(1, aIdv.Gene[Incr(K)] * 10);
+  //GA_BUILDER_BuildHouse_RTPMaxWork      := Max(1, aIdv.Gene[Incr(K)] * 20);
+  GA_BUILDER_BuildHouse_RoadMaxWork     := Max(1, aIdv.Gene[Incr(K)] * 30);
+  GA_BUILDER_CreateShortcuts_MaxWork    := Max(1, aIdv.Gene[Incr(K)] * 15);
+  GA_BUILDER_ChHTB_FractionCoef         := Max(1, aIdv.Gene[Incr(K)] * 30);
+  GA_BUILDER_ChHTB_TrunkFactor          := Max(1, aIdv.Gene[Incr(K)] * 10);
+  GA_BUILDER_ChHTB_TrunkBalance         := Max(1, aIdv.Gene[Incr(K)] * 15);
+  GA_BUILDER_ChHTB_AllWorkerCoef        := Max(1, aIdv.Gene[Incr(K)] * 15);
+  GA_BUILDER_ChHTB_FreeWorkerCoef       := Max(1, aIdv.Gene[Incr(K)] * 15);
+  GA_BUILDER_Shortage_Trunk             := Max(0.1, aIdv.Gene[Incr(K)] * 20);
+  GA_BUILDER_Shortage_Stone             := Max(1, aIdv.Gene[Incr(K)] * 20);
+  GA_BUILDER_Shortage_StoneNoQuarry     := Max(1, aIdv.Gene[Incr(K)] * 20 + 20);
+  GA_BUILDER_Shortage_Wood              := Max(1, aIdv.Gene[Incr(K)] * 20);
+  GA_BUILDER_Shortage_Gold              := Max(1, aIdv.Gene[Incr(K)] * 20 + 20);
+  GA_PREDICTOR_WareNeedPerAWorker_Stone := aIdv.Gene[Incr(K)] * 1;
+  GA_PREDICTOR_WareNeedPerAWorker_Wood  := aIdv.Gene[Incr(K)] * 1;
 
   if aLogIt then
   begin
-    //fLogPar.AddTime('GA_BUILDER_BuildHouse_FieldMaxWork    : Single = ' + FloatToStr( GA_BUILDER_BuildHouse_FieldMaxWork    ) + ';');
-    //fLogPar.AddTime('GA_BUILDER_BuildHouse_RTPMaxWork      : Single = ' + FloatToStr( GA_BUILDER_BuildHouse_RTPMaxWork      ) + ';');
-    fLogPar.AddTime('GA_BUILDER_BuildHouse_RoadMaxWork     : Single = ' + FloatToStr( GA_BUILDER_BuildHouse_RoadMaxWork     ) + ';');
-    fLogPar.AddTime('GA_BUILDER_CreateShortcuts_MaxWork    : Single = ' + FloatToStr( GA_BUILDER_CreateShortcuts_MaxWork    ) + ';');
-    fLogPar.AddTime('GA_BUILDER_ChHTB_FractionCoef         : Single = ' + FloatToStr( GA_BUILDER_ChHTB_FractionCoef         ) + ';');
-    fLogPar.AddTime('GA_BUILDER_ChHTB_TrunkFactor          : Single = ' + FloatToStr( GA_BUILDER_ChHTB_TrunkFactor          ) + ';');
-    fLogPar.AddTime('GA_BUILDER_ChHTB_TrunkBalance         : Single = ' + FloatToStr( GA_BUILDER_ChHTB_TrunkBalance         ) + ';');
-    fLogPar.AddTime('GA_BUILDER_ChHTB_AllWorkerCoef        : Single = ' + FloatToStr( GA_BUILDER_ChHTB_AllWorkerCoef        ) + ';');
-    fLogPar.AddTime('GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = ' + FloatToStr( GA_BUILDER_ChHTB_FreeWorkerCoef       ) + ';');
-    fLogPar.AddTime('GA_BUILDER_Shortage_Trunk             : Single = ' + FloatToStr( GA_BUILDER_Shortage_Trunk             ) + ';');
-    fLogPar.AddTime('GA_BUILDER_Shortage_Stone             : Single = ' + FloatToStr( GA_BUILDER_Shortage_Stone             ) + ';');
-    fLogPar.AddTime('GA_BUILDER_Shortage_StoneNoQuarry     : Single = ' + FloatToStr( GA_BUILDER_Shortage_StoneNoQuarry     ) + ';');
-    fLogPar.AddTime('GA_BUILDER_Shortage_Wood              : Single = ' + FloatToStr( GA_BUILDER_Shortage_Wood              ) + ';');
-    fLogPar.AddTime('GA_BUILDER_Shortage_Gold              : Single = ' + FloatToStr( GA_BUILDER_Shortage_Gold              ) + ';');
-    fLogPar.AddTime('GA_PREDICTOR_WareNeedPerAWorker_Stone : Single = ' + FloatToStr( GA_PREDICTOR_WareNeedPerAWorker_Stone ) + ';');
-    fLogPar.AddTime('GA_PREDICTOR_WareNeedPerAWorker_Wood  : Single = ' + FloatToStr( GA_PREDICTOR_WareNeedPerAWorker_Wood  ) + ';');
+    //fLogPar.AddTime('GA_BUILDER_BuildHouse_FieldMaxWork    : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_BuildHouse_FieldMaxWork    ) + ';');
+    //fLogPar.AddTime('GA_BUILDER_BuildHouse_RTPMaxWork      : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_BuildHouse_RTPMaxWork      ) + ';');
+    fLogPar.AddTime('GA_BUILDER_BuildHouse_RoadMaxWork     : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_BuildHouse_RoadMaxWork     ) + ';');
+    fLogPar.AddTime('GA_BUILDER_CreateShortcuts_MaxWork    : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_CreateShortcuts_MaxWork    ) + ';');
+    fLogPar.AddTime('GA_BUILDER_ChHTB_FractionCoef         : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_ChHTB_FractionCoef         ) + ';');
+    fLogPar.AddTime('GA_BUILDER_ChHTB_TrunkFactor          : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_ChHTB_TrunkFactor          ) + ';');
+    fLogPar.AddTime('GA_BUILDER_ChHTB_TrunkBalance         : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_ChHTB_TrunkBalance         ) + ';');
+    fLogPar.AddTime('GA_BUILDER_ChHTB_AllWorkerCoef        : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_ChHTB_AllWorkerCoef        ) + ';');
+    fLogPar.AddTime('GA_BUILDER_ChHTB_FreeWorkerCoef       : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_ChHTB_FreeWorkerCoef       ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Trunk             : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Trunk             ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Stone             : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Stone             ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_StoneNoQuarry     : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_StoneNoQuarry     ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Wood              : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Wood              ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Gold              : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Gold              ) + ';');
+    fLogPar.AddTime('GA_PREDICTOR_WareNeedPerAWorker_Stone : Single = ' + FormatFloat( '0.###########################', GA_PREDICTOR_WareNeedPerAWorker_Stone ) + ';');
+    fLogPar.AddTime('GA_PREDICTOR_WareNeedPerAWorker_Wood  : Single = ' + FormatFloat( '0.###########################', GA_PREDICTOR_WareNeedPerAWorker_Wood  ) + ';');
   end;
 end;
 
@@ -510,46 +530,47 @@ end;
 
 procedure TKMRunnerGA_CityRoadPlanner.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
 var
-  I: Integer;
+  K: Integer;
 begin
-  I := 0;
-  GA_PATHFINDING_BasePrice                := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_HouseOutside             := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_Field                    := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_NoBuildArea              := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_Coal                     := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_Forest                   := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_PATHFINDING_OtherCase                := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
+  K := 0;
 
-  GA_SHORTCUTS_BasePrice                  := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_HouseOutside               := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_Field                      := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_NoBuildArea                := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_Coal                       := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_Forest                     := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
-  GA_SHORTCUTS_OtherCase                  := Round( Max(0, aIdv.Gene[Incr(I)] * 50) );
+  GA_PATHFINDING_BasePrice    := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_PATHFINDING_Road         := Min(GA_PATHFINDING_BasePrice,Round( aIdv.Gene[Incr(K)] * 50 ));
+  GA_PATHFINDING_noBuildArea  := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_PATHFINDING_Field        := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_PATHFINDING_Coal         := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_PATHFINDING_Forest       := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_PATHFINDING_OtherCase    := Round( aIdv.Gene[Incr(K)] * 50 );
 
-  GA_MANAGEMENT_CheckUnitCount_SerfCoef   := Max(1, aIdv.Gene[Incr(I)] * 5);
-  GA_MANAGEMENT_CheckUnitCount_SerfLimit  := Max(1, aIdv.Gene[Incr(I)] * 5);
+  GA_SHORTCUTS_BasePrice      := 35 + Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_SHORTCUTS_Road           := Min(GA_SHORTCUTS_BasePrice,Round( aIdv.Gene[Incr(K)] * 50 ));
+  GA_SHORTCUTS_noBuildArea    := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_SHORTCUTS_Field          := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_SHORTCUTS_Coal           := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_SHORTCUTS_Forest         := Round( aIdv.Gene[Incr(K)] * 50 );
+  GA_SHORTCUTS_OtherCase      := Round( aIdv.Gene[Incr(K)] * 50 );
+
+  GA_MANAGEMENT_CheckUnitCount_SerfCoef   := Max(0.01, aIdv.Gene[Incr(K)] * 2);
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit  := Max(0.01, aIdv.Gene[Incr(K)] * 2);
 
   if aLogIt then
   begin
-    fLogPar.AddTime('GA_PATHFINDING_BasePrice               : Word = ' + IntToStr( GA_PATHFINDING_BasePrice               ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_HouseOutside            : Word = ' + IntToStr( GA_PATHFINDING_HouseOutside            ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_Field                   : Word = ' + IntToStr( GA_PATHFINDING_Field                   ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_NoBuildArea             : Word = ' + IntToStr( GA_PATHFINDING_NoBuildArea             ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_Coal                    : Word = ' + IntToStr( GA_PATHFINDING_Coal                    ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_Forest                  : Word = ' + IntToStr( GA_PATHFINDING_Forest                  ) + ';');
-    fLogPar.AddTime('GA_PATHFINDING_OtherCase               : Word = ' + IntToStr( GA_PATHFINDING_OtherCase               ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_BasePrice                 : Word = ' + IntToStr( GA_SHORTCUTS_BasePrice                 ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_HouseOutside              : Word = ' + IntToStr( GA_SHORTCUTS_HouseOutside              ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_Field                     : Word = ' + IntToStr( GA_SHORTCUTS_Field                     ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_NoBuildArea               : Word = ' + IntToStr( GA_SHORTCUTS_NoBuildArea               ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_Coal                      : Word = ' + IntToStr( GA_SHORTCUTS_Coal                      ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_Forest                    : Word = ' + IntToStr( GA_SHORTCUTS_Forest                    ) + ';');
-    fLogPar.AddTime('GA_SHORTCUTS_OtherCase                 : Word = ' + IntToStr( GA_SHORTCUTS_OtherCase                 ) + ';');
-    fLogPar.AddTime('GA_MANAGEMENT_CheckUnitCount_SerfCoef  : Word = ' + FloatToStr( GA_MANAGEMENT_CheckUnitCount_SerfCoef  ) + ';');
-    fLogPar.AddTime('GA_MANAGEMENT_CheckUnitCount_SerfLimit : Word = ' + FloatToStr( GA_MANAGEMENT_CheckUnitCount_SerfLimit ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_BasePrice               : Word = ' + IntToStr( GA_PATHFINDING_BasePrice   ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_Road                    : Word = ' + IntToStr( GA_PATHFINDING_Road        ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_noBuildArea             : Word = ' + IntToStr( GA_PATHFINDING_noBuildArea ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_Field                   : Word = ' + IntToStr( GA_PATHFINDING_Field       ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_Coal                    : Word = ' + IntToStr( GA_PATHFINDING_Coal        ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_Forest                  : Word = ' + IntToStr( GA_PATHFINDING_Forest      ) + ';');
+    fLogPar.AddTime('GA_PATHFINDING_OtherCase               : Word = ' + IntToStr( GA_PATHFINDING_OtherCase   ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_BasePrice                 : Word = ' + IntToStr( GA_SHORTCUTS_BasePrice     ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_Road                      : Word = ' + IntToStr( GA_SHORTCUTS_Road          ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_noBuildArea               : Word = ' + IntToStr( GA_SHORTCUTS_noBuildArea   ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_Field                     : Word = ' + IntToStr( GA_SHORTCUTS_Field         ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_Coal                      : Word = ' + IntToStr( GA_SHORTCUTS_Coal          ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_Forest                    : Word = ' + IntToStr( GA_SHORTCUTS_Forest        ) + ';');
+    fLogPar.AddTime('GA_SHORTCUTS_OtherCase                 : Word = ' + IntToStr( GA_SHORTCUTS_OtherCase     ) + ';');
+    fLogPar.AddTime('GA_MANAGEMENT_CheckUnitCount_SerfCoef  : Single = ' + FormatFloat( '0.###########################', GA_MANAGEMENT_CheckUnitCount_SerfCoef  ) + ';');
+    fLogPar.AddTime('GA_MANAGEMENT_CheckUnitCount_SerfLimit : Single = ' + FormatFloat( '0.###########################', GA_MANAGEMENT_CheckUnitCount_SerfLimit ) + ';');
   end;
 end;
 
@@ -560,46 +581,63 @@ end;
 procedure TKMRunnerGA_Forest.InitGAParameters();
 begin
   inherited;
-  f_SIM_SimulationTimeInMin   := 60;
-  f_SIM_NumberOfMaps          := 20;
+  f_SIM_SimulationTimeInMin   := 5;
+  f_SIM_NumberOfMaps          := 26;
   f_GA_POPULATION_CNT         := 40;
-  f_GA_GENE_CNT               := 10;
+  f_GA_GENE_CNT               := 6+10+2;
 end;
 
 
 procedure TKMRunnerGA_Forest.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
 var
-  I: Integer;
+  K: Integer;
 begin
-  I := 0;
+  K := 0;
 
-  GA_EYE_GetForests_SPRndOwnLimMin                  := Max(1, aIdv.Gene[Incr(I)] * 250);
-  GA_EYE_GetForests_SPRndOwnLimMax                  := Max(1, aIdv.Gene[Incr(I)] * 250);
-//  GA_EYE_GetForests_InflLimit                       := Max(1, aIdv.Gene[Incr(I)] * 50 + 200);
-  //GA_EYE_GetForests_MinTrees                        := Max(1, aIdv.Gene[Incr(I)] * 5);
-  //GA_EYE_GetForests_Radius                          := Max(4, aIdv.Gene[Incr(I)] * 2 + 4);
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt         := Max(1, aIdv.Gene[Incr(I)] * 80 + 120);
-//  GA_PLANNER_FindPlaceForWoodcutter_PolyRoute       := Max(1, aIdv.Gene[Incr(I)] * 50);
-//  GA_PLANNER_FindPlaceForWoodcutter_EvalArea        := Max(1, aIdv.Gene[Incr(I)] * 50);
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest     := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit        := Max(1, aIdv.Gene[Incr(I)] * 50 + 100);
-  GA_PLANNER_FindPlaceForWoodcutter_Radius          := Max(1, aIdv.Gene[Incr(I)] * 10);
-//  GA_PLANNER_FindPlaceForWoodcutter_AddAB           := Max(1, aIdv.Gene[Incr(I)] * 200);
+  GA_EYE_GetForests_MaxAB            :=   1 + aIdv.Gene[Incr(K)] * 200; // <0,201> Ignore trees in existing forest <0,255-AVOID_BUILDING_FOREST_MINIMUM)
+  GA_EYE_GetForests_Radius           :=   4 + aIdv.Gene[Incr(K)] *   6; // Forest radius
+  GA_EYE_GetForests_MinTrees         :=   2 + aIdv.Gene[Incr(K)] *   6; // Min trees in forest
+  GA_EYE_GetForests_SPRndOwnLimMin   :=  55 + aIdv.Gene[Incr(K)] * 200; // Minimum influence of potential forest
+  GA_EYE_GetForests_SPRndOwnLimMax   := 255 - aIdv.Gene[Incr(K)] * 200; // Maximum influence of potential forest
+  GA_EYE_GetForests_MinRndSoil       :=  30 + aIdv.Gene[Incr(K)] *  52; // 0-82
+
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       := 0 + aIdv.Gene[Incr(K)] *  21 * 2 ; // 0-~12
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   := 0 + aIdv.Gene[Incr(K)] * 255 * 2 ; // 0-1
+  GA_PLANNER_FindPlaceForWoodcutter_Routes        :=-1 + aIdv.Gene[Incr(K)] *   2 * 1 ; // -255<->255
+  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      := 0 + aIdv.Gene[Incr(K)] *   3 * 2 ; // 0-81
+  GA_PLANNER_FindPlaceForWoodcutter_Soil          := 0 + aIdv.Gene[Incr(K)] *   3 * 1 ; // 0-81
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      := 0 + aIdv.Gene[Incr(K)] *  10 * 1 ; // 0-20
+  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     := 0 + aIdv.Gene[Incr(K)] *   3 * 2 ; // 0-81
+  GA_PLANNER_FindPlaceForWoodcutter_ABRange       := 0 + aIdv.Gene[Incr(K)] * 200; // 0-200
+  GA_PLANNER_FindPlaceForWoodcutter_Radius        := 3 + aIdv.Gene[Incr(K)] *   4;
+  GA_PLANNER_FindForestAround_MaxDist             := 3 + aIdv.Gene[Incr(K)] *   7; // 4-10
+
+  GA_BUILDER_Shortage_Trunk                       := 1 + aIdv.Gene[Incr(K)] * 3;
+  GA_BUILDER_Shortage_Wood                        := 1 + aIdv.Gene[Incr(K)] * 12;
 
   if aLogIt then
   begin
-    fLogPar.AddTime('GA_EYE_GetForests_SPRndOwnLimMin                : Single = ' + FloatToStr( GA_EYE_GetForests_SPRndOwnLimMin              ) + ';');
-    fLogPar.AddTime('GA_EYE_GetForests_SPRndOwnLimMax                : Single = ' + FloatToStr( GA_EYE_GetForests_SPRndOwnLimMax              ) + ';');
-//    fLogPar.AddTime('GA_EYE_GetForests_InflLimit                     : Single = ' + FloatToStr( GA_EYE_GetForests_InflLimit                   ) + ';');
-    //fLogPar.AddTime('GA_EYE_GetForests_MinTrees                      : Single = ' + FloatToStr( GA_EYE_GetForests_MinTrees                    ) + ';');
-    //fLogPar.AddTime('GA_EYE_GetForests_Radius                        : Single = ' + FloatToStr( GA_EYE_GetForests_Radius                      ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_TreeCnt     ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_PolyRoute     : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_PolyRoute   ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_EvalArea      : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_EvalArea    ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_ExistForest ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_DistCrit    ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_Radius      ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_AddAB         : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForWoodcutter_AddAB       ) + ';');
+  {
+    fLogPar.AddTime('GA_EYE_GetForests_MaxAB                         : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_MaxAB                         ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_MinTrees                      : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_MinTrees                      ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_Radius                        : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_Radius                        ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_MinRndSoil                    : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_MinRndSoil                    ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_SPRndOwnLimMin                : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_SPRndOwnLimMin                ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_SPRndOwnLimMax                : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_SPRndOwnLimMax                ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_RndCount                      : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_RndCount                      ) + ';');
+    fLogPar.AddTime('GA_EYE_GetForests_RndLimit                      : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_RndLimit                      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ExistForest   ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Routes        ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_FlatArea      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Soil          ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_DistCrit      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ABRange       ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Radius        ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ChopOnlyRoute : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ChopOnlyRoute ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Trunk                       : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Trunk                       ) + ';');
+    fLogPar.AddTime('GA_BUILDER_Shortage_Wood                        : Single = ' + FormatFloat( '0.###########################', GA_BUILDER_Shortage_Wood                        ) + ';');
+   }
   end;
 end;
 
@@ -608,49 +646,66 @@ end;
 procedure TKMRunnerGA_CityPlanner.InitGAParameters();
 begin
   inherited;
-  f_SIM_SimulationTimeInMin   := 60;
-  f_SIM_NumberOfMaps          := 20;
-  f_GA_POPULATION_CNT         := 1;//50;
-  f_GA_GENE_CNT               := 12;
+  f_SIM_SimulationTimeInMin   := 65;
+  f_SIM_NumberOfMaps          := 26;
+  f_GA_POPULATION_CNT         := 10;
+  f_GA_GENE_CNT               := 19;
 end;
 
 
 procedure TKMRunnerGA_CityPlanner.SetParameters(aIdv: TGAIndividual; aLogIt: Boolean = False);
 var
-  I: Integer;
+  K: Integer;
 begin
-  I := 0;
-  // House build
+  K := 0;
 
-  GA_PLANNER_ObstaclesInHousePlan_Tree              := Max(1, aIdv.Gene[Incr(I)] * 100 + 75);
-  GA_PLANNER_ObstaclesInHousePlan_Road              := Max(1, aIdv.Gene[Incr(I)] * 100 + 75);
-//  GA_PLANNER_FieldCrit_PolyRoute                := Max(1, aIdv.Gene[Incr(I)] * 100);
-//  GA_PLANNER_FieldCrit_EvalArea                     := Max(1, aIdv.Gene[Incr(I)] * 100);
-  GA_PLANNER_SnapCrit_SnapToHouse                   := Max(1, aIdv.Gene[Incr(I)] * 50);
-  GA_PLANNER_SnapCrit_SnapToFields                  := Max(1, aIdv.Gene[Incr(I)] * 50);
-  GA_PLANNER_SnapCrit_SnapToRoads                   := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
-  GA_PLANNER_SnapCrit_ClearEntrance                 := Max(1, aIdv.Gene[Incr(I)] * 50 + 50);
-  //GA_PLANNER_FindPlaceForHouse_CloseWorker          := Max(1, aIdv.Gene[Incr(I)] * 100);
-  GA_PLANNER_FindPlaceForHouse_SnapCrit             := Max(1, aIdv.Gene[Incr(I)] * 50);
-//  GA_PLANNER_FindPlaceForHouse_DistCrit             := Max(1, aIdv.Gene[Incr(I)] * 50);
-  GA_PLANNER_FindPlaceForHouse_CityCenter           := Max(1, aIdv.Gene[Incr(I)] * 75);
-//  GA_PLANNER_FindPlaceForHouse_EvalArea             := Max(1, aIdv.Gene[Incr(I)] * 100 + 50);
+  GA_PLANNER_ObstaclesInHousePlan_Tree       := aIdv.Gene[Incr(K)] * 100 * 10; // 0-3+
+  GA_PLANNER_ObstaclesInHousePlan_Road       := aIdv.Gene[Incr(K)] *  50 * 10; // 0-5+
+
+  GA_PLANNER_FieldCrit_PolyRoute             := aIdv.Gene[Incr(K)] *   1 * 5; // 0-255
+  GA_PLANNER_FieldCrit_FlatArea              := aIdv.Gene[Incr(K)] *   3 * 4; // 0-82
+  GA_PLANNER_FieldCrit_Soil                  := aIdv.Gene[Incr(K)] *   3 * 1; // 0-82
+
+  GA_PLANNER_SnapCrit_SnapToHouse            := aIdv.Gene[Incr(K)] *  10 * 5; // 0-5+
+  GA_PLANNER_SnapCrit_SnapToFields           := aIdv.Gene[Incr(K)] *  10 * 5; // 0-5+
+  GA_PLANNER_SnapCrit_SnapToRoads            := aIdv.Gene[Incr(K)] *  10 * 5; // 0-5+
+  GA_PLANNER_SnapCrit_ClearEntrance          := aIdv.Gene[Incr(K)] *  10 * 8; // 0-6
+
+  GA_PLANNER_FindPlaceForHouse_SnapCrit      := aIdv.Gene[Incr(K)] *   2 * 1; // var
+  GA_PLANNER_FindPlaceForHouse_HouseDist     := aIdv.Gene[Incr(K)] *  10 * 2; // 3-100+
+  GA_PLANNER_FindPlaceForHouse_SeedDist      := aIdv.Gene[Incr(K)] *  10 * 5; // 3-30
+  GA_PLANNER_FindPlaceForHouse_CityCenter    := aIdv.Gene[Incr(K)] *  10 * 5; // 3-100+
+  GA_PLANNER_FindPlaceForHouse_Route         := aIdv.Gene[Incr(K)] *   1 * 4; // 0-255
+  GA_PLANNER_FindPlaceForHouse_FlatArea      := aIdv.Gene[Incr(K)] *   3 * 4; // 0-82
+  GA_PLANNER_FindPlaceForHouse_RouteFarm     := -2+aIdv.Gene[Incr(K)] *   1 * 4; // 0-255
+  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm  := -5+aIdv.Gene[Incr(K)] *   3 * 4; // 0-82
+  GA_PLANNER_FindPlaceForHouse_HouseDistFarm := aIdv.Gene[Incr(K)] *  10 * 1; // 3-100+
+  GA_PLANNER_FindPlaceForHouse_CityCenterFarm:= aIdv.Gene[Incr(K)] *  10 * 5; // 3-100+;
+  //GA_PLANNER_PlaceWoodcutter_DistFromForest  := aIdv.Gene[Incr(K)] *  10 * 1; // 0-X
+
 
   if aLogIt then
   begin
-    fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Tree                : Single = ' + FloatToStr( GA_PLANNER_ObstaclesInHousePlan_Tree              ) + ';');
-    fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Road                : Single = ' + FloatToStr( GA_PLANNER_ObstaclesInHousePlan_Road              ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FieldCrit_PolyRoute                    : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_PolyRoute                ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FieldCrit_EvalArea                       : Single = ' + FloatToStr( GA_PLANNER_FieldCrit_EvalArea                     ) + ';');
-    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToHouse                     : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToHouse                   ) + ';');
-    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToFields                    : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToFields                  ) + ';');
-    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToRoads                     : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_SnapToRoads                   ) + ';');
-    fLogPar.AddTime('GA_PLANNER_SnapCrit_ClearEntrance                   : Single = ' + FloatToStr( GA_PLANNER_SnapCrit_ClearEntrance                 ) + ';');
-    //fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CloseWorker            : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_CloseWorker          ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_SnapCrit               : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_SnapCrit             ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_DistCrit               : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_DistCrit             ) + ';');
-    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CityCenter             : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_CityCenter           ) + ';');
-//    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_EvalArea               : Single = ' + FloatToStr( GA_PLANNER_FindPlaceForHouse_EvalArea             ) + ';');
+  {
+    fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Tree       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_ObstaclesInHousePlan_Tree      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_ObstaclesInHousePlan_Road       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_ObstaclesInHousePlan_Road      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_PolyRoute             : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FieldCrit_PolyRoute            ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_FlatArea              : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FieldCrit_FlatArea             ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FieldCrit_Soil                  : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FieldCrit_Soil                 ) + ';');
+    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToHouse            : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_SnapCrit_SnapToHouse           ) + ';');
+    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToFields           : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_SnapCrit_SnapToFields          ) + ';');
+    fLogPar.AddTime('GA_PLANNER_SnapCrit_SnapToRoads            : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_SnapCrit_SnapToRoads           ) + ';');
+    fLogPar.AddTime('GA_PLANNER_SnapCrit_ClearEntrance          : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_SnapCrit_ClearEntrance         ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_SnapCrit      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_SnapCrit     ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_HouseDist     : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_HouseDist    ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_SeedDist      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_SeedDist     ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_CityCenter    : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_CityCenter   ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_Route         : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_Route        ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_FlatArea      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_FlatArea     ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_RouteFarm     : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_RouteFarm    ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForHouse_FlatAreaFarm  : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForHouse_FlatAreaFarm ) + ';');
+    fLogPar.AddTime('GA_PLANNER_PlaceWoodcutter_DistFromForest  : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_PlaceWoodcutter_DistFromForest ) + ';');
+  }
   end;
 end;
 

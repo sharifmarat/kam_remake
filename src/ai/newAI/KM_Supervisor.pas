@@ -24,19 +24,20 @@ type
   TKMMineEvalArr = array of TKMMineEval;
 
   TKMHandByteArr = array[0..MAX_HANDS-1] of Byte;
-  TKMHandIdx2Arr = array of TKMHandIDArray;
+  TKMHandID2Arr = array of TKMHandIDArray;
 
 // Supervisor <-> agent relation ... cooperating AI players are just an illusion, agents does not see each other
   TKMSupervisor = class
   private
     fFFA: Boolean;
     fPL2Alli: TKMHandByteArr;
-    fAlli2PL: TKMHandIdx2Arr;
+    fAlli2PL: TKMHandID2Arr;
     procedure UpdateDefSupport(aTeamIdx: Byte);
     procedure UpdateDefPos(aTeamIdx: Byte);
     procedure UpdateAttack(aTeamIdx: Byte);
     procedure DivideResources();
     function NewAIInTeam(aIdxTeam: Byte; aAttack, aDefence: Boolean): Boolean;
+    //procedure EvaluateArmies();
   public
     constructor Create();
     destructor Destroy(); override;
@@ -44,7 +45,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property PL2Alli: TKMHandByteArr read fPL2Alli;
-    property Alli2PL: TKMHandIdx2Arr read fAlli2PL;
+    property Alli2PL: TKMHandID2Arr read fAlli2PL;
     property FFA: boolean read fFFA;
 
     function FindClosestEnemies(var aPlayers: TKMHandIDArray; var aEnemyStats: TKMEnemyStatisticsArray): Boolean;
@@ -72,9 +73,9 @@ var
   val1 : TKMDefEval absolute aElem1;
   val2 : TKMDefEval absolute aElem2;
 begin
-  if (val1.Val = val2.Val) then      Result := 0
+  if      (val1.Val = val2.Val) then Result :=  0
   else if (val1.Val < val2.Val) then Result := -1
-  else                               Result := 1;
+  else                               Result := +1;
 end;
 
 function CompareMines(const aElem1, aElem2): Integer;
@@ -82,9 +83,19 @@ var
   val1 : TKMMineEval absolute aElem1;
   val2 : TKMMineEval absolute aElem2;
 begin
-  if (val1.Val = val2.Val) then      Result := 0
+  if      (val1.Val = val2.Val) then Result :=  0
   else if (val1.Val < val2.Val) then Result := -1
-  else                               Result := 1;
+  else                               Result := +1;
+end;
+
+function CompareInt(const aElem1, aElem2): Integer;
+var
+  val1 : Integer absolute aElem1;
+  val2 : Integer absolute aElem2;
+begin
+  if      (val1 = val2) then Result :=  0
+  else if (val1 < val2) then Result := -1
+  else                       Result := +1;
 end;
 
 
@@ -432,16 +443,19 @@ end;
 // Find best target -> to secure that AI will be as universal as possible find only point in map and company will destroy everything around automatically
 procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
 
-  function GetBestComparison(aPlayer: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray): Integer;
+  procedure GetBestComparison(aPlayer: TKMHandID; var aBestCmpIdx, aWorstCmpIdx: TKMHandID; var aBestCmp, aWorstCmp: Single; var aEnemyStats: TKMEnemyStatisticsArray);
   const
-    DISTANCE_COEF = 0.4; // Decrease chance to attack enemy in distance
+    // Decrease chance to attack enemy in distance
+    DISTANCE_COEF_1v1 = 0.4;
+    DISTANCE_COEF_FFA = 2;
   var
     I, MinDist, MaxDist: Integer;
-    Comparison, invDistInterval: Single;
+    Comparison, invDistInterval, DistCoef: Single;
   begin
-    Result := -1;
     aBestCmp := -1;
     aWorstCmp := 1;
+    aBestCmpIdx := 0;
+    aWorstCmpIdx := 0;
     if (Length(aEnemyStats) > 0) then
     begin
       // Find closest enemy
@@ -453,28 +467,33 @@ procedure TKMSupervisor.UpdateAttack(aTeamIdx: Byte);
           MaxDist := Max(MaxDist, aEnemyStats[I].Distance);
       end;
       invDistInterval := 1 / Max(1,MaxDist - MinDist);
+      DistCoef := ifthen(Length(fAlli2PL) > 2, DISTANCE_COEF_FFA, DISTANCE_COEF_1v1);
 
       for I := 0 to Length(aEnemyStats) - 1 do
       begin
         Comparison := + gAIFields.Eye.ArmyEvaluation.CompareAllianceStrength(aPlayer, aEnemyStats[I].Player)
-                      - (aEnemyStats[I].Distance - MinDist) * invDistInterval * DISTANCE_COEF;
+                      - (aEnemyStats[I].Distance - MinDist) * invDistInterval * DistCoef;
         if (Comparison > aBestCmp) then
         begin
           aBestCmp := Comparison;
-          Result := I;
+          aBestCmpIdx := I;
         end;
-        if (Comparison < aWorstCmp) then
+        if (Comparison <= aWorstCmp) then
+        begin
           aWorstCmp := Comparison;
+          aWorstCmpIdx := I;
+        end;
       end;
     end;
   end;
 const
   MIN_DEF_RATIO = 1.2;
-  FOOD_THRESHOLD = 0.4;
+  FOOD_THRESHOLD = 0.55;
   MIN_ADVANTAGE = 0.15; // 15% advantage for attacker
 var
-  BestCmpIdx, IdxPL, EnemyTeamIdx: Integer;
+  IdxPL, EnemyTeamIdx: Integer;
   DefRatio, BestCmp, WorstCmp, FoodLevel: Single;
+  BestCmpIdx, WorstCmpIdx: TKMHandID;
   ArmyState: TKMArmyEval;
   EnemyStats: TKMEnemyStatisticsArray;
   AR: TKMAttackRequest;
@@ -500,7 +519,7 @@ begin
   if FindClosestEnemies(fAlli2PL[aTeamIdx], EnemyStats) then
   begin
     // Calculate strength of alliance, find best comparison - value in interval <-1,1>, positive value = advantage, negative = disadvantage
-    BestCmpIdx := GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmp, WorstCmp, EnemyStats);
+    GetBestComparison(fAlli2PL[aTeamIdx, 0], BestCmpIdx, WorstCmpIdx, BestCmp, WorstCmp, EnemyStats);
     ArmyState := gAIFields.Eye.ArmyEvaluation.AllianceEvaluation[ fAlli2PL[aTeamIdx,0], atAlly ];
     with ArmyState.FoodState do
       FoodLevel := (Full + Middle) / Max(1, (Full + Middle + Low));
@@ -518,6 +537,8 @@ begin
             WorstAllianceCmp := WorstCmp;
             BestEnemy := EnemyStats[BestCmpIdx].Player;
             BestPoint := EnemyStats[BestCmpIdx].ClosestPoint;
+            WorstEnemy := EnemyStats[WorstCmpIdx].Player;
+            WorstPoint := EnemyStats[WorstCmpIdx].ClosestPoint;
             SetLength(Enemies, Length(fAlli2PL[EnemyTeamIdx]) );
             Move(fAlli2PL[EnemyTeamIdx,0], Enemies[0], SizeOf(Enemies[0])*Length(Enemies));
           end;
@@ -534,7 +555,7 @@ procedure TKMSupervisor.DivideResources();
   const
     MAX_INFLUENCE = 256;
   var
-    I, IdxPL, IdxPL2, Cnt, PLCnt, BestPrice: Integer;
+    K, IdxPL, IdxPL2, Cnt, PLCnt, BestPrice: Integer;
     PL: TKMHandID;
     PLMines,PLPossibleMines: TKMWordArray;
     Mines: TKMMineEvalArr;
@@ -548,22 +569,22 @@ procedure TKMSupervisor.DivideResources();
     // Get only mines in influence of alliance
     Cnt := 0;
     SetLength(Mines, Length(aMines));
-    for I := Length(aMines) - 1 downto 0 do
+    for K := Length(aMines) - 1 downto 0 do
     begin
       // Evaluate point if there can be mine (in dependence on influence)
-      PL := gAIFields.Influences.GetBestOwner(aMines[I].X,aMines[I].Y);
+      PL := gAIFields.Influences.GetBestOwner(aMines[K].X,aMines[K].Y);
       for IdxPL := 0 to Length(aPlayers) - 1 do
         if (PL = aPlayers[IdxPL]) then
         begin
           PLCnt := 0;
           for IdxPL2 := 0 to Length(aPlayers) - 1 do // Mark players which can place mine here (by influence)
-            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], aMines[I].Y,aMines[I].X] > 0) then
+            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], aMines[K].Y,aMines[K].X] > 0) then
             begin
               Inc(PLPossibleMines[IdxPL2]);
               Inc(PLCnt);
             end;
-          Mines[Cnt].Val := PLCnt * MAX_INFLUENCE + gAIFields.Influences.Ownership[PL, aMines[I].Y,aMines[I].X];
-          Mines[Cnt].pPoint := @aMines[I];
+          Mines[Cnt].Val := PLCnt * MAX_INFLUENCE + gAIFields.Influences.Ownership[PL, aMines[K].Y,aMines[K].X];
+          Mines[Cnt].pPoint := @aMines[K];
           Inc(Cnt);
         end;
     end;
@@ -572,12 +593,12 @@ procedure TKMSupervisor.DivideResources();
       // Sort mines by evaluation
       Sort(Mines[0], Low(Mines), Cnt-1, sizeof(Mines[0]), CompareMines);
       // Distribute mines by evaluation and possible mine cnt per a player
-      for I := 0 to Cnt - 1 do // Lower index = less players can own this mine
+      for K := 0 to Cnt - 1 do // Lower index = less players can own this mine
       begin
         IdxPL2 := 0;
         BestPrice := High(Word);
         for IdxPL := 0 to Length(aPlayers) - 1 do
-          if (gAIFields.Influences.Ownership[aPlayers[IdxPL], Mines[I].pPoint^.Y, Mines[I].pPoint^.X] > 0)
+          if (gAIFields.Influences.Ownership[aPlayers[IdxPL], Mines[K].pPoint^.Y, Mines[K].pPoint^.X] > 0)
             AND (PLPossibleMines[IdxPL] + PLMines[IdxPL] < BestPrice) then
           begin
             BestPrice := PLPossibleMines[IdxPL] + PLMines[IdxPL];
@@ -588,7 +609,7 @@ procedure TKMSupervisor.DivideResources();
           Inc(PLMines[IdxPL2]);
           // Decrease possible mine cnt
           for IdxPL2 := 0 to Length(aPlayers) - 1 do
-            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], Mines[I].pPoint^.Y, Mines[I].pPoint^.X] > 0) then
+            if (gAIFields.Influences.Ownership[aPlayers[IdxPL2], Mines[K].pPoint^.Y, Mines[K].pPoint^.X] > 0) then
               Dec(PLPossibleMines[IdxPL2]);
         end;
       end;
@@ -634,6 +655,140 @@ begin
 end;
 
 
+{
+procedure TKMSupervisor.EvaluateArmies();
+type
+  TKMPGroupEvalSup = ^TKMGroupEvalSup;
+  TKMGroupEvalSup = record
+    Aggressive: Single;
+    Own, Nearby: TKMGroupEval;
+    Group, HostileGroup: TKMUnitGroup;
+    pHostileGroup: TKMPGroupEvalSup;
+  end;
+const
+  COLOR_WHITE = $FFFFFF;
+  COLOR_BLACK = $000000;
+  COLOR_GREEN = $00FF00;
+  COLOR_RED = $0000FF;
+  COLOR_YELLOW = $00FFFF;
+  COLOR_BLUE = $FF0000;
+
+  LIM_INFLUENCE = 1/255;
+  LIM_CLOSEST = 15;
+  LIM_AGGRESSIVE = 0.5;
+  DIST_TOLERANCE = 8;
+var
+  X,Y: Integer;
+  Alli, Enemy, IdxPL, GIdx, GIdx2, GCnt, K, Closest, Distance: Integer;
+  Dist: Single;
+  P: TKMPoint;
+  PL: TKMHandID;
+  GE: TKMGroupEval;
+  A: array of array of TKMGroupEvalSup;
+  Time: Cardinal;
+begin
+  Time := TimeGet();
+  // Compute strength of groups
+  SetLength(A,Length(fAlli2PL));
+  for Alli := Low(fAlli2PL) to High(fAlli2PL) do
+  begin
+    GCnt := 0;
+    for IdxPL := Low(fAlli2PL[Alli]) to High(fAlli2PL[Alli]) do
+      GCnt := GCnt + gHands[ fAlli2PL[Alli,IdxPL] ].UnitGroups.Count;
+    if (GCnt <= 0) then
+      continue;
+    SetLength(A[Alli], GCnt);
+    FillChar(A[Alli,0], SizeOf(TKMGroupEval)*GCnt, #0);
+    GIdx := 0;
+    for IdxPL := Low(fAlli2PL[Alli]) to High(fAlli2PL[Alli]) do
+    begin
+      PL := fAlli2PL[Alli,IdxPL];
+      for K := 0 to gHands[PL].UnitGroups.Count - 1 do
+      begin
+        A[Alli,GIdx].Group := gHands[PL].UnitGroups[K];
+        A[Alli,GIdx].Own := gAIFields.Eye.ArmyEvaluation.GroupEvaluation(A[Alli,GIdx].Group,True);
+        Inc(GIdx);
+      end;
+    end;
+  end;
+  for Alli := Low(A) to High(A) do
+  begin
+    // Spread influence of each group to surrounding groups
+    for GIdx := Low(A[Alli]) to High(A[Alli]) do
+    begin
+      for GIdx2 := Low(A[Alli]) to High(A[Alli]) do
+        if (GIdx2 <> GIdx) then
+        begin
+          Dist := 1 / Max(KMDistanceAbs(A[Alli,GIdx].Group.Position,A[Alli,GIdx2].Group.Position) - DIST_TOLERANCE,1);
+          if (Dist > 0.1) then
+            with A[Alli,GIdx].Nearby do
+            begin
+              Attack             := Attack             + A[Alli,GIdx2].own.Attack             * Dist;
+              AttackHorse        := AttackHorse        + A[Alli,GIdx2].own.AttackHorse        * Dist;
+              Defence            := Defence            + A[Alli,GIdx2].own.Defence            * Dist;
+              DefenceProjectiles := DefenceProjectiles + A[Alli,GIdx2].own.DefenceProjectiles * Dist;
+              HitPoints          := HitPoints          + A[Alli,GIdx2].own.HitPoints          * Dist;
+            end;
+        end;
+      // Compute Aggressivity of all groups = group is close to hostile unit or house
+      P := A[Alli,GIdx].Group.Position;
+      A[Alli,GIdx].Aggressive := gAIFields.Influences.GetBestAllianceOwnership(A[Alli,GIdx].Group.Owner,P.X,P.Y,atEnemy) * LIM_INFLUENCE;
+      Closest := High(Integer);
+      for Enemy := Low(A) to High(A) do
+        if (Alli <> Enemy) then
+          for GIdx2 := Low(A[Enemy]) to High(A[Enemy]) do
+          begin
+            Distance := KMDistanceAbs(P,A[Enemy,GIdx2].Group.Position);
+            if (Distance < Closest) then
+            begin
+              Closest := Distance;
+              A[Alli,GIdx].pHostileGroup := @A[Enemy,GIdx2];
+            end;
+          end;
+      if (Closest < LIM_CLOSEST) then
+        A[Alli,GIdx].Aggressive := A[Alli,GIdx].Aggressive + 1 / Max(1,Closest - LIM_CLOSEST);
+    end;
+  end;
+
+  // Detect problematic groups
+  for Alli := Low(A) to High(A) do
+  begin
+    for Enemy := Low(A) to High(A) do
+      if (Enemy <> Alli) then
+        for GIdx := Low(A[Enemy]) to High(A[Enemy]) do
+          if (A[Enemy,GIdx].Aggressive > LIM_AGGRESSIVE) then
+          begin
+
+          end;
+    break; // DEBUG
+  end;
+
+  Time := TimeGet() - Time;
+
+  for Alli := Low(A) to High(A) do
+    for GIdx := Low(A[Alli]) to High(A[Alli]) do
+    begin
+      P := A[Alli,GIdx].Group.Position;
+      //gRenderAux.Quad(P.X, P.Y, $FF000000 OR COLOR_RED);
+      //gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], $60000000 OR COLOR_YELLOW);
+      //gRenderAux.Line(P.X-0.5, P.Y-1, P.X-0.5, P.Y-1-A[Alli,GIdx].Attack/100, $FF000000 OR COLOR_BLACK);
+      // Strenght
+      gRenderAux.Triangle(P.X-1.5, P.Y, P.X-1.25, P.Y-A[Alli,GIdx].Own.Attack           /200, P.X-1.0, P.Y, $55000000 OR COLOR_RED);
+      gRenderAux.Triangle(P.X-1.5, P.Y, P.X-1.25, P.Y-A[Alli,GIdx].Own.AttackHorse      /200, P.X-1.0, P.Y, $AA000000 OR COLOR_RED);
+      gRenderAux.Triangle(P.X-1.0, P.Y, P.X-0.75, P.Y-A[Alli,GIdx].Own.Defence           /10, P.X-0.5, P.Y, $AA000000 OR COLOR_BLUE);
+      gRenderAux.Triangle(P.X-1.0, P.Y, P.X-0.75, P.Y-A[Alli,GIdx].Own.DefenceProjectiles/10, P.X-0.5, P.Y, $55000000 OR COLOR_BLUE);
+      gRenderAux.Triangle(P.X-0.5, P.Y, P.X-0.25, P.Y-A[Alli,GIdx].Own.HitPoints         /10, P.X-0.0, P.Y, $AA000000 OR COLOR_GREEN);
+      // Influence
+      gRenderAux.Triangle(P.X+0.0, P.Y, P.X+0.25, P.Y-A[Alli,GIdx].Nearby.Attack           /200, P.X+0.5, P.Y, $22000000 OR COLOR_RED);
+      gRenderAux.Triangle(P.X+0.0, P.Y, P.X+0.25, P.Y-A[Alli,GIdx].Nearby.AttackHorse      /200, P.X+0.5, P.Y, $55000000 OR COLOR_RED);
+      gRenderAux.Triangle(P.X+0.5, P.Y, P.X+0.75, P.Y-A[Alli,GIdx].Nearby.Defence           /10, P.X+1.0, P.Y, $55000000 OR COLOR_BLUE);
+      gRenderAux.Triangle(P.X+0.5, P.Y, P.X+0.75, P.Y-A[Alli,GIdx].Nearby.DefenceProjectiles/10, P.X+1.0, P.Y, $22000000 OR COLOR_BLUE);
+      gRenderAux.Triangle(P.X+1.0, P.Y, P.X+1.25, P.Y-A[Alli,GIdx].Nearby.HitPoints         /10, P.X+1.5, P.Y, $55000000 OR COLOR_GREEN);
+    end;
+end;
+//}
+
+
 procedure TKMSupervisor.Paint(aRect: TKMRect);
 const
   COLOR_WHITE = $FFFFFF;
@@ -643,7 +798,7 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 begin
-
+  //EvaluateArmies();
 end;
 
 end.

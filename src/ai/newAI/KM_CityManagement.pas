@@ -7,8 +7,9 @@ uses
   KM_CityPredictor, KM_CityBuilder, KM_CityPlanner, KM_AIArmyEvaluation;
 
 var
-  GA_MANAGER_CheckUnitCount_SerfCoef    : Single = 1.42; //0.193077
-  GA_MANAGER_CheckUnitCount_SerfLimit   : Single = 1.432; //2.178943
+  GA_MANAGEMENT_CheckUnitCount_SerfCoef    : Single = 1.509; //0.193077
+  GA_MANAGEMENT_CheckUnitCount_SerfLimit   : Single = 1.081; //2.178943
+
 
 type
   TKMWarfareArr = array[WARFARE_MIN..WARFARE_MAX] of record
@@ -136,8 +137,8 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(773852237);
-    //gGame.GameOptions.Peacetime := 60;//SP_DEFAULT_PEACETIME;
-    fSetup.EnableAdvancedAI(True);
+    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
+    //fSetup.EnableAdvancedAI(True);
     //fSetup.EnableAdvancedAI(fOwner <= 3);
   end;
 
@@ -235,8 +236,8 @@ var
          AND (P.Units[I].IsIdle) then
         Cnt := Cnt + 1;
     // Increase count of serfs carefully (compute fraction of serfs who does not have job)
-    if (Cnt < GA_MANAGER_CheckUnitCount_SerfLimit)
-       AND (Cnt / (Serfs*1.0) < GA_MANAGER_CheckUnitCount_SerfCoef) then
+    if (Cnt < GA_MANAGEMENT_CheckUnitCount_SerfLimit)
+       AND (Cnt / (Serfs*1.0) < GA_MANAGEMENT_CheckUnitCount_SerfCoef) then
       Result := Max( 1 + Byte(Serfs < 40) + Byte(Serfs < 60), Result);
   end;
 
@@ -382,48 +383,66 @@ var
     end;
   end;
 
-  procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
+  procedure CheckMarketplaces();
   const
-    TRADE_RESERVE = 5;
-    TRADE_QUANTITY = 20;
+    WARE_RESERVE = 3;
   var
-    I: Integer;
+    K: Integer;
     Houses: TKMHousesCollection;
-    HM, IdleHM: TKMHouseMarket;
+    HM: TKMHouseMarket;
   begin
     Houses := gHands[fOwner].Houses;
-    IdleHM := nil;
-    for I := 0 to Houses.Count - 1 do
-      if (Houses[I] <> nil)
-        AND not Houses[I].IsDestroyed
-        AND (Houses[I].HouseType = htMarketplace)
-        AND Houses[I].IsComplete then
+    for K := 0 to Houses.Count - 1 do
+      if (Houses[K] <> nil)
+        AND not Houses[K].IsDestroyed
+        AND Houses[K].IsComplete
+        AND (Houses[K].HouseType = htMarketplace) then
       begin
-        HM := TKMHouseMarket(Houses[I]);
-        if (TKMHouseMarket(HM).ResOrder[0] <> 0) then
+        HM := TKMHouseMarket(Houses[K]);
+        if (HM.ResOrder[0] > 0)
+          AND (gHands[fOwner].Stats.GetWareBalance(HM.ResFrom) < HM.ResOrder[0] * HM.RatioFrom + WARE_RESERVE) then
+          HM.ResOrder[0] := 0; // Cancel the trade
+      end;
+  end;
+
+  procedure TryBuyItem(aResFrom, aResTo: TKMWareType);
+  const
+    TRADE_QUANTITY = 10;
+  var
+    K: Integer;
+    Houses: TKMHousesCollection;
+    HM, Market: TKMHouseMarket;
+  begin
+    Market := nil;
+    Houses := gHands[fOwner].Houses;
+    for K := 0 to Houses.Count - 1 do
+      if (Houses[K] <> nil)
+        AND not Houses[K].IsDestroyed
+        AND (Houses[K].HouseType = htMarketplace)
+        AND Houses[K].IsComplete then
+      begin
+        HM := TKMHouseMarket(Houses[K]);
+        // Market have an order
+        if (HM.ResOrder[0] > 0) then
         begin
           if (HM.ResTo = aResTo) then
             Exit;
-          if (gHands[fOwner].Stats.GetWareBalance(aResFrom) > TKMHouseMarket(HM).ResOrder[0]) then
-            continue;
-        end;
-        if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
-        begin
-          IdleHM := HM;
-          break;
-        end;
+        end
+        // Market is free
+        else if HM.AllowedToTrade(aResFrom) AND HM.AllowedToTrade(aResTo) then
+          Market := HM;
       end;
-    if (IdleHM <> nil) then  // AND (IdleHM.ResFrom <> aResFrom) or (IdleHM.ResTo <> aResTo) then
+    if (Market <> nil) then
     begin
-      IdleHM.ResOrder[0] := 0; //First we must cancel the current trade
-      IdleHM.ResFrom := aResFrom;
-      IdleHM.ResTo := aResTo;
-      IdleHM.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
+      Market.ResOrder[0] := 0; //First we must cancel the current trade
+      Market.ResFrom := aResFrom;
+      Market.ResTo := aResTo;
+      Market.ResOrder[0] := TRADE_QUANTITY; //Set the new trade
     end;
   end;
 const
-  SOLD_ORDER: array[0..21] of TKMWareType = (
-    wtSausages,     wtWine,     wtFish,       wtBread,
+  SOLD_ORDER: array[0..20] of TKMWareType = (
+    wtSausages,     wtWine,     wtBread,      //wtFish,
     wtSkin,         wtLeather,  wtPig,
     wtTrunk,        wtWood,
     wtShield,       wtAxe,      wtPike,       wtBow,      wtArmor,
@@ -434,7 +453,7 @@ const
   );
   MIN_GOLD_AMOUNT = GOLD_SHORTAGE * 3;
   LACK_OF_STONE = 50;
-  WARFARE_SELL_LIMIT = 20;
+  WARFARE_SELL_LIMIT = 10;
   SELL_LIMIT = 30;
 var
   MarketCnt, I, WareCnt: Word;
@@ -442,7 +461,9 @@ begin
 
   MarketCnt := gHands[fOwner].Stats.GetHouseQty(htMarketplace);
   if MarketCnt = 0 then
-    Exit;
+    Exit
+  else
+    CheckMarketplaces();
 
   RequiedCnt := 0;
   SetLength(RequiredWares,4);

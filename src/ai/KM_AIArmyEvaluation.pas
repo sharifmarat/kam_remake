@@ -37,6 +37,7 @@ type
     procedure Load(LoadStream: TKMemoryStream);
 
     property UnitEvaluation[aUT: TKMUnitType; aConsiderHitChance: Boolean]: TKMGroupEval read GetUnitEvaluation;
+    function GroupEvaluation(aGroup: TKMUnitGroup; aConsiderHitChance: Boolean): TKMGroupEval;
     property Evaluation[aPlayer: TKMHandID]: TKMArmyEval read GetEvaluation;
     property AllianceEvaluation[aPlayer: TKMHandID; aAlliance: TKMAllianceType]: TKMArmyEval read GetAllianceStrength;
 
@@ -99,6 +100,27 @@ begin
     DefenceProjectiles := US.GetDefenceVsProjectiles(False);
     if aConsiderHitChance AND (UnitGroups[aUT] = gtRanged) then
       Attack := Attack * HIT_CHANCE_MODIFIER;
+  end;
+end;
+
+
+function TKMArmyEvaluation.GroupEvaluation(aGroup: TKMUnitGroup; aConsiderHitChance: Boolean): TKMGroupEval;
+var
+  K: Integer;
+  GE: TKMGroupEval;
+begin
+  FillChar(Result, SizeOf(Result), #0);
+  for K := 0 to aGroup.Count-1 do
+  begin
+    GE := UnitEvaluation[TKMUnit(aGroup.Members[K]).UnitType,aConsiderHitChance];
+    with Result do
+    begin
+      Hitpoints :=          Hitpoints          + GE.Hitpoints;
+      Attack :=             Attack             + GE.Attack;
+      AttackHorse :=        AttackHorse        + GE.AttackHorse;
+      Defence :=            Defence            + GE.Defence;
+      DefenceProjectiles := DefenceProjectiles + GE.DefenceProjectiles;
+    end;
   end;
 end;
 

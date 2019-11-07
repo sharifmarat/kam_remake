@@ -144,9 +144,6 @@ begin
 end;
 
 procedure TParaller_Runner.bRunSimulationClick(Sender: TObject);
-var
-  T: Cardinal;
-  ID, Count: Integer;
 begin
   if (fSim.SimulationRequest = srNone) then
   begin
@@ -193,6 +190,7 @@ end;
 procedure TParaller_Runner.Log(const aText: String);
 begin
   mLog.Lines.Append(aText);
+  SendMessage(mLog.Handle, EM_LINESCROLL, 0,mLog.Lines.Count);
 end;
 
 

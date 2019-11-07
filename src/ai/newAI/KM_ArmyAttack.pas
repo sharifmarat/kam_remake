@@ -37,15 +37,18 @@ type
     fTargetUnit: TKMUnit;
     fWalkTimeLimit, fAttackTimeLimit: Cardinal;
 
-    fDEBUGPointPath: TKMPointArray;
-
     function SquadInFight(): Boolean; inline;
     function GetGroupPosition(): TKMPoint; inline;
     function PlanPath(aTick: Cardinal; var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False; aOrderDestroy: Boolean = False): Boolean;
 
     procedure SetTargetHouse(aHouse: TKMHouse);
     procedure SetTargetUnit(aUnit: TKMUnit);
+    procedure SetTargetPosition(aLoc: TKMPointDir);
   public
+    {$IFDEF DEBUG_NewAI}
+    DEBUGPointPath: TKMPointArray;
+    {$ENDIF}
+
     constructor Create(aGroup: TKMUnitGroup);
     constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
@@ -55,14 +58,12 @@ type
     property Group: TKMUnitGroup read fGroup;
     property OnPlace: Boolean read fOnPlace;
     property InFight: Boolean read SquadInFight;
-    property FinalPosition: TKMPointDir read fFinalPosition write fFinalPosition;
+    property FinalPosition: TKMPointDir read fFinalPosition write SetTargetPosition;
     property Position: TKMPoint read GetGroupPosition;
     property WalkTimeLimit: Cardinal read fWalkTimeLimit write fWalkTimeLimit;
     property AttackTimeLimit: Cardinal read fAttackTimeLimit write fAttackTimeLimit;
     property TargetHouse: TKMHouse read fTargetHouse write SetTargetHouse;
     property TargetUnit: TKMUnit read fTargetUnit write SetTargetUnit;
-
-    property PointPath: TKMPointArray read fDEBUGPointPath write fDEBUGPointPath;
 
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -80,18 +81,17 @@ type
     fState: TKMCompanyState;
     fSquads: TKMSquadList;
 
-    // DEBUG variables
-    fDEBUGPointPath: TKMPointArray;
-    fDEBUGScanRad: Single;
-    fTargetU: TKMTargetSelection;
-
     function GetPosition(): TKMPoint; overload;
     function GetPosition(var aSQRRadius: Single): TKMPoint; overload;
     function GetTargetPosition(): TKMPoint;
     function OrderToAttack(aActualPosition: TKMPoint; UA: TKMUnitArray; UGA: TKMUnitGroupArray; HA: TKMHouseArray): Boolean;
     function OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boolean;
   public
-    DEBUG_UA_POINTS, DEBUG_UGA_POINTS: TKMPointArray;
+    {$IFDEF DEBUG_NewAI}
+    DEBUGScanRad: Single;
+    DEBUGTargetU: TKMTargetSelection;
+    DEBUGPointPath, DEBUG_UA_POINTS, DEBUG_UGA_POINTS: TKMPointArray;
+    {$ENDIF}
 
     constructor Create(aOwner: TKMHandID; aCompanyMode: TKMCompanyMode);
     constructor Load(LoadStream: TKMemoryStream);
@@ -107,9 +107,6 @@ type
     property TargetPosition: TKMPoint read GetTargetPosition;
     property State: TKMCompanyState read fState;
     property Squads: TKMSquadList read fSquads;
-
-    property PointPath: TKMPointArray read fDEBUGPointPath write fDEBUGPointPath;
-    property ScanRad: Single read fDEBUGScanRad write fDEBUGScanRad;
 
     procedure InitCompany();
     procedure UpdateState(aTick: Cardinal);
@@ -149,8 +146,8 @@ type
   end;
 
 const
-  COMPANY_ATTACK_RAD = 20;
-  MAXIMAL_ATTACK_VAR_RAD = 10;
+  COMPANY_ATTACK_RAD = 30;
+  MAXIMAL_ATTACK_VAR_RAD = 15;
   SQR_COMPANY_ATTACK_RAD = COMPANY_ATTACK_RAD * COMPANY_ATTACK_RAD;
   SQR_MAXIMAL_ATTACK_VAR_RAD = MAXIMAL_ATTACK_VAR_RAD * MAXIMAL_ATTACK_VAR_RAD;
   // Houses in TARGET_HOUSES will be selected as a primary target (so company will come to the closest but will not attack it)
@@ -250,8 +247,9 @@ begin
   // Archers will reaim (+ reset animation) only in case that new target is in specific distance from existing target
   if (aUnit <> nil) AND not aUnit.IsDeadOrDying then
   begin
-    if (fTargetUnit <> nil) AND
-      not fTargetUnit.IsDeadOrDying
+    if (fTargetUnit <> nil)
+      AND not fTargetUnit.IsDeadOrDying
+      AND (fGroup.GroupType = gtRanged)
       AND (KMDistanceSqr(fTargetUnit.CurrPosition, aUnit.CurrPosition) < SQR_DIST_TOLERANCE) then
       Exit;
     fTargetChanged := True;
@@ -260,6 +258,12 @@ begin
   end
   else
     gHands.CleanUpUnitPointer(fTargetUnit); // aUnit = nil case
+end;
+
+
+procedure TAISquad.SetTargetPosition(aLoc: TKMPointDir);
+begin
+  fFinalPosition := aLoc;
 end;
 
 
@@ -314,7 +318,7 @@ begin
     FinPos := fTargetUnit.CurrPosition;
     if PlanPath(aTick, ActPos, FinPos, True, False) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else if (fGroup.GroupType <> gtRanged) OR fTargetChanged OR (fAttackTimeLimit < aTick) then
+    else if (fGroup.GroupType <> gtRanged) OR (fAttackTimeLimit < aTick) OR (KMDistanceSqr(FinPos,ActPos) > 12*12) then // fTargetChanged OR
     begin
       fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
@@ -327,7 +331,7 @@ begin
     FinPos := fTargetHouse.Position;
     if PlanPath(aTick, ActPos, FinPos, False, True) then
       Group.OrderWalk(FinPos, True, wtokAISquad, FinalPosition.Dir)
-    else if fTargetChanged OR (fAttackTimeLimit < aTick) then
+    else if (fGroup.GroupType <> gtRanged) OR fTargetChanged OR (fAttackTimeLimit < aTick) then
     begin
       fAttackTimeLimit := aTick + AIM_DELAY;
       fTargetChanged := False;
@@ -348,8 +352,8 @@ end;
 
 function TAISquad.PlanPath(aTick: Cardinal; var aActualPosition, aTargetPosition: TKMPoint; aOrderAttack: Boolean = False; aOrderDestroy: Boolean = False): Boolean;
 const
-  SQR_POSITION_REACHED_TOLERANCE = 3*3; // Tolerance between reached point and actual position it is useful in traffic problems
-  SQR_TARGET_REACHED_TOLERANCE = 3*3; // Target unit should have lower tolerance because of group type pathfinding (cav will avoid spears etc)
+  SQR_POSITION_REACHED_TOLERANCE = 4*4; // Tolerance between reached point and actual position it is useful in traffic problems
+  SQR_TARGET_REACHED_TOLERANCE = 4*4; // Target unit should have lower tolerance because of group type pathfinding (cav will avoid spears etc)
   SQR_HOUSE_REACHED_TOLERANCE = 8*8; // Houses should have larger tolerance because NavMesh does not work in cities properly
   SQR_TARGET_REACHED_RANGED = 15*15; // This should be more than maximal range of ranged groups (11*11)
   SQR_MIN_WALK_DISTANCE = 4*4; // Avoid group to be stucked in cities (higher = less stuck)
@@ -365,7 +369,7 @@ begin
   // Time limit (time limit MUST be always set by higher rank (platoon))
   if (not (aOrderAttack OR aOrderDestroy) AND (fWalkTimeLimit < aTick)) // Time limit is set to 0 in case that unit attack something
     // Target position is reached
-    OR (KMDistanceSqr(aActualPosition, aTargetPosition) < SQR_POSITION_REACHED_TOLERANCE)
+    OR (SQRDist < SQR_POSITION_REACHED_TOLERANCE)
     // Target unit is close
     OR (aOrderAttack AND (SQRDist < SQR_TARGET_REACHED_TOLERANCE))
     // Target house is close
@@ -395,7 +399,9 @@ begin
                          AND (tpWalk in gTerrain.Land[aTargetPosition.Y, aTargetPosition.X].Passability)
                          AND (aOrderAttack OR (KMDistanceSqr(aActualPosition, aTargetPosition) > SQR_MIN_WALK_DISTANCE)) );
 
-      fDEBUGPointPath := PointPath;//  DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+      {$IFDEF DEBUG_NewAI}
+      DEBUGPointPath := PointPath;
+      {$ENDIF}
     end;
   Result := True;
 end;
@@ -570,6 +576,24 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
           Result := Result AND Squad.OnPlace;
       end;
   end;
+  // Filter target houses according to house type and influence
+  procedure FilterTargetHouses(var aHA: TKMHouseArray);
+  var
+    K, Cnt: Integer;
+  begin
+    if (fCompanyMode = cmDestruction) then
+      Exit;
+    Cnt := 0;
+    for K := Low(aHA) to High(aHA) do
+      if (aHA[K].HouseType in SCAN_HOUSES) OR
+        (gAIFields.Influences.Ownership[fOwner, aHA[K].Position.Y, aHA[K].Position.X] > 100) OR
+        (gAIFields.Influences.GetBestAllianceOwnership(fOwner, aHA[K].Position.X, aHA[K].Position.Y, atAlly) > 50) then
+      begin
+        aHA[Cnt] := aHA[K];
+        Cnt := Cnt + 1;
+      end;
+    SetLength(aHA,Cnt);
+  end;
   // Update state of Squads
   procedure UpdateSquadsState();
   var
@@ -582,8 +606,10 @@ procedure TAICompany.UpdateState(aTick: Cardinal);
   end;
 var
   InPosition: Boolean;
+  {$IFDEF DEBUG_NewAI}
   I: Integer;
-  SQRRadius: Single;
+  {$ENDIF}
+  ScanRad, SQRRadius: Single;
   HA: TKMHouseArray;// Target houses in radius
   UA: TKMUnitArray; // Target closest soldiers in radius
   UGA: TKMUnitGroupArray; // Group of closest soldiers in radius (reference to UA)
@@ -601,13 +627,12 @@ begin
 
   fScanPosition := GetPosition(SQRRadius);
   ScanRad := SQR_COMPANY_ATTACK_RAD + Min(SQR_MAXIMAL_ATTACK_VAR_RAD, SQRRadius);
-  if (fCompanyMode = cmDestruction) then
-    HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, atEnemy, ALL_HOUSES, False)
-  else
-    HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, atEnemy, SCAN_HOUSES, True);
-  //UGA := gHands.GetGroupsInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, atEnemy);
+  HA := gHands.GetHousesInRadius(ScanPosition, SQR_COMPANY_ATTACK_RAD, fOwner, atEnemy, ALL_HOUSES, False);
   UA := gHands.GetGroupsMemberInRadius(ScanPosition, ScanRad, fOwner, atEnemy, UGA);
+  FilterTargetHouses(HA);
 
+  {$IFDEF DEBUG_NewAI}
+  DEBUGScanRad := ScanRad;
   SetLength(DEBUG_UA_POINTS, Length(UA));
   SetLength(DEBUG_UGA_POINTS, Length(UA));
   for I := 0 to Length(UA) - 1 do
@@ -615,6 +640,7 @@ begin
     DEBUG_UA_POINTS[I] := UA[I].CurrPosition;
     DEBUG_UGA_POINTS[I] := UGA[I].Position;
   end;
+  {$ENDIF}
 
   // Actualize target
   if not CheckPrimaryTarget() then
@@ -659,15 +685,18 @@ type
 var
   AvailableSquads: TKMSquadsArray;
   CompanyInfo: TCompanyInfo;
-  //fTargetU: TKMTargetSelection;
+  TargetU: TKMTargetSelection;
 
-  // Find only available squads (we can give orders to them)
-  procedure FindAvailableSquads();
+  // Find only available squads (we can give orders to them) and return if there are any
+  function FindAvailableSquads(var aSquadsInCombat: Boolean): Boolean;
   var
+    Output: Boolean;
     I: Integer;
     GT: TKMGroupType;
     Squad: TAISquad;
   begin
+    Output := False;
+    aSquadsInCombat := False;
     FillChar(CompanyInfo, SizeOf(CompanyInfo), #0);
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
     begin
@@ -681,6 +710,7 @@ var
         Inc(CompanyInfo.GTCnt[GT], Squad.Group.Count);
         if not Squad.InFight then
         begin
+          Output := True;
           // Make sure that unit will not hunt target over the whole map and better stay inside company
           if (GT <> gtRanged) then // ranged units are fixed in Squad class (set / reset target cause that they dont shoot and just reset animation)
           begin
@@ -689,8 +719,11 @@ var
           end;
           AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ] := Squad;
           Inc(AvailableSquads[GT].Count);
-        end;
+        end
+        else
+          aSquadsInCombat := True;
       end;
+    Result := Output;
   end;
 
   // Calculate evaluation to enemy groups in specific radius
@@ -708,8 +741,8 @@ var
     Squad: TAISquad;
     GroupsInFightArr: TKMUnitGroupArray;
   begin
-    SetLength(fTargetU, Length(UA));
-    for I := 0 to Length(fTargetU) - 1 do
+    SetLength(TargetU, Length(UA));
+    for I := 0 to Length(TargetU) - 1 do
     begin
       // Get closest distance to Ranged groups and all groups
       SqrClosestDist := INIT_DIST;
@@ -719,7 +752,7 @@ var
         begin
           Squad := fSquads[GT].Items[K];
           L := 0;
-          while (L < Squad.Group.Count - 1) do
+          while (L < Squad.Group.Count) do
           begin
             SqrDist := KMDistanceSqr(Squad.Group.Members[L].CurrPosition, UA[I].CurrPosition);
             if (SqrDist < SqrClosestDist) then
@@ -731,7 +764,7 @@ var
         end;
 
       // Calculate threat level
-      with fTargetU[I] do
+      with TargetU[I] do
       begin
         Index := I;
         CenterPoint := UGA[I].Position;
@@ -760,13 +793,13 @@ var
           begin
             // Close combat threat level (in case that group already fight agaist more soldiers there is 0 threat)
             // In case that group kills ranged units threat must be increased
-            CloseThreat := CloseThreat + Byte(SQR_RANGED_PROTECT_RADIUS < SqrClosestDistToRanged) * (SQR_RANGED_PROTECT_RADIUS - SqrClosestDistToRanged);
+            //CloseThreat := CloseThreat + Max(0, (SQR_RANGED_PROTECT_RADIUS - SqrClosestDistToRanged) );
             if UGA[I].InFightAgaistGroups(GroupsInFightArr) then
               for K := 0 to Length(GroupsInFightArr) - 1 do
                 if (GroupsInFightArr[K].GroupType = gtRanged) then
-                  CloseThreat := CloseThreat + GroupsInFightArr[K].Count
-                else
-                  CloseThreat := CloseThreat - GroupsInFightArr[K].Count;
+                  CloseThreat := CloseThreat + GroupsInFightArr[K].Count;
+                //else
+                //  CloseThreat := CloseThreat - GroupsInFightArr[K].Count;
           end;
         end;
       end;
@@ -777,7 +810,7 @@ var
   function SelectTargetGroups(): Boolean;
   const
     INIT_THREAT = -1000000;
-    SQR_MINIMAL_RANGED_DISTANCE = 4*4;
+    SQR_MINIMAL_RANGED_DISTANCE = 7*7;
     BEST_TARGET: array[TKMGroupType] of array[0..3] of TKMGroupType = (
         (gtMelee, gtRanged, gtMounted, gtAntiHorse), // against gtMelee
         (gtMelee, gtRanged, gtAntiHorse, gtMounted), // against gtAntiHorse
@@ -789,7 +822,7 @@ var
     TargetIdx: Word;
     I,K,L: Integer;
     Threat, HighestThreat, Dist, BestDist: Single;
-    GT: TKMGroupType;
+    GT, BestGT: TKMGroupType;
     Squad: TAISquad;
   begin
     Output := False;
@@ -802,11 +835,11 @@ var
       HighestThreat := INIT_THREAT;
       //BestDist := 0;
       Dist := 0;
-      for K := 0 to Length(fTargetU) - 1 do
-        if (fTargetU[K].DistantThreat > 0) then
+      for K := 0 to Length(TargetU) - 1 do
+        if (TargetU[K].DistantThreat > 0) then
         begin
-          Dist := KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ fTargetU[K].Index ].CurrPosition);
-          Threat := fTargetU[K].DistantThreat - Dist;
+          Dist := KMDistanceSqr(TAISquad(fSquads[GT].Items[I]).Position, UA[ TargetU[K].Index ].CurrPosition);
+          Threat := TargetU[K].DistantThreat - Dist;
           if (Threat > HighestThreat) then
           begin
             //BestDist := Dist;
@@ -817,12 +850,12 @@ var
       if (HighestThreat <> INIT_THREAT) then
       begin
         Output := True;
-        Squad.TargetUnit := UA[ fTargetU[TargetIdx].Index ];
+        Squad.TargetUnit := UA[ TargetU[TargetIdx].Index ];
         if (Dist >= SQR_MINIMAL_RANGED_DISTANCE) then // If is enemy too cloose aim him but dont decrease threat level so next part of code can call close combat support
-          fTargetU[TargetIdx].DistantThreat := fTargetU[TargetIdx].DistantThreat - Squad.Group.Count;
+          TargetU[TargetIdx].DistantThreat := TargetU[TargetIdx].DistantThreat - Squad.Group.Count;
         // Unit will be targeted by Ranged group -> if there was minimal priority for close combat then remove it
-        if (fTargetU[TargetIdx].CloseThreat = 1) then
-          fTargetU[TargetIdx].CloseThreat := 0;
+        if (TargetU[TargetIdx].CloseThreat = 1) then
+          TargetU[TargetIdx].CloseThreat := 0;
         Dec(AvailableSquads[GT].Count);
         AvailableSquads[GT].Squads[I] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
       end
@@ -831,19 +864,21 @@ var
     end;
 
     // Close combat groups view: enemy units -> select oponent => keep something in reserve
-    for I := 0 to Length(fTargetU) - 1 do
-      if (fTargetU[I].CloseThreat > 0) then
+    for I := 0 to Length(TargetU) - 1 do
+      if (TargetU[I].CloseThreat > 0) then
+      begin
+      {
         for K := 0 to 3 do
         begin
-          GT := BEST_TARGET[  UGA[ fTargetU[I].Index ].GroupType, K  ];
+          GT := BEST_TARGET[  UGA[ TargetU[I].Index ].GroupType, K  ];
           if (GT = gtRanged) then // Skip ranged groups
             continue;
-          while (fTargetU[I].CloseThreat > 0) AND (AvailableSquads[GT].Count > 0) do
+          while (TargetU[I].CloseThreat > 0) AND (AvailableSquads[GT].Count > 0) do
           begin
-            BestDist := 100000;
+            BestDist := 10000000;
             for L := 0 to AvailableSquads[GT].Count - 1 do
             begin
-              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ fTargetU[I].Index ].CurrPosition);
+              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[I].Index ].CurrPosition);
               if (Dist < BestDist) then
               begin
                 BestDist := Dist;
@@ -853,12 +888,41 @@ var
 
             Output := True;
             Squad := AvailableSquads[GT].Squads[TargetIdx];
-            Squad.TargetUnit := UGA[ fTargetU[I].Index ].GetAliveMember;
-            fTargetU[I].CloseThreat := fTargetU[I].CloseThreat - Squad.Group.Count/2;
+            Squad.TargetUnit := UGA[ TargetU[I].Index ].GetAliveMember;
+            TargetU[I].CloseThreat := TargetU[I].CloseThreat - Squad.Group.Count/2;
             Dec(AvailableSquads[GT].Count);
             AvailableSquads[GT].Squads[TargetIdx] := AvailableSquads[GT].Squads[ AvailableSquads[GT].Count ];
           end;
         end;
+          }
+        BestGT := gtMelee;
+        repeat
+          BestDist := 10000000;
+          for K := 0 to 3 do
+          begin
+            GT := BEST_TARGET[  UGA[ TargetU[I].Index ].GroupType, K  ];
+            for L := 0 to AvailableSquads[GT].Count - 1 do
+            begin
+              Dist := KMDistanceSqr(AvailableSquads[GT].Squads[L].Position, UA[ TargetU[I].Index ].CurrPosition) + K * 100;
+              if (Dist < BestDist) then
+              begin
+                BestDist := Dist;
+                TargetIdx := L;
+                BestGT := GT;
+              end;
+            end;
+          end;
+          if (BestDist < 10000000) then
+          begin
+            Output := True;
+            Squad := AvailableSquads[BestGT].Squads[TargetIdx];
+            Squad.TargetUnit := UGA[ TargetU[I].Index ].GetAliveMember;
+            TargetU[I].CloseThreat := TargetU[I].CloseThreat - Squad.Group.Count * 0.5;
+            Dec(AvailableSquads[BestGT].Count);
+            AvailableSquads[BestGT].Squads[TargetIdx] := AvailableSquads[BestGT].Squads[ AvailableSquads[BestGT].Count ];
+          end;
+        until (TargetU[I].CloseThreat <= 0) OR (BestDist >= 10000000);
+      end;
     Result := Output;
   end;
 
@@ -1000,32 +1064,32 @@ var
 
 
 var
-  Output: Boolean;
+  FreeSquads, SquadsInCombat, AttackGroup, AttackHouse: Boolean;
 begin
-  Output := False;
-
   // Find Available squads (groups who obey orders / are not in combat)
-  FindAvailableSquads();
+  FreeSquads := FindAvailableSquads(SquadsInCombat);
+  AttackGroup := False;
+  AttackHouse := False;
 
-  // Attack hostile units in radius
-  if (Length(UA) > 0) then
+  // Attack groups in radius
+  if (Length(UA) > 0) AND FreeSquads then
   begin
     // Calculate threat level of each enemy group in radius
     EvalEnemyGroupsInRadius();
 
-    // Select targets
-    Output := SelectTargetGroups();
+    // Attack hostile units in radius
+    AttackGroup := SelectTargetGroups();
   end;
 
   // Attack houses in radius
-  if (Length(HA) > 0) then
-    Output := OrderAttackHouse();
+  if (Length(HA) > 0) AND FreeSquads then
+    AttackHouse := OrderAttackHouse();
 
   // Move troops in reserve into new center point
-  if Output then
+  if AttackGroup OR AttackHouse then
     Regroup();
 
-  Result := Output;
+  Result := AttackGroup OR AttackHouse OR SquadsInCombat;
 end;
 
 
@@ -1041,23 +1105,23 @@ function TAICompany.OrderMove(aTick: Cardinal; aActualPosition: TKMPoint): Boole
     InitPolygons: TKMWordArray;
   begin
     // Get initial point on the path (it must be in specific distance from actual position to secure smooth moving of the company)
-    I := Length(PointPath)-1;
-    while (I >= 0) AND (KMDistanceAbs(aActualPosition, PointPath[I]) < MINIMAL_MOVEMENT) do
+    I := Length(aPointPath)-1;
+    while (I >= 0) AND (KMDistanceAbs(aActualPosition, aPointPath[I]) < MINIMAL_MOVEMENT) do
       I := I - 1;
     // Make sure that platoon will not start in actual polygon but position will be moved forward
     InitPolygon := gAIFields.NavMesh.KMPoint2Polygon[ aActualPosition ];
     repeat
-      fPathPosition := PointPath[ Max(0, I) ];
+      fPathPosition := aPointPath[ Max(0, I) ];
       I := I - 1;
     until (InitPolygon <> gAIFields.NavMesh.KMPoint2Polygon[ fPathPosition ]) OR (I < 0);
 
     I := Max(0,I + 1); // I = 0 we are in polygon of our target
     // Get several init polygons
-    SetLength(InitPolygons, Min(Length(PointPath) - I, Max(1, aCnt div INIT_POLYGONS_COEF)) );
+    SetLength(InitPolygons, Min(Length(aPointPath) - I, Max(1, aCnt div INIT_POLYGONS_COEF)) );
     Idx := 0;
     while (I >= 0) AND (Idx < Length(InitPolygons)) do
     begin
-      InitPolygons[Idx] := gAIFields.NavMesh.KMPoint2Polygon[ PointPath[I] ];
+      InitPolygons[Idx] := gAIFields.NavMesh.KMPoint2Polygon[ aPointPath[I] ];
       Idx := Idx + 1;
       I := I - 2;
     end;
@@ -1156,7 +1220,6 @@ begin
   //if gAIFields.NavMesh.Pathfinding.ShortestRoute(aActualPosition, TargetPoint, Distance, PointPath) then
   if gAIFields.NavMesh.Pathfinding.AvoidTrafficRoute(fOwner, aActualPosition, TargetPoint, Distance, PointPath) then
   begin
-    fDEBUGPointPath := PointPath;
     Cnt := SquadCnt(); // Count of groups in company
 
     // Get init polygons -> polygons on road which are base for army positioning (groups will get order to walk there)
@@ -1168,6 +1231,10 @@ begin
     // Compute distance of new positions and select the closest group to walk there
     SetOrders(Cnt, Positions);
   end;
+
+  {$IFDEF DEBUG_NewAI}
+  DEBUGPointPath := PointPath;
+  {$ENDIF}
 end;
 
 
@@ -1477,35 +1544,108 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 var
-  I,K,J: Integer;
-  Col: Cardinal;
+  I,K: Integer;
+  {$IFDEF DEBUG_NewAI}
+  L: Integer;
+  {$ENDIF}
+  Col, CompOpacity1, CompOpacity2, GroupOpacity1, GroupOpacity2: Cardinal;
   Position: TKMPoint;
   GT: TKMGroupType;
   Company: TAICompany;
   Squad: TAISquad;
 begin
-  if (fOwner <> gMySpectator.HandID) then // Show just 1 player (it prevents notification to be mess)
-    Exit;
+  //if (fOwner <> gMySpectator.HandID) then // Show just 1 player (it prevents notification to be mess)
+  //  Exit;
   //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
   //  Exit;
   for I := 0 to Count - 1 do
   begin
     // Company status log
     Company := fCompanies.Items[I];
-    Col := 0; // For compiler
+    CompOpacity1 := $09000000;
+    CompOpacity2 := $99000000;
+
+    // Pathfinding (squads) + targets
+    for GT := Low(TKMGroupType) to High(TKMGroupType) do
+      for K := Company.Squads[GT].Count - 1 downto 0 do
+      begin
+        Squad := Company.Squads[GT].Items[K];
+        // Highlight selected group and squad
+        GroupOpacity1 := $50000000;
+        GroupOpacity2 := $77000000;
+        if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = Squad.Group) then
+        begin
+          gRenderAux.CircleOnTerrain(20, 20, 20, $09000000, $FF000000);
+          CompOpacity1 :=  $13000000;
+          CompOpacity2 :=  $FF000000;
+          GroupOpacity1 := $99000000;
+          GroupOpacity2 := $FF000000;
+        end;
+        // Order position of group
+        Position := Squad.Group.OrderLoc.Loc;
+        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, GroupOpacity2 OR COLOR_YELLOW);
+        // Position
+        Position := Squad.Position;
+        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, GroupOpacity2 OR COLOR_GREEN);
+
+        // Target unit
+        if (Squad.TargetUnit <> nil) then
+        begin
+          if not Squad.TargetUnit.IsDeadOrDying then
+          begin
+            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.CurrPosition, GroupOpacity2 OR COLOR_RED);
+            {$IFDEF DEBUG_NewAI}
+            if (Length(Squad.DEBUGPointPath) > 0) then
+              for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+            {$ENDIF}
+          end;
+        end
+        // Target house
+        else if (Squad.TargetHouse <> nil) then
+          if not Squad.TargetHouse.IsDestroyed then
+          begin
+            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.Position, GroupOpacity2 OR COLOR_RED);
+            {$IFDEF DEBUG_NewAI}
+            if (Length(Squad.DEBUGPointPath) > 0) then
+              for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+            {$ENDIF}
+          end;
+        // Pathfinding
+        if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
+        begin
+          //gRenderAux.LineOnTerrain(Position, Squad.FinalPosition.Loc, $AAFF5555);
+          gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, GroupOpacity1 OR COLOR_BLUE);
+          {$IFDEF DEBUG_NewAI}
+          if (Length(Squad.DEBUGPointPath) > 0) then
+            for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
+              gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+          {$ENDIF}
+        end;
+      end;
+
+      // Change color according to state
     case Company.State of
-      csAttack: Col := COLOR_RED;
+      csAttack:  Col := COLOR_RED;
       csWalking: Col := COLOR_BLUE;
-      csIdle: Col := COLOR_BLACK;
+      csIdle:    Col := COLOR_BLACK;
+      else       Col := 0; // For compiler
     end;
+
+    // Mark company
     Position := Company.ScanPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.ScanRad), $09000000 OR Col, $99000000 OR Col);
+    {$IFDEF DEBUG_NewAI}
+    //gRenderAux.CircleOnTerrain(Position.X, Position.Y, Sqrt(Company.DEBUGScanRad), CompOpacity1 OR Col, CompOpacity2 OR Col);
+    {$ENDIF}
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 4, CompOpacity1 OR Col, CompOpacity2 OR Col);
     Position := Company.PathPosition;
-    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, $09000000 OR COLOR_GREEN, $99000000 OR COLOR_WHITE);
+    gRenderAux.CircleOnTerrain(Position.X, Position.Y, 3, CompOpacity1 OR COLOR_GREEN, CompOpacity2 OR COLOR_WHITE);
 
     // Target aim
-    for K := 0 to Length(Company.fTargetU) - 1 do
-    with Company.fTargetU[K] do
+    {$IFDEF DEBUG_NewAI}
+    for K := 0 to Length(Company.DEBUGTargetU) - 1 do
+    with Company.DEBUGTargetU[K] do
     begin
       Position := CenterPoint;
       // Close threath
@@ -1515,54 +1655,14 @@ begin
       Col :=  (Min($FF, Max(0,Round(DistantThreat)) ) shl 24) OR COLOR_BLACK;
       gRenderAux.CircleOnTerrain(Position.X, Position.Y+1, 0.5, Col, $FF000000 OR COLOR_BLACK );
     end;
+    {$ENDIF}
 
     // Pathfinding (company)
-    if (Length(Company.PointPath) > 0) then
-      for K := Length(Company.PointPath)-2 downto 0 do
-        gRenderAux.LineOnTerrain(Company.PointPath[K+1], Company.PointPath[K], $60000000 OR COLOR_YELLOW);
-
-    // Pathfinding (squads) + targets
-    for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      for K := Company.Squads[GT].Count - 1 downto 0 do
-      begin
-        Squad := Company.Squads[GT].Items[K];
-        // Order position of group
-        Position := Squad.Group.OrderLoc.Loc;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, $99000000 OR COLOR_YELLOW);
-        // Position
-        Position := Squad.Position;
-        gRenderAux.CircleOnTerrain(Position.X, Position.Y, 1, 0, $99000000 OR COLOR_GREEN);
-
-        // Target unit
-        if (Squad.TargetUnit <> nil) then
-        begin
-          if not Squad.TargetUnit.IsDeadOrDying then
-          begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.CurrPosition, $99000000 OR COLOR_RED);
-            if (Length(Squad.PointPath) > 0) then
-              for J := Length(Squad.PointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
-          end;
-        end
-        // Target house
-        else if (Squad.TargetHouse <> nil) then
-          if not Squad.TargetHouse.IsDestroyed then
-          begin
-            gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.Position, $99000000 OR COLOR_RED);
-            if (Length(Squad.PointPath) > 0) then
-              for J := Length(Squad.PointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
-          end;
-        // Pathfinding
-        if not KMSamePoint(Squad.FinalPosition.Loc,KMPOINT_ZERO) then
-        begin
-          //gRenderAux.LineOnTerrain(Position, Squad.FinalPosition.Loc, $AAFF5555);
-          gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, $66000000 OR COLOR_BLUE);
-          if (Length(Squad.PointPath) > 0) then
-            for J := Length(Squad.PointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.PointPath[J+1], Squad.PointPath[J], $60000000 OR COLOR_BLUE);
-        end;
-      end;
+    {$IFDEF DEBUG_NewAI}
+    if (Length(Company.DEBUGPointPath) > 0) then
+      for K := Length(Company.DEBUGPointPath)-2 downto 0 do
+        gRenderAux.LineOnTerrain(Company.DEBUGPointPath[K+1], Company.DEBUGPointPath[K], CompOpacity2 OR COLOR_YELLOW);
+    {$ENDIF}
   end;
   //gRenderAux.LineOnTerrain(P1, P2, $CCFF2222);
   //gRenderAux.CircleOnTerrain(CenterPlatoon.X, CenterPlatoon.Y, 5, $09FFFFFF, $99FFFFFF);

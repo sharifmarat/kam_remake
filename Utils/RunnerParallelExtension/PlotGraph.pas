@@ -10,6 +10,7 @@ type
   private
     fImgGenes: TImage;
     fImgFitness: TImage;
+    fXLabels: array of TLabel;
     fActualGeneration: Integer;
     fGeneTrackBar: TTrackBar;
     fGeneTrackBarPos: Integer;
@@ -33,8 +34,6 @@ uses
   Log;
 
 constructor TPlotGraph.Create(aImgGenes, aImgFitness: TImage; aGeneTrackBar: TTrackBar);
-var
-  ResultsFile,GAFile: TextFile;
 begin
   inherited Create();
   gLog.Log('TPlotGraph: Create');
@@ -49,7 +48,11 @@ end;
 
 
 destructor TPlotGraph.Destroy();
+var
+  K: Integer;
 begin
+  for K := Low(fXLabels) to High(fXLabels) do
+    FreeAndNil(fXLabels[K]);
   gLog.Log('TPlotGraph: Destroy');
   inherited Destroy();
 end;
@@ -122,7 +125,7 @@ end;
 procedure TPlotGraph.GetMinMaxFit(var aMinF, aMaxF: Single; aGeneration: Integer = -1);
   procedure CheckGeneration(K: Integer);
   var
-    L,M: Integer;
+    L: Integer;
     FitSum: Single;
   begin
     for L := Low(fFitnessHistory[K]) to High(fFitnessHistory[K]) do
@@ -167,6 +170,7 @@ end;
 procedure TPlotGraph.PlotGenes(aGenIdx: Integer);
 const
   OFFSET = 10;
+  X_LABEL_INDENTATION = 5;
 var
   K,L,M, X,Y: Integer;
   ScaleX, ScaleY, MinF, MaxF: Single;
@@ -180,9 +184,22 @@ begin
   if (Img.Picture.Bitmap <> nil) then
     Img.Picture.Bitmap.SetSize(Img.Width, Img.Height);
   Img.Canvas.FillRect(Img.Canvas.ClipRect);
+  // Prepare scale
+  ScaleX := Max(0, (Img.Width - 2*OFFSET) / Max(1,Length(fGeneHistory[0,0])-1));
+  ScaleY := Max(0, (Img.Height - 2*OFFSET));
   // Add axis
   with Img.Canvas do
   begin
+    // Grid
+    Pen.Color := ($00 shl 24) OR (200 shl 16) OR (200 shl 8) OR (200 shl 0);
+    Pen.Width := 3;
+    for K := Low(fGeneHistory[0,0]) to High(fGeneHistory[0,0]) do
+    begin
+      X := OFFSET + Round(ScaleX * K);
+      Img.Canvas.PenPos := Point(X-1, OFFSET);
+      Img.Canvas.LineTo(X-1,Img.Height - OFFSET);
+    end;
+    // Borders
     Pen.Color := clBlack;
     Pen.Width := 2;
     PenPos := Point(OFFSET, OFFSET);
@@ -190,6 +207,21 @@ begin
     LineTo(Img.Width - OFFSET, Img.Height - OFFSET);
     LineTo(Img.Width - OFFSET, OFFSET);
     LineTo(OFFSET, OFFSET);
+    // Labels
+    for K := Low(fXLabels) to High(fXLabels) do
+      FreeAndNil(fXLabels[K]);
+    SetLength(fXLabels, Length(fGeneHistory[0,0]));
+    for K := Low(fGeneHistory[0,0]) to High(fGeneHistory[0,0]) do
+    begin
+      X := OFFSET + Round(ScaleX * K);
+      fXLabels[K] := TLabel.Create(Img.Parent);
+      fXLabels[K].Parent := Img.Parent;
+      //fXLabels[K].Alignment := taRightJustify;
+      //fXLabels[K].Transparent := True;
+      fXLabels[K].Left := X - 1;
+      fXLabels[K].Top := Img.Height - OFFSET + X_LABEL_INDENTATION;
+      fXLabels[K].Caption := IntToStr(K);
+    end;
   end;
   // Draw genes
   GetMinMaxFit(MinF, MaxF, aGenIdx);
@@ -198,8 +230,6 @@ begin
   begin
     Img.Canvas.Pen.Color := GetWeightColor(MinF,MaxF,GetFitnessSum(K,L));
     Img.Canvas.Pen.Width := 2;//Min(30,1 + High(fGeneHistory[K]) - L);
-    ScaleX := Max(0, (Img.Width - 2*OFFSET) / Max(1,Length(fGeneHistory[K,L])-1));
-    ScaleY := Max(0, (Img.Height - 2*OFFSET));
     for M := Low(fGeneHistory[K,L]) to High(fGeneHistory[K,L]) do
     begin
       X := OFFSET + Round(ScaleX * M);
@@ -277,12 +307,11 @@ begin
       MaxVariance := VarianceArr[K];
   end;
   // Draw variance
-  for K := Low(fFitnessHistory) to Min( fActualGeneration, High(fFitnessHistory) ) do
+  for K := Low(VarianceArr) to High(VarianceArr) do
   begin
-    // Draw variance
     X := OFFSET + Round(ScaleX * K);
     Img.Canvas.Pen.Color := 0;
-    Img.Canvas.Rectangle(X+5, Img.Height - OFFSET, X+10, Img.Height - OFFSET - Round(VarianceArr[K] / MaxVariance * 50));
+    Img.Canvas.Rectangle(X+5, Img.Height - OFFSET, X+10, Img.Height - OFFSET - Round(VarianceArr[K] / Max(0.001,MaxVariance) * 50));
   end;
 end;
 

@@ -484,7 +484,7 @@ end;
 //  Output: TKMHandIndexArray;
 //begin
 //  SetLength(Result,0);
-//  if not AI_GEN_INFLUENCE_MAPS then
+//  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
 //    Exit;
 //
 //  SetLength(Output, MAX_HANDS);
@@ -521,7 +521,7 @@ var
   PL: TKMHandID;
 begin
   Result := 0;
-  if not AI_GEN_INFLUENCE_MAPS then
+  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
     Exit;
 
   for PL := 0 to gHands.Count - 1 do
@@ -544,7 +544,7 @@ var
   Ownership: Byte;
 begin
   Result := 0;
-  if not AI_GEN_INFLUENCE_MAPS then
+  if not AI_GEN_INFLUENCE_MAPS OR (aIdx = High(Word)) then
     Exit;
 
   Result := 0;
@@ -578,6 +578,7 @@ const
   INIT_HOUSE_INFLUENCE = 255;
   MAX_INFLUENCE_DISTANCE = 150;
 var
+  AI: Boolean;
   I, Cnt: Integer;
   H: TKMHouse;
   IdxArray: TKMWordArray;
@@ -588,10 +589,13 @@ begin
   // Create array of polygon indexes
   SetLength(IdxArray, gHands[aPL].Houses.Count);
   Cnt := 0;
+  AI := gHands[aPL].HandType = hndComputer;
   for I := 0 to gHands[aPL].Houses.Count - 1 do
   begin
     H := gHands[aPL].Houses[I];
-    if not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
+    if not H.IsDestroyed
+      AND not (H.HouseType in [htWatchTower, htWoodcutters])
+      AND (AI OR H.IsComplete) then // Player must finish the house to update influence so he cannot troll the AI
     begin
         IdxArray[Cnt] := fNavMesh.KMPoint2Polygon[ H.Position ];
         Cnt := Cnt + 1;
