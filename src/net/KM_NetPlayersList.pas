@@ -443,12 +443,12 @@ begin
   fNetPlayers[fCount].PlayerNetType := nptHuman;
   fNetPlayers[fCount].Team := 0;
   fNetPlayers[fCount].FlagColorID := 0;
-  fNetPlayers[fCount].ReadyToStart := false;
-  fNetPlayers[fCount].HasMapOrSave := false;
-  fNetPlayers[fCount].ReadyToPlay := false;
-  fNetPlayers[fCount].ReadyToReturnToLobby := false;
-  fNetPlayers[fCount].Connected := true;
-  fNetPlayers[fCount].Dropped := false;
+  fNetPlayers[fCount].ReadyToStart := False;
+  fNetPlayers[fCount].HasMapOrSave := False;
+  fNetPlayers[fCount].ReadyToPlay := False;
+  fNetPlayers[fCount].ReadyToReturnToLobby := False;
+  fNetPlayers[fCount].Connected := True;
+  fNetPlayers[fCount].Dropped := False;
   fNetPlayers[fCount].ResetPingRecord;
   //Check if this player must go in a spectator slot
   if fCount - GetSpectatorCount > MAX_LOBBY_PLAYERS then
@@ -537,8 +537,8 @@ var
 begin
   ID := ServerToLocal(aIndexOnServer);
   Assert(ID <> -1, 'Cannot drop player');
-  fNetPlayers[ID].Connected := false;
-  fNetPlayers[ID].Dropped := true;
+  fNetPlayers[ID].Connected := False;
+  fNetPlayers[ID].Dropped := True;
 end;
 
 
