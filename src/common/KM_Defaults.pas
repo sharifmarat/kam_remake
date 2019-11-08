@@ -318,6 +318,9 @@ var
   OWN_THRESHOLD:Byte = 126;
 
 
+const
+  LAST_SENT_COMMANDS_TICK_NONE = 0;
+
 {Cursors}
 type
   TKMCursorMode = (

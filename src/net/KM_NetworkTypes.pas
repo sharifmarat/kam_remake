@@ -135,7 +135,7 @@ const
     pfBinary,   //mkAuthChallenge
     pfNoData,   //mkGetServerInfo
     pfBinary,   //mkServerInfo
-    pfNoData,   //mkDisconnect
+    pfNumber,   //mkDisconnect
     pfNoData,   //mkPing
     pfNoData,   //mkPong
     pfBinary,   //mkPingInfo

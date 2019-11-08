@@ -989,8 +989,8 @@ begin
       Image_NetWait := TKMImage.Create(Panel_NetWaitMsg,Panel_Main.Width div 2,40,0,0,556);
       Image_NetWait.ImageCenter;
 
-      Label_NetWait  := TKMLabel.Create(Panel_NetWaitMsg,Panel_Main.Width div 2,80,NO_TEXT,fntOutline,taCenter);
-      Label_NetDropPlayersDelay := TKMLabel.Create(Panel_NetWaitMsg,Panel_Main.Width div 2,110,NO_TEXT,fntOutline,taCenter);
+      Label_NetWait  := TKMLabel.Create(Panel_NetWaitMsg,Panel_Main.Width div 2,77,NO_TEXT,fntOutline,taCenter);
+      Label_NetDropPlayersDelay := TKMLabel.Create(Panel_NetWaitMsg,Panel_Main.Width div 2,115,NO_TEXT,fntOutline,taCenter);
       Panel_NetWaitButtons := TKMPanel.Create(Panel_NetWaitMsg,0,140,Panel_Main.Width,80);
         Button_NetQuit := TKMButton.Create(Panel_NetWaitButtons,(Panel_Main.Width div 2)-150,0,300,30,gResTexts[TX_GAMEPLAY_QUIT_TO_MENU],bsGame);
         Button_NetQuit.OnClick := NetWaitClick;
@@ -2534,7 +2534,7 @@ end;
 procedure TKMGamePlayInterface.ShowNetworkLag(aShow: Boolean; aPlayers: TKMByteArray; IsHost: Boolean);
 var
   I: Integer;
-  txt: UnicodeString;
+  WPlayersMsg, WDCPlayersMsg: UnicodeString;
 begin
   if aShow then ReleaseDirectionSelector;
   if not aShow then // Reset the confirm when we hide this screen so it's not on confirm when it reshows
@@ -2545,16 +2545,32 @@ begin
 
   if gGame.Networking.IsReconnecting then
   begin
-    txt := gResTexts[TX_MULTIPLAYER_ATTEMPT_RECONNECTING];
+    WPlayersMsg := gResTexts[TX_MULTIPLAYER_ATTEMPT_RECONNECTING];
     Button_NetDropPlayers.Visible := False;
     fNetWaitDropPlayersDelayStarted := 0;
     Label_NetDropPlayersDelay.Caption := '';
   end
   else
   begin
-    txt := gResTexts[TX_MULTIPLAYER_WAITING] + ' ';
+//    txt := gResTexts[TX_MULTIPLAYER_WAITING] + ' ';
+    WPlayersMsg := '';
+    WDCPlayersMsg := '';
     for I := Low(aPlayers) to High(aPlayers) do
-      txt := txt + gGame.Networking.NetPlayers[aPlayers[I]].NiknameU + IfThen(I <> High(aPlayers), ', ');
+      if not gGame.Networking.NetPlayers[aPlayers[I]].Dropped then
+        WPlayersMsg := WPlayersMsg + gGame.Networking.NetPlayers[aPlayers[I]].NiknameU + IfThen(I <> High(aPlayers), ', ')
+      else
+        WDCPlayersMsg := WDCPlayersMsg + gGame.Networking.NetPlayers[aPlayers[I]].NiknameU + IfThen(I <> High(aPlayers), ', ');
+
+    if WPlayersMsg <> '' then
+      WPlayersMsg := gResTexts[TX_MULTIPLAYER_WAITING] + ' ' + WPlayersMsg;
+
+    if WDCPlayersMsg <> '' then
+      WDCPlayersMsg := gResTexts[TX_MULTIPLAYER_WAITING_DC_PLAYERS_DATA] + ' ' + WDCPlayersMsg;
+
+    if (WPlayersMsg <> '') and (WDCPlayersMsg <> '') then
+      WPlayersMsg := WPlayersMsg + '|';
+
+    WPlayersMsg := WPlayersMsg + WDCPlayersMsg;
 
     Button_NetDropPlayers.Visible := IsHost;
 
@@ -2569,7 +2585,7 @@ begin
       end;
   end;
 
-  Label_NetWait.Caption := txt;
+  Label_NetWait.Caption := WPlayersMsg;
   Panel_NetWait.Visible := aShow;
 end;
 
