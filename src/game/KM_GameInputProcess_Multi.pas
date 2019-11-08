@@ -85,6 +85,7 @@ type
 
 implementation
 uses
+  //TypInfo, KM_Log,
   SysUtils, Math, KromUtils,
   KM_GameApp, KM_Game, KM_HandsCollection,
   KM_ResTexts, KM_ResSound, KM_Sound, KM_CommonUtils,
@@ -220,6 +221,8 @@ begin
     fCommandIssued[Tick] := True;
   end;
   fSchedule[Tick, gGame.Networking.MyIndex].Add(aCommand);
+//  gLog.AddTime(Format('Scheduled cmd Tick: %d, CMD_TYPE = %s',
+//                      [Tick, GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(aCommand.CommandType))]));
 end;
 
 
@@ -317,6 +320,8 @@ var
 begin
   aStream.Read(dataType, 1); //Decode header
   aStream.Read(Tick); //Target tick
+
+//  gLog.AddTime(Format('Received commands for Tick %d', [Tick]));
 
   case dataType of
     kdpCommands:
@@ -448,6 +453,7 @@ begin
 
       fLastSentTick := I;
       SendCommands(I);
+//      gLog.AddTime(Format('fDelay = %d; Send Commands for Tick = %d', [fDelay, I]));
       fSent[I mod MAX_SCHEDULE] := True;
       fRecievedData[I mod MAX_SCHEDULE, gGame.Networking.MyIndex] := True; //Recieved commands from self
     end;
