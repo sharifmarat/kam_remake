@@ -959,7 +959,7 @@ var
   PacketLength: Word;
   I, SenderRoom: Integer;
   SenderClient: TKMServerClient;
-  Kind: TKMessageKind;
+//  Kind: TKMessageKind;
 begin
   Inc(BytesRX, aLength);
   SenderClient := fClientList.GetByHandle(aHandle);
@@ -1003,9 +1003,9 @@ begin
     //If sender from packet contents doesn't match the socket handle, don't process this packet (client trying to fake sender)
     if PacketSender = aHandle then
     begin
-      Kind := GetMessKind(PacketSender, @SenderClient.fBuffer[6], PacketLength);
-      gLog.AddTime(Format('Got msg %s from %d to %d',
-                          [GetEnumName(TypeInfo(TKMessageKind), Integer(Kind)), PacketSender, PacketRecipient]));
+//      Kind := GetMessKind(PacketSender, @SenderClient.fBuffer[6], PacketLength);
+//      gLog.AddTime(Format('Got msg %s from %d to %d',
+//                          [GetEnumName(TypeInfo(TKMessageKind), Integer(Kind)), PacketSender, PacketRecipient]));
       case PacketRecipient of
         NET_ADDRESS_OTHERS: //Transmit to all except sender
                 //Iterate backwards because sometimes calling Send results in ClientDisconnect (LNet only?)

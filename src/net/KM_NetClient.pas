@@ -183,7 +183,7 @@ procedure TKMNetClient.SendData(aSender,aRecepient: TKMNetHandleIndex; aData: Po
 var
   P: Pointer;
 begin
-  //We use fSocket.Shutdown(1) for disconnection,
+  //We use fSocket.Shutdown(1) for disconnection in Overbyte implementation,
   //then we have to check if we actually connected to server before sending any data
   //Otherwise we could get "ESocketException: Can't send after socket shutdown"
   if fConnected then
