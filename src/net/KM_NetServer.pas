@@ -206,6 +206,7 @@ begin
   Inc(fScheduledPacketsCnt);
   SetLength(fScheduledPackets, fScheduledPacketsSize + aLength);
 
+  //Append data packet to the end of cumulative packet
   Move(aData^, fScheduledPackets[fScheduledPacketsSize], aLength);
   Inc(fScheduledPacketsSize, aLength);
   //gLog.AddTime(Format('*** add scheduled packet: length = %d Cnt = %d totalSize = %d', [aLength, fScheduledPacketsCnt, fScheduledPacketsSize]));
@@ -734,7 +735,7 @@ begin
       PByte(P)^ := aServerClient.fScheduledPacketsCnt;
       //Copy collected packets data with 1 byte shift
       Move(aServerClient.fScheduledPackets[0], Pointer(NativeUInt(P) + 1)^, aServerClient.fScheduledPacketsSize);
-      DoSendData(aServerClient.fHandle, P, aServerClient.fScheduledPacketsSize + 1);
+      DoSendData(aServerClient.fHandle, P, aServerClient.fScheduledPacketsSize + 1); //+1 byte for packets number
       aServerClient.ClearScheduledPackets;
     finally
       FreeMem(P);
@@ -957,7 +958,7 @@ begin
   end;
 
   //Append new data to buffer
-  SetLength( SenderClient.fBuffer, SenderClient.fBufferSize + aLength);
+  SetLength(SenderClient.fBuffer, SenderClient.fBufferSize + aLength);
   Move(aData^, SenderClient.fBuffer[SenderClient.fBufferSize], aLength);
   SenderClient.fBufferSize := SenderClient.fBufferSize + aLength;
 
@@ -974,15 +975,15 @@ begin
     if not (IsValidHandle(PacketRecipient) and IsValidHandle(PacketSender) and (PacketLength <= MAX_PACKET_SIZE)) then
     begin
       //When we receive corrupt data kick the client since we have no way to recover (if in-game client will auto reconnect)
-      Status('Warning: Corrupt data received, kicking client '+IntToStr(aHandle));
+      Status('Warning: Corrupt data received, kicking client ' + IntToStr(aHandle));
       SenderClient.fBufferSize := 0;
       SetLength(SenderClient.fBuffer, 0);
       fServer.Kick(aHandle);
-      exit;
+      Exit;
     end;
 
-    if PacketLength > SenderClient.fBufferSize-6 then
-      exit; //This message was split, so we must wait for the remainder of the message to arrive
+    if PacketLength > SenderClient.fBufferSize - 6 then
+      Exit; //This message was split, so we must wait for the remainder of the message to arrive
 
     SenderRoom := fClientList.GetByHandle(aHandle).Room;
 
@@ -1012,8 +1013,8 @@ begin
     if fClientList.GetByHandle(aHandle) = nil then
       Exit;
 
-    if SenderClient.fBufferSize > 6+PacketLength then //Check range
-      Move(SenderClient.fBuffer[6+PacketLength], SenderClient.fBuffer[0], SenderClient.fBufferSize-PacketLength-6);
+    if SenderClient.fBufferSize > 6 + PacketLength then //Check range
+      Move(SenderClient.fBuffer[6 + PacketLength], SenderClient.fBuffer[0], SenderClient.fBufferSize-PacketLength-6);
     SenderClient.fBufferSize := SenderClient.fBufferSize - PacketLength - 6;
   end;
 end;

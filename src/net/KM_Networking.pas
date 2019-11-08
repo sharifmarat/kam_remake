@@ -1499,7 +1499,7 @@ function TKMNetworking.GetNetAddressPrintDescr(aNetworkAddress: Integer): String
     if NetPlayerIndex = -1 then
       Result := 'unknown'
     else
-      Result := IntToStr(NetPlayerIndex);
+      Result := Format('%d | %s', [NetPlayerIndex, fNetPlayers[NetPlayerIndex].Nikname]);
   end;
 begin
   case aNetworkAddress of
@@ -1524,15 +1524,16 @@ begin
   if aIsSending then
     LogMessage := 'Packet send:     %-23s to   %s'  // 23 is the length of mk_ command with the longest name
   else
-    LogMessage := 'Packet recieved: %-23s from %s';
+    LogMessage := 'Packet received: %-23s from %s';
 
-  LogMessage := Format(LogMessage, [GetEnumName(TypeInfo(TKMessageKind), Integer(aKind)), GetNetAddressPrintDescr(aNetworkAddress)]);
+  LogMessage := Format(LogMessage, [GetEnumName(TypeInfo(TKMessageKind), Integer(aKind)),
+                                    GetNetAddressPrintDescr(aNetworkAddress)]);
 
   case aKind of
     mkPing, mkPong,
     mkPingInfo, mkFPS:  gLog.LogNetPacketPingFps(LogMessage);
-    mkCommands        :  gLog.LogNetPacketCommand(LogMessage);
-    else                  gLog.LogNetPacketOther(LogMessage);
+    mkCommands       :  gLog.LogNetPacketCommand(LogMessage);
+    else                gLog.LogNetPacketOther(LogMessage);
   end;
 end;
 
