@@ -172,6 +172,7 @@ type
 
 implementation
 uses
+  //TypInfo, KM_Log,
   KM_CommonTypes;
 
 const
@@ -942,19 +943,31 @@ end;
 //Someone has send us something
 //Send only complete messages to allow to add server messages inbetween
 procedure TKMNetServer.DataAvailable(aHandle: TKMNetHandleIndex; aData: Pointer; aLength: Cardinal);
+//  function GetMessKind(aSenderHandle: TKMNetHandleIndex; aData: Pointer; aLength: Cardinal): TKMessageKind;
+//  var
+//    M: TKMemoryStream;
+//  begin
+//    M := TKMemoryStream.Create;
+//    M.WriteBuffer(aData^, aLength);
+//    M.Position := 0;
+//    M.Read(Result, SizeOf(TKMessageKind));
+//    M.Free;
+//  end;
+
 var
   PacketSender, PacketRecipient: TKMNetHandleIndex;
   PacketLength: Word;
   I, SenderRoom: Integer;
   SenderClient: TKMServerClient;
+  Kind: TKMessageKind;
 begin
   Inc(BytesRX, aLength);
-
   SenderClient := fClientList.GetByHandle(aHandle);
   if SenderClient = nil then
   begin
     Status('Warning: Data Available from an unassigned client');
-    exit;
+//    gLog.AddTime('Warning: Data Available from an unassigned client');
+    Exit;
   end;
 
   //Append new data to buffer
@@ -962,7 +975,7 @@ begin
   Move(aData^, SenderClient.fBuffer[SenderClient.fBufferSize], aLength);
   SenderClient.fBufferSize := SenderClient.fBufferSize + aLength;
 
-  //gLog.AddTime('----  Received data from ' + GetNetAddressStr(aHandle) + ': length = ' + IntToStr(aLength));
+//  gLog.AddTime('----  Received data from ' + GetNetAddressStr(aHandle) + ': length = ' + IntToStr(aLength));
 
   //Try to read data packet from buffer
   while SenderClient.fBufferSize >= 6 do
@@ -989,15 +1002,19 @@ begin
 
     //If sender from packet contents doesn't match the socket handle, don't process this packet (client trying to fake sender)
     if PacketSender = aHandle then
+    begin
+      Kind := GetMessKind(PacketSender, @SenderClient.fBuffer[6], PacketLength);
+      gLog.AddTime(Format('Got msg %s from %d to %d',
+                          [GetEnumName(TypeInfo(TKMessageKind), Integer(Kind)), PacketSender, PacketRecipient]));
       case PacketRecipient of
         NET_ADDRESS_OTHERS: //Transmit to all except sender
-            //Iterate backwards because sometimes calling Send results in ClientDisconnect (LNet only?)
-            for i:=fClientList.Count-1 downto 0 do
-                if (aHandle <> fClientList[i].Handle) and (SenderRoom = fClientList[i].Room) then
-                  ScheduleSendData(fClientList[i].Handle, @SenderClient.fBuffer[0], PacketLength+6);
+                //Iterate backwards because sometimes calling Send results in ClientDisconnect (LNet only?)
+                for I := fClientList.Count - 1 downto 0 do
+                  if (aHandle <> fClientList[i].Handle) and (SenderRoom = fClientList[i].Room) then
+                    ScheduleSendData(fClientList[i].Handle, @SenderClient.fBuffer[0], PacketLength+6);
         NET_ADDRESS_ALL: //Transmit to all including sender (used mainly by TextMessages)
                 //Iterate backwards because sometimes calling Send results in ClientDisconnect (LNet only?)
-                for i:=fClientList.Count-1 downto 0 do
+                for I := fClientList.Count - 1 downto 0 do
                   if SenderRoom = fClientList[i].Room then
                     ScheduleSendData(fClientList[i].Handle, @SenderClient.fBuffer[0], PacketLength+6);
         NET_ADDRESS_HOST:
@@ -1007,6 +1024,7 @@ begin
                 RecieveMessage(PacketSender, @SenderClient.fBuffer[6], PacketLength);
         else    ScheduleSendData(PacketRecipient, @SenderClient.fBuffer[0], PacketLength+6);
       end;
+    end;
 
     //Processing that packet may have caused this client to be kicked (joining room where banned)
     //and in that case SenderClient is invalid so we must exit immediately
