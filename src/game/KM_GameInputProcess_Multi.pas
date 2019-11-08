@@ -59,11 +59,11 @@ type
     //Store random seeds at each tick then confirm with other players
     fRandomCheck: array[0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
 
-    procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt=-1);
+    procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
     procedure SendRandomCheck(aTick: Cardinal);
     procedure DoRandomCheck(aTick: Cardinal; aPlayerIndex: ShortInt);
 
-    procedure SetDelay(aNewDelay:integer);
+    procedure SetDelay(aNewDelay: Integer);
   protected
     procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
   public
@@ -217,7 +217,7 @@ begin
   if not fCommandIssued[Tick] then
   begin
     fSchedule[Tick, gGame.Networking.MyIndex].Clear; //Clear old data (it was kept in case it was required for resync)
-    fCommandIssued[Tick] := true;
+    fCommandIssued[Tick] := True;
   end;
   fSchedule[Tick, gGame.Networking.MyIndex].Add(aCommand);
 end;
@@ -260,7 +260,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess_Multi.SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt=-1);
+procedure TKMGameInputProcess_Multi.SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
 var
   Msg: TKMemoryStream;
 begin

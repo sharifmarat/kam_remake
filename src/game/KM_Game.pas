@@ -2155,7 +2155,7 @@ begin
         gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
                       if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgsLoading) then
                       begin
-                        if fGameInputProcess.CommandsConfirmed(fGameTick+1) then
+                        if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
                         begin
                           if DO_PERF_LOGGING then fPerfLog.EnterSection(psTick);
 

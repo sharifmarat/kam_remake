@@ -455,13 +455,20 @@ end;
 class function TKMGameInputProcess.GIPCommandToString(aGIC: TKMGameInputCommand): UnicodeString;
 var
   NetPlayerStr: String;
+  NPlayerI: Integer;
 begin
   with aGIC do
   begin
     NetPlayerStr := '';
     if (gGame <> nil)
       and (gGame.Networking <> nil) then
-      NetPlayerStr := Format(' [NetPlayer %d]', [gGame.Networking.GetNetPlayerIndex(HandIndex)]);
+    begin
+      NPlayerI := gGame.Networking.GetNetPlayerIndex(HandIndex);
+      if NPlayerI = -1 then
+        NetPlayerStr := Format(' [NetPlayer %d]', [NPlayerI])
+      else
+        NetPlayerStr := Format(' [NetPlayer %d | %s]', [NPlayerI, gGame.Networking.NetPlayers[NPlayerI].Nikname]);
+    end;
 
     Result := Format('%-' + IntToStr(GIC_COMMAND_TYPE_MAX_LENGTH) + 's hand: %2d' + NetPlayerStr + ', params: ',
                      [GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(CommandType)), HandIndex]);
