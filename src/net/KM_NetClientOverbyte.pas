@@ -91,7 +91,13 @@ end;
 procedure TKMNetClientOverbyte.Disconnect;
 begin
   if fSocket <> nil then
-    fSocket.Close;
+  begin
+    //ShutDown(1) Works better, then Close or CloseDelayed
+    //With Close or CloseDelayed some data, that were sent just before disconnection could not be delivered to server.
+    //F.e. mkDisconnect packet
+    //But we can't send data into ShutDown'ed socket (we could try into Closed one, since it will have State wsClosed)
+    fSocket.ShutDown(1);
+  end;
 end;
 
 
