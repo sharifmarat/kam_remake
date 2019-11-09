@@ -196,6 +196,7 @@ type
     procedure IncAnimStep;
     procedure UpdateState(aTick: Cardinal); override;
     procedure Paint(const aRect: TKMRect); override;
+    function ObjToString: String;
   end;
 
 
@@ -209,7 +210,7 @@ type
 
 implementation
 uses
-  Classes, SysUtils, KromUtils, Math,
+  Classes, SysUtils, KromUtils, Math, TypInfo,
   KM_GameApp, KM_Game, KM_Terrain, KM_HouseBarracks, KM_HouseTownHall,
   KM_HandsCollection, KM_Sound, KM_AIFields,
   KM_Resource, KM_ResSound, KM_ResTexts, KM_ResMapElements, KM_ScriptingEvents,
@@ -1814,6 +1815,17 @@ begin
       fAI.ArmyManagement.Defence.Paint();
     end;
   end;
+end;
+
+
+function TKMHand.ObjToString: String;
+begin
+  Result := Format('Enabled = %5s ID = %d AI: [%s] Owner = %s HandType = %s',
+                   [BoolToStr(Enabled, True),
+                    fID,
+                    AI.ObjToString,
+                    OwnerName,
+                    GetEnumName(TypeInfo(TKMHandType), Integer(HandType))]);
 end;
 
 

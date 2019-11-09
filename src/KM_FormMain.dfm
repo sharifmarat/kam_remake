@@ -72,13 +72,13 @@ object FormMain: TFormMain
     Left = 320
     Top = 8
     Width = 193
-    Height = 736
+    Height = 752
     Anchors = [akTop, akRight]
     Caption = ' Development controls '
     TabOrder = 1
     object GroupBox4: TGroupBox
       Left = 8
-      Top = 474
+      Top = 490
       Width = 177
       Height = 89
       Caption = ' Graphics tweaks '
@@ -171,7 +171,7 @@ object FormMain: TFormMain
     end
     object GroupBox3: TGroupBox
       Left = 8
-      Top = 416
+      Top = 432
       Width = 177
       Height = 57
       Caption = ' User Interface '
@@ -249,7 +249,7 @@ object FormMain: TFormMain
     end
     object GroupBox2: TGroupBox
       Left = 8
-      Top = 248
+      Top = 264
       Width = 177
       Height = 168
       Caption = ' AI '
@@ -415,7 +415,7 @@ object FormMain: TFormMain
       Left = 8
       Top = 104
       Width = 177
-      Height = 145
+      Height = 162
       Caption = ' Debug render '
       TabOrder = 5
       object Label2: TLabel
@@ -546,10 +546,19 @@ object FormMain: TFormMain
         TabOrder = 12
         OnClick = ControlsUpdate
       end
+      object CheckBox1: TCheckBox
+        Left = 8
+        Top = 136
+        Width = 89
+        Height = 17
+        Caption = 'Hands'
+        TabOrder = 13
+        OnClick = ControlsUpdate
+      end
     end
     object GroupBoxLogs: TGroupBox
       Left = 8
-      Top = 562
+      Top = 578
       Width = 177
       Height = 170
       Caption = 'Logs'

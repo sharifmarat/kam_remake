@@ -4269,6 +4269,9 @@ begin
     end;
   end;
 
+  if SHOW_HANDS_INFO then
+    S := S + gHands.ObjToString;
+
   Label_DebugInfo.Font := fntArial;
   Label_DebugInfo.Caption := S;
   Label_DebugInfo.Visible := (Trim(S) <> '');

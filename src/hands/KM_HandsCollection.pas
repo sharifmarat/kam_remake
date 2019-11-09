@@ -85,6 +85,7 @@ type
 
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
+    function ObjToString: String;
 
     procedure ExportGameStatsToCSV(const aPath: String; const aHeader: String = '');
   end;
@@ -1073,6 +1074,18 @@ begin
     fHandsList[I].Paint(aRect);
 
   PlayerAnimals.Paint(aRect);
+end;
+
+
+function TKMHandsCollection.ObjToString: String;
+var
+  I: Integer;
+begin
+  Result := 'Hands: ';
+  for I := 0 to fCount - 1 do
+    if fHandsList[I].Enabled then
+      Result := Format('%s|%d: %s', [Result, I, fHandsList[I].ObjToString]);
+
 end;
 
 
