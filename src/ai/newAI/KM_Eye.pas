@@ -12,22 +12,15 @@ const
   MIN_SCAN_DIST_FROM_HOUSE = 2; // Houses must have at least 1 tile of space between them
 
 var
-{
-  GA_EYE_GetForests_MaxAB          : Single =  19.954822; // <0,201> Ignore trees in existing forest <0,255-AVOID_BUILDING_FOREST_MINIMUM)
-  GA_EYE_GetForests_Radius         : Single =   9.325531; // Forest radius
-  GA_EYE_GetForests_MinTrees       : Single =   3.424192; // Min trees in forest
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 138.247757; // Minimum influence of potential forest
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 202.071391; // Maximum influence of potential forest
-  GA_EYE_GetForests_MinRndSoil     : Single =  62.659789; // 0-82
-//}
 //{
-  GA_EYE_GetForests_MaxAB          : Single =  27.61245763; // <0.201> Ignore trees in existing forest <0.255-AVOID_BUILDING_FOREST_MINIMUM)
-  GA_EYE_GetForests_Radius         : Single =   6.74098748; // Forest radius
-  GA_EYE_GetForests_MinTrees       : Single =   3.649430335; // Min trees in forest
-  GA_EYE_GetForests_SPRndOwnLimMin : Single = 143.1101608; // Minimum influence of potential forest
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 221.5435612; // Maximum influence of potential forest
-  GA_EYE_GetForests_MinRndSoil     : Single =  42.37610489; // 0-82
+  GA_EYE_GetForests_MaxAB          : Single =   6.145020783; // <0.201> Ignore trees in existing forest <0.255-AVOID_BUILDING_FOREST_MINIMUM)
+  GA_EYE_GetForests_Radius         : Single =   9.129834533; // Forest radius
+  GA_EYE_GetForests_MinTrees       : Single =   3.228645921; // Min trees in forest
+  GA_EYE_GetForests_SPRndOwnLimMin : Single =  69.21056241; // Minimum influence of potential forest
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 187.8252494; // Maximum influence of potential forest
+  GA_EYE_GetForests_MinRndSoil     : Single =  70.02984214; // 0-82
 //}
+
 
 type
   TDirection = (dirN,dirE,dirS,dirW);
@@ -1605,7 +1598,7 @@ begin
         Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,I]);
         if (Dir = dirS) AND (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
             Exit;
-        if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] = bsHousePlan) then
+        if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] in [bsReserved, bsHousePlan]) then
             Exit;
         if (Dir = dirE) then
         begin
@@ -1660,9 +1653,10 @@ begin
       begin
         case Output of
           bsTree: Output := bsNoBuild;
+          bsNoBuild: Output := bsNoBuild;
           bsBuild: Output := bsCoal;
-          bsRoad: Output := bsCoal;
-          bsRoadPlan: Output := bsCoal;
+          //bsRoad: Output := bsCoal;
+          //bsRoadPlan: Output := bsCoal;
         end;
       end;
     else
@@ -1802,7 +1796,7 @@ begin
     TerrainFF(aMaxFFDistance);
 
     fUpdateTick := gGame.GameTick;
-    MarkPlans(); // Plans may change durring placing houses but this event is caught CityBuilder
+    MarkPlans(); // Plans may change during placing houses but this event is caught in CityBuilder
   end;
 end;
 

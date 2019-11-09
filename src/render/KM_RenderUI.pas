@@ -391,7 +391,7 @@ const
   function GetPos(aValue: Integer): Word;
   begin
     //At least 2px wide to show up from under the shadow
-    Result := Round((aWidth - 2) * (Max(0, aValue - 1)/ aMaxValue)) + 2;  //-1 just to draw 1st tick in a better way...
+    Result := Min( High(Word), Round((aWidth - 2) * (Max(0, aValue - 1)/ aMaxValue)) + 2);  //-1 just to draw 1st tick in a better way...
   end;
 
   procedure WriteWideLine(aX: Word; aColor: Cardinal; aPattern: Word = $FFFF);
