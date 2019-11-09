@@ -7,8 +7,8 @@ uses
   KM_AISetup, KM_ResHouses, KM_ResWares, KM_HandStats;
 
 var
-  GA_PREDICTOR_WareNeedPerAWorker_Stone : Single = 0.648239613;
-  GA_PREDICTOR_WareNeedPerAWorker_Wood  : Single = 0.280672461;
+  GA_PREDICTOR_WareNeedPerAWorker_Stone : Single = 0.65;
+  GA_PREDICTOR_WareNeedPerAWorker_Wood  : Single = 0.28;
 
 type
   TWareBalance = record
@@ -340,9 +340,6 @@ end;
 
 // Update build material consumption
 procedure TKMCityPredictor.UpdateBuildMaterialConsumption(aInitialization: Boolean = False);
-const
-  STONE_NEED_PER_A_WORKER = 0.6;
-  WOOD_NEED_PER_A_WORKER = 0.35;
 begin
   // Worker count is decreased after peace time -> compute with maximal count
   fWareBalance[wtStone].ActualConsumption := Min(fCityStats.Citizens[utWorker]+8, fWorkerCount) * GA_PREDICTOR_WareNeedPerAWorker_Stone;
@@ -465,7 +462,8 @@ begin
     for HT := Low(Houses) to High(Houses) do
     begin
       //Houses[HT] := gHands[fOwner].Stats.GetHouseTotal(HT); // Does not consider planned houses
-      Houses[HT] := Planner.PlannedHouses[HT].Completed + Planner.PlannedHouses[HT].UnderConstruction; // Consider only placed or planned houses (not destroyed houses - plans will remain in CityPlanner)
+      // Consider only placed, constructed or planned houses (not destroyed houses because plans will remain in CityPlanner)
+      Houses[HT] := Planner.PlannedHouses[HT].Completed + Planner.PlannedHouses[HT].UnderConstruction + Planner.PlannedHouses[HT].Planned;
       HousesCnt := HousesCnt + Houses[HT];
     end;
   end;

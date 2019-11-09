@@ -1544,9 +1544,9 @@ const
   COLOR_YELLOW = $00FFFF;
   COLOR_BLUE = $FF0000;
 var
-  I,K: Integer;
+  K,L: Integer;
   {$IFDEF DEBUG_NewAI}
-  L: Integer;
+  M: Integer;
   {$ENDIF}
   Col, CompOpacity1, CompOpacity2, GroupOpacity1, GroupOpacity2: Cardinal;
   Position: TKMPoint;
@@ -1558,18 +1558,18 @@ begin
   //  Exit;
   //if (fOwner <> 1) then // Show just 1 player (it prevents notification to be mess)
   //  Exit;
-  for I := 0 to Count - 1 do
+  for K := 0 to Count - 1 do
   begin
     // Company status log
-    Company := fCompanies.Items[I];
+    Company := fCompanies.Items[K];
     CompOpacity1 := $09000000;
     CompOpacity2 := $99000000;
 
     // Pathfinding (squads) + targets
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
-      for K := Company.Squads[GT].Count - 1 downto 0 do
+      for L := Company.Squads[GT].Count - 1 downto 0 do
       begin
-        Squad := Company.Squads[GT].Items[K];
+        Squad := Company.Squads[GT].Items[L];
         // Highlight selected group and squad
         GroupOpacity1 := $50000000;
         GroupOpacity2 := $77000000;
@@ -1596,8 +1596,8 @@ begin
             gRenderAux.LineOnTerrain(Position, Squad.TargetUnit.CurrPosition, GroupOpacity2 OR COLOR_RED);
             {$IFDEF DEBUG_NewAI}
             if (Length(Squad.DEBUGPointPath) > 0) then
-              for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+              for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
             {$ENDIF}
           end;
         end
@@ -1608,8 +1608,8 @@ begin
             gRenderAux.LineOnTerrain(Position, Squad.TargetHouse.Position, GroupOpacity2 OR COLOR_RED);
             {$IFDEF DEBUG_NewAI}
             if (Length(Squad.DEBUGPointPath) > 0) then
-              for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
-                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+              for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
+                gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
             {$ENDIF}
           end;
         // Pathfinding
@@ -1619,8 +1619,8 @@ begin
           gRenderAux.CircleOnTerrain(Squad.FinalPosition.Loc.X, Squad.FinalPosition.Loc.Y, 1, 0, GroupOpacity1 OR COLOR_BLUE);
           {$IFDEF DEBUG_NewAI}
           if (Length(Squad.DEBUGPointPath) > 0) then
-            for J := Length(Squad.DEBUGPointPath)-2 downto 0 do
-              gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[J+1], Squad.DEBUGPointPath[J], GroupOpacity1 OR COLOR_BLUE);
+            for M := Length(Squad.DEBUGPointPath)-2 downto 0 do
+              gRenderAux.LineOnTerrain(Squad.DEBUGPointPath[M+1], Squad.DEBUGPointPath[M], GroupOpacity1 OR COLOR_BLUE);
           {$ENDIF}
         end;
       end;
@@ -1644,8 +1644,8 @@ begin
 
     // Target aim
     {$IFDEF DEBUG_NewAI}
-    for K := 0 to Length(Company.DEBUGTargetU) - 1 do
-    with Company.DEBUGTargetU[K] do
+    for L := 0 to Length(Company.DEBUGTargetU) - 1 do
+    with Company.DEBUGTargetU[L] do
     begin
       Position := CenterPoint;
       // Close threath
@@ -1660,8 +1660,8 @@ begin
     // Pathfinding (company)
     {$IFDEF DEBUG_NewAI}
     if (Length(Company.DEBUGPointPath) > 0) then
-      for K := Length(Company.DEBUGPointPath)-2 downto 0 do
-        gRenderAux.LineOnTerrain(Company.DEBUGPointPath[K+1], Company.DEBUGPointPath[K], CompOpacity2 OR COLOR_YELLOW);
+      for L := Length(Company.DEBUGPointPath)-2 downto 0 do
+        gRenderAux.LineOnTerrain(Company.DEBUGPointPath[L+1], Company.DEBUGPointPath[L], CompOpacity2 OR COLOR_YELLOW);
     {$ENDIF}
   end;
   //gRenderAux.LineOnTerrain(P1, P2, $CCFF2222);
