@@ -137,8 +137,8 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(773852237);
-    gGame.GameOptions.Peacetime := 60;//SP_DEFAULT_PEACETIME;
-    //fSetup.EnableAdvancedAI(True);
+    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
+    fSetup.EnableAdvancedAI(True);
     //fSetup.EnableAdvancedAI(fOwner <= 3);
   end;
 
@@ -321,8 +321,8 @@ begin
     UnitReq[utWorker] := 0;
     if (Stats.GetWareBalance(wtGold) > GOLD_SHORTAGE * 2.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
     begin
-      UnitReq[utWorker] :=  fPredictor.WorkerCount * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack) + Byte(not fSetup.AutoBuild) * Byte(fSetup.AutoRepair) * 5;
-      //UnitReq[utRecruit] := RecruitsNeeded(Houses[htWatchTower]);
+      UnitReq[utWorker] := fPredictor.WorkerCount * Byte(not gHands[fOwner].AI.ArmyManagement.Defence.CityUnderAttack) + Byte(not fSetup.AutoBuild) * Byte(fSetup.AutoRepair) * 5;
+      UnitReq[utRecruit] := RecruitsNeeded(Houses[htWatchTower]);
     end;
     if (Stats.GetWareBalance(wtGold) > GOLD_SHORTAGE * 1.5) OR (GoldProduced > 0) then // Dont train servs / workers / recruits when we will be out of gold
       UnitReq[utSerf] := Stats.GetUnitQty(utSerf) + RequiredServCount();
