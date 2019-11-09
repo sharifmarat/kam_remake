@@ -159,7 +159,7 @@ end;
 procedure TKMConsole.AddLine(aMessage: String);
 begin
   if fMessages <> '' then
-    fMessages := fMessages + '|';
+    fMessages := fMessages + '[]|'; //'[]' used to close color brackets, to avoid color abuse for next text line in Chat
 
   Add(aMessage);
 end;
