@@ -18,19 +18,22 @@ var
   GA_BUILDER_ChHTB_TrunkBalance         : Single =  2.511;
   GA_BUILDER_ChHTB_AllWorkerCoef        : Single =  7.154;
   GA_BUILDER_ChHTB_FreeWorkerCoef       : Single =  4.251;
-  GA_BUILDER_Shortage_Trunk             : Single =  1.725;
   GA_BUILDER_Shortage_Stone             : Single = 13.772;
   GA_BUILDER_Shortage_StoneNoQuarry     : Single = 30.000;
-  GA_BUILDER_Shortage_Wood              : Single =  8.429;
   GA_BUILDER_Shortage_Gold              : Single = 27.638;
+//{
+  GA_BUILDER_Shortage_Trunk             : Single =  3.345;
+  GA_BUILDER_Shortage_Wood              : Single = 12.150;
+//}
 
 
 const
-  NODE_PRIO_Roads = 1;
-  NODE_PRIO_RoadsReservation = 2;
-  NODE_PRIO_Fields = 3;
-  NODE_PRIO_FieldsReservation = 3;
+  NODE_PRIO_RoadsUnlockHouse = 1;
+  NODE_PRIO_Roads = 2;
+  NODE_PRIO_RoadsReservation = 3;
   NODE_PRIO_RemoveTreeInPlan = 3;
+  NODE_PRIO_Fields = 4;
+  NODE_PRIO_FieldsReservation = 4;
   NODE_PRIO_Shortcuts = 3;
   NODE_PRIO_Default = 255;
 
@@ -252,7 +255,7 @@ begin
   begin
     fPlanner.UpdateState(aTick); // Planner must be updated as first to secure that completed houses are actualized
     UpdateBuildNodes(aFreeWorkersCnt);
-    if (aTick mod CHECK_STONE_RESERVES = fOwner) then // First update stone reserves
+    if (fPredictor.RequiredHouses[htQuary] = 0) AND (aTick mod CHECK_STONE_RESERVES = fOwner) then // First update stone reserves
       Planner.CheckStoneReserves();
   end;
 end;
@@ -267,18 +270,20 @@ var
 begin
   HMA := gAIFields.Eye.HousesMapping;
   // Reserve all tiles inside house plan
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-  begin
-    Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
-    gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
-    gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
-  end;
+  if (aHT <> htCoalMine) then
+    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+    begin
+      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_INSIDE_LOCK;
+      gAIFields.Eye.BuildFF.ActualizeTile(Point.X, Point.Y);
+    end;
   // Reserve all tiles in distance 1 from house plan
   Dist := 1;
   for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
     for I := Low(HMA[aHT].Surroundings[Dist,Dir]) to High(HMA[aHT].Surroundings[Dist,Dir]) do
     begin
       Point := KMPointAdd(aLoc, HMA[aHT].Surroundings[Dist,Dir,I]);
+      // Skip coal tiles, forests and other reserved tiles
       if (gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] < AVOID_BUILDING_HOUSE_INSIDE_LOCK) then
       begin
         gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_HOUSE_OUTSIDE_LOCK;
@@ -297,11 +302,12 @@ var
 begin
   HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
-  for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
-  begin
-    Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
-    gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
-  end;
+  if (aHT <> htCoalMine) then
+    for I := Low(HMA[aHT].Tiles) to High(HMA[aHT].Tiles) do
+    begin
+      Point := KMPointAdd(aLoc, HMA[aHT].Tiles[I]);
+      gAIFields.Influences.AvoidBuilding[Point.Y, Point.X] := AVOID_BUILDING_UNLOCK;
+    end;
   // Free all tiles in distance 1 from house plan
   Dist := 1;
   for Dir := Low(HMA[aHT].Surroundings[Dist]) to High(HMA[aHT].Surroundings[Dist]) do
@@ -885,7 +891,7 @@ begin
             Priority := aRoadNodePrio;
             RemoveTreesMode := False;
             ShortcutMode := False;
-            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RoadMaxWork) + Byte(not aIgnoreTrees) * 20;
+            MaxReqWorkers := Round(GA_BUILDER_BuildHouse_RoadMaxWork) + Byte(NODE_PRIO_RoadsUnlockHouse = aRoadNodePrio) * 20;
             RequiredWorkers := Min(MaxReqWorkers, FieldList.Count);
             CenterPoint := FieldList[ FieldList.Count-1 ]; // Road node must start from exist house
           end;
@@ -1086,11 +1092,16 @@ var
         begin
           HouseReservation := MaterialShortage OR (K <> High(HTArr));
           IgnoreExistingPlans := (Length(HTArr) = 1) AND MaterialShortage AND not (aHT in [htWoodcutters, htGoldMine, htIronMine, htCoalMine]);
+          if (K <> High(HTArr)) then
+            NodePrio := NODE_PRIO_RoadsReservation // House is blocked, prio is low
+          else if (Length(HTArr) = 1) then
+            NodePrio := NODE_PRIO_Roads // House is unlocked, prio is high
+          else
+            NodePrio := NODE_PRIO_RoadsUnlockHouse; // House is unlocked and its construction will unlock another house, prio is TOP
           NodePrio := Byte(K <> High(HTArr)) * NODE_PRIO_RoadsReservation + Byte(K = High(HTArr)) * NODE_PRIO_Roads;
           Output := BuildHouse(IgnoreTreesInPlan, HouseReservation, IgnoreExistingPlans, HTArr[K], NodePrio);
           RequiredHouses[ HTArr[K] ] := 0;
         end;
-      //BuildHouse(aIgnoreTreesInPlan, aHouseReservation, aIgnoreExistingPlans: Boolean; aHT: TKMHouseType);
     end
     else if aUnlockProcedureAllowed AND TryUnlockByRnd(aHT) then // There is scripted unlock order -> try to place random house (it works 100% for any crazy combinations which will scripters bring)
     begin
@@ -1228,9 +1239,8 @@ var
     else if fWoodShortage then
     begin
       MaxIdx := WOOD_SHORTAGE_IDX;
-      //MinIdx := TRUNK_SHORTAGE_IDX;
-      if (fPlanner.PlannedHouses[htSawmill].Completed > 0) then
-        MinIdx := WOOD_SHORTAGE_IDX;
+      if (fPlanner.PlannedHouses[htSawmill].Completed = 0) then
+        MinIdx := TRUNK_SHORTAGE_IDX+1;
     end
     else if fTrunkShortage then
       MaxIdx := TRUNK_SHORTAGE_IDX
@@ -1258,6 +1268,14 @@ var
         if (ReservationsCntArr[ RESERVATION_FullSet[K] ] > 0) then
         begin
           HT := RESERVATION_FullSet[K];
+          // Build first house with highest prio
+          if (K <= GOLD_SHORTAGE_IDX) AND (fPlanner.PlannedHouses[HT].Completed = 0) AND (fPlanner.PlannedHouses[HT].UnderConstruction = 0) then
+          begin
+            BestHT := HT;
+            BestGain := 1;
+            break;
+          end;
+          // Otherwise ignore houses
           Gain := ReservationsCntArr[HT] * 2 + MaxIdx - K;
           if (Gain > BestGain) then
           begin
@@ -1556,30 +1574,29 @@ begin
   for HT := Low(fPlanner.PlannedHouses) to High(fPlanner.PlannedHouses) do
     for I := 0 to fPlanner.PlannedHouses[HT].Count - 1 do
       with fPlanner.PlannedHouses[HT].Plans[I] do
+      begin
         if not Placed then
         begin
           if HouseReservation then
-          begin
-            aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Reservation), ';
-            cnt := cnt + 1;
-          end
+            aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Reservation), '
           else if RemoveTreeInPlanProcedure then
-          begin
-            aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Remove trees), ';
-            cnt := cnt + 1;
-          end
+            aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Remove trees), '
           else
-          begin
             aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Plan placed), ';
-            cnt := cnt + 1;
-          end;
-
-          if (cnt > 5) then
-          begin
-            cnt := 0;
-            aBalanceText := aBalanceText + '|';
-          end;
+          cnt := cnt + 1;
+        end
+        else if (House <> nil) AND not (House.IsComplete) then
+        begin
+          aBalanceText := aBalanceText + gRes.Houses[HT].HouseName + ' (Construction), ';
+          cnt := cnt + 1;
         end;
+        if (cnt > 5) then
+        begin
+          cnt := 0;
+          aBalanceText := aBalanceText + '|';
+        end;
+      end;
+
 
   cnt := 0;
   for I := Low(fBuildNodes) to High(fBuildNodes) do
@@ -1614,6 +1631,7 @@ var
   Color: Cardinal;
   Point: TKMPoint;
 begin
+{
   for K := 0 to gHands[fOwner].Units.Count - 1 do
     with gHands[fOwner].Units[K] do
       if not IsDeadOrDying then
@@ -1644,6 +1662,7 @@ begin
           gRenderAux.Quad(Point.X, Point.Y, Color);
         end;
       end;
+}
 end;
 
 
