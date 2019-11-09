@@ -137,8 +137,8 @@ begin
   if SP_DEFAULT_ADVANCED_AI then
   begin
     //SetKaMSeed(773852237);
-    gGame.GameOptions.Peacetime := 60;//SP_DEFAULT_PEACETIME;
-    //fSetup.EnableAdvancedAI(True);
+    gGame.GameOptions.Peacetime := SP_DEFAULT_PEACETIME;
+    fSetup.EnableAdvancedAI(True);
     //fSetup.EnableAdvancedAI(fOwner <= 3);
   end;
 
