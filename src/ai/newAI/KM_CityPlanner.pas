@@ -2,7 +2,7 @@ unit KM_CityPlanner;
 {$I KaM_Remake.inc}
 interface
 uses
-  Classes, Graphics, KromUtils, Math, SysUtils,
+  Classes, Graphics, KromUtils, Math, SysUtils, Contnrs,
   KM_Defaults, KM_Points, KM_CommonClasses, KM_CommonTypes, KM_CommonUtils,
   KM_TerrainFinder, KM_PerfLog, KM_Houses, KM_ResHouses, KM_ResWares, KM_Sort,
   KM_PathFindingRoad, KM_CityPredictor, KM_Eye,
@@ -15,29 +15,8 @@ var
   GA_PLANNER_FindForestAndWoodcutter_AllyInfluence    : Single =  3; // 0..255
   GA_PLANNER_FindForestAndWoodcutter_EnemyInfluence   : Single = 10; // 0..255
 
+
 {
-  GA_PLANNER_ObstaclesInHousePlan_Tree        : Single = 554.5836687;
-  GA_PLANNER_ObstaclesInHousePlan_Road        : Single = 215.137586;
-  GA_PLANNER_FieldCrit_PolyRoute              : Single =   2.847660184;
-  GA_PLANNER_FieldCrit_FlatArea               : Single =   1.322231054;
-  GA_PLANNER_FieldCrit_Soil                   : Single =   1.446874559;
-  GA_PLANNER_SnapCrit_SnapToHouse             : Single =   0.495313946;
-  GA_PLANNER_SnapCrit_SnapToFields            : Single =   4.954059795;
-  GA_PLANNER_SnapCrit_SnapToRoads             : Single =  34.57963467;
-  GA_PLANNER_SnapCrit_ClearEntrance           : Single =  36.60692453;
-  GA_PLANNER_FindPlaceForHouse_SnapCrit       : Single =   0.591337323;
-  GA_PLANNER_FindPlaceForHouse_HouseDist      : Single =   9.653032422;
-  GA_PLANNER_FindPlaceForHouse_SeedDist       : Single =  12.05221266;
-  GA_PLANNER_FindPlaceForHouse_CityCenter     : Single =  25.28423369;
-  GA_PLANNER_FindPlaceForHouse_Route          : Single =   0.780455172;
-  GA_PLANNER_FindPlaceForHouse_FlatArea       : Single =   1.730875254;
-  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  -1.42304158;
-  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =   1.275962114;
-  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =   1.006385982;
-  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =   5.03192991;
-  GA_PLANNER_PlaceWoodcutter_DistFromForest	  : Single =   0.899758935;
-  //}
-//{
   GA_PLANNER_ObstaclesInHousePlan_Tree        : Single = 841.3786292;
   GA_PLANNER_ObstaclesInHousePlan_Road        : Single = 493.7465489;
   GA_PLANNER_FieldCrit_PolyRoute              : Single =   5;
@@ -53,54 +32,84 @@ var
   GA_PLANNER_FindPlaceForHouse_CityCenter     : Single =  25.83347261;
   GA_PLANNER_FindPlaceForHouse_Route          : Single =   1.038699865;
   GA_PLANNER_FindPlaceForHouse_FlatArea       : Single =   0.832797021;
-  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  -1.722400993;
-  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =  -0.468331337;
-  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =   3.518705368;
-  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =  17.59352684;
+  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  1.05445170402527;//-1.722400993; // 1,05445170402527
+  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =  -0.37953233718872;//-0.468331337; // -0,37953233718872
+  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =  4.1189032793045;// 3.518705368; // 4,1189032793045
+  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =  8.66540372371675;//17.59352684; // 8,66540372371675
   GA_PLANNER_PlaceWoodcutter_DistFromForest	  : Single =   0.899758935;
 //}
-{
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt           : Single = 10.15831912; // 0-~20
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest       : Single = 27.61185486; // 0-1
-  GA_PLANNER_FindPlaceForWoodcutter_Routes            : Single = -0.05340177; // -255<->+255
-  GA_PLANNER_FindPlaceForWoodcutter_FlatArea          : Single =  1.81489635; // 0-81
-  GA_PLANNER_FindPlaceForWoodcutter_Soil              : Single =  0.42477764; // 0-81
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit          : Single =  7.16919124; // 0-40
-  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles         : Single =  3.00258744; // 0-81
-  GA_PLANNER_FindPlaceForWoodcutter_ABRange           : Single = 64.90645409; // 0-200
-  GA_PLANNER_FindPlaceForWoodcutter_Radius            : Single =  3.41642061;
-  GA_PLANNER_FindForestAround_MaxDist                 : Single =  8.92759353; // 4-10
-//}
 //{
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single =  41.34321427;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = 177.5686213;
-  GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single =  -0.02261829;
-  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single =   5.701113224;
-  GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single =   0.831454039;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single =   5.973019004;
-  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     : Single =   3.26864326;
-  GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single =  39.98937309;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single =   3.411889046;
-  GA_PLANNER_FindForestAround_MaxDist             : Single =   7.965329766;
+  GA_PLANNER_ObstaclesInHousePlan_Tree        : Single = 788.3220911;
+  GA_PLANNER_ObstaclesInHousePlan_Road        : Single = 219.6835876;
+  GA_PLANNER_FieldCrit_PolyRoute              : Single =   2.883937657;
+  GA_PLANNER_FieldCrit_FlatArea               : Single =   1.613979578;
+  GA_PLANNER_FieldCrit_Soil                   : Single =   2.607529342;
+  GA_PLANNER_SnapCrit_SnapToHouse             : Single =   0;
+  GA_PLANNER_SnapCrit_SnapToFields            : Single =   0.288372883;
+  GA_PLANNER_SnapCrit_SnapToRoads             : Single =   7.870791852;
+  GA_PLANNER_SnapCrit_ClearEntrance           : Single =  19.17334318;
+  GA_PLANNER_FindPlaceForHouse_SnapCrit       : Single =   1.07497108;
+  GA_PLANNER_FindPlaceForHouse_HouseDist      : Single =  18.67234826;
+  GA_PLANNER_FindPlaceForHouse_SeedDist       : Single =  42.05959439;
+  GA_PLANNER_FindPlaceForHouse_CityCenter     : Single =  43.24023426;
+  GA_PLANNER_FindPlaceForHouse_Route          : Single =   3.326784611;
+  GA_PLANNER_FindPlaceForHouse_FlatArea       : Single =   1.945348799;
+  GA_PLANNER_FindPlaceForHouse_RouteFarm      : Single =  -1.3515504;
+  GA_PLANNER_FindPlaceForHouse_FlatAreaFarm   : Single =  -5;
+  GA_PLANNER_FindPlaceForHouse_HouseDistFarm  : Single =   4.647785425;
+  GA_PLANNER_FindPlaceForHouse_CityCenterFarm : Single =  23.23892713;
+  GA_PLANNER_PlaceWoodcutter_DistFromForest	  : Single =   0.899758935;
 //}
 
-  GA_PATHFINDING_BasePrice      : Word = 50;
-  GA_PATHFINDING_Road           : Word = 49;
-  GA_PATHFINDING_noBuildArea    : Word =  6;
-  GA_PATHFINDING_Field          : Word = 44;
-  GA_PATHFINDING_Coal           : Word =  6;
-  GA_PATHFINDING_Forest         : Word = 37;
-  GA_PATHFINDING_OtherCase      : Word = 40;
 
-  GA_SHORTCUTS_BasePrice      : Word = 54;
-  GA_SHORTCUTS_Road           : Word = 21;
-  GA_SHORTCUTS_noBuildArea    : Word = 46;
-  GA_SHORTCUTS_Field          : Word = 15;
-  GA_SHORTCUTS_Coal           : Word = 18;
-  GA_SHORTCUTS_Forest         : Word = 47;
-  GA_SHORTCUTS_OtherCase      : Word = 46;
+  GA_PLANNER_PlanFarmFields_CanBuild              : Word = 20;
+  GA_PLANNER_PlanFarmFields_Dist                  : Word =  6;
+  GA_PLANNER_PlanFarmFields_ExistField            : Word = 51;
+  GA_PLANNER_PlanFarmFields_MaxFields             : Word = 17;
+
+  GA_PLANNER_FindPlaceForQuary_Obstacle	      : Single =  35;
+  GA_PLANNER_FindPlaceForQuary_DistCity	      : Single =  15;
+  GA_PLANNER_FindPlaceForQuary_DistStone	    : Single =  48;
+  GA_PLANNER_FindPlaceForQuary_SnapCrit	      : Single =  13;
+
+
+//{
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single =  10.65430927;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = 296.6792947;
+  GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single =  -0.72456187;
+  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single =   1.066726506;
+  GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single =   1.163838655;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single =   4.594412148;
+  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     : Single =   3.31785357;
+  GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single = 137.1479392;
+  GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single =   3.058347501;
+  GA_PLANNER_FindForestAround_MaxDist             : Single =   7.366333246;
+//}
+
+
+
+  GA_PATHFINDING_BasePrice      : Word = 34;
+  GA_PATHFINDING_Road           : Word = 34;
+  GA_PATHFINDING_noBuildArea    : Word = 14;
+  GA_PATHFINDING_Field          : Word = 41;
+  GA_PATHFINDING_Coal           : Word = 35;
+  GA_PATHFINDING_Forest         : Word = 50;
+  GA_PATHFINDING_OtherCase      : Word = 43;
+
+  GA_SHORTCUTS_BasePrice        : Word = 65;
+  GA_SHORTCUTS_Road             : Word = 27;
+  GA_SHORTCUTS_noBuildArea      : Word = 27;
+  GA_SHORTCUTS_Field            : Word = 47;
+  GA_SHORTCUTS_Coal             : Word = 26;
+  GA_SHORTCUTS_Forest           : Word = 27;
+  GA_SHORTCUTS_OtherCase        : Word = 22;
   // Note: it is interesting to see different GA strategy for pathfinding
   // of first road to new house and pathfinding of shortcuts
+
+
+const
+
+  FARM_RADIUS = 11;
 
 
 type
@@ -110,11 +119,13 @@ type
     Loc, SpecPoint: TKMPoint;
   end;
   THousePlanArray = record
-    Count, Completed, UnderConstruction: Word;
+    Count, Completed, UnderConstruction, Planned: Word;
     Plans: array of THousePlan;
   end;
   TPlannedHousesArray = array [HOUSE_MIN..HOUSE_MAX] of THousePlanArray;
 
+  TFieldEval = (feUnvisitedTile = 0, feFertileTile = 1, feExistingField = 2, feObstacle = 3);
+  TFieldPrice = array[-FARM_RADIUS..FARM_RADIUS,-FARM_RADIUS..FARM_RADIUS] of Integer;
 
   TPathFindingCityPlanner = class(TPathFindingRoad)
   private
@@ -132,6 +143,30 @@ type
   public
   end;
 
+
+  TKMFieldEvaluation = class
+  private
+    fMapX, fMapY: Word;
+    fOwner: TKMHandID;
+    fInitPoint: TKMPoint;
+    fQueue: TQueue;
+
+    function CanBeVisited(const aX,aY, aDistance: Word): Boolean;
+    procedure MarkAsVisited(const aX,aY, aDistance: Word);
+    procedure InsertInQueue(const aX,aY, aDistance: Word);
+    function RemoveFromQueue(var aX,aY, aDistance: Word): Boolean;
+  public
+    FieldEval: array[-FARM_RADIUS..FARM_RADIUS,-FARM_RADIUS..FARM_RADIUS] of TFieldEval;
+    FieldPrice: TFieldPrice;
+
+    constructor Create(aMapX, aMapY: Word; aOwner: TKMHandID);
+    destructor Destroy(); override;
+
+    procedure EvalField(aMaxDist: Word; aInitPoint: TKMPoint);
+    procedure OwnerUpdate(aPlayer: TKMHandID);
+  end;
+
+
   // Create plan of city AfterMissionInit and update it during game (if it is required)
   TKMCityPlanner = class
   private
@@ -141,11 +176,19 @@ type
       fTimePeakSearchHouse: array[HOUSE_MIN..HOUSE_MAX] of Cardinal;
       fTimeSumSearchForest: Cardinal;
       fTimePeakSearchForest: Cardinal;
+      fTimeSumPlanFields: Cardinal;
+      fTimePeakPlanFields: Cardinal;
       fPlaceHouseDebugText: UnicodeString;
       fPlaceFarmDebugText: UnicodeString;
       fBestHouseLocs: TKMPointArray;
       fBestHouseVal: TKMByteArray;
       fForestDebugText: UnicodeString;
+      fFieldPrice: TFieldPrice;
+
+      DA1: array [0..256,0..256] of Integer;
+      DA2: array [0..256,0..256] of Integer;
+      DA3: array [0..256,0..256] of Integer;
+      DA4: array [0..256,0..256] of Integer;
     {$ENDIF}
 
     fOwner: TKMHandID;
@@ -156,6 +199,7 @@ type
 
     fRoadPlanner: TPathFindingCityPlanner;
     fRoadShortcutPlanner: TPathFindingShortcutsCityPlanner;
+    fFieldEval: TKMFieldEvaluation;
 
     procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint); overload;
     procedure AddPlan(aHT: TKMHouseType; aLoc: TKMPoint; aSpecPoint: TKMPoint; aChopOnly: Boolean = False); overload;
@@ -169,13 +213,14 @@ type
     procedure PlanWineFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
     procedure PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
     function FindPlaceForHouse(aIgnoreTrees: Boolean; aHT: TKMHouseType; out aBestLocs: TKMPointArray): Byte;
-    function FindPlaceForMines(aHT: TKMHouseType): Boolean;
-    function FindPlaceForQuary(StoneLocs: TKMPointTagList = nil): Boolean;
+    function FindPlaceForMines(aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
+    function FindPlaceForQuary(var StoneLocs: TKMPointTagList): Boolean;
     function FindPlaceForWoodcutter(aCenter: TKMPoint; aChopOnly: Boolean = False): Boolean;
     function FindForestAndWoodcutter(): Boolean;
     function PlanDefenceTowers(): Boolean;
 
   public
+
     constructor Create(aPlayer: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
@@ -203,7 +248,7 @@ type
     function GetFieldToHouse(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList; var aFieldType: TKMFieldType): Boolean;
     function GetTreesInHousePlan(aHT: TKMHouseType; aIdx: Integer; var aField: TKMPointList): Byte;
     function FindForestAround(const aPoint: TKMPoint; aCountByInfluence: Boolean = False): Boolean;
-    procedure CheckStoneReserves();
+    procedure CheckStoneReserves(aForceToPlaceQuarry: Boolean = False);
 
     procedure LogStatus(var aBalanceText: UnicodeString);
     procedure Paint();
@@ -277,11 +322,14 @@ begin
       Count := 0;
       Completed := 0;
       UnderConstruction := 0;
+      Planned := 0;
     end;
   fDebugText := '';
   {$IFDEF DEBUG_NewAI}
     FillChar(fTimeSumSearchHouse, SizeOf(fTimeSumSearchHouse), #0);
     FillChar(fTimePeakSearchHouse, SizeOf(fTimePeakSearchHouse), #0);
+    fTimeSumPlanFields := 0;
+    fTimePeakPlanFields := 0;
     fTimeSumSearchForest := 0;
     fTimePeakSearchForest := 0;
   {$ENDIF}
@@ -292,6 +340,7 @@ begin
   SetLength(fForestsInfo.Forests,0);
   fRoadPlanner := TPathFindingCityPlanner.Create(fOwner);
   fRoadShortcutPlanner := TPathFindingShortcutsCityPlanner.Create(fOwner);
+  fFieldEval := TKMFieldEvaluation.Create(gTerrain.MapX, gTerrain.MapY, fOwner);
 end;
 
 
@@ -307,6 +356,7 @@ begin
           gHands.CleanUpHousePointer(House);
   fRoadPlanner.Free;
   fRoadShortcutPlanner.Free;
+  fFieldEval.Free;
   inherited;
 end;
 
@@ -329,6 +379,7 @@ begin
     SaveStream.Write(fPlannedHouses[HT].Count);
     SaveStream.Write(fPlannedHouses[HT].Completed);
     SaveStream.Write(fPlannedHouses[HT].UnderConstruction);
+    SaveStream.Write(fPlannedHouses[HT].Planned);
     Len := Length(fPlannedHouses[HT].Plans);
     SaveStream.Write( Len );
     for K := 0 to fPlannedHouses[HT].Count - 1 do
@@ -372,6 +423,7 @@ begin
     LoadStream.Read(fPlannedHouses[HT].Count);
     LoadStream.Read(fPlannedHouses[HT].Completed);
     LoadStream.Read(fPlannedHouses[HT].UnderConstruction);
+    LoadStream.Read(fPlannedHouses[HT].Planned);
     LoadStream.Read(Len);
     SetLength(fPlannedHouses[HT].Plans, Len);
     for K := 0 to fPlannedHouses[HT].Count - 1 do
@@ -415,6 +467,9 @@ end;
 procedure TKMCityPlanner.OwnerUpdate(aPlayer: TKMHandID);
 begin
   fOwner := aPlayer;
+  fRoadPlanner.OwnerUpdate(aPlayer);
+  fRoadShortcutPlanner.OwnerUpdate(aPlayer);
+  fFieldEval.OwnerUpdate(aPlayer);
 end;
 
 
@@ -462,7 +517,7 @@ const
   WOODCUT_CHOP_ONLY_CHECK = MAX_HANDS * 100;
 var
   CheckChopOnly, CheckExistHouse, HouseExist: Boolean;
-  CompletedHouses,HousesUnderConstruction: Word;
+  CompletedHouses,HousesUnderConstruction, PlannedHouses: Word;
   I,K: Integer;
   HT: TKMHouseType;
   H: TKMHouse;
@@ -506,6 +561,7 @@ begin
   begin
     CompletedHouses := 0;
     HousesUnderConstruction := 0;
+    PlannedHouses := 0;
     for I := 0 to fPlannedHouses[HT].Count - 1 do
       with fPlannedHouses[HT].Plans[I] do
       begin
@@ -530,7 +586,7 @@ begin
         end
         else if (HouseReservation OR RemoveTreeInPlanProcedure) then // House was reserved
         begin
-          HousesUnderConstruction := HousesUnderConstruction + 1;
+          PlannedHouses := PlannedHouses + 1;
         end
         else // House was destroyed
         begin
@@ -538,8 +594,12 @@ begin
             gHands.CleanUpHousePointer(House);
         end;
       end;
-    fPlannedHouses[HT].Completed := CompletedHouses;
-    fPlannedHouses[HT].UnderConstruction := HousesUnderConstruction;
+    with fPlannedHouses[HT] do
+    begin
+      Completed := CompletedHouses;
+      UnderConstruction := HousesUnderConstruction;
+      Planned := PlannedHouses;
+    end;
   end;
 end;
 
@@ -802,8 +862,13 @@ begin
   begin
     case aHT of
       htWoodcutters: FindForestAndWoodcutter();
-      htGoldMine, htCoalMine, htIronMine: FindPlaceForMines(aHT);
-      htQuary: FindPlaceForQuary();
+      htGoldMine, htIronMine: FindPlaceForMines(aHT, aLoc);
+      htCoalMine:
+      begin
+        if FindPlaceForMines(aHT, aLoc) then
+          gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(aHT, aLoc);
+      end;
+      htQuary: CheckStoneReserves(True);
       htWatchTower:
       begin
         if not fDefenceTowersPlanned then
@@ -1058,6 +1123,7 @@ begin
 end;
 
 
+{
 procedure TKMCityPlanner.PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
 type
   TDirArrInt = array[TDirection] of Integer;
@@ -1134,6 +1200,135 @@ begin
         Break;
     end;
   end;
+end;
+}
+
+
+
+procedure TKMCityPlanner.PlanFarmFields(aLoc: TKMPoint; var aNodeList: TKMPointList);
+const
+  MAX_DIST = 13;
+var
+  Check: Boolean;
+  X,Y, X2,Y2: Integer;
+  BelowLoc, P, P2: TKMPoint;
+  Build: array[-MAX_DIST..MAX_DIST,-MAX_DIST..MAX_DIST] of Boolean;
+  Price: TFieldPrice;
+  TagList: TKMPointTagList;
+  BuildFF: TKMBuildFF;
+  {$IFDEF DEBUG_NewAI}
+  Time: Cardinal;
+  {$ENDIF}
+begin
+  {$IFDEF DEBUG_NewAI}
+  Time := TimeGet();
+  FillChar(DA1, SizeOf(DA1), #0);
+  FillChar(DA2, SizeOf(DA2), #0);
+  FillChar(DA3, SizeOf(DA3), #0);
+  FillChar(DA4, SizeOf(DA4), #0);
+
+  FillChar(fFieldPrice, SizeOf(fFieldPrice), #0);
+  Price := fFieldPrice;
+  {$ENDIF}
+
+  BuildFF := gAIFields.Eye.BuildFF;
+  BuildFF.UpdateState(); // BuildFF is already updated if Fields are requested in same tick like Farm
+  BelowLoc := KMPointBelow(aLoc);
+  fFieldEval.EvalField(MAX_DIST,BelowLoc);
+
+  // Find build areas
+  for Y := -FARM_RADIUS to FARM_RADIUS do
+  for X := -FARM_RADIUS to FARM_RADIUS do
+  begin
+    P := KMPointAdd(KMPoint(X,Y),BelowLoc);
+    Build[Y,X] := False;
+    if gTerrain.TileInMapCoords(P.X, P.Y) AND (BuildFF.State[P.Y,P.X] in [bsBuild, bsTree] ) then
+      Build[Y,X] := True;
+  end;
+  // Evaluate tpBuild
+  with fFieldEval do
+    for Y := -FARM_RADIUS+1 to FARM_RADIUS-1 do
+    for X := -FARM_RADIUS+1 to FARM_RADIUS-1 do
+    begin
+      Check := True;
+      for Y2 := -1 to 1 do
+      for X2 := -1 to 1 do
+        if not Check OR not Build[Y+Y2,X+X2] then
+        begin
+          Check := False;
+          break;
+        end;
+      if Check then
+        for Y2 := -1 to 1 do
+        for X2 := -1 to 1 do
+        begin
+          Dec(Price[Y+Y2,X+X2], GA_PLANNER_PlanFarmFields_CanBuild);
+        {$IFDEF DEBUG_NewAI}
+          P := KMPointAdd(KMPoint(X,Y),BelowLoc);
+          if gTerrain.TileInMapCoords(P.X-1, P.Y-1) AND gTerrain.TileInMapCoords(P.X+1, P.Y+1) then
+            Inc(DA3[P.Y+Y2,P.X+X2], 40);
+        {$ENDIF}
+        end;
+    end;
+
+  //
+  with fFieldEval do
+    for Y := -FARM_RADIUS to FARM_RADIUS do
+    for X := -FARM_RADIUS to FARM_RADIUS do
+    begin
+      P := KMPointAdd(KMPoint(X,Y),BelowLoc);
+      if gTerrain.TileInMapCoords(P.X, P.Y) then
+        case FieldEval[Y,X] of
+          {$IFDEF DEBUG_NewAI}
+          feUnvisitedTile: DA4[P.Y,P.X] := 50;
+          feExistingField: DA2[P.Y,P.X] := 100;
+          {$ENDIF}
+          feFertileTile:
+          begin
+            Check := false;
+            if (Y > -FARM_RADIUS+2) AND (Y < FARM_RADIUS-2) AND (X > -FARM_RADIUS+2) AND (X < FARM_RADIUS-2) then
+              for Y2 := -2 to 2 do
+              for X2 := -2 to 2 do
+              begin
+                P2 := KMPointAdd(KMPoint(X2,Y2),BelowLoc);
+                if Check OR gTerrain.TileInMapCoords(P.X, P.Y) AND (FieldEval[Y+Y2,X+X2] = feFertileTile) then
+                begin
+                  Check := True;
+                  break;
+                end;
+              end;
+            Price[Y,X] := Price[Y,X]
+                          + GA_PLANNER_PlanFarmFields_Dist * (MAX_DIST - FieldPrice[Y,X])
+                          + GA_PLANNER_PlanFarmFields_ExistField * Byte(Check);
+          end;
+          feObstacle:      begin end;
+        end;
+    end;
+
+  TagList := TKMPointTagList.Create();
+  try
+    for Y := -FARM_RADIUS to FARM_RADIUS do
+    for X := -FARM_RADIUS to FARM_RADIUS do
+      if (fFieldEval.FieldEval[Y,X] = feFertileTile) then
+      begin
+        P := KMPointAdd(KMPoint(X,Y),BelowLoc);
+        TagList.Add(P, 20000 + Price[Y,X]);
+        {$IFDEF DEBUG_NewAI}
+        DA1[P.Y,P.X] := Price[Y,X];
+        {$ENDIF}
+      end;
+    TagList.SortByTag;
+    for X := TagList.Count - 1 downto Max(0, TagList.Count - GA_PLANNER_PlanFarmFields_MaxFields) do
+      aNodeList.Add(TagList.Items[X]);
+  finally
+    TagList.Free;
+  end;
+  {$IFDEF DEBUG_NewAI}
+    Time := TimeGet() - Time;
+    fTimeSumPlanFields := fTimeSumPlanFields + Time;
+    if (Time > fTimePeakPlanFields) then
+      fTimePeakPlanFields := Time;
+  {$ENDIF}
 end;
 
 
@@ -1489,7 +1684,7 @@ begin
     IgnoreTrees := aIgnoreTrees;
     IgnoreAvoidBuilding := False;
     //MaxCnt := 40; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
-    MaxDist := 30;
+    MaxDist := 30 - 20 * Byte(aHT = htMetallurgists);
     MaxCnt := 100; // Huge performance impact (with 10 plans needs 40 ms to build city; 100 needs 320 ms)
   end;
 
@@ -1585,7 +1780,7 @@ begin
 end;
 
 
-function TKMCityPlanner.FindPlaceForMines(aHT: TKMHouseType): Boolean;
+function TKMCityPlanner.FindPlaceForMines(aHT: TKMHouseType; var aLoc: TKMPoint): Boolean;
 const
   MAX_LOCS = 5;
 
@@ -1641,6 +1836,7 @@ const
         if (BestGain <> BEST_GAIN) then
         begin
           AddPlan(aHT, Locs.Items[BestIdx]);
+          aLoc := Locs.Items[BestIdx];
           Output := True;
         end;
       end;
@@ -1700,6 +1896,7 @@ const
         if (Gain > BestGain) then
         begin
           BestIdx := I;
+          aLoc := Items[BestIdx];
           BestGain := Gain;
         end;
       end;
@@ -1733,7 +1930,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.CheckStoneReserves();
+procedure TKMCityPlanner.CheckStoneReserves(aForceToPlaceQuarry: Boolean = False);
 const
   HT = htQuary;
   MAX_DIST = 15;
@@ -1744,73 +1941,87 @@ var
   StoneLocs, CopySL: TKMPointTagList;
   CanMineCnt: TKMWordArray;
 begin
-  // Exit if there is not completed quarry or quarry is already builded
-  if (fPlannedHouses[HT].Completed = 0) OR (fPlannedHouses[HT].Count > fPlannedHouses[HT].Completed) then
+  // Exit if we dont need new quarry and there is not completed quarry or quarry is already builded
+  if not aForceToPlaceQuarry AND ((fPlannedHouses[HT].Completed = 0) OR (fPlannedHouses[HT].Count > fPlannedHouses[HT].Completed)) then
     Exit;
   StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
+  CopySL := nil;
   try
     if (StoneLocs.Count > 0) then
     begin
-      // Calculate usage of each mine and each stone tile
-      SetLength(CanMineCnt, fPlannedHouses[HT].Count);
-      FillChar(CanMineCnt[0], SizeOf(CanMineCnt[0]) * Length(CanMineCnt), #0);
-      FillChar(StoneLocs.Tag2[0], SizeOf(StoneLocs.Tag2[0]) * Length(StoneLocs.Tag2), #0);
-      for I := Low(CanMineCnt) to High(CanMineCnt) do
-        with fPlannedHouses[HT].Plans[I] do
-          for K := 0 to StoneLocs.Count - 1 do
-            if (KMDistanceAbs(Loc,StoneLocs.Items[K]) < MAX_DIST) then
-            begin
-              Inc(CanMineCnt[I],StoneLocs.Tag[K]);
-              Inc(StoneLocs.Tag2[K]);
-            end;
-      // Find the most depleted house
-      LowestIdx := 0;
-      for I := Low(CanMineCnt) to High(CanMineCnt) do
-        if (CanMineCnt[LowestIdx] > CanMineCnt[I])
-          AND (fPlannedHouses[HT].Plans[I].House <> nil)
-          AND not fPlannedHouses[HT].Plans[I].House.IsDestroyed then
-          LowestIdx := I;
-      // Try to remove 1 quarry
-      if (CanMineCnt[LowestIdx] < MIN_CNT) then
+      if (fPlannedHouses[HT].Count > 0) then
       begin
-        // Find again all possible places where quarry can mine and check if every tile can be mined by another 2 mines
-        CanBeReplaced := True;
-        with fPlannedHouses[HT].Plans[LowestIdx] do
-          for I := StoneLocs.Count - 1 downto 0 do
-            if (StoneLocs.Tag2[I] < 3) AND (KMDistanceAbs(Loc,StoneLocs.Items[I]) < MAX_DIST) then
-            begin
-              CanBeReplaced := False;
-              break;
-            end
-            else if (StoneLocs.Tag2[I] > 1) then
-              StoneLocs.Delete(I);
-        if CanBeReplaced then
+        // Calculate usage of each mine and each stone tile
+        SetLength(CanMineCnt, fPlannedHouses[HT].Count);
+        FillChar(CanMineCnt[0], SizeOf(CanMineCnt[0]) * Length(CanMineCnt), #0);
+        FillChar(StoneLocs.Tag2[0], SizeOf(StoneLocs.Tag2[0]) * Length(StoneLocs.Tag2), #0);
+        for I := Low(CanMineCnt) to High(CanMineCnt) do
+          with fPlannedHouses[HT].Plans[I] do
+            for K := 0 to StoneLocs.Count - 1 do
+              if (KMDistanceAbs(Loc,StoneLocs.Items[K]) < MAX_DIST) then
+              begin
+                Inc(CanMineCnt[I],StoneLocs.Tag[K]);
+                Inc(StoneLocs.Tag2[K]);
+              end;
+        // Find the most depleted house
+        LowestIdx := 0;
+        for I := Low(CanMineCnt) to High(CanMineCnt) do
+          if (CanMineCnt[LowestIdx] > CanMineCnt[I])
+            AND (fPlannedHouses[HT].Plans[I].House <> nil)
+            AND not fPlannedHouses[HT].Plans[I].House.IsDestroyed then
+            LowestIdx := I;
+        // Try to remove 1 quarry
+        if (CanMineCnt[LowestIdx] < MIN_CNT) then
         begin
-          CopySL := TKMPointTagList.Create();
-          for I := 0 to StoneLocs.Count - 1 do
-            CopySL.Add(StoneLocs.Items[I], StoneLocs.Tag[I]);
-          K := fPlannedHouses[HT].Count;
-          FindPlaceForQuary(CopySL);
-          // Demolish quarry only in case that new can be placed
-          with fPlannedHouses[HT] do
-            if (K < Count) then
-            begin
-              Plans[ Count-1 ].HouseReservation := True; // Reserve houses so it builder will init road
-              if (Plans[LowestIdx].House <> nil) then
-                Plans[LowestIdx].House.DemolishHouse(fOwner);
-              RemovePlan(HT, LowestIdx);
-            end;
-        end;
-      end;
+          // Find again all possible places where quarry can mine and check if every tile can be mined by another 2 mines
+          CanBeReplaced := True;
+          with fPlannedHouses[HT].Plans[LowestIdx] do
+            for I := StoneLocs.Count - 1 downto 0 do
+              if (StoneLocs.Tag2[I] < 3) AND (KMDistanceAbs(Loc,StoneLocs.Items[I]) < MAX_DIST) then
+              begin
+                CanBeReplaced := False;
+                break;
+              end
+              else if (StoneLocs.Tag2[I] > 1) then
+                StoneLocs.Delete(I);
+          if CanBeReplaced then
+          begin
+            CopySL := TKMPointTagList.Create();
+            for I := 0 to StoneLocs.Count - 1 do
+              CopySL.Add(StoneLocs.Items[I], StoneLocs.Tag[I]);
+            K := fPlannedHouses[HT].Count;
+            FindPlaceForQuary(CopySL);
+            // Demolish quarry only in case that new can be placed
+            if not aForceToPlaceQuarry then
+              with fPlannedHouses[HT] do
+                if (K < Count) then
+                begin
+                  Plans[ Count-1 ].HouseReservation := True; // Reserve houses so builder will init road
+                  if (Plans[LowestIdx].House <> nil) then
+                    Plans[LowestIdx].House.DemolishHouse(fOwner);
+                  RemovePlan(HT, LowestIdx);
+                end;
+          end
+          else if aForceToPlaceQuarry then
+            FindPlaceForQuary(StoneLocs);
+        end
+        else if aForceToPlaceQuarry then
+          FindPlaceForQuary(StoneLocs);
+      end
+      else if aForceToPlaceQuarry then
+        FindPlaceForQuary(StoneLocs);
     end;
   finally
-    StoneLocs.Free;
+    if (StoneLocs <> nil) then
+      StoneLocs.Free;
+    if (CopySL <> nil) then
+      CopySL.Free;
   end;
 end;
 
 
 // Quarry planner (constants in this function are critical and will not be set by CA)
-function TKMCityPlanner.FindPlaceForQuary(StoneLocs: TKMPointTagList = nil): Boolean;
+function TKMCityPlanner.FindPlaceForQuary(var StoneLocs: TKMPointTagList): Boolean;
 const
   HT = htQuary;
   MAX_DERIVATION = 75;
@@ -1832,81 +2043,77 @@ begin
   {$ENDIF}
   Output := False;
   BuildFF := gAIFields.Eye.BuildFF;
+  if (StoneLocs = nil) then
+    Exit; // Find stone locs
 
   with HouseReq do
   begin
     HouseType := HT;
     IgnoreTrees := False;
     IgnoreAvoidBuilding := True;
-    MaxCnt := 20;
+    MaxCnt := 150; // Placing quarry is CRITICAL, pick up the best if possible
     MaxDist := 11;
   end;
-  if (StoneLocs = nil) then
-    StoneLocs := gAIFields.Eye.GetStoneLocs(); // Find stone locs
-  try
-    if (StoneLocs.Count > 0) then
-    begin
-      BuildFF.UpdateState(); // Mark walkable area in owner's city
-      // Consider Ownership in picking stone locs
-      with StoneLocs do
-        for I := Count - 1 downto 0 do
-        begin
-          IsWalkable := False;
-          for Y := Items[I].Y to Min(Items[I].Y + MAX_SCAN_DIST, gTerrain.MapY - 1) do
-            if (BuildFF.VisitIdx = BuildFF.Visited[Y,Items[I].X]) then
-            begin
-              Items[I] := KMPoint(Items[I].X,Y);// Set stone loc to closest walkable point (which is bellow actual point)
-              Tag[I] := Max(0, 10000
-                               + gAIFields.Influences.Ownership[fOwner, Items[I].Y, Items[I].X]
-                               - gAIFields.Influences.GetOtherOwnerships(fOwner,Items[I].X,Items[I].Y)
-                               - BuildFF.Distance[ Items[I] ]) * 10;
-              IsWalkable := True;
-              break;
-            end;
-          if not IsWalkable then // Remove stone locs without walkable tiles (under the loc)
-            Delete(I);
-        end;
-      StoneLocs.SortByTag();
-      MaxIdx := StoneLocs.Count - 1;
-      // Try find place for quarry
-      while not Output AND (MaxIdx > 0) do
+  if (StoneLocs.Count > 0) then
+  begin
+    BuildFF.UpdateState(); // Mark walkable area in owner's city
+    // Consider Ownership in picking stone locs
+    with StoneLocs do
+      for I := Count - 1 downto 0 do
       begin
-        // Try find cluster of stone locs by influence
-        for MinIdx := MaxIdx - 1 downto 0 do
-          if (StoneLocs.Tag[MinIdx + 1] - StoneLocs.Tag[MinIdx] > MAX_DERIVATION) then
-            break;
-        // Copy points in stone mountain in specific influence (it can be multiple stone mountains but in same influence area)
-        SetLength(InitPointsArr, MaxIdx - MinIdx);
-        for I := MaxIdx downto MinIdx + 1 do
-          InitPointsArr[MaxIdx - I] := StoneLocs.Items[I];
-        MaxIdx := MinIdx;
-        // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
-        BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
-        // Evaluate new locs
-        BestGain := -10000000;
-        for I := 0 to BuildFF.Locs.Count - 1 do
-        begin
-          Loc := BuildFF.Locs.Items[I];
-          Gain := - ObstaclesInHousePlan(htQuary,Loc) * 10
-                  - BuildFF.Distance[Loc] * 20 // Snap crit is aggressive
-                  - BuildFF.DistanceInitPoint[Loc] * 5
-                  + SnapCrit(HT, Loc);
-          if (Gain > BestGain) then
+        IsWalkable := False;
+        for Y := Items[I].Y to Min(Items[I].Y + MAX_SCAN_DIST, gTerrain.MapY - 1) do
+          if (BuildFF.VisitIdx = BuildFF.Visited[Y,Items[I].X]) then
           begin
-            BestGain := Gain;
-            BestLoc := Loc;
-            Output := True;
+            Items[I] := KMPoint(Items[I].X,Y);// Set stone loc to closest walkable point (which is bellow actual point)
+            Tag[I] := Max(0, 10000
+                             + gAIFields.Influences.Ownership[fOwner, Items[I].Y, Items[I].X]
+                             - gAIFields.Influences.GetOtherOwnerships(fOwner,Items[I].X,Items[I].Y)
+                             - BuildFF.Distance[ Items[I] ]) * 10;
+            IsWalkable := True;
+            break;
           end;
-        end;
+        if not IsWalkable then // Remove stone locs without walkable tiles (under the loc)
+          Delete(I);
       end;
-      if Output then
+    StoneLocs.SortByTag();
+    MaxIdx := StoneLocs.Count - 1;
+    // Try find place for quarry
+    while not Output AND (MaxIdx > 0) do
+    begin
+      // Try find cluster of stone locs by influence
+      for MinIdx := MaxIdx - 1 downto 0 do
+        if (StoneLocs.Tag[MinIdx + 1] - StoneLocs.Tag[MinIdx] > MAX_DERIVATION) then
+          break;
+      // Copy points in stone mountain in specific influence (it can be multiple stone mountains but in same influence area)
+      SetLength(InitPointsArr, MaxIdx - MinIdx);
+      for I := MaxIdx downto MinIdx + 1 do
+        InitPointsArr[MaxIdx - I] := StoneLocs.Items[I];
+      MaxIdx := MinIdx;
+      // Try to find stone locs -> array will be automatically filtered by walkable areas inside of BuildFF
+      BuildFF.FindPlaceForHouse(HouseReq, InitPointsArr, True);
+      // Evaluate new locs
+      BestGain := -10000000;
+      for I := 0 to BuildFF.Locs.Count - 1 do
       begin
-        AddPlan(HT, BestLoc);
-        gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(HT, BestLoc);
+        Loc := BuildFF.Locs.Items[I];
+        Gain := - ObstaclesInHousePlan(htQuary,Loc) * GA_PLANNER_FindPlaceForQuary_Obstacle
+                - BuildFF.Distance[Loc] * GA_PLANNER_FindPlaceForQuary_DistCity
+                - BuildFF.DistanceInitPoint[Loc] * GA_PLANNER_FindPlaceForQuary_DistStone
+                + SnapCrit(HT, Loc) * GA_PLANNER_FindPlaceForQuary_SnapCrit;
+        if (Gain > BestGain) then
+        begin
+          BestGain := Gain;
+          BestLoc := Loc;
+          Output := True;
+        end;
       end;
     end;
-  finally
-    StoneLocs.Free;
+    if Output then
+    begin
+      AddPlan(HT, BestLoc);
+      gHands[fOwner].AI.CityManagement.Builder.LockHouseLoc(HT, BestLoc);
+    end;
   end;
   Result := Output;
   {$IFDEF DEBUG_NewAI}
@@ -2353,9 +2560,29 @@ var
   Division: Single;
   HT: TKMHouseType;
   Loc: TKMPoint;
-  Color: Cardinal;
+  Color, Val: Cardinal;
   HMA: THouseMappingArray;
 begin
+
+  {$IFDEF DEBUG_NewAI}
+  Division := 1;
+  for L := Low(DA1) to High(DA1) do
+  for K := Low(DA1[0]) to High(DA1[0]) do
+    if (Division < DA1[L,K]) then
+      Division := DA1[L,K];
+  for L := Low(DA1) to High(DA1) do
+  for K := Low(DA1[0]) to High(DA1[0]) do
+    if gTerrain.TileInMapCoords(K,L) then
+    begin
+      Val := Cardinal(Max(0, Min(250, Round(DA1[L,K]/Division*250))));
+      gRenderAux.Quad(K, L, (Val shl 24) OR COLOR_GREEN);
+      //gRenderAux.Text(K, L, IntToStr(Round(DA1[L,K])), $FF000000);
+      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA2[L,K]))) shl 24) OR COLOR_WHITE);
+      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA3[L,K]))) shl 24) OR COLOR_BLUE);
+      //gRenderAux.Quad(K, L, (Cardinal(Max(0, Min(127, DA4[L,K]))) shl 24) OR COLOR_BLACK);
+    end;
+  {$ENDIF}
+
   HMA := gAIFields.Eye.HousesMapping;
 
   {$IFDEF DEBUG_NewAI}
@@ -2476,6 +2703,121 @@ end;
 function TPathFindingShortcutsCityPlanner.DestinationReached(aX, aY: Word): Boolean;
 begin
   Result := ((aX = fLocB.X) and (aY = fLocB.Y)); //We reached destination point
+end;
+
+
+
+
+{ TKMFieldEvaluation }
+constructor TKMFieldEvaluation.Create(aMapX, aMapY: Word; aOwner: TKMHandID);
+begin
+  fMapX := aMapX;
+  fMapY := aMapY;
+  fOwner := aOwner;
+  fQueue := TQueue.Create();
+end;
+
+
+destructor TKMFieldEvaluation.Destroy();
+begin
+  fQueue.Free();
+  inherited;
+end;
+
+
+function TKMFieldEvaluation.CanBeVisited(const aX,aY, aDistance: Word): Boolean;
+var
+  K,L: Integer;
+begin
+  K := aX - fInitPoint.X;
+  L := aY - fInitPoint.Y;
+  Result := (K >= - FARM_RADIUS) AND (L >= - FARM_RADIUS) AND (K <= + FARM_RADIUS) AND (L <= + FARM_RADIUS) AND (FieldPrice[L,K] = 0)
+            AND gTerrain.TileInMapCoords(aX, aY) AND (tpWalk in gTerrain.Land[aY,aX].Passability) AND (gAIFields.Influences.AvoidBuilding[aY, aX] <> AVOID_BUILDING_HOUSE_INSIDE_LOCK);
+end;
+
+
+procedure TKMFieldEvaluation.MarkAsVisited(const aX,aY, aDistance: Word);
+var
+  K,L: Integer;
+  P: TKMPoint;
+begin
+  K := aX - fInitPoint.X;
+  L := aY - fInitPoint.Y;
+
+  FieldPrice[L,K] := aDistance;
+  P := KMPoint(aX,aY);
+  case gAIFields.Influences.AvoidBuilding[aY, aX] of
+    AVOID_BUILDING_UNLOCK, AVOID_BUILDING_HOUSE_OUTSIDE_LOCK:
+    begin
+      if gHands[fOwner].CanAddFieldPlan(P, ftCorn) then
+        FieldEval[L,K] := feFertileTile
+      else if gTerrain.TileIsCornField(P) then
+        FieldEval[L,K] := feExistingField
+      else
+        FieldEval[L,K] := feObstacle;
+    end;
+    AVOID_BUILDING_NODE_LOCK_FIELD:
+      FieldEval[L,K] := feExistingField;
+    else begin end;
+  end;
+end;
+
+
+procedure TKMFieldEvaluation.InsertInQueue(const aX,aY, aDistance: Word);
+var
+  DE: PDistElement;
+begin
+  MarkAsVisited(aX,aY,aDistance);
+  New(DE);
+  DE^.X := aX;
+  DE^.Y := aY;
+  DE^.Distance := aDistance;
+  fQueue.Push(DE);
+end;
+
+
+function TKMFieldEvaluation.RemoveFromQueue(var aX,aY, aDistance: Word): Boolean;
+var
+  DE: PDistElement;
+begin
+  Result := (fQueue.Count > 0);
+  if Result then
+  begin
+    DE := fQueue.Pop;
+    aX := DE^.X;
+    aY := DE^.Y;
+    aDistance := DE^.Distance;
+    Dispose(DE);
+  end;
+end;
+
+
+procedure TKMFieldEvaluation.EvalField(aMaxDist: Word; aInitPoint: TKMPoint);
+var
+  X,Y,Distance: Word;
+begin
+  FillChar(FieldEval, SizeOf(FieldEval), #0);
+  FillChar(FieldPrice, SizeOf(FieldPrice), #0);
+
+  fInitPoint := aInitPoint;
+  if CanBeVisited(aInitPoint.X, aInitPoint.Y, 1) then
+    InsertInQueue(aInitPoint.X, aInitPoint.Y, 1);
+
+  while RemoveFromQueue(X,Y,Distance) do
+    if (Distance < aMaxDist) then
+    begin
+      Distance := Distance + 1;
+      if (X > 0)       AND CanBeVisited(X-1,Y,Distance) then InsertInQueue(X-1,Y,Distance);
+      if (X < fMapX-1) AND CanBeVisited(X+1,Y,Distance) then InsertInQueue(X+1,Y,Distance);
+      if (Y > 0)       AND CanBeVisited(X,Y-1,Distance) then InsertInQueue(X,Y-1,Distance);
+      if (Y < fMapY-1) AND CanBeVisited(X,Y+1,Distance) then InsertInQueue(X,Y+1,Distance);
+    end;
+end;
+
+
+procedure TKMFieldEvaluation.OwnerUpdate(aPlayer: TKMHandID);
+begin
+  fOwner := aPlayer;
 end;
 
 
