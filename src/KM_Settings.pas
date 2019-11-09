@@ -174,6 +174,8 @@ type
     fMenu_SPSaveFileName: UnicodeString;
     fMenu_LobbyMapType: Byte;
 
+    fDebug_SaveRandomChecks: Boolean;
+
     fFavouriteMaps: TKMMapsCRCList;
 
     //GFX
@@ -254,6 +256,9 @@ type
     procedure SetMenuSPSpecialMapCRC(aValue: Cardinal);
     procedure SetMenuSPSaveFileName(const aValue: UnicodeString);
     procedure SetMenuLobbyMapType(aValue: Byte);
+
+    //Debug
+    procedure SetDebugSaveRandomChecks(aValue: Boolean);
   protected
     function LoadFromINI(const FileName: UnicodeString): Boolean;
     procedure SaveToINI(const FileName: UnicodeString);
@@ -359,6 +364,8 @@ type
     property MenuSPSpecialMapCRC: Cardinal read fMenu_SPSpecialMapCRC write SetMenuSPSpecialMapCRC;
     property MenuSPSaveFileName: UnicodeString read fMenu_SPSaveFileName write SetMenuSPSaveFileName;
     property MenuLobbyMapType: Byte read fMenu_LobbyMapType write SetMenuLobbyMapType;
+
+    property DebugSaveRandomChecks: Boolean read fDebug_SaveRandomChecks write SetDebugSaveRandomChecks;
 
     property FavouriteMaps: TKMMapsCRCList read fFavouriteMaps;
   end;
@@ -685,6 +692,8 @@ begin
     fMenu_SPSpecialMapCRC   := StrToInt64(F.ReadString('Menu', 'SPSpecialMapCRC', '0'));
     fMenu_SPSaveFileName    := F.ReadString('Menu', 'SPSaveFileName', '');
     fMenu_LobbyMapType      := F.ReadInteger('Menu', 'LobbyMapType', 0);
+
+    fDebug_SaveRandomChecks := F.ReadBool('Debug','SaveRandomChecks',False);
   finally
     F.Free;
   end;
@@ -796,6 +805,8 @@ begin
     F.WriteString ('Menu',  'SPSpecialMapCRC',    IntToStr(fMenu_SPSpecialMapCRC));
     F.WriteString ('Menu',  'SPSaveFileName',     fMenu_SPSaveFileName);
     F.WriteInteger('Menu',  'LobbyMapType',       fMenu_LobbyMapType);
+
+    F.WriteBool   ('Debug','SaveRandomChecks',    fDebug_SaveRandomChecks);
 
     F.UpdateFile; //Write changes to file
   finally
@@ -958,6 +969,13 @@ end;
 procedure TKMGameSettings.SetMenuLobbyMapType(aValue: Byte);
 begin
   fMenu_LobbyMapType := aValue;
+  Changed;
+end;
+
+
+procedure TKMGameSettings.SetDebugSaveRandomChecks(aValue: Boolean);
+begin
+  fDebug_SaveRandomChecks := aValue;
   Changed;
 end;
 

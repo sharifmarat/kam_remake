@@ -151,7 +151,9 @@ begin
   fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
-  gRandomCheckLogger := TKMRandomCheckLogger.Create;
+
+  if fGameSettings.DebugSaveRandomChecks then
+    gRandomCheckLogger := TKMRandomCheckLogger.Create;
 
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);

@@ -324,7 +324,9 @@ begin
   end;
   gProjectiles := TKMProjectiles.Create;
 
-  gRandomCheckLogger.Clear;
+  if gRandomCheckLogger <> nil then
+    gRandomCheckLogger.Clear;
+
   gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
   fGameTick := 0; //Restart counter
@@ -1711,7 +1713,8 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
+  if gGameApp.GameSettings.DebugSaveRandomChecks and (gRandomCheckLogger <> nil) then
+    gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
 
   gLog.AddTime('Saving game', True);
 end;
@@ -2165,7 +2168,8 @@ begin
 
                           IncGameTick;
 
-                          gRandomCheckLogger.UpdateState(fGameTick);
+                          if gRandomCheckLogger <> nil then
+                            gRandomCheckLogger.UpdateState(fGameTick);
 
                           fLastReplayTick := fGameTick;
 
