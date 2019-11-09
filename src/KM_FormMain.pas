@@ -122,7 +122,7 @@ type
     chkShowEyeRoutes: TCheckBox;
     chkSelectedObjInfo: TCheckBox;
     chkShowFPS: TCheckBox;
-    CheckBox1: TCheckBox;
+    chkHands: TCheckBox;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);

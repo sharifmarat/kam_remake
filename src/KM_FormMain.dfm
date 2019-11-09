@@ -546,7 +546,7 @@ object FormMain: TFormMain
         TabOrder = 12
         OnClick = ControlsUpdate
       end
-      object CheckBox1: TCheckBox
+      object chkHands: TCheckBox
         Left = 8
         Top = 136
         Width = 89
