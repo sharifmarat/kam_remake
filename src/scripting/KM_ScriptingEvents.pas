@@ -713,7 +713,7 @@ end;
 //* aNewGroup: splitted group ID
 procedure TKMScriptEvents.ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
 begin
-  if MethodAssigned(evtGroupOrderLink) then
+  if MethodAssigned(evtGroupOrderSplit) then
   begin
     fIDCache.CacheGroup(aGroup, aGroup.UID);       //Improves cache efficiency since aGroup will probably be accessed soon
     fIDCache.CacheGroup(aNewGroup, aNewGroup.UID); //Improves cache efficiency since aNewGroup will probably be accessed soon
