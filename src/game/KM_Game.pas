@@ -685,7 +685,7 @@ begin
 
   //Find enabled human hands, where if there is no net player on that loc
   //then disable all goals with this hand for other hands
-  for I := 0 to MAX_HANDS - 1 do
+  for I := 0 to gHands.Count - 1 do
   begin
     if gHands[I].Enabled and gHands[I].IsHuman then
     begin
