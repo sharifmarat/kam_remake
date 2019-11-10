@@ -546,9 +546,11 @@ var
 begin
   if (gGame <> nil) and not gGame.IsMapEditor then
   begin
+    gResTexts.ForceDefaultLocale := True; //Use only eng for exported csv
     DateS := FormatDateTime('yyyy-mm-dd_hh-nn', Now);
     gHands.ExportGameStatsToCSV(ExeDir + 'Export' + PathDelim + gGame.GameName + '_' + DateS + '.csv',
                             Format('Statistics for game at map ''%s'' on %s', [gGame.GameName, DateS]));
+    gResTexts.ForceDefaultLocale := False;
   end;
 end;
 

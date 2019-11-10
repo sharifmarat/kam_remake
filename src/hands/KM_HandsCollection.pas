@@ -1006,7 +1006,7 @@ begin
         if K > 0 then
           TStr := TStr + ' + ';
 
-        TStr := TStr + fHandsList[I].GetOwnerName;
+        TStr := TStr + fHandsList[I].CalcOwnerName;
 
         Inc(K);
       end;
