@@ -614,7 +614,7 @@ begin
     with fAttackRequest do
     begin
       // Exit if AI has NOT enought soldiers in defence AND there is NOT food or there are multiple oponents
-      if (DefRatio < MIN_DEF_RATIO) AND (FoodShortage OR (BestEnemy <> WorstEnemy)) then
+      if (DefRatio < MIN_DEF_RATIO) AND (FoodShortage OR (BestEnemy <> WorstEnemy)) AND (gGame.MissionMode <> mmTactic) then
         Exit;
       // 1v1 or special game mode
       if (BestEnemy = WorstEnemy) OR (gGame.MissionMode = mmTactic) then
