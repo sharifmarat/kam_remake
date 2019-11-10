@@ -75,7 +75,7 @@ type
     procedure RevealForTeam(aPlayer: TKMHandID; const Pos: TKMPoint; Radius,Amount: Word);
     procedure SyncFogOfWar;
     procedure AddDefaultGoalsToAll(aMissionMode: TKMissionMode);
-    procedure DisableGoalsForDefeatedHand(aHandIndex: TKMHandID);
+    procedure UpdateGoalsForHand(aHandIndex: TKMHandID; aEnable: Boolean);
     procedure PostLoadMission;
 
     procedure Save(SaveStream: TKMemoryStream; aMultiplayer: Boolean);
@@ -889,12 +889,13 @@ begin
 end;
 
 
-procedure TKMHandsCollection.DisableGoalsForDefeatedHand(aHandIndex: TKMHandID);
-var I: Integer;
+procedure TKMHandsCollection.UpdateGoalsForHand(aHandIndex: TKMHandID; aEnable: Boolean);
+var
+  I: Integer;
 begin
   for I := 0 to fCount - 1 do
     if I <> aHandIndex then
-      fHandsList[I].AI.Goals.DisableGoalsForHand(aHandIndex);
+      fHandsList[I].AI.Goals.UpdateGoalsForHand(aHandIndex, aEnable);
 end;
 
 

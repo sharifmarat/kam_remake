@@ -792,7 +792,7 @@ begin
                                     gHands[Params[1]].HandType := TKMHandType(Params[2]);
                                   end;
       gicGamePlayerDefeat:        begin
-                                    gHands.DisableGoalsForDefeatedHand(Params[1]);
+                                    gHands.UpdateGoalsForHand(Params[1], False);
                                     gHands[Params[1]].AI.Defeat(False);
                                   end;
       gicScriptConsoleCommand:    gScriptEvents.CallConsoleCommand(HandIndex, AnsiStrParam, UnicodeStrParams);

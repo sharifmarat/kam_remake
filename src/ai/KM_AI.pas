@@ -40,6 +40,7 @@ type
     property CityManagement: TKMCityManagement read fCityManagement;
     property ArmyManagement: TKMArmyManagement read fArmyManagement;
 
+    procedure ResetWonOrLost;
     procedure Defeat(aShowDefeatMessage: Boolean = True); //Defeat the player, this is not reversible
     procedure Victory; //Set this player as victorious, this is not reversible
     procedure AddDefaultGoals(aBuildings: Boolean);
@@ -99,6 +100,13 @@ begin
   fArmyManagement.Free;
 
   inherited;
+end;
+
+
+procedure TKMHandAI.ResetWonOrLost;
+begin
+  fWonOrLost := wolNone;
+
 end;
 
 
