@@ -58,12 +58,14 @@ type
     procedure SyncLoad();
     procedure UpdateState(aTick: Cardinal);
     procedure AfterMissionInit();
+
+    function ObjToString: String;
   end;
 
 
 implementation
 uses
-  SysUtils,
+  SysUtils, TypInfo,
   KM_GameTypes, KM_GameApp, KM_Game, KM_Hand, KM_HandsCollection, KM_HandStats, KM_UnitGroup,
   KM_ResHouses, KM_ResSound, KM_ScriptingEvents, KM_Alerts, KM_Points,
   KM_AIFields;
@@ -474,6 +476,12 @@ begin
                     end;
                   end;
   end;
+end;
+
+
+function TKMHandAI.ObjToString: String;
+begin
+  Result := 'WOL = ' + GetEnumName(TypeInfo(TWonOrLost), Integer(fWonOrLost));
 end;
 
 
