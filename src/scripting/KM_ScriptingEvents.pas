@@ -72,6 +72,7 @@ type
     procedure ProcGroupHungry(aGroup: TKMUnitGroup);
     procedure ProcGroupOrderAttackHouse(aGroup: TKMUnitGroup; aHouse: TKMHouse);
     procedure ProcGroupOrderAttackUnit(aGroup: TKMUnitGroup; aUnit: TKMUnit);
+    procedure ProcGroupOrderMove(aGroup: TKMUnitGroup; aX, aY: Word);
     procedure ProcGroupOrderLink(aGroup1, aGroup2: TKMUnitGroup);
     procedure ProcGroupOrderSplit(aGroup, aNewGroup: TKMUnitGroup);
     procedure ProcMarketTrade(aMarket: TKMHouse; aFrom, aTo: TKMWareType);
@@ -178,6 +179,7 @@ begin
   AddEventHandlerName(evtGroupHungry,           'OnGroupHungry');
   AddEventHandlerName(evtGroupOrderAttackHouse, 'OnGroupOrderAttackHouse');
   AddEventHandlerName(evtGroupOrderAttackUnit,  'OnGroupOrderAttackUnit');
+  AddEventHandlerName(evtGroupOrderMove,        'OnGroupOrderMove');
   AddEventHandlerName(evtGroupOrderLink,        'OnGroupOrderLink');
   AddEventHandlerName(evtGroupOrderSplit,       'OnGroupOrderSplit');
   AddEventHandlerName(evtMarketTrade,           'OnMarketTrade');
@@ -672,6 +674,20 @@ begin
     fIDCache.CacheGroup(aGroup, aGroup.UID); //Improves cache efficiency since aGroup will probably be accessed soon
     fIDCache.CacheUnit(aUnit, aUnit.UID);    //Improves cache efficiency since aUnit will probably be accessed soon
     CallEventHandlers(evtGroupOrderAttackUnit, [aGroup.UID, aUnit.UID]);
+  end;
+end;
+
+
+//* Version: 7000+
+//* Occurs when the group gets order to move to some point
+//* aGroup: group ID
+//* aX, aY: Point coordinates
+procedure TKMScriptEvents.ProcGroupOrderMove(aGroup: TKMUnitGroup; aX, aY: Word);
+begin
+  if MethodAssigned(evtGroupOrderMove) then
+  begin
+    fIDCache.CacheGroup(aGroup, aGroup.UID); //Improves cache efficiency since aGroup will probably be accessed soon
+    CallEventHandlers(evtGroupOrderMove, [aGroup.UID, aX, aY]);
   end;
 end;
 
