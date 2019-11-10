@@ -45,7 +45,7 @@ type
     function IsMultiplayer: Boolean;
     function IsReplayValid: Boolean;
     function LoadMinimap(aMinimap: TKMMinimap): Boolean; overload;
-    function LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean; overload;
+    function LoadMinimap(aMinimap: TKMMinimap; aChoosenStartLoc: Integer): Boolean; overload;
   end;
 
   TKMSavesScanner = class(TThread)
@@ -116,9 +116,6 @@ uses
   KM_Resource, KM_ResTexts, KM_FileIO, KM_NetworkTypes,
   KM_CommonClasses, KM_Defaults, KM_CommonUtils, KM_Log;
 
-const
-  ANY_LOC = -1000;
-
 
 { TKMSaveInfo }
 constructor TKMSaveInfo.Create(const aName: String; aIsMultiplayer: Boolean);
@@ -185,20 +182,18 @@ end;
 
 function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap): Boolean;
 begin
-  Result := LoadMinimap(aMinimap, ANY_LOC);
+  Result := LoadMinimap(aMinimap, LOC_ANY);
 end;
 
 
-function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aStartLoc: Integer): Boolean;
+function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aChoosenStartLoc: Integer): Boolean;
 var
   LoadStream: TKMemoryStream;
   DummyGameInfo: TKMGameInfo;
   DummyGameOptions: TKMGameOptions;
   GameLocalData: TKMGameMPLocalData;
-  LoadMinimapFn: TKMGameLclDataLoadMinimapFn;
   IsMultiplayer: Boolean;
   LocalDataFilePath: String;
-  LocalDataStartLoc: Integer;
 begin
   Result := False;
   if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
@@ -220,16 +215,9 @@ begin
     end else begin
       try
         // Lets try to load Minimap for MP save
-        GameLocalData := TKMGameMPLocalData.Create(0, aStartLoc, aMinimap);
+        GameLocalData := TKMGameMPLocalData.Create(0, aChoosenStartLoc, aMinimap);
         try
-          LoadMinimapFn := function(aStartLoc: Integer): Boolean
-            begin
-              Result := (aStartLoc = ANY_LOC) // for not MP game, f.e.
-                        or (aStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
-                        or (aStartLoc = LocalDataStartLoc); // allow, if we was on the same loc
-            end;
-            
-          Result := GameLocalData.LoadFromFile(fPath + fFileName + EXT_SAVE_MP_LOCAL_DOT, LoadMinimapFn);
+          Result := GameLocalData.LoadFromFile(fPath + fFileName + EXT_SAVE_MP_LOCAL_DOT);
         finally
           GameLocalData.Free;
         end;

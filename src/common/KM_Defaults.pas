@@ -283,6 +283,10 @@ const
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
 
+  LOC_RANDOM = 0;
+  LOC_SPECTATE = -1;
+  LOC_ANY = -1000;
+
   EXT_SAVE_REPLAY = 'rpl';
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
