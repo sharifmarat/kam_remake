@@ -931,7 +931,7 @@ begin
           SL.Delete(0); //Delete CRC from file
           MS := TKMemoryStream.Create;
           try
-            MS.WriteHugeString(SL.Text);
+            MS.WriteHugeString(AnsiString(SL.Text));
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally
