@@ -231,7 +231,8 @@ type
 
     //Common
     procedure ConsoleCommand(const aText: UnicodeString);
-    procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = ''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
+    procedure PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = ''; const aText2: UnicodeString = '';
+                          aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL; aTextID2: Integer = -1);
     procedure PostChat(const aText: UnicodeString; aMode: TKMChatMode; aRecipientServerIndex: TKMNetHandleIndex = NET_ADDRESS_OTHERS); overload;
     procedure PostLocalMessage(const aText: UnicodeString; aSound: TKMChatSound = csNone);
     procedure AnnounceGameInfo(aGameTime: TDateTime; aMap: UnicodeString);
@@ -1190,7 +1191,8 @@ begin
 end;
 
 
-procedure TKMNetworking.PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString=''; const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL);
+procedure TKMNetworking.PostMessage(aTextID: Integer; aSound: TKMChatSound; const aText1: UnicodeString = '';
+                                    const aText2: UnicodeString = ''; aRecipient: TKMNetHandleIndex = NET_ADDRESS_ALL; aTextID2: Integer = -1);
 var M: TKMemoryStream;
 begin
   M := TKMemoryStream.Create;
@@ -1198,6 +1200,7 @@ begin
   M.Write(aSound, SizeOf(aSound));
   M.WriteW(aText1);
   M.WriteW(aText2);
+  M.Write(aTextID2);
   PacketSend(aRecipient, mkTextTranslated, M);
   M.Free;
 end;
@@ -1562,7 +1565,7 @@ var
   M, M2: TKMemoryStream;
   Kind: TKMessageKind;
   err: UnicodeString;
-  tmpInteger: Integer;
+  tmpInteger, tmpInteger2: Integer;
   tmpHandleIndex: TKMNetHandleIndex;
   tmpCardinal, tmpCardinal2: Cardinal;
   tmpStringA: AnsiString;
@@ -2208,7 +2211,11 @@ begin
                 M.Read(ChatSound, SizeOf(ChatSound));
                 M.ReadW(tmpStringW);
                 M.ReadW(replyStringW);
-                PostLocalMessage(Format(gResTexts[tmpInteger], [tmpStringW, replyStringW]), ChatSound);
+                M.Read(tmpInteger2);
+                if tmpInteger2 = -1 then
+                  PostLocalMessage(Format(gResTexts[tmpInteger], [tmpStringW, replyStringW]), ChatSound)
+                else
+                  PostLocalMessage(Format(gResTexts[tmpInteger], [gResTexts[tmpInteger2]]), ChatSound)
               end;
 
       mkTextChat:
@@ -2601,7 +2608,7 @@ begin
   begin
     if fNetPlayers[I].Connected and not fNetPlayers[I].ReadyToStart then
     begin
-      PostMessage(TX_LOBBY_ALERT_NOT_READY, csSystem, gResTexts[TX_LOBBY_READY], '', fNetPlayers[I].IndexOnServer);
+      PostMessage(TX_LOBBY_ALERT_NOT_READY, csSystem, '', '', fNetPlayers[I].IndexOnServer, TX_LOBBY_READY);
       Inc(K);
     end;
   end;
