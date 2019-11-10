@@ -4183,6 +4183,7 @@ var
   Received, Sent, RTotal, STotal, Period: Cardinal;
   S, SPackets, S2: String;
   TextSize: TKMPoint;
+  ObjToShowInfo: TObject;
 begin
   S := '';
 
@@ -4259,13 +4260,18 @@ begin
   if SHOW_SELECTED_OBJ_INFO then
   begin
     if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
+      ObjToShowInfo := gMySpectator.Selected
+    else if (gMySpectator.LastSelected <> nil) then
+      ObjToShowInfo := gMySpectator.LastSelected;
+
+    if ObjToShowInfo <> nil then
     begin
-      if gMySpectator.Selected is TKMUnit then
-        S := S + TKMUnit(gMySpectator.Selected).ObjToString
-      else if gMySpectator.Selected is TKMUnitGroup then
-        S := S + TKMUnitGroup(gMySpectator.Selected).SelectedUnit.ObjToString
-      else if gMySpectator.Selected is TKMHouse then
-        S := S + TKMHouse(gMySpectator.Selected).ObjToString;
+      if ObjToShowInfo is TKMUnit then
+        S := S + TKMUnit(ObjToShowInfo).ObjToString
+      else if ObjToShowInfo is TKMUnitGroup then
+        S := S + TKMUnitGroup(ObjToShowInfo).SelectedUnit.ObjToString
+      else if ObjToShowInfo is TKMHouse then
+        S := S + TKMHouse(ObjToShowInfo).ObjToString;
     end;
   end;
 
