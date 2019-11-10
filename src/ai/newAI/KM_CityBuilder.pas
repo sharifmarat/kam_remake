@@ -1098,7 +1098,6 @@ var
             NodePrio := NODE_PRIO_Roads // House is unlocked, prio is high
           else
             NodePrio := NODE_PRIO_RoadsUnlockHouse; // House is unlocked and its construction will unlock another house, prio is TOP
-          NodePrio := Byte(K <> High(HTArr)) * NODE_PRIO_RoadsReservation + Byte(K = High(HTArr)) * NODE_PRIO_Roads;
           Output := BuildHouse(IgnoreTreesInPlan, HouseReservation, IgnoreExistingPlans, HTArr[K], NodePrio);
           RequiredHouses[ HTArr[K] ] := 0;
         end;
@@ -1631,7 +1630,7 @@ var
   Color: Cardinal;
   Point: TKMPoint;
 begin
-{
+//{
   for K := 0 to gHands[fOwner].Units.Count - 1 do
     with gHands[fOwner].Units[K] do
       if not IsDeadOrDying then
@@ -1662,7 +1661,7 @@ begin
           gRenderAux.Quad(Point.X, Point.Y, Color);
         end;
       end;
-}
+//}
 end;
 
 
