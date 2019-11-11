@@ -1491,8 +1491,6 @@ begin
       Exit;
     end;
 
-    RemAllClosedPlayers; //Closed players are just a marker in the lobby, delete them when the game starts
-
     gLog.AddTime('Randomizing locs...');
     if gLog.IsDegubLogEnabled then
       gLog.LogDebug(LocFiller.FillerToString);
@@ -1514,6 +1512,8 @@ begin
   finally
     LocFiller.Free;
   end;
+
+  RemAllClosedPlayers; //Closed players are just a marker in the lobby, delete them when the game starts
 
   //Check for odd players
   for I := 1 to fCount do
