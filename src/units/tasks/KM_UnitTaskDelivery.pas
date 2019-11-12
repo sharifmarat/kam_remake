@@ -436,8 +436,8 @@ begin
           //All houses can have resources taken away by script at any moment
           if not fFrom.ResOutputAvailable(fWareType, 1) then
           begin
-            SetActionGoIn(uaWalk, gdGoOutside, fFrom); //Step back out
-            fPhase := 99; //Exit next run
+            SetActionLockedStay(5, uaWalk); //Wait a moment inside
+            fPhase := 120; //Will get out of Barracks onthat Phase
             Exit;
           end;
           SetActionLockedStay(5,uaWalk); //Wait a moment inside
@@ -461,6 +461,15 @@ begin
 
   if fPhase = 5 then
     TKMUnitSerf(fUnit).Thought := thNone; // Clear possible '?' thought after 4th phase
+
+  //Get out barracks (special case after wait phase inside house, if resource is not available anymore)
+  with TKMUnitSerf(fUnit) do
+  if fPhase = 120 then
+  begin
+    SetActionGoIn(uaWalk, gdGoOutside, fFrom); //Step back out
+    fPhase := 99; //Exit next run
+    Exit;
+  end;
 
   //Deliver into complete house
   if (fDeliverKind = dkToHouse) then
