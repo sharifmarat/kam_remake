@@ -13,12 +13,12 @@ const
 
 var
 //{
-  GA_EYE_GetForests_MaxAB          : Single =   6.145020783; // <0.201> Ignore trees in existing forest <0.255-AVOID_BUILDING_FOREST_MINIMUM)
-  GA_EYE_GetForests_Radius         : Single =   9.129834533; // Forest radius
-  GA_EYE_GetForests_MinTrees       : Single =   3.228645921; // Min trees in forest
-  GA_EYE_GetForests_SPRndOwnLimMin : Single =  69.21056241; // Minimum influence of potential forest
-  GA_EYE_GetForests_SPRndOwnLimMax : Single = 187.8252494; // Maximum influence of potential forest
-  GA_EYE_GetForests_MinRndSoil     : Single =  70.02984214; // 0-82
+  GA_EYE_GetForests_MaxAB          : Single = 155.750323295593; // <0.201> Ignore trees in existing forest <0.255-AVOID_BUILDING_FOREST_MINIMUM)
+  GA_EYE_GetForests_Radius         : Single =   8.670244455338; // Forest radius
+  GA_EYE_GetForests_MinTrees       : Single =   3.150522664189; // Min trees in forest
+  GA_EYE_GetForests_SPRndOwnLimMin : Single =  99.770336151123; // Minimum influence of potential forest
+  GA_EYE_GetForests_SPRndOwnLimMax : Single = 201.641844511032; // Maximum influence of potential forest
+  GA_EYE_GetForests_MinRndSoil     : Single =  81.396015167236; // 0-82
 //}
 
 

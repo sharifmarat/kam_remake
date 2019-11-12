@@ -74,16 +74,18 @@ var
 
 
 //{
-  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single =  10.65430927;
-  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = 296.6792947;
-  GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single =  -0.72456187;
-  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single =   1.066726506;
-  GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single =   1.163838655;
-  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single =   4.594412148;
-  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     : Single =   3.31785357;
-  GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single = 137.1479392;
-  GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single =   3.058347501;
-  GA_PLANNER_FindForestAround_MaxDist             : Single =   7.366333246;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single =    32.1456005573273;
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer  : Single = 13805.7332038879;
+  GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single =   406.349253058433;
+  GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single =     0.816604614257812;
+  GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single =     3.37718081474304;
+  GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single =     2.91867184638977;
+  GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single =     0.94243973493576;
+  GA_PLANNER_FindPlaceForWoodcutter_DistTimer     : Single = 11655.6522846222;
+  GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     : Single =     3.34831988811493; // c
+  GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single =   138.00858259201; // c
+  GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single =     4.72347187995911;
+  GA_PLANNER_FindForestAround_MaxDist             : Single =     7.36316233873368; // c
 //}
 
 
@@ -108,7 +110,6 @@ var
 
 
 const
-
   FARM_RADIUS = 11;
 
 
@@ -1982,7 +1983,7 @@ begin
                 CanBeReplaced := False;
                 break;
               end
-              else if (StoneLocs.Tag2[I] > 1) then
+              else if (not aForceToPlaceQuarry AND (StoneLocs.Tag2[I] > 1)) OR (StoneLocs.Tag2[I] > 3) then // Allow lower tolerance in case of aForceToPlaceQuarry
                 StoneLocs.Delete(I);
           if CanBeReplaced then
           begin
@@ -2266,8 +2267,8 @@ var
     P: TKMPoint;
   begin
     P := FI.Forests[aIdx].Loc;
-    TreeCnt   := + FI.Forests[aIdx].TreeCout           * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt;
-    DistCrit  := - FI.Forests[aIdx].Distance           * GA_PLANNER_FindPlaceForWoodcutter_DistCrit;
+    TreeCnt   := + FI.Forests[aIdx].TreeCout           * GA_PLANNER_FindPlaceForWoodcutter_TreeCnt * Max(1, GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer - gGame.GameTick);
+    DistCrit  := - FI.Forests[aIdx].Distance           * GA_PLANNER_FindPlaceForWoodcutter_DistCrit * Max(1, GA_PLANNER_FindPlaceForWoodcutter_DistTimer - gGame.GameTick);
     ExistFrs  := + Byte(FI.Forests[aIdx].PartOfForest) * GA_PLANNER_FindPlaceForWoodcutter_ExistForest;
     Routes    := + gAIFields.Eye.Routes[P.Y, P.X]      * GA_PLANNER_FindPlaceForWoodcutter_Routes;
     FlatArea  := + gAIFields.Eye.FlatArea[P.Y, P.X]    * GA_PLANNER_FindPlaceForWoodcutter_FlatArea;
@@ -2657,6 +2658,8 @@ begin
   if IsRoad                                                     then Dec(Result, GA_PATHFINDING_Road)
   // 1 tile from future house
   else if (AvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)   then Inc(Result, GA_PATHFINDING_noBuildArea)
+  // 1 tile form mine
+  else if (AvoidBuilding = AVOID_BUILDING_MINE_TILE)            then Inc(Result, 1)
   // Corn / wine field
   else if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)      then Inc(Result, GA_PATHFINDING_Field)
   // Coal field
@@ -2687,6 +2690,8 @@ begin
   if IsRoad                                                     then Dec(Result, GA_SHORTCUTS_Road)
   // 1 tile from future house
   else if (AvoidBuilding = AVOID_BUILDING_HOUSE_OUTSIDE_LOCK)   then Inc(Result, GA_SHORTCUTS_noBuildArea)
+  // 1 tile form mine
+  else if (AvoidBuilding = AVOID_BUILDING_MINE_TILE)            then Inc(Result, GA_SHORTCUTS_noBuildArea)
   // Corn / wine field
   else if (AvoidBuilding = AVOID_BUILDING_NODE_LOCK_FIELD)      then Inc(Result, GA_SHORTCUTS_Field)
   // Coal field
