@@ -421,6 +421,13 @@ begin
   {$ENDIF}
   if DELIVERY_BID_CALC_USE_PATHFINDING then
     fNodeList := TKMPointList.Create;
+
+  if AllowFormLogisticsChange then
+  begin
+    FormLogistics.DeliveriesList.Items.Clear;
+    FormLogistics.OffersList.Items.Clear;
+    FormLogistics.DemandsList.Items.Clear;
+  end;
 end;
 
 
