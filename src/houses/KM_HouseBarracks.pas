@@ -197,7 +197,7 @@ end;
 function TKMHouseBarracks.ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
-  Result := (fResourceCount[aRes] >= aCount);
+  Result := (NewDeliveryMode = dmTakeOut) and (fResourceCount[aRes] >= aCount);
 end;
 
 

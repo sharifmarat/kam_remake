@@ -868,10 +868,11 @@ begin
   Result := Result and ((fDemand[iD].Loc_House = nil)
                         or not ((fOffer[iO].Loc_House.HouseType = htBarracks) and (fDemand[iD].Loc_House.HouseType = htBarracks)));
 
-  //Do not permit Barracks -> Store deliveries
-  Result := Result and ((fDemand[iD].Loc_House = nil) or
-                        (fDemand[iD].Loc_House.HouseType <> htStore) or
-                        (fOffer[iO].Loc_House.HouseType <> htBarracks));
+  //Permit Barracks -> Store deliveries only if barracks delivery mode is TakeOut
+  Result := Result and ((fDemand[iD].Loc_House = nil)
+                        or (fDemand[iD].Loc_House.HouseType <> htStore)
+                        or (fOffer[iO].Loc_House.HouseType <> htBarracks)
+                        or (fOffer[iO].Loc_House.DeliveryMode = dmTakeOut));
 
   Result := Result and (
             ( //House-House delivery should be performed only if there's a connecting road
