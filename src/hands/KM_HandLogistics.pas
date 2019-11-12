@@ -1295,7 +1295,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     //If Demand house should abandon delivery
     Result := Result and ((fDemand[iD].Loc_House = nil)
                           or not fDemand[iD].Loc_House.IsComplete
-                          or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fDemand[iD].Ware));
+                          or not fDemand[iD].Loc_House.ShouldAbandonDelivery(aResource));
 
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));
