@@ -864,9 +864,11 @@ begin
                         or not ((fOffer[iO].Loc_House.HouseType = htStore) and (fDemand[iD].Loc_House.HouseType = htStore))
                         or (fOffer[iO].Loc_House.IsComplete <> fDemand[iD].Loc_House.IsComplete));
 
-  //Do not allow transfers between Barracks (for now)
+  //Allow transfers between Barracks only when offer barracks have DeliveryMode = dmTakeOut
   Result := Result and ((fDemand[iD].Loc_House = nil)
-                        or not ((fOffer[iO].Loc_House.HouseType = htBarracks) and (fDemand[iD].Loc_House.HouseType = htBarracks)));
+                        or (fDemand[iD].Loc_House.HouseType <> htBarracks)
+                        or (fOffer[iO].Loc_House.HouseType <> htBarracks)
+                        or (fOffer[iO].Loc_House.DeliveryMode = dmTakeOut));
 
   //Permit Barracks -> Store deliveries only if barracks delivery mode is TakeOut
   Result := Result and ((fDemand[iD].Loc_House = nil)
