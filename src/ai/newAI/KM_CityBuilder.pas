@@ -21,10 +21,8 @@ var
   GA_BUILDER_Shortage_Stone             : Single = 13.772;
   GA_BUILDER_Shortage_StoneNoQuarry     : Single = 30.000;
   GA_BUILDER_Shortage_Gold              : Single = 27.638;
-//{
-  GA_BUILDER_Shortage_Trunk             : Single =  3.345;
-  GA_BUILDER_Shortage_Wood              : Single = 12.150;
-//}
+  GA_BUILDER_Shortage_Trunk             : Single =  3.360;
+  GA_BUILDER_Shortage_Wood              : Single = 12.890;
 
 
 const
@@ -816,8 +814,8 @@ begin
   fTrunkShortage := fTrunkShortage OR (WoodReserves < RequiredWood);
   aMaxPlace := Round((Wood // Available wood
                      + Min(Trunk * 2 , gHands[fOwner].Stats.GetHouseQty(htSawmill) * 4) // Trunk which can be turned into wood while the house is digged
-                     - RequiredWood) / 3 // Consideration of required wood per a plan (approx 3)
-                   );
+                     - RequiredWood) / 3.5 // Consideration of required wood per a plan (approx 3.5)
+               );
 end;
 
 
@@ -1098,7 +1096,6 @@ var
             NodePrio := NODE_PRIO_Roads // House is unlocked, prio is high
           else
             NodePrio := NODE_PRIO_RoadsUnlockHouse; // House is unlocked and its construction will unlock another house, prio is TOP
-          NodePrio := Byte(K <> High(HTArr)) * NODE_PRIO_RoadsReservation + Byte(K = High(HTArr)) * NODE_PRIO_Roads;
           Output := BuildHouse(IgnoreTreesInPlan, HouseReservation, IgnoreExistingPlans, HTArr[K], NodePrio);
           RequiredHouses[ HTArr[K] ] := 0;
         end;
@@ -1220,7 +1217,7 @@ var
       htTannery, htArmorWorkshop, htWeaponWorkshop,
       htSiegeWorkshop, htTownHall, htWineyard, htStore, htWatchTower
     );
-    // If RESERVATION_FullSet was changed, the the following indexes must be changed too!
+    // If RESERVATION_FullSet was changed, then the following indexes must be changed too!
     STONE_SHORTAGE_IDX = 2;
     TRUNK_SHORTAGE_IDX = 4;
     WOOD_SHORTAGE_IDX = 8;
@@ -1242,7 +1239,7 @@ var
       if (fPlanner.PlannedHouses[htSawmill].Completed = 0) then
         MinIdx := TRUNK_SHORTAGE_IDX+1;
     end
-    else if fTrunkShortage then
+    else if fTrunkShortage AND (MaxPlace < 3) then // Allow to place something if MaxPlace is higher
       MaxIdx := TRUNK_SHORTAGE_IDX
     else if fGoldShortage then
       MaxIdx := GOLD_SHORTAGE_IDX
@@ -1631,7 +1628,7 @@ var
   Color: Cardinal;
   Point: TKMPoint;
 begin
-{
+//{
   for K := 0 to gHands[fOwner].Units.Count - 1 do
     with gHands[fOwner].Units[K] do
       if not IsDeadOrDying then
@@ -1662,7 +1659,7 @@ begin
           gRenderAux.Quad(Point.X, Point.Y, Color);
         end;
       end;
-}
+//}
 end;
 
 
