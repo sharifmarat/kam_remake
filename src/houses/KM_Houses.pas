@@ -789,14 +789,16 @@ begin
     end;
 
   if fNewDeliveryMode = dmTakeOut then
+  begin
     for I := 1 to 4 do
     begin
       Res := gRes.Houses[fType].ResInput[I];
       ResCnt := ResIn[I] - ResInLocked[I];
 
-      if (Res <> wtNone) and (ResCnt > 0) then
+      if not (Res in [wtNone, wtAll, wtWarfare]) and (ResCnt > 0) then
         gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
     end;
+  end;
 
   fUpdateDeliveryModeOnTick := 0;
   fDeliveryMode := fNewDeliveryMode;
