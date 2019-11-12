@@ -1505,7 +1505,7 @@ end;
 
 function TKMHouse.GetResInLocked(aI: Byte): Word;
 begin
-  Result := 0; //By default e do not lock any In res
+  Result := 0; //By default we do not lock any In res
 end;
 
 

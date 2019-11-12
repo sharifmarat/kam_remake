@@ -191,7 +191,9 @@ begin
 
   //After step 2 we don't care if From is destroyed or doesn't have the ware
   if fPhase <= 2 then
-    Result := Result or fFrom.IsDestroyed or (not fFrom.ResOutputAvailable(fWareType, 1) {and (fPhase < 5)});
+    Result := Result
+                or fFrom.IsDestroyed
+                or not fFrom.ResOutputAvailable(fWareType, 1);
 
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
