@@ -4259,6 +4259,8 @@ begin
 
   if SHOW_SELECTED_OBJ_INFO then
   begin
+    ObjToShowInfo := nil;
+
     if (gMySpectator.Selected <> nil){ and not gMySpectator.IsSelectedMyObj} then
       ObjToShowInfo := gMySpectator.Selected
     else if (gMySpectator.LastSelected <> nil) then
