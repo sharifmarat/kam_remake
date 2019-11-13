@@ -191,6 +191,7 @@ type
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -845,6 +846,12 @@ end;
 function TKMHouse.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := DeliveryMode <> dmDelivery;
+end;
+
+
+function TKMHouse.ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean;
+begin
+  Result := not ResOutputAvailable(aWareType, 1);
 end;
 
 

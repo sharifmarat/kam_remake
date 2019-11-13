@@ -829,7 +829,10 @@ begin
                    and (aIgnoreOffer or (fOffer[iO].BeingPerformed < fOffer[iO].Count)));
 
   //If Demand and Offer aren't deleted
-  Result := Result and (not fDemand[iD].IsDeleted) and (aIgnoreOffer or not fOffer[iO].IsDeleted);
+  Result := Result and not fDemand[iD].IsDeleted and (aIgnoreOffer or not fOffer[iO].IsDeleted);
+
+  //If Offer should not be abandoned
+  Result := Result and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFrom(fOffer[iO].Ware);
 
   //If Demand house should abandon delivery
   Result := Result and ((fDemand[iD].Loc_House = nil)

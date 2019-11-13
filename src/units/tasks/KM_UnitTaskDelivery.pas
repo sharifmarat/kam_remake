@@ -193,7 +193,7 @@ begin
   if fPhase <= 2 then
     Result := Result
                 or fFrom.IsDestroyed
-                or not fFrom.ResOutputAvailable(fWareType, 1);
+                or fFrom.ShouldAbandonDeliveryFrom(fWareType);
 
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
@@ -436,7 +436,7 @@ begin
     2:  begin
           //Barracks can consume the resource (by equipping) before we arrive
           //All houses can have resources taken away by script at any moment
-          if not fFrom.ResOutputAvailable(fWareType, 1) then
+          if fFrom.ShouldAbandonDeliveryFrom(fWareType) then
           begin
             SetActionLockedStay(5, uaWalk); //Wait a moment inside
             fPhase := 120; //Will get out of Barracks onthat Phase
