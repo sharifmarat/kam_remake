@@ -36,7 +36,7 @@ type
 
     procedure HouseLogo_Click(Sender: TObject);
 
-    procedure House_BarracksAcceptFlag(Sender: TObject);
+    procedure House_BarracksItemClickShift(Sender: TObject; Shift: TShiftState);
     procedure House_BarracksUnitChange(Sender: TObject; Shift: TShiftState);
 
     procedure House_TownHall_Change(Sender: TObject; aChangeValue: Integer);
@@ -108,6 +108,7 @@ type
     Panel_HouseBarracks: TKMPanel;
       Button_Barracks: array [1..BARRACKS_RES_COUNT] of TKMButtonFlat;
       Image_Barracks_NotAccept: array [1..BARRACKS_RES_COUNT] of TKMImage;
+      Image_Barracks_NotAcceptTakeOut: array [1..BARRACKS_RES_COUNT] of TKMImage;
       Button_BarracksRecruit: TKMButtonFlat;
       Image_Barracks_AcceptRecruit: TKMImage;
       Label_Barracks_Unit: TKMLabel;
@@ -451,10 +452,12 @@ begin
       Button_Barracks[I].Tag := I;
       Button_Barracks[I].TexID := gRes.Wares[BarracksResType[I]].GUIIcon;
       Button_Barracks[I].Hint := gRes.Wares[BarracksResType[I]].Title;
-      Button_Barracks[I].OnClick := House_BarracksAcceptFlag;
+      Button_Barracks[I].OnClickShift := House_BarracksItemClickShift;
 
       Image_Barracks_NotAccept[I] := TKMImage.Create(Panel_HouseBarracks, dX+16, dY, 12, 12, 49);
       Image_Barracks_NotAccept[I].Hitable := False;
+      Image_Barracks_NotAcceptTakeOut[I] := TKMImage.Create(Panel_HouseBarracks, dX, dY, 12, 12, 676);
+      Image_Barracks_NotAcceptTakeOut[I].Hitable := False;
     end;
 
     dX := (BARRACKS_RES_COUNT mod 6) * 31;
@@ -465,7 +468,7 @@ begin
     Button_BarracksRecruit.CapOffsetY := 2;
     Button_BarracksRecruit.TexID := gRes.Units[utRecruit].GUIIcon;
     Button_BarracksRecruit.Hint := gRes.Units[utRecruit].GUIName;
-    Button_BarracksRecruit.OnClick := House_BarracksAcceptFlag;
+    Button_BarracksRecruit.OnClickShift := House_BarracksItemClickShift;
     Image_Barracks_AcceptRecruit := TKMImage.Create(Panel_HouseBarracks, dX+16, dY, 12, 12, 49);
     Image_Barracks_AcceptRecruit.Hitable := False;
 
@@ -1092,6 +1095,7 @@ begin
         Button_Barracks[I].Down := True;
 
     Image_Barracks_NotAccept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
+    Image_Barracks_NotAcceptTakeOut[I].Visible := Barracks.NotAcceptTakeOutFlag[BarracksResType[I]];
   end;
 
   Tmp := Barracks.RecruitsCount;
@@ -1334,14 +1338,27 @@ end;
 
 {That small red triangle blocking delivery of wares to Barracks}
 {Ware determined by Button.Tag property}
-procedure TKMGUIGameHouse.House_BarracksAcceptFlag(Sender: TObject);
+procedure TKMGUIGameHouse.House_BarracksItemClickShift(Sender: TObject; Shift: TShiftState);
 begin
-  if gMySpectator.Selected = nil then Exit;
-  if not (gMySpectator.Selected is TKMHouseBarracks) then Exit;
-  if Sender <> Button_BarracksRecruit then
-    gGame.GameInputProcess.CmdHouse(gicHouseBarracksAcceptFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag])
+  if gMySpectator.Selected = nil then
+    Exit;
+  if not (gMySpectator.Selected is TKMHouseBarracks) then
+    Exit;
+  //Red triangle - block delivery to barracks
+  if ssLeft in Shift then
+  begin
+    if Sender <> Button_BarracksRecruit then
+      gGame.GameInputProcess.CmdHouse(gicHouseBarracksAcceptFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag])
+    else
+      gGame.GameInputProcess.CmdHouse(gicHBarracksAcceptRecruitsTgl, TKMHouse(gMySpectator.Selected));
+  end
   else
-    gGame.GameInputProcess.CmdHouse(gicHBarracksAcceptRecruitsTgl, TKMHouse(gMySpectator.Selected));
+  //Orange triange - block take resources from
+  if ssRight in Shift then
+  begin
+    if Sender <> Button_BarracksRecruit then
+      gGame.GameInputProcess.CmdHouse(gicHouseBarracksAcptTakeOutFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag]);
+  end;
 end;
 
 
