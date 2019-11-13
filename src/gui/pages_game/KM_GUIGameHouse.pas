@@ -107,7 +107,7 @@ type
       ResRow_TH_Cost: TKMCostsRow;
     Panel_HouseBarracks: TKMPanel;
       Button_Barracks: array [1..BARRACKS_RES_COUNT] of TKMButtonFlat;
-      Image_Barracks_Accept: array [1..BARRACKS_RES_COUNT] of TKMImage;
+      Image_Barracks_NotAccept: array [1..BARRACKS_RES_COUNT] of TKMImage;
       Button_BarracksRecruit: TKMButtonFlat;
       Image_Barracks_AcceptRecruit: TKMImage;
       Label_Barracks_Unit: TKMLabel;
@@ -453,8 +453,8 @@ begin
       Button_Barracks[I].Hint := gRes.Wares[BarracksResType[I]].Title;
       Button_Barracks[I].OnClick := House_BarracksAcceptFlag;
 
-      Image_Barracks_Accept[I] := TKMImage.Create(Panel_HouseBarracks, dX+16, dY, 12, 12, 49);
-      Image_Barracks_Accept[I].Hitable := False;
+      Image_Barracks_NotAccept[I] := TKMImage.Create(Panel_HouseBarracks, dX+16, dY, 12, 12, 49);
+      Image_Barracks_NotAccept[I].Hitable := False;
     end;
 
     dX := (BARRACKS_RES_COUNT mod 6) * 31;
@@ -497,7 +497,7 @@ begin
     Button_Woodcutter := TKMButtonFlat.Create(Panel_HouseWoodcutter,0,64,32,32,51,rxGui);
     Button_Woodcutter.OnClick := House_WoodcutterChange; //Clicking the button cycles it
 
-    Radio_Woodcutter := TKMRadioGroup.Create(Panel_HouseWoodcutter,38,64,TB_WIDTH-38,48,fntGrey);
+    Radio_Woodcutter := TKMRadioGroup.Create(Panel_HouseWoodcutter,38,64,TB_WIDTH - 38,48,fntGrey);
     Radio_Woodcutter.ItemIndex := 0;
     Radio_Woodcutter.Add(gResTexts[TX_HOUSES_WOODCUTTER_PLANT_CHOP]);
     Radio_Woodcutter.Add(gResTexts[TX_HOUSES_WOODCUTTER_CHOP_ONLY]);
@@ -508,7 +508,8 @@ end;
 
 {ArmorWorkshop page}
 procedure TKMGUIGameHouse.Create_HouseArmorWorkshop;
-var  I: Integer;
+var
+  I: Integer;
 begin
   // Panel should cover only 3 lines, to let common panel handle mouse events
   Panel_HouseArmorWorkshop := TKMPanel.Create(Panel_House, 0, 76, TB_WIDTH, LINE_HEIGHT*3);
@@ -610,8 +611,8 @@ begin
     Image_HouseConstructionStone.Show;
     Label_HouseConstructionWood.Show;
     Label_HouseConstructionStone.Show;
-    Label_HouseConstructionWood.Caption := IntToStr(aHouse.GetBuildWoodDelivered)+' / '+IntToStr(gRes.Houses[aHouse.HouseType].WoodCost);
-    Label_HouseConstructionStone.Caption := IntToStr(aHouse.GetBuildStoneDelivered)+' / '+IntToStr(gRes.Houses[aHouse.HouseType].StoneCost);
+    Label_HouseConstructionWood.Caption := IntToStr(aHouse.GetBuildWoodDelivered) + ' / ' + IntToStr(gRes.Houses[aHouse.HouseType].WoodCost);
+    Label_HouseConstructionStone.Caption := IntToStr(aHouse.GetBuildStoneDelivered) + ' / ' + IntToStr(gRes.Houses[aHouse.HouseType].StoneCost);
     Label_House.Show;
     Image_PlayerFlag.Show;
     Image_House_Logo.Show;
@@ -708,7 +709,9 @@ begin
             Panel_House_Common.Childs[I].Hide;
 
           //Now show only what we need
-          RowRes := 1; Line := 0; Base := 2;
+          RowRes := 1;
+          Line := 0;
+          Base := 2;
 
           //Show Demand
           ShowCommonDemand(aHouse, Base, Line, RowRes);
@@ -874,11 +877,13 @@ begin
     Panel_House_Common.Childs[I].Hide;
 
   //Now show only what we need
-  RowRes := 1; Line := 0; Base := 2;
+  RowRes := 1;
+  Line := 0;
+  Base := 2;
           
   //Show Demand
   Label_Common_Demand_WS.Show;
-  Label_Common_Demand_WS.Top := Base + Line*LINE_HEIGHT+6;
+  Label_Common_Demand_WS.Top := Base + Line*LINE_HEIGHT + 6;
   Inc(Line);
 
   for I := 1 to 2 do
@@ -916,7 +921,8 @@ end;
 
 procedure TKMGUIGameHouse.House_Demolish(Sender: TObject);
 begin
-  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) then Exit;
+  if (gMySpectator.Selected = nil) or not (gMySpectator.Selected is TKMHouse) then
+    Exit;
 
   if Sender = Button_House_DemolishYes then
   begin
@@ -1059,8 +1065,10 @@ var
   I, K, Tmp: Integer;
   Barracks: TKMHouseBarracks;
 begin
-  if gMySpectator.Selected = nil then exit;
-  if not (gMySpectator.Selected is TKMHouseBarracks) then exit;
+  if gMySpectator.Selected = nil then
+    Exit;
+  if not (gMySpectator.Selected is TKMHouseBarracks) then
+    Exit;
 
   Barracks := TKMHouseBarracks(gMySpectator.Selected);
 
@@ -1083,7 +1091,7 @@ begin
       if BarracksResType[I] = TROOP_COST[Barracks_Order[fLastBarracksUnit], K] then
         Button_Barracks[I].Down := True;
 
-    Image_Barracks_Accept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
+    Image_Barracks_NotAccept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
   end;
 
   Tmp := Barracks.RecruitsCount;
@@ -1092,11 +1100,15 @@ begin
   Image_Barracks_AcceptRecruit.Visible := Barracks.NotAcceptRecruitFlag;
 
 
-  if (Sender=Button_Barracks_Left) and (ssRight in Shift) then fLastBarracksUnit := 0;
-  if (Sender=Button_Barracks_Right) and (ssRight in Shift) then fLastBarracksUnit := High(Barracks_Order);
+  if (Sender = Button_Barracks_Left) and (ssRight in Shift) then
+    fLastBarracksUnit := 0;
+  if (Sender = Button_Barracks_Right) and (ssRight in Shift) then
+    fLastBarracksUnit := High(Barracks_Order);
 
-  if (Sender=Button_Barracks_Left)and(fLastBarracksUnit > 0) then dec(fLastBarracksUnit);
-  if (Sender=Button_Barracks_Right)and(fLastBarracksUnit < High(Barracks_Order)) then inc(fLastBarracksUnit);
+  if (Sender = Button_Barracks_Left)and(fLastBarracksUnit > 0) then
+    Dec(fLastBarracksUnit);
+  if (Sender = Button_Barracks_Right)and(fLastBarracksUnit < High(Barracks_Order)) then
+    Inc(fLastBarracksUnit);
 
   if Sender = Button_Barracks_Train then //Equip unit
     gGame.GameInputProcess.CmdHouse(gicHouseBarracksEquip, Barracks, Barracks_Order[fLastBarracksUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
@@ -1121,7 +1133,7 @@ begin
     Button_Barracks_Train.Hint := gResTexts[TX_HOUSE_BARRACKS_TRAIN_DISABLED_HINT];
 
   if fLastBarracksUnit < High(Barracks_Order) then
-    Image_Barracks_Right.TexID := gRes.Units[Barracks_Order[fLastBarracksUnit+1]].GUIScroll;
+    Image_Barracks_Right.TexID := gRes.Units[Barracks_Order[fLastBarracksUnit + 1]].GUIScroll;
 end;
 
 
@@ -1163,7 +1175,8 @@ begin
     Inc(fLastTHUnit);
 
   if Sender = Button_TH_Train then //Equip unit
-    gGame.GameInputProcess.CmdHouse(gicHouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit], Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
+    gGame.GameInputProcess.CmdHouse(gicHouseTownHallEquip, TownHall, TownHall_Order[fLastTHUnit],
+                                    Min(GetMultiplicator(Shift), MAX_UNITS_TO_EQUIP));
 
   Button_TH_Train.Enabled := not gGame.IsPeaceTime and TownHall.CanEquip(TownHall_Order[fLastTHUnit]);
   Button_TH_Left.Enabled := fLastTHUnit > 0;
@@ -1185,7 +1198,7 @@ begin
     Button_TH_Train.Hint := gResTexts[TX_HOUSE_BARRACKS_TRAIN_DISABLED_HINT];
 
   if fLastTHUnit < High(TownHall_Order) then
-    Image_TH_Right.TexID := gRes.Units[TownHall_Order[fLastTHUnit+1]].GUIScroll;
+    Image_TH_Right.TexID := gRes.Units[TownHall_Order[fLastTHUnit + 1]].GUIScroll;
 
   ResRow_TH_Cost.Count := TH_TROOP_COST[fLastTHUnit];
 end;
@@ -1197,15 +1210,21 @@ var
   I: Byte;
   School: TKMHouseSchool;
 begin
-  if gMySpectator.Selected = nil then exit;
-  if not (gMySpectator.Selected is TKMHouseSchool) then exit;
+  if gMySpectator.Selected = nil then
+    Exit;
+  if not (gMySpectator.Selected is TKMHouseSchool) then
+    Exit;
   School := TKMHouseSchool(gMySpectator.Selected);
 
-  if (ssRight in Shift) and (Sender = Button_School_Left) then fLastSchoolUnit := 0;
-  if (ssRight in Shift) and (Sender = Button_School_Right) then fLastSchoolUnit := High(School_Order);
+  if (ssRight in Shift) and (Sender = Button_School_Left) then
+    fLastSchoolUnit := 0;
+  if (ssRight in Shift) and (Sender = Button_School_Right) then
+    fLastSchoolUnit := High(School_Order);
 
-  if (Sender = Button_School_Left) and (fLastSchoolUnit > 0) then Dec(fLastSchoolUnit);
-  if (Sender = Button_School_Right) and (fLastSchoolUnit < High(School_Order)) then Inc(fLastSchoolUnit);
+  if (Sender = Button_School_Left) and (fLastSchoolUnit > 0) then
+    Dec(fLastSchoolUnit);
+  if (Sender = Button_School_Right) and (fLastSchoolUnit < High(School_Order)) then
+    Inc(fLastSchoolUnit);
 
   if Sender = Button_School_Train then
   begin
@@ -1244,7 +1263,8 @@ begin
       Button_School_UnitPlan[I].Hint:='';
     end;
 
-  Button_School_Train.Enabled := (not School.QueueIsFull) and (not gMySpectator.Hand.Locks.GetUnitBlocked(School_Order[fLastSchoolUnit]));
+  Button_School_Train.Enabled := (not School.QueueIsFull)
+                                  and (not gMySpectator.Hand.Locks.GetUnitBlocked(School_Order[fLastSchoolUnit]));
   Button_School_Left.Enabled := fLastSchoolUnit > 0;
   Button_School_Right.Enabled := fLastSchoolUnit < High(School_Order);
   Image_School_Left.Visible := Button_School_Left.Enabled;
