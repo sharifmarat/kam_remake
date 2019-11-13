@@ -731,7 +731,7 @@ begin
       gicHouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
       gicHouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
       gicHouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TKMWareType(Params[2]);
-      gicHouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleAcceptFlag(TKMWareType(Params[2]));
+      gicHouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleNotAcceptFlag(TKMWareType(Params[2]));
       gicHouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
       gicHouseBarracksAcceptFlag:
                                   TKMHouseBarracks(SrcHouse).ToggleNotAcceptFlag(TKMWareType(Params[2]));

@@ -298,7 +298,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
-    procedure ToggleAcceptFlag(aWare: TKMWareType);
+    procedure ToggleNotAcceptFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
     procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
@@ -2131,7 +2131,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ToggleAcceptFlag(aWare: TKMWareType);
+procedure TKMHouseStore.ToggleNotAcceptFlag(aWare: TKMWareType);
 const
   //Using shortints instead of bools makes it look much neater in code-view
   CHEAT_SP_PATTERN: array [WARE_MIN..WARE_MAX] of Byte = (

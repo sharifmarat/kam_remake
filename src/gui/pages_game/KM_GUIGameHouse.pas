@@ -49,7 +49,7 @@ type
     procedure House_SchoolUnitChange(Sender: TObject; Shift: TShiftState);
     procedure House_SchoolUnitQueueClick(Sender: TObject; Shift: TShiftState);
 
-    procedure House_StoreAcceptFlag(Sender: TObject);
+    procedure House_StoreNotAcceptFlag(Sender: TObject);
     procedure House_StoreFill;
 
     procedure House_WoodcutterChange(Sender: TObject);
@@ -322,7 +322,7 @@ begin
     Button_Store[I].TexID := gRes.Wares[StoreResType[I]].GUIIcon;
     Button_Store[I].Tag := I;
     Button_Store[I].Hint := gRes.Wares[StoreResType[I]].Title;
-    Button_Store[I].OnClick := House_StoreAcceptFlag;
+    Button_Store[I].OnClick := House_StoreNotAcceptFlag;
 
     Image_Store_Accept[I] := TKMImage.Create(Panel_HouseStore, dX + 20, dY, 12, 12, 49);
     Image_Store_Accept[I].Hitable := False;
@@ -1364,10 +1364,12 @@ end;
 
 {That small red triangle blocking delivery of wares to Storehouse}
 {Ware determined by Button.Tag property}
-procedure TKMGUIGameHouse.House_StoreAcceptFlag(Sender: TObject);
+procedure TKMGUIGameHouse.House_StoreNotAcceptFlag(Sender: TObject);
 begin
-  if gMySpectator.Selected = nil then Exit;
-  if not (gMySpectator.Selected is TKMHouseStore) then Exit;
+  if gMySpectator.Selected = nil then
+    Exit;
+  if not (gMySpectator.Selected is TKMHouseStore) then
+    Exit;
   gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag]);
 end;
 
