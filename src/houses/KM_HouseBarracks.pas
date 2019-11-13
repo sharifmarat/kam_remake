@@ -33,14 +33,14 @@ type
     function CheckResIn(aWare: TKMWareType): Word; override;
     function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
 
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
 
     function ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean; override;
     function CanEquip(aUnitType: TKMUnitType): Boolean;
     function RecruitsCount: Integer;
     procedure RecruitsAdd(aUnit: Pointer);
     procedure RecruitsRemove(aUnit: Pointer);
-    procedure ToggleAcceptFlag(aRes: TKMWareType);
+    procedure ToggleNotAcceptFlag(aRes: TKMWareType);
     procedure ToggleAcceptRecruits;
     function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
     procedure CreateRecruitInside(aIsMapEd: Boolean);
@@ -201,7 +201,7 @@ begin
 end;
 
 
-procedure TKMHouseBarracks.ToggleAcceptFlag(aRes: TKMWareType);
+procedure TKMHouseBarracks.ToggleNotAcceptFlag(aRes: TKMWareType);
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
 
@@ -215,9 +215,13 @@ begin
 end;
 
 
-function TKMHouseBarracks.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouseBarracks.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
-  Result := inherited or not (aWareType in [WARFARE_MIN .. WARFARE_MAX]) or NotAcceptFlag[aWareType];
+  Result := inherited
+            or not (aWareType in [WARFARE_MIN .. WARFARE_MAX])
+            or NotAcceptFlag[aWareType];
+end;
+
 end;
 
 

@@ -834,7 +834,7 @@ begin
   //If Demand house should abandon delivery
   Result := Result and ((fDemand[iD].Loc_House = nil)
                          or not fDemand[iD].Loc_House.IsComplete
-                         or not fDemand[iD].Loc_House.ShouldAbandonDelivery(fOffer[iO].Ware));
+                         or not fDemand[iD].Loc_House.ShouldAbandonDeliveryTo(fOffer[iO].Ware));
 
   //Warfare has a preference to be delivered to Barracks
   if Result
@@ -859,7 +859,8 @@ begin
     end;
   end;
 
-  //If Demand and Offer are different HouseTypes, means forbid Store<->Store deliveries except the case where 2nd store is being built and requires building materials
+  //If Demand and Offer are different HouseTypes, means forbid Store<->Store deliveries
+  //except the case where 2nd store is being built and requires building materials
   Result := Result and ((fDemand[iD].Loc_House = nil)
                         or not ((fOffer[iO].Loc_House.HouseType = htStore) and (fDemand[iD].Loc_House.HouseType = htStore))
                         or (fOffer[iO].Loc_House.IsComplete <> fDemand[iD].Loc_House.IsComplete));
@@ -1283,7 +1284,8 @@ begin
 end;
 
 // Find best Demand for the given delivery. Could return same or nothing
-procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType; out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
+procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: Integer; aResource: TKMWareType;
+                                               out aToHouse: TKMHouse; out aToUnit: TKMUnit; out aForceDelivery: Boolean);
 
   function ValidBestDemand(iD: Integer): Boolean;
   begin
@@ -1297,7 +1299,7 @@ procedure TKMDeliveries.DeliveryFindBestDemand(aSerf: TKMUnitSerf; aDeliveryId: 
     //If Demand house should abandon delivery
     Result := Result and ((fDemand[iD].Loc_House = nil)
                           or not fDemand[iD].Loc_House.IsComplete
-                          or not fDemand[iD].Loc_House.ShouldAbandonDelivery(aResource));
+                          or not fDemand[iD].Loc_House.ShouldAbandonDeliveryTo(aResource));
 
     //If Demand aren't reserved already
     Result := Result and ((fDemand[iD].DemandType = dtAlways) or (fDemand[iD].BeingPerformed = 0));

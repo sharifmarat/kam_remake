@@ -200,7 +200,7 @@ begin
     dkToHouse:         if fPhase <= 8 then
                         begin
                           Result := Result or fToHouse.IsDestroyed
-                                   or (not fForceDelivery and fToHouse.ShouldAbandonDelivery(fWareType));
+                                   or (not fForceDelivery and fToHouse.ShouldAbandonDeliveryTo(fWareType));
                         end;
     dkToConstruction:  if fPhase <= 7 then
                           Result := Result or fToHouse.IsDestroyed;

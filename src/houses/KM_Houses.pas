@@ -190,7 +190,7 @@ type
     property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -296,7 +296,7 @@ type
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
     procedure ToggleAcceptFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
@@ -326,7 +326,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
     function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
   end;
 
 
@@ -842,7 +842,7 @@ begin
 end;
 
 
-function TKMHouse.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouse.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := DeliveryMode <> dmDelivery;
 end;
@@ -2185,7 +2185,7 @@ begin
 end;
 
 
-function TKMHouseStore.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouseStore.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := inherited or NotAcceptFlag[aWareType];
 end;
@@ -2235,7 +2235,7 @@ begin
 end;
 
 
-function TKMHouseArmorWorkshop.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouseArmorWorkshop.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := inherited or not AcceptWareForDelivery(aWareType);
 end;
