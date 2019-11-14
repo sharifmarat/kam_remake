@@ -123,6 +123,7 @@ type
     chkSelectedObjInfo: TCheckBox;
     chkShowFPS: TCheckBox;
     chkHands: TCheckBox;
+    btnUpdateUI: TButton;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -175,6 +176,7 @@ type
     procedure SaveSettingsClick(Sender: TObject);
     procedure SaveEditableMission1Click(Sender: TObject);
     procedure ValidateGameStatsClick(Sender: TObject);
+    procedure Button_UpdateUI_Click(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -629,6 +631,15 @@ begin
       gGameApp.StopGame(grMapEdEnd)
     else
       gGameApp.StopGame(grCancel);
+
+  ActiveControl := nil; //Do not allow to focus on anything on debug panel
+end;
+
+
+procedure TFormMain.Button_UpdateUI_Click(Sender: TObject);
+begin
+  if gGameApp.Game <> nil then
+    gGameApp.Game.ActiveInterface.UpdateState(gGameApp.GlobalTickCount); //UpdateUI, even on game Pause
 
   ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;

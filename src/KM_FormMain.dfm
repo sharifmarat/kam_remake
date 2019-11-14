@@ -467,7 +467,7 @@ object FormMain: TFormMain
       end
       object chkShowTerrainIds: TCheckBox
         Left = 90
-        Top = 40
+        Top = 56
         Width = 79
         Height = 17
         Caption = 'Terrain IDs'
@@ -476,7 +476,7 @@ object FormMain: TFormMain
       end
       object chkShowTerrainKinds: TCheckBox
         Left = 90
-        Top = 56
+        Top = 72
         Width = 79
         Height = 17
         Caption = 'Ter. Kinds'
@@ -485,7 +485,7 @@ object FormMain: TFormMain
       end
       object chkTilesGrid: TCheckBox
         Left = 90
-        Top = 72
+        Top = 88
         Width = 79
         Height = 17
         Caption = 'Tiles grid'
@@ -495,7 +495,7 @@ object FormMain: TFormMain
       object chkShowGameTick: TCheckBox
         Left = 8
         Top = 88
-        Width = 97
+        Width = 76
         Height = 17
         Caption = 'Game tick'
         TabOrder = 7
@@ -521,7 +521,7 @@ object FormMain: TFormMain
       end
       object chkUIDs: TCheckBox
         Left = 90
-        Top = 104
+        Top = 120
         Width = 79
         Height = 17
         Caption = 'UIDs by T'
@@ -530,7 +530,7 @@ object FormMain: TFormMain
       end
       object chkSelectedObjInfo: TCheckBox
         Left = 90
-        Top = 120
+        Top = 136
         Width = 84
         Height = 17
         Caption = 'Selection Info'
@@ -539,7 +539,7 @@ object FormMain: TFormMain
       end
       object chkShowFPS: TCheckBox
         Left = 90
-        Top = 88
+        Top = 104
         Width = 97
         Height = 17
         Caption = 'FPS'
@@ -549,11 +549,20 @@ object FormMain: TFormMain
       object chkHands: TCheckBox
         Left = 8
         Top = 136
-        Width = 89
+        Width = 76
         Height = 17
         Caption = 'Hands'
         TabOrder = 13
         OnClick = ControlsUpdate
+      end
+      object btnUpdateUI: TButton
+        Left = 90
+        Top = 40
+        Width = 79
+        Height = 17
+        Caption = 'Update UI'
+        TabOrder = 14
+        OnClick = Button_UpdateUI_Click
       end
     end
     object GroupBoxLogs: TGroupBox
