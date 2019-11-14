@@ -36,6 +36,8 @@ type
     function RatioFrom: Byte;
     function RatioTo: Byte;
 
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
+
     function AllowedToTrade(aRes: TKMWareType): Boolean;
     function TradeInProgress: Boolean;
     function GetResTotal(aWare: TKMWareType): Word; overload;
@@ -230,6 +232,12 @@ begin
     raise Exception.Create(Format('No ware: [%s] count = %d to take from market UID = %d',
                                   [GetEnumName(TypeInfo(TKMWareType), Integer(aWare)), aCount, UID]));
 
+end;
+
+
+function TKMHouseMarket.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or (fTradeAmount = 0); //Stop delivery to market when player set trade amount to 0
 end;
 
 
