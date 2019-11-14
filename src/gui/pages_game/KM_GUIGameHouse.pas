@@ -49,7 +49,7 @@ type
     procedure House_SchoolUnitChange(Sender: TObject; Shift: TShiftState);
     procedure House_SchoolUnitQueueClick(Sender: TObject; Shift: TShiftState);
 
-    procedure House_StoreNotAcceptFlag(Sender: TObject);
+    procedure House_StoreItemClickShift(Sender: TObject; Shift: TShiftState);
     procedure House_StoreFill;
 
     procedure House_WoodcutterChange(Sender: TObject);
@@ -89,6 +89,7 @@ type
     Panel_HouseStore: TKMPanel;
       Button_Store: array [1..STORE_RES_COUNT] of TKMButtonFlat;
       Image_Store_Accept: array [1..STORE_RES_COUNT] of TKMImage;
+      Image_Store_NotAcceptTakeOut: array [1..STORE_RES_COUNT] of TKMImage;
     Panel_House_School: TKMPanel;
       ResRow_School_Resource: TKMWaresRow;
       Button_School_UnitWIP: TKMButton;
@@ -322,10 +323,13 @@ begin
     Button_Store[I].TexID := gRes.Wares[StoreResType[I]].GUIIcon;
     Button_Store[I].Tag := I;
     Button_Store[I].Hint := gRes.Wares[StoreResType[I]].Title;
-    Button_Store[I].OnClick := House_StoreNotAcceptFlag;
+    Button_Store[I].OnClickShift := House_StoreItemClickShift;
 
     Image_Store_Accept[I] := TKMImage.Create(Panel_HouseStore, dX + 20, dY, 12, 12, 49);
     Image_Store_Accept[I].Hitable := False;
+
+    Image_Store_NotAcceptTakeOut[I] := TKMImage.Create(Panel_HouseStore, dX, dY, 12, 12, 676);
+    Image_Store_NotAcceptTakeOut[I].Hitable := False;
   end;
 end;
 
@@ -1364,13 +1368,19 @@ end;
 
 {That small red triangle blocking delivery of wares to Storehouse}
 {Ware determined by Button.Tag property}
-procedure TKMGUIGameHouse.House_StoreNotAcceptFlag(Sender: TObject);
+procedure TKMGUIGameHouse.House_StoreItemClickShift(Sender: TObject; Shift: TShiftState);
 begin
   if gMySpectator.Selected = nil then
     Exit;
   if not (gMySpectator.Selected is TKMHouseStore) then
     Exit;
-  gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag]);
+  //Red triangle - block delivery to barracks
+  if ssLeft in Shift then
+    gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
+  else
+  //Orange triange - block take resources from
+  if ssRight in Shift then
+    gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptTakeOutFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
 end;
 
 
@@ -1481,6 +1491,7 @@ begin
     Tmp := TKMHouseStore(gMySpectator.Selected).CheckResIn(StoreResType[I]);
     Button_Store[I].Caption := IfThen(Tmp = 0, '-', IntToStr(Tmp));
     Image_Store_Accept[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAcceptFlag[StoreResType[I]];
+    Image_Store_NotAcceptTakeOut[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAcceptTakeOutFlag[StoreResType[I]];
   end;
 end;
 

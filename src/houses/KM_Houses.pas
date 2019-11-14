@@ -192,6 +192,7 @@ type
 
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
     function ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -295,10 +296,13 @@ type
     procedure Activate(aWasBuilt: Boolean); override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
+    NotAcceptTakeOutFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; override;
     procedure ToggleNotAcceptFlag(aWare: TKMWareType);
+    procedure ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
     procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
@@ -843,15 +847,24 @@ begin
 end;
 
 
+//Check if we should abandon delivery to this house
 function TKMHouse.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := DeliveryMode <> dmDelivery;
 end;
 
 
+//Check if we should abandon delivery from this house
 function TKMHouse.ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean;
 begin
   Result := not ResOutputAvailable(aWareType, 1);
+end;
+
+
+//Check if we should abandon delivery from this house to aToHouse (used in Store only for now)
+function TKMHouse.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+begin
+  Result := False;
 end;
 
 
@@ -2051,7 +2064,10 @@ begin
   FirstStore := TKMHouseStore(gHands[fOwner].FindHouse(htStore, 1));
   if (FirstStore <> nil) and not FirstStore.IsDestroyed then
     for RT := WARE_MIN to WARE_MAX do
+    begin
       NotAcceptFlag[RT] := FirstStore.NotAcceptFlag[RT];
+      NotAcceptTakeOutFlag[RT] := FirstStore.NotAcceptTakeOutFlag[RT];
+    end;
 end;
 
 
@@ -2060,6 +2076,7 @@ begin
   inherited;
   LoadStream.Read(WaresCount, SizeOf(WaresCount));
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
+  LoadStream.Read(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
 end;
 
 
@@ -2184,17 +2201,39 @@ begin
 end;
 
 
+procedure TKMHouseStore.ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
+begin
+  NotAcceptTakeOutFlag[aWare] := not NotAcceptTakeOutFlag[aWare];
+end;
+
+
 procedure TKMHouseStore.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(WaresCount, SizeOf(WaresCount));
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
+  SaveStream.Write(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
 end;
 
 
 function TKMHouseStore.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := inherited or NotAcceptFlag[aWareType];
+end;
+
+
+//Check if we should abandon TakeOut delivery (evacuate) from this house to aToHouse
+function TKMHouseStore.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or ((aToHouse <> nil)
+                           and (aToHouse is TKMHouseStore)
+                           and aToHouse.IsComplete
+                           and ((DeliveryMode <> dmTakeOut)
+                                //Cancel delivery even if for fake NewDelivery state.
+                                //When Player sees "serf enters Store" then f.e. Player wants immidiately cancel this serf delivery
+                                //In that case Delivery state will be set too late, and cancellation will be not applied
+                                or (NewDeliveryMode <> dmTakeOut)
+                                or NotAcceptTakeOutFlag[aWareType]));
 end;
 
 

@@ -832,7 +832,10 @@ begin
   Result := Result and not fDemand[iD].IsDeleted and (aIgnoreOffer or not fOffer[iO].IsDeleted);
 
   //If Offer should not be abandoned
-  Result := Result and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFrom(fOffer[iO].Ware);
+  Result := Result and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFrom(fOffer[iO].Ware)
+                       //Check store to store evacuation
+                       and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFromTo(fDemand[iD].Loc_House, fOffer[iO].Ware);
+
 
   //If Demand house should abandon delivery
   Result := Result and ((fDemand[iD].Loc_House = nil)
@@ -862,11 +865,17 @@ begin
     end;
   end;
 
+  //Do not allow delivery from 1 house to same house (f.e. store)
+  Result := Result and ((fDemand[iD].Loc_House = nil)
+                       or (fDemand[iD].Loc_House.UID <> fOffer[iO].Loc_House.UID));
+
   //If Demand and Offer are different HouseTypes, means forbid Store<->Store deliveries
   //except the case where 2nd store is being built and requires building materials
+  //or when we use TakeOut delivery (evacuation) mode for Offer Store
   Result := Result and ((fDemand[iD].Loc_House = nil)
                         or not ((fOffer[iO].Loc_House.HouseType = htStore) and (fDemand[iD].Loc_House.HouseType = htStore))
-                        or (fOffer[iO].Loc_House.IsComplete <> fDemand[iD].Loc_House.IsComplete));
+                        or not fDemand[iD].Loc_House.IsComplete
+                        or ((fOffer[iO].Loc_House.DeliveryMode = dmTakeOut) and not TKMHouseStore(fOffer[iO].Loc_House).NotAcceptTakeOutFlag[fOffer[iO].Ware]));
 
   //Allow transfers between Barracks only when offer barracks have DeliveryMode = dmTakeOut
   Result := Result and ((fDemand[iD].Loc_House = nil)

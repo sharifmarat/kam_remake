@@ -193,7 +193,8 @@ begin
   if fPhase <= 2 then
     Result := Result
                 or fFrom.IsDestroyed
-                or fFrom.ShouldAbandonDeliveryFrom(fWareType);
+                or fFrom.ShouldAbandonDeliveryFrom(fWareType)
+                or fFrom.ShouldAbandonDeliveryFromTo(fToHouse, fWareType);
 
   //do not abandon the delivery if target is destroyed/dead, we will find new target later
   case fDeliverKind of
@@ -434,9 +435,11 @@ begin
           SetActionGoIn(uaWalk, gdGoInside, fFrom);
         end;
     2:  begin
+          //Serf is inside house now.
           //Barracks can consume the resource (by equipping) before we arrive
           //All houses can have resources taken away by script at any moment
-          if fFrom.ShouldAbandonDeliveryFrom(fWareType) then
+          if fFrom.ShouldAbandonDeliveryFrom(fWareType)
+             or fFrom.ShouldAbandonDeliveryFromTo(fToHouse, fWareType) then //For store evacuation
           begin
             SetActionLockedStay(5, uaWalk); //Wait a moment inside
             fPhase := 120; //Will get out of Barracks onthat Phase
