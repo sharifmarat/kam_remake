@@ -296,7 +296,7 @@ type
     procedure Activate(aWasBuilt: Boolean); override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
-    NotAcceptTakeOutFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
+    NotAllowTakeOutFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
@@ -2066,7 +2066,7 @@ begin
     for RT := WARE_MIN to WARE_MAX do
     begin
       NotAcceptFlag[RT] := FirstStore.NotAcceptFlag[RT];
-      NotAcceptTakeOutFlag[RT] := FirstStore.NotAcceptTakeOutFlag[RT];
+      NotAllowTakeOutFlag[RT] := FirstStore.NotAllowTakeOutFlag[RT];
     end;
 end;
 
@@ -2076,7 +2076,7 @@ begin
   inherited;
   LoadStream.Read(WaresCount, SizeOf(WaresCount));
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
-  LoadStream.Read(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
+  LoadStream.Read(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
 end;
 
 
@@ -2203,7 +2203,7 @@ end;
 
 procedure TKMHouseStore.ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
 begin
-  NotAcceptTakeOutFlag[aWare] := not NotAcceptTakeOutFlag[aWare];
+  NotAllowTakeOutFlag[aWare] := not NotAllowTakeOutFlag[aWare];
 end;
 
 
@@ -2212,7 +2212,7 @@ begin
   inherited;
   SaveStream.Write(WaresCount, SizeOf(WaresCount));
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
-  SaveStream.Write(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
+  SaveStream.Write(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
 end;
 
 
@@ -2233,7 +2233,7 @@ begin
                                 //When Player sees "serf enters Store" then f.e. Player wants immidiately cancel this serf delivery
                                 //In that case Delivery state will be set too late, and cancellation will be not applied
                                 or (NewDeliveryMode <> dmTakeOut)
-                                or NotAcceptTakeOutFlag[aWareType]));
+                                or NotAllowTakeOutFlag[aWareType]));
 end;
 
 

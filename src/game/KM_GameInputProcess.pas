@@ -70,13 +70,13 @@ type
     gicHouseMarketTo,                //Select wares to trade in marketplace
     gicHouseWoodcutterMode,          //Switch the woodcutter mode
     gicHouseArmorWSDeliveryToggle,   //Toggle resourse delivery to armor workshop
-    gicHouseStoreAcceptFlag,         //Control wares delivery to store
-    gicHouseStoreAcceptTakeOutFlag,  //Control wares delivery from store
+    gicHouseStoreNotAcceptFlag,      //Control wares delivery to store
+    gicHStoreNotAllowTakeOutFlag,    //Control wares delivery from store
     gicHouseSchoolTrain,             //Place an order to train citizen
     gicHouseSchoolTrainChOrder,      //Change school training order
     gicHouseSchoolTrainChLastUOrder, //Change school training order for last unit in queue
     gicHouseBarracksAcceptFlag,      //Control wares delivery to barracks
-    gicHouseBarracksAcptTakeOutFlag, //Control wares delivery from barracks
+    gicHBarracksNotAllowTakeOutFlag, //Control wares delivery from barracks
     gicHBarracksAcceptRecruitsTgl,   //Toggle are recruits allowed to enter barracks or not
     gicHouseBarracksEquip,           //Place an order to train warrior in the Barracks
     gicHouseBarracksRally,           //Set the rally point for the Barracks
@@ -165,12 +165,12 @@ const
     gicHouseMarketFrom,
     gicHouseMarketTo,
     gicHouseWoodcutterMode,
-    gicHouseStoreAcceptFlag,
+    gicHouseStoreNotAcceptFlag,
     gicHouseSchoolTrain,
     gicHouseSchoolTrainChOrder,
     gicHouseSchoolTrainChLastUOrder,
     gicHouseBarracksAcceptFlag,
-    gicHouseBarracksAcptTakeOutFlag,
+    gicHBarracksNotAllowTakeOutFlag,
     gicHBarracksAcceptRecruitsTgl,
     gicHouseBarracksEquip,
     gicHouseBarracksRally,
@@ -213,13 +213,13 @@ const
     gicpt_Int2,     // gicHouseMarketTo
     gicpt_Int2,     // gicHouseWoodcutterMode
     gicpt_Int2,     // gicHouseArmorWSDeliveryToggle
-    gicpt_Int2,     // gicHouseStoreAcceptFlag
-    gicpt_Int2,     // gicHouseStoreAcceptTakeOutFlag
+    gicpt_Int2,     // gicHouseStoreNotAcceptFlag
+    gicpt_Int2,     // gicHStoreNotAllowTakeOutFlag
     gicpt_Int3,     // gicHouseSchoolTrain
     gicpt_Int3,     // gicHouseSchoolTrainChOrder
     gicpt_Int2,     // gicHouseSchoolTrainChLastUOrder
     gicpt_Int2,     // gicHouseBarracksAcceptFlag
-    gicpt_Int2,     // gicHouseBarracksAcptTakeOutFlag
+    gicpt_Int2,     // gicHBarracksNotAllowTakeOutFlag
     gicpt_Int1,     // gicHBarracksAcceptRecruitsTgl
     gicpt_Int3,     // gicHouseBarracksEquip
     gicpt_Int3,     // gicHouseBarracksRally
@@ -664,7 +664,7 @@ begin
     end;
     if CommandType in [gicHouseRepairToggle, gicHouseDeliveryModeNext, gicHouseDeliveryModePrev, gicHouseWoodcuttersCutting, gicHouseTownHallMaxGold,
       gicHouseOrderProduct, gicHouseMarketFrom, gicHouseMarketTo, gicHouseBarracksRally, gicHouseTownHallRally,
-      gicHouseStoreAcceptFlag, gicHouseStoreAcceptTakeOutFlag, gicHouseBarracksAcceptFlag, gicHouseBarracksAcptTakeOutFlag,
+      gicHouseStoreNotAcceptFlag, gicHStoreNotAllowTakeOutFlag, gicHouseBarracksAcceptFlag, gicHBarracksNotAllowTakeOutFlag,
       gicHouseBarracksEquip, gicHouseTownHallEquip, gicHouseClosedForWorkerTgl,
       gicHouseSchoolTrain, gicHouseSchoolTrainChOrder, gicHouseSchoolTrainChLastUOrder, gicHouseRemoveTrain,
       gicHouseWoodcutterMode, gicHBarracksAcceptRecruitsTgl, gicHouseArmorWSDeliveryToggle] then
@@ -734,14 +734,14 @@ begin
       gicHouseOrderProduct:      SrcHouse.ResOrder[Params[2]] := SrcHouse.ResOrder[Params[2]] + Params[3];
       gicHouseMarketFrom:        TKMHouseMarket(SrcHouse).ResFrom := TKMWareType(Params[2]);
       gicHouseMarketTo:          TKMHouseMarket(SrcHouse).ResTo := TKMWareType(Params[2]);
-      gicHouseStoreAcceptFlag:   TKMHouseStore(SrcHouse).ToggleNotAcceptFlag(TKMWareType(Params[2]));
-      gicHouseStoreAcceptTakeOutFlag:
+      gicHouseStoreNotAcceptFlag:   TKMHouseStore(SrcHouse).ToggleNotAcceptFlag(TKMWareType(Params[2]));
+      gicHStoreNotAllowTakeOutFlag:
                                  TKMHouseStore(SrcHouse).ToggleNotAcceptTakeOutFlag(TKMWareType(Params[2]));
       gicHouseWoodcutterMode:    TKMHouseWoodcutters(SrcHouse).WoodcutterMode := TKMWoodcutterMode(Params[2]);
       gicHouseBarracksAcceptFlag:
                                   TKMHouseBarracks(SrcHouse).ToggleNotAcceptFlag(TKMWareType(Params[2]));
-      gicHouseBarracksAcptTakeOutFlag:
-                                  TKMHouseBarracks(SrcHouse).ToggleNotAcceptTakeOutFlag(TKMWareType(Params[2]));
+      gicHBarracksNotAllowTakeOutFlag:
+                                  TKMHouseBarracks(SrcHouse).ToggleNotAllowTakeOutFlag(TKMWareType(Params[2]));
       gicHBarracksAcceptRecruitsTgl:
                                   TKMHouseBarracks(SrcHouse).ToggleAcceptRecruits;
       gicHouseBarracksEquip:     TKMHouseBarracks(SrcHouse).Equip(TKMUnitType(Params[2]), Params[3]);
@@ -959,8 +959,8 @@ end;
 
 procedure TKMGameInputProcess.CmdHouse(aCommandType: TKMGameInputCommandType; aHouse: TKMHouse; aWareType: TKMWareType);
 begin
-  Assert(aCommandType in [gicHouseStoreAcceptFlag, gicHouseStoreAcceptTakeOutFlag,
-                          gicHouseBarracksAcceptFlag, gicHouseBarracksAcptTakeOutFlag,
+  Assert(aCommandType in [gicHouseStoreNotAcceptFlag, gicHStoreNotAllowTakeOutFlag,
+                          gicHouseBarracksAcceptFlag, gicHBarracksNotAllowTakeOutFlag,
                           gicHouseMarketFrom, gicHouseMarketTo, gicHouseArmorWSDeliveryToggle]);
   TakeCommand(MakeCommand(aCommandType, aHouse.UID, Byte(aWareType)));
 end;

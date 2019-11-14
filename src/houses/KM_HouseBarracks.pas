@@ -19,7 +19,7 @@ type
   public
     MapEdRecruitCount: Word; //Only used by MapEd
     NotAcceptFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
-    NotAcceptTakeOutFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
+    NotAllowTakeOutFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
     NotAcceptRecruitFlag: Boolean;
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -43,7 +43,7 @@ type
     procedure RecruitsAdd(aUnit: Pointer);
     procedure RecruitsRemove(aUnit: Pointer);
     procedure ToggleNotAcceptFlag(aRes: TKMWareType);
-    procedure ToggleNotAcceptTakeOutFlag(aRes: TKMWareType);
+    procedure ToggleNotAllowTakeOutFlag(aRes: TKMWareType);
     procedure ToggleAcceptRecruits;
     function Equip(aUnitType: TKMUnitType; aCount: Integer): Integer;
     procedure CreateRecruitInside(aIsMapEd: Boolean);
@@ -83,7 +83,7 @@ begin
     fRecruitsList.Add(U);
   end;
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
-  LoadStream.Read(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
+  LoadStream.Read(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
   LoadStream.Read(NotAcceptRecruitFlag);
 end;
 
@@ -118,7 +118,7 @@ begin
     for WT := WARFARE_MIN to WARFARE_MAX do
     begin
       NotAcceptFlag[WT] := FirstBarracks.NotAcceptFlag[WT];
-      NotAcceptTakeOutFlag[WT] := FirstBarracks.NotAcceptTakeOutFlag[WT];
+      NotAllowTakeOutFlag[WT] := FirstBarracks.NotAllowTakeOutFlag[WT];
     end;
     NotAcceptRecruitFlag := FirstBarracks.NotAcceptRecruitFlag;
   end;
@@ -216,11 +216,11 @@ begin
 end;
 
 
-procedure TKMHouseBarracks.ToggleNotAcceptTakeOutFlag(aRes: TKMWareType);
+procedure TKMHouseBarracks.ToggleNotAllowTakeOutFlag(aRes: TKMWareType);
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
 
-  NotAcceptTakeOutFlag[aRes] := not NotAcceptTakeOutFlag[aRes];
+  NotAllowTakeOutFlag[aRes] := not NotAllowTakeOutFlag[aRes];
 end;
 
 
@@ -243,7 +243,7 @@ begin
   Result := inherited
             or (DeliveryMode <> dmTakeOut)
             or not (aWareType in [WARFARE_MIN .. WARFARE_MAX])
-            or NotAcceptTakeOutFlag[aWareType];
+            or NotAllowTakeOutFlag[aWareType];
 end;
 
 
@@ -336,7 +336,7 @@ begin
   for I := 0 to RecruitsCount - 1 do
     SaveStream.Write(TKMUnit(fRecruitsList.Items[I]).UID); //Store ID
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
-  SaveStream.Write(NotAcceptTakeOutFlag, SizeOf(NotAcceptTakeOutFlag));
+  SaveStream.Write(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
   SaveStream.Write(NotAcceptRecruitFlag);
 end;
 

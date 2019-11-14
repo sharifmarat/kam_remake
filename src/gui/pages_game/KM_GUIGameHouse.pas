@@ -1099,7 +1099,7 @@ begin
         Button_Barracks[I].Down := True;
 
     Image_Barracks_NotAccept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
-    Image_Barracks_NotAcceptTakeOut[I].Visible := Barracks.NotAcceptTakeOutFlag[BarracksResType[I]];
+    Image_Barracks_NotAcceptTakeOut[I].Visible := Barracks.NotAllowTakeOutFlag[BarracksResType[I]];
   end;
 
   Tmp := Barracks.RecruitsCount;
@@ -1361,7 +1361,7 @@ begin
   if ssRight in Shift then
   begin
     if Sender <> Button_BarracksRecruit then
-      gGame.GameInputProcess.CmdHouse(gicHouseBarracksAcptTakeOutFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag]);
+      gGame.GameInputProcess.CmdHouse(gicHBarracksNotAllowTakeOutFlag, TKMHouse(gMySpectator.Selected), BarracksResType[(Sender as TKMControl).Tag]);
   end;
 end;
 
@@ -1376,11 +1376,11 @@ begin
     Exit;
   //Red triangle - block delivery to barracks
   if ssLeft in Shift then
-    gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
+    gGame.GameInputProcess.CmdHouse(gicHouseStoreNotAcceptFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
   else
   //Orange triange - block take resources from
   if ssRight in Shift then
-    gGame.GameInputProcess.CmdHouse(gicHouseStoreAcceptTakeOutFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
+    gGame.GameInputProcess.CmdHouse(gicHStoreNotAllowTakeOutFlag, TKMHouse(gMySpectator.Selected), StoreResType[(Sender as TKMControl).Tag])
 end;
 
 
@@ -1491,7 +1491,7 @@ begin
     Tmp := TKMHouseStore(gMySpectator.Selected).CheckResIn(StoreResType[I]);
     Button_Store[I].Caption := IfThen(Tmp = 0, '-', IntToStr(Tmp));
     Image_Store_Accept[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAcceptFlag[StoreResType[I]];
-    Image_Store_NotAcceptTakeOut[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAcceptTakeOutFlag[StoreResType[I]];
+    Image_Store_NotAcceptTakeOut[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAllowTakeOutFlag[StoreResType[I]];
   end;
 end;
 

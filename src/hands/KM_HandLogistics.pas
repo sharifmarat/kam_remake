@@ -875,7 +875,7 @@ begin
   Result := Result and ((fDemand[iD].Loc_House = nil)
                         or not ((fOffer[iO].Loc_House.HouseType = htStore) and (fDemand[iD].Loc_House.HouseType = htStore))
                         or not fDemand[iD].Loc_House.IsComplete
-                        or ((fOffer[iO].Loc_House.DeliveryMode = dmTakeOut) and not TKMHouseStore(fOffer[iO].Loc_House).NotAcceptTakeOutFlag[fOffer[iO].Ware]));
+                        or ((fOffer[iO].Loc_House.DeliveryMode = dmTakeOut) and not TKMHouseStore(fOffer[iO].Loc_House).NotAllowTakeOutFlag[fOffer[iO].Ware]));
 
   //Allow transfers between Barracks only when offer barracks have DeliveryMode = dmTakeOut
   Result := Result and ((fDemand[iD].Loc_House = nil)
