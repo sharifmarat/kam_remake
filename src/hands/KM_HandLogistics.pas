@@ -738,10 +738,11 @@ function TKMDeliveries.TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType;
 var
   I: Integer;
 begin
+  Result := 0;
+
   if gGame.IsMapEditor then
     Exit;
 
-  Result := 0;
   if aCount = 0 then Exit;
   Assert(aHouse <> nil);
   for I := 1 to fDemandCount do

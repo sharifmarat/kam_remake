@@ -2045,7 +2045,7 @@ begin
   Output := False;
   BuildFF := gAIFields.Eye.BuildFF;
   if (StoneLocs = nil) then
-    Exit; // Find stone locs
+    Exit(False); // Find stone locs
 
   with HouseReq do
   begin
@@ -2561,7 +2561,7 @@ var
   Division: Single;
   HT: TKMHouseType;
   Loc: TKMPoint;
-  Color, Val: Cardinal;
+  Color{, Val}: Cardinal;
   HMA: THouseMappingArray;
 begin
 
