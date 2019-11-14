@@ -150,6 +150,7 @@ type
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
+    procedure CheckTakeOutDeliveryMode; virtual;
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
@@ -776,14 +777,13 @@ begin
 end;
 
 
-procedure TKMHouse.UpdateDeliveryMode;
+//Check and proceed if we Set or UnSet dmTakeOut delivery mode
+procedure TKMHouse.CheckTakeOutDeliveryMode;
 var
   I: Integer;
   ResCnt: Word;
   Res: TKMWareType;
 begin
-  if fNewDeliveryMode = fDeliveryMode then Exit;
-
   if fDeliveryMode = dmTakeOut then
     for I := 1 to 4 do
     begin
@@ -804,6 +804,15 @@ begin
         gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
     end;
   end;
+end;
+
+
+procedure TKMHouse.UpdateDeliveryMode;
+begin
+  if fNewDeliveryMode = fDeliveryMode then
+    Exit;
+
+  CheckTakeOutDeliveryMode;
 
   fUpdateDeliveryModeOnTick := 0;
   fDeliveryMode := fNewDeliveryMode;
