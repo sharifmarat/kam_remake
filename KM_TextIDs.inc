@@ -1288,3 +1288,7 @@ TX_SPECTATOR_PANEL_CITIZENS_SLR = 1256; //Citizens (S/L/R)
 TX_SPECTATOR_PANEL_CITIZENS_HOUSE_WORKERS = 1257; //Citizens (Others)
 
 TX_MULTIPLAYER_WAITING_DC_PLAYERS_DATA = 964; //Waiting for disconnected players data:
+
+TX_HOUSE_DELIVERY_PROHIBITED_HINT = 1259; //Deliver %s is prohibited
+TX_HOUSE_TAKEOUT_PROHIBITED_HINT = 1260; //Take out %s is prohibited
+TX_HOUSE_BARRACKS_NOT_ACCEPT_RECRUIT_HINT = 1261; //Recruit is not allowed to get into Barracks
