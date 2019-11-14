@@ -150,6 +150,7 @@ type
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
+    function IsDeliveryModeValid(aValue: TKMDeliveryMode): Boolean; virtual;
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
@@ -182,8 +183,8 @@ type
 
     property DeliveryMode: TKMDeliveryMode read fDeliveryMode;
     property NewDeliveryMode: TKMDeliveryMode read fNewDeliveryMode write SetNewDeliveryMode;
-    procedure SetNextDeliveryMode;
-    procedure SetPrevDeliveryMode;
+    procedure SetNextDeliveryMode; virtual;
+    procedure SetPrevDeliveryMode; virtual;
     procedure SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
     function AllowDeliveryModeChange: Boolean;
 
@@ -814,10 +815,19 @@ end;
 //Set NewDelivery mode. Its going to become a real delivery mode few ticks later
 procedure TKMHouse.SetNewDeliveryMode(aValue: TKMDeliveryMode);
 begin
+  if not IsDeliveryModeValid(aValue) then
+    Exit;
+
   fNewDeliveryMode := aValue;
 
   fUpdateDeliveryModeOnTick := fTick + UPDATE_DELIVERY_MODE_DELAY;
   gLog.LogDelivery('NewDeliveryMode set to ' + IntToStr(Byte(fNewDeliveryMode)));
+end;
+
+
+function TKMHouse.IsDeliveryModeValid(aValue: TKMDeliveryMode): Boolean;
+begin
+  Result := True;
 end;
 
 
@@ -836,6 +846,9 @@ end;
 //Set delivery mdoe immidiately
 procedure TKMHouse.SetDeliveryModeInstantly(aValue: TKMDeliveryMode);
 begin
+  if not IsDeliveryModeValid(aValue) then
+    Exit;
+
   fNewDeliveryMode := aValue;
   UpdateDeliveryMode;
 end;
