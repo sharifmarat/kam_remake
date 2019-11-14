@@ -1223,13 +1223,15 @@ var
 begin
   {$IFDEF DEBUG_NewAI}
   Time := TimeGet();
-  FillChar(DA1, SizeOf(DA1), #0);
-  FillChar(DA2, SizeOf(DA2), #0);
-  FillChar(DA3, SizeOf(DA3), #0);
-  FillChar(DA4, SizeOf(DA4), #0);
+  {
+  FillChar(DA1[0], SizeOf(DA1[0]) * Length(DA1), #0);
+  FillChar(DA2[0], SizeOf(DA2[0]) * Length(DA2), #0);
+  FillChar(DA3[0], SizeOf(DA3[0]) * Length(DA3), #0);
+  FillChar(DA4[0], SizeOf(DA4[0]) * Length(DA4), #0);
 
-  FillChar(fFieldPrice, SizeOf(fFieldPrice), #0);
+  FillChar(fFieldPrice[0], SizeOf(fFieldPrice[0]) * Length(fFieldPrice), #0);
   Price := fFieldPrice;
+  }
   {$ENDIF}
 
   BuildFF := gAIFields.Eye.BuildFF;
@@ -1265,9 +1267,11 @@ begin
         begin
           Dec(Price[Y+Y2,X+X2], GA_PLANNER_PlanFarmFields_CanBuild);
         {$IFDEF DEBUG_NewAI}
+        {
           P := KMPointAdd(KMPoint(X,Y),BelowLoc);
           if gTerrain.TileInMapCoords(P.X-1, P.Y-1) AND gTerrain.TileInMapCoords(P.X+1, P.Y+1) then
             Inc(DA3[P.Y+Y2,P.X+X2], 40);
+            }
         {$ENDIF}
         end;
     end;
@@ -1281,8 +1285,10 @@ begin
       if gTerrain.TileInMapCoords(P.X, P.Y) then
         case FieldEval[Y,X] of
           {$IFDEF DEBUG_NewAI}
+          {
           feUnvisitedTile: DA4[P.Y,P.X] := 50;
           feExistingField: DA2[P.Y,P.X] := 100;
+          }
           {$ENDIF}
           feFertileTile:
           begin
@@ -1315,7 +1321,7 @@ begin
         P := KMPointAdd(KMPoint(X,Y),BelowLoc);
         TagList.Add(P, 20000 + Price[Y,X]);
         {$IFDEF DEBUG_NewAI}
-        DA1[P.Y,P.X] := Price[Y,X];
+        //DA1[P.Y,P.X] := Price[Y,X];
         {$ENDIF}
       end;
     TagList.SortByTag;
@@ -1513,9 +1519,7 @@ var
     Coef: Double;
   begin
     if KMSamePoint(aLoc, aBestLocs[0]) then
-      fPlaceFarmDebugText := Format('New farm:' + gRes.Houses[aHT].HouseName
-        + '; Time sum: ' + IntToStr(fTimeSumSearchHouse[htFarm])
-        + ', peak: ' + IntToStr(fTimePeakSearchHouse[htFarm])
+      fPlaceFarmDebugText := Format('New farm; Time sum: %d, peak:  %d'
         + '|Perc'
         + #9 + '[X,Y]'
         + #9#9 + 'Obstac'
@@ -1527,10 +1531,10 @@ var
         + #9#9 + 'FlatAr'
         + #9#9 + 'AllInf'
         + #9#9 + 'EnmInf'
-        + #9#9 + 'FieldCrtit',[]);
+        + #9#9 + 'FieldCrtit',[fTimeSumSearchHouse[htFarm],fTimePeakSearchHouse[htFarm]]);
     Coef := 1;
     if (BestGainArr[0] <> 0) then
-      Coef := (100 / BestGainArr[0]);
+      Coef := (-100 / BestGainArr[0]);
     fPlaceFarmDebugText := fPlaceFarmDebugText + Format(
       '|%3.1f' + #9 + '[%d,%d]' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f',
       [aSum * Coef, aLoc.X, aLoc.Y,
@@ -1562,9 +1566,7 @@ var
         Peak := fTimePeakSearchHouse[HT];
     end;
     if KMSamePoint(aLoc, aBestLocs[0]) then
-      fPlaceHouseDebugText := Format('New house:' + gRes.Houses[aHT].HouseName
-        + '; Time sum: ' + IntToStr(Sum)
-        + ', peak: ' + IntToStr(Peak)
+      fPlaceHouseDebugText := Format('New house: %s; Time sum: %d, peak: %d'
         + '|Perc'
         + #9 + '[X,Y]'
         + #9#9 + 'Obstac'
@@ -1576,7 +1578,7 @@ var
         + #9#9 + 'FlatAr'
         + #9#9 + 'AllInf'
         + #9#9 + 'EnmInf'
-        + #9#9 + 'FreeEntr',[]);
+        + #9#9 + 'FreeEntr',[gRes.Houses[aHT].HouseName, Sum, Peak]);
     Coef := 1;
     if (BestGainArr[0] <> 0) then
       Coef := (100 / BestGainArr[0]);
@@ -2230,9 +2232,7 @@ var
     Coef: Single;
   begin
      if (aIdx = FI.Count-1) then
-        fForestDebugText := Format('Forest'
-          + ' - Time: ' + IntToStr(fTimeSumSearchForest)
-          + '; Peak: ' + IntToStr(fTimePeakSearchForest)
+        fForestDebugText := Format('Forest - Time: %d; Peak: %d'
           + '|Perc'
           + #9 + '[X,Y]'
           + #9#9 + 'TreeCnt'
@@ -2243,7 +2243,7 @@ var
           + #9#9 + 'Distance'
           + #9#9 + 'FreeTiles'
           + #9#9 + 'AllInf'
-          + #9#9 + 'EnmInfl',[]);
+          + #9#9 + 'EnmInfl',[fTimeSumSearchForest, fTimePeakSearchForest]);
     Coef := Max(0.0000001, 100 / Max(0.0001,(FI.Forests[FI.Count-1].Bid)));
     fForestDebugText := fForestDebugText + Format(
       '|%3.1f' + #9 + '[%d,%d]' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f' + #9#9 + '%5.1f',
@@ -2543,7 +2543,7 @@ end;
 procedure TKMCityPlanner.LogStatus(var aBalanceText: UnicodeString);
 begin
   {$IFDEF DEBUG_NewAI}
-    aBalanceText := aBalanceText + '||CityPlanner: |' + fPlaceHouseDebugText + '|' + fPlaceFarmDebugText + '|' + fForestDebugText;
+    aBalanceText := Format('%s||CityPlanner: |%s|%s|%s',[aBalanceText,fPlaceHouseDebugText,fPlaceFarmDebugText,fForestDebugText]);
   {$ENDIF}
 end;
 

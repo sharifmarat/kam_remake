@@ -93,10 +93,10 @@ begin
   US := gRes.Units[aUT];
   with Result do
   begin
-    Hitpoints :=          US.Hitpoints;
-    Attack :=             US.Attack;
-    AttackHorse :=        US.AttackHorse;
-    Defence :=            US.Defence;
+    Hitpoints          := US.Hitpoints;
+    Attack             := US.Attack;
+    AttackHorse        := US.AttackHorse;
+    Defence            := US.Defence;
     DefenceProjectiles := US.GetDefenceVsProjectiles(False);
     if aConsiderHitChance AND (UnitGroups[aUT] = gtRanged) then
       Attack := Attack * HIT_CHANCE_MODIFIER;
@@ -115,10 +115,10 @@ begin
     GE := UnitEvaluation[TKMUnit(aGroup.Members[K]).UnitType,aConsiderHitChance];
     with Result do
     begin
-      Hitpoints :=          Hitpoints          + GE.Hitpoints;
-      Attack :=             Attack             + GE.Attack;
-      AttackHorse :=        AttackHorse        + GE.AttackHorse;
-      Defence :=            Defence            + GE.Defence;
+      Hitpoints          := Hitpoints          + GE.Hitpoints;
+      Attack             := Attack             + GE.Attack;
+      AttackHorse        := AttackHorse        + GE.AttackHorse;
+      Defence            := Defence            + GE.Defence;
       DefenceProjectiles := DefenceProjectiles + GE.DefenceProjectiles;
     end;
   end;

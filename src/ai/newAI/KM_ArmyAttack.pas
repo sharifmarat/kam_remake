@@ -1563,7 +1563,7 @@ begin
     // Company status log
     Company := fCompanies.Items[K];
     CompOpacity1 := $09000000;
-    CompOpacity2 := $99000000;
+    CompOpacity2 := $33000000;
 
     // Pathfinding (squads) + targets
     for GT := Low(TKMGroupType) to High(TKMGroupType) do
@@ -1571,8 +1571,8 @@ begin
       begin
         Squad := Company.Squads[GT].Items[L];
         // Highlight selected group and squad
-        GroupOpacity1 := $50000000;
-        GroupOpacity2 := $77000000;
+        GroupOpacity1 := $10000000;
+        GroupOpacity2 := $20000000;
         if (gMySpectator.Selected is TKMUnitGroup) AND (gMySpectator.Selected = Squad.Group) then
         begin
           gRenderAux.CircleOnTerrain(20, 20, 20, $09000000, $FF000000);
@@ -1625,7 +1625,7 @@ begin
         end;
       end;
 
-      // Change color according to state
+    // Change color according to state
     case Company.State of
       csAttack:  Col := COLOR_RED;
       csWalking: Col := COLOR_BLUE;
