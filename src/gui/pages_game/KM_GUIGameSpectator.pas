@@ -227,7 +227,9 @@ type
 implementation
 
 uses
-  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits, KM_UnitGroup, KM_CommonUtils;
+  KM_InterfaceGame, KM_Game, KM_RenderUI, KM_ResFonts, KM_Resource, KM_ResTexts, KM_ResUnits,
+  KM_UnitGroup, KM_HouseTownhall,
+  KM_CommonUtils;
 
 const
   GUI_SPEC_ITEM_WIDTH = 28;
@@ -485,6 +487,10 @@ end;
 
 
 { TKMGUIGameSpectatorItemLineWareFare }
+const
+  RECRUIT_TAG = -1;
+  TH_GOLD_CHEST_TAG = -2;
+
 function TKMGUIGameSpectatorItemLineWarFare.CreateItem(AHandIndex: Integer; ATag: Integer; aOnItemClick: TIntBoolEvent): TKMGUIGameSpectatorItem;
 begin
   Result := TKMGUIGameSpectatorItem.Create(Self, ATag,
@@ -496,41 +502,57 @@ end;
 
 class function TKMGUIGameSpectatorItemLineWarFare.GetIcon(aTag: Integer): Word;
 begin
-  if aTag = -1 then
+  if aTag = RECRUIT_TAG then
     Result := gRes.Units[utRecruit].GUIIcon
+  else if aTag = TH_GOLD_CHEST_TAG then
+    Result := gRes.Wares[wtGold].GUIIcon
   else
     Result := gRes.Wares[TKMWareType(ATag)].GUIIcon;
 end;
 
 class function TKMGUIGameSpectatorItemLineWarFare.GetTitle(aTag: Integer): UnicodeString;
 begin
-  if aTag = -1 then
+  if aTag = RECRUIT_TAG then
     Result := gRes.Units[utRecruit].GUIName
+  else if aTag = TH_GOLD_CHEST_TAG then
+    Result := gRes.Wares[wtGold].Title
   else
     Result := gRes.Wares[TKMWareType(ATag)].Title;
 end;
 
 function TKMGUIGameSpectatorItemLineWarFare.GetTagCount: Integer;
 begin
-  Result := WARFARE_CNT + 1; //+1 for recruit
+  Result := WARFARE_CNT + 2; //+1 for recruit and +1 for gold chests in TownHall
 end;
 
 function TKMGUIGameSpectatorItemLineWarFare.GetTag(AIndex: Integer): Integer;
 begin
   if AIndex = 0 then
-    Result := -1
+    Result := RECRUIT_TAG //Recruit
+  else if AIndex = 1 then
+    Result := TH_GOLD_CHEST_TAG //TH GoldChest
   else
     //Recruit is the last
-    Result := Integer(BarracksResType[Length(BarracksResType) - AIndex + 1]); //opposite order, we draw items from the right
+    Result := Integer(BarracksResType[Length(BarracksResType) - AIndex + 2]); //opposite order, we draw items from the right
 end;
 
 function TKMGUIGameSpectatorItemLineWarFare.GetValue(AHandIndex: Integer; ATag: Integer): String;
 var
-  Value: Integer;
+  I, Value: Integer;
 begin
-  if aTag = -1 then
+  if aTag = RECRUIT_TAG then
     Value := gHands[AHandIndex].Stats.GetUnitQty(utRecruit)
-  else
+  else if aTag = TH_GOLD_CHEST_TAG then
+  begin
+    //Calc gold in all Townhalls (let's think its 'warfare')
+    Value := 0;
+    with gHands[AHandIndex].Houses do
+      for I := 0 to Count - 1 do
+      begin
+        if Houses[I].HouseType = htTownHall then
+          Inc(Value, TKMHouseTownHall(Houses[I]).GoldCnt);
+      end;
+  end else
     Value := gHands[AHandIndex].Stats.GetWareBalance(TKMWareType(ATag));
 
   Result := IfThen(Value > 0, IntToStr(Value), '');
