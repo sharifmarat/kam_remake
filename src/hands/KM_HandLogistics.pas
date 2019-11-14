@@ -557,7 +557,10 @@ procedure TKMDeliveries.AddOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: I
 var
   I, K: Integer;
 begin
-  if aCount = 0 then Exit;
+  if gGame.IsMapEditor then
+    Exit;
+  if aCount = 0 then
+    Exit;
 
   //Add Count of resource to old offer
   for I := 1 to fOfferCount do
@@ -616,6 +619,9 @@ procedure TKMDeliveries.RemAllOffers(aHouse: TKMHouse);
 var
   I: Integer;
 begin
+  if gGame.IsMapEditor then
+    Exit;
+
   //We need to parse whole list, never knowing how many offers the house had
   for I := 1 to fOfferCount do
   if fOffer[I].Loc_House = aHouse then
@@ -635,7 +641,10 @@ procedure TKMDeliveries.RemOffer(aHouse: TKMHouse; aWare: TKMWareType; aCount: C
 var
   I: Integer;
 begin
-  if aCount = 0 then Exit;
+  if gGame.IsMapEditor then
+    Exit;
+  if aCount = 0 then
+    Exit;
   
   //Add Count of resource to old offer
   for I := 1 to fOfferCount do
@@ -665,6 +674,9 @@ procedure TKMDeliveries.RemDemand(aHouse: TKMHouse);
 var
   I: Integer;
 begin
+  if gGame.IsMapEditor then
+    Exit;
+
   Assert(aHouse <> nil);
   for I := 1 to fDemandCount do
     if fDemand[I].Loc_House = aHouse then
@@ -685,6 +697,8 @@ procedure TKMDeliveries.RemDemand(aUnit: TKMUnit);
 var
   I: Integer;
 begin
+  if gGame.IsMapEditor then
+    Exit;
   Assert(aUnit <> nil);
   for I := 1 to fDemandCount do
   if fDemand[I].Loc_Unit = aUnit then
@@ -724,6 +738,9 @@ function TKMDeliveries.TryRemoveDemand(aHouse: TKMHouse; aResource: TKMWareType;
 var
   I: Integer;
 begin
+  if gGame.IsMapEditor then
+    Exit;
+
   Result := 0;
   if aCount = 0 then Exit;
   Assert(aHouse <> nil);
@@ -766,6 +783,8 @@ procedure TKMDeliveries.AddDemand(aHouse: TKMHouse; aUnit: TKMUnit; aResource: T
 var
   I,K,J: Integer;
 begin
+  if gGame.IsMapEditor then
+    Exit;
   Assert(aResource <> wtNone, 'Demanding rtNone');
   if aCount <= 0 then Exit;
 
