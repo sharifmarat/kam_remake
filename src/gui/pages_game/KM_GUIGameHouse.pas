@@ -89,7 +89,7 @@ type
     Panel_HouseStore: TKMPanel;
       Button_Store: array [1..STORE_RES_COUNT] of TKMButtonFlat;
       Image_Store_Accept: array [1..STORE_RES_COUNT] of TKMImage;
-      Image_Store_NotAcceptTakeOut: array [1..STORE_RES_COUNT] of TKMImage;
+      Image_Store_NotAllowTakeOut: array [1..STORE_RES_COUNT] of TKMImage;
     Panel_House_School: TKMPanel;
       ResRow_School_Resource: TKMWaresRow;
       Button_School_UnitWIP: TKMButton;
@@ -109,7 +109,7 @@ type
     Panel_HouseBarracks: TKMPanel;
       Button_Barracks: array [1..BARRACKS_RES_COUNT] of TKMButtonFlat;
       Image_Barracks_NotAccept: array [1..BARRACKS_RES_COUNT] of TKMImage;
-      Image_Barracks_NotAcceptTakeOut: array [1..BARRACKS_RES_COUNT] of TKMImage;
+      Image_Barracks_NotAllowTakeOut: array [1..BARRACKS_RES_COUNT] of TKMImage;
       Button_BarracksRecruit: TKMButtonFlat;
       Image_Barracks_AcceptRecruit: TKMImage;
       Label_Barracks_Unit: TKMLabel;
@@ -328,8 +328,8 @@ begin
     Image_Store_Accept[I] := TKMImage.Create(Panel_HouseStore, dX + 20, dY, 12, 12, 49);
     Image_Store_Accept[I].Hitable := False;
 
-    Image_Store_NotAcceptTakeOut[I] := TKMImage.Create(Panel_HouseStore, dX, dY, 12, 12, 676);
-    Image_Store_NotAcceptTakeOut[I].Hitable := False;
+    Image_Store_NotAllowTakeOut[I] := TKMImage.Create(Panel_HouseStore, dX, dY, 12, 12, 676);
+    Image_Store_NotAllowTakeOut[I].Hitable := False;
   end;
 end;
 
@@ -460,8 +460,8 @@ begin
 
       Image_Barracks_NotAccept[I] := TKMImage.Create(Panel_HouseBarracks, dX+16, dY, 12, 12, 49);
       Image_Barracks_NotAccept[I].Hitable := False;
-      Image_Barracks_NotAcceptTakeOut[I] := TKMImage.Create(Panel_HouseBarracks, dX, dY, 12, 12, 676);
-      Image_Barracks_NotAcceptTakeOut[I].Hitable := False;
+      Image_Barracks_NotAllowTakeOut[I] := TKMImage.Create(Panel_HouseBarracks, dX, dY, 12, 12, 676);
+      Image_Barracks_NotAllowTakeOut[I].Hitable := False;
     end;
 
     dX := (BARRACKS_RES_COUNT mod 6) * 31;
@@ -1099,7 +1099,7 @@ begin
         Button_Barracks[I].Down := True;
 
     Image_Barracks_NotAccept[I].Visible := Barracks.NotAcceptFlag[BarracksResType[I]];
-    Image_Barracks_NotAcceptTakeOut[I].Visible := Barracks.NotAllowTakeOutFlag[BarracksResType[I]];
+    Image_Barracks_NotAllowTakeOut[I].Visible := Barracks.NotAllowTakeOutFlag[BarracksResType[I]];
   end;
 
   Tmp := Barracks.RecruitsCount;
@@ -1491,7 +1491,7 @@ begin
     Tmp := TKMHouseStore(gMySpectator.Selected).CheckResIn(StoreResType[I]);
     Button_Store[I].Caption := IfThen(Tmp = 0, '-', IntToStr(Tmp));
     Image_Store_Accept[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAcceptFlag[StoreResType[I]];
-    Image_Store_NotAcceptTakeOut[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAllowTakeOutFlag[StoreResType[I]];
+    Image_Store_NotAllowTakeOut[I].Visible := TKMHouseStore(gMySpectator.Selected).NotAllowTakeOutFlag[StoreResType[I]];
   end;
 end;
 
