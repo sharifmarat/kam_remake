@@ -660,18 +660,6 @@ end;
 
 procedure TKMMapEdHouse.House_DeliveryModeToggle(Sender: TObject; Shift: TShiftState);
 begin
-  //Marketplace has only 2 delivery modes
-  if fHouse.HouseType = htMarketplace then
-  begin
-    case Button_HouseDeliveryMode.TexID of
-    37:  // dmDelivery
-          House_SetDeliveryMode(dmClosed);
-    38,  // dmClosed
-    664: // dmTakeOut
-          House_SetDeliveryMode(dmDelivery);
-    end;
-  end
-  else
   case Button_HouseDeliveryMode.TexID of
     37: // dmDelivery
           if ssLeft in Shift then

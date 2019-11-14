@@ -25,7 +25,6 @@ type
   protected
     function GetResOrder(aId: Byte): Integer; override;
     procedure SetResOrder(aId: Byte; aValue: Integer); override;
-    function IsDeliveryModeValid(aValue: TKMDeliveryMode): Boolean; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
     constructor Load(LoadStream: TKMemoryStream); override;
@@ -35,9 +34,6 @@ type
     property ResTo: TKMWareType read fResTo write SetResTo;
     function RatioFrom: Byte;
     function RatioTo: Byte;
-
-    procedure SetNextDeliveryMode; override;
-    procedure SetPrevDeliveryMode; override;
 
     function AllowedToTrade(aRes: TKMWareType): Boolean;
     function TradeInProgress: Boolean;
@@ -106,28 +102,6 @@ end;
 function TKMHouseMarket.GetResOrder(aID: Byte): Integer;
 begin
   Result := fTradeAmount;
-end;
-
-
-function TKMHouseMarket.IsDeliveryModeValid(aValue: TKMDeliveryMode): Boolean;
-begin
-  Result := aValue <> dmTakeOut;
-end;
-
-
-procedure TKMHouseMarket.SetNextDeliveryMode;
-begin
-  case NewDeliveryMode of
-    dmClosed:   SetNewDeliveryMode(dmDelivery);
-    dmDelivery: SetNewDeliveryMode(dmClosed)
-    else SetNewDeliveryMode(dmDelivery)
-  end;
-end;
-
-
-procedure TKMHouseMarket.SetPrevDeliveryMode;
-begin
-  SetNextDeliveryMode; //Same, as we use only 2 modes for Market
 end;
 
 
