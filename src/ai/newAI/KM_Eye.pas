@@ -1450,7 +1450,7 @@ end;
 // Init queue
 procedure TKMBuildFF.InitQueue(aHouseFF: Boolean);
 var
-  I: Integer;
+  K: Integer;
 begin
   fHMA := gAIFields.Eye.HousesMapping; // Make sure that HMA is actual
   fQueueCnt := 0;
@@ -1465,15 +1465,15 @@ begin
   if (fVisitIdx >= 254) then
   begin
     fVisitIdx := 0;
-    for I := 0 to Length(fInfoArr) - 1 do
-      fInfoArr[I].Visited := 0;
+    for K := 0 to Length(fInfoArr) - 1 do
+      fInfoArr[K].Visited := 0;
     //FillChar(fInfoArr[0], SizeOf(TKMBuildInfo[0])*Length(fInfoArr), #0);
   end;
   if (fVisitIdxHouse >= 254) then
   begin
     fVisitIdxHouse := 0;
-    for I := 0 to Length(fInfoArr) - 1 do
-      fInfoArr[I].VisitedHouse := 0;
+    for K := 0 to Length(fInfoArr) - 1 do
+      fInfoArr[K].VisitedHouse := 0;
   end;
   if aHouseFF then
     fVisitIdxHouse := fVisitIdxHouse + 1
@@ -1549,7 +1549,7 @@ const
   DIST = 1;
 var
   LeftSideFree, RightSideFree, CoalUnderPlan: Boolean;
-  I: Integer;
+  K: Integer;
   Point: TKMPoint;
   Dir: TDirection;
 begin
@@ -1557,9 +1557,9 @@ begin
   CoalUnderPlan := False;
   with fHMA[fHouseReq.HouseType] do
   begin
-    for I := Low(Tiles) to High(Tiles) do
+    for K := Low(Tiles) to High(Tiles) do
     begin
-      Point := KMPointAdd(aLoc, Tiles[I]);
+      Point := KMPointAdd(aLoc, Tiles[K]);
       if (Point.Y < 2) OR (Point.X < 2) OR (Point.X > fMapX - 2) OR (Point.Y > fMapY - 2) then
         Exit;
       case State[Point.Y, Point.X] of
@@ -1593,23 +1593,18 @@ begin
     LeftSideFree := True;
     RightSideFree := True;
     for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
-      for I:= Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
+      for K := Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
+      //for K := Low(Surroundings[DIST,Dir]) + Byte(Dir = dirS) to High(Surroundings[DIST,Dir]) - Byte(Dir = dirS) do
       begin
-        Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,I]);
-        if (Dir = dirS) AND (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
-            Exit;
+        Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,K]);
         if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] in [bsReserved, bsHousePlan]) then
-            Exit;
+          Exit;
+        if (Dir = dirS) AND (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan, bsFieldPlan]) then
+          Exit;
         if (Dir = dirE) then
-        begin
-          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
-            RightSideFree := False;
-        end
-        else if (Dir = dirW) then
-        begin
-          if (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]) then
-            LeftSideFree := False;
-        end;
+          RightSideFree := RightSideFree AND not (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]);
+        if (Dir = dirW) then
+          LeftSideFree := LeftSideFree AND not (State[Point.Y, Point.X] in [bsNoBuild, bsHousePlan]);
         if not (LeftSideFree OR RightSideFree) then
           Exit;
       end;
@@ -1674,7 +1669,7 @@ const
   DIST = 1;
 var
   PL: TKMHandID;
-  I,K: Integer;
+  K,L: Integer;
   Dir: TDirection;
   P1,P2: TKMPoint;
   HT: TKMHouseType;
@@ -1684,24 +1679,24 @@ begin
     if (gHands[fOwner].Alliances[PL] = atAlly) then
     begin
       // House plans
-      for I := 0 to gHands[PL].BuildList.HousePlanList.Count - 1 do
-        with gHands[PL].BuildList.HousePlanList.Plans[I] do
+      for K := 0 to gHands[PL].BuildList.HousePlanList.Count - 1 do
+        with gHands[PL].BuildList.HousePlanList.Plans[K] do
         begin
           HT := HouseType;
           if (HT = htNone) then
             continue;
           P1 := KMPointAdd( Loc, KMPoint(gRes.Houses[HT].EntranceOffsetX,0) ); // Plans have moved offset so fix it (because there is never enought exceptions ;)
           // Internal house tiles
-          for K := Low(fHMA[HT].Tiles) to High(fHMA[HT].Tiles) do
+          for L := Low(fHMA[HT].Tiles) to High(fHMA[HT].Tiles) do
           begin
-            P2 := KMPointAdd(P1, fHMA[HT].Tiles[K]);
+            P2 := KMPointAdd(P1, fHMA[HT].Tiles[L]);
             State[P2.Y, P2.X] := bsHousePlan;
           end;
           // External house tiles in distance 1 from house plan
           for Dir := Low(fHMA[HT].Surroundings[DIST]) to High(fHMA[HT].Surroundings[DIST]) do
-            for K := Low(fHMA[HT].Surroundings[DIST,Dir]) to High(fHMA[HT].Surroundings[DIST,Dir]) do
+            for L := Low(fHMA[HT].Surroundings[DIST,Dir]) to High(fHMA[HT].Surroundings[DIST,Dir]) do
             begin
-              P2 := KMPointAdd(P1, fHMA[HT].Surroundings[DIST,Dir,K]);
+              P2 := KMPointAdd(P1, fHMA[HT].Surroundings[DIST,Dir,L]);
               if (gTerrain.Land[P2.Y,P2.X].Passability * [tpMakeRoads, tpWalkRoad] <> []) then
                 State[P2.Y, P2.X] := bsRoad
               else
@@ -1709,8 +1704,8 @@ begin
             end;
         end;
       // Field plans
-      for I := 0 to gHands[PL].BuildList.FieldworksList.Count - 1 do
-        with gHands[PL].BuildList.FieldworksList.Fields[I] do
+      for K := 0 to gHands[PL].BuildList.FieldworksList.Count - 1 do
+        with gHands[PL].BuildList.FieldworksList.Fields[K] do
           case FieldType of
             ftNone: continue;
             ftRoad: State[Loc.Y, Loc.X] := bsRoadPlan;
@@ -1764,7 +1759,7 @@ procedure TKMBuildFF.UpdateState(aMaxFFDistance: Word = 40);
     MarkAsVisited(Loc.Y, InsertInQueue(Loc.Y*fMapX + Loc.X), 0, GetTerrainState(Loc.X,Loc.Y));
   end;
 var
-  I: Integer;
+  K: Integer;
   H: TKMHouse;
   HT: TKMHouseType;
   Planner: TKMCityPlanner;
@@ -1778,9 +1773,9 @@ begin
 
     if (gGame.GameTick <= MAX_HANDS) then // Make sure that Planner is already updated otherwise take only available houses
     begin
-      for I := 0 to gHands[fOwner].Houses.Count - 1 do
+      for K := 0 to gHands[fOwner].Houses.Count - 1 do
       begin
-        H := gHands[fOwner].Houses[I];
+        H := gHands[fOwner].Houses[K];
         if (H <> nil) AND not H.IsDestroyed AND not (H.HouseType in [htWatchTower, htWoodcutters]) then
           MarkHouse(H.Entrance);
       end;
@@ -1790,8 +1785,8 @@ begin
       for HT := HOUSE_MIN to HOUSE_MAX do
         if not (HT in [htWatchTower, htWoodcutters]) then
           with Planner.PlannedHouses[HT] do
-            for I := 0 to Count - 1 do
-              MarkHouse(Plans[I].Loc);
+            for K := 0 to Count - 1 do
+              MarkHouse(Plans[K].Loc);
     end;
     TerrainFF(aMaxFFDistance);
 
@@ -1817,7 +1812,7 @@ end;
 
 procedure TKMBuildFF.FindPlaceForHouse(aHouseReq: TKMHouseRequirements; InitPointsArr: TKMPointArray; aClearHouseList: Boolean = True);
 var
-  I: Integer;
+  K: Integer;
 begin
   if aClearHouseList then
     fLocs.Clear;
@@ -1828,8 +1823,8 @@ begin
   UpdateState();
 
   InitQueue(True);
-  for I := 0 to Length(InitPointsArr) - 1 do
-    with InitPointsArr[I] do
+  for K := 0 to Length(InitPointsArr) - 1 do
+    with InitPointsArr[K] do
       if CanBeVisited(X,Y,Y*fMapX + X, True) then
         MarkAsVisited(X,Y, InsertInQueue(Y*fMapX + X), 0);
 
