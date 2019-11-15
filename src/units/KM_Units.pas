@@ -2168,17 +2168,20 @@ end;
 
 function TKMUnit.ObjToString(aSeparator: String = '|'): String;
 var
-  HomeStr: String;
+  HomeStr, InHouseStr: String;
 begin
   HomeStr := 'nil';
+  InHouseStr := 'nil';
 
   if fHome <> nil then
     HomeStr := Format('[UID = %d, Type = %s]', [fHome.UID, GetEnumName(TypeInfo(TKMHouseType), Integer(fHome.HouseType))]);
+  if fInHouse <> nil then
+    InHouseStr := Format('[UID = %d, Type = %s]', [fInHouse.UID, GetEnumName(TypeInfo(TKMHouseType), Integer(fInHouse.HouseType))]);
 
   Result := ObjToStringShort(aSeparator) +
             Format('%sPositionF = %s%sPrevPosition = %s%sNextPosition = %s%s' +
                    'Thought = %s%sHitPoints = %d%sHitPointCounter = %d%sCondition = %d%s' +
-                   'Owner = %d%sHome = %s%sVisible = %s%sIsDead = %s',
+                   'Owner = %d%sHome = %s%sInHouse = %s%sVisible = %s%sIsDead = %s',
                    [aSeparator,
                     TypeToString(fPositionF), aSeparator,
                     TypeToString(fPrevPosition), aSeparator,
@@ -2189,6 +2192,7 @@ begin
                     fCondition, aSeparator,
                     fOwner, aSeparator,
                     HomeStr, aSeparator,
+                    InHouseStr, aSeparator,
                     BoolToStr(fVisible, True), aSeparator,
                     BoolToStr(fIsDead, True)]);
 end;

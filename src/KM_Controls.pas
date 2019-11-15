@@ -63,7 +63,7 @@ type
 
     property OnHint: TNotifyEvent write fOnHint;
 
-    function HitControl(X,Y: Integer; aIncludeDisabled: Boolean=false): TKMControl;
+    function HitControl(X,Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): TKMControl;
 
     function KeyDown    (Key: Word; Shift: TShiftState): Boolean;
     procedure KeyPress  (Key: Char);
@@ -196,7 +196,7 @@ type
     Tag2: Integer; //Some tag which can be used for various needs
 
     constructor Create(aParent: TKMPanel; aLeft, aTop, aWidth, aHeight: Integer; aPaintLayer: Integer = 0);
-    function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; virtual;
+    function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean; virtual;
 
     property Parent: TKMPanel read fParent;
     property AbsLeft: Integer read GetAbsLeft write SetAbsLeft;
@@ -365,7 +365,7 @@ type
                        aFont: TKMFont; aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0); overload;
     constructor Create(aParent: TKMPanel; aLeft,aTop: Integer; const aCaption: UnicodeString; aFont: TKMFont;
                        aTextAlign: TKMTextAlign; aPaintLayer: Integer = 0); overload;
-    function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean; override;
+    function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean; override;
     procedure SetColor(aColor: Cardinal);
     property AutoWrap: Boolean read fAutoWrap write SetAutoWrap;  //Whether to automatically wrap text within given text area width
     property AutoCut: Boolean read fAutoCut write SetAutoCut;     //Whether to automatically cut text within given text area size
@@ -653,7 +653,7 @@ type
     property Text: UnicodeString read fText write SetText;
     procedure UpdateText(const aText: UnicodeString);
 
-    function HitTest(X,Y: Integer; aIncludeDisabled: Boolean=false): Boolean; override;
+    function HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean; override;
     procedure Paint; override;
   end;
 
@@ -1988,9 +1988,12 @@ end;
 
 
 //fVisible is checked earlier
-function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean;
+function TKMControl.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean;
 begin
-  Result := Hitable and (fEnabled or aIncludeDisabled) and InRange(X, AbsLeft, AbsLeft + fWidth) and InRange(Y, AbsTop, AbsTop + fHeight);
+  Result := (Hitable or aIncludeNotHitable)
+            and (fEnabled or aIncludeDisabled)
+            and InRange(X, AbsLeft, AbsLeft + fWidth)
+            and InRange(Y, AbsTop, AbsTop + fHeight);
 end;
 
 
@@ -2968,9 +2971,11 @@ end;
 
 
 //Override usual hittest with regard to text alignment
-function TKMLabel.HitTest(X, Y: Integer; aIncludeDisabled: Boolean=false): Boolean;
+function TKMLabel.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean;
 begin
-  Result := Hitable and InRange(X, TextLeft, TextLeft + fTextSize.X) and InRange(Y, AbsTop, AbsTop + Height);
+  Result := (Hitable or aIncludeNotHitable)
+            and InRange(X, TextLeft, TextLeft + fTextSize.X)
+            and InRange(Y, AbsTop, AbsTop + Height);
 end;
 
 
@@ -3821,7 +3826,7 @@ begin
 end;
 
 
-function TKMEdit.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False): Boolean;
+function TKMEdit.HitTest(X, Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): Boolean;
 begin
   //When control is read-only we don't want to recieve Focus event
   Result := inherited HitTest(X,Y) and not ReadOnly;
@@ -9281,7 +9286,7 @@ end;
 
 
 { Recursing function to find topmost control (excl. Panels)}
-function TKMMasterControl.HitControl(X,Y: Integer; aIncludeDisabled: Boolean = False): TKMControl;
+function TKMMasterControl.HitControl(X,Y: Integer; aIncludeDisabled: Boolean = False; aIncludeNotHitable: Boolean = False): TKMControl;
   function ScanChild(P: TKMPanel; aX,aY: Integer): TKMControl;
   var I: Integer;
       Child: TKMControl;
@@ -9300,7 +9305,7 @@ function TKMMasterControl.HitControl(X,Y: Integer; aIncludeDisabled: Boolean = F
           if Result <> nil then
             Exit;
         end;
-        if Child.HitTest(aX, aY, aIncludeDisabled) then
+        if Child.HitTest(aX, aY, aIncludeDisabled, aIncludeNotHitable) then
         begin
           Result := Child;
           Exit;
@@ -9390,7 +9395,7 @@ begin
       if gRes.Cursors.Cursor in [kmcEdit, kmcDragUp] then
         gRes.Cursors.Cursor := kmcDefault; //Reset the cursor from these two special cursors
 
-  HintControl := HitControl(X, Y, True); //Include disabled controls
+  HintControl := HitControl(X, Y, True, True); //Include disabled and not hitable controls
   if (CtrlDown = nil) and (HintControl <> nil) and Assigned(fOnHint) then
     fOnHint(HintControl);
 end;

@@ -150,6 +150,7 @@ begin
   inherited;
   LoadStream.Read(fGroup, 4); //subst on syncload
   LoadStream.Read(fNextOrder, SizeOf(fNextOrder));
+  LoadStream.Read(fNextOrderForced);
   LoadStream.Read(fOrder, SizeOf(fOrder));
   LoadStream.Read(fOrderLoc);
   LoadStream.Read(fOrderTargetHouse, 4); //subst on syncload
@@ -181,6 +182,7 @@ begin
   else
     SaveStream.Write(Integer(0));
   SaveStream.Write(fNextOrder, SizeOf(fNextOrder));
+  SaveStream.Write(fNextOrderForced);
   SaveStream.Write(fOrder, SizeOf(fOrder));
   SaveStream.Write(fOrderLoc);
   if fOrderTargetHouse <> nil then

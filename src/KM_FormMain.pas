@@ -122,6 +122,8 @@ type
     chkShowEyeRoutes: TCheckBox;
     chkSelectedObjInfo: TCheckBox;
     chkShowFPS: TCheckBox;
+    chkHands: TCheckBox;
+    btnUpdateUI: TButton;
     procedure Export_TreeAnim1Click(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -174,6 +176,7 @@ type
     procedure SaveSettingsClick(Sender: TObject);
     procedure SaveEditableMission1Click(Sender: TObject);
     procedure ValidateGameStatsClick(Sender: TObject);
+    procedure Button_UpdateUI_Click(Sender: TObject);
   private
     fUpdating: Boolean;
     fMissionDefOpenPath: UnicodeString;
@@ -545,9 +548,11 @@ var
 begin
   if (gGame <> nil) and not gGame.IsMapEditor then
   begin
+    gResTexts.ForceDefaultLocale := True; //Use only eng for exported csv
     DateS := FormatDateTime('yyyy-mm-dd_hh-nn', Now);
     gHands.ExportGameStatsToCSV(ExeDir + 'Export' + PathDelim + gGame.GameName + '_' + DateS + '.csv',
                             Format('Statistics for game at map ''%s'' on %s', [gGame.GameName, DateS]));
+    gResTexts.ForceDefaultLocale := False;
   end;
 end;
 
@@ -626,6 +631,15 @@ begin
       gGameApp.StopGame(grMapEdEnd)
     else
       gGameApp.StopGame(grCancel);
+
+  ActiveControl := nil; //Do not allow to focus on anything on debug panel
+end;
+
+
+procedure TFormMain.Button_UpdateUI_Click(Sender: TObject);
+begin
+  if gGameApp.Game <> nil then
+    gGameApp.Game.ActiveInterface.UpdateState(gGameApp.GlobalTickCount); //UpdateUI, even on game Pause
 
   ActiveControl := nil; //Do not allow to focus on anything on debug panel
 end;
@@ -755,6 +769,7 @@ begin
     SHOW_FPS := chkShowFPS.Checked;
     SHOW_UIDs := chkUIDs.Checked;
     SHOW_SELECTED_OBJ_INFO := chkSelectedObjInfo.Checked;
+    SHOW_HANDS_INFO := chkHands.Checked;
 
     SKIP_RENDER := chkSkipRender.Checked;
     SKIP_SOUND := chkSkipSound.Checked;
@@ -929,7 +944,7 @@ begin
           SL.Delete(0); //Delete CRC from file
           MS := TKMemoryStream.Create;
           try
-            MS.WriteHugeString(SL.Text);
+            MS.WriteHugeString(AnsiString(SL.Text));
             if CRC = Adler32CRC(MS) then
               IsValid := True;
           finally

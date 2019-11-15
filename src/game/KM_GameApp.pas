@@ -130,7 +130,7 @@ uses
   SysUtils, DateUtils, Math, TypInfo, KromUtils,
   {$IFDEF USE_MAD_EXCEPT} KM_Exceptions, {$ENDIF}
   KM_FormLogistics,
-  KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess, KM_GameSavedReplays,
+  KM_Main, KM_Controls, KM_Log, KM_Sound, KM_GameInputProcess, KM_GameInputProcess_Multi, KM_GameSavedReplays,
   KM_InterfaceDefaults, KM_GameCursor, KM_ResTexts,
   KM_Saves, KM_CommonUtils, KM_Random;
 
@@ -151,7 +151,9 @@ begin
   fChat := TKMChat.Create;
 
   gGameCursor := TKMGameCursor.Create;
-  gRandomCheckLogger := TKMRandomCheckLogger.Create;
+
+  if fGameSettings.DebugSaveRandomChecks then
+    gRandomCheckLogger := TKMRandomCheckLogger.Create;
 
   gRes := TKMResource.Create(aOnLoadingStep, aOnLoadingText);
   gRes.LoadMainResources(fGameSettings.Locale, fGameSettings.LoadFullFonts);
@@ -484,7 +486,7 @@ begin
   if gGame.IsMultiPlayerOrSpec then
   begin
     if fNetworking.Connected then
-      fNetworking.AnnounceDisconnect;
+      fNetworking.AnnounceDisconnect(TKMGameInputProcess_Multi(gGame.GameInputProcess).LastSentCmdsTick);
     fNetworking.Disconnect;
   end;
 

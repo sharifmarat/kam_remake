@@ -169,6 +169,7 @@ var
   SHOW_NET_PACKETS_STATS  :Boolean = False; //Show network packet statistics
   SHOW_NET_PACKETS_LIMIT  :Integer = 1;
   SHOW_SELECTED_OBJ_INFO  :Boolean = False; //Show selected object (Unit/Group + Unit/House) data (UID/order/action etc)
+  SHOW_HANDS_INFO         :Boolean = False; //Show hands info
   INI_HITPOINT_RESTORE    :Boolean = False; //Use the hitpoint restore rate from the INI file to compare with KaM
   SLOW_MAP_SCAN           :Boolean = False; //Scan maps with a pause to emulate uncached file access
   SLOW_SAVE_SCAN          :Boolean = False; //Scan saves with a pause to emulate uncached file access
@@ -282,6 +283,10 @@ const
   RETURN_TO_LOBBY_SAVE = 'paused';
   DOWNLOADED_LOBBY_SAVE = 'downloaded';
 
+  LOC_RANDOM = 0;
+  LOC_SPECTATE = -1;
+  LOC_ANY = -1000;
+
   EXT_SAVE_REPLAY = 'rpl';
   EXT_SAVE_MAIN = 'sav';
   EXT_SAVE_BASE = 'bas';
@@ -317,6 +322,9 @@ var
   OWN_MARGIN   :Byte = 190;
   OWN_THRESHOLD:Byte = 126;
 
+
+const
+  LAST_SENT_COMMANDS_TICK_NONE = 0;
 
 {Cursors}
 type

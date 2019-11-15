@@ -912,6 +912,7 @@
 961:Common Keys
 962:Game Keys
 963:Map Editor Keys
+964:Waiting for disconnected players data:
 965:Eyedropper - select the type of tile under the cursor
 966:This armor smithy is not occupied
 967:This armory workshop is not occupied
@@ -1205,3 +1206,6 @@
 1256:Citizens (S/L/R)
 1257:Citizens (Others)
 1258:Open/Close spectator stats panel
+1259:Deliver %s is prohibited
+1260:Take out %s is prohibited
+1261:Recruit is not allowed to get into Barracks

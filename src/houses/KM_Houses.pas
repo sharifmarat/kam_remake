@@ -150,6 +150,7 @@ type
     procedure SetBuildingRepair(aValue: Boolean);
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
+    procedure CheckTakeOutDeliveryMode; virtual;
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
@@ -190,7 +191,9 @@ type
     property ResourceDepletedMsgIssued: Boolean read fResourceDepletedMsgIssued write fResourceDepletedMsgIssued;
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -294,10 +297,13 @@ type
     procedure Activate(aWasBuilt: Boolean); override;
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
+    NotAllowTakeOutFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
-    procedure ToggleAcceptFlag(aWare: TKMWareType);
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; override;
+    procedure ToggleNotAcceptFlag(aWare: TKMWareType);
+    procedure ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
     function CheckResIn(aWare: TKMWareType): Word; override;
     procedure ResTakeFromOut(aWare: TKMWareType; aCount: Word = 1; aFromScript: Boolean = False); override;
@@ -326,7 +332,7 @@ type
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
     function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
-    function ShouldAbandonDelivery(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
   end;
 
 
@@ -771,14 +777,13 @@ begin
 end;
 
 
-procedure TKMHouse.UpdateDeliveryMode;
+//Check and proceed if we Set or UnSet dmTakeOut delivery mode
+procedure TKMHouse.CheckTakeOutDeliveryMode;
 var
   I: Integer;
   ResCnt: Word;
   Res: TKMWareType;
 begin
-  if fNewDeliveryMode = fDeliveryMode then Exit;
-
   if fDeliveryMode = dmTakeOut then
     for I := 1 to 4 do
     begin
@@ -789,14 +794,25 @@ begin
     end;
 
   if fNewDeliveryMode = dmTakeOut then
+  begin
     for I := 1 to 4 do
     begin
       Res := gRes.Houses[fType].ResInput[I];
       ResCnt := ResIn[I] - ResInLocked[I];
 
-      if (Res <> wtNone) and (ResCnt > 0) then
+      if not (Res in [wtNone, wtAll, wtWarfare]) and (ResCnt > 0) then
         gHands[fOwner].Deliveries.Queue.AddOffer(Self, Res, ResCnt);
     end;
+  end;
+end;
+
+
+procedure TKMHouse.UpdateDeliveryMode;
+begin
+  if fNewDeliveryMode = fDeliveryMode then
+    Exit;
+
+  CheckTakeOutDeliveryMode;
 
   fUpdateDeliveryModeOnTick := 0;
   fDeliveryMode := fNewDeliveryMode;
@@ -840,9 +856,24 @@ begin
 end;
 
 
-function TKMHouse.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+//Check if we should abandon delivery to this house
+function TKMHouse.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := DeliveryMode <> dmDelivery;
+end;
+
+
+//Check if we should abandon delivery from this house
+function TKMHouse.ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean;
+begin
+  Result := not ResOutputAvailable(aWareType, 1);
+end;
+
+
+//Check if we should abandon delivery from this house to aToHouse (used in Store only for now)
+function TKMHouse.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+begin
+  Result := False;
 end;
 
 
@@ -1505,7 +1536,7 @@ end;
 
 function TKMHouse.GetResInLocked(aI: Byte): Word;
 begin
-  Result := 0; //By default e do not lock any In res
+  Result := 0; //By default we do not lock any In res
 end;
 
 
@@ -2042,7 +2073,10 @@ begin
   FirstStore := TKMHouseStore(gHands[fOwner].FindHouse(htStore, 1));
   if (FirstStore <> nil) and not FirstStore.IsDestroyed then
     for RT := WARE_MIN to WARE_MAX do
+    begin
       NotAcceptFlag[RT] := FirstStore.NotAcceptFlag[RT];
+      NotAllowTakeOutFlag[RT] := FirstStore.NotAllowTakeOutFlag[RT];
+    end;
 end;
 
 
@@ -2051,6 +2085,7 @@ begin
   inherited;
   LoadStream.Read(WaresCount, SizeOf(WaresCount));
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
+  LoadStream.Read(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
 end;
 
 
@@ -2122,7 +2157,7 @@ begin
 end;
 
 
-procedure TKMHouseStore.ToggleAcceptFlag(aWare: TKMWareType);
+procedure TKMHouseStore.ToggleNotAcceptFlag(aWare: TKMWareType);
 const
   //Using shortints instead of bools makes it look much neater in code-view
   CHEAT_SP_PATTERN: array [WARE_MIN..WARE_MAX] of Byte = (
@@ -2175,17 +2210,39 @@ begin
 end;
 
 
+procedure TKMHouseStore.ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
+begin
+  NotAllowTakeOutFlag[aWare] := not NotAllowTakeOutFlag[aWare];
+end;
+
+
 procedure TKMHouseStore.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(WaresCount, SizeOf(WaresCount));
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
+  SaveStream.Write(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
 end;
 
 
-function TKMHouseStore.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouseStore.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := inherited or NotAcceptFlag[aWareType];
+end;
+
+
+//Check if we should abandon TakeOut delivery (evacuate) from this house to aToHouse
+function TKMHouseStore.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+begin
+  Result := inherited or ((aToHouse <> nil)
+                           and (aToHouse is TKMHouseStore)
+                           and aToHouse.IsComplete
+                           and ((DeliveryMode <> dmTakeOut)
+                                //Cancel delivery even if for fake NewDelivery state.
+                                //When Player sees "serf enters Store" then f.e. Player wants immidiately cancel this serf delivery
+                                //In that case Delivery state will be set too late, and cancellation will be not applied
+                                or (NewDeliveryMode <> dmTakeOut)
+                                or NotAllowTakeOutFlag[aWareType]));
 end;
 
 
@@ -2233,7 +2290,7 @@ begin
 end;
 
 
-function TKMHouseArmorWorkshop.ShouldAbandonDelivery(aWareType: TKMWareType): Boolean;
+function TKMHouseArmorWorkshop.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
   Result := inherited or not AcceptWareForDelivery(aWareType);
 end;

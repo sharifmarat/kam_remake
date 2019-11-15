@@ -5,14 +5,14 @@ uses
   KM_CommonClasses;
 
 type
-  TKMGameLclDataLoadMinimapFn = reference to function(aStartLoc: Integer): Boolean;
-
   //MP Game local data, which should not be transfered over net (for different reasons described below)
   TKMGameMPLocalData = class
   private
     fLastReplayTick: Cardinal; //we can't put it into game, since this tick could be different for every player and we will get different save files CRC
     fStartLoc: Integer; //Starting loc is used to check if we are allowed to load minimap. F.e. we do not need to load minimap if we changed loc to other after back to lobby
     fMinimap: TKMMinimap; //Minimap could be unique for each player, then we can't save it to game it too
+    procedure LoadHeader(aLoadStream: TKMemoryStream);
+    procedure LoadMinimap(aLoadStream: TKMemoryStream; aMinimap: TKMMinimap);
   public
     constructor Create; overload;
     constructor Create(aLastReplayTick: Cardinal; aStartLoc: Integer; aMinimap: TKMMinimap); overload;
@@ -23,12 +23,13 @@ type
     procedure Load(aLoadStream: TKMemoryStream; aMinimap: TKMMinimap = nil);
 
     procedure SaveToFile(aFilePath: String);
-    function LoadFromFile(aFilePath: String; aLoadMinimapFn: TKMGameLclDataLoadMinimapFn = nil): Boolean;
+    function LoadFromFile(aFilePath: String): Boolean;
   end;
 
 implementation
 uses
-  SysUtils;
+  SysUtils,
+  KM_Defaults;
 
 
 constructor TKMGameMPLocalData.Create;
@@ -58,9 +59,20 @@ end;
 
 procedure TKMGameMPLocalData.Load(aLoadStream: TKMemoryStream; aMinimap: TKMMinimap = nil);
 begin
+  LoadHeader(aLoadStream);
+  LoadMinimap(aLoadStream, aMinimap);
+end;
+
+
+procedure TKMGameMPLocalData.LoadHeader(aLoadStream: TKMemoryStream);
+begin
   aLoadStream.Read(fLastReplayTick);
   aLoadStream.Read(fStartLoc);
+end;
 
+
+procedure TKMGameMPLocalData.LoadMinimap(aLoadStream: TKMemoryStream; aMinimap: TKMMinimap);
+begin
   if aMinimap <> nil then
     aMinimap.LoadFromStream(aLoadStream);
 end;
@@ -80,9 +92,10 @@ begin
 end;
 
 
-function TKMGameMPLocalData.LoadFromFile(aFilePath: String; aLoadMinimapFn: TKMGameLclDataLoadMinimapFn = nil): Boolean;
+function TKMGameMPLocalData.LoadFromFile(aFilePath: String): Boolean;
 var
   LoadStream: TKMemoryStream;
+  ChoosenStartLoc: Integer;
 begin
   Result := False;
   if FileExists(aFilePath) then
@@ -90,13 +103,16 @@ begin
     LoadStream := TKMemoryStream.Create;
     try
       LoadStream.LoadFromFile(aFilePath);
+      ChoosenStartLoc := fStartLoc;
+      LoadHeader(LoadStream);
 
-      if Assigned(aLoadMinimapFn) and aLoadMinimapFn(fStartLoc) then
+      if (ChoosenStartLoc = LOC_ANY) // for not MP game, f.e.
+        or (ChoosenStartLoc = LOC_SPECTATE) // allow to see minimap for spectator loc
+        or (fStartLoc = ChoosenStartLoc) then // allow, if we was on the same loc
       begin
-        Load(LoadStream, fMinimap);
+        LoadMinimap(LoadStream, fMinimap);
         Result := True;
-      end else
-        Load(LoadStream);
+      end;
     finally
       LoadStream.Free;
     end;

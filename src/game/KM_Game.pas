@@ -324,7 +324,9 @@ begin
   end;
   gProjectiles := TKMProjectiles.Create;
 
-  gRandomCheckLogger.Clear;
+  if gRandomCheckLogger <> nil then
+    gRandomCheckLogger.Clear;
+
   gGameApp.GameSettings.PlayersColorMode := pcmDefault;
 
   fGameTick := 0; //Restart counter
@@ -664,6 +666,13 @@ begin
         else
           //Just enable Advanced AI, do not override MapEd AI params
           gHands[HIndex].AI.Setup.EnableAdvancedAI(fNetworking.NetPlayers[I].IsAdvancedComputer);
+      end
+      else
+      //We can start to play for defeated hand, f.e. if player just left the game and we restart from save with other player
+      if fNetworking.NetPlayers[I].IsHuman and gHands[HIndex].AI.HasLost then
+      begin
+        gHands[HIndex].AI.ResetWonOrLost; //Reset WonOrLost status
+        gHands.UpdateGoalsForHand(HIndex, True); //Enable this hand goals for all other hands
       end;
 
       //In saves players can be changed to AIs, which needs to be stored in the replay
@@ -673,6 +682,18 @@ begin
       //Set owners name so we can write it into savegame/replay
       gHands[HIndex].SetOwnerNikname(fNetworking.NetPlayers[I].Nikname);
     end;
+
+  //Find enabled human hands, where if there is no net player on that loc
+  //then disable all goals with this hand for other hands
+  for I := 0 to gHands.Count - 1 do
+  begin
+    if gHands[I].Enabled and gHands[I].IsHuman then
+    begin
+      if fNetworking.NetPlayers.PlayerIndexToLocal(I) = -1 then
+        gHands.UpdateGoalsForHand(I, False);
+    end;
+  end;
+
 
   //Setup alliances
   //We mirror Lobby team setup on to alliances. Savegame and coop has the setup already
@@ -1711,7 +1732,8 @@ begin
   gLog.AddTime('Saving replay info');
   fGameInputProcess.SaveToFile(ChangeFileExt(fullPath, EXT_SAVE_REPLAY_DOT));
 
-  gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
+  if gGameApp.GameSettings.DebugSaveRandomChecks and (gRandomCheckLogger <> nil) then
+    gRandomCheckLogger.SaveToPath(ChangeFileExt(fullPath, EXT_SAVE_RNG_LOG_DOT));
 
   gLog.AddTime('Saving game', True);
 end;
@@ -2155,7 +2177,7 @@ begin
         gmSingle, gmCampaign, gmMulti, gmMultiSpectate:
                       if not (fGameMode in [gmMulti, gmMultiSpectate]) or (fNetworking.NetGameState <> lgsLoading) then
                       begin
-                        if fGameInputProcess.CommandsConfirmed(fGameTick+1) then
+                        if fGameInputProcess.CommandsConfirmed(fGameTick + 1) then
                         begin
                           if DO_PERF_LOGGING then fPerfLog.EnterSection(psTick);
 
@@ -2165,7 +2187,8 @@ begin
 
                           IncGameTick;
 
-                          gRandomCheckLogger.UpdateState(fGameTick);
+                          if gRandomCheckLogger <> nil then
+                            gRandomCheckLogger.UpdateState(fGameTick);
 
                           fLastReplayTick := fGameTick;
 

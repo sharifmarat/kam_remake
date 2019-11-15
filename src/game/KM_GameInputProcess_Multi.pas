@@ -40,7 +40,7 @@ type
   private
     fNetworking: TKMNetworking;
     fDelay: Word; //How many ticks ahead the commands are scheduled
-    fLastSentTick: Cardinal; //Needed for resync
+    fLastSentCmdsTick: Cardinal; //Needed for resync (last tick, for which commands were sent
 
     fNumberConsecutiveWaits: Word; //Number of consecutive times we have been waiting for network
 
@@ -59,11 +59,11 @@ type
     //Store random seeds at each tick then confirm with other players
     fRandomCheck: array[0..MAX_SCHEDULE-1] of TKMRandomCheck; //Ring buffer
 
-    procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt=-1);
+    procedure SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
     procedure SendRandomCheck(aTick: Cardinal);
     procedure DoRandomCheck(aTick: Cardinal; aPlayerIndex: ShortInt);
 
-    procedure SetDelay(aNewDelay:integer);
+    procedure SetDelay(aNewDelay: Integer);
   protected
     procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
   public
@@ -74,6 +74,7 @@ type
     procedure PlayerTypeChange(aPlayer: TKMHandID; aType: TKMHandType);
     function GetNetworkDelay: Word;
     property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
+    property LastSentCmdsTick: Cardinal read fLastSentCmdsTick;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
     procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
     procedure ResyncFromTick(aSender: ShortInt; aTick: Cardinal);
@@ -85,6 +86,7 @@ type
 
 implementation
 uses
+  TypInfo, KM_Log,
   SysUtils, Math, KromUtils,
   KM_GameApp, KM_Game, KM_HandsCollection,
   KM_ResTexts, KM_ResSound, KM_Sound, KM_CommonUtils,
@@ -217,9 +219,11 @@ begin
   if not fCommandIssued[Tick] then
   begin
     fSchedule[Tick, gGame.Networking.MyIndex].Clear; //Clear old data (it was kept in case it was required for resync)
-    fCommandIssued[Tick] := true;
+    fCommandIssued[Tick] := True;
   end;
   fSchedule[Tick, gGame.Networking.MyIndex].Add(aCommand);
+//  gLog.AddTime(Format('Scheduled cmd Tick: %d, CMD_TYPE = %s',
+//                      [Tick, GetEnumName(TypeInfo(TKMGameInputCommandType), Integer(aCommand.CommandType))]));
 end;
 
 
@@ -260,7 +264,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess_Multi.SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt=-1);
+procedure TKMGameInputProcess_Multi.SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
 var
   Msg: TKMemoryStream;
 begin
@@ -318,11 +322,16 @@ begin
   aStream.Read(dataType, 1); //Decode header
   aStream.Read(Tick); //Target tick
 
+//  gLog.AddTime(Format('Received commands for Tick %d', [Tick]));
+
   case dataType of
     kdpCommands:
         begin
           //Recieving commands too late will happen during reconnections, so just ignore it
-          if Tick > gGame.GameTick then
+          if (Tick > gGame.GameTick)
+            //DO not check if player is dropped - we could receive scheduled commmands from already dropped player, that we should store/execute to be in sync with other players
+            {and not gGame.Networking.NetPlayers[aSenderIndex].Dropped}
+            then
           begin
             fSchedule[Tick mod MAX_SCHEDULE, aSenderIndex].Load(aStream);
             fRecievedData[Tick mod MAX_SCHEDULE, aSenderIndex] := True;
@@ -346,7 +355,7 @@ procedure TKMGameInputProcess_Multi.ResyncFromTick(aSender: ShortInt; aTick: Car
 var
   I: Cardinal;
 begin
-  for I := aTick to fLastSentTick do
+  for I := aTick to fLastSentCmdsTick do
     SendCommands(I, aSender);
 end;
 
@@ -358,8 +367,8 @@ var
 begin
   Result := True;
   for I := 1 to fNetworking.NetPlayers.Count do
-    Result := Result and (fRecievedData[aTick mod MAX_SCHEDULE, I]
-              or not fNetworking.NetPlayers[I].IsHuman or fNetworking.NetPlayers[I].Dropped);
+    Result := Result and
+                (fRecievedData[aTick mod MAX_SCHEDULE, I] or fNetworking.NetPlayers[I].NoNeedToWait(aTick));
 end;
 
 
@@ -372,8 +381,7 @@ begin
 
   K := 0;
   for I := 1 to fNetworking.NetPlayers.Count do
-    if not (fRecievedData[aTick mod MAX_SCHEDULE, I]
-    or (not fNetworking.NetPlayers[I].IsHuman) or fNetworking.NetPlayers[I].Dropped) then
+    if not (fRecievedData[aTick mod MAX_SCHEDULE, I] or fNetworking.NetPlayers[I].NoNeedToWait(aTick)) then
     begin
       Result[K] := I;
       Inc(K);
@@ -399,10 +407,12 @@ begin
   for I := 1 to fNetworking.NetPlayers.Count do
     for K := 1 to fSchedule[Tick, I].Count do
     begin
-      if not fNetworking.NetPlayers[I].Dropped
+      //we should store/execute commands from dropped players too to be in sync with other players,
+      //that could receive mkDisconnect in other tick, then we do
+      if {not fNetworking.NetPlayers[I].Dropped}
       //Don't allow exploits like moving enemy soldiers (but maybe one day you can control disconnected allies?)
-      and ((fNetworking.NetPlayers[I].HandIndex = fSchedule[Tick, I].Items[K].HandIndex)
-           or (fSchedule[Tick, I].Items[K].CommandType in AllowedBySpectators)) then
+        (fNetworking.NetPlayers[I].HandIndex = fSchedule[Tick, I].Items[K].HandIndex)
+           or (fSchedule[Tick, I].Items[K].CommandType in AllowedBySpectators) then
       begin
         StoreCommand(fSchedule[Tick, I].Items[K]); //Store the command first so if Exec fails we still have it in the replay
         ExecCommand(fSchedule[Tick, I].Items[K]);
@@ -446,8 +456,9 @@ begin
         fSchedule[I mod MAX_SCHEDULE, gGame.Networking.MyIndex].Clear; //No one has used it since last time through the ring buffer
       fCommandIssued[I mod MAX_SCHEDULE] := False; //Make it as requiring clearing next time around
 
-      fLastSentTick := I;
+      fLastSentCmdsTick := I;
       SendCommands(I);
+//      gLog.AddTime(Format('fDelay = %d; Send Commands for Tick = %d', [fDelay, I]));
       fSent[I mod MAX_SCHEDULE] := True;
       fRecievedData[I mod MAX_SCHEDULE, gGame.Networking.MyIndex] := True; //Recieved commands from self
     end;
