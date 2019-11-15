@@ -1223,16 +1223,17 @@ var
 begin
   {$IFDEF DEBUG_NewAI}
   Time := TimeGet();
-  {
-  FillChar(DA1[0], SizeOf(DA1[0]) * Length(DA1), #0);
-  FillChar(DA2[0], SizeOf(DA2[0]) * Length(DA2), #0);
-  FillChar(DA3[0], SizeOf(DA3[0]) * Length(DA3), #0);
-  FillChar(DA4[0], SizeOf(DA4[0]) * Length(DA4), #0);
-
-  FillChar(fFieldPrice[0], SizeOf(fFieldPrice[0]) * Length(fFieldPrice), #0);
-  Price := fFieldPrice;
-  }
+  //FillChar(DA1[0,0], SizeOf(DA1[0,0]) * Length(DA1) * Length(DA1[0]), #0);
+  //FillChar(DA2[0,0], SizeOf(DA2[0,0]) * Length(DA2) * Length(DA2[0]), #0);
+  //FillChar(DA3[0,0], SizeOf(DA3[0,0]) * Length(DA3) * Length(DA3[0]), #0);
+  //FillChar(DA4[0,0], SizeOf(DA4[0,0]) * Length(DA4) * Length(DA4[0]), #0);
+  FillChar(DA1, SizeOf(DA1), #0);
+  FillChar(DA2, SizeOf(DA2), #0);
+  FillChar(DA3, SizeOf(DA3), #0);
+  FillChar(DA4, SizeOf(DA4), #0);
   {$ENDIF}
+  //FillChar(Price[-FARM_RADIUS,-FARM_RADIUS], SizeOf(Price[0,0]) * Length(Price) * Length(Price[0]), #0);
+  FillChar(Price, SizeOf(Price), #0);
 
   BuildFF := gAIFields.Eye.BuildFF;
   BuildFF.UpdateState(); // BuildFF is already updated if Fields are requested in same tick like Farm
@@ -1267,11 +1268,9 @@ begin
         begin
           Dec(Price[Y+Y2,X+X2], GA_PLANNER_PlanFarmFields_CanBuild);
         {$IFDEF DEBUG_NewAI}
-        {
           P := KMPointAdd(KMPoint(X,Y),BelowLoc);
           if gTerrain.TileInMapCoords(P.X-1, P.Y-1) AND gTerrain.TileInMapCoords(P.X+1, P.Y+1) then
             Inc(DA3[P.Y+Y2,P.X+X2], 40);
-            }
         {$ENDIF}
         end;
     end;
@@ -1285,10 +1284,8 @@ begin
       if gTerrain.TileInMapCoords(P.X, P.Y) then
         case FieldEval[Y,X] of
           {$IFDEF DEBUG_NewAI}
-          {
           feUnvisitedTile: DA4[P.Y,P.X] := 50;
           feExistingField: DA2[P.Y,P.X] := 100;
-          }
           {$ENDIF}
           feFertileTile:
           begin
@@ -1321,7 +1318,7 @@ begin
         P := KMPointAdd(KMPoint(X,Y),BelowLoc);
         TagList.Add(P, 20000 + Price[Y,X]);
         {$IFDEF DEBUG_NewAI}
-        //DA1[P.Y,P.X] := Price[Y,X];
+        DA1[P.Y,P.X] := Price[Y,X];
         {$ENDIF}
       end;
     TagList.SortByTag;
@@ -1331,10 +1328,11 @@ begin
     TagList.Free;
   end;
   {$IFDEF DEBUG_NewAI}
-    Time := TimeGet() - Time;
-    fTimeSumPlanFields := fTimeSumPlanFields + Time;
-    if (Time > fTimePeakPlanFields) then
-      fTimePeakPlanFields := Time;
+  fFieldPrice := Price;
+  Time := TimeGet() - Time;
+  fTimeSumPlanFields := fTimeSumPlanFields + Time;
+  if (Time > fTimePeakPlanFields) then
+    fTimePeakPlanFields := Time;
   {$ENDIF}
 end;
 
