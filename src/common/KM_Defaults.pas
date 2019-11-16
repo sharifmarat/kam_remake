@@ -181,6 +181,7 @@ var
   CUSTOM_SEED_VALUE     :Integer = 0;     //Custom seed value
   PAUSE_GAME_AT_TICK    :Integer = -1;    //Pause at specified game tick
   ALLOW_SAVE_IN_REPLAY  :Boolean = DEBUG_CFG; //Allow to save game from replay, good for debug
+  SAVE_GAME_AS_TEXT     :Boolean = False; //Save game serialized
   {Gameplay cheats}
   UNLOCK_CAMPAIGN_MAPS  :Boolean = False; //Unlock more maps for debug
   REDUCE_SHOOTING_RANGE :Boolean = False; //Reduce shooting range for debug

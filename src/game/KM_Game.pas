@@ -1681,8 +1681,11 @@ begin
 
   Assert((fGameMode <> gmMapEd) and (ALLOW_SAVE_IN_REPLAY or not IsReplay), 'Saving from wrong state');
 
+  if SAVE_GAME_AS_TEXT then
+    SaveStream := TKMemoryStreamText.Create
+  else
+    SaveStream := TKMemoryStreamBinary.Create;
 
-  SaveStream := TKMemoryStream.Create;
   try
     SaveGameToStream(aTimestamp, SaveStream);
 
