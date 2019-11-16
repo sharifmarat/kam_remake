@@ -853,8 +853,8 @@ begin
 
   //If Offer should not be abandoned
   Result := Result and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFrom(fOffer[iO].Ware)
-                       //Check store to store evacuation
-                       and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFromTo(fDemand[iD].Loc_House, fOffer[iO].Ware);
+                   //Check store to store evacuation
+                   and not fOffer[iO].Loc_House.ShouldAbandonDeliveryFromTo(fDemand[iD].Loc_House, fOffer[iO].Ware, False);
 
 
   //If Demand house should abandon delivery

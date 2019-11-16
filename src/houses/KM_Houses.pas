@@ -151,6 +151,7 @@ type
     procedure SetResOrder(aId: Byte; aValue: Integer); virtual;
     procedure SetNewDeliveryMode(aValue: TKMDeliveryMode); virtual;
     procedure CheckTakeOutDeliveryMode; virtual;
+    function GetDeliveryModeForCheck(aImmidiate: Boolean): TKMDeliveryMode;
   public
     CurrentAction: TKMHouseAction; //Current action, withing HouseTask or idle
     WorkAnimStep: Cardinal; //Used for Work and etc.. which is not in sync with Flags
@@ -192,8 +193,8 @@ type
     property OrderCompletedMsgIssued: Boolean read fOrderCompletedMsgIssued;
 
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; virtual;
-    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean; virtual;
-    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; virtual;
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean; virtual;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean; virtual;
 
     property IsClosedForWorker: Boolean read fIsClosedForWorker write SetIsClosedForWorker;
     property HasOwner: Boolean read fHasOwner write fHasOwner; //There's a citizen who runs this house
@@ -301,7 +302,7 @@ type
     constructor Load(LoadStream: TKMemoryStream); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
-    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean; override;
     procedure ToggleNotAcceptFlag(aWare: TKMWareType);
     procedure ToggleNotAcceptTakeOutFlag(aWare: TKMWareType);
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
@@ -807,6 +808,17 @@ begin
 end;
 
 
+//Get delivery mode, used for some checks in 'ShouldAbandonDeliveryXX'
+//aImmidiate - do we want to have immidiate check (then will get "fake" NewDeliveryMode) or no (real DeliveryMode will be returned)
+function TKMHouse.GetDeliveryModeForCheck(aImmidiate: Boolean): TKMDeliveryMode;
+begin
+  if aImmidiate then
+    Result := NewDeliveryMode
+  else
+    Result := DeliveryMode;
+end;
+
+
 procedure TKMHouse.UpdateDeliveryMode;
 begin
   if fNewDeliveryMode = fDeliveryMode then
@@ -864,14 +876,14 @@ end;
 
 
 //Check if we should abandon delivery from this house
-function TKMHouse.ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean;
+function TKMHouse.ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean;
 begin
   Result := not ResOutputAvailable(aWareType, 1);
 end;
 
 
 //Check if we should abandon delivery from this house to aToHouse (used in Store only for now)
-function TKMHouse.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+function TKMHouse.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean;
 begin
   Result := False;
 end;
@@ -2232,16 +2244,15 @@ end;
 
 
 //Check if we should abandon TakeOut delivery (evacuate) from this house to aToHouse
-function TKMHouseStore.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType): Boolean;
+function TKMHouseStore.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean;
 begin
   Result := inherited or ((aToHouse <> nil)
                            and (aToHouse is TKMHouseStore)
                            and aToHouse.IsComplete
-                           and ((DeliveryMode <> dmTakeOut)
-                                //Cancel delivery even if for fake NewDelivery state.
+                           and ((GetDeliveryModeForCheck(aImmidiateCheck) <> dmTakeOut)
+                                //Cancel delivery depends if we want to made immidiate check or not
                                 //When Player sees "serf enters Store" then f.e. Player wants immidiately cancel this serf delivery
                                 //In that case Delivery state will be set too late, and cancellation will be not applied
-                                or (NewDeliveryMode <> dmTakeOut)
                                 or NotAllowTakeOutFlag[aWareType]));
 end;
 

@@ -36,6 +36,7 @@ type
     function RatioFrom: Byte;
     function RatioTo: Byte;
 
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
 
     function AllowedToTrade(aRes: TKMWareType): Boolean;
@@ -174,8 +175,7 @@ end;
 function TKMHouseMarket.ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aRes in [WARE_MIN..WARE_MAX]);
-  Result := (fMarketResOut[aRes] >= aCount)
-            or ((NewDeliveryMode = dmTakeOut) and (fMarketResIn[aRes] >= aCount));
+  Result := (fMarketResOut[aRes] >= aCount);
 end;
 
 
@@ -232,6 +232,18 @@ begin
     raise Exception.Create(Format('No ware: [%s] count = %d to take from market UID = %d',
                                   [GetEnumName(TypeInfo(TKMWareType), Integer(aWare)), aCount, UID]));
 
+end;
+
+
+//Check if we allowed to deliver from Market
+//
+//Probably this method will be never invoked,
+//since when we cancel trade all resources from IN are moved into OUT
+//so it looks likewe have no chance to find anything to get in the IN wares, only when trade is going on
+function TKMHouseMarket.ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean;
+begin
+  Result := inherited and not ((GetDeliveryModeForCheck(aImmidiateCheck) = dmTakeOut)
+                                and (fMarketResIn[aWareType] >= 1));
 end;
 
 

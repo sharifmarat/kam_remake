@@ -35,7 +35,8 @@ type
     function ResCanAddToIn(aRes: TKMWareType): Boolean; override;
 
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
-    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean; override;
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean; override;
+    function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean; override;
 
     function ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean; override;
     function CanEquip(aUnitType: TKMUnitType): Boolean;
@@ -204,7 +205,7 @@ end;
 function TKMHouseBarracks.ResOutputAvailable(aRes: TKMWareType; const aCount: Word): Boolean;
 begin
   Assert(aRes in [WARFARE_MIN .. WARFARE_MAX]);
-  Result := (NewDeliveryMode = dmTakeOut) and (fResourceCount[aRes] >= aCount);
+  Result := (fResourceCount[aRes] >= aCount);
 end;
 
 
@@ -238,12 +239,23 @@ begin
 end;
 
 
-function TKMHouseBarracks.ShouldAbandonDeliveryFrom(aWareType: TKMWareType): Boolean;
+function TKMHouseBarracks.ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean;
+begin
+  Result := inherited or not (aWareType in [WARFARE_MIN .. WARFARE_MAX]);
+end;
+
+
+function TKMHouseBarracks.ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean;
 begin
   Result := inherited
-            or (DeliveryMode <> dmTakeOut)
-            or not (aWareType in [WARFARE_MIN .. WARFARE_MAX])
-            or NotAllowTakeOutFlag[aWareType];
+              or (aToHouse = nil)
+              //Do not allow delivery from Barracks to other houses except Market/Store/other Barracks
+              or not (aToHouse.HouseType in [htMarketplace, htStore, htBarracks])
+              or ((aToHouse.HouseType <> htMarketplace) //allow delivery to Market with any mode
+                //For other houses allow only when dmTakeOut and no flag NotAllowTakeOutFlag
+                and ((GetDeliveryModeForCheck(aImmidiateCheck) <> dmTakeOut)
+                      or NotAllowTakeOutFlag[aWareType])); //Use NewDelivery here, since
+
 end;
 
 
