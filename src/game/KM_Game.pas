@@ -1679,8 +1679,8 @@ begin
     Exit;
   gLog.AddTime('Saving game start: ' + aPathName);
 
-  if fGameMode in [gmMapEd, gmReplaySingle, gmReplayMulti] then
-    raise Exception.Create('Saving from wrong state');
+  Assert((fGameMode <> gmMapEd) and (ALLOW_SAVE_IN_REPLAY or not IsReplay), 'Saving from wrong state');
+
 
   SaveStream := TKMemoryStream.Create;
   try

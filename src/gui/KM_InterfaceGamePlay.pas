@@ -386,7 +386,10 @@ begin
   begin
     ListBox_Save.ItemIndex := -1;
     fSave_Selected := -1;
-    CheckBox_SaveExists.Enabled := FileExists(gGame.SaveName(Edit_Save.Text, EXT_SAVE_MAIN, (fUIMode in [umMP, umSpectate])));
+    CheckBox_SaveExists.Enabled := FileExists(gGame.SaveName(Edit_Save.Text,
+                                                             EXT_SAVE_MAIN,
+                                                             (fUIMode in [umMP, umSpectate])
+                                                             or (ALLOW_SAVE_IN_REPLAY and (gGame.GameMode = gmReplayMulti))));
     Label_SaveExists.Visible := CheckBox_SaveExists.Enabled;
     CheckBox_SaveExists.Checked := False;
     // we should protect ourselves from empty names and whitespaces at beggining and at end of name
@@ -602,7 +605,8 @@ begin
       fSaves.TerminateScan;
       Menu_Save_RefreshList(nil); // Need to call it at last one time to setup GUI even if there are no saves
       // Initiate refresh and process each new save added
-      fSaves.Refresh(Menu_Save_RefreshList, (fUIMode in [umMP, umSpectate]));
+      fSaves.Refresh(Menu_Save_RefreshList, (fUIMode in [umMP, umSpectate])
+                                            or (ALLOW_SAVE_IN_REPLAY and (gGame.GameMode = gmReplayMulti)));
       Panel_Save.Show;
       Label_MenuTitle.Caption := gResTexts[TX_MENU_SAVE_GAME];
       if fLastSaveName = '' then
@@ -2344,7 +2348,7 @@ begin
   Button_Main[tbStats].Enabled := not aTactic;
 
   Button_Menu_Load.Enabled := fUIMode = umSP; // No loading during multiplayer games
-  Button_Menu_Save.Enabled := fUIMode in [umSP, umMP, umSpectate];
+  Button_Menu_Save.Enabled := (fUIMode in [umSP, umMP, umSpectate]) or (ALLOW_SAVE_IN_REPLAY and (fUIMode = umReplay));
 
   if (fUIMode = umReplay) then
   begin
