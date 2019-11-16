@@ -11,7 +11,7 @@ const
 type
   TKMSaveStreamFormat = (ssfBinary, ssfText);
 
-  TKMemoryStream = class(TMemoryStream)
+  TKSaveStream = class(TMemoryStream)
   public
     // Assert savegame sections
     procedure CheckMarker(const aTitle: string); virtual; abstract;
@@ -81,7 +81,7 @@ type
   end;
 
   // Extended with custom Read/Write commands which accept various types without asking for their length
-  TKMemoryStreamBinary = class(TKMemoryStream)
+  TKMSaveStreamBinary = class(TKSaveStream)
   public
     // Assert savegame sections
     procedure CheckMarker(const aTitle: string); override;
@@ -147,7 +147,7 @@ type
   end;
 
   // Text writer
-  TKMemoryStreamText = class(TKMemoryStream)
+  TKMSaveStreamText = class(TKSaveStream)
   private
     fLastSection: string;
     procedure WriteText(aString: string);
@@ -180,18 +180,18 @@ type
     procedure Write(const Value: TDateTime     ); override;
   end;
 
-  TStreamEvent = procedure (aData: TKMemoryStream) of object;
+  TStreamEvent = procedure (aData: TKSaveStream) of object;
 
 implementation
 
 
-function TKMemoryStream.Write(const Buffer; Count: Longint): Longint;
+function TKSaveStream.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := inherited Write(Buffer, Count);
 end;
 
 
-procedure TKMemoryStream.ReadHugeString(out Value: AnsiString);
+procedure TKSaveStream.ReadHugeString(out Value: AnsiString);
 var I: Cardinal;
 begin
   Read(I, SizeOf(I));
@@ -200,7 +200,7 @@ begin
     Read(Pointer(Value)^, I);
 end;
 
-procedure TKMemoryStream.WriteHugeString(const Value: AnsiString);
+procedure TKSaveStream.WriteHugeString(const Value: AnsiString);
 var I: Cardinal;
 begin
   I := Length(Value);
@@ -211,7 +211,7 @@ end;
 
 
 { TKMSaveStreamBinary }
-procedure TKMemoryStreamBinary.CheckMarker(const aTitle: string);
+procedure TKMSaveStreamBinary.CheckMarker(const aTitle: string);
 var
   s: string;
 begin
@@ -222,7 +222,7 @@ begin
 end;
 
 
-procedure TKMemoryStreamBinary.PlaceMarker(const aTitle: string);
+procedure TKMSaveStreamBinary.PlaceMarker(const aTitle: string);
 begin
   // We use only Latin for Markers, hence ANSI is fine
   // But since Android does not support "AnsiString" we take "string" as input
@@ -230,7 +230,7 @@ begin
 end;
 
 
-procedure TKMemoryStreamBinary.ReadANSI(out aValue: string);
+procedure TKMSaveStreamBinary.ReadANSI(out aValue: string);
 var
   I: Word;
   bytes: TBytes;
@@ -244,7 +244,7 @@ begin
 end;
 
 
-procedure TKMemoryStreamBinary.WriteANSI(const aValue: string);
+procedure TKMSaveStreamBinary.WriteANSI(const aValue: string);
 var
   I: Word;
   bytes: TBytes;
@@ -258,7 +258,7 @@ end;
 
 
 //{$IFDEF DESKTOP}
-procedure TKMemoryStreamBinary.ReadA(out Value: AnsiString);
+procedure TKMSaveStreamBinary.ReadA(out Value: AnsiString);
 var I: Word;
 begin
   Read(I, SizeOf(I));
@@ -267,7 +267,7 @@ begin
     Read(Pointer(Value)^, I);
 end;
 
-procedure TKMemoryStreamBinary.WriteA(const Value: AnsiString);
+procedure TKMSaveStreamBinary.WriteA(const Value: AnsiString);
 var I: Word;
 begin
   I := Length(Value);
@@ -299,7 +299,7 @@ end;
 //{$ENDIF}
 
 
-procedure TKMemoryStreamBinary.ReadW(out Value: UnicodeString);
+procedure TKMSaveStreamBinary.ReadW(out Value: UnicodeString);
 var I: Word;
 begin
   Read(I, SizeOf(I));
@@ -309,7 +309,7 @@ begin
 end;
 
 
-procedure TKMemoryStreamBinary.WriteW(const Value: UnicodeString);
+procedure TKMSaveStreamBinary.WriteW(const Value: UnicodeString);
 var I: Word;
 begin
   I := Length(Value);
@@ -318,53 +318,53 @@ begin
   inherited Write(Pointer(Value)^, I * SizeOf(WideChar));
 end;
 
-function TKMemoryStreamBinary.Write(const Buffer; Count: Longint): Longint;
+function TKMSaveStreamBinary.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := inherited Write(Buffer, Count);
 end;
 
-procedure TKMemoryStreamBinary.Read(out Value: TKMDirection);   begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMPoint);       begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMPointW);      begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMPointF);      begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMPointDir);    begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMRangeInt);    begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMRangeSingle); begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TKMRect);        begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Single);         begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Extended);       begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Integer);        begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Cardinal);       begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Byte);           begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Boolean);        begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: Word);           begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: ShortInt);       begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: SmallInt);       begin inherited Read(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Read(out Value: TDateTime);      begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMDirection);   begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMPoint);       begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMPointW);      begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMPointF);      begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMPointDir);    begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMRangeInt);    begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMRangeSingle); begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TKMRect);        begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Single);         begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Extended);       begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Integer);        begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Cardinal);       begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Byte);           begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Boolean);        begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: Word);           begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: ShortInt);       begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: SmallInt);       begin inherited Read(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Read(out Value: TDateTime);      begin inherited Read(Value, SizeOf(Value)); end;
 
 
-procedure TKMemoryStreamBinary.Write(const Value: TKMDirection);   begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMPoint);       begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMPointW);      begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMPointF);      begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMPointDir);    begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMRangeInt);    begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMRangeSingle); begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TKMRect);        begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Single);         begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Extended);       begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Integer);        begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Cardinal);       begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Byte);           begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Boolean);        begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: Word);           begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: ShortInt);       begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: SmallInt);       begin inherited Write(Value, SizeOf(Value)); end;
-procedure TKMemoryStreamBinary.Write(const Value: TDateTime);      begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMDirection);   begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMPoint);       begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMPointW);      begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMPointF);      begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMPointDir);    begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMRangeInt);    begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMRangeSingle); begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TKMRect);        begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Single);         begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Extended);       begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Integer);        begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Cardinal);       begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Byte);           begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Boolean);        begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: Word);           begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: ShortInt);       begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: SmallInt);       begin inherited Write(Value, SizeOf(Value)); end;
+procedure TKMSaveStreamBinary.Write(const Value: TDateTime);      begin inherited Write(Value, SizeOf(Value)); end;
 
 
 { TKMSaveStreamText }
-procedure TKMemoryStreamText.WriteText(aString: string);
+procedure TKMSaveStreamText.WriteText(aString: string);
 var
   I: Word;
   bytes: TBytes;
@@ -375,7 +375,7 @@ begin
   inherited Write(bytes[0], I);
 end;
 
-function TKMemoryStreamText.Write(const Buffer; Count: Longint): Longint;
+function TKMSaveStreamText.Write(const Buffer; Count: Longint): Longint;
 begin
   if Count = 1 then
     WriteText(IntToHex(PByte(@Buffer)^, 2) + 'h')
@@ -387,113 +387,113 @@ begin
   Result := -1;
 end;
 
-procedure TKMemoryStreamText.PlaceMarker(const aTitle: string);
+procedure TKMSaveStreamText.PlaceMarker(const aTitle: string);
 begin
   fLastSection := aTitle;
   WriteText(sLineBreak + '[' + aTitle + ']' + sLineBreak);
 end;
 
-procedure TKMemoryStreamText.WriteA(const Value: AnsiString);
+procedure TKMSaveStreamText.WriteA(const Value: AnsiString);
 begin
   WriteText(Value);
 end;
 
-procedure TKMemoryStreamText.WriteANSI(const aValue: string);
+procedure TKMSaveStreamText.WriteANSI(const aValue: string);
 begin
   WriteText(aValue);
 end;
 
-procedure TKMemoryStreamText.WriteW(const Value: UnicodeString);
+procedure TKMSaveStreamText.WriteW(const Value: UnicodeString);
 begin
   WriteText(Value);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMPointDir);
+procedure TKMSaveStreamText.Write(const Value: TKMPointDir);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMRangeInt);
+procedure TKMSaveStreamText.Write(const Value: TKMRangeInt);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMRangeSingle);
+procedure TKMSaveStreamText.Write(const Value: TKMRangeSingle);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMRect);
+procedure TKMSaveStreamText.Write(const Value: TKMRect);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMDirection);
+procedure TKMSaveStreamText.Write(const Value: TKMDirection);
 begin
   WriteText('Dir' + IntToStr(Ord(Value)));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMPoint);
+procedure TKMSaveStreamText.Write(const Value: TKMPoint);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMPointW);
+procedure TKMSaveStreamText.Write(const Value: TKMPointW);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TKMPointF);
+procedure TKMSaveStreamText.Write(const Value: TKMPointF);
 begin
   WriteText(Value.ToString);
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Boolean);
+procedure TKMSaveStreamText.Write(const Value: Boolean);
 begin
   WriteText(BoolToStr(Value, True));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Word);
+procedure TKMSaveStreamText.Write(const Value: Word);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: ShortInt);
+procedure TKMSaveStreamText.Write(const Value: ShortInt);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: SmallInt);
+procedure TKMSaveStreamText.Write(const Value: SmallInt);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Byte);
+procedure TKMSaveStreamText.Write(const Value: Byte);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Single);
+procedure TKMSaveStreamText.Write(const Value: Single);
 begin
   WriteText(Format('%.5f', [Value]));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Extended);
+procedure TKMSaveStreamText.Write(const Value: Extended);
 begin
   WriteText(Format('%.5f', [Value]));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Integer);
+procedure TKMSaveStreamText.Write(const Value: Integer);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: Cardinal);
+procedure TKMSaveStreamText.Write(const Value: Cardinal);
 begin
   WriteText(IntToStr(Value));
 end;
 
-procedure TKMemoryStreamText.Write(const Value: TDateTime);
+procedure TKMSaveStreamText.Write(const Value: TDateTime);
 var
   Str: String;
 begin
