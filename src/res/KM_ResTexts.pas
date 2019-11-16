@@ -58,7 +58,7 @@ type
     property DefaultTexts[aIndex: Word]: UnicodeString read GetDefaultTexts;
     property ForceDefaultLocale: Boolean read fForceDefaultLocale write fForceDefaultLocale;
     procedure Save(aStream: TKMemoryStream);
-    procedure Load(aStream: TKMemoryStream);
+    procedure Load(aStream: TKMemoryStreamBinary);
   end;
 
 
@@ -338,7 +338,7 @@ begin
 end;
 
 
-procedure TKMTextLibraryMulti.Load(aStream: TKMemoryStream);
+procedure TKMTextLibraryMulti.Load(aStream: TKMemoryStreamBinary);
 var
   I,K: Integer;
   LocCount, TextCount: Integer;

@@ -8,14 +8,14 @@ uses
 type
   TKMSavedReplay = class
   private
-    fStream: TKMemoryStream;
+    fStream: TKMemoryStreamBinary;
     fTick: Cardinal;
     // Opened spectator menu, viewports position etc...
   public
-    constructor Create(aStream: TKMemoryStream; aTick: Cardinal);
+    constructor Create(aStream: TKMemoryStreamBinary; aTick: Cardinal);
     destructor Destroy(); override;
 
-    property Stream: TKMemoryStream read fStream;
+    property Stream: TKMemoryStreamBinary read fStream;
     property Tick: Cardinal read fTick;
   end;
 
@@ -27,7 +27,7 @@ type
 
     function GetCount(): Integer;
     function GetSave(aTick: Cardinal): TKMSavedReplay;
-    function GetStream(aTick: Cardinal): TKMemoryStream;
+    function GetStream(aTick: Cardinal): TKMemoryStreamBinary;
   public
     constructor Create();
     destructor Destroy; override;
@@ -36,11 +36,11 @@ type
 
     property Count: Integer read GetCount;
     property Replay[aTick: Cardinal]: TKMSavedReplay read GetSave;
-    property Stream[aTick: Cardinal]: TKMemoryStream read GetStream; default;
+    property Stream[aTick: Cardinal]: TKMemoryStreamBinary read GetStream; default;
     function Contains(aTick: Cardinal): Boolean;
     procedure FillTicks(aTicksList: TList<Cardinal>);
 
-    procedure NewSave(aStream: TKMemoryStream; aTick: Cardinal);
+    procedure NewSave(aStream: TKMemoryStreamBinary; aTick: Cardinal);
   end;
 
 implementation
@@ -97,7 +97,7 @@ begin
 end;
 
 
-function TKMSavedReplays.GetStream(aTick: Cardinal): TKMemoryStream;
+function TKMSavedReplays.GetStream(aTick: Cardinal): TKMemoryStreamBinary;
 var
   Rpl: TKMSavedReplay;
 begin
@@ -107,7 +107,7 @@ begin
 end;
 
 
-procedure TKMSavedReplays.NewSave(aStream: TKMemoryStream; aTick: Cardinal);
+procedure TKMSavedReplays.NewSave(aStream: TKMemoryStreamBinary; aTick: Cardinal);
 begin
   fReplaySaves.Add(aTick, TKMSavedReplay.Create(aStream, aTick) );
 end;
@@ -115,7 +115,7 @@ end;
 
 
 { TKMSavedReplay }
-constructor TKMSavedReplay.Create(aStream: TKMemoryStream; aTick: Cardinal);
+constructor TKMSavedReplay.Create(aStream: TKMemoryStreamBinary; aTick: Cardinal);
 begin
   inherited Create;
 

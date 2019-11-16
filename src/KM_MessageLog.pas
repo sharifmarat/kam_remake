@@ -15,7 +15,7 @@ type
     fIsReadLocal: Boolean; //This is used locally so it responds instantly
   public
     constructor Create(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
-    constructor CreateFromStream(LoadStream: TKMemoryStream);
+    constructor CreateFromStream(LoadStream: TKMemoryStreamBinary);
 
     function IsGoto: Boolean;
     function IsRead: Boolean;
@@ -43,7 +43,7 @@ type
     procedure Add(aKind: TKMMessageKind; aTextID: Integer; const aLoc: TKMPoint);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -62,7 +62,7 @@ begin
 end;
 
 
-constructor TKMLogMessage.CreateFromStream(LoadStream: TKMemoryStream);
+constructor TKMLogMessage.CreateFromStream(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
   LoadStream.Read(fLoc);
@@ -137,7 +137,7 @@ begin
 end;
 
 
-procedure TKMMessageLog.Load(LoadStream: TKMemoryStream);
+procedure TKMMessageLog.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin

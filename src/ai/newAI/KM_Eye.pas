@@ -107,7 +107,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     //property Info[const aY,aX: Word]: TKMBuildInfo read GetInfo write SetInfo;
     property VisitIdx: Byte read fVisitIdx;
@@ -191,7 +191,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     property HousesMapping: THouseMappingArray read fHousesMapping write fHousesMapping;
     property BuildFF: TKMBuildFF read fBuildFF;
@@ -265,7 +265,7 @@ procedure TKMEye.Save(SaveStream: TKMemoryStream);
     SaveStream.Write(aArray[0], SizeOf(aArray[0]) * Len);
   end;
 begin
-  SaveStream.WriteA('Eye');
+  SaveStream.PlaceMarker('Eye');
   SaveStream.Write(fOwner);
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
@@ -285,7 +285,7 @@ begin
   // fHousesMapping
 end;
 
-procedure TKMEye.Load(LoadStream: TKMemoryStream);
+procedure TKMEye.Load(LoadStream: TKMemoryStreamBinary);
   procedure LoadByteArr(var aArray: TKMByteArray);
   var
     Len: Integer;
@@ -295,7 +295,7 @@ procedure TKMEye.Load(LoadStream: TKMemoryStream);
     LoadStream.Read(aArray[0], SizeOf(aArray[0]) * Len);
   end;
 begin
-  LoadStream.ReadAssert('Eye');
+  LoadStream.CheckMarker('Eye');
   LoadStream.Read(fOwner);
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
@@ -1330,7 +1330,7 @@ procedure TKMBuildFF.Save(SaveStream: TKMemoryStream);
 var
   Len: Integer;
 begin
-  SaveStream.WriteA('BuildFF');
+  SaveStream.PlaceMarker('BuildFF');
 
   SaveStream.Write(fOwner);
   SaveStream.Write(fVisitIdx);
@@ -1355,11 +1355,11 @@ begin
 end;
 
 
-procedure TKMBuildFF.Load(LoadStream: TKMemoryStream);
+procedure TKMBuildFF.Load(LoadStream: TKMemoryStreamBinary);
 var
   Len: Integer;
 begin
-  LoadStream.ReadAssert('BuildFF');
+  LoadStream.CheckMarker('BuildFF');
 
   LoadStream.Read(fOwner);
   LoadStream.Read(fVisitIdx);

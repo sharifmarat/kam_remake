@@ -225,7 +225,7 @@ type
     constructor Create(aPlayer: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
@@ -367,7 +367,7 @@ var
   HT: TKMHouseType;
   K, Len: Integer;
 begin
-  SaveStream.WriteA('CityPlanner');
+  SaveStream.PlaceMarker('CityPlanner');
   SaveStream.Write(fOwner);
   SaveStream.Write(fConstructedHouses);
   SaveStream.Write(fDefenceTowersPlanned);
@@ -405,12 +405,12 @@ begin
 end;
 
 
-procedure TKMCityPlanner.Load(LoadStream: TKMemoryStream);
+procedure TKMCityPlanner.Load(LoadStream: TKMemoryStreamBinary);
 var
   HT: TKMHouseType;
   K, Len: Integer;
 begin
-  LoadStream.ReadAssert('CityPlanner');
+  LoadStream.CheckMarker('CityPlanner');
   LoadStream.Read(fOwner);
   LoadStream.Read(fConstructedHouses);
   LoadStream.Read(fDefenceTowersPlanned);

@@ -38,7 +38,7 @@ type
     fPath: UnicodeString;
     fTextLib: TKMTextLibrarySingle;
     fUnlockedMap: Byte;
-    fScriptData: TKMemoryStream;
+    fScriptData: TKMemoryStreamBinary;
 
     //Saved in CMP
     fCampaignId: TKMCampaignId; //Used to identify the campaign
@@ -76,7 +76,7 @@ type
     property CampaignId: TKMCampaignId read fCampaignId write fCampaignId;
     property ShortName: UnicodeString read fShortName;
     property UnlockedMap: Byte read fUnlockedMap write SetUnlockedMap;
-    property ScriptData: TKMemoryStream read fScriptData;
+    property ScriptData: TKMemoryStreamBinary read fScriptData;
     property MapsInfo: TKMCampaignMapDataArray read fMapsInfo;
     property MapsProgressData: TKMCampaignMapProgressDataArray read fMapsProgressData;
 
@@ -231,7 +231,7 @@ end;
 //Read progress from file trying to find matching campaigns
 procedure TKMCampaignsCollection.LoadProgress(const aFileName: UnicodeString);
 var
-  M: TKMemoryStream;
+  M: TKMemoryStreamBinary;
   C: TKMCampaign;
   I, J, campCount: Integer;
   campName: TKMCampaignId;
@@ -241,7 +241,7 @@ var
 begin
   if not FileExists(aFileName) then Exit;
 
-  M := TKMemoryStream.Create;
+  M := TKMemoryStreamBinary.Create;
   try
     M.LoadFromFile(aFileName);
 
@@ -279,7 +279,7 @@ end;
 
 procedure TKMCampaignsCollection.SaveProgress;
 var
-  M: TKMemoryStream;
+  M: TKMemoryStreamBinary;
   I,J: Integer;
   FilePath: UnicodeString;
 begin
@@ -287,7 +287,7 @@ begin
   //Makes the folder incase it is missing
   ForceDirectories(ExtractFilePath(FilePath));
 
-  M := TKMemoryStream.Create;
+  M := TKMemoryStreamBinary.Create;
   try
     M.Write(Integer(CAMP_HEADER_V2)); //Identify our format
     M.Write(Count);
@@ -356,7 +356,7 @@ begin
 
   //1st map is always unlocked to allow to start campaign
   fUnlockedMap := 0;
-  fScriptData := TKMemoryStream.Create;
+  fScriptData := TKMemoryStreamBinary.Create;
 end;
 
 
@@ -383,13 +383,13 @@ end;
 //It should be private, but it is used by CampaignBuilder
 procedure TKMCampaign.LoadFromFile(const aFileName: UnicodeString);
 var
-  M: TKMemoryStream;
+  M: TKMemoryStreamBinary;
   I, K: Integer;
   cmp: TBytes;
 begin
   if not FileExists(aFileName) then Exit;
 
-  M := TKMemoryStream.Create;
+  M := TKMemoryStreamBinary.Create;
   M.LoadFromFile(aFileName);
 
   //Convert old AnsiString into new [0..2] Byte format
@@ -419,13 +419,13 @@ end;
 
 procedure TKMCampaign.SaveToFile(const aFileName: UnicodeString);
 var
-  M: TKMemoryStream;
+  M: TKMemoryStreamBinary;
   I, K: Integer;
   cmp: TBytes;
 begin
   Assert(aFileName <> '');
 
-  M := TKMemoryStream.Create;
+  M := TKMemoryStreamBinary.Create;
   SetLength(cmp, 3);
   cmp[0] := fCampaignId[0];
   cmp[1] := fCampaignId[1];

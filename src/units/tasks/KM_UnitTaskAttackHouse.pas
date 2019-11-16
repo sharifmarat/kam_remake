@@ -13,7 +13,7 @@ type
     fHouse: TKMHouse;
   public
     constructor Create(aWarrior: TKMUnitWarrior; aHouse: TKMHouse);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
 
@@ -47,7 +47,7 @@ begin
 end;
 
 
-constructor TKMTaskAttackHouse.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskAttackHouse.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fHouse, 4);

@@ -40,7 +40,7 @@ type
   public
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToHouse: TKMHouse; Res: TKMWareType; aID: Integer); overload;
     constructor Create(aSerf: TKMUnitSerf; aFrom: TKMHouse; aToUnit: TKMUnit; Res: TKMWareType; aID: Integer); overload;
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -108,7 +108,7 @@ begin
 end;
 
 
-constructor TKMTaskDeliver.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskDeliver.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fFrom, 4);

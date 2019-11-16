@@ -9,7 +9,7 @@ uses
 const MAX_TRANSFERS = MAX_LOBBY_SLOTS - 1; //One for each player and spectator
 type
   TTransferEvent = procedure(aClientIndex: TKMNetHandleIndex) of object;
-  TTransferPacketEvent = procedure(aClientIndex: TKMNetHandleIndex; aStream: TKMemoryStream; out SendBufferEmpty: Boolean) of object;
+  TTransferPacketEvent = procedure(aClientIndex: TKMNetHandleIndex; aStream: TKMemoryStreamBinary; out SendBufferEmpty: Boolean) of object;
   TTransferProgressEvent = procedure(Total, Progress: Cardinal) of object;
   TTransferProgressPlayerEvent = procedure(aNetPlayerIndex: Integer; Total, Progress: Cardinal) of object;
   TKMTransferType = (kttMap, kttSave);
@@ -18,12 +18,12 @@ type
   private
     fReceiverIndex: TKMNetHandleIndex;
     fChunksInFlight: Byte;
-    fSendStream: TKMemoryStream;
+    fSendStream: TKMemoryStreamBinary;
     procedure AddFileToStream(const aFileName, aPostFix, aExt: UnicodeString);
   public
     constructor Create(aType: TKMTransferType; const aName: UnicodeString; aMapFolder: TKMapFolder; aReceiverIndex: TKMNetHandleIndex);
     destructor Destroy; override;
-    procedure WriteChunk(aStream: TKMemoryStream; aLength: Cardinal);
+    procedure WriteChunk(aStream: TKMemoryStreamBinary; aLength: Cardinal);
     procedure AckReceived;
     function StreamEnd: Boolean;
     property ReceiverIndex: TKMNetHandleIndex read fReceiverIndex;
@@ -31,7 +31,7 @@ type
 
   TKMFileReceiver = class
   private
-    fReceiveStream: TKMemoryStream;
+    fReceiveStream: TKMemoryStreamBinary;
     fType: TKMTransferType;
     fName: UnicodeString;
     fMapCRC: Cardinal;
@@ -42,7 +42,7 @@ type
   public
     constructor Create(aType: TKMTransferType; const aName: UnicodeString; aMapCRC: Cardinal = 0);
     destructor Destroy; override;
-    procedure DataReceived(aStream: TKMemoryStream);
+    procedure DataReceived(aStream: TKMemoryStreamBinary);
     property Name: UnicodeString read fName;
     property TotalSize: Cardinal read fTotalSize;
     property ReceivedSize: Cardinal read fReceivedSize;
@@ -108,15 +108,15 @@ var
   I, J: Integer;
   FileName: UnicodeString;
   F: TSearchRec;
-  SourceStream: TKMemoryStream;
+  SourceStream: TKMemoryStreamBinary;
   CompressionStream: TCompressionStream;
   ScriptPreProcessor: TKMScriptingPreProcessor;
   ScriptFiles: TKMScriptFilesCollection;
 begin
   inherited Create;
   fReceiverIndex := aReceiverIndex;
-  fSendStream := TKMemoryStream.Create;
-  fSendStream.WriteA('TransferCompressed');
+  fSendStream := TKMemoryStreamBinary.Create;
+  fSendStream.PlaceMarker('TransferCompressed');
   fSendStream.Write(aType, SizeOf(aType));
   fSendStream.WriteW(aName);
   //Fill stream with data to be sent
@@ -171,8 +171,8 @@ begin
   end;
   //Compress fSendStream
   SourceStream := fSendStream;
-  fSendStream := TKMemoryStream.Create;
-  fSendStream.WriteA('Transfer');
+  fSendStream := TKMemoryStreamBinary.Create;
+  fSendStream.PlaceMarker('Transfer');
   CompressionStream := TCompressionStream.Create(cldefault, fSendStream);
   CompressionStream.CopyFrom(SourceStream, 0);
   //fSendStream now contains the compressed data from SourceStream
@@ -196,12 +196,12 @@ end;
 
 
 procedure TKMFileSender.AddFileToStream(const aFileName, aPostFix, aExt: UnicodeString);
-var FileStream: TKMemoryStream;
+var FileStream: TKMemoryStreamBinary;
 begin
-  FileStream := TKMemoryStream.Create;
+  FileStream := TKMemoryStreamBinary.Create;
   FileStream.LoadFromFile(aFileName);
 
-  fSendStream.WriteA('FileStart');
+  fSendStream.PlaceMarker('FileStart');
   fSendStream.WriteW(TruncateExt(ExtractFileName(aFileName)));
   fSendStream.WriteW(aPostFix);
   fSendStream.WriteW(aExt);
@@ -213,12 +213,12 @@ begin
 end;
 
 
-procedure TKMFileSender.WriteChunk(aStream: TKMemoryStream; aLength: Cardinal);
+procedure TKMFileSender.WriteChunk(aStream: TKMemoryStreamBinary; aLength: Cardinal);
 begin
   if aLength > fSendStream.Size - fSendStream.Position then
     aLength := fSendStream.Size - fSendStream.Position;
 
-  aStream.WriteA('FileChunk');
+  aStream.PlaceMarker('FileChunk');
   aStream.Write(aLength);
   aStream.Write(Cardinal(fSendStream.Size)); //Every chunk includes the total transfer size
   aStream.CopyFrom(fSendStream, aLength);
@@ -236,7 +236,7 @@ end;
 constructor TKMFileReceiver.Create(aType: TKMTransferType; const aName: UnicodeString; aMapCRC: Cardinal = 0);
 begin
   inherited Create;
-  fReceiveStream := TKMemoryStream.Create;
+  fReceiveStream := TKMemoryStreamBinary.Create;
   fType := aType;
   fName := aName;
   fMapCRC := aMapCRC;
@@ -250,10 +250,10 @@ begin
 end;
 
 
-procedure TKMFileReceiver.DataReceived(aStream: TKMemoryStream);
+procedure TKMFileReceiver.DataReceived(aStream: TKMemoryStreamBinary);
 var ChunkSize: Cardinal;
 begin
-  aStream.ReadAssert('FileChunk');
+  aStream.CheckMarker('FileChunk');
   aStream.Read(ChunkSize);
   aStream.Read(fTotalSize); //Every chunk includes the total transfer size
   Assert(aStream.Size - aStream.Position = ChunkSize, 'Chunk corrupted');
@@ -335,25 +335,25 @@ var
   ReadType: TKMTransferType;
   ReadName, Ext, Postfix, TransferedFileName, FileName: UnicodeString;
   ReadSize: Cardinal;
-  FileStream: TKMemoryStream;
+  FileStream: TKMemoryStreamBinary;
   DecompressionStream: TDecompressionStream;
-  ReadStream: TKMemoryStream;
+  ReadStream: TKMemoryStreamBinary;
 begin
   Result := False;
   if fReceiveStream.Size = 0 then Exit; //Transfer was aborted
 
   //Decompress the stream
   fReceiveStream.Position := 0;
-  fReceiveStream.ReadAssert('Transfer');
+  fReceiveStream.CheckMarker('Transfer');
   DecompressionStream := TDecompressionStream.Create(fReceiveStream);
   //We need custom methods like ReadAssert, ReadW, etc. so we need to read from a TKMemoryStream
-  ReadStream := TKMemoryStream.Create;
+  ReadStream := TKMemoryStreamBinary.Create;
   ReadStream.CopyFromDecompression(DecompressionStream);
   DecompressionStream.Free;
   ReadStream.Position := 0;
 
   //Read from the stream
-  ReadStream.ReadAssert('TransferCompressed');
+  ReadStream.CheckMarker('TransferCompressed');
   ReadStream.Read(ReadType, SizeOf(ReadType));
   Assert(ReadType = fType, 'Unexpected transfer type received');
   ReadStream.ReadW(ReadName);
@@ -365,7 +365,7 @@ begin
   //Load each file
   while ReadStream.Position < ReadStream.Size do
   begin
-    ReadStream.ReadAssert('FileStart');
+    ReadStream.CheckMarker('FileStart');
     ReadStream.ReadW(TransferedFileName);
     ReadStream.ReadW(Postfix);
     ReadStream.ReadW(Ext);
@@ -373,7 +373,7 @@ begin
     Assert(ValidExtension(Ext), 'Unexpected file extension received');
 
     ReadStream.Read(ReadSize);
-    FileStream := TKMemoryStream.Create;
+    FileStream := TKMemoryStreamBinary.Create;
     FileStream.CopyFrom(ReadStream, ReadSize);
 
     // Scripts can have arbitrary names
@@ -464,7 +464,7 @@ end;
 procedure TKMFileSenderManager.UpdateStateIdle(SendBufferEmpty: Boolean);
 var
   I: Integer;
-  Stream: TKMemoryStream;
+  Stream: TKMemoryStreamBinary;
   ClientIndex: TKMNetHandleIndex;
   MaxChunksInFlightPerSender: Byte;
 begin
@@ -473,7 +473,7 @@ begin
   for I := Low(fSenders) to High(fSenders) do
     while (fSenders[I] <> nil) and (fSenders[I].fChunksInFlight < MaxChunksInFlightPerSender) and SendBufferEmpty do
     begin
-      Stream := TKMemoryStream.Create;
+      Stream := TKMemoryStreamBinary.Create;
       fSenders[I].WriteChunk(Stream, FILE_CHUNK_SIZE);
       fOnTransferPacket(fSenders[I].ReceiverIndex, Stream, SendBufferEmpty); //Updates SendBufferEmpty
       Stream.Free;

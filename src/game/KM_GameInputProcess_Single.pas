@@ -10,7 +10,7 @@ type
   protected
     procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
     procedure SaveExtra(aStream: TKMemoryStream); override;
-    procedure LoadExtra(aStream: TKMemoryStream); override;
+    procedure LoadExtra(aStream: TKMemoryStreamBinary); override;
   public
     procedure ReplayTimer(aTick: Cardinal); override;
     procedure RunningTimer(aTick: Cardinal); override;
@@ -79,7 +79,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStreamBinary);
 var
   LastReplayTick: Cardinal;
 begin

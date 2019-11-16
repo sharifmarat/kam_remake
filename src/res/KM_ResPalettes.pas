@@ -98,11 +98,11 @@ end;
 
 procedure TKMPaletteInfo.LoadFromFile(const aFileName: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
 begin
   if FileExists(aFileName) then
   begin
-    S := TKMemoryStream.Create;
+    S := TKMemoryStreamBinary.Create;
     S.LoadFromFile(aFileName);
     S.Seek(48, soFromBeginning);
     S.Read(fData, SizeOf(fData)); //768bytes

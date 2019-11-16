@@ -20,7 +20,7 @@ type
   public
     property WoodcutterMode: TKMWoodcutterMode read fWoodcutterMode write SetWoodcutterMode;
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
@@ -37,7 +37,7 @@ begin
 end;
 
 
-constructor TKMHouseWoodcutters.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseWoodcutters.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fWoodcutterMode, SizeOf(fWoodcutterMode));

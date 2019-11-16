@@ -28,7 +28,7 @@ type
     procedure CheckTakeOutDeliveryMode; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
 
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     property ResFrom: TKMWareType read fResFrom write SetResFrom;
@@ -390,7 +390,7 @@ begin
 end;
 
 
-constructor TKMHouseMarket.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseMarket.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fTradeAmount);

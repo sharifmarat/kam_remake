@@ -165,17 +165,17 @@ var
   end;
 
 var
-  LoadStream: TKMemoryStream;
+  LoadStream: TKMemoryStreamBinary;
   I, K, Count, CountInTick: Integer;
   CallerId: Byte;
   CallerName: AnsiString;
   Tick: Cardinal;
 begin
   Clear;
-  LoadStream := TKMemoryStream.Create;
+  LoadStream := TKMemoryStreamBinary.Create;
   try
     LoadStream.LoadFromFile(aPath);
-    LoadStream.ReadAssert('CallersTable');
+    LoadStream.CheckMarker('CallersTable');
     LoadStream.Read(Count);
     for I := 0 to Count - 1 do
     begin
@@ -184,7 +184,7 @@ begin
       fCallers.Add(CallerId, CallerName);
     end;
 
-    LoadStream.ReadAssert('KaMRandom_calls');
+    LoadStream.CheckMarker('KaMRandom_calls');
     LoadStream.Read(Count);
     for I := 0 to Count - 1 do
     begin
@@ -213,7 +213,7 @@ end;
 
 procedure TKMRandomCheckLogger.SaveToPath(aPath: String);
 var
-  SaveStream: TKMemoryStream;
+  SaveStream: TKMemoryStreamBinary;
 //  CompressionStream: TCompressionStream;
   CallerPair: TPair<Byte, AnsiString>;
   LogPair: TPair<Cardinal, TList<TKMRngLogRecord>>;
@@ -223,9 +223,9 @@ begin
   if not SAVE_RANDOM_CHECKS then
     Exit;
 
-  SaveStream := TKMemoryStream.Create;
+  SaveStream := TKMemoryStreamBinary.Create;
 
-  SaveStream.WriteA('CallersTable');
+  SaveStream.PlaceMarker('CallersTable');
   SaveStream.Write(fCallers.Count);
 
   for CallerPair in fCallers do
@@ -234,7 +234,7 @@ begin
     SaveStream.WriteA(CallerPair.Value);
   end;
 
-  SaveStream.WriteA('KaMRandom_calls');
+  SaveStream.PlaceMarker('KaMRandom_calls');
   Cnt := 0;
   SaveStream.Write(fRngLog.Count);
   for LogPair in fRngLog do

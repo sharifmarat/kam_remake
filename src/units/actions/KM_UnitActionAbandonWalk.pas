@@ -14,7 +14,7 @@ type
     fVertexOccupied: TKMPoint;
   public
     constructor Create(aUnit: TKMUnit; const LocB, aVertexOccupied: TKMPoint; aActionType: TKMUnitActionType);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     destructor Destroy; override;
     function ActName: TKMUnitActionName; override;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
@@ -51,7 +51,7 @@ begin
 end;
 
 
-constructor TKMUnitActionAbandonWalk.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionAbandonWalk.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fWalkTo);

@@ -1609,7 +1609,7 @@ procedure TKMTerrainPainter.LoadFromFile(const aFileName: UnicodeString);
 var
   I, K: Integer;
   TerType: ShortInt; //Krom's editor saves terrain kind as ShortInt
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   NewX, NewY: Integer;
   ResHead: packed record
     x1: Word;
@@ -1624,7 +1624,7 @@ begin
 
   InitSize(gTerrain.MapX, gTerrain.MapY);
 
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     S.LoadFromFile(aFileName);
 
@@ -1697,7 +1697,7 @@ end;
 procedure TKMTerrainPainter.SaveToFile(const aFileName: UnicodeString; const aInsetRect: TKMRect);
 var
   I, K, IFrom, KFrom: Integer;
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   NewX, NewY: Integer;
   ResHead: packed record
     x1: Word;
@@ -1708,7 +1708,7 @@ var
 begin
   if not FileExists(aFileName) then Exit;
 
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     S.LoadFromFile(aFileName);
 

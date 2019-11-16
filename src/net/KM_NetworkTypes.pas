@@ -204,8 +204,8 @@ type
     property SpeedRng: TKMRangeSingle read fSpeedRng;
     property SpeedAfterPTRng: TKMRangeSingle read fSpeedAfterPTRng;
 
-    procedure Save(aStream: TKMemoryStream);
-    procedure Load(aStream: TKMemoryStream);
+    procedure Save(aStream: TKMemoryStreamBinary);
+    procedure Load(aStream: TKMemoryStreamBinary);
   end;
 
 const
@@ -260,7 +260,7 @@ begin
 end;
 
 
-procedure TKMPGameFilter.Save(aStream: TKMemoryStream);
+procedure TKMPGameFilter.Save(aStream: TKMemoryStreamBinary);
 begin
   aStream.Write(fDynamicFOW);
   aStream.Write(fMapsFilterEnabled);
@@ -271,7 +271,7 @@ begin
 end;
 
 
-procedure TKMPGameFilter.Load(aStream: TKMemoryStream);
+procedure TKMPGameFilter.Load(aStream: TKMemoryStreamBinary);
 var
   StrA: AnsiString;
 begin

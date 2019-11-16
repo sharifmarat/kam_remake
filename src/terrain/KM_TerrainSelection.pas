@@ -202,13 +202,13 @@ var
     hMem: THandle;
     BufPtr: Pointer;
   {$ENDIF}
-  BufferStream: TKMemoryStream;
+  BufferStream: TKMemoryStreamBinary;
 begin
   Sx := fSelectionRect.Right - fSelectionRect.Left;
   Sy := fSelectionRect.Bottom - fSelectionRect.Top;
   SetLength(fSelectionBuffer, Sy, Sx);
 
-  BufferStream := TKMemoryStream.Create;
+  BufferStream := TKMemoryStreamBinary.Create;
   BufferStream.Write(Sx);
   BufferStream.Write(Sy);
 
@@ -260,9 +260,9 @@ var
   hMem: THandle;
   BufPtr: Pointer;
   {$ENDIF}
-  BufferStream: TKMemoryStream;
+  BufferStream: TKMemoryStreamBinary;
 begin
-  BufferStream := TKMemoryStream.Create;
+  BufferStream := TKMemoryStreamBinary.Create;
   {$IFDEF WDC}
   hMem := Clipboard.GetAsHandle(CF_MAPDATA);
   if hMem = 0 then Exit;

@@ -29,7 +29,7 @@ type
     Locked: Boolean; //Means that unit can't take part in interaction, must stay on its tile
     StepDone: Boolean; //True when single action element is done (unit walked to new tile, single attack loop done)
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aLocked: Boolean);
-    constructor Load(LoadStream: TKMemoryStream); virtual;
+    constructor Load(LoadStream: TKMemoryStreamBinary); virtual;
     procedure SyncLoad; virtual;
 
     function CanBeInterrupted(aForced: Boolean = True): Boolean; virtual;
@@ -52,7 +52,7 @@ type
     procedure InitDefaultAction; virtual;
   public
     constructor Create(aUnit: TKMUnit);
-    constructor Load(LoadStream: TKMemoryStream); virtual;
+    constructor Load(LoadStream: TKMemoryStreamBinary); virtual;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
 
@@ -129,7 +129,7 @@ type
     Dismissable: Boolean; //Is it allowed to dismiss this unit ?
 
     constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
-    constructor Load(LoadStream: TKMemoryStream); dynamic;
+    constructor Load(LoadStream: TKMemoryStreamBinary); dynamic;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
 
@@ -281,7 +281,7 @@ type
     fCarry: TKMWareType;
   public
     constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
     procedure Deliver(aFrom: TKMHouse; toHouse: TKMHouse; Res: TKMWareType; aID: integer); overload;
@@ -319,7 +319,7 @@ type
     fFishCount: Byte; //1-5
   public
     constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID); overload;
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     property FishCount: byte read fFishCount;
     function ReduceFish: Boolean;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -811,7 +811,7 @@ begin
 end;
 
 
-constructor TKMUnitSerf.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitSerf.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fCarry, SizeOf(fCarry));
@@ -1016,7 +1016,7 @@ begin
 end;
 
 
-constructor TKMUnitAnimal.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitAnimal.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fFishCount);
@@ -1173,7 +1173,7 @@ begin
 end;
 
 
-constructor TKMUnit.Load(LoadStream: TKMemoryStream);
+constructor TKMUnit.Load(LoadStream: TKMemoryStreamBinary);
 var
   HasTask, HasAct: Boolean;
   TaskName: TKMUnitTaskType;
@@ -2406,7 +2406,7 @@ begin
 end;
 
 
-constructor TKMUnitTask.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitTask.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
 
@@ -2492,7 +2492,7 @@ begin
 end;
 
 
-constructor TKMUnitAction.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitAction.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
   LoadStream.Read(fType, SizeOf(fType));

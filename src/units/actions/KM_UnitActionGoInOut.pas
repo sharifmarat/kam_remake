@@ -32,7 +32,7 @@ type
     OnWalkedOut: TEvent; //NOTE: Caller must sync these events after loading, used with caution
     OnWalkedIn: TEvent;
     constructor Create(aUnit: TKMUnit; aAction: TKMUnitActionType; aDirection: TKMGoInDirection; aHouse: TKMHouse);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function ActName: TKMUnitActionName; override;
@@ -72,7 +72,7 @@ begin
 end;
 
 
-constructor TKMUnitActionGoInOut.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionGoInOut.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fStep);

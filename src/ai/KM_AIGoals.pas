@@ -71,7 +71,7 @@ type
     procedure AddDefaultGoals(aBuildings: Boolean; aOurPlayerIndex: TKMHandID; const aEnemyIndexes: array of TKMHandID);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     procedure ExportMessages(const aPath: UnicodeString);
   end;
@@ -196,7 +196,7 @@ begin
 end;
 
 
-procedure TKMGoals.Load(LoadStream: TKMemoryStream);
+procedure TKMGoals.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin

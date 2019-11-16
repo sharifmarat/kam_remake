@@ -63,7 +63,7 @@ type
     constructor Create(aNavMesh: TKMNavMesh);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     // Avoid building
     property AvoidBuilding[const aY,aX: Word]: Byte read GetAvoidBuilding write SetAvoidBuilding;
@@ -138,49 +138,49 @@ var
   Len: Integer;
 begin
 
-  SaveStream.WriteA('Influences');
+  SaveStream.PlaceMarker('Influences');
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
   SaveStream.Write(fPolygons);
   SaveStream.Write(fUpdateCityIdx,SizeOf(fUpdateCityIdx));
   SaveStream.Write(fUpdateArmyIdx,SizeOf(fUpdateArmyIdx));
 
-  SaveStream.WriteA('AvoidBuilding');
+  SaveStream.PlaceMarker('AvoidBuilding');
   SaveStream.Write(fAvoidBuilding[0], SizeOf(fAvoidBuilding[0]) * Length(fAvoidBuilding));
 
-  SaveStream.WriteA('Ownership');
+  SaveStream.PlaceMarker('Ownership');
   Len := Length(fOwnership);
   SaveStream.Write(Len);
   SaveStream.Write(fOwnership[0], SizeOf(fOwnership[0]) * Len);
 
-  SaveStream.WriteA('ArmyPresence');
+  SaveStream.PlaceMarker('ArmyPresence');
   Len := Length(fPresence);
   SaveStream.Write(Len);
   SaveStream.Write(fPresence[0], SizeOf(fPresence[0]) * Len);
 end;
 
 
-procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
+procedure TKMInfluences.Load(LoadStream: TKMemoryStreamBinary);
 var
   Len: Integer;
 begin
-  LoadStream.ReadAssert('Influences');
+  LoadStream.CheckMarker('Influences');
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
   LoadStream.Read(fPolygons);
   LoadStream.Read(fUpdateCityIdx,SizeOf(fUpdateCityIdx));
   LoadStream.Read(fUpdateArmyIdx,SizeOf(fUpdateArmyIdx));
 
-  LoadStream.ReadAssert('AvoidBuilding');
+  LoadStream.CheckMarker('AvoidBuilding');
   SetLength(fAvoidBuilding, fMapY * fMapX);
   LoadStream.Read(fAvoidBuilding[0], SizeOf(fAvoidBuilding[0]) * fMapY * fMapX);
 
-  LoadStream.ReadAssert('Ownership');
+  LoadStream.CheckMarker('Ownership');
   LoadStream.Read(Len);
   SetLength(fOwnership, Len);
   LoadStream.Read(fOwnership[0], SizeOf(fOwnership[0]) * Len);
 
-  LoadStream.ReadAssert('ArmyPresence');
+  LoadStream.CheckMarker('ArmyPresence');
   LoadStream.Read(Len);
   SetLength(fPresence, Len);
   LoadStream.Read(fPresence[0], SizeOf(fPresence[0]) * Len);

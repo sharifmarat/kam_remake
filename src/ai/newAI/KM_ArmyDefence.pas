@@ -26,7 +26,7 @@ type
     function GetGroupType(): TKMGroupType;
   public
     constructor Create(aWeight, aLine: Word; aPos: TKMPointDir);
-    constructor Load(LoadStream: TKMemoryStream);
+    constructor Load(LoadStream: TKMemoryStreamBinary);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -60,7 +60,7 @@ type
     constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     property Count: Integer read GetCount;
@@ -118,7 +118,7 @@ end;
 
 procedure TKMDefencePosition.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('DefencePosition');
+  SaveStream.PlaceMarker('DefencePosition');
   SaveStream.Write(fWeight);
   SaveStream.Write(fLine);
   SaveStream.Write(fPosition);
@@ -129,10 +129,10 @@ begin
 end;
 
 
-constructor TKMDefencePosition.Load(LoadStream: TKMemoryStream);
+constructor TKMDefencePosition.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
-  LoadStream.ReadAssert('DefencePosition');
+  LoadStream.CheckMarker('DefencePosition');
   LoadStream.Read(fWeight);
   LoadStream.Read(fLine);
   LoadStream.Read(fPosition);
@@ -228,7 +228,7 @@ end;
 procedure TKMArmyDefence.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.WriteA('DefencePositions');
+  SaveStream.PlaceMarker('DefencePositions');
   SaveStream.Write(fOwner);
   SaveStream.Write(fCityUnderAttack);
   SaveStream.Write(fFirstLineCnt);
@@ -240,10 +240,10 @@ begin
 end;
 
 
-procedure TKMArmyDefence.Load(LoadStream: TKMemoryStream);
+procedure TKMArmyDefence.Load(LoadStream: TKMemoryStreamBinary);
 var I, NewCount: Integer;
 begin
-  LoadStream.ReadAssert('DefencePositions');
+  LoadStream.CheckMarker('DefencePositions');
   LoadStream.Read(fOwner);
   LoadStream.Read(fCityUnderAttack);
   LoadStream.Read(fFirstLineCnt);

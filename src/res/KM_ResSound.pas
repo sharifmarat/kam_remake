@@ -422,12 +422,12 @@ end;
 function TKMResSounds.LoadWarriorSoundsFromFile(const aFile: string): Boolean;
 var
   S: AnsiString;
-  MS: TKMemoryStream;
+  MS: TKMemoryStreamBinary;
 begin
   Result := False;
   if not FileExists(aFile) then Exit;
 
-  MS := TKMemoryStream.Create;
+  MS := TKMemoryStreamBinary.Create;
   try
     MS.LoadFromFile(aFile);
     MS.ReadA(S);
@@ -446,9 +446,9 @@ end;
 
 procedure TKMResSounds.SaveWarriorSoundsToFile(const aFile: string);
 var
-  MS: TKMemoryStream;
+  MS: TKMemoryStreamBinary;
 begin
-  MS := TKMemoryStream.Create;
+  MS := TKMemoryStreamBinary.Create;
   try
     MS.WriteA(GAME_REVISION);
     MS.Write(WarriorSoundCount, SizeOf(WarriorSoundCount));

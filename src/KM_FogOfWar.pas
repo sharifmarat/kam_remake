@@ -66,7 +66,7 @@ type
     procedure SyncFOW(aFOW: TKMFogOfWar);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     procedure UpdateState;
   end;
@@ -423,7 +423,7 @@ procedure TKMFogOfWar.Save(SaveStream: TKMemoryStream);
 var
   I: Word;
 begin
-  SaveStream.WriteA('FOW');
+  SaveStream.PlaceMarker('FOW');
   SaveStream.Write(fAnimStep);
   //Because each player has FOW it can become a bottleneck (8.7ms per run) due to autosaving (e.g. on Paradise Island)
   //so save it out 1 row at a time (due to 2D arrays not being continguous we can't save it all at once)
@@ -436,11 +436,11 @@ begin
 end;
 
 
-procedure TKMFogOfWar.Load(LoadStream: TKMemoryStream);
+procedure TKMFogOfWar.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Word;
 begin
-  LoadStream.ReadAssert('FOW');
+  LoadStream.CheckMarker('FOW');
   LoadStream.Read(fAnimStep);
   SetMapSize(MapX, MapY);
   for I := 0 to MapY - 1 do

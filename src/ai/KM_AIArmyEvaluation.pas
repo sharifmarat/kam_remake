@@ -34,7 +34,7 @@ type
     constructor Create();
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     property UnitEvaluation[aUT: TKMUnitType; aConsiderHitChance: Boolean]: TKMGroupEval read GetUnitEvaluation;
     function GroupEvaluation(aGroup: TKMUnitGroup; aConsiderHitChance: Boolean): TKMGroupEval;
@@ -73,14 +73,14 @@ end;
 
 procedure TKMArmyEvaluation.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('ArmyEvaluation');
+  SaveStream.PlaceMarker('ArmyEvaluation');
   SaveStream.Write(fEvals, SizeOf(fEvals));
 end;
 
 
-procedure TKMArmyEvaluation.Load(LoadStream: TKMemoryStream);
+procedure TKMArmyEvaluation.Load(LoadStream: TKMemoryStreamBinary);
 begin
-  LoadStream.ReadAssert('ArmyEvaluation');
+  LoadStream.CheckMarker('ArmyEvaluation');
   LoadStream.Read(fEvals, SizeOf(fEvals));
 end;
 

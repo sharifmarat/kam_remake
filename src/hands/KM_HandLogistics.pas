@@ -156,7 +156,7 @@ type
     procedure AbandonDelivery(aID: Integer); //Occurs when unit is killed or something alike happens
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
 
     procedure UpdateState(aTick: Cardinal);
@@ -184,7 +184,7 @@ type
     property Queue: TKMDeliveries read fQueue;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -227,7 +227,7 @@ end;
 procedure TKMHandLogistics.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.WriteA('SerfList');
+  SaveStream.PlaceMarker('SerfList');
 
   SaveStream.Write(fSerfCount);
   for I := 0 to fSerfCount - 1 do
@@ -242,10 +242,10 @@ begin
 end;
 
 
-procedure TKMHandLogistics.Load(LoadStream: TKMemoryStream);
+procedure TKMHandLogistics.Load(LoadStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
-  LoadStream.ReadAssert('SerfList');
+  LoadStream.CheckMarker('SerfList');
 
   LoadStream.Read(fSerfCount);
   SetLength(fSerfs, fSerfCount);
@@ -1684,9 +1684,11 @@ var
   Item: TPair<TKMDeliveryBidKey, Single>;
   {$ENDIF}
 begin
-  SaveStream.WriteA('Deliveries');
+  SaveStream.PlaceMarker('Deliveries');
   SaveStream.Write(fOwner);
   SaveStream.Write(fOfferCount);
+
+  SaveStream.PlaceMarker('Offers');
   for I := 1 to fOfferCount do
   begin
     SaveStream.Write(fOffer[I].Ware, SizeOf(fOffer[I].Ware));
@@ -1699,6 +1701,7 @@ begin
     SaveStream.Write(fOffer[I].IsDeleted);
   end;
 
+  SaveStream.PlaceMarker('Demands');
   SaveStream.Write(fDemandCount);
   for I := 1 to fDemandCount do
   with fDemand[I] do
@@ -1712,6 +1715,7 @@ begin
     SaveStream.Write(IsDeleted);
   end;
 
+  SaveStream.PlaceMarker('Queue');
   SaveStream.Write(fQueueCount);
   for I := 1 to fQueueCount do
   begin
@@ -1724,6 +1728,7 @@ begin
   {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
+    SaveStream.PlaceMarker('OfferToDemandCache');
     SaveStream.Write(fOfferToDemandCache.Count);
     for Item in fOfferToDemandCache do
     begin
@@ -1732,6 +1737,7 @@ begin
       SaveStream.Write(Item.Value);
     end;
 
+    SaveStream.PlaceMarker('SerfToOfferCache');
     SaveStream.Write(fSerfToOfferCache.Count);
     for Item in fSerfToOfferCache do
     begin
@@ -1744,7 +1750,7 @@ begin
 end;
 
 
-procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
+procedure TKMDeliveries.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
   {$IFDEF USE_HASH}
@@ -1753,10 +1759,12 @@ var
   Value: Single;
   {$ENDIF}
 begin
-  LoadStream.ReadAssert('Deliveries');
+  LoadStream.CheckMarker('Deliveries');
   LoadStream.Read(fOwner);
   LoadStream.Read(fOfferCount);
   SetLength(fOffer, fOfferCount+1);
+
+  LoadStream.CheckMarker('Offers');
   for I := 1 to fOfferCount do
   begin
     LoadStream.Read(fOffer[I].Ware, SizeOf(fOffer[I].Ware));
@@ -1766,6 +1774,7 @@ begin
     LoadStream.Read(fOffer[I].IsDeleted);
   end;
 
+  LoadStream.CheckMarker('Demands');
   LoadStream.Read(fDemandCount);
   SetLength(fDemand, fDemandCount+1);
   for I := 1 to fDemandCount do
@@ -1780,6 +1789,7 @@ begin
     LoadStream.Read(IsDeleted);
   end;
 
+  LoadStream.CheckMarker('Queue');
   LoadStream.Read(fQueueCount);
   SetLength(fQueue, fQueueCount+1);
   for I := 1 to fQueueCount do
@@ -1793,6 +1803,7 @@ begin
   {$IFDEF USE_HASH}
   if CACHE_DELIVERY_BIDS then
   begin
+    LoadStream.CheckMarker('OfferToDemandCache');
     fOfferToDemandCache.Clear;
     LoadStream.Read(Count);
     for I := 0 to Count - 1 do
@@ -1803,6 +1814,7 @@ begin
       fOfferToDemandCache.Add(Key, Value);
     end;
 
+    LoadStream.CheckMarker('SerfToOfferCache');
     fSerfToOfferCache.Clear;
     LoadStream.Read(Count);
     for I := 0 to Count - 1 do

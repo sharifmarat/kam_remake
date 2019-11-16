@@ -73,7 +73,7 @@ type
     constructor Create(aPlayer: TKMHandID; aPredictor: TKMCityPredictor);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     property Planner: TKMCityPlanner read fPlanner;
@@ -147,7 +147,7 @@ procedure TKMCityBuilder.Save(SaveStream: TKMemoryStream);
 var
   I, Cnt: Integer;
 begin
-  SaveStream.WriteA('CityBuilder');
+  SaveStream.PlaceMarker('CityBuilder');
   SaveStream.Write(fStoneShortage);
   SaveStream.Write(fWoodShortage);
   SaveStream.Write(fTrunkShortage);
@@ -180,11 +180,11 @@ begin
 end;
 
 
-procedure TKMCityBuilder.Load(LoadStream: TKMemoryStream);
+procedure TKMCityBuilder.Load(LoadStream: TKMemoryStreamBinary);
 var
   I, Cnt: Integer;
 begin
-  LoadStream.ReadAssert('CityBuilder');
+  LoadStream.CheckMarker('CityBuilder');
   LoadStream.Read(fStoneShortage);
   LoadStream.Read(fWoodShortage);
   LoadStream.Read(fTrunkShortage);

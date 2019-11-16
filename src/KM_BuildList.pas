@@ -33,7 +33,7 @@ type
     function GetAvailableJobsCount: Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
 
     procedure UpdateState;
@@ -83,7 +83,7 @@ type
     procedure GetTablets(aList: TKMPointTagList; const aRect: TKMRect);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
   end;
 
@@ -138,7 +138,7 @@ type
     function FieldCount(aFieldType: TKMFieldType): Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
   end;
 
@@ -165,7 +165,7 @@ type
     procedure RemWorker(aIndex: Integer);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
     procedure UpdateState;
   end;
@@ -204,7 +204,7 @@ type
     property RepairList: TKMRepairList read fRepairList;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
     procedure UpdateState;
   end;
@@ -343,7 +343,7 @@ end;
 procedure TKMHouseList.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.WriteA('HouseList');
+  SaveStream.PlaceMarker('HouseList');
 
   SaveStream.Write(fHousesCount);
   for I := 0 to fHousesCount - 1 do
@@ -357,10 +357,10 @@ begin
 end;
 
 
-procedure TKMHouseList.Load(LoadStream: TKMemoryStream);
+procedure TKMHouseList.Load(LoadStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
-  LoadStream.ReadAssert('HouseList');
+  LoadStream.CheckMarker('HouseList');
 
   LoadStream.Read(fHousesCount);
   SetLength(fHouses, fHousesCount);
@@ -630,7 +630,7 @@ var
   I: Integer;
 begin
   //Note: Fakes should not be saved, they are just temporary and saves must be consistent acorss all networked computers
-  SaveStream.WriteA('FieldworksList');
+  SaveStream.PlaceMarker('FieldworksList');
 
   SaveStream.Write(fFieldsCount);
   for I := 0 to fFieldsCount - 1 do
@@ -646,11 +646,11 @@ begin
 end;
 
 
-procedure TKMFieldworksList.Load(LoadStream: TKMemoryStream);
+procedure TKMFieldworksList.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
-  LoadStream.ReadAssert('FieldworksList');
+  LoadStream.CheckMarker('FieldworksList');
 
   LoadStream.Read(fFieldsCount);
   SetLength(fFields, fFieldsCount);
@@ -920,7 +920,7 @@ procedure TKMHousePlanList.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('HousePlanList');
+  SaveStream.PlaceMarker('HousePlanList');
 
   SaveStream.Write(fPlansCount);
   for I := 0 to fPlansCount - 1 do
@@ -937,10 +937,10 @@ begin
 end;
 
 
-procedure TKMHousePlanList.Load(LoadStream: TKMemoryStream);
+procedure TKMHousePlanList.Load(LoadStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
-  LoadStream.ReadAssert('HousePlanList');
+  LoadStream.CheckMarker('HousePlanList');
 
   LoadStream.Read(fPlansCount);
   SetLength(fPlans, fPlansCount);
@@ -1086,7 +1086,7 @@ procedure TKMRepairList.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('RepairList');
+  SaveStream.PlaceMarker('RepairList');
 
   SaveStream.Write(fHousesCount);
   for I := 0 to fHousesCount - 1 do
@@ -1100,10 +1100,10 @@ begin
 end;
 
 
-procedure TKMRepairList.Load(LoadStream: TKMemoryStream);
+procedure TKMRepairList.Load(LoadStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
-  LoadStream.ReadAssert('RepairList');
+  LoadStream.CheckMarker('RepairList');
 
   LoadStream.Read(fHousesCount);
   SetLength(fHouses, fHousesCount);
@@ -1187,7 +1187,7 @@ procedure TKMBuildList.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('WorkerList');
+  SaveStream.PlaceMarker('WorkerList');
 
   SaveStream.Write(fWorkersCount);
   for I := 0 to fWorkersCount - 1 do
@@ -1205,10 +1205,10 @@ begin
 end;
 
 
-procedure TKMBuildList.Load(LoadStream: TKMemoryStream);
+procedure TKMBuildList.Load(LoadStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
-  LoadStream.ReadAssert('WorkerList');
+  LoadStream.CheckMarker('WorkerList');
 
   LoadStream.Read(fWorkersCount);
   SetLength(fWorkers, fWorkersCount);

@@ -36,7 +36,7 @@ type
 
     procedure UpdateState(aTick: Cardinal);
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
   end;
 
@@ -100,7 +100,7 @@ begin
 end;
 
 
-procedure TKMGeneral.Load(LoadStream: TKMemoryStream);
+procedure TKMGeneral.Load(LoadStream: TKMemoryStreamBinary);
 begin
   LoadStream.Read(fOwner);
   LoadStream.Read(fLastEquippedTimeIron);

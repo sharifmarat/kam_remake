@@ -42,7 +42,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     property PL2Alli: TKMHandByteArr read fPL2Alli;
     property Alli2PL: TKMHandID2Arr read fAlli2PL;
@@ -115,7 +115,7 @@ procedure TKMSupervisor.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('Supervisor');
+  SaveStream.PlaceMarker('Supervisor');
   SaveStream.Write(fFFA);
   SaveStream.Write(fPL2Alli, SizeOf(fPL2Alli));
   SaveStream.Write( Integer(Length(fAlli2PL)) );
@@ -126,11 +126,11 @@ begin
   end;
 end;
 
-procedure TKMSupervisor.Load(LoadStream: TKMemoryStream);
+procedure TKMSupervisor.Load(LoadStream: TKMemoryStreamBinary);
 var
   I,K: Integer;
 begin
-  LoadStream.ReadAssert('Supervisor');
+  LoadStream.CheckMarker('Supervisor');
   LoadStream.Read(fFFA);
   LoadStream.Read(fPL2Alli, SizeOf(fPL2Alli));
   LoadStream.Read(K);

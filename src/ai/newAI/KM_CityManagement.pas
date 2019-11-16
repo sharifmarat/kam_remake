@@ -45,7 +45,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
@@ -96,7 +96,7 @@ end;
 
 procedure TKMCityManagement.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('CityManagement');
+  SaveStream.PlaceMarker('CityManagement');
   SaveStream.Write(fOwner);
   SaveStream.Write(fWarriorsDemands, SizeOf(fWarriorsDemands)); // Usend for Army management -> must be saved
   //SaveStream.Write(fRequiredWeapons, SizeOf(fRequiredWeapons)); // Computed every time
@@ -106,9 +106,9 @@ begin
 end;
 
 
-procedure TKMCityManagement.Load(LoadStream: TKMemoryStream);
+procedure TKMCityManagement.Load(LoadStream: TKMemoryStreamBinary);
 begin
-  LoadStream.ReadAssert('CityManagement');
+  LoadStream.CheckMarker('CityManagement');
   LoadStream.Read(fOwner);
   LoadStream.Read(fWarriorsDemands, SizeOf(fWarriorsDemands));
   //LoadStream.Read(fRequiredWeapons, SizeOf(fRequiredWeapons));

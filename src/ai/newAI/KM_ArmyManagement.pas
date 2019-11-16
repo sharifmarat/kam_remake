@@ -45,7 +45,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
@@ -111,7 +111,7 @@ var
   I: Integer;
   UG: TKMUnitGroup;
 begin
-  SaveStream.WriteA('ArmyManagement');
+  SaveStream.PlaceMarker('ArmyManagement');
   SaveStream.Write(fOwner);
   SaveStream.Write(fLastEquippedTimeIron);
   SaveStream.Write(fLastEquippedTimeLeather);
@@ -155,12 +155,12 @@ begin
 end;
 
 
-procedure TKMArmyManagement.Load(LoadStream: TKMemoryStream);
+procedure TKMArmyManagement.Load(LoadStream: TKMemoryStreamBinary);
 var
   I, Count: Integer;
   UG: TKMUnitGroup;
 begin
-  LoadStream.ReadAssert('ArmyManagement');
+  LoadStream.CheckMarker('ArmyManagement');
   LoadStream.Read(fOwner);
   LoadStream.Read(fLastEquippedTimeIron);
   LoadStream.Read(fLastEquippedTimeLeather);

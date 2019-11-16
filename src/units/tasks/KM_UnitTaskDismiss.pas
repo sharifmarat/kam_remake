@@ -14,7 +14,7 @@ type
     procedure InitDefaultAction; override;
   public
     constructor Create(aUnit: TKMUnit);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     destructor Destroy; override;
     procedure SyncLoad; override;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -44,7 +44,7 @@ begin
 end;
 
 
-constructor TKMTaskDismiss.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskDismiss.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fSchool, 4);

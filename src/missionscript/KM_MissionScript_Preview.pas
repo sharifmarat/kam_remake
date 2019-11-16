@@ -69,7 +69,7 @@ end;
 function TKMMissionParserPreview.LoadMapData(const aFileName: string): Boolean;
 var
   I: Integer;
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   UseKaMFormat: Boolean;
   TileBasic: TKMTerrainTileBasic;
 begin
@@ -78,7 +78,7 @@ begin
   if not FileExists(aFileName) then
     Exit;
 
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     UseKaMFormat := True;
     S.LoadFromFile(aFileName);

@@ -37,7 +37,7 @@ type
     property State: TKMHouseState read fHouseState write SetHouseState;
     property SubAction: TKMHouseActionSet read fSubAction;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream); 
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -159,7 +159,7 @@ type
     OnDestroyed: TKMHouseFromEvent;
 
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStream); virtual;
+    constructor Load(LoadStream: TKMemoryStreamBinary); virtual;
     procedure SyncLoad; virtual;
     destructor Destroy; override;
     function GetHousePointer: TKMHouse; //Returns self and adds one to the pointer counter
@@ -265,7 +265,7 @@ type
     function GetMaxDistanceToPoint: Integer; virtual;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
     property FlagPoint: TKMPoint read fFlagPoint write SetFlagPoint;
@@ -281,7 +281,7 @@ type
   private
     BeastAge: array[1..5]of byte; //Each beasts "age". Once Best reaches age 3+1 it's ready
   public
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     function FeedBeasts: Byte;
     procedure TakeBeast(aID: Byte);
     procedure MakeSound; override;
@@ -299,7 +299,7 @@ type
   public
     NotAcceptFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
     NotAllowTakeOutFlag: array [WARE_MIN .. WARE_MAX] of Boolean;
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
     function ShouldAbandonDeliveryFromTo(aToHouse: TKMHouse; aWareType: TKMWareType; aImmidiateCheck: Boolean): Boolean; override;
@@ -329,7 +329,7 @@ type
     property AcceptWood: Boolean read fAcceptWood write fAcceptWood;
     property AcceptLeather: Boolean read fAcceptLeather write fAcceptLeather;
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure ToggleResDelivery(aWareType: TKMWareType);
     function AcceptWareForDelivery(aWareType: TKMWareType): Boolean;
@@ -514,7 +514,7 @@ begin
 end;
 
 
-constructor TKMHouse.Load(LoadStream: TKMemoryStream);
+constructor TKMHouse.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
   HasAct: Boolean;
@@ -2000,7 +2000,7 @@ end;
 
 
 {TKMHouseSwineStable}
-constructor TKMHouseSwineStable.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseSwineStable.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(BeastAge, SizeOf(BeastAge));
@@ -2092,7 +2092,7 @@ begin
 end;
 
 
-constructor TKMHouseStore.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseStore.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(WaresCount, SizeOf(WaresCount));
@@ -2266,7 +2266,7 @@ begin
 end;
 
 
-constructor TKMHouseArmorWorkshop.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseArmorWorkshop.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fAcceptWood);
@@ -2361,7 +2361,7 @@ begin
 end;
 
 
-procedure TKMHouseAction.Load(LoadStream: TKMemoryStream);
+procedure TKMHouseAction.Load(LoadStream: TKMemoryStreamBinary);
 begin
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fHouseState, SizeOf(fHouseState));
@@ -2399,7 +2399,7 @@ begin
 end;
 
 
-constructor TKMHouseWFlagPoint.Load(LoadStream: TKMemoryStream);
+constructor TKMHouseWFlagPoint.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
 

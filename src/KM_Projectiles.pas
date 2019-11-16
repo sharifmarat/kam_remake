@@ -46,7 +46,7 @@ type
     procedure Paint;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
   end;
 
@@ -384,7 +384,7 @@ procedure TKMProjectiles.Save(SaveStream: TKMemoryStream);
 var
   I, LiveCount: Integer;
 begin
-  SaveStream.WriteA('Projectiles');
+  SaveStream.PlaceMarker('Projectiles');
 
   //Strip dead projectiles
   LiveCount := 0;
@@ -418,11 +418,11 @@ begin
 end;
 
 
-procedure TKMProjectiles.Load(LoadStream: TKMemoryStream);
+procedure TKMProjectiles.Load(LoadStream: TKMemoryStreamBinary);
 var
   I, NewCount: Integer;
 begin
-  LoadStream.ReadAssert('Projectiles');
+  LoadStream.CheckMarker('Projectiles');
 
   LoadStream.Read(NewCount);
   SetLength(fItems, NewCount);

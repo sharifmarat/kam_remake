@@ -24,7 +24,7 @@ type
     procedure MakeSound(IsHit: Boolean);
   public
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aOpponent: TKMUnit);
-    constructor Load(LoadStream:TKMemoryStream); override;
+    constructor Load(LoadStream:TKMemoryStreamBinary); override;
     destructor Destroy; override;
     function ActName: TKMUnitActionName; override;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
@@ -81,7 +81,7 @@ begin
 end;
 
 
-constructor TKMUnitActionFight.Load(LoadStream: TKMemoryStream);
+constructor TKMUnitActionFight.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(fOpponent, 4);
@@ -351,7 +351,7 @@ begin
 end;
 
 
-procedure TKMUnitActionFight.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitActionFight.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   if fOpponent <> nil then

@@ -136,7 +136,7 @@ type
     function ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     procedure UpdateState;
 
@@ -764,7 +764,7 @@ var
   W: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
-  SaveStream.WriteA('PlayerStats');
+  SaveStream.PlaceMarker('PlayerStats');
   SaveStream.Write(Houses, SizeOf(Houses));
   SaveStream.Write(Units, SizeOf(Units));
   SaveStream.Write(Wares, SizeOf(Wares));
@@ -787,13 +787,13 @@ begin
 end;
 
 
-procedure TKMHandStats.Load(LoadStream: TKMemoryStream);
+procedure TKMHandStats.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: TKMWareType;
   W: TKMUnitType;
   CKind: TKMChartArmyKind;
 begin
-  LoadStream.ReadAssert('PlayerStats');
+  LoadStream.CheckMarker('PlayerStats');
   LoadStream.Read(Houses, SizeOf(Houses));
   LoadStream.Read(Units, SizeOf(Units));
   LoadStream.Read(Wares, SizeOf(Wares));

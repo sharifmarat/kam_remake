@@ -118,7 +118,7 @@ type
 
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
-    procedure LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+    procedure LoadFromStream(var LoadStream: TKMemoryStreamBinary; aReplayStream: Boolean = False);
     procedure LoadFromFile(const aPathName: UnicodeString);
     procedure LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
     procedure AfterLoad;
@@ -405,7 +405,7 @@ var
   ParseMode: TKMMissionParsingMode;
   PlayerEnabled: TKMHandEnabledArray;
   Parser: TKMMissionParserStandard;
-  CampaignData: TKMemoryStream;
+  CampaignData: TKMemoryStreamBinary;
   CampaignDataTypeFile: UnicodeString;
 begin
   gLog.AddTime('GameStart');
@@ -1546,7 +1546,7 @@ var
 begin
   if aReplayStream then
   begin
-    aSaveStream.WriteA('ConsistencyCheck1');
+    aSaveStream.PlaceMarker('ConsistencyCheck1');
     aSaveStream.Write(fLastReplayTick);
     aSaveStream.Write(gGame.SkipReplayEndCheck); //To dont show 'Continue watching' again
   end;
@@ -1621,7 +1621,7 @@ begin
 
 
   if aReplayStream then
-    aSaveStream.WriteA('ConsistencyCheck2');
+    aSaveStream.PlaceMarker('ConsistencyCheck2');
 
   //We need to know which mission/savegame to try to restart. This is unused in MP
   if not IsMultiPlayerOrSpec then
@@ -1650,7 +1650,7 @@ begin
   gRes.Wares.SaveCustomData(aSaveStream);
 
   if aReplayStream then
-    aSaveStream.WriteA('ConsistencyCheck3');
+    aSaveStream.PlaceMarker('ConsistencyCheck3');
 
   //Parameters that are not identical for all players should not be saved as we need saves to be
   //created identically on all player's computers. Eventually these things can go through the GIP
@@ -1665,7 +1665,7 @@ begin
 
 
   if aReplayStream then
-    aSaveStream.WriteA('ConsistencyCheck4');
+    aSaveStream.PlaceMarker('ConsistencyCheck4');
 end;
 
 
@@ -1759,7 +1759,7 @@ begin
 end;
 
 
-procedure TKMGame.LoadFromStream(var LoadStream: TKMemoryStream; aReplayStream: Boolean = False);
+procedure TKMGame.LoadFromStream(var LoadStream: TKMemoryStreamBinary; aReplayStream: Boolean = False);
 var
   GameInfo: TKMGameInfo;
   LoadedSeed: LongInt;
@@ -1768,7 +1768,7 @@ var
 begin
   if aReplayStream then
   begin
-    LoadStream.ReadAssert('ConsistencyCheck1');
+    LoadStream.CheckMarker('ConsistencyCheck1');
     LoadStream.Read(fLastReplayTick);
     LoadStream.Read(gGame.SkipReplayEndCheck); //To dont show 'Continue watching' again
   end;
@@ -1814,7 +1814,7 @@ begin
   LoadStream.Read(fDynamicFOW);
 
   if aReplayStream then
-    LoadStream.ReadAssert('ConsistencyCheck2');
+    LoadStream.CheckMarker('ConsistencyCheck2');
 
   //Check if this save is Campaign game save
   IsCampaign := False;
@@ -1858,7 +1858,7 @@ begin
   gRes.Wares.LoadCustomData(LoadStream);
 
   if aReplayStream then
-    LoadStream.ReadAssert('ConsistencyCheck3');
+    LoadStream.CheckMarker('ConsistencyCheck3');
 
   if gGame.GameMode in [gmMultiSpectate, gmReplaySingle, gmReplayMulti] then
   begin
@@ -1873,7 +1873,7 @@ begin
     fGamePlayInterface.Load(LoadStream);
 
   if aReplayStream then
-    LoadStream.ReadAssert('ConsistencyCheck4');
+    LoadStream.CheckMarker('ConsistencyCheck4');
 
   if IsReplay then
     fGameInputProcess := TKMGameInputProcess_Single.Create(gipReplaying) //Replay
@@ -1889,14 +1889,14 @@ end;
 
 procedure TKMGame.LoadFromFile(const aPathName: UnicodeString);
 var
-  LoadStream: TKMemoryStream;
+  LoadStream: TKMemoryStreamBinary;
   GameMPLocalData: TKMGameMPLocalData;
 begin
   fSaveFile := ChangeFileExt(ExtractRelativePath(ExeDir, aPathName), EXT_SAVE_MAIN_DOT);
 
   gLog.AddTime('Loading game from: ' + aPathName);
 
-  LoadStream := TKMemoryStream.Create;
+  LoadStream := TKMemoryStreamBinary.Create;
   try
     if not FileExists(aPathName) then
       raise Exception.Create('Savegame could not be found at ''' + aPathName + '''');
@@ -1930,7 +1930,7 @@ end;
 
 procedure TKMGame.LoadSavedReplay(aTick: Cardinal; aSaveFile: UnicodeString);
 var
-  LoadStream: TKMemoryStream;
+  LoadStream: TKMemoryStreamBinary;
 begin
   gLog.AddTime('Loading replay from save');
   fSaveFile := aSaveFile;
@@ -1949,7 +1949,7 @@ end;
 // Save replay
 procedure TKMGame.SaveReplayToMemory();
 var
-  SaveStream: TKMemoryStream;
+  SaveStream: TKMemoryStreamBinary;
   DateTimeParam: TDateTime;
 begin
   if (fSavedReplays = nil) or fSavedReplays.Contains(fGameTick) then //No need to save twice on the same tick
@@ -1961,7 +1961,7 @@ begin
   if not gGame.IsReplay then
     raise Exception.Create('Saving replay impossible - game mode is not replay');
 
-  SaveStream := TKMemoryStream.Create;
+  SaveStream := TKMemoryStreamBinary.Create;
   SaveGameToStream(DateTimeParam, SaveStream, True);
   fGameInputProcess.SaveToStream(SaveStream);
 

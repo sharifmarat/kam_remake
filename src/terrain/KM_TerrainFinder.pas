@@ -33,7 +33,7 @@ type
     function FindNearest(const aStart: TKMPoint; aRadius: Byte; aPassability: TKMTerrainPassabilitySet; out aEnd: TKMPoint): Boolean; overload;
     procedure FindNearest(aStart: TKMPointArray; aRadius: Byte; aPassability: TKMTerrainPassabilitySet; aMaxCount: Word; aLocs: TKMPointTagList); overload;
     procedure Save(SaveStream: TKMemoryStream); virtual;
-    procedure Load(LoadStream: TKMemoryStream); virtual;
+    procedure Load(LoadStream: TKMemoryStreamBinary); virtual;
   end;
 
 
@@ -189,7 +189,7 @@ begin
 end;
 
 
-procedure TKMTerrainFinderCommon.Load(LoadStream: TKMemoryStream);
+procedure TKMTerrainFinderCommon.Load(LoadStream: TKMemoryStreamBinary);
 begin
   //Everything we have so far is Temp
 end;

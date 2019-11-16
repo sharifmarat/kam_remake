@@ -66,7 +66,7 @@ type
     procedure Clear;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -216,18 +216,18 @@ procedure TKMAIAttacks.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('AIAttacks');
+  SaveStream.PlaceMarker('AIAttacks');
   SaveStream.Write(fCount);
   for I := 0 to fCount - 1 do
     SaveStream.Write(fAttacks[I], SizeOf(fAttacks[I]));
 end;
 
 
-procedure TKMAIAttacks.Load(LoadStream: TKMemoryStream);
+procedure TKMAIAttacks.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
-  LoadStream.ReadAssert('AIAttacks');
+  LoadStream.CheckMarker('AIAttacks');
   LoadStream.Read(fCount);
   SetLength(fAttacks, fCount);
   for I := 0 to fCount - 1 do

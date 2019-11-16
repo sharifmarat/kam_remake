@@ -328,8 +328,8 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure SaveMinimap(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
-    procedure LoadMinimap(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure LoadMinimap(LoadStream: TKMemoryStreamBinary);
 
     procedure KeyDown(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
     procedure KeyUp(Key: Word; Shift: TShiftState; var aHandled: Boolean); override;
@@ -3957,7 +3957,7 @@ begin
 end;
 
 
-procedure TKMGamePlayInterface.Load(LoadStream: TKMemoryStream);
+procedure TKMGamePlayInterface.Load(LoadStream: TKMemoryStreamBinary);
 begin
   fViewport.Load(LoadStream);
 
@@ -3973,7 +3973,7 @@ end;
 
 
 // Load the minimap (saved near start of the file)
-procedure TKMGamePlayInterface.LoadMinimap(LoadStream: TKMemoryStream);
+procedure TKMGamePlayInterface.LoadMinimap(LoadStream: TKMemoryStreamBinary);
 begin
   fMinimap.LoadFromStream(LoadStream);
 end;

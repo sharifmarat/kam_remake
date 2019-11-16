@@ -134,7 +134,7 @@ type
     procedure LinkRuntime;
 
     procedure SaveVar(SaveStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
-    procedure LoadVar(LoadStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
+    procedure LoadVar(LoadStream: TKMemoryStreamBinary; Src: Pointer; aType: TPSTypeRec);
 
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
@@ -158,14 +158,14 @@ type
     function GetErrorMessage(const aErrorType, aShortErrorDescription: String; aRow, aCol: Integer): TKMScriptErrorMessage; overload;
 
     property ValidationIssues: TScriptValidatorResult read fValidationIssues;
-    procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
+    procedure LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStreamBinary);
     procedure ExportDataToText;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     procedure SaveCampaignData(SaveStream: TKMemoryStream);
-    procedure LoadCampaignData(LoadStream: TKMemoryStream);
+    procedure LoadCampaignData(LoadStream: TKMemoryStreamBinary);
 
     procedure UpdateState;
   end;
@@ -295,7 +295,7 @@ begin
 end;
 
 
-procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStream);
+procedure TKMScripting.LoadFromFile(const aFileName, aCampaignDataTypeFile: UnicodeString; aCampaignData: TKMemoryStreamBinary);
 begin
   RecreateValidationIssues;
 
@@ -1418,7 +1418,7 @@ begin
 end;
 
 
-procedure TKMScripting.LoadVar(LoadStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
+procedure TKMScripting.LoadVar(LoadStream: TKMemoryStreamBinary; Src: Pointer; aType: TPSTypeRec);
 var
   ElemCount: Integer;
   I: Integer;
@@ -1473,14 +1473,14 @@ begin
 end;
 
 
-procedure TKMScripting.Load(LoadStream: TKMemoryStream);
+procedure TKMScripting.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
   V: PIFVariant;
 begin
   RecreateValidationIssues;
 
-  LoadStream.ReadAssert('Script');
+  LoadStream.CheckMarker('Script');
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
   gScriptEvents.Load(LoadStream);
@@ -1508,7 +1508,7 @@ begin
 end;
 
 
-procedure TKMScripting.LoadCampaignData(LoadStream: TKMemoryStream);
+procedure TKMScripting.LoadCampaignData(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
   V: PIFVariant;
@@ -1591,7 +1591,7 @@ var
   I: Integer;
   V: PIFVariant;
 begin
-  SaveStream.WriteA('Script');
+  SaveStream.PlaceMarker('Script');
 
   //Write script code
   SaveStream.WriteHugeString(fScriptCode);

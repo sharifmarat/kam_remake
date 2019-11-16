@@ -61,7 +61,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
@@ -193,7 +193,7 @@ procedure TKMCityPredictor.Save(SaveStream: TKMemoryStream);
 var
   WT: TKMWareType;
 begin
-  SaveStream.WriteA('CityPredictor');
+  SaveStream.PlaceMarker('CityPredictor');
   SaveStream.Write(fOwner);
   SaveStream.Write(fWorkerCount);
 
@@ -225,11 +225,11 @@ begin
 end;
 
 
-procedure TKMCityPredictor.Load(LoadStream: TKMemoryStream);
+procedure TKMCityPredictor.Load(LoadStream: TKMemoryStreamBinary);
 var
   WT: TKMWareType;
 begin
-  LoadStream.ReadAssert('CityPredictor');
+  LoadStream.CheckMarker('CityPredictor');
   LoadStream.Read(fOwner);
   LoadStream.Read(fWorkerCount);
   LoadStream.Read(fGoldMineCnt);

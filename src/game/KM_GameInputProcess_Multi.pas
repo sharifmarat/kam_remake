@@ -27,7 +27,7 @@ type
     function CRC: Cardinal;
     property Items[aIndex: Integer]: TKMGameInputCommand read GetItem;
     procedure Save(aStream: TKMemoryStream);
-    procedure Load(aStream: TKMemoryStream);
+    procedure Load(aStream: TKMemoryStreamBinary);
   end;
 
   TKMRandomCheck = record
@@ -76,7 +76,7 @@ type
     property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
     property LastSentCmdsTick: Cardinal read fLastSentCmdsTick;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
-    procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
+    procedure RecieveCommands(aStream: TKMemoryStreamBinary; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
     procedure ResyncFromTick(aSender: ShortInt; aTick: Cardinal);
     function CommandsConfirmed(aTick: Cardinal):boolean; override;
     procedure RunningTimer(aTick: Cardinal); override;
@@ -138,7 +138,7 @@ begin
 end;
 
 
-procedure TKMCommandsPack.Load(aStream: TKMemoryStream);
+procedure TKMCommandsPack.Load(aStream: TKMemoryStreamBinary);
 var I: Integer;
 begin
   aStream.Read(fCount);
@@ -266,9 +266,9 @@ end;
 
 procedure TKMGameInputProcess_Multi.SendCommands(aTick: Cardinal; aPlayerIndex: ShortInt = -1);
 var
-  Msg: TKMemoryStream;
+  Msg: TKMemoryStreamBinary;
 begin
-  Msg := TKMemoryStream.Create;
+  Msg := TKMemoryStreamBinary.Create;
   try
     Msg.Write(Byte(kdpCommands));
     Msg.Write(aTick); //Target Tick in 1..n range
@@ -283,9 +283,9 @@ end;
 
 procedure TKMGameInputProcess_Multi.SendRandomCheck(aTick: Cardinal);
 var
-  Msg: TKMemoryStream;
+  Msg: TKMemoryStreamBinary;
 begin
-  Msg := TKMemoryStream.Create;
+  Msg := TKMemoryStreamBinary.Create;
   try
     Msg.Write(Byte(kdpRandomCheck));
     Msg.Write(aTick); //Target Tick in 1..n range
@@ -313,7 +313,7 @@ end;
 
 
 //Decode recieved messages (Commands from other players, Confirmations, Errors)
-procedure TKMGameInputProcess_Multi.RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt);
+procedure TKMGameInputProcess_Multi.RecieveCommands(aStream: TKMemoryStreamBinary; aSenderIndex: ShortInt);
 var
   dataType: TKMDataType;
   Tick: Cardinal;

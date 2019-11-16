@@ -927,7 +927,7 @@ end;
 
 procedure TFormMain.ValidateGameStatsClick(Sender: TObject);
 var
-  MS: TKMemoryStream;
+  MS: TKMemoryStreamBinary;
   SL: TStringList;
   CRC: Int64;
   IsValid: Boolean;
@@ -942,7 +942,7 @@ begin
         if TryStrToInt64(SL[0], CRC) then
         begin
           SL.Delete(0); //Delete CRC from file
-          MS := TKMemoryStream.Create;
+          MS := TKMemoryStreamBinary.Create;
           try
             MS.WriteHugeString(AnsiString(SL.Text));
             if CRC = Adler32CRC(MS) then

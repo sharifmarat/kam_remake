@@ -315,14 +315,14 @@ type
     property AnimStep: Cardinal read fAnimStep;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
 
     procedure UpdateState;
 
-    class procedure WriteTileToStream(var S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
-    class procedure WriteTileToStream(var S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
-    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
+    class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
+    class procedure ReadTileFromStream(aStream: TKMemoryStreamBinary; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
   end;
 
 const
@@ -412,7 +412,7 @@ end;
 procedure TKMTerrain.LoadFromFile(const FileName: UnicodeString; aMapEditor: Boolean);
 var
   I, J, L: Integer;
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   NewX, NewY: Integer;
   UseKaMFormat: Boolean;
   TileBasic: TKMTerrainTileBasic;
@@ -427,7 +427,7 @@ begin
   gLog.AddTime('Loading map file: ' + FileName);
 
   UseKaMFormat := True;
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     S.LoadFromFile(FileName);
 
@@ -493,7 +493,7 @@ procedure TKMTerrain.SaveToFile(const aFile: UnicodeString; const aInsetRect: TK
 var
   MapDataSize: Cardinal;
 
-  procedure SetNewLand(var S: TKMemoryStream; aFromX, aFromY: Word; aNewGeneratedTile: Boolean);
+  procedure SetNewLand(var S: TKMemoryStreamBinary; aFromX, aFromY: Word; aNewGeneratedTile: Boolean);
   var
     L: Integer;
     TileBasic: TKMTerrainTileBasic;
@@ -523,7 +523,7 @@ var
     WriteTileToStream(S, TileBasic, MapDataSize);
   end;
 
-  procedure WriteFileHeader(S: TKMemoryStream);
+  procedure WriteFileHeader(S: TKMemoryStreamBinary);
   begin
     S.Write(Integer(0));     //Indicates this map has not standart KaM format, Can use 0, as we can't have maps with 0 width
     S.WriteW(UnicodeString(GAME_REVISION)); //Write KaM version, in case we will change format in future
@@ -531,7 +531,7 @@ var
   end;
 
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   //MapInnerRect: TKMRect;
   NewGeneratedTileI, NewGeneratedTileK: Boolean;
   I, K, IFrom, KFrom: Integer;
@@ -541,7 +541,7 @@ begin
   ForceDirectories(ExtractFilePath(aFile));
 
   MapDataSize := 0;
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   WriteFileHeader(S);
   try
     //Dimensions must be stored as 4 byte integers
@@ -4106,7 +4106,7 @@ var
 begin
   Assert(not fMapEditor, 'MapEd mode is not intended to be saved into savegame');
 
-  SaveStream.WriteA('Terrain');
+  SaveStream.PlaceMarker('Terrain');
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
   SaveStream.Write(fMapRect);
@@ -4142,12 +4142,12 @@ begin
 end;
 
 
-procedure TKMTerrain.Load(LoadStream: TKMemoryStream);
+procedure TKMTerrain.Load(LoadStream: TKMemoryStreamBinary);
 var
   I,J,L: Integer;
   TileBasic: TKMTerrainTileBasic;
 begin
-  LoadStream.ReadAssert('Terrain');
+  LoadStream.CheckMarker('Terrain');
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
   LoadStream.Read(fMapRect);
@@ -4320,7 +4320,7 @@ begin
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(var S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic);
 var
   MapDataSize: Cardinal;
 begin
@@ -4328,7 +4328,7 @@ begin
 end;
 
 
-class procedure TKMTerrain.WriteTileToStream(var S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal);
+class procedure TKMTerrain.WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal);
 
   function PackLayersCorners(const aTileBasic: TKMTerrainTileBasic): Byte;
   var
@@ -4383,7 +4383,7 @@ begin
 end;
 
 
-class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStreamBinary; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
 var
   I: Integer;
   TerrainB, ObjectB, Rot, Corners: Byte;

@@ -18,7 +18,7 @@ type
     constructor Create;
     procedure Reset;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -46,7 +46,7 @@ begin
 end;
 
 
-procedure TKMGameOptions.Load(LoadStream: TKMemoryStream);
+procedure TKMGameOptions.Load(LoadStream: TKMemoryStreamBinary);
 begin
   LoadStream.Read(Peacetime);
   LoadStream.Read(SpeedPT);

@@ -12,17 +12,29 @@ type
     X,Y: Integer;
     class operator Equal(const A, B: TKMPoint): Boolean;
     class operator NotEqual(const A, B: TKMPoint): Boolean;
+    function ToString: String;
   end;
 
   TKMPointF = record
     X,Y: Single;
     class operator Equal(const A, B: TKMPointF): Boolean;
     class operator NotEqual(A: TKMPointF; B: TKMPointF): Boolean;
+    function ToString: String;
   end;
 
-  TKMPointDir = packed record Loc: TKMPoint; Dir: TKMDirection; end;
+  TKMPointDir = packed record
+    Loc: TKMPoint;
+    Dir: TKMDirection;
+    function ToString: String;
+  end;
+
   TKMPointExact = packed record Loc: TKMPoint; Exact: Boolean; end;
-  TKMPointW = record X,Y: Word; end; // For backwards compatibility with cmp files
+
+  TKMPointW = record
+    X,Y: Word;
+    function ToString: String;
+  end; // For backwards compatibility with cmp files
+
   TKMPointArray = array of TKMPoint;
   TKMPoint2Array = array of array of TKMPoint;
   TKMTrisArray = array of array [0..2] of Integer;
@@ -34,15 +46,21 @@ type
 
   //We have our own TKMRect that consistently matches TKMPoint range
   //Rects are often used without range checking and include negative off-map coords
-  TKMRect = packed record Left, Top, Right, Bottom: Integer end;
+  TKMRect = packed record
+    Left, Top, Right, Bottom: Integer;
+    function ToString: String;
+  end;
+
   TKMRectF = packed record Left, Top, Right, Bottom: Single end;
 
   TKMRangeInt = record
     Min, Max: Integer;
+    function ToString: String;
   end;
 
   TKMRangeSingle = record
     Min, Max: Single;
+    function ToString: String;
   end;
 
   TKMPointFunction = function(aPoint: TKMPoint): Boolean of object;
@@ -143,9 +161,11 @@ type
   procedure KMSwapPointDir(var A,B: TKMPointDir);
 
   function TypeToString(const P: TKMPoint): string; overload;
+  function TypeToString(const P: TKMPointW): string; overload;
   function TypeToString(const P: TKMPointDir): string; overload;
   function TypeToString(const P: TKMPointF): string; overload;
   function TypeToString(const T: TKMDirection): string; overload;
+  function TypeToString(const aRect: TKMRect): string; overload;
 
   function StringToType(const Str: String): TKMPoint; overload;
 
@@ -188,6 +208,11 @@ begin
   Result := not KMSamePoint(A,B);
 end;
 
+function TKMPoint.ToString: String;
+begin
+  Result := TypeToString(Self);
+end;
+
 
 class operator TKMPointF.Equal(const A, B: TKMPointF): Boolean;
 begin
@@ -198,6 +223,36 @@ end;
 class operator TKMPointF.NotEqual(A: TKMPointF; B: TKMPointF): Boolean;
 begin
   Result := not KMSamePointF(A,B);
+end;
+
+function TKMPointF.ToString: String;
+begin
+  Result := TypeToString(Self);
+end;
+
+function TKMPointW.ToString: String;
+begin
+  Result := TypeToString(Self);
+end;
+
+function TKMPointDir.ToString: String;
+begin
+  Result := TypeToString(Self);
+end;
+
+function TKMRect.ToString: String;
+begin
+  Result := Format('(%d, %d, %d, %d)', [Left, Top, Right, Bottom]);;
+end;
+
+function TKMRangeInt.ToString: String;
+begin
+  Result := Format('%d - %d', [Min, Max]);
+end;
+
+function TKMRangeSingle.ToString: String;
+begin
+  Result := Format('%.5f - %.5f', [Min, Max]);
 end;
 
 
@@ -899,6 +954,11 @@ begin
   Result := '(' + IntToStr(P.X) + ';' + IntToStr(P.Y) + ')';
 end;
 
+function TypeToString(const P: TKMPointW): string;
+begin
+  Result := '(' + IntToStr(P.X) + ';' + IntToStr(P.Y) + ')';
+end;
+
 
 function TypeToString(const P: TKMPointDir): string;
 begin
@@ -933,6 +993,12 @@ const
   S: array [TKMDirection] of string = ('N/A', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW');
 begin
   Result := S[T];
+end;
+
+
+function TypeToString(const aRect: TKMRect): string; overload;
+begin
+
 end;
 
 

@@ -265,7 +265,7 @@ type
   function IsSelectedObjectCommand(aGIC: TKMGameInputCommandType): Boolean;
   //As TGameInputCommand is no longer fixed size (due to the string) we cannot simply read/write it as a block
   procedure SaveCommandToMemoryStream(const aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
-  procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
+  procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStreamBinary);
 
 type
 
@@ -299,7 +299,7 @@ type
   protected
     function IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
     procedure SaveExtra(aStream: TKMemoryStream); virtual;
-    procedure LoadExtra(aStream: TKMemoryStream); virtual;
+    procedure LoadExtra(aStream: TKMemoryStreamBinary); virtual;
   public
     constructor Create(aReplayState: TKMGIPReplayState);
     destructor Destroy; override;
@@ -348,7 +348,7 @@ type
     //Replay methods
     procedure SaveToStream(SaveStream: TKMemoryStream);
     procedure SaveToFile(const aFileName: UnicodeString);
-    procedure LoadFromStream(LoadStream: TKMemoryStream);
+    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary);
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
@@ -419,7 +419,7 @@ begin
 end;
 
 
-procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
+procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStreamBinary);
 begin
   with aCommand do
   begin
@@ -1080,16 +1080,16 @@ end;
 
 procedure TKMGameInputProcess.SaveToFile(const aFileName: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
 begin
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   SaveToStream(S);
   S.SaveToFile(aFileName);
   S.Free;
 end;
 
 
-procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStream);
+procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStreamBinary);
 var
   FileVersion: AnsiString;
   I: Integer;
@@ -1112,10 +1112,10 @@ end;
 
 procedure TKMGameInputProcess.LoadFromFile(const aFileName: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
 begin
   if not FileExists(aFileName) then Exit;
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   S.LoadFromFile(aFileName);
   LoadFromStream(S);
   S.Free;
@@ -1197,7 +1197,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.LoadExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess.LoadExtra(aStream: TKMemoryStreamBinary);
 var
   Tmp: Cardinal;
 begin

@@ -40,7 +40,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
 
     property Point2Polygon[const aY,aX: Integer]: Word read GetPolygonFromPoint;
     property KMPoint2Polygon[const aPoint: TKMPoint]: Word read GetPolygonFromKMPoint;
@@ -92,7 +92,7 @@ var
   K: Integer;
 begin
   fNavMeshGenerator.Save(SaveStream);
-  SaveStream.WriteA('NavMesh');
+  SaveStream.PlaceMarker('NavMesh');
   SaveStream.Write(fMapX);
   SaveStream.Write(fMapY);
 
@@ -128,12 +128,12 @@ begin
 end;
 
 
-procedure TKMNavMesh.Load(LoadStream: TKMemoryStream);
+procedure TKMNavMesh.Load(LoadStream: TKMemoryStreamBinary);
 var
   K: Integer;
 begin
   fNavMeshGenerator.Load(LoadStream);
-  LoadStream.ReadAssert('NavMesh');
+  LoadStream.CheckMarker('NavMesh');
   LoadStream.Read(fMapX);
   LoadStream.Read(fMapY);
 

@@ -153,7 +153,7 @@ end;
 
 procedure TKMSaveInfo.ScanSave;
 var
-  LoadStream: TKMemoryStream;
+  LoadStream: TKMemoryStreamBinary;
 begin
   if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then
   begin
@@ -163,7 +163,7 @@ begin
 
   fCrcCalculated := False; //make lazy load for CRC
 
-  LoadStream := TKMemoryStream.Create; //Read data from file into stream
+  LoadStream := TKMemoryStreamBinary.Create; //Read data from file into stream
   LoadStream.LoadFromFile(fPath + fFileName + EXT_SAVE_MAIN_DOT);
 
   fGameInfo.Load(LoadStream);
@@ -188,7 +188,7 @@ end;
 
 function TKMSaveInfo.LoadMinimap(aMinimap: TKMMinimap; aChoosenStartLoc: Integer): Boolean;
 var
-  LoadStream: TKMemoryStream;
+  LoadStream: TKMemoryStreamBinary;
   DummyGameInfo: TKMGameInfo;
   DummyGameOptions: TKMGameOptions;
   GameLocalData: TKMGameMPLocalData;
@@ -198,7 +198,7 @@ begin
   Result := False;
   if not FileExists(fPath + fFileName + EXT_SAVE_MAIN_DOT) then Exit;
 
-  LoadStream := TKMemoryStream.Create; //Read data from file into stream
+  LoadStream := TKMemoryStreamBinary.Create; //Read data from file into stream
   DummyGameInfo := TKMGameInfo.Create;
   DummyGameOptions := TKMGameOptions.Create;
   try

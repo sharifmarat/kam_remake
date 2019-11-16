@@ -141,7 +141,7 @@ type
     function BalanceText: UnicodeString;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -1053,7 +1053,7 @@ begin
 end;
 
 
-procedure TKMayorBalance.Load(LoadStream: TKMemoryStream);
+procedure TKMayorBalance.Load(LoadStream: TKMemoryStreamBinary);
 begin
   LoadStream.Read(fOwner);
 

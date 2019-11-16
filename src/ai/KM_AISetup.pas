@@ -38,7 +38,7 @@ type
     procedure EnableAdvancedAI(aNewAI: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -139,7 +139,7 @@ end;
 
 procedure TKMHandAISetup.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('AISetup');
+  SaveStream.PlaceMarker('AISetup');
   SaveStream.Write(NewAI);
   SaveStream.Write(Aggressiveness);
   SaveStream.Write(AutoAttack);
@@ -162,9 +162,9 @@ begin
 end;
 
 
-procedure TKMHandAISetup.Load(LoadStream: TKMemoryStream);
+procedure TKMHandAISetup.Load(LoadStream: TKMemoryStreamBinary);
 begin
-  LoadStream.ReadAssert('AISetup');
+  LoadStream.CheckMarker('AISetup');
   LoadStream.Read(NewAI);
   LoadStream.Read(Aggressiveness);
   LoadStream.Read(AutoAttack);

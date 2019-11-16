@@ -63,7 +63,7 @@ type
     property HandIndex: Integer read GetHandIndex;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -134,7 +134,7 @@ type
 
     //Import/Export
     procedure SaveToStream(aStream: TKMemoryStream); //Gets all relevant information as text string
-    procedure LoadFromStream(aStream: TKMemoryStream); //Sets all relevant information
+    procedure LoadFromStream(aStream: TKMemoryStreamBinary); //Sets all relevant information
     function GetSlotNames: UnicodeString; //Gets just names as a text string seperated by |
     function GetPlayersWithIDs: UnicodeString;
   end;
@@ -313,7 +313,7 @@ begin
 end;
 
 
-procedure TKMNetPlayerInfo.Load(LoadStream: TKMemoryStream);
+procedure TKMNetPlayerInfo.Load(LoadStream: TKMemoryStreamBinary);
 begin
   LoadStream.ReadA(fNikname);
   LoadStream.ReadA(fLangCode);
@@ -1566,7 +1566,7 @@ begin
 end;
 
 
-procedure TKMNetPlayersList.LoadFromStream(aStream: TKMemoryStream);
+procedure TKMNetPlayersList.LoadFromStream(aStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin

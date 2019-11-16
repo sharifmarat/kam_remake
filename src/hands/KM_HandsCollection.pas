@@ -79,7 +79,7 @@ type
     procedure PostLoadMission;
 
     procedure Save(SaveStream: TKMemoryStream; aMultiplayer: Boolean);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
     procedure IncAnimStep;
 
@@ -904,7 +904,7 @@ procedure TKMHandsCollection.Save(SaveStream: TKMemoryStream; aMultiplayer: Bool
 var
   I: Integer;
 begin
-  SaveStream.WriteA('Players');
+  SaveStream.PlaceMarker('Players');
   SaveStream.Write(fCount);
   for I := 0 to fCount - 1 do
     fHandsList[I].Save(SaveStream);
@@ -912,11 +912,11 @@ begin
 end;
 
 
-procedure TKMHandsCollection.Load(LoadStream: TKMemoryStream);
+procedure TKMHandsCollection.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
-  LoadStream.ReadAssert('Players');
+  LoadStream.CheckMarker('Players');
   LoadStream.Read(fCount);
 
   if fCount > MAX_HANDS then
@@ -978,7 +978,7 @@ var
   SL: TStringList;
   Teams: TKMByteSetArray;
   TStr: UnicodeString;
-  MS: TKMemoryStream;
+  MS: TKMemoryStreamBinary;
   CRC: Cardinal;
 begin
   SL := TStringList.Create;
@@ -1047,7 +1047,7 @@ begin
     SL.Append('Lost;Died of hunger or killed');
     SL.Append('Killed;Killed (including friendly)');
 
-    MS := TKMemoryStream.Create;
+    MS := TKMemoryStreamBinary.Create;
     try
       MS.WriteHugeString(AnsiString(SL.Text));
       CRC := Adler32CRC(MS);

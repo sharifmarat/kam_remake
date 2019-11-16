@@ -32,7 +32,7 @@ type
     function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad;
     procedure IncAnimStep;
     procedure UpdateResRequest; //Change resource requested counts for all houses
@@ -314,11 +314,12 @@ end;
 procedure TKMHousesCollection.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  SaveStream.WriteA('Houses');
+  SaveStream.PlaceMarker('Houses');
 
   SaveStream.Write(Count);
   for I := 0 to Count - 1 do
   begin
+    SaveStream.PlaceMarker('House');
     //We save house type to know which house class to load
     SaveStream.Write(Houses[I].HouseType, SizeOf(Houses[I].HouseType));
     Houses[I].Save(SaveStream);
@@ -326,17 +327,18 @@ begin
 end;
 
 
-procedure TKMHousesCollection.Load(LoadStream: TKMemoryStream);
+procedure TKMHousesCollection.Load(LoadStream: TKMemoryStreamBinary);
 var
   I, NewCount: Integer;
   HouseType: TKMHouseType;
   T: TKMHouse;
 begin
-  LoadStream.ReadAssert('Houses');
+  LoadStream.CheckMarker('Houses');
 
   LoadStream.Read(NewCount);
   for I := 0 to NewCount - 1 do
   begin
+    LoadStream.CheckMarker('House');
     LoadStream.Read(HouseType, SizeOf(HouseType));
     case HouseType of
       htSwine,

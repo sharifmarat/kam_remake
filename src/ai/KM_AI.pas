@@ -55,7 +55,7 @@ type
     procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
     procedure UpdateState(aTick: Cardinal);
     procedure AfterMissionInit();
@@ -409,7 +409,7 @@ end;
 
 procedure TKMHandAI.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('HandAI');
+  SaveStream.PlaceMarker('HandAI');
   SaveStream.Write(fOwner);
   SaveStream.Write(fWonOrLost, SizeOf(fWonOrLost));
 
@@ -423,9 +423,9 @@ begin
 end;
 
 
-procedure TKMHandAI.Load(LoadStream: TKMemoryStream);
+procedure TKMHandAI.Load(LoadStream: TKMemoryStreamBinary);
 begin
-  LoadStream.ReadAssert('HandAI');
+  LoadStream.CheckMarker('HandAI');
   LoadStream.Read(fOwner);
   LoadStream.Read(fWonOrLost, SizeOf(fWonOrLost));
 

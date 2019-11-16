@@ -50,7 +50,7 @@ type
     {$ENDIF}
 
     constructor Create(aGroup: TKMUnitGroup);
-    constructor Load(LoadStream: TKMemoryStream);
+    constructor Load(LoadStream: TKMemoryStreamBinary);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -94,7 +94,7 @@ type
     {$ENDIF}
 
     constructor Create(aOwner: TKMHandID; aCompanyMode: TKMCompanyMode);
-    constructor Load(LoadStream: TKMemoryStream);
+    constructor Load(LoadStream: TKMemoryStreamBinary);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -129,7 +129,7 @@ type
     constructor Create(aOwner: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
     procedure SyncLoad();
 
     property Count: Integer read GetCount;
@@ -191,10 +191,10 @@ begin
 end;
 
 
-constructor TAISquad.Load(LoadStream: TKMemoryStream);
+constructor TAISquad.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
-  LoadStream.ReadAssert('Squad');
+  LoadStream.CheckMarker('Squad');
   LoadStream.Read(fOnPlace);
   LoadStream.Read(fTargetChanged);
   LoadStream.Read(fFinalPosition);
@@ -209,7 +209,7 @@ end;
 
 procedure TAISquad.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.WriteA('Squad');
+  SaveStream.PlaceMarker('Squad');
   SaveStream.Write(fOnPlace);
   SaveStream.Write(fTargetChanged);
   SaveStream.Write(fFinalPosition);
@@ -441,13 +441,13 @@ begin
 end;
 
 
-constructor TAICompany.Load(LoadStream: TKMemoryStream);
+constructor TAICompany.Load(LoadStream: TKMemoryStreamBinary);
 var
   I,Cnt: Integer;
   GT: TKMGroupType;
 begin
   inherited Create;
-  LoadStream.ReadAssert('Company');
+  LoadStream.CheckMarker('Company');
   LoadStream.Read(fOwner);
   LoadStream.Read(fPathPosition);
   LoadStream.Read(fScanPosition);
@@ -472,7 +472,7 @@ var
   I,Cnt: Integer;
   GT: TKMGroupType;
 begin
-  SaveStream.WriteA('Company');
+  SaveStream.PlaceMarker('Company');
   SaveStream.Write(fOwner);
   SaveStream.Write(fPathPosition);
   SaveStream.Write(fScanPosition);
@@ -1396,7 +1396,7 @@ procedure TKMArmyAttack.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('ArmyAttack');
+  SaveStream.PlaceMarker('ArmyAttack');
   SaveStream.Write(fOwner);
   SaveStream.Write( Integer(Count) );
 
@@ -1405,11 +1405,11 @@ begin
 end;
 
 
-procedure TKMArmyAttack.Load(LoadStream: TKMemoryStream);
+procedure TKMArmyAttack.Load(LoadStream: TKMemoryStreamBinary);
 var
   I, NewCount: Integer;
 begin
-  LoadStream.ReadAssert('ArmyAttack');
+  LoadStream.CheckMarker('ArmyAttack');
   LoadStream.Read(fOwner);
   LoadStream.Read(NewCount);
 

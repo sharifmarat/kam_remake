@@ -13,7 +13,7 @@ type
     fPlace: ShortInt; //Units place in Inn
   public
     constructor Create(aInn: TKMHouseInn; aUnit: TKMUnit);
-    constructor Load(LoadStream: TKMemoryStream); override;
+    constructor Load(LoadStream: TKMemoryStreamBinary); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function Eating: Boolean;
@@ -41,7 +41,7 @@ begin
 end;
 
 
-constructor TKMTaskGoEat.Load(LoadStream: TKMemoryStream);
+constructor TKMTaskGoEat.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
 

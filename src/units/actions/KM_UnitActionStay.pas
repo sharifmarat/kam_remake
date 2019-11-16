@@ -15,12 +15,12 @@ type
   public
     constructor Create(aUnit: TKMUnit; aTimeToStay: Integer; aActionType: TKMUnitActionType; aStayStill: Boolean;
                        aStillFrame: Byte; aLocked: Boolean);
-    constructor Load(LoadStream:TKMemoryStream); override;
+    constructor Load(LoadStream:TKMemoryStreamBinary); override;
     function ActName: TKMUnitActionName; override;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
     function GetExplanation: UnicodeString; override;
     function Execute: TKMActionResult; override;
-    procedure Save(SaveStream:TKMemoryStream); override;
+    procedure Save(SaveStream: TKMemoryStream); override;
   end;
 
 
@@ -40,7 +40,7 @@ begin
 end;
 
 
-constructor TKMUnitActionStay.Load(LoadStream:TKMemoryStream);
+constructor TKMUnitActionStay.Load(LoadStream:TKMemoryStreamBinary);
 begin
   inherited;
   LoadStream.Read(StayStill);
@@ -118,7 +118,7 @@ begin
 end;
 
 
-procedure TKMUnitActionStay.Save(SaveStream:TKMemoryStream);
+procedure TKMUnitActionStay.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
   SaveStream.Write(StayStill);

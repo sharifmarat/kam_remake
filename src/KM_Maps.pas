@@ -30,7 +30,7 @@ type
   TKMMapTxtInfo = class
   private
     function IsEmpty: Boolean;
-    procedure Load(aStream: TKMemoryStream);
+    procedure Load(aStream: TKMemoryStreamBinary);
     procedure Save(aStream: TKMemoryStream);
   public
     Author, BigDesc, SmallDesc: UnicodeString;
@@ -537,11 +537,11 @@ end;
 
 procedure TKMapInfo.LoadFromStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
 begin
-  Assert(aStreamObj is TKMemoryStream, 'Wrong stream object class');
+  Assert(aStreamObj is TKMemoryStreamBinary, 'Wrong stream object class');
 
-  S := TKMemoryStream(aStreamObj);
+  S := TKMemoryStreamBinary(aStreamObj);
 
   S.LoadFromFile(aPath);
 
@@ -565,12 +565,12 @@ end;
 
 procedure TKMapInfo.LoadFromFile(const aPath: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   ErrorStr: UnicodeString;
 begin
   if not FileExists(aPath) then Exit;
 
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     //Try to load map cache up to 3 times (in case its updating by other thread
     //its much easier and working well, then synchronize threads
@@ -585,11 +585,11 @@ end;
 
 procedure TKMapInfo.SaveToStreamObj(aStreamObj: TObject; const aPath: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
 begin
-  Assert(aStreamObj is TKMemoryStream, 'Wrong stream object class');
+  Assert(aStreamObj is TKMemoryStreamBinary, 'Wrong stream object class');
 
-  S := TKMemoryStream(aStreamObj);
+  S := TKMemoryStreamBinary(aStreamObj);
 
   S.SaveToFile(aPath);
 end;
@@ -597,10 +597,10 @@ end;
 
 procedure TKMapInfo.SaveToFile(const aPath: UnicodeString);
 var
-  S: TKMemoryStream;
+  S: TKMemoryStreamBinary;
   ErrorStr: UnicodeString;
 begin
-  S := TKMemoryStream.Create;
+  S := TKMemoryStreamBinary.Create;
   try
     //Internal properties
     S.Write(fCRC);
@@ -1098,7 +1098,7 @@ begin
 end;
 
 
-procedure TKMMapTxtInfo.Load(aStream: TKMemoryStream);
+procedure TKMMapTxtInfo.Load(aStream: TKMemoryStreamBinary);
 begin
   aStream.Read(IsCoop);
   aStream.Read(IsSpecial);

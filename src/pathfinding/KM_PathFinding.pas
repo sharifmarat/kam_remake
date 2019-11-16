@@ -59,7 +59,7 @@ type
                                     aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
-    procedure Load(LoadStream: TKMemoryStream); virtual;
+    procedure Load(LoadStream: TKMemoryStreamBinary); virtual;
     procedure UpdateState;
   end;
 
@@ -361,7 +361,7 @@ procedure TPathFinding.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
-  SaveStream.WriteA('PathFinding');
+  SaveStream.PlaceMarker('PathFinding');
 
   if CACHE_PATHFINDING then
   for I := 0 to PATH_CACHE_MAX - 1 do
@@ -373,11 +373,11 @@ begin
 end;
 
 
-procedure TPathFinding.Load(LoadStream: TKMemoryStream);
+procedure TPathFinding.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
-  LoadStream.ReadAssert('PathFinding');
+  LoadStream.CheckMarker('PathFinding');
 
   if CACHE_PATHFINDING then
   for I := 0 to PATH_CACHE_MAX - 1 do
