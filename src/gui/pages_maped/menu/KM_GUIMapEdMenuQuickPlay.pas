@@ -14,6 +14,7 @@ type
     fIsMultiplayer: Boolean;
     procedure Cancel_Click(Sender: TObject);
     procedure QuickPlay_Click(Sender: TObject);
+    procedure StartQuickPlay(aMapSaved: Boolean);
     procedure Update_PlayerSelect;
     procedure PlayerSelectFirst;
     procedure UpdatePanel;
@@ -104,6 +105,12 @@ end;
 
 
 procedure TKMMapEdMenuQuickPlay.QuickPlay_Click(Sender: TObject);
+begin
+  StartQuickPlay(False);
+end;
+
+
+procedure TKMMapEdMenuQuickPlay.StartQuickPlay(aMapSaved: Boolean);
 var
   MapName, GameName: String;
   Color: Cardinal;
@@ -122,7 +129,7 @@ begin
     Difficulty := TKMMissionDifficulty(DropBox_Difficulty.GetSelectedTag);
 
   FreeThenNil(gGame);
-  gGameApp.NewSingleMap(MapName, GameName, HandId, Color, Difficulty);
+  gGameApp.NewSingleMap(MapName, GameName, HandId, Color, Difficulty, aitNone, not aMapSaved);
   gGame.StartedFromMapEditor := True;
   gGame.StartedFromMapEdAsMPMap := IsMultiplayer;
   TKMGamePlayInterface(gGame.ActiveInterface).SetMenuState(gGame.MissionMode = mmTactic);
@@ -217,7 +224,7 @@ end;
 
 procedure TKMMapEdMenuQuickPlay.SaveDone(Sender: TObject);
 begin
-  QuickPlay_Click(Sender);
+  StartQuickPlay(True);
 end;
 
 

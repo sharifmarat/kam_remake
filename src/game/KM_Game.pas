@@ -114,7 +114,7 @@ type
 
     procedure GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                         aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal; aMapDifficulty: TKMMissionDifficulty = mdNone;
-                        aAIType: TKMAIType = aitNone);
+                        aAIType: TKMAIType = aitNone; aAutoselectHumanLoc: Boolean = False);
 
     procedure AfterStart;
     procedure MapEdStartEmptyMap(aSizeX, aSizeY: Integer);
@@ -393,10 +393,13 @@ end;
 //New mission
 procedure TKMGame.GameStart(const aMissionFile, aGameName: UnicodeString; aCRC: Cardinal; aCampaign: TKMCampaign;
                             aCampMap: Byte; aLocation: ShortInt; aColor: Cardinal;
-                            aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone);
+                            aMapDifficulty: TKMMissionDifficulty = mdNone; aAIType: TKMAIType = aitNone;
+                            aAutoselectHumanLoc: Boolean = False);
 const
   GAME_PARSE: array [TKMGameMode] of TKMMissionParsingMode = (
     mpmSingle, mpmSingle, mpmMulti, mpmMulti, mpmEditor, mpmSingle, mpmSingle);
+
+  NO_OVERWRITE_COLOR = $00000000;
 var
   I: Integer;
   ParseMode: TKMMissionParsingMode;
@@ -491,12 +494,23 @@ begin
       if aLocation = -1 then
         aLocation := Parser.DefaultLocation;
 
+      //Try to autoselect player loc, if needed
+      if aAutoselectHumanLoc
+        and (not InRange(aLocation, 0, gHands.Count - 1)
+             or not gHands[aLocation].Enabled) then
+        begin
+          for I := 0 to gHands.Count - 1 do
+            if gHands[I].Enabled then
+              aLocation := I;
+          aColor := NO_OVERWRITE_COLOR; //Do not overwrite player color
+        end;
+
       Assert(InRange(aLocation, 0, gHands.Count - 1), 'No human player detected');
       gHands[aLocation].HandType := hndHuman;
       gMySpectator := TKMSpectator.Create(aLocation);
 
       // If no color specified use default from mission file (don't overwrite it)
-      if aColor <> $00000000 then
+      if aColor <> NO_OVERWRITE_COLOR then
         gMySpectator.Hand.FlagColor := aColor;
 
       //Set Advanced AI for only advanced locs and if choosen Advanced AI in Single map setup  
