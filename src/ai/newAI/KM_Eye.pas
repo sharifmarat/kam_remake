@@ -33,7 +33,7 @@ type
   THouseMappingArray = array [HOUSE_MIN..HOUSE_MAX] of THouseMapping;
 
 
-  TKMBuildState = (bsNoBuild = 0, bsHousePlan = 1, bsFieldPlan = 2, bsRoadPlan = 3, bsRoad = 4, bsBuild = 9, bsTree = 10, bsForest = 11, bsCoal = 12, bsDebug = 200, bsReserved = 255);
+  TKMBuildState = (bsNoBuild = 0, bsHousePlan = 1, bsFieldPlan = 2, bsRoadPlan = 3, bsRoad = 4, bsBuild = 9, bsTree = 10, bsForest = 11, bsCoal = 12, bsMine = 13, bsDebug = 200, bsReserved = 255);
   TKMBuildInfo = record
     Visited, VisitedHouse: Byte;
     State: TKMBuildState;
@@ -122,6 +122,7 @@ type
     property Locs: TKMPointList read fLocs write fLocs;
     property HouseRequirements: TKMHouseRequirements read fHouseReq write fHouseReq;
 
+    procedure AfterMissionInit();
     procedure UpdateState(aMaxFFDistance: Word = 40);
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure ActualizeTile(aX, aY: Word);
@@ -393,6 +394,7 @@ var
   Loc: TKMPoint;
   StoneCheck: TKMFFCheckStoneTiles;
 begin
+  fBuildFF.AfterMissionInit();
   fArmyEvaluation.AfterMissionInit();
 
   fMapX := gTerrain.MapX;
@@ -1263,22 +1265,23 @@ begin
         //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdxOwner[fOwner]) then
         //if (fBuildFF.Visited[Y,X] = fBuildFF.VisitIdx) then
           case fBuildFF.State[Y,X] of
-            bsNoBuild:   gRenderAux.Quad(X, Y, $99000000 OR COLOR_BLACK);
+            bsNoBuild:   gRenderAux.Quad(X, Y, $BB000000 OR COLOR_BLACK);
             bsHousePlan: gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
-            bsFieldPlan: gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLACK);
-            bsRoadPlan:  gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
-            bsRoad:      gRenderAux.Quad(X, Y, $33000000 OR COLOR_BLUE);
-            bsBuild:     gRenderAux.Quad(X, Y, $33000000 OR COLOR_YELLOW);
+            bsFieldPlan: gRenderAux.Quad(X, Y, $55000000 OR COLOR_GREEN);
+            bsRoadPlan:  gRenderAux.Quad(X, Y, $55000000 OR COLOR_BLUE);
+            bsRoad:      gRenderAux.Quad(X, Y, $22000000 OR COLOR_BLUE);
+            bsBuild:     gRenderAux.Quad(X, Y, $11000000 OR COLOR_YELLOW);
             bsTree:      gRenderAux.Quad(X, Y, $99000000 OR COLOR_GREEN);
-            bsForest:    gRenderAux.Quad(X, Y, $66000000 OR COLOR_GREEN);
+            bsForest:    gRenderAux.Quad(X, Y, $33000000 OR COLOR_GREEN);
             bsCoal:      gRenderAux.Quad(X, Y, $66000000 OR COLOR_BLACK);
+            bsMine:      gRenderAux.Quad(X, Y, $33000000 OR COLOR_RED);
+            bsDebug:     gRenderAux.Quad(X, Y, $FF000000 OR COLOR_RED);
             bsReserved:  gRenderAux.Quad(X, Y, $66000000 OR COLOR_RED);
-            bsDebug:     gRenderAux.Quad(X, Y, $FF000000 OR COLOR_BLACK);
             else begin end;
           end;
     //{ Build places of the last plan
     for I := 0 to fBuildFF.Locs.Count - 1 do
-      gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $99000000 OR COLOR_BLACK);
+      gRenderAux.Quad(fBuildFF.Locs.Items[I].X, fBuildFF.Locs.Items[I].Y, $99000000 OR COLOR_YELLOW);
     //}
     //{ Stone mining tiles
     for I := 0 to fStoneMiningTiles.Count - 1 do
@@ -1327,9 +1330,10 @@ end;
 
 
 procedure TKMBuildFF.Save(SaveStream: TKMemoryStream);
-var
-  Len: Integer;
+//var
+//  Len: Integer;
 begin
+  {
   SaveStream.WriteA('BuildFF');
 
   SaveStream.Write(fOwner);
@@ -1356,9 +1360,11 @@ end;
 
 
 procedure TKMBuildFF.Load(LoadStream: TKMemoryStream);
-var
-  Len: Integer;
+//var
+//  Len: Integer;
 begin
+  AfterMissionInit();
+  {
   LoadStream.ReadAssert('BuildFF');
 
   LoadStream.Read(fOwner);
@@ -1454,14 +1460,6 @@ var
 begin
   fHMA := gAIFields.Eye.HousesMapping; // Make sure that HMA is actual
   fQueueCnt := 0;
-  if (Length(fInfoArr) = 0) then
-  begin
-    fMapX := gTerrain.MapX;
-    fMapY := gTerrain.MapY;
-    SetLength(fInfoArr, fMapX * fMapY);
-    fVisitIdx := 255; // Fill char will be required
-    fVisitIdxHouse := 255;
-  end;
   if (fVisitIdx >= 254) then
   begin
     fVisitIdx := 0;
@@ -1643,7 +1641,8 @@ begin
         if (Output = bsBuild) then
           Output := bsRoad;
       end;
-    AVOID_BUILDING_MINE_TILE:          Output := bsReserved;
+    AVOID_BUILDING_HOUSE_ENTRANCE:     Output := bsRoad;
+    AVOID_BUILDING_MINE_TILE:          Output := bsMine;
     AVOID_BUILDING_COAL_TILE:
       begin
         case Output of
@@ -1699,7 +1698,7 @@ begin
               P2 := KMPointAdd(P1, fHMA[HT].Surroundings[DIST,Dir,L]);
               if (gTerrain.Land[P2.Y,P2.X].Passability * [tpMakeRoads, tpWalkRoad] <> []) then
                 State[P2.Y, P2.X] := bsRoad
-              else
+              else if (State[P2.Y, P2.X] <> bsNoBuild) then
                 State[P2.Y, P2.X] := bsHousePlan;
             end;
         end;
@@ -1750,6 +1749,17 @@ begin
     if (X+1 <= fMapX-1) AND CanBeVisited(X+1,Y,Idx+1    ,True) then MarkAsVisited(X+1,Y, InsertInQueue(Idx+1)    , Distance);
     if (Y+1 <= fMapY-1) AND CanBeVisited(X,Y+1,Idx+fMapX,True) then MarkAsVisited(X,Y+1, InsertInQueue(Idx+fMapX), Distance);
   end;
+end;
+
+
+procedure TKMBuildFF.AfterMissionInit();
+begin
+  fMapX := gTerrain.MapX;
+  fMapY := gTerrain.MapY;
+  SetLength(fInfoArr, fMapX * fMapY);
+  FillChar(fInfoArr[0], SizeOf(fInfoArr[0])*Length(fInfoArr), #0);
+  fVisitIdx := 255;
+  fVisitIdxHouse := 255;
 end;
 
 

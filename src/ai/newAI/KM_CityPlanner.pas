@@ -2042,10 +2042,11 @@ begin
   {$IFDEF DEBUG_NewAI}
     Time := TimeGet();
   {$ENDIF}
+  Result := False;
   Output := False;
   BuildFF := gAIFields.Eye.BuildFF;
   if (StoneLocs = nil) then
-    Exit(False); // Find stone locs
+    Exit; // Find stone locs
 
   with HouseReq do
   begin
@@ -2559,8 +2560,11 @@ var
   Division: Single;
   HT: TKMHouseType;
   Loc: TKMPoint;
-  Color{, Val}: Cardinal;
+  Color: Cardinal;
   HMA: THouseMappingArray;
+  {$IFDEF DEBUG_NewAI}
+  Val: Cardinal;
+  {$ENDIF}
 begin
 
   {$IFDEF DEBUG_NewAI}

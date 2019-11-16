@@ -877,7 +877,7 @@ begin
         // Add avoid building for Barracks and Store (road will be build later in shortcut procedure)
         if ((aHT = htStore) OR (aHT = htBarracks)) AND (Loc.Y+2 < gTerrain.MapY) then
           for K := Loc.X-1 to Loc.X+1 do
-            gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := 255;
+            gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := AVOID_BUILDING_HOUSE_ENTRANCE;
         // Add road to node
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
