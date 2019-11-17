@@ -63,7 +63,7 @@ type
     property HandIndex: Integer read GetHandIndex;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -313,7 +313,7 @@ begin
 end;
 
 
-procedure TKMNetPlayerInfo.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMNetPlayerInfo.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.ReadA(fNikname);
   LoadStream.ReadA(fLangCode);

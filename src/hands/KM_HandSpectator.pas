@@ -45,7 +45,7 @@ type
     function HitTestCursorWGroup(aIncludeAnimals: Boolean = False): TObject;
     procedure UpdateNewSelected; overload;
     procedure UpdateSelect;
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure Save(SaveStream: TKMemoryStream);
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -128,7 +128,7 @@ begin
 end;
 
 
-procedure TKMSpectator.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMSpectator.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('Spectator');
   LoadStream.Read(fHandIndex);

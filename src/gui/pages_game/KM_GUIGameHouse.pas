@@ -134,7 +134,7 @@ type
     function Visible: Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -1508,7 +1508,7 @@ begin
 end;
 
 
-procedure TKMGUIGameHouse.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMGUIGameHouse.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fLastSchoolUnit);
   LoadStream.Read(fLastBarracksUnit);

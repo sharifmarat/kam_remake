@@ -32,7 +32,7 @@ type
     function UnitsHitTest(X, Y: Integer; const UT: TKMUnitType = utAny): TKMUnit; overload;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
-    procedure Load(LoadStream: TKMemoryStreamBinary); virtual;
+    procedure Load(LoadStream: TKMemoryStream); virtual;
     procedure SyncLoad; virtual;
 
     procedure UpdateState(aTick: Cardinal); virtual;
@@ -192,7 +192,7 @@ type
     function CanDoStatsUpdate(aTick: Cardinal): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); override;
-    procedure Load(LoadStream: TKMemoryStreamBinary); override;
+    procedure Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure IncAnimStep;
     procedure UpdateState(aTick: Cardinal); override;
@@ -266,7 +266,7 @@ begin
 end;
 
 
-procedure TKMHandCommon.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandCommon.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('HandCommon');
   fUnits.Load(LoadStream);
@@ -1686,7 +1686,7 @@ begin
 end;
 
 
-procedure TKMHand.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHand.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('Hand');
   LoadStream.Read(Enabled);

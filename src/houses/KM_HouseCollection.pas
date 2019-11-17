@@ -32,7 +32,7 @@ type
     function FindHousesInRadius(aLoc: TKMPoint; aSqrRadius: Single; aTypes: THouseTypeSet; aOnlyCompleted: Boolean = True): TKMHouseArray;
     function GetTotalPointers: Cardinal;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure IncAnimStep;
     procedure UpdateResRequest; //Change resource requested counts for all houses
@@ -326,7 +326,7 @@ begin
 end;
 
 
-procedure TKMHousesCollection.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHousesCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
   HouseType: TKMHouseType;

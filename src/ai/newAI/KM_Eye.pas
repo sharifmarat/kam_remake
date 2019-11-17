@@ -107,7 +107,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     //property Info[const aY,aX: Word]: TKMBuildInfo read GetInfo write SetInfo;
     property VisitIdx: Byte read fVisitIdx;
@@ -191,7 +191,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     property HousesMapping: THouseMappingArray read fHousesMapping write fHousesMapping;
     property BuildFF: TKMBuildFF read fBuildFF;
@@ -285,7 +285,7 @@ begin
   // fHousesMapping
 end;
 
-procedure TKMEye.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMEye.Load(LoadStream: TKMemoryStream);
   procedure LoadByteArr(var aArray: TKMByteArray);
   var
     Len: Integer;
@@ -1355,7 +1355,7 @@ begin
 end;
 
 
-procedure TKMBuildFF.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMBuildFF.Load(LoadStream: TKMemoryStream);
 var
   Len: Integer;
 begin

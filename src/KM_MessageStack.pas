@@ -14,7 +14,7 @@ type
   public
     IsRead: Boolean; //Does not gets saved, because it's UI thing
     constructor Create(aKind: TKMMessageKind; const aText: UnicodeString; const aLoc: TKMPoint);
-    constructor Load(LoadStream: TKMemoryStreamBinary);
+    constructor Load(LoadStream: TKMemoryStream);
 
     function Icon: Word;
     function IsGoto: Boolean;
@@ -40,7 +40,7 @@ type
     procedure RemoveStack(aIndex: Integer);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -59,7 +59,7 @@ begin
 end;
 
 
-constructor TKMStackMessage.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMStackMessage.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.CheckMarker('StackMessage');
@@ -147,7 +147,7 @@ begin
 end;
 
 
-procedure TKMMessageStack.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMMessageStack.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

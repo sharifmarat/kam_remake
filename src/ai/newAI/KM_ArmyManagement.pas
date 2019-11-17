@@ -45,7 +45,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     property Attack: TKMArmyAttack read fAttack write fAttack;
@@ -155,7 +155,7 @@ begin
 end;
 
 
-procedure TKMArmyManagement.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMArmyManagement.Load(LoadStream: TKMemoryStream);
 var
   I, Count: Integer;
   UG: TKMUnitGroup;

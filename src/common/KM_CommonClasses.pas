@@ -185,8 +185,8 @@ type
   end;
 
 
-  TStreamEvent = procedure (aData: TKMemoryStreamBinary) of object;
-  TStreamIntEvent = procedure (aData: TKMemoryStreamBinary; aSenderIndex: ShortInt) of object;
+  TStreamEvent = procedure (aData: TKMemoryStream) of object;
+  TStreamIntEvent = procedure (aData: TKMemoryStream; aSenderIndex: ShortInt) of object;
 
   //TXStringList using integer values, instead of its String represantation, when sorted
   TXStringList = class(TStringList)
@@ -234,7 +234,7 @@ type
     procedure SparseToDense;
     function  GetBounds(out Bounds: TKMRect): Boolean;
     procedure SaveToStream(SaveStream: TKMemoryStream); virtual;
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary); virtual;
+    procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
   end;
 
   TKMPointListArray = array of TKMPointList;
@@ -249,7 +249,7 @@ type
     function Remove(const aLoc: TKMPoint): Integer; override;
     procedure Delete(aIndex: Integer); override;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary); override;
+    procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
 
 
@@ -264,7 +264,7 @@ type
     property Count: Integer read fCount;
     property Items[aIndex: Integer]: TKMPointDir read GetItem; default;
     function GetRandom(out Point: TKMPointDir):Boolean;
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary); virtual;
+    procedure LoadFromStream(LoadStream: TKMemoryStream); virtual;
     procedure SaveToStream(SaveStream: TKMemoryStream); virtual;
   end;
 
@@ -275,7 +275,7 @@ type
     procedure Add(const aLoc: TKMPointDir; aTag: Cardinal); reintroduce;
     procedure SortByTag;
     procedure SaveToStream(SaveStream: TKMemoryStream); override;
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary); override;
+    procedure LoadFromStream(LoadStream: TKMemoryStream); override;
   end;
 
 
@@ -642,7 +642,7 @@ begin
 end;
 
 
-procedure TKMPointList.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMPointList.LoadFromStream(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fCount);
   SetLength(fItems, fCount);
@@ -762,7 +762,7 @@ begin
 end;
 
 
-procedure TKMPointTagList.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMPointTagList.LoadFromStream(LoadStream: TKMemoryStream);
 begin
   inherited; //Reads Count
 
@@ -818,7 +818,7 @@ begin
 end;
 
 
-procedure TKMPointDirList.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMPointDirList.LoadFromStream(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fCount);
   SetLength(fItems, fCount);
@@ -859,7 +859,7 @@ begin
 end;
 
 
-procedure TKMPointDirTagList.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMPointDirTagList.LoadFromStream(LoadStream: TKMemoryStream);
 begin
   inherited; //Reads Count
 

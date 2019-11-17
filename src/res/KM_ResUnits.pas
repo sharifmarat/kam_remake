@@ -96,7 +96,7 @@ type
     procedure ExportCSV(const aPath: UnicodeString);
 
     procedure SaveCustomData(aSaveStream: TKMemoryStream);
-    procedure LoadCustomData(aLoadStream: TKMemoryStreamBinary);
+    procedure LoadCustomData(aLoadStream: TKMemoryStream);
   end;
 
 const
@@ -453,7 +453,7 @@ begin
 end;
 
 
-procedure TKMResUnits.LoadCustomData(aLoadStream: TKMemoryStreamBinary);
+procedure TKMResUnits.LoadCustomData(aLoadStream: TKMemoryStream);
 begin
   aLoadStream.CheckMarker('UnitsCustomData');
   aLoadStream.Read(TH_TROOP_COST, SizeOF(TH_TROOP_COST));

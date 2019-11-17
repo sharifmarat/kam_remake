@@ -28,7 +28,7 @@ type
     function GetUnitBlocked(aUnitType: TKMUnitType; aInTownHall: Boolean = False): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -105,7 +105,7 @@ begin
 end;
 
 
-procedure TKMHandLocks.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandLocks.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('HandLocks');
   LoadStream.Read(HouseBlocked, SizeOf(HouseBlocked));

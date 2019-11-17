@@ -52,7 +52,7 @@ type
     function ParamsTypes2String(aColorfull: Boolean = True): String;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     
 //    class procedure GenerateProcClasses(aSL: TStringList);
 //    class procedure GenerateCaseClause(aSL: TStringList);
@@ -1181,7 +1181,7 @@ begin
 end;
 
 
-procedure TKMConsoleCommand.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMConsoleCommand.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

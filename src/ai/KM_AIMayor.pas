@@ -55,7 +55,7 @@ type
 
     procedure UpdateState(aTick: Cardinal);
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -1012,7 +1012,7 @@ begin
 end;
 
 
-procedure TKMayor.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMayor.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fOwner);
   LoadStream.Read(fRoadBelowStore);

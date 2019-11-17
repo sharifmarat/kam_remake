@@ -20,7 +20,7 @@ type
     procedure DecVertex;
   public
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aRow: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function ActName: TKMUnitActionName; override;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
@@ -64,7 +64,7 @@ begin
 end;
 
 
-constructor TKMUnitActionStormAttack.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMUnitActionStormAttack.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('UnitActionStormAttack');

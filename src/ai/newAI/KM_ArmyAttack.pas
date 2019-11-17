@@ -50,7 +50,7 @@ type
     {$ENDIF}
 
     constructor Create(aGroup: TKMUnitGroup);
-    constructor Load(LoadStream: TKMemoryStreamBinary);
+    constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -94,7 +94,7 @@ type
     {$ENDIF}
 
     constructor Create(aOwner: TKMHandID; aCompanyMode: TKMCompanyMode);
-    constructor Load(LoadStream: TKMemoryStreamBinary);
+    constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -129,7 +129,7 @@ type
     constructor Create(aOwner: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     property Count: Integer read GetCount;
@@ -191,7 +191,7 @@ begin
 end;
 
 
-constructor TAISquad.Load(LoadStream: TKMemoryStreamBinary);
+constructor TAISquad.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.CheckMarker('Squad');
@@ -441,7 +441,7 @@ begin
 end;
 
 
-constructor TAICompany.Load(LoadStream: TKMemoryStreamBinary);
+constructor TAICompany.Load(LoadStream: TKMemoryStream);
 var
   I,Cnt: Integer;
   GT: TKMGroupType;
@@ -1405,7 +1405,7 @@ begin
 end;
 
 
-procedure TKMArmyAttack.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMArmyAttack.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
 begin

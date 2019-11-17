@@ -42,7 +42,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     property PL2Alli: TKMHandByteArr read fPL2Alli;
     property Alli2PL: TKMHandID2Arr read fAlli2PL;
@@ -126,7 +126,7 @@ begin
   end;
 end;
 
-procedure TKMSupervisor.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMSupervisor.Load(LoadStream: TKMemoryStream);
 var
   I,K: Integer;
 begin

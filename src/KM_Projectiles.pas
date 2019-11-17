@@ -46,7 +46,7 @@ type
     procedure Paint;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
   end;
 
@@ -418,7 +418,7 @@ begin
 end;
 
 
-procedure TKMProjectiles.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMProjectiles.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
 begin

@@ -47,7 +47,7 @@ type
 
     procedure LoadFromMission(const aMissionPath: string; const aRevealFor: array of TKMHandID);
     procedure LoadFromTerrain;
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary);
+    procedure LoadFromStream(LoadStream: TKMemoryStream);
     procedure SaveToStream(SaveStream: TKMemoryStream);
 
     procedure Update(aRevealAll: Boolean = False);
@@ -350,7 +350,7 @@ begin
 end;
 
 
-procedure TKMMinimap.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMMinimap.LoadFromStream(LoadStream: TKMemoryStream);
 var
   L: Cardinal;
   I: Integer;

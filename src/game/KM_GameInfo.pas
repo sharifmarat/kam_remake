@@ -31,7 +31,7 @@ type
 
     //To be used in Savegames
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     property ParseError: UnicodeString read fParseError;
     function IsValid(aCheckDATCRC: Boolean): Boolean;
@@ -52,7 +52,7 @@ uses
 
 
 { TKMGameInfo }
-procedure TKMGameInfo.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMGameInfo.Load(LoadStream: TKMemoryStream);
 var
   s: AnsiString;
   I: Integer;

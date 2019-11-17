@@ -110,7 +110,7 @@ type
 
     constructor Create(aID: Cardinal; aCreator: TKMUnitWarrior); overload;
     constructor Create(aID: Cardinal; aOwner: TKMHandID; aUnitType: TKMUnitType; PosX, PosY: Word; aDir: TKMDirection; aUnitPerRow, aCount: Word); overload;
-    constructor Create(LoadStream: TKMemoryStreamBinary); overload;
+    constructor Create(LoadStream: TKMemoryStream); overload;
     procedure SyncLoad;
     procedure Save(SaveStream: TKMemoryStream);
     destructor Destroy; override;
@@ -229,7 +229,7 @@ type
     function WarriorTrained(aUnit: TKMUnitWarrior): TKMUnitGroup;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
     procedure Paint(const aRect: TKMRect);
@@ -332,7 +332,7 @@ end;
 
 
 //Load the Group from savegame
-constructor TKMUnitGroup.Create(LoadStream: TKMemoryStreamBinary);
+constructor TKMUnitGroup.Create(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
   W: TKMUnitWarrior;
@@ -2292,7 +2292,7 @@ begin
 end;
 
 
-procedure TKMUnitGroups.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMUnitGroups.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
 begin

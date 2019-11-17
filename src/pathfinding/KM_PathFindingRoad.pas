@@ -27,7 +27,7 @@ type
     function Route_Make(const aLocA, aLocB: TKMPoint; NodeList: TKMPointList): Boolean; reintroduce;
     function Route_ReturnToWalkable(const aLocA, aLocB: TKMPoint; aRoadConnectID: Byte; NodeList: TKMPointList): Boolean; reintroduce;
     procedure Save(SaveStream: TKMemoryStream); override;
-    procedure Load(LoadStream: TKMemoryStreamBinary); override;
+    procedure Load(LoadStream: TKMemoryStream); override;
   end;
 
   //Minor variation on class above for creating shortcuts in AI road network
@@ -68,7 +68,7 @@ begin
 end;
 
 
-procedure TPathFindingRoad.Load(LoadStream: TKMemoryStreamBinary);
+procedure TPathFindingRoad.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('PathFindingRoad');

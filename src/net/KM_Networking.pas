@@ -1846,7 +1846,7 @@ begin
                 else
                 begin
                   //Solve joiner's challenge
-                  M2 := TKMNetSecurity.SolveChallenge(M, aSenderIndex);
+                  M2 := TKMemoryStreamBinary(TKMNetSecurity.SolveChallenge(M, aSenderIndex));
                   //Send our own challenge
                   TKMNetSecurity.GenerateChallenge(M2, aSenderIndex);
                   PacketSend(aSenderIndex, mkAuthChallenge, M2);
@@ -1860,7 +1860,7 @@ begin
                 if TKMNetSecurity.ValidateSolution(M, aSenderIndex) then
                 begin
                   //Solve host's challenge and ask to join
-                  M2 := TKMNetSecurity.SolveChallenge(M, aSenderIndex);
+                  M2 := TKMemoryStreamBinary(TKMNetSecurity.SolveChallenge(M, aSenderIndex));
                   M2.WriteA(fMyNikname);
                   PacketSend(NET_ADDRESS_HOST, mkAskToJoin, M2);
                   M2.Free;

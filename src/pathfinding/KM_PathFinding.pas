@@ -59,7 +59,7 @@ type
                                     aPass: TKMTerrainPassabilitySet; NodeList: TKMPointList): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream); virtual;
-    procedure Load(LoadStream: TKMemoryStreamBinary); virtual;
+    procedure Load(LoadStream: TKMemoryStream); virtual;
     procedure UpdateState;
   end;
 
@@ -373,7 +373,7 @@ begin
 end;
 
 
-procedure TPathFinding.Load(LoadStream: TKMemoryStreamBinary);
+procedure TPathFinding.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

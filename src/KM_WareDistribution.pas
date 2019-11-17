@@ -31,7 +31,7 @@ type
     function PackToStr: String;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -131,7 +131,7 @@ begin
 end;
 
 
-procedure TKMWareDistribution.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMWareDistribution.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('WareDistribution');
   LoadStream.Read(fWareDistribution, SizeOf(fWareDistribution));

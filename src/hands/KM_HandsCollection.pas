@@ -79,7 +79,7 @@ type
     procedure PostLoadMission;
 
     procedure Save(SaveStream: TKMemoryStream; aMultiplayer: Boolean);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure IncAnimStep;
 
@@ -912,7 +912,7 @@ begin
 end;
 
 
-procedure TKMHandsCollection.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandsCollection.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

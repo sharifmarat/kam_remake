@@ -55,7 +55,7 @@ type
     procedure UnitAttackNotification(aUnit: TKMUnit; aAttacker: TKMUnit; aNotifyScript: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
     procedure UpdateState(aTick: Cardinal);
     procedure AfterMissionInit();
@@ -423,7 +423,7 @@ begin
 end;
 
 
-procedure TKMHandAI.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandAI.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('HandAI');
   LoadStream.Read(fOwner);

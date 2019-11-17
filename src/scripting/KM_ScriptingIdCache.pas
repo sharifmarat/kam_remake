@@ -32,7 +32,7 @@ type
     procedure UpdateState;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
   end;
 
@@ -216,7 +216,7 @@ begin
 end;
 
 
-procedure TKMScriptingIdCache.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMScriptingIdCache.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

@@ -27,7 +27,7 @@ type
     procedure AfterMissionInit();
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState(aTick: Cardinal);
     procedure Paint(const aRect: TKMRect);
   end;
@@ -86,7 +86,7 @@ begin
 end;
 
 
-procedure TKMAIFields.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMAIFields.Load(LoadStream: TKMemoryStream);
 begin
   fNavMesh.Load(LoadStream);
   fInfluences.Load(LoadStream);

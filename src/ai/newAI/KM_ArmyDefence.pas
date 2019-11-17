@@ -26,7 +26,7 @@ type
     function GetGroupType(): TKMGroupType;
   public
     constructor Create(aWeight, aLine: Word; aPos: TKMPointDir);
-    constructor Load(LoadStream: TKMemoryStreamBinary);
+    constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
     procedure SyncLoad();
@@ -60,7 +60,7 @@ type
     constructor Create(aOwner: TKMHandID; aAttack: TKMArmyAttack; aHostileGroups: TList);
     destructor Destroy; override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     property Count: Integer read GetCount;
@@ -129,7 +129,7 @@ begin
 end;
 
 
-constructor TKMDefencePosition.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMDefencePosition.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.CheckMarker('DefencePosition');
@@ -240,7 +240,7 @@ begin
 end;
 
 
-procedure TKMArmyDefence.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMArmyDefence.Load(LoadStream: TKMemoryStream);
 var I, NewCount: Integer;
 begin
   LoadStream.CheckMarker('DefencePositions');

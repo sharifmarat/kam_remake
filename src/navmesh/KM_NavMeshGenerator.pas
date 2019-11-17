@@ -83,7 +83,7 @@ type
     constructor Create();
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     procedure GenerateNewNavMesh();
     function Paint(const aRect: TKMRect): Boolean;
@@ -133,7 +133,7 @@ begin
 end;
 
 
-procedure TKMNavMeshGenerator.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMNavMeshGenerator.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('KMNavMeshGenerator');
   LoadStream.Read(fMapX);

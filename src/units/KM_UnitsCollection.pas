@@ -34,7 +34,7 @@ type
     procedure GetUnitsInRect(const aRect: TKMRect; List: TList);
     function GetTotalPointers: Integer;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
     procedure Paint(const aRect: TKMRect);
@@ -249,7 +249,7 @@ begin
 end;
 
 
-procedure TKMUnitsCollection.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMUnitsCollection.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
   UnitType: TKMUnitType;

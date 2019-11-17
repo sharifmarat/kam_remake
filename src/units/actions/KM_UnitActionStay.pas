@@ -15,7 +15,7 @@ type
   public
     constructor Create(aUnit: TKMUnit; aTimeToStay: Integer; aActionType: TKMUnitActionType; aStayStill: Boolean;
                        aStillFrame: Byte; aLocked: Boolean);
-    constructor Load(LoadStream:TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     function ActName: TKMUnitActionName; override;
     function CanBeInterrupted(aForced: Boolean = True): Boolean; override;
     function GetExplanation: UnicodeString; override;
@@ -40,7 +40,7 @@ begin
 end;
 
 
-constructor TKMUnitActionStay.Load(LoadStream:TKMemoryStreamBinary);
+constructor TKMUnitActionStay.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('UnitActionStay');

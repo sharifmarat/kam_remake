@@ -315,14 +315,14 @@ type
     property AnimStep: Cardinal read fAnimStep;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
 
     procedure UpdateState;
 
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic); overload;
     class procedure WriteTileToStream(S: TKMemoryStream; const aTileBasic: TKMTerrainTileBasic; var aMapDataSize: Cardinal); overload;
-    class procedure ReadTileFromStream(aStream: TKMemoryStreamBinary; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+    class procedure ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
   end;
 
 const
@@ -4142,7 +4142,7 @@ begin
 end;
 
 
-procedure TKMTerrain.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMTerrain.Load(LoadStream: TKMemoryStream);
 var
   I,J,L: Integer;
   TileBasic: TKMTerrainTileBasic;
@@ -4383,7 +4383,7 @@ begin
 end;
 
 
-class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStreamBinary; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
+class procedure TKMTerrain.ReadTileFromStream(aStream: TKMemoryStream; var aTileBasic: TKMTerrainTileBasic; aUseKaMFormat: Boolean = False);
 var
   I: Integer;
   TerrainB, ObjectB, Rot, Corners: Byte;

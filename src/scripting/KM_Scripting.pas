@@ -134,7 +134,7 @@ type
     procedure LinkRuntime;
 
     procedure SaveVar(SaveStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
-    procedure LoadVar(LoadStream: TKMemoryStreamBinary; Src: Pointer; aType: TPSTypeRec);
+    procedure LoadVar(LoadStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
 
     function GetScriptFilesInfo: TKMScriptFilesCollection;
     function GetCodeLine(aRowNum: Cardinal): AnsiString;
@@ -162,11 +162,11 @@ type
     procedure ExportDataToText;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
 
     procedure SaveCampaignData(SaveStream: TKMemoryStream);
-    procedure LoadCampaignData(LoadStream: TKMemoryStreamBinary);
+    procedure LoadCampaignData(LoadStream: TKMemoryStream);
 
     procedure UpdateState;
   end;
@@ -1419,7 +1419,7 @@ begin
 end;
 
 
-procedure TKMScripting.LoadVar(LoadStream: TKMemoryStreamBinary; Src: Pointer; aType: TPSTypeRec);
+procedure TKMScripting.LoadVar(LoadStream: TKMemoryStream; Src: Pointer; aType: TPSTypeRec);
 var
   ElemCount: Integer;
   I: Integer;
@@ -1474,7 +1474,7 @@ begin
 end;
 
 
-procedure TKMScripting.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMScripting.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
   V: PIFVariant;
@@ -1516,7 +1516,7 @@ begin
 end;
 
 
-procedure TKMScripting.LoadCampaignData(LoadStream: TKMemoryStreamBinary);
+procedure TKMScripting.LoadCampaignData(LoadStream: TKMemoryStream);
 var
   I: Integer;
   V: PIFVariant;

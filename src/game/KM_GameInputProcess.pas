@@ -265,7 +265,7 @@ type
   function IsSelectedObjectCommand(aGIC: TKMGameInputCommandType): Boolean;
   //As TGameInputCommand is no longer fixed size (due to the string) we cannot simply read/write it as a block
   procedure SaveCommandToMemoryStream(const aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
-  procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStreamBinary);
+  procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
 
 type
 
@@ -298,8 +298,8 @@ type
     procedure ExecGameAlertBeaconCmd(const aCommand: TKMGameInputCommand);
   protected
     function IsLastTickValueCorrect(aLastTickValue: Cardinal): Boolean;
-    procedure SaveExtra(aStream: TKMemoryStream); virtual;
-    procedure LoadExtra(aStream: TKMemoryStreamBinary); virtual;
+    procedure SaveExtra(SaveStream: TKMemoryStream); virtual;
+    procedure LoadExtra(LoadStream: TKMemoryStream); virtual;
   public
     constructor Create(aReplayState: TKMGIPReplayState);
     destructor Destroy; override;
@@ -348,7 +348,7 @@ type
     //Replay methods
     procedure SaveToStream(SaveStream: TKMemoryStream);
     procedure SaveToFile(const aFileName: UnicodeString);
-    procedure LoadFromStream(LoadStream: TKMemoryStreamBinary);
+    procedure LoadFromStream(LoadStream: TKMemoryStream);
     procedure LoadFromFile(const aFileName: UnicodeString);
     property Count: Integer read fCount;
     property ReplayState: TKMGIPReplayState read fReplayState;
@@ -419,7 +419,7 @@ begin
 end;
 
 
-procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStreamBinary);
+procedure LoadCommandFromMemoryStream(out aCommand: TKMGameInputCommand; aMemoryStream: TKMemoryStream);
 begin
   with aCommand do
   begin
@@ -1089,7 +1089,7 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStreamBinary);
+procedure TKMGameInputProcess.LoadFromStream(LoadStream: TKMemoryStream);
 var
   FileVersion: AnsiString;
   I: Integer;
@@ -1191,17 +1191,17 @@ begin
 end;
 
 
-procedure TKMGameInputProcess.SaveExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess.SaveExtra(SaveStream: TKMemoryStream);
 begin
-  aStream.Write(Cardinal(NO_LAST_TICK_VALUE));
+  SaveStream.Write(Cardinal(NO_LAST_TICK_VALUE));
 end;
 
 
-procedure TKMGameInputProcess.LoadExtra(aStream: TKMemoryStreamBinary);
+procedure TKMGameInputProcess.LoadExtra(LoadStream: TKMemoryStream);
 var
   Tmp: Cardinal;
 begin
-  aStream.Read(Tmp); //Just read some bytes from the stream
+  LoadStream.Read(Tmp); //Just read some bytes from the stream
   //Only used in GIP_Single
 end;
 

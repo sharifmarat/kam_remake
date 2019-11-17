@@ -16,7 +16,7 @@ type
     function ChooseNextStep(out Point: TKMPoint): Boolean;
   public
     constructor Create(aUnit: TKMUnit; aActionType: TKMUnitActionType; aLocked: Boolean);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function ActName: TKMUnitActionName; override;
     function GetExplanation: UnicodeString; override;
@@ -48,7 +48,7 @@ begin
 end;
 
 
-constructor TKMUnitActionSteer.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMUnitActionSteer.Load(LoadStream: TKMemoryStream);
 begin
   Inherited;
   LoadStream.CheckMarker('UnitActionSteer');

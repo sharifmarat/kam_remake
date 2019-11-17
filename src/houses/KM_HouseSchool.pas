@@ -25,7 +25,7 @@ type
     function GetResInLocked(aI: Byte): Word; override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure DemolishHouse(aFrom: TKMHandID; IsSilent: Boolean = False); override;
     procedure ResAddToIn(aWare: TKMWareType; aCount: Integer = 1; aFromScript: Boolean = False); override;
@@ -63,7 +63,7 @@ begin
 end;
 
 
-constructor TKMHouseSchool.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMHouseSchool.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('HouseSchool');

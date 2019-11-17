@@ -11,7 +11,7 @@ type
     fShowAnimation: Boolean;
   public
     constructor Create(aUnit: TKMUnit; aShowAnimation: Boolean);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
   end;
@@ -38,7 +38,7 @@ begin
 end;
 
 
-constructor TKMTaskDie.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskDie.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskDie');

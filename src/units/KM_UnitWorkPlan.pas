@@ -49,7 +49,7 @@ type
     function FindDifferentResource(aUnit: TKMUnit; aLoc: TKMPoint; const aAvoidLoc: TKMPoint): Boolean;
     property IsIssued: Boolean read fIssued;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -613,7 +613,7 @@ begin
 end;
 
 
-procedure TKMUnitWorkPlan.Load(LoadStream:TKMemoryStreamBinary);
+procedure TKMUnitWorkPlan.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('WorkPlan');

@@ -156,7 +156,7 @@ type
     procedure AbandonDelivery(aID: Integer); //Occurs when unit is killed or something alike happens
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
 
     procedure UpdateState(aTick: Cardinal);
@@ -184,7 +184,7 @@ type
     property Queue: TKMDeliveries read fQueue;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState(aTick: Cardinal);
   end;
@@ -242,7 +242,7 @@ begin
 end;
 
 
-procedure TKMHandLogistics.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandLogistics.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('SerfList');
@@ -1750,7 +1750,7 @@ begin
 end;
 
 
-procedure TKMDeliveries.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMDeliveries.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
   {$IFDEF USE_HASH}

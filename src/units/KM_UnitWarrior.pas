@@ -63,7 +63,7 @@ type
     FaceDir: TKMDirection; //Direction we should face after walking. Only check for enemies in this direction.
 
     constructor Create(aID: Cardinal; aUnitType: TKMUnitType; const aLoc: TKMPoint; aOwner: TKMHandID);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     procedure CloseUnit(aRemoveTileUsage: Boolean = True); override;
     destructor Destroy; override;
@@ -145,7 +145,7 @@ begin
 end;
 
 
-constructor TKMUnitWarrior.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMUnitWarrior.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.Read(fGroup, 4); //subst on syncload

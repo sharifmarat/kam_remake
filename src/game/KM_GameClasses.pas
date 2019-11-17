@@ -11,16 +11,16 @@ type
     fLastReplayTick: Cardinal; //we can't put it into game, since this tick could be different for every player and we will get different save files CRC
     fStartLoc: Integer; //Starting loc is used to check if we are allowed to load minimap. F.e. we do not need to load minimap if we changed loc to other after back to lobby
     fMinimap: TKMMinimap; //Minimap could be unique for each player, then we can't save it to game it too
-    procedure LoadHeader(aLoadStream: TKMemoryStreamBinary);
-    procedure LoadMinimap(aLoadStream: TKMemoryStreamBinary; aMinimap: TKMMinimap);
+    procedure LoadHeader(LoadStream: TKMemoryStream);
+    procedure LoadMinimap(LoadStream: TKMemoryStream; aMinimap: TKMMinimap);
   public
     constructor Create; overload;
     constructor Create(aLastReplayTick: Cardinal; aStartLoc: Integer; aMinimap: TKMMinimap); overload;
 
     property LastReplayTick: Cardinal read fLastReplayTick write fLastReplayTick;
 
-    procedure Save(aSaveStream: TKMemoryStream);
-    procedure Load(aLoadStream: TKMemoryStreamBinary; aMinimap: TKMMinimap = nil);
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream; aMinimap: TKMMinimap = nil);
 
     procedure SaveToFile(aFilePath: String);
     function LoadFromFile(aFilePath: String): Boolean;
@@ -48,33 +48,33 @@ begin
 end;
 
 
-procedure TKMGameMPLocalData.Save(aSaveStream: TKMemoryStream);
+procedure TKMGameMPLocalData.Save(SaveStream: TKMemoryStream);
 begin
-  aSaveStream.Write(fLastReplayTick);
-  aSaveStream.Write(fStartLoc);
+  SaveStream.Write(fLastReplayTick);
+  SaveStream.Write(fStartLoc);
   if fMinimap <> nil then
-    fMinimap.SaveToStream(aSaveStream);
+    fMinimap.SaveToStream(SaveStream);
 end;
 
 
-procedure TKMGameMPLocalData.Load(aLoadStream: TKMemoryStreamBinary; aMinimap: TKMMinimap = nil);
+procedure TKMGameMPLocalData.Load(LoadStream: TKMemoryStream; aMinimap: TKMMinimap = nil);
 begin
-  LoadHeader(aLoadStream);
-  LoadMinimap(aLoadStream, aMinimap);
+  LoadHeader(LoadStream);
+  LoadMinimap(LoadStream, aMinimap);
 end;
 
 
-procedure TKMGameMPLocalData.LoadHeader(aLoadStream: TKMemoryStreamBinary);
+procedure TKMGameMPLocalData.LoadHeader(LoadStream: TKMemoryStream);
 begin
-  aLoadStream.Read(fLastReplayTick);
-  aLoadStream.Read(fStartLoc);
+  LoadStream.Read(fLastReplayTick);
+  LoadStream.Read(fStartLoc);
 end;
 
 
-procedure TKMGameMPLocalData.LoadMinimap(aLoadStream: TKMemoryStreamBinary; aMinimap: TKMMinimap);
+procedure TKMGameMPLocalData.LoadMinimap(LoadStream: TKMemoryStream; aMinimap: TKMMinimap);
 begin
   if aMinimap <> nil then
-    aMinimap.LoadFromStream(aLoadStream);
+    aMinimap.LoadFromStream(LoadStream);
 end;
 
 

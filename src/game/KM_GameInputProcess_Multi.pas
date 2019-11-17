@@ -26,8 +26,8 @@ type
     procedure Add(aCommand: TKMGameInputCommand);
     function CRC: Cardinal;
     property Items[aIndex: Integer]: TKMGameInputCommand read GetItem;
-    procedure Save(aStream: TKMemoryStream);
-    procedure Load(aStream: TKMemoryStreamBinary);
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
   TKMRandomCheck = record
@@ -76,7 +76,7 @@ type
     property GetNumberConsecutiveWaits: Word read fNumberConsecutiveWaits;
     property LastSentCmdsTick: Cardinal read fLastSentCmdsTick;
     function GetWaitingPlayers(aTick: Cardinal): TKMByteArray;
-    procedure RecieveCommands(aStream: TKMemoryStreamBinary; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
+    procedure RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt); //Called by TKMNetwork when it has data for us
     procedure ResyncFromTick(aSender: ShortInt; aTick: Cardinal);
     function CommandsConfirmed(aTick: Cardinal):boolean; override;
     procedure RunningTimer(aTick: Cardinal); override;
@@ -126,26 +126,26 @@ begin
 end;
 
 
-procedure TKMCommandsPack.Save(aStream: TKMemoryStream);
+procedure TKMCommandsPack.Save(SaveStream: TKMemoryStream);
 var I: Integer;
 begin
-  aStream.Write(fCount);
+  SaveStream.Write(fCount);
   for I := 1 to fCount do
   begin
     //gLog.AddTime(Format('%s', [GetEnumName(TypeInfo(TGameInputCommandType), Integer(fItems[I].CommandType))]));
-    SaveCommandToMemoryStream(fItems[I], aStream);
+    SaveCommandToMemoryStream(fItems[I], SaveStream);
   end;
 end;
 
 
-procedure TKMCommandsPack.Load(aStream: TKMemoryStreamBinary);
+procedure TKMCommandsPack.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
-  aStream.Read(fCount);
+  LoadStream.Read(fCount);
   SetLength(fItems, fCount + 1);
 
   for I := 1 to fCount do
-    LoadCommandFromMemoryStream(fItems[I], aStream);
+    LoadCommandFromMemoryStream(fItems[I], LoadStream);
 end;
 
 
@@ -313,7 +313,7 @@ end;
 
 
 //Decode recieved messages (Commands from other players, Confirmations, Errors)
-procedure TKMGameInputProcess_Multi.RecieveCommands(aStream: TKMemoryStreamBinary; aSenderIndex: ShortInt);
+procedure TKMGameInputProcess_Multi.RecieveCommands(aStream: TKMemoryStream; aSenderIndex: ShortInt);
 var
   dataType: TKMDataType;
   Tick: Cardinal;

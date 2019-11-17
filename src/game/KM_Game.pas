@@ -1940,7 +1940,7 @@ begin
 
   if fSavedReplays.Contains(aTick) then
   begin
-    LoadStream := fSavedReplays[aTick];
+    LoadStream := TKMemoryStreamBinary(fSavedReplays[aTick]);
     LoadStream.Position := 0;
     LoadFromStream(LoadStream, True);
     fGameInputProcess.LoadFromStream(LoadStream);

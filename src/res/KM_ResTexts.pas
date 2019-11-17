@@ -58,7 +58,7 @@ type
     property DefaultTexts[aIndex: Word]: UnicodeString read GetDefaultTexts;
     property ForceDefaultLocale: Boolean read fForceDefaultLocale write fForceDefaultLocale;
     procedure Save(aStream: TKMemoryStream);
-    procedure Load(aStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -339,7 +339,7 @@ begin
 end;
 
 
-procedure TKMTextLibraryMulti.Load(aStream: TKMemoryStreamBinary);
+procedure TKMTextLibraryMulti.Load(LoadStream: TKMemoryStream);
 var
   I,K: Integer;
   LocCount, TextCount: Integer;
@@ -350,27 +350,27 @@ begin
   // Try to match savegame locales with players locales,
   // because some players might have non-native locales missing
   // We might add locale selection to setup.exe
-  aStream.CheckMarker('TextLibraryMulti');
+  LoadStream.CheckMarker('TextLibraryMulti');
   SetLength(fTexts, gResLocales.Count);
 
-  aStream.Read(LocCount);
+  LoadStream.Read(LocCount);
   for I := 0 to LocCount - 1 do
   begin
-    aStream.ReadA(curLoc);
+    LoadStream.ReadA(curLoc);
     Id := gResLocales.IndexByCode(curLoc);
 
-    aStream.Read(TextCount);
+    LoadStream.Read(TextCount);
 
     if Id <> -1 then
     begin
       SetLength(fTexts[Id], TextCount);
       for K := 0 to TextCount - 1 do
-        aStream.ReadW(fTexts[Id,K]);
+        LoadStream.ReadW(fTexts[Id,K]);
     end
     else
     begin
       for K := 0 to TextCount - 1 do
-        aStream.ReadW(Tmp);
+        LoadStream.ReadW(Tmp);
     end;
   end;
 

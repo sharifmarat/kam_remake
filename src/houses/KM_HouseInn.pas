@@ -19,7 +19,7 @@ type
     end;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     function EaterGetsRandomEmptySlot(aUnitType: TKMUnitType): ShortInt;
     procedure UpdateEater(aIndex: ShortInt; aFoodKind: TKMWareType);
     procedure EatersGoesOut(aIndex: ShortInt);
@@ -49,7 +49,7 @@ begin
 end;
 
 
-constructor TKMHouseInn.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMHouseInn.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('HouseInn');

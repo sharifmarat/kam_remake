@@ -54,7 +54,7 @@ type
     procedure ResetToDefaults;
 
     procedure SaveCustomData(aSaveStream: TKMemoryStream);
-    procedure LoadCustomData(aLoadStream: TKMemoryStreamBinary);
+    procedure LoadCustomData(aLoadStream: TKMemoryStream);
   end;
 
 
@@ -270,7 +270,7 @@ begin
 end;
 
 
-procedure TKMResWares.LoadCustomData(aLoadStream: TKMemoryStreamBinary);
+procedure TKMResWares.LoadCustomData(aLoadStream: TKMemoryStream);
 var
   I: TKMWareType;
 begin

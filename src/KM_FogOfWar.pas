@@ -66,7 +66,7 @@ type
     procedure SyncFOW(aFOW: TKMFogOfWar);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateState;
   end;
@@ -436,7 +436,7 @@ begin
 end;
 
 
-procedure TKMFogOfWar.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMFogOfWar.Load(LoadStream: TKMemoryStream);
 var
   I: Word;
 begin

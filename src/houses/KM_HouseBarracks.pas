@@ -22,7 +22,7 @@ type
     NotAllowTakeOutFlag: array [WARFARE_MIN .. WARFARE_MAX] of Boolean;
     NotAcceptRecruitFlag: Boolean;
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
@@ -68,7 +68,7 @@ begin
 end;
 
 
-constructor TKMHouseBarracks.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMHouseBarracks.Load(LoadStream: TKMemoryStream);
 var
   I, NewCount: Integer;
   U: TKMUnit;

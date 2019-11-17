@@ -225,7 +225,7 @@ type
     constructor Create(aPlayer: TKMHandID);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
@@ -405,7 +405,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMCityPlanner.Load(LoadStream: TKMemoryStream);
 var
   HT: TKMHouseType;
   K, Len: Integer;

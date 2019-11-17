@@ -26,7 +26,7 @@ type
     procedure SetResIn(aI: Byte; aValue: Word); override;
   public
     constructor Create(aUID: Integer; aHouseType: TKMHouseType; PosX, PosY: Integer; aOwner: TKMHandID; aBuildState: TKMHouseBuildState);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure Save(SaveStream: TKMemoryStream); override;
 
     procedure SetGoldMaxCnt(aValue: Word; aFromScript: Boolean); overload;
@@ -67,7 +67,7 @@ begin
 end;
 
 
-constructor TKMHouseTownHall.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMHouseTownHall.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('HouseTownHall');

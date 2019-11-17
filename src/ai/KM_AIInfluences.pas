@@ -63,7 +63,7 @@ type
     constructor Create(aNavMesh: TKMNavMesh);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     // Avoid building
     property AvoidBuilding[const aY,aX: Word]: Byte read GetAvoidBuilding write SetAvoidBuilding;
@@ -160,7 +160,7 @@ begin
 end;
 
 
-procedure TKMInfluences.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMInfluences.Load(LoadStream: TKMemoryStream);
 var
   Len: Integer;
 begin

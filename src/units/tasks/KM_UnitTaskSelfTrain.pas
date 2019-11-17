@@ -13,7 +13,7 @@ type
     fSchool: TKMHouseSchool;
   public
     constructor Create(aUnit: TKMUnit; aSchool: TKMHouseSchool);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function Execute: TKMTaskResult; override;
@@ -37,7 +37,7 @@ begin
 end;
 
 
-constructor TKMTaskSelfTrain.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskSelfTrain.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskSelfTrain');

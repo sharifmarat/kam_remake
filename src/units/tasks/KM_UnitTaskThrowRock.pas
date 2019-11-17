@@ -15,7 +15,7 @@ type
   public
     constructor Create(aUnit, aTarget: TKMUnit);
     destructor Destroy; override;
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     function Execute: TKMTaskResult; override;
     procedure Save(SaveStream: TKMemoryStream); override;
@@ -48,7 +48,7 @@ begin
 end;
 
 
-constructor TKMTaskThrowRock.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskThrowRock.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskThrowRock');

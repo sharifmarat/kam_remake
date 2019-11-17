@@ -77,7 +77,7 @@ type
     constructor Create(aUnit: TKMUnit; const aLocB: TKMPoint; aActionType: TKMUnitActionType; aDistance: Single; aSetPushed:
                        Boolean; aTargetUnit: TKMUnit; aTargetHouse: TKMHouse; aTargetPassability: TKMTerrainPassability = tpUnused;
                        aTargetWalkConnectSet: TKMByteSet = []; aUseExactTarget: Boolean = True);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure  SyncLoad; override;
     destructor Destroy; override;
 
@@ -246,7 +246,7 @@ begin
 end;
 
 
-constructor TKMUnitActionWalkTo.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMUnitActionWalkTo.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('UnitActionWalkTo');

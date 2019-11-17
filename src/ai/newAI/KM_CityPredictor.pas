@@ -61,7 +61,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     property CityStats: TCityStats read fCityStats;
     property WareBalance: TWareBalanceArray read fWareBalance;
@@ -225,7 +225,7 @@ begin
 end;
 
 
-procedure TKMCityPredictor.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMCityPredictor.Load(LoadStream: TKMemoryStream);
 var
   WT: TKMWareType;
 begin

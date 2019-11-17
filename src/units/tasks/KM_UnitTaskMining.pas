@@ -22,7 +22,7 @@ type
     constructor Create(aUnit: TKMUnit; aWare: TKMWareType);
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     function GetActivityText: UnicodeString;
     property WorkPlan: TKMUnitWorkPlan read fWorkPlan;
     function Execute: TKMTaskResult; override;
@@ -106,7 +106,7 @@ begin
 end;
 
 
-constructor TKMTaskMining.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskMining.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskMining');

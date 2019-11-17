@@ -45,7 +45,7 @@ type
     constructor Create(aPlayer: TKMHandID; aSetup: TKMHandAISetup);
     destructor Destroy(); override;
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad();
 
     procedure AfterMissionInit();
@@ -106,7 +106,7 @@ begin
 end;
 
 
-procedure TKMCityManagement.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMCityManagement.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('CityManagement');
   LoadStream.Read(fOwner);

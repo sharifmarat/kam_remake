@@ -118,7 +118,7 @@ type
     property Count: Integer read fCount;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure UpdateState;
 
     function AddSound(aHandIndex: TKMHandID; const aSoundName: AnsiString; aSoundFormat: TKMAudioFormat; aLoc: TKMPoint;
@@ -910,7 +910,7 @@ begin
 end;
 
 
-procedure TKMScriptSoundsManager.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMScriptSoundsManager.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

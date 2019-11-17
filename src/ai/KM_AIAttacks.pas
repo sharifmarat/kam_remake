@@ -66,7 +66,7 @@ type
     procedure Clear;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -223,7 +223,7 @@ begin
 end;
 
 
-procedure TKMAIAttacks.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMAIAttacks.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin

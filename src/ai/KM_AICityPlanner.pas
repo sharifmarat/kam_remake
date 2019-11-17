@@ -22,7 +22,7 @@ type
     constructor Create(aOwner: TKMHandID);
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure Save(SaveStream: TKMemoryStream); override;
-    procedure Load(LoadStream: TKMemoryStreamBinary); override;
+    procedure Load(LoadStream: TKMemoryStream); override;
   end;
 
   TKMCityPlanner = class
@@ -50,7 +50,7 @@ type
     function FindPlaceForHouse(aHouse: TKMHouseType; out aLoc: TKMPoint): Boolean;
     procedure OwnerUpdate(aPlayer: TKMHandID);
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -498,7 +498,7 @@ begin
 end;
 
 
-procedure TKMCityPlanner.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMCityPlanner.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.Read(fOwner);
   fFinder.Load(LoadStream);
@@ -591,7 +591,7 @@ begin
 end;
 
 
-procedure TKMTerrainFinderCity.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMTerrainFinderCity.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TerrainFinderCity');

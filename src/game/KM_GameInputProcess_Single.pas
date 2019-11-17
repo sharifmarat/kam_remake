@@ -9,8 +9,8 @@ type
   TKMGameInputProcess_Single = class(TKMGameInputProcess)
   protected
     procedure TakeCommand(const aCommand: TKMGameInputCommand); override;
-    procedure SaveExtra(aStream: TKMemoryStream); override;
-    procedure LoadExtra(aStream: TKMemoryStreamBinary); override;
+    procedure SaveExtra(SaveStream: TKMemoryStream); override;
+    procedure LoadExtra(LoadStream: TKMemoryStream); override;
   public
     procedure ReplayTimer(aTick: Cardinal); override;
     procedure RunningTimer(aTick: Cardinal); override;
@@ -73,17 +73,17 @@ begin
 end;
 
 
-procedure TKMGameInputProcess_Single.SaveExtra(aStream: TKMemoryStream);
+procedure TKMGameInputProcess_Single.SaveExtra(SaveStream: TKMemoryStream);
 begin
-  aStream.Write(gGame.LastReplayTick);
+  SaveStream.Write(gGame.LastReplayTick);
 end;
 
 
-procedure TKMGameInputProcess_Single.LoadExtra(aStream: TKMemoryStreamBinary);
+procedure TKMGameInputProcess_Single.LoadExtra(LoadStream: TKMemoryStream);
 var
   LastReplayTick: Cardinal;
 begin
-  aStream.Read(LastReplayTick);
+  LoadStream.Read(LastReplayTick);
   gGame.LastReplayTick := LastReplayTick;
 end;
 

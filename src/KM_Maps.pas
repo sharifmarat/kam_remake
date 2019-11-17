@@ -30,8 +30,8 @@ type
   TKMMapTxtInfo = class
   private
     function IsEmpty: Boolean;
-    procedure Load(aStream: TKMemoryStreamBinary);
-    procedure Save(aStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStream);
+    procedure Save(SaveStream: TKMemoryStream);
   public
     Author, BigDesc, SmallDesc: UnicodeString;
     SmallDescLibx, BigDescLibx: Integer;
@@ -1098,34 +1098,34 @@ begin
 end;
 
 
-procedure TKMMapTxtInfo.Load(aStream: TKMemoryStreamBinary);
+procedure TKMMapTxtInfo.Load(LoadStream: TKMemoryStream);
 begin
-  aStream.Read(IsCoop);
-  aStream.Read(IsSpecial);
-  aStream.Read(IsPlayableAsSP);
+  LoadStream.Read(IsCoop);
+  LoadStream.Read(IsSpecial);
+  LoadStream.Read(IsPlayableAsSP);
 
-  aStream.Read(BlockTeamSelection);
-  aStream.Read(BlockPeacetime);
-  aStream.Read(BlockFullMapPreview);
+  LoadStream.Read(BlockTeamSelection);
+  LoadStream.Read(BlockPeacetime);
+  LoadStream.Read(BlockFullMapPreview);
 
-  aStream.ReadW(SmallDesc);
-  aStream.Read(SmallDescLibx);
+  LoadStream.ReadW(SmallDesc);
+  LoadStream.Read(SmallDescLibx);
 //  aStream.ReadW(fBigDesc);
 end;
 
 
-procedure TKMMapTxtInfo.Save(aStream: TKMemoryStream);
+procedure TKMMapTxtInfo.Save(SaveStream: TKMemoryStream);
 begin
-  aStream.Write(IsCoop);
-  aStream.Write(IsSpecial);
-  aStream.Write(IsPlayableAsSP);
+  SaveStream.Write(IsCoop);
+  SaveStream.Write(IsSpecial);
+  SaveStream.Write(IsPlayableAsSP);
 
-  aStream.Write(BlockTeamSelection);
-  aStream.Write(BlockPeacetime);
-  aStream.Write(BlockFullMapPreview);
+  SaveStream.Write(BlockTeamSelection);
+  SaveStream.Write(BlockPeacetime);
+  SaveStream.Write(BlockFullMapPreview);
 
-  aStream.WriteW(SmallDesc);
-  aStream.Write(SmallDescLibx);
+  SaveStream.WriteW(SmallDesc);
+  SaveStream.Write(SmallDescLibx);
 //  aStream.WriteW(fBigDesc);
 end;
 

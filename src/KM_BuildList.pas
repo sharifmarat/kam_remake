@@ -33,7 +33,7 @@ type
     function GetAvailableJobsCount: Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
 
     procedure UpdateState;
@@ -83,7 +83,7 @@ type
     procedure GetTablets(aList: TKMPointTagList; const aRect: TKMRect);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
   end;
 
@@ -138,7 +138,7 @@ type
     function FieldCount(aFieldType: TKMFieldType): Integer;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
   end;
 
@@ -165,7 +165,7 @@ type
     procedure RemWorker(aIndex: Integer);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
   end;
@@ -204,7 +204,7 @@ type
     property RepairList: TKMRepairList read fRepairList;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
   end;
@@ -357,7 +357,7 @@ begin
 end;
 
 
-procedure TKMHouseList.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHouseList.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('HouseList');
@@ -646,7 +646,7 @@ begin
 end;
 
 
-procedure TKMFieldworksList.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMFieldworksList.Load(LoadStream: TKMemoryStream);
 var
   I: Integer;
 begin
@@ -937,7 +937,7 @@ begin
 end;
 
 
-procedure TKMHousePlanList.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHousePlanList.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('HousePlanList');
@@ -1100,7 +1100,7 @@ begin
 end;
 
 
-procedure TKMRepairList.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMRepairList.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('RepairList');
@@ -1205,7 +1205,7 @@ begin
 end;
 
 
-procedure TKMBuildList.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMBuildList.Load(LoadStream: TKMemoryStream);
 var I: Integer;
 begin
   LoadStream.CheckMarker('WorkerList');

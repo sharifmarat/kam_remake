@@ -38,7 +38,7 @@ type
     procedure EnableAdvancedAI(aNewAI: Boolean = True);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -162,7 +162,7 @@ begin
 end;
 
 
-procedure TKMHandAISetup.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandAISetup.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('AISetup');
   LoadStream.Read(NewAI);

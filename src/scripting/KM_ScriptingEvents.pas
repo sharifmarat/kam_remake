@@ -100,7 +100,7 @@ type
     procedure ProcWinefieldBuilt(aPlayer: TKMHandID; aX, aY: Word);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
   end;
 
 
@@ -326,7 +326,7 @@ begin
 end;
 
 
-procedure TKMScriptEvents.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMScriptEvents.Load(LoadStream: TKMemoryStream);
 var
   Cnt: Byte;
   HandlerName: AnsiString;

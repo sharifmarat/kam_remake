@@ -44,7 +44,7 @@ type
     procedure PanTo(const aLoc: TKMPointF; aTicksCnt: Cardinal);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateStateIdle(aFrameTime: Cardinal; aAllowMouseScrolling: Boolean; aInCinematic: Boolean);
   end;
@@ -339,7 +339,7 @@ begin
 end;
 
 
-procedure TKMViewport.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMViewport.Load(LoadStream: TKMemoryStream);
 begin
   LoadStream.CheckMarker('Viewport');
   //Load map dimensions then Position so it could be fit to map

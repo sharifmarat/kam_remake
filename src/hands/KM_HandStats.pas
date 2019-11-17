@@ -136,7 +136,7 @@ type
     function ChartArmyEmpty(aChartKind: TKMChartArmyKind; aWarrior: TKMUnitType): Boolean;
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
 
     procedure UpdateState;
 
@@ -787,7 +787,7 @@ begin
 end;
 
 
-procedure TKMHandStats.Load(LoadStream: TKMemoryStreamBinary);
+procedure TKMHandStats.Load(LoadStream: TKMemoryStream);
 var
   I: TKMWareType;
   W: TKMUnitType;

@@ -27,7 +27,7 @@ type
     procedure SetPosition(const Value: TKMPointDir);
   public
     constructor Create(const aPos: TKMPointDir; aGroupType: TKMGroupType; aRadius: Integer; aDefenceType: TAIDefencePosType);
-    constructor Load(LoadStream: TKMemoryStreamBinary);
+    constructor Load(LoadStream: TKMemoryStream);
     destructor Destroy; override;
 
     property DefenceType: TAIDefencePosType read fDefenceType write SetDefenceType;
@@ -72,7 +72,7 @@ type
     procedure MoveDown(aIndex: Integer);
 
     procedure Save(SaveStream: TKMemoryStream);
-    procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure Load(LoadStream: TKMemoryStream);
     procedure SyncLoad;
     procedure UpdateState;
     procedure Paint;
@@ -149,7 +149,7 @@ begin
 end;
 
 
-constructor TAIDefencePosition.Load(LoadStream: TKMemoryStreamBinary);
+constructor TAIDefencePosition.Load(LoadStream: TKMemoryStream);
 begin
   inherited Create;
   LoadStream.Read(fPosition);
@@ -403,7 +403,7 @@ begin
 end;
 
 
-procedure TAIDefencePositions.Load(LoadStream: TKMemoryStreamBinary);
+procedure TAIDefencePositions.Load(LoadStream: TKMemoryStream);
 var I, NewCount: Integer;
 begin
   LoadStream.CheckMarker('DefencePositions');

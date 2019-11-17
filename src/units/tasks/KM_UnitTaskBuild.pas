@@ -24,7 +24,7 @@ type
     TileLockSet: Boolean;
   public
     constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
@@ -41,7 +41,7 @@ type
     TileLockSet: Boolean;
   public
     constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
@@ -56,7 +56,7 @@ type
     TileLockSet: Boolean;
   public
     constructor Create(aWorker: TKMUnitWorker; const aLoc: TKMPoint; aID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
     procedure CancelThePlan; override;
@@ -77,7 +77,7 @@ type
     function GetHouseEntranceLoc: TKMPoint;
   public
     constructor Create(aWorker: TKMUnitWorker; aHouseType: TKMHouseType; const aLoc: TKMPoint; aID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     property DigState: ShortInt read LastToDig;
     procedure SyncLoad; override;
     destructor Destroy; override;
@@ -96,7 +96,7 @@ type
     Cells: TKMPointDirList; //List of surrounding cells and directions
   public
     constructor Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -113,7 +113,7 @@ type
     Cells: TKMPointDirList; //List of surrounding cells and directions
   public
     constructor Create(aWorker: TKMUnitWorker; aHouse: TKMHouse; aRepairID: Integer);
-    constructor Load(LoadStream: TKMemoryStreamBinary); override;
+    constructor Load(LoadStream: TKMemoryStream); override;
     procedure SyncLoad; override;
     destructor Destroy; override;
     function WalkShouldAbandon: Boolean; override;
@@ -149,7 +149,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildRoad.Load(LoadStream:TKMemoryStreamBinary);
+constructor TKMTaskBuildRoad.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskBuildRoad');
@@ -304,7 +304,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildWine.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskBuildWine.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.PlaceMarker('TaskBuildWine');
@@ -442,7 +442,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildField.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskBuildField.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskBuildField');
@@ -562,7 +562,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildHouseArea.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskBuildHouseArea.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
 
@@ -776,7 +776,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildHouse.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskBuildHouse.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskBuildHouse');
@@ -910,7 +910,7 @@ begin
 end;
 
 
-constructor TKMTaskBuildHouseRepair.Load(LoadStream: TKMemoryStreamBinary);
+constructor TKMTaskBuildHouseRepair.Load(LoadStream: TKMemoryStream);
 begin
   inherited;
   LoadStream.CheckMarker('TaskBuildHouseRepair');
