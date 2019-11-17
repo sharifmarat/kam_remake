@@ -41,6 +41,7 @@ end;
 constructor TKMTaskDie.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskDie');
   LoadStream.Read(fShowAnimation);
 end;
 
@@ -48,6 +49,7 @@ end;
 procedure TKMTaskDie.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskDie');
   SaveStream.Write(fShowAnimation);
 end;
 

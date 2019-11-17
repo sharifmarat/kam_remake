@@ -1173,6 +1173,7 @@ procedure TKMConsoleCommand.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
+  SaveStream.PlaceMarker('ConsoleCommand');
   SaveStream.WriteA(fName);
   SaveStream.WriteA(fProcName);
   for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do
@@ -1184,6 +1185,7 @@ procedure TKMConsoleCommand.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
+  LoadStream.CheckMarker('ConsoleCommand');
   LoadStream.ReadA(fName);
   LoadStream.ReadA(fProcName);
   for I := 0 to MAX_SCRIPT_CONSOLE_COMMAND_PARAMS - 1 do

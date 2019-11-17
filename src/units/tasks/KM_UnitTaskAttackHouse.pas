@@ -50,6 +50,7 @@ end;
 constructor TKMTaskAttackHouse.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskAttackHouse');
   LoadStream.Read(fHouse, 4);
 end;
 
@@ -202,6 +203,7 @@ procedure TKMTaskAttackHouse.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
 
+  SaveStream.PlaceMarker('TaskAttackHouse');
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID)
   else

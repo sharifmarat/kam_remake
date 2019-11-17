@@ -47,6 +47,7 @@ end;
 constructor TKMTaskDismiss.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskDismiss');
   LoadStream.Read(fSchool, 4);
 end;
 
@@ -74,6 +75,7 @@ end;
 procedure TKMTaskDismiss.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskDismiss');
   if fSchool <> nil then
     SaveStream.Write(fSchool.UID) //Store ID, then substitute it with reference on SyncLoad
   else

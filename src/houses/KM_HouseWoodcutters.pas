@@ -40,6 +40,7 @@ end;
 constructor TKMHouseWoodcutters.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseWoodcutters');
   LoadStream.Read(fWoodcutterMode, SizeOf(fWoodcutterMode));
 end;
 
@@ -47,6 +48,7 @@ end;
 procedure TKMHouseWoodcutters.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseWoodcutters');
   SaveStream.Write(fWoodcutterMode, SizeOf(fWoodcutterMode));
 end;
 

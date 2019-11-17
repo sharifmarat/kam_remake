@@ -586,6 +586,7 @@ end;
 procedure TKMTerrainFinderCity.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TerrainFinderCity');
   SaveStream.Write(fOwner);
 end;
 
@@ -593,6 +594,7 @@ end;
 procedure TKMTerrainFinderCity.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TerrainFinderCity');
   LoadStream.Read(fOwner);
 end;
 

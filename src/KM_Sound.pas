@@ -894,6 +894,7 @@ procedure TKMScriptSoundsManager.Save(SaveStream: TKMemoryStream);
 var
   I: Integer;
 begin
+  SaveStream.PlaceMarker('ScriptSoundsManager');
   SaveStream.Write(fLastScriptIndex);
   SaveStream.Write(fCount);
   for I := 0 to fCount-1 do
@@ -913,6 +914,7 @@ procedure TKMScriptSoundsManager.Load(LoadStream: TKMemoryStreamBinary);
 var
   I: Integer;
 begin
+  LoadStream.CheckMarker('ScriptSoundsManager');
   LoadStream.Read(fLastScriptIndex);
   LoadStream.Read(fCount);
   SetLength(fSounds, fCount);

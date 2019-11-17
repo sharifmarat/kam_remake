@@ -62,6 +62,7 @@ end;
 procedure TPathFindingRoad.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('PathFindingRoad');
   SaveStream.Write(fOwner);
   SaveStream.Write(fRoadConnectID);
 end;
@@ -70,6 +71,7 @@ end;
 procedure TPathFindingRoad.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('PathFindingRoad');
   LoadStream.Read(fOwner);
   LoadStream.Read(fRoadConnectID);
 end;

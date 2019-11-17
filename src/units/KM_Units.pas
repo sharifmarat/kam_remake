@@ -1019,6 +1019,7 @@ end;
 constructor TKMUnitAnimal.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitAnimal');
   LoadStream.Read(fFishCount);
 end;
 
@@ -1038,6 +1039,7 @@ end;
 procedure TKMUnitAnimal.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitAnimal');
   SaveStream.Write(fFishCount);
 end;
 
@@ -1180,6 +1182,7 @@ var
   ActName: TKMUnitActionName;
 begin
   inherited Create;
+  LoadStream.CheckMarker('Unit');
   LoadStream.Read(fType, SizeOf(fType));
   LoadStream.Read(HasTask);
   if HasTask then
@@ -2203,6 +2206,7 @@ var
   HasTask, HasAct: Boolean;
   ActName: TKMUnitActionName;
 begin
+  SaveStream.PlaceMarker('Unit');
   SaveStream.Write(fType, SizeOf(fType));
 
   HasTask := fTask <> nil; //Thats our switch to know if unit should write down his task.
@@ -2410,6 +2414,7 @@ constructor TKMUnitTask.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
 
+  LoadStream.CheckMarker('UnitTask');
   LoadStream.Read(fType, SizeOf(fType));
   LoadStream.Read(fUnit, 4);//Substitute it with reference on SyncLoad
   LoadStream.Read(fPhase);
@@ -2462,6 +2467,7 @@ end;
 
 procedure TKMUnitTask.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('UnitTask');
   SaveStream.Write(fType, SizeOf(fType)); //Save task type before anything else for it will be used on loading to create specific task type
   if fUnit <> nil then
     SaveStream.Write(fUnit.UID) //Store ID, then substitute it with reference on SyncLoad
@@ -2495,6 +2501,7 @@ end;
 constructor TKMUnitAction.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited Create;
+  LoadStream.CheckMarker('UnitAction');
   LoadStream.Read(fType, SizeOf(fType));
   LoadStream.Read(fUnit, 4);
   LoadStream.Read(Locked);
@@ -2510,6 +2517,7 @@ end;
 
 procedure TKMUnitAction.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('UnitAction');
   SaveStream.Write(fType, SizeOf(fType));
   if fUnit <> nil then
     SaveStream.Write(fUnit.UID) //Store ID, then substitute it with reference on SyncLoad

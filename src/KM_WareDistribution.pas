@@ -126,12 +126,14 @@ end;
 
 procedure TKMWareDistribution.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('WareDistribution');
   SaveStream.Write(fWareDistribution, SizeOf(fWareDistribution));
 end;
 
 
 procedure TKMWareDistribution.Load(LoadStream: TKMemoryStreamBinary);
 begin
+  LoadStream.CheckMarker('WareDistribution');
   LoadStream.Read(fWareDistribution, SizeOf(fWareDistribution));
 end;
 

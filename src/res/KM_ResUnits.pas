@@ -448,12 +448,14 @@ end;
 
 procedure TKMResUnits.SaveCustomData(aSaveStream: TKMemoryStream);
 begin
+  aSaveStream.PlaceMarker('UnitsCustomData');
   aSaveStream.Write(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
 end;
 
 
 procedure TKMResUnits.LoadCustomData(aLoadStream: TKMemoryStreamBinary);
 begin
+  aLoadStream.CheckMarker('UnitsCustomData');
   aLoadStream.Read(TH_TROOP_COST, SizeOF(TH_TROOP_COST));
 end;
 

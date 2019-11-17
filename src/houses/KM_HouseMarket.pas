@@ -393,6 +393,7 @@ end;
 constructor TKMHouseMarket.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseMarket');
   LoadStream.Read(fTradeAmount);
   LoadStream.Read(fResFrom, SizeOf(fResFrom));
   LoadStream.Read(fResTo, SizeOf(fResTo));
@@ -405,6 +406,7 @@ end;
 procedure TKMHouseMarket.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseMarket');
   SaveStream.Write(fTradeAmount);
   SaveStream.Write(fResFrom, SizeOf(fResFrom));
   SaveStream.Write(fResTo, SizeOf(fResTo));

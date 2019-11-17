@@ -261,14 +261,14 @@ end;
 
 procedure TKMHandCommon.Save(SaveStream: TKMemoryStream);
 begin
-  SaveStream.PlaceMarker('PlayerCommon');
+  SaveStream.PlaceMarker('HandCommon');
   fUnits.Save(SaveStream);
 end;
 
 
 procedure TKMHandCommon.Load(LoadStream: TKMemoryStreamBinary);
 begin
-  LoadStream.CheckMarker('PlayerCommon');
+  LoadStream.CheckMarker('HandCommon');
   fUnits.Load(LoadStream);
 end;
 
@@ -1656,6 +1656,7 @@ end;
 
 procedure TKMHand.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('Hand');
   SaveStream.Write(Enabled);
   SaveStream.Write(InCinematic);
   if not Enabled then Exit;
@@ -1687,6 +1688,7 @@ end;
 
 procedure TKMHand.Load(LoadStream: TKMemoryStreamBinary);
 begin
+  LoadStream.CheckMarker('Hand');
   LoadStream.Read(Enabled);
   LoadStream.Read(InCinematic);
   if not Enabled then Exit;

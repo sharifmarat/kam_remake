@@ -130,6 +130,7 @@ end;
 
 procedure TKMSpectator.Load(LoadStream: TKMemoryStreamBinary);
 begin
+  LoadStream.CheckMarker('Spectator');
   LoadStream.Read(fHandIndex);
   UpdateFogOfWarIndex;
 end;
@@ -137,6 +138,7 @@ end;
 
 procedure TKMSpectator.Save(SaveStream: TKMemoryStream);
 begin
+  SaveStream.PlaceMarker('Spectator');
   SaveStream.Write(fHandIndex);
 end;
 

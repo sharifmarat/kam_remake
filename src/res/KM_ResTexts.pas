@@ -322,6 +322,7 @@ var
   I,K: Integer;
   TextCount: Integer;
 begin
+  aStream.PlaceMarker('TextLibraryMulti');
   // Only save locales containing text (otherwise locale list must be synced in MP)
   aStream.Write(LocalesWithText);
   for I := 0 to gResLocales.Count - 1 do
@@ -349,7 +350,7 @@ begin
   // Try to match savegame locales with players locales,
   // because some players might have non-native locales missing
   // We might add locale selection to setup.exe
-
+  aStream.CheckMarker('TextLibraryMulti');
   SetLength(fTexts, gResLocales.Count);
 
   aStream.Read(LocCount);

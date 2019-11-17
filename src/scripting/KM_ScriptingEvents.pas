@@ -310,6 +310,7 @@ var
   ET: TKMScriptEventType;
   CmdPair: TPair<AnsiString, TKMConsoleCommand>;
 begin
+  SaveStream.PlaceMarker('CustomScriptEvents');
   //Save custom events
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin
@@ -333,6 +334,7 @@ var
   ET: TKMScriptEventType;
   Command: TKMConsoleCommand;
 begin
+  LoadStream.CheckMarker('CustomScriptEvents');
   //Load custom events
   for ET := Low(TKMScriptEventType) to High(TKMScriptEventType) do
   begin

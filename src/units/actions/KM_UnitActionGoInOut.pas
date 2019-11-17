@@ -75,6 +75,7 @@ end;
 constructor TKMUnitActionGoInOut.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionGoInOut');
   LoadStream.Read(fStep);
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fPushedUnit, 4);
@@ -399,6 +400,7 @@ end;
 procedure TKMUnitActionGoInOut.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionGoInOut');
   SaveStream.Write(fStep);
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID) //Store ID, then substitute it with reference on SyncLoad

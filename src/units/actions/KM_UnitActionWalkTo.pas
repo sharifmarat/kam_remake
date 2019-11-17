@@ -249,6 +249,7 @@ end;
 constructor TKMUnitActionWalkTo.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionWalkTo');
   LoadStream.Read(fWalkFrom);
   LoadStream.Read(fWalkTo);
   LoadStream.Read(fNewWalkTo);
@@ -1228,6 +1229,7 @@ end;
 procedure TKMUnitActionWalkTo.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionWalkTo');
   SaveStream.Write(fWalkFrom);
   SaveStream.Write(fWalkTo);
   SaveStream.Write(fNewWalkTo);

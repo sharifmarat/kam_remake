@@ -111,6 +111,7 @@ end;
 constructor TKMTaskDeliver.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskDeliver');
   LoadStream.Read(fFrom, 4);
   LoadStream.Read(fToHouse, 4);
   LoadStream.Read(fToUnit, 4);
@@ -127,6 +128,7 @@ end;
 procedure TKMTaskDeliver.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskDeliver');
   if fFrom <> nil then
     SaveStream.Write(fFrom.UID) //Store ID, then substitute it with reference on SyncLoad
   else

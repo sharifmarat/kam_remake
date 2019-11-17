@@ -84,6 +84,7 @@ end;
 constructor TKMUnitActionFight.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionFight');
   LoadStream.Read(fOpponent, 4);
   LoadStream.Read(fFightDelay);
   LoadStream.Read(fVertexOccupied);
@@ -354,6 +355,7 @@ end;
 procedure TKMUnitActionFight.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionFight');
   if fOpponent <> nil then
     SaveStream.Write(fOpponent.UID) //Store ID, then substitute it with reference on SyncLoad
   else

@@ -520,6 +520,7 @@ var
   HasAct: Boolean;
 begin
   inherited Create;
+  LoadStream.CheckMarker('House');
   LoadStream.Read(fType, SizeOf(fType));
   LoadStream.Read(fPosition);
   LoadStream.Read(fBuildState, SizeOf(fBuildState));
@@ -1752,6 +1753,7 @@ var
   I: Integer;
   HasAct: Boolean;
 begin
+  SaveStream.PlaceMarker('House');
   SaveStream.Write(fType, SizeOf(fType));
   SaveStream.Write(fPosition);
   SaveStream.Write(fBuildState, SizeOf(fBuildState));
@@ -2003,6 +2005,7 @@ end;
 constructor TKMHouseSwineStable.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseSwineStable');
   LoadStream.Read(BeastAge, SizeOf(BeastAge));
 end;
 
@@ -2050,6 +2053,7 @@ end;
 procedure TKMHouseSwineStable.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseSwineStable');
   SaveStream.Write(BeastAge, SizeOf(BeastAge));
 end;
 
@@ -2095,6 +2099,7 @@ end;
 constructor TKMHouseStore.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseStore');
   LoadStream.Read(WaresCount, SizeOf(WaresCount));
   LoadStream.Read(NotAcceptFlag, SizeOf(NotAcceptFlag));
   LoadStream.Read(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
@@ -2231,6 +2236,7 @@ end;
 procedure TKMHouseStore.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseStore');
   SaveStream.Write(WaresCount, SizeOf(WaresCount));
   SaveStream.Write(NotAcceptFlag, SizeOf(NotAcceptFlag));
   SaveStream.Write(NotAllowTakeOutFlag, SizeOf(NotAllowTakeOutFlag));
@@ -2269,6 +2275,7 @@ end;
 constructor TKMHouseArmorWorkshop.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseArmorWorkshop');
   LoadStream.Read(fAcceptWood);
   LoadStream.Read(fAcceptLeather);
 end;
@@ -2277,6 +2284,7 @@ end;
 procedure TKMHouseArmorWorkshop.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseArmorWorkshop');
   SaveStream.Write(fAcceptWood);
   SaveStream.Write(fAcceptLeather);
 end;
@@ -2402,7 +2410,7 @@ end;
 constructor TKMHouseWFlagPoint.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
-
+  LoadStream.CheckMarker('HouseWFlagPoint');
   LoadStream.Read(fFlagPoint);
 end;
 
@@ -2410,7 +2418,7 @@ end;
 procedure TKMHouseWFlagPoint.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
-
+  SaveStream.PlaceMarker('HouseWFlagPoint');
   SaveStream.Write(fFlagPoint);
 end;
 

@@ -52,6 +52,7 @@ end;
 constructor TKMHouseInn.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseInn');
   LoadStream.Read(fEater, SizeOf(fEater));
 end;
 
@@ -124,6 +125,7 @@ end;
 procedure TKMHouseInn.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseInn');
   SaveStream.Write(fEater, SizeOf(fEater));
 end;
 

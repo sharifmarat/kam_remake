@@ -109,6 +109,7 @@ end;
 constructor TKMTaskMining.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskMining');
   fWorkPlan := TKMUnitWorkPlan.Create;
   fWorkPlan.Load(LoadStream);
   LoadStream.Read(fBeastID);
@@ -412,6 +413,7 @@ end;
 procedure TKMTaskMining.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskMining');
   fWorkPlan.Save(SaveStream);
   SaveStream.Write(fBeastID);
 end;

@@ -264,6 +264,7 @@ procedure TKMResWares.SaveCustomData(aSaveStream: TKMemoryStream);
 var
   I: TKMWareType;
 begin
+  aSaveStream.PlaceMarker('WaresCustomData');
   for I := Low(TKMWareType) to High(TKMWareType) do
     aSaveStream.Write(fList[I].fMarketPriceMultiplier);
 end;
@@ -273,6 +274,7 @@ procedure TKMResWares.LoadCustomData(aLoadStream: TKMemoryStreamBinary);
 var
   I: TKMWareType;
 begin
+  aLoadStream.CheckMarker('WaresCustomData');
   for I := Low(TKMWareType) to High(TKMWareType) do
     aLoadStream.Read(fList[I].fMarketPriceMultiplier);
 end;

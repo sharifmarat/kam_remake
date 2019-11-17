@@ -40,6 +40,7 @@ end;
 constructor TKMTaskSelfTrain.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskSelfTrain');
   LoadStream.Read(fSchool, 4);
 end;
 
@@ -119,6 +120,7 @@ end;
 procedure TKMTaskSelfTrain.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskSelfTrain');
   if fSchool <> nil then
     SaveStream.Write(fSchool.UID)
   else

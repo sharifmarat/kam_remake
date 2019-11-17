@@ -1,4 +1,4 @@
-unit KM_UnitTaskThrowRock;
+﻿unit KM_UnitTaskThrowRock;
 {$I KaM_Remake.inc}
 interface
 uses
@@ -51,6 +51,7 @@ end;
 constructor TKMTaskThrowRock.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskThrowRock');
   LoadStream.Read(fTarget, 4);
   LoadStream.Read(fFlightTime);
 end;
@@ -102,6 +103,7 @@ end;
 procedure TKMTaskThrowRock.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskThrowRock');
   if fTarget <> nil then
     SaveStream.Write(fTarget.UID) //Store ID, then substitute it with reference on SyncLoad
   else

@@ -66,6 +66,7 @@ end;
 constructor TKMHouseSchool.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('HouseSchool');
   LoadStream.Read(fUnitWip, 4);
   LoadStream.Read(fHideOneGold);
   LoadStream.Read(fTrainProgress);
@@ -341,6 +342,7 @@ end;
 procedure TKMHouseSchool.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('HouseSchool');
   if TKMUnit(fUnitWip) <> nil then
     SaveStream.Write(TKMUnit(fUnitWip).UID) //Store ID, then substitute it with reference on SyncLoad
   else

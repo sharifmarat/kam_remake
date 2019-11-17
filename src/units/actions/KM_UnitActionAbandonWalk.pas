@@ -54,6 +54,7 @@ end;
 constructor TKMUnitActionAbandonWalk.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionAbandonWalk');
   LoadStream.Read(fWalkTo);
   LoadStream.Read(fVertexOccupied);
 end;
@@ -113,6 +114,7 @@ end;
 procedure TKMUnitActionAbandonWalk.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionAbandonWalk');
   SaveStream.Write(fWalkTo);
   SaveStream.Write(fVertexOccupied);
 end;

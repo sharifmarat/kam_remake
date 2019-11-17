@@ -74,7 +74,7 @@ var
   U: TKMUnit;
 begin
   inherited;
-
+  LoadStream.CheckMarker('HouseBarracks');
   LoadStream.Read(fResourceCount, SizeOf(fResourceCount));
   fRecruitsList := TList.Create;
   LoadStream.Read(NewCount);
@@ -342,7 +342,7 @@ var
   I: Integer;
 begin
   inherited;
-
+  SaveStream.PlaceMarker('HouseBarracks');
   SaveStream.Write(fResourceCount, SizeOf(fResourceCount));
   SaveStream.Write(RecruitsCount);
   for I := 0 to RecruitsCount - 1 do

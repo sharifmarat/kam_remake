@@ -70,7 +70,7 @@ end;
 constructor TKMHouseTownHall.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
-
+  LoadStream.CheckMarker('HouseTownHall');
   LoadStream.Read(fGoldCnt);
   LoadStream.Read(fGoldMaxCnt);
 end;
@@ -79,7 +79,7 @@ end;
 procedure TKMHouseTownHall.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
-
+  SaveStream.PlaceMarker('HouseTownHall');
   SaveStream.Write(fGoldCnt);
   SaveStream.Write(fGoldMaxCnt);
 end;

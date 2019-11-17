@@ -43,6 +43,7 @@ end;
 constructor TKMUnitActionStay.Load(LoadStream:TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionStay');
   LoadStream.Read(StayStill);
   LoadStream.Read(TimeToStay);
   LoadStream.Read(StillFrame);
@@ -121,6 +122,7 @@ end;
 procedure TKMUnitActionStay.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionStay');
   SaveStream.Write(StayStill);
   SaveStream.Write(TimeToStay);
   SaveStream.Write(StillFrame);

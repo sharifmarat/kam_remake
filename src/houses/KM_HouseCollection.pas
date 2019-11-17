@@ -319,7 +319,6 @@ begin
   SaveStream.Write(Count);
   for I := 0 to Count - 1 do
   begin
-    SaveStream.PlaceMarker('House');
     //We save house type to know which house class to load
     SaveStream.Write(Houses[I].HouseType, SizeOf(Houses[I].HouseType));
     Houses[I].Save(SaveStream);
@@ -338,7 +337,6 @@ begin
   LoadStream.Read(NewCount);
   for I := 0 to NewCount - 1 do
   begin
-    LoadStream.CheckMarker('House');
     LoadStream.Read(HouseType, SizeOf(HouseType));
     case HouseType of
       htSwine,

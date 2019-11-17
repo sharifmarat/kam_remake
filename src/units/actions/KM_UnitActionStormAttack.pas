@@ -67,6 +67,7 @@ end;
 constructor TKMUnitActionStormAttack.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('UnitActionStormAttack');
   LoadStream.Read(fDelay);
   LoadStream.Read(fTileSteps);
   LoadStream.Read(fStamina);
@@ -204,6 +205,7 @@ end;
 procedure TKMUnitActionStormAttack.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionStormAttack');
   SaveStream.Write(fDelay);
   SaveStream.Write(fTileSteps);
   SaveStream.Write(fStamina);

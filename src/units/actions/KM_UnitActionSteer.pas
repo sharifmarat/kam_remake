@@ -48,9 +48,10 @@ begin
 end;
 
 
-constructor TKMUnitActionSteer.Load(LoadStream:TKMemoryStreamBinary);
+constructor TKMUnitActionSteer.Load(LoadStream: TKMemoryStreamBinary);
 begin
   Inherited;
+  LoadStream.CheckMarker('UnitActionSteer');
   LoadStream.Read(fDesireToSteer);
   LoadStream.Read(fStuckFor);
   LoadStream.Read(fVertexOccupied);
@@ -191,6 +192,7 @@ end;
 procedure TKMUnitActionSteer.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('UnitActionSteer');
   SaveStream.Write(fDesireToSteer);
   SaveStream.Write(fStuckFor);
   SaveStream.Write(fVertexOccupied);

@@ -45,6 +45,7 @@ constructor TKMTaskGoEat.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
 
+  LoadStream.CheckMarker('TaskGoEat');
   LoadStream.Read(fInn, 4);
   LoadStream.Read(fPlace);
 end;
@@ -181,7 +182,7 @@ end;
 procedure TKMTaskGoEat.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
-
+  SaveStream.PlaceMarker('TaskGoEat');
   if fInn <> nil then
     SaveStream.Write(fInn.UID) //Store ID, then substitute it with reference on SyncLoad
   else

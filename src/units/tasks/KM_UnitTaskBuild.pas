@@ -152,6 +152,7 @@ end;
 constructor TKMTaskBuildRoad.Load(LoadStream:TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskBuildRoad');
   LoadStream.Read(fLoc);
   LoadStream.Read(BuildID);
   LoadStream.Read(DemandSet);
@@ -283,6 +284,7 @@ end;
 procedure TKMTaskBuildRoad.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskBuildRoad');
   SaveStream.Write(fLoc);
   SaveStream.Write(BuildID);
   SaveStream.Write(DemandSet);
@@ -305,6 +307,7 @@ end;
 constructor TKMTaskBuildWine.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.PlaceMarker('TaskBuildWine');
   LoadStream.Read(fLoc);
   LoadStream.Read(BuildID);
   LoadStream.Read(DemandSet);
@@ -420,6 +423,7 @@ end;
 procedure TKMTaskBuildWine.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskBuildWine');
   SaveStream.Write(fLoc);
   SaveStream.Write(BuildID);
   SaveStream.Write(DemandSet);
@@ -438,9 +442,10 @@ begin
 end;
 
 
-constructor TKMTaskBuildField.Load(LoadStream:TKMemoryStreamBinary);
+constructor TKMTaskBuildField.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskBuildField');
   LoadStream.Read(fLoc);
   LoadStream.Read(BuildID);
   LoadStream.Read(TileLockSet);
@@ -523,6 +528,7 @@ end;
 procedure TKMTaskBuildField.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskBuildField');
   SaveStream.Write(fLoc);
   SaveStream.Write(BuildID);
   SaveStream.Write(TileLockSet);
@@ -556,10 +562,11 @@ begin
 end;
 
 
-constructor TKMTaskBuildHouseArea.Load(LoadStream:TKMemoryStreamBinary);
+constructor TKMTaskBuildHouseArea.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
 
+  LoadStream.CheckMarker('TaskBuildHouseArea');
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fHouseType, SizeOf(fHouseType));
   LoadStream.Read(fHouseLoc);
@@ -741,7 +748,7 @@ end;
 procedure TKMTaskBuildHouseArea.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
-
+  SaveStream.PlaceMarker('TaskBuildHouseArea');
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID) //Store ID, then substitute it with reference on SyncLoad
   else
@@ -772,6 +779,7 @@ end;
 constructor TKMTaskBuildHouse.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskBuildHouse');
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(BuildID);
   LoadStream.Read(BuildFrom);
@@ -878,6 +886,7 @@ end;
 procedure TKMTaskBuildHouse.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskBuildHouse');
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID) //Store ID, then substitute it with reference on SyncLoad
   else
@@ -904,6 +913,7 @@ end;
 constructor TKMTaskBuildHouseRepair.Load(LoadStream: TKMemoryStreamBinary);
 begin
   inherited;
+  LoadStream.CheckMarker('TaskBuildHouseRepair');
   LoadStream.Read(fHouse, 4);
   LoadStream.Read(fRepairID);
   LoadStream.Read(BuildFrom);
@@ -996,6 +1006,7 @@ end;
 procedure TKMTaskBuildHouseRepair.Save(SaveStream: TKMemoryStream);
 begin
   inherited;
+  SaveStream.PlaceMarker('TaskBuildHouseRepair');
   if fHouse <> nil then
     SaveStream.Write(fHouse.UID) //Store ID, then substitute it with reference on SyncLoad
   else
