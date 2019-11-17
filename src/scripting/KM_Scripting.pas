@@ -1484,6 +1484,7 @@ begin
   LoadStream.ReadHugeString(fScriptCode);
   LoadStream.ReadA(fCampaignDataTypeCode);
   gScriptEvents.Load(LoadStream);
+  fIDCache.Load(LoadStream);
 
   if fScriptCode <> '' then
     CompileScript;
@@ -1597,6 +1598,7 @@ begin
   SaveStream.WriteHugeString(fScriptCode);
   SaveStream.WriteA(fCampaignDataTypeCode);
   gScriptEvents.Save(SaveStream);
+  fIDCache.Save(SaveStream);
 
   //Write script global variables
   SaveStream.Write(fExec.GetVarCount);

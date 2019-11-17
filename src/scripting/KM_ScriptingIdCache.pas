@@ -2,7 +2,7 @@ unit KM_ScriptingIdCache;
 {$I KaM_Remake.inc}
 interface
 uses
-  KM_Houses, KM_Units, KM_UnitGroup;
+  KM_Houses, KM_Units, KM_UnitGroup, KM_CommonClasses;
 
 
 //For caching unit/house/group IDs. Shared between States and Actions.
@@ -30,6 +30,9 @@ type
     function GetHouse(aUID: Integer): TKMHouse;
     function GetGroup(aUID: Integer): TKMUnitGroup;
     procedure UpdateState;
+
+    procedure Save(SaveStream: TKMemoryStream);
+    procedure Load(LoadStream: TKMemoryStreamBinary);
   end;
 
 
@@ -187,6 +190,57 @@ begin
     for I := Low(fGroupCache) to High(fGroupCache) do
       if (fGroupCache[I].G <> nil) and fGroupCache[I].G.IsDead then
         gHands.CleanUpGroupPointer(fGroupCache[I].G);
+  end;
+end;
+
+
+procedure TKMScriptingIdCache.Save(SaveStream: TKMemoryStream);
+var
+  I: Integer;
+begin
+  SaveStream.PlaceMarker('ScriptingIdCache_Units');
+  SaveStream.Write(fUnitLastAdded);
+  for I := Low(fUnitCache) to High(fUnitCache) do
+    SaveStream.Write(fUnitCache[I].UID);
+
+  SaveStream.PlaceMarker('ScriptingIdCache_Houses');
+  SaveStream.Write(fHouseLastAdded);
+  for I := Low(fHouseCache) to High(fHouseCache) do
+    SaveStream.Write(fHouseCache[I].UID);
+
+  SaveStream.PlaceMarker('ScriptingIdCache_Groups');
+  SaveStream.Write(fGroupLastAdded);
+  for I := Low(fGroupCache) to High(fGroupCache) do
+    SaveStream.Write(fGroupCache[I].UID);
+end;
+
+
+procedure TKMScriptingIdCache.Load(LoadStream: TKMemoryStreamBinary);
+var
+  I: Integer;
+begin
+  LoadStream.CheckMarker('ScriptingIdCache_Units');
+  LoadStream.Read(fUnitLastAdded);
+  for I := Low(fUnitCache) to High(fUnitCache) do
+  begin
+    LoadStream.Read(fUnitCache[I].UID);
+    fUnitCache[I].U := gHands.GetUnitByUID(fUnitCache[I].UID);
+  end;
+
+  LoadStream.CheckMarker('ScriptingIdCache_Houses');
+  LoadStream.Read(fHouseLastAdded);
+  for I := Low(fHouseCache) to High(fHouseCache) do
+  begin
+    LoadStream.Read(fHouseCache[I].UID);
+    fHouseCache[I].H := gHands.GetHouseByUID(fHouseCache[I].UID);
+  end;
+
+  LoadStream.CheckMarker('ScriptingIdCache_Groups');
+  LoadStream.Read(fGroupLastAdded);
+  for I := Low(fGroupCache) to High(fGroupCache) do
+  begin
+    LoadStream.Read(fGroupCache[I].UID);
+    fGroupCache[I].G := gHands.GetGroupByUID(fGroupCache[I].UID);
   end;
 end;
 
