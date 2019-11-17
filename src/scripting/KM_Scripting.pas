@@ -163,6 +163,7 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure SyncLoad;
 
     procedure SaveCampaignData(SaveStream: TKMemoryStream);
     procedure LoadCampaignData(LoadStream: TKMemoryStreamBinary);
@@ -1500,6 +1501,12 @@ begin
 
   //The log path can't be stored in the save since it might be in MapsMP or MapsDL on different clients
   fErrorHandler.ScriptLogFile := ExeDir + ChangeFileExt(gGame.GetMissionFile, SCRIPT_LOG_EXT);
+end;
+
+
+procedure TKMScripting.SyncLoad;
+begin
+  fIDCache.SyncLoad;
 end;
 
 

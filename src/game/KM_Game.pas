@@ -1981,6 +1981,7 @@ begin
   gHands.SyncLoad;
   gTerrain.SyncLoad;
   gProjectiles.SyncLoad;
+  fScripting.SyncLoad;
 
   if fGameMode in [gmMulti, gmMultiSpectate] then
     MultiplayerRig;

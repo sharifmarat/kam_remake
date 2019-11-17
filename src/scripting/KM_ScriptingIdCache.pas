@@ -33,6 +33,7 @@ type
 
     procedure Save(SaveStream: TKMemoryStream);
     procedure Load(LoadStream: TKMemoryStreamBinary);
+    procedure SyncLoad;
   end;
 
 
@@ -222,26 +223,32 @@ begin
   LoadStream.CheckMarker('ScriptingIdCache_Units');
   LoadStream.Read(fUnitLastAdded);
   for I := Low(fUnitCache) to High(fUnitCache) do
-  begin
-    LoadStream.Read(fUnitCache[I].UID);
-    fUnitCache[I].U := gHands.GetUnitByUID(fUnitCache[I].UID);
-  end;
+    LoadStream.Read(fUnitCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
 
   LoadStream.CheckMarker('ScriptingIdCache_Houses');
   LoadStream.Read(fHouseLastAdded);
   for I := Low(fHouseCache) to High(fHouseCache) do
-  begin
-    LoadStream.Read(fHouseCache[I].UID);
-    fHouseCache[I].H := gHands.GetHouseByUID(fHouseCache[I].UID);
-  end;
+    LoadStream.Read(fHouseCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
 
   LoadStream.CheckMarker('ScriptingIdCache_Groups');
   LoadStream.Read(fGroupLastAdded);
   for I := Low(fGroupCache) to High(fGroupCache) do
-  begin
-    LoadStream.Read(fGroupCache[I].UID);
+    LoadStream.Read(fGroupCache[I].UID); //Load only UID's, SyncLoad them after that, when all game assets are ready
+end;
+
+
+procedure TKMScriptingIdCache.SyncLoad;
+var
+  I: Integer;
+begin
+  for I := Low(fUnitCache) to High(fUnitCache) do
+    fUnitCache[I].U := gHands.GetUnitByUID(fUnitCache[I].UID);
+
+  for I := Low(fHouseCache) to High(fHouseCache) do
+    fHouseCache[I].H := gHands.GetHouseByUID(fHouseCache[I].UID);
+
+  for I := Low(fGroupCache) to High(fGroupCache) do
     fGroupCache[I].G := gHands.GetGroupByUID(fGroupCache[I].UID);
-  end;
 end;
 
 
