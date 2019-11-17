@@ -182,6 +182,34 @@ type
     procedure Write(const Value: ShortInt      ); override;
     procedure Write(const Value: SmallInt      ); override;
     procedure Write(const Value: TDateTime     ); override;
+
+    //Not implemented methods yet
+    procedure CheckMarker(const aTitle: string); override;
+
+    procedure ReadANSI(out aValue: string); override;
+    procedure ReadA(out Value: AnsiString); override;
+    procedure ReadW(out Value: UnicodeString); override;
+
+    procedure Read(out Value: TKMDirection  ); override;
+    procedure Read(out Value: TKMPoint      ); override;
+    procedure Read(out Value: TKMPointW     ); override;
+    procedure Read(out Value: TKMPointF     ); override;
+    procedure Read(out Value: TKMPointDir   ); override;
+    procedure Read(out Value: TKMRangeInt   ); override;
+    procedure Read(out Value: TKMRangeSingle); override;
+    procedure Read(out Value: TKMRect       ); override;
+    procedure Read(out Value: Single        ); override;
+    procedure Read(out Value: Extended      ); override;
+    procedure Read(out Value: Integer       ); override;
+    procedure Read(out Value: Cardinal      ); override;
+    procedure Read(out Value: Byte          ); override;
+    procedure Read(out Value: Boolean       ); override;
+    procedure Read(out Value: Word          ); override;
+    procedure Read(out Value: ShortInt      ); override;
+    procedure Read(out Value: SmallInt      ); override;
+    procedure Read(out Value: TDateTime     ); override;
+
+
   end;
 
 
@@ -1309,6 +1337,119 @@ var
 begin
   DateTimeToString(Str, 'dd.mm.yyyy hh:nn:ss.zzz', Value);
   WriteText(Str);
+end;
+
+
+
+//Not implemented methods 
+procedure TKMemoryStreamText.CheckMarker(const aTitle: string);
+begin
+  raise Exception.Create('MemoryStreamText.CheckMarker is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.ReadANSI(out aValue: string); 
+begin
+  raise Exception.Create('MemoryStreamText.ReadANSI is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.ReadA(out Value: AnsiString);
+begin
+  raise Exception.Create('MemoryStreamText.ReadA is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.ReadW(out Value: UnicodeString);
+begin
+  raise Exception.Create('MemoryStreamText.ReadW is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMDirection);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMPoint);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMPointW);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMPointF);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMPointDir);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMRangeInt);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMRangeSingle);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TKMRect);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Single);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Extended);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Integer);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Cardinal);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Byte);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Boolean);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: Word);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: ShortInt);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: SmallInt);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
+end;
+
+procedure TKMemoryStreamText.Read(out Value: TDateTime);
+begin
+  raise Exception.Create('MemoryStreamText.Read is not implemented yet');
 end;
 
 
