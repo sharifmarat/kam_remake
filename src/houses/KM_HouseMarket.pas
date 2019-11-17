@@ -36,7 +36,7 @@ type
     function RatioFrom: Byte;
     function RatioTo: Byte;
 
-    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean;
+    function ShouldAbandonDeliveryFrom(aWareType: TKMWareType; aImmidiateCheck: Boolean = False): Boolean; override;
     function ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean; override;
 
     function AllowedToTrade(aRes: TKMWareType): Boolean;
@@ -249,7 +249,7 @@ end;
 
 function TKMHouseMarket.ShouldAbandonDeliveryTo(aWareType: TKMWareType): Boolean;
 begin
-  Result := inherited or (fTradeAmount = 0); //Stop delivery to market when player set trade amount to 0
+  Result := inherited or (fTradeAmount = 0) or (fResFrom <> aWareType); //Stop delivery to market when player set trade amount to 0
 end;
 
 
