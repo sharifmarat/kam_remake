@@ -418,15 +418,15 @@ begin
 //            fUnit.SetActionStay(1, uaWalk);
 ////            fUnit.Thought := thQuest;
 //          end;
-      0,1:  begin
+      0:  begin
             fUnit.SetActionWalkToRoad(uaWalk, 0, tpWalkRoad,
                               [gTerrain.GetRoadConnectID(fPointBelowToHouse), gTerrain.GetRoadConnectID(fPointBelowFromHouse)]);
             fUnit.Thought := thNone;
-            fPhase := 5;
+            fPhase := 5; //Start walk to Demand house again
+            fPhase2 := 10; //Some magic (yes) meaningless number...
+            Exit;
           end;
     end;
-    fPhase2 := 10;
-    Exit;
   end;
 
   with TKMUnitSerf(fUnit) do
