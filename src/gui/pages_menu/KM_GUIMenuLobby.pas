@@ -34,8 +34,6 @@ type
     fMapsSortUpdateNeeded: Boolean;
     fMainHeight: Integer;
 
-    fLastMapOrSaveSent: String; //Last Map or Save choosen
-
     procedure UpdateMappings;
     procedure UpdateSpectatorDivide;
 
@@ -2183,32 +2181,21 @@ begin
   I := DropCol_Maps.Item[DropCol_Maps.ItemIndex].Tag;
   if Radio_MapType.ItemIndex < 4 then
   begin
-    //Skip Map choose if we already have it choosen
-    //This could happen if Control element (ColumnBox f.e.) will trigger several times on Click event
-    //Otherwise we will spam lots of packets, that will be seen in Lobby as higher pings for players for a while
-    if fLastMapOrSaveSent <> fMapsMP[I].FileName then
-    begin
-      fMapsMP.Lock;
-      try
-        fNetworking.SelectMap(fMapsMP[I].FileName, fMapsMP[I].MapFolder);
-        fLastMapOrSaveSent := fMapsMP[I].FileName;
-      finally
-        fMapsMP.Unlock;
-      end;
-      GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
+    fMapsMP.Lock;
+    try
+      fNetworking.SelectMap(fMapsMP[I].FileName, fMapsMP[I].MapFolder);
+    finally
+      fMapsMP.Unlock;
     end;
+    GameOptionsChange(nil); //Need to update GameOptions, since we could get new MissionDifficulty
   end
   else
   begin
-    if fLastMapOrSaveSent <> fSavesMP[I].FileName then
-    begin
-      fSavesMP.Lock;
-      try
-        fNetworking.SelectSave(fSavesMP[I].FileName);
-        fLastMapOrSaveSent := fSavesMP[I].FileName;
-      finally
-        fSavesMP.Unlock;
-      end;
+    fSavesMP.Lock;
+    try
+      fNetworking.SelectSave(fSavesMP[I].FileName);
+    finally
+      fSavesMP.Unlock;
     end;
   end;
 end;

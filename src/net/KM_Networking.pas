@@ -682,7 +682,7 @@ begin
   if Assigned(fOnMapName) then
     fOnMapName(fMapInfo.FileName);
 
-//  SendPlayerListAndRefreshPlayersSetup; //No need to send Player setup, since we will send from GUILobby class after that immidiately
+  SendPlayerListAndRefreshPlayersSetup;
 end;
 
 
