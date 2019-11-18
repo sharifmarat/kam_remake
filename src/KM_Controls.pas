@@ -610,6 +610,7 @@ type
     function KeyEventHandled(Key: Word; Shift: TShiftState): Boolean; virtual; abstract;
     procedure PaintSelection;
     function DrawEolSymbol: Boolean; virtual;
+    function DoShowMarkup: Boolean; virtual;
   public
     ReadOnly: Boolean;
     BlockInput: Boolean; // Blocks all input into the field, but allow focus, selection and copy selected text
@@ -641,6 +642,7 @@ type
     function KeyEventHandled(Key: Word; Shift: TShiftState): Boolean; override;
     function GetRText: UnicodeString;
     function DrawEolSymbol: Boolean; override;
+    function DoShowMarkup: Boolean; override;
   public
     Masked: Boolean; //Mask entered text as *s
     MaxLen: Word;
@@ -3511,10 +3513,10 @@ function TKMSelectableEdit.GetCursorPosAt(X: Integer): Integer;
 var RText: UnicodeString;
 begin
   RText := Copy(fText, fLeftIndex+1, Length(fText) - fLeftIndex);
-  if gRes.Fonts[fFont].GetTextSize(RText, False, DrawEolSymbol).X < X-SelfAbsLeft-4 then
+  if gRes.Fonts[fFont].GetTextSize(RText, DoShowMarkup, DrawEolSymbol).X < X-SelfAbsLeft-4 then
     Result := Length(RText) + fLeftIndex
   else
-    Result := gRes.Fonts[fFont].CharsThatFit(RText, X-SelfAbsLeft-4, False, DrawEolSymbol) + fLeftIndex;
+    Result := gRes.Fonts[fFont].CharsThatFit(RText, X-SelfAbsLeft-4, DoShowMarkup, DrawEolSymbol) + fLeftIndex;
 end;
 
 
@@ -3768,8 +3770,8 @@ begin
     BeforeSelectionText := Copy(fText, fLeftIndex+1, max(fSelectionStart, fLeftIndex) - fLeftIndex);
     SelectionText := Copy(fText, max(fSelectionStart, fLeftIndex)+1, fSelectionEnd - max(fSelectionStart, fLeftIndex));
 
-    BeforeSelectionW := gRes.Fonts[fFont].GetTextSize(BeforeSelectionText, False, DrawEolSymbol).X;
-    SelectionW := gRes.Fonts[fFont].GetTextSize(SelectionText, False, DrawEolSymbol).X;
+    BeforeSelectionW := gRes.Fonts[fFont].GetTextSize(BeforeSelectionText, DoShowMarkup, DrawEolSymbol).X;
+    SelectionW := gRes.Fonts[fFont].GetTextSize(SelectionText, DoShowMarkup, DrawEolSymbol).X;
 
     TKMRenderUI.WriteShape(SelfAbsLeft+4+BeforeSelectionW, AbsTop+3, min(SelectionW, Width-8), Height-6, clTextSelection);
   end;
@@ -3779,6 +3781,12 @@ end;
 function TKMSelectableEdit.DrawEolSymbol: Boolean;
 begin
   Result := False; //EOL is not showing by default
+end;
+
+
+function TKMSelectableEdit.DoShowMarkup: Boolean;
+begin
+  Result := False; //MarkUp is not showing by default
 end;
 
 
@@ -3826,6 +3834,12 @@ end;
 function TKMEdit.DrawEolSymbol: Boolean;
 begin
   Result := AllowedChars = acAll;
+end;
+
+
+function TKMEdit.DoShowMarkup: Boolean;
+begin
+  Result := ShowColors;
 end;
 
 
