@@ -221,6 +221,7 @@ begin
 
   Result := True;
   Edit_ChatMsg.Text := '';
+  Memo_ChatText.ScrollToBottom;
 end;
 
 
@@ -404,9 +405,7 @@ begin
   else
     Chat_MenuSelect(CHAT_TAG[gGameApp.Chat.Mode]);
 
-  Edit_ChatMsg.Text := gGameApp.Chat.Text;
   Memo_ChatText.Text := gGameApp.Chat.Messages;
-  Memo_ChatText.ScrollToBottom;
 end;
 
 
@@ -418,6 +417,8 @@ begin
   gGameApp.Chat.OnChange := UpdateChatControls;
 
   UpdateChatControls;
+  Edit_ChatMsg.Text := gGameApp.Chat.Text; //Update this text only once, when first time show Chat in game
+  Memo_ChatText.ScrollToBottom;
 end;
 
 

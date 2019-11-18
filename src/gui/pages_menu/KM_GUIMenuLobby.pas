@@ -843,9 +843,7 @@ begin
   else
     ChatMenuSelect(CHAT_TAG[gGameApp.Chat.Mode]);
 
-  Edit_Post.Text := gGameApp.Chat.Text;
   Memo_Posts.Text := gGameApp.Chat.Messages;
-  Memo_Posts.ScrollToBottom;
 end;
 
 
@@ -890,6 +888,8 @@ begin
 
   //Update chat
   SetChatHandlers;
+  Edit_Post.Text := gGameApp.Chat.Text; //Update Edit text from Chat (game) only once
+  Memo_Posts.ScrollToBottom;
 
   for I := 1 to MAX_LOBBY_SLOTS do
   begin
@@ -2516,6 +2516,7 @@ begin
     gGameApp.Chat.Post;
   Result := True;
   Edit_Post.Text := '';
+  Memo_Posts.ScrollToBottom;
 end;
 
 

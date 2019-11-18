@@ -181,7 +181,7 @@ begin
   if (Length(Text) > 0) and (Text[1] = '/') and (Text[2] <> '/') then
   begin
     TryDoCallConsoleCommand;
-    //Add command to history, bu t do not propagate post to others
+    //Add command to history, but do not propagate post to others
     Post(False);
     Result := True;
   end else
