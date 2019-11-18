@@ -1192,7 +1192,7 @@
 1242:Command called: /%s(%s)
 1243:Error while calling script command /%s(%s)
 1244:Script console command /%s not found
-1245:Enable/Disable copy-paste from chat window
+1245:Enable/Disable copy-paste from chat window and chat history
 1246:Save replay state to be able to load while watching this replay
 1247:Load replay at %s
 1248:Players colors:

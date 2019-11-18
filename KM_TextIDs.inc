@@ -1280,7 +1280,7 @@ TX_SCRIPT_CONSOLE_CMD_CALLED = 1242; //Command called: /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_PARSING_ERROR = 1243; //Error while calling script command /%s(%s)
 TX_SCRIPT_CONSOLE_CMD_NOT_FOUND = 1244; //Script console command /%s not found
 
-TX_CHAT_COPY_PASTE_SWITCH = 1245; //Enable/Disable copy-paste from chat window
+TX_CHAT_ACTIONS_ALLOWED_HINT = 1245; //Enable/Disable copy-paste from chat window and chat history
 
 TX_FORM_EXPORT_CONFIRM_MSG = 1235; //Data export could take up to several minutes.\nExported data will be stored in '%s' folder.\nDo you confirm operation?
 

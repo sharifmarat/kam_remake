@@ -39,7 +39,7 @@ type
       Dragger_Chat: TKMDragger;
       Image_Chat: TKMImage;
       Memo_ChatText: TKMMemo;
-      Button_MemoCopyAllowed: TKMButtonFlat;
+      Button_ChatActionsAllowed: TKMButtonFlat; //Button to allow Memo Copy/Paste or use Up/Down keys for Chat history
       Edit_ChatMsg: TKMEdit;
       Button_ChatRecipient: TKMButtonFlat;
       Image_ChatClose: TKMImage;
@@ -109,10 +109,10 @@ begin
     Edit_ChatMsg.Text := '';
     Edit_ChatMsg.ShowColors := True;
 
-    Button_MemoCopyAllowed := TKMButtonFlat.Create(Panel_Chat, 45+600-85+3,154-1,24,22,663);
-    Button_MemoCopyAllowed.Anchors := [anBottom];
-    Button_MemoCopyAllowed.Hint := gResTexts[TX_CHAT_COPY_PASTE_SWITCH];
-    Button_MemoCopyAllowed.OnClick := ChatMemo_CopyAllowed_Click;
+    Button_ChatActionsAllowed := TKMButtonFlat.Create(Panel_Chat, 45+600-85+3,154-1,24,22,663);
+    Button_ChatActionsAllowed.Anchors := [anBottom];
+    Button_ChatActionsAllowed.Hint := gResTexts[TX_CHAT_ACTIONS_ALLOWED_HINT];
+    Button_ChatActionsAllowed.OnClick := ChatMemo_CopyAllowed_Click;
 
     Image_ChatClose := TKMImage.Create(Panel_Chat, 600-80, 18, 32, 32, 52);
     Image_ChatClose.Anchors := [anTop, anRight];
@@ -143,15 +143,15 @@ begin
     VK_RETURN:  Result := ((gGame.Networking <> nil) and not gGame.Networking.IsReconnecting)
                            or gGame.IsSingleplayer;
     VK_UP,
-    VK_DOWN:    Result := Button_MemoCopyAllowed.Down;
+    VK_DOWN:    Result := Button_ChatActionsAllowed.Down;
   end;
 end;
 
 
 procedure TKMGUIGameChat.ChatMemo_CopyAllowed_Click(Sender: TObject);
 begin
-  Button_MemoCopyAllowed.Down := not Button_MemoCopyAllowed.Down;
-  Memo_ChatText.Selectable := Button_MemoCopyAllowed.Down;
+  Button_ChatActionsAllowed.Down := not Button_ChatActionsAllowed.Down;
+  Memo_ChatText.Selectable := Button_ChatActionsAllowed.Down;
 end;
 
 
