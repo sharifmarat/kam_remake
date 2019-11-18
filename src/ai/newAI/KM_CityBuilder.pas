@@ -298,6 +298,8 @@ var
   Dir: TDirection;
   HMA: THouseMappingArray;
 begin
+  if (aHT in [htGoldMine, htIronMine]) then
+    Exit;
   HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
   if (aHT <> htCoalMine) then
@@ -351,7 +353,7 @@ begin
         Exit;
       end;
   AB := gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X];
-  if (aCheckHousePlan AND (AB <> High(Byte))) OR (AB = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
+  if (aCheckHousePlan AND not (AB in [AVOID_BUILDING_MINE_TILE, High(Byte)])) OR (AB = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
     gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] := AVOID_BUILDING_UNLOCK;
 end;
 
@@ -877,7 +879,7 @@ begin
         // Add avoid building for Barracks and Store (road will be build later in shortcut procedure)
         if ((aHT = htStore) OR (aHT = htBarracks)) AND (Loc.Y+2 < gTerrain.MapY) then
           for K := Loc.X-1 to Loc.X+1 do
-            gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := 255;
+            gAIFields.Influences.AvoidBuilding[Loc.Y+2, K] := AVOID_BUILDING_HOUSE_ENTRANCE;
         // Add road to node
         if fPlanner.GetRoadToHouse(aHT, HouseIdx, fBuildNodes[Node1Idx].FieldList, fBuildNodes[Node1Idx].FieldType)
            AND (fBuildNodes[Node1Idx].FieldList.Count > 0) then
