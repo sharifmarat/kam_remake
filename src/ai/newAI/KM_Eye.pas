@@ -827,6 +827,10 @@ begin
   if not CanPlaceHouse(aLoc, aHT, aIgnoreTrees) then
     Exit;
 
+  // Make sure we can add road below house (1 tile is ok, BuildFF checked everything)
+  if not CanBeRoad(aLoc.X,aLoc.Y+1) then
+    Exit;
+
   // Make sure that we dont put new house into another plan (just entrance is enought because houses have similar size)
   //if gHands[fOwner].BuildList.HousePlanList.HasPlan(KMPoint(aLoc.X,aLoc.Y)) then
   //  Exit;
@@ -872,9 +876,6 @@ begin
           Exit;
     if (aHT in [htGoldMine, htIronMine]) then
       continue;
-    // Make sure we can add road below house;
-    if (Dir = dirS) AND not CanBeRoad(X,Y) then // Direction south
-      Exit;
     // Quarry / Woodcutters / CoalMine / Towers may take place for mine so its arena must be scaned completely
     if aIgnoreAvoidBuilding then
     begin
@@ -947,8 +948,7 @@ begin
     while not gTerrain.TileHasStone(X, Y) AND (Y > MaxDist) do
       Y := Y - 1;
     // Check if is possible to mine it
-    if gTerrain.TileHasStone(X, Y)
-       AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
+    if gTerrain.TileHasStone(X, Y) AND (tpWalk in gTerrain.Land[Y+1,X].Passability) then
     begin
       fStoneMiningTiles.Items[K] := KMPoint(X,Y);
       // Save tile as a potential point for quarry
@@ -1591,8 +1591,8 @@ begin
     LeftSideFree := True;
     RightSideFree := True;
     for Dir := Low(Surroundings[DIST]) to High(Surroundings[DIST]) do
-      for K := Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
-      //for K := Low(Surroundings[DIST,Dir]) + Byte(Dir = dirS) to High(Surroundings[DIST,Dir]) - Byte(Dir = dirS) do
+      //for K := Low(Surroundings[DIST,Dir]) to High(Surroundings[DIST,Dir]) do
+      for K := Low(Surroundings[DIST,Dir]) + Byte(Dir = dirS) to High(Surroundings[DIST,Dir]) - Byte(Dir = dirS) do
       begin
         Point := KMPointAdd(aLoc, Surroundings[DIST,Dir,K]);
         if fHouseReq.IgnoreAvoidBuilding AND (State[Point.Y, Point.X] in [bsReserved, bsHousePlan]) then

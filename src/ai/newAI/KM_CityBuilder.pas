@@ -298,6 +298,8 @@ var
   Dir: TDirection;
   HMA: THouseMappingArray;
 begin
+  if (aHT in [htGoldMine, htIronMine]) then
+    Exit;
   HMA := gAIFields.Eye.HousesMapping;
   // Free all tiles inside house plan
   if (aHT <> htCoalMine) then
@@ -351,7 +353,7 @@ begin
         Exit;
       end;
   AB := gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X];
-  if (aCheckHousePlan AND (AB <> High(Byte))) OR (AB = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
+  if (aCheckHousePlan AND not (AB in [AVOID_BUILDING_MINE_TILE, High(Byte)])) OR (AB = AVOID_BUILDING_NODE_LOCK_ROAD) then // Only roads are unlocked = aCheckHousePlan
     gAIFields.Influences.AvoidBuilding[aPoint.Y, aPoint.X] := AVOID_BUILDING_UNLOCK;
 end;
 
