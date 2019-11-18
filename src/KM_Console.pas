@@ -159,7 +159,11 @@ end;
 procedure TKMConsole.AddLine(aMessage: String);
 begin
   if fMessages <> '' then
+  begin
+    if not fMessages.EndsWith('[]') then
+      fMessages := fMessages + '[]';
     fMessages := fMessages + '|';
+  end;
 
   Add(aMessage);
 end;
