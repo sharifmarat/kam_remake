@@ -654,7 +654,7 @@ class procedure TKMRenderUI.WriteText(aLeft, aTop, aWidth: SmallInt; aText: Unic
                                       aColor: TColor4 = $FFFFFFFF; aIgnoreMarkup: Boolean = False; aShowMarkup: Boolean = False;
                                       aShowEolSymbol: Boolean = False; aTabWidth: Integer = TAB_WIDTH; aResetTexture: Boolean = True);
 var
-  I, K: Integer;
+  I, K, Off: Integer;
   LineCount,dx,dy,LineHeight,BlockWidth,PrevAtlas, LineWidthInc: Integer;
   LineWidth: array of Integer; //Use signed format since some fonts may have negative CharSpacing
   FontData: TKMFontData;
@@ -700,10 +700,10 @@ begin
     SetupClipX(aLeft, aLeft + aWidth);
 
   //Look for [$FFFFFF][] patterns that markup text color
-  I := 0;
+  Off := 1;
   if not aIgnoreMarkup then
   repeat
-    I := PosEx('[', aText, I+1);
+    I := PosEx('[', aText, Off);
 
     //Check for reset
     if (I <> 0) and (I+1 <= Length(aText)) and (aText[I+1] = ']') then
@@ -725,8 +725,14 @@ begin
         Inc(Colors[High(Colors)].FirstChar, 9); //Don't color the markup itself
       Colors[High(Colors)].Color := Abs(TmpColor) or $FF000000;
       if not aShowMarkup then
+      begin
         Delete(aText, I, 9);
-    end;
+      end;
+      Off := I; //We could try to find 1 more color right after this one (could happen in case of wrap colors)
+    end
+    else
+      Off := I + 1; //Continue search from the next letter
+
   until(I = 0);
 
 
