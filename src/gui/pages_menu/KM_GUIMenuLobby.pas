@@ -1709,7 +1709,7 @@ begin
       if CurPlayer.IsClosed then
         Image_Ready[I].TexID := 0
       else
-        Image_Ready[I].TexID := 32+Byte(CurPlayer.ReadyToStart and CurPlayer.HasMapOrSave);
+        Image_Ready[I].TexID := 32 + Byte(CurPlayer.ReadyToStart and (CurPlayer.HasMapOrSave or CurPlayer.IsSpectator));
 
       MyNik := (fLocalToNetPlayers[I] = fNetworking.MyIndex); //Our index
       //We are allowed to edit if it is our nickname and we are set as NOT ready,
