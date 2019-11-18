@@ -676,7 +676,7 @@ begin
   f_SIM_SimulationTimeInMin   := 5;
   f_SIM_NumberOfMaps          := 26;
   f_GA_POPULATION_CNT         := 40;
-  f_GA_GENE_CNT               := 6+10+2;
+  f_GA_GENE_CNT               := 6+12+2;
 end;
 
 
@@ -687,25 +687,27 @@ begin
   K := 0;
 
   GA_EYE_GetForests_MaxAB            :=   1 + aIdv.Gene[Incr(K)] * 200; // <0,201> Ignore trees in existing forest <0,255-AVOID_BUILDING_FOREST_MINIMUM)
-  GA_EYE_GetForests_Radius           :=   4 + aIdv.Gene[Incr(K)] *   6; // Forest radius
-  GA_EYE_GetForests_MinTrees         :=   2 + aIdv.Gene[Incr(K)] *   6; // Min trees in forest
-  GA_EYE_GetForests_SPRndOwnLimMin   :=  55 + aIdv.Gene[Incr(K)] * 200; // Minimum influence of potential forest
-  GA_EYE_GetForests_SPRndOwnLimMax   := 255 - aIdv.Gene[Incr(K)] * 200; // Maximum influence of potential forest
-  GA_EYE_GetForests_MinRndSoil       :=  30 + aIdv.Gene[Incr(K)] *  52; // 0-82
+  GA_EYE_GetForests_Radius           :=   6 + aIdv.Gene[Incr(K)] *   4; // Forest radius
+  GA_EYE_GetForests_MinTrees         :=   3 + aIdv.Gene[Incr(K)] *   3; // Min trees in forest
+  GA_EYE_GetForests_SPRndOwnLimMin   :=  55 + aIdv.Gene[Incr(K)] * 100; // Minimum influence of potential forest
+  GA_EYE_GetForests_SPRndOwnLimMax   := 255 - aIdv.Gene[Incr(K)] * 100; // Maximum influence of potential forest
+  GA_EYE_GetForests_MinRndSoil       :=  50 + aIdv.Gene[Incr(K)] *  32; // 0-82
 
   GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       := 0 + aIdv.Gene[Incr(K)] *  21 * 2 ; // 0-~12
+  GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer  := 6000 + aIdv.Gene[Incr(K)] * 12000; // 6000-18000 10-30 min
   GA_PLANNER_FindPlaceForWoodcutter_ExistForest   := 0 + aIdv.Gene[Incr(K)] * 255 * 2 ; // 0-1
   GA_PLANNER_FindPlaceForWoodcutter_Routes        :=-1 + aIdv.Gene[Incr(K)] *   2 * 1 ; // -255<->255
   GA_PLANNER_FindPlaceForWoodcutter_FlatArea      := 0 + aIdv.Gene[Incr(K)] *   3 * 2 ; // 0-81
   GA_PLANNER_FindPlaceForWoodcutter_Soil          := 0 + aIdv.Gene[Incr(K)] *   3 * 1 ; // 0-81
   GA_PLANNER_FindPlaceForWoodcutter_DistCrit      := 0 + aIdv.Gene[Incr(K)] *  10 * 1 ; // 0-20
+  GA_PLANNER_FindPlaceForWoodcutter_DistTimer     := 6000 + aIdv.Gene[Incr(K)] * 12000; // 6000-18000 10-30 min
   GA_PLANNER_FindPlaceForWoodcutter_FreeTiles     := 0 + aIdv.Gene[Incr(K)] *   3 * 2 ; // 0-81
   GA_PLANNER_FindPlaceForWoodcutter_ABRange       := 0 + aIdv.Gene[Incr(K)] * 200; // 0-200
   GA_PLANNER_FindPlaceForWoodcutter_Radius        := 3 + aIdv.Gene[Incr(K)] *   4;
-  GA_PLANNER_FindForestAround_MaxDist             := 3 + aIdv.Gene[Incr(K)] *   7; // 4-10
+  GA_PLANNER_FindForestAround_MaxDist             := 5 + aIdv.Gene[Incr(K)] *   5; // 4-10
 
-  GA_BUILDER_Shortage_Trunk                       := 1 + aIdv.Gene[Incr(K)] * 3;
-  GA_BUILDER_Shortage_Wood                        := 1 + aIdv.Gene[Incr(K)] * 12;
+  GA_BUILDER_Shortage_Trunk                       := 2 + aIdv.Gene[Incr(K)] * 3;
+  GA_BUILDER_Shortage_Wood                        := 10 + aIdv.Gene[Incr(K)] * 10;
 
   if aLogIt then
   begin
@@ -719,11 +721,13 @@ begin
     fLogPar.AddTime('GA_EYE_GetForests_RndCount                      : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_RndCount                      ) + ';');
     fLogPar.AddTime('GA_EYE_GetForests_RndLimit                      : Single = ' + FormatFloat( '0.###########################', GA_EYE_GetForests_RndLimit                      ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_TreeCnt       ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer  : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_TreeCntTimer  ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ExistForest   : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ExistForest   ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Routes        : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Routes        ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_FlatArea      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_FlatArea      ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Soil          : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Soil          ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistCrit      : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_DistCrit      ) + ';');
+    fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_DistTimer     : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_DistTimer     ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ABRange       : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ABRange       ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_Radius        : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_Radius        ) + ';');
     fLogPar.AddTime('GA_PLANNER_FindPlaceForWoodcutter_ChopOnlyRoute : Single = ' + FormatFloat( '0.###########################', GA_PLANNER_FindPlaceForWoodcutter_ChopOnlyRoute ) + ';');
@@ -807,9 +811,6 @@ end;
 procedure TKMRunnerFindBugs.SetUp();
 begin
   inherited;
-  fBestScore := -1e30;
-  fAverageScore := 0;
-  fWorstScore := 1e30;
   // Deactivate KaM log
   if (gLog = nil) then
     gLog := TKMLog.Create(ExeDir + 'Utils\Runner\Runner_Log.log');
@@ -866,39 +867,47 @@ procedure TKMRunnerFindBugs.Execute(aRun: Integer);
     Result := Output;
   end;
 const
-  INTERCATIONS = 100;
-  SP_MAP_NAME = 'GA_S1_016';
-  CRASH_DETECTION_MODE = False;
+  // Maps for simulation (I dont use for loop in this array)
+  MAPS: array [1..27] of String = ('GA_S1_001','GA_S1_002','GA_S1_003','GA_S1_004','GA_S1_005','GA_S1_006','GA_S1_007','GA_S1_008','GA_S1_009','GA_S1_010','GA_S1_011','GA_S1_012','GA_S1_013','GA_S1_014','GA_S1_015','GA_S1_016','GA_S1_017','GA_S1_018','GA_S1_019','GA_S1_020','GA_S1_021','GA_S1_022','GA_S1_023','GA_S1_024','GA_S1_025','GA_S1_026','GA_S1_027');
+  cnt_MAP_SIMULATIONS = 200;
+  CRASH_DETECTION_MODE = True;
 var
-  K: Integer;
+  K,L: Integer;
   Score: Double;
+  MapName: String;
 begin
-  for K := 1 to INTERCATIONS do
+  for K := Low(MAPS) to High(MAPS) do
   begin
-    gGameApp.NewSingleMap(ExtractFilePath(ParamStr(0)) + '..\..\Maps\' + SP_MAP_NAME + '\' + SP_MAP_NAME + '.dat', 'GA');
-
-    if CRASH_DETECTION_MODE then
-      gGameApp.Game.Save('CrashDetection', Now);
-
-    //SetKaMSeed(Max(1,Seed));
-    SimulateGame();
-    Score := Max(0,EvalGame());
-    fAverageScore := fAverageScore + Score;
-    //gGameApp.Game.Save(Format('%s__No_%.3d__Score_%.6d',[SP_MAP_NAME, K, Round(Score)]), Now);
-    if (Score < fWorstScore) then
+    fBestScore := -1e30;
+    fAverageScore := 0;
+    fWorstScore := 1e30;
+    MapName := MAPS[K];
+    for L := 1 to cnt_MAP_SIMULATIONS do
     begin
-      fWorstScore := Score;
-      gGameApp.Game.Save(Format('Worst__%s__No_%.3d__Score_%.6d',[SP_MAP_NAME, K, Round(Score)]), Now);
+      gGameApp.NewSingleMap(Format('%s..\..\Maps\%s\%s.dat',[ExtractFilePath(ParamStr(0)),MapName,MapName]), MapName);
+
+      if CRASH_DETECTION_MODE then
+        gGameApp.Game.Save('CrashDetection', Now);
+
+      //SetKaMSeed(Max(1,Seed));
+      SimulateGame();
+      Score := Max(0,EvalGame());
+      fAverageScore := fAverageScore + Score;
+      //gGameApp.Game.Save(Format('%s__No_%.3d__Score_%.6d',[MapName, K, Round(Score)]), Now);
+      if (Score < fWorstScore) then
+      begin
+        fWorstScore := Score;
+        gGameApp.Game.Save(Format('W__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
+      end;
+      if (Score > fBestScore) then
+      begin
+        fBestScore := Score;
+        gGameApp.Game.Save(Format('B__%s__No_%.3d__Score_%.6d',[MapName, L, Round(Score)]), Now);
+      end;
     end;
-    if (Score > fBestScore) then
-    begin
-      fBestScore := Score;
-      gGameApp.Game.Save(Format('Best__%s__No_%.3d__Score_%.6d',[SP_MAP_NAME, K, Round(Score)]), Now);
-    end;
+    fAverageScore := fAverageScore / Double(cnt_MAP_SIMULATIONS);
+    gGameApp.Game.Save(Format('AVRG_%s__%.6d',[MapName, Round(fAverageScore)]), Now);
   end;
-
-  fAverageScore := fAverageScore / Double(INTERCATIONS);
-  gGameApp.Game.Save(Format('AVRG_%s__%.6d',[SP_MAP_NAME, Round(fAverageScore)]), Now);
 
   gGameApp.StopGame(grSilent);
 end;

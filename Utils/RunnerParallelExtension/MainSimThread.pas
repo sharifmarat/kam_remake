@@ -72,22 +72,30 @@ begin
   fSimulationRequest := srNone;
   fSimulationInitialized := False;
 
-  SIM_Class           := 'TKMRunnerGA_Forest';// TKMRunnerGA_TestParRun TKMRunnerGA_CityPlanner TKMRunnerGA_CityRoadPlanner TKMRunnerGA_Forest
-  SIM_TimeInMin       := 65; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
+  {
+    TKMRunnerGA_TestParRun
+    TKMRunnerGA_Farm
+    TKMRunnerGA_Quarry
+    TKMRunnerGA_CityPlanner
+    TKMRunnerGA_CityRoadPlanner
+    TKMRunnerGA_Forest
+  }
+  SIM_Class           := 'TKMRunnerGA_Forest';//
+  SIM_TimeInMin       := 75; // Time of each simulation (GA doest not take simulation from game menu because it is only in minutes)
   SIM_CountThreads    := 3; //3;
-  GA_Generations      := 40; //40; // Count of generations
+  GA_Generations      := 25; //40; // Count of generations
   GA_CountIndividuals := 30; // Count of individuals in population
-  GA_CountGenes       := 19; // Count of genes
-  GA_CountMaps        := 26; //10; // Count of simulated maps for each invididual
+  GA_CountGenes       := 20; // Count of genes
+  GA_CountMaps        := 27; // Count of simulated maps for each invididual
   GA_START_TOURNAMENT_IndividualsCnt := 3; // Initial count of individuals in tournament
-  GA_FINAL_TOURNAMENT_IndividualsCnt := 3; // Final count of individuals in tournament
+  GA_FINAL_TOURNAMENT_IndividualsCnt := 5; // Final count of individuals in tournament
   GA_START_MUTATION_ResetGene := 0.05; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_ResetGene := 0.01; // Final mutation (last generation)
+  GA_FINAL_MUTATION_ResetGene := 0.001; // Final mutation (last generation)
   GA_START_MUTATION_Gaussian := 0.1; // Initial mutation (first generation)
-  GA_FINAL_MUTATION_Gaussian := 0.5; // Final mutation (last generation)
+  GA_FINAL_MUTATION_Gaussian := 0.4; // Final mutation (last generation)
   // Gaussian distribution generates mostly (-3,3) so variance > 0.1 is recommended
   GA_START_MUTATION_Variance := 0.1; // Initial variance coefficient (first generation)
-  GA_FINAL_MUTATION_Variance := 0.01; // Final variance coefficient (last generation)
+  GA_FINAL_MUTATION_Variance := 0.05; // Final variance coefficient (last generation)
 end;
 
 
